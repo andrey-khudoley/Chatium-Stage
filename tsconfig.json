@@ -1,0 +1,51 @@
+{
+  "compilerOptions": {
+    "target": "es2021",
+    "module": "es2020",
+    "moduleResolution": "node",
+    "lib": ["es2021", "dom"],
+    "rootDir": ".",
+    "baseUrl": ".",
+    "paths": {
+      "@start/*": ["../start.chatium.ru/*"],
+      "@store/*": ["../store.chatium.ru/*"],
+      "@users/*": ["../users.chatium.ru/*"],
+      "@traffic/*": ["../traffic.chatium.ru/*"],
+      "@ai-agents/*": ["../ai-agents.chatium.ru/*"],
+      "@gc-mcp-server/*": ["../gc-mcp-server.chatium.ru/*"],
+      "@user-notifier/*": ["../user-notifier.chatium.ru/*"],
+      "/*": ["./*"],
+      "@khudoley-stage/*": ["./*"]
+    },
+    "allowJs": false,
+    "allowSyntheticDefaultImports": true,
+    "experimentalDecorators": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "jsx": "react",
+    "jsxFactory": "jsx",
+    "jsxFragmentFactory": "jsx.Fragment",
+    "strict": true,
+    "noUncheckedIndexedAccess": true
+  },
+  "include": [
+    "**/*", ".**/*"
+  ],
+  "exclude": [
+    "./node_modules/**/*"
+  ],
+  "files": [
+    "./node_modules/@app/types/globals.d.ts",
+    "./node_modules/@app/types/modules.d.ts",
+    "./node_modules/@app/ui/global-jsx.d.ts"
+],
+  "references": [
+    { "path": "../start.chatium.ru" },
+    { "path": "../store.chatium.ru" },
+    { "path": "../users.chatium.ru" },
+    { "path": "../traffic.chatium.ru" },
+    { "path": "../ai-agents.chatium.ru" },
+    { "path": "../gc-mcp-server.chatium.ru" },
+    { "path": "../user-notifier.chatium.ru" }
+  ]
+}

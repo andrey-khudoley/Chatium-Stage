@@ -1,0 +1,6 @@
+{
+  "name": "saas/analytics/telegram/channel",
+  "params": {
+    "startWorkspaceAppearance": "ai"
+  }
+}

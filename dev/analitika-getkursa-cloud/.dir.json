@@ -1,0 +1,8 @@
+{
+  "name": "dev/analitika-getkursa-cloud",
+  "params": {
+    "codeIsPublic": false,
+    "searchable": false,
+    "isolatedExample": false
+  }
+}

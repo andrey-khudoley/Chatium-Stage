@@ -1,0 +1,7 @@
+{
+  "name": "auth-custom",
+  "title": "Кастомная форма авторизации",
+  "description": "Полноценная страница входа с SMS/Email/Password/Telegram авторизацией",
+  "order": 3
+}
+
