@@ -1,3 +1,5 @@
+import { sendDataToSocket } from '@app/socket'
+
 export type DebugLevel = 'info' | 'warn' | 'error'
 
 /**
@@ -33,6 +35,26 @@ export class Debug extends Error {
   static info(ctx: RichUgcCtx, message: string): void {
     // eslint-disable-next-line no-new
     new Debug(ctx, message, 'info')
+    
+    // Если есть socketId для тестов, отправляем через WebSocket
+    const socketId = (ctx as any)._testSocketId
+    const category = (ctx as any)._testCategory
+    const testName = (ctx as any)._testName
+    if (socketId && typeof socketId === 'string') {
+      // Отправляем асинхронно, но не ждём завершения (fire-and-forget)
+      // Это позволяет не блокировать выполнение, но логи всё равно отправляются
+      sendDataToSocket(ctx, socketId, {
+        type: 'test-info',
+        data: {
+          category: category || '',
+          testName: testName || '',
+          message,
+          timestamp: new Date().toISOString()
+        }
+      }).catch(() => {
+        // Игнорируем ошибки отправки через WebSocket (не критично для логирования)
+      })
+    }
   }
 
   /** Лог уровня `warn`. */

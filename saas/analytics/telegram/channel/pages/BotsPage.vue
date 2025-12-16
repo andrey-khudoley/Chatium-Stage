@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
 import Header from '../shared/Header.vue'
-import { apiGetBotsListRoute } from '../api/bots'
+import { apiGetBotsListRoute, apiValidateTokenRoute, apiAddBotRoute } from '../api/bots'
 
 declare const ctx: any
 
@@ -36,6 +36,8 @@ const error = ref<string | null>(null)
 const showAddTokenModal = ref(false)
 const newToken = ref('')
 const bootLoaderDone = ref(false)
+const addingToken = ref(false)
+const tokenError = ref<string | null>(null)
 
 // Анимация печатания текста
 const displayedTitle = ref('')
@@ -173,17 +175,66 @@ onUnmounted(() => {
 const openAddTokenModal = () => {
   showAddTokenModal.value = true
   newToken.value = ''
+  tokenError.value = null
 }
 
 const closeAddTokenModal = () => {
   showAddTokenModal.value = false
   newToken.value = ''
+  tokenError.value = null
+  addingToken.value = false
 }
 
-const addToken = () => {
-  // Пока что просто закрываем модальное окно
-  // Функционал будет добавлен позже
-  closeAddTokenModal()
+const addToken = async () => {
+  if (!newToken.value || !newToken.value.trim()) {
+    tokenError.value = 'Введите токен бота'
+    return
+  }
+  
+  addingToken.value = true
+  tokenError.value = null
+  
+  try {
+    console.log('[BotsPage] addToken: Начало валидации токена')
+    
+    // 1. Валидация токена через API
+    const validationResult = await apiValidateTokenRoute.run(ctx, {
+      token: newToken.value.trim()
+    })
+    
+    console.log('[BotsPage] addToken: Результат валидации:', validationResult)
+    
+    if (!validationResult.success) {
+      tokenError.value = validationResult.error || 'Ошибка при проверке токена'
+      return
+    }
+    
+    // 2. Сохранение токена в таблицу
+    console.log('[BotsPage] addToken: Сохранение бота в таблицу')
+    const saveResult = await apiAddBotRoute.run(ctx, {
+      token: newToken.value.trim(),
+      botName: validationResult.botInfo.name,
+      botUsername: validationResult.botInfo.username
+    })
+    
+    console.log('[BotsPage] addToken: Результат сохранения:', saveResult)
+    
+    if (!saveResult.success) {
+      tokenError.value = saveResult.error || 'Ошибка при сохранении токена'
+      return
+    }
+    
+    // 3. Обновление списка и закрытие модального окна
+    console.log('[BotsPage] addToken: Обновление списка ботов')
+    await loadBots()
+    closeAddTokenModal()
+  } catch (e: any) {
+    console.error('[BotsPage] addToken: Ошибка при добавлении токена:', e)
+    console.error('[BotsPage] addToken: Stack trace:', e.stack)
+    tokenError.value = e.message || 'Ошибка при добавлении токена'
+  } finally {
+    addingToken.value = false
+  }
 }
 
 const deleteToken = async (botId: string) => {
@@ -344,13 +395,13 @@ const maskToken = (token: string) => {
 
     <!-- Add Token Modal -->
     <Transition name="modal">
-      <div v-if="showAddTokenModal" class="modal-overlay" @click="closeAddTokenModal">
+      <div v-if="showAddTokenModal" class="modal-overlay" @click="addingToken ? null : closeAddTokenModal">
         <div class="modal-content" @click.stop>
         <div class="modal-scanlines"></div>
         
         <div class="modal-header">
           <h2 class="modal-title">Ввести новый токен</h2>
-          <button @click="closeAddTokenModal" class="modal-close-btn">
+          <button @click="closeAddTokenModal" class="modal-close-btn" :disabled="addingToken">
             <i class="fas fa-times"></i>
           </button>
         </div>
@@ -366,18 +417,27 @@ const maskToken = (token: string) => {
               type="text" 
               class="form-input"
               placeholder="1234567890:ABCdefGHIjklMNOpqrsTUVwxyz"
+              :disabled="addingToken"
             />
             <p class="form-hint">
               Токен можно получить у <a href="https://t.me/BotFather" target="_blank" class="form-link">@BotFather</a>
             </p>
+            <div v-if="tokenError" class="form-error">
+              <i class="fas fa-exclamation-circle"></i>
+              <span>{{ tokenError }}</span>
+            </div>
           </div>
         </div>
 
         <div class="modal-footer">
-          <button @click="addToken" class="modal-btn modal-btn-submit">
-            Добавить
+          <button @click="addToken" class="modal-btn modal-btn-submit" :disabled="addingToken">
+            <span v-if="addingToken">
+              <i class="fas fa-spinner fa-spin"></i>
+              Проверка...
+            </span>
+            <span v-else>Добавить</span>
           </button>
-          <button @click="closeAddTokenModal" class="modal-btn modal-btn-cancel">
+          <button @click="closeAddTokenModal" class="modal-btn modal-btn-cancel" :disabled="addingToken">
             Отмена
           </button>
         </div>
@@ -1954,6 +2014,12 @@ body {
   box-shadow: 0 0 10px rgba(211, 35, 75, 0.3);
 }
 
+.form-input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: rgba(0, 0, 0, 0.2);
+}
+
 .form-input::placeholder {
   color: var(--color-text-tertiary);
 }
@@ -1974,6 +2040,32 @@ body {
 .form-link:hover {
   color: var(--color-accent-hover);
   text-decoration: underline;
+}
+
+.form-error {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  background: rgba(211, 35, 75, 0.1);
+  border: 1px solid var(--color-accent);
+  color: var(--color-accent);
+  font-size: 0.875rem;
+  margin-top: 0.5rem;
+  clip-path: polygon(
+    0 2px, 2px 2px, 2px 0,
+    calc(100% - 2px) 0, calc(100% - 2px) 2px, 100% 2px,
+    100% calc(100% - 2px), calc(100% - 2px) calc(100% - 2px), calc(100% - 2px) 100%,
+    2px 100%, 2px calc(100% - 2px), 0 calc(100% - 2px)
+  );
+}
+
+.form-error i {
+  flex-shrink: 0;
+}
+
+.form-error span {
+  flex: 1;
 }
 
 .modal-footer {
@@ -2049,13 +2141,24 @@ body {
   box-shadow: 0 0 10px rgba(211, 35, 75, 0.3);
 }
 
-.modal-btn-submit:hover {
+.modal-btn-submit:hover:not(:disabled) {
   background: var(--color-accent);
   color: white;
   box-shadow: 
     0 0 20px rgba(211, 35, 75, 0.6),
     0 0 40px rgba(211, 35, 75, 0.4),
     inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.modal-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.modal-btn-submit:disabled {
+  opacity: 0.6;
+  cursor: wait;
 }
 
 /* Глобальный эффект глитча для всей страницы */
