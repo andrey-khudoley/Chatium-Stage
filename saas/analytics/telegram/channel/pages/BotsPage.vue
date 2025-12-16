@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
 import Header from '../shared/Header.vue'
-import { apiGetBotsListRoute, apiValidateTokenRoute, apiAddBotRoute } from '../api/bots'
+import { apiGetBotsListRoute, apiValidateTokenRoute, apiAddBotRoute, apiDeleteBotRoute } from '../api/bots'
 
 declare const ctx: any
 
@@ -238,10 +238,30 @@ const addToken = async () => {
 }
 
 const deleteToken = async (botId: string) => {
-  // Пока что просто удаляем из списка
-  // Функционал будет добавлен позже
-  bots.value = bots.value.filter(bot => bot.id !== botId)
-  // TODO: Добавить API роут для удаления бота из таблицы
+  try {
+    console.log('[BotsPage] deleteToken: Начало удаления бота с ID:', botId)
+    
+    // Вызываем API для удаления бота
+    const result = await apiDeleteBotRoute.run(ctx, {
+      botId: botId
+    })
+    
+    console.log('[BotsPage] deleteToken: Результат удаления:', result)
+    
+    if (!result.success) {
+      console.error('[BotsPage] deleteToken: Ошибка при удалении:', result.error)
+      // Можно показать уведомление об ошибке пользователю
+      return
+    }
+    
+    // Обновляем список ботов после успешного удаления
+    console.log('[BotsPage] deleteToken: Обновление списка ботов')
+    await loadBots()
+  } catch (e: any) {
+    console.error('[BotsPage] deleteToken: Исключение при удалении:', e)
+    console.error('[BotsPage] deleteToken: Stack trace:', e.stack)
+    // Можно показать уведомление об ошибке пользователю
+  }
 }
 
 const maskToken = (token: string) => {

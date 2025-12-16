@@ -31,6 +31,9 @@ export const TEST_CATEGORIES: TestCategory[] = [
       { name: 'add_bot_empty_token', description: 'Добавление бота: пустой токен' },
       { name: 'add_bot_duplicate', description: 'Добавление бота: проверка дубликатов' },
       { name: 'add_bot_success', description: 'Добавление бота: успешное создание' },
+      { name: 'delete_bot_empty_id', description: 'Удаление бота: пустой ID' },
+      { name: 'delete_bot_not_found', description: 'Удаление бота: бот не найден' },
+      { name: 'delete_bot_success', description: 'Удаление бота: успешное удаление' },
     ]
   },
   {
@@ -41,6 +44,7 @@ export const TEST_CATEGORIES: TestCategory[] = [
       { name: 'http_post_validate_token', description: 'HTTP POST /api/bots/validate-token' },
       { name: 'http_post_add_bot', description: 'HTTP POST /api/bots/add' },
       { name: 'http_get_list', description: 'HTTP GET /api/bots/list' },
+      { name: 'http_post_delete_bot', description: 'HTTP POST /api/bots/delete' },
     ]
   },
   {
@@ -64,6 +68,7 @@ export const TEST_CATEGORIES: TestCategory[] = [
       { name: 'create_bot', description: 'Создание записи бота в таблице' },
       { name: 'find_bot_by_user', description: 'Поиск ботов по userId' },
       { name: 'find_bot_duplicate', description: 'Проверка поиска дубликатов токена' },
+      { name: 'delete_bot', description: 'Удаление записи бота из таблицы' },
     ]
   }
 ]

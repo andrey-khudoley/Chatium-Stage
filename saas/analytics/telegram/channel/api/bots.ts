@@ -207,3 +207,68 @@ export const apiAddBotRoute = app.post('/add', async (ctx, req) => {
     }
   }
 })
+
+/**
+ * POST /api/bots/delete
+ * Удаление бота из таблицы
+ */
+export const apiDeleteBotRoute = app.post('/delete', async (ctx, req) => {
+  try {
+    await applyDebugLevel(ctx, 'api/bots/delete')
+    Debug.info(ctx, '[api/bots/delete] Начало удаления бота')
+    
+    requireRealUser(ctx)
+    Debug.info(ctx, `[api/bots/delete] Пользователь авторизован: userId=${ctx.user.id}`)
+    
+    const { botId } = req.body
+    
+    if (!botId || !botId.trim()) {
+      Debug.warn(ctx, '[api/bots/delete] ID бота не предоставлен')
+      return {
+        success: false,
+        error: 'ID бота обязателен'
+      }
+    }
+    
+    const trimmedBotId = botId.trim()
+    Debug.info(ctx, `[api/bots/delete] Попытка удаления бота с ID: ${trimmedBotId}`)
+    
+    // Проверяем, существует ли бот и принадлежит ли он текущему пользователю
+    const bot = await BotTokens.findById(ctx, trimmedBotId)
+    
+    if (!bot) {
+      Debug.warn(ctx, `[api/bots/delete] Бот с ID ${trimmedBotId} не найден`)
+      return {
+        success: false,
+        error: 'Бот не найден'
+      }
+    }
+    
+    // Проверяем, что бот принадлежит текущему пользователю
+    if (bot.userId !== ctx.user.id) {
+      Debug.warn(ctx, `[api/bots/delete] Попытка удаления чужого бота: bot.userId=${bot.userId}, currentUserId=${ctx.user.id}`)
+      return {
+        success: false,
+        error: 'Нет доступа к этому боту'
+      }
+    }
+    
+    // Удаляем бота
+    Debug.info(ctx, `[api/bots/delete] Удаление бота с ID: ${trimmedBotId}`)
+    await BotTokens.delete(ctx, trimmedBotId)
+    
+    Debug.info(ctx, `[api/bots/delete] Бот успешно удалён с ID: ${trimmedBotId}`)
+    
+    return {
+      success: true,
+      message: 'Бот успешно удалён'
+    }
+  } catch (error: any) {
+    Debug.error(ctx, `[api/bots/delete] Ошибка при удалении бота: ${error.message}`, 'E_DELETE_BOT')
+    Debug.error(ctx, `[api/bots/delete] Stack trace: ${error.stack || 'N/A'}`)
+    return {
+      success: false,
+      error: error.message || 'Ошибка при удалении бота'
+    }
+  }
+})

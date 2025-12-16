@@ -2,7 +2,7 @@
 import { TEST_CATEGORIES } from '../shared/test-definitions'
 import { Debug } from '../../shared/debug'
 import { applyDebugLevel } from '../../lib/logging'
-import { apiValidateTokenRoute, apiAddBotRoute, apiGetBotsListRoute } from '../../api/bots'
+import { apiValidateTokenRoute, apiAddBotRoute, apiGetBotsListRoute, apiDeleteBotRoute } from '../../api/bots'
 import { BotTokens } from '../../tables/bot-tokens.table'
 import { request } from '@app/request'
 
@@ -214,6 +214,81 @@ async function runApiTest(ctx: any, testName: string): Promise<{ success: boolea
         }
       }
 
+    case 'delete_bot_empty_id':
+      const deleteEmptyResult = await apiDeleteBotRoute.run(ctx, { botId: '' })
+      if (deleteEmptyResult.success) {
+        Debug.throw(ctx, `[tests/api/delete_bot_empty_id] Ожидалась ошибка для пустого ID`, 'E_TEST_FAILED')
+      }
+      if (!deleteEmptyResult.error || !deleteEmptyResult.error.includes('обязателен')) {
+        Debug.throw(ctx, `[tests/api/delete_bot_empty_id] Неверное сообщение об ошибке: ${deleteEmptyResult.error}`, 'E_TEST_FAILED')
+      }
+      Debug.info(ctx, `[tests/api/delete_bot_empty_id] Тест завершён успешно`)
+      return { success: true, message: 'Пустой ID корректно отклонён' }
+
+    case 'delete_bot_not_found':
+      const deleteNotFoundResult = await apiDeleteBotRoute.run(ctx, { botId: 'non_existent_id_12345' })
+      if (deleteNotFoundResult.success) {
+        Debug.throw(ctx, `[tests/api/delete_bot_not_found] Ожидалась ошибка для несуществующего бота`, 'E_TEST_FAILED')
+      }
+      if (!deleteNotFoundResult.error || !deleteNotFoundResult.error.includes('не найден')) {
+        Debug.throw(ctx, `[tests/api/delete_bot_not_found] Неверное сообщение об ошибке: ${deleteNotFoundResult.error}`, 'E_TEST_FAILED')
+      }
+      Debug.info(ctx, `[tests/api/delete_bot_not_found] Тест завершён успешно`)
+      return { success: true, message: 'Несуществующий бот корректно отклонён' }
+
+    case 'delete_bot_success':
+      // Проверяем авторизацию
+      if (!ctx.user || !ctx.user.id) {
+        Debug.throw(ctx, `[tests/api/delete_bot_success] Пользователь не авторизован`, 'E_TEST_AUTH')
+      }
+      
+      // Создаём тестового бота для удаления
+      const testTokenForDelete = `test_delete_${Date.now()}`
+      let testBotForDelete: any = null
+      
+      try {
+        Debug.info(ctx, `[tests/api/delete_bot_success] Создание тестового бота с токеном: ${testTokenForDelete.substring(0, 10)}...`)
+        testBotForDelete = await BotTokens.create(ctx, {
+          token: testTokenForDelete,
+          botName: 'Test Bot For Delete',
+          botUsername: 'testbotdelete',
+          userId: ctx.user.id
+        })
+        Debug.info(ctx, `[tests/api/delete_bot_success] Тестовый бот создан с ID: ${testBotForDelete.id}`)
+        
+        // Удаляем бота через API
+        Debug.info(ctx, `[tests/api/delete_bot_success] Попытка удаления бота через API`)
+        const deleteResult = await apiDeleteBotRoute.run(ctx, {
+          botId: testBotForDelete.id
+        })
+        
+        if (!deleteResult.success) {
+          Debug.throw(ctx, `[tests/api/delete_bot_success] Ошибка при удалении бота: ${deleteResult.error}`, 'E_TEST_FAILED')
+        }
+        
+        // Проверяем, что бот действительно удалён
+        Debug.info(ctx, `[tests/api/delete_bot_success] Проверка удаления бота из таблицы`)
+        const deletedBot = await BotTokens.findById(ctx, testBotForDelete.id)
+        if (deletedBot) {
+          Debug.throw(ctx, `[tests/api/delete_bot_success] Бот не был удалён из таблицы`, 'E_TEST_FAILED')
+        }
+        
+        Debug.info(ctx, `[tests/api/delete_bot_success] Тест завершён успешно`)
+        return { success: true, message: 'Бот успешно удалён через API' }
+      } catch (error: any) {
+        // Если ошибка произошла до удаления, пытаемся удалить вручную
+        if (testBotForDelete && testBotForDelete.id) {
+          try {
+            Debug.info(ctx, `[tests/api/delete_bot_success] Очистка: удаление тестового бота с ID: ${testBotForDelete.id}`)
+            await BotTokens.delete(ctx, testBotForDelete.id)
+            Debug.info(ctx, `[tests/api/delete_bot_success] Тестовый бот успешно удалён при очистке`)
+          } catch (cleanupError: any) {
+            Debug.warn(ctx, `[tests/api/delete_bot_success] Ошибка при очистке: ${cleanupError.message}`)
+          }
+        }
+        throw error
+      }
+
     default:
       Debug.throw(ctx, `[tests/api] Неизвестный тест API: ${testName}`, 'E_TEST_UNKNOWN')
   }
@@ -358,6 +433,30 @@ async function runApiHttpTest(ctx: any, testName: string): Promise<{ success: bo
       Debug.info(ctx, `[tests/api_http/http_get_list] Тест завершён успешно, статус: ${listResponse.statusCode}`)
       return { success: true, message: `HTTP ${listResponse.statusCode} - endpoint доступен` }
 
+    case 'http_post_delete_bot':
+      // Используем .url() метод роута для получения правильного URL
+      const deleteUrl = apiDeleteBotRoute.url()
+      Debug.info(ctx, `[tests/api_http/http_post_delete_bot] Запрос к URL: ${deleteUrl}`)
+      const deleteResponse = await request({
+        url: deleteUrl,
+        method: 'post',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        json: {
+          botId: 'test_bot_id'
+        },
+        responseType: 'json',
+        throwHttpErrors: false
+      })
+      
+      if (deleteResponse.statusCode >= 500) {
+        Debug.throw(ctx, `[tests/api_http/http_post_delete_bot] HTTP ${deleteResponse.statusCode} - серверная ошибка`, 'E_TEST_HTTP_ERROR')
+      }
+      
+      Debug.info(ctx, `[tests/api_http/http_post_delete_bot] Тест завершён успешно, статус: ${deleteResponse.statusCode}`)
+      return { success: true, message: `HTTP ${deleteResponse.statusCode} - endpoint доступен` }
+
     default:
       Debug.throw(ctx, `[tests/api_http] Неизвестный HTTP тест: ${testName}`, 'E_TEST_UNKNOWN')
   }
@@ -481,6 +580,57 @@ async function runDatabaseTest(ctx: any, testName: string): Promise<{ success: b
             // Игнорируем ошибки удаления (возможно уже удалён)
           }
         }
+      }
+
+    case 'delete_bot':
+      // Проверяем авторизацию
+      if (!ctx.user || !ctx.user.id) {
+        Debug.throw(ctx, `[tests/database/delete_bot] Пользователь не авторизован`, 'E_TEST_AUTH')
+      }
+      
+      const testTokenForDbDelete = `test_db_delete_${Date.now()}`
+      let testBotForDbDelete: any = null
+      
+      try {
+        Debug.info(ctx, `[tests/database/delete_bot] Создание тестового бота с токеном: ${testTokenForDbDelete.substring(0, 10)}...`)
+        testBotForDbDelete = await BotTokens.create(ctx, {
+          token: testTokenForDbDelete,
+          botName: 'Test Bot For DB Delete',
+          botUsername: 'testbotdbdelete',
+          userId: ctx.user.id
+        })
+        
+        if (!testBotForDbDelete || !testBotForDbDelete.id) {
+          Debug.throw(ctx, `[tests/database/delete_bot] Бот не создан`, 'E_TEST_DB_ERROR')
+        }
+        
+        Debug.info(ctx, `[tests/database/delete_bot] Бот создан с ID: ${testBotForDbDelete.id}`)
+        
+        // Удаляем бота напрямую через таблицу
+        Debug.info(ctx, `[tests/database/delete_bot] Удаление бота через таблицу`)
+        await BotTokens.delete(ctx, testBotForDbDelete.id)
+        
+        // Проверяем, что бот действительно удалён
+        Debug.info(ctx, `[tests/database/delete_bot] Проверка удаления бота`)
+        const deletedBot = await BotTokens.findById(ctx, testBotForDbDelete.id)
+        if (deletedBot) {
+          Debug.throw(ctx, `[tests/database/delete_bot] Бот не был удалён из таблицы`, 'E_TEST_DB_ERROR')
+        }
+        
+        Debug.info(ctx, `[tests/database/delete_bot] Тест завершён успешно`)
+        return { success: true, message: `Бот успешно удалён из таблицы` }
+      } catch (error: any) {
+        // Если ошибка произошла до удаления, пытаемся удалить вручную
+        if (testBotForDbDelete && testBotForDbDelete.id) {
+          try {
+            Debug.info(ctx, `[tests/database/delete_bot] Очистка: удаление тестового бота с ID: ${testBotForDbDelete.id}`)
+            await BotTokens.delete(ctx, testBotForDbDelete.id)
+            Debug.info(ctx, `[tests/database/delete_bot] Тестовый бот успешно удалён при очистке`)
+          } catch (cleanupError: any) {
+            Debug.warn(ctx, `[tests/database/delete_bot] Ошибка при очистке: ${cleanupError.message}`)
+          }
+        }
+        throw error
       }
 
     default:
