@@ -389,7 +389,7 @@ const maskToken = (token: string) => {
                     </div>
                     <div class="stat-content">
                       <div class="stat-value">{{ bot.groupsCount }}</div>
-                      <div class="stat-label">Подписчиков</div>
+                      <div class="stat-label">Лидов</div>
                     </div>
                   </div>
                 </div>
@@ -1161,6 +1161,7 @@ body {
   transform: scaleY(0.01);
   transform-origin: center;
   filter: brightness(0.8);
+  padding-top: 4px;
   /* Важно: элемент всегда занимает место в layout */
 }
 
@@ -1281,7 +1282,7 @@ body {
     0 0 0 0 rgba(0, 0, 0, 0),
     0 0 0 0 rgba(0, 0, 0, 0),
     inset 0 0 0 0 rgba(255, 255, 255, 0);
-  overflow: hidden;
+  overflow: visible;
   transform-style: preserve-3d;
   clip-path: polygon(
     0 4px, 4px 4px, 4px 0,
