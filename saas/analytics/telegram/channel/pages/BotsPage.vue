@@ -2,6 +2,8 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import Header from '../shared/Header.vue'
 import { apiGetBotsListRoute, apiValidateTokenRoute, apiAddBotRoute, apiDeleteBotRoute } from '../api/bots'
+import { apiCheckWebhookRoute } from '../api/webhook'
+import { webhooksPageRoute } from '../webhooks'
 
 declare const ctx: any
 
@@ -271,6 +273,42 @@ const maskToken = (token: string) => {
   }
   return token.substring(0, 10) + '•'.repeat(token.length - 14) + token.substring(token.length - 4)
 }
+
+const checkWebhook = async (botId: string) => {
+  try {
+    console.log('[BotsPage] checkWebhook: Проверка webhook для бота:', botId)
+    
+    // Для роутов с параметрами пути используем route({ param }).run(ctx)
+    const result = await apiCheckWebhookRoute({ id: botId }).run(ctx)
+    
+    console.log('[BotsPage] checkWebhook: Результат проверки:', result)
+    
+    if (result.success && result.webhookInfo) {
+      const info = result.webhookInfo
+      const message = `Webhook статус:\n` +
+        `URL: ${info.url || 'не установлен'}\n` +
+        `Ожидаемый URL: ${result.expectedUrl}\n` +
+        `Правильный: ${result.isCorrect ? 'Да' : 'Нет'}\n` +
+        `Ожидает обновлений: ${info.has_custom_certificate ? 'Да' : 'Нет'}\n` +
+        `Ошибок: ${info.pending_update_count || 0}\n` +
+        (info.last_error_date ? `Последняя ошибка: ${new Date(info.last_error_date * 1000).toLocaleString()}\n` : '') +
+        (info.last_error_message ? `Сообщение: ${info.last_error_message}` : '')
+      
+      alert(message)
+    } else {
+      alert(`Ошибка проверки webhook: ${result.error || 'Неизвестная ошибка'}`)
+    }
+  } catch (e: any) {
+    console.error('[BotsPage] checkWebhook: Ошибка:', e)
+    alert(`Ошибка при проверке webhook: ${e.message || 'Неизвестная ошибка'}`)
+  }
+}
+
+const viewWebhooks = (botId: string) => {
+  // Переходим на страницу вебхуков с фильтром по botId
+  const webhooksUrl = webhooksPageRoute.query({ botId: botId }).url()
+  window.location.href = webhooksUrl
+}
 </script>
 
 <template>
@@ -353,6 +391,20 @@ const maskToken = (token: string) => {
                       <span class="token-value">{{ maskToken(bot.token) }}</span>
                     </div>
                   </div>
+                  <button 
+                    @click="checkWebhook(bot.id)" 
+                    class="bot-check-btn"
+                    title="Проверить webhook"
+                  >
+                    <i class="fas fa-link"></i>
+                  </button>
+                  <button 
+                    @click="viewWebhooks(bot.id)" 
+                    class="bot-view-webhooks-btn"
+                    title="Просмотр вебхуков"
+                  >
+                    <i class="fas fa-list"></i>
+                  </button>
                   <button 
                     @click="deleteToken(bot.id)" 
                     class="bot-delete-btn"
@@ -1584,6 +1636,8 @@ body {
   );
 }
 
+.bot-check-btn,
+.bot-view-webhooks-btn,
 .bot-delete-btn {
   width: 2.25rem;
   height: 2.25rem;
@@ -1608,6 +1662,8 @@ body {
   z-index: 1;
 }
 
+.bot-check-btn::before,
+.bot-view-webhooks-btn::before,
 .bot-delete-btn::before {
   content: '';
   position: absolute;
@@ -1626,10 +1682,28 @@ body {
   z-index: 0;
 }
 
+.bot-check-btn i,
+.bot-view-webhooks-btn i,
 .bot-delete-btn i {
   position: relative;
   z-index: 2;
   font-size: 0.875rem;
+}
+
+.bot-check-btn:hover,
+.bot-view-webhooks-btn:hover {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+  background: rgba(211, 35, 75, 0.1);
+  transform: translateY(-2px);
+  box-shadow: 
+    0 4px 8px rgba(211, 35, 75, 0.2),
+    0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.bot-check-btn:active,
+.bot-view-webhooks-btn:active {
+  transform: translateY(0);
 }
 
 .bot-delete-btn:hover {
