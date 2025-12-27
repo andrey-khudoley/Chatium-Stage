@@ -4,6 +4,7 @@ import { requireRealUser } from '@app/auth'
 import { BotTokens } from '../tables/bot-tokens.table'
 import { TelegramWebhooks } from '../tables/webhooks.table'
 import { TelegramChats } from '../tables/chats.table'
+import { ChannelLinkAnalytics } from '../tables/channel-link-analytics.table'
 import { Debug } from '../shared/debug'
 import { applyDebugLevel } from '../lib/logging'
 import { sendDataToSocket } from '@app/socket'
@@ -100,6 +101,178 @@ export const apiWebhookRoute = app.post('/:id', async (ctx, req) => {
       // Логируем ошибку, но не прерываем обработку вебхука
       Debug.error(ctx, `[api/webhook] Ошибка сохранения вебхука в таблицу: ${saveError.message}`, 'E_WEBHOOK_SAVE')
       Debug.error(ctx, `[api/webhook] Stack trace сохранения: ${saveError.stack || 'N/A'}`)
+    }
+    
+    // Обрабатываем событие вступления в канал через invite link
+    try {
+      Debug.info(ctx, `[api/webhook] Проверка события вступления в канал`)
+      const chatMember = (webhookData as any)?.chat_member
+      
+      if (chatMember) {
+        const oldStatus = chatMember.old_chat_member?.status
+        const newStatus = chatMember.new_chat_member?.status
+        
+        // Извлекаем invite link - может быть объектом ChatInviteLink или строкой
+        let inviteLink: string | null = null
+        let inviteLinkName: string | null = null
+        
+        if (chatMember.invite_link) {
+          if (typeof chatMember.invite_link === 'string') {
+            // Если invite_link - строка, извлекаем только ссылку
+            inviteLink = chatMember.invite_link
+          } else if (typeof chatMember.invite_link === 'object') {
+            // Если invite_link - объект, извлекаем и ссылку, и имя
+            if (chatMember.invite_link.invite_link && typeof chatMember.invite_link.invite_link === 'string') {
+              inviteLink = chatMember.invite_link.invite_link
+            }
+            // Извлекаем имя из объекта (если доступно)
+            if (chatMember.invite_link.name) {
+              inviteLinkName = String(chatMember.invite_link.name)
+            }
+          }
+        }
+        
+        Debug.info(ctx, `[api/webhook] Событие chat_member обнаружено: oldStatus=${oldStatus || 'N/A'}, newStatus=${newStatus || 'N/A'}, inviteLink=${inviteLink || 'N/A'}, inviteLinkName=${inviteLinkName || 'N/A'}`)
+        
+        // Проверяем, что пользователь вступил в канал (статус изменился на "member" или "administrator")
+        // и вступление было через invite link
+        // Старый статус должен быть "left" или отсутствовать (для новых участников)
+        const isJoining = (newStatus === 'member' || newStatus === 'administrator') && 
+                          (oldStatus === 'left' || oldStatus === 'kicked' || !oldStatus) &&
+                          inviteLink && 
+                          typeof inviteLink === 'string'
+        
+        if (isJoining) {
+          Debug.info(ctx, `[api/webhook] Пользователь вступил в канал через invite link: ${inviteLink}`)
+          
+          // Извлекаем ID пользователя Telegram из события
+          // ID может быть в chat_member.from.id или chat_member.new_chat_member.user.id
+          let telegramUserId: string | null = null
+          if (chatMember.from && chatMember.from.id) {
+            telegramUserId = String(chatMember.from.id)
+          } else if (chatMember.new_chat_member && chatMember.new_chat_member.user && chatMember.new_chat_member.user.id) {
+            telegramUserId = String(chatMember.new_chat_member.user.id)
+          }
+          
+          Debug.info(ctx, `[api/webhook] ID пользователя Telegram: ${telegramUserId || 'N/A'}`)
+          Debug.info(ctx, `[api/webhook] Имя invite link: ${inviteLinkName || 'N/A'}`)
+          
+          // Используем эксклюзивную блокировку для предотвращения race condition
+          // Ключ блокировки должен быть одинаковым для всех параллельных запросов с одним inviteLink
+          const lockKey = `channel-link-analytics-${inviteLink.trim()}`
+          
+          await runWithExclusiveLock(ctx, lockKey, {}, async () => {
+            // ВСЕ операции с БД должны быть ВНУТРИ блокировки
+            // Это гарантирует, что между findAll и update не произойдёт другой запрос
+            
+            // Ищем все записи в аналитике по invite link с пагинацией
+            // ВАЖНО: Используем итеративную загрузку для обработки всех записей, даже если их больше 100
+            let allAnalyticsRecords: any[] = []
+            let offset = 0
+            const BATCH_SIZE = 100
+            let hasMore = true
+            
+            while (hasMore) {
+              const batch = await ChannelLinkAnalytics.findAll(ctx, {
+                where: {
+                  inviteLink: inviteLink.trim()
+                },
+                limit: BATCH_SIZE,
+                offset: offset
+              })
+              
+              if (batch && batch.length > 0) {
+                allAnalyticsRecords = allAnalyticsRecords.concat(batch)
+                offset += BATCH_SIZE
+                
+                // Если получили меньше записей, чем лимит, значит это последний батч
+                if (batch.length < BATCH_SIZE) {
+                  hasMore = false
+                }
+              } else {
+                hasMore = false
+              }
+            }
+            
+            Debug.info(ctx, `[api/webhook] Найдено записей аналитики для invite link: ${allAnalyticsRecords.length}`)
+            
+            if (allAnalyticsRecords.length > 0) {
+              const now = new Date()
+              let updatedCount = 0
+              
+              // Если имя invite link найдено, используем его для точного сопоставления
+              if (inviteLinkName) {
+                for (const record of allAnalyticsRecords) {
+                  // ВАЖНО: Обновляем только если имя invite link совпадает с uid из записи
+                  // Это гарантирует, что мы обновляем только записи конкретного пользователя
+                  // Имя invite link создаётся равным uid при создании ссылки
+                  const shouldUpdate = record.uid === inviteLinkName.trim()
+                  
+                  if (shouldUpdate && !record.joinedAt) {
+                    const updateData: any = {
+                      id: record.id,
+                      joinedAt: now
+                    }
+                    
+                    // Добавляем telegramUserId, если он был извлечён
+                    if (telegramUserId) {
+                      updateData.telegramUserId = telegramUserId
+                    }
+                    
+                    await ChannelLinkAnalytics.update(ctx, updateData)
+                    updatedCount++
+                    Debug.info(ctx, `[api/webhook] Запись аналитики обновлена: linkId=${record.linkId}, uid=${record.uid}, joinedAt=${now.toISOString()}, telegramUserId=${telegramUserId || 'N/A'}`)
+                  } else if (!shouldUpdate) {
+                    Debug.info(ctx, `[api/webhook] Пропущена запись аналитики: uid не совпадает (запись uid=${record.uid}, invite link name=${inviteLinkName})`)
+                  } else {
+                    Debug.info(ctx, `[api/webhook] Запись аналитики уже помечена как вступившая: linkId=${record.linkId}, uid=${record.uid}`)
+                  }
+                }
+                
+                if (updatedCount === 0 && allAnalyticsRecords.length > 0) {
+                  Debug.warn(ctx, `[api/webhook] Не найдено записей для обновления: все записи либо уже обновлены, либо uid не совпадает`)
+                }
+              } else {
+                // Если имя invite link не найдено (invite_link был строкой), используем fallback логику
+                // Обновляем только если найдена ровно одна запись (безопасный fallback)
+                if (allAnalyticsRecords.length === 1) {
+                  const record = allAnalyticsRecords[0]
+                  if (!record.joinedAt) {
+                    const updateData: any = {
+                      id: record.id,
+                      joinedAt: now
+                    }
+                    
+                    // Добавляем telegramUserId, если он был извлечён
+                    if (telegramUserId) {
+                      updateData.telegramUserId = telegramUserId
+                    }
+                    
+                    await ChannelLinkAnalytics.update(ctx, updateData)
+                    updatedCount++
+                    Debug.info(ctx, `[api/webhook] Запись аналитики обновлена (fallback, имя invite link недоступно): linkId=${record.linkId}, uid=${record.uid}, joinedAt=${now.toISOString()}, telegramUserId=${telegramUserId || 'N/A'}`)
+                  } else {
+                    Debug.info(ctx, `[api/webhook] Запись аналитики уже помечена как вступившая: linkId=${record.linkId}, uid=${record.uid}`)
+                  }
+                } else {
+                  // Если записей несколько и имя недоступно, не обновляем, чтобы избежать неправильной атрибуции
+                  Debug.warn(ctx, `[api/webhook] Имя invite link не найдено в событии и найдено ${allAnalyticsRecords.length} записей. Пропускаем обновление для избежания неправильной атрибуции. Для обновления требуется имя invite link (равное uid) или единственная запись.`)
+                }
+              }
+            } else {
+              Debug.warn(ctx, `[api/webhook] Запись аналитики не найдена для invite link: ${inviteLink}`)
+            }
+          })
+        } else {
+          Debug.info(ctx, `[api/webhook] Событие chat_member не является вступлением через invite link: oldStatus=${oldStatus || 'N/A'}, newStatus=${newStatus || 'N/A'}, inviteLink=${inviteLink || 'N/A'}`)
+        }
+      } else {
+        Debug.info(ctx, `[api/webhook] Событие chat_member отсутствует в вебхуке`)
+      }
+    } catch (joinError: any) {
+      // Логируем ошибку, но не прерываем обработку вебхука
+      Debug.error(ctx, `[api/webhook] Ошибка обработки вступления в канал: ${joinError.message}`, 'E_JOIN_TRACK')
+      Debug.error(ctx, `[api/webhook] Stack trace обработки вступления: ${joinError.stack || 'N/A'}`)
     }
     
     // Сохраняем информацию о чате, если она присутствует в вебхуке
