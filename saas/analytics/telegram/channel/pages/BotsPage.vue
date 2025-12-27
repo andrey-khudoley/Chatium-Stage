@@ -71,8 +71,9 @@ const loadBots = async () => {
         botName: bot.botName || null,
         botUsername: bot.botUsername || null,
         userId: bot.userId,
+        // Количество каналов из API
+        channelsCount: bot.channelsCount || 0,
         // Временные значения для статистики (пока не реализовано)
-        channelsCount: 0,
         groupsCount: 0,
         inviteLinksCount: 0
       }))

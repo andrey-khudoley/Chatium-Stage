@@ -2,6 +2,7 @@
 
 import { requireRealUser } from '@app/auth'
 import { BotTokens } from '../tables/bot-tokens.table'
+import { TelegramChats } from '../tables/chats.table'
 import { Debug } from '../shared/debug'
 import { applyDebugLevel } from '../lib/logging'
 import { request } from '@app/request'
@@ -38,9 +39,36 @@ export const apiGetBotsListRoute = app.get('/list', async (ctx, req) => {
       Debug.warn(ctx, `[api/bots/list] У пользователя userId=${ctx.user.id} нет добавленных ботов`)
     }
     
+    // Для каждого бота подсчитываем количество каналов
+    const botsWithStats = []
+    if (bots && bots.length > 0) {
+      for (const bot of bots) {
+        try {
+          Debug.info(ctx, `[api/bots/list] Подсчёт каналов для бота ${bot.id}`)
+          const channelsCount = await TelegramChats.countBy(ctx, {
+            botId: bot.id,
+            chatType: 'channel'
+          })
+          Debug.info(ctx, `[api/bots/list] Для бота ${bot.id} найдено каналов: ${channelsCount}`)
+          
+          botsWithStats.push({
+            ...bot,
+            channelsCount: channelsCount || 0
+          })
+        } catch (statsError: any) {
+          Debug.error(ctx, `[api/bots/list] Ошибка подсчёта каналов для бота ${bot.id}: ${statsError.message}`, 'E_BOT_STATS')
+          // В случае ошибки добавляем бота со значением 0
+          botsWithStats.push({
+            ...bot,
+            channelsCount: 0
+          })
+        }
+      }
+    }
+    
     return {
       success: true,
-      bots: bots || []
+      bots: botsWithStats
     }
   } catch (error: any) {
     Debug.error(ctx, `[api/bots/list] Ошибка при получении списка ботов: ${error.message}`, 'E_GET_BOTS_LIST')
