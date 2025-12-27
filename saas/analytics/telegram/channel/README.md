@@ -31,12 +31,14 @@ channel/
 ├── tables/                # Определения таблиц
 │   ├── settings.table.ts  # Настройки проекта (ключ-значение)
 │   ├── bot-tokens.table.ts # Токены Telegram ботов
-│   └── webhooks.table.ts  # Логирование входящих вебхуков от Telegram
+│   ├── webhooks.table.ts  # Логирование входящих вебхуков от Telegram
+│   └── chats.table.ts     # Уникальные телеграм-чаты и каналы
 ├── shared/                # Общие модули
 │   ├── debug.ts           # Класс Debug для структурированного логирования
 │   └── Header.vue         # Общий компонент заголовка для страниц
 ├── lib/                   # Библиотеки и утилиты
-│   └── logging.ts         # Управление уровнем логирования и кэширование
+│   ├── logging.ts         # Управление уровнем логирования и кэширование
+│   └── extract-chat.ts    # Извлечение информации о чате из вебхуков Telegram
 ├── adr/                   # Architecture Decision Records
 │   └── 000-template.md    # Шаблон ADR
 ├── tests/                 # Unit и интеграционные тесты
@@ -75,7 +77,7 @@ channel/
 |------|-------|------|----------|
 | `api/auth-password.ts` | POST | `/password-hash` | Получение хеша пароля для авторизации |
 | `api/auth-telegram.ts` | POST | `/get-telegram-oauth-url` | Получение OAuth URL для авторизации через Telegram |
-| `api/bots.ts` | GET | `/list` | Получение списка ботов текущего пользователя |
+| `api/bots.ts` | GET | `/list` | Получение списка ботов текущего пользователя (с подсчётом количества каналов для каждого бота) |
 | `api/bots.ts` | POST | `/add` | Добавление нового бота в таблицу (с автоматической регистрацией webhook в Telegram) |
 | `api/bots.ts` | POST | `/delete` | Удаление бота из таблицы (с автоматическим удалением webhook в Telegram) |
 | `api/bots.ts` | POST | `/validate-token` | Валидация токена Telegram бота |
@@ -162,6 +164,29 @@ channel/
 - Если вебхук содержит информацию о чате (поле `chat`), чат автоматически сохраняется или обновляется в таблице
 - Если вебхук не содержит информацию о чате, запись в таблицу не создаётся
 - Для каждого уникального `chatId` создаётся одна запись, которая обновляется при последующих вебхуках от этого чата
+- Используется эксклюзивная блокировка (`runWithExclusiveLock`) для предотвращения race condition при параллельных запросах с одним `chatId`
+- При обновлении существующего чата сохраняется оригинальное значение `firstSeenAt` и обновляется `lastSeenAt`
+
+**Обрабатываемые типы обновлений:**
+Чаты извлекаются из следующих типов обновлений Telegram Bot API:
+- `message.chat` - обычные сообщения
+- `channel_post.chat` - сообщения в каналах
+- `edited_message.chat` - отредактированные сообщения
+- `edited_channel_post.chat` - отредактированные сообщения в каналах
+- `callback_query.message.chat` - callback queries с сообщениями
+- `my_chat_member.chat` - изменения статуса бота в чате
+- `chat_member.chat` - изменения статуса участника чата
+- `chat_join_request.chat` - запросы на вступление в чат
+- `chat_boost.chat` - события boost чата (Bot API 9.0+)
+- `removed_chat_boost.chat` - события удаления boost (Bot API 9.0+)
+
+**НЕ обрабатываются** (не содержат Chat объект):
+- `inline_query` - содержит только `from` (User), `query`, `location`, `chat_type`
+- `chosen_inline_result` - содержит только `from` (User), `result_id`, `query`
+- `shipping_query` - содержит только `from` (User), `invoice_payload`, `shipping_address`
+- `pre_checkout_query` - содержит только `from` (User), `currency`, `total_amount`, `invoice_payload`
+- `poll` - не содержит chat
+- `poll_answer` - содержит только `poll_id`, `user` (User), `option_ids`
 
 ## Работа с токенами ботов
 
@@ -262,6 +287,45 @@ if (!deleteResult.success) {
 await loadBots()
 ```
 
+### Получение списка ботов
+
+Для получения списка ботов используется endpoint `GET /api/bots/list`:
+
+**Формат ответа:**
+```typescript
+{
+  success: true,
+  bots: [
+    {
+      id: string,              // ID бота
+      token: string,           // Токен бота
+      botName: string | null,  // Название бота
+      botUsername: string | null, // Username бота
+      userId: string,          // ID пользователя-владельца
+      channelsCount: number    // Количество каналов, для которых поступил хотя бы один вебхук
+    },
+    // ... остальные боты
+  ]
+}
+```
+
+**Особенности:**
+- Возвращает список всех ботов текущего пользователя
+- Для каждого бота автоматически подсчитывается количество каналов из таблицы `TelegramChats` с `chatType === 'channel'`
+- Если для бота нет каналов, `channelsCount` будет равен `0`
+- В случае ошибки подсчёта каналов для конкретного бота, значение `channelsCount` устанавливается в `0`, но сам бот всё равно возвращается в списке
+
+**Пример использования:**
+```typescript
+const result = await apiGetBotsListRoute.run(ctx)
+
+if (result.success && result.bots) {
+  for (const bot of result.bots) {
+    console.log(`Бот ${bot.botName}: ${bot.channelsCount} каналов`)
+  }
+}
+```
+
 ### Безопасность
 
 При работе с токенами ботов реализованы следующие меры безопасности:
@@ -323,12 +387,20 @@ await loadBots()
      - `rawData` - сырые данные вебхука
      - `receivedAt` - время получения
 
-4. **Отправка через WebSocket**:
+4. **Сохранение информации о чате**:
+   - Извлечение информации о чате из вебхука через функцию `extractChatFromUpdate()`
+   - Если вебхук содержит информацию о чате (поле `chat`), чат сохраняется или обновляется в таблице `TelegramChats`
+   - Используется эксклюзивная блокировка (`runWithExclusiveLock`) для предотвращения race condition при параллельных запросах
+   - Используется метод `createOrUpdateBy` для предотвращения дубликатов
+   - Сохраняются поля: `chatId`, `botId`, `userId`, `chatType`, `chatTitle`, `chatUsername`, `firstSeenAt`, `lastSeenAt`
+   - Если вебхук не содержит информацию о чате, запись в таблицу не создаётся
+
+5. **Отправка через WebSocket**:
    - Генерация `socketId` на основе `userId`: `webhooks-${bot.userId}`
    - Отправка данных через `sendDataToSocket()` с типом события `webhook`
    - Данные включают: `timestamp`, `botId`, `botName`, `botUsername`, `raw` (сырые данные)
 
-5. **Ответ Telegram**:
+6. **Ответ Telegram**:
    - Всегда возвращается `200 OK`, даже при ошибках
    - Это предотвращает повторные запросы от Telegram
 
@@ -911,6 +983,7 @@ async function runApiTest(ctx: any, testName: string) {
   - Добавлена документация процесса добавления и удаления токенов
 - Реализована система обработки вебхуков от Telegram:
   - Добавлена таблица `TelegramWebhooks` для логирования входящих вебхуков
+  - Добавлена таблица `TelegramChats` для хранения уникальных телеграм-чатов и каналов
   - Реализован endpoint `POST /api/webhook/:id` для обработки входящих вебхуков (без авторизации)
   - Реализован endpoint `GET /api/webhook/list` для получения списка вебхуков с фильтрацией
   - Реализован endpoint `GET /api/webhook/check/:id` для проверки состояния webhook в Telegram
@@ -920,6 +993,12 @@ async function runApiTest(ctx: any, testName: string) {
   - Реализована отправка вебхуков владельцу бота через WebSocket в реальном времени
   - Добавлена страница `/webhooks` для просмотра вебхуков с real-time обновлениями
   - Добавлен Vue компонент `WebhooksPage.vue` для отображения вебхуков
+  - Реализовано автоматическое сохранение уникальных чатов из вебхуков:
+    - Создана утилита `lib/extract-chat.ts` для извлечения информации о чате из вебхуков
+    - Чаты сохраняются автоматически при обработке вебхуков с использованием `createOrUpdateBy`
+    - Используется эксклюзивная блокировка (`runWithExclusiveLock`) для предотвращения race condition
+    - Обрабатываются все типы обновлений Telegram Bot API, содержащие Chat объекты
+    - Добавлен подсчёт количества каналов для каждого бота в API `/api/bots/list`
 - Добавлены дополнительные страницы:
   - Страница `/analytics` (в разработке)
   - Страница `/channels` (в разработке)
