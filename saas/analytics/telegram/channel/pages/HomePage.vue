@@ -185,9 +185,8 @@ const handleCardClick = () => {
             </div>
 
             <!-- Channels Card -->
-            <!-- ВАЖНО: Переход отключен на время разработки - такой страницы ещё нет -->
-            <div class="nav-card nav-card-channels">
-              <div class="nav-card-content" @click="handleCardClick">
+            <a :href="props.channelsUrl" class="nav-card nav-card-channels">
+              <div class="nav-card-content">
                 <div class="nav-card-icon nav-card-icon-channels">
                   <i class="fas fa-broadcast-tower"></i>
                 </div>
@@ -199,7 +198,7 @@ const handleCardClick = () => {
                   <i class="fas fa-arrow-right"></i>
                 </div>
               </div>
-            </div>
+            </a>
 
             <!-- Bots Card -->
             <a :href="props.botsUrl" class="nav-card nav-card-bots">
