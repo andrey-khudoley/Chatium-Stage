@@ -3,10 +3,13 @@
 import { requireRealUser } from '@app/auth'
 import { BotTokens } from '../tables/bot-tokens.table'
 import { TelegramWebhooks } from '../tables/webhooks.table'
+import { TelegramChats } from '../tables/chats.table'
 import { Debug } from '../shared/debug'
 import { applyDebugLevel } from '../lib/logging'
 import { sendDataToSocket } from '@app/socket'
 import { request } from '@app/request'
+import { extractChatFromUpdate } from '../lib/extract-chat'
+import { runWithExclusiveLock } from '@app/sync'
 
 /**
  * POST /api/webhook/:id
@@ -97,6 +100,65 @@ export const apiWebhookRoute = app.post('/:id', async (ctx, req) => {
       // Логируем ошибку, но не прерываем обработку вебхука
       Debug.error(ctx, `[api/webhook] Ошибка сохранения вебхука в таблицу: ${saveError.message}`, 'E_WEBHOOK_SAVE')
       Debug.error(ctx, `[api/webhook] Stack trace сохранения: ${saveError.stack || 'N/A'}`)
+    }
+    
+    // Сохраняем информацию о чате, если она присутствует в вебхуке
+    try {
+      Debug.info(ctx, `[api/webhook] Попытка извлечения информации о чате из вебхука`)
+      const chatInfo = extractChatFromUpdate(webhookData)
+      
+      if (chatInfo && chatInfo.id !== undefined && chatInfo.id !== null) {
+        const chatIdString = String(chatInfo.id)
+        Debug.info(ctx, `[api/webhook] Чат найден в вебхуке: chatId=${chatIdString}, type=${chatInfo.type || 'N/A'}, title=${chatInfo.title || 'N/A'}, username=${chatInfo.username || 'N/A'}`)
+        
+        const now = new Date()
+        
+        // Используем эксклюзивную блокировку для атомарной операции
+        // Ключ блокировки должен быть одинаковым для всех параллельных запросов с одним chatId
+        const lockKey = `telegram-chat-${chatIdString}`
+        
+        await runWithExclusiveLock(ctx, lockKey, {}, async () => {
+          // ВСЕ операции с БД должны быть ВНУТРИ блокировки
+          // Это гарантирует, что между findOneBy и createOrUpdateBy не произойдёт другой запрос
+          const existingChat = await TelegramChats.findOneBy(ctx, { chatId: chatIdString })
+          
+          if (existingChat) {
+            // Обновляем существующий чат
+            Debug.info(ctx, `[api/webhook] Чат ${chatIdString} уже существует, обновляем lastSeenAt и другую информацию`)
+            await TelegramChats.createOrUpdateBy(ctx, 'chatId', {
+              chatId: chatIdString,
+              botId: bot.id,
+              userId: bot.userId,
+              chatType: chatInfo.type || existingChat.chatType || null,
+              chatTitle: chatInfo.title || existingChat.chatTitle || null,
+              chatUsername: chatInfo.username || existingChat.chatUsername || null,
+              firstSeenAt: existingChat.firstSeenAt, // Сохраняем оригинальное время первого появления
+              lastSeenAt: now // Обновляем время последнего появления
+            })
+            Debug.info(ctx, `[api/webhook] Чат ${chatIdString} успешно обновлен`)
+          } else {
+            // Создаём новый чат
+            Debug.info(ctx, `[api/webhook] Чат ${chatIdString} новый, создаём запись`)
+            await TelegramChats.createOrUpdateBy(ctx, 'chatId', {
+              chatId: chatIdString,
+              botId: bot.id,
+              userId: bot.userId,
+              chatType: chatInfo.type || null,
+              chatTitle: chatInfo.title || null,
+              chatUsername: chatInfo.username || null,
+              firstSeenAt: now,
+              lastSeenAt: now
+            })
+            Debug.info(ctx, `[api/webhook] Чат ${chatIdString} успешно создан`)
+          }
+        })
+      } else {
+        Debug.info(ctx, `[api/webhook] Чат не найден в вебхуке (update не содержит chat)`)
+      }
+    } catch (chatError: any) {
+      // Логируем ошибку, но не прерываем обработку вебхука
+      Debug.error(ctx, `[api/webhook] Ошибка сохранения чата: ${chatError.message}`, 'E_CHAT_SAVE')
+      Debug.error(ctx, `[api/webhook] Stack trace сохранения чата: ${chatError.stack || 'N/A'}`)
     }
     
     // БЕЗОПАСНОСТЬ: Отправляем вебхук ТОЛЬКО владельцу этого конкретного бота

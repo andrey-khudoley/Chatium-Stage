@@ -12,23 +12,29 @@ channel/
 ├── login.tsx              # Страница входа (/login)
 ├── profile.tsx            # Страница профиля (/profile)
 ├── settings.tsx           # Страница настроек (/settings)
+├── webhooks.tsx           # Страница вебхуков (/webhooks)
 ├── pages/                 # Vue компоненты страниц
 │   ├── HomePage.vue       # Компонент главной страницы
 │   ├── LoginPage.vue      # Компонент страницы входа
 │   ├── ProfilePage.vue    # Компонент страницы профиля
-│   └── SettingsPage.vue   # Компонент страницы настроек
+│   ├── SettingsPage.vue   # Компонент страницы настроек
+│   ├── BotsPage.vue       # Компонент страницы управления ботами
+│   └── WebhooksPage.vue  # Компонент страницы вебхуков
 ├── api/                   # API endpoints
 │   ├── auth-password.ts   # POST /password-hash - получение хеша пароля
 │   ├── auth-telegram.ts   # POST /get-telegram-oauth-url - получение OAuth URL для Telegram
-│   ├── bots.ts            # GET /list - получение списка ботов пользователя
-│   └── settings.ts        # GET/POST /log-level - управление уровнем логирования
+│   ├── bots.ts            # Управление ботами (GET /list, POST /add, POST /delete, POST /validate-token)
+│   ├── settings.ts        # GET/POST /log-level - управление уровнем логирования
+│   └── webhook.ts         # Обработка вебхуков от Telegram (POST /:id, GET /list, GET /check/:id, GET /test/:id)
 ├── sdk/                   # SDK функции для клиентской части
 │   └── auth.ts            # Функции авторизации (SMS, Email, Password, Telegram)
 ├── tables/                # Определения таблиц
 │   ├── settings.table.ts  # Настройки проекта (ключ-значение)
-│   └── bot-tokens.table.ts # Токены Telegram ботов
+│   ├── bot-tokens.table.ts # Токены Telegram ботов
+│   └── webhooks.table.ts  # Логирование входящих вебхуков от Telegram
 ├── shared/                # Общие модули
-│   └── debug.ts           # Класс Debug для структурированного логирования
+│   ├── debug.ts           # Класс Debug для структурированного логирования
+│   └── Header.vue         # Общий компонент заголовка для страниц
 ├── lib/                   # Библиотеки и утилиты
 │   └── logging.ts         # Управление уровнем логирования и кэширование
 ├── adr/                   # Architecture Decision Records
@@ -39,7 +45,10 @@ channel/
 │   ├── pages/             # Vue компоненты для тестов
 │   │   └── UnitTestsPage.vue
 │   ├── api/               # API тесты
-│   │   └── run-tests.ts   # POST /run - запуск конкретного теста
+│   │   ├── run-tests.ts   # POST /run - запуск конкретного теста
+│   │   └── start-tests.ts # POST /start-all, POST /start-single, GET /get-manual-socket-id
+│   ├── jobs/              # Jobs для асинхронного выполнения тестов
+│   │   └── test-runner.job.ts
 │   └── shared/            # Общий код для тестов
 │       └── test-definitions.ts
 └── README.md              # Документация проекта
@@ -52,9 +61,13 @@ channel/
 | Файл | Роут | Описание |
 |------|------|----------|
 | `index.tsx` | `/` | Главная страница (требует авторизации) |
+| `index.tsx` | `/analytics` | Страница аналитики (требует авторизации, в разработке) |
+| `index.tsx` | `/channels` | Страница управления каналами (требует авторизации, в разработке) |
+| `index.tsx` | `/bots` | Страница управления ботами (требует авторизации) |
 | `login.tsx` | `/login` | Страница входа |
 | `profile.tsx` | `/profile` | Страница профиля пользователя (требует авторизации) |
 | `settings.tsx` | `/settings` | Страница настроек (требует авторизации) |
+| `webhooks.tsx` | `/webhooks` | Страница просмотра вебхуков от Telegram (требует авторизации) |
 
 ### API endpoints
 
@@ -63,11 +76,15 @@ channel/
 | `api/auth-password.ts` | POST | `/password-hash` | Получение хеша пароля для авторизации |
 | `api/auth-telegram.ts` | POST | `/get-telegram-oauth-url` | Получение OAuth URL для авторизации через Telegram |
 | `api/bots.ts` | GET | `/list` | Получение списка ботов текущего пользователя |
-| `api/bots.ts` | POST | `/add` | Добавление нового бота в таблицу |
-| `api/bots.ts` | POST | `/delete` | Удаление бота из таблицы |
+| `api/bots.ts` | POST | `/add` | Добавление нового бота в таблицу (с автоматической регистрацией webhook в Telegram) |
+| `api/bots.ts` | POST | `/delete` | Удаление бота из таблицы (с автоматическим удалением webhook в Telegram) |
 | `api/bots.ts` | POST | `/validate-token` | Валидация токена Telegram бота |
 | `api/settings.ts` | GET | `/log-level` | Получение текущего уровня логирования |
 | `api/settings.ts` | POST | `/log-level` | Сохранение уровня логирования |
+| `api/webhook.ts` | POST | `/:id` | Обработка входящих вебхуков от Telegram для конкретного бота (не требует авторизации) |
+| `api/webhook.ts` | GET | `/list` | Получение последних вебхуков текущего пользователя (с опциональной фильтрацией по botId) |
+| `api/webhook.ts` | GET | `/check/:id` | Проверка текущего webhook для бота в Telegram |
+| `api/webhook.ts` | GET | `/test/:id` | Тестовый endpoint для проверки доступности webhook endpoint |
 
 ### Тесты
 
@@ -109,6 +126,42 @@ channel/
 | userId | String | ID пользователя, который добавил бота |
 
 Каждая запись привязана к пользователю через поле `userId`. При создании записи используйте `ctx.user.id` для привязки к текущему пользователю.
+
+### TelegramWebhooks
+
+Таблица для логирования всех входящих вебхуков от Telegram.
+
+| Поле | Тип | Описание |
+|------|-----|----------|
+| botId | String | ID бота, которому принадлежит вебхук |
+| userId | String | ID пользователя-владельца бота |
+| updateId | Number (Optional) | Уникальный ID обновления от Telegram (для предотвращения дубликатов) |
+| rawData | Any | Сырые данные вебхука в формате JSON |
+| receivedAt | DateTime | Время получения вебхука |
+
+Каждая запись привязана к боту через поле `botId` и к пользователю через поле `userId`. Вебхуки сохраняются автоматически при получении от Telegram через endpoint `POST /api/webhook/:id`.
+
+### TelegramChats
+
+Таблица для хранения уникальных телеграм-чатов и каналов, от которых хотя бы раз приходили вебхуки.
+
+| Поле | Тип | Описание |
+|------|-----|----------|
+| chatId | String | Уникальный ID чата/канала из Telegram (используется как ключ для createOrUpdateBy) |
+| botId | String | ID бота, от которого пришёл вебхук с этим чатом |
+| userId | String | ID пользователя-владельца бота |
+| chatType | String (Optional) | Тип чата (private, group, supergroup, channel) |
+| chatTitle | String (Optional) | Название чата/канала (если доступно) |
+| chatUsername | String (Optional) | Username чата/канала (если доступно) |
+| firstSeenAt | DateTime | Время первого появления чата в вебхуках |
+| lastSeenAt | DateTime | Время последнего появления чата в вебхуках |
+
+Каждая запись привязана к боту через поле `botId` и к пользователю через поле `userId`. Чаты сохраняются автоматически при обработке вебхуков через endpoint `POST /api/webhook/:id` с использованием метода `createOrUpdateBy` для предотвращения дубликатов.
+
+**Важно:**
+- Если вебхук содержит информацию о чате (поле `chat`), чат автоматически сохраняется или обновляется в таблице
+- Если вебхук не содержит информацию о чате, запись в таблицу не создаётся
+- Для каждого уникального `chatId` создаётся одна запись, которая обновляется при последующих вебхуках от этого чата
 
 ## Работа с токенами ботов
 
@@ -234,6 +287,102 @@ await loadBots()
 - `Нет доступа к этому боту` - попытка удалить чужого бота
 
 Все ошибки логируются через систему `Debug` с указанием контекста и stack trace.
+
+## Работа с вебхуками
+
+Проект поддерживает автоматическую обработку входящих вебхуков от Telegram для всех зарегистрированных ботов. Вебхуки сохраняются в таблицу `TelegramWebhooks` и отправляются владельцу бота через WebSocket в реальном времени.
+
+### Регистрация webhook при добавлении бота
+
+При добавлении нового бота через `POST /api/bots/add` автоматически выполняется:
+
+1. **Создание записи бота** в таблице `BotTokens`
+2. **Регистрация webhook в Telegram**:
+   - Генерация URL webhook через `apiWebhookRoute({ id: botId }).url()`
+   - Отправка запроса к `https://api.telegram.org/bot{token}/setWebhook` с параметром `url`
+   - Логирование результата регистрации
+
+### Обработка входящих вебхуков
+
+Вебхуки от Telegram обрабатываются через endpoint `POST /api/webhook/:id`:
+
+1. **Получение вебхука**:
+   - Telegram отправляет POST запрос на `/api/webhook/:id`, где `:id` - это ID бота
+   - Endpoint **не требует авторизации**, так как Telegram отправляет запросы напрямую
+
+2. **Валидация бота**:
+   - Поиск бота в таблице `BotTokens` по ID из URL параметра
+   - Проверка наличия `userId` у бота (для определения владельца)
+
+3. **Сохранение вебхука**:
+   - Извлечение `update_id` из данных вебхука (если присутствует)
+   - Создание записи в таблице `TelegramWebhooks` с полями:
+     - `botId` - ID бота
+     - `userId` - ID владельца бота
+     - `updateId` - ID обновления (опционально)
+     - `rawData` - сырые данные вебхука
+     - `receivedAt` - время получения
+
+4. **Отправка через WebSocket**:
+   - Генерация `socketId` на основе `userId`: `webhooks-${bot.userId}`
+   - Отправка данных через `sendDataToSocket()` с типом события `webhook`
+   - Данные включают: `timestamp`, `botId`, `botName`, `botUsername`, `raw` (сырые данные)
+
+5. **Ответ Telegram**:
+   - Всегда возвращается `200 OK`, даже при ошибках
+   - Это предотвращает повторные запросы от Telegram
+
+### Просмотр вебхуков
+
+Вебхуки можно просматривать на странице `/webhooks`:
+
+- **Фильтрация по боту**: опциональный query параметр `?botId=...`
+- **Real-time обновления**: новые вебхуки отображаются автоматически через WebSocket
+- **API для получения списка**: `GET /api/webhook/list?limit=30&botId=...`
+
+### Проверка webhook
+
+Для проверки текущего состояния webhook в Telegram используется endpoint `GET /api/webhook/check/:id`:
+
+- Запрос к `https://api.telegram.org/bot{token}/getWebhookInfo`
+- Сравнение текущего URL в Telegram с ожидаемым URL
+- Возврат информации о webhook и флага `isCorrect`
+
+### Безопасность
+
+При работе с вебхуками реализованы следующие меры безопасности:
+
+1. **Изоляция по пользователям**: Вебхуки отправляются только владельцу бота через уникальный `socketId`
+2. **Валидация бота**: Проверка существования бота и наличия `userId` перед обработкой
+3. **Логирование**: Все операции логируются для аудита и отладки
+4. **Обработка ошибок**: Все ошибки обрабатываются без прерывания работы, всегда возвращается `200 OK` для Telegram
+
+### Примеры использования
+
+#### Получение списка вебхуков:
+```typescript
+const result = await apiGetWebhooksListRoute.run(ctx, {
+  limit: 30,
+  botId: 'bot_id_12345' // опционально
+})
+
+if (result.success) {
+  console.log(`Получено вебхуков: ${result.webhooks.length}`)
+}
+```
+
+#### Проверка webhook:
+```typescript
+const checkResult = await apiCheckWebhookRoute.run(ctx, {
+  id: 'bot_id_12345'
+})
+
+if (checkResult.success) {
+  console.log(`Webhook установлен: ${checkResult.isCorrect}`)
+  console.log(`Текущий URL: ${checkResult.webhookInfo.url}`)
+  console.log(`Ожидаемый URL: ${checkResult.expectedUrl}`)
+}
+```
 
 ## SDK
 
@@ -760,6 +909,22 @@ async function runApiTest(ctx: any, testName: string) {
   - Обновлена функция `deleteToken` в `BotsPage.vue` для вызова API удаления
   - Добавлены тесты для удаления токенов (API, HTTP, база данных)
   - Добавлена документация процесса добавления и удаления токенов
+- Реализована система обработки вебхуков от Telegram:
+  - Добавлена таблица `TelegramWebhooks` для логирования входящих вебхуков
+  - Реализован endpoint `POST /api/webhook/:id` для обработки входящих вебхуков (без авторизации)
+  - Реализован endpoint `GET /api/webhook/list` для получения списка вебхуков с фильтрацией
+  - Реализован endpoint `GET /api/webhook/check/:id` для проверки состояния webhook в Telegram
+  - Реализован endpoint `GET /api/webhook/test/:id` для тестирования доступности endpoint
+  - Добавлена автоматическая регистрация webhook при добавлении бота
+  - Добавлена автоматическая отмена webhook при удалении бота
+  - Реализована отправка вебхуков владельцу бота через WebSocket в реальном времени
+  - Добавлена страница `/webhooks` для просмотра вебхуков с real-time обновлениями
+  - Добавлен Vue компонент `WebhooksPage.vue` для отображения вебхуков
+- Добавлены дополнительные страницы:
+  - Страница `/analytics` (в разработке)
+  - Страница `/channels` (в разработке)
+  - Страница `/bots` для управления ботами
+- Добавлен общий компонент `shared/Header.vue` для заголовка страниц
 
 ### 2025-11-27
 - Создана базовая структура проекта
