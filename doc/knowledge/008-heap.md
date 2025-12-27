@@ -33,6 +33,7 @@
   - [Enum - перечисления](#enum---перечисления)
   - [DateTime - дата и время](#datetime---дата-и-время)
 - [Транзакции](#транзакции)
+- [Предотвращение race condition](#предотвращение-race-condition)
 - [Лучшие практики](#лучшие-практики)
 
 ---
@@ -1097,6 +1098,151 @@ await serializableTransaction(ctx, async (txCtx) => {
 
 ---
 
+## Предотвращение race condition
+
+### Проблема race condition
+
+**Race condition** (состояние гонки) возникает, когда несколько параллельных запросов одновременно работают с одними и теми же данными, что может привести к некорректным результатам.
+
+**Типичные сценарии**:
+- Два запроса одновременно проверяют существование записи через `findOneBy`, затем оба создают её через `createOrUpdateBy`
+- Между `findOneBy` и `createOrUpdateBy` другой процесс может изменить данные
+- Параллельные обновления одной записи могут перезаписать изменения друг друга
+
+**Пример проблемного кода**:
+```typescript
+// ❌ НЕПРАВИЛЬНО - возможна race condition
+const existingChat = await TelegramChats.findOneBy(ctx, { chatId: chatIdString })
+
+if (existingChat) {
+  // Между findOneBy и createOrUpdateBy другой запрос может создать запись
+  await TelegramChats.createOrUpdateBy(ctx, 'chatId', {
+    chatId: chatIdString,
+    firstSeenAt: existingChat.firstSeenAt, // Может быть перезаписано!
+    lastSeenAt: new Date()
+  })
+} else {
+  // Два параллельных запроса могут оба создать запись
+  await TelegramChats.createOrUpdateBy(ctx, 'chatId', {
+    chatId: chatIdString,
+    firstSeenAt: new Date(), // Может быть установлено неправильно!
+    lastSeenAt: new Date()
+  })
+}
+```
+
+### Решение: runWithExclusiveLock
+
+Используйте `runWithExclusiveLock` из `@app/sync` для гарантии, что только один процесс может выполнить критическую секцию кода для конкретного ключа.
+
+**Синтаксис**:
+```typescript
+import { runWithExclusiveLock } from '@app/sync'
+
+await runWithExclusiveLock(ctx, lockKey, options, async () => {
+  // ВСЕ операции с БД должны быть ВНУТРИ блокировки
+  // Это гарантирует атомарность выполнения
+})
+```
+
+**Параметры**:
+- `ctx` — контекст приложения
+- `lockKey` — уникальный ключ блокировки (строка). **ВАЖНО**: Ключ должен быть одинаковым для всех параллельных запросов, работающих с одними данными
+- `options` — опции блокировки (обычно пустой объект `{}`)
+- `callback` — функция, которая выполнится с блокировкой
+
+**Пример правильного использования**:
+```typescript
+// ✅ ПРАВИЛЬНО - с эксклюзивной блокировкой
+import { runWithExclusiveLock } from '@app/sync'
+
+const chatIdString = String(chatInfo.id)
+const lockKey = `telegram-chat-${chatIdString}` // Ключ должен быть одинаковым для одного chatId
+
+await runWithExclusiveLock(ctx, lockKey, {}, async () => {
+  // ВСЕ операции с БД ВНУТРИ блокировки
+  const existingChat = await TelegramChats.findOneBy(ctx, { chatId: chatIdString })
+  
+  if (existingChat) {
+    // Обновляем существующий чат
+    await TelegramChats.createOrUpdateBy(ctx, 'chatId', {
+      chatId: chatIdString,
+      firstSeenAt: existingChat.firstSeenAt, // Гарантированно сохранится оригинальное значение
+      lastSeenAt: new Date()
+    })
+  } else {
+    // Создаём новый чат (гарантированно только один раз)
+    await TelegramChats.createOrUpdateBy(ctx, 'chatId', {
+      chatId: chatIdString,
+      firstSeenAt: new Date(),
+      lastSeenAt: new Date()
+    })
+  }
+})
+```
+
+### Ключевые правила
+
+1. **Ключ блокировки должен быть одинаковым**:
+   ```typescript
+   // ✅ ПРАВИЛЬНО - одинаковый ключ для одного chatId
+   const lockKey = `telegram-chat-${chatIdString}`
+   
+   // ❌ НЕПРАВИЛЬНО - разные ключи для одного chatId
+   const lockKey = `telegram-chat-${chatIdString}-${Date.now()}` // Каждый запрос получит свой ключ!
+   ```
+
+2. **Все операции с БД должны быть внутри блокировки**:
+   ```typescript
+   // ❌ НЕПРАВИЛЬНО - findOneBy снаружи блокировки
+   const existingChat = await TelegramChats.findOneBy(ctx, { chatId: chatIdString })
+   
+   await runWithExclusiveLock(ctx, lockKey, {}, async () => {
+     // Между findOneBy и createOrUpdateBy может произойти другой запрос!
+     await TelegramChats.createOrUpdateBy(ctx, 'chatId', { ... })
+   })
+   
+   // ✅ ПРАВИЛЬНО - все операции внутри
+   await runWithExclusiveLock(ctx, lockKey, {}, async () => {
+     const existingChat = await TelegramChats.findOneBy(ctx, { chatId: chatIdString })
+     await TelegramChats.createOrUpdateBy(ctx, 'chatId', { ... })
+   })
+   ```
+
+3. **Блокировка работает только для одинаковых ключей**:
+   ```typescript
+   // Запрос 1: lockKey = "telegram-chat-123"
+   await runWithExclusiveLock(ctx, "telegram-chat-123", {}, async () => { ... })
+   
+   // Запрос 2: lockKey = "telegram-chat-123" → будет ждать завершения запроса 1
+   await runWithExclusiveLock(ctx, "telegram-chat-123", {}, async () => { ... })
+   
+   // Запрос 3: lockKey = "telegram-chat-456" → выполнится параллельно с запросом 1
+   await runWithExclusiveLock(ctx, "telegram-chat-456", {}, async () => { ... })
+   ```
+
+### Когда использовать
+
+✅ **Используйте `runWithExclusiveLock` когда**:
+- Несколько параллельных запросов могут работать с одной записью
+- Между проверкой (`findOneBy`) и изменением (`createOrUpdateBy`) может произойти другой запрос
+- Нужно гарантировать атомарность последовательности операций
+- Важно сохранить оригинальные значения полей (например, `firstSeenAt`)
+
+❌ **НЕ используйте `runWithExclusiveLock` когда**:
+- Операции уже атомарны (например, один `createOrUpdateBy` без предварительной проверки)
+- Работаете с разными записями (разные ключи блокировки)
+- Нет риска параллельного доступа
+
+### Производительность
+
+- Блокировка выполняется на уровне приложения, не блокирует всю БД
+- Запросы с разными ключами блокировки выполняются параллельно
+- Запросы с одинаковым ключом выполняются последовательно (второй ждёт завершения первого)
+- Внутри блокировки можно выполнять любые операции: работу с таблицами, внешние запросы и т.д.
+
+---
+
 ## Лучшие практики
 
 ### Организация таблиц
@@ -1588,7 +1734,7 @@ export const apiGetProductsRoute = app.get('/products/list', async (ctx) => {
 
 ---
 
-**Версия**: 1.3  
+**Версия**: 1.4  
 **Дата**: 2025-11-06  
-**Последнее обновление**: 2025-11-06 (добавлено требование отключать embeddings по умолчанию)
+**Последнее обновление**: 2025-12-02 (добавлен раздел "Предотвращение race condition" с описанием `runWithExclusiveLock`)
 

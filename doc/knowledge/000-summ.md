@@ -15,7 +15,7 @@
 | **005-jobs.md** | Отложенные задачи | задачи, джобы, app.job, scheduleJobAfter, scheduleJobAsap, scheduleJobAt, отложенное выполнение |
 | **006-arch.md** | Архитектура проекта | структура, директории, организация файлов, именование, best practices, папки |
 | **007-vue.md** | Vue компоненты | Vue, компоненты, страницы, рендеринг, `<script setup>`, реактивность, шаблоны, 🚨 КРИТИЧЕСКОЕ: клиент vs сервер, Heap таблицы только на сервере, fetch() на клиенте, SSR, props, tsconfig.json, extends, jsx preserve |
-| **008-heap.md** | База данных Heap | Heap, таблицы, CRUD, create, findAll, update, delete, Money, RefLink, поиск, фильтры |
+| **008-heap.md** | База данных Heap | Heap, таблицы, CRUD, create, findAll, update, delete, Money, RefLink, поиск, фильтры, транзакции, race condition, runWithExclusiveLock, блокировки |
 | **022-getcourse-heap.md** | Heap.Table() TypeScript API | Heap.Table(), TypeScript таблицы, Heap.String, Heap.Number, Heap.Boolean, Heap.DateTime, Heap.Optional, Heap.Any, customMeta, searchable, embeddings, типизация, экспорт типов |
 | **009-files.md** | Работа с файлами | файлы, загрузка, изображения, obtainStorageFilePutUrl, getThumbnailUrl, hash, storage, видео, Kinescope |
 | **010-agents.md** | AI-агенты | агенты, AI, боты, startCompletion, pushMessageToChain, tools, инструменты, Telegram |
@@ -109,6 +109,7 @@
 - Money — работа с деньгами
 - RefLink — связи между таблицами
 - Транзакции
+- ⚠️ **Race condition**: При работе с БД следите за возможностью race condition. Используйте `runWithExclusiveLock` из `@app/sync` для предотвращения проблем при параллельных запросах
 
 **Файл**: `022-getcourse-heap.md` (TypeScript API)
 - Heap.Table() — создание таблицы через TypeScript
@@ -312,6 +313,7 @@
 2. Изучите `022-getcourse-heap.md` → "Базовый синтаксис Heap.Table()" (TypeScript API)
 3. Изучите `008-heap.md` → "CRUD операции"
 4. Изучите `008-heap.md` → "Фильтрация и поиск"
+5. ⚠️ **ВАЖНО**: Изучите `008-heap.md` → "Предотвращение race condition" — при работе с параллельными запросами используйте `runWithExclusiveLock`
 
 ### Загрузить и сохранить файлы
 1. Изучите `009-files.md` → "Загрузка файлов с клиента"
@@ -437,7 +439,7 @@
 `<script setup>`, `ref`, `reactive`, `computed`, `onMounted`, `ctx`, `route.url()`, `SSR`, `fetch()`, `клиент vs сервер`, `Heap таблицы`, `props`, `initialData`, `tsconfig.json`, `extends`, `jsx preserve`, `Module '"vue"' has no exported member`
 
 ### База данных
-`Heap.Table`, `create`, `findAll`, `findById`, `update`, `delete`, `createOrUpdateBy`, `countBy`, `searchBy`, `Money`, `RefLink`, `where`, `order`, `Heap.String`, `Heap.Number`, `Heap.Boolean`, `Heap.DateTime`, `Heap.Optional`, `Heap.Any`, `customMeta`, `searchable`, `embeddings`, `defaultValue`, `типизация`, `TypeScript таблицы`
+`Heap.Table`, `create`, `findAll`, `findById`, `update`, `delete`, `createOrUpdateBy`, `countBy`, `searchBy`, `Money`, `RefLink`, `where`, `order`, `Heap.String`, `Heap.Number`, `Heap.Boolean`, `Heap.DateTime`, `Heap.Optional`, `Heap.Any`, `customMeta`, `searchable`, `embeddings`, `defaultValue`, `типизация`, `TypeScript таблицы`, `runWithExclusiveLock`, `race condition`, `блокировка`, `параллельные запросы`, `атомарность`
 
 ### Файлы
 `obtainStorageFilePutUrl`, `getThumbnailUrl`, `getVideoInfo`, `hash`, `upload`, `FormData`, `ImageFile`, `VideoFile`
@@ -529,6 +531,7 @@
 - ⚠️ **ОБЯЗАТЕЛЬНО**: Поддерживайте покрытие тестами минимум 80%
 - ⚠️ **ОБЯЗАТЕЛЬНО**: Обновляйте тесты при каждом изменении кода
 - ⚠️ **Vue модули**: Требуют локальный `tsconfig.json` с `"extends": "путь/к/корню/tsconfig.json"` — при переносе модуля обновите путь (см. `007-vue.md`)
+- ⚠️ **Race condition**: При работе с БД следите за возможностью race condition при параллельных запросах. Если между `findOneBy` и `createOrUpdateBy` может произойти другой запрос — используйте `runWithExclusiveLock` из `@app/sync` (см. `008-heap.md` → "Предотвращение race condition")
 
 ## 🔄 История миграции документации
 
