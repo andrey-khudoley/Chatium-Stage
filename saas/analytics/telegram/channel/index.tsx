@@ -10,7 +10,6 @@ import { profilePageRoute } from './profile'
 import { settingsPageRoute } from './settings'
 import { applyDebugLevel } from './lib/logging'
 import { Debug } from './shared/debug'
-import './link-redirect' // Импортируем обработчик перехода по ссылке
 
 export const indexPageRoute = app.html('/', async (ctx, req) => {
   // Применяем уровень логирования из настроек
