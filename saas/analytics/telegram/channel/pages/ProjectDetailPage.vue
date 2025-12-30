@@ -251,10 +251,10 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="app-layout bg-[var(--color-bg)] text-[var(--color-text)] flex flex-col">
+  <div class="app-layout bg-transparent text-[var(--color-text)] flex flex-col">
     <!-- Header -->
     <Header 
-      :pageTitle="project ? project.name : props.projectTitle" 
+      :pageTitle="'A/Ley Services'" 
       :indexUrl="props.indexUrl" 
       :profileUrl="props.profileUrl" 
       :loginUrl="props.loginUrl" 
@@ -541,7 +541,19 @@ onMounted(async () => {
   --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* App Layout */
+.app-layout {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: transparent;
+  position: relative;
+}
+
 .content-wrapper {
+  flex: 1;
+  min-height: 0;
   padding: 3rem 0;
 }
 
@@ -723,6 +735,12 @@ onMounted(async () => {
   border-bottom: 2px solid var(--color-border);
   margin-bottom: 2rem;
   overflow-x: auto;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
+.tabs::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
 }
 
 .tab {
@@ -937,28 +955,106 @@ onMounted(async () => {
   flex-shrink: 0;
   position: relative;
   z-index: 200;
+  margin-top: auto;
+}
+
+/* Terminal-style corner brackets for footer */
+.app-footer::before {
+  content: '';
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+  width: 20px;
+  height: 20px;
+  border-left: 2px solid rgba(211, 35, 75, 0.3);
+  border-bottom: 2px solid rgba(211, 35, 75, 0.3);
+  pointer-events: none;
+}
+
+.app-footer::after {
+  content: '';
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  width: 20px;
+  height: 20px;
+  border-right: 2px solid rgba(211, 35, 75, 0.3);
+  border-bottom: 2px solid rgba(211, 35, 75, 0.3);
+  pointer-events: none;
 }
 
 .footer-content {
-  max-width: 1200px;
+  max-width: 1152px;
   margin: 0 auto;
-  padding: 0 1.5rem;
+  padding: 0 1rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
   font-size: 0.875rem;
   color: var(--color-text-secondary);
+  letter-spacing: 0.03em;
+  position: relative;
+}
+
+.footer-left:hover,
+.footer-center:hover {
+  animation: glitch-footer 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+}
+
+@keyframes glitch-footer {
+  0%, 100% {
+    transform: translate(0);
+    text-shadow: none;
+  }
+  10% {
+    transform: translate(-1.5px, 0);
+    text-shadow: 1px 0 #ff00ff, -1px 0 #00ffff;
+  }
+  20% {
+    transform: translate(1.5px, 0);
+    text-shadow: -1px 0 #ff00ff, 1px 0 #00ffff;
+  }
+  30% {
+    transform: translate(-1px, 0);
+    text-shadow: 1.5px 0 #ff00ff, -1.5px 0 #00ffff;
+  }
+  40% {
+    transform: translate(1px, 0);
+    text-shadow: -1.5px 0 #ff00ff, 1.5px 0 #00ffff;
+  }
+  50% {
+    transform: translate(-1.5px, 0);
+    text-shadow: 1px 0 #ff00ff, -1px 0 #00ffff;
+  }
+  60% {
+    transform: translate(1.5px, 0);
+    text-shadow: -1px 0 #ff00ff, 1px 0 #00ffff;
+  }
+  70% {
+    transform: translate(-1px, 0);
+    text-shadow: 1px 0 #ff00ff, -1px 0 #00ffff;
+  }
+  80% {
+    transform: translate(1px, 0);
+    text-shadow: -1px 0 #ff00ff, 1px 0 #00ffff;
+  }
+  90% {
+    transform: translate(-0.5px, 0);
+    text-shadow: 0.5px 0 #ff00ff, -0.5px 0 #00ffff;
+  }
 }
 
 .footer-left {
   flex: 1;
   text-align: left;
+  color: var(--color-text-secondary);
 }
 
 .footer-center {
   flex: 0 0 auto;
   text-align: center;
+  color: var(--color-text-secondary);
 }
 
 .footer-right {
@@ -975,10 +1071,17 @@ onMounted(async () => {
   cursor: pointer;
   text-decoration: none;
   transition: color 0.25s ease;
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  position: relative;
+  z-index: 10;
 }
 
 .footer-link:hover {
   color: var(--color-text);
+  animation: glitch-footer 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
 }
 
 .footer-heart {
