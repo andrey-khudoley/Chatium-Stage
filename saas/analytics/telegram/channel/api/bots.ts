@@ -11,6 +11,63 @@ import { apiWebhookRoute } from './webhook'
 import { userIdsMatch } from '../shared/user-utils'
 
 /**
+ * Функция для регистрации webhook в Telegram с правильными параметрами
+ * Используется при добавлении нового бота и при перерегистрации существующего
+ */
+async function registerWebhook(ctx: any, bot: any, botIdString: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    // Обрезаем токен перед использованием для безопасности (на случай пробелов)
+    const trimmedToken = bot.token.trim()
+    
+    const webhookUrl = apiWebhookRoute({ id: botIdString }).url()
+    Debug.info(ctx, `[registerWebhook] Регистрация вебхука для бота ${bot.id}`)
+    Debug.info(ctx, `[registerWebhook] Сгенерированный URL вебхука: ${webhookUrl}`)
+    Debug.info(ctx, `[registerWebhook] Токен бота (первые 10 символов): ${trimmedToken.substring(0, 10)}...`)
+    
+    const telegramApiUrl = `https://api.telegram.org/bot${trimmedToken}/setWebhook`
+    Debug.info(ctx, `[registerWebhook] URL Telegram API: ${telegramApiUrl}`)
+    
+    const webhookResponse = await request({
+      url: telegramApiUrl,
+      method: 'post',
+      json: {
+        url: webhookUrl,
+        // Пустой массив allowed_updates означает получение всех типов обновлений
+        // Это более гибко и не требует обновления кода при появлении новых типов в API Telegram
+        // Все обновления будут обработаны функцией extractChatFromUpdate
+        allowed_updates: []
+      },
+      responseType: 'json',
+      throwHttpErrors: false,
+      timeout: 10000
+    })
+
+    const webhookBody = webhookResponse.body as any
+
+    Debug.info(ctx, `[registerWebhook] Ответ от Telegram API: statusCode=${webhookResponse.statusCode}, body=${JSON.stringify(webhookBody)}`)
+
+    if (webhookResponse.statusCode === 200 && webhookBody?.ok) {
+      Debug.info(ctx, `[registerWebhook] Вебхук успешно зарегистрирован для бота ${bot.id}`)
+      if (webhookBody.result) {
+        Debug.info(ctx, `[registerWebhook] Детали регистрации: ${JSON.stringify(webhookBody.result)}`)
+      }
+      return { success: true }
+    } else {
+      const errorMessage = webhookBody?.description || 'Ошибка регистрации вебхука'
+      Debug.warn(ctx, `[registerWebhook] Ошибка регистрации вебхука: statusCode=${webhookResponse.statusCode}, body=${JSON.stringify(webhookBody)}`)
+      if (webhookBody?.description) {
+        Debug.warn(ctx, `[registerWebhook] Описание ошибки от Telegram: ${webhookBody.description}`)
+      }
+      return { success: false, error: errorMessage }
+    }
+  } catch (webhookError: any) {
+    Debug.error(ctx, `[registerWebhook] Исключение при регистрации вебхука: ${webhookError.message}`, 'E_WEBHOOK_REGISTER')
+    Debug.error(ctx, `[registerWebhook] Stack trace: ${webhookError.stack || 'N/A'}`)
+    return { success: false, error: webhookError.message }
+  }
+}
+
+/**
  * GET /api/bots/list
  * Получение списка ботов проекта
  */
@@ -337,43 +394,10 @@ export const apiAddBotRoute = app.post('/add', async (ctx, req) => {
         }
       }
       
-      // Используем правильный способ генерации URL для роутов с параметрами пути
-      // Согласно @001-run.md: route({param: val}).url() или route({param: val}).run(ctx)
-      const webhookUrl = apiWebhookRoute({ id: botIdString }).url()
-      Debug.info(ctx, `[api/bots/add] URL webhook сгенерирован через route({ id }).url(): ${webhookUrl}`)
-      
-      Debug.info(ctx, `[api/bots/add] Регистрация вебхука для бота ${bot.id}`)
-      Debug.info(ctx, `[api/bots/add] Сгенерированный URL вебхука: ${webhookUrl}`)
-      Debug.info(ctx, `[api/bots/add] Токен бота (первые 10 символов): ${trimmedToken.substring(0, 10)}...`)
-      
-      const telegramApiUrl = `https://api.telegram.org/bot${trimmedToken}/setWebhook`
-      Debug.info(ctx, `[api/bots/add] URL Telegram API: ${telegramApiUrl}`)
-      
-      const webhookResponse = await request({
-        url: telegramApiUrl,
-        method: 'post',
-        json: {
-          url: webhookUrl
-        },
-        responseType: 'json',
-        throwHttpErrors: false,
-        timeout: 10000
-      })
-
-      const webhookBody = webhookResponse.body as any
-
-      Debug.info(ctx, `[api/bots/add] Ответ от Telegram API: statusCode=${webhookResponse.statusCode}, body=${JSON.stringify(webhookBody)}`)
-
-      if (webhookResponse.statusCode === 200 && webhookBody?.ok) {
-        Debug.info(ctx, `[api/bots/add] Вебхук успешно зарегистрирован для бота ${bot.id}`)
-        if (webhookBody.result) {
-          Debug.info(ctx, `[api/bots/add] Детали регистрации: ${JSON.stringify(webhookBody.result)}`)
-        }
-      } else {
-        Debug.warn(ctx, `[api/bots/add] Ошибка регистрации вебхука: statusCode=${webhookResponse.statusCode}, body=${JSON.stringify(webhookBody)}`)
-        if (webhookBody?.description) {
-          Debug.warn(ctx, `[api/bots/add] Описание ошибки от Telegram: ${webhookBody.description}`)
-        }
+      // Регистрируем вебхук в Telegram используя общую функцию
+      const registerResult = await registerWebhook(ctx, bot, botIdString)
+      if (!registerResult.success) {
+        Debug.warn(ctx, `[api/bots/add] Вебхук не был зарегистрирован: ${registerResult.error}`)
         // Не прерываем выполнение, бот уже добавлен в БД
       }
     } catch (webhookError: any) {
@@ -473,8 +497,11 @@ export const apiDeleteBotRoute = app.post('/delete', async (ctx, req) => {
     try {
       Debug.info(ctx, `[api/bots/delete] Удаление вебхука для бота ${trimmedBotId}`)
       
+      // Обрезаем токен перед использованием для безопасности (на случай пробелов)
+      const trimmedToken = bot.token.trim()
+      
       const webhookResponse = await request({
-        url: `https://api.telegram.org/bot${bot.token}/deleteWebhook`,
+        url: `https://api.telegram.org/bot${trimmedToken}/deleteWebhook`,
         method: 'post',
         json: {
           drop_pending_updates: true
@@ -513,6 +540,100 @@ export const apiDeleteBotRoute = app.post('/delete', async (ctx, req) => {
     return {
       success: false,
       error: error.message || 'Ошибка при удалении бота'
+    }
+  }
+})
+
+/**
+ * POST /api/bots/reregister-webhook
+ * Перерегистрация webhook для существующего бота с правильными параметрами
+ */
+export const apiReregisterWebhookRoute = app.post('/reregister-webhook', async (ctx, req) => {
+  try {
+    await applyDebugLevel(ctx, 'api/bots/reregister-webhook')
+    Debug.info(ctx, '[api/bots/reregister-webhook] Начало перерегистрации webhook')
+    
+    requireRealUser(ctx)
+    Debug.info(ctx, `[api/bots/reregister-webhook] Пользователь авторизован: userId=${ctx.user.id}`)
+    
+    const { botId } = req.body
+    
+    if (!botId || !botId.trim()) {
+      Debug.warn(ctx, '[api/bots/reregister-webhook] ID бота не предоставлен')
+      return {
+        success: false,
+        error: 'ID бота обязателен'
+      }
+    }
+    
+    const trimmedBotId = botId.trim()
+    Debug.info(ctx, `[api/bots/reregister-webhook] Попытка перерегистрации webhook для бота с ID: ${trimmedBotId}`)
+    
+    // Проверяем, существует ли бот
+    const bot = await BotTokens.findById(ctx, trimmedBotId)
+    
+    if (!bot) {
+      Debug.warn(ctx, `[api/bots/reregister-webhook] Бот с ID ${trimmedBotId} не найден`)
+      return {
+        success: false,
+        error: 'Бот не найден'
+      }
+    }
+    
+    // Проверяем права доступа к проекту бота
+    const project = await Projects.findById(ctx, bot.projectId)
+    
+    if (!project) {
+      Debug.warn(ctx, `[api/bots/reregister-webhook] Проект с ID ${bot.projectId} не найден`)
+      return {
+        success: false,
+        error: 'Проект бота не найден'
+      }
+    }
+    
+    const isAdmin = ctx.user.is('Admin')
+    
+    // Проверяем права доступа: только участники или админ могут перерегистрировать webhook
+    if (!isAdmin) {
+      const hasAccess = project.members && Array.isArray(project.members) && 
+        project.members.some((member: any) => 
+          member && 
+          userIdsMatch(member.userId, ctx.user?.id) && 
+          (member.role === 'owner' || member.role === 'member')
+        )
+      
+      if (!hasAccess) {
+        Debug.warn(ctx, `[api/bots/reregister-webhook] Попытка перерегистрации webhook без прав: userId=${ctx.user.id}, projectId=${bot.projectId}`)
+        return {
+          success: false,
+          error: 'Нет доступа к этому проекту'
+        }
+      }
+    }
+    
+    // Перерегистрируем webhook с правильными параметрами
+    const botIdString = String(bot.id).trim()
+    const registerResult = await registerWebhook(ctx, bot, botIdString)
+    
+    if (registerResult.success) {
+      Debug.info(ctx, `[api/bots/reregister-webhook] Webhook успешно перерегистрирован для бота ${trimmedBotId}`)
+      return {
+        success: true,
+        message: 'Webhook успешно перерегистрирован'
+      }
+    } else {
+      Debug.warn(ctx, `[api/bots/reregister-webhook] Ошибка перерегистрации webhook: ${registerResult.error}`)
+      return {
+        success: false,
+        error: registerResult.error || 'Ошибка при перерегистрации webhook'
+      }
+    }
+  } catch (error: any) {
+    Debug.error(ctx, `[api/bots/reregister-webhook] Ошибка при перерегистрации webhook: ${error.message}`, 'E_REREGISTER_WEBHOOK')
+    Debug.error(ctx, `[api/bots/reregister-webhook] Stack trace: ${error.stack || 'N/A'}`)
+    return {
+      success: false,
+      error: error.message || 'Ошибка при перерегистрации webhook'
     }
   }
 })

@@ -408,7 +408,7 @@ export const apiGetWebhooksListRoute = app.get('/list', async (ctx, req) => {
     
     // Получаем список проектов пользователя для фильтрации вебхуков
     // ИСПРАВЛЕНИЕ Bug 3: Для не-админов применяем фильтрацию на уровне БД, а не в памяти
-    const PROJECT_LIMIT = 10000
+    const PROJECT_LIMIT = 1000
     const isAdmin = ctx.user.is('Admin')
     const userProjectIds = new Set<string>()
     
@@ -483,8 +483,8 @@ export const apiGetWebhooksListRoute = app.get('/list', async (ctx, req) => {
     const userProjectIdsArray = Array.from(userProjectIds)
     // ИСПРАВЛЕНИЕ Bug 1: Используем $or для надежного IN-запроса вместо массива значений
     // Хотя документация Heap показывает поддержку массива значений, используем $or для гарантированной совместимости
-    // Примечание: используем большой лимит, но в реальных системах может потребоваться пагинация
-    const BOTS_LIMIT = 10000
+    // Примечание: используем максимальный лимит для findAll (1000), в реальных системах может потребоваться пагинация
+    const BOTS_LIMIT = 1000
     
     // Если только один проект, используем простое условие
     let userBots
@@ -701,8 +701,12 @@ export const apiCheckWebhookRoute = app.get('/check/:id', async (ctx, req) => {
     }
     
     Debug.info(ctx, `[api/webhook/check] Запрос информации о webhook в Telegram для бота ${botId}`)
+    
+    // Обрезаем токен перед использованием для безопасности (на случай пробелов)
+    const trimmedToken = bot.token.trim()
+    
     const checkResponse = await request({
-      url: `https://api.telegram.org/bot${bot.token}/getWebhookInfo`,
+      url: `https://api.telegram.org/bot${trimmedToken}/getWebhookInfo`,
       method: 'get',
       responseType: 'json',
       throwHttpErrors: false,
