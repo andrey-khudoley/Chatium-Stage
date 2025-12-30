@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
 import Header from '../shared/Header.vue'
 import { 
   apiGetProjectRoute, 
@@ -8,6 +8,8 @@ import {
   apiRejectProjectRequestRoute,
   apiRemoveProjectMemberRoute
 } from '../api/projects'
+import { apiGetBotsListRoute, apiValidateTokenRoute, apiAddBotRoute } from '../api/bots'
+import { apiGetChannelsListRoute } from '../api/channels'
 
 declare const ctx: any
 
@@ -46,10 +48,44 @@ const requests = ref<Array<{
 
 const loading = ref(true)
 const error = ref<string | null>(null)
-const activeTab = ref<'info' | 'bots' | 'channels' | 'members' | 'requests'>('info')
+const activeTab = ref<'info' | 'bots' | 'channels' | 'links' | 'members' | 'requests'>('info')
 const loadingRequests = ref(false)
 const processingRequestId = ref<string | null>(null)
 const removingMemberId = ref<string | null>(null)
+
+// Данные ботов
+const bots = ref<Array<{
+  id: string
+  token: string
+  botName: string | null
+  botUsername: string | null
+  projectId: string
+  channelsCount?: number
+}>>([])
+const loadingBots = ref(false)
+const botsError = ref<string | null>(null)
+
+// Данные каналов
+const channels = ref<Array<{
+  id: string
+  chatId: string
+  chatType: string | null
+  chatTitle: string | null
+  chatUsername: string | null
+  firstSeenAt: Date | string
+  lastSeenAt: Date | string
+}>>([])
+const loadingChannels = ref(false)
+const channelsError = ref<string | null>(null)
+
+// Фильтр для вкладки "Ссылки"
+const selectedChannelId = ref<string | null>(null)
+
+// Модальное окно для добавления бота
+const showAddTokenModal = ref(false)
+const newToken = ref('')
+const addingToken = ref(false)
+const tokenError = ref<string | null>(null)
 
 // Проверка прав доступа
 const isOwner = computed(() => {
@@ -194,6 +230,140 @@ const removeMember = async (userId: string) => {
   }
 }
 
+// Загрузка ботов
+const loadBots = async () => {
+  if (!props.projectId) return
+  
+  loadingBots.value = true
+  botsError.value = null
+  
+  try {
+    const result = await apiGetBotsListRoute.query({ projectId: props.projectId }).run(ctx)
+    
+    if (result.success && result.bots) {
+      bots.value = result.bots.map((bot: any) => ({
+        id: bot.id,
+        token: bot.token,
+        botName: bot.botName || null,
+        botUsername: bot.botUsername || null,
+        projectId: bot.projectId,
+        channelsCount: bot.channelsCount || 0
+      }))
+    } else {
+      botsError.value = result.error || 'Ошибка при получении списка ботов'
+    }
+  } catch (e: any) {
+    console.error('[ProjectDetailPage] Ошибка загрузки ботов:', e)
+    botsError.value = e.message || 'Ошибка при загрузке ботов'
+  } finally {
+    loadingBots.value = false
+  }
+}
+
+// Загрузка каналов
+const loadChannels = async () => {
+  if (!props.projectId) return
+  
+  loadingChannels.value = true
+  channelsError.value = null
+  
+  try {
+    const result = await apiGetChannelsListRoute.query({ projectId: props.projectId }).run(ctx)
+    
+    if (result.success && result.channels) {
+      channels.value = result.channels.map((channel: any) => ({
+        id: channel.id,
+        chatId: channel.chatId,
+        chatType: channel.chatType || null,
+        chatTitle: channel.chatTitle || null,
+        chatUsername: channel.chatUsername || null,
+        firstSeenAt: channel.firstSeenAt,
+        lastSeenAt: channel.lastSeenAt
+      }))
+    } else {
+      channelsError.value = result.error || 'Ошибка при получении списка каналов'
+    }
+  } catch (e: any) {
+    console.error('[ProjectDetailPage] Ошибка загрузки каналов:', e)
+    channelsError.value = e.message || 'Ошибка при загрузке каналов'
+  } finally {
+    loadingChannels.value = false
+  }
+}
+
+// Маскирование токена
+const maskToken = (token: string) => {
+  if (token.length <= 14) {
+    return '•'.repeat(token.length)
+  }
+  return token.substring(0, 10) + '•'.repeat(token.length - 14) + token.substring(token.length - 4)
+}
+
+// Открытие модального окна для добавления бота
+const openAddTokenModal = () => {
+  showAddTokenModal.value = true
+  newToken.value = ''
+  tokenError.value = null
+}
+
+// Закрытие модального окна
+const closeAddTokenModal = () => {
+  showAddTokenModal.value = false
+  newToken.value = ''
+  tokenError.value = null
+  addingToken.value = false
+}
+
+// Добавление бота
+const addToken = async () => {
+  if (!newToken.value || !newToken.value.trim()) {
+    tokenError.value = 'Введите токен бота'
+    return
+  }
+  
+  if (!props.projectId) {
+    tokenError.value = 'Для добавления бота необходимо выбрать проект.'
+    return
+  }
+  
+  addingToken.value = true
+  tokenError.value = null
+  
+  try {
+    // 1. Валидация токена через API
+    const validationResult = await apiValidateTokenRoute.body({
+      token: newToken.value.trim()
+    }).run(ctx)
+    
+    if (!validationResult.success) {
+      tokenError.value = validationResult.error || 'Ошибка при проверке токена'
+      return
+    }
+    
+    // 2. Сохранение токена в таблицу
+    const saveResult = await apiAddBotRoute.body({
+      token: newToken.value.trim(),
+      botName: validationResult.botInfo.name,
+      botUsername: validationResult.botInfo.username,
+      projectId: props.projectId
+    }).run(ctx)
+    
+    if (!saveResult.success) {
+      tokenError.value = saveResult.error || 'Ошибка при сохранении токена'
+      return
+    }
+    
+    // 3. Обновление списка и закрытие модального окна
+    await loadBots()
+    closeAddTokenModal()
+  } catch (e: any) {
+    console.error('[ProjectDetailPage] Ошибка при добавлении токена:', e)
+    tokenError.value = e.message || 'Ошибка при добавлении токена'
+  } finally {
+    addingToken.value = false
+  }
+}
+
 // Форматирование даты
 const formatDate = (date: Date | string | null | undefined) => {
   if (!date) {
@@ -221,10 +391,20 @@ const formatDate = (date: Date | string | null | undefined) => {
   }
 }
 
+let escHandler: ((e: KeyboardEvent) => void) | null = null
+
 onMounted(async () => {
   if (window.hideAppLoader) {
     window.hideAppLoader()
   }
+  
+  // Обработчик Esc для закрытия модального окна
+  escHandler = (e: KeyboardEvent) => {
+    if (e.key === 'Escape' && showAddTokenModal.value && !addingToken.value) {
+      closeAddTokenModal()
+    }
+  }
+  window.addEventListener('keydown', escHandler)
   
   await loadProject()
   
@@ -236,8 +416,8 @@ onMounted(async () => {
   // Автоматически переключаем на нужную вкладку, если передан параметр target
   if (props.target) {
     // Маппинг значений target на вкладки
-    const targetToTab: Record<string, 'info' | 'bots' | 'channels' | 'members' | 'requests'> = {
-      'links': 'info',      // Для "Управлять ссылками" открываем вкладку "Информация"
+    const targetToTab: Record<string, 'info' | 'bots' | 'channels' | 'links' | 'members' | 'requests'> = {
+      'links': 'links',     // Для "Управлять ссылками" открываем вкладку "Ссылки"
       'channels': 'channels',
       'bots': 'bots'
     }
@@ -247,7 +427,33 @@ onMounted(async () => {
       activeTab.value = targetTab
     }
   }
+  
+  // Загружаем данные при переключении на соответствующие вкладки
+  if (activeTab.value === 'bots') {
+    await loadBots()
+  } else if (activeTab.value === 'channels' || activeTab.value === 'links') {
+    await loadChannels()
+  }
 })
+
+onUnmounted(() => {
+  // Cleanup обработчика Esc
+  if (escHandler) {
+    window.removeEventListener('keydown', escHandler)
+    escHandler = null
+  }
+})
+
+// Загрузка данных при переключении вкладок
+const handleTabChange = async (tab: 'info' | 'bots' | 'channels' | 'links' | 'members' | 'requests') => {
+  activeTab.value = tab
+  
+  if (tab === 'bots' && bots.value.length === 0 && !loadingBots.value) {
+    await loadBots()
+  } else if ((tab === 'channels' || tab === 'links') && channels.value.length === 0 && !loadingChannels.value) {
+    await loadChannels()
+  }
+}
 </script>
 
 <template>
@@ -314,18 +520,25 @@ onMounted(async () => {
               Информация
             </button>
             <button 
-              @click="activeTab = 'bots'"
+              @click="handleTabChange('bots')"
               :class="['tab', { 'tab-active': activeTab === 'bots' }]"
             >
               <i class="fas fa-robot"></i>
               Боты
             </button>
             <button 
-              @click="activeTab = 'channels'"
+              @click="handleTabChange('channels')"
               :class="['tab', { 'tab-active': activeTab === 'channels' }]"
             >
               <i class="fas fa-broadcast-tower"></i>
               Каналы
+            </button>
+            <button 
+              @click="handleTabChange('links')"
+              :class="['tab', { 'tab-active': activeTab === 'links' }]"
+            >
+              <i class="fas fa-link"></i>
+              Ссылки
             </button>
             <button 
               v-if="canManageMembers"
@@ -377,36 +590,158 @@ onMounted(async () => {
             <div v-if="activeTab === 'bots'" class="tab-panel">
               <div class="section-header">
                 <h2 class="section-title">Боты проекта</h2>
-                <a 
-                  v-if="props.botsPageUrl"
-                  :href="`${props.botsPageUrl}?projectId=${project.id}`"
-                  class="btn btn-primary"
-                >
-                  <i class="fas fa-external-link-alt"></i>
-                  Управлять ботами
-                </a>
+                <div class="section-actions">
+                  <button @click="openAddTokenModal" class="btn btn-primary btn-sm">
+                    <i class="fas fa-plus"></i>
+                    Добавить бота
+                  </button>
+                  <button @click="loadBots" class="btn btn-secondary btn-sm" :disabled="loadingBots">
+                    <i v-if="loadingBots" class="fas fa-spinner fa-spin"></i>
+                    <i v-else class="fas fa-sync-alt"></i>
+                    Обновить
+                  </button>
+                </div>
               </div>
-              <p class="section-description">
-                Для управления ботами проекта перейдите на страницу управления ботами.
-              </p>
+              
+              <div v-if="loadingBots" class="loading-container-small">
+                <div class="loading-spinner"></div>
+                <p>Загрузка ботов...</p>
+              </div>
+              
+              <div v-else-if="botsError" class="error-container">
+                <div class="error-message">
+                  <i class="fas fa-exclamation-circle"></i>
+                  <span>{{ botsError }}</span>
+                </div>
+              </div>
+              
+              <div v-else-if="bots.length === 0" class="empty-state">
+                <i class="fas fa-robot"></i>
+                <p>Нет добавленных ботов</p>
+                <p class="empty-subtext">Добавьте первого бота, чтобы начать работу</p>
+              </div>
+              
+              <div v-else class="table-container">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>Название</th>
+                      <th>Username</th>
+                      <th>Токен</th>
+                      <th>Каналов</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="bot in bots" :key="bot.id">
+                      <td>{{ bot.botName || 'Telegram Bot' }}</td>
+                      <td>
+                        <span v-if="bot.botUsername" class="username-value">@{{ bot.botUsername }}</span>
+                        <span v-else class="text-secondary">—</span>
+                      </td>
+                      <td class="code-value">{{ maskToken(bot.token) }}</td>
+                      <td>{{ bot.channelsCount || 0 }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
             </div>
 
             <!-- Channels Tab -->
             <div v-if="activeTab === 'channels'" class="tab-panel">
               <div class="section-header">
                 <h2 class="section-title">Каналы проекта</h2>
-                <a 
-                  v-if="props.channelsPageUrl"
-                  :href="`${props.channelsPageUrl}?projectId=${project.id}`"
-                  class="btn btn-primary"
-                >
-                  <i class="fas fa-external-link-alt"></i>
-                  Управлять каналами
-                </a>
+                <button @click="loadChannels" class="btn btn-secondary btn-sm" :disabled="loadingChannels">
+                  <i v-if="loadingChannels" class="fas fa-spinner fa-spin"></i>
+                  <i v-else class="fas fa-sync-alt"></i>
+                  Обновить
+                </button>
               </div>
-              <p class="section-description">
-                Для управления каналами проекта перейдите на страницу управления каналами.
-              </p>
+              
+              <div v-if="loadingChannels" class="loading-container-small">
+                <div class="loading-spinner"></div>
+                <p>Загрузка каналов...</p>
+              </div>
+              
+              <div v-else-if="channelsError" class="error-container">
+                <div class="error-message">
+                  <i class="fas fa-exclamation-circle"></i>
+                  <span>{{ channelsError }}</span>
+                </div>
+              </div>
+              
+              <div v-else-if="channels.length === 0" class="empty-state">
+                <i class="fas fa-broadcast-tower"></i>
+                <p>Нет каналов</p>
+                <p class="empty-subtext">Каналы появятся здесь после того, как бот начнёт получать вебхуки от Telegram</p>
+              </div>
+              
+              <div v-else class="table-container">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>Название</th>
+                      <th>Username</th>
+                      <th>Chat ID</th>
+                      <th>Последняя активность</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="channel in channels" :key="channel.id">
+                      <td>{{ channel.chatTitle || 'Канал без названия' }}</td>
+                      <td>
+                        <span v-if="channel.chatUsername" class="username-value">@{{ channel.chatUsername }}</span>
+                        <span v-else class="text-secondary">—</span>
+                      </td>
+                      <td class="code-value">{{ channel.chatId }}</td>
+                      <td>{{ formatDate(channel.lastSeenAt) }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Links Tab -->
+            <div v-if="activeTab === 'links'" class="tab-panel">
+              <div class="section-header">
+                <h2 class="section-title">Ссылки проекта</h2>
+              </div>
+              
+              <div class="links-filter">
+                <label class="filter-label">
+                  <i class="fas fa-filter"></i>
+                  Фильтр по каналу
+                </label>
+                <select 
+                  v-model="selectedChannelId" 
+                  class="filter-select"
+                >
+                  <option :value="null">Все каналы</option>
+                  <option 
+                    v-for="channel in channels" 
+                    :key="channel.id" 
+                    :value="channel.id"
+                  >
+                    {{ channel.chatTitle || channel.chatUsername || channel.chatId }}
+                  </option>
+                </select>
+              </div>
+              
+              <div v-if="loadingChannels" class="loading-container-small">
+                <div class="loading-spinner"></div>
+                <p>Загрузка каналов...</p>
+              </div>
+              
+              <div v-else-if="channels.length === 0" class="empty-state">
+                <i class="fas fa-link"></i>
+                <p>Нет каналов</p>
+                <p class="empty-subtext">Сначала добавьте бота и дождитесь появления каналов</p>
+              </div>
+              
+              <div v-else class="empty-state">
+                <i class="fas fa-link"></i>
+                <p>Функционал создания ссылок будет добавлен позже</p>
+                <p class="empty-subtext">Здесь вы сможете создавать отслеживаемые ссылки для выбранного канала</p>
+              </div>
             </div>
 
             <!-- Members Tab -->
@@ -522,6 +857,58 @@ onMounted(async () => {
         </div>
       </div>
     </footer>
+
+    <!-- Add Token Modal -->
+    <Transition name="modal">
+      <div v-if="showAddTokenModal" class="modal-overlay" @click="addingToken ? null : closeAddTokenModal">
+        <div class="modal-content" @click.stop>
+          <div class="modal-scanlines"></div>
+          
+          <div class="modal-header">
+            <h2 class="modal-title">Ввести новый токен</h2>
+            <button @click="closeAddTokenModal" class="modal-close-btn" :disabled="addingToken">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+
+          <div class="modal-body">
+            <div class="form-group">
+              <label class="form-label">
+                <i class="fas fa-key"></i>
+                Токен бота
+              </label>
+              <input 
+                v-model="newToken"
+                type="text" 
+                class="form-input"
+                placeholder="1234567890:ABCdefGHIjklMNOpqrsTUVwxyz"
+                :disabled="addingToken"
+              />
+              <p class="form-hint">
+                Токен можно получить у <a href="https://t.me/BotFather" target="_blank" class="form-link">@BotFather</a>
+              </p>
+              <div v-if="tokenError" class="form-error">
+                <i class="fas fa-exclamation-circle"></i>
+                <span>{{ tokenError }}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button @click="addToken" class="modal-btn modal-btn-submit" :disabled="addingToken">
+              <span v-if="addingToken">
+                <i class="fas fa-spinner fa-spin"></i>
+                Проверка...
+              </span>
+              <span v-else>Добавить</span>
+            </button>
+            <button @click="closeAddTokenModal" class="modal-btn modal-btn-cancel" :disabled="addingToken">
+              Отмена
+            </button>
+          </div>
+        </div>
+      </div>
+    </Transition>
   </div>
 </template>
 
@@ -803,6 +1190,12 @@ onMounted(async () => {
   margin-bottom: 1.5rem;
 }
 
+.section-actions {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
 .section-title {
   font-size: 1.5rem;
   font-weight: 400;
@@ -947,6 +1340,493 @@ onMounted(async () => {
   color: var(--color-text-tertiary);
   margin-bottom: 1.5rem;
   display: block;
+}
+
+.empty-subtext {
+  font-size: 0.875rem;
+  color: var(--color-text-tertiary);
+  margin-top: 0.5rem;
+}
+
+.table-container {
+  background: var(--color-bg-secondary);
+  border: 2px solid var(--color-border);
+  padding: 1.5rem;
+  clip-path: polygon(
+    0 4px, 4px 4px, 4px 0,
+    calc(100% - 4px) 0, calc(100% - 4px) 4px, 100% 4px,
+    100% calc(100% - 4px), calc(100% - 4px) calc(100% - 4px), calc(100% - 4px) 100%,
+    4px 100%, 4px calc(100% - 4px), 0 calc(100% - 4px)
+  );
+  overflow-x: auto;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9375rem;
+}
+
+.data-table thead {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.data-table th {
+  padding: 1rem;
+  text-align: left;
+  color: var(--color-text);
+  font-weight: 400;
+  letter-spacing: 0.03em;
+  border-bottom: 2px solid var(--color-border);
+}
+
+.data-table td {
+  padding: 1rem;
+  color: var(--color-text);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.data-table tbody tr:hover {
+  background: rgba(211, 35, 75, 0.05);
+}
+
+.data-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.code-value {
+  font-family: 'Courier New', monospace;
+  font-size: 0.875rem;
+  color: var(--color-accent);
+  letter-spacing: 0.05em;
+}
+
+.username-value {
+  color: var(--color-accent);
+  font-family: 'Courier New', monospace;
+  letter-spacing: 0.05em;
+}
+
+.text-secondary {
+  color: var(--color-text-secondary);
+}
+
+.links-filter {
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  background: var(--color-bg-secondary);
+  border: 2px solid var(--color-border);
+  clip-path: polygon(
+    0 4px, 4px 4px, 4px 0,
+    calc(100% - 4px) 0, calc(100% - 4px) 4px, 100% 4px,
+    100% calc(100% - 4px), calc(100% - 4px) calc(100% - 4px), calc(100% - 4px) 100%,
+    4px 100%, 4px calc(100% - 4px), 0 calc(100% - 4px)
+  );
+}
+
+.filter-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  color: var(--color-text);
+  font-size: 0.9375rem;
+  letter-spacing: 0.03em;
+}
+
+.filter-label i {
+  color: var(--color-accent);
+}
+
+.filter-select {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background: rgba(0, 0, 0, 0.3);
+  border: 2px solid var(--color-border);
+  color: var(--color-text);
+  font-size: 0.9375rem;
+  font-family: 'Courier New', monospace;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition: var(--transition);
+  clip-path: polygon(
+    0 3px, 3px 3px, 3px 0,
+    calc(100% - 3px) 0, calc(100% - 3px) 3px, 100% 3px,
+    100% calc(100% - 3px), calc(100% - 3px) calc(100% - 3px), calc(100% - 3px) 100%,
+    3px 100%, 3px calc(100% - 3px), 0 calc(100% - 3px)
+  );
+}
+
+.filter-select:focus {
+  outline: none;
+  border-color: var(--color-accent);
+  box-shadow: 0 0 10px rgba(211, 35, 75, 0.3);
+}
+
+.filter-select:hover {
+  border-color: var(--color-border-light);
+}
+
+/* Modal */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.9);
+  padding: 1rem;
+}
+
+.modal-content {
+  background: linear-gradient(135deg, var(--color-bg-secondary) 0%, var(--color-bg-tertiary) 100%);
+  border: 2px solid var(--color-accent);
+  padding: 0;
+  max-width: 600px;
+  width: 100%;
+  position: relative;
+  box-shadow: 
+    0 0 40px rgba(211, 35, 75, 0.4),
+    0 0 80px rgba(211, 35, 75, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  clip-path: polygon(
+    0 4px, 4px 4px, 4px 0,
+    calc(100% - 4px) 0, calc(100% - 4px) 4px, 100% 4px,
+    100% calc(100% - 4px), calc(100% - 4px) calc(100% - 4px), calc(100% - 4px) 100%,
+    4px 100%, 4px calc(100% - 4px), 0 calc(100% - 4px)
+  );
+}
+
+/* Modal transitions */
+.modal-enter-active {
+  transition: opacity 0.3s ease-out;
+}
+
+.modal-leave-active {
+  transition: opacity 0.3s ease-in;
+}
+
+.modal-enter-from,
+.modal-leave-to {
+  opacity: 0;
+}
+
+.modal-enter-active .modal-content {
+  animation: modal-appear 0.4s cubic-bezier(0.34, 1.3, 0.64, 1);
+}
+
+.modal-leave-active .modal-content {
+  animation: modal-disappear 0.4s cubic-bezier(0.34, 1.3, 0.64, 1);
+}
+
+@keyframes modal-appear {
+  from {
+    transform: scale(0.8) translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes modal-disappear {
+  from {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
+  to {
+    transform: scale(0.8) translateY(20px);
+    opacity: 0;
+  }
+}
+
+.modal-scanlines {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.15) 0px,
+    rgba(0, 0, 0, 0.15) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+  pointer-events: none;
+  z-index: 1;
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 2rem 2.5rem;
+  border-bottom: 1px solid var(--color-border);
+  position: relative;
+  z-index: 2;
+}
+
+.modal-title {
+  font-size: 1.5rem;
+  font-weight: 400;
+  color: var(--color-text);
+  margin: 0;
+  letter-spacing: 0.08em;
+  text-shadow: 
+    0 0 10px rgba(232, 232, 232, 0.4),
+    0 0 20px rgba(211, 35, 75, 0.2);
+}
+
+.modal-close-btn {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0;
+  background: transparent;
+  border: 2px solid var(--color-border);
+  color: var(--color-text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: var(--transition);
+  position: relative;
+  overflow: hidden;
+  clip-path: polygon(
+    0 3px, 3px 3px, 3px 0,
+    calc(100% - 3px) 0, calc(100% - 3px) 3px, 100% 3px,
+    100% calc(100% - 3px), calc(100% - 3px) calc(100% - 3px), calc(100% - 3px) 100%,
+    3px 100%, 3px calc(100% - 3px), 0 calc(100% - 3px)
+  );
+}
+
+.modal-close-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.12) 0px,
+    rgba(0, 0, 0, 0.12) 1px,
+    transparent 1px,
+    transparent 2px
+  );
+  pointer-events: none;
+  z-index: 0;
+}
+
+.modal-close-btn i {
+  position: relative;
+  z-index: 2;
+}
+
+.modal-close-btn:hover {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+  background: rgba(211, 35, 75, 0.1);
+}
+
+.modal-body {
+  padding: 2rem 2.5rem;
+  position: relative;
+  z-index: 2;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.form-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9375rem;
+  color: var(--color-text);
+  letter-spacing: 0.03em;
+}
+
+.form-label i {
+  color: var(--color-accent);
+}
+
+.form-input {
+  padding: 0.875rem 1rem;
+  background: rgba(0, 0, 0, 0.3);
+  border: 2px solid var(--color-border);
+  color: var(--color-text);
+  font-size: 0.9375rem;
+  font-family: 'Courier New', monospace;
+  letter-spacing: 0.05em;
+  transition: var(--transition);
+  clip-path: polygon(
+    0 3px, 3px 3px, 3px 0,
+    calc(100% - 3px) 0, calc(100% - 3px) 3px, 100% 3px,
+    100% calc(100% - 3px), calc(100% - 3px) calc(100% - 3px), calc(100% - 3px) 100%,
+    3px 100%, 3px calc(100% - 3px), 0 calc(100% - 3px)
+  );
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: var(--color-accent);
+  box-shadow: 0 0 10px rgba(211, 35, 75, 0.3);
+}
+
+.form-input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.form-input::placeholder {
+  color: var(--color-text-tertiary);
+}
+
+.form-hint {
+  font-size: 0.8125rem;
+  color: var(--color-text-secondary);
+  margin: 0;
+  letter-spacing: 0.02em;
+}
+
+.form-link {
+  color: var(--color-accent);
+  text-decoration: none;
+  transition: color 0.25s ease;
+}
+
+.form-link:hover {
+  color: var(--color-accent-hover);
+  text-decoration: underline;
+}
+
+.form-error {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  background: rgba(211, 35, 75, 0.1);
+  border: 1px solid var(--color-accent);
+  color: var(--color-accent);
+  font-size: 0.875rem;
+  margin-top: 0.5rem;
+  clip-path: polygon(
+    0 2px, 2px 2px, 2px 0,
+    calc(100% - 2px) 0, calc(100% - 2px) 2px, 100% 2px,
+    100% calc(100% - 2px), calc(100% - 2px) calc(100% - 2px), calc(100% - 2px) 100%,
+    2px 100%, 2px calc(100% - 2px), 0 calc(100% - 2px)
+  );
+}
+
+.form-error i {
+  flex-shrink: 0;
+}
+
+.form-error span {
+  flex: 1;
+}
+
+.modal-footer {
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+  padding: 1.5rem 2.5rem;
+  border-top: 1px solid var(--color-border);
+  position: relative;
+  z-index: 2;
+}
+
+.modal-btn {
+  min-width: 120px;
+  padding: 0.875rem 2rem;
+  font-size: 1rem;
+  font-weight: 400;
+  letter-spacing: 0.05em;
+  border: 2px solid;
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+  font-family: 'Courier New', monospace;
+  text-transform: uppercase;
+  clip-path: polygon(
+    0 3px, 3px 3px, 3px 0,
+    calc(100% - 3px) 0, calc(100% - 3px) 3px, 100% 3px,
+    100% calc(100% - 3px), calc(100% - 3px) calc(100% - 3px), calc(100% - 3px) 100%,
+    3px 100%, 3px calc(100% - 3px), 0 calc(100% - 3px)
+  );
+}
+
+.modal-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.12) 0px,
+    rgba(0, 0, 0, 0.12) 1px,
+    transparent 1px,
+    transparent 2px
+  );
+  pointer-events: none;
+  z-index: 0;
+}
+
+.modal-btn span,
+.modal-btn {
+  position: relative;
+  z-index: 2;
+}
+
+.modal-btn-cancel {
+  color: var(--color-text-secondary);
+  border-color: var(--color-border-light);
+}
+
+.modal-btn-cancel:hover {
+  color: var(--color-text);
+  border-color: var(--color-text-secondary);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.modal-btn-submit {
+  color: var(--color-accent);
+  border-color: var(--color-accent);
+  box-shadow: 0 0 10px rgba(211, 35, 75, 0.3);
+}
+
+.modal-btn-submit:hover:not(:disabled) {
+  background: var(--color-accent);
+  color: white;
+  box-shadow: 
+    0 0 20px rgba(211, 35, 75, 0.6),
+    0 0 40px rgba(211, 35, 75, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.modal-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.modal-btn-submit:disabled {
+  opacity: 0.6;
+  cursor: wait;
 }
 
 .app-footer {
