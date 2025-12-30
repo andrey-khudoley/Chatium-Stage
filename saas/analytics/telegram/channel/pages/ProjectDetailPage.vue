@@ -27,6 +27,7 @@ const props = defineProps<{
   botsPageUrl?: string
   channelsPageUrl?: string
   projectId: string
+  target?: string // Параметр target из query параметров (links, channels, bots)
 }>()
 
 const project = ref<{
@@ -230,6 +231,21 @@ onMounted(async () => {
   // Загружаем заявки, если есть права
   if (canViewRequests.value) {
     await loadRequests()
+  }
+  
+  // Автоматически переключаем на нужную вкладку, если передан параметр target
+  if (props.target) {
+    // Маппинг значений target на вкладки
+    const targetToTab: Record<string, 'info' | 'bots' | 'channels' | 'members' | 'requests'> = {
+      'links': 'info',      // Для "Управлять ссылками" открываем вкладку "Информация"
+      'channels': 'channels',
+      'bots': 'bots'
+    }
+    
+    const targetTab = targetToTab[props.target]
+    if (targetTab) {
+      activeTab.value = targetTab
+    }
   }
 })
 </script>

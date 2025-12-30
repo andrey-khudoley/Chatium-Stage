@@ -3097,6 +3097,7 @@ export const projectsPageRoute = app.html('/projects', async (ctx, req) => {
           loginUrl={loginPageRoute.url()}
           isAuthenticated={isAuthenticated}
           projectsPageUrl={projectsPageRoute.url()}
+          target={req.query.target as string | undefined}
         />
       </body>
     </html>
@@ -3846,6 +3847,7 @@ export const projectDetailPageRoute = app.html('/projects/:id', async (ctx, req)
           botsPageUrl={botsPageRoute.url()}
           channelsPageUrl={channelsPageRoute.url()}
           projectId={id}
+          target={req.query.target as string | undefined}
         />
       </body>
     </html>

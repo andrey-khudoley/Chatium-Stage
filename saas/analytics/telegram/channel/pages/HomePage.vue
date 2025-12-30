@@ -135,7 +135,12 @@ const triggerGlitch = () => {
   }
 }
 
-// ИСПРАВЛЕНИЕ Bug 1: Удалён handleCardClick, так как теперь используются прямые ссылки на страницу проектов
+// Функция для генерации URL страницы проектов с параметром target
+const getProjectsUrlWithTarget = (target: string): string => {
+  const baseUrl = props.projectsPageUrl || '/projects'
+  const separator = baseUrl.includes('?') ? '&' : '?'
+  return `${baseUrl}${separator}target=${target}`
+}
 </script>
 
 <template>
@@ -154,7 +159,7 @@ const triggerGlitch = () => {
           <h1 class="hero-heading" :class="{ 'show-underline': showTitleUnderline }">
             {{ displayedTitle }}<span v-if="showCursor && (cursorPosition === 'title' || cursorPosition === 'final')" class="typing-cursor">▮</span>
           </h1>
-          <p class="hero-help" @click="handleCardClick">
+          <p class="hero-help">
             <i v-if="showHelpIcon" class="fas fa-question-circle"></i>
             {{ displayedHelp }}<span v-if="showCursor && cursorPosition === 'help'" class="typing-cursor">▮</span>
           </p>
@@ -166,14 +171,14 @@ const triggerGlitch = () => {
         <!-- Navigation Cards -->
         <section class="cards-section" :class="{ 'cards-visible': showCards }">
           <div class="cards-grid">
-            <!-- Projects Card -->
+            <!-- Links Card -->
             <!-- ИСПРАВЛЕНИЕ Bug 5: Используем props.projectsPageUrl вместо хардкода -->
-            <a :href="props.projectsPageUrl || '/projects'" class="nav-card nav-card-analytics">
+            <a :href="getProjectsUrlWithTarget('links')" class="nav-card nav-card-analytics">
               <div class="nav-card-content">
                 <div class="nav-card-icon nav-card-icon-analytics">
-                  <i class="fas fa-chart-line"></i>
+                  <i class="fas fa-link"></i>
                 </div>
-                <h2 class="nav-card-title">Управлять проектами</h2>
+                <h2 class="nav-card-title">Управлять ссылками</h2>
                 <p class="nav-card-description">
                   Просматривайте статистику переходов, анализируйте источники трафика и создавайте отчёты
                 </p>
@@ -184,7 +189,7 @@ const triggerGlitch = () => {
             </a>
 
             <!-- Channels Card -->
-            <a v-if="props.channelsUrl" :href="props.channelsUrl" class="nav-card nav-card-channels">
+            <a v-if="props.projectsPageUrl || props.channelsUrl" :href="props.projectsPageUrl ? getProjectsUrlWithTarget('channels') : props.channelsUrl" class="nav-card nav-card-channels">
               <div class="nav-card-content">
                 <div class="nav-card-icon nav-card-icon-channels">
                   <i class="fas fa-broadcast-tower"></i>
@@ -214,7 +219,7 @@ const triggerGlitch = () => {
             </div>
 
             <!-- Bots Card -->
-            <a v-if="props.botsUrl" :href="props.botsUrl" class="nav-card nav-card-bots">
+            <a v-if="props.projectsPageUrl || props.botsUrl" :href="props.projectsPageUrl ? getProjectsUrlWithTarget('bots') : props.botsUrl" class="nav-card nav-card-bots">
               <div class="nav-card-content">
                 <div class="nav-card-icon nav-card-icon-bots">
                   <i class="fas fa-robot"></i>

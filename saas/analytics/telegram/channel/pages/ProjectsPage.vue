@@ -21,13 +21,22 @@ const props = defineProps<{
   loginUrl: string
   isAuthenticated: boolean
   projectsPageUrl?: string
+  target?: string // Параметр target из query параметров (links, channels, bots)
 }>()
 
 // Функция для генерации URL детальной страницы проекта
 const getProjectDetailUrl = (projectId: string): string => {
   // Используем правильный синтаксис для роутов с параметрами: route({ param }).url()
   // Согласно документации 002-routing.md и примеру из api/bots.ts
-  return projectDetailPageRoute({ id: projectId }).url()
+  let url = projectDetailPageRoute({ id: projectId }).url()
+  
+  // Если есть параметр target, добавляем его к URL
+  if (props.target) {
+    const separator = url.includes('?') ? '&' : '?'
+    url = `${url}${separator}target=${props.target}`
+  }
+  
+  return url
 }
 
 const projects = ref<Array<{
