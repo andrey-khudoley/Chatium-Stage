@@ -6,7 +6,7 @@ import { Heap } from '@app/heap'
  * Каждая запись содержит:
  * - chatId: уникальный ID чата/канала из Telegram (используется как ключ для createOrUpdateBy)
  * - botId: ID бота, от которого пришёл вебхук с этим чатом
- * - userId: ID пользователя-владельца бота
+ * - projectId: ID проекта, к которому привязан канал
  * - chatType: тип чата (private, group, supergroup, channel)
  * - chatTitle: название чата/канала (если доступно)
  * - chatUsername: username чата/канала (если доступно)
@@ -20,8 +20,8 @@ export const TelegramChats = Heap.Table('t__tg_channel_analytics__chats__b4c5d6e
   botId: Heap.String({
     customMeta: { title: 'ID бота' }
   }),
-  userId: Heap.String({
-    customMeta: { title: 'ID пользователя-владельца бота' }
+  projectId: Heap.String({
+    customMeta: { title: 'ID проекта' }
   }),
   chatType: Heap.Optional(
     Heap.String({

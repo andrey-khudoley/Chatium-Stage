@@ -5,7 +5,7 @@ import { Heap } from '@app/heap'
  * 
  * Каждая запись содержит:
  * - botId: ID бота, которому принадлежит вебхук
- * - userId: ID пользователя-владельца бота
+ * - projectId: ID проекта, к которому принадлежит бот (для аудита и быстрого доступа)
  * - updateId: уникальный ID обновления от Telegram (для предотвращения дубликатов)
  * - rawData: сырые данные вебхука в формате JSON
  * - receivedAt: время получения вебхука
@@ -14,8 +14,8 @@ export const TelegramWebhooks = Heap.Table('t__tg_channel_analytics__webhooks__a
   botId: Heap.String({
     customMeta: { title: 'ID бота' }
   }),
-  userId: Heap.String({
-    customMeta: { title: 'ID пользователя-владельца' }
+  projectId: Heap.String({
+    customMeta: { title: 'ID проекта' }
   }),
   updateId: Heap.Optional(
     Heap.Number({

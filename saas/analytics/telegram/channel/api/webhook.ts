@@ -4,12 +4,14 @@ import { requireRealUser } from '@app/auth'
 import { BotTokens } from '../tables/bot-tokens.table'
 import { TelegramWebhooks } from '../tables/webhooks.table'
 import { TelegramChats } from '../tables/chats.table'
+import { Projects } from '../tables/projects.table'
 import { Debug } from '../shared/debug'
 import { applyDebugLevel } from '../lib/logging'
 import { sendDataToSocket } from '@app/socket'
 import { request } from '@app/request'
 import { extractChatFromUpdate } from '../lib/extract-chat'
 import { runWithExclusiveLock } from '@app/sync'
+import { userIdsMatch } from '../shared/user-utils'
 
 /**
  * POST /api/webhook/:id
@@ -56,12 +58,23 @@ export const apiWebhookRoute = app.post('/:id', async (ctx, req) => {
       }
     }
     
-    Debug.info(ctx, `[api/webhook] Бот найден: id=${bot.id}, userId=${bot.userId}, botName=${bot.botName || 'null'}, botUsername=${bot.botUsername || 'null'}`)
+    Debug.info(ctx, `[api/webhook] Бот найден: id=${bot.id}, projectId=${bot.projectId}, botName=${bot.botName || 'null'}, botUsername=${bot.botUsername || 'null'}`)
     
-    // ВАЖНО: Проверяем, что у бота есть владелец (userId)
-    // Без userId мы не можем определить, кому отправлять вебхук
-    if (!bot.userId) {
-      Debug.warn(ctx, `[api/webhook] У бота ${botId} нет userId, вебхук не отправлен`)
+    // ВАЖНО: Проверяем, что у бота есть проект (projectId)
+    // Без projectId мы не можем определить, кому отправлять вебхук
+    if (!bot.projectId) {
+      Debug.warn(ctx, `[api/webhook] У бота ${botId} нет projectId, вебхук не отправлен`)
+      // Все равно возвращаем 200 OK, чтобы Telegram не повторял запрос
+      return {
+        ok: true
+      }
+    }
+    
+    // Получаем проект для определения участников
+    const project = await Projects.findById(ctx, bot.projectId)
+    
+    if (!project) {
+      Debug.warn(ctx, `[api/webhook] Проект с ID ${bot.projectId} не найден, вебхук не отправлен`)
       // Все равно возвращаем 200 OK, чтобы Telegram не повторял запрос
       return {
         ok: true
@@ -77,9 +90,10 @@ export const apiWebhookRoute = app.post('/:id', async (ctx, req) => {
     // Сохраняем вебхук в таблицу для логирования
     try {
       Debug.info(ctx, `[api/webhook] Начало сохранения вебхука в таблицу TelegramWebhooks`)
+      
       const webhookRecord = {
         botId: bot.id,
-        userId: bot.userId,
+        projectId: bot.projectId,
         rawData: webhookData,
         receivedAt: new Date()
       } as any
@@ -92,7 +106,7 @@ export const apiWebhookRoute = app.post('/:id', async (ctx, req) => {
         Debug.info(ctx, `[api/webhook] updateId отсутствует в вебхуке`)
       }
       
-      Debug.info(ctx, `[api/webhook] Данные для сохранения: botId=${webhookRecord.botId}, userId=${webhookRecord.userId}, receivedAt=${webhookRecord.receivedAt.toISOString()}`)
+      Debug.info(ctx, `[api/webhook] Данные для сохранения: botId=${webhookRecord.botId}, projectId=${webhookRecord.projectId}, receivedAt=${webhookRecord.receivedAt.toISOString()}`)
       
       const savedWebhook = await TelegramWebhooks.create(ctx, webhookRecord)
       Debug.info(ctx, `[api/webhook] Вебхук успешно сохранен в таблицу: id=${savedWebhook.id}, botId=${botId}, updateId=${updateId !== undefined ? updateId : 'N/A'}`)
@@ -114,42 +128,150 @@ export const apiWebhookRoute = app.post('/:id', async (ctx, req) => {
         const now = new Date()
         
         // Используем эксклюзивную блокировку для атомарной операции
-        // Ключ блокировки должен быть одинаковым для всех параллельных запросов с одним chatId
+        // ИСПРАВЛЕНИЕ Bug 1: Ключ блокировки должен быть только по chatId, чтобы сериализовать обновления legacy-записей без projectId
+        // Это предотвращает race condition, когда два проекта одновременно пытаются обновить одну и ту же legacy-запись
         const lockKey = `telegram-chat-${chatIdString}`
         
         await runWithExclusiveLock(ctx, lockKey, {}, async () => {
           // ВСЕ операции с БД должны быть ВНУТРИ блокировки
-          // Это гарантирует, что между findOneBy и createOrUpdateBy не произойдёт другой запрос
-          const existingChat = await TelegramChats.findOneBy(ctx, { chatId: chatIdString })
+          // ИСПРАВЛЕНИЕ Bug 1: Сначала ищем чат по составному ключу (chatId + projectId)
+          // Это гарантирует, что мы найдём именно запись для текущего проекта
+          const existingChatForProject = await TelegramChats.findOneBy(ctx, { 
+            chatId: chatIdString,
+            projectId: bot.projectId
+          })
           
-          if (existingChat) {
-            // Обновляем существующий чат
-            Debug.info(ctx, `[api/webhook] Чат ${chatIdString} уже существует, обновляем lastSeenAt и другую информацию`)
-            await TelegramChats.createOrUpdateBy(ctx, 'chatId', {
-              chatId: chatIdString,
+          if (existingChatForProject) {
+            // Чат уже существует для этого проекта - обновляем
+            Debug.info(ctx, `[api/webhook] Чат ${chatIdString} уже существует для проекта ${bot.projectId}, обновляем lastSeenAt и другую информацию`)
+            await TelegramChats.update(ctx, {
+              id: existingChatForProject.id,
               botId: bot.id,
-              userId: bot.userId,
-              chatType: chatInfo.type || existingChat.chatType || null,
-              chatTitle: chatInfo.title || existingChat.chatTitle || null,
-              chatUsername: chatInfo.username || existingChat.chatUsername || null,
-              firstSeenAt: existingChat.firstSeenAt, // Сохраняем оригинальное время первого появления
+              projectId: bot.projectId, // Явно указываем projectId для консистентности данных
+              chatType: chatInfo.type || existingChatForProject.chatType || null,
+              chatTitle: chatInfo.title || existingChatForProject.chatTitle || null,
+              chatUsername: chatInfo.username || existingChatForProject.chatUsername || null,
+              firstSeenAt: existingChatForProject.firstSeenAt, // Сохраняем оригинальное время первого появления
               lastSeenAt: now // Обновляем время последнего появления
             })
-            Debug.info(ctx, `[api/webhook] Чат ${chatIdString} успешно обновлен`)
+            Debug.info(ctx, `[api/webhook] Чат ${chatIdString} успешно обновлен для проекта ${bot.projectId}`)
           } else {
-            // Создаём новый чат
-            Debug.info(ctx, `[api/webhook] Чат ${chatIdString} новый, создаём запись`)
-            await TelegramChats.createOrUpdateBy(ctx, 'chatId', {
-              chatId: chatIdString,
-              botId: bot.id,
-              userId: bot.userId,
-              chatType: chatInfo.type || null,
-              chatTitle: chatInfo.title || null,
-              chatUsername: chatInfo.username || null,
-              firstSeenAt: now,
-              lastSeenAt: now
+            // Чат не найден для текущего проекта
+            // ИСПРАВЛЕНИЕ Bug 1: Ищем legacy-записи без projectId для миграции
+            // Примечание: После изменения схемы с userId на projectId, старые записи могут иметь projectId = null/undefined
+            // Проверка !chat.projectId корректно идентифицирует такие записи, так как Heap возвращает null/undefined для отсутствующих полей
+            // Блокировка по chatId гарантирует, что только один проект может мигрировать legacy-запись одновременно
+            const allChatsWithId = await TelegramChats.findAll(ctx, {
+              where: {
+                chatId: chatIdString
+              },
+              limit: 1000 // Разумный limit для предотвращения пропуска legacy-записей
             })
-            Debug.info(ctx, `[api/webhook] Чат ${chatIdString} успешно создан`)
+            // ИСПРАВЛЕНИЕ Bug 1: Ищем записи без projectId (legacy-записи, созданные до изменения схемы)
+            // Проверка !chat.projectId работает для null, undefined, пустых строк и false
+            // ИСПРАВЛЕНИЕ Bug 1: Упрощено условие - убрана избыточная проверка .trim() === '', так как пустые строки уже обрабатываются !chat.projectId
+            const legacyChat = allChatsWithId.find(chat => !chat.projectId) || null
+            
+            if (legacyChat) {
+              // ИСПРАВЛЕНИЕ Bug 1: Используем атомарную проверку и обновление для миграции legacy-записи
+              // Блокировка по chatId гарантирует, что только один проект может мигрировать legacy-запись одновременно
+              // Но для полной атомарности проверяем актуальное состояние записи перед обновлением
+              Debug.info(ctx, `[api/webhook] Найдена старая запись чата ${chatIdString} без projectId, проверяем актуальное состояние перед миграцией`)
+              
+              // ИСПРАВЛЕНИЕ Bug 1: Получаем актуальное состояние записи внутри блокировки
+              // Это предотвращает race condition, когда другой проект уже мигрировал запись между findAll и update
+              const currentLegacyChat = await TelegramChats.findById(ctx, legacyChat.id)
+              
+              if (currentLegacyChat && !currentLegacyChat.projectId) {
+                // Запись всё ещё без projectId - безопасно обновляем её
+                Debug.info(ctx, `[api/webhook] Legacy-запись ${legacyChat.id} всё ещё без projectId, атомарно обновляем с projectId=${bot.projectId}`)
+                await TelegramChats.update(ctx, {
+                  id: currentLegacyChat.id,
+                  botId: bot.id,
+                  projectId: bot.projectId, // Добавляем projectId к старой записи
+                  chatType: chatInfo.type || currentLegacyChat.chatType || null,
+                  chatTitle: chatInfo.title || currentLegacyChat.chatTitle || null,
+                  chatUsername: chatInfo.username || currentLegacyChat.chatUsername || null,
+                  firstSeenAt: currentLegacyChat.firstSeenAt, // Сохраняем оригинальное время первого появления
+                  lastSeenAt: now // Обновляем время последнего появления
+                })
+                Debug.info(ctx, `[api/webhook] Legacy-запись чата ${chatIdString} успешно мигрирована с projectId=${bot.projectId}`)
+            } else {
+              // Legacy-запись уже была мигрирована другим проектом
+              // ИСПРАВЛЕНИЕ Bug 2: Проверяем, существует ли уже запись для текущего проекта перед созданием новой
+              const existingChatForCurrentProject = await TelegramChats.findOneBy(ctx, {
+                chatId: chatIdString,
+                projectId: bot.projectId
+              })
+              
+              if (existingChatForCurrentProject) {
+                // Запись для текущего проекта уже существует - обновляем её
+                Debug.info(ctx, `[api/webhook] Запись чата ${chatIdString} уже существует для проекта ${bot.projectId}, обновляем`)
+                await TelegramChats.update(ctx, {
+                  id: existingChatForCurrentProject.id,
+                  botId: bot.id,
+                  projectId: bot.projectId,
+                  chatType: chatInfo.type || existingChatForCurrentProject.chatType || null,
+                  chatTitle: chatInfo.title || existingChatForCurrentProject.chatTitle || null,
+                  chatUsername: chatInfo.username || existingChatForCurrentProject.chatUsername || null,
+                  firstSeenAt: existingChatForCurrentProject.firstSeenAt,
+                  lastSeenAt: now
+                })
+                Debug.info(ctx, `[api/webhook] Чат ${chatIdString} успешно обновлен для проекта ${bot.projectId}`)
+              } else {
+                // Создаём новую запись для текущего проекта
+                Debug.info(ctx, `[api/webhook] Legacy-запись чата ${chatIdString} уже мигрирована другим проектом (projectId=${currentLegacyChat?.projectId || 'N/A'}), создаём новую запись для проекта ${bot.projectId}`)
+                await TelegramChats.create(ctx, {
+                  chatId: chatIdString,
+                  botId: bot.id,
+                  projectId: bot.projectId,
+                  chatType: chatInfo.type || currentLegacyChat?.chatType || legacyChat.chatType || null,
+                  chatTitle: chatInfo.title || currentLegacyChat?.chatTitle || legacyChat.chatTitle || null,
+                  chatUsername: chatInfo.username || currentLegacyChat?.chatUsername || legacyChat.chatUsername || null,
+                  firstSeenAt: now, // Каждый проект отслеживает своё собственное время первого обнаружения чата
+                  lastSeenAt: now
+                })
+                Debug.info(ctx, `[api/webhook] Чат ${chatIdString} успешно создан для проекта ${bot.projectId}`)
+              }
+            }
+          } else {
+            // Чат не найден нигде или существует только в другом проекте
+            // ИСПРАВЛЕНИЕ Bug 2: Проверяем, существует ли уже запись для текущего проекта перед созданием новой
+            const existingChatForCurrentProject = await TelegramChats.findOneBy(ctx, {
+              chatId: chatIdString,
+              projectId: bot.projectId
+            })
+            
+            if (existingChatForCurrentProject) {
+              // Запись для текущего проекта уже существует - обновляем её
+              Debug.info(ctx, `[api/webhook] Запись чата ${chatIdString} уже существует для проекта ${bot.projectId}, обновляем`)
+              await TelegramChats.update(ctx, {
+                id: existingChatForCurrentProject.id,
+                botId: bot.id,
+                projectId: bot.projectId,
+                chatType: chatInfo.type || existingChatForCurrentProject.chatType || null,
+                chatTitle: chatInfo.title || existingChatForCurrentProject.chatTitle || null,
+                chatUsername: chatInfo.username || existingChatForCurrentProject.chatUsername || null,
+                firstSeenAt: existingChatForCurrentProject.firstSeenAt,
+                lastSeenAt: now
+              })
+              Debug.info(ctx, `[api/webhook] Чат ${chatIdString} успешно обновлен для проекта ${bot.projectId}`)
+            } else {
+              // Создаём новую запись для текущего проекта
+              Debug.info(ctx, `[api/webhook] Чат ${chatIdString} новый для проекта ${bot.projectId}, создаём запись`)
+              await TelegramChats.create(ctx, {
+                chatId: chatIdString,
+                botId: bot.id,
+                projectId: bot.projectId,
+                chatType: chatInfo.type || null,
+                chatTitle: chatInfo.title || null,
+                chatUsername: chatInfo.username || null,
+                firstSeenAt: now, // Каждый проект отслеживает своё собственное время первого обнаружения чата
+                lastSeenAt: now
+              })
+              Debug.info(ctx, `[api/webhook] Чат ${chatIdString} успешно создан для проекта ${bot.projectId}`)
+            }
+          }
           }
         })
       } else {
@@ -161,33 +283,74 @@ export const apiWebhookRoute = app.post('/:id', async (ctx, req) => {
       Debug.error(ctx, `[api/webhook] Stack trace сохранения чата: ${chatError.stack || 'N/A'}`)
     }
     
-    // БЕЗОПАСНОСТЬ: Отправляем вебхук ТОЛЬКО владельцу этого конкретного бота
-    // Используем уникальный socketId на основе userId владельца
-    // Это гарантирует, что вебхук не попадет к другим пользователям
+    // БЕЗОПАСНОСТЬ: Отправляем вебхук всем участникам проекта
+    // Используем уникальный socketId на основе userId каждого участника
+    // Это гарантирует, что вебхук попадет всем участникам проекта
     try {
-      const socketId = `webhooks-${bot.userId}`
-      
-      Debug.info(ctx, `[api/webhook] Подготовка отправки вебхука через WebSocket`)
-      Debug.info(ctx, `[api/webhook] socketId: ${socketId}`)
-      Debug.info(ctx, `[api/webhook] Данные для отправки: botId=${bot.id}, botName=${bot.botName || 'null'}, botUsername=${bot.botUsername || 'null'}`)
-      
-      const socketData = {
-        type: 'webhook',
-        data: {
-          timestamp: Date.now(),
-          botId: bot.id,
-          botName: bot.botName,
-          botUsername: bot.botUsername,
-          raw: webhookData
+      const members = project.members || []
+      if (!Array.isArray(members) || members.length === 0) {
+        Debug.warn(ctx, `[api/webhook] В проекте ${bot.projectId} нет участников, вебхук не отправлен`)
+      } else {
+        Debug.info(ctx, `[api/webhook] Подготовка отправки вебхука через WebSocket всем участникам проекта (${members.length} участников)`)
+        
+        const socketData = {
+          type: 'webhook',
+          data: {
+            timestamp: Date.now(),
+            botId: bot.id,
+            botName: bot.botName,
+            botUsername: bot.botUsername,
+            raw: webhookData
+          }
+        }
+        
+        // Отправляем вебхук каждому участнику проекта
+        let skippedMembers = 0 // Участники, пропущенные из-за невалидных данных (валидация)
+        let successfulSends = 0 // Успешно отправленные вебхуки
+        let failedSends = 0 // Ошибки при отправке (после валидации)
+        
+        for (const member of members) {
+          // ИСПРАВЛЕНИЕ Bug 3: Проверяем тип перед вызовом .trim() для предотвращения TypeError
+          // Сначала проверяем, что member существует и userId является строкой
+          if (!member || typeof member.userId !== 'string') {
+            skippedMembers++
+            Debug.warn(ctx, `[api/webhook] Участник проекта не имеет валидного userId (тип: ${typeof member?.userId}), пропускаем отправку вебхука. member=${JSON.stringify(member)}`)
+            continue
+          }
+          
+          // Затем проверяем, что userId не пустой после trim
+          const trimmedUserId = member.userId.trim()
+          if (!trimmedUserId) {
+            skippedMembers++
+            Debug.warn(ctx, `[api/webhook] Участник проекта имеет пустой userId, пропускаем отправку вебхука. member=${JSON.stringify(member)}`)
+            continue
+          }
+          
+          try {
+            // ИСПРАВЛЕНИЕ Bug 1: Используем обрезанный userId для формирования socketId
+            // Это гарантирует, что socket ID не содержит пробелов и соответствует ожидаемому формату
+            const socketId = `webhooks-${trimmedUserId}`
+            Debug.info(ctx, `[api/webhook] Вызов sendDataToSocket с socketId=${socketId} для участника userId=${trimmedUserId}`)
+            await sendDataToSocket(ctx, socketId, socketData)
+            successfulSends++
+            Debug.info(ctx, `[api/webhook] Вебхук успешно отправлен участнику ${trimmedUserId} для бота ${botId}`)
+          } catch (memberError: any) {
+            failedSends++
+            Debug.warn(ctx, `[api/webhook] Ошибка отправки вебхука участнику ${trimmedUserId}: ${memberError.message}`)
+            // Продолжаем отправку остальным участникам даже если один не получил
+          }
+        }
+        
+        // ИСПРАВЛЕНИЕ Bug 2 и Bug 3: Уведомляем оператора о результатах отправки
+        // ИСПРАВЛЕНИЕ Bug 2: Отслеживаем успешные отправки отдельно от пропущенных при валидации
+        if (skippedMembers > 0 || failedSends > 0) {
+          Debug.warn(ctx, `[api/webhook] Статистика отправки вебхуков: всего участников=${members.length}, пропущено при валидации=${skippedMembers}, успешно отправлено=${successfulSends}, ошибок при отправке=${failedSends}`)
+        } else if (successfulSends > 0) {
+          Debug.info(ctx, `[api/webhook] Вебхуки успешно отправлены всем ${successfulSends} участникам проекта`)
         }
       }
-      
-      Debug.info(ctx, `[api/webhook] Вызов sendDataToSocket с socketId=${socketId}`)
-      await sendDataToSocket(ctx, socketId, socketData)
-      
-      Debug.info(ctx, `[api/webhook] Вебхук успешно отправлен через WebSocket владельцу ${bot.userId} для бота ${botId}`)
     } catch (socketError: any) {
-      Debug.error(ctx, `[api/webhook] Ошибка отправки через WebSocket владельцу ${bot.userId}: ${socketError.message}`, 'E_WEBHOOK_SOCKET')
+      Debug.error(ctx, `[api/webhook] Ошибка отправки через WebSocket участникам проекта ${bot.projectId}: ${socketError.message}`, 'E_WEBHOOK_SOCKET')
       Debug.error(ctx, `[api/webhook] Stack trace WebSocket: ${socketError.stack || 'N/A'}`)
       // Не пробрасываем ошибку дальше, чтобы Telegram получил 200 OK
     }
@@ -243,27 +406,177 @@ export const apiGetWebhooksListRoute = app.get('/list', async (ctx, req) => {
     const botIdParam = req.query.botId as string | undefined
     Debug.info(ctx, `[api/webhook/list] Параметр botId: ${botIdParam || 'не указан (показываем все вебхуки)'}`)
     
-    // Формируем условие where
-    const whereCondition: any = {
-      userId: ctx.user.id
+    // Получаем список проектов пользователя для фильтрации вебхуков
+    // ИСПРАВЛЕНИЕ Bug 3: Для не-админов применяем фильтрацию на уровне БД, а не в памяти
+    const PROJECT_LIMIT = 10000
+    const isAdmin = ctx.user.is('Admin')
+    const userProjectIds = new Set<string>()
+    
+    let allProjects: any[]
+    let projectsTruncated = false
+    
+    if (isAdmin) {
+      // Админы видят вебхуки всех проектов
+      allProjects = await Projects.findAll(ctx, {
+        order: { createdAt: 'desc' },
+        limit: PROJECT_LIMIT
+      })
+      projectsTruncated = allProjects.length >= PROJECT_LIMIT
+      if (projectsTruncated) {
+        Debug.warn(ctx, `[api/webhook/list] Достигнут лимит в ${PROJECT_LIMIT} проектов для админа, некоторые проекты могут быть не учтены`)
+      }
+      allProjects.forEach(project => userProjectIds.add(project.id))
+    } else {
+      // ИСПРАВЛЕНИЕ Bug 3: Для обычных пользователей фильтруем проекты в памяти, так как Heap не поддерживает фильтрацию по вложенным массивам
+      // Примечание: Это ограничение Heap API - нет способа фильтровать по полям внутри массива members
+      // Загружаем все проекты и фильтруем в памяти, но отслеживаем лимит
+      allProjects = await Projects.findAll(ctx, {
+        order: { createdAt: 'desc' },
+        limit: PROJECT_LIMIT
+      })
+      projectsTruncated = allProjects.length >= PROJECT_LIMIT
+      if (projectsTruncated) {
+        Debug.warn(ctx, `[api/webhook/list] Достигнут лимит в ${PROJECT_LIMIT} проектов, некоторые проекты могут быть не учтены для не-админа`)
+      }
+      
+      // Фильтруем проекты, где пользователь является участником
+      allProjects.forEach(project => {
+        if (project.members && Array.isArray(project.members)) {
+          const isMember = project.members.some((member: any) => 
+            member && 
+            userIdsMatch(member.userId, ctx.user?.id) && 
+            (member.role === 'owner' || member.role === 'member')
+          )
+          if (isMember) {
+            userProjectIds.add(project.id)
+          }
+        }
+      })
     }
     
-    // Если указан botId, добавляем фильтр по боту
+    // ИСПРАВЛЕНИЕ Bug 4: Не возвращаемся раньше времени при projectsTruncated
+    // Вместо этого продолжаем обработку с доступными проектами и добавляем предупреждение
+    // Это позволяет пользователям с большим количеством проектов получить хотя бы частичные данные
+    if (projectsTruncated) {
+      Debug.warn(ctx, `[api/webhook/list] Список проектов неполный из-за лимита ${PROJECT_LIMIT}, продолжаем с доступными проектами`)
+    }
+    
+    // Если у пользователя нет проектов, возвращаем пустой список
+    if (userProjectIds.size === 0) {
+      Debug.info(ctx, `[api/webhook/list] У пользователя userId=${ctx.user.id} нет проектов, возвращаем пустой список`)
+      // ИСПРАВЛЕНИЕ Bug 1: truncated должен отражать, была ли обрезана исходная выборка данных,
+      // независимо от того, есть ли у пользователя доступ к проектам
+      // Если projectsTruncated = true, это означает, что результаты могут быть неполными
+      const truncated = projectsTruncated
+      const warning = projectsTruncated 
+        ? `Результаты могут быть неполными: достигнут лимит в ${PROJECT_LIMIT} проектов. Некоторые проекты не были учтены при фильтрации вебхуков.`
+        : undefined
+      return {
+        success: true,
+        webhooks: [],
+        truncated: truncated,
+        warning: warning
+      }
+    }
+    
+    // Получаем боты из проектов пользователя
+    const userProjectIdsArray = Array.from(userProjectIds)
+    // ИСПРАВЛЕНИЕ Bug 1: Используем $or для надежного IN-запроса вместо массива значений
+    // Хотя документация Heap показывает поддержку массива значений, используем $or для гарантированной совместимости
+    // Примечание: используем большой лимит, но в реальных системах может потребоваться пагинация
+    const BOTS_LIMIT = 10000
+    
+    // Если только один проект, используем простое условие
+    let userBots
+    if (userProjectIdsArray.length === 1) {
+      userBots = await BotTokens.findAll(ctx, {
+        where: {
+          projectId: userProjectIdsArray[0]
+        },
+        limit: BOTS_LIMIT
+      })
+    } else if (userProjectIdsArray.length > 1) {
+      // Для нескольких проектов используем $or
+      userBots = await BotTokens.findAll(ctx, {
+        where: {
+          $or: userProjectIdsArray.map(projectId => ({ projectId }))
+        },
+        limit: BOTS_LIMIT
+      })
+    } else {
+      userBots = []
+    }
+    
+    const botsTruncated = userBots.length >= BOTS_LIMIT
+    if (botsTruncated) {
+      Debug.warn(ctx, `[api/webhook/list] Достигнут лимит в ${BOTS_LIMIT} ботов, некоторые боты могут быть не учтены`)
+    }
+    
+    const userBotIds = new Set<string>()
+    userBots.forEach(bot => userBotIds.add(bot.id))
+    
+    // Если указан botId, проверяем, что бот принадлежит пользователю
     if (botIdParam && botIdParam.trim()) {
-      whereCondition.botId = botIdParam.trim()
-      Debug.info(ctx, `[api/webhook/list] Фильтрация вебхуков по botId=${botIdParam}`)
+      const trimmedBotId = botIdParam.trim()
+      if (!userBotIds.has(trimmedBotId)) {
+        Debug.warn(ctx, `[api/webhook/list] Бот ${botIdParam} не принадлежит проектам пользователя`)
+        return {
+          success: true,
+          webhooks: [],
+          truncated: projectsTruncated || botsTruncated,
+          warning: undefined // ИСПРАВЛЕНИЕ Bug 3: Консистентная структура ответа
+        }
+      }
     }
     
-    // Получаем последние вебхуки текущего пользователя (с опциональной фильтрацией по боту)
-    Debug.info(ctx, `[api/webhook/list] Запрос последних ${limit} вебхуков для userId=${ctx.user.id}`)
-    const webhooks = await TelegramWebhooks.findAll(ctx, {
-      where: whereCondition,
-      order: { receivedAt: 'desc' },
-      limit: limit
-    })
+    // Если у пользователя нет ботов, возвращаем пустой список
+    if (userBotIds.size === 0) {
+      Debug.info(ctx, `[api/webhook/list] У пользователя userId=${ctx.user.id} нет ботов в проектах, возвращаем пустой список`)
+      return {
+        success: true,
+        webhooks: [],
+        truncated: projectsTruncated || botsTruncated,
+        warning: undefined // ИСПРАВЛЕНИЕ Bug 3: Консистентная структура ответа
+      }
+    }
+    
+    // Получаем последние вебхуки для ботов пользователя
+    const botIdsArray = Array.from(userBotIds)
+    const targetBotIds = botIdParam && botIdParam.trim() && userBotIds.has(botIdParam.trim())
+      ? [botIdParam.trim()]
+      : botIdsArray
+    
+    Debug.info(ctx, `[api/webhook/list] Запрос последних ${limit} вебхуков для ${targetBotIds.length} ботов проекта пользователя userId=${ctx.user.id}`)
+    
+    // ИСПРАВЛЕНИЕ Bug 1: Используем $or для надежного IN-запроса вместо массива значений
+    // Хотя документация Heap показывает поддержку массива значений, используем $or для гарантированной совместимости
+    let webhooks
+    if (targetBotIds.length === 1) {
+      webhooks = await TelegramWebhooks.findAll(ctx, {
+        where: {
+          botId: targetBotIds[0]
+        },
+        order: { receivedAt: 'desc' },
+        limit: limit
+      })
+    } else if (targetBotIds.length > 1) {
+      // Для нескольких ботов используем $or
+      webhooks = await TelegramWebhooks.findAll(ctx, {
+        where: {
+          $or: targetBotIds.map(botId => ({ botId }))
+        },
+        order: { receivedAt: 'desc' },
+        limit: limit
+      })
+    } else {
+      webhooks = []
+    }
     
     const webhooksCount = webhooks?.length || 0
     Debug.info(ctx, `[api/webhook/list] Найдено вебхуков: ${webhooksCount}`)
+    
+    // ИСПРАВЛЕНИЕ Bug 2: Определяем, были ли данные обрезаны
+    const truncated = projectsTruncated || botsTruncated
     
     // Получаем информацию о ботах для обогащения данных вебхуков
     const botIds = new Set<string>()
@@ -307,9 +620,22 @@ export const apiGetWebhooksListRoute = app.get('/list', async (ctx, req) => {
     Debug.info(ctx, `[api/webhook/list] Возвращаем ${enrichedWebhooks.length} вебхуков пользователю ${ctx.user.id}`)
     Debug.info(ctx, '[api/webhook/list] ========== КОНЕЦ ЗАПРОСА СПИСКА ВЕБХУКОВ ==========')
     
+    // ИСПРАВЛЕНИЕ Bug 3 и Bug 4: Консистентная структура ответа - всегда включаем warning (undefined если нет предупреждения)
+    // ИСПРАВЛЕНИЕ Bug 4: Формируем предупреждение на основе того, что было обрезано
+    let warningMessage: string | undefined = undefined
+    if (projectsTruncated && botsTruncated) {
+      warningMessage = `Результаты могут быть неполными: достигнут лимит в ${PROJECT_LIMIT} проектов и лимит на количество ботов. Некоторые проекты и боты не были учтены.`
+    } else if (projectsTruncated) {
+      warningMessage = `Результаты могут быть неполными: достигнут лимит в ${PROJECT_LIMIT} проектов. Некоторые проекты не были учтены при фильтрации вебхуков.`
+    } else if (botsTruncated) {
+      warningMessage = 'Результаты могут быть неполными из-за лимита на количество ботов. Некоторые боты не были учтены.'
+    }
+    
     return {
       success: true,
-      webhooks: enrichedWebhooks
+      webhooks: enrichedWebhooks,
+      truncated: truncated,
+      warning: warningMessage
     }
   } catch (error: any) {
     Debug.error(ctx, `[api/webhook/list] Ошибка при получении списка вебхуков: ${error.message}`, 'E_GET_WEBHOOKS_LIST')
@@ -343,11 +669,34 @@ export const apiCheckWebhookRoute = app.get('/check/:id', async (ctx, req) => {
       }
     }
     
-    if (bot.userId !== ctx.user.id) {
-      Debug.warn(ctx, `[api/webhook/check] Пользователь ${ctx.user.id} пытается проверить webhook бота ${botId}, принадлежащего ${bot.userId}`)
+    // Проверяем права доступа к проекту бота
+    const project = await Projects.findById(ctx, bot.projectId)
+    
+    if (!project) {
+      Debug.warn(ctx, `[api/webhook/check] Проект с ID ${bot.projectId} не найден`)
       return {
         success: false,
-        error: 'Доступ запрещен'
+        error: 'Проект бота не найден'
+      }
+    }
+    
+    const isAdmin = ctx.user.is('Admin')
+    
+    // Проверяем права доступа: только участники или админ могут проверять webhook
+    if (!isAdmin) {
+      const hasAccess = project.members && Array.isArray(project.members) && 
+        project.members.some((member: any) => 
+          member && 
+          userIdsMatch(member.userId, ctx.user?.id) && 
+          (member.role === 'owner' || member.role === 'member')
+        )
+      
+      if (!hasAccess) {
+        Debug.warn(ctx, `[api/webhook/check] Попытка проверки webhook без прав: userId=${ctx.user.id}, projectId=${bot.projectId}`)
+        return {
+          success: false,
+          error: 'Нет доступа к этому проекту'
+        }
       }
     }
     

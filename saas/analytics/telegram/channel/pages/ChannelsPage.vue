@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
 import Header from '../shared/Header.vue'
+import { apiGetChannelsListRoute } from '../api/channels'
 
 declare global {
   interface Window {
@@ -8,12 +9,16 @@ declare global {
   }
 }
 
+declare const ctx: any
+
 const props = defineProps<{
   projectTitle: string
+  projectId: string // Обязательный параметр projectId
   indexUrl: string
   profileUrl: string
   loginUrl: string
   isAuthenticated: boolean
+  projectsPageUrl?: string
 }>()
 
 const displayedTitle = ref('')
@@ -24,7 +29,75 @@ const showTitleUnderline = ref(false)
 const cursorPosition = ref<'title' | 'description' | 'final'>('title')
 const bootLoaderDone = ref(false)
 
+// Данные каналов
+const channels = ref<Array<{
+  id: string
+  chatId: string
+  chatType: string | null
+  chatTitle: string | null
+  chatUsername: string | null
+  firstSeenAt: Date
+  lastSeenAt: Date
+}>>([])
+
+const loading = ref(false)
+const error = ref<string | null>(null)
+
 let bootloaderCompleteHandler: (() => void) | null = null
+
+// Загрузка данных каналов
+const loadChannels = async () => {
+  loading.value = true
+  error.value = null
+  
+  try {
+    // Более строгая проверка с нормализацией
+    const projectId = props.projectId?.trim()
+    if (!projectId) {
+      const errorMsg = 'Для управления каналами необходимо выбрать проект.'
+      console.error('[ChannelsPage] projectId не найден в props')
+      error.value = errorMsg
+      loading.value = false
+      // Редирект на страницу проектов если доступна
+      if (props.projectsPageUrl) {
+        setTimeout(() => {
+          window.location.href = props.projectsPageUrl!
+        }, 2000) // Даём время увидеть сообщение об ошибке
+      }
+      return
+    }
+    
+    console.log('[ChannelsPage] Начало загрузки списка каналов для проекта:', projectId)
+    const result = await apiGetChannelsListRoute.query({ projectId: projectId }).run(ctx)
+    console.log('[ChannelsPage] Результат запроса:', result)
+    
+    if (result.success && result.channels) {
+      console.log(`[ChannelsPage] Получено каналов: ${result.channels.length}`)
+      channels.value = result.channels.map((channel: any) => ({
+        id: channel.id,
+        chatId: channel.chatId,
+        chatType: channel.chatType || null,
+        chatTitle: channel.chatTitle || null,
+        chatUsername: channel.chatUsername || null,
+        firstSeenAt: channel.firstSeenAt,
+        lastSeenAt: channel.lastSeenAt
+      }))
+      console.log('[ChannelsPage] Данные каналов успешно обработаны и установлены')
+    } else {
+      const errorMsg = result.error || 'Ошибка при получении списка каналов'
+      console.warn('[ChannelsPage] Ошибка в ответе API:', errorMsg)
+      error.value = errorMsg
+    }
+  } catch (e: any) {
+    const errorMsg = e.message || 'Ошибка при загрузке каналов'
+    console.error('[ChannelsPage] Исключение при загрузке каналов:', e)
+    console.error('[ChannelsPage] Stack trace:', e.stack)
+    error.value = errorMsg
+  } finally {
+    loading.value = false
+    console.log('[ChannelsPage] Загрузка завершена, loading установлен в false')
+  }
+}
 
 onMounted(() => {
   if (window.hideAppLoader) {
@@ -79,6 +152,8 @@ onMounted(() => {
         clearInterval(descInterval)
         cursorPosition.value = 'final'
         showContent.value = true
+        // Загружаем данные каналов
+        loadChannels()
       }
     }, 20)
   }
@@ -115,6 +190,10 @@ onUnmounted(() => {
           <h1 class="page-title" :class="{ 'show-underline': showTitleUnderline }">
             {{ displayedTitle }}<span v-if="showCursor && (cursorPosition === 'title' || cursorPosition === 'final')" class="typing-cursor">▮</span>
           </h1>
+          <div v-if="showContent" class="project-name-badge">
+            <i class="fas fa-folder"></i>
+            <span>{{ props.projectTitle }}</span>
+          </div>
           <p class="page-description">
             {{ displayedDescription }}<span v-if="showCursor && cursorPosition === 'description'" class="typing-cursor">▮</span>
           </p>
@@ -122,7 +201,58 @@ onUnmounted(() => {
 
         <!-- Content Section -->
         <section class="content-section" :class="{ 'content-visible': showContent }">
-          <!-- Контент будет добавлен позже -->
+          <div v-if="loading" class="empty-state" :class="{ 'content-visible': showContent }">
+            <i class="fas fa-spinner fa-spin empty-icon"></i>
+            <p class="empty-text">Загрузка каналов...</p>
+          </div>
+          
+          <div v-else-if="error" class="empty-state" :class="{ 'content-visible': showContent }">
+            <i class="fas fa-exclamation-triangle empty-icon"></i>
+            <p class="empty-text">Ошибка загрузки</p>
+            <p class="empty-subtext">{{ error }}</p>
+            <a 
+              v-if="props.projectsPageUrl && props.projectsPageUrl.trim()" 
+              :href="props.projectsPageUrl.trim()" 
+              class="btn btn-primary mt-4"
+            >
+              <i class="fas fa-folder-open"></i>
+              Перейти к проектам
+            </a>
+          </div>
+          
+          <div v-else-if="channels.length === 0" class="empty-state" :class="{ 'content-visible': showContent }">
+            <i class="fas fa-broadcast-tower empty-icon"></i>
+            <p class="empty-text">Нет каналов</p>
+            <p class="empty-subtext">Каналы появятся здесь после того, как бот начнёт получать вебхуки от Telegram</p>
+          </div>
+
+          <div v-else class="channels-list" :class="{ 'content-visible': showContent }">
+            <div 
+              v-for="(channel, index) in channels" 
+              :key="channel.id" 
+              class="channel-card"
+              :style="{ '--delay': Number(index) * 0.1 + 's' }"
+            >
+              <div class="channel-card-content">
+                <div class="channel-card-header">
+                  <div class="channel-card-icon">
+                    <i class="fas fa-broadcast-tower"></i>
+                  </div>
+                  <div class="channel-card-title-section">
+                    <h3 class="channel-card-title">{{ channel.chatTitle || 'Канал без названия' }}</h3>
+                    <div v-if="channel.chatUsername" class="channel-card-username">
+                      <span class="username-label">Username:</span>
+                      <span class="username-value">@{{ channel.chatUsername }}</span>
+                    </div>
+                    <div class="channel-card-id">
+                      <span class="id-label">Chat ID:</span>
+                      <span class="id-value">{{ channel.chatId }}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </section>
       </div>
     </main>
@@ -335,6 +465,29 @@ body {
   letter-spacing: 0.02em;
 }
 
+.project-name-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  margin-top: 1rem;
+  background: rgba(211, 35, 75, 0.1);
+  border: 1px solid rgba(211, 35, 75, 0.3);
+  color: var(--color-accent);
+  font-size: 0.875rem;
+  letter-spacing: 0.03em;
+  clip-path: polygon(
+    0 2px, 2px 2px, 2px 0,
+    calc(100% - 2px) 0, calc(100% - 2px) 2px, 100% 2px,
+    100% calc(100% - 2px), calc(100% - 2px) calc(100% - 2px), calc(100% - 2px) 100%,
+    2px 100%, 2px calc(100% - 2px), 0 calc(100% - 2px)
+  );
+}
+
+.project-name-badge i {
+  font-size: 0.75rem;
+}
+
 /* Content Section */
 .content-section {
   opacity: 0;
@@ -345,6 +498,187 @@ body {
 .content-section.content-visible {
   opacity: 1;
   transform: translateY(0);
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  text-align: center;
+  gap: 1rem;
+  min-height: 200px;
+}
+
+.empty-icon {
+  font-size: 4rem;
+  color: var(--color-text-tertiary);
+  opacity: 0.5;
+  margin-bottom: 1rem;
+}
+
+.empty-text {
+  font-size: 1.25rem;
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+
+.empty-subtext {
+  font-size: 0.9375rem;
+  color: var(--color-text-tertiary);
+  margin: 0;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-accent-hover) 100%);
+  border: 2px solid var(--color-accent);
+  color: white;
+  font-size: 0.9375rem;
+  font-weight: 400;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  text-decoration: none;
+  transition: var(--transition);
+  clip-path: polygon(
+    0 3px, 3px 3px, 3px 0,
+    calc(100% - 3px) 0, calc(100% - 3px) 3px, 100% 3px,
+    100% calc(100% - 3px), calc(100% - 3px) calc(100% - 3px), calc(100% - 3px) 100%,
+    3px 100%, 3px calc(100% - 3px), 0 calc(100% - 3px)
+  );
+}
+
+.btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 
+    0 4px 12px rgba(211, 35, 75, 0.3),
+    0 2px 6px rgba(211, 35, 75, 0.2);
+}
+
+.channels-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+  gap: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.channel-card {
+  display: block;
+  min-height: 150px;
+  transition: var(--transition);
+  position: relative;
+  opacity: 0;
+  animation: fade-in 0.4s ease-out forwards;
+  animation-delay: var(--delay, 0s);
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.channel-card-content {
+  background: linear-gradient(135deg, var(--color-bg-secondary) 0%, var(--color-bg-tertiary) 100%);
+  border: 2px solid var(--color-border);
+  padding: 2rem;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  transition: var(--transition);
+  clip-path: polygon(
+    0 4px, 4px 4px, 4px 0,
+    calc(100% - 4px) 0, calc(100% - 4px) 4px, 100% 4px,
+    100% calc(100% - 4px), calc(100% - 4px) calc(100% - 4px), calc(100% - 4px) 100%,
+    4px 100%, 4px calc(100% - 4px), 0 calc(100% - 4px)
+  );
+}
+
+.channel-card:hover .channel-card-content {
+  transform: translateY(-4px);
+  border-color: var(--color-border-light);
+  box-shadow: 
+    0 8px 16px rgba(0, 0, 0, 0.4),
+    0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.channel-card-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 1.25rem;
+  position: relative;
+}
+
+.channel-card-icon {
+  width: 3rem;
+  height: 3rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--color-accent-medium) 0%, var(--color-accent-light) 100%);
+  border: 2px solid rgba(211, 35, 75, 0.3);
+  color: var(--color-accent);
+  font-size: 1.25rem;
+  flex-shrink: 0;
+  clip-path: polygon(
+    0 3px, 3px 3px, 3px 0,
+    calc(100% - 3px) 0, calc(100% - 3px) 3px, 100% 3px,
+    100% calc(100% - 3px), calc(100% - 3px) calc(100% - 3px), calc(100% - 3px) 100%,
+    3px 100%, 3px calc(100% - 3px), 0 calc(100% - 3px)
+  );
+}
+
+.channel-card-title-section {
+  flex: 1;
+  min-width: 0;
+}
+
+.channel-card-title {
+  font-size: 1.125rem;
+  font-weight: 400;
+  color: var(--color-text);
+  margin: 0 0 1rem 0;
+  line-height: 1.4;
+  letter-spacing: 0.03em;
+}
+
+.channel-card-username,
+.channel-card-id {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.username-label,
+.id-label {
+  font-size: 0.8125rem;
+  color: var(--color-text-secondary);
+  letter-spacing: 0.02em;
+}
+
+.username-value {
+  font-size: 0.8125rem;
+  color: var(--color-accent);
+  font-family: 'Courier New', monospace;
+  letter-spacing: 0.05em;
+}
+
+.id-value {
+  font-size: 0.8125rem;
+  color: var(--color-text);
+  font-family: 'Courier New', monospace;
+  letter-spacing: 0.05em;
 }
 
 /* Footer */

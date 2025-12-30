@@ -15,10 +15,12 @@ declare global {
 
 const props = defineProps<{
   projectTitle: string
+  projectId: string // Обязательный параметр projectId
   indexUrl: string
   profileUrl: string
   loginUrl: string
   isAuthenticated: boolean
+  projectsPageUrl?: string
 }>()
 
 // Данные ботов из таблицы
@@ -27,7 +29,7 @@ const bots = ref<Array<{
   token: string
   botName: string | null
   botUsername: string | null
-  userId: string
+  projectId: string
   channelsCount?: number
   groupsCount?: number
   inviteLinksCount?: number
@@ -35,6 +37,7 @@ const bots = ref<Array<{
 
 const loading = ref(true)
 const error = ref<string | null>(null)
+const missingProjectId = ref(false)
 const showAddTokenModal = ref(false)
 const newToken = ref('')
 const bootLoaderDone = ref(false)
@@ -57,9 +60,30 @@ const loadBots = async () => {
   error.value = null
   
   try {
-    console.log('[BotsPage] Начало загрузки списка ботов')
-    // ✅ Используем .run() для вызова внутреннего API
-    const result = await apiGetBotsListRoute.run(ctx)
+    // Более строгая проверка с нормализацией (как в ChannelsPage.vue)
+    const projectId = props.projectId?.trim()
+    if (!projectId) {
+      const errorMsg = 'Для управления ботами необходимо выбрать проект.'
+      console.error('[BotsPage] projectId не найден в props')
+      error.value = errorMsg
+      missingProjectId.value = true
+      loading.value = false
+      // Редирект на страницу проектов если доступна
+      if (props.projectsPageUrl) {
+        setTimeout(() => {
+          window.location.href = props.projectsPageUrl!
+        }, 2000) // Даём время увидеть сообщение об ошибке
+      }
+      return
+    }
+    
+    missingProjectId.value = false
+    
+    console.log('[BotsPage] Начало загрузки списка ботов для проекта:', projectId)
+    // ИСПРАВЛЕНИЕ Bug 4: Используем .query() для передачи query параметров в GET запрос
+    // Для GET запросов нужно использовать .query() перед .run(), а не передавать параметры во второй аргумент .run()
+    // Второй аргумент .run() используется только для POST запросов (body)
+    const result = await apiGetBotsListRoute.query({ projectId: projectId }).run(ctx)
     console.log('[BotsPage] Результат запроса:', result)
     
     if (result.success && result.bots) {
@@ -70,7 +94,7 @@ const loadBots = async () => {
         token: bot.token,
         botName: bot.botName || null,
         botUsername: bot.botUsername || null,
-        userId: bot.userId,
+        projectId: bot.projectId,
         // Количество каналов из API
         channelsCount: bot.channelsCount || 0,
         // Временные значения для статистики (пока не реализовано)
@@ -194,6 +218,14 @@ const addToken = async () => {
     return
   }
   
+  // Явная проверка projectId вместо вызова getProjectId()
+  const projectId = props.projectId?.trim()
+  if (!projectId) {
+    tokenError.value = 'Для добавления бота необходимо выбрать проект.'
+    console.error('[BotsPage] addToken: projectId не найден в props')
+    return
+  }
+  
   addingToken.value = true
   tokenError.value = null
   
@@ -217,7 +249,8 @@ const addToken = async () => {
     const saveResult = await apiAddBotRoute.run(ctx, {
       token: newToken.value.trim(),
       botName: validationResult.botInfo.name,
-      botUsername: validationResult.botInfo.username
+      botUsername: validationResult.botInfo.username,
+      projectId: projectId
     })
     
     console.log('[BotsPage] addToken: Результат сохранения:', saveResult)
@@ -334,6 +367,10 @@ const viewWebhooks = (botId: string) => {
           <h1 class="page-title" :class="{ 'show-underline': showTitleUnderline }">
             {{ displayedTitle }}<span v-if="showCursor && (cursorPosition === 'title' || cursorPosition === 'final')" class="typing-cursor">▮</span>
           </h1>
+          <div v-if="showContent" class="project-name-badge">
+            <i class="fas fa-folder"></i>
+            <span>{{ props.projectTitle }}</span>
+          </div>
           <p class="page-description">
             {{ displayedDescription }}<span v-if="showCursor && cursorPosition === 'description'" class="typing-cursor">▮</span>
           </p>
@@ -358,6 +395,15 @@ const viewWebhooks = (botId: string) => {
             <i class="fas fa-exclamation-triangle empty-icon"></i>
             <p class="empty-text">Ошибка загрузки</p>
             <p class="empty-subtext">{{ error }}</p>
+            <!-- ИСПРАВЛЕНИЕ Bug 4: Проверяем наличие projectsPageUrl перед рендерингом ссылки -->
+            <a 
+              v-if="missingProjectId && props.projectsPageUrl && props.projectsPageUrl.trim()" 
+              :href="props.projectsPageUrl.trim()" 
+              class="btn btn-primary mt-4"
+            >
+              <i class="fas fa-folder-open"></i>
+              Перейти к проектам
+            </a>
           </div>
           
           <div v-else-if="bots.length === 0" class="empty-state" :class="{ 'content-visible': showContent }">
@@ -371,7 +417,7 @@ const viewWebhooks = (botId: string) => {
               v-for="(bot, index) in bots" 
               :key="bot.id" 
               class="bot-card"
-              :style="{ '--delay': index * 0.1 + 's' }"
+              :style="{ '--delay': Number(index) * 0.1 + 's' }"
             >
               <div class="bot-card-content">
                 <!-- CRT scanlines эффект -->
@@ -726,6 +772,29 @@ body {
   letter-spacing: 0.05em;
   text-shadow: 0 0 6px rgba(160, 160, 160, 0.2);
   /* Резервируем место заранее, чтобы контент не сдвигался */
+}
+
+.project-name-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  margin-top: 1rem;
+  background: rgba(211, 35, 75, 0.1);
+  border: 1px solid rgba(211, 35, 75, 0.3);
+  color: var(--color-accent);
+  font-size: 0.875rem;
+  letter-spacing: 0.03em;
+  clip-path: polygon(
+    0 2px, 2px 2px, 2px 0,
+    calc(100% - 2px) 0, calc(100% - 2px) 2px, 100% 2px,
+    100% calc(100% - 2px), calc(100% - 2px) calc(100% - 2px), calc(100% - 2px) 100%,
+    2px 100%, 2px calc(100% - 2px), 0 calc(100% - 2px)
+  );
+}
+
+.project-name-badge i {
+  font-size: 0.75rem;
 }
 
 /* Actions Section */

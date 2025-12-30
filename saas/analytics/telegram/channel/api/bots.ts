@@ -3,14 +3,16 @@
 import { requireRealUser } from '@app/auth'
 import { BotTokens } from '../tables/bot-tokens.table'
 import { TelegramChats } from '../tables/chats.table'
+import { Projects } from '../tables/projects.table'
 import { Debug } from '../shared/debug'
 import { applyDebugLevel } from '../lib/logging'
 import { request } from '@app/request'
 import { apiWebhookRoute } from './webhook'
+import { userIdsMatch } from '../shared/user-utils'
 
 /**
  * GET /api/bots/list
- * Получение списка ботов текущего пользователя
+ * Получение списка ботов проекта
  */
 export const apiGetBotsListRoute = app.get('/list', async (ctx, req) => {
   try {
@@ -22,11 +24,55 @@ export const apiGetBotsListRoute = app.get('/list', async (ctx, req) => {
     requireRealUser(ctx)
     Debug.info(ctx, `[api/bots/list] Пользователь авторизован: userId=${ctx.user.id}`)
     
-    // Получаем ботов текущего пользователя
-    Debug.info(ctx, `[api/bots/list] Запрос списка ботов для userId=${ctx.user.id}`)
+    // Получаем projectId из query параметров
+    const projectId = req.query.projectId as string | undefined
+    
+    if (!projectId || !projectId.trim()) {
+      Debug.warn(ctx, '[api/bots/list] projectId не предоставлен')
+      return {
+        success: false,
+        error: 'projectId обязателен'
+      }
+    }
+    
+    const trimmedProjectId = projectId.trim()
+    Debug.info(ctx, `[api/bots/list] Запрос списка ботов для проекта: projectId=${trimmedProjectId}`)
+    
+    // Проверяем права доступа к проекту
+    const project = await Projects.findById(ctx, trimmedProjectId)
+    
+    if (!project) {
+      Debug.warn(ctx, `[api/bots/list] Проект с ID ${trimmedProjectId} не найден`)
+      return {
+        success: false,
+        error: 'Проект не найден'
+      }
+    }
+    
+    const isAdmin = ctx.user.is('Admin')
+    
+    // Проверяем права доступа: только участники или админ могут видеть ботов проекта
+    if (!isAdmin) {
+      const hasAccess = project.members && Array.isArray(project.members) && 
+        project.members.some((member: any) => 
+          member && 
+          userIdsMatch(member.userId, ctx.user?.id) && 
+          (member.role === 'owner' || member.role === 'member')
+        )
+      
+      if (!hasAccess) {
+        Debug.warn(ctx, `[api/bots/list] Попытка доступа к ботам проекта без прав: userId=${ctx.user.id}, projectId=${trimmedProjectId}`)
+        return {
+          success: false,
+          error: 'Нет доступа к этому проекту'
+        }
+      }
+    }
+    
+    // Получаем ботов проекта
     const bots = await BotTokens.findAll(ctx, {
       where: {
-        userId: ctx.user.id
+        projectId: trimmedProjectId
       },
       order: { createdAt: 'desc' },
       limit: 100
@@ -36,7 +82,7 @@ export const apiGetBotsListRoute = app.get('/list', async (ctx, req) => {
     Debug.info(ctx, `[api/bots/list] Найдено ботов: ${botsCount}`)
     
     if (botsCount === 0) {
-      Debug.warn(ctx, `[api/bots/list] У пользователя userId=${ctx.user.id} нет добавленных ботов`)
+      Debug.warn(ctx, `[api/bots/list] В проекте projectId=${trimmedProjectId} нет добавленных ботов`)
     }
     
     // Для каждого бота подсчитываем количество каналов
@@ -179,7 +225,7 @@ export const apiAddBotRoute = app.post('/add', async (ctx, req) => {
     requireRealUser(ctx)
     Debug.info(ctx, `[api/bots/add] Пользователь авторизован: userId=${ctx.user.id}`)
     
-    const { token, botName, botUsername } = req.body
+    const { token, botName, botUsername, projectId } = req.body
     
     if (!token || !token.trim()) {
       Debug.warn(ctx, '[api/bots/add] Токен не предоставлен')
@@ -189,30 +235,70 @@ export const apiAddBotRoute = app.post('/add', async (ctx, req) => {
       }
     }
     
-    const trimmedToken = token.trim()
+    if (!projectId || !projectId.trim()) {
+      Debug.warn(ctx, '[api/bots/add] projectId не предоставлен')
+      return {
+        success: false,
+        error: 'projectId обязателен'
+      }
+    }
     
-    // Проверяем, не существует ли уже такой токен у пользователя
-    Debug.info(ctx, `[api/bots/add] Проверка на дубликаты токена для userId=${ctx.user.id}`)
+    const trimmedToken = token.trim()
+    const trimmedProjectId = projectId.trim()
+    
+    // Проверяем права доступа к проекту
+    const project = await Projects.findById(ctx, trimmedProjectId)
+    
+    if (!project) {
+      Debug.warn(ctx, `[api/bots/add] Проект с ID ${trimmedProjectId} не найден`)
+      return {
+        success: false,
+        error: 'Проект не найден'
+      }
+    }
+    
+    const isAdmin = ctx.user.is('Admin')
+    
+    // Проверяем права доступа: только участники или админ могут добавлять ботов
+    if (!isAdmin) {
+      const hasAccess = project.members && Array.isArray(project.members) && 
+        project.members.some((member: any) => 
+          member && 
+          userIdsMatch(member.userId, ctx.user?.id) && 
+          (member.role === 'owner' || member.role === 'member')
+        )
+      
+      if (!hasAccess) {
+        Debug.warn(ctx, `[api/bots/add] Попытка добавления бота без прав: userId=${ctx.user.id}, projectId=${trimmedProjectId}`)
+        return {
+          success: false,
+          error: 'Нет доступа к этому проекту'
+        }
+      }
+    }
+    
+    // Проверяем, не существует ли уже такой токен в проекте
+    Debug.info(ctx, `[api/bots/add] Проверка на дубликаты токена для проекта projectId=${trimmedProjectId}`)
     const existingBot = await BotTokens.findOneBy(ctx, {
-      userId: ctx.user.id,
+      projectId: trimmedProjectId,
       token: trimmedToken
     })
     
     if (existingBot) {
-      Debug.warn(ctx, `[api/bots/add] Токен уже существует у пользователя userId=${ctx.user.id}`)
+      Debug.warn(ctx, `[api/bots/add] Токен уже существует в проекте projectId=${trimmedProjectId}`)
       return {
         success: false,
-        error: 'Этот токен уже добавлен'
+        error: 'Этот токен уже добавлен в этот проект'
       }
     }
     
     // Создаём запись в таблице
-    Debug.info(ctx, `[api/bots/add] Создание записи в таблице: token=${trimmedToken.substring(0, 10)}..., botName=${botName || 'null'}, botUsername=${botUsername || 'null'}`)
+    Debug.info(ctx, `[api/bots/add] Создание записи в таблице: token=${trimmedToken.substring(0, 10)}..., botName=${botName || 'null'}, botUsername=${botUsername || 'null'}, projectId=${trimmedProjectId}`)
     const bot = await BotTokens.create(ctx, {
       token: trimmedToken,
       botName: botName || null,
       botUsername: botUsername || null,
-      userId: ctx.user.id
+      projectId: trimmedProjectId
     })
     
     Debug.info(ctx, `[api/bots/add] Бот успешно добавлен с ID: ${bot.id}`)
@@ -303,7 +389,7 @@ export const apiAddBotRoute = app.post('/add', async (ctx, req) => {
         token: bot.token,
         botName: bot.botName,
         botUsername: bot.botUsername,
-        userId: bot.userId
+        projectId: bot.projectId
       }
     }
   } catch (error: any) {
@@ -341,7 +427,7 @@ export const apiDeleteBotRoute = app.post('/delete', async (ctx, req) => {
     const trimmedBotId = botId.trim()
     Debug.info(ctx, `[api/bots/delete] Попытка удаления бота с ID: ${trimmedBotId}`)
     
-    // Проверяем, существует ли бот и принадлежит ли он текущему пользователю
+    // Проверяем, существует ли бот
     const bot = await BotTokens.findById(ctx, trimmedBotId)
     
     if (!bot) {
@@ -352,12 +438,34 @@ export const apiDeleteBotRoute = app.post('/delete', async (ctx, req) => {
       }
     }
     
-    // Проверяем, что бот принадлежит текущему пользователю
-    if (bot.userId !== ctx.user.id) {
-      Debug.warn(ctx, `[api/bots/delete] Попытка удаления чужого бота: bot.userId=${bot.userId}, currentUserId=${ctx.user.id}`)
+    // Проверяем права доступа к проекту бота
+    const project = await Projects.findById(ctx, bot.projectId)
+    
+    if (!project) {
+      Debug.warn(ctx, `[api/bots/delete] Проект с ID ${bot.projectId} не найден`)
       return {
         success: false,
-        error: 'Нет доступа к этому боту'
+        error: 'Проект бота не найден'
+      }
+    }
+    
+    const isAdmin = ctx.user.is('Admin')
+    
+    // Проверяем права доступа: только участники или админ могут удалять ботов
+    if (!isAdmin) {
+      const hasAccess = project.members && Array.isArray(project.members) && 
+        project.members.some((member: any) => 
+          member && 
+          userIdsMatch(member.userId, ctx.user?.id) && 
+          (member.role === 'owner' || member.role === 'member')
+        )
+      
+      if (!hasAccess) {
+        Debug.warn(ctx, `[api/bots/delete] Попытка удаления бота без прав: userId=${ctx.user.id}, projectId=${bot.projectId}`)
+        return {
+          success: false,
+          error: 'Нет доступа к этому проекту'
+        }
       }
     }
     

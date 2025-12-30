@@ -13,11 +13,12 @@ const props = defineProps<{
   projectTitle: string
   indexUrl: string
   analyticsUrl: string
-  channelsUrl: string
-  botsUrl: string
+  channelsUrl?: string // Опциональный, так как требует projectId
+  botsUrl?: string // Опциональный, так как требует projectId
   profileUrl: string
   loginUrl: string
   isAuthenticated: boolean
+  projectsPageUrl?: string
 }>()
 
 const displayedTitle = ref('')
@@ -134,9 +135,7 @@ const triggerGlitch = () => {
   }
 }
 
-const handleCardClick = () => {
-  triggerGlitch()
-}
+// ИСПРАВЛЕНИЕ Bug 1: Удалён handleCardClick, так как теперь используются прямые ссылки на страницу проектов
 </script>
 
 <template>
@@ -167,14 +166,14 @@ const handleCardClick = () => {
         <!-- Navigation Cards -->
         <section class="cards-section" :class="{ 'cards-visible': showCards }">
           <div class="cards-grid">
-            <!-- Analytics Card -->
-            <!-- ВАЖНО: Переход отключен на время разработки - такой страницы ещё нет -->
-            <div class="nav-card nav-card-analytics">
-              <div class="nav-card-content" @click="handleCardClick">
+            <!-- Projects Card -->
+            <!-- ИСПРАВЛЕНИЕ Bug 5: Используем props.projectsPageUrl вместо хардкода -->
+            <a :href="props.projectsPageUrl || '/projects'" class="nav-card nav-card-analytics">
+              <div class="nav-card-content">
                 <div class="nav-card-icon nav-card-icon-analytics">
                   <i class="fas fa-chart-line"></i>
                 </div>
-                <h2 class="nav-card-title">Управлять аналитикой</h2>
+                <h2 class="nav-card-title">Управлять проектами</h2>
                 <p class="nav-card-description">
                   Просматривайте статистику переходов, анализируйте источники трафика и создавайте отчёты
                 </p>
@@ -182,10 +181,10 @@ const handleCardClick = () => {
                   <i class="fas fa-arrow-right"></i>
                 </div>
               </div>
-            </div>
+            </a>
 
             <!-- Channels Card -->
-            <a :href="props.channelsUrl" class="nav-card nav-card-channels">
+            <a v-if="props.channelsUrl" :href="props.channelsUrl" class="nav-card nav-card-channels">
               <div class="nav-card-content">
                 <div class="nav-card-icon nav-card-icon-channels">
                   <i class="fas fa-broadcast-tower"></i>
@@ -199,9 +198,23 @@ const handleCardClick = () => {
                 </div>
               </div>
             </a>
+            <div v-else class="nav-card nav-card-channels" @click="triggerGlitch">
+              <div class="nav-card-content">
+                <div class="nav-card-icon nav-card-icon-channels">
+                  <i class="fas fa-broadcast-tower"></i>
+                </div>
+                <h2 class="nav-card-title">Управлять каналами</h2>
+                <p class="nav-card-description">
+                  Настройте отслеживание переходов для ваших Telegram-каналов и создавайте отслеживаемые ссылки
+                </p>
+                <div class="nav-card-arrow">
+                  <i class="fas fa-arrow-right"></i>
+                </div>
+              </div>
+            </div>
 
             <!-- Bots Card -->
-            <a :href="props.botsUrl" class="nav-card nav-card-bots">
+            <a v-if="props.botsUrl" :href="props.botsUrl" class="nav-card nav-card-bots">
               <div class="nav-card-content">
                 <div class="nav-card-icon nav-card-icon-bots">
                   <i class="fas fa-robot"></i>
@@ -215,6 +228,20 @@ const handleCardClick = () => {
                 </div>
               </div>
             </a>
+            <div v-else class="nav-card nav-card-bots" @click="triggerGlitch">
+              <div class="nav-card-content">
+                <div class="nav-card-icon nav-card-icon-bots">
+                  <i class="fas fa-robot"></i>
+                </div>
+                <h2 class="nav-card-title">Управлять ботами</h2>
+                <p class="nav-card-description">
+                  Настройте Telegram-ботов для автоматизации работы с аналитикой и уведомлениями
+                </p>
+                <div class="nav-card-arrow">
+                  <i class="fas fa-arrow-right"></i>
+                </div>
+              </div>
+            </div>
           </div>
         </section>
       </div>
@@ -450,10 +477,6 @@ body {
     filter: drop-shadow(2px 0 0 rgba(255, 0, 255, 0.9)) drop-shadow(-2px 0 0 rgba(0, 255, 255, 0.9));
     box-shadow: none;
   }
-}
-
-.hero-icon-wrapper.hero-icon-visible {
-  /* Элемент виден, когда развёртка дошла до него */
 }
 
 .hero-icon {
