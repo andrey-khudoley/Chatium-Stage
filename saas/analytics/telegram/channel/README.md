@@ -71,7 +71,7 @@ channel/
 | `index.tsx` | `/` | Главная страница (требует авторизации) |
 | `index.tsx` | `/analytics` | Страница аналитики (требует авторизации, в разработке) |
 | `index.tsx` | `/projects` | Страница управления проектами (требует авторизации) |
-| `index.tsx` | `/projects/:id` | Детальная страница проекта (требует авторизации) |
+| `index.tsx` | `/projects/:id` | Детальная страница проекта с вкладками: Информация, Боты, Каналы, Ссылки, Участники, Заявки (требует авторизации) |
 | `index.tsx` | `/channels` | Страница управления каналами (требует авторизации, в разработке) |
 | `index.tsx` | `/bots` | Страница управления ботами (требует авторизации) |
 | `login.tsx` | `/login` | Страница входа |
@@ -249,7 +249,7 @@ channel/
 Процесс добавления нового токена Telegram бота состоит из следующих этапов:
 
 1. **Валидация токена** (`POST /api/bots/validate-token`):
-   - Пользователь вводит токен в модальном окне на странице управления ботами
+   - Пользователь вводит токен в модальном окне на странице проекта (вкладка "Боты") или на странице управления ботами
    - Токен отправляется на сервер для валидации через Telegram Bot API
    - Сервер делает запрос к `https://api.telegram.org/bot{token}/getMe`
    - Проверяется корректность токена и получение информации о боте (id, username, first_name)
@@ -277,9 +277,9 @@ channel/
 
 ```typescript
 // 1. Валидация токена
-const validationResult = await apiValidateTokenRoute.run(ctx, {
+const validationResult = await apiValidateTokenRoute.body({
   token: '1234567890:ABCdefGHIjklMNOpqrsTUVwxyz'
-})
+}).run(ctx)
 
 if (!validationResult.success) {
   // Обработка ошибки валидации
@@ -287,11 +287,12 @@ if (!validationResult.success) {
 }
 
 // 2. Сохранение токена
-const saveResult = await apiAddBotRoute.run(ctx, {
+const saveResult = await apiAddBotRoute.body({
   token: '1234567890:ABCdefGHIjklMNOpqrsTUVwxyz',
   botName: validationResult.botInfo.name,
-  botUsername: validationResult.botInfo.username
-})
+  botUsername: validationResult.botInfo.username,
+  projectId: 'project_id_12345'
+}).run(ctx)
 
 if (!saveResult.success) {
   // Обработка ошибки сохранения
@@ -329,9 +330,9 @@ await loadBots()
 
 ```typescript
 // Удаление бота
-const deleteResult = await apiDeleteBotRoute.run(ctx, {
+const deleteResult = await apiDeleteBotRoute.body({
   botId: 'bot_id_12345'
-})
+}).run(ctx)
 
 if (!deleteResult.success) {
   // Обработка ошибки удаления
@@ -374,7 +375,7 @@ await loadBots()
 
 **Пример использования:**
 ```typescript
-const result = await apiGetBotsListRoute.run(ctx)
+const result = await apiGetBotsListRoute.query({ projectId: 'project_id_12345' }).run(ctx)
 
 if (result.success && result.bots) {
   for (const bot of result.bots) {
@@ -443,9 +444,9 @@ if (result.success && result.bots) {
 
 **Использование**:
 ```typescript
-const result = await apiReregisterWebhookRoute.run(ctx, {
+const result = await apiReregisterWebhookRoute.body({
   botId: 'bot_id_12345'
-})
+}).run(ctx)
 
 if (result.success) {
   console.log('Webhook успешно перерегистрирован')
@@ -530,10 +531,10 @@ if (result.success) {
 
 #### Получение списка вебхуков:
 ```typescript
-const result = await apiGetWebhooksListRoute.run(ctx, {
-  limit: 30,
+const result = await apiGetWebhooksListRoute.query({
+  limit: '30',
   botId: 'bot_id_12345' // опционально
-})
+}).run(ctx)
 
 if (result.success) {
   console.log(`Получено вебхуков: ${result.webhooks.length}`)
@@ -542,9 +543,7 @@ if (result.success) {
 
 #### Проверка webhook:
 ```typescript
-const checkResult = await apiCheckWebhookRoute.run(ctx, {
-  id: 'bot_id_12345'
-})
+const checkResult = await apiCheckWebhookRoute({ id: 'bot_id_12345' }).run(ctx)
 
 if (checkResult.success) {
   console.log(`Webhook установлен: ${checkResult.isCorrect}`)
@@ -555,9 +554,9 @@ if (checkResult.success) {
 
 #### Перерегистрация webhook:
 ```typescript
-const reregisterResult = await apiReregisterWebhookRoute.run(ctx, {
+const reregisterResult = await apiReregisterWebhookRoute.body({
   botId: 'bot_id_12345'
-})
+}).run(ctx)
 
 if (reregisterResult.success) {
   console.log('Webhook успешно перерегистрирован с правильными параметрами')
@@ -1075,6 +1074,39 @@ async function runApiTest(ctx: any, testName: string) {
 3. Тест автоматически появится на странице `/tests` и в `/tests/ai`
 
 ## История изменений
+
+### Рефакторинг страницы детальной информации о проекте
+
+- **Интегрировано управление ботами и каналами на страницу проекта**:
+  - Убраны ссылки на отдельные страницы управления ботами и каналами
+  - Добавлена вкладка "Боты" с табличным отображением списка ботов проекта:
+    - Отображение названия, username, маскированного токена и количества каналов
+    - Кнопка "Добавить бота" для открытия модального окна
+    - Кнопка "Обновить" для ручного обновления списка
+    - Состояния загрузки, ошибок и пустого списка
+  - Добавлена вкладка "Каналы" с табличным отображением списка каналов проекта:
+    - Отображение названия, username, Chat ID и последней активности
+    - Кнопка "Обновить" для ручного обновления списка
+    - Состояния загрузки, ошибок и пустого списка
+  - Добавлена новая вкладка "Ссылки" с фильтром по каналам:
+    - Выпадающий список для выбора канала (или "Все каналы")
+    - Заглушка для будущего функционала создания отслеживаемых ссылок
+  - Реализовано модальное окно для добавления бота:
+    - Поле ввода токена с валидацией
+    - Подсказка со ссылкой на @BotFather
+    - Обработка ошибок валидации и сохранения
+    - Автоматическое обновление списка после успешного добавления
+    - Закрытие по клавише Escape (с защитой от закрытия во время добавления)
+  - Обновлена логика загрузки данных:
+    - Данные загружаются только при переключении на соответствующие вкладки
+    - Оптимизирована загрузка: данные не перезагружаются, если уже загружены
+    - Автоматическая загрузка данных при открытии страницы с параметром `target`
+  - Исправлены баги:
+    - Исправлен синтаксис вызова POST-роутов: используется `.body({...}).run(ctx)` вместо `.run(ctx, {...})`
+    - Добавлена проверка `!addingToken.value` в обработчик Escape для предотвращения закрытия модального окна во время добавления токена
+  - Обновлена навигация:
+    - Параметр `target=links` теперь открывает вкладку "Ссылки" вместо "Информация"
+    - Все вкладки используют функцию `handleTabChange()` для корректной загрузки данных
 
 ### Исправление дизайна страницы проекта
 
