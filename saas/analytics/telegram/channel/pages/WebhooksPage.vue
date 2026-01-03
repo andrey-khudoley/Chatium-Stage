@@ -3,6 +3,7 @@ import { onMounted, onBeforeUnmount, ref } from 'vue'
 import Header from '../shared/Header.vue'
 import { getOrCreateBrowserSocketClient } from '@app/socket'
 import { apiGetWebhooksListRoute } from '../api/webhook'
+import { extractChatFromUpdate } from '../lib/extract-chat'
 
 declare const ctx: any
 
@@ -21,6 +22,7 @@ const props = defineProps<{
   isAuthenticated: boolean
   encodedSocketId: string
   botId?: string | null  // Опциональный фильтр по botId
+  chatId?: string | null  // Опциональный фильтр по chatId
 }>()
 
 const displayedTitle = ref('')
@@ -50,10 +52,25 @@ let socketSubscription: any = null
 const loadRecentWebhooks = async () => {
   loadingWebhooks.value = true
   try {
-    console.log('[WebhooksPage] Загрузка последних вебхуков из таблицы', props.botId ? `для бота ${props.botId}` : 'для всех ботов')
-    // Если указан botId, передаем его через query параметры
-    const result = props.botId 
-      ? await apiGetWebhooksListRoute.query({ botId: props.botId }).run(ctx)
+    const filterDesc = props.chatId 
+      ? `для канала ${props.chatId}${props.botId ? ` (бот ${props.botId})` : ''}`
+      : props.botId 
+        ? `для бота ${props.botId}`
+        : 'для всех ботов'
+    console.log('[WebhooksPage] Загрузка последних вебхуков из таблицы', filterDesc)
+    
+    // Формируем query параметры
+    const queryParams: any = {}
+    if (props.botId) {
+      queryParams.botId = props.botId
+    }
+    if (props.chatId) {
+      queryParams.chatId = props.chatId
+    }
+    
+    // Выполняем запрос с параметрами
+    const result = Object.keys(queryParams).length > 0
+      ? await apiGetWebhooksListRoute.query(queryParams).run(ctx)
       : await apiGetWebhooksListRoute.run(ctx)
     
     if (result.success && result.webhooks) {
@@ -166,6 +183,25 @@ onMounted(async () => {
       
       socketSubscription.listen((data: any) => {
         if (data.type === 'webhook') {
+          // Фильтруем по botId, если указан
+          if (props.botId && data.data.botId !== props.botId) {
+            return
+          }
+          
+          // Фильтруем по chatId, если указан
+          if (props.chatId) {
+            try {
+              const chatInfo = extractChatFromUpdate(data.data.raw)
+              if (!chatInfo || !chatInfo.id || String(chatInfo.id) !== props.chatId) {
+                return // Пропускаем вебхук, если chatId не совпадает
+              }
+            } catch (error: any) {
+              console.warn('[WebhooksPage] Ошибка фильтрации по chatId:', error)
+              return
+            }
+          }
+          
+          // Добавляем вебхук в список, если он прошел все фильтры
           const existingIndex = webhooks.value.findIndex(
             w => w.timestamp === data.data.timestamp && w.botId === data.data.botId
           )
@@ -1028,11 +1064,12 @@ body {
   color: inherit;
   transition: var(--transition);
   position: relative;
-  perspective: 1000px;
   z-index: 10;
   cursor: pointer;
   overflow: visible;
   padding-top: 4px;
+  padding-bottom: 0;
+  margin-bottom: 0;
 }
 
 .webhook-content-wrapper {
@@ -1133,17 +1170,6 @@ body {
 }
 
 .webhook-item:hover .webhook-content-wrapper {
-  transform: translateY(-4px) rotateX(0.8deg) rotateY(-0.4deg);
-  border-color: var(--color-border-light);
-  box-shadow: 
-    0 8px 16px rgba(0, 0, 0, 0.4),
-    0 4px 8px rgba(0, 0, 0, 0.3),
-    0 2px 4px rgba(0, 0, 0, 0.2),
-    inset 0 1px 0 rgba(255, 255, 255, 0.05);
-  animation: webhook-glitch 4s ease-in-out infinite;
-}
-
-.webhook-item:hover .webhook-content-wrapper {
   border-color: rgba(211, 35, 75, 0.5);
   box-shadow: 
     0 8px 20px rgba(211, 35, 75, 0.15),
@@ -1151,6 +1177,7 @@ body {
     0 2px 4px rgba(0, 0, 0, 0.2),
     inset 0 1px 0 rgba(255, 255, 255, 0.05),
     0 0 30px rgba(211, 35, 75, 0.1);
+  animation: webhook-glitch 4s ease-in-out infinite;
 }
 
 /* RGB-разделение и искривление для вебхуков при hover */

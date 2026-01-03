@@ -14,7 +14,6 @@ const props = defineProps<{
   indexUrl: string
   analyticsUrl: string
   channelsUrl?: string // Опциональный, так как требует projectId
-  botsUrl?: string // Опциональный, так как требует projectId
   profileUrl: string
   loginUrl: string
   isAuthenticated: boolean
@@ -219,7 +218,7 @@ const getProjectsUrlWithTarget = (target: string): string => {
             </div>
 
             <!-- Bots Card -->
-            <a v-if="props.projectsPageUrl || props.botsUrl" :href="props.projectsPageUrl ? getProjectsUrlWithTarget('bots') : props.botsUrl" class="nav-card nav-card-bots">
+            <a v-if="props.projectsPageUrl" :href="getProjectsUrlWithTarget('bots')" class="nav-card nav-card-bots">
               <div class="nav-card-content">
                 <div class="nav-card-icon nav-card-icon-bots">
                   <i class="fas fa-robot"></i>

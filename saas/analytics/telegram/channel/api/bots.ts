@@ -9,6 +9,7 @@ import { applyDebugLevel } from '../lib/logging'
 import { request } from '@app/request'
 import { apiWebhookRoute } from './webhook'
 import { userIdsMatch } from '../shared/user-utils'
+import { runWithExclusiveLock } from '@app/sync'
 
 /**
  * Функция для регистрации webhook в Telegram с правильными параметрами
@@ -32,10 +33,21 @@ async function registerWebhook(ctx: any, bot: any, botIdString: string): Promise
       method: 'post',
       json: {
         url: webhookUrl,
-        // Пустой массив allowed_updates означает получение всех типов обновлений
-        // Это более гибко и не требует обновления кода при появлении новых типов в API Telegram
-        // Все обновления будут обработаны функцией extractChatFromUpdate
-        allowed_updates: []
+        // Явно указываем все нужные типы обновлений для надежности
+        // message и channel_post - сообщения в чатах и каналах
+        // chat_member и my_chat_member - подписки/отписки (бот должен быть администратором канала)
+        // message_reaction и message_reaction_count - реакции на сообщения (лайки) - Bot API 7.0+
+        // edited_message и edited_channel_post - отредактированные сообщения
+        allowed_updates: [
+          'message',
+          'channel_post',
+          'edited_message',
+          'edited_channel_post',
+          'chat_member',
+          'my_chat_member',
+          'message_reaction',
+          'message_reaction_count'
+        ]
       },
       responseType: 'json',
       throwHttpErrors: false,
@@ -334,29 +346,81 @@ export const apiAddBotRoute = app.post('/add', async (ctx, req) => {
       }
     }
     
-    // Проверяем, не существует ли уже такой токен в проекте
-    Debug.info(ctx, `[api/bots/add] Проверка на дубликаты токена для проекта projectId=${trimmedProjectId}`)
-    const existingBot = await BotTokens.findOneBy(ctx, {
-      projectId: trimmedProjectId,
-      token: trimmedToken
-    })
+    // Используем эксклюзивную блокировку для предотвращения race condition
+    // Ключ блокировки на основе токена гарантирует, что параллельные запросы с одним токеном выполняются последовательно
+    const lockKey = `bot-token-${trimmedToken}`
+    Debug.info(ctx, `[api/bots/add] Получение эксклюзивной блокировки для токена: lockKey=${lockKey}`)
     
-    if (existingBot) {
-      Debug.warn(ctx, `[api/bots/add] Токен уже существует в проекте projectId=${trimmedProjectId}`)
+    let bot: any = null
+    
+    try {
+      await runWithExclusiveLock(ctx, lockKey, {}, async () => {
+        // ВСЕ проверки и создание внутри блокировки для атомарности
+        
+        // Сначала проверяем глобально (более строгая проверка)
+        // Запрещаем подключение одного бота к разным проектам
+        Debug.info(ctx, `[api/bots/add] Проверка, не используется ли токен где-либо (глобальная проверка)`)
+        const existingBot = await BotTokens.findOneBy(ctx, {
+          token: trimmedToken
+        })
+        
+        if (existingBot) {
+          const isInCurrentProject = existingBot.projectId === trimmedProjectId
+          const errorMessage = isInCurrentProject
+            ? 'Этот токен уже добавлен в этот проект'
+            : 'Этот токен уже используется в другом проекте. Один бот не может быть подключен к нескольким проектам.'
+          
+          Debug.warn(ctx, `[api/bots/add] Токен уже используется: projectId=${existingBot.projectId}, isInCurrentProject=${isInCurrentProject}`)
+          throw new Error(errorMessage)
+        }
+        
+        // Затем проверяем в проекте (дополнительная проверка для ясности сообщения об ошибке)
+        Debug.info(ctx, `[api/bots/add] Проверка на дубликаты токена для проекта projectId=${trimmedProjectId}`)
+        const existingBotInProject = await BotTokens.findOneBy(ctx, {
+          projectId: trimmedProjectId,
+          token: trimmedToken
+        })
+        
+        if (existingBotInProject) {
+          Debug.warn(ctx, `[api/bots/add] Токен уже существует в проекте projectId=${trimmedProjectId}`)
+          throw new Error('Этот токен уже добавлен в этот проект')
+        }
+        
+        // Создаём запись в таблице (атомарная операция внутри блокировки)
+        Debug.info(ctx, `[api/bots/add] Создание записи в таблице: token=${trimmedToken.substring(0, 10)}..., botName=${botName || 'null'}, botUsername=${botUsername || 'null'}, projectId=${trimmedProjectId}`)
+        bot = await BotTokens.create(ctx, {
+          token: trimmedToken,
+          botName: botName || null,
+          botUsername: botUsername || null,
+          projectId: trimmedProjectId
+        })
+      })
+    } catch (error: any) {
+      // Обрабатываем ошибки из блокировки (дубликаты токенов)
+      if (error?.message) {
+        Debug.warn(ctx, `[api/bots/add] Ошибка при добавлении бота: ${error.message}`)
+        return {
+          success: false,
+          error: error.message
+        }
+      }
+      
+      // Неожиданная ошибка
+      Debug.error(ctx, `[api/bots/add] Неожиданная ошибка при добавлении бота: ${error?.message || String(error)}`, 'E_BOT_ADD_ERROR')
       return {
         success: false,
-        error: 'Этот токен уже добавлен в этот проект'
+        error: 'Не удалось добавить бота. Попробуйте ещё раз.'
       }
     }
     
-    // Создаём запись в таблице
-    Debug.info(ctx, `[api/bots/add] Создание записи в таблице: token=${trimmedToken.substring(0, 10)}..., botName=${botName || 'null'}, botUsername=${botUsername || 'null'}, projectId=${trimmedProjectId}`)
-    const bot = await BotTokens.create(ctx, {
-      token: trimmedToken,
-      botName: botName || null,
-      botUsername: botUsername || null,
-      projectId: trimmedProjectId
-    })
+    if (!bot) {
+      // Если bot не создан, значит была ошибка в блокировке
+      Debug.error(ctx, `[api/bots/add] Бот не был создан после выполнения блокировки`)
+      return {
+        success: false,
+        error: 'Не удалось добавить бота. Попробуйте ещё раз.'
+      }
+    }
     
     Debug.info(ctx, `[api/bots/add] Бот успешно добавлен с ID: ${bot.id}`)
     Debug.info(ctx, `[api/bots/add] Тип bot.id: ${typeof bot.id}, значение: ${bot.id}`)

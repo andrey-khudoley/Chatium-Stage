@@ -52,6 +52,10 @@ export const webhooksPageRoute = app.html('/', async (ctx, req) => {
   const botId = req.query.botId as string | undefined
   Debug.info(ctx, `[webhooks] Параметр botId из query: ${botId || 'не указан (показываем все вебхуки)'}`)
   
+  // Получаем chatId из query параметров (опционально, для фильтрации по каналу)
+  const chatId = req.query.chatId as string | undefined
+  Debug.info(ctx, `[webhooks] Параметр chatId из query: ${chatId || 'не указан (показываем все каналы)'}`)
+  
   Debug.info(ctx, '[webhooks] Рендеринг страницы вебхуков')
   return (
     <html>
@@ -738,6 +742,7 @@ export const webhooksPageRoute = app.html('/', async (ctx, req) => {
           isAuthenticated={isAuthenticated}
           encodedSocketId={encodedSocketId}
           botId={botId || null}
+          chatId={chatId || null}
         />
       </body>
     </html>

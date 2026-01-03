@@ -1,6 +1,8 @@
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import Header from '../shared/Header.vue'
+import AlertModal from '../shared/AlertModal.vue'
+import ConfirmModal from '../shared/ConfirmModal.vue'
 import { apiGetProjectsListRoute, apiJoinProjectRequestRoute, apiCreateProjectRoute, apiDeleteProjectRoute } from '../api/projects'
 import { userIdsMatch } from '../shared/user-utils'
 import { projectDetailPageRoute } from '../index'
@@ -48,6 +50,36 @@ const projects = ref<Array<{
 }>>([])
 const loading = ref(true)
 const error = ref<string | null>(null)
+const activeTab = ref<'my' | 'member'>('my')
+
+// Вычисляемые свойства для разделения проектов
+const myProjects = computed(() => {
+  if (!ctx.user) return []
+  return projects.value.filter(project => {
+    if (project.members && Array.isArray(project.members)) {
+      return project.members.some((member: any) => 
+        userIdsMatch(member.userId, ctx.user?.id) && member.role === 'owner'
+      )
+    }
+    return false
+  })
+})
+
+const memberProjects = computed(() => {
+  if (!ctx.user) return []
+  return projects.value.filter(project => {
+    if (project.members && Array.isArray(project.members)) {
+      return project.members.some((member: any) => 
+        userIdsMatch(member.userId, ctx.user?.id) && member.role === 'member'
+      )
+    }
+    return false
+  })
+})
+
+const displayedProjects = computed(() => {
+  return activeTab.value === 'my' ? myProjects.value : memberProjects.value
+})
 const showJoinModal = ref(false)
 const joinProjectId = ref('')
 const joiningProject = ref(false)
@@ -59,6 +91,18 @@ const newProjectDescription = ref('')
 const creatingProject = ref(false)
 const createError = ref<string | null>(null)
 const deletingProjectId = ref<string | null>(null)
+
+// Модальные окна для алёртов и подтверждений
+const showAlertModal = ref(false)
+const alertMessage = ref('')
+const alertTitle = ref('')
+const alertType = ref<'info' | 'error' | 'success' | 'warning'>('info')
+
+const showConfirmModal = ref(false)
+const confirmMessage = ref('')
+const confirmTitle = ref('')
+const confirmType = ref<'danger' | 'warning' | 'info'>('info')
+const confirmCallback = ref<(() => void) | null>(null)
 
 // Анимация печатания текста
 const displayedTitle = ref('')
@@ -224,34 +268,68 @@ const submitCreateProject = async () => {
   }
 }
 
+// Функции для показа модальных окон
+const showAlert = (message: string, title?: string, type: 'info' | 'error' | 'success' | 'warning' = 'info') => {
+  alertMessage.value = message
+  alertTitle.value = title || ''
+  alertType.value = type
+  showAlertModal.value = true
+}
+
+const showConfirm = (message: string, onConfirm: () => void, title?: string, type: 'danger' | 'warning' | 'info' = 'info') => {
+  confirmMessage.value = message
+  confirmTitle.value = title || ''
+  confirmType.value = type
+  confirmCallback.value = onConfirm
+  showConfirmModal.value = true
+}
+
+const handleConfirm = () => {
+  if (confirmCallback.value) {
+    confirmCallback.value()
+  }
+  showConfirmModal.value = false
+  confirmCallback.value = null
+}
+
+const handleCancel = () => {
+  showConfirmModal.value = false
+  confirmCallback.value = null
+}
+
 // Удаление проекта
 const deleteProject = async (projectId: string, event: Event) => {
   event.preventDefault()
   event.stopPropagation()
   
-  if (!confirm('Вы уверены, что хотите удалить этот проект? Это действие нельзя отменить.')) {
-    return
-  }
+  if (deletingProjectId.value) return
   
-  deletingProjectId.value = projectId
-  
-  try {
-    const result = await apiDeleteProjectRoute.run(ctx, {
-      projectId: projectId
-    })
-    
-    if (result.success) {
-      // Обновляем список проектов
-      await loadProjects()
-    } else {
-      alert(result.error || 'Ошибка при удалении проекта')
-    }
-  } catch (e: any) {
-    console.error('[ProjectsPage] Ошибка удаления проекта:', e)
-    alert(e.message || 'Ошибка при удалении проекта')
-  } finally {
-    deletingProjectId.value = null
-  }
+  showConfirm(
+    'Вы уверены, что хотите удалить этот проект? Это действие нельзя отменить.',
+    async () => {
+      deletingProjectId.value = projectId
+      
+      try {
+        const result = await apiDeleteProjectRoute.run(ctx, {
+          projectId: projectId
+        })
+        
+        if (result.success) {
+          // Обновляем список проектов
+          await loadProjects()
+        } else {
+          showAlert(result.error || 'Ошибка при удалении проекта', 'Ошибка', 'error')
+        }
+      } catch (e: any) {
+        console.error('[ProjectsPage] Ошибка удаления проекта:', e)
+        showAlert(e.message || 'Ошибка при удалении проекта', 'Ошибка', 'error')
+      } finally {
+        deletingProjectId.value = null
+      }
+    },
+    'Подтверждение удаления',
+    'danger'
+  )
 }
 
 onMounted(async () => {
@@ -356,7 +434,7 @@ onBeforeUnmount(() => {
     <!-- Header -->
     <Header 
       v-if="bootLoaderDone"
-      :pageTitle="'Проекты'" 
+      :pageTitle="'A/Ley Services'" 
       :indexUrl="props.indexUrl" 
       :profileUrl="props.profileUrl" 
       :loginUrl="props.loginUrl" 
@@ -366,28 +444,37 @@ onBeforeUnmount(() => {
     <!-- Content -->
     <main class="content-wrapper flex-1 relative z-10 min-h-0 overflow-y-auto">
       <div class="content-inner">
-        <!-- Hero Section -->
-        <section class="hero-section" :class="{ 'hero-ready': bootLoaderDone, 'hero-glow-visible': showCards }">
-          <div class="hero-icon-wrapper" :class="{ 'hero-icon-visible': showCards }">
-            <i class="fas fa-folder-open hero-icon"></i>
+        <!-- Project Header -->
+        <div class="project-header">
+          <div class="project-header-content">
+            <h1 class="project-title">Проекты</h1>
+            <p class="project-description">
+              Управляйте своими проектами и присоединяйтесь к проектам других пользователей
+            </p>
           </div>
-          <h1 class="hero-heading" :class="{ 'show-underline': showTitleUnderline }">
-            {{ displayedTitle }}<span v-if="showCursor && (cursorPosition === 'title' || cursorPosition === 'final')" class="typing-cursor">▮</span>
-          </h1>
-          <p class="hero-description">
-            {{ displayedDescription }}<span v-if="showCursor && cursorPosition === 'description'" class="typing-cursor">▮</span>
-          </p>
-          <div class="hero-actions" :class="{ 'hero-actions-visible': showCards }">
-            <button @click="openCreateModal" class="btn btn-primary">
-              <i class="fas fa-plus"></i>
-              Создать проект
-            </button>
-            <button @click="openJoinModal" class="btn btn-secondary">
-              <i class="fas fa-user-plus"></i>
-              Присоединиться к проекту
-            </button>
-          </div>
-        </section>
+          <a v-if="props.indexUrl" :href="props.indexUrl" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i>
+            На главную
+          </a>
+        </div>
+
+        <!-- Tabs -->
+        <div class="tabs">
+          <button 
+            @click="activeTab = 'my'"
+            :class="['tab', { 'tab-active': activeTab === 'my' }]"
+          >
+            <i class="fas fa-folder"></i>
+            Мои проекты
+          </button>
+          <button 
+            @click="activeTab = 'member'"
+            :class="['tab', { 'tab-active': activeTab === 'member' }]"
+          >
+            <i class="fas fa-users"></i>
+            Участник проектов
+          </button>
+        </div>
 
         <!-- Loading -->
         <div v-if="loading" class="loading-container">
@@ -403,54 +490,59 @@ onBeforeUnmount(() => {
           </div>
         </div>
 
-        <!-- Projects List -->
-        <section v-else class="cards-section" :class="{ 'cards-visible': showCards }">
-          <div v-if="projects.length === 0" class="empty-projects">
+        <!-- Projects Table -->
+        <section v-else class="projects-section" :class="{ 'projects-visible': showCards }">
+          <div v-if="displayedProjects.length === 0" class="empty-projects">
             <i class="fas fa-folder-open"></i>
             <p>Нет доступных проектов</p>
           </div>
 
-          <div v-else class="cards-grid">
-            <div
-              v-for="(project, index) in projects"
-              :key="project.id"
-              class="project-card-wrapper"
-            >
-              <a
-                :href="getProjectDetailUrl(project.id)"
-                class="nav-card nav-card-project"
-                :style="{ animationDelay: showCards ? `${0.1 + index * 0.1}s` : '0s' }"
-              >
-                <div class="nav-card-content">
-                  <div class="nav-card-icon nav-card-icon-project">
-                    <i class="fas fa-folder"></i>
-                  </div>
-                  <h2 class="nav-card-title">{{ project.name }}</h2>
-                  <p v-if="project.description" class="nav-card-description">
-                    {{ project.description }}
-                  </p>
-                  <div class="nav-card-meta">
-                    <span class="meta-item">
-                      <i class="fas fa-users"></i>
-                      {{ project.membersCount }} участников
-                    </span>
-                  </div>
-                  <div class="nav-card-arrow">
-                    <i class="fas fa-arrow-right"></i>
-                  </div>
-                </div>
-              </a>
-              <button
-                v-if="canDeleteProject(project)"
-                @click="deleteProject(project.id, $event)"
-                class="project-delete-btn"
-                :disabled="deletingProjectId === project.id"
-                :title="'Удалить проект'"
-              >
-                <i v-if="deletingProjectId === project.id" class="fas fa-spinner fa-spin"></i>
-                <i v-else class="fas fa-trash"></i>
-              </button>
+          <div v-else class="table-container">
+            <div class="section-header">
+              <h2 class="section-title">
+                {{ activeTab === 'my' ? 'Мои проекты' : 'Участник проектов' }}
+              </h2>
+              <div class="section-actions">
+                <button @click="openCreateModal" class="btn btn-primary">
+                  <i class="fas fa-plus"></i>
+                  Создать проект
+                </button>
+                <button @click="openJoinModal" class="btn btn-secondary">
+                  <i class="fas fa-user-plus"></i>
+                  Присоединиться
+                </button>
+              </div>
             </div>
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Название</th>
+                  <th>Описание</th>
+                  <th>Участники</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="(project, index) in displayedProjects" :key="project.id">
+                  <td>
+                    <a :href="getProjectDetailUrl(project.id)" class="cell-content-link">
+                      <i class="fas fa-folder" style="margin-right: 0.5rem; color: var(--color-accent);"></i>
+                      {{ project.name }}
+                    </a>
+                  </td>
+                  <td>
+                    <div class="cell-content">
+                      {{ project.description || '—' }}
+                    </div>
+                  </td>
+                  <td>
+                    <div class="cell-content">
+                      <i class="fas fa-users" style="margin-right: 0.5rem; color: var(--color-accent);"></i>
+                      {{ project.membersCount }} {{ project.membersCount === 1 ? 'участник' : project.membersCount < 5 ? 'участника' : 'участников' }}
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </section>
       </div>
@@ -600,6 +692,25 @@ onBeforeUnmount(() => {
         </div>
       </div>
     </Transition>
+
+    <!-- Alert Modal -->
+    <AlertModal
+      :show="showAlertModal"
+      :message="alertMessage"
+      :title="alertTitle"
+      :type="alertType"
+      @close="showAlertModal = false"
+    />
+
+    <!-- Confirm Modal -->
+    <ConfirmModal
+      :show="showConfirmModal"
+      :message="confirmMessage"
+      :title="confirmTitle"
+      :type="confirmType"
+      @confirm="handleConfirm"
+      @cancel="handleCancel"
+    />
   </div>
 </template>
 
@@ -645,6 +756,17 @@ body {
   overflow: hidden;
   background: transparent;
   position: relative;
+  height: 100vh;
+}
+
+/* Header fixed */
+.header {
+  position: fixed !important;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 300;
+  background: var(--color-bg);
 }
 
 /* Content Wrapper */
@@ -652,11 +774,12 @@ body {
   flex: 1;
   min-height: 0;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
   position: relative;
   z-index: 100;
-  padding: 3rem 0;
+  padding: 80px 0;
+  overflow-y: auto;
 }
 
 .content-inner {
@@ -665,7 +788,7 @@ body {
   padding: 0 1.5rem;
   display: flex;
   flex-direction: column;
-  gap: 4rem;
+  gap: 2rem;
   position: relative;
   z-index: 10;
 }
@@ -952,28 +1075,18 @@ body {
 }
 
 /* Cards Section */
-.cards-section {
+.projects-section {
   width: 100%;
-  min-height: 400px;
   position: relative;
   z-index: 10;
   opacity: 0;
   pointer-events: none;
-  transform: scaleY(0.01);
-  transform-origin: center;
-  transition: opacity 0.1s;
-  overflow: visible;
-  filter: brightness(0.8);
-  padding-bottom: 2rem;
-  padding-top: 4px;
-  display: block;
+  transition: opacity 0.3s ease;
 }
 
-.cards-section.cards-visible {
+.projects-section.projects-visible {
   opacity: 1;
   pointer-events: auto;
-  animation: crt-tv-cards-power-on 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
-  transform-style: preserve-3d;
 }
 
 @keyframes crt-tv-cards-power-on {
@@ -1010,6 +1123,184 @@ body {
   display: block;
 }
 
+/* Table Container */
+.table-container {
+  background: var(--color-bg-secondary);
+  border: 2px solid var(--color-border);
+  padding: 1.5rem;
+  clip-path: polygon(
+    0 4px, 4px 4px, 4px 0,
+    calc(100% - 4px) 0, calc(100% - 4px) 4px, 100% 4px,
+    100% calc(100% - 4px), calc(100% - 4px) calc(100% - 4px), calc(100% - 4px) 100%,
+    4px 100%, 4px calc(100% - 4px), 0 calc(100% - 4px)
+  );
+  overflow-x: auto;
+  overflow-y: visible;
+  position: relative;
+}
+
+/* Project Header */
+.project-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 2rem;
+  margin-bottom: 2rem;
+}
+
+.project-header-content {
+  flex: 1;
+}
+
+.project-title {
+  font-size: 2rem;
+  font-weight: 400;
+  margin: 0 0 0.75rem 0;
+  color: var(--color-text);
+  letter-spacing: 0.05em;
+}
+
+.project-description {
+  font-size: 1rem;
+  color: var(--color-text-secondary);
+  margin: 0;
+  line-height: 1.6;
+}
+
+/* Tabs */
+.tabs {
+  display: flex;
+  gap: 0.5rem;
+  border-bottom: 2px solid var(--color-border);
+  margin-bottom: 2rem;
+  overflow-x: auto;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
+.tabs::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}
+
+.tab {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-size: 0.9375rem;
+  cursor: pointer;
+  transition: var(--transition);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  white-space: nowrap;
+}
+
+.tab:hover {
+  color: var(--color-text);
+}
+
+.tab-active {
+  color: var(--color-accent);
+  border-bottom-color: var(--color-accent);
+}
+
+/* Section Header */
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.section-actions {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.section-title {
+  font-size: 1.5rem;
+  font-weight: 400;
+  margin: 0;
+  color: var(--color-text);
+  letter-spacing: 0.05em;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9375rem;
+  table-layout: fixed;
+}
+
+.data-table thead {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.data-table th {
+  padding: 1rem;
+  text-align: left;
+  color: var(--color-text);
+  font-weight: 400;
+  letter-spacing: 0.03em;
+  border-bottom: 2px solid var(--color-border);
+  white-space: nowrap;
+}
+
+.data-table th:nth-child(1) {
+  width: 35%;
+}
+
+.data-table th:nth-child(2) {
+  width: 45%;
+}
+
+.data-table th:nth-child(3) {
+  width: 20%;
+}
+
+.data-table td {
+  padding: 1rem;
+  color: var(--color-text);
+  border-bottom: 1px solid var(--color-border);
+  position: relative;
+}
+
+.data-table td .cell-content {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
+  width: 100%;
+}
+
+.data-table td .cell-content-link {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--color-text);
+  text-decoration: none;
+  transition: color 0.25s ease;
+}
+
+.data-table td .cell-content-link:hover {
+  color: var(--color-accent);
+}
+
+.data-table tbody tr:hover {
+  background: rgba(211, 35, 75, 0.05);
+}
+
+.data-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
 .cards-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -1044,41 +1335,6 @@ body {
 
 .project-card-wrapper {
   position: relative;
-}
-
-.project-delete-btn {
-  position: absolute;
-  top: 0.75rem;
-  right: 0.75rem;
-  width: 2rem;
-  height: 2rem;
-  border-radius: 0;
-  background: rgba(211, 35, 75, 0.1);
-  border: 2px solid var(--color-accent);
-  color: var(--color-accent);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: var(--transition);
-  z-index: 10;
-  clip-path: polygon(
-    0 3px, 3px 3px, 3px 0,
-    calc(100% - 3px) 0, calc(100% - 3px) 3px, 100% 3px,
-    100% calc(100% - 3px), calc(100% - 3px) calc(100% - 3px), calc(100% - 3px) 100%,
-    3px 100%, 3px calc(100% - 3px), 0 calc(100% - 3px)
-  );
-}
-
-.project-delete-btn:hover:not(:disabled) {
-  background: var(--color-accent);
-  color: white;
-  transform: scale(1.1);
-}
-
-.project-delete-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
 }
 
 /* Navigation Cards */
@@ -1122,6 +1378,7 @@ body {
   );
 }
 
+/* CRT scanlines эффект для карточек */
 .nav-card-content::before {
   content: '';
   position: absolute;
@@ -1151,6 +1408,7 @@ body {
   }
 }
 
+/* Эффект мерцания старого монитора */
 .nav-card-content::after {
   content: '';
   position: absolute;
@@ -1217,6 +1475,7 @@ body {
     0 0 30px rgba(211, 35, 75, 0.1);
 }
 
+/* RGB-разделение и искривление для карточек при hover */
 @keyframes card-glitch {
   0%, 90%, 100% {
     filter: none;
@@ -1370,11 +1629,25 @@ body {
   align-items: center;
   gap: 0.5rem;
   color: var(--color-text-secondary);
-  font-size: 0.875rem;
+  font-size: 0.8125rem;
+  letter-spacing: 0.02em;
+  transition: color 0.25s ease;
 }
 
 .meta-item i {
   color: var(--color-accent);
+  font-size: 0.875rem;
+  transition: color 0.25s ease;
+  opacity: 0.8;
+}
+
+.nav-card:hover .meta-item {
+  color: var(--color-text);
+}
+
+.nav-card:hover .meta-item i {
+  color: var(--color-accent-hover);
+  opacity: 1;
 }
 
 .nav-card-arrow {
@@ -1399,8 +1672,11 @@ body {
   background: transparent;
   padding: 1.5rem 0;
   flex-shrink: 0;
-  position: relative;
-  z-index: 200;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 300;
 }
 
 .app-footer::before {

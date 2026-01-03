@@ -1,15 +1,25 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed } from 'vue'
 import Header from '../shared/Header.vue'
+import AlertModal from '../shared/AlertModal.vue'
+import ConfirmModal from '../shared/ConfirmModal.vue'
 import { 
   apiGetProjectRoute, 
   apiGetProjectRequestsRoute, 
   apiApproveProjectRequestRoute, 
   apiRejectProjectRequestRoute,
-  apiRemoveProjectMemberRoute
+  apiRemoveProjectMemberRoute,
+  apiUpdateProjectRoute,
+  apiTransferOwnershipRoute,
+  apiDeleteProjectRoute
 } from '../api/projects'
-import { apiGetBotsListRoute, apiValidateTokenRoute, apiAddBotRoute } from '../api/bots'
+import { apiGetBotsListRoute, apiValidateTokenRoute, apiAddBotRoute, apiReregisterWebhookRoute } from '../api/bots'
 import { apiGetChannelsListRoute } from '../api/channels'
+import { apiCreateLinkRoute, apiGetLinksListRoute, apiDeleteLinkRoute } from '../api/links'
+import { apiCheckWebhookRoute, apiWebhookRoute } from '../api/webhook'
+import { publicLinkRoute } from '../index'
+import { webhooksPageRoute } from '../webhooks'
+import { userIdsMatch } from '../shared/user-utils'
 
 declare const ctx: any
 
@@ -74,18 +84,83 @@ const channels = ref<Array<{
   chatUsername: string | null
   firstSeenAt: Date | string
   lastSeenAt: Date | string
+  botId: string
 }>>([])
 const loadingChannels = ref(false)
 const channelsError = ref<string | null>(null)
 
 // Фильтр для вкладки "Ссылки"
 const selectedChannelId = ref<string | null>(null)
+const channelFilterOpen = ref(false)
+const channelFilterRef = ref<HTMLElement | null>(null)
+const channelFilterSearch = ref('')
+
+// Dropdown в модальном окне создания ссылки
+const modalChannelDropdownOpen = ref(false)
+const modalChannelDropdownRef = ref<HTMLElement | null>(null)
+const modalChannelSearch = ref('')
+
+// Данные ссылок
+const links = ref<Array<{
+  id: string
+  name: string
+  placementUrl?: string | null
+  channelId: string
+  botId: string
+  projectId: string
+  inviteLink?: string | null
+  inviteLinkCreatedAt?: Date | string | null
+  revokedAt?: Date | string | null
+  createdAt: Date | string
+  updatedAt: Date | string
+  clicksCount?: number
+  subscribesCount?: number
+}>>([])
+const loadingLinks = ref(false)
+const linksError = ref<string | null>(null)
+const deletingLinkId = ref<string | null>(null)
 
 // Модальное окно для добавления бота
 const showAddTokenModal = ref(false)
 const newToken = ref('')
 const addingToken = ref(false)
 const tokenError = ref<string | null>(null)
+
+// Модальное окно для создания ссылки
+const showCreateLinkModal = ref(false)
+const newLinkName = ref('')
+const newLinkPlacementUrl = ref('')
+const newLinkChannelId = ref<string | null>(null)
+const newLinkBotId = ref<string | null>(null)
+const creatingLink = ref(false)
+const linkError = ref<string | null>(null)
+
+// Модальные окна для алёртов и подтверждений
+const showAlertModal = ref(false)
+const alertMessage = ref('')
+const alertTitle = ref('')
+const alertType = ref<'info' | 'error' | 'success' | 'warning'>('info')
+
+const showConfirmModal = ref(false)
+const confirmMessage = ref('')
+const confirmTitle = ref('')
+const confirmType = ref<'danger' | 'warning' | 'info'>('info')
+const confirmCallback = ref<(() => void) | null>(null)
+
+// Модальные окна для редактирования проекта
+const showEditNameModal = ref(false)
+const showEditDescriptionModal = ref(false)
+const showTransferOwnershipModal = ref(false)
+const showDeleteProjectModal = ref(false)
+
+const editName = ref('')
+const editDescription = ref('')
+const transferOwnershipUserId = ref<string | null>(null)
+const editingName = ref(false)
+const editingDescription = ref(false)
+const transferringOwnership = ref(false)
+const deletingProject = ref(false)
+const editError = ref<string | null>(null)
 
 // Проверка прав доступа
 const isOwner = computed(() => {
@@ -105,6 +180,43 @@ const isMember = computed(() => {
 const isAdmin = computed(() => {
   return ctx.user?.is && ctx.user.is('Admin')
 })
+
+// Tooltip state
+const tooltip = ref<{
+  show: boolean
+  text: string
+  x: number
+  y: number
+}>({
+  show: false,
+  text: '',
+  x: 0,
+  y: 0
+})
+
+const showTooltip = (event: MouseEvent, text: string) => {
+  if (!text) return
+  const target = (event.currentTarget || event.target) as HTMLElement
+  
+  // Проверяем, обрезан ли текст
+  // Ищем span внутри ячейки, так как именно он содержит текст
+  const spanElement = target.querySelector('span') || target
+  const isTextTruncated = spanElement.scrollWidth > spanElement.clientWidth || target.scrollWidth > target.clientWidth
+  
+  if (!isTextTruncated) return
+  
+  const rect = target.getBoundingClientRect()
+  tooltip.value = {
+    show: true,
+    text,
+    x: rect.left + rect.width / 2,
+    y: rect.top
+  }
+}
+
+const hideTooltip = () => {
+  tooltip.value.show = false
+}
 
 const canViewRequests = computed(() => {
   return isMember.value || isAdmin.value
@@ -154,6 +266,35 @@ const loadRequests = async () => {
   }
 }
 
+// Функции для показа модальных окон
+const showAlert = (message: string, title?: string, type: 'info' | 'error' | 'success' | 'warning' = 'info') => {
+  alertMessage.value = message
+  alertTitle.value = title || ''
+  alertType.value = type
+  showAlertModal.value = true
+}
+
+const showConfirm = (message: string, onConfirm: () => void, title?: string, type: 'danger' | 'warning' | 'info' = 'info') => {
+  confirmMessage.value = message
+  confirmTitle.value = title || ''
+  confirmType.value = type
+  confirmCallback.value = onConfirm
+  showConfirmModal.value = true
+}
+
+const handleConfirm = () => {
+  if (confirmCallback.value) {
+    confirmCallback.value()
+  }
+  showConfirmModal.value = false
+  confirmCallback.value = null
+}
+
+const handleCancel = () => {
+  showConfirmModal.value = false
+  confirmCallback.value = null
+}
+
 // Одобрение заявки
 const approveRequest = async (requestId: string) => {
   if (processingRequestId.value) return
@@ -168,11 +309,11 @@ const approveRequest = async (requestId: string) => {
       await loadProject()
       await loadRequests()
     } else {
-      alert(result.error || 'Ошибка при одобрении заявки')
+      showAlert(result.error || 'Ошибка при одобрении заявки', 'Ошибка', 'error')
     }
   } catch (e: any) {
     console.error('[ProjectDetailPage] Ошибка одобрения заявки:', e)
-    alert(e.message || 'Ошибка при одобрении заявки')
+    showAlert(e.message || 'Ошибка при одобрении заявки', 'Ошибка', 'error')
   } finally {
     processingRequestId.value = null
   }
@@ -191,11 +332,11 @@ const rejectRequest = async (requestId: string) => {
       // Обновляем заявки
       await loadRequests()
     } else {
-      alert(result.error || 'Ошибка при отклонении заявки')
+      showAlert(result.error || 'Ошибка при отклонении заявки', 'Ошибка', 'error')
     }
   } catch (e: any) {
     console.error('[ProjectDetailPage] Ошибка отклонения заявки:', e)
-    alert(e.message || 'Ошибка при отклонении заявки')
+    showAlert(e.message || 'Ошибка при отклонении заявки', 'Ошибка', 'error')
   } finally {
     processingRequestId.value = null
   }
@@ -203,31 +344,34 @@ const rejectRequest = async (requestId: string) => {
 
 // Удаление участника
 const removeMember = async (userId: string) => {
-  if (!confirm('Вы уверены, что хотите удалить этого участника из проекта?')) {
-    return
-  }
-  
   if (removingMemberId.value) return
   
-  removingMemberId.value = userId
-  
-  try {
-    const result = await apiRemoveProjectMemberRoute({ id: props.projectId }).run(ctx, {
-      userId
-    })
-    
-    if (result.success) {
-      // Обновляем данные проекта
-      await loadProject()
-    } else {
-      alert(result.error || 'Ошибка при удалении участника')
-    }
-  } catch (e: any) {
-    console.error('[ProjectDetailPage] Ошибка удаления участника:', e)
-    alert(e.message || 'Ошибка при удалении участника')
-  } finally {
-    removingMemberId.value = null
-  }
+  showConfirm(
+    'Вы уверены, что хотите удалить этого участника из проекта?',
+    async () => {
+      removingMemberId.value = userId
+      
+      try {
+        const result = await apiRemoveProjectMemberRoute({ id: props.projectId }).run(ctx, {
+          userId
+        })
+        
+        if (result.success) {
+          // Обновляем данные проекта
+          await loadProject()
+        } else {
+          showAlert(result.error || 'Ошибка при удалении участника', 'Ошибка', 'error')
+        }
+      } catch (e: any) {
+        console.error('[ProjectDetailPage] Ошибка удаления участника:', e)
+        showAlert(e.message || 'Ошибка при удалении участника', 'Ошибка', 'error')
+      } finally {
+        removingMemberId.value = null
+      }
+    },
+    'Подтверждение удаления',
+    'danger'
+  )
 }
 
 // Загрузка ботов
@@ -278,7 +422,8 @@ const loadChannels = async () => {
         chatTitle: channel.chatTitle || null,
         chatUsername: channel.chatUsername || null,
         firstSeenAt: channel.firstSeenAt,
-        lastSeenAt: channel.lastSeenAt
+        lastSeenAt: channel.lastSeenAt,
+        botId: channel.botId
       }))
     } else {
       channelsError.value = result.error || 'Ошибка при получении списка каналов'
@@ -291,12 +436,342 @@ const loadChannels = async () => {
   }
 }
 
-// Маскирование токена
-const maskToken = (token: string) => {
+// Загрузка ссылок
+const loadLinks = async () => {
+  if (!props.projectId) return
+  
+  loadingLinks.value = true
+  linksError.value = null
+  
+  try {
+    const queryParams: any = { projectId: props.projectId }
+    if (selectedChannelId.value) {
+      queryParams.channelId = selectedChannelId.value
+    }
+    
+    const result = await apiGetLinksListRoute.query(queryParams).run(ctx)
+    
+    if (result.success && result.links) {
+      links.value = result.links.map((link: any) => ({
+        id: link.id,
+        name: link.name,
+        placementUrl: link.placementUrl || null,
+        channelId: link.channelId,
+        botId: link.botId,
+        projectId: link.projectId,
+        inviteLink: link.inviteLink || null,
+        inviteLinkCreatedAt: link.inviteLinkCreatedAt || null,
+        revokedAt: link.revokedAt || null,
+        createdAt: link.createdAt,
+        updatedAt: link.updatedAt,
+        clicksCount: link.clicksCount || 0,
+        subscribesCount: link.subscribesCount || 0
+      }))
+    } else {
+      linksError.value = result.error || 'Ошибка при получении списка ссылок'
+    }
+  } catch (e: any) {
+    console.error('[ProjectDetailPage] Ошибка загрузки ссылок:', e)
+    linksError.value = e.message || 'Ошибка при загрузке ссылок'
+  } finally {
+    loadingLinks.value = false
+  }
+}
+
+// Получение ботов для канала
+const getBotsForChannel = (channelId: string) => {
+  const channel = channels.value.find(c => c.id === channelId)
+  if (!channel) return []
+  
+  // Находим все каналы с таким же chatId и получаем уникальные botId
+  const channelChatIds = channels.value
+    .filter(c => c.chatId === channel.chatId)
+    .map(c => c.botId)
+  
+  const uniqueBotIds = Array.from(new Set(channelChatIds))
+  
+  // Возвращаем ботов, которые есть в списке bots
+  return bots.value.filter(bot => uniqueBotIds.includes(bot.id))
+}
+
+// Проверка, нужен ли выбор бота для канала
+const needsBotSelection = (channelId: string) => {
+  return getBotsForChannel(channelId).length > 1
+}
+
+// Открытие модального окна для создания ссылки
+const openCreateLinkModal = () => {
+  showCreateLinkModal.value = true
+  newLinkName.value = ''
+  newLinkPlacementUrl.value = ''
+  newLinkChannelId.value = null
+  newLinkBotId.value = null
+  linkError.value = null
+}
+
+// Закрытие модального окна для создания ссылки
+const closeCreateLinkModal = () => {
+  showCreateLinkModal.value = false
+  newLinkName.value = ''
+  newLinkPlacementUrl.value = ''
+  newLinkChannelId.value = null
+  newLinkBotId.value = null
+  linkError.value = null
+  creatingLink.value = false
+  modalChannelDropdownOpen.value = false
+  modalChannelSearch.value = ''
+}
+
+// Обработка изменения канала в модальном окне
+const onChannelChange = () => {
+  newLinkBotId.value = null
+  
+  if (!newLinkChannelId.value) return
+  
+  const selectedChannel = channels.value.find(c => c.id === newLinkChannelId.value)
+  if (selectedChannel) {
+    // Если у канала только один бот (для этого chatId), используем его botId
+    const botsForChannel = getBotsForChannel(newLinkChannelId.value)
+    if (botsForChannel.length === 1) {
+      // Если у канала только один бот, используем botId из выбранного канала
+      newLinkBotId.value = selectedChannel.botId
+    }
+    // Если у канала несколько ботов, оставляем newLinkBotId.value = null
+    // чтобы пользователь явно выбрал бота
+  }
+}
+
+// Создание ссылки
+const createLink = async () => {
+  console.log('[ProjectDetailPage] createLink: Начало создания ссылки')
+  
+  if (!newLinkName.value || !newLinkName.value.trim()) {
+    console.warn('[ProjectDetailPage] createLink: Название ссылки не заполнено')
+    linkError.value = 'Название ссылки обязательно'
+    return
+  }
+  
+  if (!newLinkChannelId.value) {
+    console.warn('[ProjectDetailPage] createLink: Канал не выбран')
+    linkError.value = 'Выберите канал'
+    return
+  }
+  
+  if (!props.projectId) {
+    console.warn('[ProjectDetailPage] createLink: projectId не установлен')
+    linkError.value = 'Для создания ссылки необходимо выбрать проект.'
+    return
+  }
+  
+  const botsForChannel = getBotsForChannel(newLinkChannelId.value)
+  if (botsForChannel.length === 0) {
+    console.warn('[ProjectDetailPage] createLink: У канала нет доступных ботов')
+    linkError.value = 'У выбранного канала нет доступных ботов'
+    return
+  }
+  if (botsForChannel.length > 1 && !newLinkBotId.value) {
+    console.warn('[ProjectDetailPage] createLink: У канала несколько ботов, но бот не выбран')
+    linkError.value = 'Выберите бота (у канала несколько ботов)'
+    return
+  }
+  // Если botsForChannel.length === 1, botId должен быть установлен автоматически в onChannelChange
+  // Но на случай, если что-то пошло не так, используем botId из канала или из списка ботов
+  if (botsForChannel.length === 1 && !newLinkBotId.value) {
+    const selectedChannel = channels.value.find(c => c.id === newLinkChannelId.value)
+    if (selectedChannel && selectedChannel.botId) {
+      newLinkBotId.value = selectedChannel.botId
+    } else if (botsForChannel[0] && botsForChannel[0].id) {
+      // Fallback: используем botId из списка ботов, если channel.botId недоступен
+      newLinkBotId.value = botsForChannel[0].id
+    } else {
+      // Это не должно произойти, но на всякий случай возвращаем ошибку
+      console.error('[ProjectDetailPage] createLink: Не удалось определить botId для канала с одним ботом')
+      linkError.value = 'Не удалось определить бота для канала. Попробуйте перезагрузить страницу.'
+      return
+    }
+  }
+  
+  const linkData = {
+    name: newLinkName.value.trim(),
+    placementUrl: newLinkPlacementUrl.value ? newLinkPlacementUrl.value.trim() : null,
+    channelId: newLinkChannelId.value,
+    botId: newLinkBotId.value || null,
+    projectId: props.projectId
+  }
+  
+  console.log('[ProjectDetailPage] createLink: Данные для создания ссылки:', {
+    name: linkData.name,
+    placementUrl: linkData.placementUrl || 'не указано',
+    channelId: linkData.channelId,
+    botId: linkData.botId || 'не указано (будет использован botId из канала)',
+    projectId: linkData.projectId
+  })
+  
+  creatingLink.value = true
+  linkError.value = null
+  
+  try {
+    console.log('[ProjectDetailPage] createLink: Проверка наличия apiCreateLinkRoute:', typeof apiCreateLinkRoute)
+    console.log('[ProjectDetailPage] createLink: Проверка наличия ctx:', typeof ctx)
+    
+    if (typeof apiCreateLinkRoute === 'undefined') {
+      const errorMsg = 'apiCreateLinkRoute не определен. Проверьте импорт.'
+      console.error('[ProjectDetailPage] createLink: КРИТИЧЕСКАЯ ОШИБКА:', errorMsg)
+      throw new Error(errorMsg)
+    }
+    
+    if (typeof ctx === 'undefined') {
+      const errorMsg = 'ctx не определен. Невозможно создать ссылку.'
+      console.error('[ProjectDetailPage] createLink: КРИТИЧЕСКАЯ ОШИБКА:', errorMsg)
+      throw new Error(errorMsg)
+    }
+    
+    console.log('[ProjectDetailPage] createLink: Вызов apiCreateLinkRoute.run() с данными')
+    console.log('[ProjectDetailPage] createLink: typeof apiCreateLinkRoute.run:', typeof apiCreateLinkRoute.run)
+    
+    // Используем правильный синтаксис согласно документации: .run(ctx, bodyData)
+    const result = await apiCreateLinkRoute.run(ctx, linkData)
+    
+    console.log('[ProjectDetailPage] createLink: Получен ответ от сервера:', {
+      success: result.success,
+      error: result.error || 'нет ошибки',
+      linkId: result.link?.id || 'не создана'
+    })
+    
+    if (result.success) {
+      console.log('[ProjectDetailPage] createLink: Ссылка успешно создана, обновляем список')
+      await loadLinks()
+      closeCreateLinkModal()
+      console.log('[ProjectDetailPage] createLink: Модальное окно закрыто')
+    } else {
+      console.error('[ProjectDetailPage] createLink: Сервер вернул ошибку:', result.error)
+      linkError.value = result.error || 'Ошибка при создании ссылки'
+    }
+  } catch (e: any) {
+    const errorMessage = e instanceof Error ? e.message : String(e)
+    const errorStack = e instanceof Error ? e.stack : 'нет стека'
+    
+    console.error('[ProjectDetailPage] createLink: ОШИБКА при создании ссылки:', errorMessage)
+    console.error('[ProjectDetailPage] createLink: Стек ошибки:', errorStack)
+    console.error('[ProjectDetailPage] createLink: Полный объект ошибки:', e)
+    console.error('[ProjectDetailPage] createLink: Тип ошибки:', typeof e)
+    console.error('[ProjectDetailPage] createLink: ctx доступен:', typeof ctx !== 'undefined')
+    console.error('[ProjectDetailPage] createLink: apiCreateLinkRoute доступен:', typeof apiCreateLinkRoute !== 'undefined')
+    
+    linkError.value = errorMessage || 'Ошибка при создании ссылки'
+  } finally {
+    creatingLink.value = false
+    console.log('[ProjectDetailPage] createLink: Завершение обработки, creatingLink = false')
+  }
+}
+
+// Генерация публичного URL для ссылки
+const getPublicLinkUrl = (linkId: string) => {
+  // Используем роут-объект для генерации правильного URL
+  // Согласно file-based роутингу Chatium, это создаст URL вида:
+  // https://s.chtm.aley.pro/saas/analytics/telegram/channel~{linkId}
+  
+  // Проверяем, что linkId передан и не пустой
+  if (!linkId || typeof linkId !== 'string' || !linkId.trim()) {
+    console.error('[ProjectDetailPage] getPublicLinkUrl: linkId не передан или невалиден:', linkId)
+    throw new Error('linkId обязателен для генерации URL')
+  }
+  
+  const trimmedLinkId = linkId.trim()
+  console.log('[ProjectDetailPage] getPublicLinkUrl: генерация URL для linkId:', trimmedLinkId)
+  console.log('[ProjectDetailPage] getPublicLinkUrl: publicLinkRoute:', publicLinkRoute)
+  console.log('[ProjectDetailPage] getPublicLinkUrl: typeof publicLinkRoute:', typeof publicLinkRoute)
+  
+  // Проверяем, что роут доступен
+  if (!publicLinkRoute) {
+    console.error('[ProjectDetailPage] getPublicLinkUrl: publicLinkRoute не определен')
+    throw new Error('Роут publicLinkRoute не найден')
+  }
+  
+  // Проверяем, что метод url доступен
+  if (typeof publicLinkRoute.url !== 'function') {
+    console.error('[ProjectDetailPage] getPublicLinkUrl: publicLinkRoute.url не является функцией')
+    console.error('[ProjectDetailPage] getPublicLinkUrl: publicLinkRoute:', JSON.stringify(publicLinkRoute, null, 2))
+    throw new Error('Метод url() не доступен в роуте publicLinkRoute')
+  }
+  
+  console.log('[ProjectDetailPage] getPublicLinkUrl: publicLinkRoute.url:', typeof publicLinkRoute.url)
+  console.log('[ProjectDetailPage] getPublicLinkUrl: параметры для url():', { id: trimmedLinkId })
+  
+  try {
+    // ✅ ПРАВИЛЬНО: вызываем .url() напрямую с параметрами на объекте роута
+    // Согласно документации 002-routing.md, для роутов с параметрами пути используется паттерн: route.url({ id: ... })
+    const url = publicLinkRoute.url({ id: trimmedLinkId })
+    console.log('[ProjectDetailPage] getPublicLinkUrl: сгенерирован URL:', url, 'для linkId:', trimmedLinkId)
+    return url
+  } catch (error: any) {
+    console.error('[ProjectDetailPage] getPublicLinkUrl: ошибка генерации URL:', error)
+    console.error('[ProjectDetailPage] getPublicLinkUrl: error.message:', error?.message)
+    console.error('[ProjectDetailPage] getPublicLinkUrl: error.stack:', error?.stack)
+    throw error
+  }
+}
+
+// Копирование ссылки в буфер обмена
+const copyLinkToClipboard = async (linkId: string) => {
+  try {
+    console.log('[ProjectDetailPage] copyLinkToClipboard: получен linkId:', linkId)
+    console.log('[ProjectDetailPage] copyLinkToClipboard: typeof linkId:', typeof linkId)
+    console.log('[ProjectDetailPage] copyLinkToClipboard: linkId значение:', JSON.stringify(linkId))
+    
+    if (!linkId) {
+      console.error('[ProjectDetailPage] copyLinkToClipboard: linkId не передан')
+      showAlert('Ошибка: ID ссылки не найден', 'Ошибка', 'error')
+      return
+    }
+    
+    const url = getPublicLinkUrl(linkId)
+    console.log('[ProjectDetailPage] copyLinkToClipboard: копирование URL:', url)
+    await navigator.clipboard.writeText(url)
+    showAlert('Ссылка скопирована в буфер обмена', 'Успешно', 'success')
+  } catch (e: any) {
+    console.error('[ProjectDetailPage] Ошибка копирования ссылки:', e)
+    console.error('[ProjectDetailPage] Ошибка копирования ссылки - message:', e?.message)
+    console.error('[ProjectDetailPage] Ошибка копирования ссылки - stack:', e?.stack)
+    showAlert('Не удалось скопировать ссылку: ' + (e?.message || 'Неизвестная ошибка'), 'Ошибка', 'error')
+  }
+}
+
+// Получение названия канала по ID
+const getChannelName = (channelId: string) => {
+  const channel = channels.value.find(c => c.id === channelId)
+  if (!channel) return null
+  return channel.chatTitle || channel.chatUsername || channel.chatId
+}
+
+// Маскирование токена для tooltip (полный маскированный токен)
+const maskTokenFull = (token: string) => {
+  if (!token) return ''
   if (token.length <= 14) {
     return '•'.repeat(token.length)
   }
   return token.substring(0, 10) + '•'.repeat(token.length - 14) + token.substring(token.length - 4)
+}
+
+// Отображение токена в таблице в формате "8133629083:***123"
+const maskToken = (token: string) => {
+  if (!token) return ''
+  
+  const colonIndex = token.indexOf(':')
+  if (colonIndex === -1) {
+    // Если нет двоеточия, показываем первые 13 символов
+    return token.length > 13 ? token.substring(0, 13) : token
+  }
+  
+  // Часть до двоеточия
+  const beforeColon = token.substring(0, colonIndex)
+  // Последние 3 символа после двоеточия
+  const afterColon = token.substring(colonIndex + 1)
+  const lastThree = afterColon.length >= 3 
+    ? afterColon.substring(afterColon.length - 3) 
+    : afterColon
+  
+  return `${beforeColon}:***${lastThree}`
 }
 
 // Открытие модального окна для добавления бота
@@ -397,11 +872,24 @@ onMounted(async () => {
   if (window.hideAppLoader) {
     window.hideAppLoader()
   }
-  
-  // Обработчик Esc для закрытия модального окна
+
+  // Обработчик клика вне dropdown для закрытия
+  document.addEventListener('click', handleClickOutside)
+
+  // Обработчик Esc для закрытия модальных окон
   escHandler = (e: KeyboardEvent) => {
-    if (e.key === 'Escape' && showAddTokenModal.value && !addingToken.value) {
-      closeAddTokenModal()
+    if (e.key === 'Escape') {
+      if (showAddTokenModal.value && !addingToken.value) {
+        closeAddTokenModal()
+      } else if (showCreateLinkModal.value && !creatingLink.value) {
+        closeCreateLinkModal()
+      } else if (showEditNameModal.value && !editingName.value) {
+        closeEditNameModal()
+      } else if (showEditDescriptionModal.value && !editingDescription.value) {
+        closeEditDescriptionModal()
+      } else if (showTransferOwnershipModal.value && !transferringOwnership.value) {
+        closeTransferOwnershipModal()
+      }
     }
   }
   window.addEventListener('keydown', escHandler)
@@ -433,10 +921,16 @@ onMounted(async () => {
     await loadBots()
   } else if (activeTab.value === 'channels' || activeTab.value === 'links') {
     await loadChannels()
+    if (activeTab.value === 'links') {
+      await loadLinks()
+    }
   }
 })
 
 onUnmounted(() => {
+  // Cleanup обработчика клика вне dropdown
+  document.removeEventListener('click', handleClickOutside)
+
   // Cleanup обработчика Esc
   if (escHandler) {
     window.removeEventListener('keydown', escHandler)
@@ -452,7 +946,385 @@ const handleTabChange = async (tab: 'info' | 'bots' | 'channels' | 'links' | 'me
     await loadBots()
   } else if ((tab === 'channels' || tab === 'links') && channels.value.length === 0 && !loadingChannels.value) {
     await loadChannels()
+    if (tab === 'links') {
+      await loadLinks()
+    }
+  } else if (tab === 'links' && links.value.length === 0 && !loadingLinks.value) {
+    await loadLinks()
   }
+}
+
+// Обработка изменения фильтра по каналу
+const onChannelFilterChange = async () => {
+  await loadLinks()
+}
+
+// Обработка выбора канала в кастомном dropdown
+const selectChannel = async (channelId: string | null) => {
+  selectedChannelId.value = channelId
+  channelFilterOpen.value = false
+  channelFilterSearch.value = ''
+  await loadLinks()
+}
+
+// Закрытие dropdown при клике вне его
+const handleClickOutside = (event: MouseEvent) => {
+  if (channelFilterRef.value && !channelFilterRef.value.contains(event.target as Node)) {
+    channelFilterOpen.value = false
+    channelFilterSearch.value = ''
+  }
+  if (modalChannelDropdownRef.value && !modalChannelDropdownRef.value.contains(event.target as Node)) {
+    modalChannelDropdownOpen.value = false
+    modalChannelSearch.value = ''
+  }
+}
+
+// Получение названия выбранного канала
+const selectedChannelName = computed(() => {
+  if (!selectedChannelId.value) return 'Все каналы'
+  const channel = channels.value.find(c => c.id === selectedChannelId.value)
+  return channel ? (channel.chatTitle || channel.chatUsername || channel.chatId) : 'Все каналы'
+})
+
+// Получение названия выбранного канала в модальном окне
+const selectedModalChannelName = computed(() => {
+  if (!newLinkChannelId.value) return 'Выберите канал'
+  const channel = channels.value.find(c => c.id === newLinkChannelId.value)
+  return channel ? (channel.chatTitle || channel.chatUsername || channel.chatId) : 'Выберите канал'
+})
+
+// Фильтрация каналов для фильтра
+const filteredChannelsForFilter = computed(() => {
+  if (!channelFilterSearch.value.trim()) return channels.value
+  const search = channelFilterSearch.value.toLowerCase().trim()
+  return channels.value.filter(channel => {
+    const title = (channel.chatTitle || '').toLowerCase()
+    const username = (channel.chatUsername || '').toLowerCase()
+    const id = String(channel.chatId || '').toLowerCase()
+    return title.includes(search) || username.includes(search) || id.includes(search)
+  })
+})
+
+// Фильтрация каналов для модального окна
+const filteredChannelsForModal = computed(() => {
+  if (!modalChannelSearch.value.trim()) return channels.value
+  const search = modalChannelSearch.value.toLowerCase().trim()
+  return channels.value.filter(channel => {
+    const title = (channel.chatTitle || '').toLowerCase()
+    const username = (channel.chatUsername || '').toLowerCase()
+    const id = String(channel.chatId || '').toLowerCase()
+    return title.includes(search) || username.includes(search) || id.includes(search)
+  })
+})
+
+// Обработка выбора канала в модальном окне
+const selectModalChannel = (channelId: string | null) => {
+  newLinkChannelId.value = channelId
+  modalChannelDropdownOpen.value = false
+  modalChannelSearch.value = ''
+  onChannelChange()
+}
+
+
+// Проверка webhook для бота
+const checkWebhook = async (botId: string) => {
+  try {
+    console.log('[ProjectDetailPage] checkWebhook: Проверка webhook для бота:', botId)
+    
+    const result = await apiCheckWebhookRoute({ id: botId }).run(ctx)
+    
+    console.log('[ProjectDetailPage] checkWebhook: Результат проверки:', result)
+    
+    if (result.success && result.webhookInfo) {
+      const info = result.webhookInfo
+      const message = `Текущий URL: ${info.url || 'не установлен'}\n` +
+        `URL приложения: ${result.expectedUrl}\n` +
+        `Результат совпадения: ${result.isCorrect ? 'Да' : 'Нет'}\n` +
+        `Событий в ожидании: ${info.pending_update_count || 0}\n` +
+        `Есть ошибки доставки: ${info.last_error_date ? 'Да' : 'Нет'}\n` +
+        (info.last_error_date ? `Последняя ошибка: ${new Date(info.last_error_date * 1000).toLocaleString()}\n` : '') +
+        (info.last_error_message ? `Сообщение: ${info.last_error_message}` : '')
+      
+      showAlert(message, 'Статус webhook', 'info')
+    } else {
+      showAlert(`Ошибка проверки webhook: ${result.error || 'Неизвестная ошибка'}`, 'Ошибка', 'error')
+    }
+  } catch (e: any) {
+    console.error('[ProjectDetailPage] checkWebhook: Ошибка:', e)
+    showAlert(`Ошибка при проверке webhook: ${e.message || 'Неизвестная ошибка'}`, 'Ошибка', 'error')
+  }
+}
+
+// Перерегистрация webhook для бота
+const reregisterWebhook = async (botId: string) => {
+  try {
+    console.log('[ProjectDetailPage] reregisterWebhook: Перерегистрация webhook для бота:', botId)
+    
+    showConfirm(
+      'Вы уверены, что хотите перерегистрировать webhook? Это обновит настройки webhook с новыми типами обновлений (подписки, лайки и др.).',
+      async () => {
+        const result = await apiReregisterWebhookRoute.run(ctx, { botId: botId })
+        
+        console.log('[ProjectDetailPage] reregisterWebhook: Результат перерегистрации:', result)
+        
+        if (result.success) {
+          const webhookUrl = apiWebhookRoute({ id: botId }).url()
+          showAlert(`Вебхук установлен на значение: ${webhookUrl}`, 'Успешно', 'success')
+        } else {
+          showAlert(`Ошибка перерегистрации webhook: ${result.error || 'Неизвестная ошибка'}`, 'Ошибка', 'error')
+        }
+      },
+      'Подтверждение перерегистрации',
+      'warning'
+    )
+  } catch (e: any) {
+    console.error('[ProjectDetailPage] reregisterWebhook: Ошибка:', e)
+    showAlert(`Ошибка при перерегистрации webhook: ${e.message || 'Неизвестная ошибка'}`, 'Ошибка', 'error')
+  }
+}
+
+// Переход на страницу вебхуков для бота или канала
+const viewWebhooks = (botId: string, chatId?: string) => {
+  // Переходим на страницу вебхуков с фильтром по botId и опционально по chatId
+  const queryParams: any = { botId: botId }
+  if (chatId) {
+    queryParams.chatId = chatId
+  }
+  const webhooksUrl = webhooksPageRoute.query(queryParams).url()
+  window.location.href = webhooksUrl
+}
+
+// Удаление ссылки
+const deleteLink = async (linkId: string) => {
+  if (deletingLinkId.value) return
+  
+  showConfirm(
+    'Вы уверены, что хотите удалить эту ссылку? Это отзовёт работу публичной ссылки для аналитики, отзовёт все инвайт-линки в телеграм и удалит все связанные данные по аналитике из таблиц.',
+    async () => {
+      deletingLinkId.value = linkId
+      
+      try {
+        const result = await apiDeleteLinkRoute.run(ctx, {
+          linkId: linkId
+        })
+        
+        if (result.success) {
+          showAlert('Ссылка успешно удалена', 'Успешно', 'success')
+          // Обновляем список ссылок
+          await loadLinks()
+        } else {
+          showAlert(result.error || 'Ошибка при удалении ссылки', 'Ошибка', 'error')
+        }
+      } catch (e: any) {
+        console.error('[ProjectDetailPage] Ошибка удаления ссылки:', e)
+        showAlert(e.message || 'Ошибка при удалении ссылки', 'Ошибка', 'error')
+      } finally {
+        deletingLinkId.value = null
+      }
+    },
+    'Подтверждение удаления',
+    'danger'
+  )
+}
+
+// Открытие модального окна для редактирования названия
+const openEditNameModal = () => {
+  if (!project.value) return
+  editName.value = project.value.name
+  editError.value = null
+  showEditNameModal.value = true
+}
+
+// Закрытие модального окна для редактирования названия
+const closeEditNameModal = () => {
+  showEditNameModal.value = false
+  editName.value = ''
+  editError.value = null
+  editingName.value = false
+}
+
+// Сохранение названия проекта
+const saveProjectName = async () => {
+  if (!editName.value || !editName.value.trim()) {
+    editError.value = 'Название проекта обязательно'
+    return
+  }
+  
+  if (!props.projectId) {
+    editError.value = 'ID проекта не установлен'
+    return
+  }
+  
+  editingName.value = true
+  editError.value = null
+  
+  try {
+    const result = await apiUpdateProjectRoute({ id: props.projectId }).run(ctx, {
+      name: editName.value.trim()
+    })
+    
+    if (result.success) {
+      await loadProject()
+      closeEditNameModal()
+      showAlert('Название проекта успешно обновлено', 'Успешно', 'success')
+    } else {
+      editError.value = result.error || 'Ошибка при обновлении названия'
+    }
+  } catch (e: any) {
+    console.error('[ProjectDetailPage] Ошибка обновления названия:', e)
+    editError.value = e.message || 'Ошибка при обновлении названия'
+  } finally {
+    editingName.value = false
+  }
+}
+
+// Открытие модального окна для редактирования описания
+const openEditDescriptionModal = () => {
+  if (!project.value) return
+  editDescription.value = project.value.description || ''
+  editError.value = null
+  showEditDescriptionModal.value = true
+}
+
+// Закрытие модального окна для редактирования описания
+const closeEditDescriptionModal = () => {
+  showEditDescriptionModal.value = false
+  editDescription.value = ''
+  editError.value = null
+  editingDescription.value = false
+}
+
+// Сохранение описания проекта
+const saveProjectDescription = async () => {
+  if (!props.projectId) {
+    editError.value = 'ID проекта не установлен'
+    return
+  }
+  
+  editingDescription.value = true
+  editError.value = null
+  
+  try {
+    const result = await apiUpdateProjectRoute({ id: props.projectId }).run(ctx, {
+      description: editDescription.value.trim() || null
+    })
+    
+    if (result.success) {
+      await loadProject()
+      closeEditDescriptionModal()
+      showAlert('Описание проекта успешно обновлено', 'Успешно', 'success')
+    } else {
+      editError.value = result.error || 'Ошибка при обновлении описания'
+    }
+  } catch (e: any) {
+    console.error('[ProjectDetailPage] Ошибка обновления описания:', e)
+    editError.value = e.message || 'Ошибка при обновлении описания'
+  } finally {
+    editingDescription.value = false
+  }
+}
+
+// Получение списка участников для передачи прав (кроме текущего пользователя, если он овнер)
+const availableMembersForTransfer = computed(() => {
+  if (!project.value || !project.value.members) return []
+  
+  return project.value.members.filter((member: any) => {
+    // Исключаем текущего пользователя, если он овнер
+    if (userIdsMatch(member.userId, ctx.user?.id) && member.role === 'owner') {
+      return false
+    }
+    // Включаем всех остальных участников
+    return true
+  })
+})
+
+// Открытие модального окна для передачи прав
+const openTransferOwnershipModal = () => {
+  if (!project.value) return
+  transferOwnershipUserId.value = null
+  editError.value = null
+  showTransferOwnershipModal.value = true
+}
+
+// Закрытие модального окна для передачи прав
+const closeTransferOwnershipModal = () => {
+  showTransferOwnershipModal.value = false
+  transferOwnershipUserId.value = null
+  editError.value = null
+  transferringOwnership.value = false
+}
+
+// Передача прав владельца
+const transferOwnership = async () => {
+  if (!transferOwnershipUserId.value) {
+    editError.value = 'Выберите участника для передачи прав'
+    return
+  }
+  
+  if (!props.projectId) {
+    editError.value = 'ID проекта не установлен'
+    return
+  }
+  
+  transferringOwnership.value = true
+  editError.value = null
+  
+  try {
+    const result = await apiTransferOwnershipRoute({ id: props.projectId }).run(ctx, {
+      newOwnerUserId: transferOwnershipUserId.value
+    })
+    
+    if (result.success) {
+      await loadProject()
+      closeTransferOwnershipModal()
+      showAlert('Права владельца успешно переданы', 'Успешно', 'success')
+    } else {
+      editError.value = result.error || 'Ошибка при передаче прав'
+    }
+  } catch (e: any) {
+    console.error('[ProjectDetailPage] Ошибка передачи прав:', e)
+    editError.value = e.message || 'Ошибка при передаче прав'
+  } finally {
+    transferringOwnership.value = false
+  }
+}
+
+// Удаление проекта
+const deleteProject = async () => {
+  if (!props.projectId) {
+    showAlert('ID проекта не установлен', 'Ошибка', 'error')
+    return
+  }
+  
+  showConfirm(
+    'Вы уверены, что хотите удалить этот проект? Это действие нельзя отменить. Все данные проекта (боты, каналы, ссылки, аналитика) будут удалены.',
+    async () => {
+      deletingProject.value = true
+      
+      try {
+        const result = await apiDeleteProjectRoute.run(ctx, {
+          projectId: props.projectId
+        })
+        
+        if (result.success) {
+          showAlert('Проект успешно удалён', 'Успешно', 'success')
+          // Перенаправляем на страницу проектов
+          if (props.projectsPageUrl) {
+            window.location.href = props.projectsPageUrl
+          }
+        } else {
+          showAlert(result.error || 'Ошибка при удалении проекта', 'Ошибка', 'error')
+        }
+      } catch (e: any) {
+        console.error('[ProjectDetailPage] Ошибка удаления проекта:', e)
+        showAlert(e.message || 'Ошибка при удалении проекта', 'Ошибка', 'error')
+      } finally {
+        deletingProject.value = false
+      }
+    },
+    'Подтверждение удаления проекта',
+    'danger'
+  )
 }
 </script>
 
@@ -564,7 +1436,28 @@ const handleTabChange = async (tab: 'info' | 'bots' | 'channels' | 'links' | 'me
             <!-- Info Tab -->
             <div v-if="activeTab === 'info'" class="tab-panel">
               <div class="info-section">
-                <h2 class="section-title">Информация о проекте</h2>
+                <div class="section-header">
+                  <h2 class="section-title">Информация о проекте</h2>
+                  <div v-if="isOwner || isAdmin" class="section-actions">
+                    <button @click="openEditNameModal" class="btn btn-secondary btn-sm" title="Редактировать название">
+                      <i class="fas fa-edit"></i>
+                      Редактировать название
+                    </button>
+                    <button @click="openEditDescriptionModal" class="btn btn-secondary btn-sm" title="Редактировать описание">
+                      <i class="fas fa-edit"></i>
+                      Редактировать описание
+                    </button>
+                    <button v-if="isOwner && availableMembersForTransfer.length > 0" @click="openTransferOwnershipModal" class="btn btn-secondary btn-sm" title="Передать права владельца">
+                      <i class="fas fa-user-crown"></i>
+                      Передать права
+                    </button>
+                    <button @click="deleteProject" class="btn btn-danger btn-sm" title="Удалить проект" :disabled="deletingProject">
+                      <i v-if="deletingProject" class="fas fa-spinner fa-spin"></i>
+                      <i v-else class="fas fa-trash"></i>
+                      Удалить проект
+                    </button>
+                  </div>
+                </div>
                 <div class="info-grid">
                   <div class="info-item">
                     <label class="info-label">Название</label>
@@ -622,27 +1515,74 @@ const handleTabChange = async (tab: 'info' | 'bots' | 'channels' | 'links' | 'me
               </div>
               
               <div v-else class="table-container">
-                <table class="data-table">
-                  <thead>
-                    <tr>
-                      <th>Название</th>
-                      <th>Username</th>
-                      <th>Токен</th>
-                      <th>Каналов</th>
-                    </tr>
-                  </thead>
+                <div class="table-wrapper">
+                  <table class="data-table">
+                    <thead>
+                      <tr>
+                        <th>Название</th>
+                        <th>Username</th>
+                        <th>Токен</th>
+                        <th>Действия</th>
+                      </tr>
+                    </thead>
                   <tbody>
                     <tr v-for="bot in bots" :key="bot.id">
-                      <td>{{ bot.botName || 'Telegram Bot' }}</td>
-                      <td>
-                        <span v-if="bot.botUsername" class="username-value">@{{ bot.botUsername }}</span>
+                      <td 
+                        class="cell-with-tooltip"
+                        @mouseenter="showTooltip($event, bot.botName || 'Telegram Bot')"
+                        @mouseleave="hideTooltip"
+                      >
+                        <span>{{ bot.botName || 'Telegram Bot' }}</span>
+                      </td>
+                      <td 
+                        class="cell-with-tooltip"
+                        @mouseenter="bot.botUsername && showTooltip($event, '@' + bot.botUsername)"
+                        @mouseleave="hideTooltip"
+                      >
+                        <span 
+                          v-if="bot.botUsername" 
+                          class="username-value"
+                        >
+                          @{{ bot.botUsername }}
+                        </span>
                         <span v-else class="text-secondary">—</span>
                       </td>
-                      <td class="code-value">{{ maskToken(bot.token) }}</td>
-                      <td>{{ bot.channelsCount || 0 }}</td>
+                      <td 
+                        class="cell-with-tooltip token-cell"
+                        @mouseenter="showTooltip($event, maskTokenFull(bot.token))"
+                        @mouseleave="hideTooltip"
+                      >
+                        <span class="code-value">{{ maskToken(bot.token) }}</span>
+                      </td>
+                      <td>
+                        <div class="table-actions">
+                          <button 
+                            @click="checkWebhook(bot.id)" 
+                            class="btn btn-secondary btn-sm"
+                            title="Проверить webhook"
+                          >
+                            <i class="fas fa-link"></i>
+                          </button>
+                          <button 
+                            @click="reregisterWebhook(bot.id)" 
+                            class="btn btn-secondary btn-sm"
+                            title="Перерегистрировать webhook"
+                          >
+                            <i class="fas fa-sync-alt"></i>
+                          </button>
+                          <button 
+                            @click="viewWebhooks(bot.id)" 
+                            class="btn btn-secondary btn-sm"
+                            title="Просмотр вебхуков"
+                          >
+                            <i class="fas fa-list"></i>
+                          </button>
+                        </div>
+                      </td>
                     </tr>
                   </tbody>
                 </table>
+                </div>
               </div>
             </div>
 
@@ -683,17 +1623,42 @@ const handleTabChange = async (tab: 'info' | 'bots' | 'channels' | 'links' | 'me
                       <th>Username</th>
                       <th>Chat ID</th>
                       <th>Последняя активность</th>
+                      <th>Вебхуки</th>
                     </tr>
                   </thead>
                   <tbody>
                     <tr v-for="channel in channels" :key="channel.id">
-                      <td>{{ channel.chatTitle || 'Канал без названия' }}</td>
+                      <td
+                        class="cell-with-tooltip"
+                        @mouseenter="showTooltip($event, channel.chatTitle || 'Канал без названия')"
+                        @mouseleave="hideTooltip"
+                      >
+                        <span class="cell-content">{{ channel.chatTitle || 'Канал без названия' }}</span>
+                      </td>
                       <td>
                         <span v-if="channel.chatUsername" class="username-value">@{{ channel.chatUsername }}</span>
                         <span v-else class="text-secondary">—</span>
                       </td>
-                      <td class="code-value">{{ channel.chatId }}</td>
+                      <td
+                        class="cell-with-tooltip code-value-cell"
+                        @mouseenter="showTooltip($event, String(channel.chatId))"
+                        @mouseleave="hideTooltip"
+                      >
+                        <span class="code-value">{{ channel.chatId }}</span>
+                      </td>
                       <td>{{ formatDate(channel.lastSeenAt) }}</td>
+                      <td>
+                        <button 
+                          v-if="channel.botId"
+                          @click="viewWebhooks(channel.botId, channel.chatId)"
+                          class="btn btn-secondary btn-sm"
+                          title="Просмотр вебхуков канала"
+                        >
+                          <i class="fas fa-code"></i>
+                          Вебхуки
+                        </button>
+                        <span v-else class="text-secondary">—</span>
+                      </td>
                     </tr>
                   </tbody>
                 </table>
@@ -704,6 +1669,17 @@ const handleTabChange = async (tab: 'info' | 'bots' | 'channels' | 'links' | 'me
             <div v-if="activeTab === 'links'" class="tab-panel">
               <div class="section-header">
                 <h2 class="section-title">Ссылки проекта</h2>
+                <div class="section-actions">
+                  <button @click="openCreateLinkModal" class="btn btn-primary btn-sm" :disabled="channels.length === 0">
+                    <i class="fas fa-plus"></i>
+                    Создать ссылку
+                  </button>
+                  <button @click="loadLinks" class="btn btn-secondary btn-sm" :disabled="loadingLinks">
+                    <i v-if="loadingLinks" class="fas fa-spinner fa-spin"></i>
+                    <i v-else class="fas fa-sync-alt"></i>
+                    Обновить
+                  </button>
+                </div>
               </div>
               
               <div class="links-filter">
@@ -711,24 +1687,55 @@ const handleTabChange = async (tab: 'info' | 'bots' | 'channels' | 'links' | 'me
                   <i class="fas fa-filter"></i>
                   Фильтр по каналу
                 </label>
-                <select 
-                  v-model="selectedChannelId" 
-                  class="filter-select"
-                >
-                  <option :value="null">Все каналы</option>
-                  <option 
-                    v-for="channel in channels" 
-                    :key="channel.id" 
-                    :value="channel.id"
+                <div class="custom-select-wrapper" ref="channelFilterRef">
+                  <div 
+                    class="custom-select"
+                    :class="{ 'custom-select-open': channelFilterOpen }"
+                    @click="channelFilterOpen = !channelFilterOpen"
                   >
-                    {{ channel.chatTitle || channel.chatUsername || channel.chatId }}
-                  </option>
-                </select>
+                    <span class="custom-select-value">{{ selectedChannelName }}</span>
+                    <i class="fas fa-chevron-down custom-select-arrow" :class="{ 'custom-select-arrow-open': channelFilterOpen }"></i>
+                  </div>
+                  <div v-if="channelFilterOpen" class="custom-select-dropdown">
+                    <div class="custom-select-search">
+                      <i class="fas fa-search"></i>
+                      <input
+                        type="text"
+                        v-model="channelFilterSearch"
+                        @click.stop
+                        @keydown.enter.prevent
+                        class="custom-select-search-input"
+                        placeholder="Поиск по названию..."
+                      />
+                    </div>
+                    <div class="custom-select-options">
+                      <div 
+                        class="custom-select-option"
+                        :class="{ 'custom-select-option-selected': selectedChannelId === null }"
+                        @click="selectChannel(null)"
+                      >
+                        Все каналы
+                      </div>
+                      <div 
+                        v-for="channel in filteredChannelsForFilter" 
+                        :key="channel.id"
+                        class="custom-select-option"
+                        :class="{ 'custom-select-option-selected': selectedChannelId === channel.id }"
+                        @click="selectChannel(channel.id)"
+                      >
+                        {{ channel.chatTitle || channel.chatUsername || channel.chatId }}
+                      </div>
+                      <div v-if="filteredChannelsForFilter.length === 0" class="custom-select-no-results">
+                        Каналы не найдены
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
               
-              <div v-if="loadingChannels" class="loading-container-small">
+              <div v-if="loadingChannels || loadingLinks" class="loading-container-small">
                 <div class="loading-spinner"></div>
-                <p>Загрузка каналов...</p>
+                <p>{{ loadingChannels ? 'Загрузка каналов...' : 'Загрузка ссылок...' }}</p>
               </div>
               
               <div v-else-if="channels.length === 0" class="empty-state">
@@ -737,10 +1744,91 @@ const handleTabChange = async (tab: 'info' | 'bots' | 'channels' | 'links' | 'me
                 <p class="empty-subtext">Сначала добавьте бота и дождитесь появления каналов</p>
               </div>
               
-              <div v-else class="empty-state">
+              <div v-else-if="linksError" class="error-container">
+                <div class="error-message">
+                  <i class="fas fa-exclamation-circle"></i>
+                  <span>{{ linksError }}</span>
+                </div>
+              </div>
+              
+              <div v-else-if="links.length === 0" class="empty-state">
                 <i class="fas fa-link"></i>
-                <p>Функционал создания ссылок будет добавлен позже</p>
-                <p class="empty-subtext">Здесь вы сможете создавать отслеживаемые ссылки для выбранного канала</p>
+                <p>Нет ссылок</p>
+                <p class="empty-subtext">Создайте первую ссылку для отслеживания переходов</p>
+              </div>
+              
+              <div v-else class="table-container">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>Название</th>
+                      <th>Канал</th>
+                      <th>Место размещения</th>
+                      <th>Переходы</th>
+                      <th>Подписки</th>
+                      <th>Ссылка</th>
+                      <th>Управление</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="link in links" :key="link.id">
+                      <td 
+                        class="cell-with-tooltip"
+                        @mouseenter="showTooltip($event, link.name)"
+                        @mouseleave="hideTooltip"
+                      >
+                        <span class="cell-content">{{ link.name }}</span>
+                      </td>
+                      <td 
+                        :class="getChannelName(link.channelId) ? 'cell-with-tooltip' : ''"
+                        @mouseenter="getChannelName(link.channelId) ? showTooltip($event, getChannelName(link.channelId) || '') : null"
+                        @mouseleave="getChannelName(link.channelId) ? hideTooltip() : null"
+                      >
+                        <span v-if="getChannelName(link.channelId)" class="cell-content">
+                          {{ getChannelName(link.channelId) }}
+                        </span>
+                        <span v-else class="text-secondary">—</span>
+                      </td>
+                      <td>
+                        <a 
+                          v-if="link.placementUrl" 
+                          :href="link.placementUrl" 
+                          target="_blank"
+                          class="text-[var(--color-primary)] hover:underline text-sm cell-content-link"
+                          :title="link.placementUrl"
+                        >
+                          <i class="fas fa-external-link-alt mr-1"></i>
+                          Открыть
+                        </a>
+                        <span v-else class="text-secondary">—</span>
+                      </td>
+                      <td>{{ link.clicksCount || 0 }}</td>
+                      <td>{{ link.subscribesCount || 0 }}</td>
+                      <td>
+                        <button 
+                          @click="copyLinkToClipboard(link.id)"
+                          class="btn btn-secondary btn-sm"
+                          title="Копировать ссылку"
+                        >
+                          <i class="fas fa-copy"></i>
+                          Копировать
+                        </button>
+                      </td>
+                      <td>
+                        <button 
+                          @click="deleteLink(link.id)"
+                          class="btn btn-danger btn-sm"
+                          :disabled="deletingLinkId === link.id"
+                          title="Удалить ссылку"
+                        >
+                          <i v-if="deletingLinkId === link.id" class="fas fa-spinner fa-spin"></i>
+                          <i v-else class="fas fa-trash"></i>
+                          Удалить
+                        </button>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
             </div>
 
@@ -858,6 +1946,25 @@ const handleTabChange = async (tab: 'info' | 'bots' | 'channels' | 'links' | 'me
       </div>
     </footer>
 
+    <!-- Alert Modal -->
+    <AlertModal
+      :show="showAlertModal"
+      :message="alertMessage"
+      :title="alertTitle"
+      :type="alertType"
+      @close="showAlertModal = false"
+    />
+
+    <!-- Confirm Modal -->
+    <ConfirmModal
+      :show="showConfirmModal"
+      :message="confirmMessage"
+      :title="confirmTitle"
+      :type="confirmType"
+      @confirm="handleConfirm"
+      @cancel="handleCancel"
+    />
+
     <!-- Add Token Modal -->
     <Transition name="modal">
       <div v-if="showAddTokenModal" class="modal-overlay" @click="addingToken ? null : closeAddTokenModal">
@@ -907,6 +2014,320 @@ const handleTabChange = async (tab: 'info' | 'bots' | 'channels' | 'links' | 'me
             </button>
           </div>
         </div>
+      </div>
+    </Transition>
+
+    <!-- Create Link Modal -->
+    <Transition name="modal">
+      <div v-if="showCreateLinkModal" class="modal-overlay" @click="creatingLink ? null : closeCreateLinkModal">
+        <div class="modal-content" @click.stop>
+          <div class="modal-scanlines"></div>
+          
+          <div class="modal-header">
+            <h2 class="modal-title">Создать ссылку</h2>
+            <button @click="closeCreateLinkModal" class="modal-close-btn" :disabled="creatingLink">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+
+          <div class="modal-body">
+            <div class="form-group">
+              <label class="form-label">
+                <i class="fas fa-tag"></i>
+                Название ссылки <span style="color: var(--color-accent)">*</span>
+              </label>
+              <input 
+                v-model="newLinkName"
+                type="text" 
+                class="form-input"
+                placeholder="Например: Реклама в Instagram"
+                :disabled="creatingLink"
+              />
+              <div v-if="linkError && linkError.includes('Название')" class="form-error">
+                <i class="fas fa-exclamation-circle"></i>
+                <span>{{ linkError }}</span>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">
+                <i class="fas fa-link"></i>
+                Место размещения (URL)
+              </label>
+              <input 
+                v-model="newLinkPlacementUrl"
+                type="text" 
+                class="form-input"
+                placeholder="https://example.com/page"
+                :disabled="creatingLink"
+              />
+              <p class="form-hint">
+                Опционально: укажите URL, где будет размещена эта ссылка
+              </p>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">
+                <i class="fas fa-broadcast-tower"></i>
+                Канал <span style="color: var(--color-accent)">*</span>
+              </label>
+              <div class="custom-select-wrapper custom-select-form" ref="modalChannelDropdownRef">
+                <div 
+                  class="custom-select form-input"
+                  :class="{ 'custom-select-open': modalChannelDropdownOpen, 'form-input-disabled': creatingLink }"
+                  @click="!creatingLink && (modalChannelDropdownOpen = !modalChannelDropdownOpen)"
+                  :style="{ cursor: creatingLink ? 'not-allowed' : 'pointer', opacity: creatingLink ? 0.6 : 1 }"
+                >
+                  <span class="custom-select-value">{{ selectedModalChannelName }}</span>
+                  <i class="fas fa-chevron-down custom-select-arrow" :class="{ 'custom-select-arrow-open': modalChannelDropdownOpen }"></i>
+                </div>
+                <div v-if="modalChannelDropdownOpen && !creatingLink" class="custom-select-dropdown">
+                  <div class="custom-select-search">
+                    <i class="fas fa-search"></i>
+                    <input
+                      type="text"
+                      v-model="modalChannelSearch"
+                      @click.stop
+                      @keydown.enter.prevent
+                      class="custom-select-search-input"
+                      placeholder="Поиск по названию..."
+                    />
+                  </div>
+                  <div class="custom-select-options">
+                    <div 
+                      v-for="channel in filteredChannelsForModal" 
+                      :key="channel.id"
+                      class="custom-select-option"
+                      :class="{ 'custom-select-option-selected': newLinkChannelId === channel.id }"
+                      @click="selectModalChannel(channel.id)"
+                    >
+                      {{ channel.chatTitle || channel.chatUsername || channel.chatId }}
+                    </div>
+                    <div v-if="filteredChannelsForModal.length === 0" class="custom-select-no-results">
+                      Каналы не найдены
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div v-if="linkError && linkError.includes('канал')" class="form-error">
+                <i class="fas fa-exclamation-circle"></i>
+                <span>{{ linkError }}</span>
+              </div>
+            </div>
+
+            <div v-if="newLinkChannelId && needsBotSelection(newLinkChannelId)" class="form-group">
+              <label class="form-label">
+                <i class="fas fa-robot"></i>
+                Бот <span style="color: var(--color-accent)">*</span>
+              </label>
+              <select 
+                v-model="newLinkBotId" 
+                class="form-input"
+                :disabled="creatingLink"
+              >
+                <option :value="null">Выберите бота</option>
+                <option 
+                  v-for="bot in getBotsForChannel(newLinkChannelId)" 
+                  :key="bot.id" 
+                  :value="bot.id"
+                >
+                  {{ bot.botName || bot.botUsername || bot.id }}
+                </option>
+              </select>
+              <div v-if="linkError && linkError.includes('бот')" class="form-error">
+                <i class="fas fa-exclamation-circle"></i>
+                <span>{{ linkError }}</span>
+              </div>
+            </div>
+
+            <div v-if="linkError && !linkError.includes('Название') && !linkError.includes('канал') && !linkError.includes('бот')" class="form-error">
+              <i class="fas fa-exclamation-circle"></i>
+              <span>{{ linkError }}</span>
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button @click="createLink" class="modal-btn modal-btn-submit" :disabled="creatingLink">
+              <span v-if="creatingLink">
+                <i class="fas fa-spinner fa-spin"></i>
+                Создание...
+              </span>
+              <span v-else>Создать</span>
+            </button>
+            <button @click="closeCreateLinkModal" class="modal-btn modal-btn-cancel" :disabled="creatingLink">
+              Отмена
+            </button>
+          </div>
+        </div>
+      </div>
+    </Transition>
+
+    <!-- Edit Name Modal -->
+    <Transition name="modal">
+      <div v-if="showEditNameModal" class="modal-overlay" @click="editingName ? null : closeEditNameModal">
+        <div class="modal-content" @click.stop>
+          <div class="modal-scanlines"></div>
+          
+          <div class="modal-header">
+            <h2 class="modal-title">Редактировать название проекта</h2>
+            <button @click="closeEditNameModal" class="modal-close-btn" :disabled="editingName">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+
+          <div class="modal-body">
+            <div class="form-group">
+              <label class="form-label">
+                <i class="fas fa-tag"></i>
+                Название <span style="color: var(--color-accent)">*</span>
+              </label>
+              <input 
+                v-model="editName"
+                type="text" 
+                class="form-input"
+                placeholder="Введите название проекта"
+                :disabled="editingName"
+                @keyup.enter="saveProjectName"
+              />
+              <div v-if="editError" class="form-error">
+                <i class="fas fa-exclamation-circle"></i>
+                <span>{{ editError }}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button @click="saveProjectName" class="modal-btn modal-btn-submit" :disabled="editingName">
+              <span v-if="editingName">
+                <i class="fas fa-spinner fa-spin"></i>
+                Сохранение...
+              </span>
+              <span v-else>Сохранить</span>
+            </button>
+            <button @click="closeEditNameModal" class="modal-btn modal-btn-cancel" :disabled="editingName">
+              Отмена
+            </button>
+          </div>
+        </div>
+      </div>
+    </Transition>
+
+    <!-- Edit Description Modal -->
+    <Transition name="modal">
+      <div v-if="showEditDescriptionModal" class="modal-overlay" @click="editingDescription ? null : closeEditDescriptionModal">
+        <div class="modal-content" @click.stop>
+          <div class="modal-scanlines"></div>
+          
+          <div class="modal-header">
+            <h2 class="modal-title">Редактировать описание проекта</h2>
+            <button @click="closeEditDescriptionModal" class="modal-close-btn" :disabled="editingDescription">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+
+          <div class="modal-body">
+            <div class="form-group">
+              <label class="form-label">
+                <i class="fas fa-align-left"></i>
+                Описание
+              </label>
+              <textarea 
+                v-model="editDescription"
+                class="form-input"
+                placeholder="Введите описание проекта (необязательно)"
+                :disabled="editingDescription"
+                rows="4"
+              ></textarea>
+              <div v-if="editError" class="form-error">
+                <i class="fas fa-exclamation-circle"></i>
+                <span>{{ editError }}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button @click="saveProjectDescription" class="modal-btn modal-btn-submit" :disabled="editingDescription">
+              <span v-if="editingDescription">
+                <i class="fas fa-spinner fa-spin"></i>
+                Сохранение...
+              </span>
+              <span v-else>Сохранить</span>
+            </button>
+            <button @click="closeEditDescriptionModal" class="modal-btn modal-btn-cancel" :disabled="editingDescription">
+              Отмена
+            </button>
+          </div>
+        </div>
+      </div>
+    </Transition>
+
+    <!-- Transfer Ownership Modal -->
+    <Transition name="modal">
+      <div v-if="showTransferOwnershipModal" class="modal-overlay" @click="transferringOwnership ? null : closeTransferOwnershipModal">
+        <div class="modal-content" @click.stop>
+          <div class="modal-scanlines"></div>
+          
+          <div class="modal-header">
+            <h2 class="modal-title">Передать права владельца</h2>
+            <button @click="closeTransferOwnershipModal" class="modal-close-btn" :disabled="transferringOwnership">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+
+          <div class="modal-body">
+            <div class="form-group">
+              <label class="form-label">
+                <i class="fas fa-user-crown"></i>
+                Новый владелец <span style="color: var(--color-accent)">*</span>
+              </label>
+              <select 
+                v-model="transferOwnershipUserId" 
+                class="form-input"
+                :disabled="transferringOwnership"
+              >
+                <option :value="null">Выберите участника</option>
+                <option 
+                  v-for="member in availableMembersForTransfer" 
+                  :key="member.userId" 
+                  :value="member.userId"
+                >
+                  ID: {{ member.userId }} ({{ member.role === 'owner' ? 'Владелец' : 'Участник' }})
+                </option>
+              </select>
+              <p class="form-hint">
+                После передачи прав вы станете обычным участником проекта
+              </p>
+              <div v-if="editError" class="form-error">
+                <i class="fas fa-exclamation-circle"></i>
+                <span>{{ editError }}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button @click="transferOwnership" class="modal-btn modal-btn-submit" :disabled="transferringOwnership || !transferOwnershipUserId">
+              <span v-if="transferringOwnership">
+                <i class="fas fa-spinner fa-spin"></i>
+                Передача...
+              </span>
+              <span v-else>Передать права</span>
+            </button>
+            <button @click="closeTransferOwnershipModal" class="modal-btn modal-btn-cancel" :disabled="transferringOwnership">
+              Отмена
+            </button>
+          </div>
+        </div>
+      </div>
+    </Transition>
+
+    <!-- Tooltip -->
+    <Transition name="tooltip">
+      <div 
+        v-if="tooltip.show" 
+        class="custom-tooltip"
+        :style="{ left: tooltip.x + 'px', top: (tooltip.y - 10) + 'px' }"
+      >
+        {{ tooltip.text }}
       </div>
     </Transition>
   </div>
@@ -1329,6 +2750,14 @@ const handleTabChange = async (tab: 'info' | 'bots' | 'channels' | 'links' | 'me
   gap: 0.75rem;
 }
 
+.table-actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  white-space: nowrap;
+  overflow: visible;
+}
+
 .empty-state {
   text-align: center;
   padding: 4rem 1rem;
@@ -1358,17 +2787,60 @@ const handleTabChange = async (tab: 'info' | 'bots' | 'channels' | 'links' | 'me
     100% calc(100% - 4px), calc(100% - 4px) calc(100% - 4px), calc(100% - 4px) 100%,
     4px 100%, 4px calc(100% - 4px), 0 calc(100% - 4px)
   );
-  overflow-x: auto;
+  position: relative;
+  width: 100%;
+  box-sizing: border-box;
+  display: block;
+}
+
+.table-wrapper {
+  width: 100%;
+  overflow: hidden;
+}
+
+/* Специфичные стили для таблицы ботов (4 колонки) */
+.table-wrapper .data-table th:nth-child(1),
+.table-wrapper .data-table td:nth-child(1) {
+  width: 30%;
+}
+
+.table-wrapper .data-table th:nth-child(2),
+.table-wrapper .data-table td:nth-child(2) {
+  width: 20%;
+}
+
+.table-wrapper .data-table th:nth-child(3),
+.table-wrapper .data-table td:nth-child(3) {
+  width: 30%;
+}
+
+.table-wrapper .data-table th:nth-child(4),
+.table-wrapper .data-table td:nth-child(4) {
+  width: 20%;
+  text-align: left;
 }
 
 .data-table {
   width: 100%;
+  min-width: 100%;
   border-collapse: collapse;
   font-size: 0.9375rem;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  display: table;
+  table-layout: fixed;
 }
 
 .data-table thead {
   background: rgba(0, 0, 0, 0.3);
+  width: 100%;
+  display: table-header-group;
+}
+
+.data-table tbody {
+  width: 100%;
+  display: table-row-group;
 }
 
 .data-table th {
@@ -1378,12 +2850,82 @@ const handleTabChange = async (tab: 'info' | 'bots' | 'channels' | 'links' | 'me
   font-weight: 400;
   letter-spacing: 0.03em;
   border-bottom: 2px solid var(--color-border);
+  white-space: nowrap;
+  box-sizing: border-box;
+}
+
+.data-table colgroup,
+.data-table col {
+  display: table-column;
+}
+
+.data-table th:nth-child(1),
+.data-table td:nth-child(1) {
+  width: 20%;
+  overflow: hidden;
+}
+
+.data-table th:nth-child(2),
+.data-table td:nth-child(2) {
+  width: 12%;
+}
+
+.data-table th:nth-child(3),
+.data-table td:nth-child(3) {
+  width: 18%;
+  overflow: hidden;
+}
+
+.data-table th:nth-child(4),
+.data-table td:nth-child(4) {
+  width: 10%;
+  text-align: center;
+}
+
+.data-table th:nth-child(5),
+.data-table td:nth-child(5) {
+  width: 10%;
+  text-align: center;
+}
+
+.data-table th:nth-child(6),
+.data-table td:nth-child(6) {
+  width: 15%;
+  min-width: 140px;
+  overflow: visible;
+  white-space: nowrap;
+}
+
+.data-table th:nth-child(7),
+.data-table td:nth-child(7) {
+  width: 15%;
+  min-width: 130px;
+  overflow: visible;
+  white-space: nowrap;
 }
 
 .data-table td {
   padding: 1rem;
   color: var(--color-text);
   border-bottom: 1px solid var(--color-border);
+  position: relative;
+  box-sizing: border-box;
+}
+
+.data-table td .cell-content {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
+  width: 100%;
+}
+
+.data-table td .cell-content-link {
+  display: inline-block;
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .data-table tbody tr:hover {
@@ -1399,12 +2941,93 @@ const handleTabChange = async (tab: 'info' | 'bots' | 'channels' | 'links' | 'me
   font-size: 0.875rem;
   color: var(--color-accent);
   letter-spacing: 0.05em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: inline-block;
+  max-width: 100%;
+}
+
+.code-value-cell {
+  overflow: hidden;
+  max-width: 100%;
+}
+
+.code-value-cell .code-value {
+  display: block;
+  width: 100%;
+  min-width: 0;
 }
 
 .username-value {
   color: var(--color-accent);
   font-family: 'Courier New', monospace;
   letter-spacing: 0.05em;
+}
+
+.cell-with-tooltip {
+  position: relative;
+  cursor: help;
+}
+
+.data-table td.token-cell {
+  padding-left: 1.25rem;
+  padding-right: 0.75rem;
+}
+
+.custom-tooltip {
+  position: fixed;
+  transform: translate(-50%, calc(-100% - 0.75rem));
+  padding: 0.75rem 1rem;
+  background: linear-gradient(135deg, var(--color-bg-secondary) 0%, var(--color-bg-tertiary) 100%);
+  border: 2px solid var(--color-accent);
+  color: var(--color-text);
+  font-size: 0.875rem;
+  font-family: 'Courier New', monospace;
+  white-space: nowrap;
+  z-index: 10000;
+  pointer-events: none;
+  box-shadow: 
+    0 0 20px rgba(211, 35, 75, 0.4),
+    0 0 40px rgba(211, 35, 75, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  clip-path: polygon(
+    0 3px, 3px 3px, 3px 0,
+    calc(100% - 3px) 0, calc(100% - 3px) 3px, 100% 3px,
+    100% calc(100% - 3px), calc(100% - 3px) calc(100% - 3px), calc(100% - 3px) 100%,
+    3px 100%, 3px calc(100% - 3px), 0 calc(100% - 3px)
+  );
+}
+
+.custom-tooltip::after {
+  content: '';
+  position: absolute;
+  bottom: -6px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 6px solid var(--color-accent);
+}
+
+.tooltip-enter-active {
+  transition: opacity 0.2s ease-out, transform 0.2s ease-out;
+}
+
+.tooltip-leave-active {
+  transition: opacity 0.15s ease-in, transform 0.15s ease-in;
+}
+
+.tooltip-enter-from {
+  opacity: 0;
+  transform: translate(-50%, calc(-100% - 1rem));
+}
+
+.tooltip-leave-to {
+  opacity: 0;
+  transform: translate(-50%, calc(-100% - 1rem));
 }
 
 .text-secondary {
@@ -1414,6 +3037,19 @@ const handleTabChange = async (tab: 'info' | 'bots' | 'channels' | 'links' | 'me
 .links-filter {
   margin-bottom: 2rem;
   padding: 1.5rem;
+  background: transparent;
+  border: 2px solid transparent;
+  overflow: visible;
+  position: relative;
+}
+
+.links-filter::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   background: var(--color-bg-secondary);
   border: 2px solid var(--color-border);
   clip-path: polygon(
@@ -1422,6 +3058,13 @@ const handleTabChange = async (tab: 'info' | 'bots' | 'channels' | 'links' | 'me
     100% calc(100% - 4px), calc(100% - 4px) calc(100% - 4px), calc(100% - 4px) 100%,
     4px 100%, 4px calc(100% - 4px), 0 calc(100% - 4px)
   );
+  z-index: 0;
+  pointer-events: none;
+}
+
+.links-filter > * {
+  position: relative;
+  z-index: 1;
 }
 
 .filter-label {
@@ -1438,10 +3081,30 @@ const handleTabChange = async (tab: 'info' | 'bots' | 'channels' | 'links' | 'me
   color: var(--color-accent);
 }
 
-.filter-select {
+.custom-select-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.custom-select-form .custom-select {
+  padding: 0.875rem 1rem;
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.custom-select-form .custom-select-open {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.custom-select-form .form-input-disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: rgba(0, 0, 0, 0.2) !important;
+}
+
+.custom-select {
   width: 100%;
   padding: 0.75rem 1rem;
-  background: rgba(0, 0, 0, 0.3);
+  background: #0a0a0a;
   border: 2px solid var(--color-border);
   color: var(--color-text);
   font-size: 0.9375rem;
@@ -1449,6 +3112,10 @@ const handleTabChange = async (tab: 'info' | 'bots' | 'channels' | 'links' | 'me
   letter-spacing: 0.05em;
   cursor: pointer;
   transition: var(--transition);
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   clip-path: polygon(
     0 3px, 3px 3px, 3px 0,
     calc(100% - 3px) 0, calc(100% - 3px) 3px, 100% 3px,
@@ -1457,14 +3124,149 @@ const handleTabChange = async (tab: 'info' | 'bots' | 'channels' | 'links' | 'me
   );
 }
 
-.filter-select:focus {
-  outline: none;
+.custom-select:hover {
+  border-color: var(--color-border-light);
+}
+
+.custom-select-open {
   border-color: var(--color-accent);
   box-shadow: 0 0 10px rgba(211, 35, 75, 0.3);
 }
 
-.filter-select:hover {
-  border-color: var(--color-border-light);
+.custom-select-value {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.custom-select-arrow {
+  color: var(--color-accent);
+  font-size: 0.75rem;
+  transition: transform 0.2s ease;
+  margin-left: 0.5rem;
+  flex-shrink: 0;
+}
+
+.custom-select-arrow-open {
+  transform: rotate(180deg);
+}
+
+.custom-select-dropdown {
+  position: absolute;
+  top: calc(100% + 0.25rem);
+  left: 0;
+  right: 0;
+  background: #0a0a0a;
+  border: 2px solid var(--color-border);
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  clip-path: polygon(
+    0 3px, 3px 3px, 3px 0,
+    calc(100% - 3px) 0, calc(100% - 3px) 3px, 100% 3px,
+    100% calc(100% - 3px), calc(100% - 3px) calc(100% - 3px), calc(100% - 3px) 100%,
+    3px 100%, 3px calc(100% - 3px), 0 calc(100% - 3px)
+  );
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+.custom-select-form .custom-select-dropdown {
+  z-index: 100000;
+}
+
+.custom-select-form .custom-select-wrapper {
+  z-index: 100000;
+}
+
+.custom-select-search {
+  padding: 0.5rem;
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #0a0a0a;
+  flex-shrink: 0;
+}
+
+.custom-select-search i {
+  color: var(--color-text-secondary);
+  font-size: 0.875rem;
+  flex-shrink: 0;
+}
+
+.custom-select-search-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--color-text);
+  font-size: 0.875rem;
+  font-family: 'Courier New', monospace;
+  letter-spacing: 0.03em;
+  padding: 0.25rem 0;
+}
+
+.custom-select-search-input::placeholder {
+  color: var(--color-text-tertiary);
+}
+
+.custom-select-options {
+  max-height: 12rem;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.custom-select-options::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-select-options::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-select-options::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 3px;
+}
+
+.custom-select-options::-webkit-scrollbar-thumb:hover {
+  background: var(--color-border-light);
+}
+
+.custom-select-no-results {
+  padding: 1rem;
+  text-align: center;
+  color: var(--color-text-secondary);
+  font-size: 0.875rem;
+  font-family: 'Courier New', monospace;
+}
+
+.custom-select-option {
+  padding: 0.75rem 1rem;
+  color: var(--color-text);
+  font-size: 0.9375rem;
+  font-family: 'Courier New', monospace;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition: var(--transition);
+  background: transparent;
+}
+
+.custom-select-option:hover {
+  background: #141414;
+  color: var(--color-text);
+}
+
+.custom-select-option-selected {
+  background: #141414;
+  color: var(--color-text);
+  border-left: 3px solid var(--color-accent);
+  padding-left: calc(1rem - 3px);
+}
+
+.custom-select-option-selected:hover {
+  background: #1a1a1a;
 }
 
 /* Modal */
@@ -1483,12 +3285,22 @@ const handleTabChange = async (tab: 'info' | 'bots' | 'channels' | 'links' | 'me
 }
 
 .modal-content {
-  background: linear-gradient(135deg, var(--color-bg-secondary) 0%, var(--color-bg-tertiary) 100%);
-  border: 2px solid var(--color-accent);
   padding: 0;
   max-width: 600px;
   width: 100%;
   position: relative;
+  overflow: visible;
+}
+
+.modal-content::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, var(--color-bg-secondary) 0%, var(--color-bg-tertiary) 100%);
+  border: 2px solid var(--color-accent);
   box-shadow: 
     0 0 40px rgba(211, 35, 75, 0.4),
     0 0 80px rgba(211, 35, 75, 0.2),
@@ -1499,6 +3311,8 @@ const handleTabChange = async (tab: 'info' | 'bots' | 'channels' | 'links' | 'me
     100% calc(100% - 4px), calc(100% - 4px) calc(100% - 4px), calc(100% - 4px) 100%,
     4px 100%, 4px calc(100% - 4px), 0 calc(100% - 4px)
   );
+  z-index: 0;
+  pointer-events: none;
 }
 
 /* Modal transitions */
@@ -1569,7 +3383,7 @@ const handleTabChange = async (tab: 'info' | 'bots' | 'channels' | 'links' | 'me
   padding: 2rem 2.5rem;
   border-bottom: 1px solid var(--color-border);
   position: relative;
-  z-index: 2;
+  z-index: 1;
 }
 
 .modal-title {
@@ -1637,13 +3451,16 @@ const handleTabChange = async (tab: 'info' | 'bots' | 'channels' | 'links' | 'me
 .modal-body {
   padding: 2rem 2.5rem;
   position: relative;
-  z-index: 2;
+  z-index: 100;
+  overflow: visible;
 }
 
 .form-group {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
+  position: relative;
+  z-index: 1;
 }
 
 .form-label {
@@ -1690,6 +3507,13 @@ const handleTabChange = async (tab: 'info' | 'bots' | 'channels' | 'links' | 'me
 
 .form-input::placeholder {
   color: var(--color-text-tertiary);
+}
+
+.form-input textarea,
+textarea.form-input {
+  resize: vertical;
+  min-height: 100px;
+  font-family: 'Courier New', monospace;
 }
 
 .form-hint {
@@ -1743,7 +3567,7 @@ const handleTabChange = async (tab: 'info' | 'bots' | 'channels' | 'links' | 'me
   padding: 1.5rem 2.5rem;
   border-top: 1px solid var(--color-border);
   position: relative;
-  z-index: 2;
+  z-index: 1;
 }
 
 .modal-btn {

@@ -832,3 +832,249 @@ export const apiRejectProjectRequestRoute = app.post('/:id/requests/:requestId/r
   }
 })
 
+/**
+ * POST /api/projects/:id/update
+ * Обновление информации о проекте (название, описание)
+ * Доступ: только владелец или админ
+ */
+export const apiUpdateProjectRoute = app.post('/:id/update', async (ctx, req) => {
+  try {
+    await applyDebugLevel(ctx, 'api/projects/update')
+    Debug.info(ctx, '[api/projects/update] Начало обновления проекта')
+    
+    requireRealUser(ctx)
+    Debug.info(ctx, `[api/projects/update] Пользователь авторизован: userId=${ctx.user.id}`)
+    
+    const { id } = req.params
+    const { name, description } = req.body
+    
+    if (!id || !id.trim()) {
+      Debug.warn(ctx, '[api/projects/update] ID проекта не предоставлен')
+      return {
+        success: false,
+        error: 'ID проекта обязателен'
+      }
+    }
+    
+    const trimmedProjectId = id.trim()
+    Debug.info(ctx, `[api/projects/update] Обновление проекта: projectId=${trimmedProjectId}`)
+    
+    // Получаем проект
+    const project = await Projects.findById(ctx, trimmedProjectId)
+    
+    if (!project) {
+      Debug.warn(ctx, `[api/projects/update] Проект с ID ${trimmedProjectId} не найден`)
+      return {
+        success: false,
+        error: 'Проект не найден'
+      }
+    }
+    
+    const isAdmin = ctx.user.is('Admin')
+    
+    // Проверяем права доступа: только владелец или админ может обновлять проект
+    if (!isAdmin) {
+      const isOwner = project.members && Array.isArray(project.members) && 
+        project.members.some((member: any) => 
+          userIdsMatch(member.userId, ctx.user?.id) && member.role === 'owner'
+        )
+      
+      if (!isOwner) {
+        Debug.warn(ctx, `[api/projects/update] Попытка обновления проекта без прав: userId=${ctx.user.id}, projectId=${trimmedProjectId}`)
+        return {
+          success: false,
+          error: 'Нет прав для обновления этого проекта'
+        }
+      }
+    }
+    
+    // Формируем объект для обновления
+    const updateData: any = {}
+    
+    if (name !== undefined) {
+      if (!name || !name.trim()) {
+        Debug.warn(ctx, '[api/projects/update] Название проекта не может быть пустым')
+        return {
+          success: false,
+          error: 'Название проекта обязательно и не может быть пустым'
+        }
+      }
+      updateData.name = name.trim()
+    }
+    
+    if (description !== undefined) {
+      updateData.description = description && description.trim() ? description.trim() : null
+    }
+    
+    // Проверяем, что есть что обновлять
+    if (Object.keys(updateData).length === 0) {
+      Debug.warn(ctx, '[api/projects/update] Нет данных для обновления')
+      return {
+        success: false,
+        error: 'Нет данных для обновления'
+      }
+    }
+    
+    Debug.info(ctx, `[api/projects/update] Обновление проекта с данными: ${JSON.stringify(updateData)}`)
+    const updatedProject = await Projects.update(ctx, {
+      id: trimmedProjectId,
+      ...updateData
+    })
+    
+    Debug.info(ctx, `[api/projects/update] Проект успешно обновлён`)
+    
+    return {
+      success: true,
+      project: {
+        ...updatedProject,
+        membersCount: updatedProject.members ? (Array.isArray(updatedProject.members) ? updatedProject.members.length : 0) : 0
+      }
+    }
+  } catch (error: any) {
+    Debug.error(ctx, `[api/projects/update] Ошибка при обновлении проекта: ${error.message}`, 'E_UPDATE_PROJECT')
+    Debug.error(ctx, `[api/projects/update] Stack trace: ${error.stack || 'N/A'}`)
+    return {
+      success: false,
+      error: error.message || 'Ошибка при обновлении проекта'
+    }
+  }
+})
+
+/**
+ * POST /api/projects/:id/transfer-ownership
+ * Передача прав владельца проекта другому участнику
+ * Доступ: только текущий владелец или админ
+ */
+export const apiTransferOwnershipRoute = app.post('/:id/transfer-ownership', async (ctx, req) => {
+  try {
+    await applyDebugLevel(ctx, 'api/projects/transfer-ownership')
+    Debug.info(ctx, '[api/projects/transfer-ownership] Начало передачи прав владельца')
+    
+    requireRealUser(ctx)
+    Debug.info(ctx, `[api/projects/transfer-ownership] Пользователь авторизован: userId=${ctx.user.id}`)
+    
+    const { id } = req.params
+    const { newOwnerUserId } = req.body
+    
+    if (!id || !id.trim()) {
+      Debug.warn(ctx, '[api/projects/transfer-ownership] ID проекта не предоставлен')
+      return {
+        success: false,
+        error: 'ID проекта обязателен'
+      }
+    }
+    
+    if (!newOwnerUserId || !newOwnerUserId.trim()) {
+      Debug.warn(ctx, '[api/projects/transfer-ownership] ID нового владельца не предоставлен')
+      return {
+        success: false,
+        error: 'ID нового владельца обязателен'
+      }
+    }
+    
+    const trimmedProjectId = id.trim()
+    const trimmedNewOwnerUserId = newOwnerUserId.trim()
+    
+    Debug.info(ctx, `[api/projects/transfer-ownership] Передача прав: projectId=${trimmedProjectId}, newOwnerUserId=${trimmedNewOwnerUserId}`)
+    
+    // Получаем проект
+    const project = await Projects.findById(ctx, trimmedProjectId)
+    
+    if (!project) {
+      Debug.warn(ctx, `[api/projects/transfer-ownership] Проект с ID ${trimmedProjectId} не найден`)
+      return {
+        success: false,
+        error: 'Проект не найден'
+      }
+    }
+    
+    const isAdmin = ctx.user.is('Admin')
+    
+    // Проверяем права доступа: только текущий владелец или админ может передавать права
+    if (!isAdmin) {
+      const isOwner = project.members && Array.isArray(project.members) && 
+        project.members.some((member: any) => 
+          userIdsMatch(member.userId, ctx.user?.id) && member.role === 'owner'
+        )
+      
+      if (!isOwner) {
+        Debug.warn(ctx, `[api/projects/transfer-ownership] Попытка передачи прав без прав: userId=${ctx.user.id}, projectId=${trimmedProjectId}`)
+        return {
+          success: false,
+          error: 'Нет прав для передачи прав владельца этого проекта'
+        }
+      }
+    }
+    
+    // Проверяем, что новый владелец является участником проекта
+    const members = project.members || []
+    if (!Array.isArray(members)) {
+      Debug.warn(ctx, `[api/projects/transfer-ownership] Некорректная структура members`)
+      return {
+        success: false,
+        error: 'Некорректная структура данных проекта'
+      }
+    }
+    
+    const newOwnerMember = members.find((member: any) => userIdsMatch(member.userId, trimmedNewOwnerUserId))
+    
+    if (!newOwnerMember) {
+      Debug.warn(ctx, `[api/projects/transfer-ownership] Новый владелец не является участником проекта: userId=${trimmedNewOwnerUserId}`)
+      return {
+        success: false,
+        error: 'Новый владелец должен быть участником проекта'
+      }
+    }
+    
+    // Проверяем, что новый владелец не является текущим владельцем
+    if (newOwnerMember.role === 'owner') {
+      Debug.warn(ctx, `[api/projects/transfer-ownership] Новый владелец уже является владельцем`)
+      return {
+        success: false,
+        error: 'Пользователь уже является владельцем проекта'
+      }
+    }
+    
+    // Обновляем роли участников
+    const updatedMembers = members.map((member: any) => {
+      if (userIdsMatch(member.userId, trimmedNewOwnerUserId)) {
+        // Новый владелец
+        return {
+          ...member,
+          role: 'owner'
+        }
+      } else if (userIdsMatch(member.userId, ctx.user?.id) && member.role === 'owner') {
+        // Текущий владелец становится участником
+        return {
+          ...member,
+          role: 'member'
+        }
+      }
+      return member
+    })
+    
+    Debug.info(ctx, `[api/projects/transfer-ownership] Обновление участников проекта`)
+    const updatedProject = await Projects.update(ctx, {
+      id: trimmedProjectId,
+      members: updatedMembers
+    })
+    
+    Debug.info(ctx, `[api/projects/transfer-ownership] Права владельца успешно переданы`)
+    
+    return {
+      success: true,
+      project: {
+        ...updatedProject,
+        membersCount: updatedProject.members ? (Array.isArray(updatedProject.members) ? updatedProject.members.length : 0) : 0
+      }
+    }
+  } catch (error: any) {
+    Debug.error(ctx, `[api/projects/transfer-ownership] Ошибка при передаче прав: ${error.message}`, 'E_TRANSFER_OWNERSHIP')
+    Debug.error(ctx, `[api/projects/transfer-ownership] Stack trace: ${error.stack || 'N/A'}`)
+    return {
+      success: false,
+      error: error.message || 'Ошибка при передаче прав владельца'
+    }
+  }
+})
+

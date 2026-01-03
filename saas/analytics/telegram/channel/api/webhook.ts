@@ -5,6 +5,8 @@ import { BotTokens } from '../tables/bot-tokens.table'
 import { TelegramWebhooks } from '../tables/webhooks.table'
 import { TelegramChats } from '../tables/chats.table'
 import { Projects } from '../tables/projects.table'
+import { LinkClicks } from '../tables/link-clicks.table'
+import { TrackingLinks } from '../tables/tracking-links.table'
 import { Debug } from '../shared/debug'
 import { applyDebugLevel } from '../lib/logging'
 import { sendDataToSocket } from '@app/socket'
@@ -283,6 +285,111 @@ export const apiWebhookRoute = app.post('/:id', async (ctx, req) => {
       Debug.error(ctx, `[api/webhook] Stack trace сохранения чата: ${chatError.stack || 'N/A'}`)
     }
     
+    // Обработка chat_member updates для сопоставления подписок с переходами по инвайт-линку
+    try {
+      const chatMember = (webhookData as any)?.chat_member
+      
+      if (chatMember && chatMember.new_chat_member) {
+        const newStatus = chatMember.new_chat_member.status
+        Debug.info(ctx, `[api/webhook] Обнаружен chat_member update, новый статус: ${newStatus}`)
+        Debug.info(ctx, `[api/webhook] Полный объект chat_member: ${JSON.stringify(chatMember)}`)
+        
+        // Обрабатываем только подписки (status: 'member')
+        if (newStatus === 'member') {
+          // Извлекаем данные о подписчике
+          const from = chatMember.from
+          const subscriberTgId = from?.id ? String(from.id) : null
+          const subscriberFirstName = from?.first_name || ''
+          const subscriberLastName = from?.last_name || ''
+          const subscriberName = [subscriberFirstName, subscriberLastName].filter(Boolean).join(' ') || null
+          
+          // Время подписки - используем date из вебхука или текущее время
+          const subscribedAt = chatMember.date 
+            ? new Date(chatMember.date * 1000) // Telegram date в секундах
+            : new Date()
+          
+          Debug.info(ctx, `[api/webhook] Данные подписчика: subscriberTgId=${subscriberTgId}, subscriberName=${subscriberName}, subscribedAt=${subscribedAt.toISOString()}`)
+          
+          // invite_link может быть строкой или объектом ChatInviteLink с полем invite_link
+          let inviteLink: string | null = null
+          const inviteLinkData = chatMember.invite_link
+          
+          Debug.info(ctx, `[api/webhook] invite_link данные: ${JSON.stringify(inviteLinkData)}`)
+          
+          if (typeof inviteLinkData === 'string') {
+            inviteLink = inviteLinkData
+            Debug.info(ctx, `[api/webhook] invite_link найден как строка: ${inviteLink}`)
+          } else if (inviteLinkData && typeof inviteLinkData === 'object' && inviteLinkData.invite_link) {
+            inviteLink = inviteLinkData.invite_link
+            Debug.info(ctx, `[api/webhook] invite_link найден в объекте: ${inviteLink}`)
+          } else {
+            Debug.info(ctx, `[api/webhook] invite_link не найден в chat_member update`)
+          }
+          
+          let linkClick: any = null
+          
+          // Строгое сопоставление: ищем LinkClick только по inviteLink из вебхука
+          // Логика: переход по ссылке → генерация inviteLink → редирект → подписка → вебхук с inviteLink
+          if (inviteLink && typeof inviteLink === 'string') {
+            Debug.info(ctx, `[api/webhook] Поиск LinkClick по inviteLink: ${inviteLink}`)
+            linkClick = await LinkClicks.findOneBy(ctx, {
+              inviteLink: inviteLink
+            })
+            
+            if (linkClick) {
+              Debug.info(ctx, `[api/webhook] ✅ LinkClick найден по inviteLink: linkClickId=${linkClick.id}`)
+            } else {
+              Debug.warn(ctx, `[api/webhook] ❌ LinkClick не найден по inviteLink: ${inviteLink}. Возможные причины: ссылка была отозвана, инвайт-линк был изменён, или подписка произошла не через отслеживаемую ссылку.`)
+            }
+          } else {
+            Debug.warn(ctx, `[api/webhook] ⚠️ inviteLink отсутствует в chat_member update. Подписка не может быть сопоставлена с переходом по ссылке. Возможные причины: подписка произошла не через инвайт-линк (поиск, прямая ссылка), или Telegram не передал invite_link в вебхуке.`)
+          }
+          
+          // Обновляем LinkClick, если он найден
+          if (linkClick) {
+            Debug.info(ctx, `[api/webhook] Найден LinkClick для обновления: linkClickId=${linkClick.id}`)
+            
+            // Проверяем, что ссылка принадлежит текущему проекту
+            // Это защищает от обновления записей из других проектов
+            const trackingLink = await TrackingLinks.findById(ctx, linkClick.linkId)
+            
+            if (!trackingLink) {
+              Debug.warn(ctx, `[api/webhook] TrackingLink не найден для linkId=${linkClick.linkId}, пропускаем обновление`)
+            } else if (trackingLink.projectId !== bot.projectId) {
+              Debug.warn(ctx, `[api/webhook] LinkClick принадлежит другому проекту: linkClickId=${linkClick.id}, expectedProjectId=${bot.projectId}, actualProjectId=${trackingLink.projectId}, пропускаем обновление`)
+            } else {
+              // Проверяем, не обновлена ли уже эта запись
+              if (linkClick.subscribedAt) {
+                Debug.info(ctx, `[api/webhook] LinkClick уже имеет subscribedAt: ${linkClick.subscribedAt.toISOString()}, пропускаем обновление`)
+              } else {
+                // Обновляем LinkClick с данными подписки
+                await LinkClicks.update(ctx, {
+                  id: linkClick.id,
+                  subscribedAt: subscribedAt,
+                  subscriberTgId: subscriberTgId,
+                  subscriberName: subscriberName
+                })
+                
+                Debug.info(ctx, `[api/webhook] ✅ LinkClick обновлен: linkClickId=${linkClick.id}, subscriberTgId=${subscriberTgId}, subscriberName=${subscriberName}, subscribedAt=${subscribedAt.toISOString()}`)
+              }
+            }
+          } else {
+            if (inviteLink) {
+              Debug.warn(ctx, `[api/webhook] ❌ LinkClick не найден для сопоставления подписки. inviteLink=${inviteLink}, subscriberTgId=${subscriberTgId || 'N/A'}. Подписка не будет связана с переходом по ссылке.`)
+            } else {
+              Debug.info(ctx, `[api/webhook] ℹ️ LinkClick не найден для сопоставления подписки (inviteLink отсутствует в вебхуке). subscriberTgId=${subscriberTgId || 'N/A'}. Это нормально, если подписка произошла не через отслеживаемую ссылку.`)
+            }
+          }
+        } else {
+          Debug.info(ctx, `[api/webhook] chat_member update с статусом ${newStatus}, пропускаем (обрабатываем только 'member')`)
+        }
+      }
+    } catch (linkClickError: any) {
+      // Логируем ошибку, но не прерываем обработку вебхука
+      Debug.error(ctx, `[api/webhook] Ошибка обработки chat_member для LinkClick: ${linkClickError.message}`, 'E_LINK_CLICK_UPDATE')
+      Debug.error(ctx, `[api/webhook] Stack trace обработки LinkClick: ${linkClickError.stack || 'N/A'}`)
+    }
+    
     // БЕЗОПАСНОСТЬ: Отправляем вебхук всем участникам проекта
     // Используем уникальный socketId на основе userId каждого участника
     // Это гарантирует, что вебхук попадет всем участникам проекта
@@ -405,6 +512,10 @@ export const apiGetWebhooksListRoute = app.get('/list', async (ctx, req) => {
     // Получаем параметр botId из query (опционально, для фильтрации по конкретному боту)
     const botIdParam = req.query.botId as string | undefined
     Debug.info(ctx, `[api/webhook/list] Параметр botId: ${botIdParam || 'не указан (показываем все вебхуки)'}`)
+    
+    // Получаем параметр chatId из query (опционально, для фильтрации по конкретному каналу)
+    const chatIdParam = req.query.chatId as string | undefined
+    Debug.info(ctx, `[api/webhook/list] Параметр chatId: ${chatIdParam || 'не указан (показываем все каналы)'}`)
     
     // Получаем список проектов пользователя для фильтрации вебхуков
     // ИСПРАВЛЕНИЕ Bug 3: Для не-админов применяем фильтрацию на уровне БД, а не в памяти
@@ -607,7 +718,7 @@ export const apiGetWebhooksListRoute = app.get('/list', async (ctx, req) => {
     
     // Обогащаем вебхуки информацией о ботах
     Debug.info(ctx, `[api/webhook/list] Обогащение вебхуков информацией о ботах`)
-    const enrichedWebhooks = (webhooks || []).map(webhook => ({
+    let enrichedWebhooks = (webhooks || []).map(webhook => ({
       id: webhook.id,
       botId: webhook.botId,
       botName: botsMap.get(webhook.botId)?.botName || null,
@@ -616,6 +727,28 @@ export const apiGetWebhooksListRoute = app.get('/list', async (ctx, req) => {
       raw: webhook.rawData,
       receivedAt: webhook.receivedAt?.getTime() || Date.now()
     }))
+    
+    // Фильтруем по chatId, если указан
+    if (chatIdParam && chatIdParam.trim()) {
+      const targetChatId = chatIdParam.trim()
+      Debug.info(ctx, `[api/webhook/list] Фильтрация вебхуков по chatId: ${targetChatId}`)
+      
+      enrichedWebhooks = enrichedWebhooks.filter(webhook => {
+        try {
+          const chatInfo = extractChatFromUpdate(webhook.raw)
+          if (chatInfo && chatInfo.id !== undefined && chatInfo.id !== null) {
+            const webhookChatId = String(chatInfo.id)
+            return webhookChatId === targetChatId
+          }
+          return false
+        } catch (error: any) {
+          Debug.warn(ctx, `[api/webhook/list] Ошибка извлечения chatId из вебхука ${webhook.id}: ${error.message}`)
+          return false
+        }
+      })
+      
+      Debug.info(ctx, `[api/webhook/list] После фильтрации по chatId осталось вебхуков: ${enrichedWebhooks.length}`)
+    }
     
     Debug.info(ctx, `[api/webhook/list] Возвращаем ${enrichedWebhooks.length} вебхуков пользователю ${ctx.user.id}`)
     Debug.info(ctx, '[api/webhook/list] ========== КОНЕЦ ЗАПРОСА СПИСКА ВЕБХУКОВ ==========')
