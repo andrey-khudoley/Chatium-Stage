@@ -8,6 +8,7 @@ import { request } from '@app/request'
 import { Debug } from './shared/debug'
 import { applyDebugLevel } from './lib/logging'
 import { revokeLinksJob } from './jobs/revoke-links.job'
+import { generateFingerprint } from './lib/fingerprint'
 
 /**
  * GET /:id
@@ -258,26 +259,48 @@ export const publicLinkRoute = app.get('/:id', async (ctx, req) => {
       Debug.info(ctx, `[public-link] Используется существующий инвайт-линк: ${inviteLink}`)
     }
     
-    // Сохраняем LinkClick с query-параметрами
+    // Генерируем фингерпринт для дедупликации
+    const fingerprintHash = generateFingerprint(req, trimmedId)
+    Debug.info(ctx, `[public-link] Сгенерирован fingerprint: ${fingerprintHash}`)
+    
+    // Сохраняем LinkClick с query-параметрами (только если нет дубликата)
     const clickedAt = new Date()
     const queryParamsJson = JSON.stringify(queryParams)
     
-    Debug.info(ctx, `[public-link] Начало сохранения LinkClick: linkId=${trimmedId}, inviteLink=${inviteLink}, clickedAt=${clickedAt.toISOString()}, queryParams=${queryParamsJson}`)
-    
-    try {
-      const linkClick = await LinkClicks.create(ctx, {
+    // Проверяем дубликат за последние 5 секунд
+    const fiveSecondsAgo = new Date(clickedAt.getTime() - 5000)
+    const existingClicks = await LinkClicks.findAll(ctx, {
+      where: {
         linkId: trimmedId,
-        queryParams: queryParamsJson,
-        inviteLink: inviteLink!,
-        clickedAt: clickedAt
-      })
+        fingerprint: fingerprintHash,
+        clickedAt: { $gte: fiveSecondsAgo }
+      },
+      limit: 1
+    })
+    
+    const isDuplicate = existingClicks.length > 0
+    
+    if (isDuplicate) {
+      Debug.info(ctx, `[public-link] Дубликат перехода обнаружен, fingerprint=${fingerprintHash}, не создаём новую запись`)
+    } else {
+      Debug.info(ctx, `[public-link] Начало сохранения LinkClick: linkId=${trimmedId}, inviteLink=${inviteLink}, clickedAt=${clickedAt.toISOString()}, queryParams=${queryParamsJson}, fingerprint=${fingerprintHash}`)
       
-      Debug.info(ctx, `[public-link] ✅ LinkClick успешно создан: linkClickId=${linkClick.id}, linkId=${linkClick.linkId}, inviteLink=${linkClick.inviteLink}, clickedAt=${linkClick.clickedAt?.toISOString() || 'N/A'}`)
-    } catch (clickError: any) {
-      // Логируем ошибку, но не прерываем процесс - редирект всё равно должен произойти
-      Debug.error(ctx, `[public-link] ❌ Ошибка создания LinkClick: ${clickError.message}`, 'E_CREATE_LINK_CLICK')
-      Debug.error(ctx, `[public-link] Stack trace создания LinkClick: ${clickError.stack || 'N/A'}`)
-      Debug.error(ctx, `[public-link] Данные, которые пытались сохранить: linkId=${trimmedId}, inviteLink=${inviteLink}, queryParams=${queryParamsJson}`)
+      try {
+        const linkClick = await LinkClicks.create(ctx, {
+          linkId: trimmedId,
+          queryParams: queryParamsJson,
+          inviteLink: inviteLink!,
+          clickedAt: clickedAt,
+          fingerprint: fingerprintHash
+        })
+        
+        Debug.info(ctx, `[public-link] ✅ LinkClick успешно создан: linkClickId=${linkClick.id}, linkId=${linkClick.linkId}, inviteLink=${linkClick.inviteLink}, clickedAt=${linkClick.clickedAt?.toISOString() || 'N/A'}, fingerprint=${linkClick.fingerprint}`)
+      } catch (clickError: any) {
+        // Логируем ошибку, но не прерываем процесс - редирект всё равно должен произойти
+        Debug.error(ctx, `[public-link] ❌ Ошибка создания LinkClick: ${clickError.message}`, 'E_CREATE_LINK_CLICK')
+        Debug.error(ctx, `[public-link] Stack trace создания LinkClick: ${clickError.stack || 'N/A'}`)
+        Debug.error(ctx, `[public-link] Данные, которые пытались сохранить: linkId=${trimmedId}, inviteLink=${inviteLink}, queryParams=${queryParamsJson}, fingerprint=${fingerprintHash}`)
+      }
     }
     
     // Выполняем редирект на инвайт-линк
