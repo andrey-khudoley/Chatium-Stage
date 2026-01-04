@@ -8,11 +8,11 @@ import { Debug } from '../shared/debug'
 import { applyDebugLevel } from '../lib/logging'
 
 /**
- * Job для автоматического отзыва инвайт-линков через 24 часа после создания
+ * Job для автоматического отзыва инвайт-линков через 1 час после создания
  * 
  * Логика:
- * 1. Если передан linkId - отзывает конкретную ссылку (если прошло 24 часа)
- * 2. Если linkId не передан - находит все TrackingLinks с inviteLinkCreatedAt < 24 часа назад и revokedAt = null
+ * 1. Если передан linkId - отзывает конкретную ссылку (если прошло 1 час)
+ * 2. Если linkId не передан - находит все TrackingLinks с inviteLinkCreatedAt < 1 час назад и revokedAt = null
  * 3. Для каждой ссылки вызывает revokeChatInviteLink через Telegram Bot API
  * 4. Обновляет TrackingLink: revokedAt = текущее время
  * 5. Планирует следующее выполнение через 1 час (только если linkId не передан)
@@ -40,7 +40,7 @@ export const revokeLinksJob = app.job('/revoke-links', async (ctx, params) => {
         }
       }
       
-      // Проверяем, что прошло 24 часа с момента создания инвайт-линка
+      // Проверяем, что прошло 1 час с момента создания инвайт-линка
       if (!link.inviteLinkCreatedAt) {
         Debug.warn(ctx, `[revoke-links] У ссылки ${linkId} нет inviteLinkCreatedAt, пропускаем`)
         return {
@@ -53,13 +53,13 @@ export const revokeLinksJob = app.job('/revoke-links', async (ctx, params) => {
         ? new Date(link.inviteLinkCreatedAt) 
         : link.inviteLinkCreatedAt
       
-      const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000)
+      const oneHourAgo = new Date(Date.now() - 1 * 60 * 60 * 1000)
       
-      if (inviteLinkCreatedAt >= twentyFourHoursAgo) {
-        Debug.info(ctx, `[revoke-links] Для ссылки ${linkId} ещё не прошло 24 часа, пропускаем`)
+      if (inviteLinkCreatedAt >= oneHourAgo) {
+        Debug.info(ctx, `[revoke-links] Для ссылки ${linkId} ещё не прошло 1 час, пропускаем`)
         return {
           success: true,
-          message: 'Ещё не прошло 24 часа с момента создания инвайт-линка'
+          message: 'Ещё не прошло 1 час с момента создания инвайт-линка'
         }
       }
       
@@ -86,18 +86,18 @@ export const revokeLinksJob = app.job('/revoke-links', async (ctx, params) => {
       // Режим периодической проверки всех ссылок
       Debug.info(ctx, `[revoke-links] Режим периодической проверки всех ссылок`)
       
-      // Вычисляем дату 24 часа назад (24 часа * 60 минут * 60 секунд * 1000 миллисекунд)
-      const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000)
+      // Вычисляем дату 1 час назад (1 час * 60 минут * 60 секунд * 1000 миллисекунд)
+      const oneHourAgo = new Date(Date.now() - 1 * 60 * 60 * 1000)
       
-      Debug.info(ctx, `[revoke-links] Поиск ссылок старше 24 часов: ${twentyFourHoursAgo.toISOString()}`)
+      Debug.info(ctx, `[revoke-links] Поиск ссылок старше 1 часа: ${oneHourAgo.toISOString()}`)
       
       // Находим все TrackingLinks, которые нужно отозвать:
-      // - inviteLinkCreatedAt < 24 часа назад
+      // - inviteLinkCreatedAt < 1 час назад
       // - revokedAt = null (ещё не отозваны)
       // - inviteLink не пустой (есть что отзывать)
       linksToRevoke = await TrackingLinks.findAll(ctx, {
         where: {
-          inviteLinkCreatedAt: { $lt: twentyFourHoursAgo },
+          inviteLinkCreatedAt: { $lt: oneHourAgo },
           revokedAt: null,
           inviteLink: { $ne: null }
         },

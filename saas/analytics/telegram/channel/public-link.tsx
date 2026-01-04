@@ -199,13 +199,13 @@ export const publicLinkRoute = app.get('/:id', async (ctx, req) => {
           // Не прерываем выполнение - инвайт-линк создан успешно
         }
         
-        // Планируем отзыв инвайт-линка через 24 часа
+        // Планируем отзыв инвайт-линка через 1 час
         try {
-          const revokeAt = new Date(inviteLinkCreatedAt.getTime() + 24 * 60 * 60 * 1000)
+          const revokeAt = new Date(inviteLinkCreatedAt.getTime() + 1 * 60 * 60 * 1000)
           await revokeLinksJob.scheduleJobAt(ctx, revokeAt, {
             linkId: trimmedId
           })
-          Debug.info(ctx, `[public-link] Запланирован отзыв инвайт-линка через 24 часа: ${revokeAt.toISOString()}`)
+          Debug.info(ctx, `[public-link] Запланирован отзыв инвайт-линка через 1 час: ${revokeAt.toISOString()}`)
         } catch (scheduleError: any) {
           Debug.error(ctx, `[public-link] Ошибка планирования отзыва инвайт-линка: ${scheduleError.message}`, 'E_SCHEDULE_REVOKE')
           Debug.error(ctx, `[public-link] Stack trace: ${scheduleError.stack || 'N/A'}`)
