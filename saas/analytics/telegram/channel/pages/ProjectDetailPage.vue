@@ -85,6 +85,7 @@ const channels = ref<Array<{
   firstSeenAt: Date | string
   lastSeenAt: Date | string
   botId: string
+  botStatus: string | null
 }>>([])
 const loadingChannels = ref(false)
 const channelsError = ref<string | null>(null)
@@ -119,6 +120,20 @@ const links = ref<Array<{
 const loadingLinks = ref(false)
 const linksError = ref<string | null>(null)
 const deletingLinkId = ref<string | null>(null)
+
+// Отслеживание изменения статуса канала для предупреждения
+const channelStatusHistory = ref<Map<string, string | null>>(new Map())
+const statusChangeWarning = ref<{
+  show: boolean
+  channelId: string | null
+  oldStatus: string | null
+  newStatus: string | null
+}>({
+  show: false,
+  channelId: null,
+  oldStatus: null,
+  newStatus: null
+})
 
 // Модальное окно для добавления бота
 const showAddTokenModal = ref(false)
@@ -415,16 +430,41 @@ const loadChannels = async () => {
     const result = await apiGetChannelsListRoute.query({ projectId: props.projectId }).run(ctx)
     
     if (result.success && result.channels) {
-      channels.value = result.channels.map((channel: any) => ({
+      // Проверяем изменение статуса перед обновлением
+      const newChannels = result.channels.map((channel: any) => ({
         id: channel.id,
         chatId: channel.chatId,
         chatType: channel.chatType || null,
         chatTitle: channel.chatTitle || null,
         chatUsername: channel.chatUsername || null,
         firstSeenAt: channel.firstSeenAt,
+        botStatus: channel.botStatus || null,
         lastSeenAt: channel.lastSeenAt,
         botId: channel.botId
       }))
+      
+      // Проверяем изменение статуса для каждого канала
+      for (const newChannel of newChannels) {
+        const oldStatus = channelStatusHistory.value.get(newChannel.id)
+        const newStatus = newChannel.botStatus
+        
+        // Если статус изменился и мы на вкладке "Ссылки"
+        // oldStatus !== undefined означает, что это не первая загрузка
+        if (oldStatus !== undefined && oldStatus !== newStatus && activeTab.value === 'links') {
+          // Показываем предупреждение (заменяем предыдущее, если было)
+          statusChangeWarning.value = {
+            show: true,
+            channelId: newChannel.id,
+            oldStatus: oldStatus,
+            newStatus: newStatus
+          }
+        }
+        
+        // Обновляем историю статусов (инициализируем при первой загрузке)
+        channelStatusHistory.value.set(newChannel.id, newStatus)
+      }
+      
+      channels.value = newChannels
     } else {
       channelsError.value = result.error || 'Ошибка при получении списка каналов'
     }
@@ -744,6 +784,53 @@ const getChannelName = (channelId: string) => {
   return channel.chatTitle || channel.chatUsername || channel.chatId
 }
 
+// Получение статуса канала по ID
+const getChannelStatus = (channelId: string): string | null => {
+  const channel = channels.value.find(c => c.id === channelId)
+  return channel?.botStatus || null
+}
+
+// Закрытие предупреждения об изменении статуса
+const closeStatusChangeWarning = () => {
+  statusChangeWarning.value.show = false
+  statusChangeWarning.value.channelId = null
+  statusChangeWarning.value.oldStatus = null
+  statusChangeWarning.value.newStatus = null
+}
+
+// Форматирование статуса бота в канале
+const formatBotStatus = (status: string | null): { text: string; color: string; icon: string } => {
+  if (!status) {
+    return { text: 'Неизвестно', color: 'var(--color-text-secondary)', icon: 'fa-question-circle' }
+  }
+  
+  switch (status) {
+    case 'member':
+      return { text: 'Участник', color: '#4ade80', icon: 'fa-check-circle' }
+    case 'administrator':
+      return { text: 'Администратор', color: '#3b82f6', icon: 'fa-shield-alt' }
+    case 'creator':
+      return { text: 'Создатель', color: '#f59e0b', icon: 'fa-crown' }
+    case 'left':
+      return { text: 'Покинул', color: '#ef4444', icon: 'fa-sign-out-alt' }
+    case 'kicked':
+      return { text: 'Удалён', color: '#dc2626', icon: 'fa-ban' }
+    case 'restricted':
+      return { text: 'Ограничен', color: '#f97316', icon: 'fa-lock' }
+    default:
+      return { text: status, color: 'var(--color-text-secondary)', icon: 'fa-question-circle' }
+  }
+}
+
+// Форматирование статуса канала (публичный/приватный)
+const formatChannelStatus = (chatUsername: string | null | undefined): { text: string; color: string; icon: string } => {
+  if (chatUsername) {
+    return { text: 'Публичный', color: '#4ade80', icon: 'fa-globe' }
+  } else {
+    return { text: 'Приватный', color: '#3b82f6', icon: 'fa-lock' }
+  }
+}
+
 // Маскирование токена для tooltip (полный маскированный токен)
 const maskTokenFull = (token: string) => {
   if (!token) return ''
@@ -944,13 +1031,16 @@ const handleTabChange = async (tab: 'info' | 'bots' | 'channels' | 'links' | 'me
   
   if (tab === 'bots' && bots.value.length === 0 && !loadingBots.value) {
     await loadBots()
-  } else if ((tab === 'channels' || tab === 'links') && channels.value.length === 0 && !loadingChannels.value) {
+  } else if (tab === 'channels' && channels.value.length === 0 && !loadingChannels.value) {
     await loadChannels()
-    if (tab === 'links') {
+  } else if (tab === 'links') {
+    // При переключении на вкладку "Ссылки" всегда загружаем каналы для проверки изменения статуса
+    if (!loadingChannels.value) {
+      await loadChannels()
+    }
+    if (links.value.length === 0 && !loadingLinks.value) {
       await loadLinks()
     }
-  } else if (tab === 'links' && links.value.length === 0 && !loadingLinks.value) {
-    await loadLinks()
   }
 }
 
@@ -1622,6 +1712,7 @@ const deleteProject = async () => {
                       <th>Название</th>
                       <th>Username</th>
                       <th>Chat ID</th>
+                      <th>Статус</th>
                       <th>Последняя активность</th>
                       <th>Вебхуки</th>
                     </tr>
@@ -1646,6 +1737,15 @@ const deleteProject = async () => {
                       >
                         <span class="code-value">{{ channel.chatId }}</span>
                       </td>
+                      <td>
+                        <span 
+                          class="status-badge"
+                          :style="{ color: formatChannelStatus(channel.chatUsername).color }"
+                        >
+                          <i :class="['fas', formatChannelStatus(channel.chatUsername).icon]"></i>
+                          {{ formatChannelStatus(channel.chatUsername).text }}
+                        </span>
+                      </td>
                       <td>{{ formatDate(channel.lastSeenAt) }}</td>
                       <td>
                         <button 
@@ -1667,6 +1767,27 @@ const deleteProject = async () => {
 
             <!-- Links Tab -->
             <div v-if="activeTab === 'links'" class="tab-panel">
+              <!-- Предупреждение об изменении статуса канала -->
+              <Transition name="fade">
+                <div v-if="statusChangeWarning.show" class="status-change-warning">
+                  <div class="warning-content">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <div class="warning-text">
+                      <strong>Статус канала изменился</strong>
+                      <span v-if="statusChangeWarning.channelId">
+                        Канал "{{ getChannelName(statusChangeWarning.channelId) }}" изменил статус с 
+                        <span class="status-text">{{ formatBotStatus(statusChangeWarning.oldStatus).text }}</span> 
+                        на 
+                        <span class="status-text">{{ formatBotStatus(statusChangeWarning.newStatus).text }}</span>
+                      </span>
+                    </div>
+                  </div>
+                  <button @click="closeStatusChangeWarning" class="warning-close" title="Закрыть">
+                    <i class="fas fa-times"></i>
+                  </button>
+                </div>
+              </Transition>
+              
               <div class="section-header">
                 <h2 class="section-title">Ссылки проекта</h2>
                 <div class="section-actions">
@@ -1779,14 +1900,20 @@ const deleteProject = async () => {
                       >
                         <span class="cell-content">{{ link.name }}</span>
                       </td>
-                      <td 
-                        :class="getChannelName(link.channelId) ? 'cell-with-tooltip' : ''"
-                        @mouseenter="getChannelName(link.channelId) ? showTooltip($event, getChannelName(link.channelId) || '') : null"
-                        @mouseleave="getChannelName(link.channelId) ? hideTooltip() : null"
-                      >
-                        <span v-if="getChannelName(link.channelId)" class="cell-content">
-                          {{ getChannelName(link.channelId) }}
-                        </span>
+                      <td>
+                        <div v-if="getChannelName(link.channelId)" class="channel-cell">
+                          <span class="cell-content">
+                            {{ getChannelName(link.channelId) }}
+                          </span>
+                          <span 
+                            v-if="getChannelStatus(link.channelId)"
+                            class="status-badge status-badge-small"
+                            :style="{ color: formatBotStatus(getChannelStatus(link.channelId)).color }"
+                          >
+                            <i :class="['fas', formatBotStatus(getChannelStatus(link.channelId)).icon]"></i>
+                            {{ formatBotStatus(getChannelStatus(link.channelId)).text }}
+                          </span>
+                        </div>
                         <span v-else class="text-secondary">—</span>
                       </td>
                       <td>
@@ -2878,13 +3005,13 @@ const deleteProject = async () => {
 
 .data-table th:nth-child(4),
 .data-table td:nth-child(4) {
-  width: 10%;
+  width: 12%;
   text-align: center;
 }
 
 .data-table th:nth-child(5),
 .data-table td:nth-child(5) {
-  width: 10%;
+  width: 12%;
   text-align: center;
 }
 
@@ -3010,6 +3137,102 @@ const deleteProject = async () => {
   border-left: 6px solid transparent;
   border-right: 6px solid transparent;
   border-top: 6px solid var(--color-accent);
+}
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 400;
+  letter-spacing: 0.02em;
+}
+
+.status-badge i {
+  font-size: 0.875rem;
+}
+
+.status-badge-small {
+  font-size: 0.75rem;
+  gap: 0.25rem;
+  margin-left: 0.5rem;
+}
+
+.status-badge-small i {
+  font-size: 0.75rem;
+}
+
+.channel-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.status-change-warning {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.5rem;
+  background: rgba(245, 158, 11, 0.1);
+  border: 2px solid #f59e0b;
+  margin-bottom: 1.5rem;
+  gap: 1rem;
+}
+
+.warning-content {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 1;
+}
+
+.warning-content i {
+  color: #f59e0b;
+  font-size: 1.25rem;
+}
+
+.warning-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  color: var(--color-text);
+  font-size: 0.9375rem;
+}
+
+.warning-text strong {
+  color: #f59e0b;
+  font-weight: 600;
+}
+
+.warning-text .status-text {
+  font-weight: 600;
+  color: var(--color-accent);
+}
+
+.warning-close {
+  background: transparent;
+  border: none;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  padding: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.25s ease;
+}
+
+.warning-close:hover {
+  color: var(--color-text);
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
 }
 
 .tooltip-enter-active {

@@ -45,7 +45,12 @@ export const TelegramChats = Heap.Table('t__tg_channel_analytics__chats__b4c5d6e
   }),
   lastSeenAt: Heap.DateTime({
     customMeta: { title: 'Время последнего появления' }
-  })
+  }),
+  botStatus: Heap.Optional(
+    Heap.String({
+      customMeta: { title: 'Статус бота в канале' }
+    })
+  )
 })
 
 export default TelegramChats

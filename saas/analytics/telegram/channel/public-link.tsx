@@ -291,7 +291,8 @@ export const publicLinkRoute = app.get('/:id', async (ctx, req) => {
           queryParams: queryParamsJson,
           inviteLink: inviteLink!,
           clickedAt: clickedAt,
-          fingerprint: fingerprintHash
+          fingerprint: fingerprintHash,
+          status: 'active'
         })
         
         Debug.info(ctx, `[public-link] ✅ LinkClick успешно создан: linkClickId=${linkClick.id}, linkId=${linkClick.linkId}, inviteLink=${linkClick.inviteLink}, clickedAt=${linkClick.clickedAt?.toISOString() || 'N/A'}, fingerprint=${linkClick.fingerprint}`)
@@ -331,4 +332,3 @@ export const publicLinkRoute = app.get('/:id', async (ctx, req) => {
     )
   }
 })
-

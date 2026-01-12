@@ -3267,7 +3267,8 @@ export const publicLinkRoute = app.get('/:id', async (ctx, req) => {
         linkId: trimmedId,
         queryParams: queryParamsJson,
         inviteLink: inviteLink!,
-        clickedAt: clickedAt
+        clickedAt: clickedAt,
+        status: 'active'
       })
       
       Debug.info(ctx, `[public-link] ✅ LinkClick успешно создан: linkClickId=${linkClick.id}, linkId=${linkClick.linkId}, inviteLink=${linkClick.inviteLink}, clickedAt=${linkClick.clickedAt?.toISOString() || 'N/A'}`)

@@ -95,5 +95,40 @@ export function hasChatInUpdate(update: any): boolean {
   return extractChatFromUpdate(update) !== null
 }
 
+/**
+ * Извлекает статус бота в канале из вебхука Telegram
+ * Статус находится в my_chat_member.new_chat_member.status или chat_member.new_chat_member.status
+ * 
+ * Возможные статусы:
+ * - 'member' - бот является участником
+ * - 'administrator' - бот является администратором
+ * - 'left' - бот покинул канал
+ * - 'kicked' - бот был удален из канала
+ * - 'restricted' - бот ограничен
+ * - 'creator' - бот является создателем
+ * 
+ * @param update - объект вебхука от Telegram
+ * @returns статус бота или null, если статус не найден
+ */
+export function extractBotStatusFromUpdate(update: any): string | null {
+  if (!update || typeof update !== 'object') {
+    return null
+  }
+
+  // Проверяем my_chat_member (изменение статуса бота)
+  const myChatMember = update.my_chat_member
+  if (myChatMember && myChatMember.new_chat_member && myChatMember.new_chat_member.status) {
+    return myChatMember.new_chat_member.status
+  }
+
+  // Проверяем chat_member (изменение статуса участника)
+  const chatMember = update.chat_member
+  if (chatMember && chatMember.new_chat_member && chatMember.new_chat_member.status) {
+    return chatMember.new_chat_member.status
+  }
+
+  return null
+}
+
 
 

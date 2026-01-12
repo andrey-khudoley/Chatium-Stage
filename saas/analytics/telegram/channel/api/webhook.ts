@@ -7,11 +7,13 @@ import { TelegramChats } from '../tables/chats.table'
 import { Projects } from '../tables/projects.table'
 import { LinkClicks } from '../tables/link-clicks.table'
 import { TrackingLinks } from '../tables/tracking-links.table'
+import { JoinEvents } from '../tables/join-events.table'
 import { Debug } from '../shared/debug'
+import { findTrackingLinkByInviteLink, attributeJoinDeterministic } from '../lib/deterministic-attribution'
 import { applyDebugLevel } from '../lib/logging'
 import { sendDataToSocket } from '@app/socket'
 import { request } from '@app/request'
-import { extractChatFromUpdate } from '../lib/extract-chat'
+import { extractChatFromUpdate, extractBotStatusFromUpdate } from '../lib/extract-chat'
 import { runWithExclusiveLock } from '@app/sync'
 import { userIdsMatch } from '../shared/user-utils'
 
@@ -125,7 +127,33 @@ export const apiWebhookRoute = app.post('/:id', async (ctx, req) => {
       
       if (chatInfo && chatInfo.id !== undefined && chatInfo.id !== null) {
         const chatIdString = String(chatInfo.id)
-        Debug.info(ctx, `[api/webhook] Чат найден в вебхуке: chatId=${chatIdString}, type=${chatInfo.type || 'N/A'}, title=${chatInfo.title || 'N/A'}, username=${chatInfo.username || 'N/A'}`)
+        
+        // Извлекаем статус бота из вебхука
+        let botStatus = extractBotStatusFromUpdate(webhookData)
+        
+        // ИСПРАВЛЕНИЕ Bug 1: Проверяем, было ли поле username явно передано в исходном вебхуке
+        // Это необходимо для консистентности с другими полями (chatType, chatTitle), которые используют fallback
+        // Для channel_post вебхуков объект chat должен содержать полную информацию, но на всякий случай проверяем
+        const chatPaths = [
+          (webhookData as any)?.channel_post?.chat,
+          (webhookData as any)?.message?.chat,
+          (webhookData as any)?.edited_message?.chat,
+          (webhookData as any)?.edited_channel_post?.chat,
+          (webhookData as any)?.callback_query?.message?.chat,
+          (webhookData as any)?.my_chat_member?.chat,
+          (webhookData as any)?.chat_member?.chat
+        ]
+        
+        // Ищем исходный chat объект, из которого была извлечена информация
+        const sourceChat = chatPaths.find(chat => chat && chat.id !== undefined && chat.id !== null && String(chat.id) === chatIdString)
+        
+        // Проверяем, было ли поле username явно передано в исходном вебхуке
+        // Важно: используем 'in' operator для проверки наличия поля, а не только значения
+        // Это позволяет различать отсутствие поля (undefined) от явного null или пустой строки
+        const usernameExplicitlyProvided = sourceChat !== null && sourceChat !== undefined && ('username' in sourceChat)
+        const chatUsername = usernameExplicitlyProvided && sourceChat ? (sourceChat.username || null) : undefined
+        
+        Debug.info(ctx, `[api/webhook] Чат найден в вебхуке: chatId=${chatIdString}, type=${chatInfo.type || 'N/A'}, title=${chatInfo.title || 'N/A'}, username=${chatInfo.username !== undefined ? (chatInfo.username || 'пустая строка') : 'отсутствует'}, usernameExplicitlyProvided=${usernameExplicitlyProvided}, botStatus=${botStatus || 'N/A'}`)
         
         const now = new Date()
         
@@ -136,6 +164,12 @@ export const apiWebhookRoute = app.post('/:id', async (ctx, req) => {
         
         await runWithExclusiveLock(ctx, lockKey, {}, async () => {
           // ВСЕ операции с БД должны быть ВНУТРИ блокировки
+          // ИСПРАВЛЕНИЕ Bug 1: Функция-хелпер для получения chatUsername с fallback
+          // Используется для консистентности с другими полями (chatType, chatTitle)
+          const getChatUsernameWithFallback = (existingValue: string | null | undefined): string | null => {
+            return chatUsername !== undefined ? chatUsername : (existingValue || null)
+          }
+          
           // ИСПРАВЛЕНИЕ Bug 1: Сначала ищем чат по составному ключу (chatId + projectId)
           // Это гарантирует, что мы найдём именно запись для текущего проекта
           const existingChatForProject = await TelegramChats.findOneBy(ctx, { 
@@ -145,16 +179,24 @@ export const apiWebhookRoute = app.post('/:id', async (ctx, req) => {
           
           if (existingChatForProject) {
             // Чат уже существует для этого проекта - обновляем
-            Debug.info(ctx, `[api/webhook] Чат ${chatIdString} уже существует для проекта ${bot.projectId}, обновляем lastSeenAt и другую информацию`)
+            // ИСПРАВЛЕНИЕ Bug 1: Используем ту же логику fallback для chatUsername, что и для других полей
+            // Обновляем chatUsername только если поле было явно передано в вебхуке
+            // Это предотвращает потерю данных, если вебхук содержит неполную информацию
+            const updatedChatUsername = chatUsername !== undefined 
+              ? chatUsername 
+              : (existingChatForProject.chatUsername || null)
+            
+            Debug.info(ctx, `[api/webhook] Чат ${chatIdString} уже существует для проекта ${bot.projectId}, обновляем lastSeenAt и другую информацию, chatUsername: ${existingChatForProject.chatUsername || 'null'} -> ${updatedChatUsername || 'null'} (usernameExplicitlyProvided=${usernameExplicitlyProvided})`)
             await TelegramChats.update(ctx, {
               id: existingChatForProject.id,
               botId: bot.id,
               projectId: bot.projectId, // Явно указываем projectId для консистентности данных
               chatType: chatInfo.type || existingChatForProject.chatType || null,
               chatTitle: chatInfo.title || existingChatForProject.chatTitle || null,
-              chatUsername: chatInfo.username || existingChatForProject.chatUsername || null,
+              chatUsername: updatedChatUsername, // Используем fallback на существующее значение, если поле не было явно передано
               firstSeenAt: existingChatForProject.firstSeenAt, // Сохраняем оригинальное время первого появления
-              lastSeenAt: now // Обновляем время последнего появления
+              lastSeenAt: now, // Обновляем время последнего появления
+              botStatus: botStatus || existingChatForProject.botStatus || null // Обновляем статус, если он есть в вебхуке
             })
             Debug.info(ctx, `[api/webhook] Чат ${chatIdString} успешно обновлен для проекта ${bot.projectId}`)
           } else {
@@ -186,16 +228,19 @@ export const apiWebhookRoute = app.post('/:id', async (ctx, req) => {
               
               if (currentLegacyChat && !currentLegacyChat.projectId) {
                 // Запись всё ещё без projectId - безопасно обновляем её
-                Debug.info(ctx, `[api/webhook] Legacy-запись ${legacyChat.id} всё ещё без projectId, атомарно обновляем с projectId=${bot.projectId}`)
+                // ИСПРАВЛЕНИЕ Bug 1: Используем fallback для chatUsername
+                const updatedChatUsernameForLegacy = getChatUsernameWithFallback(currentLegacyChat.chatUsername)
+                Debug.info(ctx, `[api/webhook] Legacy-запись ${legacyChat.id} всё ещё без projectId, атомарно обновляем с projectId=${bot.projectId}, chatUsername: ${currentLegacyChat.chatUsername || 'null'} -> ${updatedChatUsernameForLegacy || 'null'} (usernameExplicitlyProvided=${usernameExplicitlyProvided})`)
                 await TelegramChats.update(ctx, {
                   id: currentLegacyChat.id,
                   botId: bot.id,
                   projectId: bot.projectId, // Добавляем projectId к старой записи
                   chatType: chatInfo.type || currentLegacyChat.chatType || null,
                   chatTitle: chatInfo.title || currentLegacyChat.chatTitle || null,
-                  chatUsername: chatInfo.username || currentLegacyChat.chatUsername || null,
+                  chatUsername: updatedChatUsernameForLegacy, // Используем fallback на существующее значение, если поле не было явно передано
                   firstSeenAt: currentLegacyChat.firstSeenAt, // Сохраняем оригинальное время первого появления
-                  lastSeenAt: now // Обновляем время последнего появления
+                  lastSeenAt: now, // Обновляем время последнего появления
+                  botStatus: botStatus || currentLegacyChat.botStatus || null // Обновляем статус, если он есть в вебхуке
                 })
                 Debug.info(ctx, `[api/webhook] Legacy-запись чата ${chatIdString} успешно мигрирована с projectId=${bot.projectId}`)
             } else {
@@ -208,30 +253,38 @@ export const apiWebhookRoute = app.post('/:id', async (ctx, req) => {
               
               if (existingChatForCurrentProject) {
                 // Запись для текущего проекта уже существует - обновляем её
-                Debug.info(ctx, `[api/webhook] Запись чата ${chatIdString} уже существует для проекта ${bot.projectId}, обновляем`)
+                // ИСПРАВЛЕНИЕ Bug 1: Используем fallback для chatUsername
+                const updatedChatUsernameForExisting = getChatUsernameWithFallback(existingChatForCurrentProject.chatUsername)
+                Debug.info(ctx, `[api/webhook] Запись чата ${chatIdString} уже существует для проекта ${bot.projectId}, обновляем, chatUsername: ${existingChatForCurrentProject.chatUsername || 'null'} -> ${updatedChatUsernameForExisting || 'null'} (usernameExplicitlyProvided=${usernameExplicitlyProvided})`)
                 await TelegramChats.update(ctx, {
                   id: existingChatForCurrentProject.id,
                   botId: bot.id,
                   projectId: bot.projectId,
                   chatType: chatInfo.type || existingChatForCurrentProject.chatType || null,
                   chatTitle: chatInfo.title || existingChatForCurrentProject.chatTitle || null,
-                  chatUsername: chatInfo.username || existingChatForCurrentProject.chatUsername || null,
+                  chatUsername: updatedChatUsernameForExisting, // Используем fallback на существующее значение, если поле не было явно передано
                   firstSeenAt: existingChatForCurrentProject.firstSeenAt,
-                  lastSeenAt: now
+                  lastSeenAt: now,
+                  botStatus: botStatus || existingChatForCurrentProject.botStatus || null // Обновляем статус, если он есть в вебхуке
                 })
                 Debug.info(ctx, `[api/webhook] Чат ${chatIdString} успешно обновлен для проекта ${bot.projectId}`)
               } else {
                 // Создаём новую запись для текущего проекта
-                Debug.info(ctx, `[api/webhook] Legacy-запись чата ${chatIdString} уже мигрирована другим проектом (projectId=${currentLegacyChat?.projectId || 'N/A'}), создаём новую запись для проекта ${bot.projectId}`)
+                // ИСПРАВЛЕНИЕ Bug 1: Используем chatUsername из вебхука, если оно было явно передано, иначе из legacy-записи
+                const newChatUsername = chatUsername !== undefined 
+                  ? chatUsername 
+                  : (currentLegacyChat?.chatUsername || legacyChat.chatUsername || null)
+                Debug.info(ctx, `[api/webhook] Legacy-запись чата ${chatIdString} уже мигрирована другим проектом (projectId=${currentLegacyChat?.projectId || 'N/A'}), создаём новую запись для проекта ${bot.projectId}, chatUsername=${newChatUsername || 'null'} (usernameExplicitlyProvided=${usernameExplicitlyProvided})`)
                 await TelegramChats.create(ctx, {
                   chatId: chatIdString,
                   botId: bot.id,
                   projectId: bot.projectId,
                   chatType: chatInfo.type || currentLegacyChat?.chatType || legacyChat.chatType || null,
                   chatTitle: chatInfo.title || currentLegacyChat?.chatTitle || legacyChat.chatTitle || null,
-                  chatUsername: chatInfo.username || currentLegacyChat?.chatUsername || legacyChat.chatUsername || null,
+                  chatUsername: newChatUsername, // Используем из вебхука, если было явно передано, иначе из legacy-записи
                   firstSeenAt: now, // Каждый проект отслеживает своё собственное время первого обнаружения чата
-                  lastSeenAt: now
+                  lastSeenAt: now,
+                  botStatus: botStatus || null // Сохраняем статус, если он есть в вебхуке
                 })
                 Debug.info(ctx, `[api/webhook] Чат ${chatIdString} успешно создан для проекта ${bot.projectId}`)
               }
@@ -246,30 +299,36 @@ export const apiWebhookRoute = app.post('/:id', async (ctx, req) => {
             
             if (existingChatForCurrentProject) {
               // Запись для текущего проекта уже существует - обновляем её
-              Debug.info(ctx, `[api/webhook] Запись чата ${chatIdString} уже существует для проекта ${bot.projectId}, обновляем`)
+              // ИСПРАВЛЕНИЕ Bug 1: Используем fallback для chatUsername
+              const updatedChatUsernameForCurrent = getChatUsernameWithFallback(existingChatForCurrentProject.chatUsername)
+              Debug.info(ctx, `[api/webhook] Запись чата ${chatIdString} уже существует для проекта ${bot.projectId}, обновляем, chatUsername: ${existingChatForCurrentProject.chatUsername || 'null'} -> ${updatedChatUsernameForCurrent || 'null'} (usernameExplicitlyProvided=${usernameExplicitlyProvided})`)
               await TelegramChats.update(ctx, {
                 id: existingChatForCurrentProject.id,
                 botId: bot.id,
                 projectId: bot.projectId,
                 chatType: chatInfo.type || existingChatForCurrentProject.chatType || null,
                 chatTitle: chatInfo.title || existingChatForCurrentProject.chatTitle || null,
-                chatUsername: chatInfo.username || existingChatForCurrentProject.chatUsername || null,
+                chatUsername: updatedChatUsernameForCurrent, // Используем fallback на существующее значение, если поле не было явно передано
                 firstSeenAt: existingChatForCurrentProject.firstSeenAt,
-                lastSeenAt: now
+                lastSeenAt: now,
+                botStatus: botStatus || existingChatForCurrentProject.botStatus || null // Обновляем статус, если он есть в вебхуке
               })
               Debug.info(ctx, `[api/webhook] Чат ${chatIdString} успешно обновлен для проекта ${bot.projectId}`)
             } else {
               // Создаём новую запись для текущего проекта
-              Debug.info(ctx, `[api/webhook] Чат ${chatIdString} новый для проекта ${bot.projectId}, создаём запись`)
+              // ИСПРАВЛЕНИЕ Bug 1: Используем chatUsername из вебхука, если оно было явно передано, иначе null
+              const newChatUsername = chatUsername !== undefined ? chatUsername : null
+              Debug.info(ctx, `[api/webhook] Чат ${chatIdString} новый для проекта ${bot.projectId}, создаём запись, chatUsername=${newChatUsername || 'null'} (usernameExplicitlyProvided=${usernameExplicitlyProvided})`)
               await TelegramChats.create(ctx, {
                 chatId: chatIdString,
                 botId: bot.id,
                 projectId: bot.projectId,
                 chatType: chatInfo.type || null,
                 chatTitle: chatInfo.title || null,
-                chatUsername: chatInfo.username || null,
+                chatUsername: newChatUsername, // Используем из вебхука, если было явно передано, иначе null
                 firstSeenAt: now, // Каждый проект отслеживает своё собственное время первого обнаружения чата
-                lastSeenAt: now
+                lastSeenAt: now,
+                botStatus: botStatus || null // Сохраняем статус, если он есть в вебхуке
               })
               Debug.info(ctx, `[api/webhook] Чат ${chatIdString} успешно создан для проекта ${bot.projectId}`)
             }
@@ -285,7 +344,143 @@ export const apiWebhookRoute = app.post('/:id', async (ctx, req) => {
       Debug.error(ctx, `[api/webhook] Stack trace сохранения чата: ${chatError.stack || 'N/A'}`)
     }
     
-    // Обработка chat_member updates для сопоставления подписок с переходами по инвайт-линку
+    // Обработка my_chat_member и chat_member для обновления статуса бота в канале
+    // Это нужно делать отдельно, так как статус может измениться даже если чат не найден в других местах вебхука
+    try {
+      const myChatMember = (webhookData as any)?.my_chat_member
+      const chatMember = (webhookData as any)?.chat_member
+      
+      // Проверяем my_chat_member (изменение статуса бота)
+      if (myChatMember && myChatMember.new_chat_member && myChatMember.chat) {
+        const newStatus = myChatMember.new_chat_member.status
+        const chatId = myChatMember.chat.id != null ? String(myChatMember.chat.id) : null
+        
+        if (chatId && newStatus) {
+          Debug.info(ctx, `[api/webhook] Обнаружен my_chat_member update, обновляем статус бота: chatId=${chatId}, newStatus=${newStatus}`)
+          
+          // Ищем канал по chatId и projectId
+          const channel = await TelegramChats.findOneBy(ctx, {
+            chatId: chatId,
+            projectId: bot.projectId
+          })
+          
+          if (channel) {
+            // Обновляем статус только если он изменился
+            if (channel.botStatus !== newStatus) {
+              Debug.info(ctx, `[api/webhook] Статус бота изменился: ${channel.botStatus || 'null'} -> ${newStatus}, обновляем в БД`)
+              await TelegramChats.update(ctx, {
+                id: channel.id,
+                botStatus: newStatus
+              })
+            } else {
+              Debug.info(ctx, `[api/webhook] Статус бота не изменился: ${newStatus}, пропускаем обновление`)
+            }
+          } else {
+            Debug.warn(ctx, `[api/webhook] Канал с chatId=${chatId} не найден для проекта ${bot.projectId}, создаём запись для статуса`)
+            const lockKey = `chat-status-${bot.projectId}-${chatId}`
+            await runWithExclusiveLock(ctx, lockKey, {}, async () => {
+              const existing = await TelegramChats.findOneBy(ctx, {
+                chatId: chatId,
+                projectId: bot.projectId
+              })
+              if (existing) {
+                if (existing.botStatus !== newStatus) {
+                  await TelegramChats.update(ctx, {
+                    id: existing.id,
+                    botStatus: newStatus
+                  })
+                }
+                return
+              }
+
+              const now = new Date()
+              await TelegramChats.create(ctx, {
+                chatId: chatId,
+                botId: bot.id,
+                projectId: bot.projectId,
+                chatType: myChatMember.chat?.type || null,
+                chatTitle: myChatMember.chat?.title || null,
+                chatUsername: myChatMember.chat?.username || null,
+                firstSeenAt: now,
+                lastSeenAt: now,
+                botStatus: newStatus
+              })
+            })
+          }
+        }
+      }
+      
+      // Проверяем chat_member (изменение статуса участника, но может быть и бот)
+      if (chatMember && chatMember.new_chat_member && chatMember.chat) {
+        const newStatus = chatMember.new_chat_member.status
+        const chatId = chatMember.chat.id != null ? String(chatMember.chat.id) : null
+        
+        // Проверяем, что это изменение статуса бота (user.id должен совпадать с bot.id из Telegram)
+        // Для упрощения обновляем статус, если chatId найден
+        if (chatId && newStatus) {
+          Debug.info(ctx, `[api/webhook] Обнаружен chat_member update, проверяем обновление статуса: chatId=${chatId}, newStatus=${newStatus}`)
+          
+          // Ищем канал по chatId и projectId
+          const channel = await TelegramChats.findOneBy(ctx, {
+            chatId: chatId,
+            projectId: bot.projectId
+          })
+          
+          if (channel) {
+            // Обновляем статус только если он изменился
+            if (channel.botStatus !== newStatus) {
+              Debug.info(ctx, `[api/webhook] Статус бота изменился: ${channel.botStatus || 'null'} -> ${newStatus}, обновляем в БД`)
+              await TelegramChats.update(ctx, {
+                id: channel.id,
+                botStatus: newStatus
+              })
+            } else {
+              Debug.info(ctx, `[api/webhook] Статус бота не изменился: ${newStatus}, пропускаем обновление`)
+            }
+          } else {
+            Debug.warn(ctx, `[api/webhook] Канал с chatId=${chatId} не найден для проекта ${bot.projectId}, создаём запись для статуса`)
+            const lockKey = `chat-status-${bot.projectId}-${chatId}`
+            await runWithExclusiveLock(ctx, lockKey, {}, async () => {
+              const existing = await TelegramChats.findOneBy(ctx, {
+                chatId: chatId,
+                projectId: bot.projectId
+              })
+              if (existing) {
+                if (existing.botStatus !== newStatus) {
+                  await TelegramChats.update(ctx, {
+                    id: existing.id,
+                    botStatus: newStatus
+                  })
+                }
+                return
+              }
+
+              const now = new Date()
+              await TelegramChats.create(ctx, {
+                chatId: chatId,
+                botId: bot.id,
+                projectId: bot.projectId,
+                chatType: chatMember.chat?.type || null,
+                chatTitle: chatMember.chat?.title || null,
+                chatUsername: chatMember.chat?.username || null,
+                firstSeenAt: now,
+                lastSeenAt: now,
+                botStatus: newStatus
+              })
+            })
+          }
+        }
+      }
+    } catch (statusError: any) {
+      // Логируем ошибку, но не прерываем обработку вебхука
+      Debug.error(ctx, `[api/webhook] Ошибка обновления статуса бота: ${statusError.message}`, 'E_BOT_STATUS_UPDATE')
+      Debug.error(ctx, `[api/webhook] Stack trace обновления статуса: ${statusError.stack || 'N/A'}`)
+    }
+    
+    // Обработка chat_member updates для атрибуции подписок
+    // Реализует два способа атрибуции согласно плану:
+    // - Способ 1 (детерминированный): Для закрытых каналов (без chat.username) - атрибуция по точному совпадению invite_link
+    // - Способ 2 (вероятностный): Для открытых каналов (с chat.username) - батч-матчинг с венгерским алгоритмом
     try {
       const chatMember = (webhookData as any)?.chat_member
       
@@ -298,19 +493,30 @@ export const apiWebhookRoute = app.post('/:id', async (ctx, req) => {
         if (newStatus === 'member') {
           // Извлекаем данные о подписчике
           const from = chatMember.from
-          const subscriberTgId = from?.id ? String(from.id) : null
+          const subscriberTgId = from?.id != null ? String(from.id) : null
           const subscriberFirstName = from?.first_name || ''
           const subscriberLastName = from?.last_name || ''
           const subscriberName = [subscriberFirstName, subscriberLastName].filter(Boolean).join(' ') || null
           
           // Время подписки - используем date из вебхука или текущее время
-          const subscribedAt = chatMember.date 
+          const joinedAt = chatMember.date 
             ? new Date(chatMember.date * 1000) // Telegram date в секундах
             : new Date()
           
-          Debug.info(ctx, `[api/webhook] Данные подписчика: subscriberTgId=${subscriberTgId}, subscriberName=${subscriberName}, subscribedAt=${subscribedAt.toISOString()}`)
+          Debug.info(ctx, `[api/webhook] Данные подписчика: subscriberTgId=${subscriberTgId}, subscriberName=${subscriberName}, joinedAt=${joinedAt.toISOString()}`)
           
-          // invite_link может быть строкой или объектом ChatInviteLink с полем invite_link
+          // Извлекаем информацию о чате для определения типа канала
+          const chatInfo = chatMember.chat || extractChatFromUpdate(webhookData)
+          const chatId = chatInfo?.id != null ? String(chatInfo.id) : null
+          const chatUsername = chatInfo?.username || null
+          
+          // Определяем тип канала: закрытый (без username) или открытый (с username)
+          // Это определяет способ атрибуции согласно плану
+          const isClosedChannel = !chatUsername || (typeof chatUsername === 'string' && chatUsername.trim() === '')
+          Debug.info(ctx, `[api/webhook] Тип канала: ${isClosedChannel ? 'закрытый (без username)' : 'открытый (с username)'}, chatId=${chatId}, chatUsername=${chatUsername || 'N/A'}`)
+          
+          // Извлекаем invite_link.invite_link из webhook (согласно плану)
+          // Telegram может передавать invite_link как строку или как объект с полем invite_link
           let inviteLink: string | null = null
           const inviteLinkData = chatMember.invite_link
           
@@ -320,74 +526,133 @@ export const apiWebhookRoute = app.post('/:id', async (ctx, req) => {
             inviteLink = inviteLinkData
             Debug.info(ctx, `[api/webhook] invite_link найден как строка: ${inviteLink}`)
           } else if (inviteLinkData && typeof inviteLinkData === 'object' && inviteLinkData.invite_link) {
+            // План: "Извлечь invite_link.invite_link из webhook"
             inviteLink = inviteLinkData.invite_link
-            Debug.info(ctx, `[api/webhook] invite_link найден в объекте: ${inviteLink}`)
+            Debug.info(ctx, `[api/webhook] invite_link найден в объекте (invite_link.invite_link): ${inviteLink}`)
           } else {
             Debug.info(ctx, `[api/webhook] invite_link не найден в chat_member update`)
           }
           
-          let linkClick: any = null
+          // Генерируем уникальный joinId из update_id или создаём новый
+          // Используем 'unknown' вместо null для консистентности с userId в JoinEvent
+          // Добавляем случайный компонент для гарантии уникальности даже при одновременных событиях
+          const userIdForJoinId = subscriberTgId || 'unknown'
+          const updateId = (webhookData as any)?.update_id
+          const randomSuffix = Math.random().toString(36).substring(2, 9) // 7 случайных символов
+          const timestamp = Date.now()
+          const joinId = updateId != null 
+            ? `join_${updateId}_${userIdForJoinId}_${timestamp}_${randomSuffix}` 
+            : `join_${userIdForJoinId}_${timestamp}_${randomSuffix}`
           
-          // Строгое сопоставление: ищем LinkClick только по inviteLink из вебхука
-          // Логика: переход по ссылке → генерация inviteLink → редирект → подписка → вебхук с inviteLink
-          if (inviteLink && typeof inviteLink === 'string') {
-            Debug.info(ctx, `[api/webhook] Поиск LinkClick по inviteLink: ${inviteLink}`)
-            linkClick = await LinkClicks.findOneBy(ctx, {
-              inviteLink: inviteLink
-            })
+          if (isClosedChannel) {
+            // СПОСОБ 1: Детерминированная атрибуция для закрытых каналов
+            Debug.info(ctx, `[api/webhook] Обработка закрытого канала: детерминированная атрибуция`)
             
-            if (linkClick) {
-              Debug.info(ctx, `[api/webhook] ✅ LinkClick найден по inviteLink: linkClickId=${linkClick.id}`)
-            } else {
-              Debug.warn(ctx, `[api/webhook] ❌ LinkClick не найден по inviteLink: ${inviteLink}. Возможные причины: ссылка была отозвана, инвайт-линк был изменён, или подписка произошла не через отслеживаемую ссылку.`)
-            }
-          } else {
-            Debug.warn(ctx, `[api/webhook] ⚠️ inviteLink отсутствует в chat_member update. Подписка не может быть сопоставлена с переходом по ссылке. Возможные причины: подписка произошла не через инвайт-линк (поиск, прямая ссылка), или Telegram не передал invite_link в вебхуке.`)
-          }
-          
-          // Обновляем LinkClick, если он найден
-          if (linkClick) {
-            Debug.info(ctx, `[api/webhook] Найден LinkClick для обновления: linkClickId=${linkClick.id}`)
-            
-            // Проверяем, что ссылка принадлежит текущему проекту
-            // Это защищает от обновления записей из других проектов
-            const trackingLink = await TrackingLinks.findById(ctx, linkClick.linkId)
-            
-            if (!trackingLink) {
-              Debug.warn(ctx, `[api/webhook] TrackingLink не найден для linkId=${linkClick.linkId}, пропускаем обновление`)
-            } else if (trackingLink.projectId !== bot.projectId) {
-              Debug.warn(ctx, `[api/webhook] LinkClick принадлежит другому проекту: linkClickId=${linkClick.id}, expectedProjectId=${bot.projectId}, actualProjectId=${trackingLink.projectId}, пропускаем обновление`)
-            } else {
-              // Проверяем, не обновлена ли уже эта запись
-              if (linkClick.subscribedAt) {
-                Debug.info(ctx, `[api/webhook] LinkClick уже имеет subscribedAt: ${linkClick.subscribedAt.toISOString()}, пропускаем обновление`)
-              } else {
-                // Обновляем LinkClick с данными подписки
-                await LinkClicks.update(ctx, {
-                  id: linkClick.id,
-                  subscribedAt: subscribedAt,
-                  subscriberTgId: subscriberTgId,
-                  subscriberName: subscriberName
+            if (inviteLink && typeof inviteLink === 'string') {
+              // Ищем TrackingLink по совпадению начала invite_link
+              const attributionResult = await findTrackingLinkByInviteLink(ctx, bot.projectId, inviteLink)
+              
+              if (attributionResult && attributionResult.trackingLink) {
+                Debug.info(ctx, `[api/webhook] ✅ TrackingLink найден для детерминированной атрибуции: trackingLinkId=${attributionResult.trackingLink.id}`)
+                
+                // Создаём JoinEvent со статусом 'pending' - статус и поля атрибуции будут обновлены 
+                // только после успешного завершения attributeJoinDeterministic
+                // НЕ устанавливаем attributedToTrackingLinkId и attributedToLinkClickId здесь,
+                // чтобы избежать семантически неверных данных при неудачной атрибуции
+                const joinEvent = await JoinEvents.create(ctx, {
+                  joinId,
+                  chatId: chatId || 'unknown',
+                  botId: bot.id,
+                  projectId: bot.projectId,
+                  userId: subscriberTgId || 'unknown',
+                  userName: subscriberName || 'Unknown',
+                  joinedAt,
+                  inviteLink,
+                  attributionMethod: 'deterministic',
+                  status: 'pending' // Будет обновлён на 'attributed' после успешной атрибуции
+                  // attributedToTrackingLinkId и attributedToLinkClickId будут установлены в attributeJoinDeterministic
                 })
                 
-                Debug.info(ctx, `[api/webhook] ✅ LinkClick обновлен: linkClickId=${linkClick.id}, subscriberTgId=${subscriberTgId}, subscriberName=${subscriberName}, subscribedAt=${subscribedAt.toISOString()}`)
+                Debug.info(ctx, `[api/webhook] ✅ JoinEvent создан со статусом 'pending': joinEventId=${joinEvent.id}, будет обновлён после атрибуции`)
+                
+                // Выполняем детерминированную атрибуцию (обновляет JoinEvent и LinkClick)
+                // Если вызов упадёт с ошибкой, JoinEvent останется со статусом 'pending'
+                try {
+                  await attributeJoinDeterministic(
+                    ctx,
+                    joinEvent,
+                    attributionResult.trackingLink,
+                    attributionResult.linkClick || null
+                  )
+                  Debug.info(ctx, `[api/webhook] ✅ Детерминированная атрибуция выполнена: joinEventId=${joinEvent.id}, linkClickId=${attributionResult.linkClick?.id || 'null'}`)
+                } catch (attributionError: any) {
+                  Debug.error(ctx, `[api/webhook] ❌ Ошибка при выполнении детерминированной атрибуции: ${attributionError.message}`, 'E_DETERMINISTIC_ATTRIBUTION')
+                  Debug.error(ctx, `[api/webhook] Stack trace: ${attributionError.stack || 'N/A'}`)
+                  // JoinEvent остаётся со статусом 'pending', что правильно - атрибуция не завершена
+                }
+              } else {
+                Debug.warn(ctx, `[api/webhook] ❌ TrackingLink не найден для inviteLink: ${inviteLink.substring(0, Math.min(50, inviteLink.length))}...`)
+                // Создаём JoinEvent со статусом 'pending' для возможной последующей атрибуции
+                const joinEvent = await JoinEvents.create(ctx, {
+                  joinId,
+                  chatId: chatId || 'unknown',
+                  botId: bot.id,
+                  projectId: bot.projectId,
+                  userId: subscriberTgId || 'unknown',
+                  userName: subscriberName || 'Unknown',
+                  joinedAt,
+                  inviteLink,
+                  attributionMethod: 'unknown',
+                  status: 'pending'
+                })
+                Debug.info(ctx, `[api/webhook] ℹ️ JoinEvent создан со статусом 'pending': joinEventId=${joinEvent.id} (TrackingLink не найден)`)
               }
+            } else {
+              Debug.warn(ctx, `[api/webhook] ⚠️ inviteLink отсутствует для закрытого канала, создаём JoinEvent со статусом 'pending'`)
+              // Создаём JoinEvent со статусом 'pending'
+              const joinEvent = await JoinEvents.create(ctx, {
+                joinId,
+                chatId: chatId || 'unknown',
+                botId: bot.id,
+                projectId: bot.projectId,
+                userId: subscriberTgId || 'unknown',
+                userName: subscriberName || 'Unknown',
+                joinedAt,
+                inviteLink: null,
+                attributionMethod: 'unknown',
+                status: 'pending'
+              })
+              Debug.info(ctx, `[api/webhook] ℹ️ JoinEvent создан со статусом 'pending': joinEventId=${joinEvent.id} (inviteLink отсутствует)`)
             }
           } else {
-            if (inviteLink) {
-              Debug.warn(ctx, `[api/webhook] ❌ LinkClick не найден для сопоставления подписки. inviteLink=${inviteLink}, subscriberTgId=${subscriberTgId || 'N/A'}. Подписка не будет связана с переходом по ссылке.`)
-            } else {
-              Debug.info(ctx, `[api/webhook] ℹ️ LinkClick не найден для сопоставления подписки (inviteLink отсутствует в вебхуке). subscriberTgId=${subscriberTgId || 'N/A'}. Это нормально, если подписка произошла не через отслеживаемую ссылку.`)
-            }
+            // СПОСОБ 2: Вероятностная атрибуция для открытых каналов (батч-матчинг)
+            Debug.info(ctx, `[api/webhook] Обработка открытого канала: создание JoinEvent со статусом 'pending' для батч-матчинга`)
+            
+            // Создаём JoinEvent со статусом 'pending'
+            // Атрибуция будет выполнена периодическим job'ом через батч-матчинг
+            const joinEvent = await JoinEvents.create(ctx, {
+              joinId,
+              chatId: chatId || 'unknown',
+              botId: bot.id,
+              projectId: bot.projectId,
+              userId: subscriberTgId || 'unknown',
+              userName: subscriberName || 'Unknown',
+              joinedAt,
+              inviteLink: inviteLink || null, // Может отсутствовать или быть частичным
+              attributionMethod: 'probabilistic',
+              status: 'pending'
+            })
+            
+            Debug.info(ctx, `[api/webhook] ✅ JoinEvent создан для батч-матчинга: joinEventId=${joinEvent.id}, status=${joinEvent.status}, attributionMethod=${joinEvent.attributionMethod}`)
           }
         } else {
           Debug.info(ctx, `[api/webhook] chat_member update с статусом ${newStatus}, пропускаем (обрабатываем только 'member')`)
         }
       }
-    } catch (linkClickError: any) {
+    } catch (joinEventError: any) {
       // Логируем ошибку, но не прерываем обработку вебхука
-      Debug.error(ctx, `[api/webhook] Ошибка обработки chat_member для LinkClick: ${linkClickError.message}`, 'E_LINK_CLICK_UPDATE')
-      Debug.error(ctx, `[api/webhook] Stack trace обработки LinkClick: ${linkClickError.stack || 'N/A'}`)
+      Debug.error(ctx, `[api/webhook] Ошибка обработки chat_member для JoinEvent: ${joinEventError.message}`, 'E_JOIN_EVENT_CREATE')
+      Debug.error(ctx, `[api/webhook] Stack trace обработки JoinEvent: ${joinEventError.stack || 'N/A'}`)
     }
     
     // БЕЗОПАСНОСТЬ: Отправляем вебхук всем участникам проекта
@@ -919,4 +1184,3 @@ export const apiTestWebhookRoute = app.get('/test/:id', async (ctx, req) => {
     }
   }
 })
-

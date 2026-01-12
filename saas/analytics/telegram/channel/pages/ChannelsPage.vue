@@ -36,6 +36,7 @@ const channels = ref<Array<{
   chatType: string | null
   chatTitle: string | null
   chatUsername: string | null
+  botStatus: string | null
   firstSeenAt: Date
   lastSeenAt: Date
 }>>([])
@@ -79,6 +80,7 @@ const loadChannels = async () => {
         chatType: channel.chatType || null,
         chatTitle: channel.chatTitle || null,
         chatUsername: channel.chatUsername || null,
+        botStatus: channel.botStatus || null,
         firstSeenAt: channel.firstSeenAt,
         lastSeenAt: channel.lastSeenAt
       }))
@@ -767,4 +769,3 @@ body {
   }
 }
 </style>
-
