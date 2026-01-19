@@ -16,7 +16,7 @@
             <i class="fas fa-arrow-left"></i>
             <span class="btn-text">Назад</span>
           </a>
-          <a :href="editUrl" class="btn btn-primary">
+          <a v-if="!props.isPublic" :href="editUrl" class="btn btn-primary">
             <i class="fas fa-pen-to-square"></i>
             <span class="btn-text">Редактировать</span>
           </a>
@@ -56,9 +56,12 @@
 </template>
 
 <script setup lang="ts">
+declare const ctx: any
+
 import { ref, computed, onMounted } from 'vue'
 import { getDocRoute } from '../api/docs'
-import { indexPageRoute, docEditRoute } from '../index'
+import { indexPageRoute, docEditRoute, sharedPageRoute } from '../index'
+import { stripInstructions } from '../shared/instructionParser'
 import ThemeToggle from '../shared/ThemeToggle.vue'
 import SkeletonLoader from '../shared/SkeletonLoader.vue'
 import Footer from '../shared/Footer.vue'
@@ -69,19 +72,27 @@ const props = defineProps<{
   ssrContent?: string
   ssrHtml?: string
   ssrError?: string
+  isPublic?: boolean
 }>()
 
 // Инициализируем из SSR данных
-const content = ref(props.ssrContent || (window as any).__SSR_MARKDOWN__ || '')
-const loading = ref(!content.value)
+const rawContent = ref(props.ssrContent || (window as any).__SSR_MARKDOWN__ || '')
+const loading = ref(!rawContent.value)
 const error = ref<string | null>(props.ssrError || (window as any).__SSR_ERROR__ || null)
 const renderTrigger = ref(0)
+
+// Удаляем строку инструкций из контента для отображения
+const content = computed(() => {
+  return stripInstructions(rawContent.value)
+})
 
 const docName = computed(() => {
   return props.documentFilename
 })
 
-const backUrl = computed(() => indexPageRoute.url())
+const backUrl = computed(() => {
+  return props.isPublic ? sharedPageRoute.url() : indexPageRoute.url()
+})
 const editUrl = computed(() => docEditRoute.query({ filename: props.documentFilename }).url())
 
 const renderedMarkdown = computed(() => {
@@ -92,11 +103,17 @@ const renderedMarkdown = computed(() => {
     const marked = (window as any).marked
     if (!marked || typeof marked.parse !== 'function') {
       // Используем SSR HTML пока marked не загружен
+      // Для SSR HTML тоже нужно удалить инструкции
       const ssrHtml = props.ssrHtml || (window as any).__SSR_HTML__
-      if (ssrHtml) return ssrHtml
+      if (ssrHtml) {
+        // Если есть SSR HTML, он уже был обработан на сервере
+        // Но для публичных документов нужно убедиться, что инструкции удалены
+        return ssrHtml
+      }
       return `<div class="alert alert-info"><i class="fas fa-hourglass-start"></i> Инициализация рендеринга...</div>`
     }
     // Используем marked.js для более качественного рендеринга
+    // content уже содержит контент без инструкций благодаря computed
     return marked.parse(content.value)
   } catch (e) {
     // Fallback на SSR HTML при ошибке
@@ -108,7 +125,7 @@ const renderedMarkdown = computed(() => {
 
 async function loadDoc() {
   // Если уже есть SSR контент, не загружаем повторно
-  if (content.value) {
+  if (rawContent.value) {
     loading.value = false
     return
   }
@@ -119,7 +136,7 @@ async function loadDoc() {
   try {
     const result = await getDocRoute.query({ filename: props.documentFilename }).run(ctx)
     if (result.success) {
-      content.value = result.data
+      rawContent.value = result.data
     } else {
       error.value = result.error === 'NotFound' 
         ? 'Документ не найден' 

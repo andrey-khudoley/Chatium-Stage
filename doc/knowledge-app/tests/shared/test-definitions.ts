@@ -66,6 +66,18 @@ export const TEST_CATEGORIES = [
       { name: 'table_header_visibility', description: 'Шапка таблицы скрыта когда нет документов' },
       { name: 'selection_on_link_click', description: 'Клик на ссылку не вызывает выделение' },
     ]
+  },
+  {
+    name: 'instructions',
+    title: 'Тесты парсинга инструкций',
+    icon: 'fa-at',
+    tests: [
+      { name: 'parse_single', description: 'Парсинг одной инструкции @shared' },
+      { name: 'parse_multiple', description: 'Парсинг нескольких инструкций' },
+      { name: 'no_instructions', description: 'Документ без инструкций' },
+      { name: 'strip_instructions', description: 'Удаление строки инструкций' },
+      { name: 'list_shared_only', description: 'API возвращает только @shared документы' },
+    ]
   }
 ]
 

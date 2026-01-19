@@ -1,6 +1,7 @@
 import { requireAccountRole } from '@app/auth'
 import { request } from '@app/request'
 import Settings from '../tables/settings.table'
+import { hasInstruction } from '../shared/instructionParser'
 
 // Префикс для всех документов в Yandex Object Storage
 const DOCS_PREFIX = 'usage=external/service=docs/'
@@ -301,6 +302,108 @@ export const deleteDocRoute = app.post('/delete', async (ctx, req) => {
     ctx.account.log('Error deleting doc', {
       level: 'error',
       json: { filename, error: String(error) }
+    })
+    return { success: false, error: String(error) }
+  }
+})
+
+// Кеш для списка публичных документов
+let sharedDocsCache: { items: any[], nextToken?: string, timestamp: number } | null = null
+const CACHE_TTL_MS = 60_000 // 1 минута
+const MAX_DOCS_TO_CHECK = 200 // Максимальное количество документов для проверки
+
+// @shared-route
+export const listSharedDocsRoute = app.get('/list-shared', async (ctx, req) => {
+  // Публичный доступ - БЕЗ авторизации
+  
+  // Ограничиваем лимит запроса до MAX_DOCS_TO_CHECK, чтобы не получать больше документов, чем можем проверить
+  const requestedLimit = parseInt(req.query.limit as string) || 1000
+  const limit = Math.min(requestedLimit, MAX_DOCS_TO_CHECK)
+  const token = req.query.token as string | undefined
+  
+  // Проверяем кеш (только если нет токена пагинации)
+  if (!token) {
+    const now = Date.now()
+    if (sharedDocsCache && (now - sharedDocsCache.timestamp) < CACHE_TTL_MS) {
+      return {
+        success: true,
+        data: {
+          items: sharedDocsCache.items,
+          nextToken: sharedDocsCache.nextToken
+        }
+      }
+    }
+  }
+  
+  try {
+    // 1. Получаем список документов с ограниченным лимитом
+    const queryParams: any = { limit }
+    if (token) {
+      queryParams.token = token
+    }
+    const listResult = await listDocsRoute.query(queryParams).run(ctx)
+    
+    if (!listResult.success || !listResult.data?.items) {
+      return { 
+        success: false, 
+        error: listResult.error || 'Failed to list documents'
+      }
+    }
+    
+    const allDocs = listResult.data.items
+    
+    // 2. Проверяем ВСЕ полученные документы на наличие @shared инструкции
+    const sharedDocs: any[] = []
+    
+    for (const doc of allDocs) {
+      // Пропускаем папки и пустые файлы
+      if (doc.size === 0 || doc.key.endsWith('/')) {
+        continue
+      }
+      
+      try {
+        // Загружаем контент документа
+        const docResult = await getDocRoute.query({ filename: doc.key }).run(ctx)
+        
+        if (docResult.success && docResult.data) {
+          // Проверяем наличие инструкции @shared
+          if (hasInstruction(docResult.data, 'shared')) {
+            sharedDocs.push(doc)
+          }
+        }
+      } catch (e) {
+        // Пропускаем документы с ошибками загрузки
+        ctx.account.log('Error checking doc for @shared', {
+          level: 'warn',
+          json: { filename: doc.key, error: String(e) }
+        })
+        continue
+      }
+    }
+    
+    // 3. Сохраняем в кеш только если это первый запрос (без токена)
+    if (!token) {
+      const now = Date.now()
+      sharedDocsCache = {
+        items: sharedDocs,
+        nextToken: listResult.data.nextToken,
+        timestamp: now
+      }
+    }
+    
+    // 4. Возвращаем отфильтрованный список с корректным nextToken
+    // nextToken возвращаем только если мы проверили все полученные документы
+    return { 
+      success: true, 
+      data: { 
+        items: sharedDocs,
+        nextToken: listResult.data.nextToken // Теперь корректно, т.к. проверяем все полученные документы
+      }
+    }
+  } catch (error) {
+    ctx.account.log('Error listing shared docs', {
+      level: 'error',
+      json: { error: String(error) }
     })
     return { success: false, error: String(error) }
   }

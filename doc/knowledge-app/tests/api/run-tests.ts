@@ -132,6 +132,9 @@ async function executeTest(ctx: any, category: string, testName: string) {
     case 'ui':
       await runUITest(ctx, testName)
       break
+    case 'instructions':
+      await runInstructionsTest(ctx, testName)
+      break
   }
 }
 
@@ -648,6 +651,143 @@ async function runUITest(ctx: any, testName: string) {
       
     default:
       throw new Error(`Неизвестный UI тест: ${testName}`)
+  }
+}
+
+// === ТЕСТЫ ПАРСИНГА ИНСТРУКЦИЙ ===
+async function runInstructionsTest(ctx: any, testName: string) {
+  const { parseInstructions, hasInstruction, stripInstructions } = await import('../../shared/instructionParser')
+  const { listSharedDocsRoute, putDocRoute, deleteDocRoute, getDocRoute } = await import('../../api/docs')
+  
+  switch (testName) {
+    case 'parse_single':
+      const content1 = '@shared\n# Title\nContent'
+      const instructions1 = parseInstructions(content1)
+      
+      if (!Array.isArray(instructions1)) {
+        throw new Error('parseInstructions должен возвращать массив')
+      }
+      if (instructions1.length !== 1) {
+        throw new Error(`Ожидалась 1 инструкция, получено: ${instructions1.length}`)
+      }
+      if (instructions1[0] !== 'shared') {
+        throw new Error(`Ожидалась инструкция 'shared', получено: ${instructions1[0]}`)
+      }
+      break
+      
+    case 'parse_multiple':
+      const content2 = '@shared @featured @draft\n# Title\nContent'
+      const instructions2 = parseInstructions(content2)
+      
+      if (instructions2.length !== 3) {
+        throw new Error(`Ожидалось 3 инструкции, получено: ${instructions2.length}`)
+      }
+      if (!instructions2.includes('shared')) {
+        throw new Error('Инструкция @shared не найдена')
+      }
+      if (!instructions2.includes('featured')) {
+        throw new Error('Инструкция @featured не найдена')
+      }
+      if (!instructions2.includes('draft')) {
+        throw new Error('Инструкция @draft не найдена')
+      }
+      break
+      
+    case 'no_instructions':
+      const content3 = '# Title\nContent without instructions'
+      const instructions3 = parseInstructions(content3)
+      
+      if (instructions3.length !== 0) {
+        throw new Error(`Ожидалось 0 инструкций, получено: ${instructions3.length}`)
+      }
+      
+      // Проверяем hasInstruction
+      if (hasInstruction(content3, 'shared')) {
+        throw new Error('hasInstruction вернул true для документа без инструкций')
+      }
+      break
+      
+    case 'strip_instructions':
+      const content4 = '@shared @featured\n# Title\nContent here'
+      const stripped = stripInstructions(content4)
+      
+      if (stripped.includes('@shared')) {
+        throw new Error('Строка инструкций не была удалена')
+      }
+      if (stripped.includes('@featured')) {
+        throw new Error('Строка инструкций не была удалена')
+      }
+      if (!stripped.includes('# Title')) {
+        throw new Error('Контент после инструкций был удалён')
+      }
+      if (!stripped.includes('Content here')) {
+        throw new Error('Контент после инструкций был удалён')
+      }
+      
+      // Проверяем что первая строка - это заголовок, а не инструкции
+      const firstLine = stripped.split('\n')[0].trim()
+      if (firstLine !== '# Title') {
+        throw new Error(`Первая строка должна быть '# Title', получено: ${firstLine}`)
+      }
+      break
+      
+    case 'list_shared_only':
+      // Создаём тестовые документы
+      const sharedDocName = `test-shared-${Date.now()}.md`
+      const privateDocName = `test-private-${Date.now()}.md`
+      
+      try {
+        // Создаём документ с @shared
+        await putDocRoute.run(ctx, {
+          filename: sharedDocName,
+          markdown: '@shared\n# Shared Document\nThis is a shared document.'
+        })
+        
+        // Создаём документ без @shared
+        await putDocRoute.run(ctx, {
+          filename: privateDocName,
+          markdown: '# Private Document\nThis is a private document.'
+        })
+        
+        // Получаем список публичных документов
+        const sharedListResult = await listSharedDocsRoute.run(ctx)
+        
+        if (!sharedListResult.success) {
+          throw new Error(`API вернул success=false: ${sharedListResult.error}`)
+        }
+        
+        if (!sharedListResult.data || !Array.isArray(sharedListResult.data.items)) {
+          throw new Error('Неверная структура ответа')
+        }
+        
+        // Проверяем что shared документ есть в списке
+        const sharedDocFound = sharedListResult.data.items.some((item: any) => item.key === sharedDocName)
+        if (!sharedDocFound) {
+          throw new Error('Документ с @shared не найден в списке публичных документов')
+        }
+        
+        // Проверяем что private документ НЕ в списке
+        const privateDocFound = sharedListResult.data.items.some((item: any) => item.key === privateDocName)
+        if (privateDocFound) {
+          throw new Error('Документ без @shared найден в списке публичных документов')
+        }
+      } finally {
+        // Удаляем тестовые документы
+        try {
+          await deleteDocRoute.run(ctx, { filename: sharedDocName })
+        } catch (e) {
+          // Игнорируем ошибки удаления
+        }
+        try {
+          await deleteDocRoute.run(ctx, { filename: privateDocName })
+        } catch (e) {
+          // Игнорируем ошибки удаления
+        }
+      }
+      break
+      
+    default:
+      throw new Error(`Неизвестный тест инструкций: ${testName}`)
   }
 }
 

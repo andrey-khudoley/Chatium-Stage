@@ -4,9 +4,11 @@ import { requireAccountRole } from '@app/auth'
 import DocsListPage from './pages/DocsListPage.vue'
 import DocViewPage from './pages/DocViewPage.vue'
 import DocEditPage from './pages/DocEditPage.vue'
+import SharedDocsPage from './pages/SharedDocsPage.vue'
 import TKnowledgeAppSettings7Fk from './tables/settings.table'
 import { commonStyles } from './styles'
 import { renderMarkdownToHtml } from './shared/markdownRenderer'
+import { stripInstructions } from './shared/instructionParser'
 import { getDocRoute } from './api/docs'
 
 const getHeadContent = (title: string = 'Knowledge Base Admin') => (
@@ -197,6 +199,8 @@ export const indexPageRoute = app.get('/', async (ctx, req) => {
 export const docViewRoute = app.get('/view', async (ctx, req) => {
   // Публичный доступ для краулеров и всех пользователей
   const filename = req.query.filename as string
+  const isPublic = req.query.public === '1' || req.query.public === 'true'
+  
   if (!filename) {
     return ctx.resp.redirect(indexPageRoute.url())
   }
@@ -211,8 +215,10 @@ export const docViewRoute = app.get('/view', async (ctx, req) => {
     const result = await getDocRoute.query({ filename }).run(ctx)
     if (result.success && result.data) {
       ssrMarkdown = result.data
+      // Удаляем инструкции из контента для отображения
+      const contentWithoutInstructions = stripInstructions(ssrMarkdown)
       // Рендерим markdown в HTML на сервере через marked.js из CDN
-      ssrHtml = await renderMarkdownToHtml(ssrMarkdown)
+      ssrHtml = await renderMarkdownToHtml(contentWithoutInstructions)
     } else {
       ssrError = result.error === 'NotFound' 
         ? 'Документ не найден' 
@@ -337,6 +343,7 @@ export const docViewRoute = app.get('/view', async (ctx, req) => {
           ssrContent={ssrMarkdown}
           ssrHtml={ssrHtml}
           ssrError={ssrError}
+          isPublic={isPublic}
         />
         
         {/* Скрываем прелоадер после загрузки Vue */}
@@ -399,6 +406,21 @@ export const docCreateRoute = app.get('/create', async (ctx, req) => {
       <body>
         <script>{`window.__DEFAULT_THEME__ = '${defaultTheme}';`}</script>
         <DocEditPage />
+      </body>
+    </html>
+  )
+})
+
+export const sharedPageRoute = app.get('/shared', async (ctx, req) => {
+  // Публичный доступ - БЕЗ авторизации
+  const defaultTheme = await getDefaultTheme(ctx)
+  
+  return (
+    <html>
+      <head>{getHeadContent('Публичная документация')}</head>
+      <body>
+        <script>{`window.__DEFAULT_THEME__ = '${defaultTheme}';`}</script>
+        <SharedDocsPage />
       </body>
     </html>
   )
