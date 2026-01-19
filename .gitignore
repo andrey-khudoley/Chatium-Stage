@@ -1,0 +1,11 @@
+# Cursor IDE
+.cursor/
+
+# VS Code
+.vscode/
+
+# Node modules
+node_modules/
+
+# Chatium config
+@.chatiumrc

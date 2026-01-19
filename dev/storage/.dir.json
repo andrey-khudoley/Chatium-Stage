@@ -1,9 +1,0 @@
-{
-  "name": "dev/storage",
-  "params": {
-    "startWorkspaceAppearance": "ai",
-    "codeIsPublic": false,
-    "searchable": false,
-    "isolatedExample": false
-  }
-}

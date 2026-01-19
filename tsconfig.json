@@ -30,7 +30,7 @@
   },
   "include": [
     "**/*", ".**/*"
-  ],
+, ".cursor/references/design"  ],
   "exclude": [
     "./node_modules/**/*"
   ],
@@ -38,14 +38,5 @@
     "./node_modules/@app/types/globals.d.ts",
     "./node_modules/@app/types/modules.d.ts",
     "./node_modules/@app/ui/global-jsx.d.ts"
-],
-  "references": [
-    { "path": "../start.chatium.ru" },
-    { "path": "../store.chatium.ru" },
-    { "path": "../users.chatium.ru" },
-    { "path": "../traffic.chatium.ru" },
-    { "path": "../ai-agents.chatium.ru" },
-    { "path": "../gc-mcp-server.chatium.ru" },
-    { "path": "../user-notifier.chatium.ru" }
   ]
 }

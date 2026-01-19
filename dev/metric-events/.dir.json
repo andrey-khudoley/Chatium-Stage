@@ -1,9 +1,0 @@
-{
-  "name": "dev/metric-events",
-  "params": {
-    "startWorkspaceAppearance": "ai",
-    "codeIsPublic": false,
-    "searchable": false,
-    "isolatedExample": false
-  }
-}

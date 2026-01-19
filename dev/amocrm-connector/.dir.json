@@ -1,9 +1,0 @@
-{
-  "name": "dev/amocrm-connector",
-  "params": {
-    "startWorkspaceAppearance": "ai",
-    "codeIsPublic": false,
-    "searchable": false,
-    "isolatedExample": false
-  }
-}
