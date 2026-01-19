@@ -1,9 +1,0 @@
-{
-  "name": "doc/knowledge-app",
-  "params": {
-    "startWorkspaceAppearance": "ai",
-    "codeIsPublic": false,
-    "searchable": false,
-    "isolatedExample": false
-  }
-}
