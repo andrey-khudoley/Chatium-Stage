@@ -13,6 +13,79 @@ export {};
 	const __VLS_placeholder: any;
 	const __VLS_intrinsics: globalThis.JSX.IntrinsicElements;
 
+	// Telegram WebApp API
+	interface TelegramWebApp {
+		initData: string;
+		initDataUnsafe: {
+			user?: {
+				id: number;
+				first_name: string;
+				last_name?: string;
+				username?: string;
+				language_code?: string;
+			};
+			auth_date?: number;
+			hash?: string;
+			[key: string]: any;
+		};
+		ready: () => void;
+		expand: () => void;
+		close: () => void;
+		MainButton: {
+			text: string;
+			color: string;
+			textColor: string;
+			isVisible: boolean;
+			isActive: boolean;
+			isProgressVisible: boolean;
+			setText: (text: string) => void;
+			onClick: (callback: () => void) => void;
+			offClick: (callback: () => void) => void;
+			show: () => void;
+			hide: () => void;
+			enable: () => void;
+			disable: () => void;
+			showProgress: (leaveActive?: boolean) => void;
+			hideProgress: () => void;
+			setParams: (params: {
+				text?: string;
+				color?: string;
+				text_color?: string;
+				is_active?: boolean;
+				is_visible?: boolean;
+			}) => void;
+		};
+		BackButton: {
+			isVisible: boolean;
+			onClick: (callback: () => void) => void;
+			offClick: (callback: () => void) => void;
+			show: () => void;
+			hide: () => void;
+		};
+		HapticFeedback: {
+			impactOccurred: (style: 'light' | 'medium' | 'heavy' | 'rigid' | 'soft') => void;
+			notificationOccurred: (type: 'error' | 'success' | 'warning') => void;
+			selectionChanged: () => void;
+		};
+		showAlert: (message: string, callback?: () => void) => void;
+		showConfirm: (message: string, callback?: (confirmed: boolean) => void) => void;
+		openLink: (url: string) => void;
+		openTelegramLink: (url: string) => void;
+		[key: string]: any;
+	}
+
+	interface Window {
+		Telegram?: {
+			WebApp: TelegramWebApp;
+		};
+		hideAppLoader?: () => void;
+	}
+
+	namespace globalThis {
+		var hideAppLoader: (() => void) | undefined;
+		var Telegram: { WebApp: TelegramWebApp } | undefined;
+	}
+
 	type __VLS_Elements = __VLS_SpreadMerge<SVGElementTagNameMap, HTMLElementTagNameMap>;
 	type __VLS_GlobalComponents = import('vue').GlobalComponents & Pick<typeof import('vue'), 'Transition' | 'TransitionGroup' | 'KeepAlive' | 'Suspense' | 'Teleport'>;
 	type __VLS_GlobalDirectives = import('vue').GlobalDirectives;
