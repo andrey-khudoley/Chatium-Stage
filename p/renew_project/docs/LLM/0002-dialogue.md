@@ -131,3 +131,15 @@
 ---
 
 **Итог сессии:** структура p/renew_project приведена к 006-arch (корень — только index.tsx; web/admin, web/profile, web/login в каталогах с index.tsx; компоненты в components/, общий код в shared/); дубликаты из shared/ удалены; исправлены именование события chatium-click, метаданные .dir.json и примечание в 0001-initial.md; дано объяснение и решение для ошибки tsconfig по удалённому shared/GlobalGlitch.vue.
+
+---
+
+## 12. Запуск проверок оркестратора
+
+### Пользователь
+
+Выполняй (план проверок оркестратора).
+
+### Ассистент
+
+Выполнены проверки по плану оркестратора: standards-checker, file-based-routing-checker, runtime-architecture-checker, imports-docs, llm-conversation-logger. Обновлены docs/imports.md (добавлен config/project.tsx, актуализированы импорты index.tsx и web/profile/index.tsx, исправлены импорты ProfilePage.vue). Циклических зависимостей не обнаружено. Итоговое резюме и инструкция «что сделать дальше» выданы в чате.

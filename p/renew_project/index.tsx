@@ -3,13 +3,13 @@ import { jsx } from '@app/html-jsx'
 import HomePage from './pages/HomePage.vue'
 import { getPreloaderStyles, getPreloaderScript } from './shared/preloader'
 import { getFullUrl, ROUTES } from './config/routes'
-
-// Заголовок: A/Ley Service / Главная
-// Название посередине: Шаблон проекта
-// Подзаголовок: Находится в разработке
-const PROJECT_TITLE = 'A/Ley Service / Главная'
-const PROJECT_NAME = 'Шаблон проекта'
-const PROJECT_DESCRIPTION = 'Находится в разработке'
+import {
+  INDEX_PAGE_NAME,
+  BODY_TEXT,
+  BODY_SUBTEXT,
+  getPageTitle,
+  getHeaderText
+} from './config/project'
 
 export const indexPageRoute = app.html('/', async (ctx, req) => {
   const isAuthenticated = !!ctx.user
@@ -20,7 +20,7 @@ export const indexPageRoute = app.html('/', async (ctx, req) => {
   return (
     <html>
       <head>
-        <title>{PROJECT_TITLE}</title>
+        <title>{getPageTitle(INDEX_PAGE_NAME)}</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta charset="UTF-8" />
         <style>{`
@@ -392,9 +392,9 @@ export const indexPageRoute = app.html('/', async (ctx, req) => {
           </div>
         </div>
         <HomePage
-          projectName={PROJECT_NAME}
-          projectTitle={PROJECT_TITLE}
-          projectDescription={PROJECT_DESCRIPTION}
+          projectName={BODY_TEXT}
+          projectTitle={getHeaderText(INDEX_PAGE_NAME)}
+          projectDescription={BODY_SUBTEXT}
           indexUrl={getFullUrl(ROUTES.index)}
           profileUrl={getFullUrl(ROUTES.profile)}
           loginUrl={loginUrl}

@@ -254,3 +254,16 @@ export function getPreloaderScript() {
     })();
   `
 }
+
+/**
+ * Возвращает HTML разметку прелоадера
+ */
+export function getPreloaderHTML() {
+  return `
+    <div id="boot-loader">
+      <div class="boot-messages">
+        <div id="boot-messages-container"></div>
+      </div>
+    </div>
+  `
+}
