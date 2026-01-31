@@ -5,7 +5,8 @@
 ### `./index.tsx`
 - `@app/html-jsx` → `jsx`
 - `./pages/HomePage.vue`
-- `./styles`
+- `./shared/preloader` → `getPreloaderStyles`, `getPreloaderScript`
+- `./config/routes` → `getFullUrl`, `ROUTES`
 
 ### `./admin.tsx`
 - `@app/html-jsx` → `jsx`
@@ -30,7 +31,10 @@
 ## 2) Страницы‑компоненты (Vue)
 
 ### `./pages/HomePage.vue`
-- нет импортов
+- `vue` → `onMounted`, `onUnmounted`, `ref`
+- `../shared/Header.vue`
+- `../shared/GlobalGlitch.vue`
+- `../shared/AppFooter.vue`
 
 ### `./pages/AdminPage.vue`
 - нет импортов
@@ -40,3 +44,21 @@
 
 ### `./pages/LoginPage.vue`
 - `vue` → `computed`
+
+## 3) Shared-компоненты
+
+### `./shared/preloader.ts`
+- нет импортов
+
+### `./shared/Header.vue`
+- `vue` → `ref`, `onMounted`, `onUnmounted`
+- `./LogoutModal.vue`
+
+### `./shared/LogoutModal.vue`
+- нет импортов
+
+### `./shared/AppFooter.vue`
+- нет импортов
+
+### `./shared/GlobalGlitch.vue`
+- нет импортов
