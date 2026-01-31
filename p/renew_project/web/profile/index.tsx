@@ -230,7 +230,6 @@ export const profilePageRoute = app.html('/', async (ctx, req) => {
       </head>
       <body>
         <div id="geometric-bg"></div>
-        <script>{getPreloaderScript()}</script>
         <div id="boot-loader">
           <div class="boot-messages">
             <div id="boot-messages-container"></div>
