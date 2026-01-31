@@ -4,7 +4,7 @@
       <div class="footer-left">ИП Худолей Андрей Германович</div>
       <div class="footer-center">Все права сохранены © 2018-{{ currentYear }}</div>
       <div class="footer-right">
-        <button class="footer-link" @click="$emit('chatiumClick')">
+        <button class="footer-link" @click="$emit('chatium-click')">
           Сделано с <i class="fas fa-heart footer-heart"></i> на Chatium
         </button>
       </div>
@@ -14,7 +14,7 @@
 
 <script setup lang="ts">
 const currentYear = new Date().getFullYear()
-defineEmits<{ chatiumClick: [] }>()
+defineEmits<{ 'chatium-click': [] }>()
 </script>
 
 <style scoped>

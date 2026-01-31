@@ -1,9 +1,9 @@
 // @shared
 import { jsx } from '@app/html-jsx'
 import { requireAccountRole } from '@app/auth'
-import AdminPage from './pages/AdminPage.vue'
-import { loginPageRoute } from './login'
-import { baseHtmlStyles } from './styles'
+import AdminPage from '../../pages/AdminPage.vue'
+import { loginPageRoute } from '../login'
+import { baseHtmlStyles } from '../../styles'
 
 export const adminPageRoute = app.html('/', async (ctx, req) => {
   try {

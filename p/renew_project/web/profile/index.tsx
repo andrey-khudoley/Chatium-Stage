@@ -1,9 +1,9 @@
 // @shared
 import { jsx } from '@app/html-jsx'
 import { requireRealUser } from '@app/auth'
-import ProfilePage from './pages/ProfilePage.vue'
-import { loginPageRoute } from './login'
-import { baseHtmlStyles } from './styles'
+import ProfilePage from '../../pages/ProfilePage.vue'
+import { loginPageRoute } from '../login'
+import { baseHtmlStyles } from '../../styles'
 
 export const profilePageRoute = app.html('/', async (ctx, req) => {
   try {

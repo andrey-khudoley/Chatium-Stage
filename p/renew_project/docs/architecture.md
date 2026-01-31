@@ -14,19 +14,19 @@
 - Открыть админку (только роль Admin).
 
 ## Роутинг
-- `index.tsx` — главная (SSR + Vue).
-- `admin.tsx` — админка, `requireAccountRole('Admin')`.
-- `profile.tsx` — профиль, `requireRealUser()`.
-- `login.tsx` — вход (редирект на системный `/s/auth/signin`).
+- `index.tsx` — главная (SSR + Vue), единственный роут в корне.
+- `web/admin/index.tsx` — админка, `requireAccountRole('Admin')`.
+- `web/profile/index.tsx` — профиль, `requireRealUser()`.
+- `web/login/index.tsx` — вход (редирект на системный `/s/auth/signin`).
 
 ## Структура каталогов
 - `config/` — маршруты и `PROJECT_ROOT`.
-- `web/` — браузерные роуты модулей (пока пусто).
+- `web/` — браузерные роуты модулей (admin, profile, login).
 - `pages/` — Vue‑страницы (минимальные).
-- `components/` — переиспользуемые компоненты (пока пусто).
+- `components/` — переиспользуемые Vue‑компоненты (Header, AppFooter, GlobalGlitch, LogoutModal).
 - `api/` — API‑эндпоинты (пока нет).
 - `tables/` — Heap‑таблицы (пока нет).
-- `shared/` — общий код (пока нет).
+- `shared/` — общий код (preloader и утилиты).
 - `lib/` — серверная логика (пока нет).
 - `docs/` — документация проекта.
 

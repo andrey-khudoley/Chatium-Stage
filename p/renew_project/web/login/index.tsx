@@ -1,8 +1,8 @@
 // @shared
 import { jsx } from '@app/html-jsx'
-import LoginPage from './pages/LoginPage.vue'
-import { baseHtmlStyles } from './styles'
-import { PROJECT_ROOT } from './config/routes'
+import LoginPage from '../../pages/LoginPage.vue'
+import { baseHtmlStyles } from '../../styles'
+import { PROJECT_ROOT } from '../../config/routes'
 
 export const loginPageRoute = app.html('/', async (ctx, req) => {
   const back = (req.query?.back as string) || `/${PROJECT_ROOT}/`

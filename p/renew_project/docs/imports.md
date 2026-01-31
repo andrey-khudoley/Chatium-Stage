@@ -2,39 +2,42 @@
 
 ## 1) Страницы‑роуты (TSX entrypoints)
 
+### `./config/routes.tsx`
+- нет внутренних импортов (только экспорт PROJECT_ROOT, ROUTES, getFullUrl, withProjectRoot, withProjectRootAndSubroute)
+
 ### `./index.tsx`
 - `@app/html-jsx` → `jsx`
 - `./pages/HomePage.vue`
 - `./shared/preloader` → `getPreloaderStyles`, `getPreloaderScript`
 - `./config/routes` → `getFullUrl`, `ROUTES`
 
-### `./admin.tsx`
+### `./web/admin/index.tsx`
 - `@app/html-jsx` → `jsx`
 - `@app/auth` → `requireAccountRole`
-- `./pages/AdminPage.vue`
-- `./login`
-- `./styles`
+- `../../pages/AdminPage.vue`
+- `../login`
+- `../../styles`
 
-### `./profile.tsx`
+### `./web/profile/index.tsx`
 - `@app/html-jsx` → `jsx`
 - `@app/auth` → `requireRealUser`
-- `./pages/ProfilePage.vue`
-- `./login`
-- `./styles`
+- `../../pages/ProfilePage.vue`
+- `../login`
+- `../../styles`
 
-### `./login.tsx`
+### `./web/login/index.tsx`
 - `@app/html-jsx` → `jsx`
-- `./pages/LoginPage.vue`
-- `./styles`
-- `./config/routes`
+- `../../pages/LoginPage.vue`
+- `../../styles`
+- `../../config/routes`
 
 ## 2) Страницы‑компоненты (Vue)
 
 ### `./pages/HomePage.vue`
 - `vue` → `onMounted`, `onUnmounted`, `ref`
-- `../shared/Header.vue`
-- `../shared/GlobalGlitch.vue`
-- `../shared/AppFooter.vue`
+- `../components/Header.vue`
+- `../components/GlobalGlitch.vue`
+- `../components/AppFooter.vue`
 
 ### `./pages/AdminPage.vue`
 - нет импортов
@@ -45,20 +48,22 @@
 ### `./pages/LoginPage.vue`
 - `vue` → `computed`
 
-## 3) Shared-компоненты
+## 3) Компоненты (components/)
 
-### `./shared/preloader.ts`
-- нет импортов
-
-### `./shared/Header.vue`
+### `./components/Header.vue`
 - `vue` → `ref`, `onMounted`, `onUnmounted`
 - `./LogoutModal.vue`
 
-### `./shared/LogoutModal.vue`
+### `./components/LogoutModal.vue`
 - нет импортов
 
-### `./shared/AppFooter.vue`
+### `./components/AppFooter.vue`
 - нет импортов
 
-### `./shared/GlobalGlitch.vue`
+### `./components/GlobalGlitch.vue`
+- нет импортов
+
+## 4) Shared (общий код)
+
+### `./shared/preloader.ts`
 - нет импортов

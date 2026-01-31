@@ -7,17 +7,17 @@ const BASE_PATH = `/${PROJECT_ROOT}`
 // Все маршруты внутри проекта задаются ОТНОСИТЕЛЬНО (через ./)
 export const ROUTES = {
   index: './',
-  admin: './admin',
-  profile: './profile',
-  login: './login'
+  admin: './web/admin',
+  profile: './web/profile',
+  login: './web/login'
 } as const
 
 /** Пути для getFullUrl (абсолютные от корня проекта) */
 export const ROUTE_PATHS = {
   index: '/',
-  admin: '/admin',
-  profile: '/profile',
-  login: '/login'
+  admin: '/web/admin',
+  profile: '/web/profile',
+  login: '/web/login'
 } as const
 
 /**

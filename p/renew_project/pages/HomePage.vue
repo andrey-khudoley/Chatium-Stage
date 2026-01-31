@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref } from 'vue'
-import Header from '../shared/Header.vue'
-import GlobalGlitch from '../shared/GlobalGlitch.vue'
-import AppFooter from '../shared/AppFooter.vue'
+import Header from '../components/Header.vue'
+import GlobalGlitch from '../components/GlobalGlitch.vue'
+import AppFooter from '../components/AppFooter.vue'
 
 declare global {
   interface Window {
