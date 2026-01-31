@@ -6,7 +6,7 @@
 - нет внутренних импортов (только экспорт PROJECT_ROOT, ROUTES, getFullUrl, withProjectRoot, withProjectRootAndSubroute)
 
 ### `./config/project.tsx`
-- нет внутренних импортов (только экспорт PROJECT_TITLE, INDEX_PAGE_NAME, PROFILE_PAGE_NAME, getPageTitle, getHeaderText, BODY_TEXT, BODY_SUBTEXT)
+- нет внутренних импортов (только экспорт PROJECT_TITLE, INDEX_PAGE_NAME, PROFILE_PAGE_NAME, ADMIN_PAGE_NAME, getPageTitle, getHeaderText, BODY_TEXT, BODY_SUBTEXT)
 
 ### `./index.tsx`
 - `@app/html-jsx` → `jsx`
@@ -19,8 +19,10 @@
 - `@app/html-jsx` → `jsx`
 - `@app/auth` → `requireAccountRole`
 - `../../pages/AdminPage.vue`
-- `../login`
-- `../../styles`
+- `../login` → `loginPageRoute`
+- `../../shared/preloader` → `getPreloaderStyles`, `getPreloaderScript`
+- `../../config/routes` → `getFullUrl`, `ROUTES`
+- `../../config/project` → `ADMIN_PAGE_NAME`, `getPageTitle`, `getHeaderText`
 
 ### `./web/profile/index.tsx`
 - `@app/html-jsx` → `jsx`
@@ -45,7 +47,10 @@
 - `../components/AppFooter.vue`
 
 ### `./pages/AdminPage.vue`
-- нет импортов
+- `vue` → `onMounted`, `onUnmounted`, `ref`
+- `../components/Header.vue`
+- `../components/GlobalGlitch.vue`
+- `../components/AppFooter.vue`
 
 ### `./pages/ProfilePage.vue`
 - `vue` → `onMounted`, `ref`
