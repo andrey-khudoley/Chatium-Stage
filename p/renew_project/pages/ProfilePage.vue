@@ -230,6 +230,8 @@ body {
   overflow: hidden;
   background: transparent;
   position: relative;
+  margin: 0;
+  padding-top: 0;
 }
 
 /* Content Wrapper */

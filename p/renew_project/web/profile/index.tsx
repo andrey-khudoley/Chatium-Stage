@@ -28,10 +28,13 @@ export const profilePageRoute = app.html('/', async (ctx, req) => {
         <style>{getPreloaderStyles()}</style>
         <style>{`
           html {
+            margin: 0;
+            padding: 0;
             background: #0a0a0a;
           }
           body {
             margin: 0;
+            padding: 0;
             background: #0a0a0a;
             position: relative;
             min-height: 100vh;
