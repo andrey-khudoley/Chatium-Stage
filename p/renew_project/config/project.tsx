@@ -4,6 +4,7 @@ export const PROJECT_TITLE = 'A/Ley Services'
 /** Имя страницы: для главной и профиля */
 export const INDEX_PAGE_NAME = 'Главная'
 export const PROFILE_PAGE_NAME = 'Профиль'
+export const ADMIN_PAGE_NAME = 'Админка'
 
 /** Текст для <title>: "PAGE_NAME | PROJECT_TITLE" */
 export function getPageTitle(pageName: string): string {
