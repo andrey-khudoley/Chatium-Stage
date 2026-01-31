@@ -3,9 +3,3 @@
 
 # VS Code
 !.vscode/
-
-# Deprecated projects
-!.deprecated/
-
-# Inner instructions
-!inner/

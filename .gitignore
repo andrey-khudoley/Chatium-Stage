@@ -7,11 +7,5 @@
 # Node modules
 node_modules/
 
-# Deprecated projects
-.deprecated/
-
-# Inner instructions
-inner/
-
 # Chatium config
 @.chatiumrc
