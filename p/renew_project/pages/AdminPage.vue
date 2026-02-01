@@ -4,6 +4,7 @@ import Header from '../components/Header.vue'
 import GlobalGlitch from '../components/GlobalGlitch.vue'
 import AppFooter from '../components/AppFooter.vue'
 import { saveSettingRoute } from '../api/settings/save'
+import { logInfo, logWarn, logError } from '../shared/logger'
 
 declare const ctx: app.Ctx
 

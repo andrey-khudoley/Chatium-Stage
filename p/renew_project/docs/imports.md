@@ -48,6 +48,7 @@
 - `../components/Header.vue`
 - `../components/GlobalGlitch.vue`
 - `../components/AppFooter.vue`
+- `../shared/logger` → `logInfo`, `logWarn`, `logError`
 
 ### `./pages/AdminPage.vue`
 - `vue` → `onMounted`, `onUnmounted`, `ref`
@@ -55,12 +56,14 @@
 - `../components/GlobalGlitch.vue`
 - `../components/AppFooter.vue`
 - `../api/settings/save` → `saveSettingRoute`
+- `../shared/logger` → `logInfo`, `logWarn`, `logError`
 
 ### `./pages/ProfilePage.vue`
 - `vue` → `onMounted`, `ref`
 - `../components/Header.vue`
 - `../components/GlobalGlitch.vue`
 - `../components/AppFooter.vue`
+- `../shared/logger` → `logInfo`, `logWarn`, `logError`
 
 ### `./pages/LoginPage.vue`
 - `vue` → `computed`
@@ -87,6 +90,9 @@
 
 ### `./shared/logLevel.ts`
 - `../lib/settings.lib` → `getLogLevel`, `LogLevel`
+
+### `./shared/logger.ts`
+- нет импортов (клиентский логгер по syslog RFC 5424: severity 0–7, читает window.__BOOT__.logLevel)
 
 ## 5) Таблицы (tables/)
 

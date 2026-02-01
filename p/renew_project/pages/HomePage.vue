@@ -3,6 +3,7 @@ import { onMounted, onUnmounted, ref } from 'vue'
 import Header from '../components/Header.vue'
 import GlobalGlitch from '../components/GlobalGlitch.vue'
 import AppFooter from '../components/AppFooter.vue'
+import { logInfo, logWarn, logError } from '../shared/logger'
 
 declare global {
   interface Window {

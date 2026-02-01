@@ -110,3 +110,41 @@
 ### Ассистент
 
 Выполнены проверки оркестратора: обновлён docs/imports.md (добавлен shared/logLevel.ts, импорты в index, admin, profile); проверка циклов — циклов нет (shared/logLevel → lib → repo → table, страницы → shared). Обновлены README (текущее состояние и Changelog) и docs/architecture.md (описание shared/). В 0006 дописан лог диалога про чтение уровня логирования и вызов @check.
+
+---
+
+### Пользователь
+
+Реализовать shared, который будет импортироваться на этапе серверной генерации и будет включать всё необходимое для логирования: набор функций для логирования в браузере через console.log с проверкой, что уровень лога выше или равен уровню логирования.
+
+### Ассистент
+
+Описано понимание: отдельный shared-модуль (logger), без импорта lib; уровень из window.__BOOT__.logLevel; порядок уровней Disable &lt; Error &lt; Warn &lt; Info; функции logInfo, logWarn, logError и shouldLog. Пользователь подтвердил — реализовать.
+
+**Сделано:**
+- Создан shared/logger.ts: LEVEL_ORDER, getBootLogLevel(), shouldLog(messageLevel), logInfo, logWarn, logError. В jsx.d.ts добавлен тип Window.__BOOT__. Импорт logger добавлен в HomePage, AdminPage, ProfilePage. Обновлены docs/imports.md, docs/architecture.md, README.
+
+**Итог:** в браузере доступны logInfo, logWarn, logError с проверкой уровня по window.__BOOT__.logLevel.
+
+---
+
+### Пользователь
+
+Давай немного расширим уровни, введя стандарт syslog.
+
+### Ассистент
+
+**Сделано:**
+- В shared/logger.ts введены уровни по syslog (RFC 5424): SYSLOG_SEVERITY 0–7 (Emergency, Alert, Critical, Error, Warning, Notice, Informational, Debug). Настройка по-прежнему Info/Warn/Error/Disable с маппингом на пороги. Добавлены logEmergency, logAlert, logCritical, logError, logWarning, logNotice, logInfo, logDebug; logWarn оставлен как алиас logWarning. Экспортируются SYSLOG_SEVERITY и SyslogSeverityName. Обновлены docs/imports.md, docs/architecture.md, README.
+
+**Итог:** логгер поддерживает полный набор уровней syslog, обратная совместимость сохранена.
+
+---
+
+### Пользователь
+
+/check
+
+### Ассистент
+
+Выполнены проверки оркестратора: standards-checker — в shared/logger.ts добавлен комментарий `// @shared` в начало файла. file-based-routing-checker — затронутые файлы не содержат роутов, замечаний нет. runtime-architecture-checker — критических рисков не выявлено. imports-docs — docs/imports.md актуален, циклических зависимостей нет. docs-keeper — README и architecture уже обновлены. llm-conversation-logger — в 0006 дописан лог диалога (shared logger, syslog, @check). Итоговое резюме выдано в чате.
