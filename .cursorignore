@@ -3,3 +3,9 @@
 
 # VS Code
 !.vscode/
+
+# NOT inner files
+!inner/
+
+# NOT deprecated files
+!.deprecated/
