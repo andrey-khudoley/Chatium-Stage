@@ -3,7 +3,9 @@ import { onMounted, onUnmounted, ref } from 'vue'
 import Header from '../components/Header.vue'
 import GlobalGlitch from '../components/GlobalGlitch.vue'
 import AppFooter from '../components/AppFooter.vue'
-import { logInfo, logWarn, logError } from '../shared/logger'
+import { createComponentLogger } from '../shared/logger'
+
+const log = createComponentLogger('ProfilePage')
 
 declare global {
   interface Window {
@@ -40,6 +42,7 @@ const showTitleUnderline = ref(false)
 const intervalIds = { title: null as ReturnType<typeof setInterval> | null, desc: null as ReturnType<typeof setInterval> | null }
 
 const typeTextSequence = () => {
+  log.debug('Profile title animation started')
   const titleText = 'Профиль пользователя'
   cursorPosition.value = 'title'
 
@@ -75,6 +78,7 @@ const typeDescription = () => {
 }
 
 const startAnimations = () => {
+  log.info('Boot loader complete, starting profile animations')
   bootLoaderDone.value = true
   showCursor.value = true
   cursorPosition.value = 'title'
@@ -82,6 +86,7 @@ const startAnimations = () => {
 }
 
 onMounted(() => {
+  log.info('Component mounted')
   if (window.hideAppLoader) {
     window.hideAppLoader()
   }
@@ -94,12 +99,14 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
+  log.info('Component unmounted')
   window.removeEventListener('bootloader-complete', startAnimations)
   if (intervalIds.title) clearInterval(intervalIds.title)
   if (intervalIds.desc) clearInterval(intervalIds.desc)
 })
 
 const openChatiumLink = () => {
+  log.notice('Opening Chatium link')
   window.open('https://chatium.ru/?start=pl-LGBT1Oge7c61RkKTU4t0start', '_blank')
 }
 </script>

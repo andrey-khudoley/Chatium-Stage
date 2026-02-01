@@ -2,6 +2,17 @@
   <div class="global-glitch-style-anchor" aria-hidden="true"></div>
 </template>
 
+<script setup lang="ts">
+import { onMounted } from 'vue'
+import { createComponentLogger } from '../shared/logger'
+
+const log = createComponentLogger('GlobalGlitch')
+
+onMounted(() => {
+  log.info('Component mounted')
+})
+</script>
+
 <style>
 .global-glitch-style-anchor {
   display: none;

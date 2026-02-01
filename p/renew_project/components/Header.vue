@@ -71,6 +71,9 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
 import LogoutModal from './LogoutModal.vue'
+import { createComponentLogger } from '../shared/logger'
+
+const log = createComponentLogger('Header')
 
 const props = defineProps<{
   projectTitle: string
@@ -100,6 +103,7 @@ let timeInterval: number | null = null
 let escHandler: ((e: KeyboardEvent) => void) | null = null
 
 onMounted(() => {
+  log.info('Component mounted, clock started')
   updateTime()
   timeInterval = window.setInterval(updateTime, 1000)
 
@@ -114,6 +118,7 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
+  log.info('Component unmounted')
   if (timeInterval) {
     clearInterval(timeInterval)
   }
@@ -126,6 +131,7 @@ onUnmounted(() => {
 
 const triggerGlitch = () => {
   if (isGlitching.value) return
+  log.notice('Header glitch triggered')
   
   isGlitching.value = true
   
@@ -143,6 +149,7 @@ const triggerGlitch = () => {
 
 const handleCloseClick = () => {
   if (props.isAuthenticated) {
+    log.notice('Logout modal opened')
     // Показываем модальное окно для авторизованных
     showLogoutModal.value = true
     // Скрываем весь контент страницы
@@ -154,17 +161,19 @@ const handleCloseClick = () => {
     if (contentWrapper) contentWrapper.classList.add('hidden-for-modal')
     if (footer) footer.classList.add('hidden-for-modal')
   } else {
+    log.debug('Close button clicked (guest), triggering glitch')
     // Глитч эффект для неавторизованных
     triggerGlitch()
   }
 }
 
 const confirmLogout = () => {
-  // Выполняем выход
+  log.critical('User confirmed logout')
   window.location.href = '/s/logout'
 }
 
 const cancelLogout = () => {
+  log.info('Logout cancelled')
   showLogoutModal.value = false
   // Восстанавливаем видимость контента
   const appLayout = document.querySelector('.app-layout')

@@ -8,7 +8,7 @@
 | --- | --- | --- | --- | --- |
 | GET | /api/settings/list | api/settings/list.ts | Admin | Список всех настроек (с дефолтами) |
 | GET | /api/settings/get?key= | api/settings/get.ts | Admin | Получить одну настройку |
-| POST | /api/settings/save | api/settings/save.ts | Admin | Сохранить настройку (body: `{ key, value }`). Для `log_level`: допускаются строки (Info/Warn/Error/Disable) и числа 0–3 (0=Disable, 1=Info, 2=Warn, 3=Error), нормализация в API. |
+| POST | /api/settings/save | api/settings/save.ts | Admin | Сохранить настройку (body: `{ key, value }`). Для `log_level`: допускаются строки (Debug/Info/Warn/Error/Disable) и числа -1–4 (-1,0=Disable, 1=Info, 2=Warn, 3=Error, 4=Debug), нормализация в API. |
 
 Каждый файл — один эндпоинт с путём `/`.
 

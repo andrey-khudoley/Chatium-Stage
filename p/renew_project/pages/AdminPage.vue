@@ -1,10 +1,12 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref } from 'vue'
+import { onMounted, onUnmounted, ref, computed } from 'vue'
 import Header from '../components/Header.vue'
 import GlobalGlitch from '../components/GlobalGlitch.vue'
 import AppFooter from '../components/AppFooter.vue'
 import { saveSettingRoute } from '../api/settings/save'
-import { logInfo, logWarn, logError } from '../shared/logger'
+import { createComponentLogger, setLogSink, type LogEntry } from '../shared/logger'
+
+const log = createComponentLogger('AdminPage')
 
 declare const ctx: app.Ctx
 
@@ -26,10 +28,13 @@ const props = defineProps<{
 }>()
 
 const bootLoaderDone = ref(false)
-const logLevel = ref<'info' | 'warn' | 'error' | 'disable'>('info')
+const logLevel = ref<'debug' | 'info' | 'warn' | 'error' | 'disable'>('info')
 const logLevelError = ref('')
 const errorCount = ref(0)
 const warnCount = ref(0)
+
+const MAX_LOG_ENTRIES = 200
+const logEntries = ref<LogEntry[]>([])
 
 const logFilters = ref({
   info: true,
@@ -39,47 +44,96 @@ const logFilters = ref({
 
 const toggleLogFilter = (level: 'info' | 'warn' | 'error') => {
   logFilters.value[level] = !logFilters.value[level]
+  log.debug('Log filter toggled', level, logFilters.value[level])
 }
 
 const startAnimations = () => {
   bootLoaderDone.value = true
 }
 
+const LOG_LEVEL_VALUES = ['debug', 'info', 'warn', 'error', 'disable'] as const
+
+function formatLogEntry(e: LogEntry): string {
+  const d = new Date(e.timestamp)
+  const t = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}:${String(d.getSeconds()).padStart(2, '0')}.${String(d.getMilliseconds()).padStart(3, '0')}`
+  const msg = e.args.map((a) =>
+    typeof a === 'object' && a !== null ? JSON.stringify(a) : String(a)
+  ).join(' ')
+  return `${t} [${e.level.toUpperCase()}] ${msg}`
+}
+
+const displayedLogsText = computed(() => {
+  const filtered = logEntries.value.filter((e) => {
+    if (e.severity <= 3 && logFilters.value.error) return true
+    if (e.severity === 4 && logFilters.value.warn) return true
+    if (e.severity >= 5 && logFilters.value.info) return true
+    return false
+  })
+  return filtered.length ? filtered.map(formatLogEntry).join('\n') : 'Логи появятся здесь...'
+})
+
 onMounted(() => {
+  log.info('Component mounted')
   if (window.hideAppLoader) window.hideAppLoader()
   if (window.bootLoaderComplete) {
     startAnimations()
   } else {
     window.addEventListener('bootloader-complete', startAnimations)
   }
+  const bootLevel = (window as Window & { __BOOT__?: { logLevel?: string } }).__BOOT__?.logLevel
+  if (typeof bootLevel === 'string') {
+    const normalized = bootLevel.toLowerCase()
+    if (LOG_LEVEL_VALUES.includes(normalized as (typeof LOG_LEVEL_VALUES)[number])) {
+      logLevel.value = normalized as (typeof LOG_LEVEL_VALUES)[number]
+    }
+  }
+  setLogSink((entry: LogEntry) => {
+    logEntries.value.push(entry)
+    if (logEntries.value.length > MAX_LOG_ENTRIES) {
+      logEntries.value = logEntries.value.slice(-MAX_LOG_ENTRIES)
+    }
+    if (entry.severity <= 3) errorCount.value += 1
+    else if (entry.severity === 4) warnCount.value += 1
+  })
 })
 
 onUnmounted(() => {
+  log.info('Component unmounted')
+  setLogSink(null)
   window.removeEventListener('bootloader-complete', startAnimations)
 })
 
-const setLogLevel = async (level: 'info' | 'warn' | 'error' | 'disable') => {
+const setLogLevel = async (level: 'debug' | 'info' | 'warn' | 'error' | 'disable') => {
   const prev = logLevel.value
   logLevel.value = level
   logLevelError.value = ''
+  log.notice('Log level changed', { from: prev, to: level })
   try {
     const res = await saveSettingRoute.run(ctx, { key: 'log_level', value: level })
     if (res && (res as { success?: boolean }).success === false) {
       logLevel.value = prev
-      logLevelError.value = (res as { error?: string }).error || 'Ошибка сохранения'
+      const errMsg = (res as { error?: string }).error || 'Ошибка сохранения'
+      logLevelError.value = errMsg
+      log.error('Failed to save log level', errMsg)
+    } else {
+      log.info('Log level saved successfully', level)
     }
   } catch (e) {
     logLevel.value = prev
-    logLevelError.value = (e as Error)?.message || 'Ошибка сохранения'
+    const errMsg = (e as Error)?.message || 'Ошибка сохранения'
+    logLevelError.value = errMsg
+    log.error('Failed to save log level', errMsg)
   }
 }
 
 const resetDashboard = () => {
+  log.notice('Dashboard counters reset')
   errorCount.value = 0
   warnCount.value = 0
 }
 
 const openChatiumLink = () => {
+  log.notice('Opening Chatium link')
   window.open('https://chatium.ru/?start=pl-LGBT1Oge7c61RkKTU4t0start', '_blank')
 }
 </script>
@@ -116,6 +170,14 @@ const openChatiumLink = () => {
               <h2 class="admin-card-title">Уровень логирования</h2>
             </div>
             <div class="log-level-buttons">
+              <button
+                type="button"
+                class="log-level-btn"
+                :class="{ active: logLevel === 'debug' }"
+                @click="setLogLevel('debug')"
+              >
+                Debug
+              </button>
               <button
                 type="button"
                 class="log-level-btn"
@@ -216,7 +278,7 @@ const openChatiumLink = () => {
               </button>
             </div>
             <div class="logs-output">
-              <pre class="logs-content">Логи появятся здесь...</pre>
+              <pre class="logs-content">{{ displayedLogsText }}</pre>
             </div>
           </div>
         </section>

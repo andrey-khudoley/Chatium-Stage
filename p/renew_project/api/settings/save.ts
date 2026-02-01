@@ -2,15 +2,17 @@
 import { requireAccountRole } from '@app/auth'
 import * as settingsLib from '../../lib/settings.lib'
 
-/** Маппинг числовых уровней: 0 = Disable, 1 = Info, 2 = Warn, 3 = Error. */
+/** Маппинг числовых уровней: -1 = логи выключены, 0 = Disable, 1 = Info, 2 = Warn, 3 = Error, 4 = Debug. */
 const LOG_LEVEL_BY_NUMBER: Record<number, string> = {
+  [-1]: 'Disable',
   0: 'Disable',
   1: 'Info',
   2: 'Warn',
-  3: 'Error'
+  3: 'Error',
+  4: 'Debug'
 }
 
-/** Нормализация значения уровня логирования для lib (Info | Warn | Error | Disable). Числа 0–3 и строки. */
+/** Нормализация значения уровня логирования для lib (Debug | Info | Warn | Error | Disable). Числа -1–4 и строки. */
 function normalizeLogLevelValue(value: unknown): string {
   if (typeof value === 'number' && Number.isFinite(value) && value in LOG_LEVEL_BY_NUMBER) {
     return LOG_LEVEL_BY_NUMBER[value]

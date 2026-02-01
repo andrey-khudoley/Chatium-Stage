@@ -3,7 +3,9 @@ import { onMounted, onUnmounted, ref } from 'vue'
 import Header from '../components/Header.vue'
 import GlobalGlitch from '../components/GlobalGlitch.vue'
 import AppFooter from '../components/AppFooter.vue'
-import { logInfo, logWarn, logError } from '../shared/logger'
+import { createComponentLogger } from '../shared/logger'
+
+const log = createComponentLogger('HomePage')
 
 declare global {
   interface Window {
@@ -38,10 +40,12 @@ const intervalIds = { title: null as ReturnType<typeof setInterval> | null, desc
 const onAppLayoutAnimationEnd = (e: AnimationEvent) => {
   if (e.animationName === 'crt-power-on') {
     (e.target as HTMLElement).classList.add('app-layout-appeared')
+    log.debug('App layout animation completed')
   }
 }
 
 const typeTextSequence = () => {
+  log.debug('Typing title animation started')
   const titleText = props.projectName
   cursorPosition.value = 'title'
   let titleIndex = 0
@@ -59,6 +63,7 @@ const typeTextSequence = () => {
 }
 
 const typeDescription = () => {
+  log.debug('Typing description animation started')
   const descriptionText = props.projectDescription
   cursorPosition.value = 'description'
   let descIndex = 0
@@ -75,6 +80,7 @@ const typeDescription = () => {
 }
 
 const startAnimations = () => {
+  log.info('Boot loader complete, starting animations')
   bootLoaderDone.value = true
   showCursor.value = true
   cursorPosition.value = 'title'
@@ -82,6 +88,7 @@ const startAnimations = () => {
 }
 
 onMounted(() => {
+  log.info('Component mounted')
   if (window.hideAppLoader) {
     window.hideAppLoader()
   }
@@ -93,6 +100,7 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
+  log.info('Component unmounted')
   window.removeEventListener('bootloader-complete', startAnimations)
   if (intervalIds.title) clearInterval(intervalIds.title)
   if (intervalIds.desc) clearInterval(intervalIds.desc)
@@ -100,6 +108,7 @@ onUnmounted(() => {
 
 const triggerGlitch = () => {
   if (isGlitching.value) return
+  log.notice('Global glitch effect triggered')
   isGlitching.value = true
 
   const appLayout = document.querySelector('.app-layout')
@@ -110,11 +119,13 @@ const triggerGlitch = () => {
       isGlitching.value = false
     }, 500)
   } else {
+    log.warning('App layout element not found for glitch')
     isGlitching.value = false
   }
 }
 
 const openChatiumLink = () => {
+  log.notice('Opening Chatium link')
   triggerGlitch()
   window.open('https://chatium.ru/?start=pl-LGBT1Oge7c61RkKTU4t0start', '_blank')
 }

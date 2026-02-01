@@ -90,7 +90,7 @@ declare module '*.vue' {
 
 declare global {
   interface Window {
-    __BOOT__?: { logLevel?: string }
+    __BOOT__?: { logLevel?: string | number }
   }
   const app: {
     html: (path: string, handler: (ctx: any, req: any) => any) => any

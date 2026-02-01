@@ -4,7 +4,7 @@
       <div class="footer-left">ИП Худолей Андрей Германович</div>
       <div class="footer-center">Все права сохранены © 2018-{{ currentYear }}</div>
       <div class="footer-right">
-        <button class="footer-link" @click="$emit('chatium-click')">
+        <button class="footer-link" @click="onChatiumClick">
           Сделано с <i class="fas fa-heart footer-heart"></i> на Chatium
         </button>
       </div>
@@ -13,8 +13,21 @@
 </template>
 
 <script setup lang="ts">
+import { onMounted } from 'vue'
+import { createComponentLogger } from '../shared/logger'
+
+const log = createComponentLogger('AppFooter')
 const currentYear = new Date().getFullYear()
-defineEmits<{ 'chatium-click': [] }>()
+const emit = defineEmits<{ 'chatium-click': [] }>()
+
+function onChatiumClick() {
+  log.notice('Chatium link clicked')
+  emit('chatium-click')
+}
+
+onMounted(() => {
+  log.info('Component mounted')
+})
 </script>
 
 <style scoped>

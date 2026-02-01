@@ -17,7 +17,7 @@ export const DEFAULTS = {
 } as const
 
 /** Допустимые уровни логирования */
-export const LOG_LEVELS = ['Info', 'Warn', 'Error', 'Disable'] as const
+export const LOG_LEVELS = ['Debug', 'Info', 'Warn', 'Error', 'Disable'] as const
 export type LogLevel = (typeof LOG_LEVELS)[number]
 
 function isLogLevel(value: unknown): value is LogLevel {

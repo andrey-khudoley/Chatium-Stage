@@ -1,11 +1,11 @@
 <template>
   <Transition name="modal">
-    <div v-if="visible" class="logout-modal-overlay" @click="$emit('cancel')">
+    <div v-if="visible" class="logout-modal-overlay" @click="onCancel">
       <div class="logout-modal" @click.stop>
         <div class="logout-message">Выйти из аккаунта?</div>
         <div class="logout-buttons">
-          <button class="logout-btn logout-btn-no" @click="$emit('cancel')">Нет</button>
-          <button class="logout-btn logout-btn-yes" @click="$emit('confirm')">Да</button>
+          <button class="logout-btn logout-btn-no" @click="onCancel">Нет</button>
+          <button class="logout-btn logout-btn-yes" @click="onConfirm">Да</button>
         </div>
       </div>
     </div>
@@ -13,8 +13,31 @@
 </template>
 
 <script setup lang="ts">
-defineProps<{ visible: boolean }>()
-defineEmits<{ confirm: []; cancel: [] }>()
+import { watch, onMounted } from 'vue'
+import { createComponentLogger } from '../shared/logger'
+
+const log = createComponentLogger('LogoutModal')
+
+const props = defineProps<{ visible: boolean }>()
+const emit = defineEmits<{ confirm: []; cancel: [] }>()
+
+watch(() => props.visible, (v) => {
+  if (v) log.info('Logout modal displayed')
+})
+
+function onConfirm() {
+  log.notice('Logout confirmed by user')
+  emit('confirm')
+}
+
+function onCancel() {
+  log.info('Logout cancelled by user')
+  emit('cancel')
+}
+
+onMounted(() => {
+  log.debug('Component mounted')
+})
 </script>
 
 <style scoped>

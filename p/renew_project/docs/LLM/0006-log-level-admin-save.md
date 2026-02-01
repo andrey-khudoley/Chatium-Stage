@@ -148,3 +148,68 @@
 ### Ассистент
 
 Выполнены проверки оркестратора: standards-checker — в shared/logger.ts добавлен комментарий `// @shared` в начало файла. file-based-routing-checker — затронутые файлы не содержат роутов, замечаний нет. runtime-architecture-checker — критических рисков не выявлено. imports-docs — docs/imports.md актуален, циклических зависимостей нет. docs-keeper — README и architecture уже обновлены. llm-conversation-logger — в 0006 дописан лог диалога (shared logger, syslog, @check). Итоговое резюме выдано в чате.
+
+---
+
+### Пользователь
+
+Давай добавим уровень логирования -1, когда логи выключены вообще.
+
+### Ассистент
+
+**Сделано:**
+- В shared/logger.ts добавлена константа LOG_LEVEL_OFF = -1 и обработка в getBootLogLevel: значение -1 (number) или '-1' (string) из window.__BOOT__.logLevel трактуется как «логи выключены» (Disable). В jsx.d.ts тип __BOOT__.logLevel расширен до string | number.
+- В api/settings/save.ts в LOG_LEVEL_BY_NUMBER добавлен маппинг -1 → 'Disable', чтобы API принимал значение -1 при сохранении уровня логирования.
+- Обновлены docs/imports.md и README (текущее состояние и Changelog).
+
+**Итог:** уровень -1 явно задаёт «логи выключены»; клиент и API поддерживают -1.
+
+---
+
+### Пользователь
+
+/check
+
+### Ассистент
+
+Выполнены проверки оркестратора: standards-checker — затронутые файлы соответствуют стандартам (// @shared, // @shared-route, форматирование). file-based-routing-checker — save.ts с путём '/', замечаний нет. runtime-architecture-checker — критических рисков не выявлено. imports-docs — docs/imports.md обновлён (logger severity -1…7), циклов нет. docs-keeper — README обновлён (уровень -1, Changelog). В api/settings/save.ts добавлена поддержка -1 в LOG_LEVEL_BY_NUMBER для согласованности с клиентом. llm-conversation-logger — в 0006 дописан блок (уровень -1, @check). Итоговое резюме выдано в чате.
+
+---
+
+### Пользователь
+
+Мне надо покрыть логами 100% клиентской части моего приложения. Используй систему логирования, которую мы только что реализовали, по стандарту syslog. Опиши, что сделаешь.
+
+### Ассистент
+
+Описан план: createComponentLogger, логи в HomePage, AdminPage, ProfilePage, LoginPage, Header, AppFooter, GlobalGlitch, LogoutModal; setLogSink и LogEntry для дашборда; sink-интеграция в AdminPage с отображением логов в реальном времени, счётчиками ошибок/предупреждений и фильтрацией.
+
+---
+
+### Пользователь
+
+Реализуй.
+
+### Ассистент
+
+**Сделано:**
+- В shared/logger.ts: createComponentLogger, setLogSink, LogEntry, emitLog с sink-вызовом.
+- HomePage, AdminPage, ProfilePage: createComponentLogger, логи жизненного цикла, анимаций, glitch, Chatium link.
+- AdminPage: sink-интеграция, logEntries, displayedLogsText, errorCount/warnCount из sink, setLogSink в onMounted/onUnmounted.
+- LoginPage: createComponentLogger, onMounted, логи.
+- Header: логи mount/unmount, triggerGlitch, handleCloseClick, confirmLogout, cancelLogout.
+- AppFooter: логи mount, onChatiumClick с log.notice.
+- GlobalGlitch, LogoutModal: логи mount, watch(visible), onConfirm/onCancel.
+- Обновлён docs/imports.md.
+
+**Итог:** клиентская часть покрыта логами по syslog; дашборд AdminPage отображает логи в реальном времени.
+
+---
+
+### Пользователь
+
+/check
+
+### Ассистент
+
+Выполнены проверки оркестратора: standards-checker — затронутые файлы соответствуют стандартам (// @shared в logger, импорты, структура). file-based-routing-checker — затронутые файлы не содержат роутов, замечаний нет. runtime-architecture-checker — критических рисков не выявлено. imports-docs — docs/imports.md актуален, циклических зависимостей нет. docs-keeper — обновлены README (Changelog, текущее состояние) и docs/architecture.md. llm-conversation-logger — в 0006 дописан блок (@check).

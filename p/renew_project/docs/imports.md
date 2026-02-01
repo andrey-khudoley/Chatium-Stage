@@ -48,40 +48,45 @@
 - `../components/Header.vue`
 - `../components/GlobalGlitch.vue`
 - `../components/AppFooter.vue`
-- `../shared/logger` → `logInfo`, `logWarn`, `logError`
+- `../shared/logger` → `createComponentLogger`
 
 ### `./pages/AdminPage.vue`
-- `vue` → `onMounted`, `onUnmounted`, `ref`
+- `vue` → `onMounted`, `onUnmounted`, `ref`, `computed`
 - `../components/Header.vue`
 - `../components/GlobalGlitch.vue`
 - `../components/AppFooter.vue`
 - `../api/settings/save` → `saveSettingRoute`
-- `../shared/logger` → `logInfo`, `logWarn`, `logError`
+- `../shared/logger` → `createComponentLogger`, `setLogSink`, `LogEntry`
 
 ### `./pages/ProfilePage.vue`
-- `vue` → `onMounted`, `ref`
+- `vue` → `onMounted`, `onUnmounted`, `ref`
 - `../components/Header.vue`
 - `../components/GlobalGlitch.vue`
 - `../components/AppFooter.vue`
-- `../shared/logger` → `logInfo`, `logWarn`, `logError`
+- `../shared/logger` → `createComponentLogger`
 
 ### `./pages/LoginPage.vue`
-- `vue` → `computed`
+- `vue` → `computed`, `onMounted`
+- `../shared/logger` → `createComponentLogger`
 
 ## 3) Компоненты (components/)
 
 ### `./components/Header.vue`
 - `vue` → `ref`, `onMounted`, `onUnmounted`
 - `./LogoutModal.vue`
+- `../shared/logger` → `createComponentLogger`
 
 ### `./components/LogoutModal.vue`
-- нет импортов
+- `vue` → `watch`, `onMounted`
+- `../shared/logger` → `createComponentLogger`
 
 ### `./components/AppFooter.vue`
-- нет импортов
+- `vue` → `onMounted`
+- `../shared/logger` → `createComponentLogger`
 
 ### `./components/GlobalGlitch.vue`
-- нет импортов
+- `vue` → `onMounted`
+- `../shared/logger` → `createComponentLogger`
 
 ## 4) Shared (общий код)
 
@@ -92,7 +97,7 @@
 - `../lib/settings.lib` → `getLogLevel`, `LogLevel`
 
 ### `./shared/logger.ts`
-- нет импортов (клиентский логгер по syslog RFC 5424: severity 0–7, читает window.__BOOT__.logLevel)
+- нет импортов (клиентский логгер по syslog RFC 5424: severity -1…7, LOG_LEVEL_OFF=-1, читает window.__BOOT__.logLevel; createComponentLogger, setLogSink, LogEntry)
 
 ## 5) Таблицы (tables/)
 
