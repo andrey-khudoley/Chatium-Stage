@@ -80,3 +80,32 @@
 
 ### `./shared/preloader.ts`
 - нет импортов
+
+## 5) Таблицы (tables/)
+
+### `./tables/settings.table.ts`
+- `@app/heap` → `Heap`
+
+## 6) Репозитории (repos/)
+
+### `./repos/settings.repo.ts`
+- `../tables/settings.table` → `Settings`, `SettingsRow`
+
+## 7) Библиотеки (lib/)
+
+### `./lib/settings.lib.ts`
+- `../repos/settings.repo` → `*` (findByKey, findAll, upsert, deleteByKey)
+
+## 8) API (api/)
+
+### `./api/settings/list.ts`
+- `@app/auth` → `requireAccountRole`
+- `../../lib/settings.lib` → `*`
+
+### `./api/settings/get.ts`
+- `@app/auth` → `requireAccountRole`
+- `../../lib/settings.lib` → `*`
+
+### `./api/settings/save.ts`
+- `@app/auth` → `requireAccountRole`
+- `../../lib/settings.lib` → `*`
