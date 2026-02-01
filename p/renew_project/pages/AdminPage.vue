@@ -3,6 +3,9 @@ import { onMounted, onUnmounted, ref } from 'vue'
 import Header from '../components/Header.vue'
 import GlobalGlitch from '../components/GlobalGlitch.vue'
 import AppFooter from '../components/AppFooter.vue'
+import { saveSettingRoute } from '../api/settings/save'
+
+declare const ctx: app.Ctx
 
 declare global {
   interface Window {
@@ -23,6 +26,7 @@ const props = defineProps<{
 
 const bootLoaderDone = ref(false)
 const logLevel = ref<'info' | 'warn' | 'error' | 'disable'>('info')
+const logLevelError = ref('')
 const errorCount = ref(0)
 const warnCount = ref(0)
 
@@ -53,8 +57,20 @@ onUnmounted(() => {
   window.removeEventListener('bootloader-complete', startAnimations)
 })
 
-const setLogLevel = (level: 'info' | 'warn' | 'error' | 'disable') => {
+const setLogLevel = async (level: 'info' | 'warn' | 'error' | 'disable') => {
+  const prev = logLevel.value
   logLevel.value = level
+  logLevelError.value = ''
+  try {
+    const res = await saveSettingRoute.run(ctx, { key: 'log_level', value: level })
+    if (res && (res as { success?: boolean }).success === false) {
+      logLevel.value = prev
+      logLevelError.value = (res as { error?: string }).error || 'Ошибка сохранения'
+    }
+  } catch (e) {
+    logLevel.value = prev
+    logLevelError.value = (e as Error)?.message || 'Ошибка сохранения'
+  }
 }
 
 const resetDashboard = () => {
@@ -132,6 +148,7 @@ const openChatiumLink = () => {
                 Disable
               </button>
             </div>
+            <p v-if="logLevelError" class="admin-card-error">{{ logLevelError }}</p>
           </div>
 
           <!-- Dashboard -->
@@ -356,6 +373,12 @@ const openChatiumLink = () => {
   background: var(--color-accent);
   border-color: var(--color-accent);
   box-shadow: 0 0 12px rgba(211, 35, 75, 0.3);
+}
+
+.admin-card-error {
+  margin: 0.75rem 0 0;
+  font-size: 0.85rem;
+  color: #e74c3c;
 }
 
 /* Dashboard */

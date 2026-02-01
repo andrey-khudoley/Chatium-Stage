@@ -1,5 +1,7 @@
 # Data
 
+Настройки проекта хранятся в Heap (key-value). См. [ADR-0002](ADR/0002-settings-heap-and-layered-api.md).
+
 ## Heap таблицы
 
 | Table | File | Назначение | Основные поля |
