@@ -2,6 +2,7 @@
 import { jsx } from '@app/html-jsx'
 import HomePage from './pages/HomePage.vue'
 import { getPreloaderStyles, getPreloaderScript } from './shared/preloader'
+import { getLogLevelForPage, getLogLevelScript } from './shared/logLevel'
 import { getFullUrl, ROUTES } from './config/routes'
 import {
   INDEX_PAGE_NAME,
@@ -16,6 +17,7 @@ export const indexPageRoute = app.html('/', async (ctx, req) => {
   const isAdmin = ctx.user?.is('Admin') ?? false
   const loginUrl = getFullUrl(ROUTES.login)
   const adminUrl = isAdmin ? getFullUrl(ROUTES.admin) : ''
+  const logLevel = await getLogLevelForPage(ctx)
 
   return (
     <html>
@@ -23,6 +25,7 @@ export const indexPageRoute = app.html('/', async (ctx, req) => {
         <title>{getPageTitle(INDEX_PAGE_NAME)}</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta charset="UTF-8" />
+        <script>{getLogLevelScript(logLevel)}</script>
         <style>{`
           html { 
             background: #0a0a0a;

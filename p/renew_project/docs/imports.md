@@ -12,6 +12,7 @@
 - `@app/html-jsx` → `jsx`
 - `./pages/HomePage.vue`
 - `./shared/preloader` → `getPreloaderStyles`, `getPreloaderScript`
+- `./shared/logLevel` → `getLogLevelForPage`, `getLogLevelScript`
 - `./config/routes` → `getFullUrl`, `ROUTES`
 - `./config/project` → `INDEX_PAGE_NAME`, `BODY_TEXT`, `BODY_SUBTEXT`, `getPageTitle`, `getHeaderText`
 
@@ -21,6 +22,7 @@
 - `../../pages/AdminPage.vue`
 - `../login` → `loginPageRoute`
 - `../../shared/preloader` → `getPreloaderStyles`, `getPreloaderScript`
+- `../../shared/logLevel` → `getLogLevelForPage`, `getLogLevelScript`
 - `../../config/routes` → `getFullUrl`, `ROUTES`
 - `../../config/project` → `ADMIN_PAGE_NAME`, `getPageTitle`, `getHeaderText`
 
@@ -29,6 +31,7 @@
 - `@app/auth` → `requireRealUser`
 - `../../pages/ProfilePage.vue`
 - `../../shared/preloader` → `getPreloaderStyles`, `getPreloaderScript`
+- `../../shared/logLevel` → `getLogLevelForPage`, `getLogLevelScript`
 - `../../config/routes` → `getFullUrl`, `ROUTES`
 - `../../config/project` → `PROFILE_PAGE_NAME`, `getPageTitle`, `getHeaderText`
 
@@ -51,6 +54,7 @@
 - `../components/Header.vue`
 - `../components/GlobalGlitch.vue`
 - `../components/AppFooter.vue`
+- `../api/settings/save` → `saveSettingRoute`
 
 ### `./pages/ProfilePage.vue`
 - `vue` → `onMounted`, `ref`
@@ -80,6 +84,9 @@
 
 ### `./shared/preloader.ts`
 - нет импортов
+
+### `./shared/logLevel.ts`
+- `../lib/settings.lib` → `getLogLevel`, `LogLevel`
 
 ## 5) Таблицы (tables/)
 

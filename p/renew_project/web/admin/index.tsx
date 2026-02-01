@@ -4,6 +4,7 @@ import { requireAccountRole } from '@app/auth'
 import AdminPage from '../../pages/AdminPage.vue'
 import { loginPageRoute } from '../login'
 import { getPreloaderStyles, getPreloaderScript } from '../../shared/preloader'
+import { getLogLevelForPage, getLogLevelScript } from '../../shared/logLevel'
 import { getFullUrl, ROUTES } from '../../config/routes'
 import { ADMIN_PAGE_NAME, getPageTitle, getHeaderText } from '../../config/project'
 
@@ -115,6 +116,7 @@ export const adminPageRoute = app.html('/', async (ctx, req) => {
   const profileUrl = getFullUrl(ROUTES.profile)
   const adminUrl = getFullUrl(ROUTES.admin)
   const loginUrl = getFullUrl(ROUTES.login)
+  const logLevel = await getLogLevelForPage(ctx)
 
   return (
     <html>
@@ -122,6 +124,7 @@ export const adminPageRoute = app.html('/', async (ctx, req) => {
         <title>{getPageTitle(ADMIN_PAGE_NAME)}</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta charset="UTF-8" />
+        <script>{getLogLevelScript(logLevel)}</script>
         <script src="/s/metric/clarity.js"></script>
         <style>{adminPageStyles}</style>
         <style>{getPreloaderStyles()}</style>

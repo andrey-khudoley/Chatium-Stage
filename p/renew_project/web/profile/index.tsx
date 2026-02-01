@@ -3,6 +3,7 @@ import { jsx } from '@app/html-jsx'
 import { requireRealUser } from '@app/auth'
 import ProfilePage from '../../pages/ProfilePage.vue'
 import { getPreloaderStyles, getPreloaderScript } from '../../shared/preloader'
+import { getLogLevelForPage, getLogLevelScript } from '../../shared/logLevel'
 import { getFullUrl, ROUTES } from '../../config/routes'
 import { PROFILE_PAGE_NAME, getPageTitle, getHeaderText } from '../../config/project'
 
@@ -17,6 +18,7 @@ export const profilePageRoute = app.html('/', async (ctx, req) => {
   const isAdmin = user.is('Admin')
   const adminUrl = isAdmin ? getFullUrl(ROUTES.admin) : ''
   const loginUrl = getFullUrl(ROUTES.login)
+  const logLevel = await getLogLevelForPage(ctx)
 
   return (
     <html>
@@ -24,6 +26,7 @@ export const profilePageRoute = app.html('/', async (ctx, req) => {
         <title>{getPageTitle(PROFILE_PAGE_NAME)}</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta charset="UTF-8" />
+        <script>{getLogLevelScript(logLevel)}</script>
         <script src="/s/metric/clarity.js"></script>
         <style>{getPreloaderStyles()}</style>
         <style>{`
