@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { onMounted, onBeforeUnmount, onUnmounted, ref, computed } from 'vue'
+import { onMounted, onBeforeUnmount, onUnmounted, ref, computed, watch } from 'vue'
 import { getOrCreateBrowserSocketClient } from '@app/socket'
 import Header from '../components/Header.vue'
 import GlobalGlitch from '../components/GlobalGlitch.vue'
 import AppFooter from '../components/AppFooter.vue'
+import { getSettingRoute } from '../api/settings/get'
 import { saveSettingRoute } from '../api/settings/save'
 import { createComponentLogger, setLogSink, type LogEntry } from '../shared/logger'
 
@@ -30,8 +31,34 @@ const props = defineProps<{
 }>()
 
 const bootLoaderDone = ref(false)
+const projectName = ref(props.projectTitle.split(' / ')[0] || props.projectTitle)
+const lastSavedProjectName = ref(props.projectTitle.split(' / ')[0] || props.projectTitle)
+const projectNameError = ref('')
+const projectNameLoading = ref(false)
+const projectNameDebounceTimer = { id: null as ReturnType<typeof setTimeout> | null }
+const projectNameSaveStatus = ref<'saved' | 'error' | null>(null)
+const projectNameStatusTimeout = { id: null as ReturnType<typeof setTimeout> | null }
+
 const logLevel = ref<'debug' | 'info' | 'warn' | 'error' | 'disable'>('info')
 const logLevelError = ref('')
+const logLevelSaveStatus = ref<'saved' | 'error' | null>(null)
+const logLevelStatusTimeout = { id: null as ReturnType<typeof setTimeout> | null }
+
+const SAVE_STATUS_DURATION_MS = 3000
+const INPUT_DEBOUNCE_MS = 2000
+
+function showSaveStatus(
+  statusRef: { value: 'saved' | 'error' | null },
+  timeoutHolder: { id: ReturnType<typeof setTimeout> | null },
+  status: 'saved' | 'error'
+) {
+  if (timeoutHolder.id) clearTimeout(timeoutHolder.id)
+  statusRef.value = status
+  timeoutHolder.id = setTimeout(() => {
+    statusRef.value = null
+    timeoutHolder.id = null
+  }, SAVE_STATUS_DURATION_MS)
+}
 const errorCount = ref(0)
 const warnCount = ref(0)
 
@@ -75,8 +102,61 @@ const displayedLogsText = computed(() => {
   return filtered.length ? filtered.map(formatLogEntry).join('\n') : 'Логи появятся здесь...'
 })
 
+const loadProjectName = async () => {
+  try {
+    const res = await getSettingRoute.query({ key: 'project_name' }).run(ctx)
+    const data = res as { success?: boolean; value?: unknown }
+    if (data?.success && typeof data.value === 'string') {
+      const loaded = data.value
+      projectName.value = loaded
+      lastSavedProjectName.value = loaded
+    }
+  } catch (e) {
+    log.warn('Failed to load project name', e)
+  }
+}
+
+watch(projectName, () => {
+  if (projectNameDebounceTimer.id) clearTimeout(projectNameDebounceTimer.id)
+  projectNameDebounceTimer.id = setTimeout(() => {
+    projectNameDebounceTimer.id = null
+    const trimmed = String(projectName.value ?? '').trim()
+    if (trimmed !== lastSavedProjectName.value) {
+      saveProjectName()
+    }
+  }, INPUT_DEBOUNCE_MS)
+})
+
+const saveProjectName = async () => {
+  projectNameError.value = ''
+  projectNameLoading.value = true
+  const prev = projectName.value
+  try {
+    const res = await saveSettingRoute.run(ctx, {
+      key: 'project_name',
+      value: projectName.value.trim()
+    })
+    const data = res as { success?: boolean; error?: string }
+    if (data?.success === false) {
+      projectNameError.value = data.error || 'Ошибка сохранения'
+      projectName.value = prev
+      showSaveStatus(projectNameSaveStatus, projectNameStatusTimeout, 'error')
+    } else {
+      lastSavedProjectName.value = projectName.value.trim()
+      showSaveStatus(projectNameSaveStatus, projectNameStatusTimeout, 'saved')
+    }
+  } catch (e) {
+    projectNameError.value = (e as Error)?.message || 'Ошибка сохранения'
+    projectName.value = prev
+    showSaveStatus(projectNameSaveStatus, projectNameStatusTimeout, 'error')
+  } finally {
+    projectNameLoading.value = false
+  }
+}
+
 onMounted(() => {
   log.info('Component mounted')
+  loadProjectName()
   if (window.hideAppLoader) window.hideAppLoader()
   if (window.bootLoaderComplete) {
     startAnimations()
@@ -123,6 +203,18 @@ onBeforeUnmount(() => {
     logsSocketSubscription.unsubscribe()
     logsSocketSubscription = null
   }
+  if (projectNameStatusTimeout.id) {
+    clearTimeout(projectNameStatusTimeout.id)
+    projectNameStatusTimeout.id = null
+  }
+  if (logLevelStatusTimeout.id) {
+    clearTimeout(logLevelStatusTimeout.id)
+    logLevelStatusTimeout.id = null
+  }
+  if (projectNameDebounceTimer.id) {
+    clearTimeout(projectNameDebounceTimer.id)
+    projectNameDebounceTimer.id = null
+  }
 })
 
 onUnmounted(() => {
@@ -142,14 +234,17 @@ const setLogLevel = async (level: 'debug' | 'info' | 'warn' | 'error' | 'disable
       logLevel.value = prev
       const errMsg = (res as { error?: string }).error || 'Ошибка сохранения'
       logLevelError.value = errMsg
+      showSaveStatus(logLevelSaveStatus, logLevelStatusTimeout, 'error')
       log.error('Failed to save log level', errMsg)
     } else {
+      showSaveStatus(logLevelSaveStatus, logLevelStatusTimeout, 'saved')
       log.info('Log level saved successfully', level)
     }
   } catch (e) {
     logLevel.value = prev
     const errMsg = (e as Error)?.message || 'Ошибка сохранения'
     logLevelError.value = errMsg
+    showSaveStatus(logLevelSaveStatus, logLevelStatusTimeout, 'error')
     log.error('Failed to save log level', errMsg)
   }
 }
@@ -191,8 +286,76 @@ const openChatiumLink = () => {
             <p class="admin-description">Управление логированием и мониторинг системы</p>
           </div>
 
+          <!-- Dashboard -->
+          <div class="admin-card">
+            <div class="admin-card-header">
+              <i class="fas fa-bars admin-card-icon dashboard-card-icon"></i>
+              <h2 class="admin-card-title">Дашборд</h2>
+              <button
+                type="button"
+                class="dashboard-reset"
+                title="Сбросить счётчики"
+                @click="resetDashboard"
+              >
+                <i class="fas fa-sync-alt dashboard-reset-icon"></i>
+                Сбросить
+              </button>
+            </div>
+            <div class="dashboard-stats">
+              <div class="dashboard-stat stat-errors">
+                <i class="fas fa-exclamation-circle stat-icon"></i>
+                <div class="stat-content">
+                  <span class="stat-value">{{ errorCount }}</span>
+                  <span class="stat-label">Ошибок</span>
+                </div>
+              </div>
+              <div class="dashboard-stat stat-warnings">
+                <i class="fas fa-exclamation-triangle stat-icon"></i>
+                <div class="stat-content">
+                  <span class="stat-value">{{ warnCount }}</span>
+                  <span class="stat-label">Предупреждений</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Project Settings -->
+          <div class="admin-card">
+            <span
+              v-if="projectNameSaveStatus"
+              class="admin-card-status"
+              :class="projectNameSaveStatus === 'saved' ? 'status-saved' : 'status-error'"
+            >
+              {{ projectNameSaveStatus === 'saved' ? 'Сохранено' : 'Ошибка' }}
+            </span>
+            <div class="admin-card-header">
+              <i class="fas fa-wrench admin-card-icon"></i>
+              <h2 class="admin-card-title">Настройки проекта</h2>
+            </div>
+            <div class="settings-form">
+              <div class="settings-field">
+                <label class="settings-label" for="project-name">Название проекта</label>
+                <input
+                  id="project-name"
+                  v-model="projectName"
+                  type="text"
+                  class="settings-input"
+                  :disabled="projectNameLoading"
+                />
+              </div>
+            </div>
+            <p v-if="projectNameError" class="admin-card-error">{{ projectNameError }}</p>
+          </div>
+
           <!-- Logging Level -->
           <div class="admin-card">
+            <span
+              v-if="logLevelSaveStatus"
+              class="admin-card-status"
+              :class="logLevelSaveStatus === 'saved' ? 'status-saved' : 'status-error'"
+            >
+              {{ logLevelSaveStatus === 'saved' ? 'Сохранено' : 'Ошибка' }}
+            </span>
             <div class="admin-card-header">
               <i class="fas fa-sliders-h admin-card-icon"></i>
               <h2 class="admin-card-title">Уровень логирования</h2>
@@ -240,34 +403,6 @@ const openChatiumLink = () => {
               </button>
             </div>
             <p v-if="logLevelError" class="admin-card-error">{{ logLevelError }}</p>
-          </div>
-
-          <!-- Dashboard -->
-          <div class="admin-card">
-            <div class="admin-card-header">
-              <i class="fas fa-chart-bar admin-card-icon"></i>
-              <h2 class="admin-card-title">Дашборд</h2>
-              <button
-                type="button"
-                class="dashboard-reset"
-                title="Сбросить счётчики"
-                @click="resetDashboard"
-              >
-                Сбросить
-              </button>
-            </div>
-            <div class="dashboard-stats">
-              <div class="dashboard-stat stat-errors">
-                <span class="stat-value">{{ errorCount }}</span>
-                <span class="stat-label">Ошибок</span>
-                <i class="fas fa-exclamation-circle stat-icon"></i>
-              </div>
-              <div class="dashboard-stat stat-warnings">
-                <span class="stat-value">{{ warnCount }}</span>
-                <span class="stat-label">Предупреждений</span>
-                <i class="fas fa-exclamation-triangle stat-icon"></i>
-              </div>
-            </div>
           </div>
 
           <!-- Logs Output -->
@@ -472,50 +607,144 @@ const openChatiumLink = () => {
   color: #e74c3c;
 }
 
-/* Dashboard */
-.dashboard-reset {
-  padding: 0.25rem 0.6rem;
+.admin-card-status {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  animation: statusFadeIn 0.2s ease;
+}
+
+.admin-card-status.status-saved {
+  color: #27ae60;
+}
+
+.admin-card-status.status-error {
+  color: #e74c3c;
+}
+
+@keyframes statusFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Project Settings */
+.settings-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.settings-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.settings-label {
+  font-size: 0.85rem;
+  color: var(--color-text-secondary);
+  letter-spacing: 0.04em;
+}
+
+.settings-input {
+  padding: 0.6rem 0.9rem;
   font-family: inherit;
-  font-size: 0.75rem;
-  color: var(--color-text-tertiary);
-  background: transparent;
-  border: none;
+  font-size: 0.95rem;
+  color: var(--color-text);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  transition: border-color 0.2s ease;
+}
+
+.settings-input:focus {
+  outline: none;
+  border-color: var(--color-accent);
+}
+
+.settings-input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Dashboard */
+.dashboard-card-icon {
+  color: var(--color-accent);
+}
+
+.dashboard-reset {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.9rem;
+  font-family: inherit;
+  font-size: 0.85rem;
+  color: var(--color-text-secondary);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--color-border-light);
+  border-radius: 6px;
   cursor: pointer;
-  transition: color 0.2s ease;
+  transition: color 0.2s ease, background 0.2s ease, border-color 0.2s ease;
   letter-spacing: 0.04em;
 }
 
 .dashboard-reset:hover {
-  color: var(--color-text-secondary);
+  color: var(--color-text);
+  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--color-border);
+}
+
+.dashboard-reset-icon {
+  font-size: 0.8rem;
+  opacity: 0.9;
 }
 
 .dashboard-stats {
   display: flex;
-  gap: 1.5rem;
-  flex-wrap: wrap;
+  gap: 1rem;
 }
 
 .dashboard-stat {
+  flex: 1 1 0;
+  min-width: 0;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 0.75rem;
-  padding: 1rem 1.5rem;
+  padding: 1rem 1.25rem;
   background: rgba(255, 255, 255, 0.02);
   border: 1px solid var(--color-border-light);
   border-radius: 6px;
-  min-width: 140px;
+}
+
+.dashboard-stat .stat-icon {
+  flex-shrink: 0;
+  margin-top: 0.15rem;
+}
+
+.dashboard-stat .stat-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
 }
 
 .dashboard-stat .stat-value {
   font-size: 1.5rem;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
+  line-height: 1.2;
 }
 
 .dashboard-stat .stat-label {
   font-size: 0.85rem;
   color: var(--color-text-secondary);
-  flex: 1;
+  line-height: 1.2;
 }
 
 .stat-icon {
