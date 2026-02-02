@@ -11,7 +11,7 @@
 ## Текущее состояние
 - Главная, админка, профиль и логин существуют как минимальные страницы.
 - Реализованы: API настроек (list, get, save), Heap-таблица settings, репозиторий, lib (бизнес-логика).
-- Серверные логи: Heap-таблица logs (message, payload, severity, level, timestamp), repos/logs.repo, lib/logger.lib (проверка уровня по настройке log_level, запись в ctx.log, ctx.account.log, Heap, WebSocket с хэшем для уникальности канала, вебхук log_webhook { enable, url } по умолчанию url: ""). API POST /api/logger/log (AnyUser), body: { severity, level, message, payload?, timestamp? }. Админка получает encodedLogsSocketId и подписывается на new-log для отображения в дашборде.
+- Серверные логи: Heap-таблица logs (message, payload, severity, level, timestamp), repos/logs.repo (create, findAll, findById, findBeforeTimestamp), lib/logger.lib (проверка уровня по настройке log_level, запись в ctx.log, ctx.account.log, Heap, WebSocket с хэшем для уникальности канала, вебхук log_webhook { enable, url } по умолчанию url: ""). API POST /api/logger/log (AnyUser), body: { severity, level, message, payload?, timestamp? }; GET /api/admin/logs/recent (Admin) — последние N логов; GET /api/admin/logs/before (Admin) — N логов старше указанного timestamp для пагинации. Админка получает encodedLogsSocketId, подписывается на new-log для отображения в дашборде, загружает историю логов через recent при монтировании, может догружать старые логи через before (кнопка «Загрузить ещё 50»).
 - При серверной загрузке главной, админки и профиля уровень логирования читается из настроек и передаётся на клиент в `window.__BOOT__.logLevel` (shared/logLevel.ts). В браузере доступен shared/logger по стандарту syslog (RFC 5424): уровни -1 (логи выключены, LOG_LEVEL_OFF), 0–7 (Emergency…Debug), функции `logEmergency`, `logAlert`, `logCritical`, `logError`, `logWarning`, `logNotice`, `logInfo`, `logDebug`; `createComponentLogger(name)` для логов с префиксом; `setLogSink`, `LogEntry` для дашборда. Вывод только если severity не строже настроенного порога.
 - Клиентская часть полностью покрыта логами: страницы и компоненты используют `createComponentLogger`; AdminPage регистрирует sink и подписку на WebSocket для отображения логов в дашборде в реальном времени.
 
@@ -30,6 +30,8 @@
 - Описать бизнес‑логику и данные.
 
 ## Changelog
+- 2026-02-02: оптимизирована функция findBeforeTimestamp в repos/logs.repo — использует нативную фильтрацию Heap API через `where: { timestamp: { $lt } }` вместо загрузки избыточных данных и фильтрации в памяти.
+- 2026-02-02: добавлена пагинация логов в админке: GET /api/admin/logs/recent (последние N логов), GET /api/admin/logs/before (N логов старше timestamp); repos/logs.repo.findBeforeTimestamp; AdminPage загружает историю при монтировании и может догружать старые логи по кнопке «Загрузить ещё 50».
 - 2026-02-02: админка: индикаторы «Сохранено»/«Ошибка» в правом верхнем углу карточек «Настройки проекта» и «Уровень логирования» после ответа сервера (3 с); автосохранение поля «Название проекта» с debounce 2 с без ожидания blur.
 - 2026-02-02: исправлен вызов GET api/settings/get в AdminPage: query передаётся через getSettingRoute.query({ key }).run(ctx) вместо .run(ctx, { query }), по inner/docs (002-routing, 001-run).
 - 2026-02-02: сериализация payload при записи в Heap (lib/logger.lib): JSON.stringify для объектов, чтобы в таблице логов отображался корректный JSON вместо "[object Object]".

@@ -12,13 +12,15 @@
 
 Каждый файл — один эндпоинт с путём `/`.
 
-## Логи (api/logger/)
+## Логи (api/logger/, api/admin/logs/)
 
-Эндпоинты для записи серверных логов (проверка уровня, Heap, WebSocket, вебхук).
+Эндпоинты для записи и чтения серверных логов (проверка уровня, Heap, WebSocket, вебхук).
 
 | Method | Path | File | Auth | Назначение |
 | --- | --- | --- | --- | --- |
 | POST | /api/logger/log | api/logger/log.ts | AnyUser | Записать лог (body: `{ message, severity?, payload? }`). message — текст сообщения (имя модуля при необходимости в тексте); severity — 0–7, по умолчанию 6; payload — JSON с контекстом. timestamp и уровень (level) вычисляются в lib. В ctx.log и ctx.account.log выводится строка вида `[DD.MM.YYYY HH:mm:ss.SSS] [LEVEL] message` (пробелы между группами в скобках). Уровень сверяется с настройкой log_level; при прохождении — запись в ctx.log, ctx.account.log, Heap, WebSocket (admin-logs), опционально POST на log_webhook.url. |
+| GET | /api/admin/logs/recent | api/admin/logs/recent.ts | Admin | Получить последние N логов (query: `limit`, по умолчанию 50, макс. 200). Возвращает `{ success: true, entries: Array<LogEntry & { id: string }> }`. |
+| GET | /api/admin/logs/before | api/admin/logs/before.ts | Admin | Получить N логов старше указанного timestamp (query: `beforeTimestamp` — timestamp последней записи в миллисекундах, `limit` — количество, по умолчанию 50, макс. 200). Возвращает `{ success: true, entries: Array<LogEntry & { id: string }>, hasMore: boolean }`. |
 
 ## Публичные эндпоинты
 | Method | Path | File | Auth | Назначение |

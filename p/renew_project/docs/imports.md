@@ -63,6 +63,8 @@
 - `../components/AppFooter.vue`
 - `../api/settings/get` → `getSettingRoute`
 - `../api/settings/save` → `saveSettingRoute`
+- `../api/admin/logs/recent` → `getRecentLogsRoute`
+- `../api/admin/logs/before` → `getLogsBeforeRoute`
 - `../shared/logger` → `createComponentLogger`, `setLogSink`, `LogEntry`
 
 ### `./pages/ProfilePage.vue`
@@ -122,6 +124,7 @@
 
 ### `./repos/logs.repo.ts`
 - `../tables/logs.table` → `Logs`, `LogsRow`
+- экспортирует: `create`, `findAll`, `findById`, `findBeforeTimestamp`
 
 ## 7) Библиотеки (lib/)
 
@@ -154,3 +157,27 @@
 ### `./api/logger/log.ts`
 - `@app/auth` → `requireAnyUser`
 - `../../lib/logger.lib` → `*`
+
+### `./api/admin/logs/recent.ts`
+- `@app/auth` → `requireAccountRole`
+- `../../../repos/logs.repo` → `*`
+- `../../../lib/logger.lib` → `*`
+- `../../../tables/logs.table` → `LogsRow` (type)
+
+### `./api/admin/logs/before.ts`
+- `@app/auth` → `requireAccountRole`
+- `../../../repos/logs.repo` → `*`
+- `../../../lib/logger.lib` → `*`
+- `../../../tables/logs.table` → `LogsRow` (type)
+
+### `./api/admin/logs/recent.ts`
+- `@app/auth` → `requireAccountRole`
+- `../../../repos/logs.repo` → `*`
+- `../../../lib/logger.lib` → `*`
+- `../../../tables/logs.table` → `LogsRow` (type)
+
+### `./api/admin/logs/before.ts`
+- `@app/auth` → `requireAccountRole`
+- `../../../repos/logs.repo` → `*`
+- `../../../lib/logger.lib` → `*`
+- `../../../tables/logs.table` → `LogsRow` (type)

@@ -7,6 +7,8 @@ import AppFooter from '../components/AppFooter.vue'
 import { getSettingRoute } from '../api/settings/get'
 import { saveSettingRoute } from '../api/settings/save'
 import { createComponentLogger, setLogSink, type LogEntry } from '../shared/logger'
+import { getRecentLogsRoute } from '../api/admin/logs/recent'
+import { getLogsBeforeRoute } from '../api/admin/logs/before'
 
 const log = createComponentLogger('AdminPage')
 
@@ -62,9 +64,15 @@ function showSaveStatus(
 const errorCount = ref(0)
 const warnCount = ref(0)
 
-const MAX_LOG_ENTRIES = 200
+const MAX_LOG_ENTRIES = 500
 const logEntries = ref<LogEntry[]>([])
-let logsSocketSubscription: { unsubscribe?: () => void } | null = null
+let logsSocketSubscription: any = null
+const logsOutputRef = ref<HTMLElement | null>(null)
+
+const logsLoading = ref(false)
+const logsError = ref('')
+const logsHasMore = ref(false)
+const oldestLogTimestamp = ref<number | null>(null)
 
 const logFilters = ref({
   info: true,
@@ -83,23 +91,82 @@ const startAnimations = () => {
 
 const LOG_LEVEL_VALUES = ['debug', 'info', 'warn', 'error', 'disable'] as const
 
-function formatLogEntry(e: LogEntry): string {
-  const d = new Date(e.timestamp)
-  const t = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}:${String(d.getSeconds()).padStart(2, '0')}.${String(d.getMilliseconds()).padStart(3, '0')}`
-  const msg = e.args.map((a) =>
-    typeof a === 'object' && a !== null ? JSON.stringify(a) : String(a)
-  ).join(' ')
-  return `${t} [${e.level.toUpperCase()}] ${msg}`
+type LogDisplayItem = 
+  | { type: 'log'; entry: LogEntry; formattedTime: string; formattedMessage: string }
+  | { type: 'divider'; date: string }
+
+function formatLogTime(timestamp: number): string {
+  const d = new Date(timestamp)
+  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}:${String(d.getSeconds()).padStart(2, '0')}.${String(d.getMilliseconds()).padStart(3, '0')}`
 }
 
-const displayedLogsText = computed(() => {
+function formatLogMessage(e: LogEntry): string {
+  return e.args.map((a) =>
+    typeof a === 'object' && a !== null ? JSON.stringify(a) : String(a)
+  ).join(' ')
+}
+
+function formatDateDivider(timestamp: number): string {
+  const d = new Date(timestamp)
+  const day = String(d.getDate()).padStart(2, '0')
+  const month = String(d.getMonth() + 1).padStart(2, '0')
+  const year = d.getFullYear()
+  return `${day}.${month}.${year}`
+}
+
+function getDateKey(timestamp: number): string {
+  const d = new Date(timestamp)
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
+function trimOldLogs() {
+  if (logEntries.value.length > MAX_LOG_ENTRIES) {
+    const sorted = [...logEntries.value].sort((a, b) => b.timestamp - a.timestamp)
+    logEntries.value = sorted.slice(0, MAX_LOG_ENTRIES)
+    log.debug('Обрезаны старые логи', { 
+      было: sorted.length, 
+      осталось: logEntries.value.length 
+    })
+  }
+}
+
+const displayedLogs = computed<LogDisplayItem[]>(() => {
   const filtered = logEntries.value.filter((e) => {
     if (e.severity <= 3 && logFilters.value.error) return true
     if (e.severity === 4 && logFilters.value.warn) return true
     if (e.severity >= 5 && logFilters.value.info) return true
     return false
   })
-  return filtered.length ? filtered.map(formatLogEntry).join('\n') : 'Логи появятся здесь...'
+
+  if (!filtered.length) return []
+
+  const sorted = [...filtered].sort((a, b) => b.timestamp - a.timestamp)
+
+  const items: LogDisplayItem[] = []
+  let lastDateKey = ''
+
+  for (let i = 0; i < sorted.length; i++) {
+    const entry = sorted[i]
+    const dateKey = getDateKey(entry.timestamp)
+    
+    // Показываем разделитель только если это не первый лог и дата изменилась
+    if (i > 0 && dateKey !== lastDateKey) {
+      items.push({
+        type: 'divider',
+        date: formatDateDivider(entry.timestamp)
+      })
+    }
+    
+    lastDateKey = dateKey
+    items.push({
+      type: 'log',
+      entry,
+      formattedTime: formatLogTime(entry.timestamp),
+      formattedMessage: formatLogMessage(entry)
+    })
+  }
+
+  return items
 })
 
 const loadProjectName = async () => {
@@ -112,7 +179,7 @@ const loadProjectName = async () => {
       lastSavedProjectName.value = loaded
     }
   } catch (e) {
-    log.warn('Не удалось загрузить имя проекта', e)
+    log.warning('Не удалось загрузить имя проекта', e)
   }
 }
 
@@ -172,9 +239,7 @@ onMounted(() => {
   }
   setLogSink((entry: LogEntry) => {
     logEntries.value.push(entry)
-    if (logEntries.value.length > MAX_LOG_ENTRIES) {
-      logEntries.value = logEntries.value.slice(-MAX_LOG_ENTRIES)
-    }
+    trimOldLogs()
     if (entry.severity <= 3) errorCount.value += 1
     else if (entry.severity === 4) warnCount.value += 1
   })
@@ -186,9 +251,7 @@ onMounted(() => {
           if (data?.type === 'new-log' && data.data) {
             const entry = data.data as LogEntry
             logEntries.value.push(entry)
-            if (logEntries.value.length > MAX_LOG_ENTRIES) {
-              logEntries.value = logEntries.value.slice(-MAX_LOG_ENTRIES)
-            }
+            trimOldLogs()
             if (entry.severity <= 3) errorCount.value += 1
             else if (entry.severity === 4) warnCount.value += 1
           }
@@ -196,6 +259,8 @@ onMounted(() => {
       })
       .catch((err) => log.error('Не удалось подписаться на логи по WebSocket', err))
   }
+
+  loadRecentLogs()
 })
 
 onBeforeUnmount(() => {
@@ -258,6 +323,72 @@ const resetDashboard = () => {
 const openChatiumLink = () => {
   log.notice('Открытие ссылки Chatium')
   window.open('https://chatium.ru/?start=pl-LGBT1Oge7c61RkKTU4t0start', '_blank')
+}
+
+const loadRecentLogs = async () => {
+  logsLoading.value = true
+  logsError.value = ''
+  try {
+    const res = await getRecentLogsRoute.query({ limit: 50 }).run(ctx)
+    const data = res as { success?: boolean; entries?: Array<LogEntry & { id: string }>; error?: string }
+    if (data?.success && Array.isArray(data.entries)) {
+      logEntries.value = [...logEntries.value, ...data.entries]
+      
+      if (data.entries.length > 0) {
+        const sorted = [...data.entries].sort((a, b) => a.timestamp - b.timestamp)
+        oldestLogTimestamp.value = sorted[0].timestamp
+      }
+      logsHasMore.value = data.entries.length === 50
+      log.info('Последние логи загружены', { count: data.entries.length })
+    } else {
+      logsError.value = data?.error || 'Ошибка загрузки логов'
+      log.error('Ошибка загрузки логов', logsError.value)
+    }
+  } catch (e) {
+    logsError.value = (e as Error)?.message || 'Ошибка сети'
+    log.error('Ошибка загрузки логов', e)
+  } finally {
+    logsLoading.value = false
+  }
+}
+
+const loadMoreLogs = async () => {
+  if (!oldestLogTimestamp.value) {
+    log.warning('Попытка загрузить больше логов без oldestLogTimestamp')
+    return
+  }
+
+  logsLoading.value = true
+  logsError.value = ''
+  try {
+    const res = await getLogsBeforeRoute
+      .query({ beforeTimestamp: String(oldestLogTimestamp.value), limit: 50 })
+      .run(ctx)
+    const data = res as {
+      success?: boolean
+      entries?: Array<LogEntry & { id: string }>
+      hasMore?: boolean
+      error?: string
+    }
+    if (data?.success && Array.isArray(data.entries)) {
+      logEntries.value = [...logEntries.value, ...data.entries]
+      
+      if (data.entries.length > 0) {
+        const sorted = [...data.entries].sort((a, b) => a.timestamp - b.timestamp)
+        oldestLogTimestamp.value = sorted[0].timestamp
+      }
+      logsHasMore.value = data.hasMore ?? data.entries.length === 50
+      log.info('Дополнительные логи загружены', { count: data.entries.length })
+    } else {
+      logsError.value = data?.error || 'Ошибка загрузки логов'
+      log.error('Ошибка загрузки дополнительных логов', logsError.value)
+    }
+  } catch (e) {
+    logsError.value = (e as Error)?.message || 'Ошибка сети'
+    log.error('Ошибка загрузки дополнительных логов', e)
+  } finally {
+    logsLoading.value = false
+  }
 }
 </script>
 
@@ -440,8 +571,38 @@ const openChatiumLink = () => {
                 Error
               </button>
             </div>
-            <div class="logs-output">
-              <pre class="logs-content">{{ displayedLogsText }}</pre>
+            <div class="logs-output" ref="logsOutputRef">
+              <div v-if="displayedLogs.length === 0" class="logs-empty">
+                Логи появятся здесь...
+              </div>
+              <div v-for="(item, index) in displayedLogs" :key="index" class="log-item">
+                <div v-if="item.type === 'divider'" class="log-date-divider">
+                  --- {{ item.date }} ---
+                </div>
+                <div v-else class="log-entry">
+                  <span class="log-time">{{ item.formattedTime }}</span>
+                  <span class="log-level" :class="`log-level-${item.entry.level}`">
+                    [{{ item.entry.level.toUpperCase() }}]
+                  </span>
+                  <span class="log-message">{{ item.formattedMessage }}</span>
+                </div>
+              </div>
+            </div>
+            <div class="logs-actions">
+              <div v-if="logsLoading" class="logs-loading">
+                <i class="fas fa-spinner fa-spin"></i>
+                Загрузка логов...
+              </div>
+              <p v-if="logsError" class="logs-error">{{ logsError }}</p>
+              <button
+                v-if="logsHasMore && !logsLoading"
+                type="button"
+                class="load-more-btn"
+                @click="loadMoreLogs"
+              >
+                <i class="fas fa-arrow-down"></i>
+                Загрузить ещё 50
+              </button>
             </div>
           </div>
         </section>
@@ -840,15 +1001,142 @@ const openChatiumLink = () => {
   max-height: 400px;
   overflow: auto;
   padding: 1rem;
-}
-
-.logs-content {
   font-family: 'Share Tech Mono', 'Courier New', monospace;
   font-size: 0.8rem;
+}
+
+.logs-empty {
   color: var(--color-text-secondary);
+  text-align: center;
+  padding: 2rem;
+}
+
+.log-item {
+  margin-bottom: 0;
+}
+
+.log-date-divider {
+  text-align: center;
+  color: #555;
+  font-size: 0.75rem;
+  padding: 0.5rem 0;
+  margin: 0.5rem 0;
+  opacity: 0.7;
+  letter-spacing: 0.1em;
+}
+
+.log-entry {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.15rem 0;
+  line-height: 1.4;
+}
+
+.log-time {
+  color: var(--color-text-tertiary);
+  flex-shrink: 0;
+}
+
+.log-level {
+  flex-shrink: 0;
+  font-weight: 600;
+}
+
+.log-level-debug {
+  color: #9b59b6;
+}
+
+.log-level-info {
+  color: #3498db;
+}
+
+.log-level-notice {
+  color: #1abc9c;
+}
+
+.log-level-warning {
+  color: #f39c12;
+}
+
+.log-level-error {
+  color: #e74c3c;
+}
+
+.log-level-critical {
+  color: #c0392b;
+}
+
+.log-level-alert {
+  color: #e67e22;
+}
+
+.log-level-emergency {
+  color: #d35400;
+}
+
+.log-message {
+  color: var(--color-text-secondary);
+  word-break: break-word;
+  flex: 1;
+  min-width: 0;
+}
+
+.logs-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.logs-loading {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  color: var(--color-text-secondary);
+  padding: 0.5rem 0;
+}
+
+.logs-loading i {
+  color: var(--color-accent);
+}
+
+.logs-error {
+  font-size: 0.85rem;
+  color: #e74c3c;
   margin: 0;
-  white-space: pre-wrap;
-  word-break: break-all;
+  padding: 0.5rem 0.75rem;
+  background: rgba(231, 76, 60, 0.1);
+  border: 1px solid rgba(231, 76, 60, 0.3);
+  border-radius: 4px;
+}
+
+.load-more-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1.2rem;
+  font-family: inherit;
+  font-size: 0.9rem;
+  color: var(--color-text);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  letter-spacing: 0.04em;
+}
+
+.load-more-btn:hover {
+  color: #fff;
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  box-shadow: 0 0 12px rgba(211, 35, 75, 0.3);
+}
+
+.load-more-btn i {
+  font-size: 0.85rem;
 }
 
 @media (max-width: 768px) {

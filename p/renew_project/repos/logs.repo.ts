@@ -25,3 +25,20 @@ export async function findAll(
 export async function findById(ctx: app.Ctx, id: string): Promise<LogsRow | null> {
   return Logs.findById(ctx, id)
 }
+
+/**
+ * Получить логи старше указанного timestamp (для пагинации).
+ * Возвращает записи с timestamp меньше указанного.
+ * Использует нативную фильтрацию Heap API через where.
+ */
+export async function findBeforeTimestamp(
+  ctx: app.Ctx,
+  beforeTimestamp: number,
+  limit: number
+): Promise<LogsRow[]> {
+  return Logs.findAll(ctx, {
+    where: { timestamp: { $lt: beforeTimestamp } },
+    order: [{ timestamp: 'desc' }],
+    limit
+  })
+}
