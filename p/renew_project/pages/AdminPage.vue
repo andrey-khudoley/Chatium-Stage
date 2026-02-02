@@ -44,7 +44,7 @@ const logLevelError = ref('')
 const logLevelSaveStatus = ref<'saved' | 'error' | null>(null)
 const logLevelStatusTimeout = { id: null as ReturnType<typeof setTimeout> | null }
 
-const SAVE_STATUS_DURATION_MS = 3000
+const SAVE_STATUS_DURATION_MS = 1500
 const INPUT_DEBOUNCE_MS = 2000
 
 function showSaveStatus(
