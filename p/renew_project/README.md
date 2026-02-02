@@ -31,6 +31,7 @@
 - Описать бизнес‑логику и данные.
 
 ## Changelog
+- 2026-02-02: название проекта из настроек (input#project-name в админке) используется при серверном рендере: заголовок h1 в шапке — «название из настроек / Название страницы», document title — «Название страницы - Название из настроек». config/project: getPageTitle(pageName, projectName), getHeaderText(pageName, projectName); index, web/admin, web/profile читают project_name через settingsLib.getSettingString и передают в getPageTitle/getHeaderText; Header.vue — в h1 только projectTitle (убран отдельный вывод pageName).
 - 2026-02-02: дашборд админки: счётчики ошибок и предупреждений после таймштампа сброса; настройка dashboard_reset_at, lib/admin/dashboard.lib, GET /api/admin/dashboard/counts, POST /api/admin/dashboard/reset; repos/logs.repo — countBySeverityAfter, countErrorsAfter, countWarningsAfter (несколько countBy по severity); при новых логах (sink/WebSocket) инкремент только если entry.timestamp >= dashboardResetAt.
 - 2026-02-02: админка — блок логов: кнопка «Загрузить ещё 50» ~90% ширины, рядом квадратная кнопка «Очистить логи» (корзина); при очистке таймштамп сдвигается на текущий (Date.now()), кнопка «Загрузить ещё 50» восстанавливает последние логи с сервера.
 - 2026-02-02: стили скроллбара (customScrollbarStyles в styles.tsx): body, .content-wrapper, .custom-scrollbar; подключены на главной, админке, логине и профиле; исправление для Chrome 121+ через @supports not selector(::-webkit-scrollbar).

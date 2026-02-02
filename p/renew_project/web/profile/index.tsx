@@ -7,6 +7,7 @@ import { getLogLevelForPage, getLogLevelScript } from '../../shared/logLevel'
 import * as loggerLib from '../../lib/logger.lib'
 import { getFullUrl, ROUTES } from '../../config/routes'
 import { PROFILE_PAGE_NAME, getPageTitle, getHeaderText } from '../../config/project'
+import * as settingsLib from '../../lib/settings.lib'
 import { customScrollbarStyles } from '../../styles'
 
 const LOG_PATH = 'web/profile/index'
@@ -34,6 +35,7 @@ export const profilePageRoute = app.html('/', async (ctx, req) => {
   const adminUrl = isAdmin ? getFullUrl(ROUTES.admin) : ''
   const loginUrl = getFullUrl(ROUTES.login)
   const logLevel = await getLogLevelForPage(ctx)
+  const projectName = await settingsLib.getSettingString(ctx, settingsLib.SETTING_KEYS.PROJECT_NAME)
 
   await loggerLib.writeServerLog(ctx, {
     severity: 6,
@@ -44,7 +46,7 @@ export const profilePageRoute = app.html('/', async (ctx, req) => {
   return (
     <html>
       <head>
-        <title>{getPageTitle(PROFILE_PAGE_NAME)}</title>
+        <title>{getPageTitle(PROFILE_PAGE_NAME, projectName)}</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta charset="UTF-8" />
         <script>{getLogLevelScript(logLevel)}</script>
@@ -261,7 +263,7 @@ export const profilePageRoute = app.html('/', async (ctx, req) => {
           </div>
         </div>
         <ProfilePage
-          projectTitle={getHeaderText(PROFILE_PAGE_NAME)}
+          projectTitle={getHeaderText(PROFILE_PAGE_NAME, projectName)}
           indexUrl={getFullUrl(ROUTES.index)}
           profileUrl={getFullUrl(ROUTES.profile)}
           loginUrl={loginUrl}

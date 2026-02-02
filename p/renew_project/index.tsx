@@ -13,6 +13,7 @@ import {
   getHeaderText
 } from './config/project'
 import * as loggerLib from './lib/logger.lib'
+import * as settingsLib from './lib/settings.lib'
 
 const LOG_PATH = 'index'
 
@@ -28,11 +29,12 @@ export const indexPageRoute = app.html('/', async (ctx, req) => {
   const loginUrl = getFullUrl(ROUTES.login)
   const adminUrl = isAdmin ? getFullUrl(ROUTES.admin) : ''
   const logLevel = await getLogLevelForPage(ctx)
+  const projectName = await settingsLib.getSettingString(ctx, settingsLib.SETTING_KEYS.PROJECT_NAME)
 
   return (
     <html>
       <head>
-        <title>{getPageTitle(INDEX_PAGE_NAME)}</title>
+        <title>{getPageTitle(INDEX_PAGE_NAME, projectName)}</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta charset="UTF-8" />
         <script>{getLogLevelScript(logLevel)}</script>
@@ -408,7 +410,7 @@ export const indexPageRoute = app.html('/', async (ctx, req) => {
         </div>
         <HomePage
           projectName={BODY_TEXT}
-          projectTitle={getHeaderText(INDEX_PAGE_NAME)}
+          projectTitle={getHeaderText(INDEX_PAGE_NAME, projectName)}
           projectDescription={BODY_SUBTEXT}
           indexUrl={getFullUrl(ROUTES.index)}
           profileUrl={getFullUrl(ROUTES.profile)}

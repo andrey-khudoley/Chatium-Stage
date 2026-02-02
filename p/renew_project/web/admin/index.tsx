@@ -10,6 +10,7 @@ import { getAdminLogsSocketId } from '../../lib/logger.lib'
 import * as loggerLib from '../../lib/logger.lib'
 import { getFullUrl, ROUTES } from '../../config/routes'
 import { ADMIN_PAGE_NAME, getPageTitle, getHeaderText } from '../../config/project'
+import * as settingsLib from '../../lib/settings.lib'
 import { customScrollbarStyles } from '../../styles'
 
 const LOG_PATH = 'web/admin/index'
@@ -136,6 +137,7 @@ export const adminPageRoute = app.html('/', async (ctx, req) => {
   const logLevel = await getLogLevelForPage(ctx)
   const logsSocketId = getAdminLogsSocketId(ctx)
   const encodedLogsSocketId = await genSocketId(ctx, logsSocketId)
+  const projectName = await settingsLib.getSettingString(ctx, settingsLib.SETTING_KEYS.PROJECT_NAME)
 
   await loggerLib.writeServerLog(ctx, {
     severity: 6,
@@ -146,7 +148,7 @@ export const adminPageRoute = app.html('/', async (ctx, req) => {
   return (
     <html>
       <head>
-        <title>{getPageTitle(ADMIN_PAGE_NAME)}</title>
+        <title>{getPageTitle(ADMIN_PAGE_NAME, projectName)}</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta charset="UTF-8" />
         <script>{getLogLevelScript(logLevel)}</script>
@@ -169,7 +171,7 @@ export const adminPageRoute = app.html('/', async (ctx, req) => {
           </div>
         </div>
         <AdminPage
-          projectTitle={getHeaderText(ADMIN_PAGE_NAME)}
+          projectTitle={getHeaderText(ADMIN_PAGE_NAME, projectName)}
           indexUrl={indexUrl}
           profileUrl={profileUrl}
           loginUrl={loginUrl}

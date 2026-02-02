@@ -17,7 +17,6 @@
           </div>
           <h1 class="header-title">{{ projectTitle }}</h1>
         </a>
-        <span v-if="pageName" class="page-name"> - {{ pageName }}</span>
       </div>
       <div class="header-right">
         <span class="header-clock">
@@ -430,15 +429,6 @@ const cancelLogout = () => {
 @keyframes terminal-cursor-blink {
   0%, 50% { opacity: 1; }
   51%, 100% { opacity: 0; }
-}
-
-.page-name {
-  font-size: 1.125rem;
-  font-weight: 400;
-  color: var(--color-text-secondary);
-  letter-spacing: 0.08em;
-  text-shadow: 0 0 6px rgba(160, 160, 160, 0.2);
-  white-space: nowrap;
 }
 
 .header-clock {

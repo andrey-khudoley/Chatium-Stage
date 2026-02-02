@@ -1,19 +1,19 @@
-/** Название проекта (для заголовков и шапки) */
-export const PROJECT_TITLE = 'A/Ley Services'
+/** Название проекта по умолчанию (если в настройках не задано) */
+export const DEFAULT_PROJECT_TITLE = 'A/Ley Services'
 
 /** Имя страницы: для главной и профиля */
 export const INDEX_PAGE_NAME = 'Главная'
 export const PROFILE_PAGE_NAME = 'Профиль'
 export const ADMIN_PAGE_NAME = 'Админка'
 
-/** Текст для <title>: "PAGE_NAME | PROJECT_TITLE" */
-export function getPageTitle(pageName: string): string {
-  return `${pageName} | ${PROJECT_TITLE}`
+/** Текст для <title>: "Название страницы - Название из настроек" */
+export function getPageTitle(pageName: string, projectName: string): string {
+  return `${pageName} - ${projectName}`
 }
 
-/** Текст для шапки: "PROJECT_TITLE / PAGE_NAME" */
-export function getHeaderText(pageName: string): string {
-  return `${PROJECT_TITLE} / ${pageName}`
+/** Текст для шапки (h1): "Название из настроек / Название страницы" */
+export function getHeaderText(pageName: string, projectName: string): string {
+  return `${projectName} / ${pageName}`
 }
 
 /** Текст контента домашней страницы (заголовок) */
