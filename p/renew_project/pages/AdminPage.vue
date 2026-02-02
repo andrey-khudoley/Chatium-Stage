@@ -74,7 +74,7 @@ const logFilters = ref({
 
 const toggleLogFilter = (level: 'info' | 'warn' | 'error') => {
   logFilters.value[level] = !logFilters.value[level]
-  log.debug('Log filter toggled', level, logFilters.value[level])
+  log.debug('Фильтр логов переключён', level, logFilters.value[level])
 }
 
 const startAnimations = () => {
@@ -112,7 +112,7 @@ const loadProjectName = async () => {
       lastSavedProjectName.value = loaded
     }
   } catch (e) {
-    log.warn('Failed to load project name', e)
+    log.warn('Не удалось загрузить имя проекта', e)
   }
 }
 
@@ -155,7 +155,7 @@ const saveProjectName = async () => {
 }
 
 onMounted(() => {
-  log.info('Component mounted')
+  log.info('Компонент смонтирован')
   loadProjectName()
   if (window.hideAppLoader) window.hideAppLoader()
   if (window.bootLoaderComplete) {
@@ -194,7 +194,7 @@ onMounted(() => {
           }
         })
       })
-      .catch((err) => log.error('WebSocket logs subscription failed', err))
+      .catch((err) => log.error('Не удалось подписаться на логи по WebSocket', err))
   }
 })
 
@@ -218,7 +218,7 @@ onBeforeUnmount(() => {
 })
 
 onUnmounted(() => {
-  log.info('Component unmounted')
+  log.info('Компонент размонтирован')
   setLogSink(null)
   window.removeEventListener('bootloader-complete', startAnimations)
 })
@@ -227,7 +227,7 @@ const setLogLevel = async (level: 'debug' | 'info' | 'warn' | 'error' | 'disable
   const prev = logLevel.value
   logLevel.value = level
   logLevelError.value = ''
-  log.notice('Log level changed', { from: prev, to: level })
+  log.notice('Уровень логирования изменён', { from: prev, to: level })
   try {
     const res = await saveSettingRoute.run(ctx, { key: 'log_level', value: level })
     if (res && (res as { success?: boolean }).success === false) {
@@ -235,28 +235,28 @@ const setLogLevel = async (level: 'debug' | 'info' | 'warn' | 'error' | 'disable
       const errMsg = (res as { error?: string }).error || 'Ошибка сохранения'
       logLevelError.value = errMsg
       showSaveStatus(logLevelSaveStatus, logLevelStatusTimeout, 'error')
-      log.error('Failed to save log level', errMsg)
+      log.error('Не удалось сохранить уровень логирования', errMsg)
     } else {
       showSaveStatus(logLevelSaveStatus, logLevelStatusTimeout, 'saved')
-      log.info('Log level saved successfully', level)
+      log.info('Уровень логирования успешно сохранён', level)
     }
   } catch (e) {
     logLevel.value = prev
     const errMsg = (e as Error)?.message || 'Ошибка сохранения'
     logLevelError.value = errMsg
     showSaveStatus(logLevelSaveStatus, logLevelStatusTimeout, 'error')
-    log.error('Failed to save log level', errMsg)
+    log.error('Не удалось сохранить уровень логирования', errMsg)
   }
 }
 
 const resetDashboard = () => {
-  log.notice('Dashboard counters reset')
+  log.notice('Счётчики дашборда сброшены')
   errorCount.value = 0
   warnCount.value = 0
 }
 
 const openChatiumLink = () => {
-  log.notice('Opening Chatium link')
+  log.notice('Открытие ссылки Chatium')
   window.open('https://chatium.ru/?start=pl-LGBT1Oge7c61RkKTU4t0start', '_blank')
 }
 </script>
