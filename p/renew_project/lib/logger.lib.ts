@@ -101,9 +101,16 @@ export async function writeServerLog(ctx: app.Ctx, entry: ServerLogEntry): Promi
   ;(ctx.log as (msg: string, opts?: unknown) => void)(formattedMessage, logPayload)
   ctx.account.log(formattedMessage, logPayload)
 
+  const payloadForHeap =
+    entry.payload == null
+      ? null
+      : typeof entry.payload === 'string'
+        ? entry.payload
+        : JSON.stringify(entry.payload)
+
   await logsRepo.create(ctx, {
     message: entry.message,
-    payload: entry.payload ?? null,
+    payload: payloadForHeap,
     severity: entry.severity,
     level,
     timestamp

@@ -2,6 +2,8 @@
 import { requireAnyUser } from '@app/auth'
 import * as loggerLib from '../../lib/logger.lib'
 
+const LOG_PATH = 'api/logger/log'
+
 /**
  * POST /api/logger/log — записать серверный лог.
  * Body: { message (обязательно), severity? (0–7, по умолчанию 6), payload? (JSON с контекстом) }.
@@ -13,6 +15,12 @@ import * as loggerLib from '../../lib/logger.lib'
 export const logRoute = app.post('/', async (ctx, req) => {
   requireAnyUser(ctx)
 
+  await loggerLib.writeServerLog(ctx, {
+    severity: 7,
+    message: `[${LOG_PATH}] Получен запрос на запись лога`,
+    payload: { bodyKeys: req.body ? Object.keys(req.body as object) : [] }
+  })
+
   const body = req.body as { severity?: unknown; message?: unknown; payload?: unknown }
 
   const severity =
@@ -23,6 +31,11 @@ export const logRoute = app.post('/', async (ctx, req) => {
   const payload = body?.payload
 
   if (!message) {
+    await loggerLib.writeServerLog(ctx, {
+      severity: 4,
+      message: `[${LOG_PATH}] Валидация не пройдена: отсутствует message`,
+      payload: { bodyKeys: body ? Object.keys(body) : [] }
+    })
     return { success: false, error: 'Поле message обязательно' }
   }
 
@@ -30,9 +43,10 @@ export const logRoute = app.post('/', async (ctx, req) => {
     await loggerLib.writeServerLog(ctx, { severity, message, payload })
     return { success: true }
   } catch (error) {
-    ctx.account.log('Error writing server log', {
-      level: 'error',
-      json: { error: String(error) }
+    await loggerLib.writeServerLog(ctx, {
+      severity: 3,
+      message: `[${LOG_PATH}] Ошибка записи лога`,
+      payload: { error: String(error), message }
     })
     return { success: false, error: String(error) }
   }

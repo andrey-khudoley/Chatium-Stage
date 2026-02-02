@@ -11,8 +11,17 @@ import {
   getPageTitle,
   getHeaderText
 } from './config/project'
+import * as loggerLib from './lib/logger.lib'
+
+const LOG_PATH = 'index'
 
 export const indexPageRoute = app.html('/', async (ctx, req) => {
+  await loggerLib.writeServerLog(ctx, {
+    severity: 7,
+    message: `[${LOG_PATH}] Рендер главной страницы`,
+    payload: { hasUser: !!ctx.user, isAdmin: ctx.user?.is?.('Admin') ?? false }
+  })
+
   const isAuthenticated = !!ctx.user
   const isAdmin = ctx.user?.is('Admin') ?? false
   const loginUrl = getFullUrl(ROUTES.login)

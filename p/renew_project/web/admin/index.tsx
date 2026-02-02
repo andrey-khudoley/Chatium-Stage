@@ -7,8 +7,11 @@ import { loginPageRoute } from '../login'
 import { getPreloaderStyles, getPreloaderScript } from '../../shared/preloader'
 import { getLogLevelForPage, getLogLevelScript } from '../../shared/logLevel'
 import { getAdminLogsSocketId } from '../../lib/logger.lib'
+import * as loggerLib from '../../lib/logger.lib'
 import { getFullUrl, ROUTES } from '../../config/routes'
 import { ADMIN_PAGE_NAME, getPageTitle, getHeaderText } from '../../config/project'
+
+const LOG_PATH = 'web/admin/index'
 
 const adminPageStyles = `
   html { margin: 0; padding: 0; background: #0a0a0a; }
@@ -92,9 +95,20 @@ const adminPageStyles = `
 `
 
 export const adminPageRoute = app.html('/', async (ctx, req) => {
+  await loggerLib.writeServerLog(ctx, {
+    severity: 7,
+    message: `[${LOG_PATH}] Запрос страницы админки`,
+    payload: { hasUser: !!ctx.user }
+  })
+
   try {
     requireAccountRole(ctx, 'Admin')
   } catch (error) {
+    await loggerLib.writeServerLog(ctx, {
+      severity: 4,
+      message: `[${LOG_PATH}] Редирект на логин: требуется роль Admin`,
+      payload: { error: String(error), backUrl: req.url }
+    })
     const loginUrl = loginPageRoute.url() + `?back=${encodeURIComponent(req.url)}`
     return (
       <html>
@@ -121,6 +135,12 @@ export const adminPageRoute = app.html('/', async (ctx, req) => {
   const logLevel = await getLogLevelForPage(ctx)
   const logsSocketId = getAdminLogsSocketId(ctx)
   const encodedLogsSocketId = await genSocketId(ctx, logsSocketId)
+
+  await loggerLib.writeServerLog(ctx, {
+    severity: 6,
+    message: `[${LOG_PATH}] Рендер страницы админки`,
+    payload: { logLevel, logsSocketId }
+  })
 
   return (
     <html>

@@ -1,6 +1,9 @@
 // @shared-route
 import { requireAccountRole } from '@app/auth'
 import * as settingsLib from '../../lib/settings.lib'
+import * as loggerLib from '../../lib/logger.lib'
+
+const LOG_PATH = 'api/settings/save'
 
 /** Маппинг числовых уровней: -1 = логи выключены, 0 = Disable, 1 = Info, 2 = Warn, 3 = Error, 4 = Debug. */
 const LOG_LEVEL_BY_NUMBER: Record<number, string> = {
@@ -30,11 +33,22 @@ function normalizeLogLevelValue(value: unknown): string {
 export const saveSettingRoute = app.post('/', async (ctx, req) => {
   requireAccountRole(ctx, 'Admin')
 
+  await loggerLib.writeServerLog(ctx, {
+    severity: 7,
+    message: `[${LOG_PATH}] Получен запрос на сохранение настройки`,
+    payload: { bodyKeys: req.body ? Object.keys(req.body as object) : [] }
+  })
+
   const body = req.body as { key?: unknown; value?: unknown }
   const key = typeof body?.key === 'string' ? body.key.trim() : ''
   let value = body?.value
 
   if (!key) {
+    await loggerLib.writeServerLog(ctx, {
+      severity: 4,
+      message: `[${LOG_PATH}] Валидация не пройдена: отсутствует key`,
+      payload: { bodyKeys: body ? Object.keys(body) : [] }
+    })
     return { success: false, error: 'Поле key обязательно' }
   }
 
@@ -45,11 +59,17 @@ export const saveSettingRoute = app.post('/', async (ctx, req) => {
   try {
     await settingsLib.setSetting(ctx, key, value)
     const saved = await settingsLib.getSetting(ctx, key)
+    await loggerLib.writeServerLog(ctx, {
+      severity: 6,
+      message: `[${LOG_PATH}] Настройка сохранена`,
+      payload: { key, value: saved }
+    })
     return { success: true, key, value: saved }
   } catch (error) {
-    ctx.account.log('Error saving setting', {
-      level: 'error',
-      json: { key, error: String(error) }
+    await loggerLib.writeServerLog(ctx, {
+      severity: 3,
+      message: `[${LOG_PATH}] Ошибка сохранения настройки`,
+      payload: { key, error: String(error) }
     })
     return { success: false, error: String(error) }
   }

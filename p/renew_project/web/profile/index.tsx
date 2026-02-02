@@ -4,14 +4,28 @@ import { requireRealUser } from '@app/auth'
 import ProfilePage from '../../pages/ProfilePage.vue'
 import { getPreloaderStyles, getPreloaderScript } from '../../shared/preloader'
 import { getLogLevelForPage, getLogLevelScript } from '../../shared/logLevel'
+import * as loggerLib from '../../lib/logger.lib'
 import { getFullUrl, ROUTES } from '../../config/routes'
 import { PROFILE_PAGE_NAME, getPageTitle, getHeaderText } from '../../config/project'
 
+const LOG_PATH = 'web/profile/index'
+
 export const profilePageRoute = app.html('/', async (ctx, req) => {
+  await loggerLib.writeServerLog(ctx, {
+    severity: 7,
+    message: `[${LOG_PATH}] Запрос страницы профиля`,
+    payload: { hasUser: !!ctx.user }
+  })
+
   let user
   try {
     user = requireRealUser(ctx)
   } catch (error: unknown) {
+    await loggerLib.writeServerLog(ctx, {
+      severity: 4,
+      message: `[${LOG_PATH}] Редирект на логин: требуется авторизация`,
+      payload: { error: String(error), backUrl: req.url }
+    })
     return ctx.resp.redirect('../login?back=' + encodeURIComponent(req.url))
   }
 
@@ -19,6 +33,12 @@ export const profilePageRoute = app.html('/', async (ctx, req) => {
   const adminUrl = isAdmin ? getFullUrl(ROUTES.admin) : ''
   const loginUrl = getFullUrl(ROUTES.login)
   const logLevel = await getLogLevelForPage(ctx)
+
+  await loggerLib.writeServerLog(ctx, {
+    severity: 6,
+    message: `[${LOG_PATH}] Рендер страницы профиля`,
+    payload: { isAdmin, displayName: user.displayName }
+  })
 
   return (
     <html>

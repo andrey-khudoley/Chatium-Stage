@@ -15,6 +15,7 @@
 - `./shared/logLevel` → `getLogLevelForPage`, `getLogLevelScript`
 - `./config/routes` → `getFullUrl`, `ROUTES`
 - `./config/project` → `INDEX_PAGE_NAME`, `BODY_TEXT`, `BODY_SUBTEXT`, `getPageTitle`, `getHeaderText`
+- `./lib/logger.lib` → `*`
 
 ### `./web/admin/index.tsx`
 - `@app/html-jsx` → `jsx`
@@ -24,7 +25,7 @@
 - `../login` → `loginPageRoute`
 - `../../shared/preloader` → `getPreloaderStyles`, `getPreloaderScript`
 - `../../shared/logLevel` → `getLogLevelForPage`, `getLogLevelScript`
-- `../../lib/logger.lib` → `getAdminLogsSocketId`
+- `../../lib/logger.lib` → `getAdminLogsSocketId`, `writeServerLog` (и др.)
 - `../../config/routes` → `getFullUrl`, `ROUTES`
 - `../../config/project` → `ADMIN_PAGE_NAME`, `getPageTitle`, `getHeaderText`
 
@@ -34,6 +35,7 @@
 - `../../pages/ProfilePage.vue`
 - `../../shared/preloader` → `getPreloaderStyles`, `getPreloaderScript`
 - `../../shared/logLevel` → `getLogLevelForPage`, `getLogLevelScript`
+- `../../lib/logger.lib` → `*`
 - `../../config/routes` → `getFullUrl`, `ROUTES`
 - `../../config/project` → `PROFILE_PAGE_NAME`, `getPageTitle`, `getHeaderText`
 
@@ -42,6 +44,7 @@
 - `../../pages/LoginPage.vue`
 - `../../styles`
 - `../../config/routes`
+- `../../lib/logger.lib` → `*`
 
 ## 2) Страницы‑компоненты (Vue)
 
@@ -98,6 +101,7 @@
 
 ### `./shared/logLevel.ts`
 - `../lib/settings.lib` → `getLogLevel`, `LogLevel`
+- `../lib/logger.lib` → `*`
 
 ### `./shared/logger.ts`
 - нет импортов (клиентский логгер по syslog RFC 5424: severity -1…7, LOG_LEVEL_OFF=-1, читает window.__BOOT__.logLevel; createComponentLogger, setLogSink, LogEntry)
@@ -134,14 +138,17 @@
 ### `./api/settings/list.ts`
 - `@app/auth` → `requireAccountRole`
 - `../../lib/settings.lib` → `*`
+- `../../lib/logger.lib` → `*`
 
 ### `./api/settings/get.ts`
 - `@app/auth` → `requireAccountRole`
 - `../../lib/settings.lib` → `*`
+- `../../lib/logger.lib` → `*`
 
 ### `./api/settings/save.ts`
 - `@app/auth` → `requireAccountRole`
 - `../../lib/settings.lib` → `*`
+- `../../lib/logger.lib` → `*`
 
 ### `./api/logger/log.ts`
 - `@app/auth` → `requireAnyUser`

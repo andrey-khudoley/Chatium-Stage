@@ -1,11 +1,20 @@
 import { getLogLevel, type LogLevel } from '../lib/settings.lib'
+import * as loggerLib from '../lib/logger.lib'
+
+const LOG_PATH = 'shared/logLevel'
 
 /**
  * Получить уровень логирования для страницы (при серверной генерации).
  * Валидация выполняется в settings.lib.
  */
 export async function getLogLevelForPage(ctx: app.Ctx): Promise<LogLevel> {
-  return getLogLevel(ctx)
+  const level = await getLogLevel(ctx)
+  await loggerLib.writeServerLog(ctx, {
+    severity: 7,
+    message: `[${LOG_PATH}] getLogLevelForPage: уровень получен`,
+    payload: { level }
+  })
+  return level
 }
 
 /**
