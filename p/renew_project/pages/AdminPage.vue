@@ -49,7 +49,7 @@ const logLevelSaveStatus = ref<'saved' | 'error' | null>(null)
 const logLevelStatusTimeout = { id: null as ReturnType<typeof setTimeout> | null }
 
 const SAVE_STATUS_DURATION_MS = 1500
-const INPUT_DEBOUNCE_MS = 2000
+const INPUT_DEBOUNCE_MS = 300
 
 function showSaveStatus(
   statusRef: { value: 'saved' | 'error' | null },
@@ -513,7 +513,6 @@ const clearLogs = () => {
                   v-model="projectName"
                   type="text"
                   class="settings-input"
-                  :disabled="projectNameLoading"
                 />
               </div>
             </div>
