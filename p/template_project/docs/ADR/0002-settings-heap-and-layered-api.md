@@ -10,7 +10,7 @@
 
 ### 1. Настройки в Heap (key-value)
 
-Создана таблица `t__renew-project__setting__7Fk2Qw` с полями:
+Создана таблица `t__template-project__setting__7Fk2Qw` с полями:
 - `key` (string) — ключ настройки;
 - `value` (Heap.Any) — значение любого типа.
 

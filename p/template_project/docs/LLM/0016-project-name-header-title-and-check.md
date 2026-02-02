@@ -68,7 +68,7 @@
 
 ### Ассистент
 
-Выполнены проверки оркестратора по затронутому файлу `p/renew_project/pages/AdminPage.vue`.
+Выполнены проверки оркестратора по затронутому файлу `p/template_project/pages/AdminPage.vue`.
 
 **standards-checker:** Затронуты только константа INPUT_DEBOUNCE_MS (2000→300) и атрибут :disabled у input. Отступы, кавычки, структура — без нарушений 001-standards.md. Проверка стандартов пройдена.
 

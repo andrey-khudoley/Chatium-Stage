@@ -8,7 +8,7 @@
 
 ### Пользователь
 
-Как сейчас реализованы настройки проекта @p/renew_project?
+Как сейчас реализованы настройки проекта @p/template_project?
 
 ### Ассистент
 
@@ -38,17 +38,17 @@
 
 ### Пользователь
 
-@p/renew_project/tables/settings.table.ts:3 измени ключ таблицы на t__renew-project__setting__(глобально уникальный хэш).
+@p/template_project/tables/settings.table.ts:3 измени ключ таблицы на t__template-project__setting__(глобально уникальный хэш).
 
 ### Ассистент
 
-Ключ таблицы изменён на t__renew-project__setting__7Fk2Qw.
+Ключ таблицы изменён на t__template-project__setting__7Fk2Qw.
 
 ---
 
 ### Пользователь
 
-@p/renew_project/repos/settings.repo.ts:1-24 проверь, что это полностью соответствует документации heap @Chatium.
+@p/template_project/repos/settings.repo.ts:1-24 проверь, что это полностью соответствует документации heap @Chatium.
 
 ### Ассистент
 
@@ -78,7 +78,7 @@
 
 ### Пользователь
 
-Давай изменим всё таким образом, чтобы сохранить file-based структуру. @p/renew_project/api/settings.ts поместим в каталог settings и разобьём на три эндпоинта, чтобы в каждом было по одному эндпоинту с "/". Отразим это в документации проекта и в @inner/docs.
+Давай изменим всё таким образом, чтобы сохранить file-based структуру. @p/template_project/api/settings.ts поместим в каталог settings и разобьём на три эндпоинта, чтобы в каждом было по одному эндпоинту с "/". Отразим это в документации проекта и в @inner/docs.
 
 ### Ассистент
 

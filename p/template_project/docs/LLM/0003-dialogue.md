@@ -6,7 +6,7 @@
 
 ## 1. Лишний отступ сверху на странице профиля
 
-**Запрос:** На странице сверху отступ лишний. Выше хэдера. Надо пофиксить. https://s.chtm.aley.pro/p/renew_project/web/profile
+**Запрос:** На странице сверху отступ лишний. Выше хэдера. Надо пофиксить. https://s.chtm.aley.pro/p/template_project/web/profile
 
 **Сделано:**
 - В `web/profile/index.tsx`: для `html` добавлены `margin: 0` и `padding: 0` (помимо `background`); для `body` добавлен `padding: 0`.

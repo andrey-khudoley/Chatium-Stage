@@ -71,10 +71,10 @@ export async function findBeforeTimestamp(
 Выполни финальную проверку кода оркестратором согласно инструкциям в `.cursor/agents/orchestrator.md`.
 
 Затронутые файлы в последних изменениях:
-- `p/renew_project/repos/logs.repo.ts` — оптимизирована функция `findBeforeTimestamp` (теперь использует `where: { timestamp: { $lt } }`)
-- `p/renew_project/docs/data.md` — обновлено описание
-- `p/renew_project/README.md` — добавлена запись в Changelog об оптимизации
-- `p/renew_project/docs/LLM/0013-heap-filtering-optimization.md` — новый файл с описанием оптимизации
+- `p/template_project/repos/logs.repo.ts` — оптимизирована функция `findBeforeTimestamp` (теперь использует `where: { timestamp: { $lt } }`)
+- `p/template_project/docs/data.md` — обновлено описание
+- `p/template_project/README.md` — добавлена запись в Changelog об оптимизации
+- `p/template_project/docs/LLM/0013-heap-filtering-optimization.md` — новый файл с описанием оптимизации
 
 Контекст: после первой проверки была выявлена рекомендация по оптимизации `findBeforeTimestamp`. Изучена документация `inner/qna/006-heap-filtering.md`, выяснено что Heap API поддерживает операторы `$lt`, `$lte`, `$gt`, `$gte`. Функция переписана на использование нативной фильтрации.
 
@@ -135,13 +135,13 @@ export async function findBeforeTimestamp(
 ### Ассистент
 
 Начата проверка кода через оркестратора. Определены затронутые файлы через git diff:
-- `p/renew_project/README.md`
-- `p/renew_project/docs/api.md`
-- `p/renew_project/docs/architecture.md`
-- `p/renew_project/docs/data.md`
-- `p/renew_project/docs/imports.md`
-- `p/renew_project/pages/AdminPage.vue`
-- `p/renew_project/repos/logs.repo.ts`
+- `p/template_project/README.md`
+- `p/template_project/docs/api.md`
+- `p/template_project/docs/architecture.md`
+- `p/template_project/docs/data.md`
+- `p/template_project/docs/imports.md`
+- `p/template_project/pages/AdminPage.vue`
+- `p/template_project/repos/logs.repo.ts`
 - `api/admin/logs/before.ts` (новый файл)
 - `api/admin/logs/recent.ts` (новый файл)
 - `docs/LLM/0012-logs-pagination.md` (новый файл)

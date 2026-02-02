@@ -6,11 +6,11 @@
 ## Запрос пользователя
 
 Пользователь запросил выполнение проверки кода оркестратором для следующих файлов:
-- `p/renew_project/repos/logs.repo.ts` — добавлена функция `findBeforeTimestamp`
-- `p/renew_project/api/admin/logs/recent.ts` — новый файл, GET эндпоинт
-- `p/renew_project/api/admin/logs/before.ts` — новый файл, GET эндпоинт
-- `p/renew_project/pages/AdminPage.vue` — добавлены функции загрузки логов, новые UI элементы
-- `p/renew_project/docs/api.md` — обновлена документация
+- `p/template_project/repos/logs.repo.ts` — добавлена функция `findBeforeTimestamp`
+- `p/template_project/api/admin/logs/recent.ts` — новый файл, GET эндпоинт
+- `p/template_project/api/admin/logs/before.ts` — новый файл, GET эндпоинт
+- `p/template_project/pages/AdminPage.vue` — добавлены функции загрузки логов, новые UI элементы
+- `p/template_project/docs/api.md` — обновлена документация
 
 ## Выполненные проверки
 
@@ -109,7 +109,7 @@
 
 ### Критичность: Средняя
 
-**Файл:** `p/renew_project/repos/logs.repo.ts`  
+**Файл:** `p/template_project/repos/logs.repo.ts`  
 **Функция:** `findBeforeTimestamp`
 
 **Проблема:**

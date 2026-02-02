@@ -5,12 +5,12 @@
 ---
 
 Внимательно изучи документацию в разделе /docs/.
-В полном соответствии с документацией создай базовую структуру проекта в каталоге /inner/samples/renew_project/
-Реализуй в новом проекте индекс-страницу (пока пустую) и админку (пока пустую) с авторизацией (странией профиля пользователя и страницей логина). Очень важно, чтобы дизайн и анимации всех страниц полностью совпадали с дизайном проекта /inner/samples/renew_project/.
+В полном соответствии с документацией создай базовую структуру проекта в каталоге /inner/samples/template_project/
+Реализуй в новом проекте индекс-страницу (пока пустую) и админку (пока пустую) с авторизацией (странией профиля пользователя и страницей логина). Очень важно, чтобы дизайн и анимации всех страниц полностью совпадали с дизайном проекта /inner/samples/template_project/.
 
 ---
 
-Создал базовую структуру в inner/samples/renew_project/, вынес единый стиль фона и подключение Clarity во все страницы, добавил маршруты index/admin/profile/login с проверками авторизации и редиректом на страницу логина, а также минимальные Vue‑страницы (index/admin пустые, profile/login — рабочие заготовки). Дизайн и анимации совпадают с текущим стилем проекта за счёт общего styles.tsx.
+Создал базовую структуру в inner/samples/template_project/, вынес единый стиль фона и подключение Clarity во все страницы, добавил маршруты index/admin/profile/login с проверками авторизации и редиректом на страницу логина, а также минимальные Vue‑страницы (index/admin пустые, profile/login — рабочие заготовки). Дизайн и анимации совпадают с текущим стилем проекта за счёт общего styles.tsx.
 
 Изменено/добавлено:
 
@@ -28,7 +28,7 @@ tsconfig.json
 vue-shim.d.ts
 jsx.d.ts
 imports.md
-inner/samples/renew_project/docs/LLM/.gitkeep
+inner/samples/template_project/docs/LLM/.gitkeep
 Тесты не запускал.
 
 Если хочешь продолжить, могу:
@@ -41,31 +41,31 @@ inner/samples/renew_project/docs/LLM/.gitkeep
 Отменить
 
 Проверить
-inner/samples/renew_project/admin.tsx
-inner/samples/renew_project/config/routes.tsx
-inner/samples/renew_project/docs/LLM/.gitkeep
-inner/samples/renew_project/docs/imports.md
-inner/samples/renew_project/index.tsx
-inner/samples/renew_project/jsx.d.ts
-inner/samples/renew_project/login.tsx
-inner/samples/renew_project/pages/AdminPage.vue
-inner/samples/renew_project/pages/HomePage.vue
-inner/samples/renew_project/pages/LoginPage.vue
-inner/samples/renew_project/pages/ProfilePage.vue
-inner/samples/renew_project/profile.tsx
-inner/samples/renew_project/styles.tsx
-inner/samples/renew_project/tsconfig.json
-inner/samples/renew_project/vue-shim.d.ts
+inner/samples/template_project/admin.tsx
+inner/samples/template_project/config/routes.tsx
+inner/samples/template_project/docs/LLM/.gitkeep
+inner/samples/template_project/docs/imports.md
+inner/samples/template_project/index.tsx
+inner/samples/template_project/jsx.d.ts
+inner/samples/template_project/login.tsx
+inner/samples/template_project/pages/AdminPage.vue
+inner/samples/template_project/pages/HomePage.vue
+inner/samples/template_project/pages/LoginPage.vue
+inner/samples/template_project/pages/ProfilePage.vue
+inner/samples/template_project/profile.tsx
+inner/samples/template_project/styles.tsx
+inner/samples/template_project/tsconfig.json
+inner/samples/template_project/vue-shim.d.ts
 
 ---
 
-Отлично. Я перенёс проект в /p/renew_project/.
+Отлично. Я перенёс проект в /p/template_project/.
 Теперь добавь к нему структуру каталогов, описанную в стандартах архитектуры в /docs/, а также, минимально, файлы.
 Также создай каталоги для документации и положи сами файлы (без воды), чтобы было понятно, что и где заполнять.
 
 ---
 
-Добавил архитектурные каталоги в /p/renew_project с минимальными файлами‑заглушками, создал документацию (без воды) и обновил PROJECT_ROOT под новое расположение проекта.
+Добавил архитектурные каталоги в /p/template_project с минимальными файлами‑заглушками, создал документацию (без воды) и обновил PROJECT_ROOT под новое расположение проекта.
 
 Что сделано
 
@@ -84,13 +84,13 @@ run.md
 000-template.md
 README.md
 .CHATIUM-LLM.md
-p/renew_project/api/.gitkeep
-p/renew_project/components/.gitkeep
-p/renew_project/lib/.gitkeep
-p/renew_project/shared/.gitkeep
-p/renew_project/tables/.gitkeep
-p/renew_project/web/.gitkeep
-p/renew_project/docs/adr/.gitkeep
+p/template_project/api/.gitkeep
+p/template_project/components/.gitkeep
+p/template_project/lib/.gitkeep
+p/template_project/shared/.gitkeep
+p/template_project/tables/.gitkeep
+p/template_project/web/.gitkeep
+p/template_project/docs/adr/.gitkeep
 Тесты не запускал.
 
 Если хочешь продолжить:
@@ -103,14 +103,14 @@ p/renew_project/docs/adr/.gitkeep
 Отменить
 
 Проверить
-p/renew_project/.CHATIUM-LLM.md
-p/renew_project/config/routes.tsx
-p/renew_project/docs/LLM/README.md
-p/renew_project/docs/adr/000-template.md
-p/renew_project/docs/api.md
-p/renew_project/docs/architecture.md
-p/renew_project/docs/data.md
-p/renew_project/docs/run.md
+p/template_project/.CHATIUM-LLM.md
+p/template_project/config/routes.tsx
+p/template_project/docs/LLM/README.md
+p/template_project/docs/adr/000-template.md
+p/template_project/docs/api.md
+p/template_project/docs/architecture.md
+p/template_project/docs/data.md
+p/template_project/docs/run.md
 
 ---
 
@@ -153,7 +153,7 @@ run.md
 
 Если хочешь продолжить:
 
-Синхронизировать /inner/samples/renew_project с /p/renew_project или удалить старую копию.
+Синхронизировать /inner/samples/template_project с /p/template_project или удалить старую копию.
 Заполнить README более конкретными задачами и первыми feature‑планами.
 Изменено 14 файлов
 +257
@@ -163,15 +163,15 @@ run.md
 Проверить
 inner/docs/000-summ.md
 inner/docs/024-project-docs.md
-p/renew_project/.CHATIUM-LLM.md
-p/renew_project/README.md
-p/renew_project/docs/ADR/.gitkeep
-p/renew_project/docs/ADR/000-template.md
-p/renew_project/docs/ADR/0001-initial-structure.md
-p/renew_project/docs/LLM/.gitkeep
-p/renew_project/docs/LLM/0001-initial.md
-p/renew_project/docs/LLM/README.md
-p/renew_project/docs/api.md
-p/renew_project/docs/architecture.md
-p/renew_project/docs/data.md
-p/renew_project/docs/run.md
+p/template_project/.CHATIUM-LLM.md
+p/template_project/README.md
+p/template_project/docs/ADR/.gitkeep
+p/template_project/docs/ADR/000-template.md
+p/template_project/docs/ADR/0001-initial-structure.md
+p/template_project/docs/LLM/.gitkeep
+p/template_project/docs/LLM/0001-initial.md
+p/template_project/docs/LLM/README.md
+p/template_project/docs/api.md
+p/template_project/docs/architecture.md
+p/template_project/docs/data.md
+p/template_project/docs/run.md

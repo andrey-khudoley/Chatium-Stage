@@ -1,12 +1,12 @@
 # LLM 0002 — диалог: структура проекта, роуты, дубликаты, исправления
 
-История переписки с агентом по приведению структуры p/renew_project в соответствие с документацией Chatium, удалению дубликатов и исправлению ошибок.
+История переписки с агентом по приведению структуры p/template_project в соответствие с документацией Chatium, удалению дубликатов и исправлению ошибок.
 
 ---
 
 ## 1. Восстановление структуры каталогов по документации Chatium
 
-**Запрос:** Структура проекта @p/renew_project отличается от документации @Chatium. Восстановить правильную структуру каталогов и путей.
+**Запрос:** Структура проекта @p/template_project отличается от документации @Chatium. Восстановить правильную структуру каталогов и путей.
 
 **Сделано:**
 - По документации и ADR: `components/` — переиспользуемые Vue-компоненты, `shared/` — общий код (утилиты).
@@ -34,7 +34,7 @@
 
 **Сделано:**
 - В `config/routes.tsx`: `ROUTES.admin` → `'./web/admin'`, `ROUTE_PATHS.admin` → `'/web/admin'`.
-- Ссылки на админку ведут на `/p/renew_project/web/admin`.
+- Ссылки на админку ведут на `/p/template_project/web/admin`.
 
 ---
 
@@ -103,8 +103,8 @@
 
 **Сделано:**
 - Удалены из `shared/`: AppFooter.vue, Header.vue, GlobalGlitch.vue, LogoutModal.vue. Оставлены `preloader.ts` и `.gitkeep`.
-- Выведено дерево p/renew_project.
-- Отмечены аномалии: устаревший путь в `.dir.json` (`inner/samples/renew_project/`), в `docs/LLM/0001-initial.md` — старые имена файлов роутов.
+- Выведено дерево p/template_project.
+- Отмечены аномалии: устаревший путь в `.dir.json` (`inner/samples/template_project/`), в `docs/LLM/0001-initial.md` — старые имена файлов роутов.
 
 ---
 
@@ -113,7 +113,7 @@
 **Запрос:** Исправь обе проблемы.
 
 **Сделано:**
-- `.dir.json`: `"name": "[INWORK] inner/samples/renew_project/"` заменён на `"name": "[INWORK] p/renew_project"`.
+- `.dir.json`: `"name": "[INWORK] inner/samples/template_project/"` заменён на `"name": "[INWORK] p/template_project"`.
 - `docs/LLM/0001-initial.md`: в начало добавлено примечание об актуальной структуре роутов (web/admin/index.tsx, web/profile/index.tsx, web/login/index.tsx; в корне только index.tsx).
 
 ---
@@ -130,7 +130,7 @@
 
 ---
 
-**Итог сессии:** структура p/renew_project приведена к 006-arch (корень — только index.tsx; web/admin, web/profile, web/login в каталогах с index.tsx; компоненты в components/, общий код в shared/); дубликаты из shared/ удалены; исправлены именование события chatium-click, метаданные .dir.json и примечание в 0001-initial.md; дано объяснение и решение для ошибки tsconfig по удалённому shared/GlobalGlitch.vue.
+**Итог сессии:** структура p/template_project приведена к 006-arch (корень — только index.tsx; web/admin, web/profile, web/login в каталогах с index.tsx; компоненты в components/, общий код в shared/); дубликаты из shared/ удалены; исправлены именование события chatium-click, метаданные .dir.json и примечание в 0001-initial.md; дано объяснение и решение для ошибки tsconfig по удалённому shared/GlobalGlitch.vue.
 
 ---
 
