@@ -390,6 +390,14 @@ const loadMoreLogs = async () => {
     logsLoading.value = false
   }
 }
+
+const clearLogs = () => {
+  logEntries.value = []
+  oldestLogTimestamp.value = Date.now()
+  logsHasMore.value = true
+  logsError.value = ''
+  log.debug('Логи очищены, таймштамп сдвинут на текущий — «Загрузить ещё 50» восстановит последние')
+}
 </script>
 
 <template>
@@ -594,15 +602,25 @@ const loadMoreLogs = async () => {
                 Загрузка логов...
               </div>
               <p v-if="logsError" class="logs-error">{{ logsError }}</p>
-              <button
-                v-if="logsHasMore && !logsLoading"
-                type="button"
-                class="load-more-btn"
-                @click="loadMoreLogs"
-              >
-                <i class="fas fa-arrow-down"></i>
-                Загрузить ещё 50
-              </button>
+              <div class="logs-action-row">
+                <button
+                  v-if="logsHasMore && !logsLoading"
+                  type="button"
+                  class="load-more-btn"
+                  @click="loadMoreLogs"
+                >
+                  <i class="fas fa-arrow-down"></i>
+                  Загрузить ещё 50
+                </button>
+                <button
+                  type="button"
+                  class="logs-clear-btn"
+                  title="Очистить логи"
+                  @click="clearLogs"
+                >
+                  <i class="fas fa-trash-alt"></i>
+                </button>
+              </div>
             </div>
           </div>
         </section>
@@ -1086,6 +1104,44 @@ const loadMoreLogs = async () => {
   flex-direction: column;
   gap: 0.75rem;
   margin-top: 1rem;
+}
+
+.logs-action-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.logs-action-row .load-more-btn {
+  flex: 1;
+  min-width: 0;
+  margin-right: auto;
+}
+
+.logs-clear-btn {
+  flex-shrink: 0;
+  width: 2.75rem;
+  height: 2.75rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  font-size: 1rem;
+  color: var(--color-text-secondary);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.logs-clear-btn:hover {
+  color: #fff;
+  background: #e74c3c;
+  border-color: #e74c3c;
+  box-shadow: 0 0 12px rgba(231, 76, 60, 0.3);
 }
 
 .logs-loading {
