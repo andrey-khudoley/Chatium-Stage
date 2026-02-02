@@ -2,6 +2,7 @@
 import { jsx } from '@app/html-jsx'
 import HomePage from './pages/HomePage.vue'
 import { getPreloaderStyles, getPreloaderScript } from './shared/preloader'
+import { customScrollbarStyles } from './styles'
 import { getLogLevelForPage, getLogLevelScript } from './shared/logLevel'
 import { getFullUrl, ROUTES } from './config/routes'
 import {
@@ -393,6 +394,8 @@ export const indexPageRoute = app.html('/', async (ctx, req) => {
             background: #e0335a;
             color: #ffffff;
           }
+
+          ${customScrollbarStyles}
         `}</style>
       </head>
       <body>

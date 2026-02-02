@@ -12,6 +12,7 @@
 - `@app/html-jsx` → `jsx`
 - `./pages/HomePage.vue`
 - `./shared/preloader` → `getPreloaderStyles`, `getPreloaderScript`
+- `./styles` → `customScrollbarStyles`
 - `./shared/logLevel` → `getLogLevelForPage`, `getLogLevelScript`
 - `./config/routes` → `getFullUrl`, `ROUTES`
 - `./config/project` → `INDEX_PAGE_NAME`, `BODY_TEXT`, `BODY_SUBTEXT`, `getPageTitle`, `getHeaderText`
@@ -25,6 +26,7 @@
 - `../login` → `loginPageRoute`
 - `../../shared/preloader` → `getPreloaderStyles`, `getPreloaderScript`
 - `../../shared/logLevel` → `getLogLevelForPage`, `getLogLevelScript`
+- `../../styles` → `customScrollbarStyles`
 - `../../lib/logger.lib` → `getAdminLogsSocketId`, `writeServerLog` (и др.)
 - `../../config/routes` → `getFullUrl`, `ROUTES`
 - `../../config/project` → `ADMIN_PAGE_NAME`, `getPageTitle`, `getHeaderText`
@@ -35,6 +37,7 @@
 - `../../pages/ProfilePage.vue`
 - `../../shared/preloader` → `getPreloaderStyles`, `getPreloaderScript`
 - `../../shared/logLevel` → `getLogLevelForPage`, `getLogLevelScript`
+- `../../styles` → `customScrollbarStyles`
 - `../../lib/logger.lib` → `*`
 - `../../config/routes` → `getFullUrl`, `ROUTES`
 - `../../config/project` → `PROFILE_PAGE_NAME`, `getPageTitle`, `getHeaderText`
@@ -42,8 +45,8 @@
 ### `./web/login/index.tsx`
 - `@app/html-jsx` → `jsx`
 - `../../pages/LoginPage.vue`
-- `../../styles`
-- `../../config/routes`
+- `../../styles` → `baseHtmlStyles`, `customScrollbarStyles`
+- `../../config/routes` → `PROJECT_ROOT`
 - `../../lib/logger.lib` → `*`
 
 ## 2) Страницы‑компоненты (Vue)
@@ -98,6 +101,9 @@
 - `../shared/logger` → `createComponentLogger`
 
 ## 4) Shared (общий код)
+
+### `./styles.tsx`
+- нет внутренних импортов (только экспорт `baseHtmlStyles`, `customScrollbarStyles`)
 
 ### `./shared/preloader.ts`
 - нет импортов

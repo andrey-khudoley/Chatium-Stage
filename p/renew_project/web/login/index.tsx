@@ -1,7 +1,7 @@
 // @shared
 import { jsx } from '@app/html-jsx'
 import LoginPage from '../../pages/LoginPage.vue'
-import { baseHtmlStyles } from '../../styles'
+import { baseHtmlStyles, customScrollbarStyles } from '../../styles'
 import { PROJECT_ROOT } from '../../config/routes'
 import * as loggerLib from '../../lib/logger.lib'
 
@@ -24,6 +24,7 @@ export const loginPageRoute = app.html('/', async (ctx, req) => {
         <meta charset="UTF-8" />
         <script src="/s/metric/clarity.js"></script>
         <style>{baseHtmlStyles}</style>
+        <style>{customScrollbarStyles}</style>
       </head>
       <body>
         <LoginPage back={back} />

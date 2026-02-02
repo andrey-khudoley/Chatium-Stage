@@ -10,6 +10,7 @@ import { getAdminLogsSocketId } from '../../lib/logger.lib'
 import * as loggerLib from '../../lib/logger.lib'
 import { getFullUrl, ROUTES } from '../../config/routes'
 import { ADMIN_PAGE_NAME, getPageTitle, getHeaderText } from '../../config/project'
+import { customScrollbarStyles } from '../../styles'
 
 const LOG_PATH = 'web/admin/index'
 
@@ -151,6 +152,7 @@ export const adminPageRoute = app.html('/', async (ctx, req) => {
         <script>{getLogLevelScript(logLevel)}</script>
         <script src="/s/metric/clarity.js"></script>
         <style>{adminPageStyles}</style>
+        <style>{customScrollbarStyles}</style>
         <style>{getPreloaderStyles()}</style>
         <script>{getPreloaderScript()}</script>
         <script src="/s/static/lib/tailwind.3.4.16.min.js"></script>

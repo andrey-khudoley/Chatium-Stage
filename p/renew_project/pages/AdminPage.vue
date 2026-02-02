@@ -571,7 +571,7 @@ const loadMoreLogs = async () => {
                 Error
               </button>
             </div>
-            <div class="logs-output" ref="logsOutputRef">
+            <div class="logs-output custom-scrollbar" ref="logsOutputRef">
               <div v-if="displayedLogs.length === 0" class="logs-empty">
                 Логи появятся здесь...
               </div>

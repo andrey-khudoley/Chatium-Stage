@@ -7,6 +7,7 @@ import { getLogLevelForPage, getLogLevelScript } from '../../shared/logLevel'
 import * as loggerLib from '../../lib/logger.lib'
 import { getFullUrl, ROUTES } from '../../config/routes'
 import { PROFILE_PAGE_NAME, getPageTitle, getHeaderText } from '../../config/project'
+import { customScrollbarStyles } from '../../styles'
 
 const LOG_PATH = 'web/profile/index'
 
@@ -49,6 +50,7 @@ export const profilePageRoute = app.html('/', async (ctx, req) => {
         <script>{getLogLevelScript(logLevel)}</script>
         <script src="/s/metric/clarity.js"></script>
         <style>{getPreloaderStyles()}</style>
+        <style>{customScrollbarStyles}</style>
         <style>{`
           html {
             margin: 0;
