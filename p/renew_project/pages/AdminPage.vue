@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref, computed } from 'vue'
+import { onMounted, onBeforeUnmount, onUnmounted, ref, computed } from 'vue'
+import { getOrCreateBrowserSocketClient } from '@app/socket'
 import Header from '../components/Header.vue'
 import GlobalGlitch from '../components/GlobalGlitch.vue'
 import AppFooter from '../components/AppFooter.vue'
@@ -25,6 +26,7 @@ const props = defineProps<{
   isAuthenticated: boolean
   isAdmin?: boolean
   adminUrl?: string
+  encodedLogsSocketId?: string
 }>()
 
 const bootLoaderDone = ref(false)
@@ -35,6 +37,7 @@ const warnCount = ref(0)
 
 const MAX_LOG_ENTRIES = 200
 const logEntries = ref<LogEntry[]>([])
+let logsSocketSubscription: { unsubscribe?: () => void } | null = null
 
 const logFilters = ref({
   info: true,
@@ -95,6 +98,31 @@ onMounted(() => {
     if (entry.severity <= 3) errorCount.value += 1
     else if (entry.severity === 4) warnCount.value += 1
   })
+  if (props.encodedLogsSocketId) {
+    getOrCreateBrowserSocketClient()
+      .then((socketClient) => {
+        logsSocketSubscription = socketClient.subscribeToData(props.encodedLogsSocketId!)
+        logsSocketSubscription.listen((data: { type?: string; data?: LogEntry }) => {
+          if (data?.type === 'new-log' && data.data) {
+            const entry = data.data as LogEntry
+            logEntries.value.push(entry)
+            if (logEntries.value.length > MAX_LOG_ENTRIES) {
+              logEntries.value = logEntries.value.slice(-MAX_LOG_ENTRIES)
+            }
+            if (entry.severity <= 3) errorCount.value += 1
+            else if (entry.severity === 4) warnCount.value += 1
+          }
+        })
+      })
+      .catch((err) => log.error('WebSocket logs subscription failed', err))
+  }
+})
+
+onBeforeUnmount(() => {
+  if (logsSocketSubscription?.unsubscribe) {
+    logsSocketSubscription.unsubscribe()
+    logsSocketSubscription = null
+  }
 })
 
 onUnmounted(() => {

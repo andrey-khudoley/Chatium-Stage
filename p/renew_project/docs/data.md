@@ -7,12 +7,15 @@
 | Table | File | Назначение | Основные поля |
 | --- | --- | --- | --- |
 | t__renew-project__setting__7Fk2Qw | tables/settings.table.ts | Настройки проекта (key-value) | key (string), value (any) |
+| t__renew-project__log__9Xm3Kp | tables/logs.table.ts | Серверные логи (долгосрочное хранение) | message (string), payload (any), severity, level, timestamp |
 
 ## Репозитории (repos/)
 - `repos/settings.repo.ts` — findByKey, findAll, upsert, deleteByKey (слой работы с БД).
+- `repos/logs.repo.ts` — create, findAll, findById (слой работы с БД логов).
 
 ## Библиотеки (lib/)
-- `lib/settings.lib.ts` — getSetting, getAllSettings, setSetting, getLogLevel, getLogsLimit (бизнес-логика, дефолты, валидация).
+- `lib/settings.lib.ts` — getSetting, getAllSettings, setSetting, getLogLevel, getLogsLimit, getLogWebhook (бизнес-логика, дефолты, валидация).
+- `lib/logger.lib.ts` — getAdminLogsSocketId, shouldLogByLevel, writeServerLog (проверка уровня, запись в ctx.log/ctx.account.log, Heap, WebSocket, вебхук).
 
 ## Файлы и хранилище
 - Не используется.

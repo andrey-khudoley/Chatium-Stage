@@ -37,10 +37,10 @@
 - `web/` — браузерные роуты модулей (admin, profile, login).
 - `pages/` — Vue‑страницы (минимальные).
 - `components/` — переиспользуемые Vue‑компоненты (Header, AppFooter, GlobalGlitch, LogoutModal).
-- `api/` — API‑эндпоинты (получение и валидация входных данных). File-based: один файл — один эндпоинт с `/`. Пример: `api/settings/list.ts`, `api/settings/get.ts`, `api/settings/save.ts`.
-- `tables/` — Heap‑таблицы (схемы).
-- `repos/` — репозитории (работа с БД).
-- `lib/` — бизнес‑логика.
+- `api/` — API‑эндпоинты (получение и валидация входных данных). File-based: один файл — один эндпоинт с `/`. Пример: `api/settings/list.ts`, `api/settings/get.ts`, `api/settings/save.ts`, `api/logger/log.ts`.
+- `tables/` — Heap‑таблицы (схемы: settings, logs).
+- `repos/` — репозитории (работа с БД: settings, logs).
+- `lib/` — бизнес‑логика (settings.lib, logger.lib: проверка уровня, запись в ctx/Heap/WebSocket/вебхук).
 - `shared/` — общий код (preloader, logLevel для передачи уровня логирования на клиент, logger — уровни syslog RFC 5424, createComponentLogger, setLogSink/LogEntry для дашборда, logEmergency…logDebug в браузере с проверкой порога).
 - `docs/` — документация проекта.
 

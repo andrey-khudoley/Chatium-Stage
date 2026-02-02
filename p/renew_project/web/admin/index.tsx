@@ -1,10 +1,12 @@
 // @shared
 import { jsx } from '@app/html-jsx'
 import { requireAccountRole } from '@app/auth'
+import { genSocketId } from '@app/socket'
 import AdminPage from '../../pages/AdminPage.vue'
 import { loginPageRoute } from '../login'
 import { getPreloaderStyles, getPreloaderScript } from '../../shared/preloader'
 import { getLogLevelForPage, getLogLevelScript } from '../../shared/logLevel'
+import { getAdminLogsSocketId } from '../../lib/logger.lib'
 import { getFullUrl, ROUTES } from '../../config/routes'
 import { ADMIN_PAGE_NAME, getPageTitle, getHeaderText } from '../../config/project'
 
@@ -117,6 +119,8 @@ export const adminPageRoute = app.html('/', async (ctx, req) => {
   const adminUrl = getFullUrl(ROUTES.admin)
   const loginUrl = getFullUrl(ROUTES.login)
   const logLevel = await getLogLevelForPage(ctx)
+  const logsSocketId = getAdminLogsSocketId(ctx)
+  const encodedLogsSocketId = await genSocketId(ctx, logsSocketId)
 
   return (
     <html>
@@ -150,6 +154,7 @@ export const adminPageRoute = app.html('/', async (ctx, req) => {
           isAuthenticated={true}
           isAdmin={true}
           adminUrl={adminUrl}
+          encodedLogsSocketId={encodedLogsSocketId}
         />
       </body>
     </html>

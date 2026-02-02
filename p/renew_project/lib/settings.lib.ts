@@ -5,15 +5,20 @@ export const SETTING_KEYS = {
   PROJECT_NAME: 'project_name',
   PROJECT_TITLE: 'project_title',
   LOG_LEVEL: 'log_level',
-  LOGS_LIMIT: 'logs_limit'
+  LOGS_LIMIT: 'logs_limit',
+  LOG_WEBHOOK: 'log_webhook'
 } as const
+
+/** Настройка вебхука логов: enable — активна ли отправка, url — куда отправлять. */
+export type LogWebhookSetting = { enable: boolean; url: string }
 
 /** Значения по умолчанию */
 export const DEFAULTS = {
   [SETTING_KEYS.PROJECT_NAME]: 'A/Ley Services',
   [SETTING_KEYS.PROJECT_TITLE]: 'A/Ley',
   [SETTING_KEYS.LOG_LEVEL]: 'Info',
-  [SETTING_KEYS.LOGS_LIMIT]: '100'
+  [SETTING_KEYS.LOGS_LIMIT]: '100',
+  [SETTING_KEYS.LOG_WEBHOOK]: { enable: false, url: '' } as LogWebhookSetting
 } as const
 
 /** Допустимые уровни логирования */
@@ -67,6 +72,20 @@ export async function getLogsLimit(ctx: app.Ctx): Promise<number> {
   return parseLogsLimit(value)
 }
 
+function isLogWebhook(value: unknown): value is LogWebhookSetting {
+  if (typeof value !== 'object' || value === null) return false
+  const o = value as Record<string, unknown>
+  return typeof o.enable === 'boolean' && typeof o.url === 'string'
+}
+
+/**
+ * Получить настройку вебхука логов (enable, url). При отсутствии — дефолт { enable: false, url: '' }.
+ */
+export async function getLogWebhook(ctx: app.Ctx): Promise<LogWebhookSetting> {
+  const value = await getSetting(ctx, SETTING_KEYS.LOG_WEBHOOK)
+  return isLogWebhook(value) ? value : DEFAULTS[SETTING_KEYS.LOG_WEBHOOK]
+}
+
 /**
  * Получить все настройки в виде объекта ключ-значение (с дефолтами).
  */
@@ -101,6 +120,15 @@ export async function setSetting(ctx: app.Ctx, key: string, value: unknown): Pro
     normalized = String(n)
   } else if (key === SETTING_KEYS.PROJECT_NAME || key === SETTING_KEYS.PROJECT_TITLE) {
     normalized = typeof value === 'string' ? value.trim() : String(value)
+  } else if (key === SETTING_KEYS.LOG_WEBHOOK) {
+    if (typeof value !== 'object' || value === null) {
+      throw new Error('log_webhook должен быть объектом { enable: boolean, url: string }')
+    }
+    const o = value as Record<string, unknown>
+    normalized = {
+      enable: typeof o.enable === 'boolean' ? o.enable : false,
+      url: typeof o.url === 'string' ? o.url : ''
+    }
   }
 
   await repo.upsert(ctx, key, normalized)

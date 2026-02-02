@@ -19,10 +19,12 @@
 ### `./web/admin/index.tsx`
 - `@app/html-jsx` → `jsx`
 - `@app/auth` → `requireAccountRole`
+- `@app/socket` → `genSocketId`
 - `../../pages/AdminPage.vue`
 - `../login` → `loginPageRoute`
 - `../../shared/preloader` → `getPreloaderStyles`, `getPreloaderScript`
 - `../../shared/logLevel` → `getLogLevelForPage`, `getLogLevelScript`
+- `../../lib/logger.lib` → `getAdminLogsSocketId`
 - `../../config/routes` → `getFullUrl`, `ROUTES`
 - `../../config/project` → `ADMIN_PAGE_NAME`, `getPageTitle`, `getHeaderText`
 
@@ -51,7 +53,8 @@
 - `../shared/logger` → `createComponentLogger`
 
 ### `./pages/AdminPage.vue`
-- `vue` → `onMounted`, `onUnmounted`, `ref`, `computed`
+- `vue` → `onMounted`, `onBeforeUnmount`, `onUnmounted`, `ref`, `computed`
+- `@app/socket` → `getOrCreateBrowserSocketClient`
 - `../components/Header.vue`
 - `../components/GlobalGlitch.vue`
 - `../components/AppFooter.vue`
@@ -104,15 +107,27 @@
 ### `./tables/settings.table.ts`
 - `@app/heap` → `Heap`
 
+### `./tables/logs.table.ts`
+- `@app/heap` → `Heap`
+
 ## 6) Репозитории (repos/)
 
 ### `./repos/settings.repo.ts`
 - `../tables/settings.table` → `Settings`, `SettingsRow`
 
+### `./repos/logs.repo.ts`
+- `../tables/logs.table` → `Logs`, `LogsRow`
+
 ## 7) Библиотеки (lib/)
 
 ### `./lib/settings.lib.ts`
 - `../repos/settings.repo` → `*` (findByKey, findAll, upsert, deleteByKey)
+
+### `./lib/logger.lib.ts`
+- `./settings.lib` → `*` (getLogLevel, getLogWebhook, LogLevel)
+- `../repos/logs.repo` → `*` (create)
+- `@app/socket` → `sendDataToSocket`
+- `@app/request` → `request`
 
 ## 8) API (api/)
 
@@ -127,3 +142,7 @@
 ### `./api/settings/save.ts`
 - `@app/auth` → `requireAccountRole`
 - `../../lib/settings.lib` → `*`
+
+### `./api/logger/log.ts`
+- `@app/auth` → `requireAnyUser`
+- `../../lib/logger.lib` → `*`
