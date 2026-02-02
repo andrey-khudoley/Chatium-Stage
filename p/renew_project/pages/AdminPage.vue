@@ -717,6 +717,32 @@ const clearLogs = () => {
     100% calc(100% - 4px), calc(100% - 4px) calc(100% - 4px), calc(100% - 4px) 100%,
     4px 100%, 4px calc(100% - 4px), 0 calc(100% - 4px)
   );
+  position: relative;
+  overflow: hidden;
+}
+
+.admin-icon-wrapper::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.15) 0px,
+    rgba(0, 0, 0, 0.15) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+  pointer-events: none;
+  z-index: 2;
+  animation: admin-scanline-flicker 8s linear infinite;
+}
+
+@keyframes admin-scanline-flicker {
+  0%, 100% { opacity: 0.7; }
+  50% { opacity: 0.5; }
 }
 
 .admin-icon {
