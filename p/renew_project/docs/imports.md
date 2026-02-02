@@ -56,11 +56,12 @@
 - `../shared/logger` → `createComponentLogger`
 
 ### `./pages/AdminPage.vue`
-- `vue` → `onMounted`, `onBeforeUnmount`, `onUnmounted`, `ref`, `computed`
+- `vue` → `onMounted`, `onBeforeUnmount`, `onUnmounted`, `ref`, `computed`, `watch`
 - `@app/socket` → `getOrCreateBrowserSocketClient`
 - `../components/Header.vue`
 - `../components/GlobalGlitch.vue`
 - `../components/AppFooter.vue`
+- `../api/settings/get` → `getSettingRoute`
 - `../api/settings/save` → `saveSettingRoute`
 - `../shared/logger` → `createComponentLogger`, `setLogSink`, `LogEntry`
 
