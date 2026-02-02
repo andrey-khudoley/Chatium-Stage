@@ -42,3 +42,41 @@ export async function findBeforeTimestamp(
     limit
   })
 }
+
+/** Severity ошибок (syslog): 0 Emergency, 1 Alert, 2 Critical, 3 Error. */
+const ERROR_SEVERITIES = [0, 1, 2, 3] as const
+/** Severity предупреждений (syslog): 4 Warning. */
+const WARN_SEVERITY = 4
+
+/**
+ * Подсчёт записей с заданным severity после указанного timestamp (для дашборда).
+ */
+export async function countBySeverityAfter(
+  ctx: app.Ctx,
+  sinceTimestamp: number,
+  severity: number
+): Promise<number> {
+  return Logs.countBy(ctx, {
+    timestamp: { $gt: sinceTimestamp },
+    severity
+  })
+}
+
+/**
+ * Количество ошибок (severity 0–3) после указанного timestamp.
+ * Несколько countBy по диапазону severity, сумма.
+ */
+export async function countErrorsAfter(ctx: app.Ctx, sinceTimestamp: number): Promise<number> {
+  let total = 0
+  for (const severity of ERROR_SEVERITIES) {
+    total += await countBySeverityAfter(ctx, sinceTimestamp, severity)
+  }
+  return total
+}
+
+/**
+ * Количество предупреждений (severity 4) после указанного timestamp.
+ */
+export async function countWarningsAfter(ctx: app.Ctx, sinceTimestamp: number): Promise<number> {
+  return countBySeverityAfter(ctx, sinceTimestamp, WARN_SEVERITY)
+}

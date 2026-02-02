@@ -9,6 +9,8 @@ import { saveSettingRoute } from '../api/settings/save'
 import { createComponentLogger, setLogSink, type LogEntry } from '../shared/logger'
 import { getRecentLogsRoute } from '../api/admin/logs/recent'
 import { getLogsBeforeRoute } from '../api/admin/logs/before'
+import { getDashboardCountsRoute } from '../api/admin/dashboard/counts'
+import { resetDashboardRoute } from '../api/admin/dashboard/reset'
 
 const log = createComponentLogger('AdminPage')
 
@@ -63,6 +65,7 @@ function showSaveStatus(
 }
 const errorCount = ref(0)
 const warnCount = ref(0)
+const dashboardResetAt = ref(0)
 
 const MAX_LOG_ENTRIES = 500
 const logEntries = ref<LogEntry[]>([])
@@ -224,6 +227,7 @@ const saveProjectName = async () => {
 onMounted(() => {
   log.info('Компонент смонтирован')
   loadProjectName()
+  loadDashboardCounts()
   if (window.hideAppLoader) window.hideAppLoader()
   if (window.bootLoaderComplete) {
     startAnimations()
@@ -240,8 +244,10 @@ onMounted(() => {
   setLogSink((entry: LogEntry) => {
     logEntries.value.push(entry)
     trimOldLogs()
-    if (entry.severity <= 3) errorCount.value += 1
-    else if (entry.severity === 4) warnCount.value += 1
+    if (entry.timestamp >= dashboardResetAt.value) {
+      if (entry.severity <= 3) errorCount.value += 1
+      else if (entry.severity === 4) warnCount.value += 1
+    }
   })
   if (props.encodedLogsSocketId) {
     getOrCreateBrowserSocketClient()
@@ -252,8 +258,10 @@ onMounted(() => {
             const entry = data.data as LogEntry
             logEntries.value.push(entry)
             trimOldLogs()
-            if (entry.severity <= 3) errorCount.value += 1
-            else if (entry.severity === 4) warnCount.value += 1
+            if (entry.timestamp >= dashboardResetAt.value) {
+              if (entry.severity <= 3) errorCount.value += 1
+              else if (entry.severity === 4) warnCount.value += 1
+            }
           }
         })
       })
@@ -314,10 +322,36 @@ const setLogLevel = async (level: 'debug' | 'info' | 'warn' | 'error' | 'disable
   }
 }
 
-const resetDashboard = () => {
-  log.notice('Счётчики дашборда сброшены')
-  errorCount.value = 0
-  warnCount.value = 0
+const loadDashboardCounts = async () => {
+  try {
+    const res = await getDashboardCountsRoute.run(ctx)
+    const data = res as { success?: boolean; errorCount?: number; warnCount?: number; resetAt?: number; error?: string }
+    if (data?.success && typeof data.errorCount === 'number' && typeof data.warnCount === 'number' && typeof data.resetAt === 'number') {
+      errorCount.value = data.errorCount
+      warnCount.value = data.warnCount
+      dashboardResetAt.value = data.resetAt
+      log.debug('Счётчики дашборда загружены', { errorCount: data.errorCount, warnCount: data.warnCount, resetAt: data.resetAt })
+    }
+  } catch (e) {
+    log.warning('Не удалось загрузить счётчики дашборда', e)
+  }
+}
+
+const resetDashboard = async () => {
+  try {
+    const res = await resetDashboardRoute.run(ctx)
+    const data = res as { success?: boolean; errorCount?: number; warnCount?: number; resetAt?: number; error?: string }
+    if (data?.success && typeof data.resetAt === 'number') {
+      dashboardResetAt.value = data.resetAt
+      errorCount.value = data.errorCount ?? 0
+      warnCount.value = data.warnCount ?? 0
+      log.notice('Счётчики дашборда сброшены', { resetAt: data.resetAt })
+    } else {
+      log.error('Ошибка сброса дашборда', data?.error)
+    }
+  } catch (e) {
+    log.error('Ошибка сброса дашборда', e)
+  }
 }
 
 const openChatiumLink = () => {

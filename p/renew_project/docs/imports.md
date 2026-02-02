@@ -68,6 +68,8 @@
 - `../api/settings/save` → `saveSettingRoute`
 - `../api/admin/logs/recent` → `getRecentLogsRoute`
 - `../api/admin/logs/before` → `getLogsBeforeRoute`
+- `../api/admin/dashboard/counts` → `getDashboardCountsRoute`
+- `../api/admin/dashboard/reset` → `resetDashboardRoute`
 - `../shared/logger` → `createComponentLogger`, `setLogSink`, `LogEntry`
 
 ### `./pages/ProfilePage.vue`
@@ -130,12 +132,16 @@
 
 ### `./repos/logs.repo.ts`
 - `../tables/logs.table` → `Logs`, `LogsRow`
-- экспортирует: `create`, `findAll`, `findById`, `findBeforeTimestamp`
+- экспортирует: `create`, `findAll`, `findById`, `findBeforeTimestamp`, `countBySeverityAfter`, `countErrorsAfter`, `countWarningsAfter`
 
 ## 7) Библиотеки (lib/)
 
 ### `./lib/settings.lib.ts`
 - `../repos/settings.repo` → `*` (findByKey, findAll, upsert, deleteByKey)
+
+### `./lib/admin/dashboard.lib.ts`
+- `../settings.lib` → `*` (getDashboardResetAt, setSetting, SETTING_KEYS)
+- `../../repos/logs.repo` → `*` (countErrorsAfter, countWarningsAfter)
 
 ### `./lib/logger.lib.ts`
 - `./settings.lib` → `*` (getLogLevel, getLogWebhook, LogLevel)
@@ -176,14 +182,12 @@
 - `../../../lib/logger.lib` → `*`
 - `../../../tables/logs.table` → `LogsRow` (type)
 
-### `./api/admin/logs/recent.ts`
+### `./api/admin/dashboard/counts.ts`
 - `@app/auth` → `requireAccountRole`
-- `../../../repos/logs.repo` → `*`
+- `../../../lib/admin/dashboard.lib` → `*`
 - `../../../lib/logger.lib` → `*`
-- `../../../tables/logs.table` → `LogsRow` (type)
 
-### `./api/admin/logs/before.ts`
+### `./api/admin/dashboard/reset.ts`
 - `@app/auth` → `requireAccountRole`
-- `../../../repos/logs.repo` → `*`
+- `../../../lib/admin/dashboard.lib` → `*`
 - `../../../lib/logger.lib` → `*`
-- `../../../tables/logs.table` → `LogsRow` (type)

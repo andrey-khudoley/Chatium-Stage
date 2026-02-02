@@ -6,7 +6,8 @@ export const SETTING_KEYS = {
   PROJECT_TITLE: 'project_title',
   LOG_LEVEL: 'log_level',
   LOGS_LIMIT: 'logs_limit',
-  LOG_WEBHOOK: 'log_webhook'
+  LOG_WEBHOOK: 'log_webhook',
+  DASHBOARD_RESET_AT: 'dashboard_reset_at'
 } as const
 
 /** Настройка вебхука логов: enable — активна ли отправка, url — куда отправлять. */
@@ -18,7 +19,8 @@ export const DEFAULTS = {
   [SETTING_KEYS.PROJECT_TITLE]: 'A/Ley',
   [SETTING_KEYS.LOG_LEVEL]: 'Info',
   [SETTING_KEYS.LOGS_LIMIT]: '100',
-  [SETTING_KEYS.LOG_WEBHOOK]: { enable: false, url: '' } as LogWebhookSetting
+  [SETTING_KEYS.LOG_WEBHOOK]: { enable: false, url: '' } as LogWebhookSetting,
+  [SETTING_KEYS.DASHBOARD_RESET_AT]: null as number | null
 } as const
 
 /** Допустимые уровни логирования */
@@ -87,6 +89,17 @@ export async function getLogWebhook(ctx: app.Ctx): Promise<LogWebhookSetting> {
 }
 
 /**
+ * Получить таймштамп сброса дашборда (Unix ms). При отсутствии — 0 (учитываются все логи).
+ */
+export async function getDashboardResetAt(ctx: app.Ctx): Promise<number> {
+  const value = await getSetting(ctx, SETTING_KEYS.DASHBOARD_RESET_AT)
+  if (typeof value === 'number' && Number.isFinite(value) && value >= 0) {
+    return Math.floor(value)
+  }
+  return 0
+}
+
+/**
  * Получить все настройки в виде объекта ключ-значение (с дефолтами).
  */
 export async function getAllSettings(ctx: app.Ctx): Promise<Record<string, unknown>> {
@@ -129,6 +142,12 @@ export async function setSetting(ctx: app.Ctx, key: string, value: unknown): Pro
       enable: typeof o.enable === 'boolean' ? o.enable : false,
       url: typeof o.url === 'string' ? o.url : ''
     }
+  } else if (key === SETTING_KEYS.DASHBOARD_RESET_AT) {
+    const n = typeof value === 'number' ? value : Number(value)
+    if (!Number.isFinite(n) || n < 0) {
+      throw new Error('dashboard_reset_at должен быть неотрицательным числом (Unix ms)')
+    }
+    normalized = Math.floor(n)
   }
 
   await repo.upsert(ctx, key, normalized)
