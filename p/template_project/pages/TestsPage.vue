@@ -296,39 +296,164 @@ const testMetrics = ref({
 })
 const runAllTestsLoading = ref(false)
 
+/* Проверка эндпоинтов */
+const runGroupTestsLoading = ref(false)
+type EndpointTestResult = { id: string; title: string; passed: boolean; error?: string }
+const endpointGroupResults = ref<EndpointTestResult[]>([])
+const endpointGroupLastRunAt = ref<string | null>(null)
+
+/** Базовый URL для API (origin + путь проекта без trailing slash) */
+function getApiBaseUrl(): string {
+  const path = props.indexUrl.startsWith('http')
+    ? new URL(props.indexUrl).pathname
+    : props.indexUrl
+  const basePath = path.replace(/\/$/, '') || '/p/template_project'
+  const origin =
+    props.indexUrl.startsWith('http') ? new URL(props.indexUrl).origin : window.location.origin
+  return `${origin}${basePath.startsWith('/') ? basePath : '/' + basePath}`
+}
+
+/** Определения тестов группы «Проверка эндпоинтов»: путь, описание и валидатор ответа */
+const ENDPOINTS_CHECK_TESTS: Array<{
+  id: string
+  title: string
+  path: string
+  description: string
+  validate: (data: unknown) => boolean
+}> = [
+  {
+    id: 'health',
+    title: 'Health check',
+    path: '/api/tests/endpoints-check/health',
+    description:
+      'Проверяем, что сервис доступен: GET-запрос к эндпоинту должен вернуть HTTP 200 и JSON с полями success: true, ok: true, test: "health". Путь: /api/tests/endpoints-check/health.',
+    validate: (data) =>
+      typeof data === 'object' &&
+      data !== null &&
+      (data as { success?: boolean; ok?: boolean; test?: string }).success === true &&
+      (data as { ok?: boolean }).ok === true &&
+      (data as { test?: string }).test === 'health'
+  },
+  {
+    id: 'ping',
+    title: 'Ping',
+    path: '/api/tests/endpoints-check/ping',
+    description:
+      'Проверяем ответ API (эхо): GET должен вернуть HTTP 200 и JSON с полями success: true, pong: true, test: "ping". Путь: /api/tests/endpoints-check/ping.',
+    validate: (data) =>
+      typeof data === 'object' &&
+      data !== null &&
+      (data as { success?: boolean; pong?: boolean; test?: string }).success === true &&
+      (data as { pong?: boolean }).pong === true &&
+      (data as { test?: string }).test === 'ping'
+  }
+]
+
+/** Запуск тестов группы «Проверка эндпоинтов» (HTTP-запросы). Возвращает результаты. */
+async function runEndpointCheckTests(): Promise<EndpointTestResult[]> {
+  const baseUrl = getApiBaseUrl()
+  const results: EndpointTestResult[] = []
+  for (const test of ENDPOINTS_CHECK_TESTS) {
+    const url = `${baseUrl}${test.path}`
+    try {
+      const res = await fetch(url, { method: 'GET', credentials: 'include' })
+      if (!res.ok) {
+        results.push({
+          id: test.id,
+          title: test.title,
+          passed: false,
+          error: `HTTP ${res.status}`
+        })
+        log.warning('Тест эндпоинта не прошёл', { test: test.id, status: res.status })
+        continue
+      }
+      const data: unknown = await res.json().catch(() => null)
+      if (!test.validate(data)) {
+        results.push({
+          id: test.id,
+          title: test.title,
+          passed: false,
+          error: 'Некорректный ответ'
+        })
+        log.warning('Тест эндпоинта: неверный формат ответа', { test: test.id, data })
+        continue
+      }
+      results.push({ id: test.id, title: test.title, passed: true })
+      log.info('Тест эндпоинта пройден', { test: test.id })
+    } catch (e) {
+      const msg = (e as Error)?.message || String(e)
+      results.push({ id: test.id, title: test.title, passed: false, error: msg })
+      log.error('Ошибка запроса к эндпоинту', { test: test.id, error: msg })
+    }
+  }
+  return results
+}
+
+/** Обновить метрики дашборда по результатам проверки эндпоинтов */
+function applyEndpointResultsToMetrics(results: EndpointTestResult[]) {
+  const passed = results.filter((r) => r.passed).length
+  const failed = results.filter((r) => !r.passed).length
+  testMetrics.value = {
+    total: results.length,
+    passed,
+    failed,
+    skipped: 0,
+    lastRunAt: new Date().toLocaleString('ru-RU')
+  }
+}
+
+/** Запустить все тесты (сейчас — группа «Проверка эндпоинтов») */
 const runAllTests = async () => {
   runAllTestsLoading.value = true
   log.info('Запуск всех тестов')
   try {
-    // TODO: вызов API запуска всех тестов
-    await new Promise((r) => setTimeout(r, 800))
-    testMetrics.value = {
-      total: 12,
-      passed: 10,
-      failed: 1,
-      skipped: 1,
-      lastRunAt: new Date().toLocaleString('ru-RU')
-    }
+    const results = await runEndpointCheckTests()
+    endpointGroupResults.value = results
+    endpointGroupLastRunAt.value = new Date().toLocaleString('ru-RU')
+    applyEndpointResultsToMetrics(results)
     log.info('Тесты завершены', testMetrics.value)
   } finally {
     runAllTestsLoading.value = false
   }
 }
 
-/* Проверка эндпоинтов */
-const runGroupTestsLoading = ref(false)
-
+/** Запустить только тесты группы «Проверка эндпоинтов» */
 const runGroupTests = async () => {
   runGroupTestsLoading.value = true
+  endpointGroupResults.value = []
   log.info('Запуск тестов группы «Проверка эндпоинтов»')
   try {
-    // TODO: вызов API запуска тестов группы
-    await new Promise((r) => setTimeout(r, 600))
-    log.info('Тесты группы завершены')
+    const results = await runEndpointCheckTests()
+    endpointGroupResults.value = results
+    endpointGroupLastRunAt.value = new Date().toLocaleString('ru-RU')
+    applyEndpointResultsToMetrics(results)
+    log.info('Тесты группы завершены', {
+      passed: results.filter((r) => r.passed).length,
+      failed: results.filter((r) => !r.passed).length
+    })
   } finally {
     runGroupTestsLoading.value = false
   }
 }
+
+/** Список тестов эндпоинтов для отображения: каждый с меткой [TODO] | [SUCCESS] | [FAIL] и описанием */
+const endpointTestsDisplay = computed(() => {
+  const resultsById = new Map(
+    endpointGroupResults.value.map((r) => [r.id, r])
+  )
+  return ENDPOINTS_CHECK_TESTS.map((t) => {
+    const result = resultsById.get(t.id)
+    const status: 'todo' | 'success' | 'fail' =
+      result === undefined ? 'todo' : result.passed ? 'success' : 'fail'
+    return {
+      id: t.id,
+      title: t.title,
+      description: t.description,
+      status,
+      error: result && !result.passed ? result.error : undefined
+    }
+  })
+})
 </script>
 
 <template>
@@ -490,9 +615,46 @@ const runGroupTests = async () => {
               <i class="fas fa-plug tests-endpoints-icon"></i>
               <h2 class="tests-endpoints-title">Проверка эндпоинтов</h2>
             </div>
-            <p class="tests-endpoints-desc text-[var(--color-text-secondary)]">
-              Запуск тестов группы для проверки HTTP-эндпоинтов.
+            <p class="tests-endpoints-desc">
+              Здесь проверяется, что перечисленные ниже API-эндпоинты отвечают корректно (код 200 и ожидаемый JSON). Нажмите кнопку внизу, чтобы запустить проверку.
             </p>
+            <div v-if="endpointGroupLastRunAt" class="tests-endpoints-last-run">
+              Результаты от: {{ endpointGroupLastRunAt }}
+            </div>
+            <div class="tests-endpoints-legend">
+              <span class="tests-endpoints-legend-item">
+                <span class="tests-endpoints-badge tests-endpoints-badge-todo">[TODO]</span>
+                ещё не проверяли
+              </span>
+              <span class="tests-endpoints-legend-item">
+                <span class="tests-endpoints-badge tests-endpoints-badge-success">[SUCCESS]</span>
+                проверка пройдена
+              </span>
+              <span class="tests-endpoints-legend-item">
+                <span class="tests-endpoints-badge tests-endpoints-badge-fail">[FAIL]</span>
+                ошибка (причина справа)
+              </span>
+            </div>
+            <p class="tests-endpoints-list-label">Что проверяется:</p>
+            <div class="tests-endpoints-list-wrap">
+              <ul class="tests-endpoints-list" role="list">
+                <li
+                  v-for="item in endpointTestsDisplay"
+                  :key="item.id"
+                  class="tests-endpoints-list-item"
+                  :class="`tests-endpoints-status-${item.status}`"
+                >
+                  <span class="tests-endpoints-badge" :class="`tests-endpoints-badge-${item.status}`">
+                    {{ item.status === 'todo' ? '[TODO]' : item.status === 'success' ? '[SUCCESS]' : '[FAIL]' }}
+                  </span>
+                  <div class="tests-endpoints-list-content">
+                    <span class="tests-endpoints-list-title">{{ item.title }}</span>
+                    <p class="tests-endpoints-list-desc">{{ item.description }}</p>
+                  </div>
+                  <span v-if="item.error" class="tests-endpoints-list-error">{{ item.error }}</span>
+                </li>
+              </ul>
+            </div>
             <div class="tests-endpoints-actions">
               <button
                 type="button"
@@ -501,7 +663,7 @@ const runGroupTests = async () => {
                 @click="runGroupTests"
               >
                 <i class="fas" :class="runGroupTestsLoading ? 'fa-spinner fa-spin' : 'fa-bolt'"></i>
-                {{ runGroupTestsLoading ? 'Запуск...' : 'Запустить тесты группы' }}
+                {{ runGroupTestsLoading ? 'Проверяем...' : 'Запустить проверку эндпоинтов' }}
               </button>
             </div>
           </div>
@@ -773,7 +935,7 @@ const runGroupTests = async () => {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  margin-bottom: 0.75rem;
+  margin-bottom: 0.5rem;
 }
 
 .tests-endpoints-icon {
@@ -790,7 +952,148 @@ const runGroupTests = async () => {
 
 .tests-endpoints-desc {
   font-size: 0.9rem;
-  margin: 0 0 1rem 0;
+  color: var(--color-text-secondary);
+  margin: 0 0 0.5rem 0;
+  line-height: 1.45;
+}
+
+.tests-endpoints-last-run {
+  font-size: 0.8rem;
+  color: var(--color-text-tertiary);
+  margin: 0 0 0.75rem 0;
+}
+
+.tests-endpoints-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem 1.5rem;
+  margin-bottom: 0.75rem;
+  padding: 0.5rem 0;
+  font-size: 0.85rem;
+  color: var(--color-text-secondary);
+}
+
+.tests-endpoints-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.tests-endpoints-legend .tests-endpoints-badge {
+  font-size: 0.65rem;
+  padding: 0.15rem 0.35rem;
+}
+
+.tests-endpoints-list-label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--color-text);
+  margin: 0 0 0.5rem 0;
+}
+
+.tests-endpoints-list-wrap {
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.tests-endpoints-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.tests-endpoints-list-item {
+  display: flex;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  font-size: 0.9rem;
+  min-height: 2.25rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--color-border);
+  font-family: 'Share Tech Mono', monospace;
+}
+
+.tests-endpoints-list-item:last-child {
+  border-bottom: none;
+}
+
+.tests-endpoints-list-item.tests-endpoints-status-success {
+  border-left: 3px solid #22c55e;
+  padding-left: 0.5rem;
+  margin-left: -0.5rem;
+}
+
+.tests-endpoints-list-item.tests-endpoints-status-fail {
+  border-left: 3px solid var(--color-accent);
+  padding-left: 0.5rem;
+  margin-left: -0.5rem;
+}
+
+.tests-endpoints-list-item.tests-endpoints-status-todo {
+  border-left: 3px solid var(--color-border);
+  padding-left: 0.5rem;
+  margin-left: -0.5rem;
+}
+
+.tests-endpoints-badge {
+  flex-shrink: 0;
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  letter-spacing: 0.03em;
+}
+
+.tests-endpoints-badge-todo {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--color-text-tertiary);
+  border: 1px solid var(--color-border);
+}
+
+.tests-endpoints-badge-success {
+  background: rgba(34, 197, 94, 0.18);
+  color: #4ade80;
+  border: 1px solid rgba(34, 197, 94, 0.35);
+}
+
+.tests-endpoints-badge-fail {
+  background: rgba(211, 35, 75, 0.12);
+  color: var(--color-accent);
+  border: 1px solid rgba(211, 35, 75, 0.3);
+}
+
+.tests-endpoints-list-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.tests-endpoints-list-title {
+  font-weight: 600;
+  color: var(--color-text);
+  display: block;
+  margin-bottom: 0.2rem;
+}
+
+.tests-endpoints-list-desc {
+  font-size: 0.8rem;
+  color: var(--color-text-secondary);
+  line-height: 1.4;
+  margin: 0;
+  font-weight: 400;
+  font-family: inherit;
+}
+
+.tests-endpoints-list-error {
+  font-size: 0.8rem;
+  color: var(--color-text-secondary);
+  flex-shrink: 0;
 }
 
 .tests-endpoints-actions {
@@ -803,27 +1106,27 @@ const runGroupTests = async () => {
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  padding: 0.6rem 1.2rem;
+  padding: 0.65rem 1.25rem;
   font-family: inherit;
-  font-size: 0.9rem;
-  color: var(--color-text);
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid var(--color-border);
+  font-size: 0.95rem;
+  color: #fff;
+  background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-accent-hover) 100%);
+  border: 1px solid var(--color-accent);
   border-radius: 6px;
   cursor: pointer;
   transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(211, 35, 75, 0.25);
 }
 
 .tests-run-group-btn:hover:not(:disabled) {
-  color: #fff;
-  background: var(--color-accent);
-  border-color: var(--color-accent);
-  box-shadow: 0 0 12px rgba(211, 35, 75, 0.3);
+  box-shadow: 0 6px 16px rgba(211, 35, 75, 0.35);
+  transform: translateY(-1px);
 }
 
 .tests-run-group-btn:disabled {
   opacity: 0.7;
   cursor: not-allowed;
+  transform: none;
 }
 
 /* Блок логов (выше tests-card) */
