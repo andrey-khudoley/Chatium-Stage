@@ -25,6 +25,7 @@ const props = defineProps<{
   isAuthenticated: boolean
   isAdmin?: boolean
   adminUrl?: string
+  testsUrl?: string
 }>()
 
 const displayedTitle = ref('')
@@ -146,6 +147,7 @@ const openChatiumLink = () => {
       :isAuthenticated="props.isAuthenticated"
       :isAdmin="props.isAdmin"
       :adminUrl="props.adminUrl"
+      :testsUrl="props.testsUrl"
     />
     <!-- Content -->
     <main class="content-wrapper flex-1 relative z-10 min-h-0 overflow-y-auto">

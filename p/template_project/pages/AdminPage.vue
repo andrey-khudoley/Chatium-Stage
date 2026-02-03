@@ -27,6 +27,7 @@ const props = defineProps<{
   projectTitle: string
   indexUrl: string
   profileUrl: string
+  testsUrl?: string
   loginUrl: string
   isAuthenticated: boolean
   isAdmin?: boolean
@@ -446,6 +447,7 @@ const clearLogs = () => {
       :isAuthenticated="props.isAuthenticated"
       :isAdmin="props.isAdmin"
       :adminUrl="props.adminUrl"
+      :testsUrl="props.testsUrl"
     />
 
     <main class="content-wrapper flex-1 relative z-10 min-h-0 overflow-y-auto">
