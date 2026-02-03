@@ -6,7 +6,7 @@
 - нет внутренних импортов (только экспорт PROJECT_ROOT, ROUTES, getFullUrl, withProjectRoot, withProjectRootAndSubroute)
 
 ### `./config/project.tsx`
-- нет внутренних импортов (только экспорт DEFAULT_PROJECT_TITLE, INDEX_PAGE_NAME, PROFILE_PAGE_NAME, ADMIN_PAGE_NAME, getPageTitle, getHeaderText, BODY_TEXT, BODY_SUBTEXT)
+- нет внутренних импортов (только экспорт DEFAULT_PROJECT_TITLE, INDEX_PAGE_NAME, PROFILE_PAGE_NAME, ADMIN_PAGE_NAME, TESTS_PAGE_NAME, getPageTitle, getHeaderText, BODY_TEXT, BODY_SUBTEXT)
 
 ### `./index.tsx`
 - `@app/html-jsx` → `jsx`
@@ -45,6 +45,19 @@
 - `../../config/project` → `PROFILE_PAGE_NAME`, `getPageTitle`, `getHeaderText`
 - `../../lib/settings.lib` → `*`
 
+### `./web/tests/index.tsx`
+- `@app/html-jsx` → `jsx`
+- `@app/auth` → `requireRealUser`
+- `@app/socket` → `genSocketId`
+- `../../lib/logger.lib` → `getAdminLogsSocketId`
+- `../../pages/TestsPage.vue`
+- `../../shared/preloader` → `getPreloaderStyles`, `getPreloaderScript`
+- `../../shared/logLevel` → `getLogLevelForPage`, `getLogLevelScript`
+- `../../styles` → `customScrollbarStyles`
+- `../../config/routes` → `getFullUrl`, `ROUTES`
+- `../../config/project` → `TESTS_PAGE_NAME`, `getPageTitle`, `getHeaderText`
+- `../../lib/settings.lib` → `*`
+
 ### `./web/login/index.tsx`
 - `@app/html-jsx` → `jsx`
 - `../../pages/LoginPage.vue`
@@ -81,6 +94,16 @@
 - `../components/GlobalGlitch.vue`
 - `../components/AppFooter.vue`
 - `../shared/logger` → `createComponentLogger`
+
+### `./pages/TestsPage.vue`
+- `vue` → `onMounted`, `onBeforeUnmount`, `onUnmounted`, `ref`, `computed`
+- `@app/socket` → `getOrCreateBrowserSocketClient`
+- `../components/Header.vue`
+- `../components/GlobalGlitch.vue`
+- `../components/AppFooter.vue`
+- `../shared/logger` → `createComponentLogger`, `setLogSink`, `LogEntry`
+- `../api/admin/logs/recent` → `getRecentLogsRoute`
+- `../api/admin/logs/before` → `getLogsBeforeRoute`
 
 ### `./pages/LoginPage.vue`
 - `vue` → `computed`, `onMounted`
@@ -194,3 +217,46 @@
 - `@app/auth` → `requireAccountRole`
 - `../../../lib/admin/dashboard.lib` → `*`
 - `../../../lib/logger.lib` → `*`
+
+### `./api/tests/list.ts`
+- `@app/auth` → `requireAnyUser`
+- `../../lib/logger.lib` → `*`
+
+### `./api/tests/endpoints-check/health.ts`
+- `@app/auth` → `requireAnyUser`
+- `../../../lib/logger.lib` → `*`
+
+### `./api/tests/endpoints-check/ping.ts`
+- `@app/auth` → `requireAnyUser`
+- `../../../lib/logger.lib` → `*`
+
+### `./api/tests/endpoints-check/config.ts`
+- `@app/auth` → `requireAnyUser`
+- `../../../lib/logger.lib` → `*`
+- `../../../config/routes` → `getFullUrl`, `ROUTES`
+- `../../../config/project` → `TESTS_PAGE_NAME`, `getPageTitle`, `getHeaderText`
+
+### `./api/tests/endpoints-check/settings-lib.ts`
+- `@app/auth` → `requireAnyUser`
+- `../../../lib/logger.lib` → `*`
+- `../../../lib/settings.lib` → `*`
+
+### `./api/tests/endpoints-check/settings-repo.ts`
+- `@app/auth` → `requireAnyUser`
+- `../../../lib/logger.lib` → `*`
+- `../../../lib/settings.lib` → `SETTING_KEYS`
+- `../../../repos/settings.repo` → `*`
+
+### `./api/tests/endpoints-check/logger-lib.ts`
+- `@app/auth` → `requireAnyUser`
+- `../../../lib/logger.lib` → `*`
+
+### `./api/tests/endpoints-check/logs-repo.ts`
+- `@app/auth` → `requireAnyUser`
+- `../../../lib/logger.lib` → `*`
+- `../../../repos/logs.repo` → `*`
+
+### `./api/tests/endpoints-check/dashboard-lib.ts`
+- `@app/auth` → `requireAnyUser`
+- `../../../lib/logger.lib` → `*`
+- `../../../lib/admin/dashboard.lib` → `*`
