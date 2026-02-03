@@ -5,6 +5,7 @@ export const DEFAULT_PROJECT_TITLE = 'A/Ley Services'
 export const INDEX_PAGE_NAME = 'Главная'
 export const PROFILE_PAGE_NAME = 'Профиль'
 export const ADMIN_PAGE_NAME = 'Админка'
+export const TESTS_PAGE_NAME = 'Тесты'
 
 /** Текст для <title>: "Название страницы - Название из настроек" */
 export function getPageTitle(pageName: string, projectName: string): string {

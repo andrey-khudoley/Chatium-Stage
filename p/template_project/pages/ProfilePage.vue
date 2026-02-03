@@ -18,6 +18,7 @@ const props = defineProps<{
   projectTitle: string
   indexUrl: string
   profileUrl: string
+  testsUrl?: string
   loginUrl: string
   isAuthenticated: boolean
   isAdmin?: boolean
@@ -124,6 +125,7 @@ const openChatiumLink = () => {
       :isAuthenticated="props.isAuthenticated"
       :isAdmin="props.isAdmin"
       :adminUrl="props.adminUrl"
+      :testsUrl="props.testsUrl"
     />
 
     <!-- Content -->

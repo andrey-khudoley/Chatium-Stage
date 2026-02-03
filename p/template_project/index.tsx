@@ -28,6 +28,7 @@ export const indexPageRoute = app.html('/', async (ctx, req) => {
   const isAdmin = ctx.user?.is('Admin') ?? false
   const loginUrl = getFullUrl(ROUTES.login)
   const adminUrl = isAdmin ? getFullUrl(ROUTES.admin) : ''
+  const testsUrl = isAuthenticated ? getFullUrl(ROUTES.tests) : ''
   const logLevel = await getLogLevelForPage(ctx)
   const projectName = await settingsLib.getSettingString(ctx, settingsLib.SETTING_KEYS.PROJECT_NAME)
 
@@ -418,6 +419,7 @@ export const indexPageRoute = app.html('/', async (ctx, req) => {
           isAuthenticated={isAuthenticated}
           isAdmin={isAdmin}
           adminUrl={adminUrl}
+          testsUrl={testsUrl}
         />
       </body>
     </html>

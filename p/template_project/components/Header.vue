@@ -32,6 +32,14 @@
         >
           <i class="fas fa-cog"></i>
         </a>
+        <a 
+          v-if="props.testsUrl"
+          :href="props.testsUrl" 
+          class="header-action-btn"
+          title="Тесты"
+        >
+          <i class="fas fa-flask"></i>
+        </a>
         <button 
           @click="triggerGlitch"
           class="header-action-btn"
@@ -83,6 +91,7 @@ const props = defineProps<{
   isAuthenticated: boolean
   isAdmin?: boolean
   adminUrl?: string
+  testsUrl?: string
 }>()
 
 const isGlitching = ref(false)
