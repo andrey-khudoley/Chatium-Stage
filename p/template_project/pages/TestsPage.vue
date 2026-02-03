@@ -296,13 +296,10 @@ const testMetrics = ref({
 })
 const runAllTestsLoading = ref(false)
 
-/* Проверка эндпоинтов */
-const runGroupTestsLoading = ref(false)
-type EndpointTestResult = { id: string; title: string; passed: boolean; error?: string }
-const endpointGroupResults = ref<EndpointTestResult[]>([])
-const endpointGroupLastRunAt = ref<string | null>(null)
+/** Результат одного теста */
+type TestResult = { id: string; title: string; passed: boolean; error?: string }
 
-/** Базовый URL для API (origin + путь проекта без trailing slash) */
+/** Базовый URL (origin + путь проекта без trailing slash) */
 function getApiBaseUrl(): string {
   const path = props.indexUrl.startsWith('http')
     ? new URL(props.indexUrl).pathname
@@ -313,147 +310,315 @@ function getApiBaseUrl(): string {
   return `${origin}${basePath.startsWith('/') ? basePath : '/' + basePath}`
 }
 
-/** Определения тестов группы «Проверка эндпоинтов»: путь, описание и валидатор ответа */
-const ENDPOINTS_CHECK_TESTS: Array<{
-  id: string
-  title: string
-  path: string
-  description: string
-  validate: (data: unknown) => boolean
-}> = [
-  {
-    id: 'health',
-    title: 'Health check',
-    path: '/api/tests/endpoints-check/health',
-    description:
-      'Проверяем, что сервис доступен: GET-запрос к эндпоинту должен вернуть HTTP 200 и JSON с полями success: true, ok: true, test: "health". Путь: /api/tests/endpoints-check/health.',
-    validate: (data) =>
-      typeof data === 'object' &&
-      data !== null &&
-      (data as { success?: boolean; ok?: boolean; test?: string }).success === true &&
-      (data as { ok?: boolean }).ok === true &&
-      (data as { test?: string }).test === 'health'
-  },
-  {
-    id: 'ping',
-    title: 'Ping',
-    path: '/api/tests/endpoints-check/ping',
-    description:
-      'Проверяем ответ API (эхо): GET должен вернуть HTTP 200 и JSON с полями success: true, pong: true, test: "ping". Путь: /api/tests/endpoints-check/ping.',
-    validate: (data) =>
-      typeof data === 'object' &&
-      data !== null &&
-      (data as { success?: boolean; pong?: boolean; test?: string }).success === true &&
-      (data as { pong?: boolean }).pong === true &&
-      (data as { test?: string }).test === 'ping'
-  }
+/* --- Блок 1: Проверка эндпоинтов (маршруты /, /web/admin, ...) --- */
+const ENDPOINTS_ROUTES: Array<{ id: string; path: string; title: string }> = [
+  { id: 'index', path: '/', title: 'Эндпоинт /' },
+  { id: 'web-admin', path: '/web/admin', title: 'Эндпоинт /web/admin' },
+  { id: 'web-profile', path: '/web/profile', title: 'Эндпоинт /web/profile' },
+  { id: 'web-login', path: '/web/login', title: 'Эндпоинт /web/login' },
+  { id: 'web-tests', path: '/web/tests', title: 'Эндпоинт /web/tests' }
 ]
+const endpointsResults = ref<TestResult[]>([])
+const endpointsLoading = ref(false)
+const endpointsLastRunAt = ref<string | null>(null)
 
-/** Запуск тестов группы «Проверка эндпоинтов» (HTTP-запросы). Возвращает результаты. */
-async function runEndpointCheckTests(): Promise<EndpointTestResult[]> {
-  const baseUrl = getApiBaseUrl()
-  const results: EndpointTestResult[] = []
-  for (const test of ENDPOINTS_CHECK_TESTS) {
-    const url = `${baseUrl}${test.path}`
-    try {
-      const res = await fetch(url, { method: 'GET', credentials: 'include' })
-      if (!res.ok) {
-        results.push({
-          id: test.id,
-          title: test.title,
-          passed: false,
-          error: `HTTP ${res.status}`
-        })
-        log.warning('Тест эндпоинта не прошёл', { test: test.id, status: res.status })
-        continue
-      }
-      const data: unknown = await res.json().catch(() => null)
-      if (!test.validate(data)) {
-        results.push({
-          id: test.id,
-          title: test.title,
-          passed: false,
-          error: 'Некорректный ответ'
-        })
-        log.warning('Тест эндпоинта: неверный формат ответа', { test: test.id, data })
-        continue
-      }
-      results.push({ id: test.id, title: test.title, passed: true })
-      log.info('Тест эндпоинта пройден', { test: test.id })
-    } catch (e) {
-      const msg = (e as Error)?.message || String(e)
-      results.push({ id: test.id, title: test.title, passed: false, error: msg })
-      log.error('Ошибка запроса к эндпоинту', { test: test.id, error: msg })
+const endpointsDisplay = computed(() => {
+  const byId = new Map(endpointsResults.value.map((r) => [r.id, r]))
+  return ENDPOINTS_ROUTES.map((t) => {
+    const res = byId.get(t.id)
+    return {
+      id: t.id,
+      title: t.title,
+      path: t.path,
+      status: res === undefined ? 'todo' : res.passed ? 'success' : 'fail',
+      error: res && !res.passed ? res.error : undefined
     }
+  })
+})
+
+async function runEndpointsTests() {
+  endpointsLoading.value = true
+  endpointsResults.value = []
+  const baseUrl = getApiBaseUrl().replace(/\/$/, '')
+  log.info('Запуск проверки эндпоинтов')
+  try {
+    const results: TestResult[] = []
+    for (const t of ENDPOINTS_ROUTES) {
+      const url = `${baseUrl}${t.path === '/' ? '' : t.path}`
+      try {
+        const res = await fetch(url, { method: 'GET', credentials: 'include' })
+        results.push({
+          id: t.id,
+          title: t.title,
+          passed: res.ok,
+          error: res.ok ? undefined : `HTTP ${res.status}`
+        })
+      } catch (e) {
+        results.push({
+          id: t.id,
+          title: t.title,
+          passed: false,
+          error: (e as Error)?.message ?? String(e)
+        })
+      }
+    }
+    endpointsResults.value = results
+    endpointsLastRunAt.value = new Date().toLocaleString('ru-RU')
+    log.info('Проверка эндпоинтов завершена', { passed: results.filter((r) => r.passed).length, failed: results.filter((r) => !r.passed).length })
+  } finally {
+    endpointsLoading.value = false
   }
-  return results
 }
 
-/** Обновить метрики дашборда по результатам проверки эндпоинтов */
-function applyEndpointResultsToMetrics(results: EndpointTestResult[]) {
-  const passed = results.filter((r) => r.passed).length
-  const failed = results.filter((r) => !r.passed).length
-  testMetrics.value = {
-    total: results.length,
-    passed,
-    failed,
-    skipped: 0,
-    lastRunAt: new Date().toLocaleString('ru-RU')
+/* --- Блок 2: Библиотека настроек (settings.lib) --- */
+const SETTINGS_LIB_TESTS: Array<{ id: string; title: string }> = [
+  { id: 'getSettingString', title: 'getSettingString (project_name)' },
+  { id: 'getLogLevel', title: 'getLogLevel' },
+  { id: 'getLogsLimit', title: 'getLogsLimit' },
+  { id: 'getLogWebhook', title: 'getLogWebhook' },
+  { id: 'getDashboardResetAt', title: 'getDashboardResetAt' },
+  { id: 'getAllSettings', title: 'getAllSettings' }
+]
+const settingsResults = ref<TestResult[]>([])
+const settingsLoading = ref(false)
+const settingsLastRunAt = ref<string | null>(null)
+
+const settingsDisplay = computed(() => {
+  const byId = new Map(settingsResults.value.map((r) => [r.id, r]))
+  return SETTINGS_LIB_TESTS.map((t) => {
+    const res = byId.get(t.id)
+    return {
+      id: t.id,
+      title: t.title,
+      status: res === undefined ? 'todo' : res.passed ? 'success' : 'fail',
+      error: res && !res.passed ? res.error : undefined
+    }
+  })
+})
+
+async function runSettingsTests() {
+  settingsLoading.value = true
+  settingsResults.value = []
+  const baseUrl = getApiBaseUrl().replace(/\/$/, '')
+  log.info('Запуск проверки библиотеки настроек')
+  try {
+    const res = await fetch(`${baseUrl}/api/tests/endpoints-check/settings-lib`, { method: 'GET', credentials: 'include' })
+    const data = (await res.json().catch(() => null)) as { success?: boolean; results?: TestResult[] }
+    if (res.ok && data?.success && Array.isArray(data.results)) {
+      settingsResults.value = data.results
+    } else {
+      settingsResults.value = SETTINGS_LIB_TESTS.map((t) => ({ id: t.id, title: t.title, passed: false, error: 'Ошибка запроса' }))
+    }
+    settingsLastRunAt.value = new Date().toLocaleString('ru-RU')
+  } finally {
+    settingsLoading.value = false
   }
 }
 
-/** Запустить все тесты (сейчас — группа «Проверка эндпоинтов») */
+/* --- Блок 3: Репозиторий настроек (settings.repo) --- */
+const SETTINGS_REPO_TESTS: Array<{ id: string; title: string }> = [
+  { id: 'upsert', title: 'upsert' },
+  { id: 'deleteByKey', title: 'deleteByKey' },
+  { id: 'findByKey', title: 'findByKey' },
+  { id: 'findAll', title: 'findAll' }
+]
+const settingsRepoResults = ref<TestResult[]>([])
+const settingsRepoLoading = ref(false)
+const settingsRepoLastRunAt = ref<string | null>(null)
+
+const settingsRepoDisplay = computed(() => {
+  const byId = new Map(settingsRepoResults.value.map((r) => [r.id, r]))
+  return SETTINGS_REPO_TESTS.map((t) => {
+    const res = byId.get(t.id)
+    return {
+      id: t.id,
+      title: t.title,
+      status: res === undefined ? 'todo' : res.passed ? 'success' : 'fail',
+      error: res && !res.passed ? res.error : undefined
+    }
+  })
+})
+
+async function runSettingsRepoTests() {
+  settingsRepoLoading.value = true
+  settingsRepoResults.value = []
+  const baseUrl = getApiBaseUrl().replace(/\/$/, '')
+  log.info('Запуск проверки репозитория настроек')
+  try {
+    const res = await fetch(`${baseUrl}/api/tests/endpoints-check/settings-repo`, { method: 'GET', credentials: 'include' })
+    const data = (await res.json().catch(() => null)) as { success?: boolean; results?: TestResult[] }
+    if (res.ok && data?.success && Array.isArray(data.results)) {
+      settingsRepoResults.value = data.results
+    } else {
+      settingsRepoResults.value = SETTINGS_REPO_TESTS.map((t) => ({ id: t.id, title: t.title, passed: false, error: 'Ошибка запроса' }))
+    }
+    settingsRepoLastRunAt.value = new Date().toLocaleString('ru-RU')
+  } finally {
+    settingsRepoLoading.value = false
+  }
+}
+
+/* --- Блок 4: Библиотека логов (logger.lib) --- */
+const LOGGER_LIB_TESTS: Array<{ id: string; title: string }> = [
+  { id: 'getAdminLogsSocketId', title: 'getAdminLogsSocketId' },
+  { id: 'shouldLogByLevel_Info', title: 'shouldLogByLevel (Info, 6)' },
+  { id: 'shouldLogByLevel_Error', title: 'shouldLogByLevel (Error, 3)' },
+  { id: 'shouldLogByLevel_Disable', title: 'shouldLogByLevel (Disable, 7)' }
+]
+const loggerLibResults = ref<TestResult[]>([])
+const loggerLibLoading = ref(false)
+const loggerLibLastRunAt = ref<string | null>(null)
+
+const loggerLibDisplay = computed(() => {
+  const byId = new Map(loggerLibResults.value.map((r) => [r.id, r]))
+  return LOGGER_LIB_TESTS.map((t) => {
+    const res = byId.get(t.id)
+    return {
+      id: t.id,
+      title: t.title,
+      status: res === undefined ? 'todo' : res.passed ? 'success' : 'fail',
+      error: res && !res.passed ? res.error : undefined
+    }
+  })
+})
+
+async function runLoggerLibTests() {
+  loggerLibLoading.value = true
+  loggerLibResults.value = []
+  const baseUrl = getApiBaseUrl().replace(/\/$/, '')
+  log.info('Запуск проверки библиотеки логов')
+  try {
+    const res = await fetch(`${baseUrl}/api/tests/endpoints-check/logger-lib`, { method: 'GET', credentials: 'include' })
+    const data = (await res.json().catch(() => null)) as { success?: boolean; results?: TestResult[] }
+    if (res.ok && data?.success && Array.isArray(data.results)) {
+      loggerLibResults.value = data.results
+    } else {
+      loggerLibResults.value = LOGGER_LIB_TESTS.map((t) => ({ id: t.id, title: t.title, passed: false, error: 'Ошибка запроса' }))
+    }
+    loggerLibLastRunAt.value = new Date().toLocaleString('ru-RU')
+  } finally {
+    loggerLibLoading.value = false
+  }
+}
+
+/* --- Блок 5: Репозиторий логов (logs.repo) --- */
+const LOGS_REPO_TESTS: Array<{ id: string; title: string }> = [
+  { id: 'create', title: 'create' },
+  { id: 'findAll', title: 'findAll' },
+  { id: 'findBeforeTimestamp', title: 'findBeforeTimestamp' },
+  { id: 'countErrorsAfter', title: 'countErrorsAfter' },
+  { id: 'countWarningsAfter', title: 'countWarningsAfter' }
+]
+const logsRepoResults = ref<TestResult[]>([])
+const logsRepoLoading = ref(false)
+const logsRepoLastRunAt = ref<string | null>(null)
+
+const logsRepoDisplay = computed(() => {
+  const byId = new Map(logsRepoResults.value.map((r) => [r.id, r]))
+  return LOGS_REPO_TESTS.map((t) => {
+    const res = byId.get(t.id)
+    return {
+      id: t.id,
+      title: t.title,
+      status: res === undefined ? 'todo' : res.passed ? 'success' : 'fail',
+      error: res && !res.passed ? res.error : undefined
+    }
+  })
+})
+
+async function runLogsRepoTests() {
+  logsRepoLoading.value = true
+  logsRepoResults.value = []
+  const baseUrl = getApiBaseUrl().replace(/\/$/, '')
+  log.info('Запуск проверки репозитория логов')
+  try {
+    const res = await fetch(`${baseUrl}/api/tests/endpoints-check/logs-repo`, { method: 'GET', credentials: 'include' })
+    const data = (await res.json().catch(() => null)) as { success?: boolean; results?: TestResult[] }
+    if (res.ok && data?.success && Array.isArray(data.results)) {
+      logsRepoResults.value = data.results
+    } else {
+      logsRepoResults.value = LOGS_REPO_TESTS.map((t) => ({ id: t.id, title: t.title, passed: false, error: 'Ошибка запроса' }))
+    }
+    logsRepoLastRunAt.value = new Date().toLocaleString('ru-RU')
+  } finally {
+    logsRepoLoading.value = false
+  }
+}
+
+/* --- Блок 6: Библиотека админки (dashboard.lib) --- */
+const DASHBOARD_LIB_TESTS: Array<{ id: string; title: string }> = [
+  { id: 'getDashboardCounts', title: 'getDashboardCounts' },
+  { id: 'resetDashboard', title: 'resetDashboard' }
+]
+const dashboardLibResults = ref<TestResult[]>([])
+const dashboardLibLoading = ref(false)
+const dashboardLibLastRunAt = ref<string | null>(null)
+
+const dashboardLibDisplay = computed(() => {
+  const byId = new Map(dashboardLibResults.value.map((r) => [r.id, r]))
+  return DASHBOARD_LIB_TESTS.map((t) => {
+    const res = byId.get(t.id)
+    return {
+      id: t.id,
+      title: t.title,
+      status: res === undefined ? 'todo' : res.passed ? 'success' : 'fail',
+      error: res && !res.passed ? res.error : undefined
+    }
+  })
+})
+
+async function runDashboardLibTests() {
+  dashboardLibLoading.value = true
+  dashboardLibResults.value = []
+  const baseUrl = getApiBaseUrl().replace(/\/$/, '')
+  log.info('Запуск проверки библиотеки админки')
+  try {
+    const res = await fetch(`${baseUrl}/api/tests/endpoints-check/dashboard-lib`, { method: 'GET', credentials: 'include' })
+    const data = (await res.json().catch(() => null)) as { success?: boolean; results?: TestResult[] }
+    if (res.ok && data?.success && Array.isArray(data.results)) {
+      dashboardLibResults.value = data.results
+    } else {
+      dashboardLibResults.value = DASHBOARD_LIB_TESTS.map((t) => ({ id: t.id, title: t.title, passed: false, error: 'Ошибка запроса' }))
+    }
+    dashboardLibLastRunAt.value = new Date().toLocaleString('ru-RU')
+  } finally {
+    dashboardLibLoading.value = false
+  }
+}
+
+/** Запустить все тесты (все шесть блоков) и обновить метрики дашборда */
 const runAllTests = async () => {
   runAllTestsLoading.value = true
   log.info('Запуск всех тестов')
   try {
-    const results = await runEndpointCheckTests()
-    endpointGroupResults.value = results
-    endpointGroupLastRunAt.value = new Date().toLocaleString('ru-RU')
-    applyEndpointResultsToMetrics(results)
-    log.info('Тесты завершены', testMetrics.value)
+    await runEndpointsTests()
+    await runSettingsTests()
+    await runSettingsRepoTests()
+    await runLoggerLibTests()
+    await runLogsRepoTests()
+    await runDashboardLibTests()
+    const all = [
+      ...endpointsResults.value,
+      ...settingsResults.value,
+      ...settingsRepoResults.value,
+      ...loggerLibResults.value,
+      ...logsRepoResults.value,
+      ...dashboardLibResults.value
+    ]
+    const passed = all.filter((r) => r.passed).length
+    const failed = all.filter((r) => !r.passed).length
+    testMetrics.value = {
+      total: all.length,
+      passed,
+      failed,
+      skipped: 0,
+      lastRunAt: new Date().toLocaleString('ru-RU')
+    }
+    log.info('Все тесты завершены', testMetrics.value)
   } finally {
     runAllTestsLoading.value = false
   }
 }
-
-/** Запустить только тесты группы «Проверка эндпоинтов» */
-const runGroupTests = async () => {
-  runGroupTestsLoading.value = true
-  endpointGroupResults.value = []
-  log.info('Запуск тестов группы «Проверка эндпоинтов»')
-  try {
-    const results = await runEndpointCheckTests()
-    endpointGroupResults.value = results
-    endpointGroupLastRunAt.value = new Date().toLocaleString('ru-RU')
-    applyEndpointResultsToMetrics(results)
-    log.info('Тесты группы завершены', {
-      passed: results.filter((r) => r.passed).length,
-      failed: results.filter((r) => !r.passed).length
-    })
-  } finally {
-    runGroupTestsLoading.value = false
-  }
-}
-
-/** Список тестов эндпоинтов для отображения: каждый с меткой [TODO] | [SUCCESS] | [FAIL] и описанием */
-const endpointTestsDisplay = computed(() => {
-  const resultsById = new Map(
-    endpointGroupResults.value.map((r) => [r.id, r])
-  )
-  return ENDPOINTS_CHECK_TESTS.map((t) => {
-    const result = resultsById.get(t.id)
-    const status: 'todo' | 'success' | 'fail' =
-      result === undefined ? 'todo' : result.passed ? 'success' : 'fail'
-    return {
-      id: t.id,
-      title: t.title,
-      description: t.description,
-      status,
-      error: result && !result.passed ? result.error : undefined
-    }
-  })
-})
 </script>
 
 <template>
@@ -609,48 +774,71 @@ const endpointTestsDisplay = computed(() => {
             </div>
           </div>
 
-          <!-- Проверка эндпоинтов -->
+          <!-- Блок 1: Проверка эндпоинтов -->
           <div v-if="showContent" class="tests-card tests-endpoints-card">
             <div class="tests-endpoints-header">
               <i class="fas fa-plug tests-endpoints-icon"></i>
               <h2 class="tests-endpoints-title">Проверка эндпоинтов</h2>
             </div>
             <p class="tests-endpoints-desc">
-              Здесь проверяется, что перечисленные ниже API-эндпоинты отвечают корректно (код 200 и ожидаемый JSON). Нажмите кнопку внизу, чтобы запустить проверку.
+              Проверка доступности маршрутов приложения (HTTP 200).
             </p>
-            <div v-if="endpointGroupLastRunAt" class="tests-endpoints-last-run">
-              Результаты от: {{ endpointGroupLastRunAt }}
+            <div v-if="endpointsLastRunAt" class="tests-endpoints-last-run">
+              Результаты от: {{ endpointsLastRunAt }}
             </div>
-            <div class="tests-endpoints-legend">
-              <span class="tests-endpoints-legend-item">
-                <span class="tests-endpoints-badge tests-endpoints-badge-todo">[TODO]</span>
-                ещё не проверяли
-              </span>
-              <span class="tests-endpoints-legend-item">
-                <span class="tests-endpoints-badge tests-endpoints-badge-success">[SUCCESS]</span>
-                проверка пройдена
-              </span>
-              <span class="tests-endpoints-legend-item">
-                <span class="tests-endpoints-badge tests-endpoints-badge-fail">[FAIL]</span>
-                ошибка (причина справа)
-              </span>
-            </div>
-            <p class="tests-endpoints-list-label">Что проверяется:</p>
             <div class="tests-endpoints-list-wrap">
               <ul class="tests-endpoints-list" role="list">
                 <li
-                  v-for="item in endpointTestsDisplay"
+                  v-for="item in endpointsDisplay"
+                :key="item.id"
+                class="tests-endpoints-list-item"
+                :class="`tests-endpoints-status-${item.status}`"
+              >
+                <span class="tests-endpoints-badge" :class="`tests-endpoints-badge-${item.status}`">
+                  {{ item.status === 'todo' ? '[TODO]' : item.status === 'success' ? '[OK]' : '[FAIL]' }}
+                </span>
+                <span class="tests-endpoints-list-title-inline">{{ item.title }}</span>
+                <span v-if="item.error" class="tests-endpoints-list-error">{{ item.error }}</span>
+              </li>
+              </ul>
+            </div>
+            <div class="tests-endpoints-actions">
+              <button
+                type="button"
+                class="tests-run-group-btn"
+                :disabled="endpointsLoading"
+                @click="runEndpointsTests"
+              >
+                <i class="fas" :class="endpointsLoading ? 'fa-spinner fa-spin' : 'fa-bolt'"></i>
+                {{ endpointsLoading ? 'Проверяем...' : 'Запустить проверку эндпоинтов' }}
+              </button>
+            </div>
+          </div>
+
+          <!-- Блок 2: Библиотека настроек -->
+          <div v-if="showContent" class="tests-card tests-endpoints-card">
+            <div class="tests-endpoints-header">
+              <i class="fas fa-cog tests-endpoints-icon"></i>
+              <h2 class="tests-endpoints-title">Библиотека настроек</h2>
+            </div>
+            <p class="tests-endpoints-desc">
+              Тесты библиотеки настроек (settings.lib).
+            </p>
+            <div v-if="settingsLastRunAt" class="tests-endpoints-last-run">
+              Результаты от: {{ settingsLastRunAt }}
+            </div>
+            <div class="tests-endpoints-list-wrap">
+              <ul class="tests-endpoints-list" role="list">
+                <li
+                  v-for="item in settingsDisplay"
                   :key="item.id"
                   class="tests-endpoints-list-item"
                   :class="`tests-endpoints-status-${item.status}`"
                 >
                   <span class="tests-endpoints-badge" :class="`tests-endpoints-badge-${item.status}`">
-                    {{ item.status === 'todo' ? '[TODO]' : item.status === 'success' ? '[SUCCESS]' : '[FAIL]' }}
+                    {{ item.status === 'todo' ? '[TODO]' : item.status === 'success' ? '[OK]' : '[FAIL]' }}
                   </span>
-                  <div class="tests-endpoints-list-content">
-                    <span class="tests-endpoints-list-title">{{ item.title }}</span>
-                    <p class="tests-endpoints-list-desc">{{ item.description }}</p>
-                  </div>
+                  <span class="tests-endpoints-list-title-inline">{{ item.title }}</span>
                   <span v-if="item.error" class="tests-endpoints-list-error">{{ item.error }}</span>
                 </li>
               </ul>
@@ -659,11 +847,175 @@ const endpointTestsDisplay = computed(() => {
               <button
                 type="button"
                 class="tests-run-group-btn"
-                :disabled="runGroupTestsLoading"
-                @click="runGroupTests"
+                :disabled="settingsLoading"
+                @click="runSettingsTests"
               >
-                <i class="fas" :class="runGroupTestsLoading ? 'fa-spinner fa-spin' : 'fa-bolt'"></i>
-                {{ runGroupTestsLoading ? 'Проверяем...' : 'Запустить проверку эндпоинтов' }}
+                <i class="fas" :class="settingsLoading ? 'fa-spinner fa-spin' : 'fa-bolt'"></i>
+                {{ settingsLoading ? 'Проверяем...' : 'Запустить проверку библиотеки настроек' }}
+              </button>
+            </div>
+          </div>
+
+          <!-- Блок 3: Репозиторий настроек -->
+          <div v-if="showContent" class="tests-card tests-endpoints-card">
+            <div class="tests-endpoints-header">
+              <i class="fas fa-table tests-endpoints-icon"></i>
+              <h2 class="tests-endpoints-title">Репозиторий настроек</h2>
+            </div>
+            <p class="tests-endpoints-desc">
+              Тесты репозитория настроек (settings.repo).
+            </p>
+            <div v-if="settingsRepoLastRunAt" class="tests-endpoints-last-run">
+              Результаты от: {{ settingsRepoLastRunAt }}
+            </div>
+            <div class="tests-endpoints-list-wrap">
+              <ul class="tests-endpoints-list" role="list">
+                <li
+                  v-for="item in settingsRepoDisplay"
+                  :key="item.id"
+                  class="tests-endpoints-list-item"
+                  :class="`tests-endpoints-status-${item.status}`"
+                >
+                  <span class="tests-endpoints-badge" :class="`tests-endpoints-badge-${item.status}`">
+                    {{ item.status === 'todo' ? '[TODO]' : item.status === 'success' ? '[OK]' : '[FAIL]' }}
+                  </span>
+                  <span class="tests-endpoints-list-title-inline">{{ item.title }}</span>
+                  <span v-if="item.error" class="tests-endpoints-list-error">{{ item.error }}</span>
+                </li>
+              </ul>
+            </div>
+            <div class="tests-endpoints-actions">
+              <button
+                type="button"
+                class="tests-run-group-btn"
+                :disabled="settingsRepoLoading"
+                @click="runSettingsRepoTests"
+              >
+                <i class="fas" :class="settingsRepoLoading ? 'fa-spinner fa-spin' : 'fa-bolt'"></i>
+                {{ settingsRepoLoading ? 'Проверяем...' : 'Запустить проверку репозитория настроек' }}
+              </button>
+            </div>
+          </div>
+
+          <!-- Блок 4: Библиотека логов -->
+          <div v-if="showContent" class="tests-card tests-endpoints-card">
+            <div class="tests-endpoints-header">
+              <i class="fas fa-file-alt tests-endpoints-icon"></i>
+              <h2 class="tests-endpoints-title">Библиотека логов</h2>
+            </div>
+            <p class="tests-endpoints-desc">
+              Тесты библиотеки логов (logger.lib).
+            </p>
+            <div v-if="loggerLibLastRunAt" class="tests-endpoints-last-run">
+              Результаты от: {{ loggerLibLastRunAt }}
+            </div>
+            <div class="tests-endpoints-list-wrap">
+              <ul class="tests-endpoints-list" role="list">
+                <li
+                  v-for="item in loggerLibDisplay"
+                  :key="item.id"
+                  class="tests-endpoints-list-item"
+                  :class="`tests-endpoints-status-${item.status}`"
+                >
+                  <span class="tests-endpoints-badge" :class="`tests-endpoints-badge-${item.status}`">
+                    {{ item.status === 'todo' ? '[TODO]' : item.status === 'success' ? '[OK]' : '[FAIL]' }}
+                  </span>
+                  <span class="tests-endpoints-list-title-inline">{{ item.title }}</span>
+                  <span v-if="item.error" class="tests-endpoints-list-error">{{ item.error }}</span>
+                </li>
+              </ul>
+            </div>
+            <div class="tests-endpoints-actions">
+              <button
+                type="button"
+                class="tests-run-group-btn"
+                :disabled="loggerLibLoading"
+                @click="runLoggerLibTests"
+              >
+                <i class="fas" :class="loggerLibLoading ? 'fa-spinner fa-spin' : 'fa-bolt'"></i>
+                {{ loggerLibLoading ? 'Проверяем...' : 'Запустить проверку библиотеки логов' }}
+              </button>
+            </div>
+          </div>
+
+          <!-- Блок 5: Репозиторий логов -->
+          <div v-if="showContent" class="tests-card tests-endpoints-card">
+            <div class="tests-endpoints-header">
+              <i class="fas fa-database tests-endpoints-icon"></i>
+              <h2 class="tests-endpoints-title">Репозиторий логов</h2>
+            </div>
+            <p class="tests-endpoints-desc">
+              Тесты репозитория логов (logs.repo).
+            </p>
+            <div v-if="logsRepoLastRunAt" class="tests-endpoints-last-run">
+              Результаты от: {{ logsRepoLastRunAt }}
+            </div>
+            <div class="tests-endpoints-list-wrap">
+              <ul class="tests-endpoints-list" role="list">
+                <li
+                  v-for="item in logsRepoDisplay"
+                  :key="item.id"
+                  class="tests-endpoints-list-item"
+                  :class="`tests-endpoints-status-${item.status}`"
+                >
+                  <span class="tests-endpoints-badge" :class="`tests-endpoints-badge-${item.status}`">
+                    {{ item.status === 'todo' ? '[TODO]' : item.status === 'success' ? '[OK]' : '[FAIL]' }}
+                  </span>
+                  <span class="tests-endpoints-list-title-inline">{{ item.title }}</span>
+                  <span v-if="item.error" class="tests-endpoints-list-error">{{ item.error }}</span>
+                </li>
+              </ul>
+            </div>
+            <div class="tests-endpoints-actions">
+              <button
+                type="button"
+                class="tests-run-group-btn"
+                :disabled="logsRepoLoading"
+                @click="runLogsRepoTests"
+              >
+                <i class="fas" :class="logsRepoLoading ? 'fa-spinner fa-spin' : 'fa-bolt'"></i>
+                {{ logsRepoLoading ? 'Проверяем...' : 'Запустить проверку репозитория логов' }}
+              </button>
+            </div>
+          </div>
+
+          <!-- Блок 6: Библиотека админки -->
+          <div v-if="showContent" class="tests-card tests-endpoints-card">
+            <div class="tests-endpoints-header">
+              <i class="fas fa-chart-line tests-endpoints-icon"></i>
+              <h2 class="tests-endpoints-title">Библиотека админки</h2>
+            </div>
+            <p class="tests-endpoints-desc">
+              Тесты библиотеки админки (dashboard.lib).
+            </p>
+            <div v-if="dashboardLibLastRunAt" class="tests-endpoints-last-run">
+              Результаты от: {{ dashboardLibLastRunAt }}
+            </div>
+            <div class="tests-endpoints-list-wrap">
+              <ul class="tests-endpoints-list" role="list">
+                <li
+                  v-for="item in dashboardLibDisplay"
+                  :key="item.id"
+                  class="tests-endpoints-list-item"
+                  :class="`tests-endpoints-status-${item.status}`"
+                >
+                  <span class="tests-endpoints-badge" :class="`tests-endpoints-badge-${item.status}`">
+                    {{ item.status === 'todo' ? '[TODO]' : item.status === 'success' ? '[OK]' : '[FAIL]' }}
+                  </span>
+                  <span class="tests-endpoints-list-title-inline">{{ item.title }}</span>
+                  <span v-if="item.error" class="tests-endpoints-list-error">{{ item.error }}</span>
+                </li>
+              </ul>
+            </div>
+            <div class="tests-endpoints-actions">
+              <button
+                type="button"
+                class="tests-run-group-btn"
+                :disabled="dashboardLibLoading"
+                @click="runDashboardLibTests"
+              >
+                <i class="fas" :class="dashboardLibLoading ? 'fa-spinner fa-spin' : 'fa-bolt'"></i>
+                {{ dashboardLibLoading ? 'Проверяем...' : 'Запустить проверку библиотеки админки' }}
               </button>
             </div>
           </div>
@@ -1079,6 +1431,20 @@ const endpointTestsDisplay = computed(() => {
   color: var(--color-text);
   display: block;
   margin-bottom: 0.2rem;
+}
+
+.tests-endpoints-list-title-inline {
+  font-weight: 600;
+  color: var(--color-text);
+  flex: 1;
+  min-width: 0;
+}
+
+.tests-endpoints-list-category {
+  font-size: 0.7rem;
+  font-weight: 400;
+  color: var(--color-text-tertiary);
+  margin-left: 0.5rem;
 }
 
 .tests-endpoints-list-desc {

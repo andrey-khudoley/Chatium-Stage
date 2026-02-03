@@ -229,3 +229,34 @@
 ### `./api/tests/endpoints-check/ping.ts`
 - `@app/auth` → `requireAnyUser`
 - `../../../lib/logger.lib` → `*`
+
+### `./api/tests/endpoints-check/config.ts`
+- `@app/auth` → `requireAnyUser`
+- `../../../lib/logger.lib` → `*`
+- `../../../config/routes` → `getFullUrl`, `ROUTES`
+- `../../../config/project` → `TESTS_PAGE_NAME`, `getPageTitle`, `getHeaderText`
+
+### `./api/tests/endpoints-check/settings-lib.ts`
+- `@app/auth` → `requireAnyUser`
+- `../../../lib/logger.lib` → `*`
+- `../../../lib/settings.lib` → `*`
+
+### `./api/tests/endpoints-check/settings-repo.ts`
+- `@app/auth` → `requireAnyUser`
+- `../../../lib/logger.lib` → `*`
+- `../../../lib/settings.lib` → `SETTING_KEYS`
+- `../../../repos/settings.repo` → `*`
+
+### `./api/tests/endpoints-check/logger-lib.ts`
+- `@app/auth` → `requireAnyUser`
+- `../../../lib/logger.lib` → `*`
+
+### `./api/tests/endpoints-check/logs-repo.ts`
+- `@app/auth` → `requireAnyUser`
+- `../../../lib/logger.lib` → `*`
+- `../../../repos/logs.repo` → `*`
+
+### `./api/tests/endpoints-check/dashboard-lib.ts`
+- `@app/auth` → `requireAnyUser`
+- `../../../lib/logger.lib` → `*`
+- `../../../lib/admin/dashboard.lib` → `*`

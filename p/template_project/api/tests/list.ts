@@ -19,11 +19,65 @@ export const listTestsRoute = app.get('/', async (ctx, req) => {
 
   const categories = [
     {
-      id: 'endpoints-check',
+      id: 'endpoints',
       title: 'Проверка эндпоинтов',
       tests: [
-        { id: 'health', title: 'Health check' },
-        { id: 'ping', title: 'Ping' }
+        { id: 'index', title: 'Эндпоинт /' },
+        { id: 'web-admin', title: 'Эндпоинт /web/admin' },
+        { id: 'web-profile', title: 'Эндпоинт /web/profile' },
+        { id: 'web-login', title: 'Эндпоинт /web/login' },
+        { id: 'web-tests', title: 'Эндпоинт /web/tests' }
+      ]
+    },
+    {
+      id: 'settings-lib',
+      title: 'Библиотека настроек',
+      tests: [
+        { id: 'getSettingString', title: 'getSettingString (project_name)' },
+        { id: 'getLogLevel', title: 'getLogLevel' },
+        { id: 'getLogsLimit', title: 'getLogsLimit' },
+        { id: 'getLogWebhook', title: 'getLogWebhook' },
+        { id: 'getDashboardResetAt', title: 'getDashboardResetAt' },
+        { id: 'getAllSettings', title: 'getAllSettings' }
+      ]
+    },
+    {
+      id: 'settings-repo',
+      title: 'Репозиторий настроек',
+      tests: [
+        { id: 'upsert', title: 'upsert' },
+        { id: 'deleteByKey', title: 'deleteByKey' },
+        { id: 'findByKey', title: 'findByKey' },
+        { id: 'findAll', title: 'findAll' }
+      ]
+    },
+    {
+      id: 'logger-lib',
+      title: 'Библиотека логов',
+      tests: [
+        { id: 'getAdminLogsSocketId', title: 'getAdminLogsSocketId' },
+        { id: 'shouldLogByLevel_Info', title: 'shouldLogByLevel (Info, 6)' },
+        { id: 'shouldLogByLevel_Error', title: 'shouldLogByLevel (Error, 3)' },
+        { id: 'shouldLogByLevel_Disable', title: 'shouldLogByLevel (Disable, 7)' }
+      ]
+    },
+    {
+      id: 'logs-repo',
+      title: 'Репозиторий логов',
+      tests: [
+        { id: 'create', title: 'create' },
+        { id: 'findAll', title: 'findAll' },
+        { id: 'findBeforeTimestamp', title: 'findBeforeTimestamp' },
+        { id: 'countErrorsAfter', title: 'countErrorsAfter' },
+        { id: 'countWarningsAfter', title: 'countWarningsAfter' }
+      ]
+    },
+    {
+      id: 'dashboard-lib',
+      title: 'Библиотека админки',
+      tests: [
+        { id: 'getDashboardCounts', title: 'getDashboardCounts' },
+        { id: 'resetDashboard', title: 'resetDashboard' }
       ]
     }
   ]
