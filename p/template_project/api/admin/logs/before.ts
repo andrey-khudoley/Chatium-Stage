@@ -33,6 +33,11 @@ export const getLogsBeforeRoute = app.get('/', async (ctx, req) => {
   })
 
   const beforeTimestampRaw = req.query.beforeTimestamp as string
+  await loggerLib.writeServerLog(ctx, {
+    severity: 7,
+    message: `[${LOG_PATH}] Парсинг query`,
+    payload: { beforeTimestampRaw, queryKeys: Object.keys(req.query ?? {}) }
+  })
   if (!beforeTimestampRaw || typeof beforeTimestampRaw !== 'string' || !beforeTimestampRaw.trim()) {
     await loggerLib.writeServerLog(ctx, {
       severity: 4,
@@ -43,6 +48,11 @@ export const getLogsBeforeRoute = app.get('/', async (ctx, req) => {
   }
 
   const beforeTimestamp = Number(beforeTimestampRaw)
+  await loggerLib.writeServerLog(ctx, {
+    severity: 7,
+    message: `[${LOG_PATH}] Переменные после парсинга timestamp`,
+    payload: { beforeTimestampRaw, beforeTimestamp }
+  })
   if (isNaN(beforeTimestamp) || beforeTimestamp <= 0) {
     await loggerLib.writeServerLog(ctx, {
       severity: 4,
@@ -54,11 +64,26 @@ export const getLogsBeforeRoute = app.get('/', async (ctx, req) => {
 
   const limitRaw = req.query.limit as string | undefined
   const limit = Math.min(Math.max(1, Number(limitRaw) || 50), 200)
+  await loggerLib.writeServerLog(ctx, {
+    severity: 7,
+    message: `[${LOG_PATH}] Парсинг limit`,
+    payload: { limitRaw, limit }
+  })
 
   try {
+    await loggerLib.writeServerLog(ctx, {
+      severity: 7,
+      message: `[${LOG_PATH}] Вызов logsRepo.findBeforeTimestamp`,
+      payload: { beforeTimestamp, limit }
+    })
     const logs = await logsRepo.findBeforeTimestamp(ctx, beforeTimestamp, limit)
     const entries = logs.map(rowToLogEntry)
     const hasMore = entries.length === limit
+    await loggerLib.writeServerLog(ctx, {
+      severity: 7,
+      message: `[${LOG_PATH}] Переменные после findBeforeTimestamp`,
+      payload: { logsCount: logs.length, entriesCount: entries.length, hasMore }
+    })
 
     await loggerLib.writeServerLog(ctx, {
       severity: 6,
@@ -66,6 +91,11 @@ export const getLogsBeforeRoute = app.get('/', async (ctx, req) => {
       payload: { count: entries.length, limit, hasMore, beforeTimestamp }
     })
 
+    await loggerLib.writeServerLog(ctx, {
+      severity: 7,
+      message: `[${LOG_PATH}] Возврат success`,
+      payload: { entriesCount: entries.length, hasMore }
+    })
     return { success: true, entries, hasMore }
   } catch (error) {
     await loggerLib.writeServerLog(ctx, {

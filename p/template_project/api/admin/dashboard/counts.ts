@@ -19,11 +19,26 @@ export const getDashboardCountsRoute = app.get('/', async (ctx, req) => {
   })
 
   try {
+    await loggerLib.writeServerLog(ctx, {
+      severity: 7,
+      message: `[${LOG_PATH}] Вызов dashboardLib.getDashboardCounts`,
+      payload: {}
+    })
     const counts = await dashboardLib.getDashboardCounts(ctx)
+    await loggerLib.writeServerLog(ctx, {
+      severity: 7,
+      message: `[${LOG_PATH}] Переменные counts`,
+      payload: counts
+    })
     await loggerLib.writeServerLog(ctx, {
       severity: 6,
       message: `[${LOG_PATH}] Счётчики получены`,
       payload: { errorCount: counts.errorCount, warnCount: counts.warnCount, resetAt: counts.resetAt }
+    })
+    await loggerLib.writeServerLog(ctx, {
+      severity: 7,
+      message: `[${LOG_PATH}] Возврат success`,
+      payload: counts
     })
     return { success: true, ...counts }
   } catch (error) {

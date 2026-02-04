@@ -43,6 +43,12 @@ export const saveSettingRoute = app.post('/', async (ctx, req) => {
   const key = typeof body?.key === 'string' ? body.key.trim() : ''
   let value = body?.value
 
+  await loggerLib.writeServerLog(ctx, {
+    severity: 7,
+    message: `[${LOG_PATH}] Парсинг body`,
+    payload: { key, value, bodyKeys: body ? Object.keys(body) : [] }
+  })
+
   if (!key) {
     await loggerLib.writeServerLog(ctx, {
       severity: 4,
@@ -54,15 +60,30 @@ export const saveSettingRoute = app.post('/', async (ctx, req) => {
 
   if (key === settingsLib.SETTING_KEYS.LOG_LEVEL && value !== undefined && value !== null) {
     value = normalizeLogLevelValue(value)
+    await loggerLib.writeServerLog(ctx, {
+      severity: 7,
+      message: `[${LOG_PATH}] Нормализован log_level`,
+      payload: { value }
+    })
   }
 
   try {
+    await loggerLib.writeServerLog(ctx, {
+      severity: 7,
+      message: `[${LOG_PATH}] Вызов lib setSetting`,
+      payload: { key, value }
+    })
     await settingsLib.setSetting(ctx, key, value)
     const saved = await settingsLib.getSetting(ctx, key)
     await loggerLib.writeServerLog(ctx, {
       severity: 6,
       message: `[${LOG_PATH}] Настройка сохранена`,
       payload: { key, value: saved }
+    })
+    await loggerLib.writeServerLog(ctx, {
+      severity: 7,
+      message: `[${LOG_PATH}] Возврат success`,
+      payload: { key, saved }
     })
     return { success: true, key, value: saved }
   } catch (error) {

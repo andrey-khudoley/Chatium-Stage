@@ -21,7 +21,17 @@ export const profilePageRoute = app.html('/', async (ctx, req) => {
 
   let user
   try {
+    await loggerLib.writeServerLog(ctx, {
+      severity: 7,
+      message: `[${LOG_PATH}] Проверка requireRealUser`,
+      payload: { hasUser: !!ctx.user }
+    })
     user = requireRealUser(ctx)
+    await loggerLib.writeServerLog(ctx, {
+      severity: 7,
+      message: `[${LOG_PATH}] requireRealUser пройдена`,
+      payload: { displayName: user.displayName }
+    })
   } catch (error: unknown) {
     await loggerLib.writeServerLog(ctx, {
       severity: 4,
@@ -34,9 +44,18 @@ export const profilePageRoute = app.html('/', async (ctx, req) => {
   const isAdmin = user.is('Admin')
   const adminUrl = isAdmin ? getFullUrl(ROUTES.admin) : ''
   const loginUrl = getFullUrl(ROUTES.login)
+  await loggerLib.writeServerLog(ctx, {
+    severity: 7,
+    message: `[${LOG_PATH}] Переменные после user`,
+    payload: { isAdmin, adminUrl, loginUrl, displayName: user.displayName }
+  })
   const logLevel = await getLogLevelForPage(ctx)
   const projectName = await settingsLib.getSettingString(ctx, settingsLib.SETTING_KEYS.PROJECT_NAME)
-
+  await loggerLib.writeServerLog(ctx, {
+    severity: 7,
+    message: `[${LOG_PATH}] Переменные для рендера`,
+    payload: { logLevel, projectName }
+  })
   await loggerLib.writeServerLog(ctx, {
     severity: 6,
     message: `[${LOG_PATH}] Рендер страницы профиля`,

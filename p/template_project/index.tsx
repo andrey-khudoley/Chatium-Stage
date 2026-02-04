@@ -26,11 +26,26 @@ export const indexPageRoute = app.html('/', async (ctx, req) => {
 
   const isAuthenticated = !!ctx.user
   const isAdmin = ctx.user?.is('Admin') ?? false
+  await loggerLib.writeServerLog(ctx, {
+    severity: 7,
+    message: `[${LOG_PATH}] Переменные auth`,
+    payload: { isAuthenticated, isAdmin }
+  })
   const loginUrl = getFullUrl(ROUTES.login)
   const adminUrl = isAdmin ? getFullUrl(ROUTES.admin) : ''
   const testsUrl = isAuthenticated ? getFullUrl(ROUTES.tests) : ''
+  await loggerLib.writeServerLog(ctx, {
+    severity: 7,
+    message: `[${LOG_PATH}] URL-ы`,
+    payload: { loginUrl, adminUrl, testsUrl }
+  })
   const logLevel = await getLogLevelForPage(ctx)
   const projectName = await settingsLib.getSettingString(ctx, settingsLib.SETTING_KEYS.PROJECT_NAME)
+  await loggerLib.writeServerLog(ctx, {
+    severity: 7,
+    message: `[${LOG_PATH}] Переменные для рендера`,
+    payload: { logLevel, projectName }
+  })
 
   return (
     <html>

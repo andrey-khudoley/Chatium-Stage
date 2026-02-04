@@ -76,6 +76,7 @@ let logSink: LogSink | null = null
 /** Регистрирует sink для отображения логов в дашборде. Вызов с null снимает. */
 export function setLogSink(sink: LogSink | null): void {
   logSink = sink
+  logDebug(`[shared/logger] setLogSink ${sink ? 'sink set' : 'sink cleared'}`)
 }
 
 function emitLog(

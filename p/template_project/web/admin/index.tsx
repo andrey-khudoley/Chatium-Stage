@@ -104,7 +104,17 @@ export const adminPageRoute = app.html('/', async (ctx, req) => {
   })
 
   try {
+    await loggerLib.writeServerLog(ctx, {
+      severity: 7,
+      message: `[${LOG_PATH}] Проверка requireAccountRole Admin`,
+      payload: { hasUser: !!ctx.user }
+    })
     requireAccountRole(ctx, 'Admin')
+    await loggerLib.writeServerLog(ctx, {
+      severity: 7,
+      message: `[${LOG_PATH}] requireAccountRole пройдена`,
+      payload: {}
+    })
   } catch (error) {
     await loggerLib.writeServerLog(ctx, {
       severity: 4,
@@ -134,11 +144,25 @@ export const adminPageRoute = app.html('/', async (ctx, req) => {
   const profileUrl = getFullUrl(ROUTES.profile)
   const adminUrl = getFullUrl(ROUTES.admin)
   const loginUrl = getFullUrl(ROUTES.login)
+  await loggerLib.writeServerLog(ctx, {
+    severity: 7,
+    message: `[${LOG_PATH}] URL-ы`,
+    payload: { indexUrl, profileUrl, adminUrl, loginUrl }
+  })
   const logLevel = await getLogLevelForPage(ctx)
   const logsSocketId = getAdminLogsSocketId(ctx)
   const encodedLogsSocketId = await genSocketId(ctx, logsSocketId)
+  await loggerLib.writeServerLog(ctx, {
+    severity: 7,
+    message: `[${LOG_PATH}] Переменные сокета и уровня`,
+    payload: { logLevel, logsSocketId, hasEncodedLogsSocketId: !!encodedLogsSocketId }
+  })
   const projectName = await settingsLib.getSettingString(ctx, settingsLib.SETTING_KEYS.PROJECT_NAME)
-
+  await loggerLib.writeServerLog(ctx, {
+    severity: 7,
+    message: `[${LOG_PATH}] Переменные для рендера`,
+    payload: { projectName }
+  })
   await loggerLib.writeServerLog(ctx, {
     severity: 6,
     message: `[${LOG_PATH}] Рендер страницы админки`,

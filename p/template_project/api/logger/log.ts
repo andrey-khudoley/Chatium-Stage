@@ -23,12 +23,24 @@ export const logRoute = app.post('/', async (ctx, req) => {
 
   const body = req.body as { severity?: unknown; message?: unknown; payload?: unknown }
 
+  await loggerLib.writeServerLog(ctx, {
+    severity: 7,
+    message: `[${LOG_PATH}] Парсинг body`,
+    payload: { bodyKeys: body ? Object.keys(body) : [], body }
+  })
+
   const severity =
     typeof body?.severity === 'number' && Number.isFinite(body.severity)
       ? Math.max(0, Math.min(7, Math.floor(body.severity)))
       : 6
   const message = typeof body?.message === 'string' ? body.message.trim() : String(body?.message ?? '')
   const payload = body?.payload
+
+  await loggerLib.writeServerLog(ctx, {
+    severity: 7,
+    message: `[${LOG_PATH}] Переменные после парсинга`,
+    payload: { severity, message, hasPayload: payload !== undefined }
+  })
 
   if (!message) {
     await loggerLib.writeServerLog(ctx, {
@@ -41,6 +53,11 @@ export const logRoute = app.post('/', async (ctx, req) => {
 
   try {
     await loggerLib.writeServerLog(ctx, { severity, message, payload })
+    await loggerLib.writeServerLog(ctx, {
+      severity: 7,
+      message: `[${LOG_PATH}] Возврат success`,
+      payload: { success: true }
+    })
     return { success: true }
   } catch (error) {
     await loggerLib.writeServerLog(ctx, {

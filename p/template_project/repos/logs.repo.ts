@@ -1,9 +1,13 @@
 import Logs, { type LogsRow } from '../tables/logs.table'
+import * as loggerLib from '../lib/logger.lib'
+
+const LOG_MODULE = 'repos/logs.repo'
 
 /**
  * Репозиторий логов — слой работы с БД.
  * Только CRUD-операции, без бизнес-логики.
  */
+/** create не логирует через writeServerLog, чтобы не было рекурсии (writeServerLog вызывает create). */
 export async function create(
   ctx: app.Ctx,
   data: { message: string; payload: unknown; severity: number; level: string; timestamp: number }
@@ -15,15 +19,39 @@ export async function findAll(
   ctx: app.Ctx,
   opts: { limit?: number; offset?: number } = {}
 ): Promise<LogsRow[]> {
-  return Logs.findAll(ctx, {
-    order: [{ timestamp: 'desc' }],
-    limit: opts.limit ?? 1000,
-    offset: opts.offset ?? 0
+  await loggerLib.writeServerLog(ctx, {
+    severity: 7,
+    message: `[${LOG_MODULE}] findAll entry`,
+    payload: opts
   })
+  const limit = opts.limit ?? 1000
+  const offset = opts.offset ?? 0
+  const rows = await Logs.findAll(ctx, {
+    order: [{ timestamp: 'desc' }],
+    limit,
+    offset
+  })
+  await loggerLib.writeServerLog(ctx, {
+    severity: 7,
+    message: `[${LOG_MODULE}] findAll exit`,
+    payload: { limit, offset, count: rows.length }
+  })
+  return rows
 }
 
 export async function findById(ctx: app.Ctx, id: string): Promise<LogsRow | null> {
-  return Logs.findById(ctx, id)
+  await loggerLib.writeServerLog(ctx, {
+    severity: 7,
+    message: `[${LOG_MODULE}] findById entry`,
+    payload: { id }
+  })
+  const row = await Logs.findById(ctx, id)
+  await loggerLib.writeServerLog(ctx, {
+    severity: 7,
+    message: `[${LOG_MODULE}] findById exit`,
+    payload: { id, hasRow: !!row }
+  })
+  return row
 }
 
 /**
@@ -36,11 +64,22 @@ export async function findBeforeTimestamp(
   beforeTimestamp: number,
   limit: number
 ): Promise<LogsRow[]> {
-  return Logs.findAll(ctx, {
+  await loggerLib.writeServerLog(ctx, {
+    severity: 7,
+    message: `[${LOG_MODULE}] findBeforeTimestamp entry`,
+    payload: { beforeTimestamp, limit }
+  })
+  const rows = await Logs.findAll(ctx, {
     where: { timestamp: { $lt: beforeTimestamp } },
     order: [{ timestamp: 'desc' }],
     limit
   })
+  await loggerLib.writeServerLog(ctx, {
+    severity: 7,
+    message: `[${LOG_MODULE}] findBeforeTimestamp exit`,
+    payload: { beforeTimestamp, limit, count: rows.length }
+  })
+  return rows
 }
 
 /** Severity ошибок (syslog): 0 Emergency, 1 Alert, 2 Critical, 3 Error. */
@@ -56,10 +95,21 @@ export async function countBySeverityAfter(
   sinceTimestamp: number,
   severity: number
 ): Promise<number> {
-  return Logs.countBy(ctx, {
+  await loggerLib.writeServerLog(ctx, {
+    severity: 7,
+    message: `[${LOG_MODULE}] countBySeverityAfter entry`,
+    payload: { sinceTimestamp, severity }
+  })
+  const count = await Logs.countBy(ctx, {
     timestamp: { $gt: sinceTimestamp },
     severity
   })
+  await loggerLib.writeServerLog(ctx, {
+    severity: 7,
+    message: `[${LOG_MODULE}] countBySeverityAfter exit`,
+    payload: { sinceTimestamp, severity, count }
+  })
+  return count
 }
 
 /**
@@ -67,10 +117,26 @@ export async function countBySeverityAfter(
  * Несколько countBy по диапазону severity, сумма.
  */
 export async function countErrorsAfter(ctx: app.Ctx, sinceTimestamp: number): Promise<number> {
+  await loggerLib.writeServerLog(ctx, {
+    severity: 7,
+    message: `[${LOG_MODULE}] countErrorsAfter entry`,
+    payload: { sinceTimestamp }
+  })
   let total = 0
   for (const severity of ERROR_SEVERITIES) {
-    total += await countBySeverityAfter(ctx, sinceTimestamp, severity)
+    const n = await countBySeverityAfter(ctx, sinceTimestamp, severity)
+    total += n
+    await loggerLib.writeServerLog(ctx, {
+      severity: 7,
+      message: `[${LOG_MODULE}] countErrorsAfter severity`,
+      payload: { severity, n, total }
+    })
   }
+  await loggerLib.writeServerLog(ctx, {
+    severity: 7,
+    message: `[${LOG_MODULE}] countErrorsAfter exit`,
+    payload: { sinceTimestamp, total }
+  })
   return total
 }
 
@@ -78,5 +144,16 @@ export async function countErrorsAfter(ctx: app.Ctx, sinceTimestamp: number): Pr
  * Количество предупреждений (severity 4) после указанного timestamp.
  */
 export async function countWarningsAfter(ctx: app.Ctx, sinceTimestamp: number): Promise<number> {
-  return countBySeverityAfter(ctx, sinceTimestamp, WARN_SEVERITY)
+  await loggerLib.writeServerLog(ctx, {
+    severity: 7,
+    message: `[${LOG_MODULE}] countWarningsAfter entry`,
+    payload: { sinceTimestamp }
+  })
+  const count = await countBySeverityAfter(ctx, sinceTimestamp, WARN_SEVERITY)
+  await loggerLib.writeServerLog(ctx, {
+    severity: 7,
+    message: `[${LOG_MODULE}] countWarningsAfter exit`,
+    payload: { sinceTimestamp, count }
+  })
+  return count
 }
