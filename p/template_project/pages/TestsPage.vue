@@ -1600,8 +1600,7 @@ const runAllTests = async () => {
   background: #080808;
   border: 1px solid var(--color-border);
   border-radius: 4px;
-  min-height: 200px;
-  max-height: 400px;
+  height: 400px;
   overflow: auto;
   padding: 1rem;
   font-family: 'Share Tech Mono', 'Courier New', monospace;
