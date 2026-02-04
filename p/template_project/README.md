@@ -32,6 +32,7 @@
 - Описать бизнес‑логику и данные.
 
 ## Changelog
+- 2026-02-04: исправлена рекурсия Maximum call stack size exceeded при обращении к проекту (p/neso/crm/index): в repos/settings.repo.ts убраны все вызовы logger.lib — getSetting/getLogLevel/getLogWebhook вызываются из writeServerLog и используют findByKey, иначе цепочка зациливалась. Обновлён docs/imports.md.
 - 2026-02-04: в lib/logger.lib: в ctx.log передаётся только сообщение (без payload), в ctx.account.log — сообщение и payload (level, json). Обновлён JSDoc writeServerLog.
 - 2026-02-04: покрытие debug-логами всех слоёв: при уровне Debug трассировка в lib (logger.lib через ctx.log без рекурсии; settings.lib, dashboard.lib — вход/выход и переменные), repos (settings.repo, logs.repo; в logs.repo.create логи не пишутся, чтобы не было рекурсии), api (парсинг, переменные, возвраты), web и index (шаги и переменные), shared/logger (setLogSink). В settings.lib не логируют getSetting, getLogLevel, getLogWebhook — они вызываются из logger.lib. Обновлены docs/imports.md.
 - 2026-02-03: страница тестов разбита на шесть блоков по слоям: Проверка эндпоинтов (маршруты), Библиотека настроек, Репозиторий настроек, Библиотека логов, Репозиторий логов, Библиотека админки. API тестов расширен: config, settings-lib, settings-repo, logger-lib, logs-repo, dashboard-lib (каждый возвращает results[]). В репозиториях соблюдён порядок «создание до чтения» (create/upsert перед read); в logs.repo добавлен тест create. Документация api.md и imports.md обновлены.
