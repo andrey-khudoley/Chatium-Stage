@@ -78,22 +78,18 @@ export function shouldLogByLevel(configuredLevel: settingsLib.LogLevel, messageS
 }
 
 /**
- * Записывает лог на сервере: проверяет уровень, при прохождении — ctx.log, ctx.account.log,
- * запись в Heap, отправка в WebSocket, отправка на внешний URL (fire-and-forget).
+ * Записывает лог на сервере: проверяет уровень, при прохождении — ctx.log (только сообщение),
+ * ctx.account.log (сообщение + payload), запись в Heap, WebSocket, внешний URL (fire-and-forget).
  */
 export async function writeServerLog(ctx: app.Ctx, entry: ServerLogEntry): Promise<void> {
   const configuredLevel = await settingsLib.getLogLevel(ctx)
   if (configuredLevel === 'Debug') {
-    ;(ctx.log as (msg: string, opts?: unknown) => void)(
-      `[DEBUG] [lib/logger.lib] writeServerLog entry`,
-      { configuredLevel, entry }
-    )
+    ;(ctx.log as (msg: string) => void)(`[DEBUG] [lib/logger.lib] writeServerLog entry`)
   }
   if (!shouldLogByLevel(configuredLevel, entry.severity)) {
     if (configuredLevel === 'Debug') {
-      ;(ctx.log as (msg: string, opts?: unknown) => void)(
-        '[DEBUG] [lib/logger.lib] writeServerLog skip: level filter',
-        { configuredLevel, messageSeverity: entry.severity }
+      ;(ctx.log as (msg: string) => void)(
+        '[DEBUG] [lib/logger.lib] writeServerLog skip: level filter'
       )
     }
     return
@@ -103,9 +99,8 @@ export async function writeServerLog(ctx: app.Ctx, entry: ServerLogEntry): Promi
   const level = severityToLevelName(entry.severity)
   const formattedEntry: FormattedEntry = { timestamp, level, message: entry.message }
   if (configuredLevel === 'Debug') {
-    ;(ctx.log as (msg: string, opts?: unknown) => void)(
-      '[DEBUG] [lib/logger.lib] writeServerLog formatted',
-      { timestamp, level, formattedEntry }
+    ;(ctx.log as (msg: string) => void)(
+      '[DEBUG] [lib/logger.lib] writeServerLog formatted'
     )
   }
 
@@ -116,10 +111,10 @@ export async function writeServerLog(ctx: app.Ctx, entry: ServerLogEntry): Promi
   const logPayload = { level, json: { ...payloadObj, message: entry.message } }
   const formattedMessage = formatLogMessage(formattedEntry)
 
-  ;(ctx.log as (msg: string, opts?: unknown) => void)(formattedMessage, logPayload)
+  ;(ctx.log as (msg: string) => void)(formattedMessage)
   ctx.account.log(formattedMessage, logPayload)
   if (configuredLevel === 'Debug') {
-    ;(ctx.log as (msg: string, opts?: unknown) => void)(
+    ;(ctx.log as (msg: string) => void)(
       '[DEBUG] [lib/logger.lib] writeServerLog ctx.log done'
     )
   }
@@ -139,7 +134,7 @@ export async function writeServerLog(ctx: app.Ctx, entry: ServerLogEntry): Promi
     timestamp
   })
   if (configuredLevel === 'Debug') {
-    ;(ctx.log as (msg: string, opts?: unknown) => void)(
+    ;(ctx.log as (msg: string) => void)(
       '[DEBUG] [lib/logger.lib] writeServerLog Heap create done'
     )
   }
@@ -155,9 +150,8 @@ export async function writeServerLog(ctx: app.Ctx, entry: ServerLogEntry): Promi
     }
   } as any)
   if (configuredLevel === 'Debug') {
-    ;(ctx.log as (msg: string, opts?: unknown) => void)(
-      '[DEBUG] [lib/logger.lib] writeServerLog WebSocket sent',
-      { socketId }
+    ;(ctx.log as (msg: string) => void)(
+      '[DEBUG] [lib/logger.lib] writeServerLog WebSocket sent'
     )
   }
 
@@ -175,19 +169,17 @@ export async function writeServerLog(ctx: app.Ctx, entry: ServerLogEntry): Promi
       /* fire-and-forget: не блокируем и не логируем ошибку вебхука */
     })
     if (configuredLevel === 'Debug') {
-      ;(ctx.log as (msg: string, opts?: unknown) => void)(
-        '[DEBUG] [lib/logger.lib] writeServerLog webhook POST fired',
-        { fullUrl }
+      ;(ctx.log as (msg: string) => void)(
+        '[DEBUG] [lib/logger.lib] writeServerLog webhook POST fired'
       )
     }
   } else if (configuredLevel === 'Debug') {
-    ;(ctx.log as (msg: string, opts?: unknown) => void)(
-      '[DEBUG] [lib/logger.lib] writeServerLog webhook disabled or empty',
-      { webhook }
+    ;(ctx.log as (msg: string) => void)(
+      '[DEBUG] [lib/logger.lib] writeServerLog webhook disabled or empty'
     )
   }
   if (configuredLevel === 'Debug') {
-    ;(ctx.log as (msg: string, opts?: unknown) => void)(
+    ;(ctx.log as (msg: string) => void)(
       '[DEBUG] [lib/logger.lib] writeServerLog exit'
     )
   }
