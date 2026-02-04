@@ -155,7 +155,7 @@
 
 ### `./repos/settings.repo.ts`
 - `../tables/settings.table` → `Settings`, `SettingsRow`
-- `../lib/logger.lib` → `*`
+- (не импортирует logger.lib — иначе рекурсия: writeServerLog → getLogLevel → getSetting → findByKey → writeServerLog)
 
 ### `./repos/logs.repo.ts`
 - `../tables/logs.table` → `Logs`, `LogsRow`
