@@ -17,6 +17,11 @@ export const listTestsRoute = app.get('/', async (ctx, req) => {
     payload: {}
   })
 
+  await loggerLib.writeServerLog(ctx, {
+    severity: 7,
+    message: `[${LOG_PATH}] Формирование categories`,
+    payload: {}
+  })
   const categories = [
     {
       id: 'endpoints',
@@ -83,10 +88,19 @@ export const listTestsRoute = app.get('/', async (ctx, req) => {
   ]
 
   await loggerLib.writeServerLog(ctx, {
+    severity: 7,
+    message: `[${LOG_PATH}] Переменные categories`,
+    payload: { categoriesCount: categories.length, categoryIds: categories.map((c) => c.id) }
+  })
+  await loggerLib.writeServerLog(ctx, {
     severity: 6,
     message: `[${LOG_PATH}] Каталог отдан`,
     payload: { categoriesCount: categories.length }
   })
-
+  await loggerLib.writeServerLog(ctx, {
+    severity: 7,
+    message: `[${LOG_PATH}] Возврат success`,
+    payload: { categoriesCount: categories.length }
+  })
   return { success: true, categories }
 })

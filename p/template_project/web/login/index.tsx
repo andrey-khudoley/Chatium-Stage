@@ -8,8 +8,17 @@ import * as loggerLib from '../../lib/logger.lib'
 const LOG_PATH = 'web/login/index'
 
 export const loginPageRoute = app.html('/', async (ctx, req) => {
+  await loggerLib.writeServerLog(ctx, {
+    severity: 7,
+    message: `[${LOG_PATH}] Запрос страницы входа`,
+    payload: { queryKeys: Object.keys(req.query ?? {}), query: req.query }
+  })
   const back = (req.query?.back as string) || `/${PROJECT_ROOT}/`
-
+  await loggerLib.writeServerLog(ctx, {
+    severity: 7,
+    message: `[${LOG_PATH}] Переменные для рендера`,
+    payload: { back, hasQuery: !!req.query?.back }
+  })
   await loggerLib.writeServerLog(ctx, {
     severity: 6,
     message: `[${LOG_PATH}] Рендер страницы входа`,

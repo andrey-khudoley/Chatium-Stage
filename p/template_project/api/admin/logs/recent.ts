@@ -34,17 +34,35 @@ export const getRecentLogsRoute = app.get('/', async (ctx, req) => {
 
   const limitRaw = req.query.limit as string | undefined
   const limit = Math.min(Math.max(1, Number(limitRaw) || 50), 200)
+  await loggerLib.writeServerLog(ctx, {
+    severity: 7,
+    message: `[${LOG_PATH}] Парсинг query`,
+    payload: { limitRaw, limit, queryKeys: Object.keys(req.query ?? {}) }
+  })
 
   try {
+    await loggerLib.writeServerLog(ctx, {
+      severity: 7,
+      message: `[${LOG_PATH}] Вызов logsRepo.findAll`,
+      payload: { limit, offset: 0 }
+    })
     const logs = await logsRepo.findAll(ctx, { limit, offset: 0 })
     const entries = logs.map(rowToLogEntry)
-
+    await loggerLib.writeServerLog(ctx, {
+      severity: 7,
+      message: `[${LOG_PATH}] Переменные после findAll`,
+      payload: { logsCount: logs.length, entriesCount: entries.length }
+    })
     await loggerLib.writeServerLog(ctx, {
       severity: 6,
       message: `[${LOG_PATH}] Логи получены`,
       payload: { count: entries.length, limit }
     })
-
+    await loggerLib.writeServerLog(ctx, {
+      severity: 7,
+      message: `[${LOG_PATH}] Возврат success`,
+      payload: { entriesCount: entries.length }
+    })
     return { success: true, entries }
   } catch (error) {
     await loggerLib.writeServerLog(ctx, {

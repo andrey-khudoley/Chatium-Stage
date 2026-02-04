@@ -19,11 +19,26 @@ export const resetDashboardRoute = app.post('/', async (ctx, req) => {
   })
 
   try {
+    await loggerLib.writeServerLog(ctx, {
+      severity: 7,
+      message: `[${LOG_PATH}] Вызов dashboardLib.resetDashboard`,
+      payload: {}
+    })
     const counts = await dashboardLib.resetDashboard(ctx)
+    await loggerLib.writeServerLog(ctx, {
+      severity: 7,
+      message: `[${LOG_PATH}] Переменные counts`,
+      payload: counts
+    })
     await loggerLib.writeServerLog(ctx, {
       severity: 6,
       message: `[${LOG_PATH}] Дашборд сброшен`,
       payload: { resetAt: counts.resetAt }
+    })
+    await loggerLib.writeServerLog(ctx, {
+      severity: 7,
+      message: `[${LOG_PATH}] Возврат success`,
+      payload: counts
     })
     return { success: true, ...counts }
   } catch (error) {

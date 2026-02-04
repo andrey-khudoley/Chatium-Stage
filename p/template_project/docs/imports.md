@@ -155,19 +155,23 @@
 
 ### `./repos/settings.repo.ts`
 - `../tables/settings.table` → `Settings`, `SettingsRow`
+- `../lib/logger.lib` → `*`
 
 ### `./repos/logs.repo.ts`
 - `../tables/logs.table` → `Logs`, `LogsRow`
+- `../lib/logger.lib` → `*`
 - экспортирует: `create`, `findAll`, `findById`, `findBeforeTimestamp`, `countBySeverityAfter`, `countErrorsAfter`, `countWarningsAfter`
 
 ## 7) Библиотеки (lib/)
 
 ### `./lib/settings.lib.ts`
 - `../repos/settings.repo` → `*` (findByKey, findAll, upsert, deleteByKey)
+- `./logger.lib` → `*` (только для функций, не вызываемых из logger.lib: getSettingString, getLogsLimit, getDashboardResetAt, getAllSettings, setSetting)
 
 ### `./lib/admin/dashboard.lib.ts`
 - `../settings.lib` → `*` (getDashboardResetAt, setSetting, SETTING_KEYS)
 - `../../repos/logs.repo` → `*` (countErrorsAfter, countWarningsAfter)
+- `../logger.lib` → `*`
 
 ### `./lib/logger.lib.ts`
 - `./settings.lib` → `*` (getLogLevel, getLogWebhook, LogLevel)
