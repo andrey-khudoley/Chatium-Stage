@@ -16,6 +16,7 @@ const props = defineProps<{
   isAdmin?: boolean
   adminUrl?: string
   testsUrl?: string
+  inquiriesUrl?: string
 }>()
 
 const projectName = computed(() => props.projectTitle.split(' / ')[0] || props.projectTitle)
@@ -23,6 +24,7 @@ const projectName = computed(() => props.projectTitle.split(' / ')[0] || props.p
 const navItems = computed(() =>
   [
     { id: 'dashboard', icon: 'fa-house', label: 'Главная', href: props.indexUrl },
+    { id: 'inquiries', icon: 'fa-comments', label: 'Обращения', href: props.inquiriesUrl },
     { id: 'profile', icon: 'fa-user', label: 'Профиль', href: props.profileUrl },
     { id: 'admin', icon: 'fa-gear', label: 'Админка', href: props.adminUrl },
     { id: 'tests', icon: 'fa-flask', label: 'Тесты', href: props.testsUrl }

@@ -18,6 +18,7 @@
 - `web/admin/index.tsx` — админка, `requireAccountRole('Admin')`.
 - `web/profile/index.tsx` — профиль, `requireRealUser()`.
 - `web/tests/index.tsx` — страница тестов, `requireRealUser()`.
+- `web/inquiries/index.tsx` — раздел «Обращения» (inbox-модуль: список обращений, переписка, карточка клиента), `requireRealUser()`.
 - `web/login/index.tsx` — вход (редирект на системный `/s/auth/signin`).
 
 ## Разделение слоёв
@@ -35,7 +36,7 @@
 
 ## Структура каталогов
 - `config/` — маршруты и `PROJECT_ROOT`.
-- `web/` — браузерные роуты модулей (admin, profile, tests, login).
+- `web/` — браузерные роуты модулей (admin, profile, tests, inquiries, login).
 - `pages/` — Vue‑страницы (минимальные).
 - `components/` — legacy Vue‑компоненты (Header, AppFooter, GlobalGlitch, LogoutModal); страницы используют `web/design/components/AppShell.vue`.
 - `api/` — API‑эндпоинты (получение и валидация входных данных). File-based: один файл — один эндпоинт с `/`. Пример: `api/settings/list.ts`, `api/settings/get.ts`, `api/settings/save.ts`, `api/logger/log.ts`, `api/admin/logs/recent.ts`, `api/admin/logs/before.ts`, `api/tests/list.ts`, `api/tests/endpoints-check/health.ts`, `api/tests/endpoints-check/ping.ts`.

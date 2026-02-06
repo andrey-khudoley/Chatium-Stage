@@ -22,6 +22,7 @@ const props = defineProps<{
   indexUrl: string
   profileUrl: string
   testsUrl: string
+  inquiriesUrl?: string
   loginUrl: string
   isAuthenticated: boolean
   isAdmin?: boolean
@@ -32,6 +33,7 @@ const props = defineProps<{
 const navItems = computed(() =>
   [
     { id: 'dashboard', icon: 'fa-house', label: 'Главная', href: props.indexUrl },
+    { id: 'inquiries', icon: 'fa-comments', label: 'Обращения', href: props.inquiriesUrl },
     { id: 'profile', icon: 'fa-user', label: 'Профиль', href: props.profileUrl },
     { id: 'admin', icon: 'fa-gear', label: 'Админка', href: props.adminUrl },
     { id: 'tests', icon: 'fa-flask', label: 'Тесты', href: props.testsUrl }

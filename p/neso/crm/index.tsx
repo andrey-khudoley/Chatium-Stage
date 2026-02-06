@@ -45,6 +45,7 @@ export const indexPageRoute = app.html('/', async (ctx, req) => {
   const loginUrl = getFullUrl(ROUTES.login)
   const adminUrl = isAdmin ? getFullUrl(ROUTES.admin) : ''
   const testsUrl = isAuthenticated ? getFullUrl(ROUTES.tests) : ''
+  const inquiriesUrl = isAuthenticated ? getFullUrl(ROUTES.inquiries) : ''
   await loggerLib.writeServerLog(ctx, {
     severity: 7,
     message: `[${LOG_PATH}] URL-ы`,
@@ -104,6 +105,7 @@ export const indexPageRoute = app.html('/', async (ctx, req) => {
           isAdmin={isAdmin}
           adminUrl={adminUrl}
           testsUrl={testsUrl}
+          inquiriesUrl={inquiriesUrl}
         />
       </body>
     </html>

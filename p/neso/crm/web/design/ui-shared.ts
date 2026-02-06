@@ -60,7 +60,7 @@ export const uiSharedStyles = `
   }
   .sidebar.mobile-open.collapsed {
     width: 80px;
-    padding: 24px 12px;
+    padding: 24px 16px;
   }
 }
 

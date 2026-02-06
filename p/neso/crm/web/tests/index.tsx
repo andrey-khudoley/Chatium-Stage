@@ -121,6 +121,7 @@ export const testsPageRoute = app.html('/', async (ctx, req) => {
           indexUrl={getFullUrl(ROUTES.index)}
           profileUrl={getFullUrl(ROUTES.profile)}
           testsUrl={getFullUrl(ROUTES.tests)}
+          inquiriesUrl={getFullUrl(ROUTES.inquiries)}
           loginUrl={loginUrl}
           isAuthenticated={true}
           isAdmin={isAdmin}

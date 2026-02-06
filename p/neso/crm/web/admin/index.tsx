@@ -150,6 +150,7 @@ export const adminPageRoute = app.html('/', async (ctx, req) => {
           indexUrl={indexUrl}
           profileUrl={profileUrl}
           testsUrl={getFullUrl(ROUTES.tests)}
+          inquiriesUrl={getFullUrl(ROUTES.inquiries)}
           loginUrl={loginUrl}
           isAuthenticated={true}
           isAdmin={true}

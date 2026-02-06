@@ -6,7 +6,7 @@
 - нет внутренних импортов (только экспорт PROJECT_ROOT, ROUTES, getFullUrl, withProjectRoot, withProjectRootAndSubroute)
 
 ### `./config/project.tsx`
-- нет внутренних импортов (только экспорт DEFAULT_PROJECT_TITLE, INDEX_PAGE_NAME, PROFILE_PAGE_NAME, ADMIN_PAGE_NAME, TESTS_PAGE_NAME, getPageTitle, getHeaderText, BODY_TEXT, BODY_SUBTEXT)
+- нет внутренних импортов (только экспорт DEFAULT_PROJECT_TITLE, INDEX_PAGE_NAME, PROFILE_PAGE_NAME, ADMIN_PAGE_NAME, TESTS_PAGE_NAME, INQUIRIES_PAGE_NAME, getPageTitle, getHeaderText, BODY_TEXT, BODY_SUBTEXT)
 
 ### `./index.tsx`
 - `@app/html-jsx` → `jsx`
@@ -74,6 +74,22 @@
 - `../../config/project` → `TESTS_PAGE_NAME`, `getPageTitle`, `getHeaderText`
 - `../../lib/settings.lib` → `*`
 
+### `./web/inquiries/index.tsx`
+- `@app/html-jsx` → `jsx`
+- `@app/auth` → `requireRealUser`
+- `../../pages/InquiriesPage.vue`
+- `../../shared/preloader` → `getPreloaderStyles`, `getPreloaderScript`
+- `../../shared/logLevel` → `getLogLevelForPage`, `getLogLevelScript`
+- `../design/theme` → `darkThemeTokens`, `darkPageStyles`, `darkScrollbarStyles`, `lightThemeTokens`, `lightPageStyles`, `lightScrollbarStyles`
+- `../design/ui-dark` → `darkUiStyles`
+- `../design/ui-light` → `lightUiStyles`
+- `../design/ui-shared` → `uiSharedStyles`
+- `../design/themeRuntime` → `getThemeInitScript`
+- `../../lib/logger.lib` → `*`
+- `../../config/routes` → `getFullUrl`, `ROUTES`
+- `../../config/project` → `INQUIRIES_PAGE_NAME`, `getPageTitle`, `getHeaderText`
+- `../../lib/settings.lib` → `*`
+
 ### `./web/design/dark.tsx`
 - `@app/html-jsx` → `jsx`
 - `./components/DesignDemoPage.vue`
@@ -114,6 +130,10 @@
 - `vue` → `computed`
 - `../web/design/components/AppShell.vue`
 - `../shared/logger` → `createComponentLogger`
+
+### `./pages/InquiriesPage.vue`
+- `vue` → `computed`, `ref`
+- `../web/design/components/AppShell.vue`
 
 ### `./pages/AdminPage.vue`
 - `vue` → `onMounted`, `onBeforeUnmount`, `onUnmounted`, `ref`, `computed`, `watch`
