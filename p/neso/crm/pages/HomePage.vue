@@ -1,23 +1,14 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
-import Header from '../components/Header.vue'
-import AppFooter from '../components/AppFooter.vue'
+import { computed } from 'vue'
+import AppShell from '../web/design/components/AppShell.vue'
 import { createComponentLogger } from '../shared/logger'
 
 const log = createComponentLogger('HomePage')
-
-declare global {
-  interface Window {
-    hideAppLoader?: () => void
-    bootLoaderComplete?: boolean
-  }
-}
 
 const props = defineProps<{
   projectName: string
   projectTitle: string
   projectDescription: string
-  logoUrl?: string
   indexUrl: string
   profileUrl: string
   loginUrl: string
@@ -27,229 +18,182 @@ const props = defineProps<{
   testsUrl?: string
 }>()
 
-const bootLoaderDone = ref(false)
+const projectName = computed(() => props.projectTitle.split(' / ')[0] || props.projectTitle)
 
-function startAnimations() {
-  log.info('Boot loader complete')
-  bootLoaderDone.value = true
+const navItems = computed(() =>
+  [
+    { id: 'dashboard', icon: 'fa-house', label: 'Главная', href: props.indexUrl },
+    { id: 'profile', icon: 'fa-user', label: 'Профиль', href: props.profileUrl },
+    { id: 'admin', icon: 'fa-gear', label: 'Админка', href: props.adminUrl },
+    { id: 'tests', icon: 'fa-flask', label: 'Тесты', href: props.testsUrl }
+  ].filter((item) => item.href)
+)
+
+const stats = [
+  { value: '2.4K', label: 'Пользователей', icon: 'fa-users' },
+  { value: '147', label: 'Курсов', icon: 'fa-graduation-cap' },
+  { value: '98%', label: 'Довольных', icon: 'fa-heart' },
+  { value: '4.9', label: 'Рейтинг', icon: 'fa-star' }
+]
+
+function navigate(href?: string) {
+  if (!href) return
+  window.location.href = href
 }
 
-onMounted(() => {
-  if (window.hideAppLoader) window.hideAppLoader()
-  if (window.bootLoaderComplete) {
-    startAnimations()
-  } else {
-    window.addEventListener('bootloader-complete', startAnimations)
-  }
-})
+log.info('Home page rendered')
 </script>
 
 <template>
-  <div
-    class="app-layout"
-    :class="{ 'app-layout-visible': bootLoaderDone }"
+  <AppShell
+    :pageTitle="'Главная'"
+    :pageSubtitle="projectName"
+    :navItems="navItems"
+    activeSection="dashboard"
+    :userName="props.isAuthenticated ? 'Алексей' : 'Гость'"
+    :userRole="props.isAuthenticated ? (props.isAdmin ? 'Admin' : 'User') : 'Guest'"
   >
-    <Header
-      v-if="bootLoaderDone"
-      :projectTitle="props.projectTitle"
-      :logoUrl="props.logoUrl"
-      :indexUrl="props.indexUrl"
-      :profileUrl="props.profileUrl"
-      :loginUrl="props.loginUrl"
-      :isAuthenticated="props.isAuthenticated"
-      :isAdmin="props.isAdmin"
-      :adminUrl="props.adminUrl"
-      :testsUrl="props.testsUrl"
-    />
-    <main class="content-wrapper">
-      <section class="hero" :class="{ 'hero-visible': bootLoaderDone }">
+    <template #headerActions>
+      <button class="action-btn glass" type="button" @click="navigate(props.profileUrl)">
+        <i class="fas fa-user"></i>
+      </button>
+      <button v-if="props.testsUrl" class="action-btn glass" type="button" @click="navigate(props.testsUrl)">
+        <i class="fas fa-flask"></i>
+      </button>
+      <button class="action-btn primary" type="button" @click="navigate(props.isAuthenticated ? props.profileUrl : props.loginUrl)">
+        <i class="fas fa-arrow-right"></i>
+        <span>{{ props.isAuthenticated ? 'В кабинет' : 'Войти' }}</span>
+      </button>
+    </template>
+
+    <section class="bento-grid">
+      <div class="bento-item hero-card">
         <div class="hero-content">
-          <p class="hero-label">Добро пожаловать</p>
-          <h1 class="hero-title">{{ props.projectName }}</h1>
-          <p class="hero-subtitle">{{ props.projectDescription }}</p>
+          <span class="hero-tag">
+            <i class="fas fa-sparkles"></i>
+            CRM
+          </span>
+          <h2 class="hero-title">{{ projectName }}</h2>
+          <p class="hero-desc">{{ props.projectDescription }}</p>
           <div class="hero-actions">
-            <a
-              v-if="props.isAuthenticated && props.testsUrl"
-              :href="props.testsUrl"
-              class="hero-btn hero-btn-primary"
+            <button class="btn-glow" type="button" @click="navigate(props.isAuthenticated ? props.profileUrl : props.loginUrl)">
+              <span>{{ props.isAuthenticated ? 'Открыть профиль' : 'Войти' }}</span>
+              <i class="fas fa-arrow-right"></i>
+            </button>
+            <button
+              v-if="props.adminUrl"
+              class="btn-ghost"
+              type="button"
+              @click="navigate(props.adminUrl)"
             >
-              Тесты
-            </a>
-            <a
-              v-if="props.isAuthenticated && props.profileUrl"
-              :href="props.profileUrl"
-              class="hero-btn hero-btn-secondary"
-            >
-              Профиль
-            </a>
-            <a
-              v-if="!props.isAuthenticated && props.loginUrl"
-              :href="props.loginUrl"
-              class="hero-btn hero-btn-primary"
-            >
-              Войти
-            </a>
+              Админка
+            </button>
           </div>
         </div>
         <div class="hero-visual">
-          <div class="hero-shape hero-shape-a"></div>
-          <div class="hero-shape hero-shape-b"></div>
+          <div class="floating-card card-1">
+            <i class="fas fa-chart-line"></i>
+          </div>
+          <div class="floating-card card-2">
+            <i class="fas fa-user-check"></i>
+          </div>
+          <div class="floating-card card-3">
+            <i class="fas fa-bolt"></i>
+          </div>
         </div>
-      </section>
-    </main>
-    <AppFooter v-if="bootLoaderDone" @chatium-click="() => window.open('https://chatium.ru', '_blank')" />
-  </div>
+      </div>
+
+      <div
+        v-for="(stat, i) in stats"
+        :key="i"
+        class="bento-item stat-card"
+        :style="{ '--delay': `${Number(i) * 0.1}s` }"
+      >
+        <div class="stat-icon">
+          <i :class="['fas', stat.icon]"></i>
+        </div>
+        <div class="stat-content">
+          <span class="stat-value">{{ stat.value }}</span>
+          <span class="stat-label">{{ stat.label }}</span>
+        </div>
+        <div class="stat-glow"></div>
+      </div>
+
+      <div class="bento-item actions-card">
+        <h3 class="card-title">Быстрые действия</h3>
+        <div class="quick-actions">
+          <button class="quick-btn" type="button" @click="navigate(props.profileUrl)">
+            <div class="quick-icon"><i class="fas fa-user"></i></div>
+            <span>Профиль</span>
+          </button>
+          <button v-if="props.adminUrl" class="quick-btn" type="button" @click="navigate(props.adminUrl)">
+            <div class="quick-icon"><i class="fas fa-gear"></i></div>
+            <span>Админка</span>
+          </button>
+          <button v-if="props.testsUrl" class="quick-btn" type="button" @click="navigate(props.testsUrl)">
+            <div class="quick-icon"><i class="fas fa-flask"></i></div>
+            <span>Тесты</span>
+          </button>
+          <button class="quick-btn" type="button" @click="navigate(props.loginUrl)">
+            <div class="quick-icon"><i class="fas fa-right-to-bracket"></i></div>
+            <span>Логин</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="bento-item activity-card">
+        <div class="card-header">
+          <h3 class="card-title">Статус системы</h3>
+          <span class="live-badge">
+            <span class="live-dot"></span>
+            Live
+          </span>
+        </div>
+        <div class="activity-list">
+          <div class="activity-item">
+            <div class="activity-avatar">OK</div>
+            <div class="activity-info">
+              <span class="activity-name">Сервисы доступны</span>
+              <span class="activity-time">обновлено сейчас</span>
+            </div>
+          </div>
+          <div class="activity-item">
+            <div class="activity-avatar">API</div>
+            <div class="activity-info">
+              <span class="activity-name">API отвечает</span>
+              <span class="activity-time">200 ms</span>
+            </div>
+          </div>
+          <div class="activity-item">
+            <div class="activity-avatar">DB</div>
+            <div class="activity-info">
+              <span class="activity-name">База данных</span>
+              <span class="activity-time">без ошибок</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="bento-item chart-card">
+        <div class="card-header">
+          <h3 class="card-title">Активность</h3>
+          <div class="chart-tabs">
+            <button class="tab active" type="button">Неделя</button>
+            <button class="tab" type="button">Месяц</button>
+          </div>
+        </div>
+        <div class="chart-visual">
+          <div class="chart-bars">
+            <div class="bar" style="--h: 60%"><span>Пн</span></div>
+            <div class="bar" style="--h: 80%"><span>Вт</span></div>
+            <div class="bar" style="--h: 45%"><span>Ср</span></div>
+            <div class="bar" style="--h: 90%"><span>Чт</span></div>
+            <div class="bar" style="--h: 70%"><span>Пт</span></div>
+            <div class="bar active" style="--h: 95%"><span>Сб</span></div>
+            <div class="bar" style="--h: 55%"><span>Вс</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </AppShell>
 </template>
-
-<style scoped>
-.app-layout {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  background: var(--color-bg);
-  opacity: 0;
-  transition: opacity 0.4s ease;
-}
-
-.app-layout-visible {
-  opacity: 1;
-}
-
-.content-wrapper {
-  flex: 1;
-  min-height: 0;
-  display: flex;
-  align-items: center;
-  padding: 2rem 0 3rem;
-}
-
-.hero {
-  width: 100%;
-  max-width: 72rem;
-  margin: 0 auto;
-  padding: 0 1.5rem;
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 2rem;
-  align-items: center;
-  opacity: 0;
-  transform: translateY(12px);
-  transition: opacity 0.5s ease, transform 0.5s ease;
-}
-
-.hero-visible {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-.hero-label {
-  font-family: 'Mulish', system-ui, sans-serif;
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: var(--color-green);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  margin: 0 0 0.5rem 0;
-}
-
-.hero-title {
-  font-family: 'Old Standard TT', serif;
-  font-weight: 700;
-  font-size: clamp(2rem, 5vw, 3rem);
-  line-height: 1.15;
-  color: var(--color-text);
-  margin: 0 0 1rem 0;
-  letter-spacing: 0.02em;
-}
-
-.hero-subtitle {
-  font-family: 'Mulish', system-ui, sans-serif;
-  font-size: 1.125rem;
-  line-height: 1.5;
-  color: var(--color-text-secondary);
-  margin: 0 0 1.75rem 0;
-  max-width: 480px;
-}
-
-.hero-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-}
-
-.hero-btn {
-  display: inline-flex;
-  align-items: center;
-  padding: 0.75rem 1.5rem;
-  font-family: 'Mulish', system-ui, sans-serif;
-  font-size: 1rem;
-  font-weight: 600;
-  border-radius: 10px;
-  text-decoration: none;
-  transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
-}
-
-.hero-btn-primary {
-  color: var(--color-bg);
-  background: var(--color-green);
-}
-
-.hero-btn-primary:hover {
-  background: var(--color-green-medium);
-  box-shadow: 0 4px 14px rgba(70, 240, 210, 0.25);
-}
-
-.hero-btn-secondary {
-  color: var(--color-green);
-  background: var(--color-green-pale);
-  border: 2px solid transparent;
-}
-
-.hero-btn-secondary:hover {
-  background: var(--color-bg-tertiary);
-  color: var(--color-text);
-}
-
-.hero-visual {
-  position: relative;
-  min-height: 200px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.hero-shape {
-  position: absolute;
-  border-radius: 50%;
-  opacity: 0.9;
-}
-
-.hero-shape-a {
-  width: min(280px, 80vw);
-  height: min(280px, 80vw);
-  background: linear-gradient(135deg, var(--color-green-pale) 0%, var(--color-green-light) 100%);
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-}
-
-.hero-shape-b {
-  width: min(160px, 45vw);
-  height: min(160px, 45vw);
-  background: linear-gradient(145deg, var(--color-gold-light) 0%, var(--color-gold) 100%);
-  top: 50%;
-  left: 50%;
-  transform: translate(-40%, -60%);
-  box-shadow: 0 8px 24px rgba(253, 199, 96, 0.35);
-}
-
-@media (min-width: 768px) {
-  .hero {
-    grid-template-columns: 1fr 1fr;
-    gap: 3rem;
-  }
-  .hero-visual {
-    min-height: 320px;
-  }
-}
-</style>

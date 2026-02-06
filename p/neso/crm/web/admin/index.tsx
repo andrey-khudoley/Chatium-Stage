@@ -11,20 +11,20 @@ import * as loggerLib from '../../lib/logger.lib'
 import { getFullUrl, ROUTES } from '../../config/routes'
 import { ADMIN_PAGE_NAME, getPageTitle, getHeaderText } from '../../config/project'
 import * as settingsLib from '../../lib/settings.lib'
-import { customScrollbarStyles, designTokens } from '../../styles'
+import {
+  darkThemeTokens,
+  darkPageStyles,
+  darkScrollbarStyles,
+  lightThemeTokens,
+  lightPageStyles,
+  lightScrollbarStyles
+} from '../design/theme'
+import { darkUiStyles } from '../design/ui-dark'
+import { lightUiStyles } from '../design/ui-light'
+import { uiSharedStyles } from '../design/ui-shared'
+import { getThemeInitScript } from '../design/themeRuntime'
 
 const LOG_PATH = 'web/admin/index'
-
-const adminPageStyles = `
-  html { margin: 0; background: var(--color-bg); }
-  body {
-    margin: 0;
-    position: relative;
-    min-height: 100vh;
-    overflow: hidden;
-  }
-  body.boot-complete { overflow-x: hidden; overflow-y: auto; }
-`
 
 export const adminPageRoute = app.html('/', async (ctx, req) => {
   await loggerLib.writeServerLog(ctx, {
@@ -61,7 +61,18 @@ export const adminPageRoute = app.html('/', async (ctx, req) => {
           <script src="/s/metric/clarity.js"></script>
           <meta http-equiv="refresh" content={`0; url=${loginUrl}`} />
           <script>{`window.location.href = '${loginUrl}'`}</script>
-          <style>{adminPageStyles}</style>
+          <style data-theme="dark">{darkThemeTokens}</style>
+          <style data-theme="dark">{darkPageStyles}</style>
+          <style data-theme="dark">{darkUiStyles}</style>
+          <style data-theme="light" media="not all">{lightThemeTokens}</style>
+          <style data-theme="light" media="not all">{lightPageStyles}</style>
+          <style data-theme="light" media="not all">{lightUiStyles}</style>
+          <style>{uiSharedStyles}</style>
+          <script>{getThemeInitScript()}</script>
+          <link
+            href="https://fonts.googleapis.com/css2?family=Mulish:ital,wght@0,200..1000;1,200..1000&family=Old+Standard+TT:ital,wght@0,400;0,700;1,400&display=swap"
+            rel="stylesheet"
+          />
         </head>
         <body>
           <p>Перенаправление на страницу входа...</p>
@@ -88,7 +99,6 @@ export const adminPageRoute = app.html('/', async (ctx, req) => {
     payload: { logLevel, logsSocketId, hasEncodedLogsSocketId: !!encodedLogsSocketId }
   })
   const projectName = await settingsLib.getSettingString(ctx, settingsLib.SETTING_KEYS.PROJECT_NAME)
-  const logoUrl = await settingsLib.getLogoUrl(ctx)
   await loggerLib.writeServerLog(ctx, {
     severity: 7,
     message: `[${LOG_PATH}] Переменные для рендера`,
@@ -108,16 +118,26 @@ export const adminPageRoute = app.html('/', async (ctx, req) => {
         <meta charset="UTF-8" />
         <script>{getLogLevelScript(logLevel)}</script>
         <script src="/s/metric/clarity.js"></script>
-        <style>{designTokens}</style>
-        <style>{adminPageStyles}</style>
-        <style>{customScrollbarStyles}</style>
+        <style data-theme="dark">{darkThemeTokens}</style>
+        <style data-theme="dark">{darkPageStyles}</style>
+        <style data-theme="dark">{darkScrollbarStyles}</style>
+        <style data-theme="dark">{darkUiStyles}</style>
+        <style data-theme="light" media="not all">{lightThemeTokens}</style>
+        <style data-theme="light" media="not all">{lightPageStyles}</style>
+        <style data-theme="light" media="not all">{lightScrollbarStyles}</style>
+        <style data-theme="light" media="not all">{lightUiStyles}</style>
+        <style>{uiSharedStyles}</style>
+        <script>{getThemeInitScript()}</script>
         <style>{getPreloaderStyles()}</style>
         <script>{getPreloaderScript()}</script>
         <script src="/s/static/lib/tailwind.3.4.16.min.js"></script>
         <link rel="stylesheet" href="/s/static/lib/fontawesome/6.7.2/css/all.min.css" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
-        <link href="https://fonts.googleapis.com/css2?family=Mulish:wght@400;500;600;700&family=Old+Standard+TT:wght@700&display=swap" rel="stylesheet" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Mulish:ital,wght@0,200..1000;1,200..1000&family=Old+Standard+TT:ital,wght@0,400;0,700;1,400&display=swap"
+          rel="stylesheet"
+        />
       </head>
       <body>
         <div id="boot-loader">
@@ -127,7 +147,6 @@ export const adminPageRoute = app.html('/', async (ctx, req) => {
         </div>
         <AdminPage
           projectTitle={getHeaderText(ADMIN_PAGE_NAME, projectName)}
-          logoUrl={logoUrl}
           indexUrl={indexUrl}
           profileUrl={profileUrl}
           testsUrl={getFullUrl(ROUTES.tests)}

@@ -1,73 +1,10 @@
-<script setup lang="ts">
-import { onMounted, ref } from 'vue'
-import { createComponentLogger } from '../shared/logger'
-
-const log = createComponentLogger('DesignDemoPage')
-
-declare global {
-  interface Window {
-    hideAppLoader?: () => void
-    bootLoaderComplete?: boolean
-  }
-}
-
-const props = defineProps<{
-  projectTitle: string
-  logoUrl?: string
-  indexUrl: string
-  profileUrl: string
-  loginUrl: string
-  isAuthenticated: boolean
-  isAdmin?: boolean
-  adminUrl?: string
-}>()
-
-const bootLoaderDone = ref(false)
-const sidebarCollapsed = ref(false)
-const activeSection = ref('dashboard')
-const activeTab = ref('overview')
-
-const stats = [
-  { value: '2.4K', label: 'Пользователей', icon: 'fa-users' },
-  { value: '147', label: 'Курсов', icon: 'fa-graduation-cap' },
-  { value: '98%', label: 'Довольных', icon: 'fa-heart' },
-  { value: '4.9', label: 'Рейтинг', icon: 'fa-star' }
-]
-
-const menuItems = [
-  { id: 'dashboard', icon: 'fa-house', label: 'Главная' },
-  { id: 'courses', icon: 'fa-book-open', label: 'Курсы' },
-  { id: 'users', icon: 'fa-users', label: 'Пользователи' },
-  { id: 'analytics', icon: 'fa-chart-pie', label: 'Аналитика' },
-  { id: 'settings', icon: 'fa-gear', label: 'Настройки' }
-]
-
-function startAnimations() {
-  log.info('Boot complete')
-  bootLoaderDone.value = true
-}
-
-onMounted(() => {
-  if (window.hideAppLoader) window.hideAppLoader()
-  if (window.bootLoaderComplete) {
-    startAnimations()
-  } else {
-    window.addEventListener('bootloader-complete', startAnimations)
-  }
-})
-</script>
-
 <template>
   <div class="app" :class="{ 'app-ready': bootLoaderDone }">
-    <!-- Animated Mesh Background -->
-    <div class="mesh-bg">
-      <div class="mesh-gradient mesh-1"></div>
-      <div class="mesh-gradient mesh-2"></div>
-      <div class="mesh-gradient mesh-3"></div>
-      <div class="noise-overlay"></div>
-    </div>
+    <!-- Background with generated image -->
+    <div class="bg-layer"></div>
+    <div class="bg-overlay"></div>
 
-    <!-- Floating Orbs -->
+    <!-- Floating sunray orbs -->
     <div class="orbs">
       <div class="orb orb-1"></div>
       <div class="orb orb-2"></div>
@@ -108,7 +45,7 @@ onMounted(() => {
             <i class="fas fa-user"></i>
           </div>
           <div class="user-info">
-            <span class="name">Алексей</span>
+            <span class="name">Андрей</span>
             <span class="role">Admin</span>
           </div>
         </div>
@@ -144,6 +81,7 @@ onMounted(() => {
         <section class="bento-grid">
           <!-- Hero Card -->
           <div class="bento-item hero-card">
+            <div class="sunray-diagonal"></div>
             <div class="hero-content">
               <span class="hero-tag">
                 <i class="fas fa-sparkles"></i>
@@ -156,7 +94,7 @@ onMounted(() => {
                   <span>Начать</span>
                   <i class="fas fa-arrow-right"></i>
                 </button>
-                <button class="btn-ghost">Узнать больше</button>
+                <button class="btn-glass">Узнать больше</button>
               </div>
             </div>
             <div class="hero-visual">
@@ -186,7 +124,6 @@ onMounted(() => {
               <span class="stat-value">{{ stat.value }}</span>
               <span class="stat-label">{{ stat.label }}</span>
             </div>
-            <div class="stat-glow"></div>
           </div>
 
           <!-- Quick Actions -->
@@ -251,8 +188,20 @@ onMounted(() => {
             <div class="card-header">
               <h3 class="card-title">Прогресс</h3>
               <div class="chart-tabs">
-                <button class="tab active">Неделя</button>
-                <button class="tab">Месяц</button>
+                <button 
+                  class="tab" 
+                  :class="{ active: activeTab === 'overview' }"
+                  @click="activeTab = 'overview'"
+                >
+                  Неделя
+                </button>
+                <button 
+                  class="tab"
+                  :class="{ active: activeTab === 'month' }"
+                  @click="activeTab = 'month'"
+                >
+                  Месяц
+                </button>
               </div>
             </div>
             <div class="chart-visual">
@@ -370,37 +319,37 @@ onMounted(() => {
 
         <!-- Color Palette -->
         <section class="palette-section">
-          <h2 class="section-title">Палитра</h2>
+          <h2 class="section-title">Палитра (светлая тема)</h2>
           <div class="palette-grid">
-            <div class="palette-item" style="--c: #92a447">
-              <div class="palette-swatch"></div>
-              <span class="palette-name">Primary</span>
-              <span class="palette-hex">#92a447</span>
+            <div class="palette-item" style="--c: #f5f8f0">
+              <div class="palette-swatch swatch-light"></div>
+              <span class="palette-name">BG Primary</span>
+              <span class="palette-hex">#f5f8f0</span>
             </div>
-            <div class="palette-item" style="--c: #9aa56a">
-              <div class="palette-swatch"></div>
-              <span class="palette-name">Light</span>
-              <span class="palette-hex">#9aa56a</span>
+            <div class="palette-item" style="--c: #eef2e6">
+              <div class="palette-swatch swatch-light"></div>
+              <span class="palette-name">BG Secondary</span>
+              <span class="palette-hex">#eef2e6</span>
             </div>
-            <div class="palette-item" style="--c: #77884c">
-              <div class="palette-swatch"></div>
-              <span class="palette-name">Dark</span>
-              <span class="palette-hex">#77884c</span>
+            <div class="palette-item" style="--c: #ffffff">
+              <div class="palette-swatch swatch-light"></div>
+              <span class="palette-name">Elevated</span>
+              <span class="palette-hex">#ffffff</span>
             </div>
-            <div class="palette-item" style="--c: #a5b068">
+            <div class="palette-item" style="--c: #4a5a24">
               <div class="palette-swatch"></div>
-              <span class="palette-name">Medium</span>
-              <span class="palette-hex">#a5b068</span>
+              <span class="palette-name">Accent</span>
+              <span class="palette-hex">#4a5a24</span>
             </div>
-            <div class="palette-item" style="--c: #1b2b1c">
+            <div class="palette-item" style="--c: #1a2518">
               <div class="palette-swatch"></div>
-              <span class="palette-name">Deep</span>
-              <span class="palette-hex">#1b2b1c</span>
+              <span class="palette-name">Text Primary</span>
+              <span class="palette-hex">#1a2518</span>
             </div>
-            <div class="palette-item" style="--c: #464936">
-              <div class="palette-swatch"></div>
-              <span class="palette-name">Muted</span>
-              <span class="palette-hex">#464936</span>
+            <div class="palette-item" style="--c: #fffcf0">
+              <div class="palette-swatch swatch-light"></div>
+              <span class="palette-name">Sunray</span>
+              <span class="palette-hex">#fffcf0</span>
             </div>
           </div>
         </section>
@@ -409,39 +358,95 @@ onMounted(() => {
   </div>
 </template>
 
+<script setup lang="ts">
+import { onMounted, ref } from 'vue'
+import { createComponentLogger } from '../../../shared/logger'
+
+const log = createComponentLogger('DesignDemoLightPage')
+
+declare global {
+  interface Window {
+    hideAppLoader?: () => void
+    bootLoaderComplete?: boolean
+  }
+}
+
+const props = defineProps<{
+  projectTitle: string
+  logoUrl?: string
+  indexUrl: string
+  profileUrl: string
+  loginUrl: string
+  isAuthenticated: boolean
+  isAdmin?: boolean
+  adminUrl?: string
+}>()
+
+const bootLoaderDone = ref(false)
+const sidebarCollapsed = ref(false)
+const activeSection = ref('dashboard')
+const activeTab = ref('overview')
+
+const stats = [
+  { value: '2.4K', label: 'Пользователей', icon: 'fa-users' },
+  { value: '147', label: 'Курсов', icon: 'fa-graduation-cap' },
+  { value: '98%', label: 'Довольных', icon: 'fa-heart' },
+  { value: '4.9', label: 'Рейтинг', icon: 'fa-star' }
+]
+
+const menuItems = [
+  { id: 'dashboard', icon: 'fa-house', label: 'Главная' },
+  { id: 'courses', icon: 'fa-book-open', label: 'Курсы' },
+  { id: 'users', icon: 'fa-users', label: 'Пользователи' },
+  { id: 'analytics', icon: 'fa-chart-pie', label: 'Аналитика' },
+  { id: 'settings', icon: 'fa-gear', label: 'Настройки' }
+]
+
+function startAnimations() {
+  log.info('Boot complete')
+  bootLoaderDone.value = true
+}
+
+onMounted(() => {
+  if (window.hideAppLoader) window.hideAppLoader()
+  if (window.bootLoaderComplete) {
+    startAnimations()
+  } else {
+    window.addEventListener('bootloader-complete', startAnimations)
+  }
+})
+</script>
+
 <style scoped>
-/* ===== Variables ===== */
+/* ===== CSS Variables — Light Theme "Modern Nature Minimal" ===== */
 .app {
-  /* Нейтральный тёмный фон */
-  --bg: #0a0a0c;
-  --bg-secondary: #111114;
-  --bg-card: rgba(255, 255, 255, 0.02);
-  --bg-card-hover: rgba(255, 255, 255, 0.04);
-  --glass: rgba(255, 255, 255, 0.03);
-  --glass-border: rgba(255, 255, 255, 0.06);
-  --text: #f0f0f2;
-  --text-secondary: rgba(240, 240, 242, 0.65);
-  --text-tertiary: rgba(240, 240, 242, 0.4);
+  --bg-primary: #f5f8f0;
+  --bg-secondary: #eef2e6;
+  --bg-elevated: #ffffff;
+  --surface-glass: rgba(255, 255, 255, 0.55);
+  --surface-glass-hover: rgba(255, 255, 255, 0.75);
+  --border-glass: rgba(74, 90, 36, 0.1);
+  --border-glass-light: rgba(255, 255, 255, 0.8);
+  --text-primary: #1a2518;
+  --text-secondary: #3d4a35;
+  --text-tertiary: #5a6652;
+  --accent-primary: #4a5a24;
+  --accent-glow: rgba(74, 90, 36, 0.2);
+  --accent-soft: rgba(74, 90, 36, 0.08);
+  --sunray: rgba(255, 252, 240, 0.9);
+  --sunray-glow: rgba(255, 248, 230, 0.6);
   
-  /* Зелёный только для акцентов */
-  --accent: #92a447;
-  --accent-light: #9aa56a;
-  --accent-lighter: #a5b068;
-  --accent-dark: #77884c;
-  --accent-glow: rgba(146, 164, 71, 0.3);
-  --accent-pale: rgba(146, 164, 71, 0.1);
-  
-  --radius: 20px;
+  --radius: 24px;
+  --radius-md: 16px;
   --radius-sm: 12px;
-  --radius-xs: 8px;
 }
 
 /* ===== Base ===== */
 .app {
   display: flex;
   min-height: 100vh;
-  background: var(--bg);
-  color: var(--text);
+  background: var(--bg-primary);
+  color: var(--text-primary);
   font-family: 'Mulish', -apple-system, BlinkMacSystemFont, sans-serif;
   position: relative;
   overflow: hidden;
@@ -453,71 +458,34 @@ onMounted(() => {
   opacity: 1;
 }
 
-/* ===== Mesh Background — нейтральные тона ===== */
-.mesh-bg {
+/* ===== Background ===== */
+.bg-layer {
   position: fixed;
   inset: 0;
   z-index: 0;
-  overflow: hidden;
+  background-image: url('https://sel.cdn-chatium.io/get/image_msk_09YXnJj0kv.1408x768.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
 }
 
-.mesh-gradient {
-  position: absolute;
-  border-radius: 50%;
-  filter: blur(140px);
-  opacity: 0.25;
-  animation: float 25s ease-in-out infinite;
-}
-
-.mesh-1 {
-  width: 50vw;
-  height: 50vw;
-  top: -15%;
-  left: -10%;
-  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-  animation-delay: 0s;
-}
-
-.mesh-2 {
-  width: 45vw;
-  height: 45vw;
-  bottom: -15%;
-  right: -10%;
-  background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 100%);
-  animation-delay: -8s;
-}
-
-.mesh-3 {
-  width: 35vw;
-  height: 35vw;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background: linear-gradient(135deg, #1e1e2f 0%, #252538 100%);
-  opacity: 0.15;
-  animation-delay: -16s;
-}
-
-@keyframes float {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  25% { transform: translate(3%, 3%) scale(1.03); }
-  50% { transform: translate(-2%, 5%) scale(0.97); }
-  75% { transform: translate(-3%, -2%) scale(1.01); }
-}
-
-.noise-overlay {
-  position: absolute;
-  inset: 0;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
-  opacity: 0.015;
-  pointer-events: none;
-}
-
-/* ===== Floating Orbs — едва заметные ===== */
-.orbs {
+.bg-overlay {
   position: fixed;
   inset: 0;
   z-index: 1;
+  background: linear-gradient(135deg, 
+    rgba(245, 248, 240, 0.85) 0%, 
+    rgba(238, 242, 230, 0.75) 50%,
+    rgba(255, 255, 255, 0.65) 100%
+  );
+  backdrop-filter: blur(2px);
+}
+
+/* ===== Floating Orbs (Sunrays) ===== */
+.orbs {
+  position: fixed;
+  inset: 0;
+  z-index: 2;
   pointer-events: none;
   overflow: hidden;
 }
@@ -525,38 +493,45 @@ onMounted(() => {
 .orb {
   position: absolute;
   border-radius: 50%;
-  background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.03), transparent 70%);
+  background: radial-gradient(circle at 35% 35%, 
+    var(--sunray), 
+    var(--sunray-glow) 40%, 
+    transparent 70%
+  );
   animation: orb-float 20s ease-in-out infinite;
+  filter: blur(40px);
 }
 
 .orb-1 {
-  width: 300px;
-  height: 300px;
-  top: 10%;
-  right: 15%;
+  width: 400px;
+  height: 400px;
+  top: -10%;
+  right: 10%;
   animation-delay: 0s;
 }
 
 .orb-2 {
-  width: 200px;
-  height: 200px;
-  bottom: 20%;
-  left: 10%;
-  animation-delay: -5s;
+  width: 300px;
+  height: 300px;
+  bottom: 15%;
+  left: 5%;
+  opacity: 0.7;
+  animation-delay: -7s;
 }
 
 .orb-3 {
-  width: 150px;
-  height: 150px;
-  top: 60%;
-  right: 30%;
-  animation-delay: -10s;
+  width: 250px;
+  height: 250px;
+  top: 45%;
+  left: 40%;
+  opacity: 0.5;
+  animation-delay: -14s;
 }
 
 @keyframes orb-float {
-  0%, 100% { transform: translate(0, 0) rotate(0deg); }
-  33% { transform: translate(30px, -30px) rotate(120deg); }
-  66% { transform: translate(-20px, 20px) rotate(240deg); }
+  0%, 100% { transform: translate(0, 0); }
+  33% { transform: translate(30px, -20px); }
+  66% { transform: translate(-20px, 30px); }
 }
 
 /* ===== Sidebar ===== */
@@ -568,10 +543,14 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   padding: 24px 16px;
-  background: var(--glass);
-  backdrop-filter: blur(40px);
-  -webkit-backdrop-filter: blur(40px);
-  border-right: 1px solid var(--glass-border);
+  background: var(--surface-glass);
+  backdrop-filter: blur(20px) saturate(150%);
+  -webkit-backdrop-filter: blur(20px) saturate(150%);
+  border-right: 1px solid var(--border-glass-light);
+  box-shadow: 
+    0 8px 32px rgba(74, 90, 36, 0.08),
+    0 2px 8px rgba(74, 90, 36, 0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
   z-index: 100;
   transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -596,29 +575,29 @@ onMounted(() => {
 .logo-icon {
   width: 44px;
   height: 44px;
-  background: linear-gradient(135deg, var(--accent), var(--accent-light));
+  background: linear-gradient(135deg, var(--accent-primary), #5d6d2e);
   border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 1.2rem;
-  color: var(--bg);
-  box-shadow: 0 8px 32px var(--accent-glow);
+  color: white;
+  box-shadow: 0 4px 16px var(--accent-glow);
 }
 
 .logo-text {
   font-family: 'Old Standard TT', serif;
   font-size: 1.5rem;
   font-weight: 700;
-  color: var(--text);
+  color: var(--text-primary);
 }
 
 .toggle-btn {
   width: 32px;
   height: 32px;
-  background: var(--glass);
-  border: 1px solid var(--glass-border);
-  border-radius: var(--radius-xs);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-glass);
+  border-radius: 8px;
   color: var(--text-secondary);
   cursor: pointer;
   display: flex;
@@ -628,8 +607,8 @@ onMounted(() => {
 }
 
 .toggle-btn:hover {
-  background: var(--accent-pale);
-  color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent-primary);
 }
 
 /* ===== Navigation ===== */
@@ -663,20 +642,20 @@ onMounted(() => {
 }
 
 .nav-item:hover {
-  background: var(--accent-pale);
-  color: var(--text);
+  background: var(--accent-soft);
+  color: var(--accent-primary);
 }
 
 .nav-item.active {
-  background: var(--accent);
-  color: var(--bg);
-  box-shadow: 0 4px 20px var(--accent-glow);
+  background: var(--accent-primary);
+  color: white;
+  box-shadow: 0 4px 16px var(--accent-glow);
 }
 
 .sidebar-footer {
   margin-top: auto;
   padding-top: 16px;
-  border-top: 1px solid var(--glass-border);
+  border-top: 1px solid var(--border-glass);
 }
 
 .user-pill {
@@ -684,19 +663,20 @@ onMounted(() => {
   align-items: center;
   gap: 12px;
   padding: 12px;
-  background: var(--bg-card);
+  background: var(--bg-elevated);
   border-radius: var(--radius-sm);
+  box-shadow: 0 2px 8px rgba(74, 90, 36, 0.04);
 }
 
 .avatar {
   width: 40px;
   height: 40px;
-  background: linear-gradient(135deg, var(--accent-dark), var(--accent));
+  background: linear-gradient(135deg, #3a4a1a, var(--accent-primary));
   border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--bg);
+  color: white;
 }
 
 .user-info {
@@ -707,6 +687,7 @@ onMounted(() => {
 .name {
   font-weight: 600;
   font-size: 0.9rem;
+  color: var(--text-primary);
 }
 
 .role {
@@ -738,7 +719,7 @@ onMounted(() => {
   font-weight: 700;
   margin: 0 0 4px 0;
   line-height: 1.1;
-  color: var(--text);
+  color: var(--text-primary);
 }
 
 .page-subtitle {
@@ -772,25 +753,29 @@ onMounted(() => {
   width: 44px;
   padding: 0;
   justify-content: center;
-  background: var(--glass);
-  border: 1px solid var(--glass-border);
+  background: var(--surface-glass);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border-glass-light);
   color: var(--text-secondary);
+  box-shadow: 0 2px 8px rgba(74, 90, 36, 0.04);
 }
 
 .action-btn.glass:hover {
-  background: var(--accent-pale);
-  color: var(--accent);
+  background: var(--surface-glass-hover);
+  color: var(--accent-primary);
+  transform: translateY(-2px);
 }
 
 .action-btn.primary {
-  background: var(--accent);
-  color: var(--bg);
-  box-shadow: 0 4px 20px var(--accent-glow);
+  background: var(--accent-primary);
+  color: white;
+  box-shadow: 0 4px 16px var(--accent-glow);
 }
 
 .action-btn.primary:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 30px var(--accent-glow);
+  box-shadow: 0 6px 20px var(--accent-glow);
 }
 
 .badge {
@@ -799,13 +784,14 @@ onMounted(() => {
   right: -4px;
   width: 18px;
   height: 18px;
-  background: var(--accent);
+  background: var(--accent-primary);
   border-radius: 50%;
   font-size: 0.65rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--bg);
+  color: white;
+  font-weight: 700;
 }
 
 /* ===== Bento Grid ===== */
@@ -818,12 +804,16 @@ onMounted(() => {
 }
 
 .bento-item {
-  background: var(--bg-card);
-  border: 1px solid var(--glass-border);
+  background: var(--surface-glass);
+  border: 1px solid var(--border-glass-light);
   border-radius: var(--radius);
   padding: 24px;
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px) saturate(150%);
+  -webkit-backdrop-filter: blur(20px) saturate(150%);
+  box-shadow: 
+    0 8px 32px rgba(74, 90, 36, 0.08),
+    0 2px 8px rgba(74, 90, 36, 0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   animation: bento-in 0.6s cubic-bezier(0.4, 0, 0.2, 1) backwards;
   animation-delay: var(--delay, 0s);
@@ -837,9 +827,12 @@ onMounted(() => {
 }
 
 .bento-item:hover {
-  background: var(--bg-card-hover);
-  border-color: rgba(146, 164, 71, 0.15);
+  background: var(--surface-glass-hover);
   transform: translateY(-4px);
+  box-shadow: 
+    0 16px 48px rgba(74, 90, 36, 0.12),
+    0 4px 12px rgba(74, 90, 36, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 1);
 }
 
 /* Hero Card */
@@ -851,7 +844,22 @@ onMounted(() => {
   justify-content: space-between;
   position: relative;
   overflow: hidden;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.02), rgba(146, 164, 71, 0.03));
+}
+
+.sunray-diagonal {
+  position: absolute;
+  top: -50%;
+  right: -20%;
+  width: 150%;
+  height: 150%;
+  background: linear-gradient(135deg, 
+    transparent 0%, 
+    var(--sunray) 40%, 
+    transparent 60%
+  );
+  opacity: 0.4;
+  pointer-events: none;
+  transform: rotate(-15deg);
 }
 
 .hero-tag {
@@ -859,8 +867,8 @@ onMounted(() => {
   align-items: center;
   gap: 6px;
   padding: 6px 12px;
-  background: var(--accent-pale);
-  color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent-primary);
   border-radius: 20px;
   font-size: 0.75rem;
   font-weight: 700;
@@ -877,6 +885,7 @@ onMounted(() => {
   line-height: 1.2;
   margin: 0 0 12px 0;
   max-width: 400px;
+  color: var(--text-primary);
 }
 
 .hero-desc {
@@ -893,10 +902,10 @@ onMounted(() => {
 
 .btn-glow {
   padding: 12px 24px;
-  background: var(--accent);
+  background: var(--accent-primary);
   border: none;
-  border-radius: var(--radius-sm);
-  color: var(--bg);
+  border-radius: var(--radius-md);
+  color: white;
   font-family: inherit;
   font-size: 0.9rem;
   font-weight: 600;
@@ -904,31 +913,32 @@ onMounted(() => {
   display: flex;
   align-items: center;
   gap: 8px;
-  box-shadow: 0 4px 20px var(--accent-glow);
+  box-shadow: 0 4px 16px var(--accent-glow);
   transition: all 0.2s;
 }
 
 .btn-glow:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 30px var(--accent-glow);
+  box-shadow: 0 6px 24px var(--accent-glow);
 }
 
-.btn-ghost {
+.btn-glass {
   padding: 12px 24px;
-  background: transparent;
-  border: 1px solid var(--glass-border);
-  border-radius: var(--radius-sm);
-  color: var(--text-secondary);
+  background: var(--surface-glass);
+  border: 1px solid var(--border-glass-light);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
   font-family: inherit;
   font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;
+  backdrop-filter: blur(8px);
   transition: all 0.2s;
 }
 
-.btn-ghost:hover {
-  background: var(--glass);
-  color: var(--text);
+.btn-glass:hover {
+  background: var(--surface-glass-hover);
+  transform: translateY(-2px);
 }
 
 .hero-visual {
@@ -941,15 +951,19 @@ onMounted(() => {
 
 .floating-card {
   position: absolute;
-  background: var(--glass);
-  backdrop-filter: blur(10px);
-  border: 1px solid var(--glass-border);
+  background: var(--surface-glass);
+  backdrop-filter: blur(16px) saturate(150%);
+  -webkit-backdrop-filter: blur(16px) saturate(150%);
+  border: 1px solid var(--border-glass-light);
   border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--accent);
-  animation: float-card 6s ease-in-out infinite;
+  color: var(--accent-primary);
+  box-shadow: 
+    0 8px 24px rgba(74, 90, 36, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  animation: float-card 8s ease-in-out infinite;
 }
 
 .card-1 {
@@ -966,7 +980,7 @@ onMounted(() => {
   height: 50px;
   bottom: 20%;
   left: 10%;
-  animation-delay: -2s;
+  animation-delay: -2.5s;
 }
 
 .card-3 {
@@ -974,12 +988,12 @@ onMounted(() => {
   height: 45px;
   top: 50%;
   right: 30%;
-  animation-delay: -4s;
+  animation-delay: -5s;
 }
 
 @keyframes float-card {
   0%, 100% { transform: translateY(0) rotate(0deg); }
-  50% { transform: translateY(-10px) rotate(5deg); }
+  50% { transform: translateY(-12px) rotate(3deg); }
 }
 
 /* Stats Cards */
@@ -987,8 +1001,6 @@ onMounted(() => {
   display: flex;
   align-items: center;
   gap: 16px;
-  position: relative;
-  overflow: hidden;
 }
 
 .stat-icon {
@@ -1000,8 +1012,8 @@ onMounted(() => {
   justify-content: center;
   font-size: 1.3rem;
   flex-shrink: 0;
-  background: var(--accent-pale);
-  color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent-primary);
 }
 
 .stat-content {
@@ -1013,24 +1025,13 @@ onMounted(() => {
   font-size: 1.75rem;
   font-weight: 700;
   line-height: 1;
+  color: var(--text-primary);
 }
 
 .stat-label {
   font-size: 0.8rem;
   color: var(--text-secondary);
   margin-top: 4px;
-}
-
-.stat-glow {
-  position: absolute;
-  width: 80px;
-  height: 80px;
-  border-radius: 50%;
-  right: -20px;
-  bottom: -20px;
-  opacity: 0.08;
-  filter: blur(30px);
-  background: var(--accent);
 }
 
 /* Actions Card */
@@ -1057,19 +1058,22 @@ onMounted(() => {
   align-items: center;
   gap: 10px;
   padding: 16px 12px;
-  background: var(--glass);
-  border: 1px solid var(--glass-border);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-glass);
   border-radius: var(--radius-sm);
-  color: var(--text);
+  color: var(--text-primary);
   font-family: inherit;
   font-size: 0.8rem;
   cursor: pointer;
   transition: all 0.2s;
+  box-shadow: 0 2px 8px rgba(74, 90, 36, 0.04);
 }
 
 .quick-btn:hover {
-  background: var(--accent-pale);
+  background: var(--surface-glass);
+  border-color: var(--border-glass-light);
   transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(74, 90, 36, 0.08);
 }
 
 .quick-icon {
@@ -1079,8 +1083,8 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--accent-pale);
-  color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent-primary);
 }
 
 /* Activity Card */
@@ -1100,8 +1104,8 @@ onMounted(() => {
   align-items: center;
   gap: 6px;
   padding: 4px 10px;
-  background: var(--accent-pale);
-  color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent-primary);
   border-radius: 20px;
   font-size: 0.7rem;
   font-weight: 600;
@@ -1111,7 +1115,7 @@ onMounted(() => {
 .live-dot {
   width: 6px;
   height: 6px;
-  background: var(--accent);
+  background: var(--accent-primary);
   border-radius: 50%;
   animation: pulse 2s ease-in-out infinite;
 }
@@ -1132,13 +1136,15 @@ onMounted(() => {
   align-items: center;
   gap: 12px;
   padding: 12px;
-  background: var(--glass);
+  background: var(--bg-elevated);
   border-radius: var(--radius-sm);
   transition: all 0.2s;
+  box-shadow: 0 2px 8px rgba(74, 90, 36, 0.04);
 }
 
 .activity-item:hover {
-  background: var(--accent-pale);
+  background: var(--surface-glass);
+  transform: translateX(4px);
 }
 
 .activity-avatar {
@@ -1150,8 +1156,8 @@ onMounted(() => {
   justify-content: center;
   font-weight: 600;
   font-size: 0.85rem;
-  background: var(--accent-pale);
-  color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent-primary);
 }
 
 .activity-info {
@@ -1162,6 +1168,7 @@ onMounted(() => {
 .activity-name {
   font-size: 0.85rem;
   font-weight: 500;
+  color: var(--text-primary);
 }
 
 .activity-time {
@@ -1177,9 +1184,10 @@ onMounted(() => {
 .chart-tabs {
   display: flex;
   gap: 4px;
-  background: var(--glass);
+  background: var(--bg-elevated);
   padding: 4px;
-  border-radius: var(--radius-xs);
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(74, 90, 36, 0.04);
 }
 
 .tab {
@@ -1196,8 +1204,9 @@ onMounted(() => {
 }
 
 .tab.active {
-  background: var(--accent);
-  color: var(--bg);
+  background: var(--accent-primary);
+  color: white;
+  box-shadow: 0 2px 8px var(--accent-glow);
 }
 
 .chart-visual {
@@ -1215,8 +1224,11 @@ onMounted(() => {
 .bar {
   flex: 1;
   height: var(--h);
-  background: linear-gradient(180deg, rgba(146, 164, 71, 0.25), rgba(146, 164, 71, 0.08));
-  border-radius: var(--radius-xs) var(--radius-xs) 0 0;
+  background: linear-gradient(180deg, 
+    rgba(74, 90, 36, 0.15), 
+    rgba(74, 90, 36, 0.05)
+  );
+  border-radius: 8px 8px 0 0;
   position: relative;
   transition: all 0.3s;
   display: flex;
@@ -1234,12 +1246,18 @@ onMounted(() => {
 }
 
 .bar:hover {
-  background: linear-gradient(180deg, var(--accent), rgba(146, 164, 71, 0.2));
+  background: linear-gradient(180deg, 
+    var(--accent-primary), 
+    rgba(74, 90, 36, 0.2)
+  );
 }
 
 .bar.active {
-  background: linear-gradient(180deg, var(--accent), var(--accent-dark));
-  box-shadow: 0 0 20px var(--accent-glow);
+  background: linear-gradient(180deg, 
+    var(--accent-primary), 
+    #5d6d2e
+  );
+  box-shadow: 0 0 16px var(--accent-glow);
 }
 
 /* ===== Showcase ===== */
@@ -1252,6 +1270,7 @@ onMounted(() => {
   font-size: 1.75rem;
   font-weight: 700;
   margin: 0 0 24px 0;
+  color: var(--text-primary);
 }
 
 .showcase-grid {
@@ -1261,11 +1280,16 @@ onMounted(() => {
 }
 
 .showcase-card {
-  background: var(--bg-card);
-  border: 1px solid var(--glass-border);
+  background: var(--surface-glass);
+  border: 1px solid var(--border-glass-light);
   border-radius: var(--radius);
   padding: 24px;
-  backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px) saturate(150%);
+  -webkit-backdrop-filter: blur(20px) saturate(150%);
+  box-shadow: 
+    0 8px 32px rgba(74, 90, 36, 0.08),
+    0 2px 8px rgba(74, 90, 36, 0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
 }
 
 .showcase-card.wide {
@@ -1296,12 +1320,12 @@ onMounted(() => {
 }
 
 /* Buttons */
-.btn-glass {
+.btn-ghost {
   padding: 12px 24px;
-  background: var(--glass);
-  border: 1px solid var(--glass-border);
-  border-radius: var(--radius-sm);
-  color: var(--text);
+  background: transparent;
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
   font-family: inherit;
   font-size: 0.9rem;
   font-weight: 600;
@@ -1309,16 +1333,17 @@ onMounted(() => {
   transition: all 0.2s;
 }
 
-.btn-glass:hover {
-  background: var(--accent-pale);
+.btn-ghost:hover {
+  background: var(--accent-soft);
+  color: var(--accent-primary);
 }
 
 .btn-outline {
   padding: 12px 24px;
   background: transparent;
-  border: 1px solid var(--accent);
-  border-radius: var(--radius-sm);
-  color: var(--accent);
+  border: 1px solid var(--accent-primary);
+  border-radius: var(--radius-md);
+  color: var(--accent-primary);
   font-family: inherit;
   font-size: 0.9rem;
   font-weight: 600;
@@ -1327,7 +1352,7 @@ onMounted(() => {
 }
 
 .btn-outline:hover {
-  background: var(--accent-pale);
+  background: var(--accent-soft);
 }
 
 /* Inputs */
@@ -1336,15 +1361,16 @@ onMounted(() => {
   align-items: center;
   gap: 12px;
   padding: 0 16px;
-  background: var(--glass);
-  border: 1px solid var(--glass-border);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-glass);
   border-radius: var(--radius-sm);
   transition: all 0.2s;
+  box-shadow: 0 2px 8px rgba(74, 90, 36, 0.04);
 }
 
 .input-group:focus-within {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px var(--accent-pale);
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 3px var(--accent-soft);
 }
 
 .input-group i {
@@ -1357,7 +1383,7 @@ onMounted(() => {
   background: transparent;
   border: none;
   outline: none;
-  color: var(--text);
+  color: var(--text-primary);
   font-family: inherit;
   font-size: 0.9rem;
 }
@@ -1376,7 +1402,7 @@ onMounted(() => {
 }
 
 .input-action:hover {
-  color: var(--accent);
+  color: var(--accent-primary);
 }
 
 /* Tags */
@@ -1385,23 +1411,24 @@ onMounted(() => {
   border-radius: 20px;
   font-size: 0.75rem;
   font-weight: 600;
-  background: var(--accent-pale);
-  color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent-primary);
 }
 
 .tag-light {
-  background: rgba(154, 165, 106, 0.15);
-  color: var(--accent-light);
+  background: var(--bg-elevated);
+  color: var(--accent-primary);
+  border: 1px solid var(--border-glass);
 }
 
 .tag-outline {
   background: transparent;
-  border: 1px solid var(--accent);
-  color: var(--accent);
+  border: 1px solid var(--accent-primary);
+  color: var(--accent-primary);
 }
 
 .tag-muted {
-  background: var(--glass);
+  background: var(--bg-secondary);
   color: var(--text-secondary);
 }
 
@@ -1411,20 +1438,22 @@ onMounted(() => {
   align-items: center;
   justify-content: space-between;
   padding: 12px 16px;
-  background: var(--glass);
+  background: var(--bg-elevated);
   border-radius: var(--radius-sm);
   cursor: pointer;
+  box-shadow: 0 2px 8px rgba(74, 90, 36, 0.04);
 }
 
 .toggle-row span {
   font-size: 0.9rem;
+  color: var(--text-primary);
 }
 
 .toggle {
   appearance: none;
   width: 48px;
   height: 26px;
-  background: var(--glass-border);
+  background: var(--bg-secondary);
   border-radius: 13px;
   position: relative;
   cursor: pointer;
@@ -1438,18 +1467,18 @@ onMounted(() => {
   left: 3px;
   width: 20px;
   height: 20px;
-  background: var(--text);
+  background: white;
   border-radius: 50%;
   transition: all 0.2s;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
 .toggle:checked {
-  background: var(--accent);
+  background: var(--accent-primary);
 }
 
 .toggle:checked::before {
   transform: translateX(22px);
-  background: var(--bg);
 }
 
 /* Progress */
@@ -1462,11 +1491,12 @@ onMounted(() => {
   justify-content: space-between;
   font-size: 0.85rem;
   margin-bottom: 8px;
+  color: var(--text-primary);
 }
 
 .progress-bar {
   height: 8px;
-  background: var(--glass);
+  background: var(--bg-secondary);
   border-radius: 4px;
   overflow: hidden;
 }
@@ -1476,7 +1506,7 @@ onMounted(() => {
   width: var(--w);
   border-radius: 4px;
   transition: width 1s ease;
-  background: linear-gradient(90deg, var(--accent-dark), var(--accent));
+  background: linear-gradient(90deg, #3a4a1a, var(--accent-primary));
 }
 
 /* Avatar Group */
@@ -1494,21 +1524,21 @@ onMounted(() => {
   font-weight: 600;
   font-size: 0.85rem;
   margin-left: -8px;
-  border: 2px solid var(--bg);
-  background: var(--accent);
-  color: var(--bg);
+  border: 2px solid var(--bg-primary);
+  background: var(--accent-primary);
+  color: white;
 }
 
 .avatar-item:first-child {
   margin-left: 0;
 }
 
-.avatar-item:nth-child(2) { background: var(--accent-light); }
-.avatar-item:nth-child(3) { background: var(--accent-dark); }
-.avatar-item:nth-child(4) { background: var(--accent-lighter); }
+.avatar-item:nth-child(2) { background: #5d6d2e; }
+.avatar-item:nth-child(3) { background: #3a4a1a; }
+.avatar-item:nth-child(4) { background: #6b7d38; }
 
 .avatar-item.more {
-  background: var(--glass);
+  background: var(--bg-secondary);
   color: var(--text-secondary);
 }
 
@@ -1535,8 +1565,12 @@ onMounted(() => {
   height: 72px;
   background: var(--c);
   border-radius: var(--radius-sm);
-  box-shadow: 0 4px 20px color-mix(in srgb, var(--c) 30%, transparent);
+  box-shadow: 0 4px 16px rgba(74, 90, 36, 0.12);
   transition: transform 0.2s;
+}
+
+.palette-swatch.swatch-light {
+  border: 1px solid var(--border-glass);
 }
 
 .palette-swatch:hover {
@@ -1546,6 +1580,7 @@ onMounted(() => {
 .palette-name {
   font-size: 0.8rem;
   font-weight: 600;
+  color: var(--text-primary);
 }
 
 .palette-hex {

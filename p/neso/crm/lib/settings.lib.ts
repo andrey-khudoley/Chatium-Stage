@@ -108,14 +108,6 @@ export async function getLogWebhook(ctx: app.Ctx): Promise<LogWebhookSetting> {
 }
 
 /**
- * Получить URL логотипа из настроек (произвольный ключ logo_url).
- */
-export async function getLogoUrl(ctx: app.Ctx): Promise<string> {
-  const value = await getSetting(ctx, 'logo_url')
-  return typeof value === 'string' ? value : ''
-}
-
-/**
  * Получить таймштамп сброса дашборда (Unix ms). При отсутствии — 0 (учитываются все логи).
  */
 export async function getDashboardResetAt(ctx: app.Ctx): Promise<number> {
@@ -229,8 +221,6 @@ export async function setSetting(ctx: app.Ctx, key: string, value: unknown): Pro
       message: `[${LOG_MODULE}] setSetting DASHBOARD_RESET_AT branch`,
       payload: { normalized }
     })
-  } else if (key === 'logo_url') {
-    normalized = typeof value === 'string' ? value.trim() : ''
   }
 
   await repo.upsert(ctx, key, normalized)

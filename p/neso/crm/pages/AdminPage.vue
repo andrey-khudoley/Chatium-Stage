@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import { onMounted, onBeforeUnmount, onUnmounted, ref, computed, watch } from 'vue'
 import { getOrCreateBrowserSocketClient } from '@app/socket'
-import Header from '../components/Header.vue'
-import AppFooter from '../components/AppFooter.vue'
+import AppShell from '../web/design/components/AppShell.vue'
 import { getSettingRoute } from '../api/settings/get'
 import { saveSettingRoute } from '../api/settings/save'
 import { createComponentLogger, setLogSink, type LogEntry } from '../shared/logger'
@@ -24,7 +23,6 @@ declare global {
 
 const props = defineProps<{
   projectTitle: string
-  logoUrl?: string
   indexUrl: string
   profileUrl: string
   testsUrl?: string
@@ -35,12 +33,18 @@ const props = defineProps<{
   encodedLogsSocketId?: string
 }>()
 
+const navItems = computed(() =>
+  [
+    { id: 'dashboard', icon: 'fa-house', label: 'Главная', href: props.indexUrl },
+    { id: 'profile', icon: 'fa-user', label: 'Профиль', href: props.profileUrl },
+    { id: 'admin', icon: 'fa-gear', label: 'Админка', href: props.adminUrl },
+    { id: 'tests', icon: 'fa-flask', label: 'Тесты', href: props.testsUrl }
+  ].filter((item) => item.href)
+)
+
 const bootLoaderDone = ref(false)
 const projectName = ref(props.projectTitle.split(' / ')[0] || props.projectTitle)
 const lastSavedProjectName = ref(props.projectTitle.split(' / ')[0] || props.projectTitle)
-const logoUrl = ref(props.logoUrl ?? '')
-const lastSavedLogoUrl = ref(props.logoUrl ?? '')
-const logoUrlDebounceTimer = { id: null as ReturnType<typeof setTimeout> | null }
 const projectNameError = ref('')
 const projectNameLoading = ref(false)
 const projectNameDebounceTimer = { id: null as ReturnType<typeof setTimeout> | null }
@@ -190,34 +194,6 @@ const loadProjectName = async () => {
   }
 }
 
-const loadLogoUrl = async () => {
-  try {
-    const res = await getSettingRoute.query({ key: 'logo_url' }).run(ctx)
-    const data = res as { success?: boolean; value?: unknown }
-    if (data?.success && typeof data.value === 'string') {
-      logoUrl.value = data.value
-      lastSavedLogoUrl.value = data.value
-    }
-  } catch (e) {
-    log.warning('Не удалось загрузить URL логотипа', e)
-  }
-}
-
-const saveLogoUrl = async () => {
-  const trimmed = String(logoUrl.value ?? '').trim()
-  try {
-    const res = await saveSettingRoute.run(ctx, { key: 'logo_url', value: trimmed })
-    const data = res as { success?: boolean; error?: string }
-    if (data?.success === false) {
-      log.warning('Ошибка сохранения URL логотипа', data.error)
-    } else {
-      lastSavedLogoUrl.value = trimmed
-    }
-  } catch (e) {
-    log.warning('Не удалось сохранить URL логотипа', e)
-  }
-}
-
 watch(projectName, () => {
   if (projectNameDebounceTimer.id) clearTimeout(projectNameDebounceTimer.id)
   projectNameDebounceTimer.id = setTimeout(() => {
@@ -225,17 +201,6 @@ watch(projectName, () => {
     const trimmed = String(projectName.value ?? '').trim()
     if (trimmed !== lastSavedProjectName.value) {
       saveProjectName()
-    }
-  }, INPUT_DEBOUNCE_MS)
-})
-
-watch(logoUrl, () => {
-  if (logoUrlDebounceTimer.id) clearTimeout(logoUrlDebounceTimer.id)
-  logoUrlDebounceTimer.id = setTimeout(() => {
-    logoUrlDebounceTimer.id = null
-    const trimmed = String(logoUrl.value ?? '').trim()
-    if (trimmed !== lastSavedLogoUrl.value) {
-      saveLogoUrl()
     }
   }, INPUT_DEBOUNCE_MS)
 })
@@ -270,7 +235,6 @@ const saveProjectName = async () => {
 onMounted(() => {
   log.info('Компонент смонтирован')
   loadProjectName()
-  loadLogoUrl()
   loadDashboardCounts()
   if (window.hideAppLoader) window.hideAppLoader()
   if (window.bootLoaderComplete) {
@@ -331,10 +295,6 @@ onBeforeUnmount(() => {
   if (projectNameDebounceTimer.id) {
     clearTimeout(projectNameDebounceTimer.id)
     projectNameDebounceTimer.id = null
-  }
-  if (logoUrlDebounceTimer.id) {
-    clearTimeout(logoUrlDebounceTimer.id)
-    logoUrlDebounceTimer.id = null
   }
 })
 
@@ -400,11 +360,6 @@ const resetDashboard = async () => {
   } catch (e) {
     log.error('Ошибка сброса дашборда', e)
   }
-}
-
-const openChatiumLink = () => {
-  log.notice('Открытие ссылки Chatium')
-  window.open('https://chatium.ru/?start=pl-LGBT1Oge7c61RkKTU4t0start', '_blank')
 }
 
 const loadRecentLogs = async () => {
@@ -483,814 +438,272 @@ const clearLogs = () => {
 </script>
 
 <template>
-  <div class="app-layout bg-[var(--color-bg)] text-[var(--color-text)] flex flex-col">
-    <Header
-      v-if="bootLoaderDone"
-      :projectTitle="props.projectTitle"
-      :logoUrl="logoUrl"
-      :indexUrl="props.indexUrl"
-      :profileUrl="props.profileUrl"
-      :loginUrl="props.loginUrl"
-      :isAuthenticated="props.isAuthenticated"
-      :isAdmin="props.isAdmin"
-      :adminUrl="props.adminUrl"
-      :testsUrl="props.testsUrl"
-    />
+  <AppShell
+    :pageTitle="'Админка'"
+    :pageSubtitle="projectName"
+    :navItems="navItems"
+    activeSection="admin"
+  >
+    <template #headerActions>
+      <button class="action-btn glass" type="button" @click="resetDashboard">
+        <i class="fas fa-sync-alt"></i>
+      </button>
+      <button class="action-btn glass" type="button" @click="loadRecentLogs">
+        <i class="fas fa-terminal"></i>
+      </button>
+      <button class="action-btn primary" type="button" @click="clearLogs">
+        <i class="fas fa-trash-alt"></i>
+        <span>Очистить</span>
+      </button>
+    </template>
 
-    <main class="content-wrapper flex-1 relative z-10 min-h-0 overflow-y-auto">
-      <div class="content-inner">
-        <section class="admin-section" :class="{ 'admin-visible': bootLoaderDone }">
-          <div class="admin-header">
-            <div class="admin-icon-wrapper">
-              <i class="fas fa-cog admin-icon"></i>
-            </div>
-            <h1 class="admin-heading">Панель администратора</h1>
-            <p class="admin-description">Управление логированием и мониторинг системы</p>
+    <section class="bento-grid">
+      <div class="bento-item hero-card">
+        <div class="hero-content">
+          <span class="hero-tag">
+            <i class="fas fa-shield-halved"></i>
+            Администрирование
+          </span>
+          <h2 class="hero-title">Панель управления</h2>
+          <p class="hero-desc">Настройки проекта, контроль логирования и мониторинг ошибок.</p>
+          <div class="hero-actions">
+            <button class="btn-glow" type="button" @click="resetDashboard">
+              <span>Сбросить метрики</span>
+              <i class="fas fa-rotate"></i>
+            </button>
+            <button class="btn-ghost" type="button" @click="loadRecentLogs">Обновить логи</button>
           </div>
-
-          <!-- Dashboard -->
-          <div class="admin-card">
-            <div class="admin-card-header">
-              <i class="fas fa-bars admin-card-icon dashboard-card-icon"></i>
-              <h2 class="admin-card-title">Дашборд</h2>
-              <button
-                type="button"
-                class="dashboard-reset"
-                title="Сбросить счётчики"
-                @click="resetDashboard"
-              >
-                <i class="fas fa-sync-alt dashboard-reset-icon"></i>
-                Сбросить
-              </button>
-            </div>
-            <div class="dashboard-stats">
-              <div class="dashboard-stat stat-errors">
-                <i class="fas fa-exclamation-circle stat-icon"></i>
-                <div class="stat-content">
-                  <span class="stat-value">{{ errorCount }}</span>
-                  <span class="stat-label">Ошибок</span>
-                </div>
-              </div>
-              <div class="dashboard-stat stat-warnings">
-                <i class="fas fa-exclamation-triangle stat-icon"></i>
-                <div class="stat-content">
-                  <span class="stat-value">{{ warnCount }}</span>
-                  <span class="stat-label">Предупреждений</span>
-                </div>
-              </div>
-            </div>
+        </div>
+        <div class="hero-visual">
+          <div class="floating-card card-1">
+            <i class="fas fa-chart-line"></i>
           </div>
+          <div class="floating-card card-2">
+            <i class="fas fa-bug"></i>
+          </div>
+          <div class="floating-card card-3">
+            <i class="fas fa-shield-check"></i>
+          </div>
+        </div>
+      </div>
 
-          <!-- Project Settings -->
-          <div class="admin-card">
+      <div class="bento-item stat-card">
+        <div class="stat-icon"><i class="fas fa-exclamation-circle"></i></div>
+        <div class="stat-content">
+          <span class="stat-value">{{ errorCount }}</span>
+          <span class="stat-label">Ошибок</span>
+        </div>
+        <div class="stat-glow"></div>
+      </div>
+
+      <div class="bento-item stat-card">
+        <div class="stat-icon"><i class="fas fa-exclamation-triangle"></i></div>
+        <div class="stat-content">
+          <span class="stat-value">{{ warnCount }}</span>
+          <span class="stat-label">Предупреждений</span>
+        </div>
+        <div class="stat-glow"></div>
+      </div>
+
+      <div class="bento-item actions-card">
+        <h3 class="card-title">Фильтры логов</h3>
+        <div class="showcase-content wrap">
+          <button
+            type="button"
+            class="tag"
+            :class="logFilters.info ? '' : 'tag-muted'"
+            @click="toggleLogFilter('info')"
+          >
+            <i class="fas fa-info-circle"></i>
+            Info
+          </button>
+          <button
+            type="button"
+            class="tag"
+            :class="logFilters.warn ? 'tag-light' : 'tag-muted'"
+            @click="toggleLogFilter('warn')"
+          >
+            <i class="fas fa-exclamation-triangle"></i>
+            Warn
+          </button>
+          <button
+            type="button"
+            class="tag"
+            :class="logFilters.error ? 'tag-outline' : 'tag-muted'"
+            @click="toggleLogFilter('error')"
+          >
+            <i class="fas fa-exclamation-circle"></i>
+            Error
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <section class="showcase">
+      <h2 class="section-title">Настройки</h2>
+      <div class="showcase-grid">
+        <div class="showcase-card wide">
+          <h4 class="showcase-label">Название проекта</h4>
+          <div class="showcase-content column">
+            <div class="input-group">
+              <i class="fas fa-font"></i>
+              <input id="project-name" v-model="projectName" type="text" placeholder="Название проекта" />
+            </div>
             <span
               v-if="projectNameSaveStatus"
-              class="admin-card-status"
-              :class="projectNameSaveStatus === 'saved' ? 'status-saved' : 'status-error'"
+              class="tag"
+              :class="projectNameSaveStatus === 'saved' ? 'tag-light' : 'tag-outline'"
             >
               {{ projectNameSaveStatus === 'saved' ? 'Сохранено' : 'Ошибка' }}
             </span>
-            <div class="admin-card-header">
-              <i class="fas fa-wrench admin-card-icon"></i>
-              <h2 class="admin-card-title">Настройки проекта</h2>
-            </div>
-            <div class="settings-form">
-              <div class="settings-field">
-                <label class="settings-label" for="project-name">Название проекта</label>
-                <input
-                  id="project-name"
-                  v-model="projectName"
-                  type="text"
-                  class="settings-input"
-                />
-              </div>
-              <div class="settings-field">
-                <label class="settings-label" for="logo-url">URL логотипа</label>
-                <input
-                  id="logo-url"
-                  v-model="logoUrl"
-                  type="url"
-                  class="settings-input"
-                  placeholder="https://..."
-                />
-                <p class="settings-hint">Формат: PNG, JPG или WebP, рекомендуемый размер до 200×80 px.</p>
-              </div>
-            </div>
-            <p v-if="projectNameError" class="admin-card-error">{{ projectNameError }}</p>
+            <p v-if="projectNameError" class="helper-error">{{ projectNameError }}</p>
           </div>
+        </div>
 
-          <!-- Logging Level -->
-          <div class="admin-card">
+        <div class="showcase-card">
+          <h4 class="showcase-label">Уровень логирования</h4>
+          <div class="showcase-content wrap">
+            <button type="button" :class="logLevel === 'debug' ? 'btn-glow' : 'btn-glass'" @click="setLogLevel('debug')">Debug</button>
+            <button type="button" :class="logLevel === 'info' ? 'btn-glow' : 'btn-glass'" @click="setLogLevel('info')">Info</button>
+            <button type="button" :class="logLevel === 'warn' ? 'btn-glow' : 'btn-glass'" @click="setLogLevel('warn')">Warn</button>
+            <button type="button" :class="logLevel === 'error' ? 'btn-glow' : 'btn-glass'" @click="setLogLevel('error')">Error</button>
+            <button type="button" :class="logLevel === 'disable' ? 'btn-glow' : 'btn-glass'" @click="setLogLevel('disable')">Disable</button>
             <span
               v-if="logLevelSaveStatus"
-              class="admin-card-status"
-              :class="logLevelSaveStatus === 'saved' ? 'status-saved' : 'status-error'"
+              class="tag"
+              :class="logLevelSaveStatus === 'saved' ? 'tag-light' : 'tag-outline'"
             >
               {{ logLevelSaveStatus === 'saved' ? 'Сохранено' : 'Ошибка' }}
             </span>
-            <div class="admin-card-header">
-              <i class="fas fa-sliders-h admin-card-icon"></i>
-              <h2 class="admin-card-title">Уровень логирования</h2>
-            </div>
-            <div class="log-level-buttons">
-              <button
-                type="button"
-                class="log-level-btn"
-                :class="{ active: logLevel === 'debug' }"
-                @click="setLogLevel('debug')"
-              >
-                Debug
-              </button>
-              <button
-                type="button"
-                class="log-level-btn"
-                :class="{ active: logLevel === 'info' }"
-                @click="setLogLevel('info')"
-              >
-                Info
-              </button>
-              <button
-                type="button"
-                class="log-level-btn"
-                :class="{ active: logLevel === 'warn' }"
-                @click="setLogLevel('warn')"
-              >
-                Warn
-              </button>
-              <button
-                type="button"
-                class="log-level-btn"
-                :class="{ active: logLevel === 'error' }"
-                @click="setLogLevel('error')"
-              >
-                Error
-              </button>
-              <button
-                type="button"
-                class="log-level-btn"
-                :class="{ active: logLevel === 'disable' }"
-                @click="setLogLevel('disable')"
-              >
-                Disable
-              </button>
-            </div>
-            <p v-if="logLevelError" class="admin-card-error">{{ logLevelError }}</p>
+            <p v-if="logLevelError" class="helper-error">{{ logLevelError }}</p>
           </div>
-
-          <!-- Logs Output -->
-          <div class="admin-card logs-card">
-            <div class="admin-card-header">
-              <i class="fas fa-terminal admin-card-icon"></i>
-              <h2 class="admin-card-title">Логи</h2>
-            </div>
-            <div class="logs-filters">
-              <button
-                type="button"
-                class="log-filter-chip chip-info"
-                :class="{ active: logFilters.info }"
-                @click="toggleLogFilter('info')"
-              >
-                <i class="fas fa-info-circle"></i>
-                Info
-              </button>
-              <button
-                type="button"
-                class="log-filter-chip chip-warn"
-                :class="{ active: logFilters.warn }"
-                @click="toggleLogFilter('warn')"
-              >
-                <i class="fas fa-exclamation-triangle"></i>
-                Warn
-              </button>
-              <button
-                type="button"
-                class="log-filter-chip chip-error"
-                :class="{ active: logFilters.error }"
-                @click="toggleLogFilter('error')"
-              >
-                <i class="fas fa-exclamation-circle"></i>
-                Error
-              </button>
-            </div>
-            <div class="logs-output custom-scrollbar" ref="logsOutputRef">
-              <div v-if="displayedLogs.length === 0" class="logs-empty">
-                Логи появятся здесь...
-              </div>
-              <div v-for="(item, index) in displayedLogs" :key="index" class="log-item">
-                <div v-if="item.type === 'divider'" class="log-date-divider">
-                  --- {{ item.date }} ---
-                </div>
-                <div v-else class="log-entry">
-                  <span class="log-time">{{ item.formattedTime }}</span>
-                  <span class="log-level" :class="`log-level-${item.entry.level}`">
-                    [{{ item.entry.level.toUpperCase() }}]
-                  </span>
-                  <span class="log-message">{{ item.formattedMessage }}</span>
-                </div>
-              </div>
-            </div>
-            <div class="logs-actions">
-              <div v-if="logsLoading" class="logs-loading">
-                <i class="fas fa-spinner fa-spin"></i>
-                Загрузка логов...
-              </div>
-              <p v-if="logsError" class="logs-error">{{ logsError }}</p>
-              <div class="logs-action-row">
-                <button
-                  v-if="logsHasMore && !logsLoading"
-                  type="button"
-                  class="load-more-btn"
-                  @click="loadMoreLogs"
-                >
-                  <i class="fas fa-arrow-down"></i>
-                  Загрузить ещё 50
-                </button>
-                <button
-                  type="button"
-                  class="logs-clear-btn"
-                  title="Очистить логи"
-                  @click="clearLogs"
-                >
-                  <i class="fas fa-trash-alt"></i>
-                </button>
-              </div>
-            </div>
-          </div>
-        </section>
+        </div>
       </div>
-    </main>
+    </section>
 
-    <AppFooter v-if="bootLoaderDone" @chatium-click="openChatiumLink" />
-  </div>
+    <section class="showcase">
+      <h2 class="section-title">Логи</h2>
+      <div class="showcase-card wide logs-card">
+        <div class="logs-output custom-scrollbar" ref="logsOutputRef">
+          <div v-if="displayedLogs.length === 0" class="logs-empty">Логи появятся здесь...</div>
+          <div v-for="(item, index) in displayedLogs" :key="index" class="log-item">
+            <div v-if="item.type === 'divider'" class="log-date-divider">
+              --- {{ item.date }} ---
+            </div>
+            <div v-else class="log-entry">
+              <span class="log-time">{{ item.formattedTime }}</span>
+              <span class="log-level" :class="`log-level-${item.entry.level}`">
+                [{{ item.entry.level.toUpperCase() }}]
+              </span>
+              <span class="log-message">{{ item.formattedMessage }}</span>
+            </div>
+          </div>
+        </div>
+        <div class="logs-actions">
+          <div v-if="logsLoading" class="logs-loading">
+            <i class="fas fa-spinner fa-spin"></i>
+            Загрузка логов...
+          </div>
+          <p v-if="logsError" class="helper-error">{{ logsError }}</p>
+          <div class="logs-action-row">
+            <button
+              v-if="logsHasMore && !logsLoading"
+              type="button"
+              class="btn-glass"
+              @click="loadMoreLogs"
+            >
+              <i class="fas fa-arrow-down"></i>
+              Загрузить ещё 50
+            </button>
+            <button type="button" class="btn-outline" @click="clearLogs">
+              <i class="fas fa-trash-alt"></i>
+              Очистить
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </AppShell>
 </template>
 
-<style>
-.content-wrapper {
-  position: relative;
-  z-index: 10;
-}
-
-.content-inner {
-  max-width: 1000px;
-  margin: 0 auto;
-  padding: 2rem;
-}
-
-@media (max-width: 768px) {
-  .content-inner {
-    padding: 1.5rem 1rem;
-  }
-}
-</style>
-
 <style scoped>
-.admin-section {
-  opacity: 0;
-  transform: translateY(20px);
-  transition: opacity 0.6s ease, transform 0.6s ease;
-}
-
-.admin-section.admin-visible {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-.admin-header {
-  text-align: center;
-  margin-bottom: 2.5rem;
-}
-
-.admin-icon-wrapper {
-  width: 4rem;
-  height: 4rem;
-  margin: 0 auto 1.25rem;
-  border-radius: 10px;
-  background: linear-gradient(135deg, var(--color-gold-dark) 0%, var(--color-gold) 50%, var(--color-gold-light) 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 4px 16px rgba(171, 112, 28, 0.3);
-}
-
-.admin-icon {
-  font-size: 1.5rem;
-  color: var(--color-text);
-}
-
-.admin-heading {
-  font-family: 'Old Standard TT', serif;
-  font-size: 2rem;
-  font-weight: 700;
-  color: var(--color-text);
-  margin: 0 0 0.5rem 0;
-  letter-spacing: 0.02em;
-}
-
-.admin-description {
-  color: var(--color-text-secondary);
-  font-size: 0.95rem;
-  margin: 0;
-}
-
-/* Admin Cards */
-.admin-card {
-  background: var(--color-bg);
-  border: 1px solid var(--color-border);
-  border-radius: 12px;
-  border-top: 4px solid var(--color-green);
-  padding: 1.5rem;
-  margin-bottom: 1.5rem;
-  position: relative;
-  box-shadow: 0 1px 3px rgba(26, 46, 31, 0.06);
-}
-
-.admin-card::before {
-  display: none;
-}
-
-.admin-card-header {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  margin-bottom: 1.25rem;
-  flex-wrap: wrap;
-}
-
-.admin-card-icon {
-  color: var(--color-green);
-  font-size: 1rem;
-}
-
-.admin-card-title {
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: var(--color-text);
-  margin: 0;
-  flex: 1;
-}
-
-/* Log Level Buttons */
-.log-level-buttons {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-
-.log-level-btn {
-  padding: 0.5rem 1rem;
-  font-family: inherit;
-  font-size: 0.9rem;
-  color: var(--color-text-secondary);
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid var(--color-border);
-  cursor: pointer;
-  transition: all 0.2s ease;
-  letter-spacing: 0.05em;
-}
-
-.log-level-btn:hover {
-  color: var(--color-text);
-  border-color: var(--color-border-light);
-  background: rgba(255, 255, 255, 0.05);
-}
-
-.log-level-btn.active {
-  color: var(--color-bg);
-  background: var(--color-green);
-  border-color: var(--color-green);
-}
-
-.admin-card-error {
-  margin: 0.75rem 0 0;
+.helper-error {
+  color: var(--accent-primary);
   font-size: 0.85rem;
-  color: #e74c3c;
+  margin: 8px 0 0 0;
 }
 
-.admin-card-status {
-  position: absolute;
-  top: 1rem;
-  right: 1rem;
-  font-size: 0.85rem;
-  font-weight: 500;
-  letter-spacing: 0.04em;
-  animation: statusFadeIn 0.2s ease;
-}
-
-.admin-card-status.status-saved {
-  color: #27ae60;
-}
-
-.admin-card-status.status-error {
-  color: #e74c3c;
-}
-
-@keyframes statusFadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-/* Project Settings */
-.settings-form {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.settings-field {
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-}
-
-.settings-label {
-  font-size: 0.85rem;
-  color: var(--color-text-secondary);
-  letter-spacing: 0.04em;
-}
-
-.settings-input {
-  padding: 0.6rem 0.9rem;
-  font-family: inherit;
-  font-size: 0.95rem;
-  color: var(--color-text);
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid var(--color-border);
-  border-radius: 4px;
-  transition: border-color 0.2s ease;
-}
-
-.settings-input:focus {
-  outline: none;
-  border-color: var(--color-green);
-}
-
-.settings-input:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.settings-hint {
-  font-size: 0.8rem;
-  color: var(--color-text-tertiary);
-  margin: 0.25rem 0 0;
-}
-
-/* Dashboard */
-.dashboard-card-icon {
-  color: var(--color-green);
-}
-
-.dashboard-reset {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 0.9rem;
-  font-family: inherit;
-  font-size: 0.85rem;
-  color: var(--color-text-secondary);
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid var(--color-border-light);
-  border-radius: 6px;
-  cursor: pointer;
-  transition: color 0.2s ease, background 0.2s ease, border-color 0.2s ease;
-  letter-spacing: 0.04em;
-}
-
-.dashboard-reset:hover {
-  color: var(--color-text);
-  background: rgba(255, 255, 255, 0.08);
-  border-color: var(--color-border);
-}
-
-.dashboard-reset-icon {
-  font-size: 0.8rem;
-  opacity: 0.9;
-}
-
-.dashboard-stats {
-  display: flex;
-  gap: 1rem;
-}
-
-.dashboard-stat {
-  flex: 1 1 0;
-  min-width: 0;
-  display: flex;
-  align-items: flex-start;
-  gap: 0.75rem;
-  padding: 1rem 1.25rem;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid var(--color-border-light);
-  border-radius: 6px;
-}
-
-.dashboard-stat .stat-icon {
-  flex-shrink: 0;
-  margin-top: 0.15rem;
-}
-
-.dashboard-stat .stat-content {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.dashboard-stat .stat-value {
-  font-size: 1.5rem;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-  line-height: 1.2;
-}
-
-.dashboard-stat .stat-label {
-  font-size: 0.85rem;
-  color: var(--color-text-secondary);
-  line-height: 1.2;
-}
-
-.stat-icon {
-  font-size: 1.25rem;
-  opacity: 0.6;
-}
-
-.stat-errors .stat-value,
-.stat-errors .stat-icon {
-  color: #e74c3c;
-}
-
-.stat-warnings .stat-value,
-.stat-warnings .stat-icon {
-  color: #f39c12;
-}
-
-/* Logs Output */
 .logs-card {
-  margin-bottom: 0;
-}
-
-.logs-filters {
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  margin-bottom: 1rem;
-}
-
-.log-filter-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  padding: 0.35rem 0.75rem;
-  font-family: inherit;
-  font-size: 0.8rem;
-  color: var(--color-text-tertiary);
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid var(--color-border);
-  border-radius: 4px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  letter-spacing: 0.04em;
-}
-
-.log-filter-chip:hover {
-  color: var(--color-text-secondary);
-  border-color: var(--color-border-light);
-  background: rgba(255, 255, 255, 0.05);
-}
-
-.log-filter-chip.active {
-  color: var(--color-text);
-}
-
-.log-filter-chip i {
-  font-size: 0.75rem;
-  opacity: 0.9;
-}
-
-.log-filter-chip.chip-info.active {
-  border-color: #3498db;
-  background: rgba(52, 152, 219, 0.12);
-}
-
-.log-filter-chip.chip-info.active i {
-  color: #3498db;
-}
-
-.log-filter-chip.chip-warn.active {
-  border-color: #f39c12;
-  background: rgba(243, 156, 18, 0.12);
-}
-
-.log-filter-chip.chip-warn.active i {
-  color: #f39c12;
-}
-
-.log-filter-chip.chip-error.active {
-  border-color: #e74c3c;
-  background: rgba(231, 76, 60, 0.12);
-}
-
-.log-filter-chip.chip-error.active i {
-  color: #e74c3c;
+  flex-direction: column;
+  gap: 16px;
 }
 
 .logs-output {
-  background: var(--color-bg-secondary);
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
-  min-height: 200px;
-  max-height: 400px;
+  max-height: 320px;
   overflow: auto;
-  padding: 1rem;
-  font-family: 'Mulish', system-ui, monospace;
-  font-size: 0.8rem;
+  padding: 12px;
+  background: var(--surface-glass);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-glass-light);
 }
 
 .logs-empty {
-  color: var(--color-text-secondary);
-  text-align: center;
-  padding: 2rem;
-}
-
-.log-item {
-  margin-bottom: 0;
-}
-
-.log-date-divider {
-  text-align: center;
-  color: #555;
-  font-size: 0.75rem;
-  padding: 0.5rem 0;
-  margin: 0.5rem 0;
-  opacity: 0.7;
-  letter-spacing: 0.1em;
+  color: var(--text-tertiary);
+  font-size: 0.9rem;
 }
 
 .log-entry {
   display: flex;
-  gap: 0.5rem;
-  padding: 0.15rem 0;
-  line-height: 1.4;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  padding: 6px 0;
+  border-bottom: 1px dashed var(--border-glass-light);
+}
+
+.log-entry:last-child {
+  border-bottom: none;
 }
 
 .log-time {
-  color: var(--color-text-tertiary);
-  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-tertiary);
 }
 
 .log-level {
-  flex-shrink: 0;
+  color: var(--accent-primary);
   font-weight: 600;
 }
 
-.log-level-debug {
-  color: #9b59b6;
-}
-
-.log-level-info {
-  color: #3498db;
-}
-
-.log-level-notice {
-  color: #1abc9c;
+.log-level-error {
+  color: #d9534f;
 }
 
 .log-level-warning {
-  color: #f39c12;
+  color: #f0ad4e;
 }
 
-.log-level-error {
-  color: #e74c3c;
+.log-level-info {
+  color: var(--accent-primary);
 }
 
-.log-level-critical {
-  color: #c0392b;
-}
-
-.log-level-alert {
-  color: #e67e22;
-}
-
-.log-level-emergency {
-  color: #d35400;
-}
-
-.log-message {
-  color: var(--color-text-secondary);
-  word-break: break-word;
-  flex: 1;
-  min-width: 0;
+.log-date-divider {
+  color: var(--text-tertiary);
+  font-size: 0.8rem;
+  margin: 8px 0;
 }
 
 .logs-actions {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
-  margin-top: 1rem;
+  gap: 10px;
 }
 
 .logs-action-row {
   display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 0.5rem;
-  width: 100%;
-}
-
-.logs-action-row .load-more-btn {
-  flex: 1;
-  min-width: 0;
-  margin-right: auto;
-}
-
-.logs-clear-btn {
-  flex-shrink: 0;
-  width: 2.75rem;
-  height: 2.75rem;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  font-size: 1rem;
-  color: var(--color-text-secondary);
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid var(--color-border);
-  border-radius: 4px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.logs-clear-btn:hover {
-  color: #fff;
-  background: #e74c3c;
-  border-color: #e74c3c;
-  box-shadow: 0 0 12px rgba(231, 76, 60, 0.3);
-}
-
-.logs-loading {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.85rem;
-  color: var(--color-text-secondary);
-  padding: 0.5rem 0;
-}
-
-.logs-loading i {
-  color: var(--color-green);
-}
-
-.logs-error {
-  font-size: 0.85rem;
-  color: #e74c3c;
-  margin: 0;
-  padding: 0.5rem 0.75rem;
-  background: rgba(231, 76, 60, 0.1);
-  border: 1px solid rgba(231, 76, 60, 0.3);
-  border-radius: 4px;
-}
-
-.load-more-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  padding: 0.6rem 1.2rem;
-  font-family: inherit;
-  font-size: 0.9rem;
-  color: var(--color-text);
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid var(--color-border);
-  border-radius: 4px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  letter-spacing: 0.04em;
-}
-
-.load-more-btn:hover {
-  color: var(--color-bg);
-  background: var(--color-green);
-  border-color: var(--color-green);
-}
-
-.load-more-btn i {
-  font-size: 0.85rem;
-}
-
-@media (max-width: 768px) {
-  .admin-heading {
-    font-size: 1.6rem;
-  }
-
-  .admin-card {
-    padding: 1.25rem;
-  }
-
-  .dashboard-stat {
-    min-width: 100%;
-  }
+  flex-wrap: wrap;
+  gap: 10px;
 }
 </style>
