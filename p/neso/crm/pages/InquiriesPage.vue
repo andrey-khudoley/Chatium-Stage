@@ -778,14 +778,14 @@ function getChannelIcon(channel: ChannelKind): string {
 .inquiries-header-meta {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
 }
 
 .inquiries-layout {
   display: grid;
-  grid-template-columns: 338px minmax(0, 1fr) 338px;
-  gap: 14px;
-  height: calc(100dvh - 172px);
+  grid-template-columns: 340px minmax(0, 1fr) 340px;
+  gap: 16px;
+  height: calc(100dvh - 190px);
   min-height: 620px;
   max-height: 860px;
 }
@@ -796,7 +796,6 @@ function getChannelIcon(channel: ChannelKind): string {
   min-width: 0;
   min-height: 0;
   height: 100%;
-  border-radius: var(--radius-lg);
 }
 
 .inquiries-list-card,
@@ -809,33 +808,29 @@ function getChannelIcon(channel: ChannelKind): string {
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  border-radius: var(--radius-lg);
-  border: 1px solid var(--border-glass-light);
-  background: var(--surface-glass-card);
-  box-shadow: var(--shadow-soft);
 }
 
 .inquiries-list-toolbar {
   position: sticky;
   top: 0;
   z-index: 2;
-  padding: 18px;
-  background: linear-gradient(180deg, color-mix(in srgb, var(--surface-soft) 96%, transparent), color-mix(in srgb, var(--surface-glass) 88%, transparent));
+  padding: 20px;
+  background: var(--surface-glass);
   border-bottom: 1px solid var(--border-glass-light);
-  backdrop-filter: blur(18px) saturate(125%);
+  backdrop-filter: blur(20px) saturate(150%);
 }
 
 .inquiries-list-tabs {
   display: flex;
-  gap: 8px;
-  margin-top: 14px;
+  gap: 6px;
+  margin-top: 12px;
   overflow-x: auto;
   padding-bottom: 2px;
 }
 
 .inquiries-list-tabs .tab {
   white-space: nowrap;
-  font-size: 0.78rem;
+  font-size: 0.8rem;
   padding: 8px 12px;
 }
 
@@ -843,51 +838,49 @@ function getChannelIcon(channel: ChannelKind): string {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  padding: 10px 10px 12px;
+  padding: 10px;
   display: flex;
   flex-direction: column;
-  gap: 9px;
+  gap: 8px;
 }
 
 .inquiries-list-item {
   width: 100%;
   border: 1px solid var(--border-glass-light);
-  border-radius: 12px;
-  background: linear-gradient(165deg, color-mix(in srgb, var(--surface-soft) 96%, transparent), color-mix(in srgb, var(--surface-glass) 88%, transparent));
+  border-radius: var(--radius-sm);
+  background: var(--surface-glass);
   color: var(--text-primary);
   padding: 12px;
   display: grid;
-  grid-template-columns: 42px minmax(0, 1fr);
+  grid-template-columns: 40px minmax(0, 1fr);
   gap: 12px;
   text-align: left;
   cursor: pointer;
-  transition: all 0.16s ease;
+  transition: all 0.2s ease;
 }
 
 .inquiries-list-item:hover {
   border-color: var(--border-glass);
   background: var(--surface-glass-hover);
-  transform: translateY(-1px);
 }
 
 .inquiries-list-item.active {
-  border-color: color-mix(in srgb, var(--accent-primary) 56%, transparent);
-  background: color-mix(in srgb, var(--accent-soft) 76%, var(--surface-soft));
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent-primary) 20%, transparent);
+  border-color: var(--accent-primary);
+  background: var(--accent-soft);
 }
 
 .inquiries-list-avatar {
-  width: 42px;
-  height: 42px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, var(--accent-primary), var(--accent-light));
+  background: linear-gradient(135deg, var(--accent-primary), #6f7c3f);
   color: #fff;
-  font-size: 0.74rem;
+  font-size: 0.75rem;
   font-weight: 700;
-  box-shadow: 0 10px 18px color-mix(in srgb, var(--accent-primary) 28%, transparent);
+  box-shadow: 0 4px 12px var(--accent-glow);
 }
 
 .inquiries-list-main {
@@ -903,7 +896,7 @@ function getChannelIcon(channel: ChannelKind): string {
 
 .inquiries-list-item-name {
   font-weight: 700;
-  font-size: 0.88rem;
+  font-size: 0.92rem;
   line-height: 1.2;
 }
 
@@ -915,7 +908,7 @@ function getChannelIcon(channel: ChannelKind): string {
 }
 
 .inquiries-list-item-date {
-  font-size: 0.7rem;
+  font-size: 0.73rem;
   color: var(--text-tertiary);
 }
 
@@ -924,20 +917,20 @@ function getChannelIcon(channel: ChannelKind): string {
   height: 20px;
   border-radius: 999px;
   padding: 0 6px;
-  background: linear-gradient(135deg, var(--accent-primary), var(--accent-dark));
+  background: var(--accent-primary);
   color: #fff;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.68rem;
+  font-size: 0.7rem;
   font-weight: 700;
 }
 
 .inquiries-list-item-preview {
   margin: 6px 0;
-  font-size: 0.81rem;
+  font-size: 0.84rem;
   color: var(--text-secondary);
-  line-height: 1.38;
+  line-height: 1.35;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
@@ -955,7 +948,7 @@ function getChannelIcon(channel: ChannelKind): string {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: 0.73rem;
+  font-size: 0.75rem;
   color: var(--text-tertiary);
 }
 
@@ -966,10 +959,10 @@ function getChannelIcon(channel: ChannelKind): string {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 18px 18px 14px;
+  padding: 20px 20px 14px;
   border-bottom: 1px solid var(--border-glass-light);
-  background: linear-gradient(180deg, color-mix(in srgb, var(--surface-soft) 96%, transparent), color-mix(in srgb, var(--surface-glass) 88%, transparent));
-  backdrop-filter: blur(16px) saturate(120%);
+  background: var(--surface-glass);
+  backdrop-filter: blur(20px) saturate(150%);
 }
 
 .inquiries-thread-header-info {
@@ -979,15 +972,14 @@ function getChannelIcon(channel: ChannelKind): string {
 
 .inquiries-thread-title {
   margin: 0;
-  font-family: var(--font-display);
-  font-size: 1.22rem;
+  font-size: 1.25rem;
   font-weight: 700;
   line-height: 1.15;
 }
 
 .inquiries-thread-subtitle {
   margin: 4px 0 0 0;
-  font-size: 0.8rem;
+  font-size: 0.83rem;
   color: var(--text-tertiary);
 }
 
@@ -1001,15 +993,13 @@ function getChannelIcon(channel: ChannelKind): string {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  padding: 14px 18px;
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--surface-soft) 26%, transparent), transparent);
+  padding: 14px 20px;
 }
 
 .inquiries-message-list {
   display: flex;
   flex-direction: column;
-  gap: 11px;
+  gap: 10px;
 }
 
 .inquiries-message-item {
@@ -1025,28 +1015,26 @@ function getChannelIcon(channel: ChannelKind): string {
 }
 
 .inquiries-message-bubble {
-  max-width: min(76%, 660px);
+  max-width: min(75%, 640px);
   border: 1px solid var(--border-glass-light);
-  border-radius: 14px 14px 14px 10px;
+  border-radius: 14px;
   padding: 10px 12px;
-  background: var(--surface-soft);
-  box-shadow: 0 10px 24px color-mix(in srgb, var(--bg-primary) 18%, transparent);
+  box-shadow: 0 2px 8px rgba(74, 90, 36, 0.04);
 }
 
 .inquiries-message-item.author-client .inquiries-message-bubble {
-  background: var(--surface-soft);
+  background: var(--bg-elevated);
 }
 
 .inquiries-message-item.author-agent .inquiries-message-bubble {
-  border-radius: 14px 14px 10px 14px;
-  background: color-mix(in srgb, var(--accent-soft) 78%, var(--surface-soft));
-  border-color: color-mix(in srgb, var(--accent-primary) 26%, transparent);
+  background: var(--accent-soft);
+  border-color: rgba(74, 90, 36, 0.25);
 }
 
 .inquiries-message-bubble p {
   margin: 0;
   color: var(--text-primary);
-  font-size: 0.88rem;
+  font-size: 0.92rem;
   line-height: 1.45;
   white-space: pre-line;
   word-break: break-word;
@@ -1056,18 +1044,17 @@ function getChannelIcon(channel: ChannelKind): string {
   display: block;
   margin-top: 6px;
   text-align: right;
-  font-size: 0.7rem;
+  font-size: 0.72rem;
   color: var(--text-tertiary);
 }
 
 .inquiries-system-event {
-  margin: 8px auto;
-  padding: 6px 11px;
+  margin: 6px auto;
+  padding: 6px 10px;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--surface-soft) 92%, transparent);
-  border: 1px solid var(--border-glass-light);
+  background: var(--bg-secondary);
   color: var(--text-tertiary);
-  font-size: 0.73rem;
+  font-size: 0.76rem;
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -1078,9 +1065,9 @@ function getChannelIcon(channel: ChannelKind): string {
   bottom: 0;
   z-index: 3;
   border-top: 1px solid var(--border-glass-light);
-  padding: 12px 18px 16px;
-  background: linear-gradient(0deg, color-mix(in srgb, var(--surface-soft) 94%, transparent), color-mix(in srgb, var(--surface-glass) 88%, transparent));
-  backdrop-filter: blur(16px) saturate(120%);
+  padding: 12px 20px 16px;
+  background: var(--surface-glass);
+  backdrop-filter: blur(20px) saturate(150%);
 }
 
 .inquiries-compose-row {
@@ -1095,11 +1082,11 @@ function getChannelIcon(channel: ChannelKind): string {
   max-height: 140px;
   resize: vertical;
   border: 1px solid var(--border-glass-light);
-  border-radius: 12px;
-  background: var(--surface-soft);
+  border-radius: var(--radius-sm);
+  background: var(--bg-elevated);
   color: var(--text-primary);
   font-family: inherit;
-  font-size: 0.88rem;
+  font-size: 0.92rem;
   padding: 12px 14px;
 }
 
@@ -1110,17 +1097,10 @@ function getChannelIcon(channel: ChannelKind): string {
 .inquiries-attach-btn {
   width: 42px;
   height: 42px;
-  border-radius: 12px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--border-glass-light);
-  background: var(--surface-soft);
+  background: var(--surface-glass);
   color: var(--text-secondary);
-  cursor: pointer;
-  transition: all 0.16s ease;
-}
-
-.inquiries-attach-btn:hover {
-  color: var(--accent-primary);
-  border-color: var(--border-glass);
 }
 
 .inquiries-compose-actions {
@@ -1136,8 +1116,8 @@ function getChannelIcon(channel: ChannelKind): string {
   align-items: center;
   justify-content: center;
   border: 1px solid var(--border-glass-light);
-  border-radius: 12px;
-  background: var(--surface-soft);
+  border-radius: var(--radius-sm);
+  background: var(--bg-elevated);
   color: var(--text-secondary);
   cursor: pointer;
 }
@@ -1148,12 +1128,12 @@ function getChannelIcon(channel: ChannelKind): string {
   gap: 6px;
   height: 40px;
   padding: 0 12px;
-  border-radius: 12px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--border-glass-light);
-  background: var(--surface-soft);
+  background: var(--bg-elevated);
   color: var(--text-secondary);
   font-family: inherit;
-  font-size: 0.78rem;
+  font-size: 0.82rem;
   cursor: pointer;
 }
 
@@ -1165,10 +1145,10 @@ function getChannelIcon(channel: ChannelKind): string {
   justify-content: space-between;
   gap: 12px;
   align-items: center;
-  padding: 18px;
+  padding: 20px;
   border-bottom: 1px solid var(--border-glass-light);
-  background: linear-gradient(180deg, color-mix(in srgb, var(--surface-soft) 96%, transparent), color-mix(in srgb, var(--surface-glass) 88%, transparent));
-  backdrop-filter: blur(16px) saturate(120%);
+  background: var(--surface-glass);
+  backdrop-filter: blur(20px) saturate(150%);
 }
 
 .inquiries-client-title-wrap {
@@ -1177,7 +1157,7 @@ function getChannelIcon(channel: ChannelKind): string {
 
 .inquiries-client-title {
   margin: 0;
-  font-size: 1.02rem;
+  font-size: 1.08rem;
   font-weight: 700;
   color: var(--text-primary);
 }
@@ -1185,7 +1165,7 @@ function getChannelIcon(channel: ChannelKind): string {
 .inquiries-client-subtitle {
   display: block;
   margin-top: 4px;
-  font-size: 0.75rem;
+  font-size: 0.78rem;
   color: var(--text-tertiary);
 }
 
@@ -1193,14 +1173,14 @@ function getChannelIcon(channel: ChannelKind): string {
   display: none;
   width: 36px;
   height: 36px;
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--border-glass-light);
-  background: var(--surface-soft);
+  background: var(--bg-elevated);
   color: var(--text-secondary);
 }
 
 .inquiries-client-actions {
-  padding: 14px 18px 0;
+  padding: 14px 20px 0;
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
@@ -1217,15 +1197,15 @@ function getChannelIcon(channel: ChannelKind): string {
 
 .inquiries-client-tabs {
   display: flex;
-  gap: 8px;
+  gap: 6px;
   overflow-x: auto;
-  padding: 14px 18px;
+  padding: 14px 20px;
   border-bottom: 1px solid var(--border-glass-light);
 }
 
 .inquiries-client-tabs .tab {
   white-space: nowrap;
-  font-size: 0.78rem;
+  font-size: 0.8rem;
   padding: 8px 12px;
 }
 
@@ -1233,13 +1213,13 @@ function getChannelIcon(channel: ChannelKind): string {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  padding: 14px 18px 18px;
+  padding: 16px 20px 20px;
 }
 
 .inquiries-details-section {
   display: flex;
   flex-direction: column;
-  gap: 9px;
+  gap: 10px;
 }
 
 .inquiries-prop-row {
@@ -1247,19 +1227,19 @@ function getChannelIcon(channel: ChannelKind): string {
   align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
-  padding: 10px 11px;
+  padding: 10px 12px;
   border: 1px solid var(--border-glass-light);
-  border-radius: 11px;
-  background: var(--surface-soft);
+  border-radius: var(--radius-sm);
+  background: var(--bg-elevated);
 }
 
 .inquiries-prop-label {
-  font-size: 0.76rem;
+  font-size: 0.8rem;
   color: var(--text-tertiary);
 }
 
 .inquiries-prop-value {
-  font-size: 0.82rem;
+  font-size: 0.86rem;
   color: var(--text-primary);
   text-align: right;
 }
@@ -1273,8 +1253,8 @@ function getChannelIcon(channel: ChannelKind): string {
 
 .inquiries-note-card {
   border: 1px solid var(--border-glass-light);
-  background: var(--surface-soft);
-  border-radius: 11px;
+  background: var(--bg-elevated);
+  border-radius: var(--radius-sm);
   padding: 12px;
 }
 
@@ -1287,18 +1267,18 @@ function getChannelIcon(channel: ChannelKind): string {
 }
 
 .inquiries-note-top strong {
-  font-size: 0.82rem;
+  font-size: 0.86rem;
   color: var(--text-primary);
 }
 
 .inquiries-note-top span {
-  font-size: 0.71rem;
+  font-size: 0.75rem;
   color: var(--text-tertiary);
 }
 
 .inquiries-note-card p {
   margin: 0;
-  font-size: 0.8rem;
+  font-size: 0.84rem;
   line-height: 1.4;
   color: var(--text-secondary);
 }
@@ -1313,33 +1293,29 @@ function getChannelIcon(channel: ChannelKind): string {
   text-align: center;
   gap: 8px;
   color: var(--text-tertiary);
-  border: 1px dashed var(--border-glass-light);
-  border-radius: 12px;
-  background: color-mix(in srgb, var(--surface-soft) 88%, transparent);
 }
 
 .inquiries-empty i {
-  font-size: 1.6rem;
-  opacity: 0.52;
+  font-size: 1.8rem;
+  opacity: 0.55;
 }
 
 .inquiries-empty p {
   margin: 0;
   color: var(--text-secondary);
-  font-size: 0.84rem;
 }
 
 .inquiries-empty-hint {
-  font-size: 0.78rem;
+  font-size: 0.82rem;
 }
 
 .inquiries-empty.compact {
-  min-height: 110px;
+  min-height: 120px;
 }
 
 @media (max-width: 1360px) {
   .inquiries-layout {
-    grid-template-columns: 300px minmax(0, 1fr) 318px;
+    grid-template-columns: 300px minmax(0, 1fr) 320px;
   }
 }
 
@@ -1377,7 +1353,7 @@ function getChannelIcon(channel: ChannelKind): string {
     grid-template-columns: 1fr;
     position: relative;
     min-height: 520px;
-    height: calc(100dvh - 140px);
+    height: calc(100dvh - 150px);
   }
 
   .inquiries-list-panel.mobile-hidden {
@@ -1413,7 +1389,7 @@ function getChannelIcon(channel: ChannelKind): string {
 
 @media (max-width: 640px) {
   .inquiries-layout {
-    height: calc(100dvh - 122px);
+    height: calc(100dvh - 130px);
     min-height: 480px;
   }
 
@@ -1425,12 +1401,12 @@ function getChannelIcon(channel: ChannelKind): string {
   .inquiries-client-scroll,
   .inquiries-thread-messages,
   .inquiries-thread-compose {
-    padding-left: 12px;
-    padding-right: 12px;
+    padding-left: 14px;
+    padding-right: 14px;
   }
 
   .inquiries-thread-title {
-    font-size: 1rem;
+    font-size: 1.08rem;
   }
 
   .inquiries-thread-header-tags {

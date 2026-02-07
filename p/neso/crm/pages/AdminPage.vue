@@ -630,100 +630,71 @@ const clearLogs = () => {
 
 <style scoped>
 .helper-error {
-  color: var(--danger);
-  font-size: 0.83rem;
-  margin: 8px 0 0;
+  color: var(--accent-primary);
+  font-size: 0.85rem;
+  margin: 8px 0 0 0;
 }
 
 .logs-card {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 16px;
 }
 
 .logs-output {
-  max-height: 360px;
+  max-height: 320px;
   overflow: auto;
-  padding: 14px;
-  background: var(--surface-soft);
-  border-radius: 14px;
+  padding: 12px;
+  background: var(--surface-glass);
+  border-radius: var(--radius-sm);
   border: 1px solid var(--border-glass-light);
 }
 
 .logs-empty {
   color: var(--text-tertiary);
-  font-size: 0.86rem;
-  text-align: center;
-  padding: 12px 0;
-}
-
-.log-item {
-  margin-bottom: 2px;
+  font-size: 0.9rem;
 }
 
 .log-entry {
   display: flex;
-  align-items: flex-start;
+  flex-wrap: wrap;
   gap: 8px;
-  font-size: 0.82rem;
+  font-size: 0.85rem;
   color: var(--text-secondary);
-  padding: 8px 10px;
-  border-radius: 10px;
-  border: 1px solid color-mix(in srgb, var(--border-glass-light) 86%, transparent);
-  background: var(--surface-glass);
+  padding: 6px 0;
+  border-bottom: 1px dashed var(--border-glass-light);
 }
 
 .log-entry:last-child {
-  margin-bottom: 0;
+  border-bottom: none;
 }
 
 .log-time {
   font-variant-numeric: tabular-nums;
   color: var(--text-tertiary);
-  min-width: 90px;
 }
 
 .log-level {
-  color: var(--info);
-  min-width: 58px;
+  color: var(--accent-primary);
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  font-size: 0.7rem;
 }
 
 .log-level-error {
-  color: var(--danger);
+  color: #d9534f;
 }
 
 .log-level-warning {
-  color: var(--warning);
+  color: #f0ad4e;
 }
 
 .log-level-info {
-  color: var(--info);
-}
-
-.log-message {
-  flex: 1;
-  min-width: 180px;
-  word-break: break-word;
+  color: var(--accent-primary);
 }
 
 .log-date-divider {
   color: var(--text-tertiary);
-  font-size: 0.74rem;
-  margin: 10px 0 8px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.log-date-divider::before,
-.log-date-divider::after {
-  content: '';
-  flex: 1;
-  border-top: 1px dashed var(--border-glass-light);
+  font-size: 0.8rem;
+  margin: 8px 0;
 }
 
 .logs-actions {
@@ -732,27 +703,9 @@ const clearLogs = () => {
   gap: 10px;
 }
 
-.logs-loading {
-  color: var(--text-tertiary);
-  font-size: 0.78rem;
-}
-
 .logs-action-row {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
-}
-
-@media (max-width: 720px) {
-  .log-entry {
-    grid-template-columns: 1fr;
-    display: grid;
-    gap: 4px;
-  }
-
-  .log-time,
-  .log-level {
-    min-width: 0;
-  }
 }
 </style>

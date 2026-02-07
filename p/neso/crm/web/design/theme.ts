@@ -1,92 +1,66 @@
+// Generated from design demo tokens/styles
+
 export const darkThemeTokens = `
 
   :root {
-    color-scheme: dark;
-
-    --bg-primary: #05080a;
-    --bg-secondary: #0b1013;
-    --bg-elevated: #11191b;
-
-    --surface-glass: rgba(8, 13, 14, 0.8);
-    --surface-glass-hover: rgba(13, 22, 21, 0.9);
-    --surface-glass-card: rgba(5, 9, 10, 0.86);
-    --surface-soft: rgba(15, 24, 22, 0.68);
-    --surface-strong: rgba(28, 42, 39, 0.8);
-
-    --border-glass: rgba(175, 196, 95, 0.34);
-    --border-glass-light: rgba(238, 244, 235, 0.14);
-
-    --text-primary: #eef4eb;
-    --text-secondary: rgba(238, 244, 235, 0.78);
-    --text-tertiary: rgba(238, 244, 235, 0.52);
-
-    --accent-primary: #afc45f;
-    --accent-light: #c5d879;
-    --accent-dark: #6f8440;
-    --accent-glow: rgba(175, 196, 95, 0.34);
-    --accent-soft: rgba(175, 196, 95, 0.16);
-
-    --success: #9dbf62;
-    --warning: #d4aa58;
-    --danger: #dd7367;
-    --info: #78aaca;
-
-    --shadow-soft: 0 18px 46px rgba(0, 0, 0, 0.54);
-    --shadow-focus: 0 0 0 3px rgba(175, 196, 95, 0.26);
-
-    --radius-lg: 22px;
-    --radius-md: 16px;
-    --radius-sm: 12px;
-    --radius-xs: 10px;
-
-    --font-sans: 'Manrope', 'Segoe UI', sans-serif;
-    --font-display: 'Fraunces', 'Times New Roman', serif;
+    /* Фоны — глубокая тьма ночного леса */
+    --bg-primary: #070b0d;
+    --bg-secondary: #0d1214;
+    --bg-elevated: #121a1d;
+    
+    /* Glassmorphism поверхности */
+    --surface-glass: rgba(20, 35, 30, 0.4);
+    --surface-glass-hover: rgba(25, 45, 38, 0.55);
+    --border-glass: rgba(146, 164, 71, 0.12);
+    --border-glass-light: rgba(255, 255, 255, 0.06);
+    
+    /* Текст */
+    --text-primary: #f0f2ed;
+    --text-secondary: rgba(240, 242, 237, 0.7);
+    --text-tertiary: rgba(240, 242, 237, 0.45);
+    
+    /* Акценты — природная зелень */
+    --accent-primary: #92a447;
+    --accent-light: #a5b568;
+    --accent-dark: #77884c;
+    --accent-glow: rgba(146, 164, 71, 0.35);
+    --accent-soft: rgba(146, 164, 71, 0.15);
+    
+    /* Биолюминесцентное свечение */
+    --glow-ambient: rgba(100, 140, 90, 0.08);
   }
 
   body {
+    font-family: 'Mulish', -apple-system, BlinkMacSystemFont, sans-serif;
     margin: 0;
-    color: var(--text-primary);
     background: var(--bg-primary);
-    font-family: var(--font-sans);
-    font-feature-settings: 'liga' 1, 'cv03' 1, 'cv04' 1;
+    color: var(--text-primary);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
 
-  * {
-    box-sizing: border-box;
-  }
-
-  *:focus-visible {
-    outline: none;
-    box-shadow: var(--shadow-focus);
-  }
-
   ::selection {
-    color: var(--text-primary);
     background: var(--accent-glow);
+    color: var(--text-primary);
   }
 
 `
 
 export const darkPageStyles = `
 
-  html {
-    margin: 0;
-    background:
-      radial-gradient(circle at 10% -10%, rgba(175, 196, 95, 0.2), transparent 45%),
-      radial-gradient(circle at 88% 2%, rgba(56, 77, 70, 0.32), transparent 52%),
-      #05080a;
+  html { 
+    margin: 0; 
+    background: #070b0d;
   }
-
   body {
+    margin: 0;
+    position: relative;
     min-height: 100vh;
     overflow: hidden;
   }
-
-  body.boot-complete {
-    overflow-x: hidden;
-    overflow-y: auto;
+  body.boot-complete { 
+    overflow-x: hidden; 
+    overflow-y: auto; 
   }
 
 `
@@ -95,38 +69,28 @@ export const darkScrollbarStyles = `
 
   @supports not selector(::-webkit-scrollbar) {
     body,
-    .main,
-    .custom-scrollbar {
+    .main {
       scrollbar-width: thin;
-      scrollbar-color: rgba(175, 196, 95, 0.34) rgba(5, 8, 10, 0.72);
+      scrollbar-color: rgba(146, 164, 71, 0.25) rgba(7, 11, 13, 0.5);
     }
   }
-
   body::-webkit-scrollbar,
-  .main::-webkit-scrollbar,
-  .custom-scrollbar::-webkit-scrollbar {
-    width: 10px;
-    height: 10px;
+  .main::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
   }
-
   body::-webkit-scrollbar-track,
-  .main::-webkit-scrollbar-track,
-  .custom-scrollbar::-webkit-scrollbar-track {
-    background: rgba(5, 8, 10, 0.72);
+  .main::-webkit-scrollbar-track {
+    background: rgba(7, 11, 13, 0.5);
   }
-
   body::-webkit-scrollbar-thumb,
-  .main::-webkit-scrollbar-thumb,
-  .custom-scrollbar::-webkit-scrollbar-thumb {
-    border-radius: 999px;
-    border: 2px solid rgba(5, 8, 10, 0.72);
-    background: rgba(175, 196, 95, 0.34);
+  .main::-webkit-scrollbar-thumb {
+    background: rgba(146, 164, 71, 0.2);
+    border-radius: 4px;
   }
-
   body::-webkit-scrollbar-thumb:hover,
-  .main::-webkit-scrollbar-thumb:hover,
-  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: rgba(175, 196, 95, 0.48);
+  .main::-webkit-scrollbar-thumb:hover {
+    background: rgba(146, 164, 71, 0.35);
   }
 
 `
@@ -134,92 +98,65 @@ export const darkScrollbarStyles = `
 export const lightThemeTokens = `
 
   :root {
-    color-scheme: light;
-
-    --bg-primary: #f8fbe9;
-    --bg-secondary: #f0f5e1;
+    /* Фоны — мягкий кремовый свет */
+    --bg-primary: #f5f8f0;
+    --bg-secondary: #eef2e6;
     --bg-elevated: #ffffff;
-
-    --surface-glass: rgba(255, 255, 255, 0.9);
-    --surface-glass-hover: rgba(255, 255, 255, 0.97);
-    --surface-glass-card: rgba(255, 255, 255, 0.95);
-    --surface-soft: rgba(249, 252, 240, 0.97);
-    --surface-strong: rgba(239, 245, 227, 0.95);
-
-    --border-glass: rgba(79, 111, 47, 0.24);
-    --border-glass-light: rgba(79, 111, 47, 0.16);
-
-    --text-primary: #243523;
-    --text-secondary: #3f513a;
-    --text-tertiary: #73816d;
-
-    --accent-primary: #4f6f2f;
-    --accent-light: #7a8f3f;
-    --accent-dark: #3c5928;
-    --accent-glow: rgba(79, 111, 47, 0.24);
-    --accent-soft: rgba(79, 111, 47, 0.12);
-
-    --success: #5a8d43;
-    --warning: #b58733;
-    --danger: #c65d53;
-    --info: #4e789d;
-
-    --shadow-soft: 0 16px 38px rgba(69, 88, 46, 0.14);
-    --shadow-focus: 0 0 0 3px rgba(79, 111, 47, 0.2);
-
-    --radius-lg: 22px;
-    --radius-md: 16px;
-    --radius-sm: 12px;
-    --radius-xs: 10px;
-
-    --font-sans: 'Manrope', 'Segoe UI', sans-serif;
-    --font-display: 'Fraunces', 'Times New Roman', serif;
+    
+    /* Glassmorphism поверхности */
+    --surface-glass: rgba(255, 255, 255, 0.55);
+    --surface-glass-hover: rgba(255, 255, 255, 0.75);
+    --border-glass: rgba(74, 90, 36, 0.1);
+    --border-glass-light: rgba(255, 255, 255, 0.8);
+    
+    /* Текст */
+    --text-primary: #1a2518;
+    --text-secondary: #3d4a35;
+    --text-tertiary: #5a6652;
+    
+    /* Акценты — насыщенная зелень */
+    --accent-primary: #4a5a24;
+    --accent-light: #5d6d2e;
+    --accent-dark: #3a4a1a;
+    --accent-glow: rgba(74, 90, 36, 0.2);
+    --accent-soft: rgba(74, 90, 36, 0.08);
+    
+    /* Солнечные лучи */
+    --sunray: rgba(255, 252, 240, 0.9);
+    --sunray-glow: rgba(255, 248, 230, 0.6);
   }
 
   body {
+    font-family: 'Mulish', -apple-system, BlinkMacSystemFont, sans-serif;
     margin: 0;
-    color: var(--text-primary);
     background: var(--bg-primary);
-    font-family: var(--font-sans);
-    font-feature-settings: 'liga' 1, 'cv03' 1, 'cv04' 1;
+    color: var(--text-primary);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
 
-  * {
-    box-sizing: border-box;
-  }
-
-  *:focus-visible {
-    outline: none;
-    box-shadow: var(--shadow-focus);
-  }
-
   ::selection {
-    color: var(--text-primary);
     background: var(--accent-glow);
+    color: var(--text-primary);
   }
 
 `
 
 export const lightPageStyles = `
 
-  html {
-    margin: 0;
-    background:
-      radial-gradient(circle at 12% 8%, rgba(122, 143, 63, 0.25), transparent 48%),
-      radial-gradient(circle at 90% 0%, rgba(255, 255, 255, 0.82), transparent 55%),
-      #f8fbe9;
+  html { 
+    margin: 0; 
+    background: #f5f8f0;
   }
-
   body {
+    margin: 0;
+    position: relative;
     min-height: 100vh;
     overflow: hidden;
   }
-
-  body.boot-complete {
-    overflow-x: hidden;
-    overflow-y: auto;
+  body.boot-complete { 
+    overflow-x: hidden; 
+    overflow-y: auto; 
   }
 
 `
@@ -228,38 +165,28 @@ export const lightScrollbarStyles = `
 
   @supports not selector(::-webkit-scrollbar) {
     body,
-    .main,
-    .custom-scrollbar {
+    .main {
       scrollbar-width: thin;
-      scrollbar-color: rgba(79, 111, 47, 0.3) rgba(240, 245, 225, 0.9);
+      scrollbar-color: rgba(74, 90, 36, 0.2) rgba(238, 242, 230, 0.8);
     }
   }
-
   body::-webkit-scrollbar,
-  .main::-webkit-scrollbar,
-  .custom-scrollbar::-webkit-scrollbar {
-    width: 10px;
-    height: 10px;
+  .main::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
   }
-
   body::-webkit-scrollbar-track,
-  .main::-webkit-scrollbar-track,
-  .custom-scrollbar::-webkit-scrollbar-track {
-    background: rgba(240, 245, 225, 0.9);
+  .main::-webkit-scrollbar-track {
+    background: rgba(238, 242, 230, 0.8);
   }
-
   body::-webkit-scrollbar-thumb,
-  .main::-webkit-scrollbar-thumb,
-  .custom-scrollbar::-webkit-scrollbar-thumb {
-    border-radius: 999px;
-    border: 2px solid rgba(240, 245, 225, 0.9);
-    background: rgba(79, 111, 47, 0.3);
+  .main::-webkit-scrollbar-thumb {
+    background: rgba(74, 90, 36, 0.18);
+    border-radius: 4px;
   }
-
   body::-webkit-scrollbar-thumb:hover,
-  .main::-webkit-scrollbar-thumb:hover,
-  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: rgba(79, 111, 47, 0.44);
+  .main::-webkit-scrollbar-thumb:hover {
+    background: rgba(74, 90, 36, 0.3);
   }
 
 `

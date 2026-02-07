@@ -109,12 +109,12 @@ function navigate(href?: string, disabled?: boolean) {
     <aside class="sidebar" :class="{ collapsed: sidebarCollapsed, 'mobile-open': sidebarOpen }">
       <div class="sidebar-layout">
         <div class="sidebar-header">
-          <div class="logo" aria-label="Логотип CRM">
+          <div class="logo">
             <div class="logo-icon">
               <i class="fas fa-leaf"></i>
             </div>
             <div class="logo-text-wrap">
-              <span class="logo-text">{{ props.logoText || 'NeSo CRM' }}</span>
+              <span class="logo-text">{{ props.logoText || 'NeSo' }}</span>
             </div>
           </div>
           <button class="toggle-btn" @click="toggleSidebarCollapsed" aria-label="Свернуть меню" type="button">
@@ -155,8 +155,8 @@ function navigate(href?: string, disabled?: boolean) {
           </ul>
         </nav>
 
-        <div class="sidebar-footer visible" :class="{ compact: sidebarCollapsed }">
-          <div v-if="!sidebarCollapsed" class="user-pill">
+        <div class="sidebar-footer" :class="{ visible: !sidebarCollapsed }">
+          <div class="user-pill">
             <div class="avatar">
               <i class="fas fa-user"></i>
             </div>
@@ -172,7 +172,7 @@ function navigate(href?: string, disabled?: boolean) {
 
     <main class="main">
       <header class="header">
-        <button class="menu-toggle" aria-label="Открыть меню" type="button" @click="toggleSidebarMobile">
+        <button class="menu-toggle" aria-label="Открыть меню" @click="toggleSidebarMobile">
           <i class="fas fa-bars"></i>
         </button>
         <div class="header-left">
@@ -180,11 +180,7 @@ function navigate(href?: string, disabled?: boolean) {
           <p v-if="props.pageSubtitle" class="page-subtitle">{{ props.pageSubtitle }}</p>
         </div>
         <div class="header-actions">
-          <slot name="headerActions">
-            <button class="action-btn glass" type="button" disabled>
-              <i class="fas fa-circle-info"></i>
-            </button>
-          </slot>
+          <slot name="headerActions"></slot>
         </div>
       </header>
 
