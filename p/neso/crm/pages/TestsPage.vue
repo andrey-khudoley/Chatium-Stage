@@ -1022,41 +1022,41 @@ const runAllTests = async () => {
 
 <style scoped>
 .content-inner {
-  max-width: 1200px;
+  max-width: 1280px;
   margin: 0 auto;
-  padding: 8px 0 32px;
+  padding: 4px 0 28px;
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 20px;
 }
 
 .tests-section {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 18px;
 }
 
 .tests-header {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
 }
 
 .tests-icon-wrapper {
   width: 48px;
   height: 48px;
   border-radius: 12px;
-  background: linear-gradient(135deg, var(--accent-primary), var(--accent-light));
+  background: linear-gradient(135deg, var(--accent-primary), var(--accent-dark));
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--bg-primary);
-  box-shadow: 0 8px 24px var(--accent-glow);
+  color: #fff;
+  box-shadow: 0 12px 22px color-mix(in srgb, var(--accent-primary) 28%, transparent);
 }
 
 .tests-heading {
-  font-family: 'Old Standard TT', serif;
-  font-size: 2rem;
+  font-family: var(--font-display);
+  font-size: clamp(1.5rem, 2.4vw, 1.95rem);
   margin: 0;
 }
 
@@ -1072,7 +1072,7 @@ const runAllTests = async () => {
 
 .tests-heading.show-underline {
   text-decoration: underline;
-  text-decoration-color: var(--accent-soft);
+  text-decoration-color: color-mix(in srgb, var(--accent-primary) 42%, transparent);
   text-decoration-thickness: 2px;
   text-underline-offset: 6px;
 }
@@ -1080,15 +1080,16 @@ const runAllTests = async () => {
 .tests-description {
   margin: 0;
   color: var(--text-secondary);
+  font-size: 0.9rem;
 }
 
 .tests-logs-card,
 .tests-card {
-  background: var(--surface-glass-card);
-  border: 1px solid var(--border-glass);
+  background: linear-gradient(165deg, color-mix(in srgb, var(--surface-glass-card) 96%, transparent), color-mix(in srgb, var(--surface-soft) 92%, transparent));
+  border: 1px solid var(--border-glass-light);
   border-radius: var(--radius-lg);
-  padding: 20px;
-  box-shadow: 0 4px 32px rgba(0, 0, 0, 0.3);
+  padding: 18px;
+  box-shadow: var(--shadow-soft);
 }
 
 .tests-logs-card-header,
@@ -1104,10 +1105,21 @@ const runAllTests = async () => {
 .tests-dashboard-title,
 .tests-endpoints-title {
   margin: 0;
-  font-size: 1rem;
+  font-size: 0.92rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--text-secondary);
+}
+
+.tests-dashboard-icon,
+.tests-endpoints-icon {
+  color: var(--accent-primary);
+}
+
+.tests-endpoints-desc {
+  margin: 0 0 10px;
+  color: var(--text-secondary);
+  font-size: 0.82rem;
 }
 
 .tests-logs-filters {
@@ -1119,53 +1131,106 @@ const runAllTests = async () => {
 
 .tests-log-filter-chip {
   padding: 6px 12px;
-  border-radius: 16px;
+  border-radius: 999px;
   border: 1px solid var(--border-glass-light);
-  background: var(--surface-glass);
+  background: var(--surface-soft);
   color: var(--text-secondary);
-  font-size: 0.8rem;
+  font-size: 0.76rem;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.16s ease;
 }
 
 .tests-log-filter-chip.active {
-  background: var(--accent-soft);
+  background: color-mix(in srgb, var(--accent-soft) 82%, var(--surface-soft));
   border-color: var(--border-glass);
   color: var(--text-primary);
 }
 
 .tests-logs-output {
-  max-height: 320px;
+  max-height: 340px;
   overflow: auto;
   padding: 12px;
-  border-radius: var(--radius-sm);
+  border-radius: 14px;
   border: 1px solid var(--border-glass-light);
-  background: var(--surface-glass);
+  background: var(--surface-soft);
+}
+
+.tests-log-item {
+  margin-bottom: 3px;
 }
 
 .tests-log-entry {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: 96px 70px minmax(0, 1fr);
   gap: 8px;
-  padding: 6px 0;
-  border-bottom: 1px dashed var(--border-glass-light);
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--border-glass-light) 84%, transparent);
+  background: var(--surface-glass);
   color: var(--text-secondary);
-  font-size: 0.85rem;
+  font-size: 0.8rem;
 }
 
 .tests-log-entry:last-child {
-  border-bottom: none;
+  margin-bottom: 0;
+}
+
+.tests-log-time {
+  font-variant-numeric: tabular-nums;
+  color: var(--text-tertiary);
 }
 
 .tests-log-level {
-  color: var(--accent-primary);
+  color: var(--info);
   font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 0.69rem;
+}
+
+.tests-log-level-error {
+  color: var(--danger);
+}
+
+.tests-log-level-warning,
+.tests-log-level-warn {
+  color: var(--warning);
+}
+
+.tests-log-level-notice,
+.tests-log-level-info {
+  color: var(--info);
+}
+
+.tests-log-level-debug {
+  color: var(--text-tertiary);
+}
+
+.tests-log-message {
+  word-break: break-word;
 }
 
 .tests-log-date-divider {
   color: var(--text-tertiary);
-  font-size: 0.8rem;
-  margin: 6px 0;
+  font-size: 0.74rem;
+  margin: 10px 0 7px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tests-log-date-divider::before,
+.tests-log-date-divider::after {
+  content: '';
+  flex: 1;
+  border-top: 1px dashed var(--border-glass-light);
+}
+
+.tests-logs-empty {
+  text-align: center;
+  color: var(--text-tertiary);
+  font-size: 0.82rem;
+  padding: 10px 0;
 }
 
 .tests-logs-actions {
@@ -1181,22 +1246,28 @@ const runAllTests = async () => {
   flex-wrap: wrap;
 }
 
+.tests-logs-loading {
+  color: var(--text-tertiary);
+  font-size: 0.78rem;
+}
+
 .tests-load-more-btn,
 .tests-run-group-btn,
 .tests-run-all-btn {
-  padding: 10px 16px;
-  border-radius: var(--radius-md);
+  min-height: 40px;
+  padding: 0 14px;
+  border-radius: 12px;
   border: 1px solid var(--border-glass-light);
-  background: var(--surface-glass);
+  background: var(--surface-soft);
   color: var(--text-primary);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.16s ease;
 }
 
 .tests-load-more-btn:hover,
 .tests-run-group-btn:hover,
 .tests-run-all-btn:hover {
-  background: var(--accent-soft);
+  background: color-mix(in srgb, var(--accent-soft) 82%, var(--surface-soft));
   border-color: var(--border-glass);
 }
 
@@ -1207,21 +1278,52 @@ const runAllTests = async () => {
 }
 
 .tests-metric {
-  background: var(--surface-glass);
+  background: var(--surface-soft);
   border: 1px solid var(--border-glass-light);
-  border-radius: var(--radius-sm);
+  border-radius: 12px;
   padding: 12px;
   text-align: center;
 }
 
 .tests-metric-value {
-  font-size: 1.4rem;
-  font-weight: 600;
+  font-size: 1.3rem;
+  font-weight: 700;
 }
 
 .tests-metric-label {
-  font-size: 0.8rem;
+  font-size: 0.74rem;
   color: var(--text-tertiary);
+}
+
+.tests-metric-total .tests-metric-value {
+  color: var(--text-primary);
+}
+
+.tests-metric-passed .tests-metric-value {
+  color: var(--success);
+}
+
+.tests-metric-failed .tests-metric-value {
+  color: var(--danger);
+}
+
+.tests-metric-skipped .tests-metric-value {
+  color: var(--warning);
+}
+
+.tests-dashboard-last-run,
+.tests-endpoints-last-run {
+  margin: 0 0 10px;
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+}
+
+.tests-dashboard-actions,
+.tests-endpoints-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 12px;
 }
 
 .tests-endpoints-list {
@@ -1234,29 +1336,85 @@ const runAllTests = async () => {
 }
 
 .tests-endpoints-list-item {
-  display: flex;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
   flex-wrap: wrap;
   gap: 8px;
   padding: 10px;
-  border-radius: var(--radius-sm);
+  border-radius: 12px;
   border: 1px solid var(--border-glass-light);
-  background: var(--surface-glass);
-  font-size: 0.85rem;
+  background: var(--surface-soft);
+  font-size: 0.8rem;
   color: var(--text-secondary);
 }
 
 .tests-endpoints-badge {
   font-weight: 600;
-  color: var(--accent-primary);
+  border: 1px solid var(--border-glass-light);
+  border-radius: 999px;
+  padding: 3px 7px;
+  font-size: 0.68rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.tests-endpoints-badge-success {
+  color: var(--success);
+  border-color: color-mix(in srgb, var(--success) 46%, transparent);
+  background: color-mix(in srgb, var(--success) 12%, transparent);
+}
+
+.tests-endpoints-badge-fail {
+  color: var(--danger);
+  border-color: color-mix(in srgb, var(--danger) 42%, transparent);
+  background: color-mix(in srgb, var(--danger) 12%, transparent);
+}
+
+.tests-endpoints-badge-todo {
+  color: var(--warning);
+  border-color: color-mix(in srgb, var(--warning) 42%, transparent);
+  background: color-mix(in srgb, var(--warning) 12%, transparent);
+}
+
+.tests-endpoints-list-title-inline {
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.tests-endpoints-status-success {
+  border-color: color-mix(in srgb, var(--success) 42%, var(--border-glass-light));
+}
+
+.tests-endpoints-status-fail {
+  border-color: color-mix(in srgb, var(--danger) 40%, var(--border-glass-light));
+}
+
+.tests-endpoints-status-todo {
+  border-color: color-mix(in srgb, var(--warning) 36%, var(--border-glass-light));
 }
 
 .tests-endpoints-list-error {
-  color: #d9534f;
+  color: var(--danger);
+}
+
+.tests-endpoints-list-wrap {
+  display: grid;
+  gap: 8px;
 }
 
 @media (max-width: 900px) {
   .content-inner {
     padding: 0 4px 24px;
+  }
+
+  .tests-log-entry {
+    grid-template-columns: 1fr;
+    gap: 3px;
+  }
+
+  .tests-endpoints-list-item {
+    grid-template-columns: 1fr;
   }
 }
 </style>
