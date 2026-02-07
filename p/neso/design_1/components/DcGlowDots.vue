@@ -20,6 +20,7 @@ defineProps<{
   z-index: 2;
   pointer-events: none;
   overflow: hidden;
+  backface-visibility: hidden;
 }
 
 /* Атмосферный свет — три мягких градиента */
@@ -56,17 +57,20 @@ defineProps<{
   opacity: 0.04;
 }
 
-/* Угловые свечения: правый верх + левый низ (радиус сохранён, интенсивность снижена) */
+/* Угловые свечения: правый верх + левый низ (радиус сохранён, интенсивность снижена).
+   inset увеличен, чтобы при анимации translate+scale не появлялись чёрные полосы у границ экрана. */
 .dc-glow-dots::after {
   content: '';
   position: absolute;
-  inset: -14%;
+  inset: -30%;
   pointer-events: none;
   background:
     radial-gradient(50% 38% at 78% 16%, rgba(197, 216, 121, 0.06), transparent 74%),
     radial-gradient(44% 34% at 28% 84%, rgba(175, 196, 95, 0.05), transparent 76%);
   opacity: 0.12;
   animation: dc-ambient-breathe 46s ease-in-out infinite alternate;
+  backface-visibility: hidden;
+  will-change: transform;
 }
 
 .dc-glow-dots--light::after {
@@ -145,12 +149,13 @@ defineProps<{
   }
 }
 
+/* Лёгкое «дыхание» без scale, чтобы не обнажать края и не давать чёрных полос у границ экрана */
 @keyframes dc-ambient-breathe {
   0% {
-    transform: translate3d(-1.2%, -0.8%, 0) scale(1);
+    transform: translate3d(-0.6%, -0.4%, 0);
   }
   100% {
-    transform: translate3d(1%, 0.9%, 0) scale(1.04);
+    transform: translate3d(0.5%, 0.45%, 0);
   }
 }
 

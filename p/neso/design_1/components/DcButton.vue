@@ -106,8 +106,47 @@ defineProps<{
 }
 .dc-btn.variant-secondary:hover { background: rgba(255,255,255,0.14); transform: translateY(-1px); }
 .dc-btn.theme-light.variant-secondary:hover { background: rgba(79, 111, 47, 0.16); }
-.dc-btn.variant-ghost { background: transparent; color: var(--text2); }
-.dc-btn.variant-ghost:hover { background: var(--glow-soft); color: var(--accent); }
+.dc-btn.variant-ghost {
+  background: transparent;
+  color: var(--text2);
+  border: 1px solid transparent;
+}
+.dc-btn.variant-ghost:hover:not(.disabled) {
+  background: linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.14) 0%,
+      transparent 40%,
+      rgba(0, 0, 0, 0.04) 100%
+    ),
+    var(--glow-soft);
+  border-top-color: rgba(255, 255, 255, 0.18);
+  border-left-color: rgba(255, 255, 255, 0.08);
+  color: var(--accent);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.15),
+    inset 1px 0 0 rgba(255, 255, 255, 0.08),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.12),
+    3px 6px 12px rgba(0, 0, 0, 0.25),
+    2px 10px 20px rgba(0, 0, 0, 0.15);
+  transform: translateY(-1px);
+}
+.dc-btn.theme-light.variant-ghost:hover:not(.disabled) {
+  background: linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.5) 0%,
+      transparent 40%,
+      rgba(0, 0, 0, 0.03) 100%
+    ),
+    var(--glow-soft);
+  border-top-color: rgba(255, 255, 255, 0.5);
+  border-left-color: rgba(255, 255, 255, 0.15);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.4),
+    inset 1px 0 0 rgba(255, 255, 255, 0.1),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.05),
+    2px 4px 10px rgba(0, 0, 0, 0.08),
+    1px 6px 14px rgba(0, 0, 0, 0.05);
+}
 .dc-btn.variant-outline {
   background: transparent;
   border: 1px solid var(--accent);
