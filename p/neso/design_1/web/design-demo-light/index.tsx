@@ -1,15 +1,85 @@
 // @shared
-// Светлая тема «Солнечная листва» — общие стили из shared/themeStyles
 import { jsx } from '@app/html-jsx'
 import DesignDemoLightPage from '../../pages/DesignDemoLightPage.vue'
 import { getPreloaderStyles, getPreloaderScript } from '../../shared/preloader'
 import { getLogLevelScript } from '../../shared/logLevel'
 import { getFullUrl, ROUTES } from '../../config/routes'
 import { DEFAULT_PROJECT_TITLE, getPageTitle } from '../../config/project'
-import { getGlobalThemeStyles, getThemeStyleElementId } from '../../shared/themeStyles'
+
+// CSS переменные — CRM Design System Light «Солнечная листва»
+const designDemoTokens = `
+  :root {
+    --bg-primary: #f8f6eb;
+    --bg-secondary: #f0ede0;
+    --surface: #ffffff;
+    --accent: #4f6f2f;
+    --accent-warm: #7a8f3f;
+    --text-primary: #243523;
+    --accent-glow: rgba(79, 111, 47, 0.15);
+  }
+
+  body {
+    font-family: 'Mulish', -apple-system, BlinkMacSystemFont, sans-serif;
+    margin: 0;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  ::selection {
+    background: var(--accent-glow);
+    color: var(--text-primary);
+  }
+`
+
+const pageStyles = `
+  html { 
+    margin: 0; 
+    background: #f8f6eb;
+  }
+  body {
+    margin: 0;
+    position: relative;
+    min-height: 100vh;
+    overflow: hidden;
+  }
+  body.boot-complete { 
+    overflow-x: hidden; 
+    overflow-y: auto; 
+  }
+`
+
+const lightScrollbarStyles = `
+  @supports not selector(::-webkit-scrollbar) {
+    body,
+    .main {
+      scrollbar-width: thin;
+      scrollbar-color: rgba(79, 111, 47, 0.2) rgba(248, 246, 235, 0.8);
+    }
+  }
+  body::-webkit-scrollbar,
+  .main::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  body::-webkit-scrollbar-track,
+  .main::-webkit-scrollbar-track {
+    background: rgba(248, 246, 235, 0.8);
+  }
+  body::-webkit-scrollbar-thumb,
+  .main::-webkit-scrollbar-thumb {
+    background: rgba(79, 111, 47, 0.18);
+    border-radius: 4px;
+  }
+  body::-webkit-scrollbar-thumb:hover,
+  .main::-webkit-scrollbar-thumb:hover {
+    background: rgba(79, 111, 47, 0.3);
+  }
+`
 
 const PROJECT_NAME = DEFAULT_PROJECT_TITLE
-const PAGE_NAME = 'Пример страницы · Солнечная листва (Light)'
+const PAGE_NAME = 'Design Demo (Light)'
 const HEADER_BREADCRUMBS = ['Главная', 'сводка и последние изменения']
 const LOG_LEVEL = 'Info'
 
@@ -27,7 +97,9 @@ export const designDemoLightPageRoute = app.html('/', async (ctx) => {
         <meta name="theme-color" content="#f8f6eb" />
         <script>{getLogLevelScript(LOG_LEVEL)}</script>
         <script src="/s/metric/clarity.js"></script>
-        <style id={getThemeStyleElementId()}>{getGlobalThemeStyles('light')}</style>
+        <style>{designDemoTokens}</style>
+        <style>{pageStyles}</style>
+        <style>{lightScrollbarStyles}</style>
         <style>{getPreloaderStyles()}</style>
         <script>{getPreloaderScript()}</script>
         <script src="/s/static/lib/tailwind.3.4.16.min.js"></script>

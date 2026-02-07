@@ -1,82 +1,12 @@
 // @shared
-// Тёмная тема «Ночной лес»
+// Тёмная тема «Ночной лес» — общие стили из shared/themeStyles (подключаются как у роута, так и через DcThemeGlobalStyles в DcAppShell)
 import { jsx } from '@app/html-jsx'
 import DesignDemoDarkPage from '../../pages/DesignDemoDarkPage.vue'
 import { getPreloaderStyles, getPreloaderScript } from '../../shared/preloader'
 import { getLogLevelScript } from '../../shared/logLevel'
 import { getFullUrl, ROUTES } from '../../config/routes'
 import { DEFAULT_PROJECT_TITLE, getPageTitle, getHeaderText } from '../../config/project'
-
-const darkThemeTokens = `
-  :root {
-    --bg-primary: #05080a;
-    --bg-secondary: #0d1214;
-    --surface: #11191b;
-    --accent: #afc45f;
-    --accent-deep: #6f8440;
-    --text-primary: #eef4eb;
-    --accent-glow: rgba(175, 196, 95, 0.25);
-  }
-
-  body {
-    font-family: 'Mulish', -apple-system, BlinkMacSystemFont, sans-serif;
-    margin: 0;
-    background: var(--bg-primary);
-    color: var(--text-primary);
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-  }
-
-  ::selection {
-    background: var(--accent-glow);
-    color: var(--text-primary);
-  }
-`
-
-const pageStyles = `
-  html { 
-    margin: 0; 
-    background: #05080a;
-  }
-  body {
-    margin: 0;
-    position: relative;
-    min-height: 100vh;
-    overflow: hidden;
-  }
-  body.boot-complete { 
-    overflow-x: hidden; 
-    overflow-y: auto; 
-  }
-`
-
-const darkScrollbarStyles = `
-  @supports not selector(::-webkit-scrollbar) {
-    body,
-    .main {
-      scrollbar-width: thin;
-      scrollbar-color: rgba(175, 196, 95, 0.25) rgba(5, 8, 10, 0.5);
-    }
-  }
-  body::-webkit-scrollbar,
-  .main::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
-  }
-  body::-webkit-scrollbar-track,
-  .main::-webkit-scrollbar-track {
-    background: rgba(5, 8, 10, 0.5);
-  }
-  body::-webkit-scrollbar-thumb,
-  .main::-webkit-scrollbar-thumb {
-    background: rgba(175, 196, 95, 0.2);
-    border-radius: 4px;
-  }
-  body::-webkit-scrollbar-thumb:hover,
-  .main::-webkit-scrollbar-thumb:hover {
-    background: rgba(175, 196, 95, 0.35);
-  }
-`
+import { getGlobalThemeStyles, getThemeStyleElementId } from '../../shared/themeStyles'
 
 const PROJECT_NAME = DEFAULT_PROJECT_TITLE
 const PAGE_NAME = 'Пример страницы · Ночной лес (Dark)'
@@ -96,9 +26,7 @@ export const designDemoDarkPageRoute = app.html('/', async (ctx) => {
         <meta name="theme-color" content="#05080a" />
         <script>{getLogLevelScript(LOG_LEVEL)}</script>
         <script src="/s/metric/clarity.js"></script>
-        <style>{darkThemeTokens}</style>
-        <style>{pageStyles}</style>
-        <style>{darkScrollbarStyles}</style>
+        <style id={getThemeStyleElementId()}>{getGlobalThemeStyles('dark')}</style>
         <style>{getPreloaderStyles()}</style>
         <script>{getPreloaderScript()}</script>
         <script src="/s/static/lib/tailwind.3.4.16.min.js"></script>

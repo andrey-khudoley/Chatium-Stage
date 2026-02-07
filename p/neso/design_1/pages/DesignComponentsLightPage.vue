@@ -1,5 +1,24 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import {
+  DcButton,
+  DcCard,
+  DcCoverageTags,
+  DcFormField,
+  DcList,
+  DcModal,
+  DcNotification,
+  DcPalette,
+  DcSearchFilter,
+  DcState,
+  DcTable,
+  type TableColumn,
+  type ListItem,
+  type FilterTab,
+  type FilterTag,
+  type CoverageTag,
+  type PaletteItem
+} from '../components'
 
 defineProps<{
   indexUrl: string
@@ -7,10 +26,50 @@ defineProps<{
 }>()
 
 const modalOpen = ref(false)
+const theme = 'light' as const
 const tableRows = [
   { client: 'Мария Петрова', channel: 'WhatsApp', status: 'В работе', sla: '01:24' },
   { client: 'Иван Смирнов', channel: 'Telegram', status: 'Новый', sla: '00:41' },
   { client: 'Анна Орлова', channel: 'Email', status: 'Закрыт', sla: '03:12' }
+]
+const tableColumns: TableColumn[] = [
+  { key: 'client', header: 'КЛИЕНТ' },
+  { key: 'channel', header: 'КАНАЛ' },
+  { key: 'status', header: 'СТАТУС', badge: true, mutedWhen: (v) => v === 'Закрыт' },
+  { key: 'sla', header: 'SLA' }
+]
+const listItems: ListItem[] = [
+  { tag: 'HOT', tagHot: true, title: 'Клиент 001 · #inq-2045', desc: 'Нужно уточнить сроки запуска первой рассылки', time: '10:02' },
+  { tag: 'WAIT', title: 'Клиент 002 · #inq-2037', desc: 'Вернусь с решением сегодня вечером', time: '09:40' }
+]
+const filterTabs: FilterTab[] = [
+  { id: 'all', label: 'Все', active: true },
+  { id: 'unread', label: 'Непрочитанные' },
+  { id: 'open', label: 'Открытые' },
+  { id: 'mine', label: 'Мои' }
+]
+const filterTags: FilterTag[] = [
+  { id: 'work', label: 'В работе', active: true, dot: true },
+  { id: 'priority', label: 'Приоритет' },
+  { id: 'archive', label: 'Архив' }
+]
+const coverageTags: CoverageTag[] = [
+  { icon: 'fa-bars', label: 'Навигация и shell' },
+  { icon: 'fa-filter', label: 'Фильтры и поиск' },
+  { icon: 'fa-list', label: 'Списки и карточки' },
+  { icon: 'fa-table', label: 'Таблицы и статусы' },
+  { icon: 'fa-check', label: 'Формы и валидация' },
+  { icon: 'fa-bell', label: 'Уведомления' },
+  { icon: 'fa-window-maximize', label: 'Модальные сценарии' },
+  { icon: 'fa-spinner', label: 'Loading / Empty / Error' }
+]
+const paletteItems: PaletteItem[] = [
+  { name: 'BACKGROUND', hex: '#f8f6eb' },
+  { name: 'SURFACE', hex: '#ffffff', style: 'background:#ffffff;border:1px solid #e8e6df' },
+  { name: 'ACCENT', hex: '#4f6f2f' },
+  { name: 'ACCENT WARM', hex: '#7a8f3f' },
+  { name: 'TEXT', hex: '#243523' },
+  { name: 'SUNRAY', hex: '#fff3ca' }
 ]
 </script>
 
@@ -28,225 +87,100 @@ const tableRows = [
     <div class="content">
       <section class="showcase">
         <h2 class="section-title">КНОПКИ И ИНТЕРАКЦИИ</h2>
-        <div class="card showcase-card">
+        <DcCard :theme="theme">
           <div class="btn-row">
-            <button class="btn primary"><i class="fas fa-paper-plane"></i> Action</button>
-            <button class="btn secondary">Secondary</button>
-            <button class="btn ghost">Ghost</button>
-            <button class="btn outline">Outline</button>
-            <button class="btn" disabled>Disabled</button>
-            <button class="btn loading" disabled><i class="fas fa-spinner fa-spin"></i> Loading</button>
+            <DcButton :theme="theme" variant="primary" icon="fa-paper-plane">Action</DcButton>
+            <DcButton :theme="theme" variant="secondary">Secondary</DcButton>
+            <DcButton :theme="theme" variant="ghost">Ghost</DcButton>
+            <DcButton :theme="theme" variant="outline">Outline</DcButton>
+            <DcButton :theme="theme" variant="primary" disabled>Disabled</DcButton>
+            <DcButton :theme="theme" variant="primary" loading>Loading</DcButton>
           </div>
-        </div>
+        </DcCard>
       </section>
 
       <section class="showcase">
         <h2 class="section-title">ФОРМА И ВАЛИДАЦИЯ</h2>
-        <div class="card showcase-card">
+        <DcCard :theme="theme">
           <div class="form-row">
-            <label class="field">
-              <span class="field-label">ИМЯ КЛИЕНТА</span>
-              <div class="input-wrap">
-                <i class="fas fa-user"></i>
-                <input type="text" placeholder="Имя клиента" />
-              </div>
-            </label>
-            <label class="field error">
-              <span class="field-label">EMAIL</span>
-              <div class="input-wrap">
-                <input type="email" placeholder="email@example.com" />
-                <i class="fas fa-copy"></i>
-              </div>
-              <span class="field-error">Нужен валидный адрес для уведомлений SLA</span>
-            </label>
-            <label class="field">
-              <span class="field-label">КОММЕНТАРИЙ</span>
-              <textarea placeholder="Комментарий оператора" rows="3"></textarea>
-              <span class="field-hint">Поддерживаются markdown-ссылки и теги.</span>
-            </label>
+            <DcFormField :theme="theme" label="ИМЯ КЛИЕНТА" placeholder="Имя клиента" icon="fa-user" />
+            <DcFormField :theme="theme" label="EMAIL" placeholder="email@example.com" icon="fa-copy" icon-position="right" has-error error="Нужен валидный адрес для уведомлений SLA" type="email" />
+            <DcFormField :theme="theme" label="КОММЕНТАРИЙ" placeholder="Комментарий оператора" type="textarea" rows="3" hint="Поддерживаются markdown-ссылки и теги." />
           </div>
-        </div>
+        </DcCard>
       </section>
 
       <section class="showcase">
         <h2 class="section-title">ФИЛЬТРАЦИЯ И ПОИСК</h2>
-        <div class="card showcase-card">
-          <div class="search-wrap">
-            <i class="fas fa-search"></i>
-            <input type="search" placeholder="Поиск по клиенту, тегу, ID обращения" />
-          </div>
-          <div class="filter-tabs">
-            <button class="filter-tab active">Все</button>
-            <button class="filter-tab">Непрочитанные</button>
-            <button class="filter-tab">Открытые</button>
-            <button class="filter-tab">Мои</button>
-          </div>
-          <div class="filter-tags">
-            <span class="tag active"><span class="tag-dot"></span> В работе</span>
-            <span class="tag">Приоритет</span>
-            <span class="tag">Архив</span>
-          </div>
-        </div>
+        <DcCard :theme="theme">
+          <DcSearchFilter
+            :theme="theme"
+            search-placeholder="Поиск по клиенту, тегу, ID обращения"
+            :tabs="filterTabs"
+            :tags="filterTags"
+          />
+        </DcCard>
       </section>
 
       <section class="showcase">
         <h2 class="section-title">УВЕДОМЛЕНИЯ</h2>
-        <div class="card showcase-card">
+        <DcCard :theme="theme">
           <div class="notify-list">
-            <div class="notify success">
-              <i class="fas fa-check"></i>
-              <div>
-                <span class="notify-title">Настройки сохранены</span>
-                <span class="notify-sub">только что</span>
-              </div>
-              <button class="btn ghost small">Открыть</button>
-            </div>
-            <div class="notify warning">
-              <i class="fas fa-triangle-exclamation"></i>
-              <div>
-                <span class="notify-title">SLA для Telegram не задан</span>
-                <span class="notify-sub">нужна настройка</span>
-              </div>
-              <button class="btn ghost small">Исправить</button>
-            </div>
-            <div class="notify info">
-              <i class="fas fa-circle-info"></i>
-              <div>
-                <span class="notify-title">Доступна версия UI Kit v3.0</span>
-                <span class="notify-sub">обновление дизайна</span>
-              </div>
-              <button class="btn ghost small">Обновить</button>
-            </div>
+            <DcNotification :theme="theme" type="success" title="Настройки сохранены" sub="только что" action-label="Открыть" />
+            <DcNotification :theme="theme" type="warning" title="SLA для Telegram не задан" sub="нужна настройка" action-label="Исправить" />
+            <DcNotification :theme="theme" type="info" title="Доступна версия UI Kit v3.0" sub="обновление дизайна" action-label="Обновить" />
           </div>
-        </div>
+        </DcCard>
       </section>
 
       <section class="showcase">
         <h2 class="section-title">СПИСОК И ТАБЛИЦА</h2>
-        <div class="card showcase-card two-col">
-          <div class="list-panel">
-            <div class="list-item">
-              <span class="list-tag hot">HOT</span>
-              <div class="list-body">
-                <span class="list-title">Клиент 001 · #inq-2045</span>
-                <span class="list-desc">Нужно уточнить сроки запуска первой рассылки</span>
-              </div>
-              <span class="list-time">10:02</span>
-            </div>
-            <div class="list-item">
-              <span class="list-tag">WAIT</span>
-              <div class="list-body">
-                <span class="list-title">Клиент 002 · #inq-2037</span>
-                <span class="list-desc">Вернусь с решением сегодня вечером</span>
-              </div>
-              <span class="list-time">09:40</span>
-            </div>
-          </div>
-          <div class="table-panel">
-            <table>
-              <thead>
-                <tr><th>КЛИЕНТ</th><th>КАНАЛ</th><th>СТАТУС</th><th>SLA</th></tr>
-              </thead>
-              <tbody>
-                <tr v-for="(row, i) in tableRows" :key="i">
-                  <td>{{ row.client }}</td>
-                  <td>{{ row.channel }}</td>
-                  <td><span class="badge-status" :class="row.status === 'Закрыт' ? 'muted' : ''">{{ row.status }}</span></td>
-                  <td>{{ row.sla }}</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
+        <DcCard :theme="theme" :two-col="true">
+          <DcList :theme="theme" :items="listItems" />
+          <DcTable :theme="theme" :columns="tableColumns" :rows="tableRows" />
+        </DcCard>
       </section>
 
       <section class="showcase">
         <h2 class="section-title">СОСТОЯНИЯ И МОДАЛЬНЫЕ СЦЕНАРИИ</h2>
-        <div class="card showcase-card states-grid">
-          <div class="state-card">
-            <span class="state-label">LOADING</span>
-            <div class="state-content loading">
-              <i class="fas fa-spinner fa-spin"></i>
-              <span>Загружаем данные таблицы...</span>
-            </div>
+        <DcCard :theme="theme">
+          <div class="states-grid">
+            <DcState :theme="theme" type="loading" message="Загружаем данные таблицы..." />
+            <DcState :theme="theme" type="skeleton" />
+            <DcState :theme="theme" type="error" message="Ошибка сети: не удалось обновить логи" action-label="Повторить" />
+            <DcState :theme="theme" type="empty" message="Нет обращений по текущему фильтру." action-label="Сбросить фильтр" />
           </div>
-          <div class="state-card">
-            <span class="state-label">SKELETON</span>
-            <div class="state-content skeleton">
-              <div class="sk-line"></div>
-              <div class="sk-line short"></div>
-              <div class="sk-line mid"></div>
-            </div>
-          </div>
-          <div class="state-card">
-            <span class="state-label">ERROR</span>
-            <div class="state-content error">
-              <span>Ошибка сети: не удалось обновить логи</span>
-              <button class="btn ghost small">Повторить</button>
-            </div>
-          </div>
-          <div class="state-card">
-            <span class="state-label">EMPTY</span>
-            <div class="state-content empty">
-              <span>Нет обращений по текущему фильтру.</span>
-              <button class="btn ghost small">Сбросить фильтр</button>
-            </div>
-          </div>
-        </div>
+        </DcCard>
       </section>
 
-      <Teleport to="body">
-        <div v-if="modalOpen" class="modal-overlay" @click.self="modalOpen = false">
-          <div class="modal">
-            <div class="modal-header">
-              <h3>Создать новое обращение</h3>
-              <button class="modal-close" @click="modalOpen = false" aria-label="Закрыть">
-                <i class="fas fa-times"></i>
-              </button>
-            </div>
-            <div class="modal-body">
-              <div class="input-wrap"><i class="fas fa-user"></i><input placeholder="Имя клиента" /></div>
-              <div class="input-wrap"><i class="fas fa-phone"></i><input placeholder="Телефон" /></div>
-              <div class="input-wrap select"><i class="fas fa-telegram"></i><select><option>Telegram</option></select><i class="fas fa-chevron-down"></i></div>
-            </div>
-            <div class="modal-footer">
-              <button class="btn ghost" @click="modalOpen = false">Отмена</button>
-              <button class="btn primary">Создать</button>
-            </div>
-          </div>
+      <DcModal :theme="theme" title="Создать новое обращение" :open="modalOpen" @close="modalOpen = false">
+        <div class="dc-mf-row"><i class="fas fa-user"></i><input placeholder="Имя клиента" /></div>
+        <div class="dc-mf-row"><i class="fas fa-phone"></i><input placeholder="Телефон" /></div>
+        <div class="dc-mf-row">
+          <i class="fas fa-telegram"></i>
+          <select><option>Telegram</option></select>
+          <i class="fas fa-chevron-down dc-mf-chevron"></i>
         </div>
-      </Teleport>
+        <template #footer>
+          <DcButton :theme="theme" variant="ghost" @click="modalOpen = false">Отмена</DcButton>
+          <DcButton :theme="theme" variant="primary">Создать</DcButton>
+        </template>
+      </DcModal>
 
       <section class="showcase">
-        <button class="btn primary" @click="modalOpen = true">
-          <i class="fas fa-plus"></i> Открыть модальное окно
-        </button>
+        <DcButton :theme="theme" variant="primary" icon="fa-plus" @click="modalOpen = true">
+          Открыть модальное окно
+        </DcButton>
       </section>
 
       <section class="showcase">
         <h2 class="section-title">ПОКРЫТИЕ ДИЗАЙН-СИСТЕМЫ</h2>
-        <div class="coverage-tags">
-          <span class="cov-tag"><i class="fas fa-bars"></i> Навигация и shell</span>
-          <span class="cov-tag"><i class="fas fa-filter"></i> Фильтры и поиск</span>
-          <span class="cov-tag"><i class="fas fa-list"></i> Списки и карточки</span>
-          <span class="cov-tag"><i class="fas fa-table"></i> Таблицы и статусы</span>
-          <span class="cov-tag"><i class="fas fa-check"></i> Формы и валидация</span>
-          <span class="cov-tag"><i class="fas fa-bell"></i> Уведомления</span>
-          <span class="cov-tag"><i class="fas fa-window-maximize"></i> Модальные сценарии</span>
-          <span class="cov-tag"><i class="fas fa-spinner"></i> Loading / Empty / Error</span>
-        </div>
+        <DcCoverageTags :theme="theme" :tags="coverageTags" />
       </section>
 
       <section class="showcase">
         <h2 class="section-title">ПАЛИТРА ТЕМЫ</h2>
-        <div class="palette-grid">
-          <div class="palette-item"><div class="swatch" style="background:#f8f6eb"></div><span>BACKGROUND</span><code>#f8f6eb</code></div>
-          <div class="palette-item"><div class="swatch" style="background:#ffffff;border:1px solid #e8e6df"></div><span>SURFACE</span><code>#ffffff</code></div>
-          <div class="palette-item"><div class="swatch" style="background:#4f6f2f"></div><span>ACCENT</span><code>#4f6f2f</code></div>
-          <div class="palette-item"><div class="swatch" style="background:#7a8f3f"></div><span>ACCENT WARM</span><code>#7a8f3f</code></div>
-          <div class="palette-item"><div class="swatch" style="background:#243523"></div><span>TEXT</span><code>#243523</code></div>
-          <div class="palette-item"><div class="swatch" style="background:#fff3ca"></div><span>SUNRAY</span><code>#fff3ca</code></div>
-        </div>
+        <DcPalette :theme="theme" :items="paletteItems" />
       </section>
     </div>
   </div>
@@ -255,27 +189,12 @@ const tableRows = [
 <style scoped>
 .app {
   --bg: #f8f6eb;
-  --bg2: #f0ede0;
-  --surface: #ffffff;
   --accent: #4f6f2f;
-  --accent-warm: #7a8f3f;
   --text: #243523;
   --text2: #3d4a35;
-  --text3: #5a6652;
-  --glow-soft: rgba(79, 111, 47, 0.15);
   --border: rgba(79, 111, 47, 0.12);
   --border-strong: rgba(79, 111, 47, 0.22);
-  --glass-strong: rgba(255, 255, 255, 0.82);
-  --glass-soft: rgba(248, 246, 235, 0.72);
-  --error: #c53d3d;
-  --warning: #c9972e;
-  --info: #3a7bd5;
-  --radius-sm: 8px;
   --radius: 12px;
-  --radius-lg: 16px;
-}
-
-.app {
   min-height: 100vh;
   background: var(--bg);
   color: var(--text);
@@ -313,7 +232,6 @@ const tableRows = [
 .components-desc { margin: 0; font-size: 0.95rem; color: var(--text2); }
 
 .content { max-width: 1200px; }
-
 .showcase { margin-bottom: 40px; }
 .section-title {
   font-size: 0.8rem;
@@ -322,292 +240,13 @@ const tableRows = [
   letter-spacing: 0.05em;
   margin: 0 0 16px 0;
 }
-.showcase-card { margin-top: 0; }
-.card {
-  background: linear-gradient(165deg, var(--glass-strong), var(--glass-soft));
-  backdrop-filter: blur(24px) saturate(135%);
-  -webkit-backdrop-filter: blur(24px) saturate(135%);
-  border: 1px solid var(--border-strong);
-  border-radius: var(--radius-lg);
-  padding: 24px;
-  position: relative;
-  overflow: hidden;
-  box-shadow: 0 14px 30px rgba(79, 111, 47, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.9);
-}
-.card::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.6), transparent 26%);
-}
 
 .btn-row { display: flex; gap: 12px; flex-wrap: wrap; }
-.btn {
-  padding: 12px 20px;
-  border-radius: var(--radius);
-  font-family: inherit;
-  font-size: 0.9rem;
-  font-weight: 600;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  border: none;
-  transition: all 0.2s;
-  text-decoration: none;
-}
-.btn.primary { background: var(--accent); color: #fff; box-shadow: 0 12px 22px rgba(79, 111, 47, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.2); }
-.btn.primary:hover:not(:disabled) { filter: brightness(1.08); transform: translateY(-1px); }
-.btn.secondary { background: rgba(79, 111, 47, 0.1); color: var(--text); border: 1px solid rgba(79, 111, 47, 0.2); }
-.btn.secondary:hover { background: rgba(79, 111, 47, 0.16); transform: translateY(-1px); }
-.btn.ghost { background: transparent; color: var(--text2); }
-.btn.ghost:hover { background: var(--glow-soft); color: var(--accent); }
-.btn.outline { background: transparent; border: 1px solid var(--accent); color: var(--accent); }
-.btn.outline:hover { background: var(--glow-soft); transform: translateY(-1px); }
-.btn:disabled { opacity: 0.5; cursor: not-allowed; }
-.btn.small { padding: 8px 14px; font-size: 0.85rem; }
-
 .form-row { display: flex; flex-direction: column; gap: 20px; }
-.field { display: block; }
-.field-label { display: block; font-size: 0.75rem; font-weight: 600; color: var(--text2); letter-spacing: 0.05em; margin-bottom: 8px; }
-.input-wrap {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 0 16px;
-  height: 48px;
-  background: rgba(255,255,255,0.8);
-  border: 1px solid rgba(79, 111, 47, 0.2);
-  border-radius: var(--radius);
-  transition: all 0.25s ease;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
-}
-.input-wrap:focus-within {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 2px rgba(79, 111, 47, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.9);
-}
-.field.error .input-wrap { border-color: var(--error); }
-.input-wrap input, .input-wrap select {
-  flex: 1;
-  background: transparent;
-  border: none;
-  outline: none;
-  color: var(--text);
-  font-family: inherit;
-  font-size: 0.9rem;
-}
-.input-wrap i { color: var(--text3); }
-.input-wrap.select select { padding-right: 24px; }
-textarea {
-  width: 100%;
-  padding: 12px 16px;
-  background: rgba(255,255,255,0.8);
-  border: 1px solid rgba(79, 111, 47, 0.2);
-  border-radius: var(--radius);
-  color: var(--text);
-  font-family: inherit;
-  font-size: 0.9rem;
-  resize: vertical;
-}
-textarea:focus { border-color: var(--accent); outline: none; box-shadow: 0 0 0 2px rgba(79, 111, 47, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.9); }
-.field-error { font-size: 0.8rem; color: var(--error); margin-top: 6px; display: block; }
-.field-hint { font-size: 0.8rem; color: var(--text3); margin-top: 6px; display: block; }
-
-.search-wrap {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 0 16px;
-  height: 44px;
-  background: rgba(255,255,255,0.8);
-  border: 1px solid rgba(79, 111, 47, 0.2);
-  border-radius: var(--radius);
-  margin-bottom: 16px;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
-}
-.search-wrap i { color: var(--text3); }
-.search-wrap input { flex: 1; background: transparent; border: none; outline: none; color: var(--text); font-family: inherit; }
-.filter-tabs { display: flex; gap: 8px; margin-bottom: 12px; }
-.filter-tab {
-  padding: 8px 16px;
-  background: transparent;
-  border: none;
-  border-radius: var(--radius-sm);
-  color: var(--text2);
-  font-family: inherit;
-  font-size: 0.85rem;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-.filter-tab.active { background: var(--accent); color: #fff; }
-.filter-tags { display: flex; gap: 8px; flex-wrap: wrap; }
-.tag {
-  padding: 8px 14px;
-  background: rgba(79, 111, 47, 0.08);
-  border-radius: 20px;
-  font-size: 0.85rem;
-  color: var(--text2);
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-}
-.tag.active { background: var(--accent); color: #fff; }
-.tag-dot { width: 6px; height: 6px; background: currentColor; border-radius: 50%; }
-
 .notify-list { display: flex; flex-direction: column; gap: 12px; }
-.notify {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  padding: 16px;
-  background: rgba(255,255,255,0.7);
-  border-radius: var(--radius);
-  border: 1px solid rgba(79, 111, 47, 0.14);
-  box-shadow: 0 2px 8px rgba(79, 111, 47, 0.06);
-}
-.notify i { font-size: 1.25rem; }
-.notify.success i { color: var(--accent); }
-.notify.warning i { color: var(--warning); }
-.notify.info i { color: var(--info); }
-.notify-title { display: block; font-weight: 600; }
-.notify-sub { font-size: 0.85rem; color: var(--text3); }
-.notify .btn { margin-left: auto; }
-
-.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
-.list-item {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  padding: 16px;
-  background: rgba(255,255,255,0.7);
-  border-radius: var(--radius);
-  border: 1px solid rgba(79, 111, 47, 0.14);
-  margin-bottom: 12px;
-  box-shadow: 0 2px 8px rgba(79, 111, 47, 0.06);
-}
-.list-tag { padding: 4px 10px; border-radius: 12px; font-size: 0.7rem; font-weight: 700; flex-shrink: 0; }
-.list-tag.hot { background: var(--accent); color: #fff; }
-.list-tag:not(.hot) { background: rgba(79, 111, 47, 0.1); color: var(--text2); }
-.list-body { flex: 1; min-width: 0; }
-.list-title { display: block; font-weight: 600; font-size: 0.9rem; }
-.list-desc { font-size: 0.85rem; color: var(--text3); }
-.list-time { font-size: 0.85rem; color: var(--text3); flex-shrink: 0; }
-
-table { width: 100%; border-collapse: collapse; }
-th, td { padding: 12px 16px; text-align: left; border-bottom: 1px solid var(--border); }
-th { font-size: 0.75rem; font-weight: 600; color: var(--text3); letter-spacing: 0.05em; }
-.badge-status { padding: 4px 10px; background: var(--glow-soft); color: var(--accent); border-radius: 12px; font-size: 0.8rem; }
-.badge-status.muted { background: rgba(79, 111, 47, 0.08); color: var(--text2); }
-
 .states-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
-.state-card {
-  padding: 20px;
-  background: rgba(255,255,255,0.7);
-  border-radius: var(--radius);
-  border: 1px solid rgba(79, 111, 47, 0.2);
-  box-shadow: 0 2px 8px rgba(79, 111, 47, 0.06);
-}
-.state-label { display: block; font-size: 0.7rem; font-weight: 600; color: var(--text3); letter-spacing: 0.05em; margin-bottom: 12px; }
-.state-content {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  min-height: 80px;
-  color: var(--text2);
-  font-size: 0.85rem;
-  text-align: center;
-}
-.state-content.loading i { font-size: 1.5rem; color: var(--accent); }
-.state-content.error span { color: var(--error); }
-.skeleton { align-items: stretch; }
-.sk-line { height: 12px; background: rgba(79, 111, 47, 0.12); border-radius: 4px; width: 100%; }
-.sk-line.short { width: 60%; }
-.sk-line.mid { width: 80%; }
-
-.modal-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 1000;
-  background: rgba(0,0,0,0.4);
-  backdrop-filter: blur(4px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 24px;
-  animation: fade 0.2s ease;
-}
-@keyframes fade { from { opacity: 0; } to { opacity: 1; } }
-.modal {
-  background: linear-gradient(165deg, rgba(255, 255, 255, 0.98), rgba(248, 246, 235, 0.95));
-  backdrop-filter: blur(30px) saturate(150%);
-  -webkit-backdrop-filter: blur(30px) saturate(150%);
-  border: 1px solid var(--border-strong);
-  border-radius: var(--radius-lg);
-  max-width: 420px;
-  width: 100%;
-  overflow: hidden;
-  position: relative;
-  box-shadow: 0 28px 72px rgba(79, 111, 47, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.9);
-}
-.modal::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.8), transparent 26%);
-}
-.modal-header { display: flex; align-items: center; justify-content: space-between; padding: 20px 24px; border-bottom: 1px solid var(--border); }
-.modal-header h3 { margin: 0; font-size: 1.1rem; }
-.modal-close {
-  width: 36px;
-  height: 36px;
-  background: transparent;
-  border: none;
-  border-radius: var(--radius-sm);
-  color: var(--text2);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s;
-}
-.modal-close:hover { background: var(--glow-soft); color: var(--accent); }
-.modal-body { padding: 24px; display: flex; flex-direction: column; gap: 16px; }
-.modal-body .input-wrap { height: 44px; }
-.modal-footer { display: flex; justify-content: flex-end; gap: 12px; padding: 16px 24px; border-top: 1px solid var(--border); }
-
-.coverage-tags { display: flex; flex-wrap: wrap; gap: 12px; }
-.cov-tag {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 16px;
-  background: rgba(255,255,255,0.8);
-  border: 1px solid rgba(79, 111, 47, 0.2);
-  border-radius: var(--radius);
-  font-size: 0.85rem;
-  color: var(--text2);
-  transition: all 0.25s ease;
-  box-shadow: 0 2px 8px rgba(79, 111, 47, 0.06);
-}
-.cov-tag:hover {
-  background: rgba(79, 111, 47, 0.12);
-  border-color: rgba(79, 111, 47, 0.3);
-  color: var(--text);
-}
-.cov-tag i { color: var(--accent); }
-
-.palette-grid { display: flex; flex-wrap: wrap; gap: 24px; }
-.palette-item { display: flex; flex-direction: column; align-items: center; gap: 8px; }
-.swatch { width: 64px; height: 64px; border-radius: var(--radius); border: 1px solid var(--border); }
-.palette-item span { font-size: 0.8rem; font-weight: 600; }
-.palette-item code { font-size: 0.75rem; color: var(--text3); font-family: monospace; }
 
 @media (max-width: 1024px) {
-  .two-col { grid-template-columns: 1fr; }
   .states-grid { grid-template-columns: repeat(2, 1fr); }
 }
 @media (max-width: 768px) {
