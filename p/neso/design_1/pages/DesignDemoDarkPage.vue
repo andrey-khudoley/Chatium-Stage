@@ -2,7 +2,7 @@
 import { onMounted, ref } from 'vue'
 import { createComponentLogger } from '../shared/logger'
 
-const log = createComponentLogger('DesignDemoPage')
+const log = createComponentLogger('DesignDemoDarkPage')
 
 declare global {
   interface Window {
@@ -27,7 +27,6 @@ const sidebarCollapsed = ref(false)
 const sidebarOpen = ref(false)
 const activeSection = ref('dashboard')
 const activeChartTab = ref('week')
-const modalOpen = ref(false)
 
 function closeSidebar() {
   sidebarOpen.value = false
@@ -135,8 +134,8 @@ onMounted(() => {
           <i class="fas fa-bars"></i>
         </button>
         <div class="header-left">
-          <h1 class="page-title">CRM Design System · Dark</h1>
-          <p class="page-subtitle">Ночной лес: глубина, мягкий контраст, фокус на задаче</p>
+          <h1 class="page-title">{{ projectTitle }}</h1>
+          <p class="page-subtitle">Главная · сводка и последние изменения</p>
         </div>
         <div class="header-actions">
           <button class="action-btn icon"><i class="fas fa-search"></i></button>
@@ -152,49 +151,42 @@ onMounted(() => {
       </header>
 
       <div class="content">
-        <!-- Hero Block -->
+        <!-- Приветственный блок -->
         <section class="hero-section">
           <div class="hero-card">
             <div class="glow-spot"></div>
-            <span class="hero-tag">NEW UI FOUNDATION</span>
-            <h2 class="hero-title">A/Ley Services / Design Demo</h2>
+            <h2 class="hero-title">Добрый день</h2>
             <p class="hero-desc">
-              Полностью новый визуальный фундамент CRM: адаптивный shell, единые токены,
-              компонентный каталог и стандартизированные состояния для масштабирования интерфейса.
+              За сегодня обработано 12 обращений. 3 требуют ответа в течение часа.
             </p>
             <div class="hero-actions">
-              <a :href="profileUrl" class="btn primary">Открыть профиль →</a>
-              <a :href="loginUrl" class="btn ghost">Открыть auth-flow</a>
-            </div>
-            <div class="hero-visual">
-              <div class="visual-tile"><i class="fas fa-th-large"></i></div>
-              <div class="visual-tile"><i class="fas fa-filter"></i></div>
-              <div class="visual-tile"><i class="fas fa-comment"></i></div>
+              <a :href="profileUrl" class="btn primary">Перейти к обращениям</a>
+              <a :href="loginUrl" class="btn ghost">Выйти</a>
             </div>
           </div>
         </section>
 
-        <!-- Stats -->
+        <!-- Метрики -->
         <section class="stats-section">
           <div class="stat-card">
-            <div class="stat-icon"><i class="fas fa-leaf"></i></div>
-            <span class="stat-value">42</span>
-            <span class="stat-label">UI-компонента</span>
+            <div class="stat-icon"><i class="fas fa-inbox"></i></div>
+            <span class="stat-value">12</span>
+            <span class="stat-label">Сегодня</span>
           </div>
           <div class="stat-card">
-            <div class="stat-icon"><i class="fas fa-th-large"></i></div>
-            <span class="stat-value">18</span>
-            <span class="stat-label">Паттернов CRM</span>
+            <div class="stat-icon"><i class="fas fa-spinner"></i></div>
+            <span class="stat-value">5</span>
+            <span class="stat-label">В работе</span>
           </div>
           <div class="stat-card">
-            <div class="stat-icon"><i class="fas fa-circle-half-stroke"></i></div>
-            <span class="stat-value">2</span>
-            <span class="stat-label">Равные темы</span>
+            <div class="stat-icon"><i class="fas fa-bell"></i></div>
+            <span class="stat-value">3</span>
+            <span class="stat-label">Новых</span>
           </div>
           <div class="stat-card">
             <div class="stat-icon"><i class="fas fa-check"></i></div>
-            <span class="stat-value">AA</span>
-            <span class="stat-label">Контраст</span>
+            <span class="stat-value">4</span>
+            <span class="stat-label">Закрыто</span>
           </div>
         </section>
 
@@ -226,10 +218,10 @@ onMounted(() => {
             </div>
           </section>
 
-          <!-- Chart -->
+          <!-- График -->
           <section class="card chart-card">
             <div class="card-header">
-              <h3 class="card-title">РЕЛИЗНАЯ ДИНАМИКА</h3>
+              <h3 class="card-title">ОБРАЩЕНИЯ ЗА НЕДЕЛЮ</h3>
               <div class="chart-tabs">
                 <button class="tab" :class="{ active: activeChartTab === 'week' }" @click="activeChartTab = 'week'">Неделя</button>
                 <button class="tab" :class="{ active: activeChartTab === 'month' }" @click="activeChartTab = 'month'">Месяц</button>
@@ -247,229 +239,23 @@ onMounted(() => {
           </section>
         </div>
 
-        <!-- UI Components Showcase -->
-        <section class="showcase">
-          <h2 class="section-title">КНОПКИ И ИНТЕРАКЦИИ</h2>
-          <div class="card showcase-card">
-            <div class="btn-row">
-              <button class="btn primary"><i class="fas fa-paper-plane"></i> Action</button>
-              <button class="btn secondary">Secondary</button>
-              <button class="btn ghost">Ghost</button>
-              <button class="btn outline">Outline</button>
-              <button class="btn" disabled>Disabled</button>
-              <button class="btn loading" disabled><i class="fas fa-spinner fa-spin"></i> Loading</button>
-            </div>
-          </div>
-        </section>
-
-        <section class="showcase">
-          <h2 class="section-title">ФОРМА И ВАЛИДАЦИЯ</h2>
-          <div class="card showcase-card">
-            <div class="form-row">
-              <label class="field">
-                <span class="field-label">ИМЯ КЛИЕНТА</span>
-                <div class="input-wrap">
-                  <i class="fas fa-user"></i>
-                  <input type="text" placeholder="Имя клиента" />
-                </div>
-              </label>
-              <label class="field error">
-                <span class="field-label">EMAIL</span>
-                <div class="input-wrap">
-                  <input type="email" placeholder="email@example.com" />
-                  <i class="fas fa-copy"></i>
-                </div>
-                <span class="field-error">Нужен валидный адрес для уведомлений SLA</span>
-              </label>
-              <label class="field">
-                <span class="field-label">КОММЕНТАРИЙ</span>
-                <textarea placeholder="Комментарий оператора" rows="3"></textarea>
-                <span class="field-hint">Поддерживаются markdown-ссылки и теги.</span>
-              </label>
-            </div>
-          </div>
-        </section>
-
-        <section class="showcase">
-          <h2 class="section-title">ФИЛЬТРАЦИЯ И ПОИСК</h2>
-          <div class="card showcase-card">
-            <div class="search-wrap">
-              <i class="fas fa-search"></i>
-              <input type="search" placeholder="Поиск по клиенту, тегу, ID обращения" />
-            </div>
-            <div class="filter-tabs">
-              <button class="filter-tab active">Все</button>
-              <button class="filter-tab">Непрочитанные</button>
-              <button class="filter-tab">Открытые</button>
-              <button class="filter-tab">Мои</button>
-            </div>
-            <div class="filter-tags">
-              <span class="tag active"><span class="tag-dot"></span> В работе</span>
-              <span class="tag">Приоритет</span>
-              <span class="tag">Архив</span>
-            </div>
-          </div>
-        </section>
-
-        <section class="showcase">
-          <h2 class="section-title">УВЕДОМЛЕНИЯ</h2>
-          <div class="card showcase-card">
-            <div class="notify-list">
-              <div class="notify success">
-                <i class="fas fa-check"></i>
-                <div>
-                  <span class="notify-title">Настройки сохранены</span>
-                  <span class="notify-sub">только что</span>
-                </div>
-                <button class="btn ghost small">Открыть</button>
-              </div>
-              <div class="notify warning">
-                <i class="fas fa-triangle-exclamation"></i>
-                <div>
-                  <span class="notify-title">SLA для Telegram не задан</span>
-                  <span class="notify-sub">нужна настройка</span>
-                </div>
-                <button class="btn ghost small">Исправить</button>
-              </div>
-              <div class="notify info">
-                <i class="fas fa-circle-info"></i>
-                <div>
-                  <span class="notify-title">Доступна версия UI Kit v3.0</span>
-                  <span class="notify-sub">обновление дизайна</span>
-                </div>
-                <button class="btn ghost small">Обновить</button>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section class="showcase">
-          <h2 class="section-title">СПИСОК И ТАБЛИЦА</h2>
-          <div class="card showcase-card two-col">
-            <div class="list-panel">
-              <div class="list-item">
-                <span class="list-tag hot">HOT</span>
-                <div class="list-body">
-                  <span class="list-title">Клиент 001 · #inq-2045</span>
-                  <span class="list-desc">Нужно уточнить сроки запуска первой рассылки</span>
-                </div>
-                <span class="list-time">10:02</span>
-              </div>
-              <div class="list-item">
-                <span class="list-tag">WAIT</span>
-                <div class="list-body">
-                  <span class="list-title">Клиент 002 · #inq-2037</span>
-                  <span class="list-desc">Вернусь с решением сегодня вечером</span>
-                </div>
-                <span class="list-time">09:40</span>
-              </div>
-            </div>
-            <div class="table-panel">
-              <table>
-                <thead>
-                  <tr><th>КЛИЕНТ</th><th>КАНАЛ</th><th>СТАТУС</th><th>SLA</th></tr>
-                </thead>
-                <tbody>
-                  <tr v-for="(row, i) in tableRows" :key="i">
-                    <td>{{ row.client }}</td>
-                    <td>{{ row.channel }}</td>
-                    <td><span class="badge-status" :class="row.status === 'Закрыт' ? 'muted' : ''">{{ row.status }}</span></td>
-                    <td>{{ row.sla }}</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </section>
-
-        <section class="showcase">
-          <h2 class="section-title">СОСТОЯНИЯ И МОДАЛЬНЫЕ СЦЕНАРИИ</h2>
-          <div class="card showcase-card states-grid">
-            <div class="state-card">
-              <span class="state-label">LOADING</span>
-              <div class="state-content loading">
-                <i class="fas fa-spinner fa-spin"></i>
-                <span>Загружаем данные таблицы...</span>
-              </div>
-            </div>
-            <div class="state-card">
-              <span class="state-label">SKELETON</span>
-              <div class="state-content skeleton">
-                <div class="sk-line"></div>
-                <div class="sk-line short"></div>
-                <div class="sk-line mid"></div>
-              </div>
-            </div>
-            <div class="state-card">
-              <span class="state-label">ERROR</span>
-              <div class="state-content error">
-                <span>Ошибка сети: не удалось обновить логи</span>
-                <button class="btn ghost small">Повторить</button>
-              </div>
-            </div>
-            <div class="state-card">
-              <span class="state-label">EMPTY</span>
-              <div class="state-content empty">
-                <span>Нет обращений по текущему фильтру.</span>
-                <button class="btn ghost small">Сбросить фильтр</button>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <!-- Modal -->
-        <Teleport to="body">
-          <div v-if="modalOpen" class="modal-overlay" @click.self="modalOpen = false">
-            <div class="modal">
-              <div class="modal-header">
-                <h3>Создать новое обращение</h3>
-                <button class="modal-close" @click="modalOpen = false" aria-label="Закрыть">
-                  <i class="fas fa-times"></i>
-                </button>
-              </div>
-              <div class="modal-body">
-                <div class="input-wrap"><i class="fas fa-user"></i><input placeholder="Имя клиента" /></div>
-                <div class="input-wrap"><i class="fas fa-phone"></i><input placeholder="Телефон" /></div>
-                <div class="input-wrap select"><i class="fas fa-telegram"></i><select><option>Telegram</option></select><i class="fas fa-chevron-down"></i></div>
-              </div>
-              <div class="modal-footer">
-                <button class="btn ghost" @click="modalOpen = false">Отмена</button>
-                <button class="btn primary">Создать</button>
-              </div>
-            </div>
-          </div>
-        </Teleport>
-
-        <section class="showcase">
-          <button class="btn primary" @click="modalOpen = true">
-            <i class="fas fa-plus"></i> Открыть модальное окно
-          </button>
-        </section>
-
-        <!-- Coverage & Palette -->
-        <section class="showcase">
-          <h2 class="section-title">ПОКРЫТИЕ ДИЗАЙН-СИСТЕМЫ</h2>
-          <div class="coverage-tags">
-            <span class="cov-tag"><i class="fas fa-bars"></i> Навигация и shell</span>
-            <span class="cov-tag"><i class="fas fa-filter"></i> Фильтры и поиск</span>
-            <span class="cov-tag"><i class="fas fa-list"></i> Списки и карточки</span>
-            <span class="cov-tag"><i class="fas fa-table"></i> Таблицы и статусы</span>
-            <span class="cov-tag"><i class="fas fa-check"></i> Формы и валидация</span>
-            <span class="cov-tag"><i class="fas fa-bell"></i> Уведомления</span>
-            <span class="cov-tag"><i class="fas fa-window-maximize"></i> Модальные сценарии</span>
-            <span class="cov-tag"><i class="fas fa-spinner"></i> Loading / Empty / Error</span>
-          </div>
-        </section>
-
-        <section class="showcase">
-          <h2 class="section-title">ПАЛИТРА ТЕМЫ</h2>
-          <div class="palette-grid">
-            <div class="palette-item"><div class="swatch" style="background:#05080a"></div><span>BACKGROUND</span><code>#05080a</code></div>
-            <div class="palette-item"><div class="swatch" style="background:#11191b"></div><span>SURFACE</span><code>#11191b</code></div>
-            <div class="palette-item"><div class="swatch" style="background:#afc45f"></div><span>ACCENT</span><code>#afc45f</code></div>
-            <div class="palette-item"><div class="swatch" style="background:#6f8440"></div><span>ACCENT DEEP</span><code>#6f8440</code></div>
-            <div class="palette-item"><div class="swatch" style="background:#eef4eb"></div><span>TEXT</span><code>#eef4eb</code></div>
-            <div class="palette-item"><div class="swatch" style="background:#c5d879"></div><span>GLOW</span><code>#c5d879</code></div>
+        <!-- Обращения за сегодня -->
+        <section class="page-block">
+          <h3 class="card-title">ПОСЛЕДНИЕ ОБРАЩЕНИЯ</h3>
+          <div class="card">
+            <table class="page-table">
+              <thead>
+                <tr><th>Клиент</th><th>Канал</th><th>Статус</th><th>SLA</th></tr>
+              </thead>
+              <tbody>
+                <tr v-for="(row, i) in tableRows" :key="i">
+                  <td>{{ row.client }}</td>
+                  <td>{{ row.channel }}</td>
+                  <td><span class="badge-status" :class="row.status === 'Закрыт' ? 'muted' : ''">{{ row.status }}</span></td>
+                  <td>{{ row.sla }}</td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </section>
       </div>
@@ -490,6 +276,9 @@ onMounted(() => {
   --glow: #c5d879;
   --glow-soft: rgba(175, 196, 95, 0.15);
   --border: rgba(175, 196, 95, 0.12);
+  --border-strong: rgba(175, 196, 95, 0.22);
+  --glass-strong: rgba(12, 20, 22, 0.68);
+  --glass-soft: rgba(12, 20, 22, 0.56);
   --error: #e85555;
   --warning: #e5b04a;
   --info: #5a9cf5;
@@ -501,15 +290,38 @@ onMounted(() => {
 .app {
   display: flex;
   min-height: 100vh;
-  background: var(--bg);
+  background:
+    radial-gradient(circle at 16% 12%, rgba(175, 196, 95, 0.1), transparent 34%),
+    radial-gradient(circle at 84% 86%, rgba(111, 132, 64, 0.08), transparent 38%),
+    linear-gradient(140deg, var(--bg) 0%, var(--bg2) 60%, var(--surface) 100%);
   color: var(--text);
   font-family: 'Mulish', -apple-system, BlinkMacSystemFont, sans-serif;
   position: relative;
   overflow-x: hidden;
   opacity: 0;
-  transition: opacity 0.5s ease;
+  transition: opacity 0.55s ease;
+  isolation: isolate;
 }
 .app-ready { opacity: 1; }
+
+.app::before,
+.app::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.app::before {
+  background:
+    linear-gradient(120deg, rgba(255, 255, 255, 0.06), transparent 26%, transparent 74%, rgba(255, 255, 255, 0.05));
+  mix-blend-mode: soft-light;
+}
+
+.app::after {
+  background: radial-gradient(circle at center, transparent 40%, rgba(0, 0, 0, 0.34) 100%);
+}
 
 /* Фоновое изображение — ночной лес */
 .bg-layer {
@@ -520,7 +332,9 @@ onMounted(() => {
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
-  opacity: 0.4;
+  opacity: 0.34;
+  transform: scale(1.03);
+  filter: saturate(112%) contrast(106%);
 }
 
 .bg-overlay {
@@ -528,71 +342,126 @@ onMounted(() => {
   inset: 0;
   z-index: 1;
   background: linear-gradient(
-    135deg,
-    rgba(5, 8, 10, 0.88) 0%,
-    rgba(13, 18, 20, 0.78) 50%,
-    rgba(17, 25, 27, 0.88) 100%
+    145deg,
+    rgba(5, 8, 10, 0.92) 0%,
+    rgba(13, 18, 20, 0.82) 48%,
+    rgba(17, 25, 27, 0.9) 100%
   );
-  backdrop-filter: blur(3px);
+  backdrop-filter: blur(4px);
 }
 
-/* Летающие светлячки — орбы поверх фона */
+/* Атмосферный свет + микро-светлячки (чисто, без пиксельных орбов) */
 .orbs {
   position: fixed;
   inset: 0;
   z-index: 2;
   pointer-events: none;
   overflow: hidden;
+  background:
+    radial-gradient(68% 54% at 14% 92%, rgba(175, 196, 95, 0.11), transparent 74%),
+    radial-gradient(62% 52% at 88% 10%, rgba(197, 216, 121, 0.09), transparent 76%),
+    radial-gradient(40% 34% at 58% 52%, rgba(175, 196, 95, 0.06), transparent 78%);
+  animation: dark-ambient-shift 38s ease-in-out infinite alternate;
+}
+
+.orbs::before,
+.orbs::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.orbs::before {
+  background-image: radial-gradient(rgba(197, 216, 121, 0.55) 0.6px, transparent 0.8px);
+  background-size: 4px 4px;
+  opacity: 0.03;
+  mix-blend-mode: screen;
+}
+
+.orbs::after {
+  inset: -14%;
+  background:
+    radial-gradient(50% 38% at 78% 16%, rgba(197, 216, 121, 0.12), transparent 74%),
+    radial-gradient(44% 34% at 28% 84%, rgba(175, 196, 95, 0.1), transparent 76%);
+  opacity: 0.24;
+  animation: dark-ambient-breathe 46s ease-in-out infinite alternate;
 }
 
 .orb {
   position: absolute;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
-  background: radial-gradient(
-    circle at 30% 30%,
-    rgba(175, 196, 95, 0.08),
-    rgba(197, 216, 121, 0.03) 50%,
-    transparent 70%
-  );
-  animation: orb-float 22s ease-in-out infinite;
+  background: #c5d879;
+  mix-blend-mode: screen;
+  opacity: 0.52;
+  box-shadow:
+    0 0 0 1px rgba(197, 216, 121, 0.14),
+    0 0 14px rgba(197, 216, 121, 0.48),
+    0 0 30px rgba(175, 196, 95, 0.22);
+  animation:
+    dark-firefly-drift 16s ease-in-out infinite,
+    dark-firefly-pulse 4.8s ease-in-out infinite;
 }
 
 .orb-1 {
-  width: 320px;
-  height: 320px;
-  top: calc(10% + 80px);
-  right: 12%;
-  animation-delay: 0s;
+  top: 24%;
+  right: 22%;
+  animation-delay: 0s, -1s;
 }
 
 .orb-2 {
-  width: 220px;
-  height: 220px;
-  bottom: 18%;
-  left: 8%;
-  animation-delay: -6s;
+  width: 5px;
+  height: 5px;
+  bottom: 28%;
+  left: 18%;
+  opacity: 0.42;
+  animation-delay: -5s, -2.2s;
 }
 
 .orb-3 {
-  width: 180px;
-  height: 180px;
-  top: 55%;
-  right: 25%;
-  animation-delay: -12s;
+  width: 4px;
+  height: 4px;
+  top: 62%;
+  right: 36%;
+  opacity: 0.36;
+  animation-delay: -9s, -3.1s;
 }
 
-@keyframes orb-float {
+@keyframes dark-ambient-shift {
+  0% {
+    transform: translate3d(-0.8%, -0.6%, 0);
+  }
+  100% {
+    transform: translate3d(0.8%, 0.7%, 0);
+  }
+}
+
+@keyframes dark-ambient-breathe {
+  0% {
+    transform: translate3d(-1.2%, -0.8%, 0) scale(1);
+  }
+  100% {
+    transform: translate3d(1%, 0.9%, 0) scale(1.04);
+  }
+}
+
+@keyframes dark-firefly-drift {
   0%, 100% {
-    transform: translate(0, 0) rotate(0deg);
-    opacity: 0.6;
+    transform: translate3d(0, 0, 0);
   }
-  33% {
-    transform: translate(25px, -25px) rotate(110deg);
-    opacity: 1;
+  50% {
+    transform: translate3d(18px, -14px, 0);
   }
-  66% {
-    transform: translate(-18px, 22px) rotate(230deg);
-    opacity: 0.6;
+}
+
+@keyframes dark-firefly-pulse {
+  0%, 100% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 0.72;
   }
 }
 
@@ -611,19 +480,31 @@ onMounted(() => {
   position: sticky;
   top: 0;
   padding: 24px 16px;
-  background: rgba(8, 14, 16, 0.45);
-  backdrop-filter: blur(24px) saturate(160%);
-  -webkit-backdrop-filter: blur(24px) saturate(160%);
-  border-right: 1px solid var(--border);
+  background: linear-gradient(165deg, rgba(13, 21, 23, 0.84), rgba(10, 16, 18, 0.72));
+  backdrop-filter: blur(30px) saturate(170%);
+  -webkit-backdrop-filter: blur(30px) saturate(170%);
+  border-right: 1px solid var(--border-strong);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.03),
-    4px 0 28px rgba(0, 0, 0, 0.35);
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    6px 0 34px rgba(0, 0, 0, 0.4);
   z-index: 100;
   transition: width 0.3s ease;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 .sidebar.collapsed { width: 72px; }
+
+.sidebar::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.08), transparent 24%);
+  opacity: 0.75;
+  z-index: 0;
+}
+.sidebar > * { position: relative; z-index: 1; }
 
 .menu-toggle { display: none; }
 
@@ -643,12 +524,15 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
+  box-shadow:
+    0 10px 22px rgba(175, 196, 95, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.24);
 }
 .logo-text { font-family: 'Old Standard TT', serif; font-size: 1.25rem; font-weight: 700; }
 .toggle-btn {
   width: 32px;
   height: 32px;
-  background: transparent;
+  background: rgba(255, 255, 255, 0.02);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   color: var(--text2);
@@ -656,9 +540,13 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s;
+  transition: all 0.25s ease;
 }
-.toggle-btn:hover { background: var(--glow-soft); color: var(--accent); }
+.toggle-btn:hover {
+  background: rgba(175, 196, 95, 0.14);
+  border-color: var(--border-strong);
+  color: var(--accent);
+}
 
 .nav { display: flex; flex-direction: column; gap: 4px; flex: 1; }
 .nav-item {
@@ -667,18 +555,27 @@ onMounted(() => {
   gap: 12px;
   padding: 12px 16px;
   background: transparent;
-  border: none;
+  border: 1px solid transparent;
   border-radius: var(--radius);
   color: var(--text2);
   font-family: inherit;
   font-size: 0.9rem;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.25s ease;
   text-align: left;
 }
 .nav-item i { width: 20px; }
-.nav-item:hover { background: var(--glow-soft); color: var(--text); }
-.nav-item.active { background: var(--accent); color: var(--bg); }
+.nav-item:hover {
+  background: rgba(175, 196, 95, 0.12);
+  border-color: rgba(175, 196, 95, 0.18);
+  color: var(--text);
+}
+.nav-item.active {
+  background: var(--accent);
+  border-color: rgba(197, 216, 121, 0.6);
+  color: var(--bg);
+  box-shadow: 0 10px 20px rgba(175, 196, 95, 0.22);
+}
 
 .sidebar-footer { margin-top: auto; padding-top: 16px; border-top: 1px solid var(--border); }
 .user-pill {
@@ -686,10 +583,11 @@ onMounted(() => {
   align-items: center;
   gap: 12px;
   padding: 12px;
-  background: rgba(255,255,255,0.04);
-  backdrop-filter: blur(8px);
+  background: rgba(17, 28, 29, 0.72);
+  backdrop-filter: blur(16px);
   border-radius: var(--radius);
-  border: 1px solid rgba(255,255,255,0.04);
+  border: 1px solid rgba(175, 196, 95, 0.16);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 .avatar {
   width: 36px;
@@ -741,7 +639,7 @@ onMounted(() => {
   gap: 8px;
   text-decoration: none;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.25s ease;
   border: none;
   position: relative;
 }
@@ -749,18 +647,26 @@ onMounted(() => {
   width: 44px;
   padding: 0;
   justify-content: center;
-  background: rgba(255,255,255,0.05);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255,255,255,0.06);
+  background: rgba(255,255,255,0.07);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border: 1px solid rgba(175,196,95,0.16);
   color: var(--text2);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
-.action-btn.icon:hover { background: var(--glow-soft); color: var(--accent); }
+.action-btn.icon:hover {
+  background: rgba(175, 196, 95, 0.14);
+  color: var(--accent);
+  transform: translateY(-1px);
+}
 .action-btn.primary {
   background: var(--accent);
   color: var(--bg);
+  box-shadow:
+    0 14px 24px rgba(175, 196, 95, 0.24),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
 }
-.action-btn.primary:hover { filter: brightness(1.1); }
+.action-btn.primary:hover { filter: brightness(1.08); transform: translateY(-1px); }
 .badge {
   position: absolute;
   top: -4px;
@@ -781,17 +687,37 @@ onMounted(() => {
 
 .hero-section { margin-bottom: 32px; }
 .hero-card {
-  background: rgba(12, 20, 22, 0.5);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid var(--border);
+  background: linear-gradient(165deg, rgba(13, 22, 24, 0.8), rgba(11, 18, 20, 0.66));
+  backdrop-filter: blur(26px) saturate(145%);
+  -webkit-backdrop-filter: blur(26px) saturate(145%);
+  border: 1px solid var(--border-strong);
   border-radius: var(--radius-lg);
   padding: 32px;
   position: relative;
   overflow: hidden;
+  isolation: isolate;
+  transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
   box-shadow:
-    0 4px 32px rgba(0, 0, 0, 0.3),
-    inset 0 1px 0 rgba(255, 255, 255, 0.03);
+    0 18px 40px rgba(0, 0, 0, 0.34),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.hero-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.08), transparent 30%);
+  z-index: -1;
+}
+
+.hero-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(175, 196, 95, 0.3);
+  box-shadow:
+    0 24px 46px rgba(0, 0, 0, 0.38),
+    0 0 32px rgba(175, 196, 95, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
 }
 
 /* Лёгкое свечение светлячка в углу hero */
@@ -799,14 +725,15 @@ onMounted(() => {
   position: absolute;
   top: -30%;
   right: -15%;
-  width: 60%;
-  height: 80%;
+  width: 56%;
+  height: 74%;
   background: radial-gradient(
     ellipse at 70% 30%,
-    rgba(175, 196, 95, 0.04),
+    rgba(175, 196, 95, 0.08),
     transparent 60%
   );
   pointer-events: none;
+  filter: blur(6px);
 }
 .hero-tag {
   display: inline-block;
@@ -834,12 +761,14 @@ onMounted(() => {
 .visual-tile {
   width: 48px;
   height: 48px;
-  background: rgba(255,255,255,0.06);
+  background: rgba(255,255,255,0.08);
   border-radius: var(--radius);
   display: flex;
   align-items: center;
   justify-content: center;
   color: var(--accent);
+  border: 1px solid rgba(175, 196, 95, 0.16);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
 }
 
 .stats-section {
@@ -849,18 +778,27 @@ onMounted(() => {
   margin-bottom: 32px;
 }
 .stat-card {
-  background: rgba(12, 20, 22, 0.45);
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
-  border: 1px solid var(--border);
+  background: linear-gradient(165deg, var(--glass-strong), var(--glass-soft));
+  backdrop-filter: blur(24px) saturate(135%);
+  -webkit-backdrop-filter: blur(24px) saturate(135%);
+  border: 1px solid var(--border-strong);
   border-radius: var(--radius-lg);
   padding: 24px;
   display: flex;
   flex-direction: column;
   gap: 8px;
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
   box-shadow:
-    0 4px 24px rgba(0, 0, 0, 0.25),
-    inset 0 1px 0 rgba(255, 255, 255, 0.02);
+    0 14px 30px rgba(0, 0, 0, 0.26),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+.stat-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(175, 196, 95, 0.26);
+  box-shadow:
+    0 18px 34px rgba(0, 0, 0, 0.28),
+    0 0 26px rgba(175, 196, 95, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 .stat-icon {
   width: 44px;
@@ -882,15 +820,33 @@ onMounted(() => {
   margin-bottom: 48px;
 }
 .card {
-  background: rgba(12, 20, 22, 0.42);
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
-  border: 1px solid var(--border);
+  background: linear-gradient(165deg, var(--glass-strong), var(--glass-soft));
+  backdrop-filter: blur(24px) saturate(135%);
+  -webkit-backdrop-filter: blur(24px) saturate(135%);
+  border: 1px solid var(--border-strong);
   border-radius: var(--radius-lg);
   padding: 24px;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
   box-shadow:
-    0 4px 24px rgba(0, 0, 0, 0.25),
-    inset 0 1px 0 rgba(255, 255, 255, 0.02);
+    0 14px 30px rgba(0, 0, 0, 0.26),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+.card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.08), transparent 26%);
+}
+.card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(175, 196, 95, 0.24);
+  box-shadow:
+    0 18px 36px rgba(0, 0, 0, 0.3),
+    0 0 24px rgba(175, 196, 95, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
 .card-title {
@@ -926,13 +882,19 @@ onMounted(() => {
   align-items: center;
   gap: 10px;
   padding: 12px 16px;
-  background: rgba(255,255,255,0.04);
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(175, 196, 95, 0.12);
   border-radius: var(--radius);
   color: var(--text2);
   text-decoration: none;
-  transition: all 0.2s;
+  transition: all 0.25s ease;
 }
-.quick-btn:hover { background: var(--glow-soft); color: var(--accent); }
+.quick-btn:hover {
+  background: rgba(175, 196, 95, 0.14);
+  border-color: rgba(175, 196, 95, 0.28);
+  color: var(--accent);
+  transform: translateY(-1px);
+}
 
 .changelog-list { display: flex; flex-direction: column; gap: 12px; }
 .changelog-item {
@@ -940,8 +902,9 @@ onMounted(() => {
   align-items: center;
   gap: 12px;
   padding: 12px;
-  background: rgba(255,255,255,0.03);
+  background: rgba(255,255,255,0.05);
   border-radius: var(--radius);
+  border: 1px solid rgba(175, 196, 95, 0.1);
 }
 .changelog-role {
   width: 32px;
@@ -959,6 +922,11 @@ onMounted(() => {
 .changelog-time { font-size: 0.8rem; color: var(--text3); }
 
 .chart-card { grid-column: span 2; }
+.page-block { margin-bottom: 32px; }
+.page-block .card-title { margin: 0 0 16px 0; display: block; }
+.page-table { width: 100%; border-collapse: collapse; }
+.page-table th, .page-table td { padding: 12px 16px; text-align: left; border-bottom: 1px solid var(--border); }
+.page-table th { font-size: 0.75rem; font-weight: 600; color: var(--text3); letter-spacing: 0.05em; }
 .chart-tabs { display: flex; gap: 4px; }
 .tab {
   padding: 6px 12px;
@@ -1022,13 +990,18 @@ onMounted(() => {
   text-decoration: none;
 }
 .btn.primary { background: var(--accent); color: var(--bg); }
-.btn.primary:hover:not(:disabled) { filter: brightness(1.1); }
-.btn.secondary { background: rgba(255,255,255,0.08); color: var(--text); }
-.btn.secondary:hover { background: rgba(255,255,255,0.12); }
+.btn.primary {
+  box-shadow:
+    0 12px 22px rgba(175, 196, 95, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.28);
+}
+.btn.primary:hover:not(:disabled) { filter: brightness(1.08); transform: translateY(-1px); }
+.btn.secondary { background: rgba(255,255,255,0.1); color: var(--text); border: 1px solid rgba(175, 196, 95, 0.14); }
+.btn.secondary:hover { background: rgba(255,255,255,0.14); transform: translateY(-1px); }
 .btn.ghost { background: transparent; color: var(--text2); }
 .btn.ghost:hover { background: var(--glow-soft); color: var(--accent); }
 .btn.outline { background: transparent; border: 1px solid var(--accent); color: var(--accent); }
-.btn.outline:hover { background: var(--glow-soft); }
+.btn.outline:hover { background: var(--glow-soft); transform: translateY(-1px); }
 .btn:disabled { opacity: 0.5; cursor: not-allowed; }
 .btn.loading { opacity: 0.8; }
 .btn.small { padding: 8px 14px; font-size: 0.85rem; }
@@ -1049,12 +1022,19 @@ onMounted(() => {
   gap: 12px;
   padding: 0 16px;
   height: 48px;
-  background: rgba(255,255,255,0.04);
-  border: 1px solid var(--border);
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(175, 196, 95, 0.16);
   border-radius: var(--radius);
-  transition: all 0.2s;
+  transition: all 0.25s ease;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
-.input-wrap:focus-within { border-color: var(--accent); outline: none; }
+.input-wrap:focus-within {
+  border-color: var(--accent);
+  outline: none;
+  box-shadow:
+    0 0 0 2px rgba(175, 196, 95, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
 .input-wrap.error { border-color: var(--error); }
 .field.error .input-wrap { border-color: var(--error); }
 .input-wrap input,
@@ -1072,15 +1052,21 @@ onMounted(() => {
 textarea {
   width: 100%;
   padding: 12px 16px;
-  background: rgba(255,255,255,0.04);
-  border: 1px solid var(--border);
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(175, 196, 95, 0.16);
   border-radius: var(--radius);
   color: var(--text);
   font-family: inherit;
   font-size: 0.9rem;
   resize: vertical;
 }
-textarea:focus { border-color: var(--accent); outline: none; }
+textarea:focus {
+  border-color: var(--accent);
+  outline: none;
+  box-shadow:
+    0 0 0 2px rgba(175, 196, 95, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
 .field-error { font-size: 0.8rem; color: var(--error); margin-top: 6px; display: block; }
 .field-hint { font-size: 0.8rem; color: var(--text3); margin-top: 6px; display: block; }
 
@@ -1090,10 +1076,11 @@ textarea:focus { border-color: var(--accent); outline: none; }
   gap: 12px;
   padding: 0 16px;
   height: 44px;
-  background: rgba(255,255,255,0.04);
-  border: 1px solid var(--border);
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(175, 196, 95, 0.16);
   border-radius: var(--radius);
   margin-bottom: 16px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 .search-wrap i { color: var(--text3); }
 .search-wrap input {
@@ -1137,8 +1124,9 @@ textarea:focus { border-color: var(--accent); outline: none; }
   align-items: center;
   gap: 16px;
   padding: 16px;
-  background: rgba(255,255,255,0.03);
+  background: rgba(255,255,255,0.05);
   border-radius: var(--radius);
+  border: 1px solid rgba(175, 196, 95, 0.1);
 }
 .notify i { font-size: 1.25rem; }
 .notify.success i { color: var(--accent); }
@@ -1154,8 +1142,9 @@ textarea:focus { border-color: var(--accent); outline: none; }
   align-items: flex-start;
   gap: 12px;
   padding: 16px;
-  background: rgba(255,255,255,0.03);
+  background: rgba(255,255,255,0.05);
   border-radius: var(--radius);
+  border: 1px solid rgba(175, 196, 95, 0.1);
   margin-bottom: 12px;
 }
 .list-tag {
@@ -1187,9 +1176,9 @@ th { font-size: 0.75rem; font-weight: 600; color: var(--text3); letter-spacing: 
 .states-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
 .state-card {
   padding: 20px;
-  background: rgba(255,255,255,0.03);
+  background: rgba(255,255,255,0.05);
   border-radius: var(--radius);
-  border: 1px solid var(--border);
+  border: 1px solid rgba(175, 196, 95, 0.14);
 }
 .state-label {
   display: block;
@@ -1226,7 +1215,8 @@ th { font-size: 0.75rem; font-weight: 600; color: var(--text3); letter-spacing: 
   position: fixed;
   inset: 0;
   z-index: 1000;
-  background: rgba(0,0,0,0.6);
+  background: rgba(0,0,0,0.66);
+  backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1234,17 +1224,25 @@ th { font-size: 0.75rem; font-weight: 600; color: var(--text3); letter-spacing: 
   animation: fade 0.2s ease;
 }
 .modal {
-  background: rgba(17, 25, 27, 0.92);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  border: 1px solid var(--border);
+  background: linear-gradient(165deg, rgba(18, 27, 29, 0.94), rgba(14, 22, 24, 0.9));
+  backdrop-filter: blur(30px) saturate(150%);
+  -webkit-backdrop-filter: blur(30px) saturate(150%);
+  border: 1px solid var(--border-strong);
   border-radius: var(--radius-lg);
   max-width: 420px;
   width: 100%;
   overflow: hidden;
+  position: relative;
   box-shadow:
-    0 24px 64px rgba(0, 0, 0, 0.5),
-    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    0 28px 72px rgba(0, 0, 0, 0.54),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+.modal::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.08), transparent 26%);
 }
 .modal-header {
   display: flex;
@@ -1284,11 +1282,17 @@ th { font-size: 0.75rem; font-weight: 600; color: var(--text3); letter-spacing: 
   align-items: center;
   gap: 8px;
   padding: 10px 16px;
-  background: rgba(255,255,255,0.04);
-  border: 1px solid var(--border);
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(175, 196, 95, 0.14);
   border-radius: var(--radius);
   font-size: 0.85rem;
   color: var(--text2);
+  transition: all 0.25s ease;
+}
+.cov-tag:hover {
+  background: rgba(175, 196, 95, 0.12);
+  border-color: rgba(175, 196, 95, 0.24);
+  color: var(--text);
 }
 .cov-tag i { color: var(--accent); }
 
@@ -1347,5 +1351,25 @@ th { font-size: 0.75rem; font-weight: 600; color: var(--text3); letter-spacing: 
 
 @media (min-width: 769px) {
   .sidebar-overlay { display: none !important; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .orbs,
+  .orbs::after,
+  .orb,
+  .live-dot {
+    animation: none !important;
+  }
+
+  .hero-card,
+  .card,
+  .stat-card,
+  .quick-btn,
+  .action-btn,
+  .btn,
+  .cov-tag {
+    transition: none !important;
+    transform: none !important;
+  }
 }
 </style>

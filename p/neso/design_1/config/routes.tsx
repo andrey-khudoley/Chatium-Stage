@@ -1,21 +1,29 @@
-// PROJECT_ROOT — путь от корня воркспэйса до проекта (от /)
-export const PROJECT_ROOT = 'p/neso/design'
+// PROJECT_ROOT — путь от корня воркспэйса до проекта (от /), должен совпадать с путём папки
+export const PROJECT_ROOT = 'p/neso/design_1'
 
 // Базовый путь проекта для формирования ссылок (от корня, без домена)
 const BASE_PATH = `/${PROJECT_ROOT}`
 
-// Все маршруты внутри проекта задаются ОТНОСИТЕЛЬНО (через ./)
+// Все маршруты: библиотека компонентов и пример страницы, в тёмной и светлой теме
 export const ROUTES = {
   index: './',
-  designDemo: './web/design-demo',
-  designDemoLight: './web/design-demo-light'
+  /** Библиотека компонентов · тёмная тема */
+  componentsDark: './web/dark/components',
+  /** Библиотека компонентов · светлая тема */
+  componentsLight: './web/light/components',
+  /** Пример страницы (dashboard) · тёмная тема */
+  pageDark: './web/dark',
+  /** Пример страницы (dashboard) · светлая тема */
+  pageLight: './web/light'
 } as const
 
 /** Пути для getFullUrl (абсолютные от корня проекта) */
 export const ROUTE_PATHS = {
   index: '/',
-  designDemo: '/web/design-demo',
-  designDemoLight: '/web/design-demo-light'
+  componentsDark: '/web/dark/components',
+  componentsLight: '/web/light/components',
+  pageDark: '/web/dark',
+  pageLight: '/web/light'
 } as const
 
 /**

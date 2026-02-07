@@ -1,4 +1,5 @@
 // @shared
+// Светлая тема «Солнечная листва»
 import { jsx } from '@app/html-jsx'
 import DesignDemoLightPage from '../../pages/DesignDemoLightPage.vue'
 import { getPreloaderStyles, getPreloaderScript } from '../../shared/preloader'
@@ -6,8 +7,7 @@ import { getLogLevelScript } from '../../shared/logLevel'
 import { getFullUrl, ROUTES } from '../../config/routes'
 import { DEFAULT_PROJECT_TITLE, getPageTitle, getHeaderText } from '../../config/project'
 
-// CSS переменные — CRM Design System Light «Солнечная листва»
-const designDemoTokens = `
+const lightThemeTokens = `
   :root {
     --bg-primary: #f8f6eb;
     --bg-secondary: #f0ede0;
@@ -79,6 +79,7 @@ const lightScrollbarStyles = `
 `
 
 const PROJECT_NAME = DEFAULT_PROJECT_TITLE
+const PAGE_NAME = 'Пример страницы · Солнечная листва (Light)'
 const LOG_LEVEL = 'Info'
 
 export const designDemoLightPageRoute = app.html('/', async (ctx) => {
@@ -89,13 +90,13 @@ export const designDemoLightPageRoute = app.html('/', async (ctx) => {
   return (
     <html>
       <head>
-        <title>{getPageTitle('Design Demo (Light)', PROJECT_NAME)}</title>
+        <title>{getPageTitle(PAGE_NAME, PROJECT_NAME)}</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta charset="UTF-8" />
         <meta name="theme-color" content="#f8f6eb" />
         <script>{getLogLevelScript(LOG_LEVEL)}</script>
         <script src="/s/metric/clarity.js"></script>
-        <style>{designDemoTokens}</style>
+        <style>{lightThemeTokens}</style>
         <style>{pageStyles}</style>
         <style>{lightScrollbarStyles}</style>
         <style>{getPreloaderStyles()}</style>
@@ -113,7 +114,7 @@ export const designDemoLightPageRoute = app.html('/', async (ctx) => {
           </div>
         </div>
         <DesignDemoLightPage
-          projectTitle={getHeaderText('Design Demo (Light)', PROJECT_NAME)}
+          projectTitle={getHeaderText(PAGE_NAME, PROJECT_NAME)}
           logoUrl=""
           indexUrl={indexUrl}
           profileUrl={indexUrl}

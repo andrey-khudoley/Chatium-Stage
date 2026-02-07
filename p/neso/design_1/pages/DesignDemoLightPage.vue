@@ -27,7 +27,6 @@ const sidebarCollapsed = ref(false)
 const sidebarOpen = ref(false)
 const activeSection = ref('dashboard')
 const activeChartTab = ref('week')
-const modalOpen = ref(false)
 
 function closeSidebar() {
   sidebarOpen.value = false
@@ -133,8 +132,8 @@ onMounted(() => {
           <i class="fas fa-bars"></i>
         </button>
         <div class="header-left">
-          <h1 class="page-title">CRM Design System · Light</h1>
-          <p class="page-subtitle">Солнечная листва: воздух, чистота, лёгкая иерархия</p>
+          <h1 class="page-title">{{ projectTitle }}</h1>
+          <p class="page-subtitle">Главная · сводка и последние изменения</p>
         </div>
         <div class="header-actions">
           <button class="action-btn icon"><i class="fas fa-search"></i></button>
@@ -153,44 +152,37 @@ onMounted(() => {
         <section class="hero-section">
           <div class="hero-card">
             <div class="sunray-diagonal"></div>
-            <span class="hero-tag">NEW UI FOUNDATION</span>
-            <h2 class="hero-title">A/Ley Services / Design Demo (Light)</h2>
+            <h2 class="hero-title">Добрый день</h2>
             <p class="hero-desc">
-              Полностью новый визуальный фундамент CRM: адаптивный shell, единые токены,
-              компонентный каталог и стандартизированные состояния для масштабирования интерфейса.
+              За сегодня обработано 12 обращений. 3 требуют ответа в течение часа.
             </p>
             <div class="hero-actions">
-              <a :href="profileUrl" class="btn primary">Открыть профиль →</a>
-              <a :href="loginUrl" class="btn ghost">Открыть auth-flow</a>
-            </div>
-            <div class="hero-visual">
-              <div class="visual-tile"><i class="fas fa-th-large"></i></div>
-              <div class="visual-tile"><i class="fas fa-filter"></i></div>
-              <div class="visual-tile"><i class="fas fa-comment"></i></div>
+              <a :href="profileUrl" class="btn primary">Перейти к обращениям</a>
+              <a :href="loginUrl" class="btn ghost">Выйти</a>
             </div>
           </div>
         </section>
 
         <section class="stats-section">
           <div class="stat-card">
-            <div class="stat-icon"><i class="fas fa-leaf"></i></div>
-            <span class="stat-value">42</span>
-            <span class="stat-label">UI-компонента</span>
+            <div class="stat-icon"><i class="fas fa-inbox"></i></div>
+            <span class="stat-value">12</span>
+            <span class="stat-label">Сегодня</span>
           </div>
           <div class="stat-card">
-            <div class="stat-icon"><i class="fas fa-th-large"></i></div>
-            <span class="stat-value">18</span>
-            <span class="stat-label">Паттернов CRM</span>
+            <div class="stat-icon"><i class="fas fa-spinner"></i></div>
+            <span class="stat-value">5</span>
+            <span class="stat-label">В работе</span>
           </div>
           <div class="stat-card">
-            <div class="stat-icon"><i class="fas fa-circle-half-stroke"></i></div>
-            <span class="stat-value">2</span>
-            <span class="stat-label">Равные темы</span>
+            <div class="stat-icon"><i class="fas fa-bell"></i></div>
+            <span class="stat-value">3</span>
+            <span class="stat-label">Новых</span>
           </div>
           <div class="stat-card">
             <div class="stat-icon"><i class="fas fa-check"></i></div>
-            <span class="stat-value">AA</span>
-            <span class="stat-label">Контраст</span>
+            <span class="stat-value">4</span>
+            <span class="stat-label">Закрыто</span>
           </div>
         </section>
 
@@ -221,7 +213,7 @@ onMounted(() => {
 
           <section class="card chart-card">
             <div class="card-header">
-              <h3 class="card-title">РЕЛИЗНАЯ ДИНАМИКА</h3>
+              <h3 class="card-title">ОБРАЩЕНИЯ ЗА НЕДЕЛЮ</h3>
               <div class="chart-tabs">
                 <button class="tab" :class="{ active: activeChartTab === 'week' }" @click="activeChartTab = 'week'">Неделя</button>
                 <button class="tab" :class="{ active: activeChartTab === 'month' }" @click="activeChartTab = 'month'">Месяц</button>
@@ -239,226 +231,22 @@ onMounted(() => {
           </section>
         </div>
 
-        <section class="showcase">
-          <h2 class="section-title">КНОПКИ И ИНТЕРАКЦИИ</h2>
-          <div class="card showcase-card">
-            <div class="btn-row">
-              <button class="btn primary"><i class="fas fa-paper-plane"></i> Action</button>
-              <button class="btn secondary">Secondary</button>
-              <button class="btn ghost">Ghost</button>
-              <button class="btn outline">Outline</button>
-              <button class="btn" disabled>Disabled</button>
-              <button class="btn loading" disabled><i class="fas fa-spinner fa-spin"></i> Loading</button>
-            </div>
-          </div>
-        </section>
-
-        <section class="showcase">
-          <h2 class="section-title">ФОРМА И ВАЛИДАЦИЯ</h2>
-          <div class="card showcase-card">
-            <div class="form-row">
-              <label class="field">
-                <span class="field-label">ИМЯ КЛИЕНТА</span>
-                <div class="input-wrap">
-                  <i class="fas fa-user"></i>
-                  <input type="text" placeholder="Имя клиента" />
-                </div>
-              </label>
-              <label class="field error">
-                <span class="field-label">EMAIL</span>
-                <div class="input-wrap">
-                  <input type="email" placeholder="email@example.com" />
-                  <i class="fas fa-copy"></i>
-                </div>
-                <span class="field-error">Нужен валидный адрес для уведомлений SLA</span>
-              </label>
-              <label class="field">
-                <span class="field-label">КОММЕНТАРИЙ</span>
-                <textarea placeholder="Комментарий оператора" rows="3"></textarea>
-                <span class="field-hint">Поддерживаются markdown-ссылки и теги.</span>
-              </label>
-            </div>
-          </div>
-        </section>
-
-        <section class="showcase">
-          <h2 class="section-title">ФИЛЬТРАЦИЯ И ПОИСК</h2>
-          <div class="card showcase-card">
-            <div class="search-wrap">
-              <i class="fas fa-search"></i>
-              <input type="search" placeholder="Поиск по клиенту, тегу, ID обращения" />
-            </div>
-            <div class="filter-tabs">
-              <button class="filter-tab active">Все</button>
-              <button class="filter-tab">Непрочитанные</button>
-              <button class="filter-tab">Открытые</button>
-              <button class="filter-tab">Мои</button>
-            </div>
-            <div class="filter-tags">
-              <span class="tag active"><span class="tag-dot"></span> В работе</span>
-              <span class="tag">Приоритет</span>
-              <span class="tag">Архив</span>
-            </div>
-          </div>
-        </section>
-
-        <section class="showcase">
-          <h2 class="section-title">УВЕДОМЛЕНИЯ</h2>
-          <div class="card showcase-card">
-            <div class="notify-list">
-              <div class="notify success">
-                <i class="fas fa-check"></i>
-                <div>
-                  <span class="notify-title">Настройки сохранены</span>
-                  <span class="notify-sub">только что</span>
-                </div>
-                <button class="btn ghost small">Открыть</button>
-              </div>
-              <div class="notify warning">
-                <i class="fas fa-triangle-exclamation"></i>
-                <div>
-                  <span class="notify-title">SLA для Telegram не задан</span>
-                  <span class="notify-sub">нужна настройка</span>
-                </div>
-                <button class="btn ghost small">Исправить</button>
-              </div>
-              <div class="notify info">
-                <i class="fas fa-circle-info"></i>
-                <div>
-                  <span class="notify-title">Доступна версия UI Kit v3.0</span>
-                  <span class="notify-sub">обновление дизайна</span>
-                </div>
-                <button class="btn ghost small">Обновить</button>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section class="showcase">
-          <h2 class="section-title">СПИСОК И ТАБЛИЦА</h2>
-          <div class="card showcase-card two-col">
-            <div class="list-panel">
-              <div class="list-item">
-                <span class="list-tag new">NEW</span>
-                <div class="list-body">
-                  <span class="list-title">Клиент 001 · #inq-2045</span>
-                  <span class="list-desc">Нужно уточнить сроки запуска первой рассылки</span>
-                </div>
-                <span class="list-time">10:02</span>
-              </div>
-              <div class="list-item">
-                <span class="list-tag">WAIT</span>
-                <div class="list-body">
-                  <span class="list-title">Клиент 002 · #inq-2037</span>
-                  <span class="list-desc">Вернусь с решением сегодня вечером</span>
-                </div>
-                <span class="list-time">09:40</span>
-              </div>
-            </div>
-            <div class="table-panel">
-              <table>
-                <thead>
-                  <tr><th>КЛИЕНТ</th><th>КАНАЛ</th><th>СТАТУС</th><th>SLA</th></tr>
-                </thead>
-                <tbody>
-                  <tr v-for="(row, i) in tableRows" :key="i">
-                    <td>{{ row.client }}</td>
-                    <td>{{ row.channel }}</td>
-                    <td><span class="badge-status" :class="row.status === 'Закрыт' ? 'muted' : ''">{{ row.status }}</span></td>
-                    <td>{{ row.sla }}</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </section>
-
-        <section class="showcase">
-          <h2 class="section-title">СОСТОЯНИЯ И МОДАЛЬНЫЕ СЦЕНАРИИ</h2>
-          <div class="card showcase-card states-grid">
-            <div class="state-card">
-              <span class="state-label">LOADING</span>
-              <div class="state-content loading">
-                <i class="fas fa-spinner fa-spin"></i>
-                <span>Загружаем данные таблицы...</span>
-              </div>
-            </div>
-            <div class="state-card">
-              <span class="state-label">SKELETON</span>
-              <div class="state-content skeleton">
-                <div class="sk-line"></div>
-                <div class="sk-line short"></div>
-                <div class="sk-line mid"></div>
-              </div>
-            </div>
-            <div class="state-card">
-              <span class="state-label">ERROR</span>
-              <div class="state-content error">
-                <span>Ошибка сети: не удалось обновить логи</span>
-                <button class="btn ghost small">Повторить</button>
-              </div>
-            </div>
-            <div class="state-card">
-              <span class="state-label">EMPTY</span>
-              <div class="state-content empty">
-                <span>Нет обращений по текущему фильтру.</span>
-                <button class="btn ghost small">Сбросить фильтр</button>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <Teleport to="body">
-          <div v-if="modalOpen" class="modal-overlay" @click.self="modalOpen = false">
-            <div class="modal">
-              <div class="modal-header">
-                <h3>Создать новое обращение</h3>
-                <button class="modal-close" @click="modalOpen = false" aria-label="Закрыть">
-                  <i class="fas fa-times"></i>
-                </button>
-              </div>
-              <div class="modal-body">
-                <div class="input-wrap"><i class="fas fa-user"></i><input placeholder="Имя клиента" /></div>
-                <div class="input-wrap"><i class="fas fa-phone"></i><input placeholder="Телефон" /></div>
-                <div class="input-wrap select"><i class="fas fa-telegram"></i><select><option>Telegram</option></select><i class="fas fa-chevron-down"></i></div>
-              </div>
-              <div class="modal-footer">
-                <button class="btn ghost" @click="modalOpen = false">Отмена</button>
-                <button class="btn primary">Создать</button>
-              </div>
-            </div>
-          </div>
-        </Teleport>
-
-        <section class="showcase">
-          <button class="btn primary" @click="modalOpen = true">
-            <i class="fas fa-plus"></i> Открыть модальное окно
-          </button>
-        </section>
-
-        <section class="showcase">
-          <h2 class="section-title">ПОКРЫТИЕ ДИЗАЙН-СИСТЕМЫ</h2>
-          <div class="coverage-tags">
-            <span class="cov-tag"><i class="fas fa-bars"></i> Навигация и shell</span>
-            <span class="cov-tag"><i class="fas fa-filter"></i> Фильтры и поиск</span>
-            <span class="cov-tag"><i class="fas fa-list"></i> Списки и карточки</span>
-            <span class="cov-tag"><i class="fas fa-table"></i> Таблицы и статусы</span>
-            <span class="cov-tag"><i class="fas fa-check"></i> Формы и валидация</span>
-            <span class="cov-tag"><i class="fas fa-bell"></i> Уведомления</span>
-            <span class="cov-tag"><i class="fas fa-window-maximize"></i> Модальные сценарии</span>
-            <span class="cov-tag"><i class="fas fa-spinner"></i> Loading / Empty / Error</span>
-          </div>
-        </section>
-
-        <section class="showcase">
-          <h2 class="section-title">ПАЛИТРА ТЕМЫ</h2>
-          <div class="palette-grid">
-            <div class="palette-item"><div class="swatch" style="background:#f8f6eb"></div><span>BACKGROUND</span><code>#f8f6eb</code></div>
-            <div class="palette-item"><div class="swatch" style="background:#ffffff;border:1px solid #e8e6df"></div><span>SURFACE</span><code>#ffffff</code></div>
-            <div class="palette-item"><div class="swatch" style="background:#4f6f2f"></div><span>ACCENT</span><code>#4f6f2f</code></div>
-            <div class="palette-item"><div class="swatch" style="background:#7a8f3f"></div><span>ACCENT WARM</span><code>#7a8f3f</code></div>
-            <div class="palette-item"><div class="swatch" style="background:#243523"></div><span>TEXT</span><code>#243523</code></div>
-            <div class="palette-item"><div class="swatch" style="background:#fff3ca"></div><span>SUNRAY</span><code>#fff3ca</code></div>
+        <section class="page-block">
+          <h3 class="card-title">ПОСЛЕДНИЕ ОБРАЩЕНИЯ</h3>
+          <div class="card">
+            <table class="page-table">
+              <thead>
+                <tr><th>Клиент</th><th>Канал</th><th>Статус</th><th>SLA</th></tr>
+              </thead>
+              <tbody>
+                <tr v-for="(row, i) in tableRows" :key="i">
+                  <td>{{ row.client }}</td>
+                  <td>{{ row.channel }}</td>
+                  <td><span class="badge-status" :class="row.status === 'Закрыт' ? 'muted' : ''">{{ row.status }}</span></td>
+                  <td>{{ row.sla }}</td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </section>
       </div>
@@ -523,66 +311,119 @@ onMounted(() => {
   backdrop-filter: blur(2px);
 }
 
-/* Летающие солнечные лучи — орбы */
+/* Солнечная дымка + микро-пылинки (без пиксельных орбов) */
 .orbs {
   position: fixed;
   inset: 0;
   z-index: 2;
   pointer-events: none;
   overflow: hidden;
+  background:
+    radial-gradient(66% 52% at 12% 90%, rgba(255, 243, 202, 0.34), transparent 74%),
+    radial-gradient(58% 48% at 90% 12%, rgba(255, 243, 202, 0.28), transparent 76%),
+    radial-gradient(42% 34% at 56% 48%, rgba(122, 143, 63, 0.08), transparent 78%);
+  animation: light-ambient-shift 42s ease-in-out infinite alternate;
+}
+
+.orbs::before,
+.orbs::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.orbs::before {
+  background-image: radial-gradient(rgba(122, 143, 63, 0.38) 0.6px, transparent 0.8px);
+  background-size: 4px 4px;
+  opacity: 0.028;
+  mix-blend-mode: soft-light;
+}
+
+.orbs::after {
+  inset: -12%;
+  background:
+    radial-gradient(50% 38% at 18% 14%, rgba(255, 243, 202, 0.24), transparent 74%),
+    radial-gradient(44% 34% at 84% 86%, rgba(122, 143, 63, 0.1), transparent 76%);
+  opacity: 0.2;
+  mix-blend-mode: soft-light;
+  animation: light-ambient-breathe 52s ease-in-out infinite alternate;
 }
 
 .orb {
   position: absolute;
+  width: 5px;
+  height: 5px;
   border-radius: 50%;
-  background: radial-gradient(
-    circle at 35% 35%,
-    rgba(255, 243, 202, 0.5),
-    rgba(255, 248, 230, 0.2) 40%,
-    transparent 70%
-  );
-  animation: orb-float 24s ease-in-out infinite;
-  filter: blur(50px);
+  background: #fff3ca;
+  mix-blend-mode: soft-light;
+  opacity: 0.44;
+  box-shadow:
+    0 0 0 1px rgba(255, 243, 202, 0.22),
+    0 0 12px rgba(255, 243, 202, 0.4),
+    0 0 28px rgba(122, 143, 63, 0.16);
+  animation:
+    light-mote-drift 18s ease-in-out infinite,
+    light-mote-pulse 5.2s ease-in-out infinite;
 }
 
 .orb-1 {
-  width: 420px;
-  height: 420px;
-  top: -8%;
-  right: 8%;
-  animation-delay: 0s;
+  top: 20%;
+  right: 20%;
+  animation-delay: 0s, -0.8s;
 }
 
 .orb-2 {
-  width: 320px;
-  height: 320px;
-  bottom: 12%;
-  left: 4%;
-  opacity: 0.7;
-  animation-delay: -8s;
+  width: 4px;
+  height: 4px;
+  bottom: 30%;
+  left: 16%;
+  opacity: 0.36;
+  animation-delay: -6s, -2.4s;
 }
 
 .orb-3 {
-  width: 260px;
-  height: 260px;
-  top: 42%;
+  width: 3px;
+  height: 3px;
+  top: 60%;
   left: 38%;
-  opacity: 0.5;
-  animation-delay: -16s;
+  opacity: 0.3;
+  animation-delay: -10s, -3.6s;
 }
 
-@keyframes orb-float {
+@keyframes light-ambient-shift {
+  0% {
+    transform: translate3d(-0.7%, -0.6%, 0);
+  }
+  100% {
+    transform: translate3d(0.7%, 0.6%, 0);
+  }
+}
+
+@keyframes light-ambient-breathe {
+  0% {
+    transform: translate3d(-1.1%, -0.7%, 0) scale(1);
+  }
+  100% {
+    transform: translate3d(1%, 0.8%, 0) scale(1.04);
+  }
+}
+
+@keyframes light-mote-drift {
   0%, 100% {
-    transform: translate(0, 0);
-    opacity: 0.6;
+    transform: translate3d(0, 0, 0);
   }
-  33% {
-    transform: translate(28px, -22px);
-    opacity: 1;
+  50% {
+    transform: translate3d(14px, -11px, 0);
   }
-  66% {
-    transform: translate(-22px, 28px);
-    opacity: 0.6;
+}
+
+@keyframes light-mote-pulse {
+  0%, 100% {
+    opacity: 0.24;
+  }
+  50% {
+    opacity: 0.56;
   }
 }
 
@@ -950,6 +791,11 @@ onMounted(() => {
 .changelog-time { font-size: 0.8rem; color: var(--text3); }
 
 .chart-card { grid-column: span 2; }
+.page-block { margin-bottom: 32px; }
+.page-block .card-title { margin: 0 0 16px 0; display: block; }
+.page-table { width: 100%; border-collapse: collapse; }
+.page-table th, .page-table td { padding: 12px 16px; text-align: left; border-bottom: 1px solid var(--border); }
+.page-table th { font-size: 0.75rem; font-weight: 600; color: var(--text3); letter-spacing: 0.05em; }
 .chart-tabs { display: flex; gap: 4px; }
 .tab {
   padding: 6px 12px;
@@ -1338,5 +1184,25 @@ th { font-size: 0.75rem; font-weight: 600; color: var(--text3); letter-spacing: 
 
 @media (min-width: 769px) {
   .sidebar-overlay { display: none !important; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .orbs,
+  .orbs::after,
+  .orb,
+  .live-dot {
+    animation: none !important;
+  }
+
+  .hero-card,
+  .card,
+  .stat-card,
+  .quick-btn,
+  .action-btn,
+  .btn,
+  .cov-tag {
+    transition: none !important;
+    transform: none !important;
+  }
 }
 </style>

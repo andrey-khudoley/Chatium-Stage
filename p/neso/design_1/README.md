@@ -1,20 +1,22 @@
-# p/neso/crm — демо дизайна
+# p/neso/design_1 — демо дизайна
 
 Проект содержит только демо-страницы дизайна (тёмная и светлая тема) для предпросмотра UI.
 
-## Маршруты
+## Маршруты (относительно `/p/neso/design_1`)
 
-- **/** — лендинг со ссылками на демо
-- **/web/design-demo** — демо тёмной темы
-- **/web/design-demo-light** — демо светлой темы
+- **/** — лендинг с выбором: библиотека компонентов и пример страницы (по 2 карточки на тему)
+- **/web/dark/components** — библиотека компонентов · тёмная тема «Ночной лес»
+- **/web/light/components** — библиотека компонентов · светлая тема «Солнечная листва»
+- **/web/dark** — пример страницы (dashboard) · тёмная тема
+- **/web/light** — пример страницы (dashboard) · светлая тема
 
 ## Структура
 
-- `config/` — маршруты и название проекта
-- `pages/` — Vue-страницы: `DesignDemoPage.vue`, `DesignDemoLightPage.vue`
+- `config/` — маршруты (`routes.tsx`, PROJECT_ROOT `p/neso/design_1`): `componentsDark`, `componentsLight`, `pageDark`, `pageLight`
+- `pages/` — Vue: `DesignComponentsDarkPage.vue`, `DesignComponentsLightPage.vue` (библиотека), `DesignDemoDarkPage.vue`, `DesignDemoLightPage.vue` (пример страницы)
 - `shared/` — прелоадер, уровень логов (клиент), логгер для компонентов
-- `web/design-demo/`, `web/design-demo-light/` — точки входа для демо-страниц
-- `docs/design.md`, `docs/design_v01.md` — описание дизайна
+- `web/dark/`, `web/light/` — точки входа примера страницы; `web/dark/components/`, `web/light/components/` — точки входа библиотеки компонентов
+- `DESIGN_SPEC.md`, `design_v01.md` — описание дизайна
 
 ## Стек
 
