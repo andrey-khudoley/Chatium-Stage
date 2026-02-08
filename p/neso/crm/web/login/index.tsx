@@ -1,13 +1,11 @@
 // @shared
 import { jsx } from '@app/html-jsx'
 import LoginPage from '../../pages/LoginPage.vue'
+import { baseHtmlStyles, customScrollbarStyles } from '../../styles'
 import { PROJECT_ROOT } from '../../config/routes'
-import { DEFAULT_PROJECT_TITLE } from '../../config/project'
-import { getDemoPageHead, getBootLoaderDiv } from '../../shared/demoPageShell'
 import * as loggerLib from '../../lib/logger.lib'
 
 const LOG_PATH = 'web/login/index'
-const THEME = 'dark' as const
 
 export const loginPageRoute = app.html('/', async (ctx, req) => {
   await loggerLib.writeServerLog(ctx, {
@@ -29,9 +27,15 @@ export const loginPageRoute = app.html('/', async (ctx, req) => {
 
   return (
     <html>
-      <head>{getDemoPageHead(THEME, 'Вход', DEFAULT_PROJECT_TITLE)}</head>
+      <head>
+        <title>Вход</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta charset="UTF-8" />
+        <script src="/s/metric/clarity.js"></script>
+        <style>{baseHtmlStyles}</style>
+        <style>{customScrollbarStyles}</style>
+      </head>
       <body>
-        {getBootLoaderDiv(THEME, DEFAULT_PROJECT_TITLE)}
         <LoginPage back={back} />
       </body>
     </html>

@@ -10,8 +10,7 @@ export const ROUTES = {
   admin: './web/admin',
   profile: './web/profile',
   login: './web/login',
-  tests: './web/tests',
-  inquiries: './web/inquiries'
+  tests: './web/tests'
 } as const
 
 /** Пути для getFullUrl (абсолютные от корня проекта) */
@@ -20,8 +19,7 @@ export const ROUTE_PATHS = {
   admin: '/web/admin',
   profile: '/web/profile',
   login: '/web/login',
-  tests: '/web/tests',
-  inquiries: '/web/inquiries'
+  tests: '/web/tests'
 } as const
 
 /**

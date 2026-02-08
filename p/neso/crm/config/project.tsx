@@ -1,12 +1,11 @@
 /** Название проекта по умолчанию (если в настройках не задано) */
-export const DEFAULT_PROJECT_TITLE = 'NeSo CRM'
+export const DEFAULT_PROJECT_TITLE = 'Neso CRM'
 
 /** Имя страницы: для главной и профиля */
 export const INDEX_PAGE_NAME = 'Главная'
 export const PROFILE_PAGE_NAME = 'Профиль'
 export const ADMIN_PAGE_NAME = 'Админка'
 export const TESTS_PAGE_NAME = 'Тесты'
-export const INQUIRIES_PAGE_NAME = 'Библиотека компонентов'
 
 /** Текст для <title>: "Название страницы - Название из настроек" */
 export function getPageTitle(pageName: string, projectName: string): string {
@@ -19,7 +18,7 @@ export function getHeaderText(pageName: string, projectName: string): string {
 }
 
 /** Текст контента домашней страницы (заголовок) */
-export const BODY_TEXT = 'NeSo CRM'
+export const BODY_TEXT = 'Neso CRM'
 
 /** Подзаголовок домашней страницы */
-export const BODY_SUBTEXT = 'Заготовка в новом дизайне'
+export const BODY_SUBTEXT = 'В разработке'

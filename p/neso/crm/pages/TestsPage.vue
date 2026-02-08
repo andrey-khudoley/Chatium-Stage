@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { onMounted, onBeforeUnmount, onUnmounted, ref, computed } from 'vue'
 import { getOrCreateBrowserSocketClient } from '@app/socket'
-import { DcDemoSidebar, DcPageHeader } from '../components'
-import { DcAppShell, DcMain } from '../layout'
-import type { NavItem } from '../components'
+import Header from '../components/Header.vue'
+import GlobalGlitch from '../components/GlobalGlitch.vue'
+import AppFooter from '../components/AppFooter.vue'
 import { createComponentLogger, setLogSink, type LogEntry } from '../shared/logger'
 import { getRecentLogsRoute } from '../api/admin/logs/recent'
 import { getLogsBeforeRoute } from '../api/admin/logs/before'
@@ -15,6 +15,7 @@ declare const ctx: app.Ctx
 declare global {
   interface Window {
     hideAppLoader?: () => void
+    triggerGlobalGlitch?: () => void
     bootLoaderComplete?: boolean
   }
 }
@@ -24,50 +25,12 @@ const props = defineProps<{
   indexUrl: string
   profileUrl: string
   testsUrl: string
-  inquiriesUrl?: string
   loginUrl: string
   isAuthenticated: boolean
   isAdmin?: boolean
   adminUrl?: string
   encodedLogsSocketId?: string
 }>()
-
-const theme = 'dark' as const
-const sidebarCollapsed = ref(false)
-const sidebarOpen = ref(false)
-const activeSection = ref('tests')
-
-const navIdToUrl = computed<Record<string, string>>(() => ({
-  dashboard: props.indexUrl,
-  inquiries: props.inquiriesUrl ?? '',
-  profile: props.profileUrl,
-  admin: props.adminUrl ?? '',
-  tests: props.testsUrl ?? '',
-  login: props.loginUrl
-}))
-
-const menuItems = computed<NavItem[]>(() => {
-  const items: NavItem[] = [
-    { id: 'dashboard', icon: 'fa-house', label: 'Главная' },
-    { id: 'inquiries', icon: 'fa-layer-group', label: 'Компоненты' },
-    { id: 'profile', icon: 'fa-user', label: 'Профиль' },
-    { id: 'admin', icon: 'fa-gear', label: 'Админка' },
-    { id: 'tests', icon: 'fa-flask', label: 'Тесты' },
-    { id: 'login', icon: 'fa-right-to-bracket', label: 'Логин' }
-  ]
-  return items.filter((item) => navIdToUrl.value[item.id])
-})
-
-function closeSidebar() {
-  sidebarOpen.value = false
-}
-function toggleSidebarMobile() {
-  sidebarOpen.value = !sidebarOpen.value
-}
-function onSidebarSelect(id: string) {
-  const url = navIdToUrl.value[id]
-  if (url) window.location.href = url
-}
 
 const showContent = ref(false)
 const bootLoaderDone = ref(false)
@@ -317,6 +280,11 @@ onUnmounted(() => {
   if (intervalIds.title) clearInterval(intervalIds.title)
   if (intervalIds.desc) clearInterval(intervalIds.desc)
 })
+
+const openChatiumLink = () => {
+  log.notice('Opening Chatium link')
+  window.open('https://chatium.ru/?start=pl-LGBT1Oge7c61RkKTU4t0start', '_blank')
+}
 
 /* Дашборд тестов */
 const testMetrics = ref({
@@ -654,473 +622,521 @@ const runAllTests = async () => {
 </script>
 
 <template>
-  <DcAppShell
-    :theme="theme"
-    :ready="bootLoaderDone"
-    :sidebar-collapsed="sidebarCollapsed"
-    :sidebar-open="sidebarOpen"
-    @close-sidebar="closeSidebar"
-  >
-    <template #sidebar>
-      <DcDemoSidebar
-        :theme="theme"
-        logo-text="NeSo CRM"
-        user-name="Пользователь"
-        :user-role="props.isAdmin ? 'Admin' : 'User'"
-        :logout-url="loginUrl"
-        :items="menuItems"
-        :collapsed="sidebarCollapsed"
-        :mobile-open="sidebarOpen"
-        :active-id="activeSection"
-        @close="closeSidebar"
-        @select="onSidebarSelect"
-        @toggle-collapse="sidebarCollapsed = !sidebarCollapsed"
-      />
-    </template>
-    <template #header>
-      <DcPageHeader
-        :theme="theme"
-        :title="projectTitle"
-        :breadcrumbs="['Главная', 'Тесты']"
-        :show-menu-toggle="true"
-        @menu-toggle="toggleSidebarMobile"
-      />
-    </template>
+  <div class="app-layout bg-[var(--color-bg)] text-[var(--color-text)] flex flex-col">
+    <GlobalGlitch />
+    <Header
+      v-if="bootLoaderDone"
+      :projectTitle="props.projectTitle"
+      :indexUrl="props.indexUrl"
+      :profileUrl="props.profileUrl"
+      :loginUrl="props.loginUrl"
+      :isAuthenticated="props.isAuthenticated"
+      :isAdmin="props.isAdmin"
+      :adminUrl="props.adminUrl"
+      :testsUrl="props.testsUrl"
+    />
 
-    <DcMain>
     <main class="content-wrapper flex-1 relative z-10 min-h-0 overflow-y-auto">
-          <div class="content-inner">
-            <section class="tests-section" :class="{ 'content-visible': showContent }">
-              <div class="tests-header">
-                <div class="tests-icon-wrapper">
-                  <i class="fas fa-flask tests-icon"></i>
-                </div>
-                <h1 class="tests-heading" :class="{ 'show-underline': showTitleUnderline }">
-                  {{ displayedTitle }}<span v-if="showCursor && (cursorPosition === 'title' || cursorPosition === 'final')" class="typing-cursor">▮</span>
-                </h1>
-                <p class="tests-description">
-                  {{ displayedDescription }}<span v-if="showCursor && cursorPosition === 'description'" class="typing-cursor">▮</span>
-                </p>
-              </div>
-
-              <!-- Логи (тот же сокет, что в админке; только для админа) -->
-              <div v-if="showContent && props.encodedLogsSocketId" class="tests-logs-card">
-                <div class="tests-logs-card-header">
-                  <i class="fas fa-terminal tests-logs-card-icon"></i>
-                  <h2 class="tests-logs-card-title">Логи</h2>
-                </div>
-                <div class="tests-logs-filters">
-                  <button
-                    type="button"
-                    class="tests-log-filter-chip chip-info"
-                    :class="{ active: logFilters.info }"
-                    @click="toggleLogFilter('info')"
-                  >
-                    <i class="fas fa-info-circle"></i>
-                    Info
-                  </button>
-                  <button
-                    type="button"
-                    class="tests-log-filter-chip chip-warn"
-                    :class="{ active: logFilters.warn }"
-                    @click="toggleLogFilter('warn')"
-                  >
-                    <i class="fas fa-exclamation-triangle"></i>
-                    Warn
-                  </button>
-                  <button
-                    type="button"
-                    class="tests-log-filter-chip chip-error"
-                    :class="{ active: logFilters.error }"
-                    @click="toggleLogFilter('error')"
-                  >
-                    <i class="fas fa-exclamation-circle"></i>
-                    Error
-                  </button>
-                </div>
-                <div class="tests-logs-output custom-scrollbar" ref="logsOutputRef">
-                  <div v-if="displayedLogs.length === 0" class="tests-logs-empty">
-                    Логи появятся здесь...
-                  </div>
-                  <div v-for="(item, index) in displayedLogs" :key="index" class="tests-log-item">
-                    <div v-if="item.type === 'divider'" class="tests-log-date-divider">
-                      --- {{ item.date }} ---
-                    </div>
-                    <div v-else class="tests-log-entry">
-                      <span class="tests-log-time">{{ item.formattedTime }}</span>
-                      <span class="tests-log-level" :class="`tests-log-level-${item.entry.level}`">
-                        [{{ item.entry.level.toUpperCase() }}]
-                      </span>
-                      <span class="tests-log-message">{{ item.formattedMessage }}</span>
-                    </div>
-                  </div>
-                </div>
-                <div class="tests-logs-actions">
-                  <div v-if="logsLoading" class="tests-logs-loading">
-                    <i class="fas fa-spinner fa-spin"></i>
-                    Загрузка логов...
-                  </div>
-                  <p v-if="logsError" class="tests-logs-error">{{ logsError }}</p>
-                  <div class="tests-logs-action-row">
-                    <button
-                      v-if="!logsLoading"
-                      type="button"
-                      class="tests-load-more-btn"
-                      :class="{ 'tests-load-more-btn-disabled': !logsHasMore }"
-                      :disabled="!logsHasMore"
-                      :title="logsHasMore ? 'Загрузить более старые логи' : 'Нет более старых логов'"
-                      @click="loadMoreLogs"
-                    >
-                      <i class="fas fa-arrow-down"></i>
-                      Загрузить ещё 50
-                    </button>
-                    <button
-                      type="button"
-                      class="tests-logs-clear-btn"
-                      title="Очистить логи"
-                      @click="clearLogs"
-                    >
-                      <i class="fas fa-trash-alt"></i>
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Дашборд с метриками по тестам -->
-              <div v-if="showContent" class="tests-card tests-dashboard">
-                <div class="tests-dashboard-header">
-                  <i class="fas fa-chart-line tests-dashboard-icon"></i>
-                  <h2 class="tests-dashboard-title">Метрики тестов</h2>
-                </div>
-                <div class="tests-dashboard-metrics">
-                  <div class="tests-metric tests-metric-total">
-                    <span class="tests-metric-value">{{ testMetrics.total }}</span>
-                    <span class="tests-metric-label">всего</span>
-                  </div>
-                  <div class="tests-metric tests-metric-passed">
-                    <span class="tests-metric-value">{{ testMetrics.passed }}</span>
-                    <span class="tests-metric-label">пройдено</span>
-                  </div>
-                  <div class="tests-metric tests-metric-failed">
-                    <span class="tests-metric-value">{{ testMetrics.failed }}</span>
-                    <span class="tests-metric-label">провалено</span>
-                  </div>
-                  <div class="tests-metric tests-metric-skipped">
-                    <span class="tests-metric-value">{{ testMetrics.skipped }}</span>
-                    <span class="tests-metric-label">пропущено</span>
-                  </div>
-                </div>
-                <p v-if="testMetrics.lastRunAt" class="tests-dashboard-last-run">
-                  Последний запуск: {{ testMetrics.lastRunAt }}
-                </p>
-                <div class="tests-dashboard-actions">
-                  <button
-                    type="button"
-                    class="tests-run-all-btn"
-                    :disabled="runAllTestsLoading"
-                    @click="runAllTests"
-                  >
-                    <i class="fas" :class="runAllTestsLoading ? 'fa-spinner fa-spin' : 'fa-play'"></i>
-                    {{ runAllTestsLoading ? 'Запуск...' : 'Запустить все тесты' }}
-                  </button>
-                </div>
-              </div>
-
-              <!-- Блок 1: Проверка эндпоинтов -->
-              <div v-if="showContent" class="tests-card tests-endpoints-card">
-                <div class="tests-endpoints-header">
-                  <i class="fas fa-plug tests-endpoints-icon"></i>
-                  <h2 class="tests-endpoints-title">Проверка эндпоинтов</h2>
-                </div>
-                <p class="tests-endpoints-desc">
-                  Проверка доступности маршрутов приложения (HTTP 200).
-                </p>
-                <div v-if="endpointsLastRunAt" class="tests-endpoints-last-run">
-                  Результаты от: {{ endpointsLastRunAt }}
-                </div>
-                <div class="tests-endpoints-list-wrap">
-                  <ul class="tests-endpoints-list" role="list">
-                    <li
-                      v-for="item in endpointsDisplay"
-                    :key="item.id"
-                    class="tests-endpoints-list-item"
-                    :class="`tests-endpoints-status-${item.status}`"
-                  >
-                    <span class="tests-endpoints-badge" :class="`tests-endpoints-badge-${item.status}`">
-                      {{ item.status === 'todo' ? '[TODO]' : item.status === 'success' ? '[OK]' : '[FAIL]' }}
-                    </span>
-                    <span class="tests-endpoints-list-title-inline">{{ item.title }}</span>
-                    <span v-if="item.error" class="tests-endpoints-list-error">{{ item.error }}</span>
-                  </li>
-                  </ul>
-                </div>
-                <div class="tests-endpoints-actions">
-                  <button
-                    type="button"
-                    class="tests-run-group-btn"
-                    :disabled="endpointsLoading"
-                    @click="runEndpointsTests"
-                  >
-                    <i class="fas" :class="endpointsLoading ? 'fa-spinner fa-spin' : 'fa-bolt'"></i>
-                    {{ endpointsLoading ? 'Проверяем...' : 'Запустить проверку эндпоинтов' }}
-                  </button>
-                </div>
-              </div>
-
-              <!-- Блок 2: Библиотека настроек -->
-              <div v-if="showContent" class="tests-card tests-endpoints-card">
-                <div class="tests-endpoints-header">
-                  <i class="fas fa-cog tests-endpoints-icon"></i>
-                  <h2 class="tests-endpoints-title">Библиотека настроек</h2>
-                </div>
-                <p class="tests-endpoints-desc">
-                  Тесты библиотеки настроек (settings.lib).
-                </p>
-                <div v-if="settingsLastRunAt" class="tests-endpoints-last-run">
-                  Результаты от: {{ settingsLastRunAt }}
-                </div>
-                <div class="tests-endpoints-list-wrap">
-                  <ul class="tests-endpoints-list" role="list">
-                    <li
-                      v-for="item in settingsDisplay"
-                      :key="item.id"
-                      class="tests-endpoints-list-item"
-                      :class="`tests-endpoints-status-${item.status}`"
-                    >
-                      <span class="tests-endpoints-badge" :class="`tests-endpoints-badge-${item.status}`">
-                        {{ item.status === 'todo' ? '[TODO]' : item.status === 'success' ? '[OK]' : '[FAIL]' }}
-                      </span>
-                      <span class="tests-endpoints-list-title-inline">{{ item.title }}</span>
-                      <span v-if="item.error" class="tests-endpoints-list-error">{{ item.error }}</span>
-                    </li>
-                  </ul>
-                </div>
-                <div class="tests-endpoints-actions">
-                  <button
-                    type="button"
-                    class="tests-run-group-btn"
-                    :disabled="settingsLoading"
-                    @click="runSettingsTests"
-                  >
-                    <i class="fas" :class="settingsLoading ? 'fa-spinner fa-spin' : 'fa-bolt'"></i>
-                    {{ settingsLoading ? 'Проверяем...' : 'Запустить проверку библиотеки настроек' }}
-                  </button>
-                </div>
-              </div>
-
-              <!-- Блок 3: Репозиторий настроек -->
-              <div v-if="showContent" class="tests-card tests-endpoints-card">
-                <div class="tests-endpoints-header">
-                  <i class="fas fa-table tests-endpoints-icon"></i>
-                  <h2 class="tests-endpoints-title">Репозиторий настроек</h2>
-                </div>
-                <p class="tests-endpoints-desc">
-                  Тесты репозитория настроек (settings.repo).
-                </p>
-                <div v-if="settingsRepoLastRunAt" class="tests-endpoints-last-run">
-                  Результаты от: {{ settingsRepoLastRunAt }}
-                </div>
-                <div class="tests-endpoints-list-wrap">
-                  <ul class="tests-endpoints-list" role="list">
-                    <li
-                      v-for="item in settingsRepoDisplay"
-                      :key="item.id"
-                      class="tests-endpoints-list-item"
-                      :class="`tests-endpoints-status-${item.status}`"
-                    >
-                      <span class="tests-endpoints-badge" :class="`tests-endpoints-badge-${item.status}`">
-                        {{ item.status === 'todo' ? '[TODO]' : item.status === 'success' ? '[OK]' : '[FAIL]' }}
-                      </span>
-                      <span class="tests-endpoints-list-title-inline">{{ item.title }}</span>
-                      <span v-if="item.error" class="tests-endpoints-list-error">{{ item.error }}</span>
-                    </li>
-                  </ul>
-                </div>
-                <div class="tests-endpoints-actions">
-                  <button
-                    type="button"
-                    class="tests-run-group-btn"
-                    :disabled="settingsRepoLoading"
-                    @click="runSettingsRepoTests"
-                  >
-                    <i class="fas" :class="settingsRepoLoading ? 'fa-spinner fa-spin' : 'fa-bolt'"></i>
-                    {{ settingsRepoLoading ? 'Проверяем...' : 'Запустить проверку репозитория настроек' }}
-                  </button>
-                </div>
-              </div>
-
-              <!-- Блок 4: Библиотека логов -->
-              <div v-if="showContent" class="tests-card tests-endpoints-card">
-                <div class="tests-endpoints-header">
-                  <i class="fas fa-file-alt tests-endpoints-icon"></i>
-                  <h2 class="tests-endpoints-title">Библиотека логов</h2>
-                </div>
-                <p class="tests-endpoints-desc">
-                  Тесты библиотеки логов (logger.lib).
-                </p>
-                <div v-if="loggerLibLastRunAt" class="tests-endpoints-last-run">
-                  Результаты от: {{ loggerLibLastRunAt }}
-                </div>
-                <div class="tests-endpoints-list-wrap">
-                  <ul class="tests-endpoints-list" role="list">
-                    <li
-                      v-for="item in loggerLibDisplay"
-                      :key="item.id"
-                      class="tests-endpoints-list-item"
-                      :class="`tests-endpoints-status-${item.status}`"
-                    >
-                      <span class="tests-endpoints-badge" :class="`tests-endpoints-badge-${item.status}`">
-                        {{ item.status === 'todo' ? '[TODO]' : item.status === 'success' ? '[OK]' : '[FAIL]' }}
-                      </span>
-                      <span class="tests-endpoints-list-title-inline">{{ item.title }}</span>
-                      <span v-if="item.error" class="tests-endpoints-list-error">{{ item.error }}</span>
-                    </li>
-                  </ul>
-                </div>
-                <div class="tests-endpoints-actions">
-                  <button
-                    type="button"
-                    class="tests-run-group-btn"
-                    :disabled="loggerLibLoading"
-                    @click="runLoggerLibTests"
-                  >
-                    <i class="fas" :class="loggerLibLoading ? 'fa-spinner fa-spin' : 'fa-bolt'"></i>
-                    {{ loggerLibLoading ? 'Проверяем...' : 'Запустить проверку библиотеки логов' }}
-                  </button>
-                </div>
-              </div>
-
-              <!-- Блок 5: Репозиторий логов -->
-              <div v-if="showContent" class="tests-card tests-endpoints-card">
-                <div class="tests-endpoints-header">
-                  <i class="fas fa-database tests-endpoints-icon"></i>
-                  <h2 class="tests-endpoints-title">Репозиторий логов</h2>
-                </div>
-                <p class="tests-endpoints-desc">
-                  Тесты репозитория логов (logs.repo).
-                </p>
-                <div v-if="logsRepoLastRunAt" class="tests-endpoints-last-run">
-                  Результаты от: {{ logsRepoLastRunAt }}
-                </div>
-                <div class="tests-endpoints-list-wrap">
-                  <ul class="tests-endpoints-list" role="list">
-                    <li
-                      v-for="item in logsRepoDisplay"
-                      :key="item.id"
-                      class="tests-endpoints-list-item"
-                      :class="`tests-endpoints-status-${item.status}`"
-                    >
-                      <span class="tests-endpoints-badge" :class="`tests-endpoints-badge-${item.status}`">
-                        {{ item.status === 'todo' ? '[TODO]' : item.status === 'success' ? '[OK]' : '[FAIL]' }}
-                      </span>
-                      <span class="tests-endpoints-list-title-inline">{{ item.title }}</span>
-                      <span v-if="item.error" class="tests-endpoints-list-error">{{ item.error }}</span>
-                    </li>
-                  </ul>
-                </div>
-                <div class="tests-endpoints-actions">
-                  <button
-                    type="button"
-                    class="tests-run-group-btn"
-                    :disabled="logsRepoLoading"
-                    @click="runLogsRepoTests"
-                  >
-                    <i class="fas" :class="logsRepoLoading ? 'fa-spinner fa-spin' : 'fa-bolt'"></i>
-                    {{ logsRepoLoading ? 'Проверяем...' : 'Запустить проверку репозитория логов' }}
-                  </button>
-                </div>
-              </div>
-
-              <!-- Блок 6: Библиотека админки -->
-              <div v-if="showContent" class="tests-card tests-endpoints-card">
-                <div class="tests-endpoints-header">
-                  <i class="fas fa-chart-line tests-endpoints-icon"></i>
-                  <h2 class="tests-endpoints-title">Библиотека админки</h2>
-                </div>
-                <p class="tests-endpoints-desc">
-                  Тесты библиотеки админки (dashboard.lib).
-                </p>
-                <div v-if="dashboardLibLastRunAt" class="tests-endpoints-last-run">
-                  Результаты от: {{ dashboardLibLastRunAt }}
-                </div>
-                <div class="tests-endpoints-list-wrap">
-                  <ul class="tests-endpoints-list" role="list">
-                    <li
-                      v-for="item in dashboardLibDisplay"
-                      :key="item.id"
-                      class="tests-endpoints-list-item"
-                      :class="`tests-endpoints-status-${item.status}`"
-                    >
-                      <span class="tests-endpoints-badge" :class="`tests-endpoints-badge-${item.status}`">
-                        {{ item.status === 'todo' ? '[TODO]' : item.status === 'success' ? '[OK]' : '[FAIL]' }}
-                      </span>
-                      <span class="tests-endpoints-list-title-inline">{{ item.title }}</span>
-                      <span v-if="item.error" class="tests-endpoints-list-error">{{ item.error }}</span>
-                    </li>
-                  </ul>
-                </div>
-                <div class="tests-endpoints-actions">
-                  <button
-                    type="button"
-                    class="tests-run-group-btn"
-                    :disabled="dashboardLibLoading"
-                    @click="runDashboardLibTests"
-                  >
-                    <i class="fas" :class="dashboardLibLoading ? 'fa-spinner fa-spin' : 'fa-bolt'"></i>
-                    {{ dashboardLibLoading ? 'Проверяем...' : 'Запустить проверку библиотеки админки' }}
-                  </button>
-                </div>
-              </div>
-            </section>
+      <div class="content-inner">
+        <section class="tests-section" :class="{ 'content-visible': showContent }">
+          <div class="tests-header">
+            <div class="tests-icon-wrapper">
+              <i class="fas fa-flask tests-icon"></i>
+            </div>
+            <h1 class="tests-heading" :class="{ 'show-underline': showTitleUnderline }">
+              {{ displayedTitle }}<span v-if="showCursor && (cursorPosition === 'title' || cursorPosition === 'final')" class="typing-cursor">▮</span>
+            </h1>
+            <p class="tests-description">
+              {{ displayedDescription }}<span v-if="showCursor && cursorPosition === 'description'" class="typing-cursor">▮</span>
+            </p>
           </div>
-        </main>
-    </DcMain>
-  </DcAppShell>
+
+          <!-- Логи (тот же сокет, что в админке; только для админа) -->
+          <div v-if="showContent && props.encodedLogsSocketId" class="tests-logs-card">
+            <div class="tests-logs-card-header">
+              <i class="fas fa-terminal tests-logs-card-icon"></i>
+              <h2 class="tests-logs-card-title">Логи</h2>
+            </div>
+            <div class="tests-logs-filters">
+              <button
+                type="button"
+                class="tests-log-filter-chip chip-info"
+                :class="{ active: logFilters.info }"
+                @click="toggleLogFilter('info')"
+              >
+                <i class="fas fa-info-circle"></i>
+                Info
+              </button>
+              <button
+                type="button"
+                class="tests-log-filter-chip chip-warn"
+                :class="{ active: logFilters.warn }"
+                @click="toggleLogFilter('warn')"
+              >
+                <i class="fas fa-exclamation-triangle"></i>
+                Warn
+              </button>
+              <button
+                type="button"
+                class="tests-log-filter-chip chip-error"
+                :class="{ active: logFilters.error }"
+                @click="toggleLogFilter('error')"
+              >
+                <i class="fas fa-exclamation-circle"></i>
+                Error
+              </button>
+            </div>
+            <div class="tests-logs-output custom-scrollbar" ref="logsOutputRef">
+              <div v-if="displayedLogs.length === 0" class="tests-logs-empty">
+                Логи появятся здесь...
+              </div>
+              <div v-for="(item, index) in displayedLogs" :key="index" class="tests-log-item">
+                <div v-if="item.type === 'divider'" class="tests-log-date-divider">
+                  --- {{ item.date }} ---
+                </div>
+                <div v-else class="tests-log-entry">
+                  <span class="tests-log-time">{{ item.formattedTime }}</span>
+                  <span class="tests-log-level" :class="`tests-log-level-${item.entry.level}`">
+                    [{{ item.entry.level.toUpperCase() }}]
+                  </span>
+                  <span class="tests-log-message">{{ item.formattedMessage }}</span>
+                </div>
+              </div>
+            </div>
+            <div class="tests-logs-actions">
+              <div v-if="logsLoading" class="tests-logs-loading">
+                <i class="fas fa-spinner fa-spin"></i>
+                Загрузка логов...
+              </div>
+              <p v-if="logsError" class="tests-logs-error">{{ logsError }}</p>
+              <div class="tests-logs-action-row">
+                <button
+                  v-if="!logsLoading"
+                  type="button"
+                  class="tests-load-more-btn"
+                  :class="{ 'tests-load-more-btn-disabled': !logsHasMore }"
+                  :disabled="!logsHasMore"
+                  :title="logsHasMore ? 'Загрузить более старые логи' : 'Нет более старых логов'"
+                  @click="loadMoreLogs"
+                >
+                  <i class="fas fa-arrow-down"></i>
+                  Загрузить ещё 50
+                </button>
+                <button
+                  type="button"
+                  class="tests-logs-clear-btn"
+                  title="Очистить логи"
+                  @click="clearLogs"
+                >
+                  <i class="fas fa-trash-alt"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Дашборд с метриками по тестам -->
+          <div v-if="showContent" class="tests-card tests-dashboard">
+            <div class="tests-dashboard-header">
+              <i class="fas fa-chart-line tests-dashboard-icon"></i>
+              <h2 class="tests-dashboard-title">Метрики тестов</h2>
+            </div>
+            <div class="tests-dashboard-metrics">
+              <div class="tests-metric tests-metric-total">
+                <span class="tests-metric-value">{{ testMetrics.total }}</span>
+                <span class="tests-metric-label">всего</span>
+              </div>
+              <div class="tests-metric tests-metric-passed">
+                <span class="tests-metric-value">{{ testMetrics.passed }}</span>
+                <span class="tests-metric-label">пройдено</span>
+              </div>
+              <div class="tests-metric tests-metric-failed">
+                <span class="tests-metric-value">{{ testMetrics.failed }}</span>
+                <span class="tests-metric-label">провалено</span>
+              </div>
+              <div class="tests-metric tests-metric-skipped">
+                <span class="tests-metric-value">{{ testMetrics.skipped }}</span>
+                <span class="tests-metric-label">пропущено</span>
+              </div>
+            </div>
+            <p v-if="testMetrics.lastRunAt" class="tests-dashboard-last-run">
+              Последний запуск: {{ testMetrics.lastRunAt }}
+            </p>
+            <div class="tests-dashboard-actions">
+              <button
+                type="button"
+                class="tests-run-all-btn"
+                :disabled="runAllTestsLoading"
+                @click="runAllTests"
+              >
+                <i class="fas" :class="runAllTestsLoading ? 'fa-spinner fa-spin' : 'fa-play'"></i>
+                {{ runAllTestsLoading ? 'Запуск...' : 'Запустить все тесты' }}
+              </button>
+            </div>
+          </div>
+
+          <!-- Блок 1: Проверка эндпоинтов -->
+          <div v-if="showContent" class="tests-card tests-endpoints-card">
+            <div class="tests-endpoints-header">
+              <i class="fas fa-plug tests-endpoints-icon"></i>
+              <h2 class="tests-endpoints-title">Проверка эндпоинтов</h2>
+            </div>
+            <p class="tests-endpoints-desc">
+              Проверка доступности маршрутов приложения (HTTP 200).
+            </p>
+            <div v-if="endpointsLastRunAt" class="tests-endpoints-last-run">
+              Результаты от: {{ endpointsLastRunAt }}
+            </div>
+            <div class="tests-endpoints-list-wrap">
+              <ul class="tests-endpoints-list" role="list">
+                <li
+                  v-for="item in endpointsDisplay"
+                :key="item.id"
+                class="tests-endpoints-list-item"
+                :class="`tests-endpoints-status-${item.status}`"
+              >
+                <span class="tests-endpoints-badge" :class="`tests-endpoints-badge-${item.status}`">
+                  {{ item.status === 'todo' ? '[TODO]' : item.status === 'success' ? '[OK]' : '[FAIL]' }}
+                </span>
+                <span class="tests-endpoints-list-title-inline">{{ item.title }}</span>
+                <span v-if="item.error" class="tests-endpoints-list-error">{{ item.error }}</span>
+              </li>
+              </ul>
+            </div>
+            <div class="tests-endpoints-actions">
+              <button
+                type="button"
+                class="tests-run-group-btn"
+                :disabled="endpointsLoading"
+                @click="runEndpointsTests"
+              >
+                <i class="fas" :class="endpointsLoading ? 'fa-spinner fa-spin' : 'fa-bolt'"></i>
+                {{ endpointsLoading ? 'Проверяем...' : 'Запустить проверку эндпоинтов' }}
+              </button>
+            </div>
+          </div>
+
+          <!-- Блок 2: Библиотека настроек -->
+          <div v-if="showContent" class="tests-card tests-endpoints-card">
+            <div class="tests-endpoints-header">
+              <i class="fas fa-cog tests-endpoints-icon"></i>
+              <h2 class="tests-endpoints-title">Библиотека настроек</h2>
+            </div>
+            <p class="tests-endpoints-desc">
+              Тесты библиотеки настроек (settings.lib).
+            </p>
+            <div v-if="settingsLastRunAt" class="tests-endpoints-last-run">
+              Результаты от: {{ settingsLastRunAt }}
+            </div>
+            <div class="tests-endpoints-list-wrap">
+              <ul class="tests-endpoints-list" role="list">
+                <li
+                  v-for="item in settingsDisplay"
+                  :key="item.id"
+                  class="tests-endpoints-list-item"
+                  :class="`tests-endpoints-status-${item.status}`"
+                >
+                  <span class="tests-endpoints-badge" :class="`tests-endpoints-badge-${item.status}`">
+                    {{ item.status === 'todo' ? '[TODO]' : item.status === 'success' ? '[OK]' : '[FAIL]' }}
+                  </span>
+                  <span class="tests-endpoints-list-title-inline">{{ item.title }}</span>
+                  <span v-if="item.error" class="tests-endpoints-list-error">{{ item.error }}</span>
+                </li>
+              </ul>
+            </div>
+            <div class="tests-endpoints-actions">
+              <button
+                type="button"
+                class="tests-run-group-btn"
+                :disabled="settingsLoading"
+                @click="runSettingsTests"
+              >
+                <i class="fas" :class="settingsLoading ? 'fa-spinner fa-spin' : 'fa-bolt'"></i>
+                {{ settingsLoading ? 'Проверяем...' : 'Запустить проверку библиотеки настроек' }}
+              </button>
+            </div>
+          </div>
+
+          <!-- Блок 3: Репозиторий настроек -->
+          <div v-if="showContent" class="tests-card tests-endpoints-card">
+            <div class="tests-endpoints-header">
+              <i class="fas fa-table tests-endpoints-icon"></i>
+              <h2 class="tests-endpoints-title">Репозиторий настроек</h2>
+            </div>
+            <p class="tests-endpoints-desc">
+              Тесты репозитория настроек (settings.repo).
+            </p>
+            <div v-if="settingsRepoLastRunAt" class="tests-endpoints-last-run">
+              Результаты от: {{ settingsRepoLastRunAt }}
+            </div>
+            <div class="tests-endpoints-list-wrap">
+              <ul class="tests-endpoints-list" role="list">
+                <li
+                  v-for="item in settingsRepoDisplay"
+                  :key="item.id"
+                  class="tests-endpoints-list-item"
+                  :class="`tests-endpoints-status-${item.status}`"
+                >
+                  <span class="tests-endpoints-badge" :class="`tests-endpoints-badge-${item.status}`">
+                    {{ item.status === 'todo' ? '[TODO]' : item.status === 'success' ? '[OK]' : '[FAIL]' }}
+                  </span>
+                  <span class="tests-endpoints-list-title-inline">{{ item.title }}</span>
+                  <span v-if="item.error" class="tests-endpoints-list-error">{{ item.error }}</span>
+                </li>
+              </ul>
+            </div>
+            <div class="tests-endpoints-actions">
+              <button
+                type="button"
+                class="tests-run-group-btn"
+                :disabled="settingsRepoLoading"
+                @click="runSettingsRepoTests"
+              >
+                <i class="fas" :class="settingsRepoLoading ? 'fa-spinner fa-spin' : 'fa-bolt'"></i>
+                {{ settingsRepoLoading ? 'Проверяем...' : 'Запустить проверку репозитория настроек' }}
+              </button>
+            </div>
+          </div>
+
+          <!-- Блок 4: Библиотека логов -->
+          <div v-if="showContent" class="tests-card tests-endpoints-card">
+            <div class="tests-endpoints-header">
+              <i class="fas fa-file-alt tests-endpoints-icon"></i>
+              <h2 class="tests-endpoints-title">Библиотека логов</h2>
+            </div>
+            <p class="tests-endpoints-desc">
+              Тесты библиотеки логов (logger.lib).
+            </p>
+            <div v-if="loggerLibLastRunAt" class="tests-endpoints-last-run">
+              Результаты от: {{ loggerLibLastRunAt }}
+            </div>
+            <div class="tests-endpoints-list-wrap">
+              <ul class="tests-endpoints-list" role="list">
+                <li
+                  v-for="item in loggerLibDisplay"
+                  :key="item.id"
+                  class="tests-endpoints-list-item"
+                  :class="`tests-endpoints-status-${item.status}`"
+                >
+                  <span class="tests-endpoints-badge" :class="`tests-endpoints-badge-${item.status}`">
+                    {{ item.status === 'todo' ? '[TODO]' : item.status === 'success' ? '[OK]' : '[FAIL]' }}
+                  </span>
+                  <span class="tests-endpoints-list-title-inline">{{ item.title }}</span>
+                  <span v-if="item.error" class="tests-endpoints-list-error">{{ item.error }}</span>
+                </li>
+              </ul>
+            </div>
+            <div class="tests-endpoints-actions">
+              <button
+                type="button"
+                class="tests-run-group-btn"
+                :disabled="loggerLibLoading"
+                @click="runLoggerLibTests"
+              >
+                <i class="fas" :class="loggerLibLoading ? 'fa-spinner fa-spin' : 'fa-bolt'"></i>
+                {{ loggerLibLoading ? 'Проверяем...' : 'Запустить проверку библиотеки логов' }}
+              </button>
+            </div>
+          </div>
+
+          <!-- Блок 5: Репозиторий логов -->
+          <div v-if="showContent" class="tests-card tests-endpoints-card">
+            <div class="tests-endpoints-header">
+              <i class="fas fa-database tests-endpoints-icon"></i>
+              <h2 class="tests-endpoints-title">Репозиторий логов</h2>
+            </div>
+            <p class="tests-endpoints-desc">
+              Тесты репозитория логов (logs.repo).
+            </p>
+            <div v-if="logsRepoLastRunAt" class="tests-endpoints-last-run">
+              Результаты от: {{ logsRepoLastRunAt }}
+            </div>
+            <div class="tests-endpoints-list-wrap">
+              <ul class="tests-endpoints-list" role="list">
+                <li
+                  v-for="item in logsRepoDisplay"
+                  :key="item.id"
+                  class="tests-endpoints-list-item"
+                  :class="`tests-endpoints-status-${item.status}`"
+                >
+                  <span class="tests-endpoints-badge" :class="`tests-endpoints-badge-${item.status}`">
+                    {{ item.status === 'todo' ? '[TODO]' : item.status === 'success' ? '[OK]' : '[FAIL]' }}
+                  </span>
+                  <span class="tests-endpoints-list-title-inline">{{ item.title }}</span>
+                  <span v-if="item.error" class="tests-endpoints-list-error">{{ item.error }}</span>
+                </li>
+              </ul>
+            </div>
+            <div class="tests-endpoints-actions">
+              <button
+                type="button"
+                class="tests-run-group-btn"
+                :disabled="logsRepoLoading"
+                @click="runLogsRepoTests"
+              >
+                <i class="fas" :class="logsRepoLoading ? 'fa-spinner fa-spin' : 'fa-bolt'"></i>
+                {{ logsRepoLoading ? 'Проверяем...' : 'Запустить проверку репозитория логов' }}
+              </button>
+            </div>
+          </div>
+
+          <!-- Блок 6: Библиотека админки -->
+          <div v-if="showContent" class="tests-card tests-endpoints-card">
+            <div class="tests-endpoints-header">
+              <i class="fas fa-chart-line tests-endpoints-icon"></i>
+              <h2 class="tests-endpoints-title">Библиотека админки</h2>
+            </div>
+            <p class="tests-endpoints-desc">
+              Тесты библиотеки админки (dashboard.lib).
+            </p>
+            <div v-if="dashboardLibLastRunAt" class="tests-endpoints-last-run">
+              Результаты от: {{ dashboardLibLastRunAt }}
+            </div>
+            <div class="tests-endpoints-list-wrap">
+              <ul class="tests-endpoints-list" role="list">
+                <li
+                  v-for="item in dashboardLibDisplay"
+                  :key="item.id"
+                  class="tests-endpoints-list-item"
+                  :class="`tests-endpoints-status-${item.status}`"
+                >
+                  <span class="tests-endpoints-badge" :class="`tests-endpoints-badge-${item.status}`">
+                    {{ item.status === 'todo' ? '[TODO]' : item.status === 'success' ? '[OK]' : '[FAIL]' }}
+                  </span>
+                  <span class="tests-endpoints-list-title-inline">{{ item.title }}</span>
+                  <span v-if="item.error" class="tests-endpoints-list-error">{{ item.error }}</span>
+                </li>
+              </ul>
+            </div>
+            <div class="tests-endpoints-actions">
+              <button
+                type="button"
+                class="tests-run-group-btn"
+                :disabled="dashboardLibLoading"
+                @click="runDashboardLibTests"
+              >
+                <i class="fas" :class="dashboardLibLoading ? 'fa-spinner fa-spin' : 'fa-bolt'"></i>
+                {{ dashboardLibLoading ? 'Проверяем...' : 'Запустить проверку библиотеки админки' }}
+              </button>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <AppFooter v-if="bootLoaderDone" @chatium-click="openChatiumLink" />
+  </div>
 </template>
 
 <style scoped>
-.content-inner {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 8px 0 32px;
+.app-layout {
+  min-height: 100vh;
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  overflow: hidden;
+  background: transparent;
+  position: relative;
+  margin: 0;
+  padding-top: 0;
+}
+
+.content-wrapper {
+  position: relative;
+  z-index: 10;
+}
+
+.content-inner {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+@media (max-width: 768px) {
+  .content-inner {
+    padding: 1.5rem 1rem;
+  }
 }
 
 .tests-section {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.8s ease, transform 0.8s ease;
+}
+
+.tests-section.content-visible {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 .tests-header {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+  text-align: center;
+  margin-bottom: 3rem;
 }
 
 .tests-icon-wrapper {
-  width: 48px;
-  height: 48px;
-  border-radius: 12px;
-  background: linear-gradient(135deg, var(--accent-primary), var(--accent-light));
+  width: 5rem;
+  height: 5rem;
+  margin: 0 auto 1.5rem;
+  border-radius: 0;
+  background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-accent-hover) 100%);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--bg-primary);
-  box-shadow: 0 8px 24px var(--accent-glow);
+  box-shadow:
+    0 8px 24px rgba(211, 35, 75, 0.4),
+    0 4px 12px rgba(211, 35, 75, 0.3),
+    0 0 30px rgba(211, 35, 75, 0.2),
+    inset 0 0 0 2px rgba(0, 0, 0, 0.3);
+  position: relative;
+  overflow: hidden;
+  clip-path: polygon(
+    0 4px, 4px 4px, 4px 0,
+    calc(100% - 4px) 0, calc(100% - 4px) 4px, 100% 4px,
+    100% calc(100% - 4px), calc(100% - 4px) calc(100% - 4px), calc(100% - 4px) 100%,
+    4px 100%, 4px calc(100% - 4px), 0 calc(100% - 4px)
+  );
+}
+
+.tests-icon {
+  font-size: 2rem;
+  color: #ffffff;
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.35);
+  position: relative;
+  z-index: 3;
 }
 
 .tests-heading {
-  font-family: 'Old Standard TT', serif;
-  font-size: 2rem;
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: var(--color-text);
+  margin: 0 0 1rem 0;
+  position: relative;
+  display: inline-block;
+}
+
+.tests-heading.show-underline::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -10px;
+  transform: translateX(-50%);
+  width: 100px;
+  height: 2px;
+  background: var(--color-accent);
+  box-shadow: 0 0 10px var(--color-accent);
+}
+
+.tests-description {
+  color: var(--color-text-secondary);
+  font-size: 1.1rem;
   margin: 0;
+  min-height: 1.5rem;
 }
 
 .typing-cursor {
-  margin-left: 4px;
+  display: inline-block;
+  color: var(--color-accent);
   animation: cursor-blink 1s step-end infinite;
+  margin-left: 2px;
 }
 
 @keyframes cursor-blink {
@@ -1128,193 +1144,643 @@ const runAllTests = async () => {
   51%, 100% { opacity: 0; }
 }
 
-.tests-heading.show-underline {
-  text-decoration: underline;
-  text-decoration-color: var(--accent-soft);
-  text-decoration-thickness: 2px;
-  text-underline-offset: 6px;
-}
-
-.tests-description {
-  margin: 0;
-  color: var(--text-secondary);
-}
-
-.tests-logs-card,
 .tests-card {
-  background: var(--surface-glass-card);
-  border: 1px solid var(--border-glass);
-  border-radius: var(--radius-lg);
-  padding: 20px;
-  box-shadow: 0 4px 32px rgba(0, 0, 0, 0.3);
+  background: linear-gradient(135deg, var(--color-bg-secondary) 0%, var(--color-bg-tertiary) 100%);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 2rem;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+  position: relative;
+  overflow: hidden;
 }
 
-.tests-logs-card-header,
-.tests-dashboard-header,
+.tests-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--color-accent), transparent);
+}
+
+.tests-card-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.tests-placeholder {
+  margin: 0;
+  font-size: 1rem;
+}
+
+/* Дашборд метрик тестов */
+.tests-dashboard {
+  margin-bottom: 2rem;
+}
+
+.tests-dashboard-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.tests-dashboard-icon {
+  font-size: 1.25rem;
+  color: var(--color-accent);
+}
+
+.tests-dashboard-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--color-text);
+  margin: 0;
+}
+
+.tests-dashboard-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+@media (max-width: 600px) {
+  .tests-dashboard-metrics {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.tests-metric {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  gap: 0.25rem;
+}
+
+.tests-metric-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.tests-metric-label {
+  font-size: 0.8rem;
+  color: var(--color-text-secondary);
+  text-transform: lowercase;
+}
+
+.tests-metric-passed .tests-metric-value { color: #2ecc71; }
+.tests-metric-failed .tests-metric-value { color: #e74c3c; }
+.tests-metric-skipped .tests-metric-value { color: #95a5a6; }
+
+.tests-dashboard-last-run {
+  font-size: 0.85rem;
+  color: var(--color-text-tertiary);
+  margin: 0 0 1rem 0;
+}
+
+.tests-dashboard-actions {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.tests-run-all-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.65rem 1.25rem;
+  font-family: inherit;
+  font-size: 0.95rem;
+  color: #fff;
+  background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-accent-hover) 100%);
+  border: 1px solid var(--color-accent);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(211, 35, 75, 0.3);
+}
+
+.tests-run-all-btn:hover:not(:disabled) {
+  box-shadow: 0 6px 16px rgba(211, 35, 75, 0.4);
+  transform: translateY(-1px);
+}
+
+.tests-run-all-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Блок «Проверка эндпоинтов» */
+.tests-endpoints-card {
+  margin-bottom: 2rem;
+}
+
 .tests-endpoints-header {
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin-bottom: 12px;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
 }
 
-.tests-logs-card-title,
-.tests-dashboard-title,
+.tests-endpoints-icon {
+  font-size: 1.25rem;
+  color: var(--color-accent);
+}
+
 .tests-endpoints-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--color-text);
   margin: 0;
-  font-size: 1rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--text-secondary);
+}
+
+.tests-endpoints-desc {
+  font-size: 0.9rem;
+  color: var(--color-text-secondary);
+  margin: 0 0 0.5rem 0;
+  line-height: 1.45;
+}
+
+.tests-endpoints-last-run {
+  font-size: 0.8rem;
+  color: var(--color-text-tertiary);
+  margin: 0 0 0.75rem 0;
+}
+
+.tests-endpoints-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem 1.5rem;
+  margin-bottom: 0.75rem;
+  padding: 0.5rem 0;
+  font-size: 0.85rem;
+  color: var(--color-text-secondary);
+}
+
+.tests-endpoints-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.tests-endpoints-legend .tests-endpoints-badge {
+  font-size: 0.65rem;
+  padding: 0.15rem 0.35rem;
+}
+
+.tests-endpoints-list-label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--color-text);
+  margin: 0 0 0.5rem 0;
+}
+
+.tests-endpoints-list-wrap {
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.tests-endpoints-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.tests-endpoints-list-item {
+  display: flex;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  font-size: 0.9rem;
+  min-height: 2.25rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--color-border);
+  font-family: 'Share Tech Mono', monospace;
+}
+
+.tests-endpoints-list-item:last-child {
+  border-bottom: none;
+}
+
+.tests-endpoints-list-item.tests-endpoints-status-success {
+  border-left: 3px solid #22c55e;
+  padding-left: 0.5rem;
+  margin-left: -0.5rem;
+}
+
+.tests-endpoints-list-item.tests-endpoints-status-fail {
+  border-left: 3px solid var(--color-accent);
+  padding-left: 0.5rem;
+  margin-left: -0.5rem;
+}
+
+.tests-endpoints-list-item.tests-endpoints-status-todo {
+  border-left: 3px solid var(--color-border);
+  padding-left: 0.5rem;
+  margin-left: -0.5rem;
+}
+
+.tests-endpoints-badge {
+  flex-shrink: 0;
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  letter-spacing: 0.03em;
+}
+
+.tests-endpoints-badge-todo {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--color-text-tertiary);
+  border: 1px solid var(--color-border);
+}
+
+.tests-endpoints-badge-success {
+  background: rgba(34, 197, 94, 0.18);
+  color: #4ade80;
+  border: 1px solid rgba(34, 197, 94, 0.35);
+}
+
+.tests-endpoints-badge-fail {
+  background: rgba(211, 35, 75, 0.12);
+  color: var(--color-accent);
+  border: 1px solid rgba(211, 35, 75, 0.3);
+}
+
+.tests-endpoints-list-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.tests-endpoints-list-title {
+  font-weight: 600;
+  color: var(--color-text);
+  display: block;
+  margin-bottom: 0.2rem;
+}
+
+.tests-endpoints-list-title-inline {
+  font-weight: 600;
+  color: var(--color-text);
+  flex: 1;
+  min-width: 0;
+}
+
+.tests-endpoints-list-category {
+  font-size: 0.7rem;
+  font-weight: 400;
+  color: var(--color-text-tertiary);
+  margin-left: 0.5rem;
+}
+
+.tests-endpoints-list-desc {
+  font-size: 0.8rem;
+  color: var(--color-text-secondary);
+  line-height: 1.4;
+  margin: 0;
+  font-weight: 400;
+  font-family: inherit;
+}
+
+.tests-endpoints-list-error {
+  font-size: 0.8rem;
+  color: var(--color-text-secondary);
+  flex-shrink: 0;
+}
+
+.tests-endpoints-actions {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.tests-run-group-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.65rem 1.25rem;
+  font-family: inherit;
+  font-size: 0.95rem;
+  color: #fff;
+  background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-accent-hover) 100%);
+  border: 1px solid var(--color-accent);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(211, 35, 75, 0.25);
+}
+
+.tests-run-group-btn:hover:not(:disabled) {
+  box-shadow: 0 6px 16px rgba(211, 35, 75, 0.35);
+  transform: translateY(-1px);
+}
+
+.tests-run-group-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Блок логов (выше tests-card) */
+.tests-logs-card {
+  background: linear-gradient(135deg, var(--color-bg-secondary) 0%, var(--color-bg-tertiary) 100%);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 2rem;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 2rem;
+}
+
+.tests-logs-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--color-accent), transparent);
+}
+
+.tests-logs-card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.tests-logs-card-icon {
+  font-size: 1.25rem;
+  color: var(--color-accent);
+}
+
+.tests-logs-card-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--color-text);
+  margin: 0;
 }
 
 .tests-logs-filters {
   display: flex;
-  gap: 8px;
   flex-wrap: wrap;
-  margin-bottom: 12px;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
 }
 
 .tests-log-filter-chip {
-  padding: 6px 12px;
-  border-radius: 16px;
-  border: 1px solid var(--border-glass-light);
-  background: var(--surface-glass);
-  color: var(--text-secondary);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.75rem;
+  font-family: inherit;
   font-size: 0.8rem;
+  color: var(--color-text-tertiary);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
   cursor: pointer;
   transition: all 0.2s ease;
+  letter-spacing: 0.04em;
+}
+
+.tests-log-filter-chip:hover {
+  color: var(--color-text-secondary);
+  border-color: var(--color-border-light);
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .tests-log-filter-chip.active {
-  background: var(--accent-soft);
-  border-color: var(--border-glass);
-  color: var(--text-primary);
+  color: var(--color-text);
+}
+
+.tests-log-filter-chip.chip-info.active {
+  border-color: #3498db;
+  background: rgba(52, 152, 219, 0.12);
+}
+
+.tests-log-filter-chip.chip-info.active i {
+  color: #3498db;
+}
+
+.tests-log-filter-chip.chip-warn.active {
+  border-color: #f39c12;
+  background: rgba(243, 156, 18, 0.12);
+}
+
+.tests-log-filter-chip.chip-warn.active i {
+  color: #f39c12;
+}
+
+.tests-log-filter-chip.chip-error.active {
+  border-color: #e74c3c;
+  background: rgba(231, 76, 60, 0.12);
+}
+
+.tests-log-filter-chip.chip-error.active i {
+  color: #e74c3c;
 }
 
 .tests-logs-output {
-  max-height: 320px;
+  background: #080808;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  height: 400px;
   overflow: auto;
-  padding: 12px;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--border-glass-light);
-  background: var(--surface-glass);
+  padding: 1rem;
+  font-family: 'Share Tech Mono', 'Courier New', monospace;
+  font-size: 0.8rem;
+}
+
+.tests-logs-empty {
+  color: var(--color-text-secondary);
+  text-align: center;
+  padding: 2rem;
+}
+
+.tests-log-item {
+  margin-bottom: 0;
+}
+
+.tests-log-date-divider {
+  text-align: center;
+  color: #555;
+  font-size: 0.75rem;
+  padding: 0.5rem 0;
+  margin: 0.5rem 0;
+  opacity: 0.7;
+  letter-spacing: 0.1em;
 }
 
 .tests-log-entry {
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  padding: 6px 0;
-  border-bottom: 1px dashed var(--border-glass-light);
-  color: var(--text-secondary);
-  font-size: 0.85rem;
+  gap: 0.5rem;
+  padding: 0.15rem 0;
+  line-height: 1.4;
 }
 
-.tests-log-entry:last-child {
-  border-bottom: none;
+.tests-log-time {
+  color: var(--color-text-tertiary);
+  flex-shrink: 0;
 }
 
 .tests-log-level {
-  color: var(--accent-primary);
+  flex-shrink: 0;
   font-weight: 600;
 }
 
-.tests-log-date-divider {
-  color: var(--text-tertiary);
-  font-size: 0.8rem;
-  margin: 6px 0;
+.tests-log-level-debug { color: #9b59b6; }
+.tests-log-level-info { color: #3498db; }
+.tests-log-level-notice { color: #1abc9c; }
+.tests-log-level-warning { color: #f39c12; }
+.tests-log-level-error { color: #e74c3c; }
+.tests-log-level-critical { color: #c0392b; }
+.tests-log-level-alert { color: #e67e22; }
+.tests-log-level-emergency { color: #d35400; }
+
+.tests-log-message {
+  color: var(--color-text-secondary);
+  word-break: break-word;
+  flex: 1;
+  min-width: 0;
 }
 
 .tests-logs-actions {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  margin-top: 12px;
+  gap: 0.75rem;
+  margin-top: 1rem;
 }
 
 .tests-logs-action-row {
   display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  width: 100%;
 }
 
-.tests-load-more-btn,
-.tests-run-group-btn,
-.tests-run-all-btn {
-  padding: 10px 16px;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--border-glass-light);
-  background: var(--surface-glass);
-  color: var(--text-primary);
+.tests-logs-action-row .tests-load-more-btn {
+  flex: 1;
+  min-width: 0;
+  margin-right: auto;
+}
+
+.tests-logs-clear-btn {
+  flex-shrink: 0;
+  width: 2.75rem;
+  height: 2.75rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  font-size: 1rem;
+  color: var(--color-text-secondary);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
-.tests-load-more-btn:hover,
-.tests-run-group-btn:hover,
-.tests-run-all-btn:hover {
-  background: var(--accent-soft);
-  border-color: var(--border-glass);
+.tests-logs-clear-btn:hover {
+  color: #fff;
+  background: #e74c3c;
+  border-color: #e74c3c;
+  box-shadow: 0 0 12px rgba(231, 76, 60, 0.3);
 }
 
-.tests-dashboard-metrics {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-  gap: 12px;
-}
-
-.tests-metric {
-  background: var(--surface-glass);
-  border: 1px solid var(--border-glass-light);
-  border-radius: var(--radius-sm);
-  padding: 12px;
-  text-align: center;
-}
-
-.tests-metric-value {
-  font-size: 1.4rem;
-  font-weight: 600;
-}
-
-.tests-metric-label {
-  font-size: 0.8rem;
-  color: var(--text-tertiary);
-}
-
-.tests-endpoints-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
+.tests-logs-loading {
   display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.tests-endpoints-list-item {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  padding: 10px;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--border-glass-light);
-  background: var(--surface-glass);
+  align-items: center;
+  gap: 0.5rem;
   font-size: 0.85rem;
-  color: var(--text-secondary);
+  color: var(--color-text-secondary);
+  padding: 0.5rem 0;
 }
 
-.tests-endpoints-badge {
-  font-weight: 600;
-  color: var(--accent-primary);
+.tests-logs-loading i {
+  color: var(--color-accent);
 }
 
-.tests-endpoints-list-error {
-  color: #d9534f;
+.tests-logs-error {
+  font-size: 0.85rem;
+  color: #e74c3c;
+  margin: 0;
+  padding: 0.5rem 0.75rem;
+  background: rgba(231, 76, 60, 0.1);
+  border: 1px solid rgba(231, 76, 60, 0.3);
+  border-radius: 4px;
 }
 
-@media (max-width: 900px) {
-  .content-inner {
-    padding: 0 4px 24px;
+.tests-load-more-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1.2rem;
+  font-family: inherit;
+  font-size: 0.9rem;
+  color: var(--color-text);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  letter-spacing: 0.04em;
+}
+
+.tests-load-more-btn:hover:not(:disabled) {
+  color: #fff;
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  box-shadow: 0 0 12px rgba(211, 35, 75, 0.3);
+}
+
+.tests-load-more-btn:disabled,
+.tests-load-more-btn.tests-load-more-btn-disabled {
+  color: var(--color-text-tertiary);
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.tests-load-more-btn:disabled:hover,
+.tests-load-more-btn.tests-load-more-btn-disabled:hover {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: var(--color-border);
+  box-shadow: none;
+}
+
+.tests-load-more-btn i {
+  font-size: 0.85rem;
+}
+
+@media (max-width: 768px) {
+  .tests-heading {
+    font-size: 2rem;
+  }
+
+  .tests-card {
+    padding: 1.5rem;
+  }
+
+  .tests-logs-card {
+    padding: 1.5rem;
   }
 }
 </style>

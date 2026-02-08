@@ -1,22 +1,16 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref, computed } from 'vue'
+import { onMounted, onUnmounted, ref } from 'vue'
+import Header from '../components/Header.vue'
+import GlobalGlitch from '../components/GlobalGlitch.vue'
+import AppFooter from '../components/AppFooter.vue'
 import { createComponentLogger } from '../shared/logger'
-import {
-  DcButton,
-  DcCard,
-  DcDemoSidebar,
-  DcHeaderActions,
-  DcHeroCard,
-  DcPageHeader,
-  type NavItem
-} from '../components'
-import { DcAppShell, DcMain } from '../layout'
 
 const log = createComponentLogger('HomePage')
 
 declare global {
   interface Window {
     hideAppLoader?: () => void
+    triggerGlobalGlitch?: () => void
     bootLoaderComplete?: boolean
   }
 }
@@ -32,160 +26,73 @@ const props = defineProps<{
   isAdmin?: boolean
   adminUrl?: string
   testsUrl?: string
-  inquiriesUrl?: string
 }>()
 
-const theme = 'dark' as const
+const displayedTitle = ref('')
+const displayedDescription = ref('')
+const showCursor = ref(false)
 const bootLoaderDone = ref(false)
-const sidebarCollapsed = ref(false)
-const sidebarOpen = ref(false)
-const activeSection = ref('dashboard')
+const cursorPosition = ref<'title' | 'description' | 'final'>('title')
+const showTitleUnderline = ref(false)
+const isGlitching = ref(false)
 
-const navIdToUrl = computed<Record<string, string>>(() => ({
-  dashboard: props.indexUrl,
-  inquiries: props.inquiriesUrl ?? '',
-  profile: props.profileUrl,
-  admin: props.adminUrl ?? '',
-  tests: props.testsUrl ?? '',
-  login: props.loginUrl
-}))
+const intervalIds = { title: null as ReturnType<typeof setInterval> | null, desc: null as ReturnType<typeof setInterval> | null }
 
-const menuItems = computed<NavItem[]>(() => {
-  const items: NavItem[] = [
-    { id: 'dashboard', icon: 'fa-house', label: 'Главная' },
-    { id: 'inquiries', icon: 'fa-layer-group', label: 'Компоненты' },
-    { id: 'profile', icon: 'fa-user', label: 'Профиль' },
-    { id: 'admin', icon: 'fa-gear', label: 'Админка' },
-    { id: 'tests', icon: 'fa-flask', label: 'Тесты' },
-    { id: 'login', icon: 'fa-right-to-bracket', label: 'Логин' }
-  ]
-  return items.filter((item) => navIdToUrl.value[item.id])
-})
+const onAppLayoutAnimationEnd = (e: AnimationEvent) => {
+  if (e.animationName === 'crt-power-on') {
+    (e.target as HTMLElement).classList.add('app-layout-appeared')
+    log.debug('App layout animation completed')
+  }
+}
 
-const heroDescription = computed(() => {
-  return `${props.projectDescription}. Базовый контур уже собран, ключевые бизнес-сценарии внедряются поэтапно.`
-})
-
-const primaryAction = computed(() => {
-  if (props.isAuthenticated) {
-    return {
-      label: 'Открыть рабочую область',
-      href: props.inquiriesUrl || props.indexUrl,
-      icon: 'fa-layer-group'
+const typeTextSequence = () => {
+  log.debug('Typing title animation started')
+  const titleText = props.projectName
+  cursorPosition.value = 'title'
+  let titleIndex = 0
+  intervalIds.title = setInterval(() => {
+    if (titleIndex < titleText.length) {
+      displayedTitle.value = titleText.substring(0, titleIndex + 1)
+      titleIndex++
+    } else {
+      if (intervalIds.title) clearInterval(intervalIds.title)
+      intervalIds.title = null
+      showTitleUnderline.value = true
+      typeDescription()
     }
-  }
-  return {
-    label: 'Войти в систему',
-    href: props.loginUrl,
-    icon: 'fa-right-to-bracket'
-  }
-})
-
-const roadmapItems = computed(() => [
-  {
-    id: 'foundation',
-    title: 'Ядро интерфейса',
-    note: 'Навигация, shell и базовая дизайн-система.',
-    state: 'готово'
-  },
-  {
-    id: 'sales',
-    title: 'Сценарии продаж',
-    note: 'Карточка клиента, обработка обращений и статусы сделок.',
-    state: 'в работе'
-  },
-  {
-    id: 'automation',
-    title: 'Автоматизация и отчёты',
-    note: 'Триггеры, интеграции и итоговая аналитика.',
-    state: 'план'
-  }
-])
-
-const moduleCards = computed(() => [
-  {
-    id: 'overview',
-    title: 'Главный контур',
-    description: 'Структура проекта и базовая навигация уже стабилизированы.',
-    tone: 'ready',
-    actionLabel: 'Текущий экран',
-    href: props.indexUrl
-  },
-  {
-    id: 'workspace',
-    title: 'Рабочие модули',
-    description: props.isAuthenticated
-      ? 'Компоненты и тестовые сценарии доступны для просмотра.'
-      : 'Открываются после авторизации пользователя.',
-    tone: props.isAuthenticated ? 'progress' : 'planned',
-    actionLabel: props.isAuthenticated ? 'Открыть модули' : 'Авторизация',
-    href: props.isAuthenticated ? props.inquiriesUrl || props.indexUrl : props.loginUrl
-  },
-  {
-    id: 'admin',
-    title: 'Админ-инструменты',
-    description: props.isAdmin
-      ? 'Панель администрирования подключена и доступна по роли Admin.'
-      : 'Раздел готов, но доступен только администраторам.',
-    tone: props.isAdmin ? 'ready' : 'planned',
-    actionLabel: props.isAdmin ? 'Открыть админку' : 'Проверить доступ',
-    href: props.isAdmin && props.adminUrl ? props.adminUrl : props.loginUrl
-  }
-])
-
-const developmentSignals = computed(() => [
-  {
-    id: 'status',
-    label: 'Статус',
-    value: 'Система в разработке'
-  },
-  {
-    id: 'sprint',
-    label: 'Текущий этап',
-    value: 'UI foundation и core-flow'
-  },
-  {
-    id: 'focus',
-    label: 'Фокус релиза',
-    value: 'Стабильный CRM-контур'
-  }
-])
-
-const releaseNote = computed(() => {
-  if (props.isAuthenticated) {
-    return 'Доступны базовые разделы. Следующий шаг: расширение клиентских сценариев и автоматизации.'
-  }
-  return 'Демо-контур доступен в режиме просмотра. Для рабочих сценариев требуется авторизация.'
-})
-
-const profileActionHref = computed(() => {
-  return props.isAuthenticated ? props.profileUrl : props.loginUrl
-})
-
-const profileActionLabel = computed(() => {
-  return props.isAuthenticated ? 'Открыть профиль' : 'Авторизоваться'
-})
-
-function closeSidebar() {
-  sidebarOpen.value = false
+  }, 30)
 }
 
-function toggleSidebarMobile() {
-  sidebarOpen.value = !sidebarOpen.value
+const typeDescription = () => {
+  log.debug('Typing description animation started')
+  const descriptionText = props.projectDescription
+  cursorPosition.value = 'description'
+  let descIndex = 0
+  intervalIds.desc = setInterval(() => {
+    if (descIndex < descriptionText.length) {
+      displayedDescription.value = descriptionText.substring(0, descIndex + 1)
+      descIndex++
+    } else {
+      if (intervalIds.desc) clearInterval(intervalIds.desc)
+      intervalIds.desc = null
+      cursorPosition.value = 'final'
+    }
+  }, 30)
 }
 
-function onSidebarSelect(id: string) {
-  const url = navIdToUrl.value[id]
-  if (url) window.location.href = url
-}
-
-function startAnimations() {
-  log.info('Boot complete')
+const startAnimations = () => {
+  log.info('Boot loader complete, starting animations')
   bootLoaderDone.value = true
+  showCursor.value = true
+  cursorPosition.value = 'title'
+  setTimeout(() => typeTextSequence(), 1000)
 }
 
 onMounted(() => {
-  if (window.hideAppLoader) window.hideAppLoader()
+  log.info('Component mounted')
+  if (window.hideAppLoader) {
+    window.hideAppLoader()
+  }
   if (window.bootLoaderComplete) {
     startAnimations()
   } else {
@@ -194,403 +101,378 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
+  log.info('Component unmounted')
   window.removeEventListener('bootloader-complete', startAnimations)
+  if (intervalIds.title) clearInterval(intervalIds.title)
+  if (intervalIds.desc) clearInterval(intervalIds.desc)
 })
+
+const triggerGlitch = () => {
+  if (isGlitching.value) return
+  log.notice('Global glitch effect triggered')
+  isGlitching.value = true
+
+  const appLayout = document.querySelector('.app-layout')
+  if (appLayout) {
+    appLayout.classList.add('global-glitch-active')
+    setTimeout(() => {
+      appLayout.classList.remove('global-glitch-active')
+      isGlitching.value = false
+    }, 500)
+  } else {
+    log.warning('App layout element not found for glitch')
+    isGlitching.value = false
+  }
+}
+
+const openChatiumLink = () => {
+  log.notice('Opening Chatium link')
+  triggerGlitch()
+  window.open('https://chatium.ru/?start=pl-LGBT1Oge7c61RkKTU4t0start', '_blank')
+}
 </script>
 
 <template>
-  <DcAppShell
-    :theme="theme"
-    :ready="bootLoaderDone"
-    :sidebar-collapsed="sidebarCollapsed"
-    :sidebar-open="sidebarOpen"
-    @close-sidebar="closeSidebar"
+  <div
+    class="app-layout bg-[var(--color-bg)] text-[var(--color-text)] flex flex-col"
+    @animationend="onAppLayoutAnimationEnd"
   >
-    <template #sidebar>
-      <DcDemoSidebar
-        :theme="theme"
-        logo-text="NeSo CRM"
-        :user-name="props.isAuthenticated ? 'Пользователь' : 'Гость'"
-        :user-role="props.isAuthenticated ? (props.isAdmin ? 'Admin' : 'User') : 'Guest'"
-        :logout-url="loginUrl"
-        :items="menuItems"
-        :collapsed="sidebarCollapsed"
-        :mobile-open="sidebarOpen"
-        :active-id="activeSection"
-        @close="closeSidebar"
-        @select="onSidebarSelect"
-        @toggle-collapse="sidebarCollapsed = !sidebarCollapsed"
-      />
-    </template>
-    <template #header>
-      <DcPageHeader
-        :theme="theme"
-        :title="projectTitle"
-        :breadcrumbs="['Главная', 'Сводка']"
-        :show-menu-toggle="true"
-        @menu-toggle="toggleSidebarMobile"
-      >
-        <template #actions>
-          <DcHeaderActions :theme="theme" :index-url="indexUrl" :notification-count="0" />
-        </template>
-      </DcPageHeader>
-    </template>
+    <GlobalGlitch />
+    <Header
+      v-if="bootLoaderDone"
+      :projectTitle="props.projectTitle"
+      :indexUrl="props.indexUrl"
+      :profileUrl="props.profileUrl"
+      :loginUrl="props.loginUrl"
+      :isAuthenticated="props.isAuthenticated"
+      :isAdmin="props.isAdmin"
+      :adminUrl="props.adminUrl"
+      :testsUrl="props.testsUrl"
+    />
+    <!-- Content -->
+    <main class="content-wrapper flex-1 relative z-10 min-h-0 overflow-y-auto">
+      <div class="content-inner">
+        <!-- Hero Section -->
+        <section class="hero-section" :class="{ 'hero-ready': bootLoaderDone }">
+          <div class="hero-icon-wrapper" :class="{ 'hero-icon-visible': bootLoaderDone }" @click="triggerGlitch">
+            <i class="fas fa-tasks hero-icon"></i>
+          </div>
+          <h1 class="hero-heading" :class="{ 'show-underline': showTitleUnderline }">
+            {{ displayedTitle }}<span v-if="showCursor && (cursorPosition === 'title' || cursorPosition === 'final')" class="typing-cursor">▮</span>
+          </h1>
+          <p class="hero-description">
+            {{ displayedDescription }}<span v-if="showCursor && cursorPosition === 'description'" class="typing-cursor">▮</span>
+          </p>
+        </section>
+      </div>
+    </main>
 
-    <DcMain>
-      <section class="home-page" :class="{ 'home-page--ready': bootLoaderDone }">
-        <div class="home-hero-grid">
-          <DcHeroCard
-            :theme="theme"
-            :title="projectName"
-            :desc="heroDescription"
-          >
-            <template #actions>
-              <div class="hero-actions">
-                <div class="hero-actions-row">
-                  <DcButton
-                    :theme="theme"
-                    variant="primary"
-                    :icon="primaryAction.icon"
-                    :href="primaryAction.href"
-                  >
-                    {{ primaryAction.label }}
-                  </DcButton>
-                  <DcButton
-                    :theme="theme"
-                    variant="secondary"
-                    icon="fa-user"
-                    :href="profileActionHref"
-                  >
-                    {{ profileActionLabel }}
-                  </DcButton>
-                </div>
-                <div class="hero-status-row">
-                  <span class="home-status-pill home-status-pill--accent">
-                    <i class="fas fa-screwdriver-wrench" aria-hidden="true"></i>
-                    Система в активной разработке
-                  </span>
-                  <span class="home-status-pill">
-                    <i class="fas fa-shield-heart" aria-hidden="true"></i>
-                    Приоритет: стабильный user-flow
-                  </span>
-                </div>
-              </div>
-            </template>
-          </DcHeroCard>
-
-          <DcCard :theme="theme" title="Состояние релиза">
-            <div class="release-panel">
-              <p class="release-note">{{ releaseNote }}</p>
-              <div class="release-list">
-                <article
-                  v-for="item in roadmapItems"
-                  :key="item.id"
-                  class="release-item"
-                >
-                  <span class="release-state">{{ item.state }}</span>
-                  <div>
-                    <h3>{{ item.title }}</h3>
-                    <p>{{ item.note }}</p>
-                  </div>
-                </article>
-              </div>
-            </div>
-          </DcCard>
-        </div>
-
-        <div class="home-cards-grid">
-          <DcCard :theme="theme" title="Модульная готовность">
-            <div class="module-list">
-              <article
-                v-for="module in moduleCards"
-                :key="module.id"
-                class="module-item"
-              >
-                <div class="module-heading">
-                  <h3>{{ module.title }}</h3>
-                  <span
-                    class="module-tone"
-                    :class="`module-tone--${module.tone}`"
-                  >
-                    {{ module.tone === 'ready' ? 'Готово' : module.tone === 'progress' ? 'В работе' : 'План' }}
-                  </span>
-                </div>
-                <p>{{ module.description }}</p>
-                <a :href="module.href" class="module-link">
-                  {{ module.actionLabel }}
-                  <i class="fas fa-arrow-right" aria-hidden="true"></i>
-                </a>
-              </article>
-            </div>
-          </DcCard>
-
-          <DcCard :theme="theme" title="Текущий фокус разработки">
-            <div class="signal-list">
-              <article
-                v-for="signal in developmentSignals"
-                :key="signal.id"
-                class="signal-item"
-              >
-                <p class="signal-label">{{ signal.label }}</p>
-                <p class="signal-value">{{ signal.value }}</p>
-              </article>
-            </div>
-          </DcCard>
-        </div>
-      </section>
-    </DcMain>
-  </DcAppShell>
+    <AppFooter v-if="bootLoaderDone" @chatium-click="openChatiumLink" />
+  </div>
 </template>
 
-<style scoped>
-.home-page {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-  opacity: 0;
-  transform: translateY(8px);
-  transition: opacity 0.45s ease, transform 0.45s ease;
+<style>
+/* Глобальное правило: скрываем курсор на главной странице при hover на хедер */
+.app-layout:has(.header-title-section:hover) .typing-cursor {
+  opacity: 0 !important;
+}
+</style>
+
+<style>
+:root {
+  --color-bg: #0a0a0a;
+  --color-bg-secondary: #141414;
+  --color-bg-tertiary: #1a1a1a;
+  --color-text: #e8e8e8;
+  --color-text-secondary: #a0a0a0;
+  --color-text-tertiary: #707070;
+  --color-border: #2a2a2a;
+  --color-border-light: #3a3a3a;
+  --color-accent: #d3234b;
+  --color-accent-hover: #e6395f;
+  --color-accent-light: rgba(211, 35, 75, 0.1);
+  --color-accent-medium: rgba(211, 35, 75, 0.2);
+  --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.home-page--ready {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-.home-hero-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1.6fr) minmax(320px, 1fr);
-  gap: 24px;
-  align-items: stretch;
-}
-
-.hero-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  width: 100%;
-}
-
-.hero-actions-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-}
-
-.hero-status-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
-.home-status-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
-  border-radius: 999px;
-  font-size: 0.82rem;
-  color: rgba(238, 244, 235, 0.78);
-  border: 1px solid rgba(175, 196, 95, 0.2);
-  background: rgba(175, 196, 95, 0.08);
-}
-
-.home-status-pill--accent {
-  color: #eef4eb;
-  border-color: rgba(175, 196, 95, 0.35);
-  background: linear-gradient(135deg, rgba(175, 196, 95, 0.2), rgba(175, 196, 95, 0.08));
-}
-
-.release-panel {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.release-note {
+body {
+  font-family: 'Share Tech Mono', 'Courier New', monospace;
   margin: 0;
-  color: rgba(238, 244, 235, 0.75);
-  line-height: 1.6;
+  background: var(--color-bg);
+  letter-spacing: 0.03em;
 }
 
-.release-list {
+::selection {
+  background: #e0335a;
+  color: #ffffff;
+}
+
+::-moz-selection {
+  background: #e0335a;
+  color: #ffffff;
+}
+
+.app-layout {
+  min-height: 100vh;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  overflow: hidden;
+  background: transparent;
+  position: relative;
 }
 
-.release-item {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  align-items: start;
-  gap: 12px;
-  padding: 14px;
-  border-radius: 12px;
-  border: 1px solid rgba(175, 196, 95, 0.16);
-  background: rgba(9, 15, 17, 0.55);
+.hidden-for-modal {
+  opacity: 0 !important;
+  pointer-events: none !important;
+  transition: opacity 0.3s ease;
 }
 
-.release-state {
-  font-size: 0.72rem;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: #afc45f;
+.content-hidden {
+  transition: opacity 0.3s ease;
 }
 
-.release-item h3 {
-  margin: 0 0 6px 0;
-  font-size: 0.95rem;
-  color: #eef4eb;
-}
-
-.release-item p {
-  margin: 0;
-  font-size: 0.88rem;
-  color: rgba(238, 244, 235, 0.72);
-  line-height: 1.45;
-}
-
-.home-cards-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 24px;
-}
-
-.module-list {
+.content-wrapper {
+  flex: 1;
+  min-height: 0;
   display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.module-item {
-  padding: 14px;
-  border-radius: 12px;
-  border: 1px solid rgba(175, 196, 95, 0.14);
-  background: rgba(9, 15, 17, 0.5);
-}
-
-.module-heading {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.module-heading h3 {
-  margin: 0;
-  font-size: 0.95rem;
-  color: #eef4eb;
-}
-
-.module-tone {
-  display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 72px;
-  padding: 5px 10px;
-  border-radius: 999px;
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  border: 1px solid transparent;
+  position: relative;
+  z-index: 100;
+  padding: 3rem 0;
 }
 
-.module-tone--ready {
-  color: #a8e2b4;
-  border-color: rgba(116, 215, 146, 0.35);
-  background: rgba(116, 215, 146, 0.16);
-}
-
-.module-tone--progress {
-  color: #f2d38b;
-  border-color: rgba(242, 189, 93, 0.35);
-  background: rgba(242, 189, 93, 0.16);
-}
-
-.module-tone--planned {
-  color: #9fb2ff;
-  border-color: rgba(133, 168, 255, 0.35);
-  background: rgba(133, 168, 255, 0.16);
-}
-
-.module-item p {
-  margin: 10px 0 12px;
-  color: rgba(238, 244, 235, 0.72);
-  line-height: 1.5;
-}
-
-.module-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  color: #afc45f;
-  text-decoration: none;
-  font-size: 0.86rem;
-  font-weight: 700;
-}
-
-.module-link:hover {
-  color: #c6da7d;
-}
-
-.signal-list {
+.content-inner {
+  width: 100%;
+  max-width: 1200px;
+  padding: 0 1.5rem;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 4rem;
+  position: relative;
+  z-index: 10;
 }
 
-.signal-item {
-  border: 1px solid rgba(175, 196, 95, 0.14);
-  background: rgba(9, 15, 17, 0.5);
-  border-radius: 12px;
-  padding: 14px;
+.hero-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 1.5rem;
+  padding: 2rem 0;
+  position: relative;
+  z-index: 10;
 }
 
-.signal-label {
-  margin: 0 0 6px 0;
-  font-size: 0.78rem;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  color: rgba(238, 244, 235, 0.58);
+.hero-section::before {
+  display: none;
 }
 
-.signal-value {
+.hero-icon-wrapper {
+  width: 5rem;
+  height: 5rem;
+  border-radius: 0;
+  background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-accent-hover) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow:
+    0 8px 24px rgba(211, 35, 75, 0.4),
+    0 4px 12px rgba(211, 35, 75, 0.3),
+    0 0 30px rgba(211, 35, 75, 0.2),
+    inset 0 0 0 2px rgba(0, 0, 0, 0.3);
+  margin-bottom: 0.5rem;
+  position: relative;
+  cursor: pointer;
+  overflow: hidden;
+  clip-path: polygon(
+    0 4px, 4px 4px, 4px 0,
+    calc(100% - 4px) 0, calc(100% - 4px) 4px, 100% 4px,
+    100% calc(100% - 4px), calc(100% - 4px) calc(100% - 4px), calc(100% - 4px) 100%,
+    4px 100%, 4px calc(100% - 4px), 0 calc(100% - 4px)
+  );
+}
+
+.hero-icon-wrapper::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.15) 0px,
+    rgba(0, 0, 0, 0.15) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+  pointer-events: none;
+  z-index: 2;
+  animation: scanline-flicker 8s linear infinite;
+}
+
+@keyframes scanline-flicker {
+  0%, 100% { opacity: 0.7; }
+  50% { opacity: 0.5; }
+}
+
+@media (min-width: 769px) {
+  .hero-icon-wrapper {
+    box-shadow:
+      0 10px 28px rgba(211, 35, 75, 0.45),
+      0 5px 14px rgba(211, 35, 75, 0.35),
+      0 0 40px rgba(211, 35, 75, 0.25);
+  }
+}
+
+.hero-icon-wrapper.hero-icon-visible:hover {
+  animation: glitch-icon 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+}
+
+@keyframes glitch-icon {
+  0%, 100% {
+    transform: scale(1) translate(0);
+    filter: none;
+    box-shadow:
+      0 8px 24px rgba(211, 35, 75, 0.4),
+      0 4px 12px rgba(211, 35, 75, 0.3);
+  }
+  10% {
+    transform: scale(1) translate(-1.5px, 0);
+    filter: drop-shadow(4px 0 0 rgba(255, 0, 255, 0.9)) drop-shadow(-4px 0 0 rgba(0, 255, 255, 0.9));
+    box-shadow: none;
+  }
+  20% {
+    transform: scale(1) translate(1.5px, 0);
+    filter: drop-shadow(-4px 0 0 rgba(255, 0, 255, 0.9)) drop-shadow(4px 0 0 rgba(0, 255, 255, 0.9));
+    box-shadow: none;
+  }
+  30% {
+    transform: scale(1) translate(-1px, 0);
+    filter: drop-shadow(4px 0 0 rgba(255, 0, 255, 0.9)) drop-shadow(-4px 0 0 rgba(0, 255, 255, 0.9));
+    box-shadow: none;
+  }
+  40% {
+    transform: scale(1) translate(1px, 0);
+    filter: drop-shadow(-4px 0 0 rgba(255, 0, 255, 0.9)) drop-shadow(4px 0 0 rgba(0, 255, 255, 0.9));
+    box-shadow: none;
+  }
+  50% {
+    transform: scale(1) translate(-1.5px, 0);
+    filter: drop-shadow(4px 0 0 rgba(255, 0, 255, 0.9)) drop-shadow(-4px 0 0 rgba(0, 255, 255, 0.9));
+    box-shadow: none;
+  }
+  60% {
+    transform: scale(1) translate(1.5px, 0);
+    filter: drop-shadow(-4px 0 0 rgba(255, 0, 255, 0.9)) drop-shadow(4px 0 0 rgba(0, 255, 255, 0.9));
+    box-shadow: none;
+  }
+  70% {
+    transform: scale(1) translate(-1px, 0);
+    filter: drop-shadow(4px 0 0 rgba(255, 0, 255, 0.9)) drop-shadow(-4px 0 0 rgba(0, 255, 255, 0.9));
+    box-shadow: none;
+  }
+  80% {
+    transform: scale(1) translate(1px, 0);
+    filter: drop-shadow(-4px 0 0 rgba(255, 0, 255, 0.9)) drop-shadow(4px 0 0 rgba(0, 255, 255, 0.9));
+    box-shadow: none;
+  }
+  90% {
+    transform: scale(1) translate(-0.5px, 0);
+    filter: drop-shadow(2px 0 0 rgba(255, 0, 255, 0.9)) drop-shadow(-2px 0 0 rgba(0, 255, 255, 0.9));
+    box-shadow: none;
+  }
+}
+
+.hero-icon {
+  font-size: 2rem;
+  color: white;
+  position: relative;
+  z-index: 3;
+}
+
+.hero-heading {
+  font-size: 2.5rem;
+  font-weight: 400;
+  line-height: 1.2;
+  letter-spacing: 0.08em;
   margin: 0;
-  font-size: 0.98rem;
-  color: #eef4eb;
+  margin-bottom: 0.5rem;
+  min-height: 3rem;
+  color: var(--color-text);
+  position: relative;
+  z-index: 10;
+  text-shadow: 0 0 8px rgba(232, 232, 232, 0.3);
 }
 
-@media (max-width: 1180px) {
-  .home-hero-grid {
-    grid-template-columns: 1fr;
-  }
+.hero-heading::after {
+  content: '';
+  position: absolute;
+  bottom: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60px;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, var(--color-accent), transparent);
+  border-radius: 2px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
 }
 
-@media (max-width: 980px) {
-  .home-cards-grid {
-    grid-template-columns: 1fr;
-  }
+.hero-heading.show-underline::after {
+  opacity: 1;
+}
+
+.typing-cursor {
+  display: inline-block;
+  margin-left: 0.25rem;
+  animation: terminal-cursor-blink 1s step-end infinite;
+  color: var(--color-accent);
+  text-shadow: 0 0 8px rgba(211, 35, 75, 0.5);
+  font-size: 1em;
+  line-height: 1;
+  vertical-align: baseline;
+}
+
+@keyframes terminal-cursor-blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+
+.hero-description {
+  font-size: 1rem;
+  line-height: 1.6;
+  color: var(--color-text-secondary);
+  font-weight: 400;
+  margin: 0;
+  margin-bottom: 2rem;
+  min-height: 1.6rem;
+  max-width: 600px;
+  letter-spacing: 0.05em;
+  text-shadow: 0 0 6px rgba(160, 160, 160, 0.2);
+}
+
+@media (min-width: 1201px) {
+  .content-wrapper { padding: 1rem 0; }
+  .content-inner { gap: 1.5rem; }
+  .hero-section { gap: 0.75rem; padding: 0.5rem 0; }
+  .hero-description { margin-bottom: 0.25rem; }
 }
 
 @media (max-width: 768px) {
-  .hero-actions-row {
-    width: 100%;
-  }
+  .content-inner { padding: 0 1rem; gap: 3rem; }
+  .content-wrapper { padding: 2rem 0; }
+  .hero-section { gap: 1.25rem; padding: 1rem 0; }
+  .hero-heading { font-size: 2rem; }
+  .hero-description { font-size: 0.9375rem; }
+}
 
-  .hero-actions-row :deep(.dc-btn) {
-    width: 100%;
-    justify-content: center;
-  }
-
-  .home-status-pill {
-    width: 100%;
-    justify-content: center;
-  }
-
-  .module-heading {
-    flex-direction: column;
-    align-items: flex-start;
-  }
+@media (max-width: 480px) {
+  .content-inner { padding: 0 0.75rem; gap: 2.5rem; }
+  .content-wrapper { padding: 1.5rem 0; }
+  .hero-section { gap: 1rem; }
+  .hero-heading { font-size: 1.75rem; letter-spacing: 0.08em; }
+  .hero-description { font-size: 0.875rem; line-height: 1.5; }
 }
 </style>
