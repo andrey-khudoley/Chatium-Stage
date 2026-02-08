@@ -163,7 +163,20 @@ const pageStyles = `
     width: 100%;
     margin-bottom: 2.5rem;
   }
+  .index-section--primary {
+    margin-bottom: 3rem;
+  }
   .index-section:last-of-type { margin-bottom: 0; }
+  .index-section-desc {
+    font-size: 0.95rem;
+    opacity: 0.85;
+    margin-bottom: 1.25rem;
+    line-height: 1.5;
+    background: linear-gradient(90deg, rgba(240,242,237,0.72) 0%, rgba(240,242,237,0.72) 50%, rgba(61,74,53,0.88) 50%, rgba(61,74,53,0.88) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
   .index-section-title {
     font-size: 0.85rem;
     font-weight: 600;
@@ -370,6 +383,12 @@ const pageStyles = `
       -webkit-text-fill-color: transparent;
       background-clip: text;
     }
+    .index-section-desc {
+      background: linear-gradient(180deg, rgba(240,242,237,0.8) 0%, rgba(240,242,237,0.8) 50%, rgba(61,74,53,0.9) 50%, rgba(61,74,53,0.9) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -393,7 +412,7 @@ export const indexPageRoute = app.html('/', async (ctx) => {
   return (
     <html>
       <head>
-        <title>{`Дизайн-система — ${DEFAULT_PROJECT_TITLE}`}</title>
+        <title>Дизайн-система — {DEFAULT_PROJECT_TITLE}</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta charset="UTF-8" />
         <meta name="theme-color" content="#070b0d" />
@@ -412,18 +431,48 @@ export const indexPageRoute = app.html('/', async (ctx) => {
             <i class="fas fa-leaf"></i>
           </div>
           
-          <h1>CRM Design System</h1>
-          <p class="subtitle">Библиотека компонентов и пример страницы в тёмной и светлой теме</p>
+          <h1>Дизайн-система</h1>
+          <p class="subtitle">Сводка и каталог компонентов в темах «Ночной лес» и «Солнечная листва»</p>
           
+          <section class="index-section index-section--primary">
+            <h2 class="index-section-title">Главная страница</h2>
+            <p class="index-section-desc">Пример приложения: сводка, сайдбар, карточки, таблица, сценарии.</p>
+            <div class="theme-cards">
+              <a href={pageDarkUrl} class="theme-card dark">
+                <div class="theme-icon">
+                  <i class="fas fa-th-large"></i>
+                </div>
+                <div class="theme-name">Ночной лес</div>
+                <p class="theme-desc">Сводка в тёмной теме. Dashboard, сайдбар, быстрые сценарии, журнал изменений.</p>
+                <span class="theme-badge">
+                  <i class="fas fa-moon"></i>
+                  Сводка · Dark
+                </span>
+              </a>
+              <a href={pageLightUrl} class="theme-card light">
+                <div class="theme-icon">
+                  <i class="fas fa-th-large"></i>
+                </div>
+                <div class="theme-name">Солнечная листва</div>
+                <p class="theme-desc">Сводка в светлой теме. Dashboard, сайдбар, быстрые сценарии, журнал изменений.</p>
+                <span class="theme-badge">
+                  <i class="fas fa-sun"></i>
+                  Сводка · Light
+                </span>
+              </a>
+            </div>
+          </section>
+
           <section class="index-section">
             <h2 class="index-section-title">Библиотека компонентов</h2>
+            <p class="index-section-desc">Каталог кнопок, форм, таблиц, уведомлений для разработчиков.</p>
             <div class="theme-cards">
               <a href={componentsDarkUrl} class="theme-card dark">
                 <div class="theme-icon">
                   <i class="fas fa-palette"></i>
                 </div>
                 <div class="theme-name">Ночной лес</div>
-                <p class="theme-desc">Каталог кнопок, форм, таблиц, уведомлений в тёмной теме.</p>
+                <p class="theme-desc">Каталог компонентов в тёмной теме.</p>
                 <span class="theme-badge">
                   <i class="fas fa-moon"></i>
                   Компоненты · Dark
@@ -434,7 +483,7 @@ export const indexPageRoute = app.html('/', async (ctx) => {
                   <i class="fas fa-palette"></i>
                 </div>
                 <div class="theme-name">Солнечная листва</div>
-                <p class="theme-desc">Каталог кнопок, форм, таблиц, уведомлений в светлой теме.</p>
+                <p class="theme-desc">Каталог компонентов в светлой теме.</p>
                 <span class="theme-badge">
                   <i class="fas fa-sun"></i>
                   Компоненты · Light
@@ -442,37 +491,9 @@ export const indexPageRoute = app.html('/', async (ctx) => {
               </a>
             </div>
           </section>
-
-          <section class="index-section">
-            <h2 class="index-section-title">Пример страницы на дизайне</h2>
-            <div class="theme-cards">
-              <a href={pageDarkUrl} class="theme-card dark">
-                <div class="theme-icon">
-                  <i class="fas fa-th-large"></i>
-                </div>
-                <div class="theme-name">Ночной лес</div>
-                <p class="theme-desc">Dashboard с сайдбаром, карточками и сценариями. Тёмная тема.</p>
-                <span class="theme-badge">
-                  <i class="fas fa-moon"></i>
-                  Пример · Dark
-                </span>
-              </a>
-              <a href={pageLightUrl} class="theme-card light">
-                <div class="theme-icon">
-                  <i class="fas fa-th-large"></i>
-                </div>
-                <div class="theme-name">Солнечная листва</div>
-                <p class="theme-desc">Dashboard с сайдбаром, карточками и сценариями. Светлая тема.</p>
-                <span class="theme-badge">
-                  <i class="fas fa-sun"></i>
-                  Пример · Light
-                </span>
-              </a>
-            </div>
-          </section>
         </div>
         
-        <p class="footer">A/Ley Services • CRM Design System v2</p>
+        <p class="footer">A/Ley Services · Дизайн-система</p>
       </body>
     </html>
   )

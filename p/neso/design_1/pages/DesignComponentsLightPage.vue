@@ -64,12 +64,12 @@ const coverageTags: CoverageTag[] = [
   { icon: 'fa-spinner', label: 'Loading / Empty / Error' }
 ]
 const paletteItems: PaletteItem[] = [
-  { name: 'BACKGROUND', hex: '#f8f6eb' },
-  { name: 'SURFACE', hex: '#ffffff', style: 'background:#ffffff;border:1px solid #e8e6df' },
+  { name: 'BACKGROUND', hex: '#f2eedf' },
+  { name: 'SURFACE', hex: '#f9f5ea', style: 'background:#f9f5ea;border:1px solid #d8d1bc' },
   { name: 'ACCENT', hex: '#4f6f2f' },
-  { name: 'ACCENT WARM', hex: '#7a8f3f' },
-  { name: 'TEXT', hex: '#243523' },
-  { name: 'SUNRAY', hex: '#fff3ca' }
+  { name: 'ACCENT DEEP', hex: '#3d5525' },
+  { name: 'TEXT', hex: '#1f2f1d' },
+  { name: 'MUTED SURFACE', hex: '#e8e2ce' }
 ]
 </script>
 
@@ -188,15 +188,17 @@ const paletteItems: PaletteItem[] = [
 
 <style scoped>
 .app {
-  --bg: #f8f6eb;
+  --bg: #f2eedf;
   --accent: #4f6f2f;
-  --text: #243523;
-  --text2: #3d4a35;
-  --border: rgba(79, 111, 47, 0.12);
-  --border-strong: rgba(79, 111, 47, 0.22);
+  --text: #1f2f1d;
+  --text2: #2f3f2c;
+  --border: rgba(79, 111, 47, 0.18);
+  --border-strong: rgba(79, 111, 47, 0.28);
   --radius: 12px;
   min-height: 100vh;
-  background: var(--bg);
+  background:
+    radial-gradient(circle at 14% 8%, rgba(79, 111, 47, 0.1), transparent 34%),
+    linear-gradient(145deg, #f2eedf 0%, #e8e2ce 62%, #f6f2e3 100%);
   color: var(--text);
   font-family: 'Mulish', -apple-system, BlinkMacSystemFont, sans-serif;
   padding: 24px 32px 48px;
@@ -209,17 +211,17 @@ const paletteItems: PaletteItem[] = [
   align-items: center;
   gap: 8px;
   padding: 10px 16px;
-  background: rgba(255,255,255,0.7);
+  background: rgba(250, 247, 238, 0.84);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   color: var(--text2);
   text-decoration: none;
   font-size: 0.9rem;
   transition: all 0.2s;
-  box-shadow: 0 2px 8px rgba(79, 111, 47, 0.08);
+  box-shadow: 0 6px 14px rgba(79, 111, 47, 0.12);
 }
 .nav-link:hover {
-  background: rgba(79, 111, 47, 0.12);
+  background: rgba(79, 111, 47, 0.16);
   border-color: var(--border-strong);
   color: var(--accent);
 }

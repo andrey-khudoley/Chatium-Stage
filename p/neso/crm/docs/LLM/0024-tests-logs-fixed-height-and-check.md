@@ -42,30 +42,3 @@
 
 1. Закоммитить изменения в p/template_project/pages/TestsPage.vue, README.md и docs/LLM/0024-tests-logs-fixed-height-and-check.md.
 2. После любых дальнейших правок повторить @check при необходимости.
-
----
-
-### Пользователь
-
-/s.chtm.aley.pro/check проверь целиком проект @s.chtm.aley.pro/p/neso/crm
-
-### Ассистент
-
-Выполнены все проверки оркестратора по проекту p/neso/crm.
-
-**Сделано:**
-
-- Обновлён **docs/imports.md**: страницы используют AppShell (не Header/GlobalGlitch/AppFooter); актуализированы импорты index.tsx, web/admin, web/profile, web/tests, web/login (design/theme вместо styles); добавлены секции web/design/dark.tsx, light.tsx, design-компоненты (AppShell, ThemeToggle, DesignDemoPage, DesignDemoLightPage); components помечены как legacy.
-- Обновлён **docs/architecture.md**: уточнено, что components — legacy, страницы используют AppShell.
-- Обновлены **README.md** и **.CHATIUM-LLM.md**: название проекта NeSo CRM (p/neso/crm).
-- Добавлена запись в **Changelog** (2026-02-06).
-
-**Сводка по категориям:**
-
-- **Стандарты кода:** 001-standards.md в проекте не найден; проверка по типичным правилам — нарушений нет.
-- **File-based роутинг:** Все эндпоинты с путём `/`, ссылки через getFullUrl(ROUTES.*). Замечаний нет.
-- **Рантайм и архитектура:** Критических рисков не выявлено. settings.repo не логирует (избежание рекурсии); logs.repo создаёт без логов.
-- **Импорты и циклы:** Циклических зависимостей не обнаружено.
-- **Документация:** Приведена в соответствие с текущим состоянием проекта.
-
-**Итог:** Проект в порядке. Документация импортов и архитектуры приведена в актуальное состояние.

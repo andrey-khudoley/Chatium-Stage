@@ -29,5 +29,8 @@
     "**/*.vue",
     "vue-shim.d.ts"
   ],
-  "exclude": []
+  "exclude": [
+    "**/DesignDemoDarkPage.vue",
+    "**/DesignDemoLightPage.vue"
+  ]
 }

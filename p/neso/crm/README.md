@@ -1,7 +1,7 @@
-# NeSo CRM (p/neso/crm)
+# template_project
 
 ## Назначение
-Проект Chatium: главная страница, админка, профиль, логин, страница тестов. Серверные логи, дашборд метрик, настройки.
+Шаблон проекта для Chatium. Минимальный старт: главная страница, админка, профиль и логин.
 
 ## Важно
 - Платформа: Chatium. Серверная часть управляется платформой.
@@ -9,7 +9,7 @@
 - Деплой происходит автоматически после пуша.
 
 ## Текущее состояние
-- Главная, админка, профиль, обращения и логин существуют как страницы. Раздел «Обращения» — UI-скелет (список обращений, область переписки, карточка клиента; мок-данные, без API и логики отправки).
+- Главная, админка, профиль и логин существуют как минимальные страницы.
 - Реализованы: API настроек (list, get, save), Heap-таблица settings, репозиторий, lib (бизнес-логика).
 - Серверные логи: Heap-таблица logs (message, payload, severity, level, timestamp), repos/logs.repo (create, findAll, findById, findBeforeTimestamp, countBySeverityAfter, countErrorsAfter, countWarningsAfter), lib/logger.lib (проверка уровня по настройке log_level, запись в ctx.log — только сообщение, в ctx.account.log — сообщение и payload, Heap, WebSocket с хэшем для уникальности канала, вебхук log_webhook { enable, url } по умолчанию url: ""). API POST /api/logger/log (AnyUser), body: { severity, level, message, payload?, timestamp? }; GET /api/admin/logs/recent (Admin) — последние N логов; GET /api/admin/logs/before (Admin) — N логов старше указанного timestamp для пагинации. Админка получает encodedLogsSocketId, подписывается на new-log для отображения в дашборде, загружает историю логов через recent при монтировании, может догружать старые логи через before (кнопка «Загрузить ещё 50»); кнопка «Очистить логи» очищает вывод и сдвигает таймштамп на текущий — повторное нажатие «Загрузить ещё 50» восстанавливает последние логи.
 - Дашборд админки: счётчики ошибок и предупреждений. Настройка `dashboard_reset_at` (таймштамп сброса в ms); lib/admin/dashboard.lib (getDashboardCounts, resetDashboard), GET /api/admin/dashboard/counts и POST /api/admin/dashboard/reset (Admin). При монтировании загружаются счётчики; кнопка «Сбросить» записывает текущее время в настройки; при новых логах (sink/WebSocket) инкремент только если timestamp >= dashboardResetAt.
@@ -32,9 +32,6 @@
 - Описать бизнес‑логику и данные.
 
 ## Changelog
-- 2026-02-06: введена таблица клиентов (tables/clients.table.ts); в обращениях поле client и в сообщениях поле inquiry переведены на Heap.RefLink; обновлены планы 001/002 и docs/data.md.
-- 2026-02-06: добавлен раздел «Обращения»: маршрут web/inquiries, страница InquiriesPage (трёхколоночный inbox — список, переписка, карточка клиента), пункт в навигации; прелоадер в web/inquiries; обновлены docs/imports.md, docs/architecture.md, README.
-- 2026-02-06: оркестратор @check: обновлены docs/imports.md (страницы используют AppShell, web/design; актуальные импорты index, web/*, design), docs/architecture.md (components legacy), README и .CHATIUM-LLM (название NeSo CRM).
 - 2026-02-04: фиксированная высота (400px) блока логов на странице тестов — TestsPage.vue, класс .tests-logs-output.
 - 2026-02-04: исправлена рекурсия Maximum call stack size exceeded при обращении к проекту (p/neso/crm/index): в repos/settings.repo.ts убраны все вызовы logger.lib — getSetting/getLogLevel/getLogWebhook вызываются из writeServerLog и используют findByKey, иначе цепочка зациливалась. Обновлён docs/imports.md.
 - 2026-02-04: в lib/logger.lib: в ctx.log передаётся только сообщение (без payload), в ctx.account.log — сообщение и payload (level, json). Обновлён JSDoc writeServerLog.

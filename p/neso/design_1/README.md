@@ -1,22 +1,28 @@
-# p/neso/design_1 — демо дизайна
+# p/neso/design_1 — дизайн-система
 
-Проект содержит только демо-страницы дизайна (тёмная и светлая тема) для предпросмотра UI.
+Проект дизайн-системы с главными страницами примера приложения (сводка) и каталогом компонентов в темах «Ночной лес» (dark) и «Солнечная листва» (light).
 
 ## Маршруты (относительно `/p/neso/design_1`)
 
-- **/** — лендинг с выбором: библиотека компонентов и пример страницы (по 2 карточки на тему)
-- **/web/dark/components** — библиотека компонентов · тёмная тема «Ночной лес»
-- **/web/light/components** — библиотека компонентов · светлая тема «Солнечная листва»
-- **/web/dark** — пример страницы (dashboard) · тёмная тема
-- **/web/light** — пример страницы (dashboard) · светлая тема
+- **/** — лендинг: выбор темы, переход на главную страницу или каталог компонентов
+- **/web/dark** — **главная страница** (сводка) · тёмная тема
+- **/web/light** — **главная страница** (сводка) · светлая тема
+- **/web/dark/components** — каталог компонентов · тёмная тема
+- **/web/light/components** — каталог компонентов · светлая тема
 
-## Структура
+Страницы `/web/dark` и `/web/light` — основа проекта с точки зрения UI; каталог компонентов вторичен.
 
-- `config/` — маршруты (`routes.tsx`, PROJECT_ROOT `p/neso/design_1`): `componentsDark`, `componentsLight`, `pageDark`, `pageLight`
-- `pages/` — Vue: `DesignComponentsDarkPage.vue`, `DesignComponentsLightPage.vue` (библиотека), `DesignDemoDarkPage.vue`, `DesignDemoLightPage.vue` (пример страницы)
-- `shared/` — прелоадер, уровень логов (клиент), логгер для компонентов
-- `web/dark/`, `web/light/` — точки входа примера страницы; `web/dark/components/`, `web/light/components/` — точки входа библиотеки компонентов
-- `DESIGN_SPEC.md`, `design_v01.md` — описание дизайна
+## Структура (продовая)
+
+- `config/` — маршруты и название проекта
+- `pages/` — Vue-страницы: `DesignDemoPage.vue` (сводка, одна на обе темы), `DesignComponents*Page.vue` (каталог)
+- `layout/` — оболочка приложения (DcAppShell, DcMain, DcContent и др.)
+- `components/` — UI-компоненты дизайн-системы (Dc*)
+- `shared/` — прелоадер, темы, логгер, **demoPageShell** (общая разметка head + boot loader для dark/light)
+- `web/dark/`, `web/light/` — точки входа роутов главной страницы и каталога компонентов
+- `docs/architecture.md` — описание архитектуры
+
+Подробнее: `docs/architecture.md`.
 
 ## Стек
 

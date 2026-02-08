@@ -4,27 +4,16 @@ import { requireAccountRole } from '@app/auth'
 import { genSocketId } from '@app/socket'
 import AdminPage from '../../pages/AdminPage.vue'
 import { loginPageRoute } from '../login'
-import { getPreloaderStyles, getPreloaderScript } from '../../shared/preloader'
-import { getLogLevelForPage, getLogLevelScript } from '../../shared/logLevel'
+import { getDemoPageHead, getBootLoaderDiv } from '../../shared/demoPageShell'
+import { getLogLevelForPage } from '../../shared/logLevel'
 import { getAdminLogsSocketId } from '../../lib/logger.lib'
 import * as loggerLib from '../../lib/logger.lib'
 import { getFullUrl, ROUTES } from '../../config/routes'
-import { ADMIN_PAGE_NAME, getPageTitle, getHeaderText } from '../../config/project'
+import { ADMIN_PAGE_NAME, getHeaderText } from '../../config/project'
 import * as settingsLib from '../../lib/settings.lib'
-import {
-  darkThemeTokens,
-  darkPageStyles,
-  darkScrollbarStyles,
-  lightThemeTokens,
-  lightPageStyles,
-  lightScrollbarStyles
-} from '../design/theme'
-import { darkUiStyles } from '../design/ui-dark'
-import { lightUiStyles } from '../design/ui-light'
-import { uiSharedStyles } from '../design/ui-shared'
-import { getThemeInitScript } from '../design/themeRuntime'
 
 const LOG_PATH = 'web/admin/index'
+const THEME = 'dark' as const
 
 export const adminPageRoute = app.html('/', async (ctx, req) => {
   await loggerLib.writeServerLog(ctx, {
@@ -61,18 +50,6 @@ export const adminPageRoute = app.html('/', async (ctx, req) => {
           <script src="/s/metric/clarity.js"></script>
           <meta http-equiv="refresh" content={`0; url=${loginUrl}`} />
           <script>{`window.location.href = '${loginUrl}'`}</script>
-          <style data-theme="dark">{darkThemeTokens}</style>
-          <style data-theme="dark">{darkPageStyles}</style>
-          <style data-theme="dark">{darkUiStyles}</style>
-          <style data-theme="light" media="not all">{lightThemeTokens}</style>
-          <style data-theme="light" media="not all">{lightPageStyles}</style>
-          <style data-theme="light" media="not all">{lightUiStyles}</style>
-          <style>{uiSharedStyles}</style>
-          <script>{getThemeInitScript()}</script>
-          <link
-            href="https://fonts.googleapis.com/css2?family=Mulish:ital,wght@0,200..1000;1,200..1000&family=Old+Standard+TT:ital,wght@0,400;0,700;1,400&display=swap"
-            rel="stylesheet"
-          />
         </head>
         <body>
           <p>Перенаправление на страницу входа...</p>
@@ -112,39 +89,9 @@ export const adminPageRoute = app.html('/', async (ctx, req) => {
 
   return (
     <html>
-      <head>
-        <title>{getPageTitle(ADMIN_PAGE_NAME, projectName)}</title>
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <meta charset="UTF-8" />
-        <script>{getLogLevelScript(logLevel)}</script>
-        <script src="/s/metric/clarity.js"></script>
-        <style data-theme="dark">{darkThemeTokens}</style>
-        <style data-theme="dark">{darkPageStyles}</style>
-        <style data-theme="dark">{darkScrollbarStyles}</style>
-        <style data-theme="dark">{darkUiStyles}</style>
-        <style data-theme="light" media="not all">{lightThemeTokens}</style>
-        <style data-theme="light" media="not all">{lightPageStyles}</style>
-        <style data-theme="light" media="not all">{lightScrollbarStyles}</style>
-        <style data-theme="light" media="not all">{lightUiStyles}</style>
-        <style>{uiSharedStyles}</style>
-        <script>{getThemeInitScript()}</script>
-        <style>{getPreloaderStyles()}</style>
-        <script>{getPreloaderScript()}</script>
-        <script src="/s/static/lib/tailwind.3.4.16.min.js"></script>
-        <link rel="stylesheet" href="/s/static/lib/fontawesome/6.7.2/css/all.min.css" />
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Mulish:ital,wght@0,200..1000;1,200..1000&family=Old+Standard+TT:ital,wght@0,400;0,700;1,400&display=swap"
-          rel="stylesheet"
-        />
-      </head>
+      <head>{getDemoPageHead(THEME, ADMIN_PAGE_NAME, projectName, logLevel)}</head>
       <body>
-        <div id="boot-loader">
-          <div class="boot-messages">
-            <div id="boot-messages-container"></div>
-          </div>
-        </div>
+        {getBootLoaderDiv(THEME, projectName)}
         <AdminPage
           projectTitle={getHeaderText(ADMIN_PAGE_NAME, projectName)}
           indexUrl={indexUrl}

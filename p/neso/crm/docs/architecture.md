@@ -1,7 +1,7 @@
 # Architecture
 
 ## Назначение
-Базовый шаблон проекта Chatium с минимальным набором страниц и документации.
+Заготовка проекта NeSo CRM на Chatium с дизайн-системой «Ночной лес» / «Солнечная листва» (перенесённой из design_1).
 
 ## Ограничения платформы
 - Серверная инфраструктура предоставляется Chatium.
@@ -18,7 +18,6 @@
 - `web/admin/index.tsx` — админка, `requireAccountRole('Admin')`.
 - `web/profile/index.tsx` — профиль, `requireRealUser()`.
 - `web/tests/index.tsx` — страница тестов, `requireRealUser()`.
-- `web/inquiries/index.tsx` — раздел «Обращения» (inbox-модуль: список обращений, переписка, карточка клиента), `requireRealUser()`.
 - `web/login/index.tsx` — вход (редирект на системный `/s/auth/signin`).
 
 ## Разделение слоёв
@@ -36,15 +35,16 @@
 
 ## Структура каталогов
 - `config/` — маршруты и `PROJECT_ROOT`.
-- `web/` — браузерные роуты модулей (admin, profile, tests, inquiries, login).
-- `pages/` — Vue‑страницы (минимальные).
-- `components/` — legacy Vue‑компоненты (Header, AppFooter, GlobalGlitch, LogoutModal); страницы используют `web/design/components/AppShell.vue`.
+- `web/` — браузерные роуты модулей (admin, profile, tests, login).
+- `pages/` — Vue‑страницы (HomePage, AdminPage, ProfilePage, TestsPage, LoginPage).
+- `components/` — компоненты дизайн-системы (Dc*, AppSidebar): кнопки, карточки, таблицы, сайдбар, hero, стат-карты и др. (перенесены из design_1).
+- `layout/` — оболочка страницы: DcAppShell, DcMain, DcContent, DcMainGrid, DcPageSection, DcSidebarOverlay (из design_1).
+- `shared/` — общий код: `preloader` (прелоадер с темой dark/light), `themeStyles` (токены темы, скроллбар), `demoPageShell` (getDemoPageHead, getBootLoaderDiv для единой разметки head и boot loader), `logLevel`, `logger`.
 - `api/` — API‑эндпоинты (получение и валидация входных данных). File-based: один файл — один эндпоинт с `/`. Пример: `api/settings/list.ts`, `api/settings/get.ts`, `api/settings/save.ts`, `api/logger/log.ts`, `api/admin/logs/recent.ts`, `api/admin/logs/before.ts`, `api/tests/list.ts`, `api/tests/endpoints-check/health.ts`, `api/tests/endpoints-check/ping.ts`.
-- `tables/` — Heap‑таблицы (схемы: settings, logs, clients, inquiries, inquiryMessages; в inquiries — RefLink на clients, в inquiryMessages — RefLink на inquiries).
+- `tables/` — Heap‑таблицы (схемы: settings, logs).
 - `repos/` — репозитории (работа с БД: settings, logs; logs.repo включает findBeforeTimestamp для пагинации).
 - `lib/` — бизнес‑логика (settings.lib, logger.lib: проверка уровня, запись в ctx/Heap/WebSocket/вебхук).
-- `shared/` — общий код (preloader, logLevel для передачи уровня логирования на клиент, logger — уровни syslog RFC 5424, createComponentLogger, setLogSink/LogEntry для дашборда, logEmergency…logDebug в браузере с проверкой порога).
-- `docs/` — документация проекта.
+- `docs/` — документация проекта; `docs/design/` — спецификация дизайна (DESIGN_SPEC.md, design_v01.md, design-architecture.md).
 
 ## Интеграции
 - Внешние сервисы: нет.

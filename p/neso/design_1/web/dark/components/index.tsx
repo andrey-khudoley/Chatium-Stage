@@ -67,7 +67,7 @@ export const designComponentsDarkPageRoute = app.html('/', async (ctx) => {
         <style>{pageStyles}</style>
         <style>{darkScrollbarStyles}</style>
         <style>{getPreloaderStyles()}</style>
-        <script>{getPreloaderScript()}</script>
+        <script>{getPreloaderScript('dark')}</script>
         <script src="/s/static/lib/tailwind.3.4.16.min.js"></script>
         <link rel="stylesheet" href="/s/static/lib/fontawesome/6.7.2/css/all.min.css" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -75,9 +75,21 @@ export const designComponentsDarkPageRoute = app.html('/', async (ctx) => {
         <link href="https://fonts.googleapis.com/css2?family=Mulish:ital,wght@0,200..1000;1,200..1000&family=Old+Standard+TT:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet" />
       </head>
       <body>
-        <div id="boot-loader">
-          <div class="boot-messages">
-            <div id="boot-messages-container"></div>
+        <div id="boot-loader" data-theme="dark" data-theme-hint="dark" data-project-name={DEFAULT_PROJECT_TITLE} aria-live="polite" aria-busy="true">
+          <div class="boot-shell" role="status">
+            <span class="boot-orb boot-orb--top" aria-hidden="true"></span>
+            <span class="boot-orb boot-orb--bottom" aria-hidden="true"></span>
+            <p class="boot-kicker">System Boot</p>
+            <h1 class="boot-title">{DEFAULT_PROJECT_TITLE}</h1>
+            <p class="boot-subtitle">Подготавливаем интерфейс...</p>
+            <div class="boot-progress-track" aria-hidden="true">
+              <span id="boot-progress-bar" class="boot-progress-bar"></span>
+            </div>
+            <div class="boot-meta">
+              <span id="boot-status-text" class="boot-status-text">Собираем визуальную оболочку...</span>
+              <span id="boot-progress-value" class="boot-progress-value">0%</span>
+            </div>
+            <div class="boot-theme-chip" id="boot-theme-pill">Ночной лес</div>
           </div>
         </div>
         <DesignComponentsDarkPage indexUrl={indexUrl} pageUrl={pageUrl} />

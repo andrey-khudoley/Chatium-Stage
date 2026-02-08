@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { onMounted, onBeforeUnmount, onUnmounted, ref, computed } from 'vue'
 import { getOrCreateBrowserSocketClient } from '@app/socket'
-import AppShell from '../web/design/components/AppShell.vue'
+import { DcDemoSidebar, DcPageHeader } from '../components'
+import { DcAppShell, DcMain } from '../layout'
+import type { NavItem } from '../components'
 import { createComponentLogger, setLogSink, type LogEntry } from '../shared/logger'
 import { getRecentLogsRoute } from '../api/admin/logs/recent'
 import { getLogsBeforeRoute } from '../api/admin/logs/before'
@@ -30,15 +32,40 @@ const props = defineProps<{
   encodedLogsSocketId?: string
 }>()
 
-const navItems = computed(() =>
-  [
-    { id: 'dashboard', icon: 'fa-house', label: 'Главная', href: props.indexUrl },
-    { id: 'inquiries', icon: 'fa-comments', label: 'Обращения', href: props.inquiriesUrl },
-    { id: 'profile', icon: 'fa-user', label: 'Профиль', href: props.profileUrl },
-    { id: 'admin', icon: 'fa-gear', label: 'Админка', href: props.adminUrl },
-    { id: 'tests', icon: 'fa-flask', label: 'Тесты', href: props.testsUrl }
-  ].filter((item) => item.href)
-)
+const theme = 'dark' as const
+const sidebarCollapsed = ref(false)
+const sidebarOpen = ref(false)
+const activeSection = ref('tests')
+
+const navIdToUrl = computed<Record<string, string>>(() => ({
+  dashboard: props.indexUrl,
+  profile: props.profileUrl,
+  admin: props.adminUrl ?? '',
+  tests: props.testsUrl ?? '',
+  login: props.loginUrl
+}))
+
+const menuItems = computed<NavItem[]>(() => {
+  const items: NavItem[] = [
+    { id: 'dashboard', icon: 'fa-house', label: 'Главная' },
+    { id: 'profile', icon: 'fa-user', label: 'Профиль' },
+    { id: 'admin', icon: 'fa-gear', label: 'Админка' },
+    { id: 'tests', icon: 'fa-flask', label: 'Тесты' },
+    { id: 'login', icon: 'fa-right-to-bracket', label: 'Логин' }
+  ]
+  return items.filter((item) => navIdToUrl.value[item.id])
+})
+
+function closeSidebar() {
+  sidebarOpen.value = false
+}
+function toggleSidebarMobile() {
+  sidebarOpen.value = !sidebarOpen.value
+}
+function onSidebarSelect(id: string) {
+  const url = navIdToUrl.value[id]
+  if (url) window.location.href = url
+}
 
 const showContent = ref(false)
 const bootLoaderDone = ref(false)
@@ -625,12 +652,40 @@ const runAllTests = async () => {
 </script>
 
 <template>
-  <AppShell
-    :pageTitle="'Тесты'"
-    :pageSubtitle="'Проверка слоёв и эндпоинтов'"
-    :navItems="navItems"
-    activeSection="tests"
+  <DcAppShell
+    :theme="theme"
+    :ready="bootLoaderDone"
+    :sidebar-collapsed="sidebarCollapsed"
+    :sidebar-open="sidebarOpen"
+    @close-sidebar="closeSidebar"
   >
+    <template #sidebar>
+      <DcDemoSidebar
+        :theme="theme"
+        logo-text="NeSo CRM"
+        user-name="Пользователь"
+        :user-role="props.isAdmin ? 'Admin' : 'User'"
+        :logout-url="loginUrl"
+        :items="menuItems"
+        :collapsed="sidebarCollapsed"
+        :mobile-open="sidebarOpen"
+        :active-id="activeSection"
+        @close="closeSidebar"
+        @select="onSidebarSelect"
+        @toggle-collapse="sidebarCollapsed = !sidebarCollapsed"
+      />
+    </template>
+    <template #header>
+      <DcPageHeader
+        :theme="theme"
+        :title="projectTitle"
+        :breadcrumbs="['Главная', 'Тесты']"
+        :show-menu-toggle="true"
+        @menu-toggle="toggleSidebarMobile"
+      />
+    </template>
+
+    <DcMain>
     <main class="content-wrapper flex-1 relative z-10 min-h-0 overflow-y-auto">
           <div class="content-inner">
             <section class="tests-section" :class="{ 'content-visible': showContent }">
@@ -1017,7 +1072,8 @@ const runAllTests = async () => {
             </section>
           </div>
         </main>
-  </AppShell>
+    </DcMain>
+  </DcAppShell>
 </template>
 
 <style scoped>

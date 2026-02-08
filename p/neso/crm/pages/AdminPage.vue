@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { onMounted, onBeforeUnmount, onUnmounted, ref, computed, watch } from 'vue'
 import { getOrCreateBrowserSocketClient } from '@app/socket'
-import AppShell from '../web/design/components/AppShell.vue'
+import { DcDemoSidebar, DcHeaderActions, DcPageHeader } from '../components'
+import { DcAppShell, DcMain } from '../layout'
+import type { NavItem } from '../components'
 import { getSettingRoute } from '../api/settings/get'
 import { saveSettingRoute } from '../api/settings/save'
 import { createComponentLogger, setLogSink, type LogEntry } from '../shared/logger'
@@ -34,15 +36,40 @@ const props = defineProps<{
   encodedLogsSocketId?: string
 }>()
 
-const navItems = computed(() =>
-  [
-    { id: 'dashboard', icon: 'fa-house', label: 'Главная', href: props.indexUrl },
-    { id: 'inquiries', icon: 'fa-comments', label: 'Обращения', href: props.inquiriesUrl },
-    { id: 'profile', icon: 'fa-user', label: 'Профиль', href: props.profileUrl },
-    { id: 'admin', icon: 'fa-gear', label: 'Админка', href: props.adminUrl },
-    { id: 'tests', icon: 'fa-flask', label: 'Тесты', href: props.testsUrl }
-  ].filter((item) => item.href)
-)
+const theme = 'dark' as const
+const sidebarCollapsed = ref(false)
+const sidebarOpen = ref(false)
+const activeSection = ref('admin')
+
+const navIdToUrl = computed<Record<string, string>>(() => ({
+  dashboard: props.indexUrl,
+  profile: props.profileUrl,
+  admin: props.adminUrl ?? '',
+  tests: props.testsUrl ?? '',
+  login: props.loginUrl
+}))
+
+const menuItems = computed<NavItem[]>(() => {
+  const items: NavItem[] = [
+    { id: 'dashboard', icon: 'fa-house', label: 'Главная' },
+    { id: 'profile', icon: 'fa-user', label: 'Профиль' },
+    { id: 'admin', icon: 'fa-gear', label: 'Админка' },
+    { id: 'tests', icon: 'fa-flask', label: 'Тесты' },
+    { id: 'login', icon: 'fa-right-to-bracket', label: 'Логин' }
+  ]
+  return items.filter((item) => navIdToUrl.value[item.id])
+})
+
+function closeSidebar() {
+  sidebarOpen.value = false
+}
+function toggleSidebarMobile() {
+  sidebarOpen.value = !sidebarOpen.value
+}
+function onSidebarSelect(id: string) {
+  const url = navIdToUrl.value[id]
+  if (url) window.location.href = url
+}
 
 const bootLoaderDone = ref(false)
 const projectName = ref(props.projectTitle.split(' / ')[0] || props.projectTitle)
@@ -440,26 +467,54 @@ const clearLogs = () => {
 </script>
 
 <template>
-  <AppShell
-    :pageTitle="'Админка'"
-    :pageSubtitle="projectName"
-    :navItems="navItems"
-    activeSection="admin"
+  <DcAppShell
+    :theme="theme"
+    :ready="bootLoaderDone"
+    :sidebar-collapsed="sidebarCollapsed"
+    :sidebar-open="sidebarOpen"
+    @close-sidebar="closeSidebar"
   >
-    <template #headerActions>
-      <button class="action-btn glass" type="button" @click="resetDashboard">
-        <i class="fas fa-sync-alt"></i>
-      </button>
-      <button class="action-btn glass" type="button" @click="loadRecentLogs">
-        <i class="fas fa-terminal"></i>
-      </button>
-      <button class="action-btn primary" type="button" @click="clearLogs">
-        <i class="fas fa-trash-alt"></i>
-        <span>Очистить</span>
-      </button>
+    <template #sidebar>
+      <DcDemoSidebar
+        :theme="theme"
+        logo-text="NeSo CRM"
+        user-name="Admin"
+        user-role="Admin"
+        :logout-url="loginUrl"
+        :items="menuItems"
+        :collapsed="sidebarCollapsed"
+        :mobile-open="sidebarOpen"
+        :active-id="activeSection"
+        @close="closeSidebar"
+        @select="onSidebarSelect"
+        @toggle-collapse="sidebarCollapsed = !sidebarCollapsed"
+      />
+    </template>
+    <template #header>
+      <DcPageHeader
+        :theme="theme"
+        :title="projectTitle"
+        :breadcrumbs="['Главная', 'Админка']"
+        :show-menu-toggle="true"
+        @menu-toggle="toggleSidebarMobile"
+      >
+        <template #actions>
+          <button type="button" class="dc-header-action" @click="resetDashboard" title="Сбросить метрики">
+            <i class="fas fa-sync-alt"></i>
+          </button>
+          <button type="button" class="dc-header-action" @click="loadRecentLogs" title="Обновить логи">
+            <i class="fas fa-terminal"></i>
+          </button>
+          <button type="button" class="dc-header-action dc-header-action--primary" @click="clearLogs">
+            <i class="fas fa-trash-alt"></i>
+            <span>Очистить</span>
+          </button>
+        </template>
+      </DcPageHeader>
     </template>
 
-    <section class="bento-grid">
+    <DcMain>
+    <section class="bento-grid dc-content-area">
       <div class="bento-item hero-card">
         <div class="hero-content">
           <span class="hero-tag">
@@ -625,7 +680,8 @@ const clearLogs = () => {
         </div>
       </div>
     </section>
-  </AppShell>
+    </DcMain>
+  </DcAppShell>
 </template>
 
 <style scoped>

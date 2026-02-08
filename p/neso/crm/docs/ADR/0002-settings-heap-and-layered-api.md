@@ -10,7 +10,7 @@
 
 ### 1. Настройки в Heap (key-value)
 
-Создана таблица `t__neso-crm__setting__M4n8Tx` с полями:
+Создана таблица `t__template-project__setting__7Fk2Qw` с полями:
 - `key` (string) — ключ настройки;
 - `value` (Heap.Any) — значение любого типа.
 

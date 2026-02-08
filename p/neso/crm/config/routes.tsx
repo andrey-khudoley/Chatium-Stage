@@ -11,9 +11,7 @@ export const ROUTES = {
   profile: './web/profile',
   login: './web/login',
   tests: './web/tests',
-  inquiries: './web/inquiries',
-  designDark: './web/design/dark',
-  designLight: './web/design/light'
+  inquiries: './web/inquiries'
 } as const
 
 /** Пути для getFullUrl (абсолютные от корня проекта) */
@@ -23,9 +21,7 @@ export const ROUTE_PATHS = {
   profile: '/web/profile',
   login: '/web/login',
   tests: '/web/tests',
-  inquiries: '/web/inquiries',
-  designDark: '/web/design/dark',
-  designLight: '/web/design/light'
+  inquiries: '/web/inquiries'
 } as const
 
 /**

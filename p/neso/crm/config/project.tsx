@@ -1,5 +1,5 @@
 /** Название проекта по умолчанию (если в настройках не задано) */
-export const DEFAULT_PROJECT_TITLE = 'A/Ley Services'
+export const DEFAULT_PROJECT_TITLE = 'NeSo CRM'
 
 /** Имя страницы: для главной и профиля */
 export const INDEX_PAGE_NAME = 'Главная'
@@ -19,7 +19,7 @@ export function getHeaderText(pageName: string, projectName: string): string {
 }
 
 /** Текст контента домашней страницы (заголовок) */
-export const BODY_TEXT = 'Шаблон проекта'
+export const BODY_TEXT = 'NeSo CRM'
 
 /** Подзаголовок домашней страницы */
-export const BODY_SUBTEXT = 'В разработке'
+export const BODY_SUBTEXT = 'Заготовка в новом дизайне'
