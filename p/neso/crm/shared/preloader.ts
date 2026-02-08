@@ -70,16 +70,6 @@ export function getPreloaderStyles() {
       transition: opacity 0.44s ease, transform 0.44s ease, visibility 0.44s ease;
     }
 
-    #boot-loader::before {
-      content: '';
-      position: absolute;
-      inset: -20%;
-      pointer-events: none;
-      opacity: 0.36;
-      background: linear-gradient(120deg, transparent 0%, rgba(255, 255, 255, 0.08) 24%, transparent 48%);
-      animation: boot-ray 3.6s ease-in-out infinite;
-    }
-
     #boot-loader::after {
       content: '';
       position: absolute;
@@ -159,7 +149,6 @@ export function getPreloaderStyles() {
       border-radius: 999px;
       filter: blur(2px);
       opacity: 0.75;
-      animation: boot-orb-float 4.2s ease-in-out infinite;
     }
 
     .boot-orb--top {
@@ -238,17 +227,6 @@ export function getPreloaderStyles() {
       box-shadow: 0 0 20px rgba(79, 111, 47, 0.28);
     }
 
-    .boot-progress-bar::after {
-      content: '';
-      position: absolute;
-      top: 0;
-      bottom: 0;
-      width: 54px;
-      right: -54px;
-      background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.72) 56%, transparent 100%);
-      animation: boot-progress-glint 1.7s linear infinite;
-    }
-
     .boot-meta {
       margin-top: 0.72rem;
       display: flex;
@@ -296,33 +274,6 @@ export function getPreloaderStyles() {
         rgba(79, 111, 47, 0.18);
     }
 
-    @keyframes boot-ray {
-      0%, 100% {
-        transform: translateX(-28%) translateY(-3%) rotate(2deg);
-      }
-      50% {
-        transform: translateX(26%) translateY(2%) rotate(-1deg);
-      }
-    }
-
-    @keyframes boot-orb-float {
-      0%, 100% {
-        transform: translateY(0);
-      }
-      50% {
-        transform: translateY(-7px);
-      }
-    }
-
-    @keyframes boot-progress-glint {
-      from {
-        transform: translateX(0);
-      }
-      to {
-        transform: translateX(120px);
-      }
-    }
-
     @media (max-width: 640px) {
       #boot-loader {
         padding: 1rem;
@@ -345,8 +296,7 @@ export function getPreloaderStyles() {
     @media (prefers-reduced-motion: reduce) {
       #boot-loader,
       .boot-shell,
-      .boot-orb,
-      .boot-progress-bar::after {
+      .boot-orb {
         animation: none !important;
         transition: none !important;
       }

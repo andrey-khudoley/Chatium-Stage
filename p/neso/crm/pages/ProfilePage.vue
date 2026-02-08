@@ -39,6 +39,7 @@ const activeSection = ref('profile')
 
 const navIdToUrl = computed<Record<string, string>>(() => ({
   dashboard: props.indexUrl,
+  inquiries: props.inquiriesUrl ?? '',
   profile: props.profileUrl,
   admin: props.adminUrl ?? '',
   tests: props.testsUrl ?? '',
@@ -48,6 +49,7 @@ const navIdToUrl = computed<Record<string, string>>(() => ({
 const menuItems = computed<NavItem[]>(() => {
   const items: NavItem[] = [
     { id: 'dashboard', icon: 'fa-house', label: 'Главная' },
+    { id: 'inquiries', icon: 'fa-layer-group', label: 'Компоненты' },
     { id: 'profile', icon: 'fa-user', label: 'Профиль' },
     { id: 'admin', icon: 'fa-gear', label: 'Админка' },
     { id: 'tests', icon: 'fa-flask', label: 'Тесты' },

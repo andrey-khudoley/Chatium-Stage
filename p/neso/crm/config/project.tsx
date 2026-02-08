@@ -6,7 +6,7 @@ export const INDEX_PAGE_NAME = 'Главная'
 export const PROFILE_PAGE_NAME = 'Профиль'
 export const ADMIN_PAGE_NAME = 'Админка'
 export const TESTS_PAGE_NAME = 'Тесты'
-export const INQUIRIES_PAGE_NAME = 'Обращения'
+export const INQUIRIES_PAGE_NAME = 'Библиотека компонентов'
 
 /** Текст для <title>: "Название страницы - Название из настроек" */
 export function getPageTitle(pageName: string, projectName: string): string {
