@@ -6,7 +6,7 @@ export function getPageTitle(pageName: string, projectName: string): string {
   return `${pageName} - ${projectName}`
 }
 
-/** Header helper for legacy integrations. */
+/** Header helper for route/page labels. */
 export function getHeaderText(pageName: string, projectName: string): string {
   return `${projectName} / ${pageName}`
 }

@@ -1,3 +1,4 @@
+// @shared
 import { jsx } from '@app/html-jsx'
 import { getFullUrl, ROUTES } from './config/routes'
 import { DEFAULT_PROJECT_TITLE } from './config/project'
@@ -244,7 +245,7 @@ export const indexPageRoute = app.html('/', async () => {
 
             <a href={componentsDarkUrl} class="card utility">
               <h2><i class="fas fa-palette"></i> Dark components</h2>
-              <p>Component library and legacy visual states in dark mode.</p>
+              <p>Reusable BPM sections and shell primitives in dark mode.</p>
               <div class="chip-row">
                 <span class="chip">components</span>
                 <span class="chip">dark</span>
@@ -253,7 +254,7 @@ export const indexPageRoute = app.html('/', async () => {
 
             <a href={componentsLightUrl} class="card utility">
               <h2><i class="fas fa-palette"></i> Light components</h2>
-              <p>Component library and legacy visual states in light mode.</p>
+              <p>Reusable BPM sections and shell primitives in light mode.</p>
               <div class="chip-row">
                 <span class="chip">components</span>
                 <span class="chip">light</span>

@@ -10,38 +10,32 @@ Accepted
 
 ## Context
 
-The previous interface used atmospheric visual language but was too airy and oversized for operational BPM work. The redesign had to:
-
-- preserve dark/light atmosphere and glass effects,
-- become dense and process-centric,
-- support future theme expansion without changing components,
-- keep route and shell architecture stable.
+The previous UI module mixed BPM goals with oversized generic dashboard patterns.
+We needed a clean, production-transferable BPM-first component set with preserved visual atmosphere.
 
 ## Decision
 
-1. Rebuild the main workspace as BPM-first layout focused on process instances and flow control.
-2. Move theme system to preset tokens in `shared/themeCatalog.ts`.
-3. Generate runtime global CSS from tokens (`shared/themeStyles.ts`).
-4. Keep components style-only through CSS variables (no hardcoded theme branches).
-5. Provide four presets (2 base + 2 variants) to validate extensibility.
-6. Keep dark/light routes, allow preset switching inside workspace controls.
+1. Rebuild workspace around BPM entities: flow instances, stages, SLA, rules, automation.
+2. Keep page files thin and move section rendering into reusable `components/bpm/*` files.
+3. Standardize theming as token presets (`shared/themeCatalog.ts`) consumed via CSS vars only.
+4. Ship dark/light base presets plus two variants to validate extensibility.
+5. Keep catalog routes and show only the new BPM component set.
 
 ## Consequences
 
 ### Positive
 
-- Data density and scan speed are significantly improved.
-- Future themes can be added by extending token presets only.
-- Visual identity (night forest / sunrise morning + glass depth) is preserved.
-- BPM patterns are explicit: inbox/detail, kanban, timeline, builder, analytics.
+- Higher data density and better scan speed for operations.
+- Components are copy-ready and independent.
+- Theme extension no longer requires component code changes.
 
 ### Tradeoffs
 
-- Local RU/EN dictionary currently lives in page-level composition layer.
-- Component catalogs still include legacy samples and can be modernized later.
+- Workspace remains demo-data driven (no backend integration in this module).
+- RU/EN dictionary is local to this module and can be moved to global i18n later.
 
 ## Follow-up
 
-1. Extract workspace copy into project-wide i18n module.
-2. Add persisted user theme settings (preset + density + typography).
-3. Split large page composition into dedicated BPM modules (`design/` templates + mock states).
+1. Add persistent user theme settings.
+2. Move RU/EN dictionary to shared platform i18n layer.
+3. Add automated visual regression checks for presets.

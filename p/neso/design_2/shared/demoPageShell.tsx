@@ -1,3 +1,4 @@
+// @shared
 import { jsx } from '@app/html-jsx'
 import { getPageTitle } from '../config/project'
 import { getThemePreset } from './themeCatalog'

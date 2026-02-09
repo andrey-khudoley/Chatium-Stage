@@ -7,6 +7,7 @@ Workspace for BPM screen templates, showcase states and mock datasets.
 - `design/` imports production components from root folders.
 - Production components must not depend on `design/`.
 - Mock data lives only for visual demos and scenario testing.
+- No legacy CRM-specific UI blocks should be added here.
 
 ## Folders
 

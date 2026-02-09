@@ -15,4 +15,5 @@ Use production components from:
 
 - `layout/`
 - `components/`
+- `components/bpm/`
 - `shared/themeCatalog.ts`

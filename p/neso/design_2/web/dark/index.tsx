@@ -1,3 +1,4 @@
+// @shared
 import { jsx } from '@app/html-jsx'
 import DesignDemoPage from '../../pages/DesignDemoPage.vue'
 import { getBootLoaderDiv, getDemoPageHead } from '../../shared/demoPageShell'
@@ -8,9 +9,7 @@ const PROJECT_NAME = DEFAULT_PROJECT_TITLE
 const PAGE_NAME = 'BPM Control Workspace · Night Forest'
 const PRESET_ID = 'forest-night'
 
-export const designDemoDarkPageRoute = app.html('/', async (ctx) => {
-  const isAuthenticated = !!ctx.user
-  const isAdmin = ctx.user?.is('Admin') ?? false
+export const designDemoDarkPageRoute = app.html('/', async () => {
   const indexUrl = getFullUrl(ROUTES.index)
 
   return (
@@ -21,15 +20,10 @@ export const designDemoDarkPageRoute = app.html('/', async (ctx) => {
         <DesignDemoPage
           theme="dark"
           themePresetId={PRESET_ID}
-          pageTitle={PAGE_NAME}
-          breadcrumbs={['Home', 'BPM']}
           logoUrl=""
           indexUrl={indexUrl}
           profileUrl={indexUrl}
           loginUrl={indexUrl}
-          isAuthenticated={isAuthenticated}
-          isAdmin={isAdmin}
-          adminUrl={isAdmin ? indexUrl : ''}
         />
       </body>
     </html>

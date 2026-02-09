@@ -30,7 +30,6 @@
     "vue-shim.d.ts"
   ],
   "exclude": [
-    "**/DesignDemoDarkPage.vue",
-    "**/DesignDemoLightPage.vue"
+    "node_modules"
   ]
 }
