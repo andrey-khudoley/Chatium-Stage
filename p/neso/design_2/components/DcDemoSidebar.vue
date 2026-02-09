@@ -1,0 +1,614 @@
+<script setup lang="ts">
+import { computed, ref, watch } from 'vue'
+
+export interface NavChildItem {
+  id: string
+  label: string
+  icon?: string
+  badge?: string | number
+}
+
+export interface NavItem {
+  id: string
+  icon: string
+  label: string
+  badge?: string | number
+  children?: NavChildItem[]
+}
+
+const props = defineProps<{
+  theme?: 'dark' | 'light'
+  logoText?: string
+  logoImageUrl?: string
+  userName?: string
+  userRole?: string
+  logoutUrl?: string
+  items: NavItem[]
+  collapsed?: boolean
+  mobileOpen?: boolean
+  activeId?: string | null
+}>()
+
+const emit = defineEmits<{
+  close: []
+  select: [id: string]
+  toggleCollapse: []
+}>()
+
+const expandedGroups = ref<Record<string, boolean>>({})
+
+const hasMobileOpen = computed(() => !!props.mobileOpen)
+
+watch(
+  () => props.items,
+  () => {
+    const next: Record<string, boolean> = {}
+    for (const item of props.items) {
+      if (item.children?.length) {
+        next[item.id] = expandedGroups.value[item.id] ?? item.id === props.activeId
+      }
+    }
+    expandedGroups.value = next
+    openActiveParent()
+  },
+  { immediate: true, deep: true }
+)
+
+watch(
+  () => props.activeId,
+  () => {
+    openActiveParent()
+  },
+  { immediate: true }
+)
+
+function hasChildren(item: NavItem): boolean {
+  return !!item.children?.length
+}
+
+function isParentOpen(item: NavItem): boolean {
+  return !!expandedGroups.value[item.id]
+}
+
+function isParentActive(item: NavItem): boolean {
+  if (props.activeId === item.id) return true
+  if (!item.children?.length || !props.activeId) return false
+  return item.children.some((child) => child.id === props.activeId)
+}
+
+function openActiveParent() {
+  if (!props.activeId) return
+  const next = { ...expandedGroups.value }
+  for (const item of props.items) {
+    if (item.children?.some((child) => child.id === props.activeId)) {
+      next[item.id] = true
+    }
+  }
+  expandedGroups.value = next
+}
+
+function toggleGroup(item: NavItem) {
+  expandedGroups.value = {
+    ...expandedGroups.value,
+    [item.id]: !expandedGroups.value[item.id]
+  }
+}
+
+function onParentClick(item: NavItem) {
+  if (hasChildren(item) && !props.collapsed) {
+    toggleGroup(item)
+    return
+  }
+  emit('select', item.id)
+}
+
+function onChildClick(parent: NavItem, child: NavChildItem) {
+  if (!expandedGroups.value[parent.id]) {
+    toggleGroup(parent)
+  }
+  emit('select', child.id)
+}
+</script>
+
+<template>
+  <aside
+    class="dc-demo-sidebar"
+    :class="[
+      `theme-${theme ?? 'dark'}`,
+      {
+        collapsed: collapsed,
+        'mobile-open': hasMobileOpen
+      }
+    ]"
+    aria-label="BPM navigation"
+  >
+    <div class="dc-sidebar-top">
+      <div class="dc-logo" :title="collapsed ? (logoText ?? 'NeSo BPM') : ''">
+        <div class="dc-logo-icon" :class="{ 'dc-logo-icon--image': !!logoImageUrl }">
+          <img
+            v-if="logoImageUrl"
+            class="dc-logo-img"
+            :src="logoImageUrl"
+            :alt="`${logoText ?? 'NeSo BPM'} logo`"
+          />
+          <i v-else class="fas fa-diagram-project" aria-hidden="true"></i>
+        </div>
+
+        <div class="dc-logo-copy dc-collapsible-text">
+          <span class="dc-logo-title">{{ logoText ?? 'NeSo BPM' }}</span>
+          <span class="dc-logo-subtitle">Process Control Plane</span>
+        </div>
+      </div>
+
+      <button
+        type="button"
+        class="dc-toggle-btn"
+        :aria-label="collapsed ? 'Expand navigation' : 'Collapse navigation'"
+        @click="emit('toggleCollapse')"
+      >
+        <i :class="collapsed ? 'fas fa-chevron-right' : 'fas fa-chevron-left'" aria-hidden="true"></i>
+      </button>
+
+      <button type="button" class="dc-mobile-close" aria-label="Close navigation" @click="emit('close')">
+        <i class="fas fa-times" aria-hidden="true"></i>
+      </button>
+    </div>
+
+    <div class="dc-ops-summary">
+      <p class="dc-ops-kicker dc-collapsible-text">Control status</p>
+      <div class="dc-ops-pill" :title="collapsed ? '7 SLA risks across active processes' : ''">
+        <span class="dc-ops-dot"></span>
+        <span class="dc-collapsible-text">7 SLA risks</span>
+      </div>
+    </div>
+
+    <nav class="dc-nav">
+      <p class="dc-nav-title dc-collapsible-text">Process spaces</p>
+
+      <div
+        v-for="item in items"
+        :key="item.id"
+        class="dc-nav-group"
+        :class="{
+          'is-active': isParentActive(item),
+          'is-open': isParentOpen(item),
+          'has-children': hasChildren(item)
+        }"
+      >
+        <button
+          type="button"
+          class="dc-nav-item dc-nav-item--parent"
+          :class="{ active: isParentActive(item) }"
+          :title="collapsed ? item.label : ''"
+          @click="onParentClick(item)"
+        >
+          <span class="dc-nav-icon"><i :class="['fas', item.icon]" aria-hidden="true"></i></span>
+          <span class="dc-nav-label dc-collapsible-text">{{ item.label }}</span>
+          <span v-if="item.badge" class="dc-nav-badge dc-collapsible-badge">{{ item.badge }}</span>
+          <span v-if="hasChildren(item)" class="dc-nav-caret dc-collapsible-text" :class="{ open: isParentOpen(item) }">
+            <i class="fas fa-chevron-down" aria-hidden="true"></i>
+          </span>
+        </button>
+
+        <div v-if="hasChildren(item)" class="dc-submenu-wrap" :class="{ open: isParentOpen(item) && !collapsed }">
+          <button
+            v-for="child in item.children"
+            :key="child.id"
+            type="button"
+            class="dc-submenu-item"
+            :class="{ active: activeId === child.id }"
+            :title="collapsed ? child.label : ''"
+            @click="onChildClick(item, child)"
+          >
+            <span class="dc-submenu-icon" aria-hidden="true">
+              <i v-if="child.icon" :class="['fas', child.icon]"></i>
+              <span v-else class="dc-submenu-dot"></span>
+            </span>
+            <span class="dc-submenu-label dc-collapsible-text">{{ child.label }}</span>
+            <span v-if="child.badge" class="dc-nav-badge dc-collapsible-badge">{{ child.badge }}</span>
+          </button>
+        </div>
+      </div>
+    </nav>
+
+    <div class="dc-sidebar-footer">
+      <div class="dc-user-pill" :title="collapsed ? `${userName ?? 'Operator'} - ${userRole ?? 'Workflow Admin'}` : ''">
+        <div class="dc-avatar"><i class="fas fa-user-gear" aria-hidden="true"></i></div>
+        <div class="dc-user-copy dc-collapsible-text">
+          <span class="dc-user-name">{{ userName ?? 'Operator' }}</span>
+          <span class="dc-user-role">{{ userRole ?? 'Workflow Admin' }}</span>
+        </div>
+        <a class="dc-logout dc-collapsible-action" :href="logoutUrl ?? '#'" aria-label="Logout">
+          <i class="fas fa-right-from-bracket" aria-hidden="true"></i>
+        </a>
+      </div>
+    </div>
+  </aside>
+</template>
+
+<style scoped>
+.dc-demo-sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 48;
+  display: flex;
+  height: 100vh;
+  width: var(--sidebar-width);
+  flex-direction: column;
+  padding: 12px 10px 10px;
+  color: var(--text-primary);
+  border-right: 1px solid var(--border-strong);
+  background:
+    var(--gradient-glass),
+    var(--surface-glass);
+  backdrop-filter: blur(20px) saturate(140%);
+  box-shadow: var(--shadow-lg);
+  transition:
+    width 0.26s ease,
+    transform 0.24s ease,
+    padding 0.26s ease;
+}
+
+.dc-demo-sidebar.collapsed {
+  width: var(--sidebar-collapsed-width);
+  padding-inline: 8px;
+}
+
+.dc-sidebar-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.dc-logo {
+  min-width: 0;
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 8px;
+}
+
+.dc-logo-icon {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-md);
+  color: var(--accent-contrast);
+  background: linear-gradient(140deg, var(--accent-strong), var(--accent));
+  box-shadow: var(--shadow-sm);
+}
+
+.dc-logo-icon--image {
+  background: var(--surface-3);
+}
+
+.dc-logo-img {
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  object-fit: cover;
+}
+
+.dc-logo-copy {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.dc-logo-title {
+  font-size: 0.78rem;
+  letter-spacing: 0.03em;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.dc-logo-subtitle {
+  font-size: 0.66rem;
+  color: var(--text-tertiary);
+  letter-spacing: 0.03em;
+}
+
+.dc-toggle-btn,
+.dc-mobile-close {
+  width: var(--control-height);
+  height: var(--control-height);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-soft);
+  background: color-mix(in srgb, var(--surface-2) 78%, transparent);
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.dc-toggle-btn:hover,
+.dc-mobile-close:hover {
+  color: var(--text-primary);
+  border-color: var(--border-accent);
+}
+
+.dc-mobile-close {
+  display: none;
+}
+
+.dc-ops-summary {
+  margin-bottom: 8px;
+  border-radius: var(--radius-md);
+  padding: 8px;
+  border: 1px solid var(--border-soft);
+  background: color-mix(in srgb, var(--surface-2) 70%, transparent);
+}
+
+.dc-ops-kicker {
+  margin: 0 0 6px;
+  font-size: 0.64rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-tertiary);
+}
+
+.dc-ops-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 8px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  border: 1px solid var(--border-soft);
+  background: color-mix(in srgb, var(--surface-3) 76%, transparent);
+}
+
+.dc-ops-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--status-warning);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--status-warning) 65%, transparent);
+}
+
+.dc-nav {
+  min-height: 0;
+  flex: 1;
+  overflow: auto;
+  padding-right: 2px;
+}
+
+.dc-nav-title {
+  margin: 0 0 8px;
+  padding: 0 4px;
+  font-size: 0.64rem;
+  letter-spacing: 0.1em;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+}
+
+.dc-nav-group {
+  margin-bottom: 2px;
+}
+
+.dc-nav-item,
+.dc-submenu-item {
+  width: 100%;
+  height: var(--control-height);
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  display: grid;
+  grid-template-columns: 18px 1fr auto auto;
+  align-items: center;
+  gap: 8px;
+  padding: 0 8px;
+  color: var(--text-secondary);
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  transition:
+    background-color 0.18s ease,
+    border-color 0.18s ease,
+    color 0.18s ease;
+}
+
+.dc-nav-item:hover,
+.dc-submenu-item:hover {
+  background: color-mix(in srgb, var(--accent-soft) 50%, transparent);
+  color: var(--text-primary);
+}
+
+.dc-nav-item.active,
+.dc-submenu-item.active {
+  color: var(--text-primary);
+  border-color: var(--border-accent);
+  background: color-mix(in srgb, var(--accent-soft) 78%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 24%, transparent);
+}
+
+.dc-nav-icon,
+.dc-submenu-icon {
+  display: inline-flex;
+  justify-content: center;
+  font-size: 0.74rem;
+}
+
+.dc-nav-label,
+.dc-submenu-label {
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
+
+.dc-nav-badge {
+  min-width: 20px;
+  height: 18px;
+  padding: 0 6px;
+  border-radius: 999px;
+  border: 1px solid var(--border-soft);
+  background: color-mix(in srgb, var(--surface-3) 82%, transparent);
+  font-size: 0.66rem;
+  line-height: 16px;
+  text-align: center;
+}
+
+.dc-nav-caret {
+  font-size: 0.58rem;
+  color: var(--text-tertiary);
+}
+
+.dc-nav-caret.open {
+  transform: rotate(180deg);
+}
+
+.dc-submenu-wrap {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.2s ease;
+}
+
+.dc-submenu-wrap.open {
+  grid-template-rows: 1fr;
+}
+
+.dc-submenu-wrap > * {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.dc-submenu-item {
+  grid-template-columns: 14px 1fr auto;
+  height: 30px;
+  margin: 2px 0 2px 18px;
+  border-radius: var(--radius-xs);
+  font-size: 0.73rem;
+}
+
+.dc-submenu-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--text-tertiary);
+}
+
+.dc-sidebar-footer {
+  margin-top: 8px;
+}
+
+.dc-user-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 44px;
+  padding: 0 8px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-soft);
+  background: color-mix(in srgb, var(--surface-2) 72%, transparent);
+}
+
+.dc-avatar {
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--accent-soft) 68%, transparent);
+  color: var(--text-primary);
+  font-size: 0.72rem;
+}
+
+.dc-user-copy {
+  min-width: 0;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+}
+
+.dc-user-name {
+  font-size: 0.74rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.dc-user-role {
+  font-size: 0.66rem;
+  color: var(--text-tertiary);
+}
+
+.dc-logout {
+  width: 24px;
+  height: 24px;
+  border-radius: var(--radius-xs);
+  display: grid;
+  place-items: center;
+  color: var(--text-secondary);
+  text-decoration: none;
+}
+
+.dc-logout:hover {
+  color: var(--accent);
+}
+
+.dc-collapsible-text,
+.dc-collapsible-action,
+.dc-collapsible-badge {
+  overflow: hidden;
+  transition:
+    max-width 0.2s ease,
+    opacity 0.18s ease,
+    transform 0.2s ease,
+    margin 0.2s ease;
+}
+
+.dc-collapsible-text {
+  max-width: 180px;
+  opacity: 1;
+}
+
+.dc-collapsible-badge {
+  max-width: 40px;
+  opacity: 1;
+}
+
+.dc-collapsible-action {
+  max-width: 28px;
+  opacity: 1;
+}
+
+.dc-demo-sidebar.collapsed .dc-collapsible-text,
+.dc-demo-sidebar.collapsed .dc-collapsible-action,
+.dc-demo-sidebar.collapsed .dc-collapsible-badge {
+  max-width: 0;
+  opacity: 0;
+  transform: translateX(-6px);
+  margin: 0;
+}
+
+.dc-demo-sidebar.collapsed .dc-nav-item,
+.dc-demo-sidebar.collapsed .dc-submenu-item {
+  grid-template-columns: 1fr;
+  justify-items: center;
+  padding-inline: 0;
+}
+
+.dc-demo-sidebar.collapsed .dc-submenu-wrap {
+  display: none;
+}
+
+@media (max-width: 980px) {
+  .dc-demo-sidebar {
+    transform: translateX(-100%);
+    width: min(86vw, 320px);
+    max-width: min(86vw, 320px);
+    z-index: 52;
+  }
+
+  .dc-demo-sidebar.mobile-open {
+    transform: translateX(0);
+  }
+
+  .dc-mobile-close {
+    display: inline-block;
+  }
+
+  .dc-toggle-btn {
+    display: none;
+  }
+}
+</style>
