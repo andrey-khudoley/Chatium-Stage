@@ -1,9 +1,14 @@
 <script setup lang="ts">
 import { onMounted, onBeforeUnmount, onUnmounted, ref, computed, watch } from 'vue'
 import { getOrCreateBrowserSocketClient } from '@app/socket'
-import Header from '../components/Header.vue'
-import GlobalGlitch from '../components/GlobalGlitch.vue'
-import AppFooter from '../components/AppFooter.vue'
+import AppShell from '../components/layout/AppShell.vue'
+import CrmKpiBlock from '../components/layout/CrmKpiBlock.vue'
+import CrmSection from '../components/layout/CrmSection.vue'
+import CrmButton from '../components/base/CrmButton.vue'
+import CrmInput from '../components/base/CrmInput.vue'
+import CrmBadge from '../components/base/CrmBadge.vue'
+import CrmStatCard from '../components/base/CrmStatCard.vue'
+import CrmLogFeed from '../components/data-display/CrmLogFeed.vue'
 import { getSettingRoute } from '../api/settings/get'
 import { saveSettingRoute } from '../api/settings/save'
 import { createComponentLogger, setLogSink, type LogEntry } from '../shared/logger'
@@ -33,7 +38,17 @@ const props = defineProps<{
   isAdmin?: boolean
   adminUrl?: string
   encodedLogsSocketId?: string
+  initialLocale?: string
 }>()
+
+const navItems = computed(() =>
+  [
+    { id: 'dashboard', icon: 'fa-house', label: 'Главная', href: props.indexUrl },
+    { id: 'profile', icon: 'fa-user', label: 'Профиль', href: props.profileUrl },
+    { id: 'admin', icon: 'fa-gear', label: 'Админка', href: props.adminUrl },
+    { id: 'tests', icon: 'fa-flask', label: 'Тесты', href: props.testsUrl }
+  ].filter((item) => item.href)
+)
 
 const bootLoaderDone = ref(false)
 const projectName = ref(props.projectTitle.split(' / ')[0] || props.projectTitle)
@@ -71,7 +86,6 @@ const dashboardResetAt = ref(0)
 const MAX_LOG_ENTRIES = 500
 const logEntries = ref<LogEntry[]>([])
 let logsSocketSubscription: any = null
-const logsOutputRef = ref<HTMLElement | null>(null)
 
 const logsLoading = ref(false)
 const logsError = ref('')
@@ -94,6 +108,13 @@ const startAnimations = () => {
 }
 
 const LOG_LEVEL_VALUES = ['debug', 'info', 'warn', 'error', 'disable'] as const
+const LOG_LEVEL_OPTIONS = [
+  { value: 'debug', label: 'Debug' },
+  { value: 'info', label: 'Info' },
+  { value: 'warn', label: 'Warn' },
+  { value: 'error', label: 'Error' },
+  { value: 'disable', label: 'Disable' }
+] as const
 
 type LogDisplayItem = 
   | { type: 'log'; entry: LogEntry; formattedTime: string; formattedMessage: string }
@@ -172,6 +193,22 @@ const displayedLogs = computed<LogDisplayItem[]>(() => {
 
   return items
 })
+
+const logFeedItems = computed(() =>
+  displayedLogs.value.map((item) =>
+    item.type === 'divider'
+      ? {
+          type: 'divider' as const,
+          date: item.date
+        }
+      : {
+          type: 'log' as const,
+          level: item.entry.level,
+          formattedTime: item.formattedTime,
+          formattedMessage: item.formattedMessage
+        }
+  )
+)
 
 const loadProjectName = async () => {
   try {
@@ -355,11 +392,6 @@ const resetDashboard = async () => {
   }
 }
 
-const openChatiumLink = () => {
-  log.notice('Открытие ссылки Chatium')
-  window.open('https://chatium.ru/?start=pl-LGBT1Oge7c61RkKTU4t0start', '_blank')
-}
-
 const loadRecentLogs = async () => {
   logsLoading.value = true
   logsError.value = ''
@@ -436,837 +468,269 @@ const clearLogs = () => {
 </script>
 
 <template>
-  <div class="app-layout bg-[var(--color-bg)] text-[var(--color-text)] flex flex-col">
-    <GlobalGlitch />
-    <Header
-      v-if="bootLoaderDone"
-      :projectTitle="props.projectTitle"
-      :indexUrl="props.indexUrl"
-      :profileUrl="props.profileUrl"
-      :loginUrl="props.loginUrl"
-      :isAuthenticated="props.isAuthenticated"
-      :isAdmin="props.isAdmin"
-      :adminUrl="props.adminUrl"
-      :testsUrl="props.testsUrl"
-    />
+  <AppShell
+    class="admin-page-shell"
+    :pageTitle="'Админка'"
+    :pageSubtitle="projectName"
+    :navItems="navItems"
+    activeSection="admin"
+  >
+    <template #headerActions>
+      <CrmButton class="admin-header-btn" size="sm" variant="ghost" icon="fas fa-arrows-rotate" @click="resetDashboard">
+        Сброс
+      </CrmButton>
+      <CrmButton class="admin-header-btn" size="sm" variant="ghost" icon="fas fa-terminal" @click="loadRecentLogs">
+        Обновить
+      </CrmButton>
+      <CrmButton class="admin-header-btn" size="sm" variant="danger" icon="fas fa-trash-alt" @click="clearLogs">
+        Очистить
+      </CrmButton>
+    </template>
 
-    <main class="content-wrapper flex-1 relative z-10 min-h-0 overflow-y-auto">
-      <div class="content-inner">
-        <section class="admin-section" :class="{ 'admin-visible': bootLoaderDone }">
-          <div class="admin-header">
-            <div class="admin-icon-wrapper">
-              <i class="fas fa-cog admin-icon"></i>
+    <div class="admin-stack" :class="{ 'is-ready': bootLoaderDone }">
+      <CrmSection
+        title="Панель управления"
+        subtitle="Настройки проекта, контроль логирования и мониторинг ошибок."
+        variant="raised"
+      >
+        <template #actions>
+          <CrmBadge variant="info" icon="fas fa-shield-halved">Администрирование</CrmBadge>
+        </template>
+
+        <div class="admin-overview-grid">
+          <CrmStatCard
+            label="Ошибок"
+            :value="errorCount"
+            icon="fas fa-exclamation-circle"
+            status="danger"
+          />
+          <CrmStatCard
+            label="Предупреждений"
+            :value="warnCount"
+            icon="fas fa-exclamation-triangle"
+            status="warning"
+          />
+          <CrmKpiBlock class="admin-overview-actions" title="Быстрые действия">
+            <div class="crm-row">
+              <CrmButton size="sm" variant="primary" icon="fas fa-rotate" @click="resetDashboard">
+                Сбросить метрики
+              </CrmButton>
+              <CrmButton size="sm" variant="ghost" icon="fas fa-terminal" @click="loadRecentLogs">
+                Обновить логи
+              </CrmButton>
             </div>
-            <h1 class="admin-heading">Панель администратора</h1>
-            <p class="admin-description">Управление логированием и мониторинг системы</p>
+          </CrmKpiBlock>
+        </div>
+      </CrmSection>
+
+      <CrmSection
+        title="Фильтры логов"
+        subtitle="Управление видимостью уровней в ленте."
+      >
+        <div class="crm-row">
+          <CrmButton
+            size="sm"
+            variant="ghost"
+            icon="fas fa-info-circle"
+            :class="{ 'admin-filter-active': logFilters.info }"
+            @click="toggleLogFilter('info')"
+          >
+            Info
+          </CrmButton>
+          <CrmButton
+            size="sm"
+            variant="ghost"
+            icon="fas fa-exclamation-triangle"
+            :class="{ 'admin-filter-active': logFilters.warn }"
+            @click="toggleLogFilter('warn')"
+          >
+            Warn
+          </CrmButton>
+          <CrmButton
+            size="sm"
+            :variant="logFilters.error ? 'danger' : 'ghost'"
+            icon="fas fa-exclamation-circle"
+            :class="{ 'admin-filter-active': logFilters.error }"
+            @click="toggleLogFilter('error')"
+          >
+            Error
+          </CrmButton>
+        </div>
+      </CrmSection>
+
+      <CrmSection
+        title="Настройки"
+        subtitle="Параметры проекта и режим логирования."
+      >
+        <div class="admin-settings-grid">
+          <div class="admin-settings-block">
+            <CrmInput
+              v-model="projectName"
+              label="Название проекта"
+              placeholder="Название проекта"
+              :disabled="projectNameLoading"
+            />
+            <div class="admin-inline-status">
+              <CrmBadge
+                v-if="projectNameSaveStatus === 'saved'"
+                variant="success"
+                icon="fas fa-check"
+              >
+                Сохранено
+              </CrmBadge>
+              <CrmBadge
+                v-if="projectNameSaveStatus === 'error'"
+                variant="danger"
+                icon="fas fa-triangle-exclamation"
+              >
+                Ошибка
+              </CrmBadge>
+            </div>
+            <p v-if="projectNameError" class="crm-status-danger admin-error">{{ projectNameError }}</p>
           </div>
 
-          <!-- Dashboard -->
-          <div class="admin-card">
-            <div class="admin-card-header">
-              <i class="fas fa-bars admin-card-icon dashboard-card-icon"></i>
-              <h2 class="admin-card-title">Дашборд</h2>
-              <button
-                type="button"
-                class="dashboard-reset"
-                title="Сбросить счётчики"
-                @click="resetDashboard"
+          <div class="admin-settings-block">
+            <span class="crm-field-label">Уровень логирования</span>
+            <div class="crm-row">
+              <CrmButton
+                v-for="option in LOG_LEVEL_OPTIONS"
+                :key="option.value"
+                size="sm"
+                :variant="logLevel === option.value ? 'primary' : 'ghost'"
+                @click="setLogLevel(option.value)"
               >
-                <i class="fas fa-sync-alt dashboard-reset-icon"></i>
-                Сбросить
-              </button>
+                {{ option.label }}
+              </CrmButton>
             </div>
-            <div class="dashboard-stats">
-              <div class="dashboard-stat stat-errors">
-                <i class="fas fa-exclamation-circle stat-icon"></i>
-                <div class="stat-content">
-                  <span class="stat-value">{{ errorCount }}</span>
-                  <span class="stat-label">Ошибок</span>
-                </div>
-              </div>
-              <div class="dashboard-stat stat-warnings">
-                <i class="fas fa-exclamation-triangle stat-icon"></i>
-                <div class="stat-content">
-                  <span class="stat-value">{{ warnCount }}</span>
-                  <span class="stat-label">Предупреждений</span>
-                </div>
-              </div>
+            <div class="admin-inline-status">
+              <CrmBadge
+                v-if="logLevelSaveStatus === 'saved'"
+                variant="success"
+                icon="fas fa-check"
+              >
+                Сохранено
+              </CrmBadge>
+              <CrmBadge
+                v-if="logLevelSaveStatus === 'error'"
+                variant="danger"
+                icon="fas fa-triangle-exclamation"
+              >
+                Ошибка
+              </CrmBadge>
             </div>
+            <p v-if="logLevelError" class="crm-status-danger admin-error">{{ logLevelError }}</p>
           </div>
+        </div>
+      </CrmSection>
 
-          <!-- Project Settings -->
-          <div class="admin-card">
-            <span
-              v-if="projectNameSaveStatus"
-              class="admin-card-status"
-              :class="projectNameSaveStatus === 'saved' ? 'status-saved' : 'status-error'"
-            >
-              {{ projectNameSaveStatus === 'saved' ? 'Сохранено' : 'Ошибка' }}
-            </span>
-            <div class="admin-card-header">
-              <i class="fas fa-wrench admin-card-icon"></i>
-              <h2 class="admin-card-title">Настройки проекта</h2>
-            </div>
-            <div class="settings-form">
-              <div class="settings-field">
-                <label class="settings-label" for="project-name">Название проекта</label>
-                <input
-                  id="project-name"
-                  v-model="projectName"
-                  type="text"
-                  class="settings-input"
-                />
-              </div>
-            </div>
-            <p v-if="projectNameError" class="admin-card-error">{{ projectNameError }}</p>
-          </div>
-
-          <!-- Logging Level -->
-          <div class="admin-card">
-            <span
-              v-if="logLevelSaveStatus"
-              class="admin-card-status"
-              :class="logLevelSaveStatus === 'saved' ? 'status-saved' : 'status-error'"
-            >
-              {{ logLevelSaveStatus === 'saved' ? 'Сохранено' : 'Ошибка' }}
-            </span>
-            <div class="admin-card-header">
-              <i class="fas fa-sliders-h admin-card-icon"></i>
-              <h2 class="admin-card-title">Уровень логирования</h2>
-            </div>
-            <div class="log-level-buttons">
-              <button
-                type="button"
-                class="log-level-btn"
-                :class="{ active: logLevel === 'debug' }"
-                @click="setLogLevel('debug')"
-              >
-                Debug
-              </button>
-              <button
-                type="button"
-                class="log-level-btn"
-                :class="{ active: logLevel === 'info' }"
-                @click="setLogLevel('info')"
-              >
-                Info
-              </button>
-              <button
-                type="button"
-                class="log-level-btn"
-                :class="{ active: logLevel === 'warn' }"
-                @click="setLogLevel('warn')"
-              >
-                Warn
-              </button>
-              <button
-                type="button"
-                class="log-level-btn"
-                :class="{ active: logLevel === 'error' }"
-                @click="setLogLevel('error')"
-              >
-                Error
-              </button>
-              <button
-                type="button"
-                class="log-level-btn"
-                :class="{ active: logLevel === 'disable' }"
-                @click="setLogLevel('disable')"
-              >
-                Disable
-              </button>
-            </div>
-            <p v-if="logLevelError" class="admin-card-error">{{ logLevelError }}</p>
-          </div>
-
-          <!-- Logs Output -->
-          <div class="admin-card logs-card">
-            <div class="admin-card-header">
-              <i class="fas fa-terminal admin-card-icon"></i>
-              <h2 class="admin-card-title">Логи</h2>
-            </div>
-            <div class="logs-filters">
-              <button
-                type="button"
-                class="log-filter-chip chip-info"
-                :class="{ active: logFilters.info }"
-                @click="toggleLogFilter('info')"
-              >
-                <i class="fas fa-info-circle"></i>
-                Info
-              </button>
-              <button
-                type="button"
-                class="log-filter-chip chip-warn"
-                :class="{ active: logFilters.warn }"
-                @click="toggleLogFilter('warn')"
-              >
-                <i class="fas fa-exclamation-triangle"></i>
-                Warn
-              </button>
-              <button
-                type="button"
-                class="log-filter-chip chip-error"
-                :class="{ active: logFilters.error }"
-                @click="toggleLogFilter('error')"
-              >
-                <i class="fas fa-exclamation-circle"></i>
-                Error
-              </button>
-            </div>
-            <div class="logs-output custom-scrollbar" ref="logsOutputRef">
-              <div v-if="displayedLogs.length === 0" class="logs-empty">
-                Логи появятся здесь...
-              </div>
-              <div v-for="(item, index) in displayedLogs" :key="index" class="log-item">
-                <div v-if="item.type === 'divider'" class="log-date-divider">
-                  --- {{ item.date }} ---
-                </div>
-                <div v-else class="log-entry">
-                  <span class="log-time">{{ item.formattedTime }}</span>
-                  <span class="log-level" :class="`log-level-${item.entry.level}`">
-                    [{{ item.entry.level.toUpperCase() }}]
-                  </span>
-                  <span class="log-message">{{ item.formattedMessage }}</span>
-                </div>
-              </div>
-            </div>
-            <div class="logs-actions">
-              <div v-if="logsLoading" class="logs-loading">
-                <i class="fas fa-spinner fa-spin"></i>
-                Загрузка логов...
-              </div>
-              <p v-if="logsError" class="logs-error">{{ logsError }}</p>
-              <div class="logs-action-row">
-                <button
-                  v-if="logsHasMore && !logsLoading"
-                  type="button"
-                  class="load-more-btn"
-                  @click="loadMoreLogs"
-                >
-                  <i class="fas fa-arrow-down"></i>
-                  Загрузить ещё 50
-                </button>
-                <button
-                  type="button"
-                  class="logs-clear-btn"
-                  title="Очистить логи"
-                  @click="clearLogs"
-                >
-                  <i class="fas fa-trash-alt"></i>
-                </button>
-              </div>
-            </div>
-          </div>
-        </section>
-      </div>
-    </main>
-
-    <AppFooter v-if="bootLoaderDone" @chatium-click="openChatiumLink" />
-  </div>
+      <CrmSection
+        title="Логи"
+        subtitle="Поток системных сообщений в реальном времени."
+      >
+        <CrmLogFeed
+          :items="logFeedItems"
+          :loading="logsLoading"
+          :error="logsError"
+          :hasMore="logsHasMore"
+          emptyText="Логи появятся здесь..."
+          loadingText="Загрузка логов..."
+          loadMoreLabel="Загрузить ещё 50"
+          clearLabel="Очистить"
+          @load-more="loadMoreLogs"
+          @clear="clearLogs"
+        />
+      </CrmSection>
+    </div>
+  </AppShell>
 </template>
 
-<style>
-.content-wrapper {
-  position: relative;
-  z-index: 10;
-}
-
-.content-inner {
-  max-width: 1000px;
-  margin: 0 auto;
-  padding: 2rem;
-}
-
-@media (max-width: 768px) {
-  .content-inner {
-    padding: 1.5rem 1rem;
-  }
-}
-</style>
-
 <style scoped>
-.admin-section {
-  opacity: 0;
-  transform: translateY(20px);
-  transition: opacity 0.6s ease, transform 0.6s ease;
+.admin-page-shell :deep(.app-shell-content) {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-4);
 }
 
-.admin-section.admin-visible {
+.admin-page-shell :deep(.app-shell-actions) {
+  flex-wrap: wrap;
+}
+
+.admin-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-4);
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.admin-stack.is-ready {
   opacity: 1;
   transform: translateY(0);
 }
 
-.admin-header {
-  text-align: center;
-  margin-bottom: 2.5rem;
+.admin-header-btn {
+  min-width: 6.8rem;
 }
 
-.admin-icon-wrapper {
-  width: 4rem;
-  height: 4rem;
-  margin: 0 auto 1.25rem;
-  background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-accent-hover) 100%);
+.admin-overview-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--crm-space-3);
+}
+
+.admin-overview-actions {
+  justify-content: space-between;
+}
+
+.admin-settings-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--crm-space-3);
+}
+
+.admin-settings-block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--crm-space-2);
+}
+
+.admin-inline-status {
+  min-height: 1.7rem;
   display: flex;
   align-items: center;
-  justify-content: center;
-  box-shadow:
-    0 6px 20px rgba(211, 35, 75, 0.35),
-    0 0 24px rgba(211, 35, 75, 0.15);
-  clip-path: polygon(
-    0 4px, 4px 4px, 4px 0,
-    calc(100% - 4px) 0, calc(100% - 4px) 4px, 100% 4px,
-    100% calc(100% - 4px), calc(100% - 4px) calc(100% - 4px), calc(100% - 4px) 100%,
-    4px 100%, 4px calc(100% - 4px), 0 calc(100% - 4px)
-  );
-  position: relative;
-  overflow: hidden;
+  gap: var(--crm-space-2);
 }
 
-.admin-icon-wrapper::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: repeating-linear-gradient(
-    0deg,
-    rgba(0, 0, 0, 0.15) 0px,
-    rgba(0, 0, 0, 0.15) 1px,
-    transparent 1px,
-    transparent 3px
-  );
-  pointer-events: none;
-  z-index: 2;
-  animation: admin-scanline-flicker 8s linear infinite;
-}
-
-@keyframes admin-scanline-flicker {
-  0%, 100% { opacity: 0.7; }
-  50% { opacity: 0.5; }
-}
-
-.admin-icon {
-  font-size: 1.5rem;
-  color: #fff;
-}
-
-.admin-heading {
-  font-size: 2rem;
-  font-weight: 600;
-  color: var(--color-text);
-  margin: 0 0 0.5rem 0;
-  letter-spacing: 0.05em;
-}
-
-.admin-description {
-  color: var(--color-text-secondary);
-  font-size: 0.95rem;
+.admin-error {
   margin: 0;
+  font-size: 0.82rem;
 }
 
-/* Admin Cards */
-.admin-card {
-  background: linear-gradient(135deg, var(--color-bg-secondary) 0%, var(--color-bg-tertiary) 100%);
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
-  padding: 1.5rem;
-  margin-bottom: 1.5rem;
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
-  position: relative;
-  overflow: hidden;
+.admin-filter-active {
+  border-color: var(--crm-accent) !important;
+  background: var(--crm-accentSoft) !important;
+  color: var(--crm-text) !important;
 }
 
-.admin-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, var(--color-accent), transparent);
-}
-
-.admin-card-header {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  margin-bottom: 1.25rem;
-  flex-wrap: wrap;
-}
-
-.admin-card-icon {
-  color: var(--color-accent);
-  font-size: 1rem;
-}
-
-.admin-card-title {
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: var(--color-text);
-  margin: 0;
-  flex: 1;
-}
-
-/* Log Level Buttons */
-.log-level-buttons {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-
-.log-level-btn {
-  padding: 0.5rem 1rem;
-  font-family: inherit;
-  font-size: 0.9rem;
-  color: var(--color-text-secondary);
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid var(--color-border);
-  cursor: pointer;
-  transition: all 0.2s ease;
-  letter-spacing: 0.05em;
-}
-
-.log-level-btn:hover {
-  color: var(--color-text);
-  border-color: var(--color-border-light);
-  background: rgba(255, 255, 255, 0.05);
-}
-
-.log-level-btn.active {
-  color: #fff;
-  background: var(--color-accent);
-  border-color: var(--color-accent);
-  box-shadow: 0 0 12px rgba(211, 35, 75, 0.3);
-}
-
-.admin-card-error {
-  margin: 0.75rem 0 0;
-  font-size: 0.85rem;
-  color: #e74c3c;
-}
-
-.admin-card-status {
-  position: absolute;
-  top: 1rem;
-  right: 1rem;
-  font-size: 0.85rem;
-  font-weight: 500;
-  letter-spacing: 0.04em;
-  animation: statusFadeIn 0.2s ease;
-}
-
-.admin-card-status.status-saved {
-  color: #27ae60;
-}
-
-.admin-card-status.status-error {
-  color: #e74c3c;
-}
-
-@keyframes statusFadeIn {
-  from {
-    opacity: 0;
+@media (max-width: 1100px) {
+  .admin-overview-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-  to {
-    opacity: 1;
+
+  .admin-overview-actions {
+    grid-column: span 2;
   }
 }
 
-/* Project Settings */
-.settings-form {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.settings-field {
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-}
-
-.settings-label {
-  font-size: 0.85rem;
-  color: var(--color-text-secondary);
-  letter-spacing: 0.04em;
-}
-
-.settings-input {
-  padding: 0.6rem 0.9rem;
-  font-family: inherit;
-  font-size: 0.95rem;
-  color: var(--color-text);
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid var(--color-border);
-  border-radius: 4px;
-  transition: border-color 0.2s ease;
-}
-
-.settings-input:focus {
-  outline: none;
-  border-color: var(--color-accent);
-}
-
-.settings-input:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-/* Dashboard */
-.dashboard-card-icon {
-  color: var(--color-accent);
-}
-
-.dashboard-reset {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 0.9rem;
-  font-family: inherit;
-  font-size: 0.85rem;
-  color: var(--color-text-secondary);
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid var(--color-border-light);
-  border-radius: 6px;
-  cursor: pointer;
-  transition: color 0.2s ease, background 0.2s ease, border-color 0.2s ease;
-  letter-spacing: 0.04em;
-}
-
-.dashboard-reset:hover {
-  color: var(--color-text);
-  background: rgba(255, 255, 255, 0.08);
-  border-color: var(--color-border);
-}
-
-.dashboard-reset-icon {
-  font-size: 0.8rem;
-  opacity: 0.9;
-}
-
-.dashboard-stats {
-  display: flex;
-  gap: 1rem;
-}
-
-.dashboard-stat {
-  flex: 1 1 0;
-  min-width: 0;
-  display: flex;
-  align-items: flex-start;
-  gap: 0.75rem;
-  padding: 1rem 1.25rem;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid var(--color-border-light);
-  border-radius: 6px;
-}
-
-.dashboard-stat .stat-icon {
-  flex-shrink: 0;
-  margin-top: 0.15rem;
-}
-
-.dashboard-stat .stat-content {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.dashboard-stat .stat-value {
-  font-size: 1.5rem;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-  line-height: 1.2;
-}
-
-.dashboard-stat .stat-label {
-  font-size: 0.85rem;
-  color: var(--color-text-secondary);
-  line-height: 1.2;
-}
-
-.stat-icon {
-  font-size: 1.25rem;
-  opacity: 0.6;
-}
-
-.stat-errors .stat-value,
-.stat-errors .stat-icon {
-  color: #e74c3c;
-}
-
-.stat-warnings .stat-value,
-.stat-warnings .stat-icon {
-  color: #f39c12;
-}
-
-/* Logs Output */
-.logs-card {
-  margin-bottom: 0;
-}
-
-.logs-filters {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  margin-bottom: 1rem;
-}
-
-.log-filter-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  padding: 0.35rem 0.75rem;
-  font-family: inherit;
-  font-size: 0.8rem;
-  color: var(--color-text-tertiary);
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid var(--color-border);
-  border-radius: 4px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  letter-spacing: 0.04em;
-}
-
-.log-filter-chip:hover {
-  color: var(--color-text-secondary);
-  border-color: var(--color-border-light);
-  background: rgba(255, 255, 255, 0.05);
-}
-
-.log-filter-chip.active {
-  color: var(--color-text);
-}
-
-.log-filter-chip i {
-  font-size: 0.75rem;
-  opacity: 0.9;
-}
-
-.log-filter-chip.chip-info.active {
-  border-color: #3498db;
-  background: rgba(52, 152, 219, 0.12);
-}
-
-.log-filter-chip.chip-info.active i {
-  color: #3498db;
-}
-
-.log-filter-chip.chip-warn.active {
-  border-color: #f39c12;
-  background: rgba(243, 156, 18, 0.12);
-}
-
-.log-filter-chip.chip-warn.active i {
-  color: #f39c12;
-}
-
-.log-filter-chip.chip-error.active {
-  border-color: #e74c3c;
-  background: rgba(231, 76, 60, 0.12);
-}
-
-.log-filter-chip.chip-error.active i {
-  color: #e74c3c;
-}
-
-.logs-output {
-  background: #080808;
-  border: 1px solid var(--color-border);
-  border-radius: 4px;
-  min-height: 200px;
-  max-height: 400px;
-  overflow: auto;
-  padding: 1rem;
-  font-family: 'Share Tech Mono', 'Courier New', monospace;
-  font-size: 0.8rem;
-}
-
-.logs-empty {
-  color: var(--color-text-secondary);
-  text-align: center;
-  padding: 2rem;
-}
-
-.log-item {
-  margin-bottom: 0;
-}
-
-.log-date-divider {
-  text-align: center;
-  color: #555;
-  font-size: 0.75rem;
-  padding: 0.5rem 0;
-  margin: 0.5rem 0;
-  opacity: 0.7;
-  letter-spacing: 0.1em;
-}
-
-.log-entry {
-  display: flex;
-  gap: 0.5rem;
-  padding: 0.15rem 0;
-  line-height: 1.4;
-}
-
-.log-time {
-  color: var(--color-text-tertiary);
-  flex-shrink: 0;
-}
-
-.log-level {
-  flex-shrink: 0;
-  font-weight: 600;
-}
-
-.log-level-debug {
-  color: #9b59b6;
-}
-
-.log-level-info {
-  color: #3498db;
-}
-
-.log-level-notice {
-  color: #1abc9c;
-}
-
-.log-level-warning {
-  color: #f39c12;
-}
-
-.log-level-error {
-  color: #e74c3c;
-}
-
-.log-level-critical {
-  color: #c0392b;
-}
-
-.log-level-alert {
-  color: #e67e22;
-}
-
-.log-level-emergency {
-  color: #d35400;
-}
-
-.log-message {
-  color: var(--color-text-secondary);
-  word-break: break-word;
-  flex: 1;
-  min-width: 0;
-}
-
-.logs-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  margin-top: 1rem;
-}
-
-.logs-action-row {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 0.5rem;
-  width: 100%;
-}
-
-.logs-action-row .load-more-btn {
-  flex: 1;
-  min-width: 0;
-  margin-right: auto;
-}
-
-.logs-clear-btn {
-  flex-shrink: 0;
-  width: 2.75rem;
-  height: 2.75rem;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  font-size: 1rem;
-  color: var(--color-text-secondary);
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid var(--color-border);
-  border-radius: 4px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.logs-clear-btn:hover {
-  color: #fff;
-  background: #e74c3c;
-  border-color: #e74c3c;
-  box-shadow: 0 0 12px rgba(231, 76, 60, 0.3);
-}
-
-.logs-loading {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.85rem;
-  color: var(--color-text-secondary);
-  padding: 0.5rem 0;
-}
-
-.logs-loading i {
-  color: var(--color-accent);
-}
-
-.logs-error {
-  font-size: 0.85rem;
-  color: #e74c3c;
-  margin: 0;
-  padding: 0.5rem 0.75rem;
-  background: rgba(231, 76, 60, 0.1);
-  border: 1px solid rgba(231, 76, 60, 0.3);
-  border-radius: 4px;
-}
-
-.load-more-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  padding: 0.6rem 1.2rem;
-  font-family: inherit;
-  font-size: 0.9rem;
-  color: var(--color-text);
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid var(--color-border);
-  border-radius: 4px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  letter-spacing: 0.04em;
-}
-
-.load-more-btn:hover {
-  color: #fff;
-  background: var(--color-accent);
-  border-color: var(--color-accent);
-  box-shadow: 0 0 12px rgba(211, 35, 75, 0.3);
-}
-
-.load-more-btn i {
-  font-size: 0.85rem;
-}
-
-@media (max-width: 768px) {
-  .admin-heading {
-    font-size: 1.6rem;
+@media (max-width: 900px) {
+  .admin-settings-grid,
+  .admin-overview-grid {
+    grid-template-columns: 1fr;
   }
 
-  .admin-card {
-    padding: 1.25rem;
-  }
-
-  .dashboard-stat {
-    min-width: 100%;
+  .admin-overview-actions {
+    grid-column: span 1;
   }
 }
 </style>

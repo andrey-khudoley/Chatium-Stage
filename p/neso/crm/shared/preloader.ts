@@ -1,268 +1,278 @@
-// Переиспользуемый компонент прелоадера для всех страниц проекта
+// @shared
 
-/**
- * Возвращает CSS стили для прелоадера
- */
+const LOADER_COOKIE = 'crm_ui_loader_v1'
+
 export function getPreloaderStyles() {
   return `
-    #boot-loader {
+    #crm-boot-loader {
       position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
+      inset: 0;
       z-index: 99999;
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 2rem;
-      background: transparent;
-      transform-origin: center center;
+      background:
+        radial-gradient(circle at 18% 20%, color-mix(in srgb, var(--crm-accent, #4da3ff) 28%, transparent) 0%, transparent 30%),
+        radial-gradient(circle at 82% 12%, color-mix(in srgb, var(--crm-info, #7dd3fc) 24%, transparent) 0%, transparent 28%),
+        linear-gradient(180deg, color-mix(in srgb, var(--crm-bgAlt, #0e1321) 94%, black 6%) 0%, var(--crm-bg, #070a12) 100%);
+      transition: opacity 0.35s ease, visibility 0.35s ease;
+      opacity: 1;
+      visibility: visible;
+    }
+
+    #crm-boot-loader.crm-loader-hidden {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    #crm-boot-loader.crm-loader-disabled {
+      display: none;
+    }
+
+    .crm-loader-card {
+      width: min(520px, calc(100vw - 2rem));
+      border: 1px solid color-mix(in srgb, var(--crm-borderStrong, #3b4b71) 80%, transparent);
+      border-radius: 16px;
+      background: color-mix(in srgb, var(--crm-surfaceRaised, #1a233a) 88%, transparent);
+      box-shadow:
+        0 20px 40px color-mix(in srgb, var(--crm-shadow, rgba(2, 6, 23, 0.55)) 72%, transparent),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+      padding: 1.2rem 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.9rem;
+    }
+
+    .crm-loader-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      font-family: var(--crm-font-heading, 'Space Grotesk', sans-serif);
+      color: var(--crm-text, #f2f6ff);
+    }
+
+    .crm-loader-title {
+      font-size: 0.94rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .crm-loader-meta {
+      font-family: var(--crm-font-tables, 'JetBrains Mono', monospace);
+      color: var(--crm-textDim, #8e9abc);
+      font-size: 0.74rem;
+    }
+
+    .crm-loader-progress {
+      width: 100%;
+      height: 0.62rem;
+      border-radius: 999px;
+      background: color-mix(in srgb, var(--crm-border, #2a3550) 70%, transparent);
+      overflow: hidden;
+      position: relative;
+    }
+
+    .crm-loader-progress-value {
+      height: 100%;
+      width: 10%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--crm-accentStrong, #1a7cff) 0%, var(--crm-accent, #4da3ff) 100%);
+      box-shadow: 0 0 18px color-mix(in srgb, var(--crm-accent, #4da3ff) 45%, transparent);
+      transition: width 0.26s ease;
+    }
+
+    .crm-loader-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0.55rem;
+      font-family: var(--crm-font-tables, 'JetBrains Mono', monospace);
+      font-size: 0.74rem;
+      color: var(--crm-textMuted, #c4cee5);
+      max-height: 8rem;
       overflow: hidden;
     }
-    
-    #boot-loader.collapsing {
-      animation: crt-collapse 0.4s cubic-bezier(0.5, 0, 0.75, 1) forwards;
-    }
-    
-    @keyframes crt-collapse {
-      0% {
-        transform: scaleY(1) scaleX(1);
-        opacity: 1;
-        filter: brightness(1) contrast(1);
-      }
-      15% {
-        transform: scaleY(0.95) scaleX(1.02);
-        opacity: 0.95;
-        filter: brightness(0.9) contrast(1.1);
-      }
-      30% {
-        transform: scaleY(0.7) scaleX(1.05);
-        opacity: 0.85;
-        filter: brightness(0.7) contrast(1.3);
-      }
-      50% {
-        transform: scaleY(0.4) scaleX(1.08);
-        opacity: 0.7;
-        filter: brightness(0.5) contrast(1.5);
-      }
-      70% {
-        transform: scaleY(0.15) scaleX(1.1);
-        opacity: 0.5;
-        filter: brightness(0.3) contrast(2);
-      }
-      85% {
-        transform: scaleY(0.05) scaleX(1.12);
-        opacity: 0.3;
-        filter: brightness(0.1) contrast(2.5);
-      }
-      100% {
-        transform: scaleY(0) scaleX(1.15);
-        opacity: 0;
-        filter: brightness(0) contrast(3);
-      }
-    }
-    
-    #boot-loader.collapsing .boot-messages {
-      animation: crt-distort-lines 0.4s cubic-bezier(0.5, 0, 0.75, 1) forwards;
-    }
-    
-    @keyframes crt-distort-lines {
-      0% {
-        transform: scaleY(1);
-        filter: blur(0);
-      }
-      30% {
-        transform: scaleY(1.1);
-        filter: blur(0.3px);
-      }
-      60% {
-        transform: scaleY(1.3);
-        filter: blur(0.8px);
-      }
-      100% {
-        transform: scaleY(2);
-        filter: blur(1.5px);
-      }
-    }
-    
-    .boot-messages {
-      font-family: 'Courier New', monospace;
-      font-size: 0.9rem;
-      color: #a0a0a0;
-      max-width: 600px;
-      width: 100%;
-    }
-    
-    .boot-message {
-      display: flex;
-      gap: 0.75rem;
-      margin-bottom: 0.5rem;
+
+    .crm-loader-item {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 0.55rem;
       opacity: 0;
-      transform: translateX(-10px);
-      animation: boot-line-appear 0.3s ease-out forwards;
+      transform: translateY(5px);
+      animation: crm-loader-item-enter 0.25s ease forwards;
     }
-    
-    .boot-status {
-      color: #d3234b;
-      font-weight: bold;
-      flex-shrink: 0;
+
+    .crm-loader-item-index {
+      color: var(--crm-textDim, #8e9abc);
+      min-width: 1.2rem;
     }
-    
-    .boot-text {
-      color: #e8e8e8;
+
+    .crm-loader-item-dot {
+      width: 0.4rem;
+      height: 0.4rem;
+      border-radius: 999px;
+      background: var(--crm-accent, #4da3ff);
+      box-shadow: 0 0 8px color-mix(in srgb, var(--crm-accent, #4da3ff) 55%, transparent);
     }
-    
-    .boot-cursor {
-      display: inline-block;
-      margin-left: 0.5rem;
-      animation: cursor-blink 1s step-end infinite;
-      color: #d3234b;
-      font-size: 1.2rem;
+
+    .crm-loader-status {
+      color: var(--crm-success, #36d399);
+      font-size: 0.72rem;
     }
-    
-    @keyframes boot-line-appear {
-      from { opacity: 0; transform: translateX(-10px); }
-      to { opacity: 1; transform: translateX(0); }
+
+    @keyframes crm-loader-item-enter {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
     }
-    
-    @keyframes cursor-blink {
-      0%, 50% { opacity: 1; }
-      51%, 100% { opacity: 0; }
+
+    @media (max-width: 640px) {
+      .crm-loader-card {
+        border-radius: 12px;
+      }
+
+      .crm-loader-list {
+        max-height: 7rem;
+      }
     }
   `
 }
 
-/**
- * Возвращает JavaScript код прелоадера
- */
 export function getPreloaderScript() {
   return `
-    (function() {
-      var container = null;
-      var loadedResources = new Set();
-      var isComplete = false;
-      
-      var bootSequence = [
-        { type: 'init', msg: 'Инициализация системы...' },
-        { type: 'html', msg: 'Парсинг HTML документа...' },
-        { type: 'script', name: 'tailwind', msg: 'Загрузка Tailwind CSS...' },
-        { type: 'link', name: 'fontawesome', msg: 'Загрузка FontAwesome иконок...' },
-        { type: 'link', name: 'fonts.googleapis', msg: 'Подключение Google Fonts...' },
-        { type: 'link', name: 'fonts.gstatic', msg: 'Загрузка терминального шрифта...' }
+    (function () {
+      var LOADER_COOKIE = '${LOADER_COOKIE}';
+      var MAX_STEPS = 8;
+      var steps = [
+        'Boot sequence initialized',
+        'Collecting runtime context',
+        'Mounting shared design tokens',
+        'Resolving active theme',
+        'Resolving locale dictionary',
+        'Wiring page components',
+        'Hydrating realtime streams',
+        'UI shell ready'
       ];
-      
-      function addMessage(status, text) {
-        if (!container) {
-          container = document.getElementById('boot-messages-container');
-        }
-        if (!container) return;
-        
-        var div = document.createElement('div');
-        div.className = 'boot-message';
-        div.innerHTML = '<span class="boot-status">[' + status + ']</span><span class="boot-text">' + text + '</span>';
-        container.appendChild(div);
-        
-        if (container.children.length > 12) {
-          container.removeChild(container.children[0]);
-        }
+
+      function readCookie(name) {
+        var escaped = name.replace(/[.*+?^()|[\\\\]\\\\]/g, '\\\\$&');
+        var match = document.cookie.match(new RegExp('(?:^|; )' + escaped + '=([^;]*)'));
+        return match ? decodeURIComponent(match[1]) : null;
       }
-      
-      function checkResource(resource) {
-        var name = resource.name;
-        if (loadedResources.has(name)) return;
-        
-        for (var i = 0; i < bootSequence.length; i++) {
-          var item = bootSequence[i];
-          if (item.name && name.indexOf(item.name) !== -1) {
-            loadedResources.add(name);
-            addMessage('OK', item.msg);
+
+      function createItem(index, message) {
+        var item = document.createElement('li');
+        item.className = 'crm-loader-item';
+        item.innerHTML =
+          '<span class="crm-loader-item-index">' + String(index + 1).padStart(2, '0') + '</span>' +
+          '<span class="crm-inline"><span class="crm-loader-item-dot"></span><span>' + message + '</span></span>' +
+          '<span class="crm-loader-status">OK</span>';
+        return item;
+      }
+
+      function markComplete() {
+        if (window.__crmBootDone) return;
+        window.__crmBootDone = true;
+        document.body.classList.add('boot-complete');
+        window.bootLoaderComplete = true;
+        window.dispatchEvent(new Event('bootloader-complete'));
+      }
+
+      function hideLoader() {
+        var loader = document.getElementById('crm-boot-loader');
+        if (!loader) {
+          markComplete();
+          return;
+        }
+
+        loader.classList.add('crm-loader-hidden');
+        setTimeout(function () {
+          loader.classList.add('crm-loader-disabled');
+          markComplete();
+        }, 360);
+      }
+
+      window.hideAppLoader = hideLoader;
+
+      function runLoader() {
+        var state = readCookie(LOADER_COOKIE);
+        if (state === '0' || document.documentElement.dataset.crmLoader === 'off') {
+          hideLoader();
+          return;
+        }
+
+        var list = document.getElementById('crm-loader-list');
+        var value = document.getElementById('crm-loader-progress-value');
+        if (!list || !value) {
+          hideLoader();
+          return;
+        }
+
+        var timer = null;
+        var index = 0;
+
+        timer = setInterval(function () {
+          if (index >= MAX_STEPS) {
+            if (timer) clearInterval(timer);
+            setTimeout(hideLoader, 180);
             return;
           }
-        }
-      }
-      
-      function monitorResources() {
-        if (window.performance && window.performance.getEntriesByType) {
-          var resources = window.performance.getEntriesByType('resource');
-          for (var i = 0; i < resources.length; i++) {
-            checkResource(resources[i]);
+
+          list.appendChild(createItem(index, steps[index] || 'Loading component'));
+          value.style.width = String(Math.round(((index + 1) / MAX_STEPS) * 100)) + '%';
+          index += 1;
+        }, 120);
+
+        setTimeout(function () {
+          if (timer) clearInterval(timer);
+          hideLoader();
+        }, 2600);
+
+        // Fallback: when all resources loaded, force-hide if loader still visible
+        // (handles main-thread blocking during Vue hydration or heavy scripts)
+        window.addEventListener('load', function forceHideOnLoad() {
+          var loader = document.getElementById('crm-boot-loader');
+          if (loader && !loader.classList.contains('crm-loader-hidden')) {
+            hideLoader();
           }
-        }
-      }
-      
-      function completeSequence() {
-        if (isComplete) return;
-        isComplete = true;
-        
-        addMessage('OK', 'Компоненты загружены');
-        addMessage('OK', 'Инициализация Vue.js...');
-        addMessage('OK', 'Проверка аутентификации...');
-        addMessage('OK', 'Система готова к работе');
-        
-        var cursor = document.createElement('div');
-        cursor.className = 'boot-cursor';
-        cursor.textContent = '_';
-        container.appendChild(cursor);
-        
-        setTimeout(hideBootLoader, 400);
-      }
-      
-      function hideBootLoader() {
-        var loader = document.getElementById('boot-loader');
-        if (loader) {
-          loader.classList.add('collapsing');
-          document.body.classList.add('boot-complete');
-          setTimeout(function() {
-            loader.style.display = 'none';
-            window.bootLoaderComplete = true;
-            window.dispatchEvent(new Event('bootloader-complete'));
-          }, 400);
-        }
-      }
-      
-      function startBoot() {
-        addMessage('OK', bootSequence[0].msg);
-        addMessage('OK', bootSequence[1].msg);
-        
-        var checkInterval = setInterval(function() {
-          monitorResources();
-        }, 50);
-        
-        window.addEventListener('load', function() {
-          clearInterval(checkInterval);
-          monitorResources();
-          setTimeout(completeSequence, 100);
-        });
-        
-        setTimeout(function() {
-          if (!isComplete) {
-            clearInterval(checkInterval);
-            monitorResources();
-            completeSequence();
+        }, { once: true });
+
+        // Extended safety: guarantee hide after 5s even if load event delayed
+        setTimeout(function () {
+          var loader = document.getElementById('crm-boot-loader');
+          if (loader && !loader.classList.contains('crm-loader-hidden')) {
+            hideLoader();
           }
-        }, 3000);
+        }, 5000);
       }
-      
+
       if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', function() {
-          setTimeout(startBoot, 50);
-        });
+        document.addEventListener('DOMContentLoaded', runLoader, { once: true });
       } else {
-        setTimeout(startBoot, 50);
+        runLoader();
       }
     })();
   `
 }
 
-/**
- * Возвращает HTML разметку прелоадера
- */
 export function getPreloaderHTML() {
   return `
-    <div id="boot-loader">
-      <div class="boot-messages">
-        <div id="boot-messages-container"></div>
+    <div id="crm-boot-loader" role="status" aria-live="polite">
+      <div class="crm-loader-card">
+        <div class="crm-loader-head">
+          <span class="crm-loader-title">CRM Interface Engine</span>
+          <span class="crm-loader-meta">v2 UI shell</span>
+        </div>
+        <div class="crm-loader-progress">
+          <div id="crm-loader-progress-value" class="crm-loader-progress-value"></div>
+        </div>
+        <ul id="crm-loader-list" class="crm-loader-list"></ul>
       </div>
     </div>
   `

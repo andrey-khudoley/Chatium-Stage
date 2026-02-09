@@ -1,50 +1,102 @@
 # Architecture
 
-## Назначение
-Базовый шаблон проекта Chatium с минимальным набором страниц и документации.
+## Purpose
+`p/neso/crm` is a Chatium CRM project with strict layered backend boundaries and an extensible, token-driven UI architecture.
 
-## Ограничения платформы
-- Серверная инфраструктура предоставляется Chatium.
-- Нельзя менять стек и зависимости.
-- Деплой — автоматически при пуше.
+## Platform Constraints
+- Chatium controls runtime and deployment.
+- Stack and dependency model remain platform-defined.
+- Deployment is automatic after push.
 
-## Основные сценарии
-- Открыть главную страницу.
-- Авторизоваться и попасть в профиль.
-- Открыть админку (только роль Admin).
+## Routing
+- `index.tsx` → Home page (SSR + Vue)
+- `web/admin/index.tsx` → Admin page (`requireAccountRole('Admin')`)
+- `web/profile/index.tsx` → Profile page (`requireRealUser()`)
+- `web/tests/index.tsx` → Tests page (`requireRealUser()`)
+- `web/login/index.tsx` → Login redirect page
 
-## Роутинг
-- `index.tsx` — главная (SSR + Vue), единственный роут в корне.
-- `web/admin/index.tsx` — админка, `requireAccountRole('Admin')`.
-- `web/profile/index.tsx` — профиль, `requireRealUser()`.
-- `web/tests/index.tsx` — страница тестов, `requireRealUser()`.
-- `web/login/index.tsx` — вход (редирект на системный `/s/auth/signin`).
+## Layer Separation (Data Flow)
 
-## Разделение слоёв
+Reference ADR: `docs/ADR/0002-settings-heap-and-layered-api.md`
 
-Принцип разделения ответственности при работе с данными (см. [ADR-0002](ADR/0002-settings-heap-and-layered-api.md)):
-
-| Слой | Каталог | Ответственность |
+| Layer | Folder | Responsibility |
 | --- | --- | --- |
-| **Таблицы** | `tables/` | Схемы Heap (поля, типы). Только определение структуры данных. |
-| **Репозитории** | `repos/` | Работа с БД: CRUD, запросы. Никакой бизнес‑логики, только вызовы Heap API. |
-| **Бизнес‑логика** | `lib/` | Правила, дефолты, валидация значений, вычисления. Вызывает репозитории. |
-| **API** | `api/` | HTTP‑эндпоинты, парсинг и первичная валидация запросов, проверка прав. Вызывает lib. |
+| Tables | `tables/` | Heap schema only |
+| Repositories | `repos/` | CRUD and Heap queries only |
+| Business logic | `lib/` | Rules, validation, computation |
+| API | `api/` | HTTP input, access checks, calls to lib |
 
-Поток данных: `HTTP → API → lib → repos → Heap`.
+Data flow: `HTTP -> API -> lib -> repos -> Heap`.
 
-## Структура каталогов
-- `config/` — маршруты и `PROJECT_ROOT`.
-- `web/` — браузерные роуты модулей (admin, profile, tests, login).
-- `pages/` — Vue‑страницы (минимальные).
-- `components/` — переиспользуемые Vue‑компоненты (Header, AppFooter, GlobalGlitch, LogoutModal).
-- `api/` — API‑эндпоинты (получение и валидация входных данных). File-based: один файл — один эндпоинт с `/`. Пример: `api/settings/list.ts`, `api/settings/get.ts`, `api/settings/save.ts`, `api/logger/log.ts`, `api/admin/logs/recent.ts`, `api/admin/logs/before.ts`, `api/tests/list.ts`, `api/tests/endpoints-check/health.ts`, `api/tests/endpoints-check/ping.ts`.
-- `tables/` — Heap‑таблицы (схемы: settings, logs).
-- `repos/` — репозитории (работа с БД: settings, logs; logs.repo включает findBeforeTimestamp для пагинации).
-- `lib/` — бизнес‑логика (settings.lib, logger.lib: проверка уровня, запись в ctx/Heap/WebSocket/вебхук).
-- `shared/` — общий код (preloader, logLevel для передачи уровня логирования на клиент, logger — уровни syslog RFC 5424, createComponentLogger, setLogSink/LogEntry для дашборда, logEmergency…logDebug в браузере с проверкой порога).
-- `docs/` — документация проекта.
+## UI Architecture
 
-## Интеграции
-- Внешние сервисы: нет.
-- Внутренние SDK: стандартные модули Chatium.
+### Runtime UI folders
+- `pages/` — Vue page components
+- `components/` — reusable UI components by domain level
+- `shared/design/` — design engine (tokens/themes/i18n/preferences)
+- `shared/preloader.ts` — global preloader and boot behavior
+
+### Component domain structure
+- `components/base/`
+- `components/layout/`
+- `components/navigation/`
+- `components/data-display/`
+- `components/editors/`
+- `components/feedback/`
+- `components/feature/`
+
+### Design system core
+- `shared/design/system.ts`
+  - 6 preset themes
+  - token schema
+  - font catalog (default + 20)
+  - cookie-based preference persistence
+- `shared/design/useDesignSystem.ts`
+  - runtime customization API (density/radius/shadow/scale/colors/fonts)
+- `shared/design/globalStyles.ts`
+  - global CSS variables and shared visual primitives
+- `shared/design/i18n.ts`
+  - RU/EN key-based dictionary and locale switching
+
+## Design vs Runtime Source of Truth
+
+### `design/` folder
+Contains template-only assets:
+- module screen blueprints (`screens.md`)
+- module state blueprints (`states.md`)
+- mock compositions and UI-state coverage
+
+### Runtime folders
+Contain real reusable UI entities used by pages:
+- `components/`
+- `shared/design/`
+- `pages/`
+
+No component duplication between `design/` and runtime folders.
+
+## Preloader
+- Global UI preloader is implemented in `shared/preloader.ts`.
+- Preloader state is persisted in cookies (`crm_ui_loader_v1`).
+- State is restored on reload before page hydration.
+
+## i18n
+- RU/EN baseline implemented.
+- All new UI copy is key-based in `shared/design/i18n.ts`.
+- Locale switcher is available in the top navigation.
+
+## Redesigned Pages
+- Home page: modern CRM overview with design-system previews.
+- Admin page: operational controls + Theme & Styling Settings panel.
+- Tests page: grouped validation dashboards and live log stream panel.
+
+## Design Catalog Modules
+The `design/` directory includes module folders for:
+- Base CRM modules
+- Process management modules
+- Knowledge modules
+- Learning modules
+- Analytics modules
+- Administration modules
+- Additional UX modules
+
+Each module defines multiple screens and `empty/loading/error/filled` states.

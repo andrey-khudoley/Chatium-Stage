@@ -276,9 +276,16 @@ export const profilePageRoute = app.html('/', async (ctx, req) => {
       </head>
       <body>
         <div id="geometric-bg"></div>
-        <div id="boot-loader">
-          <div class="boot-messages">
-            <div id="boot-messages-container"></div>
+        <div id="crm-boot-loader" role="status" aria-live="polite">
+          <div class="crm-loader-card">
+            <div class="crm-loader-head">
+              <span class="crm-loader-title">CRM Interface Engine</span>
+              <span class="crm-loader-meta">v2 UI shell</span>
+            </div>
+            <div class="crm-loader-progress">
+              <div id="crm-loader-progress-value" class="crm-loader-progress-value"></div>
+            </div>
+            <ul id="crm-loader-list" class="crm-loader-list"></ul>
           </div>
         </div>
         <ProfilePage
