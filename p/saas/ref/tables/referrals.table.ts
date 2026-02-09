@@ -1,0 +1,61 @@
+// This file is auto-generated via createOrUpdateHeapTableFile API and should not be edited manually
+import { Heap } from '@app/heap'
+
+export const TSaasRefReferral9Xy2Zk = Heap.Table(
+  't__saas-ref__referral__9Xy2Zk',
+  {
+    campaignId: Heap.Optional(
+      Heap.RefLink('t__saas-ref__campaign__8Hn4Lx', {
+        customMeta: { title: 'Кампания' },
+        onDelete: 'none',
+      }),
+    ),
+    partnerId: Heap.Optional(
+      Heap.RefLink('t__saas-ref__partner__3Ab7Cd', {
+        customMeta: { title: 'Партнёр' },
+        onDelete: 'none',
+      }),
+    ),
+    ref: Heap.Optional(
+      Heap.String({
+        customMeta: { title: 'Реферальный ID' },
+      }),
+    ),
+    tgId: Heap.Optional(Heap.String({ customMeta: { title: 'Telegram ID' } })),
+    gcId: Heap.Optional(Heap.String({ customMeta: { title: 'GetCourse ID' } })),
+    name: Heap.Optional(Heap.String({ customMeta: { title: 'Имя' } })),
+    email: Heap.Optional(Heap.String({ customMeta: { title: 'Email' } })),
+    phone: Heap.Optional(Heap.String({ customMeta: { title: 'Телефон' } })),
+    registeredAt: Heap.Optional(
+      Heap.DateTime({
+        customMeta: { title: 'Дата регистрации' },
+      }),
+    ),
+    ordersCount: Heap.Optional(
+      Heap.Number({
+        customMeta: { title: 'Количество заказов' },
+      }),
+    ),
+    ordersSum: Heap.Optional(
+      Heap.Number({
+        customMeta: { title: 'Сумма заказов' },
+      }),
+    ),
+    paymentsCount: Heap.Optional(
+      Heap.Number({
+        customMeta: { title: 'Количество оплат' },
+      }),
+    ),
+    paymentsSum: Heap.Optional(
+      Heap.Number({
+        customMeta: { title: 'Сумма оплат' },
+      }),
+    ),
+  },
+  { customMeta: { title: 'Рефералы', description: 'Клиенты (рефералы партнёров)' } },
+)
+
+export default TSaasRefReferral9Xy2Zk
+
+export type TSaasRefReferral9Xy2ZkRow = typeof TSaasRefReferral9Xy2Zk.T
+export type TSaasRefReferral9Xy2ZkRowJson = typeof TSaasRefReferral9Xy2Zk.JsonT
