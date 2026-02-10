@@ -1,6 +1,6 @@
 import { Heap } from '@app/heap'
 
-export const Settings = Heap.Table('t__neso-crm__setting__8Ab3Xy', {
+export const Settings = Heap.Table('t__kate-todo__setting__Kt1Set', {
   key: Heap.String({
     customMeta: { title: 'Ключ настройки' },
     searchable: { langs: ['ru', 'en'], embeddings: false }

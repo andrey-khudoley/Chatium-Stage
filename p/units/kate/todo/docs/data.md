@@ -6,8 +6,8 @@
 
 | Table | File | Назначение | Основные поля |
 | --- | --- | --- | --- |
-| t__neso-crm__setting__8Ab3Xy | tables/settings.table.ts | Настройки проекта (key-value) | key (string), value (any) |
-| t__neso-crm__log__2Cd5Wz | tables/logs.table.ts | Серверные логи (долгосрочное хранение) | message (string), payload (any), severity, level, timestamp |
+| t__kate-todo__setting__Kt1Set | tables/settings.table.ts | Настройки проекта (key-value) | key (string), value (any) |
+| t__kate-todo__log__Kt2Log | tables/logs.table.ts | Серверные логи (долгосрочное хранение) | message (string), payload (any), severity, level, timestamp |
 
 ## Репозитории (repos/)
 - `repos/settings.repo.ts` — findByKey, findAll, upsert, deleteByKey (слой работы с БД; без вызовов logger.lib, т.к. getSetting/getLogLevel вызываются из writeServerLog и используют findByKey — иначе рекурсия).

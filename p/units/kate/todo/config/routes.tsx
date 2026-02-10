@@ -1,5 +1,5 @@
 // PROJECT_ROOT — путь от корня воркспэйса до проекта (от /)
-export const PROJECT_ROOT = 'p/template_project'
+export const PROJECT_ROOT = 'p/units/kate/todo'
 
 // Базовый путь проекта для формирования ссылок (от корня, без домена)
 const BASE_PATH = `/${PROJECT_ROOT}`
