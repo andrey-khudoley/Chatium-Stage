@@ -191,22 +191,24 @@ function onChildClick(parent: NavItem, child: NavChildItem) {
         </button>
 
         <div v-if="hasChildren(item)" class="dc-submenu-wrap" :class="{ open: isParentOpen(item) && !collapsed }">
-          <button
-            v-for="child in item.children"
-            :key="child.id"
-            type="button"
-            class="dc-submenu-item"
-            :class="{ active: activeId === child.id }"
-            :title="collapsed ? child.label : ''"
-            @click="onChildClick(item, child)"
-          >
-            <span class="dc-submenu-icon" aria-hidden="true">
-              <i v-if="child.icon" :class="['fas', child.icon]"></i>
-              <span v-else class="dc-submenu-dot"></span>
-            </span>
-            <span class="dc-submenu-label dc-collapsible-text">{{ child.label }}</span>
-            <span v-if="child.badge" class="dc-nav-badge dc-collapsible-badge">{{ child.badge }}</span>
-          </button>
+          <div class="dc-submenu-inner">
+            <button
+              v-for="child in item.children"
+              :key="child.id"
+              type="button"
+              class="dc-submenu-item"
+              :class="{ active: activeId === child.id }"
+              :title="collapsed ? child.label : ''"
+              @click="onChildClick(item, child)"
+            >
+              <span class="dc-submenu-icon" aria-hidden="true">
+                <i v-if="child.icon" :class="['fas', child.icon]"></i>
+                <span v-else class="dc-submenu-dot"></span>
+              </span>
+              <span class="dc-submenu-label dc-collapsible-text">{{ child.label }}</span>
+              <span v-if="child.badge" class="dc-nav-badge dc-collapsible-badge">{{ child.badge }}</span>
+            </button>
+          </div>
         </div>
       </div>
     </nav>
@@ -470,6 +472,12 @@ function onChildClick(parent: NavItem, child: NavChildItem) {
 .dc-submenu-wrap > * {
   min-height: 0;
   overflow: hidden;
+}
+
+.dc-submenu-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
 .dc-submenu-item {

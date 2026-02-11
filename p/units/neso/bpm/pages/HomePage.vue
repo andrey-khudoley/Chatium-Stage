@@ -1,11 +1,13 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import {
   DcBpmExecutionTimeline,
   DcBpmKanbanBoard,
   DcBpmMetricGrid,
+  DcBpmSidebar,
   DcThemeGlobalStyles
 } from '../components'
+import { DcAppShell } from '../layout'
 import { bpmCopy } from '../shared/bpmI18n'
 import {
   getBpmExecutionTimeline,
@@ -30,14 +32,68 @@ const props = defineProps<{
   featuredScenarios: FeaturedScenario[]
 }>()
 
+const sidebarCollapsed = ref(false)
+const sidebarOpen = ref(false)
+
 const ui = computed(() => bpmCopy.ru)
 const metrics = computed(() => getBpmMetrics(ui.value))
 const kanbanColumns = computed(() => getBpmKanbanColumns(ui.value))
 const timeline = computed(() => getBpmExecutionTimeline('ru'))
+
+/** Контекст видимости меню. В демо передаём userRole: 'admin', чтобы отображался раздел «Админка»; в проде — роль из авторизации. */
+const navVisibilityContext = computed(() => ({ userRole: 'admin' }))
+
+function closeSidebar() {
+  sidebarOpen.value = false
+}
+
+function toggleSidebarMobile() {
+  sidebarOpen.value = !sidebarOpen.value
+}
 </script>
 
 <template>
-  <DcThemeGlobalStyles theme="light" theme-preset-id="sunrise-leaf" />
+  <DcAppShell
+    theme="light"
+    theme-preset-id="sunrise-leaf"
+    :ready="true"
+    :sidebar-collapsed="sidebarCollapsed"
+    :sidebar-open="sidebarOpen"
+    @close-sidebar="closeSidebar"
+  >
+    <template #sidebar>
+      <DcBpmSidebar
+        active-id="home"
+        :login-url="loginUrl"
+        :admin-url="adminUrl"
+        :tests-url="testsUrl"
+        :design-url="designUrl"
+        :scenario-count="scenarioCount"
+        :visibility-context="navVisibilityContext"
+        theme="light"
+        logo-text="NeSo BPM"
+        user-name="Guest"
+        user-role="BPM Workspace"
+        :collapsed="sidebarCollapsed"
+        :mobile-open="sidebarOpen"
+        @close="closeSidebar"
+        @toggle-collapse="sidebarCollapsed = !sidebarCollapsed"
+      />
+    </template>
+
+    <template #header>
+      <header class="bpm-home-header">
+        <button
+          type="button"
+          class="bpm-home-header__menu-toggle"
+          aria-label="Открыть меню"
+          @click="toggleSidebarMobile"
+        >
+          <i class="fas fa-bars" aria-hidden="true"></i>
+        </button>
+        <h1 class="bpm-home-header__title">{{ projectTitle }}</h1>
+      </header>
+    </template>
 
   <div class="bpm-home-page">
     <header class="bpm-home-hero">
@@ -47,13 +103,6 @@ const timeline = computed(() => getBpmExecutionTimeline('ru'))
         Новый BPM-контур в `p/units/neso/bpm`: data layer вынесен отдельно,
         UI построен на reusable-компонентах и на отдельном design-каталоге.
       </p>
-
-      <nav class="bpm-home-links">
-        <a :href="loginUrl">Вход</a>
-        <a :href="adminUrl">Админка</a>
-        <a :href="testsUrl">Тесты</a>
-        <a :href="designUrl">Design ({{ scenarioCount }} scenarios)</a>
-      </nav>
     </header>
 
     <section class="bpm-home-section">
@@ -85,6 +134,7 @@ const timeline = computed(() => getBpmExecutionTimeline('ru'))
       </div>
     </section>
   </div>
+  </DcAppShell>
 </template>
 
 <style scoped>
@@ -129,28 +179,49 @@ const timeline = computed(() => getBpmExecutionTimeline('ru'))
   line-height: 1.5;
 }
 
-.bpm-home-links {
-  margin-top: 12px;
+.bpm-home-header {
+  min-height: var(--header-height);
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.bpm-home-links a {
-  height: 32px;
-  display: inline-flex;
   align-items: center;
-  padding: 0 12px;
-  border-radius: var(--radius-sm);
+  gap: 12px;
+  padding: 10px 12px;
   border: 1px solid var(--border-soft);
-  text-decoration: none;
-  color: var(--text-secondary);
-  font-size: 0.74rem;
+  border-radius: var(--radius-lg);
+  background:
+    var(--gradient-glass),
+    color-mix(in srgb, var(--surface-2) 72%, transparent);
+  box-shadow: var(--shadow-sm);
 }
 
-.bpm-home-links a:hover {
+.bpm-home-header__menu-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  background: transparent;
+  cursor: pointer;
+}
+
+.bpm-home-header__menu-toggle:hover {
   color: var(--text-primary);
-  border-color: var(--border-accent);
+  background: color-mix(in srgb, var(--surface-2) 80%, transparent);
+}
+
+.bpm-home-header__title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-family: var(--font-display);
+  color: var(--text-primary);
+}
+
+@media (min-width: 981px) {
+  .bpm-home-header__menu-toggle {
+    display: none;
+  }
 }
 
 .bpm-home-section {

@@ -24,6 +24,7 @@ export type { MilestoneItem } from './bpm/DcMilestoneRail.vue'
 export type { RoleStackItem } from './bpm/DcRoleStack.vue'
 export type { SwimlaneLane } from './bpm/DcSwimlaneBoard.vue'
 
+export { default as DcBpmSidebar } from './DcBpmSidebar.vue'
 export { default as DcDemoSidebar } from './DcDemoSidebar.vue'
 export { default as DcGlowDots } from './DcGlowDots.vue'
 export { default as DcGridLayer } from './DcGridLayer.vue'
