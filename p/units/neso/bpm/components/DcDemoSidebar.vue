@@ -370,9 +370,11 @@ function onLinkClick() {
 </template>
 
 <style scoped>
-/* Easing: мягкий ease-out для естественного ощущения */
+/* Easing: мягкий ease-out для плавного замедления в конце
+   Задержка сдвига (при collapse: status растворяется, затем всё сдвигается) */
 .bpm-sb {
-  --bpm-ease: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --bpm-ease: cubic-bezier(0.33, 1, 0.68, 1);
+  --bpm-shift-delay: 0s;
 }
 
 /* Корень: фиксированная полоса слева, высота экрана */
@@ -396,14 +398,16 @@ function onLinkClick() {
   box-shadow: 4px 0 24px rgba(0, 0, 0, 0.15);
   overflow: hidden;
   transition:
-    width 0.3s var(--bpm-ease),
-    transform 0.3s var(--bpm-ease),
-    padding 0.3s var(--bpm-ease);
+    width 0.4s var(--bpm-ease),
+    transform 0.4s var(--bpm-ease),
+    padding 0.4s var(--bpm-ease);
 }
 
 .bpm-sb--collapsed {
+  --bpm-shift-delay: 0.2s;
   width: var(--sidebar-collapsed-width, var(--bpm-sb-width-collapsed));
   padding: 12px 8px 10px;
+  transition: width 0.4s var(--bpm-ease) var(--bpm-shift-delay), transform 0.4s var(--bpm-ease) var(--bpm-shift-delay), padding 0.4s var(--bpm-ease) var(--bpm-shift-delay);
 }
 
 /* Разделители секций */
@@ -438,18 +442,19 @@ function onLinkClick() {
   box-shadow: 6px 0 20px rgba(0, 0, 0, 0.08);
 }
 
-/* Шапка: лого + кнопки */
+/* Шапка: лого + кнопки. Row сохраняем при collapse — кнопка не скачет */
 .bpm-sb__header {
   display: flex;
+  flex-direction: row;
   align-items: center;
   gap: 8px;
   flex-shrink: 0;
   margin-bottom: 10px;
+  transition: gap 0.4s var(--bpm-ease) var(--bpm-shift-delay);
 }
 
 .bpm-sb--collapsed .bpm-sb__header {
-  flex-direction: column;
-  gap: 6px;
+  gap: 2px;
 }
 
 /* Grid 0fr/1fr: плавное появление/исчезновение без переключения DOM */
@@ -460,7 +465,7 @@ function onLinkClick() {
   gap: 8px;
   min-width: 0;
   flex: 1;
-  transition: grid-template-columns 0.3s var(--bpm-ease);
+  transition: grid-template-columns 0.4s var(--bpm-ease) var(--bpm-shift-delay);
 }
 
 .bpm-sb__brand--collapsed {
@@ -472,12 +477,12 @@ function onLinkClick() {
   min-width: 0;
   overflow: hidden;
   opacity: 1;
-  transition: opacity 0.25s var(--bpm-ease);
+  transition: opacity 0.35s var(--bpm-ease);
 }
 
 .bpm-sb__brand--collapsed .bpm-sb__brand-slot {
   opacity: 0;
-  transition: opacity 0.2s var(--bpm-ease);
+  transition: opacity 0.3s var(--bpm-ease) var(--bpm-shift-delay);
 }
 
 .bpm-sb__brand-slot .bpm-sb__brand-text {
@@ -495,7 +500,7 @@ function onLinkClick() {
   color: var(--accent-contrast, #111);
   background: linear-gradient(140deg, var(--accent-strong, #8ab), var(--accent, #6a9));
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-  transition: width 0.28s var(--bpm-ease), height 0.28s var(--bpm-ease);
+  transition: width 0.4s var(--bpm-ease) var(--bpm-shift-delay), height 0.4s var(--bpm-ease) var(--bpm-shift-delay);
 }
 
 .bpm-sb--collapsed .bpm-sb__brand-icon {
@@ -547,12 +552,12 @@ function onLinkClick() {
   color: var(--text-secondary, rgba(255,255,255,0.8));
   cursor: pointer;
   transition:
-    width 0.28s var(--bpm-ease),
-    height 0.28s var(--bpm-ease),
-    border-color 0.2s ease,
-    color 0.2s ease,
-    background 0.2s ease,
-    transform 0.12s ease;
+    width 0.4s var(--bpm-ease) var(--bpm-shift-delay),
+    height 0.4s var(--bpm-ease) var(--bpm-shift-delay),
+    border-color 0.25s var(--bpm-ease),
+    color 0.25s var(--bpm-ease),
+    background 0.25s var(--bpm-ease),
+    transform 0.2s var(--bpm-ease);
 }
 
 .bpm-sb__btn:hover {
@@ -562,7 +567,7 @@ function onLinkClick() {
 }
 
 .bpm-sb__btn:active {
-  transform: scale(0.95);
+  transform: scale(0.96);
 }
 
 .bpm-sb__btn:focus-visible {
@@ -579,11 +584,11 @@ function onLinkClick() {
   display: none;
 }
 
-/* Блок статуса: dissolve (opacity) → затем сжатие grid */
+/* Сворачивание: status растворяется первым → sidebar и остальное сдвигается (delay)
+   Разворачивание: sidebar сдвигается → status проявляется (без задержки)
+   visibility с delay при collapse, чтобы opacity успела проанимироваться */
 .bpm-sb__status {
-  position: relative;
-  display: grid;
-  grid-template-columns: auto 1fr;
+  display: flex;
   align-items: center;
   gap: 8px;
   padding: 8px 10px;
@@ -592,50 +597,41 @@ function onLinkClick() {
   border: 1px solid var(--border-soft, rgba(255,255,255,0.12));
   background: color-mix(in srgb, var(--surface-2, rgba(255,255,255,0.06)) 80%, transparent);
   flex-shrink: 0;
+  overflow: hidden;
+  opacity: 1;
+  visibility: visible;
+  max-height: 80px;
   transition:
-    grid-template-columns 0.3s var(--bpm-ease),
-    padding 0.28s var(--bpm-ease),
-    margin 0.28s var(--bpm-ease),
-    border 0.28s var(--bpm-ease),
-    background 0.28s var(--bpm-ease),
-    border-radius 0.28s var(--bpm-ease);
+    opacity 0.25s var(--bpm-ease),
+    visibility 0s,
+    max-height 0.35s var(--bpm-ease),
+    padding 0.3s var(--bpm-ease),
+    margin 0.3s var(--bpm-ease),
+    border 0.3s var(--bpm-ease),
+    background 0.3s var(--bpm-ease);
 }
 
 .bpm-sb__status--collapsed {
-  grid-template-columns: auto 0fr;
-  justify-content: center;
+  opacity: 0;
+  visibility: hidden;
+  max-height: 0;
   padding: 0;
-  margin-bottom: 8px;
+  margin: 0;
   border: 0;
   background: transparent;
   transition:
-    grid-template-columns 0.3s var(--bpm-ease) 0.12s,
-    padding 0.28s var(--bpm-ease) 0.12s,
-    margin 0.28s var(--bpm-ease) 0.12s,
-    border 0.28s var(--bpm-ease) 0.12s,
-    background 0.28s var(--bpm-ease) 0.12s,
-    border-radius 0.28s var(--bpm-ease) 0.12s;
+    opacity 0.25s var(--bpm-ease),
+    visibility 0s linear 0.25s,
+    max-height 0.3s var(--bpm-ease) var(--bpm-shift-delay),
+    padding 0.3s var(--bpm-ease) var(--bpm-shift-delay),
+    margin 0.3s var(--bpm-ease) var(--bpm-shift-delay),
+    border 0.3s var(--bpm-ease) var(--bpm-shift-delay),
+    background 0.3s var(--bpm-ease) var(--bpm-shift-delay);
 }
 
 .bpm-sb__status-slot {
   min-width: 0;
   overflow: hidden;
-  opacity: 1;
-  transition: opacity 0.12s var(--bpm-ease);
-}
-
-.bpm-sb__status--collapsed .bpm-sb__status-slot {
-  opacity: 0;
-  visibility: hidden;
-  position: absolute;
-  left: 0;
-  top: 0;
-  width: 0;
-  height: 0;
-  overflow: hidden;
-  pointer-events: none;
-  clip: rect(0, 0, 0, 0);
-  transition: opacity 0.12s var(--bpm-ease);
 }
 
 .bpm-sb__status-dot {
@@ -650,8 +646,8 @@ function onLinkClick() {
 }
 
 .bpm-sb__status--collapsed .bpm-sb__status-dot {
-  width: 10px;
-  height: 10px;
+  width: 8px;
+  height: 8px;
 }
 
 @keyframes bpm-sb-pulse {
@@ -659,11 +655,7 @@ function onLinkClick() {
   50% { opacity: 0.75; }
 }
 
-.bpm-sb__status:not(.bpm-sb__status--collapsed) {
-  transition: background 0.2s ease, border-color 0.2s ease;
-}
-
-.bpm-sb__status:not(.bpm-sb__status--collapsed):hover {
+.bpm-sb__status:hover {
   border-color: var(--border-strong, rgba(255,255,255,0.18));
   background: color-mix(in srgb, var(--surface-2, rgba(255,255,255,0.08)) 90%, transparent);
 }
@@ -678,6 +670,9 @@ function onLinkClick() {
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: var(--text-tertiary, rgba(255,255,255,0.5));
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .bpm-sb__status-desc {
@@ -685,6 +680,9 @@ function onLinkClick() {
   font-size: 0.7rem;
   color: var(--text-secondary, rgba(255,255,255,0.8));
   line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* Навигация */
@@ -721,23 +719,23 @@ function onLinkClick() {
 .bpm-sb__nav-heading-wrap {
   display: grid;
   grid-template-rows: 1fr;
-  transition: grid-template-rows 0.3s var(--bpm-ease);
   overflow: hidden;
+  opacity: 1;
+  transition:
+    grid-template-rows 0.4s var(--bpm-ease) var(--bpm-shift-delay),
+    opacity 0.35s var(--bpm-ease);
 }
 
 .bpm-sb__nav-heading-wrap > * {
   min-height: 0;
 }
 
-.bpm-sb__nav-heading-wrap {
-  opacity: 1;
-  transition: opacity 0.25s var(--bpm-ease);
-}
-
 .bpm-sb__nav-heading-wrap--collapsed {
   grid-template-rows: 0fr;
   opacity: 0;
-  transition: opacity 0.2s var(--bpm-ease);
+  transition:
+    grid-template-rows 0.4s var(--bpm-ease) var(--bpm-shift-delay),
+    opacity 0.3s var(--bpm-ease) var(--bpm-shift-delay);
 }
 
 .bpm-sb__nav-heading {
@@ -772,14 +770,14 @@ a.bpm-sb__link {
   text-align: left;
   font: inherit;
   transition:
-    grid-template-columns 0.3s var(--bpm-ease),
-    gap 0.3s var(--bpm-ease),
-    background 0.2s ease,
-    border-color 0.2s ease,
-    color 0.2s ease,
-    box-shadow 0.2s ease,
-    transform 0.12s ease,
-    justify-content 0.3s var(--bpm-ease);
+    grid-template-columns 0.4s var(--bpm-ease) var(--bpm-shift-delay),
+    gap 0.4s var(--bpm-ease) var(--bpm-shift-delay),
+    justify-content 0.4s var(--bpm-ease) var(--bpm-shift-delay),
+    background 0.25s var(--bpm-ease),
+    border-color 0.25s var(--bpm-ease),
+    color 0.25s var(--bpm-ease),
+    box-shadow 0.25s var(--bpm-ease),
+    transform 0.2s var(--bpm-ease);
   box-sizing: border-box;
 }
 
@@ -798,12 +796,12 @@ a.bpm-sb__link--collapsed {
   min-width: 0;
   overflow: hidden;
   opacity: 1;
-  transition: opacity 0.25s var(--bpm-ease);
+  transition: opacity 0.35s var(--bpm-ease);
 }
 
 .bpm-sb__link-slot--collapsed {
   opacity: 0;
-  transition: opacity 0.2s var(--bpm-ease);
+  transition: opacity 0.3s var(--bpm-ease) var(--bpm-shift-delay);
 }
 
 .bpm-sb__link-slot .bpm-sb__link-label {
@@ -1063,13 +1061,14 @@ button.bpm-sb__sub-link--active {
   border-radius: var(--radius-md, 10px);
   border: 1px solid var(--border-soft, rgba(255,255,255,0.12));
   background: color-mix(in srgb, var(--surface-2, rgba(255,255,255,0.06)) 75%, transparent);
+  overflow: hidden;
   transition:
-    grid-template-columns 0.3s var(--bpm-ease),
-    border-color 0.2s ease,
-    background 0.2s ease,
-    height 0.28s var(--bpm-ease),
-    padding 0.28s var(--bpm-ease),
-    border-radius 0.28s var(--bpm-ease);
+    grid-template-columns 0.4s var(--bpm-ease) var(--bpm-shift-delay),
+    border-color 0.25s var(--bpm-ease),
+    background 0.25s var(--bpm-ease),
+    height 0.4s var(--bpm-ease),
+    padding 0.4s var(--bpm-ease),
+    border-radius 0.4s var(--bpm-ease);
 }
 
 .bpm-sb__user:hover {
@@ -1092,12 +1091,12 @@ button.bpm-sb__sub-link--active {
   min-width: 0;
   overflow: hidden;
   opacity: 1;
-  transition: opacity 0.25s var(--bpm-ease);
+  transition: opacity 0.4s var(--bpm-ease);
 }
 
 .bpm-sb__user-slot--collapsed {
   opacity: 0;
-  transition: opacity 0.2s var(--bpm-ease);
+  transition: opacity 0.4s var(--bpm-ease) var(--bpm-shift-delay);
 }
 
 .bpm-sb__user-slot .bpm-sb__user-text {
@@ -1116,7 +1115,7 @@ button.bpm-sb__sub-link--active {
   background: color-mix(in srgb, var(--accent-soft, rgba(100,180,100,0.25)) 70%, transparent);
   color: var(--text-primary, #fff);
   font-size: 0.72rem;
-  transition: width 0.28s var(--bpm-ease), height 0.28s var(--bpm-ease);
+  transition: width 0.4s var(--bpm-ease) var(--bpm-shift-delay), height 0.4s var(--bpm-ease) var(--bpm-shift-delay);
 }
 
 .bpm-sb--collapsed .bpm-sb__avatar {
@@ -1143,6 +1142,9 @@ button.bpm-sb__sub-link--active {
 .bpm-sb__user-role {
   font-size: 0.65rem;
   color: var(--text-tertiary, rgba(255,255,255,0.5));
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .bpm-sb__logout {
@@ -1213,9 +1215,9 @@ button.bpm-sb__sub-link--active {
 
   .bpm-sb__status,
   .bpm-sb__status--collapsed {
-    grid-template-columns: auto 1fr;
-    justify-content: flex-start;
-    gap: 8px;
+    opacity: 1;
+    visibility: visible;
+    max-height: 80px;
     padding: 8px 10px;
     margin-bottom: 10px;
     border: 1px solid var(--border-soft, rgba(255,255,255,0.12));

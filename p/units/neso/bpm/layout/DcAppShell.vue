@@ -48,6 +48,7 @@ defineEmits<{
 <style scoped>
 .dc-app-shell {
   --dc-shell-sidebar-offset: var(--sidebar-width);
+  --dc-shell-shift-delay: 0s;
   position: relative;
   display: flex;
   min-height: 100vh;
@@ -64,6 +65,7 @@ defineEmits<{
 
 .dc-app-shell--sidebar-collapsed {
   --dc-shell-sidebar-offset: var(--sidebar-collapsed-width);
+  --dc-shell-shift-delay: 0.2s;
 }
 
 .dc-app-shell__content {
@@ -74,7 +76,7 @@ defineEmits<{
   min-width: 0;
   flex-direction: column;
   margin-left: var(--dc-shell-sidebar-offset);
-  transition: margin-left 0.34s cubic-bezier(0.22, 1, 0.36, 1);
+  transition: margin-left 0.4s cubic-bezier(0.33, 1, 0.68, 1) var(--dc-shell-shift-delay);
   will-change: margin-left;
 }
 
