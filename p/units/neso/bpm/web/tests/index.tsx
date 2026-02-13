@@ -3,7 +3,7 @@ import { jsx } from '@app/html-jsx'
 import TestsPage from '../../pages/TestsPage.vue'
 import { getBootLoaderDiv, getDemoPageHead } from '../../shared/demoPageShell'
 import { DEFAULT_PROJECT_TITLE, TESTS_PAGE_NAME } from '../../config/project'
-import { ROUTES, getFullUrl } from '../../config/routes'
+import { getBpmNavUrlsAsync } from '../../lib/navUrls.lib'
 
 const groups = [
   {
@@ -104,17 +104,18 @@ const groups = [
   }
 ]
 
-export const testsPageRoute = app.html('/', async () => {
+export const testsPageRoute = app.html('/', async (ctx) => {
+  const navUrls = await getBpmNavUrlsAsync(ctx)
   return (
     <html>
       <head>{getDemoPageHead('light', TESTS_PAGE_NAME, DEFAULT_PROJECT_TITLE, 'Info', 'misty-daybreak')}</head>
       <body>
         {getBootLoaderDiv('light', DEFAULT_PROJECT_TITLE, 'misty-daybreak')}
         <TestsPage
-          homeUrl={getFullUrl(ROUTES.index)}
-          adminUrl={getFullUrl(ROUTES.admin)}
-          designUrl={getFullUrl(ROUTES.design)}
-          loginUrl={getFullUrl(ROUTES.login)}
+          homeUrl={navUrls.homeUrl}
+          adminUrl={navUrls.adminUrl}
+          designUrl={navUrls.designUrl}
+          loginUrl={navUrls.loginUrl}
           groups={groups}
         />
       </body>

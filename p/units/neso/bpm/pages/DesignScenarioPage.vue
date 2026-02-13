@@ -9,11 +9,11 @@ import {
   DcBpmKanbanBoard,
   DcBpmKnowledgeEditor,
   DcBpmProcessInbox,
+  DcBpmSidebar,
   DcCapacityMatrix,
   DcClientSupportDesk,
   DcCommandDeck,
   DcDecisionTree,
-  DcDemoSidebar,
   DcMilestoneRail,
   DcPageHeader,
   DcRiskHeatmap,
@@ -21,8 +21,7 @@ import {
   DcScenarioChecklist,
   DcScenarioHero,
   DcSlaGauge,
-  DcSwimlaneBoard,
-  type NavItem
+  DcSwimlaneBoard
 } from '../components'
 import { DcAppShell, DcContent, DcMain } from '../layout'
 import { bpmCopy, type BpmLocale } from '../shared/bpmI18n'
@@ -100,6 +99,8 @@ const props = defineProps<{
   adminUrl: string
   testsUrl: string
   designIndexUrl: string
+  clientsDialogsUrl?: string
+  scenarioCount?: number
 }>()
 
 const fallbackScenario = BPM_DESIGN_SCENARIOS[0]
@@ -110,7 +111,6 @@ if (!fallbackScenario) {
 const locale = ref<BpmLocale>('ru')
 const sidebarCollapsed = ref(false)
 const sidebarOpen = ref(false)
-const activeSection = ref('overview')
 
 const activeScenario = computed(() => getBpmScenarioBySlug(props.scenarioSlug) ?? fallbackScenario)
 const currentTheme = computed<ThemeMode>(() => activeScenario.value.theme)
@@ -270,62 +270,33 @@ const clientSupportDemo = computed(() => getClientSupportDemo(locale.value))
 
 const breadcrumbs = computed(() => [ui.value.home, 'Design', activeScenario.value.title])
 
-const menuItems = computed<NavItem[]>(() => {
-  const labels: Record<BpmScenarioLayout, string> = {
-    'war-room': 'War Room',
-    'approval-lab': 'Approval Lab',
-    'operations-hub': 'Operations Hub',
-    'risk-console': 'Risk Console',
-    'delivery-studio': 'Delivery Studio',
-    'executive-deck': 'Executive Deck',
-    'client-desk': 'Client Inbox'
+function syncPresetFromScenario() {
+  selectedPresetId.value = activeScenario.value.presetId
+}
+syncPresetFromScenario()
+watch(() => activeScenario.value.slug, syncPresetFromScenario)
+
+function syncPresetFromTheme() {
+  if (!themeControlOptions.value.some((item) => item.id === selectedPresetId.value)) {
+    selectedPresetId.value = getDefaultThemePresetId(currentTheme.value)
   }
-
-  return [
-    { id: 'overview', icon: 'fa-compass', label: 'Overview' },
-    {
-      id: 'workspace',
-      icon: 'fa-layer-group',
-      label: labels[layout.value],
-      children: [
-        { id: 'workspace', label: 'Workspace', icon: 'fa-table-cells-large' },
-        { id: 'controls', label: 'Controls', icon: 'fa-sliders' },
-        { id: 'knowledge', label: 'Knowledge', icon: 'fa-book-open' }
-      ]
-    }
-  ]
-})
-
-watch(
-  () => activeScenario.value.slug,
-  () => {
-    selectedPresetId.value = activeScenario.value.presetId
-  },
-  { immediate: true }
-)
-
+}
+syncPresetFromTheme()
 watch(
   () => [currentTheme.value, themeControlOptions.value.map((item) => item.id).join('|')],
-  () => {
-    if (!themeControlOptions.value.some((item) => item.id === selectedPresetId.value)) {
-      selectedPresetId.value = getDefaultThemePresetId(currentTheme.value)
-    }
-  },
-  { immediate: true }
+  syncPresetFromTheme
 )
 
-watch(
-  () => [activeScenario.value.slug, locale.value],
-  () => {
-    const next = demoState.value
-    selectedInstanceId.value = next.selectedInstanceId
-    activeTableMode.value = next.tableMode
-    activeChartMode.value = next.activeChartMode
-    editorMode.value = next.editorMode
-    markdownDraft.value = next.markdownDraft
-  },
-  { immediate: true }
-)
+function syncStateFromDemo() {
+  const next = demoState.value
+  selectedInstanceId.value = next.selectedInstanceId
+  activeTableMode.value = next.tableMode
+  activeChartMode.value = next.activeChartMode
+  editorMode.value = next.editorMode
+  markdownDraft.value = next.markdownDraft
+}
+syncStateFromDemo()
+watch(() => [activeScenario.value.slug, locale.value], syncStateFromDemo)
 
 function closeSidebar() {
   sidebarOpen.value = false
@@ -333,16 +304,6 @@ function closeSidebar() {
 
 function toggleSidebarMobile() {
   sidebarOpen.value = !sidebarOpen.value
-}
-
-function onSidebarSelect(id: string) {
-  activeSection.value = id
-  closeSidebar()
-
-  const section = document.getElementById(`section-${id}`)
-  if (section) {
-    section.scrollIntoView({ behavior: 'smooth', block: 'start' })
-  }
 }
 
 function onThemeChange(id: string) {
@@ -364,18 +325,23 @@ function setLocale(next: BpmLocale) {
     @close-sidebar="closeSidebar"
   >
     <template #sidebar>
-      <DcDemoSidebar
+      <DcBpmSidebar
+        active-id="admin-design"
+        :home-url="homeUrl"
+        :login-url="loginUrl"
+        :admin-url="adminUrl"
+        :tests-url="testsUrl"
+        :design-url="designIndexUrl"
+        :clients-dialogs-url="clientsDialogsUrl"
+        :scenario-count="scenarioCount ?? 0"
+        :visibility-context="{ userRole: 'admin' }"
         :theme="currentTheme"
         logo-text="NeSo BPM"
         user-name="Scenario Operator"
         user-role="Design playground"
-        :logout-url="loginUrl"
-        :items="menuItems"
         :collapsed="sidebarCollapsed"
         :mobile-open="sidebarOpen"
-        :active-id="activeSection"
         @close="closeSidebar"
-        @select="onSidebarSelect"
         @toggle-collapse="sidebarCollapsed = !sidebarCollapsed"
       />
     </template>

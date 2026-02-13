@@ -2,18 +2,21 @@
 import { computed, ref } from 'vue'
 import {
   DcBpmExecutionTimeline,
+  DcBpmHeaderControls,
   DcBpmKanbanBoard,
   DcBpmMetricGrid,
   DcBpmSidebar,
+  DcPageHeader,
   DcThemeGlobalStyles
 } from '../components'
 import { DcAppShell } from '../layout'
-import { bpmCopy } from '../shared/bpmI18n'
+import { bpmCopy, type BpmLocale } from '../shared/bpmI18n'
 import {
   getBpmExecutionTimeline,
   getBpmKanbanColumns,
   getBpmMetrics
 } from '../shared/bpmDemoData'
+import { getDefaultThemePresetId, getThemePresetById } from '../shared/themeCatalog'
 
 interface FeaturedScenario {
   slug: string
@@ -24,21 +27,28 @@ interface FeaturedScenario {
 
 const props = defineProps<{
   projectTitle: string
+  homeUrl: string
   loginUrl: string
   adminUrl: string
   testsUrl: string
   designUrl: string
+  clientsDialogsUrl: string
   scenarioCount: number
   featuredScenarios: FeaturedScenario[]
 }>()
 
 const sidebarCollapsed = ref(false)
 const sidebarOpen = ref(false)
+const locale = ref<BpmLocale>('ru')
+const selectedPresetId = ref(getDefaultThemePresetId('light'))
 
-const ui = computed(() => bpmCopy.ru)
+const currentTheme = computed(() => getThemePresetById(selectedPresetId.value)?.mode ?? 'light')
+const breadcrumbs = computed(() => [ui.value.home])
+
+const ui = computed(() => bpmCopy[locale.value])
 const metrics = computed(() => getBpmMetrics(ui.value))
 const kanbanColumns = computed(() => getBpmKanbanColumns(ui.value))
-const timeline = computed(() => getBpmExecutionTimeline('ru'))
+const timeline = computed(() => getBpmExecutionTimeline(locale.value))
 
 /** Контекст видимости меню. В демо передаём userRole: 'admin', чтобы отображался раздел «Админка»; в проде — роль из авторизации. */
 const navVisibilityContext = computed(() => ({ userRole: 'admin' }))
@@ -50,12 +60,21 @@ function closeSidebar() {
 function toggleSidebarMobile() {
   sidebarOpen.value = !sidebarOpen.value
 }
+
+function setLocale(next: BpmLocale) {
+  locale.value = next
+}
+
+function onThemeChange(id: string) {
+  const mode = id === 'dark' ? 'dark' : 'light'
+  selectedPresetId.value = getDefaultThemePresetId(mode)
+}
 </script>
 
 <template>
   <DcAppShell
-    theme="light"
-    theme-preset-id="sunrise-leaf"
+    :theme="currentTheme"
+    :theme-preset-id="selectedPresetId"
     :ready="true"
     :sidebar-collapsed="sidebarCollapsed"
     :sidebar-open="sidebarOpen"
@@ -64,10 +83,12 @@ function toggleSidebarMobile() {
     <template #sidebar>
       <DcBpmSidebar
         active-id="home"
+        :home-url="homeUrl"
         :login-url="loginUrl"
         :admin-url="adminUrl"
         :tests-url="testsUrl"
         :design-url="designUrl"
+        :clients-dialogs-url="clientsDialogsUrl"
         :scenario-count="scenarioCount"
         :visibility-context="navVisibilityContext"
         theme="light"
@@ -82,27 +103,37 @@ function toggleSidebarMobile() {
     </template>
 
     <template #header>
-      <header class="bpm-home-header">
-        <button
-          type="button"
-          class="bpm-home-header__menu-toggle"
-          aria-label="Открыть меню"
-          @click="toggleSidebarMobile"
-        >
-          <i class="fas fa-bars" aria-hidden="true"></i>
-        </button>
-        <h1 class="bpm-home-header__title">{{ projectTitle }}</h1>
-      </header>
+      <DcPageHeader
+        :theme="currentTheme"
+        :title="projectTitle"
+        :breadcrumbs="breadcrumbs"
+        :show-menu-toggle="true"
+        @menu-toggle="toggleSidebarMobile"
+      >
+        <template #actions>
+          <DcBpmHeaderControls
+            :language-label="ui.navLanguage"
+            :theme-label="ui.navTheme"
+            :locale="locale"
+            :theme-options="[]"
+            :selected-theme-id="currentTheme"
+            theme-variant="light-dark"
+            :open-index-label="ui.openLanding"
+            index-url="https://example.com/"
+            :theme-light-aria-label="ui.themeLight"
+            :theme-dark-aria-label="ui.themeDark"
+            @change-locale="setLocale"
+            @change-theme="onThemeChange"
+          />
+        </template>
+      </DcPageHeader>
     </template>
 
   <div class="bpm-home-page">
     <header class="bpm-home-hero">
-      <p class="bpm-home-hero__kicker">BPM Workspace</p>
+      <p class="bpm-home-hero__kicker">{{ ui.workspace }}</p>
       <h1>{{ projectTitle }}</h1>
-      <p>
-        Новый BPM-контур в `p/units/neso/bpm`: data layer вынесен отдельно,
-        UI построен на reusable-компонентах и на отдельном design-каталоге.
-      </p>
+      <p>{{ ui.heroDescription }}</p>
     </header>
 
     <section class="bpm-home-section">
@@ -124,7 +155,7 @@ function toggleSidebarMobile() {
     </section>
 
     <section class="bpm-home-section">
-      <h2>Featured design scenarios</h2>
+      <h2>{{ ui.featuredScenariosTitle }}</h2>
       <div class="bpm-home-scenarios">
         <a v-for="scenario in featuredScenarios" :key="scenario.slug" :href="scenario.url" class="bpm-home-scenario-card">
           <h3>{{ scenario.title }}</h3>
@@ -177,51 +208,6 @@ function toggleSidebarMobile() {
   color: var(--text-secondary);
   font-size: 0.86rem;
   line-height: 1.5;
-}
-
-.bpm-home-header {
-  min-height: var(--header-height);
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 10px 12px;
-  border: 1px solid var(--border-soft);
-  border-radius: var(--radius-lg);
-  background:
-    var(--gradient-glass),
-    color-mix(in srgb, var(--surface-2) 72%, transparent);
-  box-shadow: var(--shadow-sm);
-}
-
-.bpm-home-header__menu-toggle {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 36px;
-  height: 36px;
-  border: none;
-  border-radius: var(--radius-sm);
-  color: var(--text-secondary);
-  background: transparent;
-  cursor: pointer;
-}
-
-.bpm-home-header__menu-toggle:hover {
-  color: var(--text-primary);
-  background: color-mix(in srgb, var(--surface-2) 80%, transparent);
-}
-
-.bpm-home-header__title {
-  margin: 0;
-  font-size: 1.05rem;
-  font-family: var(--font-display);
-  color: var(--text-primary);
-}
-
-@media (min-width: 981px) {
-  .bpm-home-header__menu-toggle {
-    display: none;
-  }
 }
 
 .bpm-home-section {

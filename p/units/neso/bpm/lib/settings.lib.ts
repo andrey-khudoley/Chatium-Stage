@@ -7,6 +7,8 @@ const LOG_MODULE = 'lib/settings.lib'
 export const SETTING_KEYS = {
   PROJECT_NAME: 'project_name',
   PROJECT_TITLE: 'project_title',
+  /** Домен проекта для формирования полных URL (например s.chtm.aley.pro). */
+  PROJECT_DOMAIN: 'project_domain',
   LOG_LEVEL: 'log_level',
   LOGS_LIMIT: 'logs_limit',
   LOG_WEBHOOK: 'log_webhook',
@@ -20,6 +22,7 @@ export type LogWebhookSetting = { enable: boolean; url: string }
 export const DEFAULTS = {
   [SETTING_KEYS.PROJECT_NAME]: 'Neso CRM',
   [SETTING_KEYS.PROJECT_TITLE]: 'Neso CRM',
+  [SETTING_KEYS.PROJECT_DOMAIN]: 's.chtm.aley.pro',
   [SETTING_KEYS.LOG_LEVEL]: 'Info',
   [SETTING_KEYS.LOGS_LIMIT]: '100',
   [SETTING_KEYS.LOG_WEBHOOK]: { enable: false, url: '' } as LogWebhookSetting,
@@ -49,6 +52,15 @@ export async function getSetting(ctx: app.Ctx, key: string): Promise<unknown> {
     return row.value
   }
   return (DEFAULTS as Record<string, unknown>)[key] ?? null
+}
+
+/**
+ * Домен проекта для формирования полных URL (например s.chtm.aley.pro).
+ * По умолчанию: s.chtm.aley.pro.
+ */
+export async function getProjectDomain(ctx: app.Ctx): Promise<string> {
+  const value = await getSetting(ctx, SETTING_KEYS.PROJECT_DOMAIN)
+  return typeof value === 'string' && value.trim() ? value.trim() : DEFAULTS[SETTING_KEYS.PROJECT_DOMAIN]
 }
 
 /**
@@ -196,6 +208,8 @@ export async function setSetting(ctx: app.Ctx, key: string, value: unknown): Pro
       message: `[${LOG_MODULE}] setSetting PROJECT_NAME/PROJECT_TITLE branch`,
       payload: { normalized }
     })
+  } else if (key === SETTING_KEYS.PROJECT_DOMAIN) {
+    normalized = typeof value === 'string' ? value.trim() : String(value)
   } else if (key === SETTING_KEYS.LOG_WEBHOOK) {
     if (typeof value !== 'object' || value === null) {
       throw new Error('log_webhook должен быть объектом { enable: boolean, url: string }')

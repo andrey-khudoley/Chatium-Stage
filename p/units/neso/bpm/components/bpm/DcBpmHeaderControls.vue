@@ -6,15 +6,28 @@ interface ThemeOption {
   label: string
 }
 
-const props = defineProps<{
-  languageLabel: string
-  themeLabel: string
-  locale: BpmLocale
-  themeOptions: ThemeOption[]
-  selectedThemeId: string
-  openIndexLabel: string
-  indexUrl: string
-}>()
+const props = withDefaults(
+  defineProps<{
+    languageLabel: string
+    themeLabel: string
+    locale: BpmLocale
+    themeOptions: ThemeOption[]
+    selectedThemeId: string
+    openIndexLabel: string
+    indexUrl: string
+    /** 'presets' — выбор пресета текстом; 'light-dark' — переключатель светлая/тёмная с иконками солнца и луны */
+    themeVariant?: 'presets' | 'light-dark'
+    /** Aria-label для кнопки светлой темы (themeVariant === 'light-dark'). */
+    themeLightAriaLabel?: string
+    /** Aria-label для кнопки тёмной темы (themeVariant === 'light-dark'). */
+    themeDarkAriaLabel?: string
+  }>(),
+  {
+    themeVariant: 'presets',
+    themeLightAriaLabel: 'Светлая тема',
+    themeDarkAriaLabel: 'Тёмная тема'
+  }
+)
 
 const emit = defineEmits<{
   changeLocale: [locale: BpmLocale]
@@ -35,16 +48,38 @@ const emit = defineEmits<{
 
   <div class="dc-bpm-header-controls__group">
     <span class="dc-bpm-header-controls__label">{{ themeLabel }}</span>
-    <button
-      v-for="option in themeOptions"
-      :key="option.id"
-      type="button"
-      class="dc-bpm-header-controls__chip"
-      :class="{ active: selectedThemeId === option.id }"
-      @click="emit('changeTheme', option.id)"
-    >
-      {{ option.label }}
-    </button>
+    <template v-if="themeVariant === 'light-dark'">
+      <button
+        type="button"
+        class="dc-bpm-header-controls__chip dc-bpm-header-controls__chip--icon"
+        :class="{ active: selectedThemeId === 'light' }"
+        :aria-label="themeLightAriaLabel"
+        @click="emit('changeTheme', 'light')"
+      >
+        <i class="fas fa-sun" aria-hidden="true"></i>
+      </button>
+      <button
+        type="button"
+        class="dc-bpm-header-controls__chip dc-bpm-header-controls__chip--icon"
+        :class="{ active: selectedThemeId === 'dark' }"
+        :aria-label="themeDarkAriaLabel"
+        @click="emit('changeTheme', 'dark')"
+      >
+        <i class="fas fa-moon" aria-hidden="true"></i>
+      </button>
+    </template>
+    <template v-else>
+      <button
+        v-for="option in themeOptions"
+        :key="option.id"
+        type="button"
+        class="dc-bpm-header-controls__chip"
+        :class="{ active: selectedThemeId === option.id }"
+        @click="emit('changeTheme', option.id)"
+      >
+        {{ option.label }}
+      </button>
+    </template>
   </div>
 
   <a :href="indexUrl" class="dc-bpm-header-controls__link">
@@ -81,6 +116,14 @@ const emit = defineEmits<{
   color: var(--text-secondary);
   font-size: 0.68rem;
   padding: 0 8px;
+}
+
+.dc-bpm-header-controls__chip--icon {
+  width: 28px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .dc-bpm-header-controls__chip.active {

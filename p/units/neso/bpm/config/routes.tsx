@@ -7,7 +7,8 @@ export const ROUTES = {
   login: './web/login',
   admin: './web/admin',
   tests: './web/tests',
-  design: './web/design'
+  design: './web/design',
+  clientsDialogs: './web/clients/dialogs'
 } as const
 
 export function getDesignScenarioRoute(slug: string): string {

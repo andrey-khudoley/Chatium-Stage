@@ -6,6 +6,8 @@ export interface NavChildItem {
   label: string
   icon?: string
   badge?: string | number
+  /** Если задан — пункт рендерится как ссылка <a href>, иначе как кнопка. */
+  href?: string
 }
 
 export interface NavItem {
@@ -13,6 +15,8 @@ export interface NavItem {
   icon: string
   label: string
   badge?: string | number
+  /** Если задан и нет children — пункт рендерится как ссылка <a href>. */
+  href?: string
   children?: NavChildItem[]
 }
 
@@ -108,6 +112,10 @@ function onChildClick(parent: NavItem, child: NavChildItem) {
   }
   emit('select', child.id)
 }
+
+function onChildLinkClick() {
+  emit('close')
+}
 </script>
 
 <template>
@@ -175,12 +183,14 @@ function onChildClick(parent: NavItem, child: NavChildItem) {
           'has-children': hasChildren(item)
         }"
       >
-        <button
-          type="button"
+        <component
+          :is="item.href ? 'a' : 'button'"
+          :href="item.href"
+          :type="item.href ? undefined : 'button'"
           class="dc-nav-item dc-nav-item--parent"
           :class="{ active: isParentActive(item) }"
           :title="collapsed ? item.label : ''"
-          @click="onParentClick(item)"
+          @click="item.href ? emit('close') : onParentClick(item)"
         >
           <span class="dc-nav-icon"><i :class="['fas', item.icon]" aria-hidden="true"></i></span>
           <span class="dc-nav-label dc-collapsible-text">{{ item.label }}</span>
@@ -188,18 +198,20 @@ function onChildClick(parent: NavItem, child: NavChildItem) {
           <span v-if="hasChildren(item)" class="dc-nav-caret dc-collapsible-text" :class="{ open: isParentOpen(item) }">
             <i class="fas fa-chevron-down" aria-hidden="true"></i>
           </span>
-        </button>
+        </component>
 
         <div v-if="hasChildren(item)" class="dc-submenu-wrap" :class="{ open: isParentOpen(item) && !collapsed }">
           <div class="dc-submenu-inner">
-            <button
+            <component
               v-for="child in item.children"
               :key="child.id"
-              type="button"
+              :is="child.href ? 'a' : 'button'"
+              :href="child.href"
+              :type="child.href ? undefined : 'button'"
               class="dc-submenu-item"
               :class="{ active: activeId === child.id }"
               :title="collapsed ? child.label : ''"
-              @click="onChildClick(item, child)"
+              @click="child.href ? onChildLinkClick() : onChildClick(item, child)"
             >
               <span class="dc-submenu-icon" aria-hidden="true">
                 <i v-if="child.icon" :class="['fas', child.icon]"></i>
@@ -207,7 +219,7 @@ function onChildClick(parent: NavItem, child: NavChildItem) {
               </span>
               <span class="dc-submenu-label dc-collapsible-text">{{ child.label }}</span>
               <span v-if="child.badge" class="dc-nav-badge dc-collapsible-badge">{{ child.badge }}</span>
-            </button>
+            </component>
           </div>
         </div>
       </div>
@@ -478,12 +490,14 @@ function onChildClick(parent: NavItem, child: NavChildItem) {
   display: flex;
   flex-direction: column;
   gap: 2px;
+  padding-right: 8px;
 }
 
 .dc-submenu-item {
   grid-template-columns: 14px 1fr auto;
   height: 30px;
   margin: 2px 0 2px 18px;
+  padding-inline: 8px 10px;
   border-radius: var(--radius-xs);
   font-size: 0.73rem;
 }

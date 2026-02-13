@@ -67,6 +67,14 @@ export interface BpmUiCopy {
   savedViews: string
   sectionOpen: string
   sectionDocs: string
+  /** Описание на главной (hero). */
+  heroDescription: string
+  /** Заголовок секции сценариев на главной. */
+  featuredScenariosTitle: string
+  /** Aria-label для кнопки светлой темы. */
+  themeLight: string
+  /** Aria-label для кнопки тёмной темы. */
+  themeDark: string
 }
 
 export const bpmCopy: Record<BpmLocale, BpmUiCopy> = {
@@ -135,7 +143,12 @@ export const bpmCopy: Record<BpmLocale, BpmUiCopy> = {
     tableMode: 'Режим таблицы',
     savedViews: 'Сохранённые view',
     sectionOpen: 'Открыть',
-    sectionDocs: 'Документация'
+    sectionDocs: 'Документация',
+    heroDescription:
+      'Новый BPM-контур в `p/units/neso/bpm`: data layer вынесен отдельно, UI построен на reusable-компонентах и на отдельном design-каталоге.',
+    featuredScenariosTitle: 'Избранные сценарии дизайна',
+    themeLight: 'Светлая тема',
+    themeDark: 'Тёмная тема'
   },
   en: {
     home: 'Home',
@@ -202,6 +215,11 @@ export const bpmCopy: Record<BpmLocale, BpmUiCopy> = {
     tableMode: 'Table mode',
     savedViews: 'Saved views',
     sectionOpen: 'Open',
-    sectionDocs: 'Docs'
+    sectionDocs: 'Docs',
+    heroDescription:
+      'New BPM layer in `p/units/neso/bpm`: data layer is separate, UI is built with reusable components and a dedicated design catalog.',
+    featuredScenariosTitle: 'Featured design scenarios',
+    themeLight: 'Light theme',
+    themeDark: 'Dark theme'
   }
 }

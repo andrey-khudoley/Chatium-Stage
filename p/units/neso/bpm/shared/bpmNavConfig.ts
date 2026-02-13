@@ -32,6 +32,12 @@ export const BPM_HOME_NAV_ITEMS: BpmNavItemConfig[] = [
     label: 'Главная'
   },
   {
+    id: 'clients',
+    icon: 'fa-users',
+    label: 'Клиенты',
+    children: [{ id: 'client-dialogs', label: 'Диалоги', icon: 'fa-comments' }]
+  },
+  {
     id: 'admin',
     icon: 'fa-gear',
     label: 'Админка',

@@ -3,13 +3,13 @@ import { jsx } from '@app/html-jsx'
 import AdminPage from '../../pages/AdminPage.vue'
 import { getBootLoaderDiv, getDemoPageHead } from '../../shared/demoPageShell'
 import { ADMIN_PAGE_NAME, DEFAULT_PROJECT_TITLE } from '../../config/project'
-import { ROUTES, getFullUrl } from '../../config/routes'
 import { BPM_DESIGN_SCENARIOS } from '../../shared/bpmScenarios'
 import * as settingsLib from '../../lib/settings.lib'
+import { getBpmNavUrlsAsync } from '../../lib/navUrls.lib'
 
 export const adminPageRoute = app.html('/', async (ctx) => {
+  const navUrls = await getBpmNavUrlsAsync(ctx)
   let settings: Array<{ key: string; value: string }> = []
-
   try {
     const allSettings = await settingsLib.getAllSettings(ctx)
     settings = Object.entries(allSettings)
@@ -44,10 +44,10 @@ export const adminPageRoute = app.html('/', async (ctx) => {
         {getBootLoaderDiv('dark', DEFAULT_PROJECT_TITLE, 'forest-night')}
         <AdminPage
           projectTitle={DEFAULT_PROJECT_TITLE}
-          homeUrl={getFullUrl(ROUTES.index)}
-          loginUrl={getFullUrl(ROUTES.login)}
-          testsUrl={getFullUrl(ROUTES.tests)}
-          designUrl={getFullUrl(ROUTES.design)}
+          homeUrl={navUrls.homeUrl}
+          loginUrl={navUrls.loginUrl}
+          testsUrl={navUrls.testsUrl}
+          designUrl={navUrls.designUrl}
           scenariosTotal={BPM_DESIGN_SCENARIOS.length}
           layerCards={layerCards}
           settings={settings}

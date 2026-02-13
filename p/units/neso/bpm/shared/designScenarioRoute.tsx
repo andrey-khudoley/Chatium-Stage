@@ -3,13 +3,16 @@ import { jsx } from '@app/html-jsx'
 import DesignScenarioPage from '../pages/DesignScenarioPage.vue'
 import { getBootLoaderDiv, getDemoPageHead } from './demoPageShell'
 import { DEFAULT_PROJECT_TITLE } from '../config/project'
-import { ROUTES, getFullUrl } from '../config/routes'
-import { getBpmScenarioBySlug } from './bpmScenarios'
+import { getBpmNavUrlsAsync } from '../lib/navUrls.lib'
+import { BPM_DESIGN_SCENARIOS, getBpmScenarioBySlug } from './bpmScenarios'
 import { getDefaultThemePresetId } from './themeCatalog'
 
 export function createDesignScenarioRoute(scenarioSlug: string) {
-  return app.html('/', async () => {
-    const scenario = getBpmScenarioBySlug(scenarioSlug)
+  return app.html('/', async (ctx) => {
+    const [scenario, navUrls] = await Promise.all([
+      Promise.resolve(getBpmScenarioBySlug(scenarioSlug)),
+      getBpmNavUrlsAsync(ctx)
+    ])
     const theme = scenario?.theme ?? 'dark'
     const presetId = scenario?.presetId ?? getDefaultThemePresetId(theme)
     const pageTitle = scenario ? `Design · ${scenario.title}` : `Design · ${scenarioSlug}`
@@ -21,11 +24,13 @@ export function createDesignScenarioRoute(scenarioSlug: string) {
           {getBootLoaderDiv(theme, DEFAULT_PROJECT_TITLE, presetId)}
           <DesignScenarioPage
             scenarioSlug={scenarioSlug}
-            homeUrl={getFullUrl(ROUTES.index)}
-            loginUrl={getFullUrl(ROUTES.login)}
-            adminUrl={getFullUrl(ROUTES.admin)}
-            testsUrl={getFullUrl(ROUTES.tests)}
-            designIndexUrl={getFullUrl(ROUTES.design)}
+            homeUrl={navUrls.homeUrl}
+            loginUrl={navUrls.loginUrl}
+            adminUrl={navUrls.adminUrl}
+            testsUrl={navUrls.testsUrl}
+            designIndexUrl={navUrls.designUrl}
+            clientsDialogsUrl={navUrls.clientsDialogsUrl}
+            scenarioCount={BPM_DESIGN_SCENARIOS.length}
           />
         </body>
       </html>

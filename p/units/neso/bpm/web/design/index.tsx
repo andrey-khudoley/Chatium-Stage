@@ -3,14 +3,11 @@ import { jsx } from '@app/html-jsx'
 import DesignIndexPage from '../../pages/DesignIndexPage.vue'
 import { getBootLoaderDiv, getDemoPageHead } from '../../shared/demoPageShell'
 import { DEFAULT_PROJECT_TITLE, DESIGN_PAGE_NAME } from '../../config/project'
-import {
-  ROUTES,
-  getDesignScenarioRoute,
-  getFullUrl
-} from '../../config/routes'
 import { BPM_DESIGN_SCENARIOS } from '../../shared/bpmScenarios'
+import { getBpmNavUrlsAsync } from '../../lib/navUrls.lib'
 
-export const designIndexPageRoute = app.html('/', async () => {
+export const designIndexPageRoute = app.html('/', async (ctx) => {
+  const navUrls = await getBpmNavUrlsAsync(ctx)
   const scenarios = BPM_DESIGN_SCENARIOS.map((scenario) => ({
     slug: scenario.slug,
     title: scenario.title,
@@ -20,7 +17,7 @@ export const designIndexPageRoute = app.html('/', async () => {
     theme: scenario.theme,
     presetId: scenario.presetId,
     layout: scenario.layout,
-    url: getFullUrl(getDesignScenarioRoute(scenario.slug))
+    url: navUrls.getScenarioUrl(scenario.slug)
   }))
 
   return (
@@ -29,10 +26,10 @@ export const designIndexPageRoute = app.html('/', async () => {
       <body>
         {getBootLoaderDiv('light', DEFAULT_PROJECT_TITLE, 'sunrise-leaf')}
         <DesignIndexPage
-          homeUrl={getFullUrl(ROUTES.index)}
-          loginUrl={getFullUrl(ROUTES.login)}
-          adminUrl={getFullUrl(ROUTES.admin)}
-          testsUrl={getFullUrl(ROUTES.tests)}
+          homeUrl={navUrls.homeUrl}
+          loginUrl={navUrls.loginUrl}
+          adminUrl={navUrls.adminUrl}
+          testsUrl={navUrls.testsUrl}
           scenarios={scenarios}
         />
       </body>
