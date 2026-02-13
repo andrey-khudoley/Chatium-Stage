@@ -28,7 +28,7 @@ const SHARED_TOKENS: Record<string, string> = {
   '--space-8': '32px',
   '--space-10': '40px',
   '--sidebar-width': '260px',
-  '--sidebar-collapsed-width': '78px',
+  '--sidebar-collapsed-width': '84px',
   '--content-max-width': '1560px',
   '--header-height': '68px',
   '--control-height': '34px',

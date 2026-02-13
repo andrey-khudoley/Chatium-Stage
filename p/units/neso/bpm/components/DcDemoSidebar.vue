@@ -6,7 +6,6 @@ export interface NavChildItem {
   label: string
   icon?: string
   badge?: string | number
-  /** Если задан — пункт рендерится как ссылка <a href>, иначе как кнопка. */
   href?: string
 }
 
@@ -15,7 +14,6 @@ export interface NavItem {
   icon: string
   label: string
   badge?: string | number
-  /** Если задан и нет children — пункт рендерится как ссылка <a href>. */
   href?: string
   children?: NavChildItem[]
 }
@@ -40,46 +38,40 @@ const emit = defineEmits<{
 }>()
 
 const expandedGroups = ref<Record<string, boolean>>({})
-
 const hasMobileOpen = computed(() => !!props.mobileOpen)
 const isMobileViewport = ref(false)
-const isCollapsed = computed(() => !!props.collapsed && !isMobileViewport.value && !hasMobileOpen.value)
+const isCollapsed = computed(
+  () => !!props.collapsed && !isMobileViewport.value && !hasMobileOpen.value
+)
 
-const MOBILE_BREAKPOINT_QUERY = '(max-width: 980px)'
-let mobileQueryList: MediaQueryList | null = null
+const MOBILE_BREAKPOINT_PX = 980
+const MOBILE_QUERY = `(max-width: ${MOBILE_BREAKPOINT_PX}px)`
+let mediaList: MediaQueryList | null = null
 
-function syncViewportState() {
-  isMobileViewport.value = !!mobileQueryList?.matches
+function updateMobile() {
+  isMobileViewport.value = !!mediaList?.matches
 }
 
 onMounted(() => {
-  if (typeof window === 'undefined' || !('matchMedia' in window)) return
-  mobileQueryList = window.matchMedia(MOBILE_BREAKPOINT_QUERY)
-  syncViewportState()
-  if (typeof mobileQueryList.addEventListener === 'function') {
-    mobileQueryList.addEventListener('change', syncViewportState)
-    return
-  }
-  mobileQueryList.addListener(syncViewportState)
+  if (typeof window === 'undefined' || !window.matchMedia) return
+  mediaList = window.matchMedia(MOBILE_QUERY)
+  updateMobile()
+  mediaList.addEventListener('change', updateMobile)
 })
 
 onBeforeUnmount(() => {
-  if (!mobileQueryList) return
-  if (typeof mobileQueryList.removeEventListener === 'function') {
-    mobileQueryList.removeEventListener('change', syncViewportState)
-  } else {
-    mobileQueryList.removeListener(syncViewportState)
-  }
-  mobileQueryList = null
+  mediaList?.removeEventListener('change', updateMobile)
+  mediaList = null
 })
 
 watch(
   () => props.items,
-  () => {
+  (items: NavItem[]) => {
     const next: Record<string, boolean> = {}
-    for (const item of props.items) {
+    for (const item of items) {
       if (item.children?.length) {
-        next[item.id] = expandedGroups.value[item.id] ?? item.id === props.activeId
+        next[item.id] =
+          expandedGroups.value[item.id] ?? item.id === props.activeId
       }
     }
     expandedGroups.value = next
@@ -90,31 +82,33 @@ watch(
 
 watch(
   () => props.activeId,
-  () => {
-    openActiveParent()
-  },
+  () => openActiveParent(),
   { immediate: true }
 )
+
+watch(isCollapsed, (val) => {
+  if (!val) openActiveParent()
+})
 
 function hasChildren(item: NavItem): boolean {
   return !!item.children?.length
 }
 
-function isParentOpen(item: NavItem): boolean {
+function isOpen(item: NavItem): boolean {
   return !!expandedGroups.value[item.id]
 }
 
-function isParentActive(item: NavItem): boolean {
+function isActive(item: NavItem): boolean {
   if (props.activeId === item.id) return true
   if (!item.children?.length || !props.activeId) return false
-  return item.children.some((child) => child.id === props.activeId)
+  return item.children.some((c) => c.id === props.activeId)
 }
 
 function openActiveParent() {
   if (!props.activeId) return
   const next = { ...expandedGroups.value }
   for (const item of props.items) {
-    if (item.children?.some((child) => child.id === props.activeId)) {
+    if (item.children?.some((c) => c.id === props.activeId)) {
       next[item.id] = true
     }
   }
@@ -128,708 +122,916 @@ function toggleGroup(item: NavItem) {
   }
 }
 
-function onParentClick(item: NavItem) {
-  if (hasChildren(item) && !isCollapsed.value) {
+function onLeafClick(id: string) {
+  emit('select', id)
+  if (hasMobileOpen.value) emit('close')
+}
+
+function onItemClick(item: NavItem) {
+  if (hasChildren(item)) {
+    if (isCollapsed.value) {
+      emit('toggleCollapse')
+      expandedGroups.value = { ...expandedGroups.value, [item.id]: true }
+      return
+    }
     toggleGroup(item)
     return
   }
-  emit('select', item.id)
+  onLeafClick(item.id)
 }
 
-function onChildClick(parent: NavItem, child: NavChildItem) {
-  if (!expandedGroups.value[parent.id]) {
-    toggleGroup(parent)
-  }
-  emit('select', child.id)
-}
-
-function onChildLinkClick() {
+function onLinkClick() {
   emit('close')
 }
 </script>
 
 <template>
   <aside
-    class="dc-demo-sidebar"
+    class="bpm-sb"
     :class="[
-      `theme-${theme ?? 'dark'}`,
+      `bpm-sb--${theme ?? 'dark'}`,
       {
-        collapsed: isCollapsed,
-        'mobile-open': hasMobileOpen
+        'bpm-sb--collapsed': isCollapsed,
+        'bpm-sb--mobile-open': hasMobileOpen
       }
     ]"
     aria-label="BPM navigation"
   >
-    <div class="dc-sidebar-top">
-      <div class="dc-logo" :title="isCollapsed ? (logoText ?? 'NeSo BPM') : ''">
-        <div class="dc-logo-icon" :class="{ 'dc-logo-icon--image': !!logoImageUrl }">
+    <header class="bpm-sb__header">
+      <div class="bpm-sb__brand" :title="isCollapsed ? (logoText ?? 'NeSo BPM') : ''">
+        <div
+          class="bpm-sb__brand-icon"
+          :class="{ 'bpm-sb__brand-icon--img': !!logoImageUrl }"
+        >
           <img
             v-if="logoImageUrl"
-            class="dc-logo-img"
+            class="bpm-sb__brand-img"
             :src="logoImageUrl"
-            :alt="`${logoText ?? 'NeSo BPM'} logo`"
+            :alt="(logoText ?? 'NeSo BPM') + ' logo'"
           />
           <i v-else class="fas fa-diagram-project" aria-hidden="true"></i>
         </div>
-
-        <div class="dc-logo-copy dc-collapsible-text">
-          <span class="dc-logo-title">{{ logoText ?? 'NeSo BPM' }}</span>
-          <span class="dc-logo-subtitle">Process Control Plane</span>
+        <div v-show="!isCollapsed" class="bpm-sb__brand-text">
+          <span class="bpm-sb__brand-title">{{ logoText ?? 'NeSo BPM' }}</span>
+          <span class="bpm-sb__brand-sub">Process Control Plane</span>
         </div>
       </div>
 
       <button
         type="button"
-        class="dc-toggle-btn"
-        :aria-label="isCollapsed ? 'Expand navigation' : 'Collapse navigation'"
+        class="bpm-sb__btn bpm-sb__btn--collapse"
+        :aria-label="isCollapsed ? 'Развернуть меню' : 'Свернуть меню'"
         @click="emit('toggleCollapse')"
       >
-        <i :class="isCollapsed ? 'fas fa-chevron-right' : 'fas fa-chevron-left'" aria-hidden="true"></i>
+        <i
+          :class="isCollapsed ? 'fas fa-chevron-right' : 'fas fa-chevron-left'"
+          aria-hidden="true"
+        ></i>
       </button>
 
-      <button type="button" class="dc-mobile-close" aria-label="Close navigation" @click="emit('close')">
+      <button
+        type="button"
+        class="bpm-sb__btn bpm-sb__btn--close"
+        aria-label="Закрыть меню"
+        @click="emit('close')"
+      >
         <i class="fas fa-times" aria-hidden="true"></i>
       </button>
-    </div>
+    </header>
 
-    <div class="dc-ops-summary">
-      <p class="dc-ops-kicker dc-collapsible-text">Control status</p>
-      <div class="dc-ops-pill" :title="isCollapsed ? '7 SLA risks across active processes' : ''">
-        <span class="dc-ops-dot"></span>
-        <span class="dc-collapsible-text">7 SLA risks</span>
-      </div>
-    </div>
+    <div class="bpm-sb__divider bpm-sb__divider--after-header" aria-hidden="true"></div>
 
-    <nav class="dc-nav">
-      <p class="dc-nav-title dc-collapsible-text">Process spaces</p>
+    <section
+      class="bpm-sb__status"
+      :class="{ 'bpm-sb__status--compact': isCollapsed }"
+      role="status"
+      aria-label="Control status"
+    >
+      <span class="bpm-sb__status-dot" aria-hidden="true"></span>
+      <template v-if="!isCollapsed">
+        <div class="bpm-sb__status-text">
+          <p class="bpm-sb__status-title">Control status</p>
+          <p class="bpm-sb__status-desc">7 SLA risks across active processes</p>
+        </div>
+      </template>
+    </section>
+
+    <nav class="bpm-sb__nav" aria-label="Process spaces">
+      <p v-if="!isCollapsed" class="bpm-sb__nav-heading">Process spaces</p>
 
       <div
         v-for="item in items"
         :key="item.id"
-        class="dc-nav-group"
+        class="bpm-sb__group"
         :class="{
-          'is-active': isParentActive(item),
-          'is-open': isParentOpen(item),
-          'has-children': hasChildren(item)
+          'bpm-sb__group--active': isActive(item),
+          'bpm-sb__group--open': isOpen(item),
+          'bpm-sb__group--has-children': hasChildren(item)
         }"
       >
-        <component
-          :is="item.href ? 'a' : 'button'"
+        <a
+          v-if="item.href && !hasChildren(item)"
           :href="item.href"
-          :type="item.href ? undefined : 'button'"
-          class="dc-nav-item dc-nav-item--parent"
-          :class="{ active: isParentActive(item) }"
-          :title="isCollapsed ? item.label : ''"
-          @click="item.href ? emit('close') : onParentClick(item)"
+          class="bpm-sb__link"
+          :class="{
+            'bpm-sb__link--active': isActive(item),
+            'bpm-sb__link--collapsed': isCollapsed
+          }"
+          :title="isCollapsed ? item.label : undefined"
+          :aria-current="isActive(item) ? 'page' : undefined"
+          @click="onLinkClick"
         >
-          <span class="dc-nav-icon"><i :class="['fas', item.icon]" aria-hidden="true"></i></span>
-          <span class="dc-nav-label dc-collapsible-text">{{ item.label }}</span>
-          <span v-if="item.badge" class="dc-nav-badge dc-collapsible-badge">{{ item.badge }}</span>
-          <span v-if="hasChildren(item)" class="dc-nav-caret dc-collapsible-text" :class="{ open: isParentOpen(item) }">
+          <span class="bpm-sb__link-indicator" aria-hidden="true"></span>
+          <span class="bpm-sb__link-icon">
+            <i :class="['fas', item.icon]" aria-hidden="true"></i>
+          </span>
+          <span v-show="!isCollapsed" class="bpm-sb__link-label">{{ item.label }}</span>
+          <span v-show="!isCollapsed && item.badge" class="bpm-sb__badge">{{
+            item.badge
+          }}</span>
+          <span
+            v-show="!isCollapsed && hasChildren(item)"
+            class="bpm-sb__caret"
+            :class="{ 'bpm-sb__caret--open': isOpen(item) }"
+          >
             <i class="fas fa-chevron-down" aria-hidden="true"></i>
           </span>
-        </component>
+        </a>
+        <button
+          v-else
+          type="button"
+          class="bpm-sb__link"
+          :class="{
+            'bpm-sb__link--active': isActive(item),
+            'bpm-sb__link--collapsed': isCollapsed
+          }"
+          :title="isCollapsed ? item.label : undefined"
+          :aria-expanded="hasChildren(item) ? isOpen(item) : undefined"
+          :aria-current="isActive(item) && !hasChildren(item) ? 'page' : undefined"
+          @click="onItemClick(item)"
+        >
+          <span class="bpm-sb__link-indicator" aria-hidden="true"></span>
+          <span class="bpm-sb__link-icon">
+            <i :class="['fas', item.icon]" aria-hidden="true"></i>
+          </span>
+          <span v-show="!isCollapsed" class="bpm-sb__link-label">{{ item.label }}</span>
+          <span v-show="!isCollapsed && item.badge" class="bpm-sb__badge">{{
+            item.badge
+          }}</span>
+          <span
+            v-show="!isCollapsed && hasChildren(item)"
+            class="bpm-sb__caret"
+            :class="{ 'bpm-sb__caret--open': isOpen(item) }"
+          >
+            <i class="fas fa-chevron-down" aria-hidden="true"></i>
+          </span>
+        </button>
 
-        <div v-if="hasChildren(item)" class="dc-submenu-wrap" :class="{ open: isParentOpen(item) && !isCollapsed }">
-          <div class="dc-submenu-inner">
+        <div
+          v-if="hasChildren(item)"
+          class="bpm-sb__sub"
+          :class="{ 'bpm-sb__sub--open': isOpen(item) && !isCollapsed }"
+          role="group"
+          :aria-label="item.label"
+        >
+          <div class="bpm-sb__sub-track" aria-hidden="true"></div>
+          <div class="bpm-sb__sub-inner">
             <component
               v-for="child in item.children"
               :key="child.id"
               :is="child.href ? 'a' : 'button'"
               :href="child.href"
               :type="child.href ? undefined : 'button'"
-              class="dc-submenu-item"
-              :class="{ active: activeId === child.id }"
-              :title="isCollapsed ? child.label : ''"
-              @click="child.href ? onChildLinkClick() : onChildClick(item, child)"
+              class="bpm-sb__sub-link"
+              :class="{ 'bpm-sb__sub-link--active': activeId === child.id }"
+              :aria-current="activeId === child.id ? 'page' : undefined"
+              @click="child.href ? onLinkClick() : onLeafClick(child.id)"
             >
-              <span class="dc-submenu-icon" aria-hidden="true">
+              <span class="bpm-sb__sub-icon">
                 <i v-if="child.icon" :class="['fas', child.icon]"></i>
-                <span v-else class="dc-submenu-dot"></span>
+                <span v-else class="bpm-sb__sub-dot"></span>
               </span>
-              <span class="dc-submenu-label dc-collapsible-text">{{ child.label }}</span>
-              <span v-if="child.badge" class="dc-nav-badge dc-collapsible-badge">{{ child.badge }}</span>
+              <span class="bpm-sb__sub-label">{{ child.label }}</span>
+              <span v-if="child.badge" class="bpm-sb__badge">{{ child.badge }}</span>
             </component>
           </div>
         </div>
       </div>
     </nav>
 
-    <div class="dc-sidebar-footer">
-      <div class="dc-user-pill" :title="isCollapsed ? `${userName ?? 'Operator'} - ${userRole ?? 'Workflow Admin'}` : ''">
-        <div class="dc-avatar"><i class="fas fa-user-gear" aria-hidden="true"></i></div>
-        <div class="dc-user-copy dc-collapsible-text">
-          <span class="dc-user-name">{{ userName ?? 'Operator' }}</span>
-          <span class="dc-user-role">{{ userRole ?? 'Workflow Admin' }}</span>
+    <div class="bpm-sb__divider bpm-sb__divider--before-footer" aria-hidden="true"></div>
+
+    <footer class="bpm-sb__footer">
+      <div
+        class="bpm-sb__user"
+        :title="
+          isCollapsed
+            ? `${userName ?? 'Operator'} — ${userRole ?? 'Workflow Admin'}`
+            : ''
+        "
+      >
+        <div class="bpm-sb__avatar">
+          <i class="fas fa-user-gear" aria-hidden="true"></i>
         </div>
-        <a class="dc-logout dc-collapsible-action" :href="logoutUrl ?? '#'" aria-label="Logout">
+        <div v-show="!isCollapsed" class="bpm-sb__user-text">
+          <span class="bpm-sb__user-name">{{ userName ?? 'Operator' }}</span>
+          <span class="bpm-sb__user-role">{{ userRole ?? 'Workflow Admin' }}</span>
+        </div>
+        <a
+          v-show="!isCollapsed"
+          class="bpm-sb__logout"
+          :href="logoutUrl ?? '#'"
+          aria-label="Выйти"
+          title="Выйти"
+        >
           <i class="fas fa-right-from-bracket" aria-hidden="true"></i>
+          <span class="bpm-sb__logout-text">Выйти</span>
         </a>
       </div>
-    </div>
+    </footer>
   </aside>
 </template>
 
 <style scoped>
-.dc-demo-sidebar {
+/* Корень: фиксированная полоса слева, высота экрана */
+.bpm-sb {
+  --bpm-sb-width: 260px;
+  --bpm-sb-width-collapsed: 78px;
   position: fixed;
   top: 0;
   left: 0;
   z-index: 48;
-  display: flex;
+  width: var(--sidebar-width, var(--bpm-sb-width));
   height: 100vh;
-  width: var(--sidebar-width);
+  display: flex;
   flex-direction: column;
-  padding: 12px 10px 12px;
+  padding: 12px 10px 10px;
   color: var(--text-primary);
-  border-right: 1px solid var(--border-strong);
-  background:
-    var(--gradient-glass),
-    var(--surface-glass);
-  backdrop-filter: blur(20px) saturate(140%);
-  box-shadow: var(--shadow-lg);
+  background: var(--gradient-glass, linear-gradient(180deg, rgba(255,255,255,0.08) 0%, transparent 50%)),
+    var(--surface-glass, rgba(20, 30, 40, 0.6));
+  backdrop-filter: blur(20px);
+  border-right: 1px solid var(--border-strong, rgba(255,255,255,0.1));
+  box-shadow: 4px 0 24px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
   transition:
-    width 0.34s cubic-bezier(0.22, 1, 0.36, 1),
-    transform 0.3s cubic-bezier(0.22, 1, 0.36, 1),
-    padding 0.34s cubic-bezier(0.22, 1, 0.36, 1);
-  overflow-x: hidden;
-  will-change: width, transform;
+    width 0.28s ease,
+    transform 0.28s ease,
+    padding 0.28s ease;
 }
 
-.dc-demo-sidebar.collapsed {
-  width: var(--sidebar-collapsed-width);
+.bpm-sb--collapsed {
+  width: var(--sidebar-collapsed-width, var(--bpm-sb-width-collapsed));
   padding: 12px 8px 10px;
 }
 
-.dc-sidebar-top {
+/* Разделители секций */
+.bpm-sb__divider {
+  height: 1px;
+  flex-shrink: 0;
+  background: linear-gradient(
+    90deg,
+    var(--border-strong, rgba(255,255,255,0.12)) 0%,
+    transparent 100%
+  );
+  opacity: 0.8;
+}
+
+.bpm-sb__divider--after-header {
+  margin: 0 0 10px;
+}
+
+.bpm-sb__divider--before-footer {
+  margin: 12px 0 8px;
+}
+
+.bpm-sb--light .bpm-sb__divider {
+  background: linear-gradient(
+    90deg,
+    var(--border-strong, rgba(0,0,0,0.12)) 0%,
+    transparent 100%
+  );
+}
+
+.bpm-sb--light {
+  box-shadow: 6px 0 20px rgba(0, 0, 0, 0.08);
+}
+
+/* Шапка: лого + кнопки */
+.bpm-sb__header {
   display: flex;
   align-items: center;
   gap: 8px;
+  flex-shrink: 0;
   margin-bottom: 10px;
 }
 
-.dc-logo {
-  min-width: 0;
+.bpm-sb--collapsed .bpm-sb__header {
+  flex-direction: column;
+  gap: 6px;
+}
+
+.bpm-sb__brand {
   display: flex;
-  flex: 1;
   align-items: center;
   gap: 8px;
+  min-width: 0;
+  flex: 1;
 }
 
-.dc-logo-icon {
+.bpm-sb--collapsed .bpm-sb__brand {
+  flex: none;
+  justify-content: center;
+}
+
+.bpm-sb__brand-icon {
   width: 34px;
   height: 34px;
-  display: grid;
-  place-items: center;
-  border-radius: var(--radius-md);
-  color: var(--accent-contrast);
-  background: linear-gradient(140deg, var(--accent-strong), var(--accent));
-  box-shadow: var(--shadow-sm);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-md, 10px);
+  color: var(--accent-contrast, #111);
+  background: linear-gradient(140deg, var(--accent-strong, #8ab), var(--accent, #6a9));
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
-.dc-logo-icon--image {
-  background: var(--surface-3);
+.bpm-sb--collapsed .bpm-sb__brand-icon {
+  width: 30px;
+  height: 30px;
 }
 
-.dc-logo-img {
+.bpm-sb__brand-icon--img {
+  background: var(--surface-3, rgba(40, 50, 60, 0.9));
+}
+
+.bpm-sb__brand-img {
   width: 100%;
   height: 100%;
   border-radius: inherit;
   object-fit: cover;
 }
 
-.dc-logo-copy {
+.bpm-sb__brand-text {
   min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 2px;
 }
 
-.dc-logo-title {
+.bpm-sb__brand-title {
   font-size: 0.78rem;
-  letter-spacing: 0.03em;
   font-weight: 700;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
 }
 
-.dc-logo-subtitle {
-  font-size: 0.66rem;
-  color: var(--text-tertiary);
-  letter-spacing: 0.03em;
+.bpm-sb__brand-sub {
+  font-size: 0.65rem;
+  color: var(--text-tertiary, rgba(255,255,255,0.5));
+  letter-spacing: 0.04em;
 }
 
-.dc-toggle-btn,
-.dc-mobile-close {
-  width: var(--control-height);
-  height: var(--control-height);
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--border-soft);
-  background: color-mix(in srgb, var(--surface-2) 78%, transparent);
-  color: var(--text-secondary);
+.bpm-sb__btn {
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border-soft, rgba(255,255,255,0.15));
+  border-radius: var(--radius-sm, 8px);
+  background: color-mix(in srgb, var(--surface-2, rgba(255,255,255,0.08)) 80%, transparent);
+  color: var(--text-secondary, rgba(255,255,255,0.8));
   cursor: pointer;
+  transition: border-color 0.2s, color 0.2s, background 0.2s;
 }
 
-.dc-toggle-btn:hover,
-.dc-mobile-close:hover {
-  color: var(--text-primary);
-  border-color: var(--border-accent);
+.bpm-sb__btn:hover {
+  color: var(--text-primary, #fff);
+  border-color: var(--border-accent, rgba(255,255,255,0.3));
+  background: color-mix(in srgb, var(--surface-2, rgba(255,255,255,0.12)) 90%, transparent);
 }
 
-.dc-mobile-close {
+.bpm-sb__btn:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring, 0 0 0 2px rgba(100,180,100,0.35));
+}
+
+.bpm-sb--collapsed .bpm-sb__btn--collapse {
+  width: 30px;
+  height: 30px;
+}
+
+.bpm-sb__btn--close {
   display: none;
 }
 
-.dc-ops-summary {
-  margin-bottom: 8px;
-  border-radius: var(--radius-md);
-  padding: 8px;
-  border: 1px solid var(--border-soft);
-  background: color-mix(in srgb, var(--surface-2) 70%, transparent);
-}
-
-.dc-ops-kicker {
-  margin: 0 0 6px;
-  font-size: 0.64rem;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--text-tertiary);
-}
-
-.dc-ops-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 5px 8px;
-  border-radius: 999px;
-  font-size: 0.72rem;
-  border: 1px solid var(--border-soft);
-  background: color-mix(in srgb, var(--surface-3) 76%, transparent);
-}
-
-.dc-ops-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--status-warning);
-  box-shadow: 0 0 12px color-mix(in srgb, var(--status-warning) 65%, transparent);
-}
-
-.dc-nav {
-  min-height: 0;
-  flex: 1;
-  overflow: auto;
-  padding-right: 2px;
-}
-
-.dc-nav-title {
-  margin: 0 0 8px;
-  padding: 0 4px;
-  font-size: 0.64rem;
-  letter-spacing: 0.1em;
-  color: var(--text-tertiary);
-  text-transform: uppercase;
-  max-height: 22px;
-  overflow: hidden;
-  transition:
-    max-height 0.24s cubic-bezier(0.2, 0.8, 0.2, 1),
-    margin 0.24s cubic-bezier(0.2, 0.8, 0.2, 1),
-    padding 0.24s cubic-bezier(0.2, 0.8, 0.2, 1),
-    opacity 0.18s ease;
-}
-
-.dc-nav-group {
-  margin-bottom: 2px;
-}
-
-.dc-nav-item,
-.dc-submenu-item {
-  width: 100%;
-  height: var(--control-height);
-  border: 1px solid transparent;
-  border-radius: var(--radius-sm);
-  display: grid;
-  grid-template-columns: 18px minmax(0, 1fr) auto auto;
+/* Блок статуса */
+.bpm-sb__status {
+  display: flex;
   align-items: center;
   gap: 8px;
-  padding: 0 8px;
-  color: var(--text-secondary);
-  background: transparent;
-  cursor: pointer;
-  text-align: left;
-  transition:
-    background-color 0.18s ease,
-    border-color 0.18s ease,
-    color 0.18s ease,
-    grid-template-columns 0.24s cubic-bezier(0.2, 0.8, 0.2, 1),
-    gap 0.24s cubic-bezier(0.2, 0.8, 0.2, 1),
-    padding 0.24s cubic-bezier(0.2, 0.8, 0.2, 1),
-    margin 0.24s cubic-bezier(0.2, 0.8, 0.2, 1);
-}
-
-.dc-nav-item:hover,
-.dc-submenu-item:hover {
-  background: color-mix(in srgb, var(--accent-soft) 50%, transparent);
-  color: var(--text-primary);
-}
-
-.dc-nav-item.active,
-.dc-submenu-item.active {
-  color: var(--text-primary);
-  border-color: var(--border-accent);
-  background: color-mix(in srgb, var(--accent-soft) 78%, transparent);
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 24%, transparent);
-}
-
-.dc-nav-icon,
-.dc-submenu-icon {
-  display: inline-flex;
-  justify-content: center;
-  font-size: 0.74rem;
-}
-
-.dc-nav-label,
-.dc-submenu-label {
-  font-size: 0.78rem;
-  white-space: nowrap;
-}
-
-.dc-nav-badge {
-  min-width: 20px;
-  height: 18px;
-  padding: 0 6px;
-  border-radius: 999px;
-  border: 1px solid var(--border-soft);
-  background: color-mix(in srgb, var(--surface-3) 82%, transparent);
-  font-size: 0.66rem;
-  line-height: 16px;
-  text-align: center;
-}
-
-.dc-nav-caret {
-  font-size: 0.58rem;
-  color: var(--text-tertiary);
-  transition: transform 0.2s ease;
-}
-
-.dc-nav-caret.open {
-  transform: rotate(180deg);
-}
-
-.dc-submenu-wrap {
-  display: grid;
-  grid-template-rows: 0fr;
-  opacity: 0;
-  transition:
-    grid-template-rows 0.24s cubic-bezier(0.2, 0.8, 0.2, 1),
-    opacity 0.18s ease;
-}
-
-.dc-submenu-wrap.open {
-  grid-template-rows: 1fr;
-  opacity: 1;
-}
-
-.dc-submenu-wrap > * {
-  min-height: 0;
-  overflow: hidden;
-}
-
-.dc-submenu-inner {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding-right: 8px;
-}
-
-.dc-submenu-item {
-  grid-template-columns: 14px minmax(0, 1fr) auto;
-  height: 30px;
-  margin: 2px 0 2px 18px;
-  padding-inline: 8px 10px;
-  border-radius: var(--radius-xs);
-  font-size: 0.73rem;
-}
-
-.dc-submenu-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--text-tertiary);
-}
-
-.dc-sidebar-footer {
-  margin-top: 8px;
-  flex-shrink: 0;
-}
-
-.dc-user-pill {
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  gap: 8px;
-  height: 44px;
-  padding: 0 8px;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--border-soft);
-  background: color-mix(in srgb, var(--surface-2) 72%, transparent);
-  min-width: 0;
-}
-
-.dc-avatar {
-  width: 26px;
-  height: 26px;
-  display: grid;
-  place-items: center;
-  border-radius: var(--radius-sm);
-  background: color-mix(in srgb, var(--accent-soft) 68%, transparent);
-  color: var(--text-primary);
-  font-size: 0.72rem;
-}
-
-.dc-user-copy {
-  min-width: 0;
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-}
-
-.dc-user-name {
-  font-size: 0.74rem;
-  font-weight: 700;
-  white-space: nowrap;
-}
-
-.dc-user-role {
-  font-size: 0.66rem;
-  color: var(--text-tertiary);
-}
-
-.dc-logout {
-  width: 24px;
-  height: 24px;
-  border-radius: var(--radius-xs);
-  display: grid;
-  place-items: center;
-  color: var(--text-secondary);
-  text-decoration: none;
-}
-
-.dc-logout:hover {
-  color: var(--accent);
-}
-
-.dc-collapsible-text,
-.dc-collapsible-action,
-.dc-collapsible-badge {
-  overflow: hidden;
-  transition:
-    max-width 0.24s cubic-bezier(0.2, 0.8, 0.2, 1),
-    opacity 0.18s ease,
-    transform 0.24s cubic-bezier(0.2, 0.8, 0.2, 1),
-    margin 0.24s cubic-bezier(0.2, 0.8, 0.2, 1);
-}
-
-.dc-collapsible-text {
-  max-width: 180px;
-  opacity: 1;
-}
-
-.dc-collapsible-badge {
-  max-width: 40px;
-  opacity: 1;
-}
-
-.dc-collapsible-action {
-  max-width: 28px;
-  opacity: 1;
-}
-
-.dc-demo-sidebar.collapsed .dc-collapsible-text,
-.dc-demo-sidebar.collapsed .dc-collapsible-action,
-.dc-demo-sidebar.collapsed .dc-collapsible-badge {
-  max-width: 0;
-  min-width: 0;
-  width: 0;
-  opacity: 0;
-  transform: translateX(-6px);
-  margin: 0;
-  overflow: hidden;
-  pointer-events: none;
-}
-
-/* Свёрнутый сайдбар: верх (лого + кнопка) по центру */
-.dc-demo-sidebar.collapsed .dc-sidebar-top {
-  display: grid;
-  grid-template-columns: 1fr;
-  justify-items: center;
-  align-items: center;
-  gap: 10px;
+  padding: 8px 10px;
   margin-bottom: 10px;
-}
-
-.dc-demo-sidebar.collapsed .dc-logo {
-  width: 100%;
-  flex: 0 0 auto;
-  justify-content: center;
-  gap: 0;
-}
-
-.dc-demo-sidebar.collapsed .dc-logo-icon {
-  width: 30px;
-  height: 30px;
-  font-size: 0.82rem;
-}
-
-.dc-demo-sidebar.collapsed .dc-toggle-btn {
-  width: 30px;
-  height: 30px;
+  border-radius: var(--radius-md, 10px);
+  border: 1px solid var(--border-soft, rgba(255,255,255,0.12));
+  background: color-mix(in srgb, var(--surface-2, rgba(255,255,255,0.06)) 80%, transparent);
   flex-shrink: 0;
-  display: grid;
-  place-items: center;
 }
 
-/* Свёрнутый сайдбар: блок статуса — только точка по центру */
-.dc-demo-sidebar.collapsed .dc-ops-summary {
+.bpm-sb__status--compact {
+  justify-content: center;
   padding: 0;
-  margin: 0 0 10px;
+  margin-bottom: 8px;
   border: 0;
   background: transparent;
-  box-shadow: none;
 }
 
-.dc-demo-sidebar.collapsed .dc-ops-kicker {
-  position: absolute;
-  width: 0;
-  height: 0;
-  overflow: hidden;
-  margin: 0;
-  padding: 0;
-  opacity: 0;
-  pointer-events: none;
-}
-
-.dc-demo-sidebar.collapsed .dc-ops-pill {
-  width: 34px;
-  height: 34px;
-  padding: 0;
-  margin-inline: auto;
-  gap: 0;
-  display: grid;
-  place-items: center;
-  border-radius: 10px;
-}
-
-.dc-demo-sidebar.collapsed .dc-ops-dot {
+.bpm-sb__status-dot {
   width: 8px;
   height: 8px;
+  border-radius: 50%;
+  background: var(--status-warning, #e8a030);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--status-warning, #e8a030) 60%, transparent);
+  flex-shrink: 0;
 }
 
-.dc-demo-sidebar.collapsed .dc-ops-pill .dc-ops-dot {
+.bpm-sb__status--compact .bpm-sb__status-dot {
+  width: 10px;
+  height: 10px;
+}
+
+.bpm-sb__status:not(.bpm-sb__status--compact) {
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.bpm-sb__status:not(.bpm-sb__status--compact):hover {
+  border-color: var(--border-strong, rgba(255,255,255,0.18));
+  background: color-mix(in srgb, var(--surface-2, rgba(255,255,255,0.08)) 90%, transparent);
+}
+
+.bpm-sb__status-text {
+  min-width: 0;
+}
+
+.bpm-sb__status-title {
   margin: 0;
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-tertiary, rgba(255,255,255,0.5));
 }
 
-/* Свёрнутый сайдбар: нав-пункты — только иконка по центру */
-.dc-demo-sidebar.collapsed .dc-nav-title {
-  height: 0;
-  margin: 0;
-  padding: 0;
-  overflow: hidden;
-  opacity: 0;
-  pointer-events: none;
+.bpm-sb__status-desc {
+  margin: 2px 0 0;
+  font-size: 0.7rem;
+  color: var(--text-secondary, rgba(255,255,255,0.8));
+  line-height: 1.3;
 }
 
-.dc-demo-sidebar.collapsed .dc-nav-group {
+/* Навигация */
+.bpm-sb__nav {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 4px;
+  scrollbar-gutter: stable;
+}
+
+.bpm-sb__nav::-webkit-scrollbar {
+  width: 6px;
+}
+
+.bpm-sb__nav::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.bpm-sb__nav::-webkit-scrollbar-thumb {
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--text-tertiary, rgba(255,255,255,0.4)) 60%, transparent);
+}
+
+.bpm-sb__nav::-webkit-scrollbar-thumb:hover {
+  background: var(--text-tertiary, rgba(255,255,255,0.5));
+}
+
+.bpm-sb--collapsed .bpm-sb__nav {
+  padding-right: 0;
+}
+
+.bpm-sb__nav-heading {
+  margin: 0 0 8px;
+  padding: 0 4px;
+  font-size: 0.62rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-tertiary, rgba(255,255,255,0.5));
+}
+
+.bpm-sb__group {
   margin-bottom: 4px;
 }
 
-.dc-demo-sidebar.collapsed .dc-nav-item,
-.dc-demo-sidebar.collapsed .dc-submenu-item {
+.bpm-sb__link,
+a.bpm-sb__link {
+  position: relative;
   width: 100%;
-  height: 36px;
+  min-height: 36px;
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 0;
-  padding: 0;
-  min-width: 0 !important;
-  text-align: center;
+  gap: 8px;
+  padding: 0 10px;
+  border: 1px solid transparent;
   border-radius: 10px;
+  color: var(--text-secondary, rgba(255,255,255,0.8));
+  background: transparent;
+  cursor: pointer;
+  text-decoration: none;
+  text-align: left;
+  font: inherit;
+  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+  box-sizing: border-box;
 }
 
-.dc-demo-sidebar.collapsed .dc-nav-item {
-  grid-template-columns: unset;
+.bpm-sb__link:hover,
+a.bpm-sb__link:hover {
+  background: color-mix(in srgb, var(--accent-soft, rgba(100,180,100,0.2)) 50%, transparent);
+  color: var(--text-primary, #fff);
 }
 
-.dc-demo-sidebar.collapsed .dc-submenu-item {
-  grid-template-columns: unset;
-  margin: 2px 0;
+.bpm-sb__link:focus-visible,
+a.bpm-sb__link:focus-visible {
+  outline: 2px solid var(--accent, #6a9);
+  outline-offset: 2px;
 }
 
-.dc-demo-sidebar.collapsed .dc-nav-item .dc-nav-icon,
-.dc-demo-sidebar.collapsed .dc-submenu-item .dc-submenu-icon {
-  margin: 0;
+.bpm-sb__link--active .bpm-sb__link-indicator,
+a.bpm-sb__link--active .bpm-sb__link-indicator {
+  opacity: 1;
+  transform: scaleY(1);
 }
 
-.dc-demo-sidebar.collapsed .dc-nav {
-  padding-right: 0;
-  padding-inline: 0;
+.bpm-sb__link--active,
+a.bpm-sb__link--active {
+  color: var(--text-primary, #fff);
+  border-color: var(--border-accent, rgba(255,255,255,0.35));
+  background: color-mix(in srgb, var(--accent-soft, rgba(100,180,100,0.25)) 75%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent, #6a9) 25%, transparent);
 }
 
-.dc-demo-sidebar.collapsed .dc-submenu-wrap {
-  grid-template-rows: 0fr !important;
+.bpm-sb__link-indicator {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%) scaleY(0.6);
+  width: 3px;
+  height: 18px;
+  border-radius: 0 2px 2px 0;
+  background: var(--accent, #6a9);
   opacity: 0;
+  transition: opacity 0.2s ease, transform 0.2s ease;
   pointer-events: none;
 }
 
-/* Свёрнутый сайдбар: футер — только аватар по центру, без обрезки */
-.dc-demo-sidebar.collapsed .dc-user-pill {
+.bpm-sb--collapsed .bpm-sb__link--active .bpm-sb__link-indicator,
+.bpm-sb--collapsed a.bpm-sb__link--active .bpm-sb__link-indicator {
+  opacity: 1;
+  transform: translateY(-50%) scaleY(1);
+  height: 20px;
+}
+
+.bpm-sb__link--collapsed,
+a.bpm-sb__link--collapsed {
+  justify-content: center;
+  padding: 0;
+}
+
+.bpm-sb__link--collapsed .bpm-sb__link-indicator,
+a.bpm-sb__link--collapsed .bpm-sb__link-indicator {
+  left: 2px;
+}
+
+.bpm-sb__link-icon {
+  width: 18px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+}
+
+.bpm-sb__link--active .bpm-sb__link-icon,
+a.bpm-sb__link--active .bpm-sb__link-icon {
+  color: var(--accent, inherit);
+}
+
+.bpm-sb__link-label {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.78rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bpm-sb__badge {
+  min-width: 20px;
+  height: 18px;
+  padding: 0 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  font-size: 0.65rem;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: 0.02em;
+  border: 1px solid var(--border-soft, rgba(255,255,255,0.15));
+  background: color-mix(in srgb, var(--surface-3, rgba(255,255,255,0.1)) 85%, transparent);
+  color: var(--text-secondary, rgba(255,255,255,0.9));
+}
+
+.bpm-sb__caret {
+  flex-shrink: 0;
+  font-size: 0.56rem;
+  color: var(--text-tertiary, rgba(255,255,255,0.5));
+  transition: transform 0.2s ease;
+}
+
+.bpm-sb__caret--open {
+  transform: rotate(180deg);
+}
+
+/* Подменю */
+.bpm-sb__sub {
+  position: relative;
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.28s cubic-bezier(0.22, 0.8, 0.2, 1);
+}
+
+.bpm-sb__sub--open {
+  max-height: 420px;
+}
+
+.bpm-sb__sub-track {
+  position: absolute;
+  left: 25px;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: linear-gradient(
+    180deg,
+    var(--border-soft, rgba(255,255,255,0.15)) 0%,
+    var(--border-soft, rgba(255,255,255,0.15)) 100%
+  );
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.bpm-sb__sub-inner {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 4px 0 6px 0;
+  padding-right: 8px;
+  padding-left: 2px;
+}
+
+.bpm-sb__sub-link,
+button.bpm-sb__sub-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 32px;
+  margin-left: 18px;
+  padding: 0 8px 0 10px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm, 6px);
+  color: var(--text-secondary, rgba(255,255,255,0.8));
+  background: transparent;
+  cursor: pointer;
+  text-decoration: none;
+  text-align: left;
+  font: inherit;
+  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+  box-sizing: border-box;
+}
+
+.bpm-sb__sub-link:hover,
+button.bpm-sb__sub-link:hover {
+  background: color-mix(in srgb, var(--accent-soft, rgba(100,180,100,0.2)) 50%, transparent);
+  color: var(--text-primary, #fff);
+}
+
+.bpm-sb__sub-link:focus-visible,
+button.bpm-sb__sub-link:focus-visible {
+  outline: 2px solid var(--accent, #6a9);
+  outline-offset: 2px;
+}
+
+.bpm-sb__sub-link--active,
+button.bpm-sb__sub-link--active {
+  color: var(--text-primary, #fff);
+  border-color: var(--border-accent, rgba(255,255,255,0.3));
+  background: color-mix(in srgb, var(--accent-soft, rgba(100,180,100,0.2)) 70%, transparent);
+}
+
+.bpm-sb__sub-icon {
+  width: 14px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+}
+
+.bpm-sb__sub-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--text-tertiary, rgba(255,255,255,0.5));
+}
+
+.bpm-sb__sub-label {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.76rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Футер: пользователь */
+.bpm-sb__footer {
+  flex-shrink: 0;
+  margin-top: 8px;
+}
+
+.bpm-sb__user {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  height: 44px;
+  padding: 0 8px;
+  border-radius: var(--radius-md, 10px);
+  border: 1px solid var(--border-soft, rgba(255,255,255,0.12));
+  background: color-mix(in srgb, var(--surface-2, rgba(255,255,255,0.06)) 75%, transparent);
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.bpm-sb__user:hover {
+  border-color: var(--border-strong, rgba(255,255,255,0.18));
+  background: color-mix(in srgb, var(--surface-2, rgba(255,255,255,0.1)) 85%, transparent);
+}
+
+.bpm-sb--collapsed .bpm-sb__user {
   justify-content: center;
   height: 38px;
   padding: 0;
-  min-width: 0;
-  border-radius: 11px;
+  border-radius: 10px;
 }
 
-.dc-demo-sidebar.collapsed .dc-avatar {
+.bpm-sb__avatar {
+  width: 26px;
+  height: 26px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm, 8px);
+  background: color-mix(in srgb, var(--accent-soft, rgba(100,180,100,0.25)) 70%, transparent);
+  color: var(--text-primary, #fff);
+  font-size: 0.72rem;
+}
+
+.bpm-sb--collapsed .bpm-sb__avatar {
   width: 24px;
   height: 24px;
-  font-size: 0.72rem;
-  flex-shrink: 0;
 }
 
+.bpm-sb__user-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.bpm-sb__user-name {
+  font-size: 0.74rem;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bpm-sb__user-role {
+  font-size: 0.65rem;
+  color: var(--text-tertiary, rgba(255,255,255,0.5));
+}
+
+.bpm-sb__logout {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 24px;
+  height: 24px;
+  padding: 0 6px;
+  border-radius: var(--radius-xs, 4px);
+  color: var(--text-secondary, rgba(255,255,255,0.8));
+  text-decoration: none;
+  font-size: 0.7rem;
+  transition: color 0.2s ease, background 0.2s ease;
+}
+
+.bpm-sb__logout:hover {
+  color: var(--accent, #6a9);
+  background: color-mix(in srgb, var(--accent-soft, rgba(100,180,100,0.15)) 60%, transparent);
+}
+
+.bpm-sb__logout:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring, 0 0 0 2px var(--accent, #6a9));
+}
+
+.bpm-sb__logout-text {
+  max-width: 0;
+  overflow: hidden;
+  opacity: 0;
+  white-space: nowrap;
+  transition: max-width 0.25s ease, opacity 0.2s ease;
+}
+
+.bpm-sb__user:hover .bpm-sb__logout-text {
+  max-width: 3rem;
+  opacity: 1;
+}
+
+/* Мобильный вид: выезд слева, кнопка закрыть */
 @media (max-width: 980px) {
-  .dc-demo-sidebar {
-    transform: translateX(-100%);
+  .bpm-sb {
     width: min(86vw, 320px);
     max-width: min(86vw, 320px);
+    transform: translateX(-100%);
     z-index: 52;
+    padding: 12px 10px 10px;
   }
 
-  .dc-demo-sidebar.mobile-open {
+  .bpm-sb--mobile-open {
     transform: translateX(0);
   }
 
-  .dc-mobile-close {
-    display: inline-block;
+  .bpm-sb__btn--close {
+    display: flex;
   }
 
-  .dc-toggle-btn {
+  .bpm-sb__btn--collapse {
     display: none;
+  }
+
+  .bpm-sb__brand {
+    flex: 1;
+    justify-content: flex-start;
+  }
+
+  .bpm-sb__status,
+  .bpm-sb__status--compact {
+    justify-content: flex-start;
+    gap: 8px;
+    padding: 8px 10px;
+    margin-bottom: 10px;
+    border: 1px solid var(--border-soft, rgba(255,255,255,0.12));
+    background: color-mix(in srgb, var(--surface-2, rgba(255,255,255,0.06)) 80%, transparent);
+  }
+
+  .bpm-sb__link,
+  a.bpm-sb__link {
+    min-height: 44px;
+  }
+
+  .bpm-sb__sub-link,
+  button.bpm-sb__sub-link {
+    min-height: 44px;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .dc-demo-sidebar,
-  .dc-nav-item,
-  .dc-submenu-item,
-  .dc-collapsible-text,
-  .dc-collapsible-action,
-  .dc-collapsible-badge,
-  .dc-submenu-wrap,
-  .dc-nav-title,
-  .dc-nav-caret {
+  .bpm-sb,
+  .bpm-sb__link,
+  a.bpm-sb__link,
+  .bpm-sb__sub-link,
+  button.bpm-sb__sub-link,
+  .bpm-sb__sub,
+  .bpm-sb__caret,
+  .bpm-sb__btn {
     transition-duration: 0.01ms !important;
-    animation-duration: 0.01ms !important;
   }
 }
 </style>
