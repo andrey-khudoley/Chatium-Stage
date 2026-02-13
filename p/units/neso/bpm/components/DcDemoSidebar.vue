@@ -579,8 +579,9 @@ function onLinkClick() {
   display: none;
 }
 
-/* Блок статуса: grid для плавного сжатия */
+/* Блок статуса: dissolve (opacity) → затем сжатие grid */
 .bpm-sb__status {
+  position: relative;
   display: grid;
   grid-template-columns: auto 1fr;
   align-items: center;
@@ -607,18 +608,34 @@ function onLinkClick() {
   margin-bottom: 8px;
   border: 0;
   background: transparent;
+  transition:
+    grid-template-columns 0.3s var(--bpm-ease) 0.12s,
+    padding 0.28s var(--bpm-ease) 0.12s,
+    margin 0.28s var(--bpm-ease) 0.12s,
+    border 0.28s var(--bpm-ease) 0.12s,
+    background 0.28s var(--bpm-ease) 0.12s,
+    border-radius 0.28s var(--bpm-ease) 0.12s;
 }
 
 .bpm-sb__status-slot {
   min-width: 0;
   overflow: hidden;
   opacity: 1;
-  transition: opacity 0.25s var(--bpm-ease);
+  transition: opacity 0.12s var(--bpm-ease);
 }
 
 .bpm-sb__status--collapsed .bpm-sb__status-slot {
   opacity: 0;
-  transition: opacity 0.2s var(--bpm-ease);
+  visibility: hidden;
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+  pointer-events: none;
+  clip: rect(0, 0, 0, 0);
+  transition: opacity 0.12s var(--bpm-ease);
 }
 
 .bpm-sb__status-dot {
