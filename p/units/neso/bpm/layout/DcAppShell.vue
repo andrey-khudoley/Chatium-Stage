@@ -36,7 +36,7 @@ defineEmits<{
 
     <slot name="sidebar" />
 
-    <div class="dc-app-shell__content" :class="{ 'dc-app-shell__content--collapsed': sidebarCollapsed }">
+    <div class="dc-app-shell__content">
       <div v-if="$slots.header" class="dc-app-shell__header-row">
         <slot name="header" />
       </div>
@@ -47,6 +47,7 @@ defineEmits<{
 
 <style scoped>
 .dc-app-shell {
+  --dc-shell-sidebar-offset: var(--sidebar-width);
   position: relative;
   display: flex;
   min-height: 100vh;
@@ -61,6 +62,10 @@ defineEmits<{
   opacity: 1;
 }
 
+.dc-app-shell--sidebar-collapsed {
+  --dc-shell-sidebar-offset: var(--sidebar-collapsed-width);
+}
+
 .dc-app-shell__content {
   position: relative;
   z-index: 12;
@@ -68,12 +73,9 @@ defineEmits<{
   flex: 1;
   min-width: 0;
   flex-direction: column;
-  margin-left: var(--sidebar-width);
-  transition: margin-left 0.28s ease;
-}
-
-.dc-app-shell__content--collapsed {
-  margin-left: var(--sidebar-collapsed-width);
+  margin-left: var(--dc-shell-sidebar-offset);
+  transition: margin-left 0.34s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: margin-left;
 }
 
 .dc-app-shell__header-row {
@@ -85,13 +87,24 @@ defineEmits<{
 }
 
 @media (max-width: 980px) {
-  .dc-app-shell__content,
-  .dc-app-shell__content--collapsed {
+  .dc-app-shell {
+    --dc-shell-sidebar-offset: 0px;
+  }
+
+  .dc-app-shell__content {
     margin-left: 0;
   }
 
   .dc-app-shell__header-row {
     padding: 12px 12px 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dc-app-shell,
+  .dc-app-shell__content {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
   }
 }
 </style>

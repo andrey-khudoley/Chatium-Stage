@@ -291,6 +291,10 @@ const visibleScenarios = computed(() => {
   border-color: color-mix(in srgb, var(--status-info) 32%, var(--status-warning));
 }
 
+.bpm-design-index__card.layout-home-page {
+  border-color: color-mix(in srgb, var(--accent) 36%, var(--border-soft));
+}
+
 .mono {
   font-family: var(--font-mono);
   color: var(--text-tertiary);

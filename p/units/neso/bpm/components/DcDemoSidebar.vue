@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 
 export interface NavChildItem {
   id: string
@@ -42,6 +42,36 @@ const emit = defineEmits<{
 const expandedGroups = ref<Record<string, boolean>>({})
 
 const hasMobileOpen = computed(() => !!props.mobileOpen)
+const isMobileViewport = ref(false)
+const isCollapsed = computed(() => !!props.collapsed && !isMobileViewport.value && !hasMobileOpen.value)
+
+const MOBILE_BREAKPOINT_QUERY = '(max-width: 980px)'
+let mobileQueryList: MediaQueryList | null = null
+
+function syncViewportState() {
+  isMobileViewport.value = !!mobileQueryList?.matches
+}
+
+onMounted(() => {
+  if (typeof window === 'undefined' || !('matchMedia' in window)) return
+  mobileQueryList = window.matchMedia(MOBILE_BREAKPOINT_QUERY)
+  syncViewportState()
+  if (typeof mobileQueryList.addEventListener === 'function') {
+    mobileQueryList.addEventListener('change', syncViewportState)
+    return
+  }
+  mobileQueryList.addListener(syncViewportState)
+})
+
+onBeforeUnmount(() => {
+  if (!mobileQueryList) return
+  if (typeof mobileQueryList.removeEventListener === 'function') {
+    mobileQueryList.removeEventListener('change', syncViewportState)
+  } else {
+    mobileQueryList.removeListener(syncViewportState)
+  }
+  mobileQueryList = null
+})
 
 watch(
   () => props.items,
@@ -99,7 +129,7 @@ function toggleGroup(item: NavItem) {
 }
 
 function onParentClick(item: NavItem) {
-  if (hasChildren(item) && !props.collapsed) {
+  if (hasChildren(item) && !isCollapsed.value) {
     toggleGroup(item)
     return
   }
@@ -124,14 +154,14 @@ function onChildLinkClick() {
     :class="[
       `theme-${theme ?? 'dark'}`,
       {
-        collapsed: collapsed,
+        collapsed: isCollapsed,
         'mobile-open': hasMobileOpen
       }
     ]"
     aria-label="BPM navigation"
   >
     <div class="dc-sidebar-top">
-      <div class="dc-logo" :title="collapsed ? (logoText ?? 'NeSo BPM') : ''">
+      <div class="dc-logo" :title="isCollapsed ? (logoText ?? 'NeSo BPM') : ''">
         <div class="dc-logo-icon" :class="{ 'dc-logo-icon--image': !!logoImageUrl }">
           <img
             v-if="logoImageUrl"
@@ -151,10 +181,10 @@ function onChildLinkClick() {
       <button
         type="button"
         class="dc-toggle-btn"
-        :aria-label="collapsed ? 'Expand navigation' : 'Collapse navigation'"
+        :aria-label="isCollapsed ? 'Expand navigation' : 'Collapse navigation'"
         @click="emit('toggleCollapse')"
       >
-        <i :class="collapsed ? 'fas fa-chevron-right' : 'fas fa-chevron-left'" aria-hidden="true"></i>
+        <i :class="isCollapsed ? 'fas fa-chevron-right' : 'fas fa-chevron-left'" aria-hidden="true"></i>
       </button>
 
       <button type="button" class="dc-mobile-close" aria-label="Close navigation" @click="emit('close')">
@@ -164,7 +194,7 @@ function onChildLinkClick() {
 
     <div class="dc-ops-summary">
       <p class="dc-ops-kicker dc-collapsible-text">Control status</p>
-      <div class="dc-ops-pill" :title="collapsed ? '7 SLA risks across active processes' : ''">
+      <div class="dc-ops-pill" :title="isCollapsed ? '7 SLA risks across active processes' : ''">
         <span class="dc-ops-dot"></span>
         <span class="dc-collapsible-text">7 SLA risks</span>
       </div>
@@ -189,7 +219,7 @@ function onChildLinkClick() {
           :type="item.href ? undefined : 'button'"
           class="dc-nav-item dc-nav-item--parent"
           :class="{ active: isParentActive(item) }"
-          :title="collapsed ? item.label : ''"
+          :title="isCollapsed ? item.label : ''"
           @click="item.href ? emit('close') : onParentClick(item)"
         >
           <span class="dc-nav-icon"><i :class="['fas', item.icon]" aria-hidden="true"></i></span>
@@ -200,7 +230,7 @@ function onChildLinkClick() {
           </span>
         </component>
 
-        <div v-if="hasChildren(item)" class="dc-submenu-wrap" :class="{ open: isParentOpen(item) && !collapsed }">
+        <div v-if="hasChildren(item)" class="dc-submenu-wrap" :class="{ open: isParentOpen(item) && !isCollapsed }">
           <div class="dc-submenu-inner">
             <component
               v-for="child in item.children"
@@ -210,7 +240,7 @@ function onChildLinkClick() {
               :type="child.href ? undefined : 'button'"
               class="dc-submenu-item"
               :class="{ active: activeId === child.id }"
-              :title="collapsed ? child.label : ''"
+              :title="isCollapsed ? child.label : ''"
               @click="child.href ? onChildLinkClick() : onChildClick(item, child)"
             >
               <span class="dc-submenu-icon" aria-hidden="true">
@@ -226,7 +256,7 @@ function onChildLinkClick() {
     </nav>
 
     <div class="dc-sidebar-footer">
-      <div class="dc-user-pill" :title="collapsed ? `${userName ?? 'Operator'} - ${userRole ?? 'Workflow Admin'}` : ''">
+      <div class="dc-user-pill" :title="isCollapsed ? `${userName ?? 'Operator'} - ${userRole ?? 'Workflow Admin'}` : ''">
         <div class="dc-avatar"><i class="fas fa-user-gear" aria-hidden="true"></i></div>
         <div class="dc-user-copy dc-collapsible-text">
           <span class="dc-user-name">{{ userName ?? 'Operator' }}</span>
@@ -250,7 +280,7 @@ function onChildLinkClick() {
   height: 100vh;
   width: var(--sidebar-width);
   flex-direction: column;
-  padding: 12px 10px 10px;
+  padding: 12px 10px 12px;
   color: var(--text-primary);
   border-right: 1px solid var(--border-strong);
   background:
@@ -259,14 +289,16 @@ function onChildLinkClick() {
   backdrop-filter: blur(20px) saturate(140%);
   box-shadow: var(--shadow-lg);
   transition:
-    width 0.26s ease,
-    transform 0.24s ease,
-    padding 0.26s ease;
+    width 0.34s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.3s cubic-bezier(0.22, 1, 0.36, 1),
+    padding 0.34s cubic-bezier(0.22, 1, 0.36, 1);
+  overflow-x: hidden;
+  will-change: width, transform;
 }
 
 .dc-demo-sidebar.collapsed {
   width: var(--sidebar-collapsed-width);
-  padding-inline: 8px;
+  padding: 12px 8px 10px;
 }
 
 .dc-sidebar-top {
@@ -396,6 +428,13 @@ function onChildLinkClick() {
   letter-spacing: 0.1em;
   color: var(--text-tertiary);
   text-transform: uppercase;
+  max-height: 22px;
+  overflow: hidden;
+  transition:
+    max-height 0.24s cubic-bezier(0.2, 0.8, 0.2, 1),
+    margin 0.24s cubic-bezier(0.2, 0.8, 0.2, 1),
+    padding 0.24s cubic-bezier(0.2, 0.8, 0.2, 1),
+    opacity 0.18s ease;
 }
 
 .dc-nav-group {
@@ -409,7 +448,7 @@ function onChildLinkClick() {
   border: 1px solid transparent;
   border-radius: var(--radius-sm);
   display: grid;
-  grid-template-columns: 18px 1fr auto auto;
+  grid-template-columns: 18px minmax(0, 1fr) auto auto;
   align-items: center;
   gap: 8px;
   padding: 0 8px;
@@ -420,7 +459,11 @@ function onChildLinkClick() {
   transition:
     background-color 0.18s ease,
     border-color 0.18s ease,
-    color 0.18s ease;
+    color 0.18s ease,
+    grid-template-columns 0.24s cubic-bezier(0.2, 0.8, 0.2, 1),
+    gap 0.24s cubic-bezier(0.2, 0.8, 0.2, 1),
+    padding 0.24s cubic-bezier(0.2, 0.8, 0.2, 1),
+    margin 0.24s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 .dc-nav-item:hover,
@@ -465,6 +508,7 @@ function onChildLinkClick() {
 .dc-nav-caret {
   font-size: 0.58rem;
   color: var(--text-tertiary);
+  transition: transform 0.2s ease;
 }
 
 .dc-nav-caret.open {
@@ -474,11 +518,15 @@ function onChildLinkClick() {
 .dc-submenu-wrap {
   display: grid;
   grid-template-rows: 0fr;
-  transition: grid-template-rows 0.2s ease;
+  opacity: 0;
+  transition:
+    grid-template-rows 0.24s cubic-bezier(0.2, 0.8, 0.2, 1),
+    opacity 0.18s ease;
 }
 
 .dc-submenu-wrap.open {
   grid-template-rows: 1fr;
+  opacity: 1;
 }
 
 .dc-submenu-wrap > * {
@@ -494,7 +542,7 @@ function onChildLinkClick() {
 }
 
 .dc-submenu-item {
-  grid-template-columns: 14px 1fr auto;
+  grid-template-columns: 14px minmax(0, 1fr) auto;
   height: 30px;
   margin: 2px 0 2px 18px;
   padding-inline: 8px 10px;
@@ -511,17 +559,20 @@ function onChildLinkClick() {
 
 .dc-sidebar-footer {
   margin-top: 8px;
+  flex-shrink: 0;
 }
 
 .dc-user-pill {
   display: flex;
   align-items: center;
+  justify-content: flex-start;
   gap: 8px;
   height: 44px;
   padding: 0 8px;
   border-radius: var(--radius-md);
   border: 1px solid var(--border-soft);
   background: color-mix(in srgb, var(--surface-2) 72%, transparent);
+  min-width: 0;
 }
 
 .dc-avatar {
@@ -572,10 +623,10 @@ function onChildLinkClick() {
 .dc-collapsible-badge {
   overflow: hidden;
   transition:
-    max-width 0.2s ease,
+    max-width 0.24s cubic-bezier(0.2, 0.8, 0.2, 1),
     opacity 0.18s ease,
-    transform 0.2s ease,
-    margin 0.2s ease;
+    transform 0.24s cubic-bezier(0.2, 0.8, 0.2, 1),
+    margin 0.24s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 .dc-collapsible-text {
@@ -597,20 +648,153 @@ function onChildLinkClick() {
 .dc-demo-sidebar.collapsed .dc-collapsible-action,
 .dc-demo-sidebar.collapsed .dc-collapsible-badge {
   max-width: 0;
+  min-width: 0;
+  width: 0;
   opacity: 0;
   transform: translateX(-6px);
   margin: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+/* Свёрнутый сайдбар: верх (лого + кнопка) по центру */
+.dc-demo-sidebar.collapsed .dc-sidebar-top {
+  display: grid;
+  grid-template-columns: 1fr;
+  justify-items: center;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.dc-demo-sidebar.collapsed .dc-logo {
+  width: 100%;
+  flex: 0 0 auto;
+  justify-content: center;
+  gap: 0;
+}
+
+.dc-demo-sidebar.collapsed .dc-logo-icon {
+  width: 30px;
+  height: 30px;
+  font-size: 0.82rem;
+}
+
+.dc-demo-sidebar.collapsed .dc-toggle-btn {
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+}
+
+/* Свёрнутый сайдбар: блок статуса — только точка по центру */
+.dc-demo-sidebar.collapsed .dc-ops-summary {
+  padding: 0;
+  margin: 0 0 10px;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.dc-demo-sidebar.collapsed .dc-ops-kicker {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.dc-demo-sidebar.collapsed .dc-ops-pill {
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  margin-inline: auto;
+  gap: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+}
+
+.dc-demo-sidebar.collapsed .dc-ops-dot {
+  width: 8px;
+  height: 8px;
+}
+
+.dc-demo-sidebar.collapsed .dc-ops-pill .dc-ops-dot {
+  margin: 0;
+}
+
+/* Свёрнутый сайдбар: нав-пункты — только иконка по центру */
+.dc-demo-sidebar.collapsed .dc-nav-title {
+  height: 0;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.dc-demo-sidebar.collapsed .dc-nav-group {
+  margin-bottom: 4px;
 }
 
 .dc-demo-sidebar.collapsed .dc-nav-item,
 .dc-demo-sidebar.collapsed .dc-submenu-item {
-  grid-template-columns: 1fr;
-  justify-items: center;
+  width: 100%;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  padding: 0;
+  min-width: 0 !important;
+  text-align: center;
+  border-radius: 10px;
+}
+
+.dc-demo-sidebar.collapsed .dc-nav-item {
+  grid-template-columns: unset;
+}
+
+.dc-demo-sidebar.collapsed .dc-submenu-item {
+  grid-template-columns: unset;
+  margin: 2px 0;
+}
+
+.dc-demo-sidebar.collapsed .dc-nav-item .dc-nav-icon,
+.dc-demo-sidebar.collapsed .dc-submenu-item .dc-submenu-icon {
+  margin: 0;
+}
+
+.dc-demo-sidebar.collapsed .dc-nav {
+  padding-right: 0;
   padding-inline: 0;
 }
 
 .dc-demo-sidebar.collapsed .dc-submenu-wrap {
-  display: none;
+  grid-template-rows: 0fr !important;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Свёрнутый сайдбар: футер — только аватар по центру, без обрезки */
+.dc-demo-sidebar.collapsed .dc-user-pill {
+  justify-content: center;
+  height: 38px;
+  padding: 0;
+  min-width: 0;
+  border-radius: 11px;
+}
+
+.dc-demo-sidebar.collapsed .dc-avatar {
+  width: 24px;
+  height: 24px;
+  font-size: 0.72rem;
+  flex-shrink: 0;
 }
 
 @media (max-width: 980px) {
@@ -631,6 +815,21 @@ function onChildLinkClick() {
 
   .dc-toggle-btn {
     display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dc-demo-sidebar,
+  .dc-nav-item,
+  .dc-submenu-item,
+  .dc-collapsible-text,
+  .dc-collapsible-action,
+  .dc-collapsible-badge,
+  .dc-submenu-wrap,
+  .dc-nav-title,
+  .dc-nav-caret {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
   }
 }
 </style>

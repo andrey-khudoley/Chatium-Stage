@@ -8,6 +8,7 @@ import {
   DcBpmInstanceDetail,
   DcBpmKanbanBoard,
   DcBpmKnowledgeEditor,
+  DcBpmMetricGrid,
   DcBpmProcessInbox,
   DcBpmSidebar,
   DcCapacityMatrix,
@@ -25,7 +26,12 @@ import {
 } from '../components'
 import { DcAppShell, DcContent, DcMain } from '../layout'
 import { bpmCopy, type BpmLocale } from '../shared/bpmI18n'
-import { getBpmChartBars } from '../shared/bpmDemoData'
+import {
+  getBpmChartBars,
+  getBpmExecutionTimeline,
+  getBpmKanbanColumns,
+  getBpmMetrics
+} from '../shared/bpmDemoData'
 import {
   BPM_DESIGN_SCENARIOS,
   getBpmScenarioBySlug,
@@ -124,6 +130,20 @@ const markdownDraft = ref('')
 
 const ui = computed(() => bpmCopy[locale.value])
 const demoState = computed(() => buildScenarioDemoState(activeScenario.value, locale.value))
+
+const homePageMetrics = computed(() => getBpmMetrics(ui.value))
+const homePageKanbanColumns = computed(() => getBpmKanbanColumns(ui.value))
+const homePageTimeline = computed(() => getBpmExecutionTimeline(locale.value))
+const homePageFeaturedScenarios = computed(() =>
+  BPM_DESIGN_SCENARIOS.filter((s) => s.slug !== 'home-page')
+    .slice(0, 6)
+    .map((scenario) => ({
+      slug: scenario.slug,
+      title: scenario.title,
+      description: scenario.description,
+      url: `${(props.designIndexUrl || '').replace(/\/$/, '')}/${scenario.slug}`
+    }))
+)
 
 const fallbackInstance: BpmInstanceRow = {
   id: 'WF-0000',
@@ -390,7 +410,43 @@ function setLocale(next: BpmLocale) {
             </div>
           </section>
 
-          <template v-if="layout === 'war-room'">
+          <template v-if="layout === 'home-page'">
+            <section id="section-home-metrics" class="bpm-design-scenario-page__section">
+              <DcBpmMetricGrid :metrics="homePageMetrics" />
+            </section>
+
+            <section id="section-home-grid" class="bpm-design-scenario-page__section bpm-design-scenario-page__split">
+              <DcBpmKanbanBoard
+                :title="ui.kanbanTitle"
+                :hint="ui.kanbanHint"
+                :columns="homePageKanbanColumns"
+              />
+
+              <DcBpmExecutionTimeline
+                :title="ui.timelineTitle"
+                :hint="ui.timelineHint"
+                :events="homePageTimeline"
+              />
+            </section>
+
+            <section id="section-home-scenarios" class="bpm-design-scenario-page__section">
+              <h2>{{ ui.featuredScenariosTitle }}</h2>
+              <div class="bpm-home-scenarios">
+                <a
+                  v-for="scenario in homePageFeaturedScenarios"
+                  :key="scenario.slug"
+                  :href="scenario.url"
+                  class="bpm-home-scenario-card"
+                >
+                  <h3>{{ scenario.title }}</h3>
+                  <p>{{ scenario.description }}</p>
+                  <span>{{ scenario.slug }}</span>
+                </a>
+              </div>
+            </section>
+          </template>
+
+          <template v-else-if="layout === 'war-room'">
             <section id="section-workspace" class="bpm-design-scenario-page__section bpm-design-scenario-page__split">
               <DcSlaGauge
                 title="SLA pulse"
@@ -847,9 +903,62 @@ function setLocale(next: BpmLocale) {
   border-color: color-mix(in srgb, var(--status-info) 46%, var(--border-soft));
 }
 
+#section-home-scenarios h2 {
+  margin: 0 0 10px;
+  font-size: 1rem;
+}
+
+.bpm-home-scenarios {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.bpm-home-scenario-card {
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-soft);
+  padding: 10px;
+  text-decoration: none;
+  color: inherit;
+  background:
+    var(--gradient-glass),
+    color-mix(in srgb, var(--surface-2) 82%, transparent);
+}
+
+.bpm-home-scenario-card h3 {
+  margin: 0;
+  font-size: 0.83rem;
+}
+
+.bpm-home-scenario-card p {
+  margin: 6px 0 0;
+  font-size: 0.73rem;
+  color: var(--text-secondary);
+  line-height: 1.45;
+}
+
+.bpm-home-scenario-card span {
+  display: inline-flex;
+  margin-top: 8px;
+  height: 21px;
+  align-items: center;
+  padding: 0 8px;
+  border-radius: 999px;
+  border: 1px solid var(--border-soft);
+  color: var(--text-tertiary);
+  font-size: 0.65rem;
+  font-family: var(--font-mono);
+}
+
 @media (max-width: 1280px) {
   .bpm-design-scenario-page__split,
   .bpm-design-scenario-page__split--triple {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 1080px) {
+  .bpm-home-scenarios {
     grid-template-columns: 1fr;
   }
 }

@@ -12,6 +12,7 @@ export type BpmScenarioLayout =
   | 'delivery-studio'
   | 'executive-deck'
   | 'client-desk'
+  | 'home-page'
 
 export interface ScenarioWidget {
   id: string
@@ -39,6 +40,16 @@ export interface BpmDesignScenario {
 }
 
 export const BPM_DESIGN_SCENARIOS: BpmDesignScenario[] = [
+  {
+    slug: 'home-page',
+    title: 'Главная страница',
+    description: 'Обзор метрик, Kanban-панель, timeline исполнения и блок избранных сценариев.',
+    objective: 'Показать стартовый дашборд BPM-workspace с ключевыми виджетами.',
+    tags: ['home', 'dashboard', 'metrics', 'kanban'],
+    theme: 'light',
+    presetId: 'sunrise-leaf',
+    layout: 'home-page'
+  },
   {
     slug: 'incident-war-room',
     title: 'Incident war room',

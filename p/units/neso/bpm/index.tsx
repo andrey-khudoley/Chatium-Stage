@@ -8,12 +8,6 @@ import { getBpmNavUrlsAsync } from './lib/navUrls.lib'
 
 export const indexPageRoute = app.html('/', async (ctx) => {
   const navUrls = await getBpmNavUrlsAsync(ctx)
-  const featuredScenarios = BPM_DESIGN_SCENARIOS.slice(0, 6).map((scenario) => ({
-    slug: scenario.slug,
-    title: scenario.title,
-    description: scenario.description,
-    url: navUrls.getScenarioUrl(scenario.slug)
-  }))
 
   return (
     <html>
@@ -29,7 +23,6 @@ export const indexPageRoute = app.html('/', async (ctx) => {
           designUrl={navUrls.designUrl}
           clientsDialogsUrl={navUrls.clientsDialogsUrl}
           scenarioCount={BPM_DESIGN_SCENARIOS.length}
-          featuredScenarios={featuredScenarios}
         />
       </body>
     </html>

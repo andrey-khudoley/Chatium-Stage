@@ -1,29 +1,14 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import {
-  DcBpmExecutionTimeline,
   DcBpmHeaderControls,
-  DcBpmKanbanBoard,
-  DcBpmMetricGrid,
   DcBpmSidebar,
   DcPageHeader,
   DcThemeGlobalStyles
 } from '../components'
 import { DcAppShell } from '../layout'
 import { bpmCopy, type BpmLocale } from '../shared/bpmI18n'
-import {
-  getBpmExecutionTimeline,
-  getBpmKanbanColumns,
-  getBpmMetrics
-} from '../shared/bpmDemoData'
 import { getDefaultThemePresetId, getThemePresetById } from '../shared/themeCatalog'
-
-interface FeaturedScenario {
-  slug: string
-  title: string
-  description: string
-  url: string
-}
 
 const props = defineProps<{
   projectTitle: string
@@ -34,7 +19,6 @@ const props = defineProps<{
   designUrl: string
   clientsDialogsUrl: string
   scenarioCount: number
-  featuredScenarios: FeaturedScenario[]
 }>()
 
 const sidebarCollapsed = ref(false)
@@ -46,9 +30,6 @@ const currentTheme = computed(() => getThemePresetById(selectedPresetId.value)?.
 const breadcrumbs = computed(() => [ui.value.home])
 
 const ui = computed(() => bpmCopy[locale.value])
-const metrics = computed(() => getBpmMetrics(ui.value))
-const kanbanColumns = computed(() => getBpmKanbanColumns(ui.value))
-const timeline = computed(() => getBpmExecutionTimeline(locale.value))
 
 /** Контекст видимости меню. В демо передаём userRole: 'admin', чтобы отображался раздел «Админка»; в проде — роль из авторизации. */
 const navVisibilityContext = computed(() => ({ userRole: 'admin' }))
@@ -135,48 +116,23 @@ function onThemeChange(id: string) {
       <h1>{{ projectTitle }}</h1>
       <p>{{ ui.heroDescription }}</p>
     </header>
-
-    <section class="bpm-home-section">
-      <DcBpmMetricGrid :metrics="metrics" />
-    </section>
-
-    <section class="bpm-home-grid">
-      <DcBpmKanbanBoard
-        :title="ui.kanbanTitle"
-        :hint="ui.kanbanHint"
-        :columns="kanbanColumns"
-      />
-
-      <DcBpmExecutionTimeline
-        :title="ui.timelineTitle"
-        :hint="ui.timelineHint"
-        :events="timeline"
-      />
-    </section>
-
-    <section class="bpm-home-section">
-      <h2>{{ ui.featuredScenariosTitle }}</h2>
-      <div class="bpm-home-scenarios">
-        <a v-for="scenario in featuredScenarios" :key="scenario.slug" :href="scenario.url" class="bpm-home-scenario-card">
-          <h3>{{ scenario.title }}</h3>
-          <p>{{ scenario.description }}</p>
-          <span>{{ scenario.slug }}</span>
-        </a>
-      </div>
-    </section>
   </div>
   </DcAppShell>
 </template>
 
 <style scoped>
 .bpm-home-page {
-  max-width: 1340px;
-  margin: 0 auto;
-  padding: 16px;
+  padding: 16px 18px;
   display: grid;
   gap: 14px;
   position: relative;
   z-index: 2;
+}
+
+@media (max-width: 980px) {
+  .bpm-home-page {
+    padding: 16px 12px;
+  }
 }
 
 .bpm-home-hero {
@@ -208,70 +164,5 @@ function onThemeChange(id: string) {
   color: var(--text-secondary);
   font-size: 0.86rem;
   line-height: 1.5;
-}
-
-.bpm-home-section {
-  display: grid;
-  gap: 10px;
-}
-
-.bpm-home-section h2 {
-  margin: 0;
-  font-size: 1rem;
-}
-
-.bpm-home-grid {
-  display: grid;
-  grid-template-columns: 1.34fr 1fr;
-  gap: 10px;
-}
-
-.bpm-home-scenarios {
-  display: grid;
-  gap: 10px;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-
-.bpm-home-scenario-card {
-  border-radius: var(--radius-md);
-  border: 1px solid var(--border-soft);
-  padding: 10px;
-  text-decoration: none;
-  color: inherit;
-  background:
-    var(--gradient-glass),
-    color-mix(in srgb, var(--surface-2) 82%, transparent);
-}
-
-.bpm-home-scenario-card h3 {
-  margin: 0;
-  font-size: 0.83rem;
-}
-
-.bpm-home-scenario-card p {
-  margin: 6px 0 0;
-  font-size: 0.73rem;
-  color: var(--text-secondary);
-  line-height: 1.45;
-}
-
-.bpm-home-scenario-card span {
-  display: inline-flex;
-  margin-top: 8px;
-  height: 21px;
-  align-items: center;
-  padding: 0 8px;
-  border-radius: 999px;
-  border: 1px solid var(--border-soft);
-  color: var(--text-tertiary);
-  font-size: 0.65rem;
-  font-family: var(--font-mono);
-}
-
-@media (max-width: 1080px) {
-  .bpm-home-grid,
-  .bpm-home-scenarios {
-    grid-template-columns: 1fr;
-  }
 }
 </style>
