@@ -158,7 +158,11 @@ function onLinkClick() {
     aria-label="BPM navigation"
   >
     <header class="bpm-sb__header">
-      <div class="bpm-sb__brand" :title="isCollapsed ? (logoText ?? 'NeSo BPM') : ''">
+      <div
+        class="bpm-sb__brand"
+        :class="{ 'bpm-sb__brand--collapsed': isCollapsed }"
+        :title="isCollapsed ? (logoText ?? 'NeSo BPM') : ''"
+      >
         <div
           class="bpm-sb__brand-icon"
           :class="{ 'bpm-sb__brand-icon--img': !!logoImageUrl }"
@@ -171,9 +175,11 @@ function onLinkClick() {
           />
           <i v-else class="fas fa-diagram-project" aria-hidden="true"></i>
         </div>
-        <div v-show="!isCollapsed" class="bpm-sb__brand-text">
-          <span class="bpm-sb__brand-title">{{ logoText ?? 'NeSo BPM' }}</span>
-          <span class="bpm-sb__brand-sub">Process Control Plane</span>
+        <div class="bpm-sb__brand-slot" :aria-hidden="isCollapsed">
+          <div class="bpm-sb__brand-text">
+            <span class="bpm-sb__brand-title">{{ logoText ?? 'NeSo BPM' }}</span>
+            <span class="bpm-sb__brand-sub">Process Control Plane</span>
+          </div>
         </div>
       </div>
 
@@ -203,21 +209,27 @@ function onLinkClick() {
 
     <section
       class="bpm-sb__status"
-      :class="{ 'bpm-sb__status--compact': isCollapsed }"
+      :class="{ 'bpm-sb__status--collapsed': isCollapsed }"
       role="status"
       aria-label="Control status"
     >
       <span class="bpm-sb__status-dot" aria-hidden="true"></span>
-      <template v-if="!isCollapsed">
+      <div class="bpm-sb__status-slot" :aria-hidden="isCollapsed">
         <div class="bpm-sb__status-text">
           <p class="bpm-sb__status-title">Control status</p>
           <p class="bpm-sb__status-desc">7 SLA risks across active processes</p>
         </div>
-      </template>
+      </div>
     </section>
 
     <nav class="bpm-sb__nav" aria-label="Process spaces">
-      <p v-if="!isCollapsed" class="bpm-sb__nav-heading">Process spaces</p>
+      <div
+        class="bpm-sb__nav-heading-wrap"
+        :class="{ 'bpm-sb__nav-heading-wrap--collapsed': isCollapsed }"
+        :aria-hidden="isCollapsed"
+      >
+        <p class="bpm-sb__nav-heading">Process spaces</p>
+      </div>
 
       <div
         v-for="item in items"
@@ -245,17 +257,17 @@ function onLinkClick() {
           <span class="bpm-sb__link-icon">
             <i :class="['fas', item.icon]" aria-hidden="true"></i>
           </span>
-          <span v-show="!isCollapsed" class="bpm-sb__link-label">{{ item.label }}</span>
-          <span v-show="!isCollapsed && item.badge" class="bpm-sb__badge">{{
-            item.badge
-          }}</span>
-          <span
-            v-show="!isCollapsed && hasChildren(item)"
-            class="bpm-sb__caret"
-            :class="{ 'bpm-sb__caret--open': isOpen(item) }"
-          >
-            <i class="fas fa-chevron-down" aria-hidden="true"></i>
-          </span>
+          <div class="bpm-sb__link-slot" :class="{ 'bpm-sb__link-slot--collapsed': isCollapsed }" :aria-hidden="isCollapsed">
+            <span class="bpm-sb__link-label">{{ item.label }}</span>
+            <span v-if="item.badge" class="bpm-sb__badge">{{ item.badge }}</span>
+            <span
+              v-if="hasChildren(item)"
+              class="bpm-sb__caret"
+              :class="{ 'bpm-sb__caret--open': isOpen(item) }"
+            >
+              <i class="fas fa-chevron-down" aria-hidden="true"></i>
+            </span>
+          </div>
         </a>
         <button
           v-else
@@ -274,17 +286,17 @@ function onLinkClick() {
           <span class="bpm-sb__link-icon">
             <i :class="['fas', item.icon]" aria-hidden="true"></i>
           </span>
-          <span v-show="!isCollapsed" class="bpm-sb__link-label">{{ item.label }}</span>
-          <span v-show="!isCollapsed && item.badge" class="bpm-sb__badge">{{
-            item.badge
-          }}</span>
-          <span
-            v-show="!isCollapsed && hasChildren(item)"
-            class="bpm-sb__caret"
-            :class="{ 'bpm-sb__caret--open': isOpen(item) }"
-          >
-            <i class="fas fa-chevron-down" aria-hidden="true"></i>
-          </span>
+          <div class="bpm-sb__link-slot" :class="{ 'bpm-sb__link-slot--collapsed': isCollapsed }" :aria-hidden="isCollapsed">
+            <span class="bpm-sb__link-label">{{ item.label }}</span>
+            <span v-if="item.badge" class="bpm-sb__badge">{{ item.badge }}</span>
+            <span
+              v-if="hasChildren(item)"
+              class="bpm-sb__caret"
+              :class="{ 'bpm-sb__caret--open': isOpen(item) }"
+            >
+              <i class="fas fa-chevron-down" aria-hidden="true"></i>
+            </span>
+          </div>
         </button>
 
         <div
@@ -333,20 +345,25 @@ function onLinkClick() {
         <div class="bpm-sb__avatar">
           <i class="fas fa-user-gear" aria-hidden="true"></i>
         </div>
-        <div v-show="!isCollapsed" class="bpm-sb__user-text">
-          <span class="bpm-sb__user-name">{{ userName ?? 'Operator' }}</span>
-          <span class="bpm-sb__user-role">{{ userRole ?? 'Workflow Admin' }}</span>
-        </div>
-        <a
-          v-show="!isCollapsed"
-          class="bpm-sb__logout"
-          :href="logoutUrl ?? '#'"
-          aria-label="Выйти"
-          title="Выйти"
+        <div
+          class="bpm-sb__user-slot"
+          :class="{ 'bpm-sb__user-slot--collapsed': isCollapsed }"
+          :aria-hidden="isCollapsed"
         >
-          <i class="fas fa-right-from-bracket" aria-hidden="true"></i>
-          <span class="bpm-sb__logout-text">Выйти</span>
-        </a>
+          <div class="bpm-sb__user-text">
+            <span class="bpm-sb__user-name">{{ userName ?? 'Operator' }}</span>
+            <span class="bpm-sb__user-role">{{ userRole ?? 'Workflow Admin' }}</span>
+          </div>
+          <a
+            class="bpm-sb__logout"
+            :href="logoutUrl ?? '#'"
+            aria-label="Выйти"
+            title="Выйти"
+          >
+            <i class="fas fa-right-from-bracket" aria-hidden="true"></i>
+            <span class="bpm-sb__logout-text">Выйти</span>
+          </a>
+        </div>
       </div>
     </footer>
   </aside>
@@ -435,17 +452,36 @@ function onLinkClick() {
   gap: 6px;
 }
 
+/* Grid 0fr/1fr: плавное появление/исчезновение без переключения DOM */
 .bpm-sb__brand {
-  display: flex;
+  display: grid;
+  grid-template-columns: auto 1fr;
   align-items: center;
   gap: 8px;
   min-width: 0;
   flex: 1;
+  transition: grid-template-columns 0.3s var(--bpm-ease);
 }
 
-.bpm-sb--collapsed .bpm-sb__brand {
+.bpm-sb__brand--collapsed {
+  grid-template-columns: auto 0fr;
   flex: none;
-  justify-content: center;
+}
+
+.bpm-sb__brand-slot {
+  min-width: 0;
+  overflow: hidden;
+  opacity: 1;
+  transition: opacity 0.25s var(--bpm-ease);
+}
+
+.bpm-sb__brand--collapsed .bpm-sb__brand-slot {
+  opacity: 0;
+  transition: opacity 0.2s var(--bpm-ease);
+}
+
+.bpm-sb__brand-slot .bpm-sb__brand-text {
+  white-space: nowrap;
 }
 
 .bpm-sb__brand-icon {
@@ -543,9 +579,10 @@ function onLinkClick() {
   display: none;
 }
 
-/* Блок статуса */
+/* Блок статуса: grid для плавного сжатия */
 .bpm-sb__status {
-  display: flex;
+  display: grid;
+  grid-template-columns: auto 1fr;
   align-items: center;
   gap: 8px;
   padding: 8px 10px;
@@ -555,6 +592,7 @@ function onLinkClick() {
   background: color-mix(in srgb, var(--surface-2, rgba(255,255,255,0.06)) 80%, transparent);
   flex-shrink: 0;
   transition:
+    grid-template-columns 0.3s var(--bpm-ease),
     padding 0.28s var(--bpm-ease),
     margin 0.28s var(--bpm-ease),
     border 0.28s var(--bpm-ease),
@@ -562,12 +600,25 @@ function onLinkClick() {
     border-radius 0.28s var(--bpm-ease);
 }
 
-.bpm-sb__status--compact {
+.bpm-sb__status--collapsed {
+  grid-template-columns: auto 0fr;
   justify-content: center;
   padding: 0;
   margin-bottom: 8px;
   border: 0;
   background: transparent;
+}
+
+.bpm-sb__status-slot {
+  min-width: 0;
+  overflow: hidden;
+  opacity: 1;
+  transition: opacity 0.25s var(--bpm-ease);
+}
+
+.bpm-sb__status--collapsed .bpm-sb__status-slot {
+  opacity: 0;
+  transition: opacity 0.2s var(--bpm-ease);
 }
 
 .bpm-sb__status-dot {
@@ -581,7 +632,7 @@ function onLinkClick() {
   transition: width 0.28s var(--bpm-ease), height 0.28s var(--bpm-ease);
 }
 
-.bpm-sb__status--compact .bpm-sb__status-dot {
+.bpm-sb__status--collapsed .bpm-sb__status-dot {
   width: 10px;
   height: 10px;
 }
@@ -591,11 +642,11 @@ function onLinkClick() {
   50% { opacity: 0.75; }
 }
 
-.bpm-sb__status:not(.bpm-sb__status--compact) {
+.bpm-sb__status:not(.bpm-sb__status--collapsed) {
   transition: background 0.2s ease, border-color 0.2s ease;
 }
 
-.bpm-sb__status:not(.bpm-sb__status--compact):hover {
+.bpm-sb__status:not(.bpm-sb__status--collapsed):hover {
   border-color: var(--border-strong, rgba(255,255,255,0.18));
   background: color-mix(in srgb, var(--surface-2, rgba(255,255,255,0.08)) 90%, transparent);
 }
@@ -650,6 +701,28 @@ function onLinkClick() {
   padding-right: 0;
 }
 
+.bpm-sb__nav-heading-wrap {
+  display: grid;
+  grid-template-rows: 1fr;
+  transition: grid-template-rows 0.3s var(--bpm-ease);
+  overflow: hidden;
+}
+
+.bpm-sb__nav-heading-wrap > * {
+  min-height: 0;
+}
+
+.bpm-sb__nav-heading-wrap {
+  opacity: 1;
+  transition: opacity 0.25s var(--bpm-ease);
+}
+
+.bpm-sb__nav-heading-wrap--collapsed {
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition: opacity 0.2s var(--bpm-ease);
+}
+
 .bpm-sb__nav-heading {
   margin: 0 0 8px;
   padding: 0 4px;
@@ -668,7 +741,8 @@ a.bpm-sb__link {
   position: relative;
   width: 100%;
   min-height: 36px;
-  display: flex;
+  display: grid;
+  grid-template-columns: 18px 1fr;
   align-items: center;
   gap: 8px;
   padding: 0 10px;
@@ -681,12 +755,43 @@ a.bpm-sb__link {
   text-align: left;
   font: inherit;
   transition:
+    grid-template-columns 0.3s var(--bpm-ease),
+    gap 0.3s var(--bpm-ease),
     background 0.2s ease,
     border-color 0.2s ease,
     color 0.2s ease,
     box-shadow 0.2s ease,
-    transform 0.12s ease;
+    transform 0.12s ease,
+    justify-content 0.3s var(--bpm-ease);
   box-sizing: border-box;
+}
+
+.bpm-sb__link--collapsed,
+a.bpm-sb__link--collapsed {
+  grid-template-columns: 18px 0fr;
+  gap: 0;
+  justify-content: center;
+  padding: 0;
+}
+
+.bpm-sb__link-slot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  overflow: hidden;
+  opacity: 1;
+  transition: opacity 0.25s var(--bpm-ease);
+}
+
+.bpm-sb__link-slot--collapsed {
+  opacity: 0;
+  transition: opacity 0.2s var(--bpm-ease);
+}
+
+.bpm-sb__link-slot .bpm-sb__link-label {
+  flex: 1;
+  min-width: 0;
 }
 
 .bpm-sb__link:active,
@@ -743,7 +848,6 @@ a.bpm-sb__link--active {
 
 .bpm-sb__link--collapsed,
 a.bpm-sb__link--collapsed {
-  justify-content: center;
   padding: 0;
 }
 
@@ -932,7 +1036,8 @@ button.bpm-sb__sub-link--active {
 }
 
 .bpm-sb__user {
-  display: flex;
+  display: grid;
+  grid-template-columns: auto 1fr;
   align-items: center;
   gap: 8px;
   min-width: 0;
@@ -942,6 +1047,7 @@ button.bpm-sb__sub-link--active {
   border: 1px solid var(--border-soft, rgba(255,255,255,0.12));
   background: color-mix(in srgb, var(--surface-2, rgba(255,255,255,0.06)) 75%, transparent);
   transition:
+    grid-template-columns 0.3s var(--bpm-ease),
     border-color 0.2s ease,
     background 0.2s ease,
     height 0.28s var(--bpm-ease),
@@ -955,10 +1061,31 @@ button.bpm-sb__sub-link--active {
 }
 
 .bpm-sb--collapsed .bpm-sb__user {
+  grid-template-columns: auto 0fr;
   justify-content: center;
   height: 38px;
   padding: 0;
   border-radius: 10px;
+}
+
+.bpm-sb__user-slot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  overflow: hidden;
+  opacity: 1;
+  transition: opacity 0.25s var(--bpm-ease);
+}
+
+.bpm-sb__user-slot--collapsed {
+  opacity: 0;
+  transition: opacity 0.2s var(--bpm-ease);
+}
+
+.bpm-sb__user-slot .bpm-sb__user-text {
+  flex: 1;
+  min-width: 0;
 }
 
 .bpm-sb__avatar {
@@ -1068,7 +1195,8 @@ button.bpm-sb__sub-link--active {
   }
 
   .bpm-sb__status,
-  .bpm-sb__status--compact {
+  .bpm-sb__status--collapsed {
+    grid-template-columns: auto 1fr;
     justify-content: flex-start;
     gap: 8px;
     padding: 8px 10px;
@@ -1097,11 +1225,17 @@ button.bpm-sb__sub-link--active {
   .bpm-sb__sub,
   .bpm-sb__caret,
   .bpm-sb__btn,
+  .bpm-sb__brand,
+  .bpm-sb__brand-slot,
   .bpm-sb__brand-icon,
   .bpm-sb__avatar,
   .bpm-sb__user,
+  .bpm-sb__user-slot,
   .bpm-sb__status,
-  .bpm-sb__status-dot {
+  .bpm-sb__status-slot,
+  .bpm-sb__status-dot,
+  .bpm-sb__nav-heading-wrap,
+  .bpm-sb__link-slot {
     transition-duration: 0.01ms !important;
   }
 
