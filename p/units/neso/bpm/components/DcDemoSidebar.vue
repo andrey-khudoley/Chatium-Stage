@@ -353,6 +353,11 @@ function onLinkClick() {
 </template>
 
 <style scoped>
+/* Easing: мягкий ease-out для естественного ощущения */
+.bpm-sb {
+  --bpm-ease: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
 /* Корень: фиксированная полоса слева, высота экрана */
 .bpm-sb {
   --bpm-sb-width: 260px;
@@ -374,9 +379,9 @@ function onLinkClick() {
   box-shadow: 4px 0 24px rgba(0, 0, 0, 0.15);
   overflow: hidden;
   transition:
-    width 0.28s ease,
-    transform 0.28s ease,
-    padding 0.28s ease;
+    width 0.3s var(--bpm-ease),
+    transform 0.3s var(--bpm-ease),
+    padding 0.3s var(--bpm-ease);
 }
 
 .bpm-sb--collapsed {
@@ -454,6 +459,7 @@ function onLinkClick() {
   color: var(--accent-contrast, #111);
   background: linear-gradient(140deg, var(--accent-strong, #8ab), var(--accent, #6a9));
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  transition: width 0.28s var(--bpm-ease), height 0.28s var(--bpm-ease);
 }
 
 .bpm-sb--collapsed .bpm-sb__brand-icon {
@@ -504,13 +510,23 @@ function onLinkClick() {
   background: color-mix(in srgb, var(--surface-2, rgba(255,255,255,0.08)) 80%, transparent);
   color: var(--text-secondary, rgba(255,255,255,0.8));
   cursor: pointer;
-  transition: border-color 0.2s, color 0.2s, background 0.2s;
+  transition:
+    width 0.28s var(--bpm-ease),
+    height 0.28s var(--bpm-ease),
+    border-color 0.2s ease,
+    color 0.2s ease,
+    background 0.2s ease,
+    transform 0.12s ease;
 }
 
 .bpm-sb__btn:hover {
   color: var(--text-primary, #fff);
   border-color: var(--border-accent, rgba(255,255,255,0.3));
   background: color-mix(in srgb, var(--surface-2, rgba(255,255,255,0.12)) 90%, transparent);
+}
+
+.bpm-sb__btn:active {
+  transform: scale(0.95);
 }
 
 .bpm-sb__btn:focus-visible {
@@ -538,6 +554,12 @@ function onLinkClick() {
   border: 1px solid var(--border-soft, rgba(255,255,255,0.12));
   background: color-mix(in srgb, var(--surface-2, rgba(255,255,255,0.06)) 80%, transparent);
   flex-shrink: 0;
+  transition:
+    padding 0.28s var(--bpm-ease),
+    margin 0.28s var(--bpm-ease),
+    border 0.28s var(--bpm-ease),
+    background 0.28s var(--bpm-ease),
+    border-radius 0.28s var(--bpm-ease);
 }
 
 .bpm-sb__status--compact {
@@ -555,11 +577,18 @@ function onLinkClick() {
   background: var(--status-warning, #e8a030);
   box-shadow: 0 0 10px color-mix(in srgb, var(--status-warning, #e8a030) 60%, transparent);
   flex-shrink: 0;
+  animation: bpm-sb-pulse 2.5s ease-in-out infinite;
+  transition: width 0.28s var(--bpm-ease), height 0.28s var(--bpm-ease);
 }
 
 .bpm-sb__status--compact .bpm-sb__status-dot {
   width: 10px;
   height: 10px;
+}
+
+@keyframes bpm-sb-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.75; }
 }
 
 .bpm-sb__status:not(.bpm-sb__status--compact) {
@@ -651,8 +680,18 @@ a.bpm-sb__link {
   text-decoration: none;
   text-align: left;
   font: inherit;
-  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.12s ease;
   box-sizing: border-box;
+}
+
+.bpm-sb__link:active,
+a.bpm-sb__link:active {
+  transform: scale(0.99);
 }
 
 .bpm-sb__link:hover,
@@ -691,7 +730,7 @@ a.bpm-sb__link--active {
   border-radius: 0 2px 2px 0;
   background: var(--accent, #6a9);
   opacity: 0;
-  transition: opacity 0.2s ease, transform 0.2s ease;
+  transition: opacity 0.22s var(--bpm-ease), transform 0.22s var(--bpm-ease);
   pointer-events: none;
 }
 
@@ -757,7 +796,7 @@ a.bpm-sb__link--active .bpm-sb__link-icon {
   flex-shrink: 0;
   font-size: 0.56rem;
   color: var(--text-tertiary, rgba(255,255,255,0.5));
-  transition: transform 0.2s ease;
+  transition: transform 0.24s var(--bpm-ease);
 }
 
 .bpm-sb__caret--open {
@@ -769,11 +808,23 @@ a.bpm-sb__link--active .bpm-sb__link-icon {
   position: relative;
   max-height: 0;
   overflow: hidden;
-  transition: max-height 0.28s cubic-bezier(0.22, 0.8, 0.2, 1);
+  transition: max-height 0.3s var(--bpm-ease);
 }
 
 .bpm-sb__sub--open {
   max-height: 420px;
+}
+
+.bpm-sb__sub-inner {
+  transition: opacity 0.2s var(--bpm-ease) 0.06s;
+}
+
+.bpm-sb__sub:not(.bpm-sb__sub--open) .bpm-sb__sub-inner {
+  opacity: 0;
+}
+
+.bpm-sb__sub--open .bpm-sb__sub-inner {
+  opacity: 1;
 }
 
 .bpm-sb__sub-track {
@@ -817,8 +868,17 @@ button.bpm-sb__sub-link {
   text-decoration: none;
   text-align: left;
   font: inherit;
-  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease,
+    transform 0.12s ease;
   box-sizing: border-box;
+}
+
+.bpm-sb__sub-link:active,
+button.bpm-sb__sub-link:active {
+  transform: scale(0.99);
 }
 
 .bpm-sb__sub-link:hover,
@@ -881,7 +941,12 @@ button.bpm-sb__sub-link--active {
   border-radius: var(--radius-md, 10px);
   border: 1px solid var(--border-soft, rgba(255,255,255,0.12));
   background: color-mix(in srgb, var(--surface-2, rgba(255,255,255,0.06)) 75%, transparent);
-  transition: border-color 0.2s ease, background 0.2s ease;
+  transition:
+    border-color 0.2s ease,
+    background 0.2s ease,
+    height 0.28s var(--bpm-ease),
+    padding 0.28s var(--bpm-ease),
+    border-radius 0.28s var(--bpm-ease);
 }
 
 .bpm-sb__user:hover {
@@ -907,6 +972,7 @@ button.bpm-sb__sub-link--active {
   background: color-mix(in srgb, var(--accent-soft, rgba(100,180,100,0.25)) 70%, transparent);
   color: var(--text-primary, #fff);
   font-size: 0.72rem;
+  transition: width 0.28s var(--bpm-ease), height 0.28s var(--bpm-ease);
 }
 
 .bpm-sb--collapsed .bpm-sb__avatar {
@@ -966,7 +1032,7 @@ button.bpm-sb__sub-link--active {
   overflow: hidden;
   opacity: 0;
   white-space: nowrap;
-  transition: max-width 0.25s ease, opacity 0.2s ease;
+  transition: max-width 0.28s var(--bpm-ease), opacity 0.22s var(--bpm-ease);
 }
 
 .bpm-sb__user:hover .bpm-sb__logout-text {
@@ -1030,8 +1096,28 @@ button.bpm-sb__sub-link--active {
   button.bpm-sb__sub-link,
   .bpm-sb__sub,
   .bpm-sb__caret,
-  .bpm-sb__btn {
+  .bpm-sb__btn,
+  .bpm-sb__brand-icon,
+  .bpm-sb__avatar,
+  .bpm-sb__user,
+  .bpm-sb__status,
+  .bpm-sb__status-dot {
     transition-duration: 0.01ms !important;
+  }
+
+  .bpm-sb__link:active,
+  a.bpm-sb__link:active,
+  .bpm-sb__sub-link:active,
+  button.bpm-sb__sub-link:active {
+    transform: none;
+  }
+
+  .bpm-sb__btn:active {
+    transform: none;
+  }
+
+  .bpm-sb__status-dot {
+    animation: none;
   }
 }
 </style>
