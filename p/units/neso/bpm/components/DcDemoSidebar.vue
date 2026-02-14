@@ -163,17 +163,12 @@ function onLinkClick() {
         :class="{ 'bpm-sb__brand--collapsed': isCollapsed }"
         :title="isCollapsed ? (logoText ?? 'NeSo BPM') : ''"
       >
-        <div
-          class="bpm-sb__brand-icon"
-          :class="{ 'bpm-sb__brand-icon--img': !!logoImageUrl }"
-        >
+        <div class="bpm-sb__brand-media">
           <img
-            v-if="logoImageUrl"
             class="bpm-sb__brand-img"
-            :src="logoImageUrl"
+            :src="logoImageUrl ?? 'https://sel.cdn-chatium.io/thumbnail/image_msk_bxpKawmlab.512x512.png/s/128x?'"
             :alt="(logoText ?? 'NeSo BPM') + ' logo'"
           />
-          <i v-else class="fas fa-diagram-project" aria-hidden="true"></i>
         </div>
         <div class="bpm-sb__brand-slot" :aria-hidden="isCollapsed">
           <div class="bpm-sb__brand-text">
@@ -183,26 +178,27 @@ function onLinkClick() {
         </div>
       </div>
 
-      <button
-        type="button"
-        class="bpm-sb__btn bpm-sb__btn--collapse"
-        :aria-label="isCollapsed ? 'Развернуть меню' : 'Свернуть меню'"
-        @click="emit('toggleCollapse')"
-      >
-        <i
-          :class="isCollapsed ? 'fas fa-chevron-right' : 'fas fa-chevron-left'"
-          aria-hidden="true"
-        ></i>
-      </button>
-
-      <button
-        type="button"
-        class="bpm-sb__btn bpm-sb__btn--close"
-        aria-label="Закрыть меню"
-        @click="emit('close')"
-      >
-        <i class="fas fa-times" aria-hidden="true"></i>
-      </button>
+      <div class="bpm-sb__header-actions">
+        <button
+          type="button"
+          class="bpm-sb__btn bpm-sb__btn--collapse"
+          :aria-label="isCollapsed ? 'Развернуть меню' : 'Свернуть меню'"
+          @click="emit('toggleCollapse')"
+        >
+          <i
+            :class="isCollapsed ? 'fas fa-chevron-right' : 'fas fa-chevron-left'"
+            aria-hidden="true"
+          ></i>
+        </button>
+        <button
+          type="button"
+          class="bpm-sb__btn bpm-sb__btn--close"
+          aria-label="Закрыть меню"
+          @click="emit('close')"
+        >
+          <i class="fas fa-times" aria-hidden="true"></i>
+        </button>
+      </div>
     </header>
 
     <div class="bpm-sb__divider bpm-sb__divider--after-header" aria-hidden="true"></div>
@@ -442,11 +438,10 @@ function onLinkClick() {
   box-shadow: 6px 0 20px rgba(0, 0, 0, 0.08);
 }
 
-/* Шапка: лого + кнопки. Row сохраняем при collapse — кнопка не скачет */
+/* Шапка: две строки — brand сверху, collapse bar снизу (ширина как у status) */
 .bpm-sb__header {
   display: flex;
-  flex-direction: row;
-  align-items: center;
+  flex-direction: column;
   gap: 8px;
   flex-shrink: 0;
   margin-bottom: 10px;
@@ -454,27 +449,60 @@ function onLinkClick() {
 }
 
 .bpm-sb--collapsed .bpm-sb__header {
-  gap: 2px;
+  gap: 6px;
+  transition: gap 0.4s var(--bpm-ease);
 }
 
-/* Grid 0fr/1fr: плавное появление/исчезновение без переключения DOM */
+.bpm-sb__header-actions {
+  display: flex;
+  align-items: center;
+  justify-content: stretch;
+  width: 100%;
+  min-height: 0;
+}
+
+/* Brand: изображение сверху (ширина = collapse button), текст снизу */
 .bpm-sb__brand {
   display: grid;
-  grid-template-columns: auto 1fr;
-  align-items: center;
+  grid-template-columns: 1fr;
+  grid-template-rows: auto 1fr;
+  align-items: start;
   gap: 8px;
   min-width: 0;
   flex: 1;
-  transition: grid-template-columns 0.4s var(--bpm-ease) var(--bpm-shift-delay);
+  width: 100%;
+  transition: grid-template-rows 0.4s var(--bpm-ease) var(--bpm-shift-delay), gap 0.4s var(--bpm-ease) var(--bpm-shift-delay);
 }
 
 .bpm-sb__brand--collapsed {
-  grid-template-columns: auto 0fr;
+  grid-template-rows: 1fr 0fr;
   flex: none;
+  width: 100%;
+  min-width: 0;
+  gap: 0;
+  transition: grid-template-rows 0.4s var(--bpm-ease), gap 0.4s var(--bpm-ease);
+}
+
+.bpm-sb__brand-media {
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  padding: 6px;
+}
+
+.bpm-sb__brand-img {
+  display: block;
+  width: 100%;
+  max-width: 67px;
+  height: auto;
+  aspect-ratio: 1;
+  object-fit: contain;
+  border-radius: var(--radius-sm, 8px);
 }
 
 .bpm-sb__brand-slot {
   min-width: 0;
+  min-height: 0;
   overflow: hidden;
   opacity: 1;
   transition: opacity 0.35s var(--bpm-ease);
@@ -489,41 +517,12 @@ function onLinkClick() {
   white-space: nowrap;
 }
 
-.bpm-sb__brand-icon {
-  width: 34px;
-  height: 34px;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: var(--radius-md, 10px);
-  color: var(--accent-contrast, #111);
-  background: linear-gradient(140deg, var(--accent-strong, #8ab), var(--accent, #6a9));
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-  transition: width 0.4s var(--bpm-ease) var(--bpm-shift-delay), height 0.4s var(--bpm-ease) var(--bpm-shift-delay);
-}
-
-.bpm-sb--collapsed .bpm-sb__brand-icon {
-  width: 30px;
-  height: 30px;
-}
-
-.bpm-sb__brand-icon--img {
-  background: var(--surface-3, rgba(40, 50, 60, 0.9));
-}
-
-.bpm-sb__brand-img {
-  width: 100%;
-  height: 100%;
-  border-radius: inherit;
-  object-fit: cover;
-}
-
 .bpm-sb__brand-text {
   min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 2px;
+  padding-left: 6px;
 }
 
 .bpm-sb__brand-title {
@@ -540,24 +539,21 @@ function onLinkClick() {
 }
 
 .bpm-sb__btn {
-  width: 34px;
-  height: 34px;
-  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
   border: 1px solid var(--border-soft, rgba(255,255,255,0.15));
-  border-radius: var(--radius-sm, 8px);
+  border-radius: var(--radius-md, 10px);
   background: color-mix(in srgb, var(--surface-2, rgba(255,255,255,0.08)) 80%, transparent);
   color: var(--text-secondary, rgba(255,255,255,0.8));
   cursor: pointer;
   transition:
-    width 0.4s var(--bpm-ease) var(--bpm-shift-delay),
-    height 0.4s var(--bpm-ease) var(--bpm-shift-delay),
     border-color 0.25s var(--bpm-ease),
     color 0.25s var(--bpm-ease),
     background 0.25s var(--bpm-ease),
-    transform 0.2s var(--bpm-ease);
+    transform 0.2s var(--bpm-ease),
+    width 0.4s var(--bpm-ease) var(--bpm-shift-delay),
+    height 0.4s var(--bpm-ease) var(--bpm-shift-delay);
 }
 
 .bpm-sb__btn:hover {
@@ -567,7 +563,7 @@ function onLinkClick() {
 }
 
 .bpm-sb__btn:active {
-  transform: scale(0.96);
+  transform: scale(0.98);
 }
 
 .bpm-sb__btn:focus-visible {
@@ -575,13 +571,44 @@ function onLinkClick() {
   box-shadow: var(--focus-ring, 0 0 0 2px rgba(100,180,100,0.35));
 }
 
+/* Collapse bar: полная ширина (как status), высота 18px, стиль как status */
+.bpm-sb__btn--collapse {
+  width: 100%;
+  height: 18px;
+  min-height: 18px;
+  border-radius: var(--radius-md, 10px);
+  border: 1px solid var(--border-soft, rgba(255,255,255,0.12));
+  background: color-mix(in srgb, var(--surface-2, rgba(255,255,255,0.06)) 80%, transparent);
+  transition:
+    border-color 0.25s var(--bpm-ease),
+    color 0.25s var(--bpm-ease),
+    background 0.25s var(--bpm-ease),
+    transform 0.2s var(--bpm-ease),
+    width 0.4s var(--bpm-ease) var(--bpm-shift-delay),
+    height 0.4s var(--bpm-ease) var(--bpm-shift-delay);
+}
+
+.bpm-sb__btn--collapse:hover {
+  border-color: var(--border-strong, rgba(255,255,255,0.18));
+  background: color-mix(in srgb, var(--surface-2, rgba(255,255,255,0.08)) 90%, transparent);
+}
+
+.bpm-sb__btn--collapse i {
+  font-size: 0.5rem;
+  opacity: 0.85;
+}
+
 .bpm-sb--collapsed .bpm-sb__btn--collapse {
-  width: 30px;
-  height: 30px;
+  height: 18px;
+  min-height: 18px;
+  transition: width 0.4s var(--bpm-ease), height 0.4s var(--bpm-ease);
 }
 
 .bpm-sb__btn--close {
   display: none;
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
 }
 
 /* Сворачивание: status растворяется первым → sidebar и остальное сдвигается (delay)
@@ -1208,6 +1235,10 @@ button.bpm-sb__sub-link--active {
     display: none;
   }
 
+  .bpm-sb__header-actions {
+    justify-content: flex-end;
+  }
+
   .bpm-sb__brand {
     flex: 1;
     justify-content: flex-start;
@@ -1246,7 +1277,6 @@ button.bpm-sb__sub-link--active {
   .bpm-sb__btn,
   .bpm-sb__brand,
   .bpm-sb__brand-slot,
-  .bpm-sb__brand-icon,
   .bpm-sb__avatar,
   .bpm-sb__user,
   .bpm-sb__user-slot,
