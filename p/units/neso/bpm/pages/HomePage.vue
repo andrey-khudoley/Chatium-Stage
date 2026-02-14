@@ -8,6 +8,8 @@ import {
 } from '../components'
 import { DcAppShell } from '../layout'
 import { bpmCopy, type BpmLocale } from '../shared/bpmI18n'
+import { getStoredSidebarCollapsed } from '../shared/sidebarStorage'
+import { getStoredTheme, setStoredTheme } from '../shared/themeStorage'
 import { getDefaultThemePresetId, getThemePresetById } from '../shared/themeCatalog'
 
 const props = defineProps<{
@@ -21,10 +23,11 @@ const props = defineProps<{
   scenarioCount: number
 }>()
 
-const sidebarCollapsed = ref(false)
+const sidebarCollapsed = ref(getStoredSidebarCollapsed())
 const sidebarOpen = ref(false)
 const locale = ref<BpmLocale>('ru')
-const selectedPresetId = ref(getDefaultThemePresetId('light'))
+const storedTheme = getStoredTheme()
+const selectedPresetId = ref(getDefaultThemePresetId(storedTheme ?? 'light'))
 
 const currentTheme = computed(() => getThemePresetById(selectedPresetId.value)?.mode ?? 'light')
 const breadcrumbs = computed(() => [ui.value.home])
@@ -48,6 +51,7 @@ function setLocale(next: BpmLocale) {
 
 function onThemeChange(id: string) {
   const mode = id === 'dark' ? 'dark' : 'light'
+  setStoredTheme(mode)
   selectedPresetId.value = getDefaultThemePresetId(mode)
 }
 </script>

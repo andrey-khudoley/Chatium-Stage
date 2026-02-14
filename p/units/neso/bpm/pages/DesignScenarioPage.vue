@@ -39,6 +39,7 @@ import {
 } from '../shared/bpmScenarios'
 import { getClientSupportDemo } from '../shared/clientSupportDemo'
 import { buildScenarioDemoState } from '../shared/bpmScenarioDemo'
+import { getStoredSidebarCollapsed } from '../shared/sidebarStorage'
 import {
   getDefaultThemePresetId,
   getThemePresetOptions,
@@ -115,7 +116,7 @@ if (!fallbackScenario) {
 }
 
 const locale = ref<BpmLocale>('ru')
-const sidebarCollapsed = ref(false)
+const sidebarCollapsed = ref(getStoredSidebarCollapsed())
 const sidebarOpen = ref(false)
 
 const activeScenario = computed(() => getBpmScenarioBySlug(props.scenarioSlug) ?? fallbackScenario)

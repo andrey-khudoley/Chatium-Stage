@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { setStoredSidebarCollapsed } from '../shared/sidebarStorage'
 
 export interface NavChildItem {
   id: string
@@ -143,6 +144,11 @@ function onItemClick(item: NavItem) {
 function onLinkClick() {
   emit('close')
 }
+
+function onCollapseClick() {
+  setStoredSidebarCollapsed(!props.collapsed)
+  emit('toggleCollapse')
+}
 </script>
 
 <template>
@@ -183,7 +189,7 @@ function onLinkClick() {
           type="button"
           class="bpm-sb__btn bpm-sb__btn--collapse"
           :aria-label="isCollapsed ? 'Развернуть меню' : 'Свернуть меню'"
-          @click="emit('toggleCollapse')"
+          @click="onCollapseClick"
         >
           <i
             :class="isCollapsed ? 'fas fa-chevron-right' : 'fas fa-chevron-left'"
@@ -410,11 +416,7 @@ function onLinkClick() {
 .bpm-sb__divider {
   height: 1px;
   flex-shrink: 0;
-  background: linear-gradient(
-    90deg,
-    var(--border-strong, rgba(255,255,255,0.12)) 0%,
-    transparent 100%
-  );
+  background: var(--border-strong, rgba(255,255,255,0.12));
   opacity: 0.8;
 }
 
@@ -427,11 +429,7 @@ function onLinkClick() {
 }
 
 .bpm-sb--light .bpm-sb__divider {
-  background: linear-gradient(
-    90deg,
-    var(--border-strong, rgba(0,0,0,0.12)) 0%,
-    transparent 100%
-  );
+  background: var(--border-strong, rgba(0,0,0,0.12));
 }
 
 .bpm-sb--light {
@@ -446,6 +444,7 @@ function onLinkClick() {
   flex-shrink: 0;
   margin-bottom: 10px;
   transition: gap 0.4s var(--bpm-ease) var(--bpm-shift-delay);
+  isolation: isolate;
 }
 
 .bpm-sb--collapsed .bpm-sb__header {
@@ -454,6 +453,8 @@ function onLinkClick() {
 }
 
 .bpm-sb__header-actions {
+  position: relative;
+  z-index: 2;
   display: flex;
   align-items: center;
   justify-content: stretch;
@@ -461,8 +462,10 @@ function onLinkClick() {
   min-height: 0;
 }
 
-/* Brand: изображение сверху (ширина = collapse button), текст снизу */
+/* Brand: изображение сверху (ширина = collapse button), текст снизу; z-index ниже header-actions, чтобы кнопка получала клики */
 .bpm-sb__brand {
+  position: relative;
+  z-index: 1;
   display: grid;
   grid-template-columns: 1fr;
   grid-template-rows: auto 1fr;
@@ -480,7 +483,8 @@ function onLinkClick() {
   width: 100%;
   min-width: 0;
   gap: 0;
-  transition: grid-template-rows 0.4s var(--bpm-ease), gap 0.4s var(--bpm-ease);
+  /* Задержка: сжатие строки после исчезновения текста */
+  transition: grid-template-rows 0.4s var(--bpm-ease) var(--bpm-shift-delay), gap 0.4s var(--bpm-ease) var(--bpm-shift-delay);
 }
 
 .bpm-sb__brand-media {
@@ -492,10 +496,8 @@ function onLinkClick() {
 
 .bpm-sb__brand-img {
   display: block;
-  width: 100%;
-  max-width: 67px;
-  height: auto;
-  aspect-ratio: 1;
+  width: 55px;
+  height: 55px;
   object-fit: contain;
   border-radius: var(--radius-sm, 8px);
 }
@@ -505,12 +507,14 @@ function onLinkClick() {
   min-height: 0;
   overflow: hidden;
   opacity: 1;
-  transition: opacity 0.35s var(--bpm-ease);
+  transition: opacity 0.35s var(--bpm-ease) var(--bpm-shift-delay);
 }
 
+/* При сворачивании: сначала скрываем текст (без задержки), чтобы нижележащие элементы не наезжали */
 .bpm-sb__brand--collapsed .bpm-sb__brand-slot {
   opacity: 0;
-  transition: opacity 0.3s var(--bpm-ease) var(--bpm-shift-delay);
+  pointer-events: none;
+  transition: opacity 0.15s var(--bpm-ease);
 }
 
 .bpm-sb__brand-slot .bpm-sb__brand-text {
@@ -596,6 +600,7 @@ function onLinkClick() {
 .bpm-sb__btn--collapse i {
   font-size: 0.5rem;
   opacity: 0.85;
+  pointer-events: none; /* клик срабатывает по всей области кнопки (иконка + рамка) */
 }
 
 .bpm-sb--collapsed .bpm-sb__btn--collapse {
@@ -638,6 +643,7 @@ function onLinkClick() {
     background 0.3s var(--bpm-ease);
 }
 
+/* При сворачивании: сначала скрываем (opacity), затем сжимаем — чтобы nav не наезжал */
 .bpm-sb__status--collapsed {
   opacity: 0;
   visibility: hidden;
@@ -647,8 +653,8 @@ function onLinkClick() {
   border: 0;
   background: transparent;
   transition:
-    opacity 0.25s var(--bpm-ease),
-    visibility 0s linear 0.25s,
+    opacity 0.15s var(--bpm-ease),
+    visibility 0s linear 0.15s,
     max-height 0.3s var(--bpm-ease) var(--bpm-shift-delay),
     padding 0.3s var(--bpm-ease) var(--bpm-shift-delay),
     margin 0.3s var(--bpm-ease) var(--bpm-shift-delay),
@@ -853,18 +859,18 @@ a.bpm-sb__link:focus-visible {
   outline-offset: 2px;
 }
 
-.bpm-sb__link--active .bpm-sb__link-indicator,
-a.bpm-sb__link--active .bpm-sb__link-indicator {
-  opacity: 1;
-  transform: scaleY(1);
-}
-
 .bpm-sb__link--active,
 a.bpm-sb__link--active {
   color: var(--text-primary, #fff);
-  border-color: var(--border-accent, rgba(255,255,255,0.35));
+  border: 1px solid var(--border-accent, rgba(255,255,255,0.35));
+  border-left: 3px solid var(--accent, #6a9);
   background: color-mix(in srgb, var(--accent-soft, rgba(100,180,100,0.25)) 75%, transparent);
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent, #6a9) 25%, transparent);
+}
+
+/* В активном состоянии используем border-left вместо отдельного индикатора — без наезжания линий */
+.bpm-sb__link--active .bpm-sb__link-indicator,
+a.bpm-sb__link--active .bpm-sb__link-indicator {
+  display: none;
 }
 
 .bpm-sb__link-indicator {
@@ -874,7 +880,8 @@ a.bpm-sb__link--active {
   transform: translateY(-50%) scaleY(0.6);
   width: 3px;
   height: 18px;
-  border-radius: 0 2px 2px 0;
+  /* Левый край повторяет скругление ссылки */
+  border-radius: 0 4px 4px 0;
   background: var(--accent, #6a9);
   opacity: 0;
   transition: opacity 0.22s var(--bpm-ease), transform 0.22s var(--bpm-ease);
@@ -975,9 +982,10 @@ a.bpm-sb__link--active .bpm-sb__link-icon {
 
 .bpm-sb__sub-track {
   position: absolute;
-  left: 25px;
+  left: 18px;
   top: 0;
   bottom: 0;
+  z-index: 0;
   width: 1px;
   background: linear-gradient(
     180deg,
@@ -990,12 +998,13 @@ a.bpm-sb__link--active .bpm-sb__link-icon {
 
 .bpm-sb__sub-inner {
   position: relative;
+  z-index: 1;
   display: flex;
   flex-direction: column;
   gap: 2px;
   padding: 4px 0 6px 0;
   padding-right: 8px;
-  padding-left: 2px;
+  padding-left: 22px;
 }
 
 .bpm-sb__sub-link,
@@ -1004,7 +1013,7 @@ button.bpm-sb__sub-link {
   align-items: center;
   gap: 8px;
   min-height: 32px;
-  margin-left: 18px;
+  margin-left: 0;
   padding: 0 8px 0 10px;
   border: 1px solid transparent;
   border-radius: var(--radius-sm, 6px);
@@ -1042,8 +1051,9 @@ button.bpm-sb__sub-link:focus-visible {
 .bpm-sb__sub-link--active,
 button.bpm-sb__sub-link--active {
   color: var(--text-primary, #fff);
-  border-color: var(--border-accent, rgba(255,255,255,0.3));
-  background: color-mix(in srgb, var(--accent-soft, rgba(100,180,100,0.2)) 70%, transparent);
+  border: 1px solid var(--border-accent, rgba(255,255,255,0.3));
+  border-left: 3px solid var(--accent, #6a9);
+  background: color-mix(in srgb, var(--accent-soft, rgba(100,180,100,0.2)) 85%, transparent);
 }
 
 .bpm-sb__sub-icon {
@@ -1091,6 +1101,7 @@ button.bpm-sb__sub-link--active {
   overflow: hidden;
   transition:
     grid-template-columns 0.4s var(--bpm-ease) var(--bpm-shift-delay),
+    gap 0.4s var(--bpm-ease) var(--bpm-shift-delay),
     border-color 0.25s var(--bpm-ease),
     background 0.25s var(--bpm-ease),
     height 0.4s var(--bpm-ease),
@@ -1105,9 +1116,9 @@ button.bpm-sb__sub-link--active {
 
 .bpm-sb--collapsed .bpm-sb__user {
   grid-template-columns: auto 0fr;
-  justify-content: center;
+  gap: 0;
   height: 38px;
-  padding: 0;
+  padding: 0 calc((100% - 24px) / 2);
   border-radius: 10px;
 }
 
