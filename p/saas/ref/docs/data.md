@@ -1,0 +1,75 @@
+# Data
+
+Настройки проекта хранятся в Heap (key-value). См. [ADR-0002](ADR/0002-settings-heap-and-layered-api.md).
+
+## Общие типы (shared/types.ts)
+- **CampaignSettings** — requireNewClient, products, attributionDays, botUpdatesLimit, logLevel (по плану 9.4).
+- **CampaignRow** — id, title, ownerUserId, webhookSecret, settings, isDeleted, createdAt, updatedAt.
+- **MemberRow** — id, campaignId, userId, role, createdAt, updatedAt (участники кампании).
+- **PageRow** — id, campaignId, title, urlTemplate, webhookSecret, createdAt, updatedAt (целевые страницы кампании).
+- **PartnerLinkRow** — id, campaignId, partnerId, pageId, publicSlug, createdAt, updatedAt (партнёрские ссылки).
+- **PartnerRow**, **PartnerStats** — партнёры кампании (Telegram: tgId, username, fullName, stats).
+- **ReferralRow**, **RegistrationRow**, **OrderRow**, **PaymentRow** — рефералы и события (фича 5).
+- **BotRow**, **BotUpdateRow** — боты и апдейты Telegram.
+- **TelegramUser**, **TelegramChat**, **TelegramMessage**, **TelegramUpdate**, **CallbackQuery** — типы payload Telegram Bot API.
+
+## Константы (shared/constants.ts)
+- **CAMPAIGN_ROLES** / **CampaignRole** — 'campaign-owner' | 'campaign-member'.
+- **DEFAULT_CAMPAIGN_SETTINGS** — дефолты для настроек кампании (botUpdatesLimit: 25, logLevel: 'info' и др.).
+
+## Heap таблицы
+
+| Table | File | Назначение | Основные поля |
+| --- | --- | --- | --- |
+| t__saas-ref__setting__7Fk2Qw | tables/settings.table.ts | Настройки проекта (key-value) | key (string), value (any) |
+| t__saas-ref__log__9Xm3Kp | tables/logs.table.ts | Серверные логи (долгосрочное хранение) | message (string), payload (any), severity, level, timestamp |
+| t__saas-ref__campaign__8Hn4Lx | tables/campaigns.table.ts | Кампании партнёрской программы | title, ownerUserId (UserRefLink), webhookSecret, settings (Any), isDeleted |
+| t__saas-ref__campaign_member__2Km5Ny | tables/campaign_members.table.ts | Участники кампаний | campaignId (RefLink→campaigns), userId (UserRefLink), role |
+| t__saas-ref__campaign_invite__6Xy9Zk | tables/campaign_invites.table.ts | Приглашения в кампанию по токену | campaignId (RefLink→campaigns), token, createdByUserId (UserRefLink), expiresAt (DateTime), acceptedAt (DateTime, null = не использовано) |
+| t__saas-ref__partner__3Ab7Cd | tables/partners.table.ts | Партнёры кампании (Telegram) | campaignId (RefLink→campaigns), tgId, username, fullName, stats (Any) |
+| t__saas-ref__page__4Bc8De | tables/pages.table.ts | Целевые страницы для трафика | campaignId (RefLink→campaigns), title, urlTemplate (шаблон с {ref}), webhookSecret |
+| t__saas-ref__partner_link__5Cd9Ef | tables/partner_links.table.ts | Партнёрские ссылки | campaignId, partnerId (RefLink→partners), pageId (RefLink→pages), publicSlug |
+| t__saas-ref__visit__1Vw7Kx | tables/visits.table.ts | Визиты (клики по партнёрским ссылкам) | campaignId, partnerLinkId, partnerId, pageId (RefLink), ref, fingerprintHash, fingerprintParts (Any), clickedAt, registeredAt (DateTime) |
+| t__saas-ref__bot__2Kf9Mn | tables/bots.table.ts | Telegram-боты кампаний | campaignId (RefLink→campaigns), tokenEncrypted, tgBotId, username, title, webhookUrl, webhookStatus |
+| t__saas-ref__bot_update__7Pq3Rs | tables/bot_updates.table.ts | Апдейты Telegram-ботов | campaignId, botId (RefLink→bots), updateId, tgUserId, updateType, payloadJson (Any) |
+| t__saas-ref__referral__9Xy2Zk | tables/referrals.table.ts | Рефералы (клиенты) | campaignId, partnerId (RefLink), ref, tgId, gcId, name, email, phone, registeredAt, ordersCount, ordersSum, paymentsCount, paymentsSum |
+| t__saas-ref__registration__4Ab3Cd | tables/registrations.table.ts | События регистрации | campaignId, ref, tgId, gcId, name, email, phone, rawPayload (Any) |
+| t__saas-ref__order__5De6Fg | tables/orders.table.ts | События заказов | campaignId, ref, orderId, productName, orderSum, rawPayload (Any) |
+| t__saas-ref__payment__7Hi8Jk | tables/payments.table.ts | События оплат | campaignId, ref, orderId, paymentSum, rawPayload (Any) |
+
+## Репозитории (repos/, lib/repo/)
+- `repos/settings.repo.ts` — findByKey, findAll, upsert, deleteByKey (слой работы с БД).
+- `repos/logs.repo.ts` — create, findAll, findById, findBeforeTimestamp (слой работы с БД логов; findBeforeTimestamp использует нативную фильтрацию Heap API через `where: { timestamp: { $lt } }` для эффективной пагинации).
+- `lib/repo/memberRepo.ts` — addMember(ctx, campaignId, userId, role), checkCampaignAccess(ctx, campaignId, userId) → { hasAccess, role }, listMembers(ctx, campaignId); слой работы с campaign_members.
+- `lib/repo/campaignRepo.ts` — createCampaign(ctx, { title, ownerUserId, settings? }), getCampaignById(ctx, campaignId), getUserCampaigns(ctx, userId), findCampaignBySecret(ctx, key), updateCampaignSettings(ctx, campaignId, settings), deleteCampaign(ctx, campaignId) (мягкое удаление isDeleted=true); создание кампании с добавлением владельца в campaign_members, чтение по id и список кампаний пользователя (через campaign_members, фильтр isDeleted). findCampaignBySecret — поиск кампании по webhookSecret; в hook/register, hook/order, hook/payment используется findPageBySecret (key = page.webhookSecret).
+- `lib/repo/inviteRepo.ts` — createInvite(ctx, { campaignId, createdByUserId, expiresInDays? }), getInviteByToken(ctx, token), acceptInvite(ctx, token, userId), listInvitesByCampaign(ctx, campaignId, options?). Токен генерируется в refGenerator (generateInviteToken); при принятии — добавление в campaign_members, обновление acceptedAt.
+- `lib/repo/pageRepo.ts` — createPage(ctx, { campaignId, title, urlTemplate }) — генерирует webhookSecret; getPageById(ctx, pageId), getCampaignPages(ctx, campaignId), findPageBySecret(ctx, key) — поиск страницы по webhook secret для webhook-хуков.
+- `lib/repo/linkRepo.ts` — getOrCreatePartnerLink(ctx, campaignId, partnerId, pageId), getPartnerLinks(ctx, partnerId), findLinkByPublicSlug(ctx, publicSlug).
+- `lib/repo/visitRepo.ts` — createVisit(ctx, data) → { visit, ref, isNew }, findVisitByRef(ctx, ref), markVisitRegistered(ctx, ref).
+- `lib/repo/partnerRepo.ts` — getOrCreatePartner(ctx, campaignId, tgUser) → { partner, isNew }, getPartnerById(ctx, partnerId), updatePartnerStats(ctx, partnerId, { registrations?, orders?, payments?, paymentsSum? }). Партнёры по Telegram (tgId, username, fullName, stats); инкремент статистики для фичи 5.
+- `lib/repo/referralRepo.ts` — createOrUpdateReferral(ctx, data), incrementReferralStats(ctx, campaignId, ref, { ordersCount?, ordersSum?, paymentsCount?, paymentsSum? }). Рефералы по campaignId+ref; инкремент счётчиков заказов/оплат.
+- `lib/repo/eventRepo.ts` — processRegistration(ctx, campaignId, data), processOrder(ctx, campaignId, data), processPayment(ctx, campaignId, data), getReferralEventLog(ctx, campaignId, ref). Обработка webhook-событий с идемпотентностью; лог событий реферала.
+- `lib/repo/botRepo.ts` — getBotById(ctx, botId), saveUpdate(ctx, botId, update). Боты и сохранение апдейтов в bot_updates.
+
+## Библиотеки (lib/)
+- `lib/settings.lib.ts` — getSetting, getAllSettings, setSetting, getLogLevel, getLogsLimit, getLogWebhook (бизнес-логика, дефолты, валидация).
+- `lib/logger.lib.ts` — getAdminLogsSocketId, shouldLogByLevel, writeServerLog (проверка уровня, запись в ctx.log/ctx.account.log, Heap, WebSocket, вебхук).
+- `lib/core/refGenerator.ts` — generateUrlSafeId(length?), generateCampaignSecret, generateLinkSlug, generateInviteToken (base62, для webhookSecret, партнёрских ссылок и токенов приглашений).
+- `lib/core/urlBuilder.ts` — substituteRef(urlTemplate, ref), buildPartnerLinkUrl(linkSlug). config/routes: REDIRECT_SUBROUTE, getBaseUrl(), getPartnerRedirectUrl(linkSlug).
+- `lib/core/attribution.ts` — resolveByRef(ctx, ref) → { visit, partnerId, campaignId } | null. По ref найти визит и партнёра (для eventRepo и webhook).
+- `lib/telegram/messages.ts` — buildWelcomeMessage(partner, campaignTitle?, partnerLinkUrl?), buildStatsMessage(partner).
+- `lib/telegram/keyboards.ts` — getMainKeyboard(), getWelcomeInlineButtons(partnerLinkUrl?).
+- `lib/telegram/sendTelegram.ts` — sendTelegramMessage(ctx, token, chatId, options), inlineKeyboardFromButtons(rows). Отправка через Telegram Bot API (@app/request).
+- `lib/telegram/botHandler.ts` — handleTelegramUpdate(ctx, botId, update): /start → партнёр + ссылка + статистика, /stats и callback «Статистика».
+
+## Hook (webhook)
+- `hook/telegram.ts` — POST / с query botId=…, приём апдейтов от Telegram Bot API (без тильды в адресе); валидация botId и body; вызов handleTelegramUpdate; всегда 200 в ответ (чтобы Telegram не ретраил).
+- `hook/register.ts` — GET и POST /; query/body: key (webhook secret), ref — обязательно; tg_id, gc_id, name, email, phone — опционально. По key ищется страница (findPageBySecret); campaignId берётся из page.campaignId; вызов eventRepo.processRegistration. Ответ { success, error? }. Без авторизации (внешняя система).
+- `hook/order.ts` — GET и POST /; query/body: key, ref, order_id, product_name, order_sum (в рублях). Валидация key/ref; eventRepo.processOrder. Идемпотентность по campaignId+orderId. Ответ { success, error? }.
+- `hook/payment.ts` — GET и POST /; query/body: key, ref, order_id, payment_sum (в рублях). eventRepo.processPayment. Идемпотентность по campaignId+orderId. Ответ { success, error? }.
+
+## Файлы и хранилище
+- Не используется.
+
+## Индексы/поиск
+- Не используется.
