@@ -1,94 +1,393 @@
-# Реферальная программа (p/saas/ref)
+# Реферальная программа — Документация для AI-программиста
 
-## Назначение
-Проект реферальной программы на базе шаблона Chatium. Главная страница, админка, профиль и логин; настройки и серверные логи в отдельных Heap-таблицах (`t__saas-ref__*`).
+## Оглавление
+1. [Общая архитектура проекта](#общая-архитектура-проекта)
+2. [Платформа и ограничения](#платформа-и-ограничения)
+3. [Ключевые сущности и сценарии](#ключевые-сущности-и-сценарии)
+4. [Структура файлов](#структура-файлов)
+5. [Слои данных и API](#слои-данных-и-api)
+6. [Кампании и участники](#кампании-и-участники)
+7. [Страницы, ссылки и редирект](#страницы-ссылки-и-редирект)
+8. [Визиты и атрибуция](#визиты-и-атрибуция)
+9. [Telegram-бот](#telegram-бот)
+10. [Рефералы и события (webhooks)](#рефералы-и-события-webhooks)
+11. [Настройки, логи и админка](#настройки-логи-и-админка)
+12. [Таблицы данных](#таблицы-данных)
+13. [API и роуты](#api-и-роуты)
+14. [Тесты](#тесты)
+15. [Навигация по документации](#навигация-по-документации)
 
-## Важно
-- Платформа: Chatium. Серверная часть управляется платформой.
-- Стек фиксирован платформой, новые зависимости не добавляем.
-- Деплой происходит автоматически после пуша.
+---
 
-## Текущее состояние
-- Главная, админка, профиль и логин существуют как минимальные страницы.
-- Реализованы: API настроек (list, get, save), Heap-таблица settings, репозиторий, lib (бизнес-логика). Общие типы и константы кампаний: shared/types.ts (CampaignSettings, CampaignRow, MemberRow), shared/constants.ts (роли campaign-owner/campaign-member, DEFAULT_CAMPAIGN_SETTINGS). Генератор идентификаторов: lib/core/refGenerator.ts (generateUrlSafeId, generateCampaignSecret, base62).
-- Серверные логи: Heap-таблица logs (message, payload, severity, level, timestamp), repos/logs.repo (create, findAll, findById, findBeforeTimestamp, countBySeverityAfter, countErrorsAfter, countWarningsAfter), lib/logger.lib (проверка уровня по настройке log_level, запись в ctx.log, ctx.account.log, Heap, WebSocket с хэшем для уникальности канала, вебхук log_webhook { enable, url } по умолчанию url: ""). API POST /api/logger/log (AnyUser), body: { severity, level, message, payload?, timestamp? }; GET /api/admin/logs/recent (Admin) — последние N логов; GET /api/admin/logs/before (Admin) — N логов старше указанного timestamp для пагинации. Админка получает encodedLogsSocketId, подписывается на new-log для отображения в дашборде, загружает историю логов через recent при монтировании, может догружать старые логи через before (кнопка «Загрузить ещё 50»); кнопка «Очистить логи» очищает вывод и сдвигает таймштамп на текущий — повторное нажатие «Загрузить ещё 50» восстанавливает последние логи.
-- Дашборд админки: счётчики ошибок и предупреждений. Настройка `dashboard_reset_at` (таймштамп сброса в ms); lib/admin/dashboard.lib (getDashboardCounts, resetDashboard), GET /api/admin/dashboard/counts и POST /api/admin/dashboard/reset (Admin). При монтировании загружаются счётчики; кнопка «Сбросить» записывает текущее время в настройки; при новых логах (sink/WebSocket) инкремент только если timestamp >= dashboardResetAt.
-- API кампаний: GET /api/campaigns/list (RealUser) — список кампаний текущего пользователя; POST /api/campaigns/create (RealUser) — создание кампании (body: title, валидация ≥ 2 символов). Файлы api/campaigns/list.ts, api/campaigns/create.ts; вызов lib/repo/campaignRepo.
-- Фича 2 (страницы и партнёрские ссылки): таблицы Heap partners, pages, partner_links; lib/repo/pageRepo (createPage, getPageById, getCampaignPages), lib/repo/linkRepo (getOrCreatePartnerLink, getPartnerLinks, findLinkByPublicSlug); lib/core/refGenerator.generateLinkSlug, lib/core/urlBuilder (substituteRef, buildPartnerLinkUrl); config/routes: REDIRECT_SUBROUTE, getBaseUrl, getPartnerRedirectUrl. API для страниц/ссылок в прототипе не реализован — бот в фиче 4 будет создавать ссылки через linkRepo.
-- Фича 3 (визиты и редирект): Heap-таблица visits; lib/core/fingerprint (FingerprintData, computeFingerprint для дедупликации визитов). Тесты fingerprint на странице тестов; visitRepo и роут редиректа r — по плану ADR 0003.
-- Роут редиректа: GET /r?linkId= (r.tsx, без авторизации) — по publicSlug ищется партнёрская ссылка, создаётся визит (fingerprint + ref), редирект 302 на urlTemplate страницы с подставленным ref. Тесты: api/tests/endpoints-check/redirect-route.ts, блок «Роут редиректа /r?linkId=» на странице тестов.
-- Фича 4 (Telegram-бот): Heap-таблицы bots и bot_updates; lib/repo/partnerRepo (getOrCreatePartner, getPartnerById), lib/repo/botRepo (getBotById, getBotByCampaignId, saveUpdate, addBot, getRecentUpdates, validateBotToken, setTelegramWebhook); lib/telegram (messages, keyboards, sendTelegram, botHandler) — приветствие, статистика, партнёрская ссылка; hook/telegram.ts — POST webhook для апдейтов Telegram; config/routes: TELEGRAM_WEBHOOK_SUBROUTE, getTelegramWebhookUrl(botId). Тесты: partner-repo, bot-repo, telegram-bot, telegram-hook; настройка telegram_test_bot_token в админке для теста getMe. Этап 3 (веб-интерфейс бота): API api/bot/get, api/bot/add, api/bot/reinstall-webhook, api/bot/updates; страница кампании «Бот» (BotPage, BotForm) — подключение по токену, юзернейм и статус webhook, кнопка «Переустановить» (URL webhook не отдаётся клиенту), последние апдейты.
-- Фича 5 (рефералы и стандартные события): таблицы referrals, registrations, orders, payments; lib/core/attribution (resolveByRef); lib/repo/referralRepo (createOrUpdateReferral, incrementReferralStats с campaignId); lib/repo/eventRepo (processRegistration, processOrder, processPayment с идемпотентностью); hook/register, hook/order, hook/payment (GET и POST, key + ref, вызов eventRepo). Тесты: referral-repo, event-repo, webhooks-feature5; блоки на странице тестов и в runAllTests.
-- Этап 4 (фича 9 — админка: партнёры и рефералы): API api/analytics/dashboard (агрегаты и последние рефералы), api/partners/list и api/partners/get, api/referrals/list и api/referrals/events; lib/repo/partnerRepo.listPartners, lib/repo/referralRepo.listReferrals, lib/repo/eventRepo.getReferralEventLog; дашборд кампании (CampaignPage) — StatsCard (партнёры, рефералы, заказы, оплаты), блок «Последние рефералы», ссылка на раздел рефералов; страницы PartnersPage, PartnerProfilePage, ReferralsPage; компоненты StatsCard, DataTable, Pagination, EventLogModal; разделы в сайдбаре «Партнёры», «Рефералы», «О кампании» (#partners, #referrals, #about, #partner~id, #referrals~partnerId). Раздел «О кампании» (AboutCampaignPage) — удаление кампании (POST /api/campaigns/delete, только владелец).
-- API тестов: каталог `api/tests/` (GET /api/tests/list — список категорий и тестов, AnyUser); категория `api/tests/endpoints-check/` с эндпоинтами для проверки всех слоёв: health, ping, config, settings-lib, settings-repo, logger-lib, logs-repo, dashboard-lib, ref-generator, fingerprint, member-repo, campaign-repo, url-builder, page-repo, link-repo, visit-repo, redirect-route, referral-repo, event-repo, webhooks-feature5, partner-repo, bot-repo, telegram-bot, telegram-hook. Страница тестов содержит блоки в т.ч. «Fingerprint», «Репозиторий визитов», «Роут редиректа», «Репозиторий рефералов», «Репозиторий событий (eventRepo)», «Webhook'и фичи 5», «Репозиторий партнёров», «Репозиторий ботов», «Telegram-бот», «Webhook Telegram»; дашборд метрик и кнопка «Запустить все тесты» включают все блоки.
-- При серверной загрузке главной, админки и профиля уровень логирования читается из настроек и передаётся на клиент в `window.__BOOT__.logLevel` (shared/logLevel.ts). В браузере доступен shared/logger по стандарту syslog (RFC 5424): уровни -1 (логи выключены, LOG_LEVEL_OFF), 0–7 (Emergency…Debug), функции `logEmergency`, `logAlert`, `logCritical`, `logError`, `logWarning`, `logNotice`, `logInfo`, `logDebug`; `createComponentLogger(name)` для логов с префиксом; `setLogSink`, `LogEntry` для дашборда. Вывод только если severity не строже настроенного порога.
-- Клиентская часть полностью покрыта логами: страницы и компоненты используют `createComponentLogger`; AdminPage регистрирует sink и подписку на WebSocket для отображения логов в дашборде в реальном времени.
+## Общая архитектура проекта
+
+Проект представляет собой **реферальную программу** на базе Chatium с поддержкой:
+- **Кампаний** — владелец и участники (роли campaign-owner / campaign-member)
+- **Целевых страниц** — URL-шаблоны с плейсхолдером `{ref}` и webhook secret для событий
+- **Партнёрских ссылок** — уникальный slug на пару (страница + партнёр), редирект через GET /r?linkId=
+- **Визитов** — клики по ссылкам с fingerprint для дедупликации
+- **Telegram-бота** — приветствие, статистика, выдача партнёрской ссылки; webhook без тильды (hook/telegram?botId=)
+- **Рефералов и событий** — регистрация, заказы, оплаты через webhooks (hook/register, hook/order, hook/payment) с key = page.webhookSecret
+- **Настроек и логов** — key-value в Heap, серверные логи с уровнем, дашборд админки, WebSocket для логов в реальном времени
+- **Приглашений в кампанию** — токен, страница приглашения, принятие (добавление в campaign_members)
+
+Поток данных: **HTTP → API → lib → repos → Heap**. Роутинг file-based: один файл — один роут с путём `/`. Ссылки формируются через `withProjectRoot(route.url())`.
+
+---
+
+## Платформа и ограничения
+
+- **Платформа:** Chatium. Серверная часть управляется платформой.
+- **Стек** фиксирован платформой; новые npm-зависимости не добавляем.
+- **Деплой** — автоматически после пуша.
+- **Глобальные объекты:** `ctx` и `app` — глобальные, не импортировать.
+- **Логирование:** использовать `ctx.account.log` / проектную обёртку (lib/logger.lib, shared/logger для клиента).
+- **Документация платформы:** inner/docs; навигатор — 000-summ.md.
+
+---
+
+## Ключевые сущности и сценарии
+
+### Кампания
+- Владелец (ownerUserId) и участники в `campaign_members` (роль: campaign-owner | campaign-member).
+- Настройки кампании: `CampaignSettings` (requireNewClient, products, attributionDays, botUpdatesLimit, logLevel).
+- Создание кампании добавляет владельца в campaign_members. Удаление — мягкое (isDeleted).
+
+### Партнёр
+- Привязка к кампании и Telegram (tgId, username, fullName). Создаётся при первом обращении к боту или через getOrCreatePartner.
+- Статистика в поле stats; инкремент при событиях (registrations, orders, payments).
+
+### Страница кампании
+- `urlTemplate` обязан содержать `{ref}`. При создании страницы генерируется `webhookSecret` (для webhooks событий).
+- По key (webhook secret) ищется страница через `findPageBySecret`; campaignId берётся из page.
+
+### Партнёрская ссылка
+- Одна запись на пару (partner + page). `publicSlug` — короткий идентификатор для редиректа.
+- URL редиректа: GET /r?linkId={publicSlug}. По slug ищется ссылка, загружается страница, создаётся визит, редирект 302 на urlTemplate с подставленным ref.
+
+### Визит
+- Создаётся при переходе по редиректу. Поля: campaignId, partnerLinkId, partnerId, pageId, ref, fingerprintHash, fingerprintParts, clickedAt, registeredAt.
+- Дедупликация по fingerprint (lib/core/fingerprint). ref используется для атрибуции в webhooks.
+
+### Реферал
+- Один реферал на пару (campaignId + ref). События (регистрация, заказ, оплата) приходят через webhooks; key = page.webhookSecret; идемпотентность по campaignId+orderId для order/payment и по campaignId+ref для register.
+
+---
+
+## Структура файлов
+
+```
+/ref-program/
+├── index.tsx                    # Главная (SSR + Vue)
+├── r.tsx                        # Публичный редирект GET /r?linkId=
+├── styles.tsx                   # Глобальные стили
+│
+├── config/
+│   ├── routes.tsx               # PROJECT_ROOT, ROUTES, getFullUrl, getPartnerRedirectUrl, getTelegramWebhookUrl
+│   └── project.tsx              # getPageTitle, getHeaderText
+│
+├── web/                         # Браузерные роуты
+│   ├── admin/index.tsx          # Админка (requireAccountRole('Admin'))
+│   ├── profile/index.tsx        # Профиль (requireRealUser)
+│   ├── login/index.tsx          # Вход (редирект на /s/auth/signin)
+│   ├── invite/index.tsx         # Страница приглашения по токену
+│   ├── campaign/index.tsx      # Оболочка кампании (hash: #partners, #referrals, #pages, #bot, #about)
+│   └── tests/
+│       ├── index.tsx            # Страница тестов
+│       └── redirect-landing/index.tsx  # Заглушка для тестов редиректа (?ref=)
+│
+├── api/                         # File-based API (один файл — один эндпоинт с /)
+│   ├── settings/                # list, get, save
+│   ├── campaigns/               # list, create, get, update, delete
+│   ├── members/                 # list
+│   ├── invites/                 # create, get-by-token, accept
+│   ├── pages/                   # list, create, update, delete
+│   ├── links/                   # list
+│   ├── analytics/               # dashboard
+│   ├── partners/                # list, get
+│   ├── referrals/               # list, events
+│   ├── bot/                     # get, add, reinstall-webhook, updates
+│   ├── logger/log.ts            # POST запись лога
+│   ├── admin/logs/              # recent, before
+│   ├── admin/dashboard/         # counts, reset
+│   └── tests/                   # list, cleanup-campaign, endpoints-check/*
+│
+├── hook/                        # Webhooks (без авторизации)
+│   ├── telegram.ts              # POST hook/telegram?botId=
+│   ├── register.ts              # GET/POST key + ref (+ tg_id, gc_id, name, email, phone)
+│   ├── order.ts                 # GET/POST key, ref, order_id, product_name, order_sum
+│   └── payment.ts               # GET/POST key, ref, order_id, payment_sum
+│
+├── lib/                         # Бизнес-логика
+│   ├── settings.lib.ts          # Настройки (getLogLevel, getLogWebhook, getDashboardResetAt, ...)
+│   ├── logger.lib.ts            # Запись логов (Heap, WebSocket, вебхук)
+│   ├── admin/dashboard.lib.ts   # getDashboardCounts, resetDashboard
+│   ├── core/
+│   │   ├── refGenerator.ts      # generateUrlSafeId, generateCampaignSecret, generateLinkSlug, generateInviteToken
+│   │   ├── urlBuilder.ts        # substituteRef, buildPartnerLinkUrl
+│   │   ├── fingerprint.ts       # computeFingerprint (дедупликация визитов)
+│   │   └── attribution.ts       # resolveByRef → visit, partnerId, campaignId
+│   ├── repo/                    # Репозитории (campaignRepo, memberRepo, pageRepo, linkRepo, visitRepo, partnerRepo, referralRepo, eventRepo, botRepo, inviteRepo)
+│   └── telegram/                # messages, keyboards, sendTelegram, botHandler, partnerNotify
+│
+├── repos/                       # Слой БД (только Heap)
+│   ├── settings.repo.ts
+│   └── logs.repo.ts
+│
+├── tables/                      # Heap-таблицы (схемы)
+│   ├── settings.table.ts
+│   ├── logs.table.ts
+│   ├── campaigns.table.ts
+│   ├── campaign_members.table.ts
+│   ├── campaign_invites.table.ts
+│   ├── partners.table.ts
+│   ├── pages.table.ts
+│   ├── partner_links.table.ts
+│   ├── visits.table.ts
+│   ├── bots.table.ts
+│   ├── bot_updates.table.ts
+│   ├── referrals.table.ts
+│   ├── registrations.table.ts
+│   ├── orders.table.ts
+│   └── payments.table.ts
+│
+├── pages/                       # Vue-страницы
+│   ├── IndexPage.vue
+│   ├── HomePage.vue
+│   ├── AdminPage.vue
+│   ├── ProfilePage.vue
+│   ├── LoginPage.vue
+│   ├── InvitePage.vue
+│   ├── TestsPage.vue
+│   ├── CampaignPageShell.vue
+│   ├── CampaignPage.vue         # Дашборд кампании
+│   ├── PartnersPage.vue
+│   ├── PartnerProfilePage.vue
+│   ├── ReferralsPage.vue
+│   ├── PagesPage.vue
+│   ├── BotPage.vue
+│   └── AboutCampaignPage.vue    # Удаление кампании
+│
+├── components/
+│   ├── Header.vue, AppFooter.vue, GlobalGlitch.vue, LogoutModal.vue
+│   ├── Layout/Sidebar.vue, PageContainer.vue
+│   ├── Forms/CampaignForm.vue, BotForm.vue, PageForm.vue
+│   ├── Charts/StatsCard.vue
+│   ├── Tables/DataTable.vue, Pagination.vue
+│   └── Modals/ConfirmModal.vue, EventLogModal.vue, WebhookInfoModal.vue
+│
+├── shared/
+│   ├── types.ts                 # CampaignSettings, CampaignRow, MemberRow, PageRow, VisitRow, PartnerRow, ReferralRow, ...
+│   ├── constants.ts             # CAMPAIGN_ROLES, DEFAULT_CAMPAIGN_SETTINGS
+│   ├── logLevel.ts              # Передача уровня логирования на клиент
+│   ├── logger.ts                # Клиентский логгер (syslog-уровни, createComponentLogger, setLogSink)
+│   └── preloader.ts
+│
+└── docs/                        # Документация
+    ├── architecture.md
+    ├── api.md
+    ├── data.md
+    ├── run.md
+    ├── imports.md
+    ├── ADR/
+    └── LLM/
+```
+
+---
+
+## Слои данных и API
+
+| Слой | Каталог | Ответственность |
+| --- | --- | --- |
+| **Таблицы** | `tables/` | Схемы Heap (поля, типы). Только определение структуры. |
+| **Репозитории** | `repos/`, `lib/repo/` | Работа с БД: CRUD, запросы. Без бизнес-логики. |
+| **Бизнес-логика** | `lib/` | Правила, дефолты, валидация. Вызывает репозитории. |
+| **API** | `api/` | HTTP-эндпоинты, валидация, права. Вызывает lib. |
+
+Поток: **HTTP → API → lib → repos → Heap**.
+
+---
+
+## Кампании и участники
+
+### Роли (shared/constants.ts)
+- `campaign-owner` — владелец; может удалить кампанию.
+- `campaign-member` — участник; доступ к данным кампании.
+
+### Основные операции
+- **Создание кампании:** POST /api/campaigns/create, body: `{ title }` (≥ 2 символов). Владелец добавляется в campaign_members.
+- **Доступ:** memberRepo.checkCampaignAccess(ctx, campaignId, userId) → { hasAccess, role }.
+- **Удаление:** POST /api/campaigns/delete (только owner), мягкое (isDeleted=true).
+
+### Приглашения
+- POST /api/invites/create (campaignId, expiresInDays?) → токен.
+- GET /api/invites/get-by-token?token= — публично (название кампании, expiresAt).
+- POST /api/invites/accept (token) — добавление в campaign_members, инвайт помечается использованным.
+
+---
+
+## Страницы, ссылки и редирект
+
+### Страницы (api/pages/, pageRepo)
+- **urlTemplate** обязан содержать `{ref}`. При создании страницы генерируется **webhookSecret** (для hook/register, hook/order, hook/payment).
+- list, create, update, delete с проверкой доступа к кампании.
+
+### Партнёрские ссылки (linkRepo)
+- getOrCreatePartnerLink(campaignId, partnerId, pageId) — одна ссылка на пару; publicSlug = generateLinkSlug().
+- findLinkByPublicSlug(publicSlug) — для роута редиректа.
+- Полный URL ссылки: buildPartnerLinkUrl(linkSlug) из config/routes (getBaseUrl + getFullUrl(REDIRECT_SUBROUTE) + ?linkId=).
+
+### Роут редиректа (r.tsx)
+- GET /r?linkId={publicSlug}. Без авторизации.
+- По publicSlug ищется партнёрская ссылка и страница; создаётся визит (fingerprint + ref); ответ 302 на urlTemplate с подставленным ref (substituteRef).
+- При отсутствии ссылки/страницы — 404.
+
+---
+
+## Визиты и атрибуция
+
+### Визиты (visitRepo)
+- createVisit(ctx, data) → { visit, ref, isNew }. Дедупликация по fingerprint (lib/core/fingerprint).
+- findVisitByRef(ctx, ref), markVisitRegistered(ctx, ref).
+
+### Атрибуция (lib/core/attribution.ts)
+- resolveByRef(ctx, ref) → { visit, partnerId, campaignId } | null. Используется в eventRepo при обработке webhooks.
+
+### Fingerprint (lib/core/fingerprint.ts)
+- computeFingerprint(ctx) → { hash, parts }. Используется при создании визита для дедупликации.
+
+---
+
+## Telegram-бот
+
+### Подключение бота (api/bot/)
+- GET /api/bot/get?campaignId= — бот кампании (без токена и webhookUrl).
+- POST /api/bot/add — body: { campaignId, token }. Проверка getMe, запись в bots, установка webhook. URL webhook не отдаётся клиенту.
+- POST /api/bot/reinstall-webhook — body: { campaignId }. Переустановка webhook (если перезаписали снаружи).
+- GET /api/bot/updates?campaignId=&limit= — последние апдейты.
+
+### Webhook Telegram (hook/telegram.ts)
+- POST hook/telegram?botId=. Без тильды в пути. Body — Telegram Update. Всегда 200 { ok: true }. URL: getTelegramWebhookUrl(botId) из config/routes.
+
+### Логика бота (lib/telegram/botHandler.ts)
+- /start → getOrCreatePartner, партнёрская ссылка, приветствие + кнопки (ссылка, статистика).
+- /stats и callback «Статистика» → buildStatsMessage(partner).
+
+---
+
+## Рефералы и события (webhooks)
+
+### Webhooks событий (key = page.webhookSecret)
+- **hook/register** — GET/POST: key, ref (обяз.), tg_id, gc_id, name, email, phone. findPageBySecret(key) → campaignId; eventRepo.processRegistration. Идемпотентность по campaignId+ref.
+- **hook/order** — GET/POST: key, ref, order_id, product_name, order_sum. processOrder. Идемпотентность по campaignId+orderId.
+- **hook/payment** — GET/POST: key, ref, order_id, payment_sum. processPayment. Идемпотентность по campaignId+orderId.
+
+### Репозитории
+- **referralRepo:** createOrUpdateReferral, incrementReferralStats(campaignId, ref, { ordersCount?, ordersSum?, paymentsCount?, paymentsSum? }), listReferrals, getReferralEventLog.
+- **eventRepo:** processRegistration, processOrder, processPayment (идемпотентность), getReferralEventLog(campaignId, ref).
+
+### Атрибуция
+- По ref через resolveByRef получаем visit, partnerId, campaignId. Реферал привязывается к партнёру; счётчики партнёра и реферала обновляются.
+
+---
+
+## Настройки, логи и админка
+
+### Настройки (api/settings/, settings.repo, lib/settings.lib)
+- Key-value в Heap (tables/settings.table). getSettingString, getLogLevel, getLogsLimit, getLogWebhook, getDashboardResetAt, getAllSettings.
+- GET /api/settings/list, GET /api/settings/get?key=, POST /api/settings/save (body: { key, value }). Auth: Admin.
+
+### Логи (api/logger/log, api/admin/logs/, logs.repo, lib/logger.lib)
+- POST /api/logger/log — body: { message, severity?, payload? }. Уровень сверяется с log_level; запись в ctx.log, ctx.account.log, Heap, WebSocket (admin-logs), опционально вебхук.
+- GET /api/admin/logs/recent?limit=, GET /api/admin/logs/before?beforeTimestamp=&limit= — пагинация. Auth: Admin.
+- Админка: подписка на new-log (encodedLogsSocketId), при монтировании — recent, кнопка «Загрузить ещё 50» — before, «Очистить логи» — сдвиг таймштампа.
+
+### Дашборд админки (api/admin/dashboard/, lib/admin/dashboard.lib)
+- GET /api/admin/dashboard/counts — errorCount, warnCount после dashboard_reset_at (настройка в ms).
+- POST /api/admin/dashboard/reset — записать текущий таймштамп в настройки. При новых логах (WebSocket) инкремент только если timestamp >= dashboardResetAt.
+
+### Клиентский логгер (shared/logger.ts)
+- Уровни по RFC 5424 (Emergency…Debug). createComponentLogger(name), setLogSink, LogEntry. Порог из window.__BOOT__.logLevel (передаётся с сервера через shared/logLevel.ts).
+
+---
+
+## Таблицы данных
+
+| Таблица | Файл | Назначение | Основные поля |
+| --- | --- | --- | --- |
+| settings | tables/settings.table.ts | Настройки проекта (key-value) | key, value |
+| logs | tables/logs.table.ts | Серверные логи | message, payload, severity, level, timestamp |
+| campaigns | tables/campaigns.table.ts | Кампании | title, ownerUserId, settings, isDeleted |
+| campaign_members | tables/campaign_members.table.ts | Участники кампаний | campaignId, userId, role |
+| campaign_invites | tables/campaign_invites.table.ts | Приглашения по токену | campaignId, token, expiresAt, acceptedAt |
+| partners | tables/partners.table.ts | Партнёры (Telegram) | campaignId, tgId, username, fullName, stats |
+| pages | tables/pages.table.ts | Целевые страницы | campaignId, title, urlTemplate, webhookSecret |
+| partner_links | tables/partner_links.table.ts | Партнёрские ссылки | campaignId, partnerId, pageId, publicSlug |
+| visits | tables/visits.table.ts | Визиты по ссылкам | campaignId, partnerLinkId, ref, fingerprintHash, clickedAt, registeredAt |
+| bots | tables/bots.table.ts | Telegram-боты | campaignId, tgBotId, username, webhookUrl, webhookStatus |
+| bot_updates | tables/bot_updates.table.ts | Апдейты ботов | botId, updateId, tgUserId, updateType, payloadJson |
+| referrals | tables/referrals.table.ts | Рефералы | campaignId, partnerId, ref, registeredAt, ordersCount, ordersSum, paymentsCount, paymentsSum |
+| registrations | tables/registrations.table.ts | События регистрации | campaignId, ref, tgId, gcId, name, email, phone |
+| orders | tables/orders.table.ts | События заказов | campaignId, ref, orderId, productName, orderSum |
+| payments | tables/payments.table.ts | События оплат | campaignId, ref, orderId, paymentSum |
+
+Типы: shared/types.ts (CampaignRow, MemberRow, PageRow, PartnerRow, ReferralRow, VisitRow, …). Константы: shared/constants.ts (CAMPAIGN_ROLES, DEFAULT_CAMPAIGN_SETTINGS).
+
+---
+
+## API и роуты
+
+### Кампании
+- GET /api/campaigns/list — список кампаний пользователя.
+- POST /api/campaigns/create — body: { title }.
+- GET /api/campaigns/get?campaignId=
+- POST /api/campaigns/update — body: { campaignId, settings }.
+- POST /api/campaigns/delete — body: { campaignId } (только owner).
+
+### Участники и приглашения
+- GET /api/members/list?campaignId=
+- POST /api/invites/create, GET /api/invites/get-by-token?token=, POST /api/invites/accept
+
+### Страницы и ссылки
+- GET /api/pages/list?campaignId=, POST /api/pages/create, POST /api/pages/update, POST /api/pages/delete
+- GET /api/links/list?campaignId=
+
+### Аналитика, партнёры, рефералы
+- GET /api/analytics/dashboard?campaignId= — агрегаты и последние рефералы.
+- GET /api/partners/list?campaignId=&limit=&offset=&sortBy=&order=
+- GET /api/partners/get?campaignId=&partnerId=
+- GET /api/referrals/list?campaignId=&partnerId=&…, GET /api/referrals/events?campaignId=&ref=
+
+### Бот
+- GET /api/bot/get?campaignId=, POST /api/bot/add, POST /api/bot/reinstall-webhook, GET /api/bot/updates?campaignId=&limit=
+
+### Настройки, логи, дашборд
+- GET/POST api/settings/*, POST /api/logger/log, GET api/admin/logs/recent|before, GET/POST api/admin/dashboard/counts|reset
+
+### Публичные
+- GET /r?linkId= — редирект по партнёрской ссылке (r.tsx).
+- GET /web/tests/redirect-landing?ref= — заглушка для тестов редиректа.
+
+Подробные таблицы методов и путей — в `docs/api.md`.
+
+---
+
+## Тесты
+
+- **Каталог:** api/tests/. GET /api/tests/list — список категорий и тестов.
+- **Категория endpoints-check:** по одному файлу на тест (health, ping, config, settings-lib, settings-repo, logger-lib, logs-repo, dashboard-lib, ref-generator, fingerprint, member-repo, campaign-repo, url-builder, page-repo, link-repo, visit-repo, redirect-route, partner-repo, bot-repo, telegram-bot, telegram-hook, referral-repo, event-repo, webhooks-feature5, …).
+- **Страница тестов:** web/tests, TestsPage.vue — блоки по категориям, кнопка «Запустить все тесты». POST /api/tests/cleanup-campaign — удаление тестовой кампании после campaigns-create.
+
+---
 
 ## Навигация по документации
-- Архитектура: `docs/architecture.md`
-- API: `docs/api.md`
-- Данные: `docs/data.md`
-- Запуск и деплой: `docs/run.md`
-- Импорты/циклы: `docs/imports.md`
-- Решения: `docs/ADR/`
-- История диалогов: `docs/LLM/`
 
-## TODO
-- Заполнить UI для главной/админки/профиля.
-- Добавить реальные сценарии авторизации.
-- Описать бизнес‑логику и данные.
+- **Архитектура:** `docs/architecture.md`
+- **API (подробно):** `docs/api.md`
+- **Данные и репозитории:** `docs/data.md`
+- **Запуск и деплой:** `docs/run.md`
+- **Импорты и циклы:** `docs/imports.md`
+- **Решения (ADR):** `docs/ADR/`
+- **История диалогов LLM:** `docs/LLM/`
 
-## Changelog
-- 2026-02-04: Страница бота: скрыт URL webhook и кнопка «Копировать URL»; добавлена кнопка «Переустановить» и API POST /api/bot/reinstall-webhook; api/bot/get и api/bot/add не возвращают webhookUrl; в botRepo добавлена reinstallWebhook(ctx, campaignId). Обновлены docs/api.md, docs/imports.md, README.
-- 2026-02-04: Обновлена документация по изменениям в ref: в docs/api.md уточнено, что key в hook/register, hook/order, hook/payment — webhook secret страницы (page.webhookSecret), поиск через findPageBySecret; в docs/data.md уточнено различие findCampaignBySecret и findPageBySecret в контексте webhook-хуков.
-- 2026-02-03: Раздел «О кампании» в кампании: страница AboutCampaignPage.vue (hash #about), кнопка «Удалить кампанию» с подтверждением, вызов POST /api/campaigns/delete; пункт в Sidebar, роут в CampaignPageShell. Обновлён docs/imports.md.
-- 2026-02-03: Тесты webhooks-feature5 переведены на page.webhookSecret: key берётся из созданной страницы; обновлено описание в docs/api.md.
-- 2026-02-03: Интеграция WebhookInfoModal в PagesPage: импорт модалки, состояние webhookModalPage, показ модалки после создания страницы и кнопка «Webhook» у каждой страницы; PageForm при создании передаёт в saved объект page с webhookSecret. Обновлён docs/imports.md.
-- 2026-02-03: GET /api/pages/list возвращает webhookSecret в каждом элементе массива pages; обновлён docs/api.md.
-- 2026-02-03: api/pages/create возвращает webhookSecret в объекте page при создании страницы; обновлены docs/api.md.
-- 2026-02-03: hook/register, hook/order, hook/payment — поиск страницы по webhook secret (findPageBySecret); campaignId из page.campaignId; обновлены docs/imports.md, docs/data.md.
-- 2026-02-03: в lib/repo/pageRepo: createPage генерирует webhookSecret (generateCampaignSecret), добавлена findPageBySecret(ctx, key). Обновлены docs/imports.md, docs/data.md.
-- 2026-02-03: в таблицу pages (tables/pages.table.ts) добавлено поле webhookSecret (опциональная строка, секрет для webhook).
-- 2026-02-03: этап 4 (фича 9 — партнёры и рефералы в админке): API analytics/dashboard, partners/list и get, referrals/list и events; репозитории listPartners, listReferrals, getReferralEventLog; дашборд кампании со StatsCard и последними рефералами; страницы Партнёры, Профиль партнёра, Рефералы; компоненты StatsCard, DataTable, Pagination, EventLogModal; обновлены docs/api.md, README.
-- 2026-02-03: этап 2 (фича 7 — страницы и ссылки в веб-интерфейсе): API api/pages (list, create, update, delete) и api/links (list); pageRepo.updatePage, deletePage; linkRepo.getCampaignLinks; страница PagesPage.vue, форма PageForm.vue; раздел «Страницы» в кампании (hash #pages), Sidebar. Обновлены docs/api.md, docs/imports.md.
-- 2026-02-03: этап 3 (фича 8 — бот в веб-интерфейсе): API api/bot/get, api/bot/add, api/bot/updates; расширен lib/repo/botRepo (getBotByCampaignId, validateBotToken, setTelegramWebhook, addBot, getRecentUpdates); страница BotPage.vue и форма BotForm.vue; раздел «Бот» в сайдбаре кампании (campaign#bot); обновлены docs/imports.md, docs/api.md, README.
-- 2026-02-03: фича 5 (рефералы и события): eventRepo (processRegistration, processOrder, processPayment), hook/register, hook/order, hook/payment; расширен referralRepo.incrementReferralStats(campaignId, ref, update); тесты referral-repo, event-repo, webhooks-feature5 и блоки на странице тестов; исправление в webhooks-feature5: body → json для POST request. Обновлены docs/imports.md, docs/api.md, docs/data.md, README.
-- 2026-02-03: webhook Telegram переведён на URL без тильды: botId передаётся в query (hook/telegram?botId=…), путь hook/telegram; обновлены config/routes, hook/telegram.ts, тест telegram-hook, docs, TestsPage.vue.
-- 2026-02-03: фича 4 — Telegram-бот: таблицы bots, bot_updates; partnerRepo, botRepo; lib/telegram (messages, keyboards, sendTelegram, botHandler); hook/telegram (POST webhook); тесты partner-repo, bot-repo, telegram-bot, telegram-hook; настройка telegram_test_bot_token в админке. Обновлены docs/imports.md, docs/data.md, docs/api.md, README.
-- 2026-02-03: страница-заглушка web/tests/redirect-landing для тестов роута редиректа (GET /web/tests/redirect-landing?ref=…); в тестах redirect-route urlTemplate задаётся через getRedirectTestLandingUrlTemplate(), чтобы при следовании редиректу получать 200 с нашего сервера. config/routes: getRedirectTestLandingUrlTemplate(); обновлены docs/imports.md, docs/api.md, docs/architecture.md.
-- 2026-02-03: роут редиректа GET /r?linkId= (r.tsx): визит + редирект на urlTemplate с ref; тесты api/tests/endpoints-check/redirect-route.ts и блок «Роут редиректа /r?linkId=» на странице тестов; категория redirect-route в api/tests/list; обновлены docs/api.md, docs/imports.md, README.
-- 2026-02-03: в shared/types.ts добавлен тип VisitRow (алиас к TSaasRefVisit1Vw7KxRow из tables/visits.table); обновлён docs/imports.md.
-- 2026-02-03: тесты lib/repo/visitRepo: эндпоинт api/tests/endpoints-check/visit-repo.ts (createVisit, findVisitByRef, markVisitRegistered), категория visit-repo в api/tests/list, блок «Репозиторий визитов» на странице тестов и runAllTests. Обновлены docs/imports.md, docs/api.md, docs/data.md, README.
-- 2026-02-03: фича 3 — lib/core/fingerprint.ts (FingerprintData, computeFingerprint), тесты api/tests/endpoints-check/fingerprint.ts и блок «Fingerprint (дедупликация визитов)» на странице тестов; runAllTests и каталог api/tests/list включают fingerprint. Обновлены docs/imports.md, docs/api.md, README.
-- 2026-02-03: фича 3 (визиты) — добавлена Heap-таблица visits (tables/visits.table.ts): campaignId, partnerLinkId, partnerId, pageId, ref, fingerprintHash, fingerprintParts, clickedAt, registeredAt. Обновлены docs/data.md, docs/imports.md.
-- 2026-02-03: фича 2 — страницы и партнёрские ссылки: таблицы partners, pages, partner_links; pageRepo, linkRepo; urlBuilder (substituteRef, buildPartnerLinkUrl), refGenerator.generateLinkSlug; константы редиректа в config/routes. Тесты: эндпоинты url-builder, page-repo, link-repo и тест generateLinkSlug в ref-generator; блоки на странице тестов и runAllTests. Обновлены docs/api.md, docs/data.md, docs/imports.md, README.
-- 2026-02-03: очистка тестовых данных: в logs-repo тестовая запись лога удаляется в конце; добавлен POST /api/tests/cleanup-campaign и вызов с фронта после теста campaigns-create (TestsPage.vue), чтобы не оставлять мусор в таблицах. Обновлены docs/imports.md, docs/api.md.
-- 2026-02-03: добавлены API кампаний GET /api/campaigns/list и POST /api/campaigns/create (api/campaigns/list.ts, create.ts, RealUser), блок «API кампаний» на странице тестов (три теста: list, create успех, create валидация), категория campaigns-api в api/tests/list. Обновлены docs/imports.md, docs/api.md, docs/architecture.md, README.
-- 2026-02-03: добавлены lib/repo/campaignRepo.ts (createCampaign, getCampaignById, getUserCampaigns), тесты api/tests/endpoints-check/campaign-repo.ts и блок «Репозиторий кампаний» на странице тестов (девять блоков, runAllTests включает campaign-repo). Документация (docs/imports.md, docs/api.md, docs/data.md, README) обновлена.
-- 2026-02-03: в тесте member-repo убрано использование (member as any); проверки приведены к типизированному виду (member.id, member.campaignId?.id, member.userId?.id, member.role) по 001-standards.md.
-- 2026-02-03: добавлены lib/repo/memberRepo.ts (addMember, checkCampaignAccess), тесты api/tests/endpoints-check/member-repo.ts и блок «Репозиторий участников кампании» на странице тестов (восемь блоков, runAllTests включает member-repo). Документация (docs/imports.md, docs/api.md, docs/data.md) обновлена; в тесте member-repo убрано приведение (ctx as any), используется ctx.user?.id с проверкой типа.
-- 2026-02-03: добавлены Heap-таблицы campaigns (t__saas-ref__campaign__8Hn4Lx) и campaign_members (t__saas-ref__campaign_member__2Km5Ny) по плану фичи 1; обновлены docs/data.md и docs/imports.md.
-- 2026-02-03: добавлены lib/core/refGenerator.ts (generateUrlSafeId, generateCampaignSecret), эндпоинт проверки api/tests/endpoints-check/ref-generator.ts, блок «Генератор идентификаторов» на странице тестов (семь блоков, runAllTests включает ref-generator).
-- 2026-02-03: добавлены shared/types.ts и shared/constants.ts (типы кампаний и участников, роли, дефолты настроек по плану фичи 1).
-- 2026-02-03: добавлена страница тестов (TestsPage) и полный набор API/библиотек/репозиториев для layer-тестирования: каталог `api/tests`, эндпоинты категории `endpoints-check`, фронтенд `web/tests/index.tsx` и `pages/TestsPage.vue`, кнопка «Тесты» в хедере, передача `testsUrl` на главной/профиле/админке. Документация (`docs/api.md`, `docs/imports.md`, `docs/run.md`, `README`) дополнена описанием тестов; история LLM пополнена файлами 0018–0020.
-- 2026-02-02: проект скопирован из шаблона в p/saas/ref; настроен как реферальная программа: PROJECT_ROOT, .dir.json, названия (config/project, lib/settings.lib), отдельные Heap-таблицы t__saas-ref__setting__7Fk2Qw и t__saas-ref__log__9Xm3Kp; документация data.md обновлена.
-- 2026-02-02: админка — поле «Название проекта»: debounce уменьшен с 2 с до 300 мс; снят :disabled при сохранении, чтобы поле не теряло фокус при отправке запроса.
-- 2026-02-02: название проекта из настроек (input#project-name в админке) используется при серверном рендере: заголовок h1 в шапке — «название из настроек / Название страницы», document title — «Название страницы - Название из настроек». config/project: getPageTitle(pageName, projectName), getHeaderText(pageName, projectName); index, web/admin, web/profile читают project_name через settingsLib.getSettingString и передают в getPageTitle/getHeaderText; Header.vue — в h1 только projectTitle (убран отдельный вывод pageName).
-- 2026-02-02: дашборд админки: счётчики ошибок и предупреждений после таймштампа сброса; настройка dashboard_reset_at, lib/admin/dashboard.lib, GET /api/admin/dashboard/counts, POST /api/admin/dashboard/reset; repos/logs.repo — countBySeverityAfter, countErrorsAfter, countWarningsAfter (несколько countBy по severity); при новых логах (sink/WebSocket) инкремент только если entry.timestamp >= dashboardResetAt.
-- 2026-02-02: админка — блок логов: кнопка «Загрузить ещё 50» ~90% ширины, рядом квадратная кнопка «Очистить логи» (корзина); при очистке таймштамп сдвигается на текущий (Date.now()), кнопка «Загрузить ещё 50» восстанавливает последние логи с сервера.
-- 2026-02-02: стили скроллбара (customScrollbarStyles в styles.tsx): body, .content-wrapper, .custom-scrollbar; подключены на главной, админке, логине и профиле; исправление для Chrome 121+ через @supports not selector(::-webkit-scrollbar).
-- 2026-02-02: оптимизирована функция findBeforeTimestamp в repos/logs.repo — использует нативную фильтрацию Heap API через `where: { timestamp: { $lt } }` вместо загрузки избыточных данных и фильтрации в памяти.
-- 2026-02-02: добавлена пагинация логов в админке: GET /api/admin/logs/recent (последние N логов), GET /api/admin/logs/before (N логов старше timestamp); repos/logs.repo.findBeforeTimestamp; AdminPage загружает историю при монтировании и может догружать старые логи по кнопке «Загрузить ещё 50».
-- 2026-02-02: админка: индикаторы «Сохранено»/«Ошибка» в правом верхнем углу карточек «Настройки проекта» и «Уровень логирования» после ответа сервера (3 с); автосохранение поля «Название проекта» с debounce 2 с без ожидания blur.
-- 2026-02-02: исправлен вызов GET api/settings/get в AdminPage: query передаётся через getSettingRoute.query({ key }).run(ctx) вместо .run(ctx, { query }), по inner/docs (002-routing, 001-run).
-- 2026-02-02: сериализация payload при записи в Heap (lib/logger.lib): JSON.stringify для объектов, чтобы в таблице логов отображался корректный JSON вместо "[object Object]".
-- 2026-02-02: серверные логи: таблица logs, repos/logs.repo, lib/logger.lib, api/logger/log (POST), админка — encodedLogsSocketId и подписка на new-log; сокет без accountId. Body API: только message (обяз.), severity? (0–7), payload?; timestamp и level вычисляются в lib; имя модуля в тексте message. Формат вывода: `[DD.MM.YYYY HH:mm:ss.SSS] [LEVEL] message` (пробелы между группами в скобках).
-- 2026-02-01: клиентская часть покрыта логами (createComponentLogger, setLogSink, sink в AdminPage дашборде; HomePage, AdminPage, ProfilePage, LoginPage, Header, AppFooter, GlobalGlitch, LogoutModal).
-- 2026-02-01: добавлен уровень логирования Debug (кнопка в админке перед Info, lib LOG_LEVELS, logger CONFIG_LEVELS и порог, API save -1–4), порядок: Debug, Info, Warn, Error, Disable.
-- 2026-02-01: уровень логирования -1 (логи выключены): LOG_LEVEL_OFF в shared/logger, приём -1 в window.__BOOT__.logLevel, API save принимает -1 → Disable.
-- 2026-02-01: shared/logger — логгер для браузера (logInfo, logWarn, logError с проверкой уровня по window.__BOOT__.logLevel), импорт в HomePage, AdminPage, ProfilePage.
-- 2026-02-01: чтение уровня логирования при загрузке страницы — shared/logLevel.ts, вызов getLogLevel в lib, скрипт window.__BOOT__.logLevel на главной, админке и профиле (без логина).
-- 2026-02-01: мгновенное сохранение уровня логирования в админке (кнопки → .run() → POST /api/settings/save), нормализация чисел 0–3 и строк в API.
-- 2026-02-01: добавлен ADR-0002 — настройки в Heap и слоистая архитектура API (решения коммита aaf4a0a).
-- 2026-02-01: обновлено «Текущее состояние» — отражены API настроек, таблица, репозиторий, lib.
-- 2026-01-31: создана базовая структура и первичная документация.
+Для точечных правок смотри конкретные файлы из структуры выше; при добавлении фич соблюдай 001-standards.md и 006-arch.md.
