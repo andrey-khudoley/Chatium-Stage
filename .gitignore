@@ -8,7 +8,7 @@
 node_modules/
 
 # LLM files
-docs/LLM/
+**/docs/LLM/
 
 # Chatium config
 @.chatiumrc
