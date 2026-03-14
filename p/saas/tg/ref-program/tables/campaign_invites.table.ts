@@ -1,11 +1,11 @@
 // Таблица приглашений в кампанию (токен, срок действия, принятие).
 import { Heap } from '@app/heap'
 
-export const TSaasRefCampaignInvite6Xy9Zk = Heap.Table(
-  't__saas-ref__campaign_invite__6Xy9Zk',
+export const TSaasRefCampaignInviteP2K8mN = Heap.Table(
+  't__tg-ref-program__campaign_invite__p2K8mN',
   {
     campaignId: Heap.Optional(
-      Heap.RefLink('t__saas-ref__campaign__8Hn4Lx', {
+      Heap.RefLink('t__tg-ref-program__campaign__8Hn4Lx', {
         customMeta: { title: 'Кампания' },
         onDelete: 'none',
       }),
@@ -36,7 +36,7 @@ export const TSaasRefCampaignInvite6Xy9Zk = Heap.Table(
   { customMeta: { title: 'Приглашения в кампанию', description: 'Приглашения по токену' } },
 )
 
-export default TSaasRefCampaignInvite6Xy9Zk
+export default TSaasRefCampaignInviteP2K8mN
 
-export type TSaasRefCampaignInvite6Xy9ZkRow = typeof TSaasRefCampaignInvite6Xy9Zk.T
-export type TSaasRefCampaignInvite6Xy9ZkRowJson = typeof TSaasRefCampaignInvite6Xy9Zk.JsonT
+export type TSaasRefCampaignInviteP2K8mNRow = typeof TSaasRefCampaignInviteP2K8mN.T
+export type TSaasRefCampaignInviteP2K8mNRowJson = typeof TSaasRefCampaignInviteP2K8mN.JsonT

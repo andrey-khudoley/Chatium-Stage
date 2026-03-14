@@ -273,7 +273,7 @@
 
 ### `./shared/types.ts`
 - `../tables/visits.table` → `TSaasRefVisit1Vw7KxRow` (type, алиас VisitRow)
-- `../tables/partners.table` → `TSaasRefPartner3Ab7CdRow` (type, алиас PartnerRow)
+- `../tables/partners.table` → `TSaasRefProgramPartner3Ab7CdRow` (type, алиас PartnerRow)
 - `../tables/bots.table` → `TSaasRefBot2Kf9MnRow` (type, алиас BotRow)
 - `../tables/bot_updates.table` → `TSaasRefBotUpdate7Pq3RsRow` (type, алиас BotUpdateRow)
 - `../tables/referrals.table` → `TSaasRefReferral9Xy2ZkRow` (type, алиас ReferralRow)

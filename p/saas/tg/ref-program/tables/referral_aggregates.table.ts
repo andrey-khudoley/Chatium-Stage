@@ -5,13 +5,13 @@ import { Heap } from '@app/heap'
  * Одна запись на реферала; обновляется инкрементально и при полном пересчёте.
  */
 export const ReferralAggregates = Heap.Table(
-  't__saas-ref__refagg__2Xy9Zk',
+  't__tg-ref-program__refagg__2Xy9Zk',
   {
-    referralId: Heap.RefLink('t__saas-ref__referral__9Xy2Zk', {
+    referralId: Heap.RefLink('t__tg-ref-program__referral__9Xy2Zk', {
       customMeta: { title: 'Реферал' },
       onDelete: 'none'
     }),
-    campaignId: Heap.RefLink('t__saas-ref__campaign__8Hn4Lx', {
+    campaignId: Heap.RefLink('t__tg-ref-program__campaign__8Hn4Lx', {
       customMeta: { title: 'Кампания' },
       onDelete: 'none'
     }),

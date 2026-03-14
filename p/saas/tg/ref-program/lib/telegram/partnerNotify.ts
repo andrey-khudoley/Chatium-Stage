@@ -9,7 +9,7 @@ import {
   buildOrderNotification,
   buildPaymentNotification,
   buildRegistrationNotification
-} from '../../../../../../p.chtm.aley.pro/p/saas/ref/lib/telegram/messages'
+} from './messages'
 import { sendTelegramMessage } from './sendTelegram'
 
 /**

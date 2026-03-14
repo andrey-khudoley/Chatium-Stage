@@ -1,4 +1,12 @@
-import Settings, { type SettingsRow } from '../tables/settings.table'
+import Settings from '../tables/settings.table'
+import type { SettingsRow } from '../tables/settings.table'
+
+if (!Settings) {
+  throw new Error(
+    'Settings table is not initialized. ' +
+    'Check if table "t__tg-ref-program__setting__7Fk2Qw" exists in Heap and is properly exported from tables/settings.table.ts'
+  )
+}
 
 /**
  * Репозиторий настроек — слой работы с БД.

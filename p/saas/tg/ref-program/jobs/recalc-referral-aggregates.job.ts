@@ -11,6 +11,7 @@ export interface RecalcReferralAggregatesParams {
   campaignOffset: number
   campaignIndex: number
   referralOffset: number
+  campaignId?: string
 }
 
 /**
@@ -18,6 +19,8 @@ export interface RecalcReferralAggregatesParams {
  * Запускается цепочкой через scheduleJobAsap до полной обработки всех кампаний.
  * Пагинация кампаний: загрузка с offset/limit (campaignOffset, BATCH_LIMIT); campaignIndex — индекс внутри текущей страницы.
  * Полный пересчёт перезаписывает агрегаты по данным из таблиц заказов и оплат (не инкремент); запись по каждому рефералу сериализована с вебхуками через runWithExclusiveLock.
+ * 
+ * Если передан campaignId — пересчитывается только указанная кампания (точечный пересчёт).
  */
 export const recalcReferralAggregatesJob = app.job(
   '/recalc-referral-aggregates',
@@ -25,27 +28,45 @@ export const recalcReferralAggregatesJob = app.job(
     const campaignOffset = Math.max(0, Number(params?.campaignOffset) ?? 0)
     const campaignIndex = Math.max(0, Number(params?.campaignIndex) ?? 0)
     const referralOffset = Math.max(0, Number(params?.referralOffset) ?? 0)
+    const specificCampaignId = params?.campaignId
 
     try {
       ctx.account.log('info', '[recalc-referral-aggregates-job] Старт батча', {
-        json: { campaignOffset, campaignIndex, referralOffset }
+        json: { campaignOffset, campaignIndex, referralOffset, specificCampaignId }
       })
 
-      const allCampaigns = await Campaigns.findAll(ctx, {
-        limit: BATCH_LIMIT,
-        offset: campaignOffset
-      })
-      const campaigns = allCampaigns.filter((c) => c.isDeleted !== true)
+      let campaignId: string
 
-      if (campaignIndex >= campaigns.length) {
-        ctx.account.log('info', '[recalc-referral-aggregates-job] Завершено: кампаний нет или все обработаны', {
-          json: { campaignIndex, campaignsCount: campaigns.length }
+      if (specificCampaignId) {
+        // Точечный пересчёт для конкретной кампании
+        const campaign = await Campaigns.findById(ctx, specificCampaignId)
+        if (!campaign || campaign.isDeleted) {
+          ctx.account.log('warn', '[recalc-referral-aggregates-job] Кампания не найдена или удалена', {
+            json: { campaignId: specificCampaignId }
+          })
+          return
+        }
+        campaignId = campaign.id
+        ctx.account.log('info', '[recalc-referral-aggregates-job] Точечный пересчёт кампании', {
+          json: { campaignId }
         })
-        return
-      }
+      } else {
+        // Глобальный пересчёт всех кампаний с пагинацией
+        const allCampaigns = await Campaigns.findAll(ctx, {
+          limit: BATCH_LIMIT,
+          offset: campaignOffset
+        })
+        const campaigns = allCampaigns.filter((c) => c.isDeleted !== true)
 
-      const campaign = campaigns[campaignIndex]
-      const campaignId = campaign.id
+        if (campaignIndex >= campaigns.length) {
+          ctx.account.log('info', '[recalc-referral-aggregates-job] Завершено: кампаний нет или все обработаны', {
+            json: { campaignIndex, campaignsCount: campaigns.length }
+          })
+          return
+        }
+
+        campaignId = campaigns[campaignIndex].id
+      }
 
       const referrals = await Referrals.findAll(ctx, {
         where: { campaignId },
@@ -148,32 +169,55 @@ export const recalcReferralAggregatesJob = app.job(
       }
 
       ctx.account.log('info', '[recalc-referral-aggregates-job] Батч обработан', {
-        json: { campaignId, referralOffset, updated, referralsInBatch: referrals.length }
+        json: { campaignId, referralOffset, updated, referralsInBatch: referrals.length, specificCampaignId }
       })
 
-      if (referrals.length === BATCH_LIMIT) {
-        recalcReferralAggregatesJob.scheduleJobAsap(ctx, {
-          campaignOffset,
-          campaignIndex,
-          referralOffset: referralOffset + BATCH_LIMIT
-        })
-      } else {
-        const nextCampaignIndex = campaignIndex + 1
-        if (nextCampaignIndex < campaigns.length) {
+      if (specificCampaignId) {
+        // Точечный пересчёт: продолжаем только если есть ещё рефералы в этой кампании
+        if (referrals.length === BATCH_LIMIT) {
           recalcReferralAggregatesJob.scheduleJobAsap(ctx, {
-            campaignOffset,
-            campaignIndex: nextCampaignIndex,
-            referralOffset: 0
+            campaignOffset: 0,
+            campaignIndex: 0,
+            referralOffset: referralOffset + BATCH_LIMIT,
+            campaignId: specificCampaignId
           })
         } else {
+          ctx.account.log('info', '[recalc-referral-aggregates-job] Точечный пересчёт кампании завершён', {
+            json: { campaignId, totalUpdated: updated }
+          })
+        }
+      } else {
+        // Глобальный пересчёт: пагинация по всем кампаниям
+        if (referrals.length === BATCH_LIMIT) {
           recalcReferralAggregatesJob.scheduleJobAsap(ctx, {
-            campaignOffset: campaignOffset + BATCH_LIMIT,
-            campaignIndex: 0,
-            referralOffset: 0
+            campaignOffset,
+            campaignIndex,
+            referralOffset: referralOffset + BATCH_LIMIT
           })
-          ctx.account.log('info', '[recalc-referral-aggregates-job] Следующая страница кампаний', {
-            json: { nextCampaignOffset: campaignOffset + BATCH_LIMIT }
+        } else {
+          const allCampaigns = await Campaigns.findAll(ctx, {
+            limit: BATCH_LIMIT,
+            offset: campaignOffset
           })
+          const campaigns = allCampaigns.filter((c) => c.isDeleted !== true)
+          const nextCampaignIndex = campaignIndex + 1
+          
+          if (nextCampaignIndex < campaigns.length) {
+            recalcReferralAggregatesJob.scheduleJobAsap(ctx, {
+              campaignOffset,
+              campaignIndex: nextCampaignIndex,
+              referralOffset: 0
+            })
+          } else {
+            recalcReferralAggregatesJob.scheduleJobAsap(ctx, {
+              campaignOffset: campaignOffset + BATCH_LIMIT,
+              campaignIndex: 0,
+              referralOffset: 0
+            })
+            ctx.account.log('info', '[recalc-referral-aggregates-job] Следующая страница кампаний', {
+              json: { nextCampaignOffset: campaignOffset + BATCH_LIMIT }
+            })
+          }
         }
       }
     } catch (err) {

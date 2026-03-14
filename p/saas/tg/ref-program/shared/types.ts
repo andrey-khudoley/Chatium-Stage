@@ -4,8 +4,8 @@
  */
 
 import type { TSaasRefVisit1Vw7KxRow } from '../tables/visits.table'
-import type { TSaasRefPartner3Ab7CdRow } from '../tables/partners.table'
-import type { TSaasRefBot2Kf9MnRow } from '../tables/bots.table'
+import type { TSaasRefProgramPartner3Ab7CdRow } from '../tables/partners.table'
+import type { TSaasTgRefBotX7pQ2mRow } from '../tables/bots.table'
 import type { TSaasRefBotUpdate7Pq3RsRow } from '../tables/bot_updates.table'
 import type { TSaasRefReferral9Xy2ZkRow } from '../tables/referrals.table'
 import type { ReferralAggregatesRow } from '../tables/referral_aggregates.table'
@@ -88,7 +88,7 @@ export type VisitRow = TSaasRefVisit1Vw7KxRow
 // ============================================
 
 /** Строка таблицы партнёров (Telegram-пользователи кампании). */
-export type PartnerRow = TSaasRefPartner3Ab7CdRow
+export type PartnerRow = TSaasRefProgramPartner3Ab7CdRow
 
 export interface PartnerStats {
   registrations: number
@@ -123,7 +123,7 @@ export type PaymentRow = TSaasRefPayment7Hi8JkRow
 // ============================================
 
 /** Строка таблицы ботов. */
-export type BotRow = TSaasRefBot2Kf9MnRow
+export type BotRow = TSaasTgRefBotX7pQ2mRow
 
 /** Строка таблицы апдейтов бота. */
 export type BotUpdateRow = TSaasRefBotUpdate7Pq3RsRow

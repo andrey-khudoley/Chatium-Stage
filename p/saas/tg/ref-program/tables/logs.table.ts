@@ -1,6 +1,6 @@
 import { Heap } from '@app/heap'
 
-export const Logs = Heap.Table('t__saas-ref__log__9Xm3Kp', {
+export const Logs = Heap.Table('t__tg-ref-program__log__x7Kp9m', {
   message: Heap.String({
     customMeta: { title: 'Сообщение' },
     searchable: { langs: ['ru', 'en'], embeddings: false }

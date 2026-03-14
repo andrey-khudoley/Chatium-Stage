@@ -1,6 +1,6 @@
 import { Heap } from '@app/heap'
 
-export const Settings = Heap.Table('t__saas-ref__setting__7Fk2Qw', {
+export const Settings = Heap.Table('t__tg-ref-program__setting__7Fk2Qw', {
   key: Heap.String({
     customMeta: { title: 'Ключ настройки' },
     searchable: { langs: ['ru', 'en'], embeddings: false }

@@ -12,6 +12,8 @@ import { getLogsBeforeRoute } from '../api/admin/logs/before'
 import { getDashboardCountsRoute } from '../api/admin/dashboard/counts'
 import { resetDashboardRoute } from '../api/admin/dashboard/reset'
 import { recalcReferralAggregatesRoute } from '../api/admin/recalc-referral-aggregates'
+import { listAdminCampaignsRoute } from '../api/admin/campaigns/list'
+import CampaignSearchSelect from '../components/Forms/CampaignSearchSelect.vue'
 
 const log = createComponentLogger('AdminPage')
 
@@ -60,7 +62,8 @@ const telegramTestBotTokenDebounceTimer = { id: null as ReturnType<typeof setTim
 
 const recalcAggregatesLoading = ref(false)
 const recalcAggregatesError = ref('')
-const recalcAggregatesResult = ref<{ jobScheduled: boolean } | null>(null)
+const recalcAggregatesResult = ref<{ jobScheduled: boolean; campaignId?: string } | null>(null)
+const selectedCampaignId = ref<string | null>(null)
 
 const SAVE_STATUS_DURATION_MS = 1500
 const INPUT_DEBOUNCE_MS = 300
@@ -434,16 +437,27 @@ const resetDashboard = async () => {
   }
 }
 
+const loadAdminCampaigns = async () => {
+  const res = await listAdminCampaignsRoute.run(ctx)
+  return res as { success: boolean; campaigns?: Array<{ id: string; title: string }>; error?: string }
+}
+
 const recalcReferralAggregates = async () => {
   recalcAggregatesError.value = ''
   recalcAggregatesResult.value = null
   recalcAggregatesLoading.value = true
   try {
-    const res = await recalcReferralAggregatesRoute.run(ctx)
-    const data = res as { success?: boolean; jobScheduled?: boolean; error?: string }
+    const res = await recalcReferralAggregatesRoute.run(ctx, {
+      campaignId: selectedCampaignId.value ?? undefined
+    })
+    const data = res as { success?: boolean; jobScheduled?: boolean; campaignId?: string; error?: string }
     if (data?.success && data?.jobScheduled) {
-      recalcAggregatesResult.value = { jobScheduled: true }
-      log.notice('Пересчёт агрегатов поставлен в очередь', recalcAggregatesResult.value)
+      recalcAggregatesResult.value = { jobScheduled: true, campaignId: data.campaignId }
+      if (data.campaignId) {
+        log.notice('Точечный пересчёт агрегатов поставлен в очередь', { campaignId: data.campaignId })
+      } else {
+        log.notice('Глобальный пересчёт агрегатов поставлен в очередь')
+      }
     } else {
       recalcAggregatesError.value = data?.error ?? 'Ошибка пересчёта'
       log.error('Ошибка пересчёта агрегатов', recalcAggregatesError.value)
@@ -619,18 +633,37 @@ const clearLogs = () => {
                 />
               </div>
               <div class="settings-field">
+                <label class="settings-label">Кампания для пересчёта (опционально)</label>
+                <CampaignSearchSelect
+                  v-model="selectedCampaignId"
+                  :load-campaigns="loadAdminCampaigns"
+                  placeholder="Все кампании — глобальный пересчёт"
+                  :disabled="recalcAggregatesLoading"
+                />
+                <p class="field-hint">
+                  Если не выбрана — будет выполнен глобальный пересчёт по всем кампаниям
+                </p>
+              </div>
+              <div class="settings-field">
                 <button
                   type="button"
                   class="dashboard-reset"
                   :disabled="recalcAggregatesLoading"
-                  title="Пересчитать агрегаты по всем кампаниям и рефералам (выполняется фоновыми джобами батчами по 1000 записей)"
+                  :title="selectedCampaignId 
+                    ? 'Пересчитать агрегаты для выбранной кампании' 
+                    : 'Пересчитать агрегаты по всем кампаниям и рефералам (выполняется фоновыми джобами батчами по 1000 записей)'"
                   @click="recalcReferralAggregates"
                 >
                   <i class="fas" :class="recalcAggregatesLoading ? 'fa-spinner fa-spin' : 'fa-calculator'"></i>
-                  {{ recalcAggregatesLoading ? 'Пересчёт…' : 'Пересчитать агрегаты' }}
+                  {{ recalcAggregatesLoading ? 'Пересчёт…' : (selectedCampaignId ? 'Пересчитать для кампании' : 'Пересчитать все агрегаты') }}
                 </button>
                 <p v-if="recalcAggregatesResult" class="admin-card-desc">
-                  Пересчёт агрегатов поставлен в очередь и выполняется фоновыми джобами.
+                  <template v-if="recalcAggregatesResult.campaignId">
+                    Точечный пересчёт для кампании поставлен в очередь.
+                  </template>
+                  <template v-else>
+                    Глобальный пересчёт агрегатов поставлен в очередь и выполняется фоновыми джобами.
+                  </template>
                 </p>
               </div>
             </div>
@@ -1069,6 +1102,13 @@ const clearLogs = () => {
 .settings-input:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+.field-hint {
+  font-size: 0.8rem;
+  color: var(--color-text-tertiary);
+  margin: 0.25rem 0 0;
+  line-height: 1.4;
 }
 
 /* Dashboard */

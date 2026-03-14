@@ -14,10 +14,10 @@ defineProps<{
   emptyMessage?: string
 }>()
 
-function formatDatetime(s: string): string {
-  if (!s) return '—'
+function formatDatetime(s: unknown): string {
+  if (!s || typeof s !== 'string') return '—'
   const d = new Date(s)
-  if (Number.isNaN(d.getTime())) return s
+  if (Number.isNaN(d.getTime())) return String(s)
   return d.toLocaleString('ru-RU', {
     day: '2-digit',
     month: '2-digit',
@@ -27,9 +27,10 @@ function formatDatetime(s: string): string {
   })
 }
 
-function formatMoney(kopecks: number): string {
-  if (kopecks === 0) return '0 ₽'
-  return `${(kopecks / 100).toFixed(2)} ₽`
+function formatMoney(kopecks: unknown): string {
+  const num = typeof kopecks === 'number' ? kopecks : Number(kopecks) || 0
+  if (num === 0) return '0 ₽'
+  return `${(num / 100).toFixed(2)} ₽`
 }
 </script>
 
@@ -51,7 +52,7 @@ function formatMoney(kopecks: number): string {
             <th
               v-for="col in columns"
               :key="col.key"
-              :class="[col.class, 'px-4 py-2 font-medium']"
+              :class="[col['class'], 'px-4 py-2 font-medium']"
             >
               {{ col.title }}
             </th>
@@ -66,27 +67,27 @@ function formatMoney(kopecks: number): string {
             <td
               v-for="col in columns"
               :key="col.key"
-              :class="[col.class, 'px-4 py-2']"
+              :class="[col['class'], 'px-4 py-2']"
             >
               <template v-if="col.format === 'datetime'">
-                {{ row[col.key] ? formatDatetime(row[col.key] as string) : '—' }}
+                {{ formatDatetime(row[col.key]) }}
               </template>
               <template v-else-if="col.format === 'money'">
-                {{ formatMoney((row[col.key] as number) ?? 0) }}
+                {{ formatMoney(row[col.key]) }}
               </template>
               <template v-else-if="col.format === 'number'">
-                {{ (row[col.key] as number) ?? 0 }}
+                {{ Number(row[col.key]) || 0 }}
               </template>
               <template v-else-if="col.format === 'link' && col.hrefKey && row[col.hrefKey]">
                 <a
-                  :href="(row[col.hrefKey] as string)"
+                  :href="String(row[col.hrefKey] || '')"
                   class="text-[var(--color-accent)] hover:underline"
                 >
-                  {{ (row[col.key] as string) || 'Перейти' }}
+                  {{ String(row[col.key] || 'Перейти') }}
                 </a>
               </template>
               <template v-else>
-                {{ (row[col.key] as string) ?? '—' }}
+                {{ row[col.key] != null ? String(row[col.key]) : '—' }}
               </template>
             </td>
           </tr>

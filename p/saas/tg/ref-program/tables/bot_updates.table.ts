@@ -2,16 +2,16 @@
 import { Heap } from '@app/heap'
 
 export const TSaasRefBotUpdate7Pq3Rs = Heap.Table(
-  't__saas-ref__bot_update__7Pq3Rs',
+  't__tg-ref-program__bot_update__7Pq3Rs',
   {
     campaignId: Heap.Optional(
-      Heap.RefLink('t__saas-ref__campaign__8Hn4Lx', {
+      Heap.RefLink('t__tg-ref-program__campaign__8Hn4Lx', {
         customMeta: { title: 'Кампания' },
         onDelete: 'none'
       })
     ),
     botId: Heap.Optional(
-      Heap.RefLink('t__saas-ref__bot__2Kf9Mn', {
+      Heap.RefLink('t__tg-ref-program__bot__X7pQ2m', {
         customMeta: { title: 'Бот' },
         onDelete: 'none'
       })

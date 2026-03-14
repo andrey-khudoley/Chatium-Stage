@@ -1,11 +1,11 @@
 // This file is auto-generated via createOrUpdateHeapTableFile API and should not be edited manually
 import { Heap } from '@app/heap'
 
-export const TSaasRefPage4Bc8De = Heap.Table(
-  't__saas-ref__page__4Bc8De',
+export const TSaasRefProgramPage4Bc8De = Heap.Table(
+  't__tg-ref-program__page__4Bc8De',
   {
     campaignId: Heap.Optional(
-      Heap.RefLink('t__saas-ref__campaign__8Hn4Lx', {
+      Heap.RefLink('t__tg-ref-program__campaign__8Hn4Lx', {
         customMeta: { title: 'Кампания' },
         onDelete: 'none',
       }),
@@ -24,7 +24,7 @@ export const TSaasRefPage4Bc8De = Heap.Table(
   { customMeta: { title: 'Страницы', description: 'Целевые страницы для трафика' } },
 )
 
-export default TSaasRefPage4Bc8De
+export default TSaasRefProgramPage4Bc8De
 
-export type TSaasRefPage4Bc8DeRow = typeof TSaasRefPage4Bc8De.T
-export type TSaasRefPage4Bc8DeRowJson = typeof TSaasRefPage4Bc8De.JsonT
+export type TSaasRefProgramPage4Bc8DeRow = typeof TSaasRefProgramPage4Bc8De.T
+export type TSaasRefProgramPage4Bc8DeRowJson = typeof TSaasRefProgramPage4Bc8De.JsonT
