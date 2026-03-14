@@ -110,7 +110,11 @@
 │   ├── logger/log.ts            # POST запись лога
 │   ├── admin/logs/              # recent, before
 │   ├── admin/dashboard/         # counts, reset
+│   ├── admin/recalc-referral-aggregates.ts   # POST — поставить в очередь пересчёт агрегатов (джоб)
 │   └── tests/                   # list, cleanup-campaign, endpoints-check/*
+│
+├── jobs/                        # Отложенные задачи (app.job)
+│   └── recalc-referral-aggregates.job.ts     # Цепочка батчей по 1000 записей (scheduleJobAsap)
 │
 ├── hook/                        # Webhooks (без авторизации)
 │   ├── telegram.ts              # POST hook/telegram?botId=
@@ -326,7 +330,8 @@
 | visits | tables/visits.table.ts | Визиты по ссылкам | campaignId, partnerLinkId, ref, fingerprintHash, clickedAt, registeredAt |
 | bots | tables/bots.table.ts | Telegram-боты | campaignId, tgBotId, username, webhookUrl, webhookStatus |
 | bot_updates | tables/bot_updates.table.ts | Апдейты ботов | botId, updateId, tgUserId, updateType, payloadJson |
-| referrals | tables/referrals.table.ts | Рефералы | campaignId, partnerId, ref, registeredAt, ordersCount, ordersSum, paymentsCount, paymentsSum |
+| referrals | tables/referrals.table.ts | Рефералы | campaignId, partnerId, ref, registeredAt, tgId, gcId, name, email, phone |
+| referral_aggregates | tables/referral_aggregates.table.ts | Агрегаты рефералов | referralId, campaignId, ordersCount, ordersSum, paymentsCount, paymentsSum |
 | registrations | tables/registrations.table.ts | События регистрации | campaignId, ref, tgId, gcId, name, email, phone |
 | orders | tables/orders.table.ts | События заказов | campaignId, ref, orderId, productName, orderSum |
 | payments | tables/payments.table.ts | События оплат | campaignId, ref, orderId, paymentSum |
@@ -362,7 +367,7 @@
 - GET /api/bot/get?campaignId=, POST /api/bot/add, POST /api/bot/reinstall-webhook, GET /api/bot/updates?campaignId=&limit=
 
 ### Настройки, логи, дашборд
-- GET/POST api/settings/*, POST /api/logger/log, GET api/admin/logs/recent|before, GET/POST api/admin/dashboard/counts|reset
+- GET/POST api/settings/*, POST /api/logger/log, GET api/admin/logs/recent|before, GET/POST api/admin/dashboard/counts|reset, POST api/admin/recalc-referral-aggregates (поставить в очередь пересчёт агрегатов; выполняется джобами батчами по 1000)
 
 ### Публичные
 - GET /r?linkId= — редирект по партнёрской ссылке (r.tsx).

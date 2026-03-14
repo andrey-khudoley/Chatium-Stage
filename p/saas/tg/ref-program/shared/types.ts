@@ -1,3 +1,4 @@
+// @shared
 /**
  * Общие TypeScript-типы проекта (по плану 9.4).
  */
@@ -7,6 +8,7 @@ import type { TSaasRefPartner3Ab7CdRow } from '../tables/partners.table'
 import type { TSaasRefBot2Kf9MnRow } from '../tables/bots.table'
 import type { TSaasRefBotUpdate7Pq3RsRow } from '../tables/bot_updates.table'
 import type { TSaasRefReferral9Xy2ZkRow } from '../tables/referrals.table'
+import type { ReferralAggregatesRow } from '../tables/referral_aggregates.table'
 import type { TSaasRefRegistration4Ab3CdRow } from '../tables/registrations.table'
 import type { TSaasRefOrder5De6FgRow } from '../tables/orders.table'
 import type { TSaasRefPayment7Hi8JkRow } from '../tables/payments.table'
@@ -101,8 +103,11 @@ export interface PartnerStats {
 // REFERRAL & EVENTS (фича 5)
 // ============================================
 
-/** Строка таблицы рефералов. */
+/** Строка таблицы рефералов (без агрегатов; агрегаты в referral_aggregates). */
 export type ReferralRow = TSaasRefReferral9Xy2ZkRow
+
+/** Строка таблицы агрегатов рефералов (заказы/оплаты). */
+export type ReferralAggregateRow = ReferralAggregatesRow
 
 /** Строка таблицы регистраций. */
 export type RegistrationRow = TSaasRefRegistration4Ab3CdRow

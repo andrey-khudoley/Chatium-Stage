@@ -11,6 +11,7 @@ import { getRecentLogsRoute } from '../api/admin/logs/recent'
 import { getLogsBeforeRoute } from '../api/admin/logs/before'
 import { getDashboardCountsRoute } from '../api/admin/dashboard/counts'
 import { resetDashboardRoute } from '../api/admin/dashboard/reset'
+import { recalcReferralAggregatesRoute } from '../api/admin/recalc-referral-aggregates'
 
 const log = createComponentLogger('AdminPage')
 
@@ -56,6 +57,10 @@ const telegramTestBotTokenLoading = ref(false)
 const telegramTestBotTokenSaveStatus = ref<'saved' | 'error' | null>(null)
 const telegramTestBotTokenStatusTimeout = { id: null as ReturnType<typeof setTimeout> | null }
 const telegramTestBotTokenDebounceTimer = { id: null as ReturnType<typeof setTimeout> | null }
+
+const recalcAggregatesLoading = ref(false)
+const recalcAggregatesError = ref('')
+const recalcAggregatesResult = ref<{ jobScheduled: boolean } | null>(null)
 
 const SAVE_STATUS_DURATION_MS = 1500
 const INPUT_DEBOUNCE_MS = 300
@@ -429,6 +434,28 @@ const resetDashboard = async () => {
   }
 }
 
+const recalcReferralAggregates = async () => {
+  recalcAggregatesError.value = ''
+  recalcAggregatesResult.value = null
+  recalcAggregatesLoading.value = true
+  try {
+    const res = await recalcReferralAggregatesRoute.run(ctx)
+    const data = res as { success?: boolean; jobScheduled?: boolean; error?: string }
+    if (data?.success && data?.jobScheduled) {
+      recalcAggregatesResult.value = { jobScheduled: true }
+      log.notice('Пересчёт агрегатов поставлен в очередь', recalcAggregatesResult.value)
+    } else {
+      recalcAggregatesError.value = data?.error ?? 'Ошибка пересчёта'
+      log.error('Ошибка пересчёта агрегатов', recalcAggregatesError.value)
+    }
+  } catch (e) {
+    recalcAggregatesError.value = (e as Error)?.message ?? 'Ошибка пересчёта'
+    log.error('Ошибка пересчёта агрегатов', e)
+  } finally {
+    recalcAggregatesLoading.value = false
+  }
+}
+
 const openChatiumLink = () => {
   log.notice('Открытие ссылки Chatium')
   window.open('https://chatium.ru/?start=pl-LGBT1Oge7c61RkKTU4t0start', '_blank')
@@ -591,8 +618,24 @@ const clearLogs = () => {
                   class="settings-input"
                 />
               </div>
+              <div class="settings-field">
+                <button
+                  type="button"
+                  class="dashboard-reset"
+                  :disabled="recalcAggregatesLoading"
+                  title="Пересчитать агрегаты по всем кампаниям и рефералам (выполняется фоновыми джобами батчами по 1000 записей)"
+                  @click="recalcReferralAggregates"
+                >
+                  <i class="fas" :class="recalcAggregatesLoading ? 'fa-spinner fa-spin' : 'fa-calculator'"></i>
+                  {{ recalcAggregatesLoading ? 'Пересчёт…' : 'Пересчитать агрегаты' }}
+                </button>
+                <p v-if="recalcAggregatesResult" class="admin-card-desc">
+                  Пересчёт агрегатов поставлен в очередь и выполняется фоновыми джобами.
+                </p>
+              </div>
             </div>
             <p v-if="projectNameError" class="admin-card-error">{{ projectNameError }}</p>
+            <p v-if="recalcAggregatesError" class="admin-card-error">{{ recalcAggregatesError }}</p>
           </div>
 
           <!-- Logging Level -->

@@ -31,26 +31,6 @@ export const TSaasRefReferral9Xy2Zk = Heap.Table(
         customMeta: { title: 'Дата регистрации' },
       }),
     ),
-    ordersCount: Heap.Optional(
-      Heap.Number({
-        customMeta: { title: 'Количество заказов' },
-      }),
-    ),
-    ordersSum: Heap.Optional(
-      Heap.Number({
-        customMeta: { title: 'Сумма заказов' },
-      }),
-    ),
-    paymentsCount: Heap.Optional(
-      Heap.Number({
-        customMeta: { title: 'Количество оплат' },
-      }),
-    ),
-    paymentsSum: Heap.Optional(
-      Heap.Number({
-        customMeta: { title: 'Сумма оплат' },
-      }),
-    ),
   },
   { customMeta: { title: 'Рефералы', description: 'Клиенты (рефералы партнёров)' } },
 )

@@ -22,11 +22,19 @@ export const listReferralsRoute = app.get('/', async (ctx, req) => {
   const limit = typeof req.query?.limit === 'string' ? parseInt(req.query.limit, 10) : 20
   const offset = typeof req.query?.offset === 'string' ? parseInt(req.query.offset, 10) : 0
   const partnerId = typeof req.query?.partnerId === 'string' ? req.query.partnerId.trim() || undefined : undefined
+  const dateFrom = typeof req.query?.dateFrom === 'string' ? req.query.dateFrom.trim() || undefined : undefined
+  const dateTo = typeof req.query?.dateTo === 'string' ? req.query.dateTo.trim() || undefined : undefined
+  const minOrders = typeof req.query?.minOrders === 'string' ? parseInt(req.query.minOrders, 10) : undefined
+  const minPayments = typeof req.query?.minPayments === 'string' ? parseInt(req.query.minPayments, 10) : undefined
 
   const { referrals: rows, total } = await referralRepo.listReferrals(ctx, campaignId, {
     limit: Number.isNaN(limit) ? 20 : Math.min(limit, 100),
     offset: Number.isNaN(offset) ? 0 : Math.max(0, offset),
-    partnerId
+    partnerId,
+    dateFrom,
+    dateTo,
+    minOrders: Number.isNaN(minOrders ?? NaN) ? undefined : minOrders,
+    minPayments: Number.isNaN(minPayments ?? NaN) ? undefined : minPayments
   })
 
   const referrals = rows.map((r) => ({

@@ -7,6 +7,7 @@ import Campaigns from '../../../tables/campaigns.table'
 import CampaignMembers from '../../../tables/campaign_members.table'
 import Partners from '../../../tables/partners.table'
 import Referrals from '../../../tables/referrals.table'
+import ReferralAggregates from '../../../tables/referral_aggregates.table'
 
 const LOG_PATH = 'api/tests/endpoints-check/referral-repo'
 
@@ -67,16 +68,14 @@ export const referralRepoTestRoute = app.get('/', async (ctx, req) => {
           const createOk =
             r1 != null &&
             r1.id != null &&
-            r1.ref === testRef &&
-            (r1.ordersCount ?? 0) === 0 &&
-            (r1.paymentsCount ?? 0) === 0
+            r1.ref === testRef
           results.push({
             id: 'createOrUpdateReferral-new',
             title: 'createOrUpdateReferral (новый реферал)',
             passed: createOk
           })
           if (!createOk) {
-            results[results.length - 1].error = `ref=${r1?.ref}, ordersCount=${r1?.ordersCount}`
+            results[results.length - 1].error = `ref=${r1?.ref}, id=${r1?.id}`
           }
         } catch (e) {
           results.push({
@@ -118,17 +117,22 @@ export const referralRepoTestRoute = app.get('/', async (ctx, req) => {
             ordersSum: 10000
           })
           const refAfter = await Referrals.findOneBy(ctx, { campaignId, ref: testRef })
+          const aggAfter =
+            refAfter != null
+              ? await ReferralAggregates.findOneBy(ctx, { referralId: refAfter.id })
+              : null
           const incrementOk =
             refAfter != null &&
-            (refAfter.ordersCount ?? 0) >= 1 &&
-            (refAfter.ordersSum ?? 0) >= 10000
+            aggAfter != null &&
+            (aggAfter.ordersCount ?? 0) >= 1 &&
+            (aggAfter.ordersSum ?? 0) >= 10000
           results.push({
             id: 'incrementReferralStats',
             title: 'incrementReferralStats',
             passed: incrementOk
           })
           if (!incrementOk) {
-            results[results.length - 1].error = `ordersCount=${refAfter?.ordersCount}, ordersSum=${refAfter?.ordersSum}`
+            results[results.length - 1].error = `ordersCount=${aggAfter?.ordersCount}, ordersSum=${aggAfter?.ordersSum}`
           }
         } catch (e) {
           results.push({
@@ -142,6 +146,15 @@ export const referralRepoTestRoute = app.get('/', async (ctx, req) => {
     }
   } finally {
     if (campaignId) {
+      const aggregates = await ReferralAggregates.findAll(ctx, {
+        where: { campaignId },
+        limit: 500
+      })
+      for (const a of aggregates) {
+        try {
+          await ReferralAggregates.delete(ctx, a.id)
+        } catch (_) {}
+      }
       const referrals = await Referrals.findAll(ctx, {
         where: { campaignId },
         limit: 100

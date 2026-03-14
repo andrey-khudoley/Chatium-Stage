@@ -125,6 +125,7 @@
 - `../api/admin/logs/before` → `getLogsBeforeRoute`
 - `../api/admin/dashboard/counts` → `getDashboardCountsRoute`
 - `../api/admin/dashboard/reset` → `resetDashboardRoute`
+- `../api/admin/recalc-referral-aggregates` → `recalcReferralAggregatesRoute`
 - `../shared/logger` → `createComponentLogger`, `setLogSink`, `LogEntry`
 
 ### `./pages/ProfilePage.vue`
@@ -399,8 +400,10 @@
 - `../repo/visitRepo` → `*`
 
 ### `./lib/repo/referralRepo.ts`
+- `@app/sync` → `runWithExclusiveLock`
 - `../../tables/referrals.table` → `Referrals` (default)
-- экспортирует: createOrUpdateReferral, incrementReferralStats, listReferrals, ListReferralsInput
+- `../../tables/referral_aggregates.table` → `ReferralAggregates` (default)
+- экспортирует: createOrUpdateReferral, incrementReferralStats, listReferrals, ListReferralsInput, ReferralWithAggregates
 
 ### `./lib/repo/eventRepo.ts`
 - `../core/attribution` → `*`
@@ -511,6 +514,18 @@
 - `@app/auth` → `requireAccountRole`
 - `../../../lib/admin/dashboard.lib` → `*`
 - `../../../lib/logger.lib` → `*`
+
+### `./api/admin/recalc-referral-aggregates.ts`
+- `@app/auth` → `requireAccountRole`
+- `../../jobs/recalc-referral-aggregates.job` → `recalcReferralAggregatesJob`
+
+### `./jobs/recalc-referral-aggregates.job.ts`
+- `@app/sync` → `runWithExclusiveLock`
+- `../tables/referrals.table` → `Referrals` (default)
+- `../tables/referral_aggregates.table` → `ReferralAggregates` (default)
+- `../tables/orders.table` → `Orders` (default)
+- `../tables/payments.table` → `Payments` (default)
+- `../tables/campaigns.table` → `Campaigns` (default)
 
 ### `./api/campaigns/list.ts`
 - `@app/auth` → `requireRealUser`

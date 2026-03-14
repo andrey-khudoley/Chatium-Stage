@@ -63,7 +63,7 @@
 
 ## Аналитика кампании (api/analytics/)
 
-Агрегаты и последние рефералы для дашборда кампании. Требуется доступ к кампании (memberRepo.checkCampaignAccess).
+Агрегаты и последние рефералы для дашборда кампании. Требуется доступ к кампании (memberRepo.checkCampaignAccess). Итоги заказов/оплат считаются по таблице referral_aggregates.
 
 | Method | Path | File | Auth | Назначение |
 | --- | --- | --- | --- | --- |
@@ -116,6 +116,7 @@
 | --- | --- | --- | --- | --- |
 | GET | /api/admin/dashboard/counts | api/admin/dashboard/counts.ts | Admin | Получить счётчики ошибок и предупреждений после таймштампа сброса. Возвращает `{ success: true, errorCount, warnCount, resetAt }`. |
 | POST | /api/admin/dashboard/reset | api/admin/dashboard/reset.ts | Admin | Сбросить дашборд: записать текущий таймштамп в настройки. Возвращает `{ success: true, errorCount: 0, warnCount: 0, resetAt }`. |
+| POST | /api/admin/recalc-referral-aggregates | api/admin/recalc-referral-aggregates.ts | Admin | Поставить в очередь пересчёт агрегатов рефералов. Не выполняет пересчёт в запросе: запускает джоб с params `{ campaignOffset: 0, campaignIndex: 0, referralOffset: 0 }`; джоб пагинирует кампании по campaignOffset (страницы по 1000), рефералов по referralOffset, обрабатывая все кампании цепочкой; запись агрегатов по каждому рефералу сериализована с вебхуками через runWithExclusiveLock. Возвращает `{ success: true, jobScheduled: true }` или `{ success: false, error }`. |
 
 Каждый файл — один эндпоинт с путём `/`.
 
