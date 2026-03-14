@@ -87,7 +87,18 @@
 - то же, что web/calendar; страница `HabitsPage.vue`, константа `HABITS_PAGE_NAME`
 
 ### `./web/notebook/index.tsx`
-- то же, что web/calendar; страница `NotebookPage.vue`, константа `NOTEBOOK_PAGE_NAME`
+- `@app/html-jsx` → `jsx`
+- `@app/auth` → `requireRealUser`
+- `../../pages/NotebookPage.vue`
+- `../../shared/preloader` → `getPreloaderStyles`, `getPreloaderScript`
+- `../../shared/sectionPageStyles` → `getSectionPageLayoutStyles`, `sectionPageVariablesStyles`
+- `../../shared/logLevel` → `getLogLevelForPage`, `getLogLevelScript`
+- `../../lib/logger.lib` → `*`
+- `../../config/routes` → `getFullUrl`, `ROUTES`
+- `../../config/project` → `NOTEBOOK_PAGE_NAME`, `getPageTitle`, `getHeaderText`
+- `../../lib/settings.lib` → `*`
+- `../../styles` → `customScrollbarStyles`
+- передаёт в NotebookPage также `apiBase={getFullUrl('api')}`; при неавторизованном — редирект на логин
 
 ## 2) Страницы‑компоненты (Vue)
 
@@ -134,11 +145,18 @@
 - `vue` → `computed`, `onMounted`
 - `../shared/logger` → `createComponentLogger`
 
-### `./pages/CalendarPage.vue`, `MyDayPage.vue`, `WeekPage.vue`, `HabitsPage.vue`, `NotebookPage.vue`
+### `./pages/CalendarPage.vue`, `MyDayPage.vue`, `WeekPage.vue`, `HabitsPage.vue`
 - `vue` → `onMounted`, `ref`
 - `../components/Header.vue`, `GlobalGlitch.vue`, `AppFooter.vue`, `SectionNav.vue`
 - `../shared/logger` → `createComponentLogger`
 - получают от соответствующих web/*/index.tsx: projectTitle, indexUrl, profileUrl, loginUrl, isAuthenticated, isAdmin?, adminUrl?, testsUrl?, calendarUrl, myDayUrl, weekUrl, habitsUrl, notebookUrl
+
+### `./pages/NotebookPage.vue`
+- `vue` → `onMounted`, `onUnmounted`, `ref`, `watch`, `computed`
+- `../components/Header.vue`, `GlobalGlitch.vue`, `AppFooter.vue`, `SectionNav.vue`
+- `../shared/logger` → `createComponentLogger`
+- `../shared/notebookMarkdownClient` → `markdownToHtml`
+- получает от web/notebook/index.tsx: projectTitle, indexUrl, profileUrl, loginUrl, isAuthenticated, adminUrl?, testsUrl?, calendarUrl, myDayUrl, weekUrl, habitsUrl, notebookUrl, apiBase?
 
 ## 3) Компоненты (components/)
 
@@ -181,12 +199,18 @@
 - `// @shared` в начале файла
 - нет импортов (экспорт getSectionPageLayoutStyles(getPreloaderStyles), sectionPageVariablesStyles; общие стили для web/calendar, web/my-day, web/week, web/habits, web/notebook)
 
+### `./shared/notebookMarkdownClient.ts`
+- нет внешних импортов (клиентский рендер markdown → HTML для режима просмотра блокнота: markdownToHtml; чекбоксы с data-checkbox-index)
+
 ## 5) Таблицы (tables/)
 
 ### `./tables/settings.table.ts`
 - `@app/heap` → `Heap`
 
 ### `./tables/logs.table.ts`
+- `@app/heap` → `Heap`
+
+### `./tables/notebook_notes.table.ts`
 - `@app/heap` → `Heap`
 
 ## 6) Репозитории (repos/)
@@ -200,6 +224,10 @@
 - `../lib/logger.lib` → `*`
 - экспортирует: `create`, `findAll`, `findById`, `findBeforeTimestamp`, `countBySeverityAfter`, `countErrorsAfter`, `countWarningsAfter`
 
+### `./repos/notebookNotes.repo.ts`
+- `../tables/notebook_notes.table` → `NotebookNotes`, `NotebookNoteRow`
+- экспортирует: `listByUser`, `getByIdForUser`, `createForUser`, `updateForUser`, `deleteForUser`
+
 ## 7) Библиотеки (lib/)
 
 ### `./lib/settings.lib.ts`
@@ -210,6 +238,9 @@
 - `../settings.lib` → `*` (getDashboardResetAt, setSetting, SETTING_KEYS)
 - `../../repos/logs.repo` → `*` (countErrorsAfter, countWarningsAfter)
 - `../logger.lib` → `*`
+
+### `./lib/notebookMarkdown.ts`
+- нет импортов (серверные утилиты: extractPreview, toggleCheckbox, countCheckboxes для markdown заметок и чекбоксов)
 
 ### `./lib/logger.lib.ts`
 - `./settings.lib` → `*` (getLogLevel, getLogWebhook, LogLevel)
@@ -236,6 +267,33 @@
 
 ### `./api/logger/log.ts`
 - `@app/auth` → `requireAnyUser`
+- `../../lib/logger.lib` → `*`
+
+### `./api/notebook/list.ts`
+- `@app/auth` → `requireRealUser`
+- `../../repos/notebookNotes.repo` → `*`
+- `../../lib/notebookMarkdown` → `extractPreview`
+- `../../lib/logger.lib` → `*`
+
+### `./api/notebook/get.ts`
+- `@app/auth` → `requireRealUser`
+- `../../repos/notebookNotes.repo` → `*`
+- `../../lib/logger.lib` → `*`
+
+### `./api/notebook/save.ts`
+- `@app/auth` → `requireRealUser`
+- `../../repos/notebookNotes.repo` → `*`
+- `../../lib/logger.lib` → `*`
+
+### `./api/notebook/delete.ts`
+- `@app/auth` → `requireRealUser`
+- `../../repos/notebookNotes.repo` → `*`
+- `../../lib/logger.lib` → `*`
+
+### `./api/notebook/toggleCheckbox.ts`
+- `@app/auth` → `requireRealUser`
+- `../../repos/notebookNotes.repo` → `*`
+- `../../lib/notebookMarkdown` → `toggleCheckbox`, `countCheckboxes`
 - `../../lib/logger.lib` → `*`
 
 ### `./api/admin/logs/recent.ts`

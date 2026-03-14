@@ -51,6 +51,20 @@
 
 Структура: `api/tests/` — общий каталог; `api/tests/<категория>/` — директория категории (например, `endpoints-check`); внутри категории — отдельные файлы с одним эндпоинтом `/` в каждом.
 
+## Блокнот (api/notebook/)
+
+Эндпоинты для заметок блокнота. Требуется авторизованный пользователь (`requireRealUser`). Все операции привязаны к текущему пользователю (userId из контекста). При отсутствии заметки или доступа или невалидном body ответ — 200 с телом `{ success: false, error: "сообщение" }`; при успехе — `{ success: true, ... }`.
+
+| Method | Path | File | Auth | Назначение |
+| --- | --- | --- | --- | --- |
+| GET | /api/notebook/list | api/notebook/list.ts | RealUser | Список заметок пользователя. Возвращает `{ success: true, notes: Array<{ id, title, preview, updatedAt }> }`. |
+| GET | /api/notebook/get?id= | api/notebook/get.ts | RealUser | Получить заметку по id. 404 если не найдена или чужая. Возвращает `{ success: true, note }`. |
+| POST | /api/notebook/save | api/notebook/save.ts | RealUser | Создать или обновить заметку. Body: `{ id?, title, contentMarkdown }`. 400 при пустом title. Возвращает `{ success: true, note }`. |
+| POST | /api/notebook/delete | api/notebook/delete.ts | RealUser | Удалить заметку. Body: `{ id }`. 404 если не найдена или чужая. Возвращает `{ success: true }`. |
+| POST | /api/notebook/toggleCheckbox | api/notebook/toggleCheckbox.ts | RealUser | Переключить чекбокс. Body: `{ noteId, checkboxIndex, checked }`. Пересохраняет заметку. 404/400 при ошибках. Возвращает `{ success: true, note }`. |
+
+Каждый файл — один эндпоинт с путём `/`.
+
 ## Публичные эндпоинты
 | Method | Path | File | Auth | Назначение |
 | --- | --- | --- | --- | --- |

@@ -23,7 +23,7 @@
 - `web/my-day/index.tsx` — раздел «Мой день» (публичный).
 - `web/week/index.tsx` — раздел «Неделя» (публичный).
 - `web/habits/index.tsx` — раздел «Привычки» (публичный).
-- `web/notebook/index.tsx` — раздел «Блокнот» (публичный).
+- `web/notebook/index.tsx` — раздел «Блокнот» (только для авторизованных, `requireRealUser`); список заметок, просмотр и редактирование по hash-роутингу (#view/:id, #edit/:id, #edit/new).
 
 ## Разделение слоёв
 
@@ -44,10 +44,10 @@
 - `pages/` — Vue‑страницы (HomePage, ProfilePage, AdminPage, LoginPage, TestsPage; разделы: CalendarPage, MyDayPage, WeekPage, HabitsPage, NotebookPage).
 - `components/` — переиспользуемые Vue‑компоненты (Header, AppFooter, GlobalGlitch, LogoutModal, SectionNav — навигация по разделам).
 - `shared/sectionPageStyles.ts` — общие стили для страниц разделов (календарь, мой день, неделя, привычки, блокнот).
-- `api/` — API‑эндпоинты (получение и валидация входных данных). File-based: один файл — один эндпоинт с `/`. Пример: `api/settings/list.ts`, `api/settings/get.ts`, `api/settings/save.ts`, `api/logger/log.ts`, `api/admin/logs/recent.ts`, `api/admin/logs/before.ts`, `api/tests/list.ts`, `api/tests/endpoints-check/health.ts`, `api/tests/endpoints-check/ping.ts`.
-- `tables/` — Heap‑таблицы (схемы: settings, logs).
-- `repos/` — репозитории (работа с БД: settings, logs; logs.repo включает findBeforeTimestamp для пагинации).
-- `lib/` — бизнес‑логика (settings.lib, logger.lib: проверка уровня, запись в ctx/Heap/WebSocket/вебхук).
+- `api/` — API‑эндпоинты (получение и валидация входных данных). File-based: один файл — один эндпоинт с `/`. Пример: `api/settings/list.ts`, `api/settings/get.ts`, `api/settings/save.ts`, `api/logger/log.ts`, `api/notebook/list.ts`, `api/notebook/get.ts`, `api/notebook/save.ts`, `api/notebook/delete.ts`, `api/notebook/toggleCheckbox.ts`, `api/admin/logs/recent.ts`, `api/admin/logs/before.ts`, `api/tests/list.ts`, `api/tests/endpoints-check/health.ts`, `api/tests/endpoints-check/ping.ts`.
+- `tables/` — Heap‑таблицы (схемы: settings, logs, notebook_notes).
+- `repos/` — репозитории (работа с БД: settings, logs, notebookNotes; logs.repo — findBeforeTimestamp; notebookNotes.repo — listByUser, getByIdForUser, createForUser, updateForUser, deleteForUser).
+- `lib/` — бизнес‑логика (settings.lib, logger.lib, notebookMarkdown: extractPreview, toggleCheckbox, countCheckboxes).
 - `shared/` — общий код (preloader, logLevel для передачи уровня логирования на клиент, logger — уровни syslog RFC 5424, createComponentLogger, setLogSink/LogEntry для дашборда, logEmergency…logDebug в браузере с проверкой порога).
 - `docs/` — документация проекта.
 
