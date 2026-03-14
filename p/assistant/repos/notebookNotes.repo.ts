@@ -61,7 +61,7 @@ export async function updateForUser(
   const updates: Partial<NotebookNoteRow> = {}
   if (payload.title !== undefined) updates.title = payload.title.trim() || 'Без названия'
   if (payload.contentMarkdown !== undefined) updates.contentMarkdown = payload.contentMarkdown
-  await NotebookNotes.update(ctx, noteId, updates)
+  await NotebookNotes.update(ctx, { id: noteId, ...updates })
   // updatedAt обновляет Heap
   return NotebookNotes.findById(ctx, noteId)
 }

@@ -1,5 +1,6 @@
 // @shared
 import { jsx } from '@app/html-jsx'
+import { requireRealUser } from '@app/auth'
 import MyDayPage from '../../pages/MyDayPage.vue'
 import { getPreloaderStyles, getPreloaderScript } from '../../shared/preloader'
 import { getSectionPageLayoutStyles, sectionPageVariablesStyles } from '../../shared/sectionPageStyles'
@@ -12,17 +13,29 @@ import { customScrollbarStyles } from '../../styles'
 
 const LOG_PATH = 'web/my-day/index'
 
-export const myDayPageRoute = app.html('/', async (ctx) => {
+export const myDayPageRoute = app.html('/', async (ctx, req) => {
   await loggerLib.writeServerLog(ctx, {
     severity: 7,
     message: `[${LOG_PATH}] Запрос страницы «Мой день»`,
     payload: { hasUser: !!ctx.user }
   })
 
-  const isAuthenticated = !!ctx.user
-  const isAdmin = ctx.user?.is?.('Admin') ?? false
+  let user
+  try {
+    user = requireRealUser(ctx)
+  } catch {
+    await loggerLib.writeServerLog(ctx, {
+      severity: 4,
+      message: `[${LOG_PATH}] Требуется авторизация`,
+      payload: { backUrl: req.url }
+    })
+    return ctx.resp.redirect('../login?back=' + encodeURIComponent(req.url))
+  }
+
+  const isAuthenticated = true
+  const isAdmin = user.is?.('Admin') ?? false
   const adminUrl = isAdmin ? getFullUrl(ROUTES.admin) : ''
-  const testsUrl = isAuthenticated ? getFullUrl(ROUTES.tests) : ''
+  const testsUrl = getFullUrl(ROUTES.tests)
   const loginUrl = getFullUrl(ROUTES.login)
   const logLevel = await getLogLevelForPage(ctx)
   const projectName = await settingsLib.getSettingString(ctx, settingsLib.SETTING_KEYS.PROJECT_NAME)
@@ -67,6 +80,7 @@ export const myDayPageRoute = app.html('/', async (ctx) => {
           weekUrl={getFullUrl(ROUTES.week)}
           habitsUrl={getFullUrl(ROUTES.habits)}
           notebookUrl={getFullUrl(ROUTES.notebook)}
+          apiBase={getFullUrl('api')}
         />
       </body>
     </html>
