@@ -5,12 +5,54 @@
       <p class="subtitle">Управление конфигурацией приложения</p>
     </div>
 
+    <!-- Логирование и метрики -->
+    <AppSection
+      title="Логирование и метрики"
+      icon="fas fa-list-alt"
+      description="Уровень логирования и счётчики событий (обработанные сообщения, ошибки)."
+    >
+      <AppNotification v-if="loggingLoadError" type="error" :message="loggingLoadError" />
+      <template v-else>
+        <div class="form-row">
+          <AppSelect
+            v-model="logLevel"
+            label="Уровень логирования"
+            :options="logLevelOptions"
+          />
+          <AppButton
+            variant="primary"
+            :loading="logLevelSaving"
+            loading-text="Сохранение…"
+            @click="saveLogLevel"
+          >
+            Сохранить уровень
+          </AppButton>
+        </div>
+        <AppCard title="Счётчики событий" class="metrics-card">
+          <div class="metrics-grid">
+            <div class="metric-item">
+              <span class="metric-label">Обработано сообщений</span>
+              <span class="metric-value">{{ metrics.processedMessages ?? 0 }}</span>
+            </div>
+            <div class="metric-item">
+              <span class="metric-label">Ошибки</span>
+              <span class="metric-value">{{ metrics.errors ?? 0 }}</span>
+            </div>
+          </div>
+          <AppButton
+            variant="secondary"
+            :loading="resetMetricsLoading"
+            loading-text="Сброс…"
+            @click="resetMetrics"
+          >
+            Сбросить
+          </AppButton>
+        </AppCard>
+      </template>
+    </AppSection>
+
     <!-- Roadmap -->
-    <div class="settings-section">
-      <div class="section-header">
-        <i class="fas fa-road"></i>
-        <h3>План развития</h3>
-      </div>
+    <AppSection title="План развития" icon="fas fa-road">
       <ul class="roadmap-list">
         <li><i class="fas fa-check"></i> WebSocket (real-time сообщения)</li>
         <li><i class="fas fa-check"></i> Inbox API (счётчики непрочитанных)</li>
@@ -18,12 +60,71 @@
         <li><i class="fas fa-check"></i> AI-агенты в чатах</li>
         <li><i class="fas fa-check"></i> Платные чаты и подписки</li>
       </ul>
-    </div>
+    </AppSection>
   </div>
 </template>
 
 <script setup>
-// Настройки упрощены — push-уведомления удалены из проекта
+import { ref, onMounted } from 'vue'
+import AppSection from './ui/AppSection.vue'
+import AppSelect from './ui/AppSelect.vue'
+import AppButton from './ui/AppButton.vue'
+import AppNotification from './ui/AppNotification.vue'
+import AppCard from './ui/AppCard.vue'
+import { apiLoggingGetLevelRoute } from '../api/logging/get-level'
+import { apiLoggingSetLevelRoute } from '../api/logging/set-level'
+import { apiLoggingGetMetricsRoute } from '../api/logging/get-metrics'
+import { apiLoggingResetMetricsRoute } from '../api/logging/reset-metrics'
+
+const logLevelOptions = [
+  { value: 'Disable', label: 'Выключено' },
+  { value: 'Error', label: 'Error' },
+  { value: 'Warn', label: 'Warn' },
+  { value: 'Info', label: 'Info' },
+  { value: 'Debug', label: 'Debug' },
+]
+
+const logLevel = ref('Info')
+const logLevelSaving = ref(false)
+const metrics = ref({ processedMessages: 0, errors: 0 })
+const resetMetricsLoading = ref(false)
+const loggingLoadError = ref('')
+
+async function loadLogging() {
+  try {
+    const levelRes = await apiLoggingGetLevelRoute.run(ctx)
+    if (levelRes?.level) logLevel.value = levelRes.level
+    const metricsRes = await apiLoggingGetMetricsRoute.run(ctx)
+    if (metricsRes?.metrics) metrics.value = { ...metrics.value, ...metricsRes.metrics }
+  } catch (e) {
+    loggingLoadError.value = e?.message || 'Не удалось загрузить настройки логирования'
+  }
+}
+
+async function saveLogLevel() {
+  logLevelSaving.value = true
+  try {
+    const res = await apiLoggingSetLevelRoute.run(ctx, { level: logLevel.value })
+    if (!res?.success) loggingLoadError.value = res?.error || 'Ошибка сохранения'
+    else loggingLoadError.value = ''
+  } finally {
+    logLevelSaving.value = false
+  }
+}
+
+async function resetMetrics() {
+  resetMetricsLoading.value = true
+  try {
+    await apiLoggingResetMetricsRoute.run(ctx)
+    await loadLogging()
+  } finally {
+    resetMetricsLoading.value = false
+  }
+}
+
+onMounted(() => {
+  loadLogging()
+})
 </script>
 
 <style scoped>
@@ -49,64 +150,18 @@
   margin: 0;
 }
 
-.settings-section {
-  background: var(--c-surface);
-  border-radius: 12px;
-  padding: 24px;
-  margin-bottom: 24px;
-  border: 1px solid var(--c-border);
+.metrics-card {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--c-border);
 }
 
-.section-header {
+.form-row {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 12px;
   margin-bottom: 16px;
-}
-
-.section-header i {
-  font-size: 20px;
-  color: var(--c-primary);
-}
-
-.section-header h3 {
-  font-size: 18px;
-  font-weight: 600;
-  color: var(--c-text-primary);
-  margin: 0;
-}
-
-.section-description {
-  color: var(--c-text-secondary);
-  font-size: 14px;
-  margin-bottom: 20px;
-  line-height: 1.5;
-}
-
-.info-box {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  padding: 16px;
-  background: rgba(37, 211, 102, 0.1);
-  border-radius: 8px;
-  color: var(--c-success);
-}
-
-.info-box i {
-  font-size: 24px;
-  flex-shrink: 0;
-}
-
-.info-box strong {
-  display: block;
-  margin-bottom: 4px;
-}
-
-.info-box p {
-  margin: 0;
-  font-size: 14px;
-  opacity: 0.9;
 }
 
 .roadmap-list {
@@ -139,5 +194,29 @@
 
 .roadmap-list li i.fa-times {
   color: var(--c-danger);
+}
+
+.metrics-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.metric-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.metric-label {
+  font-size: 12px;
+  color: var(--c-text-secondary);
+}
+
+.metric-value {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--c-text-primary);
 }
 </style>

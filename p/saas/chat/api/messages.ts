@@ -10,6 +10,14 @@ import {
 } from '@app/feed'
 import { sendDataToSocket } from '@app/socket'
 import { pushMessageToChain } from '@ai-agents/sdk/process'
+import * as loggerLib from '../lib/logger.lib'
+import * as loggerSettings from '../lib/logger-settings.lib'
+import {
+  normalizeAuthorId,
+  normalizeReactions,
+  type CreatedBy,
+  type FeedMessageMinimal,
+} from '../lib/messages-helpers'
 import Chats from '../tables/chats.table'
 import BlockedUsers from '../tables/blocked-users.table'
 import ChatAgents from '../tables/chat-agents.table'
@@ -18,32 +26,25 @@ import Moderations from '../tables/chat-moderations.table'
 import PlanChats from '../tables/chat-plan-chats.table'
 // Push-уведомления удалены - используем только WebSocket и Inbox
 
-// Вспомогательная функция для обогащения сообщений данными авторов
-function normalizeAuthorId(createdBy) {
-  if (!createdBy) return ''
-  if (typeof createdBy === 'string') return createdBy
-  if (typeof createdBy === 'object' && createdBy.id) return createdBy.id
-  return String(createdBy)
+/** Обогащённое сообщение с полем author */
+interface EnrichedMessage extends FeedMessageMinimal {
+  author: {
+    id: string
+    displayName?: string
+    firstName?: string
+    lastName?: string
+    username?: string
+    avatar?: string
+    email?: string | null
+    phone?: string | null
+  } | null
 }
 
-// Нормализация реакций (защита от строки вместо объекта)
-function normalizeReactions(message: any): any {
-  let reactions = message.reactions || message.data?.reactions || {}
-  if (typeof reactions === 'string') {
-    try {
-      reactions = JSON.parse(reactions)
-    } catch (e) {
-      reactions = {}
-    }
-  }
-  return reactions
-}
+async function enrichMessagesWithAuthorData(ctx: app.Ctx, messages: FeedMessageMinimal[]): Promise<EnrichedMessage[]> {
+  const authorIds = [...new Set(messages.map(m => normalizeAuthorId(m.createdBy ?? (m as FeedMessageMinimal & { created_by?: CreatedBy }).created_by)).filter(Boolean))]
 
-async function enrichMessagesWithAuthorData(ctx, messages) {
-  const authorIds = [...new Set(messages.map(m => normalizeAuthorId(m.createdBy)).filter(Boolean))]
-  
   if (authorIds.length === 0) {
-    return messages.map(m => ({ ...m, author: null }))
+    return messages.map(m => ({ ...m, author: null })) as EnrichedMessage[]
   }
 
   const users = await findUsersByIds(ctx, authorIds)
@@ -54,18 +55,18 @@ async function enrichMessagesWithAuthorData(ctx, messages) {
   
   const usersMap = new Map(users.map(u => [u.id, u]))
   
-  return messages.map(m => {
-    const authorId = normalizeAuthorId(m.createdBy)
+  return messages.map((m: FeedMessageMinimal) => {
+    const authorId = normalizeAuthorId(m.createdBy ?? (m as FeedMessageMinimal & { created_by?: CreatedBy }).created_by)
     const user = usersMap.get(authorId)
     const userIdentities = allIdentities.filter(i => i.userId === authorId)
     const normalizedReactions = normalizeReactions(m)
-    const forwardedFrom = m.data?.forwardedFrom || null
-    
+    const forwardedFrom = (m.data as { forwardedFrom?: unknown } | undefined)?.forwardedFrom ?? null
+
     return {
       ...m,
       reactions: normalizedReactions,
       data: {
-        ...(m.data || {}),
+        ...(m.data ?? {}),
         reactions: normalizedReactions,
         forwardedFrom,
       },
@@ -83,8 +84,27 @@ async function enrichMessagesWithAuthorData(ctx, messages) {
   })
 }
 
+/** Минимальный контур чата для processMessageWithAgents */
+interface ChatForAgents {
+  id: string | { id: string }
+  feedId: string
+  title?: string
+  type?: string
+}
+
+/** Участник с ролью для processMessageWithAgents */
+interface ParticipantForAgents {
+  role?: string
+  userId?: string
+}
+
 // Обработка сообщения агентами через pushMessageToChain
-async function processMessageWithAgents(ctx, chat, message, senderParticipant) {
+async function processMessageWithAgents(
+  ctx: app.Ctx,
+  chat: ChatForAgents,
+  message: EnrichedMessage,
+  senderParticipant: ParticipantForAgents | null | undefined
+) {
   ctx.account.log('[processMessageWithAgents] START', {
     level: 'info',
     json: { 
@@ -200,7 +220,7 @@ async function processMessageWithAgents(ctx, chat, message, senderParticipant) {
       const chainKey = chatAgent.chainKey || `chat_${chat.feedId}_agent_${chatAgent.agentId}`
       
       // Получаем историю сообщений для контекста
-      let recentMessages: any[] = []
+      let recentMessages: FeedMessageMinimal[] = []
       try {
         recentMessages = await findFeedMessages(ctx, chat.feedId, {
           mode: 'tail',
@@ -343,7 +363,12 @@ ${senderName}: ${messageText}
 }
 
 // Отправить событие о новом сообщении всем участникам чата
-async function broadcastMessageEvent(ctx, feedId, eventType, message) {
+async function broadcastMessageEvent(
+  ctx: app.Ctx,
+  feedId: string,
+  eventType: string,
+  message: EnrichedMessage | FeedMessageMinimal
+) {
   try {
     const participants = await findFeedParticipants(ctx, feedId)
     for (const participant of participants) {
@@ -417,7 +442,7 @@ export const apiMessagesListRoute = app.get('/:feedId/list', async (ctx, req) =>
     return { messages: [], hasMore: false }
   }
 
-  let messages: any[] = []
+  let messages: FeedMessageMinimal[] = []
   try {
     messages = await findFeedMessages(ctx, req.params.feedId, {
       mode: beforeId ? 'head' : 'tail',
@@ -467,9 +492,10 @@ export const apiMessagesSendRoute = app
     }).optional(),
   }))
   .post('/:feedId/send', async (ctx, req) => {
-    requireRealUser(ctx)
+    try {
+      requireRealUser(ctx)
 
-    const chat = await Chats.findOneBy(ctx, { feedId: req.params.feedId })
+      const chat = await Chats.findOneBy(ctx, { feedId: req.params.feedId })
     if (!chat) throw new Error('Чат не найден')
 
     const participants = await findFeedParticipants(ctx, req.params.feedId)
@@ -556,7 +582,7 @@ export const apiMessagesSendRoute = app
       }
     }
 
-    const messageData: any = {}
+    const messageData: { forwardedFrom?: typeof req.body.forwardedFrom } = {}
     if (req.body.forwardedFrom) messageData.forwardedFrom = req.body.forwardedFrom
 
     const message = await createFeedMessage(ctx, req.params.feedId, ctx.user, {
@@ -580,7 +606,27 @@ export const apiMessagesSendRoute = app
       })
     }
 
-    return { success: true, message: enrichedMessage }
+    await loggerLib.writeServerLog(ctx, {
+      severity: 6,
+      message: '[api/messages] message sent',
+      payload: { feedId: req.params.feedId, messageId: message.id }
+    })
+    await loggerSettings.incrementMetric(ctx, 'processedMessages')
+
+      return { success: true, message: enrichedMessage }
+    } catch (err) {
+      try {
+        await loggerLib.writeServerLog(ctx, {
+          severity: 3,
+          message: '[api/messages] send error',
+          payload: { error: err instanceof Error ? err.message : String(err), feedId: req.params.feedId }
+        })
+        await loggerSettings.incrementMetric(ctx, 'errors')
+      } catch (_) {
+        /* не подменяем исходную ошибку при сбое логирования */
+      }
+      throw err
+    }
   })
 
 export const apiMessagesEditRoute = app
@@ -607,7 +653,7 @@ export const apiMessagesEditRoute = app
     const authorId = normalizeAuthorId(message.created_by || message.createdBy)
     const normalizedAuthorId = authorId?.toString().replace(/^user:/, '')
     const normalizedCurrentUserId = ctx.user.id?.toString().replace(/^user:/, '')
-    const isAuthor = normalizedAuthorId === normalizedCurrentUserId
+    const isAuthor = !!normalizedAuthorId && normalizedAuthorId === normalizedCurrentUserId
 
     if (!isAuthor) throw new Error('Вы можете редактировать только свои сообщения')
 
