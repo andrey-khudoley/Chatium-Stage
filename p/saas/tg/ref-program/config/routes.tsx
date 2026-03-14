@@ -1,5 +1,5 @@
 // PROJECT_ROOT — путь от корня воркспэйса до проекта (от /)
-export const PROJECT_ROOT = 'p/saas/ref'
+export const PROJECT_ROOT = 'p/saas/tg/ref-program'
 
 // Базовый путь проекта для формирования ссылок (от корня, без домена)
 const BASE_PATH = `/${PROJECT_ROOT}`

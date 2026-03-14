@@ -56,7 +56,7 @@ export async function getInviteByToken(
   return { invite, campaign }
 }
 
-export interface AcceptInviteResult {
+export type AcceptInviteResult = {
   success: true
   campaignId: string
 } | {

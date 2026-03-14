@@ -1,11 +1,11 @@
 // This file is auto-generated via createOrUpdateHeapTableFile API and should not be edited manually
 import { Heap } from '@app/heap'
 
-export const TSaasRefRegistration4Ab3Cd = Heap.Table(
-  't__saas-ref__registration__4Ab3Cd',
+export const TSaasRefProgramRegistration4Ab3Cd = Heap.Table(
+  't__tg-ref-program__registration__4Ab3Cd',
   {
     campaignId: Heap.Optional(
-      Heap.RefLink('t__saas-ref__campaign__8Hn4Lx', {
+      Heap.RefLink('t__tg-ref-program__campaign__8Hn4Lx', {
         customMeta: { title: 'Кампания' },
         onDelete: 'none',
       }),
@@ -25,7 +25,7 @@ export const TSaasRefRegistration4Ab3Cd = Heap.Table(
   { customMeta: { title: 'Регистрации', description: 'События регистрации' } },
 )
 
-export default TSaasRefRegistration4Ab3Cd
+export default TSaasRefProgramRegistration4Ab3Cd
 
-export type TSaasRefRegistration4Ab3CdRow = typeof TSaasRefRegistration4Ab3Cd.T
-export type TSaasRefRegistration4Ab3CdRowJson = typeof TSaasRefRegistration4Ab3Cd.JsonT
+export type TSaasRefProgramRegistration4Ab3CdRow = typeof TSaasRefProgramRegistration4Ab3Cd.T
+export type TSaasRefProgramRegistration4Ab3CdRowJson = typeof TSaasRefProgramRegistration4Ab3Cd.JsonT

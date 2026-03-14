@@ -4,10 +4,12 @@ import * as memberRepo from '../../lib/repo/memberRepo'
 import * as referralRepo from '../../lib/repo/referralRepo'
 import Partners from '../../tables/partners.table'
 import Referrals from '../../tables/referrals.table'
+import ReferralAggregates from '../../tables/referral_aggregates.table'
 
 /**
  * GET /api/analytics/dashboard?campaignId=… — агрегаты кампании и последние рефералы для дашборда.
  * Требуется авторизация и доступ к кампании.
+ * Итоги заказов/оплат считаются по таблице referral_aggregates.
  */
 export const dashboardRoute = app.get('/', async (ctx, req) => {
   const user = requireRealUser(ctx)
@@ -21,22 +23,26 @@ export const dashboardRoute = app.get('/', async (ctx, req) => {
     return { success: false, error: 'Нет доступа к кампании' }
   }
 
-  const [partnersCount, referralsCount, allReferrals, latestReferrals] = await Promise.all([
-    Partners.countBy(ctx, { campaignId }),
-    Referrals.countBy(ctx, { campaignId }),
-    Referrals.findAll(ctx, { where: { campaignId }, limit: 1000 }),
-    referralRepo.listReferrals(ctx, campaignId, { limit: 10, offset: 0 })
-  ])
+  const [partnersCount, referralsCount, aggregatesRows, latestReferrals] =
+    await Promise.all([
+      Partners.countBy(ctx, { campaignId }),
+      Referrals.countBy(ctx, { campaignId }),
+      ReferralAggregates.findAll(ctx, {
+        where: { campaignId },
+        limit: 10000
+      }),
+      referralRepo.listReferrals(ctx, campaignId, { limit: 10, offset: 0 })
+    ])
 
   let totalOrdersCount = 0
   let totalOrdersSum = 0
   let totalPaymentsCount = 0
   let totalPaymentsSum = 0
-  for (const r of allReferrals) {
-    totalOrdersCount += r.ordersCount ?? 0
-    totalOrdersSum += r.ordersSum ?? 0
-    totalPaymentsCount += r.paymentsCount ?? 0
-    totalPaymentsSum += r.paymentsSum ?? 0
+  for (const a of aggregatesRows) {
+    totalOrdersCount += a.ordersCount ?? 0
+    totalOrdersSum += a.ordersSum ?? 0
+    totalPaymentsCount += a.paymentsCount ?? 0
+    totalPaymentsSum += a.paymentsSum ?? 0
   }
 
   const latest = latestReferrals.referrals.map((r) => ({

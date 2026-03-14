@@ -1,11 +1,11 @@
 // This file is auto-generated via createOrUpdateHeapTableFile API and should not be edited manually
 import { Heap } from '@app/heap'
 
-export const TSaasRefBot2Kf9Mn = Heap.Table(
-  't__saas-ref__bot__2Kf9Mn',
+export const TSaasTgRefBotX7pQ2m = Heap.Table(
+  't__tg-ref-program__bot__X7pQ2m',
   {
     campaignId: Heap.Optional(
-      Heap.RefLink('t__saas-ref__campaign__8Hn4Lx', {
+      Heap.RefLink('t__tg-ref-program__campaign__8Hn4Lx', {
         customMeta: { title: 'Кампания' },
         onDelete: 'none'
       })
@@ -22,7 +22,7 @@ export const TSaasRefBot2Kf9Mn = Heap.Table(
   { customMeta: { title: 'Telegram боты', description: 'Боты кампаний' } }
 )
 
-export default TSaasRefBot2Kf9Mn
+export default TSaasTgRefBotX7pQ2m
 
-export type TSaasRefBot2Kf9MnRow = typeof TSaasRefBot2Kf9Mn.T
-export type TSaasRefBot2Kf9MnRowJson = typeof TSaasRefBot2Kf9Mn.JsonT
+export type TSaasTgRefBotX7pQ2mRow = typeof TSaasTgRefBotX7pQ2m.T
+export type TSaasTgRefBotX7pQ2mRowJson = typeof TSaasTgRefBotX7pQ2m.JsonT

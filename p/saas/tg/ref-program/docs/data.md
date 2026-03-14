@@ -9,7 +9,7 @@
 - **PageRow** — id, campaignId, title, urlTemplate, webhookSecret, createdAt, updatedAt (целевые страницы кампании).
 - **PartnerLinkRow** — id, campaignId, partnerId, pageId, publicSlug, createdAt, updatedAt (партнёрские ссылки).
 - **PartnerRow**, **PartnerStats** — партнёры кампании (Telegram: tgId, username, fullName, stats).
-- **ReferralRow**, **RegistrationRow**, **OrderRow**, **PaymentRow** — рефералы и события (фича 5).
+- **ReferralRow**, **ReferralAggregateRow**, **RegistrationRow**, **OrderRow**, **PaymentRow** — рефералы, агрегаты заказов/оплат и события (фича 5).
 - **BotRow**, **BotUpdateRow** — боты и апдейты Telegram.
 - **TelegramUser**, **TelegramChat**, **TelegramMessage**, **TelegramUpdate**, **CallbackQuery** — типы payload Telegram Bot API.
 
@@ -21,21 +21,22 @@
 
 | Table | File | Назначение | Основные поля |
 | --- | --- | --- | --- |
-| t__saas-ref__setting__7Fk2Qw | tables/settings.table.ts | Настройки проекта (key-value) | key (string), value (any) |
-| t__saas-ref__log__9Xm3Kp | tables/logs.table.ts | Серверные логи (долгосрочное хранение) | message (string), payload (any), severity, level, timestamp |
-| t__saas-ref__campaign__8Hn4Lx | tables/campaigns.table.ts | Кампании партнёрской программы | title, ownerUserId (UserRefLink), webhookSecret, settings (Any), isDeleted |
-| t__saas-ref__campaign_member__2Km5Ny | tables/campaign_members.table.ts | Участники кампаний | campaignId (RefLink→campaigns), userId (UserRefLink), role |
-| t__saas-ref__campaign_invite__6Xy9Zk | tables/campaign_invites.table.ts | Приглашения в кампанию по токену | campaignId (RefLink→campaigns), token, createdByUserId (UserRefLink), expiresAt (DateTime), acceptedAt (DateTime, null = не использовано) |
-| t__saas-ref__partner__3Ab7Cd | tables/partners.table.ts | Партнёры кампании (Telegram) | campaignId (RefLink→campaigns), tgId, username, fullName, stats (Any) |
-| t__saas-ref__page__4Bc8De | tables/pages.table.ts | Целевые страницы для трафика | campaignId (RefLink→campaigns), title, urlTemplate (шаблон с {ref}), webhookSecret |
-| t__saas-ref__partner_link__5Cd9Ef | tables/partner_links.table.ts | Партнёрские ссылки | campaignId, partnerId (RefLink→partners), pageId (RefLink→pages), publicSlug |
-| t__saas-ref__visit__1Vw7Kx | tables/visits.table.ts | Визиты (клики по партнёрским ссылкам) | campaignId, partnerLinkId, partnerId, pageId (RefLink), ref, fingerprintHash, fingerprintParts (Any), clickedAt, registeredAt (DateTime) |
-| t__saas-ref__bot__2Kf9Mn | tables/bots.table.ts | Telegram-боты кампаний | campaignId (RefLink→campaigns), tokenEncrypted, tgBotId, username, title, webhookUrl, webhookStatus |
-| t__saas-ref__bot_update__7Pq3Rs | tables/bot_updates.table.ts | Апдейты Telegram-ботов | campaignId, botId (RefLink→bots), updateId, tgUserId, updateType, payloadJson (Any) |
-| t__saas-ref__referral__9Xy2Zk | tables/referrals.table.ts | Рефералы (клиенты) | campaignId, partnerId (RefLink), ref, tgId, gcId, name, email, phone, registeredAt, ordersCount, ordersSum, paymentsCount, paymentsSum |
-| t__saas-ref__registration__4Ab3Cd | tables/registrations.table.ts | События регистрации | campaignId, ref, tgId, gcId, name, email, phone, rawPayload (Any) |
-| t__saas-ref__order__5De6Fg | tables/orders.table.ts | События заказов | campaignId, ref, orderId, productName, orderSum, rawPayload (Any) |
-| t__saas-ref__payment__7Hi8Jk | tables/payments.table.ts | События оплат | campaignId, ref, orderId, paymentSum, rawPayload (Any) |
+| t__tg-ref-program__setting__7Fk2Qw | tables/settings.table.ts | Настройки проекта (key-value) | key (string), value (any) |
+| t__tg-ref-program__log__x7Kp9m | tables/logs.table.ts | Серверные логи (долгосрочное хранение) | message (string), payload (any), severity, level, timestamp |
+| t__tg-ref-program__campaign__8Hn4Lx | tables/campaigns.table.ts | Кампании партнёрской программы | title, ownerUserId (UserRefLink), webhookSecret, settings (Any), isDeleted |
+| t__tg-ref-program__campaign_member__Pg7T2x | tables/campaign_members.table.ts | Участники кампаний | campaignId (RefLink→campaigns), userId (UserRefLink), role |
+| t__tg-ref-program__campaign_invite__p2K8mN | tables/campaign_invites.table.ts | Приглашения в кампанию по токену | campaignId (RefLink→campaigns), token, createdByUserId (UserRefLink), expiresAt (DateTime), acceptedAt (DateTime, null = не использовано) |
+| t__tg-ref-program__partner__3Ab7Cd | tables/partners.table.ts | Партнёры кампании (Telegram) | campaignId (RefLink→campaigns), tgId, username, fullName, stats (Any) |
+| t__tg-ref-program__page__4Bc8De | tables/pages.table.ts | Целевые страницы для трафика | campaignId (RefLink→campaigns), title, urlTemplate (шаблон с {ref}), webhookSecret |
+| t__tg-ref-program__partner_link__5Cd9Ef | tables/partner_links.table.ts | Партнёрские ссылки | campaignId, partnerId (RefLink→partners), pageId (RefLink→pages), publicSlug |
+| t__tg-ref-program__visit__1Vw7Kx | tables/visits.table.ts | Визиты (клики по партнёрским ссылкам) | campaignId, partnerLinkId, partnerId, pageId (RefLink), ref, fingerprintHash, fingerprintParts (Any), clickedAt, registeredAt (DateTime) |
+| t__tg-ref-program__bot__X7pQ2m | tables/bots.table.ts | Telegram-боты кампаний | campaignId (RefLink→campaigns), tokenEncrypted, tgBotId, username, title, webhookUrl, webhookStatus |
+| t__tg-ref-program__bot_update__7Pq3Rs | tables/bot_updates.table.ts | Апдейты Telegram-ботов | campaignId, botId (RefLink→bots), updateId, tgUserId, updateType, payloadJson (Any) |
+| t__tg-ref-program__referral__9Xy2Zk | tables/referrals.table.ts | Рефералы (клиенты) | campaignId, partnerId (RefLink), ref, tgId, gcId, name, email, phone, registeredAt |
+| t__tg-ref-program__refagg__2Xy9Zk | tables/referral_aggregates.table.ts | Агрегаты рефералов | referralId (RefLink→referrals), campaignId (RefLink→campaigns), ordersCount, ordersSum, paymentsCount, paymentsSum. Обновляются инкрементально (incrementReferralStats по вебхукам, runWithExclusiveLock по referralId) и при полном пересчёте (джоб recalc-referral-aggregates). Полный пересчёт перезаписывает агрегаты по данным из таблиц заказов и оплат (не инкремент); запись по каждому рефералу сериализована с вебхуками через runWithExclusiveLock. Джоб пагинирует по campaignOffset, campaignIndex, referralOffset (страницы кампаний по BATCH_LIMIT). |
+| t__tg-ref-program__registration__4Ab3Cd | tables/registrations.table.ts | События регистрации | campaignId, ref, tgId, gcId, name, email, phone, rawPayload (Any) |
+| t__tg-ref-program__order__5De6Fg | tables/orders.table.ts | События заказов | campaignId, ref, orderId, productName, orderSum, rawPayload (Any) |
+| t__tg-ref-program__payment__7Hi8Jk | tables/payments.table.ts | События оплат | campaignId, ref, orderId, paymentSum, rawPayload (Any) |
 
 ## Репозитории (repos/, lib/repo/)
 - `repos/settings.repo.ts` — findByKey, findAll, upsert, deleteByKey (слой работы с БД).
@@ -47,7 +48,7 @@
 - `lib/repo/linkRepo.ts` — getOrCreatePartnerLink(ctx, campaignId, partnerId, pageId), getPartnerLinks(ctx, partnerId), findLinkByPublicSlug(ctx, publicSlug).
 - `lib/repo/visitRepo.ts` — createVisit(ctx, data) → { visit, ref, isNew }, findVisitByRef(ctx, ref), markVisitRegistered(ctx, ref).
 - `lib/repo/partnerRepo.ts` — getOrCreatePartner(ctx, campaignId, tgUser) → { partner, isNew }, getPartnerById(ctx, partnerId), updatePartnerStats(ctx, partnerId, { registrations?, orders?, payments?, paymentsSum? }). Партнёры по Telegram (tgId, username, fullName, stats); инкремент статистики для фичи 5.
-- `lib/repo/referralRepo.ts` — createOrUpdateReferral(ctx, data), incrementReferralStats(ctx, campaignId, ref, { ordersCount?, ordersSum?, paymentsCount?, paymentsSum? }). Рефералы по campaignId+ref; инкремент счётчиков заказов/оплат.
+- `lib/repo/referralRepo.ts` — createOrUpdateReferral(ctx, data) — без агрегатов; incrementReferralStats(ctx, campaignId, ref, { ordersCount?, ordersSum?, paymentsCount?, paymentsSum? }) — обновляет только таблицу referral_aggregates (ленивое создание записи, runWithExclusiveLock); listReferrals(ctx, campaignId, opts) — возвращает рефералов с агрегатами из referral_aggregates. В ветке без memory-фильтров: пагинация по limit/offset, агрегаты загружаются только для referralIds текущей страницы (where: { referralId: referralIds }), без глобального лимита 5000. При наличии фильтров (dateFrom/dateTo/minOrders/minPayments) — два запроса + merge в памяти.
 - `lib/repo/eventRepo.ts` — processRegistration(ctx, campaignId, data), processOrder(ctx, campaignId, data), processPayment(ctx, campaignId, data), getReferralEventLog(ctx, campaignId, ref). Обработка webhook-событий с идемпотентностью; лог событий реферала.
 - `lib/repo/botRepo.ts` — getBotById(ctx, botId), saveUpdate(ctx, botId, update). Боты и сохранение апдейтов в bot_updates.
 

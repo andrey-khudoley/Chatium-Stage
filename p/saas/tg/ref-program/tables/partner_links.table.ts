@@ -2,22 +2,22 @@
 import { Heap } from '@app/heap'
 
 export const TSaasRefPartnerLink5Cd9Ef = Heap.Table(
-  't__saas-ref__partner_link__5Cd9Ef',
+  't__tg-ref-program__partner_link__5Cd9Ef',
   {
     campaignId: Heap.Optional(
-      Heap.RefLink('t__saas-ref__campaign__8Hn4Lx', {
+      Heap.RefLink('t__tg-ref-program__campaign__8Hn4Lx', {
         customMeta: { title: 'Кампания' },
         onDelete: 'none',
       }),
     ),
     partnerId: Heap.Optional(
-      Heap.RefLink('t__saas-ref__partner__3Ab7Cd', {
+      Heap.RefLink('t__tg-ref-program__partner__3Ab7Cd', {
         customMeta: { title: 'Партнёр' },
         onDelete: 'none',
       }),
     ),
     pageId: Heap.Optional(
-      Heap.RefLink('t__saas-ref__page__4Bc8De', {
+      Heap.RefLink('t__tg-ref-program__page__4Bc8De', {
         customMeta: { title: 'Страница' },
         onDelete: 'none',
       }),
