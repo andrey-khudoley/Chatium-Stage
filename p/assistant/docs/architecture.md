@@ -14,11 +14,16 @@
 - Открыть админку (только роль Admin).
 
 ## Роутинг
-- `index.tsx` — главная (SSR + Vue), единственный роут в корне.
+- `index.tsx` — главная (SSR + Vue), единственный роут в корне. Ниже hero — блоки разделов (Календарь, Мой день, Неделя, Привычки, Блокнот).
 - `web/admin/index.tsx` — админка, `requireAccountRole('Admin')`.
 - `web/profile/index.tsx` — профиль, `requireRealUser()`.
 - `web/tests/index.tsx` — страница тестов, `requireRealUser()`.
 - `web/login/index.tsx` — вход (редирект на системный `/s/auth/signin`).
+- `web/calendar/index.tsx` — раздел «Календарь» (публичный).
+- `web/my-day/index.tsx` — раздел «Мой день» (публичный).
+- `web/week/index.tsx` — раздел «Неделя» (публичный).
+- `web/habits/index.tsx` — раздел «Привычки» (публичный).
+- `web/notebook/index.tsx` — раздел «Блокнот» (публичный).
 
 ## Разделение слоёв
 
@@ -36,8 +41,9 @@
 ## Структура каталогов
 - `config/` — маршруты и `PROJECT_ROOT`.
 - `web/` — браузерные роуты модулей (admin, profile, tests, login).
-- `pages/` — Vue‑страницы (минимальные).
-- `components/` — переиспользуемые Vue‑компоненты (Header, AppFooter, GlobalGlitch, LogoutModal).
+- `pages/` — Vue‑страницы (HomePage, ProfilePage, AdminPage, LoginPage, TestsPage; разделы: CalendarPage, MyDayPage, WeekPage, HabitsPage, NotebookPage).
+- `components/` — переиспользуемые Vue‑компоненты (Header, AppFooter, GlobalGlitch, LogoutModal, SectionNav — навигация по разделам).
+- `shared/sectionPageStyles.ts` — общие стили для страниц разделов (календарь, мой день, неделя, привычки, блокнот).
 - `api/` — API‑эндпоинты (получение и валидация входных данных). File-based: один файл — один эндпоинт с `/`. Пример: `api/settings/list.ts`, `api/settings/get.ts`, `api/settings/save.ts`, `api/logger/log.ts`, `api/admin/logs/recent.ts`, `api/admin/logs/before.ts`, `api/tests/list.ts`, `api/tests/endpoints-check/health.ts`, `api/tests/endpoints-check/ping.ts`.
 - `tables/` — Heap‑таблицы (схемы: settings, logs).
 - `repos/` — репозитории (работа с БД: settings, logs; logs.repo включает findBeforeTimestamp для пагинации).

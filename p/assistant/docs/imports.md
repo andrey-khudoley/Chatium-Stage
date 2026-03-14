@@ -6,7 +6,7 @@
 - нет внутренних импортов (только экспорт PROJECT_ROOT, ROUTES, getFullUrl, withProjectRoot, withProjectRootAndSubroute)
 
 ### `./config/project.tsx`
-- нет внутренних импортов (только экспорт DEFAULT_PROJECT_TITLE, INDEX_PAGE_NAME, PROFILE_PAGE_NAME, ADMIN_PAGE_NAME, TESTS_PAGE_NAME, getPageTitle, getHeaderText, BODY_TEXT, BODY_SUBTEXT)
+- нет внутренних импортов (только экспорт DEFAULT_PROJECT_TITLE, INDEX_PAGE_NAME, PROFILE_PAGE_NAME, ADMIN_PAGE_NAME, TESTS_PAGE_NAME, CALENDAR_PAGE_NAME, MY_DAY_PAGE_NAME, WEEK_PAGE_NAME, HABITS_PAGE_NAME, NOTEBOOK_PAGE_NAME, getPageTitle, getHeaderText, BODY_TEXT, BODY_SUBTEXT)
 
 ### `./index.tsx`
 - `@app/html-jsx` → `jsx`
@@ -65,6 +65,30 @@
 - `../../config/routes` → `PROJECT_ROOT`
 - `../../lib/logger.lib` → `*`
 
+### `./web/calendar/index.tsx`
+- `@app/html-jsx` → `jsx`
+- `../../pages/CalendarPage.vue`
+- `../../shared/preloader` → `getPreloaderStyles`, `getPreloaderScript`
+- `../../shared/sectionPageStyles` → `getSectionPageLayoutStyles`, `sectionPageVariablesStyles`
+- `../../shared/logLevel` → `getLogLevelForPage`, `getLogLevelScript`
+- `../../lib/logger.lib` → `*`
+- `../../config/routes` → `getFullUrl`, `ROUTES`
+- `../../config/project` → `CALENDAR_PAGE_NAME`, `getPageTitle`, `getHeaderText`
+- `../../lib/settings.lib` → `*`
+- `../../styles` → `customScrollbarStyles`
+
+### `./web/my-day/index.tsx`
+- то же, что web/calendar; страница `MyDayPage.vue`, константа `MY_DAY_PAGE_NAME`
+
+### `./web/week/index.tsx`
+- то же, что web/calendar; страница `WeekPage.vue`, константа `WEEK_PAGE_NAME`
+
+### `./web/habits/index.tsx`
+- то же, что web/calendar; страница `HabitsPage.vue`, константа `HABITS_PAGE_NAME`
+
+### `./web/notebook/index.tsx`
+- то же, что web/calendar; страница `NotebookPage.vue`, константа `NOTEBOOK_PAGE_NAME`
+
 ## 2) Страницы‑компоненты (Vue)
 
 ### `./pages/HomePage.vue`
@@ -73,6 +97,7 @@
 - `../components/GlobalGlitch.vue`
 - `../components/AppFooter.vue`
 - `../shared/logger` → `createComponentLogger`
+- получает от index.tsx: calendarUrl, myDayUrl, weekUrl, habitsUrl, notebookUrl (getFullUrl(ROUTES.*))
 
 ### `./pages/AdminPage.vue`
 - `vue` → `onMounted`, `onBeforeUnmount`, `onUnmounted`, `ref`, `computed`, `watch`
@@ -109,6 +134,12 @@
 - `vue` → `computed`, `onMounted`
 - `../shared/logger` → `createComponentLogger`
 
+### `./pages/CalendarPage.vue`, `MyDayPage.vue`, `WeekPage.vue`, `HabitsPage.vue`, `NotebookPage.vue`
+- `vue` → `onMounted`, `ref`
+- `../components/Header.vue`, `GlobalGlitch.vue`, `AppFooter.vue`, `SectionNav.vue`
+- `../shared/logger` → `createComponentLogger`
+- получают от соответствующих web/*/index.tsx: projectTitle, indexUrl, profileUrl, loginUrl, isAuthenticated, isAdmin?, adminUrl?, testsUrl?, calendarUrl, myDayUrl, weekUrl, habitsUrl, notebookUrl
+
 ## 3) Компоненты (components/)
 
 ### `./components/Header.vue`
@@ -128,6 +159,9 @@
 - `vue` → `onMounted`
 - `../shared/logger` → `createComponentLogger`
 
+### `./components/SectionNav.vue`
+- нет внешних импортов (только defineProps: indexUrl, calendarUrl, myDayUrl, weekUrl, habitsUrl, notebookUrl, currentSection)
+
 ## 4) Shared (общий код)
 
 ### `./styles.tsx`
@@ -142,6 +176,10 @@
 
 ### `./shared/logger.ts`
 - нет импортов (клиентский логгер по syslog RFC 5424: severity -1…7, LOG_LEVEL_OFF=-1, читает window.__BOOT__.logLevel; createComponentLogger, setLogSink, LogEntry)
+
+### `./shared/sectionPageStyles.ts`
+- `// @shared` в начале файла
+- нет импортов (экспорт getSectionPageLayoutStyles(getPreloaderStyles), sectionPageVariablesStyles; общие стили для web/calendar, web/my-day, web/week, web/habits, web/notebook)
 
 ## 5) Таблицы (tables/)
 
