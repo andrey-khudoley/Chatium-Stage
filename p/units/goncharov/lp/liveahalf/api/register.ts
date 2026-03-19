@@ -1,9 +1,15 @@
 import Registrations from "../tables/registrations.table"
 import Settings from "../tables/settings.table"
+// @ts-ignore
 import { captureCustomerEvent, ContactType } from "@crm/sdk"
+// @ts-ignore
 import { sendNotificationToAccountOwners } from "@user-notifier/sdk"
+// @ts-ignore
 import { writeWorkspaceEvent, getWorkspaceEventUrl } from '@start/sdk'
+// @ts-ignore
 import { request } from "@app/request"
+
+declare const base64Encode: (text: string) => string
 
 export const apiRegisterRoute = app.post('/register', async (ctx, req) => {
   const { name, email, phone, utmSource, utmMedium, utmCampaign, utmContent, utmTerm, clrtUid } = req.body
@@ -113,8 +119,40 @@ interface GetcourseResult {
   paymentUrl?: string
 }
 
+function maskSecret(value: string | undefined): string {
+  if (!value) return ''
+  if (value.length <= 8) return '***'
+  return `${value.slice(0, 4)}***${value.slice(-2)}`
+}
+
+function logToCtx(ctx: app.Ctx, tag: string, data?: unknown): void {
+  if (!ctx.log) return
+  if (data === undefined) {
+    ctx.log(tag)
+    return
+  }
+  try {
+    ctx.log(`${tag} ${JSON.stringify(data)}`)
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'stringify_failed'
+    ctx.log(`${tag} {"log_error":"${errorMessage}"}`)
+  }
+}
+
 async function sendToGetcourse(ctx: app.Ctx, payload: GetcoursePayload): Promise<GetcourseResult> {
   try {
+    logToCtx(ctx, 'liveahalf:getcourse:start', {
+      email: payload.email,
+      hasPhone: Boolean(payload.phone),
+      utm: {
+        source: Boolean(payload.utmSource),
+        medium: Boolean(payload.utmMedium),
+        campaign: Boolean(payload.utmCampaign),
+        content: Boolean(payload.utmContent),
+        term: Boolean(payload.utmTerm),
+      },
+    })
+
     const accountNameSetting = await Settings.findOneBy(ctx, { key: 'getcourse_account_name' })
     const apiKeySetting = await Settings.findOneBy(ctx, { key: 'getcourse_api_key' })
     const offerCodeSetting = await Settings.findOneBy(ctx, { key: 'getcourse_offer_code' })
@@ -126,10 +164,15 @@ async function sendToGetcourse(ctx: app.Ctx, payload: GetcoursePayload): Promise
     const utmTermFieldSetting = await Settings.findOneBy(ctx, { key: 'getcourse_utm_term_field' })
 
     if (!accountNameSetting?.value) {
+      logToCtx(ctx, 'liveahalf:getcourse:config-missing', { field: 'getcourse_account_name' })
       return { success: false, error: 'GetCourse account name not configured' }
     }
 
     if (!apiKeySetting?.value || !offerCodeSetting?.value) {
+      logToCtx(ctx, 'liveahalf:getcourse:config-missing', {
+        hasApiKey: Boolean(apiKeySetting?.value),
+        hasOfferCode: Boolean(offerCodeSetting?.value),
+      })
       return { success: false, error: 'GetCourse settings not configured' }
     }
 
@@ -137,6 +180,23 @@ async function sendToGetcourse(ctx: app.Ctx, payload: GetcoursePayload): Promise
     const apiKey = apiKeySetting.value
     const offerCode = offerCodeSetting.value
     const price = parseFloat(priceSetting?.value || '0')
+    const priceIsNaN = Number.isNaN(price)
+
+    logToCtx(ctx, 'liveahalf:getcourse:config-loaded', {
+      accountName,
+      apiKeyMasked: maskSecret(apiKey),
+      offerCode,
+      rawPrice: priceSetting?.value || '',
+      parsedPrice: price,
+      priceIsNaN,
+      utmFieldMap: {
+        source: utmSourceFieldSetting?.value || '',
+        medium: utmMediumFieldSetting?.value || '',
+        campaign: utmCampaignFieldSetting?.value || '',
+        content: utmContentFieldSetting?.value || '',
+        term: utmTermFieldSetting?.value || '',
+      },
+    })
 
     const [firstName, ...lastNameParts] = payload.name.split(' ')
     const lastName = lastNameParts.join(' ') || ''
@@ -193,11 +253,20 @@ async function sendToGetcourse(ctx: app.Ctx, payload: GetcoursePayload): Promise
     }
 
     const paramsJson = JSON.stringify(paramsObj)
-    const paramsBase64 = btoa(unescape(encodeURIComponent(paramsJson)))
+    const paramsBase64 = base64Encode(paramsJson)
+    const requestUrl = `https://${accountName}.getcourse.ru/pl/api/deals`
+
+    logToCtx(ctx, 'liveahalf:getcourse:request-prepared', {
+      url: requestUrl,
+      action: 'add',
+      paramsLength: paramsJson.length,
+      paramsBase64Length: paramsBase64.length,
+      requestPayload: paramsObj,
+    })
 
     const response = await request({
       method: 'post',
-      url: `https://${accountName}.getcourse.ru/pl/api/deals`,
+      url: requestUrl,
       form: {
         action: 'add',
         key: apiKey,
@@ -207,6 +276,20 @@ async function sendToGetcourse(ctx: app.Ctx, payload: GetcoursePayload): Promise
     })
 
     const body = response.body as any
+    const topLevelSuccess = body ? String(body.success) : 'undefined'
+    const resultSuccess = body?.result ? String(body.result.success) : 'undefined'
+    const resultError = body?.result ? String(body.result.error) : 'undefined'
+
+    logToCtx(ctx, 'liveahalf:getcourse:response-received', {
+      statusCode: response.statusCode,
+      bodyType: typeof body,
+      topLevelSuccess,
+      resultSuccess,
+      resultError,
+      error: body?.error,
+      errorMessage: body?.error_message || body?.result?.error_message,
+      responseBody: body,
+    })
 
     await writeWorkspaceEvent(ctx, 'getcourse_api_debug', {
       action_param1: payload.email,
@@ -218,7 +301,11 @@ async function sendToGetcourse(ctx: app.Ctx, payload: GetcoursePayload): Promise
       },
     })
 
-    if (body && String(body.success) === 'true') {
+    const isTopLevelSuccess = body && String(body.success) === 'true'
+    const isResultSuccess = body?.result && String(body.result.success) === 'true'
+    const hasResultError = body?.result && String(body.result.error) === 'true'
+
+    if (isTopLevelSuccess && isResultSuccess && !hasResultError) {
       let paymentUrl: string | undefined
       if (price > 0 && body.result && body.result.payment_link) {
         paymentUrl = body.result.payment_link
@@ -234,9 +321,25 @@ async function sendToGetcourse(ctx: app.Ctx, payload: GetcoursePayload): Promise
         },
       })
 
+      logToCtx(ctx, 'liveahalf:getcourse:success', {
+        email: payload.email,
+        offerCode,
+        price,
+        hasPaymentUrl: Boolean(paymentUrl),
+      })
+
       return { success: true, paymentUrl }
     } else {
-      const errorMessage = body?.error_message || body?.error || JSON.stringify(body)
+      const errorMessage = body?.result?.error_message || body?.error_message || body?.error || JSON.stringify(body)
+      logToCtx(ctx, 'liveahalf:getcourse:api-error', {
+        email: payload.email,
+        offerCode,
+        statusCode: response.statusCode,
+        errorMessage,
+        topLevelSuccess,
+        resultSuccess,
+        resultError,
+      })
       await writeWorkspaceEvent(ctx, 'getcourse_api_error', {
         action_param1: payload.email,
         action_param2: offerCode,
@@ -251,6 +354,11 @@ async function sendToGetcourse(ctx: app.Ctx, payload: GetcoursePayload): Promise
     }
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    logToCtx(ctx, 'liveahalf:getcourse:exception', {
+      email: payload.email,
+      errorMessage,
+      stack: error instanceof Error ? error.stack : undefined,
+    })
     await writeWorkspaceEvent(ctx, 'getcourse_integration_exception', {
       action_param1: payload.email,
       action_param3: errorMessage,
