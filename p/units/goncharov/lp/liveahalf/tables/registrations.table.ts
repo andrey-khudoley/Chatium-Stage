@@ -1,7 +1,7 @@
 // This file is auto-generated via createOrUpdateHeapTableFile API and should not be edited manually
 import { Heap } from '@app/heap'
 
-export const TPUnitsGoncharovLpLiveahalfLiveahalfRegistrationsJpz = Heap.Table(
+export const TPUnitsGoncharovLpLiveahalfLiveahalfRegistrationsJwp = Heap.Table(
   't_p_units_goncharov_lp_liveahalf_liveahalf_registrations_jwp',
   {
     name: Heap.Optional(Heap.String({ customMeta: { title: 'Имя' }, searchable: { langs: ['ru', 'en'] } })),
@@ -10,13 +10,15 @@ export const TPUnitsGoncharovLpLiveahalfLiveahalfRegistrationsJpz = Heap.Table(
     utmSource: Heap.Optional(Heap.String({ customMeta: { title: 'UTM Source' } })),
     utmMedium: Heap.Optional(Heap.String({ customMeta: { title: 'UTM Medium' } })),
     utmCampaign: Heap.Optional(Heap.String({ customMeta: { title: 'UTM Campaign' } })),
+    utmContent: Heap.Optional(Heap.String({ customMeta: { title: 'UTM Content' } })),
+    utmTerm: Heap.Optional(Heap.String({ customMeta: { title: 'UTM Term' } })),
   },
-  { customMeta: { title: 'Регистрации на вебинар', description: 'Регистрации на вебинар' } },
+  { customMeta: { title: 'registrations.table.ts', description: '' } },
 )
 
-export default TPUnitsGoncharovLpLiveahalfLiveahalfRegistrationsJpz
+export default TPUnitsGoncharovLpLiveahalfLiveahalfRegistrationsJwp
 
-export type TPUnitsGoncharovLpLiveahalfLiveahalfRegistrationsJpzRow =
-  typeof TPUnitsGoncharovLpLiveahalfLiveahalfRegistrationsJpz.T
-export type TPUnitsGoncharovLpLiveahalfLiveahalfRegistrationsJpzRowJson =
-  typeof TPUnitsGoncharovLpLiveahalfLiveahalfRegistrationsJpz.JsonT
+export type TPUnitsGoncharovLpLiveahalfLiveahalfRegistrationsJwpRow =
+  typeof TPUnitsGoncharovLpLiveahalfLiveahalfRegistrationsJwp.T
+export type TPUnitsGoncharovLpLiveahalfLiveahalfRegistrationsJwpRowJson =
+  typeof TPUnitsGoncharovLpLiveahalfLiveahalfRegistrationsJwp.JsonT

@@ -99,8 +99,18 @@ function getUtm() {
       utmSource: params.get('utm_source') || '',
       utmMedium: params.get('utm_medium') || '',
       utmCampaign: params.get('utm_campaign') || '',
+      utmContent: params.get('utm_content') || '',
+      utmTerm: params.get('utm_term') || '',
     }
-  } catch { return { utmSource: '', utmMedium: '', utmCampaign: '' } }
+  } catch { 
+    return { 
+      utmSource: '', 
+      utmMedium: '', 
+      utmCampaign: '', 
+      utmContent: '', 
+      utmTerm: '' 
+    } 
+  }
 }
 
 async function handleSubmit() {
@@ -109,11 +119,37 @@ async function handleSubmit() {
   try {
     const utm = getUtm()
     const clrtUid = typeof window !== 'undefined' ? window.clrtUid : undefined
-    await apiRegisterRoute.run(ctx, {
+    const result = await apiRegisterRoute.run(ctx, {
       ...form.value,
       ...utm,
       clrtUid,
     })
+    
+    if (result && !result.success && result.error) {
+      error.value = result.error
+      loading.value = false
+      return
+    }
+    
+    // Если есть ссылка на оплату, перенаправляем на неё
+    if (result && result.paymentUrl) {
+      if (typeof window !== 'undefined' && window.clrtTrack) {
+        window.clrtTrack({
+          url: 'event://custom/liveahalf/redirect-to-payment',
+          action: 'redirect_to_payment',
+          action_param1: 'webinar_liveahalf',
+          action_param2: result.paymentUrl,
+        })
+      }
+      
+      // Перенаправляем на страницу оплаты
+      if (typeof window !== 'undefined') {
+        window.location.href = result.paymentUrl
+      }
+      return
+    }
+    
+    // Если ссылки нет (бесплатная регистрация), показываем сообщение об успехе
     submitted.value = true
 
     if (typeof window !== 'undefined' && window.clrtTrack) {
@@ -124,7 +160,7 @@ async function handleSubmit() {
       })
     }
   } catch (e) {
-    error.value = 'Произошла ошибка. Попробуйте ещё раз.'
+    error.value = e?.message || 'Произошла ошибка. Попробуйте ещё раз.'
   } finally {
     loading.value = false
   }
