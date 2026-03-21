@@ -1,8 +1,13 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref } from 'vue'
+import { computed, markRaw, onMounted, onUnmounted, ref } from 'vue'
 import Header from '../components/Header.vue'
 import GlobalGlitch from '../components/GlobalGlitch.vue'
 import AppFooter from '../components/AppFooter.vue'
+import JournalNotebookPane from '../components/journal/JournalNotebookPane.vue'
+import JournalMonthPane from '../components/journal/JournalMonthPane.vue'
+import JournalWeekPane from '../components/journal/JournalWeekPane.vue'
+import JournalDayPane from '../components/journal/JournalDayPane.vue'
+import JournalHabitsPane from '../components/journal/JournalHabitsPane.vue'
 import { createComponentLogger } from '../shared/logger'
 
 const log = createComponentLogger('JournalPage')
@@ -12,6 +17,8 @@ declare global {
     hideAppLoader?: () => void
   }
 }
+
+type JournalTabId = 'notebook' | 'month' | 'week' | 'day' | 'habits'
 
 const props = defineProps<{
   projectTitle: string
@@ -25,6 +32,32 @@ const props = defineProps<{
 }>()
 
 const bootLoaderDone = ref(false)
+
+const tabComponents: Record<JournalTabId, object> = {
+  notebook: markRaw(JournalNotebookPane),
+  month: markRaw(JournalMonthPane),
+  week: markRaw(JournalWeekPane),
+  day: markRaw(JournalDayPane),
+  habits: markRaw(JournalHabitsPane),
+}
+
+const tabs: { id: JournalTabId; label: string }[] = [
+  { id: 'notebook', label: 'Блокнот' },
+  { id: 'month', label: 'Месяц' },
+  { id: 'week', label: 'Неделя' },
+  { id: 'day', label: 'День' },
+  { id: 'habits', label: 'Привычки' },
+]
+
+const activeTab = ref<JournalTabId>('notebook')
+
+const currentPane = computed(() => tabComponents[activeTab.value])
+
+const selectTab = (id: JournalTabId) => {
+  if (activeTab.value === id) return
+  log.info('Journal tab changed', { from: activeTab.value, to: id })
+  activeTab.value = id
+}
 
 const startAfterBoot = () => {
   log.info('Boot loader complete, showing journal page')
@@ -70,8 +103,29 @@ const openChatiumLink = () => {
     />
 
     <main class="content-wrapper flex-1 relative z-10 min-h-0 overflow-y-auto">
-      <div class="content-inner journal-inner">
-        <p class="journal-stub-text">В разработке</p>
+      <div class="content-inner journal-shell">
+        <nav class="journal-nav" aria-label="Разделы журнала">
+          <ul class="journal-nav-list" role="tablist">
+            <li v-for="t in tabs" :key="t.id" class="journal-nav-item">
+              <button
+                type="button"
+                role="tab"
+                class="journal-nav-btn"
+                :class="{ 'journal-nav-btn--active': activeTab === t.id }"
+                :aria-selected="activeTab === t.id"
+                @click="selectTab(t.id)"
+              >
+                {{ t.label }}
+              </button>
+            </li>
+          </ul>
+        </nav>
+
+        <section class="journal-panel" aria-live="polite">
+          <Transition name="journal-view" mode="out-in">
+            <component :is="currentPane" :key="activeTab" />
+          </Transition>
+        </section>
       </div>
     </main>
 
@@ -80,19 +134,127 @@ const openChatiumLink = () => {
 </template>
 
 <style scoped>
-.journal-inner {
+.journal-shell {
   display: flex;
-  align-items: center;
-  justify-content: center;
+  flex-direction: row;
+  align-items: stretch;
+  gap: 0.75rem 1rem;
+  max-width: 1200px;
   min-height: 40vh;
 }
 
-.journal-stub-text {
+.journal-nav {
+  flex: 0 0 auto;
+  width: 7.25rem;
+}
+
+.journal-nav-list {
+  list-style: none;
   margin: 0;
-  font-size: 1.25rem;
-  letter-spacing: 0.12em;
-  color: var(--color-text-secondary);
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.journal-nav-item {
+  margin: 0;
+}
+
+.journal-nav-btn {
+  width: 100%;
+  margin: 0;
+  padding: 0.35rem 0.45rem;
+  box-sizing: border-box;
+  font-family: inherit;
+  font-size: 0.68rem;
+  font-weight: 400;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
+  text-align: left;
+  color: var(--color-text-secondary);
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-left: 2px solid transparent;
+  cursor: pointer;
+  transition: var(--transition);
+  line-height: 1.25;
+}
+
+.journal-nav-btn:hover {
+  color: var(--color-text);
+  border-color: var(--color-border-light);
+  background: var(--color-bg-tertiary);
+}
+
+.journal-nav-btn--active {
+  color: var(--color-text);
+  border-color: var(--color-border-light);
+  border-left-color: var(--color-accent);
+  background: var(--color-accent-light);
+  box-shadow: 0 0 12px var(--color-accent-medium);
+}
+
+.journal-panel {
+  flex: 1;
+  min-width: 0;
+  position: relative;
+  background: linear-gradient(135deg, var(--color-bg-secondary) 0%, rgba(20, 20, 20, 0.6) 100%);
+  border: 1px solid var(--color-border);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.journal-view-enter-active,
+.journal-view-leave-active {
+  transition:
+    opacity 0.22s cubic-bezier(0.4, 0, 0.2, 1),
+    transform 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.journal-view-enter-from {
+  opacity: 0;
+  transform: translateX(6px);
+}
+
+.journal-view-leave-to {
+  opacity: 0;
+  transform: translateX(-6px);
+}
+
+@media (max-width: 640px) {
+  .journal-shell {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .journal-nav {
+    width: 100%;
+  }
+
+  .journal-nav-list {
+    flex-direction: row;
+    flex-wrap: nowrap;
+    gap: 0.25rem;
+    overflow-x: auto;
+    padding-bottom: 0.15rem;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .journal-nav-btn {
+    width: auto;
+    flex: 0 0 auto;
+    white-space: nowrap;
+    border-left-width: 1px;
+    border-bottom: 2px solid transparent;
+    text-align: center;
+    padding: 0.3rem 0.5rem;
+  }
+
+  .journal-nav-btn--active {
+    border-left-color: var(--color-border-light);
+    border-bottom-color: var(--color-accent);
+  }
 }
 </style>
 

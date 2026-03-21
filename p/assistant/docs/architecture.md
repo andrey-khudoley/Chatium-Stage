@@ -17,7 +17,7 @@
 - `index.tsx` — главная (SSR + Vue), единственный роут в корне.
 - `web/admin/index.tsx` — админка, `requireAccountRole('Admin')`.
 - `web/profile/index.tsx` — профиль, `requireRealUser()`.
-- `web/journal/index.tsx` — страница «Мой журнал» (заглушка «В разработке»), без обязательной авторизации.
+- `web/journal/index.tsx` — страница «Мой журнал» (`JournalPage.vue`): компактное вертикальное меню слева (Блокнот, Месяц, Неделя, День, Привычки) и панель справа с динамической подгрузкой Vue-компонентов (`components/journal/*Pane.vue`, пока заглушка «В разработке»), без обязательной авторизации.
 - `web/tests/index.tsx` — страница тестов, `requireRealUser()`.
 - `web/login/index.tsx` — вход (редирект на системный `/s/auth/signin`).
 
@@ -38,7 +38,7 @@
 - `config/` — маршруты и `PROJECT_ROOT`.
 - `web/` — браузерные роуты модулей (admin, profile, journal, tests, login).
 - `pages/` — Vue‑страницы (минимальные, в т.ч. JournalPage — журнал).
-- `components/` — переиспользуемые Vue‑компоненты (Header, AppFooter, GlobalGlitch, LogoutModal).
+- `components/` — переиспользуемые Vue‑компоненты (Header, AppFooter, GlobalGlitch, LogoutModal); подкаталог `components/journal/` — панели разделов журнала (заглушки под будущую логику).
 - `api/` — API‑эндпоинты (получение и валидация входных данных). File-based: один файл — один эндпоинт с `/`. Пример: `api/settings/list.ts`, `api/settings/get.ts`, `api/settings/save.ts`, `api/logger/log.ts`, `api/admin/logs/recent.ts`, `api/admin/logs/before.ts`, `api/tests/list.ts`, `api/tests/endpoints-check/health.ts`, `api/tests/endpoints-check/ping.ts`.
 - `tables/` — Heap‑таблицы (схемы: settings, logs).
 - `repos/` — репозитории (работа с БД: settings, logs; logs.repo включает findBeforeTimestamp для пагинации).

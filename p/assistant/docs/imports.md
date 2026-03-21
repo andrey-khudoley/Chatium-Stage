@@ -107,10 +107,15 @@
 - `../shared/logger` → `createComponentLogger`
 
 ### `./pages/JournalPage.vue`
-- `vue` → `onMounted`, `onUnmounted`, `ref`
+- `vue` → `computed`, `markRaw`, `onMounted`, `onUnmounted`, `ref`
 - `../components/Header.vue`
 - `../components/GlobalGlitch.vue`
 - `../components/AppFooter.vue`
+- `../components/journal/JournalNotebookPane.vue`
+- `../components/journal/JournalMonthPane.vue`
+- `../components/journal/JournalWeekPane.vue`
+- `../components/journal/JournalDayPane.vue`
+- `../components/journal/JournalHabitsPane.vue`
 - `../shared/logger` → `createComponentLogger`
 
 ### `./pages/TestsPage.vue`
@@ -145,6 +150,24 @@
 ### `./components/GlobalGlitch.vue`
 - `vue` → `onMounted`
 - `../shared/logger` → `createComponentLogger`
+
+### `./components/journal/JournalStubPanel.vue`
+- (только разметка заглушки «В разработке»)
+
+### `./components/journal/JournalNotebookPane.vue`
+- `./JournalStubPanel.vue`
+
+### `./components/journal/JournalMonthPane.vue`
+- `./JournalStubPanel.vue`
+
+### `./components/journal/JournalWeekPane.vue`
+- `./JournalStubPanel.vue`
+
+### `./components/journal/JournalDayPane.vue`
+- `./JournalStubPanel.vue`
+
+### `./components/journal/JournalHabitsPane.vue`
+- `./JournalStubPanel.vue`
 
 ## 4) Shared (общий код)
 
