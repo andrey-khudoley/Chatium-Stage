@@ -6,7 +6,7 @@
 - нет внутренних импортов (только экспорт PROJECT_ROOT, ROUTES, getFullUrl, withProjectRoot, withProjectRootAndSubroute)
 
 ### `./config/project.tsx`
-- нет внутренних импортов (только экспорт DEFAULT_PROJECT_TITLE, INDEX_PAGE_NAME, PROFILE_PAGE_NAME, ADMIN_PAGE_NAME, TESTS_PAGE_NAME, getPageTitle, getHeaderText, BODY_TEXT, BODY_SUBTEXT)
+- нет внутренних импортов (только экспорт DEFAULT_PROJECT_TITLE, INDEX_PAGE_NAME, PROFILE_PAGE_NAME, ADMIN_PAGE_NAME, TESTS_PAGE_NAME, JOURNAL_PAGE_NAME, getPageTitle, getHeaderText, BODY_TEXT, BODY_SUBTEXT)
 
 ### `./index.tsx`
 - `@app/html-jsx` → `jsx`
@@ -43,6 +43,17 @@
 - `../../lib/logger.lib` → `*`
 - `../../config/routes` → `getFullUrl`, `ROUTES`
 - `../../config/project` → `PROFILE_PAGE_NAME`, `getPageTitle`, `getHeaderText`
+- `../../lib/settings.lib` → `*`
+
+### `./web/journal/index.tsx`
+- `@app/html-jsx` → `jsx`
+- `../../pages/JournalPage.vue`
+- `../../shared/preloader` → `getPreloaderStyles`, `getPreloaderScript`
+- `../../shared/logLevel` → `getLogLevelForPage`, `getLogLevelScript`
+- `../../styles` → `customScrollbarStyles`
+- `../../lib/logger.lib` → `*`
+- `../../config/routes` → `getFullUrl`, `ROUTES`
+- `../../config/project` → `JOURNAL_PAGE_NAME`, `getPageTitle`, `getHeaderText`
 - `../../lib/settings.lib` → `*`
 
 ### `./web/tests/index.tsx`
@@ -89,6 +100,13 @@
 - `../shared/logger` → `createComponentLogger`, `setLogSink`, `LogEntry`
 
 ### `./pages/ProfilePage.vue`
+- `vue` → `onMounted`, `onUnmounted`, `ref`
+- `../components/Header.vue`
+- `../components/GlobalGlitch.vue`
+- `../components/AppFooter.vue`
+- `../shared/logger` → `createComponentLogger`
+
+### `./pages/JournalPage.vue`
 - `vue` → `onMounted`, `onUnmounted`, `ref`
 - `../components/Header.vue`
 - `../components/GlobalGlitch.vue`

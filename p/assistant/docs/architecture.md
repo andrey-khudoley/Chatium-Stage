@@ -17,6 +17,7 @@
 - `index.tsx` — главная (SSR + Vue), единственный роут в корне.
 - `web/admin/index.tsx` — админка, `requireAccountRole('Admin')`.
 - `web/profile/index.tsx` — профиль, `requireRealUser()`.
+- `web/journal/index.tsx` — страница «Мой журнал» (заглушка «В разработке»), без обязательной авторизации.
 - `web/tests/index.tsx` — страница тестов, `requireRealUser()`.
 - `web/login/index.tsx` — вход (редирект на системный `/s/auth/signin`).
 
@@ -35,8 +36,8 @@
 
 ## Структура каталогов
 - `config/` — маршруты и `PROJECT_ROOT`.
-- `web/` — браузерные роуты модулей (admin, profile, tests, login).
-- `pages/` — Vue‑страницы (минимальные).
+- `web/` — браузерные роуты модулей (admin, profile, journal, tests, login).
+- `pages/` — Vue‑страницы (минимальные, в т.ч. JournalPage — журнал).
 - `components/` — переиспользуемые Vue‑компоненты (Header, AppFooter, GlobalGlitch, LogoutModal).
 - `api/` — API‑эндпоинты (получение и валидация входных данных). File-based: один файл — один эндпоинт с `/`. Пример: `api/settings/list.ts`, `api/settings/get.ts`, `api/settings/save.ts`, `api/logger/log.ts`, `api/admin/logs/recent.ts`, `api/admin/logs/before.ts`, `api/tests/list.ts`, `api/tests/endpoints-check/health.ts`, `api/tests/endpoints-check/ping.ts`.
 - `tables/` — Heap‑таблицы (схемы: settings, logs).

@@ -1,7 +1,7 @@
 # assistant
 
 ## Назначение
-Проект `p/assistant` для Chatium. Базовая структура: главная страница, админка, профиль, логин и тестовая страница.
+Проект `p/assistant` для Chatium. Базовая структура: главная страница (карточки «Мой журнал», «Мои задачи», «Диалоги»), страница «Мой журнал» (`/web/journal`, заглушка), админка, профиль, логин и тестовая страница.
 
 ## Важно
 - Платформа: Chatium. Серверная часть управляется платформой.
@@ -32,6 +32,7 @@
 - Описать бизнес‑логику и данные.
 
 ## Changelog
+- 2026-03-22: страница «Мой журнал» (`web/journal/index.tsx`, `JournalPage.vue`), маршрут в `config/routes.tsx`, главная — три карточки (журнал → переход; задачи и диалоги → глитч как кнопка minimize в шапке). Тесты эндпоинтов и `api/tests/endpoints-check/config` дополнены маршрутом journal.
 - 2026-02-04: фиксированная высота (400px) блока логов на странице тестов — TestsPage.vue, класс .tests-logs-output.
 - 2026-02-04: исправлена рекурсия Maximum call stack size exceeded при обращении к проекту (p/neso/crm/index): в repos/settings.repo.ts убраны все вызовы logger.lib — getSetting/getLogLevel/getLogWebhook вызываются из writeServerLog и используют findByKey, иначе цепочка зациливалась. Обновлён docs/imports.md.
 - 2026-02-04: в lib/logger.lib: в ctx.log передаётся только сообщение (без payload), в ctx.account.log — сообщение и payload (level, json). Обновлён JSDoc writeServerLog.

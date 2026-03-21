@@ -316,7 +316,8 @@ const ENDPOINTS_ROUTES: Array<{ id: string; path: string; title: string }> = [
   { id: 'web-admin', path: '/web/admin', title: 'Эндпоинт /web/admin' },
   { id: 'web-profile', path: '/web/profile', title: 'Эндпоинт /web/profile' },
   { id: 'web-login', path: '/web/login', title: 'Эндпоинт /web/login' },
-  { id: 'web-tests', path: '/web/tests', title: 'Эндпоинт /web/tests' }
+  { id: 'web-tests', path: '/web/tests', title: 'Эндпоинт /web/tests' },
+  { id: 'web-journal', path: '/web/journal', title: 'Эндпоинт /web/journal' }
 ]
 const endpointsResults = ref<TestResult[]>([])
 const endpointsLoading = ref(false)
