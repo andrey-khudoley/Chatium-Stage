@@ -11,7 +11,7 @@
     <ImportanceSection />
     <ApproachSection />
     <SpeakerSection />
-    <AudienceSection />
+    <AudienceSection @open-modal="showModal = true" />
     <FormatSection @open-modal="showModal = true" />
 
     <footer class="py-8 bg-slate-900 text-center">

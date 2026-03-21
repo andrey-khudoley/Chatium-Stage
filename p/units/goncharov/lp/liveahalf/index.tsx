@@ -1,11 +1,12 @@
 import { jsx } from "@app/html-jsx"
 import { HeadStyles } from './styles'
 import MainPage from './pages/MainPage.vue'
+import ThankYouPage from './pages/ThankYouPage.vue'
 import { requireAccountRole } from '@app/auth'
 
 const OG_IMAGE = 'https://fs.chatium.ru/thumbnail/image_msk_2bq1JwLtNx.1280x853.jpeg/s/1200x'
 const TITLE = 'Жизнь вполсилы — онлайн-встреча с врачом Алексеем Волковым'
-const DESCRIPTION = 'На каком уровне энергии вы сейчас? Практическая встреча для тех, кто чувствует, что сил стало меньше. 21 марта, онлайн, 1 час.'
+const DESCRIPTION = 'На каком уровне энергии вы сейчас? Практическая встреча для тех, кто чувствует, что сил стало меньше. 28 марта, онлайн, 1 час.'
 
 const isAdmin = (ctx: app.Ctx) => ctx.user?.is?.('Admin') ?? false
 
@@ -92,6 +93,27 @@ export const indexPageRoute = app.get('/', async (ctx, req) => {
             </a>
           </div>
         )}
+      </body>
+    </html>
+  )
+})
+
+export const thankYouPageRoute = app.get('/thanks', async (ctx, req) => {
+  return (
+    <html lang="ru">
+      <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+        <title>Спасибо за регистрацию на вебинар</title>
+        <meta name="description" content="Спасибо за регистрацию на вебинар «Жизнь вполсилы». Встреча начнётся 28 марта 2026 в 19:00 по московскому времени." />
+        <meta name="robots" content="noindex, nofollow" />
+        <link rel="canonical" href={`https://${ctx.hostname}${req.url}`} />
+
+        <HeadStyles />
+      </head>
+      <body>
+        <ThankYouPage />
       </body>
     </html>
   )

@@ -51,7 +51,7 @@
           <div class="animate-on-scroll delay-4 flex flex-wrap gap-3 mb-8">
             <div class="flex items-center gap-2 bg-white/70 backdrop-blur-sm rounded-xl px-4 py-2.5 border border-sage-100">
               <i class="fa-regular fa-calendar text-sage-500"></i>
-              <span class="text-sm font-medium text-bark-800">21 марта</span>
+<span class="text-sm font-medium text-bark-800">28 марта</span>
             </div>
             <div class="flex items-center gap-2 bg-white/70 backdrop-blur-sm rounded-xl px-4 py-2.5 border border-sage-100">
               <i class="fa-solid fa-wifi text-sage-500"></i>

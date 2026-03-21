@@ -10,7 +10,7 @@
         </div>
 
         <div v-if="!submitted">
-          <p class="text-slate-600 mb-7 text-sm font-medium">21 марта · Онлайн · 1 час · 990 ₽</p>
+          <p class="text-slate-600 mb-7 text-sm font-medium">28 марта · Онлайн · 1 час · 990 ₽</p>
 
           <form @submit.prevent="handleSubmit" class="space-y-5">
             <div>
@@ -39,10 +39,31 @@
                 class="input-field-glass"
               />
             </div>
+            <div class="space-y-3 pt-1">
+              <label class="consent-item">
+                <input v-model="consents.offerAccepted" type="checkbox" class="consent-checkbox" />
+                <span class="text-sm text-slate-700 leading-snug">
+                  Я согласен с
+                  <a href="https://gc.praktiky.ru/legal" target="_blank" rel="noopener noreferrer" class="consent-link">офертой</a>
+                </span>
+              </label>
+              <label class="consent-item">
+                <input v-model="consents.privacyAccepted" type="checkbox" class="consent-checkbox" />
+                <span class="text-sm text-slate-700 leading-snug">
+                  Я согласен с
+                  <a href="https://gc.praktiky.ru/privacypolicy" target="_blank" rel="noopener noreferrer" class="consent-link">политикой обработки персональных данных</a>
+                </span>
+              </label>
+              <label class="consent-item">
+                <input v-model="consents.marketingAccepted" type="checkbox" class="consent-checkbox" />
+                <span class="text-sm text-slate-700 leading-snug">Я согласен на получение рекламных и маркетинговых рассылок</span>
+              </label>
+            </div>
             <button
               type="submit"
               class="cta-btn w-full text-center"
-              :disabled="loading"
+              :class="{ 'opacity-60 cursor-not-allowed': loading || !isConsentsAccepted }"
+              :disabled="loading || !isConsentsAccepted"
             >
               <span v-if="!loading" class="relative z-10">Зарегистрироваться</span>
               <span v-else class="flex items-center justify-center gap-2 relative z-10">
@@ -60,7 +81,7 @@
           </div>
           <h4 class="font-display text-2xl lg:text-3xl font-bold text-slate-900 mb-4" style="letter-spacing: 0.015em">Вы зарегистрированы!</h4>
           <p class="text-slate-600 leading-relaxed text-lg">
-            Информация для подключения придёт на&nbsp;указанный email. До&nbsp;встречи 21 марта!
+            Информация для подключения придёт на&nbsp;указанный email. До&nbsp;встречи 28 марта!
           </p>
           <button @click="close" class="cta-btn-outline mt-8">Закрыть</button>
         </div>
@@ -70,16 +91,24 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { apiRegisterRoute } from '../api/register'
 
 const props = defineProps({ isOpen: Boolean })
 const emit = defineEmits(['close'])
 
 const form = ref({ name: '', email: '', phone: '' })
+const consents = ref({
+  offerAccepted: false,
+  privacyAccepted: false,
+  marketingAccepted: false,
+})
 const loading = ref(false)
 const error = ref('')
 const submitted = ref(false)
+const isConsentsAccepted = computed(() =>
+  consents.value.offerAccepted && consents.value.privacyAccepted && consents.value.marketingAccepted
+)
 
 function close() {
   emit('close')
@@ -114,6 +143,11 @@ function getUtm() {
 }
 
 async function handleSubmit() {
+  if (!isConsentsAccepted.value) {
+    error.value = 'Подтвердите все согласия перед отправкой формы.'
+    return
+  }
+
   loading.value = true
   error.value = ''
   try {
@@ -212,6 +246,30 @@ watch(() => props.isOpen, (val) => {
 }
 .input-field-glass::placeholder { 
   color: #a8bca0; 
+}
+
+.consent-item {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.consent-checkbox {
+  margin-top: 2px;
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  accent-color: #7f9b76;
+}
+
+.consent-link {
+  color: #4f6a4a;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.consent-link:hover {
+  color: #2f4532;
 }
 
 @media (max-width: 768px) {

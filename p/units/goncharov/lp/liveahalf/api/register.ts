@@ -9,7 +9,43 @@ import { writeWorkspaceEvent, getWorkspaceEventUrl } from '@start/sdk'
 // @ts-ignore
 import { request } from "@app/request"
 
-declare const base64Encode: (text: string) => string
+function toBase64(str: string): string {
+  const utf8Bytes: number[] = []
+  for (let i = 0; i < str.length; i++) {
+    let char = str.charCodeAt(i)
+    if (char < 0x80) {
+      utf8Bytes.push(char)
+    } else if (char < 0x800) {
+      utf8Bytes.push(0xc0 | (char >> 6))
+      utf8Bytes.push(0x80 | (char & 0x3f))
+    } else if (char < 0xd800 || char >= 0xe000) {
+      utf8Bytes.push(0xe0 | (char >> 12))
+      utf8Bytes.push(0x80 | ((char >> 6) & 0x3f))
+      utf8Bytes.push(0x80 | (char & 0x3f))
+    } else {
+      i++
+      char = 0x10000 + (((char & 0x3ff) << 10) | (str.charCodeAt(i) & 0x3ff))
+      utf8Bytes.push(0xf0 | (char >> 18))
+      utf8Bytes.push(0x80 | ((char >> 12) & 0x3f))
+      utf8Bytes.push(0x80 | ((char >> 6) & 0x3f))
+      utf8Bytes.push(0x80 | (char & 0x3f))
+    }
+  }
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'
+  let result = ''
+  let i = 0
+  while (i < utf8Bytes.length) {
+    const b1 = utf8Bytes[i++]
+    const b2 = i < utf8Bytes.length ? utf8Bytes[i++] : undefined
+    const b3 = i < utf8Bytes.length ? utf8Bytes[i++] : undefined
+    const bitmap = (b1 << 16) | ((b2 ?? 0) << 8) | (b3 ?? 0)
+    result += chars.charAt((bitmap >> 18) & 63)
+    result += chars.charAt((bitmap >> 12) & 63)
+    result += b2 !== undefined ? chars.charAt((bitmap >> 6) & 63) : '='
+    result += b3 !== undefined ? chars.charAt(bitmap & 63) : '='
+  }
+  return result
+}
 
 export const apiRegisterRoute = app.post('/register', async (ctx, req) => {
   const { name, email, phone, utmSource, utmMedium, utmCampaign, utmContent, utmTerm, clrtUid } = req.body
@@ -253,7 +289,7 @@ async function sendToGetcourse(ctx: app.Ctx, payload: GetcoursePayload): Promise
     }
 
     const paramsJson = JSON.stringify(paramsObj)
-    const paramsBase64 = base64Encode(paramsJson)
+    const paramsBase64 = toBase64(paramsJson)
     const requestUrl = `https://${accountName}.getcourse.ru/pl/api/deals`
 
     logToCtx(ctx, 'liveahalf:getcourse:request-prepared', {
