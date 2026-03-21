@@ -435,11 +435,6 @@ export const indexPageRoute = app.html('/', async (ctx, req) => {
           isAdmin={isAdmin}
           adminUrl={adminUrl}
           testsUrl={testsUrl}
-          calendarUrl={getFullUrl(ROUTES.calendar)}
-          myDayUrl={getFullUrl(ROUTES.myDay)}
-          weekUrl={getFullUrl(ROUTES.week)}
-          habitsUrl={getFullUrl(ROUTES.habits)}
-          notebookUrl={getFullUrl(ROUTES.notebook)}
         />
       </body>
     </html>

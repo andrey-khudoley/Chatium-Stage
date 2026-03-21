@@ -10,13 +10,13 @@
 
 ### 1. Настройки в Heap (key-value)
 
-В проекте Ассистент используется таблица `t__assistant__setting__7Fk2Qw` (в шаблоне — `t__template-project__setting__7Fk2Qw`). Поля:
+Создана таблица `t__template-project__setting__7Fk2Qw` с полями:
 - `key` (string) — ключ настройки;
 - `value` (Heap.Any) — значение любого типа.
 
-Дефолты в проекте Ассистент (если записи в БД нет):
-- `project_name` — Ассистент;
-- `project_title` — Ассистент;
+Дефолты (если записи в БД нет):
+- `project_name` — A/Ley Services;
+- `project_title` — A/Ley;
 - `log_level` — Info;
 - `logs_limit` — 100.
 

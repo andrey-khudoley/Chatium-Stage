@@ -51,52 +51,6 @@
 
 Структура: `api/tests/` — общий каталог; `api/tests/<категория>/` — директория категории (например, `endpoints-check`); внутри категории — отдельные файлы с одним эндпоинтом `/` в каждом.
 
-## Блокнот (api/notebook/)
-
-Эндпоинты для заметок блокнота. Требуется авторизованный пользователь (`requireRealUser`). Все операции привязаны к текущему пользователю (userId из контекста). При отсутствии заметки или доступа или невалидном body ответ — 200 с телом `{ success: false, error: "сообщение" }`; при успехе — `{ success: true, ... }`.
-
-| Method | Path | File | Auth | Назначение |
-| --- | --- | --- | --- | --- |
-| GET | /api/notebook/list | api/notebook/list.ts | RealUser | Список заметок пользователя. Возвращает `{ success: true, notes: Array<{ id, title, preview, updatedAt }> }`. |
-| GET | /api/notebook/get?id= | api/notebook/get.ts | RealUser | Получить заметку по id. 404 если не найдена или чужая. Возвращает `{ success: true, note }`. |
-| POST | /api/notebook/save | api/notebook/save.ts | RealUser | Создать или обновить заметку. Body: `{ id?, title, contentMarkdown }`. 400 при пустом title. Возвращает `{ success: true, note }`. |
-| POST | /api/notebook/delete | api/notebook/delete.ts | RealUser | Удалить заметку. Body: `{ id }`. 404 если не найдена или чужая. Возвращает `{ success: true }`. |
-| POST | /api/notebook/toggleCheckbox | api/notebook/toggleCheckbox.ts | RealUser | Переключить чекбокс. Body: `{ noteId, checkboxIndex, checked }`. Пересохраняет заметку. 404/400 при ошибках. Возвращает `{ success: true, note }`. |
-
-Каждый файл — один эндпоинт с путём `/`.
-
-## Мой день (api/my-day/)
-
-Эндпоинты раздела «Мой день»: записи дня (Утро/День/Вечер), задачи (главные, дополнительные, бэклог), папки бэклога. Требуется авторизованный пользователь (`requireRealUser`). При ошибках — 200 с `{ success: false, error: "..." }`.
-
-### Записи дня
-
-| Method | Path | File | Auth | Назначение |
-| --- | --- | --- | --- | --- |
-| GET | /api/my-day/entries/get?date= | api/my-day/entries/get.ts | RealUser | Запись дня на дату (YYYY-MM-DD). Возвращает `{ success, entry? }`. |
-| POST | /api/my-day/entries/save | api/my-day/entries/save.ts | RealUser | Сохранить запись дня. Body: `{ date, morningText?, dayText?, eveningText? }`. Возвращает `{ success, entry }`. |
-
-### Задачи
-
-| Method | Path | File | Auth | Назначение |
-| --- | --- | --- | --- | --- |
-| GET | /api/my-day/tasks/list?date= | api/my-day/tasks/list.ts | RealUser | Задачи дня и бэклог. Возвращает `{ success, mainTasks, additionalTasks, backlogTasks, folders }`. |
-| POST | /api/my-day/tasks/create | api/my-day/tasks/create.ts | RealUser | Создать задачу. Body: `{ section, date?, folderId?, title }`. |
-| POST | /api/my-day/tasks/update | api/my-day/tasks/update.ts | RealUser | Обновить задачу (title, completedAt). Body: `{ id, title?, completedAt? }`. |
-| POST | /api/my-day/tasks/delete | api/my-day/tasks/delete.ts | RealUser | Удалить задачу. Body: `{ id }`. |
-| POST | /api/my-day/tasks/move | api/my-day/tasks/move.ts | RealUser | Переместить задачу. Body: `{ taskId, section?, folderId?, date?, sortOrder? }`. |
-| POST | /api/my-day/tasks/reorder | api/my-day/tasks/reorder.ts | RealUser | Переупорядочить задачи. Body: `{ section, date?, folderId?, taskIds[] }`. |
-
-### Папки бэклога
-
-| Method | Path | File | Auth | Назначение |
-| --- | --- | --- | --- | --- |
-| GET | /api/my-day/folders/list | api/my-day/folders/list.ts | RealUser | Список папок (по sortOrder). |
-| POST | /api/my-day/folders/create | api/my-day/folders/create.ts | RealUser | Создать папку. Body: `{ name }`. |
-| POST | /api/my-day/folders/update | api/my-day/folders/update.ts | RealUser | Переименовать. Body: `{ id, name? }`. |
-| POST | /api/my-day/folders/delete | api/my-day/folders/delete.ts | RealUser | Удалить папку (задачи остаются с folderId=null). Body: `{ id }`. |
-| POST | /api/my-day/folders/reorder | api/my-day/folders/reorder.ts | RealUser | Переупорядочить папки. Body: `{ folderIds[] }`. |
-
 ## Публичные эндпоинты
 | Method | Path | File | Auth | Назначение |
 | --- | --- | --- | --- | --- |

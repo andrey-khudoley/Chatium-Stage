@@ -239,7 +239,7 @@ onMounted(() => {
     window.hideAppLoader()
   }
 
-  if (window.bootLoaderComplete) {
+  if ((window as any).bootLoaderComplete) {
     startAnimations()
   } else {
     window.addEventListener('bootloader-complete', startAnimations)
@@ -304,7 +304,7 @@ function getApiBaseUrl(): string {
   const path = props.indexUrl.startsWith('http')
     ? new URL(props.indexUrl).pathname
     : props.indexUrl
-  const basePath = path.replace(/\/$/, '') || '/p/assistant'
+  const basePath = path.replace(/\/$/, '') || '/p/template_project'
   const origin =
     props.indexUrl.startsWith('http') ? new URL(props.indexUrl).origin : window.location.origin
   return `${origin}${basePath.startsWith('/') ? basePath : '/' + basePath}`
