@@ -372,3 +372,50 @@ export async function reorderTasks(
   }
   return true
 }
+
+export async function reorderClients(ctx: app.Ctx, userId: string, orderedIds: string[]): Promise<boolean> {
+  const clients = await TaskClients.findAll(ctx, { where: { userId } })
+  const idSet = new Set(clients.map((c) => c.id))
+  if (orderedIds.length !== idSet.size || orderedIds.some((id) => !idSet.has(id))) {
+    return false
+  }
+  const offset = 1_000_000
+  let i = 0
+  for (const id of orderedIds) {
+    await TaskClients.update(ctx, { id, sortOrder: offset + i })
+    i++
+  }
+  i = 0
+  for (const id of orderedIds) {
+    await TaskClients.update(ctx, { id, sortOrder: i })
+    i++
+  }
+  return true
+}
+
+export async function reorderProjects(
+  ctx: app.Ctx,
+  userId: string,
+  clientId: string,
+  orderedIds: string[]
+): Promise<boolean> {
+  const client = await assertClientOwner(ctx, userId, clientId)
+  if (!client) return false
+  const projects = await TaskProjects.findAll(ctx, { where: { userId, clientId } })
+  const idSet = new Set(projects.map((p) => p.id))
+  if (orderedIds.length !== idSet.size || orderedIds.some((id) => !idSet.has(id))) {
+    return false
+  }
+  const offset = 1_000_000
+  let i = 0
+  for (const id of orderedIds) {
+    await TaskProjects.update(ctx, { id, sortOrder: offset + i })
+    i++
+  }
+  i = 0
+  for (const id of orderedIds) {
+    await TaskProjects.update(ctx, { id, sortOrder: i })
+    i++
+  }
+  return true
+}

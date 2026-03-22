@@ -11,9 +11,11 @@ import { getTasksTreeRoute } from '../../api/tasks/tree/get'
 import { createTaskClientRoute } from '../../api/tasks/clients/create'
 import { updateTaskClientRoute } from '../../api/tasks/clients/update'
 import { deleteTaskClientRoute } from '../../api/tasks/clients/delete'
+import { reorderTaskClientsRoute } from '../../api/tasks/clients/reorder'
 import { createTaskProjectRoute } from '../../api/tasks/projects/create'
 import { updateTaskProjectRoute } from '../../api/tasks/projects/update'
 import { deleteTaskProjectRoute } from '../../api/tasks/projects/delete'
+import { reorderTaskProjectsRoute } from '../../api/tasks/projects/reorder'
 import { createTaskItemRoute } from '../../api/tasks/items/create'
 import { updateTaskItemRoute } from '../../api/tasks/items/update'
 import { deleteTaskItemRoute } from '../../api/tasks/items/delete'
@@ -57,9 +59,11 @@ export const tasksPageRoute = app.html('/', async (ctx, _req) => {
   const taskClientCreateUrl = getApiUrlForRoute(createTaskClientRoute.url())
   const taskClientUpdateUrl = getApiUrlForRoute(updateTaskClientRoute.url())
   const taskClientDeleteUrl = getApiUrlForRoute(deleteTaskClientRoute.url())
+  const taskClientReorderUrl = getApiUrlForRoute(reorderTaskClientsRoute.url())
   const taskProjectCreateUrl = getApiUrlForRoute(createTaskProjectRoute.url())
   const taskProjectUpdateUrl = getApiUrlForRoute(updateTaskProjectRoute.url())
   const taskProjectDeleteUrl = getApiUrlForRoute(deleteTaskProjectRoute.url())
+  const taskProjectReorderUrl = getApiUrlForRoute(reorderTaskProjectsRoute.url())
   const taskItemCreateUrl = getApiUrlForRoute(createTaskItemRoute.url())
   const taskItemUpdateUrl = getApiUrlForRoute(updateTaskItemRoute.url())
   const taskItemDeleteUrl = getApiUrlForRoute(deleteTaskItemRoute.url())
@@ -308,9 +312,11 @@ export const tasksPageRoute = app.html('/', async (ctx, _req) => {
           taskClientCreateUrl={taskClientCreateUrl}
           taskClientUpdateUrl={taskClientUpdateUrl}
           taskClientDeleteUrl={taskClientDeleteUrl}
+          taskClientReorderUrl={taskClientReorderUrl}
           taskProjectCreateUrl={taskProjectCreateUrl}
           taskProjectUpdateUrl={taskProjectUpdateUrl}
           taskProjectDeleteUrl={taskProjectDeleteUrl}
+          taskProjectReorderUrl={taskProjectReorderUrl}
           taskItemCreateUrl={taskItemCreateUrl}
           taskItemUpdateUrl={taskItemUpdateUrl}
           taskItemDeleteUrl={taskItemDeleteUrl}

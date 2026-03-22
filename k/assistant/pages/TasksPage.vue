@@ -33,6 +33,8 @@ const props = defineProps<{
   taskProjectCreateUrl: string
   taskProjectUpdateUrl: string
   taskProjectDeleteUrl: string
+  taskClientReorderUrl: string
+  taskProjectReorderUrl: string
   taskItemCreateUrl: string
   taskItemUpdateUrl: string
   taskItemDeleteUrl: string
@@ -534,6 +536,315 @@ onUnmounted(() => {
 const openChatiumLink = () => {
   window.open('https://chatium.ru/?start=pl-LGBT1Oge7c61RkKTU4t0start', '_blank')
 }
+
+/** --- Drag-and-drop: порядок клиентов и проектов в сайдбаре --- */
+type SidebarDragKind = 'client' | 'project' | null
+
+const dragKind = ref<SidebarDragKind>(null)
+const dragClientId = ref<string | null>(null)
+const dragProjectId = ref<string | null>(null)
+const dragProjectClientId = ref<string | null>(null)
+/** Индекс линии вставки: 0 — перед первым клиентом, length — после последнего */
+const clientInsertBefore = ref<number | null>(null)
+/** Вставка в списке проектов клиента `clientId` перед индексом `idx` */
+const projectInsertBefore = ref<{ clientId: string; beforeIdx: number } | null>(null)
+
+function clearSidebarDragState() {
+  dragKind.value = null
+  dragClientId.value = null
+  dragProjectId.value = null
+  dragProjectClientId.value = null
+  clientInsertBefore.value = null
+  projectInsertBefore.value = null
+}
+
+function onClientDragStart(e: DragEvent, clientId: string) {
+  if (!props.isAuthenticated) return
+  dragKind.value = 'client'
+  dragClientId.value = clientId
+  e.dataTransfer?.setData('text/plain', `client:${clientId}`)
+  e.dataTransfer!.effectAllowed = 'move'
+}
+
+function onProjectDragStart(e: DragEvent, projectId: string, clientId: string) {
+  if (!props.isAuthenticated) return
+  dragKind.value = 'project'
+  dragProjectId.value = projectId
+  dragProjectClientId.value = clientId
+  e.dataTransfer?.setData('text/plain', `project:${projectId}:${clientId}`)
+  e.dataTransfer!.effectAllowed = 'move'
+}
+
+function onClientDragOver(e: DragEvent, cIdx: number) {
+  e.preventDefault()
+  if (dragKind.value !== 'client' || !dragClientId.value) return
+  e.dataTransfer!.dropEffect = 'move'
+  const el = e.currentTarget as HTMLElement
+  const r = el.getBoundingClientRect()
+  const mid = r.top + r.height / 2
+  const insertBefore = e.clientY < mid ? cIdx : cIdx + 1
+  const originalIds = sortedClients.value.map((c) => c.id)
+  const fromIdx = originalIds.indexOf(dragClientId.value)
+  if (fromIdx < 0 || !reorderIdsWouldChange(originalIds, fromIdx, insertBefore)) {
+    clientInsertBefore.value = null
+    return
+  }
+  clientInsertBefore.value = insertBefore
+}
+
+function onClientDragLeave(e: DragEvent) {
+  const rel = e.relatedTarget as Node | null
+  const block = e.currentTarget as HTMLElement
+  if (rel && block.contains(rel)) return
+  const hier = block.closest('.tasks-hierarchy')
+  if (rel && hier?.contains(rel)) return
+  clientInsertBefore.value = null
+}
+
+function hierarchyEndZoneBottomPx(box: DOMRect): number {
+  return Math.max(48, Math.min(120, box.height * 0.14))
+}
+
+function trySetClientInsertAtEnd() {
+  if (dragKind.value !== 'client' || !dragClientId.value) return
+  const originalIds = sortedClients.value.map((c) => c.id)
+  const fromIdx = originalIds.indexOf(dragClientId.value)
+  const insertBefore = sortedClients.value.length
+  if (fromIdx < 0 || !reorderIdsWouldChange(originalIds, fromIdx, insertBefore)) {
+    clientInsertBefore.value = null
+    return
+  }
+  clientInsertBefore.value = insertBefore
+}
+
+function onHierarchyDragOver(e: DragEvent) {
+  e.preventDefault()
+  if (dragKind.value !== 'client' || !dragClientId.value) return
+  e.dataTransfer!.dropEffect = 'move'
+  const box = (e.currentTarget as HTMLElement).getBoundingClientRect()
+  if (e.clientY >= box.bottom - hierarchyEndZoneBottomPx(box)) {
+    trySetClientInsertAtEnd()
+  }
+}
+
+function onHierarchyTailDragOver(e: DragEvent) {
+  e.preventDefault()
+  if (dragKind.value !== 'client' || !dragClientId.value) return
+  e.dataTransfer!.dropEffect = 'move'
+  trySetClientInsertAtEnd()
+}
+
+function onHierarchyTailDrop(e: DragEvent) {
+  e.preventDefault()
+  e.stopPropagation()
+  if (dragKind.value !== 'client' || !dragClientId.value) return
+  const id = dragClientId.value
+  clearSidebarDragState()
+  if (!id) return
+  void persistClientOrder(id, sortedClients.value.length)
+}
+
+function onClientDrop(e: DragEvent, cIdx: number) {
+  e.preventDefault()
+  e.stopPropagation()
+  const id = dragClientId.value
+  clearSidebarDragState()
+  if (!id) return
+  const el = e.currentTarget as HTMLElement
+  const r = el.getBoundingClientRect()
+  const mid = r.top + r.height / 2
+  const insertBefore = e.clientY < mid ? cIdx : cIdx + 1
+  void persistClientOrder(id, insertBefore)
+}
+
+function onHierarchyDrop(e: DragEvent) {
+  e.preventDefault()
+  if (dragKind.value !== 'client' || !dragClientId.value) return
+  const id = dragClientId.value
+  const wantEnd = clientInsertBefore.value === sortedClients.value.length
+  const box = (e.currentTarget as HTMLElement).getBoundingClientRect()
+  const inEndZone = e.clientY >= box.bottom - hierarchyEndZoneBottomPx(box)
+  clearSidebarDragState()
+  if (!id) return
+  if (wantEnd || inEndZone) {
+    void persistClientOrder(id, sortedClients.value.length)
+  }
+}
+
+function onClientDragEnd() {
+  clearSidebarDragState()
+}
+
+function isSameIdOrder(next: string[], prev: string[]): boolean {
+  return next.length === prev.length && next.every((id, i) => id === prev[i])
+}
+
+/**
+ * insertBefore — индекс в исходном массиве: «вставить перед элементом с этим индексом» (0…length).
+ * Значение `length` — вставка в конец.
+ */
+function reorderIdsWithInsertBefore(originalIds: string[], fromIdx: number, insertBefore: number): string[] {
+  const next = [...originalIds]
+  const [removed] = next.splice(fromIdx, 1)
+  let insertAt = insertBefore
+  if (fromIdx < insertBefore) insertAt = insertBefore - 1
+  next.splice(insertAt, 0, removed)
+  return next
+}
+
+/** true, если после перемещения элемента с индекса `fromIdx` к позиции «перед insertBefore» порядок id изменится */
+function reorderIdsWouldChange(originalIds: string[], fromIdx: number, insertBefore: number): boolean {
+  if (fromIdx < 0 || insertBefore < 0 || insertBefore > originalIds.length) return false
+  const next = reorderIdsWithInsertBefore(originalIds, fromIdx, insertBefore)
+  return !isSameIdOrder(next, originalIds)
+}
+
+async function persistClientOrder(movedId: string, insertBefore: number) {
+  const list = sortedClients.value
+  const fromIdx = list.findIndex((c) => c.id === movedId)
+  if (fromIdx < 0) return
+  if (insertBefore < 0 || insertBefore > list.length) return
+  const originalIds = list.map((c) => c.id)
+  const orderedIds = reorderIdsWithInsertBefore(originalIds, fromIdx, insertBefore)
+  if (isSameIdOrder(orderedIds, originalIds)) return
+  const r = await postJson<{ success: boolean; error?: string }>(props.taskClientReorderUrl, { orderedIds })
+  if (!r.success) {
+    globalError.value = r.error ?? 'Не удалось сохранить порядок клиентов'
+    await refreshTree()
+    return
+  }
+  let o = 0
+  for (const cid of orderedIds) {
+    const row = tree.value.clients.find((x) => x.id === cid)
+    if (row) row.sortOrder = o
+    o++
+  }
+}
+
+function projectItemDropRowRect(e: DragEvent): DOMRect {
+  const li = (e.currentTarget as HTMLElement).closest('.tasks-project-item')
+  return (li ?? (e.currentTarget as HTMLElement)).getBoundingClientRect()
+}
+
+function onProjectDragOver(e: DragEvent, clientId: string, pIdx: number) {
+  e.preventDefault()
+  if (dragKind.value !== 'project' || dragProjectClientId.value !== clientId || !dragProjectId.value) return
+  e.dataTransfer!.dropEffect = 'move'
+  const r = projectItemDropRowRect(e)
+  const mid = r.top + r.height / 2
+  const insertBefore = e.clientY < mid ? pIdx : pIdx + 1
+  const originalIds = projectsForClientId(clientId).map((p) => p.id)
+  const fromIdx = originalIds.indexOf(dragProjectId.value)
+  if (fromIdx < 0 || !reorderIdsWouldChange(originalIds, fromIdx, insertBefore)) {
+    projectInsertBefore.value = null
+    return
+  }
+  projectInsertBefore.value = { clientId, beforeIdx: insertBefore }
+}
+
+function onProjectListDragLeave(e: DragEvent, clientId: string) {
+  const rel = e.relatedTarget as Node | null
+  const ul = e.currentTarget as HTMLElement
+  if (rel && ul.contains(rel)) return
+  const block = ul.closest('.tasks-client-block')
+  if (rel && block?.contains(rel)) return
+  if (projectInsertBefore.value?.clientId === clientId) projectInsertBefore.value = null
+}
+
+function projectListEndZoneBottomPx(el: HTMLElement): number {
+  return Math.max(32, Math.min(96, el.getBoundingClientRect().height * 0.14))
+}
+
+function trySetProjectInsertAtEnd(clientId: string) {
+  if (dragKind.value !== 'project' || dragProjectClientId.value !== clientId || !dragProjectId.value) return
+  const listLen = projectsForClientId(clientId).length
+  const originalIds = projectsForClientId(clientId).map((p) => p.id)
+  const fromIdx = originalIds.indexOf(dragProjectId.value)
+  if (fromIdx < 0 || !reorderIdsWouldChange(originalIds, fromIdx, listLen)) {
+    projectInsertBefore.value = null
+    return
+  }
+  projectInsertBefore.value = { clientId, beforeIdx: listLen }
+}
+
+function onProjectListDragOver(e: DragEvent, clientId: string) {
+  e.preventDefault()
+  if (dragKind.value !== 'project' || dragProjectClientId.value !== clientId || !dragProjectId.value) return
+  e.dataTransfer!.dropEffect = 'move'
+  const el = e.currentTarget as HTMLElement
+  const r = el.getBoundingClientRect()
+  if (e.clientY >= r.bottom - projectListEndZoneBottomPx(el)) {
+    trySetProjectInsertAtEnd(clientId)
+  }
+}
+
+function onProjectDrop(e: DragEvent, clientId: string, pIdx: number) {
+  e.preventDefault()
+  e.stopPropagation()
+  const id = dragProjectId.value
+  const fromClient = dragProjectClientId.value
+  clearSidebarDragState()
+  if (!id || fromClient !== clientId) return
+  const r = projectItemDropRowRect(e)
+  const mid = r.top + r.height / 2
+  const insertBefore = e.clientY < mid ? pIdx : pIdx + 1
+  void persistProjectOrder(clientId, id, insertBefore)
+}
+
+function onProjectListDrop(e: DragEvent, clientId: string, listLen: number) {
+  e.preventDefault()
+  e.stopPropagation()
+  const id = dragProjectId.value
+  const fromClient = dragProjectClientId.value
+  const wantEnd =
+    projectInsertBefore.value?.clientId === clientId && projectInsertBefore.value.beforeIdx === listLen
+  const el = e.currentTarget as HTMLElement
+  const r = el.getBoundingClientRect()
+  const inEndZone = e.clientY >= r.bottom - projectListEndZoneBottomPx(el)
+  clearSidebarDragState()
+  if (!id || fromClient !== clientId) return
+  if (wantEnd || inEndZone) {
+    void persistProjectOrder(clientId, id, listLen)
+  }
+}
+
+function onProjectDragEnd() {
+  clearSidebarDragState()
+}
+
+async function persistProjectOrder(clientId: string, movedId: string, insertBefore: number) {
+  const list = projectsForClientId(clientId)
+  const fromIdx = list.findIndex((p) => p.id === movedId)
+  if (fromIdx < 0) return
+  if (insertBefore < 0 || insertBefore > list.length) return
+  const originalIds = list.map((p) => p.id)
+  const orderedIds = reorderIdsWithInsertBefore(originalIds, fromIdx, insertBefore)
+  if (isSameIdOrder(orderedIds, originalIds)) return
+  const r = await postJson<{ success: boolean; error?: string }>(props.taskProjectReorderUrl, {
+    clientId,
+    orderedIds
+  })
+  if (!r.success) {
+    globalError.value = r.error ?? 'Не удалось сохранить порядок проектов'
+    await refreshTree()
+    return
+  }
+  let o = 0
+  for (const pid of orderedIds) {
+    const row = tree.value.projects.find((x) => x.id === pid)
+    if (row) row.sortOrder = o
+    o++
+  }
+}
+
+function showClientLineBefore(idx: number): boolean {
+  return clientInsertBefore.value === idx
+}
+
+function showProjectLineBefore(clientId: string, idx: number): boolean {
+  const p = projectInsertBefore.value
+  return !!p && p.clientId === clientId && p.beforeIdx === idx
+}
 </script>
 
 <template>
@@ -567,10 +878,39 @@ const openChatiumLink = () => {
           </div>
           <div class="journal-nav-divider" aria-hidden="true" />
           <p v-if="!props.isAuthenticated" class="tasks-hint">Войдите, чтобы вести задачи.</p>
-          <div v-else class="tasks-hierarchy">
+          <div
+            v-else
+            class="tasks-hierarchy"
+            @dragover="onHierarchyDragOver"
+            @drop="onHierarchyDrop"
+          >
             <p v-if="!sortedClients.length" class="tasks-hint tasks-hint--muted">Пока нет клиентов — создайте первого.</p>
-            <div v-for="c in sortedClients" :key="c.id" class="tasks-client-block">
+            <div
+              v-for="(c, cIdx) in sortedClients"
+              :key="c.id"
+              class="tasks-client-block"
+              :class="{ 'tasks-client-block--dragging': dragKind === 'client' && dragClientId === c.id }"
+              @dragover="onClientDragOver($event, cIdx)"
+              @dragleave="onClientDragLeave"
+              @drop="onClientDrop($event, cIdx)"
+            >
+              <div
+                v-if="showClientLineBefore(cIdx)"
+                class="tasks-dnd-line"
+                aria-hidden="true"
+              />
               <div class="tasks-client-row">
+                <span
+                  v-if="props.isAuthenticated"
+                  class="tasks-dnd-grip"
+                  draggable="true"
+                  title="Перетащить клиента"
+                  aria-label="Перетащить клиента"
+                  @dragstart="onClientDragStart($event, c.id)"
+                  @dragend="onClientDragEnd"
+                >
+                  <i class="fas fa-grip-vertical" aria-hidden="true" />
+                </span>
                 <div
                   class="tasks-client-select tasks-client-select--static"
                   :class="{ 'tasks-client-select--project-active': selectedProject?.clientId === c.id }"
@@ -599,31 +939,74 @@ const openChatiumLink = () => {
                   </button>
                 </div>
               </div>
-              <ul class="tasks-project-list" role="list">
-                <li v-for="p in projectsForClientId(c.id)" :key="p.id" class="tasks-project-item">
+              <ul
+                class="tasks-project-list"
+                role="list"
+                @dragover.capture="onProjectListDragOver($event, c.id)"
+                @dragleave="onProjectListDragLeave($event, c.id)"
+                @drop="onProjectListDrop($event, c.id, projectsForClientId(c.id).length)"
+              >
+                <li
+                  v-for="(p, pIdx) in projectsForClientId(c.id)"
+                  :key="p.id"
+                  class="tasks-project-item"
+                  :class="{ 'tasks-project-item--dragging': dragKind === 'project' && dragProjectId === p.id }"
+                >
+                  <div
+                    v-if="showProjectLineBefore(c.id, pIdx)"
+                    class="tasks-dnd-line tasks-dnd-line--nested"
+                    aria-hidden="true"
+                  />
                   <div class="tasks-project-row">
-                    <button
-                      type="button"
-                      class="journal-nav-btn tasks-project-btn"
-                      :class="{ 'journal-nav-btn--active': selectedProjectId === p.id }"
-                      @click="selectProject(p.id)"
+                    <span
+                      v-if="props.isAuthenticated"
+                      class="tasks-dnd-grip tasks-dnd-grip--nested"
+                      draggable="true"
+                      title="Перетащить проект"
+                      aria-label="Перетащить проект"
+                      @dragstart="onProjectDragStart($event, p.id, c.id)"
+                      @dragend="onProjectDragEnd"
+                      @dragover.prevent="onProjectDragOver($event, c.id, pIdx)"
+                      @drop.prevent="onProjectDrop($event, c.id, pIdx)"
                     >
-                      {{ p.name }}
-                    </button>
-                    <div v-if="props.isAuthenticated" class="tasks-item-actions">
-                      <button type="button" class="tasks-icon-btn" title="Переименовать" @click="openProjectEdit(p)">
-                        <i class="fas fa-pen" aria-hidden="true" />
-                      </button>
+                      <i class="fas fa-grip-vertical" aria-hidden="true" />
+                    </span>
+                    <div
+                      class="tasks-project-drop-target"
+                      @dragover.prevent="onProjectDragOver($event, c.id, pIdx)"
+                      @drop.prevent="onProjectDrop($event, c.id, pIdx)"
+                    >
                       <button
                         type="button"
-                        class="tasks-icon-btn tasks-icon-btn--danger"
-                        title="Удалить проект"
-                        @click="openDelete('project', p.id, p.name)"
+                        class="journal-nav-btn tasks-project-btn"
+                        :class="{ 'journal-nav-btn--active': selectedProjectId === p.id }"
+                        @click="selectProject(p.id)"
                       >
-                        <i class="fas fa-trash" aria-hidden="true" />
+                        {{ p.name }}
                       </button>
+                      <div v-if="props.isAuthenticated" class="tasks-item-actions">
+                        <button type="button" class="tasks-icon-btn" title="Переименовать" @click="openProjectEdit(p)">
+                          <i class="fas fa-pen" aria-hidden="true" />
+                        </button>
+                        <button
+                          type="button"
+                          class="tasks-icon-btn tasks-icon-btn--danger"
+                          title="Удалить проект"
+                          @click="openDelete('project', p.id, p.name)"
+                        >
+                          <i class="fas fa-trash" aria-hidden="true" />
+                        </button>
+                      </div>
                     </div>
                   </div>
+                </li>
+                <li
+                  v-if="showProjectLineBefore(c.id, projectsForClientId(c.id).length)"
+                  role="presentation"
+                  class="tasks-dnd-line-slot"
+                  aria-hidden="true"
+                >
+                  <div class="tasks-dnd-line tasks-dnd-line--nested" />
                 </li>
               </ul>
               <p
@@ -633,6 +1016,18 @@ const openChatiumLink = () => {
                 Нет проектов
               </p>
             </div>
+            <div
+              v-if="sortedClients.length && showClientLineBefore(sortedClients.length)"
+              class="tasks-dnd-line"
+              aria-hidden="true"
+            />
+            <div
+              v-if="sortedClients.length"
+              class="tasks-hierarchy-tail"
+              aria-hidden="true"
+              @dragover="onHierarchyTailDragOver"
+              @drop="onHierarchyTailDrop"
+            />
           </div>
         </aside>
 
@@ -907,9 +1302,19 @@ const openChatiumLink = () => {
   gap: 0.85rem;
 }
 
+.tasks-hierarchy-tail {
+  flex-shrink: 0;
+  min-height: 2.25rem;
+  margin-top: -0.15rem;
+}
+
 .tasks-client-block {
   padding-bottom: 0.65rem;
   border-bottom: 1px solid var(--color-border);
+  transition:
+    transform 0.22s cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 0.22s ease,
+    opacity 0.22s ease;
 }
 
 .tasks-client-block:last-child {
@@ -922,6 +1327,86 @@ const openChatiumLink = () => {
   align-items: flex-start;
   gap: 0.35rem;
   margin-bottom: 0.35rem;
+}
+
+.tasks-dnd-grip {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  align-self: stretch;
+  padding: 0.15rem 0.2rem 0 0;
+  margin: 0;
+  color: var(--color-text-tertiary);
+  cursor: grab;
+  user-select: none;
+  transition: color 0.2s ease, transform 0.2s ease;
+}
+
+.tasks-dnd-grip:hover {
+  color: var(--color-accent-hover);
+}
+
+.tasks-dnd-grip:active {
+  cursor: grabbing;
+}
+
+.tasks-dnd-grip--nested {
+  padding-top: 0.25rem;
+}
+
+.tasks-dnd-line {
+  height: 4px;
+  margin: 0.15rem 0 0.5rem;
+  border-radius: 2px;
+  background: linear-gradient(90deg, transparent 0%, rgba(229, 57, 53, 0.55) 15%, #e53935 50%, rgba(229, 57, 53, 0.55) 85%, transparent 100%);
+  box-shadow:
+    0 0 12px rgba(229, 57, 53, 0.45),
+    0 0 2px rgba(255, 255, 255, 0.25);
+  animation: tasks-dnd-line-pulse 0.9s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.tasks-dnd-line--nested {
+  margin: 0 0 0.5rem;
+  height: 3px;
+}
+
+.tasks-dnd-line-slot {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: block;
+  min-height: 0;
+}
+
+@keyframes tasks-dnd-line-pulse {
+  0%,
+  100% {
+    opacity: 0.85;
+    transform: scaleY(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scaleY(1.15);
+  }
+}
+
+.tasks-client-block--dragging {
+  opacity: 0.72;
+  transform: scale(0.985);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.45);
+  border-radius: 2px;
+  outline: 1px dashed rgba(229, 57, 53, 0.55);
+  outline-offset: 2px;
+}
+
+.tasks-project-item--dragging {
+  opacity: 0.72;
+  transform: scale(0.985);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.4);
+  border-radius: 2px;
+  outline: 1px dashed rgba(229, 57, 53, 0.45);
+  outline-offset: 1px;
 }
 
 .tasks-client-select {
@@ -998,8 +1483,20 @@ const openChatiumLink = () => {
   gap: 0.28rem;
 }
 
+.tasks-project-drop-target {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: stretch;
+  gap: 0.3rem;
+}
+
 .tasks-project-item {
   margin: 0;
+  transition:
+    transform 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 0.2s ease,
+    opacity 0.2s ease;
 }
 
 .tasks-project-row {
