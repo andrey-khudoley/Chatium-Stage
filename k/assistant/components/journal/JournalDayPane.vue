@@ -695,6 +695,7 @@ async function releaseAll() {
   letter-spacing: 0.1em;
   text-transform: uppercase;
   font-weight: 400;
+  color: var(--color-text);
 }
 
 .jn-label {

@@ -34,6 +34,8 @@
 - Описать бизнес‑логику и данные.
 
 ## Changelog
+- 2026-03-22: `JournalDayPane.vue` — `.jn-modal-heading`: `color: var(--color-text)` (как в `TasksPage` и `JournalNotebookPane`).
+- 2026-03-22: `TasksPage.vue` — заголовки модалок (`.jn-modal-heading`): явный `color: var(--color-text)`, чтобы текст не сливался с тёмным фоном модалки.
 - 2026-03-22: `shared/bootUi.ts` — добавлена директива `// @shared` (иначе модуль не подгружается в клиенте Chatium: «does not have shared file mark»).
 - 2026-03-22: прелоадер — исправлено зависание: `isComplete` только после безопасной фазы; `boot-static-ready` после `document.fonts.ready`; резерв 12 с / принудительное скрытие 15 с; `bootUi.ts` ждёт шрифты (до 10 с) и кадр перед `hideBootLoader`.
 - 2026-03-22: прелоадер — скрытие `hideBootLoader` только после отрисовки шапки/подвала: `shared/bootUi.ts` (`subscribeBootStaticReady`, `scheduleHideBootLoader`), `boot-static-ready`/`bootStaticReady` вместо автоскрытия по `load`; страницы Vue вызывают `scheduleHideBootLoader()` после `bootLoaderDone`.
