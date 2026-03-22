@@ -42,7 +42,7 @@
 | GET | /api/tests/list | api/tests/list.ts | AnyUser | Каталог тестов: список категорий и тестов. Возвращает `{ success: true, categories }`. |
 | GET | /api/tests/endpoints-check/health | api/tests/endpoints-check/health.ts | AnyUser | Тест: health check. Возвращает `{ success: true, ok: true, test: 'health', at }`. |
 | GET | /api/tests/endpoints-check/ping | api/tests/endpoints-check/ping.ts | AnyUser | Тест: ping. Возвращает `{ success: true, pong: true, test: 'ping', at }`. |
-| GET | /api/tests/endpoints-check/config | api/tests/endpoints-check/config.ts | AnyUser | Тест слоя config (routes, project). Возвращает `{ success, test: 'config', routes: { index, admin, login, profile, tests, journal }, pageTitle, headerText, at }`. |
+| GET | /api/tests/endpoints-check/config | api/tests/endpoints-check/config.ts | AnyUser | Тест слоя config (routes, project). Возвращает `{ success, test: 'config', routes: { index, admin, login, profile, tests, journal, tasks }, pageTitle, headerText, at }`. |
 | GET | /api/tests/endpoints-check/settings-lib | api/tests/endpoints-check/settings-lib.ts | AnyUser | Тесты библиотеки настроек: массив `results` по каждой функции (getSettingString, getLogLevel, getLogsLimit, getLogWebhook, getDashboardResetAt, getAllSettings). |
 | GET | /api/tests/endpoints-check/settings-repo | api/tests/endpoints-check/settings-repo.ts | AnyUser | Тесты репозитория настроек: массив `results` (upsert, deleteByKey, findByKey, findAll). Порядок: создание до чтения. |
 | GET | /api/tests/endpoints-check/logger-lib | api/tests/endpoints-check/logger-lib.ts | AnyUser | Тесты библиотеки логов: массив `results` (getAdminLogsSocketId, shouldLogByLevel). |
@@ -62,6 +62,24 @@
 | POST | /api/journal/notes/create | api/journal/notes/create.ts | RealUser | Создать заметку. Body (опционально): `{ title?, content? }`; по умолчанию заголовок «Новая заметка», пустое содержимое. Ответ: `{ success, note: { id, title } }`. |
 | POST | /api/journal/notes/update | api/journal/notes/update.ts | RealUser | Обновить свою заметку. Body: `{ id, title, content }`. Пустой `title` после trim заменяется на «Без названия». Ответ: `{ success, note: { id, title } }`. |
 | POST | /api/journal/notes/delete | api/journal/notes/delete.ts | RealUser | Удалить свою заметку. Body: `{ id }`. Ответ: `{ success: true }`. |
+
+## Задачи (api/tasks/)
+
+Иерархия «клиент → проект → задача» в Heap; все мутации и дерево — только `requireRealUser`. Один файл — один эндпоинт с путём `/`.
+
+| Method | Path | File | Auth | Назначение |
+| --- | --- | --- | --- | --- |
+| GET | /api/tasks/tree/get | api/tasks/tree/get.ts | RealUser | Полное дерево: `{ success, tree: { clients, projects, tasks } }`. |
+| POST | /api/tasks/clients/create | api/tasks/clients/create.ts | RealUser | Body: `{ name }`. Ответ: `{ success, client }`. |
+| POST | /api/tasks/clients/update | api/tasks/clients/update.ts | RealUser | Body: `{ id, name }`. |
+| POST | /api/tasks/clients/delete | api/tasks/clients/delete.ts | RealUser | Body: `{ id }` — каскадное удаление проектов и задач. |
+| POST | /api/tasks/projects/create | api/tasks/projects/create.ts | RealUser | Body: `{ clientId, name }`. |
+| POST | /api/tasks/projects/update | api/tasks/projects/update.ts | RealUser | Body: `{ id, name, clientId? }` — смена клиента у проекта допустима. |
+| POST | /api/tasks/projects/delete | api/tasks/projects/delete.ts | RealUser | Body: `{ id }` — удаление задач проекта. |
+| POST | /api/tasks/items/create | api/tasks/items/create.ts | RealUser | Body: `{ projectId, title, description?, priority?, status? }`. |
+| POST | /api/tasks/items/update | api/tasks/items/update.ts | RealUser | Body: `{ id, title?, description?, priority?, status?, projectId? }`. |
+| POST | /api/tasks/items/delete | api/tasks/items/delete.ts | RealUser | Body: `{ id }`. |
+| POST | /api/tasks/items/reorder | api/tasks/items/reorder.ts | RealUser | Body: `{ projectId, orderedIds: string[] }` — полный список id задач проекта в новом порядке. |
 
 ## Публичные эндпоинты
 | Method | Path | File | Auth | Назначение |

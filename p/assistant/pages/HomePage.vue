@@ -21,6 +21,7 @@ const props = defineProps<{
   projectDescription: string
   indexUrl: string
   journalUrl: string
+  tasksUrl: string
   profileUrl: string
   loginUrl: string
   isAuthenticated: boolean
@@ -171,10 +172,10 @@ const openChatiumLink = () => {
             <i class="fas fa-book home-card-icon" aria-hidden="true"></i>
             <span class="home-card-label">Мой журнал</span>
           </a>
-          <button type="button" class="home-card home-card-action" @click="triggerGlitch">
+          <a :href="props.tasksUrl" class="home-card home-card-link">
             <i class="fas fa-list-check home-card-icon" aria-hidden="true"></i>
             <span class="home-card-label">Мои задачи</span>
-          </button>
+          </a>
           <button type="button" class="home-card home-card-action" @click="triggerGlitch">
             <i class="fas fa-comments home-card-icon" aria-hidden="true"></i>
             <span class="home-card-label">Диалоги</span>

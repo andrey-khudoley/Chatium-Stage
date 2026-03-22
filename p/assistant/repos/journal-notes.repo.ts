@@ -47,7 +47,7 @@ export async function updateForUser(
   if (!existing) {
     return null
   }
-  return JournalNotes.update(ctx, id, { title: data.title, content: data.content })
+  return JournalNotes.update(ctx, { id, title: data.title, content: data.content })
 }
 
 export async function deleteByIdForUser(ctx: app.Ctx, userId: string, id: string): Promise<boolean> {

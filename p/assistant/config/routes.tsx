@@ -11,7 +11,8 @@ export const ROUTES = {
   profile: './web/profile',
   login: './web/login',
   tests: './web/tests',
-  journal: './web/journal'
+  journal: './web/journal',
+  tasks: './web/tasks'
 } as const
 
 /** Пути для getFullUrl (абсолютные от корня проекта) */
@@ -21,7 +22,8 @@ export const ROUTE_PATHS = {
   profile: '/web/profile',
   login: '/web/login',
   tests: '/web/tests',
-  journal: '/web/journal'
+  journal: '/web/journal',
+  tasks: '/web/tasks'
 } as const
 
 /**

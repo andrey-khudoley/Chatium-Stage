@@ -18,6 +18,7 @@
 - `web/admin/index.tsx` — админка, `requireAccountRole('Admin')`.
 - `web/profile/index.tsx` — профиль, `requireRealUser()`.
 - `web/journal/index.tsx` — страница «Мой журнал» (`JournalPage.vue`): компактное вертикальное меню слева (Блокнот, Месяц, Неделя, День, Привычки) и панель справа с динамической подгрузкой Vue-компонентов (`components/journal/*Pane.vue`). Вкладка «Блокнот»: Heap-таблица заметок, SSR передаёт список заголовков и URL API (list/create/get/update/delete) для авторизованного пользователя; кнопка «Новая заметка» открывает модальный редактор в `JournalNotebookPane` (название и текст, сохранение через POST create). В панели: раскрытие заметки для чтения (GET get), редактирование и удаление. Остальные вкладки — заглушка «В разработке». Страница доступна без обязательной авторизации.
+- `web/tasks/index.tsx` — страница «Управление задачами» (`TasksPage.vue`): боковая панель с иерархией «клиент → проекты» (широкая колонка; вверху — вторичная по акценту кнопка «Новый клиент», новый проект — иконкой в строке клиента) и основная область с таблицей задач в визуальном стиле журнала; SSR передаёт дерево задач и URL API (`api/tasks/`) для авторизованного пользователя; без входа — подсказка. Модальные формы создания/редактирования, удаление с подтверждением, смена приоритета/статуса/проекта, кнопки «вверх/вниз» и POST reorder для порядка задач в проекте.
 - `web/tests/index.tsx` — страница тестов, `requireRealUser()`.
 - `web/login/index.tsx` — вход (редирект на системный `/s/auth/signin`).
 
@@ -36,13 +37,13 @@
 
 ## Структура каталогов
 - `config/` — маршруты и `PROJECT_ROOT`.
-- `web/` — браузерные роуты модулей (admin, profile, journal, tests, login).
-- `pages/` — Vue‑страницы (минимальные, в т.ч. JournalPage — журнал).
+- `web/` — браузерные роуты модулей (admin, profile, journal, tasks, tests, login).
+- `pages/` — Vue‑страницы (минимальные, в т.ч. JournalPage, TasksPage).
 - `components/` — переиспользуемые Vue‑компоненты (Header, AppFooter, GlobalGlitch, LogoutModal); подкаталог `components/journal/` — панели разделов журнала (`JournalNotebookPane` — список, раскрытие текста, модал создания/редактирования, удаление; остальные — заглушки).
-- `api/` — API‑эндпоинты (получение и валидация входных данных). File-based: один файл — один эндпоинт с `/`. Пример: `api/settings/list.ts`, `api/settings/get.ts`, `api/settings/save.ts`, `api/logger/log.ts`, `api/admin/logs/recent.ts`, `api/admin/logs/before.ts`, `api/tests/list.ts`, `api/tests/endpoints-check/health.ts`, `api/tests/endpoints-check/ping.ts`.
-- `tables/` — Heap‑таблицы (схемы: settings, logs).
-- `repos/` — репозитории (работа с БД: settings, logs; logs.repo включает findBeforeTimestamp для пагинации).
-- `lib/` — бизнес‑логика (settings.lib, logger.lib: проверка уровня, запись в ctx/Heap/WebSocket/вебхук).
+- `api/` — API‑эндпоинты (получение и валидация входных данных). File-based: один файл — один эндпоинт с `/`. Примеры: `api/settings/list.ts`, `api/journal/notes/`, `api/tasks/tree/get.ts`, `api/logger/log.ts`, `api/tests/list.ts`.
+- `tables/` — Heap‑таблицы (settings, logs, journal-notes, task-clients, task-projects, task-items).
+- `repos/` — репозитории (settings, logs, journal-notes, tasks; logs.repo — findBeforeTimestamp для пагинации).
+- `lib/` — бизнес‑логика (settings.lib, logger.lib, tasks-types — DTO задач без Heap).
 - `shared/` — общий код (preloader, logLevel для передачи уровня логирования на клиент, logger — уровни syslog RFC 5424, createComponentLogger, setLogSink/LogEntry для дашборда, logEmergency…logDebug в браузере с проверкой порога).
 - `docs/` — документация проекта.
 

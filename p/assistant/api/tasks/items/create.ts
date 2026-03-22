@@ -1,0 +1,49 @@
+// @shared-route
+import { requireRealUser } from '@app/auth'
+import * as loggerLib from '../../../lib/logger.lib'
+import * as tasksRepo from '../../../repos/tasks.repo'
+import type { TaskStatus } from '../../../tables/task-items.table'
+import { TASK_STATUSES } from '../../../tables/task-items.table'
+
+const LOG_PATH = 'api/tasks/items/create'
+
+function parseStatus(v: unknown): TaskStatus | undefined {
+  if (typeof v !== 'string') return undefined
+  return TASK_STATUSES.includes(v as TaskStatus) ? (v as TaskStatus) : undefined
+}
+
+export const createTaskItemRoute = app
+  .body((s) => ({
+    projectId: s.string(),
+    title: s.string(),
+    description: s.optional(s.string()),
+    priority: s.optional(s.number()),
+    status: s.optional(s.string())
+  }))
+  .post('/', async (ctx, req) => {
+    const user = requireRealUser(ctx)
+    await loggerLib.writeServerLog(ctx, {
+      severity: 7,
+      message: `[${LOG_PATH}] Создание задачи`,
+      payload: { projectId: req.body.projectId }
+    })
+    try {
+      const task = await tasksRepo.createTask(ctx, user.id, req.body.projectId, {
+        title: req.body.title,
+        description: req.body.description,
+        priority: req.body.priority,
+        status: parseStatus(req.body.status)
+      })
+      if (!task) {
+        return { success: false, error: 'Проект не найден' }
+      }
+      return { success: true, task }
+    } catch (error) {
+      await loggerLib.writeServerLog(ctx, {
+        severity: 3,
+        message: `[${LOG_PATH}] Ошибка`,
+        payload: { error: String(error) }
+      })
+      return { success: false, error: String(error) }
+    }
+  })

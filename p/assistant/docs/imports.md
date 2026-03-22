@@ -6,7 +6,7 @@
 - нет внутренних импортов (только экспорт PROJECT_ROOT, ROUTES, getFullUrl, getApiUrlForRoute, withProjectRoot, withProjectRootAndSubroute)
 
 ### `./config/project.tsx`
-- нет внутренних импортов (только экспорт DEFAULT_PROJECT_TITLE, INDEX_PAGE_NAME, PROFILE_PAGE_NAME, ADMIN_PAGE_NAME, TESTS_PAGE_NAME, JOURNAL_PAGE_NAME, getPageTitle, getHeaderText, BODY_TEXT, BODY_SUBTEXT)
+- нет внутренних импортов (только экспорт DEFAULT_PROJECT_TITLE, INDEX_PAGE_NAME, PROFILE_PAGE_NAME, ADMIN_PAGE_NAME, TESTS_PAGE_NAME, JOURNAL_PAGE_NAME, TASKS_PAGE_NAME, getPageTitle, getHeaderText, BODY_TEXT, BODY_SUBTEXT)
 
 ### `./index.tsx`
 - `@app/html-jsx` → `jsx`
@@ -18,6 +18,7 @@
 - `./config/project` → `INDEX_PAGE_NAME`, `BODY_TEXT`, `BODY_SUBTEXT`, `getPageTitle`, `getHeaderText`
 - `./lib/logger.lib` → `*`
 - `./lib/settings.lib` → `*`
+- передаёт в `HomePage`: `tasksUrl` (`getFullUrl(ROUTES.tasks)`), `journalUrl`, др.
 
 ### `./web/admin/index.tsx`
 - `@app/html-jsx` → `jsx`
@@ -44,6 +45,28 @@
 - `../../config/routes` → `getFullUrl`, `ROUTES`
 - `../../config/project` → `PROFILE_PAGE_NAME`, `getPageTitle`, `getHeaderText`
 - `../../lib/settings.lib` → `*`
+
+### `./web/tasks/index.tsx`
+- `@app/html-jsx` → `jsx`
+- `@app/auth` → `requireRealUser`
+- `../../pages/TasksPage.vue`
+- `../../lib/tasks-types` → тип `TasksTreeDto`
+- `../../repos/tasks.repo` → `getTreeForUser` и др.
+- `../../api/tasks/tree/get` → `getTasksTreeRoute`
+- `../../api/tasks/clients/create` → `createTaskClientRoute`
+- `../../api/tasks/clients/update` → `updateTaskClientRoute`
+- `../../api/tasks/clients/delete` → `deleteTaskClientRoute`
+- `../../api/tasks/projects/create` → `createTaskProjectRoute`
+- `../../api/tasks/projects/update` → `updateTaskProjectRoute`
+- `../../api/tasks/projects/delete` → `deleteTaskProjectRoute`
+- `../../api/tasks/items/create` → `createTaskItemRoute`
+- `../../api/tasks/items/update` → `updateTaskItemRoute`
+- `../../api/tasks/items/delete` → `deleteTaskItemRoute`
+- `../../api/tasks/items/reorder` → `reorderTaskItemsRoute`
+- `../../shared/preloader`, `../../shared/logLevel`, `../../styles` → `customScrollbarStyles`
+- `../../lib/logger.lib`, `../../lib/settings.lib`
+- `../../config/routes` → `getFullUrl`, `getApiUrlForRoute`, `ROUTES`
+- `../../config/project` → `TASKS_PAGE_NAME`, `getPageTitle`, `getHeaderText`
 
 ### `./web/journal/index.tsx`
 - `@app/html-jsx` → `jsx`
@@ -205,6 +228,15 @@
 ### `./tables/journal-notes.table.ts`
 - `@app/heap` → `Heap`
 
+### `./tables/task-clients.table.ts`
+- `@app/heap` → `Heap`
+
+### `./tables/task-projects.table.ts`
+- `@app/heap` → `Heap`
+
+### `./tables/task-items.table.ts`
+- `@app/heap` → `Heap`
+
 ## 6) Репозитории (repos/)
 
 ### `./repos/settings.repo.ts`
@@ -219,6 +251,14 @@
 ### `./repos/journal-notes.repo.ts`
 - `../tables/journal-notes.table` → `JournalNotes`, `JournalNotesRow`
 - экспортирует: `JournalNoteSummary` (type), `findSummariesByUserId`, `createForUser`, `findByIdForUser`, `updateForUser`, `deleteByIdForUser`
+
+### `./repos/tasks.repo.ts`
+- `../tables/task-clients.table`, `task-projects.table`, `task-items.table`
+- `../lib/tasks-types` → DTO и `TaskStatus`
+- реэкспорт типов из `lib/tasks-types`
+
+### `./lib/tasks-types.ts`
+- нет импортов (чистые типы DTO для задач)
 
 ## 7) Библиотеки (lib/)
 
@@ -282,6 +322,11 @@
 - `@app/auth` → `requireRealUser`
 - `../../../lib/logger.lib` → `*`
 - `../../../repos/journal-notes.repo` → `*`
+
+### `./api/tasks/tree/get.ts` и CRUD `api/tasks/{clients,projects,items}/`
+- `@app/auth` → `requireRealUser`
+- `../../../lib/logger.lib` → `*`
+- `../../../repos/tasks.repo` → `*`
 
 ### `./api/admin/logs/recent.ts`
 - `@app/auth` → `requireAccountRole`
