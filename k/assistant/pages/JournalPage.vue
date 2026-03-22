@@ -455,7 +455,7 @@ const openChatiumLink = () => {
   transform: translateX(-6px);
 }
 
-@media (max-width: 640px) {
+@media (max-width: 900px) {
   .journal-shell {
     flex-direction: column;
     align-items: stretch;
@@ -482,6 +482,11 @@ const openChatiumLink = () => {
     overflow-x: auto;
     padding-bottom: 0.15rem;
     -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x proximity;
+  }
+
+  .journal-nav-item {
+    scroll-snap-align: start;
   }
 
   .journal-nav-btn {
@@ -492,6 +497,7 @@ const openChatiumLink = () => {
     border-bottom: 2px solid transparent;
     text-align: center;
     padding: 0.3rem 0.5rem;
+    min-height: 2.5rem;
   }
 
   .journal-nav-btn--active {

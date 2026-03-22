@@ -1065,17 +1065,17 @@ function showProjectLineBefore(clientId: string, idx: number): boolean {
             </thead>
             <tbody>
               <tr v-for="t in tasksForProject" :key="t.id">
-                <td>
+                <td data-label="Задача">
                   <div class="tasks-title">{{ t.title }}</div>
                   <div v-if="t.description" class="tasks-desc">{{ t.description }}</div>
                 </td>
-                <td>
+                <td data-label="Приоритет">
                   <span class="tasks-badge" :class="`tasks-badge--p${t.priority}`">
                     {{ PRIORITY_LABELS[t.priority] ?? t.priority }}
                   </span>
                 </td>
-                <td>{{ STATUS_LABELS[t.status] ?? t.status }}</td>
-                <td class="tasks-reorder">
+                <td data-label="Статус">{{ STATUS_LABELS[t.status] ?? t.status }}</td>
+                <td class="tasks-reorder" data-label="Порядок">
                   <button type="button" class="tasks-reorder-btn" title="Выше" @click="moveTask(t, -1)">
                     <i class="fas fa-chevron-up" aria-hidden="true" />
                   </button>
@@ -1083,7 +1083,7 @@ function showProjectLineBefore(clientId: string, idx: number): boolean {
                     <i class="fas fa-chevron-down" aria-hidden="true" />
                   </button>
                 </td>
-                <td class="tasks-row-actions">
+                <td class="tasks-row-actions" data-label="Действия">
                   <button
                     type="button"
                     class="tasks-icon-btn tasks-icon-btn--accent"
@@ -1712,6 +1712,77 @@ function showProjectLineBefore(clientId: string, idx: number): boolean {
 
 .tasks-row-actions {
   white-space: nowrap;
+}
+
+@media (max-width: 639px) {
+  .tasks-table thead {
+    display: none;
+  }
+
+  .tasks-table tbody {
+    display: block;
+  }
+
+  .tasks-table tr {
+    display: block;
+    margin-bottom: 0.85rem;
+    border: 1px solid var(--color-border);
+    border-radius: 2px;
+    padding: 0.5rem 0.65rem 0.65rem;
+    background: rgba(0, 0, 0, 0.22);
+  }
+
+  .tasks-table td {
+    display: block;
+    border: none;
+    padding: 0.4rem 0;
+    text-align: left;
+    vertical-align: top;
+  }
+
+  .tasks-table td::before {
+    content: attr(data-label);
+    display: block;
+    font-size: 0.58rem;
+    font-weight: 400;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-text-tertiary);
+    margin-bottom: 0.25rem;
+  }
+
+  .tasks-table .tasks-row-actions {
+    padding-top: 0.5rem;
+    margin-top: 0.25rem;
+    border-top: 1px solid var(--color-border);
+    white-space: normal;
+  }
+
+  .tasks-reorder {
+    white-space: normal;
+  }
+
+  .tasks-reorder-btn {
+    min-width: 2.75rem;
+    min-height: 2.75rem;
+    padding: 0.35rem 0.5rem;
+  }
+
+  .tasks-table .tasks-icon-btn {
+    width: 2.25rem;
+    height: 2.25rem;
+    font-size: 0.75rem;
+  }
+
+  .tasks-panel-head {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .tasks-panel-add {
+    width: 100%;
+    justify-content: center;
+  }
 }
 
 .tasks-delete-warn {

@@ -1,4 +1,44 @@
 // @shared
+
+/** Единый viewport для всех HTML-страниц проекта (в т.ч. safe-area на iPhone). */
+export const VIEWPORT_META_CONTENT = 'width=device-width, initial-scale=1, viewport-fit=cover'
+
+/**
+ * Safe-area (вырезы, home indicator), отступы для модалок и хедера/футера.
+ * Подключать вместе с `customScrollbarStyles` в `<head>` у `index.tsx` и `web/*/index.tsx`.
+ */
+export const mobileSafeAreaStyles = `
+  :root {
+    --app-safe-top: env(safe-area-inset-top, 0px);
+    --app-safe-right: env(safe-area-inset-right, 0px);
+    --app-safe-bottom: env(safe-area-inset-bottom, 0px);
+    --app-safe-left: env(safe-area-inset-left, 0px);
+  }
+
+  body {
+    padding-left: var(--app-safe-left);
+    padding-right: var(--app-safe-right);
+  }
+
+  .jn-modal-overlay,
+  .logout-modal-overlay {
+    padding-left: max(1rem, var(--app-safe-left));
+    padding-right: max(1rem, var(--app-safe-right));
+    padding-bottom: max(1rem, var(--app-safe-bottom));
+    padding-top: max(1rem, var(--app-safe-top));
+    box-sizing: border-box;
+  }
+
+  @media (max-width: 480px) {
+    .jn-modal-overlay,
+    .logout-modal-overlay {
+      align-items: flex-start;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+  }
+`
+
 export const baseHtmlStyles = `
   body {
     height: 100%;

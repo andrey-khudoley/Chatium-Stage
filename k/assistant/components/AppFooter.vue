@@ -34,6 +34,7 @@ onMounted(() => {
 .app-footer {
   background: transparent;
   padding: 1.5rem 0;
+  padding-bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px));
   flex-shrink: 0;
   position: relative;
   z-index: 200;
@@ -119,6 +120,10 @@ onMounted(() => {
 }
 
 @media (max-width: 768px) {
+  .app-footer {
+    padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+  }
+
   .footer-content { flex-direction: column; gap: 0.5rem; font-size: 0.8125rem; }
   .footer-left, .footer-center, .footer-right { text-align: center; flex: none; }
 }
@@ -128,6 +133,9 @@ onMounted(() => {
 }
 
 @media (min-width: 1201px) {
-  .app-footer { padding: 1rem 0; }
+  .app-footer {
+    padding: 1rem 0;
+    padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+  }
 }
 </style>

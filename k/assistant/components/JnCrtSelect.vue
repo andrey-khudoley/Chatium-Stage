@@ -34,10 +34,21 @@ function syncPanelPosition() {
   const el = triggerRef.value
   if (!el) return
   const r = el.getBoundingClientRect()
+  const margin = 8
+  const vw = typeof window !== 'undefined' ? window.innerWidth : 400
+  let width = Math.min(r.width, vw - margin * 2)
+  let left = r.left
+  if (left + width > vw - margin) {
+    left = vw - margin - width
+  }
+  if (left < margin) {
+    left = margin
+    width = Math.min(width, vw - margin * 2)
+  }
   panelFixedStyle.value = {
     top: `${r.bottom + 2}px`,
-    left: `${r.left}px`,
-    width: `${r.width}px`
+    left: `${left}px`,
+    width: `${width}px`
   }
 }
 
@@ -228,7 +239,7 @@ onUnmounted(() => {
 .jn-crt-select__panel--fixed {
   position: fixed;
   z-index: 250000;
-  max-height: 14rem;
+  max-height: min(14rem, 45vh);
   overflow-x: hidden;
   overflow-y: auto;
   margin: 0;

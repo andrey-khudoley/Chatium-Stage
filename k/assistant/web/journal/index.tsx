@@ -19,7 +19,7 @@ import { getApiUrlForRoute, getFullUrl, ROUTES } from '../../config/routes'
 import type { TasksTreeDto } from '../../lib/tasks-types'
 import { JOURNAL_PAGE_NAME, getPageTitle, getHeaderText } from '../../config/project'
 import * as settingsLib from '../../lib/settings.lib'
-import { customScrollbarStyles, formControlStyles } from '../../styles'
+import { customScrollbarStyles, formControlStyles, mobileSafeAreaStyles, VIEWPORT_META_CONTENT } from '../../styles'
 
 const LOG_PATH = 'web/journal/index'
 
@@ -87,12 +87,13 @@ export const journalPageRoute = app.html('/', async (ctx, req) => {
     <html>
       <head>
         <title>{getPageTitle(JOURNAL_PAGE_NAME, projectName)}</title>
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta name="viewport" content={VIEWPORT_META_CONTENT} />
         <meta charset="UTF-8" />
         <script>{getLogLevelScript(logLevel)}</script>
         <script src="/s/metric/clarity.js"></script>
         <style>{getPreloaderStyles()}</style>
         <style>{customScrollbarStyles}</style>
+        <style>{mobileSafeAreaStyles}</style>
         <style>{formControlStyles}</style>
         <style>{`
           html {

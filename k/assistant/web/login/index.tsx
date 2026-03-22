@@ -1,7 +1,7 @@
 // @shared
 import { jsx } from '@app/html-jsx'
 import LoginPage from '../../pages/LoginPage.vue'
-import { baseHtmlStyles, customScrollbarStyles, formControlStyles } from '../../styles'
+import { baseHtmlStyles, customScrollbarStyles, formControlStyles, mobileSafeAreaStyles, VIEWPORT_META_CONTENT } from '../../styles'
 import { PROJECT_ROOT } from '../../config/routes'
 import * as loggerLib from '../../lib/logger.lib'
 
@@ -29,11 +29,12 @@ export const loginPageRoute = app.html('/', async (ctx, req) => {
     <html>
       <head>
         <title>Вход</title>
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta name="viewport" content={VIEWPORT_META_CONTENT} />
         <meta charset="UTF-8" />
         <script src="/s/metric/clarity.js"></script>
         <style>{baseHtmlStyles}</style>
         <style>{customScrollbarStyles}</style>
+        <style>{mobileSafeAreaStyles}</style>
         <style>{formControlStyles}</style>
       </head>
       <body>

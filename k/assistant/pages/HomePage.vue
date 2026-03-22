@@ -542,7 +542,13 @@ body {
   .content-inner { padding: 0 0.75rem; gap: 2.5rem; }
   .content-wrapper { padding: 1.5rem 0; }
   .hero-section { gap: 1rem; }
-  .hero-heading { font-size: 1.75rem; letter-spacing: 0.08em; }
+  .hero-heading { font-size: 1.75rem; letter-spacing: 0.08em; min-height: 2.5rem; }
   .hero-description { font-size: 0.875rem; line-height: 1.5; }
+  .hero-icon-wrapper { width: 4.25rem; height: 4.25rem; }
+  .hero-icon { font-size: 1.65rem; }
+  .home-card {
+    min-height: 3.5rem;
+    padding: 1.25rem 0.85rem;
+  }
 }
 </style>

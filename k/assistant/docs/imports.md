@@ -12,7 +12,7 @@
 - `@app/html-jsx` → `jsx`
 - `./pages/HomePage.vue`
 - `./shared/preloader` → `getPreloaderStyles`, `getPreloaderScript`
-- `./styles` → `customScrollbarStyles`, `formControlStyles`
+- `./styles` → `customScrollbarStyles`, `mobileSafeAreaStyles`, `formControlStyles`, `VIEWPORT_META_CONTENT`
 - `./shared/logLevel` → `getLogLevelForPage`, `getLogLevelScript`
 - `./config/routes` → `getFullUrl`, `ROUTES`
 - `./config/project` → `INDEX_PAGE_NAME`, `BODY_TEXT`, `BODY_SUBTEXT`, `getPageTitle`, `getHeaderText`
@@ -28,7 +28,7 @@
 - `../login` → `loginPageRoute`
 - `../../shared/preloader` → `getPreloaderStyles`, `getPreloaderScript`
 - `../../shared/logLevel` → `getLogLevelForPage`, `getLogLevelScript`
-- `../../styles` → `customScrollbarStyles`, `formControlStyles`
+- `../../styles` → `customScrollbarStyles`, `mobileSafeAreaStyles`, `formControlStyles`, `VIEWPORT_META_CONTENT`
 - `../../lib/logger.lib` → `getAdminLogsSocketId`, `writeServerLog` (и др.)
 - `../../config/routes` → `getFullUrl`, `ROUTES`
 - `../../config/project` → `ADMIN_PAGE_NAME`, `getPageTitle`, `getHeaderText`
@@ -40,7 +40,7 @@
 - `../../pages/ProfilePage.vue`
 - `../../shared/preloader` → `getPreloaderStyles`, `getPreloaderScript`
 - `../../shared/logLevel` → `getLogLevelForPage`, `getLogLevelScript`
-- `../../styles` → `customScrollbarStyles`, `formControlStyles`
+- `../../styles` → `customScrollbarStyles`, `mobileSafeAreaStyles`, `formControlStyles`, `VIEWPORT_META_CONTENT`
 - `../../lib/logger.lib` → `*`
 - `../../config/routes` → `getFullUrl`, `ROUTES`
 - `../../config/project` → `PROFILE_PAGE_NAME`, `getPageTitle`, `getHeaderText`
@@ -65,7 +65,7 @@
 - `../../api/tasks/items/update` → `updateTaskItemRoute`
 - `../../api/tasks/items/delete` → `deleteTaskItemRoute`
 - `../../api/tasks/items/reorder` → `reorderTaskItemsRoute`
-- `../../shared/preloader`, `../../shared/logLevel`, `../../styles` → `customScrollbarStyles`, `formControlStyles`
+- `../../shared/preloader`, `../../shared/logLevel`, `../../styles` → `customScrollbarStyles`, `mobileSafeAreaStyles`, `formControlStyles`, `VIEWPORT_META_CONTENT`
 - `../../lib/logger.lib`, `../../lib/settings.lib`
 - `../../config/routes` → `getFullUrl`, `getApiUrlForRoute`, `ROUTES`
 - `../../config/project` → `TASKS_PAGE_NAME`, `getPageTitle`, `getHeaderText`
@@ -76,7 +76,7 @@
 - `../../pages/JournalPage.vue`
 - `../../shared/preloader` → `getPreloaderStyles`, `getPreloaderScript`
 - `../../shared/logLevel` → `getLogLevelForPage`, `getLogLevelScript`
-- `../../styles` → `customScrollbarStyles`, `formControlStyles`
+- `../../styles` → `customScrollbarStyles`, `mobileSafeAreaStyles`, `formControlStyles`, `VIEWPORT_META_CONTENT`
 - `../../lib/logger.lib` → `*`
 - `../../repos/journal-notes.repo` → `*`
 - `../../repos/tasks.repo` → `*`
@@ -101,7 +101,7 @@
 - `../../pages/TestsPage.vue`
 - `../../shared/preloader` → `getPreloaderStyles`, `getPreloaderScript`
 - `../../shared/logLevel` → `getLogLevelForPage`, `getLogLevelScript`
-- `../../styles` → `customScrollbarStyles`, `formControlStyles`
+- `../../styles` → `customScrollbarStyles`, `mobileSafeAreaStyles`, `formControlStyles`, `VIEWPORT_META_CONTENT`
 - `../../config/routes` → `getFullUrl`, `ROUTES`
 - `../../config/project` → `TESTS_PAGE_NAME`, `getPageTitle`, `getHeaderText`
 - `../../lib/settings.lib` → `*`
@@ -109,7 +109,7 @@
 ### `./web/login/index.tsx`
 - `@app/html-jsx` → `jsx`
 - `../../pages/LoginPage.vue`
-- `../../styles` → `baseHtmlStyles`, `customScrollbarStyles`, `formControlStyles`
+- `../../styles` → `baseHtmlStyles`, `customScrollbarStyles`, `mobileSafeAreaStyles`, `formControlStyles`, `VIEWPORT_META_CONTENT`
 - `../../config/routes` → `PROJECT_ROOT`
 - `../../lib/logger.lib` → `*`
 
@@ -238,7 +238,7 @@
 ## 4) Shared (общий код)
 
 ### `./styles.tsx`
-- нет внутренних импортов (только экспорт `baseHtmlStyles`, `customScrollbarStyles`, `formControlStyles`)
+- нет внутренних импортов (только экспорт `baseHtmlStyles`, `customScrollbarStyles`, `mobileSafeAreaStyles`, `formControlStyles`, `VIEWPORT_META_CONTENT`)
 
 ### `./shared/preloader.ts`
 - нет импортов
