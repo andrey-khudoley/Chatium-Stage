@@ -9,6 +9,7 @@ import JournalWeekPane from '../components/journal/JournalWeekPane.vue'
 import JournalDayPane from '../components/journal/JournalDayPane.vue'
 import type { TasksTreeDto } from '../lib/tasks-types'
 import JournalHabitsPane from '../components/journal/JournalHabitsPane.vue'
+import { subscribeBootStaticReady, scheduleHideBootLoader } from '../shared/bootUi'
 import { createComponentLogger } from '../shared/logger'
 
 const log = createComponentLogger('JournalPage')
@@ -189,7 +190,10 @@ function syncActiveTabFromLocation() {
 const startAfterBoot = () => {
   log.info('Boot loader complete, showing journal page')
   bootLoaderDone.value = true
+  scheduleHideBootLoader()
 }
+
+let unsubBootStatic: (() => void) | null = null
 
 onMounted(() => {
   log.info('Component mounted')
@@ -198,16 +202,12 @@ onMounted(() => {
   if (window.hideAppLoader) {
     window.hideAppLoader()
   }
-  if ((window as unknown as { bootLoaderComplete?: boolean }).bootLoaderComplete) {
-    startAfterBoot()
-  } else {
-    window.addEventListener('bootloader-complete', startAfterBoot)
-  }
+  unsubBootStatic = subscribeBootStaticReady(startAfterBoot)
 })
 
 onUnmounted(() => {
   log.info('Component unmounted')
-  window.removeEventListener('bootloader-complete', startAfterBoot)
+  unsubBootStatic?.()
   window.removeEventListener('popstate', syncActiveTabFromLocation)
 })
 

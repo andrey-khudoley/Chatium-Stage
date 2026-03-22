@@ -3,6 +3,7 @@ import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import Header from '../components/Header.vue'
 import GlobalGlitch from '../components/GlobalGlitch.vue'
 import AppFooter from '../components/AppFooter.vue'
+import { subscribeBootStaticReady, scheduleHideBootLoader } from '../shared/bootUi'
 import { createComponentLogger } from '../shared/logger'
 import type { TasksTreeDto, TaskClientDto, TaskProjectDto, TaskItemDto } from '../lib/tasks-types'
 
@@ -427,20 +428,21 @@ async function submitTaskModal() {
 }
 
 async function markTaskForDay(t: TaskItemDto) {
-  if (!props.isAuthenticated || t.status === 'in_progress') return
+  if (!props.isAuthenticated) return
+  const nextStatus: TaskItemDto['status'] = t.status === 'in_progress' ? 'todo' : 'in_progress'
   loading.value = true
   globalError.value = ''
   try {
     const j = await postJson<{ success: boolean; task?: TaskItemDto; error?: string }>(props.taskItemUpdateUrl, {
       id: t.id,
-      status: 'in_progress'
+      status: nextStatus
     })
     if (!j.success || !j.task) {
       globalError.value = j.error ?? 'Не удалось обновить задачу'
       return
     }
     tree.value.tasks = tree.value.tasks.map((x) => (x.id === j.task!.id ? j.task! : x))
-    log.info('Task marked for day (in progress)', { id: t.id })
+    log.info(nextStatus === 'in_progress' ? 'Task marked for day (in progress)' : 'Task back to todo', { id: t.id })
   } catch (e) {
     globalError.value = String(e)
   } finally {
@@ -491,18 +493,17 @@ async function moveTask(t: TaskItemDto, dir: -1 | 1) {
 
 const startAfterBoot = () => {
   bootLoaderDone.value = true
+  scheduleHideBootLoader()
 }
+
+let unsubBootStatic: (() => void) | null = null
 
 onMounted(() => {
   log.info('TasksPage mounted')
   if (window.hideAppLoader) {
     window.hideAppLoader()
   }
-  if ((window as unknown as { bootLoaderComplete?: boolean }).bootLoaderComplete) {
-    startAfterBoot()
-  } else {
-    window.addEventListener('bootloader-complete', startAfterBoot)
-  }
+  unsubBootStatic = subscribeBootStaticReady(startAfterBoot)
   void nextTick(() => applyTasksUrlQuery())
 })
 
@@ -514,7 +515,7 @@ watch(
 )
 
 onUnmounted(() => {
-  window.removeEventListener('bootloader-complete', startAfterBoot)
+  unsubBootStatic?.()
 })
 
 const openChatiumLink = () => {
@@ -680,8 +681,13 @@ const openChatiumLink = () => {
                   <button
                     type="button"
                     class="tasks-icon-btn tasks-icon-btn--accent"
-                    title="Отметить на день (статус «В работе»)"
-                    :disabled="!props.isAuthenticated || t.status === 'in_progress'"
+                    :class="{ 'tasks-icon-btn--in-progress': t.status === 'in_progress' }"
+                    :title="
+                      t.status === 'in_progress'
+                        ? 'Вернуть в «К выполнению»'
+                        : 'Отметить на день (статус «В работе»)'
+                    "
+                    :disabled="!props.isAuthenticated"
                     @click="markTaskForDay(t)"
                   >
                     <i class="fas fa-bookmark" aria-hidden="true" />
@@ -1040,6 +1046,20 @@ const openChatiumLink = () => {
   color: var(--color-accent-hover);
   border-color: var(--color-accent);
   background: var(--color-accent-light);
+}
+
+.tasks-icon-btn--in-progress {
+  color: #e53935;
+  border-color: rgba(229, 57, 53, 0.65);
+  background: rgba(229, 57, 53, 0.12);
+  cursor: pointer;
+  opacity: 1;
+}
+
+.tasks-icon-btn--accent.tasks-icon-btn--in-progress:hover {
+  color: #c62828;
+  border-color: rgba(229, 57, 53, 0.85);
+  background: rgba(229, 57, 53, 0.18);
 }
 
 .tasks-icon-btn--danger:hover {

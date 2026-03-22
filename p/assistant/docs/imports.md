@@ -118,6 +118,7 @@
 - `../components/Header.vue`
 - `../components/GlobalGlitch.vue`
 - `../components/AppFooter.vue`
+- `../shared/bootUi` → `subscribeBootStaticReady`, `scheduleHideBootLoader`
 - `../shared/logger` → `createComponentLogger`
 
 ### `./pages/AdminPage.vue`
@@ -132,6 +133,7 @@
 - `../api/admin/logs/before` → `getLogsBeforeRoute`
 - `../api/admin/dashboard/counts` → `getDashboardCountsRoute`
 - `../api/admin/dashboard/reset` → `resetDashboardRoute`
+- `../shared/bootUi` → `subscribeBootStaticReady`, `scheduleHideBootLoader`
 - `../shared/logger` → `createComponentLogger`, `setLogSink`, `LogEntry`
 
 ### `./pages/ProfilePage.vue`
@@ -139,6 +141,7 @@
 - `../components/Header.vue`
 - `../components/GlobalGlitch.vue`
 - `../components/AppFooter.vue`
+- `../shared/bootUi` → `subscribeBootStaticReady`, `scheduleHideBootLoader`
 - `../shared/logger` → `createComponentLogger`
 
 ### `./pages/JournalPage.vue`
@@ -151,6 +154,7 @@
 - `../components/journal/JournalWeekPane.vue`
 - `../components/journal/JournalDayPane.vue`
 - `../components/journal/JournalHabitsPane.vue`
+- `../shared/bootUi` → `subscribeBootStaticReady`, `scheduleHideBootLoader`
 - `../shared/logger` → `createComponentLogger`
 - `../lib/tasks-types` → `TasksTreeDto`
 - пропсы: `journalTabInitial?` — вкладка из `?tab=` при SSR; блокнот — `journalNotesInitial?`, `journalNotesCreateUrl?`, …; вкладка «День» — `tasksTreeInitial?`, `tasksTreeGetUrl?`, `taskItemReorderDayUrl?`, `taskReleaseDayUrl?`, `taskItemUpdateUrl?`, `tasksPageUrl?`; `panePropsForTab` подставляет `notebookPaneProps` или `dayPaneProps` по `activeTab`; обработчики `@note-*` только у блокнота; активная вкладка синхронизируется с адресной строкой (`replaceState`, `popstate`)
@@ -161,9 +165,19 @@
 - `../components/Header.vue`
 - `../components/GlobalGlitch.vue`
 - `../components/AppFooter.vue`
+- `../shared/bootUi` → `subscribeBootStaticReady`, `scheduleHideBootLoader`
 - `../shared/logger` → `createComponentLogger`, `setLogSink`, `LogEntry`
 - `../api/admin/logs/recent` → `getRecentLogsRoute`
 - `../api/admin/logs/before` → `getLogsBeforeRoute`
+
+### `./pages/TasksPage.vue`
+- `vue` → `computed`, `nextTick`, `onMounted`, `onUnmounted`, `ref`, `watch`
+- `../components/Header.vue`
+- `../components/GlobalGlitch.vue`
+- `../components/AppFooter.vue`
+- `../shared/bootUi` → `subscribeBootStaticReady`, `scheduleHideBootLoader`
+- `../shared/logger` → `createComponentLogger`
+- `../lib/tasks-types` → `TasksTreeDto`, `TaskClientDto`, `TaskProjectDto`, `TaskItemDto`
 
 ### `./pages/LoginPage.vue`
 - `vue` → `computed`, `onMounted`
@@ -219,6 +233,10 @@
 
 ### `./shared/preloader.ts`
 - нет импортов
+
+### `./shared/bootUi.ts`
+- первая строка: `// @shared` (обязательная пометка для загрузки в клиентском бандле Chatium)
+- `vue` → `nextTick` (подписка на `boot-static-ready`; ожидание `document.fonts` с таймаутом 10 с; затем `hideBootLoader`)
 
 ### `./shared/logLevel.ts`
 - `../lib/settings.lib` → `getLogLevel`, `LogLevel`

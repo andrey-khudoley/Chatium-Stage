@@ -3,6 +3,7 @@ import { onMounted, onUnmounted, ref } from 'vue'
 import Header from '../components/Header.vue'
 import GlobalGlitch from '../components/GlobalGlitch.vue'
 import AppFooter from '../components/AppFooter.vue'
+import { subscribeBootStaticReady, scheduleHideBootLoader } from '../shared/bootUi'
 import { createComponentLogger } from '../shared/logger'
 
 const log = createComponentLogger('HomePage')
@@ -11,7 +12,6 @@ declare global {
   interface Window {
     hideAppLoader?: () => void
     triggerGlobalGlitch?: () => void
-    bootLoaderComplete?: boolean
   }
 }
 
@@ -87,24 +87,23 @@ const startAnimations = () => {
   bootLoaderDone.value = true
   showCursor.value = true
   cursorPosition.value = 'title'
+  scheduleHideBootLoader()
   setTimeout(() => typeTextSequence(), 1000)
 }
+
+let unsubBootStatic: (() => void) | null = null
 
 onMounted(() => {
   log.info('Component mounted')
   if (window.hideAppLoader) {
     window.hideAppLoader()
   }
-  if (window.bootLoaderComplete) {
-    startAnimations()
-  } else {
-    window.addEventListener('bootloader-complete', startAnimations)
-  }
+  unsubBootStatic = subscribeBootStaticReady(startAnimations)
 })
 
 onUnmounted(() => {
   log.info('Component unmounted')
-  window.removeEventListener('bootloader-complete', startAnimations)
+  unsubBootStatic?.()
   if (intervalIds.title) clearInterval(intervalIds.title)
   if (intervalIds.desc) clearInterval(intervalIds.desc)
 })
