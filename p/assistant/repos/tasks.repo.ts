@@ -28,6 +28,11 @@ function rowToProject(row: {
   return { id: row.id, clientId: row.clientId, name: row.name, sortOrder: row.sortOrder }
 }
 
+function normalizeDaySortOrder(n: unknown): number {
+  if (typeof n !== 'number' || !Number.isFinite(n)) return 0
+  return Math.floor(n)
+}
+
 function rowToTask(row: {
   id: string
   projectId: string
@@ -36,6 +41,7 @@ function rowToTask(row: {
   priority: number
   status: string
   sortOrder: number
+  daySortOrder?: number
 }): TaskItemDto {
   return {
     id: row.id,
@@ -44,7 +50,8 @@ function rowToTask(row: {
     description: row.description ?? '',
     priority: normalizePriority(row.priority),
     status: normalizeStatus(row.status),
-    sortOrder: row.sortOrder
+    sortOrder: row.sortOrder,
+    daySortOrder: normalizeDaySortOrder(row.daySortOrder)
   }
 }
 
@@ -98,6 +105,16 @@ async function nextTaskSortOrder(ctx: app.Ctx, userId: string, projectId: string
     limit: 1
   })
   const max = rows[0]?.sortOrder ?? 0
+  return max + 1
+}
+
+async function nextDaySortOrder(ctx: app.Ctx, userId: string): Promise<number> {
+  const rows = await TaskItems.findAll(ctx, {
+    where: { userId, status: 'in_progress' },
+    order: [{ daySortOrder: 'desc' }],
+    limit: 1
+  })
+  const max = rows[0]?.daySortOrder ?? 0
   return max + 1
 }
 
@@ -224,6 +241,7 @@ export async function createTask(
   const sortOrder = await nextTaskSortOrder(ctx, userId, projectId)
   const priority = normalizePriority(data.priority ?? 2)
   const status = data.status ? normalizeStatus(data.status) : 'todo'
+  const daySortOrder = status === 'in_progress' ? await nextDaySortOrder(ctx, userId) : 0
   const row = await TaskItems.create(ctx, {
     userId,
     projectId,
@@ -231,7 +249,8 @@ export async function createTask(
     description: typeof data.description === 'string' ? data.description : '',
     priority,
     status,
-    sortOrder
+    sortOrder,
+    daySortOrder
   })
   return rowToTask(row)
 }
@@ -260,18 +279,62 @@ export async function updateTask(
   if (projectId !== existing.projectId) {
     sortOrder = await nextTaskSortOrder(ctx, userId, projectId)
   }
+  const nextStatus =
+    data.status !== undefined ? normalizeStatus(data.status) : normalizeStatus(existing.status)
+  let daySortOrderPatch: { daySortOrder: number } | undefined
+  if (data.status !== undefined) {
+    if (nextStatus === 'in_progress' && existing.status !== 'in_progress') {
+      daySortOrderPatch = { daySortOrder: await nextDaySortOrder(ctx, userId) }
+    } else if (nextStatus !== 'in_progress' && existing.status === 'in_progress') {
+      daySortOrderPatch = { daySortOrder: 0 }
+    }
+  }
   const patch = {
     ...(data.title !== undefined ? { title: data.title.trim() || existing.title } : {}),
     ...(data.description !== undefined ? { description: data.description } : {}),
     ...(data.priority !== undefined ? { priority: normalizePriority(data.priority) } : {}),
-    ...(data.status !== undefined ? { status: normalizeStatus(data.status) } : {}),
-    ...(projectId !== existing.projectId ? { projectId, sortOrder } : {})
+    ...(data.status !== undefined ? { status: nextStatus } : {}),
+    ...(projectId !== existing.projectId ? { projectId, sortOrder } : {}),
+    ...(daySortOrderPatch ?? {})
   }
   if (Object.keys(patch).length === 0) {
     return rowToTask(existing)
   }
   const row = await TaskItems.update(ctx, { id, ...patch })
   return rowToTask(row)
+}
+
+export async function reorderDayTasks(
+  ctx: app.Ctx,
+  userId: string,
+  orderedIds: string[]
+): Promise<boolean> {
+  const tasks = await TaskItems.findAll(ctx, { where: { userId, status: 'in_progress' } })
+  const idSet = new Set(tasks.map((t) => t.id))
+  if (orderedIds.length !== idSet.size || orderedIds.some((id) => !idSet.has(id))) {
+    return false
+  }
+  const offset = 1_000_000
+  let i = 0
+  for (const taskId of orderedIds) {
+    await TaskItems.update(ctx, { id: taskId, daySortOrder: offset + i })
+    i++
+  }
+  i = 0
+  for (const taskId of orderedIds) {
+    await TaskItems.update(ctx, { id: taskId, daySortOrder: i })
+    i++
+  }
+  return true
+}
+
+/** Все задачи «В работе» → «К выполнению» (очистка дневного списка). */
+export async function releaseAllInProgressToTodo(ctx: app.Ctx, userId: string): Promise<number> {
+  const tasks = await TaskItems.findAll(ctx, { where: { userId, status: 'in_progress' } })
+  for (const t of tasks) {
+    await TaskItems.update(ctx, { id: t.id, status: 'todo', daySortOrder: 0 })
+  }
+  return tasks.length
 }
 
 export async function deleteTask(ctx: app.Ctx, userId: string, id: string): Promise<boolean> {

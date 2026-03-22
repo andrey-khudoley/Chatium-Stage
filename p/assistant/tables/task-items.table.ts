@@ -34,6 +34,10 @@ export const TaskItems = Heap.Table('t__assistant__task_item__2Vx8sT', {
   }),
   sortOrder: Heap.Number({
     customMeta: { title: 'Порядок в проекте' }
+  }),
+  /** Порядок в дневном списке (задачи «В работе» на вкладке «День» журнала) */
+  daySortOrder: Heap.Number({
+    customMeta: { title: 'Порядок в дневном списке' }
   })
 })
 

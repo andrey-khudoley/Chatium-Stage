@@ -426,6 +426,47 @@ async function submitTaskModal() {
   }
 }
 
+async function markTaskForDay(t: TaskItemDto) {
+  if (!props.isAuthenticated || t.status === 'in_progress') return
+  loading.value = true
+  globalError.value = ''
+  try {
+    const j = await postJson<{ success: boolean; task?: TaskItemDto; error?: string }>(props.taskItemUpdateUrl, {
+      id: t.id,
+      status: 'in_progress'
+    })
+    if (!j.success || !j.task) {
+      globalError.value = j.error ?? 'Не удалось обновить задачу'
+      return
+    }
+    tree.value.tasks = tree.value.tasks.map((x) => (x.id === j.task!.id ? j.task! : x))
+    log.info('Task marked for day (in progress)', { id: t.id })
+  } catch (e) {
+    globalError.value = String(e)
+  } finally {
+    loading.value = false
+  }
+}
+
+function applyTasksUrlQuery() {
+  if (typeof window === 'undefined') return
+  const params = new URLSearchParams(window.location.search)
+  const qp = params.get('project')
+  const qc = params.get('client')
+  if (qp) {
+    const proj = tree.value.projects.find((p) => p.id === qp)
+    if (proj) {
+      selectedClientId.value = proj.clientId
+      selectedProjectId.value = proj.id
+      return
+    }
+  }
+  if (qc) {
+    const c = tree.value.clients.find((x) => x.id === qc)
+    if (c) selectedClientId.value = qc
+  }
+}
+
 async function moveTask(t: TaskItemDto, dir: -1 | 1) {
   const list = tasksForProject.value
   const idx = list.findIndex((x) => x.id === t.id)
@@ -462,7 +503,15 @@ onMounted(() => {
   } else {
     window.addEventListener('bootloader-complete', startAfterBoot)
   }
+  void nextTick(() => applyTasksUrlQuery())
 })
+
+watch(
+  () => [tree.value.clients.length, tree.value.projects.length] as const,
+  () => {
+    applyTasksUrlQuery()
+  }
+)
 
 onUnmounted(() => {
   window.removeEventListener('bootloader-complete', startAfterBoot)
@@ -628,6 +677,15 @@ const openChatiumLink = () => {
                   </button>
                 </td>
                 <td class="tasks-row-actions">
+                  <button
+                    type="button"
+                    class="tasks-icon-btn tasks-icon-btn--accent"
+                    title="Отметить на день (статус «В работе»)"
+                    :disabled="!props.isAuthenticated || t.status === 'in_progress'"
+                    @click="markTaskForDay(t)"
+                  >
+                    <i class="fas fa-bookmark" aria-hidden="true" />
+                  </button>
                   <button type="button" class="tasks-icon-btn" title="Изменить" @click="openTaskEdit(t)">
                     <i class="fas fa-pen" aria-hidden="true" />
                   </button>
@@ -971,6 +1029,17 @@ const openChatiumLink = () => {
 .tasks-icon-btn:hover {
   color: var(--color-text);
   border-color: var(--color-border-light);
+}
+
+.tasks-icon-btn--accent {
+  color: var(--color-text-secondary);
+  border-color: var(--color-border-light);
+}
+
+.tasks-icon-btn--accent:hover:not(:disabled) {
+  color: var(--color-accent-hover);
+  border-color: var(--color-accent);
+  background: var(--color-accent-light);
 }
 
 .tasks-icon-btn--danger:hover {

@@ -77,10 +77,16 @@
 - `../../styles` → `customScrollbarStyles`
 - `../../lib/logger.lib` → `*`
 - `../../repos/journal-notes.repo` → `*`
+- `../../repos/tasks.repo` → `*`
+- `../../lib/tasks-types` → `TasksTreeDto`
 - `../../api/journal/notes/create` → `createJournalNoteRoute`
 - `../../api/journal/notes/get` → `getJournalNoteRoute`
 - `../../api/journal/notes/update` → `updateJournalNoteRoute`
 - `../../api/journal/notes/delete` → `deleteJournalNoteRoute`
+- `../../api/tasks/tree/get` → `getTasksTreeRoute`
+- `../../api/tasks/items/reorder-day` → `reorderTaskDayItemsRoute`
+- `../../api/tasks/items/release-day` → `releaseTaskDayItemsRoute`
+- `../../api/tasks/items/update` → `updateTaskItemRoute`
 - `../../config/routes` → `getFullUrl`, `getApiUrlForRoute`, `ROUTES`
 - `../../config/project` → `JOURNAL_PAGE_NAME`, `getPageTitle`, `getHeaderText`
 - `../../lib/settings.lib` → `*`
@@ -146,7 +152,8 @@
 - `../components/journal/JournalDayPane.vue`
 - `../components/journal/JournalHabitsPane.vue`
 - `../shared/logger` → `createComponentLogger`
-- пропсы: `journalNotesInitial?`, `journalNotesCreateUrl?`, `journalNotesGetUrl?`, `journalNotesUpdateUrl?`, `journalNotesDeleteUrl?` (вкладка «Блокнот» через `v-bind` только при `activeTab === 'notebook'`); счётчик `openNotebookEditorRequest` передаётся из `notebookOpenEditorTick`; обработчики `@note-created`, `@note-updated`, `@note-deleted` от `JournalNotebookPane`
+- `../lib/tasks-types` → `TasksTreeDto`
+- пропсы: `journalTabInitial?` — вкладка из `?tab=` при SSR; блокнот — `journalNotesInitial?`, `journalNotesCreateUrl?`, …; вкладка «День» — `tasksTreeInitial?`, `tasksTreeGetUrl?`, `taskItemReorderDayUrl?`, `taskReleaseDayUrl?`, `taskItemUpdateUrl?`, `tasksPageUrl?`; `panePropsForTab` подставляет `notebookPaneProps` или `dayPaneProps` по `activeTab`; обработчики `@note-*` только у блокнота; активная вкладка синхронизируется с адресной строкой (`replaceState`, `popstate`)
 
 ### `./pages/TestsPage.vue`
 - `vue` → `onMounted`, `onBeforeUnmount`, `onUnmounted`, `ref`, `computed`
@@ -197,7 +204,10 @@
 - `./JournalStubPanel.vue`
 
 ### `./components/journal/JournalDayPane.vue`
-- `./JournalStubPanel.vue`
+- `vue` → `computed`, `onUnmounted`, `ref`, `watch`
+- `../../lib/tasks-types` → `TasksTreeDto`, `TaskItemDto`, `TaskProjectDto`
+- `../../shared/logger` → `createComponentLogger`
+- пропсы: `isAuthenticated`, `tasksTreeInitial`, `tasksTreeGetUrl`, `taskItemReorderDayUrl`, `taskReleaseDayUrl`, `taskItemUpdateUrl`, `tasksPageUrl` — список задач «В работе», сортировка (кнопки и drag-and-drop), клик по названию — модалка редактирования (POST `taskItemUpdateUrl`), ссылки на страницу задач с `?client=&project=`
 
 ### `./components/journal/JournalHabitsPane.vue`
 - `./JournalStubPanel.vue`

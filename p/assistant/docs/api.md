@@ -80,6 +80,8 @@
 | POST | /api/tasks/items/update | api/tasks/items/update.ts | RealUser | Body: `{ id, title?, description?, priority?, status?, projectId? }`. |
 | POST | /api/tasks/items/delete | api/tasks/items/delete.ts | RealUser | Body: `{ id }`. |
 | POST | /api/tasks/items/reorder | api/tasks/items/reorder.ts | RealUser | Body: `{ projectId, orderedIds: string[] }` — полный список id задач проекта в новом порядке. |
+| POST | /api/tasks/items/reorder-day | api/tasks/items/reorder-day.ts | RealUser | Body: `{ orderedIds: string[] }` — полный список id всех задач со статусом «В работе» в новом порядке (дневной список). |
+| POST | /api/tasks/items/release-day | api/tasks/items/release-day.ts | RealUser | Body: `{}` (опционально). Все задачи «В работе» → «К выполнению». Ответ: `{ success, count }`. |
 
 ## Публичные эндпоинты
 | Method | Path | File | Auth | Назначение |

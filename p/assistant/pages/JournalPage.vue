@@ -7,6 +7,7 @@ import JournalNotebookPane from '../components/journal/JournalNotebookPane.vue'
 import JournalMonthPane from '../components/journal/JournalMonthPane.vue'
 import JournalWeekPane from '../components/journal/JournalWeekPane.vue'
 import JournalDayPane from '../components/journal/JournalDayPane.vue'
+import type { TasksTreeDto } from '../lib/tasks-types'
 import JournalHabitsPane from '../components/journal/JournalHabitsPane.vue'
 import { createComponentLogger } from '../shared/logger'
 
@@ -19,6 +20,33 @@ declare global {
 }
 
 type JournalTabId = 'notebook' | 'month' | 'week' | 'day' | 'habits'
+
+const TAB_QUERY_KEY = 'tab'
+
+const JOURNAL_TAB_IDS: JournalTabId[] = ['notebook', 'month', 'week', 'day', 'habits']
+
+function parseTabFromSearch(search: string): JournalTabId | null {
+  const q = search.startsWith('?') ? search.slice(1) : search
+  const params = new URLSearchParams(q)
+  const raw = params.get(TAB_QUERY_KEY)
+  if (!raw) return null
+  return JOURNAL_TAB_IDS.includes(raw as JournalTabId) ? (raw as JournalTabId) : null
+}
+
+function applyTabToUrl(tab: JournalTabId) {
+  if (typeof window === 'undefined') return
+  const url = new URL(window.location.href)
+  if (tab === 'notebook') {
+    url.searchParams.delete(TAB_QUERY_KEY)
+  } else {
+    url.searchParams.set(TAB_QUERY_KEY, tab)
+  }
+  const next = url.pathname + url.search + url.hash
+  const cur = window.location.pathname + window.location.search + window.location.hash
+  if (next !== cur) {
+    history.replaceState(null, '', next)
+  }
+}
 
 type JournalNoteSummary = { id: string; title: string }
 
@@ -36,6 +64,14 @@ const props = defineProps<{
   journalNotesGetUrl?: string
   journalNotesUpdateUrl?: string
   journalNotesDeleteUrl?: string
+  tasksTreeInitial?: TasksTreeDto
+  tasksTreeGetUrl?: string
+  taskItemReorderDayUrl?: string
+  taskReleaseDayUrl?: string
+  taskItemUpdateUrl?: string
+  tasksPageUrl?: string
+  /** Вкладка из `?tab=` при SSR; на клиенте приоритет у текущего `window.location` */
+  journalTabInitial?: JournalTabId
 }>()
 
 const bootLoaderDone = ref(false)
@@ -56,7 +92,15 @@ const tabs: { id: JournalTabId; label: string }[] = [
   { id: 'habits', label: 'Привычки' },
 ]
 
-const activeTab = ref<JournalTabId>('notebook')
+function resolveInitialTab(): JournalTabId {
+  if (typeof window !== 'undefined') {
+    const fromUrl = parseTabFromSearch(window.location.search)
+    if (fromUrl) return fromUrl
+  }
+  return props.journalTabInitial ?? 'notebook'
+}
+
+const activeTab = ref<JournalTabId>(resolveInitialTab())
 
 const journalNotes = ref<JournalNoteSummary[]>([...(props.journalNotesInitial ?? [])])
 
@@ -109,11 +153,37 @@ const notebookPaneProps = computed(() => ({
   openNotebookEditorRequest: notebookOpenEditorTick.value
 }))
 
+const dayPaneProps = computed(() => ({
+  isAuthenticated: props.isAuthenticated,
+  tasksTreeInitial: props.tasksTreeInitial ?? { clients: [], projects: [], tasks: [] },
+  tasksTreeGetUrl: props.tasksTreeGetUrl ?? '',
+  taskItemReorderDayUrl: props.taskItemReorderDayUrl ?? '',
+  taskReleaseDayUrl: props.taskReleaseDayUrl ?? '',
+  taskItemUpdateUrl: props.taskItemUpdateUrl ?? '',
+  tasksPageUrl: props.tasksPageUrl ?? ''
+}))
+
+const panePropsForTab = computed(() => {
+  if (activeTab.value === 'notebook') return notebookPaneProps.value
+  if (activeTab.value === 'day') return dayPaneProps.value
+  return {}
+})
+
 const selectTab = (id: JournalTabId) => {
   if (activeTab.value === id) return
   log.info('Journal tab changed', { from: activeTab.value, to: id })
   notebookCreateError.value = ''
   activeTab.value = id
+  applyTabToUrl(id)
+}
+
+function syncActiveTabFromLocation() {
+  const fromUrl = parseTabFromSearch(window.location.search)
+  const next = fromUrl ?? 'notebook'
+  if (activeTab.value !== next) {
+    notebookCreateError.value = ''
+    activeTab.value = next
+  }
 }
 
 const startAfterBoot = () => {
@@ -123,6 +193,8 @@ const startAfterBoot = () => {
 
 onMounted(() => {
   log.info('Component mounted')
+  syncActiveTabFromLocation()
+  window.addEventListener('popstate', syncActiveTabFromLocation)
   if (window.hideAppLoader) {
     window.hideAppLoader()
   }
@@ -136,6 +208,7 @@ onMounted(() => {
 onUnmounted(() => {
   log.info('Component unmounted')
   window.removeEventListener('bootloader-complete', startAfterBoot)
+  window.removeEventListener('popstate', syncActiveTabFromLocation)
 })
 
 const openChatiumLink = () => {
@@ -204,7 +277,7 @@ const openChatiumLink = () => {
             <component
               :is="currentPane"
               :key="activeTab"
-              v-bind="activeTab === 'notebook' ? notebookPaneProps : {}"
+              v-bind="panePropsForTab"
               @note-created="onNotebookNoteCreated"
               @note-updated="onNotebookNoteUpdated"
               @note-deleted="onNotebookNoteDeleted"

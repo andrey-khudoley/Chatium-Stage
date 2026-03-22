@@ -6,22 +6,37 @@ import { getPreloaderStyles, getPreloaderScript } from '../../shared/preloader'
 import { getLogLevelForPage, getLogLevelScript } from '../../shared/logLevel'
 import * as loggerLib from '../../lib/logger.lib'
 import * as journalNotesRepo from '../../repos/journal-notes.repo'
+import * as tasksRepo from '../../repos/tasks.repo'
 import { createJournalNoteRoute } from '../../api/journal/notes/create'
 import { getJournalNoteRoute } from '../../api/journal/notes/get'
 import { updateJournalNoteRoute } from '../../api/journal/notes/update'
 import { deleteJournalNoteRoute } from '../../api/journal/notes/delete'
+import { getTasksTreeRoute } from '../../api/tasks/tree/get'
+import { reorderTaskDayItemsRoute } from '../../api/tasks/items/reorder-day'
+import { releaseTaskDayItemsRoute } from '../../api/tasks/items/release-day'
+import { updateTaskItemRoute } from '../../api/tasks/items/update'
 import { getApiUrlForRoute, getFullUrl, ROUTES } from '../../config/routes'
+import type { TasksTreeDto } from '../../lib/tasks-types'
 import { JOURNAL_PAGE_NAME, getPageTitle, getHeaderText } from '../../config/project'
 import * as settingsLib from '../../lib/settings.lib'
 import { customScrollbarStyles } from '../../styles'
 
 const LOG_PATH = 'web/journal/index'
 
+const VALID_JOURNAL_TABS = ['notebook', 'month', 'week', 'day', 'habits'] as const
+
+function parseJournalTabFromQuery(tab: unknown): (typeof VALID_JOURNAL_TABS)[number] | undefined {
+  if (typeof tab !== 'string') return undefined
+  return (VALID_JOURNAL_TABS as readonly string[]).includes(tab)
+    ? (tab as (typeof VALID_JOURNAL_TABS)[number])
+    : undefined
+}
+
 /**
  * Страница «Мой журнал»: заглушка «В разработке», общий хедер и футер.
  * Доступна без обязательной авторизации (как главная).
  */
-export const journalPageRoute = app.html('/', async (ctx, _req) => {
+export const journalPageRoute = app.html('/', async (ctx, req) => {
   await loggerLib.writeServerLog(ctx, {
     severity: 7,
     message: `[${LOG_PATH}] Запрос страницы журнала`,
@@ -36,12 +51,15 @@ export const journalPageRoute = app.html('/', async (ctx, _req) => {
   const testsUrl = isAuthenticated ? getFullUrl(ROUTES.tests) : ''
 
   let journalNotesInitial: journalNotesRepo.JournalNoteSummary[] = []
+  let tasksTreeInitial: TasksTreeDto = { clients: [], projects: [], tasks: [] }
   if (ctx.user) {
     try {
       const user = requireRealUser(ctx)
       journalNotesInitial = await journalNotesRepo.findSummariesByUserId(ctx, user.id)
+      tasksTreeInitial = await tasksRepo.getTreeForUser(ctx, user.id)
     } catch {
       journalNotesInitial = []
+      tasksTreeInitial = { clients: [], projects: [], tasks: [] }
     }
   }
 
@@ -49,6 +67,12 @@ export const journalPageRoute = app.html('/', async (ctx, _req) => {
   const journalNotesGetUrl = getApiUrlForRoute(getJournalNoteRoute.url())
   const journalNotesUpdateUrl = getApiUrlForRoute(updateJournalNoteRoute.url())
   const journalNotesDeleteUrl = getApiUrlForRoute(deleteJournalNoteRoute.url())
+  const tasksTreeGetUrl = getApiUrlForRoute(getTasksTreeRoute.url())
+  const taskItemReorderDayUrl = getApiUrlForRoute(reorderTaskDayItemsRoute.url())
+  const taskReleaseDayUrl = getApiUrlForRoute(releaseTaskDayItemsRoute.url())
+  const taskItemUpdateUrl = getApiUrlForRoute(updateTaskItemRoute.url())
+  const tasksPageUrl = getFullUrl(ROUTES.tasks)
+  const journalTabInitial = parseJournalTabFromQuery(req.query?.tab)
 
   const logLevel = await getLogLevelForPage(ctx)
   const projectName = await settingsLib.getSettingString(ctx, settingsLib.SETTING_KEYS.PROJECT_NAME)
@@ -292,6 +316,13 @@ export const journalPageRoute = app.html('/', async (ctx, _req) => {
           journalNotesGetUrl={journalNotesGetUrl}
           journalNotesUpdateUrl={journalNotesUpdateUrl}
           journalNotesDeleteUrl={journalNotesDeleteUrl}
+          tasksTreeInitial={tasksTreeInitial}
+          tasksTreeGetUrl={tasksTreeGetUrl}
+          taskItemReorderDayUrl={taskItemReorderDayUrl}
+          taskReleaseDayUrl={taskReleaseDayUrl}
+          taskItemUpdateUrl={taskItemUpdateUrl}
+          tasksPageUrl={tasksPageUrl}
+          journalTabInitial={journalTabInitial}
         />
       </body>
     </html>

@@ -14,6 +14,8 @@ export type TaskItemDto = {
   priority: number
   status: TaskStatus
   sortOrder: number
+  /** Порядок среди задач со статусом «В работе» (вкладка «День» журнала) */
+  daySortOrder: number
 }
 
 export type TasksTreeDto = {
