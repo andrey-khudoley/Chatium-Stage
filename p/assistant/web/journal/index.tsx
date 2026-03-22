@@ -1,178 +1,118 @@
 // @shared
 import { jsx } from '@app/html-jsx'
-import HomePage from './pages/HomePage.vue'
-import { getPreloaderStyles, getPreloaderScript } from './shared/preloader'
-import { customScrollbarStyles } from './styles'
-import { getLogLevelForPage, getLogLevelScript } from './shared/logLevel'
-import { getFullUrl, ROUTES } from './config/routes'
-import {
-  INDEX_PAGE_NAME,
-  BODY_TEXT,
-  BODY_SUBTEXT,
-  getPageTitle,
-  getHeaderText
-} from './config/project'
-import * as loggerLib from './lib/logger.lib'
-import * as settingsLib from './lib/settings.lib'
+import { requireRealUser } from '@app/auth'
+import JournalPage from '../../pages/JournalPage.vue'
+import { getPreloaderStyles, getPreloaderScript } from '../../shared/preloader'
+import { getLogLevelForPage, getLogLevelScript } from '../../shared/logLevel'
+import * as loggerLib from '../../lib/logger.lib'
+import * as journalNotesRepo from '../../repos/journal-notes.repo'
+import * as tasksRepo from '../../repos/tasks.repo'
+import { createJournalNoteRoute } from '../../api/journal/notes/create'
+import { getJournalNoteRoute } from '../../api/journal/notes/get'
+import { updateJournalNoteRoute } from '../../api/journal/notes/update'
+import { deleteJournalNoteRoute } from '../../api/journal/notes/delete'
+import { getTasksTreeRoute } from '../../api/tasks/tree/get'
+import { reorderTaskDayItemsRoute } from '../../api/tasks/items/reorder-day'
+import { releaseTaskDayItemsRoute } from '../../api/tasks/items/release-day'
+import { updateTaskItemRoute } from '../../api/tasks/items/update'
+import { getApiUrlForRoute, getFullUrl, ROUTES } from '../../config/routes'
+import type { TasksTreeDto } from '../../lib/tasks-types'
+import { JOURNAL_PAGE_NAME, getPageTitle, getHeaderText } from '../../config/project'
+import * as settingsLib from '../../lib/settings.lib'
+import { customScrollbarStyles } from '../../styles'
 
-const LOG_PATH = 'index'
+const LOG_PATH = 'web/journal/index'
 
-export const indexPageRoute = app.html('/', async (ctx, req) => {
+const VALID_JOURNAL_TABS = ['notebook', 'month', 'week', 'day', 'habits'] as const
+
+function parseJournalTabFromQuery(tab: unknown): (typeof VALID_JOURNAL_TABS)[number] | undefined {
+  if (typeof tab !== 'string') return undefined
+  return (VALID_JOURNAL_TABS as readonly string[]).includes(tab)
+    ? (tab as (typeof VALID_JOURNAL_TABS)[number])
+    : undefined
+}
+
+/**
+ * Страница «Мой журнал»: заглушка «В разработке», общий хедер и футер.
+ * Доступна без обязательной авторизации (как главная).
+ */
+export const journalPageRoute = app.html('/', async (ctx, req) => {
   await loggerLib.writeServerLog(ctx, {
     severity: 7,
-    message: `[${LOG_PATH}] Рендер главной страницы`,
-    payload: { hasUser: !!ctx.user, isAdmin: ctx.user?.is?.('Admin') ?? false }
+    message: `[${LOG_PATH}] Запрос страницы журнала`,
+    payload: { hasUser: !!ctx.user }
   })
 
   const isAuthenticated = !!ctx.user
   const isAdmin = ctx.user?.is('Admin') ?? false
-  await loggerLib.writeServerLog(ctx, {
-    severity: 7,
-    message: `[${LOG_PATH}] Переменные auth`,
-    payload: { isAuthenticated, isAdmin }
-  })
   const loginUrl = getFullUrl(ROUTES.login)
-  const journalUrl = getFullUrl(ROUTES.journal)
-  const tasksUrl = getFullUrl(ROUTES.tasks)
+  const indexUrl = getFullUrl(ROUTES.index)
   const adminUrl = isAdmin ? getFullUrl(ROUTES.admin) : ''
   const testsUrl = isAuthenticated ? getFullUrl(ROUTES.tests) : ''
-  await loggerLib.writeServerLog(ctx, {
-    severity: 7,
-    message: `[${LOG_PATH}] URL-ы`,
-    payload: { loginUrl, journalUrl, tasksUrl, adminUrl, testsUrl }
-  })
+
+  let journalNotesInitial: journalNotesRepo.JournalNoteSummary[] = []
+  let tasksTreeInitial: TasksTreeDto = { clients: [], projects: [], tasks: [] }
+  if (ctx.user) {
+    try {
+      const user = requireRealUser(ctx)
+      journalNotesInitial = await journalNotesRepo.findSummariesByUserId(ctx, user.id)
+      tasksTreeInitial = await tasksRepo.getTreeForUser(ctx, user.id)
+    } catch {
+      journalNotesInitial = []
+      tasksTreeInitial = { clients: [], projects: [], tasks: [] }
+    }
+  }
+
+  const journalNotesCreateUrl = getApiUrlForRoute(createJournalNoteRoute.url())
+  const journalNotesGetUrl = getApiUrlForRoute(getJournalNoteRoute.url())
+  const journalNotesUpdateUrl = getApiUrlForRoute(updateJournalNoteRoute.url())
+  const journalNotesDeleteUrl = getApiUrlForRoute(deleteJournalNoteRoute.url())
+  const tasksTreeGetUrl = getApiUrlForRoute(getTasksTreeRoute.url())
+  const taskItemReorderDayUrl = getApiUrlForRoute(reorderTaskDayItemsRoute.url())
+  const taskReleaseDayUrl = getApiUrlForRoute(releaseTaskDayItemsRoute.url())
+  const taskItemUpdateUrl = getApiUrlForRoute(updateTaskItemRoute.url())
+  const tasksPageUrl = getFullUrl(ROUTES.tasks)
+  const journalTabInitial = parseJournalTabFromQuery(req.query?.tab)
+
   const logLevel = await getLogLevelForPage(ctx)
   const projectName = await settingsLib.getSettingString(ctx, settingsLib.SETTING_KEYS.PROJECT_NAME)
+
   await loggerLib.writeServerLog(ctx, {
-    severity: 7,
-    message: `[${LOG_PATH}] Переменные для рендера`,
-    payload: { logLevel, projectName }
+    severity: 6,
+    message: `[${LOG_PATH}] Рендер страницы журнала`,
+    payload: { isAuthenticated, isAdmin }
   })
 
   return (
     <html>
       <head>
-        <title>{getPageTitle(INDEX_PAGE_NAME, projectName)}</title>
+        <title>{getPageTitle(JOURNAL_PAGE_NAME, projectName)}</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta charset="UTF-8" />
         <script>{getLogLevelScript(logLevel)}</script>
+        <script src="/s/metric/clarity.js"></script>
+        <style>{getPreloaderStyles()}</style>
+        <style>{customScrollbarStyles}</style>
         <style>{`
-          html { 
+          html {
+            margin: 0;
+            padding: 0;
             background: #0a0a0a;
           }
-          body { 
-            margin: 0; 
+          body {
+            margin: 0;
+            padding: 0;
             background: #0a0a0a;
             position: relative;
             min-height: 100vh;
             overflow: hidden;
           }
-          
+
           body.boot-complete {
             overflow-x: hidden;
             overflow-y: auto;
           }
-          
-          /* Скрываем контент до завершения загрузки */
-          .app-layout:not(.global-glitch-active) {
-            opacity: 0;
-            position: relative;
-            z-index: 2;
-            transform: scale(0.96);
-            filter: blur(1px);
-          }
-          
-          /* Анимация появления запускается только один раз при загрузке */
-          body.boot-complete .app-layout:not(.app-layout-appeared) {
-            animation: crt-power-on 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.5s forwards;
-          }
-          
-          /* После завершения анимации появления класс предотвращает её повторный запуск */
-          body.boot-complete .app-layout.app-layout-appeared:not(.global-glitch-active) {
-            opacity: 1 !important;
-            transform: scale(1) translate(0, 0) !important;
-            filter: blur(0) !important;
-          }
-          
-          /* При активном глитче убираем все конфликтующие стили */
-          body.boot-complete .app-layout.global-glitch-active {
-            opacity: 1 !important;
-          }
-          
-          @keyframes crt-power-on {
-            0% {
-              opacity: 0;
-              transform: scale(0.96) translate(0, 0);
-              filter: blur(1.2px);
-            }
-            8% {
-              opacity: 0.2;
-              transform: scale(0.97) translate(0.15px, -0.1px);
-              filter: blur(1px);
-            }
-            16% {
-              opacity: 0.4;
-              transform: scale(0.98) translate(-0.12px, 0.08px);
-              filter: blur(0.8px);
-            }
-            24% {
-              opacity: 0.55;
-              transform: scale(0.985) translate(0.1px, -0.06px);
-              filter: blur(0.6px);
-            }
-            32% {
-              opacity: 0.68;
-              transform: scale(0.99) translate(-0.08px, 0.05px);
-              filter: blur(0.5px);
-            }
-            40% {
-              opacity: 0.78;
-              transform: scale(0.995) translate(0.06px, -0.04px);
-              filter: blur(0.4px);
-            }
-            48% {
-              opacity: 0.85;
-              transform: scale(0.998) translate(-0.04px, 0.03px);
-              filter: blur(0.3px);
-            }
-            56% {
-              opacity: 0.9;
-              transform: scale(1.0) translate(0.03px, -0.02px);
-              filter: blur(0.2px);
-            }
-            64% {
-              opacity: 0.94;
-              transform: scale(1.0) translate(-0.02px, 0.015px);
-              filter: blur(0.15px);
-            }
-            72% {
-              opacity: 0.97;
-              transform: scale(1.0) translate(0.015px, -0.01px);
-              filter: blur(0.1px);
-            }
-            80% {
-              opacity: 0.99;
-              transform: scale(1.0) translate(-0.01px, 0.008px);
-              filter: blur(0.05px);
-            }
-            88% {
-              opacity: 1;
-              transform: scale(1.0) translate(0.008px, -0.005px);
-              filter: blur(0.02px);
-            }
-            96% {
-              opacity: 1;
-              transform: scale(1.0) translate(-0.005px, 0.003px);
-              filter: blur(0.01px);
-            }
-            100% {
-              opacity: 1;
-              transform: scale(1.0) translate(0, 0);
-              filter: blur(0);
-            }
-          }
-          
-          /* LAYER 1: Realistic CRT Screen Vignette (BEHIND content, z-index: 1) */
+
           #geometric-bg {
             position: fixed;
             top: 0;
@@ -181,7 +121,7 @@ export const indexPageRoute = app.html('/', async (ctx, req) => {
             bottom: 0;
             z-index: 1;
             pointer-events: none;
-            background: 
+            background:
               radial-gradient(
                 ellipse 100% 100% at 50% 50%,
                 transparent 0%,
@@ -192,15 +132,15 @@ export const indexPageRoute = app.html('/', async (ctx, req) => {
                 rgba(0, 0, 0, 0.99) 100%
               );
             border-radius: 3% / 4%;
-            box-shadow: 
+            box-shadow:
               inset 0 0 200px 50px rgba(0, 0, 0, 0.8),
               inset 0 0 100px 20px rgba(0, 0, 0, 0.6);
             animation: crt-ambient-glow 3s ease-in-out infinite;
           }
-          
+
           @media (max-width: 768px) {
             #geometric-bg {
-              background: 
+              background:
                 radial-gradient(
                   ellipse 150% 100% at 50% 50%,
                   transparent 0%,
@@ -209,18 +149,17 @@ export const indexPageRoute = app.html('/', async (ctx, req) => {
                   rgba(0, 0, 0, 0.95) 100%
                 );
               border-radius: 0;
-              box-shadow: 
+              box-shadow:
                 inset 0 100px 80px -50px rgba(0, 0, 0, 0.9),
                 inset 0 -100px 80px -50px rgba(0, 0, 0, 0.9);
             }
           }
-          
+
           @keyframes crt-ambient-glow {
             0%, 100% { opacity: 1; }
             50% { opacity: 0.97; }
           }
-          
-          /* LAYER 3: Cosmetic overlay - Scanlines and subtle effects (TOP, z-index: 999999) */
+
           body::after {
             content: '';
             position: fixed;
@@ -239,29 +178,28 @@ export const indexPageRoute = app.html('/', async (ctx, req) => {
             z-index: 999999;
             border-radius: 3% / 4%;
             opacity: 0;
-            animation: 
+            animation:
               scanline-fade-in 0.6s ease-out 1s forwards,
               scanline-flicker 8s linear 1.6s infinite;
           }
-          
+
           @keyframes scanline-fade-in {
             from { opacity: 0; }
             to { opacity: 0.3; }
           }
-          
+
           @keyframes scanline-flicker {
             0% { opacity: 0.25; }
             50% { opacity: 0.35; }
             100% { opacity: 0.25; }
           }
-          
+
           @media (max-width: 768px) {
             body::after {
               border-radius: 0;
             }
           }
-          
-          /* Screen bezel effect */
+
           body::before {
             content: '';
             position: fixed;
@@ -272,25 +210,25 @@ export const indexPageRoute = app.html('/', async (ctx, req) => {
             pointer-events: none;
             z-index: 999998;
             border-radius: 3% / 4%;
-            box-shadow: 
+            box-shadow:
               inset 0 0 80px rgba(0, 0, 0, 0.3),
               inset 0 2px 1px rgba(255, 255, 255, 0.01);
             opacity: 0;
             animation: bezel-fade-in 0.8s ease-out 1.2s forwards;
           }
-          
+
           @keyframes bezel-fade-in {
             from { opacity: 0; }
             to { opacity: 1; }
           }
-          
+
           @media (max-width: 768px) {
             body::before {
               border-radius: 0;
               box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.2);
             }
           }
-          /* CRT grid */
+
           #geometric-bg::before {
             content: '';
             position: absolute;
@@ -304,6 +242,7 @@ export const indexPageRoute = app.html('/', async (ctx, req) => {
             background-repeat: no-repeat;
             opacity: 0.3;
           }
+
           #geometric-bg::after {
             content: '';
             position: absolute;
@@ -315,75 +254,15 @@ export const indexPageRoute = app.html('/', async (ctx, req) => {
             border-radius: 50%;
             animation: geometric-float 20s ease-in-out infinite;
           }
+
           @keyframes geometric-float {
             0%, 100% { transform: translate(0, 0) scale(1); }
             50% { transform: translate(-50px, 50px) scale(1.1); }
           }
+
           ${getPreloaderStyles()}
-          
-          /* TV Glitch Effect */
-          #tv-glitch {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            z-index: 999997;
-            pointer-events: none;
-            opacity: 0;
-          }
-          
-          #tv-glitch.active {
-            animation: glitch-wave 1s cubic-bezier(0.4, 0, 0.2, 1);
-          }
-          
-          @keyframes glitch-wave {
-            0%, 100% { opacity: 0; }
-            10%, 90% { opacity: 0.8; }
-          }
-          
-          #tv-glitch::before {
-            content: '';
-            position: absolute;
-            left: 0;
-            right: 0;
-            height: 80px;
-            background: transparent;
-          }
-          
-          #tv-glitch.active::before {
-            animation: glitch-zone-move 1s cubic-bezier(0.4, 0, 0.2, 1);
-          }
-          
-          @keyframes glitch-zone-move {
-            0% { top: -80px; opacity: 0; }
-            10% { opacity: 1; }
-            90% { opacity: 1; }
-            100% { top: 100%; opacity: 0; }
-          }
-          
-          body.glitch-active .app-layout {
-            animation: body-glitch 1s cubic-bezier(0.4, 0, 0.2, 1);
-            will-change: transform;
-          }
-          
-          @keyframes body-glitch {
-            0%, 100% { transform: translateX(0); }
-            15% { transform: translateX(-2px); }
-            18% { transform: translateX(3px); }
-            22% { transform: translateX(-2px); }
-            25% { transform: translateX(2px); }
-            28% { transform: translateX(0); }
-            50% { transform: translateX(-3px); }
-            53% { transform: translateX(2px); }
-            56% { transform: translateX(0); }
-            75% { transform: translateX(2px); }
-            78% { transform: translateX(-2px); }
-            82% { transform: translateX(0); }
-          }
         `}</style>
         <script>{getPreloaderScript()}</script>
-        <script src="/s/metric/clarity.js"></script>
         <script src="/s/static/lib/tailwind.3.4.16.min.js"></script>
         <link rel="stylesheet" href="/s/static/lib/fontawesome/6.7.2/css/all.min.css" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -401,48 +280,53 @@ export const indexPageRoute = app.html('/', async (ctx, req) => {
             --color-border-light: #3a3a3a;
             --color-accent: #d3234b;
             --color-accent-hover: #e6395f;
-            --color-accent-light: rgba(211, 35, 75, 0.15);
-            --color-accent-medium: rgba(211, 35, 75, 0.25);
+            --color-accent-light: rgba(211, 35, 75, 0.1);
+            --color-accent-medium: rgba(211, 35, 75, 0.2);
           }
-          
+
           ::selection {
             background: #e0335a;
             color: #ffffff;
           }
-          
+
           ::-moz-selection {
             background: #e0335a;
             color: #ffffff;
           }
-
-          ${customScrollbarStyles}
         `}</style>
       </head>
       <body>
         <div id="geometric-bg"></div>
-        <div id="tv-glitch"></div>
         <div id="boot-loader">
           <div class="boot-messages">
             <div id="boot-messages-container"></div>
           </div>
         </div>
-        <HomePage
-          projectName={BODY_TEXT}
-          projectTitle={getHeaderText(INDEX_PAGE_NAME, projectName)}
-          projectDescription={BODY_SUBTEXT}
-          indexUrl={getFullUrl(ROUTES.index)}
-          journalUrl={journalUrl}
-          tasksUrl={tasksUrl}
+        <JournalPage
+          projectTitle={getHeaderText(JOURNAL_PAGE_NAME, projectName)}
+          indexUrl={indexUrl}
           profileUrl={getFullUrl(ROUTES.profile)}
+          testsUrl={testsUrl}
           loginUrl={loginUrl}
           isAuthenticated={isAuthenticated}
           isAdmin={isAdmin}
           adminUrl={adminUrl}
-          testsUrl={testsUrl}
+          journalNotesInitial={journalNotesInitial}
+          journalNotesCreateUrl={journalNotesCreateUrl}
+          journalNotesGetUrl={journalNotesGetUrl}
+          journalNotesUpdateUrl={journalNotesUpdateUrl}
+          journalNotesDeleteUrl={journalNotesDeleteUrl}
+          tasksTreeInitial={tasksTreeInitial}
+          tasksTreeGetUrl={tasksTreeGetUrl}
+          taskItemReorderDayUrl={taskItemReorderDayUrl}
+          taskReleaseDayUrl={taskReleaseDayUrl}
+          taskItemUpdateUrl={taskItemUpdateUrl}
+          tasksPageUrl={tasksPageUrl}
+          journalTabInitial={journalTabInitial}
         />
       </body>
     </html>
   )
 })
 
-export default indexPageRoute
+export default journalPageRoute

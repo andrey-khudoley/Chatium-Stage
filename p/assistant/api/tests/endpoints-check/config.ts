@@ -32,7 +32,9 @@ export const configTestRoute = app.get('/', async (ctx, req) => {
       index: getFullUrl(ROUTES.index),
       admin: getFullUrl(ROUTES.admin),
       login: getFullUrl(ROUTES.login),
-      profile: getFullUrl(ROUTES.profile)
+      profile: getFullUrl(ROUTES.profile),
+      journal: getFullUrl(ROUTES.journal),
+      tasks: getFullUrl(ROUTES.tasks)
     },
     pageTitle,
     headerText,

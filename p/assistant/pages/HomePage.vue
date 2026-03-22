@@ -3,6 +3,7 @@ import { onMounted, onUnmounted, ref } from 'vue'
 import Header from '../components/Header.vue'
 import GlobalGlitch from '../components/GlobalGlitch.vue'
 import AppFooter from '../components/AppFooter.vue'
+import { subscribeBootStaticReady, scheduleHideBootLoader } from '../shared/bootUi'
 import { createComponentLogger } from '../shared/logger'
 
 const log = createComponentLogger('HomePage')
@@ -11,7 +12,6 @@ declare global {
   interface Window {
     hideAppLoader?: () => void
     triggerGlobalGlitch?: () => void
-    bootLoaderComplete?: boolean
   }
 }
 
@@ -20,6 +20,8 @@ const props = defineProps<{
   projectTitle: string
   projectDescription: string
   indexUrl: string
+  journalUrl: string
+  tasksUrl: string
   profileUrl: string
   loginUrl: string
   isAuthenticated: boolean
@@ -85,24 +87,23 @@ const startAnimations = () => {
   bootLoaderDone.value = true
   showCursor.value = true
   cursorPosition.value = 'title'
+  scheduleHideBootLoader()
   setTimeout(() => typeTextSequence(), 1000)
 }
+
+let unsubBootStatic: (() => void) | null = null
 
 onMounted(() => {
   log.info('Component mounted')
   if (window.hideAppLoader) {
     window.hideAppLoader()
   }
-  if (window.bootLoaderComplete) {
-    startAnimations()
-  } else {
-    window.addEventListener('bootloader-complete', startAnimations)
-  }
+  unsubBootStatic = subscribeBootStaticReady(startAnimations)
 })
 
 onUnmounted(() => {
   log.info('Component unmounted')
-  window.removeEventListener('bootloader-complete', startAnimations)
+  unsubBootStatic?.()
   if (intervalIds.title) clearInterval(intervalIds.title)
   if (intervalIds.desc) clearInterval(intervalIds.desc)
 })
@@ -163,6 +164,21 @@ const openChatiumLink = () => {
           <p class="hero-description">
             {{ displayedDescription }}<span v-if="showCursor && cursorPosition === 'description'" class="typing-cursor">▮</span>
           </p>
+        </section>
+
+        <section v-if="bootLoaderDone" class="home-cards-section" aria-label="Быстрые разделы">
+          <a :href="props.journalUrl" class="home-card home-card-link">
+            <i class="fas fa-book home-card-icon" aria-hidden="true"></i>
+            <span class="home-card-label">Мой журнал</span>
+          </a>
+          <a :href="props.tasksUrl" class="home-card home-card-link">
+            <i class="fas fa-list-check home-card-icon" aria-hidden="true"></i>
+            <span class="home-card-label">Мои задачи</span>
+          </a>
+          <button type="button" class="home-card home-card-action" @click="triggerGlitch">
+            <i class="fas fa-comments home-card-icon" aria-hidden="true"></i>
+            <span class="home-card-label">Диалоги</span>
+          </button>
         </section>
       </div>
     </main>
@@ -453,6 +469,56 @@ body {
   text-shadow: 0 0 6px rgba(160, 160, 160, 0.2);
 }
 
+.home-cards-section {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.25rem;
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 0 0 0.5rem;
+}
+
+.home-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 1.5rem 1rem;
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  color: var(--color-text);
+  text-decoration: none;
+  font: inherit;
+  cursor: pointer;
+  text-align: center;
+  clip-path: polygon(
+    0 4px, 4px 4px, 4px 0,
+    calc(100% - 4px) 0, calc(100% - 4px) 4px, 100% 4px,
+    100% calc(100% - 4px), calc(100% - 4px) calc(100% - 4px), calc(100% - 4px) 100%,
+    4px 100%, 4px calc(100% - 4px), 0 calc(100% - 4px)
+  );
+  transition: var(--transition);
+}
+
+.home-card-link:hover,
+.home-card-action:hover {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 20px rgba(211, 35, 75, 0.25);
+}
+
+.home-card-icon {
+  font-size: 1.75rem;
+  color: var(--color-accent);
+}
+
+.home-card-label {
+  font-size: 0.95rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
 @media (min-width: 1201px) {
   .content-wrapper { padding: 1rem 0; }
   .content-inner { gap: 1.5rem; }
@@ -466,6 +532,10 @@ body {
   .hero-section { gap: 1.25rem; padding: 1rem 0; }
   .hero-heading { font-size: 2rem; }
   .hero-description { font-size: 0.9375rem; }
+  .home-cards-section {
+    grid-template-columns: 1fr;
+    max-width: 22rem;
+  }
 }
 
 @media (max-width: 480px) {

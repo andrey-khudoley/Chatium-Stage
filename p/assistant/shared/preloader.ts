@@ -16,7 +16,7 @@ export function getPreloaderStyles() {
       align-items: center;
       justify-content: center;
       padding: 2rem;
-      background: transparent;
+      background: #0a0a0a;
       transform-origin: center center;
       overflow: hidden;
     }
@@ -142,6 +142,7 @@ export function getPreloaderScript() {
       var container = null;
       var loadedResources = new Set();
       var isComplete = false;
+      window.bootStaticReady = false;
       
       var bootSequence = [
         { type: 'init', msg: 'Инициализация системы...' },
@@ -191,35 +192,71 @@ export function getPreloaderScript() {
         }
       }
       
+      function finishBootStaticReady() {
+        if (window.bootStaticReady) return;
+        window.bootStaticReady = true;
+        window.dispatchEvent(new Event('boot-static-ready'));
+      }
+      
       function completeSequence() {
         if (isComplete) return;
+        
+        try {
+          addMessage('OK', 'Компоненты загружены');
+          addMessage('OK', 'Инициализация Vue.js...');
+          addMessage('OK', 'Проверка аутентификации...');
+          addMessage('OK', 'Система готова к работе');
+          var cursor = document.createElement('div');
+          cursor.className = 'boot-cursor';
+          cursor.textContent = '_';
+          if (!container) {
+            container = document.getElementById('boot-messages-container');
+          }
+          if (container) {
+            container.appendChild(cursor);
+          }
+        } catch (e) {}
+        
         isComplete = true;
         
-        addMessage('OK', 'Компоненты загружены');
-        addMessage('OK', 'Инициализация Vue.js...');
-        addMessage('OK', 'Проверка аутентификации...');
-        addMessage('OK', 'Система готова к работе');
-        
-        var cursor = document.createElement('div');
-        cursor.className = 'boot-cursor';
-        cursor.textContent = '_';
-        container.appendChild(cursor);
-        
-        setTimeout(hideBootLoader, 400);
+        setTimeout(function() {
+          function afterFonts() {
+            if (document.fonts && document.fonts.ready) {
+              document.fonts.ready.then(finishBootStaticReady).catch(finishBootStaticReady);
+            } else {
+              finishBootStaticReady();
+            }
+          }
+          afterFonts();
+        }, 400);
       }
       
       function hideBootLoader() {
         var loader = document.getElementById('boot-loader');
         if (loader) {
           loader.classList.add('collapsing');
-          document.body.classList.add('boot-complete');
           setTimeout(function() {
             loader.style.display = 'none';
+            document.body.classList.add('boot-complete');
             window.bootLoaderComplete = true;
             window.dispatchEvent(new Event('bootloader-complete'));
           }, 400);
         }
       }
+      
+      window.hideBootLoader = hideBootLoader;
+      
+      setTimeout(function() {
+        if (!window.bootStaticReady) {
+          finishBootStaticReady();
+        }
+      }, 12000);
+      
+      setTimeout(function() {
+        if (!window.bootLoaderComplete && typeof window.hideBootLoader === 'function') {
+          window.hideBootLoader();
+        }
+      }, 15000);
       
       function startBoot() {
         addMessage('OK', bootSequence[0].msg);

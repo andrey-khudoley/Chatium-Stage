@@ -18,8 +18,8 @@ export type LogWebhookSetting = { enable: boolean; url: string }
 
 /** Значения по умолчанию */
 export const DEFAULTS = {
-  [SETTING_KEYS.PROJECT_NAME]: 'Ассистент',
-  [SETTING_KEYS.PROJECT_TITLE]: 'Ассистент',
+  [SETTING_KEYS.PROJECT_NAME]: 'Assistant',
+  [SETTING_KEYS.PROJECT_TITLE]: 'Assistant',
   [SETTING_KEYS.LOG_LEVEL]: 'Info',
   [SETTING_KEYS.LOGS_LIMIT]: '100',
   [SETTING_KEYS.LOG_WEBHOOK]: { enable: false, url: '' } as LogWebhookSetting,

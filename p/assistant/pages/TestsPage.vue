@@ -4,6 +4,7 @@ import { getOrCreateBrowserSocketClient } from '@app/socket'
 import Header from '../components/Header.vue'
 import GlobalGlitch from '../components/GlobalGlitch.vue'
 import AppFooter from '../components/AppFooter.vue'
+import { subscribeBootStaticReady, scheduleHideBootLoader } from '../shared/bootUi'
 import { createComponentLogger, setLogSink, type LogEntry } from '../shared/logger'
 import { getRecentLogsRoute } from '../api/admin/logs/recent'
 import { getLogsBeforeRoute } from '../api/admin/logs/before'
@@ -16,7 +17,6 @@ declare global {
   interface Window {
     hideAppLoader?: () => void
     triggerGlobalGlitch?: () => void
-    bootLoaderComplete?: boolean
   }
 }
 
@@ -230,8 +230,11 @@ const startAnimations = () => {
   bootLoaderDone.value = true
   showCursor.value = true
   cursorPosition.value = 'title'
+  scheduleHideBootLoader()
   setTimeout(() => typeTextSequence(), 200)
 }
+
+let unsubBootStatic: (() => void) | null = null
 
 onMounted(() => {
   log.info('Component mounted')
@@ -239,11 +242,7 @@ onMounted(() => {
     window.hideAppLoader()
   }
 
-  if (window.bootLoaderComplete) {
-    startAnimations()
-  } else {
-    window.addEventListener('bootloader-complete', startAnimations)
-  }
+  unsubBootStatic = subscribeBootStaticReady(startAnimations)
 
   if (props.encodedLogsSocketId) {
     setLogSink((entry: LogEntry) => {
@@ -276,7 +275,7 @@ onBeforeUnmount(() => {
 onUnmounted(() => {
   log.info('Component unmounted')
   setLogSink(null)
-  window.removeEventListener('bootloader-complete', startAnimations)
+  unsubBootStatic?.()
   if (intervalIds.title) clearInterval(intervalIds.title)
   if (intervalIds.desc) clearInterval(intervalIds.desc)
 })
@@ -304,7 +303,7 @@ function getApiBaseUrl(): string {
   const path = props.indexUrl.startsWith('http')
     ? new URL(props.indexUrl).pathname
     : props.indexUrl
-  const basePath = path.replace(/\/$/, '') || '/p/assistant'
+  const basePath = path.replace(/\/$/, '') || '/p/template_project'
   const origin =
     props.indexUrl.startsWith('http') ? new URL(props.indexUrl).origin : window.location.origin
   return `${origin}${basePath.startsWith('/') ? basePath : '/' + basePath}`
@@ -316,7 +315,9 @@ const ENDPOINTS_ROUTES: Array<{ id: string; path: string; title: string }> = [
   { id: 'web-admin', path: '/web/admin', title: 'Эндпоинт /web/admin' },
   { id: 'web-profile', path: '/web/profile', title: 'Эндпоинт /web/profile' },
   { id: 'web-login', path: '/web/login', title: 'Эндпоинт /web/login' },
-  { id: 'web-tests', path: '/web/tests', title: 'Эндпоинт /web/tests' }
+  { id: 'web-tests', path: '/web/tests', title: 'Эндпоинт /web/tests' },
+  { id: 'web-journal', path: '/web/journal', title: 'Эндпоинт /web/journal' },
+  { id: 'web-tasks', path: '/web/tasks', title: 'Эндпоинт /web/tasks' }
 ]
 const endpointsResults = ref<TestResult[]>([])
 const endpointsLoading = ref(false)

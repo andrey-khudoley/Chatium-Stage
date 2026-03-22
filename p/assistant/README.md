@@ -1,7 +1,9 @@
-# Ассистент
+# assistant
 
 ## Назначение
-Проект «Ассистент» на базе шаблона Chatium. Путь: `p/assistant`. Главная страница, админка, профиль и логин.
+Проект `p/assistant` для Chatium. Базовая структура: главная страница (карточки «Мой журнал», «Мои задачи», «Диалоги»), страница «Мой журнал» (`/web/journal` — блокнот и вкладка «День» с задачами «В работе» из Heap, порядок дня и сброс в очередь), страница «Управление задачами» (`/web/tasks` — клиенты → проекты → задачи, приоритеты, статусы, «Отметить» / повторный клик — «К выполнению»), админка, профиль, логин и тестовая страница.
+
+Подробнее о задачах и журнале: `docs/architecture.md`, `docs/api.md`, `docs/data.md`.
 
 ## Важно
 - Платформа: Chatium. Серверная часть управляется платформой.
@@ -32,6 +34,24 @@
 - Описать бизнес‑логику и данные.
 
 ## Changelog
+- 2026-03-22: `shared/bootUi.ts` — добавлена директива `// @shared` (иначе модуль не подгружается в клиенте Chatium: «does not have shared file mark»).
+- 2026-03-22: прелоадер — исправлено зависание: `isComplete` только после безопасной фазы; `boot-static-ready` после `document.fonts.ready`; резерв 12 с / принудительное скрытие 15 с; `bootUi.ts` ждёт шрифты (до 10 с) и кадр перед `hideBootLoader`.
+- 2026-03-22: прелоадер — скрытие `hideBootLoader` только после отрисовки шапки/подвала: `shared/bootUi.ts` (`subscribeBootStaticReady`, `scheduleHideBootLoader`), `boot-static-ready`/`bootStaticReady` вместо автоскрытия по `load`; страницы Vue вызывают `scheduleHideBootLoader()` после `bootLoaderDone`.
+- 2026-03-22: прелоадер (`shared/preloader.ts`) — `body.boot-complete` и событие `bootloader-complete` выполняются после завершения анимации скрытия оверлея (вместе с показом шапки/подвала во Vue); у `#boot-loader` непрозрачный фон `#0a0a0a`, чтобы не было «просвета» до готовности интерфейса.
+- 2026-03-22: журнал — активная вкладка в URL (`?tab=` для месяца/недели/дня/привычек; для блокнота параметр не добавляется), `replaceState` при смене вкладки, SSR читает `tab` и передаёт в `JournalPage` как `journalTabInitial`, чтобы кнопка «назад» со страницы задач возвращала на ту же вкладку (например «День»).
+- 2026-03-22: журнал «День» — клик по названию задачи открывает модальное редактирование (как на странице задач), сохранение через `POST /api/tasks/items/update`; SSR передаёт `taskItemUpdateUrl` из `web/journal/index.tsx`.
+- 2026-03-22: задачи «на день» — вкладка «День» в журнале (`JournalDayPane`): список задач со статусом «В работе», сортировка кнопками и drag-and-drop, ссылки на клиента/проект на `/web/tasks` с `?client=` / `?project=`, кнопка «В очередь» (все «В работе» → «К выполнению»); Heap поле `daySortOrder`, API `POST /api/tasks/items/reorder-day`, `POST /api/tasks/items/release-day`. На `TasksPage` — кнопка «Отметить» (статус «В работе»).
+- 2026-03-22: `TasksPage` — для задач со статусом «В работе» первая кнопка действий («Отметить») подсвечена красным; повторный клик возвращает статус «К выполнению».
+- 2026-03-22: `TasksPage` — в боковой панели убрана дублирующая кнопка «Новый проект» (создание проекта — иконка в строке клиента); кнопка «Новый клиент» оформлена вторичным (приглушённым) стилем.
+- 2026-03-22: Heap `Table.update` — только два аргумента (`ctx` и объект `{ id, ...поля }`); исправлены `repos/tasks.repo.ts` и `repos/journal-notes.repo.ts` (раньше вызывалось `update(ctx, id, patch)`, из‑за чего падали reorder и любые update по Heap).
+- 2026-03-22: `reorderTasks` — двухфазное обновление `sortOrder` (временное смещение, затем финальный порядок), чтобы POST `/api/tasks/items/reorder` не падал при смене порядка задач в проекте.
+- 2026-03-22: «Мои задачи» на главной ведут на `/web/tasks` (`TasksPage.vue`): Heap-таблицы клиентов/проектов/задач, `repos/tasks.repo`, API `api/tasks/` (дерево, CRUD, reorder), типы в `lib/tasks-types.ts`.
+- 2026-03-22: журнал — исправлен 404 при сохранении заметки: `route.url()` может быть абсолютным URL, `getFullUrl(withProjectRoot(...))` давал неверный путь; добавлен `getApiUrlForRoute` в `config/routes.tsx`, `web/journal/index.tsx` использует его для API блокнота.
+- 2026-03-22: блокнот — `JournalNotebookPane`: раскрытие заметки по клику (текст подгружается GET get), кнопки «Редактировать» / «Удалить»; «Новая заметка» в левом меню открывает модал с названием и текстом; API `get`, `update`, `delete`; репозиторий `findByIdForUser`, `updateForUser`, `deleteByIdForUser`.
+- 2026-03-22: `JournalPage` — кнопка «Новая заметка» перенесена в левое меню над разделителем при активной вкладке «Блокнот»; список заметок только в панели справа (`JournalNotebookPane`).
+- 2026-03-22: блокнот журнала — Heap `journal-notes` (userId, title, content), `repos/journal-notes.repo`, GET `/api/journal/notes/list` и POST `/api/journal/notes/create` (RealUser), SSR списка заголовков в `web/journal/index.tsx`, `JournalNotebookPane.vue` — «Заметок нет» / список названий, кнопка «Новая заметка».
+- 2026-03-22: `JournalPage.vue` — компактное вертикальное меню (Блокнот, Месяц, Неделя, День, Привычки), переключение панелей с анимацией (`Transition` + `:key`), компоненты `components/journal/*Pane.vue` с заглушкой «В разработке».
+- 2026-03-22: страница «Мой журнал» (`web/journal/index.tsx`, `JournalPage.vue`), маршрут в `config/routes.tsx`, главная — три карточки (журнал → переход; задачи и диалоги → глитч как кнопка minimize в шапке). Тесты эндпоинтов и `api/tests/endpoints-check/config` дополнены маршрутом journal.
 - 2026-02-04: фиксированная высота (400px) блока логов на странице тестов — TestsPage.vue, класс .tests-logs-output.
 - 2026-02-04: исправлена рекурсия Maximum call stack size exceeded при обращении к проекту (p/neso/crm/index): в repos/settings.repo.ts убраны все вызовы logger.lib — getSetting/getLogLevel/getLogWebhook вызываются из writeServerLog и используют findByKey, иначе цепочка зациливалась. Обновлён docs/imports.md.
 - 2026-02-04: в lib/logger.lib: в ctx.log передаётся только сообщение (без payload), в ctx.account.log — сообщение и payload (level, json). Обновлён JSDoc writeServerLog.

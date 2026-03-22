@@ -6,6 +6,7 @@ import GlobalGlitch from '../components/GlobalGlitch.vue'
 import AppFooter from '../components/AppFooter.vue'
 import { getSettingRoute } from '../api/settings/get'
 import { saveSettingRoute } from '../api/settings/save'
+import { subscribeBootStaticReady, scheduleHideBootLoader } from '../shared/bootUi'
 import { createComponentLogger, setLogSink, type LogEntry } from '../shared/logger'
 import { getRecentLogsRoute } from '../api/admin/logs/recent'
 import { getLogsBeforeRoute } from '../api/admin/logs/before'
@@ -19,7 +20,6 @@ declare const ctx: app.Ctx
 declare global {
   interface Window {
     hideAppLoader?: () => void
-    bootLoaderComplete?: boolean
   }
 }
 
@@ -91,6 +91,7 @@ const toggleLogFilter = (level: 'info' | 'warn' | 'error') => {
 
 const startAnimations = () => {
   bootLoaderDone.value = true
+  scheduleHideBootLoader()
 }
 
 const LOG_LEVEL_VALUES = ['debug', 'info', 'warn', 'error', 'disable'] as const
@@ -225,16 +226,14 @@ const saveProjectName = async () => {
   }
 }
 
+let unsubBootStatic: (() => void) | null = null
+
 onMounted(() => {
   log.info('Компонент смонтирован')
   loadProjectName()
   loadDashboardCounts()
   if (window.hideAppLoader) window.hideAppLoader()
-  if (window.bootLoaderComplete) {
-    startAnimations()
-  } else {
-    window.addEventListener('bootloader-complete', startAnimations)
-  }
+  unsubBootStatic = subscribeBootStaticReady(startAnimations)
   const bootLevel = (window as Window & { __BOOT__?: { logLevel?: string } }).__BOOT__?.logLevel
   if (typeof bootLevel === 'string') {
     const normalized = bootLevel.toLowerCase()
@@ -294,7 +293,7 @@ onBeforeUnmount(() => {
 onUnmounted(() => {
   log.info('Компонент размонтирован')
   setLogSink(null)
-  window.removeEventListener('bootloader-complete', startAnimations)
+  unsubBootStatic?.()
 })
 
 const setLogLevel = async (level: 'debug' | 'info' | 'warn' | 'error' | 'disable') => {
