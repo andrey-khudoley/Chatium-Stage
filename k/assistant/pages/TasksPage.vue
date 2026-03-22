@@ -326,12 +326,13 @@ async function submitProjectModal() {
       selectedProjectId.value = j.project.id
       closeProjectModal()
     } else if (projectModal.value === 'edit' && projectEditId.value) {
+      // Не передаём clientId: иначе при переименовании подставится selectedClientId сайдбара
+      // (клиент выбранного проекта), и проект «переедет» к другому клиенту.
       const j = await postJson<{ success: boolean; project?: TaskProjectDto; error?: string }>(
         props.taskProjectUpdateUrl,
         {
           id: projectEditId.value,
-          name: projectFormName.value,
-          clientId: selectedClientId.value ?? undefined
+          name: projectFormName.value
         }
       )
       if (!j.success || !j.project) {
