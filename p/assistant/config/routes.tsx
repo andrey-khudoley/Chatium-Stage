@@ -34,6 +34,23 @@ export function getFullUrl(path: string): string {
   return `${BASE_PATH}${normalized}`
 }
 
+/**
+ * Путь для `fetch` из браузера к API-роуту этого проекта.
+ * `route.url()` в Chatium может вернуть относительный путь (`./api/...`) или полный URL с доменом.
+ * Для абсолютного URL нельзя вызывать `withProjectRoot` — получится `p/assistant/.../https://...` и 404.
+ */
+export function getApiUrlForRoute(routeUrl: string): string {
+  const raw = routeUrl.trim()
+  if (raw.startsWith('http://') || raw.startsWith('https://')) {
+    try {
+      return new URL(raw).pathname
+    } catch {
+      return getFullUrl(raw)
+    }
+  }
+  return getFullUrl(raw)
+}
+
 export function withProjectRoot(route: string): string {
   const clean = route.startsWith('./') ? route.slice(2) : route
   return `./${PROJECT_ROOT}/${clean}`

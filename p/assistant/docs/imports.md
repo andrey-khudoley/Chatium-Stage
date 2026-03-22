@@ -3,7 +3,7 @@
 ## 1) Страницы‑роуты (TSX entrypoints)
 
 ### `./config/routes.tsx`
-- нет внутренних импортов (только экспорт PROJECT_ROOT, ROUTES, getFullUrl, withProjectRoot, withProjectRootAndSubroute)
+- нет внутренних импортов (только экспорт PROJECT_ROOT, ROUTES, getFullUrl, getApiUrlForRoute, withProjectRoot, withProjectRootAndSubroute)
 
 ### `./config/project.tsx`
 - нет внутренних импортов (только экспорт DEFAULT_PROJECT_TITLE, INDEX_PAGE_NAME, PROFILE_PAGE_NAME, ADMIN_PAGE_NAME, TESTS_PAGE_NAME, JOURNAL_PAGE_NAME, getPageTitle, getHeaderText, BODY_TEXT, BODY_SUBTEXT)
@@ -47,12 +47,18 @@
 
 ### `./web/journal/index.tsx`
 - `@app/html-jsx` → `jsx`
+- `@app/auth` → `requireRealUser`
 - `../../pages/JournalPage.vue`
 - `../../shared/preloader` → `getPreloaderStyles`, `getPreloaderScript`
 - `../../shared/logLevel` → `getLogLevelForPage`, `getLogLevelScript`
 - `../../styles` → `customScrollbarStyles`
 - `../../lib/logger.lib` → `*`
-- `../../config/routes` → `getFullUrl`, `ROUTES`
+- `../../repos/journal-notes.repo` → `*`
+- `../../api/journal/notes/create` → `createJournalNoteRoute`
+- `../../api/journal/notes/get` → `getJournalNoteRoute`
+- `../../api/journal/notes/update` → `updateJournalNoteRoute`
+- `../../api/journal/notes/delete` → `deleteJournalNoteRoute`
+- `../../config/routes` → `getFullUrl`, `getApiUrlForRoute`, `ROUTES`
 - `../../config/project` → `JOURNAL_PAGE_NAME`, `getPageTitle`, `getHeaderText`
 - `../../lib/settings.lib` → `*`
 
@@ -107,7 +113,7 @@
 - `../shared/logger` → `createComponentLogger`
 
 ### `./pages/JournalPage.vue`
-- `vue` → `computed`, `markRaw`, `onMounted`, `onUnmounted`, `ref`
+- `vue` → `computed`, `markRaw`, `onMounted`, `onUnmounted`, `ref`, `watch`
 - `../components/Header.vue`
 - `../components/GlobalGlitch.vue`
 - `../components/AppFooter.vue`
@@ -117,6 +123,7 @@
 - `../components/journal/JournalDayPane.vue`
 - `../components/journal/JournalHabitsPane.vue`
 - `../shared/logger` → `createComponentLogger`
+- пропсы: `journalNotesInitial?`, `journalNotesCreateUrl?`, `journalNotesGetUrl?`, `journalNotesUpdateUrl?`, `journalNotesDeleteUrl?` (вкладка «Блокнот» через `v-bind` только при `activeTab === 'notebook'`); счётчик `openNotebookEditorRequest` передаётся из `notebookOpenEditorTick`; обработчики `@note-created`, `@note-updated`, `@note-deleted` от `JournalNotebookPane`
 
 ### `./pages/TestsPage.vue`
 - `vue` → `onMounted`, `onBeforeUnmount`, `onUnmounted`, `ref`, `computed`
@@ -155,7 +162,10 @@
 - (только разметка заглушки «В разработке»)
 
 ### `./components/journal/JournalNotebookPane.vue`
-- `./JournalStubPanel.vue`
+- `vue` → `reactive`, `ref`, `watch`
+- `../../shared/logger` → `createComponentLogger`
+- `defineProps`: `notes`, `isAuthenticated`, `journalNotesCreateUrl?`, `journalNotesGetUrl?`, `journalNotesUpdateUrl?`, `journalNotesDeleteUrl?`, `openNotebookEditorRequest?`
+- `defineEmits`: `noteCreated`, `noteUpdated`, `noteDeleted`
 
 ### `./components/journal/JournalMonthPane.vue`
 - `./JournalStubPanel.vue`
@@ -192,6 +202,9 @@
 ### `./tables/logs.table.ts`
 - `@app/heap` → `Heap`
 
+### `./tables/journal-notes.table.ts`
+- `@app/heap` → `Heap`
+
 ## 6) Репозитории (repos/)
 
 ### `./repos/settings.repo.ts`
@@ -202,6 +215,10 @@
 - `../tables/logs.table` → `Logs`, `LogsRow`
 - `../lib/logger.lib` → `*`
 - экспортирует: `create`, `findAll`, `findById`, `findBeforeTimestamp`, `countBySeverityAfter`, `countErrorsAfter`, `countWarningsAfter`
+
+### `./repos/journal-notes.repo.ts`
+- `../tables/journal-notes.table` → `JournalNotes`, `JournalNotesRow`
+- экспортирует: `JournalNoteSummary` (type), `findSummariesByUserId`, `createForUser`, `findByIdForUser`, `updateForUser`, `deleteByIdForUser`
 
 ## 7) Библиотеки (lib/)
 
@@ -240,6 +257,31 @@
 ### `./api/logger/log.ts`
 - `@app/auth` → `requireAnyUser`
 - `../../lib/logger.lib` → `*`
+
+### `./api/journal/notes/list.ts`
+- `@app/auth` → `requireRealUser`
+- `../../../lib/logger.lib` → `*`
+- `../../../repos/journal-notes.repo` → `*`
+
+### `./api/journal/notes/create.ts`
+- `@app/auth` → `requireRealUser`
+- `../../../lib/logger.lib` → `*`
+- `../../../repos/journal-notes.repo` → `*`
+
+### `./api/journal/notes/get.ts`
+- `@app/auth` → `requireRealUser`
+- `../../../lib/logger.lib` → `*`
+- `../../../repos/journal-notes.repo` → `*`
+
+### `./api/journal/notes/update.ts`
+- `@app/auth` → `requireRealUser`
+- `../../../lib/logger.lib` → `*`
+- `../../../repos/journal-notes.repo` → `*`
+
+### `./api/journal/notes/delete.ts`
+- `@app/auth` → `requireRealUser`
+- `../../../lib/logger.lib` → `*`
+- `../../../repos/journal-notes.repo` → `*`
 
 ### `./api/admin/logs/recent.ts`
 - `@app/auth` → `requireAccountRole`

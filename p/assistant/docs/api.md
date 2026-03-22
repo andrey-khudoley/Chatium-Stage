@@ -51,6 +51,18 @@
 
 Структура: `api/tests/` — общий каталог; `api/tests/<категория>/` — директория категории (например, `endpoints-check`); внутри категории — отдельные файлы с одним эндпоинтом `/` в каждом.
 
+## Журнал — блокнот (api/journal/notes/)
+
+Заметки пользователя в Heap; доступ только авторизованным пользователям (`requireRealUser`).
+
+| Method | Path | File | Auth | Назначение |
+| --- | --- | --- | --- | --- |
+| GET | /api/journal/notes/list | api/journal/notes/list.ts | RealUser | Список заметок: `{ success, notes: [{ id, title }] }` (без поля content). |
+| GET | /api/journal/notes/get?id= | api/journal/notes/get.ts | RealUser | Одна заметка: `{ success, note: { id, title, content } }` или ошибка. |
+| POST | /api/journal/notes/create | api/journal/notes/create.ts | RealUser | Создать заметку. Body (опционально): `{ title?, content? }`; по умолчанию заголовок «Новая заметка», пустое содержимое. Ответ: `{ success, note: { id, title } }`. |
+| POST | /api/journal/notes/update | api/journal/notes/update.ts | RealUser | Обновить свою заметку. Body: `{ id, title, content }`. Пустой `title` после trim заменяется на «Без названия». Ответ: `{ success, note: { id, title } }`. |
+| POST | /api/journal/notes/delete | api/journal/notes/delete.ts | RealUser | Удалить свою заметку. Body: `{ id }`. Ответ: `{ success: true }`. |
+
 ## Публичные эндпоинты
 | Method | Path | File | Auth | Назначение |
 | --- | --- | --- | --- | --- |

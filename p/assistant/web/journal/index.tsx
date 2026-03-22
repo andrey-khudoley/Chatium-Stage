@@ -1,10 +1,16 @@
 // @shared
 import { jsx } from '@app/html-jsx'
+import { requireRealUser } from '@app/auth'
 import JournalPage from '../../pages/JournalPage.vue'
 import { getPreloaderStyles, getPreloaderScript } from '../../shared/preloader'
 import { getLogLevelForPage, getLogLevelScript } from '../../shared/logLevel'
 import * as loggerLib from '../../lib/logger.lib'
-import { getFullUrl, ROUTES } from '../../config/routes'
+import * as journalNotesRepo from '../../repos/journal-notes.repo'
+import { createJournalNoteRoute } from '../../api/journal/notes/create'
+import { getJournalNoteRoute } from '../../api/journal/notes/get'
+import { updateJournalNoteRoute } from '../../api/journal/notes/update'
+import { deleteJournalNoteRoute } from '../../api/journal/notes/delete'
+import { getApiUrlForRoute, getFullUrl, ROUTES } from '../../config/routes'
 import { JOURNAL_PAGE_NAME, getPageTitle, getHeaderText } from '../../config/project'
 import * as settingsLib from '../../lib/settings.lib'
 import { customScrollbarStyles } from '../../styles'
@@ -25,8 +31,24 @@ export const journalPageRoute = app.html('/', async (ctx, _req) => {
   const isAuthenticated = !!ctx.user
   const isAdmin = ctx.user?.is('Admin') ?? false
   const loginUrl = getFullUrl(ROUTES.login)
+  const indexUrl = getFullUrl(ROUTES.index)
   const adminUrl = isAdmin ? getFullUrl(ROUTES.admin) : ''
   const testsUrl = isAuthenticated ? getFullUrl(ROUTES.tests) : ''
+
+  let journalNotesInitial: journalNotesRepo.JournalNoteSummary[] = []
+  if (ctx.user) {
+    try {
+      const user = requireRealUser(ctx)
+      journalNotesInitial = await journalNotesRepo.findSummariesByUserId(ctx, user.id)
+    } catch {
+      journalNotesInitial = []
+    }
+  }
+
+  const journalNotesCreateUrl = getApiUrlForRoute(createJournalNoteRoute.url())
+  const journalNotesGetUrl = getApiUrlForRoute(getJournalNoteRoute.url())
+  const journalNotesUpdateUrl = getApiUrlForRoute(updateJournalNoteRoute.url())
+  const journalNotesDeleteUrl = getApiUrlForRoute(deleteJournalNoteRoute.url())
 
   const logLevel = await getLogLevelForPage(ctx)
   const projectName = await settingsLib.getSettingString(ctx, settingsLib.SETTING_KEYS.PROJECT_NAME)
@@ -258,13 +280,18 @@ export const journalPageRoute = app.html('/', async (ctx, _req) => {
         </div>
         <JournalPage
           projectTitle={getHeaderText(JOURNAL_PAGE_NAME, projectName)}
-          indexUrl={getFullUrl(ROUTES.index)}
+          indexUrl={indexUrl}
           profileUrl={getFullUrl(ROUTES.profile)}
           testsUrl={testsUrl}
           loginUrl={loginUrl}
           isAuthenticated={isAuthenticated}
           isAdmin={isAdmin}
           adminUrl={adminUrl}
+          journalNotesInitial={journalNotesInitial}
+          journalNotesCreateUrl={journalNotesCreateUrl}
+          journalNotesGetUrl={journalNotesGetUrl}
+          journalNotesUpdateUrl={journalNotesUpdateUrl}
+          journalNotesDeleteUrl={journalNotesDeleteUrl}
         />
       </body>
     </html>
