@@ -48,3 +48,59 @@ export const customScrollbarStyles = `
     background: #666;
   }
 `
+
+/**
+ * Единые стили полей: убирают жёлтый autofill Chrome, задают фокус в цветах темы,
+ * Выпадающие списки в модалках задач — компонент `JnCrtSelect.vue` (не нативный select).
+ * Подключается в head рядом с customScrollbarStyles.
+ */
+export const formControlStyles = `
+  .jn-input,
+  .jn-textarea {
+    transition: border-color 0.18s ease, box-shadow 0.18s ease;
+  }
+
+  .jn-input:-webkit-autofill,
+  .jn-textarea:-webkit-autofill,
+  .settings-input:-webkit-autofill {
+    -webkit-text-fill-color: #e8e8e8;
+    caret-color: #e8e8e8;
+    box-shadow: 0 0 0 1000px #0a0a0a inset;
+    transition: background-color 5000s ease-in-out 0s;
+  }
+
+  .settings-input:-webkit-autofill {
+    box-shadow: 0 0 0 1000px rgba(12, 12, 12, 0.98) inset;
+  }
+
+  .jn-input:-webkit-autofill:focus,
+  .jn-textarea:-webkit-autofill:focus,
+  .settings-input:-webkit-autofill:focus {
+    -webkit-text-fill-color: #e8e8e8;
+    box-shadow:
+      0 0 0 1000px #0a0a0a inset,
+      0 0 0 1px rgba(211, 35, 75, 0.45);
+  }
+
+  .settings-input:-webkit-autofill:focus {
+    box-shadow:
+      0 0 0 1000px rgba(12, 12, 12, 0.98) inset,
+      0 0 0 1px rgba(211, 35, 75, 0.4);
+  }
+
+  .jn-input:focus,
+  .jn-textarea:focus,
+  .jn-input:focus-visible,
+  .jn-textarea:focus-visible {
+    outline: none;
+    border-color: #d3234b;
+    box-shadow: 0 0 0 1px rgba(211, 35, 75, 0.35);
+  }
+
+  .settings-input:focus,
+  .settings-input:focus-visible {
+    outline: none;
+    border-color: #d3234b;
+    box-shadow: 0 0 0 1px rgba(211, 35, 75, 0.28);
+  }
+`

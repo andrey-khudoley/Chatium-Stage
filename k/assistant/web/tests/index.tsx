@@ -9,7 +9,7 @@ import * as loggerLib from '../../lib/logger.lib'
 import { getFullUrl, ROUTES } from '../../config/routes'
 import { TESTS_PAGE_NAME, getPageTitle, getHeaderText } from '../../config/project'
 import * as settingsLib from '../../lib/settings.lib'
-import { customScrollbarStyles } from '../../styles'
+import { customScrollbarStyles, formControlStyles } from '../../styles'
 
 const LOG_PATH = 'web/tests/index'
 
@@ -79,6 +79,7 @@ export const testsPageRoute = app.html('/', async (ctx, req) => {
         <script src="/s/metric/clarity.js"></script>
         <style>{getPreloaderStyles()}</style>
         <style>{customScrollbarStyles}</style>
+        <style>{formControlStyles}</style>
         <style>{`
           html {
             margin: 0;

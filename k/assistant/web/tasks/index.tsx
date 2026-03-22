@@ -21,7 +21,7 @@ import { reorderTaskItemsRoute } from '../../api/tasks/items/reorder'
 import { getApiUrlForRoute, getFullUrl, ROUTES } from '../../config/routes'
 import { TASKS_PAGE_NAME, getPageTitle, getHeaderText } from '../../config/project'
 import * as settingsLib from '../../lib/settings.lib'
-import { customScrollbarStyles } from '../../styles'
+import { customScrollbarStyles, formControlStyles } from '../../styles'
 
 const LOG_PATH = 'web/tasks/index'
 
@@ -84,6 +84,7 @@ export const tasksPageRoute = app.html('/', async (ctx, _req) => {
         <script src="/s/metric/clarity.js"></script>
         <style>{getPreloaderStyles()}</style>
         <style>{customScrollbarStyles}</style>
+        <style>{formControlStyles}</style>
         <style>{`
           html {
             margin: 0;

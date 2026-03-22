@@ -12,7 +12,7 @@
 - `@app/html-jsx` → `jsx`
 - `./pages/HomePage.vue`
 - `./shared/preloader` → `getPreloaderStyles`, `getPreloaderScript`
-- `./styles` → `customScrollbarStyles`
+- `./styles` → `customScrollbarStyles`, `formControlStyles`
 - `./shared/logLevel` → `getLogLevelForPage`, `getLogLevelScript`
 - `./config/routes` → `getFullUrl`, `ROUTES`
 - `./config/project` → `INDEX_PAGE_NAME`, `BODY_TEXT`, `BODY_SUBTEXT`, `getPageTitle`, `getHeaderText`
@@ -28,7 +28,7 @@
 - `../login` → `loginPageRoute`
 - `../../shared/preloader` → `getPreloaderStyles`, `getPreloaderScript`
 - `../../shared/logLevel` → `getLogLevelForPage`, `getLogLevelScript`
-- `../../styles` → `customScrollbarStyles`
+- `../../styles` → `customScrollbarStyles`, `formControlStyles`
 - `../../lib/logger.lib` → `getAdminLogsSocketId`, `writeServerLog` (и др.)
 - `../../config/routes` → `getFullUrl`, `ROUTES`
 - `../../config/project` → `ADMIN_PAGE_NAME`, `getPageTitle`, `getHeaderText`
@@ -40,7 +40,7 @@
 - `../../pages/ProfilePage.vue`
 - `../../shared/preloader` → `getPreloaderStyles`, `getPreloaderScript`
 - `../../shared/logLevel` → `getLogLevelForPage`, `getLogLevelScript`
-- `../../styles` → `customScrollbarStyles`
+- `../../styles` → `customScrollbarStyles`, `formControlStyles`
 - `../../lib/logger.lib` → `*`
 - `../../config/routes` → `getFullUrl`, `ROUTES`
 - `../../config/project` → `PROFILE_PAGE_NAME`, `getPageTitle`, `getHeaderText`
@@ -63,7 +63,7 @@
 - `../../api/tasks/items/update` → `updateTaskItemRoute`
 - `../../api/tasks/items/delete` → `deleteTaskItemRoute`
 - `../../api/tasks/items/reorder` → `reorderTaskItemsRoute`
-- `../../shared/preloader`, `../../shared/logLevel`, `../../styles` → `customScrollbarStyles`
+- `../../shared/preloader`, `../../shared/logLevel`, `../../styles` → `customScrollbarStyles`, `formControlStyles`
 - `../../lib/logger.lib`, `../../lib/settings.lib`
 - `../../config/routes` → `getFullUrl`, `getApiUrlForRoute`, `ROUTES`
 - `../../config/project` → `TASKS_PAGE_NAME`, `getPageTitle`, `getHeaderText`
@@ -74,7 +74,7 @@
 - `../../pages/JournalPage.vue`
 - `../../shared/preloader` → `getPreloaderStyles`, `getPreloaderScript`
 - `../../shared/logLevel` → `getLogLevelForPage`, `getLogLevelScript`
-- `../../styles` → `customScrollbarStyles`
+- `../../styles` → `customScrollbarStyles`, `formControlStyles`
 - `../../lib/logger.lib` → `*`
 - `../../repos/journal-notes.repo` → `*`
 - `../../repos/tasks.repo` → `*`
@@ -99,7 +99,7 @@
 - `../../pages/TestsPage.vue`
 - `../../shared/preloader` → `getPreloaderStyles`, `getPreloaderScript`
 - `../../shared/logLevel` → `getLogLevelForPage`, `getLogLevelScript`
-- `../../styles` → `customScrollbarStyles`
+- `../../styles` → `customScrollbarStyles`, `formControlStyles`
 - `../../config/routes` → `getFullUrl`, `ROUTES`
 - `../../config/project` → `TESTS_PAGE_NAME`, `getPageTitle`, `getHeaderText`
 - `../../lib/settings.lib` → `*`
@@ -107,7 +107,7 @@
 ### `./web/login/index.tsx`
 - `@app/html-jsx` → `jsx`
 - `../../pages/LoginPage.vue`
-- `../../styles` → `baseHtmlStyles`, `customScrollbarStyles`
+- `../../styles` → `baseHtmlStyles`, `customScrollbarStyles`, `formControlStyles`
 - `../../config/routes` → `PROJECT_ROOT`
 - `../../lib/logger.lib` → `*`
 
@@ -175,6 +175,7 @@
 - `../components/Header.vue`
 - `../components/GlobalGlitch.vue`
 - `../components/AppFooter.vue`
+- `../components/JnCrtSelect.vue`
 - `../shared/bootUi` → `subscribeBootStaticReady`, `scheduleHideBootLoader`
 - `../shared/logger` → `createComponentLogger`
 - `../lib/tasks-types` → `TasksTreeDto`, `TaskClientDto`, `TaskProjectDto`, `TaskItemDto`
@@ -202,6 +203,11 @@
 - `vue` → `onMounted`
 - `../shared/logger` → `createComponentLogger`
 
+### `./components/JnCrtSelect.vue`
+- `vue` → `computed`, `onMounted`, `onUnmounted`, `ref`
+- `defineProps`: `modelValue`, `options`, `disabled?`, `id?`
+- `defineEmits`: `update:modelValue`
+
 ### `./components/journal/JournalStubPanel.vue`
 - (только разметка заглушки «В разработке»)
 
@@ -219,6 +225,7 @@
 
 ### `./components/journal/JournalDayPane.vue`
 - `vue` → `computed`, `onUnmounted`, `ref`, `watch`
+- `../JnCrtSelect.vue`
 - `../../lib/tasks-types` → `TasksTreeDto`, `TaskItemDto`, `TaskProjectDto`
 - `../../shared/logger` → `createComponentLogger`
 - пропсы: `isAuthenticated`, `tasksTreeInitial`, `tasksTreeGetUrl`, `taskItemReorderDayUrl`, `taskReleaseDayUrl`, `taskItemUpdateUrl`, `tasksPageUrl` — список задач «В работе», сортировка (кнопки и drag-and-drop), клик по названию — модалка редактирования (POST `taskItemUpdateUrl`), ссылки на страницу задач с `?client=&project=`
@@ -229,7 +236,7 @@
 ## 4) Shared (общий код)
 
 ### `./styles.tsx`
-- нет внутренних импортов (только экспорт `baseHtmlStyles`, `customScrollbarStyles`)
+- нет внутренних импортов (только экспорт `baseHtmlStyles`, `customScrollbarStyles`, `formControlStyles`)
 
 ### `./shared/preloader.ts`
 - нет импортов

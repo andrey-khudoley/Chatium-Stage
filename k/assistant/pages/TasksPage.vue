@@ -3,6 +3,7 @@ import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import Header from '../components/Header.vue'
 import GlobalGlitch from '../components/GlobalGlitch.vue'
 import AppFooter from '../components/AppFooter.vue'
+import JnCrtSelect from '../components/JnCrtSelect.vue'
 import { subscribeBootStaticReady, scheduleHideBootLoader } from '../shared/bootUi'
 import { createComponentLogger } from '../shared/logger'
 import type { TasksTreeDto, TaskClientDto, TaskProjectDto, TaskItemDto } from '../lib/tasks-types'
@@ -126,6 +127,23 @@ const STATUS_LABELS: Record<string, string> = {
   cancelled: 'Отмена'
 }
 
+const statusSelectOptions = [
+  { value: 'todo', label: 'К выполнению' },
+  { value: 'in_progress', label: 'В работе' },
+  { value: 'done', label: 'Готово' },
+  { value: 'cancelled', label: 'Отмена' }
+]
+
+const prioritySelectOptions = computed(() =>
+  ([1, 2, 3, 4] as const).map((n) => ({ value: n, label: `${n} — ${PRIORITY_LABELS[n]}` }))
+)
+
+const taskProjectSelectOptions = computed(() =>
+  tree.value.projects
+    .filter((x) => x.clientId === selectedClientId.value)
+    .map((p) => ({ value: p.id, label: p.name }))
+)
+
 const globalError = ref('')
 const loading = ref(false)
 
@@ -156,12 +174,6 @@ async function refreshTree() {
   } finally {
     loading.value = false
   }
-}
-
-function selectClient(id: string) {
-  selectedClientId.value = id
-  selectedProjectId.value = null
-  log.info('Client selected', { id })
 }
 
 function selectProject(id: string) {
@@ -558,14 +570,12 @@ const openChatiumLink = () => {
             <p v-if="!sortedClients.length" class="tasks-hint tasks-hint--muted">Пока нет клиентов — создайте первого.</p>
             <div v-for="c in sortedClients" :key="c.id" class="tasks-client-block">
               <div class="tasks-client-row">
-                <button
-                  type="button"
-                  class="tasks-client-select"
-                  :class="{ 'tasks-client-select--active': selectedClientId === c.id }"
-                  @click="selectClient(c.id)"
+                <div
+                  class="tasks-client-select tasks-client-select--static"
+                  :class="{ 'tasks-client-select--project-active': selectedProject?.clientId === c.id }"
                 >
                   {{ c.name }}
-                </button>
+                </div>
                 <div v-if="props.isAuthenticated" class="tasks-item-actions">
                   <button
                     type="button"
@@ -774,29 +784,23 @@ const openChatiumLink = () => {
           aria-modal="true"
           @click.self="closeTaskModal"
         >
-          <div class="jn-modal jn-modal--wide" @click.stop>
+          <div class="jn-modal jn-modal--wide crt-form-panel" @click.stop>
             <h2 class="jn-modal-heading">{{ taskModal === 'create' ? 'Новая задача' : 'Задача' }}</h2>
             <label class="jn-label" for="tt-title">Заголовок</label>
             <input id="tt-title" v-model="taskForm.title" type="text" class="jn-input" maxlength="500" />
             <label class="jn-label" for="tt-desc">Описание</label>
             <textarea id="tt-desc" v-model="taskForm.description" class="jn-textarea" rows="5" />
             <label class="jn-label" for="tt-p">Приоритет</label>
-            <select id="tt-p" v-model.number="taskForm.priority" class="jn-input">
-              <option v-for="n in 4" :key="n" :value="n">{{ n }} — {{ PRIORITY_LABELS[n] }}</option>
-            </select>
+            <JnCrtSelect id="tt-p" v-model="taskForm.priority" :options="prioritySelectOptions" />
             <label class="jn-label" for="tt-s">Статус</label>
-            <select id="tt-s" v-model="taskForm.status" class="jn-input">
-              <option value="todo">К выполнению</option>
-              <option value="in_progress">В работе</option>
-              <option value="done">Готово</option>
-              <option value="cancelled">Отмена</option>
-            </select>
+            <JnCrtSelect id="tt-s" v-model="taskForm.status" :options="statusSelectOptions" />
             <label class="jn-label" for="tt-pr">Проект</label>
-            <select id="tt-pr" v-model="taskForm.projectId" class="jn-input">
-              <option v-for="p in tree.projects.filter((x) => x.clientId === selectedClientId)" :key="p.id" :value="p.id">
-                {{ p.name }}
-              </option>
-            </select>
+            <JnCrtSelect
+              id="tt-pr"
+              v-model="taskForm.projectId"
+              :options="taskProjectSelectOptions"
+              :disabled="!taskProjectSelectOptions.length"
+            />
             <p v-if="taskError" class="jn-modal-error" role="alert">{{ taskError }}</p>
             <div class="jn-modal-actions">
               <button type="button" class="journal-nav-btn" @click="closeTaskModal">Отмена</button>
@@ -935,7 +939,6 @@ const openChatiumLink = () => {
   color: var(--color-text);
   background: var(--color-bg-secondary);
   border: 1px solid var(--color-border);
-  border-left: 3px solid transparent;
   border-radius: 2px;
   cursor: pointer;
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
@@ -948,10 +951,25 @@ const openChatiumLink = () => {
   background: var(--color-bg-tertiary);
 }
 
-.tasks-client-select--active {
-  border-left-color: var(--color-accent);
-  background: var(--color-accent-light);
-  box-shadow: 0 0 10px var(--color-accent-medium);
+.tasks-client-select--static {
+  cursor: default;
+}
+
+.tasks-client-select--static:hover {
+  border-color: var(--color-border);
+  background: var(--color-bg-secondary);
+}
+
+.tasks-client-select--static.tasks-client-select--project-active:hover {
+  border-color: rgba(229, 57, 53, 0.55);
+  background: rgba(229, 57, 53, 0.14);
+  box-shadow: inset 2px 0 0 0 #e53935, 0 0 10px rgba(229, 57, 53, 0.28);
+}
+
+.tasks-client-select--project-active {
+  background: rgba(229, 57, 53, 0.12);
+  box-shadow: inset 2px 0 0 0 #e53935, 0 0 10px rgba(229, 57, 53, 0.28);
+  color: #ffcdd2;
 }
 
 .tasks-item-actions {
@@ -1241,6 +1259,55 @@ const openChatiumLink = () => {
   box-shadow: 0 0 24px rgba(211, 35, 75, 0.15);
 }
 
+.jn-modal.crt-form-panel {
+  position: relative;
+  overflow: visible;
+}
+
+.jn-modal.crt-form-panel::before {
+  content: '';
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  border-radius: 2px;
+  opacity: 0.1;
+  z-index: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 1px,
+    rgba(0, 0, 0, 0.48) 1px,
+    rgba(0, 0, 0, 0.48) 2px
+  );
+}
+
+.jn-modal.crt-form-panel > *:not(.jn-crt-select) {
+  position: relative;
+  z-index: 1;
+}
+
+.crt-form-panel input.jn-input {
+  background-image: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.08),
+    rgba(0, 0, 0, 0.08) 1px,
+    transparent 1px,
+    transparent 2px
+  );
+  background-color: var(--color-bg);
+}
+
+.crt-form-panel textarea.jn-textarea {
+  background-image: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.09),
+    rgba(0, 0, 0, 0.09) 1px,
+    transparent 1px,
+    transparent 2px
+  );
+  background-color: var(--color-bg);
+}
+
 .jn-modal--wide {
   max-width: 520px;
 }
@@ -1297,6 +1364,7 @@ const openChatiumLink = () => {
   justify-content: flex-end;
   gap: 0.5rem;
   margin-top: 0.5rem;
+  flex-wrap: wrap;
 }
 
 .jn-modal-enter-active,
@@ -1439,7 +1507,6 @@ body {
   color: var(--color-text-secondary);
   background: var(--color-bg-secondary);
   border: 1px solid var(--color-border);
-  border-left: 2px solid transparent;
   cursor: pointer;
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   line-height: 1.25;
@@ -1454,9 +1521,13 @@ body {
 .journal-nav-btn--active {
   color: var(--color-text);
   border-color: var(--color-border-light);
-  border-left-color: var(--color-accent);
   background: var(--color-accent-light);
-  box-shadow: 0 0 12px var(--color-accent-medium);
+  box-shadow: inset 2px 0 0 0 var(--color-accent), 0 0 12px var(--color-accent-medium);
+}
+
+.jn-modal-actions .journal-nav-btn,
+.jn-modal-actions .journal-nav-action {
+  width: auto;
 }
 
 .journal-panel {

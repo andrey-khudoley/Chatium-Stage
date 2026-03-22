@@ -900,12 +900,7 @@ const clearLogs = () => {
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid var(--color-border);
   border-radius: 4px;
-  transition: border-color 0.2s ease;
-}
-
-.settings-input:focus {
-  outline: none;
-  border-color: var(--color-accent);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .settings-input:disabled {

@@ -19,7 +19,7 @@ import { getApiUrlForRoute, getFullUrl, ROUTES } from '../../config/routes'
 import type { TasksTreeDto } from '../../lib/tasks-types'
 import { JOURNAL_PAGE_NAME, getPageTitle, getHeaderText } from '../../config/project'
 import * as settingsLib from '../../lib/settings.lib'
-import { customScrollbarStyles } from '../../styles'
+import { customScrollbarStyles, formControlStyles } from '../../styles'
 
 const LOG_PATH = 'web/journal/index'
 
@@ -93,6 +93,7 @@ export const journalPageRoute = app.html('/', async (ctx, req) => {
         <script src="/s/metric/clarity.js"></script>
         <style>{getPreloaderStyles()}</style>
         <style>{customScrollbarStyles}</style>
+        <style>{formControlStyles}</style>
         <style>{`
           html {
             margin: 0;

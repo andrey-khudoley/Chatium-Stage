@@ -34,6 +34,11 @@
 - Описать бизнес‑логику и данные.
 
 ## Changelog
+- 2026-03-22: `JnCrtSelect.vue` — панель списка через `Teleport` в `body` с `position: fixed` и `z-index: 250000`, отдельный слой `.jn-crt-select__panel-bg` (#0a0a0a); синхронизация координат при открытии/scroll/resize/`ResizeObserver`; клик вне — учёт `panelEl`; правило `.crt-form-panel > *:not(.jn-crt-select)` в `TasksPage` / `JournalDayPane` (не навешивать `z-index: 1` на корень селекта).
+- 2026-03-22: `components/JnCrtSelect.vue` — кастомный выпадающий список для модалок задач (без системного синего выделения); `TasksPage.vue` и `JournalDayPane.vue` — замена `<select>` на `JnCrtSelect`, класс `crt-form-panel` на модалке задачи (CRT-сканлайны на фоне и на `input`/`textarea`). Из `formControlStyles` убраны стили нативного `select` (больше не используется).
+- 2026-03-22: `styles.tsx` — добавлен `formControlStyles` (единый фокус в цветах темы, снятие жёлтого Chrome autofill, стили нативных `select` с классом `jn-input`); подключение в head у главной и `web/*`; поля админки `.settings-input` включены; дублирующие правила фокуса убраны из `JournalNotebookPane.vue` и `AdminPage.vue`.
+- 2026-03-22: `TasksPage.vue` — исправлено визуальное «обрезание» левой границы у строки клиента и кнопок модалок: акцент слева через `box-shadow: inset` вместо разной толщины `border-left`; у кнопок в `.jn-modal-actions` задано `width: auto` (как в `JournalDayPane`), чтобы не переполнять модалку.
+- 2026-03-22: `TasksPage` — имя клиента в боковой панели не кликабельно для переключения контекста; красная подсветка строки клиента, если выбран проект этого клиента.
 - 2026-03-22: `JournalDayPane.vue` — `.jn-modal-heading`: `color: var(--color-text)` (как в `TasksPage` и `JournalNotebookPane`).
 - 2026-03-22: `TasksPage.vue` — заголовки модалок (`.jn-modal-heading`): явный `color: var(--color-text)`, чтобы текст не сливался с тёмным фоном модалки.
 - 2026-03-22: `shared/bootUi.ts` — добавлена директива `// @shared` (иначе модуль не подгружается в клиенте Chatium: «does not have shared file mark»).
