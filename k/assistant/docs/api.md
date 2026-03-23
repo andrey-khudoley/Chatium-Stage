@@ -74,8 +74,8 @@
 | POST | /api/tasks/clients/update | api/tasks/clients/update.ts | RealUser | Body: `{ id, name }`. |
 | POST | /api/tasks/clients/delete | api/tasks/clients/delete.ts | RealUser | Body: `{ id }` — каскадное удаление проектов и задач. |
 | POST | /api/tasks/clients/reorder | api/tasks/clients/reorder.ts | RealUser | Body: `{ orderedIds: string[] }` — полный список id клиентов пользователя в новом порядке. |
-| POST | /api/tasks/projects/create | api/tasks/projects/create.ts | RealUser | Body: `{ clientId, name }`. |
-| POST | /api/tasks/projects/update | api/tasks/projects/update.ts | RealUser | Body: `{ id, name, clientId? }` — смена клиента у проекта допустима. |
+| POST | /api/tasks/projects/create | api/tasks/projects/create.ts | RealUser | Body: `{ clientId, name, details? }` — `details` (текст «Детали»), опционально. |
+| POST | /api/tasks/projects/update | api/tasks/projects/update.ts | RealUser | Body: `{ id, name, clientId?, details? }` — смена клиента у проекта допустима; `details` — опционально обновить текст «Детали». |
 | POST | /api/tasks/projects/delete | api/tasks/projects/delete.ts | RealUser | Body: `{ id }` — удаление задач проекта. |
 | POST | /api/tasks/projects/reorder | api/tasks/projects/reorder.ts | RealUser | Body: `{ clientId, orderedIds: string[] }` — полный список id проектов этого клиента в новом порядке. |
 | POST | /api/tasks/items/create | api/tasks/items/create.ts | RealUser | Body: `{ projectId, title, description?, priority?, status? }`. |

@@ -19,13 +19,30 @@ function rowToClient(row: { id: string; name: string; sortOrder: number }): Task
   return { id: row.id, name: row.name, sortOrder: row.sortOrder }
 }
 
+const TASK_PROJECT_DETAILS_MAX_LEN = 10_000
+
 function rowToProject(row: {
   id: string
   clientId: string
   name: string
   sortOrder: number
+  details?: string | null
 }): TaskProjectDto {
-  return { id: row.id, clientId: row.clientId, name: row.name, sortOrder: row.sortOrder }
+  return {
+    id: row.id,
+    clientId: row.clientId,
+    name: row.name,
+    details: row.details ?? '',
+    sortOrder: row.sortOrder
+  }
+}
+
+/** Для Heap Optional: пустой ввод — снимаем значение; непустой — обрезка по длине. */
+function normalizeProjectDetails(raw: string | undefined): string | undefined {
+  if (raw === undefined) return undefined
+  const t = raw.trim()
+  if (!t) return undefined
+  return t.length > TASK_PROJECT_DETAILS_MAX_LEN ? t.slice(0, TASK_PROJECT_DETAILS_MAX_LEN) : t
 }
 
 function normalizeDaySortOrder(n: unknown): number {
@@ -178,16 +195,19 @@ export async function createProject(
   ctx: app.Ctx,
   userId: string,
   clientId: string,
-  name: string
+  name: string,
+  details?: string
 ): Promise<TaskProjectDto | null> {
   const client = await assertClientOwner(ctx, userId, clientId)
   if (!client) return null
   const sortOrder = await nextProjectSortOrder(ctx, userId, clientId)
+  const d = normalizeProjectDetails(details)
   const row = await TaskProjects.create(ctx, {
     userId,
     clientId,
     name: name.trim() || 'Новый проект',
-    sortOrder
+    sortOrder,
+    ...(d !== undefined ? { details: d } : {})
   })
   return rowToProject(row)
 }
@@ -196,7 +216,7 @@ export async function updateProject(
   ctx: app.Ctx,
   userId: string,
   id: string,
-  data: { name: string; clientId?: string }
+  data: { name: string; clientId?: string; details?: string }
 ): Promise<TaskProjectDto | null> {
   const existing = await assertProjectOwner(ctx, userId, id)
   if (!existing) return null
@@ -210,11 +230,19 @@ export async function updateProject(
     clientId === existing.clientId
       ? existing.sortOrder
       : await nextProjectSortOrder(ctx, userId, clientId)
+  const detailsPatch =
+    data.details !== undefined
+      ? {
+          /** `null` сбрасывает Heap.Optional (см. inner/docs/008-heap.md, опциональные поля). */
+          details: normalizeProjectDetails(data.details) ?? (null as TaskProjects.T['details'])
+        }
+      : {}
   const row = await TaskProjects.update(ctx, {
     id,
     name: data.name.trim() || existing.name,
     clientId,
-    sortOrder
+    sortOrder,
+    ...detailsPatch
   })
   return rowToProject(row)
 }

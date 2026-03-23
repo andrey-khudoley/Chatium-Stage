@@ -4,7 +4,14 @@ export type TaskStatus = 'todo' | 'in_progress' | 'done' | 'cancelled'
 
 export type TaskClientDto = { id: string; name: string; sortOrder: number }
 
-export type TaskProjectDto = { id: string; clientId: string; name: string; sortOrder: number }
+export type TaskProjectDto = {
+  id: string
+  clientId: string
+  name: string
+  /** Текст «Детали»; пустая строка, если не задано. */
+  details: string
+  sortOrder: number
+}
 
 export type TaskItemDto = {
   id: string

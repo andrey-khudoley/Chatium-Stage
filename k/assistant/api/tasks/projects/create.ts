@@ -8,7 +8,8 @@ const LOG_PATH = 'api/tasks/projects/create'
 export const createTaskProjectRoute = app
   .body((s) => ({
     clientId: s.string(),
-    name: s.string()
+    name: s.string(),
+    details: s.optional(s.string())
   }))
   .post('/', async (ctx, req) => {
     const user = requireRealUser(ctx)
@@ -18,7 +19,13 @@ export const createTaskProjectRoute = app
       payload: { clientId: req.body.clientId }
     })
     try {
-      const project = await tasksRepo.createProject(ctx, user.id, req.body.clientId, req.body.name)
+      const project = await tasksRepo.createProject(
+        ctx,
+        user.id,
+        req.body.clientId,
+        req.body.name,
+        req.body.details
+      )
       if (!project) {
         return { success: false, error: 'Клиент не найден' }
       }

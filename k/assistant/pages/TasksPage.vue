@@ -178,11 +178,60 @@ async function refreshTree() {
   }
 }
 
+/** Мобильный UI: только дерево или только задачи (не две колонки). */
+const TASKS_MOBILE_MQ = '(max-width: 1023px)'
+/** Класс на `document.documentElement` — увеличивает базовый rem на странице задач (читабельность). */
+const TASKS_HTML_MOBILE_CLASS = 'tasks-page-html-mobile'
+
+const isMobileTasksLayout = ref(false)
+const mobilePane = ref<'tree' | 'tasks'>('tree')
+
+function syncMobileLayout() {
+  if (typeof window === 'undefined') return
+  const mq = window.matchMedia(TASKS_MOBILE_MQ)
+  isMobileTasksLayout.value = mq.matches
+  if (!isMobileTasksLayout.value) {
+    mobilePane.value = 'tree'
+  }
+  if (typeof document !== 'undefined') {
+    if (mq.matches) {
+      document.documentElement.classList.add(TASKS_HTML_MOBILE_CLASS)
+    } else {
+      document.documentElement.classList.remove(TASKS_HTML_MOBILE_CLASS)
+    }
+  }
+}
+
+const showTasksSidebar = computed(
+  () => !isMobileTasksLayout.value || mobilePane.value === 'tree'
+)
+const showTasksPanel = computed(
+  () => !isMobileTasksLayout.value || mobilePane.value === 'tasks'
+)
+
+function backToTasksTree() {
+  mobilePane.value = 'tree'
+  try {
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  } catch {
+    window.scrollTo(0, 0)
+  }
+}
+
+watch(selectedProjectId, (id) => {
+  if (isMobileTasksLayout.value && !id) {
+    mobilePane.value = 'tree'
+  }
+})
+
 function selectProject(id: string) {
   const row = tree.value.projects.find((x) => x.id === id)
   if (!row) return
   selectedClientId.value = row.clientId
   selectedProjectId.value = id
+  if (isMobileTasksLayout.value) {
+    mobilePane.value = 'tasks'
+  }
   log.info('Project selected', { id })
 }
 
@@ -287,6 +336,7 @@ async function confirmDelete() {
 /** --- Проект --- */
 const projectModal = ref<'create' | 'edit' | null>(null)
 const projectFormName = ref('')
+const projectFormDetails = ref('')
 const projectEditId = ref<string | null>(null)
 const projectSaving = ref(false)
 const projectError = ref('')
@@ -295,6 +345,7 @@ function openProjectCreate() {
   if (!props.isAuthenticated || !selectedClientId.value) return
   projectModal.value = 'create'
   projectFormName.value = ''
+  projectFormDetails.value = ''
   projectError.value = ''
 }
 
@@ -302,12 +353,14 @@ function openProjectEdit(p: TaskProjectDto) {
   projectModal.value = 'edit'
   projectEditId.value = p.id
   projectFormName.value = p.name
+  projectFormDetails.value = p.details ?? ''
   projectError.value = ''
 }
 
 function closeProjectModal() {
   projectModal.value = null
   projectEditId.value = null
+  projectFormDetails.value = ''
 }
 
 async function submitProjectModal() {
@@ -318,7 +371,7 @@ async function submitProjectModal() {
     if (projectModal.value === 'create') {
       const j = await postJson<{ success: boolean; project?: TaskProjectDto; error?: string }>(
         props.taskProjectCreateUrl,
-        { clientId: selectedClientId.value!, name: projectFormName.value }
+        { clientId: selectedClientId.value!, name: projectFormName.value, details: projectFormDetails.value }
       )
       if (!j.success || !j.project) {
         projectError.value = j.error ?? 'Ошибка'
@@ -334,7 +387,8 @@ async function submitProjectModal() {
         props.taskProjectUpdateUrl,
         {
           id: projectEditId.value,
-          name: projectFormName.value
+          name: projectFormName.value,
+          details: projectFormDetails.value
         }
       )
       if (!j.success || !j.project) {
@@ -512,25 +566,44 @@ const startAfterBoot = () => {
 }
 
 let unsubBootStatic: (() => void) | null = null
+let mqListener: (() => void) | null = null
 
 onMounted(() => {
   log.info('TasksPage mounted')
   if (window.hideAppLoader) {
     window.hideAppLoader()
   }
+  syncMobileLayout()
+  mqListener = () => syncMobileLayout()
+  window.matchMedia(TASKS_MOBILE_MQ).addEventListener('change', mqListener)
   unsubBootStatic = subscribeBootStaticReady(startAfterBoot)
-  void nextTick(() => applyTasksUrlQuery())
+  void nextTick(() => {
+    applyTasksUrlQuery()
+    if (isMobileTasksLayout.value && selectedProjectId.value) {
+      mobilePane.value = 'tasks'
+    }
+  })
 })
 
 watch(
   () => [tree.value.clients.length, tree.value.projects.length] as const,
   () => {
     applyTasksUrlQuery()
+    if (isMobileTasksLayout.value && selectedProjectId.value) {
+      mobilePane.value = 'tasks'
+    }
   }
 )
 
 onUnmounted(() => {
   unsubBootStatic?.()
+  if (mqListener) {
+    window.matchMedia(TASKS_MOBILE_MQ).removeEventListener('change', mqListener)
+    mqListener = null
+  }
+  if (typeof document !== 'undefined') {
+    document.documentElement.classList.remove(TASKS_HTML_MOBILE_CLASS)
+  }
 })
 
 const openChatiumLink = () => {
@@ -559,7 +632,7 @@ function clearSidebarDragState() {
 }
 
 function onClientDragStart(e: DragEvent, clientId: string) {
-  if (!props.isAuthenticated) return
+  if (!props.isAuthenticated || isMobileTasksLayout.value) return
   dragKind.value = 'client'
   dragClientId.value = clientId
   e.dataTransfer?.setData('text/plain', `client:${clientId}`)
@@ -567,7 +640,7 @@ function onClientDragStart(e: DragEvent, clientId: string) {
 }
 
 function onProjectDragStart(e: DragEvent, projectId: string, clientId: string) {
-  if (!props.isAuthenticated) return
+  if (!props.isAuthenticated || isMobileTasksLayout.value) return
   dragKind.value = 'project'
   dragProjectId.value = projectId
   dragProjectClientId.value = clientId
@@ -848,7 +921,7 @@ function showProjectLineBefore(clientId: string, idx: number): boolean {
 </script>
 
 <template>
-  <div class="app-layout bg-[var(--color-bg)] text-[var(--color-text)] flex flex-col">
+  <div class="app-layout tasks-page-app bg-[var(--color-bg)] text-[var(--color-text)] flex flex-col">
     <GlobalGlitch />
     <Header
       v-if="bootLoaderDone"
@@ -862,9 +935,9 @@ function showProjectLineBefore(clientId: string, idx: number): boolean {
       :testsUrl="props.testsUrl"
     />
 
-    <main class="content-wrapper flex-1 relative z-10 min-h-0 overflow-y-auto">
-      <div class="content-inner journal-shell tasks-page-shell">
-        <aside class="tasks-sidebar" aria-label="Клиенты и проекты">
+    <main class="content-wrapper tasks-page-main flex-1 relative z-10 min-h-0 overflow-y-auto">
+      <div class="content-inner tasks-page-shell">
+        <aside v-show="showTasksSidebar" class="tasks-sidebar" aria-label="Клиенты и проекты">
           <div class="tasks-sidebar-toolbar">
             <button
               type="button"
@@ -903,7 +976,7 @@ function showProjectLineBefore(clientId: string, idx: number): boolean {
                 <span
                   v-if="props.isAuthenticated"
                   class="tasks-dnd-grip"
-                  draggable="true"
+                  :draggable="!isMobileTasksLayout"
                   title="Перетащить клиента"
                   aria-label="Перетащить клиента"
                   @dragstart="onClientDragStart($event, c.id)"
@@ -961,7 +1034,7 @@ function showProjectLineBefore(clientId: string, idx: number): boolean {
                     <span
                       v-if="props.isAuthenticated"
                       class="tasks-dnd-grip tasks-dnd-grip--nested"
-                      draggable="true"
+                      :draggable="!isMobileTasksLayout"
                       title="Перетащить проект"
                       aria-label="Перетащить проект"
                       @dragstart="onProjectDragStart($event, p.id, c.id)"
@@ -1031,14 +1104,31 @@ function showProjectLineBefore(clientId: string, idx: number): boolean {
           </div>
         </aside>
 
-        <section class="journal-panel tasks-panel" aria-live="polite">
+        <section
+          v-show="showTasksPanel"
+          class="journal-panel tasks-panel"
+          :class="{ 'tasks-panel--mobile-fill': isMobileTasksLayout && mobilePane === 'tasks' }"
+          aria-live="polite"
+        >
           <div class="tasks-panel-head">
-            <h2 class="tasks-panel-title">
-              <template v-if="selectedProject && selectedClient">
-                {{ selectedClient.name }} / {{ selectedProject.name }}
-              </template>
-              <template v-else>Задачи</template>
-            </h2>
+            <button
+              v-if="isMobileTasksLayout"
+              type="button"
+              class="tasks-mobile-back"
+              aria-label="Назад к списку проектов"
+              @click="backToTasksTree"
+            >
+              <i class="fas fa-arrow-left" aria-hidden="true" />
+              <span>Проекты</span>
+            </button>
+            <div class="tasks-panel-head-center">
+              <h2 class="tasks-panel-title">
+                <template v-if="selectedProject && selectedClient">
+                  {{ selectedClient.name }} / {{ selectedProject.name }}
+                </template>
+                <template v-else>Задачи</template>
+              </h2>
+            </div>
             <button
               type="button"
               class="journal-nav-action tasks-panel-add"
@@ -1159,6 +1249,8 @@ function showProjectLineBefore(clientId: string, idx: number): boolean {
             <h2 class="jn-modal-heading">{{ projectModal === 'create' ? 'Новый проект' : 'Проект' }}</h2>
             <label class="jn-label" for="tp-name">Название</label>
             <input id="tp-name" v-model="projectFormName" type="text" class="jn-input" maxlength="200" />
+            <label class="jn-label" for="tp-details">Детали</label>
+            <textarea id="tp-details" v-model="projectFormDetails" class="jn-textarea" rows="4" />
             <p v-if="projectError" class="jn-modal-error" role="alert">{{ projectError }}</p>
             <div class="jn-modal-actions">
               <button type="button" class="journal-nav-btn" @click="closeProjectModal">Отмена</button>
@@ -1236,8 +1328,23 @@ function showProjectLineBefore(clientId: string, idx: number): boolean {
 </template>
 
 <style scoped>
+.tasks-page-main {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
 .tasks-page-shell {
+  display: flex;
+  flex-direction: row;
   align-items: stretch;
+  gap: 0.75rem 1rem;
+  max-width: 1200px;
+  width: 100%;
+  margin: 0 auto;
+  min-height: 0;
+  flex: 1 1 auto;
 }
 
 .tasks-sidebar {
@@ -1589,15 +1696,62 @@ function showProjectLineBefore(clientId: string, idx: number): boolean {
   min-height: 280px;
 }
 
+.tasks-panel--mobile-fill {
+  flex: 1 1 auto;
+  min-height: min(72vh, calc(100vh - 10rem));
+  max-height: calc(100vh - 9rem);
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.tasks-panel--mobile-fill .tasks-placeholder,
+.tasks-panel--mobile-fill .tasks-global-err,
+.tasks-panel--mobile-fill .tasks-loading {
+  flex-shrink: 0;
+}
+
 .tasks-panel-head {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
   justify-content: space-between;
-  gap: 0.75rem;
+  gap: 0.5rem 0.75rem;
   padding: 0.65rem 0.85rem;
   border-bottom: 1px solid var(--color-border);
   background: rgba(0, 0, 0, 0.2);
+}
+
+.tasks-panel-head-center {
+  flex: 1;
+  min-width: 0;
+}
+
+.tasks-mobile-back {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 3rem;
+  min-width: 3rem;
+  padding: 0 0.85rem;
+  margin: 0;
+  font-family: inherit;
+  font-size: 0.95rem;
+  letter-spacing: 0.04em;
+  color: var(--color-text);
+  background: var(--color-bg-tertiary);
+  border: 2px solid var(--color-border);
+  border-radius: 4px;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: border-color 0.2s ease, color 0.2s ease;
+}
+
+.tasks-mobile-back:hover {
+  border-color: var(--color-accent);
+  color: var(--color-accent-hover);
 }
 
 .tasks-panel-title {
@@ -1607,6 +1761,8 @@ function showProjectLineBefore(clientId: string, idx: number): boolean {
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--color-text-secondary);
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .tasks-panel-add {
@@ -1743,12 +1899,12 @@ function showProjectLineBefore(clientId: string, idx: number): boolean {
   .tasks-table td::before {
     content: attr(data-label);
     display: block;
-    font-size: 0.58rem;
-    font-weight: 400;
-    letter-spacing: 0.08em;
+    font-size: 0.72rem;
+    font-weight: 500;
+    letter-spacing: 0.05em;
     text-transform: uppercase;
     color: var(--color-text-tertiary);
-    margin-bottom: 0.25rem;
+    margin-bottom: 0.35rem;
   }
 
   .tasks-table .tasks-row-actions {
@@ -1763,25 +1919,30 @@ function showProjectLineBefore(clientId: string, idx: number): boolean {
   }
 
   .tasks-reorder-btn {
-    min-width: 2.75rem;
-    min-height: 2.75rem;
-    padding: 0.35rem 0.5rem;
+    min-width: 3rem;
+    min-height: 3rem;
+    padding: 0.45rem 0.65rem;
   }
 
   .tasks-table .tasks-icon-btn {
-    width: 2.25rem;
-    height: 2.25rem;
-    font-size: 0.75rem;
+    width: 3rem;
+    height: 3rem;
+    font-size: 0.95rem;
   }
 
   .tasks-panel-head {
-    flex-direction: column;
-    align-items: stretch;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .tasks-panel-head-center {
+    flex: 1 1 12rem;
+    min-width: 0;
   }
 
   .tasks-panel-add {
-    width: 100%;
-    justify-content: center;
+    width: auto;
+    min-height: 2.75rem;
   }
 }
 
@@ -1791,7 +1952,7 @@ function showProjectLineBefore(clientId: string, idx: number): boolean {
   margin: 0 0 0.5rem;
 }
 
-@media (max-width: 900px) {
+@media (max-width: 1023px) {
   .tasks-page-shell {
     flex-direction: column;
   }
@@ -1801,6 +1962,122 @@ function showProjectLineBefore(clientId: string, idx: number): boolean {
     max-width: none;
     width: 100%;
     max-height: none;
+    min-height: min(65vh, calc(100vh - 11rem));
+    padding: 0.65rem 0.85rem 0.85rem;
+    border-width: 2px;
+  }
+
+  .tasks-dnd-grip {
+    display: none;
+  }
+
+  .tasks-hint,
+  .tasks-hint--muted {
+    font-size: 0.9rem;
+    line-height: 1.45;
+  }
+
+  .tasks-project-empty {
+    font-size: 0.82rem;
+  }
+
+  .tasks-sidebar-btn-subtle {
+    font-size: 0.95rem;
+    padding: 0.75rem 1rem;
+    min-height: 3rem;
+    border-width: 2px;
+    letter-spacing: 0.06em;
+  }
+
+  .tasks-client-select {
+    font-size: 0.95rem;
+    padding: 0.75rem 0.9rem;
+    min-height: 3rem;
+    border-width: 2px;
+    letter-spacing: 0.05em;
+  }
+
+  .tasks-project-btn {
+    font-size: 0.95rem !important;
+    min-height: 3rem;
+    padding: 0.65rem 0.85rem !important;
+    letter-spacing: 0.05em !important;
+    border-width: 2px !important;
+  }
+
+  .tasks-item-actions .tasks-icon-btn {
+    width: 3rem;
+    height: 3rem;
+    font-size: 1rem;
+    border-width: 2px;
+  }
+
+  .tasks-icon-btn {
+    width: 3rem;
+    height: 3rem;
+    font-size: 1rem;
+    border-width: 2px;
+  }
+
+  .tasks-panel-title {
+    font-size: 1rem;
+    line-height: 1.4;
+    letter-spacing: 0.06em;
+  }
+
+  .tasks-panel-add {
+    min-height: 3rem;
+    padding: 0.55rem 1rem;
+    font-size: 0.82rem;
+    touch-action: manipulation;
+  }
+
+  .tasks-placeholder {
+    font-size: 1.05rem;
+    line-height: 1.5;
+    padding: 1.5rem 1.15rem;
+  }
+
+  .tasks-table {
+    font-size: 0.95rem;
+  }
+
+  .tasks-table th {
+    font-size: 0.78rem;
+    padding: 0.65rem 0.75rem;
+  }
+
+  .tasks-table td {
+    padding: 0.65rem 0.75rem;
+  }
+
+  .tasks-title {
+    font-size: 1.02rem;
+    line-height: 1.4;
+  }
+
+  .tasks-desc {
+    font-size: 0.9rem;
+    line-height: 1.45;
+  }
+
+  .tasks-badge {
+    font-size: 0.8rem;
+    padding: 0.25rem 0.5rem;
+  }
+
+  .tasks-global-err,
+  .tasks-loading {
+    font-size: 0.9rem;
+  }
+
+  .tasks-page-main.content-wrapper {
+    padding: 0.75rem 0 1rem;
+  }
+
+  .tasks-page-main .content-inner {
+    padding-left: 0.65rem;
+    padding-right: 0.65rem;
   }
 }
 </style>
@@ -1994,15 +2271,6 @@ body {
   z-index: 10;
 }
 
-.journal-shell {
-  display: flex;
-  flex-direction: row;
-  align-items: stretch;
-  gap: 0.75rem 1rem;
-  max-width: 1200px;
-  min-height: 40vh;
-}
-
 .journal-nav-toolbar {
   display: flex;
   flex-direction: column;
@@ -2107,5 +2375,101 @@ body {
   border: 1px solid var(--color-border);
   border-radius: 2px;
   overflow: hidden;
+}
+
+/*
+ * Класс `tasks-page-html-mobile` вешается на documentElement при viewport ≤1023px
+ * только на странице задач — крупнее базовый rem, модалки на всю ширину, поля ≥16px (iOS).
+ */
+html.tasks-page-html-mobile {
+  font-size: 125%;
+  -webkit-text-size-adjust: 100%;
+}
+
+html.tasks-page-html-mobile .jn-modal-overlay {
+  align-items: center;
+  justify-content: center;
+  padding: max(0.75rem, env(safe-area-inset-top)) max(0.75rem, env(safe-area-inset-right))
+    max(0.75rem, env(safe-area-inset-bottom)) max(0.75rem, env(safe-area-inset-left));
+  box-sizing: border-box;
+}
+
+html.tasks-page-html-mobile .jn-modal {
+  width: min(100%, calc(100vw - 1.5rem));
+  max-width: 26rem;
+  padding: 1.5rem 1.35rem 1.65rem;
+  border-radius: 0.65rem;
+  border-width: 2px;
+}
+
+html.tasks-page-html-mobile .jn-modal--wide {
+  max-width: min(34rem, calc(100vw - 1.5rem));
+}
+
+html.tasks-page-html-mobile .jn-modal--compact {
+  max-width: min(24rem, calc(100vw - 1.5rem));
+}
+
+html.tasks-page-html-mobile .jn-modal-heading {
+  font-size: 1.05rem;
+  letter-spacing: 0.06em;
+  line-height: 1.35;
+}
+
+html.tasks-page-html-mobile .jn-label {
+  font-size: 0.8rem;
+  letter-spacing: 0.06em;
+  margin-bottom: 0.45rem;
+}
+
+html.tasks-page-html-mobile .jn-input,
+html.tasks-page-html-mobile .jn-textarea {
+  font-size: 16px;
+  padding: 0.75rem 0.9rem;
+  border-width: 2px;
+  min-height: 3rem;
+}
+
+html.tasks-page-html-mobile .jn-textarea {
+  min-height: 7.5rem;
+}
+
+html.tasks-page-html-mobile .jn-modal-error {
+  font-size: 0.88rem;
+}
+
+html.tasks-page-html-mobile .jn-modal-actions {
+  flex-direction: column-reverse;
+  gap: 0.65rem;
+  margin-top: 0.65rem;
+}
+
+html.tasks-page-html-mobile .jn-modal-actions .journal-nav-btn,
+html.tasks-page-html-mobile .jn-modal-actions .journal-nav-action {
+  width: 100%;
+  min-height: 3rem;
+  justify-content: center;
+  font-size: 0.95rem;
+  padding: 0.65rem 1rem;
+}
+
+html.tasks-page-html-mobile .jn-crt-select__trigger.jn-input {
+  min-height: 3rem;
+  font-size: 16px;
+}
+
+html.tasks-page-html-mobile .header-action-btn {
+  width: 2.85rem;
+  height: 2.85rem;
+  font-size: 1.05rem;
+}
+
+html.tasks-page-html-mobile .header-title {
+  font-size: 1.05rem;
+}
+
+html.tasks-page-html-mobile .header-clock {
+  font-size: 0.88rem;
+  padding: 0.35rem 0.65rem;
 }
 </style>
