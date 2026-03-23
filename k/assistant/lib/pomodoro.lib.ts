@@ -125,8 +125,8 @@ async function skipFromRunningPhase(ctx: app.Ctx, userId: string, nowMs: number,
   return next
 }
 
-async function tick(ctx: app.Ctx, userId: string, nowMs: number): Promise<PomodoroStateDto> {
-  let state = await pomodoroRepo.getOrCreateState(ctx, userId)
+async function tick(ctx: app.Ctx, userId: string, nowMs: number, statsDayKey?: string): Promise<PomodoroStateDto> {
+  let state = await pomodoroRepo.getOrCreateStateWithDailyStats(ctx, userId, statsDayKey, nowMs)
   if (state.status === 'awaiting_continue') {
     return state
   }
@@ -176,18 +176,23 @@ async function tick(ctx: app.Ctx, userId: string, nowMs: number): Promise<Pomodo
   return state
 }
 
-export async function getState(ctx: app.Ctx, userId: string): Promise<PomodoroStateDto> {
-  return runWithExclusiveLock(ctx, lockKey(userId), () => tick(ctx, userId, Date.now()))
+export async function getState(ctx: app.Ctx, userId: string, statsDayKey?: string): Promise<PomodoroStateDto> {
+  return runWithExclusiveLock(ctx, lockKey(userId), () => tick(ctx, userId, Date.now(), statsDayKey))
 }
 
-export async function saveSettings(ctx: app.Ctx, userId: string, input: PomodoroSettingsInput): Promise<PomodoroStateDto> {
+export async function saveSettings(
+  ctx: app.Ctx,
+  userId: string,
+  input: PomodoroSettingsInput,
+  statsDayKey?: string,
+): Promise<PomodoroStateDto> {
   const workMinutes = Math.max(1, Math.min(180, Math.floor(input.workMinutes)))
   const restMinutes = Math.max(1, Math.min(180, Math.floor(input.restMinutes)))
   const longRestMinutes = Math.max(1, Math.min(180, Math.floor(input.longRestMinutes)))
   const cyclesUntilLongRest = Math.max(1, Math.min(12, Math.floor(input.cyclesUntilLongRest)))
   const phaseChangeSound = normalizePhaseChangeSoundId(input.phaseChangeSound)
   return runWithExclusiveLock(ctx, lockKey(userId), async () => {
-    const state = await tick(ctx, userId, Date.now())
+    const state = await tick(ctx, userId, Date.now(), statsDayKey)
     return pomodoroRepo.updateState(ctx, userId, {
       workMinutes,
       restMinutes,
@@ -204,10 +209,10 @@ export async function saveSettings(ctx: app.Ctx, userId: string, input: Pomodoro
   })
 }
 
-export async function start(ctx: app.Ctx, userId: string): Promise<PomodoroStateDto> {
+export async function start(ctx: app.Ctx, userId: string, statsDayKey?: string): Promise<PomodoroStateDto> {
   return runWithExclusiveLock(ctx, lockKey(userId), async () => {
     const nowMs = Date.now()
-    const state = await tick(ctx, userId, nowMs)
+    const state = await tick(ctx, userId, nowMs, statsDayKey)
     await closeLaunchSegment(ctx, userId, nowMs, 'restart')
     const remaining = state.workMinutes * 60
     const nextState = await pomodoroRepo.updateState(ctx, userId, {
@@ -222,10 +227,10 @@ export async function start(ctx: app.Ctx, userId: string): Promise<PomodoroState
   })
 }
 
-export async function resume(ctx: app.Ctx, userId: string): Promise<PomodoroStateDto> {
+export async function resume(ctx: app.Ctx, userId: string, statsDayKey?: string): Promise<PomodoroStateDto> {
   return runWithExclusiveLock(ctx, lockKey(userId), async () => {
     const nowMs = Date.now()
-    const state = await tick(ctx, userId, nowMs)
+    const state = await tick(ctx, userId, nowMs, statsDayKey)
     if (state.status === 'awaiting_continue') {
       return advanceToNextPhaseAfterOvertime(ctx, userId, state, nowMs, 'continue')
     }
@@ -241,10 +246,10 @@ export async function resume(ctx: app.Ctx, userId: string): Promise<PomodoroStat
   })
 }
 
-export async function skipPhase(ctx: app.Ctx, userId: string): Promise<PomodoroStateDto> {
+export async function skipPhase(ctx: app.Ctx, userId: string, statsDayKey?: string): Promise<PomodoroStateDto> {
   return runWithExclusiveLock(ctx, lockKey(userId), async () => {
     const nowMs = Date.now()
-    const state = await tick(ctx, userId, nowMs)
+    const state = await tick(ctx, userId, nowMs, statsDayKey)
     if (state.status === 'awaiting_continue') {
       return advanceToNextPhaseAfterOvertime(ctx, userId, state, nowMs, 'skip')
     }
@@ -253,10 +258,10 @@ export async function skipPhase(ctx: app.Ctx, userId: string): Promise<PomodoroS
   })
 }
 
-export async function pause(ctx: app.Ctx, userId: string): Promise<PomodoroStateDto> {
+export async function pause(ctx: app.Ctx, userId: string, statsDayKey?: string): Promise<PomodoroStateDto> {
   return runWithExclusiveLock(ctx, lockKey(userId), async () => {
     const nowMs = Date.now()
-    const state = await tick(ctx, userId, nowMs)
+    const state = await tick(ctx, userId, nowMs, statsDayKey)
     if (state.status !== 'running') return state
     const remaining = Math.max(0, Math.floor((state.phaseEndsAtMs - nowMs) / 1000))
     const nextState = await pomodoroRepo.updateState(ctx, userId, {
@@ -269,10 +274,10 @@ export async function pause(ctx: app.Ctx, userId: string): Promise<PomodoroState
   })
 }
 
-export async function stop(ctx: app.Ctx, userId: string): Promise<PomodoroStateDto> {
+export async function stop(ctx: app.Ctx, userId: string, statsDayKey?: string): Promise<PomodoroStateDto> {
   return runWithExclusiveLock(ctx, lockKey(userId), async () => {
     const nowMs = Date.now()
-    const state = await tick(ctx, userId, nowMs)
+    const state = await tick(ctx, userId, nowMs, statsDayKey)
     const nextState = await pomodoroRepo.updateState(ctx, userId, {
       status: 'stopped',
       phase: 'work',
@@ -286,10 +291,10 @@ export async function stop(ctx: app.Ctx, userId: string): Promise<PomodoroStateD
 }
 
 /** Полная остановка и возврат к началу серии (первый цикл, таймер на полный work, без запуска). */
-export async function reset(ctx: app.Ctx, userId: string): Promise<PomodoroStateDto> {
+export async function reset(ctx: app.Ctx, userId: string, statsDayKey?: string): Promise<PomodoroStateDto> {
   return runWithExclusiveLock(ctx, lockKey(userId), async () => {
     const nowMs = Date.now()
-    const state = await tick(ctx, userId, nowMs)
+    const state = await tick(ctx, userId, nowMs, statsDayKey)
     if (state.status === 'stopped') return state
     const nextState = await pomodoroRepo.updateState(ctx, userId, {
       status: 'stopped',
@@ -304,14 +309,14 @@ export async function reset(ctx: app.Ctx, userId: string): Promise<PomodoroState
   })
 }
 
-export async function assignTask(ctx: app.Ctx, userId: string, taskId: string): Promise<PomodoroStateDto> {
+export async function assignTask(ctx: app.Ctx, userId: string, taskId: string, statsDayKey?: string): Promise<PomodoroStateDto> {
   return runWithExclusiveLock(ctx, lockKey(userId), async () => {
     if (taskId) {
       const task = await tasksRepo.findTaskByIdForUser(ctx, userId, taskId)
       if (!task) throw new Error('Task not found')
     }
     const nowMs = Date.now()
-    const state = await tick(ctx, userId, nowMs)
+    const state = await tick(ctx, userId, nowMs, statsDayKey)
     const nextTaskId = taskId || null
     const changedDuringRun = state.status === 'running' && (state.currentTaskId || null) !== nextTaskId
     if (changedDuringRun) {

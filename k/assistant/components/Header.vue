@@ -87,6 +87,7 @@ import { computed, ref, onMounted, onUnmounted } from 'vue'
 import LogoutModal from './LogoutModal.vue'
 import { createComponentLogger } from '../shared/logger'
 import { formatPomodoroSecondsDisplay } from '../lib/pomodoro-types'
+import { computePomodoroStatsDayKeyLocal } from '../lib/pomodoro-stats-day'
 
 const log = createComponentLogger('Header')
 
@@ -153,10 +154,15 @@ const readApiJson = async <T,>(response: Response): Promise<T> => {
   return response.json() as Promise<T>
 }
 
+function pomodoroStateGetUrlWithDay(base: string): string {
+  const key = encodeURIComponent(computePomodoroStatsDayKeyLocal(Date.now()))
+  return base.includes('?') ? `${base}&statsDayKey=${key}` : `${base}?statsDayKey=${key}`
+}
+
 const syncPomodoro = async () => {
   if (!props.pomodoroStateGetUrl) return
   try {
-    const r = await fetch(props.pomodoroStateGetUrl, { credentials: 'include' })
+    const r = await fetch(pomodoroStateGetUrlWithDay(props.pomodoroStateGetUrl), { credentials: 'include' })
     const j = await readApiJson<{ success?: boolean; state?: { status: 'stopped' | 'running' | 'paused' | 'awaiting_continue'; phaseEndsAtMs: number; phaseRemainingSec: number } }>(r)
     if (!j.success || !j.state) return
     pomodoroStatus.value = j.state.status
@@ -175,7 +181,7 @@ const togglePomodoroPauseResume = async () => {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action })
+      body: JSON.stringify({ action, statsDayKey: computePomodoroStatsDayKeyLocal(Date.now()) })
     })
     const j = await readApiJson<{ success?: boolean; state?: { status: 'stopped' | 'running' | 'paused' | 'awaiting_continue'; phaseEndsAtMs: number; phaseRemainingSec: number } }>(r)
     if (j.success && j.state) {

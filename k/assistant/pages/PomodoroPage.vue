@@ -8,6 +8,7 @@ import PomodoroSettingsModal from '../components/pomodoro/PomodoroSettingsModal.
 import PomodoroTaskSelector from '../components/pomodoro/PomodoroTaskSelector.vue'
 import { playPomodoroPhaseChangeSound } from '../lib/pomodoro-phase-sounds'
 import { formatPomodoroSecondsDisplay as fmt } from '../lib/pomodoro-types'
+import { computePomodoroStatsDayKeyLocal } from '../lib/pomodoro-stats-day'
 
 type PomodoroState = {
   status: 'stopped' | 'running' | 'paused' | 'awaiting_continue'
@@ -85,9 +86,20 @@ async function readApiJson<T>(response: Response): Promise<T> {
   return response.json() as Promise<T>
 }
 
+function pomodoroStatsDayKeyNow(): string {
+  return computePomodoroStatsDayKeyLocal(localTick.value)
+}
+
+function pomodoroStateGetUrlWithDay(): string {
+  const key = encodeURIComponent(pomodoroStatsDayKeyNow())
+  return props.stateGetUrl.includes('?')
+    ? `${props.stateGetUrl}&statsDayKey=${key}`
+    : `${props.stateGetUrl}?statsDayKey=${key}`
+}
+
 async function refresh() {
   try {
-    const r = await fetch(props.stateGetUrl, { credentials: 'include' })
+    const r = await fetch(pomodoroStateGetUrlWithDay(), { credentials: 'include' })
     const j = await readApiJson<{ success?: boolean; state?: PomodoroState; serverNowMs?: number; error?: string }>(r)
     if (j.success && j.state) {
       applyIncomingState(j.state, j.serverNowMs ?? 0, 'poll', 0)
@@ -120,7 +132,12 @@ async function control(action: 'start' | 'resume' | 'pause' | 'stop' | 'skip' | 
   actionPending.value = true
   const localActionSeq = actionSeq.value + 1
   try {
-    const r = await fetch(props.controlUrl, { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action }) })
+    const r = await fetch(props.controlUrl, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action, statsDayKey: pomodoroStatsDayKeyNow() }),
+    })
     const j = await readApiJson<{ success?: boolean; state?: PomodoroState; serverNowMs?: number; error?: string }>(r)
     if (j.success && j.state) {
       applyIncomingState(j.state, j.serverNowMs ?? 0, 'action', localActionSeq)
@@ -156,7 +173,7 @@ async function saveSettings(draft: PomodoroSettingsDraft) {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(draft)
+      body: JSON.stringify({ ...draft, statsDayKey: pomodoroStatsDayKeyNow() })
     })
     const j = await readApiJson<{ success?: boolean; state?: PomodoroState; serverNowMs?: number; error?: string }>(r)
     if (j.success && j.state) {
@@ -417,6 +434,7 @@ const pomodoroActionPanelLayout = computed(() => {
           :assign-task-url="props.assignTaskUrl"
           :get-tasks-url="props.getTasksUrl"
           :current-task-id="state.currentTaskId"
+          :stats-day-key="pomodoroStatsDayKeyNow()"
           @task-assigned="refresh"
         />
 

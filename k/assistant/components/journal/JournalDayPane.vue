@@ -154,6 +154,7 @@
 <script setup lang="ts">
 import { computed, onUnmounted, ref, watch } from 'vue'
 import type { TasksTreeDto, TaskItemDto, TaskProjectDto } from '../../lib/tasks-types'
+import { computePomodoroStatsDayKeyLocal } from '../../lib/pomodoro-stats-day'
 import { createComponentLogger } from '../../shared/logger'
 import JnCrtSelect from '../JnCrtSelect.vue'
 
@@ -441,7 +442,10 @@ async function releaseAll() {
 async function addToPomodoro(taskId: string) {
   globalError.value = ''
   try {
-    const j = await postJson<{ success: boolean; error?: string }>(props.pomodoroAssignTaskUrl, { taskId })
+    const j = await postJson<{ success: boolean; error?: string }>(props.pomodoroAssignTaskUrl, {
+      taskId,
+      statsDayKey: computePomodoroStatsDayKeyLocal(Date.now()),
+    })
     if (!j.success) {
       globalError.value = j.error ?? 'Не удалось добавить задачу в pomodoro'
     }

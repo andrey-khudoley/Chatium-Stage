@@ -8,6 +8,7 @@ import TasksAiChatPanel from '../components/tasks/TasksAiChatPanel.vue'
 import { subscribeBootStaticReady, scheduleHideBootLoader } from '../shared/bootUi'
 import { createComponentLogger } from '../shared/logger'
 import type { TasksTreeDto, TaskClientDto, TaskProjectDto, TaskItemDto } from '../lib/tasks-types'
+import { computePomodoroStatsDayKeyLocal } from '../lib/pomodoro-stats-day'
 
 const log = createComponentLogger('TasksPage')
 
@@ -552,7 +553,10 @@ async function assignTaskToPomodoro(t: TaskItemDto) {
   if (!props.isAuthenticated) return
   globalError.value = ''
   try {
-    const j = await postJson<{ success: boolean; error?: string }>(props.pomodoroAssignTaskUrl, { taskId: t.id })
+    const j = await postJson<{ success: boolean; error?: string }>(props.pomodoroAssignTaskUrl, {
+      taskId: t.id,
+      statsDayKey: computePomodoroStatsDayKeyLocal(Date.now()),
+    })
     if (!j.success) {
       globalError.value = j.error ?? 'Не удалось добавить задачу в pomodoro'
     }

@@ -233,7 +233,8 @@ function previewPhaseSound(): void {
   max-height: 90vh;
   overflow-y: auto;
   background: var(--color-bg-secondary);
-  border: 1px solid var(--color-border-light);
+  /* Не используем border: вместе с clip-path внешняя обводка часто обрезается (особенно снизу). Рамка — inset box-shadow внутри формы. */
+  border: none;
   padding: 0;
   position: relative;
   clip-path: polygon(
@@ -243,6 +244,7 @@ function previewPhaseSound(): void {
     6px 100%, 6px calc(100% - 6px), 0 calc(100% - 6px)
   );
   box-shadow:
+    inset 0 0 0 1px var(--color-border-light),
     0 16px 48px rgba(0, 0, 0, 0.6),
     0 0 0 1px rgba(0, 0, 0, 0.3),
     0 0 40px rgba(211, 35, 75, 0.06);

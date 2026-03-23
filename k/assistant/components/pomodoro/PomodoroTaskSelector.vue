@@ -11,6 +11,8 @@ const props = defineProps<{
   assignTaskUrl: string
   getTasksUrl: string
   currentTaskId: string
+  /** Ключ дневной статистики помодоро (YYYY-MM-DD от 05:00 локально), см. pomodoro-stats-day */
+  statsDayKey: string
 }>()
 
 const emit = defineEmits<{
@@ -44,7 +46,7 @@ async function assignTask(taskId: string) {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ taskId })
+      body: JSON.stringify({ taskId, statsDayKey: props.statsDayKey })
     })
     const j = await r.json()
     if (j.success) {

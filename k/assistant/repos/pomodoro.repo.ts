@@ -1,6 +1,7 @@
 import PomodoroState from '../tables/pomodoro-state.table'
 import type { PomodoroAfterLongRest, PomodoroSettingsInput, PomodoroStateDto, PomodoroPhase, PomodoroStatus } from '../lib/pomodoro-types'
 import { normalizePhaseChangeSoundId } from '../lib/pomodoro-types'
+import { computePomodoroStatsDayKeyInTimeZone, normalizeClientStatsDayKey } from '../lib/pomodoro-stats-day'
 
 const DEFAULTS: PomodoroSettingsInput = {
   workMinutes: 25,
@@ -87,6 +88,51 @@ export async function getOrCreateStateRow(ctx: app.Ctx, userId: string): Promise
 
 export async function getOrCreateState(ctx: app.Ctx, userId: string): Promise<PomodoroStateDto> {
   return rowToState(await getOrCreateStateRow(ctx, userId))
+}
+
+const STATS_FALLBACK_TIMEZONE = 'Europe/Moscow'
+
+/**
+ * Сброс дневной статистики при смене ключа периода (05:00 локально на клиенте или fallback по Москве).
+ * updatedAtMs не трогаем — иначе сломается расчёт running-таймера в tick().
+ */
+export async function applyStatsPeriodIfNeeded(
+  ctx: app.Ctx,
+  row: typeof PomodoroState.T,
+  expectedKey: string,
+): Promise<typeof PomodoroState.T> {
+  const stored = row.statsPeriodDayKey
+  if (stored == null || stored === '') {
+    return PomodoroState.update(ctx, {
+      id: row.id,
+      statsPeriodDayKey: expectedKey,
+      updatedAtMs: row.updatedAtMs,
+    })
+  }
+  if (stored === expectedKey) {
+    return row
+  }
+  return PomodoroState.update(ctx, {
+    id: row.id,
+    statsPeriodDayKey: expectedKey,
+    totalWorkSec: 0,
+    totalRestSec: 0,
+    tasksCompletedToday: 0,
+    updatedAtMs: row.updatedAtMs,
+  })
+}
+
+export async function getOrCreateStateWithDailyStats(
+  ctx: app.Ctx,
+  userId: string,
+  clientStatsDayKey: string | undefined,
+  nowMs: number,
+): Promise<PomodoroStateDto> {
+  let row = await getOrCreateStateRow(ctx, userId)
+  const expectedKey =
+    normalizeClientStatsDayKey(clientStatsDayKey) ?? computePomodoroStatsDayKeyInTimeZone(nowMs, STATS_FALLBACK_TIMEZONE)
+  row = await applyStatsPeriodIfNeeded(ctx, row, expectedKey)
+  return rowToState(row)
 }
 
 export async function updateState(

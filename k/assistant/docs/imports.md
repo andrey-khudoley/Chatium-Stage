@@ -217,6 +217,7 @@
 - `../shared/bootUi` → `subscribeBootStaticReady`, `scheduleHideBootLoader`
 - `../shared/logger` → `createComponentLogger`
 - `../lib/tasks-types` → `TasksTreeDto`, `TaskClientDto`, `TaskProjectDto`, `TaskItemDto`
+- `../lib/pomodoro-stats-day` → `computePomodoroStatsDayKeyLocal` (при привязке задачи к Pomodoro)
 - событие `tasks-maybe-changed` от чата — отложенный `refreshTree` после ответа ассистента
 
 ### `./pages/ToolsPage.vue`
@@ -233,6 +234,7 @@
 - `../components/pomodoro/PomodoroSettingsModal.vue`
 - `../lib/pomodoro-phase-sounds` → `playPomodoroPhaseChangeSound`
 - `../lib/pomodoro-types` → `formatPomodoroSecondsDisplay` (как `fmt`)
+- `../lib/pomodoro-stats-day` → `computePomodoroStatsDayKeyLocal`
 
 ### `./components/tasks/TasksAiChatPanel.vue`
 - `vue` → `computed`, `onMounted`, `onUnmounted`, `ref`, `watch`, `nextTick`
@@ -253,6 +255,7 @@
 - `./LogoutModal.vue`
 - `../shared/logger` → `createComponentLogger`
 - `../lib/pomodoro-types` → `formatPomodoroSecondsDisplay`
+- `../lib/pomodoro-stats-day` → `computePomodoroStatsDayKeyLocal`
 
 ### `./components/LogoutModal.vue`
 - `vue` → `watch`, `onMounted`
@@ -282,6 +285,10 @@
 - `defineProps`: `isOpen`, `saving`, `modelValue`
 - `defineEmits`: `close`, `save`
 
+### `./components/pomodoro/PomodoroTaskSelector.vue`
+- `vue` → `computed`, `onMounted`, `ref`
+- `defineProps`: `assignTaskUrl`, `getTasksUrl`, `currentTaskId`, `statsDayKey` (передаётся в `assign-task` вместе с `taskId`)
+
 ### `./components/journal/JournalStubPanel.vue`
 - (только разметка заглушки «В разработке»)
 
@@ -306,6 +313,7 @@
 - `vue` → `computed`, `onUnmounted`, `ref`, `watch`
 - `../JnCrtSelect.vue`
 - `../../lib/tasks-types` → `TasksTreeDto`, `TaskItemDto`, `TaskProjectDto`
+- `../../lib/pomodoro-stats-day` → `computePomodoroStatsDayKeyLocal` (добавление задачи в Pomodoro)
 - `../../shared/logger` → `createComponentLogger`
 - пропсы: `isAuthenticated`, `tasksTreeInitial`, `tasksTreeGetUrl`, `taskItemReorderDayUrl`, `taskReleaseDayUrl`, `taskItemUpdateUrl`, `tasksPageUrl` — список задач «В работе», сортировка (кнопки и drag-and-drop), клик по названию — модалка редактирования (POST `taskItemUpdateUrl`), ссылки на страницу задач с `?client=&project=`
 
@@ -381,6 +389,7 @@
 ### `./repos/pomodoro.repo.ts`
 - `../tables/pomodoro-state.table` → `PomodoroState`
 - `../lib/pomodoro-types` → `PomodoroAfterLongRest`, `PomodoroPhase`, `PomodoroStatus`, `PomodoroSettingsInput`, `PomodoroStateDto`, `normalizePhaseChangeSoundId`
+- `../lib/pomodoro-stats-day` → `computePomodoroStatsDayKeyInTimeZone`, `normalizeClientStatsDayKey`
 
 ### `./lib/tasks-types.ts`
 - нет импортов (чистые типы DTO для задач)
@@ -410,6 +419,9 @@
 - `../repos/logs.repo` → `*` (create)
 - `@app/socket` → `sendDataToSocket`
 - `@app/request` → `request`
+
+### `./lib/pomodoro-stats-day.ts`
+- `@shared` — ключ периода дневной статистики (05:00 локально / Москва): `computePomodoroStatsDayKeyLocal`, `computePomodoroStatsDayKeyInTimeZone`, `normalizeClientStatsDayKey`
 
 ### `./lib/pomodoro.lib.ts`
 - `@app/sync` → `runWithExclusiveLock`

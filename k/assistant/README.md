@@ -39,6 +39,8 @@
 - Расширить раздел «Инструменты» новыми утилитами (кроме Pomodoro).
 
 ## Changelog
+- 2026-03-24: Pomodoro — дневная статистика (помидоры / работа / отдых в `.stat-cell`) сбрасывается при смене «помодоро-суток»: граница в **05:00 по локальному времени браузера**; в Heap поле `statsPeriodDayKey`, клиент передаёт `statsDayKey` в `state/get`, `control`, `settings/save`, `assign-task`; без ключа — fallback по `Europe/Moscow`. Реализация: `lib/pomodoro-stats-day.ts`, `repos/pomodoro.repo.ts`, `lib/pomodoro.lib.ts`, `PomodoroPage.vue`, `Header.vue`, `PomodoroTaskSelector.vue`.
+- 2026-03-23: Pomodoro — модалка настроек (`PomodoroSettingsModal.vue`): рамка внешним `border` вместе с `clip-path` могла не рисоваться снизу; контур через `inset box-shadow` (`var(--color-border-light)`).
 - 2026-03-23: Pomodoro — модалка настроек: черновик полей подтягивается из `state` только при открытии (`PomodoroSettingsModal.vue`), чтобы опрос API и обновление `settingsModel` не сбрасывали несохранённые значения.
 - 2026-03-23: Pomodoro — отображение длительности от 1 часа: `H:MM:SS` (например `2:11:31` вместо `131:31`) в статистике за день, в основном таймере, в заголовке вкладки и в таймере шапки; функция `formatPomodoroSecondsDisplay` в `lib/pomodoro-types.ts`.
 - 2026-03-23: Pomodoro — панель действий: только «Старт» (`stopped`); «Пауза» и «Пропустить» (`running`); «Продолжить» и «Сбросить» (`paused` / `awaiting_continue`, `reset` в `lib/pomodoro.lib.ts` + `api/pomodoro/control.ts`). Убраны «Рестарт» и «Стоп» с экрана.

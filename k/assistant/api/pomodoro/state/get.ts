@@ -2,10 +2,12 @@
 import { requireRealUser } from '@app/auth'
 import * as pomodoroLib from '../../../lib/pomodoro.lib'
 
-export const getPomodoroStateRoute = app.get('/', async (ctx) => {
+export const getPomodoroStateRoute = app.get('/', async (ctx, req) => {
   const user = requireRealUser(ctx)
   try {
-    const state = await pomodoroLib.getState(ctx, user.id)
+    const raw = req.query.statsDayKey
+    const statsDayKey = typeof raw === 'string' ? raw : undefined
+    const state = await pomodoroLib.getState(ctx, user.id, statsDayKey)
     return { success: true, state, serverNowMs: Date.now() }
   } catch (error) {
     ctx.account.log(`pomodoro.state.get error`, {
