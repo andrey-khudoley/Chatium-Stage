@@ -123,6 +123,13 @@
 - `../shared/bootUi` → `subscribeBootStaticReady`, `scheduleHideBootLoader`
 - `../shared/logger` → `createComponentLogger`
 
+### `./components/admin/AiSettings.vue`
+- `vue` → `ref`, `watch`, `onMounted`, `onBeforeUnmount`
+- `../api/settings/get` → `getSettingRoute`
+- `../api/settings/save` → `saveSettingRoute`
+- `../shared/logger` → `createComponentLogger`
+- `../config/prompts` → `AVAILABLE_AI_MODELS`, `DEFAULT_AI_MODEL`
+
 ### `./pages/AdminPage.vue`
 - `vue` → `onMounted`, `onBeforeUnmount`, `onUnmounted`, `ref`, `computed`, `watch`
 - `@app/socket` → `getOrCreateBrowserSocketClient`

@@ -4,8 +4,10 @@ import Header from '../components/Header.vue'
 import GlobalGlitch from '../components/GlobalGlitch.vue'
 import AppFooter from '../components/AppFooter.vue'
 import JnCrtSelect from '../components/JnCrtSelect.vue'
+import FormulateTaskModal from '../components/tasks/FormulateTaskModal.vue'
 import { subscribeBootStaticReady, scheduleHideBootLoader } from '../shared/bootUi'
 import { createComponentLogger } from '../shared/logger'
+import { useAiFormulate, type AiFormulateResult } from '../shared/useAiFormulate'
 import type { TasksTreeDto, TaskClientDto, TaskProjectDto, TaskItemDto } from '../lib/tasks-types'
 
 const log = createComponentLogger('TasksPage')
@@ -39,6 +41,7 @@ const props = defineProps<{
   taskItemUpdateUrl: string
   taskItemDeleteUrl: string
   taskItemReorderUrl: string
+  taskAiFormulateUrl: string
 }>()
 
 const bootLoaderDone = ref(false)
@@ -148,6 +151,46 @@ const taskProjectSelectOptions = computed(() =>
 
 const globalError = ref('')
 const loading = ref(false)
+
+const ai = useAiFormulate()
+const formulateModalRef = ref<InstanceType<typeof FormulateTaskModal> | null>(null)
+
+async function handleAiFormulate(query: string) {
+  if (!selectedProjectId.value || !props.isAuthenticated) return
+  
+  try {
+    const r = await postJson<{ success?: boolean; message?: string; summary?: string; stats?: AiFormulateResult['stats']; error?: string }>(
+      props.taskAiFormulateUrl,
+      { projectId: selectedProjectId.value, userQuery: query }
+    )
+    
+    if (r.success) {
+      // Если есть summary и stats — результат готов (синхронно)
+      if (r.summary && r.stats) {
+        formulateModalRef.value?.setLoading(false)
+        ai.closeFormulateModal()
+        ai.showFormulateResult({ summary: r.summary, stats: r.stats })
+        await refreshTree()
+      } 
+      // Если есть только message — запрос принят, обработка асинхронная
+      else if (r.message) {
+        formulateModalRef.value?.setLoading(false)
+        ai.closeFormulateModal()
+        globalError.value = ''
+        // Показываем сообщение об ожидании
+        alert(r.message + '\n\nСтраница обновится автоматически через 5 секунд.')
+        // Обновляем через 5 секунд
+        setTimeout(() => {
+          void refreshTree()
+        }, 5000)
+      }
+    } else {
+      formulateModalRef.value?.setError(r.error || 'Не удалось обработать запрос')
+    }
+  } catch (e) {
+    formulateModalRef.value?.setError(String(e))
+  }
+}
 
 async function postJson<T>(url: string, body: Record<string, unknown>): Promise<T> {
   const r = await fetch(url, {
@@ -1129,14 +1172,25 @@ function showProjectLineBefore(clientId: string, idx: number): boolean {
                 <template v-else>Задачи</template>
               </h2>
             </div>
-            <button
-              type="button"
-              class="journal-nav-action tasks-panel-add"
-              :disabled="!props.isAuthenticated || !selectedProjectId"
-              @click="openTaskCreate"
-            >
-              Новая задача
-            </button>
+            <div class="tasks-panel-head-actions">
+              <button
+                type="button"
+                class="journal-nav-action tasks-panel-add"
+                :disabled="!props.isAuthenticated || !selectedProjectId"
+                @click="ai.openFormulateModal"
+              >
+                <i class="fas fa-magic" aria-hidden="true" />
+                Сформулировать
+              </button>
+              <button
+                type="button"
+                class="journal-nav-action tasks-panel-add"
+                :disabled="!props.isAuthenticated || !selectedProjectId"
+                @click="openTaskCreate"
+              >
+                Новая задача
+              </button>
+            </div>
           </div>
           <p v-if="globalError" class="tasks-global-err" role="alert">{{ globalError }}</p>
           <p v-if="loading" class="tasks-loading">Обновление…</p>
@@ -1207,7 +1261,49 @@ function showProjectLineBefore(clientId: string, idx: number): boolean {
           <p v-if="selectedProjectId && !tasksForProject.length" class="tasks-placeholder">В этом проекте пока нет задач.</p>
         </section>
       </div>
+
+      <Transition name="jn-modal">
+        <div v-if="ai.formulateResultVisible.value" class="ai-result-banner" @click="ai.closeFormulateResult">
+          <div class="ai-result-content" @click.stop>
+            <button
+              type="button"
+              class="ai-result-close"
+              aria-label="Закрыть"
+              @click="ai.closeFormulateResult"
+            >
+              <i class="fas fa-times" aria-hidden="true" />
+            </button>
+            <div class="ai-result-icon">
+              <i class="fas fa-check-circle" aria-hidden="true" />
+            </div>
+            <div class="ai-result-text">
+              <div class="ai-result-summary">{{ ai.formulateResult.value?.summary }}</div>
+              <div v-if="ai.formulateResult.value?.stats" class="ai-result-stats">
+                <span v-if="ai.formulateResult.value.stats.projectUpdated" class="ai-result-stat">
+                  <i class="fas fa-edit" aria-hidden="true" />
+                  Обновлен контекст проекта
+                </span>
+                <span v-if="ai.formulateResult.value.stats.createdTasks.length" class="ai-result-stat">
+                  <i class="fas fa-plus" aria-hidden="true" />
+                  {{ ai.formulateResult.value.stats.createdTasks.length }} нов.
+                </span>
+                <span v-if="ai.formulateResult.value.stats.updatedTasks.length" class="ai-result-stat">
+                  <i class="fas fa-edit" aria-hidden="true" />
+                  {{ ai.formulateResult.value.stats.updatedTasks.length }} обн.
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Transition>
     </main>
+
+    <FormulateTaskModal
+      ref="formulateModalRef"
+      :show="ai.showFormulateModal.value"
+      @submit="handleAiFormulate"
+      @cancel="ai.closeFormulateModal"
+    />
 
     <AppFooter v-if="bootLoaderDone" @chatium-click="openChatiumLink" />
 
@@ -2471,5 +2567,135 @@ html.tasks-page-html-mobile .header-title {
 html.tasks-page-html-mobile .header-clock {
   font-size: 0.88rem;
   padding: 0.35rem 0.65rem;
+}
+
+.tasks-panel-head-actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.tasks-panel-head-actions .journal-nav-action {
+  width: auto;
+  padding: 0.5rem 0.85rem;
+  font-size: 0.7rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  white-space: nowrap;
+}
+
+@media (max-width: 640px) {
+  .tasks-panel-head-actions {
+    width: 100%;
+  }
+  
+  .tasks-panel-head-actions .journal-nav-action {
+    flex: 1;
+    justify-content: center;
+  }
+}
+
+.ai-result-banner {
+  position: fixed;
+  top: 5rem;
+  right: 1.5rem;
+  z-index: 10000;
+  max-width: 400px;
+  animation: slideInRight 0.4s ease-out;
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.ai-result-content {
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-accent);
+  border-radius: 4px;
+  padding: 1rem 1.25rem;
+  box-shadow: 0 4px 24px rgba(211, 35, 75, 0.3);
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+  position: relative;
+}
+
+.ai-result-close {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  background: transparent;
+  border: none;
+  color: var(--color-text-secondary);
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 0.25rem;
+  line-height: 1;
+  transition: color 0.2s;
+}
+
+.ai-result-close:hover {
+  color: var(--color-accent);
+}
+
+.ai-result-icon {
+  flex-shrink: 0;
+  color: var(--color-accent);
+  font-size: 1.5rem;
+  padding-top: 0.25rem;
+}
+
+.ai-result-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.ai-result-summary {
+  color: var(--color-text);
+  font-size: 0.9rem;
+  line-height: 1.5;
+  margin-bottom: 0.75rem;
+}
+
+.ai-result-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.ai-result-stat {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+  background: rgba(211, 35, 75, 0.1);
+  padding: 0.25rem 0.6rem;
+  border-radius: 3px;
+  border: 1px solid rgba(211, 35, 75, 0.3);
+}
+
+.ai-result-stat i {
+  font-size: 0.7rem;
+  color: var(--color-accent);
+}
+
+@media (max-width: 768px) {
+  .ai-result-banner {
+    top: auto;
+    bottom: 5rem;
+    right: 1rem;
+    left: 1rem;
+    max-width: none;
+  }
 }
 </style>

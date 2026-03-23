@@ -1,5 +1,6 @@
 import * as repo from '../repos/settings.repo'
 import * as loggerLib from './logger.lib'
+import { DEFAULT_AI_MODEL, DEFAULT_AI_FORMULATE_SYSTEM_PROMPT } from '../config/prompts'
 
 const LOG_MODULE = 'lib/settings.lib'
 
@@ -10,7 +11,9 @@ export const SETTING_KEYS = {
   LOG_LEVEL: 'log_level',
   LOGS_LIMIT: 'logs_limit',
   LOG_WEBHOOK: 'log_webhook',
-  DASHBOARD_RESET_AT: 'dashboard_reset_at'
+  DASHBOARD_RESET_AT: 'dashboard_reset_at',
+  AI_MODEL: 'ai_model',
+  AI_FORMULATE_SYSTEM_PROMPT: 'ai_formulate_system_prompt'
 } as const
 
 /** Настройка вебхука логов: enable — активна ли отправка, url — куда отправлять. */
@@ -23,7 +26,9 @@ export const DEFAULTS = {
   [SETTING_KEYS.LOG_LEVEL]: 'Info',
   [SETTING_KEYS.LOGS_LIMIT]: '100',
   [SETTING_KEYS.LOG_WEBHOOK]: { enable: false, url: '' } as LogWebhookSetting,
-  [SETTING_KEYS.DASHBOARD_RESET_AT]: null as number | null
+  [SETTING_KEYS.DASHBOARD_RESET_AT]: null as number | null,
+  [SETTING_KEYS.AI_MODEL]: DEFAULT_AI_MODEL,
+  [SETTING_KEYS.AI_FORMULATE_SYSTEM_PROMPT]: DEFAULT_AI_FORMULATE_SYSTEM_PROMPT
 } as const
 
 /** Допустимые уровни логирования */
@@ -125,6 +130,22 @@ export async function getDashboardResetAt(ctx: app.Ctx): Promise<number> {
     payload: { value, result }
   })
   return result
+}
+
+/**
+ * Получить модель AI (строка).
+ */
+export async function getAiModel(ctx: app.Ctx): Promise<string> {
+  const value = await getSetting(ctx, SETTING_KEYS.AI_MODEL)
+  return typeof value === 'string' && value.trim() ? value.trim() : String(DEFAULTS[SETTING_KEYS.AI_MODEL])
+}
+
+/**
+ * Получить системный промпт для AI-формулирования задач.
+ */
+export async function getAiFormulateSystemPrompt(ctx: app.Ctx): Promise<string> {
+  const value = await getSetting(ctx, SETTING_KEYS.AI_FORMULATE_SYSTEM_PROMPT)
+  return typeof value === 'string' && value.trim() ? value.trim() : String(DEFAULTS[SETTING_KEYS.AI_FORMULATE_SYSTEM_PROMPT])
 }
 
 /**

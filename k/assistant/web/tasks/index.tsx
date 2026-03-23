@@ -20,6 +20,7 @@ import { createTaskItemRoute } from '../../api/tasks/items/create'
 import { updateTaskItemRoute } from '../../api/tasks/items/update'
 import { deleteTaskItemRoute } from '../../api/tasks/items/delete'
 import { reorderTaskItemsRoute } from '../../api/tasks/items/reorder'
+import { aiFormulateTasksRoute } from '../../api/tasks/ai-formulate'
 import { getApiUrlForRoute, getFullUrl, ROUTES } from '../../config/routes'
 import { TASKS_PAGE_NAME, getPageTitle, getHeaderText } from '../../config/project'
 import * as settingsLib from '../../lib/settings.lib'
@@ -68,6 +69,7 @@ export const tasksPageRoute = app.html('/', async (ctx, _req) => {
   const taskItemUpdateUrl = getApiUrlForRoute(updateTaskItemRoute.url())
   const taskItemDeleteUrl = getApiUrlForRoute(deleteTaskItemRoute.url())
   const taskItemReorderUrl = getApiUrlForRoute(reorderTaskItemsRoute.url())
+  const taskAiFormulateUrl = getApiUrlForRoute(aiFormulateTasksRoute.url())
 
   const logLevel = await getLogLevelForPage(ctx)
   const projectName = await settingsLib.getSettingString(ctx, settingsLib.SETTING_KEYS.PROJECT_NAME)
@@ -322,6 +324,7 @@ export const tasksPageRoute = app.html('/', async (ctx, _req) => {
           taskItemUpdateUrl={taskItemUpdateUrl}
           taskItemDeleteUrl={taskItemDeleteUrl}
           taskItemReorderUrl={taskItemReorderUrl}
+          taskAiFormulateUrl={taskAiFormulateUrl}
         />
       </body>
     </html>

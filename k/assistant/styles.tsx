@@ -1,12 +1,5 @@
-// @shared
-
-/** Единый viewport для всех HTML-страниц проекта (в т.ч. safe-area на iPhone). */
 export const VIEWPORT_META_CONTENT = 'width=device-width, initial-scale=1, viewport-fit=cover'
 
-/**
- * Safe-area (вырезы, home indicator), отступы для модалок и хедера/футера.
- * Подключать вместе с `customScrollbarStyles` в `<head>` у `index.tsx` и `web/*/index.tsx`.
- */
 export const mobileSafeAreaStyles = `
   :root {
     --app-safe-top: env(safe-area-inset-top, 0px);
@@ -49,7 +42,6 @@ export const baseHtmlStyles = `
   }
 `
 
-/** Переиспользуемые стили скроллбара (тёмная тема). .content-wrapper — основной скролл; body — если скроллится страница; .custom-scrollbar — блоки вроде логов. В Chrome 121+ стандартные scrollbar-width/scrollbar-color переопределяют ::-webkit-scrollbar, поэтому стандартные свойства задаём только для Firefox через @supports. */
 export const customScrollbarStyles = `
   @supports not selector(::-webkit-scrollbar) {
     body,
@@ -89,11 +81,6 @@ export const customScrollbarStyles = `
   }
 `
 
-/**
- * Единые стили полей: убирают жёлтый autofill Chrome, задают фокус в цветах темы,
- * Выпадающие списки в модалках задач — компонент `JnCrtSelect.vue` (не нативный select).
- * Подключается в head рядом с customScrollbarStyles.
- */
 export const formControlStyles = `
   .jn-input,
   .jn-textarea {

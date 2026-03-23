@@ -27,12 +27,14 @@ function rowToProject(row: {
   name: string
   sortOrder: number
   details?: string | null
+  context?: string | null
 }): TaskProjectDto {
   return {
     id: row.id,
     clientId: row.clientId,
     name: row.name,
     details: row.details ?? '',
+    context: row.context ?? '',
     sortOrder: row.sortOrder
   }
 }
@@ -57,6 +59,7 @@ function rowToTask(row: {
   projectId: string
   title: string
   details?: string | null
+  context?: string | null
   priority: number
   status: string
   sortOrder: number
@@ -67,6 +70,7 @@ function rowToTask(row: {
     projectId: row.projectId,
     title: row.title,
     details: row.details ?? '',
+    context: row.context ?? '',
     priority: normalizePriority(row.priority),
     status: normalizeStatus(row.status),
     sortOrder: row.sortOrder,
@@ -198,18 +202,21 @@ export async function createProject(
   userId: string,
   clientId: string,
   name: string,
-  details?: string
+  details?: string,
+  context?: string
 ): Promise<TaskProjectDto | null> {
   const client = await assertClientOwner(ctx, userId, clientId)
   if (!client) return null
   const sortOrder = await nextProjectSortOrder(ctx, userId, clientId)
   const d = normalizeHeapOptionalDetailsText(details)
+  const c = normalizeHeapOptionalDetailsText(context)
   const row = await TaskProjects.create(ctx, {
     userId,
     clientId,
     name: name.trim() || 'Новый проект',
     sortOrder,
-    ...(d !== undefined ? { details: d } : {})
+    ...(d !== undefined ? { details: d } : {}),
+    ...(c !== undefined ? { context: c } : {})
   })
   return rowToProject(row)
 }
@@ -218,7 +225,7 @@ export async function updateProject(
   ctx: app.Ctx,
   userId: string,
   id: string,
-  data: { name: string; clientId?: string; details?: string }
+  data: { name: string; clientId?: string; details?: string; context?: string }
 ): Promise<TaskProjectDto | null> {
   const existing = await assertProjectOwner(ctx, userId, id)
   if (!existing) return null
@@ -239,12 +246,19 @@ export async function updateProject(
           details: normalizeHeapOptionalDetailsText(data.details) ?? (null as TaskProjects.T['details'])
         }
       : {}
+  const contextPatch =
+    data.context !== undefined
+      ? {
+          context: normalizeHeapOptionalDetailsText(data.context) ?? (null as TaskProjects.T['context'])
+        }
+      : {}
   const row = await TaskProjects.update(ctx, {
     id,
     name: data.name.trim() || existing.name,
     clientId,
     sortOrder,
-    ...detailsPatch
+    ...detailsPatch,
+    ...contextPatch
   })
   return rowToProject(row)
 }
@@ -264,7 +278,7 @@ export async function createTask(
   ctx: app.Ctx,
   userId: string,
   projectId: string,
-  data: { title: string; details?: string; priority?: number; status?: TaskStatus }
+  data: { title: string; details?: string; context?: string; priority?: number; status?: TaskStatus }
 ): Promise<TaskItemDto | null> {
   const project = await assertProjectOwner(ctx, userId, projectId)
   if (!project) return null
@@ -275,6 +289,9 @@ export async function createTask(
   const d = normalizeHeapOptionalDetailsText(
     typeof data.details === 'string' ? data.details : undefined
   )
+  const c = normalizeHeapOptionalDetailsText(
+    typeof data.context === 'string' ? data.context : undefined
+  )
   const row = await TaskItems.create(ctx, {
     userId,
     projectId,
@@ -283,7 +300,8 @@ export async function createTask(
     status,
     sortOrder,
     daySortOrder,
-    ...(d !== undefined ? { details: d } : {})
+    ...(d !== undefined ? { details: d } : {}),
+    ...(c !== undefined ? { context: c } : {})
   })
   return rowToTask(row)
 }
@@ -295,6 +313,7 @@ export async function updateTask(
   data: {
     title?: string
     details?: string
+    context?: string
     priority?: number
     status?: TaskStatus
     projectId?: string
@@ -329,9 +348,17 @@ export async function updateTask(
             normalizeHeapOptionalDetailsText(data.details) ?? (null as TaskItems.T['details'])
         }
       : {}
+  const contextPatch =
+    data.context !== undefined
+      ? {
+          context:
+            normalizeHeapOptionalDetailsText(data.context) ?? (null as TaskItems.T['context'])
+        }
+      : {}
   const patch = {
     ...(data.title !== undefined ? { title: data.title.trim() || existing.title } : {}),
     ...detailsPatch,
+    ...contextPatch,
     ...(data.priority !== undefined ? { priority: normalizePriority(data.priority) } : {}),
     ...(data.status !== undefined ? { status: nextStatus } : {}),
     ...(projectId !== existing.projectId ? { projectId, sortOrder } : {}),
