@@ -160,6 +160,7 @@
 - `../components/Header.vue`
 - `../components/GlobalGlitch.vue`
 - `../components/AppFooter.vue`
+- `../components/journal/JournalNav.vue`
 - `../components/journal/JournalNotebookPane.vue`
 - `../components/journal/JournalMonthPane.vue`
 - `../components/journal/JournalWeekPane.vue`
@@ -231,6 +232,11 @@
 
 ### `./components/journal/JournalStubPanel.vue`
 - (только разметка заглушки «В разработке»)
+
+### `./components/journal/JournalNav.vue`
+- `defineProps`: `tabs`, `activeTab`, `showNotebookToolbar`, `showDayToolbar`, `isAuthenticated`, `notebookCreateTitle`, `notebookCreateError`
+- `defineEmits`: `select-tab`, `create-note`, `open-all-tasks`
+- отвечает за левое меню журнала: список вкладок, разделитель, динамические кнопки (`Новая заметка` / `Все задачи`) и их стили/focus
 
 ### `./components/journal/JournalNotebookPane.vue`
 - `vue` → `reactive`, `ref`, `watch`

@@ -9,6 +9,7 @@ import JournalWeekPane from '../components/journal/JournalWeekPane.vue'
 import JournalDayPane from '../components/journal/JournalDayPane.vue'
 import type { TasksTreeDto } from '../lib/tasks-types'
 import JournalHabitsPane from '../components/journal/JournalHabitsPane.vue'
+import JournalNav from '../components/journal/JournalNav.vue'
 import { subscribeBootStaticReady, scheduleHideBootLoader } from '../shared/bootUi'
 import { createComponentLogger } from '../shared/logger'
 
@@ -86,11 +87,11 @@ const tabComponents: Record<JournalTabId, object> = {
 }
 
 const tabs: { id: JournalTabId; label: string }[] = [
-  { id: 'notebook', label: 'Блокнот' },
-  { id: 'month', label: 'Месяц' },
-  { id: 'week', label: 'Неделя' },
   { id: 'day', label: 'День' },
+  { id: 'week', label: 'Неделя' },
+  { id: 'month', label: 'Месяц' },
   { id: 'habits', label: 'Привычки' },
+  { id: 'notebook', label: 'Блокнот' },
 ]
 
 function resolveInitialTab(): JournalTabId {
@@ -117,6 +118,8 @@ const notebookOpenEditorTick = ref(0)
 const notebookCreateError = ref('')
 
 const showNotebookNavToolbar = computed(() => activeTab.value === 'notebook')
+const hasTasksPageUrl = computed(() => Boolean(props.tasksPageUrl?.trim()))
+const showDayNavToolbar = computed(() => activeTab.value === 'day' && hasTasksPageUrl.value)
 
 const notebookCreateTitle = computed(() =>
   props.isAuthenticated ? 'Открыть редактор новой заметки' : 'Войдите в аккаунт, чтобы создавать заметки'
@@ -127,6 +130,13 @@ function onCreateNotebookNote() {
   notebookCreateError.value = ''
   notebookOpenEditorTick.value += 1
   log.info('Запрос редактора новой заметки', { tick: notebookOpenEditorTick.value })
+}
+
+function onOpenAllTasks() {
+  const targetUrl = props.tasksPageUrl?.trim()
+  if (!targetUrl) return
+  log.info('Переход к общему списку задач', { targetUrl })
+  window.location.assign(targetUrl)
 }
 
 function onNotebookNoteCreated(note: JournalNoteSummary) {
@@ -176,6 +186,11 @@ const selectTab = (id: JournalTabId) => {
   notebookCreateError.value = ''
   activeTab.value = id
   applyTabToUrl(id)
+}
+
+function onSelectNavTab(tabId: string) {
+  if (!JOURNAL_TAB_IDS.includes(tabId as JournalTabId)) return
+  selectTab(tabId as JournalTabId)
 }
 
 function syncActiveTabFromLocation() {
@@ -234,43 +249,18 @@ const openChatiumLink = () => {
 
     <main class="content-wrapper flex-1 relative z-10 min-h-0 overflow-y-auto">
       <div class="content-inner journal-shell">
-        <nav class="journal-nav" aria-label="Разделы журнала">
-          <Transition name="journal-nav-toolbar">
-            <div v-if="showNotebookNavToolbar" class="journal-nav-toolbar">
-              <button
-                type="button"
-                class="journal-nav-action"
-                :disabled="!props.isAuthenticated"
-                :title="notebookCreateTitle"
-                @click="onCreateNotebookNote"
-              >
-                Новая заметка
-              </button>
-              <p v-if="notebookCreateError" class="journal-nav-action-error" role="alert">
-                {{ notebookCreateError }}
-              </p>
-            </div>
-          </Transition>
-          <div
-            v-if="showNotebookNavToolbar"
-            class="journal-nav-divider"
-            aria-hidden="true"
-          />
-          <ul class="journal-nav-list" role="tablist">
-            <li v-for="t in tabs" :key="t.id" class="journal-nav-item">
-              <button
-                type="button"
-                role="tab"
-                class="journal-nav-btn"
-                :class="{ 'journal-nav-btn--active': activeTab === t.id }"
-                :aria-selected="activeTab === t.id"
-                @click="selectTab(t.id)"
-              >
-                {{ t.label }}
-              </button>
-            </li>
-          </ul>
-        </nav>
+        <JournalNav
+          :tabs="tabs"
+          :activeTab="activeTab"
+          :showNotebookToolbar="showNotebookNavToolbar"
+          :showDayToolbar="showDayNavToolbar"
+          :isAuthenticated="props.isAuthenticated"
+          :notebookCreateTitle="notebookCreateTitle"
+          :notebookCreateError="notebookCreateError"
+          @select-tab="onSelectNavTab"
+          @create-note="onCreateNotebookNote"
+          @open-all-tasks="onOpenAllTasks"
+        />
 
         <section class="journal-panel" aria-live="polite">
           <Transition name="journal-view" mode="out-in">
@@ -299,133 +289,6 @@ const openChatiumLink = () => {
   gap: 0.75rem 1rem;
   max-width: 1200px;
   min-height: 40vh;
-}
-
-.journal-nav {
-  flex: 0 0 auto;
-  width: 7.25rem;
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: 0.45rem;
-}
-
-.journal-nav-toolbar {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: 0.35rem;
-}
-
-.journal-nav-toolbar-enter-active,
-.journal-nav-toolbar-leave-active {
-  transition:
-    opacity 0.22s cubic-bezier(0.4, 0, 0.2, 1),
-    transform 0.22s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.journal-nav-toolbar-enter-from,
-.journal-nav-toolbar-leave-to {
-  opacity: 0;
-  transform: translateY(-6px);
-}
-
-.journal-nav-divider {
-  height: 0;
-  margin: 0.1rem 0;
-  border: 0;
-  border-top: 1px solid var(--color-border-light);
-  opacity: 0.85;
-}
-
-.journal-nav-action {
-  width: 100%;
-  margin: 0;
-  padding: 0.35rem 0.4rem;
-  box-sizing: border-box;
-  font-family: inherit;
-  font-size: 0.62rem;
-  font-weight: 400;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  text-align: center;
-  line-height: 1.3;
-  color: var(--color-text);
-  background: var(--color-accent-light);
-  border: 1px solid var(--color-accent);
-  border-radius: 2px;
-  cursor: pointer;
-  transition: var(--transition);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.35rem;
-}
-
-.journal-nav-action:hover:not(:disabled) {
-  background: var(--color-accent-medium);
-  border-color: var(--color-accent-hover);
-  color: #fff;
-}
-
-.journal-nav-action:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-}
-
-.journal-nav-action-error {
-  margin: 0;
-  font-size: 0.6rem;
-  line-height: 1.25;
-  color: var(--color-accent-hover);
-  letter-spacing: 0.03em;
-}
-
-.journal-nav-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
-}
-
-.journal-nav-item {
-  margin: 0;
-}
-
-.journal-nav-btn {
-  width: 100%;
-  margin: 0;
-  padding: 0.35rem 0.45rem;
-  box-sizing: border-box;
-  font-family: inherit;
-  font-size: 0.68rem;
-  font-weight: 400;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  text-align: left;
-  color: var(--color-text-secondary);
-  background: var(--color-bg-secondary);
-  border: 1px solid var(--color-border);
-  border-left: 2px solid transparent;
-  cursor: pointer;
-  transition: var(--transition);
-  line-height: 1.25;
-}
-
-.journal-nav-btn:hover {
-  color: var(--color-text);
-  border-color: var(--color-border-light);
-  background: var(--color-bg-tertiary);
-}
-
-.journal-nav-btn--active {
-  color: var(--color-text);
-  border-color: var(--color-border-light);
-  border-left-color: var(--color-accent);
-  background: var(--color-accent-light);
-  box-shadow: 0 0 12px var(--color-accent-medium);
 }
 
 .journal-panel {
@@ -459,50 +322,6 @@ const openChatiumLink = () => {
   .journal-shell {
     flex-direction: column;
     align-items: stretch;
-  }
-
-  .journal-nav {
-    width: 100%;
-    flex-direction: column;
-  }
-
-  .journal-nav-action {
-    font-size: 0.65rem;
-    padding: 0.4rem 0.5rem;
-  }
-
-  .journal-nav-divider {
-    margin: 0.15rem 0;
-  }
-
-  .journal-nav-list {
-    flex-direction: row;
-    flex-wrap: nowrap;
-    gap: 0.25rem;
-    overflow-x: auto;
-    padding-bottom: 0.15rem;
-    -webkit-overflow-scrolling: touch;
-    scroll-snap-type: x proximity;
-  }
-
-  .journal-nav-item {
-    scroll-snap-align: start;
-  }
-
-  .journal-nav-btn {
-    width: auto;
-    flex: 0 0 auto;
-    white-space: nowrap;
-    border-left-width: 1px;
-    border-bottom: 2px solid transparent;
-    text-align: center;
-    padding: 0.3rem 0.5rem;
-    min-height: 2.5rem;
-  }
-
-  .journal-nav-btn--active {
-    border-left-color: var(--color-border-light);
-    border-bottom-color: var(--color-accent);
   }
 }
 </style>

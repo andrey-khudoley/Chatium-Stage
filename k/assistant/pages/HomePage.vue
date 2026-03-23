@@ -150,10 +150,8 @@ const openChatiumLink = () => {
       :adminUrl="props.adminUrl"
       :testsUrl="props.testsUrl"
     />
-    <!-- Content -->
     <main class="content-wrapper flex-1 relative z-10 min-h-0 overflow-y-auto">
       <div class="content-inner">
-        <!-- Hero Section -->
         <section class="hero-section" :class="{ 'hero-ready': bootLoaderDone }">
           <div class="hero-icon-wrapper" :class="{ 'hero-icon-visible': bootLoaderDone }" @click="triggerGlitch">
             <i class="fas fa-tasks hero-icon"></i>
@@ -178,6 +176,26 @@ const openChatiumLink = () => {
           <button type="button" class="home-card home-card-action" @click="triggerGlitch">
             <i class="fas fa-comments home-card-icon" aria-hidden="true"></i>
             <span class="home-card-label">Диалоги</span>
+          </button>
+          <button type="button" class="home-card home-card-action" @click="triggerGlitch">
+            <i class="fas fa-screwdriver-wrench home-card-icon" aria-hidden="true"></i>
+            <span class="home-card-label">Инструменты</span>
+          </button>
+          <button type="button" class="home-card home-card-action" @click="triggerGlitch">
+            <i class="fas fa-layer-group home-card-icon" aria-hidden="true"></i>
+            <span class="home-card-label">PARA</span>
+          </button>
+          <button type="button" class="home-card home-card-action" @click="triggerGlitch">
+            <i class="fas fa-wallet home-card-icon" aria-hidden="true"></i>
+            <span class="home-card-label">Финансы</span>
+          </button>
+          <button type="button" class="home-card home-card-action" @click="triggerGlitch">
+            <i class="fas fa-network-wired home-card-icon" aria-hidden="true"></i>
+            <span class="home-card-label">Сервисы</span>
+          </button>
+          <button type="button" class="home-card home-card-action" @click="triggerGlitch">
+            <i class="fas fa-book-open-reader home-card-icon" aria-hidden="true"></i>
+            <span class="home-card-label">Библиотека</span>
           </button>
         </section>
       </div>
@@ -471,10 +489,10 @@ body {
 
 .home-cards-section {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 1.25rem;
   width: 100%;
-  max-width: 900px;
+  max-width: 1120px;
   margin: 0 auto;
   padding: 0 0 0.5rem;
 }
@@ -533,8 +551,8 @@ body {
   .hero-heading { font-size: 2rem; }
   .hero-description { font-size: 0.9375rem; }
   .home-cards-section {
-    grid-template-columns: 1fr;
-    max-width: 22rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    max-width: 32rem;
   }
 }
 
@@ -549,6 +567,10 @@ body {
   .home-card {
     min-height: 3.5rem;
     padding: 1.25rem 0.85rem;
+  }
+  .home-cards-section {
+    grid-template-columns: 1fr;
+    max-width: 22rem;
   }
 }
 </style>
