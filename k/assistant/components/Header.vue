@@ -19,9 +19,16 @@
         </a>
       </div>
       <div class="header-right">
-        <span class="header-clock">
+        <span v-if="!pomodoroActive" class="header-clock">
           <i class="fas fa-clock"></i>
           <span class="clock-time">{{ currentTime }}</span>
+        </span>
+        <span v-else class="header-clock header-clock--pomodoro">
+          <i class="fas fa-hourglass-half"></i>
+          <span class="clock-time">{{ pomodoroDisplay }}</span>
+          <button type="button" class="header-pomodoro-toggle" @click="togglePomodoroPauseResume">
+            <i :class="pomodoroStatus === 'running' ? 'fas fa-pause' : 'fas fa-play'" />
+          </button>
         </span>
         <div class="header-actions">
         <a 
@@ -76,7 +83,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { computed, ref, onMounted, onUnmounted } from 'vue'
 import LogoutModal from './LogoutModal.vue'
 import { createComponentLogger } from '../shared/logger'
 
@@ -92,11 +99,28 @@ const props = defineProps<{
   isAdmin?: boolean
   adminUrl?: string
   testsUrl?: string
+  pomodoroStateGetUrl?: string
+  pomodoroControlUrl?: string
 }>()
 
 const isGlitching = ref(false)
 const showLogoutModal = ref(false)
 const currentTime = ref('')
+const pomodoroStatus = ref<'stopped' | 'running' | 'paused'>('stopped')
+const pomodoroEndsAtMs = ref(0)
+const pomodoroRemainingSec = ref(0)
+const nowTick = ref(Date.now())
+const pomodoroActive = computed(() => !!props.pomodoroStateGetUrl && !!props.pomodoroControlUrl && pomodoroStatus.value !== 'stopped')
+const pomodoroDisplaySec = computed(() => {
+  if (pomodoroStatus.value === 'running') {
+    return Math.max(0, Math.floor((pomodoroEndsAtMs.value - nowTick.value) / 1000))
+  }
+  return Math.max(0, pomodoroRemainingSec.value)
+})
+const pomodoroDisplay = computed(() => {
+  const sec = pomodoroDisplaySec.value
+  return `${String(Math.floor(sec / 60)).padStart(2, '0')}:${String(sec % 60).padStart(2, '0')}`
+})
 
 // Функция для форматирования времени
 const updateTime = () => {
@@ -108,12 +132,66 @@ const updateTime = () => {
 }
 
 let timeInterval: number | null = null
+let pomodoroPollInterval: number | null = null
+let nowTickInterval: number | null = null
 let escHandler: ((e: KeyboardEvent) => void) | null = null
+
+const readApiJson = async <T,>(response: Response): Promise<T> => {
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status}`)
+  }
+  const contentType = response.headers.get('content-type') ?? ''
+  if (!contentType.toLowerCase().includes('application/json')) {
+    throw new Error('Non-JSON response')
+  }
+  return response.json() as Promise<T>
+}
+
+const syncPomodoro = async () => {
+  if (!props.pomodoroStateGetUrl) return
+  try {
+    const r = await fetch(props.pomodoroStateGetUrl, { credentials: 'include' })
+    const j = await readApiJson<{ success?: boolean; state?: { status: 'stopped' | 'running' | 'paused'; phaseEndsAtMs: number; phaseRemainingSec: number } }>(r)
+    if (!j.success || !j.state) return
+    pomodoroStatus.value = j.state.status
+    pomodoroEndsAtMs.value = j.state.phaseEndsAtMs
+    pomodoroRemainingSec.value = j.state.phaseRemainingSec
+  } catch (error) {
+    log.warning('Pomodoro sync failed', { error: String(error) })
+  }
+}
+
+const togglePomodoroPauseResume = async () => {
+  if (!props.pomodoroControlUrl || pomodoroStatus.value === 'stopped') return
+  const action = pomodoroStatus.value === 'running' ? 'pause' : 'resume'
+  try {
+    const r = await fetch(props.pomodoroControlUrl, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action })
+    })
+    const j = await readApiJson<{ success?: boolean; state?: { status: 'stopped' | 'running' | 'paused'; phaseEndsAtMs: number; phaseRemainingSec: number } }>(r)
+    if (j.success && j.state) {
+      pomodoroStatus.value = j.state.status
+      pomodoroEndsAtMs.value = j.state.phaseEndsAtMs
+      pomodoroRemainingSec.value = j.state.phaseRemainingSec
+    }
+  } catch (error) {
+    log.warning('Pomodoro toggle failed', { error: String(error) })
+  }
+}
 
 onMounted(() => {
   log.info('Component mounted, clock started')
   updateTime()
   timeInterval = window.setInterval(updateTime, 1000)
+  nowTick.value = Date.now()
+  nowTickInterval = window.setInterval(() => { nowTick.value = Date.now() }, 1000)
+  if (props.isAuthenticated && props.pomodoroStateGetUrl && props.pomodoroControlUrl) {
+    void syncPomodoro()
+    pomodoroPollInterval = window.setInterval(() => { void syncPomodoro() }, 7000)
+  }
 
   // Обработчик Esc для закрытия модального окна выхода
   escHandler = (e: KeyboardEvent) => {
@@ -130,6 +208,8 @@ onUnmounted(() => {
   if (timeInterval) {
     clearInterval(timeInterval)
   }
+  if (pomodoroPollInterval) clearInterval(pomodoroPollInterval)
+  if (nowTickInterval) clearInterval(nowTickInterval)
   
   // Удаляем обработчик Esc при размонтировании
   if (escHandler) {
@@ -480,6 +560,23 @@ const cancelLogout = () => {
 
 .clock-time {
   font-family: 'Share Tech Mono', 'Courier New', monospace;
+}
+
+.header-clock--pomodoro {
+  gap: 0.5rem;
+}
+
+.header-pomodoro-toggle {
+  border: 1px solid var(--color-border-light);
+  background: var(--color-bg-tertiary);
+  color: var(--color-text);
+  width: 1.35rem;
+  height: 1.35rem;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
 }
 
 .header-clock:hover {

@@ -42,7 +42,7 @@
 | GET | /api/tests/list | api/tests/list.ts | AnyUser | Каталог тестов: список категорий и тестов. Возвращает `{ success: true, categories }`. |
 | GET | /api/tests/endpoints-check/health | api/tests/endpoints-check/health.ts | AnyUser | Тест: health check. Возвращает `{ success: true, ok: true, test: 'health', at }`. |
 | GET | /api/tests/endpoints-check/ping | api/tests/endpoints-check/ping.ts | AnyUser | Тест: ping. Возвращает `{ success: true, pong: true, test: 'ping', at }`. |
-| GET | /api/tests/endpoints-check/config | api/tests/endpoints-check/config.ts | AnyUser | Тест слоя config (routes, project). Возвращает `{ success, test: 'config', routes: { index, admin, login, profile, tests, journal, tasks }, pageTitle, headerText, at }`. |
+| GET | /api/tests/endpoints-check/config | api/tests/endpoints-check/config.ts | AnyUser | Тест слоя config (routes, project). Возвращает `{ success, test: 'config', routes: { index, admin, login, profile, tests, journal, tasks, tools, pomodoro }, pageTitle, headerText, at }`. |
 | GET | /api/tests/endpoints-check/settings-lib | api/tests/endpoints-check/settings-lib.ts | AnyUser | Тесты библиотеки настроек: массив `results` по каждой функции (getSettingString, getLogLevel, getLogsLimit, getLogWebhook, getDashboardResetAt, getAllSettings). |
 | GET | /api/tests/endpoints-check/settings-repo | api/tests/endpoints-check/settings-repo.ts | AnyUser | Тесты репозитория настроек: массив `results` (upsert, deleteByKey, findByKey, findAll). Порядок: создание до чтения. |
 | GET | /api/tests/endpoints-check/logger-lib | api/tests/endpoints-check/logger-lib.ts | AnyUser | Тесты библиотеки логов: массив `results` (getAdminLogsSocketId, shouldLogByLevel). |
@@ -90,10 +90,27 @@
 | GET | `/tasks-ai-chat/:feedId/messages/changes` | api/tasks/tasks-ai-chat-messages-changes.ts | RealUser | `feedMessagesChangesHandler` + тот же маппинг авторов. |
 | POST | `/tasks-ai-chat/:feedId/messages/add` | api/tasks/tasks-ai-chat-messages-add.ts | RealUser | `feedMessagesAddHandler`; после успешного add — `runTaskAiChatReplyIfNeeded` в `tasks-ai-chat-reply.ts` (`startCompletion`, в proxy context). В system перед каждым запросом подставляется актуальный блок из `buildTaskAiChatProjectContextBlock` (`tasks-ai-chat-lib.ts`): проект, задачи, **details** и служебные **context** у проекта и задач из Heap, с явной шапкой «СЛУЖЕБНЫЙ КОНТЕКСТ ПРОЕКТА (НЕ СООБЩЕНИЕ ПОЛЬЗОВАТЕЛЯ)». Последнее пользовательское сообщение передаётся отдельным user-блоком «ТЕКУЩЕЕ СООБЩЕНИЕ ПОЛЬЗОВАТЕЛЯ». Системный текст: `getAiFormulateSystemPrompt` + `TASKS_AI_CHAT_JSON_APPENDIX` в `config/prompts.tsx` (разделение: сквозная рамка проекта — `update_project.context` без повторения списка задач; уточнения по строкам — `update_task` / `create_task`, полные слитые `context` по правилам промпта). Ответ модели — JSON с `reply`, `actions`, `summary`; применение в Heap — `tasks-ai-chat-completion-completed.ts` → `tasks-ai-formulate-apply.ts` (create/update/delete/reorder, `reorder_tasks` с `$new:N`). В ленту пишется только текст `reply`. Отдельного роута `ai-formulate` нет. |
 
+## Pomodoro (api/pomodoro/)
+
+Личный таймер пользователя (состояние и настройки в Heap), синхронизация с задачами и шапкой UI. Все маршруты работают для `requireRealUser`.
+
+| Method | Path | File | Auth | Назначение |
+| --- | --- | --- | --- | --- |
+| GET | /api/pomodoro/state/get | api/pomodoro/state/get.ts | RealUser | Текущее состояние таймера: `{ success, state, serverNowMs }`, где state включает `status`, `phase`, `phaseRemainingSec`, `phaseEndsAtMs`, текущую задачу и агрегаты времени. |
+| POST | /api/pomodoro/control | api/pomodoro/control.ts | RealUser | Управление состоянием. Body: `{ action }`, где `action ∈ { start, resume, pause, stop }`. Ответ: `{ success, state, serverNowMs }`. |
+| POST | /api/pomodoro/settings/save | api/pomodoro/settings/save.ts | RealUser | Сохранить настройки таймера. Body: `{ workMinutes, restMinutes, longRestMinutes, cyclesUntilLongRest, pauseAfterWork, pauseAfterRest, afterLongRest }`, где `afterLongRest ∈ { stop, pause }`. |
+| POST | /api/pomodoro/assign-task | api/pomodoro/assign-task.ts | RealUser | Привязать текущую задачу к Pomodoro. Body: `{ taskId }`. Проверяется, что задача принадлежит пользователю; при активном тике накопленное время задачи синхронизируется перед сменой привязки. |
+
 ## Публичные эндпоинты
 | Method | Path | File | Auth | Назначение |
 | --- | --- | --- | --- | --- |
 | - | - | - | - | - |
+
+Примечания по семантике `control`:
+- `start` всегда запускает/перезапускает рабочую фазу (`phase=work`, полный `workMinutes`) из любого статуса.
+- `resume` изменяет состояние только из `paused` (в остальных случаях возвращает текущее состояние без ошибки).
+- `pause` изменяет состояние только из `running` (в остальных случаях возвращает текущее состояние без ошибки).
+- `stop` переводит в `stopped`, сбрасывает фазу в `work` и очищает `currentTaskId`.
 
 ## События и webhooks
 - Не используются.

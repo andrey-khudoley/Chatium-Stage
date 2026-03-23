@@ -12,7 +12,9 @@ export const ROUTES = {
   login: './web/login',
   tests: './web/tests',
   journal: './web/journal',
-  tasks: './web/tasks'
+  tasks: './web/tasks',
+  tools: './web/tools',
+  pomodoro: './web/pomodoro'
 } as const
 
 /** Пути для getFullUrl (абсолютные от корня проекта) */
@@ -23,7 +25,9 @@ export const ROUTE_PATHS = {
   login: '/web/login',
   tests: '/web/tests',
   journal: '/web/journal',
-  tasks: '/web/tasks'
+  tasks: '/web/tasks',
+  tools: '/web/tools',
+  pomodoro: '/web/pomodoro'
 } as const
 
 /**

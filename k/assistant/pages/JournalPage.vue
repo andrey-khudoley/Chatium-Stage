@@ -72,6 +72,9 @@ const props = defineProps<{
   taskReleaseDayUrl?: string
   taskItemUpdateUrl?: string
   tasksPageUrl?: string
+  pomodoroAssignTaskUrl?: string
+  pomodoroStateGetUrl?: string
+  pomodoroControlUrl?: string
   /** Вкладка из `?tab=` при SSR; на клиенте приоритет у текущего `window.location` */
   journalTabInitial?: JournalTabId
 }>()
@@ -171,7 +174,8 @@ const dayPaneProps = computed(() => ({
   taskItemReorderDayUrl: props.taskItemReorderDayUrl ?? '',
   taskReleaseDayUrl: props.taskReleaseDayUrl ?? '',
   taskItemUpdateUrl: props.taskItemUpdateUrl ?? '',
-  tasksPageUrl: props.tasksPageUrl ?? ''
+  tasksPageUrl: props.tasksPageUrl ?? '',
+  pomodoroAssignTaskUrl: props.pomodoroAssignTaskUrl ?? ''
 }))
 
 const panePropsForTab = computed(() => {
@@ -245,6 +249,8 @@ const openChatiumLink = () => {
       :isAdmin="props.isAdmin"
       :adminUrl="props.adminUrl"
       :testsUrl="props.testsUrl"
+      :pomodoroStateGetUrl="props.pomodoroStateGetUrl"
+      :pomodoroControlUrl="props.pomodoroControlUrl"
     />
 
     <main class="content-wrapper flex-1 relative z-10 min-h-0 overflow-y-auto">

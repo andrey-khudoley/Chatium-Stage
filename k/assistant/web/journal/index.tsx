@@ -15,6 +15,9 @@ import { getTasksTreeRoute } from '../../api/tasks/tree/get'
 import { reorderTaskDayItemsRoute } from '../../api/tasks/items/reorder-day'
 import { releaseTaskDayItemsRoute } from '../../api/tasks/items/release-day'
 import { updateTaskItemRoute } from '../../api/tasks/items/update'
+import { pomodoroAssignTaskRoute } from '../../api/pomodoro/assign-task'
+import { getPomodoroStateRoute } from '../../api/pomodoro/state/get'
+import { pomodoroControlRoute } from '../../api/pomodoro/control'
 import { getApiUrlForRoute, getFullUrl, ROUTES } from '../../config/routes'
 import type { TasksTreeDto } from '../../lib/tasks-types'
 import { JOURNAL_PAGE_NAME, getPageTitle, getHeaderText } from '../../config/project'
@@ -71,6 +74,9 @@ export const journalPageRoute = app.html('/', async (ctx, req) => {
   const taskItemReorderDayUrl = getApiUrlForRoute(reorderTaskDayItemsRoute.url())
   const taskReleaseDayUrl = getApiUrlForRoute(releaseTaskDayItemsRoute.url())
   const taskItemUpdateUrl = getApiUrlForRoute(updateTaskItemRoute.url())
+  const pomodoroAssignTaskUrl = getApiUrlForRoute(pomodoroAssignTaskRoute.url())
+  const pomodoroStateGetUrl = getApiUrlForRoute(getPomodoroStateRoute.url())
+  const pomodoroControlUrl = getApiUrlForRoute(pomodoroControlRoute.url())
   const tasksPageUrl = getFullUrl(ROUTES.tasks)
   const journalTabInitial = parseJournalTabFromQuery(req.query?.tab)
 
@@ -324,6 +330,9 @@ export const journalPageRoute = app.html('/', async (ctx, req) => {
           taskReleaseDayUrl={taskReleaseDayUrl}
           taskItemUpdateUrl={taskItemUpdateUrl}
           tasksPageUrl={tasksPageUrl}
+          pomodoroAssignTaskUrl={pomodoroAssignTaskUrl}
+          pomodoroStateGetUrl={pomodoroStateGetUrl}
+          pomodoroControlUrl={pomodoroControlUrl}
           journalTabInitial={journalTabInitial}
         />
       </body>

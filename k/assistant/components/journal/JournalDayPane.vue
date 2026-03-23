@@ -16,7 +16,7 @@
         title="Перевести все задачи «В работе» в «К выполнению»"
         @click="releaseAll"
       >
-        <i class="fa-solid fa-arrow-rotate-left" aria-hidden="true" />
+        <i class="fas fa-arrow-rotate-left" aria-hidden="true" />
         В очередь
       </button>
     </header>
@@ -52,7 +52,7 @@
             @dragstart="onDragStart(t.id)"
             @dragend="onDragEnd"
           >
-            <i class="fa-solid fa-grip-vertical" />
+            <i class="fas fa-grip-vertical" />
           </span>
 
           <div class="journal-day-body">
@@ -91,7 +91,7 @@
               :disabled="idx === 0 || loading"
               @click="moveTask(idx, -1)"
             >
-              <i class="fa-solid fa-chevron-up" aria-hidden="true" />
+              <i class="fas fa-chevron-up" aria-hidden="true" />
             </button>
             <button
               type="button"
@@ -100,7 +100,10 @@
               :disabled="idx >= dayTasks.length - 1 || loading"
               @click="moveTask(idx, 1)"
             >
-              <i class="fa-solid fa-chevron-down" aria-hidden="true" />
+              <i class="fas fa-chevron-down" aria-hidden="true" />
+            </button>
+            <button type="button" class="journal-day-sort-btn" title="В помидор" @click="addToPomodoro(t.id)">
+              <i class="fas fa-clock" aria-hidden="true" />
             </button>
           </div>
         </li>
@@ -164,6 +167,7 @@ const props = defineProps<{
   taskReleaseDayUrl: string
   taskItemUpdateUrl: string
   tasksPageUrl: string
+  pomodoroAssignTaskUrl: string
 }>()
 
 const tree = ref<TasksTreeDto>({
@@ -312,6 +316,13 @@ async function postJson<T>(url: string, body: Record<string, unknown>): Promise<
     credentials: 'include',
     body: JSON.stringify(body)
   })
+  if (!r.ok) {
+    throw new Error(`HTTP ${r.status}`)
+  }
+  const contentType = r.headers.get('content-type') ?? ''
+  if (!contentType.toLowerCase().includes('application/json')) {
+    throw new Error('Сервер вернул не-JSON ответ')
+  }
   return r.json() as Promise<T>
 }
 
@@ -424,6 +435,18 @@ async function releaseAll() {
     globalError.value = String(e)
   } finally {
     loading.value = false
+  }
+}
+
+async function addToPomodoro(taskId: string) {
+  globalError.value = ''
+  try {
+    const j = await postJson<{ success: boolean; error?: string }>(props.pomodoroAssignTaskUrl, { taskId })
+    if (!j.success) {
+      globalError.value = j.error ?? 'Не удалось добавить задачу в pomodoro'
+    }
+  } catch (e) {
+    globalError.value = String(e)
   }
 }
 </script>

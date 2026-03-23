@@ -1,0 +1,58 @@
+<script setup lang="ts">
+import Header from '../components/Header.vue'
+import GlobalGlitch from '../components/GlobalGlitch.vue'
+import AppFooter from '../components/AppFooter.vue'
+
+const props = defineProps<{
+  projectTitle: string
+  indexUrl: string
+  profileUrl: string
+  loginUrl: string
+  isAuthenticated: boolean
+  isAdmin?: boolean
+  adminUrl?: string
+  testsUrl?: string
+  pomodoroUrl: string
+  pomodoroStateGetUrl?: string
+  pomodoroControlUrl?: string
+}>()
+</script>
+
+<template>
+  <div class="app-layout bg-[var(--color-bg)] text-[var(--color-text)] flex flex-col">
+    <GlobalGlitch />
+    <Header
+      :projectTitle="props.projectTitle"
+      :indexUrl="props.indexUrl"
+      :profileUrl="props.profileUrl"
+      :loginUrl="props.loginUrl"
+      :isAuthenticated="props.isAuthenticated"
+      :isAdmin="props.isAdmin"
+      :adminUrl="props.adminUrl"
+      :testsUrl="props.testsUrl"
+      :pomodoroStateGetUrl="props.pomodoroStateGetUrl"
+      :pomodoroControlUrl="props.pomodoroControlUrl"
+    />
+    <main class="content-wrapper flex-1 relative z-10 min-h-0 overflow-y-auto">
+      <div class="content-inner tools-shell">
+        <h2 class="tools-title">Инструменты</h2>
+        <a class="tools-card" :href="props.pomodoroUrl">
+          <i class="fas fa-clock tools-card-icon" />
+          <span>Pomodoro</span>
+        </a>
+      </div>
+    </main>
+    <AppFooter />
+  </div>
+</template>
+
+<style scoped>
+.app-layout { min-height: 100vh; }
+.content-wrapper { display: flex; }
+.content-inner { width: 100%; }
+.tools-shell { max-width: 860px; margin: 0 auto; padding: 1rem; }
+.tools-title { margin: 0 0 1rem; text-transform: uppercase; letter-spacing: .12em; font-size: .9rem; }
+.tools-card { display: inline-flex; gap: .6rem; align-items: center; padding: .9rem 1rem; border: 1px solid var(--color-border); background: var(--color-bg-secondary); color: var(--color-text); text-decoration: none; }
+.tools-card:hover { border-color: var(--color-accent); box-shadow: 0 0 10px var(--color-accent-light); }
+.tools-card-icon { color: var(--color-accent-hover); }
+</style>

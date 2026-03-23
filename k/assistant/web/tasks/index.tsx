@@ -22,6 +22,9 @@ import { deleteTaskItemRoute } from '../../api/tasks/items/delete'
 import { reorderTaskItemsRoute } from '../../api/tasks/items/reorder'
 import { taskAiChatEnsureRoute } from '../../api/tasks/tasks-ai-chat-ensure'
 import { taskAiChatResetRoute } from '../../api/tasks/tasks-ai-chat-reset'
+import { pomodoroAssignTaskRoute } from '../../api/pomodoro/assign-task'
+import { getPomodoroStateRoute } from '../../api/pomodoro/state/get'
+import { pomodoroControlRoute } from '../../api/pomodoro/control'
 import { getApiUrlForRoute, getFullUrl, ROUTES } from '../../config/routes'
 import { TASKS_PAGE_NAME, getPageTitle, getHeaderText } from '../../config/project'
 import * as settingsLib from '../../lib/settings.lib'
@@ -72,6 +75,9 @@ export const tasksPageRoute = app.html('/', async (ctx, _req) => {
   const taskItemReorderUrl = getApiUrlForRoute(reorderTaskItemsRoute.url())
   const taskAiChatEnsureUrl = getApiUrlForRoute(taskAiChatEnsureRoute.url())
   const taskAiChatResetUrl = getApiUrlForRoute(taskAiChatResetRoute.url())
+  const pomodoroAssignTaskUrl = getApiUrlForRoute(pomodoroAssignTaskRoute.url())
+  const pomodoroStateGetUrl = getApiUrlForRoute(getPomodoroStateRoute.url())
+  const pomodoroControlUrl = getApiUrlForRoute(pomodoroControlRoute.url())
 
   const logLevel = await getLogLevelForPage(ctx)
   const projectName = await settingsLib.getSettingString(ctx, settingsLib.SETTING_KEYS.PROJECT_NAME)
@@ -328,6 +334,9 @@ export const tasksPageRoute = app.html('/', async (ctx, _req) => {
           taskItemReorderUrl={taskItemReorderUrl}
           taskAiChatEnsureUrl={taskAiChatEnsureUrl}
           taskAiChatResetUrl={taskAiChatResetUrl}
+          pomodoroAssignTaskUrl={pomodoroAssignTaskUrl}
+          pomodoroStateGetUrl={pomodoroStateGetUrl}
+          pomodoroControlUrl={pomodoroControlUrl}
         />
       </body>
     </html>

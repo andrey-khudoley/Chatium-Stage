@@ -1,6 +1,6 @@
-import TaskClients from '../tables/task-clients.table'
-import TaskProjects from '../tables/task-projects.table'
-import TaskItems, { TASK_STATUSES } from '../tables/task-items.table'
+import { TaskClients } from '../tables/task-clients.table'
+import { TaskProjects } from '../tables/task-projects.table'
+import { TaskItems, TASK_STATUSES } from '../tables/task-items.table'
 import type { TaskClientDto, TaskItemDto, TaskProjectDto, TasksTreeDto, TaskStatus } from '../lib/tasks-types'
 
 export type { TaskClientDto, TaskItemDto, TaskProjectDto, TasksTreeDto, TaskStatus } from '../lib/tasks-types'
@@ -64,6 +64,8 @@ function rowToTask(row: {
   status: string
   sortOrder: number
   daySortOrder?: number
+  pomodoroWorkSec?: number
+  pomodoroRestSec?: number
 }): TaskItemDto {
   return {
     id: row.id,
@@ -74,7 +76,9 @@ function rowToTask(row: {
     priority: normalizePriority(row.priority),
     status: normalizeStatus(row.status),
     sortOrder: row.sortOrder,
-    daySortOrder: normalizeDaySortOrder(row.daySortOrder)
+    daySortOrder: normalizeDaySortOrder(row.daySortOrder),
+    pomodoroWorkSec: Math.max(0, Math.floor(row.pomodoroWorkSec ?? 0)),
+    pomodoroRestSec: Math.max(0, Math.floor(row.pomodoroRestSec ?? 0))
   }
 }
 
@@ -157,6 +161,11 @@ async function assertTaskOwner(ctx: app.Ctx, userId: string, id: string) {
   const row = await TaskItems.findById(ctx, id)
   if (!row || row.userId !== userId) return null
   return row
+}
+
+export async function findTaskByIdForUser(ctx: app.Ctx, userId: string, id: string): Promise<TaskItemDto | null> {
+  const row = await assertTaskOwner(ctx, userId, id)
+  return row ? rowToTask(row) : null
 }
 
 export async function createClient(ctx: app.Ctx, userId: string, name: string): Promise<TaskClientDto> {
@@ -300,10 +309,26 @@ export async function createTask(
     status,
     sortOrder,
     daySortOrder,
+    pomodoroWorkSec: 0,
+    pomodoroRestSec: 0,
     ...(d !== undefined ? { details: d } : {}),
     ...(c !== undefined ? { context: c } : {})
   })
   return rowToTask(row)
+}
+
+export async function addPomodoroSecondsToTask(
+  ctx: app.Ctx,
+  userId: string,
+  taskId: string,
+  addWorkSec: number,
+  addRestSec: number
+): Promise<void> {
+  const task = await assertTaskOwner(ctx, userId, taskId)
+  if (!task) return
+  const nextWork = Math.max(0, Math.floor((task.pomodoroWorkSec ?? 0) + addWorkSec))
+  const nextRest = Math.max(0, Math.floor((task.pomodoroRestSec ?? 0) + addRestSec))
+  await TaskItems.update(ctx, { id: task.id, pomodoroWorkSec: nextWork, pomodoroRestSec: nextRest })
 }
 
 export async function updateTask(

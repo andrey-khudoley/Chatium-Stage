@@ -47,6 +47,14 @@ export const TaskItems = Heap.Table('t__assistant__task_item__2Vx8sT', {
   /** Порядок в дневном списке (задачи «В работе» на вкладке «День» журнала) */
   daySortOrder: Heap.Number({
     customMeta: { title: 'Порядок в дневном списке' }
+  }),
+  /** Накопленное время в работе Pomodoro, секунды */
+  pomodoroWorkSec: Heap.Number({
+    customMeta: { title: 'Pomodoro работа (сек)' }
+  }),
+  /** Накопленное время в отдыхе Pomodoro, секунды */
+  pomodoroRestSec: Heap.Number({
+    customMeta: { title: 'Pomodoro отдых (сек)' }
   })
 })
 

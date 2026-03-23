@@ -3,10 +3,10 @@
 ## 1) Страницы‑роуты (TSX entrypoints)
 
 ### `./config/routes.tsx`
-- нет внутренних импортов (только экспорт PROJECT_ROOT, ROUTES, getFullUrl, getApiUrlForRoute, withProjectRoot, withProjectRootAndSubroute)
+- нет внутренних импортов (только экспорт PROJECT_ROOT, ROUTES, ROUTE_PATHS, getFullUrl, getApiUrlForRoute, withProjectRoot, withProjectRootAndSubroute)
 
 ### `./config/project.tsx`
-- нет внутренних импортов (только экспорт DEFAULT_PROJECT_TITLE, INDEX_PAGE_NAME, PROFILE_PAGE_NAME, ADMIN_PAGE_NAME, TESTS_PAGE_NAME, JOURNAL_PAGE_NAME, TASKS_PAGE_NAME, getPageTitle, getHeaderText, BODY_TEXT, BODY_SUBTEXT)
+- нет внутренних импортов (только экспорт DEFAULT_PROJECT_TITLE, INDEX_PAGE_NAME, PROFILE_PAGE_NAME, ADMIN_PAGE_NAME, TESTS_PAGE_NAME, JOURNAL_PAGE_NAME, TASKS_PAGE_NAME, TOOLS_PAGE_NAME, POMODORO_PAGE_NAME, getPageTitle, getHeaderText, BODY_TEXT, BODY_SUBTEXT)
 
 ### `./index.tsx`
 - `@app/html-jsx` → `jsx`
@@ -14,11 +14,13 @@
 - `./shared/preloader` → `getPreloaderStyles`, `getPreloaderScript`
 - `./styles` → `customScrollbarStyles`, `mobileSafeAreaStyles`, `formControlStyles`, `VIEWPORT_META_CONTENT`
 - `./shared/logLevel` → `getLogLevelForPage`, `getLogLevelScript`
-- `./config/routes` → `getFullUrl`, `ROUTES`
+- `./config/routes` → `getApiUrlForRoute`, `getFullUrl`, `ROUTES`
 - `./config/project` → `INDEX_PAGE_NAME`, `BODY_TEXT`, `BODY_SUBTEXT`, `getPageTitle`, `getHeaderText`
 - `./lib/logger.lib` → `*`
 - `./lib/settings.lib` → `*`
-- передаёт в `HomePage`: `tasksUrl` (`getFullUrl(ROUTES.tasks)`), `journalUrl`, др.
+- `./api/pomodoro/state/get` → `getPomodoroStateRoute`
+- `./api/pomodoro/control` → `pomodoroControlRoute`
+- передаёт в `HomePage`: `tasksUrl` (`getFullUrl(ROUTES.tasks)`), `journalUrl`, `toolsUrl`, `pomodoroStateGetUrl`, `pomodoroControlUrl`, др.
 
 ### `./web/admin/index.tsx`
 - `@app/html-jsx` → `jsx`
@@ -67,6 +69,9 @@
 - `../../api/tasks/items/reorder` → `reorderTaskItemsRoute`
 - `../../api/tasks/tasks-ai-chat-ensure` → `taskAiChatEnsureRoute`
 - `../../api/tasks/tasks-ai-chat-reset` → `taskAiChatResetRoute`
+- `../../api/pomodoro/assign-task` → `pomodoroAssignTaskRoute`
+- `../../api/pomodoro/state/get` → `getPomodoroStateRoute`
+- `../../api/pomodoro/control` → `pomodoroControlRoute`
 - `../../shared/preloader`, `../../shared/logLevel`, `../../styles` → `customScrollbarStyles`, `mobileSafeAreaStyles`, `formControlStyles`, `VIEWPORT_META_CONTENT`
 - `../../lib/logger.lib`, `../../lib/settings.lib`
 - `../../config/routes` → `getFullUrl`, `getApiUrlForRoute`, `ROUTES`
@@ -91,9 +96,29 @@
 - `../../api/tasks/items/reorder-day` → `reorderTaskDayItemsRoute`
 - `../../api/tasks/items/release-day` → `releaseTaskDayItemsRoute`
 - `../../api/tasks/items/update` → `updateTaskItemRoute`
+- `../../api/pomodoro/assign-task` → `pomodoroAssignTaskRoute`
+- `../../api/pomodoro/state/get` → `getPomodoroStateRoute`
+- `../../api/pomodoro/control` → `pomodoroControlRoute`
 - `../../config/routes` → `getFullUrl`, `getApiUrlForRoute`, `ROUTES`
 - `../../config/project` → `JOURNAL_PAGE_NAME`, `getPageTitle`, `getHeaderText`
 - `../../lib/settings.lib` → `*`
+
+### `./web/tools/index.tsx`
+- `@app/html-jsx` → `jsx`
+- `../../pages/ToolsPage.vue`
+- `../../config/routes` → `getFullUrl`, `ROUTES`
+- `../../config/project` → `TOOLS_PAGE_NAME`, `getPageTitle`, `getHeaderText`
+- `../../lib/settings.lib` → `*`
+
+### `./web/pomodoro/index.tsx`
+- `@app/html-jsx` → `jsx`
+- `../../pages/PomodoroPage.vue`
+- `../../config/routes` → `getApiUrlForRoute`, `getFullUrl`, `ROUTES`
+- `../../config/project` → `POMODORO_PAGE_NAME`, `getPageTitle`, `getHeaderText`
+- `../../lib/settings.lib` → `*`
+- `../../api/pomodoro/state/get` → `getPomodoroStateRoute`
+- `../../api/pomodoro/control` → `pomodoroControlRoute`
+- `../../api/pomodoro/settings/save` → `savePomodoroSettingsRoute`
 
 ### `./web/tests/index.tsx`
 - `@app/html-jsx` → `jsx`
@@ -194,6 +219,19 @@
 - `../lib/tasks-types` → `TasksTreeDto`, `TaskClientDto`, `TaskProjectDto`, `TaskItemDto`
 - событие `tasks-maybe-changed` от чата — отложенный `refreshTree` после ответа ассистента
 
+### `./pages/ToolsPage.vue`
+- `../components/Header.vue`
+- `../components/GlobalGlitch.vue`
+- `../components/AppFooter.vue`
+
+### `./pages/PomodoroPage.vue`
+- `vue` → `computed`, `onMounted`, `onUnmounted`, `ref`
+- `../components/Header.vue`
+- `../components/GlobalGlitch.vue`
+- `../components/AppFooter.vue`
+- `../components/pomodoro/PomodoroTimerDial.vue`
+- `../components/pomodoro/PomodoroSettingsModal.vue`
+
 ### `./components/tasks/TasksAiChatPanel.vue`
 - `vue` → `computed`, `onMounted`, `onUnmounted`, `ref`, `watch`, `nextTick`
 - `@app/socket` → `getOrCreateBrowserSocketClient`
@@ -229,6 +267,16 @@
 - `vue` → `computed`, `onMounted`, `onUnmounted`, `ref`
 - `defineProps`: `modelValue`, `options`, `disabled?`, `id?`
 - `defineEmits`: `update:modelValue`
+
+### `./components/pomodoro/PomodoroTimerDial.vue`
+- `vue` → `computed`
+- `defineProps`: `phase`, `remainingSec`, `phaseDurationSec`, `status`, `phaseLabel`, `statusLabel`, `timeLabel`
+
+### `./components/pomodoro/PomodoroSettingsModal.vue`
+- `vue` → `reactive`, `watch`
+- `../../tables/pomodoro-state.table` → type `PomodoroAfterLongRest`
+- `defineProps`: `isOpen`, `saving`, `modelValue`
+- `defineEmits`: `close`, `save`
 
 ### `./components/journal/JournalStubPanel.vue`
 - (только разметка заглушки «В разработке»)
@@ -303,6 +351,9 @@
 ### `./tables/task-items.table.ts`
 - `@app/heap` → `Heap`
 
+### `./tables/pomodoro-state.table.ts`
+- `@app/heap` → `Heap`
+
 ## 6) Репозитории (repos/)
 
 ### `./repos/settings.repo.ts`
@@ -323,8 +374,15 @@
 - `../lib/tasks-types` → DTO и `TaskStatus`
 - реэкспорт типов из `lib/tasks-types`
 
+### `./repos/pomodoro.repo.ts`
+- `../tables/pomodoro-state.table` → `PomodoroState` и типы (`PomodoroAfterLongRest`, `PomodoroPhase`, `PomodoroStatus`)
+- `../lib/pomodoro-types` → `PomodoroSettingsInput`, `PomodoroStateDto`
+
 ### `./lib/tasks-types.ts`
 - нет импортов (чистые типы DTO для задач)
+
+### `./lib/pomodoro-types.ts`
+- `../tables/pomodoro-state.table` → типы `PomodoroAfterLongRest`, `PomodoroPhase`, `PomodoroStatus`
 
 ## 7) Библиотеки (lib/)
 
@@ -342,6 +400,12 @@
 - `../repos/logs.repo` → `*` (create)
 - `@app/socket` → `sendDataToSocket`
 - `@app/request` → `request`
+
+### `./lib/pomodoro.lib.ts`
+- `@app/sync` → `runWithExclusiveLock`
+- `../repos/pomodoro.repo` → `*`
+- `../repos/tasks.repo` → `*`
+- `./pomodoro-types` → `PomodoroSettingsInput`, `PomodoroStateDto`
 
 ## 8) API (api/)
 
@@ -522,3 +586,19 @@
 - `@app/auth` → `requireAnyUser`
 - `../../../lib/logger.lib` → `*`
 - `../../../lib/admin/dashboard.lib` → `*`
+
+### `./api/pomodoro/assign-task.ts`
+- `@app/auth` → `requireRealUser`
+- `../../lib/pomodoro.lib` → `*`
+
+### `./api/pomodoro/control.ts`
+- `@app/auth` → `requireRealUser`
+- `../../lib/pomodoro.lib` → `*`
+
+### `./api/pomodoro/state/get.ts`
+- `@app/auth` → `requireRealUser`
+- `../../../lib/pomodoro.lib` → `*`
+
+### `./api/pomodoro/settings/save.ts`
+- `@app/auth` → `requireRealUser`
+- `../../../lib/pomodoro.lib` → `*`

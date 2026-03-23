@@ -42,6 +42,9 @@ const props = defineProps<{
   taskItemReorderUrl: string
   taskAiChatEnsureUrl: string
   taskAiChatResetUrl: string
+  pomodoroAssignTaskUrl: string
+  pomodoroStateGetUrl: string
+  pomodoroControlUrl: string
 }>()
 
 const bootLoaderDone = ref(false)
@@ -159,6 +162,13 @@ async function postJson<T>(url: string, body: Record<string, unknown>): Promise<
     credentials: 'include',
     body: JSON.stringify(body)
   })
+  if (!r.ok) {
+    throw new Error(`HTTP ${r.status}`)
+  }
+  const contentType = r.headers.get('content-type') ?? ''
+  if (!contentType.toLowerCase().includes('application/json')) {
+    throw new Error('Сервер вернул не-JSON ответ')
+  }
   return r.json() as Promise<T>
 }
 
@@ -535,6 +545,19 @@ async function markTaskForDay(t: TaskItemDto) {
     globalError.value = String(e)
   } finally {
     loading.value = false
+  }
+}
+
+async function assignTaskToPomodoro(t: TaskItemDto) {
+  if (!props.isAuthenticated) return
+  globalError.value = ''
+  try {
+    const j = await postJson<{ success: boolean; error?: string }>(props.pomodoroAssignTaskUrl, { taskId: t.id })
+    if (!j.success) {
+      globalError.value = j.error ?? 'Не удалось добавить задачу в pomodoro'
+    }
+  } catch (e) {
+    globalError.value = String(e)
   }
 }
 
@@ -952,6 +975,8 @@ function showProjectLineBefore(clientId: string, idx: number): boolean {
       :isAdmin="props.isAdmin"
       :adminUrl="props.adminUrl"
       :testsUrl="props.testsUrl"
+      :pomodoroStateGetUrl="props.pomodoroStateGetUrl"
+      :pomodoroControlUrl="props.pomodoroControlUrl"
     />
 
     <main class="content-wrapper tasks-page-main flex-1 relative z-10 min-h-0 overflow-y-auto">
@@ -1211,6 +1236,15 @@ function showProjectLineBefore(clientId: string, idx: number): boolean {
                   </button>
                   <button type="button" class="tasks-icon-btn" title="Изменить" @click="openTaskEdit(t)">
                     <i class="fas fa-pen" aria-hidden="true" />
+                  </button>
+                  <button
+                    type="button"
+                    class="tasks-icon-btn"
+                    title="Добавить в pomodoro"
+                    :disabled="!props.isAuthenticated"
+                    @click="assignTaskToPomodoro(t)"
+                  >
+                    <i class="fas fa-clock" aria-hidden="true" />
                   </button>
                   <button
                     type="button"

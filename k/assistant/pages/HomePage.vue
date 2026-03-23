@@ -22,12 +22,15 @@ const props = defineProps<{
   indexUrl: string
   journalUrl: string
   tasksUrl: string
+  toolsUrl: string
   profileUrl: string
   loginUrl: string
   isAuthenticated: boolean
   isAdmin?: boolean
   adminUrl?: string
   testsUrl?: string
+  pomodoroStateGetUrl: string
+  pomodoroControlUrl: string
 }>()
 
 const displayedTitle = ref('')
@@ -149,6 +152,8 @@ const openChatiumLink = () => {
       :isAdmin="props.isAdmin"
       :adminUrl="props.adminUrl"
       :testsUrl="props.testsUrl"
+      :pomodoroStateGetUrl="props.pomodoroStateGetUrl"
+      :pomodoroControlUrl="props.pomodoroControlUrl"
     />
     <main class="content-wrapper flex-1 relative z-10 min-h-0 overflow-y-auto">
       <div class="content-inner">
@@ -177,10 +182,10 @@ const openChatiumLink = () => {
             <i class="fas fa-comments home-card-icon" aria-hidden="true"></i>
             <span class="home-card-label">Диалоги</span>
           </button>
-          <button type="button" class="home-card home-card-action" @click="triggerGlitch">
+          <a :href="props.toolsUrl" class="home-card home-card-link">
             <i class="fas fa-screwdriver-wrench home-card-icon" aria-hidden="true"></i>
             <span class="home-card-label">Инструменты</span>
-          </button>
+          </a>
           <button type="button" class="home-card home-card-action" @click="triggerGlitch">
             <i class="fas fa-layer-group home-card-icon" aria-hidden="true"></i>
             <span class="home-card-label">PARA</span>
