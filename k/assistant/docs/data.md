@@ -14,6 +14,7 @@
 | t__assistant__task_ai_chat_feed__3Kp9mX | tables/task-ai-chat-feeds.table.ts | Фид чата с AI на странице задач (на проект) | userId, projectId, feedId (UID фида Chatium) |
 | t__assistant__task_item__2Vx8sT | tables/task-items.table.ts | Задачи внутри проекта | userId, projectId, title, priority (1–4), status (todo/in_progress/done/cancelled), sortOrder, daySortOrder (порядок в дневном списке «В работе»); опционально `details` (текст для пользователя), `context` (служебное, не отдаётся в клиентский API) |
 | t__assistant__pomodoro_state__6Gs2mQ | tables/pomodoro-state.table.ts | Состояние Pomodoro пользователя | userId, status, phase, currentTaskId, phaseEndsAtMs, phaseRemainingSec, cyclesCompleted, totalWorkSec, totalRestSec, workMinutes, restMinutes, longRestMinutes, cyclesUntilLongRest, pauseAfterWork, pauseAfterRest, afterLongRest, updatedAtMs |
+| t__assistant__pomodoro_launch__9Hk2tR | tables/pomodoro-launches.table.ts | Журнал сегментов Pomodoro (каждый запуск/продолжение) | userId, startedAtMs, endedAtMs, durationSec, phase, taskId, cyclesCompletedAtStart, source (`start/resume/auto_next_phase/task_changed`), endReason (`pause/stop/restart/phase_completed/task_changed/state_recovered`) |
 
 ## Репозитории (repos/)
 - `repos/settings.repo.ts` — findByKey, findAll, upsert, deleteByKey (слой работы с БД; без вызовов logger.lib, т.к. getSetting/getLogLevel вызываются из writeServerLog и используют findByKey — иначе рекурсия).
@@ -21,12 +22,13 @@
 - `repos/journal-notes.repo.ts` — findSummariesByUserId, createForUser, findByIdForUser, updateForUser (`JournalNotes.update(ctx, { id, title, content })`), deleteByIdForUser.
 - `repos/tasks.repo.ts` — getTreeForUser, CRUD клиентов/проектов/задач, reorderTasks (порядок в проекте), reorderDayTasks (порядок задач со статусом `in_progress` для вкладки «День»), releaseAllInProgressToTodo (все «В работе» → «К выполнению»), addPomodoroSecondsToTask (накопление времени работы/отдыха в задаче при активном Pomodoro); при входе в `in_progress` выставляется `daySortOrder`, при выходе — 0; удаление клиента каскадом (проекты и задачи), проекта — с задачами.
 - `repos/pomodoro.repo.ts` — getOrCreateState/getOrCreateStateRow, updateState; нормализация и маппинг состояния Pomodoro между Heap-строкой и DTO.
+- `repos/pomodoro-launches.repo.ts` — append-only журнал сегментов Pomodoro: открытие сегмента при запуске/продолжении, закрытие при паузе/стопе/автопереходе/смене задачи, расчёт `durationSec`.
 
 ## Библиотеки (lib/)
 - `lib/settings.lib.ts` — getSetting, getAllSettings, setSetting, getLogLevel, getLogsLimit, getLogWebhook (бизнес-логика, дефолты, валидация).
 - `lib/logger.lib.ts` — getAdminLogsSocketId, shouldLogByLevel, writeServerLog (проверка уровня, запись в ctx.log/ctx.account.log, Heap, WebSocket, вебхук).
 - `lib/tasks-types.ts` — DTO дерева задач для UI/API (без импорта Heap).
-- `lib/pomodoro.lib.ts` — бизнес-логика Pomodoro: тик по времени, переключение фаз (`work`/`rest`/`long_rest`), pause/resume/stop/start, сохранение настроек, привязка задачи; все мутации под `runWithExclusiveLock`. `start` всегда перезапускает рабочую фазу, `pause`/`resume` вне валидного статуса возвращают текущее состояние без мутации.
+- `lib/pomodoro.lib.ts` — бизнес-логика Pomodoro: тик по времени, переключение фаз (`work`/`rest`/`long_rest`), pause/resume/stop/start, сохранение настроек, привязка задачи; все мутации под `runWithExclusiveLock`. `start` всегда перезапускает рабочую фазу, `pause`/`resume` вне валидного статуса возвращают текущее состояние без мутации. Дополнительно ведётся полный лог запусков в `pomodoro-launches`: сегменты закрываются/открываются на всех переходах фаз и при смене задачи во время `running`.
 - `lib/pomodoro-types.ts` — DTO состояния Pomodoro и тип входа настроек.
 
 ## Файлы и хранилище

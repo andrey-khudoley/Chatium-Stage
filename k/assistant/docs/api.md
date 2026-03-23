@@ -93,6 +93,7 @@
 ## Pomodoro (api/pomodoro/)
 
 Личный таймер пользователя (состояние и настройки в Heap), синхронизация с задачами и шапкой UI. Все маршруты работают для `requireRealUser`.
+Дополнительно внутри `lib/pomodoro.lib.ts` ведётся полный лог сегментов запуска в `tables/pomodoro-launches.table.ts` (каждый `start`/`resume`, автопереходы фаз и смена задачи во время `running`).
 
 | Method | Path | File | Auth | Назначение |
 | --- | --- | --- | --- | --- |
