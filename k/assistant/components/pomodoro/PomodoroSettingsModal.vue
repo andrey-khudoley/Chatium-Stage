@@ -84,36 +84,97 @@ function submit(): void {
 <template>
   <teleport to="body">
     <div v-if="props.isOpen" class="settings-overlay" @click="onBackdropClick" @keydown="onKeyDown" tabindex="0">
-      <section class="settings-modal">
+      <section class="settings-modal crt-form-panel">
+        <div class="modal-scanlines"></div>
         <header class="settings-head">
-          <h3>Настройки Pomodoro</h3>
+          <h3><i class="fa-solid fa-sliders" /> Настройки</h3>
           <button class="modal-close" type="button" :disabled="props.saving" @click="emit('close')">
             <i class="fa-solid fa-xmark" />
           </button>
         </header>
-        <div class="settings-grid">
-          <label>Работа, мин <input v-model.number="draft.workMinutes" class="jn-input" type="number" min="1" max="180" /></label>
-          <label>Отдых, мин <input v-model.number="draft.restMinutes" class="jn-input" type="number" min="1" max="180" /></label>
-          <label>Длинный отдых, мин <input v-model.number="draft.longRestMinutes" class="jn-input" type="number" min="1" max="180" /></label>
-          <label>Циклов до длинного <input v-model.number="draft.cyclesUntilLongRest" class="jn-input" type="number" min="1" max="12" /></label>
+
+        <div class="settings-body">
+          <div class="settings-section">
+            <div class="section-title">
+              <i class="fa-solid fa-clock" /> Таймеры
+            </div>
+            <div class="settings-row-grid">
+              <label class="field-label">
+                <span class="field-name">Работа</span>
+                <div class="field-input-wrap">
+                  <input v-model.number="draft.workMinutes" class="field-input" type="number" min="1" max="180" />
+                  <span class="field-unit">мин</span>
+                </div>
+              </label>
+              <label class="field-label">
+                <span class="field-name">Отдых</span>
+                <div class="field-input-wrap">
+                  <input v-model.number="draft.restMinutes" class="field-input" type="number" min="1" max="180" />
+                  <span class="field-unit">мин</span>
+                </div>
+              </label>
+              <label class="field-label">
+                <span class="field-name">Длинный отдых</span>
+                <div class="field-input-wrap">
+                  <input v-model.number="draft.longRestMinutes" class="field-input" type="number" min="1" max="180" />
+                  <span class="field-unit">мин</span>
+                </div>
+              </label>
+              <label class="field-label">
+                <span class="field-name">Циклов до длинного</span>
+                <div class="field-input-wrap">
+                  <input v-model.number="draft.cyclesUntilLongRest" class="field-input" type="number" min="1" max="12" />
+                  <span class="field-unit">шт</span>
+                </div>
+              </label>
+            </div>
+          </div>
+
           <div class="settings-divider"></div>
-          <label class="settings-section-title">Режим автопилота</label>
-          <label><input v-model="draft.autoStartRest" type="checkbox" /> Автостарт отдыха</label>
-          <label><input v-model="draft.autoStartNextCycle" type="checkbox" /> Автостарт следующего цикла</label>
+
+          <div class="settings-section">
+            <div class="section-title">
+              <i class="fa-solid fa-robot" /> Автопилот
+            </div>
+            <label class="toggle-label">
+              <input v-model="draft.autoStartRest" type="checkbox" class="toggle-checkbox" />
+              <span class="toggle-text">Автостарт отдыха</span>
+            </label>
+            <label class="toggle-label">
+              <input v-model="draft.autoStartNextCycle" type="checkbox" class="toggle-checkbox" />
+              <span class="toggle-text">Автостарт следующего цикла</span>
+            </label>
+          </div>
+
           <div class="settings-divider"></div>
-          <label class="settings-section-title">Ручные паузы</label>
-          <label><input v-model="draft.pauseAfterWork" type="checkbox" /> Пауза после работы</label>
-          <label><input v-model="draft.pauseAfterRest" type="checkbox" /> Пауза после отдыха</label>
-          <label>После длинного отдыха
-            <select v-model="draft.afterLongRest" class="jn-input">
-              <option value="pause">Пауза</option>
-              <option value="stop">Выключать</option>
-            </select>
-          </label>
+
+          <div class="settings-section">
+            <div class="section-title">
+              <i class="fa-solid fa-hand" /> Ручные паузы
+            </div>
+            <label class="toggle-label">
+              <input v-model="draft.pauseAfterWork" type="checkbox" class="toggle-checkbox" />
+              <span class="toggle-text">Пауза после работы</span>
+            </label>
+            <label class="toggle-label">
+              <input v-model="draft.pauseAfterRest" type="checkbox" class="toggle-checkbox" />
+              <span class="toggle-text">Пауза после отдыха</span>
+            </label>
+            <label class="field-label">
+              <span class="field-name">После длинного отдыха</span>
+              <select v-model="draft.afterLongRest" class="field-input field-select">
+                <option value="pause">Пауза</option>
+                <option value="stop">Выключить</option>
+              </select>
+            </label>
+          </div>
         </div>
+
         <footer class="settings-actions">
-          <button class="journal-nav-btn" type="button" :disabled="props.saving" @click="emit('close')">Отмена</button>
-          <button class="journal-nav-action" type="button" :disabled="props.saving" @click="submit">
+          <button class="pomo-modal-btn pomo-modal-btn--ghost" type="button" :disabled="props.saving" @click="emit('close')">
+            Отмена
+          </button>
+          <button class="pomo-modal-btn pomo-modal-btn--primary" type="button" :disabled="props.saving" @click="submit">
             {{ props.saving ? 'Сохранение...' : 'Сохранить' }}
           </button>
         </footer>
@@ -126,68 +187,278 @@ function submit(): void {
 .settings-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(10, 10, 10, .72);
+  background: rgba(5, 5, 5, .8);
   z-index: 80;
   display: grid;
   place-items: center;
   padding: .8rem;
+  backdrop-filter: blur(2px);
 }
+
 .settings-modal {
-  width: min(460px, 95vw);
+  width: min(440px, 95vw);
+  max-height: 90vh;
+  overflow-y: auto;
   background: var(--color-bg-secondary);
   border: 1px solid var(--color-border-light);
-  border-radius: 14px;
-  padding: .8rem;
+  padding: 0;
+  position: relative;
+  clip-path: polygon(
+    0 6px, 6px 6px, 6px 0,
+    calc(100% - 6px) 0, calc(100% - 6px) 6px, 100% 6px,
+    100% calc(100% - 6px), calc(100% - 6px) calc(100% - 6px), calc(100% - 6px) 100%,
+    6px 100%, 6px calc(100% - 6px), 0 calc(100% - 6px)
+  );
+  box-shadow:
+    0 16px 48px rgba(0, 0, 0, 0.6),
+    0 0 0 1px rgba(0, 0, 0, 0.3),
+    0 0 40px rgba(211, 35, 75, 0.06);
 }
+
+.modal-scanlines {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.04) 0px,
+    rgba(0, 0, 0, 0.04) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+  pointer-events: none;
+  z-index: 0;
+}
+
 .settings-head {
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: .6rem;
-  margin-bottom: .65rem;
+  padding: .7rem .85rem;
+  border-bottom: 1px solid var(--color-border);
+  position: relative;
+  z-index: 1;
 }
+
 .settings-head h3 {
   margin: 0;
-  font-size: .95rem;
-  letter-spacing: .05em;
+  font-size: .85rem;
+  letter-spacing: .08em;
   text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: .45rem;
+  color: var(--color-text);
 }
+
+.settings-head h3 i {
+  color: var(--color-accent);
+  font-size: .8rem;
+}
+
 .modal-close {
   border: 1px solid var(--color-border);
   background: transparent;
   color: var(--color-text-secondary);
-  border-radius: 8px;
-  width: 2rem;
-  height: 2rem;
-}
-.settings-grid {
-  display: grid;
-  gap: .55rem;
-}
-.settings-grid label {
-  display: grid;
-  gap: .3rem;
-  font-size: .82rem;
-}
-.settings-actions {
-  margin-top: .8rem;
+  width: 1.75rem;
+  height: 1.75rem;
   display: flex;
-  justify-content: flex-end;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all .2s ease;
+  clip-path: polygon(
+    0 2px, 2px 2px, 2px 0,
+    calc(100% - 2px) 0, calc(100% - 2px) 2px, 100% 2px,
+    100% calc(100% - 2px), calc(100% - 2px) calc(100% - 2px), calc(100% - 2px) 100%,
+    2px 100%, 2px calc(100% - 2px), 0 calc(100% - 2px)
+  );
+}
+
+.modal-close:hover {
+  border-color: var(--color-accent);
+  color: var(--color-text);
+}
+
+.settings-body {
+  padding: .75rem .85rem;
+  position: relative;
+  z-index: 1;
+}
+
+.settings-section {
+  display: grid;
   gap: .45rem;
 }
+
+.section-title {
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: .7rem;
+  letter-spacing: .1em;
+  color: var(--color-text-secondary);
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+  margin-bottom: .15rem;
+}
+
+.section-title i {
+  color: var(--color-accent);
+  font-size: .65rem;
+  opacity: .8;
+}
+
 .settings-divider {
   height: 1px;
   background: var(--color-border);
-  margin: .4rem 0;
-  grid-column: 1 / -1;
+  margin: .6rem 0;
 }
-.settings-section-title {
-  font-weight: 600;
+
+.settings-row-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: .4rem;
+}
+
+.field-label {
+  display: flex;
+  flex-direction: column;
+  gap: .2rem;
+  font-size: .78rem;
+}
+
+.field-name {
+  color: var(--color-text-secondary);
+  font-size: .7rem;
   text-transform: uppercase;
-  font-size: .75rem;
-  letter-spacing: .08em;
+  letter-spacing: .06em;
+}
+
+.field-input-wrap {
+  display: flex;
+  align-items: center;
+  gap: .3rem;
+}
+
+.field-input {
+  width: 100%;
+  padding: .35rem .5rem;
+  background: var(--color-bg-tertiary);
+  border: 1px solid var(--color-border);
   color: var(--color-text);
-  margin-top: .2rem;
-  grid-column: 1 / -1;
+  font-family: inherit;
+  font-size: .8rem;
+  transition: border-color .2s ease;
+}
+
+.field-input:focus {
+  outline: none;
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 1px rgba(211, 35, 75, 0.3);
+}
+
+.field-unit {
+  font-size: .68rem;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+
+.field-select {
+  appearance: none;
+  cursor: pointer;
+  padding-right: 1.5rem;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M3 5l3 3 3-3' stroke='%23a0a0a0' fill='none' stroke-width='1.5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right .4rem center;
+  background-size: 12px;
+}
+
+.toggle-label {
+  display: flex;
+  align-items: center;
+  gap: .45rem;
+  cursor: pointer;
+  font-size: .78rem;
+  padding: .15rem 0;
+}
+
+.toggle-checkbox {
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border: 1px solid var(--color-border-light);
+  background: var(--color-bg-tertiary);
+  cursor: pointer;
+  position: relative;
+  flex-shrink: 0;
+  transition: all .15s ease;
+}
+
+.toggle-checkbox:checked {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+}
+
+.toggle-checkbox:checked::after {
+  content: '';
+  position: absolute;
+  top: 1px; left: 4px;
+  width: 4px; height: 8px;
+  border: solid #fff;
+  border-width: 0 1.5px 1.5px 0;
+  transform: rotate(45deg);
+}
+
+.toggle-text {
+  color: var(--color-text);
+}
+
+.settings-actions {
+  padding: .65rem .85rem;
+  border-top: 1px solid var(--color-border);
+  display: flex;
+  justify-content: flex-end;
+  gap: .4rem;
+  position: relative;
+  z-index: 1;
+}
+
+.pomo-modal-btn {
+  padding: .45rem .9rem;
+  font-size: .78rem;
+  font-family: inherit;
+  border: 1px solid var(--color-border);
+  background: transparent;
+  color: var(--color-text);
+  cursor: pointer;
+  transition: all .2s ease;
+  clip-path: polygon(
+    0 3px, 3px 3px, 3px 0,
+    calc(100% - 3px) 0, calc(100% - 3px) 3px, 100% 3px,
+    100% calc(100% - 3px), calc(100% - 3px) calc(100% - 3px), calc(100% - 3px) 100%,
+    3px 100%, 3px calc(100% - 3px), 0 calc(100% - 3px)
+  );
+}
+
+.pomo-modal-btn:disabled {
+  opacity: .45;
+  cursor: not-allowed;
+}
+
+.pomo-modal-btn--ghost:hover:not(:disabled) {
+  border-color: var(--color-border-light);
+}
+
+.pomo-modal-btn--primary {
+  background: var(--color-accent);
+  border-color: transparent;
+  color: #fff;
+  font-weight: 600;
+}
+
+.pomo-modal-btn--primary:hover:not(:disabled) {
+  background: var(--color-accent-hover);
+  box-shadow: 0 0 12px rgba(211, 35, 75, 0.3);
 }
 </style>

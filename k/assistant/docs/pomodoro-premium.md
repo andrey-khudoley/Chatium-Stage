@@ -111,7 +111,31 @@ GET  /api/tasks/in-progress         — список задач в работе
 - CSS transitions вместо JavaScript анимаций
 - Один polling-интервал для всех обновлений
 
-## Визуальный дизайн
+## Визуальный дизайн — CRT-стиль
+
+### CRT-слои SSR (`web/pomodoro/index.tsx`)
+- **geometric-bg**: виньетка с `radial-gradient`, CRT-сетка (inline SVG), плавающий красный акцент
+- **Сканлайны**: `body::after` с `repeating-linear-gradient` (2px), `scanline-flicker` анимация
+- **Бэзел**: `body::before` с `inset box-shadow`, `bezel-fade-in`
+- **CRT power-on**: анимация появления `.app-layout` (scale, blur, opacity)
+- **Адаптивность**: на мобильных (≤768px) убраны скругления, облегчены тени
+
+### Пиксельные углы
+Все элементы UI используют `clip-path: polygon(...)` для характерных CRT-углов:
+- **6px** — крупные карточки (TimerDial, Settings Modal)
+- **4px** — кнопки управления
+- **3px** — мелкие элементы (stats, phase-bar, error, dropdown)
+- **2px** — микро-элементы (settings trigger, close button, checkboxes)
+
+### Scanlines overlay
+Повторяющийся паттерн на интерактивных элементах:
+```css
+background: repeating-linear-gradient(0deg,
+  rgba(0,0,0,0.06) 0px, rgba(0,0,0,0.06) 1px,
+  transparent 1px, transparent 3px);
+animation: dial-scanline-flicker 6s linear infinite;
+```
+Применяется к: TimerDial, кнопкам управления, stat-cards, task toggle/dropdown, settings modal
 
 ### Цветовая палитра
 ```css
@@ -127,13 +151,26 @@ GET  /api/tasks/in-progress         — список задач в работе
 
 ### Типографика
 - **Основной шрифт**: Share Tech Mono (монопространственный, tech-стиль)
-- **Таймер**: tabular-nums для стабильности
-- **Лейблы**: uppercase, letter-spacing: 0.08em
+- **Таймер**: tabular-nums для стабильности, RGB chromatic aberration text-shadow
+- **Лейблы**: uppercase, letter-spacing: 0.08–0.12em
 
 ### Анимации
-- **Pulse**: свечение дуги (2.5s, ease-in-out, infinite)
+- **crt-power-on**: появление страницы (0.5s, scale + blur)
+- **Pulse**: свечение дуги (2.5s, glow-strong filter, ease-in-out, infinite)
+- **Paused blink**: мигание дуги и времени (2s, ease-in-out)
+- **Phase dot pulse**: пульсация индикатора фазы (2s)
+- **Scanline flicker**: мерцание сканлайнов (6–8s)
 - **Fade**: смена фаз (0.4s ease)
-- **Hover**: подъём карточек статистики (translateY -2px)
+- **Button underline**: `::after scaleX(0→1)` на hover (0.3s)
+- **Cursor blink**: мигающий `▮` при загрузке (1s, step-end)
+
+### Кнопки управления
+Phase bar сверху с cycle dots → TimerDial → TaskSelector → Actions → Stats:
+- `.pomo-btn--primary` — залитая фаза, glow shadow
+- `.pomo-btn--secondary` — обводка фазовым цветом
+- `.pomo-btn--ghost` — только border
+- `.pomo-btn--danger` — красноватая обводка для «Стоп»
+- Все кнопки: scanlines `::before`, underline `::after`, pixel corners `clip-path`
 
 ## Файловая структура
 

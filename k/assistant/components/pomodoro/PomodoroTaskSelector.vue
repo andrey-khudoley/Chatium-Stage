@@ -64,36 +64,38 @@ onMounted(() => {
 <template>
   <div class="task-selector">
     <button 
-      class="task-selector-toggle" 
+      class="task-toggle" 
       :disabled="loading"
       @click="expanded = !expanded"
     >
-      <i class="fa-solid fa-clipboard-list mr-1" />
-      <span v-if="currentTask" class="task-name">{{ currentTask.title }}</span>
-      <span v-else class="task-name">Выберите задачу</span>
-      <i class="fa-solid fa-chevron-down ml-1" :class="{ 'rotated': expanded }" />
+      <i class="fa-solid fa-clipboard-list task-toggle__icon" />
+      <span class="task-toggle__text">
+        <span v-if="currentTask">{{ currentTask.title }}</span>
+        <span v-else class="task-toggle__placeholder">Выберите задачу</span>
+      </span>
+      <i class="fa-solid fa-chevron-down task-toggle__arrow" :class="{ 'task-toggle__arrow--open': expanded }" />
     </button>
     <transition name="dropdown">
-      <div v-if="expanded" class="task-selector-dropdown">
+      <div v-if="expanded" class="task-dropdown">
+        <div class="task-dropdown__scanlines"></div>
         <button
           v-if="currentTask"
-          class="task-option task-option-clear"
+          class="task-item task-item--clear"
           @click="assignTask('')"
         >
-          <i class="fa-solid fa-times" /> Снять задачу
+          <i class="fa-solid fa-times task-item__icon" /> Снять задачу
         </button>
         <button
           v-for="task in tasks"
           :key="task.id"
-          class="task-option"
-          :class="{ 'task-option-active': task.id === currentTaskId }"
+          class="task-item"
+          :class="{ 'task-item--active': task.id === currentTaskId }"
           @click="assignTask(task.id)"
         >
-          <i class="fa-solid fa-check" v-if="task.id === currentTaskId" />
-          <i class="fa-solid fa-circle" v-else />
+          <i :class="task.id === currentTaskId ? 'fa-solid fa-check' : 'fa-solid fa-circle'" class="task-item__icon" />
           {{ task.title }}
         </button>
-        <p v-if="tasks.length === 0 && !loading" class="task-option-empty">
+        <p v-if="tasks.length === 0 && !loading" class="task-empty">
           Нет задач в работе
         </p>
       </div>
@@ -105,98 +107,182 @@ onMounted(() => {
 .task-selector {
   position: relative;
 }
-.task-selector-toggle {
+
+.task-toggle {
   border: 1px solid var(--color-border);
   background: var(--color-bg-tertiary);
   color: var(--color-text);
-  padding: .5rem .7rem;
-  border-radius: 8px;
+  padding: .45rem .65rem;
   display: flex;
   align-items: center;
   gap: .4rem;
   cursor: pointer;
   transition: all .2s ease;
   width: 100%;
-  font-size: .85rem;
+  font-size: .8rem;
+  font-family: inherit;
+  position: relative;
+  overflow: hidden;
+  clip-path: polygon(
+    0 3px, 3px 3px, 3px 0,
+    calc(100% - 3px) 0, calc(100% - 3px) 3px, 100% 3px,
+    100% calc(100% - 3px), calc(100% - 3px) calc(100% - 3px), calc(100% - 3px) 100%,
+    3px 100%, 3px calc(100% - 3px), 0 calc(100% - 3px)
+  );
 }
-.task-selector-toggle:hover:not(:disabled) {
+
+.task-toggle::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.03) 0px, rgba(0, 0, 0, 0.03) 1px,
+    transparent 1px, transparent 3px
+  );
+  pointer-events: none;
+}
+
+.task-toggle:hover:not(:disabled) {
   border-color: var(--color-border-light);
   background: var(--color-bg-secondary);
 }
-.task-selector-toggle:disabled {
+
+.task-toggle:disabled {
   opacity: .5;
   cursor: not-allowed;
 }
-.task-name {
+
+.task-toggle__icon {
+  color: var(--color-accent);
+  opacity: .7;
+  font-size: .75rem;
+  flex-shrink: 0;
+}
+
+.task-toggle__text {
   flex: 1;
   text-align: left;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.fa-chevron-down {
-  transition: transform .2s ease;
-  font-size: .7rem;
+
+.task-toggle__placeholder {
+  color: var(--color-text-secondary);
 }
-.fa-chevron-down.rotated {
+
+.task-toggle__arrow {
+  transition: transform .2s ease;
+  font-size: .6rem;
+  color: var(--color-text-secondary);
+}
+
+.task-toggle__arrow--open {
   transform: rotate(180deg);
 }
-.task-selector-dropdown {
+
+.task-dropdown {
   position: absolute;
   top: calc(100% + .3rem);
   left: 0;
   right: 0;
   background: var(--color-bg-secondary);
   border: 1px solid var(--color-border-light);
-  border-radius: 8px;
-  max-height: 240px;
+  max-height: 220px;
   overflow-y: auto;
   z-index: 10;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, .4);
+  box-shadow:
+    0 6px 20px rgba(0, 0, 0, 0.5),
+    0 0 0 1px rgba(0, 0, 0, 0.2);
+  clip-path: polygon(
+    0 3px, 3px 3px, 3px 0,
+    calc(100% - 3px) 0, calc(100% - 3px) 3px, 100% 3px,
+    100% calc(100% - 3px), calc(100% - 3px) calc(100% - 3px), calc(100% - 3px) 100%,
+    3px 100%, 3px calc(100% - 3px), 0 calc(100% - 3px)
+  );
 }
-.task-option {
+
+.task-dropdown__scanlines {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.03) 0px, rgba(0, 0, 0, 0.03) 1px,
+    transparent 1px, transparent 3px
+  );
+  pointer-events: none;
+  z-index: 0;
+}
+
+.task-item {
   border: none;
   background: transparent;
   color: var(--color-text);
-  padding: .6rem .7rem;
+  padding: .5rem .65rem;
   width: 100%;
   text-align: left;
   cursor: pointer;
   display: flex;
   align-items: center;
-  gap: .5rem;
+  gap: .45rem;
   transition: all .15s ease;
-  font-size: .85rem;
+  font-size: .8rem;
+  font-family: inherit;
   border-bottom: 1px solid var(--color-border);
+  position: relative;
+  z-index: 1;
 }
-.task-option:last-child {
+
+.task-item:last-child {
   border-bottom: none;
 }
-.task-option:hover {
-  background: var(--color-bg-tertiary);
+
+.task-item:hover {
+  background: rgba(255, 255, 255, .03);
 }
-.task-option-active {
+
+.task-item__icon {
+  font-size: .55rem;
+  flex-shrink: 0;
+  width: 14px;
+  text-align: center;
+}
+
+.task-item--active {
   color: var(--color-accent);
   font-weight: 500;
 }
-.task-option-clear {
-  color: var(--color-accent-hover);
-  font-weight: 500;
+
+.task-item--active .task-item__icon {
+  font-size: .7rem;
 }
-.task-option-clear:hover {
-  background: rgba(211, 35, 75, .1);
+
+.task-item--clear {
+  color: #ff8a8a;
 }
-.task-option-empty {
-  padding: .8rem;
+
+.task-item--clear:hover {
+  background: rgba(255, 107, 107, .06);
+}
+
+.task-empty {
+  padding: .7rem;
   margin: 0;
   color: var(--color-text-secondary);
-  font-size: .8rem;
+  font-size: .75rem;
   text-align: center;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  position: relative;
+  z-index: 1;
 }
+
 .dropdown-enter-active,
 .dropdown-leave-active {
   transition: all .2s ease;
 }
+
 .dropdown-enter-from,
 .dropdown-leave-to {
   opacity: 0;

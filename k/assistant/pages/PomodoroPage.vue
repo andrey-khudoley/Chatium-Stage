@@ -339,6 +339,9 @@ const phaseTheme = computed(() => {
   if (!state.value) return 'default'
   return state.value.phase
 })
+
+const cycleDotsTotal = computed(() => state.value?.cyclesUntilLongRest ?? 4)
+const cycleDotsCompleted = computed(() => state.value?.cyclesCompleted ?? 0)
 </script>
 
 <template>
@@ -358,7 +361,28 @@ const phaseTheme = computed(() => {
     />
     <main class="content-wrapper flex-1 relative z-10 min-h-0 overflow-y-auto">
       <div v-if="state" class="content-inner pomodoro-shell">
-        <p v-if="pageError" class="pomodoro-error">{{ pageError }}</p>
+        <p v-if="pageError" class="pomodoro-error">
+          <i class="fa-solid fa-triangle-exclamation" /> {{ pageError }}
+        </p>
+
+        <div class="pomodoro-phase-bar">
+          <span class="phase-indicator">
+            <span class="phase-dot" :class="`phase-dot--${state.phase}`"></span>
+            {{ phaseLabels[state.phase] }}
+          </span>
+          <span class="cycle-dots">
+            <span
+              v-for="i in cycleDotsTotal"
+              :key="i"
+              class="cycle-dot"
+              :class="{ 'cycle-dot--filled': i <= cycleDotsCompleted }"
+            ></span>
+          </span>
+          <button class="settings-trigger" :disabled="saving" @click="settingsOpen = true">
+            <i class="fa-solid fa-sliders" />
+          </button>
+        </div>
+
         <transition name="fade" mode="out-in">
           <PomodoroTimerDial
             :key="state.phase"
@@ -371,91 +395,86 @@ const phaseTheme = computed(() => {
             :time-label="fmt(remainSec)"
           />
         </transition>
+
         <PomodoroTaskSelector
           :assign-task-url="props.assignTaskUrl"
           :get-tasks-url="props.getTasksUrl"
           :current-task-id="state.currentTaskId"
           @task-assigned="refresh"
         />
-        <div class="pomodoro-topline">
-          <p class="pomodoro-phase">Фаза: {{ phaseLabels[state.phase] }}</p>
-          <button class="journal-nav-btn" :disabled="saving" @click="settingsOpen = true">
-            <i class="fa-solid fa-sliders mr-1" /> Настройки
-          </button>
-        </div>
+
         <div class="pomodoro-actions">
           <button
             v-if="state.status === 'stopped'"
-            class="pomodoro-btn primary"
+            class="pomo-btn pomo-btn--primary"
             :disabled="actionPending"
             @click="control('start')"
           >
-            <i class="fa-solid fa-play btn-icon" />
-            Старт
+            <i class="fa-solid fa-play pomo-btn__icon" />
+            <span class="pomo-btn__label">Старт</span>
           </button>
           <button
             v-else
-            class="pomodoro-btn primary"
+            class="pomo-btn pomo-btn--ghost"
             :disabled="actionPending"
             @click="control('start')"
           >
-            <i class="fa-solid fa-rotate-right btn-icon" />
-            Перезапуск
+            <i class="fa-solid fa-rotate-right pomo-btn__icon" />
+            <span class="pomo-btn__label">Рестарт</span>
           </button>
 
           <button
             v-if="state.status === 'running'"
-            class="pomodoro-btn"
+            class="pomo-btn pomo-btn--secondary"
             :disabled="actionPending"
             @click="control('pause')"
           >
-            <i class="fa-solid fa-pause btn-icon" />
-            Пауза
+            <i class="fa-solid fa-pause pomo-btn__icon" />
+            <span class="pomo-btn__label">Пауза</span>
           </button>
 
           <button
             v-if="state.status === 'paused'"
-            class="pomodoro-btn"
+            class="pomo-btn pomo-btn--primary"
             :disabled="actionPending"
             @click="control('resume')"
           >
-            <i class="fa-solid fa-play btn-icon" />
-            Продолжить
+            <i class="fa-solid fa-play pomo-btn__icon" />
+            <span class="pomo-btn__label">Продолжить</span>
           </button>
 
           <button
             v-if="state.status !== 'stopped'"
-            class="pomodoro-btn secondary"
+            class="pomo-btn pomo-btn--danger"
             :disabled="actionPending"
             @click="control('stop')"
           >
-            <i class="fa-solid fa-stop btn-icon" />
-            Стоп
+            <i class="fa-solid fa-stop pomo-btn__icon" />
+            <span class="pomo-btn__label">Стоп</span>
           </button>
         </div>
-        <div class="pomodoro-stats-grid">
-          <div class="stat-card">
-            <i class="fa-solid fa-fire stat-icon" />
-            <div class="stat-content">
-              <p class="stat-value">{{ state.tasksCompletedToday }}</p>
-              <p class="stat-label">Помидорок</p>
-            </div>
+
+        <div class="pomodoro-stats">
+          <div class="stat-cell">
+            <span class="stat-cell__value">{{ state.tasksCompletedToday }}</span>
+            <span class="stat-cell__label">
+              <i class="fa-solid fa-fire" /> Помидоров
+            </span>
           </div>
-          <div class="stat-card">
-            <i class="fa-solid fa-clock stat-icon" />
-            <div class="stat-content">
-              <p class="stat-value">{{ fmt(state.totalWorkSec) }}</p>
-              <p class="stat-label">Работа</p>
-            </div>
+          <div class="stat-cell">
+            <span class="stat-cell__value">{{ fmt(state.totalWorkSec) }}</span>
+            <span class="stat-cell__label">
+              <i class="fa-solid fa-clock" /> Работа
+            </span>
           </div>
-          <div class="stat-card">
-            <i class="fa-solid fa-mug-hot stat-icon" />
-            <div class="stat-content">
-              <p class="stat-value">{{ fmt(state.totalRestSec) }}</p>
-              <p class="stat-label">Отдых</p>
-            </div>
+          <div class="stat-cell">
+            <span class="stat-cell__value">{{ fmt(state.totalRestSec) }}</span>
+            <span class="stat-cell__label">
+              <i class="fa-solid fa-mug-hot" /> Отдых
+            </span>
           </div>
         </div>
+
         <PomodoroSettingsModal
           :is-open="settingsOpen"
           :saving="saving"
@@ -465,8 +484,12 @@ const phaseTheme = computed(() => {
         />
       </div>
       <div v-else class="content-inner pomodoro-shell">
-        <p class="pomodoro-loading">Загрузка Pomodoro...</p>
-        <p v-if="pageError" class="pomodoro-error">{{ pageError }}</p>
+        <div class="pomodoro-loading">
+          <span class="loading-cursor">▮</span> Инициализация Pomodoro...
+        </div>
+        <p v-if="pageError" class="pomodoro-error">
+          <i class="fa-solid fa-triangle-exclamation" /> {{ pageError }}
+        </p>
       </div>
     </main>
     <AppFooter />
@@ -477,147 +500,374 @@ const phaseTheme = computed(() => {
 .app-layout {
   min-height: 100vh;
   transition: background-color 0.6s ease, color 0.6s ease;
+  background: transparent;
 }
+
 .app-layout.theme-work {
   --pomodoro-phase-color: #d3234b;
   --pomodoro-phase-glow: rgba(211, 35, 75, 0.2);
-  background: linear-gradient(135deg, #0d0d0d 0%, #1a0e0e 100%);
+  --pomodoro-phase-glow-strong: rgba(211, 35, 75, 0.4);
 }
 .app-layout.theme-rest {
   --pomodoro-phase-color: #2f8f8f;
   --pomodoro-phase-glow: rgba(47, 143, 143, 0.2);
-  background: linear-gradient(135deg, #0d0d0d 0%, #0e1a1a 100%);
+  --pomodoro-phase-glow-strong: rgba(47, 143, 143, 0.4);
 }
 .app-layout.theme-long_rest {
   --pomodoro-phase-color: #8566ff;
   --pomodoro-phase-glow: rgba(133, 102, 255, 0.2);
-  background: linear-gradient(135deg, #0d0d0d 0%, #12101a 100%);
+  --pomodoro-phase-glow-strong: rgba(133, 102, 255, 0.4);
 }
-.content-wrapper { display: flex; }
-.content-inner { width: 100%; }
-.pomodoro-shell { max-width: 720px; margin: 0 auto; padding: 1rem; display: grid; gap: .75rem; }
-.pomodoro-error { margin: 0; color: var(--color-accent-hover); font-size: .8rem; }
-.pomodoro-loading { margin: 0; color: var(--color-text-secondary); font-size: .85rem; text-transform: uppercase; letter-spacing: .08em; }
+.app-layout.theme-default {
+  --pomodoro-phase-color: var(--color-accent);
+  --pomodoro-phase-glow: rgba(211, 35, 75, 0.2);
+  --pomodoro-phase-glow-strong: rgba(211, 35, 75, 0.4);
+}
+
+.content-wrapper {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 1rem 0 2rem;
+}
+
+.content-inner {
+  width: 100%;
+}
+
+.pomodoro-shell {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.pomodoro-error {
+  margin: 0;
+  padding: .5rem .75rem;
+  color: #ff6b6b;
+  font-size: .78rem;
+  background: rgba(255, 107, 107, 0.06);
+  border: 1px solid rgba(255, 107, 107, 0.15);
+  clip-path: polygon(
+    0 3px, 3px 3px, 3px 0,
+    calc(100% - 3px) 0, calc(100% - 3px) 3px, 100% 3px,
+    100% calc(100% - 3px), calc(100% - 3px) calc(100% - 3px), calc(100% - 3px) 100%,
+    3px 100%, 3px calc(100% - 3px), 0 calc(100% - 3px)
+  );
+}
+
+.pomodoro-loading {
+  color: var(--color-text-secondary);
+  font-size: .85rem;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  text-align: center;
+  padding: 4rem 0;
+}
+
+.loading-cursor {
+  color: var(--color-accent);
+  animation: cursor-blink 1s step-end infinite;
+}
+
+@keyframes cursor-blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+
+/* ── Phase bar ── */
+.pomodoro-phase-bar {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  padding: .5rem .75rem;
+  background: rgba(255, 255, 255, .02);
+  border: 1px solid var(--color-border);
+  clip-path: polygon(
+    0 3px, 3px 3px, 3px 0,
+    calc(100% - 3px) 0, calc(100% - 3px) 3px, 100% 3px,
+    100% calc(100% - 3px), calc(100% - 3px) calc(100% - 3px), calc(100% - 3px) 100%,
+    3px 100%, 3px calc(100% - 3px), 0 calc(100% - 3px)
+  );
+}
+
+.phase-indicator {
+  display: flex;
+  align-items: center;
+  gap: .45rem;
+  font-size: .78rem;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  color: var(--color-text);
+  white-space: nowrap;
+}
+
+.phase-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 0;
+  background: var(--pomodoro-phase-color);
+  box-shadow: 0 0 6px var(--pomodoro-phase-glow-strong);
+  animation: dot-pulse 2s ease-in-out infinite;
+}
+
+@keyframes dot-pulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 6px var(--pomodoro-phase-glow-strong); }
+  50% { opacity: .7; box-shadow: 0 0 12px var(--pomodoro-phase-glow-strong); }
+}
+
+.cycle-dots {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex: 1;
+  justify-content: center;
+}
+
+.cycle-dot {
+  width: 6px;
+  height: 6px;
+  border: 1px solid var(--color-border-light);
+  background: transparent;
+  transition: all .3s ease;
+}
+
+.cycle-dot--filled {
+  background: var(--pomodoro-phase-color);
+  border-color: var(--pomodoro-phase-color);
+  box-shadow: 0 0 4px var(--pomodoro-phase-glow);
+}
+
+.settings-trigger {
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--color-border);
+  background: rgba(255, 255, 255, .02);
+  color: var(--color-text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: .75rem;
+  transition: all .2s ease;
+  clip-path: polygon(
+    0 2px, 2px 2px, 2px 0,
+    calc(100% - 2px) 0, calc(100% - 2px) 2px, 100% 2px,
+    100% calc(100% - 2px), calc(100% - 2px) calc(100% - 2px), calc(100% - 2px) 100%,
+    2px 100%, 2px calc(100% - 2px), 0 calc(100% - 2px)
+  );
+}
+
+.settings-trigger:hover:not(:disabled) {
+  border-color: var(--pomodoro-phase-color);
+  color: var(--color-text);
+  box-shadow: 0 0 8px var(--pomodoro-phase-glow);
+}
+
+/* ── Actions ── */
 .pomodoro-actions {
   display: flex;
-  gap: .75rem;
-  flex-wrap: wrap;
+  gap: .6rem;
   justify-content: center;
   align-items: center;
-  padding: .5rem 0;
+  flex-wrap: wrap;
 }
-.pomodoro-actions .pomodoro-btn {
+
+.pomo-btn {
   position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: .4rem;
-  padding: .65rem 1.25rem;
-  font-size: .85rem;
+  padding: .6rem 1.1rem;
+  font-size: .82rem;
   font-weight: 500;
-  border-radius: 10px;
-  border: 1px solid var(--pomodoro-phase-color, var(--color-accent));
-  background: linear-gradient(135deg, rgba(211, 35, 75, 0.08), rgba(211, 35, 75, 0.02));
+  font-family: inherit;
+  border: 2px solid var(--color-border);
+  background: var(--color-bg-secondary);
   color: var(--color-text);
   cursor: pointer;
   transition: all 0.2s ease;
-  min-height: 44px;
-  min-width: 100px;
+  min-height: 42px;
+  min-width: 90px;
+  overflow: hidden;
+  clip-path: polygon(
+    0 4px, 4px 4px, 4px 0,
+    calc(100% - 4px) 0, calc(100% - 4px) 4px, 100% 4px,
+    100% calc(100% - 4px), calc(100% - 4px) calc(100% - 4px), calc(100% - 4px) 100%,
+    4px 100%, 4px calc(100% - 4px), 0 calc(100% - 4px)
+  );
 }
-.pomodoro-actions .pomodoro-btn:hover:not(:disabled) {
-  background: linear-gradient(135deg, rgba(211, 35, 75, 0.15), rgba(211, 35, 75, 0.05));
+
+.pomo-btn::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.08) 0px, rgba(0, 0, 0, 0.08) 1px,
+    transparent 1px, transparent 3px
+  );
+  pointer-events: none;
+  z-index: 0;
+}
+
+.pomo-btn::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0;
+  width: 100%; height: 2px;
+  background: var(--pomodoro-phase-color);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform .3s ease;
+  z-index: 2;
+}
+
+.pomo-btn:hover:not(:disabled)::after {
+  transform: scaleX(1);
+}
+
+.pomo-btn__icon,
+.pomo-btn__label {
+  position: relative;
+  z-index: 1;
+}
+
+.pomo-btn__icon {
+  font-size: .85rem;
+  opacity: .85;
+}
+
+.pomo-btn:hover:not(:disabled) {
+  border-color: var(--pomodoro-phase-color);
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25), 0 0 20px var(--pomodoro-phase-glow, rgba(211, 35, 75, 0.15));
-}
-.pomodoro-actions .pomodoro-btn:focus-visible {
-  outline: none;
   box-shadow:
-    0 0 0 2px var(--color-bg),
-    0 0 0 4px var(--pomodoro-phase-color, var(--color-accent));
+    0 4px 12px rgba(0, 0, 0, 0.3),
+    0 0 16px var(--pomodoro-phase-glow);
 }
-.pomodoro-actions .pomodoro-btn:disabled {
-  opacity: 0.45;
+
+.pomo-btn:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+}
+
+.pomo-btn:disabled {
+  opacity: 0.4;
   cursor: not-allowed;
-  border-color: var(--color-border);
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.01));
 }
-.pomodoro-actions .pomodoro-btn.primary {
-  background: linear-gradient(135deg, var(--pomodoro-phase-color, var(--color-accent)), rgba(211, 35, 75, 0.85));
+
+.pomo-btn--primary {
+  background: linear-gradient(135deg, var(--pomodoro-phase-color), rgba(211, 35, 75, 0.85));
   border-color: transparent;
   color: #fff;
   font-weight: 600;
+  box-shadow: 0 2px 8px var(--pomodoro-phase-glow);
 }
-.pomodoro-actions .pomodoro-btn.primary:hover:not(:disabled) {
-  background: linear-gradient(135deg, var(--pomodoro-phase-color, var(--color-accent)), rgba(211, 35, 75, 0.95));
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3), 0 0 24px var(--pomodoro-phase-glow, rgba(211, 35, 75, 0.25));
+
+.pomo-btn--primary:hover:not(:disabled) {
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.3),
+    0 0 24px var(--pomodoro-phase-glow-strong);
 }
-.pomodoro-actions .pomodoro-btn.secondary {
-  border-style: dashed;
+
+.pomo-btn--secondary {
+  border-color: var(--pomodoro-phase-color);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.pomo-btn--ghost {
+  border-style: solid;
+  border-color: var(--color-border);
   background: transparent;
 }
-.pomodoro-actions .pomodoro-btn .btn-icon {
-  font-size: .9rem;
-  opacity: .85;
+
+.pomo-btn--danger {
+  border-color: rgba(255, 107, 107, 0.3);
+  background: rgba(255, 107, 107, 0.04);
+  color: #ff8a8a;
 }
-.pomodoro-stats-grid {
+
+.pomo-btn--danger:hover:not(:disabled) {
+  border-color: rgba(255, 107, 107, 0.6);
+  box-shadow: 0 0 12px rgba(255, 107, 107, 0.15);
+}
+
+.pomo-btn--danger::after {
+  background: #ff6b6b;
+}
+
+/* ── Stats ── */
+.pomodoro-stats {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-  gap: .6rem;
-  margin-top: .3rem;
+  grid-template-columns: repeat(3, 1fr);
+  gap: .5rem;
 }
-.stat-card {
+
+.stat-cell {
   border: 1px solid var(--color-border);
-  background: linear-gradient(135deg, rgba(255, 255, 255, .02), rgba(255, 255, 255, .01));
-  border-radius: 12px;
-  padding: .75rem;
-  display: flex;
-  align-items: center;
-  gap: .6rem;
+  background: rgba(255, 255, 255, .02);
+  padding: .6rem .5rem;
+  text-align: center;
   transition: all .3s ease;
+  position: relative;
+  overflow: hidden;
+  clip-path: polygon(
+    0 3px, 3px 3px, 3px 0,
+    calc(100% - 3px) 0, calc(100% - 3px) 3px, 100% 3px,
+    100% calc(100% - 3px), calc(100% - 3px) calc(100% - 3px), calc(100% - 3px) 100%,
+    3px 100%, 3px calc(100% - 3px), 0 calc(100% - 3px)
+  );
 }
-.stat-card:hover {
+
+.stat-cell::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.04) 0px, rgba(0, 0, 0, 0.04) 1px,
+    transparent 1px, transparent 3px
+  );
+  pointer-events: none;
+}
+
+.stat-cell:hover {
   border-color: var(--color-border-light);
-  background: linear-gradient(135deg, rgba(255, 255, 255, .04), rgba(255, 255, 255, .02));
-  transform: translateY(-2px);
+  background: rgba(255, 255, 255, .04);
+  box-shadow: 0 0 8px var(--pomodoro-phase-glow);
 }
-.stat-icon {
-  font-size: 1.4rem;
-  color: var(--pomodoro-phase-color, var(--color-accent));
-  opacity: .85;
-}
-.stat-content {
-  flex: 1;
-  min-width: 0;
-}
-.stat-value {
-  margin: 0 0 .15rem;
-  font-size: 1.1rem;
+
+.stat-cell__value {
+  display: block;
+  font-size: 1.2rem;
   font-weight: 600;
   font-family: 'Share Tech Mono', 'Courier New', monospace;
   color: var(--color-text);
   line-height: 1;
+  margin-bottom: .35rem;
+  text-shadow: 0 0 8px rgba(232, 232, 232, .2);
 }
-.stat-label {
-  margin: 0;
-  font-size: .7rem;
-  color: var(--color-text-secondary);
-  text-transform: uppercase;
-  letter-spacing: .06em;
-  line-height: 1;
-}
-.pomodoro-topline {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: .5rem;
-}
-.pomodoro-phase {
-  margin: 0;
+
+.stat-cell__label {
+  display: block;
+  font-size: .65rem;
   color: var(--color-text-secondary);
   text-transform: uppercase;
   letter-spacing: .08em;
-  font-size: .8rem;
+  line-height: 1;
 }
+
+.stat-cell__label i {
+  font-size: .6rem;
+  color: var(--pomodoro-phase-color);
+  opacity: .7;
+}
+
+/* ── Transitions ── */
 .fade-enter-active,
 .fade-leave-active {
   transition: opacity .4s ease;
@@ -626,33 +876,39 @@ const phaseTheme = computed(() => {
 .fade-leave-to {
   opacity: 0;
 }
+
+/* ── Responsive ── */
 @media (max-width: 640px) {
-  .pomodoro-stats-grid {
-    grid-template-columns: 1fr;
-  }
-  .pomodoro-actions {
-    gap: .6rem;
-    padding: .5rem var(--app-safe-left, 0) .5rem var(--app-safe-right, 0);
-  }
-  .pomodoro-actions .pomodoro-btn {
-    min-height: 48px;
-    min-width: 90px;
-    padding: .75rem 1rem;
-    font-size: .9rem;
-    flex: 1 1 auto;
-    max-width: 160px;
-  }
   .pomodoro-shell {
     padding: 1rem max(1rem, var(--app-safe-left, 0)) max(1rem, var(--app-safe-bottom, 0)) max(1rem, var(--app-safe-right, 0));
   }
+
+  .pomodoro-actions {
+    gap: .5rem;
+  }
+
+  .pomo-btn {
+    min-height: 46px;
+    min-width: 80px;
+    padding: .7rem 1rem;
+    font-size: .85rem;
+    flex: 1 1 auto;
+    max-width: 140px;
+  }
 }
+
 @media (max-width: 400px) {
+  .pomodoro-stats {
+    grid-template-columns: 1fr;
+  }
+
   .pomodoro-actions {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: .5rem;
+    gap: .45rem;
   }
-  .pomodoro-actions .pomodoro-btn {
+
+  .pomo-btn {
     max-width: none;
     width: 100%;
   }
