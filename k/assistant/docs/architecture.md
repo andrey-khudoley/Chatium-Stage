@@ -27,7 +27,7 @@
 
 ## Стили UI
 - `styles.tsx`: `customScrollbarStyles` (тёмный скроллбар), `mobileSafeAreaStyles` (viewport-fit, отступы `env(safe-area-inset-*)` для body и модалок `.jn-modal-overlay` / `.logout-modal-overlay`), `formControlStyles` (фокус и отключение жёлтого autofill у `.jn-input` / `.jn-textarea` / `.settings-input`), константа `VIEWPORT_META_CONTENT` для `<meta name="viewport">`. Подключаются в `<head>` у главной (`index.tsx`) и у роутов `web/*`. В компонентах `Header.vue` / `AppFooter.vue` дополнительно учтены safe-area для шапки и подвала.
-- Выпадающие списки в модалках задач — `components/JnCrtSelect.vue` (панель в `Teleport` → `body`, `position: fixed`, непрозрачный базовый слой фона; не нативный `<select>`). Модалка задачи с классом `crt-form-panel` — сканлайны на фоне и на полях ввода; для `z-index` дочерних элементов модалки используется селектор `> *:not(.jn-crt-select)`.
+- Выпадающие списки в модалках задач — `components/JnCrtSelect.vue` (панель в `Teleport` → `body`, `position: fixed`, непрозрачный базовый слой фона; не нативный `<select>`). Триггер селекта имеет собственный базовый набор стилей поля (`padding`, `border`, `background`, `color`, `font-size`, focus-ring), чтобы не зависеть от внешних scoped-стилей `jn-input`; для значения фиксирована типографика (`line-height` и наследование `letter-spacing`), чтобы текст не смещался по вертикали. Модалка задачи с классом `crt-form-panel` — сканлайны на фоне и на полях ввода; для `z-index` дочерних элементов модалки используется селектор `> *:not(.jn-crt-select)`.
 
 ## Разделение слоёв
 

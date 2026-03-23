@@ -39,6 +39,7 @@
 - Расширить раздел «Инструменты» новыми утилитами (кроме Pomodoro).
 
 ## Changelog
+- 2026-03-23: `components/JnCrtSelect.vue` — селект отвязан от внешнего `jn-input`-каскада и получил собственные базовые стили триггера (`padding`, `border`, `background`, `color`, `font-size`, focus-ring), чтобы одинаково выглядеть в `TasksPage` и в scoped-модалке `JournalDayPane`; дополнительно у `.jn-crt-select__value` сохранены `display: block` и наследование `line-height`/`letter-spacing` для стабильной типографики.
 - 2026-03-23: для Pomodoro добавлен полный лог сегментов запусков: новая Heap-таблица `tables/pomodoro-launches.table.ts`, репозиторий `repos/pomodoro-launches.repo.ts`, интеграция в `lib/pomodoro.lib.ts` (закрытие/открытие сегментов на `start/resume/pause/stop`, автопереходах фаз и смене задачи во время `running`).
 - 2026-03-23: устранено мигание белого blur-ореола под дугой таймера — в `PomodoroTimerDial.vue` для `status=running` убрана пульсация `progress-pulse` и динамический `drop-shadow`, свечение сделано статичным (`filter: url(#glow)`), а интенсивность `glow/glow-strong` дополнительно снижена (`stdDeviation` 3/4).
 - 2026-03-23: уменьшена выраженность мигания таймера в `PomodoroTimerDial.vue` — смягчены `paused-blink`/`time-paused-blink` (меньшая амплитуда opacity, более медленный цикл), а также ослаблено мерцание `dial-scanline-flicker` для более спокойного CRT-эффекта.

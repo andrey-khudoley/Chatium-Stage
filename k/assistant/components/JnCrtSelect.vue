@@ -205,22 +205,43 @@ onUnmounted(() => {
   justify-content: space-between;
   gap: 0.5rem;
   width: 100%;
+  box-sizing: border-box;
+  padding: 0.5rem 0.6rem;
   margin-bottom: 0;
+  border: 1px solid var(--color-border, #2a2a2a);
+  border-radius: 2px;
+  background: var(--color-bg, #0a0a0a);
+  color: var(--color-text, #e8e8e8);
   text-align: left;
   cursor: pointer;
   font: inherit;
+  font-size: 0.8rem;
+  line-height: 1.25;
+  transition:
+    border-color 0.18s ease,
+    box-shadow 0.18s ease;
 }
 
 .jn-crt-select__trigger:disabled {
   cursor: not-allowed;
 }
 
+.jn-crt-select__trigger:focus,
+.jn-crt-select__trigger:focus-visible {
+  outline: none;
+  border-color: #d3234b;
+  box-shadow: 0 0 0 1px rgba(211, 35, 75, 0.35);
+}
+
 .jn-crt-select__value {
+  display: block;
   flex: 1;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  line-height: inherit;
+  letter-spacing: inherit;
 }
 
 .jn-crt-select__chev {
