@@ -510,4 +510,27 @@ body {
   }
 }
 
+@media (max-width: 480px) {
+  .content-inner {
+    padding: 1.25rem 0.75rem;
+  }
+
+  .profile-heading {
+    font-size: 1.65rem;
+  }
+
+  .profile-description {
+    font-size: 1rem;
+  }
+
+  .profile-card {
+    padding: 1.25rem;
+    border-radius: 8px;
+  }
+
+  .profile-field {
+    padding: 0.85rem;
+  }
+}
+
 </style>

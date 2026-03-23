@@ -19,13 +19,34 @@ function rowToClient(row: { id: string; name: string; sortOrder: number }): Task
   return { id: row.id, name: row.name, sortOrder: row.sortOrder }
 }
 
+const HEAP_OPTIONAL_DETAILS_TEXT_MAX_LEN = 10_000
+
 function rowToProject(row: {
   id: string
   clientId: string
   name: string
   sortOrder: number
+  details?: string | null
+  context?: string | null
 }): TaskProjectDto {
-  return { id: row.id, clientId: row.clientId, name: row.name, sortOrder: row.sortOrder }
+  return {
+    id: row.id,
+    clientId: row.clientId,
+    name: row.name,
+    details: row.details ?? '',
+    context: row.context ?? '',
+    sortOrder: row.sortOrder
+  }
+}
+
+/** Для Heap.Optional(String) «Детали» у проектов и задач: trim, длина, пустое — unset. */
+function normalizeHeapOptionalDetailsText(raw: string | undefined): string | undefined {
+  if (raw === undefined) return undefined
+  const t = raw.trim()
+  if (!t) return undefined
+  return t.length > HEAP_OPTIONAL_DETAILS_TEXT_MAX_LEN
+    ? t.slice(0, HEAP_OPTIONAL_DETAILS_TEXT_MAX_LEN)
+    : t
 }
 
 function normalizeDaySortOrder(n: unknown): number {
@@ -37,7 +58,8 @@ function rowToTask(row: {
   id: string
   projectId: string
   title: string
-  description: string
+  details?: string | null
+  context?: string | null
   priority: number
   status: string
   sortOrder: number
@@ -47,7 +69,8 @@ function rowToTask(row: {
     id: row.id,
     projectId: row.projectId,
     title: row.title,
-    description: row.description ?? '',
+    details: row.details ?? '',
+    context: row.context ?? '',
     priority: normalizePriority(row.priority),
     status: normalizeStatus(row.status),
     sortOrder: row.sortOrder,
@@ -178,16 +201,22 @@ export async function createProject(
   ctx: app.Ctx,
   userId: string,
   clientId: string,
-  name: string
+  name: string,
+  details?: string,
+  context?: string
 ): Promise<TaskProjectDto | null> {
   const client = await assertClientOwner(ctx, userId, clientId)
   if (!client) return null
   const sortOrder = await nextProjectSortOrder(ctx, userId, clientId)
+  const d = normalizeHeapOptionalDetailsText(details)
+  const c = normalizeHeapOptionalDetailsText(context)
   const row = await TaskProjects.create(ctx, {
     userId,
     clientId,
     name: name.trim() || 'Новый проект',
-    sortOrder
+    sortOrder,
+    ...(d !== undefined ? { details: d } : {}),
+    ...(c !== undefined ? { context: c } : {})
   })
   return rowToProject(row)
 }
@@ -196,7 +225,7 @@ export async function updateProject(
   ctx: app.Ctx,
   userId: string,
   id: string,
-  data: { name: string; clientId?: string }
+  data: { name: string; clientId?: string; details?: string; context?: string }
 ): Promise<TaskProjectDto | null> {
   const existing = await assertProjectOwner(ctx, userId, id)
   if (!existing) return null
@@ -210,11 +239,26 @@ export async function updateProject(
     clientId === existing.clientId
       ? existing.sortOrder
       : await nextProjectSortOrder(ctx, userId, clientId)
+  const detailsPatch =
+    data.details !== undefined
+      ? {
+          /** `null` сбрасывает Heap.Optional (см. inner/docs/008-heap.md, опциональные поля). */
+          details: normalizeHeapOptionalDetailsText(data.details) ?? (null as TaskProjects.T['details'])
+        }
+      : {}
+  const contextPatch =
+    data.context !== undefined
+      ? {
+          context: normalizeHeapOptionalDetailsText(data.context) ?? (null as TaskProjects.T['context'])
+        }
+      : {}
   const row = await TaskProjects.update(ctx, {
     id,
     name: data.name.trim() || existing.name,
     clientId,
-    sortOrder
+    sortOrder,
+    ...detailsPatch,
+    ...contextPatch
   })
   return rowToProject(row)
 }
@@ -234,7 +278,7 @@ export async function createTask(
   ctx: app.Ctx,
   userId: string,
   projectId: string,
-  data: { title: string; description?: string; priority?: number; status?: TaskStatus }
+  data: { title: string; details?: string; context?: string; priority?: number; status?: TaskStatus }
 ): Promise<TaskItemDto | null> {
   const project = await assertProjectOwner(ctx, userId, projectId)
   if (!project) return null
@@ -242,15 +286,22 @@ export async function createTask(
   const priority = normalizePriority(data.priority ?? 2)
   const status = data.status ? normalizeStatus(data.status) : 'todo'
   const daySortOrder = status === 'in_progress' ? await nextDaySortOrder(ctx, userId) : 0
+  const d = normalizeHeapOptionalDetailsText(
+    typeof data.details === 'string' ? data.details : undefined
+  )
+  const c = normalizeHeapOptionalDetailsText(
+    typeof data.context === 'string' ? data.context : undefined
+  )
   const row = await TaskItems.create(ctx, {
     userId,
     projectId,
     title: data.title.trim() || 'Новая задача',
-    description: typeof data.description === 'string' ? data.description : '',
     priority,
     status,
     sortOrder,
-    daySortOrder
+    daySortOrder,
+    ...(d !== undefined ? { details: d } : {}),
+    ...(c !== undefined ? { context: c } : {})
   })
   return rowToTask(row)
 }
@@ -261,7 +312,8 @@ export async function updateTask(
   id: string,
   data: {
     title?: string
-    description?: string
+    details?: string
+    context?: string
     priority?: number
     status?: TaskStatus
     projectId?: string
@@ -289,9 +341,24 @@ export async function updateTask(
       daySortOrderPatch = { daySortOrder: 0 }
     }
   }
+  const detailsPatch =
+    data.details !== undefined
+      ? {
+          details:
+            normalizeHeapOptionalDetailsText(data.details) ?? (null as TaskItems.T['details'])
+        }
+      : {}
+  const contextPatch =
+    data.context !== undefined
+      ? {
+          context:
+            normalizeHeapOptionalDetailsText(data.context) ?? (null as TaskItems.T['context'])
+        }
+      : {}
   const patch = {
     ...(data.title !== undefined ? { title: data.title.trim() || existing.title } : {}),
-    ...(data.description !== undefined ? { description: data.description } : {}),
+    ...detailsPatch,
+    ...contextPatch,
     ...(data.priority !== undefined ? { priority: normalizePriority(data.priority) } : {}),
     ...(data.status !== undefined ? { status: nextStatus } : {}),
     ...(projectId !== existing.projectId ? { projectId, sortOrder } : {}),
@@ -368,6 +435,53 @@ export async function reorderTasks(
   i = 0
   for (const taskId of orderedIds) {
     await TaskItems.update(ctx, { id: taskId, sortOrder: i })
+    i++
+  }
+  return true
+}
+
+export async function reorderClients(ctx: app.Ctx, userId: string, orderedIds: string[]): Promise<boolean> {
+  const clients = await TaskClients.findAll(ctx, { where: { userId } })
+  const idSet = new Set(clients.map((c) => c.id))
+  if (orderedIds.length !== idSet.size || orderedIds.some((id) => !idSet.has(id))) {
+    return false
+  }
+  const offset = 1_000_000
+  let i = 0
+  for (const id of orderedIds) {
+    await TaskClients.update(ctx, { id, sortOrder: offset + i })
+    i++
+  }
+  i = 0
+  for (const id of orderedIds) {
+    await TaskClients.update(ctx, { id, sortOrder: i })
+    i++
+  }
+  return true
+}
+
+export async function reorderProjects(
+  ctx: app.Ctx,
+  userId: string,
+  clientId: string,
+  orderedIds: string[]
+): Promise<boolean> {
+  const client = await assertClientOwner(ctx, userId, clientId)
+  if (!client) return false
+  const projects = await TaskProjects.findAll(ctx, { where: { userId, clientId } })
+  const idSet = new Set(projects.map((p) => p.id))
+  if (orderedIds.length !== idSet.size || orderedIds.some((id) => !idSet.has(id))) {
+    return false
+  }
+  const offset = 1_000_000
+  let i = 0
+  for (const id of orderedIds) {
+    await TaskProjects.update(ctx, { id, sortOrder: offset + i })
+    i++
+  }
+  i = 0
+  for (const id of orderedIds) {
+    await TaskProjects.update(ctx, { id, sortOrder: i })
     i++
   }
   return true

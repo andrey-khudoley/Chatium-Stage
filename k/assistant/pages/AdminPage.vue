@@ -4,6 +4,7 @@ import { getOrCreateBrowserSocketClient } from '@app/socket'
 import Header from '../components/Header.vue'
 import GlobalGlitch from '../components/GlobalGlitch.vue'
 import AppFooter from '../components/AppFooter.vue'
+import AiSettings from '../components/admin/AiSettings.vue'
 import { getSettingRoute } from '../api/settings/get'
 import { saveSettingRoute } from '../api/settings/save'
 import { subscribeBootStaticReady, scheduleHideBootLoader } from '../shared/bootUi'
@@ -578,6 +579,9 @@ const clearLogs = () => {
             <p v-if="logLevelError" class="admin-card-error">{{ logLevelError }}</p>
           </div>
 
+          <!-- AI Settings -->
+          <AiSettings />
+
           <!-- Logs Output -->
           <div class="admin-card logs-card">
             <div class="admin-card-header">
@@ -900,12 +904,7 @@ const clearLogs = () => {
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid var(--color-border);
   border-radius: 4px;
-  transition: border-color 0.2s ease;
-}
-
-.settings-input:focus {
-  outline: none;
-  border-color: var(--color-accent);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .settings-input:disabled {

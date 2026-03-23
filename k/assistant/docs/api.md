@@ -73,15 +73,22 @@
 | POST | /api/tasks/clients/create | api/tasks/clients/create.ts | RealUser | Body: `{ name }`. Ответ: `{ success, client }`. |
 | POST | /api/tasks/clients/update | api/tasks/clients/update.ts | RealUser | Body: `{ id, name }`. |
 | POST | /api/tasks/clients/delete | api/tasks/clients/delete.ts | RealUser | Body: `{ id }` — каскадное удаление проектов и задач. |
-| POST | /api/tasks/projects/create | api/tasks/projects/create.ts | RealUser | Body: `{ clientId, name }`. |
-| POST | /api/tasks/projects/update | api/tasks/projects/update.ts | RealUser | Body: `{ id, name, clientId? }` — смена клиента у проекта допустима. |
+| POST | /api/tasks/clients/reorder | api/tasks/clients/reorder.ts | RealUser | Body: `{ orderedIds: string[] }` — полный список id клиентов пользователя в новом порядке. |
+| POST | /api/tasks/projects/create | api/tasks/projects/create.ts | RealUser | Body: `{ clientId, name, details? }` — `details` (текст «Детали»), опционально. |
+| POST | /api/tasks/projects/update | api/tasks/projects/update.ts | RealUser | Body: `{ id, name, clientId?, details? }` — смена клиента у проекта допустима; `details` — опционально обновить текст «Детали». |
 | POST | /api/tasks/projects/delete | api/tasks/projects/delete.ts | RealUser | Body: `{ id }` — удаление задач проекта. |
-| POST | /api/tasks/items/create | api/tasks/items/create.ts | RealUser | Body: `{ projectId, title, description?, priority?, status? }`. |
-| POST | /api/tasks/items/update | api/tasks/items/update.ts | RealUser | Body: `{ id, title?, description?, priority?, status?, projectId? }`. |
+| POST | /api/tasks/projects/reorder | api/tasks/projects/reorder.ts | RealUser | Body: `{ clientId, orderedIds: string[] }` — полный список id проектов этого клиента в новом порядке. |
+| POST | /api/tasks/items/create | api/tasks/items/create.ts | RealUser | Body: `{ projectId, title, details?, priority?, status? }` — `details` (текст «Детали»), опционально. |
+| POST | /api/tasks/items/update | api/tasks/items/update.ts | RealUser | Body: `{ id, title?, details?, priority?, status?, projectId? }`. |
 | POST | /api/tasks/items/delete | api/tasks/items/delete.ts | RealUser | Body: `{ id }`. |
 | POST | /api/tasks/items/reorder | api/tasks/items/reorder.ts | RealUser | Body: `{ projectId, orderedIds: string[] }` — полный список id задач проекта в новом порядке. |
 | POST | /api/tasks/items/reorder-day | api/tasks/items/reorder-day.ts | RealUser | Body: `{ orderedIds: string[] }` — полный список id всех задач со статусом «В работе» в новом порядке (дневной список). |
 | POST | /api/tasks/items/release-day | api/tasks/items/release-day.ts | RealUser | Body: `{}` (опционально). Все задачи «В работе» → «К выполнению». Ответ: `{ success, count }`. |
+| POST | /api/tasks/tasks-ai-chat-ensure | api/tasks/tasks-ai-chat-ensure.ts | RealUser | Body: `{ projectId }`. Создаёт/возвращает фид чата с AI для пары пользователь+проект, участник фида, `getChat` только с URL `messages/get`, `changes`, `add` (без `useAppAccount` — иначе `@app/feed` требует proxy `ctx.app` и падает в UGC). Ответ: `{ success, chat?, feedId?, error? }`. |
+| POST | /api/tasks/tasks-ai-chat-reset | api/tasks/tasks-ai-chat-reset.ts | RealUser | Body: `{ projectId }`. Удаляет старый фид, создаёт новый, обновляет Heap-маппинг (сброс истории). Ответ: `{ success, feedId?, error? }`. Клиент затем вызывает `tasks-ai-chat-ensure`. |
+| GET | `/tasks-ai-chat/:feedId/messages/get` | api/tasks/tasks-ai-chat-messages-get.ts | RealUser | `feedMessagesGetHandler` + маппинг авторов (ассистент/пользователь); список **сортируется по времени** (старые→новые), т.к. фид по умолчанию может отдавать новые первыми. Доступ к `feedId` — через Heap `task_ai_chat_feeds`. URL в чате: `taskAiChatMessagesGetRoute({ feedId }).url()`. |
+| GET | `/tasks-ai-chat/:feedId/messages/changes` | api/tasks/tasks-ai-chat-messages-changes.ts | RealUser | `feedMessagesChangesHandler` + тот же маппинг авторов. |
+| POST | `/tasks-ai-chat/:feedId/messages/add` | api/tasks/tasks-ai-chat-messages-add.ts | RealUser | `feedMessagesAddHandler`; после успешного add — `runTaskAiChatReplyIfNeeded` в `tasks-ai-chat-reply.ts` (`startCompletion`, в proxy context). В system перед каждым запросом подставляется актуальный блок из `buildTaskAiChatProjectContextBlock` (`tasks-ai-chat-lib.ts`): проект, задачи, **details** и служебные **context** у проекта и задач из Heap, с явной шапкой «СЛУЖЕБНЫЙ КОНТЕКСТ ПРОЕКТА (НЕ СООБЩЕНИЕ ПОЛЬЗОВАТЕЛЯ)». Последнее пользовательское сообщение передаётся отдельным user-блоком «ТЕКУЩЕЕ СООБЩЕНИЕ ПОЛЬЗОВАТЕЛЯ». Системный текст: `getAiFormulateSystemPrompt` + `TASKS_AI_CHAT_JSON_APPENDIX` в `config/prompts.tsx` (разделение: сквозная рамка проекта — `update_project.context` без повторения списка задач; уточнения по строкам — `update_task` / `create_task`, полные слитые `context` по правилам промпта). Ответ модели — JSON с `reply`, `actions`, `summary`; применение в Heap — `tasks-ai-chat-completion-completed.ts` → `tasks-ai-formulate-apply.ts` (create/update/delete/reorder, `reorder_tasks` с `$new:N`). В ленту пишется только текст `reply`. Отдельного роута `ai-formulate` нет. |
 
 ## Публичные эндпоинты
 | Method | Path | File | Auth | Назначение |

@@ -16,7 +16,7 @@ export const updateTaskItemRoute = app
   .body((s) => ({
     id: s.string(),
     title: s.optional(s.string()),
-    description: s.optional(s.string()),
+    details: s.optional(s.string()),
     priority: s.optional(s.number()),
     status: s.optional(s.string()),
     projectId: s.optional(s.string())
@@ -32,7 +32,7 @@ export const updateTaskItemRoute = app
       const status = parseStatus(req.body.status)
       const task = await tasksRepo.updateTask(ctx, user.id, req.body.id, {
         ...(req.body.title !== undefined ? { title: req.body.title } : {}),
-        ...(req.body.description !== undefined ? { description: req.body.description } : {}),
+        ...(req.body.details !== undefined ? { details: req.body.details } : {}),
         ...(req.body.priority !== undefined ? { priority: req.body.priority } : {}),
         ...(status !== undefined ? { status } : {}),
         ...(req.body.projectId !== undefined ? { projectId: req.body.projectId } : {})

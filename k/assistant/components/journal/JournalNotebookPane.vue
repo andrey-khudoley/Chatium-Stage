@@ -728,13 +728,6 @@ async function confirmDelete() {
   line-height: 1.4;
 }
 
-.jn-input:focus,
-.jn-textarea:focus {
-  outline: none;
-  border-color: var(--color-accent);
-  box-shadow: 0 0 0 1px var(--color-accent-medium);
-}
-
 .jn-modal-error {
   margin: 0 0 0.65rem;
   font-size: 0.72rem;

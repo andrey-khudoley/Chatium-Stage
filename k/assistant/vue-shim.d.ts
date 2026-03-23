@@ -23,20 +23,3 @@ declare module 'vue' {
   export type ComputedRef<T> = { value: T }
   export type DefineComponent = any
 }
-
-declare namespace app {
-  interface Req {
-    body?: any
-    query?: any
-    params?: any
-  }
-  
-  interface Ctx {
-    user?: any
-    account?: any
-    log?: (message: string) => void
-    [key: string]: any
-  }
-}
-
-type RichUgcCtx = app.Ctx

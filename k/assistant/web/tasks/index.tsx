@@ -11,17 +11,21 @@ import { getTasksTreeRoute } from '../../api/tasks/tree/get'
 import { createTaskClientRoute } from '../../api/tasks/clients/create'
 import { updateTaskClientRoute } from '../../api/tasks/clients/update'
 import { deleteTaskClientRoute } from '../../api/tasks/clients/delete'
+import { reorderTaskClientsRoute } from '../../api/tasks/clients/reorder'
 import { createTaskProjectRoute } from '../../api/tasks/projects/create'
 import { updateTaskProjectRoute } from '../../api/tasks/projects/update'
 import { deleteTaskProjectRoute } from '../../api/tasks/projects/delete'
+import { reorderTaskProjectsRoute } from '../../api/tasks/projects/reorder'
 import { createTaskItemRoute } from '../../api/tasks/items/create'
 import { updateTaskItemRoute } from '../../api/tasks/items/update'
 import { deleteTaskItemRoute } from '../../api/tasks/items/delete'
 import { reorderTaskItemsRoute } from '../../api/tasks/items/reorder'
+import { taskAiChatEnsureRoute } from '../../api/tasks/tasks-ai-chat-ensure'
+import { taskAiChatResetRoute } from '../../api/tasks/tasks-ai-chat-reset'
 import { getApiUrlForRoute, getFullUrl, ROUTES } from '../../config/routes'
 import { TASKS_PAGE_NAME, getPageTitle, getHeaderText } from '../../config/project'
 import * as settingsLib from '../../lib/settings.lib'
-import { customScrollbarStyles } from '../../styles'
+import { customScrollbarStyles, formControlStyles, mobileSafeAreaStyles, VIEWPORT_META_CONTENT } from '../../styles'
 
 const LOG_PATH = 'web/tasks/index'
 
@@ -57,13 +61,17 @@ export const tasksPageRoute = app.html('/', async (ctx, _req) => {
   const taskClientCreateUrl = getApiUrlForRoute(createTaskClientRoute.url())
   const taskClientUpdateUrl = getApiUrlForRoute(updateTaskClientRoute.url())
   const taskClientDeleteUrl = getApiUrlForRoute(deleteTaskClientRoute.url())
+  const taskClientReorderUrl = getApiUrlForRoute(reorderTaskClientsRoute.url())
   const taskProjectCreateUrl = getApiUrlForRoute(createTaskProjectRoute.url())
   const taskProjectUpdateUrl = getApiUrlForRoute(updateTaskProjectRoute.url())
   const taskProjectDeleteUrl = getApiUrlForRoute(deleteTaskProjectRoute.url())
+  const taskProjectReorderUrl = getApiUrlForRoute(reorderTaskProjectsRoute.url())
   const taskItemCreateUrl = getApiUrlForRoute(createTaskItemRoute.url())
   const taskItemUpdateUrl = getApiUrlForRoute(updateTaskItemRoute.url())
   const taskItemDeleteUrl = getApiUrlForRoute(deleteTaskItemRoute.url())
   const taskItemReorderUrl = getApiUrlForRoute(reorderTaskItemsRoute.url())
+  const taskAiChatEnsureUrl = getApiUrlForRoute(taskAiChatEnsureRoute.url())
+  const taskAiChatResetUrl = getApiUrlForRoute(taskAiChatResetRoute.url())
 
   const logLevel = await getLogLevelForPage(ctx)
   const projectName = await settingsLib.getSettingString(ctx, settingsLib.SETTING_KEYS.PROJECT_NAME)
@@ -78,12 +86,14 @@ export const tasksPageRoute = app.html('/', async (ctx, _req) => {
     <html>
       <head>
         <title>{getPageTitle(TASKS_PAGE_NAME, projectName)}</title>
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta name="viewport" content={VIEWPORT_META_CONTENT} />
         <meta charset="UTF-8" />
         <script>{getLogLevelScript(logLevel)}</script>
         <script src="/s/metric/clarity.js"></script>
         <style>{getPreloaderStyles()}</style>
         <style>{customScrollbarStyles}</style>
+        <style>{mobileSafeAreaStyles}</style>
+        <style>{formControlStyles}</style>
         <style>{`
           html {
             margin: 0;
@@ -307,13 +317,17 @@ export const tasksPageRoute = app.html('/', async (ctx, _req) => {
           taskClientCreateUrl={taskClientCreateUrl}
           taskClientUpdateUrl={taskClientUpdateUrl}
           taskClientDeleteUrl={taskClientDeleteUrl}
+          taskClientReorderUrl={taskClientReorderUrl}
           taskProjectCreateUrl={taskProjectCreateUrl}
           taskProjectUpdateUrl={taskProjectUpdateUrl}
           taskProjectDeleteUrl={taskProjectDeleteUrl}
+          taskProjectReorderUrl={taskProjectReorderUrl}
           taskItemCreateUrl={taskItemCreateUrl}
           taskItemUpdateUrl={taskItemUpdateUrl}
           taskItemDeleteUrl={taskItemDeleteUrl}
           taskItemReorderUrl={taskItemReorderUrl}
+          taskAiChatEnsureUrl={taskAiChatEnsureUrl}
+          taskAiChatResetUrl={taskAiChatResetUrl}
         />
       </body>
     </html>

@@ -198,6 +198,7 @@ const cancelLogout = () => {
 .header {
   background: transparent;
   padding: 1.25rem 0;
+  padding-top: calc(1.25rem + env(safe-area-inset-top, 0px));
   position: relative;
   z-index: 200;
   transition: all 0.25s ease;
@@ -627,6 +628,7 @@ const cancelLogout = () => {
 @media (max-width: 640px) {
   .header {
     padding: 1rem 0;
+    padding-top: calc(1rem + env(safe-area-inset-top, 0px));
   }
 
   .header-title {
@@ -657,6 +659,23 @@ const cancelLogout = () => {
 @media (max-width: 480px) {
   .header-clock {
     display: none;
+  }
+}
+
+@media (max-width: 380px) {
+  .header-title {
+    white-space: normal;
+    line-height: 1.25;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    max-width: 100%;
+  }
+
+  .header-logo-and-title {
+    align-items: flex-start;
+    gap: 0.65rem;
   }
 }
 </style>

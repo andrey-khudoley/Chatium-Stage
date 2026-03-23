@@ -83,20 +83,10 @@ declare namespace JSX {
   }
 }
 
-declare module '*.vue' {
-  const component: any
-  export default component
-}
-
+/** Расширения без дублирования `const app` — тип роутера задаёт `@app/types/globals.d.ts` (см. `tsconfig.json` → `files`). Модуль `*.vue` — в `vue-shim.d.ts`. */
 declare global {
   interface Window {
     __BOOT__?: { logLevel?: string | number }
-  }
-  const app: {
-    html: (path: string, handler: (ctx: any, req: any) => any) => any
-    get: (path: string, handler: (ctx: any, req: any) => any) => any
-    post: (path: string, handler: (ctx: any, req: any) => any) => any
-    job: (name: string, handler: (ctx: any, data: any) => any) => any
   }
 }
 

@@ -9,7 +9,8 @@ export const updateTaskProjectRoute = app
   .body((s) => ({
     id: s.string(),
     name: s.string(),
-    clientId: s.optional(s.string())
+    clientId: s.optional(s.string()),
+    details: s.optional(s.string())
   }))
   .post('/', async (ctx, req) => {
     const user = requireRealUser(ctx)
@@ -21,7 +22,8 @@ export const updateTaskProjectRoute = app
     try {
       const project = await tasksRepo.updateProject(ctx, user.id, req.body.id, {
         name: req.body.name,
-        ...(req.body.clientId !== undefined ? { clientId: req.body.clientId } : {})
+        ...(req.body.clientId !== undefined ? { clientId: req.body.clientId } : {}),
+        ...(req.body.details !== undefined ? { details: req.body.details } : {})
       })
       if (!project) {
         return { success: false, error: 'Проект или клиент не найдены' }

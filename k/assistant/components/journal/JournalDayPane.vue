@@ -67,7 +67,7 @@
             >
               {{ t.title }}
             </div>
-            <div v-if="t.description" class="journal-day-task-desc">{{ t.description }}</div>
+            <div v-if="t.details" class="journal-day-task-desc">{{ t.details }}</div>
             <div class="journal-day-meta">
               <span class="journal-day-meta-label">Клиент</span>
               <a
@@ -117,27 +117,23 @@
           aria-labelledby="jd-task-edit-title"
           @click.self="closeTaskModal"
         >
-          <div class="jn-modal jn-modal--wide" @click.stop>
+          <div class="jn-modal jn-modal--wide crt-form-panel" @click.stop>
             <h2 id="jd-task-edit-title" class="jn-modal-heading">Задача</h2>
             <label class="jn-label" for="jd-tt-title">Заголовок</label>
             <input id="jd-tt-title" v-model="taskForm.title" type="text" class="jn-input" maxlength="500" />
-            <label class="jn-label" for="jd-tt-desc">Описание</label>
-            <textarea id="jd-tt-desc" v-model="taskForm.description" class="jn-textarea" rows="5" />
+            <label class="jn-label" for="jd-tt-desc">Детали</label>
+            <textarea id="jd-tt-desc" v-model="taskForm.details" class="jn-textarea" rows="5" />
             <label class="jn-label" for="jd-tt-p">Приоритет</label>
-            <select id="jd-tt-p" v-model.number="taskForm.priority" class="jn-input">
-              <option v-for="n in 4" :key="n" :value="n">{{ n }} — {{ PRIORITY_LABELS[n] }}</option>
-            </select>
+            <JnCrtSelect id="jd-tt-p" v-model="taskForm.priority" :options="prioritySelectOptions" />
             <label class="jn-label" for="jd-tt-s">Статус</label>
-            <select id="jd-tt-s" v-model="taskForm.status" class="jn-input">
-              <option value="todo">К выполнению</option>
-              <option value="in_progress">В работе</option>
-              <option value="done">Готово</option>
-              <option value="cancelled">Отмена</option>
-            </select>
+            <JnCrtSelect id="jd-tt-s" v-model="taskForm.status" :options="statusSelectOptions" />
             <label class="jn-label" for="jd-tt-pr">Проект</label>
-            <select id="jd-tt-pr" v-model="taskForm.projectId" class="jn-input">
-              <option v-for="p in projectsForEditClient" :key="p.id" :value="p.id">{{ p.name }}</option>
-            </select>
+            <JnCrtSelect
+              id="jd-tt-pr"
+              v-model="taskForm.projectId"
+              :options="taskProjectSelectOptions"
+              :disabled="!taskProjectSelectOptions.length"
+            />
             <p v-if="taskError" class="jn-modal-error" role="alert">{{ taskError }}</p>
             <div class="jn-modal-actions">
               <button type="button" class="journal-nav-btn" @click="closeTaskModal">Отмена</button>
@@ -156,6 +152,7 @@
 import { computed, onUnmounted, ref, watch } from 'vue'
 import type { TasksTreeDto, TaskItemDto, TaskProjectDto } from '../../lib/tasks-types'
 import { createComponentLogger } from '../../shared/logger'
+import JnCrtSelect from '../JnCrtSelect.vue'
 
 const log = createComponentLogger('JournalDayPane')
 
@@ -216,12 +213,23 @@ const PRIORITY_LABELS: Record<number, string> = {
   4: 'Низкий'
 }
 
+const statusSelectOptions = [
+  { value: 'todo', label: 'К выполнению' },
+  { value: 'in_progress', label: 'В работе' },
+  { value: 'done', label: 'Готово' },
+  { value: 'cancelled', label: 'Отмена' }
+]
+
+const prioritySelectOptions = computed(() =>
+  ([1, 2, 3, 4] as const).map((n) => ({ value: n, label: `${n} — ${PRIORITY_LABELS[n]}` }))
+)
+
 const taskModalOpen = ref(false)
 const taskEditId = ref<string | null>(null)
 const taskEditClientId = ref('')
 const taskForm = ref({
   title: '',
-  description: '',
+  details: '',
   priority: 2,
   status: 'todo' as TaskItemDto['status'],
   projectId: '' as string
@@ -237,6 +245,10 @@ const projectsForEditClient = computed((): TaskProjectDto[] => {
     .sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name, 'ru'))
 })
 
+const taskProjectSelectOptions = computed(() =>
+  projectsForEditClient.value.map((p) => ({ value: p.id, label: p.name }))
+)
+
 function onTaskTitleClick(t: TaskItemDto) {
   if (!props.taskItemUpdateUrl) return
   openTaskEdit(t)
@@ -248,7 +260,7 @@ function openTaskEdit(t: TaskItemDto) {
   taskEditClientId.value = clientIdForTask(t)
   taskForm.value = {
     title: t.title,
-    description: t.description,
+    details: t.details ?? '',
     priority: t.priority,
     status: t.status,
     projectId: t.projectId
@@ -311,7 +323,7 @@ async function submitTaskModal() {
     const j = await postJson<{ success: boolean; task?: TaskItemDto; error?: string }>(props.taskItemUpdateUrl, {
       id: taskEditId.value,
       title: taskForm.value.title,
-      description: taskForm.value.description,
+      details: taskForm.value.details,
       priority: taskForm.value.priority,
       status: taskForm.value.status,
       projectId: taskForm.value.projectId
@@ -685,6 +697,55 @@ async function releaseAll() {
   box-shadow: 0 0 24px rgba(211, 35, 75, 0.15);
 }
 
+.jn-modal.crt-form-panel {
+  position: relative;
+  overflow: visible;
+}
+
+.jn-modal.crt-form-panel::before {
+  content: '';
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  border-radius: 2px;
+  opacity: 0.1;
+  z-index: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 1px,
+    rgba(0, 0, 0, 0.48) 1px,
+    rgba(0, 0, 0, 0.48) 2px
+  );
+}
+
+.jn-modal.crt-form-panel > *:not(.jn-crt-select) {
+  position: relative;
+  z-index: 1;
+}
+
+.crt-form-panel input.jn-input {
+  background-image: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.08),
+    rgba(0, 0, 0, 0.08) 1px,
+    transparent 1px,
+    transparent 2px
+  );
+  background-color: var(--color-bg);
+}
+
+.crt-form-panel textarea.jn-textarea {
+  background-image: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.09),
+    rgba(0, 0, 0, 0.09) 1px,
+    transparent 1px,
+    transparent 2px
+  );
+  background-color: var(--color-bg);
+}
+
 .jn-modal--wide {
   max-width: 520px;
 }
@@ -695,6 +756,7 @@ async function releaseAll() {
   letter-spacing: 0.1em;
   text-transform: uppercase;
   font-weight: 400;
+  color: var(--color-text);
 }
 
 .jn-label {

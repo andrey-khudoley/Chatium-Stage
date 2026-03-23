@@ -11,7 +11,7 @@ import * as loggerLib from '../../lib/logger.lib'
 import { getFullUrl, ROUTES } from '../../config/routes'
 import { ADMIN_PAGE_NAME, getPageTitle, getHeaderText } from '../../config/project'
 import * as settingsLib from '../../lib/settings.lib'
-import { customScrollbarStyles } from '../../styles'
+import { customScrollbarStyles, formControlStyles, mobileSafeAreaStyles, VIEWPORT_META_CONTENT } from '../../styles'
 
 const LOG_PATH = 'web/admin/index'
 
@@ -126,7 +126,7 @@ export const adminPageRoute = app.html('/', async (ctx, req) => {
       <html>
         <head>
           <title>Вход</title>
-          <meta name="viewport" content="width=device-width, initial-scale=1" />
+          <meta name="viewport" content={VIEWPORT_META_CONTENT} />
           <meta charset="UTF-8" />
           <script src="/s/metric/clarity.js"></script>
           <meta http-equiv="refresh" content={`0; url=${loginUrl}`} />
@@ -173,12 +173,14 @@ export const adminPageRoute = app.html('/', async (ctx, req) => {
     <html>
       <head>
         <title>{getPageTitle(ADMIN_PAGE_NAME, projectName)}</title>
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta name="viewport" content={VIEWPORT_META_CONTENT} />
         <meta charset="UTF-8" />
         <script>{getLogLevelScript(logLevel)}</script>
         <script src="/s/metric/clarity.js"></script>
         <style>{adminPageStyles}</style>
         <style>{customScrollbarStyles}</style>
+        <style>{mobileSafeAreaStyles}</style>
+        <style>{formControlStyles}</style>
         <style>{getPreloaderStyles()}</style>
         <script>{getPreloaderScript()}</script>
         <script src="/s/static/lib/tailwind.3.4.16.min.js"></script>

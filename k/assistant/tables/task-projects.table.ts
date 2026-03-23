@@ -16,6 +16,19 @@ export const TaskProjects = Heap.Table('t__assistant__task_project__9Lp4qR', {
     customMeta: { title: 'Название проекта' },
     searchable: { langs: ['ru', 'en'], embeddings: false }
   }),
+  /** Текст «Детали» (редактирование на странице задач; приходит в DTO дерева). */
+  details: Heap.Optional(
+    Heap.String({
+      customMeta: { title: 'Детали' },
+      searchable: { langs: ['ru', 'en'], embeddings: false }
+    })
+  ),
+  /** Служебное поле; не отдаётся в API клиенту. */
+  context: Heap.Optional(
+    Heap.String({
+      customMeta: { title: 'Контекст (служебное)' }
+    })
+  ),
   sortOrder: Heap.Number({
     customMeta: { title: 'Порядок в списке' }
   })

@@ -3,6 +3,8 @@ import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import Header from '../components/Header.vue'
 import GlobalGlitch from '../components/GlobalGlitch.vue'
 import AppFooter from '../components/AppFooter.vue'
+import JnCrtSelect from '../components/JnCrtSelect.vue'
+import TasksAiChatPanel from '../components/tasks/TasksAiChatPanel.vue'
 import { subscribeBootStaticReady, scheduleHideBootLoader } from '../shared/bootUi'
 import { createComponentLogger } from '../shared/logger'
 import type { TasksTreeDto, TaskClientDto, TaskProjectDto, TaskItemDto } from '../lib/tasks-types'
@@ -32,10 +34,14 @@ const props = defineProps<{
   taskProjectCreateUrl: string
   taskProjectUpdateUrl: string
   taskProjectDeleteUrl: string
+  taskClientReorderUrl: string
+  taskProjectReorderUrl: string
   taskItemCreateUrl: string
   taskItemUpdateUrl: string
   taskItemDeleteUrl: string
   taskItemReorderUrl: string
+  taskAiChatEnsureUrl: string
+  taskAiChatResetUrl: string
 }>()
 
 const bootLoaderDone = ref(false)
@@ -126,6 +132,23 @@ const STATUS_LABELS: Record<string, string> = {
   cancelled: 'Отмена'
 }
 
+const statusSelectOptions = [
+  { value: 'todo', label: 'К выполнению' },
+  { value: 'in_progress', label: 'В работе' },
+  { value: 'done', label: 'Готово' },
+  { value: 'cancelled', label: 'Отмена' }
+]
+
+const prioritySelectOptions = computed(() =>
+  ([1, 2, 3, 4] as const).map((n) => ({ value: n, label: `${n} — ${PRIORITY_LABELS[n]}` }))
+)
+
+const taskProjectSelectOptions = computed(() =>
+  tree.value.projects
+    .filter((x) => x.clientId === selectedClientId.value)
+    .map((p) => ({ value: p.id, label: p.name }))
+)
+
 const globalError = ref('')
 const loading = ref(false)
 
@@ -137,6 +160,17 @@ async function postJson<T>(url: string, body: Record<string, unknown>): Promise<
     body: JSON.stringify(body)
   })
   return r.json() as Promise<T>
+}
+
+let chatRefreshTimer: ReturnType<typeof setTimeout> | null = null
+
+/** После ответа AI в чате список задач мог обновиться на сервере. */
+function onTasksChatMaybeChanged() {
+  if (chatRefreshTimer) clearTimeout(chatRefreshTimer)
+  chatRefreshTimer = setTimeout(() => {
+    chatRefreshTimer = null
+    void refreshTree()
+  }, 700)
 }
 
 async function refreshTree() {
@@ -158,17 +192,65 @@ async function refreshTree() {
   }
 }
 
-function selectClient(id: string) {
-  selectedClientId.value = id
-  selectedProjectId.value = null
-  log.info('Client selected', { id })
+/** Мобильный UI: только дерево или только задачи (не две колонки). */
+const TASKS_MOBILE_MQ = '(max-width: 1023px)'
+/** Класс на `document.documentElement` — увеличивает базовый rem на странице задач (читабельность). */
+const TASKS_HTML_MOBILE_CLASS = 'tasks-page-html-mobile'
+
+const isMobileTasksLayout = ref(false)
+const mobilePane = ref<'tree' | 'tasks'>('tree')
+
+function syncMobileLayout() {
+  if (typeof window === 'undefined') return
+  const mq = window.matchMedia(TASKS_MOBILE_MQ)
+  isMobileTasksLayout.value = mq.matches
+  if (!isMobileTasksLayout.value) {
+    mobilePane.value = 'tree'
+  }
+  if (typeof document !== 'undefined') {
+    if (mq.matches) {
+      document.documentElement.classList.add(TASKS_HTML_MOBILE_CLASS)
+    } else {
+      document.documentElement.classList.remove(TASKS_HTML_MOBILE_CLASS)
+    }
+  }
 }
+
+const showTasksSidebar = computed(
+  () => !isMobileTasksLayout.value || mobilePane.value === 'tree'
+)
+const showTasksPanel = computed(
+  () => !isMobileTasksLayout.value || mobilePane.value === 'tasks'
+)
+
+/** Правая колонка чата: только десктоп (≥1024px). */
+const showDesktopAiChat = computed(() => !isMobileTasksLayout.value)
+
+const mobileAiChatOpen = ref(false)
+
+function backToTasksTree() {
+  mobilePane.value = 'tree'
+  try {
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  } catch {
+    window.scrollTo(0, 0)
+  }
+}
+
+watch(selectedProjectId, (id) => {
+  if (isMobileTasksLayout.value && !id) {
+    mobilePane.value = 'tree'
+  }
+})
 
 function selectProject(id: string) {
   const row = tree.value.projects.find((x) => x.id === id)
   if (!row) return
   selectedClientId.value = row.clientId
   selectedProjectId.value = id
+  if (isMobileTasksLayout.value) {
+    mobilePane.value = 'tasks'
+  }
   log.info('Project selected', { id })
 }
 
@@ -273,6 +355,7 @@ async function confirmDelete() {
 /** --- Проект --- */
 const projectModal = ref<'create' | 'edit' | null>(null)
 const projectFormName = ref('')
+const projectFormDetails = ref('')
 const projectEditId = ref<string | null>(null)
 const projectSaving = ref(false)
 const projectError = ref('')
@@ -281,6 +364,7 @@ function openProjectCreate() {
   if (!props.isAuthenticated || !selectedClientId.value) return
   projectModal.value = 'create'
   projectFormName.value = ''
+  projectFormDetails.value = ''
   projectError.value = ''
 }
 
@@ -288,12 +372,14 @@ function openProjectEdit(p: TaskProjectDto) {
   projectModal.value = 'edit'
   projectEditId.value = p.id
   projectFormName.value = p.name
+  projectFormDetails.value = p.details ?? ''
   projectError.value = ''
 }
 
 function closeProjectModal() {
   projectModal.value = null
   projectEditId.value = null
+  projectFormDetails.value = ''
 }
 
 async function submitProjectModal() {
@@ -304,7 +390,7 @@ async function submitProjectModal() {
     if (projectModal.value === 'create') {
       const j = await postJson<{ success: boolean; project?: TaskProjectDto; error?: string }>(
         props.taskProjectCreateUrl,
-        { clientId: selectedClientId.value!, name: projectFormName.value }
+        { clientId: selectedClientId.value!, name: projectFormName.value, details: projectFormDetails.value }
       )
       if (!j.success || !j.project) {
         projectError.value = j.error ?? 'Ошибка'
@@ -314,12 +400,14 @@ async function submitProjectModal() {
       selectedProjectId.value = j.project.id
       closeProjectModal()
     } else if (projectModal.value === 'edit' && projectEditId.value) {
+      // Не передаём clientId: иначе при переименовании подставится selectedClientId сайдбара
+      // (клиент выбранного проекта), и проект «переедет» к другому клиенту.
       const j = await postJson<{ success: boolean; project?: TaskProjectDto; error?: string }>(
         props.taskProjectUpdateUrl,
         {
           id: projectEditId.value,
           name: projectFormName.value,
-          clientId: selectedClientId.value ?? undefined
+          details: projectFormDetails.value
         }
       )
       if (!j.success || !j.project) {
@@ -340,7 +428,7 @@ async function submitProjectModal() {
 const taskModal = ref<'create' | 'edit' | null>(null)
 const taskForm = ref({
   title: '',
-  description: '',
+  details: '',
   priority: 2,
   status: 'todo' as TaskItemDto['status'],
   projectId: '' as string
@@ -354,7 +442,7 @@ function openTaskCreate() {
   taskModal.value = 'create'
   taskForm.value = {
     title: '',
-    description: '',
+    details: '',
     priority: 2,
     status: 'todo',
     projectId: selectedProjectId.value
@@ -367,7 +455,7 @@ function openTaskEdit(t: TaskItemDto) {
   taskEditId.value = t.id
   taskForm.value = {
     title: t.title,
-    description: t.description,
+    details: t.details ?? '',
     priority: t.priority,
     status: t.status,
     projectId: t.projectId
@@ -390,7 +478,7 @@ async function submitTaskModal() {
         {
           projectId: taskForm.value.projectId,
           title: taskForm.value.title,
-          description: taskForm.value.description,
+          details: taskForm.value.details,
           priority: taskForm.value.priority,
           status: taskForm.value.status
         }
@@ -407,7 +495,7 @@ async function submitTaskModal() {
         {
           id: taskEditId.value,
           title: taskForm.value.title,
-          description: taskForm.value.description,
+          details: taskForm.value.details,
           priority: taskForm.value.priority,
           status: taskForm.value.status,
           projectId: taskForm.value.projectId
@@ -497,34 +585,362 @@ const startAfterBoot = () => {
 }
 
 let unsubBootStatic: (() => void) | null = null
+let mqListener: (() => void) | null = null
 
 onMounted(() => {
   log.info('TasksPage mounted')
   if (window.hideAppLoader) {
     window.hideAppLoader()
   }
+  syncMobileLayout()
+  mqListener = () => syncMobileLayout()
+  window.matchMedia(TASKS_MOBILE_MQ).addEventListener('change', mqListener)
   unsubBootStatic = subscribeBootStaticReady(startAfterBoot)
-  void nextTick(() => applyTasksUrlQuery())
+  void nextTick(() => {
+    applyTasksUrlQuery()
+    if (isMobileTasksLayout.value && selectedProjectId.value) {
+      mobilePane.value = 'tasks'
+    }
+  })
 })
 
 watch(
   () => [tree.value.clients.length, tree.value.projects.length] as const,
   () => {
     applyTasksUrlQuery()
+    if (isMobileTasksLayout.value && selectedProjectId.value) {
+      mobilePane.value = 'tasks'
+    }
   }
 )
 
 onUnmounted(() => {
   unsubBootStatic?.()
+  if (mqListener) {
+    window.matchMedia(TASKS_MOBILE_MQ).removeEventListener('change', mqListener)
+    mqListener = null
+  }
+  if (typeof document !== 'undefined') {
+    document.documentElement.classList.remove(TASKS_HTML_MOBILE_CLASS)
+  }
 })
 
 const openChatiumLink = () => {
   window.open('https://chatium.ru/?start=pl-LGBT1Oge7c61RkKTU4t0start', '_blank')
 }
+
+/** --- Drag-and-drop: порядок клиентов и проектов в сайдбаре --- */
+type SidebarDragKind = 'client' | 'project' | null
+
+const dragKind = ref<SidebarDragKind>(null)
+const dragClientId = ref<string | null>(null)
+const dragProjectId = ref<string | null>(null)
+const dragProjectClientId = ref<string | null>(null)
+/** Индекс линии вставки: 0 — перед первым клиентом, length — после последнего */
+const clientInsertBefore = ref<number | null>(null)
+/** Вставка в списке проектов клиента `clientId` перед индексом `idx` */
+const projectInsertBefore = ref<{ clientId: string; beforeIdx: number } | null>(null)
+
+function clearSidebarDragState() {
+  dragKind.value = null
+  dragClientId.value = null
+  dragProjectId.value = null
+  dragProjectClientId.value = null
+  clientInsertBefore.value = null
+  projectInsertBefore.value = null
+}
+
+function onClientDragStart(e: DragEvent, clientId: string) {
+  if (!props.isAuthenticated || isMobileTasksLayout.value) return
+  dragKind.value = 'client'
+  dragClientId.value = clientId
+  e.dataTransfer?.setData('text/plain', `client:${clientId}`)
+  e.dataTransfer!.effectAllowed = 'move'
+}
+
+function onProjectDragStart(e: DragEvent, projectId: string, clientId: string) {
+  if (!props.isAuthenticated || isMobileTasksLayout.value) return
+  dragKind.value = 'project'
+  dragProjectId.value = projectId
+  dragProjectClientId.value = clientId
+  e.dataTransfer?.setData('text/plain', `project:${projectId}:${clientId}`)
+  e.dataTransfer!.effectAllowed = 'move'
+}
+
+function onClientDragOver(e: DragEvent, cIdx: number) {
+  e.preventDefault()
+  if (dragKind.value !== 'client' || !dragClientId.value) return
+  e.dataTransfer!.dropEffect = 'move'
+  const el = e.currentTarget as HTMLElement
+  const r = el.getBoundingClientRect()
+  const mid = r.top + r.height / 2
+  const insertBefore = e.clientY < mid ? cIdx : cIdx + 1
+  const originalIds = sortedClients.value.map((c) => c.id)
+  const fromIdx = originalIds.indexOf(dragClientId.value)
+  if (fromIdx < 0 || !reorderIdsWouldChange(originalIds, fromIdx, insertBefore)) {
+    clientInsertBefore.value = null
+    return
+  }
+  clientInsertBefore.value = insertBefore
+}
+
+function onClientDragLeave(e: DragEvent) {
+  const rel = e.relatedTarget as Node | null
+  const block = e.currentTarget as HTMLElement
+  if (rel && block.contains(rel)) return
+  const hier = block.closest('.tasks-hierarchy')
+  if (rel && hier?.contains(rel)) return
+  clientInsertBefore.value = null
+}
+
+function hierarchyEndZoneBottomPx(box: DOMRect): number {
+  return Math.max(48, Math.min(120, box.height * 0.14))
+}
+
+function trySetClientInsertAtEnd() {
+  if (dragKind.value !== 'client' || !dragClientId.value) return
+  const originalIds = sortedClients.value.map((c) => c.id)
+  const fromIdx = originalIds.indexOf(dragClientId.value)
+  const insertBefore = sortedClients.value.length
+  if (fromIdx < 0 || !reorderIdsWouldChange(originalIds, fromIdx, insertBefore)) {
+    clientInsertBefore.value = null
+    return
+  }
+  clientInsertBefore.value = insertBefore
+}
+
+function onHierarchyDragOver(e: DragEvent) {
+  e.preventDefault()
+  if (dragKind.value !== 'client' || !dragClientId.value) return
+  e.dataTransfer!.dropEffect = 'move'
+  const box = (e.currentTarget as HTMLElement).getBoundingClientRect()
+  if (e.clientY >= box.bottom - hierarchyEndZoneBottomPx(box)) {
+    trySetClientInsertAtEnd()
+  }
+}
+
+function onHierarchyTailDragOver(e: DragEvent) {
+  e.preventDefault()
+  if (dragKind.value !== 'client' || !dragClientId.value) return
+  e.dataTransfer!.dropEffect = 'move'
+  trySetClientInsertAtEnd()
+}
+
+function onHierarchyTailDrop(e: DragEvent) {
+  e.preventDefault()
+  e.stopPropagation()
+  if (dragKind.value !== 'client' || !dragClientId.value) return
+  const id = dragClientId.value
+  clearSidebarDragState()
+  if (!id) return
+  void persistClientOrder(id, sortedClients.value.length)
+}
+
+function onClientDrop(e: DragEvent, cIdx: number) {
+  e.preventDefault()
+  e.stopPropagation()
+  const id = dragClientId.value
+  clearSidebarDragState()
+  if (!id) return
+  const el = e.currentTarget as HTMLElement
+  const r = el.getBoundingClientRect()
+  const mid = r.top + r.height / 2
+  const insertBefore = e.clientY < mid ? cIdx : cIdx + 1
+  void persistClientOrder(id, insertBefore)
+}
+
+function onHierarchyDrop(e: DragEvent) {
+  e.preventDefault()
+  if (dragKind.value !== 'client' || !dragClientId.value) return
+  const id = dragClientId.value
+  const wantEnd = clientInsertBefore.value === sortedClients.value.length
+  const box = (e.currentTarget as HTMLElement).getBoundingClientRect()
+  const inEndZone = e.clientY >= box.bottom - hierarchyEndZoneBottomPx(box)
+  clearSidebarDragState()
+  if (!id) return
+  if (wantEnd || inEndZone) {
+    void persistClientOrder(id, sortedClients.value.length)
+  }
+}
+
+function onClientDragEnd() {
+  clearSidebarDragState()
+}
+
+function isSameIdOrder(next: string[], prev: string[]): boolean {
+  return next.length === prev.length && next.every((id, i) => id === prev[i])
+}
+
+/**
+ * insertBefore — индекс в исходном массиве: «вставить перед элементом с этим индексом» (0…length).
+ * Значение `length` — вставка в конец.
+ */
+function reorderIdsWithInsertBefore(originalIds: string[], fromIdx: number, insertBefore: number): string[] {
+  const next = [...originalIds]
+  const [removed] = next.splice(fromIdx, 1)
+  let insertAt = insertBefore
+  if (fromIdx < insertBefore) insertAt = insertBefore - 1
+  next.splice(insertAt, 0, removed)
+  return next
+}
+
+/** true, если после перемещения элемента с индекса `fromIdx` к позиции «перед insertBefore» порядок id изменится */
+function reorderIdsWouldChange(originalIds: string[], fromIdx: number, insertBefore: number): boolean {
+  if (fromIdx < 0 || insertBefore < 0 || insertBefore > originalIds.length) return false
+  const next = reorderIdsWithInsertBefore(originalIds, fromIdx, insertBefore)
+  return !isSameIdOrder(next, originalIds)
+}
+
+async function persistClientOrder(movedId: string, insertBefore: number) {
+  const list = sortedClients.value
+  const fromIdx = list.findIndex((c) => c.id === movedId)
+  if (fromIdx < 0) return
+  if (insertBefore < 0 || insertBefore > list.length) return
+  const originalIds = list.map((c) => c.id)
+  const orderedIds = reorderIdsWithInsertBefore(originalIds, fromIdx, insertBefore)
+  if (isSameIdOrder(orderedIds, originalIds)) return
+  const r = await postJson<{ success: boolean; error?: string }>(props.taskClientReorderUrl, { orderedIds })
+  if (!r.success) {
+    globalError.value = r.error ?? 'Не удалось сохранить порядок клиентов'
+    await refreshTree()
+    return
+  }
+  let o = 0
+  for (const cid of orderedIds) {
+    const row = tree.value.clients.find((x) => x.id === cid)
+    if (row) row.sortOrder = o
+    o++
+  }
+}
+
+function projectItemDropRowRect(e: DragEvent): DOMRect {
+  const li = (e.currentTarget as HTMLElement).closest('.tasks-project-item')
+  return (li ?? (e.currentTarget as HTMLElement)).getBoundingClientRect()
+}
+
+function onProjectDragOver(e: DragEvent, clientId: string, pIdx: number) {
+  e.preventDefault()
+  if (dragKind.value !== 'project' || dragProjectClientId.value !== clientId || !dragProjectId.value) return
+  e.dataTransfer!.dropEffect = 'move'
+  const r = projectItemDropRowRect(e)
+  const mid = r.top + r.height / 2
+  const insertBefore = e.clientY < mid ? pIdx : pIdx + 1
+  const originalIds = projectsForClientId(clientId).map((p) => p.id)
+  const fromIdx = originalIds.indexOf(dragProjectId.value)
+  if (fromIdx < 0 || !reorderIdsWouldChange(originalIds, fromIdx, insertBefore)) {
+    projectInsertBefore.value = null
+    return
+  }
+  projectInsertBefore.value = { clientId, beforeIdx: insertBefore }
+}
+
+function onProjectListDragLeave(e: DragEvent, clientId: string) {
+  const rel = e.relatedTarget as Node | null
+  const ul = e.currentTarget as HTMLElement
+  if (rel && ul.contains(rel)) return
+  const block = ul.closest('.tasks-client-block')
+  if (rel && block?.contains(rel)) return
+  if (projectInsertBefore.value?.clientId === clientId) projectInsertBefore.value = null
+}
+
+function projectListEndZoneBottomPx(el: HTMLElement): number {
+  return Math.max(32, Math.min(96, el.getBoundingClientRect().height * 0.14))
+}
+
+function trySetProjectInsertAtEnd(clientId: string) {
+  if (dragKind.value !== 'project' || dragProjectClientId.value !== clientId || !dragProjectId.value) return
+  const listLen = projectsForClientId(clientId).length
+  const originalIds = projectsForClientId(clientId).map((p) => p.id)
+  const fromIdx = originalIds.indexOf(dragProjectId.value)
+  if (fromIdx < 0 || !reorderIdsWouldChange(originalIds, fromIdx, listLen)) {
+    projectInsertBefore.value = null
+    return
+  }
+  projectInsertBefore.value = { clientId, beforeIdx: listLen }
+}
+
+function onProjectListDragOver(e: DragEvent, clientId: string) {
+  e.preventDefault()
+  if (dragKind.value !== 'project' || dragProjectClientId.value !== clientId || !dragProjectId.value) return
+  e.dataTransfer!.dropEffect = 'move'
+  const el = e.currentTarget as HTMLElement
+  const r = el.getBoundingClientRect()
+  if (e.clientY >= r.bottom - projectListEndZoneBottomPx(el)) {
+    trySetProjectInsertAtEnd(clientId)
+  }
+}
+
+function onProjectDrop(e: DragEvent, clientId: string, pIdx: number) {
+  e.preventDefault()
+  e.stopPropagation()
+  const id = dragProjectId.value
+  const fromClient = dragProjectClientId.value
+  clearSidebarDragState()
+  if (!id || fromClient !== clientId) return
+  const r = projectItemDropRowRect(e)
+  const mid = r.top + r.height / 2
+  const insertBefore = e.clientY < mid ? pIdx : pIdx + 1
+  void persistProjectOrder(clientId, id, insertBefore)
+}
+
+function onProjectListDrop(e: DragEvent, clientId: string, listLen: number) {
+  e.preventDefault()
+  e.stopPropagation()
+  const id = dragProjectId.value
+  const fromClient = dragProjectClientId.value
+  const wantEnd =
+    projectInsertBefore.value?.clientId === clientId && projectInsertBefore.value.beforeIdx === listLen
+  const el = e.currentTarget as HTMLElement
+  const r = el.getBoundingClientRect()
+  const inEndZone = e.clientY >= r.bottom - projectListEndZoneBottomPx(el)
+  clearSidebarDragState()
+  if (!id || fromClient !== clientId) return
+  if (wantEnd || inEndZone) {
+    void persistProjectOrder(clientId, id, listLen)
+  }
+}
+
+function onProjectDragEnd() {
+  clearSidebarDragState()
+}
+
+async function persistProjectOrder(clientId: string, movedId: string, insertBefore: number) {
+  const list = projectsForClientId(clientId)
+  const fromIdx = list.findIndex((p) => p.id === movedId)
+  if (fromIdx < 0) return
+  if (insertBefore < 0 || insertBefore > list.length) return
+  const originalIds = list.map((p) => p.id)
+  const orderedIds = reorderIdsWithInsertBefore(originalIds, fromIdx, insertBefore)
+  if (isSameIdOrder(orderedIds, originalIds)) return
+  const r = await postJson<{ success: boolean; error?: string }>(props.taskProjectReorderUrl, {
+    clientId,
+    orderedIds
+  })
+  if (!r.success) {
+    globalError.value = r.error ?? 'Не удалось сохранить порядок проектов'
+    await refreshTree()
+    return
+  }
+  let o = 0
+  for (const pid of orderedIds) {
+    const row = tree.value.projects.find((x) => x.id === pid)
+    if (row) row.sortOrder = o
+    o++
+  }
+}
+
+function showClientLineBefore(idx: number): boolean {
+  return clientInsertBefore.value === idx
+}
+
+function showProjectLineBefore(clientId: string, idx: number): boolean {
+  const p = projectInsertBefore.value
+  return !!p && p.clientId === clientId && p.beforeIdx === idx
+}
 </script>
 
 <template>
-  <div class="app-layout bg-[var(--color-bg)] text-[var(--color-text)] flex flex-col">
+  <div class="app-layout tasks-page-app bg-[var(--color-bg)] text-[var(--color-text)] flex flex-col">
     <GlobalGlitch />
     <Header
       v-if="bootLoaderDone"
@@ -538,9 +954,9 @@ const openChatiumLink = () => {
       :testsUrl="props.testsUrl"
     />
 
-    <main class="content-wrapper flex-1 relative z-10 min-h-0 overflow-y-auto">
-      <div class="content-inner journal-shell tasks-page-shell">
-        <aside class="tasks-sidebar" aria-label="Клиенты и проекты">
+    <main class="content-wrapper tasks-page-main flex-1 relative z-10 min-h-0 overflow-y-auto">
+      <div class="content-inner tasks-page-shell">
+        <aside v-show="showTasksSidebar" class="tasks-sidebar" aria-label="Клиенты и проекты">
           <div class="tasks-sidebar-toolbar">
             <button
               type="button"
@@ -554,18 +970,45 @@ const openChatiumLink = () => {
           </div>
           <div class="journal-nav-divider" aria-hidden="true" />
           <p v-if="!props.isAuthenticated" class="tasks-hint">Войдите, чтобы вести задачи.</p>
-          <div v-else class="tasks-hierarchy">
+          <div
+            v-else
+            class="tasks-hierarchy"
+            @dragover="onHierarchyDragOver"
+            @drop="onHierarchyDrop"
+          >
             <p v-if="!sortedClients.length" class="tasks-hint tasks-hint--muted">Пока нет клиентов — создайте первого.</p>
-            <div v-for="c in sortedClients" :key="c.id" class="tasks-client-block">
+            <div
+              v-for="(c, cIdx) in sortedClients"
+              :key="c.id"
+              class="tasks-client-block"
+              :class="{ 'tasks-client-block--dragging': dragKind === 'client' && dragClientId === c.id }"
+              @dragover="onClientDragOver($event, cIdx)"
+              @dragleave="onClientDragLeave"
+              @drop="onClientDrop($event, cIdx)"
+            >
+              <div
+                v-if="showClientLineBefore(cIdx)"
+                class="tasks-dnd-line"
+                aria-hidden="true"
+              />
               <div class="tasks-client-row">
-                <button
-                  type="button"
-                  class="tasks-client-select"
-                  :class="{ 'tasks-client-select--active': selectedClientId === c.id }"
-                  @click="selectClient(c.id)"
+                <span
+                  v-if="props.isAuthenticated"
+                  class="tasks-dnd-grip"
+                  :draggable="!isMobileTasksLayout"
+                  title="Перетащить клиента"
+                  aria-label="Перетащить клиента"
+                  @dragstart="onClientDragStart($event, c.id)"
+                  @dragend="onClientDragEnd"
+                >
+                  <i class="fas fa-grip-vertical" aria-hidden="true" />
+                </span>
+                <div
+                  class="tasks-client-select tasks-client-select--static"
+                  :class="{ 'tasks-client-select--project-active': selectedProject?.clientId === c.id }"
                 >
                   {{ c.name }}
-                </button>
+                </div>
                 <div v-if="props.isAuthenticated" class="tasks-item-actions">
                   <button
                     type="button"
@@ -588,31 +1031,74 @@ const openChatiumLink = () => {
                   </button>
                 </div>
               </div>
-              <ul class="tasks-project-list" role="list">
-                <li v-for="p in projectsForClientId(c.id)" :key="p.id" class="tasks-project-item">
+              <ul
+                class="tasks-project-list"
+                role="list"
+                @dragover.capture="onProjectListDragOver($event, c.id)"
+                @dragleave="onProjectListDragLeave($event, c.id)"
+                @drop="onProjectListDrop($event, c.id, projectsForClientId(c.id).length)"
+              >
+                <li
+                  v-for="(p, pIdx) in projectsForClientId(c.id)"
+                  :key="p.id"
+                  class="tasks-project-item"
+                  :class="{ 'tasks-project-item--dragging': dragKind === 'project' && dragProjectId === p.id }"
+                >
+                  <div
+                    v-if="showProjectLineBefore(c.id, pIdx)"
+                    class="tasks-dnd-line tasks-dnd-line--nested"
+                    aria-hidden="true"
+                  />
                   <div class="tasks-project-row">
-                    <button
-                      type="button"
-                      class="journal-nav-btn tasks-project-btn"
-                      :class="{ 'journal-nav-btn--active': selectedProjectId === p.id }"
-                      @click="selectProject(p.id)"
+                    <span
+                      v-if="props.isAuthenticated"
+                      class="tasks-dnd-grip tasks-dnd-grip--nested"
+                      :draggable="!isMobileTasksLayout"
+                      title="Перетащить проект"
+                      aria-label="Перетащить проект"
+                      @dragstart="onProjectDragStart($event, p.id, c.id)"
+                      @dragend="onProjectDragEnd"
+                      @dragover.prevent="onProjectDragOver($event, c.id, pIdx)"
+                      @drop.prevent="onProjectDrop($event, c.id, pIdx)"
                     >
-                      {{ p.name }}
-                    </button>
-                    <div v-if="props.isAuthenticated" class="tasks-item-actions">
-                      <button type="button" class="tasks-icon-btn" title="Переименовать" @click="openProjectEdit(p)">
-                        <i class="fas fa-pen" aria-hidden="true" />
-                      </button>
+                      <i class="fas fa-grip-vertical" aria-hidden="true" />
+                    </span>
+                    <div
+                      class="tasks-project-drop-target"
+                      @dragover.prevent="onProjectDragOver($event, c.id, pIdx)"
+                      @drop.prevent="onProjectDrop($event, c.id, pIdx)"
+                    >
                       <button
                         type="button"
-                        class="tasks-icon-btn tasks-icon-btn--danger"
-                        title="Удалить проект"
-                        @click="openDelete('project', p.id, p.name)"
+                        class="journal-nav-btn tasks-project-btn"
+                        :class="{ 'journal-nav-btn--active': selectedProjectId === p.id }"
+                        @click="selectProject(p.id)"
                       >
-                        <i class="fas fa-trash" aria-hidden="true" />
+                        {{ p.name }}
                       </button>
+                      <div v-if="props.isAuthenticated" class="tasks-item-actions">
+                        <button type="button" class="tasks-icon-btn" title="Переименовать" @click="openProjectEdit(p)">
+                          <i class="fas fa-pen" aria-hidden="true" />
+                        </button>
+                        <button
+                          type="button"
+                          class="tasks-icon-btn tasks-icon-btn--danger"
+                          title="Удалить проект"
+                          @click="openDelete('project', p.id, p.name)"
+                        >
+                          <i class="fas fa-trash" aria-hidden="true" />
+                        </button>
+                      </div>
                     </div>
                   </div>
+                </li>
+                <li
+                  v-if="showProjectLineBefore(c.id, projectsForClientId(c.id).length)"
+                  role="presentation"
+                  class="tasks-dnd-line-slot"
+                  aria-hidden="true"
+                >
+                  <div class="tasks-dnd-line tasks-dnd-line--nested" />
                 </li>
               </ul>
               <p
@@ -622,25 +1108,56 @@ const openChatiumLink = () => {
                 Нет проектов
               </p>
             </div>
+            <div
+              v-if="sortedClients.length && showClientLineBefore(sortedClients.length)"
+              class="tasks-dnd-line"
+              aria-hidden="true"
+            />
+            <div
+              v-if="sortedClients.length"
+              class="tasks-hierarchy-tail"
+              aria-hidden="true"
+              @dragover="onHierarchyTailDragOver"
+              @drop="onHierarchyTailDrop"
+            />
           </div>
         </aside>
 
-        <section class="journal-panel tasks-panel" aria-live="polite">
+        <section
+          v-show="showTasksPanel"
+          class="journal-panel tasks-panel"
+          :class="{ 'tasks-panel--mobile-fill': isMobileTasksLayout && mobilePane === 'tasks' }"
+          aria-live="polite"
+        >
           <div class="tasks-panel-head">
-            <h2 class="tasks-panel-title">
-              <template v-if="selectedProject && selectedClient">
-                {{ selectedClient.name }} / {{ selectedProject.name }}
-              </template>
-              <template v-else>Задачи</template>
-            </h2>
             <button
+              v-if="isMobileTasksLayout"
               type="button"
-              class="journal-nav-action tasks-panel-add"
-              :disabled="!props.isAuthenticated || !selectedProjectId"
-              @click="openTaskCreate"
+              class="tasks-mobile-back"
+              aria-label="Назад к списку проектов"
+              @click="backToTasksTree"
             >
-              Новая задача
+              <i class="fas fa-arrow-left" aria-hidden="true" />
+              <span>Проекты</span>
             </button>
+            <div class="tasks-panel-head-center">
+              <h2 class="tasks-panel-title">
+                <template v-if="selectedProject && selectedClient">
+                  {{ selectedClient.name }} / {{ selectedProject.name }}
+                </template>
+                <template v-else>Задачи</template>
+              </h2>
+            </div>
+            <div class="tasks-panel-head-actions">
+              <button
+                type="button"
+                class="journal-nav-action tasks-panel-add"
+                :disabled="!props.isAuthenticated || !selectedProjectId"
+                @click="openTaskCreate"
+              >
+                Новая задача
+              </button>
+            </div>
           </div>
           <p v-if="globalError" class="tasks-global-err" role="alert">{{ globalError }}</p>
           <p v-if="loading" class="tasks-loading">Обновление…</p>
@@ -659,17 +1176,17 @@ const openChatiumLink = () => {
             </thead>
             <tbody>
               <tr v-for="t in tasksForProject" :key="t.id">
-                <td>
+                <td data-label="Задача">
                   <div class="tasks-title">{{ t.title }}</div>
-                  <div v-if="t.description" class="tasks-desc">{{ t.description }}</div>
+                  <div v-if="t.details" class="tasks-desc">{{ t.details }}</div>
                 </td>
-                <td>
+                <td data-label="Приоритет">
                   <span class="tasks-badge" :class="`tasks-badge--p${t.priority}`">
                     {{ PRIORITY_LABELS[t.priority] ?? t.priority }}
                   </span>
                 </td>
-                <td>{{ STATUS_LABELS[t.status] ?? t.status }}</td>
-                <td class="tasks-reorder">
+                <td data-label="Статус">{{ STATUS_LABELS[t.status] ?? t.status }}</td>
+                <td class="tasks-reorder" data-label="Порядок">
                   <button type="button" class="tasks-reorder-btn" title="Выше" @click="moveTask(t, -1)">
                     <i class="fas fa-chevron-up" aria-hidden="true" />
                   </button>
@@ -677,7 +1194,7 @@ const openChatiumLink = () => {
                     <i class="fas fa-chevron-down" aria-hidden="true" />
                   </button>
                 </td>
-                <td class="tasks-row-actions">
+                <td class="tasks-row-actions" data-label="Действия">
                   <button
                     type="button"
                     class="tasks-icon-btn tasks-icon-btn--accent"
@@ -710,7 +1227,65 @@ const openChatiumLink = () => {
 
           <p v-if="selectedProjectId && !tasksForProject.length" class="tasks-placeholder">В этом проекте пока нет задач.</p>
         </section>
+
+        <aside
+          v-if="showDesktopAiChat"
+          class="tasks-ai-chat-sidebar"
+          aria-label="Чат с AI"
+        >
+          <TasksAiChatPanel
+            :projectId="selectedProjectId"
+            :isAuthenticated="props.isAuthenticated"
+            :ensureUrl="props.taskAiChatEnsureUrl"
+            :resetUrl="props.taskAiChatResetUrl"
+            @tasks-maybe-changed="onTasksChatMaybeChanged"
+          />
+        </aside>
       </div>
+
+      <button
+        v-if="isMobileTasksLayout && props.isAuthenticated"
+        type="button"
+        class="tasks-ai-chat-fab"
+        aria-label="Открыть чат с AI"
+        @click="mobileAiChatOpen = true"
+      >
+        <i class="fas fa-comments" aria-hidden="true" />
+      </button>
+
+      <Teleport to="body">
+        <Transition name="jn-modal">
+          <div
+            v-if="isMobileTasksLayout && mobileAiChatOpen"
+            class="jn-modal-overlay tasks-ai-chat-mobile-overlay"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Чат с AI"
+            @click.self="mobileAiChatOpen = false"
+          >
+            <div class="tasks-ai-chat-mobile-sheet" @click.stop>
+              <div class="tasks-ai-chat-mobile-head">
+                <span class="tasks-ai-chat-mobile-title">Чат с AI</span>
+                <button
+                  type="button"
+                  class="tasks-icon-btn"
+                  aria-label="Закрыть"
+                  @click="mobileAiChatOpen = false"
+                >
+                  <i class="fas fa-times" aria-hidden="true" />
+                </button>
+              </div>
+              <TasksAiChatPanel
+                :projectId="selectedProjectId"
+                :isAuthenticated="props.isAuthenticated"
+                :ensureUrl="props.taskAiChatEnsureUrl"
+                :resetUrl="props.taskAiChatResetUrl"
+                @tasks-maybe-changed="onTasksChatMaybeChanged"
+              />
+            </div>
+          </div>
+        </Transition>
+      </Teleport>
     </main>
 
     <AppFooter v-if="bootLoaderDone" @chatium-click="openChatiumLink" />
@@ -753,6 +1328,8 @@ const openChatiumLink = () => {
             <h2 class="jn-modal-heading">{{ projectModal === 'create' ? 'Новый проект' : 'Проект' }}</h2>
             <label class="jn-label" for="tp-name">Название</label>
             <input id="tp-name" v-model="projectFormName" type="text" class="jn-input" maxlength="200" />
+            <label class="jn-label" for="tp-details">Детали</label>
+            <textarea id="tp-details" v-model="projectFormDetails" class="jn-textarea" rows="4" />
             <p v-if="projectError" class="jn-modal-error" role="alert">{{ projectError }}</p>
             <div class="jn-modal-actions">
               <button type="button" class="journal-nav-btn" @click="closeProjectModal">Отмена</button>
@@ -774,29 +1351,23 @@ const openChatiumLink = () => {
           aria-modal="true"
           @click.self="closeTaskModal"
         >
-          <div class="jn-modal jn-modal--wide" @click.stop>
+          <div class="jn-modal jn-modal--wide crt-form-panel" @click.stop>
             <h2 class="jn-modal-heading">{{ taskModal === 'create' ? 'Новая задача' : 'Задача' }}</h2>
             <label class="jn-label" for="tt-title">Заголовок</label>
             <input id="tt-title" v-model="taskForm.title" type="text" class="jn-input" maxlength="500" />
-            <label class="jn-label" for="tt-desc">Описание</label>
-            <textarea id="tt-desc" v-model="taskForm.description" class="jn-textarea" rows="5" />
+            <label class="jn-label" for="tt-desc">Детали</label>
+            <textarea id="tt-desc" v-model="taskForm.details" class="jn-textarea" rows="5" />
             <label class="jn-label" for="tt-p">Приоритет</label>
-            <select id="tt-p" v-model.number="taskForm.priority" class="jn-input">
-              <option v-for="n in 4" :key="n" :value="n">{{ n }} — {{ PRIORITY_LABELS[n] }}</option>
-            </select>
+            <JnCrtSelect id="tt-p" v-model="taskForm.priority" :options="prioritySelectOptions" />
             <label class="jn-label" for="tt-s">Статус</label>
-            <select id="tt-s" v-model="taskForm.status" class="jn-input">
-              <option value="todo">К выполнению</option>
-              <option value="in_progress">В работе</option>
-              <option value="done">Готово</option>
-              <option value="cancelled">Отмена</option>
-            </select>
+            <JnCrtSelect id="tt-s" v-model="taskForm.status" :options="statusSelectOptions" />
             <label class="jn-label" for="tt-pr">Проект</label>
-            <select id="tt-pr" v-model="taskForm.projectId" class="jn-input">
-              <option v-for="p in tree.projects.filter((x) => x.clientId === selectedClientId)" :key="p.id" :value="p.id">
-                {{ p.name }}
-              </option>
-            </select>
+            <JnCrtSelect
+              id="tt-pr"
+              v-model="taskForm.projectId"
+              :options="taskProjectSelectOptions"
+              :disabled="!taskProjectSelectOptions.length"
+            />
             <p v-if="taskError" class="jn-modal-error" role="alert">{{ taskError }}</p>
             <div class="jn-modal-actions">
               <button type="button" class="journal-nav-btn" @click="closeTaskModal">Отмена</button>
@@ -836,8 +1407,103 @@ const openChatiumLink = () => {
 </template>
 
 <style scoped>
+.tasks-page-main {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
 .tasks-page-shell {
+  display: flex;
+  flex-direction: row;
   align-items: stretch;
+  gap: 0.75rem 1rem;
+  max-width: min(1680px, 100%);
+  width: 100%;
+  margin: 0 auto;
+  min-height: 0;
+  flex: 1 1 auto;
+}
+
+.tasks-ai-chat-sidebar {
+  flex: 0 0 min(320px, 26vw);
+  min-width: 240px;
+  max-width: 400px;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.tasks-ai-chat-fab {
+  position: fixed;
+  right: max(1rem, env(safe-area-inset-right));
+  bottom: max(5.5rem, calc(env(safe-area-inset-bottom) + 4.5rem));
+  z-index: 15000;
+  width: 3.25rem;
+  height: 3.25rem;
+  border-radius: 50%;
+  border: 2px solid var(--color-accent);
+  background: rgba(211, 35, 75, 0.2);
+  color: var(--color-accent-hover);
+  font-size: 1.15rem;
+  cursor: pointer;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  touch-action: manipulation;
+}
+
+.tasks-ai-chat-fab:hover {
+  background: rgba(211, 35, 75, 0.35);
+}
+
+.tasks-ai-chat-mobile-overlay {
+  align-items: flex-end;
+  justify-content: center;
+  padding: 0;
+}
+
+.tasks-ai-chat-mobile-sheet {
+  width: 100%;
+  max-height: min(88vh, 640px);
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-bottom: none;
+  border-radius: 12px 12px 0 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  box-shadow: 0 -8px 40px rgba(0, 0, 0, 0.5);
+}
+
+.tasks-ai-chat-mobile-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.65rem 0.75rem;
+  border-bottom: 1px solid var(--color-border);
+  flex-shrink: 0;
+}
+
+.tasks-ai-chat-mobile-title {
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+}
+
+.tasks-ai-chat-mobile-sheet :deep(.tasks-ai-chat) {
+  max-height: none;
+  border: none;
+  border-radius: 0;
+  flex: 1;
+  min-height: min(60vh, 420px);
+}
+
+.tasks-ai-chat-mobile-sheet :deep(.tasks-ai-chat-head) {
+  display: none;
 }
 
 .tasks-sidebar {
@@ -902,9 +1568,19 @@ const openChatiumLink = () => {
   gap: 0.85rem;
 }
 
+.tasks-hierarchy-tail {
+  flex-shrink: 0;
+  min-height: 2.25rem;
+  margin-top: -0.15rem;
+}
+
 .tasks-client-block {
   padding-bottom: 0.65rem;
   border-bottom: 1px solid var(--color-border);
+  transition:
+    transform 0.22s cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 0.22s ease,
+    opacity 0.22s ease;
 }
 
 .tasks-client-block:last-child {
@@ -917,6 +1593,86 @@ const openChatiumLink = () => {
   align-items: flex-start;
   gap: 0.35rem;
   margin-bottom: 0.35rem;
+}
+
+.tasks-dnd-grip {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  align-self: stretch;
+  padding: 0.15rem 0.2rem 0 0;
+  margin: 0;
+  color: var(--color-text-tertiary);
+  cursor: grab;
+  user-select: none;
+  transition: color 0.2s ease, transform 0.2s ease;
+}
+
+.tasks-dnd-grip:hover {
+  color: var(--color-accent-hover);
+}
+
+.tasks-dnd-grip:active {
+  cursor: grabbing;
+}
+
+.tasks-dnd-grip--nested {
+  padding-top: 0.25rem;
+}
+
+.tasks-dnd-line {
+  height: 4px;
+  margin: 0.15rem 0 0.5rem;
+  border-radius: 2px;
+  background: linear-gradient(90deg, transparent 0%, rgba(229, 57, 53, 0.55) 15%, #e53935 50%, rgba(229, 57, 53, 0.55) 85%, transparent 100%);
+  box-shadow:
+    0 0 12px rgba(229, 57, 53, 0.45),
+    0 0 2px rgba(255, 255, 255, 0.25);
+  animation: tasks-dnd-line-pulse 0.9s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.tasks-dnd-line--nested {
+  margin: 0 0 0.5rem;
+  height: 3px;
+}
+
+.tasks-dnd-line-slot {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: block;
+  min-height: 0;
+}
+
+@keyframes tasks-dnd-line-pulse {
+  0%,
+  100% {
+    opacity: 0.85;
+    transform: scaleY(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scaleY(1.15);
+  }
+}
+
+.tasks-client-block--dragging {
+  opacity: 0.72;
+  transform: scale(0.985);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.45);
+  border-radius: 2px;
+  outline: 1px dashed rgba(229, 57, 53, 0.55);
+  outline-offset: 2px;
+}
+
+.tasks-project-item--dragging {
+  opacity: 0.72;
+  transform: scale(0.985);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.4);
+  border-radius: 2px;
+  outline: 1px dashed rgba(229, 57, 53, 0.45);
+  outline-offset: 1px;
 }
 
 .tasks-client-select {
@@ -935,7 +1691,6 @@ const openChatiumLink = () => {
   color: var(--color-text);
   background: var(--color-bg-secondary);
   border: 1px solid var(--color-border);
-  border-left: 3px solid transparent;
   border-radius: 2px;
   cursor: pointer;
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
@@ -948,10 +1703,25 @@ const openChatiumLink = () => {
   background: var(--color-bg-tertiary);
 }
 
-.tasks-client-select--active {
-  border-left-color: var(--color-accent);
-  background: var(--color-accent-light);
-  box-shadow: 0 0 10px var(--color-accent-medium);
+.tasks-client-select--static {
+  cursor: default;
+}
+
+.tasks-client-select--static:hover {
+  border-color: var(--color-border);
+  background: var(--color-bg-secondary);
+}
+
+.tasks-client-select--static.tasks-client-select--project-active:hover {
+  border-color: rgba(229, 57, 53, 0.55);
+  background: rgba(229, 57, 53, 0.14);
+  box-shadow: inset 2px 0 0 0 #e53935, 0 0 10px rgba(229, 57, 53, 0.28);
+}
+
+.tasks-client-select--project-active {
+  background: rgba(229, 57, 53, 0.12);
+  box-shadow: inset 2px 0 0 0 #e53935, 0 0 10px rgba(229, 57, 53, 0.28);
+  color: #ffcdd2;
 }
 
 .tasks-item-actions {
@@ -979,8 +1749,20 @@ const openChatiumLink = () => {
   gap: 0.28rem;
 }
 
+.tasks-project-drop-target {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: stretch;
+  gap: 0.3rem;
+}
+
 .tasks-project-item {
   margin: 0;
+  transition:
+    transform 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 0.2s ease,
+    opacity 0.2s ease;
 }
 
 .tasks-project-row {
@@ -1073,15 +1855,62 @@ const openChatiumLink = () => {
   min-height: 280px;
 }
 
+.tasks-panel--mobile-fill {
+  flex: 1 1 auto;
+  min-height: min(72vh, calc(100vh - 10rem));
+  max-height: calc(100vh - 9rem);
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.tasks-panel--mobile-fill .tasks-placeholder,
+.tasks-panel--mobile-fill .tasks-global-err,
+.tasks-panel--mobile-fill .tasks-loading {
+  flex-shrink: 0;
+}
+
 .tasks-panel-head {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
   justify-content: space-between;
-  gap: 0.75rem;
+  gap: 0.5rem 0.75rem;
   padding: 0.65rem 0.85rem;
   border-bottom: 1px solid var(--color-border);
   background: rgba(0, 0, 0, 0.2);
+}
+
+.tasks-panel-head-center {
+  flex: 1;
+  min-width: 0;
+}
+
+.tasks-mobile-back {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 3rem;
+  min-width: 3rem;
+  padding: 0 0.85rem;
+  margin: 0;
+  font-family: inherit;
+  font-size: 0.95rem;
+  letter-spacing: 0.04em;
+  color: var(--color-text);
+  background: var(--color-bg-tertiary);
+  border: 2px solid var(--color-border);
+  border-radius: 4px;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: border-color 0.2s ease, color 0.2s ease;
+}
+
+.tasks-mobile-back:hover {
+  border-color: var(--color-accent);
+  color: var(--color-accent-hover);
 }
 
 .tasks-panel-title {
@@ -1091,6 +1920,8 @@ const openChatiumLink = () => {
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--color-text-secondary);
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .tasks-panel-add {
@@ -1198,13 +2029,89 @@ const openChatiumLink = () => {
   white-space: nowrap;
 }
 
+@media (max-width: 639px) {
+  .tasks-table thead {
+    display: none;
+  }
+
+  .tasks-table tbody {
+    display: block;
+  }
+
+  .tasks-table tr {
+    display: block;
+    margin-bottom: 0.85rem;
+    border: 1px solid var(--color-border);
+    border-radius: 2px;
+    padding: 0.5rem 0.65rem 0.65rem;
+    background: rgba(0, 0, 0, 0.22);
+  }
+
+  .tasks-table td {
+    display: block;
+    border: none;
+    padding: 0.4rem 0;
+    text-align: left;
+    vertical-align: top;
+  }
+
+  .tasks-table td::before {
+    content: attr(data-label);
+    display: block;
+    font-size: 0.72rem;
+    font-weight: 500;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--color-text-tertiary);
+    margin-bottom: 0.35rem;
+  }
+
+  .tasks-table .tasks-row-actions {
+    padding-top: 0.5rem;
+    margin-top: 0.25rem;
+    border-top: 1px solid var(--color-border);
+    white-space: normal;
+  }
+
+  .tasks-reorder {
+    white-space: normal;
+  }
+
+  .tasks-reorder-btn {
+    min-width: 3rem;
+    min-height: 3rem;
+    padding: 0.45rem 0.65rem;
+  }
+
+  .tasks-table .tasks-icon-btn {
+    width: 3rem;
+    height: 3rem;
+    font-size: 0.95rem;
+  }
+
+  .tasks-panel-head {
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .tasks-panel-head-center {
+    flex: 1 1 12rem;
+    min-width: 0;
+  }
+
+  .tasks-panel-add {
+    width: auto;
+    min-height: 2.75rem;
+  }
+}
+
 .tasks-delete-warn {
   font-size: 0.75rem;
   color: var(--color-text-secondary);
   margin: 0 0 0.5rem;
 }
 
-@media (max-width: 900px) {
+@media (max-width: 1023px) {
   .tasks-page-shell {
     flex-direction: column;
   }
@@ -1214,6 +2121,122 @@ const openChatiumLink = () => {
     max-width: none;
     width: 100%;
     max-height: none;
+    min-height: min(65vh, calc(100vh - 11rem));
+    padding: 0.65rem 0.85rem 0.85rem;
+    border-width: 2px;
+  }
+
+  .tasks-dnd-grip {
+    display: none;
+  }
+
+  .tasks-hint,
+  .tasks-hint--muted {
+    font-size: 0.9rem;
+    line-height: 1.45;
+  }
+
+  .tasks-project-empty {
+    font-size: 0.82rem;
+  }
+
+  .tasks-sidebar-btn-subtle {
+    font-size: 0.95rem;
+    padding: 0.75rem 1rem;
+    min-height: 3rem;
+    border-width: 2px;
+    letter-spacing: 0.06em;
+  }
+
+  .tasks-client-select {
+    font-size: 0.95rem;
+    padding: 0.75rem 0.9rem;
+    min-height: 3rem;
+    border-width: 2px;
+    letter-spacing: 0.05em;
+  }
+
+  .tasks-project-btn {
+    font-size: 0.95rem !important;
+    min-height: 3rem;
+    padding: 0.65rem 0.85rem !important;
+    letter-spacing: 0.05em !important;
+    border-width: 2px !important;
+  }
+
+  .tasks-item-actions .tasks-icon-btn {
+    width: 3rem;
+    height: 3rem;
+    font-size: 1rem;
+    border-width: 2px;
+  }
+
+  .tasks-icon-btn {
+    width: 3rem;
+    height: 3rem;
+    font-size: 1rem;
+    border-width: 2px;
+  }
+
+  .tasks-panel-title {
+    font-size: 1rem;
+    line-height: 1.4;
+    letter-spacing: 0.06em;
+  }
+
+  .tasks-panel-add {
+    min-height: 3rem;
+    padding: 0.55rem 1rem;
+    font-size: 0.82rem;
+    touch-action: manipulation;
+  }
+
+  .tasks-placeholder {
+    font-size: 1.05rem;
+    line-height: 1.5;
+    padding: 1.5rem 1.15rem;
+  }
+
+  .tasks-table {
+    font-size: 0.95rem;
+  }
+
+  .tasks-table th {
+    font-size: 0.78rem;
+    padding: 0.65rem 0.75rem;
+  }
+
+  .tasks-table td {
+    padding: 0.65rem 0.75rem;
+  }
+
+  .tasks-title {
+    font-size: 1.02rem;
+    line-height: 1.4;
+  }
+
+  .tasks-desc {
+    font-size: 0.9rem;
+    line-height: 1.45;
+  }
+
+  .tasks-badge {
+    font-size: 0.8rem;
+    padding: 0.25rem 0.5rem;
+  }
+
+  .tasks-global-err,
+  .tasks-loading {
+    font-size: 0.9rem;
+  }
+
+  .tasks-page-main.content-wrapper {
+    padding: 0.75rem 0 1rem;
+  }
+
+  .tasks-page-main .content-inner {
+    padding-left: 0.65rem;
+    padding-right: 0.65rem;
   }
 }
 </style>
@@ -1241,6 +2264,55 @@ const openChatiumLink = () => {
   box-shadow: 0 0 24px rgba(211, 35, 75, 0.15);
 }
 
+.jn-modal.crt-form-panel {
+  position: relative;
+  overflow: visible;
+}
+
+.jn-modal.crt-form-panel::before {
+  content: '';
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  border-radius: 2px;
+  opacity: 0.1;
+  z-index: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 1px,
+    rgba(0, 0, 0, 0.48) 1px,
+    rgba(0, 0, 0, 0.48) 2px
+  );
+}
+
+.jn-modal.crt-form-panel > *:not(.jn-crt-select) {
+  position: relative;
+  z-index: 1;
+}
+
+.crt-form-panel input.jn-input {
+  background-image: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.08),
+    rgba(0, 0, 0, 0.08) 1px,
+    transparent 1px,
+    transparent 2px
+  );
+  background-color: var(--color-bg);
+}
+
+.crt-form-panel textarea.jn-textarea {
+  background-image: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.09),
+    rgba(0, 0, 0, 0.09) 1px,
+    transparent 1px,
+    transparent 2px
+  );
+  background-color: var(--color-bg);
+}
+
 .jn-modal--wide {
   max-width: 520px;
 }
@@ -1255,6 +2327,7 @@ const openChatiumLink = () => {
   letter-spacing: 0.1em;
   text-transform: uppercase;
   font-weight: 400;
+  color: var(--color-text);
 }
 
 .jn-label {
@@ -1296,6 +2369,7 @@ const openChatiumLink = () => {
   justify-content: flex-end;
   gap: 0.5rem;
   margin-top: 0.5rem;
+  flex-wrap: wrap;
 }
 
 .jn-modal-enter-active,
@@ -1349,20 +2423,11 @@ body {
 
 .content-inner {
   width: 100%;
-  max-width: 1200px;
+  max-width: min(1680px, 100%);
   padding: 0 1.5rem;
   margin: 0 auto;
   position: relative;
   z-index: 10;
-}
-
-.journal-shell {
-  display: flex;
-  flex-direction: row;
-  align-items: stretch;
-  gap: 0.75rem 1rem;
-  max-width: 1200px;
-  min-height: 40vh;
 }
 
 .journal-nav-toolbar {
@@ -1438,7 +2503,6 @@ body {
   color: var(--color-text-secondary);
   background: var(--color-bg-secondary);
   border: 1px solid var(--color-border);
-  border-left: 2px solid transparent;
   cursor: pointer;
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   line-height: 1.25;
@@ -1453,9 +2517,13 @@ body {
 .journal-nav-btn--active {
   color: var(--color-text);
   border-color: var(--color-border-light);
-  border-left-color: var(--color-accent);
   background: var(--color-accent-light);
-  box-shadow: 0 0 12px var(--color-accent-medium);
+  box-shadow: inset 2px 0 0 0 var(--color-accent), 0 0 12px var(--color-accent-medium);
+}
+
+.jn-modal-actions .journal-nav-btn,
+.jn-modal-actions .journal-nav-action {
+  width: auto;
 }
 
 .journal-panel {
@@ -1466,5 +2534,129 @@ body {
   border: 1px solid var(--color-border);
   border-radius: 2px;
   overflow: hidden;
+}
+
+/*
+ * Класс `tasks-page-html-mobile` вешается на documentElement при viewport ≤1023px
+ * только на странице задач — крупнее базовый rem, модалки на всю ширину, поля ≥16px (iOS).
+ */
+html.tasks-page-html-mobile {
+  font-size: 125%;
+  -webkit-text-size-adjust: 100%;
+}
+
+html.tasks-page-html-mobile .jn-modal-overlay {
+  align-items: center;
+  justify-content: center;
+  padding: max(0.75rem, env(safe-area-inset-top)) max(0.75rem, env(safe-area-inset-right))
+    max(0.75rem, env(safe-area-inset-bottom)) max(0.75rem, env(safe-area-inset-left));
+  box-sizing: border-box;
+}
+
+html.tasks-page-html-mobile .jn-modal {
+  width: min(100%, calc(100vw - 1.5rem));
+  max-width: 26rem;
+  padding: 1.5rem 1.35rem 1.65rem;
+  border-radius: 0.65rem;
+  border-width: 2px;
+}
+
+html.tasks-page-html-mobile .jn-modal--wide {
+  max-width: min(34rem, calc(100vw - 1.5rem));
+}
+
+html.tasks-page-html-mobile .jn-modal--compact {
+  max-width: min(24rem, calc(100vw - 1.5rem));
+}
+
+html.tasks-page-html-mobile .jn-modal-heading {
+  font-size: 1.05rem;
+  letter-spacing: 0.06em;
+  line-height: 1.35;
+}
+
+html.tasks-page-html-mobile .jn-label {
+  font-size: 0.8rem;
+  letter-spacing: 0.06em;
+  margin-bottom: 0.45rem;
+}
+
+html.tasks-page-html-mobile .jn-input,
+html.tasks-page-html-mobile .jn-textarea {
+  font-size: 16px;
+  padding: 0.75rem 0.9rem;
+  border-width: 2px;
+  min-height: 3rem;
+}
+
+html.tasks-page-html-mobile .jn-textarea {
+  min-height: 7.5rem;
+}
+
+html.tasks-page-html-mobile .jn-modal-error {
+  font-size: 0.88rem;
+}
+
+html.tasks-page-html-mobile .jn-modal-actions {
+  flex-direction: column-reverse;
+  gap: 0.65rem;
+  margin-top: 0.65rem;
+}
+
+html.tasks-page-html-mobile .jn-modal-actions .journal-nav-btn,
+html.tasks-page-html-mobile .jn-modal-actions .journal-nav-action {
+  width: 100%;
+  min-height: 3rem;
+  justify-content: center;
+  font-size: 0.95rem;
+  padding: 0.65rem 1rem;
+}
+
+html.tasks-page-html-mobile .jn-crt-select__trigger.jn-input {
+  min-height: 3rem;
+  font-size: 16px;
+}
+
+html.tasks-page-html-mobile .header-action-btn {
+  width: 2.85rem;
+  height: 2.85rem;
+  font-size: 1.05rem;
+}
+
+html.tasks-page-html-mobile .header-title {
+  font-size: 1.05rem;
+}
+
+html.tasks-page-html-mobile .header-clock {
+  font-size: 0.88rem;
+  padding: 0.35rem 0.65rem;
+}
+
+.tasks-panel-head-actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.tasks-panel-head-actions .journal-nav-action {
+  width: auto;
+  padding: 0.5rem 0.85rem;
+  font-size: 0.7rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  white-space: nowrap;
+}
+
+@media (max-width: 640px) {
+  .tasks-panel-head-actions {
+    width: 100%;
+  }
+  
+  .tasks-panel-head-actions .journal-nav-action {
+    flex: 1;
+    justify-content: center;
+  }
 }
 </style>

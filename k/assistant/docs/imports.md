@@ -12,7 +12,7 @@
 - `@app/html-jsx` → `jsx`
 - `./pages/HomePage.vue`
 - `./shared/preloader` → `getPreloaderStyles`, `getPreloaderScript`
-- `./styles` → `customScrollbarStyles`
+- `./styles` → `customScrollbarStyles`, `mobileSafeAreaStyles`, `formControlStyles`, `VIEWPORT_META_CONTENT`
 - `./shared/logLevel` → `getLogLevelForPage`, `getLogLevelScript`
 - `./config/routes` → `getFullUrl`, `ROUTES`
 - `./config/project` → `INDEX_PAGE_NAME`, `BODY_TEXT`, `BODY_SUBTEXT`, `getPageTitle`, `getHeaderText`
@@ -28,7 +28,7 @@
 - `../login` → `loginPageRoute`
 - `../../shared/preloader` → `getPreloaderStyles`, `getPreloaderScript`
 - `../../shared/logLevel` → `getLogLevelForPage`, `getLogLevelScript`
-- `../../styles` → `customScrollbarStyles`
+- `../../styles` → `customScrollbarStyles`, `mobileSafeAreaStyles`, `formControlStyles`, `VIEWPORT_META_CONTENT`
 - `../../lib/logger.lib` → `getAdminLogsSocketId`, `writeServerLog` (и др.)
 - `../../config/routes` → `getFullUrl`, `ROUTES`
 - `../../config/project` → `ADMIN_PAGE_NAME`, `getPageTitle`, `getHeaderText`
@@ -40,7 +40,7 @@
 - `../../pages/ProfilePage.vue`
 - `../../shared/preloader` → `getPreloaderStyles`, `getPreloaderScript`
 - `../../shared/logLevel` → `getLogLevelForPage`, `getLogLevelScript`
-- `../../styles` → `customScrollbarStyles`
+- `../../styles` → `customScrollbarStyles`, `mobileSafeAreaStyles`, `formControlStyles`, `VIEWPORT_META_CONTENT`
 - `../../lib/logger.lib` → `*`
 - `../../config/routes` → `getFullUrl`, `ROUTES`
 - `../../config/project` → `PROFILE_PAGE_NAME`, `getPageTitle`, `getHeaderText`
@@ -56,14 +56,18 @@
 - `../../api/tasks/clients/create` → `createTaskClientRoute`
 - `../../api/tasks/clients/update` → `updateTaskClientRoute`
 - `../../api/tasks/clients/delete` → `deleteTaskClientRoute`
+- `../../api/tasks/clients/reorder` → `reorderTaskClientsRoute`
 - `../../api/tasks/projects/create` → `createTaskProjectRoute`
 - `../../api/tasks/projects/update` → `updateTaskProjectRoute`
 - `../../api/tasks/projects/delete` → `deleteTaskProjectRoute`
+- `../../api/tasks/projects/reorder` → `reorderTaskProjectsRoute`
 - `../../api/tasks/items/create` → `createTaskItemRoute`
 - `../../api/tasks/items/update` → `updateTaskItemRoute`
 - `../../api/tasks/items/delete` → `deleteTaskItemRoute`
 - `../../api/tasks/items/reorder` → `reorderTaskItemsRoute`
-- `../../shared/preloader`, `../../shared/logLevel`, `../../styles` → `customScrollbarStyles`
+- `../../api/tasks/tasks-ai-chat-ensure` → `taskAiChatEnsureRoute`
+- `../../api/tasks/tasks-ai-chat-reset` → `taskAiChatResetRoute`
+- `../../shared/preloader`, `../../shared/logLevel`, `../../styles` → `customScrollbarStyles`, `mobileSafeAreaStyles`, `formControlStyles`, `VIEWPORT_META_CONTENT`
 - `../../lib/logger.lib`, `../../lib/settings.lib`
 - `../../config/routes` → `getFullUrl`, `getApiUrlForRoute`, `ROUTES`
 - `../../config/project` → `TASKS_PAGE_NAME`, `getPageTitle`, `getHeaderText`
@@ -74,7 +78,7 @@
 - `../../pages/JournalPage.vue`
 - `../../shared/preloader` → `getPreloaderStyles`, `getPreloaderScript`
 - `../../shared/logLevel` → `getLogLevelForPage`, `getLogLevelScript`
-- `../../styles` → `customScrollbarStyles`
+- `../../styles` → `customScrollbarStyles`, `mobileSafeAreaStyles`, `formControlStyles`, `VIEWPORT_META_CONTENT`
 - `../../lib/logger.lib` → `*`
 - `../../repos/journal-notes.repo` → `*`
 - `../../repos/tasks.repo` → `*`
@@ -99,7 +103,7 @@
 - `../../pages/TestsPage.vue`
 - `../../shared/preloader` → `getPreloaderStyles`, `getPreloaderScript`
 - `../../shared/logLevel` → `getLogLevelForPage`, `getLogLevelScript`
-- `../../styles` → `customScrollbarStyles`
+- `../../styles` → `customScrollbarStyles`, `mobileSafeAreaStyles`, `formControlStyles`, `VIEWPORT_META_CONTENT`
 - `../../config/routes` → `getFullUrl`, `ROUTES`
 - `../../config/project` → `TESTS_PAGE_NAME`, `getPageTitle`, `getHeaderText`
 - `../../lib/settings.lib` → `*`
@@ -107,7 +111,7 @@
 ### `./web/login/index.tsx`
 - `@app/html-jsx` → `jsx`
 - `../../pages/LoginPage.vue`
-- `../../styles` → `baseHtmlStyles`, `customScrollbarStyles`
+- `../../styles` → `baseHtmlStyles`, `customScrollbarStyles`, `mobileSafeAreaStyles`, `formControlStyles`, `VIEWPORT_META_CONTENT`
 - `../../config/routes` → `PROJECT_ROOT`
 - `../../lib/logger.lib` → `*`
 
@@ -120,6 +124,13 @@
 - `../components/AppFooter.vue`
 - `../shared/bootUi` → `subscribeBootStaticReady`, `scheduleHideBootLoader`
 - `../shared/logger` → `createComponentLogger`
+
+### `./components/admin/AiSettings.vue`
+- `vue` → `ref`, `watch`, `onMounted`, `onBeforeUnmount`
+- `../api/settings/get` → `getSettingRoute`
+- `../api/settings/save` → `saveSettingRoute`
+- `../shared/logger` → `createComponentLogger`
+- `../config/prompts` → `AVAILABLE_AI_MODELS`, `DEFAULT_AI_MODEL`
 
 ### `./pages/AdminPage.vue`
 - `vue` → `onMounted`, `onBeforeUnmount`, `onUnmounted`, `ref`, `computed`, `watch`
@@ -149,6 +160,7 @@
 - `../components/Header.vue`
 - `../components/GlobalGlitch.vue`
 - `../components/AppFooter.vue`
+- `../components/journal/JournalNav.vue`
 - `../components/journal/JournalNotebookPane.vue`
 - `../components/journal/JournalMonthPane.vue`
 - `../components/journal/JournalWeekPane.vue`
@@ -175,9 +187,20 @@
 - `../components/Header.vue`
 - `../components/GlobalGlitch.vue`
 - `../components/AppFooter.vue`
+- `../components/JnCrtSelect.vue`
+- `../components/tasks/TasksAiChatPanel.vue`
 - `../shared/bootUi` → `subscribeBootStaticReady`, `scheduleHideBootLoader`
 - `../shared/logger` → `createComponentLogger`
 - `../lib/tasks-types` → `TasksTreeDto`, `TaskClientDto`, `TaskProjectDto`, `TaskItemDto`
+- событие `tasks-maybe-changed` от чата — отложенный `refreshTree` после ответа ассистента
+
+### `./components/tasks/TasksAiChatPanel.vue`
+- `vue` → `computed`, `onMounted`, `onUnmounted`, `ref`, `watch`, `nextTick`
+- `@app/socket` → `getOrCreateBrowserSocketClient`
+- `../../shared/logger` → `createComponentLogger`
+- `../../shared/tasks-ai-chat-message-order` → `sortTaskAiChatMessagesForDisplay`
+- пропсы: `projectId`, `isAuthenticated`, `ensureUrl`, `resetUrl` — чат с AI на фиде (`getChat`), вебсокет + polling `messages/changes`
+- `emit('tasks-maybe-changed')` при появлении нового сообщения ассистента в фиде (после JSON-действий на сервере список задач мог обновиться)
 
 ### `./pages/LoginPage.vue`
 - `vue` → `computed`, `onMounted`
@@ -202,8 +225,18 @@
 - `vue` → `onMounted`
 - `../shared/logger` → `createComponentLogger`
 
+### `./components/JnCrtSelect.vue`
+- `vue` → `computed`, `onMounted`, `onUnmounted`, `ref`
+- `defineProps`: `modelValue`, `options`, `disabled?`, `id?`
+- `defineEmits`: `update:modelValue`
+
 ### `./components/journal/JournalStubPanel.vue`
 - (только разметка заглушки «В разработке»)
+
+### `./components/journal/JournalNav.vue`
+- `defineProps`: `tabs`, `activeTab`, `showNotebookToolbar`, `showDayToolbar`, `isAuthenticated`, `notebookCreateTitle`, `notebookCreateError`
+- `defineEmits`: `select-tab`, `create-note`, `open-all-tasks`
+- отвечает за левое меню журнала: список вкладок, разделитель, динамические кнопки (`Новая заметка` / `Все задачи`) и их стили/focus
 
 ### `./components/journal/JournalNotebookPane.vue`
 - `vue` → `reactive`, `ref`, `watch`
@@ -219,6 +252,7 @@
 
 ### `./components/journal/JournalDayPane.vue`
 - `vue` → `computed`, `onUnmounted`, `ref`, `watch`
+- `../JnCrtSelect.vue`
 - `../../lib/tasks-types` → `TasksTreeDto`, `TaskItemDto`, `TaskProjectDto`
 - `../../shared/logger` → `createComponentLogger`
 - пропсы: `isAuthenticated`, `tasksTreeInitial`, `tasksTreeGetUrl`, `taskItemReorderDayUrl`, `taskReleaseDayUrl`, `taskItemUpdateUrl`, `tasksPageUrl` — список задач «В работе», сортировка (кнопки и drag-and-drop), клик по названию — модалка редактирования (POST `taskItemUpdateUrl`), ссылки на страницу задач с `?client=&project=`
@@ -229,7 +263,7 @@
 ## 4) Shared (общий код)
 
 ### `./styles.tsx`
-- нет внутренних импортов (только экспорт `baseHtmlStyles`, `customScrollbarStyles`)
+- нет внутренних импортов (только экспорт `baseHtmlStyles`, `customScrollbarStyles`, `mobileSafeAreaStyles`, `formControlStyles`, `VIEWPORT_META_CONTENT`)
 
 ### `./shared/preloader.ts`
 - нет импортов
@@ -244,6 +278,10 @@
 
 ### `./shared/logger.ts`
 - нет импортов (клиентский логгер по syslog RFC 5424: severity -1…7, LOG_LEVEL_OFF=-1, читает window.__BOOT__.logLevel; createComponentLogger, setLogSink, LogEntry)
+
+### `./shared/tasks-ai-chat-message-order.ts`
+- первая строка: `// @shared`
+- нет импортов — `taskAiChatMsgTime`, `sortTaskAiChatMessagesForDisplay` (хронологический порядок сообщений чата с AI для UI и сервера)
 
 ## 5) Таблицы (tables/)
 
@@ -355,6 +393,70 @@
 - `@app/auth` → `requireRealUser`
 - `../../../lib/logger.lib` → `*`
 - `../../../repos/tasks.repo` → `*`
+
+### `./api/tasks/tasks-ai-chat-lib.ts`
+- `@app/auth` → `findUsersByIds`, `SmartUser`
+- `@app/feed` → `createFeedMessage`
+- `../../shared/tasks-ai-chat-message-order` → `taskAiChatMsgTime` (реэкспорт)
+- `../../repos/task-ai-chat.repo`, `../../repos/tasks.repo`
+- типы и хелперы чата с AI (маппинг авторов, контекст проекта для completion, `appendTaskAiChatAssistantMessage`)
+
+### `./api/tasks/tasks-ai-chat-messages-get.ts`
+- `@app/auth` → `requireRealUser`, `findUsersByIds`
+- `@app/feed` → `feedMessagesGetHandler`, `getFeedById`
+- `./tasks-ai-chat-lib` → `assertTaskAiChatFeedAccess`, `mapTaskAiChatMessage`, `TaskAiChatFeedMsg`
+- `../../shared/tasks-ai-chat-message-order` → `sortTaskAiChatMessagesForDisplay` (после маппинга — порядок старые→новые для UI)
+
+### `./api/tasks/tasks-ai-chat-messages-changes.ts`
+- `@app/auth` → `requireRealUser`, `findUsersByIds`
+- `@app/feed` → `feedMessagesChangesHandler`, `getFeedById`
+- `./tasks-ai-chat-lib` → `assertTaskAiChatFeedAccess`, `mapTaskAiChatMessage`, `TaskAiChatFeedMsg`
+
+### `./api/tasks/tasks-ai-chat-messages-add.ts`
+- `@app/auth` → `requireRealUser`, `findUsersByIds`
+- `@app/feed` → `feedMessagesAddHandler`, `getFeedById`
+- `./tasks-ai-chat-lib` → `mapAuthorForTaskAiChat`, `assertTaskAiChatFeedAccess`, `TaskAiChatFeedMsg`
+- `./tasks-ai-chat-reply` → `runTaskAiChatReplyIfNeeded`
+- `../../repos/task-ai-chat.repo`
+
+### `./api/tasks/tasks-ai-chat-reply.ts`
+- `@app/feed` → `findFeedMessages`
+- `@app/sync` → `runWithExclusiveLock`
+- `@start/sdk` → `startCompletion`
+- `../../config/prompts` → `TASKS_AI_CHAT_JSON_APPENDIX`; `../../lib/settings.lib` → `getAiFormulateSystemPrompt`, `getAiModel`
+- `../../repos/task-ai-chat.repo`
+- `./tasks-ai-chat-completion-completed`, `./tasks-ai-chat-completion-failed`, `./tasks-ai-chat-lib`
+- вызывается из `tasks-ai-chat-messages-add` (HTTP) — `startCompletion` требует proxy app context (`ctx.app`)
+
+### `./api/tasks/tasks-ai-formulate-apply.ts`
+- `../../lib/logger.lib`, `../../repos/tasks.repo`
+- `parseAiFormulateJsonFromText`, `stripJsonFences`, `applyAiFormulateJsonResponse` (логика бывшего `ai-formulate` по `actions`)
+
+### `./api/tasks/tasks-ai-chat-completion-completed.ts` / `tasks-ai-chat-completion-failed.ts`
+- `@start/sdk` → `CompletionCompletedBody` / `CompletionFailedBody`
+- `../../lib/logger.lib`, `./tasks-ai-chat-lib` → `appendTaskAiChatAssistantMessage`
+- completed: `./tasks-ai-formulate-apply` (JSON → Heap)
+
+### `./api/tasks/tasks-ai-chat-ensure.ts`
+- `@app/auth` → `requireRealUser`
+- `@app/feed` → `getChat`, `getOrCreateParticipant`
+- `./tasks-ai-chat-messages-add` → `taskAiChatMessagesAddRoute`
+- `./tasks-ai-chat-messages-changes` → `taskAiChatMessagesChangesRoute`
+- `./tasks-ai-chat-messages-get` → `taskAiChatMessagesGetRoute`
+- `../../lib/logger.lib`, `../../repos/task-ai-chat.repo`
+
+### `./api/tasks/tasks-ai-chat-reset.ts`
+- `@app/auth` → `requireRealUser`
+- `@app/feed` → `getOrCreateParticipant`
+- `../../lib/logger.lib`, `../../repos/task-ai-chat.repo`
+
+### `./repos/task-ai-chat.repo.ts`
+- `@app/feed` → `createFeed`, `deleteFeed`
+- `@app/sync` → `runWithExclusiveLock`
+- `../tables/task-ai-chat-feeds.table`, `../tables/task-projects.table`
+
+### `./tables/task-ai-chat-feeds.table.ts`
+- `@app/heap` → `Heap`
 
 ### `./api/admin/logs/recent.ts`
 - `@app/auth` → `requireAccountRole`
