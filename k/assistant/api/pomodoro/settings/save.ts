@@ -10,7 +10,10 @@ export const savePomodoroSettingsRoute = app
     cyclesUntilLongRest: s.number(),
     pauseAfterWork: s.boolean(),
     pauseAfterRest: s.boolean(),
-    afterLongRest: s.string()
+    afterLongRest: s.string(),
+    autoStartRest: s.boolean(),
+    autoStartNextCycle: s.boolean(),
+    phaseChangeSound: s.number()
   }))
   .post('/', async (ctx, req) => {
     const user = requireRealUser(ctx)
@@ -25,7 +28,10 @@ export const savePomodoroSettingsRoute = app
         cyclesUntilLongRest: req.body.cyclesUntilLongRest,
         pauseAfterWork: req.body.pauseAfterWork,
         pauseAfterRest: req.body.pauseAfterRest,
-        afterLongRest: req.body.afterLongRest
+        afterLongRest: req.body.afterLongRest,
+        autoStartRest: req.body.autoStartRest,
+        autoStartNextCycle: req.body.autoStartNextCycle,
+        phaseChangeSound: req.body.phaseChangeSound
       })
       return { success: true, state, serverNowMs: Date.now() }
     } catch (error) {

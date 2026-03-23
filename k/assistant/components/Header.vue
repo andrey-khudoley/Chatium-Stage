@@ -86,6 +86,7 @@
 import { computed, ref, onMounted, onUnmounted } from 'vue'
 import LogoutModal from './LogoutModal.vue'
 import { createComponentLogger } from '../shared/logger'
+import { formatPomodoroSecondsDisplay } from '../lib/pomodoro-types'
 
 const log = createComponentLogger('Header')
 
@@ -122,7 +123,7 @@ const pomodoroDisplaySec = computed(() => {
 })
 const pomodoroDisplay = computed(() => {
   const sec = pomodoroDisplaySec.value
-  const s = `${String(Math.floor(sec / 60)).padStart(2, '0')}:${String(sec % 60).padStart(2, '0')}`
+  const s = formatPomodoroSecondsDisplay(sec)
   if (pomodoroStatus.value === 'awaiting_continue') return `+${s}`
   return s
 })

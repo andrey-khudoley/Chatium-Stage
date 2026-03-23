@@ -3,6 +3,7 @@ import * as pomodoroRepo from '../repos/pomodoro.repo'
 import * as pomodoroLaunchesRepo from '../repos/pomodoro-launches.repo'
 import * as tasksRepo from '../repos/tasks.repo'
 import type { PomodoroSettingsInput, PomodoroStateDto } from './pomodoro-types'
+import { normalizePhaseChangeSoundId } from './pomodoro-types'
 import type { PomodoroLaunchEndReason, PomodoroLaunchSource } from '../tables/pomodoro-launches.table'
 
 function lockKey(userId: string): string {
@@ -79,15 +80,9 @@ async function advanceToNextPhaseAfterOvertime(
 
 /** Пропуск текущей фазы во время отсчёта: сразу следующая фаза с полным таймером. */
 async function skipFromRunningPhase(ctx: app.Ctx, userId: string, nowMs: number, state: PomodoroStateDto): Promise<PomodoroStateDto> {
-  const remaining = Math.max(0, Math.floor((state.phaseEndsAtMs - nowMs) / 1000))
-  const addWork = state.phase === 'work' ? remaining : 0
-  const addRest = state.phase === 'work' ? 0 : remaining
-  if (state.currentTaskId && remaining > 0) {
-    await tasksRepo.addPomodoroSecondsToTask(ctx, userId, state.currentTaskId, addWork, addRest)
-  }
+  // tick() выше уже перенёс в totalWorkSec/totalRestSec и в задачу фактически прошедшее время.
+  // Оставшееся до конца фазы (skipped) в аналитику и в задачи не включаем.
   let next = await pomodoroRepo.updateState(ctx, userId, {
-    totalWorkSec: state.totalWorkSec + addWork,
-    totalRestSec: state.totalRestSec + addRest,
     phaseRemainingSec: 0
   })
   await closeLaunchSegment(ctx, userId, next.updatedAtMs, 'phase_skip')
@@ -190,6 +185,7 @@ export async function saveSettings(ctx: app.Ctx, userId: string, input: Pomodoro
   const restMinutes = Math.max(1, Math.min(180, Math.floor(input.restMinutes)))
   const longRestMinutes = Math.max(1, Math.min(180, Math.floor(input.longRestMinutes)))
   const cyclesUntilLongRest = Math.max(1, Math.min(12, Math.floor(input.cyclesUntilLongRest)))
+  const phaseChangeSound = normalizePhaseChangeSoundId(input.phaseChangeSound)
   return runWithExclusiveLock(ctx, lockKey(userId), async () => {
     const state = await tick(ctx, userId, Date.now())
     return pomodoroRepo.updateState(ctx, userId, {
@@ -202,6 +198,7 @@ export async function saveSettings(ctx: app.Ctx, userId: string, input: Pomodoro
       afterLongRest: input.afterLongRest,
       autoStartRest: input.autoStartRest,
       autoStartNextCycle: input.autoStartNextCycle,
+      phaseChangeSound,
       phaseRemainingSec: state.status === 'stopped' ? workMinutes * 60 : state.phaseRemainingSec
     })
   })
@@ -217,7 +214,8 @@ export async function start(ctx: app.Ctx, userId: string): Promise<PomodoroState
       phase: 'work',
       status: 'running',
       phaseRemainingSec: remaining,
-      phaseEndsAtMs: nowMs + remaining * 1000
+      phaseEndsAtMs: nowMs + remaining * 1000,
+      cyclesCompleted: 0
     })
     await startLaunchSegment(ctx, userId, nextState, 'start', nowMs)
     return nextState
@@ -281,6 +279,25 @@ export async function stop(ctx: app.Ctx, userId: string): Promise<PomodoroStateD
       phaseRemainingSec: state.workMinutes * 60,
       phaseEndsAtMs: 0,
       currentTaskId: null
+    })
+    await closeLaunchSegment(ctx, userId, nowMs, 'stop')
+    return nextState
+  })
+}
+
+/** Полная остановка и возврат к началу серии (первый цикл, таймер на полный work, без запуска). */
+export async function reset(ctx: app.Ctx, userId: string): Promise<PomodoroStateDto> {
+  return runWithExclusiveLock(ctx, lockKey(userId), async () => {
+    const nowMs = Date.now()
+    const state = await tick(ctx, userId, nowMs)
+    if (state.status === 'stopped') return state
+    const nextState = await pomodoroRepo.updateState(ctx, userId, {
+      status: 'stopped',
+      phase: 'work',
+      phaseRemainingSec: state.workMinutes * 60,
+      phaseEndsAtMs: 0,
+      currentTaskId: null,
+      cyclesCompleted: 0
     })
     await closeLaunchSegment(ctx, userId, nowMs, 'stop')
     return nextState

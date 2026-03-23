@@ -1,5 +1,6 @@
 import PomodoroState from '../tables/pomodoro-state.table'
 import type { PomodoroAfterLongRest, PomodoroSettingsInput, PomodoroStateDto, PomodoroPhase, PomodoroStatus } from '../lib/pomodoro-types'
+import { normalizePhaseChangeSoundId } from '../lib/pomodoro-types'
 
 const DEFAULTS: PomodoroSettingsInput = {
   workMinutes: 25,
@@ -10,7 +11,8 @@ const DEFAULTS: PomodoroSettingsInput = {
   pauseAfterRest: false,
   afterLongRest: 'pause',
   autoStartRest: false,
-  autoStartNextCycle: false
+  autoStartNextCycle: false,
+  phaseChangeSound: 3
 }
 
 function normalizeMinutes(v: number, fallback: number): number {
@@ -45,6 +47,7 @@ function rowToState(row: typeof PomodoroState.T): PomodoroStateDto {
     afterLongRest: (row.afterLongRest as PomodoroAfterLongRest) === 'stop' ? 'stop' : 'pause',
     autoStartRest: !!row.autoStartRest,
     autoStartNextCycle: !!row.autoStartNextCycle,
+    phaseChangeSound: normalizePhaseChangeSoundId(row.phaseChangeSound ?? DEFAULTS.phaseChangeSound),
     tasksCompletedToday: Math.max(0, Math.floor(row.tasksCompletedToday ?? 0)),
     updatedAtMs: row.updatedAtMs
   }
@@ -70,6 +73,7 @@ async function createDefaultState(ctx: app.Ctx, userId: string): Promise<typeof 
     afterLongRest: DEFAULTS.afterLongRest,
     autoStartRest: DEFAULTS.autoStartRest,
     autoStartNextCycle: DEFAULTS.autoStartNextCycle,
+    phaseChangeSound: DEFAULTS.phaseChangeSound,
     tasksCompletedToday: 0,
     updatedAtMs: now
   })

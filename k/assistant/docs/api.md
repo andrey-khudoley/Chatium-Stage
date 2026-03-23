@@ -98,8 +98,8 @@
 | Method | Path | File | Auth | Назначение |
 | --- | --- | --- | --- | --- |
 | GET | /api/pomodoro/state/get | api/pomodoro/state/get.ts | RealUser | Текущее состояние таймера: `{ success, state, serverNowMs }`, где state включает `status`, `phase`, `phaseRemainingSec`, `phaseEndsAtMs`, текущую задачу и агрегаты времени. |
-| POST | /api/pomodoro/control | api/pomodoro/control.ts | RealUser | Управление состоянием. Body: `{ action }`, где `action ∈ { start, resume, pause, stop, skip }` (`skip` — пропуск текущей фазы). Ответ: `{ success, state, serverNowMs }`. В `state.status` возможно значение `awaiting_continue` (фаза закончилась по таймеру, ожидание «Продолжить»). |
-| POST | /api/pomodoro/settings/save | api/pomodoro/settings/save.ts | RealUser | Сохранить настройки таймера. Body: `{ workMinutes, restMinutes, longRestMinutes, cyclesUntilLongRest, pauseAfterWork, pauseAfterRest, afterLongRest }`, где `afterLongRest ∈ { stop, pause }`. |
+| POST | /api/pomodoro/control | api/pomodoro/control.ts | RealUser | Управление состоянием. Body: `{ action }`, где `action ∈ { start, resume, pause, stop, skip, reset }` (`skip` — пропуск текущей фазы; `reset` — остановка и сброс к началу серии: `stopped`, полный work, `cyclesCompleted=0`). Ответ: `{ success, state, serverNowMs }`. В `state.status` возможно значение `awaiting_continue` (фаза закончилась по таймеру, ожидание «Продолжить»). |
+| POST | /api/pomodoro/settings/save | api/pomodoro/settings/save.ts | RealUser | Сохранить настройки таймера. Body: `{ workMinutes, restMinutes, longRestMinutes, cyclesUntilLongRest, pauseAfterWork, pauseAfterRest, afterLongRest, autoStartRest, autoStartNextCycle, phaseChangeSound }`, где `afterLongRest ∈ { stop, pause }`, `phaseChangeSound` — целое 1–5 (громкость/выразительность сигнала при смене этапа). |
 | POST | /api/pomodoro/assign-task | api/pomodoro/assign-task.ts | RealUser | Привязать текущую задачу к Pomodoro. Body: `{ taskId }`. Проверяется, что задача принадлежит пользователю; при активном тике накопленное время задачи синхронизируется перед сменой привязки. |
 
 ## Публичные эндпоинты
@@ -108,10 +108,11 @@
 | - | - | - | - | - |
 
 Примечания по семантике `control`:
-- `start` всегда запускает/перезапускает рабочую фазу (`phase=work`, полный `workMinutes`) из любого статуса.
-- `resume` изменяет состояние только из `paused` (в остальных случаях возвращает текущее состояние без ошибки).
+- `start` запускает/перезапускает рабочую фазу (`phase=work`, полный `workMinutes`, `cyclesCompleted=0`); на странице Pomodoro кнопка доступна только в `stopped`, прямой вызов API из других статусов по-прежнему перезапускает работу.
+- `resume` изменяет состояние из `paused` или `awaiting_continue`; иначе возвращает текущее состояние без ошибки.
 - `pause` изменяет состояние только из `running` (в остальных случаях возвращает текущее состояние без ошибки).
-- `stop` переводит в `stopped`, сбрасывает фазу в `work` и очищает `currentTaskId`.
+- `stop` переводит в `stopped`, сбрасывает фазу в `work` и очищает `currentTaskId` (счётчик циклов не обнуляет).
+- `reset` переводит в `stopped` с полным таймером работы, очищает задачу и обнуляет `cyclesCompleted` (кнопка «Сбросить» на странице).
 
 ## События и webhooks
 - Не используются.

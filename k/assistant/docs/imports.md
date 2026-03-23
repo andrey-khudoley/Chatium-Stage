@@ -231,6 +231,8 @@
 - `../components/AppFooter.vue`
 - `../components/pomodoro/PomodoroTimerDial.vue`
 - `../components/pomodoro/PomodoroSettingsModal.vue`
+- `../lib/pomodoro-phase-sounds` → `playPomodoroPhaseChangeSound`
+- `../lib/pomodoro-types` → `formatPomodoroSecondsDisplay` (как `fmt`)
 
 ### `./components/tasks/TasksAiChatPanel.vue`
 - `vue` → `computed`, `onMounted`, `onUnmounted`, `ref`, `watch`, `nextTick`
@@ -250,6 +252,7 @@
 - `vue` → `ref`, `onMounted`, `onUnmounted`
 - `./LogoutModal.vue`
 - `../shared/logger` → `createComponentLogger`
+- `../lib/pomodoro-types` → `formatPomodoroSecondsDisplay`
 
 ### `./components/LogoutModal.vue`
 - `vue` → `watch`, `onMounted`
@@ -274,7 +277,8 @@
 
 ### `./components/pomodoro/PomodoroSettingsModal.vue`
 - `vue` → `reactive`, `watch`
-- `../../tables/pomodoro-state.table` → type `PomodoroAfterLongRest`
+- `../../lib/pomodoro-types` → `PomodoroAfterLongRest`, `normalizePhaseChangeSoundId`
+- `../../lib/pomodoro-phase-sounds` → `POMODORO_PHASE_CHANGE_SOUND_OPTIONS`, `playPomodoroPhaseChangeSound`
 - `defineProps`: `isOpen`, `saving`, `modelValue`
 - `defineEmits`: `close`, `save`
 
@@ -376,13 +380,19 @@
 
 ### `./repos/pomodoro.repo.ts`
 - `../tables/pomodoro-state.table` → `PomodoroState`
-- `../lib/pomodoro-types` → `PomodoroAfterLongRest`, `PomodoroPhase`, `PomodoroStatus`, `PomodoroSettingsInput`, `PomodoroStateDto`
+- `../lib/pomodoro-types` → `PomodoroAfterLongRest`, `PomodoroPhase`, `PomodoroStatus`, `PomodoroSettingsInput`, `PomodoroStateDto`, `normalizePhaseChangeSoundId`
 
 ### `./lib/tasks-types.ts`
 - нет импортов (чистые типы DTO для задач)
 
+### `./lib/pomodoro-phase-sounds.ts`
+- первая строка: `// @shared` (импорт из Vue)
+- `./pomodoro-types` → `PomodoroPhaseChangeSoundId`, `normalizePhaseChangeSoundId`
+- экспорт `POMODORO_PHASE_CHANGE_SOUND_OPTIONS`, `playPomodoroPhaseChangeSound` (Web Audio API)
+
 ### `./lib/pomodoro-types.ts`
-- нет импортов (типы статуса/фаз Pomodoro и DTO)
+- первая строка: `// @shared` (импорт из Vue)
+- нет импортов (типы статуса/фаз Pomodoro, DTO, `PomodoroPhaseChangeSoundId`, `normalizePhaseChangeSoundId`, `formatPomodoroSecondsDisplay`)
 
 ## 7) Библиотеки (lib/)
 
@@ -594,7 +604,7 @@
 
 ### `./api/pomodoro/control.ts`
 - `@app/auth` → `requireRealUser`
-- `../../lib/pomodoro.lib` → `start`, `resume`, `pause`, `stop`, `skipPhase`
+- `../../lib/pomodoro.lib` → `start`, `resume`, `pause`, `stop`, `reset`, `skipPhase`
 
 ### `./api/pomodoro/state/get.ts`
 - `@app/auth` → `requireRealUser`

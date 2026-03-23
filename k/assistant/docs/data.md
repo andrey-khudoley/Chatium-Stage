@@ -13,7 +13,7 @@
 | t__assistant__task_project__9Lp4qR | tables/task-projects.table.ts | Проекты внутри клиента | userId, clientId, name, sortOrder; опционально `details` (текст для пользователя), `context` (служебное, не отдаётся в клиентский API) |
 | t__assistant__task_ai_chat_feed__3Kp9mX | tables/task-ai-chat-feeds.table.ts | Фид чата с AI на странице задач (на проект) | userId, projectId, feedId (UID фида Chatium) |
 | t__assistant__task_item__2Vx8sT | tables/task-items.table.ts | Задачи внутри проекта | userId, projectId, title, priority (1–4), status (todo/in_progress/done/cancelled), sortOrder, daySortOrder (порядок в дневном списке «В работе»); опционально `details` (текст для пользователя), `context` (служебное, не отдаётся в клиентский API) |
-| t__assistant__pomodoro_state__6Gs2mQ | tables/pomodoro-state.table.ts | Состояние Pomodoro пользователя | userId, status, phase, currentTaskId, phaseEndsAtMs, phaseRemainingSec, cyclesCompleted, totalWorkSec, totalRestSec, workMinutes, restMinutes, longRestMinutes, cyclesUntilLongRest, pauseAfterWork, pauseAfterRest, afterLongRest, updatedAtMs |
+| t__assistant__pomodoro_state__6Gs2mQ | tables/pomodoro-state.table.ts | Состояние Pomodoro пользователя | userId, status, phase, currentTaskId, phaseEndsAtMs, phaseRemainingSec, cyclesCompleted, totalWorkSec, totalRestSec, workMinutes, restMinutes, longRestMinutes, cyclesUntilLongRest, pauseAfterWork, pauseAfterRest, afterLongRest, autoStartRest, autoStartNextCycle, phaseChangeSound (1–5), tasksCompletedToday, updatedAtMs |
 | t__assistant__pomodoro_launch__9Hk2tR | tables/pomodoro-launches.table.ts | Журнал сегментов Pomodoro (каждый запуск/продолжение) | userId, startedAtMs, endedAtMs, durationSec, phase, taskId, cyclesCompletedAtStart, source (`start/resume/auto_next_phase/task_changed`), endReason (`pause/stop/restart/phase_completed/task_changed/state_recovered`) |
 
 ## Репозитории (repos/)
@@ -28,8 +28,9 @@
 - `lib/settings.lib.ts` — getSetting, getAllSettings, setSetting, getLogLevel, getLogsLimit, getLogWebhook (бизнес-логика, дефолты, валидация).
 - `lib/logger.lib.ts` — getAdminLogsSocketId, shouldLogByLevel, writeServerLog (проверка уровня, запись в ctx.log/ctx.account.log, Heap, WebSocket, вебхук).
 - `lib/tasks-types.ts` — DTO дерева задач для UI/API (без импорта Heap).
-- `lib/pomodoro.lib.ts` — бизнес-логика Pomodoro: тик по времени, переключение фаз (`work`/`rest`/`long_rest`), pause/resume/stop/start, сохранение настроек, привязка задачи; все мутации под `runWithExclusiveLock`. `start` всегда перезапускает рабочую фазу, `pause`/`resume` вне валидного статуса возвращают текущее состояние без мутации. Дополнительно ведётся полный лог запусков в `pomodoro-launches`: сегменты закрываются/открываются на всех переходах фаз и при смене задачи во время `running`.
-- `lib/pomodoro-types.ts` — DTO состояния Pomodoro и тип входа настроек.
+- `lib/pomodoro.lib.ts` — бизнес-логика Pomodoro: тик по времени, переключение фаз (`work`/`rest`/`long_rest`), pause/resume/stop/start/reset, сохранение настроек, привязка задачи; все мутации под `runWithExclusiveLock`. `start` перезапускает рабочую фазу и сбрасывает `cyclesCompleted` в 0; `reset` — остановка и сброс к началу серии (`cyclesCompleted=0`); `pause`/`resume` вне валидного статуса возвращают текущее состояние без мутации. При «Пропустить» во время отсчёта в суммы работы/отдыха и в задачу не доначисляется неотработанный остаток фазы (учёт только через предшествующий `tick`). Дополнительно ведётся полный лог запусков в `pomodoro-launches`: сегменты закрываются/открываются на всех переходах фаз и при смене задачи во время `running`.
+- `lib/pomodoro-types.ts` — DTO состояния Pomodoro и тип входа настроек; `normalizePhaseChangeSoundId` для поля `phaseChangeSound` (1–5).
+- `lib/pomodoro-phase-sounds.ts` — пресеты звука смены фазы (Web Audio API, только клиент).
 
 ## Файлы и хранилище
 - Не используется.

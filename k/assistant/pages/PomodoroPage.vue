@@ -6,6 +6,8 @@ import AppFooter from '../components/AppFooter.vue'
 import PomodoroTimerDial from '../components/pomodoro/PomodoroTimerDial.vue'
 import PomodoroSettingsModal from '../components/pomodoro/PomodoroSettingsModal.vue'
 import PomodoroTaskSelector from '../components/pomodoro/PomodoroTaskSelector.vue'
+import { playPomodoroPhaseChangeSound } from '../lib/pomodoro-phase-sounds'
+import { formatPomodoroSecondsDisplay as fmt } from '../lib/pomodoro-types'
 
 type PomodoroState = {
   status: 'stopped' | 'running' | 'paused' | 'awaiting_continue'
@@ -26,6 +28,7 @@ type PomodoroState = {
   afterLongRest: 'stop' | 'pause'
   autoStartRest: boolean
   autoStartNextCycle: boolean
+  phaseChangeSound: number
   tasksCompletedToday: number
   updatedAtMs: number
 }
@@ -71,8 +74,6 @@ const phaseEmoji = {
   long_rest: '🌙'
 }
 
-const fmt = (sec: number) => `${String(Math.floor(sec / 60)).padStart(2, '0')}:${String(sec % 60).padStart(2, '0')}`
-
 async function readApiJson<T>(response: Response): Promise<T> {
   if (!response.ok) {
     throw new Error(`HTTP ${response.status}`)
@@ -114,7 +115,7 @@ function applyIncomingState(nextState: PomodoroState, serverNowMs: number, sourc
   }
 }
 
-async function control(action: 'start' | 'resume' | 'pause' | 'stop' | 'skip') {
+async function control(action: 'start' | 'resume' | 'pause' | 'stop' | 'skip' | 'reset') {
   if (actionPending.value) return
   actionPending.value = true
   const localActionSeq = actionSeq.value + 1
@@ -145,6 +146,7 @@ type PomodoroSettingsDraft = {
   afterLongRest: 'stop' | 'pause'
   autoStartRest: boolean
   autoStartNextCycle: boolean
+  phaseChangeSound: number
 }
 
 async function saveSettings(draft: PomodoroSettingsDraft) {
@@ -171,24 +173,6 @@ async function saveSettings(draft: PomodoroSettingsDraft) {
   }
 }
 
-function playSound() {
-  try {
-    const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)()
-    const oscillator = audioCtx.createOscillator()
-    const gainNode = audioCtx.createGain()
-    oscillator.connect(gainNode)
-    gainNode.connect(audioCtx.destination)
-    oscillator.frequency.value = 880
-    oscillator.type = 'sine'
-    gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime)
-    gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5)
-    oscillator.start(audioCtx.currentTime)
-    oscillator.stop(audioCtx.currentTime + 0.5)
-  } catch (error) {
-    console.error('Не удалось воспроизвести звук:', error)
-  }
-}
-
 function vibrate() {
   if (hasVibration.value && navigator.vibrate) {
     navigator.vibrate([200, 100, 200])
@@ -207,7 +191,7 @@ function showNotification(title: string, body: string) {
 }
 
 function onPhaseChange(newPhase: 'work' | 'rest' | 'long_rest') {
-  playSound()
+  playPomodoroPhaseChangeSound(state.value?.phaseChangeSound ?? 3)
   vibrate()
   
   const phaseLabel = phaseLabels[newPhase]
@@ -305,17 +289,13 @@ watch(
   () => state.value?.status,
   (next, prev) => {
     if (prev === 'running' && next === 'awaiting_continue') {
-      playSound()
+      playPomodoroPhaseChangeSound(state.value?.phaseChangeSound ?? 3)
       vibrate()
       showNotification('Фаза завершена', 'Секундомер овертайма. Нажмите «Продолжить» для следующего этапа.')
     }
   }
 )
 
-const canSkip = computed(() => state.value?.status === 'running' || state.value?.status === 'awaiting_continue')
-const canStop = computed(() => !!state.value && state.value.status !== 'stopped')
-const canStartOrRestart = computed(() => !!state.value)
-const startLabel = computed(() => (state.value?.status === 'stopped' ? 'Старт' : 'Перезапуск'))
 const statusLabel = computed(() => {
   if (!state.value) return 'Загрузка'
   if (state.value.status === 'running') return 'Идёт'
@@ -344,6 +324,7 @@ const settingsModel = computed(() => {
     afterLongRest: 'pause',
     autoStartRest: false,
     autoStartNextCycle: false,
+    phaseChangeSound: 3,
     tasksCompletedToday: 0,
     updatedAtMs: 0
   }
@@ -357,7 +338,8 @@ const settingsModel = computed(() => {
     pauseAfterRest: current.pauseAfterRest,
     afterLongRest: current.afterLongRest,
     autoStartRest: current.autoStartRest,
-    autoStartNextCycle: current.autoStartNextCycle
+    autoStartNextCycle: current.autoStartNextCycle,
+    phaseChangeSound: current.phaseChangeSound
   }
 })
 
@@ -368,6 +350,14 @@ const phaseTheme = computed(() => {
 
 const cycleDotsTotal = computed(() => state.value?.cyclesUntilLongRest ?? 4)
 const cycleDotsCompleted = computed(() => state.value?.cyclesCompleted ?? 0)
+
+/** Сколько кнопок в панели — для ровной сетки без «осиротевших» строк */
+const pomodoroActionPanelLayout = computed(() => {
+  if (!state.value) return 'pomodoro-actions__panel--n1'
+  const s = state.value.status
+  if (s === 'stopped') return 'pomodoro-actions__panel--n1'
+  return 'pomodoro-actions__panel--n2'
+})
 </script>
 
 <template>
@@ -431,64 +421,60 @@ const cycleDotsCompleted = computed(() => state.value?.cyclesCompleted ?? 0)
         />
 
         <div class="pomodoro-actions">
-          <button
-            v-if="state.status === 'stopped'"
-            class="pomo-btn pomo-btn--primary"
-            :disabled="actionPending"
-            @click="control('start')"
-          >
-            <i class="fa-solid fa-play pomo-btn__icon" />
-            <span class="pomo-btn__label">Старт</span>
-          </button>
-          <button
-            v-else
-            class="pomo-btn pomo-btn--ghost"
-            :disabled="actionPending"
-            @click="control('start')"
-          >
-            <i class="fa-solid fa-rotate-right pomo-btn__icon" />
-            <span class="pomo-btn__label">Рестарт</span>
-          </button>
+          <div class="pomodoro-actions__panel" :class="pomodoroActionPanelLayout">
+            <button
+              v-if="state.status === 'stopped'"
+              type="button"
+              class="pomo-btn pomo-btn--primary"
+              :disabled="actionPending"
+              @click="control('start')"
+            >
+              <i class="fa-solid fa-play pomo-btn__icon" aria-hidden="true" />
+              <span class="pomo-btn__label">Старт</span>
+            </button>
 
-          <button
-            v-if="state.status === 'running'"
-            class="pomo-btn pomo-btn--secondary"
-            :disabled="actionPending"
-            @click="control('pause')"
-          >
-            <i class="fa-solid fa-pause pomo-btn__icon" />
-            <span class="pomo-btn__label">Пауза</span>
-          </button>
+            <template v-if="state.status === 'running'">
+              <button
+                type="button"
+                class="pomo-btn pomo-btn--secondary"
+                :disabled="actionPending"
+                @click="control('pause')"
+              >
+                <i class="fa-solid fa-pause pomo-btn__icon" aria-hidden="true" />
+                <span class="pomo-btn__label">Пауза</span>
+              </button>
+              <button
+                type="button"
+                class="pomo-btn pomo-btn--ghost"
+                :disabled="actionPending"
+                @click="control('skip')"
+              >
+                <i class="fa-solid fa-forward pomo-btn__icon" aria-hidden="true" />
+                <span class="pomo-btn__label">Пропустить</span>
+              </button>
+            </template>
 
-          <button
-            v-if="state.status === 'paused' || state.status === 'awaiting_continue'"
-            class="pomo-btn pomo-btn--primary"
-            :disabled="actionPending"
-            @click="control('resume')"
-          >
-            <i class="fa-solid fa-play pomo-btn__icon" />
-            <span class="pomo-btn__label">Продолжить</span>
-          </button>
-
-          <button
-            v-if="canSkip"
-            class="pomo-btn pomo-btn--ghost"
-            :disabled="actionPending"
-            @click="control('skip')"
-          >
-            <i class="fa-solid fa-forward pomo-btn__icon" />
-            <span class="pomo-btn__label">Пропустить</span>
-          </button>
-
-          <button
-            v-if="state.status !== 'stopped'"
-            class="pomo-btn pomo-btn--danger"
-            :disabled="actionPending"
-            @click="control('stop')"
-          >
-            <i class="fa-solid fa-stop pomo-btn__icon" />
-            <span class="pomo-btn__label">Стоп</span>
-          </button>
+            <template v-if="state.status === 'paused' || state.status === 'awaiting_continue'">
+              <button
+                type="button"
+                class="pomo-btn pomo-btn--primary"
+                :disabled="actionPending"
+                @click="control('resume')"
+              >
+                <i class="fa-solid fa-play pomo-btn__icon" aria-hidden="true" />
+                <span class="pomo-btn__label">Продолжить</span>
+              </button>
+              <button
+                type="button"
+                class="pomo-btn pomo-btn--danger"
+                :disabled="actionPending"
+                @click="control('reset')"
+              >
+                <i class="fa-solid fa-rotate-left pomo-btn__icon" aria-hidden="true" />
+                <span class="pomo-btn__label">Сбросить</span>
+              </button>
+            </template>
+          </div>
         </div>
 
         <div class="pomodoro-stats">
@@ -704,13 +690,36 @@ const cycleDotsCompleted = computed(() => state.value?.cyclesCompleted ?? 0)
   box-shadow: 0 0 8px var(--pomodoro-phase-glow);
 }
 
-/* ── Actions ── */
+/* ── Actions: сетка n1 / n2 по числу кнопок ── */
 .pomodoro-actions {
-  display: flex;
-  gap: .6rem;
+  width: 100%;
+}
+
+.pomodoro-actions__panel {
+  display: grid;
+  width: 100%;
+  gap: 0.45rem;
+  padding: 0.65rem 0.7rem;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--color-border);
+  clip-path: polygon(
+    0 3px, 3px 3px, 3px 0,
+    calc(100% - 3px) 0, calc(100% - 3px) 3px, 100% 3px,
+    100% calc(100% - 3px), calc(100% - 3px) calc(100% - 3px), calc(100% - 3px) 100%,
+    3px 100%, 3px calc(100% - 3px), 0 calc(100% - 3px)
+  );
+}
+
+/* 1 кнопка — старт, по центру */
+.pomodoro-actions__panel--n1 {
+  grid-template-columns: minmax(0, 13rem);
   justify-content: center;
-  align-items: center;
-  flex-wrap: wrap;
+  margin-inline: auto;
+}
+
+/* 2 кнопки — пауза/пропустить или продолжить/сбросить */
+.pomodoro-actions__panel--n2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .pomo-btn {
@@ -718,50 +727,73 @@ const cycleDotsCompleted = computed(() => state.value?.cyclesCompleted ?? 0)
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: .4rem;
-  padding: .6rem 1.1rem;
-  font-size: .82rem;
-  font-weight: 500;
+  gap: 0.45rem;
+  width: 100%;
+  min-width: 0;
+  padding: 0.55rem 0.65rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
   font-family: inherit;
-  border: 2px solid var(--color-border);
+  line-height: 1.15;
+  border: 1px solid var(--color-border);
   background: var(--color-bg-secondary);
   color: var(--color-text);
   cursor: pointer;
-  transition: all 0.2s ease;
-  min-height: 42px;
-  min-width: 90px;
+  transition:
+    border-color 0.18s ease,
+    background 0.18s ease,
+    color 0.18s ease,
+    box-shadow 0.18s ease;
+  min-height: 44px;
+  box-sizing: border-box;
   overflow: hidden;
   clip-path: polygon(
-    0 4px, 4px 4px, 4px 0,
-    calc(100% - 4px) 0, calc(100% - 4px) 4px, 100% 4px,
-    100% calc(100% - 4px), calc(100% - 4px) calc(100% - 4px), calc(100% - 4px) 100%,
-    4px 100%, 4px calc(100% - 4px), 0 calc(100% - 4px)
+    0 3px, 3px 3px, 3px 0,
+    calc(100% - 3px) 0, calc(100% - 3px) 3px, 100% 3px,
+    100% calc(100% - 3px), calc(100% - 3px) calc(100% - 3px), calc(100% - 3px) 100%,
+    3px 100%, 3px calc(100% - 3px), 0 calc(100% - 3px)
   );
 }
 
 .pomo-btn::before {
   content: '';
   position: absolute;
-  top: 0; left: 0; width: 100%; height: 100%;
+  inset: 0;
   background: repeating-linear-gradient(
     0deg,
-    rgba(0, 0, 0, 0.08) 0px, rgba(0, 0, 0, 0.08) 1px,
-    transparent 1px, transparent 3px
+    rgba(0, 0, 0, 0.05) 0px,
+    rgba(0, 0, 0, 0.05) 1px,
+    transparent 1px,
+    transparent 4px
   );
   pointer-events: none;
   z-index: 0;
+  opacity: 0.45;
 }
 
 .pomo-btn::after {
   content: '';
   position: absolute;
-  bottom: 0; left: 0;
-  width: 100%; height: 2px;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
   background: var(--pomodoro-phase-color);
   transform: scaleX(0);
   transform-origin: left;
-  transition: transform .3s ease;
+  transition: transform 0.25s ease;
   z-index: 2;
+}
+
+.pomo-btn:focus {
+  outline: none;
+}
+
+.pomo-btn:focus-visible {
+  outline: 2px solid var(--pomodoro-phase-color);
+  outline-offset: 2px;
 }
 
 .pomo-btn:hover:not(:disabled)::after {
@@ -775,62 +807,91 @@ const cycleDotsCompleted = computed(() => state.value?.cyclesCompleted ?? 0)
 }
 
 .pomo-btn__icon {
-  font-size: .85rem;
-  opacity: .85;
+  font-size: 0.72rem;
+  opacity: 0.92;
 }
 
 .pomo-btn:hover:not(:disabled) {
-  border-color: var(--pomodoro-phase-color);
-  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--pomodoro-phase-color) 55%, var(--color-border));
   box-shadow:
-    0 4px 12px rgba(0, 0, 0, 0.3),
-    0 0 16px var(--pomodoro-phase-glow);
+    0 2px 8px rgba(0, 0, 0, 0.2),
+    0 0 12px var(--pomodoro-phase-glow);
 }
 
 .pomo-btn:active:not(:disabled) {
-  transform: translateY(0);
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.28);
 }
 
 .pomo-btn:disabled {
-  opacity: 0.4;
+  opacity: 0.42;
   cursor: not-allowed;
 }
 
 .pomo-btn--primary {
-  background: linear-gradient(135deg, var(--pomodoro-phase-color), rgba(211, 35, 75, 0.85));
-  border-color: transparent;
+  background: linear-gradient(
+    165deg,
+    color-mix(in srgb, var(--pomodoro-phase-color) 92%, #000),
+    var(--pomodoro-phase-color)
+  );
+  border-color: color-mix(in srgb, var(--pomodoro-phase-color) 70%, transparent);
   color: #fff;
-  font-weight: 600;
-  box-shadow: 0 2px 8px var(--pomodoro-phase-glow);
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.2);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.12) inset,
+    0 2px 10px var(--pomodoro-phase-glow);
+}
+
+.pomo-btn--primary::before {
+  opacity: 0.2;
 }
 
 .pomo-btn--primary:hover:not(:disabled) {
   box-shadow:
-    0 4px 16px rgba(0, 0, 0, 0.3),
-    0 0 24px var(--pomodoro-phase-glow-strong);
+    0 1px 0 rgba(255, 255, 255, 0.14) inset,
+    0 4px 18px rgba(0, 0, 0, 0.28),
+    0 0 22px var(--pomodoro-phase-glow-strong);
 }
 
 .pomo-btn--secondary {
-  border-color: var(--pomodoro-phase-color);
-  background: rgba(255, 255, 255, 0.02);
+  border-color: color-mix(in srgb, var(--pomodoro-phase-color) 45%, var(--color-border));
+  background: color-mix(in srgb, var(--pomodoro-phase-color) 9%, rgba(255, 255, 255, 0.02));
+  color: var(--color-text);
 }
 
 .pomo-btn--ghost {
-  border-style: solid;
   border-color: var(--color-border);
   background: transparent;
+  color: var(--color-text-secondary);
+  font-weight: 500;
+}
+
+.pomo-btn--ghost:hover:not(:disabled) {
+  color: var(--color-text);
+}
+
+.pomo-btn--muted {
+  border-color: var(--color-border);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--color-text-secondary);
+  font-weight: 500;
+}
+
+.pomo-btn--muted:hover:not(:disabled) {
+  color: var(--color-text);
+  border-color: color-mix(in srgb, var(--pomodoro-phase-color) 35%, var(--color-border));
 }
 
 .pomo-btn--danger {
-  border-color: rgba(255, 107, 107, 0.3);
-  background: rgba(255, 107, 107, 0.04);
-  color: #ff8a8a;
+  border-color: rgba(255, 107, 107, 0.35);
+  background: transparent;
+  color: #e8a0a0;
+  font-weight: 600;
 }
 
 .pomo-btn--danger:hover:not(:disabled) {
-  border-color: rgba(255, 107, 107, 0.6);
-  box-shadow: 0 0 12px rgba(255, 107, 107, 0.15);
+  border-color: rgba(255, 120, 120, 0.65);
+  color: #ffc9c9;
+  box-shadow: 0 0 14px rgba(255, 107, 107, 0.12);
 }
 
 .pomo-btn--danger::after {
@@ -920,34 +981,21 @@ const cycleDotsCompleted = computed(() => state.value?.cyclesCompleted ?? 0)
     padding: 1rem max(1rem, var(--app-safe-left, 0)) max(1rem, var(--app-safe-bottom, 0)) max(1rem, var(--app-safe-right, 0));
   }
 
-  .pomodoro-actions {
-    gap: .5rem;
+  .pomodoro-actions__panel {
+    gap: 0.4rem;
+    padding: 0.55rem 0.55rem;
   }
 
   .pomo-btn {
-    min-height: 46px;
-    min-width: 80px;
-    padding: .7rem 1rem;
-    font-size: .85rem;
-    flex: 1 1 auto;
-    max-width: 140px;
+    font-size: 0.66rem;
+    padding: 0.5rem 0.45rem;
+    min-height: 42px;
   }
 }
 
 @media (max-width: 400px) {
   .pomodoro-stats {
     grid-template-columns: 1fr;
-  }
-
-  .pomodoro-actions {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: .45rem;
-  }
-
-  .pomo-btn {
-    max-width: none;
-    width: 100%;
   }
 }
 </style>

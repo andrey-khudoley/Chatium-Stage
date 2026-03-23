@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { reactive, watch } from 'vue'
 import type { PomodoroAfterLongRest } from '../../lib/pomodoro-types'
+import { normalizePhaseChangeSoundId } from '../../lib/pomodoro-types'
+import { POMODORO_PHASE_CHANGE_SOUND_OPTIONS, playPomodoroPhaseChangeSound } from '../../lib/pomodoro-phase-sounds'
 
 type SettingsDraft = {
   workMinutes: number
@@ -12,6 +14,7 @@ type SettingsDraft = {
   afterLongRest: PomodoroAfterLongRest
   autoStartRest: boolean
   autoStartNextCycle: boolean
+  phaseChangeSound: number
 }
 
 const props = defineProps<{
@@ -34,7 +37,8 @@ const draft = reactive<SettingsDraft>({
   pauseAfterRest: false,
   afterLongRest: 'pause',
   autoStartRest: false,
-  autoStartNextCycle: false
+  autoStartNextCycle: false,
+  phaseChangeSound: 3
 })
 
 function clamp(v: number, min: number, max: number): number {
@@ -52,6 +56,7 @@ function syncDraft(source: SettingsDraft): void {
   draft.afterLongRest = source.afterLongRest === 'stop' ? 'stop' : 'pause'
   draft.autoStartRest = !!source.autoStartRest
   draft.autoStartNextCycle = !!source.autoStartNextCycle
+  draft.phaseChangeSound = normalizePhaseChangeSoundId(source.phaseChangeSound)
 }
 
 watch(
@@ -78,6 +83,10 @@ function onKeyDown(event: KeyboardEvent): void {
 
 function submit(): void {
   emit('save', { ...draft })
+}
+
+function previewPhaseSound(): void {
+  playPomodoroPhaseChangeSound(draft.phaseChangeSound)
 }
 </script>
 
@@ -127,6 +136,35 @@ function submit(): void {
                   <span class="field-unit">шт</span>
                 </div>
               </label>
+            </div>
+          </div>
+
+          <div class="settings-divider"></div>
+
+          <div class="settings-section">
+            <div class="section-title">
+              <i class="fa-solid fa-volume-high" /> Сигнал при смене этапа
+            </div>
+            <p class="sound-hint">
+              От тихого до заметного — при переходе между работой и отдыхом и при окончании фазы по таймеру.
+            </p>
+            <div class="sound-row">
+              <label class="field-label sound-select-label">
+                <span class="field-name">Пресет</span>
+                <select v-model.number="draft.phaseChangeSound" class="field-input field-select">
+                  <option v-for="opt in POMODORO_PHASE_CHANGE_SOUND_OPTIONS" :key="opt.id" :value="opt.id">
+                    {{ opt.id }}. {{ opt.label }} — {{ opt.hint }}
+                  </option>
+                </select>
+              </label>
+              <button
+                class="pomo-modal-btn pomo-modal-btn--ghost sound-preview-btn"
+                type="button"
+                :disabled="props.saving"
+                @click="previewPhaseSound"
+              >
+                <i class="fa-solid fa-play" /> Прослушать
+              </button>
             </div>
           </div>
 
@@ -313,6 +351,32 @@ function submit(): void {
   height: 1px;
   background: var(--color-border);
   margin: .6rem 0;
+}
+
+.sound-hint {
+  margin: 0 0 .35rem;
+  font-size: .68rem;
+  line-height: 1.35;
+  color: var(--color-text-secondary);
+}
+
+.sound-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: .45rem;
+}
+
+.sound-select-label {
+  flex: 1 1 200px;
+  min-width: 0;
+}
+
+.sound-preview-btn {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: .35rem;
 }
 
 .settings-row-grid {
