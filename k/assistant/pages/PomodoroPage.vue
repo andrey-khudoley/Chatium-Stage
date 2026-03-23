@@ -8,7 +8,7 @@ import PomodoroSettingsModal from '../components/pomodoro/PomodoroSettingsModal.
 import PomodoroTaskSelector from '../components/pomodoro/PomodoroTaskSelector.vue'
 
 type PomodoroState = {
-  status: 'stopped' | 'running' | 'paused'
+  status: 'stopped' | 'running' | 'paused' | 'awaiting_continue'
   phase: 'work' | 'rest' | 'long_rest'
   currentTaskId: string
   phaseRemainingSec: number
@@ -114,7 +114,7 @@ function applyIncomingState(nextState: PomodoroState, serverNowMs: number, sourc
   }
 }
 
-async function control(action: 'start' | 'resume' | 'pause' | 'stop') {
+async function control(action: 'start' | 'resume' | 'pause' | 'stop' | 'skip') {
   if (actionPending.value) return
   actionPending.value = true
   const localActionSeq = actionSeq.value + 1
@@ -225,9 +225,13 @@ function updateDocumentTitle() {
     return
   }
   
-  const time = fmt(remainSec.value)
   const phaseLabel = phaseLabels[state.value.phase]
   const emoji = phaseEmoji[state.value.phase]
+  if (state.value.status === 'awaiting_continue') {
+    document.title = `(+${fmt(overtimeSec.value)}) ${emoji} ${phaseLabel}`
+    return
+  }
+  const time = fmt(remainSec.value)
   document.title = state.value.status === 'paused' ? `(Пауза) ${phaseLabel}` : `(${time}) ${emoji} ${phaseLabel}`
 }
 
@@ -269,10 +273,21 @@ onUnmounted(() => {
   document.removeEventListener('visibilitychange', onVisibilityBack)
 })
 
+const overtimeSec = computed(() => {
+  if (!state.value || state.value.status !== 'awaiting_continue') return 0
+  return Math.max(0, Math.floor((localTick.value - state.value.phaseEndsAtMs) / 1000))
+})
+
 const remainSec = computed(() => {
   if (!state.value) return 0
+  if (state.value.status === 'awaiting_continue') return 0
   if (state.value.status !== 'running') return state.value.phaseRemainingSec
   return Math.max(0, Math.floor((state.value.phaseEndsAtMs - localTick.value) / 1000))
+})
+
+const displayTimeLabel = computed(() => {
+  if (state.value?.status === 'awaiting_continue') return `+${fmt(overtimeSec.value)}`
+  return fmt(remainSec.value)
 })
 
 const phaseDurationSec = computed(() => {
@@ -282,18 +297,29 @@ const phaseDurationSec = computed(() => {
   return state.value.longRestMinutes * 60
 })
 
-watch([() => state.value?.status, () => state.value?.phase, remainSec], () => {
+watch([() => state.value?.status, () => state.value?.phase, remainSec, overtimeSec], () => {
   nextTick(() => updateDocumentTitle())
 })
 
-const canPause = computed(() => state.value?.status === 'running')
-const canResume = computed(() => state.value?.status === 'paused')
+watch(
+  () => state.value?.status,
+  (next, prev) => {
+    if (prev === 'running' && next === 'awaiting_continue') {
+      playSound()
+      vibrate()
+      showNotification('Фаза завершена', 'Секундомер овертайма. Нажмите «Продолжить» для следующего этапа.')
+    }
+  }
+)
+
+const canSkip = computed(() => state.value?.status === 'running' || state.value?.status === 'awaiting_continue')
 const canStop = computed(() => !!state.value && state.value.status !== 'stopped')
 const canStartOrRestart = computed(() => !!state.value)
 const startLabel = computed(() => (state.value?.status === 'stopped' ? 'Старт' : 'Перезапуск'))
 const statusLabel = computed(() => {
   if (!state.value) return 'Загрузка'
   if (state.value.status === 'running') return 'Идёт'
+  if (state.value.status === 'awaiting_continue') return 'Овертайм'
   if (state.value.status === 'paused') return 'Пауза'
   return 'Остановлен'
 })
@@ -388,11 +414,12 @@ const cycleDotsCompleted = computed(() => state.value?.cyclesCompleted ?? 0)
             :key="state.phase"
             :phase="state.phase"
             :remaining-sec="remainSec"
+            :overtime-sec="overtimeSec"
             :phase-duration-sec="phaseDurationSec"
             :status="state.status"
             :phase-label="phaseLabels[state.phase]"
             :status-label="statusLabel"
-            :time-label="fmt(remainSec)"
+            :time-label="displayTimeLabel"
           />
         </transition>
 
@@ -434,13 +461,23 @@ const cycleDotsCompleted = computed(() => state.value?.cyclesCompleted ?? 0)
           </button>
 
           <button
-            v-if="state.status === 'paused'"
+            v-if="state.status === 'paused' || state.status === 'awaiting_continue'"
             class="pomo-btn pomo-btn--primary"
             :disabled="actionPending"
             @click="control('resume')"
           >
             <i class="fa-solid fa-play pomo-btn__icon" />
             <span class="pomo-btn__label">Продолжить</span>
+          </button>
+
+          <button
+            v-if="canSkip"
+            class="pomo-btn pomo-btn--ghost"
+            :disabled="actionPending"
+            @click="control('skip')"
+          >
+            <i class="fa-solid fa-forward pomo-btn__icon" />
+            <span class="pomo-btn__label">Пропустить</span>
           </button>
 
           <button

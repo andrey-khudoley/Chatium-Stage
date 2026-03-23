@@ -270,7 +270,7 @@
 
 ### `./components/pomodoro/PomodoroTimerDial.vue`
 - `vue` → `computed`
-- `defineProps`: `phase`, `remainingSec`, `phaseDurationSec`, `status`, `phaseLabel`, `statusLabel`, `timeLabel`
+- `defineProps`: `phase`, `remainingSec`, `overtimeSec`, `phaseDurationSec`, `status`, `phaseLabel`, `statusLabel`, `timeLabel`
 
 ### `./components/pomodoro/PomodoroSettingsModal.vue`
 - `vue` → `reactive`, `watch`
@@ -375,14 +375,14 @@
 - реэкспорт типов из `lib/tasks-types`
 
 ### `./repos/pomodoro.repo.ts`
-- `../tables/pomodoro-state.table` → `PomodoroState` и типы (`PomodoroAfterLongRest`, `PomodoroPhase`, `PomodoroStatus`)
-- `../lib/pomodoro-types` → `PomodoroSettingsInput`, `PomodoroStateDto`
+- `../tables/pomodoro-state.table` → `PomodoroState`
+- `../lib/pomodoro-types` → `PomodoroAfterLongRest`, `PomodoroPhase`, `PomodoroStatus`, `PomodoroSettingsInput`, `PomodoroStateDto`
 
 ### `./lib/tasks-types.ts`
 - нет импортов (чистые типы DTO для задач)
 
 ### `./lib/pomodoro-types.ts`
-- `../tables/pomodoro-state.table` → типы `PomodoroAfterLongRest`, `PomodoroPhase`, `PomodoroStatus`
+- нет импортов (типы статуса/фаз Pomodoro и DTO)
 
 ## 7) Библиотеки (lib/)
 
@@ -404,6 +404,7 @@
 ### `./lib/pomodoro.lib.ts`
 - `@app/sync` → `runWithExclusiveLock`
 - `../repos/pomodoro.repo` → `*`
+- `../repos/pomodoro-launches.repo` → `*`
 - `../repos/tasks.repo` → `*`
 - `./pomodoro-types` → `PomodoroSettingsInput`, `PomodoroStateDto`
 
@@ -593,7 +594,7 @@
 
 ### `./api/pomodoro/control.ts`
 - `@app/auth` → `requireRealUser`
-- `../../lib/pomodoro.lib` → `*`
+- `../../lib/pomodoro.lib` → `start`, `resume`, `pause`, `stop`, `skipPhase`
 
 ### `./api/pomodoro/state/get.ts`
 - `@app/auth` → `requireRealUser`

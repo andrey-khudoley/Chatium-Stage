@@ -1,4 +1,7 @@
-import type { PomodoroAfterLongRest, PomodoroPhase, PomodoroStatus } from '../tables/pomodoro-state.table'
+export type PomodoroAfterLongRest = 'stop' | 'pause'
+export type PomodoroPhase = 'work' | 'rest' | 'long_rest'
+/** awaiting_continue — фаза закончилась по таймеру, идёт «овертайм» до нажатия «Продолжить» */
+export type PomodoroStatus = 'stopped' | 'running' | 'paused' | 'awaiting_continue'
 
 export type PomodoroStateDto = {
   status: PomodoroStatus

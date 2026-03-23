@@ -4,8 +4,9 @@ import { computed } from 'vue'
 const props = defineProps<{
   phase: 'work' | 'rest' | 'long_rest'
   remainingSec: number
+  overtimeSec: number
   phaseDurationSec: number
-  status: 'stopped' | 'running' | 'paused'
+  status: 'stopped' | 'running' | 'paused' | 'awaiting_continue'
   phaseLabel: string
   statusLabel: string
   timeLabel: string
@@ -15,6 +16,7 @@ const radius = 90
 const circumference = 2 * Math.PI * radius
 
 const progress = computed(() => {
+  if (props.status === 'awaiting_continue' || props.overtimeSec > 0) return 1
   const total = Math.max(1, props.phaseDurationSec)
   const remain = Math.max(0, Math.min(total, props.remainingSec))
   return 1 - remain / total
@@ -191,6 +193,16 @@ const phaseClass = computed(() => {
 .status-stopped .dial-progress {
   opacity: .3;
   animation: none;
+}
+
+.status-awaiting_continue .dial-progress {
+  opacity: 1;
+  animation: overtime-pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes overtime-pulse {
+  0%, 100% { opacity: 1; filter: url(#glow); }
+  50% { opacity: 0.88; filter: url(#glow-strong); }
 }
 
 .dial-center {

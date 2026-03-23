@@ -1,6 +1,5 @@
 import PomodoroState from '../tables/pomodoro-state.table'
-import type { PomodoroSettingsInput, PomodoroStateDto } from '../lib/pomodoro-types'
-import type { PomodoroAfterLongRest, PomodoroPhase, PomodoroStatus } from '../tables/pomodoro-state.table'
+import type { PomodoroAfterLongRest, PomodoroSettingsInput, PomodoroStateDto, PomodoroPhase, PomodoroStatus } from '../lib/pomodoro-types'
 
 const DEFAULTS: PomodoroSettingsInput = {
   workMinutes: 25,

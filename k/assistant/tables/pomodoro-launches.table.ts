@@ -1,6 +1,6 @@
 import { Heap } from '@app/heap'
 
-export const POMODORO_LAUNCH_SOURCES = ['start', 'resume', 'auto_next_phase', 'task_changed'] as const
+export const POMODORO_LAUNCH_SOURCES = ['start', 'resume', 'auto_next_phase', 'task_changed', 'continue', 'skip'] as const
 export type PomodoroLaunchSource = (typeof POMODORO_LAUNCH_SOURCES)[number]
 
 export const POMODORO_LAUNCH_END_REASONS = [
@@ -9,7 +9,8 @@ export const POMODORO_LAUNCH_END_REASONS = [
   'restart',
   'phase_completed',
   'task_changed',
-  'state_recovered'
+  'state_recovered',
+  'phase_skip'
 ] as const
 export type PomodoroLaunchEndReason = (typeof POMODORO_LAUNCH_END_REASONS)[number]
 

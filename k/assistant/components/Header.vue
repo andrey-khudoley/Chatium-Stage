@@ -106,7 +106,7 @@ const props = defineProps<{
 const isGlitching = ref(false)
 const showLogoutModal = ref(false)
 const currentTime = ref('')
-const pomodoroStatus = ref<'stopped' | 'running' | 'paused'>('stopped')
+const pomodoroStatus = ref<'stopped' | 'running' | 'paused' | 'awaiting_continue'>('stopped')
 const pomodoroEndsAtMs = ref(0)
 const pomodoroRemainingSec = ref(0)
 const nowTick = ref(Date.now())
@@ -115,11 +115,16 @@ const pomodoroDisplaySec = computed(() => {
   if (pomodoroStatus.value === 'running') {
     return Math.max(0, Math.floor((pomodoroEndsAtMs.value - nowTick.value) / 1000))
   }
+  if (pomodoroStatus.value === 'awaiting_continue') {
+    return Math.max(0, Math.floor((nowTick.value - pomodoroEndsAtMs.value) / 1000))
+  }
   return Math.max(0, pomodoroRemainingSec.value)
 })
 const pomodoroDisplay = computed(() => {
   const sec = pomodoroDisplaySec.value
-  return `${String(Math.floor(sec / 60)).padStart(2, '0')}:${String(sec % 60).padStart(2, '0')}`
+  const s = `${String(Math.floor(sec / 60)).padStart(2, '0')}:${String(sec % 60).padStart(2, '0')}`
+  if (pomodoroStatus.value === 'awaiting_continue') return `+${s}`
+  return s
 })
 
 // Функция для форматирования времени
@@ -151,7 +156,7 @@ const syncPomodoro = async () => {
   if (!props.pomodoroStateGetUrl) return
   try {
     const r = await fetch(props.pomodoroStateGetUrl, { credentials: 'include' })
-    const j = await readApiJson<{ success?: boolean; state?: { status: 'stopped' | 'running' | 'paused'; phaseEndsAtMs: number; phaseRemainingSec: number } }>(r)
+    const j = await readApiJson<{ success?: boolean; state?: { status: 'stopped' | 'running' | 'paused' | 'awaiting_continue'; phaseEndsAtMs: number; phaseRemainingSec: number } }>(r)
     if (!j.success || !j.state) return
     pomodoroStatus.value = j.state.status
     pomodoroEndsAtMs.value = j.state.phaseEndsAtMs
@@ -171,7 +176,7 @@ const togglePomodoroPauseResume = async () => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action })
     })
-    const j = await readApiJson<{ success?: boolean; state?: { status: 'stopped' | 'running' | 'paused'; phaseEndsAtMs: number; phaseRemainingSec: number } }>(r)
+    const j = await readApiJson<{ success?: boolean; state?: { status: 'stopped' | 'running' | 'paused' | 'awaiting_continue'; phaseEndsAtMs: number; phaseRemainingSec: number } }>(r)
     if (j.success && j.state) {
       pomodoroStatus.value = j.state.status
       pomodoroEndsAtMs.value = j.state.phaseEndsAtMs

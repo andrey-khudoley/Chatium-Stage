@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { reactive, watch } from 'vue'
-import type { PomodoroAfterLongRest } from '../../tables/pomodoro-state.table'
+import type { PomodoroAfterLongRest } from '../../lib/pomodoro-types'
 
 type SettingsDraft = {
   workMinutes: number

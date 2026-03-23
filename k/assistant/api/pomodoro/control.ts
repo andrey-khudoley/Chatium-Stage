@@ -9,7 +9,7 @@ export const pomodoroControlRoute = app
   .post('/', async (ctx, req) => {
     const user = requireRealUser(ctx)
     const action = req.body.action.trim()
-    if (action !== 'start' && action !== 'resume' && action !== 'pause' && action !== 'stop') {
+    if (action !== 'start' && action !== 'resume' && action !== 'pause' && action !== 'stop' && action !== 'skip') {
       return { success: false, error: 'Unknown action' }
     }
     try {
@@ -21,6 +21,9 @@ export const pomodoroControlRoute = app
       }
       if (action === 'pause') {
         return { success: true, state: await pomodoroLib.pause(ctx, user.id), serverNowMs: Date.now() }
+      }
+      if (action === 'skip') {
+        return { success: true, state: await pomodoroLib.skipPhase(ctx, user.id), serverNowMs: Date.now() }
       }
       return { success: true, state: await pomodoroLib.stop(ctx, user.id), serverNowMs: Date.now() }
     } catch (error) {

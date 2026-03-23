@@ -5,12 +5,6 @@ import * as tasksRepo from '../repos/tasks.repo'
 import type { PomodoroSettingsInput, PomodoroStateDto } from './pomodoro-types'
 import type { PomodoroLaunchEndReason, PomodoroLaunchSource } from '../tables/pomodoro-launches.table'
 
-function phaseDurationSec(state: Pick<PomodoroStateDto, 'phase' | 'workMinutes' | 'restMinutes' | 'longRestMinutes'>): number {
-  if (state.phase === 'work') return state.workMinutes * 60
-  if (state.phase === 'rest') return state.restMinutes * 60
-  return state.longRestMinutes * 60
-}
-
 function lockKey(userId: string): string {
   return `assistant:pomodoro:${userId}`
 }
@@ -40,8 +34,107 @@ async function closeLaunchSegment(
   await pomodoroLaunchesRepo.closeOpenLaunchByUser(ctx, userId, nowMs, endReason)
 }
 
+/** После овертайма или при skip из awaiting_continue — следующая фаза. */
+async function advanceToNextPhaseAfterOvertime(
+  ctx: app.Ctx,
+  userId: string,
+  state: PomodoroStateDto,
+  nowMs: number,
+  source: PomodoroLaunchSource
+): Promise<PomodoroStateDto> {
+  if (state.phase === 'work') {
+    const longBreak = state.cyclesCompleted % state.cyclesUntilLongRest === 0
+    const nextPhase = longBreak ? 'long_rest' : 'rest'
+    const nextRemainingSec = longBreak ? state.longRestMinutes * 60 : state.restMinutes * 60
+    const nextState = await pomodoroRepo.updateState(ctx, userId, {
+      phase: nextPhase,
+      status: 'running',
+      phaseRemainingSec: nextRemainingSec,
+      phaseEndsAtMs: nowMs + nextRemainingSec * 1000
+    })
+    await startLaunchSegment(ctx, userId, nextState, source, nowMs)
+    return nextState
+  }
+
+  if (state.phase === 'long_rest' && state.afterLongRest === 'stop') {
+    return pomodoroRepo.updateState(ctx, userId, {
+      status: 'stopped',
+      phase: 'work',
+      phaseRemainingSec: state.workMinutes * 60,
+      phaseEndsAtMs: 0,
+      currentTaskId: null
+    })
+  }
+
+  const nextRemainingSec = state.workMinutes * 60
+  const nextState = await pomodoroRepo.updateState(ctx, userId, {
+    phase: 'work',
+    status: 'running',
+    phaseRemainingSec: nextRemainingSec,
+    phaseEndsAtMs: nowMs + nextRemainingSec * 1000
+  })
+  await startLaunchSegment(ctx, userId, nextState, source, nowMs)
+  return nextState
+}
+
+/** Пропуск текущей фазы во время отсчёта: сразу следующая фаза с полным таймером. */
+async function skipFromRunningPhase(ctx: app.Ctx, userId: string, nowMs: number, state: PomodoroStateDto): Promise<PomodoroStateDto> {
+  const remaining = Math.max(0, Math.floor((state.phaseEndsAtMs - nowMs) / 1000))
+  const addWork = state.phase === 'work' ? remaining : 0
+  const addRest = state.phase === 'work' ? 0 : remaining
+  if (state.currentTaskId && remaining > 0) {
+    await tasksRepo.addPomodoroSecondsToTask(ctx, userId, state.currentTaskId, addWork, addRest)
+  }
+  let next = await pomodoroRepo.updateState(ctx, userId, {
+    totalWorkSec: state.totalWorkSec + addWork,
+    totalRestSec: state.totalRestSec + addRest,
+    phaseRemainingSec: 0
+  })
+  await closeLaunchSegment(ctx, userId, next.updatedAtMs, 'phase_skip')
+
+  if (state.phase === 'work') {
+    const nextCycles = state.cyclesCompleted + 1
+    const longBreak = nextCycles % state.cyclesUntilLongRest === 0
+    const nextPhase = longBreak ? 'long_rest' : 'rest'
+    const nextRemainingSec = longBreak ? state.longRestMinutes * 60 : state.restMinutes * 60
+    next = await pomodoroRepo.updateState(ctx, userId, {
+      cyclesCompleted: nextCycles,
+      tasksCompletedToday: state.tasksCompletedToday + 1,
+      phase: nextPhase,
+      status: 'running',
+      phaseRemainingSec: nextRemainingSec,
+      phaseEndsAtMs: nowMs + nextRemainingSec * 1000
+    })
+    await startLaunchSegment(ctx, userId, next, 'skip', nowMs)
+    return next
+  }
+
+  if (state.phase === 'long_rest' && state.afterLongRest === 'stop') {
+    return pomodoroRepo.updateState(ctx, userId, {
+      status: 'stopped',
+      phase: 'work',
+      phaseRemainingSec: state.workMinutes * 60,
+      phaseEndsAtMs: 0,
+      currentTaskId: null
+    })
+  }
+
+  const nextRemainingSec = state.workMinutes * 60
+  next = await pomodoroRepo.updateState(ctx, userId, {
+    phase: 'work',
+    status: 'running',
+    phaseRemainingSec: nextRemainingSec,
+    phaseEndsAtMs: nowMs + nextRemainingSec * 1000
+  })
+  await startLaunchSegment(ctx, userId, next, 'skip', nowMs)
+  return next
+}
+
 async function tick(ctx: app.Ctx, userId: string, nowMs: number): Promise<PomodoroStateDto> {
   let state = await pomodoroRepo.getOrCreateState(ctx, userId)
+  if (state.status === 'awaiting_continue') {
+    return state
+  }
   if (state.status !== 'running') {
     await closeLaunchSegment(ctx, userId, nowMs, 'state_recovered')
     return state
@@ -67,38 +160,23 @@ async function tick(ctx: app.Ctx, userId: string, nowMs: number): Promise<Pomodo
     if (state.phase === 'work') {
       await closeLaunchSegment(ctx, userId, state.updatedAtMs, 'phase_completed')
       const nextCycles = state.cyclesCompleted + 1
-      const longBreak = nextCycles % state.cyclesUntilLongRest === 0
-      const nextPhase = longBreak ? 'long_rest' : 'rest'
-      const pauseAfter = state.pauseAfterWork && !state.autoStartRest
-      const nextRemainingSec = longBreak ? state.longRestMinutes * 60 : state.restMinutes * 60
       state = await pomodoroRepo.updateState(ctx, userId, {
         cyclesCompleted: nextCycles,
-        phase: nextPhase,
-        status: pauseAfter ? 'paused' : 'running',
-        phaseRemainingSec: nextRemainingSec,
-        phaseEndsAtMs: pauseAfter ? 0 : state.updatedAtMs + nextRemainingSec * 1000,
-        tasksCompletedToday: state.tasksCompletedToday + 1
+        tasksCompletedToday: state.tasksCompletedToday + 1,
+        status: 'awaiting_continue',
+        phaseRemainingSec: 0,
+        phaseEndsAtMs: state.updatedAtMs
       })
-      if (pauseAfter) break
-      await startLaunchSegment(ctx, userId, state, 'auto_next_phase', state.updatedAtMs)
-      continue
+      break
     }
 
     await closeLaunchSegment(ctx, userId, state.updatedAtMs, 'phase_completed')
-    const finishedLongRest = state.phase === 'long_rest'
-    const shouldStop = finishedLongRest && state.afterLongRest === 'stop'
-    const pauseAfter = finishedLongRest
-      ? state.afterLongRest === 'pause'
-      : state.pauseAfterRest && !state.autoStartNextCycle
-    const nextRemainingSec = state.workMinutes * 60
     state = await pomodoroRepo.updateState(ctx, userId, {
-      phase: 'work',
-      status: shouldStop ? 'stopped' : pauseAfter ? 'paused' : 'running',
-      phaseRemainingSec: nextRemainingSec,
-      phaseEndsAtMs: shouldStop || pauseAfter ? 0 : state.updatedAtMs + nextRemainingSec * 1000
+      status: 'awaiting_continue',
+      phaseRemainingSec: 0,
+      phaseEndsAtMs: state.updatedAtMs
     })
-    if (shouldStop || pauseAfter) break
-    await startLaunchSegment(ctx, userId, state, 'auto_next_phase', state.updatedAtMs)
+    break
   }
   return state
 }
@@ -150,6 +228,9 @@ export async function resume(ctx: app.Ctx, userId: string): Promise<PomodoroStat
   return runWithExclusiveLock(ctx, lockKey(userId), async () => {
     const nowMs = Date.now()
     const state = await tick(ctx, userId, nowMs)
+    if (state.status === 'awaiting_continue') {
+      return advanceToNextPhaseAfterOvertime(ctx, userId, state, nowMs, 'continue')
+    }
     if (state.status !== 'paused') return state
     const remaining = Math.max(1, state.phaseRemainingSec)
     const nextState = await pomodoroRepo.updateState(ctx, userId, {
@@ -159,6 +240,18 @@ export async function resume(ctx: app.Ctx, userId: string): Promise<PomodoroStat
     })
     await startLaunchSegment(ctx, userId, nextState, 'resume', nowMs)
     return nextState
+  })
+}
+
+export async function skipPhase(ctx: app.Ctx, userId: string): Promise<PomodoroStateDto> {
+  return runWithExclusiveLock(ctx, lockKey(userId), async () => {
+    const nowMs = Date.now()
+    const state = await tick(ctx, userId, nowMs)
+    if (state.status === 'awaiting_continue') {
+      return advanceToNextPhaseAfterOvertime(ctx, userId, state, nowMs, 'skip')
+    }
+    if (state.status !== 'running') return state
+    return skipFromRunningPhase(ctx, userId, nowMs, state)
   })
 }
 

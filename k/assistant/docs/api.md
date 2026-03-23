@@ -98,7 +98,7 @@
 | Method | Path | File | Auth | Назначение |
 | --- | --- | --- | --- | --- |
 | GET | /api/pomodoro/state/get | api/pomodoro/state/get.ts | RealUser | Текущее состояние таймера: `{ success, state, serverNowMs }`, где state включает `status`, `phase`, `phaseRemainingSec`, `phaseEndsAtMs`, текущую задачу и агрегаты времени. |
-| POST | /api/pomodoro/control | api/pomodoro/control.ts | RealUser | Управление состоянием. Body: `{ action }`, где `action ∈ { start, resume, pause, stop }`. Ответ: `{ success, state, serverNowMs }`. |
+| POST | /api/pomodoro/control | api/pomodoro/control.ts | RealUser | Управление состоянием. Body: `{ action }`, где `action ∈ { start, resume, pause, stop, skip }` (`skip` — пропуск текущей фазы). Ответ: `{ success, state, serverNowMs }`. В `state.status` возможно значение `awaiting_continue` (фаза закончилась по таймеру, ожидание «Продолжить»). |
 | POST | /api/pomodoro/settings/save | api/pomodoro/settings/save.ts | RealUser | Сохранить настройки таймера. Body: `{ workMinutes, restMinutes, longRestMinutes, cyclesUntilLongRest, pauseAfterWork, pauseAfterRest, afterLongRest }`, где `afterLongRest ∈ { stop, pause }`. |
 | POST | /api/pomodoro/assign-task | api/pomodoro/assign-task.ts | RealUser | Привязать текущую задачу к Pomodoro. Body: `{ taskId }`. Проверяется, что задача принадлежит пользователю; при активном тике накопленное время задачи синхронизируется перед сменой привязки. |
 
