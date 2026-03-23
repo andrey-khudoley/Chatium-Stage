@@ -14,6 +14,16 @@ import {
   type TaskAiChatFeedMsg
 } from './tasks-ai-chat-lib'
 
+function buildCurrentUserMessageBlock(text: string): string {
+  return [
+    '## ТЕКУЩЕЕ СООБЩЕНИЕ ПОЛЬЗОВАТЕЛЯ',
+    text,
+    '',
+    '## ПРАВИЛО',
+    'Служебный контекст проекта передан отдельно в system-блоке. Это не новый запрос пользователя.'
+  ].join('\n')
+}
+
 /**
  * Запускает ответ ассистента по последнему пользовательскому сообщению в фиде.
  * Должен вызываться только из HTTP-роута (или иного proxy app context): `startCompletion`
@@ -47,12 +57,21 @@ export async function runTaskAiChatReplyIfNeeded(
 
     const formulatePrompt = await settingsLib.getAiFormulateSystemPrompt(ctx)
     const projectBlock = await buildTaskAiChatProjectContextBlock(ctx, userId, projectId)
-    const system = `${formulatePrompt}\n\n${TASKS_AI_CHAT_JSON_APPENDIX}\n\n---\nСнимок проекта и списка задач (из Heap на каждый запрос). Служебный context проекта в БД — только общая рамка; не дублируй ниже перечень задач (см. правила в промпте выше).\n${projectBlock}`
+    const system = `${formulatePrompt}\n\n${TASKS_AI_CHAT_JSON_APPENDIX}\n\n---\n## СЛУЖЕБНЫЙ КОНТЕКСТ ПРОЕКТА (НЕ СООБЩЕНИЕ ПОЛЬЗОВАТЕЛЯ)\nСнимок проекта и списка задач (из Heap на каждый запрос). Служебный context проекта в БД — только общая рамка; не дублируй ниже перечень задач (см. правила в промпте выше).\n${projectBlock}`
 
     const history = taskAiChatFeedToCompletionMessages(chronological)
     if (!history.length) {
       return
     }
+    const latestUserText = (last.text ?? '').trim()
+    if (!latestUserText) {
+      return
+    }
+    const completionMessages = history.slice(0, -1)
+    completionMessages.push({
+      role: 'user',
+      content: [{ type: 'text', text: buildCurrentUserMessageBlock(latestUserText) }]
+    })
 
     const aiModel = await settingsLib.getAiModel(ctx)
     if (!aiModel || !aiModel.trim()) {
@@ -65,7 +84,7 @@ export async function runTaskAiChatReplyIfNeeded(
       onCompletionFailed: taskAiChatCompletionFailedFn,
       system,
       model: aiModel,
-      messages: history,
+      messages: completionMessages,
       context: {
         userId,
         projectId,

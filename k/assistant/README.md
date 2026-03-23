@@ -34,6 +34,7 @@
 - Описать бизнес‑логику и данные.
 
 ## Changelog
+- 2026-03-23: чат задач AI — в `tasks-ai-chat-reply.ts` явно разделены «служебный контекст проекта» и «текущее сообщение пользователя»: контекст помечен в `system` как не-пользовательский ввод, последнее сообщение передаётся отдельным user-блоком с шапкой, чтобы агент не трактовал контекст как новую задачу.
 - 2026-03-23: чат с AI — исправлен порядок сообщений в UI: после `feedMessagesGetHandler` и при применении `messages/changes` список сортируется по `createdAt` (и `id` при совпадении времени), чтобы ответ ассистента не оказывался над вопросом. См. `shared/tasks-ai-chat-message-order.ts`, `tasks-ai-chat-messages-get.ts`, `TasksAiChatPanel.vue`.
 - 2026-03-23: чат с AI — промпт и блок `buildTaskAiChatProjectContextBlock`: служебный `context` проекта только как **рамка** (цели, термины, стек), без дублирования списка задач; уточнения по пунктам — в `context`/`details` задач. См. `config/prompts.tsx`, `docs/api.md`.
 - 2026-03-23: **чат с AI = бывший «Список (AI)»**: ответ модели — JSON (`reply` + `actions` + `summary`), применение в Heap в `tasks-ai-formulate-apply.ts`, системный текст из `getAiFormulateSystemPrompt` + `TASKS_AI_CHAT_JSON_APPENDIX`; роут `api/tasks/ai-formulate` и UI кнопки/модалки убраны; после ответа ассистента в чате — отложенное обновление дерева задач. См. `docs/api.md`.
