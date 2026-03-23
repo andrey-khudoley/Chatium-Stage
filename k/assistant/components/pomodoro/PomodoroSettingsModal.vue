@@ -60,16 +60,11 @@ function syncDraft(source: SettingsDraft): void {
 }
 
 watch(
-  () => props.modelValue,
-  (value) => syncDraft(value),
-  { immediate: true, deep: true }
-)
-
-watch(
   () => props.isOpen,
   (isOpen) => {
     if (isOpen) syncDraft(props.modelValue)
-  }
+  },
+  { immediate: true }
 )
 
 function onBackdropClick(event: MouseEvent): void {
