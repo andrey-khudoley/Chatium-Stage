@@ -78,8 +78,8 @@
 | POST | /api/tasks/projects/update | api/tasks/projects/update.ts | RealUser | Body: `{ id, name, clientId?, details? }` — смена клиента у проекта допустима; `details` — опционально обновить текст «Детали». |
 | POST | /api/tasks/projects/delete | api/tasks/projects/delete.ts | RealUser | Body: `{ id }` — удаление задач проекта. |
 | POST | /api/tasks/projects/reorder | api/tasks/projects/reorder.ts | RealUser | Body: `{ clientId, orderedIds: string[] }` — полный список id проектов этого клиента в новом порядке. |
-| POST | /api/tasks/items/create | api/tasks/items/create.ts | RealUser | Body: `{ projectId, title, description?, priority?, status? }`. |
-| POST | /api/tasks/items/update | api/tasks/items/update.ts | RealUser | Body: `{ id, title?, description?, priority?, status?, projectId? }`. |
+| POST | /api/tasks/items/create | api/tasks/items/create.ts | RealUser | Body: `{ projectId, title, details?, priority?, status? }` — `details` (текст «Детали»), опционально. |
+| POST | /api/tasks/items/update | api/tasks/items/update.ts | RealUser | Body: `{ id, title?, details?, priority?, status?, projectId? }`. |
 | POST | /api/tasks/items/delete | api/tasks/items/delete.ts | RealUser | Body: `{ id }`. |
 | POST | /api/tasks/items/reorder | api/tasks/items/reorder.ts | RealUser | Body: `{ projectId, orderedIds: string[] }` — полный список id задач проекта в новом порядке. |
 | POST | /api/tasks/items/reorder-day | api/tasks/items/reorder-day.ts | RealUser | Body: `{ orderedIds: string[] }` — полный список id всех задач со статусом «В работе» в новом порядке (дневной список). |

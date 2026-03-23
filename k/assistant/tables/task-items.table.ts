@@ -20,10 +20,19 @@ export const TaskItems = Heap.Table('t__assistant__task_item__2Vx8sT', {
     customMeta: { title: 'Заголовок' },
     searchable: { langs: ['ru', 'en'], embeddings: false }
   }),
-  description: Heap.String({
-    customMeta: { title: 'Описание' },
-    searchable: { langs: ['ru', 'en'], embeddings: false }
-  }),
+  /** Текст «Детали» (форма задачи; в DTO дерева). */
+  details: Heap.Optional(
+    Heap.String({
+      customMeta: { title: 'Детали' },
+      searchable: { langs: ['ru', 'en'], embeddings: false }
+    })
+  ),
+  /** Служебное поле; не отдаётся в API клиенту. */
+  context: Heap.Optional(
+    Heap.String({
+      customMeta: { title: 'Контекст (служебное)' }
+    })
+  ),
   /** 1 — срочно, 4 — низкий */
   priority: Heap.Number({
     customMeta: { title: 'Приоритет (1–4)' }

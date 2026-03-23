@@ -19,7 +19,7 @@ function rowToClient(row: { id: string; name: string; sortOrder: number }): Task
   return { id: row.id, name: row.name, sortOrder: row.sortOrder }
 }
 
-const TASK_PROJECT_DETAILS_MAX_LEN = 10_000
+const HEAP_OPTIONAL_DETAILS_TEXT_MAX_LEN = 10_000
 
 function rowToProject(row: {
   id: string
@@ -37,12 +37,14 @@ function rowToProject(row: {
   }
 }
 
-/** Для Heap Optional: пустой ввод — снимаем значение; непустой — обрезка по длине. */
-function normalizeProjectDetails(raw: string | undefined): string | undefined {
+/** Для Heap.Optional(String) «Детали» у проектов и задач: trim, длина, пустое — unset. */
+function normalizeHeapOptionalDetailsText(raw: string | undefined): string | undefined {
   if (raw === undefined) return undefined
   const t = raw.trim()
   if (!t) return undefined
-  return t.length > TASK_PROJECT_DETAILS_MAX_LEN ? t.slice(0, TASK_PROJECT_DETAILS_MAX_LEN) : t
+  return t.length > HEAP_OPTIONAL_DETAILS_TEXT_MAX_LEN
+    ? t.slice(0, HEAP_OPTIONAL_DETAILS_TEXT_MAX_LEN)
+    : t
 }
 
 function normalizeDaySortOrder(n: unknown): number {
@@ -54,7 +56,7 @@ function rowToTask(row: {
   id: string
   projectId: string
   title: string
-  description: string
+  details?: string | null
   priority: number
   status: string
   sortOrder: number
@@ -64,7 +66,7 @@ function rowToTask(row: {
     id: row.id,
     projectId: row.projectId,
     title: row.title,
-    description: row.description ?? '',
+    details: row.details ?? '',
     priority: normalizePriority(row.priority),
     status: normalizeStatus(row.status),
     sortOrder: row.sortOrder,
@@ -201,7 +203,7 @@ export async function createProject(
   const client = await assertClientOwner(ctx, userId, clientId)
   if (!client) return null
   const sortOrder = await nextProjectSortOrder(ctx, userId, clientId)
-  const d = normalizeProjectDetails(details)
+  const d = normalizeHeapOptionalDetailsText(details)
   const row = await TaskProjects.create(ctx, {
     userId,
     clientId,
@@ -234,7 +236,7 @@ export async function updateProject(
     data.details !== undefined
       ? {
           /** `null` сбрасывает Heap.Optional (см. inner/docs/008-heap.md, опциональные поля). */
-          details: normalizeProjectDetails(data.details) ?? (null as TaskProjects.T['details'])
+          details: normalizeHeapOptionalDetailsText(data.details) ?? (null as TaskProjects.T['details'])
         }
       : {}
   const row = await TaskProjects.update(ctx, {
@@ -262,7 +264,7 @@ export async function createTask(
   ctx: app.Ctx,
   userId: string,
   projectId: string,
-  data: { title: string; description?: string; priority?: number; status?: TaskStatus }
+  data: { title: string; details?: string; priority?: number; status?: TaskStatus }
 ): Promise<TaskItemDto | null> {
   const project = await assertProjectOwner(ctx, userId, projectId)
   if (!project) return null
@@ -270,15 +272,18 @@ export async function createTask(
   const priority = normalizePriority(data.priority ?? 2)
   const status = data.status ? normalizeStatus(data.status) : 'todo'
   const daySortOrder = status === 'in_progress' ? await nextDaySortOrder(ctx, userId) : 0
+  const d = normalizeHeapOptionalDetailsText(
+    typeof data.details === 'string' ? data.details : undefined
+  )
   const row = await TaskItems.create(ctx, {
     userId,
     projectId,
     title: data.title.trim() || 'Новая задача',
-    description: typeof data.description === 'string' ? data.description : '',
     priority,
     status,
     sortOrder,
-    daySortOrder
+    daySortOrder,
+    ...(d !== undefined ? { details: d } : {})
   })
   return rowToTask(row)
 }
@@ -289,7 +294,7 @@ export async function updateTask(
   id: string,
   data: {
     title?: string
-    description?: string
+    details?: string
     priority?: number
     status?: TaskStatus
     projectId?: string
@@ -317,9 +322,16 @@ export async function updateTask(
       daySortOrderPatch = { daySortOrder: 0 }
     }
   }
+  const detailsPatch =
+    data.details !== undefined
+      ? {
+          details:
+            normalizeHeapOptionalDetailsText(data.details) ?? (null as TaskItems.T['details'])
+        }
+      : {}
   const patch = {
     ...(data.title !== undefined ? { title: data.title.trim() || existing.title } : {}),
-    ...(data.description !== undefined ? { description: data.description } : {}),
+    ...detailsPatch,
     ...(data.priority !== undefined ? { priority: normalizePriority(data.priority) } : {}),
     ...(data.status !== undefined ? { status: nextStatus } : {}),
     ...(projectId !== existing.projectId ? { projectId, sortOrder } : {}),

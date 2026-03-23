@@ -409,7 +409,7 @@ async function submitProjectModal() {
 const taskModal = ref<'create' | 'edit' | null>(null)
 const taskForm = ref({
   title: '',
-  description: '',
+  details: '',
   priority: 2,
   status: 'todo' as TaskItemDto['status'],
   projectId: '' as string
@@ -423,7 +423,7 @@ function openTaskCreate() {
   taskModal.value = 'create'
   taskForm.value = {
     title: '',
-    description: '',
+    details: '',
     priority: 2,
     status: 'todo',
     projectId: selectedProjectId.value
@@ -436,7 +436,7 @@ function openTaskEdit(t: TaskItemDto) {
   taskEditId.value = t.id
   taskForm.value = {
     title: t.title,
-    description: t.description,
+    details: t.details ?? '',
     priority: t.priority,
     status: t.status,
     projectId: t.projectId
@@ -459,7 +459,7 @@ async function submitTaskModal() {
         {
           projectId: taskForm.value.projectId,
           title: taskForm.value.title,
-          description: taskForm.value.description,
+          details: taskForm.value.details,
           priority: taskForm.value.priority,
           status: taskForm.value.status
         }
@@ -476,7 +476,7 @@ async function submitTaskModal() {
         {
           id: taskEditId.value,
           title: taskForm.value.title,
-          description: taskForm.value.description,
+          details: taskForm.value.details,
           priority: taskForm.value.priority,
           status: taskForm.value.status,
           projectId: taskForm.value.projectId
@@ -1157,7 +1157,7 @@ function showProjectLineBefore(clientId: string, idx: number): boolean {
               <tr v-for="t in tasksForProject" :key="t.id">
                 <td data-label="Задача">
                   <div class="tasks-title">{{ t.title }}</div>
-                  <div v-if="t.description" class="tasks-desc">{{ t.description }}</div>
+                  <div v-if="t.details" class="tasks-desc">{{ t.details }}</div>
                 </td>
                 <td data-label="Приоритет">
                   <span class="tasks-badge" :class="`tasks-badge--p${t.priority}`">
@@ -1276,8 +1276,8 @@ function showProjectLineBefore(clientId: string, idx: number): boolean {
             <h2 class="jn-modal-heading">{{ taskModal === 'create' ? 'Новая задача' : 'Задача' }}</h2>
             <label class="jn-label" for="tt-title">Заголовок</label>
             <input id="tt-title" v-model="taskForm.title" type="text" class="jn-input" maxlength="500" />
-            <label class="jn-label" for="tt-desc">Описание</label>
-            <textarea id="tt-desc" v-model="taskForm.description" class="jn-textarea" rows="5" />
+            <label class="jn-label" for="tt-desc">Детали</label>
+            <textarea id="tt-desc" v-model="taskForm.details" class="jn-textarea" rows="5" />
             <label class="jn-label" for="tt-p">Приоритет</label>
             <JnCrtSelect id="tt-p" v-model="taskForm.priority" :options="prioritySelectOptions" />
             <label class="jn-label" for="tt-s">Статус</label>

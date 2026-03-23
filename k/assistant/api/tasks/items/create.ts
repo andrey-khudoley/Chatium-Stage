@@ -16,7 +16,7 @@ export const createTaskItemRoute = app
   .body((s) => ({
     projectId: s.string(),
     title: s.string(),
-    description: s.optional(s.string()),
+    details: s.optional(s.string()),
     priority: s.optional(s.number()),
     status: s.optional(s.string())
   }))
@@ -30,7 +30,7 @@ export const createTaskItemRoute = app
     try {
       const task = await tasksRepo.createTask(ctx, user.id, req.body.projectId, {
         title: req.body.title,
-        description: req.body.description,
+        details: req.body.details,
         priority: req.body.priority,
         status: parseStatus(req.body.status)
       })

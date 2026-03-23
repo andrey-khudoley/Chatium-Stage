@@ -67,7 +67,7 @@
             >
               {{ t.title }}
             </div>
-            <div v-if="t.description" class="journal-day-task-desc">{{ t.description }}</div>
+            <div v-if="t.details" class="journal-day-task-desc">{{ t.details }}</div>
             <div class="journal-day-meta">
               <span class="journal-day-meta-label">Клиент</span>
               <a
@@ -121,8 +121,8 @@
             <h2 id="jd-task-edit-title" class="jn-modal-heading">Задача</h2>
             <label class="jn-label" for="jd-tt-title">Заголовок</label>
             <input id="jd-tt-title" v-model="taskForm.title" type="text" class="jn-input" maxlength="500" />
-            <label class="jn-label" for="jd-tt-desc">Описание</label>
-            <textarea id="jd-tt-desc" v-model="taskForm.description" class="jn-textarea" rows="5" />
+            <label class="jn-label" for="jd-tt-desc">Детали</label>
+            <textarea id="jd-tt-desc" v-model="taskForm.details" class="jn-textarea" rows="5" />
             <label class="jn-label" for="jd-tt-p">Приоритет</label>
             <JnCrtSelect id="jd-tt-p" v-model="taskForm.priority" :options="prioritySelectOptions" />
             <label class="jn-label" for="jd-tt-s">Статус</label>
@@ -229,7 +229,7 @@ const taskEditId = ref<string | null>(null)
 const taskEditClientId = ref('')
 const taskForm = ref({
   title: '',
-  description: '',
+  details: '',
   priority: 2,
   status: 'todo' as TaskItemDto['status'],
   projectId: '' as string
@@ -260,7 +260,7 @@ function openTaskEdit(t: TaskItemDto) {
   taskEditClientId.value = clientIdForTask(t)
   taskForm.value = {
     title: t.title,
-    description: t.description,
+    details: t.details ?? '',
     priority: t.priority,
     status: t.status,
     projectId: t.projectId
@@ -323,7 +323,7 @@ async function submitTaskModal() {
     const j = await postJson<{ success: boolean; task?: TaskItemDto; error?: string }>(props.taskItemUpdateUrl, {
       id: taskEditId.value,
       title: taskForm.value.title,
-      description: taskForm.value.description,
+      details: taskForm.value.details,
       priority: taskForm.value.priority,
       status: taskForm.value.status,
       projectId: taskForm.value.projectId

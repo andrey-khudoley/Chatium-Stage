@@ -17,7 +17,8 @@ export type TaskItemDto = {
   id: string
   projectId: string
   title: string
-  description: string
+  /** Текст «Детали»; пустая строка, если не задано. */
+  details: string
   priority: number
   status: TaskStatus
   sortOrder: number

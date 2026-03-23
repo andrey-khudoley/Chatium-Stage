@@ -11,7 +11,7 @@
 | t__assistant__journal_note__8Kp2Nx | tables/journal-notes.table.ts | Заметки блокнота журнала | userId (string), title (string), content (string); системные: id, createdAt, updatedAt |
 | t__assistant__task_client__7Hk3mN | tables/task-clients.table.ts | Клиенты (задачи) | userId, name, sortOrder |
 | t__assistant__task_project__9Lp4qR | tables/task-projects.table.ts | Проекты внутри клиента | userId, clientId, name, sortOrder; опционально `details` (текст для пользователя), `context` (служебное, не отдаётся в клиентский API) |
-| t__assistant__task_item__2Vx8sT | tables/task-items.table.ts | Задачи внутри проекта | userId, projectId, title, description, priority (1–4), status (todo/in_progress/done/cancelled), sortOrder, daySortOrder (порядок в дневном списке «В работе») |
+| t__assistant__task_item__2Vx8sT | tables/task-items.table.ts | Задачи внутри проекта | userId, projectId, title, priority (1–4), status (todo/in_progress/done/cancelled), sortOrder, daySortOrder (порядок в дневном списке «В работе»); опционально `details` (текст для пользователя), `context` (служебное, не отдаётся в клиентский API) |
 
 ## Репозитории (repos/)
 - `repos/settings.repo.ts` — findByKey, findAll, upsert, deleteByKey (слой работы с БД; без вызовов logger.lib, т.к. getSetting/getLogLevel вызываются из writeServerLog и используют findByKey — иначе рекурсия).
