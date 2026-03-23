@@ -4,10 +4,9 @@ import Header from '../components/Header.vue'
 import GlobalGlitch from '../components/GlobalGlitch.vue'
 import AppFooter from '../components/AppFooter.vue'
 import JnCrtSelect from '../components/JnCrtSelect.vue'
-import FormulateTaskModal from '../components/tasks/FormulateTaskModal.vue'
+import TasksAiChatPanel from '../components/tasks/TasksAiChatPanel.vue'
 import { subscribeBootStaticReady, scheduleHideBootLoader } from '../shared/bootUi'
 import { createComponentLogger } from '../shared/logger'
-import { useAiFormulate, type AiFormulateResult } from '../shared/useAiFormulate'
 import type { TasksTreeDto, TaskClientDto, TaskProjectDto, TaskItemDto } from '../lib/tasks-types'
 
 const log = createComponentLogger('TasksPage')
@@ -41,7 +40,8 @@ const props = defineProps<{
   taskItemUpdateUrl: string
   taskItemDeleteUrl: string
   taskItemReorderUrl: string
-  taskAiFormulateUrl: string
+  taskAiChatEnsureUrl: string
+  taskAiChatResetUrl: string
 }>()
 
 const bootLoaderDone = ref(false)
@@ -152,46 +152,6 @@ const taskProjectSelectOptions = computed(() =>
 const globalError = ref('')
 const loading = ref(false)
 
-const ai = useAiFormulate()
-const formulateModalRef = ref<InstanceType<typeof FormulateTaskModal> | null>(null)
-
-async function handleAiFormulate(query: string) {
-  if (!selectedProjectId.value || !props.isAuthenticated) return
-  
-  try {
-    const r = await postJson<{ success?: boolean; message?: string; summary?: string; stats?: AiFormulateResult['stats']; error?: string }>(
-      props.taskAiFormulateUrl,
-      { projectId: selectedProjectId.value, userQuery: query }
-    )
-    
-    if (r.success) {
-      // Если есть summary и stats — результат готов (синхронно)
-      if (r.summary && r.stats) {
-        formulateModalRef.value?.setLoading(false)
-        ai.closeFormulateModal()
-        ai.showFormulateResult({ summary: r.summary, stats: r.stats })
-        await refreshTree()
-      } 
-      // Если есть только message — запрос принят, обработка асинхронная
-      else if (r.message) {
-        formulateModalRef.value?.setLoading(false)
-        ai.closeFormulateModal()
-        globalError.value = ''
-        // Показываем сообщение об ожидании
-        alert(r.message + '\n\nСтраница обновится автоматически через 5 секунд.')
-        // Обновляем через 5 секунд
-        setTimeout(() => {
-          void refreshTree()
-        }, 5000)
-      }
-    } else {
-      formulateModalRef.value?.setError(r.error || 'Не удалось обработать запрос')
-    }
-  } catch (e) {
-    formulateModalRef.value?.setError(String(e))
-  }
-}
-
 async function postJson<T>(url: string, body: Record<string, unknown>): Promise<T> {
   const r = await fetch(url, {
     method: 'POST',
@@ -200,6 +160,17 @@ async function postJson<T>(url: string, body: Record<string, unknown>): Promise<
     body: JSON.stringify(body)
   })
   return r.json() as Promise<T>
+}
+
+let chatRefreshTimer: ReturnType<typeof setTimeout> | null = null
+
+/** После ответа AI в чате список задач мог обновиться на сервере. */
+function onTasksChatMaybeChanged() {
+  if (chatRefreshTimer) clearTimeout(chatRefreshTimer)
+  chatRefreshTimer = setTimeout(() => {
+    chatRefreshTimer = null
+    void refreshTree()
+  }, 700)
 }
 
 async function refreshTree() {
@@ -251,6 +222,11 @@ const showTasksSidebar = computed(
 const showTasksPanel = computed(
   () => !isMobileTasksLayout.value || mobilePane.value === 'tasks'
 )
+
+/** Правая колонка чата: только десктоп (≥1024px). */
+const showDesktopAiChat = computed(() => !isMobileTasksLayout.value)
+
+const mobileAiChatOpen = ref(false)
 
 function backToTasksTree() {
   mobilePane.value = 'tree'
@@ -1177,15 +1153,6 @@ function showProjectLineBefore(clientId: string, idx: number): boolean {
                 type="button"
                 class="journal-nav-action tasks-panel-add"
                 :disabled="!props.isAuthenticated || !selectedProjectId"
-                @click="ai.openFormulateModal"
-              >
-                <i class="fas fa-magic" aria-hidden="true" />
-                Сформулировать
-              </button>
-              <button
-                type="button"
-                class="journal-nav-action tasks-panel-add"
-                :disabled="!props.isAuthenticated || !selectedProjectId"
                 @click="openTaskCreate"
               >
                 Новая задача
@@ -1260,50 +1227,66 @@ function showProjectLineBefore(clientId: string, idx: number): boolean {
 
           <p v-if="selectedProjectId && !tasksForProject.length" class="tasks-placeholder">В этом проекте пока нет задач.</p>
         </section>
+
+        <aside
+          v-if="showDesktopAiChat"
+          class="tasks-ai-chat-sidebar"
+          aria-label="Чат с AI"
+        >
+          <TasksAiChatPanel
+            :projectId="selectedProjectId"
+            :isAuthenticated="props.isAuthenticated"
+            :ensureUrl="props.taskAiChatEnsureUrl"
+            :resetUrl="props.taskAiChatResetUrl"
+            @tasks-maybe-changed="onTasksChatMaybeChanged"
+          />
+        </aside>
       </div>
 
-      <Transition name="jn-modal">
-        <div v-if="ai.formulateResultVisible.value" class="ai-result-banner" @click="ai.closeFormulateResult">
-          <div class="ai-result-content" @click.stop>
-            <button
-              type="button"
-              class="ai-result-close"
-              aria-label="Закрыть"
-              @click="ai.closeFormulateResult"
-            >
-              <i class="fas fa-times" aria-hidden="true" />
-            </button>
-            <div class="ai-result-icon">
-              <i class="fas fa-check-circle" aria-hidden="true" />
-            </div>
-            <div class="ai-result-text">
-              <div class="ai-result-summary">{{ ai.formulateResult.value?.summary }}</div>
-              <div v-if="ai.formulateResult.value?.stats" class="ai-result-stats">
-                <span v-if="ai.formulateResult.value.stats.projectUpdated" class="ai-result-stat">
-                  <i class="fas fa-edit" aria-hidden="true" />
-                  Обновлен контекст проекта
-                </span>
-                <span v-if="ai.formulateResult.value.stats.createdTasks.length" class="ai-result-stat">
-                  <i class="fas fa-plus" aria-hidden="true" />
-                  {{ ai.formulateResult.value.stats.createdTasks.length }} нов.
-                </span>
-                <span v-if="ai.formulateResult.value.stats.updatedTasks.length" class="ai-result-stat">
-                  <i class="fas fa-edit" aria-hidden="true" />
-                  {{ ai.formulateResult.value.stats.updatedTasks.length }} обн.
-                </span>
+      <button
+        v-if="isMobileTasksLayout && props.isAuthenticated"
+        type="button"
+        class="tasks-ai-chat-fab"
+        aria-label="Открыть чат с AI"
+        @click="mobileAiChatOpen = true"
+      >
+        <i class="fas fa-comments" aria-hidden="true" />
+      </button>
+
+      <Teleport to="body">
+        <Transition name="jn-modal">
+          <div
+            v-if="isMobileTasksLayout && mobileAiChatOpen"
+            class="jn-modal-overlay tasks-ai-chat-mobile-overlay"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Чат с AI"
+            @click.self="mobileAiChatOpen = false"
+          >
+            <div class="tasks-ai-chat-mobile-sheet" @click.stop>
+              <div class="tasks-ai-chat-mobile-head">
+                <span class="tasks-ai-chat-mobile-title">Чат с AI</span>
+                <button
+                  type="button"
+                  class="tasks-icon-btn"
+                  aria-label="Закрыть"
+                  @click="mobileAiChatOpen = false"
+                >
+                  <i class="fas fa-times" aria-hidden="true" />
+                </button>
               </div>
+              <TasksAiChatPanel
+                :projectId="selectedProjectId"
+                :isAuthenticated="props.isAuthenticated"
+                :ensureUrl="props.taskAiChatEnsureUrl"
+                :resetUrl="props.taskAiChatResetUrl"
+                @tasks-maybe-changed="onTasksChatMaybeChanged"
+              />
             </div>
           </div>
-        </div>
-      </Transition>
+        </Transition>
+      </Teleport>
     </main>
-
-    <FormulateTaskModal
-      ref="formulateModalRef"
-      :show="ai.showFormulateModal.value"
-      @submit="handleAiFormulate"
-      @cancel="ai.closeFormulateModal"
-    />
 
     <AppFooter v-if="bootLoaderDone" @chatium-click="openChatiumLink" />
 
@@ -1436,11 +1419,91 @@ function showProjectLineBefore(clientId: string, idx: number): boolean {
   flex-direction: row;
   align-items: stretch;
   gap: 0.75rem 1rem;
-  max-width: 1200px;
+  max-width: min(1680px, 100%);
   width: 100%;
   margin: 0 auto;
   min-height: 0;
   flex: 1 1 auto;
+}
+
+.tasks-ai-chat-sidebar {
+  flex: 0 0 min(320px, 26vw);
+  min-width: 240px;
+  max-width: 400px;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.tasks-ai-chat-fab {
+  position: fixed;
+  right: max(1rem, env(safe-area-inset-right));
+  bottom: max(5.5rem, calc(env(safe-area-inset-bottom) + 4.5rem));
+  z-index: 15000;
+  width: 3.25rem;
+  height: 3.25rem;
+  border-radius: 50%;
+  border: 2px solid var(--color-accent);
+  background: rgba(211, 35, 75, 0.2);
+  color: var(--color-accent-hover);
+  font-size: 1.15rem;
+  cursor: pointer;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  touch-action: manipulation;
+}
+
+.tasks-ai-chat-fab:hover {
+  background: rgba(211, 35, 75, 0.35);
+}
+
+.tasks-ai-chat-mobile-overlay {
+  align-items: flex-end;
+  justify-content: center;
+  padding: 0;
+}
+
+.tasks-ai-chat-mobile-sheet {
+  width: 100%;
+  max-height: min(88vh, 640px);
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-bottom: none;
+  border-radius: 12px 12px 0 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  box-shadow: 0 -8px 40px rgba(0, 0, 0, 0.5);
+}
+
+.tasks-ai-chat-mobile-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.65rem 0.75rem;
+  border-bottom: 1px solid var(--color-border);
+  flex-shrink: 0;
+}
+
+.tasks-ai-chat-mobile-title {
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+}
+
+.tasks-ai-chat-mobile-sheet :deep(.tasks-ai-chat) {
+  max-height: none;
+  border: none;
+  border-radius: 0;
+  flex: 1;
+  min-height: min(60vh, 420px);
+}
+
+.tasks-ai-chat-mobile-sheet :deep(.tasks-ai-chat-head) {
+  display: none;
 }
 
 .tasks-sidebar {
@@ -2360,7 +2423,7 @@ body {
 
 .content-inner {
   width: 100%;
-  max-width: 1200px;
+  max-width: min(1680px, 100%);
   padding: 0 1.5rem;
   margin: 0 auto;
   position: relative;
@@ -2594,108 +2657,6 @@ html.tasks-page-html-mobile .header-clock {
   .tasks-panel-head-actions .journal-nav-action {
     flex: 1;
     justify-content: center;
-  }
-}
-
-.ai-result-banner {
-  position: fixed;
-  top: 5rem;
-  right: 1.5rem;
-  z-index: 10000;
-  max-width: 400px;
-  animation: slideInRight 0.4s ease-out;
-}
-
-@keyframes slideInRight {
-  from {
-    transform: translateX(100%);
-    opacity: 0;
-  }
-  to {
-    transform: translateX(0);
-    opacity: 1;
-  }
-}
-
-.ai-result-content {
-  background: var(--color-bg-secondary);
-  border: 1px solid var(--color-accent);
-  border-radius: 4px;
-  padding: 1rem 1.25rem;
-  box-shadow: 0 4px 24px rgba(211, 35, 75, 0.3);
-  display: flex;
-  gap: 1rem;
-  align-items: flex-start;
-  position: relative;
-}
-
-.ai-result-close {
-  position: absolute;
-  top: 0.5rem;
-  right: 0.5rem;
-  background: transparent;
-  border: none;
-  color: var(--color-text-secondary);
-  font-size: 1rem;
-  cursor: pointer;
-  padding: 0.25rem;
-  line-height: 1;
-  transition: color 0.2s;
-}
-
-.ai-result-close:hover {
-  color: var(--color-accent);
-}
-
-.ai-result-icon {
-  flex-shrink: 0;
-  color: var(--color-accent);
-  font-size: 1.5rem;
-  padding-top: 0.25rem;
-}
-
-.ai-result-text {
-  flex: 1;
-  min-width: 0;
-}
-
-.ai-result-summary {
-  color: var(--color-text);
-  font-size: 0.9rem;
-  line-height: 1.5;
-  margin-bottom: 0.75rem;
-}
-
-.ai-result-stats {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-}
-
-.ai-result-stat {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  font-size: 0.75rem;
-  color: var(--color-text-secondary);
-  background: rgba(211, 35, 75, 0.1);
-  padding: 0.25rem 0.6rem;
-  border-radius: 3px;
-  border: 1px solid rgba(211, 35, 75, 0.3);
-}
-
-.ai-result-stat i {
-  font-size: 0.7rem;
-  color: var(--color-accent);
-}
-
-@media (max-width: 768px) {
-  .ai-result-banner {
-    top: auto;
-    bottom: 5rem;
-    right: 1rem;
-    left: 1rem;
-    max-width: none;
   }
 }
 </style>
