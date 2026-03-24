@@ -11,6 +11,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'exec', cmd: string, value?: string): void
+  (e: 'insertMedia', type: 'image' | 'video' | 'pdf' | 'file', url: string, filename?: string): void
 }>()
 
 const showBlockMenu = ref(false)
@@ -18,6 +19,9 @@ const showColorPicker = ref(false)
 const showLinkDialog = ref(false)
 const showTablePicker = ref(false)
 const showTableMenu = ref(false)
+const fileUploading = ref(false)
+
+const fileInputRef = ref<HTMLInputElement | null>(null)
 
 const linkHref = ref('')
 const linkTarget = ref('_blank')
@@ -120,6 +124,52 @@ function toggleDropdown(which: 'block' | 'color' | 'link' | 'table' | 'tableMenu
 }
 
 defineExpose({ openLinkDialog, closeAll })
+
+const MAX_FILE_SIZE_MB = 50
+const ALLOWED_TYPES = [
+  'image/*',
+  'video/*',
+  'application/pdf',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/vnd.ms-excel',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  'text/plain',
+]
+
+function openFilePicker() {
+  fileInputRef.value?.click()
+}
+
+function handleFileUpload(event: Event) {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  if (!file) return
+
+  if (file.size > MAX_FILE_SIZE_MB * 1024 * 1024) {
+    alert(`Файл слишком большой. Максимальный размер: ${MAX_FILE_SIZE_MB} МБ`)
+    input.value = ''
+    return
+  }
+
+  fileUploading.value = true
+
+  const objectUrl = URL.createObjectURL(file)
+  const fileType = getFileType(file)
+
+  setTimeout(() => {
+    emit('insertMedia', fileType, objectUrl, file.name)
+    fileUploading.value = false
+    input.value = ''
+  }, 300)
+}
+
+function getFileType(file: File): 'image' | 'video' | 'pdf' | 'file' {
+  if (file.type.startsWith('image/')) return 'image'
+  if (file.type.startsWith('video/')) return 'video'
+  if (file.type === 'application/pdf') return 'pdf'
+  return 'file'
+}
 </script>
 
 <template>
@@ -342,6 +392,29 @@ defineExpose({ openLinkDialog, closeAll })
           <i class="fa-solid fa-eraser" aria-hidden="true" />
         </button>
       </div>
+
+      <div class="wy-sep" />
+
+      <div class="wy-btn-group">
+        <button
+          type="button"
+          class="wy-btn wy-btn--file"
+          :class="{ 'wy-btn--uploading': fileUploading }"
+          title="Добавить файл"
+          @click="openFilePicker"
+          :disabled="fileUploading"
+        >
+          <i class="fa-solid fa-paperclip" aria-hidden="true" />
+          <span v-if="fileUploading" class="wy-upload-spinner" />
+        </button>
+        <input
+          ref="fileInputRef"
+          type="file"
+          class="wy-file-input"
+          :accept="ALLOWED_TYPES.join(',')"
+          @change="handleFileUpload"
+        />
+      </div>
     </div>
   </div>
 </template>
@@ -547,5 +620,31 @@ defineExpose({ openLinkDialog, closeAll })
   font-size: 0.5rem;
   color: var(--color-text-tertiary);
   margin-top: 0.2rem;
+}
+
+.wy-file-input {
+  display: none;
+}
+.wy-btn--file {
+  position: relative;
+}
+.wy-btn--uploading {
+  opacity: 0.7;
+  pointer-events: none;
+}
+.wy-upload-spinner {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 12px;
+  height: 12px;
+  border: 2px solid var(--color-border);
+  border-top-color: var(--color-accent);
+  border-radius: 50%;
+  animation: wy-spin 0.8s linear infinite;
+}
+@keyframes wy-spin {
+  to { transform: translate(-50%, -50%) rotate(360deg); }
 }
 </style>

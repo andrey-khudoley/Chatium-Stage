@@ -109,6 +109,34 @@ function updateState() {
   }
 }
 
+function insertMedia(type: 'image' | 'video' | 'pdf' | 'file', url: string, filename?: string) {
+  editorRef.value?.focus()
+  restoreSelection()
+
+  const html = buildMediaHtml(type, url, filename)
+  document.execCommand('insertHTML', false, html + '<p><br></p>')
+
+  nextTick(() => {
+    onInput()
+    saveSelection()
+  })
+}
+
+function buildMediaHtml(type: 'image' | 'video' | 'pdf' | 'file', url: string, filename?: string): string {
+  switch (type) {
+    case 'image':
+      return `<img src="${escapeHtml(url)}" class="wy-media-img" alt="${escapeHtml(filename || 'Изображение')}" />`
+    case 'video':
+      return `<video src="${escapeHtml(url)}" class="wy-media-video" controls preload="metadata"></video>`
+    case 'pdf':
+      return `<div class="wy-media-pdf"><iframe src="${escapeHtml(url)}" width="100%" height="500px" frameborder="0"></iframe><a href="${escapeHtml(url)}" target="_blank" class="wy-media-link">Открыть PDF</a></div>`
+    case 'file':
+    default:
+      const ext = filename ? filename.split('.').pop()?.toUpperCase() || 'FILE' : 'FILE'
+      return `<div class="wy-media-file" data-filename="${escapeHtml(filename || 'file')}"><div class="wy-file-icon">${ext}</div><div class="wy-file-info"><div class="wy-file-name">${escapeHtml(filename || 'Файл')}</div><a href="${escapeHtml(url)}" target="_blank" download class="wy-file-link">Скачать</a></div></div>`
+  }
+}
+
 function execCommand(cmd: string, value?: string) {
   editorRef.value?.focus()
   restoreSelection()
@@ -273,6 +301,24 @@ function onKeydown(e: KeyboardEvent) {
 function onEditorFocus() { saveSelection() }
 function onEditorMouseup() { saveSelection() }
 function onEditorKeyup() { saveSelection() }
+
+function onEditorClick(e: MouseEvent) {
+  const target = e.target as HTMLElement
+  const mediaEl = target.closest('.wy-media-img, .wy-media-video, .wy-media-pdf, .wy-media-file') as HTMLElement | null
+  if (!mediaEl) return
+
+  const rect = mediaEl.getBoundingClientRect()
+  const x = e.clientX - rect.left
+  const y = e.clientY - rect.top
+
+  const deleteBtnSize = 24
+  if (x >= rect.width - deleteBtnSize && y <= deleteBtnSize) {
+    e.preventDefault()
+    e.stopPropagation()
+    mediaEl.remove()
+    onInput()
+  }
+}
 </script>
 
 <template>
@@ -283,6 +329,7 @@ function onEditorKeyup() { saveSelection() }
       :currentBlock="currentBlock"
       :isInTable="isInTable"
       @exec="execCommand"
+      @insertMedia="insertMedia"
     />
     <div
       ref="editorRef"
@@ -295,6 +342,7 @@ function onEditorKeyup() { saveSelection() }
       @focus="onEditorFocus"
       @mouseup="onEditorMouseup"
       @keyup="onEditorKeyup"
+      @click="onEditorClick"
     />
   </div>
 </template>
@@ -460,5 +508,152 @@ function onEditorKeyup() { saveSelection() }
 .wy-content img {
   max-width: 100%;
   height: auto;
+}
+
+/* Media elements styling */
+.wy-content .wy-media-img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  border-radius: 2px;
+  box-shadow: inset 0 0 0 1px var(--color-border-light);
+  margin: 0.5rem 0;
+}
+
+.wy-content .wy-media-video {
+  display: block;
+  max-width: 100%;
+  width: 100%;
+  max-height: 500px;
+  border-radius: 2px;
+  box-shadow: inset 0 0 0 1px var(--color-border-light);
+  margin: 0.5rem 0;
+  background: var(--color-bg-secondary);
+}
+
+.wy-content .wy-media-pdf {
+  position: relative;
+  margin: 0.5rem 0;
+  border: 1px solid var(--color-border-light);
+  border-radius: 2px;
+  overflow: hidden;
+  background: var(--color-bg-secondary);
+}
+
+.wy-content .wy-media-pdf iframe {
+  display: block;
+  background: var(--color-bg);
+}
+
+.wy-content .wy-media-link {
+  display: block;
+  padding: 0.4rem 0.6rem;
+  font-size: 0.7rem;
+  color: var(--color-accent);
+  text-align: center;
+  text-decoration: none;
+  background: var(--color-bg-tertiary);
+  border-top: 1px solid var(--color-border-light);
+  transition: background 0.15s ease;
+}
+
+.wy-content .wy-media-link:hover {
+  background: var(--color-accent-light);
+}
+
+.wy-content .wy-media-file {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.6rem 0.8rem;
+  margin: 0.5rem 0;
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border-light);
+  border-radius: 2px;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.1);
+  transition: border-color 0.15s ease;
+}
+
+.wy-content .wy-media-file:hover {
+  border-color: var(--color-accent);
+}
+
+.wy-content .wy-file-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.2rem;
+  height: 2.2rem;
+  font-size: 0.55rem;
+  font-weight: 700;
+  color: var(--color-text-secondary);
+  background: var(--color-bg-tertiary);
+  border: 1px solid var(--color-border);
+  border-radius: 2px;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.wy-content .wy-file-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.wy-content .wy-file-name {
+  font-size: 0.75rem;
+  color: var(--color-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 0.15rem;
+}
+
+.wy-content .wy-file-link {
+  font-size: 0.6rem;
+  color: var(--color-accent);
+  text-decoration: none;
+}
+
+.wy-content .wy-file-link:hover {
+  text-decoration: underline;
+}
+
+/* Media hover delete button */
+.wy-content .wy-media-img,
+.wy-content .wy-media-video,
+.wy-content .wy-media-pdf,
+.wy-content .wy-media-file {
+  position: relative;
+}
+
+.wy-content .wy-media-img::after,
+.wy-content .wy-media-video::after,
+.wy-content .wy-media-pdf::after,
+.wy-content .wy-media-file::after {
+  content: '×';
+  position: absolute;
+  top: 0.3rem;
+  right: 0.3rem;
+  width: 1.2rem;
+  height: 1.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+  color: var(--color-text);
+  background: var(--color-accent-hover);
+  border-radius: 2px;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  pointer-events: none;
+}
+
+.wy-content .wy-media-img:hover::after,
+.wy-content .wy-media-video:hover::after,
+.wy-content .wy-media-pdf:hover::after,
+.wy-content .wy-media-file:hover::after {
+  opacity: 1;
+  pointer-events: auto;
 }
 </style>
