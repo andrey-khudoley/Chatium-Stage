@@ -92,6 +92,11 @@
 - `../../api/journal/notes/get` → `getJournalNoteRoute`
 - `../../api/journal/notes/update` → `updateJournalNoteRoute`
 - `../../api/journal/notes/delete` → `deleteJournalNoteRoute`
+- `../../api/journal/day/get` → `getJournalDayEntryRoute`
+- `../../api/journal/day/save` → `saveJournalDayEntryRoute`
+- `../../api/journal/week/get` → `getJournalWeekEntryRoute`
+- `../../api/journal/week/save` → `saveJournalWeekDayEntryRoute`
+- `../../api/journal/week/save-summary` → `saveJournalWeekSummaryRoute`
 - `../../api/tasks/tree/get` → `getTasksTreeRoute`
 - `../../api/tasks/items/reorder-day` → `reorderTaskDayItemsRoute`
 - `../../api/tasks/items/release-day` → `releaseTaskDayItemsRoute`
@@ -102,6 +107,10 @@
 - `../../config/routes` → `getFullUrl`, `getApiUrlForRoute`, `ROUTES`
 - `../../config/project` → `JOURNAL_PAGE_NAME`, `getPageTitle`, `getHeaderText`
 - `../../lib/settings.lib` → `*`
+- `../../repos/journal-day-entries.repo` → `*`
+- `../../lib/journal-day-key` → `computeJournalDayKeyInTimeZone`
+- `../../repos/journal-week-entries.repo` → `*`
+- `../../lib/journal-week-key` → `computeJournalWeekMondayKeyLocal`
 
 ### `./web/tools/index.tsx`
 - `@app/html-jsx` → `jsx`
@@ -190,11 +199,12 @@
 - `../components/journal/JournalMonthPane.vue`
 - `../components/journal/JournalWeekPane.vue`
 - `../components/journal/JournalDayPane.vue`
+- `../components/journal/JournalDayInDevelopmentPane.vue`
 - `../components/journal/JournalHabitsPane.vue`
 - `../shared/bootUi` → `subscribeBootStaticReady`, `scheduleHideBootLoader`
 - `../shared/logger` → `createComponentLogger`
 - `../lib/tasks-types` → `TasksTreeDto`
-- пропсы: `journalTabInitial?` — вкладка из `?tab=` при SSR; блокнот — `journalNotesInitial?`, `journalNotesCreateUrl?`, …; вкладка «День» — `tasksTreeInitial?`, `tasksTreeGetUrl?`, `taskItemReorderDayUrl?`, `taskReleaseDayUrl?`, `taskItemUpdateUrl?`, `tasksPageUrl?`; `panePropsForTab` подставляет `notebookPaneProps` или `dayPaneProps` по `activeTab`; обработчики `@note-*` только у блокнота; активная вкладка синхронизируется с адресной строкой (`replaceState`, `popstate`)
+- пропсы: `journalTabInitial?` — вкладка из `?tab=` при SSR; блокнот — `journalNotesInitial?`, `journalNotesCreateUrl?`, …; вкладка «Задачи» (`tasks`) — `tasksTreeInitial?`, `tasksTreeGetUrl?`, `taskItemReorderDayUrl?`, `taskReleaseDayUrl?`, `taskItemUpdateUrl?`, `tasksPageUrl?`; `panePropsForTab` подставляет `notebookPaneProps` или `dayPaneProps` по `activeTab`; обработчики `@note-*` только у блокнота; активная вкладка синхронизируется с адресной строкой (`replaceState`, `popstate`)
 
 ### `./pages/TestsPage.vue`
 - `vue` → `onMounted`, `onBeforeUnmount`, `onUnmounted`, `ref`, `computed`
@@ -293,9 +303,9 @@
 - (только разметка заглушки «В разработке»)
 
 ### `./components/journal/JournalNav.vue`
-- `defineProps`: `tabs`, `activeTab`, `showNotebookToolbar`, `showDayToolbar`, `isAuthenticated`, `notebookCreateTitle`, `notebookCreateError`
+- `defineProps`: `tabs`, `activeTab`, `showNotebookToolbar`, `showTasksToolbar`, `isAuthenticated`, `notebookCreateTitle`, `notebookCreateError`
 - `defineEmits`: `select-tab`, `create-note`, `open-all-tasks`
-- отвечает за левое меню журнала: список вкладок, разделитель, динамические кнопки (`Новая заметка` / `Все задачи`) и их стили/focus
+- отвечает за левое меню журнала: список вкладок, разделитель, динамические кнопки (`Новая заметка` / `Все задачи` на вкладке «Задачи») и их стили/focus
 
 ### `./components/journal/JournalNotebookPane.vue`
 - `vue` → `reactive`, `ref`, `watch`
@@ -307,7 +317,12 @@
 - `./JournalStubPanel.vue`
 
 ### `./components/journal/JournalWeekPane.vue`
-- `./JournalStubPanel.vue`
+- `vue` → `computed`, `onMounted`, `ref`, `watch`
+- `../../lib/journal-week-key` → `computeJournalWeekMondayKeyLocal`, `getWeekDayKeysFromMonday`, `getWeekNumberFromMondayKey`, `shiftWeekMondayKey`
+
+### `./components/journal/JournalDayInDevelopmentPane.vue`
+- `vue` → `computed`, `onMounted`, `ref`, `watch`
+- `../../lib/journal-day-key` → `computeJournalDayKeyLocal`
 
 ### `./components/journal/JournalDayPane.vue`
 - `vue` → `computed`, `onUnmounted`, `ref`, `watch`
@@ -366,6 +381,15 @@
 ### `./tables/pomodoro-state.table.ts`
 - `@app/heap` → `Heap`
 
+### `./tables/journal-day-entries.table.ts`
+- `@app/heap` → `Heap`
+
+### `./tables/journal-week-entries.table.ts`
+- `@app/heap` → `Heap`
+
+### `./tables/journal-week-summary.table.ts`
+- `@app/heap` → `Heap`
+
 ## 6) Репозитории (repos/)
 
 ### `./repos/settings.repo.ts`
@@ -380,6 +404,14 @@
 ### `./repos/journal-notes.repo.ts`
 - `../tables/journal-notes.table` → `JournalNotes`, `JournalNotesRow`
 - экспортирует: `JournalNoteSummary` (type), `findSummariesByUserId`, `createForUser`, `findByIdForUser`, `updateForUser`, `deleteByIdForUser`
+
+### `./repos/journal-day-entries.repo.ts`
+- `../tables/journal-day-entries.table` → `JournalDayEntries`, `JournalDayEntriesRow`
+
+### `./repos/journal-week-entries.repo.ts`
+- `../tables/journal-week-entries.table` → `JournalWeekEntries`
+- `../tables/journal-week-summary.table` → `JournalWeekSummary`
+- `../lib/journal-week-key` → `getWeekDayKeysFromMonday`, `getWeekNumberFromMondayKey`
 
 ### `./repos/tasks.repo.ts`
 - `../tables/task-clients.table`, `task-projects.table`, `task-items.table`
@@ -422,6 +454,12 @@
 
 ### `./lib/pomodoro-stats-day.ts`
 - `@shared` — ключ периода дневной статистики (05:00 локально / Москва): `computePomodoroStatsDayKeyLocal`, `computePomodoroStatsDayKeyInTimeZone`, `normalizeClientStatsDayKey`
+
+### `./lib/journal-day-key.ts`
+- `@shared` — ключ дневного периода (граница 05:00): `computeJournalDayKeyLocal`, `computeJournalDayKeyInTimeZone`, `normalizeClientJournalDayKey`
+
+### `./lib/journal-week-key.ts`
+- `@shared` — ключ понедельника недели и диапазон дат: `computeJournalWeekMondayKeyLocal`, `normalizeWeekMondayKey`, `shiftWeekMondayKey`, `getWeekDayKeysFromMonday`, `getWeekMondayKeyForDateKey`, `getWeekNumberFromMondayKey`
 
 ### `./lib/pomodoro.lib.ts`
 - `@app/sync` → `runWithExclusiveLock`
@@ -480,6 +518,36 @@
 - `@app/auth` → `requireRealUser`
 - `../../../lib/logger.lib` → `*`
 - `../../../repos/tasks.repo` → `*`
+
+### `./api/journal/day/get.ts`
+- `@app/auth` → `requireRealUser`
+- `../../../lib/logger.lib` → `*`
+- `../../../repos/journal-day-entries.repo` → `*`
+- `../../../lib/journal-day-key` → `computeJournalDayKeyInTimeZone`, `normalizeClientJournalDayKey`
+
+### `./api/journal/day/save.ts`
+- `@app/auth` → `requireRealUser`
+- `../../../lib/logger.lib` → `*`
+- `../../../repos/journal-day-entries.repo` → `*`
+- `../../../lib/journal-day-key` → `computeJournalDayKeyInTimeZone`, `normalizeClientJournalDayKey`
+
+### `./api/journal/week/get.ts`
+- `@app/auth` → `requireRealUser`
+- `../../../lib/logger.lib` → `*`
+- `../../../repos/journal-week-entries.repo` → `*`
+- `../../../lib/journal-week-key` → `computeJournalWeekMondayKeyLocal`, `normalizeWeekMondayKey`
+
+### `./api/journal/week/save.ts`
+- `@app/auth` → `requireRealUser`
+- `../../../lib/logger.lib` → `*`
+- `../../../repos/journal-week-entries.repo` → `*`
+- `../../../lib/journal-week-key` → `getWeekMondayKeyForDateKey`, `normalizeClientJournalDateKey`
+
+### `./api/journal/week/save-summary.ts`
+- `@app/auth` → `requireRealUser`
+- `../../../lib/logger.lib` → `*`
+- `../../../repos/journal-week-entries.repo` → `*`
+- `../../../lib/journal-week-key` → `normalizeWeekMondayKey`
 
 ### `./api/tasks/tasks-ai-chat-lib.ts`
 - `@app/auth` → `findUsersByIds`, `SmartUser`

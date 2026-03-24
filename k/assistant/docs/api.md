@@ -63,6 +63,25 @@
 | POST | /api/journal/notes/update | api/journal/notes/update.ts | RealUser | Обновить свою заметку. Body: `{ id, title, content }`. Пустой `title` после trim заменяется на «Без названия». Ответ: `{ success, note: { id, title } }`. |
 | POST | /api/journal/notes/delete | api/journal/notes/delete.ts | RealUser | Удалить свою заметку. Body: `{ id }`. Ответ: `{ success: true }`. |
 
+## Журнал — день (api/journal/day/)
+
+Дневные записи пользователя по сегментам `night/morning/day/evening` с фиксацией (блокировка редактирования). Данные хранятся отдельно по `dayKey` (`YYYY-MM-DD`) с границей суток в **05:00**.
+
+| Method | Path | File | Auth | Назначение |
+| --- | --- | --- | --- | --- |
+| GET | /api/journal/day/get?dayKey= | api/journal/day/get.ts | RealUser | Получить запись дня: `{ success, entry }`, где `entry = { dayKey, night, morning, day, evening }`, а каждый сегмент — `{ value, locked }`. `dayKey` опционален (если не передан, сервер использует fallback-ключ по `Europe/Moscow`). |
+| POST | /api/journal/day/save | api/journal/day/save.ts | RealUser | Сохранить один сегмент дня. Body: `{ dayKey?, segment, value, locked }`, где `segment ∈ { night, morning, day, evening }`. Ответ: `{ success, entry }` (актуальный снимок всего дня после записи). |
+
+## Журнал — неделя (api/journal/week/)
+
+Недельный план пользователя: по одному многострочному полю на каждый день недели (`Пн..Вс`) с фиксацией/разблокировкой.
+
+| Method | Path | File | Auth | Назначение |
+| --- | --- | --- | --- | --- |
+| GET | /api/journal/week/get?mondayKey= | api/journal/week/get.ts | RealUser | Получить недельный план: `{ success, week }`, где `week = { mondayKey, weekNumber, summary, days }`, `summary = { value, locked }`, `days = [{ dayId, dayKey, value, locked }]`. `mondayKey` опционален, по умолчанию берётся текущая локальная неделя. |
+| POST | /api/journal/week/save | api/journal/week/save.ts | RealUser | Сохранить план дня недели. Body: `{ dayKey, value, locked }`. Ответ: `{ success, week }` — актуальный снимок всей недели, к которой относится `dayKey`. |
+| POST | /api/journal/week/save-summary | api/journal/week/save-summary.ts | RealUser | Сохранить общий weekly-summary. Body: `{ mondayKey, value, locked }`. Ответ: `{ success, week }` — актуальный снимок недели после сохранения общего плана. |
+
 ## Задачи (api/tasks/)
 
 Иерархия «клиент → проект → задача» в Heap; все мутации и дерево — только `requireRealUser`. Один файл — один эндпоинт с путём `/`.

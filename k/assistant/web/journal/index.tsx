@@ -11,6 +11,11 @@ import { createJournalNoteRoute } from '../../api/journal/notes/create'
 import { getJournalNoteRoute } from '../../api/journal/notes/get'
 import { updateJournalNoteRoute } from '../../api/journal/notes/update'
 import { deleteJournalNoteRoute } from '../../api/journal/notes/delete'
+import { getJournalDayEntryRoute } from '../../api/journal/day/get'
+import { saveJournalDayEntryRoute } from '../../api/journal/day/save'
+import { getJournalWeekEntryRoute } from '../../api/journal/week/get'
+import { saveJournalWeekDayEntryRoute } from '../../api/journal/week/save'
+import { saveJournalWeekSummaryRoute } from '../../api/journal/week/save-summary'
 import { getTasksTreeRoute } from '../../api/tasks/tree/get'
 import { reorderTaskDayItemsRoute } from '../../api/tasks/items/reorder-day'
 import { releaseTaskDayItemsRoute } from '../../api/tasks/items/release-day'
@@ -22,11 +27,16 @@ import { getApiUrlForRoute, getFullUrl, ROUTES } from '../../config/routes'
 import type { TasksTreeDto } from '../../lib/tasks-types'
 import { JOURNAL_PAGE_NAME, getPageTitle, getHeaderText } from '../../config/project'
 import * as settingsLib from '../../lib/settings.lib'
+import * as journalDayRepo from '../../repos/journal-day-entries.repo'
+import { computeJournalDayKeyInTimeZone } from '../../lib/journal-day-key'
+import * as journalWeekRepo from '../../repos/journal-week-entries.repo'
+import { computeJournalWeekMondayKeyLocal } from '../../lib/journal-week-key'
 import { customScrollbarStyles, formControlStyles, mobileSafeAreaStyles, VIEWPORT_META_CONTENT } from '../../styles'
 
 const LOG_PATH = 'web/journal/index'
 
-const VALID_JOURNAL_TABS = ['notebook', 'month', 'week', 'day', 'habits'] as const
+const VALID_JOURNAL_TABS = ['notebook', 'month', 'week', 'tasks', 'day', 'habits'] as const
+const SERVER_FALLBACK_TIME_ZONE = 'Europe/Moscow'
 
 function parseJournalTabFromQuery(tab: unknown): (typeof VALID_JOURNAL_TABS)[number] | undefined {
   if (typeof tab !== 'string') return undefined
@@ -55,14 +65,22 @@ export const journalPageRoute = app.html('/', async (ctx, req) => {
 
   let journalNotesInitial: journalNotesRepo.JournalNoteSummary[] = []
   let tasksTreeInitial: TasksTreeDto = { clients: [], projects: [], tasks: [] }
+  let journalDayEntryInitial: journalDayRepo.JournalDayEntryDto | null = null
+  let journalWeekEntryInitial: journalWeekRepo.JournalWeekEntryDto | null = null
   if (ctx.user) {
     try {
       const user = requireRealUser(ctx)
       journalNotesInitial = await journalNotesRepo.findSummariesByUserId(ctx, user.id)
       tasksTreeInitial = await tasksRepo.getTreeForUser(ctx, user.id)
+      const dayKey = computeJournalDayKeyInTimeZone(Date.now(), SERVER_FALLBACK_TIME_ZONE)
+      journalDayEntryInitial = await journalDayRepo.getByUserAndDay(ctx, user.id, dayKey)
+      const mondayKey = computeJournalWeekMondayKeyLocal(Date.now())
+      journalWeekEntryInitial = await journalWeekRepo.getWeekByUserAndMonday(ctx, user.id, mondayKey)
     } catch {
       journalNotesInitial = []
       tasksTreeInitial = { clients: [], projects: [], tasks: [] }
+      journalDayEntryInitial = null
+      journalWeekEntryInitial = null
     }
   }
 
@@ -70,6 +88,11 @@ export const journalPageRoute = app.html('/', async (ctx, req) => {
   const journalNotesGetUrl = getApiUrlForRoute(getJournalNoteRoute.url())
   const journalNotesUpdateUrl = getApiUrlForRoute(updateJournalNoteRoute.url())
   const journalNotesDeleteUrl = getApiUrlForRoute(deleteJournalNoteRoute.url())
+  const journalDayGetUrl = getApiUrlForRoute(getJournalDayEntryRoute.url())
+  const journalDaySaveUrl = getApiUrlForRoute(saveJournalDayEntryRoute.url())
+  const journalWeekGetUrl = getApiUrlForRoute(getJournalWeekEntryRoute.url())
+  const journalWeekSaveUrl = getApiUrlForRoute(saveJournalWeekDayEntryRoute.url())
+  const journalWeekSaveSummaryUrl = getApiUrlForRoute(saveJournalWeekSummaryRoute.url())
   const tasksTreeGetUrl = getApiUrlForRoute(getTasksTreeRoute.url())
   const taskItemReorderDayUrl = getApiUrlForRoute(reorderTaskDayItemsRoute.url())
   const taskReleaseDayUrl = getApiUrlForRoute(releaseTaskDayItemsRoute.url())
@@ -324,6 +347,13 @@ export const journalPageRoute = app.html('/', async (ctx, req) => {
           journalNotesGetUrl={journalNotesGetUrl}
           journalNotesUpdateUrl={journalNotesUpdateUrl}
           journalNotesDeleteUrl={journalNotesDeleteUrl}
+          journalDayGetUrl={journalDayGetUrl}
+          journalDaySaveUrl={journalDaySaveUrl}
+          journalDayEntryInitial={journalDayEntryInitial}
+          journalWeekGetUrl={journalWeekGetUrl}
+          journalWeekSaveUrl={journalWeekSaveUrl}
+          journalWeekSaveSummaryUrl={journalWeekSaveSummaryUrl}
+          journalWeekEntryInitial={journalWeekEntryInitial}
           tasksTreeInitial={tasksTreeInitial}
           tasksTreeGetUrl={tasksTreeGetUrl}
           taskItemReorderDayUrl={taskItemReorderDayUrl}

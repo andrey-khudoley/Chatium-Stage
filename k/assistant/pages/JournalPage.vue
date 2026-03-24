@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, markRaw, onMounted, onUnmounted, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import Header from '../components/Header.vue'
 import GlobalGlitch from '../components/GlobalGlitch.vue'
 import AppFooter from '../components/AppFooter.vue'
@@ -9,6 +9,7 @@ import JournalWeekPane from '../components/journal/JournalWeekPane.vue'
 import JournalDayPane from '../components/journal/JournalDayPane.vue'
 import type { TasksTreeDto } from '../lib/tasks-types'
 import JournalHabitsPane from '../components/journal/JournalHabitsPane.vue'
+import JournalDayInDevelopmentPane from '../components/journal/JournalDayInDevelopmentPane.vue'
 import JournalNav from '../components/journal/JournalNav.vue'
 import { subscribeBootStaticReady, scheduleHideBootLoader } from '../shared/bootUi'
 import { createComponentLogger } from '../shared/logger'
@@ -21,11 +22,11 @@ declare global {
   }
 }
 
-type JournalTabId = 'notebook' | 'month' | 'week' | 'day' | 'habits'
+type JournalTabId = 'notebook' | 'month' | 'week' | 'tasks' | 'day' | 'habits'
 
 const TAB_QUERY_KEY = 'tab'
 
-const JOURNAL_TAB_IDS: JournalTabId[] = ['notebook', 'month', 'week', 'day', 'habits']
+const JOURNAL_TAB_IDS: JournalTabId[] = ['notebook', 'month', 'week', 'tasks', 'day', 'habits']
 
 function parseTabFromSearch(search: string): JournalTabId | null {
   const q = search.startsWith('?') ? search.slice(1) : search
@@ -51,8 +52,7 @@ function applyTabToUrl(tab: JournalTabId) {
 }
 
 type JournalNoteSummary = { id: string; title: string }
-
-const props = defineProps<{
+interface JournalPageProps {
   projectTitle: string
   indexUrl: string
   profileUrl: string
@@ -66,6 +66,13 @@ const props = defineProps<{
   journalNotesGetUrl?: string
   journalNotesUpdateUrl?: string
   journalNotesDeleteUrl?: string
+  journalDayGetUrl?: string
+  journalDaySaveUrl?: string
+  journalDayEntryInitial?: unknown
+  journalWeekGetUrl?: string
+  journalWeekSaveUrl?: string
+  journalWeekSaveSummaryUrl?: string
+  journalWeekEntryInitial?: unknown
   tasksTreeInitial?: TasksTreeDto
   tasksTreeGetUrl?: string
   taskItemReorderDayUrl?: string
@@ -75,21 +82,25 @@ const props = defineProps<{
   pomodoroAssignTaskUrl?: string
   pomodoroStateGetUrl?: string
   pomodoroControlUrl?: string
-  /** Вкладка из `?tab=` при SSR; на клиенте приоритет у текущего `window.location` */
+  // Вкладка из ?tab= при SSR; на клиенте приоритет у текущего window.location.
   journalTabInitial?: JournalTabId
-}>()
+}
+
+const props = defineProps<JournalPageProps>()
 
 const bootLoaderDone = ref(false)
 
 const tabComponents: Record<JournalTabId, object> = {
-  notebook: markRaw(JournalNotebookPane),
-  month: markRaw(JournalMonthPane),
-  week: markRaw(JournalWeekPane),
-  day: markRaw(JournalDayPane),
-  habits: markRaw(JournalHabitsPane),
+  notebook: JournalNotebookPane,
+  month: JournalMonthPane,
+  week: JournalWeekPane,
+  tasks: JournalDayPane,
+  day: JournalDayInDevelopmentPane,
+  habits: JournalHabitsPane,
 }
 
 const tabs: { id: JournalTabId; label: string }[] = [
+  { id: 'tasks', label: 'Задачи' },
   { id: 'day', label: 'День' },
   { id: 'week', label: 'Неделя' },
   { id: 'month', label: 'Месяц' },
@@ -111,10 +122,9 @@ const journalNotes = ref<JournalNoteSummary[]>([...(props.journalNotesInitial ??
 
 watch(
   () => props.journalNotesInitial,
-  (next) => {
+  (next: JournalNoteSummary[] | undefined) => {
     journalNotes.value = [...(next ?? [])]
-  },
-  { deep: true }
+  }
 )
 
 const notebookOpenEditorTick = ref(0)
@@ -122,7 +132,7 @@ const notebookCreateError = ref('')
 
 const showNotebookNavToolbar = computed(() => activeTab.value === 'notebook')
 const hasTasksPageUrl = computed(() => Boolean(props.tasksPageUrl?.trim()))
-const showDayNavToolbar = computed(() => activeTab.value === 'day' && hasTasksPageUrl.value)
+const showTasksNavToolbar = computed(() => activeTab.value === 'tasks' && hasTasksPageUrl.value)
 
 const notebookCreateTitle = computed(() =>
   props.isAuthenticated ? 'Открыть редактор новой заметки' : 'Войдите в аккаунт, чтобы создавать заметки'
@@ -167,7 +177,7 @@ const notebookPaneProps = computed(() => ({
   openNotebookEditorRequest: notebookOpenEditorTick.value
 }))
 
-const dayPaneProps = computed(() => ({
+const tasksPaneProps = computed(() => ({
   isAuthenticated: props.isAuthenticated,
   tasksTreeInitial: props.tasksTreeInitial ?? { clients: [], projects: [], tasks: [] },
   tasksTreeGetUrl: props.tasksTreeGetUrl ?? '',
@@ -178,9 +188,26 @@ const dayPaneProps = computed(() => ({
   pomodoroAssignTaskUrl: props.pomodoroAssignTaskUrl ?? ''
 }))
 
+const dayInDevelopmentPaneProps = computed(() => ({
+  isAuthenticated: props.isAuthenticated,
+  journalDayGetUrl: props.journalDayGetUrl ?? '',
+  journalDaySaveUrl: props.journalDaySaveUrl ?? '',
+  journalDayEntryInitial: props.journalDayEntryInitial ?? null
+}))
+
 const panePropsForTab = computed(() => {
   if (activeTab.value === 'notebook') return notebookPaneProps.value
-  if (activeTab.value === 'day') return dayPaneProps.value
+  if (activeTab.value === 'tasks') return tasksPaneProps.value
+  if (activeTab.value === 'day') return dayInDevelopmentPaneProps.value
+  if (activeTab.value === 'week') {
+    return {
+      isAuthenticated: props.isAuthenticated,
+      journalWeekGetUrl: props.journalWeekGetUrl ?? '',
+      journalWeekSaveUrl: props.journalWeekSaveUrl ?? '',
+      journalWeekSaveSummaryUrl: props.journalWeekSaveSummaryUrl ?? '',
+      journalWeekEntryInitial: props.journalWeekEntryInitial ?? null
+    }
+  }
   return {}
 })
 
@@ -259,7 +286,7 @@ const openChatiumLink = () => {
           :tabs="tabs"
           :activeTab="activeTab"
           :showNotebookToolbar="showNotebookNavToolbar"
-          :showDayToolbar="showDayNavToolbar"
+          :showTasksToolbar="showTasksNavToolbar"
           :isAuthenticated="props.isAuthenticated"
           :notebookCreateTitle="notebookCreateTitle"
           :notebookCreateError="notebookCreateError"

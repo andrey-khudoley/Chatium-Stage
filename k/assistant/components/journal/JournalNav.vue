@@ -5,7 +5,7 @@ const props = defineProps<{
   tabs: JournalNavTab[]
   activeTab: string
   showNotebookToolbar: boolean
-  showDayToolbar: boolean
+  showTasksToolbar: boolean
   isAuthenticated: boolean
   notebookCreateTitle: string
   notebookCreateError: string
@@ -36,7 +36,7 @@ const emit = defineEmits<{
     </ul>
 
     <div
-      v-if="props.showNotebookToolbar || props.showDayToolbar"
+      v-if="props.showNotebookToolbar || props.showTasksToolbar"
       class="journal-nav-divider"
       aria-hidden="true"
     />
@@ -59,7 +59,7 @@ const emit = defineEmits<{
     </Transition>
 
     <Transition name="journal-nav-toolbar">
-      <div v-if="props.showDayToolbar" class="journal-nav-toolbar">
+      <div v-if="props.showTasksToolbar" class="journal-nav-toolbar">
         <button type="button" class="journal-nav-action journal-nav-action--tasks" @click="emit('open-all-tasks')">
           Все задачи
         </button>

@@ -82,6 +82,21 @@ export const customScrollbarStyles = `
 `
 
 export const formControlStyles = `
+  :where(
+    input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='color']):not([type='file']),
+    textarea,
+    select
+  ):focus,
+  :where(
+    input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='color']):not([type='file']),
+    textarea,
+    select
+  ):focus-visible {
+    outline: none;
+    /* Убираем системную (в т.ч. жёлтую) обводку браузера по всему проекту */
+    box-shadow: none;
+  }
+
   .jn-input,
   .jn-textarea {
     transition: border-color 0.18s ease, box-shadow 0.18s ease;
