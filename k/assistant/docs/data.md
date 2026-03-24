@@ -27,7 +27,8 @@
 - `repos/journal-week-entries.repo.ts` — getWeekByUserAndMonday, saveDayPlanForUser, saveWeekSummaryForUser (чтение/запись недельного плана по дням + общего weekly-summary).
 - `repos/tasks.repo.ts` — getTreeForUser, CRUD клиентов/проектов/задач, reorderTasks (порядок в проекте), reorderDayTasks (порядок задач со статусом `in_progress` для вкладки «День»), releaseAllInProgressToTodo (все «В работе» → «К выполнению»), addPomodoroSecondsToTask (накопление времени работы/отдыха в задаче при активном Pomodoro); при входе в `in_progress` выставляется `daySortOrder`, при выходе — 0; удаление клиента каскадом (проекты и задачи), проекта — с задачами.
 - `repos/pomodoro.repo.ts` — getOrCreateState/getOrCreateStateRow, updateState, getOrCreateStateWithDailyStats/applyStatsPeriodIfNeeded (сброс `totalWorkSec`/`totalRestSec`/`tasksCompletedToday` при смене `statsPeriodDayKey` без изменения `updatedAtMs`); нормализация и маппинг состояния Pomodoro между Heap-строкой и DTO.
-- `repos/pomodoro-launches.repo.ts` — append-only журнал сегментов Pomodoro: открытие сегмента при запуске/продолжении, закрытие при паузе/стопе/автопереходе/смене задачи, расчёт `durationSec`.
+- `repos/pomodoro-launches.repo.ts` — append-only журнал сегментов Pomodoro: открытие сегмента при запуске/продолжении, закрытие при паузе/стопе/автопереходе/смене задачи, расчёт `durationSec`; `getWorkFocusByDayForMonth` — суммарное время work-фаз по дням для вкладки «Месяц».
+- `repos/tasks.repo.ts` — дополнительно: `getCompletedTasksSummaryForMonth` — завершённые задачи (`status: done`) с `updatedAt` в указанном месяце, сгруппированные по дню обновления.
 
 ## Библиотеки (lib/)
 - `lib/settings.lib.ts` — getSetting, getAllSettings, setSetting, getLogLevel, getLogsLimit, getLogWebhook (бизнес-логика, дефолты, валидация).

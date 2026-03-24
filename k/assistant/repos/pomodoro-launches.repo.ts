@@ -58,3 +58,30 @@ export async function closeOpenLaunchByUser(
   if (!openLaunch) return null
   return closeLaunch(ctx, openLaunch.id, endedAtMs, endReason)
 }
+
+function msToDayKey(ms: number): string {
+  const d = new Date(ms)
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
+export async function getWorkFocusByDayForMonth(
+  ctx: app.Ctx,
+  userId: string,
+  year: number,
+  month: number
+): Promise<Record<string, number>> {
+  const monthStartMs = new Date(year, month - 1, 1).getTime()
+  const monthEndMs = new Date(year, month, 1).getTime()
+
+  const launches = await PomodoroLaunches.findAll(ctx, { where: { userId, phase: 'work' } })
+
+  const focusByDay: Record<string, number> = {}
+  for (const launch of launches) {
+    if (!launch.endedAtMs || !launch.durationSec) continue
+    if (launch.startedAtMs >= monthStartMs && launch.startedAtMs < monthEndMs) {
+      const key = msToDayKey(launch.startedAtMs)
+      focusByDay[key] = (focusByDay[key] ?? 0) + (launch.durationSec ?? 0)
+    }
+  }
+  return focusByDay
+}

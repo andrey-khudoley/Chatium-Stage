@@ -72,6 +72,14 @@
 | GET | /api/journal/day/get?dayKey= | api/journal/day/get.ts | RealUser | Получить запись дня: `{ success, entry }`, где `entry = { dayKey, night, morning, day, evening }`, а каждый сегмент — `{ value, locked }`. `dayKey` опционален (если не передан, сервер использует fallback-ключ по `Europe/Moscow`). |
 | POST | /api/journal/day/save | api/journal/day/save.ts | RealUser | Сохранить один сегмент дня. Body: `{ dayKey?, segment, value, locked }`, где `segment ∈ { night, morning, day, evening }`. Ответ: `{ success, entry }` (актуальный снимок всего дня после записи). |
 
+## Журнал — месяц (api/journal/month/)
+
+Агрегированные данные месяца: завершённые задачи (по `updatedAt` из Heap) и время фокуса (Pomodoro work-сегменты) по дням.
+
+| Method | Path | File | Auth | Назначение |
+| --- | --- | --- | --- | --- |
+| GET | /api/journal/month/data?year=&month= | api/journal/month/data.ts | RealUser | Данные месяца: `{ success, year, month, completedTasks, focusByDay }`. `completedTasks` — массив `{ id, title, projectName, clientName, dayKey }` — задачи со статусом `done`, `updatedAt` которых попадает в указанный месяц. `focusByDay` — объект `{ "YYYY-MM-DD": seconds }` — суммарная продолжительность work-фаз Pomodoro по дням. |
+
 ## Журнал — неделя (api/journal/week/)
 
 Недельный план пользователя: по одному многострочному полю на каждый день недели (`Пн..Вс`) с фиксацией/разблокировкой.

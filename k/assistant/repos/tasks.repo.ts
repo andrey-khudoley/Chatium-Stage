@@ -513,3 +513,56 @@ export async function reorderProjects(
   }
   return true
 }
+
+export type CompletedTaskSummaryDto = {
+  id: string
+  title: string
+  projectName: string
+  clientName: string
+  dayKey: string
+}
+
+function heapDateToMs(d: unknown): number {
+  if (d instanceof Date) return d.getTime()
+  if (typeof d === 'number') return d
+  if (typeof d === 'string') return new Date(d).getTime()
+  return 0
+}
+
+function msToDayKey(ms: number): string {
+  const d = new Date(ms)
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
+export async function getCompletedTasksSummaryForMonth(
+  ctx: app.Ctx,
+  userId: string,
+  year: number,
+  month: number
+): Promise<CompletedTaskSummaryDto[]> {
+  const monthStartMs = new Date(year, month - 1, 1).getTime()
+  const monthEndMs = new Date(year, month, 1).getTime()
+
+  const tasks = await TaskItems.findAll(ctx, { where: { userId, status: 'done' } })
+  const projects = await TaskProjects.findAll(ctx, { where: { userId } })
+  const clients = await TaskClients.findAll(ctx, { where: { userId } })
+  const projectMap = new Map(projects.map((p) => [p.id, p]))
+  const clientMap = new Map(clients.map((c) => [c.id, c]))
+
+  const result: CompletedTaskSummaryDto[] = []
+  for (const task of tasks) {
+    const updatedMs = heapDateToMs((task as Record<string, unknown>).updatedAt)
+    if (updatedMs >= monthStartMs && updatedMs < monthEndMs) {
+      const project = projectMap.get(task.projectId)
+      const client = project ? clientMap.get(project.clientId) : null
+      result.push({
+        id: task.id,
+        title: task.title,
+        projectName: project?.name ?? '',
+        clientName: client?.name ?? '',
+        dayKey: msToDayKey(updatedMs)
+      })
+    }
+  }
+  return result
+}

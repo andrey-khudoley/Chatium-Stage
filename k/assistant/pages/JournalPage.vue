@@ -82,6 +82,7 @@ interface JournalPageProps {
   pomodoroAssignTaskUrl?: string
   pomodoroStateGetUrl?: string
   pomodoroControlUrl?: string
+  journalMonthDataUrl?: string
   // Вкладка из ?tab= при SSR; на клиенте приоритет у текущего window.location.
   journalTabInitial?: JournalTabId
 }
@@ -206,6 +207,16 @@ const panePropsForTab = computed(() => {
       journalWeekSaveUrl: props.journalWeekSaveUrl ?? '',
       journalWeekSaveSummaryUrl: props.journalWeekSaveSummaryUrl ?? '',
       journalWeekEntryInitial: props.journalWeekEntryInitial ?? null
+    }
+  }
+  if (activeTab.value === 'month') {
+    return {
+      isAuthenticated: props.isAuthenticated,
+      journalMonthDataUrl: props.journalMonthDataUrl ?? '',
+      journalDayGetUrl: props.journalDayGetUrl ?? '',
+      journalDaySaveUrl: props.journalDaySaveUrl ?? '',
+      journalWeekGetUrl: props.journalWeekGetUrl ?? '',
+      journalWeekSaveUrl: props.journalWeekSaveUrl ?? ''
     }
   }
   return {}
