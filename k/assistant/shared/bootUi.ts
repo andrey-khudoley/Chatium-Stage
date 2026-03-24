@@ -1,5 +1,4 @@
 // @shared
-import { nextTick } from 'vue'
 
 const BOOT_STATIC_READY = 'boot-static-ready'
 
@@ -38,7 +37,7 @@ export function subscribeBootStaticReady(cb: () => void): () => void {
 }
 
 /**
- * После отрисовки Vue: шрифты, nextTick, кадр — затем скрытие прелоадера (синхронно с реальной отрисовкой).
+ * После отрисовки Vue: шрифты, microtask, кадр — затем скрытие прелоадера (синхронно с реальной отрисовкой).
  */
 export function scheduleHideBootLoader(): void {
   void runHideBootLoader()
@@ -46,7 +45,7 @@ export function scheduleHideBootLoader(): void {
 
 async function runHideBootLoader() {
   await waitForFontsLoaded()
-  await nextTick()
+  await Promise.resolve()
   await new Promise<void>((resolve) => {
     requestAnimationFrame(() => {
       requestAnimationFrame(() => resolve())

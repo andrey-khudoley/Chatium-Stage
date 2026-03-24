@@ -29,25 +29,25 @@ export type ServerLogEntry = {
   payload?: unknown
 }
 
-/** Маппинг severity (0–7) в читаемое имя уровня для префикса. */
-const SEVERITY_TO_LEVEL: Record<number, string> = {
-  0: 'emergency',
-  1: 'alert',
-  2: 'critical',
+/** Маппинг severity (0–7) в уровни, поддерживаемые ctx.account.log. */
+const SEVERITY_TO_LEVEL: Record<number, 'error' | 'warn' | 'info' | 'debug'> = {
+  0: 'error',
+  1: 'error',
+  2: 'error',
   3: 'error',
-  4: 'warning',
-  5: 'notice',
+  4: 'warn',
+  5: 'info',
   6: 'info',
   7: 'debug'
 }
 
-function severityToLevelName(severity: number): string {
+function severityToLevelName(severity: number): 'error' | 'warn' | 'info' | 'debug' {
   const s = Math.max(0, Math.min(7, Math.floor(severity)))
   return SEVERITY_TO_LEVEL[s] ?? 'info'
 }
 
 /** Внутренняя запись с timestamp и level, вычисленными в lib. */
-type FormattedEntry = { timestamp: number; level: string; message: string }
+type FormattedEntry = { timestamp: number; level: 'error' | 'warn' | 'info' | 'debug'; message: string }
 
 /**
  * Форматирует строку вывода лога: [DD.MM.YYYY HH:mm:ss.SSS] [LEVEL] message

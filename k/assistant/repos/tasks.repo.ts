@@ -2,6 +2,8 @@ import { TaskClients } from '../tables/task-clients.table'
 import { TaskProjects } from '../tables/task-projects.table'
 import { TaskItems, TASK_STATUSES } from '../tables/task-items.table'
 import type { TaskClientDto, TaskItemDto, TaskProjectDto, TasksTreeDto, TaskStatus } from '../lib/tasks-types'
+import type { TaskProjectsRow } from '../tables/task-projects.table'
+import type { TaskItemsRow } from '../tables/task-items.table'
 
 export type { TaskClientDto, TaskItemDto, TaskProjectDto, TasksTreeDto, TaskStatus } from '../lib/tasks-types'
 
@@ -252,13 +254,13 @@ export async function updateProject(
     data.details !== undefined
       ? {
           /** `null` сбрасывает Heap.Optional (см. inner/docs/008-heap.md, опциональные поля). */
-          details: normalizeHeapOptionalDetailsText(data.details) ?? (null as TaskProjects.T['details'])
+          details: normalizeHeapOptionalDetailsText(data.details) ?? (null as TaskProjectsRow['details'])
         }
       : {}
   const contextPatch =
     data.context !== undefined
       ? {
-          context: normalizeHeapOptionalDetailsText(data.context) ?? (null as TaskProjects.T['context'])
+          context: normalizeHeapOptionalDetailsText(data.context) ?? (null as TaskProjectsRow['context'])
         }
       : {}
   const row = await TaskProjects.update(ctx, {
@@ -370,14 +372,14 @@ export async function updateTask(
     data.details !== undefined
       ? {
           details:
-            normalizeHeapOptionalDetailsText(data.details) ?? (null as TaskItems.T['details'])
+            normalizeHeapOptionalDetailsText(data.details) ?? (null as TaskItemsRow['details'])
         }
       : {}
   const contextPatch =
     data.context !== undefined
       ? {
           context:
-            normalizeHeapOptionalDetailsText(data.context) ?? (null as TaskItems.T['context'])
+            normalizeHeapOptionalDetailsText(data.context) ?? (null as TaskItemsRow['context'])
         }
       : {}
   const patch = {

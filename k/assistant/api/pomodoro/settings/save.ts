@@ -1,6 +1,7 @@
 // @shared-route
 import { requireRealUser } from '@app/auth'
 import * as pomodoroLib from '../../../lib/pomodoro.lib'
+import { normalizePhaseChangeSoundId } from '../../../lib/pomodoro-types'
 
 export const savePomodoroSettingsRoute = app
   .body((s) => ({
@@ -35,7 +36,7 @@ export const savePomodoroSettingsRoute = app
           afterLongRest: req.body.afterLongRest,
           autoStartRest: req.body.autoStartRest,
           autoStartNextCycle: req.body.autoStartNextCycle,
-          phaseChangeSound: req.body.phaseChangeSound,
+          phaseChangeSound: normalizePhaseChangeSoundId(req.body.phaseChangeSound),
         },
         req.body.statsDayKey,
       )
