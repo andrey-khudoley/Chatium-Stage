@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { createComponentLogger } from '../../shared/logger'
 import WysiwygEditor from './WysiwygEditor.vue'
 
@@ -58,11 +58,17 @@ const noteDate = ref<string | null>(null)
 const isArchived = ref(false)
 
 const catDropOpen = ref(false)
+const exportDropOpen = ref(false)
 
 onMounted(async () => {
+  document.addEventListener('click', onDocumentClick)
   if (!props.isCreate && props.noteId) {
     await loadNote(props.noteId)
   }
+})
+
+onUnmounted(() => {
+  document.removeEventListener('click', onDocumentClick)
 })
 
 async function loadNote(id: string) {
@@ -157,6 +163,179 @@ function filteredTasks() {
   if (!linkedProjectId.value) return props.taskItems
   return props.taskItems.filter((t) => t.projectId === linkedProjectId.value)
 }
+
+function onDocumentClick(e: MouseEvent) {
+  const target = e.target as HTMLElement
+  if (!target.closest('.nb-editor-export-wrap')) {
+    exportDropOpen.value = false
+  }
+}
+
+function safeFileName(rawTitle: string, ext: string): string {
+  const base = (rawTitle.trim() || 'journal-note')
+    .replace(/[\\/:*?"<>|]+/g, '-')
+    .replace(/\s+/g, ' ')
+    .slice(0, 120)
+  return `${base || 'journal-note'}.${ext}`
+}
+
+function downloadAsFile(textValue: string, ext: string, mimeType: string) {
+  const blob = new Blob([textValue], { type: `${mimeType};charset=utf-8` })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = safeFileName(title.value, ext)
+  a.click()
+  setTimeout(() => URL.revokeObjectURL(url), 1000)
+}
+
+function htmlToPlainText(html: string): string {
+  const doc = new DOMParser().parseFromString(html || '', 'text/html')
+  const text = doc.body.textContent ?? ''
+  return text.replace(/\n{3,}/g, '\n\n').trim()
+}
+
+function inlineToMarkdown(node: ChildNode): string {
+  if (node.nodeType === Node.TEXT_NODE) return node.textContent || ''
+  if (!(node instanceof HTMLElement)) return ''
+
+  const tag = node.tagName.toLowerCase()
+  const inner = Array.from(node.childNodes).map(inlineToMarkdown).join('')
+
+  if (tag === 'strong' || tag === 'b') return `**${inner}**`
+  if (tag === 'em' || tag === 'i') return `*${inner}*`
+  if (tag === 'u') return `<u>${inner}</u>`
+  if (tag === 's' || tag === 'strike') return `~~${inner}~~`
+  if (tag === 'code') return `\`${inner}\``
+  if (tag === 'a') {
+    const href = node.getAttribute('href') || '#'
+    return `[${inner || href}](${href})`
+  }
+  if (tag === 'br') return '\n'
+  return inner
+}
+
+function listToMarkdown(listEl: HTMLElement, level = 0): string {
+  const isOrdered = listEl.tagName.toLowerCase() === 'ol'
+  const items = Array.from(listEl.children).filter((x): x is HTMLElement => x.tagName.toLowerCase() === 'li')
+  return items.map((item, i) => {
+    const prefix = isOrdered ? `${i + 1}. ` : '- '
+    const indent = '  '.repeat(level)
+    const own = Array.from(item.childNodes)
+      .filter((child) => !(child instanceof HTMLElement && (child.tagName.toLowerCase() === 'ul' || child.tagName.toLowerCase() === 'ol')))
+      .map(inlineToMarkdown)
+      .join('')
+      .trim()
+    const nested = Array.from(item.children)
+      .filter((child): child is HTMLElement => child.tagName.toLowerCase() === 'ul' || child.tagName.toLowerCase() === 'ol')
+      .map((child) => `\n${listToMarkdown(child, level + 1)}`)
+      .join('')
+    return `${indent}${prefix}${own}${nested}`
+  }).join('\n')
+}
+
+function blockToMarkdown(node: ChildNode): string {
+  if (node.nodeType === Node.TEXT_NODE) return (node.textContent || '').trim()
+  if (!(node instanceof HTMLElement)) return ''
+
+  const tag = node.tagName.toLowerCase()
+  const text = Array.from(node.childNodes).map(inlineToMarkdown).join('').trim()
+
+  if (tag === 'h1') return `# ${text}`
+  if (tag === 'h2') return `## ${text}`
+  if (tag === 'h3') return `### ${text}`
+  if (tag === 'h4') return `#### ${text}`
+  if (tag === 'h5') return `##### ${text}`
+  if (tag === 'h6') return `###### ${text}`
+  if (tag === 'blockquote') return text.split('\n').map((line) => `> ${line}`).join('\n')
+  if (tag === 'pre') return `\`\`\`\n${node.textContent?.trim() || ''}\n\`\`\``
+  if (tag === 'hr') return '---'
+  if (tag === 'ul' || tag === 'ol') return listToMarkdown(node)
+  if (tag === 'p' || tag === 'div') return text
+  if (tag === 'table') return text
+  return text
+}
+
+function htmlToMarkdown(html: string): string {
+  const doc = new DOMParser().parseFromString(html || '', 'text/html')
+  const blocks = Array.from(doc.body.childNodes)
+    .map(blockToMarkdown)
+    .map((x) => x.trim())
+    .filter(Boolean)
+  return blocks.join('\n\n').trim()
+}
+
+function getEditorHtml(): string {
+  return content.value || '<p><br></p>'
+}
+
+function exportAsTxt() {
+  const plain = htmlToPlainText(getEditorHtml())
+  downloadAsFile(plain, 'txt', 'text/plain')
+  exportDropOpen.value = false
+}
+
+function exportAsMarkdown() {
+  const md = htmlToMarkdown(getEditorHtml())
+  downloadAsFile(md, 'md', 'text/markdown')
+  exportDropOpen.value = false
+}
+
+function escapePrintHtml(s: string): string {
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+}
+
+function exportAsPdf() {
+  const printWindow = window.open('', '_blank', 'width=980,height=760')
+  if (!printWindow) {
+    error.value = 'Не удалось открыть окно печати. Разрешите всплывающие окна.'
+    return
+  }
+
+  const currentTitle = title.value.trim() || 'Без названия'
+  const printableBody = getEditorHtml()
+
+  const html = `
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <title>${escapePrintHtml(currentTitle)}</title>
+  <style>
+    body { margin: 0; padding: 24px; font-family: Georgia, "Times New Roman", serif; color: #111; background: #fff; }
+    .doc { max-width: 820px; margin: 0 auto; }
+    h1.doc-title { margin: 0 0 8px; font-size: 28px; line-height: 1.2; }
+    .doc-meta { margin: 0 0 20px; color: #666; font-size: 13px; }
+    .doc-content { font-size: 16px; line-height: 1.6; word-break: break-word; }
+    .doc-content img, .doc-content video, .doc-content iframe { max-width: 100%; height: auto; }
+    .doc-content table { border-collapse: collapse; width: 100%; margin: 10px 0; }
+    .doc-content th, .doc-content td { border: 1px solid #ddd; padding: 6px 8px; text-align: left; vertical-align: top; }
+    .doc-content pre { background: #f6f6f6; border: 1px solid #e3e3e3; padding: 12px; overflow: auto; }
+    .doc-content blockquote { margin: 12px 0; padding-left: 12px; border-left: 3px solid #bbb; color: #444; }
+    @media print {
+      body { padding: 0; }
+      .doc { max-width: none; }
+    }
+  </style>
+</head>
+<body>
+  <article class="doc">
+    <h1 class="doc-title">${escapePrintHtml(currentTitle)}</h1>
+    <section class="doc-content">${printableBody}</section>
+  </article>
+</body>
+</html>`
+
+  printWindow.document.open()
+  printWindow.document.write(html)
+  printWindow.document.close()
+  printWindow.focus()
+  setTimeout(() => printWindow.print(), 120)
+  exportDropOpen.value = false
+}
 </script>
 
 <template>
@@ -171,6 +350,18 @@ function filteredTasks() {
           <input type="checkbox" v-model="isArchived" />
           <span>В архиве</span>
         </label>
+        <div class="nb-editor-export-wrap">
+          <button type="button" class="nb-editor-export-btn" @click.stop="exportDropOpen = !exportDropOpen">
+            <i class="fa-solid fa-file-export" aria-hidden="true" />
+            <span>Экспорт</span>
+            <i class="fa-solid fa-chevron-down" aria-hidden="true" />
+          </button>
+          <div v-if="exportDropOpen" class="nb-editor-export-drop">
+            <button type="button" class="nb-editor-export-item" @click="exportAsTxt">Скачать TXT (без разметки)</button>
+            <button type="button" class="nb-editor-export-item" @click="exportAsMarkdown">Скачать MD (с разметкой)</button>
+            <button type="button" class="nb-editor-export-item" @click="exportAsPdf">Печать в PDF…</button>
+          </div>
+        </div>
         <button
           type="button"
           class="nb-editor-save"
@@ -336,6 +527,69 @@ function filteredTasks() {
   border-radius: 2px;
   cursor: pointer;
   transition: var(--transition);
+}
+
+.nb-editor-export-wrap {
+  position: relative;
+}
+
+.nb-editor-export-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.28rem;
+  padding: 0.3rem 0.58rem;
+  font-family: inherit;
+  font-size: 0.6rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: 2px;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.nb-editor-export-btn:hover {
+  color: var(--color-text);
+  border-color: var(--color-border-light);
+}
+
+.nb-editor-export-drop {
+  position: absolute;
+  top: calc(100% + 0.2rem);
+  right: 0;
+  min-width: 13.5rem;
+  z-index: 80;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border-light);
+  border-radius: 2px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.45);
+  overflow: hidden;
+}
+
+.nb-editor-export-item {
+  text-align: left;
+  font-family: inherit;
+  font-size: 0.62rem;
+  letter-spacing: 0.04em;
+  color: var(--color-text-secondary);
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--color-border);
+  padding: 0.45rem 0.55rem;
+  cursor: pointer;
+}
+
+.nb-editor-export-item:last-child {
+  border-bottom: none;
+}
+
+.nb-editor-export-item:hover {
+  background: var(--color-accent-light);
+  color: var(--color-text);
 }
 
 .nb-editor-save:hover:not(:disabled) {

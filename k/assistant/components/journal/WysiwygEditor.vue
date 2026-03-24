@@ -16,9 +16,13 @@ const toolbarRef = ref<InstanceType<typeof WysiwygToolbar> | null>(null)
 const activeStates = ref<Record<string, boolean>>({})
 const currentBlock = ref('p')
 const isInTable = ref(false)
+const editorMode = ref<'wysiwyg' | 'source'>('wysiwyg')
+const sourceHtml = ref('')
+const lastKnownHtml = ref('')
 
 let savedRange: Range | null = null
 let ignoreInput = false
+const EMPTY_LINE_HTML = '<p class="wy-blank-line"><br></p>'
 
 // Media overlay state
 const selectedMedia = ref<HTMLElement | null>(null)
@@ -36,17 +40,51 @@ function ensureHtml(raw: string): string {
   if (/<[a-z][\s\S]*>/i.test(raw)) return raw
   return raw
     .split('\n')
-    .map(line => `<p>${line ? escapeHtml(line) : '<br>'}</p>`)
+    .map(line => line ? `<p>${escapeHtml(line)}</p>` : EMPTY_LINE_HTML)
     .join('')
+}
+
+function normalizeSourceHtml(raw: string): string {
+  // Browser may prepend a technical newline in textarea source mode.
+  return raw.replace(/^[\r\n]+/, '')
 }
 
 function escapeHtml(s: string): string {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 }
 
+function hasMeaningfulContent(el: HTMLElement): boolean {
+  const normalizedText = (el.textContent || '').replace(/\u00A0/g, ' ').trim()
+  if (normalizedText.length > 0) return true
+  return Array.from(el.children).some(child => child.tagName !== 'BR')
+}
+
+function normalizeBlankLineParagraphs(root: HTMLElement): boolean {
+  const nodes = Array.from(root.querySelectorAll('p.wy-blank-line'))
+  let changed = false
+  for (const p of nodes) {
+    if (hasMeaningfulContent(p)) {
+      p.classList.remove('wy-blank-line')
+      changed = true
+      continue
+    }
+    if (p.innerHTML.trim() !== '<br>') {
+      p.innerHTML = '<br>'
+      changed = true
+    }
+  }
+  return changed
+}
+
 onMounted(() => {
   if (editorRef.value) {
     editorRef.value.innerHTML = ensureHtml(props.modelValue)
+    normalizeBlankLineParagraphs(editorRef.value)
+    sourceHtml.value = editorRef.value.innerHTML
+    lastKnownHtml.value = editorRef.value.innerHTML
+  } else {
+    sourceHtml.value = ensureHtml(props.modelValue)
+    lastKnownHtml.value = sourceHtml.value
   }
   document.addEventListener('selectionchange', updateState)
   document.addEventListener('click', onDocumentClick)
@@ -62,12 +100,57 @@ onUnmounted(() => {
 })
 
 watch(() => props.modelValue, (val) => {
-  if (!editorRef.value) return
-  if (editorRef.value.innerHTML !== val) {
+  const normalized = ensureHtml(val)
+  lastKnownHtml.value = normalized
+  if (editorMode.value === 'source') {
+    sourceHtml.value = normalized
+  }
+  if (!editorRef.value || editorMode.value !== 'wysiwyg') return
+  if (editorRef.value.innerHTML !== normalized) {
     ignoreInput = true
-    editorRef.value.innerHTML = ensureHtml(val)
+    editorRef.value.innerHTML = normalized
+    normalizeBlankLineParagraphs(editorRef.value)
   }
 })
+
+function setEditorMode(mode: 'wysiwyg' | 'source') {
+  if (editorMode.value === mode) return
+
+  if (mode === 'source') {
+    const currentHtml = editorRef.value?.innerHTML || sourceHtml.value || props.modelValue || lastKnownHtml.value
+    const normalizedCurrentHtml = ensureHtml(currentHtml)
+    sourceHtml.value = normalizeSourceHtml(normalizedCurrentHtml)
+    lastKnownHtml.value = normalizedCurrentHtml
+    clearMediaSelection()
+    editorMode.value = mode
+    return
+  }
+
+  const htmlToApply = sourceHtml.value || props.modelValue || lastKnownHtml.value
+  const normalizedHtml = ensureHtml(htmlToApply)
+  sourceHtml.value = normalizedHtml
+  lastKnownHtml.value = normalizedHtml
+  editorMode.value = mode
+  nextTick(() => {
+    // In `v-if` branch editorRef is recreated after mode switch.
+    // Apply html only after DOM updates, otherwise content may be lost.
+    if (editorRef.value) {
+      ignoreInput = true
+      editorRef.value.innerHTML = normalizedHtml
+      normalizeBlankLineParagraphs(editorRef.value)
+      editorRef.value.focus()
+      saveSelection()
+      const normalizedFromDom = editorRef.value.innerHTML
+      lastKnownHtml.value = normalizedFromDom
+      emit('update:modelValue', normalizedFromDom)
+    }
+  })
+}
+
+function onSourceInput() {
+  lastKnownHtml.value = ensureHtml(sourceHtml.value)
+  emit('update:modelValue', sourceHtml.value)
+}
 
 function onInput() {
   if (ignoreInput) {
@@ -75,8 +158,226 @@ function onInput() {
     return
   }
   if (editorRef.value) {
-    emit('update:modelValue', editorRef.value.innerHTML)
+    normalizeBlankLineParagraphs(editorRef.value)
+    const html = editorRef.value.innerHTML
+    lastKnownHtml.value = html
+    emit('update:modelValue', html)
   }
+}
+
+function normalizeClipboardText(raw: string): string {
+  return raw.replace(/\r\n?/g, '\n')
+}
+
+function looksLikeMarkdown(text: string): boolean {
+  const lines = normalizeClipboardText(text).split('\n')
+  const sample = lines.slice(0, 80).join('\n')
+  if (!sample.trim()) return false
+
+  const signals = [
+    /^#{1,6}\s/m,
+    /^>\s/m,
+    /^(\*|-|\+)\s/m,
+    /^\d+\.\s/m,
+    /```/,
+    /\[[^\]]+\]\([^)]+\)/,
+    /\*\*[^*]+\*\*/,
+    /(^|\s)_[^_]+_(\s|$)/,
+    /(^|\s)\*[^*]+\*(\s|$)/,
+    /^---+$/m,
+  ]
+
+  return signals.some((rx) => rx.test(sample))
+}
+
+function formatInlineMarkdown(raw: string): string {
+  const escaped = escapeHtml(raw)
+  const withLinks = escaped.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, (_m, label, href) => {
+    return `<a href="${href}" target="_blank" rel="noopener noreferrer">${label}</a>`
+  })
+  return withLinks
+    .replace(/`([^`]+)`/g, '<code>$1</code>')
+    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+    .replace(/(^|[^\*])\*([^*]+)\*(?!\*)/g, '$1<em>$2</em>')
+}
+
+function plainTextToParagraphHtml(text: string): string {
+  return normalizeClipboardText(text)
+    .split('\n')
+    .map(line => line ? `<p>${escapeHtml(line)}</p>` : EMPTY_LINE_HTML)
+    .join('')
+}
+
+function markdownToHtml(markdown: string): string {
+  const lines = normalizeClipboardText(markdown).split('\n')
+  const out: string[] = []
+  let i = 0
+
+  while (i < lines.length) {
+    const line = lines[i]
+    const trimmed = line.trim()
+
+    if (!trimmed) {
+      out.push(EMPTY_LINE_HTML)
+      i += 1
+      continue
+    }
+
+    if (/^```/.test(trimmed)) {
+      const block: string[] = []
+      i += 1
+      while (i < lines.length && !/^```/.test(lines[i].trim())) {
+        block.push(lines[i])
+        i += 1
+      }
+      if (i < lines.length) i += 1
+      out.push(`<pre><code>${escapeHtml(block.join('\n'))}</code></pre>`)
+      continue
+    }
+
+    const headingMatch = trimmed.match(/^(#{1,6})\s+(.*)$/)
+    if (headingMatch) {
+      const lvl = headingMatch[1].length
+      out.push(`<h${lvl}>${formatInlineMarkdown(headingMatch[2]) || '<br>'}</h${lvl}>`)
+      i += 1
+      continue
+    }
+
+    if (/^---+$/.test(trimmed)) {
+      out.push('<hr>')
+      i += 1
+      continue
+    }
+
+    if (/^>\s?/.test(trimmed)) {
+      const quoteLines: string[] = []
+      while (i < lines.length && /^>\s?/.test(lines[i].trim())) {
+        quoteLines.push(lines[i].trim().replace(/^>\s?/, ''))
+        i += 1
+      }
+      out.push(`<blockquote><p>${formatInlineMarkdown(quoteLines.join('<br>')) || '<br>'}</p></blockquote>`)
+      continue
+    }
+
+    if (/^(\*|-|\+)\s+/.test(trimmed) || /^\d+\.\s+/.test(trimmed)) {
+      const ordered = /^\d+\.\s+/.test(trimmed)
+      const listTag = ordered ? 'ol' : 'ul'
+      const items: string[] = []
+      while (i < lines.length) {
+        const t = lines[i].trim()
+        const itemMatch = ordered
+          ? t.match(/^\d+\.\s+(.*)$/)
+          : t.match(/^(\*|-|\+)\s+(.*)$/)
+        if (!itemMatch) break
+        items.push(`<li>${formatInlineMarkdown(itemMatch[ordered ? 1 : 2]) || '<br>'}</li>`)
+        i += 1
+      }
+      out.push(`<${listTag}>${items.join('')}</${listTag}>`)
+      continue
+    }
+
+    const paragraphLines: string[] = []
+    while (i < lines.length) {
+      const t = lines[i].trim()
+      if (!t) break
+      if (/^(#{1,6})\s+/.test(t) || /^>\s?/.test(t) || /^(\*|-|\+)\s+/.test(t) || /^\d+\.\s+/.test(t) || /^```/.test(t) || /^---+$/.test(t)) {
+        break
+      }
+      paragraphLines.push(lines[i])
+      i += 1
+    }
+    out.push(`<p>${formatInlineMarkdown(paragraphLines.join('<br>')) || '<br>'}</p>`)
+  }
+
+  return out.join('') || '<p><br></p>'
+}
+
+function insertHtmlAtCursor(html: string) {
+  const sel = window.getSelection()
+  if (!sel || !sel.rangeCount || !editorRef.value) return
+
+  const range = sel.getRangeAt(0)
+  range.deleteContents()
+
+  let insertionPoint = range.startContainer
+  let insertionOffset = range.startOffset
+
+  if (insertionPoint.nodeType === Node.TEXT_NODE && insertionPoint.parentNode !== editorRef.value) {
+    const textNode = insertionPoint as Text
+    const parent = textNode.parentNode!
+
+    if (insertionOffset === 0) {
+      insertionPoint = parent.parentNode!
+      insertionOffset = Array.from(insertionPoint.childNodes).indexOf(parent as ChildNode)
+    } else if (insertionOffset >= textNode.length) {
+      insertionPoint = parent.parentNode!
+      insertionOffset = Array.from(insertionPoint.childNodes).indexOf(parent as ChildNode) + 1
+    } else {
+      textNode.splitText(insertionOffset)
+      insertionPoint = parent.parentNode!
+      insertionOffset = Array.from(insertionPoint.childNodes).indexOf(parent as ChildNode) + 1
+    }
+  }
+
+  while (insertionPoint !== editorRef.value && insertionPoint.parentNode !== editorRef.value) {
+    const parent = insertionPoint.parentNode!
+    insertionOffset = Array.from(parent.childNodes).indexOf(insertionPoint as ChildNode) + 1
+    insertionPoint = parent
+  }
+
+  if (insertionPoint !== editorRef.value) {
+    insertionOffset = Array.from(editorRef.value.childNodes).indexOf(insertionPoint as ChildNode) + 1
+    insertionPoint = editorRef.value
+  }
+
+  const temp = document.createElement('div')
+  temp.innerHTML = html
+  const refChild = editorRef.value.childNodes[insertionOffset] || null
+  let lastInserted: Node | null = null
+
+  while (temp.firstChild) {
+    const node = temp.firstChild
+    editorRef.value.insertBefore(node, refChild)
+    lastInserted = node
+  }
+
+  if (lastInserted) {
+    const newRange = document.createRange()
+    newRange.setStartAfter(lastInserted)
+    newRange.collapse(true)
+    sel.removeAllRanges()
+    sel.addRange(newRange)
+  }
+}
+
+function onPaste(e: ClipboardEvent) {
+  const clipboard = e.clipboardData
+  if (!clipboard) return
+
+  e.preventDefault()
+  const rawHtml = clipboard.getData('text/html')?.trim()
+  const plainText = clipboard.getData('text/plain')
+  const normalizedPlain = plainText ? normalizeClipboardText(plainText) : ''
+  const hasExplicitBlankLines = /\n\s*\n/.test(normalizedPlain)
+  const shouldPreferPlainText = !!plainText && (looksLikeMarkdown(plainText) || hasExplicitBlankLines)
+
+  let html = ''
+  if (shouldPreferPlainText && plainText) {
+    html = looksLikeMarkdown(plainText)
+      ? markdownToHtml(plainText)
+      : plainTextToParagraphHtml(plainText)
+  } else if (rawHtml) {
+    html = rawHtml
+  } else if (plainText) {
+    html = plainTextToParagraphHtml(plainText)
+  }
+
+  insertHtmlAtCursor(html || '<p><br></p>')
+
+  nextTick(() => {
+    onInput()
+    saveSelection()
+  })
 }
 
 function saveSelection() {
@@ -531,6 +832,7 @@ function onWindowScroll() {
 <template>
   <div class="wy-editor-wrap">
     <WysiwygToolbar
+      v-if="editorMode === 'wysiwyg'"
       ref="toolbarRef"
       :activeStates="activeStates"
       :currentBlock="currentBlock"
@@ -539,13 +841,33 @@ function onWindowScroll() {
       @insertMedia="insertMedia"
     />
     <div class="wy-editor-area">
+      <div class="wy-mode-switch">
+        <button
+          type="button"
+          class="wy-mode-switch-btn"
+          :class="{ 'is-active': editorMode === 'wysiwyg' }"
+          @click="setEditorMode('wysiwyg')"
+        >
+          WYSIWYG
+        </button>
+        <button
+          type="button"
+          class="wy-mode-switch-btn"
+          :class="{ 'is-active': editorMode === 'source' }"
+          @click="setEditorMode('source')"
+        >
+          HTML
+        </button>
+      </div>
       <div
+        v-if="editorMode === 'wysiwyg'"
         ref="editorRef"
         class="wy-content"
         contenteditable="true"
         spellcheck="true"
         :data-placeholder="placeholder || 'Содержимое заметки'"
         @input="onInput"
+        @paste="onPaste"
         @keydown="onKeydown"
         @focus="onEditorFocus"
         @blur="onEditorBlur"
@@ -553,12 +875,19 @@ function onWindowScroll() {
         @keyup="onEditorKeyup"
         @click="onEditorClick"
       />
+      <textarea
+        v-else
+        v-model="sourceHtml"
+        class="wy-source"
+        spellcheck="false"
+        @input="onSourceInput"
+      />
       
       <!-- Bubble Menu for Media -->
       <Teleport to="body">
         <Transition name="wy-bubble-fade">
           <div
-            v-if="showBubbleMenu"
+            v-if="editorMode === 'wysiwyg' && showBubbleMenu"
             class="wy-media-bubble-menu"
             :style="{ left: bubbleMenuPos.x + 'px', top: bubbleMenuPos.y + 'px' }"
             @mousedown.prevent
@@ -624,7 +953,7 @@ function onWindowScroll() {
       <!-- Resize handle for selected image -->
       <Teleport to="body">
         <div
-          v-if="isImageSelected && selectedMedia"
+          v-if="editorMode === 'wysiwyg' && isImageSelected && selectedMedia"
           class="wy-resize-handle"
           :style="{
             position: 'fixed',
@@ -658,6 +987,41 @@ function onWindowScroll() {
   min-height: 0;
 }
 
+.wy-mode-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  align-self: flex-end;
+  padding: 0.35rem 0.45rem;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-bg-secondary);
+}
+
+.wy-mode-switch-btn {
+  min-width: 4.4rem;
+  padding: 0.22rem 0.45rem;
+  font-size: 0.62rem;
+  line-height: 1.2;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+  background: var(--color-bg-tertiary);
+  border: 1px solid var(--color-border);
+  border-radius: 2px;
+  cursor: pointer;
+}
+
+.wy-mode-switch-btn.is-active {
+  color: var(--color-text);
+  border-color: var(--color-accent);
+  box-shadow: inset 0 0 0 1px var(--color-accent-light);
+}
+
+.wy-mode-switch-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--color-accent-light);
+}
+
 .wy-content {
   flex: 1;
   min-height: 16rem;
@@ -671,6 +1035,25 @@ function onWindowScroll() {
   outline: none;
   word-wrap: break-word;
   overflow-wrap: break-word;
+}
+
+.wy-source {
+  flex: 1;
+  min-height: 16rem;
+  padding: 0.6rem 0.7rem;
+  font-family: 'Share Tech Mono', 'Courier New', monospace;
+  font-size: 0.76rem;
+  line-height: 1.55;
+  color: var(--color-text);
+  background: var(--color-bg);
+  border: none;
+  border-top: 1px solid var(--color-border);
+  resize: none;
+  outline: none;
+}
+
+.wy-source:focus {
+  box-shadow: inset 0 0 0 1px var(--color-accent);
 }
 
 .wy-content:focus {
@@ -836,6 +1219,16 @@ function onWindowScroll() {
 }
 .wy-content p {
   margin: 0.25rem 0;
+}
+.wy-content .wy-blank-line {
+  display: block;
+  padding: 0.4rem 0;
+  line-height: 0;
+  font-size: 0;
+  overflow: hidden;
+  margin: 0;
+  border: none;
+  height: 0;
 }
 .wy-content ul,
 .wy-content ol {
