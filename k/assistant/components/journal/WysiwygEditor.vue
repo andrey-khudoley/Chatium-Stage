@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, watch, onMounted, onUnmounted, nextTick, computed } from 'vue'
 import WysiwygToolbar from './WysiwygToolbar.vue'
 
 const props = defineProps<{
@@ -20,6 +20,17 @@ const isInTable = ref(false)
 let savedRange: Range | null = null
 let ignoreInput = false
 
+// Media overlay state
+const selectedMedia = ref<HTMLElement | null>(null)
+const bubbleMenuPos = ref({ x: 0, y: 0 })
+const isResizing = ref(false)
+
+const MEDIA_SELECTOR = '.wy-media-img, .wy-media-video, .wy-media-pdf, .wy-media-file'
+
+const showBubbleMenu = computed(() => !!selectedMedia.value && !isResizing.value)
+const isImageSelected = computed(() => selectedMedia.value?.classList.contains('wy-media-img') ?? false)
+const isFileSelected = computed(() => selectedMedia.value?.classList.contains('wy-media-file') ?? false)
+
 function ensureHtml(raw: string): string {
   if (!raw) return '<p><br></p>'
   if (/<[a-z][\s\S]*>/i.test(raw)) return raw
@@ -38,10 +49,16 @@ onMounted(() => {
     editorRef.value.innerHTML = ensureHtml(props.modelValue)
   }
   document.addEventListener('selectionchange', updateState)
+  document.addEventListener('click', onDocumentClick)
+  window.addEventListener('scroll', onWindowScroll, { passive: true })
+  window.addEventListener('resize', onWindowScroll)
 })
 
 onUnmounted(() => {
   document.removeEventListener('selectionchange', updateState)
+  document.removeEventListener('click', onDocumentClick)
+  window.removeEventListener('scroll', onWindowScroll)
+  window.removeEventListener('resize', onWindowScroll)
 })
 
 watch(() => props.modelValue, (val) => {
@@ -110,6 +127,9 @@ function updateState() {
 }
 
 function insertMedia(type: 'image' | 'video' | 'pdf' | 'file', url: string, filename?: string) {
+  // Clear any existing selection
+  clearMediaSelection()
+  
   editorRef.value?.focus()
   restoreSelection()
 
@@ -119,6 +139,51 @@ function insertMedia(type: 'image' | 'video' | 'pdf' | 'file', url: string, file
   nextTick(() => {
     onInput()
     saveSelection()
+    
+    // Auto-select the newly inserted media
+    const media = editorRef.value?.querySelector(`${MEDIA_SELECTOR}:last-of-type`) as HTMLElement | null
+    if (!media) return
+    
+    // For images, wait for load to get correct dimensions
+    if (type === 'image' && media instanceof HTMLImageElement) {
+      const img = media as HTMLImageElement
+      
+      // If already loaded (cached), select immediately
+      if (img.complete && img.naturalWidth > 0) {
+        selectMedia(media)
+        return
+      }
+      
+      // Otherwise wait for load event
+      const onLoad = () => {
+        selectMedia(media)
+        img.removeEventListener('load', onLoad)
+        img.removeEventListener('error', onError)
+      }
+      const onError = () => {
+        // Select anyway even if load failed
+        selectMedia(media)
+        img.removeEventListener('load', onLoad)
+        img.removeEventListener('error', onError)
+      }
+      
+      img.addEventListener('load', onLoad)
+      img.addEventListener('error', onError)
+      
+      // Fallback: select after timeout even if not loaded
+      setTimeout(() => {
+        if (!selectedMedia.value) {
+          selectMedia(media)
+          img.removeEventListener('load', onLoad)
+          img.removeEventListener('error', onError)
+        }
+      }, 300)
+    } else {
+      // For other types, use requestAnimationFrame to ensure DOM is rendered
+      requestAnimationFrame(() => {
+        selectMedia(media)
+      })
+    }
   })
 }
 
@@ -304,19 +369,161 @@ function onEditorKeyup() { saveSelection() }
 
 function onEditorClick(e: MouseEvent) {
   const target = e.target as HTMLElement
-  const mediaEl = target.closest('.wy-media-img, .wy-media-video, .wy-media-pdf, .wy-media-file') as HTMLElement | null
-  if (!mediaEl) return
+  const mediaEl = target.closest(MEDIA_SELECTOR) as HTMLElement | null
+  
+  // If clicked outside media, deselect
+  if (!mediaEl) {
+    clearMediaSelection()
+    return
+  }
+  
+  // Select the media element
+  e.preventDefault()
+  e.stopPropagation()
+  selectMedia(mediaEl)
+}
 
-  const rect = mediaEl.getBoundingClientRect()
-  const x = e.clientX - rect.left
-  const y = e.clientY - rect.top
+function selectMedia(el: HTMLElement) {
+  // Remove selected class from previous
+  if (selectedMedia.value) {
+    selectedMedia.value.classList.remove('wy-media-selected')
+  }
+  // Add to new
+  selectedMedia.value = el
+  el.classList.add('wy-media-selected')
+  updateBubbleMenuPosition()
+}
 
-  const deleteBtnSize = 24
-  if (x >= rect.width - deleteBtnSize && y <= deleteBtnSize) {
-    e.preventDefault()
-    e.stopPropagation()
-    mediaEl.remove()
+function clearMediaSelection() {
+  if (selectedMedia.value) {
+    selectedMedia.value.classList.remove('wy-media-selected')
+    selectedMedia.value = null
+  }
+}
+
+function updateBubbleMenuPosition() {
+  if (!selectedMedia.value) return
+  
+  const rect = selectedMedia.value.getBoundingClientRect()
+  
+  // Position bubble menu above the media (using viewport coordinates for fixed positioning)
+  bubbleMenuPos.value = {
+    x: rect.left + rect.width / 2,
+    y: rect.top - 12
+  }
+}
+
+function deleteSelectedMedia() {
+  if (!selectedMedia.value) return
+  selectedMedia.value.remove()
+  clearMediaSelection()
+  onInput()
+}
+
+function alignImage(align: 'left' | 'center' | 'right') {
+  if (!selectedMedia.value || !isImageSelected.value) return
+  
+  const img = selectedMedia.value as HTMLImageElement
+  img.style.float = align === 'center' ? 'none' : align
+  img.style.marginLeft = align === 'right' || align === 'center' ? 'auto' : '0'
+  img.style.marginRight = align === 'left' || align === 'center' ? 'auto' : '0'
+  img.style.display = align === 'center' ? 'block' : 'block'
+  
+  if (align === 'center') {
+    img.style.marginLeft = 'auto'
+    img.style.marginRight = 'auto'
+  }
+  
+  onInput()
+}
+
+function downloadFile() {
+  if (!selectedMedia.value) return
+  
+  let url: string | null = null
+  let filename = 'download'
+  
+  if (selectedMedia.value.classList.contains('wy-media-file')) {
+    const link = selectedMedia.value.querySelector('.wy-file-link') as HTMLAnchorElement | null
+    if (link) {
+      url = link.href
+      filename = selectedMedia.value.dataset.filename || 'download'
+    }
+  } else if (selectedMedia.value.classList.contains('wy-media-pdf')) {
+    const link = selectedMedia.value.querySelector('.wy-media-link') as HTMLAnchorElement | null
+    if (link) url = link.href
+  } else if (selectedMedia.value.classList.contains('wy-media-img') || 
+             selectedMedia.value.classList.contains('wy-media-video')) {
+    const media = selectedMedia.value as HTMLImageElement | HTMLVideoElement
+    url = media.src
+    filename = media instanceof HTMLImageElement ? (media.alt || 'image') : 'video'
+  }
+  
+  if (url) {
+    const a = document.createElement('a')
+    a.href = url
+    a.download = filename
+    a.target = '_blank'
+    a.click()
+  }
+}
+
+function startResize(e: MouseEvent, mediaEl: HTMLElement | null) {
+  if (!mediaEl || !mediaEl.classList.contains('wy-media-img')) return
+  
+  isResizing.value = true
+  const img = mediaEl as HTMLImageElement
+  const startX = e.clientX
+  const startWidth = img.offsetWidth
+  const startHeight = img.offsetHeight
+  const aspectRatio = startWidth / startHeight
+  
+  function onMouseMove(e: MouseEvent) {
+    const deltaX = e.clientX - startX
+    const newWidth = Math.max(100, Math.min(startWidth + deltaX, 800))
+    img.style.width = `${newWidth}px`
+    img.style.height = 'auto'
+    updateBubbleMenuPosition()
+  }
+  
+  function onMouseUp() {
+    document.removeEventListener('mousemove', onMouseMove)
+    document.removeEventListener('mouseup', onMouseUp)
+    isResizing.value = false
     onInput()
+  }
+  
+  document.addEventListener('mousemove', onMouseMove)
+  document.addEventListener('mouseup', onMouseUp)
+}
+
+function onEditorBlur(e: FocusEvent) {
+  // Delay to allow clicking on bubble menu
+  setTimeout(() => {
+    const activeEl = document.activeElement
+    const bubbleMenu = document.querySelector('.wy-media-bubble-menu')
+    
+    if (!bubbleMenu?.contains(activeEl) && !editorRef.value?.contains(activeEl)) {
+      clearMediaSelection()
+    }
+  }, 150)
+}
+
+function onDocumentClick(e: MouseEvent) {
+  const target = e.target as HTMLElement
+  
+  // Check if click is outside media, bubble menu and resize handle
+  if (!target.closest(MEDIA_SELECTOR) && 
+      !target.closest('.wy-media-bubble-menu') && 
+      !target.closest('.wy-resize-handle')) {
+    clearMediaSelection()
+  }
+}
+
+function onWindowScroll() {
+  // Update bubble menu and resize handle position on scroll
+  if (selectedMedia.value) {
+    updateBubbleMenuPosition()
   }
 }
 </script>
@@ -331,19 +538,104 @@ function onEditorClick(e: MouseEvent) {
       @exec="execCommand"
       @insertMedia="insertMedia"
     />
-    <div
-      ref="editorRef"
-      class="wy-content"
-      contenteditable="true"
-      spellcheck="true"
-      :data-placeholder="placeholder || 'Содержимое заметки'"
-      @input="onInput"
-      @keydown="onKeydown"
-      @focus="onEditorFocus"
-      @mouseup="onEditorMouseup"
-      @keyup="onEditorKeyup"
-      @click="onEditorClick"
-    />
+    <div class="wy-editor-area">
+      <div
+        ref="editorRef"
+        class="wy-content"
+        contenteditable="true"
+        spellcheck="true"
+        :data-placeholder="placeholder || 'Содержимое заметки'"
+        @input="onInput"
+        @keydown="onKeydown"
+        @focus="onEditorFocus"
+        @blur="onEditorBlur"
+        @mouseup="onEditorMouseup"
+        @keyup="onEditorKeyup"
+        @click="onEditorClick"
+      />
+      
+      <!-- Bubble Menu for Media -->
+      <Teleport to="body">
+        <Transition name="wy-bubble-fade">
+          <div
+            v-if="showBubbleMenu"
+            class="wy-media-bubble-menu"
+            :style="{ left: bubbleMenuPos.x + 'px', top: bubbleMenuPos.y + 'px' }"
+            @mousedown.prevent
+          >
+            <div class="wy-bubble-arrow" />
+            <div class="wy-bubble-content">
+              <!-- Image alignment buttons -->
+              <template v-if="isImageSelected">
+                <button
+                  type="button"
+                  class="wy-bubble-btn"
+                  title="По левому краю"
+                  @click="alignImage('left')"
+                >
+                  <i class="fa-solid fa-align-left" />
+                </button>
+                <button
+                  type="button"
+                  class="wy-bubble-btn"
+                  title="По центру"
+                  @click="alignImage('center')"
+                >
+                  <i class="fa-solid fa-align-center" />
+                </button>
+                <button
+                  type="button"
+                  class="wy-bubble-btn"
+                  title="По правому краю"
+                  @click="alignImage('right')"
+                >
+                  <i class="fa-solid fa-align-right" />
+                </button>
+                <div class="wy-bubble-sep" />
+              </template>
+              
+              <!-- Download button for files -->
+              <button
+                v-if="isFileSelected || selectedMedia?.classList.contains('wy-media-pdf') || selectedMedia?.classList.contains('wy-media-img') || selectedMedia?.classList.contains('wy-media-video')"
+                type="button"
+                class="wy-bubble-btn"
+                title="Скачать"
+                @click="downloadFile"
+              >
+                <i class="fa-solid fa-download" />
+              </button>
+              
+              <div v-if="isFileSelected || selectedMedia?.classList.contains('wy-media-pdf') || selectedMedia?.classList.contains('wy-media-img') || selectedMedia?.classList.contains('wy-media-video')" class="wy-bubble-sep" />
+              
+              <!-- Delete button -->
+              <button
+                type="button"
+                class="wy-bubble-btn wy-bubble-btn--danger"
+                title="Удалить"
+                @click="deleteSelectedMedia"
+              >
+                <i class="fa-solid fa-trash" />
+              </button>
+            </div>
+          </div>
+        </Transition>
+      </Teleport>
+      
+      <!-- Resize handle for selected image -->
+      <Teleport to="body">
+        <div
+          v-if="isImageSelected && selectedMedia"
+          class="wy-resize-handle"
+          :style="{
+            position: 'fixed',
+            left: (selectedMedia.getBoundingClientRect().right - 6) + 'px',
+            top: (selectedMedia.getBoundingClientRect().bottom - 6) + 'px'
+          }"
+          title="Изменить размер"
+          @mousedown="startResize($event, selectedMedia)"
+        />
+      </Teleport>
+    </div>
   </div>
 </template>
 
@@ -356,6 +648,14 @@ function onEditorClick(e: MouseEvent) {
   border: 1px solid var(--color-border);
   border-radius: 2px;
   overflow: hidden;
+}
+
+.wy-editor-area {
+  flex: 1;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 }
 
 .wy-content {
@@ -382,6 +682,135 @@ function onEditorClick(e: MouseEvent) {
   color: var(--color-text-tertiary);
   pointer-events: none;
   display: block;
+}
+
+/* Bubble Menu - CRT Style */
+.wy-media-bubble-menu {
+  position: fixed;
+  z-index: 1000;
+  transform: translate(-50%, -100%);
+  pointer-events: auto;
+}
+
+.wy-bubble-arrow {
+  position: absolute;
+  bottom: -6px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 6px solid var(--color-bg-secondary);
+}
+
+.wy-bubble-content {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 0.3rem;
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border-light);
+  border-radius: 2px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
+  position: relative;
+  clip-path: polygon(
+    0 2px, 2px 2px, 2px 0,
+    calc(100% - 2px) 0, calc(100% - 2px) 2px, 100% 2px,
+    100% calc(100% - 2px), calc(100% - 2px) calc(100% - 2px), calc(100% - 2px) 100%,
+    2px 100%, 2px calc(100% - 2px), 0 calc(100% - 2px)
+  );
+}
+
+.wy-bubble-content::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent 2px,
+    rgba(0, 0, 0, 0.1) 2px,
+    rgba(0, 0, 0, 0.1) 4px
+  );
+  pointer-events: none;
+  opacity: 0.5;
+}
+
+.wy-bubble-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.8rem;
+  height: 1.8rem;
+  padding: 0;
+  font-size: 0.7rem;
+  color: var(--color-text-secondary);
+  background: var(--color-bg-tertiary);
+  border: 1px solid var(--color-border);
+  border-radius: 2px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  position: relative;
+}
+
+.wy-bubble-btn:hover {
+  color: var(--color-text);
+  background: var(--color-accent-light);
+  border-color: var(--color-accent);
+}
+
+.wy-bubble-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--color-accent-light);
+}
+
+.wy-bubble-btn--danger {
+  color: var(--color-accent-hover);
+}
+
+.wy-bubble-btn--danger:hover {
+  background: rgba(211, 35, 75, 0.2);
+  border-color: var(--color-accent-hover);
+}
+
+.wy-bubble-sep {
+  width: 1px;
+  height: 1.2rem;
+  background: var(--color-border);
+  margin: 0 0.1rem;
+}
+
+/* Resize Handle */
+.wy-resize-handle {
+  position: fixed;
+  width: 12px;
+  height: 12px;
+  background: var(--color-accent);
+  border: 2px solid var(--color-bg);
+  border-radius: 50%;
+  cursor: nwse-resize;
+  z-index: 1001;
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.5);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  pointer-events: auto;
+}
+
+.wy-resize-handle:hover {
+  transform: scale(1.2);
+  box-shadow: 0 0 8px var(--color-accent);
+}
+
+/* Transitions */
+.wy-bubble-fade-enter-active,
+.wy-bubble-fade-leave-active {
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.wy-bubble-fade-enter-from,
+.wy-bubble-fade-leave-to {
+  opacity: 0;
+  transform: translate(-50%, -100%) translateY(5px);
 }
 </style>
 
@@ -618,42 +1047,30 @@ function onEditorClick(e: MouseEvent) {
   text-decoration: underline;
 }
 
-/* Media hover delete button */
+/* Media hover delete button - removed, using bubble menu instead */
 .wy-content .wy-media-img,
 .wy-content .wy-media-video,
 .wy-content .wy-media-pdf,
 .wy-content .wy-media-file {
   position: relative;
-}
-
-.wy-content .wy-media-img::after,
-.wy-content .wy-media-video::after,
-.wy-content .wy-media-pdf::after,
-.wy-content .wy-media-file::after {
-  content: '×';
-  position: absolute;
-  top: 0.3rem;
-  right: 0.3rem;
-  width: 1.2rem;
-  height: 1.2rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.9rem;
-  color: var(--color-text);
-  background: var(--color-accent-hover);
-  border-radius: 2px;
   cursor: pointer;
-  opacity: 0;
-  transition: opacity 0.15s ease;
-  pointer-events: none;
+  transition: box-shadow 0.15s ease;
 }
 
-.wy-content .wy-media-img:hover::after,
-.wy-content .wy-media-video:hover::after,
-.wy-content .wy-media-pdf:hover::after,
-.wy-content .wy-media-file:hover::after {
-  opacity: 1;
-  pointer-events: auto;
+/* Selected state for media elements */
+.wy-content .wy-media-img.wy-media-selected,
+.wy-content .wy-media-video.wy-media-selected,
+.wy-content .wy-media-pdf.wy-media-selected,
+.wy-content .wy-media-file.wy-media-selected {
+  box-shadow: 0 0 0 2px var(--color-accent), 0 0 12px rgba(211, 35, 75, 0.4);
+}
+
+/* Focus outline for media elements */
+.wy-content .wy-media-img:focus,
+.wy-content .wy-media-video:focus,
+.wy-content .wy-media-pdf:focus,
+.wy-content .wy-media-file:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--color-accent);
 }
 </style>
