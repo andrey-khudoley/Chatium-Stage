@@ -153,6 +153,12 @@ function goWeek(delta: number) {
   void fetchWeek(target, true)
 }
 
+function goToCurrentWeek() {
+  const currentMondayKey = computeJournalWeekMondayKeyLocal(Date.now())
+  if (mondayKey.value === currentMondayKey) return
+  void fetchWeek(currentMondayKey, true)
+}
+
 function toggleLock(day: WeekDayDto) {
   const nextLocked = !day.locked
   void saveDay(day.dayKey, day.value, nextLocked)
@@ -178,6 +184,7 @@ function onToggleSummaryLock() {
 }
 
 const canEdit = computed(() => props.isAuthenticated && !loading.value && !loadingSwitch.value)
+const isCurrentWeek = computed(() => mondayKey.value === computeJournalWeekMondayKeyLocal(Date.now()))
 
 onMounted(() => {
   void fetchWeek(mondayKey.value, false)
@@ -192,7 +199,17 @@ onMounted(() => {
         <p class="journal-week-title">Неделя #{{ weekNumber }}</p>
         <button type="button" class="journal-week-switch" :disabled="loadingSwitch" @click="goWeek(1)">След. →</button>
       </div>
-      <p class="journal-week-sub">Начало недели: {{ mondayKey }}</p>
+      <div class="journal-week-sub-row">
+        <p class="journal-week-sub">Начало недели: {{ mondayKey }}</p>
+        <button
+          type="button"
+          class="journal-week-current-link"
+          :disabled="loadingSwitch || isCurrentWeek"
+          @click="goToCurrentWeek"
+        >
+          К текущей неделе
+        </button>
+      </div>
     </header>
 
     <p v-if="!props.isAuthenticated" class="journal-week-hint">Войдите в аккаунт, чтобы вести недельный план.</p>
@@ -228,7 +245,10 @@ onMounted(() => {
 
       <article class="journal-week-day journal-week-summary">
         <div class="journal-week-summary-head">
-          <h3 class="journal-week-summary-title">Неделя #{{ weekNumber }}</h3>
+          <div class="journal-week-summary-caption">
+            <h3 class="journal-week-summary-title">Неделя #{{ weekNumber }}</h3>
+            <p class="journal-week-day-date journal-week-summary-date-spacer" aria-hidden="true">&nbsp;</p>
+          </div>
           <button
             type="button"
             class="journal-week-day-lock"
@@ -303,10 +323,43 @@ onMounted(() => {
 }
 
 .journal-week-sub {
-  margin: 0.3rem 0 0;
+  margin: 0;
   font-size: 0.64rem;
   letter-spacing: 0.06em;
   color: var(--color-text-secondary);
+}
+
+.journal-week-sub-row {
+  margin-top: 0.3rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.journal-week-current-link {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-family: inherit;
+  font-size: 0.62rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.journal-week-current-link:hover:not(:disabled) {
+  color: var(--color-text);
+  text-decoration: underline;
+  text-underline-offset: 0.12rem;
+}
+
+.journal-week-current-link:disabled {
+  opacity: 0.45;
+  cursor: default;
 }
 
 .journal-week-hint {
@@ -334,10 +387,14 @@ onMounted(() => {
 
 .journal-week-summary-head {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 0.6rem;
   margin-bottom: 0.45rem;
+}
+
+.journal-week-summary-caption {
+  min-width: 0;
 }
 
 .journal-week-summary-title {
@@ -347,6 +404,10 @@ onMounted(() => {
   text-transform: uppercase;
   letter-spacing: 0.11em;
   color: var(--color-text);
+}
+
+.journal-week-summary-date-spacer {
+  visibility: hidden;
 }
 
 .journal-week-summary-text {
