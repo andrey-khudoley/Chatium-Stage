@@ -57,11 +57,38 @@
 
 | Method | Path | File | Auth | Назначение |
 | --- | --- | --- | --- | --- |
-| GET | /api/journal/notes/list | api/journal/notes/list.ts | RealUser | Список заметок: `{ success, notes: [{ id, title }] }` (без поля content). |
-| GET | /api/journal/notes/get?id= | api/journal/notes/get.ts | RealUser | Одна заметка: `{ success, note: { id, title, content } }` или ошибка. |
-| POST | /api/journal/notes/create | api/journal/notes/create.ts | RealUser | Создать заметку. Body (опционально): `{ title?, content? }`; по умолчанию заголовок «Новая заметка», пустое содержимое. Ответ: `{ success, note: { id, title } }`. |
-| POST | /api/journal/notes/update | api/journal/notes/update.ts | RealUser | Обновить свою заметку. Body: `{ id, title, content }`. Пустой `title` после trim заменяется на «Без названия». Ответ: `{ success, note: { id, title } }`. |
+| GET | /api/journal/notes/list | api/journal/notes/list.ts | RealUser | Список заметок + папки + категории: `{ success, notes: [...], folders: [...], categories: [...] }`. Каждая заметка включает расширенное DTO (id, title, folderId, categoryIds, noteDate, isArchived, sortOrder, linkedTaskId, linkedProjectId, linkedClientId). |
+| GET | /api/journal/notes/get?id= | api/journal/notes/get.ts | RealUser | Одна заметка (расширенное DTO): `{ success, note: { id, title, content, folderId, categoryIds, noteDate, isArchived, sortOrder, ... } }` или ошибка. |
+| POST | /api/journal/notes/create | api/journal/notes/create.ts | RealUser | Создать заметку. Body (опционально): `{ title?, content?, folderId?, categoryIds?, linkedTaskId?, linkedProjectId?, linkedClientId?, noteDate? }`; по умолчанию заголовок «Новая заметка», пустое содержимое. Ответ: `{ success, note }`. |
+| POST | /api/journal/notes/update | api/journal/notes/update.ts | RealUser | Обновить свою заметку. Body: `{ id, title?, content?, folderId?, categoryIds?, linkedTaskId?, linkedProjectId?, linkedClientId?, noteDate? }`. Пустой `title` после trim заменяется на «Без названия». Ответ: `{ success, note }`. |
 | POST | /api/journal/notes/delete | api/journal/notes/delete.ts | RealUser | Удалить свою заметку. Body: `{ id }`. Ответ: `{ success: true }`. |
+| POST | /api/journal/notes/reorder | api/journal/notes/reorder.ts | RealUser | Изменить порядок заметок. Body: `{ orderedIds: string[] }`. Ответ: `{ success: true }`. |
+| POST | /api/journal/notes/archive | api/journal/notes/archive.ts | RealUser | Архивировать/разархивировать заметку. Body: `{ id, isArchived: boolean }`. Ответ: `{ success: true }`. |
+| POST | /api/journal/notes/move | api/journal/notes/move.ts | RealUser | Переместить заметку в папку. Body: `{ id, folderId: string|null }`. Ответ: `{ success: true }`. |
+| POST | /api/journal/notes/bulk | api/journal/notes/bulk.ts | RealUser | Массовые операции с заметками. Body: `{ ids: string[], action: 'archive'|'move'|'delete'|'setCategory', folderId?, categoryId? }`. Ответ: `{ success: true }`. |
+
+## Журнал — категории блокнота (api/journal/categories/)
+
+Категории для классификации заметок; доступ `requireRealUser`.
+
+| Method | Path | File | Auth | Назначение |
+| --- | --- | --- | --- | --- |
+| GET | /api/journal/categories/list | api/journal/categories/list.ts | RealUser | Список категорий: `{ success, categories: [{ id, name, color, sortOrder }] }`. |
+| POST | /api/journal/categories/create | api/journal/categories/create.ts | RealUser | Создать категорию. Body: `{ name, color? }`. Ответ: `{ success, category }`. |
+| POST | /api/journal/categories/update | api/journal/categories/update.ts | RealUser | Обновить категорию. Body: `{ id, name?, color? }`. Ответ: `{ success, category }`. |
+| POST | /api/journal/categories/delete | api/journal/categories/delete.ts | RealUser | Удалить категорию. Body: `{ id }`. Ответ: `{ success: true }`. При удалении категория убирается из `categoryIds` всех заметок. |
+
+## Журнал — папки блокнота (api/journal/folders/)
+
+Папки для организации заметок; доступ `requireRealUser`.
+
+| Method | Path | File | Auth | Назначение |
+| --- | --- | --- | --- | --- |
+| POST | /api/journal/folders/create | api/journal/folders/create.ts | RealUser | Создать папку. Body: `{ name, color? }`. Ответ: `{ success, folder }`. |
+| POST | /api/journal/folders/update | api/journal/folders/update.ts | RealUser | Обновить папку. Body: `{ id, name?, color? }`. Ответ: `{ success, folder }`. |
+| POST | /api/journal/folders/delete | api/journal/folders/delete.ts | RealUser | Удалить папку. Body: `{ id }`. При удалении папки заметки внутри неё не удаляются, а теряют привязку (folderId=null). Ответ: `{ success: true }`. |
+| POST | /api/journal/folders/reorder | api/journal/folders/reorder.ts | RealUser | Изменить порядок папок. Body: `{ orderedIds: string[] }`. Ответ: `{ success: true }`. |
+| POST | /api/journal/folders/archive | api/journal/folders/archive.ts | RealUser | Архивировать/разархивировать папку. Body: `{ id, isArchived: boolean }`. При архивации папки все заметки в ней тоже архивируются. Ответ: `{ success: true }`. |
 
 ## Журнал — день (api/journal/day/)
 

@@ -2,35 +2,34 @@
 import { requireRealUser } from '@app/auth'
 import * as loggerLib from '../../../lib/logger.lib'
 import * as journalNotesRepo from '../../../repos/journal-notes.repo'
+import * as foldersRepo from '../../../repos/notebook-folders.repo'
+import * as categoriesRepo from '../../../repos/notebook-categories.repo'
 
 const LOG_PATH = 'api/journal/notes/list'
 
-/**
- * GET /api/journal/notes/list — заголовки заметок текущего пользователя (без содержимого).
- */
-export const listJournalNotesRoute = app.get('/', async (ctx, _req) => {
+export const listJournalNotesRoute = app.get('/', async (ctx, req) => {
   const user = requireRealUser(ctx)
+  const includeArchived = req.query.includeArchived === 'true'
 
   await loggerLib.writeServerLog(ctx, {
     severity: 7,
     message: `[${LOG_PATH}] Запрос списка заметок`,
-    payload: {}
+    payload: { includeArchived }
   })
 
   try {
-    const notes = await journalNotesRepo.findSummariesByUserId(ctx, user.id)
-    await loggerLib.writeServerLog(ctx, {
-      severity: 6,
-      message: `[${LOG_PATH}] Список отдан`,
-      payload: { count: notes.length }
-    })
-    return { success: true, notes }
+    const [notes, folders, categories] = await Promise.all([
+      journalNotesRepo.findSummariesByUserId(ctx, user.id, { includeArchived }),
+      foldersRepo.findByUserId(ctx, user.id, includeArchived),
+      categoriesRepo.findByUserId(ctx, user.id)
+    ])
+    return { success: true, notes, folders, categories }
   } catch (error) {
     await loggerLib.writeServerLog(ctx, {
       severity: 3,
-      message: `[${LOG_PATH}] Ошибка выборки заметок`,
+      message: `[${LOG_PATH}] Ошибка`,
       payload: { error: String(error) }
     })
-    return { success: false, error: String(error), notes: [] }
+    return { success: false, error: String(error), notes: [], folders: [], categories: [] }
   }
 })

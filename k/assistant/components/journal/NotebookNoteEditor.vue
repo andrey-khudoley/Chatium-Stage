@@ -1,0 +1,557 @@
+<script setup lang="ts">
+import { ref, onMounted } from 'vue'
+import { createComponentLogger } from '../../shared/logger'
+import WysiwygEditor from './WysiwygEditor.vue'
+
+const log = createComponentLogger('NotebookNoteEditor')
+
+type CategoryDto = { id: string; name: string; color: string }
+type FolderDto = { id: string; name: string; color: string }
+type TaskClientDto = { id: string; name: string }
+type TaskProjectDto = { id: string; clientId: string; name: string }
+type TaskItemDto = { id: string; projectId: string; title: string }
+
+type NoteFullData = {
+  id: string
+  title: string
+  content: string
+  folderId: string | null
+  categoryIds: string[]
+  linkedTaskId: string | null
+  linkedProjectId: string | null
+  linkedClientId: string | null
+  noteDate: string | null
+  isArchived: boolean
+}
+
+const props = defineProps<{
+  noteId: string | null
+  isCreate: boolean
+  categories: CategoryDto[]
+  folders: FolderDto[]
+  taskClients: TaskClientDto[]
+  taskProjects: TaskProjectDto[]
+  taskItems: TaskItemDto[]
+  journalNotesGetUrl: string
+  journalNotesCreateUrl: string
+  journalNotesUpdateUrl: string
+}>()
+
+const emit = defineEmits<{
+  (e: 'back'): void
+  (e: 'saved', note: { id: string; title: string }): void
+  (e: 'deleted', id: string): void
+}>()
+
+const loading = ref(false)
+const saving = ref(false)
+const error = ref('')
+
+const title = ref('')
+const content = ref('')
+const folderId = ref<string | null>(null)
+const selectedCategoryIds = ref<string[]>([])
+const linkedClientId = ref<string | null>(null)
+const linkedProjectId = ref<string | null>(null)
+const linkedTaskId = ref<string | null>(null)
+const noteDate = ref<string | null>(null)
+const isArchived = ref(false)
+
+const catDropOpen = ref(false)
+
+onMounted(async () => {
+  if (!props.isCreate && props.noteId) {
+    await loadNote(props.noteId)
+  }
+})
+
+async function loadNote(id: string) {
+  loading.value = true
+  error.value = ''
+  try {
+    const res = await fetch(`${props.journalNotesGetUrl}?id=${encodeURIComponent(id)}`, {
+      method: 'GET',
+      credentials: 'include'
+    })
+    const data = await res.json() as { success?: boolean; note?: NoteFullData; error?: string }
+    if (data.success && data.note) {
+      title.value = data.note.title
+      content.value = data.note.content
+      folderId.value = data.note.folderId
+      selectedCategoryIds.value = data.note.categoryIds ?? []
+      linkedClientId.value = data.note.linkedClientId
+      linkedProjectId.value = data.note.linkedProjectId
+      linkedTaskId.value = data.note.linkedTaskId
+      noteDate.value = data.note.noteDate
+      isArchived.value = data.note.isArchived
+    } else {
+      error.value = data.error || 'Не удалось загрузить заметку'
+    }
+  } catch (e) {
+    error.value = 'Ошибка сети'
+    log.error('Загрузка заметки', { error: String(e) })
+  } finally {
+    loading.value = false
+  }
+}
+
+async function save() {
+  const t = title.value.trim()
+  if (!t) {
+    error.value = 'Введите название заметки'
+    return
+  }
+  saving.value = true
+  error.value = ''
+  try {
+    const body: Record<string, unknown> = {
+      title: t,
+      content: content.value,
+      folderId: folderId.value || '',
+      categoryIds: selectedCategoryIds.value,
+      linkedTaskId: linkedTaskId.value || '',
+      linkedProjectId: linkedProjectId.value || '',
+      linkedClientId: linkedClientId.value || '',
+      noteDate: noteDate.value || ''
+    }
+    if (!props.isCreate) {
+      body.id = props.noteId
+      body.isArchived = isArchived.value
+    }
+    const url = props.isCreate ? props.journalNotesCreateUrl : props.journalNotesUpdateUrl
+    const res = await fetch(url, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    })
+    const data = await res.json() as { success?: boolean; note?: { id: string; title: string }; error?: string }
+    if (data.success && data.note) {
+      emit('saved', data.note)
+    } else {
+      error.value = data.error || 'Не удалось сохранить'
+    }
+  } catch (e) {
+    error.value = 'Ошибка сети'
+    log.error('Сохранение заметки', { error: String(e) })
+  } finally {
+    saving.value = false
+  }
+}
+
+function toggleCategory(id: string) {
+  const idx = selectedCategoryIds.value.indexOf(id)
+  if (idx >= 0) {
+    selectedCategoryIds.value.splice(idx, 1)
+  } else {
+    selectedCategoryIds.value.push(id)
+  }
+}
+
+function filteredProjects() {
+  if (!linkedClientId.value) return props.taskProjects
+  return props.taskProjects.filter((p) => p.clientId === linkedClientId.value)
+}
+
+function filteredTasks() {
+  if (!linkedProjectId.value) return props.taskItems
+  return props.taskItems.filter((t) => t.projectId === linkedProjectId.value)
+}
+</script>
+
+<template>
+  <div class="nb-editor">
+    <div class="nb-editor-topbar">
+      <button type="button" class="nb-editor-back" @click="emit('back')">
+        <i class="fa-solid fa-arrow-left" aria-hidden="true" />
+        <span>Назад к списку</span>
+      </button>
+      <div class="nb-editor-topbar-right">
+        <label v-if="!props.isCreate" class="nb-editor-archive-check">
+          <input type="checkbox" v-model="isArchived" />
+          <span>В архиве</span>
+        </label>
+        <button
+          type="button"
+          class="nb-editor-save"
+          :disabled="saving"
+          @click="save"
+        >
+          <span v-if="saving" class="nb-editor-spinner" />
+          {{ saving ? 'Сохранение…' : 'Сохранить' }}
+        </button>
+      </div>
+    </div>
+
+    <div v-if="loading" class="nb-editor-loading">Загрузка…</div>
+
+    <div v-else class="nb-editor-body">
+      <div class="nb-editor-main">
+        <input
+          v-model="title"
+          type="text"
+          class="nb-editor-title-input"
+          maxlength="500"
+          placeholder="Название заметки"
+          autocomplete="off"
+        />
+        <WysiwygEditor
+          v-model="content"
+          placeholder="Содержимое заметки"
+        />
+        <p v-if="error" class="nb-editor-error" role="alert">{{ error }}</p>
+      </div>
+
+      <aside class="nb-editor-meta">
+        <div class="nb-editor-meta-section">
+          <label class="nb-editor-meta-label">Папка</label>
+          <select v-model="folderId" class="nb-editor-select">
+            <option :value="null">— без папки —</option>
+            <option v-for="f in props.folders" :key="f.id" :value="f.id">
+              {{ f.name }}
+            </option>
+          </select>
+        </div>
+
+        <div class="nb-editor-meta-section">
+          <label class="nb-editor-meta-label">Категории</label>
+          <div class="nb-editor-cat-wrap">
+            <button type="button" class="nb-editor-cat-btn" @click="catDropOpen = !catDropOpen">
+              {{ selectedCategoryIds.length ? selectedCategoryIds.length + ' выбрано' : 'Выбрать' }}
+              <i class="fa-solid fa-chevron-down" aria-hidden="true" />
+            </button>
+            <div v-if="catDropOpen" class="nb-editor-cat-drop">
+              <label
+                v-for="cat in props.categories"
+                :key="cat.id"
+                class="nb-editor-cat-item"
+              >
+                <input
+                  type="checkbox"
+                  :checked="selectedCategoryIds.includes(cat.id)"
+                  @change="toggleCategory(cat.id)"
+                />
+                <span class="nb-editor-cat-dot" :style="{ background: cat.color }" />
+                <span>{{ cat.name }}</span>
+              </label>
+              <p v-if="!props.categories.length" class="nb-editor-cat-empty">Нет категорий</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="nb-editor-meta-section">
+          <label class="nb-editor-meta-label">Дата</label>
+          <input type="date" v-model="noteDate" class="nb-editor-date-input" />
+        </div>
+
+        <div class="nb-editor-meta-section">
+          <label class="nb-editor-meta-label">Привязка</label>
+          <select v-model="linkedClientId" class="nb-editor-select" @change="linkedProjectId = null; linkedTaskId = null">
+            <option :value="null">— клиент —</option>
+            <option v-for="c in props.taskClients" :key="c.id" :value="c.id">{{ c.name }}</option>
+          </select>
+          <select v-model="linkedProjectId" class="nb-editor-select" @change="linkedTaskId = null">
+            <option :value="null">— проект —</option>
+            <option v-for="p in filteredProjects()" :key="p.id" :value="p.id">{{ p.name }}</option>
+          </select>
+          <select v-model="linkedTaskId" class="nb-editor-select">
+            <option :value="null">— задача —</option>
+            <option v-for="t in filteredTasks()" :key="t.id" :value="t.id">{{ t.title }}</option>
+          </select>
+        </div>
+      </aside>
+    </div>
+  </div>
+</template>
+
+<style scoped>
+.nb-editor {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 50vh;
+}
+
+.nb-editor-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0.7rem;
+  border-bottom: 1px solid var(--color-border);
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.nb-editor-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  background: none;
+  border: none;
+  color: var(--color-text-secondary);
+  font-family: inherit;
+  font-size: 0.65rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  padding: 0.25rem 0.35rem;
+  transition: var(--transition);
+}
+
+.nb-editor-back:hover {
+  color: var(--color-text);
+}
+
+.nb-editor-topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.nb-editor-archive-check {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.6rem;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+}
+
+.nb-editor-archive-check input {
+  accent-color: var(--color-accent);
+}
+
+.nb-editor-save {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.3rem 0.65rem;
+  font-family: inherit;
+  font-size: 0.6rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text);
+  background: var(--color-accent-light);
+  border: 1px solid var(--color-accent);
+  border-radius: 2px;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.nb-editor-save:hover:not(:disabled) {
+  background: var(--color-accent-medium);
+  border-color: var(--color-accent-hover);
+  color: #fff;
+}
+
+.nb-editor-save:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.nb-editor-spinner {
+  width: 0.5rem;
+  height: 0.5rem;
+  border: 2px solid var(--color-border-light);
+  border-top-color: var(--color-accent);
+  border-radius: 50%;
+  animation: nb-spin 0.7s linear infinite;
+}
+
+@keyframes nb-spin {
+  to { transform: rotate(360deg); }
+}
+
+.nb-editor-loading {
+  padding: 2rem;
+  text-align: center;
+  color: var(--color-text-secondary);
+  font-size: 0.8rem;
+}
+
+.nb-editor-body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+.nb-editor-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 0.7rem;
+  gap: 0.5rem;
+}
+
+.nb-editor-title-input {
+  width: 100%;
+  padding: 0.5rem 0.55rem;
+  font-family: inherit;
+  font-size: 0.95rem;
+  color: var(--color-text);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: 2px;
+  box-sizing: border-box;
+  letter-spacing: 0.03em;
+}
+
+.nb-editor-title-input:focus {
+  border-color: var(--color-accent);
+  outline: none;
+}
+
+.nb-editor-main :deep(.wy-editor-wrap) {
+  flex: 1;
+  min-height: 20rem;
+}
+
+.nb-editor-error {
+  margin: 0;
+  font-size: 0.7rem;
+  color: var(--color-accent-hover);
+}
+
+.nb-editor-meta {
+  width: 14rem;
+  flex-shrink: 0;
+  border-left: 1px solid var(--color-border);
+  padding: 0.7rem 0.6rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  overflow-y: auto;
+}
+
+.nb-editor-meta-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.nb-editor-meta-label {
+  font-size: 0.55rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-text-tertiary);
+}
+
+.nb-editor-select {
+  width: 100%;
+  padding: 0.3rem 0.35rem;
+  font-family: inherit;
+  font-size: 0.65rem;
+  color: var(--color-text);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: 2px;
+  box-sizing: border-box;
+}
+
+.nb-editor-date-input {
+  width: 100%;
+  padding: 0.3rem 0.35rem;
+  font-family: inherit;
+  font-size: 0.65rem;
+  color: var(--color-text);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: 2px;
+  box-sizing: border-box;
+}
+
+.nb-editor-cat-wrap {
+  position: relative;
+}
+
+.nb-editor-cat-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.3rem;
+  padding: 0.3rem 0.35rem;
+  font-family: inherit;
+  font-size: 0.65rem;
+  color: var(--color-text-secondary);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: 2px;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+.nb-editor-cat-btn i {
+  font-size: 0.45rem;
+}
+
+.nb-editor-cat-drop {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  margin-top: 0.15rem;
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border-light);
+  border-radius: 2px;
+  max-height: 12rem;
+  overflow-y: auto;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.nb-editor-cat-item {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.4rem;
+  cursor: pointer;
+  font-size: 0.6rem;
+  color: var(--color-text-secondary);
+}
+
+.nb-editor-cat-item:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.nb-editor-cat-item input {
+  accent-color: var(--color-accent);
+  width: 12px;
+  height: 12px;
+}
+
+.nb-editor-cat-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.nb-editor-cat-empty {
+  margin: 0;
+  padding: 0.3rem 0.4rem;
+  font-size: 0.55rem;
+  color: var(--color-text-tertiary);
+}
+
+@media (max-width: 900px) {
+  .nb-editor-body {
+    flex-direction: column;
+  }
+
+  .nb-editor-meta {
+    width: 100%;
+    border-left: none;
+    border-top: 1px solid var(--color-border);
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .nb-editor-meta-section {
+    flex: 1;
+    min-width: 8rem;
+  }
+}
+</style>

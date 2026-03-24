@@ -7,14 +7,16 @@ const LOG_PATH = 'api/journal/notes/create'
 
 const DEFAULT_TITLE = 'Новая заметка'
 
-/**
- * POST /api/journal/notes/create — создать пустую заметку (заголовок по умолчанию, пустое содержимое).
- * Тело опционально: { title?: string, content?: string }
- */
 export const createJournalNoteRoute = app
   .body((s) => ({
     title: s.optional(s.string()),
-    content: s.optional(s.string())
+    content: s.optional(s.string()),
+    folderId: s.optional(s.string()),
+    categoryIds: s.optional(s.array(s.string())),
+    linkedTaskId: s.optional(s.string()),
+    linkedProjectId: s.optional(s.string()),
+    linkedClientId: s.optional(s.string()),
+    noteDate: s.optional(s.string())
   }))
   .post('/', async (ctx, req) => {
     const body = req.body as Record<string, unknown> | undefined
@@ -22,12 +24,8 @@ export const createJournalNoteRoute = app
 
     await loggerLib.writeServerLog(ctx, {
       severity: 7,
-      message: `[${LOG_PATH}] Запрос создания заметки (после валидации body)`,
-      payload: {
-        bodyKeys,
-        titleType: body?.title !== undefined ? typeof body.title : 'undefined',
-        contentType: body?.content !== undefined ? typeof body.content : 'undefined'
-      }
+      message: `[${LOG_PATH}] Запрос создания заметки`,
+      payload: { bodyKeys }
     })
 
     let user: { id: string }
@@ -36,17 +34,11 @@ export const createJournalNoteRoute = app
     } catch (authErr) {
       await loggerLib.writeServerLog(ctx, {
         severity: 4,
-        message: `[${LOG_PATH}] Отказ: не авторизован (requireRealUser)`,
+        message: `[${LOG_PATH}] Отказ: не авторизован`,
         payload: { error: String(authErr) }
       })
       throw authErr
     }
-
-    await loggerLib.writeServerLog(ctx, {
-      severity: 7,
-      message: `[${LOG_PATH}] Пользователь определён`,
-      payload: { userId: user.id }
-    })
 
     const titleRaw = req.body.title
     const contentRaw = req.body.content
@@ -54,17 +46,17 @@ export const createJournalNoteRoute = app
       typeof titleRaw === 'string' && titleRaw.trim() !== '' ? titleRaw.trim() : DEFAULT_TITLE
     const content = typeof contentRaw === 'string' ? contentRaw : ''
 
-    await loggerLib.writeServerLog(ctx, {
-      severity: 7,
-      message: `[${LOG_PATH}] Данные для записи`,
-      payload: {
-        titleLen: title.length,
-        contentLen: content.length
-      }
-    })
-
     try {
-      const row = await journalNotesRepo.createForUser(ctx, user.id, { title, content })
+      const row = await journalNotesRepo.createForUser(ctx, user.id, {
+        title,
+        content,
+        folderId: req.body.folderId ?? null,
+        categoryIds: req.body.categoryIds ?? [],
+        linkedTaskId: req.body.linkedTaskId ?? null,
+        linkedProjectId: req.body.linkedProjectId ?? null,
+        linkedClientId: req.body.linkedClientId ?? null,
+        noteDate: req.body.noteDate ?? null
+      })
       await loggerLib.writeServerLog(ctx, {
         severity: 6,
         message: `[${LOG_PATH}] Заметка создана`,
@@ -76,11 +68,10 @@ export const createJournalNoteRoute = app
       }
     } catch (error) {
       const errMsg = error instanceof Error ? error.message : String(error)
-      const errStack = error instanceof Error ? error.stack : undefined
       await loggerLib.writeServerLog(ctx, {
         severity: 3,
-        message: `[${LOG_PATH}] Ошибка создания заметки (Heap/repo)`,
-        payload: { error: errMsg, stack: errStack }
+        message: `[${LOG_PATH}] Ошибка создания заметки`,
+        payload: { error: errMsg }
       })
       return { success: false, error: errMsg }
     }

@@ -6,11 +6,27 @@ import { getPreloaderStyles, getPreloaderScript } from '../../shared/preloader'
 import { getLogLevelForPage, getLogLevelScript } from '../../shared/logLevel'
 import * as loggerLib from '../../lib/logger.lib'
 import * as journalNotesRepo from '../../repos/journal-notes.repo'
+import * as notebookFoldersRepo from '../../repos/notebook-folders.repo'
+import * as notebookCategoriesRepo from '../../repos/notebook-categories.repo'
 import * as tasksRepo from '../../repos/tasks.repo'
 import { createJournalNoteRoute } from '../../api/journal/notes/create'
 import { getJournalNoteRoute } from '../../api/journal/notes/get'
 import { updateJournalNoteRoute } from '../../api/journal/notes/update'
 import { deleteJournalNoteRoute } from '../../api/journal/notes/delete'
+import { listJournalNotesRoute } from '../../api/journal/notes/list'
+import { reorderJournalNotesRoute } from '../../api/journal/notes/reorder'
+import { archiveJournalNoteRoute } from '../../api/journal/notes/archive'
+import { moveJournalNotesRoute } from '../../api/journal/notes/move'
+import { bulkJournalNotesRoute } from '../../api/journal/notes/bulk'
+import { createNotebookFolderRoute } from '../../api/journal/folders/create'
+import { updateNotebookFolderRoute } from '../../api/journal/folders/update'
+import { deleteNotebookFolderRoute } from '../../api/journal/folders/delete'
+import { reorderNotebookFoldersRoute } from '../../api/journal/folders/reorder'
+import { archiveNotebookFolderRoute } from '../../api/journal/folders/archive'
+import { listNotebookCategoriesRoute } from '../../api/journal/categories/list'
+import { createNotebookCategoryRoute } from '../../api/journal/categories/create'
+import { updateNotebookCategoryRoute } from '../../api/journal/categories/update'
+import { deleteNotebookCategoryRoute } from '../../api/journal/categories/delete'
 import { getJournalDayEntryRoute } from '../../api/journal/day/get'
 import { saveJournalDayEntryRoute } from '../../api/journal/day/save'
 import { getJournalWeekEntryRoute } from '../../api/journal/week/get'
@@ -46,10 +62,6 @@ function parseJournalTabFromQuery(tab: unknown): (typeof VALID_JOURNAL_TABS)[num
     : undefined
 }
 
-/**
- * Страница «Мой журнал»: заглушка «В разработке», общий хедер и футер.
- * Доступна без обязательной авторизации (как главная).
- */
 export const journalPageRoute = app.html('/', async (ctx, req) => {
   await loggerLib.writeServerLog(ctx, {
     severity: 7,
@@ -65,20 +77,29 @@ export const journalPageRoute = app.html('/', async (ctx, req) => {
   const testsUrl = isAuthenticated ? getFullUrl(ROUTES.tests) : ''
 
   let journalNotesInitial: journalNotesRepo.JournalNoteSummary[] = []
+  let notebookFoldersInitial: notebookFoldersRepo.NotebookFolderDto[] = []
+  let notebookCategoriesInitial: notebookCategoriesRepo.NotebookCategoryDto[] = []
   let tasksTreeInitial: TasksTreeDto = { clients: [], projects: [], tasks: [] }
   let journalDayEntryInitial: journalDayRepo.JournalDayEntryDto | null = null
   let journalWeekEntryInitial: journalWeekRepo.JournalWeekEntryDto | null = null
   if (ctx.user) {
     try {
       const user = requireRealUser(ctx)
-      journalNotesInitial = await journalNotesRepo.findSummariesByUserId(ctx, user.id)
-      tasksTreeInitial = await tasksRepo.getTreeForUser(ctx, user.id)
+      ;[journalNotesInitial, notebookFoldersInitial, notebookCategoriesInitial, tasksTreeInitial] =
+        await Promise.all([
+          journalNotesRepo.findSummariesByUserId(ctx, user.id),
+          notebookFoldersRepo.findByUserId(ctx, user.id, true),
+          notebookCategoriesRepo.findByUserId(ctx, user.id),
+          tasksRepo.getTreeForUser(ctx, user.id)
+        ])
       const dayKey = computeJournalDayKeyInTimeZone(Date.now(), SERVER_FALLBACK_TIME_ZONE)
       journalDayEntryInitial = await journalDayRepo.getByUserAndDay(ctx, user.id, dayKey)
       const mondayKey = computeJournalWeekMondayKeyLocal(Date.now())
       journalWeekEntryInitial = await journalWeekRepo.getWeekByUserAndMonday(ctx, user.id, mondayKey)
     } catch {
       journalNotesInitial = []
+      notebookFoldersInitial = []
+      notebookCategoriesInitial = []
       tasksTreeInitial = { clients: [], projects: [], tasks: [] }
       journalDayEntryInitial = null
       journalWeekEntryInitial = null
@@ -89,6 +110,20 @@ export const journalPageRoute = app.html('/', async (ctx, req) => {
   const journalNotesGetUrl = getApiUrlForRoute(getJournalNoteRoute.url())
   const journalNotesUpdateUrl = getApiUrlForRoute(updateJournalNoteRoute.url())
   const journalNotesDeleteUrl = getApiUrlForRoute(deleteJournalNoteRoute.url())
+  const journalNotesListUrl = getApiUrlForRoute(listJournalNotesRoute.url())
+  const journalNotesReorderUrl = getApiUrlForRoute(reorderJournalNotesRoute.url())
+  const journalNotesArchiveUrl = getApiUrlForRoute(archiveJournalNoteRoute.url())
+  const journalNotesMoveUrl = getApiUrlForRoute(moveJournalNotesRoute.url())
+  const journalNotesBulkUrl = getApiUrlForRoute(bulkJournalNotesRoute.url())
+  const notebookFoldersCreateUrl = getApiUrlForRoute(createNotebookFolderRoute.url())
+  const notebookFoldersUpdateUrl = getApiUrlForRoute(updateNotebookFolderRoute.url())
+  const notebookFoldersDeleteUrl = getApiUrlForRoute(deleteNotebookFolderRoute.url())
+  const notebookFoldersReorderUrl = getApiUrlForRoute(reorderNotebookFoldersRoute.url())
+  const notebookFoldersArchiveUrl = getApiUrlForRoute(archiveNotebookFolderRoute.url())
+  const notebookCategoriesListUrl = getApiUrlForRoute(listNotebookCategoriesRoute.url())
+  const notebookCategoriesCreateUrl = getApiUrlForRoute(createNotebookCategoryRoute.url())
+  const notebookCategoriesUpdateUrl = getApiUrlForRoute(updateNotebookCategoryRoute.url())
+  const notebookCategoriesDeleteUrl = getApiUrlForRoute(deleteNotebookCategoryRoute.url())
   const journalDayGetUrl = getApiUrlForRoute(getJournalDayEntryRoute.url())
   const journalDaySaveUrl = getApiUrlForRoute(saveJournalDayEntryRoute.url())
   const journalWeekGetUrl = getApiUrlForRoute(getJournalWeekEntryRoute.url())
@@ -345,10 +380,26 @@ export const journalPageRoute = app.html('/', async (ctx, req) => {
           isAdmin={isAdmin}
           adminUrl={adminUrl}
           journalNotesInitial={journalNotesInitial}
+          notebookFoldersInitial={notebookFoldersInitial}
+          notebookCategoriesInitial={notebookCategoriesInitial}
           journalNotesCreateUrl={journalNotesCreateUrl}
           journalNotesGetUrl={journalNotesGetUrl}
           journalNotesUpdateUrl={journalNotesUpdateUrl}
           journalNotesDeleteUrl={journalNotesDeleteUrl}
+          journalNotesListUrl={journalNotesListUrl}
+          journalNotesReorderUrl={journalNotesReorderUrl}
+          journalNotesArchiveUrl={journalNotesArchiveUrl}
+          journalNotesMoveUrl={journalNotesMoveUrl}
+          journalNotesBulkUrl={journalNotesBulkUrl}
+          notebookFoldersCreateUrl={notebookFoldersCreateUrl}
+          notebookFoldersUpdateUrl={notebookFoldersUpdateUrl}
+          notebookFoldersDeleteUrl={notebookFoldersDeleteUrl}
+          notebookFoldersReorderUrl={notebookFoldersReorderUrl}
+          notebookFoldersArchiveUrl={notebookFoldersArchiveUrl}
+          notebookCategoriesListUrl={notebookCategoriesListUrl}
+          notebookCategoriesCreateUrl={notebookCategoriesCreateUrl}
+          notebookCategoriesUpdateUrl={notebookCategoriesUpdateUrl}
+          notebookCategoriesDeleteUrl={notebookCategoriesDeleteUrl}
           journalDayGetUrl={journalDayGetUrl}
           journalDaySaveUrl={journalDaySaveUrl}
           journalDayEntryInitial={journalDayEntryInitial}

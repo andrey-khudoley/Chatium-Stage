@@ -51,7 +51,22 @@ function applyTabToUrl(tab: JournalTabId) {
   }
 }
 
-type JournalNoteSummary = { id: string; title: string }
+type JournalNoteSummary = {
+  id: string
+  title: string
+  folderId: string | null
+  categoryIds: string[]
+  linkedTaskId: string | null
+  linkedProjectId: string | null
+  linkedClientId: string | null
+  noteDate: string | null
+  isArchived: boolean
+  sortOrder: number
+}
+
+type NotebookFolderDto = { id: string; name: string; color: string; sortOrder: number; isArchived: boolean }
+type NotebookCategoryDto = { id: string; name: string; color: string; sortOrder: number }
+
 interface JournalPageProps {
   projectTitle: string
   indexUrl: string
@@ -62,10 +77,26 @@ interface JournalPageProps {
   isAdmin?: boolean
   adminUrl?: string
   journalNotesInitial?: JournalNoteSummary[]
+  notebookFoldersInitial?: NotebookFolderDto[]
+  notebookCategoriesInitial?: NotebookCategoryDto[]
   journalNotesCreateUrl?: string
   journalNotesGetUrl?: string
   journalNotesUpdateUrl?: string
   journalNotesDeleteUrl?: string
+  journalNotesListUrl?: string
+  journalNotesReorderUrl?: string
+  journalNotesArchiveUrl?: string
+  journalNotesMoveUrl?: string
+  journalNotesBulkUrl?: string
+  notebookFoldersCreateUrl?: string
+  notebookFoldersUpdateUrl?: string
+  notebookFoldersDeleteUrl?: string
+  notebookFoldersReorderUrl?: string
+  notebookFoldersArchiveUrl?: string
+  notebookCategoriesListUrl?: string
+  notebookCategoriesCreateUrl?: string
+  notebookCategoriesUpdateUrl?: string
+  notebookCategoriesDeleteUrl?: string
   journalDayGetUrl?: string
   journalDaySaveUrl?: string
   journalDayEntryInitial?: unknown
@@ -83,7 +114,6 @@ interface JournalPageProps {
   pomodoroStateGetUrl?: string
   pomodoroControlUrl?: string
   journalMonthDataUrl?: string
-  // Вкладка из ?tab= при SSR; на клиенте приоритет у текущего window.location.
   journalTabInitial?: JournalTabId
 }
 
@@ -120,62 +150,99 @@ function resolveInitialTab(): JournalTabId {
 const activeTab = ref<JournalTabId>(resolveInitialTab())
 
 const journalNotes = ref<JournalNoteSummary[]>([...(props.journalNotesInitial ?? [])])
+const notebookFolders = ref<NotebookFolderDto[]>([...(props.notebookFoldersInitial ?? [])])
+const notebookCategories = ref<NotebookCategoryDto[]>([...(props.notebookCategoriesInitial ?? [])])
 
 watch(
   () => props.journalNotesInitial,
-  (next: JournalNoteSummary[] | undefined) => {
-    journalNotes.value = [...(next ?? [])]
-  }
+  (next) => { journalNotes.value = [...(next ?? [])] }
 )
 
-const notebookOpenEditorTick = ref(0)
-const notebookCreateError = ref('')
-
-const showNotebookNavToolbar = computed(() => activeTab.value === 'notebook')
-const hasTasksPageUrl = computed(() => Boolean(props.tasksPageUrl?.trim()))
-const showTasksNavToolbar = computed(() => activeTab.value === 'tasks' && hasTasksPageUrl.value)
-
-const notebookCreateTitle = computed(() =>
-  props.isAuthenticated ? 'Открыть редактор новой заметки' : 'Войдите в аккаунт, чтобы создавать заметки'
+watch(
+  () => props.notebookFoldersInitial,
+  (next) => { notebookFolders.value = [...(next ?? [])] }
 )
 
-function onCreateNotebookNote() {
-  if (!props.isAuthenticated) return
-  notebookCreateError.value = ''
-  notebookOpenEditorTick.value += 1
-  log.info('Запрос редактора новой заметки', { tick: notebookOpenEditorTick.value })
+watch(
+  () => props.notebookCategoriesInitial,
+  (next) => { notebookCategories.value = [...(next ?? [])] }
+)
+
+const showTasksNavToolbar = computed(() => {
+  return activeTab.value === 'tasks' && Boolean(props.tasksPageUrl?.trim())
+})
+
+function onNotebookNoteCreated(note: { id: string; title: string }) {
+  reloadNotebookData()
 }
 
-function onOpenAllTasks() {
-  const targetUrl = props.tasksPageUrl?.trim()
-  if (!targetUrl) return
-  log.info('Переход к общему списку задач', { targetUrl })
-  window.location.assign(targetUrl)
-}
-
-function onNotebookNoteCreated(note: JournalNoteSummary) {
-  const id = note.id
-  journalNotes.value = [note, ...journalNotes.value.filter((x) => x.id !== id)]
-}
-
-function onNotebookNoteUpdated(note: JournalNoteSummary) {
-  journalNotes.value = journalNotes.value.map((x) => (x.id === note.id ? note : x))
+function onNotebookNoteUpdated(note: { id: string; title: string }) {
+  reloadNotebookData()
 }
 
 function onNotebookNoteDeleted(id: string) {
   journalNotes.value = journalNotes.value.filter((x) => x.id !== id)
 }
 
+function onFoldersChanged() {
+  reloadNotebookData()
+}
+
+function onCategoriesChanged() {
+  reloadNotebookData()
+}
+
+async function reloadNotebookData() {
+  if (!props.journalNotesListUrl) return
+  try {
+    const url = `${props.journalNotesListUrl}?includeArchived=true`
+    const res = await fetch(url, { method: 'GET', credentials: 'include' })
+    const data = await res.json() as {
+      success?: boolean
+      notes?: JournalNoteSummary[]
+      folders?: NotebookFolderDto[]
+      categories?: NotebookCategoryDto[]
+    }
+    if (data.success) {
+      if (data.notes) journalNotes.value = data.notes
+      if (data.folders) notebookFolders.value = data.folders
+      if (data.categories) notebookCategories.value = data.categories
+    }
+  } catch (e) {
+    log.error('Обновление данных блокнота', { error: String(e) })
+  }
+}
+
 const currentPane = computed(() => tabComponents[activeTab.value])
+
+const tasksTree = computed(() => props.tasksTreeInitial ?? { clients: [], projects: [], tasks: [] })
 
 const notebookPaneProps = computed(() => ({
   notes: journalNotes.value,
+  folders: notebookFolders.value,
+  categories: notebookCategories.value,
   isAuthenticated: props.isAuthenticated,
+  taskClients: tasksTree.value.clients.map((c) => ({ id: c.id, name: c.name })),
+  taskProjects: tasksTree.value.projects.map((p) => ({ id: p.id, clientId: p.clientId, name: p.name })),
+  taskItems: tasksTree.value.tasks.map((t) => ({ id: t.id, projectId: t.projectId, title: t.title })),
   journalNotesCreateUrl: props.journalNotesCreateUrl,
   journalNotesGetUrl: props.journalNotesGetUrl,
   journalNotesUpdateUrl: props.journalNotesUpdateUrl,
   journalNotesDeleteUrl: props.journalNotesDeleteUrl,
-  openNotebookEditorRequest: notebookOpenEditorTick.value
+  journalNotesListUrl: props.journalNotesListUrl,
+  journalNotesReorderUrl: props.journalNotesReorderUrl,
+  journalNotesArchiveUrl: props.journalNotesArchiveUrl,
+  journalNotesMoveUrl: props.journalNotesMoveUrl,
+  journalNotesBulkUrl: props.journalNotesBulkUrl,
+  notebookFoldersCreateUrl: props.notebookFoldersCreateUrl,
+  notebookFoldersUpdateUrl: props.notebookFoldersUpdateUrl,
+  notebookFoldersDeleteUrl: props.notebookFoldersDeleteUrl,
+  notebookFoldersReorderUrl: props.notebookFoldersReorderUrl,
+  notebookFoldersArchiveUrl: props.notebookFoldersArchiveUrl,
+  notebookCategoriesListUrl: props.notebookCategoriesListUrl,
+  notebookCategoriesCreateUrl: props.notebookCategoriesCreateUrl,
+  notebookCategoriesUpdateUrl: props.notebookCategoriesUpdateUrl,
+  notebookCategoriesDeleteUrl: props.notebookCategoriesDeleteUrl,
 }))
 
 const tasksPaneProps = computed(() => ({
@@ -225,7 +292,6 @@ const panePropsForTab = computed(() => {
 const selectTab = (id: JournalTabId) => {
   if (activeTab.value === id) return
   log.info('Journal tab changed', { from: activeTab.value, to: id })
-  notebookCreateError.value = ''
   activeTab.value = id
   applyTabToUrl(id)
 }
@@ -235,11 +301,16 @@ function onSelectNavTab(tabId: string) {
   selectTab(tabId as JournalTabId)
 }
 
+function onOpenAllTasks() {
+  const targetUrl = props.tasksPageUrl?.trim()
+  if (!targetUrl) return
+  window.location.assign(targetUrl)
+}
+
 function syncActiveTabFromLocation() {
   const fromUrl = parseTabFromSearch(window.location.search)
   const next = fromUrl ?? 'notebook'
   if (activeTab.value !== next) {
-    notebookCreateError.value = ''
     activeTab.value = next
   }
 }
@@ -296,13 +367,13 @@ const openChatiumLink = () => {
         <JournalNav
           :tabs="tabs"
           :activeTab="activeTab"
-          :showNotebookToolbar="showNotebookNavToolbar"
+          :showNotebookToolbar="false"
           :showTasksToolbar="showTasksNavToolbar"
           :isAuthenticated="props.isAuthenticated"
-          :notebookCreateTitle="notebookCreateTitle"
-          :notebookCreateError="notebookCreateError"
+          notebookCreateTitle=""
+          notebookCreateError=""
           @select-tab="onSelectNavTab"
-          @create-note="onCreateNotebookNote"
+          @create-note="() => {}"
           @open-all-tasks="onOpenAllTasks"
         />
 
@@ -315,6 +386,8 @@ const openChatiumLink = () => {
               @note-created="onNotebookNoteCreated"
               @note-updated="onNotebookNoteUpdated"
               @note-deleted="onNotebookNoteDeleted"
+              @folders-changed="onFoldersChanged"
+              @categories-changed="onCategoriesChanged"
             />
           </Transition>
         </section>
