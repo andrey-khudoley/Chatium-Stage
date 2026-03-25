@@ -152,6 +152,7 @@ const openChatiumLink = () => {
       :isAdmin="props.isAdmin"
       :adminUrl="props.adminUrl"
       :testsUrl="props.testsUrl"
+      :enableToolClockWidget="true"
       :pomodoroStateGetUrl="props.pomodoroStateGetUrl"
       :pomodoroControlUrl="props.pomodoroControlUrl"
     />

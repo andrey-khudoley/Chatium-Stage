@@ -19,17 +19,24 @@
         </a>
       </div>
       <div class="header-right">
-        <span v-if="!pomodoroActive" class="header-clock">
-          <i class="fas fa-clock"></i>
-          <span class="clock-time">{{ currentTime }}</span>
+        <span class="header-clock" :class="{ 'header-clock--interactive': isToolClockWidgetEnabled && widgetMode !== 'clock' }" @click="onClockClick">
+          <i :class="clockIconClass"></i>
+          <span class="clock-time">{{ headerClockDisplay }}</span>
+          <template v-if="isToolClockWidgetEnabled && widgetMode !== 'clock'">
+            <button type="button" class="header-tool-btn" :disabled="clockActionPending" @click.stop="handleToolStartPause">
+              {{ startPauseLabel }}
+            </button>
+            <button type="button" class="header-tool-btn header-tool-btn--danger" :disabled="clockActionPending" @click.stop="handleToolReset">
+              Сброс
+            </button>
+          </template>
         </span>
-        <span v-else class="header-clock header-clock--pomodoro">
-          <i class="fas fa-hourglass-half"></i>
-          <span class="clock-time">{{ pomodoroDisplay }}</span>
-          <button type="button" class="header-pomodoro-toggle" @click="togglePomodoroPauseResume">
-            <i :class="pomodoroStatus === 'running' ? 'fas fa-pause' : 'fas fa-play'" />
-          </button>
-        </span>
+        <div v-if="isToolClockWidgetEnabled && showToolPicker" class="header-tool-picker">
+          <button type="button" class="header-tool-picker-btn" @click="selectWidgetMode('clock')">Часы</button>
+          <button type="button" class="header-tool-picker-btn" @click="selectWidgetMode('pomodoro')">Помидор</button>
+          <button type="button" class="header-tool-picker-btn" @click="selectWidgetMode('timer')">Таймер</button>
+          <button type="button" class="header-tool-picker-btn" @click="selectWidgetMode('stopwatch')">Секундомер</button>
+        </div>
         <div class="header-actions">
         <a 
           v-if="props.isAdmin && props.adminUrl"
@@ -90,6 +97,9 @@ import { formatPomodoroSecondsDisplay } from '../lib/pomodoro-types'
 import { computePomodoroStatsDayKeyLocal } from '../lib/pomodoro-stats-day'
 
 const log = createComponentLogger('Header')
+type HeaderTool = 'pomodoro' | 'timer' | 'stopwatch'
+type HeaderWidgetMode = 'clock' | HeaderTool
+type LocalClockStatus = 'stopped' | 'running' | 'paused'
 
 const props = defineProps<{
   projectTitle: string
@@ -101,6 +111,7 @@ const props = defineProps<{
   isAdmin?: boolean
   adminUrl?: string
   testsUrl?: string
+  enableToolClockWidget?: boolean
   pomodoroStateGetUrl?: string
   pomodoroControlUrl?: string
 }>()
@@ -112,7 +123,26 @@ const pomodoroStatus = ref<'stopped' | 'running' | 'paused' | 'awaiting_continue
 const pomodoroEndsAtMs = ref(0)
 const pomodoroRemainingSec = ref(0)
 const nowTick = ref(Date.now())
-const pomodoroActive = computed(() => !!props.pomodoroStateGetUrl && !!props.pomodoroControlUrl && pomodoroStatus.value !== 'stopped')
+const widgetMode = ref<HeaderWidgetMode>('clock')
+const showToolPicker = ref(false)
+const clockActionPending = ref(false)
+const timerStatus = ref<LocalClockStatus>('stopped')
+const timerRemainingSec = ref(0)
+const timerEndsAtMs = ref(0)
+const stopwatchStatus = ref<LocalClockStatus>('stopped')
+const stopwatchElapsedSec = ref(0)
+const stopwatchStartedAtMs = ref(0)
+const TIMER_SETTINGS_STORAGE_KEY = 'assistant:focus-clock-settings:timer'
+const HEADER_WIDGET_STORAGE_KEY = 'assistant:header-clock-widget:v1'
+const HEADER_WIDGET_STORAGE_VERSION = 1
+const isInitialAutoModeResolved = ref(false)
+
+type PersistedHeaderWidgetState = {
+  version: number
+  mode: HeaderWidgetMode
+  timer: { status: LocalClockStatus; remainingSec: number; endsAtMs: number }
+  stopwatch: { status: LocalClockStatus; elapsedSec: number; startedAtMs: number }
+}
 const pomodoroDisplaySec = computed(() => {
   if (pomodoroStatus.value === 'running') {
     return Math.max(0, Math.floor((pomodoroEndsAtMs.value - nowTick.value) / 1000))
@@ -128,6 +158,37 @@ const pomodoroDisplay = computed(() => {
   if (pomodoroStatus.value === 'awaiting_continue') return `+${s}`
   return s
 })
+const timerDisplaySec = computed(() => {
+  if (timerStatus.value === 'running') {
+    return Math.max(0, Math.floor((timerEndsAtMs.value - nowTick.value) / 1000))
+  }
+  return Math.max(0, timerRemainingSec.value)
+})
+const stopwatchDisplaySec = computed(() => {
+  if (stopwatchStatus.value === 'running') {
+    return Math.max(0, stopwatchElapsedSec.value + Math.floor((nowTick.value - stopwatchStartedAtMs.value) / 1000))
+  }
+  return Math.max(0, stopwatchElapsedSec.value)
+})
+const headerClockDisplay = computed(() => {
+  if (widgetMode.value === 'clock') return currentTime.value
+  if (widgetMode.value === 'pomodoro') return pomodoroDisplay.value
+  if (widgetMode.value === 'timer') return formatPomodoroSecondsDisplay(timerDisplaySec.value)
+  return formatPomodoroSecondsDisplay(stopwatchDisplaySec.value)
+})
+const clockIconClass = computed(() => {
+  if (widgetMode.value === 'clock') return 'fas fa-clock'
+  if (widgetMode.value === 'pomodoro') return 'fas fa-hourglass-half'
+  if (widgetMode.value === 'timer') return 'fas fa-stopwatch-20'
+  return 'fas fa-stopwatch'
+})
+const startPauseLabel = computed(() => {
+  if (widgetMode.value === 'pomodoro') return pomodoroStatus.value === 'running' ? 'Пауза' : 'Запуск'
+  if (widgetMode.value === 'timer') return timerStatus.value === 'running' ? 'Пауза' : 'Запуск'
+  if (widgetMode.value === 'stopwatch') return stopwatchStatus.value === 'running' ? 'Пауза' : 'Запуск'
+  return 'Запуск'
+})
+const isToolClockWidgetEnabled = computed(() => !!props.enableToolClockWidget)
 
 // Функция для форматирования времени
 const updateTime = () => {
@@ -168,14 +229,144 @@ const syncPomodoro = async () => {
     pomodoroStatus.value = j.state.status
     pomodoroEndsAtMs.value = j.state.phaseEndsAtMs
     pomodoroRemainingSec.value = j.state.phaseRemainingSec
+    resolveInitialAutoMode()
   } catch (error) {
     log.warning('Pomodoro sync failed', { error: String(error) })
+  } finally {
+    if (!isInitialAutoModeResolved.value) {
+      resolveInitialAutoMode()
+      if (!isInitialAutoModeResolved.value) isInitialAutoModeResolved.value = true
+    }
   }
 }
 
-const togglePomodoroPauseResume = async () => {
-  if (!props.pomodoroControlUrl || pomodoroStatus.value === 'stopped') return
-  const action = pomodoroStatus.value === 'running' ? 'pause' : 'resume'
+function readTimerSettingsDurationSec(): number {
+  try {
+    const raw = window.localStorage.getItem(TIMER_SETTINGS_STORAGE_KEY)
+    if (!raw) return 25 * 60
+    const parsed = JSON.parse(raw) as { version?: number; minutes?: number; seconds?: number }
+    const minutes = Math.max(0, Math.min(999, Math.floor(parsed.minutes ?? 25)))
+    const seconds = Math.max(0, Math.min(59, Math.floor(parsed.seconds ?? 0)))
+    return Math.max(1, minutes * 60 + seconds)
+  } catch {
+    return 25 * 60
+  }
+}
+
+function onClockClick(): void {
+  if (!isToolClockWidgetEnabled.value) return
+  showToolPicker.value = !showToolPicker.value
+}
+
+function normalizeLocalClockStatus(raw: unknown): LocalClockStatus {
+  if (raw === 'running' || raw === 'paused' || raw === 'stopped') return raw
+  return 'stopped'
+}
+
+function persistHeaderWidgetState(): void {
+  if (!isToolClockWidgetEnabled.value) return
+  const payload: PersistedHeaderWidgetState = {
+    version: HEADER_WIDGET_STORAGE_VERSION,
+    mode: widgetMode.value,
+    timer: {
+      status: timerStatus.value,
+      remainingSec: Math.max(0, Math.floor(timerRemainingSec.value)),
+      endsAtMs: Math.max(0, Math.floor(timerEndsAtMs.value))
+    },
+    stopwatch: {
+      status: stopwatchStatus.value,
+      elapsedSec: Math.max(0, Math.floor(stopwatchElapsedSec.value)),
+      startedAtMs: Math.max(0, Math.floor(stopwatchStartedAtMs.value))
+    }
+  }
+  try {
+    window.localStorage.setItem(HEADER_WIDGET_STORAGE_KEY, JSON.stringify(payload))
+  } catch {
+    // ignore storage write errors
+  }
+}
+
+function restoreHeaderWidgetState(): void {
+  if (!isToolClockWidgetEnabled.value) return
+  try {
+    const raw = window.localStorage.getItem(HEADER_WIDGET_STORAGE_KEY)
+    if (!raw) return
+    const parsed = JSON.parse(raw) as PersistedHeaderWidgetState
+    if (parsed.version !== HEADER_WIDGET_STORAGE_VERSION) return
+    widgetMode.value = parsed.mode
+
+    timerStatus.value = normalizeLocalClockStatus(parsed.timer?.status)
+    timerRemainingSec.value = Math.max(0, Math.floor(parsed.timer?.remainingSec ?? 0))
+    timerEndsAtMs.value = Math.max(0, Math.floor(parsed.timer?.endsAtMs ?? 0))
+
+    stopwatchStatus.value = normalizeLocalClockStatus(parsed.stopwatch?.status)
+    stopwatchElapsedSec.value = Math.max(0, Math.floor(parsed.stopwatch?.elapsedSec ?? 0))
+    stopwatchStartedAtMs.value = Math.max(0, Math.floor(parsed.stopwatch?.startedAtMs ?? 0))
+
+    const ts = Date.now()
+    if (timerStatus.value === 'running' && timerEndsAtMs.value > 0) {
+      const remain = Math.max(0, Math.floor((timerEndsAtMs.value - ts) / 1000))
+      if (remain <= 0) {
+        timerStatus.value = 'stopped'
+        timerRemainingSec.value = 0
+        timerEndsAtMs.value = 0
+      } else {
+        timerRemainingSec.value = remain
+      }
+    }
+    if (stopwatchStatus.value !== 'running') {
+      stopwatchStartedAtMs.value = 0
+    }
+  } catch {
+    // ignore broken localStorage data
+  }
+}
+
+function resolveInitialAutoMode(): void {
+  if (isInitialAutoModeResolved.value || !isToolClockWidgetEnabled.value) return
+  if (pomodoroStatus.value === 'running' || pomodoroStatus.value === 'awaiting_continue') {
+    widgetMode.value = 'pomodoro'
+    isInitialAutoModeResolved.value = true
+    persistHeaderWidgetState()
+    return
+  }
+  if (timerStatus.value === 'running') {
+    widgetMode.value = 'timer'
+    isInitialAutoModeResolved.value = true
+    persistHeaderWidgetState()
+    return
+  }
+  if (stopwatchStatus.value === 'running') {
+    widgetMode.value = 'stopwatch'
+    isInitialAutoModeResolved.value = true
+    persistHeaderWidgetState()
+    return
+  }
+  if (!props.pomodoroStateGetUrl || !props.pomodoroControlUrl) {
+    isInitialAutoModeResolved.value = true
+  }
+}
+
+async function pauseOtherRunningTools(target: HeaderWidgetMode): Promise<void> {
+  // Local timer
+  if (target !== 'timer' && timerStatus.value === 'running') pauseTimer()
+  // Local stopwatch
+  if (target !== 'stopwatch' && stopwatchStatus.value === 'running') pauseStopwatch()
+  // Pomodoro (server)
+  if (target !== 'pomodoro' && pomodoroStatus.value === 'running') {
+    await controlPomodoro('pause')
+  }
+}
+
+function selectWidgetMode(mode: HeaderWidgetMode): void {
+  if (!isToolClockWidgetEnabled.value) return
+  widgetMode.value = mode
+  showToolPicker.value = false
+  persistHeaderWidgetState()
+}
+
+async function controlPomodoro(action: 'start' | 'resume' | 'pause' | 'reset'): Promise<void> {
+  if (!props.pomodoroControlUrl) return
   try {
     const r = await fetch(props.pomodoroControlUrl, {
       method: 'POST',
@@ -194,12 +385,132 @@ const togglePomodoroPauseResume = async () => {
   }
 }
 
+function startTimer(): void {
+  void pauseOtherRunningTools('timer')
+  const durationSec = readTimerSettingsDurationSec()
+  timerRemainingSec.value = durationSec
+  timerEndsAtMs.value = Date.now() + durationSec * 1000
+  timerStatus.value = 'running'
+  persistHeaderWidgetState()
+}
+
+function pauseTimer(): void {
+  timerRemainingSec.value = timerDisplaySec.value
+  timerEndsAtMs.value = 0
+  timerStatus.value = 'paused'
+  persistHeaderWidgetState()
+}
+
+function resumeTimer(): void {
+  void pauseOtherRunningTools('timer')
+  timerEndsAtMs.value = Date.now() + Math.max(1, timerRemainingSec.value) * 1000
+  timerStatus.value = 'running'
+  persistHeaderWidgetState()
+}
+
+function resetTimer(): void {
+  timerStatus.value = 'stopped'
+  timerEndsAtMs.value = 0
+  timerRemainingSec.value = readTimerSettingsDurationSec()
+  persistHeaderWidgetState()
+}
+
+function startStopwatch(): void {
+  void pauseOtherRunningTools('stopwatch')
+  stopwatchElapsedSec.value = 0
+  stopwatchStartedAtMs.value = Date.now()
+  stopwatchStatus.value = 'running'
+  persistHeaderWidgetState()
+}
+
+function pauseStopwatch(): void {
+  stopwatchElapsedSec.value = stopwatchDisplaySec.value
+  stopwatchStartedAtMs.value = 0
+  stopwatchStatus.value = 'paused'
+  persistHeaderWidgetState()
+}
+
+function resumeStopwatch(): void {
+  void pauseOtherRunningTools('stopwatch')
+  stopwatchStartedAtMs.value = Date.now()
+  stopwatchStatus.value = 'running'
+  persistHeaderWidgetState()
+}
+
+function resetStopwatch(): void {
+  stopwatchStatus.value = 'stopped'
+  stopwatchElapsedSec.value = 0
+  stopwatchStartedAtMs.value = 0
+  persistHeaderWidgetState()
+}
+
+async function handleToolStartPause(): Promise<void> {
+  if (clockActionPending.value) return
+  if (widgetMode.value === 'pomodoro') {
+    clockActionPending.value = true
+    try {
+      await pauseOtherRunningTools('pomodoro')
+      if (pomodoroStatus.value === 'running') await controlPomodoro('pause')
+      else if (pomodoroStatus.value === 'paused' || pomodoroStatus.value === 'awaiting_continue') await controlPomodoro('resume')
+      else await controlPomodoro('start')
+    } finally {
+      clockActionPending.value = false
+    }
+    persistHeaderWidgetState()
+    return
+  }
+  if (widgetMode.value === 'timer') {
+    if (timerStatus.value === 'running') pauseTimer()
+    else if (timerStatus.value === 'paused') resumeTimer()
+    else startTimer()
+    return
+  }
+  if (widgetMode.value === 'stopwatch') {
+    if (stopwatchStatus.value === 'running') pauseStopwatch()
+    else if (stopwatchStatus.value === 'paused') resumeStopwatch()
+    else startStopwatch()
+  }
+}
+
+async function handleToolReset(): Promise<void> {
+  if (clockActionPending.value) return
+  if (widgetMode.value === 'pomodoro') {
+    clockActionPending.value = true
+    try {
+      await controlPomodoro('reset')
+    } finally {
+      clockActionPending.value = false
+    }
+    persistHeaderWidgetState()
+    return
+  }
+  if (widgetMode.value === 'timer') {
+    resetTimer()
+    return
+  }
+  if (widgetMode.value === 'stopwatch') {
+    resetStopwatch()
+    return
+  }
+}
+
 onMounted(() => {
   log.info('Component mounted, clock started')
   updateTime()
   timeInterval = window.setInterval(updateTime, 1000)
   nowTick.value = Date.now()
-  nowTickInterval = window.setInterval(() => { nowTick.value = Date.now() }, 1000)
+  timerRemainingSec.value = readTimerSettingsDurationSec()
+  restoreHeaderWidgetState()
+  resolveInitialAutoMode()
+  nowTickInterval = window.setInterval(() => {
+    nowTick.value = Date.now()
+    if (timerStatus.value === 'running' && timerDisplaySec.value <= 0) {
+      timerStatus.value = 'stopped'
+      timerRemainingSec.value = 0
+      timerEndsAtMs.value = 0
+      persistHeaderWidgetState()
+    }
+  }, 1000)
   if (props.isAuthenticated && props.pomodoroStateGetUrl && props.pomodoroControlUrl) {
     void syncPomodoro()
     pomodoroPollInterval = window.setInterval(() => { void syncPomodoro() }, 7000)
@@ -564,6 +875,7 @@ const cancelLogout = () => {
     2px 100%, 2px calc(100% - 2px), 0 calc(100% - 2px)
   );
 }
+.header-clock--interactive { cursor: pointer; }
 
 .header-clock i {
   font-size: 0.625rem;
@@ -574,21 +886,46 @@ const cancelLogout = () => {
   font-family: 'Share Tech Mono', 'Courier New', monospace;
 }
 
-.header-clock--pomodoro {
-  gap: 0.5rem;
-}
-
-.header-pomodoro-toggle {
+.header-tool-btn {
   border: 1px solid var(--color-border-light);
   background: var(--color-bg-tertiary);
   color: var(--color-text);
-  width: 1.35rem;
   height: 1.35rem;
-  padding: 0;
+  padding: 0 0.38rem;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
+  font-size: 0.6rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.header-tool-btn--danger {
+  border-color: rgba(255, 107, 107, 0.35);
+  color: #e8a0a0;
+}
+
+.header-tool-picker {
+  display: flex;
+  gap: 0.3rem;
+}
+
+.header-tool-picker-btn {
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-tertiary);
+  color: var(--color-text-secondary);
+  height: 1.6rem;
+  padding: 0 0.45rem;
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+}
+
+.header-tool-picker-btn:hover {
+  color: var(--color-text);
+  border-color: var(--color-border-light);
 }
 
 .header-clock:hover {

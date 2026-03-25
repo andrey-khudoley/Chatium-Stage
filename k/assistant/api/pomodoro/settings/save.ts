@@ -19,8 +19,8 @@ export const savePomodoroSettingsRoute = app
   }))
   .post('/', async (ctx, req) => {
     const user = requireRealUser(ctx)
-    if (req.body.afterLongRest !== 'stop' && req.body.afterLongRest !== 'pause') {
-      return { success: false, error: 'afterLongRest must be stop or pause' }
+    if (req.body.afterLongRest !== 'auto' && req.body.afterLongRest !== 'pause' && req.body.afterLongRest !== 'overtime' && req.body.afterLongRest !== 'stop') {
+      return { success: false, error: 'afterLongRest must be auto, pause or overtime' }
     }
     try {
       const state = await pomodoroLib.saveSettings(

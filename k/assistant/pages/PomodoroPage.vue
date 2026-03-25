@@ -27,7 +27,7 @@ type PomodoroState = {
   cyclesUntilLongRest: number
   pauseAfterWork: boolean
   pauseAfterRest: boolean
-  afterLongRest: 'stop' | 'pause'
+  afterLongRest: 'auto' | 'pause' | 'overtime' | 'stop'
   autoStartRest: boolean
   autoStartNextCycle: boolean
   phaseChangeSound: number
@@ -163,10 +163,12 @@ type PomodoroSettingsDraft = {
   cyclesUntilLongRest: number
   pauseAfterWork: boolean
   pauseAfterRest: boolean
-  afterLongRest: 'stop' | 'pause'
+  afterLongRest: 'auto' | 'pause' | 'overtime' | 'stop'
   autoStartRest: boolean
   autoStartNextCycle: boolean
   phaseChangeSound: number
+  afterWorkAction: 'auto' | 'pause' | 'overtime'
+  afterRestAction: 'auto' | 'pause' | 'overtime'
 }
 
 async function saveSettings(draft: PomodoroSettingsDraft) {
@@ -176,7 +178,19 @@ async function saveSettings(draft: PomodoroSettingsDraft) {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...draft, statsDayKey: pomodoroStatsDayKeyNow() })
+      body: JSON.stringify({
+        workMinutes: draft.workMinutes,
+        restMinutes: draft.restMinutes,
+        longRestMinutes: draft.longRestMinutes,
+        cyclesUntilLongRest: draft.cyclesUntilLongRest,
+        pauseAfterWork: draft.pauseAfterWork,
+        pauseAfterRest: draft.pauseAfterRest,
+        afterLongRest: draft.afterLongRest,
+        autoStartRest: draft.autoStartRest,
+        autoStartNextCycle: draft.autoStartNextCycle,
+        phaseChangeSound: draft.phaseChangeSound,
+        statsDayKey: pomodoroStatsDayKeyNow()
+      })
     })
     const j = await readApiJson<{ success?: boolean; state?: PomodoroState; serverNowMs?: number; error?: string }>(r)
     if (j.success && j.state) {
@@ -356,10 +370,12 @@ const settingsModel = computed(() => {
     cyclesUntilLongRest: current.cyclesUntilLongRest,
     pauseAfterWork: current.pauseAfterWork,
     pauseAfterRest: current.pauseAfterRest,
-    afterLongRest: current.afterLongRest,
+    afterLongRest: current.afterLongRest === 'stop' ? 'pause' : current.afterLongRest,
     autoStartRest: current.autoStartRest,
     autoStartNextCycle: current.autoStartNextCycle,
-    phaseChangeSound: current.phaseChangeSound
+    phaseChangeSound: current.phaseChangeSound,
+    afterWorkAction: current.autoStartRest ? 'auto' : current.pauseAfterWork ? 'pause' : 'overtime',
+    afterRestAction: current.autoStartNextCycle ? 'auto' : current.pauseAfterRest ? 'pause' : 'overtime'
   }
 })
 
@@ -392,6 +408,7 @@ const pomodoroActionPanelLayout = computed(() => {
       :isAdmin="props.isAdmin"
       :adminUrl="props.adminUrl"
       :testsUrl="props.testsUrl"
+      :enableToolClockWidget="true"
       :pomodoroStateGetUrl="props.stateGetUrl"
       :pomodoroControlUrl="props.controlUrl"
     />

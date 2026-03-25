@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { reactive, watch } from 'vue'
-import type { PomodoroAfterLongRest } from '../../lib/pomodoro-types'
+import type { PomodoroAfterLongRest, PomodoroPhaseCompleteAction } from '../../lib/pomodoro-types'
 import { normalizePhaseChangeSoundId } from '../../lib/pomodoro-types'
 import { POMODORO_PHASE_CHANGE_SOUND_OPTIONS, playPomodoroPhaseChangeSound } from '../../lib/pomodoro-phase-sounds'
 
@@ -15,6 +15,8 @@ type SettingsDraft = {
   autoStartRest: boolean
   autoStartNextCycle: boolean
   phaseChangeSound: number
+  afterWorkAction: PomodoroPhaseCompleteAction
+  afterRestAction: PomodoroPhaseCompleteAction
 }
 
 const props = defineProps<{
@@ -38,7 +40,9 @@ const draft = reactive<SettingsDraft>({
   afterLongRest: 'pause',
   autoStartRest: false,
   autoStartNextCycle: false,
-  phaseChangeSound: 3
+  phaseChangeSound: 3,
+  afterWorkAction: 'overtime',
+  afterRestAction: 'overtime',
 })
 
 function clamp(v: number, min: number, max: number): number {
@@ -53,10 +57,12 @@ function syncDraft(source: SettingsDraft): void {
   draft.cyclesUntilLongRest = clamp(source.cyclesUntilLongRest, 1, 12)
   draft.pauseAfterWork = !!source.pauseAfterWork
   draft.pauseAfterRest = !!source.pauseAfterRest
-  draft.afterLongRest = source.afterLongRest === 'stop' ? 'stop' : 'pause'
+  draft.afterLongRest = source.afterLongRest === 'stop' ? 'pause' : source.afterLongRest
   draft.autoStartRest = !!source.autoStartRest
   draft.autoStartNextCycle = !!source.autoStartNextCycle
   draft.phaseChangeSound = normalizePhaseChangeSoundId(source.phaseChangeSound)
+  draft.afterWorkAction = source.autoStartRest ? 'auto' : source.pauseAfterWork ? 'pause' : 'overtime'
+  draft.afterRestAction = source.autoStartNextCycle ? 'auto' : source.pauseAfterRest ? 'pause' : 'overtime'
 }
 
 watch(
@@ -77,7 +83,20 @@ function onKeyDown(event: KeyboardEvent): void {
 }
 
 function submit(): void {
-  emit('save', { ...draft })
+  const afterWorkAction = draft.afterWorkAction
+  const afterRestAction = draft.afterRestAction
+  emit('save', {
+    workMinutes: draft.workMinutes,
+    restMinutes: draft.restMinutes,
+    longRestMinutes: draft.longRestMinutes,
+    cyclesUntilLongRest: draft.cyclesUntilLongRest,
+    autoStartRest: afterWorkAction === 'auto',
+    pauseAfterWork: afterWorkAction === 'pause',
+    autoStartNextCycle: afterRestAction === 'auto',
+    pauseAfterRest: afterRestAction === 'pause',
+    afterLongRest: draft.afterLongRest === 'stop' ? 'pause' : draft.afterLongRest,
+    phaseChangeSound: draft.phaseChangeSound
+  })
 }
 
 function previewPhaseSound(): void {
@@ -167,15 +186,23 @@ function previewPhaseSound(): void {
 
           <div class="settings-section">
             <div class="section-title">
-              <i class="fa-solid fa-robot" /> Автопилот
+              <i class="fa-solid fa-robot" /> После завершения этапа
             </div>
-            <label class="toggle-label">
-              <input v-model="draft.autoStartRest" type="checkbox" class="toggle-checkbox" />
-              <span class="toggle-text">Автостарт отдыха</span>
+            <label class="field-label">
+              <span class="field-name">После работы</span>
+              <select v-model="draft.afterWorkAction" class="field-input field-select">
+                <option value="auto">Автоматический переход на следующий этап</option>
+                <option value="pause">Пауза после завершения этапа</option>
+                <option value="overtime">Продолжение отсчёта (отрицательный таймер)</option>
+              </select>
             </label>
-            <label class="toggle-label">
-              <input v-model="draft.autoStartNextCycle" type="checkbox" class="toggle-checkbox" />
-              <span class="toggle-text">Автостарт следующего цикла</span>
+            <label class="field-label">
+              <span class="field-name">После отдыха</span>
+              <select v-model="draft.afterRestAction" class="field-input field-select">
+                <option value="auto">Автоматический переход на следующий этап</option>
+                <option value="pause">Пауза после завершения этапа</option>
+                <option value="overtime">Продолжение отсчёта (отрицательный таймер)</option>
+              </select>
             </label>
           </div>
 
@@ -183,21 +210,14 @@ function previewPhaseSound(): void {
 
           <div class="settings-section">
             <div class="section-title">
-              <i class="fa-solid fa-hand" /> Ручные паузы
+              <i class="fa-solid fa-hand" /> После длинного отдыха
             </div>
-            <label class="toggle-label">
-              <input v-model="draft.pauseAfterWork" type="checkbox" class="toggle-checkbox" />
-              <span class="toggle-text">Пауза после работы</span>
-            </label>
-            <label class="toggle-label">
-              <input v-model="draft.pauseAfterRest" type="checkbox" class="toggle-checkbox" />
-              <span class="toggle-text">Пауза после отдыха</span>
-            </label>
             <label class="field-label">
-              <span class="field-name">После длинного отдыха</span>
+              <span class="field-name">Режим</span>
               <select v-model="draft.afterLongRest" class="field-input field-select">
-                <option value="pause">Пауза</option>
-                <option value="stop">Выключить</option>
+                <option value="auto">Автоматический переход на следующий этап</option>
+                <option value="pause">Пауза после завершения этапа</option>
+                <option value="overtime">Продолжение отсчёта (отрицательный таймер)</option>
               </select>
             </label>
           </div>

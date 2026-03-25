@@ -29,6 +29,11 @@ function normalizeCycles(v: number, fallback: number): number {
 }
 
 function rowToState(row: typeof PomodoroState.T): PomodoroStateDto {
+  const rawAfterLongRest = row.afterLongRest as PomodoroAfterLongRest
+  const afterLongRest =
+    rawAfterLongRest === 'auto' || rawAfterLongRest === 'overtime' || rawAfterLongRest === 'stop'
+      ? rawAfterLongRest
+      : 'pause'
   return {
     status: row.status as PomodoroStatus,
     phase: row.phase as PomodoroPhase,
@@ -45,7 +50,7 @@ function rowToState(row: typeof PomodoroState.T): PomodoroStateDto {
     cyclesUntilLongRest: normalizeCycles(row.cyclesUntilLongRest, DEFAULTS.cyclesUntilLongRest),
     pauseAfterWork: !!row.pauseAfterWork,
     pauseAfterRest: !!row.pauseAfterRest,
-    afterLongRest: (row.afterLongRest as PomodoroAfterLongRest) === 'stop' ? 'stop' : 'pause',
+    afterLongRest,
     autoStartRest: !!row.autoStartRest,
     autoStartNextCycle: !!row.autoStartNextCycle,
     phaseChangeSound: normalizePhaseChangeSoundId(row.phaseChangeSound ?? DEFAULTS.phaseChangeSound),

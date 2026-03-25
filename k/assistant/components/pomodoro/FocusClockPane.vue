@@ -3,6 +3,7 @@ import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import PomodoroTimerDial from './PomodoroTimerDial.vue'
 import PomodoroTaskSelectDropdown from './PomodoroTaskSelectDropdown.vue'
 import { formatPomodoroSecondsDisplay as fmt } from '../../lib/pomodoro-types'
+import { computePomodoroStatsDayKeyLocal } from '../../lib/pomodoro-stats-day'
 
 type FocusMode = 'timer' | 'stopwatch'
 type ClockStatus = 'stopped' | 'running' | 'paused'
@@ -40,6 +41,78 @@ const timerRunDurationSec = ref(25 * 60)
 const timerEndsAtMs = ref(0)
 const stopwatchElapsedSec = ref(0)
 const stopwatchStartedAtMs = ref(0)
+const statsDayKey = ref(computePomodoroStatsDayKeyLocal(Date.now()))
+
+const CLOCK_STATS_STORAGE_VERSION = 1
+const TIMER_SETTINGS_STORAGE_VERSION = 1
+const TIMER_SETTINGS_STORAGE_KEY = 'assistant:focus-clock-settings:timer'
+
+type PersistedClockStats = {
+  version: number
+  dayKey: string
+  mode: FocusMode
+  sessionsCount: number
+  totalFocusSec: number
+  totalSec: number
+}
+
+type PersistedTimerSettings = {
+  version: number
+  minutes: number
+  seconds: number
+}
+
+function getStatsStorageKey(mode: FocusMode): string {
+  return `assistant:focus-clock-stats:${mode}`
+}
+
+function loadPersistedStats(mode: FocusMode, dayKey: string): void {
+  const key = getStatsStorageKey(mode)
+  try {
+    const raw = window.localStorage.getItem(key)
+    if (!raw) return
+    const parsed = JSON.parse(raw) as PersistedClockStats
+    if (parsed.version !== CLOCK_STATS_STORAGE_VERSION) return
+    if (parsed.mode !== mode) return
+    if (parsed.dayKey !== dayKey) return
+    sessionsCount.value = Math.max(0, Math.floor(parsed.sessionsCount))
+    totalFocusSec.value = Math.max(0, Math.floor(parsed.totalFocusSec))
+    totalSec.value = Math.max(0, Math.floor(parsed.totalSec))
+  } catch {
+    // ignore broken localStorage data
+  }
+}
+
+function restoreStatsForMode(mode: FocusMode): void {
+  const dayKey = computePomodoroStatsDayKeyLocal(Date.now())
+  statsDayKey.value = dayKey
+  resetStats()
+  loadPersistedStats(mode, dayKey)
+  persistStats(mode, dayKey)
+}
+
+function persistStats(mode: FocusMode, dayKey: string): void {
+  const key = getStatsStorageKey(mode)
+  const payload: PersistedClockStats = {
+    version: CLOCK_STATS_STORAGE_VERSION,
+    dayKey,
+    mode,
+    sessionsCount: Math.max(0, Math.floor(sessionsCount.value)),
+    totalFocusSec: Math.max(0, Math.floor(totalFocusSec.value)),
+    totalSec: Math.max(0, Math.floor(totalSec.value))
+  }
+  try {
+    window.localStorage.setItem(key, JSON.stringify(payload))
+  } catch {
+    // ignore storage write errors
+  }
+}
+
+function resetStats(): void {
+  sessionsCount.value = 0
+  totalFocusSec.value = 0
+  totalSec.value = 0
+}
 
 const isTimer = computed(() => props.mode === 'timer')
 const modeTitle = computed(() => (props.mode === 'timer' ? 'Таймер' : 'Секундомер'))
@@ -68,6 +141,34 @@ function normalizeTimerDuration(): number {
 
 function resetDurationFromInputs(): void {
   timerRemainingSec.value = normalizeTimerDuration()
+}
+
+function persistTimerSettings(): void {
+  if (!isTimer.value) return
+  const payload: PersistedTimerSettings = {
+    version: TIMER_SETTINGS_STORAGE_VERSION,
+    minutes: Math.max(0, Math.min(999, Math.floor(timerMin.value || 0))),
+    seconds: Math.max(0, Math.min(59, Math.floor(timerSec.value || 0)))
+  }
+  try {
+    window.localStorage.setItem(TIMER_SETTINGS_STORAGE_KEY, JSON.stringify(payload))
+  } catch {
+    // ignore storage write errors
+  }
+}
+
+function restoreTimerSettings(): void {
+  if (!isTimer.value) return
+  try {
+    const raw = window.localStorage.getItem(TIMER_SETTINGS_STORAGE_KEY)
+    if (!raw) return
+    const parsed = JSON.parse(raw) as PersistedTimerSettings
+    if (parsed.version !== TIMER_SETTINGS_STORAGE_VERSION) return
+    timerMin.value = Math.max(0, Math.min(999, Math.floor(parsed.minutes || 0)))
+    timerSec.value = Math.max(0, Math.min(59, Math.floor(parsed.seconds || 0)))
+  } catch {
+    // ignore broken localStorage data
+  }
 }
 
 async function readApiJson<T>(response: Response): Promise<T> {
@@ -212,12 +313,47 @@ watch(focusEnabled, async (next) => {
   }
 })
 
+watch(
+  [sessionsCount, totalFocusSec, totalSec],
+  () => {
+    persistStats(props.mode, statsDayKey.value)
+  },
+  { flush: 'post' }
+)
+
+watch(
+  () => props.mode,
+  (nextMode, prevMode) => {
+    if (prevMode) persistStats(prevMode, statsDayKey.value)
+    restoreStatsForMode(nextMode)
+    if (nextMode === 'timer') {
+      restoreTimerSettings()
+      resetDurationFromInputs()
+    }
+  }
+)
+
+watch([timerMin, timerSec], () => {
+  persistTimerSettings()
+})
+
 let tickInterval: number | null = null
 onMounted(() => {
-  if (isTimer.value) resetDurationFromInputs()
+  restoreStatsForMode(props.mode)
+  if (isTimer.value) {
+    restoreTimerSettings()
+    resetDurationFromInputs()
+  }
   void loadTasks()
   tickInterval = window.setInterval(() => {
-    nowMs.value = Date.now()
+    const tickNowMs = Date.now()
+    nowMs.value = tickNowMs
+    const nextDayKey = computePomodoroStatsDayKeyLocal(tickNowMs)
+    if (nextDayKey !== statsDayKey.value) {
+      statsDayKey.value = nextDayKey
+      resetStats()
+      persistStats(props.mode, nextDayKey)
+    }
     if (status.value === 'running') totalSec.value += 1
     void finalizeTimerByEnd()
   }, 1000)

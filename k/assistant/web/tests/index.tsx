@@ -6,10 +6,12 @@ import TestsPage from '../../pages/TestsPage.vue'
 import { getPreloaderStyles, getPreloaderScript } from '../../shared/preloader'
 import { getLogLevelForPage, getLogLevelScript } from '../../shared/logLevel'
 import * as loggerLib from '../../lib/logger.lib'
-import { getFullUrl, ROUTES } from '../../config/routes'
+import { getApiUrlForRoute, getFullUrl, ROUTES } from '../../config/routes'
 import { TESTS_PAGE_NAME, getPageTitle, getHeaderText } from '../../config/project'
 import * as settingsLib from '../../lib/settings.lib'
 import { customScrollbarStyles, formControlStyles, mobileSafeAreaStyles, VIEWPORT_META_CONTENT } from '../../styles'
+import { getPomodoroStateRoute } from '../../api/pomodoro/state/get'
+import { pomodoroControlRoute } from '../../api/pomodoro/control'
 
 const LOG_PATH = 'web/tests/index'
 
@@ -49,6 +51,8 @@ export const testsPageRoute = app.html('/', async (ctx, req) => {
   const isAdmin = user.is('Admin')
   const adminUrl = isAdmin ? getFullUrl(ROUTES.admin) : ''
   const loginUrl = getFullUrl(ROUTES.login)
+  const pomodoroStateGetUrl = getApiUrlForRoute(getPomodoroStateRoute.url())
+  const pomodoroControlUrl = getApiUrlForRoute(pomodoroControlRoute.url())
   await loggerLib.writeServerLog(ctx, {
     severity: 7,
     message: `[${LOG_PATH}] Переменные после user`,
@@ -299,6 +303,8 @@ export const testsPageRoute = app.html('/', async (ctx, req) => {
           isAuthenticated={true}
           isAdmin={isAdmin}
           adminUrl={adminUrl}
+          pomodoroStateGetUrl={pomodoroStateGetUrl}
+          pomodoroControlUrl={pomodoroControlUrl}
           encodedLogsSocketId={encodedLogsSocketId}
         />
       </body>

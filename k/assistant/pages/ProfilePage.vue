@@ -20,6 +20,8 @@ const props = defineProps<{
   indexUrl: string
   profileUrl: string
   testsUrl?: string
+  pomodoroStateGetUrl?: string
+  pomodoroControlUrl?: string
   loginUrl: string
   isAuthenticated: boolean
   isAdmin?: boolean
@@ -126,6 +128,9 @@ const openChatiumLink = () => {
       :isAdmin="props.isAdmin"
       :adminUrl="props.adminUrl"
       :testsUrl="props.testsUrl"
+      :enableToolClockWidget="true"
+      :pomodoroStateGetUrl="props.pomodoroStateGetUrl"
+      :pomodoroControlUrl="props.pomodoroControlUrl"
     />
 
     <!-- Content -->

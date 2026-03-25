@@ -1,5 +1,7 @@
 // @shared
-export type PomodoroAfterLongRest = 'stop' | 'pause'
+export type PomodoroPhaseCompleteAction = 'auto' | 'pause' | 'overtime'
+/** `stop` оставлен для обратной совместимости старых данных */
+export type PomodoroAfterLongRest = PomodoroPhaseCompleteAction | 'stop'
 /** 1 — самый тихий, 5 — самый выраженный; по умолчанию 3 */
 export type PomodoroPhaseChangeSoundId = 1 | 2 | 3 | 4 | 5
 
