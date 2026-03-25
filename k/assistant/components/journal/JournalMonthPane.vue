@@ -143,6 +143,18 @@ const tasksCountByDay = computed(() => {
   return map
 })
 
+/** Всего завершённых задач в загруженном месяце (ответ API уже по year/month). */
+const monthCompletedTasksTotal = computed(() => completedTasks.value.length)
+
+/** Суммарное время фокуса (сек) за месяц по всем дням из focusByDay. */
+const monthFocusTotalSec = computed(() => {
+  let s = 0
+  for (const v of Object.values(focusByDay.value)) {
+    if (typeof v === 'number' && v > 0) s += v
+  }
+  return s
+})
+
 const selectedDayTasks = computed(() =>
   selectedDayKey.value ? completedTasks.value.filter((t) => t.dayKey === selectedDayKey.value) : []
 )
@@ -173,6 +185,22 @@ function formatFocusTime(sec: number): string {
   if (minutes === 0) return `${hours} ч`
   return `${hours} ч ${minutes} мин`
 }
+
+/** Короткая подпись для ячейки календаря (минимум места, табличные цифры). */
+function formatFocusTimeCompact(sec: number): string {
+  if (sec <= 0) return ''
+  const hours = Math.floor(sec / 3600)
+  const minutes = Math.floor((sec % 3600) / 60)
+  if (hours === 0) return `${minutes}м`
+  if (minutes === 0) return `${hours}ч`
+  return `${hours}ч${minutes}м`
+}
+
+const monthFocusLegendCompact = computed(() => {
+  const sec = monthFocusTotalSec.value
+  if (sec <= 0) return '0м'
+  return formatFocusTimeCompact(sec)
+})
 
 async function fetchMonthData(isSwitch: boolean) {
   if (!props.isAuthenticated || !props.journalMonthDataUrl) return
@@ -420,23 +448,41 @@ onMounted(() => {
             @click="cell.isCurrentMonth && selectDay(cell.dayKey)"
           >
             <span class="jm-cell-num">{{ cell.day }}</span>
-            <span v-if="cell.isCurrentMonth && tasksCountByDay[cell.dayKey]" class="jm-cell-badge">
-              {{ tasksCountByDay[cell.dayKey] }}
-            </span>
-            <span
-              v-if="cell.isCurrentMonth && focusByDay[cell.dayKey]"
-              class="jm-cell-focus-dot"
-              title="Время фокуса"
-            />
+            <div
+              v-if="
+                cell.isCurrentMonth &&
+                (tasksCountByDay[cell.dayKey] || (focusByDay[cell.dayKey] && focusByDay[cell.dayKey] > 0))
+              "
+              class="jm-cell-meta"
+            >
+              <span v-if="tasksCountByDay[cell.dayKey]" class="jm-cell-badge">
+                {{ tasksCountByDay[cell.dayKey] }}
+              </span>
+              <span
+                v-if="focusByDay[cell.dayKey] && focusByDay[cell.dayKey] > 0"
+                class="jm-cell-focus"
+                :title="`Время фокуса: ${formatFocusTime(focusByDay[cell.dayKey])}`"
+              >
+                {{ formatFocusTimeCompact(focusByDay[cell.dayKey]) }}
+              </span>
+            </div>
           </button>
         </div>
 
         <div class="jm-legend">
-          <span class="jm-legend-item">
-            <span class="jm-legend-badge">N</span> завершённых задач
+          <span
+            class="jm-legend-item"
+            title="Всего по выбранному месяцу. В ячейке дня — сколько задач завершено в этот день."
+          >
+            <span class="jm-legend-badge">{{ monthCompletedTasksTotal }}</span>
+            <span>завершённых задач за месяц</span>
           </span>
-          <span class="jm-legend-item">
-            <span class="jm-legend-dot" /> время фокуса
+          <span
+            class="jm-legend-item"
+            title="Всего время фокуса за месяц. В ячейке — время фокуса за день."
+          >
+            <span class="jm-legend-focus-sample">{{ monthFocusLegendCompact }}</span>
+            <span>время фокуса за месяц</span>
           </span>
         </div>
       </div>
@@ -708,7 +754,7 @@ onMounted(() => {
   align-items: center;
   gap: 0.15rem;
   padding: 0.45rem 0.2rem 0.35rem;
-  min-height: 2.8rem;
+  min-height: 3rem;
   font-family: inherit;
   font-size: 0.86rem;
   color: var(--color-text-secondary);
@@ -761,13 +807,37 @@ onMounted(() => {
   font-weight: 600;
 }
 
-.jm-cell-focus-dot {
-  display: block;
-  width: 4px;
-  height: 4px;
-  border-radius: 50%;
-  background: var(--color-accent);
-  box-shadow: 0 0 4px var(--color-accent-medium);
+.jm-cell-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.18rem 0.28rem;
+  max-width: 100%;
+}
+
+.jm-cell-focus {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  max-width: 100%;
+  padding: 0.08rem 0.24rem;
+  font-size: 0.68rem;
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: 0.03em;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-accent-hover);
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.28) 0%, rgba(0, 0, 0, 0.45) 100%);
+  border: 1px solid var(--color-accent);
+  border-radius: 3px;
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.2),
+    0 1px 3px rgba(0, 0, 0, 0.35);
+}
+
+.jm-cell--today .jm-cell-focus {
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.12) 0%, rgba(0, 0, 0, 0.22) 100%);
 }
 
 /* Legend */
@@ -798,14 +868,25 @@ onMounted(() => {
   background: var(--color-accent-medium);
   color: var(--color-accent-hover);
   font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  min-width: 1.15rem;
+  text-align: center;
 }
 
-.jm-legend-dot {
-  display: block;
-  width: 4px;
-  height: 4px;
-  border-radius: 50%;
-  background: var(--color-accent);
+.jm-legend-focus-sample {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.06rem 0.22rem;
+  min-width: 2rem;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-accent-hover);
+  border: 1px solid var(--color-accent);
+  border-radius: 3px;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.28) 0%, rgba(0, 0, 0, 0.45) 100%);
 }
 
 /* Day View */
@@ -1162,12 +1243,22 @@ onMounted(() => {
 
 @media (max-width: 520px) {
   .jm-cell {
-    min-height: 2.2rem;
-    padding: 0.3rem 0.1rem 0.25rem;
+    min-height: 2.75rem;
+    padding: 0.28rem 0.08rem 0.22rem;
   }
 
   .jm-cell-num {
     font-size: 0.76rem;
+  }
+
+  .jm-cell-focus {
+    font-size: 0.62rem;
+    padding: 0.06rem 0.18rem;
+  }
+
+  .jm-cell-badge {
+    font-size: 0.7rem;
+    padding: 0.06rem 0.18rem;
   }
 }
 </style>
