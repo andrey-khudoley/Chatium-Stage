@@ -9,6 +9,7 @@ import { pomodoroControlRoute } from '../../api/pomodoro/control'
 import { savePomodoroSettingsRoute } from '../../api/pomodoro/settings/save'
 import { pomodoroAssignTaskRoute } from '../../api/pomodoro/assign-task'
 import { getInProgressTasksRoute } from '../../api/tasks/in-progress'
+import { toolsFocusLogRoute } from '../../api/tools/focus-log'
 import { customScrollbarStyles, formControlStyles, mobileSafeAreaStyles, VIEWPORT_META_CONTENT } from '../../styles'
 
 export const pomodoroPageRoute = app.html('/', async (ctx) => {
@@ -220,6 +221,7 @@ export const pomodoroPageRoute = app.html('/', async (ctx) => {
           settingsSaveUrl={getApiUrlForRoute(savePomodoroSettingsRoute.url())}
           assignTaskUrl={getApiUrlForRoute(pomodoroAssignTaskRoute.url())}
           getTasksUrl={getApiUrlForRoute(getInProgressTasksRoute.url())}
+          toolsFocusLogUrl={getApiUrlForRoute(toolsFocusLogRoute.url())}
         />
       </body>
     </html>

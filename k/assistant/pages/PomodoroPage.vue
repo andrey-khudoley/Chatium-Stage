@@ -6,6 +6,7 @@ import AppFooter from '../components/AppFooter.vue'
 import PomodoroTimerDial from '../components/pomodoro/PomodoroTimerDial.vue'
 import PomodoroSettingsModal from '../components/pomodoro/PomodoroSettingsModal.vue'
 import PomodoroTaskSelector from '../components/pomodoro/PomodoroTaskSelector.vue'
+import FocusClockPane from '../components/pomodoro/FocusClockPane.vue'
 import { playPomodoroPhaseChangeSound } from '../lib/pomodoro-phase-sounds'
 import { formatPomodoroSecondsDisplay as fmt } from '../lib/pomodoro-types'
 import { computePomodoroStatsDayKeyLocal } from '../lib/pomodoro-stats-day'
@@ -48,6 +49,7 @@ const props = defineProps<{
   settingsSaveUrl: string
   assignTaskUrl: string
   getTasksUrl: string
+  toolsFocusLogUrl: string
 }>()
 
 const state = ref<PomodoroState | null>(null)
@@ -62,6 +64,7 @@ const originalTitle = ref('')
 const notificationPermission = ref<NotificationPermission>('default')
 const hasVibration = ref(false)
 const previousPhase = ref<'work' | 'rest' | 'long_rest' | null>(null)
+const activeTool = ref<'pomodoro' | 'timer' | 'stopwatch'>('pomodoro')
 
 const phaseLabels: Record<PomodoroState['phase'], string> = {
   work: 'Работа',
@@ -398,7 +401,13 @@ const pomodoroActionPanelLayout = computed(() => {
           <i class="fa-solid fa-triangle-exclamation" /> {{ pageError }}
         </p>
 
-        <div class="pomodoro-phase-bar">
+        <div class="tool-tabs">
+          <button type="button" class="tool-tab-btn" :class="{ 'tool-tab-btn--active': activeTool === 'pomodoro' }" @click="activeTool = 'pomodoro'">Pomodoro</button>
+          <button type="button" class="tool-tab-btn" :class="{ 'tool-tab-btn--active': activeTool === 'timer' }" @click="activeTool = 'timer'">Таймер</button>
+          <button type="button" class="tool-tab-btn" :class="{ 'tool-tab-btn--active': activeTool === 'stopwatch' }" @click="activeTool = 'stopwatch'">Секундомер</button>
+        </div>
+
+        <div v-if="activeTool === 'pomodoro'" class="pomodoro-phase-bar">
           <span class="phase-indicator">
             <span class="phase-dot" :class="`phase-dot--${state.phase}`"></span>
             {{ phaseLabels[state.phase] }}
@@ -416,7 +425,7 @@ const pomodoroActionPanelLayout = computed(() => {
           </button>
         </div>
 
-        <transition name="fade" mode="out-in">
+        <transition v-if="activeTool === 'pomodoro'" name="fade" mode="out-in">
           <PomodoroTimerDial
             :key="state.phase"
             :phase="state.phase"
@@ -431,6 +440,7 @@ const pomodoroActionPanelLayout = computed(() => {
         </transition>
 
         <PomodoroTaskSelector
+          v-if="activeTool === 'pomodoro'"
           :assign-task-url="props.assignTaskUrl"
           :get-tasks-url="props.getTasksUrl"
           :current-task-id="state.currentTaskId"
@@ -438,7 +448,7 @@ const pomodoroActionPanelLayout = computed(() => {
           @task-assigned="refresh"
         />
 
-        <div class="pomodoro-actions">
+        <div v-if="activeTool === 'pomodoro'" class="pomodoro-actions">
           <div class="pomodoro-actions__panel" :class="pomodoroActionPanelLayout">
             <button
               v-if="state.status === 'stopped'"
@@ -495,7 +505,7 @@ const pomodoroActionPanelLayout = computed(() => {
           </div>
         </div>
 
-        <div class="pomodoro-stats">
+        <div v-if="activeTool === 'pomodoro'" class="pomodoro-stats">
           <div class="stat-cell">
             <span class="stat-cell__value">{{ state.tasksCompletedToday }}</span>
             <span class="stat-cell__label">
@@ -517,11 +527,18 @@ const pomodoroActionPanelLayout = computed(() => {
         </div>
 
         <PomodoroSettingsModal
+          v-if="activeTool === 'pomodoro'"
           :is-open="settingsOpen"
           :saving="saving"
           :model-value="settingsModel"
           @close="settingsOpen = false"
           @save="saveSettings"
+        />
+        <FocusClockPane
+          v-if="activeTool === 'timer' || activeTool === 'stopwatch'"
+          :mode="activeTool === 'timer' ? 'timer' : 'stopwatch'"
+          :focus-log-url="props.toolsFocusLogUrl"
+          :get-tasks-url="props.getTasksUrl"
         />
       </div>
       <div v-else class="content-inner pomodoro-shell">
@@ -585,6 +602,31 @@ const pomodoroActionPanelLayout = computed(() => {
   gap: 1rem;
 }
 
+.tool-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: .45rem;
+}
+
+.tool-tab-btn {
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-secondary);
+  color: var(--color-text-secondary);
+  padding: .5rem .6rem;
+  font-size: .68rem;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  cursor: pointer;
+  transition: all .2s ease;
+}
+
+.tool-tab-btn:hover { border-color: var(--color-border-light); color: var(--color-text); }
+.tool-tab-btn--active {
+  border-color: var(--color-accent);
+  color: #fff;
+  background: linear-gradient(165deg, color-mix(in srgb, var(--color-accent) 92%, #000), var(--color-accent));
+}
+
 .pomodoro-error {
   margin: 0;
   padding: .5rem .75rem;
@@ -621,7 +663,8 @@ const pomodoroActionPanelLayout = computed(() => {
 
 /* ── Phase bar ── */
 .pomodoro-phase-bar {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: center;
   gap: .75rem;
   padding: .5rem .75rem;
@@ -644,6 +687,7 @@ const pomodoroActionPanelLayout = computed(() => {
   letter-spacing: .1em;
   color: var(--color-text);
   white-space: nowrap;
+  justify-self: start;
 }
 
 .phase-dot {
@@ -664,8 +708,8 @@ const pomodoroActionPanelLayout = computed(() => {
   display: flex;
   align-items: center;
   gap: 5px;
-  flex: 1;
   justify-content: center;
+  justify-self: center;
 }
 
 .cycle-dot {
@@ -700,6 +744,7 @@ const pomodoroActionPanelLayout = computed(() => {
     100% calc(100% - 2px), calc(100% - 2px) calc(100% - 2px), calc(100% - 2px) 100%,
     2px 100%, 2px calc(100% - 2px), 0 calc(100% - 2px)
   );
+  justify-self: end;
 }
 
 .settings-trigger:hover:not(:disabled) {

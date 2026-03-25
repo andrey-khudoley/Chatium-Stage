@@ -143,6 +143,7 @@
 | GET | `/tasks-ai-chat/:feedId/messages/get` | api/tasks/tasks-ai-chat-messages-get.ts | RealUser | `feedMessagesGetHandler` + маппинг авторов (ассистент/пользователь); список **сортируется по времени** (старые→новые), т.к. фид по умолчанию может отдавать новые первыми. Доступ к `feedId` — через Heap `task_ai_chat_feeds`. URL в чате: `taskAiChatMessagesGetRoute({ feedId }).url()`. |
 | GET | `/tasks-ai-chat/:feedId/messages/changes` | api/tasks/tasks-ai-chat-messages-changes.ts | RealUser | `feedMessagesChangesHandler` + тот же маппинг авторов. |
 | POST | `/tasks-ai-chat/:feedId/messages/add` | api/tasks/tasks-ai-chat-messages-add.ts | RealUser | `feedMessagesAddHandler`; после успешного add — `runTaskAiChatReplyIfNeeded` в `tasks-ai-chat-reply.ts` (`startCompletion`, в proxy context). В system перед каждым запросом подставляется актуальный блок из `buildTaskAiChatProjectContextBlock` (`tasks-ai-chat-lib.ts`): проект, задачи, **details** и служебные **context** у проекта и задач из Heap, с явной шапкой «СЛУЖЕБНЫЙ КОНТЕКСТ ПРОЕКТА (НЕ СООБЩЕНИЕ ПОЛЬЗОВАТЕЛЯ)». Последнее пользовательское сообщение передаётся отдельным user-блоком «ТЕКУЩЕЕ СООБЩЕНИЕ ПОЛЬЗОВАТЕЛЯ». Системный текст: `getAiFormulateSystemPrompt` + `TASKS_AI_CHAT_JSON_APPENDIX` в `config/prompts.tsx` (разделение: сквозная рамка проекта — `update_project.context` без повторения списка задач; уточнения по строкам — `update_task` / `create_task`, полные слитые `context` по правилам промпта). Ответ модели — JSON с `reply`, `actions`, `summary`; применение в Heap — `tasks-ai-chat-completion-completed.ts` → `tasks-ai-formulate-apply.ts` (create/update/delete/reorder, `reorder_tasks` с `$new:N`). В ленту пишется только текст `reply`. Отдельного роута `ai-formulate` нет. |
+| GET | /api/tasks/in-progress | api/tasks/in-progress.ts | RealUser | Список задач в статусе `in_progress` для Pomodoro/Timer/Stopwatch. Возвращает `{ success, tasks }`, где каждый элемент содержит поля задачи + `projectName` и `clientName`; порядок задач сохраняется из общего дерева задач пользователя (без отдельной пересортировки в endpoint). |
 
 ## Pomodoro (api/pomodoro/)
 
@@ -155,6 +156,14 @@
 | POST | /api/pomodoro/control | api/pomodoro/control.ts | RealUser | Управление состоянием. Body: `{ action, statsDayKey? }`, где `action ∈ { start, resume, pause, stop, skip, reset }` (`skip` — пропуск текущей фазы; `reset` — остановка и сброс к началу серии: `stopped`, полный work, `cyclesCompleted=0`). Ответ: `{ success, state, serverNowMs }`. В `state.status` возможно значение `awaiting_continue` (фаза закончилась по таймеру, ожидание «Продолжить»). |
 | POST | /api/pomodoro/settings/save | api/pomodoro/settings/save.ts | RealUser | Сохранить настройки таймера. Body: поля длительностей и флагов + опционально `statsDayKey` (см. выше). |
 | POST | /api/pomodoro/assign-task | api/pomodoro/assign-task.ts | RealUser | Привязать текущую задачу к Pomodoro. Body: `{ taskId, statsDayKey? }`. Проверяется, что задача принадлежит пользователю; при активном тике накопленное время задачи синхронизируется перед сменой привязки. |
+
+## Инструменты (api/tools/)
+
+Логирование фокус-сегментов со страницы `web/tools` (таймер и секундомер) в общий журнал фокуса Pomodoro.
+
+| Method | Path | File | Auth | Назначение |
+| --- | --- | --- | --- | --- |
+| POST | /api/tools/focus-log | api/tools/focus-log.ts | RealUser | Записать фокус-сегмент из `Таймера` или `Секундомера`. Body: `{ tool: 'timer'|'stopwatch', startedAtMs, endedAtMs, taskId? }`. Принимает только `endedAtMs > startedAtMs`, создаёт запись в `pomodoro-launches` с `phase='work'`, `source='tools_timer'|'tools_stopwatch'`; `taskId` сохраняется опционально, если выбран в инструменте. |
 
 ## Публичные эндпоинты
 | Method | Path | File | Auth | Назначение |

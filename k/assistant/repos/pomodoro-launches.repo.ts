@@ -59,6 +59,31 @@ export async function closeOpenLaunchByUser(
   return closeLaunch(ctx, openLaunch.id, endedAtMs, endReason)
 }
 
+type AppendFocusLaunchInput = {
+  userId: string
+  startedAtMs: number
+  endedAtMs: number
+  source: Extract<PomodoroLaunchSource, 'tools_timer' | 'tools_stopwatch'>
+  taskId?: string | null
+}
+
+export async function appendFocusLaunchSegment(ctx: app.Ctx, input: AppendFocusLaunchInput): Promise<typeof PomodoroLaunches.T> {
+  const startedAtMs = Math.max(0, Math.floor(input.startedAtMs))
+  const endedAtMs = Math.max(startedAtMs, Math.floor(input.endedAtMs))
+  const durationSec = Math.max(0, Math.floor((endedAtMs - startedAtMs) / 1000))
+  return PomodoroLaunches.create(ctx, {
+    userId: input.userId,
+    startedAtMs,
+    endedAtMs,
+    durationSec,
+    phase: 'work',
+    taskId: input.taskId ?? null,
+    cyclesCompletedAtStart: 0,
+    source: input.source,
+    endReason: 'stop'
+  })
+}
+
 function msToDayKey(ms: number): string {
   const d = new Date(ms)
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`

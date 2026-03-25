@@ -36,10 +36,12 @@ const props = defineProps<{
     <main class="content-wrapper flex-1 relative z-10 min-h-0 overflow-y-auto">
       <div class="content-inner tools-shell">
         <h2 class="tools-title">Инструменты</h2>
-        <a class="tools-card" :href="props.pomodoroUrl">
-          <i class="fas fa-clock tools-card-icon" />
-          <span>Pomodoro</span>
-        </a>
+        <div class="tools-grid">
+          <a class="tools-card tools-card--link" :href="props.pomodoroUrl">
+            <i class="fas fa-clock tools-card-icon" />
+            <span>Таймеры</span>
+          </a>
+        </div>
       </div>
     </main>
     <AppFooter />
@@ -52,7 +54,9 @@ const props = defineProps<{
 .content-inner { width: 100%; }
 .tools-shell { max-width: 860px; margin: 0 auto; padding: 1rem; }
 .tools-title { margin: 0 0 1rem; text-transform: uppercase; letter-spacing: .12em; font-size: .9rem; }
-.tools-card { display: inline-flex; gap: .6rem; align-items: center; padding: .9rem 1rem; border: 1px solid var(--color-border); background: var(--color-bg-secondary); color: var(--color-text); text-decoration: none; }
+.tools-grid { display: grid; gap: .8rem; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+.tools-card { border: 1px solid var(--color-border); background: var(--color-bg-secondary); color: var(--color-text); text-decoration: none; }
+.tools-card--link { display: inline-flex; gap: .6rem; align-items: center; padding: .9rem 1rem; min-height: 3.2rem; }
 .tools-card:hover { border-color: var(--color-accent); box-shadow: 0 0 10px var(--color-accent-light); }
 .tools-card-icon { color: var(--color-accent-hover); }
 </style>
