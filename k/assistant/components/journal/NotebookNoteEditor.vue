@@ -55,6 +55,7 @@ const linkedClientId = ref<string | null>(null)
 const linkedProjectId = ref<string | null>(null)
 const linkedTaskId = ref<string | null>(null)
 const noteDate = ref<string | null>(null)
+const noteDateInput = ref('')
 const isArchived = ref(false)
 
 const catDropOpen = ref(false)
@@ -89,6 +90,7 @@ async function loadNote(id: string) {
       linkedProjectId.value = data.note.linkedProjectId
       linkedTaskId.value = data.note.linkedTaskId
       noteDate.value = data.note.noteDate
+      noteDateInput.value = formatDateForInput(data.note.noteDate)
       isArchived.value = data.note.isArchived
     } else {
       error.value = data.error || 'Не удалось загрузить заметку'
@@ -101,12 +103,74 @@ async function loadNote(id: string) {
   }
 }
 
+function formatDateForInput(value: string | null): string {
+  if (!value) return ''
+  const m = value.match(/^(\d{4})-(\d{2})-(\d{2})$/)
+  if (!m) return ''
+  return `${m[3]}/${m[2]}/${m[1]}`
+}
+
+function parseDateInput(value: string): string | null {
+  const trimmed = value.trim()
+  if (!trimmed) return null
+
+  const slashMatch = trimmed.match(/^(\d{2})\/(\d{2})\/(\d{4})$/)
+  if (slashMatch) {
+    const day = Number(slashMatch[1])
+    const month = Number(slashMatch[2])
+    const year = Number(slashMatch[3])
+    const parsed = new Date(year, month - 1, day)
+    if (
+      parsed.getFullYear() === year &&
+      parsed.getMonth() === month - 1 &&
+      parsed.getDate() === day
+    ) {
+      return `${slashMatch[3]}-${slashMatch[2]}-${slashMatch[1]}`
+    }
+    return ''
+  }
+
+  const isoMatch = trimmed.match(/^(\d{4})-(\d{2})-(\d{2})$/)
+  if (isoMatch) {
+    const day = Number(isoMatch[3])
+    const month = Number(isoMatch[2])
+    const year = Number(isoMatch[1])
+    const parsed = new Date(year, month - 1, day)
+    if (
+      parsed.getFullYear() === year &&
+      parsed.getMonth() === month - 1 &&
+      parsed.getDate() === day
+    ) {
+      return `${isoMatch[1]}-${isoMatch[2]}-${isoMatch[3]}`
+    }
+    return ''
+  }
+
+  return ''
+}
+
+function onDateInputBlur() {
+  const parsed = parseDateInput(noteDateInput.value)
+  if (parsed === '') {
+    error.value = 'Дата должна быть в формате dd/mm/yyyy'
+    return
+  }
+  noteDate.value = parsed
+  noteDateInput.value = formatDateForInput(parsed)
+}
+
 async function save() {
   const t = title.value.trim()
   if (!t) {
     error.value = 'Введите название заметки'
     return
   }
+  const parsedDate = parseDateInput(noteDateInput.value)
+  if (parsedDate === '') {
+    error.value = 'Дата должна быть в формате dd/mm/yyyy'
+    return
+  }
+  noteDate.value = parsedDate
   saving.value = true
   error.value = ''
   try {
@@ -435,7 +499,15 @@ function exportAsPdf() {
 
         <div class="nb-editor-meta-section">
           <label class="nb-editor-meta-label">Дата</label>
-          <input type="date" v-model="noteDate" class="nb-editor-date-input" />
+          <input
+            v-model="noteDateInput"
+            type="text"
+            class="nb-editor-date-input"
+            inputmode="numeric"
+            placeholder="dd/mm/yyyy"
+            autocomplete="off"
+            @blur="onDateInputBlur"
+          />
         </div>
 
         <div class="nb-editor-meta-section">
