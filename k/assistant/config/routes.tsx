@@ -14,7 +14,7 @@ export const ROUTES = {
   journal: './web/journal',
   tasks: './web/tasks',
   tools: './web/tools',
-  pomodoro: './web/pomodoro'
+  pomodoro: './web/timers'
 } as const
 
 /** Пути для getFullUrl (абсолютные от корня проекта) */
@@ -27,7 +27,7 @@ export const ROUTE_PATHS = {
   journal: '/web/journal',
   tasks: '/web/tasks',
   tools: '/web/tools',
-  pomodoro: '/web/pomodoro'
+  pomodoro: '/web/timers'
 } as const
 
 /**

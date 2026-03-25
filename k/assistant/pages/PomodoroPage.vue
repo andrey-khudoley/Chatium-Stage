@@ -419,7 +419,7 @@ const pomodoroActionPanelLayout = computed(() => {
         </p>
 
         <div class="tool-tabs">
-          <button type="button" class="tool-tab-btn" :class="{ 'tool-tab-btn--active': activeTool === 'pomodoro' }" @click="activeTool = 'pomodoro'">Pomodoro</button>
+          <button type="button" class="tool-tab-btn" :class="{ 'tool-tab-btn--active': activeTool === 'pomodoro' }" @click="activeTool = 'pomodoro'">Помидор</button>
           <button type="button" class="tool-tab-btn" :class="{ 'tool-tab-btn--active': activeTool === 'timer' }" @click="activeTool = 'timer'">Таймер</button>
           <button type="button" class="tool-tab-btn" :class="{ 'tool-tab-btn--active': activeTool === 'stopwatch' }" @click="activeTool = 'stopwatch'">Секундомер</button>
         </div>

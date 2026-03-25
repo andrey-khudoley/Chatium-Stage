@@ -9,7 +9,7 @@ export const TESTS_PAGE_NAME = 'Тесты'
 export const JOURNAL_PAGE_NAME = 'Мой журнал'
 export const TASKS_PAGE_NAME = 'Управление задачами'
 export const TOOLS_PAGE_NAME = 'Инструменты'
-export const POMODORO_PAGE_NAME = 'Pomodoro'
+export const POMODORO_PAGE_NAME = 'Таймеры'
 
 /** Текст для <title>: "Название страницы - Название из настроек" */
 export function getPageTitle(pageName: string, projectName: string): string {

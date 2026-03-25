@@ -19,23 +19,70 @@
         </a>
       </div>
       <div class="header-right">
-        <span class="header-clock" :class="{ 'header-clock--interactive': isToolClockWidgetEnabled && widgetMode !== 'clock' }" @click="onClockClick">
-          <i :class="clockIconClass"></i>
-          <span class="clock-time">{{ headerClockDisplay }}</span>
-          <template v-if="isToolClockWidgetEnabled && widgetMode !== 'clock'">
-            <button type="button" class="header-tool-btn" :disabled="clockActionPending" @click.stop="handleToolStartPause">
-              {{ startPauseLabel }}
+        <div class="header-clock-tools">
+          <span
+            ref="clockTriggerRef"
+            class="header-clock"
+            :class="{ 'header-clock--interactive': isToolClockWidgetEnabled && widgetMode !== 'clock' }"
+            @click="onClockClick"
+          >
+            <i :class="clockIconClass"></i>
+            <span class="clock-time">{{ headerClockDisplay }}</span>
+            <template v-if="isToolClockWidgetEnabled && widgetMode !== 'clock'">
+              <button type="button" class="header-tool-btn" :disabled="clockActionPending" @click.stop="handleToolStartPause">
+                {{ startPauseLabel }}
+              </button>
+              <button type="button" class="header-tool-btn header-tool-btn--danger" :disabled="clockActionPending" @click.stop="handleToolReset">
+                Сброс
+              </button>
+            </template>
+          </span>
+          <div v-if="isToolClockWidgetEnabled && showToolPicker" ref="toolPickerRef" class="header-tool-picker" role="group" aria-label="Выбор инструмента">
+            <button
+              type="button"
+              class="header-tool-picker-btn"
+              :class="{ 'header-tool-picker-btn--active': widgetMode === 'clock' }"
+              :aria-pressed="widgetMode === 'clock'"
+              title="Показать часы"
+              @click="selectWidgetMode('clock')"
+            >
+              <i class="fas fa-clock" aria-hidden="true"></i>
+              <span>Часы</span>
             </button>
-            <button type="button" class="header-tool-btn header-tool-btn--danger" :disabled="clockActionPending" @click.stop="handleToolReset">
-              Сброс
+            <button
+              type="button"
+              class="header-tool-picker-btn"
+              :class="{ 'header-tool-picker-btn--active': widgetMode === 'pomodoro' }"
+              :aria-pressed="widgetMode === 'pomodoro'"
+              title="Показать помидор"
+              @click="selectWidgetMode('pomodoro')"
+            >
+              <i class="fas fa-hourglass-half" aria-hidden="true"></i>
+              <span>Помидор</span>
             </button>
-          </template>
-        </span>
-        <div v-if="isToolClockWidgetEnabled && showToolPicker" class="header-tool-picker">
-          <button type="button" class="header-tool-picker-btn" @click="selectWidgetMode('clock')">Часы</button>
-          <button type="button" class="header-tool-picker-btn" @click="selectWidgetMode('pomodoro')">Помидор</button>
-          <button type="button" class="header-tool-picker-btn" @click="selectWidgetMode('timer')">Таймер</button>
-          <button type="button" class="header-tool-picker-btn" @click="selectWidgetMode('stopwatch')">Секундомер</button>
+            <button
+              type="button"
+              class="header-tool-picker-btn"
+              :class="{ 'header-tool-picker-btn--active': widgetMode === 'timer' }"
+              :aria-pressed="widgetMode === 'timer'"
+              title="Показать таймер"
+              @click="selectWidgetMode('timer')"
+            >
+              <i class="fas fa-stopwatch-20" aria-hidden="true"></i>
+              <span>Таймер</span>
+            </button>
+            <button
+              type="button"
+              class="header-tool-picker-btn"
+              :class="{ 'header-tool-picker-btn--active': widgetMode === 'stopwatch' }"
+              :aria-pressed="widgetMode === 'stopwatch'"
+              title="Показать секундомер"
+              @click="selectWidgetMode('stopwatch')"
+            >
+              <i class="fas fa-stopwatch" aria-hidden="true"></i>
+              <span>Секундомер</span>
+            </button>
+          </div>
         </div>
         <div class="header-actions">
         <a 
@@ -203,6 +250,9 @@ let timeInterval: number | null = null
 let pomodoroPollInterval: number | null = null
 let nowTickInterval: number | null = null
 let escHandler: ((e: KeyboardEvent) => void) | null = null
+let outsideToolPickerClickHandler: ((e: MouseEvent) => void) | null = null
+const toolPickerRef = ref<HTMLElement | null>(null)
+const clockTriggerRef = ref<HTMLElement | null>(null)
 
 const readApiJson = async <T,>(response: Response): Promise<T> => {
   if (!response.ok) {
@@ -518,12 +568,26 @@ onMounted(() => {
 
   // Обработчик Esc для закрытия модального окна выхода
   escHandler = (e: KeyboardEvent) => {
+    if (e.key === 'Escape' && showToolPicker.value) {
+      showToolPicker.value = false
+      return
+    }
     if (e.key === 'Escape' && showLogoutModal.value) {
       cancelLogout()
     }
   }
 
   window.addEventListener('keydown', escHandler)
+  outsideToolPickerClickHandler = (e: MouseEvent) => {
+    if (!showToolPicker.value) return
+    const target = e.target as Node | null
+    if (!target) return
+    const picker = toolPickerRef.value
+    const trigger = clockTriggerRef.value
+    if (picker?.contains(target) || trigger?.contains(target)) return
+    showToolPicker.value = false
+  }
+  window.addEventListener('mousedown', outsideToolPickerClickHandler)
 })
 
 onUnmounted(() => {
@@ -537,6 +601,9 @@ onUnmounted(() => {
   // Удаляем обработчик Esc при размонтировании
   if (escHandler) {
     window.removeEventListener('keydown', escHandler)
+  }
+  if (outsideToolPickerClickHandler) {
+    window.removeEventListener('mousedown', outsideToolPickerClickHandler)
   }
 })
 
@@ -877,6 +944,10 @@ const cancelLogout = () => {
 }
 .header-clock--interactive { cursor: pointer; }
 
+.header-clock-tools {
+  position: relative;
+}
+
 .header-clock i {
   font-size: 0.625rem;
   opacity: 0.7;
@@ -907,25 +978,64 @@ const cancelLogout = () => {
 }
 
 .header-tool-picker {
+  position: absolute;
+  top: calc(100% + 0.35rem);
+  right: 0;
+  z-index: 320;
   display: flex;
-  gap: 0.3rem;
+  flex-direction: column;
+  gap: 0.16rem;
+  align-items: stretch;
+  width: min(11.5rem, calc(100vw - 1rem));
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-secondary);
+  padding: 0.2rem;
+  box-shadow:
+    inset 0 1px 1px rgba(255, 255, 255, 0.04),
+    0 2px 7px rgba(0, 0, 0, 0.35);
 }
 
 .header-tool-picker-btn {
-  border: 1px solid var(--color-border);
-  background: var(--color-bg-tertiary);
+  border: 1px solid transparent;
+  background: transparent;
   color: var(--color-text-secondary);
-  height: 1.6rem;
-  padding: 0 0.45rem;
+  height: 1.82rem;
+  padding: 0 0.5rem;
   font-size: 0.62rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  justify-content: flex-start;
+  transition: color 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+}
+
+.header-tool-picker-btn i {
+  font-size: 0.64rem;
+  opacity: 0.8;
 }
 
 .header-tool-picker-btn:hover {
   color: var(--color-text);
-  border-color: var(--color-border-light);
+  border-color: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.header-tool-picker-btn:focus-visible {
+  outline: none;
+  border-color: var(--color-accent);
+}
+
+.header-tool-picker-btn--active {
+  color: var(--color-text);
+  border-color: var(--color-accent);
+  background: rgba(211, 35, 75, 0.16);
+}
+
+.header-tool-picker-btn--active i {
+  opacity: 1;
 }
 
 .header-clock:hover {
