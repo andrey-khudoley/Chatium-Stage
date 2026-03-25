@@ -29,6 +29,45 @@ const selectedMedia = ref<HTMLElement | null>(null)
 const bubbleMenuPos = ref({ x: 0, y: 0 })
 const isResizing = ref(false)
 
+// Code block state
+const activeCodeBlock = ref<HTMLPreElement | null>(null)
+const codePickerPos = ref({ x: 0, y: 0 })
+const showCodePicker = computed(() => !!activeCodeBlock.value)
+let hljsInstance: any = null
+let hljsLoadPromise: Promise<void> | null = null
+let highlightTimeout: ReturnType<typeof setTimeout> | null = null
+
+const HLJS_VERSION = '11.11.1'
+const HLJS_CDN = `https://cdnjs.cloudflare.com/ajax/libs/highlight.js/${HLJS_VERSION}`
+
+const CODE_LANGUAGES = [
+  { value: 'plaintext', label: 'Текст' },
+  { value: 'javascript', label: 'JavaScript' },
+  { value: 'typescript', label: 'TypeScript' },
+  { value: 'python', label: 'Python' },
+  { value: 'html', label: 'HTML' },
+  { value: 'css', label: 'CSS' },
+  { value: 'json', label: 'JSON' },
+  { value: 'bash', label: 'Bash' },
+  { value: 'sql', label: 'SQL' },
+  { value: 'php', label: 'PHP' },
+  { value: 'java', label: 'Java' },
+  { value: 'cpp', label: 'C++' },
+  { value: 'csharp', label: 'C#' },
+  { value: 'go', label: 'Go' },
+  { value: 'rust', label: 'Rust' },
+  { value: 'ruby', label: 'Ruby' },
+  { value: 'yaml', label: 'YAML' },
+  { value: 'xml', label: 'XML' },
+  { value: 'markdown', label: 'Markdown' },
+  { value: 'swift', label: 'Swift' },
+  { value: 'kotlin', label: 'Kotlin' },
+  { value: 'scss', label: 'SCSS' },
+  { value: 'less', label: 'Less' },
+  { value: 'dockerfile', label: 'Dockerfile' },
+  { value: 'nginx', label: 'Nginx' },
+]
+
 const MEDIA_SELECTOR = '.wy-media-img, .wy-media-video, .wy-media-pdf, .wy-media-file'
 
 const showBubbleMenu = computed(() => !!selectedMedia.value && !isResizing.value)
@@ -90,6 +129,8 @@ onMounted(() => {
   document.addEventListener('click', onDocumentClick)
   window.addEventListener('scroll', onWindowScroll, { passive: true })
   window.addEventListener('resize', onWindowScroll)
+
+  highlightAllCodeBlocks()
 })
 
 onUnmounted(() => {
@@ -97,6 +138,7 @@ onUnmounted(() => {
   document.removeEventListener('click', onDocumentClick)
   window.removeEventListener('scroll', onWindowScroll)
   window.removeEventListener('resize', onWindowScroll)
+  if (highlightTimeout) clearTimeout(highlightTimeout)
 })
 
 watch(() => props.modelValue, (val) => {
@@ -110,6 +152,7 @@ watch(() => props.modelValue, (val) => {
     ignoreInput = true
     editorRef.value.innerHTML = normalized
     normalizeBlankLineParagraphs(editorRef.value)
+    nextTick(() => highlightAllCodeBlocks())
   }
 })
 
@@ -132,8 +175,6 @@ function setEditorMode(mode: 'wysiwyg' | 'source') {
   lastKnownHtml.value = normalizedHtml
   editorMode.value = mode
   nextTick(() => {
-    // In `v-if` branch editorRef is recreated after mode switch.
-    // Apply html only after DOM updates, otherwise content may be lost.
     if (editorRef.value) {
       ignoreInput = true
       editorRef.value.innerHTML = normalizedHtml
@@ -143,6 +184,7 @@ function setEditorMode(mode: 'wysiwyg' | 'source') {
       const normalizedFromDom = editorRef.value.innerHTML
       lastKnownHtml.value = normalizedFromDom
       emit('update:modelValue', normalizedFromDom)
+      highlightAllCodeBlocks()
     }
   })
 }
@@ -162,6 +204,17 @@ function onInput() {
     const html = editorRef.value.innerHTML
     lastKnownHtml.value = html
     emit('update:modelValue', html)
+  }
+
+  const sel = window.getSelection()
+  if (sel?.anchorNode) {
+    const pre = getAncestorCodeBlock(sel.anchorNode)
+    if (pre) {
+      if (highlightTimeout) clearTimeout(highlightTimeout)
+      highlightTimeout = setTimeout(() => {
+        loadHighlightJs().then(() => rehighlightWithCaret(pre))
+      }, 700)
+    }
   }
 }
 
@@ -224,6 +277,8 @@ function markdownToHtml(markdown: string): string {
     }
 
     if (/^```/.test(trimmed)) {
+      const langMatch = trimmed.match(/^```(\w+)?/)
+      const lang = langMatch?.[1] || 'plaintext'
       const block: string[] = []
       i += 1
       while (i < lines.length && !/^```/.test(lines[i].trim())) {
@@ -231,7 +286,7 @@ function markdownToHtml(markdown: string): string {
         i += 1
       }
       if (i < lines.length) i += 1
-      out.push(`<pre><code>${escapeHtml(block.join('\n'))}</code></pre>`)
+      out.push(`<pre data-language="${escapeHtml(lang)}"><code class="hljs">${escapeHtml(block.join('\n'))}</code></pre>`)
       continue
     }
 
@@ -377,6 +432,7 @@ function onPaste(e: ClipboardEvent) {
   nextTick(() => {
     onInput()
     saveSelection()
+    highlightAllCodeBlocks()
   })
 }
 
@@ -424,6 +480,17 @@ function updateState() {
       break
     }
     node = node.parentNode
+  }
+
+  const pre = getAncestorCodeBlock(sel.anchorNode)
+  if (pre !== activeCodeBlock.value) {
+    if (activeCodeBlock.value && !pre) {
+      loadHighlightJs().then(() => {
+        if (activeCodeBlock.value) highlightCodeElement(activeCodeBlock.value)
+      })
+    }
+    activeCodeBlock.value = pre
+    if (pre) updateCodePickerPosition()
   }
 }
 
@@ -639,8 +706,170 @@ function wrapInlineCode() {
   }
 }
 
+function loadHighlightJs(): Promise<void> {
+  if (hljsInstance) return Promise.resolve()
+  if (hljsLoadPromise) return hljsLoadPromise
+
+  hljsLoadPromise = new Promise<void>((resolve, reject) => {
+    if (!document.querySelector('link[data-hljs-theme]')) {
+      const link = document.createElement('link')
+      link.rel = 'stylesheet'
+      link.href = `${HLJS_CDN}/styles/atom-one-dark.min.css`
+      link.setAttribute('data-hljs-theme', '1')
+      document.head.appendChild(link)
+    }
+    const script = document.createElement('script')
+    script.src = `${HLJS_CDN}/highlight.min.js`
+    script.onload = () => {
+      hljsInstance = (window as any).hljs
+      if (hljsInstance) hljsInstance.configure({ ignoreUnescapedHTML: true })
+      resolve()
+    }
+    script.onerror = () => {
+      hljsLoadPromise = null
+      reject(new Error('highlight.js CDN load failed'))
+    }
+    document.head.appendChild(script)
+  })
+  return hljsLoadPromise
+}
+
+function highlightCodeElement(pre: HTMLPreElement) {
+  if (!hljsInstance || !pre) return
+  const code = pre.querySelector('code')
+  if (!code) return
+
+  const lang = pre.dataset.language || 'plaintext'
+  const plain = code.textContent || ''
+  if (!plain.trim()) return
+
+  if (lang === 'plaintext') {
+    code.className = 'hljs'
+    return
+  }
+
+  try {
+    const result = hljsInstance.highlight(plain, { language: lang, ignoreIllegals: true })
+    code.innerHTML = result.value
+    code.className = `hljs language-${lang}`
+  } catch {
+    code.className = 'hljs'
+  }
+}
+
+function getCaretOffset(el: HTMLElement): number {
+  const sel = window.getSelection()
+  if (!sel || !sel.rangeCount || !el.contains(sel.anchorNode)) return -1
+  const range = sel.getRangeAt(0)
+  const pre = range.cloneRange()
+  pre.selectNodeContents(el)
+  pre.setEnd(range.startContainer, range.startOffset)
+  return pre.toString().length
+}
+
+function setCaretOffset(el: HTMLElement, offset: number) {
+  if (offset < 0) return
+  const sel = window.getSelection()
+  if (!sel) return
+  const range = document.createRange()
+  let cur = 0
+
+  function walk(node: Node): boolean {
+    if (node.nodeType === Node.TEXT_NODE) {
+      const len = (node.textContent || '').length
+      if (cur + len >= offset) {
+        range.setStart(node, offset - cur)
+        range.collapse(true)
+        return true
+      }
+      cur += len
+    } else {
+      for (const ch of Array.from(node.childNodes)) {
+        if (walk(ch)) return true
+      }
+    }
+    return false
+  }
+
+  if (walk(el)) {
+    sel.removeAllRanges()
+    sel.addRange(range)
+  }
+}
+
+function rehighlightWithCaret(pre: HTMLPreElement) {
+  const code = pre.querySelector('code')
+  if (!code) return
+  const offset = getCaretOffset(code)
+  highlightCodeElement(pre)
+  if (offset >= 0) setCaretOffset(code, offset)
+}
+
+function getAncestorCodeBlock(node: Node | null): HTMLPreElement | null {
+  while (node && node !== editorRef.value) {
+    if (node instanceof HTMLPreElement && node.dataset.language !== undefined) return node
+    node = node.parentNode
+  }
+  return null
+}
+
+async function highlightAllCodeBlocks() {
+  if (!editorRef.value) return
+  const pres = editorRef.value.querySelectorAll('pre[data-language]')
+  if (!pres.length) return
+  await loadHighlightJs()
+  pres.forEach(p => highlightCodeElement(p as HTMLPreElement))
+}
+
+function updateCodePickerPosition() {
+  if (!activeCodeBlock.value) return
+  const rect = activeCodeBlock.value.getBoundingClientRect()
+  // Левый верхний угол над блоком: якорь — левый верх pre; CSS сдвигает пикер вверх на свою высоту + зазор
+  codePickerPos.value = { x: rect.left, y: rect.top }
+}
+
+function changeCodeLanguage(lang: string) {
+  if (!activeCodeBlock.value) return
+  activeCodeBlock.value.dataset.language = lang
+  loadHighlightJs().then(() => {
+    if (!activeCodeBlock.value) return
+    highlightCodeElement(activeCodeBlock.value)
+    onInput()
+  })
+}
+
+/** Обработчик для шаблона: в template нельзя использовать `as` (UGC/JS без TS). */
+function onCodeLangSelectChange(ev: Event) {
+  const el = ev.target as HTMLSelectElement
+  changeCodeLanguage(el.value)
+}
+
 function insertCodeBlockHtml() {
-  document.execCommand('insertHTML', false, '<pre><code>\n</code></pre><p><br></p>')
+  document.execCommand(
+    'insertHTML',
+    false,
+    '<pre data-language="plaintext"><code class="hljs">\n</code></pre><p><br></p>',
+  )
+  nextTick(() => {
+    if (!editorRef.value) return
+    const allPre = editorRef.value.querySelectorAll('pre[data-language]')
+    const last = allPre[allPre.length - 1] as HTMLPreElement | undefined
+    if (last) {
+      const code = last.querySelector('code')
+      if (code) {
+        const sel = window.getSelection()
+        if (sel) {
+          const r = document.createRange()
+          r.setStart(code, 0)
+          r.collapse(true)
+          sel.removeAllRanges()
+          sel.addRange(r)
+        }
+      }
+      activeCodeBlock.value = last
+      updateCodePickerPosition()
+    }
+  })
 }
 
 function onKeydown(e: KeyboardEvent) {
@@ -822,10 +1051,8 @@ function onDocumentClick(e: MouseEvent) {
 }
 
 function onWindowScroll() {
-  // Update bubble menu and resize handle position on scroll
-  if (selectedMedia.value) {
-    updateBubbleMenuPosition()
-  }
+  if (selectedMedia.value) updateBubbleMenuPosition()
+  if (activeCodeBlock.value) updateCodePickerPosition()
 }
 </script>
 
@@ -963,6 +1190,28 @@ function onWindowScroll() {
           title="Изменить размер"
           @mousedown="startResize($event, selectedMedia)"
         />
+      </Teleport>
+
+      <!-- Code Block Language Picker -->
+      <Teleport to="body">
+        <Transition name="wy-code-picker-fade">
+          <div
+            v-if="editorMode === 'wysiwyg' && showCodePicker"
+            class="wy-code-picker"
+            :style="{ left: codePickerPos.x + 'px', top: codePickerPos.y + 'px' }"
+            @mousedown.stop
+          >
+            <select
+              class="wy-code-lang-select"
+              :value="activeCodeBlock?.dataset.language || 'plaintext'"
+              @change="onCodeLangSelectChange"
+            >
+              <option v-for="lang in CODE_LANGUAGES" :key="lang.value" :value="lang.value">
+                {{ lang.label }}
+              </option>
+            </select>
+          </div>
+        </Transition>
       </Teleport>
     </div>
   </div>
@@ -1195,6 +1444,56 @@ function onWindowScroll() {
   opacity: 0;
   transform: translate(-50%, -100%) translateY(5px);
 }
+
+/* Code block language picker: над блоком, выровнено по левому краю pre */
+.wy-code-picker {
+  position: fixed;
+  z-index: 1000;
+  transform: translateY(calc(-100% - 0.3rem));
+  pointer-events: auto;
+}
+
+.wy-code-picker-fade-enter-active,
+.wy-code-picker-fade-leave-active {
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.wy-code-picker-fade-enter-from,
+.wy-code-picker-fade-leave-to {
+  opacity: 0;
+  transform: translateY(calc(-100% - 0.3rem - 6px));
+}
+
+.wy-code-lang-select {
+  padding: 0.2rem 0.35rem;
+  font-family: 'Share Tech Mono', 'Courier New', monospace;
+  font-size: 0.58rem;
+  color: var(--color-text-secondary);
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border-light);
+  border-radius: 2px;
+  cursor: pointer;
+  outline: none;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  transition: border-color 0.15s ease;
+  -webkit-appearance: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8' viewBox='0 0 8 8'%3E%3Cpath fill='%23888' d='M0 2l4 4 4-4z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.3rem center;
+  padding-right: 1.2rem;
+}
+
+.wy-code-lang-select:hover,
+.wy-code-lang-select:focus {
+  border-color: var(--color-accent);
+  color: var(--color-text);
+}
+
+.wy-code-lang-select option {
+  background: var(--color-bg-secondary);
+  color: var(--color-text);
+}
 </style>
 
 <style>
@@ -1282,6 +1581,15 @@ function onWindowScroll() {
   overflow-x: auto;
   white-space: pre;
 }
+.wy-content pre[data-language] {
+  position: relative;
+  border-left: 3px solid var(--color-accent);
+  transition: border-color 0.2s ease;
+}
+.wy-content pre[data-language]:focus-within {
+  border-color: var(--color-accent-hover);
+  box-shadow: 0 0 8px rgba(211, 35, 75, 0.15);
+}
 .wy-content pre code {
   padding: 0;
   background: transparent;
@@ -1289,6 +1597,11 @@ function onWindowScroll() {
   color: var(--color-text);
   font-size: 0.75rem;
   line-height: 1.5;
+}
+.wy-content pre code.hljs {
+  padding: 0;
+  background: transparent;
+  overflow: visible;
 }
 
 .wy-content table {

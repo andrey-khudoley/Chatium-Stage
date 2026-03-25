@@ -214,7 +214,6 @@ const ctxMenuItems = computed<ContextMenuItem[]>(() => {
 let messagesSocketDisposer: (() => void) | null = null
 let reactionsSocketDisposer: (() => void) | null = null
 let userSocketSubscription: any = null
-let changesPollTimer: ReturnType<typeof setInterval> | null = null
 
 function isInjectedScenarioMessage(message: any) {
   return Boolean(
@@ -559,16 +558,12 @@ onMounted(() => {
   subscribeToUserSocket()
   checkRateLimitStatus()
   checkBanStatus()
-  changesPollTimer = setInterval(() => {
-    fetchChanges().catch(() => {})
-  }, 5000)
 })
 
 onBeforeUnmount(() => {
   if (messagesSocketDisposer) messagesSocketDisposer()
   if (reactionsSocketDisposer) reactionsSocketDisposer()
   if (userSocketSubscription && userSocketSubscription.close) userSocketSubscription.close()
-  if (changesPollTimer) clearInterval(changesPollTimer)
 })
 </script>
 

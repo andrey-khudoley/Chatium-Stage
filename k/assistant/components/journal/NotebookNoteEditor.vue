@@ -248,7 +248,10 @@ function blockToMarkdown(node: ChildNode): string {
   if (tag === 'h5') return `##### ${text}`
   if (tag === 'h6') return `###### ${text}`
   if (tag === 'blockquote') return text.split('\n').map((line) => `> ${line}`).join('\n')
-  if (tag === 'pre') return `\`\`\`\n${node.textContent?.trim() || ''}\n\`\`\``
+  if (tag === 'pre') {
+    const lang = node.dataset?.language || ''
+    return `\`\`\`${lang}\n${node.textContent?.trim() || ''}\n\`\`\``
+  }
   if (tag === 'hr') return '---'
   if (tag === 'ul' || tag === 'ol') return listToMarkdown(node)
   if (tag === 'p' || tag === 'div') return text
