@@ -119,15 +119,23 @@
 - `../../config/project` → `TOOLS_PAGE_NAME`, `getPageTitle`, `getHeaderText`
 - `../../lib/settings.lib` → `*`
 
-### `./web/pomodoro/index.tsx`
+### `./web/timers/index.tsx`
 - `@app/html-jsx` → `jsx`
+- `@app/auth` → `requireRealUser`
 - `../../pages/PomodoroPage.vue`
+- `../../lib/pomodoro.lib` → `getState` (SSR начального состояния)
+- `../../lib/pomodoro-stats-day` → `computePomodoroStatsDayKeyInTimeZone`
+- `../../lib/pomodoro-types` → тип `PomodoroStateDto`
 - `../../config/routes` → `getApiUrlForRoute`, `getFullUrl`, `ROUTES`
 - `../../config/project` → `POMODORO_PAGE_NAME`, `getPageTitle`, `getHeaderText`
 - `../../lib/settings.lib` → `*`
 - `../../api/pomodoro/state/get` → `getPomodoroStateRoute`
 - `../../api/pomodoro/control` → `pomodoroControlRoute`
 - `../../api/pomodoro/settings/save` → `savePomodoroSettingsRoute`
+- `../../api/pomodoro/assign-task` → `pomodoroAssignTaskRoute`
+- `../../api/tasks/in-progress` → `getInProgressTasksRoute`
+- `../../api/tools/focus-log` → `toolsFocusLogRoute`
+- `../../styles` → `customScrollbarStyles`, `formControlStyles`, `mobileSafeAreaStyles`, `VIEWPORT_META_CONTENT`
 
 ### `./web/tests/index.tsx`
 - `@app/html-jsx` → `jsx`
@@ -236,15 +244,16 @@
 - `../components/AppFooter.vue`
 
 ### `./pages/PomodoroPage.vue`
-- `vue` → `computed`, `onMounted`, `onUnmounted`, `ref`
+- `vue` → `computed`, `onMounted`, `onUnmounted`, `ref`, `watch`, `nextTick`
 - `../components/Header.vue`
 - `../components/GlobalGlitch.vue`
 - `../components/AppFooter.vue`
-- `../components/pomodoro/PomodoroTimerDial.vue`
-- `../components/pomodoro/PomodoroSettingsModal.vue`
+- `../components/pomodoro/PomodoroToolsWorkspace.vue`
 - `../lib/pomodoro-phase-sounds` → `playPomodoroPhaseChangeSound`
 - `../lib/pomodoro-types` → `formatPomodoroSecondsDisplay` (как `fmt`)
 - `../lib/pomodoro-stats-day` → `computePomodoroStatsDayKeyLocal`
+- пропсы SSR от `web/timers/index.tsx`: `initialPomodoroState`, `initialServerNowMs` (опционально)
+- второй блок `<style>` без `scoped` в этом же файле — глобальные CRT-стили (`.pomodoro-phase-bar`, `.pomodoro-actions`, `.pomo-btn`, …) для `/web/timers`; отдельные `.css` из `import` в `<script>` в этой среде не подключаются в бандл
 
 ### `./components/tasks/TasksAiChatPanel.vue`
 - `vue` → `computed`, `onMounted`, `onUnmounted`, `ref`, `watch`, `nextTick`
@@ -298,6 +307,28 @@
 ### `./components/pomodoro/PomodoroTaskSelector.vue`
 - `vue` → `computed`, `onMounted`, `ref`
 - `defineProps`: `assignTaskUrl`, `getTasksUrl`, `currentTaskId`, `statsDayKey` (передаётся в `assign-task` вместе с `taskId`)
+
+### `./components/pomodoro/PomodoroToolStatsRow.vue`
+- `defineProps`: `firstText`, `secondText`, `thirdText`, `firstLabel`, `secondLabel`, `thirdLabel`, `firstIcon`, `secondIcon`, `thirdIcon` (три ячейки `.stat-cell` в одной сетке; общая вёрстка для вкладок Pomodoro и таймера/секундомера)
+
+### `./components/pomodoro/PomodoroToolsWorkspace.vue`
+- `vue` → `computed`
+- `../../lib/focus-clock-local-stats` → `readFocusClockStatsFromStorage`
+- `../../lib/pomodoro-types` → `formatPomodoroSecondsDisplay`, типы `PomodoroPhaseCompleteAction`, `PomodoroAfterLongRest`
+- `../../lib/pomodoro-stats-day` → `computePomodoroStatsDayKeyLocal`
+- `./PomodoroTimerDial.vue`, `./PomodoroSettingsModal.vue`, `./PomodoroTaskSelector.vue`, `./FocusClockPane.vue`, `./PomodoroToolStatsRow.vue`
+- `defineProps`: `state`, `localTickMs`, `sharedSelectedTaskId`, `settingsModel`, `saving`, `actionPending`, `assignTaskUrl`, `getTasksUrl`, `toolsFocusLogUrl`, `activeTool`, `settingsOpen`
+- `defineEmits`: `update:activeTool`, `update:settingsOpen`, `control`, `save-settings`, `pomodoro-task-assigned`, `shared-task-selected`
+
+### `./components/pomodoro/FocusClockPane.vue`
+- стили панели фазы и кнопок — глобальный блок в `PomodoroPage.vue` (см. выше); в scoped `FocusClockPane` остаются оболочка, модалка настроек (`clock-settings-*`), оформление секундомерного dial
+- `vue` → `computed`, `onMounted`, `onUnmounted`, `ref`, `watch`
+- `../../lib/pomodoro-types` → `formatPomodoroSecondsDisplay` (как `fmt`)
+- `../../lib/focus-clock-local-stats` → `buildFocusClockStatsPayload`, `readFocusClockStatsFromStorage`, `writeFocusClockStatsToStorage`
+- `../../lib/pomodoro-stats-day` → `computePomodoroStatsDayKeyLocal`
+- `./PomodoroTimerDial.vue`, `./PomodoroTaskSelectDropdown.vue`
+- `defineProps`: `mode`, `focusLogUrl`, `getTasksUrl`, `selectedTaskId?`
+- `defineEmits`: `taskSelected`
 
 ### `./components/journal/JournalStubPanel.vue`
 - (только разметка заглушки «В разработке»)

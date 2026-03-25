@@ -19,7 +19,7 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  (event: 'taskAssigned'): void
+  (event: 'taskAssigned', taskId: string): void
 }>()
 
 const tasks = ref<TaskItem[]>([])
@@ -50,7 +50,7 @@ async function assignTask(taskId: string) {
     })
     const j = await r.json()
     if (j.success) {
-      emit('taskAssigned')
+      emit('taskAssigned', taskId)
     }
   } catch (error) {
     console.error('Failed to assign task:', error)

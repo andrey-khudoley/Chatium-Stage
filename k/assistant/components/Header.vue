@@ -23,7 +23,10 @@
           <span
             ref="clockTriggerRef"
             class="header-clock"
-            :class="{ 'header-clock--interactive': isToolClockWidgetEnabled && widgetMode !== 'clock' }"
+            :class="{
+              'header-clock--interactive': isToolClockWidgetEnabled && widgetMode !== 'clock',
+              'header-clock--attention': clockNeedsAttention
+            }"
             @click="onClockClick"
           >
             <i :class="clockIconClass"></i>
@@ -182,13 +185,19 @@ const stopwatchStartedAtMs = ref(0)
 const TIMER_SETTINGS_STORAGE_KEY = 'assistant:focus-clock-settings:timer'
 const HEADER_WIDGET_STORAGE_KEY = 'assistant:header-clock-widget:v1'
 const HEADER_WIDGET_STORAGE_VERSION = 1
+const FOCUS_TASK_STORAGE_KEY = 'assistant:focus-clock-selected-task:v1'
 const isInitialAutoModeResolved = ref(false)
+const clockNeedsAttention = ref(false)
 
 type PersistedHeaderWidgetState = {
   version: number
   mode: HeaderWidgetMode
   timer: { status: LocalClockStatus; remainingSec: number; endsAtMs: number }
   stopwatch: { status: LocalClockStatus; elapsedSec: number; startedAtMs: number }
+}
+type PersistedFocusTaskState = {
+  version: 1
+  taskId: string
 }
 const pomodoroDisplaySec = computed(() => {
   if (pomodoroStatus.value === 'running') {
@@ -251,6 +260,8 @@ let pomodoroPollInterval: number | null = null
 let nowTickInterval: number | null = null
 let escHandler: ((e: KeyboardEvent) => void) | null = null
 let outsideToolPickerClickHandler: ((e: MouseEvent) => void) | null = null
+let focusTaskEventHandler: ((e: Event) => void) | null = null
+let headerClockStateChangedHandler: ((e: Event) => void) | null = null
 const toolPickerRef = ref<HTMLElement | null>(null)
 const clockTriggerRef = ref<HTMLElement | null>(null)
 
@@ -334,6 +345,7 @@ function persistHeaderWidgetState(): void {
   } catch {
     // ignore storage write errors
   }
+  window.dispatchEvent(new CustomEvent('assistant:header-clock-state-changed'))
 }
 
 function restoreHeaderWidgetState(): void {
@@ -370,6 +382,25 @@ function restoreHeaderWidgetState(): void {
   } catch {
     // ignore broken localStorage data
   }
+}
+
+function persistSelectedFocusTask(taskId: string): void {
+  if (!taskId) return
+  const payload: PersistedFocusTaskState = { version: 1, taskId }
+  try {
+    window.localStorage.setItem(FOCUS_TASK_STORAGE_KEY, JSON.stringify(payload))
+  } catch {
+    // ignore storage write errors
+  }
+}
+
+function clearSelectedFocusTask(): void {
+  try {
+    window.localStorage.removeItem(FOCUS_TASK_STORAGE_KEY)
+  } catch {
+    // ignore storage write errors
+  }
+  window.dispatchEvent(new CustomEvent('assistant:focus-task-cleared'))
 }
 
 function resolveInitialAutoMode(): void {
@@ -536,11 +567,50 @@ async function handleToolReset(): Promise<void> {
   }
   if (widgetMode.value === 'timer') {
     resetTimer()
+    clearSelectedFocusTask()
     return
   }
   if (widgetMode.value === 'stopwatch') {
     resetStopwatch()
+    clearSelectedFocusTask()
     return
+  }
+}
+
+function blinkClockAttention(): void {
+  clockNeedsAttention.value = false
+  window.setTimeout(() => {
+    clockNeedsAttention.value = true
+    window.setTimeout(() => {
+      clockNeedsAttention.value = false
+    }, 900)
+  }, 0)
+}
+
+async function startSelectedToolIfStopped(): Promise<void> {
+  if (widgetMode.value === 'pomodoro') {
+    if (pomodoroStatus.value === 'running') return
+    clockActionPending.value = true
+    try {
+      await pauseOtherRunningTools('pomodoro')
+      if (pomodoroStatus.value === 'paused' || pomodoroStatus.value === 'awaiting_continue') await controlPomodoro('resume')
+      else await controlPomodoro('start')
+    } finally {
+      clockActionPending.value = false
+    }
+    persistHeaderWidgetState()
+    return
+  }
+  if (widgetMode.value === 'timer') {
+    if (timerStatus.value === 'running') return
+    if (timerStatus.value === 'paused') resumeTimer()
+    else startTimer()
+    return
+  }
+  if (widgetMode.value === 'stopwatch') {
+    if (stopwatchStatus.value === 'running') return
+    if (stopwatchStatus.value === 'paused') resumeStopwatch()
+    else startStopwatch()
   }
 }
 
@@ -588,6 +658,22 @@ onMounted(() => {
     showToolPicker.value = false
   }
   window.addEventListener('mousedown', outsideToolPickerClickHandler)
+  focusTaskEventHandler = (e: Event) => {
+    const customEvent = e as CustomEvent<{ taskId?: string }>
+    const taskId = customEvent.detail?.taskId
+    if (!taskId || !isToolClockWidgetEnabled.value) return
+    persistSelectedFocusTask(taskId)
+    if (widgetMode.value === 'clock') {
+      blinkClockAttention()
+      return
+    }
+    void startSelectedToolIfStopped()
+  }
+  window.addEventListener('assistant:focus-task-selected', focusTaskEventHandler)
+  headerClockStateChangedHandler = () => {
+    restoreHeaderWidgetState()
+  }
+  window.addEventListener('assistant:header-clock-state-changed', headerClockStateChangedHandler)
 })
 
 onUnmounted(() => {
@@ -604,6 +690,12 @@ onUnmounted(() => {
   }
   if (outsideToolPickerClickHandler) {
     window.removeEventListener('mousedown', outsideToolPickerClickHandler)
+  }
+  if (focusTaskEventHandler) {
+    window.removeEventListener('assistant:focus-task-selected', focusTaskEventHandler)
+  }
+  if (headerClockStateChangedHandler) {
+    window.removeEventListener('assistant:header-clock-state-changed', headerClockStateChangedHandler)
   }
 })
 
@@ -943,6 +1035,39 @@ const cancelLogout = () => {
   );
 }
 .header-clock--interactive { cursor: pointer; }
+.header-clock--attention {
+  animation: header-clock-attention-blink 0.9s ease-in-out;
+}
+
+@keyframes header-clock-attention-blink {
+  0%,
+  100% {
+    color: var(--color-text-secondary);
+    border-color: var(--color-border);
+    box-shadow:
+      inset 0 1px 2px rgba(0, 0, 0, 0.4),
+      0 0 6px rgba(160, 160, 160, 0.08);
+  }
+  10%,
+  30%,
+  50% {
+    color: #ffd7dd;
+    border-color: var(--color-accent-hover);
+    box-shadow:
+      inset 0 1px 2px rgba(0, 0, 0, 0.4),
+      0 0 12px rgba(211, 35, 75, 0.45);
+    background: rgba(90, 14, 26, 0.7);
+  }
+  20%,
+  40%,
+  60% {
+    color: var(--color-text-secondary);
+    border-color: var(--color-border);
+    box-shadow:
+      inset 0 1px 2px rgba(0, 0, 0, 0.4),
+      0 0 6px rgba(160, 160, 160, 0.08);
+  }
+}
 
 .header-clock-tools {
   position: relative;

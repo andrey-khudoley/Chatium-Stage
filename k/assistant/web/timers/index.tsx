@@ -1,9 +1,13 @@
 // @shared
 import { jsx } from '@app/html-jsx'
+import { requireRealUser } from '@app/auth'
 import PomodoroPage from '../../pages/PomodoroPage.vue'
 import { getApiUrlForRoute, getFullUrl, ROUTES } from '../../config/routes'
 import { POMODORO_PAGE_NAME, getPageTitle, getHeaderText } from '../../config/project'
 import * as settingsLib from '../../lib/settings.lib'
+import * as pomodoroLib from '../../lib/pomodoro.lib'
+import { computePomodoroStatsDayKeyInTimeZone } from '../../lib/pomodoro-stats-day'
+import type { PomodoroStateDto } from '../../lib/pomodoro-types'
 import { getPomodoroStateRoute } from '../../api/pomodoro/state/get'
 import { pomodoroControlRoute } from '../../api/pomodoro/control'
 import { savePomodoroSettingsRoute } from '../../api/pomodoro/settings/save'
@@ -16,6 +20,21 @@ export const pomodoroPageRoute = app.html('/', async (ctx) => {
   const isAuthenticated = !!ctx.user
   const isAdmin = ctx.user?.is('Admin') ?? false
   const projectName = await settingsLib.getSettingString(ctx, settingsLib.SETTING_KEYS.PROJECT_NAME)
+
+  let initialPomodoroState: PomodoroStateDto | null = null
+  let initialServerNowMs = 0
+  if (isAuthenticated) {
+    try {
+      const user = requireRealUser(ctx)
+      const statsDayKey = computePomodoroStatsDayKeyInTimeZone(Date.now(), 'Europe/Moscow')
+      initialPomodoroState = await pomodoroLib.getState(ctx, user.id, statsDayKey)
+      initialServerNowMs = Date.now()
+    } catch {
+      initialPomodoroState = null
+      initialServerNowMs = 0
+    }
+  }
+
   return (
     <html>
       <head>
@@ -216,6 +235,8 @@ export const pomodoroPageRoute = app.html('/', async (ctx) => {
           isAdmin={isAdmin}
           adminUrl={isAdmin ? getFullUrl(ROUTES.admin) : ''}
           testsUrl={isAuthenticated ? getFullUrl(ROUTES.tests) : ''}
+          initialPomodoroState={initialPomodoroState}
+          initialServerNowMs={initialServerNowMs}
           stateGetUrl={getApiUrlForRoute(getPomodoroStateRoute.url())}
           controlUrl={getApiUrlForRoute(pomodoroControlRoute.url())}
           settingsSaveUrl={getApiUrlForRoute(savePomodoroSettingsRoute.url())}

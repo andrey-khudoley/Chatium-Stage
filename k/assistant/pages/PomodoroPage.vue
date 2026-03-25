@@ -3,10 +3,7 @@ import { computed, onMounted, onUnmounted, ref, watch, nextTick } from 'vue'
 import Header from '../components/Header.vue'
 import GlobalGlitch from '../components/GlobalGlitch.vue'
 import AppFooter from '../components/AppFooter.vue'
-import PomodoroTimerDial from '../components/pomodoro/PomodoroTimerDial.vue'
-import PomodoroSettingsModal from '../components/pomodoro/PomodoroSettingsModal.vue'
-import PomodoroTaskSelector from '../components/pomodoro/PomodoroTaskSelector.vue'
-import FocusClockPane from '../components/pomodoro/FocusClockPane.vue'
+import PomodoroToolsWorkspace from '../components/pomodoro/PomodoroToolsWorkspace.vue'
 import { playPomodoroPhaseChangeSound } from '../lib/pomodoro-phase-sounds'
 import { formatPomodoroSecondsDisplay as fmt } from '../lib/pomodoro-types'
 import { computePomodoroStatsDayKeyLocal } from '../lib/pomodoro-stats-day'
@@ -34,6 +31,10 @@ type PomodoroState = {
   tasksCompletedToday: number
   updatedAtMs: number
 }
+type PersistedFocusTaskState = {
+  version: 1
+  taskId: string
+}
 
 const props = defineProps<{
   projectTitle: string
@@ -44,6 +45,9 @@ const props = defineProps<{
   isAdmin?: boolean
   adminUrl?: string
   testsUrl?: string
+  /** Состояние с SSR (`web/timers/index.tsx`), чтобы не зависеть от первого клиентского fetch */
+  initialPomodoroState?: PomodoroState | null
+  initialServerNowMs?: number
   stateGetUrl: string
   controlUrl: string
   settingsSaveUrl: string
@@ -52,7 +56,7 @@ const props = defineProps<{
   toolsFocusLogUrl: string
 }>()
 
-const state = ref<PomodoroState | null>(null)
+const state = ref<PomodoroState | null>(props.initialPomodoroState ?? null)
 const localTick = ref(Date.now())
 const saving = ref(false)
 const pageError = ref('')
@@ -65,6 +69,8 @@ const notificationPermission = ref<NotificationPermission>('default')
 const hasVibration = ref(false)
 const previousPhase = ref<'work' | 'rest' | 'long_rest' | null>(null)
 const activeTool = ref<'pomodoro' | 'timer' | 'stopwatch'>('pomodoro')
+const sharedSelectedTaskId = ref('')
+const FOCUS_TASK_STORAGE_KEY = 'assistant:focus-clock-selected-task:v1'
 
 const phaseLabels: Record<PomodoroState['phase'], string> = {
   work: 'Работа',
@@ -89,6 +95,14 @@ async function readApiJson<T>(response: Response): Promise<T> {
   return response.json() as Promise<T>
 }
 
+function formatFetchError(error: unknown): string {
+  const msg = error instanceof Error ? error.message : String(error)
+  if (msg.includes('Failed to fetch') || (error instanceof TypeError && msg === 'Failed to fetch')) {
+    return 'Нет соединения с сервером. Проверьте сеть, VPN и блокировщики расширений.'
+  }
+  return msg
+}
+
 function pomodoroStatsDayKeyNow(): string {
   return computePomodoroStatsDayKeyLocal(localTick.value)
 }
@@ -100,19 +114,92 @@ function pomodoroStateGetUrlWithDay(): string {
     : `${props.stateGetUrl}?statsDayKey=${key}`
 }
 
-async function refresh() {
-  try {
-    const r = await fetch(pomodoroStateGetUrlWithDay(), { credentials: 'include' })
-    const j = await readApiJson<{ success?: boolean; state?: PomodoroState; serverNowMs?: number; error?: string }>(r)
-    if (j.success && j.state) {
-      applyIncomingState(j.state, j.serverNowMs ?? 0, 'poll', 0)
-      pageError.value = ''
+async function refresh(opts?: { maxAttempts?: number }): Promise<void> {
+  const maxAttempts = opts?.maxAttempts ?? 1
+  let lastError: unknown
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    try {
+      if (attempt > 0) {
+        await new Promise((r) => setTimeout(r, 350 * attempt))
+      }
+      const r = await fetch(pomodoroStateGetUrlWithDay(), { credentials: 'include' })
+      const j = await readApiJson<{ success?: boolean; state?: PomodoroState; serverNowMs?: number; error?: string }>(r)
+      if (j.success && j.state) {
+        applyIncomingState(j.state, j.serverNowMs ?? 0, 'poll', 0)
+        pageError.value = ''
+        return
+      }
+      pageError.value = j.error ?? 'Не удалось обновить состояние pomodoro'
       return
+    } catch (error) {
+      lastError = error
     }
-    pageError.value = j.error ?? 'Не удалось обновить состояние pomodoro'
-  } catch (error) {
-    pageError.value = String(error)
   }
+  if (state.value) {
+    pageError.value = 'Не удалось синхронизировать с сервером. Показаны последние данные.'
+  } else {
+    pageError.value = formatFetchError(lastError)
+  }
+}
+
+function persistSelectedTaskToStorage(taskId: string): void {
+  if (!taskId) return
+  const payload: PersistedFocusTaskState = { version: 1, taskId }
+  try {
+    window.localStorage.setItem(FOCUS_TASK_STORAGE_KEY, JSON.stringify(payload))
+  } catch {
+    // ignore storage write errors
+  }
+}
+
+function clearSelectedTaskStorage(): void {
+  try {
+    window.localStorage.removeItem(FOCUS_TASK_STORAGE_KEY)
+  } catch {
+    // ignore storage write errors
+  }
+}
+
+function restoreSelectedTaskFromStorage(): void {
+  try {
+    const raw = window.localStorage.getItem(FOCUS_TASK_STORAGE_KEY)
+    if (!raw) return
+    const parsed = JSON.parse(raw) as PersistedFocusTaskState
+    if (parsed.version !== 1) return
+    if (!parsed.taskId) return
+    sharedSelectedTaskId.value = parsed.taskId
+  } catch {
+    // ignore broken localStorage data
+  }
+}
+
+async function assignTaskToPomodoro(taskId: string): Promise<void> {
+  const r = await fetch(props.assignTaskUrl, {
+    method: 'POST',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ taskId, statsDayKey: pomodoroStatsDayKeyNow() })
+  })
+  const j = await readApiJson<{ success?: boolean; error?: string }>(r)
+  if (!j.success) throw new Error(j.error ?? 'Не удалось привязать задачу к Pomodoro')
+}
+
+async function onSharedTaskSelected(taskId: string): Promise<void> {
+  if (!taskId) return
+  sharedSelectedTaskId.value = taskId
+  persistSelectedTaskToStorage(taskId)
+  try {
+    await assignTaskToPomodoro(taskId)
+    await refresh({ maxAttempts: 2 })
+  } catch (error) {
+    pageError.value = formatFetchError(error)
+  }
+}
+
+function onPomodoroTaskAssigned(taskId: string): void {
+  sharedSelectedTaskId.value = taskId
+  persistSelectedTaskToStorage(taskId)
+  void refresh({ maxAttempts: 1 })
 }
 
 function applyIncomingState(nextState: PomodoroState, serverNowMs: number, source: 'poll' | 'action', incomingActionSeq: number): void {
@@ -149,10 +236,10 @@ async function control(action: 'start' | 'resume' | 'pause' | 'stop' | 'skip' | 
       pageError.value = j.error ?? 'Не удалось выполнить действие'
     }
   } catch (error) {
-    pageError.value = String(error)
+    pageError.value = formatFetchError(error)
   } finally {
     actionPending.value = false
-    await refresh()
+    await refresh({ maxAttempts: 1 })
   }
 }
 
@@ -201,7 +288,7 @@ async function saveSettings(draft: PomodoroSettingsDraft) {
     }
     pageError.value = j.error ?? 'Не удалось сохранить настройки'
   } catch (error) {
-    pageError.value = String(error)
+    pageError.value = formatFetchError(error)
   } finally {
     saving.value = false
   }
@@ -265,18 +352,28 @@ let poll: number | null = null
 let focusHandler: (() => void) | null = null
 
 function onVisibilityBack(): void {
-  if (document.visibilityState === 'visible') void refresh()
+  if (document.visibilityState === 'visible') void refresh({ maxAttempts: 1 })
 }
 
 onMounted(() => {
   originalTitle.value = document.title
   notificationPermission.value = 'Notification' in window ? Notification.permission : 'denied'
   hasVibration.value = 'vibrate' in navigator
-  
-  void refresh()
+  restoreSelectedTaskFromStorage()
+
+  if (
+    props.initialPomodoroState != null &&
+    props.initialServerNowMs != null &&
+    props.initialServerNowMs > 0
+  ) {
+    applyIncomingState(props.initialPomodoroState, props.initialServerNowMs, 'poll', 0)
+    pageError.value = ''
+  }
+
+  void refresh({ maxAttempts: 3 })
   timer = window.setInterval(() => (localTick.value = Date.now()), 1000)
-  poll = window.setInterval(() => void refresh(), 7000)
-  focusHandler = () => void refresh()
+  poll = window.setInterval(() => void refresh({ maxAttempts: 1 }), 7000)
+  focusHandler = () => void refresh({ maxAttempts: 1 })
   window.addEventListener('focus', focusHandler)
   document.addEventListener('visibilitychange', onVisibilityBack)
   
@@ -303,21 +400,23 @@ const remainSec = computed(() => {
   return Math.max(0, Math.floor((state.value.phaseEndsAtMs - localTick.value) / 1000))
 })
 
-const displayTimeLabel = computed(() => {
-  if (state.value?.status === 'awaiting_continue') return `+${fmt(overtimeSec.value)}`
-  return fmt(remainSec.value)
-})
-
-const phaseDurationSec = computed(() => {
-  if (!state.value) return 1
-  if (state.value.phase === 'work') return state.value.workMinutes * 60
-  if (state.value.phase === 'rest') return state.value.restMinutes * 60
-  return state.value.longRestMinutes * 60
-})
-
 watch([() => state.value?.status, () => state.value?.phase, remainSec, overtimeSec], () => {
   nextTick(() => updateDocumentTitle())
 })
+
+watch(
+  () => state.value?.currentTaskId,
+  (taskId) => {
+    if (typeof taskId !== 'string') return
+    sharedSelectedTaskId.value = taskId
+    if (taskId) {
+      persistSelectedTaskToStorage(taskId)
+      return
+    }
+    clearSelectedTaskStorage()
+  },
+  { immediate: true }
+)
 
 watch(
   () => state.value?.status,
@@ -329,14 +428,6 @@ watch(
     }
   }
 )
-
-const statusLabel = computed(() => {
-  if (!state.value) return 'Загрузка'
-  if (state.value.status === 'running') return 'Идёт'
-  if (state.value.status === 'awaiting_continue') return 'Овертайм'
-  if (state.value.status === 'paused') return 'Пауза'
-  return 'Остановлен'
-})
 
 const settingsModel = computed(() => {
   const fallback: PomodoroState = {
@@ -384,16 +475,6 @@ const phaseTheme = computed(() => {
   return state.value.phase
 })
 
-const cycleDotsTotal = computed(() => state.value?.cyclesUntilLongRest ?? 4)
-const cycleDotsCompleted = computed(() => state.value?.cyclesCompleted ?? 0)
-
-/** Сколько кнопок в панели — для ровной сетки без «осиротевших» строк */
-const pomodoroActionPanelLayout = computed(() => {
-  if (!state.value) return 'pomodoro-actions__panel--n1'
-  const s = state.value.status
-  if (s === 'stopped') return 'pomodoro-actions__panel--n1'
-  return 'pomodoro-actions__panel--n2'
-})
 </script>
 
 <template>
@@ -418,144 +499,22 @@ const pomodoroActionPanelLayout = computed(() => {
           <i class="fa-solid fa-triangle-exclamation" /> {{ pageError }}
         </p>
 
-        <div class="tool-tabs">
-          <button type="button" class="tool-tab-btn" :class="{ 'tool-tab-btn--active': activeTool === 'pomodoro' }" @click="activeTool = 'pomodoro'">Помидор</button>
-          <button type="button" class="tool-tab-btn" :class="{ 'tool-tab-btn--active': activeTool === 'timer' }" @click="activeTool = 'timer'">Таймер</button>
-          <button type="button" class="tool-tab-btn" :class="{ 'tool-tab-btn--active': activeTool === 'stopwatch' }" @click="activeTool = 'stopwatch'">Секундомер</button>
-        </div>
-
-        <div v-if="activeTool === 'pomodoro'" class="pomodoro-phase-bar">
-          <span class="phase-indicator">
-            <span class="phase-dot" :class="`phase-dot--${state.phase}`"></span>
-            {{ phaseLabels[state.phase] }}
-          </span>
-          <span class="cycle-dots">
-            <span
-              v-for="i in cycleDotsTotal"
-              :key="i"
-              class="cycle-dot"
-              :class="{ 'cycle-dot--filled': i <= cycleDotsCompleted }"
-            ></span>
-          </span>
-          <button class="settings-trigger" :disabled="saving" @click="settingsOpen = true">
-            <i class="fa-solid fa-sliders" />
-          </button>
-        </div>
-
-        <transition v-if="activeTool === 'pomodoro'" name="fade" mode="out-in">
-          <PomodoroTimerDial
-            :key="state.phase"
-            :phase="state.phase"
-            :remaining-sec="remainSec"
-            :overtime-sec="overtimeSec"
-            :phase-duration-sec="phaseDurationSec"
-            :status="state.status"
-            :phase-label="phaseLabels[state.phase]"
-            :status-label="statusLabel"
-            :time-label="displayTimeLabel"
-          />
-        </transition>
-
-        <PomodoroTaskSelector
-          v-if="activeTool === 'pomodoro'"
+        <PomodoroToolsWorkspace
+          v-model:active-tool="activeTool"
+          v-model:settings-open="settingsOpen"
+          :state="state"
+          :local-tick-ms="localTick"
+          :shared-selected-task-id="sharedSelectedTaskId"
+          :settings-model="settingsModel"
+          :saving="saving"
+          :action-pending="actionPending"
           :assign-task-url="props.assignTaskUrl"
           :get-tasks-url="props.getTasksUrl"
-          :current-task-id="state.currentTaskId"
-          :stats-day-key="pomodoroStatsDayKeyNow()"
-          @task-assigned="refresh"
-        />
-
-        <div v-if="activeTool === 'pomodoro'" class="pomodoro-actions">
-          <div class="pomodoro-actions__panel" :class="pomodoroActionPanelLayout">
-            <button
-              v-if="state.status === 'stopped'"
-              type="button"
-              class="pomo-btn pomo-btn--primary"
-              :disabled="actionPending"
-              @click="control('start')"
-            >
-              <i class="fa-solid fa-play pomo-btn__icon" aria-hidden="true" />
-              <span class="pomo-btn__label">Старт</span>
-            </button>
-
-            <template v-if="state.status === 'running'">
-              <button
-                type="button"
-                class="pomo-btn pomo-btn--secondary"
-                :disabled="actionPending"
-                @click="control('pause')"
-              >
-                <i class="fa-solid fa-pause pomo-btn__icon" aria-hidden="true" />
-                <span class="pomo-btn__label">Пауза</span>
-              </button>
-              <button
-                type="button"
-                class="pomo-btn pomo-btn--ghost"
-                :disabled="actionPending"
-                @click="control('skip')"
-              >
-                <i class="fa-solid fa-forward pomo-btn__icon" aria-hidden="true" />
-                <span class="pomo-btn__label">Пропустить</span>
-              </button>
-            </template>
-
-            <template v-if="state.status === 'paused' || state.status === 'awaiting_continue'">
-              <button
-                type="button"
-                class="pomo-btn pomo-btn--primary"
-                :disabled="actionPending"
-                @click="control('resume')"
-              >
-                <i class="fa-solid fa-play pomo-btn__icon" aria-hidden="true" />
-                <span class="pomo-btn__label">Продолжить</span>
-              </button>
-              <button
-                type="button"
-                class="pomo-btn pomo-btn--danger"
-                :disabled="actionPending"
-                @click="control('reset')"
-              >
-                <i class="fa-solid fa-rotate-left pomo-btn__icon" aria-hidden="true" />
-                <span class="pomo-btn__label">Сбросить</span>
-              </button>
-            </template>
-          </div>
-        </div>
-
-        <div v-if="activeTool === 'pomodoro'" class="pomodoro-stats">
-          <div class="stat-cell">
-            <span class="stat-cell__value">{{ state.tasksCompletedToday }}</span>
-            <span class="stat-cell__label">
-              <i class="fa-solid fa-fire" /> Помидоров
-            </span>
-          </div>
-          <div class="stat-cell">
-            <span class="stat-cell__value">{{ fmt(state.totalWorkSec) }}</span>
-            <span class="stat-cell__label">
-              <i class="fa-solid fa-clock" /> Работа
-            </span>
-          </div>
-          <div class="stat-cell">
-            <span class="stat-cell__value">{{ fmt(state.totalRestSec) }}</span>
-            <span class="stat-cell__label">
-              <i class="fa-solid fa-mug-hot" /> Отдых
-            </span>
-          </div>
-        </div>
-
-        <PomodoroSettingsModal
-          v-if="activeTool === 'pomodoro'"
-          :is-open="settingsOpen"
-          :saving="saving"
-          :model-value="settingsModel"
-          @close="settingsOpen = false"
-          @save="saveSettings"
-        />
-        <FocusClockPane
-          v-if="activeTool === 'timer' || activeTool === 'stopwatch'"
-          :mode="activeTool === 'timer' ? 'timer' : 'stopwatch'"
-          :focus-log-url="props.toolsFocusLogUrl"
-          :get-tasks-url="props.getTasksUrl"
+          :tools-focus-log-url="props.toolsFocusLogUrl"
+          @control="control"
+          @save-settings="saveSettings"
+          @pomodoro-task-assigned="onPomodoroTaskAssigned"
+          @shared-task-selected="onSharedTaskSelected"
         />
       </div>
       <div v-else class="content-inner pomodoro-shell">
@@ -619,31 +578,6 @@ const pomodoroActionPanelLayout = computed(() => {
   gap: 1rem;
 }
 
-.tool-tabs {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: .45rem;
-}
-
-.tool-tab-btn {
-  border: 1px solid var(--color-border);
-  background: var(--color-bg-secondary);
-  color: var(--color-text-secondary);
-  padding: .5rem .6rem;
-  font-size: .68rem;
-  text-transform: uppercase;
-  letter-spacing: .08em;
-  cursor: pointer;
-  transition: all .2s ease;
-}
-
-.tool-tab-btn:hover { border-color: var(--color-border-light); color: var(--color-text); }
-.tool-tab-btn--active {
-  border-color: var(--color-accent);
-  color: #fff;
-  background: linear-gradient(165deg, color-mix(in srgb, var(--color-accent) 92%, #000), var(--color-accent));
-}
-
 .pomodoro-error {
   margin: 0;
   padding: .5rem .75rem;
@@ -678,30 +612,71 @@ const pomodoroActionPanelLayout = computed(() => {
   51%, 100% { opacity: 0; }
 }
 
-/* ── Phase bar ── */
+/* ── Responsive ── */
+@media (max-width: 640px) {
+  .pomodoro-shell {
+    padding: 1rem max(1rem, var(--app-safe-left, 0)) max(1rem, var(--app-safe-bottom, 0)) max(1rem, var(--app-safe-right, 0));
+  }
+}
+
+</style>
+
+<style>
+/* CRT: phase bar, actions, pomo-btn — правила встроены в SFC: бандлер Chatium не подключает отдельные .css из import в script. */
+.pomodoro-tool-error {
+  margin: 0;
+  padding: 0.5rem 0.75rem;
+  color: #ff6b6b;
+  font-size: 0.78rem;
+  background: rgba(255, 107, 107, 0.06);
+  border: 1px solid rgba(255, 107, 107, 0.15);
+  clip-path: polygon(
+    0 3px,
+    3px 3px,
+    3px 0,
+    calc(100% - 3px) 0,
+    calc(100% - 3px) 3px,
+    100% 3px,
+    100% calc(100% - 3px),
+    calc(100% - 3px) calc(100% - 3px),
+    calc(100% - 3px) 100%,
+    3px 100%,
+    3px calc(100% - 3px),
+    0 calc(100% - 3px)
+  );
+}
+
 .pomodoro-phase-bar {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: center;
-  gap: .75rem;
-  padding: .5rem .75rem;
-  background: rgba(255, 255, 255, .02);
+  gap: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  background: rgba(255, 255, 255, 0.02);
   border: 1px solid var(--color-border);
   clip-path: polygon(
-    0 3px, 3px 3px, 3px 0,
-    calc(100% - 3px) 0, calc(100% - 3px) 3px, 100% 3px,
-    100% calc(100% - 3px), calc(100% - 3px) calc(100% - 3px), calc(100% - 3px) 100%,
-    3px 100%, 3px calc(100% - 3px), 0 calc(100% - 3px)
+    0 3px,
+    3px 3px,
+    3px 0,
+    calc(100% - 3px) 0,
+    calc(100% - 3px) 3px,
+    100% 3px,
+    100% calc(100% - 3px),
+    calc(100% - 3px) calc(100% - 3px),
+    calc(100% - 3px) 100%,
+    3px 100%,
+    3px calc(100% - 3px),
+    0 calc(100% - 3px)
   );
 }
 
 .phase-indicator {
   display: flex;
   align-items: center;
-  gap: .45rem;
-  font-size: .78rem;
+  gap: 0.45rem;
+  font-size: 0.78rem;
   text-transform: uppercase;
-  letter-spacing: .1em;
+  letter-spacing: 0.1em;
   color: var(--color-text);
   white-space: nowrap;
   justify-self: start;
@@ -713,12 +688,19 @@ const pomodoroActionPanelLayout = computed(() => {
   border-radius: 0;
   background: var(--pomodoro-phase-color);
   box-shadow: 0 0 6px var(--pomodoro-phase-glow-strong);
-  animation: dot-pulse 2s ease-in-out infinite;
+  animation: pomodoro-tool-dot-pulse 2s ease-in-out infinite;
 }
 
-@keyframes dot-pulse {
-  0%, 100% { opacity: 1; box-shadow: 0 0 6px var(--pomodoro-phase-glow-strong); }
-  50% { opacity: .7; box-shadow: 0 0 12px var(--pomodoro-phase-glow-strong); }
+@keyframes pomodoro-tool-dot-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    box-shadow: 0 0 6px var(--pomodoro-phase-glow-strong);
+  }
+  50% {
+    opacity: 0.7;
+    box-shadow: 0 0 12px var(--pomodoro-phase-glow-strong);
+  }
 }
 
 .cycle-dots {
@@ -734,7 +716,7 @@ const pomodoroActionPanelLayout = computed(() => {
   height: 6px;
   border: 1px solid var(--color-border-light);
   background: transparent;
-  transition: all .3s ease;
+  transition: all 0.3s ease;
 }
 
 .cycle-dot--filled {
@@ -747,19 +729,27 @@ const pomodoroActionPanelLayout = computed(() => {
   width: 28px;
   height: 28px;
   border: 1px solid var(--color-border);
-  background: rgba(255, 255, 255, .02);
+  background: rgba(255, 255, 255, 0.02);
   color: var(--color-text-secondary);
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  font-size: .75rem;
-  transition: all .2s ease;
+  font-size: 0.75rem;
+  transition: all 0.2s ease;
   clip-path: polygon(
-    0 2px, 2px 2px, 2px 0,
-    calc(100% - 2px) 0, calc(100% - 2px) 2px, 100% 2px,
-    100% calc(100% - 2px), calc(100% - 2px) calc(100% - 2px), calc(100% - 2px) 100%,
-    2px 100%, 2px calc(100% - 2px), 0 calc(100% - 2px)
+    0 2px,
+    2px 2px,
+    2px 0,
+    calc(100% - 2px) 0,
+    calc(100% - 2px) 2px,
+    100% 2px,
+    100% calc(100% - 2px),
+    calc(100% - 2px) calc(100% - 2px),
+    calc(100% - 2px) 100%,
+    2px 100%,
+    2px calc(100% - 2px),
+    0 calc(100% - 2px)
   );
   justify-self: end;
 }
@@ -770,7 +760,6 @@ const pomodoroActionPanelLayout = computed(() => {
   box-shadow: 0 0 8px var(--pomodoro-phase-glow);
 }
 
-/* ── Actions: сетка n1 / n2 по числу кнопок ── */
 .pomodoro-actions {
   width: 100%;
 }
@@ -783,21 +772,27 @@ const pomodoroActionPanelLayout = computed(() => {
   background: rgba(255, 255, 255, 0.02);
   border: 1px solid var(--color-border);
   clip-path: polygon(
-    0 3px, 3px 3px, 3px 0,
-    calc(100% - 3px) 0, calc(100% - 3px) 3px, 100% 3px,
-    100% calc(100% - 3px), calc(100% - 3px) calc(100% - 3px), calc(100% - 3px) 100%,
-    3px 100%, 3px calc(100% - 3px), 0 calc(100% - 3px)
+    0 3px,
+    3px 3px,
+    3px 0,
+    calc(100% - 3px) 0,
+    calc(100% - 3px) 3px,
+    100% 3px,
+    100% calc(100% - 3px),
+    calc(100% - 3px) calc(100% - 3px),
+    calc(100% - 3px) 100%,
+    3px 100%,
+    3px calc(100% - 3px),
+    0 calc(100% - 3px)
   );
 }
 
-/* 1 кнопка — старт, по центру */
 .pomodoro-actions__panel--n1 {
   grid-template-columns: minmax(0, 13rem);
   justify-content: center;
   margin-inline: auto;
 }
 
-/* 2 кнопки — пауза/пропустить или продолжить/сбросить */
 .pomodoro-actions__panel--n2 {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
@@ -830,10 +825,18 @@ const pomodoroActionPanelLayout = computed(() => {
   box-sizing: border-box;
   overflow: hidden;
   clip-path: polygon(
-    0 3px, 3px 3px, 3px 0,
-    calc(100% - 3px) 0, calc(100% - 3px) 3px, 100% 3px,
-    100% calc(100% - 3px), calc(100% - 3px) calc(100% - 3px), calc(100% - 3px) 100%,
-    3px 100%, 3px calc(100% - 3px), 0 calc(100% - 3px)
+    0 3px,
+    3px 3px,
+    3px 0,
+    calc(100% - 3px) 0,
+    calc(100% - 3px) 3px,
+    100% 3px,
+    100% calc(100% - 3px),
+    calc(100% - 3px) calc(100% - 3px),
+    calc(100% - 3px) 100%,
+    3px 100%,
+    3px calc(100% - 3px),
+    0 calc(100% - 3px)
   );
 }
 
@@ -949,18 +952,6 @@ const pomodoroActionPanelLayout = computed(() => {
   color: var(--color-text);
 }
 
-.pomo-btn--muted {
-  border-color: var(--color-border);
-  background: rgba(255, 255, 255, 0.03);
-  color: var(--color-text-secondary);
-  font-weight: 500;
-}
-
-.pomo-btn--muted:hover:not(:disabled) {
-  color: var(--color-text);
-  border-color: color-mix(in srgb, var(--pomodoro-phase-color) 35%, var(--color-border));
-}
-
 .pomo-btn--danger {
   border-color: rgba(255, 107, 107, 0.35);
   background: transparent;
@@ -978,89 +969,7 @@ const pomodoroActionPanelLayout = computed(() => {
   background: #ff6b6b;
 }
 
-/* ── Stats ── */
-.pomodoro-stats {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: .5rem;
-}
-
-.stat-cell {
-  border: 1px solid var(--color-border);
-  background: rgba(255, 255, 255, .02);
-  padding: .6rem .5rem;
-  text-align: center;
-  transition: all .3s ease;
-  position: relative;
-  overflow: hidden;
-  clip-path: polygon(
-    0 3px, 3px 3px, 3px 0,
-    calc(100% - 3px) 0, calc(100% - 3px) 3px, 100% 3px,
-    100% calc(100% - 3px), calc(100% - 3px) calc(100% - 3px), calc(100% - 3px) 100%,
-    3px 100%, 3px calc(100% - 3px), 0 calc(100% - 3px)
-  );
-}
-
-.stat-cell::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 0; width: 100%; height: 100%;
-  background: repeating-linear-gradient(
-    0deg,
-    rgba(0, 0, 0, 0.04) 0px, rgba(0, 0, 0, 0.04) 1px,
-    transparent 1px, transparent 3px
-  );
-  pointer-events: none;
-}
-
-.stat-cell:hover {
-  border-color: var(--color-border-light);
-  background: rgba(255, 255, 255, .04);
-  box-shadow: 0 0 8px var(--pomodoro-phase-glow);
-}
-
-.stat-cell__value {
-  display: block;
-  font-size: 1.2rem;
-  font-weight: 600;
-  font-family: 'Share Tech Mono', 'Courier New', monospace;
-  color: var(--color-text);
-  line-height: 1;
-  margin-bottom: .35rem;
-  text-shadow: 0 0 8px rgba(232, 232, 232, .2);
-}
-
-.stat-cell__label {
-  display: block;
-  font-size: .65rem;
-  color: var(--color-text-secondary);
-  text-transform: uppercase;
-  letter-spacing: .08em;
-  line-height: 1;
-}
-
-.stat-cell__label i {
-  font-size: .6rem;
-  color: var(--pomodoro-phase-color);
-  opacity: .7;
-}
-
-/* ── Transitions ── */
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity .4s ease;
-}
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
-}
-
-/* ── Responsive ── */
 @media (max-width: 640px) {
-  .pomodoro-shell {
-    padding: 1rem max(1rem, var(--app-safe-left, 0)) max(1rem, var(--app-safe-bottom, 0)) max(1rem, var(--app-safe-right, 0));
-  }
-
   .pomodoro-actions__panel {
     gap: 0.4rem;
     padding: 0.55rem 0.55rem;
@@ -1070,12 +979,6 @@ const pomodoroActionPanelLayout = computed(() => {
     font-size: 0.82rem;
     padding: 0.5rem 0.45rem;
     min-height: 42px;
-  }
-}
-
-@media (max-width: 400px) {
-  .pomodoro-stats {
-    grid-template-columns: 1fr;
   }
 }
 </style>

@@ -3,6 +3,11 @@ import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import PomodoroTimerDial from './PomodoroTimerDial.vue'
 import PomodoroTaskSelectDropdown from './PomodoroTaskSelectDropdown.vue'
 import { formatPomodoroSecondsDisplay as fmt } from '../../lib/pomodoro-types'
+import {
+  buildFocusClockStatsPayload,
+  readFocusClockStatsFromStorage,
+  writeFocusClockStatsToStorage
+} from '../../lib/focus-clock-local-stats'
 import { computePomodoroStatsDayKeyLocal } from '../../lib/pomodoro-stats-day'
 
 type FocusMode = 'timer' | 'stopwatch'
@@ -19,6 +24,10 @@ const props = defineProps<{
   mode: FocusMode
   focusLogUrl: string
   getTasksUrl: string
+  selectedTaskId?: string
+}>()
+const emit = defineEmits<{
+  (event: 'taskSelected', taskId: string): void
 }>()
 
 const nowMs = ref(Date.now())
@@ -43,18 +52,11 @@ const stopwatchElapsedSec = ref(0)
 const stopwatchStartedAtMs = ref(0)
 const statsDayKey = ref(computePomodoroStatsDayKeyLocal(Date.now()))
 
-const CLOCK_STATS_STORAGE_VERSION = 1
 const TIMER_SETTINGS_STORAGE_VERSION = 1
 const TIMER_SETTINGS_STORAGE_KEY = 'assistant:focus-clock-settings:timer'
-
-type PersistedClockStats = {
-  version: number
-  dayKey: string
-  mode: FocusMode
-  sessionsCount: number
-  totalFocusSec: number
-  totalSec: number
-}
+const HEADER_WIDGET_STORAGE_KEY = 'assistant:header-clock-widget:v1'
+const HEADER_WIDGET_STORAGE_VERSION = 1
+const FOCUS_TASK_STORAGE_KEY = 'assistant:focus-clock-selected-task:v1'
 
 type PersistedTimerSettings = {
   version: number
@@ -62,25 +64,23 @@ type PersistedTimerSettings = {
   seconds: number
 }
 
-function getStatsStorageKey(mode: FocusMode): string {
-  return `assistant:focus-clock-stats:${mode}`
+type PersistedHeaderWidgetState = {
+  version: number
+  mode: 'clock' | 'pomodoro' | 'timer' | 'stopwatch'
+  timer?: { status?: ClockStatus; remainingSec?: number; endsAtMs?: number }
+  stopwatch?: { status?: ClockStatus; elapsedSec?: number; startedAtMs?: number }
+}
+type PersistedFocusTaskState = {
+  version: 1
+  taskId: string
 }
 
 function loadPersistedStats(mode: FocusMode, dayKey: string): void {
-  const key = getStatsStorageKey(mode)
-  try {
-    const raw = window.localStorage.getItem(key)
-    if (!raw) return
-    const parsed = JSON.parse(raw) as PersistedClockStats
-    if (parsed.version !== CLOCK_STATS_STORAGE_VERSION) return
-    if (parsed.mode !== mode) return
-    if (parsed.dayKey !== dayKey) return
-    sessionsCount.value = Math.max(0, Math.floor(parsed.sessionsCount))
-    totalFocusSec.value = Math.max(0, Math.floor(parsed.totalFocusSec))
-    totalSec.value = Math.max(0, Math.floor(parsed.totalSec))
-  } catch {
-    // ignore broken localStorage data
-  }
+  const parsed = readFocusClockStatsFromStorage(mode, dayKey)
+  if (!parsed) return
+  sessionsCount.value = Math.max(0, Math.floor(parsed.sessionsCount))
+  totalFocusSec.value = Math.max(0, Math.floor(parsed.totalFocusSec))
+  totalSec.value = Math.max(0, Math.floor(parsed.totalSec))
 }
 
 function restoreStatsForMode(mode: FocusMode): void {
@@ -92,20 +92,14 @@ function restoreStatsForMode(mode: FocusMode): void {
 }
 
 function persistStats(mode: FocusMode, dayKey: string): void {
-  const key = getStatsStorageKey(mode)
-  const payload: PersistedClockStats = {
-    version: CLOCK_STATS_STORAGE_VERSION,
-    dayKey,
+  const payload = buildFocusClockStatsPayload(
     mode,
-    sessionsCount: Math.max(0, Math.floor(sessionsCount.value)),
-    totalFocusSec: Math.max(0, Math.floor(totalFocusSec.value)),
-    totalSec: Math.max(0, Math.floor(totalSec.value))
-  }
-  try {
-    window.localStorage.setItem(key, JSON.stringify(payload))
-  } catch {
-    // ignore storage write errors
-  }
+    dayKey,
+    sessionsCount.value,
+    totalFocusSec.value,
+    totalSec.value
+  )
+  writeFocusClockStatsToStorage(mode, payload)
 }
 
 function resetStats(): void {
@@ -116,6 +110,7 @@ function resetStats(): void {
 
 const isTimer = computed(() => props.mode === 'timer')
 const modeTitle = computed(() => (props.mode === 'timer' ? 'Таймер' : 'Секундомер'))
+
 const dialStatus = computed<'stopped' | 'running' | 'paused' | 'awaiting_continue'>(() => status.value)
 const timerPhaseDurationSec = computed(() => Math.max(1, timerRunDurationSec.value))
 const stopwatchDialRemainingSec = computed(() => 3600)
@@ -169,6 +164,131 @@ function restoreTimerSettings(): void {
   } catch {
     // ignore broken localStorage data
   }
+}
+
+function syncClockStateFromHeaderWidget(): void {
+  try {
+    const raw = window.localStorage.getItem(HEADER_WIDGET_STORAGE_KEY)
+    if (!raw) return
+    const parsed = JSON.parse(raw) as PersistedHeaderWidgetState
+    if (parsed.version !== HEADER_WIDGET_STORAGE_VERSION) return
+
+    const now = Date.now()
+    if (props.mode === 'timer') {
+      const timer = parsed.timer
+      if (!timer) return
+      const headerStatus = timer.status
+      if (headerStatus !== 'running' && headerStatus !== 'paused' && headerStatus !== 'stopped') return
+
+      status.value = headerStatus
+      timerRemainingSec.value = Math.max(0, Math.floor(timer.remainingSec ?? 0))
+      timerEndsAtMs.value = Math.max(0, Math.floor(timer.endsAtMs ?? 0))
+
+      if (status.value === 'running') {
+        const remain = Math.max(0, Math.floor((timerEndsAtMs.value - now) / 1000))
+        if (remain <= 0) {
+          status.value = 'stopped'
+          timerRemainingSec.value = 0
+          timerEndsAtMs.value = 0
+        } else {
+          timerRemainingSec.value = remain
+        }
+      }
+      if (status.value === 'stopped' && timerRemainingSec.value <= 0) {
+        resetDurationFromInputs()
+      }
+      return
+    }
+
+    const stopwatch = parsed.stopwatch
+    if (!stopwatch) return
+    const headerStatus = stopwatch.status
+    if (headerStatus !== 'running' && headerStatus !== 'paused' && headerStatus !== 'stopped') return
+
+    status.value = headerStatus
+    stopwatchElapsedSec.value = Math.max(0, Math.floor(stopwatch.elapsedSec ?? 0))
+    stopwatchStartedAtMs.value = Math.max(0, Math.floor(stopwatch.startedAtMs ?? 0))
+    if (status.value !== 'running') stopwatchStartedAtMs.value = 0
+  } catch {
+    // ignore broken localStorage data
+  }
+}
+
+function persistClockStateToHeaderWidget(): void {
+  try {
+    const raw = window.localStorage.getItem(HEADER_WIDGET_STORAGE_KEY)
+    const parsed = raw ? (JSON.parse(raw) as PersistedHeaderWidgetState) : null
+    const payload: PersistedHeaderWidgetState = {
+      version: HEADER_WIDGET_STORAGE_VERSION,
+      mode: props.mode,
+      timer: {
+        status: parsed?.timer?.status ?? 'stopped',
+        remainingSec: Math.max(0, Math.floor(parsed?.timer?.remainingSec ?? 0)),
+        endsAtMs: Math.max(0, Math.floor(parsed?.timer?.endsAtMs ?? 0))
+      },
+      stopwatch: {
+        status: parsed?.stopwatch?.status ?? 'stopped',
+        elapsedSec: Math.max(0, Math.floor(parsed?.stopwatch?.elapsedSec ?? 0)),
+        startedAtMs: Math.max(0, Math.floor(parsed?.stopwatch?.startedAtMs ?? 0))
+      }
+    }
+
+    if (props.mode === 'timer') {
+      payload.timer = {
+        status: status.value,
+        remainingSec: Math.max(0, Math.floor(timerRemainingSec.value)),
+        endsAtMs: Math.max(0, Math.floor(timerEndsAtMs.value))
+      }
+    } else {
+      payload.stopwatch = {
+        status: status.value,
+        elapsedSec: Math.max(0, Math.floor(stopwatchElapsedSec.value)),
+        startedAtMs: Math.max(0, Math.floor(stopwatchStartedAtMs.value))
+      }
+    }
+
+    window.localStorage.setItem(HEADER_WIDGET_STORAGE_KEY, JSON.stringify(payload))
+    window.dispatchEvent(new CustomEvent('assistant:header-clock-state-changed'))
+  } catch {
+    // ignore broken localStorage data
+  }
+}
+
+function restoreSelectedTaskFromStorage(): void {
+  try {
+    const raw = window.localStorage.getItem(FOCUS_TASK_STORAGE_KEY)
+    if (!raw) return
+    const parsed = JSON.parse(raw) as PersistedFocusTaskState
+    if (parsed.version !== 1) return
+    if (!parsed.taskId) return
+    selectedTaskId.value = parsed.taskId
+  } catch {
+    // ignore broken localStorage data
+  }
+}
+
+function persistSelectedTaskToStorage(taskId: string): void {
+  if (!taskId) return
+  const payload: PersistedFocusTaskState = { version: 1, taskId }
+  try {
+    window.localStorage.setItem(FOCUS_TASK_STORAGE_KEY, JSON.stringify(payload))
+  } catch {
+    // ignore storage write errors
+  }
+}
+
+function clearSelectedTaskStorage(): void {
+  try {
+    window.localStorage.removeItem(FOCUS_TASK_STORAGE_KEY)
+  } catch {
+    // ignore storage write errors
+  }
+}
+
+function onTaskSelected(taskId: string): void {
+  selectedTaskId.value = taskId
+  persistSelectedTaskToStorage(taskId)
+  emit('taskSelected', taskId)
 }
 
 async function readApiJson<T>(response: Response): Promise<T> {
@@ -233,6 +353,7 @@ function startClock(): void {
     stopwatchStartedAtMs.value = ts
   }
   openFocusSegment(ts)
+  persistClockStateToHeaderWidget()
 }
 
 async function pauseClock(): Promise<void> {
@@ -251,6 +372,7 @@ async function pauseClock(): Promise<void> {
   } catch (error) {
     pageError.value = String(error)
   }
+  persistClockStateToHeaderWidget()
 }
 
 function resumeClock(): void {
@@ -263,6 +385,7 @@ function resumeClock(): void {
     stopwatchStartedAtMs.value = ts
   }
   openFocusSegment(ts)
+  persistClockStateToHeaderWidget()
 }
 
 async function resetClock(): Promise<void> {
@@ -283,6 +406,9 @@ async function resetClock(): Promise<void> {
     stopwatchElapsedSec.value = 0
     stopwatchStartedAtMs.value = 0
   }
+  selectedTaskId.value = ''
+  clearSelectedTaskStorage()
+  persistClockStateToHeaderWidget()
 }
 
 async function finalizeTimerByEnd(): Promise<void> {
@@ -297,6 +423,7 @@ async function finalizeTimerByEnd(): Promise<void> {
   } catch (error) {
     pageError.value = String(error)
   }
+  persistClockStateToHeaderWidget()
 }
 
 watch(focusEnabled, async (next) => {
@@ -330,6 +457,7 @@ watch(
       restoreTimerSettings()
       resetDurationFromInputs()
     }
+    syncClockStateFromHeaderWidget()
   }
 )
 
@@ -337,13 +465,35 @@ watch([timerMin, timerSec], () => {
   persistTimerSettings()
 })
 
+watch(selectedTaskId, (taskId) => {
+  if (!taskId) return
+  persistSelectedTaskToStorage(taskId)
+})
+
+watch(
+  () => props.selectedTaskId,
+  (taskId) => {
+    if (typeof taskId !== 'string') return
+    selectedTaskId.value = taskId
+  },
+  { immediate: true }
+)
+
 let tickInterval: number | null = null
+let clearTaskEventHandler: ((e: Event) => void) | null = null
+let headerClockStateChangedHandler: ((e: Event) => void) | null = null
 onMounted(() => {
   restoreStatsForMode(props.mode)
   if (isTimer.value) {
     restoreTimerSettings()
     resetDurationFromInputs()
   }
+  if (props.selectedTaskId) {
+    selectedTaskId.value = props.selectedTaskId
+  } else {
+    restoreSelectedTaskFromStorage()
+  }
+  syncClockStateFromHeaderWidget()
   void loadTasks()
   tickInterval = window.setInterval(() => {
     const tickNowMs = Date.now()
@@ -357,18 +507,34 @@ onMounted(() => {
     if (status.value === 'running') totalSec.value += 1
     void finalizeTimerByEnd()
   }, 1000)
+  clearTaskEventHandler = () => {
+    selectedTaskId.value = ''
+    clearSelectedTaskStorage()
+  }
+  window.addEventListener('assistant:focus-task-cleared', clearTaskEventHandler)
+  headerClockStateChangedHandler = () => {
+    syncClockStateFromHeaderWidget()
+  }
+  window.addEventListener('assistant:header-clock-state-changed', headerClockStateChangedHandler)
 })
 
 onUnmounted(() => {
   if (tickInterval) clearInterval(tickInterval)
+  if (clearTaskEventHandler) {
+    window.removeEventListener('assistant:focus-task-cleared', clearTaskEventHandler)
+  }
+  if (headerClockStateChangedHandler) {
+    window.removeEventListener('assistant:header-clock-state-changed', headerClockStateChangedHandler)
+  }
+  persistClockStateToHeaderWidget()
 })
 </script>
 
 <template>
   <div class="focus-clock-shell">
-    <p v-if="pageError" class="clock-error"><i class="fa-solid fa-triangle-exclamation" /> {{ pageError }}</p>
+    <p v-if="pageError" class="pomodoro-tool-error"><i class="fa-solid fa-triangle-exclamation" /> {{ pageError }}</p>
 
-    <div class="clock-phase-bar">
+    <div class="pomodoro-phase-bar">
       <span class="phase-indicator"><span class="phase-dot"></span>{{ modeTitle }}</span>
       <span class="cycle-dots" aria-hidden="true">
         <span v-for="i in 4" :key="i" class="cycle-dot"></span>
@@ -404,50 +570,35 @@ onUnmounted(() => {
       :tasks="tasks"
       :selected-task-id="selectedTaskId"
       :loading="tasksLoading"
-      @select="selectedTaskId = $event"
+      @select="onTaskSelected"
     />
 
-    <div class="clock-actions">
-      <div class="clock-actions__panel" :class="status === 'stopped' ? 'clock-actions__panel--n1' : 'clock-actions__panel--n2'">
-        <button v-if="status === 'stopped'" type="button" class="clock-btn clock-btn--primary" @click="startClock">
-          <i class="fa-solid fa-play clock-btn__icon" aria-hidden="true" />
-          <span class="clock-btn__label">Старт</span>
+    <div class="pomodoro-actions">
+      <div class="pomodoro-actions__panel" :class="status === 'stopped' ? 'pomodoro-actions__panel--n1' : 'pomodoro-actions__panel--n2'">
+        <button v-if="status === 'stopped'" type="button" class="pomo-btn pomo-btn--primary" @click="startClock">
+          <i class="fa-solid fa-play pomo-btn__icon" aria-hidden="true" />
+          <span class="pomo-btn__label">Старт</span>
         </button>
         <template v-else-if="status === 'running'">
-          <button type="button" class="clock-btn clock-btn--secondary" @click="pauseClock">
-            <i class="fa-solid fa-pause clock-btn__icon" aria-hidden="true" />
-            <span class="clock-btn__label">Пауза</span>
+          <button type="button" class="pomo-btn pomo-btn--secondary" @click="pauseClock">
+            <i class="fa-solid fa-pause pomo-btn__icon" aria-hidden="true" />
+            <span class="pomo-btn__label">Пауза</span>
           </button>
-          <button type="button" class="clock-btn clock-btn--danger" @click="resetClock">
-            <i class="fa-solid fa-rotate-left clock-btn__icon" aria-hidden="true" />
-            <span class="clock-btn__label">Сброс</span>
+          <button type="button" class="pomo-btn pomo-btn--danger" @click="resetClock">
+            <i class="fa-solid fa-rotate-left pomo-btn__icon" aria-hidden="true" />
+            <span class="pomo-btn__label">Сброс</span>
           </button>
         </template>
         <template v-else>
-          <button type="button" class="clock-btn clock-btn--primary" @click="resumeClock">
-            <i class="fa-solid fa-play clock-btn__icon" aria-hidden="true" />
-            <span class="clock-btn__label">Продолжить</span>
+          <button type="button" class="pomo-btn pomo-btn--primary" @click="resumeClock">
+            <i class="fa-solid fa-play pomo-btn__icon" aria-hidden="true" />
+            <span class="pomo-btn__label">Продолжить</span>
           </button>
-          <button type="button" class="clock-btn clock-btn--danger" @click="resetClock">
-            <i class="fa-solid fa-rotate-left clock-btn__icon" aria-hidden="true" />
-            <span class="clock-btn__label">Сброс</span>
+          <button type="button" class="pomo-btn pomo-btn--danger" @click="resetClock">
+            <i class="fa-solid fa-rotate-left pomo-btn__icon" aria-hidden="true" />
+            <span class="pomo-btn__label">Сброс</span>
           </button>
         </template>
-      </div>
-    </div>
-
-    <div class="clock-stats">
-      <div class="stat-cell">
-        <span class="stat-cell__value">{{ sessionsCount }}</span>
-        <span class="stat-cell__label"><i class="fa-solid fa-flag-checkered" /> Сессий</span>
-      </div>
-      <div class="stat-cell">
-        <span class="stat-cell__value">{{ fmt(totalFocusSec) }}</span>
-        <span class="stat-cell__label"><i class="fa-solid fa-bullseye" /> Фокус</span>
-      </div>
-      <div class="stat-cell">
-        <span class="stat-cell__value">{{ fmt(totalSec) }}</span>
-        <span class="stat-cell__label"><i class="fa-solid fa-clock" /> Всего</span>
       </div>
     </div>
   </div>
@@ -467,7 +618,7 @@ onUnmounted(() => {
       </div>
       <p class="clock-settings-hint">В режиме фокуса интервалы пишутся в общий журнал фокуса и попадут в аналитику рабочего времени.</p>
       <div class="clock-settings-actions">
-        <button class="clock-btn" @click="settingsOpen = false">Закрыть</button>
+        <button type="button" class="pomo-btn" @click="settingsOpen = false">Закрыть</button>
       </div>
     </div>
   </div>
@@ -475,80 +626,7 @@ onUnmounted(() => {
 
 <style scoped>
 .focus-clock-shell { width: 100%; max-width: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 1rem; }
-.clock-error { margin: 0; padding: .5rem .75rem; color: #ff6b6b; font-size: .78rem; background: rgba(255,107,107,.06); border: 1px solid rgba(255,107,107,.15); }
-.clock-phase-bar {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
-  align-items: center;
-  gap: .75rem;
-  padding: .5rem .75rem;
-  background: rgba(255,255,255,.02);
-  border: 1px solid var(--color-border);
-  clip-path: polygon(0 3px, 3px 3px, 3px 0, calc(100% - 3px) 0, calc(100% - 3px) 3px, 100% 3px, 100% calc(100% - 3px), calc(100% - 3px) calc(100% - 3px), calc(100% - 3px) 100%, 3px 100%, 3px calc(100% - 3px), 0 calc(100% - 3px));
-}
-.phase-indicator { display: flex; align-items: center; gap: .45rem; font-size: .78rem; text-transform: uppercase; letter-spacing: .1em; color: var(--color-text); white-space: nowrap; justify-self: start; }
-.phase-dot {
-  width: 8px;
-  height: 8px;
-  background: var(--pomodoro-phase-color, var(--color-accent));
-  box-shadow: 0 0 6px var(--pomodoro-phase-glow-strong, var(--color-accent-light));
-  animation: dot-pulse 2s ease-in-out infinite;
-}
-.cycle-dots { display: flex; align-items: center; gap: 5px; justify-content: center; justify-self: center; pointer-events: none; }
-.cycle-dot { width: 6px; height: 6px; border: 1px solid var(--color-border-light); background: transparent; transition: all .3s ease; }
-@keyframes dot-pulse {
-  0%, 100% { opacity: 1; box-shadow: 0 0 6px var(--pomodoro-phase-glow-strong, var(--color-accent-light)); }
-  50% { opacity: .7; box-shadow: 0 0 12px var(--pomodoro-phase-glow-strong, var(--color-accent-light)); }
-}
-.settings-trigger {
-  width: 28px; height: 28px; border: 1px solid var(--color-border); background: rgba(255,255,255,.02); color: var(--color-text-secondary); display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: .75rem; transition: all .2s ease;
-  clip-path: polygon(0 2px, 2px 2px, 2px 0, calc(100% - 2px) 0, calc(100% - 2px) 2px, 100% 2px, 100% calc(100% - 2px), calc(100% - 2px) calc(100% - 2px), calc(100% - 2px) 100%, 2px 100%, 2px calc(100% - 2px), 0 calc(100% - 2px));
-}
-.settings-trigger:hover:not(:disabled) {
-  border-color: var(--pomodoro-phase-color, var(--color-accent));
-  color: var(--color-text);
-  box-shadow: 0 0 8px var(--pomodoro-phase-glow, var(--color-accent-light));
-}
-.settings-trigger { justify-self: end; }
 .stopwatch-dial-shell :deep(.dial-progress) { stroke-dashoffset: 565.4866776461628 !important; opacity: .45; filter: none; }
-.clock-actions { width: 100%; }
-.clock-actions__panel {
-  display: grid; width: 100%; gap: .45rem; padding: .65rem .7rem; background: rgba(255,255,255,.02); border: 1px solid var(--color-border);
-  clip-path: polygon(0 3px, 3px 3px, 3px 0, calc(100% - 3px) 0, calc(100% - 3px) 3px, 100% 3px, 100% calc(100% - 3px), calc(100% - 3px) calc(100% - 3px), calc(100% - 3px) 100%, 3px 100%, 3px calc(100% - 3px), 0 calc(100% - 3px));
-}
-.clock-actions__panel--n1 { grid-template-columns: minmax(0, 13rem); justify-content: center; margin-inline: auto; }
-.clock-actions__panel--n2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-.clock-btn {
-  position: relative; display: inline-flex; align-items: center; justify-content: center; gap: .45rem; width: 100%; min-width: 0; padding: .55rem .65rem; font-size: .7rem; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; font-family: inherit; line-height: 1.15; border: 1px solid var(--color-border); background: var(--color-bg-secondary); color: var(--color-text); cursor: pointer; transition: border-color .18s ease, background .18s ease, color .18s ease, box-shadow .18s ease; min-height: 44px; box-sizing: border-box; overflow: hidden;
-  clip-path: polygon(0 3px, 3px 3px, 3px 0, calc(100% - 3px) 0, calc(100% - 3px) 3px, 100% 3px, 100% calc(100% - 3px), calc(100% - 3px) calc(100% - 3px), calc(100% - 3px) 100%, 3px 100%, 3px calc(100% - 3px), 0 calc(100% - 3px));
-}
-.clock-btn::before { content: ''; position: absolute; inset: 0; background: repeating-linear-gradient(0deg, rgba(0,0,0,.05) 0px, rgba(0,0,0,.05) 1px, transparent 1px, transparent 4px); pointer-events: none; z-index: 0; opacity: .45; }
-.clock-btn::after { content: ''; position: absolute; bottom: 0; left: 0; width: 100%; height: 2px; background: var(--color-accent); transform: scaleX(0); transform-origin: left; transition: transform .25s ease; z-index: 2; }
-.clock-btn:hover:not(:disabled)::after { transform: scaleX(1); }
-.clock-btn:focus { outline: none; }
-.clock-btn:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
-.clock-btn__icon, .clock-btn__label { position: relative; z-index: 1; }
-.clock-btn__icon { font-size: .72rem; opacity: .92; }
-.clock-btn:hover:not(:disabled) { border-color: color-mix(in srgb, var(--color-accent) 55%, var(--color-border)); box-shadow: 0 2px 8px rgba(0,0,0,.2), 0 0 12px var(--color-accent-light); }
-.clock-btn:active:not(:disabled) { box-shadow: 0 1px 3px rgba(0,0,0,.28); }
-.clock-btn:disabled { opacity: .42; cursor: not-allowed; }
-.clock-btn--primary { background: linear-gradient(165deg, color-mix(in srgb, var(--color-accent) 92%, #000), var(--color-accent)); border-color: color-mix(in srgb, var(--color-accent) 70%, transparent); color: #fff; text-shadow: 0 1px 0 rgba(0,0,0,.2); box-shadow: 0 1px 0 rgba(255,255,255,.12) inset, 0 2px 10px var(--color-accent-light); }
-.clock-btn--primary::before { opacity: .2; }
-.clock-btn--primary:hover:not(:disabled) { box-shadow: 0 1px 0 rgba(255,255,255,.14) inset, 0 4px 18px rgba(0,0,0,.28), 0 0 22px var(--color-accent-light); }
-.clock-btn--secondary { border-color: color-mix(in srgb, var(--color-accent) 45%, var(--color-border)); background: color-mix(in srgb, var(--color-accent) 9%, rgba(255,255,255,.02)); color: var(--color-text); }
-.clock-btn--danger { border-color: rgba(255,107,107,.35); background: transparent; color: #e8a0a0; font-weight: 600; }
-.clock-btn--danger:hover:not(:disabled) { border-color: rgba(255,120,120,.65); color: #ffc9c9; box-shadow: 0 0 14px rgba(255,107,107,.12); }
-.clock-btn--danger::after { background: #ff6b6b; }
-.clock-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: .5rem; }
-.stat-cell {
-  border: 1px solid var(--color-border); background: rgba(255,255,255,.02); padding: .6rem .5rem; text-align: center; transition: all .3s ease; position: relative; overflow: hidden;
-  clip-path: polygon(0 3px, 3px 3px, 3px 0, calc(100% - 3px) 0, calc(100% - 3px) 3px, 100% 3px, 100% calc(100% - 3px), calc(100% - 3px) calc(100% - 3px), calc(100% - 3px) 100%, 3px 100%, 3px calc(100% - 3px), 0 calc(100% - 3px));
-}
-.stat-cell::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: repeating-linear-gradient(0deg, rgba(0,0,0,.04) 0px, rgba(0,0,0,.04) 1px, transparent 1px, transparent 3px); pointer-events: none; }
-.stat-cell:hover { border-color: var(--color-border-light); background: rgba(255,255,255,.04); box-shadow: 0 0 8px var(--color-accent-light); }
-.stat-cell__value { display: block; font-size: 1.2rem; font-weight: 600; font-family: 'Share Tech Mono', 'Courier New', monospace; color: var(--color-text); line-height: 1; margin-bottom: .35rem; }
-.stat-cell__label { display: block; font-size: .65rem; color: var(--color-text-secondary); text-transform: uppercase; letter-spacing: .08em; line-height: 1; }
-.stat-cell__label i { font-size: .6rem; color: var(--color-accent); opacity: .7; }
 .clock-settings-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.65); display: flex; align-items: center; justify-content: center; z-index: 300000; padding: 1rem; }
 .clock-settings-modal { width: min(30rem, 100%); background: var(--color-bg-secondary); border: 1px solid var(--color-border-light); padding: 1rem; display: flex; flex-direction: column; gap: .8rem; }
 .clock-settings-title { margin: 0; font-size: .82rem; text-transform: uppercase; letter-spacing: .1em; color: var(--color-text); }
@@ -559,9 +637,4 @@ onUnmounted(() => {
 .focus-toggle { display: inline-flex; align-items: center; gap: .35rem; font-size: .75rem; color: var(--color-text-secondary); }
 .clock-settings-hint { margin: 0; font-size: .74rem; color: var(--color-text-secondary); line-height: 1.45; }
 .clock-settings-actions { display: flex; justify-content: flex-end; }
-@media (max-width: 640px) {
-  .clock-actions__panel { gap: .4rem; padding: .55rem .55rem; }
-  .clock-btn { font-size: .66rem; padding: .5rem .45rem; min-height: 42px; }
-}
-@media (max-width: 400px) { .clock-stats { grid-template-columns: 1fr; } }
 </style>

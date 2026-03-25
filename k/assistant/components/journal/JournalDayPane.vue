@@ -448,7 +448,9 @@ async function addToPomodoro(taskId: string) {
     })
     if (!j.success) {
       globalError.value = j.error ?? 'Не удалось добавить задачу в pomodoro'
+      return
     }
+    window.dispatchEvent(new CustomEvent('assistant:focus-task-selected', { detail: { taskId } }))
   } catch (e) {
     globalError.value = String(e)
   }

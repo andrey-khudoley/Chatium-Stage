@@ -93,6 +93,20 @@ const tasksForProject = computed(() => {
     .sort((a, b) => a.sortOrder - b.sortOrder || a.title.localeCompare(b.title))
 })
 
+const ARCHIVE_STATUSES = ['done', 'cancelled'] as const
+
+function isTaskArchived(status: TaskItemDto['status']): boolean {
+  return ARCHIVE_STATUSES.includes(status)
+}
+
+const showArchive = ref(false)
+
+const visibleTasksForProject = computed(() =>
+  tasksForProject.value.filter((t) =>
+    showArchive.value ? isTaskArchived(t.status) : !isTaskArchived(t.status)
+  )
+)
+
 const selectedClient = computed(() =>
   selectedClientId.value ? tree.value.clients.find((c) => c.id === selectedClientId.value) ?? null : null
 )
@@ -132,8 +146,8 @@ const PRIORITY_LABELS: Record<number, string> = {
 const STATUS_LABELS: Record<string, string> = {
   todo: 'К выполнению',
   in_progress: 'В работе',
-  done: 'Готово',
-  cancelled: 'Отмена'
+  done: 'Завершено',
+  cancelled: 'Отменено'
 }
 
 const statusSelectOptions = [
@@ -565,6 +579,53 @@ async function assignTaskToPomodoro(t: TaskItemDto) {
   }
 }
 
+const statusMenuTaskId = ref<string | null>(null)
+
+function toggleTaskStatusMenu(taskId: string) {
+  if (!props.isAuthenticated) return
+  statusMenuTaskId.value = statusMenuTaskId.value === taskId ? null : taskId
+}
+
+function closeTaskStatusMenu() {
+  statusMenuTaskId.value = null
+}
+
+async function updateTaskStatus(t: TaskItemDto, status: TaskItemDto['status']) {
+  if (!props.isAuthenticated) return
+  if (t.status === status) {
+    closeTaskStatusMenu()
+    return
+  }
+  loading.value = true
+  globalError.value = ''
+  try {
+    const j = await postJson<{ success: boolean; task?: TaskItemDto; error?: string }>(props.taskItemUpdateUrl, {
+      id: t.id,
+      status
+    })
+    if (!j.success || !j.task) {
+      globalError.value = j.error ?? 'Не удалось обновить статус'
+      return
+    }
+    tree.value.tasks = tree.value.tasks.map((x) => (x.id === j.task!.id ? j.task! : x))
+    closeTaskStatusMenu()
+  } catch (e) {
+    globalError.value = String(e)
+  } finally {
+    loading.value = false
+  }
+}
+
+function updateTaskStatusByValue(t: TaskItemDto, status: string) {
+  void updateTaskStatus(t, status as TaskItemDto['status'])
+}
+
+function onWindowPointerDown(e: PointerEvent) {
+  const target = e.target as HTMLElement | null
+  if (target?.closest('.tasks-status-cell')) return
+  closeTaskStatusMenu()
+}
+
 function applyTasksUrlQuery() {
   if (typeof window === 'undefined') return
   const params = new URLSearchParams(window.location.search)
@@ -623,6 +684,7 @@ onMounted(() => {
   mqListener = () => syncMobileLayout()
   window.matchMedia(TASKS_MOBILE_MQ).addEventListener('change', mqListener)
   unsubBootStatic = subscribeBootStaticReady(startAfterBoot)
+  window.addEventListener('pointerdown', onWindowPointerDown)
   void nextTick(() => {
     applyTasksUrlQuery()
     if (isMobileTasksLayout.value && selectedProjectId.value) {
@@ -650,6 +712,7 @@ onUnmounted(() => {
   if (typeof document !== 'undefined') {
     document.documentElement.classList.remove(TASKS_HTML_MOBILE_CLASS)
   }
+  window.removeEventListener('pointerdown', onWindowPointerDown)
 })
 
 const openChatiumLink = () => {
@@ -1181,6 +1244,15 @@ function showProjectLineBefore(clientId: string, idx: number): boolean {
             <div class="tasks-panel-head-actions">
               <button
                 type="button"
+                class="journal-nav-btn tasks-panel-toggle"
+                :disabled="!selectedProjectId"
+                :aria-pressed="showArchive"
+                @click="showArchive = !showArchive"
+              >
+                {{ showArchive ? 'Активные' : 'Архив' }}
+              </button>
+              <button
+                type="button"
                 class="journal-nav-action tasks-panel-add"
                 :disabled="!props.isAuthenticated || !selectedProjectId"
                 @click="openTaskCreate"
@@ -1205,7 +1277,7 @@ function showProjectLineBefore(clientId: string, idx: number): boolean {
               </tr>
             </thead>
             <tbody>
-              <tr v-for="t in tasksForProject" :key="t.id">
+              <tr v-for="t in visibleTasksForProject" :key="t.id">
                 <td data-label="Задача">
                   <div class="tasks-title">{{ t.title }}</div>
                   <div v-if="t.details" class="tasks-desc">{{ t.details }}</div>
@@ -1215,7 +1287,37 @@ function showProjectLineBefore(clientId: string, idx: number): boolean {
                     {{ PRIORITY_LABELS[t.priority] ?? t.priority }}
                   </span>
                 </td>
-                <td data-label="Статус">{{ STATUS_LABELS[t.status] ?? t.status }}</td>
+                <td class="tasks-status-cell" data-label="Статус">
+                  <button
+                    type="button"
+                    class="tasks-status-trigger"
+                    :disabled="!props.isAuthenticated"
+                    @click.stop="toggleTaskStatusMenu(t.id)"
+                  >
+                    {{ STATUS_LABELS[t.status] ?? t.status }}
+                    <i class="fas fa-chevron-down" aria-hidden="true" />
+                  </button>
+                  <div
+                    v-if="statusMenuTaskId === t.id"
+                    class="tasks-status-menu"
+                    role="menu"
+                    aria-label="Изменить статус задачи"
+                    @click.stop
+                  >
+                    <button
+                      v-for="option in statusSelectOptions"
+                      :key="option.value"
+                      type="button"
+                      class="tasks-status-menu-item"
+                      :class="{ 'tasks-status-menu-item--active': option.value === t.status }"
+                      role="menuitemradio"
+                      :aria-checked="option.value === t.status"
+                      @click="updateTaskStatusByValue(t, option.value)"
+                    >
+                      {{ option.label }}
+                    </button>
+                  </div>
+                </td>
                 <td class="tasks-reorder" data-label="Порядок">
                   <button type="button" class="tasks-reorder-btn" title="Выше" @click="moveTask(t, -1)">
                     <i class="fas fa-chevron-up" aria-hidden="true" />
@@ -1264,7 +1366,9 @@ function showProjectLineBefore(clientId: string, idx: number): boolean {
             </tbody>
           </table>
 
-          <p v-if="selectedProjectId && !tasksForProject.length" class="tasks-placeholder">В этом проекте пока нет задач.</p>
+          <p v-if="selectedProjectId && !visibleTasksForProject.length" class="tasks-placeholder">
+            {{ showArchive ? 'В архиве пока нет задач.' : 'В этом проекте пока нет активных задач.' }}
+          </p>
         </section>
 
         <aside
@@ -2048,6 +2152,79 @@ function showProjectLineBefore(clientId: string, idx: number): boolean {
   white-space: nowrap;
 }
 
+.tasks-status-cell {
+  position: relative;
+}
+
+.tasks-status-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0.2rem 0.4rem;
+  border: 1px solid var(--color-border);
+  border-radius: 2px;
+  background: var(--color-bg-tertiary);
+  color: var(--color-text);
+  font-family: inherit;
+  font-size: 0.82rem;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+}
+
+.tasks-status-trigger:hover:not(:disabled) {
+  border-color: var(--color-border-light);
+}
+
+.tasks-status-trigger:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.tasks-status-menu {
+  position: absolute;
+  top: calc(100% - 0.1rem);
+  left: 0;
+  z-index: 25;
+  min-width: 10.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  padding: 0.25rem;
+  border: 1px solid var(--color-border-light);
+  border-radius: 2px;
+  background: var(--color-bg-secondary);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
+}
+
+.tasks-status-menu-item {
+  width: 100%;
+  margin: 0;
+  padding: 0.35rem 0.45rem;
+  border: 1px solid transparent;
+  border-radius: 2px;
+  background: transparent;
+  color: var(--color-text-secondary);
+  text-align: left;
+  font-family: inherit;
+  font-size: 0.8rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.tasks-status-menu-item:hover {
+  border-color: var(--color-border);
+  color: var(--color-text);
+  background: var(--color-bg-tertiary);
+}
+
+.tasks-status-menu-item--active {
+  color: var(--color-accent-hover);
+  border-color: var(--color-accent);
+  background: var(--color-accent-light);
+}
+
 .tasks-reorder-btn {
   display: inline-block;
   background: transparent;
@@ -2686,6 +2863,11 @@ html.tasks-page-html-mobile .header-clock {
   align-items: center;
   gap: 0.4rem;
   white-space: nowrap;
+}
+
+.tasks-panel-toggle {
+  width: auto;
+  padding: 0.5rem 0.85rem;
 }
 
 @media (max-width: 640px) {

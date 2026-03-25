@@ -49,7 +49,8 @@ export function getApiUrlForRoute(routeUrl: string): string {
   const raw = routeUrl.trim()
   if (raw.startsWith('http://') || raw.startsWith('https://')) {
     try {
-      return new URL(raw).pathname
+      const u = new URL(raw)
+      return u.pathname + u.search
     } catch {
       return getFullUrl(raw)
     }
