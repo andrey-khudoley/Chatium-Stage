@@ -86,12 +86,19 @@
 - `../../styles` → `customScrollbarStyles`, `mobileSafeAreaStyles`, `formControlStyles`, `VIEWPORT_META_CONTENT`
 - `../../lib/logger.lib` → `*`
 - `../../repos/journal-notes.repo` → `*`
+- `../../repos/inbox-notes.repo` → `*`
 - `../../repos/tasks.repo` → `*`
 - `../../lib/tasks-types` → `TasksTreeDto`
 - `../../api/journal/notes/create` → `createJournalNoteRoute`
 - `../../api/journal/notes/get` → `getJournalNoteRoute`
 - `../../api/journal/notes/update` → `updateJournalNoteRoute`
 - `../../api/journal/notes/delete` → `deleteJournalNoteRoute`
+- `../../api/journal/inbox/create` → `createInboxNoteRoute`
+- `../../api/journal/inbox/get` → `getInboxNoteRoute`
+- `../../api/journal/inbox/update` → `updateInboxNoteRoute`
+- `../../api/journal/inbox/archive` → `archiveInboxNoteRoute`
+- `../../api/journal/inbox/delete` → `deleteInboxNoteRoute`
+- `../../api/journal/inbox/list` → `listInboxNotesRoute`
 - `../../api/journal/day/get` → `getJournalDayEntryRoute`
 - `../../api/journal/day/save` → `saveJournalDayEntryRoute`
 - `../../api/journal/week/get` → `getJournalWeekEntryRoute`
@@ -204,6 +211,7 @@
 - `../components/AppFooter.vue`
 - `../components/journal/JournalNav.vue`
 - `../components/journal/JournalNotebookPane.vue`
+- `../components/journal/JournalInboxPane.vue`
 - `../components/journal/JournalMonthPane.vue`
 - `../components/journal/JournalWeekPane.vue`
 - `../components/journal/JournalDayPane.vue`
@@ -212,7 +220,7 @@
 - `../shared/bootUi` → `subscribeBootStaticReady`, `scheduleHideBootLoader`
 - `../shared/logger` → `createComponentLogger`
 - `../lib/tasks-types` → `TasksTreeDto`
-- пропсы: `journalTabInitial?` — вкладка из `?tab=` при SSR; блокнот — `journalNotesInitial?`, `journalNotesCreateUrl?`, …; вкладка «Задачи» (`tasks`) — `tasksTreeInitial?`, `tasksTreeGetUrl?`, `taskItemReorderDayUrl?`, `taskReleaseDayUrl?`, `taskItemUpdateUrl?`, `tasksPageUrl?`; `panePropsForTab` подставляет `notebookPaneProps` или `dayPaneProps` по `activeTab`; обработчики `@note-*` только у блокнота; активная вкладка синхронизируется с адресной строкой (`replaceState`, `popstate`)
+- пропсы: `journalTabInitial?` — вкладка из `?tab=` при SSR; блокнот — `notebookPaneProps` (`journalNotes*`, папки/категории); инбокс — `inboxPaneProps` (`inboxNotes*`, отдельная Heap-таблица), компонент `JournalInboxPane`; вкладка «Задачи» (`tasks`) — `tasksTreeInitial?`, …; активная вкладка синхронизируется с адресной строкой (`replaceState`, `popstate`; для инбокса по умолчанию `?tab=` не добавляется, для блокнота — `?tab=notebook`)
 
 ### `./pages/TestsPage.vue`
 - `vue` → `onMounted`, `onBeforeUnmount`, `onUnmounted`, `ref`, `computed`
@@ -273,7 +281,7 @@
 - `vue` → `ref`, `onMounted`, `onUnmounted`
 - `./LogoutModal.vue`
 - `../shared/logger` → `createComponentLogger`
-- `../lib/pomodoro-types` → `formatPomodoroSecondsDisplay`
+- `../lib/pomodoro-types` → `formatPomodoroSecondsDisplay`, типы `PomodoroPhase`, `PomodoroStateDto`
 - `../lib/pomodoro-stats-day` → `computePomodoroStatsDayKeyLocal`
 
 ### `./components/LogoutModal.vue`
@@ -339,10 +347,21 @@
 - отвечает за левое меню журнала: список вкладок, разделитель, динамические кнопки (`Новая заметка` / `Все задачи` на вкладке «Задачи») и их стили/focus
 
 ### `./components/journal/JournalNotebookPane.vue`
-- `vue` → `reactive`, `ref`, `watch`
+- `vue` → `computed`, `ref`, `watch`
 - `../../shared/logger` → `createComponentLogger`
-- `defineProps`: `notes`, `isAuthenticated`, `journalNotesCreateUrl?`, `journalNotesGetUrl?`, `journalNotesUpdateUrl?`, `journalNotesDeleteUrl?`, `openNotebookEditorRequest?`
-- `defineEmits`: `noteCreated`, `noteUpdated`, `noteDeleted`
+- `./NotebookFolderSidebar.vue`, `./NotebookFilterBar.vue`, `./NotebookNoteCard.vue`, `./NotebookBulkBar.vue`, `./NotebookNoteEditor.vue`
+- полноценный блокнот: папки, категории, фильтры, редактор заметок; URL `journalNotes*`, Heap `journal-notes`
+- `defineEmits`: `noteCreated`, `noteUpdated`, `noteDeleted`, `foldersChanged`, `categoriesChanged`
+
+### `./components/journal/JournalInboxPane.vue`
+- `vue` → `computed`, `ref`
+- `../../shared/logger` → `createComponentLogger`
+- `./NotebookBulkBar.vue` — массовые действия при выборе заметок (`showFolderMove: false`)
+- упрощённый список + textarea для инбокса; пропсы `inboxNotes*` включая `inboxNotesDeleteUrl` (Heap `inbox-notes`); визуально согласовано с блокнотом: тулбар как `NotebookFilterBar` (кнопка «Новая заметка» как `nb-pane-new-btn`, «Архив» как `nb-filter-btn` — при активной кнопке в списке только архивные заметки), карточки как у блокнота (выделение кликом по телу, открытие по заголовку), пустой список как `nb-pane-empty`
+- `defineEmits`: `noteCreated`, `noteUpdated`, `noteDeleted`, `foldersChanged`, `categoriesChanged` (последние два не используются, для совместимости с `JournalPage`)
+
+### `./components/journal/NotebookBulkBar.vue`
+- проп `showFolderMove` (по умолчанию `true`): при `false` скрыт блок «В корень» и папки (инбокс)
 
 ### `./components/journal/JournalMonthPane.vue`
 - `./JournalStubPanel.vue`
@@ -544,6 +563,11 @@
 - `@app/auth` → `requireRealUser`
 - `../../../lib/logger.lib` → `*`
 - `../../../repos/journal-notes.repo` → `*`
+
+### `./api/journal/inbox/list.ts`, `get.ts`, `create.ts`, `update.ts`, `archive.ts`, `delete.ts`
+- `@app/auth` → `requireRealUser`
+- `../../../lib/logger.lib` → `*`
+- `../../../repos/inbox-notes.repo` → `*`
 
 ### `./api/tasks/tree/get.ts` и CRUD `api/tasks/{clients,projects,items}/`
 - `@app/auth` → `requireRealUser`

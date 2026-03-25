@@ -29,16 +29,23 @@
             }"
             @click="onClockClick"
           >
-            <i :class="clockIconClass"></i>
-            <span class="clock-time">{{ headerClockDisplay }}</span>
-            <template v-if="isToolClockWidgetEnabled && widgetMode !== 'clock'">
-              <button type="button" class="header-tool-btn" :disabled="clockActionPending" @click.stop="handleToolStartPause">
-                {{ startPauseLabel }}
-              </button>
-              <button type="button" class="header-tool-btn header-tool-btn--danger" :disabled="clockActionPending" @click.stop="handleToolReset">
-                Сброс
-              </button>
-            </template>
+            <span
+              class="header-clock-progress"
+              :style="{ width: `${Math.round(headerClockProgressFill * 10000) / 100}%` }"
+              aria-hidden="true"
+            />
+            <span class="header-clock-row">
+              <i :class="clockIconClass"></i>
+              <span class="clock-time">{{ headerClockDisplay }}</span>
+              <template v-if="isToolClockWidgetEnabled && widgetMode !== 'clock'">
+                <button type="button" class="header-tool-btn" :disabled="clockActionPending" @click.stop="handleToolStartPause">
+                  {{ startPauseLabel }}
+                </button>
+                <button type="button" class="header-tool-btn header-tool-btn--danger" :disabled="clockActionPending" @click.stop="handleToolReset">
+                  Сброс
+                </button>
+              </template>
+            </span>
           </span>
           <div v-if="isToolClockWidgetEnabled && showToolPicker" ref="toolPickerRef" class="header-tool-picker" role="group" aria-label="Выбор инструмента">
             <button
@@ -143,7 +150,7 @@
 import { computed, ref, onMounted, onUnmounted } from 'vue'
 import LogoutModal from './LogoutModal.vue'
 import { createComponentLogger } from '../shared/logger'
-import { formatPomodoroSecondsDisplay } from '../lib/pomodoro-types'
+import { formatPomodoroSecondsDisplay, type PomodoroPhase, type PomodoroStateDto } from '../lib/pomodoro-types'
 import { computePomodoroStatsDayKeyLocal } from '../lib/pomodoro-stats-day'
 
 const log = createComponentLogger('Header')
@@ -172,6 +179,10 @@ const currentTime = ref('')
 const pomodoroStatus = ref<'stopped' | 'running' | 'paused' | 'awaiting_continue'>('stopped')
 const pomodoroEndsAtMs = ref(0)
 const pomodoroRemainingSec = ref(0)
+const pomodoroPhase = ref<PomodoroPhase>('work')
+const pomodoroWorkMinutes = ref(25)
+const pomodoroRestMinutes = ref(5)
+const pomodoroLongRestMinutes = ref(20)
 const nowTick = ref(Date.now())
 const widgetMode = ref<HeaderWidgetMode>('clock')
 const showToolPicker = ref(false)
@@ -232,6 +243,47 @@ const headerClockDisplay = computed(() => {
   if (widgetMode.value === 'timer') return formatPomodoroSecondsDisplay(timerDisplaySec.value)
   return formatPomodoroSecondsDisplay(stopwatchDisplaySec.value)
 })
+
+function pomodoroPhaseDurationSec(phase: PomodoroPhase, wm: number, rm: number, lrm: number): number {
+  if (phase === 'work') return Math.max(1, wm * 60)
+  if (phase === 'rest') return Math.max(1, rm * 60)
+  return Math.max(1, lrm * 60)
+}
+
+function applyPomodoroStateDto(state: PomodoroStateDto): void {
+  pomodoroStatus.value = state.status
+  pomodoroEndsAtMs.value = state.phaseEndsAtMs
+  pomodoroRemainingSec.value = state.phaseRemainingSec
+  pomodoroPhase.value = state.phase
+  pomodoroWorkMinutes.value = state.workMinutes
+  pomodoroRestMinutes.value = state.restMinutes
+  pomodoroLongRestMinutes.value = state.longRestMinutes
+}
+
+/** Доля заполнения слева направо (0–1) для помидора и локального таймера в шапке */
+const headerClockProgressFill = computed(() => {
+  if (!isToolClockWidgetEnabled.value) return 0
+  if (widgetMode.value === 'pomodoro') {
+    if (pomodoroStatus.value === 'stopped') return 0
+    if (pomodoroStatus.value === 'awaiting_continue') return 1
+    const total = pomodoroPhaseDurationSec(
+      pomodoroPhase.value,
+      pomodoroWorkMinutes.value,
+      pomodoroRestMinutes.value,
+      pomodoroLongRestMinutes.value
+    )
+    const rem = pomodoroDisplaySec.value
+    return Math.min(1, Math.max(0, 1 - rem / total))
+  }
+  if (widgetMode.value === 'timer') {
+    if (timerStatus.value === 'stopped') return 0
+    const total = readTimerSettingsDurationSec()
+    if (total <= 0) return 0
+    const rem = timerDisplaySec.value
+    return Math.min(1, Math.max(0, 1 - rem / total))
+  }
+  return 0
+})
 const clockIconClass = computed(() => {
   if (widgetMode.value === 'clock') return 'fas fa-clock'
   if (widgetMode.value === 'pomodoro') return 'fas fa-hourglass-half'
@@ -285,11 +337,9 @@ const syncPomodoro = async () => {
   if (!props.pomodoroStateGetUrl) return
   try {
     const r = await fetch(pomodoroStateGetUrlWithDay(props.pomodoroStateGetUrl), { credentials: 'include' })
-    const j = await readApiJson<{ success?: boolean; state?: { status: 'stopped' | 'running' | 'paused' | 'awaiting_continue'; phaseEndsAtMs: number; phaseRemainingSec: number } }>(r)
+    const j = await readApiJson<{ success?: boolean; state?: PomodoroStateDto }>(r)
     if (!j.success || !j.state) return
-    pomodoroStatus.value = j.state.status
-    pomodoroEndsAtMs.value = j.state.phaseEndsAtMs
-    pomodoroRemainingSec.value = j.state.phaseRemainingSec
+    applyPomodoroStateDto(j.state)
     resolveInitialAutoMode()
   } catch (error) {
     log.warning('Pomodoro sync failed', { error: String(error) })
@@ -455,11 +505,9 @@ async function controlPomodoro(action: 'start' | 'resume' | 'pause' | 'reset'): 
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action, statsDayKey: computePomodoroStatsDayKeyLocal(Date.now()) })
     })
-    const j = await readApiJson<{ success?: boolean; state?: { status: 'stopped' | 'running' | 'paused' | 'awaiting_continue'; phaseEndsAtMs: number; phaseRemainingSec: number } }>(r)
+    const j = await readApiJson<{ success?: boolean; state?: PomodoroStateDto }>(r)
     if (j.success && j.state) {
-      pomodoroStatus.value = j.state.status
-      pomodoroEndsAtMs.value = j.state.phaseEndsAtMs
-      pomodoroRemainingSec.value = j.state.phaseRemainingSec
+      applyPomodoroStateDto(j.state)
     }
   } catch (error) {
     log.warning('Pomodoro toggle failed', { error: String(error) })
@@ -1005,14 +1053,14 @@ const cancelLogout = () => {
 
 .header-clock {
   display: flex;
-  align-items: center;
-  gap: 0.4rem;
+  align-items: stretch;
+  position: relative;
+  overflow: hidden;
   font-size: 0.98rem;
   font-weight: 700;
   color: var(--color-text-secondary);
   letter-spacing: 0.1em;
   text-shadow: 0 0 4px rgba(160, 160, 160, 0.3);
-  position: relative;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
   transition: all 0.25s ease;
@@ -1033,6 +1081,36 @@ const cancelLogout = () => {
     100% calc(100% - 2px), calc(100% - 2px) calc(100% - 2px), calc(100% - 2px) 100%,
     2px 100%, 2px calc(100% - 2px), 0 calc(100% - 2px)
   );
+}
+
+.header-clock-progress {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  z-index: 0;
+  width: 0;
+  pointer-events: none;
+  /* Сильнее, чем --color-accent-light (часто ~10% альфа): иначе на тёмном header-clock не читается */
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--color-accent) 72%, #140508),
+    color-mix(in srgb, var(--color-accent) 48%, rgba(0, 0, 0, 0.45))
+  );
+  box-shadow:
+    inset 0 1px 0 rgba(255, 130, 150, 0.35),
+    0 0 22px color-mix(in srgb, var(--color-accent) 55%, transparent),
+    inset -1px 0 0 rgba(255, 200, 210, 0.22);
+  transition: width 0.95s linear;
+}
+
+.header-clock-row {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-width: 0;
 }
 .header-clock--interactive { cursor: pointer; }
 .header-clock--attention {

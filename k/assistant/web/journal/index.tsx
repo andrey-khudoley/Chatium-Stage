@@ -6,6 +6,7 @@ import { getPreloaderStyles, getPreloaderScript } from '../../shared/preloader'
 import { getLogLevelForPage, getLogLevelScript } from '../../shared/logLevel'
 import * as loggerLib from '../../lib/logger.lib'
 import * as journalNotesRepo from '../../repos/journal-notes.repo'
+import * as inboxNotesRepo from '../../repos/inbox-notes.repo'
 import * as notebookFoldersRepo from '../../repos/notebook-folders.repo'
 import * as notebookCategoriesRepo from '../../repos/notebook-categories.repo'
 import * as tasksRepo from '../../repos/tasks.repo'
@@ -18,6 +19,12 @@ import { reorderJournalNotesRoute } from '../../api/journal/notes/reorder'
 import { archiveJournalNoteRoute } from '../../api/journal/notes/archive'
 import { moveJournalNotesRoute } from '../../api/journal/notes/move'
 import { bulkJournalNotesRoute } from '../../api/journal/notes/bulk'
+import { createInboxNoteRoute } from '../../api/journal/inbox/create'
+import { getInboxNoteRoute } from '../../api/journal/inbox/get'
+import { updateInboxNoteRoute } from '../../api/journal/inbox/update'
+import { archiveInboxNoteRoute } from '../../api/journal/inbox/archive'
+import { deleteInboxNoteRoute } from '../../api/journal/inbox/delete'
+import { listInboxNotesRoute } from '../../api/journal/inbox/list'
 import { createNotebookFolderRoute } from '../../api/journal/folders/create'
 import { updateNotebookFolderRoute } from '../../api/journal/folders/update'
 import { deleteNotebookFolderRoute } from '../../api/journal/folders/delete'
@@ -52,7 +59,7 @@ import { customScrollbarStyles, formControlStyles, mobileSafeAreaStyles, VIEWPOR
 
 const LOG_PATH = 'web/journal/index'
 
-const VALID_JOURNAL_TABS = ['notebook', 'month', 'week', 'tasks', 'day', 'habits'] as const
+const VALID_JOURNAL_TABS = ['inbox', 'notebook', 'tasks', 'day', 'week', 'month', 'habits'] as const
 const SERVER_FALLBACK_TIME_ZONE = 'Europe/Moscow'
 
 function parseJournalTabFromQuery(tab: unknown): (typeof VALID_JOURNAL_TABS)[number] | undefined {
@@ -77,6 +84,7 @@ export const journalPageRoute = app.html('/', async (ctx, req) => {
   const testsUrl = isAuthenticated ? getFullUrl(ROUTES.tests) : ''
 
   let journalNotesInitial: journalNotesRepo.JournalNoteSummary[] = []
+  let inboxNotesInitial: inboxNotesRepo.InboxNoteSummary[] = []
   let notebookFoldersInitial: notebookFoldersRepo.NotebookFolderDto[] = []
   let notebookCategoriesInitial: notebookCategoriesRepo.NotebookCategoryDto[] = []
   let tasksTreeInitial: TasksTreeDto = { clients: [], projects: [], tasks: [] }
@@ -85,9 +93,10 @@ export const journalPageRoute = app.html('/', async (ctx, req) => {
   if (ctx.user) {
     try {
       const user = requireRealUser(ctx)
-      ;[journalNotesInitial, notebookFoldersInitial, notebookCategoriesInitial, tasksTreeInitial] =
+      ;[journalNotesInitial, inboxNotesInitial, notebookFoldersInitial, notebookCategoriesInitial, tasksTreeInitial] =
         await Promise.all([
           journalNotesRepo.findSummariesByUserId(ctx, user.id),
+          inboxNotesRepo.findSummariesByUserId(ctx, user.id, { includeArchived: true }),
           notebookFoldersRepo.findByUserId(ctx, user.id, true),
           notebookCategoriesRepo.findByUserId(ctx, user.id),
           tasksRepo.getTreeForUser(ctx, user.id)
@@ -98,6 +107,7 @@ export const journalPageRoute = app.html('/', async (ctx, req) => {
       journalWeekEntryInitial = await journalWeekRepo.getWeekByUserAndMonday(ctx, user.id, mondayKey)
     } catch {
       journalNotesInitial = []
+      inboxNotesInitial = []
       notebookFoldersInitial = []
       notebookCategoriesInitial = []
       tasksTreeInitial = { clients: [], projects: [], tasks: [] }
@@ -115,6 +125,12 @@ export const journalPageRoute = app.html('/', async (ctx, req) => {
   const journalNotesArchiveUrl = getApiUrlForRoute(archiveJournalNoteRoute.url())
   const journalNotesMoveUrl = getApiUrlForRoute(moveJournalNotesRoute.url())
   const journalNotesBulkUrl = getApiUrlForRoute(bulkJournalNotesRoute.url())
+  const inboxNotesCreateUrl = getApiUrlForRoute(createInboxNoteRoute.url())
+  const inboxNotesGetUrl = getApiUrlForRoute(getInboxNoteRoute.url())
+  const inboxNotesUpdateUrl = getApiUrlForRoute(updateInboxNoteRoute.url())
+  const inboxNotesArchiveUrl = getApiUrlForRoute(archiveInboxNoteRoute.url())
+  const inboxNotesDeleteUrl = getApiUrlForRoute(deleteInboxNoteRoute.url())
+  const inboxNotesListUrl = getApiUrlForRoute(listInboxNotesRoute.url())
   const notebookFoldersCreateUrl = getApiUrlForRoute(createNotebookFolderRoute.url())
   const notebookFoldersUpdateUrl = getApiUrlForRoute(updateNotebookFolderRoute.url())
   const notebookFoldersDeleteUrl = getApiUrlForRoute(deleteNotebookFolderRoute.url())
@@ -380,6 +396,7 @@ export const journalPageRoute = app.html('/', async (ctx, req) => {
           isAdmin={isAdmin}
           adminUrl={adminUrl}
           journalNotesInitial={journalNotesInitial}
+          inboxNotesInitial={inboxNotesInitial}
           notebookFoldersInitial={notebookFoldersInitial}
           notebookCategoriesInitial={notebookCategoriesInitial}
           journalNotesCreateUrl={journalNotesCreateUrl}
@@ -391,6 +408,12 @@ export const journalPageRoute = app.html('/', async (ctx, req) => {
           journalNotesArchiveUrl={journalNotesArchiveUrl}
           journalNotesMoveUrl={journalNotesMoveUrl}
           journalNotesBulkUrl={journalNotesBulkUrl}
+          inboxNotesCreateUrl={inboxNotesCreateUrl}
+          inboxNotesGetUrl={inboxNotesGetUrl}
+          inboxNotesUpdateUrl={inboxNotesUpdateUrl}
+          inboxNotesArchiveUrl={inboxNotesArchiveUrl}
+          inboxNotesDeleteUrl={inboxNotesDeleteUrl}
+          inboxNotesListUrl={inboxNotesListUrl}
           notebookFoldersCreateUrl={notebookFoldersCreateUrl}
           notebookFoldersUpdateUrl={notebookFoldersUpdateUrl}
           notebookFoldersDeleteUrl={notebookFoldersDeleteUrl}

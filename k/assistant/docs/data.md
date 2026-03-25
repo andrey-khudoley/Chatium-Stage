@@ -9,6 +9,7 @@
 | t__assistant__setting__7Fk2Qw | tables/settings.table.ts | Настройки проекта (key-value) | key (string), value (any) |
 | t__assistant__log__9Xm3Kp | tables/logs.table.ts | Серверные логи (долгосрочное хранение) | message (string), payload (any), severity, level, timestamp |
 | t__assistant__journal_note__8Kp2Nx | tables/journal-notes.table.ts | Заметки блокнота журнала | userId (string), title (string), content (string); опционально: folderId (string), categoryIds (JSON string), linkedTaskId (string), linkedProjectId (string), linkedClientId (string), noteDate (string), isArchived (boolean), sortOrder (number); системные: id, createdAt, updatedAt |
+| t__assistant__inbox_note__7Np4Kx | tables/inbox-notes.table.ts | Заметки инбокса журнала (отдельно от блокнота) | userId, title, content, isArchived, sortOrder; системные: id, createdAt, updatedAt |
 | t__assistant__notebook_category__5Rk3Qw | tables/notebook-categories.table.ts | Категории блокнота | userId (string), name (string), color (string), sortOrder (number) |
 | t__assistant__notebook_folder__8Lm4Tp | tables/notebook-folders.table.ts | Папки блокнота | userId (string), name (string), color (string), sortOrder (number), isArchived (boolean) |
 | t__assistant__journal_day_entry__4Hd9Qa | tables/journal-day-entries.table.ts | Дневные записи по сегментам (Ночь/Утро/День/Вечер) | userId, dayKey (YYYY-MM-DD с границей 05:00), nightText/nightLocked, morningText/morningLocked, dayText/dayLocked, eveningText/eveningLocked |
@@ -25,6 +26,7 @@
 - `repos/settings.repo.ts` — findByKey, findAll, upsert, deleteByKey (слой работы с БД; без вызовов logger.lib, т.к. getSetting/getLogLevel вызываются из writeServerLog и используют findByKey — иначе рекурсия).
 - `repos/logs.repo.ts` — create, findAll, findById, findBeforeTimestamp (слой работы с БД логов; findBeforeTimestamp использует нативную фильтрацию Heap API через `where: { timestamp: { $lt } }` для эффективной пагинации).
 - `repos/journal-notes.repo.ts` — findSummariesByUserId (расширенное DTO с folderId, categoryIds, noteDate, isArchived, sortOrder, linkedTaskId, linkedProjectId, linkedClientId), createForUser, findByIdForUser, updateForUser, deleteByIdForUser, reorderForUser, bulkArchiveForUser, bulkMoveToFolderForUser, bulkDeleteForUser, bulkSetCategoryForUser, archiveByFolderForUser, clearFolderIdForUser, removeCategoryFromAllNotes.
+- `repos/inbox-notes.repo.ts` — findSummariesByUserId (id, title, isArchived, sortOrder), createForUser, findByIdForUser, updateForUser, deleteByIdForUser — только таблица инбокса.
 - `repos/notebook-categories.repo.ts` — findByUserId, createForUser, updateForUser, deleteForUser.
 - `repos/notebook-folders.repo.ts` — findByUserId, createForUser, updateForUser, deleteForUser, archiveForUser, reorderForUser.
 - `repos/journal-day-entries.repo.ts` — getByUserAndDay, saveSegmentForUserDay (upsert сегмента в записи конкретного дня пользователя).

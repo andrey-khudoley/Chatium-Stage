@@ -432,8 +432,13 @@ function exportAsPdf() {
         <span>Назад к списку</span>
       </button>
       <div class="nb-editor-topbar-right">
-        <label v-if="!props.isCreate" class="nb-editor-archive-check">
+        <label
+          v-if="!props.isCreate"
+          class="nb-editor-archive-check"
+          :class="{ 'nb-editor-archive-check--active': isArchived }"
+        >
           <input type="checkbox" v-model="isArchived" />
+          <i class="fa-solid fa-box-archive" aria-hidden="true" />
           <span>В архиве</span>
         </label>
         <div class="nb-editor-export-wrap">
@@ -594,17 +599,52 @@ function exportAsPdf() {
   gap: 0.5rem;
 }
 
+/* Как .nb-inbox-filter-btn / .nb-inbox-filter-btn--active (JournalInboxPane) */
 .nb-editor-archive-check {
-  display: flex;
+  position: relative;
+  display: inline-flex;
   align-items: center;
   gap: 0.25rem;
+  margin: 0;
+  padding: 0.25rem 0.45rem;
+  font-family: inherit;
   font-size: 0.76rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
   color: var(--color-text-secondary);
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: 2px;
   cursor: pointer;
+  transition: var(--transition);
 }
 
-.nb-editor-archive-check input {
-  accent-color: var(--color-accent);
+.nb-editor-archive-check:hover {
+  color: var(--color-text);
+  border-color: var(--color-border-light);
+}
+
+.nb-editor-archive-check--active {
+  color: var(--color-accent);
+  border-color: var(--color-accent);
+  background: var(--color-accent-light);
+}
+
+.nb-editor-archive-check:has(input:focus-visible) {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--color-bg), 0 0 0 4px var(--color-accent-medium);
+}
+
+.nb-editor-archive-check input[type='checkbox'] {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 .nb-editor-save {

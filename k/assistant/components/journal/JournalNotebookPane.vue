@@ -85,7 +85,9 @@ const filteredNotes = computed(() => {
     list = list.filter((n) => n.folderId === activeFolderId.value)
   }
 
-  if (!showArchived.value) {
+  if (showArchived.value) {
+    list = list.filter((n) => n.isArchived)
+  } else {
     list = list.filter((n) => !n.isArchived)
   }
 
@@ -171,7 +173,7 @@ async function postJson(url: string, body: unknown) {
 async function refreshList() {
   if (!props.journalNotesListUrl) return
   try {
-    const url = `${props.journalNotesListUrl}?includeArchived=${showArchived.value}`
+    const url = `${props.journalNotesListUrl}?includeArchived=true`
     const res = await fetch(url, { method: 'GET', credentials: 'include' })
     const _data = await res.json()
   } catch (e) {
@@ -402,7 +404,7 @@ function onDragEnd() {
 
           <div class="nb-pane-list">
             <p v-if="!filteredNotes.length" class="nb-pane-empty">
-              {{ showArchived ? 'Нет заметок (включая архив)' : 'Заметок нет' }}
+              {{ showArchived ? 'В архиве пусто' : 'Заметок нет' }}
             </p>
             <NotebookNoteCard
               v-for="n in filteredNotes"

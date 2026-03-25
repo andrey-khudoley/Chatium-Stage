@@ -71,6 +71,7 @@ function hasActiveFilters() {
         type="button"
         class="nb-filter-btn"
         :class="{ 'nb-filter-btn--active': props.showArchived }"
+        :aria-pressed="props.showArchived"
         @click="emit('toggle-archived')"
       >
         <i class="fa-solid fa-box-archive" aria-hidden="true" />

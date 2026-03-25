@@ -58,19 +58,18 @@ function onDragStart(e: DragEvent) {
     @dragend="emit('dragend')"
   >
     <div class="nb-card-left">
-      <label class="nb-card-check" @click.stop>
-        <input
-          type="checkbox"
-          :checked="props.selected"
-          @change="emit('toggle-select', props.note.id)"
-        />
-      </label>
       <i class="fa-solid fa-grip-vertical nb-card-grip" aria-hidden="true" />
     </div>
 
-    <div class="nb-card-body" @click="emit('open', props.note.id)">
+    <div class="nb-card-body" @click="emit('toggle-select', props.note.id)">
       <div class="nb-card-title-row">
-        <span class="nb-card-title">{{ props.note.title }}</span>
+        <button
+          type="button"
+          class="nb-card-title"
+          @click.stop="emit('open', props.note.id)"
+        >
+          {{ props.note.title }}
+        </button>
         <span v-if="props.note.isArchived" class="nb-card-badge nb-card-badge--archive">
           <i class="fa-solid fa-box-archive" aria-hidden="true" /> Архив
         </span>
@@ -135,18 +134,6 @@ function onDragStart(e: DragEvent) {
   flex-shrink: 0;
 }
 
-.nb-card-check {
-  display: flex;
-  cursor: pointer;
-}
-
-.nb-card-check input {
-  accent-color: var(--color-accent);
-  cursor: pointer;
-  width: 13px;
-  height: 13px;
-}
-
 .nb-card-grip {
   font-size: 0.76rem;
   color: var(--color-text-tertiary);
@@ -173,17 +160,38 @@ function onDragStart(e: DragEvent) {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  min-width: 0;
 }
 
 .nb-card-title {
-  flex: 1;
+  flex: 0 1 auto;
+  width: fit-content;
+  max-width: 100%;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  font-family: inherit;
   font-size: 0.97rem;
   color: var(--color-text);
   letter-spacing: 0.03em;
+  text-align: left;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.nb-card-title:hover {
+  color: var(--color-accent);
+}
+
+.nb-card-title:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--color-bg), 0 0 0 4px var(--color-accent-medium);
+  border-radius: 2px;
 }
 
 .nb-card-badge {

@@ -4,6 +4,7 @@ import Header from '../components/Header.vue'
 import GlobalGlitch from '../components/GlobalGlitch.vue'
 import AppFooter from '../components/AppFooter.vue'
 import JournalNotebookPane from '../components/journal/JournalNotebookPane.vue'
+import JournalInboxPane from '../components/journal/JournalInboxPane.vue'
 import JournalMonthPane from '../components/journal/JournalMonthPane.vue'
 import JournalWeekPane from '../components/journal/JournalWeekPane.vue'
 import JournalDayPane from '../components/journal/JournalDayPane.vue'
@@ -22,11 +23,11 @@ declare global {
   }
 }
 
-type JournalTabId = 'notebook' | 'month' | 'week' | 'tasks' | 'day' | 'habits'
+type JournalTabId = 'notebook' | 'month' | 'week' | 'tasks' | 'day' | 'habits' | 'inbox'
 
 const TAB_QUERY_KEY = 'tab'
 
-const JOURNAL_TAB_IDS: JournalTabId[] = ['notebook', 'month', 'week', 'tasks', 'day', 'habits']
+const JOURNAL_TAB_IDS: JournalTabId[] = ['inbox', 'notebook', 'tasks', 'day', 'week', 'month', 'habits']
 
 function parseTabFromSearch(search: string): JournalTabId | null {
   const q = search.startsWith('?') ? search.slice(1) : search
@@ -39,7 +40,7 @@ function parseTabFromSearch(search: string): JournalTabId | null {
 function applyTabToUrl(tab: JournalTabId) {
   if (typeof window === 'undefined') return
   const url = new URL(window.location.href)
-  if (tab === 'notebook') {
+  if (tab === 'inbox') {
     url.searchParams.delete(TAB_QUERY_KEY)
   } else {
     url.searchParams.set(TAB_QUERY_KEY, tab)
@@ -66,6 +67,29 @@ type JournalNoteSummary = {
 
 type NotebookFolderDto = { id: string; name: string; color: string; sortOrder: number; isArchived: boolean }
 type NotebookCategoryDto = { id: string; name: string; color: string; sortOrder: number }
+
+/** Сводка инбокса с сервера (отдельная Heap-таблица `inbox-notes`) */
+type InboxNoteSummaryDto = {
+  id: string
+  title: string
+  isArchived: boolean
+  sortOrder: number
+}
+
+function mapInboxToJournalSummary(n: InboxNoteSummaryDto): JournalNoteSummary {
+  return {
+    id: n.id,
+    title: n.title,
+    folderId: null,
+    categoryIds: [],
+    linkedTaskId: null,
+    linkedProjectId: null,
+    linkedClientId: null,
+    noteDate: null,
+    isArchived: n.isArchived,
+    sortOrder: n.sortOrder
+  }
+}
 
 interface JournalPageProps {
   projectTitle: string
@@ -115,6 +139,13 @@ interface JournalPageProps {
   pomodoroControlUrl?: string
   journalMonthDataUrl?: string
   journalTabInitial?: JournalTabId
+  inboxNotesInitial?: InboxNoteSummaryDto[]
+  inboxNotesCreateUrl?: string
+  inboxNotesGetUrl?: string
+  inboxNotesUpdateUrl?: string
+  inboxNotesArchiveUrl?: string
+  inboxNotesDeleteUrl?: string
+  inboxNotesListUrl?: string
 }
 
 const props = defineProps<JournalPageProps>()
@@ -123,6 +154,7 @@ const bootLoaderDone = ref(false)
 
 const tabComponents: Record<JournalTabId, object> = {
   notebook: JournalNotebookPane,
+  inbox: JournalInboxPane,
   month: JournalMonthPane,
   week: JournalWeekPane,
   tasks: JournalDayPane,
@@ -131,12 +163,13 @@ const tabComponents: Record<JournalTabId, object> = {
 }
 
 const tabs: { id: JournalTabId; label: string }[] = [
+  { id: 'inbox', label: 'Инбокс' },
+  { id: 'notebook', label: 'Блокнот' },
   { id: 'tasks', label: 'Задачи' },
   { id: 'day', label: 'День' },
   { id: 'week', label: 'Неделя' },
   { id: 'month', label: 'Месяц' },
   { id: 'habits', label: 'Привычки' },
-  { id: 'notebook', label: 'Блокнот' },
 ]
 
 function resolveInitialTab(): JournalTabId {
@@ -144,18 +177,26 @@ function resolveInitialTab(): JournalTabId {
     const fromUrl = parseTabFromSearch(window.location.search)
     if (fromUrl) return fromUrl
   }
-  return props.journalTabInitial ?? 'notebook'
+  return props.journalTabInitial ?? 'inbox'
 }
 
 const activeTab = ref<JournalTabId>(resolveInitialTab())
 
 const journalNotes = ref<JournalNoteSummary[]>([...(props.journalNotesInitial ?? [])])
+const inboxNotes = ref<JournalNoteSummary[]>(
+  (props.inboxNotesInitial ?? []).map(mapInboxToJournalSummary)
+)
 const notebookFolders = ref<NotebookFolderDto[]>([...(props.notebookFoldersInitial ?? [])])
 const notebookCategories = ref<NotebookCategoryDto[]>([...(props.notebookCategoriesInitial ?? [])])
 
 watch(
   () => props.journalNotesInitial,
   (next) => { journalNotes.value = [...(next ?? [])] }
+)
+
+watch(
+  () => props.inboxNotesInitial,
+  (next) => { inboxNotes.value = (next ?? []).map(mapInboxToJournalSummary) }
 )
 
 watch(
@@ -172,16 +213,22 @@ const showTasksNavToolbar = computed(() => {
   return activeTab.value === 'tasks' && Boolean(props.tasksPageUrl?.trim())
 })
 
-function onNotebookNoteCreated(note: { id: string; title: string }) {
-  reloadNotebookData()
+function onNotebookNoteCreated() {
+  if (activeTab.value === 'inbox') void reloadInboxData()
+  else void reloadNotebookData()
 }
 
-function onNotebookNoteUpdated(note: { id: string; title: string }) {
-  reloadNotebookData()
+function onNotebookNoteUpdated() {
+  if (activeTab.value === 'inbox') void reloadInboxData()
+  else void reloadNotebookData()
 }
 
 function onNotebookNoteDeleted(id: string) {
-  journalNotes.value = journalNotes.value.filter((x) => x.id !== id)
+  if (activeTab.value === 'inbox') {
+    inboxNotes.value = inboxNotes.value.filter((x) => x.id !== id)
+  } else {
+    journalNotes.value = journalNotes.value.filter((x) => x.id !== id)
+  }
 }
 
 function onFoldersChanged() {
@@ -210,6 +257,23 @@ async function reloadNotebookData() {
     }
   } catch (e) {
     log.error('Обновление данных блокнота', { error: String(e) })
+  }
+}
+
+async function reloadInboxData() {
+  if (!props.inboxNotesListUrl) return
+  try {
+    const url = `${props.inboxNotesListUrl}?includeArchived=true`
+    const res = await fetch(url, { method: 'GET', credentials: 'include' })
+    const data = await res.json() as {
+      success?: boolean
+      notes?: InboxNoteSummaryDto[]
+    }
+    if (data.success && data.notes) {
+      inboxNotes.value = data.notes.map(mapInboxToJournalSummary)
+    }
+  } catch (e) {
+    log.error('Обновление данных инбокса', { error: String(e) })
   }
 }
 
@@ -245,6 +309,16 @@ const notebookPaneProps = computed(() => ({
   notebookCategoriesDeleteUrl: props.notebookCategoriesDeleteUrl,
 }))
 
+const inboxPaneProps = computed(() => ({
+  notes: inboxNotes.value,
+  isAuthenticated: props.isAuthenticated,
+  inboxNotesCreateUrl: props.inboxNotesCreateUrl,
+  inboxNotesGetUrl: props.inboxNotesGetUrl,
+  inboxNotesUpdateUrl: props.inboxNotesUpdateUrl,
+  inboxNotesArchiveUrl: props.inboxNotesArchiveUrl,
+  inboxNotesDeleteUrl: props.inboxNotesDeleteUrl,
+}))
+
 const tasksPaneProps = computed(() => ({
   isAuthenticated: props.isAuthenticated,
   tasksTreeInitial: props.tasksTreeInitial ?? { clients: [], projects: [], tasks: [] },
@@ -265,6 +339,7 @@ const dayInDevelopmentPaneProps = computed(() => ({
 
 const panePropsForTab = computed(() => {
   if (activeTab.value === 'notebook') return notebookPaneProps.value
+  if (activeTab.value === 'inbox') return inboxPaneProps.value
   if (activeTab.value === 'tasks') return tasksPaneProps.value
   if (activeTab.value === 'day') return dayInDevelopmentPaneProps.value
   if (activeTab.value === 'week') {
@@ -309,7 +384,7 @@ function onOpenAllTasks() {
 
 function syncActiveTabFromLocation() {
   const fromUrl = parseTabFromSearch(window.location.search)
-  const next = fromUrl ?? 'notebook'
+  const next = fromUrl ?? 'inbox'
   if (activeTab.value !== next) {
     activeTab.value = next
   }

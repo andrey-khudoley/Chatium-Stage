@@ -1,10 +1,15 @@
 <script setup lang="ts">
 type FolderDto = { id: string; name: string; color: string }
 
-const props = defineProps<{
-  count: number
-  folders: FolderDto[]
-}>()
+const props = withDefaults(
+  defineProps<{
+    count: number
+    folders: FolderDto[]
+    /** Если false — скрыть блок «В корень» и папки (например, инбокс без папок). */
+    showFolderMove?: boolean
+  }>(),
+  { showFolderMove: true }
+)
 
 const emit = defineEmits<{
   (e: 'archive'): void
@@ -32,7 +37,7 @@ const emit = defineEmits<{
         <i class="fa-solid fa-box-open" aria-hidden="true" />
         <span>Из архива</span>
       </button>
-      <div class="nb-bulk-move-group">
+      <div v-if="props.showFolderMove" class="nb-bulk-move-group">
         <button
           type="button"
           class="nb-bulk-btn"

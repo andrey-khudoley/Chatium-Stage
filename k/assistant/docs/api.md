@@ -67,6 +67,19 @@
 | POST | /api/journal/notes/move | api/journal/notes/move.ts | RealUser | Переместить заметку в папку. Body: `{ id, folderId: string|null }`. Ответ: `{ success: true }`. |
 | POST | /api/journal/notes/bulk | api/journal/notes/bulk.ts | RealUser | Массовые операции с заметками. Body: `{ ids: string[], action: 'archive'|'move'|'delete'|'setCategory', folderId?, categoryId? }`. Ответ: `{ success: true }`. |
 
+## Журнал — инбокс (api/journal/inbox/)
+
+Отдельная Heap-таблица `inbox-notes` (не путать с `journal-notes` блокнота). Только текст и архив.
+
+| Method | Path | File | Auth | Назначение |
+| --- | --- | --- | --- | --- |
+| GET | /api/journal/inbox/list | api/journal/inbox/list.ts | RealUser | Список: `{ success, notes: [{ id, title, isArchived, sortOrder }] }`. Query: `includeArchived=true` — включить архивные. |
+| GET | /api/journal/inbox/get?id= | api/journal/inbox/get.ts | RealUser | Одна заметка: `{ success, note: { id, title, content, isArchived, sortOrder } }`. |
+| POST | /api/journal/inbox/create | api/journal/inbox/create.ts | RealUser | Body: `{ title?, content? }`. Ответ: `{ success, note }`. |
+| POST | /api/journal/inbox/update | api/journal/inbox/update.ts | RealUser | Body: `{ id, title?, content?, isArchived? }`. Ответ: `{ success, note }`. |
+| POST | /api/journal/inbox/archive | api/journal/inbox/archive.ts | RealUser | Body: `{ id, isArchived }`. Ответ: `{ success: true }`. |
+| POST | /api/journal/inbox/delete | api/journal/inbox/delete.ts | RealUser | Body: `{ id }`. Ответ: `{ success: true }`. |
+
 ## Журнал — категории блокнота (api/journal/categories/)
 
 Категории для классификации заметок; доступ `requireRealUser`.
