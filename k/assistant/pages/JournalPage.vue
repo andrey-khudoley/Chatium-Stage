@@ -8,12 +8,16 @@ import JournalInboxPane from '../components/journal/JournalInboxPane.vue'
 import JournalMonthPane from '../components/journal/JournalMonthPane.vue'
 import JournalWeekPane from '../components/journal/JournalWeekPane.vue'
 import JournalDayPane from '../components/journal/JournalDayPane.vue'
-import type { TasksTreeDto } from '../lib/tasks-types'
 import JournalHabitsPane from '../components/journal/JournalHabitsPane.vue'
 import JournalDayInDevelopmentPane from '../components/journal/JournalDayInDevelopmentPane.vue'
+import type { TasksTreeDto } from '../lib/tasks-types'
+import type { JournalHabitsWeekDto } from '../lib/journal-habits-time'
 import JournalNav from '../components/journal/JournalNav.vue'
 import { subscribeBootStaticReady, scheduleHideBootLoader } from '../shared/bootUi'
 import { createComponentLogger } from '../shared/logger'
+
+/** Отдельный alias — union внутри `interface JournalPageProps` даёт parse error в части пайплайнов Vue. */
+type JournalHabitsInitialProp = JournalHabitsWeekDto | null
 
 const log = createComponentLogger('JournalPage')
 
@@ -24,6 +28,17 @@ declare global {
 }
 
 type JournalTabId = 'notebook' | 'month' | 'week' | 'tasks' | 'day' | 'habits' | 'inbox'
+
+/** Явная карта компонентов вкладок (без Record с угловыми скобками в типе — см. комментарий к defineProps ниже). */
+type JournalTabComponentMap = {
+  notebook: object
+  inbox: object
+  month: object
+  week: object
+  tasks: object
+  day: object
+  habits: object
+}
 
 const TAB_QUERY_KEY = 'tab'
 
@@ -146,13 +161,75 @@ interface JournalPageProps {
   inboxNotesArchiveUrl?: string
   inboxNotesDeleteUrl?: string
   inboxNotesListUrl?: string
+  journalHabitsGetUrl?: string
+  journalHabitsSaveUrl?: string
+  journalHabitsInitial?: JournalHabitsInitialProp
 }
 
-const props = defineProps<JournalPageProps>()
+/* Не использовать defineProps с дженериком и ref с дженериком: при ts+jsx символ «меньше» в коде читается как JSX. */
+const props = defineProps({
+  projectTitle: { type: String, required: true },
+  indexUrl: { type: String, required: true },
+  profileUrl: { type: String, required: true },
+  testsUrl: String,
+  loginUrl: { type: String, required: true },
+  isAuthenticated: { type: Boolean, required: true },
+  isAdmin: Boolean,
+  adminUrl: String,
+  journalNotesInitial: Array,
+  notebookFoldersInitial: Array,
+  notebookCategoriesInitial: Array,
+  journalNotesCreateUrl: String,
+  journalNotesGetUrl: String,
+  journalNotesUpdateUrl: String,
+  journalNotesDeleteUrl: String,
+  journalNotesListUrl: String,
+  journalNotesReorderUrl: String,
+  journalNotesArchiveUrl: String,
+  journalNotesMoveUrl: String,
+  journalNotesBulkUrl: String,
+  notebookFoldersCreateUrl: String,
+  notebookFoldersUpdateUrl: String,
+  notebookFoldersDeleteUrl: String,
+  notebookFoldersReorderUrl: String,
+  notebookFoldersArchiveUrl: String,
+  notebookCategoriesListUrl: String,
+  notebookCategoriesCreateUrl: String,
+  notebookCategoriesUpdateUrl: String,
+  notebookCategoriesDeleteUrl: String,
+  journalDayGetUrl: String,
+  journalDaySaveUrl: String,
+  journalDayEntryInitial: Object,
+  journalWeekGetUrl: String,
+  journalWeekSaveUrl: String,
+  journalWeekSaveSummaryUrl: String,
+  journalWeekEntryInitial: Object,
+  tasksTreeInitial: Object,
+  tasksTreeGetUrl: String,
+  taskItemReorderDayUrl: String,
+  taskReleaseDayUrl: String,
+  taskItemUpdateUrl: String,
+  tasksPageUrl: String,
+  pomodoroAssignTaskUrl: String,
+  pomodoroStateGetUrl: String,
+  pomodoroControlUrl: String,
+  journalMonthDataUrl: String,
+  journalTabInitial: String,
+  inboxNotesInitial: Array,
+  inboxNotesCreateUrl: String,
+  inboxNotesGetUrl: String,
+  inboxNotesUpdateUrl: String,
+  inboxNotesArchiveUrl: String,
+  inboxNotesDeleteUrl: String,
+  inboxNotesListUrl: String,
+  journalHabitsGetUrl: String,
+  journalHabitsSaveUrl: String,
+  journalHabitsInitial: Object,
+}) as unknown as JournalPageProps
 
 const bootLoaderDone = ref(false)
 
-const tabComponents: Record<JournalTabId, object> = {
+const tabComponents: JournalTabComponentMap = {
   notebook: JournalNotebookPane,
   inbox: JournalInboxPane,
   month: JournalMonthPane,
@@ -177,40 +254,45 @@ function resolveInitialTab(): JournalTabId {
     const fromUrl = parseTabFromSearch(window.location.search)
     if (fromUrl) return fromUrl
   }
-  return props.journalTabInitial ?? 'inbox'
+  return props.journalTabInitial != null ? props.journalTabInitial : 'inbox'
 }
 
-const activeTab = ref<JournalTabId>(resolveInitialTab())
+const activeTab = ref(resolveInitialTab())
 
-const journalNotes = ref<JournalNoteSummary[]>([...(props.journalNotesInitial ?? [])])
-const inboxNotes = ref<JournalNoteSummary[]>(
-  (props.inboxNotesInitial ?? []).map(mapInboxToJournalSummary)
+const journalNotes = ref([...(props.journalNotesInitial != null ? props.journalNotesInitial : [])])
+const inboxNotes = ref(
+  (props.inboxNotesInitial != null ? props.inboxNotesInitial : []).map(mapInboxToJournalSummary),
 )
-const notebookFolders = ref<NotebookFolderDto[]>([...(props.notebookFoldersInitial ?? [])])
-const notebookCategories = ref<NotebookCategoryDto[]>([...(props.notebookCategoriesInitial ?? [])])
+const notebookFolders = ref([...(props.notebookFoldersInitial != null ? props.notebookFoldersInitial : [])])
+const notebookCategories = ref([
+  ...(props.notebookCategoriesInitial != null ? props.notebookCategoriesInitial : []),
+])
 
 watch(
   () => props.journalNotesInitial,
-  (next) => { journalNotes.value = [...(next ?? [])] }
+  (next) => { journalNotes.value = [...(next != null ? next : [])] }
 )
 
 watch(
   () => props.inboxNotesInitial,
-  (next) => { inboxNotes.value = (next ?? []).map(mapInboxToJournalSummary) }
+  (next) => { inboxNotes.value = (next != null ? next : []).map(mapInboxToJournalSummary) }
 )
 
 watch(
   () => props.notebookFoldersInitial,
-  (next) => { notebookFolders.value = [...(next ?? [])] }
+  (next) => { notebookFolders.value = [...(next != null ? next : [])] }
 )
 
 watch(
   () => props.notebookCategoriesInitial,
-  (next) => { notebookCategories.value = [...(next ?? [])] }
+  (next) => { notebookCategories.value = [...(next != null ? next : [])] }
 )
 
 const showTasksNavToolbar = computed(() => {
-  return activeTab.value === 'tasks' && Boolean(props.tasksPageUrl?.trim())
+  return (
+    activeTab.value === 'tasks' &&
+    Boolean(props.tasksPageUrl != null && props.tasksPageUrl.trim() !== '')
+  )
 })
 
 function onNotebookNoteCreated() {
@@ -279,7 +361,9 @@ async function reloadInboxData() {
 
 const currentPane = computed(() => tabComponents[activeTab.value])
 
-const tasksTree = computed(() => props.tasksTreeInitial ?? { clients: [], projects: [], tasks: [] })
+const tasksTree = computed(() =>
+  props.tasksTreeInitial != null ? props.tasksTreeInitial : { clients: [], projects: [], tasks: [] },
+)
 
 const notebookPaneProps = computed(() => ({
   notes: journalNotes.value,
@@ -321,20 +405,21 @@ const inboxPaneProps = computed(() => ({
 
 const tasksPaneProps = computed(() => ({
   isAuthenticated: props.isAuthenticated,
-  tasksTreeInitial: props.tasksTreeInitial ?? { clients: [], projects: [], tasks: [] },
-  tasksTreeGetUrl: props.tasksTreeGetUrl ?? '',
-  taskItemReorderDayUrl: props.taskItemReorderDayUrl ?? '',
-  taskReleaseDayUrl: props.taskReleaseDayUrl ?? '',
-  taskItemUpdateUrl: props.taskItemUpdateUrl ?? '',
-  tasksPageUrl: props.tasksPageUrl ?? '',
-  pomodoroAssignTaskUrl: props.pomodoroAssignTaskUrl ?? ''
+  tasksTreeInitial:
+    props.tasksTreeInitial != null ? props.tasksTreeInitial : { clients: [], projects: [], tasks: [] },
+  tasksTreeGetUrl: props.tasksTreeGetUrl != null ? props.tasksTreeGetUrl : '',
+  taskItemReorderDayUrl: props.taskItemReorderDayUrl != null ? props.taskItemReorderDayUrl : '',
+  taskReleaseDayUrl: props.taskReleaseDayUrl != null ? props.taskReleaseDayUrl : '',
+  taskItemUpdateUrl: props.taskItemUpdateUrl != null ? props.taskItemUpdateUrl : '',
+  tasksPageUrl: props.tasksPageUrl != null ? props.tasksPageUrl : '',
+  pomodoroAssignTaskUrl: props.pomodoroAssignTaskUrl != null ? props.pomodoroAssignTaskUrl : '',
 }))
 
 const dayInDevelopmentPaneProps = computed(() => ({
   isAuthenticated: props.isAuthenticated,
-  journalDayGetUrl: props.journalDayGetUrl ?? '',
-  journalDaySaveUrl: props.journalDaySaveUrl ?? '',
-  journalDayEntryInitial: props.journalDayEntryInitial ?? null
+  journalDayGetUrl: props.journalDayGetUrl != null ? props.journalDayGetUrl : '',
+  journalDaySaveUrl: props.journalDaySaveUrl != null ? props.journalDaySaveUrl : '',
+  journalDayEntryInitial: props.journalDayEntryInitial != null ? props.journalDayEntryInitial : null,
 }))
 
 const panePropsForTab = computed(() => {
@@ -345,20 +430,29 @@ const panePropsForTab = computed(() => {
   if (activeTab.value === 'week') {
     return {
       isAuthenticated: props.isAuthenticated,
-      journalWeekGetUrl: props.journalWeekGetUrl ?? '',
-      journalWeekSaveUrl: props.journalWeekSaveUrl ?? '',
-      journalWeekSaveSummaryUrl: props.journalWeekSaveSummaryUrl ?? '',
-      journalWeekEntryInitial: props.journalWeekEntryInitial ?? null
+      journalWeekGetUrl: props.journalWeekGetUrl != null ? props.journalWeekGetUrl : '',
+      journalWeekSaveUrl: props.journalWeekSaveUrl != null ? props.journalWeekSaveUrl : '',
+      journalWeekSaveSummaryUrl:
+        props.journalWeekSaveSummaryUrl != null ? props.journalWeekSaveSummaryUrl : '',
+      journalWeekEntryInitial: props.journalWeekEntryInitial != null ? props.journalWeekEntryInitial : null,
     }
   }
   if (activeTab.value === 'month') {
     return {
       isAuthenticated: props.isAuthenticated,
-      journalMonthDataUrl: props.journalMonthDataUrl ?? '',
-      journalDayGetUrl: props.journalDayGetUrl ?? '',
-      journalDaySaveUrl: props.journalDaySaveUrl ?? '',
-      journalWeekGetUrl: props.journalWeekGetUrl ?? '',
-      journalWeekSaveUrl: props.journalWeekSaveUrl ?? ''
+      journalMonthDataUrl: props.journalMonthDataUrl != null ? props.journalMonthDataUrl : '',
+      journalDayGetUrl: props.journalDayGetUrl != null ? props.journalDayGetUrl : '',
+      journalDaySaveUrl: props.journalDaySaveUrl != null ? props.journalDaySaveUrl : '',
+      journalWeekGetUrl: props.journalWeekGetUrl != null ? props.journalWeekGetUrl : '',
+      journalWeekSaveUrl: props.journalWeekSaveUrl != null ? props.journalWeekSaveUrl : '',
+    }
+  }
+  if (activeTab.value === 'habits') {
+    return {
+      isAuthenticated: props.isAuthenticated,
+      journalHabitsGetUrl: props.journalHabitsGetUrl != null ? props.journalHabitsGetUrl : '',
+      journalHabitsSaveUrl: props.journalHabitsSaveUrl != null ? props.journalHabitsSaveUrl : '',
+      journalHabitsInitial: props.journalHabitsInitial != null ? props.journalHabitsInitial : null,
     }
   }
   return {}
@@ -377,14 +471,14 @@ function onSelectNavTab(tabId: string) {
 }
 
 function onOpenAllTasks() {
-  const targetUrl = props.tasksPageUrl?.trim()
+  const targetUrl = props.tasksPageUrl != null ? props.tasksPageUrl.trim() : ''
   if (!targetUrl) return
   window.location.assign(targetUrl)
 }
 
 function syncActiveTabFromLocation() {
   const fromUrl = parseTabFromSearch(window.location.search)
-  const next = fromUrl ?? 'inbox'
+  const next = fromUrl != null ? fromUrl : 'inbox'
   if (activeTab.value !== next) {
     activeTab.value = next
   }
@@ -410,7 +504,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   log.info('Component unmounted')
-  unsubBootStatic?.()
+  if (unsubBootStatic != null) unsubBootStatic()
   window.removeEventListener('popstate', syncActiveTabFromLocation)
 })
 
@@ -455,16 +549,18 @@ const openChatiumLink = () => {
 
         <section class="journal-panel" aria-live="polite">
           <Transition name="journal-view" mode="out-in">
-            <component
-              :is="currentPane"
-              :key="activeTab"
-              v-bind="panePropsForTab"
-              @note-created="onNotebookNoteCreated"
-              @note-updated="onNotebookNoteUpdated"
-              @note-deleted="onNotebookNoteDeleted"
-              @folders-changed="onFoldersChanged"
-              @categories-changed="onCategoriesChanged"
-            />
+            <KeepAlive :max="8">
+              <component
+                :is="currentPane"
+                :key="activeTab"
+                v-bind="panePropsForTab"
+                @note-created="onNotebookNoteCreated"
+                @note-updated="onNotebookNoteUpdated"
+                @note-deleted="onNotebookNoteDeleted"
+                @folders-changed="onFoldersChanged"
+                @categories-changed="onCategoriesChanged"
+              />
+            </KeepAlive>
           </Transition>
         </section>
       </div>
@@ -496,19 +592,12 @@ const openChatiumLink = () => {
 
 .journal-view-enter-active,
 .journal-view-leave-active {
-  transition:
-    opacity 0.22s cubic-bezier(0.4, 0, 0.2, 1),
-    transform 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: opacity 0.22s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.journal-view-enter-from {
-  opacity: 0;
-  transform: translateX(6px);
-}
-
+.journal-view-enter-from,
 .journal-view-leave-to {
   opacity: 0;
-  transform: translateX(-6px);
 }
 
 @media (max-width: 900px) {

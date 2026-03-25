@@ -130,6 +130,15 @@
 | POST | /api/journal/week/save | api/journal/week/save.ts | RealUser | Сохранить план дня недели. Body: `{ dayKey, value, locked }`. Ответ: `{ success, week }` — актуальный снимок всей недели, к которой относится `dayKey`. |
 | POST | /api/journal/week/save-summary | api/journal/week/save-summary.ts | RealUser | Сохранить общий weekly-summary. Body: `{ mondayKey, value, locked }`. Ответ: `{ success, week }` — актуальный снимок недели после сохранения общего плана. |
 
+## Журнал — привычки (api/journal/habits/)
+
+Трекер привычек по неделям (Пн–Вс): название строки + семь чекбоксов. «Сегодня» и граница недели считаются с **05:00** по локальному времени (как `computeJournalDayKeyLocal`). В Heap хранятся только **прошлые** недели и **текущая**; для будущих недель записей нет (при запросе GET с `interactionMode === future` возвращается пустой `rows`, устаревшая Heap-строка будущей недели удаляется). На сервере для текущей недели изменяется только колонка «сегодня»; прошлые недели — read-only. При ответе GET для прошлой/текущей недели: если Heap-строка есть, но список привычек пуст, подставляются названия с предыдущей недели.
+
+| Method | Path | File | Auth | Назначение |
+| --- | --- | --- | --- | --- |
+| GET | /api/journal/habits/get?mondayKey= | api/journal/habits/get.ts | RealUser | `{ success, habits }`, где `habits = { mondayKey, weekNumber, dayKeys, rows, todayColumnIndex, interactionMode (current / past / future), effectiveDayKey, currentWeekMondayKey }`. `currentWeekMondayKey` — понедельник текущей недели (05:00), для UI-навигации. Без `mondayKey` — текущая неделя по правилу 05:00. |
+| POST | /api/journal/habits/save | api/journal/habits/save.ts | RealUser | Body: `{ mondayKey, rows }`. Порядок элементов в `rows` — порядок строк в UI (клиент может менять drag-and-drop). Сохранение только для `interactionMode === current`; чекбоксы кроме «сегодня» мержатся с уже сохранёнными. Ответ: `{ success, habits }`. |
+
 ## Задачи (api/tasks/)
 
 Иерархия «клиент → проект → задача» в Heap; все мутации и дерево — только `requireRealUser`. Один файл — один эндпоинт с путём `/`.

@@ -104,6 +104,10 @@
 - `../../api/journal/week/get` → `getJournalWeekEntryRoute`
 - `../../api/journal/week/save` → `saveJournalWeekDayEntryRoute`
 - `../../api/journal/week/save-summary` → `saveJournalWeekSummaryRoute`
+- `../../api/journal/habits/get` → `getJournalHabitsRoute`
+- `../../api/journal/habits/save` → `saveJournalHabitsRoute`
+- `../../repos/journal-habits.repo` → `*`
+- `../../lib/journal-habits-time` → `computeHabitsMondayKeyFromNow`
 - `../../api/tasks/tree/get` → `getTasksTreeRoute`
 - `../../api/tasks/items/reorder-day` → `reorderTaskDayItemsRoute`
 - `../../api/tasks/items/release-day` → `releaseTaskDayItemsRoute`
@@ -383,7 +387,10 @@
 - пропсы: `isAuthenticated`, `tasksTreeInitial`, `tasksTreeGetUrl`, `taskItemReorderDayUrl`, `taskReleaseDayUrl`, `taskItemUpdateUrl`, `tasksPageUrl` — список задач «В работе», сортировка (кнопки и drag-and-drop), клик по названию — модалка редактирования (POST `taskItemUpdateUrl`), ссылки на страницу задач с `?client=&project=`
 
 ### `./components/journal/JournalHabitsPane.vue`
-- `./JournalStubPanel.vue`
+- `vue` → `computed`, `onMounted`, `onUnmounted`, `ref`, `watch`
+- `../../lib/journal-week-key` → `shiftWeekMondayKey`
+- `../../lib/journal-habits-time` → типы `JournalHabitsWeekDto`, `JournalHabitRowDto`
+- пропсы: `isAuthenticated`, `journalHabitsGetUrl`, `journalHabitsSaveUrl`, `journalHabitsInitial` — недельная таблица привычек; порядок строк на текущей неделе — HTML5 DnD (ручка в первой колонке), сохранение через `scheduleSave` → POST `journalHabitsSaveUrl`; опрос текущей недели (`setInterval` 60 с) стартует в `onMounted`/`onActivated` и останавливается в `onDeactivated`/`onUnmounted`, чтобы при `KeepAlive` на вкладках журнала не крутить таймер в фоне; `watch` на `journalHabitsInitial` применяет SSR только пока `mondayKey` пуст или совпадает с `initial.mondayKey`
 
 ## 4) Shared (общий код)
 
@@ -440,6 +447,9 @@
 ### `./tables/journal-week-summary.table.ts`
 - `@app/heap` → `Heap`
 
+### `./tables/journal-habits-week.table.ts`
+- `@app/heap` → `Heap`
+
 ## 6) Репозитории (repos/)
 
 ### `./repos/settings.repo.ts`
@@ -462,6 +472,12 @@
 - `../tables/journal-week-entries.table` → `JournalWeekEntries`
 - `../tables/journal-week-summary.table` → `JournalWeekSummary`
 - `../lib/journal-week-key` → `getWeekDayKeysFromMonday`, `getWeekNumberFromMondayKey`
+
+### `./repos/journal-habits.repo.ts`
+- `../tables/journal-habits-week.table` → `JournalHabitsWeek`
+- `../lib/journal-day-key` → `computeJournalDayKeyLocal`
+- `../lib/journal-habits-time` → DTO, `computeHabitsMondayKeyFromNow`, `parseRowsJson`, `serializeRowsJson`, `mergeRowsPreserveLockedDays`, `getHabitsInteractionMode`, `getTodayColumnIndexForWeek`
+- `../lib/journal-week-key` → `getWeekDayKeysFromMonday`, `getWeekNumberFromMondayKey`, `shiftWeekMondayKey`
 
 ### `./repos/tasks.repo.ts`
 - `../tables/task-clients.table`, `task-projects.table`, `task-items.table`
@@ -510,6 +526,9 @@
 
 ### `./lib/journal-week-key.ts`
 - `@shared` — ключ понедельника недели и диапазон дат: `computeJournalWeekMondayKeyLocal`, `normalizeWeekMondayKey`, `shiftWeekMondayKey`, `getWeekDayKeysFromMonday`, `getWeekMondayKeyForDateKey`, `getWeekNumberFromMondayKey`
+
+### `./lib/journal-habits-time.ts`
+- `@shared` — привычки: `computeHabitsMondayKeyFromNow`, `normalizeHabitsMondayKey`, `getHabitsInteractionMode`, `getTodayColumnIndexForWeek`, DTO, `parseRowsJson`, `serializeRowsJson`, `mergeRowsPreserveLockedDays`; импорт `journal-day-key`, `journal-week-key`
 
 ### `./lib/pomodoro.lib.ts`
 - `@app/sync` → `runWithExclusiveLock`
@@ -603,6 +622,20 @@
 - `../../../lib/logger.lib` → `*`
 - `../../../repos/journal-week-entries.repo` → `*`
 - `../../../lib/journal-week-key` → `normalizeWeekMondayKey`
+
+### `./api/journal/habits/get.ts`
+- `@app/auth` → `requireRealUser`
+- `../../../lib/logger.lib` → `*`
+- `../../../repos/journal-habits.repo` → `*`
+- `../../../lib/journal-habits-time` → `computeHabitsMondayKeyFromNow`, `normalizeHabitsMondayKey`
+- `../../../lib/journal-week-key` → `getWeekMondayKeyForDateKey`
+
+### `./api/journal/habits/save.ts`
+- `@app/auth` → `requireRealUser`
+- `../../../lib/logger.lib` → `*`
+- `../../../repos/journal-habits.repo` → `*`
+- `../../../lib/journal-habits-time` → `computeHabitsMondayKeyFromNow`, `normalizeHabitsMondayKey`, `type JournalHabitRowDto`
+- `../../../lib/journal-week-key` → `getWeekMondayKeyForDateKey`
 
 ### `./api/tasks/tasks-ai-chat-lib.ts`
 - `@app/auth` → `findUsersByIds`, `SmartUser`

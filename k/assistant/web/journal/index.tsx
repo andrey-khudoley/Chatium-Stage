@@ -47,6 +47,8 @@ import { pomodoroAssignTaskRoute } from '../../api/pomodoro/assign-task'
 import { getPomodoroStateRoute } from '../../api/pomodoro/state/get'
 import { pomodoroControlRoute } from '../../api/pomodoro/control'
 import { getJournalMonthDataRoute } from '../../api/journal/month/data'
+import { getJournalHabitsRoute } from '../../api/journal/habits/get'
+import { saveJournalHabitsRoute } from '../../api/journal/habits/save'
 import { getApiUrlForRoute, getFullUrl, ROUTES } from '../../config/routes'
 import type { TasksTreeDto } from '../../lib/tasks-types'
 import { JOURNAL_PAGE_NAME, getPageTitle, getHeaderText } from '../../config/project'
@@ -54,6 +56,8 @@ import * as settingsLib from '../../lib/settings.lib'
 import * as journalDayRepo from '../../repos/journal-day-entries.repo'
 import { computeJournalDayKeyInTimeZone } from '../../lib/journal-day-key'
 import * as journalWeekRepo from '../../repos/journal-week-entries.repo'
+import * as journalHabitsRepo from '../../repos/journal-habits.repo'
+import { computeHabitsMondayKeyFromNow } from '../../lib/journal-habits-time'
 import { computeJournalWeekMondayKeyLocal } from '../../lib/journal-week-key'
 import { customScrollbarStyles, formControlStyles, mobileSafeAreaStyles, VIEWPORT_META_CONTENT } from '../../styles'
 
@@ -90,6 +94,7 @@ export const journalPageRoute = app.html('/', async (ctx, req) => {
   let tasksTreeInitial: TasksTreeDto = { clients: [], projects: [], tasks: [] }
   let journalDayEntryInitial: journalDayRepo.JournalDayEntryDto | null = null
   let journalWeekEntryInitial: journalWeekRepo.JournalWeekEntryDto | null = null
+  let journalHabitsInitial: import('../../lib/journal-habits-time').JournalHabitsWeekDto | null = null
   if (ctx.user) {
     try {
       const user = requireRealUser(ctx)
@@ -105,6 +110,8 @@ export const journalPageRoute = app.html('/', async (ctx, req) => {
       journalDayEntryInitial = await journalDayRepo.getByUserAndDay(ctx, user.id, dayKey)
       const mondayKey = computeJournalWeekMondayKeyLocal(Date.now())
       journalWeekEntryInitial = await journalWeekRepo.getWeekByUserAndMonday(ctx, user.id, mondayKey)
+      const habitsMonday = computeHabitsMondayKeyFromNow(Date.now())
+      journalHabitsInitial = await journalHabitsRepo.getHabitsWeekForUser(ctx, user.id, habitsMonday, Date.now())
     } catch {
       journalNotesInitial = []
       inboxNotesInitial = []
@@ -113,6 +120,7 @@ export const journalPageRoute = app.html('/', async (ctx, req) => {
       tasksTreeInitial = { clients: [], projects: [], tasks: [] }
       journalDayEntryInitial = null
       journalWeekEntryInitial = null
+      journalHabitsInitial = null
     }
   }
 
@@ -153,6 +161,8 @@ export const journalPageRoute = app.html('/', async (ctx, req) => {
   const pomodoroStateGetUrl = getApiUrlForRoute(getPomodoroStateRoute.url())
   const pomodoroControlUrl = getApiUrlForRoute(pomodoroControlRoute.url())
   const journalMonthDataUrl = getApiUrlForRoute(getJournalMonthDataRoute.url())
+  const journalHabitsGetUrl = getApiUrlForRoute(getJournalHabitsRoute.url())
+  const journalHabitsSaveUrl = getApiUrlForRoute(saveJournalHabitsRoute.url())
   const tasksPageUrl = getFullUrl(ROUTES.tasks)
   const journalTabInitial = parseJournalTabFromQuery(req.query?.tab)
 
@@ -441,6 +451,9 @@ export const journalPageRoute = app.html('/', async (ctx, req) => {
           pomodoroControlUrl={pomodoroControlUrl}
           journalMonthDataUrl={journalMonthDataUrl}
           journalTabInitial={journalTabInitial}
+          journalHabitsGetUrl={journalHabitsGetUrl}
+          journalHabitsSaveUrl={journalHabitsSaveUrl}
+          journalHabitsInitial={journalHabitsInitial}
         />
       </body>
     </html>

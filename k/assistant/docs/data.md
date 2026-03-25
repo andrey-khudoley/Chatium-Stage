@@ -15,6 +15,7 @@
 | t__assistant__journal_day_entry__4Hd9Qa | tables/journal-day-entries.table.ts | Дневные записи по сегментам (Ночь/Утро/День/Вечер) | userId, dayKey (YYYY-MM-DD с границей 05:00), nightText/nightLocked, morningText/morningLocked, dayText/dayLocked, eveningText/eveningLocked |
 | t__assistant__journal_week_entry__7Qm2Lp | tables/journal-week-entries.table.ts | Недельный план по дням | userId, dayKey (YYYY-MM-DD), planText, locked |
 | t__assistant__journal_week_summary__3Fn8Rt | tables/journal-week-summary.table.ts | Общий план недели | userId, mondayKey (YYYY-MM-DD понедельник), summaryText, locked |
+| t__assistant__journal_habits_week__9Hk2Mx | tables/journal-habits-week.table.ts | Трекер привычек по неделям | userId, mondayKey (понедельник недели), rowsJson (JSON: массив `{ id, title, days: boolean[7] }`); хранятся только прошлые и текущая недели; строки будущих недель при обнаружении удаляются |
 | t__assistant__task_client__7Hk3mN | tables/task-clients.table.ts | Клиенты (задачи) | userId, name, sortOrder |
 | t__assistant__task_project__9Lp4qR | tables/task-projects.table.ts | Проекты внутри клиента | userId, clientId, name, sortOrder; опционально `details` (текст для пользователя), `context` (служебное, не отдаётся в клиентский API) |
 | t__assistant__task_ai_chat_feed__3Kp9mX | tables/task-ai-chat-feeds.table.ts | Фид чата с AI на странице задач (на проект) | userId, projectId, feedId (UID фида Chatium) |
@@ -31,6 +32,7 @@
 - `repos/notebook-folders.repo.ts` — findByUserId, createForUser, updateForUser, deleteForUser, archiveForUser, reorderForUser.
 - `repos/journal-day-entries.repo.ts` — getByUserAndDay, saveSegmentForUserDay (upsert сегмента в записи конкретного дня пользователя).
 - `repos/journal-week-entries.repo.ts` — getWeekByUserAndMonday, saveDayPlanForUser, saveWeekSummaryForUser (чтение/запись недельного плана по дням + общего weekly-summary).
+- `repos/journal-habits.repo.ts` — getHabitsWeekForUser (для **будущей** недели: не создаёт Heap-запись, возвращает пустой `rows`, при наличии устаревшей строки — удаляет её; для прошлой/текущей: если записи недели ещё нет — создаётся строка с названиями с прошлой недели и пустыми отметками; если запись есть, но `rows` после парсинга пустой — те же названия подставляются и сохраняются в Heap), saveHabitsWeekForUser (мерж только «сегодняшней» колонки для текущей недели).
 - `repos/tasks.repo.ts` — getTreeForUser, CRUD клиентов/проектов/задач, reorderTasks (порядок в проекте), reorderDayTasks (порядок задач со статусом `in_progress` для вкладки «День»), releaseAllInProgressToTodo (все «В работе» → «К выполнению»), addPomodoroSecondsToTask (накопление времени работы/отдыха в задаче при активном Pomodoro); при входе в `in_progress` выставляется `daySortOrder`, при выходе — 0; удаление клиента каскадом (проекты и задачи), проекта — с задачами. Endpoint `api/tasks/in-progress` дополнительно обогащает `tree.tasks` полями `projectName` и `clientName` (через join по `projectId -> clientId`) для UI-селекторов Pomodoro/Timer/Stopwatch.
 - `repos/pomodoro.repo.ts` — getOrCreateState/getOrCreateStateRow, updateState, getOrCreateStateWithDailyStats/applyStatsPeriodIfNeeded (сброс `totalWorkSec`/`totalRestSec`/`tasksCompletedToday` при смене `statsPeriodDayKey` без изменения `updatedAtMs`); нормализация и маппинг состояния Pomodoro между Heap-строкой и DTO.
 - `repos/pomodoro-launches.repo.ts` — append-only журнал сегментов Pomodoro: открытие сегмента при запуске/продолжении, закрытие при паузе/стопе/автопереходе/смене задачи, расчёт `durationSec`; `appendFocusLaunchSegment` — запись фокус-сегментов из `web/tools` (`tools_timer/tools_stopwatch`); `getWorkFocusByDayForMonth` — суммарное время work-фаз по дням для вкладки «Месяц».
@@ -45,6 +47,7 @@
 - `lib/pomodoro-stats-day.ts` — ключ периода дневной статистики (граница 05:00 локально / fallback Europe/Moscow); `@shared`.
 - `lib/journal-day-key.ts` — ключ периода дневника (граница 05:00 локально / fallback Europe/Moscow); `@shared`.
 - `lib/journal-week-key.ts` — ключ понедельника недели, сдвиг недели, список дней недели и номер недели; `@shared`.
+- `lib/journal-habits-time.ts` — DTO привычек (в т.ч. `currentWeekMondayKey` для навигации), парсинг/сериализация JSON, ключ понедельника для привычек с границей 05:00 (`computeHabitsMondayKeyFromNow`), режим просмотра недели, мерж отметок при сохранении; `@shared`.
 - `lib/pomodoro-phase-sounds.ts` — пресеты звука смены фазы (Web Audio API, только клиент).
 
 ## Файлы и хранилище
