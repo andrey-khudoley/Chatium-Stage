@@ -123,12 +123,11 @@ function onEditorBack() {
 function onEditorSaved(note: { id: string; title: string }) {
   if (isCreatingNote.value) {
     emit('noteCreated', note)
+    editingNoteId.value = note.id
+    isCreatingNote.value = false
   } else {
     emit('noteUpdated', note)
   }
-  mode.value = 'list'
-  editingNoteId.value = null
-  isCreatingNote.value = false
   refreshList()
 }
 
