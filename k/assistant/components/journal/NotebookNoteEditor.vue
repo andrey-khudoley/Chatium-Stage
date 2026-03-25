@@ -159,6 +159,25 @@ function onDateInputBlur() {
   noteDateInput.value = formatDateForInput(parsed)
 }
 
+function onDateInput(e: Event) {
+  const inputEvent = e as InputEvent
+  const isDeleting = inputEvent.inputType?.startsWith('delete') ?? false
+  const raw = noteDateInput.value.replace(/\D/g, '').slice(0, 8)
+
+  let formatted = ''
+  if (raw.length <= 2) {
+    formatted = raw
+    if (!isDeleting && raw.length === 2) formatted += '/'
+  } else if (raw.length <= 4) {
+    formatted = `${raw.slice(0, 2)}/${raw.slice(2)}`
+    if (!isDeleting && raw.length === 4) formatted += '/'
+  } else {
+    formatted = `${raw.slice(0, 2)}/${raw.slice(2, 4)}/${raw.slice(4)}`
+  }
+
+  noteDateInput.value = formatted
+}
+
 async function save() {
   const t = title.value.trim()
   if (!t) {
@@ -506,6 +525,7 @@ function exportAsPdf() {
             inputmode="numeric"
             placeholder="dd/mm/yyyy"
             autocomplete="off"
+            @input="onDateInput"
             @blur="onDateInputBlur"
           />
         </div>
