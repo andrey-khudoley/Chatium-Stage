@@ -40,6 +40,8 @@ let highlightTimeout: ReturnType<typeof setTimeout> | null = null
 const HLJS_VERSION = '11.11.1'
 const HLJS_CDN = `https://cdnjs.cloudflare.com/ajax/libs/highlight.js/${HLJS_VERSION}`
 
+const PREFERRED_CODE_LANG_STORAGE_KEY = 'assistant-journal-preferred-code-lang'
+
 const CODE_LANGUAGES = [
   { value: 'plaintext', label: 'Текст' },
   { value: 'javascript', label: 'JavaScript' },
@@ -67,6 +69,32 @@ const CODE_LANGUAGES = [
   { value: 'dockerfile', label: 'Dockerfile' },
   { value: 'nginx', label: 'Nginx' },
 ]
+
+const CODE_LANG_VALUES = new Set(CODE_LANGUAGES.map((l) => l.value))
+
+function readStoredPreferredCodeLang(): string {
+  if (typeof localStorage === 'undefined') return 'plaintext'
+  try {
+    const raw = localStorage.getItem(PREFERRED_CODE_LANG_STORAGE_KEY)
+    if (raw && CODE_LANG_VALUES.has(raw)) return raw
+  } catch {
+    /* private mode / недоступно */
+  }
+  return 'plaintext'
+}
+
+/** Дефолт для новых блоков и fallback селекта; синхронизируется с localStorage при смене языка. */
+const preferredDefaultCodeLang = ref(readStoredPreferredCodeLang())
+
+function writeStoredPreferredCodeLang(lang: string) {
+  if (!CODE_LANG_VALUES.has(lang)) return
+  preferredDefaultCodeLang.value = lang
+  try {
+    localStorage.setItem(PREFERRED_CODE_LANG_STORAGE_KEY, lang)
+  } catch {
+    /* quota / private mode */
+  }
+}
 
 const MEDIA_SELECTOR = '.wy-media-img, .wy-media-video, .wy-media-pdf, .wy-media-file'
 
@@ -265,6 +293,7 @@ function markdownToHtml(markdown: string): string {
   const lines = normalizeClipboardText(markdown).split('\n')
   const out: string[] = []
   let i = 0
+  const defaultFenceLang = preferredDefaultCodeLang.value
 
   while (i < lines.length) {
     const line = lines[i]
@@ -278,7 +307,7 @@ function markdownToHtml(markdown: string): string {
 
     if (/^```/.test(trimmed)) {
       const langMatch = trimmed.match(/^```(\w+)?/)
-      const lang = langMatch?.[1] || 'plaintext'
+      const lang = langMatch?.[1] || defaultFenceLang
       const block: string[] = []
       i += 1
       while (i < lines.length && !/^```/.test(lines[i].trim())) {
@@ -347,6 +376,78 @@ function markdownToHtml(markdown: string): string {
   return out.join('') || '<p><br></p>'
 }
 
+/** Текст из буфера для вставки в блок кода (без Markdown/HTML-разметки). */
+function clipboardPlainTextForCodeBlock(clipboard: DataTransfer | null): string {
+  if (!clipboard) return ''
+  const plain = clipboard.getData('text/plain')
+  if (plain) return normalizeClipboardText(plain)
+  const rawHtml = clipboard.getData('text/html')?.trim()
+  if (!rawHtml) return ''
+  const div = document.createElement('div')
+  div.innerHTML = rawHtml
+  return normalizeClipboardText(div.innerText || div.textContent || '')
+}
+
+/** Гарантирует `<code>` внутри `pre` и сдвигает range внутрь него, если курсор на границе `pre`. */
+function ensureRangeInsidePreCode(range: Range, pre: HTMLPreElement): HTMLElement | null {
+  let codeEl = pre.querySelector('code')
+  if (!codeEl) {
+    codeEl = document.createElement('code')
+    codeEl.className = 'hljs'
+    pre.appendChild(codeEl)
+  }
+  const code = codeEl as HTMLElement
+  if (code.contains(range.startContainer)) return code
+
+  if (range.startContainer === pre) {
+    const idx = range.startOffset
+    const childAt = pre.childNodes[idx]
+    if (childAt === code) {
+      range.setStart(code, 0)
+      range.collapse(true)
+    } else if (idx >= pre.childNodes.length || !childAt) {
+      range.selectNodeContents(code)
+      range.collapse(false)
+    } else {
+      range.setStart(code, 0)
+      range.collapse(true)
+    }
+    return code
+  }
+
+  if (pre.contains(range.startContainer)) {
+    range.selectNodeContents(code)
+    range.collapse(false)
+    return code
+  }
+
+  return null
+}
+
+/** Вставка plain text в позицию курсора внутри блока кода (обходит insertHtmlAtCursor, который поднимает вставку до корня редактора). */
+function insertPlainTextIntoCodeBlockAtSelection(text: string): boolean {
+  if (!editorRef.value) return false
+  const sel = window.getSelection()
+  if (!sel?.rangeCount) return false
+  const range = sel.getRangeAt(0).cloneRange()
+  if (!editorRef.value.contains(range.commonAncestorContainer)) return false
+
+  const pre = getAncestorCodeBlock(sel.anchorNode)
+  if (!pre) return false
+
+  const code = ensureRangeInsidePreCode(range, pre)
+  if (!code) return false
+
+  range.deleteContents()
+  const tn = document.createTextNode(text)
+  range.insertNode(tn)
+  range.setStartAfter(tn)
+  range.collapse(true)
+  sel.removeAllRanges()
+  sel.addRange(range)
+  return true
+}
+
 function insertHtmlAtCursor(html: string) {
   const sel = window.getSelection()
   if (!sel || !sel.rangeCount || !editorRef.value) return
@@ -410,6 +511,24 @@ function onPaste(e: ClipboardEvent) {
   if (!clipboard) return
 
   e.preventDefault()
+
+  const selEarly = window.getSelection()
+  if (
+    selEarly?.rangeCount &&
+    editorRef.value?.contains(selEarly.anchorNode) &&
+    getAncestorCodeBlock(selEarly.anchorNode)
+  ) {
+    const codeText = clipboardPlainTextForCodeBlock(clipboard)
+    if (insertPlainTextIntoCodeBlockAtSelection(codeText)) {
+      nextTick(() => {
+        onInput()
+        saveSelection()
+        highlightAllCodeBlocks()
+      })
+      return
+    }
+  }
+
   const rawHtml = clipboard.getData('text/html')?.trim()
   const plainText = clipboard.getData('text/plain')
   const normalizedPlain = plainText ? normalizeClipboardText(plainText) : ''
@@ -831,6 +950,7 @@ function updateCodePickerPosition() {
 function changeCodeLanguage(lang: string) {
   if (!activeCodeBlock.value) return
   activeCodeBlock.value.dataset.language = lang
+  writeStoredPreferredCodeLang(lang)
   loadHighlightJs().then(() => {
     if (!activeCodeBlock.value) return
     highlightCodeElement(activeCodeBlock.value)
@@ -845,10 +965,12 @@ function onCodeLangSelectChange(ev: Event) {
 }
 
 function insertCodeBlockHtml() {
+  const lang = preferredDefaultCodeLang.value
+  const langAttr = escapeHtml(lang)
   document.execCommand(
     'insertHTML',
     false,
-    '<pre data-language="plaintext"><code class="hljs">\n</code></pre><p><br></p>',
+    `<pre data-language="${langAttr}"><code class="hljs">\n</code></pre><p><br></p>`,
   )
   nextTick(() => {
     if (!editorRef.value) return
@@ -1203,7 +1325,7 @@ function onWindowScroll() {
           >
             <select
               class="wy-code-lang-select"
-              :value="activeCodeBlock?.dataset.language || 'plaintext'"
+              :value="activeCodeBlock?.dataset.language || preferredDefaultCodeLang"
               @change="onCodeLangSelectChange"
             >
               <option v-for="lang in CODE_LANGUAGES" :key="lang.value" :value="lang.value">
