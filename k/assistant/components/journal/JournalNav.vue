@@ -112,7 +112,7 @@ const emit = defineEmits<{
   padding: 0.35rem 0.4rem;
   box-sizing: border-box;
   font-family: inherit;
-  font-size: 0.62rem;
+  font-size: 0.78rem;
   font-weight: 400;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -163,7 +163,7 @@ const emit = defineEmits<{
 
 .journal-nav-action-error {
   margin: 0;
-  font-size: 0.6rem;
+  font-size: 0.76rem;
   line-height: 1.25;
   color: var(--color-accent-hover);
   letter-spacing: 0.03em;
@@ -188,7 +188,7 @@ const emit = defineEmits<{
   padding: 0.35rem 0.45rem;
   box-sizing: border-box;
   font-family: inherit;
-  font-size: 0.68rem;
+  font-size: 0.84rem;
   font-weight: 400;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -233,7 +233,7 @@ const emit = defineEmits<{
   }
 
   .journal-nav-action {
-    font-size: 0.65rem;
+    font-size: 0.82rem;
     padding: 0.4rem 0.5rem;
   }
 

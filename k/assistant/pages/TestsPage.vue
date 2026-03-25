@@ -1236,7 +1236,7 @@ const runAllTests = async () => {
 }
 
 .tests-metric-label {
-  font-size: 0.8rem;
+  font-size: 0.95rem;
   color: var(--color-text-secondary);
   text-transform: lowercase;
 }
@@ -1246,7 +1246,7 @@ const runAllTests = async () => {
 .tests-metric-skipped .tests-metric-value { color: #95a5a6; }
 
 .tests-dashboard-last-run {
-  font-size: 0.85rem;
+  font-size: 0.98rem;
   color: var(--color-text-tertiary);
   margin: 0 0 1rem 0;
 }
@@ -1263,7 +1263,7 @@ const runAllTests = async () => {
   gap: 0.5rem;
   padding: 0.65rem 1.25rem;
   font-family: inherit;
-  font-size: 0.95rem;
+  font-size: 1.06rem;
   color: #fff;
   background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-accent-hover) 100%);
   border: 1px solid var(--color-accent);
@@ -1309,14 +1309,14 @@ const runAllTests = async () => {
 }
 
 .tests-endpoints-desc {
-  font-size: 0.9rem;
+  font-size: 1.02rem;
   color: var(--color-text-secondary);
   margin: 0 0 0.5rem 0;
   line-height: 1.45;
 }
 
 .tests-endpoints-last-run {
-  font-size: 0.8rem;
+  font-size: 0.95rem;
   color: var(--color-text-tertiary);
   margin: 0 0 0.75rem 0;
 }
@@ -1327,7 +1327,7 @@ const runAllTests = async () => {
   gap: 1rem 1.5rem;
   margin-bottom: 0.75rem;
   padding: 0.5rem 0;
-  font-size: 0.85rem;
+  font-size: 0.98rem;
   color: var(--color-text-secondary);
 }
 
@@ -1338,12 +1338,12 @@ const runAllTests = async () => {
 }
 
 .tests-endpoints-legend .tests-endpoints-badge {
-  font-size: 0.65rem;
+  font-size: 0.82rem;
   padding: 0.15rem 0.35rem;
 }
 
 .tests-endpoints-list-label {
-  font-size: 0.9rem;
+  font-size: 1.02rem;
   font-weight: 600;
   color: var(--color-text);
   margin: 0 0 0.5rem 0;
@@ -1371,7 +1371,7 @@ const runAllTests = async () => {
   align-items: flex-start;
   flex-wrap: wrap;
   gap: 0.6rem;
-  font-size: 0.9rem;
+  font-size: 1.02rem;
   min-height: 2.25rem;
   padding: 0.5rem 0;
   border-bottom: 1px solid var(--color-border);
@@ -1402,7 +1402,7 @@ const runAllTests = async () => {
 
 .tests-endpoints-badge {
   flex-shrink: 0;
-  font-size: 0.7rem;
+  font-size: 0.86rem;
   font-weight: 600;
   padding: 0.2rem 0.5rem;
   border-radius: 4px;
@@ -1447,14 +1447,14 @@ const runAllTests = async () => {
 }
 
 .tests-endpoints-list-category {
-  font-size: 0.7rem;
+  font-size: 0.86rem;
   font-weight: 400;
   color: var(--color-text-tertiary);
   margin-left: 0.5rem;
 }
 
 .tests-endpoints-list-desc {
-  font-size: 0.8rem;
+  font-size: 0.95rem;
   color: var(--color-text-secondary);
   line-height: 1.4;
   margin: 0;
@@ -1463,7 +1463,7 @@ const runAllTests = async () => {
 }
 
 .tests-endpoints-list-error {
-  font-size: 0.8rem;
+  font-size: 0.95rem;
   color: var(--color-text-secondary);
   flex-shrink: 0;
 }
@@ -1480,7 +1480,7 @@ const runAllTests = async () => {
   gap: 0.5rem;
   padding: 0.65rem 1.25rem;
   font-family: inherit;
-  font-size: 0.95rem;
+  font-size: 1.06rem;
   color: #fff;
   background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-accent-hover) 100%);
   border: 1px solid var(--color-accent);
@@ -1555,7 +1555,7 @@ const runAllTests = async () => {
   gap: 0.4rem;
   padding: 0.35rem 0.75rem;
   font-family: inherit;
-  font-size: 0.8rem;
+  font-size: 0.95rem;
   color: var(--color-text-tertiary);
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid var(--color-border);
@@ -1610,7 +1610,7 @@ const runAllTests = async () => {
   overflow: auto;
   padding: 1rem;
   font-family: 'Share Tech Mono', 'Courier New', monospace;
-  font-size: 0.8rem;
+  font-size: 0.95rem;
 }
 
 .tests-logs-empty {
@@ -1626,7 +1626,7 @@ const runAllTests = async () => {
 .tests-log-date-divider {
   text-align: center;
   color: #555;
-  font-size: 0.75rem;
+  font-size: 0.9rem;
   padding: 0.5rem 0;
   margin: 0.5rem 0;
   opacity: 0.7;
@@ -1715,7 +1715,7 @@ const runAllTests = async () => {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  font-size: 0.85rem;
+  font-size: 0.98rem;
   color: var(--color-text-secondary);
   padding: 0.5rem 0;
 }
@@ -1725,7 +1725,7 @@ const runAllTests = async () => {
 }
 
 .tests-logs-error {
-  font-size: 0.85rem;
+  font-size: 0.98rem;
   color: #e74c3c;
   margin: 0;
   padding: 0.5rem 0.75rem;
@@ -1741,7 +1741,7 @@ const runAllTests = async () => {
   gap: 0.5rem;
   padding: 0.6rem 1.2rem;
   font-family: inherit;
-  font-size: 0.9rem;
+  font-size: 1.02rem;
   color: var(--color-text);
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid var(--color-border);
@@ -1773,7 +1773,7 @@ const runAllTests = async () => {
 }
 
 .tests-load-more-btn i {
-  font-size: 0.85rem;
+  font-size: 0.98rem;
 }
 
 @media (max-width: 768px) {

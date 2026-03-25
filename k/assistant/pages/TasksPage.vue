@@ -1527,7 +1527,7 @@ function showProjectLineBefore(clientId: string, idx: number): boolean {
 }
 
 .tasks-ai-chat-mobile-title {
-  font-size: 0.75rem;
+  font-size: 0.9rem;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--color-text-secondary);
@@ -1576,7 +1576,7 @@ function showProjectLineBefore(clientId: string, idx: number): boolean {
   padding: 0.32rem 0.45rem;
   box-sizing: border-box;
   font-family: inherit;
-  font-size: 0.6rem;
+  font-size: 0.76rem;
   font-weight: 400;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -1721,7 +1721,7 @@ function showProjectLineBefore(clientId: string, idx: number): boolean {
   padding: 0.4rem 0.5rem;
   box-sizing: border-box;
   font-family: inherit;
-  font-size: 0.68rem;
+  font-size: 0.84rem;
   font-weight: 500;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -1775,7 +1775,7 @@ function showProjectLineBefore(clientId: string, idx: number): boolean {
 .tasks-item-actions .tasks-icon-btn {
   width: 1.6rem;
   height: 1.6rem;
-  font-size: 0.65rem;
+  font-size: 0.82rem;
 }
 
 .tasks-project-list {
@@ -1823,7 +1823,7 @@ function showProjectLineBefore(clientId: string, idx: number): boolean {
 .tasks-project-empty {
   margin: 0.15rem 0 0 0.65rem;
   padding: 0;
-  font-size: 0.6rem;
+  font-size: 0.76rem;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--color-text-tertiary);
@@ -1831,7 +1831,7 @@ function showProjectLineBefore(clientId: string, idx: number): boolean {
 
 .tasks-hint {
   margin: 0;
-  font-size: 0.62rem;
+  font-size: 0.78rem;
   line-height: 1.3;
   color: var(--color-text-secondary);
   letter-spacing: 0.06em;
@@ -1936,7 +1936,7 @@ function showProjectLineBefore(clientId: string, idx: number): boolean {
   padding: 0 0.85rem;
   margin: 0;
   font-family: inherit;
-  font-size: 0.95rem;
+  font-size: 1.06rem;
   letter-spacing: 0.04em;
   color: var(--color-text);
   background: var(--color-bg-tertiary);
@@ -1954,7 +1954,7 @@ function showProjectLineBefore(clientId: string, idx: number): boolean {
 
 .tasks-panel-title {
   margin: 0;
-  font-size: 0.72rem;
+  font-size: 0.88rem;
   font-weight: 400;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -1970,27 +1970,27 @@ function showProjectLineBefore(clientId: string, idx: number): boolean {
 
 .tasks-placeholder {
   padding: 1.5rem;
-  font-size: 0.75rem;
+  font-size: 0.9rem;
   color: var(--color-text-tertiary);
   text-align: center;
 }
 
 .tasks-global-err {
   margin: 0.5rem 0.85rem;
-  font-size: 0.7rem;
+  font-size: 0.86rem;
   color: var(--color-accent-hover);
 }
 
 .tasks-loading {
   margin: 0.35rem 0.85rem;
-  font-size: 0.65rem;
+  font-size: 0.82rem;
   color: var(--color-text-secondary);
 }
 
 .tasks-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.72rem;
+  font-size: 0.88rem;
 }
 
 .tasks-table th,
@@ -2006,7 +2006,7 @@ function showProjectLineBefore(clientId: string, idx: number): boolean {
   font-weight: 400;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  font-size: 0.62rem;
+  font-size: 0.78rem;
 }
 
 .tasks-title {
@@ -2017,7 +2017,7 @@ function showProjectLineBefore(clientId: string, idx: number): boolean {
 .tasks-desc {
   margin-top: 0.25rem;
   color: var(--color-text-secondary);
-  font-size: 0.68rem;
+  font-size: 0.84rem;
   white-space: pre-wrap;
 }
 
@@ -2026,7 +2026,7 @@ function showProjectLineBefore(clientId: string, idx: number): boolean {
   padding: 0.15rem 0.4rem;
   border: 1px solid var(--color-border);
   border-radius: 2px;
-  font-size: 0.62rem;
+  font-size: 0.78rem;
   letter-spacing: 0.05em;
 }
 
@@ -2097,7 +2097,7 @@ function showProjectLineBefore(clientId: string, idx: number): boolean {
   .tasks-table td::before {
     content: attr(data-label);
     display: block;
-    font-size: 0.72rem;
+    font-size: 0.88rem;
     font-weight: 500;
     letter-spacing: 0.05em;
     text-transform: uppercase;
@@ -2125,7 +2125,7 @@ function showProjectLineBefore(clientId: string, idx: number): boolean {
   .tasks-table .tasks-icon-btn {
     width: 3rem;
     height: 3rem;
-    font-size: 0.95rem;
+    font-size: 1.06rem;
   }
 
   .tasks-panel-head {
@@ -2145,7 +2145,7 @@ function showProjectLineBefore(clientId: string, idx: number): boolean {
 }
 
 .tasks-delete-warn {
-  font-size: 0.75rem;
+  font-size: 0.9rem;
   color: var(--color-text-secondary);
   margin: 0 0 0.5rem;
 }
@@ -2171,16 +2171,16 @@ function showProjectLineBefore(clientId: string, idx: number): boolean {
 
   .tasks-hint,
   .tasks-hint--muted {
-    font-size: 0.9rem;
+    font-size: 1.02rem;
     line-height: 1.45;
   }
 
   .tasks-project-empty {
-    font-size: 0.82rem;
+    font-size: 0.97rem;
   }
 
   .tasks-sidebar-btn-subtle {
-    font-size: 0.95rem;
+    font-size: 1.06rem;
     padding: 0.75rem 1rem;
     min-height: 3rem;
     border-width: 2px;
@@ -2188,7 +2188,7 @@ function showProjectLineBefore(clientId: string, idx: number): boolean {
   }
 
   .tasks-client-select {
-    font-size: 0.95rem;
+    font-size: 1.06rem;
     padding: 0.75rem 0.9rem;
     min-height: 3rem;
     border-width: 2px;
@@ -2196,7 +2196,7 @@ function showProjectLineBefore(clientId: string, idx: number): boolean {
   }
 
   .tasks-project-btn {
-    font-size: 0.95rem !important;
+    font-size: 1.06rem !important;
     min-height: 3rem;
     padding: 0.65rem 0.85rem !important;
     letter-spacing: 0.05em !important;
@@ -2226,7 +2226,7 @@ function showProjectLineBefore(clientId: string, idx: number): boolean {
   .tasks-panel-add {
     min-height: 3rem;
     padding: 0.55rem 1rem;
-    font-size: 0.82rem;
+    font-size: 0.97rem;
     touch-action: manipulation;
   }
 
@@ -2237,11 +2237,11 @@ function showProjectLineBefore(clientId: string, idx: number): boolean {
   }
 
   .tasks-table {
-    font-size: 0.95rem;
+    font-size: 1.06rem;
   }
 
   .tasks-table th {
-    font-size: 0.78rem;
+    font-size: 0.92rem;
     padding: 0.65rem 0.75rem;
   }
 
@@ -2255,18 +2255,18 @@ function showProjectLineBefore(clientId: string, idx: number): boolean {
   }
 
   .tasks-desc {
-    font-size: 0.9rem;
+    font-size: 1.02rem;
     line-height: 1.45;
   }
 
   .tasks-badge {
-    font-size: 0.8rem;
+    font-size: 0.95rem;
     padding: 0.25rem 0.5rem;
   }
 
   .tasks-global-err,
   .tasks-loading {
-    font-size: 0.9rem;
+    font-size: 1.02rem;
   }
 
   .tasks-page-main.content-wrapper {
@@ -2362,7 +2362,7 @@ function showProjectLineBefore(clientId: string, idx: number): boolean {
 
 .jn-modal-heading {
   margin: 0 0 1rem;
-  font-size: 0.85rem;
+  font-size: 0.98rem;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   font-weight: 400;
@@ -2371,7 +2371,7 @@ function showProjectLineBefore(clientId: string, idx: number): boolean {
 
 .jn-label {
   display: block;
-  font-size: 0.65rem;
+  font-size: 0.82rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--color-text-secondary);
@@ -2385,7 +2385,7 @@ function showProjectLineBefore(clientId: string, idx: number): boolean {
   margin-bottom: 0.75rem;
   padding: 0.5rem 0.6rem;
   font-family: inherit;
-  font-size: 0.8rem;
+  font-size: 0.95rem;
   background: var(--color-bg);
   border: 1px solid var(--color-border);
   color: var(--color-text);
@@ -2399,7 +2399,7 @@ function showProjectLineBefore(clientId: string, idx: number): boolean {
 
 .jn-modal-error {
   color: var(--color-accent-hover);
-  font-size: 0.72rem;
+  font-size: 0.88rem;
   margin: 0 0 0.5rem;
 }
 
@@ -2490,7 +2490,7 @@ body {
   padding: 0.35rem 0.4rem;
   box-sizing: border-box;
   font-family: inherit;
-  font-size: 0.62rem;
+  font-size: 0.78rem;
   font-weight: 400;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -2534,7 +2534,7 @@ body {
   padding: 0.35rem 0.45rem;
   box-sizing: border-box;
   font-family: inherit;
-  font-size: 0.68rem;
+  font-size: 0.84rem;
   font-weight: 400;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -2615,7 +2615,7 @@ html.tasks-page-html-mobile .jn-modal-heading {
 }
 
 html.tasks-page-html-mobile .jn-label {
-  font-size: 0.8rem;
+  font-size: 0.95rem;
   letter-spacing: 0.06em;
   margin-bottom: 0.45rem;
 }
@@ -2647,7 +2647,7 @@ html.tasks-page-html-mobile .jn-modal-actions .journal-nav-action {
   width: 100%;
   min-height: 3rem;
   justify-content: center;
-  font-size: 0.95rem;
+  font-size: 1.06rem;
   padding: 0.65rem 1rem;
 }
 
@@ -2681,7 +2681,7 @@ html.tasks-page-html-mobile .header-clock {
 .tasks-panel-head-actions .journal-nav-action {
   width: auto;
   padding: 0.5rem 0.85rem;
-  font-size: 0.7rem;
+  font-size: 0.86rem;
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;

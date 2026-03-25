@@ -558,7 +558,7 @@ onMounted(() => {
 
 .jm-title {
   margin: 0;
-  font-size: 0.82rem;
+  font-size: 0.97rem;
   font-weight: 600;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -567,7 +567,7 @@ onMounted(() => {
 }
 
 .jm-title--day {
-  font-size: 0.72rem;
+  font-size: 0.88rem;
   letter-spacing: 0.1em;
 }
 
@@ -575,7 +575,7 @@ onMounted(() => {
   margin: 0;
   padding: 0.28rem 0.5rem;
   font-family: inherit;
-  font-size: 0.6rem;
+  font-size: 0.76rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--color-text-secondary);
@@ -606,7 +606,7 @@ onMounted(() => {
 
 .jm-sub {
   margin: 0;
-  font-size: 0.64rem;
+  font-size: 0.8rem;
   letter-spacing: 0.06em;
   color: var(--color-text-secondary);
 }
@@ -618,7 +618,7 @@ onMounted(() => {
   background: transparent;
   color: var(--color-text-secondary);
   font-family: inherit;
-  font-size: 0.62rem;
+  font-size: 0.78rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   cursor: pointer;
@@ -638,13 +638,13 @@ onMounted(() => {
 
 .jm-hint {
   margin: 0.4rem 0 0.7rem;
-  font-size: 0.68rem;
+  font-size: 0.84rem;
   color: var(--color-text-secondary);
 }
 
 .jm-error {
   margin: 0.4rem 0 0.7rem;
-  font-size: 0.66rem;
+  font-size: 0.82rem;
   color: var(--color-accent-hover);
 }
 
@@ -658,7 +658,7 @@ onMounted(() => {
 
 .jm-dow {
   padding: 0.35rem 0;
-  font-size: 0.58rem;
+  font-size: 0.74rem;
   font-weight: 600;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -676,7 +676,7 @@ onMounted(() => {
   padding: 0.45rem 0.2rem 0.35rem;
   min-height: 2.8rem;
   font-family: inherit;
-  font-size: 0.7rem;
+  font-size: 0.86rem;
   color: var(--color-text-secondary);
   background: transparent;
   border: 1px solid transparent;
@@ -710,13 +710,13 @@ onMounted(() => {
 }
 
 .jm-cell-num {
-  font-size: 0.68rem;
+  font-size: 0.84rem;
   line-height: 1;
   color: inherit;
 }
 
 .jm-cell-badge {
-  font-size: 0.48rem;
+  font-size: 0.76rem;
   line-height: 1;
   letter-spacing: 0.04em;
   padding: 0.1rem 0.22rem;
@@ -741,7 +741,7 @@ onMounted(() => {
   display: flex;
   align-items: center;
   gap: 1rem;
-  font-size: 0.56rem;
+  font-size: 0.74rem;
   letter-spacing: 0.06em;
   color: var(--color-text-tertiary);
   text-transform: uppercase;
@@ -754,7 +754,7 @@ onMounted(() => {
 }
 
 .jm-legend-badge {
-  font-size: 0.44rem;
+  font-size: 0.74rem;
   line-height: 1;
   padding: 0.08rem 0.18rem;
   border-radius: 2px;
@@ -783,7 +783,7 @@ onMounted(() => {
 
 .jm-section-title {
   margin: 0 0 0.4rem;
-  font-size: 0.68rem;
+  font-size: 0.84rem;
   font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -792,7 +792,7 @@ onMounted(() => {
 
 .jm-section-empty {
   margin: 0;
-  font-size: 0.64rem;
+  font-size: 0.8rem;
   color: var(--color-text-tertiary);
 }
 
@@ -814,7 +814,7 @@ onMounted(() => {
 
 .jm-task-title {
   display: block;
-  font-size: 0.68rem;
+  font-size: 0.84rem;
   font-weight: 500;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -825,7 +825,7 @@ onMounted(() => {
 .jm-task-meta {
   display: block;
   margin-top: 0.2rem;
-  font-size: 0.58rem;
+  font-size: 0.74rem;
   letter-spacing: 0.04em;
   color: var(--color-text-tertiary);
 }
@@ -839,7 +839,7 @@ onMounted(() => {
 
 .jm-focus-value {
   margin: 0.15rem 0 0;
-  font-size: 0.9rem;
+  font-size: 1.02rem;
   font-weight: 600;
   letter-spacing: 0.08em;
   color: var(--color-text);
@@ -849,7 +849,7 @@ onMounted(() => {
   margin: 0;
   padding: 0.28rem 0.5rem;
   font-family: inherit;
-  font-size: 0.58rem;
+  font-size: 0.74rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--color-text-secondary);
@@ -875,7 +875,7 @@ onMounted(() => {
 
 .jm-stub-label {
   margin: 0;
-  font-size: 0.72rem;
+  font-size: 0.88rem;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--color-text-tertiary);
@@ -885,7 +885,7 @@ onMounted(() => {
   margin: 0;
   padding: 0.45rem 0.5rem;
   font-family: inherit;
-  font-size: 0.68rem;
+  font-size: 0.84rem;
   line-height: 1.45;
   letter-spacing: 0.04em;
   color: var(--color-text);
@@ -919,7 +919,7 @@ onMounted(() => {
 
 .jm-segment-label {
   margin: 0;
-  font-size: 0.62rem;
+  font-size: 0.78rem;
   font-weight: 500;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -927,7 +927,7 @@ onMounted(() => {
 }
 
 .jm-segment-locked {
-  font-size: 0.5rem;
+  font-size: 0.78rem;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--color-accent);
@@ -940,7 +940,7 @@ onMounted(() => {
 .jm-segment-text {
   margin: 0;
   font-family: inherit;
-  font-size: 0.64rem;
+  font-size: 0.8rem;
   line-height: 1.4;
   letter-spacing: 0.04em;
   color: var(--color-text-secondary);
@@ -950,7 +950,7 @@ onMounted(() => {
 
 .jm-segment-empty {
   margin: 0;
-  font-size: 0.62rem;
+  font-size: 0.78rem;
   color: var(--color-text-tertiary);
 }
 
@@ -958,7 +958,7 @@ onMounted(() => {
   margin: 0;
   padding: 0.2rem 0.4rem;
   font-family: inherit;
-  font-size: 0.54rem;
+  font-size: 0.7rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--color-text-secondary);
@@ -993,7 +993,7 @@ onMounted(() => {
   margin: 0;
   padding: 0.45rem 0.5rem;
   font-family: inherit;
-  font-size: 0.64rem;
+  font-size: 0.8rem;
   line-height: 1.4;
   letter-spacing: 0.04em;
   color: var(--color-text);
@@ -1037,7 +1037,7 @@ onMounted(() => {
   }
 
   .jm-title--day {
-    font-size: 0.62rem;
+    font-size: 0.78rem;
     letter-spacing: 0.06em;
   }
 }
@@ -1049,7 +1049,7 @@ onMounted(() => {
   }
 
   .jm-cell-num {
-    font-size: 0.6rem;
+    font-size: 0.76rem;
   }
 }
 </style>

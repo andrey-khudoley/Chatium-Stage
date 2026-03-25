@@ -461,7 +461,7 @@ function getFileType(file: File): 'image' | 'video' | 'pdf' | 'file' {
   height: 1.5rem;
   padding: 0 0.3rem;
   font-family: inherit;
-  font-size: 0.58rem;
+  font-size: 0.74rem;
   color: var(--color-text-secondary);
   background: transparent;
   border: 1px solid transparent;
@@ -482,10 +482,10 @@ function getFileType(file: File): 'image' | 'video' | 'pdf' | 'file' {
 .wy-btn--wide {
   min-width: 5.5rem;
   justify-content: space-between;
-  font-size: 0.55rem;
+  font-size: 0.72rem;
   letter-spacing: 0.04em;
 }
-.wy-chevron { font-size: 0.4rem; margin-left: 0.15rem; }
+.wy-chevron { font-size: 0.55rem; margin-left: 0.15rem; }
 .wy-color-dot {
   display: inline-block;
   width: 6px;
@@ -512,7 +512,7 @@ function getFileType(file: File): 'image' | 'video' | 'pdf' | 'file' {
   width: 100%;
   padding: 0.3rem 0.5rem;
   font-family: inherit;
-  font-size: 0.6rem;
+  font-size: 0.76rem;
   color: var(--color-text-secondary);
   background: transparent;
   border: none;
@@ -553,12 +553,12 @@ function getFileType(file: File): 'image' | 'video' | 'pdf' | 'file' {
   background: var(--color-bg);
   cursor: pointer;
 }
-.wy-color-hex { font-size: 0.55rem; color: var(--color-text-tertiary); }
+.wy-color-hex { font-size: 0.72rem; color: var(--color-text-tertiary); }
 
 .wy-link-drop { min-width: 14rem; padding: 0.4rem; }
 .wy-link-label {
   display: block;
-  font-size: 0.5rem;
+  font-size: 0.68rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--color-text-tertiary);
@@ -569,7 +569,7 @@ function getFileType(file: File): 'image' | 'video' | 'pdf' | 'file' {
   width: 100%;
   padding: 0.25rem 0.3rem;
   font-family: inherit;
-  font-size: 0.6rem;
+  font-size: 0.76rem;
   color: var(--color-text);
   background: var(--color-bg);
   border: 1px solid var(--color-border);
@@ -586,7 +586,7 @@ function getFileType(file: File): 'image' | 'video' | 'pdf' | 'file' {
 .wy-link-cancel {
   padding: 0.2rem 0.4rem;
   font-family: inherit;
-  font-size: 0.55rem;
+  font-size: 0.72rem;
   border-radius: 2px;
   cursor: pointer;
   border: 1px solid var(--color-border);
@@ -617,7 +617,7 @@ function getFileType(file: File): 'image' | 'video' | 'pdf' | 'file' {
 .wy-table-size {
   display: block;
   text-align: center;
-  font-size: 0.5rem;
+  font-size: 0.68rem;
   color: var(--color-text-tertiary);
   margin-top: 0.2rem;
 }

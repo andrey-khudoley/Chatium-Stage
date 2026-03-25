@@ -576,7 +576,7 @@ function exportAsPdf() {
   border: none;
   color: var(--color-text-secondary);
   font-family: inherit;
-  font-size: 0.65rem;
+  font-size: 0.82rem;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   cursor: pointer;
@@ -598,7 +598,7 @@ function exportAsPdf() {
   display: flex;
   align-items: center;
   gap: 0.25rem;
-  font-size: 0.6rem;
+  font-size: 0.76rem;
   color: var(--color-text-secondary);
   cursor: pointer;
 }
@@ -613,7 +613,7 @@ function exportAsPdf() {
   gap: 0.25rem;
   padding: 0.3rem 0.65rem;
   font-family: inherit;
-  font-size: 0.6rem;
+  font-size: 0.76rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--color-text);
@@ -634,7 +634,7 @@ function exportAsPdf() {
   gap: 0.28rem;
   padding: 0.3rem 0.58rem;
   font-family: inherit;
-  font-size: 0.6rem;
+  font-size: 0.76rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--color-text-secondary);
@@ -668,7 +668,7 @@ function exportAsPdf() {
 .nb-editor-export-item {
   text-align: left;
   font-family: inherit;
-  font-size: 0.62rem;
+  font-size: 0.78rem;
   letter-spacing: 0.04em;
   color: var(--color-text-secondary);
   background: transparent;
@@ -715,7 +715,7 @@ function exportAsPdf() {
   padding: 2rem;
   text-align: center;
   color: var(--color-text-secondary);
-  font-size: 0.8rem;
+  font-size: 0.95rem;
 }
 
 .nb-editor-body {
@@ -737,7 +737,7 @@ function exportAsPdf() {
   width: 100%;
   padding: 0.5rem 0.55rem;
   font-family: inherit;
-  font-size: 0.95rem;
+  font-size: 1.06rem;
   color: var(--color-text);
   background: var(--color-bg);
   border: 1px solid var(--color-border);
@@ -758,7 +758,7 @@ function exportAsPdf() {
 
 .nb-editor-error {
   margin: 0;
-  font-size: 0.7rem;
+  font-size: 0.86rem;
   color: var(--color-accent-hover);
 }
 
@@ -780,7 +780,7 @@ function exportAsPdf() {
 }
 
 .nb-editor-meta-label {
-  font-size: 0.55rem;
+  font-size: 0.72rem;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--color-text-tertiary);
@@ -790,7 +790,7 @@ function exportAsPdf() {
   width: 100%;
   padding: 0.3rem 0.35rem;
   font-family: inherit;
-  font-size: 0.65rem;
+  font-size: 0.82rem;
   color: var(--color-text);
   background: var(--color-bg);
   border: 1px solid var(--color-border);
@@ -802,7 +802,7 @@ function exportAsPdf() {
   width: 100%;
   padding: 0.3rem 0.35rem;
   font-family: inherit;
-  font-size: 0.65rem;
+  font-size: 0.82rem;
   color: var(--color-text);
   background: var(--color-bg);
   border: 1px solid var(--color-border);
@@ -822,7 +822,7 @@ function exportAsPdf() {
   gap: 0.3rem;
   padding: 0.3rem 0.35rem;
   font-family: inherit;
-  font-size: 0.65rem;
+  font-size: 0.82rem;
   color: var(--color-text-secondary);
   background: var(--color-bg);
   border: 1px solid var(--color-border);
@@ -832,7 +832,7 @@ function exportAsPdf() {
 }
 
 .nb-editor-cat-btn i {
-  font-size: 0.45rem;
+  font-size: 0.74rem;
 }
 
 .nb-editor-cat-drop {
@@ -856,7 +856,7 @@ function exportAsPdf() {
   gap: 0.25rem;
   padding: 0.25rem 0.4rem;
   cursor: pointer;
-  font-size: 0.6rem;
+  font-size: 0.76rem;
   color: var(--color-text-secondary);
 }
 
@@ -880,7 +880,7 @@ function exportAsPdf() {
 .nb-editor-cat-empty {
   margin: 0;
   padding: 0.3rem 0.4rem;
-  font-size: 0.55rem;
+  font-size: 0.72rem;
   color: var(--color-text-tertiary);
 }
 

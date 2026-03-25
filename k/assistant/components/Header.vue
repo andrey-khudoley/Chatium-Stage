@@ -874,7 +874,7 @@ const cancelLogout = () => {
 }
 
 .header-title {
-  font-size: 1.125rem;
+  font-size: 1.25rem;
   font-weight: 400;
   color: var(--color-text);
   margin: 0;
@@ -915,7 +915,7 @@ const cancelLogout = () => {
   display: flex;
   align-items: center;
   gap: 0.4rem;
-  font-size: 0.75rem;
+  font-size: 0.98rem;
   font-weight: 700;
   color: var(--color-text-secondary);
   letter-spacing: 0.1em;
@@ -949,7 +949,7 @@ const cancelLogout = () => {
 }
 
 .header-clock i {
-  font-size: 0.625rem;
+  font-size: 0.9rem;
   opacity: 0.7;
 }
 
@@ -961,13 +961,13 @@ const cancelLogout = () => {
   border: 1px solid var(--color-border-light);
   background: var(--color-bg-tertiary);
   color: var(--color-text);
-  height: 1.35rem;
-  padding: 0 0.38rem;
+  min-height: 1.65rem;
+  padding: 0 0.5rem;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  font-size: 0.6rem;
+  font-size: 0.88rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -999,9 +999,9 @@ const cancelLogout = () => {
   border: 1px solid transparent;
   background: transparent;
   color: var(--color-text-secondary);
-  height: 1.82rem;
+  min-height: 2rem;
   padding: 0 0.5rem;
-  font-size: 0.62rem;
+  font-size: 0.88rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   cursor: pointer;
@@ -1013,7 +1013,7 @@ const cancelLogout = () => {
 }
 
 .header-tool-picker-btn i {
-  font-size: 0.64rem;
+  font-size: 0.92rem;
   opacity: 0.8;
 }
 
@@ -1075,15 +1075,15 @@ const cancelLogout = () => {
 }
 
 .header-action-btn {
-  width: 2rem;
-  height: 2rem;
+  width: 2.25rem;
+  height: 2.25rem;
   border-radius: 0;
   background: var(--color-bg-tertiary);
   border: 2px solid var(--color-border);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.875rem;
+  font-size: 1.06rem;
   transition: all 0.25s ease;
   color: var(--color-text);
   text-decoration: none;
@@ -1188,27 +1188,27 @@ const cancelLogout = () => {
   }
 
   .header-title {
-    font-size: 1rem;
+    font-size: 1.125rem;
   }
 
   .header-clock {
-    font-size: 0.8125rem;
+    font-size: 1rem;
     padding: 0.3rem 0.5rem;
     gap: 0.35rem;
   }
 
   .header-clock i {
-    font-size: 0.6875rem;
+    font-size: 0.9rem;
   }
 
   .clock-time {
-    font-size: 0.8125rem;
+    font-size: 1rem;
   }
 
   .header-action-btn {
-    width: 1.875rem;
-    height: 1.875rem;
-    font-size: 0.8125rem;
+    width: 2rem;
+    height: 2rem;
+    font-size: 1.02rem;
   }
 }
 

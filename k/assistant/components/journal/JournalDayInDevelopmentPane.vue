@@ -171,7 +171,7 @@ onMounted(() => {
 
 .journal-day-dev-title {
   margin: 0;
-  font-size: 0.82rem;
+  font-size: 0.97rem;
   font-weight: 600;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -180,20 +180,20 @@ onMounted(() => {
 
 .journal-day-dev-sub {
   margin: 0.3rem 0 0;
-  font-size: 0.64rem;
+  font-size: 0.8rem;
   letter-spacing: 0.06em;
   color: var(--color-text-secondary);
 }
 
 .journal-day-dev-hint {
   margin: 0.4rem 0 0.7rem;
-  font-size: 0.68rem;
+  font-size: 0.84rem;
   color: var(--color-text-secondary);
 }
 
 .journal-day-dev-error {
   margin: 0.4rem 0 0.7rem;
-  font-size: 0.66rem;
+  font-size: 0.82rem;
   color: var(--color-accent-hover);
 }
 
@@ -221,7 +221,7 @@ onMounted(() => {
 
 .journal-day-segment-title {
   margin: 0;
-  font-size: 0.72rem;
+  font-size: 0.88rem;
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.1em;
@@ -232,7 +232,7 @@ onMounted(() => {
   margin: 0;
   padding: 0.25rem 0.45rem;
   font-family: inherit;
-  font-size: 0.58rem;
+  font-size: 0.74rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--color-text-secondary);
@@ -268,7 +268,7 @@ onMounted(() => {
   margin: 0;
   padding: 0.55rem 0.6rem;
   font-family: inherit;
-  font-size: 0.72rem;
+  font-size: 0.88rem;
   line-height: 1.45;
   letter-spacing: 0.04em;
   color: var(--color-text);

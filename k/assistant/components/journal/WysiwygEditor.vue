@@ -1371,7 +1371,7 @@ function onWindowScroll() {
 .wy-mode-switch-btn {
   min-width: 4.4rem;
   padding: 0.22rem 0.45rem;
-  font-size: 0.62rem;
+  font-size: 0.78rem;
   line-height: 1.2;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -1398,7 +1398,7 @@ function onWindowScroll() {
   min-height: 16rem;
   padding: 0.6rem 0.7rem;
   font-family: inherit;
-  font-size: 0.82rem;
+  font-size: 0.97rem;
   line-height: 1.6;
   color: var(--color-text);
   background: var(--color-bg);
@@ -1413,7 +1413,7 @@ function onWindowScroll() {
   min-height: 16rem;
   padding: 0.6rem 0.7rem;
   font-family: 'Share Tech Mono', 'Courier New', monospace;
-  font-size: 0.76rem;
+  font-size: 0.9rem;
   line-height: 1.55;
   color: var(--color-text);
   background: var(--color-bg);
@@ -1498,7 +1498,7 @@ function onWindowScroll() {
   width: 1.8rem;
   height: 1.8rem;
   padding: 0;
-  font-size: 0.7rem;
+  font-size: 0.86rem;
   color: var(--color-text-secondary);
   background: var(--color-bg-tertiary);
   border: 1px solid var(--color-border);
@@ -1589,7 +1589,7 @@ function onWindowScroll() {
 .wy-code-lang-select {
   padding: 0.2rem 0.35rem;
   font-family: 'Share Tech Mono', 'Courier New', monospace;
-  font-size: 0.58rem;
+  font-size: 0.74rem;
   color: var(--color-text-secondary);
   background: var(--color-bg-secondary);
   border: 1px solid var(--color-border-light);
@@ -1633,7 +1633,7 @@ function onWindowScroll() {
   color: var(--color-text);
 }
 .wy-content h3 {
-  font-size: 0.95rem;
+  font-size: 1.06rem;
   font-weight: 700;
   margin: 0.4rem 0 0.2rem;
   color: var(--color-text);
@@ -1686,7 +1686,7 @@ function onWindowScroll() {
 
 .wy-content code {
   font-family: 'Share Tech Mono', 'Courier New', monospace;
-  font-size: 0.78rem;
+  font-size: 0.92rem;
   padding: 0.1rem 0.3rem;
   background: var(--color-bg-tertiary);
   border: 1px solid var(--color-border);
@@ -1717,7 +1717,7 @@ function onWindowScroll() {
   background: transparent;
   border: none;
   color: var(--color-text);
-  font-size: 0.75rem;
+  font-size: 0.9rem;
   line-height: 1.5;
 }
 .wy-content pre code.hljs {
@@ -1735,7 +1735,7 @@ function onWindowScroll() {
 .wy-content td {
   border: 1px solid var(--color-border-light);
   padding: 0.3rem 0.45rem;
-  font-size: 0.78rem;
+  font-size: 0.92rem;
   min-width: 3rem;
   vertical-align: top;
 }
@@ -1743,7 +1743,7 @@ function onWindowScroll() {
   background: var(--color-bg-tertiary);
   font-weight: 700;
   text-transform: uppercase;
-  font-size: 0.6rem;
+  font-size: 0.76rem;
   letter-spacing: 0.06em;
   color: var(--color-text-secondary);
 }
@@ -1805,7 +1805,7 @@ function onWindowScroll() {
 .wy-content .wy-media-link {
   display: block;
   padding: 0.4rem 0.6rem;
-  font-size: 0.7rem;
+  font-size: 0.86rem;
   color: var(--color-accent);
   text-align: center;
   text-decoration: none;
@@ -1841,7 +1841,7 @@ function onWindowScroll() {
   justify-content: center;
   width: 2.2rem;
   height: 2.2rem;
-  font-size: 0.55rem;
+  font-size: 0.72rem;
   font-weight: 700;
   color: var(--color-text-secondary);
   background: var(--color-bg-tertiary);
@@ -1857,7 +1857,7 @@ function onWindowScroll() {
 }
 
 .wy-content .wy-file-name {
-  font-size: 0.75rem;
+  font-size: 0.9rem;
   color: var(--color-text);
   white-space: nowrap;
   overflow: hidden;
@@ -1866,7 +1866,7 @@ function onWindowScroll() {
 }
 
 .wy-content .wy-file-link {
-  font-size: 0.6rem;
+  font-size: 0.76rem;
   color: var(--color-accent);
   text-decoration: none;
 }

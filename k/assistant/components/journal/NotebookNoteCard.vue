@@ -148,7 +148,7 @@ function onDragStart(e: DragEvent) {
 }
 
 .nb-card-grip {
-  font-size: 0.6rem;
+  font-size: 0.76rem;
   color: var(--color-text-tertiary);
   cursor: grab;
   padding: 0.2rem;
@@ -181,14 +181,14 @@ function onDragStart(e: DragEvent) {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 0.82rem;
+  font-size: 0.97rem;
   color: var(--color-text);
   letter-spacing: 0.03em;
 }
 
 .nb-card-badge {
   flex-shrink: 0;
-  font-size: 0.55rem;
+  font-size: 0.72rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   padding: 0.15rem 0.35rem;
@@ -213,7 +213,7 @@ function onDragStart(e: DragEvent) {
 }
 
 .nb-card-cat {
-  font-size: 0.55rem;
+  font-size: 0.72rem;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   padding: 0.1rem 0.3rem;
@@ -224,7 +224,7 @@ function onDragStart(e: DragEvent) {
 }
 
 .nb-card-date {
-  font-size: 0.6rem;
+  font-size: 0.76rem;
   color: var(--color-text-tertiary);
   display: inline-flex;
   align-items: center;
@@ -232,7 +232,7 @@ function onDragStart(e: DragEvent) {
 }
 
 .nb-card-link-indicator {
-  font-size: 0.55rem;
+  font-size: 0.72rem;
   color: var(--color-text-tertiary);
 }
 </style>

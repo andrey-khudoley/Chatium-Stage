@@ -2,7 +2,13 @@
 import { jsx } from '@app/html-jsx'
 import HomePage from './pages/HomePage.vue'
 import { getPreloaderStyles, getPreloaderScript } from './shared/preloader'
-import { customScrollbarStyles, formControlStyles, mobileSafeAreaStyles, VIEWPORT_META_CONTENT } from './styles'
+import {
+  baseHtmlStyles,
+  customScrollbarStyles,
+  formControlStyles,
+  mobileSafeAreaStyles,
+  VIEWPORT_META_CONTENT
+} from './styles'
 import { getLogLevelForPage, getLogLevelScript } from './shared/logLevel'
 import { getApiUrlForRoute, getFullUrl, ROUTES } from './config/routes'
 import {
@@ -420,6 +426,7 @@ export const indexPageRoute = app.html('/', async (ctx, req) => {
             color: #ffffff;
           }
 
+          ${baseHtmlStyles}
           ${customScrollbarStyles}
           ${mobileSafeAreaStyles}
           ${formControlStyles}

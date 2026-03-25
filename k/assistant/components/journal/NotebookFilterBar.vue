@@ -121,7 +121,7 @@ function hasActiveFilters() {
   gap: 0.25rem;
   padding: 0.25rem 0.45rem;
   font-family: inherit;
-  font-size: 0.6rem;
+  font-size: 0.76rem;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--color-text-secondary);
@@ -145,7 +145,7 @@ function hasActiveFilters() {
 
 .nb-filter-count {
   padding: 0 0.2rem;
-  font-size: 0.55rem;
+  font-size: 0.72rem;
   background: var(--color-accent);
   color: #fff;
   border-radius: 2px;
@@ -154,7 +154,7 @@ function hasActiveFilters() {
 }
 
 .nb-filter-chevron {
-  font-size: 0.45rem;
+  font-size: 0.74rem;
   transition: transform 0.2s;
 }
 
@@ -182,7 +182,7 @@ function hasActiveFilters() {
   gap: 0.3rem;
   padding: 0.3rem 0.5rem;
   cursor: pointer;
-  font-size: 0.65rem;
+  font-size: 0.82rem;
   color: var(--color-text-secondary);
   transition: background 0.15s;
 }
@@ -208,7 +208,7 @@ function hasActiveFilters() {
 .nb-filter-cat-empty {
   margin: 0;
   padding: 0.4rem 0.5rem;
-  font-size: 0.6rem;
+  font-size: 0.76rem;
   color: var(--color-text-tertiary);
   font-style: italic;
 }
@@ -224,7 +224,7 @@ function hasActiveFilters() {
   border: none;
   color: var(--color-text-tertiary);
   font-family: inherit;
-  font-size: 0.55rem;
+  font-size: 0.72rem;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   cursor: pointer;

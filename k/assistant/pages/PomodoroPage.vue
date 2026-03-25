@@ -811,7 +811,7 @@ const pomodoroActionPanelLayout = computed(() => {
   width: 100%;
   min-width: 0;
   padding: 0.55rem 0.65rem;
-  font-size: 0.7rem;
+  font-size: 0.86rem;
   font-weight: 600;
   letter-spacing: 0.05em;
   text-transform: uppercase;
@@ -887,7 +887,7 @@ const pomodoroActionPanelLayout = computed(() => {
 }
 
 .pomo-btn__icon {
-  font-size: 0.72rem;
+  font-size: 0.88rem;
   opacity: 0.92;
 }
 
@@ -1067,7 +1067,7 @@ const pomodoroActionPanelLayout = computed(() => {
   }
 
   .pomo-btn {
-    font-size: 0.66rem;
+    font-size: 0.82rem;
     padding: 0.5rem 0.45rem;
     min-height: 42px;
   }

@@ -538,7 +538,7 @@ body {
 }
 
 .home-card-label {
-  font-size: 0.95rem;
+  font-size: 1.06rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -567,7 +567,7 @@ body {
   .content-wrapper { padding: 1.5rem 0; }
   .hero-section { gap: 1rem; }
   .hero-heading { font-size: 1.75rem; letter-spacing: 0.08em; min-height: 2.5rem; }
-  .hero-description { font-size: 0.875rem; line-height: 1.5; }
+  .hero-description { font-size: 1rem; line-height: 1.5; }
   .hero-icon-wrapper { width: 4.25rem; height: 4.25rem; }
   .hero-icon { font-size: 1.65rem; }
   .home-card {

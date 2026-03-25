@@ -290,7 +290,7 @@ onMounted(() => {
 
 .journal-week-title {
   margin: 0;
-  font-size: 0.82rem;
+  font-size: 0.97rem;
   font-weight: 600;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -301,7 +301,7 @@ onMounted(() => {
   margin: 0;
   padding: 0.28rem 0.5rem;
   font-family: inherit;
-  font-size: 0.6rem;
+  font-size: 0.76rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--color-text-secondary);
@@ -324,7 +324,7 @@ onMounted(() => {
 
 .journal-week-sub {
   margin: 0;
-  font-size: 0.64rem;
+  font-size: 0.8rem;
   letter-spacing: 0.06em;
   color: var(--color-text-secondary);
 }
@@ -344,7 +344,7 @@ onMounted(() => {
   background: transparent;
   color: var(--color-text-secondary);
   font-family: inherit;
-  font-size: 0.62rem;
+  font-size: 0.78rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   cursor: pointer;
@@ -364,13 +364,13 @@ onMounted(() => {
 
 .journal-week-hint {
   margin: 0.4rem 0 0.7rem;
-  font-size: 0.68rem;
+  font-size: 0.84rem;
   color: var(--color-text-secondary);
 }
 
 .journal-week-error {
   margin: 0.4rem 0 0.7rem;
-  font-size: 0.66rem;
+  font-size: 0.82rem;
   color: var(--color-accent-hover);
 }
 
@@ -437,7 +437,7 @@ onMounted(() => {
 
 .journal-week-day-title {
   margin: 0;
-  font-size: 0.72rem;
+  font-size: 0.88rem;
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.1em;
@@ -446,7 +446,7 @@ onMounted(() => {
 
 .journal-week-day-date {
   margin: 0.24rem 0 0;
-  font-size: 0.62rem;
+  font-size: 0.78rem;
   letter-spacing: 0.06em;
   color: var(--color-text-secondary);
 }
@@ -455,7 +455,7 @@ onMounted(() => {
   margin: 0;
   padding: 0.25rem 0.45rem;
   font-family: inherit;
-  font-size: 0.58rem;
+  font-size: 0.74rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--color-text-secondary);
@@ -491,7 +491,7 @@ onMounted(() => {
   margin: 0;
   padding: 0.55rem 0.6rem;
   font-family: inherit;
-  font-size: 0.72rem;
+  font-size: 0.88rem;
   line-height: 1.45;
   letter-spacing: 0.04em;
   color: var(--color-text);

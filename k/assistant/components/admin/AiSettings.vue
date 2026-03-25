@@ -221,7 +221,7 @@ onBeforeUnmount(() => {
 }
 
 .settings-label {
-  font-size: 0.9rem;
+  font-size: 1.02rem;
   font-weight: 500;
   color: var(--color-text-secondary);
   letter-spacing: 0.04em;
@@ -231,7 +231,7 @@ onBeforeUnmount(() => {
 .settings-textarea {
   padding: 0.7rem 0.9rem;
   font-family: inherit;
-  font-size: 0.95rem;
+  font-size: 1.06rem;
   color: var(--color-text);
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid var(--color-border);
@@ -254,7 +254,7 @@ onBeforeUnmount(() => {
 }
 
 .settings-hint {
-  font-size: 0.85rem;
+  font-size: 0.98rem;
   color: var(--color-text-secondary);
   margin: 0;
   opacity: 0.8;
@@ -262,7 +262,7 @@ onBeforeUnmount(() => {
 
 .field-error {
   margin: 0;
-  font-size: 0.85rem;
+  font-size: 0.98rem;
   color: #e74c3c;
 }
 
@@ -310,7 +310,7 @@ onBeforeUnmount(() => {
   position: absolute;
   top: 1rem;
   right: 1rem;
-  font-size: 0.85rem;
+  font-size: 0.98rem;
   font-weight: 500;
   letter-spacing: 0.04em;
   animation: statusFadeIn 0.2s ease;

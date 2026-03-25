@@ -488,7 +488,7 @@ body {
 
 .profile-field-label {
   color: var(--color-text-secondary);
-  font-size: 0.9rem;
+  font-size: 1.02rem;
   text-transform: uppercase;
   letter-spacing: 0.1em;
   font-weight: 500;

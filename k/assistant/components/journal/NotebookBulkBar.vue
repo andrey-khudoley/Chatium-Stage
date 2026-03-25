@@ -81,7 +81,7 @@ const emit = defineEmits<{
 }
 
 .nb-bulk-count {
-  font-size: 0.65rem;
+  font-size: 0.82rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--color-text);
@@ -92,7 +92,7 @@ const emit = defineEmits<{
   border: none;
   color: var(--color-text-secondary);
   cursor: pointer;
-  font-size: 0.6rem;
+  font-size: 0.76rem;
   padding: 0.15rem 0.25rem;
   transition: var(--transition);
 }
@@ -121,7 +121,7 @@ const emit = defineEmits<{
   gap: 0.2rem;
   padding: 0.25rem 0.4rem;
   font-family: inherit;
-  font-size: 0.55rem;
+  font-size: 0.72rem;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--color-text-secondary);

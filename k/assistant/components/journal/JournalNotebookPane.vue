@@ -444,7 +444,7 @@ function onDragEnd() {
 .nb-pane-hint {
   margin: 0;
   padding: 1rem;
-  font-size: 0.8rem;
+  font-size: 0.95rem;
   color: var(--color-text-secondary);
 }
 
@@ -479,7 +479,7 @@ function onDragEnd() {
   gap: 0.25rem;
   padding: 0.3rem 0.55rem;
   font-family: inherit;
-  font-size: 0.6rem;
+  font-size: 0.76rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--color-text);
@@ -509,7 +509,7 @@ function onDragEnd() {
   margin: 0;
   padding: 1rem;
   text-align: center;
-  font-size: 0.8rem;
+  font-size: 0.95rem;
   color: var(--color-text-secondary);
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -529,7 +529,7 @@ function onDragEnd() {
 }
 
 .nb-cat-manager-title {
-  font-size: 0.6rem;
+  font-size: 0.76rem;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--color-text-secondary);
@@ -540,7 +540,7 @@ function onDragEnd() {
   border: none;
   color: var(--color-text-tertiary);
   cursor: pointer;
-  font-size: 0.6rem;
+  font-size: 0.76rem;
   padding: 0.15rem 0.25rem;
 }
 
@@ -560,7 +560,7 @@ function onDragEnd() {
   align-items: center;
   gap: 0.3rem;
   padding: 0.2rem 0.3rem;
-  font-size: 0.65rem;
+  font-size: 0.82rem;
   color: var(--color-text-secondary);
 }
 
@@ -580,7 +580,7 @@ function onDragEnd() {
   border: none;
   color: var(--color-text-tertiary);
   cursor: pointer;
-  font-size: 0.5rem;
+  font-size: 0.78rem;
   padding: 0.15rem;
 }
 
@@ -598,7 +598,7 @@ function onDragEnd() {
   flex: 1;
   padding: 0.25rem 0.3rem;
   font-family: inherit;
-  font-size: 0.65rem;
+  font-size: 0.82rem;
   color: var(--color-text);
   background: var(--color-bg);
   border: 1px solid var(--color-border);
@@ -620,7 +620,7 @@ function onDragEnd() {
   background: var(--color-accent-light);
   border: 1px solid var(--color-accent);
   color: var(--color-text);
-  font-size: 0.55rem;
+  font-size: 0.72rem;
   padding: 0.25rem 0.4rem;
   border-radius: 2px;
   cursor: pointer;

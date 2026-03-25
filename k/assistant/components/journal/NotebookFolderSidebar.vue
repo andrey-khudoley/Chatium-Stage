@@ -206,7 +206,7 @@ function onFolderDrop(e: DragEvent, folderId: string | null) {
 }
 
 .nb-sidebar-header-text {
-  font-size: 0.55rem;
+  font-size: 0.72rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--color-text-tertiary);
@@ -217,7 +217,7 @@ function onFolderDrop(e: DragEvent, folderId: string | null) {
   border: none;
   color: var(--color-text-tertiary);
   cursor: pointer;
-  font-size: 0.55rem;
+  font-size: 0.72rem;
   padding: 0.15rem 0.25rem;
   border-radius: 2px;
   transition: var(--transition);
@@ -235,7 +235,7 @@ function onFolderDrop(e: DragEvent, folderId: string | null) {
   padding: 0.3rem 0.35rem;
   border-radius: 2px;
   cursor: pointer;
-  font-size: 0.7rem;
+  font-size: 0.86rem;
   color: var(--color-text-secondary);
   background: transparent;
   border: 1px solid transparent;
@@ -267,7 +267,7 @@ function onFolderDrop(e: DragEvent, folderId: string | null) {
 }
 
 .nb-sidebar-icon {
-  font-size: 0.6rem;
+  font-size: 0.76rem;
   flex-shrink: 0;
   width: 1rem;
   text-align: center;
@@ -297,7 +297,7 @@ function onFolderDrop(e: DragEvent, folderId: string | null) {
   border: none;
   color: var(--color-text-tertiary);
   cursor: pointer;
-  font-size: 0.5rem;
+  font-size: 0.78rem;
   padding: 0.15rem;
   border-radius: 2px;
   transition: var(--transition);
@@ -316,7 +316,7 @@ function onFolderDrop(e: DragEvent, folderId: string | null) {
   flex: 1;
   min-width: 0;
   font-family: inherit;
-  font-size: 0.7rem;
+  font-size: 0.86rem;
   color: var(--color-text);
   background: var(--color-bg);
   border: 1px solid var(--color-accent);
@@ -328,7 +328,7 @@ function onFolderDrop(e: DragEvent, folderId: string | null) {
 .nb-sidebar-empty {
   margin: 0;
   padding: 0.3rem;
-  font-size: 0.6rem;
+  font-size: 0.76rem;
   color: var(--color-text-tertiary);
   font-style: italic;
 }
@@ -339,7 +339,7 @@ function onFolderDrop(e: DragEvent, folderId: string | null) {
   gap: 0.3rem;
   padding: 0.25rem 0.35rem;
   font-family: inherit;
-  font-size: 0.6rem;
+  font-size: 0.76rem;
   color: var(--color-text-tertiary);
   background: none;
   border: none;

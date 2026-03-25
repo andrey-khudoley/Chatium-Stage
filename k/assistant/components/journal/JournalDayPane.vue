@@ -478,7 +478,7 @@ async function addToPomodoro(taskId: string) {
 
 .journal-day-title {
   margin: 0 0 0.35rem;
-  font-size: 0.78rem;
+  font-size: 0.92rem;
   font-weight: 600;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -487,7 +487,7 @@ async function addToPomodoro(taskId: string) {
 
 .journal-day-sub {
   margin: 0;
-  font-size: 0.68rem;
+  font-size: 0.84rem;
   line-height: 1.45;
   letter-spacing: 0.06em;
   color: var(--color-text-secondary);
@@ -502,7 +502,7 @@ async function addToPomodoro(taskId: string) {
   margin: 0;
   padding: 0.4rem 0.65rem;
   font-family: inherit;
-  font-size: 0.62rem;
+  font-size: 0.78rem;
   font-weight: 500;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -529,7 +529,7 @@ async function addToPomodoro(taskId: string) {
 .journal-day-empty,
 .journal-day-loading {
   margin: 0.5rem 0 0;
-  font-size: 0.68rem;
+  font-size: 0.84rem;
   letter-spacing: 0.05em;
   color: var(--color-text-secondary);
   line-height: 1.45;
@@ -537,7 +537,7 @@ async function addToPomodoro(taskId: string) {
 
 .journal-day-err {
   margin: 0 0 0.5rem;
-  font-size: 0.65rem;
+  font-size: 0.82rem;
   color: var(--color-accent-hover);
 }
 
@@ -587,7 +587,7 @@ async function addToPomodoro(taskId: string) {
 }
 
 .journal-day-task-title {
-  font-size: 0.72rem;
+  font-size: 0.88rem;
   font-weight: 500;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -619,7 +619,7 @@ async function addToPomodoro(taskId: string) {
 
 .journal-day-task-desc {
   margin-top: 0.25rem;
-  font-size: 0.62rem;
+  font-size: 0.78rem;
   line-height: 1.45;
   color: var(--color-text-secondary);
   white-space: pre-wrap;
@@ -632,7 +632,7 @@ async function addToPomodoro(taskId: string) {
   flex-wrap: wrap;
   align-items: baseline;
   gap: 0.25rem 0.35rem;
-  font-size: 0.68rem;
+  font-size: 0.84rem;
   line-height: 1.45;
   letter-spacing: 0.06em;
 }
@@ -670,7 +670,7 @@ async function addToPomodoro(taskId: string) {
 .journal-day-sort-btn {
   margin: 0;
   padding: 0.2rem 0.35rem;
-  font-size: 0.65rem;
+  font-size: 0.82rem;
   color: var(--color-text-secondary);
   background: var(--color-bg-secondary);
   border: 1px solid var(--color-border);
@@ -779,7 +779,7 @@ async function addToPomodoro(taskId: string) {
 
 .jn-modal-heading {
   margin: 0 0 1rem;
-  font-size: 0.85rem;
+  font-size: 0.98rem;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   font-weight: 400;
@@ -788,7 +788,7 @@ async function addToPomodoro(taskId: string) {
 
 .jn-label {
   display: block;
-  font-size: 0.65rem;
+  font-size: 0.82rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--color-text-secondary);
@@ -802,7 +802,7 @@ async function addToPomodoro(taskId: string) {
   margin-bottom: 0.75rem;
   padding: 0.5rem 0.6rem;
   font-family: inherit;
-  font-size: 0.8rem;
+  font-size: 0.95rem;
   background: var(--color-bg);
   border: 1px solid var(--color-border);
   color: var(--color-text);
@@ -816,7 +816,7 @@ async function addToPomodoro(taskId: string) {
 
 .jn-modal-error {
   color: var(--color-accent-hover);
-  font-size: 0.72rem;
+  font-size: 0.88rem;
   margin: 0 0 0.5rem;
 }
 
@@ -838,7 +838,7 @@ async function addToPomodoro(taskId: string) {
   padding: 0.35rem 0.45rem;
   box-sizing: border-box;
   font-family: inherit;
-  font-size: 0.68rem;
+  font-size: 0.84rem;
   font-weight: 400;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -863,7 +863,7 @@ async function addToPomodoro(taskId: string) {
   padding: 0.35rem 0.4rem;
   box-sizing: border-box;
   font-family: inherit;
-  font-size: 0.62rem;
+  font-size: 0.78rem;
   font-weight: 400;
   letter-spacing: 0.08em;
   text-transform: uppercase;
