@@ -283,6 +283,25 @@ async function onBulkDelete() {
   }
   clearSelection()
 }
+
+const bulkSelectionAllArchived = computed(() => {
+  if (!selectedNoteIds.value.length) return false
+  return selectedNoteIds.value.every((id) => {
+    const n = props.notes.find((x) => x.id === id)
+    return n?.isArchived === true
+  })
+})
+
+async function deleteFromList(id: string) {
+  if (!props.inboxNotesDeleteUrl) return
+  if (!confirm('Удалить заметку?')) return
+  try {
+    const data = (await postJson(props.inboxNotesDeleteUrl, { id })) as { success?: boolean }
+    if (data.success) emit('noteDeleted', id)
+  } catch (e) {
+    log.error('Удаление заметки', { error: String(e) })
+  }
+}
 </script>
 
 <template>
@@ -410,14 +429,23 @@ async function onBulkDelete() {
                 >
                   В архив
                 </button>
-                <button
-                  v-else
-                  type="button"
-                  class="nb-inbox-btn nb-inbox-btn--small nb-inbox-btn--ghost"
-                  @click="unarchiveFromList(n.id)"
-                >
-                  Вернуть
-                </button>
+                <template v-else>
+                  <button
+                    type="button"
+                    class="nb-inbox-btn nb-inbox-btn--small nb-inbox-btn--ghost"
+                    @click="unarchiveFromList(n.id)"
+                  >
+                    Вернуть
+                  </button>
+                  <button
+                    type="button"
+                    class="nb-inbox-btn nb-inbox-btn--small nb-inbox-btn--danger"
+                    title="Удалить"
+                    @click="deleteFromList(n.id)"
+                  >
+                    Удалить
+                  </button>
+                </template>
               </div>
             </li>
           </ul>
@@ -427,6 +455,7 @@ async function onBulkDelete() {
             :count="selectedNoteIds.length"
             :folders="[]"
             :show-folder-move="false"
+            :show-delete="bulkSelectionAllArchived"
             @archive="onBulkArchive"
             @unarchive="onBulkUnarchive"
             @delete="onBulkDelete"
@@ -714,7 +743,11 @@ async function onBulkDelete() {
 .nb-inbox-card-actions {
   flex-shrink: 0;
   display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
   align-items: center;
+  justify-content: flex-end;
+  gap: 0.3rem;
   padding: 0.35rem 0.45rem;
   border-left: 1px solid var(--color-border);
   background: rgba(0, 0, 0, 0.15);
@@ -893,6 +926,17 @@ async function onBulkDelete() {
   font-size: 0.72rem;
   padding: 0.25rem 0.4rem;
   letter-spacing: 0.06em;
+}
+
+.nb-inbox-btn--danger {
+  border-color: rgba(211, 35, 75, 0.45);
+  color: var(--color-accent-hover);
+}
+
+.nb-inbox-btn--danger:hover:not(:disabled) {
+  border-color: var(--color-accent);
+  background: rgba(211, 35, 75, 0.12);
+  color: var(--color-accent-hover);
 }
 
 @media (max-width: 900px) {

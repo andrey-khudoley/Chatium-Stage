@@ -443,7 +443,7 @@ onMounted(() => {
 
       <!-- DAY VIEW MODE -->
       <div v-else key="day-view" class="jm-day">
-        <header class="jm-head">
+        <header class="jm-head jm-head--day">
           <div class="jm-controls">
             <button type="button" class="jm-switch" @click="goDay(-1)">← Пред.</button>
             <h2 class="jm-title jm-title--day">{{ selectedDayFormatted }}</h2>
@@ -457,84 +457,101 @@ onMounted(() => {
         <p v-if="loadingDay" class="jm-hint">Загрузка данных дня…</p>
         <p v-if="globalError" class="jm-error" role="alert">{{ globalError }}</p>
 
-        <section class="jm-section">
-          <h3 class="jm-section-title">Завершённые задачи</h3>
-          <p v-if="selectedDayTasks.length === 0" class="jm-section-empty">Нет завершённых задач за этот день</p>
-          <ul v-else class="jm-task-list">
-            <li v-for="t in selectedDayTasks" :key="t.id" class="jm-task-item">
-              <span class="jm-task-title">{{ t.title }}</span>
-              <span v-if="t.projectName || t.clientName" class="jm-task-meta">
-                <template v-if="t.clientName">{{ t.clientName }}</template>
-                <template v-if="t.clientName && t.projectName"> · </template>
-                <template v-if="t.projectName">{{ t.projectName }}</template>
+        <div class="jm-day-stack">
+          <section class="jm-section">
+            <div class="jm-section-header">
+              <h3 class="jm-section-title">Завершённые задачи</h3>
+              <span v-if="selectedDayTasks.length > 0" class="jm-section-badge" aria-hidden="true">
+                {{ selectedDayTasks.length }}
               </span>
-            </li>
-          </ul>
-        </section>
-
-        <section class="jm-section">
-          <div class="jm-focus-row">
-            <div>
-              <h3 class="jm-section-title">Время фокуса</h3>
-              <p class="jm-focus-value">{{ formatFocusTime(selectedDayFocusSec) }}</p>
             </div>
-            <button type="button" class="jm-focus-btn" @click="showFocusStub = !showFocusStub">
-              {{ showFocusStub ? 'Скрыть' : 'Показать детали' }}
-            </button>
-          </div>
-          <div v-if="showFocusStub" class="jm-focus-stub">
-            <p class="jm-stub-label">В разработке</p>
-          </div>
-        </section>
+            <div class="jm-section-body">
+              <p v-if="selectedDayTasks.length === 0" class="jm-section-empty">Нет завершённых задач за этот день</p>
+              <ul v-else class="jm-task-list">
+                <li v-for="t in selectedDayTasks" :key="t.id" class="jm-task-item">
+                  <span class="jm-task-title">{{ t.title }}</span>
+                  <span v-if="t.projectName || t.clientName" class="jm-task-meta">
+                    <template v-if="t.clientName">{{ t.clientName }}</template>
+                    <template v-if="t.clientName && t.projectName"> · </template>
+                    <template v-if="t.projectName">{{ t.projectName }}</template>
+                  </span>
+                </li>
+              </ul>
+            </div>
+          </section>
 
-        <section class="jm-section">
-          <div class="jm-segment-head">
-            <h3 class="jm-section-title">План на день (из недели)</h3>
-            <button
-              type="button"
-              class="jm-segment-lock-btn"
-              :class="{ 'jm-segment-lock-btn--active': dayWeekLocked }"
-              :disabled="savingWeekPlan"
-              @click="onToggleWeekPlanLock"
-            >
-              {{ dayWeekLocked ? 'Редактировать' : 'Зафиксировать' }}
-            </button>
-          </div>
-          <textarea
-            v-model="dayWeekPlan"
-            class="jm-segment-textarea"
-            rows="3"
-            :disabled="dayWeekLocked || savingWeekPlan"
-            placeholder="План на день из раздела Неделя…"
-          />
-        </section>
-
-        <section v-if="dayEntry" class="jm-section">
-          <h3 class="jm-section-title">Дневные записи</h3>
-          <div class="jm-segments">
-            <article v-for="seg in daySegments" :key="seg.id" class="jm-segment">
-              <div class="jm-segment-head">
-                <h4 class="jm-segment-label">{{ seg.label }}</h4>
-                <button
-                  type="button"
-                  class="jm-segment-lock-btn"
-                  :class="{ 'jm-segment-lock-btn--active': seg.state.locked }"
-                  :disabled="savingDaySegment === seg.id"
-                  @click="onToggleSegmentLock(seg.id)"
-                >
-                  {{ seg.state.locked ? 'Редактировать' : 'Зафиксировать' }}
-                </button>
+          <section class="jm-section jm-section--focus">
+            <div class="jm-section-header jm-section-header--split">
+              <div class="jm-focus-intro">
+                <h3 class="jm-section-title">Время фокуса</h3>
+                <p class="jm-focus-value">{{ formatFocusTime(selectedDayFocusSec) }}</p>
               </div>
+              <button type="button" class="jm-focus-btn" @click="showFocusStub = !showFocusStub">
+                {{ showFocusStub ? 'Скрыть' : 'Показать детали' }}
+              </button>
+            </div>
+            <div v-if="showFocusStub" class="jm-section-body jm-section-body--flush-top">
+              <div class="jm-focus-stub">
+                <p class="jm-stub-label">В разработке</p>
+              </div>
+            </div>
+          </section>
+
+          <section class="jm-section">
+            <div class="jm-section-header jm-section-header--split">
+              <h3 class="jm-section-title">План на день (из недели)</h3>
+              <button
+                type="button"
+                class="jm-segment-lock-btn"
+                :class="{ 'jm-segment-lock-btn--active': dayWeekLocked }"
+                :disabled="savingWeekPlan"
+                @click="onToggleWeekPlanLock"
+              >
+                {{ dayWeekLocked ? 'Редактировать' : 'Зафиксировать' }}
+              </button>
+            </div>
+            <div class="jm-section-body jm-section-body--flush-top">
               <textarea
-                v-model="seg.state.value"
+                v-model="dayWeekPlan"
                 class="jm-segment-textarea"
                 rows="3"
-                :disabled="seg.state.locked || savingDaySegment === seg.id"
-                :placeholder="`Запись: ${seg.label.toLowerCase()}…`"
+                :disabled="dayWeekLocked || savingWeekPlan"
+                placeholder="План на день из раздела Неделя…"
               />
-            </article>
-          </div>
-        </section>
+            </div>
+          </section>
+
+          <section v-if="dayEntry" class="jm-section">
+            <div class="jm-section-header">
+              <h3 class="jm-section-title">Дневные записи</h3>
+            </div>
+            <div class="jm-section-body jm-section-body--segments">
+              <div class="jm-segments">
+                <article v-for="seg in daySegments" :key="seg.id" class="jm-segment">
+                  <div class="jm-segment-head">
+                    <h4 class="jm-segment-label">{{ seg.label }}</h4>
+                    <button
+                      type="button"
+                      class="jm-segment-lock-btn"
+                      :class="{ 'jm-segment-lock-btn--active': seg.state.locked }"
+                      :disabled="savingDaySegment === seg.id"
+                      @click="onToggleSegmentLock(seg.id)"
+                    >
+                      {{ seg.state.locked ? 'Редактировать' : 'Зафиксировать' }}
+                    </button>
+                  </div>
+                  <textarea
+                    v-model="seg.state.value"
+                    class="jm-segment-textarea"
+                    rows="3"
+                    :disabled="seg.state.locked || savingDaySegment === seg.id"
+                    :placeholder="`Запись: ${seg.label.toLowerCase()}…`"
+                  />
+                </article>
+              </div>
+            </div>
+          </section>
+        </div>
       </div>
     </Transition>
   </div>
@@ -542,11 +559,17 @@ onMounted(() => {
 
 <style scoped>
 .jm-root {
-  padding: 0.85rem 1rem 1.1rem;
+  padding: 0.85rem 1rem 1.25rem;
 }
 
 .jm-head {
-  margin-bottom: 0.8rem;
+  margin-bottom: 0.85rem;
+  padding-bottom: 0.65rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.jm-head--day {
+  margin-bottom: 0.75rem;
 }
 
 .jm-controls {
@@ -564,6 +587,7 @@ onMounted(() => {
   text-transform: uppercase;
   color: var(--color-text);
   text-align: center;
+  line-height: 1.35;
 }
 
 .jm-title--day {
@@ -649,22 +673,32 @@ onMounted(() => {
 }
 
 /* Calendar Grid */
+.jm-calendar {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
 .jm-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 1px;
-  margin-top: 0.5rem;
+  gap: 2px;
+  margin-top: 0.35rem;
+  padding: 0.35rem;
+  border-radius: 4px;
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-secondary);
 }
 
 .jm-dow {
-  padding: 0.35rem 0;
+  padding: 0.4rem 0 0.35rem;
   font-size: 0.74rem;
   font-weight: 600;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   text-align: center;
   color: var(--color-text-tertiary);
-  border-bottom: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border-light);
 }
 
 .jm-cell {
@@ -678,9 +712,9 @@ onMounted(() => {
   font-family: inherit;
   font-size: 0.86rem;
   color: var(--color-text-secondary);
-  background: transparent;
+  background: var(--color-bg);
   border: 1px solid transparent;
-  border-radius: 2px;
+  border-radius: 3px;
   cursor: pointer;
   transition: var(--transition);
 }
@@ -688,6 +722,7 @@ onMounted(() => {
 .jm-cell:hover:not(:disabled) {
   background: var(--color-bg-tertiary);
   border-color: var(--color-border-light);
+  box-shadow: 0 0 0 1px var(--color-accent-medium);
 }
 
 .jm-cell--other {
@@ -737,10 +772,12 @@ onMounted(() => {
 
 /* Legend */
 .jm-legend {
-  margin-top: 0.6rem;
+  margin-top: 0.5rem;
+  padding-top: 0.45rem;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 1rem;
+  gap: 0.65rem 1rem;
   font-size: 0.74rem;
   letter-spacing: 0.06em;
   color: var(--color-text-tertiary);
@@ -772,27 +809,96 @@ onMounted(() => {
 }
 
 /* Day View */
+.jm-day-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: 0.35rem;
+}
+
 .jm-section {
-  margin-top: 0.8rem;
-  padding: 0.6rem;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
   border: 1px solid var(--color-border);
-  background: linear-gradient(180deg, rgba(10, 10, 10, 0.72) 0%, rgba(0, 0, 0, 0.45) 100%);
-  border-left: 2px solid var(--color-accent);
-  border-radius: 2px;
+  border-left: 3px solid var(--color-accent);
+  border-radius: 4px;
+  background: var(--color-bg-secondary);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.04) inset,
+    0 4px 14px rgba(0, 0, 0, 0.22);
+}
+
+.jm-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.65rem;
+  padding: 0.65rem 0.85rem;
+  border-bottom: 1px solid var(--color-border);
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.35) 0%, rgba(0, 0, 0, 0.12) 100%);
+}
+
+.jm-section-header--split {
+  align-items: flex-start;
 }
 
 .jm-section-title {
-  margin: 0 0 0.4rem;
-  font-size: 0.84rem;
+  margin: 0;
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 0.82rem;
   font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--color-text);
+  color: var(--color-text-secondary);
+  line-height: 1.3;
+}
+
+.jm-section-badge {
+  flex-shrink: 0;
+  min-width: 1.35rem;
+  padding: 0.12rem 0.4rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-align: center;
+  line-height: 1.2;
+  color: var(--color-accent-hover);
+  background: var(--color-accent-medium);
+  border: 1px solid var(--color-accent);
+  border-radius: 999px;
+}
+
+.jm-section-body {
+  padding: 0.75rem 0.85rem 0.85rem;
+}
+
+.jm-section-body--flush-top {
+  padding-top: 0.65rem;
+}
+
+.jm-section-body--segments {
+  padding-top: 0.65rem;
+}
+
+.jm-section--focus .jm-section-header--split {
+  align-items: center;
+}
+
+.jm-focus-intro {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.jm-focus-intro .jm-section-title {
+  margin-bottom: 0.2rem;
 }
 
 .jm-section-empty {
   margin: 0;
-  font-size: 0.8rem;
+  font-size: 0.82rem;
+  line-height: 1.45;
   color: var(--color-text-tertiary);
 }
 
@@ -802,21 +908,35 @@ onMounted(() => {
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
+  gap: 0.5rem;
 }
 
 .jm-task-item {
-  padding: 0.35rem 0.4rem;
-  background: rgba(0, 0, 0, 0.25);
-  border: 1px solid var(--color-border);
-  border-radius: 2px;
+  position: relative;
+  padding: 0.55rem 0.65rem 0.55rem 0.75rem;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border-light);
+  border-radius: 3px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
+}
+
+.jm-task-item::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.35rem;
+  bottom: 0.35rem;
+  width: 3px;
+  border-radius: 0 2px 2px 0;
+  background: var(--color-accent);
+  opacity: 0.85;
 }
 
 .jm-task-title {
   display: block;
   font-size: 0.84rem;
-  font-weight: 500;
-  letter-spacing: 0.06em;
+  font-weight: 600;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
   color: var(--color-text);
   word-break: break-word;
@@ -824,24 +944,20 @@ onMounted(() => {
 
 .jm-task-meta {
   display: block;
-  margin-top: 0.2rem;
-  font-size: 0.74rem;
-  letter-spacing: 0.04em;
-  color: var(--color-text-tertiary);
-}
-
-.jm-focus-row {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 0.5rem;
+  margin-top: 0.28rem;
+  padding-top: 0.28rem;
+  border-top: 1px solid var(--color-border);
+  font-size: 0.76rem;
+  letter-spacing: 0.03em;
+  color: var(--color-text-secondary);
 }
 
 .jm-focus-value {
-  margin: 0.15rem 0 0;
-  font-size: 1.02rem;
-  font-weight: 600;
-  letter-spacing: 0.08em;
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  font-variant-numeric: tabular-nums;
   color: var(--color-text);
 }
 
@@ -866,11 +982,12 @@ onMounted(() => {
 }
 
 .jm-focus-stub {
-  margin-top: 0.5rem;
+  margin: 0;
   padding: 1rem;
   text-align: center;
   border: 1px dashed var(--color-border-light);
-  border-radius: 2px;
+  border-radius: 3px;
+  background: rgba(0, 0, 0, 0.2);
 }
 
 .jm-stub-label {
@@ -899,14 +1016,15 @@ onMounted(() => {
 .jm-segments {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.5rem;
+  gap: 0.65rem;
 }
 
 .jm-segment {
-  padding: 0.45rem;
-  border: 1px solid var(--color-border);
-  background: rgba(0, 0, 0, 0.2);
-  border-radius: 2px;
+  padding: 0.5rem 0.55rem;
+  border: 1px solid var(--color-border-light);
+  background: var(--color-bg);
+  border-radius: 3px;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.03);
 }
 
 .jm-segment-head {

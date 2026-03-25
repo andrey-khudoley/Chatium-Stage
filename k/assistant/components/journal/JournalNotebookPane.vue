@@ -100,6 +100,14 @@ const filteredNotes = computed(() => {
   return list
 })
 
+const bulkSelectionAllArchived = computed(() => {
+  if (!selectedNoteIds.value.length) return false
+  return selectedNoteIds.value.every((id) => {
+    const n = props.notes.find((x) => x.id === id)
+    return n?.isArchived === true
+  })
+})
+
 const activeFolders = computed(() => props.folders.filter((f) => !f.isArchived))
 
 function openEditor(noteId: string) {
@@ -205,6 +213,47 @@ async function onBulkDelete() {
   if (!confirm('Удалить выбранные заметки?')) return
   await bulkAction('delete')
 }
+
+async function archiveNoteFromList(id: string) {
+  if (!props.journalNotesArchiveUrl) return
+  try {
+    const data = (await postJson(props.journalNotesArchiveUrl, { id, isArchived: true })) as { success?: boolean }
+    if (data.success) {
+      emit('noteUpdated', { id, title: '' })
+      emit('foldersChanged')
+    }
+  } catch (e) {
+    log.error('Архивация заметки', { error: String(e) })
+  }
+}
+
+async function unarchiveNoteFromList(id: string) {
+  if (!props.journalNotesArchiveUrl) return
+  try {
+    const data = (await postJson(props.journalNotesArchiveUrl, { id, isArchived: false })) as { success?: boolean }
+    if (data.success) {
+      emit('noteUpdated', { id, title: '' })
+      emit('foldersChanged')
+    }
+  } catch (e) {
+    log.error('Разархивация заметки', { error: String(e) })
+  }
+}
+
+async function deleteNoteFromList(id: string) {
+  if (!props.journalNotesDeleteUrl) return
+  if (!confirm('Удалить заметку?')) return
+  try {
+    const data = (await postJson(props.journalNotesDeleteUrl, { id })) as { success?: boolean }
+    if (data.success) {
+      emit('noteDeleted', id)
+      emit('foldersChanged')
+    }
+  } catch (e) {
+    log.error('Удаление заметки', { error: String(e) })
+  }
+}
+
 async function onBulkMove(folderId: string | null) {
   await bulkAction('move', { folderId: folderId ?? '' })
 }
@@ -417,6 +466,9 @@ function onDragEnd() {
               @open="openEditor"
               @dragstart="onDragStart"
               @dragend="onDragEnd"
+              @archive="archiveNoteFromList"
+              @unarchive="unarchiveNoteFromList"
+              @delete="deleteNoteFromList"
             />
           </div>
 
@@ -424,6 +476,7 @@ function onDragEnd() {
             v-if="selectedNoteIds.length > 0"
             :count="selectedNoteIds.length"
             :folders="activeFolders"
+            :show-delete="bulkSelectionAllArchived"
             @archive="onBulkArchive"
             @unarchive="onBulkUnarchive"
             @delete="onBulkDelete"

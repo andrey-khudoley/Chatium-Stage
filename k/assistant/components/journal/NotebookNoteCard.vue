@@ -26,6 +26,9 @@ const emit = defineEmits<{
   (e: 'open', id: string): void
   (e: 'dragstart', id: string, evt: DragEvent): void
   (e: 'dragend'): void
+  (e: 'archive', id: string): void
+  (e: 'unarchive', id: string): void
+  (e: 'delete', id: string): void
 }>()
 
 function noteCategories() {
@@ -92,6 +95,34 @@ function onDragStart(e: DragEvent) {
           <i class="fa-solid fa-link" aria-hidden="true" />
         </span>
       </div>
+    </div>
+
+    <div class="nb-card-actions" @click.stop>
+      <button
+        v-if="!props.note.isArchived"
+        type="button"
+        class="nb-card-btn nb-card-btn--small"
+        @click="emit('archive', props.note.id)"
+      >
+        В архив
+      </button>
+      <template v-else>
+        <button
+          type="button"
+          class="nb-card-btn nb-card-btn--small nb-card-btn--ghost"
+          @click="emit('unarchive', props.note.id)"
+        >
+          Вернуть
+        </button>
+        <button
+          type="button"
+          class="nb-card-btn nb-card-btn--small nb-card-btn--danger"
+          title="Удалить"
+          @click="emit('delete', props.note.id)"
+        >
+          Удалить
+        </button>
+      </template>
     </div>
   </div>
 </template>
@@ -242,5 +273,64 @@ function onDragStart(e: DragEvent) {
 .nb-card-link-indicator {
   font-size: 0.72rem;
   color: var(--color-text-tertiary);
+}
+
+.nb-card-actions {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.3rem;
+  padding: 0.35rem 0.45rem;
+  border-left: 1px solid var(--color-border);
+  background: rgba(0, 0, 0, 0.15);
+}
+
+.nb-card-btn {
+  margin: 0;
+  font-family: inherit;
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 0.25rem 0.4rem;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: var(--transition);
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-secondary);
+  color: var(--color-text-secondary);
+}
+
+.nb-card-btn:hover {
+  color: var(--color-text);
+  border-color: var(--color-border-light);
+}
+
+.nb-card-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--color-bg), 0 0 0 4px var(--color-accent-medium);
+}
+
+.nb-card-btn--small {
+  font-size: 0.72rem;
+  padding: 0.25rem 0.4rem;
+}
+
+.nb-card-btn--ghost {
+  background: transparent;
+  border-color: var(--color-border-light);
+}
+
+.nb-card-btn--danger {
+  border-color: rgba(211, 35, 75, 0.45);
+  color: var(--color-accent-hover);
+}
+
+.nb-card-btn--danger:hover {
+  border-color: var(--color-accent);
+  background: rgba(211, 35, 75, 0.12);
+  color: var(--color-accent-hover);
 }
 </style>

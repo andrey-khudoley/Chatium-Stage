@@ -7,8 +7,10 @@ const props = withDefaults(
     folders: FolderDto[]
     /** Если false — скрыть блок «В корень» и папки (например, инбокс без папок). */
     showFolderMove?: boolean
+    /** Показывать «Удалить» только если все выделенные заметки в архиве. */
+    showDelete?: boolean
   }>(),
-  { showFolderMove: true }
+  { showFolderMove: true, showDelete: false }
 )
 
 const emit = defineEmits<{
@@ -59,7 +61,13 @@ const emit = defineEmits<{
           <span>{{ f.name }}</span>
         </button>
       </div>
-      <button type="button" class="nb-bulk-btn nb-bulk-btn--danger" @click="emit('delete')" title="Удалить">
+      <button
+        v-if="props.showDelete"
+        type="button"
+        class="nb-bulk-btn nb-bulk-btn--danger"
+        @click="emit('delete')"
+        title="Удалить"
+      >
         <i class="fa-solid fa-trash-can" aria-hidden="true" />
         <span>Удалить</span>
       </button>
