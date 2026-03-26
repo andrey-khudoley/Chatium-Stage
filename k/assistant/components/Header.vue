@@ -707,12 +707,19 @@ onMounted(() => {
   }
   window.addEventListener('mousedown', outsideToolPickerClickHandler)
   focusTaskEventHandler = (e: Event) => {
-    const customEvent = e as CustomEvent<{ taskId?: string }>
+    const customEvent = e as CustomEvent<{
+      taskId?: string
+      pomodoroSessionStartedFromTasksPage?: boolean
+    }>
     const taskId = customEvent.detail?.taskId
     if (!taskId || !isToolClockWidgetEnabled.value) return
     persistSelectedFocusTask(taskId)
     if (widgetMode.value === 'clock') {
       blinkClockAttention()
+      return
+    }
+    if (widgetMode.value === 'pomodoro' && customEvent.detail?.pomodoroSessionStartedFromTasksPage) {
+      void syncPomodoro()
       return
     }
     void startSelectedToolIfStopped()

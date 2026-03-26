@@ -394,7 +394,7 @@ onUnmounted(() => {
         class="tasks-ai-chat-input"
         rows="2"
         maxlength="8000"
-        placeholder="Сообщение…"
+        placeholder="Сообщение… Например: поставь встречу на завтра 14:00 и напомни за 15 минут"
         :disabled="!canUseChat || booting"
         @keydown="onKeydown"
       />

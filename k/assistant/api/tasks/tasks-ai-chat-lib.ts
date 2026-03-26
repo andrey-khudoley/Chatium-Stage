@@ -114,6 +114,12 @@ export async function buildTaskAiChatProjectContextBlock(
     ordered.forEach((task, index) => {
       parts.push(`\n[${index + 1}] [ID: ${task.id}] ${task.title}`)
       parts.push(`Приоритет: ${PRIORITY_LINE[task.priority] ?? task.priority}; статус: ${task.status}`)
+      if (task.eventAtMs) {
+        const eventAtIso = new Date(task.eventAtMs).toISOString()
+        parts.push(
+          `Событие: ${eventAtIso}; напоминание за ${Math.max(0, task.reminderMinutesBefore)} мин`
+        )
+      }
       if (task.details) parts.push(`Детали: ${task.details}`)
       if (task.context) parts.push(`Контекст задачи (служебный): ${task.context}`)
     })

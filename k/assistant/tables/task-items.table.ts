@@ -55,6 +55,16 @@ export const TaskItems = Heap.Table('t__assistant__task_item__2Vx8sT', {
   /** Накопленное время в отдыхе Pomodoro, секунды */
   pomodoroRestSec: Heap.Number({
     customMeta: { title: 'Pomodoro отдых (сек)' }
+  }),
+  /** Дата/время события задачи (unix ms) */
+  eventAtMs: Heap.Optional(
+    Heap.Number({
+      customMeta: { title: 'Дата/время события (ms)' }
+    })
+  ),
+  /** Напомнить за N минут до события */
+  reminderMinutesBefore: Heap.Number({
+    customMeta: { title: 'Напоминание за (мин)' }
   })
 })
 

@@ -456,11 +456,195 @@ const taskForm = ref({
   details: '',
   priority: 2,
   status: 'todo' as TaskItemDto['status'],
-  projectId: '' as string
+  projectId: '' as string,
+  eventAtLocal: '',
+  reminderMinutesBefore: 15
 })
 const taskEditId = ref<string | null>(null)
 const taskSaving = ref(false)
 const taskError = ref('')
+
+const REMINDER_AUDIO_URL = 'https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg'
+const TASK_REMINDER_FIRED_KEY = 'assistant:task-reminders-fired:v1'
+const reminderPermission = ref<NotificationPermission | 'unsupported'>('unsupported')
+let reminderTimer: ReturnType<typeof setInterval> | null = null
+let reminderAudioEl: HTMLAudioElement | null = null
+
+function formatEventAtLocalInput(eventAtMs: number | null | undefined): string {
+  if (!eventAtMs || !Number.isFinite(eventAtMs)) return ''
+  const d = new Date(eventAtMs)
+  const day = String(d.getDate()).padStart(2, '0')
+  const month = String(d.getMonth() + 1).padStart(2, '0')
+  const year = d.getFullYear()
+  const hour = String(d.getHours()).padStart(2, '0')
+  const minute = String(d.getMinutes()).padStart(2, '0')
+  return `${day}/${month}/${year} ${hour}:${minute}`
+}
+
+function parseEventAtLocalInput(value: string): number | undefined {
+  const t = value.trim()
+  if (!t) return undefined
+  const m = /^(\d{2})\/(\d{2})\/(\d{4})\s+(\d{2}):(\d{2})$/.exec(t)
+  if (!m) return undefined
+  const day = Number(m[1])
+  const month = Number(m[2])
+  const year = Number(m[3])
+  const hour = Number(m[4])
+  const minute = Number(m[5])
+  if (
+    !Number.isFinite(day) ||
+    !Number.isFinite(month) ||
+    !Number.isFinite(year) ||
+    !Number.isFinite(hour) ||
+    !Number.isFinite(minute)
+  ) {
+    return undefined
+  }
+  if (month < 1 || month > 12 || hour < 0 || hour > 23 || minute < 0 || minute > 59) {
+    return undefined
+  }
+  const d = new Date(year, month - 1, day, hour, minute, 0, 0)
+  if (
+    d.getFullYear() !== year ||
+    d.getMonth() !== month - 1 ||
+    d.getDate() !== day ||
+    d.getHours() !== hour ||
+    d.getMinutes() !== minute
+  ) {
+    return undefined
+  }
+  const ms = d.getTime()
+  if (!Number.isFinite(ms) || ms <= 0) return undefined
+  return ms
+}
+
+function onEventAtInput(e: Event) {
+  const inputEvent = e as InputEvent
+  const isDeleting = inputEvent.inputType?.startsWith('delete') ?? false
+  const raw = taskForm.value.eventAtLocal.replace(/\D/g, '').slice(0, 12)
+
+  let formatted = ''
+  if (raw.length <= 2) {
+    formatted = raw
+    if (!isDeleting && raw.length === 2) formatted += '/'
+  } else if (raw.length <= 4) {
+    formatted = `${raw.slice(0, 2)}/${raw.slice(2)}`
+    if (!isDeleting && raw.length === 4) formatted += '/'
+  } else if (raw.length <= 8) {
+    formatted = `${raw.slice(0, 2)}/${raw.slice(2, 4)}/${raw.slice(4)}`
+    if (!isDeleting && raw.length === 8) formatted += ' '
+  } else if (raw.length <= 10) {
+    formatted = `${raw.slice(0, 2)}/${raw.slice(2, 4)}/${raw.slice(4, 8)} ${raw.slice(8)}`
+    if (!isDeleting && raw.length === 10) formatted += ':'
+  } else {
+    formatted = `${raw.slice(0, 2)}/${raw.slice(2, 4)}/${raw.slice(4, 8)} ${raw.slice(8, 10)}:${raw.slice(10)}`
+  }
+
+  taskForm.value.eventAtLocal = formatted
+}
+
+function loadReminderFiredMap(): Record<string, number> {
+  if (typeof window === 'undefined') return {}
+  try {
+    const raw = window.localStorage.getItem(TASK_REMINDER_FIRED_KEY)
+    if (!raw) return {}
+    const parsed = JSON.parse(raw) as Record<string, unknown>
+    if (!parsed || typeof parsed !== 'object') return {}
+    const out: Record<string, number> = {}
+    for (const [k, v] of Object.entries(parsed)) {
+      if (typeof v === 'number' && Number.isFinite(v)) out[k] = v
+    }
+    return out
+  } catch {
+    return {}
+  }
+}
+
+function saveReminderFiredMap(map: Record<string, number>) {
+  if (typeof window === 'undefined') return
+  try {
+    window.localStorage.setItem(TASK_REMINDER_FIRED_KEY, JSON.stringify(map))
+  } catch {
+    // ignore quota errors
+  }
+}
+
+function markTaskReminderFired(taskId: string, eventAtMs: number) {
+  const map = loadReminderFiredMap()
+  map[taskId] = eventAtMs
+  saveReminderFiredMap(map)
+}
+
+function isTaskReminderAlreadyFired(taskId: string, eventAtMs: number): boolean {
+  const map = loadReminderFiredMap()
+  return map[taskId] === eventAtMs
+}
+
+function clearTaskReminderIfEventChanged(taskId: string, eventAtMs: number | null) {
+  const map = loadReminderFiredMap()
+  if (eventAtMs && map[taskId] === eventAtMs) return
+  if (taskId in map) {
+    delete map[taskId]
+    saveReminderFiredMap(map)
+  }
+}
+
+async function playReminderSound() {
+  if (typeof window === 'undefined') return
+  if (!reminderAudioEl) {
+    reminderAudioEl = new Audio(REMINDER_AUDIO_URL)
+    reminderAudioEl.preload = 'auto'
+  }
+  try {
+    reminderAudioEl.currentTime = 0
+    await reminderAudioEl.play()
+  } catch {
+    // autoplay may be blocked by browser policy
+  }
+}
+
+function fireTaskReminder(task: TaskItemDto, remindAtMs: number) {
+  if (!task.eventAtMs) return
+  const title = task.title || 'Событие'
+  const body = `Событие по задаче начнется в ${task.reminderMinutesBefore} мин.`
+  if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+    try {
+      const notification = new Notification(title, { body, tag: `task-reminder:${task.id}` })
+      notification.onclick = () => {
+        window.focus()
+      }
+    } catch {
+      // ignore Notification errors
+    }
+  }
+  void playReminderSound()
+  markTaskReminderFired(task.id, task.eventAtMs)
+  log.info('Task reminder fired', { taskId: task.id, remindAtMs })
+}
+
+function runTaskReminderChecks() {
+  const now = Date.now()
+  for (const task of tree.value.tasks) {
+    const eventAtMs = task.eventAtMs ?? null
+    clearTaskReminderIfEventChanged(task.id, eventAtMs)
+    if (!eventAtMs) continue
+    if (isTaskArchived(task.status)) continue
+    if (isTaskReminderAlreadyFired(task.id, eventAtMs)) continue
+    const remindAtMs = eventAtMs - Math.max(0, task.reminderMinutesBefore) * 60_000
+    if (now >= remindAtMs && now <= eventAtMs + 5 * 60_000) {
+      fireTaskReminder(task, remindAtMs)
+    }
+  }
+}
+
+async function requestReminderPermission() {
+  if (typeof window === 'undefined' || !('Notification' in window)) {
+    reminderPermission.value = 'unsupported'
+    return
+  }
+  const p = await Notification.requestPermission()
+  reminderPermission.value = p
+}
 
 function openTaskCreate() {
   if (!props.isAuthenticated || !selectedProjectId.value) return
@@ -470,7 +654,9 @@ function openTaskCreate() {
     details: '',
     priority: 2,
     status: 'todo',
-    projectId: selectedProjectId.value
+    projectId: selectedProjectId.value,
+    eventAtLocal: '',
+    reminderMinutesBefore: 15
   }
   taskError.value = ''
 }
@@ -483,7 +669,9 @@ function openTaskEdit(t: TaskItemDto) {
     details: t.details ?? '',
     priority: t.priority,
     status: t.status,
-    projectId: t.projectId
+    projectId: t.projectId,
+    eventAtLocal: formatEventAtLocalInput(t.eventAtMs),
+    reminderMinutesBefore: t.reminderMinutesBefore
   }
   taskError.value = ''
 }
@@ -498,6 +686,7 @@ async function submitTaskModal() {
   taskError.value = ''
   try {
     if (taskModal.value === 'create') {
+      const eventAtMs = parseEventAtLocalInput(taskForm.value.eventAtLocal)
       const j = await postJson<{ success: boolean; task?: TaskItemDto; error?: string }>(
         props.taskItemCreateUrl,
         {
@@ -505,7 +694,9 @@ async function submitTaskModal() {
           title: taskForm.value.title,
           details: taskForm.value.details,
           priority: taskForm.value.priority,
-          status: taskForm.value.status
+          status: taskForm.value.status,
+          eventAtMs: eventAtMs ?? null,
+          reminderMinutesBefore: taskForm.value.reminderMinutesBefore
         }
       )
       if (!j.success || !j.task) {
@@ -515,6 +706,7 @@ async function submitTaskModal() {
       tree.value.tasks.push(j.task)
       closeTaskModal()
     } else if (taskModal.value === 'edit' && taskEditId.value) {
+      const eventAtMs = parseEventAtLocalInput(taskForm.value.eventAtLocal)
       const j = await postJson<{ success: boolean; task?: TaskItemDto; error?: string }>(
         props.taskItemUpdateUrl,
         {
@@ -523,7 +715,9 @@ async function submitTaskModal() {
           details: taskForm.value.details,
           priority: taskForm.value.priority,
           status: taskForm.value.status,
-          projectId: taskForm.value.projectId
+          projectId: taskForm.value.projectId,
+          eventAtMs: eventAtMs ?? null,
+          reminderMinutesBefore: taskForm.value.reminderMinutesBefore
         }
       )
       if (!j.success || !j.task) {
@@ -566,13 +760,44 @@ async function markTaskForDay(t: TaskItemDto) {
 async function assignTaskToPomodoro(t: TaskItemDto) {
   if (!props.isAuthenticated) return
   globalError.value = ''
+  const statsDayKey = computePomodoroStatsDayKeyLocal(Date.now())
   try {
-    const j = await postJson<{ success: boolean; error?: string }>(props.pomodoroAssignTaskUrl, {
+    const j = await postJson<{
+      success: boolean
+      error?: string
+      state?: { status: string }
+    }>(props.pomodoroAssignTaskUrl, {
       taskId: t.id,
-      statsDayKey: computePomodoroStatsDayKeyLocal(Date.now()),
+      statsDayKey,
     })
     if (!j.success) {
       globalError.value = j.error ?? 'Не удалось добавить задачу в pomodoro'
+      return
+    }
+    const status = j.state?.status
+    let pomodoroSessionStartedFromTasksPage = false
+    if (status && status !== 'running') {
+      let action: 'start' | 'resume' | null = null
+      if (status === 'stopped') action = 'start'
+      else if (status === 'paused' || status === 'awaiting_continue') action = 'resume'
+      if (action) {
+        const cj = await postJson<{ success: boolean; error?: string }>(props.pomodoroControlUrl, {
+          action,
+          statsDayKey,
+        })
+        if (!cj.success) {
+          globalError.value = cj.error ?? 'Не удалось запустить таймер pomodoro'
+          return
+        }
+        pomodoroSessionStartedFromTasksPage = true
+      }
+    }
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(
+        new CustomEvent('assistant:focus-task-selected', {
+          detail: { taskId: t.id, pomodoroSessionStartedFromTasksPage },
+        })
+      )
     }
   } catch (e) {
     globalError.value = String(e)
@@ -685,6 +910,11 @@ onMounted(() => {
   window.matchMedia(TASKS_MOBILE_MQ).addEventListener('change', mqListener)
   unsubBootStatic = subscribeBootStaticReady(startAfterBoot)
   window.addEventListener('pointerdown', onWindowPointerDown)
+  if (typeof window !== 'undefined' && 'Notification' in window) {
+    reminderPermission.value = Notification.permission
+  }
+  runTaskReminderChecks()
+  reminderTimer = setInterval(runTaskReminderChecks, 15_000)
   void nextTick(() => {
     applyTasksUrlQuery()
     if (isMobileTasksLayout.value && selectedProjectId.value) {
@@ -703,6 +933,14 @@ watch(
   }
 )
 
+watch(
+  () => tree.value.tasks,
+  () => {
+    runTaskReminderChecks()
+  },
+  { deep: true }
+)
+
 onUnmounted(() => {
   unsubBootStatic?.()
   if (mqListener) {
@@ -713,6 +951,10 @@ onUnmounted(() => {
     document.documentElement.classList.remove(TASKS_HTML_MOBILE_CLASS)
   }
   window.removeEventListener('pointerdown', onWindowPointerDown)
+  if (reminderTimer) {
+    clearInterval(reminderTimer)
+    reminderTimer = null
+  }
 })
 
 const openChatiumLink = () => {
@@ -1281,6 +1523,13 @@ function showProjectLineBefore(clientId: string, idx: number): boolean {
                 <td data-label="Задача">
                   <div class="tasks-title">{{ t.title }}</div>
                   <div v-if="t.details" class="tasks-desc">{{ t.details }}</div>
+                  <div v-if="t.eventAtMs" class="tasks-event-meta">
+                    <i class="fas fa-calendar-alt" aria-hidden="true" />
+                    <span>
+                      {{ new Date(t.eventAtMs).toLocaleString('ru-RU') }} · напомнить за
+                      {{ t.reminderMinutesBefore }} мин
+                    </span>
+                  </div>
                 </td>
                 <td data-label="Приоритет">
                   <span class="tasks-badge" :class="`tasks-badge--p${t.priority}`">
@@ -1511,6 +1760,48 @@ function showProjectLineBefore(clientId: string, idx: number): boolean {
               :options="taskProjectSelectOptions"
               :disabled="!taskProjectSelectOptions.length"
             />
+            <label class="jn-label" for="tt-event-at">Дата и время события</label>
+            <input
+              id="tt-event-at"
+              v-model="taskForm.eventAtLocal"
+              type="text"
+              inputmode="numeric"
+              placeholder="dd/mm/yyyy hh:mm"
+              pattern="\\d{2}/\\d{2}/\\d{4}\\s\\d{2}:\\d{2}"
+              class="jn-input"
+              @input="onEventAtInput"
+            />
+            <label class="jn-label" for="tt-reminder-min">Напомнить за (минут)</label>
+            <input
+              id="tt-reminder-min"
+              v-model.number="taskForm.reminderMinutesBefore"
+              type="number"
+              min="0"
+              max="20160"
+              step="1"
+              class="jn-input"
+            />
+            <div class="tasks-reminder-permission-row">
+              <span class="tasks-reminder-permission-status">
+                {{
+                  reminderPermission === 'granted'
+                    ? 'Браузерные уведомления: разрешены'
+                    : reminderPermission === 'denied'
+                      ? 'Браузерные уведомления: запрещены'
+                      : reminderPermission === 'default'
+                        ? 'Браузерные уведомления: не запрошены'
+                        : 'Браузерные уведомления не поддерживаются'
+                }}
+              </span>
+              <button
+                v-if="reminderPermission !== 'unsupported' && reminderPermission !== 'granted'"
+                type="button"
+                class="journal-nav-btn"
+                @click="requestReminderPermission"
+              >
+                Разрешить уведомления
+              </button>
+            </div>
             <p v-if="taskError" class="jn-modal-error" role="alert">{{ taskError }}</p>
             <div class="jn-modal-actions">
               <button type="button" class="journal-nav-btn" @click="closeTaskModal">Отмена</button>
@@ -2125,6 +2416,16 @@ function showProjectLineBefore(clientId: string, idx: number): boolean {
   white-space: pre-wrap;
 }
 
+.tasks-event-meta {
+  margin-top: 0.35rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.76rem;
+  letter-spacing: 0.04em;
+  color: var(--color-text-tertiary);
+}
+
 .tasks-badge {
   display: inline-block;
   padding: 0.15rem 0.4rem;
@@ -2586,6 +2887,20 @@ function showProjectLineBefore(clientId: string, idx: number): boolean {
   gap: 0.5rem;
   margin-top: 0.5rem;
   flex-wrap: wrap;
+}
+
+.tasks-reminder-permission-row {
+  margin: 0 0 0.6rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.65rem;
+}
+
+.tasks-reminder-permission-status {
+  font-size: 0.78rem;
+  color: var(--color-text-secondary);
+  letter-spacing: 0.04em;
 }
 
 .jn-modal-enter-active,

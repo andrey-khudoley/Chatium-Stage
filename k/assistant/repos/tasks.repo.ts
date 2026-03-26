@@ -56,6 +56,18 @@ function normalizeDaySortOrder(n: unknown): number {
   return Math.floor(n)
 }
 
+function normalizeReminderMinutesBefore(n: unknown): number {
+  if (typeof n !== 'number' || !Number.isFinite(n)) return 15
+  const rounded = Math.round(n)
+  return Math.min(60 * 24 * 14, Math.max(0, rounded))
+}
+
+function normalizeEventAtMs(n: unknown): number | undefined {
+  if (typeof n !== 'number' || !Number.isFinite(n)) return undefined
+  const rounded = Math.round(n)
+  return rounded > 0 ? rounded : undefined
+}
+
 function rowToTask(row: {
   id: string
   projectId: string
@@ -68,6 +80,8 @@ function rowToTask(row: {
   daySortOrder?: number
   pomodoroWorkSec?: number
   pomodoroRestSec?: number
+  eventAtMs?: number | null
+  reminderMinutesBefore?: number
 }): TaskItemDto {
   return {
     id: row.id,
@@ -80,7 +94,9 @@ function rowToTask(row: {
     sortOrder: row.sortOrder,
     daySortOrder: normalizeDaySortOrder(row.daySortOrder),
     pomodoroWorkSec: Math.max(0, Math.floor(row.pomodoroWorkSec ?? 0)),
-    pomodoroRestSec: Math.max(0, Math.floor(row.pomodoroRestSec ?? 0))
+    pomodoroRestSec: Math.max(0, Math.floor(row.pomodoroRestSec ?? 0)),
+    eventAtMs: row.eventAtMs ?? null,
+    reminderMinutesBefore: normalizeReminderMinutesBefore(row.reminderMinutesBefore)
   }
 }
 
@@ -289,7 +305,15 @@ export async function createTask(
   ctx: app.Ctx,
   userId: string,
   projectId: string,
-  data: { title: string; details?: string; context?: string; priority?: number; status?: TaskStatus }
+  data: {
+    title: string
+    details?: string
+    context?: string
+    priority?: number
+    status?: TaskStatus
+    eventAtMs?: number
+    reminderMinutesBefore?: number
+  }
 ): Promise<TaskItemDto | null> {
   const project = await assertProjectOwner(ctx, userId, projectId)
   if (!project) return null
@@ -303,6 +327,8 @@ export async function createTask(
   const c = normalizeHeapOptionalDetailsText(
     typeof data.context === 'string' ? data.context : undefined
   )
+  const eventAtMs = normalizeEventAtMs(data.eventAtMs)
+  const reminderMinutesBefore = normalizeReminderMinutesBefore(data.reminderMinutesBefore)
   const row = await TaskItems.create(ctx, {
     userId,
     projectId,
@@ -313,8 +339,10 @@ export async function createTask(
     daySortOrder,
     pomodoroWorkSec: 0,
     pomodoroRestSec: 0,
+    reminderMinutesBefore,
     ...(d !== undefined ? { details: d } : {}),
-    ...(c !== undefined ? { context: c } : {})
+    ...(c !== undefined ? { context: c } : {}),
+    ...(eventAtMs !== undefined ? { eventAtMs } : {})
   })
   return rowToTask(row)
 }
@@ -344,6 +372,8 @@ export async function updateTask(
     priority?: number
     status?: TaskStatus
     projectId?: string
+    eventAtMs?: number | null
+    reminderMinutesBefore?: number
   }
 ): Promise<TaskItemDto | null> {
   const existing = await assertTaskOwner(ctx, userId, id)
@@ -382,6 +412,18 @@ export async function updateTask(
             normalizeHeapOptionalDetailsText(data.context) ?? (null as TaskItemsRow['context'])
         }
       : {}
+  const eventPatch =
+    data.eventAtMs !== undefined
+      ? {
+          eventAtMs: normalizeEventAtMs(data.eventAtMs) ?? (null as TaskItemsRow['eventAtMs'])
+        }
+      : {}
+  const reminderPatch =
+    data.reminderMinutesBefore !== undefined
+      ? {
+          reminderMinutesBefore: normalizeReminderMinutesBefore(data.reminderMinutesBefore)
+        }
+      : {}
   const patch = {
     ...(data.title !== undefined ? { title: data.title.trim() || existing.title } : {}),
     ...detailsPatch,
@@ -389,7 +431,9 @@ export async function updateTask(
     ...(data.priority !== undefined ? { priority: normalizePriority(data.priority) } : {}),
     ...(data.status !== undefined ? { status: nextStatus } : {}),
     ...(projectId !== existing.projectId ? { projectId, sortOrder } : {}),
-    ...(daySortOrderPatch ?? {})
+    ...(daySortOrderPatch ?? {}),
+    ...eventPatch,
+    ...reminderPatch
   }
   if (Object.keys(patch).length === 0) {
     return rowToTask(existing)

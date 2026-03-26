@@ -19,7 +19,9 @@ export const updateTaskItemRoute = app
     details: s.optional(s.string()),
     priority: s.optional(s.number()),
     status: s.optional(s.string()),
-    projectId: s.optional(s.string())
+    projectId: s.optional(s.string()),
+    eventAtMs: s.optional(s.nullable(s.number())),
+    reminderMinutesBefore: s.optional(s.number())
   }))
   .post('/', async (ctx, req) => {
     const user = requireRealUser(ctx)
@@ -35,7 +37,11 @@ export const updateTaskItemRoute = app
         ...(req.body.details !== undefined ? { details: req.body.details } : {}),
         ...(req.body.priority !== undefined ? { priority: req.body.priority } : {}),
         ...(status !== undefined ? { status } : {}),
-        ...(req.body.projectId !== undefined ? { projectId: req.body.projectId } : {})
+        ...(req.body.projectId !== undefined ? { projectId: req.body.projectId } : {}),
+        ...(req.body.eventAtMs !== undefined ? { eventAtMs: req.body.eventAtMs } : {}),
+        ...(req.body.reminderMinutesBefore !== undefined
+          ? { reminderMinutesBefore: req.body.reminderMinutesBefore }
+          : {})
       })
       if (!task) {
         return { success: false, error: 'Задача или проект не найдены' }
