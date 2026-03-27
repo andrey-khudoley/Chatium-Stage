@@ -16,7 +16,7 @@
         title="Перевести все задачи «В работе» в «К выполнению»"
         @click="releaseAll"
       >
-        <i class="fa-solid fa-arrow-rotate-left" aria-hidden="true" />
+        <i class="fas fa-arrow-rotate-left" aria-hidden="true" />
         В очередь
       </button>
     </header>
@@ -52,7 +52,7 @@
             @dragstart="onDragStart(t.id)"
             @dragend="onDragEnd"
           >
-            <i class="fa-solid fa-grip-vertical" />
+            <i class="fas fa-grip-vertical" />
           </span>
 
           <div class="journal-day-body">
@@ -91,7 +91,7 @@
               :disabled="idx === 0 || loading"
               @click="moveTask(idx, -1)"
             >
-              <i class="fa-solid fa-chevron-up" aria-hidden="true" />
+              <i class="fas fa-chevron-up" aria-hidden="true" />
             </button>
             <button
               type="button"
@@ -100,7 +100,10 @@
               :disabled="idx >= dayTasks.length - 1 || loading"
               @click="moveTask(idx, 1)"
             >
-              <i class="fa-solid fa-chevron-down" aria-hidden="true" />
+              <i class="fas fa-chevron-down" aria-hidden="true" />
+            </button>
+            <button type="button" class="journal-day-sort-btn" title="В помидор" @click="addToPomodoro(t.id)">
+              <i class="fas fa-clock" aria-hidden="true" />
             </button>
           </div>
         </li>
@@ -151,6 +154,7 @@
 <script setup lang="ts">
 import { computed, onUnmounted, ref, watch } from 'vue'
 import type { TasksTreeDto, TaskItemDto, TaskProjectDto } from '../../lib/tasks-types'
+import { computePomodoroStatsDayKeyLocal } from '../../lib/pomodoro-stats-day'
 import { createComponentLogger } from '../../shared/logger'
 import JnCrtSelect from '../JnCrtSelect.vue'
 
@@ -164,6 +168,7 @@ const props = defineProps<{
   taskReleaseDayUrl: string
   taskItemUpdateUrl: string
   tasksPageUrl: string
+  pomodoroAssignTaskUrl: string
 }>()
 
 const tree = ref<TasksTreeDto>({
@@ -312,6 +317,13 @@ async function postJson<T>(url: string, body: Record<string, unknown>): Promise<
     credentials: 'include',
     body: JSON.stringify(body)
   })
+  if (!r.ok) {
+    throw new Error(`HTTP ${r.status}`)
+  }
+  const contentType = r.headers.get('content-type') ?? ''
+  if (!contentType.toLowerCase().includes('application/json')) {
+    throw new Error('Сервер вернул не-JSON ответ')
+  }
   return r.json() as Promise<T>
 }
 
@@ -426,6 +438,23 @@ async function releaseAll() {
     loading.value = false
   }
 }
+
+async function addToPomodoro(taskId: string) {
+  globalError.value = ''
+  try {
+    const j = await postJson<{ success: boolean; error?: string }>(props.pomodoroAssignTaskUrl, {
+      taskId,
+      statsDayKey: computePomodoroStatsDayKeyLocal(Date.now()),
+    })
+    if (!j.success) {
+      globalError.value = j.error ?? 'Не удалось добавить задачу в pomodoro'
+      return
+    }
+    window.dispatchEvent(new CustomEvent('assistant:focus-task-selected', { detail: { taskId } }))
+  } catch (e) {
+    globalError.value = String(e)
+  }
+}
 </script>
 
 <style scoped>
@@ -451,7 +480,7 @@ async function releaseAll() {
 
 .journal-day-title {
   margin: 0 0 0.35rem;
-  font-size: 0.78rem;
+  font-size: 0.92rem;
   font-weight: 600;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -460,7 +489,7 @@ async function releaseAll() {
 
 .journal-day-sub {
   margin: 0;
-  font-size: 0.68rem;
+  font-size: 0.84rem;
   line-height: 1.45;
   letter-spacing: 0.06em;
   color: var(--color-text-secondary);
@@ -475,7 +504,7 @@ async function releaseAll() {
   margin: 0;
   padding: 0.4rem 0.65rem;
   font-family: inherit;
-  font-size: 0.62rem;
+  font-size: 0.78rem;
   font-weight: 500;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -502,7 +531,7 @@ async function releaseAll() {
 .journal-day-empty,
 .journal-day-loading {
   margin: 0.5rem 0 0;
-  font-size: 0.68rem;
+  font-size: 0.84rem;
   letter-spacing: 0.05em;
   color: var(--color-text-secondary);
   line-height: 1.45;
@@ -510,7 +539,7 @@ async function releaseAll() {
 
 .journal-day-err {
   margin: 0 0 0.5rem;
-  font-size: 0.65rem;
+  font-size: 0.82rem;
   color: var(--color-accent-hover);
 }
 
@@ -560,7 +589,7 @@ async function releaseAll() {
 }
 
 .journal-day-task-title {
-  font-size: 0.72rem;
+  font-size: 0.88rem;
   font-weight: 500;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -592,7 +621,7 @@ async function releaseAll() {
 
 .journal-day-task-desc {
   margin-top: 0.25rem;
-  font-size: 0.62rem;
+  font-size: 0.78rem;
   line-height: 1.45;
   color: var(--color-text-secondary);
   white-space: pre-wrap;
@@ -605,7 +634,7 @@ async function releaseAll() {
   flex-wrap: wrap;
   align-items: baseline;
   gap: 0.25rem 0.35rem;
-  font-size: 0.68rem;
+  font-size: 0.84rem;
   line-height: 1.45;
   letter-spacing: 0.06em;
 }
@@ -643,7 +672,7 @@ async function releaseAll() {
 .journal-day-sort-btn {
   margin: 0;
   padding: 0.2rem 0.35rem;
-  font-size: 0.65rem;
+  font-size: 0.82rem;
   color: var(--color-text-secondary);
   background: var(--color-bg-secondary);
   border: 1px solid var(--color-border);
@@ -752,7 +781,7 @@ async function releaseAll() {
 
 .jn-modal-heading {
   margin: 0 0 1rem;
-  font-size: 0.85rem;
+  font-size: 0.98rem;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   font-weight: 400;
@@ -761,7 +790,7 @@ async function releaseAll() {
 
 .jn-label {
   display: block;
-  font-size: 0.65rem;
+  font-size: 0.82rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--color-text-secondary);
@@ -775,7 +804,7 @@ async function releaseAll() {
   margin-bottom: 0.75rem;
   padding: 0.5rem 0.6rem;
   font-family: inherit;
-  font-size: 0.8rem;
+  font-size: 0.95rem;
   background: var(--color-bg);
   border: 1px solid var(--color-border);
   color: var(--color-text);
@@ -789,7 +818,7 @@ async function releaseAll() {
 
 .jn-modal-error {
   color: var(--color-accent-hover);
-  font-size: 0.72rem;
+  font-size: 0.88rem;
   margin: 0 0 0.5rem;
 }
 
@@ -811,7 +840,7 @@ async function releaseAll() {
   padding: 0.35rem 0.45rem;
   box-sizing: border-box;
   font-family: inherit;
-  font-size: 0.68rem;
+  font-size: 0.84rem;
   font-weight: 400;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -836,7 +865,7 @@ async function releaseAll() {
   padding: 0.35rem 0.4rem;
   box-sizing: border-box;
   font-family: inherit;
-  font-size: 0.62rem;
+  font-size: 0.78rem;
   font-weight: 400;
   letter-spacing: 0.08em;
   text-transform: uppercase;

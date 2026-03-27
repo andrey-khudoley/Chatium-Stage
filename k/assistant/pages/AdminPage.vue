@@ -29,6 +29,8 @@ const props = defineProps<{
   indexUrl: string
   profileUrl: string
   testsUrl?: string
+  pomodoroStateGetUrl?: string
+  pomodoroControlUrl?: string
   loginUrl: string
   isAuthenticated: boolean
   isAdmin?: boolean
@@ -448,6 +450,9 @@ const clearLogs = () => {
       :isAdmin="props.isAdmin"
       :adminUrl="props.adminUrl"
       :testsUrl="props.testsUrl"
+      :enableToolClockWidget="true"
+      :pomodoroStateGetUrl="props.pomodoroStateGetUrl"
+      :pomodoroControlUrl="props.pomodoroControlUrl"
     />
 
     <main class="content-wrapper flex-1 relative z-10 min-h-0 overflow-y-auto">
@@ -765,7 +770,7 @@ const clearLogs = () => {
 
 .admin-description {
   color: var(--color-text-secondary);
-  font-size: 0.95rem;
+  font-size: 1.06rem;
   margin: 0;
 }
 
@@ -822,7 +827,7 @@ const clearLogs = () => {
 .log-level-btn {
   padding: 0.5rem 1rem;
   font-family: inherit;
-  font-size: 0.9rem;
+  font-size: 1.02rem;
   color: var(--color-text-secondary);
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid var(--color-border);
@@ -846,7 +851,7 @@ const clearLogs = () => {
 
 .admin-card-error {
   margin: 0.75rem 0 0;
-  font-size: 0.85rem;
+  font-size: 0.98rem;
   color: #e74c3c;
 }
 
@@ -854,7 +859,7 @@ const clearLogs = () => {
   position: absolute;
   top: 1rem;
   right: 1rem;
-  font-size: 0.85rem;
+  font-size: 0.98rem;
   font-weight: 500;
   letter-spacing: 0.04em;
   animation: statusFadeIn 0.2s ease;
@@ -891,7 +896,7 @@ const clearLogs = () => {
 }
 
 .settings-label {
-  font-size: 0.85rem;
+  font-size: 0.98rem;
   color: var(--color-text-secondary);
   letter-spacing: 0.04em;
 }
@@ -899,7 +904,7 @@ const clearLogs = () => {
 .settings-input {
   padding: 0.6rem 0.9rem;
   font-family: inherit;
-  font-size: 0.95rem;
+  font-size: 1.06rem;
   color: var(--color-text);
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid var(--color-border);
@@ -923,7 +928,7 @@ const clearLogs = () => {
   gap: 0.5rem;
   padding: 0.5rem 0.9rem;
   font-family: inherit;
-  font-size: 0.85rem;
+  font-size: 0.98rem;
   color: var(--color-text-secondary);
   background: rgba(255, 255, 255, 0.06);
   border: 1px solid var(--color-border-light);
@@ -940,7 +945,7 @@ const clearLogs = () => {
 }
 
 .dashboard-reset-icon {
-  font-size: 0.8rem;
+  font-size: 0.95rem;
   opacity: 0.9;
 }
 
@@ -980,7 +985,7 @@ const clearLogs = () => {
 }
 
 .dashboard-stat .stat-label {
-  font-size: 0.85rem;
+  font-size: 0.98rem;
   color: var(--color-text-secondary);
   line-height: 1.2;
 }
@@ -1018,7 +1023,7 @@ const clearLogs = () => {
   gap: 0.4rem;
   padding: 0.35rem 0.75rem;
   font-family: inherit;
-  font-size: 0.8rem;
+  font-size: 0.95rem;
   color: var(--color-text-tertiary);
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid var(--color-border);
@@ -1039,7 +1044,7 @@ const clearLogs = () => {
 }
 
 .log-filter-chip i {
-  font-size: 0.75rem;
+  font-size: 0.9rem;
   opacity: 0.9;
 }
 
@@ -1079,7 +1084,7 @@ const clearLogs = () => {
   overflow: auto;
   padding: 1rem;
   font-family: 'Share Tech Mono', 'Courier New', monospace;
-  font-size: 0.8rem;
+  font-size: 0.95rem;
 }
 
 .logs-empty {
@@ -1095,7 +1100,7 @@ const clearLogs = () => {
 .log-date-divider {
   text-align: center;
   color: #555;
-  font-size: 0.75rem;
+  font-size: 0.9rem;
   padding: 0.5rem 0;
   margin: 0.5rem 0;
   opacity: 0.7;
@@ -1207,7 +1212,7 @@ const clearLogs = () => {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  font-size: 0.85rem;
+  font-size: 0.98rem;
   color: var(--color-text-secondary);
   padding: 0.5rem 0;
 }
@@ -1217,7 +1222,7 @@ const clearLogs = () => {
 }
 
 .logs-error {
-  font-size: 0.85rem;
+  font-size: 0.98rem;
   color: #e74c3c;
   margin: 0;
   padding: 0.5rem 0.75rem;
@@ -1233,7 +1238,7 @@ const clearLogs = () => {
   gap: 0.5rem;
   padding: 0.6rem 1.2rem;
   font-family: inherit;
-  font-size: 0.9rem;
+  font-size: 1.02rem;
   color: var(--color-text);
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid var(--color-border);
@@ -1251,7 +1256,7 @@ const clearLogs = () => {
 }
 
 .load-more-btn i {
-  font-size: 0.85rem;
+  font-size: 0.98rem;
 }
 
 @media (max-width: 768px) {

@@ -68,7 +68,7 @@ onMounted(() => {
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  font-size: 0.875rem;
+  font-size: 1.06rem;
   color: var(--color-text-secondary);
   letter-spacing: 0.03em;
   position: relative;
@@ -116,7 +116,7 @@ onMounted(() => {
 
 .footer-heart {
   color: #dd3057;
-  font-size: 0.875rem;
+  font-size: 1.06rem;
 }
 
 @media (max-width: 768px) {
@@ -124,12 +124,12 @@ onMounted(() => {
     padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
   }
 
-  .footer-content { flex-direction: column; gap: 0.5rem; font-size: 0.8125rem; }
+  .footer-content { flex-direction: column; gap: 0.5rem; font-size: 1.02rem; }
   .footer-left, .footer-center, .footer-right { text-align: center; flex: none; }
 }
 
 @media (max-width: 480px) {
-  .footer-content { font-size: 0.75rem; }
+  .footer-content { font-size: 0.98rem; }
 }
 
 @media (min-width: 1201px) {

@@ -205,28 +205,49 @@ onUnmounted(() => {
   justify-content: space-between;
   gap: 0.5rem;
   width: 100%;
+  box-sizing: border-box;
+  padding: 0.62rem 0.72rem;
   margin-bottom: 0;
+  border: 1px solid var(--color-border, #2a2a2a);
+  border-radius: 2px;
+  background: var(--color-bg, #0a0a0a);
+  color: var(--color-text, #e8e8e8);
   text-align: left;
   cursor: pointer;
   font: inherit;
+  font-size: 1.04rem;
+  line-height: 1.25;
+  transition:
+    border-color 0.18s ease,
+    box-shadow 0.18s ease;
 }
 
 .jn-crt-select__trigger:disabled {
   cursor: not-allowed;
 }
 
+.jn-crt-select__trigger:focus,
+.jn-crt-select__trigger:focus-visible {
+  outline: none;
+  border-color: #d3234b;
+  box-shadow: 0 0 0 1px rgba(211, 35, 75, 0.35);
+}
+
 .jn-crt-select__value {
+  display: block;
   flex: 1;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  line-height: inherit;
+  letter-spacing: inherit;
 }
 
 .jn-crt-select__chev {
   flex-shrink: 0;
-  width: 0.65rem;
-  height: 0.65rem;
+  width: 0.78rem;
+  height: 0.78rem;
   background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23a0a0a0' d='M2.8 4.2L6 7.4l3.2-3.2'/%3E%3C/svg%3E")
     center / contain no-repeat;
   transition: transform 0.2s ease;
@@ -302,10 +323,10 @@ onUnmounted(() => {
   display: block;
   width: 100%;
   margin: 0;
-  padding: 0.45rem 0.65rem;
+  padding: 0.56rem 0.72rem;
   box-sizing: border-box;
   font: inherit;
-  font-size: 0.8rem;
+  font-size: 1.02rem;
   color: #e8e8e8;
   text-align: left;
   background: transparent;

@@ -18,7 +18,13 @@ export function taskAiChatMsgTime(m: {
   return 0
 }
 
-export function sortTaskAiChatMessagesForDisplay<T extends { id?: string }>(messages: T[]): T[] {
+export function sortTaskAiChatMessagesForDisplay<
+  T extends {
+    id?: string
+    createdAt?: number | Date | string | null
+    createdAtTimestamp?: number | null
+  }
+>(messages: T[]): T[] {
   return [...messages].sort((a, b) => {
     const ta = taskAiChatMsgTime(a)
     const tb = taskAiChatMsgTime(b)

@@ -5,14 +5,18 @@ import * as journalNotesRepo from '../../../repos/journal-notes.repo'
 
 const LOG_PATH = 'api/journal/notes/update'
 
-/**
- * POST /api/journal/notes/update — обновить title и content своей заметки.
- */
 export const updateJournalNoteRoute = app
   .body((s) => ({
     id: s.string(),
-    title: s.string(),
-    content: s.string()
+    title: s.optional(s.string()),
+    content: s.optional(s.string()),
+    folderId: s.optional(s.string()),
+    categoryIds: s.optional(s.array(s.string())),
+    linkedTaskId: s.optional(s.string()),
+    linkedProjectId: s.optional(s.string()),
+    linkedClientId: s.optional(s.string()),
+    noteDate: s.optional(s.string()),
+    isArchived: s.optional(s.boolean())
   }))
   .post('/', async (ctx, req) => {
     const user = requireRealUser(ctx)
@@ -20,23 +24,25 @@ export const updateJournalNoteRoute = app
     await loggerLib.writeServerLog(ctx, {
       severity: 7,
       message: `[${LOG_PATH}] Запрос обновления заметки`,
-      payload: {}
+      payload: { id: req.body.id }
     })
 
-    const title = req.body.title.trim() !== '' ? req.body.title.trim() : 'Без названия'
-    const content = req.body.content
+    const data: journalNotesRepo.UpdateNoteData = {}
+    if (req.body.title !== undefined) {
+      data.title = req.body.title.trim() !== '' ? req.body.title.trim() : 'Без названия'
+    }
+    if (req.body.content !== undefined) data.content = req.body.content
+    if (req.body.folderId !== undefined) data.folderId = req.body.folderId || null
+    if (req.body.categoryIds !== undefined) data.categoryIds = req.body.categoryIds
+    if (req.body.linkedTaskId !== undefined) data.linkedTaskId = req.body.linkedTaskId || null
+    if (req.body.linkedProjectId !== undefined) data.linkedProjectId = req.body.linkedProjectId || null
+    if (req.body.linkedClientId !== undefined) data.linkedClientId = req.body.linkedClientId || null
+    if (req.body.noteDate !== undefined) data.noteDate = req.body.noteDate || null
+    if (req.body.isArchived !== undefined) data.isArchived = req.body.isArchived
 
     try {
-      const row = await journalNotesRepo.updateForUser(ctx, user.id, req.body.id, {
-        title,
-        content
-      })
+      const row = await journalNotesRepo.updateForUser(ctx, user.id, req.body.id, data)
       if (!row) {
-        await loggerLib.writeServerLog(ctx, {
-          severity: 5,
-          message: `[${LOG_PATH}] Заметка не найдена`,
-          payload: { id: req.body.id }
-        })
         return { success: false, error: 'Заметка не найдена' }
       }
       await loggerLib.writeServerLog(ctx, {

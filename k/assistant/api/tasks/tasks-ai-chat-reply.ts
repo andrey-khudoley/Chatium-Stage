@@ -1,5 +1,6 @@
 import { findFeedMessages } from '@app/feed'
 import { runWithExclusiveLock } from '@app/sync'
+// @ts-ignore external platform module is resolved at runtime in Chatium
 import { startCompletion } from '@start/sdk'
 import { TASKS_AI_CHAT_JSON_APPENDIX } from '../../config/prompts'
 import * as settingsLib from '../../lib/settings.lib'

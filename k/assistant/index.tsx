@@ -2,9 +2,15 @@
 import { jsx } from '@app/html-jsx'
 import HomePage from './pages/HomePage.vue'
 import { getPreloaderStyles, getPreloaderScript } from './shared/preloader'
-import { customScrollbarStyles, formControlStyles, mobileSafeAreaStyles, VIEWPORT_META_CONTENT } from './styles'
+import {
+  baseHtmlStyles,
+  customScrollbarStyles,
+  formControlStyles,
+  mobileSafeAreaStyles,
+  VIEWPORT_META_CONTENT
+} from './styles'
 import { getLogLevelForPage, getLogLevelScript } from './shared/logLevel'
-import { getFullUrl, ROUTES } from './config/routes'
+import { getApiUrlForRoute, getFullUrl, ROUTES } from './config/routes'
 import {
   INDEX_PAGE_NAME,
   BODY_TEXT,
@@ -14,6 +20,8 @@ import {
 } from './config/project'
 import * as loggerLib from './lib/logger.lib'
 import * as settingsLib from './lib/settings.lib'
+import { getPomodoroStateRoute } from './api/pomodoro/state/get'
+import { pomodoroControlRoute } from './api/pomodoro/control'
 
 const LOG_PATH = 'index'
 
@@ -34,12 +42,15 @@ export const indexPageRoute = app.html('/', async (ctx, req) => {
   const loginUrl = getFullUrl(ROUTES.login)
   const journalUrl = getFullUrl(ROUTES.journal)
   const tasksUrl = getFullUrl(ROUTES.tasks)
+  const toolsUrl = getFullUrl(ROUTES.tools)
   const adminUrl = isAdmin ? getFullUrl(ROUTES.admin) : ''
   const testsUrl = isAuthenticated ? getFullUrl(ROUTES.tests) : ''
+  const pomodoroStateGetUrl = getApiUrlForRoute(getPomodoroStateRoute.url())
+  const pomodoroControlUrl = getApiUrlForRoute(pomodoroControlRoute.url())
   await loggerLib.writeServerLog(ctx, {
     severity: 7,
     message: `[${LOG_PATH}] URL-ы`,
-    payload: { loginUrl, journalUrl, tasksUrl, adminUrl, testsUrl }
+    payload: { loginUrl, journalUrl, tasksUrl, toolsUrl, adminUrl, testsUrl }
   })
   const logLevel = await getLogLevelForPage(ctx)
   const projectName = await settingsLib.getSettingString(ctx, settingsLib.SETTING_KEYS.PROJECT_NAME)
@@ -415,6 +426,7 @@ export const indexPageRoute = app.html('/', async (ctx, req) => {
             color: #ffffff;
           }
 
+          ${baseHtmlStyles}
           ${customScrollbarStyles}
           ${mobileSafeAreaStyles}
           ${formControlStyles}
@@ -435,12 +447,15 @@ export const indexPageRoute = app.html('/', async (ctx, req) => {
           indexUrl={getFullUrl(ROUTES.index)}
           journalUrl={journalUrl}
           tasksUrl={tasksUrl}
+          toolsUrl={toolsUrl}
           profileUrl={getFullUrl(ROUTES.profile)}
           loginUrl={loginUrl}
           isAuthenticated={isAuthenticated}
           isAdmin={isAdmin}
           adminUrl={adminUrl}
           testsUrl={testsUrl}
+          pomodoroStateGetUrl={pomodoroStateGetUrl}
+          pomodoroControlUrl={pomodoroControlUrl}
         />
       </body>
     </html>

@@ -6,24 +6,65 @@ import { getPreloaderStyles, getPreloaderScript } from '../../shared/preloader'
 import { getLogLevelForPage, getLogLevelScript } from '../../shared/logLevel'
 import * as loggerLib from '../../lib/logger.lib'
 import * as journalNotesRepo from '../../repos/journal-notes.repo'
+import * as inboxNotesRepo from '../../repos/inbox-notes.repo'
+import * as notebookFoldersRepo from '../../repos/notebook-folders.repo'
+import * as notebookCategoriesRepo from '../../repos/notebook-categories.repo'
 import * as tasksRepo from '../../repos/tasks.repo'
 import { createJournalNoteRoute } from '../../api/journal/notes/create'
 import { getJournalNoteRoute } from '../../api/journal/notes/get'
 import { updateJournalNoteRoute } from '../../api/journal/notes/update'
 import { deleteJournalNoteRoute } from '../../api/journal/notes/delete'
+import { listJournalNotesRoute } from '../../api/journal/notes/list'
+import { reorderJournalNotesRoute } from '../../api/journal/notes/reorder'
+import { archiveJournalNoteRoute } from '../../api/journal/notes/archive'
+import { moveJournalNotesRoute } from '../../api/journal/notes/move'
+import { bulkJournalNotesRoute } from '../../api/journal/notes/bulk'
+import { createInboxNoteRoute } from '../../api/journal/inbox/create'
+import { getInboxNoteRoute } from '../../api/journal/inbox/get'
+import { updateInboxNoteRoute } from '../../api/journal/inbox/update'
+import { archiveInboxNoteRoute } from '../../api/journal/inbox/archive'
+import { deleteInboxNoteRoute } from '../../api/journal/inbox/delete'
+import { listInboxNotesRoute } from '../../api/journal/inbox/list'
+import { createNotebookFolderRoute } from '../../api/journal/folders/create'
+import { updateNotebookFolderRoute } from '../../api/journal/folders/update'
+import { deleteNotebookFolderRoute } from '../../api/journal/folders/delete'
+import { reorderNotebookFoldersRoute } from '../../api/journal/folders/reorder'
+import { archiveNotebookFolderRoute } from '../../api/journal/folders/archive'
+import { listNotebookCategoriesRoute } from '../../api/journal/categories/list'
+import { createNotebookCategoryRoute } from '../../api/journal/categories/create'
+import { updateNotebookCategoryRoute } from '../../api/journal/categories/update'
+import { deleteNotebookCategoryRoute } from '../../api/journal/categories/delete'
+import { getJournalDayEntryRoute } from '../../api/journal/day/get'
+import { saveJournalDayEntryRoute } from '../../api/journal/day/save'
+import { getJournalWeekEntryRoute } from '../../api/journal/week/get'
+import { saveJournalWeekDayEntryRoute } from '../../api/journal/week/save'
+import { saveJournalWeekSummaryRoute } from '../../api/journal/week/save-summary'
 import { getTasksTreeRoute } from '../../api/tasks/tree/get'
 import { reorderTaskDayItemsRoute } from '../../api/tasks/items/reorder-day'
 import { releaseTaskDayItemsRoute } from '../../api/tasks/items/release-day'
 import { updateTaskItemRoute } from '../../api/tasks/items/update'
+import { pomodoroAssignTaskRoute } from '../../api/pomodoro/assign-task'
+import { getPomodoroStateRoute } from '../../api/pomodoro/state/get'
+import { pomodoroControlRoute } from '../../api/pomodoro/control'
+import { getJournalMonthDataRoute } from '../../api/journal/month/data'
+import { getJournalHabitsRoute } from '../../api/journal/habits/get'
+import { saveJournalHabitsRoute } from '../../api/journal/habits/save'
 import { getApiUrlForRoute, getFullUrl, ROUTES } from '../../config/routes'
 import type { TasksTreeDto } from '../../lib/tasks-types'
 import { JOURNAL_PAGE_NAME, getPageTitle, getHeaderText } from '../../config/project'
 import * as settingsLib from '../../lib/settings.lib'
+import * as journalDayRepo from '../../repos/journal-day-entries.repo'
+import { computeJournalDayKeyInTimeZone } from '../../lib/journal-day-key'
+import * as journalWeekRepo from '../../repos/journal-week-entries.repo'
+import * as journalHabitsRepo from '../../repos/journal-habits.repo'
+import { computeHabitsMondayKeyFromNow } from '../../lib/journal-habits-time'
+import { computeJournalWeekMondayKeyInTimeZone } from '../../lib/journal-week-key'
 import { customScrollbarStyles, formControlStyles, mobileSafeAreaStyles, VIEWPORT_META_CONTENT } from '../../styles'
 
 const LOG_PATH = 'web/journal/index'
 
-const VALID_JOURNAL_TABS = ['notebook', 'month', 'week', 'day', 'habits'] as const
+const VALID_JOURNAL_TABS = ['inbox', 'notebook', 'tasks', 'day', 'week', 'month', 'habits'] as const
+const SERVER_FALLBACK_TIME_ZONE = 'Europe/Moscow'
 
 function parseJournalTabFromQuery(tab: unknown): (typeof VALID_JOURNAL_TABS)[number] | undefined {
   if (typeof tab !== 'string') return undefined
@@ -32,10 +73,6 @@ function parseJournalTabFromQuery(tab: unknown): (typeof VALID_JOURNAL_TABS)[num
     : undefined
 }
 
-/**
- * Страница «Мой журнал»: заглушка «В разработке», общий хедер и футер.
- * Доступна без обязательной авторизации (как главная).
- */
 export const journalPageRoute = app.html('/', async (ctx, req) => {
   await loggerLib.writeServerLog(ctx, {
     severity: 7,
@@ -51,15 +88,39 @@ export const journalPageRoute = app.html('/', async (ctx, req) => {
   const testsUrl = isAuthenticated ? getFullUrl(ROUTES.tests) : ''
 
   let journalNotesInitial: journalNotesRepo.JournalNoteSummary[] = []
+  let inboxNotesInitial: inboxNotesRepo.InboxNoteSummary[] = []
+  let notebookFoldersInitial: notebookFoldersRepo.NotebookFolderDto[] = []
+  let notebookCategoriesInitial: notebookCategoriesRepo.NotebookCategoryDto[] = []
   let tasksTreeInitial: TasksTreeDto = { clients: [], projects: [], tasks: [] }
+  let journalDayEntryInitial: journalDayRepo.JournalDayEntryDto | null = null
+  let journalWeekEntryInitial: journalWeekRepo.JournalWeekEntryDto | null = null
+  let journalHabitsInitial: import('../../lib/journal-habits-time').JournalHabitsWeekDto | null = null
   if (ctx.user) {
     try {
       const user = requireRealUser(ctx)
-      journalNotesInitial = await journalNotesRepo.findSummariesByUserId(ctx, user.id)
-      tasksTreeInitial = await tasksRepo.getTreeForUser(ctx, user.id)
+      ;[journalNotesInitial, inboxNotesInitial, notebookFoldersInitial, notebookCategoriesInitial, tasksTreeInitial] =
+        await Promise.all([
+          journalNotesRepo.findSummariesByUserId(ctx, user.id),
+          inboxNotesRepo.findSummariesByUserId(ctx, user.id, { includeArchived: true }),
+          notebookFoldersRepo.findByUserId(ctx, user.id, true),
+          notebookCategoriesRepo.findByUserId(ctx, user.id),
+          tasksRepo.getTreeForUser(ctx, user.id)
+        ])
+      const dayKey = computeJournalDayKeyInTimeZone(Date.now(), SERVER_FALLBACK_TIME_ZONE)
+      journalDayEntryInitial = await journalDayRepo.getByUserAndDay(ctx, user.id, dayKey)
+      const mondayKey = computeJournalWeekMondayKeyInTimeZone(Date.now(), SERVER_FALLBACK_TIME_ZONE)
+      journalWeekEntryInitial = await journalWeekRepo.getWeekByUserAndMonday(ctx, user.id, mondayKey)
+      const habitsMonday = computeHabitsMondayKeyFromNow(Date.now())
+      journalHabitsInitial = await journalHabitsRepo.getHabitsWeekForUser(ctx, user.id, habitsMonday, Date.now())
     } catch {
       journalNotesInitial = []
+      inboxNotesInitial = []
+      notebookFoldersInitial = []
+      notebookCategoriesInitial = []
       tasksTreeInitial = { clients: [], projects: [], tasks: [] }
+      journalDayEntryInitial = null
+      journalWeekEntryInitial = null
+      journalHabitsInitial = null
     }
   }
 
@@ -67,10 +128,41 @@ export const journalPageRoute = app.html('/', async (ctx, req) => {
   const journalNotesGetUrl = getApiUrlForRoute(getJournalNoteRoute.url())
   const journalNotesUpdateUrl = getApiUrlForRoute(updateJournalNoteRoute.url())
   const journalNotesDeleteUrl = getApiUrlForRoute(deleteJournalNoteRoute.url())
+  const journalNotesListUrl = getApiUrlForRoute(listJournalNotesRoute.url())
+  const journalNotesReorderUrl = getApiUrlForRoute(reorderJournalNotesRoute.url())
+  const journalNotesArchiveUrl = getApiUrlForRoute(archiveJournalNoteRoute.url())
+  const journalNotesMoveUrl = getApiUrlForRoute(moveJournalNotesRoute.url())
+  const journalNotesBulkUrl = getApiUrlForRoute(bulkJournalNotesRoute.url())
+  const inboxNotesCreateUrl = getApiUrlForRoute(createInboxNoteRoute.url())
+  const inboxNotesGetUrl = getApiUrlForRoute(getInboxNoteRoute.url())
+  const inboxNotesUpdateUrl = getApiUrlForRoute(updateInboxNoteRoute.url())
+  const inboxNotesArchiveUrl = getApiUrlForRoute(archiveInboxNoteRoute.url())
+  const inboxNotesDeleteUrl = getApiUrlForRoute(deleteInboxNoteRoute.url())
+  const inboxNotesListUrl = getApiUrlForRoute(listInboxNotesRoute.url())
+  const notebookFoldersCreateUrl = getApiUrlForRoute(createNotebookFolderRoute.url())
+  const notebookFoldersUpdateUrl = getApiUrlForRoute(updateNotebookFolderRoute.url())
+  const notebookFoldersDeleteUrl = getApiUrlForRoute(deleteNotebookFolderRoute.url())
+  const notebookFoldersReorderUrl = getApiUrlForRoute(reorderNotebookFoldersRoute.url())
+  const notebookFoldersArchiveUrl = getApiUrlForRoute(archiveNotebookFolderRoute.url())
+  const notebookCategoriesListUrl = getApiUrlForRoute(listNotebookCategoriesRoute.url())
+  const notebookCategoriesCreateUrl = getApiUrlForRoute(createNotebookCategoryRoute.url())
+  const notebookCategoriesUpdateUrl = getApiUrlForRoute(updateNotebookCategoryRoute.url())
+  const notebookCategoriesDeleteUrl = getApiUrlForRoute(deleteNotebookCategoryRoute.url())
+  const journalDayGetUrl = getApiUrlForRoute(getJournalDayEntryRoute.url())
+  const journalDaySaveUrl = getApiUrlForRoute(saveJournalDayEntryRoute.url())
+  const journalWeekGetUrl = getApiUrlForRoute(getJournalWeekEntryRoute.url())
+  const journalWeekSaveUrl = getApiUrlForRoute(saveJournalWeekDayEntryRoute.url())
+  const journalWeekSaveSummaryUrl = getApiUrlForRoute(saveJournalWeekSummaryRoute.url())
   const tasksTreeGetUrl = getApiUrlForRoute(getTasksTreeRoute.url())
   const taskItemReorderDayUrl = getApiUrlForRoute(reorderTaskDayItemsRoute.url())
   const taskReleaseDayUrl = getApiUrlForRoute(releaseTaskDayItemsRoute.url())
   const taskItemUpdateUrl = getApiUrlForRoute(updateTaskItemRoute.url())
+  const pomodoroAssignTaskUrl = getApiUrlForRoute(pomodoroAssignTaskRoute.url())
+  const pomodoroStateGetUrl = getApiUrlForRoute(getPomodoroStateRoute.url())
+  const pomodoroControlUrl = getApiUrlForRoute(pomodoroControlRoute.url())
+  const journalMonthDataUrl = getApiUrlForRoute(getJournalMonthDataRoute.url())
+  const journalHabitsGetUrl = getApiUrlForRoute(getJournalHabitsRoute.url())
+  const journalHabitsSaveUrl = getApiUrlForRoute(saveJournalHabitsRoute.url())
   const tasksPageUrl = getFullUrl(ROUTES.tasks)
   const journalTabInitial = parseJournalTabFromQuery(req.query?.tab)
 
@@ -314,17 +406,54 @@ export const journalPageRoute = app.html('/', async (ctx, req) => {
           isAdmin={isAdmin}
           adminUrl={adminUrl}
           journalNotesInitial={journalNotesInitial}
+          inboxNotesInitial={inboxNotesInitial}
+          notebookFoldersInitial={notebookFoldersInitial}
+          notebookCategoriesInitial={notebookCategoriesInitial}
           journalNotesCreateUrl={journalNotesCreateUrl}
           journalNotesGetUrl={journalNotesGetUrl}
           journalNotesUpdateUrl={journalNotesUpdateUrl}
           journalNotesDeleteUrl={journalNotesDeleteUrl}
+          journalNotesListUrl={journalNotesListUrl}
+          journalNotesReorderUrl={journalNotesReorderUrl}
+          journalNotesArchiveUrl={journalNotesArchiveUrl}
+          journalNotesMoveUrl={journalNotesMoveUrl}
+          journalNotesBulkUrl={journalNotesBulkUrl}
+          inboxNotesCreateUrl={inboxNotesCreateUrl}
+          inboxNotesGetUrl={inboxNotesGetUrl}
+          inboxNotesUpdateUrl={inboxNotesUpdateUrl}
+          inboxNotesArchiveUrl={inboxNotesArchiveUrl}
+          inboxNotesDeleteUrl={inboxNotesDeleteUrl}
+          inboxNotesListUrl={inboxNotesListUrl}
+          notebookFoldersCreateUrl={notebookFoldersCreateUrl}
+          notebookFoldersUpdateUrl={notebookFoldersUpdateUrl}
+          notebookFoldersDeleteUrl={notebookFoldersDeleteUrl}
+          notebookFoldersReorderUrl={notebookFoldersReorderUrl}
+          notebookFoldersArchiveUrl={notebookFoldersArchiveUrl}
+          notebookCategoriesListUrl={notebookCategoriesListUrl}
+          notebookCategoriesCreateUrl={notebookCategoriesCreateUrl}
+          notebookCategoriesUpdateUrl={notebookCategoriesUpdateUrl}
+          notebookCategoriesDeleteUrl={notebookCategoriesDeleteUrl}
+          journalDayGetUrl={journalDayGetUrl}
+          journalDaySaveUrl={journalDaySaveUrl}
+          journalDayEntryInitial={journalDayEntryInitial}
+          journalWeekGetUrl={journalWeekGetUrl}
+          journalWeekSaveUrl={journalWeekSaveUrl}
+          journalWeekSaveSummaryUrl={journalWeekSaveSummaryUrl}
+          journalWeekEntryInitial={journalWeekEntryInitial}
           tasksTreeInitial={tasksTreeInitial}
           tasksTreeGetUrl={tasksTreeGetUrl}
           taskItemReorderDayUrl={taskItemReorderDayUrl}
           taskReleaseDayUrl={taskReleaseDayUrl}
           taskItemUpdateUrl={taskItemUpdateUrl}
           tasksPageUrl={tasksPageUrl}
+          pomodoroAssignTaskUrl={pomodoroAssignTaskUrl}
+          pomodoroStateGetUrl={pomodoroStateGetUrl}
+          pomodoroControlUrl={pomodoroControlUrl}
+          journalMonthDataUrl={journalMonthDataUrl}
           journalTabInitial={journalTabInitial}
+          journalHabitsGetUrl={journalHabitsGetUrl}
+          journalHabitsSaveUrl={journalHabitsSaveUrl}
+          journalHabitsInitial={journalHabitsInitial}
         />
       </body>
     </html>

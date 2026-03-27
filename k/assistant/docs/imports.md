@@ -3,10 +3,10 @@
 ## 1) Страницы‑роуты (TSX entrypoints)
 
 ### `./config/routes.tsx`
-- нет внутренних импортов (только экспорт PROJECT_ROOT, ROUTES, getFullUrl, getApiUrlForRoute, withProjectRoot, withProjectRootAndSubroute)
+- нет внутренних импортов (только экспорт PROJECT_ROOT, ROUTES, ROUTE_PATHS, getFullUrl, getApiUrlForRoute, withProjectRoot, withProjectRootAndSubroute)
 
 ### `./config/project.tsx`
-- нет внутренних импортов (только экспорт DEFAULT_PROJECT_TITLE, INDEX_PAGE_NAME, PROFILE_PAGE_NAME, ADMIN_PAGE_NAME, TESTS_PAGE_NAME, JOURNAL_PAGE_NAME, TASKS_PAGE_NAME, getPageTitle, getHeaderText, BODY_TEXT, BODY_SUBTEXT)
+- нет внутренних импортов (только экспорт DEFAULT_PROJECT_TITLE, INDEX_PAGE_NAME, PROFILE_PAGE_NAME, ADMIN_PAGE_NAME, TESTS_PAGE_NAME, JOURNAL_PAGE_NAME, TASKS_PAGE_NAME, TOOLS_PAGE_NAME, POMODORO_PAGE_NAME, getPageTitle, getHeaderText, BODY_TEXT, BODY_SUBTEXT)
 
 ### `./index.tsx`
 - `@app/html-jsx` → `jsx`
@@ -14,11 +14,13 @@
 - `./shared/preloader` → `getPreloaderStyles`, `getPreloaderScript`
 - `./styles` → `customScrollbarStyles`, `mobileSafeAreaStyles`, `formControlStyles`, `VIEWPORT_META_CONTENT`
 - `./shared/logLevel` → `getLogLevelForPage`, `getLogLevelScript`
-- `./config/routes` → `getFullUrl`, `ROUTES`
+- `./config/routes` → `getApiUrlForRoute`, `getFullUrl`, `ROUTES`
 - `./config/project` → `INDEX_PAGE_NAME`, `BODY_TEXT`, `BODY_SUBTEXT`, `getPageTitle`, `getHeaderText`
 - `./lib/logger.lib` → `*`
 - `./lib/settings.lib` → `*`
-- передаёт в `HomePage`: `tasksUrl` (`getFullUrl(ROUTES.tasks)`), `journalUrl`, др.
+- `./api/pomodoro/state/get` → `getPomodoroStateRoute`
+- `./api/pomodoro/control` → `pomodoroControlRoute`
+- передаёт в `HomePage`: `tasksUrl` (`getFullUrl(ROUTES.tasks)`), `journalUrl`, `toolsUrl`, `pomodoroStateGetUrl`, `pomodoroControlUrl`, др.
 
 ### `./web/admin/index.tsx`
 - `@app/html-jsx` → `jsx`
@@ -67,6 +69,9 @@
 - `../../api/tasks/items/reorder` → `reorderTaskItemsRoute`
 - `../../api/tasks/tasks-ai-chat-ensure` → `taskAiChatEnsureRoute`
 - `../../api/tasks/tasks-ai-chat-reset` → `taskAiChatResetRoute`
+- `../../api/pomodoro/assign-task` → `pomodoroAssignTaskRoute`
+- `../../api/pomodoro/state/get` → `getPomodoroStateRoute`
+- `../../api/pomodoro/control` → `pomodoroControlRoute`
 - `../../shared/preloader`, `../../shared/logLevel`, `../../styles` → `customScrollbarStyles`, `mobileSafeAreaStyles`, `formControlStyles`, `VIEWPORT_META_CONTENT`
 - `../../lib/logger.lib`, `../../lib/settings.lib`
 - `../../config/routes` → `getFullUrl`, `getApiUrlForRoute`, `ROUTES`
@@ -81,19 +86,67 @@
 - `../../styles` → `customScrollbarStyles`, `mobileSafeAreaStyles`, `formControlStyles`, `VIEWPORT_META_CONTENT`
 - `../../lib/logger.lib` → `*`
 - `../../repos/journal-notes.repo` → `*`
+- `../../repos/inbox-notes.repo` → `*`
 - `../../repos/tasks.repo` → `*`
 - `../../lib/tasks-types` → `TasksTreeDto`
 - `../../api/journal/notes/create` → `createJournalNoteRoute`
 - `../../api/journal/notes/get` → `getJournalNoteRoute`
 - `../../api/journal/notes/update` → `updateJournalNoteRoute`
 - `../../api/journal/notes/delete` → `deleteJournalNoteRoute`
+- `../../api/journal/inbox/create` → `createInboxNoteRoute`
+- `../../api/journal/inbox/get` → `getInboxNoteRoute`
+- `../../api/journal/inbox/update` → `updateInboxNoteRoute`
+- `../../api/journal/inbox/archive` → `archiveInboxNoteRoute`
+- `../../api/journal/inbox/delete` → `deleteInboxNoteRoute`
+- `../../api/journal/inbox/list` → `listInboxNotesRoute`
+- `../../api/journal/day/get` → `getJournalDayEntryRoute`
+- `../../api/journal/day/save` → `saveJournalDayEntryRoute`
+- `../../api/journal/week/get` → `getJournalWeekEntryRoute`
+- `../../api/journal/week/save` → `saveJournalWeekDayEntryRoute`
+- `../../api/journal/week/save-summary` → `saveJournalWeekSummaryRoute`
+- `../../api/journal/habits/get` → `getJournalHabitsRoute`
+- `../../api/journal/habits/save` → `saveJournalHabitsRoute`
+- `../../repos/journal-habits.repo` → `*`
+- `../../lib/journal-habits-time` → `computeHabitsMondayKeyFromNow`
 - `../../api/tasks/tree/get` → `getTasksTreeRoute`
 - `../../api/tasks/items/reorder-day` → `reorderTaskDayItemsRoute`
 - `../../api/tasks/items/release-day` → `releaseTaskDayItemsRoute`
 - `../../api/tasks/items/update` → `updateTaskItemRoute`
+- `../../api/pomodoro/assign-task` → `pomodoroAssignTaskRoute`
+- `../../api/pomodoro/state/get` → `getPomodoroStateRoute`
+- `../../api/pomodoro/control` → `pomodoroControlRoute`
 - `../../config/routes` → `getFullUrl`, `getApiUrlForRoute`, `ROUTES`
 - `../../config/project` → `JOURNAL_PAGE_NAME`, `getPageTitle`, `getHeaderText`
 - `../../lib/settings.lib` → `*`
+- `../../repos/journal-day-entries.repo` → `*`
+- `../../lib/journal-day-key` → `computeJournalDayKeyInTimeZone`
+- `../../repos/journal-week-entries.repo` → `*`
+- `../../lib/journal-week-key` → `computeJournalWeekMondayKeyLocal`
+
+### `./web/tools/index.tsx`
+- `@app/html-jsx` → `jsx`
+- `../../pages/ToolsPage.vue`
+- `../../config/routes` → `getFullUrl`, `ROUTES`
+- `../../config/project` → `TOOLS_PAGE_NAME`, `getPageTitle`, `getHeaderText`
+- `../../lib/settings.lib` → `*`
+
+### `./web/timers/index.tsx`
+- `@app/html-jsx` → `jsx`
+- `@app/auth` → `requireRealUser`
+- `../../pages/PomodoroPage.vue`
+- `../../lib/pomodoro.lib` → `getState` (SSR начального состояния)
+- `../../lib/pomodoro-stats-day` → `computePomodoroStatsDayKeyInTimeZone`
+- `../../lib/pomodoro-types` → тип `PomodoroStateDto`
+- `../../config/routes` → `getApiUrlForRoute`, `getFullUrl`, `ROUTES`
+- `../../config/project` → `POMODORO_PAGE_NAME`, `getPageTitle`, `getHeaderText`
+- `../../lib/settings.lib` → `*`
+- `../../api/pomodoro/state/get` → `getPomodoroStateRoute`
+- `../../api/pomodoro/control` → `pomodoroControlRoute`
+- `../../api/pomodoro/settings/save` → `savePomodoroSettingsRoute`
+- `../../api/pomodoro/assign-task` → `pomodoroAssignTaskRoute`
+- `../../api/tasks/in-progress` → `getInProgressTasksRoute`
+- `../../api/tools/focus-log` → `toolsFocusLogRoute`
+- `../../styles` → `customScrollbarStyles`, `formControlStyles`, `mobileSafeAreaStyles`, `VIEWPORT_META_CONTENT`
 
 ### `./web/tests/index.tsx`
 - `@app/html-jsx` → `jsx`
@@ -162,14 +215,16 @@
 - `../components/AppFooter.vue`
 - `../components/journal/JournalNav.vue`
 - `../components/journal/JournalNotebookPane.vue`
+- `../components/journal/JournalInboxPane.vue`
 - `../components/journal/JournalMonthPane.vue`
 - `../components/journal/JournalWeekPane.vue`
 - `../components/journal/JournalDayPane.vue`
+- `../components/journal/JournalDayInDevelopmentPane.vue`
 - `../components/journal/JournalHabitsPane.vue`
 - `../shared/bootUi` → `subscribeBootStaticReady`, `scheduleHideBootLoader`
 - `../shared/logger` → `createComponentLogger`
 - `../lib/tasks-types` → `TasksTreeDto`
-- пропсы: `journalTabInitial?` — вкладка из `?tab=` при SSR; блокнот — `journalNotesInitial?`, `journalNotesCreateUrl?`, …; вкладка «День» — `tasksTreeInitial?`, `tasksTreeGetUrl?`, `taskItemReorderDayUrl?`, `taskReleaseDayUrl?`, `taskItemUpdateUrl?`, `tasksPageUrl?`; `panePropsForTab` подставляет `notebookPaneProps` или `dayPaneProps` по `activeTab`; обработчики `@note-*` только у блокнота; активная вкладка синхронизируется с адресной строкой (`replaceState`, `popstate`)
+- пропсы: `journalTabInitial?` — вкладка из `?tab=` при SSR; блокнот — `notebookPaneProps` (`journalNotes*`, папки/категории); инбокс — `inboxPaneProps` (`inboxNotes*`, отдельная Heap-таблица), компонент `JournalInboxPane`; вкладка «Задачи» (`tasks`) — `tasksTreeInitial?`, …; активная вкладка синхронизируется с адресной строкой (`replaceState`, `popstate`; для инбокса по умолчанию `?tab=` не добавляется, для блокнота — `?tab=notebook`)
 
 ### `./pages/TestsPage.vue`
 - `vue` → `onMounted`, `onBeforeUnmount`, `onUnmounted`, `ref`, `computed`
@@ -192,7 +247,25 @@
 - `../shared/bootUi` → `subscribeBootStaticReady`, `scheduleHideBootLoader`
 - `../shared/logger` → `createComponentLogger`
 - `../lib/tasks-types` → `TasksTreeDto`, `TaskClientDto`, `TaskProjectDto`, `TaskItemDto`
+- `../lib/pomodoro-stats-day` → `computePomodoroStatsDayKeyLocal` (при привязке задачи к Pomodoro)
 - событие `tasks-maybe-changed` от чата — отложенный `refreshTree` после ответа ассистента
+
+### `./pages/ToolsPage.vue`
+- `../components/Header.vue`
+- `../components/GlobalGlitch.vue`
+- `../components/AppFooter.vue`
+
+### `./pages/PomodoroPage.vue`
+- `vue` → `computed`, `onMounted`, `onUnmounted`, `ref`, `watch`, `nextTick`
+- `../components/Header.vue`
+- `../components/GlobalGlitch.vue`
+- `../components/AppFooter.vue`
+- `../components/pomodoro/PomodoroToolsWorkspace.vue`
+- `../lib/pomodoro-phase-sounds` → `playPomodoroPhaseChangeSound`
+- `../lib/pomodoro-types` → `formatPomodoroSecondsDisplay` (как `fmt`)
+- `../lib/pomodoro-stats-day` → `computePomodoroStatsDayKeyLocal`
+- пропсы SSR от `web/timers/index.tsx`: `initialPomodoroState`, `initialServerNowMs` (опционально)
+- второй блок `<style>` без `scoped` в этом же файле — глобальные CRT-стили (`.pomodoro-phase-bar`, `.pomodoro-actions`, `.pomo-btn`, …) для `/web/timers`; отдельные `.css` из `import` в `<script>` в этой среде не подключаются в бандл
 
 ### `./components/tasks/TasksAiChatPanel.vue`
 - `vue` → `computed`, `onMounted`, `onUnmounted`, `ref`, `watch`, `nextTick`
@@ -212,6 +285,8 @@
 - `vue` → `ref`, `onMounted`, `onUnmounted`
 - `./LogoutModal.vue`
 - `../shared/logger` → `createComponentLogger`
+- `../lib/pomodoro-types` → `formatPomodoroSecondsDisplay`, типы `PomodoroPhase`, `PomodoroStateDto`
+- `../lib/pomodoro-stats-day` → `computePomodoroStatsDayKeyLocal`
 
 ### `./components/LogoutModal.vue`
 - `vue` → `watch`, `onMounted`
@@ -230,35 +305,92 @@
 - `defineProps`: `modelValue`, `options`, `disabled?`, `id?`
 - `defineEmits`: `update:modelValue`
 
+### `./components/pomodoro/PomodoroTimerDial.vue`
+- `vue` → `computed`
+- `defineProps`: `phase`, `remainingSec`, `overtimeSec`, `phaseDurationSec`, `status`, `phaseLabel`, `statusLabel`, `timeLabel`
+
+### `./components/pomodoro/PomodoroSettingsModal.vue`
+- `vue` → `reactive`, `watch`
+- `../../lib/pomodoro-types` → `PomodoroAfterLongRest`, `normalizePhaseChangeSoundId`
+- `../../lib/pomodoro-phase-sounds` → `POMODORO_PHASE_CHANGE_SOUND_OPTIONS`, `playPomodoroPhaseChangeSound`
+- `defineProps`: `isOpen`, `saving`, `modelValue`
+- `defineEmits`: `close`, `save`
+
+### `./components/pomodoro/PomodoroTaskSelector.vue`
+- `vue` → `computed`, `onMounted`, `ref`
+- `defineProps`: `assignTaskUrl`, `getTasksUrl`, `currentTaskId`, `statsDayKey` (передаётся в `assign-task` вместе с `taskId`)
+
+### `./components/pomodoro/PomodoroToolStatsRow.vue`
+- `defineProps`: `firstText`, `secondText`, `thirdText`, `firstLabel`, `secondLabel`, `thirdLabel`, `firstIcon`, `secondIcon`, `thirdIcon` (три ячейки `.stat-cell` в одной сетке; общая вёрстка для вкладок Pomodoro и таймера/секундомера)
+
+### `./components/pomodoro/PomodoroToolsWorkspace.vue`
+- `vue` → `computed`
+- `../../lib/focus-clock-local-stats` → `readFocusClockStatsFromStorage`
+- `../../lib/pomodoro-types` → `formatPomodoroSecondsDisplay`, типы `PomodoroPhaseCompleteAction`, `PomodoroAfterLongRest`
+- `../../lib/pomodoro-stats-day` → `computePomodoroStatsDayKeyLocal`
+- `./PomodoroTimerDial.vue`, `./PomodoroSettingsModal.vue`, `./PomodoroTaskSelector.vue`, `./FocusClockPane.vue`, `./PomodoroToolStatsRow.vue`
+- `defineProps`: `state`, `localTickMs`, `sharedSelectedTaskId`, `settingsModel`, `saving`, `actionPending`, `assignTaskUrl`, `getTasksUrl`, `toolsFocusLogUrl`, `activeTool`, `settingsOpen`
+- `defineEmits`: `update:activeTool`, `update:settingsOpen`, `control`, `save-settings`, `pomodoro-task-assigned`, `shared-task-selected`
+
+### `./components/pomodoro/FocusClockPane.vue`
+- стили панели фазы и кнопок — глобальный блок в `PomodoroPage.vue` (см. выше); в scoped `FocusClockPane` остаются оболочка, модалка настроек (`clock-settings-*`), оформление секундомерного dial
+- `vue` → `computed`, `onMounted`, `onUnmounted`, `ref`, `watch`
+- `../../lib/pomodoro-types` → `formatPomodoroSecondsDisplay` (как `fmt`)
+- `../../lib/focus-clock-local-stats` → `buildFocusClockStatsPayload`, `readFocusClockStatsFromStorage`, `writeFocusClockStatsToStorage`
+- `../../lib/pomodoro-stats-day` → `computePomodoroStatsDayKeyLocal`
+- `./PomodoroTimerDial.vue`, `./PomodoroTaskSelectDropdown.vue`
+- `defineProps`: `mode`, `focusLogUrl`, `getTasksUrl`, `selectedTaskId?`
+- `defineEmits`: `taskSelected`
+
 ### `./components/journal/JournalStubPanel.vue`
 - (только разметка заглушки «В разработке»)
 
 ### `./components/journal/JournalNav.vue`
-- `defineProps`: `tabs`, `activeTab`, `showNotebookToolbar`, `showDayToolbar`, `isAuthenticated`, `notebookCreateTitle`, `notebookCreateError`
+- `defineProps`: `tabs`, `activeTab`, `showNotebookToolbar`, `showTasksToolbar`, `isAuthenticated`, `notebookCreateTitle`, `notebookCreateError`
 - `defineEmits`: `select-tab`, `create-note`, `open-all-tasks`
-- отвечает за левое меню журнала: список вкладок, разделитель, динамические кнопки (`Новая заметка` / `Все задачи`) и их стили/focus
+- отвечает за левое меню журнала: список вкладок, разделитель, динамические кнопки (`Новая заметка` / `Все задачи` на вкладке «Задачи») и их стили/focus
 
 ### `./components/journal/JournalNotebookPane.vue`
-- `vue` → `reactive`, `ref`, `watch`
+- `vue` → `computed`, `ref`, `watch`
 - `../../shared/logger` → `createComponentLogger`
-- `defineProps`: `notes`, `isAuthenticated`, `journalNotesCreateUrl?`, `journalNotesGetUrl?`, `journalNotesUpdateUrl?`, `journalNotesDeleteUrl?`, `openNotebookEditorRequest?`
-- `defineEmits`: `noteCreated`, `noteUpdated`, `noteDeleted`
+- `./NotebookFolderSidebar.vue`, `./NotebookFilterBar.vue`, `./NotebookNoteCard.vue`, `./NotebookBulkBar.vue`, `./NotebookNoteEditor.vue`
+- полноценный блокнот: папки, категории, фильтры, редактор заметок; URL `journalNotes*`, Heap `journal-notes`
+- `defineEmits`: `noteCreated`, `noteUpdated`, `noteDeleted`, `foldersChanged`, `categoriesChanged`
+
+### `./components/journal/JournalInboxPane.vue`
+- `vue` → `computed`, `ref`
+- `../../shared/logger` → `createComponentLogger`
+- `./NotebookBulkBar.vue` — массовые действия при выборе заметок (`showFolderMove: false`)
+- упрощённый список + textarea для инбокса; пропсы `inboxNotes*` включая `inboxNotesDeleteUrl` (Heap `inbox-notes`); визуально согласовано с блокнотом: тулбар как `NotebookFilterBar` (кнопка «Новая заметка» как `nb-pane-new-btn`, «Архив» как `nb-filter-btn` — при активной кнопке в списке только архивные заметки), карточки как у блокнота (выделение кликом по телу, открытие по заголовку), пустой список как `nb-pane-empty`
+- `defineEmits`: `noteCreated`, `noteUpdated`, `noteDeleted`, `foldersChanged`, `categoriesChanged` (последние два не используются, для совместимости с `JournalPage`)
+
+### `./components/journal/NotebookBulkBar.vue`
+- проп `showFolderMove` (по умолчанию `true`): при `false` скрыт блок «В корень» и папки (инбокс)
 
 ### `./components/journal/JournalMonthPane.vue`
 - `./JournalStubPanel.vue`
 
 ### `./components/journal/JournalWeekPane.vue`
-- `./JournalStubPanel.vue`
+- `vue` → `computed`, `onMounted`, `ref`, `watch`
+- `../../lib/journal-week-key` → `computeJournalWeekMondayKeyLocal`, `getWeekDayKeysFromMonday`, `getWeekNumberFromMondayKey`, `shiftWeekMondayKey`
+
+### `./components/journal/JournalDayInDevelopmentPane.vue`
+- `vue` → `computed`, `onMounted`, `ref`, `watch`
+- `../../lib/journal-day-key` → `computeJournalDayKeyLocal`
 
 ### `./components/journal/JournalDayPane.vue`
 - `vue` → `computed`, `onUnmounted`, `ref`, `watch`
 - `../JnCrtSelect.vue`
 - `../../lib/tasks-types` → `TasksTreeDto`, `TaskItemDto`, `TaskProjectDto`
+- `../../lib/pomodoro-stats-day` → `computePomodoroStatsDayKeyLocal` (добавление задачи в Pomodoro)
 - `../../shared/logger` → `createComponentLogger`
 - пропсы: `isAuthenticated`, `tasksTreeInitial`, `tasksTreeGetUrl`, `taskItemReorderDayUrl`, `taskReleaseDayUrl`, `taskItemUpdateUrl`, `tasksPageUrl` — список задач «В работе», сортировка (кнопки и drag-and-drop), клик по названию — модалка редактирования (POST `taskItemUpdateUrl`), ссылки на страницу задач с `?client=&project=`
 
 ### `./components/journal/JournalHabitsPane.vue`
-- `./JournalStubPanel.vue`
+- `vue` → `computed`, `onMounted`, `onUnmounted`, `ref`, `watch`
+- `../../lib/journal-week-key` → `shiftWeekMondayKey`
+- `../../lib/journal-habits-time` → типы `JournalHabitsWeekDto`, `JournalHabitRowDto`
+- пропсы: `isAuthenticated`, `journalHabitsGetUrl`, `journalHabitsSaveUrl`, `journalHabitsInitial` — недельная таблица привычек; порядок строк на текущей неделе — HTML5 DnD (ручка в первой колонке), сохранение через `scheduleSave` → POST `journalHabitsSaveUrl`; опрос текущей недели (`setInterval` 60 с) стартует в `onMounted`/`onActivated` и останавливается в `onDeactivated`/`onUnmounted`, чтобы при `KeepAlive` на вкладках журнала не крутить таймер в фоне; `watch` на `journalHabitsInitial` применяет SSR только пока `mondayKey` пуст или совпадает с `initial.mondayKey`
 
 ## 4) Shared (общий код)
 
@@ -303,6 +435,21 @@
 ### `./tables/task-items.table.ts`
 - `@app/heap` → `Heap`
 
+### `./tables/pomodoro-state.table.ts`
+- `@app/heap` → `Heap`
+
+### `./tables/journal-day-entries.table.ts`
+- `@app/heap` → `Heap`
+
+### `./tables/journal-week-entries.table.ts`
+- `@app/heap` → `Heap`
+
+### `./tables/journal-week-summary.table.ts`
+- `@app/heap` → `Heap`
+
+### `./tables/journal-habits-week.table.ts`
+- `@app/heap` → `Heap`
+
 ## 6) Репозитории (repos/)
 
 ### `./repos/settings.repo.ts`
@@ -318,13 +465,41 @@
 - `../tables/journal-notes.table` → `JournalNotes`, `JournalNotesRow`
 - экспортирует: `JournalNoteSummary` (type), `findSummariesByUserId`, `createForUser`, `findByIdForUser`, `updateForUser`, `deleteByIdForUser`
 
+### `./repos/journal-day-entries.repo.ts`
+- `../tables/journal-day-entries.table` → `JournalDayEntries`, `JournalDayEntriesRow`
+
+### `./repos/journal-week-entries.repo.ts`
+- `../tables/journal-week-entries.table` → `JournalWeekEntries`
+- `../tables/journal-week-summary.table` → `JournalWeekSummary`
+- `../lib/journal-week-key` → `getWeekDayKeysFromMonday`, `getWeekNumberFromMondayKey`
+
+### `./repos/journal-habits.repo.ts`
+- `../tables/journal-habits-week.table` → `JournalHabitsWeek`
+- `../lib/journal-day-key` → `computeJournalDayKeyLocal`
+- `../lib/journal-habits-time` → DTO, `computeHabitsMondayKeyFromNow`, `parseRowsJson`, `serializeRowsJson`, `mergeRowsPreserveLockedDays`, `getHabitsInteractionMode`, `getTodayColumnIndexForWeek`
+- `../lib/journal-week-key` → `getWeekDayKeysFromMonday`, `getWeekNumberFromMondayKey`, `shiftWeekMondayKey`
+
 ### `./repos/tasks.repo.ts`
 - `../tables/task-clients.table`, `task-projects.table`, `task-items.table`
 - `../lib/tasks-types` → DTO и `TaskStatus`
 - реэкспорт типов из `lib/tasks-types`
 
+### `./repos/pomodoro.repo.ts`
+- `../tables/pomodoro-state.table` → `PomodoroState`
+- `../lib/pomodoro-types` → `PomodoroAfterLongRest`, `PomodoroPhase`, `PomodoroStatus`, `PomodoroSettingsInput`, `PomodoroStateDto`, `normalizePhaseChangeSoundId`
+- `../lib/pomodoro-stats-day` → `computePomodoroStatsDayKeyInTimeZone`, `normalizeClientStatsDayKey`
+
 ### `./lib/tasks-types.ts`
 - нет импортов (чистые типы DTO для задач)
+
+### `./lib/pomodoro-phase-sounds.ts`
+- первая строка: `// @shared` (импорт из Vue)
+- `./pomodoro-types` → `PomodoroPhaseChangeSoundId`, `normalizePhaseChangeSoundId`
+- экспорт `POMODORO_PHASE_CHANGE_SOUND_OPTIONS`, `playPomodoroPhaseChangeSound` (Web Audio API)
+
+### `./lib/pomodoro-types.ts`
+- первая строка: `// @shared` (импорт из Vue)
+- нет импортов (типы статуса/фаз Pomodoro, DTO, `PomodoroPhaseChangeSoundId`, `normalizePhaseChangeSoundId`, `formatPomodoroSecondsDisplay`)
 
 ## 7) Библиотеки (lib/)
 
@@ -342,6 +517,25 @@
 - `../repos/logs.repo` → `*` (create)
 - `@app/socket` → `sendDataToSocket`
 - `@app/request` → `request`
+
+### `./lib/pomodoro-stats-day.ts`
+- `@shared` — ключ периода дневной статистики (05:00 локально / Москва): `computePomodoroStatsDayKeyLocal`, `computePomodoroStatsDayKeyInTimeZone`, `normalizeClientStatsDayKey`
+
+### `./lib/journal-day-key.ts`
+- `@shared` — ключ дневного периода (граница 05:00): `computeJournalDayKeyLocal`, `computeJournalDayKeyInTimeZone`, `normalizeClientJournalDayKey`
+
+### `./lib/journal-week-key.ts`
+- `@shared` — ключ понедельника недели и диапазон дат: `computeJournalWeekMondayKeyLocal`, `computeJournalWeekMondayKeyInTimeZone`, `normalizeWeekMondayKey`, `shiftWeekMondayKey`, `getWeekDayKeysFromMonday`, `getWeekMondayKeyForDateKey`, `getWeekNumberFromMondayKey`; импорт `journal-day-key` для `InTimeZone`
+
+### `./lib/journal-habits-time.ts`
+- `@shared` — привычки: `computeHabitsMondayKeyFromNow`, `normalizeHabitsMondayKey`, `getHabitsInteractionMode`, `getTodayColumnIndexForWeek`, DTO, `parseRowsJson`, `serializeRowsJson`, `mergeRowsPreserveLockedDays`; импорт `journal-day-key` (`computeJournalDayKeyInTimeZone`), `journal-week-key` (`computeJournalWeekMondayKeyInTimeZone` и др.); серверный fallback границы 05:00 — `Europe/Moscow`
+
+### `./lib/pomodoro.lib.ts`
+- `@app/sync` → `runWithExclusiveLock`
+- `../repos/pomodoro.repo` → `*`
+- `../repos/pomodoro-launches.repo` → `*`
+- `../repos/tasks.repo` → `*`
+- `./pomodoro-types` → `PomodoroSettingsInput`, `PomodoroStateDto`
 
 ## 8) API (api/)
 
@@ -389,10 +583,59 @@
 - `../../../lib/logger.lib` → `*`
 - `../../../repos/journal-notes.repo` → `*`
 
+### `./api/journal/inbox/list.ts`, `get.ts`, `create.ts`, `update.ts`, `archive.ts`, `delete.ts`
+- `@app/auth` → `requireRealUser`
+- `../../../lib/logger.lib` → `*`
+- `../../../repos/inbox-notes.repo` → `*`
+
 ### `./api/tasks/tree/get.ts` и CRUD `api/tasks/{clients,projects,items}/`
 - `@app/auth` → `requireRealUser`
 - `../../../lib/logger.lib` → `*`
 - `../../../repos/tasks.repo` → `*`
+
+### `./api/journal/day/get.ts`
+- `@app/auth` → `requireRealUser`
+- `../../../lib/logger.lib` → `*`
+- `../../../repos/journal-day-entries.repo` → `*`
+- `../../../lib/journal-day-key` → `computeJournalDayKeyInTimeZone`, `normalizeClientJournalDayKey`
+
+### `./api/journal/day/save.ts`
+- `@app/auth` → `requireRealUser`
+- `../../../lib/logger.lib` → `*`
+- `../../../repos/journal-day-entries.repo` → `*`
+- `../../../lib/journal-day-key` → `computeJournalDayKeyInTimeZone`, `normalizeClientJournalDayKey`
+
+### `./api/journal/week/get.ts`
+- `@app/auth` → `requireRealUser`
+- `../../../lib/logger.lib` → `*`
+- `../../../repos/journal-week-entries.repo` → `*`
+- `../../../lib/journal-week-key` → `computeJournalWeekMondayKeyLocal`, `normalizeWeekMondayKey`
+
+### `./api/journal/week/save.ts`
+- `@app/auth` → `requireRealUser`
+- `../../../lib/logger.lib` → `*`
+- `../../../repos/journal-week-entries.repo` → `*`
+- `../../../lib/journal-week-key` → `getWeekMondayKeyForDateKey`, `normalizeClientJournalDateKey`
+
+### `./api/journal/week/save-summary.ts`
+- `@app/auth` → `requireRealUser`
+- `../../../lib/logger.lib` → `*`
+- `../../../repos/journal-week-entries.repo` → `*`
+- `../../../lib/journal-week-key` → `normalizeWeekMondayKey`
+
+### `./api/journal/habits/get.ts`
+- `@app/auth` → `requireRealUser`
+- `../../../lib/logger.lib` → `*`
+- `../../../repos/journal-habits.repo` → `*`
+- `../../../lib/journal-habits-time` → `computeHabitsMondayKeyFromNow`, `normalizeHabitsMondayKey`
+- `../../../lib/journal-week-key` → `getWeekMondayKeyForDateKey`
+
+### `./api/journal/habits/save.ts`
+- `@app/auth` → `requireRealUser`
+- `../../../lib/logger.lib` → `*`
+- `../../../repos/journal-habits.repo` → `*`
+- `../../../lib/journal-habits-time` → `computeHabitsMondayKeyFromNow`, `normalizeHabitsMondayKey`, `type JournalHabitRowDto`
+- `../../../lib/journal-week-key` → `getWeekMondayKeyForDateKey`
 
 ### `./api/tasks/tasks-ai-chat-lib.ts`
 - `@app/auth` → `findUsersByIds`, `SmartUser`
@@ -522,3 +765,19 @@
 - `@app/auth` → `requireAnyUser`
 - `../../../lib/logger.lib` → `*`
 - `../../../lib/admin/dashboard.lib` → `*`
+
+### `./api/pomodoro/assign-task.ts`
+- `@app/auth` → `requireRealUser`
+- `../../lib/pomodoro.lib` → `*`
+
+### `./api/pomodoro/control.ts`
+- `@app/auth` → `requireRealUser`
+- `../../lib/pomodoro.lib` → `start`, `resume`, `pause`, `stop`, `reset`, `skipPhase`
+
+### `./api/pomodoro/state/get.ts`
+- `@app/auth` → `requireRealUser`
+- `../../../lib/pomodoro.lib` → `*`
+
+### `./api/pomodoro/settings/save.ts`
+- `@app/auth` → `requireRealUser`
+- `../../../lib/pomodoro.lib` → `*`

@@ -20,6 +20,8 @@ const props = defineProps<{
   indexUrl: string
   profileUrl: string
   testsUrl?: string
+  pomodoroStateGetUrl?: string
+  pomodoroControlUrl?: string
   loginUrl: string
   isAuthenticated: boolean
   isAdmin?: boolean
@@ -126,6 +128,9 @@ const openChatiumLink = () => {
       :isAdmin="props.isAdmin"
       :adminUrl="props.adminUrl"
       :testsUrl="props.testsUrl"
+      :enableToolClockWidget="true"
+      :pomodoroStateGetUrl="props.pomodoroStateGetUrl"
+      :pomodoroControlUrl="props.pomodoroControlUrl"
     />
 
     <!-- Content -->
@@ -483,7 +488,7 @@ body {
 
 .profile-field-label {
   color: var(--color-text-secondary);
-  font-size: 0.9rem;
+  font-size: 1.02rem;
   text-transform: uppercase;
   letter-spacing: 0.1em;
   font-weight: 500;

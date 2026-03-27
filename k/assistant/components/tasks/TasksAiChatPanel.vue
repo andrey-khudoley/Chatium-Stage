@@ -394,7 +394,7 @@ onUnmounted(() => {
         class="tasks-ai-chat-input"
         rows="2"
         maxlength="8000"
-        placeholder="Сообщение…"
+        placeholder="Сообщение… Например: поставь встречу на завтра 14:00 и напомни за 15 минут"
         :disabled="!canUseChat || booting"
         @keydown="onKeydown"
       />
@@ -434,7 +434,7 @@ onUnmounted(() => {
 }
 
 .tasks-ai-chat-title {
-  font-size: 0.68rem;
+  font-size: 0.84rem;
   font-weight: 500;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -457,7 +457,7 @@ onUnmounted(() => {
   color: var(--color-text-secondary);
   border-radius: 2px;
   cursor: pointer;
-  font-size: 0.7rem;
+  font-size: 0.86rem;
 }
 
 .tasks-ai-chat-reset:hover:not(:disabled) {
@@ -474,7 +474,7 @@ onUnmounted(() => {
 .tasks-ai-chat-err {
   margin: 0;
   padding: 0.65rem 0.75rem;
-  font-size: 0.68rem;
+  font-size: 0.84rem;
   color: var(--color-text-tertiary);
   flex-shrink: 0;
 }
@@ -524,20 +524,20 @@ onUnmounted(() => {
 }
 
 .tasks-ai-chat-author {
-  font-size: 0.58rem;
+  font-size: 0.74rem;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--color-text-tertiary);
 }
 
 .tasks-ai-chat-sending {
-  font-size: 0.55rem;
+  font-size: 0.72rem;
   color: var(--color-text-tertiary);
   font-style: italic;
 }
 
 .tasks-ai-chat-text {
-  font-size: 0.72rem;
+  font-size: 0.88rem;
   line-height: 1.45;
   color: var(--color-text);
   white-space: pre-wrap;
@@ -545,7 +545,7 @@ onUnmounted(() => {
 }
 
 .tasks-ai-chat-typing {
-  font-size: 0.62rem;
+  font-size: 0.78rem;
   color: var(--color-text-secondary);
   font-style: italic;
   padding: 0.15rem 0.25rem;
@@ -569,7 +569,7 @@ onUnmounted(() => {
   max-height: 8rem;
   padding: 0.45rem 0.5rem;
   font-family: inherit;
-  font-size: 0.72rem;
+  font-size: 0.88rem;
   background: var(--color-bg);
   border: 1px solid var(--color-border);
   color: var(--color-text);
@@ -580,7 +580,7 @@ onUnmounted(() => {
   align-self: flex-end;
   width: auto;
   padding: 0.35rem 0.75rem;
-  font-size: 0.62rem;
+  font-size: 0.78rem;
 }
 
 @media (max-width: 1023px) {

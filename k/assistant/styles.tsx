@@ -33,12 +33,25 @@ export const mobileSafeAreaStyles = `
 `
 
 export const baseHtmlStyles = `
+  html {
+    font-size: 17px;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+
   body {
     height: 100%;
     width: 100%;
     background-image: url(https://fs.cdn-chatium.io/thumbnail/image_bXkpfHZFGu.2393x2250.png/s/400x400);
     background-size: 196px;
     background-color: #f8f8f8;
+    line-height: 1.45;
+  }
+
+  @media (max-width: 480px) {
+    html {
+      font-size: 16px;
+    }
   }
 `
 
@@ -82,9 +95,33 @@ export const customScrollbarStyles = `
 `
 
 export const formControlStyles = `
+  :where(
+    input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='color']):not([type='file']),
+    textarea,
+    select
+  ):focus,
+  :where(
+    input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='color']):not([type='file']),
+    textarea,
+    select
+  ):focus-visible {
+    outline: none;
+    /* Убираем системную (в т.ч. жёлтую) обводку браузера по всему проекту */
+    box-shadow: none;
+  }
+
   .jn-input,
   .jn-textarea {
     transition: border-color 0.18s ease, box-shadow 0.18s ease;
+    font-size: max(0.9rem, 16px);
+    line-height: 1.35;
+  }
+
+  button,
+  input,
+  textarea,
+  select {
+    font-size: max(0.9rem, 16px);
   }
 
   .jn-input:-webkit-autofill,

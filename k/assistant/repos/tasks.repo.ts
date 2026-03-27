@@ -1,7 +1,9 @@
-import TaskClients from '../tables/task-clients.table'
-import TaskProjects from '../tables/task-projects.table'
-import TaskItems, { TASK_STATUSES } from '../tables/task-items.table'
+import { TaskClients } from '../tables/task-clients.table'
+import { TaskProjects } from '../tables/task-projects.table'
+import { TaskItems, TASK_STATUSES } from '../tables/task-items.table'
 import type { TaskClientDto, TaskItemDto, TaskProjectDto, TasksTreeDto, TaskStatus } from '../lib/tasks-types'
+import type { TaskProjectsRow } from '../tables/task-projects.table'
+import type { TaskItemsRow } from '../tables/task-items.table'
 
 export type { TaskClientDto, TaskItemDto, TaskProjectDto, TasksTreeDto, TaskStatus } from '../lib/tasks-types'
 
@@ -54,6 +56,18 @@ function normalizeDaySortOrder(n: unknown): number {
   return Math.floor(n)
 }
 
+function normalizeReminderMinutesBefore(n: unknown): number {
+  if (typeof n !== 'number' || !Number.isFinite(n)) return 15
+  const rounded = Math.round(n)
+  return Math.min(60 * 24 * 14, Math.max(0, rounded))
+}
+
+function normalizeEventAtMs(n: unknown): number | undefined {
+  if (typeof n !== 'number' || !Number.isFinite(n)) return undefined
+  const rounded = Math.round(n)
+  return rounded > 0 ? rounded : undefined
+}
+
 function rowToTask(row: {
   id: string
   projectId: string
@@ -64,6 +78,10 @@ function rowToTask(row: {
   status: string
   sortOrder: number
   daySortOrder?: number
+  pomodoroWorkSec?: number
+  pomodoroRestSec?: number
+  eventAtMs?: number | null
+  reminderMinutesBefore?: number
 }): TaskItemDto {
   return {
     id: row.id,
@@ -74,7 +92,11 @@ function rowToTask(row: {
     priority: normalizePriority(row.priority),
     status: normalizeStatus(row.status),
     sortOrder: row.sortOrder,
-    daySortOrder: normalizeDaySortOrder(row.daySortOrder)
+    daySortOrder: normalizeDaySortOrder(row.daySortOrder),
+    pomodoroWorkSec: Math.max(0, Math.floor(row.pomodoroWorkSec ?? 0)),
+    pomodoroRestSec: Math.max(0, Math.floor(row.pomodoroRestSec ?? 0)),
+    eventAtMs: row.eventAtMs ?? null,
+    reminderMinutesBefore: normalizeReminderMinutesBefore(row.reminderMinutesBefore)
   }
 }
 
@@ -157,6 +179,11 @@ async function assertTaskOwner(ctx: app.Ctx, userId: string, id: string) {
   const row = await TaskItems.findById(ctx, id)
   if (!row || row.userId !== userId) return null
   return row
+}
+
+export async function findTaskByIdForUser(ctx: app.Ctx, userId: string, id: string): Promise<TaskItemDto | null> {
+  const row = await assertTaskOwner(ctx, userId, id)
+  return row ? rowToTask(row) : null
 }
 
 export async function createClient(ctx: app.Ctx, userId: string, name: string): Promise<TaskClientDto> {
@@ -243,13 +270,13 @@ export async function updateProject(
     data.details !== undefined
       ? {
           /** `null` сбрасывает Heap.Optional (см. inner/docs/008-heap.md, опциональные поля). */
-          details: normalizeHeapOptionalDetailsText(data.details) ?? (null as TaskProjects.T['details'])
+          details: normalizeHeapOptionalDetailsText(data.details) ?? (null as TaskProjectsRow['details'])
         }
       : {}
   const contextPatch =
     data.context !== undefined
       ? {
-          context: normalizeHeapOptionalDetailsText(data.context) ?? (null as TaskProjects.T['context'])
+          context: normalizeHeapOptionalDetailsText(data.context) ?? (null as TaskProjectsRow['context'])
         }
       : {}
   const row = await TaskProjects.update(ctx, {
@@ -278,7 +305,15 @@ export async function createTask(
   ctx: app.Ctx,
   userId: string,
   projectId: string,
-  data: { title: string; details?: string; context?: string; priority?: number; status?: TaskStatus }
+  data: {
+    title: string
+    details?: string
+    context?: string
+    priority?: number
+    status?: TaskStatus
+    eventAtMs?: number
+    reminderMinutesBefore?: number
+  }
 ): Promise<TaskItemDto | null> {
   const project = await assertProjectOwner(ctx, userId, projectId)
   if (!project) return null
@@ -292,6 +327,8 @@ export async function createTask(
   const c = normalizeHeapOptionalDetailsText(
     typeof data.context === 'string' ? data.context : undefined
   )
+  const eventAtMs = normalizeEventAtMs(data.eventAtMs)
+  const reminderMinutesBefore = normalizeReminderMinutesBefore(data.reminderMinutesBefore)
   const row = await TaskItems.create(ctx, {
     userId,
     projectId,
@@ -300,10 +337,28 @@ export async function createTask(
     status,
     sortOrder,
     daySortOrder,
+    pomodoroWorkSec: 0,
+    pomodoroRestSec: 0,
+    reminderMinutesBefore,
     ...(d !== undefined ? { details: d } : {}),
-    ...(c !== undefined ? { context: c } : {})
+    ...(c !== undefined ? { context: c } : {}),
+    ...(eventAtMs !== undefined ? { eventAtMs } : {})
   })
   return rowToTask(row)
+}
+
+export async function addPomodoroSecondsToTask(
+  ctx: app.Ctx,
+  userId: string,
+  taskId: string,
+  addWorkSec: number,
+  addRestSec: number
+): Promise<void> {
+  const task = await assertTaskOwner(ctx, userId, taskId)
+  if (!task) return
+  const nextWork = Math.max(0, Math.floor((task.pomodoroWorkSec ?? 0) + addWorkSec))
+  const nextRest = Math.max(0, Math.floor((task.pomodoroRestSec ?? 0) + addRestSec))
+  await TaskItems.update(ctx, { id: task.id, pomodoroWorkSec: nextWork, pomodoroRestSec: nextRest })
 }
 
 export async function updateTask(
@@ -317,6 +372,8 @@ export async function updateTask(
     priority?: number
     status?: TaskStatus
     projectId?: string
+    eventAtMs?: number | null
+    reminderMinutesBefore?: number
   }
 ): Promise<TaskItemDto | null> {
   const existing = await assertTaskOwner(ctx, userId, id)
@@ -345,14 +402,26 @@ export async function updateTask(
     data.details !== undefined
       ? {
           details:
-            normalizeHeapOptionalDetailsText(data.details) ?? (null as TaskItems.T['details'])
+            normalizeHeapOptionalDetailsText(data.details) ?? (null as TaskItemsRow['details'])
         }
       : {}
   const contextPatch =
     data.context !== undefined
       ? {
           context:
-            normalizeHeapOptionalDetailsText(data.context) ?? (null as TaskItems.T['context'])
+            normalizeHeapOptionalDetailsText(data.context) ?? (null as TaskItemsRow['context'])
+        }
+      : {}
+  const eventPatch =
+    data.eventAtMs !== undefined
+      ? {
+          eventAtMs: normalizeEventAtMs(data.eventAtMs) ?? (null as TaskItemsRow['eventAtMs'])
+        }
+      : {}
+  const reminderPatch =
+    data.reminderMinutesBefore !== undefined
+      ? {
+          reminderMinutesBefore: normalizeReminderMinutesBefore(data.reminderMinutesBefore)
         }
       : {}
   const patch = {
@@ -362,7 +431,9 @@ export async function updateTask(
     ...(data.priority !== undefined ? { priority: normalizePriority(data.priority) } : {}),
     ...(data.status !== undefined ? { status: nextStatus } : {}),
     ...(projectId !== existing.projectId ? { projectId, sortOrder } : {}),
-    ...(daySortOrderPatch ?? {})
+    ...(daySortOrderPatch ?? {}),
+    ...eventPatch,
+    ...reminderPatch
   }
   if (Object.keys(patch).length === 0) {
     return rowToTask(existing)
@@ -485,4 +556,57 @@ export async function reorderProjects(
     i++
   }
   return true
+}
+
+export type CompletedTaskSummaryDto = {
+  id: string
+  title: string
+  projectName: string
+  clientName: string
+  dayKey: string
+}
+
+function heapDateToMs(d: unknown): number {
+  if (d instanceof Date) return d.getTime()
+  if (typeof d === 'number') return d
+  if (typeof d === 'string') return new Date(d).getTime()
+  return 0
+}
+
+function msToDayKey(ms: number): string {
+  const d = new Date(ms)
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
+export async function getCompletedTasksSummaryForMonth(
+  ctx: app.Ctx,
+  userId: string,
+  year: number,
+  month: number
+): Promise<CompletedTaskSummaryDto[]> {
+  const monthStartMs = new Date(year, month - 1, 1).getTime()
+  const monthEndMs = new Date(year, month, 1).getTime()
+
+  const tasks = await TaskItems.findAll(ctx, { where: { userId, status: 'done' } })
+  const projects = await TaskProjects.findAll(ctx, { where: { userId } })
+  const clients = await TaskClients.findAll(ctx, { where: { userId } })
+  const projectMap = new Map(projects.map((p) => [p.id, p]))
+  const clientMap = new Map(clients.map((c) => [c.id, c]))
+
+  const result: CompletedTaskSummaryDto[] = []
+  for (const task of tasks) {
+    const updatedMs = heapDateToMs((task as Record<string, unknown>).updatedAt)
+    if (updatedMs >= monthStartMs && updatedMs < monthEndMs) {
+      const project = projectMap.get(task.projectId)
+      const client = project ? clientMap.get(project.clientId) : null
+      result.push({
+        id: task.id,
+        title: task.title,
+        projectName: project?.name ?? '',
+        clientName: client?.name ?? '',
+        dayKey: msToDayKey(updatedMs)
+      })
+    }
+  }
+  return result
 }

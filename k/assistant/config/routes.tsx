@@ -12,7 +12,9 @@ export const ROUTES = {
   login: './web/login',
   tests: './web/tests',
   journal: './web/journal',
-  tasks: './web/tasks'
+  tasks: './web/tasks',
+  tools: './web/tools',
+  pomodoro: './web/timers'
 } as const
 
 /** Пути для getFullUrl (абсолютные от корня проекта) */
@@ -23,7 +25,9 @@ export const ROUTE_PATHS = {
   login: '/web/login',
   tests: '/web/tests',
   journal: '/web/journal',
-  tasks: '/web/tasks'
+  tasks: '/web/tasks',
+  tools: '/web/tools',
+  pomodoro: '/web/timers'
 } as const
 
 /**
@@ -45,7 +49,8 @@ export function getApiUrlForRoute(routeUrl: string): string {
   const raw = routeUrl.trim()
   if (raw.startsWith('http://') || raw.startsWith('https://')) {
     try {
-      return new URL(raw).pathname
+      const u = new URL(raw)
+      return u.pathname + u.search
     } catch {
       return getFullUrl(raw)
     }

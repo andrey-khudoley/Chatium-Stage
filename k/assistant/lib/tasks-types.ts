@@ -28,6 +28,14 @@ export type TaskItemDto = {
   sortOrder: number
   /** Порядок среди задач со статусом «В работе» (вкладка «День» журнала) */
   daySortOrder: number
+  /** Накопленное время Pomodoro в работе, секунды */
+  pomodoroWorkSec: number
+  /** Накопленное время Pomodoro в отдыхе, секунды */
+  pomodoroRestSec: number
+  /** Дата/время события (unix ms), если для задачи задано событие */
+  eventAtMs: number | null
+  /** За сколько минут до события напоминать в браузере */
+  reminderMinutesBefore: number
 }
 
 export type TasksTreeDto = {

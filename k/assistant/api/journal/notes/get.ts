@@ -5,9 +5,16 @@ import * as journalNotesRepo from '../../../repos/journal-notes.repo'
 
 const LOG_PATH = 'api/journal/notes/get'
 
-/**
- * GET /api/journal/notes/get?id= — одна заметка (id, title, content) владельца.
- */
+function parseCategoryIds(raw: string | null | undefined): string[] {
+  if (!raw) return []
+  try {
+    const parsed = JSON.parse(raw)
+    return Array.isArray(parsed) ? parsed.filter((x: unknown) => typeof x === 'string') : []
+  } catch {
+    return []
+  }
+}
+
 export const getJournalNoteRoute = app.get('/', async (ctx, req) => {
   const user = requireRealUser(ctx)
 
@@ -26,26 +33,28 @@ export const getJournalNoteRoute = app.get('/', async (ctx, req) => {
   try {
     const row = await journalNotesRepo.findByIdForUser(ctx, user.id, id)
     if (!row) {
-      await loggerLib.writeServerLog(ctx, {
-        severity: 6,
-        message: `[${LOG_PATH}] Заметка не найдена или чужая`,
-        payload: { id }
-      })
       return { success: false, error: 'Заметка не найдена' }
     }
-    await loggerLib.writeServerLog(ctx, {
-      severity: 6,
-      message: `[${LOG_PATH}] Заметка отдана`,
-      payload: { id }
-    })
     return {
       success: true,
-      note: { id: row.id, title: row.title, content: row.content }
+      note: {
+        id: row.id,
+        title: row.title,
+        content: row.content,
+        folderId: row.folderId ?? null,
+        categoryIds: parseCategoryIds(row.categoryIds),
+        linkedTaskId: row.linkedTaskId ?? null,
+        linkedProjectId: row.linkedProjectId ?? null,
+        linkedClientId: row.linkedClientId ?? null,
+        noteDate: row.noteDate ?? null,
+        isArchived: row.isArchived ?? false,
+        sortOrder: row.sortOrder ?? 0
+      }
     }
   } catch (error) {
     await loggerLib.writeServerLog(ctx, {
       severity: 3,
-      message: `[${LOG_PATH}] Ошибка чтения заметки`,
+      message: `[${LOG_PATH}] Ошибка`,
       payload: { error: String(error) }
     })
     return { success: false, error: String(error) }

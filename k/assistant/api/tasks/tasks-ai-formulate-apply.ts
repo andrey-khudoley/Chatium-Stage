@@ -13,6 +13,23 @@ function normalizeAiPriority(raw: unknown): number | undefined {
   return n
 }
 
+function normalizeAiEventAtMs(raw: unknown): number | undefined {
+  if (raw === undefined || raw === null) return undefined
+  const x = typeof raw === 'number' ? raw : Number(raw)
+  if (!Number.isFinite(x)) return undefined
+  const rounded = Math.round(x)
+  return rounded > 0 ? rounded : undefined
+}
+
+function normalizeAiReminderMinutesBefore(raw: unknown): number | undefined {
+  if (raw === undefined || raw === null) return undefined
+  const x = typeof raw === 'number' ? raw : Number(raw)
+  if (!Number.isFinite(x)) return undefined
+  const n = Math.round(x)
+  if (n < 0 || n > 60 * 24 * 14) return undefined
+  return n
+}
+
 export type AiUpdateProject = {
   type: 'update_project'
   context: string
@@ -25,6 +42,8 @@ export type AiUpdateTask = {
   context?: string
   details?: string
   priority?: number
+  eventAtMs?: number
+  reminderMinutesBefore?: number
 }
 
 export type AiCreateTask = {
@@ -33,6 +52,8 @@ export type AiCreateTask = {
   details?: string
   context?: string
   priority?: number
+  eventAtMs?: number
+  reminderMinutesBefore?: number
 }
 
 export type AiDeleteTask = {
@@ -167,11 +188,15 @@ export async function applyAiFormulateJsonResponse(
     }
     if (action.type === 'update_task') {
       const pr = normalizeAiPriority(action.priority)
+      const eventAtMs = normalizeAiEventAtMs(action.eventAtMs)
+      const reminderMinutesBefore = normalizeAiReminderMinutesBefore(action.reminderMinutesBefore)
       const updated = await tasksRepo.updateTask(ctx, userId, action.taskId, {
         ...(action.title !== undefined ? { title: action.title } : {}),
         ...(action.context !== undefined ? { context: action.context } : {}),
         ...(action.details !== undefined ? { details: action.details } : {}),
-        ...(pr !== undefined ? { priority: pr } : {})
+        ...(pr !== undefined ? { priority: pr } : {}),
+        ...(eventAtMs !== undefined ? { eventAtMs } : {}),
+        ...(reminderMinutesBefore !== undefined ? { reminderMinutesBefore } : {})
       })
       if (updated) {
         updatedTasks.push(updated.title)
@@ -207,11 +232,15 @@ export async function applyAiFormulateJsonResponse(
     if (action.type !== 'create_task') continue
     try {
       const pr = normalizeAiPriority(action.priority)
+      const eventAtMs = normalizeAiEventAtMs(action.eventAtMs)
+      const reminderMinutesBefore = normalizeAiReminderMinutesBefore(action.reminderMinutesBefore)
       const created = await tasksRepo.createTask(ctx, userId, project.id, {
         title: action.title,
         details: action.details,
         context: action.context,
-        ...(pr !== undefined ? { priority: pr } : {})
+        ...(pr !== undefined ? { priority: pr } : {}),
+        ...(eventAtMs !== undefined ? { eventAtMs } : {}),
+        ...(reminderMinutesBefore !== undefined ? { reminderMinutesBefore } : {})
       })
       if (created) {
         createdTasks.push(created.title)

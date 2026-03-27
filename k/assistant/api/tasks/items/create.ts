@@ -18,7 +18,9 @@ export const createTaskItemRoute = app
     title: s.string(),
     details: s.optional(s.string()),
     priority: s.optional(s.number()),
-    status: s.optional(s.string())
+    status: s.optional(s.string()),
+    eventAtMs: s.optional(s.nullable(s.number())),
+    reminderMinutesBefore: s.optional(s.number())
   }))
   .post('/', async (ctx, req) => {
     const user = requireRealUser(ctx)
@@ -32,7 +34,11 @@ export const createTaskItemRoute = app
         title: req.body.title,
         details: req.body.details,
         priority: req.body.priority,
-        status: parseStatus(req.body.status)
+        status: parseStatus(req.body.status),
+        ...(req.body.eventAtMs !== undefined ? { eventAtMs: req.body.eventAtMs ?? undefined } : {}),
+        ...(req.body.reminderMinutesBefore !== undefined
+          ? { reminderMinutesBefore: req.body.reminderMinutesBefore }
+          : {})
       })
       if (!task) {
         return { success: false, error: 'Проект не найден' }
