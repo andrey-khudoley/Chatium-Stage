@@ -1,11 +1,14 @@
 // @shared
 
-import { computeJournalDayKeyLocal } from './journal-day-key'
+import { computeJournalDayKeyInTimeZone } from './journal-day-key'
 import {
-  computeJournalWeekMondayKeyLocal,
+  computeJournalWeekMondayKeyInTimeZone,
   getWeekDayKeysFromMonday,
   normalizeWeekMondayKey
 } from './journal-week-key'
+
+/** Серверный fallback для границы 05:00 — как у pomodoro/journal day API (Europe/Moscow). */
+const SERVER_FALLBACK_TIMEZONE = 'Europe/Moscow'
 
 export type JournalHabitInteractionMode = 'current' | 'past' | 'future'
 
@@ -32,19 +35,9 @@ export type JournalHabitsWeekDto = {
 const MAX_ROWS = 48
 const MAX_TITLE = 200
 
-function parseYmdToLocalNoon(ymd: string): number {
-  const y = Number(ymd.slice(0, 4))
-  const m = Number(ymd.slice(5, 7))
-  const d = Number(ymd.slice(8, 10))
-  if (!Number.isFinite(y) || !Number.isFinite(m) || !Number.isFinite(d)) return Date.now()
-  return new Date(y, m - 1, d, 12, 0, 0).getTime()
-}
-
-/** Понедельник недели, к которой относится «эффективный» день (сутки с 05:00). */
+/** Понедельник недели, к которой относится «эффективный» день (сутки с 05:00 по fallback TZ). */
 export function computeHabitsMondayKeyFromNow(nowMs: number): string {
-  const effectiveDay = computeJournalDayKeyLocal(nowMs)
-  const noon = parseYmdToLocalNoon(effectiveDay)
-  return computeJournalWeekMondayKeyLocal(noon)
+  return computeJournalWeekMondayKeyInTimeZone(nowMs, SERVER_FALLBACK_TIMEZONE)
 }
 
 function compareMondayKeys(a: string, b: string): number {
@@ -62,7 +55,7 @@ export function getHabitsInteractionMode(viewMondayKey: string, nowMs: number): 
 export function getTodayColumnIndexForWeek(mondayKey: string, nowMs: number): number | null {
   if (getHabitsInteractionMode(mondayKey, nowMs) !== 'current') return null
   const dayKeys = getWeekDayKeysFromMonday(mondayKey)
-  const effectiveDay = computeJournalDayKeyLocal(nowMs)
+  const effectiveDay = computeJournalDayKeyInTimeZone(nowMs, SERVER_FALLBACK_TIMEZONE)
   const idx = dayKeys.indexOf(effectiveDay)
   return idx >= 0 ? idx : null
 }

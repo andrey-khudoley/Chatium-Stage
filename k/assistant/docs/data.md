@@ -46,8 +46,8 @@
 - `lib/pomodoro-types.ts` — DTO состояния Pomodoro и тип входа настроек; `normalizePhaseChangeSoundId` для поля `phaseChangeSound` (1–5).
 - `lib/pomodoro-stats-day.ts` — ключ периода дневной статистики (граница 05:00 локально / fallback Europe/Moscow); `@shared`.
 - `lib/journal-day-key.ts` — ключ периода дневника (граница 05:00 локально / fallback Europe/Moscow); `@shared`.
-- `lib/journal-week-key.ts` — ключ понедельника недели, сдвиг недели, список дней недели и номер недели; `@shared`.
-- `lib/journal-habits-time.ts` — DTO привычек (в т.ч. `currentWeekMondayKey` для навигации), парсинг/сериализация JSON, ключ понедельника для привычек с границей 05:00 (`computeHabitsMondayKeyFromNow`), режим просмотра недели, мерж отметок при сохранении; `@shared`.
+- `lib/journal-week-key.ts` — ключ понедельника недели, сдвиг недели, список дней недели и номер недели; на сервере для «текущей недели» без TZ клиента — `computeJournalWeekMondayKeyInTimeZone(..., Europe/Moscow)` (не `*Local`, иначе при TZ=UTC сдвиг относительно GMT+3); `@shared`.
+- `lib/journal-habits-time.ts` — DTO привычек (в т.ч. `currentWeekMondayKey` для навигации), парсинг/сериализация JSON, ключ понедельника и колонка «сегодня» с границей 05:00 по **Europe/Moscow** на сервере (`computeJournalDayKeyInTimeZone`), режим просмотра недели, мерж отметок при сохранении; `@shared`.
 - `lib/pomodoro-phase-sounds.ts` — пресеты звука смены фазы (Web Audio API, только клиент).
 
 ## Файлы и хранилище

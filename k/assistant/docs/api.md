@@ -126,7 +126,7 @@
 
 | Method | Path | File | Auth | Назначение |
 | --- | --- | --- | --- | --- |
-| GET | /api/journal/week/get?mondayKey= | api/journal/week/get.ts | RealUser | Получить недельный план: `{ success, week }`, где `week = { mondayKey, weekNumber, summary, days }`, `summary = { value, locked }`, `days = [{ dayId, dayKey, value, locked }]`. `mondayKey` опционален, по умолчанию берётся текущая локальная неделя. |
+| GET | /api/journal/week/get?mondayKey= | api/journal/week/get.ts | RealUser | Получить недельный план: `{ success, week }`, где `week = { mondayKey, weekNumber, summary, days }`, `summary = { value, locked }`, `days = [{ dayId, dayKey, value, locked }]`. `mondayKey` опционален; без параметра — текущая неделя по границе суток 05:00 **Europe/Moscow** (не «локальное» время процесса сервера). |
 | POST | /api/journal/week/save | api/journal/week/save.ts | RealUser | Сохранить план дня недели. Body: `{ dayKey, value, locked }`. Ответ: `{ success, week }` — актуальный снимок всей недели, к которой относится `dayKey`. |
 | POST | /api/journal/week/save-summary | api/journal/week/save-summary.ts | RealUser | Сохранить общий weekly-summary. Body: `{ mondayKey, value, locked }`. Ответ: `{ success, week }` — актуальный снимок недели после сохранения общего плана. |
 
@@ -136,7 +136,7 @@
 
 | Method | Path | File | Auth | Назначение |
 | --- | --- | --- | --- | --- |
-| GET | /api/journal/habits/get?mondayKey= | api/journal/habits/get.ts | RealUser | `{ success, habits }`, где `habits = { mondayKey, weekNumber, dayKeys, rows, todayColumnIndex, interactionMode (current / past / future), effectiveDayKey, currentWeekMondayKey }`. `currentWeekMondayKey` — понедельник текущей недели (05:00), для UI-навигации. Без `mondayKey` — текущая неделя по правилу 05:00. |
+| GET | /api/journal/habits/get?mondayKey= | api/journal/habits/get.ts | RealUser | `{ success, habits }`, где `habits = { mondayKey, weekNumber, dayKeys, rows, todayColumnIndex, interactionMode (current / past / future), effectiveDayKey, currentWeekMondayKey }`. `currentWeekMondayKey` — понедельник текущей недели (05:00), для UI-навигации. Без `mondayKey` — текущая неделя по правилу 05:00 с fallback **Europe/Moscow** на сервере. |
 | POST | /api/journal/habits/save | api/journal/habits/save.ts | RealUser | Body: `{ mondayKey, rows }`. Порядок элементов в `rows` — порядок строк в UI (клиент может менять drag-and-drop). Сохранение только для `interactionMode === current`; чекбоксы кроме «сегодня» мержатся с уже сохранёнными. Ответ: `{ success, habits }`. |
 
 ## Задачи (api/tasks/)

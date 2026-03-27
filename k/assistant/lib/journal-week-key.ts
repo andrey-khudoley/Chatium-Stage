@@ -1,5 +1,7 @@
 // @shared
 
+import { computeJournalDayKeyInTimeZone } from './journal-day-key'
+
 const JOURNAL_DATE_KEY_RE = /^\d{4}-\d{2}-\d{2}$/
 
 type Ymd = { y: number; m: number; d: number }
@@ -43,6 +45,15 @@ export function normalizeClientJournalDateKey(raw: unknown): string | undefined 
 export function computeJournalWeekMondayKeyLocal(nowMs: number): string {
   const monday = getMondayForLocalDate(nowMs)
   return formatYmd(monday.y, monday.m, monday.d)
+}
+
+/**
+ * Понедельник недели для «эффективного» дня с границей 05:00 в заданной IANA-зоне
+ * (на сервере вместо Local — иначе при TZ=UTC получится сдвиг относительно GMT+3).
+ */
+export function computeJournalWeekMondayKeyInTimeZone(nowMs: number, timeZone: string): string {
+  const dayKey = computeJournalDayKeyInTimeZone(nowMs, timeZone)
+  return getWeekMondayKeyForDateKey(dayKey) ?? computeJournalWeekMondayKeyLocal(nowMs)
 }
 
 export function normalizeWeekMondayKey(raw: unknown): string | undefined {

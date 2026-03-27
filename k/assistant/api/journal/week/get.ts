@@ -3,17 +3,21 @@ import { requireRealUser } from '@app/auth'
 import * as loggerLib from '../../../lib/logger.lib'
 import * as journalWeekRepo from '../../../repos/journal-week-entries.repo'
 import {
-  computeJournalWeekMondayKeyLocal,
+  computeJournalWeekMondayKeyInTimeZone,
   getWeekMondayKeyForDateKey,
   normalizeWeekMondayKey
 } from '../../../lib/journal-week-key'
 
 const LOG_PATH = 'api/journal/week/get'
+const SERVER_FALLBACK_TIME_ZONE = 'Europe/Moscow'
 
 export const getJournalWeekEntryRoute = app.get('/', async (ctx, req) => {
   const user = requireRealUser(ctx)
-  const mondayKeyRaw = normalizeWeekMondayKey(req.query.mondayKey) ?? computeJournalWeekMondayKeyLocal(Date.now())
-  const mondayKey = getWeekMondayKeyForDateKey(mondayKeyRaw) ?? computeJournalWeekMondayKeyLocal(Date.now())
+  const mondayKeyRaw =
+    normalizeWeekMondayKey(req.query.mondayKey) ?? computeJournalWeekMondayKeyInTimeZone(Date.now(), SERVER_FALLBACK_TIME_ZONE)
+  const mondayKey =
+    getWeekMondayKeyForDateKey(mondayKeyRaw) ??
+    computeJournalWeekMondayKeyInTimeZone(Date.now(), SERVER_FALLBACK_TIME_ZONE)
 
   try {
     const week = await journalWeekRepo.getWeekByUserAndMonday(ctx, user.id, mondayKey)

@@ -1,5 +1,7 @@
 import JournalHabitsWeek from '../tables/journal-habits-week.table'
-import { computeJournalDayKeyLocal } from '../lib/journal-day-key'
+import { computeJournalDayKeyInTimeZone } from '../lib/journal-day-key'
+
+const HABITS_DAY_FALLBACK_TIMEZONE = 'Europe/Moscow'
 import {
   computeHabitsMondayKeyFromNow,
   getHabitsInteractionMode,
@@ -38,7 +40,7 @@ export async function getHabitsWeekForUser(
   const dayKeys = getWeekDayKeysFromMonday(mondayKey)
   const weekNumber = getWeekNumberFromMondayKey(mondayKey)
   const interactionMode = getHabitsInteractionMode(mondayKey, nowMs)
-  const effectiveDayKey = computeJournalDayKeyLocal(nowMs)
+  const effectiveDayKey = computeJournalDayKeyInTimeZone(nowMs, HABITS_DAY_FALLBACK_TIMEZONE)
   const currentWeekMondayKey = computeHabitsMondayKeyFromNow(nowMs)
 
   if (interactionMode === 'future') {

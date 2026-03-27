@@ -58,7 +58,7 @@ import { computeJournalDayKeyInTimeZone } from '../../lib/journal-day-key'
 import * as journalWeekRepo from '../../repos/journal-week-entries.repo'
 import * as journalHabitsRepo from '../../repos/journal-habits.repo'
 import { computeHabitsMondayKeyFromNow } from '../../lib/journal-habits-time'
-import { computeJournalWeekMondayKeyLocal } from '../../lib/journal-week-key'
+import { computeJournalWeekMondayKeyInTimeZone } from '../../lib/journal-week-key'
 import { customScrollbarStyles, formControlStyles, mobileSafeAreaStyles, VIEWPORT_META_CONTENT } from '../../styles'
 
 const LOG_PATH = 'web/journal/index'
@@ -108,7 +108,7 @@ export const journalPageRoute = app.html('/', async (ctx, req) => {
         ])
       const dayKey = computeJournalDayKeyInTimeZone(Date.now(), SERVER_FALLBACK_TIME_ZONE)
       journalDayEntryInitial = await journalDayRepo.getByUserAndDay(ctx, user.id, dayKey)
-      const mondayKey = computeJournalWeekMondayKeyLocal(Date.now())
+      const mondayKey = computeJournalWeekMondayKeyInTimeZone(Date.now(), SERVER_FALLBACK_TIME_ZONE)
       journalWeekEntryInitial = await journalWeekRepo.getWeekByUserAndMonday(ctx, user.id, mondayKey)
       const habitsMonday = computeHabitsMondayKeyFromNow(Date.now())
       journalHabitsInitial = await journalHabitsRepo.getHabitsWeekForUser(ctx, user.id, habitsMonday, Date.now())

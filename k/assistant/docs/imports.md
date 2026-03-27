@@ -525,10 +525,10 @@
 - `@shared` — ключ дневного периода (граница 05:00): `computeJournalDayKeyLocal`, `computeJournalDayKeyInTimeZone`, `normalizeClientJournalDayKey`
 
 ### `./lib/journal-week-key.ts`
-- `@shared` — ключ понедельника недели и диапазон дат: `computeJournalWeekMondayKeyLocal`, `normalizeWeekMondayKey`, `shiftWeekMondayKey`, `getWeekDayKeysFromMonday`, `getWeekMondayKeyForDateKey`, `getWeekNumberFromMondayKey`
+- `@shared` — ключ понедельника недели и диапазон дат: `computeJournalWeekMondayKeyLocal`, `computeJournalWeekMondayKeyInTimeZone`, `normalizeWeekMondayKey`, `shiftWeekMondayKey`, `getWeekDayKeysFromMonday`, `getWeekMondayKeyForDateKey`, `getWeekNumberFromMondayKey`; импорт `journal-day-key` для `InTimeZone`
 
 ### `./lib/journal-habits-time.ts`
-- `@shared` — привычки: `computeHabitsMondayKeyFromNow`, `normalizeHabitsMondayKey`, `getHabitsInteractionMode`, `getTodayColumnIndexForWeek`, DTO, `parseRowsJson`, `serializeRowsJson`, `mergeRowsPreserveLockedDays`; импорт `journal-day-key`, `journal-week-key`
+- `@shared` — привычки: `computeHabitsMondayKeyFromNow`, `normalizeHabitsMondayKey`, `getHabitsInteractionMode`, `getTodayColumnIndexForWeek`, DTO, `parseRowsJson`, `serializeRowsJson`, `mergeRowsPreserveLockedDays`; импорт `journal-day-key` (`computeJournalDayKeyInTimeZone`), `journal-week-key` (`computeJournalWeekMondayKeyInTimeZone` и др.); серверный fallback границы 05:00 — `Europe/Moscow`
 
 ### `./lib/pomodoro.lib.ts`
 - `@app/sync` → `runWithExclusiveLock`
