@@ -82,6 +82,9 @@
 - `../components/AppFooter.vue`
 - `../api/settings/get` → `getSettingRoute`
 - `../api/settings/save` → `saveSettingRoute`
+- `../api/admin/lava/catalog` → `lavaCatalogRoute`
+- `../lib/settings.lib` → `SETTING_KEYS`
+- `../shared/lavaBaseUrl` → `normalizeLavaBaseUrlInput`
 - `../api/admin/logs/recent` → `getRecentLogsRoute`
 - `../api/admin/logs/before` → `getLogsBeforeRoute`
 - `../api/admin/dashboard/counts` → `getDashboardCountsRoute`
@@ -167,7 +170,17 @@
 
 ### `./lib/settings.lib.ts`
 - `../repos/settings.repo` → `*` (findByKey, findAll, upsert, deleteByKey)
+- `../shared/lavaBaseUrl` → `normalizeLavaBaseUrlInput` (ветка `setSetting` для `lava_base_url`)
 - `./logger.lib` → `*` (только для функций, не вызываемых из logger.lib: getSettingString, getLogsLimit, getDashboardResetAt, getAllSettings, setSetting)
+- экспортирует также: `SETTING_KEYS`, интеграционные геттеры (`getLavaApiKey`, `getLavaBaseUrl`, …) без `writeServerLog` (аналогично `getLogLevel` / `getLogWebhook`)
+
+### `./lib/lava-api.client.ts`
+- `@app/request` → `request`
+- `../shared/lavaBaseUrl` → `normalizeLavaBaseUrlInput`
+- `./logger.lib` → `*`
+
+### `./shared/lavaBaseUrl.ts`
+- нет внутренних импортов
 
 ### `./lib/admin/dashboard.lib.ts`
 - `../settings.lib` → `*` (getDashboardResetAt, setSetting, SETTING_KEYS)
@@ -196,6 +209,11 @@
 - `@app/auth` → `requireAccountRole`
 - `../../lib/settings.lib` → `*`
 - `../../lib/logger.lib` → `*`
+
+### `./api/admin/lava/catalog/index.ts`
+- `@app/auth` → `requireAccountRole`
+- `../../../../lib/lava-api.client` → `*`
+- `../../../../lib/logger.lib` → `*`
 
 ### `./api/logger/log.ts`
 - `@app/auth` → `requireAnyUser`

@@ -31,6 +31,14 @@
 | GET | /api/admin/dashboard/counts | api/admin/dashboard/counts.ts | Admin | Получить счётчики ошибок и предупреждений после таймштампа сброса. Возвращает `{ success: true, errorCount, warnCount, resetAt }`. |
 | POST | /api/admin/dashboard/reset | api/admin/dashboard/reset.ts | Admin | Сбросить дашборд: записать текущий таймштамп в настройки. Возвращает `{ success: true, errorCount: 0, warnCount: 0, resetAt }`. |
 
+## Lava (api/admin/lava/)
+
+Загрузка каталога продуктов для мастера настройки в админке (шаг перед сохранением `lava_product_id` / `lava_offer_id`).
+
+| Method | Path | File | Auth | Назначение |
+| --- | --- | --- | --- | --- |
+| POST | /api/admin/lava/catalog | api/admin/lava/catalog/index.ts | Admin | Body: `{ lavaApiKey, lavaBaseUrl? }`. Запрос к Lava `GET /api/v2/products` с `X-Api-Key`, разбор `items` с `type: PRODUCT`, список пар продукт/оффер. Успех: `{ success: true, catalog: [{ productId, productTitle, offerId, offerName }] }`. Ошибка: `{ success: false, errorCode, message }`. Ключ в логах не записывается. |
+
 Каждый файл — один эндпоинт с путём `/`.
 
 ## Тесты (api/tests/)

@@ -41,7 +41,8 @@
 - `api/` — API‑эндпоинты (получение и валидация входных данных). File-based: один файл — один эндпоинт с `/`. Пример: `api/settings/list.ts`, `api/settings/get.ts`, `api/settings/save.ts`, `api/logger/log.ts`, `api/admin/logs/recent.ts`, `api/admin/logs/before.ts`, `api/tests/list.ts`, `api/tests/endpoints-check/health.ts`, `api/tests/endpoints-check/ping.ts`.
 - `tables/` — Heap‑таблицы (схемы: settings, logs).
 - `repos/` — репозитории (работа с БД: settings, logs; logs.repo включает findBeforeTimestamp для пагинации).
-- `lib/` — бизнес‑логика (settings.lib, logger.lib: проверка уровня, запись в ctx/Heap/WebSocket/вебхук).
+- `lib/` — бизнес‑логика (settings.lib, logger.lib, lava-api.client: проверка уровня, запись в ctx/Heap/WebSocket/вебхук; запросы к Lava API).
+- `shared/lavaBaseUrl.ts` — нормализация базового URL Lava для форм и сервера.
 - `shared/` — общий код (preloader, logLevel для передачи уровня логирования на клиент, logger — уровни syslog RFC 5424, createComponentLogger, setLogSink/LogEntry для дашборда, logEmergency…logDebug в браузере с проверкой порога).
 - `docs/` — документация проекта.
 

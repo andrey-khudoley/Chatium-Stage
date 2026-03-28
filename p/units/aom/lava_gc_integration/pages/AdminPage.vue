@@ -6,6 +6,9 @@ import GlobalGlitch from '../components/GlobalGlitch.vue'
 import AppFooter from '../components/AppFooter.vue'
 import { getSettingRoute } from '../api/settings/get'
 import { saveSettingRoute } from '../api/settings/save'
+import { lavaCatalogRoute } from '../api/admin/lava/catalog'
+import { SETTING_KEYS } from '../lib/settings.lib'
+import { normalizeLavaBaseUrlInput } from '../shared/lavaBaseUrl'
 import { createComponentLogger, setLogSink, type LogEntry } from '../shared/logger'
 import { getRecentLogsRoute } from '../api/admin/logs/recent'
 import { getLogsBeforeRoute } from '../api/admin/logs/before'
@@ -51,6 +54,32 @@ const logLevelStatusTimeout = { id: null as ReturnType<typeof setTimeout> | null
 
 const SAVE_STATUS_DURATION_MS = 1500
 const INPUT_DEBOUNCE_MS = 300
+
+const LAVA_DEFAULT_BASE_URL = 'https://gate.lava.top'
+
+type LavaCatalogRow = {
+  productId: string
+  productTitle: string
+  offerId: string
+  offerName: string
+}
+
+const lavaApiKey = ref('')
+const lavaBaseUrl = ref(LAVA_DEFAULT_BASE_URL)
+const lavaCatalog = ref<LavaCatalogRow[]>([])
+const lavaCatalogFetched = ref(false)
+const lavaSelectedKey = ref('')
+const lavaLoadError = ref('')
+const lavaLoading = ref(false)
+const lavaSaveError = ref('')
+const lavaSaveStatus = ref<'saved' | 'error' | null>(null)
+const lavaSaveStatusTimeout = { id: null as ReturnType<typeof setTimeout> | null }
+const savedLavaProductId = ref('')
+const savedLavaOfferId = ref('')
+
+function lavaRowKey(row: LavaCatalogRow): string {
+  return `${row.productId}::${row.offerId}`
+}
 
 function showSaveStatus(
   statusRef: { value: 'saved' | 'error' | null },
@@ -173,6 +202,115 @@ const displayedLogs = computed<LogDisplayItem[]>(() => {
   return items
 })
 
+const loadLavaSettings = async () => {
+  try {
+    const keys: Array<{ key: string; ref: typeof lavaApiKey }> = [
+      { key: SETTING_KEYS.LAVA_API_KEY, ref: lavaApiKey },
+      { key: SETTING_KEYS.LAVA_BASE_URL, ref: lavaBaseUrl }
+    ]
+    for (const { key, ref } of keys) {
+      const res = await getSettingRoute.query({ key }).run(ctx)
+      const data = res as { success?: boolean; value?: unknown }
+      if (data?.success && typeof data.value === 'string' && data.value.length > 0) {
+        ref.value = data.value
+      }
+    }
+    if (!lavaBaseUrl.value.trim()) {
+      lavaBaseUrl.value = LAVA_DEFAULT_BASE_URL
+    } else {
+      lavaBaseUrl.value = normalizeLavaBaseUrlInput(lavaBaseUrl.value)
+    }
+    const pidRes = await getSettingRoute.query({ key: SETTING_KEYS.LAVA_PRODUCT_ID }).run(ctx)
+    const pidData = pidRes as { success?: boolean; value?: unknown }
+    if (pidData?.success && typeof pidData.value === 'string') {
+      savedLavaProductId.value = pidData.value
+    }
+    const oidRes = await getSettingRoute.query({ key: SETTING_KEYS.LAVA_OFFER_ID }).run(ctx)
+    const oidData = oidRes as { success?: boolean; value?: unknown }
+    if (oidData?.success && typeof oidData.value === 'string') {
+      savedLavaOfferId.value = oidData.value
+    }
+  } catch (e) {
+    log.warning('Не удалось загрузить настройки Lava', e)
+  }
+}
+
+const loadLavaCatalog = async () => {
+  lavaLoadError.value = ''
+  lavaCatalog.value = []
+  lavaCatalogFetched.value = false
+  lavaSelectedKey.value = ''
+  lavaLoading.value = true
+  try {
+    const res = await lavaCatalogRoute.run(ctx, {
+      lavaApiKey: lavaApiKey.value,
+      lavaBaseUrl: lavaBaseUrl.value
+    })
+    const data = res as {
+      success?: boolean
+      catalog?: LavaCatalogRow[]
+      message?: string
+    }
+    if (data?.success && Array.isArray(data.catalog)) {
+      lavaCatalog.value = data.catalog
+      lavaCatalogFetched.value = true
+      if (savedLavaProductId.value && savedLavaOfferId.value) {
+        const k = `${savedLavaProductId.value}::${savedLavaOfferId.value}`
+        if (data.catalog.some((r) => lavaRowKey(r) === k)) {
+          lavaSelectedKey.value = k
+        }
+      }
+      log.info('Каталог Lava загружен', { rows: data.catalog.length })
+    } else {
+      lavaLoadError.value = data?.message || 'Не удалось загрузить каталог'
+      log.error('Каталог Lava', lavaLoadError.value)
+    }
+  } catch (e) {
+    lavaLoadError.value = (e as Error)?.message || 'Ошибка сети'
+    log.error('Каталог Lava', e)
+  } finally {
+    lavaLoading.value = false
+  }
+}
+
+const saveLavaIntegration = async () => {
+  lavaSaveError.value = ''
+  if (!lavaSelectedKey.value) {
+    lavaSaveError.value = 'Выберите продукт и оффер в списке (шаг 2).'
+    return
+  }
+  const row = lavaCatalog.value.find((r) => lavaRowKey(r) === lavaSelectedKey.value)
+  if (!row) {
+    lavaSaveError.value = 'Выбранная строка недоступна. Загрузите каталог снова.'
+    return
+  }
+  const baseNorm = normalizeLavaBaseUrlInput(lavaBaseUrl.value)
+  try {
+    for (const pair of [
+      { key: SETTING_KEYS.LAVA_BASE_URL, value: baseNorm },
+      { key: SETTING_KEYS.LAVA_API_KEY, value: lavaApiKey.value.trim() },
+      { key: SETTING_KEYS.LAVA_PRODUCT_ID, value: row.productId },
+      { key: SETTING_KEYS.LAVA_OFFER_ID, value: row.offerId }
+    ] as const) {
+      const res = await saveSettingRoute.run(ctx, { key: pair.key, value: pair.value })
+      if (res && (res as { success?: boolean }).success === false) {
+        const err = (res as { error?: string }).error || 'Ошибка сохранения'
+        lavaSaveError.value = err
+        showSaveStatus(lavaSaveStatus, lavaSaveStatusTimeout, 'error')
+        return
+      }
+    }
+    savedLavaProductId.value = row.productId
+    savedLavaOfferId.value = row.offerId
+    lavaBaseUrl.value = baseNorm
+    showSaveStatus(lavaSaveStatus, lavaSaveStatusTimeout, 'saved')
+    log.info('Настройки Lava сохранены', { productId: row.productId, offerId: row.offerId })
+  } catch (e) {
+    lavaSaveError.value = (e as Error)?.message || 'Ошибка сохранения'
+    showSaveStatus(lavaSaveStatus, lavaSaveStatusTimeout, 'error')
+  }
+}
+
 const loadProjectName = async () => {
   try {
     const res = await getSettingRoute.query({ key: 'project_name' }).run(ctx)
@@ -228,6 +366,7 @@ const saveProjectName = async () => {
 onMounted(() => {
   log.info('Компонент смонтирован')
   loadProjectName()
+  loadLavaSettings()
   loadDashboardCounts()
   if (window.hideAppLoader) window.hideAppLoader()
   if (window.bootLoaderComplete) {
@@ -284,6 +423,10 @@ onBeforeUnmount(() => {
   if (logLevelStatusTimeout.id) {
     clearTimeout(logLevelStatusTimeout.id)
     logLevelStatusTimeout.id = null
+  }
+  if (lavaSaveStatusTimeout.id) {
+    clearTimeout(lavaSaveStatusTimeout.id)
+    lavaSaveStatusTimeout.id = null
   }
   if (projectNameDebounceTimer.id) {
     clearTimeout(projectNameDebounceTimer.id)
@@ -519,6 +662,105 @@ const clearLogs = () => {
               </div>
             </div>
             <p v-if="projectNameError" class="admin-card-error">{{ projectNameError }}</p>
+          </div>
+
+          <!-- Lava.top: ключ, URL, каталог продуктов -->
+          <div class="admin-card lava-settings-card">
+            <span
+              v-if="lavaSaveStatus"
+              class="admin-card-status"
+              :class="lavaSaveStatus === 'saved' ? 'status-saved' : 'status-error'"
+            >
+              {{ lavaSaveStatus === 'saved' ? 'Сохранено' : 'Ошибка' }}
+            </span>
+            <div class="admin-card-header">
+              <i class="fas fa-plug admin-card-icon"></i>
+              <h2 class="admin-card-title">Интеграция Lava.top</h2>
+            </div>
+            <p class="lava-settings-hint">
+              Шаг 1: укажите API-ключ и базовый URL (по умолчанию gate.lava.top). Шаг 2: загрузите каталог и
+              выберите продукт и оффер. Шаг 3: сохраните в настройки.
+            </p>
+            <div class="settings-form">
+              <div class="settings-field">
+                <label class="settings-label" for="lava-api-key">LAVA_API_KEY</label>
+                <input
+                  id="lava-api-key"
+                  v-model="lavaApiKey"
+                  type="password"
+                  autocomplete="off"
+                  class="settings-input"
+                  placeholder="Секретный ключ из кабинета Lava"
+                />
+              </div>
+              <div class="settings-field">
+                <label class="settings-label" for="lava-base-url">LAVA_BASE_URL</label>
+                <input
+                  id="lava-base-url"
+                  v-model="lavaBaseUrl"
+                  type="text"
+                  class="settings-input"
+                  placeholder="https://gate.lava.top"
+                />
+              </div>
+              <div class="lava-step-actions">
+                <button
+                  type="button"
+                  class="lava-primary-btn"
+                  :disabled="lavaLoading || !lavaApiKey.trim()"
+                  @click="loadLavaCatalog"
+                >
+                  <i v-if="lavaLoading" class="fas fa-spinner fa-spin"></i>
+                  <i v-else class="fas fa-cloud-download-alt"></i>
+                  Загрузить продукты и офферы
+                </button>
+              </div>
+            </div>
+            <p v-if="lavaLoadError" class="admin-card-error">{{ lavaLoadError }}</p>
+
+            <div v-if="lavaCatalog.length > 0" class="lava-catalog-block">
+              <h3 class="lava-catalog-title">Шаг 2 — выбор продукта и оффера</h3>
+              <div class="lava-catalog-list custom-scrollbar">
+                <label
+                  v-for="row in lavaCatalog"
+                  :key="lavaRowKey(row)"
+                  class="lava-catalog-row"
+                >
+                  <input
+                    v-model="lavaSelectedKey"
+                    type="radio"
+                    class="lava-catalog-radio"
+                    :value="lavaRowKey(row)"
+                  />
+                  <span class="lava-catalog-text">
+                    <span class="lava-catalog-line">
+                      <span class="lava-catalog-product">{{ row.productTitle || row.productId }}</span>
+                      <span class="lava-catalog-sep"> — </span>
+                      <span class="lava-catalog-offer">{{ row.offerName || row.offerId }}</span>
+                    </span>
+                    <span class="lava-catalog-ids">{{ row.productId }} / {{ row.offerId }}</span>
+                  </span>
+                </label>
+              </div>
+              <div class="lava-step-actions">
+                <button
+                  type="button"
+                  class="lava-primary-btn"
+                  :disabled="!lavaSelectedKey"
+                  @click="saveLavaIntegration"
+                >
+                  <i class="fas fa-save"></i>
+                  Сохранить продукт и оффер в настройки
+                </button>
+              </div>
+            </div>
+            <p
+              v-else-if="lavaCatalogFetched && lavaCatalog.length === 0 && !lavaLoadError"
+              class="lava-catalog-empty"
+            >
+              В ответе Lava нет продуктов с офферами. Проверьте ключ и кабинет Lava.
+            </p>
+            <p v-if="lavaSaveError" class="admin-card-error">{{ lavaSaveError }}</p>
           </div>
 
           <!-- Logging Level -->
@@ -1254,6 +1496,121 @@ const clearLogs = () => {
 
 .load-more-btn i {
   font-size: 0.85rem;
+}
+
+.lava-settings-hint {
+  margin: 0 0 1rem;
+  font-size: 0.85rem;
+  color: var(--color-text-secondary);
+  line-height: 1.45;
+}
+
+.lava-step-actions {
+  margin-top: 0.5rem;
+}
+
+.lava-primary-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.55rem 1rem;
+  font-family: inherit;
+  font-size: 0.9rem;
+  color: #fff;
+  background: var(--color-accent);
+  border: 1px solid var(--color-accent);
+  border-radius: 4px;
+  cursor: pointer;
+  letter-spacing: 0.04em;
+  transition: opacity 0.2s ease, box-shadow 0.2s ease;
+}
+
+.lava-primary-btn:hover:not(:disabled) {
+  box-shadow: 0 0 14px rgba(211, 35, 75, 0.35);
+}
+
+.lava-primary-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.lava-catalog-block {
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--color-border-light);
+}
+
+.lava-catalog-title {
+  margin: 0 0 0.75rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.lava-catalog-list {
+  max-height: 280px;
+  overflow: auto;
+  margin-bottom: 1rem;
+  padding: 0.5rem;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+}
+
+.lava-catalog-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  padding: 0.45rem 0.35rem;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background 0.15s ease;
+}
+
+.lava-catalog-row:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.lava-catalog-radio {
+  margin-top: 0.2rem;
+  flex-shrink: 0;
+  accent-color: var(--color-accent);
+}
+
+.lava-catalog-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  font-size: 0.88rem;
+  line-height: 1.35;
+}
+
+.lava-catalog-product {
+  color: var(--color-text);
+  font-weight: 500;
+}
+
+.lava-catalog-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.15rem;
+}
+
+.lava-catalog-offer {
+  color: var(--color-text-secondary);
+}
+
+.lava-catalog-ids {
+  font-size: 0.75rem;
+  color: var(--color-text-tertiary);
+  word-break: break-all;
+}
+
+.lava-catalog-empty {
+  margin: 0.75rem 0 0;
+  font-size: 0.85rem;
+  color: var(--color-text-secondary);
 }
 
 @media (max-width: 768px) {

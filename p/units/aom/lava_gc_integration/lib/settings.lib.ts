@@ -1,4 +1,5 @@
 import * as repo from '../repos/settings.repo'
+import { normalizeLavaBaseUrlInput } from '../shared/lavaBaseUrl'
 import * as loggerLib from './logger.lib'
 
 const LOG_MODULE = 'lib/settings.lib'
@@ -10,7 +11,15 @@ export const SETTING_KEYS = {
   LOG_LEVEL: 'log_level',
   LOGS_LIMIT: 'logs_limit',
   LOG_WEBHOOK: 'log_webhook',
-  DASHBOARD_RESET_AT: 'dashboard_reset_at'
+  DASHBOARD_RESET_AT: 'dashboard_reset_at',
+  LAVA_API_KEY: 'lava_api_key',
+  LAVA_BASE_URL: 'lava_base_url',
+  LAVA_PRODUCT_ID: 'lava_product_id',
+  LAVA_OFFER_ID: 'lava_offer_id',
+  LAVA_WEBHOOK_SECRET: 'lava_webhook_secret',
+  GC_API_KEY: 'gc_api_key',
+  GC_ACCOUNT_DOMAIN: 'gc_account_domain',
+  GC_SERVICE_TOKEN: 'gc_service_token'
 } as const
 
 /** Настройка вебхука логов: enable — активна ли отправка, url — куда отправлять. */
@@ -23,7 +32,15 @@ export const DEFAULTS = {
   [SETTING_KEYS.LOG_LEVEL]: 'Info',
   [SETTING_KEYS.LOGS_LIMIT]: '100',
   [SETTING_KEYS.LOG_WEBHOOK]: { enable: false, url: '' } as LogWebhookSetting,
-  [SETTING_KEYS.DASHBOARD_RESET_AT]: null as number | null
+  [SETTING_KEYS.DASHBOARD_RESET_AT]: null as number | null,
+  [SETTING_KEYS.LAVA_API_KEY]: '',
+  [SETTING_KEYS.LAVA_BASE_URL]: 'https://gate.lava.top',
+  [SETTING_KEYS.LAVA_PRODUCT_ID]: '',
+  [SETTING_KEYS.LAVA_OFFER_ID]: '',
+  [SETTING_KEYS.LAVA_WEBHOOK_SECRET]: '',
+  [SETTING_KEYS.GC_API_KEY]: '',
+  [SETTING_KEYS.GC_ACCOUNT_DOMAIN]: '',
+  [SETTING_KEYS.GC_SERVICE_TOKEN]: ''
 } as const
 
 /** Допустимые уровни логирования */
@@ -108,6 +125,57 @@ export async function getLogWebhook(ctx: app.Ctx): Promise<LogWebhookSetting> {
 }
 
 /**
+ * Строковая настройка интеграции без writeServerLog (как getLogLevel / getLogWebhook) —
+ * иначе возможна рекурсия при вызовах из цепочек логирования.
+ */
+async function getIntegrationStringSetting(ctx: app.Ctx, key: string): Promise<string> {
+  const value = await getSetting(ctx, key)
+  if (typeof value === 'string') return value
+  const fallback = (DEFAULTS as Record<string, unknown>)[key]
+  return fallback !== undefined && fallback !== null ? String(fallback) : ''
+}
+
+/** Без writeServerLog — см. getIntegrationStringSetting. */
+export async function getLavaApiKey(ctx: app.Ctx): Promise<string> {
+  return getIntegrationStringSetting(ctx, SETTING_KEYS.LAVA_API_KEY)
+}
+
+/** Без writeServerLog — см. getIntegrationStringSetting. */
+export async function getLavaBaseUrl(ctx: app.Ctx): Promise<string> {
+  return getIntegrationStringSetting(ctx, SETTING_KEYS.LAVA_BASE_URL)
+}
+
+/** Без writeServerLog — см. getIntegrationStringSetting. */
+export async function getLavaProductId(ctx: app.Ctx): Promise<string> {
+  return getIntegrationStringSetting(ctx, SETTING_KEYS.LAVA_PRODUCT_ID)
+}
+
+/** Без writeServerLog — см. getIntegrationStringSetting. */
+export async function getLavaOfferId(ctx: app.Ctx): Promise<string> {
+  return getIntegrationStringSetting(ctx, SETTING_KEYS.LAVA_OFFER_ID)
+}
+
+/** Без writeServerLog — см. getIntegrationStringSetting. */
+export async function getLavaWebhookSecret(ctx: app.Ctx): Promise<string> {
+  return getIntegrationStringSetting(ctx, SETTING_KEYS.LAVA_WEBHOOK_SECRET)
+}
+
+/** Без writeServerLog — см. getIntegrationStringSetting. */
+export async function getGcApiKey(ctx: app.Ctx): Promise<string> {
+  return getIntegrationStringSetting(ctx, SETTING_KEYS.GC_API_KEY)
+}
+
+/** Без writeServerLog — см. getIntegrationStringSetting. */
+export async function getGcAccountDomain(ctx: app.Ctx): Promise<string> {
+  return getIntegrationStringSetting(ctx, SETTING_KEYS.GC_ACCOUNT_DOMAIN)
+}
+
+/** Без writeServerLog — см. getIntegrationStringSetting. */
+export async function getGcServiceToken(ctx: app.Ctx): Promise<string> {
+  return getIntegrationStringSetting(ctx, SETTING_KEYS.GC_SERVICE_TOKEN)
+}
+
+/**
  * Получить таймштамп сброса дашборда (Unix ms). При отсутствии — 0 (учитываются все логи).
  */
 export async function getDashboardResetAt(ctx: app.Ctx): Promise<number> {
@@ -159,11 +227,20 @@ export async function getAllSettings(ctx: app.Ctx): Promise<Record<string, unkno
 /**
  * Сохранить настройку. Валидирует значение для известных ключей.
  */
+function isSecretSettingKey(key: string): boolean {
+  return (
+    key === SETTING_KEYS.LAVA_API_KEY ||
+    key === SETTING_KEYS.LAVA_WEBHOOK_SECRET ||
+    key === SETTING_KEYS.GC_API_KEY ||
+    key === SETTING_KEYS.GC_SERVICE_TOKEN
+  )
+}
+
 export async function setSetting(ctx: app.Ctx, key: string, value: unknown): Promise<void> {
   await loggerLib.writeServerLog(ctx, {
     severity: 7,
     message: `[${LOG_MODULE}] setSetting entry`,
-    payload: { key, value }
+    payload: { key, value: isSecretSettingKey(key) ? '[redacted]' : value }
   })
   let normalized: unknown = value
 
@@ -221,12 +298,24 @@ export async function setSetting(ctx: app.Ctx, key: string, value: unknown): Pro
       message: `[${LOG_MODULE}] setSetting DASHBOARD_RESET_AT branch`,
       payload: { normalized }
     })
+  } else if (key === SETTING_KEYS.LAVA_BASE_URL) {
+    normalized = normalizeLavaBaseUrlInput(typeof value === 'string' ? value : String(value))
+  } else if (
+    key === SETTING_KEYS.LAVA_API_KEY ||
+    key === SETTING_KEYS.LAVA_PRODUCT_ID ||
+    key === SETTING_KEYS.LAVA_OFFER_ID ||
+    key === SETTING_KEYS.LAVA_WEBHOOK_SECRET ||
+    key === SETTING_KEYS.GC_API_KEY ||
+    key === SETTING_KEYS.GC_ACCOUNT_DOMAIN ||
+    key === SETTING_KEYS.GC_SERVICE_TOKEN
+  ) {
+    normalized = typeof value === 'string' ? value.trim() : String(value).trim()
   }
 
   await repo.upsert(ctx, key, normalized)
   await loggerLib.writeServerLog(ctx, {
     severity: 7,
     message: `[${LOG_MODULE}] setSetting exit`,
-    payload: { key, normalized }
+    payload: { key, normalized: isSecretSettingKey(key) ? '[redacted]' : normalized }
   })
 }
