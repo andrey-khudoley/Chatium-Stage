@@ -7,7 +7,7 @@ import AppFooter from '../components/AppFooter.vue'
 import { getSettingRoute } from '../api/settings/get'
 import { saveSettingRoute } from '../api/settings/save'
 import { lavaCatalogRoute } from '../api/admin/lava/catalog'
-import { SETTING_KEYS } from '../lib/settings.lib'
+import { LAVA_SETTING_KEYS } from '../shared/lavaSettingKeys'
 import { normalizeLavaBaseUrlInput } from '../shared/lavaBaseUrl'
 import { createComponentLogger, setLogSink, type LogEntry } from '../shared/logger'
 import { getRecentLogsRoute } from '../api/admin/logs/recent'
@@ -205,8 +205,8 @@ const displayedLogs = computed<LogDisplayItem[]>(() => {
 const loadLavaSettings = async () => {
   try {
     const keys: Array<{ key: string; ref: typeof lavaApiKey }> = [
-      { key: SETTING_KEYS.LAVA_API_KEY, ref: lavaApiKey },
-      { key: SETTING_KEYS.LAVA_BASE_URL, ref: lavaBaseUrl }
+      { key: LAVA_SETTING_KEYS.LAVA_API_KEY, ref: lavaApiKey },
+      { key: LAVA_SETTING_KEYS.LAVA_BASE_URL, ref: lavaBaseUrl }
     ]
     for (const { key, ref } of keys) {
       const res = await getSettingRoute.query({ key }).run(ctx)
@@ -220,12 +220,12 @@ const loadLavaSettings = async () => {
     } else {
       lavaBaseUrl.value = normalizeLavaBaseUrlInput(lavaBaseUrl.value)
     }
-    const pidRes = await getSettingRoute.query({ key: SETTING_KEYS.LAVA_PRODUCT_ID }).run(ctx)
+    const pidRes = await getSettingRoute.query({ key: LAVA_SETTING_KEYS.LAVA_PRODUCT_ID }).run(ctx)
     const pidData = pidRes as { success?: boolean; value?: unknown }
     if (pidData?.success && typeof pidData.value === 'string') {
       savedLavaProductId.value = pidData.value
     }
-    const oidRes = await getSettingRoute.query({ key: SETTING_KEYS.LAVA_OFFER_ID }).run(ctx)
+    const oidRes = await getSettingRoute.query({ key: LAVA_SETTING_KEYS.LAVA_OFFER_ID }).run(ctx)
     const oidData = oidRes as { success?: boolean; value?: unknown }
     if (oidData?.success && typeof oidData.value === 'string') {
       savedLavaOfferId.value = oidData.value
@@ -287,10 +287,10 @@ const saveLavaIntegration = async () => {
   const baseNorm = normalizeLavaBaseUrlInput(lavaBaseUrl.value)
   try {
     for (const pair of [
-      { key: SETTING_KEYS.LAVA_BASE_URL, value: baseNorm },
-      { key: SETTING_KEYS.LAVA_API_KEY, value: lavaApiKey.value.trim() },
-      { key: SETTING_KEYS.LAVA_PRODUCT_ID, value: row.productId },
-      { key: SETTING_KEYS.LAVA_OFFER_ID, value: row.offerId }
+      { key: LAVA_SETTING_KEYS.LAVA_BASE_URL, value: baseNorm },
+      { key: LAVA_SETTING_KEYS.LAVA_API_KEY, value: lavaApiKey.value.trim() },
+      { key: LAVA_SETTING_KEYS.LAVA_PRODUCT_ID, value: row.productId },
+      { key: LAVA_SETTING_KEYS.LAVA_OFFER_ID, value: row.offerId }
     ] as const) {
       const res = await saveSettingRoute.run(ctx, { key: pair.key, value: pair.value })
       if (res && (res as { success?: boolean }).success === false) {

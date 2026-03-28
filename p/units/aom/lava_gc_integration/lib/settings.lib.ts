@@ -1,5 +1,6 @@
 import * as repo from '../repos/settings.repo'
 import { normalizeLavaBaseUrlInput } from '../shared/lavaBaseUrl'
+import { LAVA_SETTING_KEYS } from '../shared/lavaSettingKeys'
 import * as loggerLib from './logger.lib'
 
 const LOG_MODULE = 'lib/settings.lib'
@@ -12,11 +13,7 @@ export const SETTING_KEYS = {
   LOGS_LIMIT: 'logs_limit',
   LOG_WEBHOOK: 'log_webhook',
   DASHBOARD_RESET_AT: 'dashboard_reset_at',
-  LAVA_API_KEY: 'lava_api_key',
-  LAVA_BASE_URL: 'lava_base_url',
-  LAVA_PRODUCT_ID: 'lava_product_id',
-  LAVA_OFFER_ID: 'lava_offer_id',
-  LAVA_WEBHOOK_SECRET: 'lava_webhook_secret',
+  ...LAVA_SETTING_KEYS,
   GC_API_KEY: 'gc_api_key',
   GC_ACCOUNT_DOMAIN: 'gc_account_domain',
   GC_SERVICE_TOKEN: 'gc_service_token'

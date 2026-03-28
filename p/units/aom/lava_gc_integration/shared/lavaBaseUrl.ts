@@ -1,3 +1,4 @@
+// @shared
 /**
  * Базовый URL API Lava для форм ввода и запросов.
  * Пустое значение → https://gate.lava.top; «gate.lava.top» → https://gate.lava.top

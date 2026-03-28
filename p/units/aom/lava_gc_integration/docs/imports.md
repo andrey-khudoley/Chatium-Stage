@@ -83,7 +83,7 @@
 - `../api/settings/get` → `getSettingRoute`
 - `../api/settings/save` → `saveSettingRoute`
 - `../api/admin/lava/catalog` → `lavaCatalogRoute`
-- `../lib/settings.lib` → `SETTING_KEYS`
+- `../shared/lavaSettingKeys` → `LAVA_SETTING_KEYS`
 - `../shared/lavaBaseUrl` → `normalizeLavaBaseUrlInput`
 - `../api/admin/logs/recent` → `getRecentLogsRoute`
 - `../api/admin/logs/before` → `getLogsBeforeRoute`
@@ -170,6 +170,7 @@
 
 ### `./lib/settings.lib.ts`
 - `../repos/settings.repo` → `*` (findByKey, findAll, upsert, deleteByKey)
+- `../shared/lavaSettingKeys` → `LAVA_SETTING_KEYS` (spread в `SETTING_KEYS`)
 - `../shared/lavaBaseUrl` → `normalizeLavaBaseUrlInput` (ветка `setSetting` для `lava_base_url`)
 - `./logger.lib` → `*` (только для функций, не вызываемых из logger.lib: getSettingString, getLogsLimit, getDashboardResetAt, getAllSettings, setSetting)
 - экспортирует также: `SETTING_KEYS`, интеграционные геттеры (`getLavaApiKey`, `getLavaBaseUrl`, …) без `writeServerLog` (аналогично `getLogLevel` / `getLogWebhook`)
@@ -180,7 +181,10 @@
 - `./logger.lib` → `*`
 
 ### `./shared/lavaBaseUrl.ts`
-- нет внутренних импортов
+- нет внутренних импортов (файл с `// @shared`)
+
+### `./shared/lavaSettingKeys.ts`
+- нет внутренних импортов (файл с `// @shared`; ключи Lava для клиента и `SETTING_KEYS` на сервере)
 
 ### `./lib/admin/dashboard.lib.ts`
 - `../settings.lib` → `*` (getDashboardResetAt, setSetting, SETTING_KEYS)
