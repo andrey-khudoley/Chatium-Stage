@@ -1,4 +1,4 @@
-// @shared-route
+/** Сервер-only: импорт `lavaPaymentLinkRoute` тянет `app.body` со схемой — не помечать @shared-route (иначе падение при сборке shared). */
 import { requireAnyUser } from '@app/auth'
 import { lavaPaymentLinkRoute } from '../../../api/integrations/lava/payment-link/index'
 import * as loggerLib from '../../../lib/logger.lib'

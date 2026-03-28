@@ -4,9 +4,13 @@
 
 ## 1) Страницы‑роуты (TSX entrypoints)
 
+### `./shared/projectRoot.ts`
+- первая строка: `// @shared`
+- экспорт `PROJECT_ROOT` — единственная константа для Vue/страниц, которым нужен корень пути **без** импорта всего `config/routes.tsx` (иначе сборщик мог подтягивать API-модули).
+
 ### `./config/routes.tsx`
-- первая строка: `// @shared` (нужна для импорта из Vue и из `web/**/index.tsx` с `// @shared`)
-- нет внутренних импортов (только экспорт PROJECT_ROOT, ROUTES, ROUTE_PATHS, getFullUrl, withProjectRoot, withProjectRootAndSubroute); в `ROUTES`/`ROUTE_PATHS` — в т.ч. `paymentLink` → `/api/integrations/lava/payment-link`, `lavaWebhook` → `/api/integrations/lava/webhook`
+- первая строка: `// @shared` (нужна для импорта из `web/**/index.tsx` с `// @shared`)
+- импорт `PROJECT_ROOT` из `../shared/projectRoot`, реэкспорт; **`ROUTES`** / **`ROUTE_PATHS`** — только страницы (без `/api/integrations/...`); `getFullUrl`, `withProjectRoot`, …
 
 ### `./config/project.tsx`
 - первая строка: `// @shared` (как у `routes.tsx`, импортируется из тех же shared-роутов)
@@ -66,7 +70,7 @@
 - `@app/html-jsx` → `jsx`
 - `../../pages/LoginPage.vue`
 - `../../styles` → `baseHtmlStyles`, `customScrollbarStyles`
-- `../../config/routes` → `PROJECT_ROOT`
+- `../../shared/projectRoot` → `PROJECT_ROOT`
 - `../../lib/logger.lib` → `*`
 
 ## 2) Страницы‑компоненты (Vue)
@@ -113,7 +117,7 @@
 - `../shared/logger` → `createComponentLogger`, `setLogSink`, `LogEntry`
 - `../api/admin/logs/recent` → `getRecentLogsRoute`
 - `../api/admin/logs/before` → `getLogsBeforeRoute`
-- `../config/routes` → `PROJECT_ROOT`
+- `../shared/projectRoot` → `PROJECT_ROOT`
 
 ### `./pages/LoginPage.vue`
 - `vue` → `computed`, `onMounted`

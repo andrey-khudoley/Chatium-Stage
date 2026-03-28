@@ -4,6 +4,11 @@ import * as settingsLib from './settings.lib'
 
 const LOG_MODULE = 'lib/getcourse-api.client'
 
+/** Node.js Buffer (опционально в globalThis; без @types/node). */
+type OptionalGlobalBuffer = {
+  from(data: string, encoding: 'utf8'): { toString(encoding: 'base64'): string }
+}
+
 /**
  * Кодирование строки в Base64 (полностью самодостаточная реализация).
  * Работает в любой среде: Node.js, браузер, изолированный sandbox.
@@ -11,8 +16,9 @@ const LOG_MODULE = 'lib/getcourse-api.client'
  */
 function encodeBase64(str: string): string {
   // Попытка использовать нативные методы (оптимизация производительности)
-  if (typeof Buffer !== 'undefined') {
-    return Buffer.from(str, 'utf8').toString('base64')
+  const nodeBuffer = (globalThis as { Buffer?: OptionalGlobalBuffer }).Buffer
+  if (nodeBuffer) {
+    return nodeBuffer.from(str, 'utf8').toString('base64')
   }
   if (typeof btoa !== 'undefined') {
     return btoa(unescape(encodeURIComponent(str)))
@@ -147,6 +153,19 @@ function responseSuggestsKeyAcceptedBusinessError(body: unknown): boolean {
     return true
   if (raw.includes('user') && (raw.includes('email') || raw.includes('пользоват'))) return true
   return false
+}
+
+/** Типичный отказ PL API в `result` при HTTP 200 (не сбой сети/транспорта). */
+function isGcPlApiBusinessRejection(body: unknown): boolean {
+  if (typeof body !== 'object' || body === null) return false
+  const b = body as Record<string, unknown>
+  if (b.success !== true && b.success !== 'true') return false
+  const result = b.result
+  if (typeof result !== 'object' || result === null) return false
+  const r = result as Record<string, unknown>
+  if (r.error === true || r.error === 'true') return true
+  const innerOk = r.success === true || r.success === 'true'
+  return !innerOk
 }
 
 export type VerifyGcPlApiParams = { apiKey: string; domain: string }
@@ -355,9 +374,12 @@ export async function updateDealStatus(ctx: app.Ctx, params: UpdateDealStatusPar
       message: `[${LOG_MODULE}] updateDealStatus: ветка ошибки (HTTP или тело)`,
       payload: { gcOrderId: params.gcOrderId, statusOk, parseOk: parsed.ok }
     })
+    const businessRejection = statusOk && !parsed.ok && isGcPlApiBusinessRejection(response.body)
     await loggerLib.writeServerLog(ctx, {
-      severity: 3,
-      message: `[${LOG_MODULE}] updateDealStatus: ошибка GetCourse PL API`,
+      severity: businessRejection ? 6 : 3,
+      message: businessRejection
+        ? `[${LOG_MODULE}] updateDealStatus: отказ PL API по заказу (бизнес-ответ, HTTP ${String(response.statusCode)})`
+        : `[${LOG_MODULE}] updateDealStatus: ошибка GetCourse PL API (транспорт или неожиданный ответ)`,
       payload: {
         gcOrderId: params.gcOrderId,
         url,
