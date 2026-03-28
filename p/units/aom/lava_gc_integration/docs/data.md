@@ -8,14 +8,24 @@
 | --- | --- | --- | --- |
 | t__lava-gc-integration__setting__8Qm4Rt | tables/settings.table.ts | Настройки проекта (key-value) | key (string), value (any) |
 | t__lava-gc-integration__log__8Qm4Rt | tables/logs.table.ts | Серверные логи (долгосрочное хранение) | message (string), payload (any), severity, level, timestamp |
+| t__lava-gc-integration__payment-contract__9Xr5Bt | tables/lava_payment_contract.table.ts | Связь заказа GetCourse с контрактом Lava | gc_order_id, gc_user_id, lava_contract_id, lava_product_id, lava_offer_id, amount, currency, buyer_email, payment_url, status, request_id, created_at, updated_at |
+| t__lava-gc-integration__webhook-event__3Kp7Qs | tables/lava_webhook_event.table.ts | Webhook Lava: сырой payload и дедупликация | event_type, lava_contract_id, payload_json, dedupe_key, processed, processed_at, processing_error, created_at |
+| t__lava-gc-integration__lock-log__5Fm2Nt | tables/lava_lock_log.table.ts | Аудит блокировок критической секции (payment-link) | lock_key, request_id, gc_order_id, acquired_at, released_at, result, error_message |
 
 ## Репозитории (repos/)
 - `repos/settings.repo.ts` — findByKey, findAll, upsert, deleteByKey (слой работы с БД; без вызовов logger.lib, т.к. getSetting/getLogLevel вызываются из writeServerLog и используют findByKey — иначе рекурсия).
 - `repos/logs.repo.ts` — create, findAll, findById, findBeforeTimestamp (слой работы с БД логов; findBeforeTimestamp использует нативную фильтрацию Heap API через `where: { timestamp: { $lt } }` для эффективной пагинации).
+- `repos/lava_payment_contract.repo.ts` — create, findByGcOrderId, findByLavaContractId, updateStatus, findActiveByGcOrderId (активный контракт: статус в `created` / `in_progress` / `unknown` через `where: { status: { $in: [...] } }` для идемпотентности payment-link).
+- `repos/lava_webhook_event.repo.ts` — create, findByDedupeKey, markProcessed, findUnprocessed (очередь необработанных: `where: { processed: false }`, сортировка по `created_at` asc).
+- `repos/lava_lock_log.repo.ts` — create, updateReleased (аудит блокировки шаблона оплаты).
 
 ## Библиотеки (lib/)
 - `lib/settings.lib.ts` — getSetting, getAllSettings, setSetting, getLogLevel, getLogsLimit, getLogWebhook; ключи интеграции в `SETTING_KEYS` (`lava_api_key`, `lava_base_url`, `lava_product_id`, `lava_offer_id`, `lava_webhook_secret`, `gc_api_key`, `gc_account_domain`, `gc_service_token`) и геттеры без логирования: `getLavaApiKey`, `getLavaBaseUrl`, `getLavaProductId`, `getLavaOfferId`, `getLavaWebhookSecret`, `getGcApiKey`, `getGcAccountDomain`, `getGcServiceToken` (бизнес-логика, дефолты, валидация); для `lava_base_url` при сохранении — нормализация через `shared/lavaBaseUrl.ts`.
-- `lib/lava-api.client.ts` — `fetchLavaProductsCatalog` (GET Lava `/api/v2/products`, пары продукт/оффер для мастера в админке).
+- `lib/lava-api.client.ts` — `updateOfferPrice` (PATCH цены оффера перед оплатой), `createContract` (POST `/api/v3/invoice`), `getProducts` (диагностический GET), `fetchLavaProductsCatalog` (GET `/api/v2/products`, пары продукт/оффер для мастера в админке). Парсер каталога учитывает **два** формата `items[]`: лента `{ type: PRODUCT, data: { id, title, offers } }` и **плоский** ответ API `{ id, title, type, offers }` (например `type: CONSULTATION`). Исходящий `request` — **одним аргументом** (объект опций), без `ctx`. Debug-логи при загрузке каталога: сырой JSON, гистограмма `type` по элементам.
+- `lib/getcourse-api.client.ts` — `verifyGcPlApiAccess` (проверка ключа и домена для админки), `updateDealStatus` (POST `https://{домен}/pl/api/deals`, form + Base64 `params`; ошибки от GC только в лог).
+- `lib/lava-payment.service.ts` — `createPaymentLink` (идемпотентность, `runWithExclusiveLock`, запись в `lava_payment_contract` и `lava_lock_log`).
+- `lib/lava-webhook.service.ts` — `processWebhook` (секрет, дедупликация `lava_webhook_event`, обновление контракта, callback в GetCourse).
+- `lib/lava-types.ts` — типы валюты, webhook, запрос/ответ payment-link, локальный статус контракта.
 - `lib/logger.lib.ts` — getAdminLogsSocketId, shouldLogByLevel, writeServerLog (проверка уровня, запись в ctx.log/ctx.account.log, Heap, WebSocket, вебхук).
 
 ## Файлы и хранилище
@@ -24,12 +34,6 @@
 ## Индексы/поиск
 - Не используется.
 
-## Планируемые Heap-сущности (интеграция Lava + GetCourse)
+## Интеграция Lava + GetCourse (реализовано)
 
-По мере реализации — отдельные файлы в `tables/` и репозитории в `repos/`. Поля и смысл — [integration-data-model.md](./integration-data-model.md); платформенные замечания — [integration-implementation-chatium.md](./integration-implementation-chatium.md).
-
-| Концепт таблицы | Назначение |
-| --- | --- |
-| `lava_payment_contract` | Связь заказа GetCourse с контрактом Lava, сумма, URL оплаты, статус |
-| `lava_webhook_event` | Сырой webhook, дедупликация, флаг обработки |
-| `lava_runtime_lock_log` (опционально) | Аудит блокировок критической секции |
+Поток данных: GetCourse вызывает `POST /api/integrations/lava/payment-link` → `lava-payment.service` → Lava API → запись в `lava_payment_contract`; Lava шлёт `POST /api/integrations/lava/webhook` → `lava-webhook.service` → Heap + GetCourse PL API. Дополнительный контекст по полям и сценариям — [integration-data-model.md](./integration-data-model.md); ограничения платформы — [integration-implementation-chatium.md](./integration-implementation-chatium.md).

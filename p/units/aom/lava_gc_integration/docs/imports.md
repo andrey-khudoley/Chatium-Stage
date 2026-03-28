@@ -1,11 +1,15 @@
 # Импорты страниц и схема зависимостей
 
+Актуально для реализованной интеграции GetCourse + Lava: таблицы `lava_*`, репозитории в `repos/`, `lib/lava-types.ts`, `lib/lava-api.client.ts`, `lib/getcourse-api.client.ts`, `lib/lava-payment.service.ts`, `lib/lava-webhook.service.ts`, эндпоинты `api/integrations/lava/*`, тесты в `api/tests/endpoints-check/` — в т.ч. `lava-settings-getters.ts`, `lava-repos.ts`, `lava-webhook-service.ts`, `getcourse-deal-update.ts`, `lava-api-catalog.ts`, `lava-payment-link-route.ts`, `lava-api-client.ts`, `payment-link.ts`.
+
 ## 1) Страницы‑роуты (TSX entrypoints)
 
 ### `./config/routes.tsx`
-- нет внутренних импортов (только экспорт PROJECT_ROOT, ROUTES, getFullUrl, withProjectRoot, withProjectRootAndSubroute)
+- первая строка: `// @shared` (нужна для импорта из Vue и из `web/**/index.tsx` с `// @shared`)
+- нет внутренних импортов (только экспорт PROJECT_ROOT, ROUTES, ROUTE_PATHS, getFullUrl, withProjectRoot, withProjectRootAndSubroute); в `ROUTES`/`ROUTE_PATHS` — в т.ч. `paymentLink` → `/api/integrations/lava/payment-link`, `lavaWebhook` → `/api/integrations/lava/webhook`
 
 ### `./config/project.tsx`
+- первая строка: `// @shared` (как у `routes.tsx`, импортируется из тех же shared-роутов)
 - нет внутренних импортов (только экспорт DEFAULT_PROJECT_TITLE, INDEX_PAGE_NAME, PROFILE_PAGE_NAME, ADMIN_PAGE_NAME, TESTS_PAGE_NAME, getPageTitle, getHeaderText, BODY_TEXT, BODY_SUBTEXT)
 
 ### `./index.tsx`
@@ -83,6 +87,8 @@
 - `../api/settings/get` → `getSettingRoute`
 - `../api/settings/save` → `saveSettingRoute`
 - `../api/admin/lava/catalog` → `lavaCatalogRoute`
+- `../api/admin/getcourse/verify` → `getcourseVerifyRoute`
+- `../shared/gcSettingKeys` → `GC_SETTING_KEYS`
 - `../shared/lavaSettingKeys` → `LAVA_SETTING_KEYS`
 - `../shared/lavaBaseUrl` → `normalizeLavaBaseUrlInput`
 - `../api/admin/logs/recent` → `getRecentLogsRoute`
@@ -155,6 +161,15 @@
 ### `./tables/logs.table.ts`
 - `@app/heap` → `Heap`
 
+### `./tables/lava_payment_contract.table.ts`
+- `@app/heap` → `Heap`
+
+### `./tables/lava_webhook_event.table.ts`
+- `@app/heap` → `Heap`
+
+### `./tables/lava_lock_log.table.ts`
+- `@app/heap` → `Heap`
+
 ## 6) Репозитории (repos/)
 
 ### `./repos/settings.repo.ts`
@@ -166,11 +181,30 @@
 - `../lib/logger.lib` → `*`
 - экспортирует: `create`, `findAll`, `findById`, `findBeforeTimestamp`, `countBySeverityAfter`, `countErrorsAfter`, `countWarningsAfter`
 
+### `./repos/lava_payment_contract.repo.ts`
+- `../tables/lava_payment_contract.table` → `LavaPaymentContract`, `LavaPaymentContractRow`
+- `../lib/logger.lib` → `writeServerLog` (severity 7: вход/выход каждой операции; не создаёт рекурсии с `logs.repo`)
+- экспортирует: `create`, `findByGcOrderId`, `findByLavaContractId`, `updateStatus`, `findActiveByGcOrderId`
+
+### `./repos/lava_webhook_event.repo.ts`
+- `../tables/lava_webhook_event.table` → `LavaWebhookEvent`, `LavaWebhookEventRow`
+- `../lib/logger.lib` → `writeServerLog` (severity 7 на каждый метод)
+- экспортирует: `create`, `findByDedupeKey`, `markProcessed`, `findUnprocessed`
+
+### `./repos/lava_lock_log.repo.ts`
+- `../tables/lava_lock_log.table` → `LavaLockLog`, `LavaLockLogRow`
+- `../lib/logger.lib` → `writeServerLog` (severity 7 на каждый метод)
+- экспортирует: `create`, `updateReleased`, `updateAcquiredAt`
+
 ## 7) Библиотеки (lib/)
+
+### `./lib/lava-types.ts`
+- нет внутренних импортов (типы TypeScript: валюта, webhook, payment-link request/response)
 
 ### `./lib/settings.lib.ts`
 - `../repos/settings.repo` → `*` (findByKey, findAll, upsert, deleteByKey)
 - `../shared/lavaSettingKeys` → `LAVA_SETTING_KEYS` (spread в `SETTING_KEYS`)
+- `../shared/gcSettingKeys` → `GC_SETTING_KEYS` (spread в `SETTING_KEYS`)
 - `../shared/lavaBaseUrl` → `normalizeLavaBaseUrlInput` (ветка `setSetting` для `lava_base_url`)
 - `./logger.lib` → `*` (только для функций, не вызываемых из logger.lib: getSettingString, getLogsLimit, getDashboardResetAt, getAllSettings, setSetting)
 - экспортирует также: `SETTING_KEYS`, интеграционные геттеры (`getLavaApiKey`, `getLavaBaseUrl`, …) без `writeServerLog` (аналогично `getLogLevel` / `getLogWebhook`)
@@ -178,13 +212,45 @@
 ### `./lib/lava-api.client.ts`
 - `@app/request` → `request`
 - `../shared/lavaBaseUrl` → `normalizeLavaBaseUrlInput`
+- `./lava-types` → `LavaCurrency` (type)
 - `./logger.lib` → `*`
+- `./settings.lib` → `*` (геттеры Lava: base URL, API key, product/offer id)
+- экспортирует: `updateOfferPrice`, `createContract`, `getProducts`, `CreateContractParams`, `fetchLavaProductsCatalog`, `LavaCatalogRow`
+
+### `./lib/getcourse-api.client.ts`
+- `@app/request` → `request`
+- `./logger.lib` → `*`
+- `./settings.lib` → `*` (`getGcApiKey`, `getGcAccountDomain`)
+- экспортирует: `normalizeGcAccountDomain`, `verifyGcPlApiAccess`, `VerifyGcPlApiParams`, `updateDealStatus`, `UpdateDealStatusParams`
+
+### `./lib/lava-payment.service.ts`
+- `@app/sync` → `runWithExclusiveLock`, `LockAcquisitionError`
+- `./lava-types` → `PaymentLinkRequest`, `PaymentLinkResponse` (types)
+- `./lava-api.client` → `*` (`updateOfferPrice`, `createContract`)
+- `./logger.lib` → `*`
+- `./settings.lib` → `*` (`getLavaProductId`, `getLavaOfferId`)
+- `../repos/lava_payment_contract.repo` → `*`
+- `../repos/lava_lock_log.repo` → `*`
+- экспортирует: `createPaymentLink`
+
+### `./lib/lava-webhook.service.ts`
+- `./lava-types` → `LavaWebhookPayload`, `LocalContractStatus` (types)
+- `./getcourse-api.client` → `*` (`updateDealStatus`)
+- `./logger.lib` → `*`
+- `./settings.lib` → `*` (`getLavaWebhookSecret`)
+- `../repos/lava_payment_contract.repo` → `*`
+- `../repos/lava_webhook_event.repo` → `*`
+- `../tables/lava_webhook_event.table` → `LavaWebhookEventRow` (type)
+- экспортирует: `processWebhook`, `ProcessWebhookResult`
 
 ### `./shared/lavaBaseUrl.ts`
 - нет внутренних импортов (файл с `// @shared`)
 
 ### `./shared/lavaSettingKeys.ts`
 - нет внутренних импортов (файл с `// @shared`; ключи Lava для клиента и `SETTING_KEYS` на сервере)
+
+### `./shared/gcSettingKeys.ts`
+- нет внутренних импортов (файл с `// @shared`; ключи `gc_api_key` / `gc_account_domain` для админки и `SETTING_KEYS`)
 
 ### `./lib/admin/dashboard.lib.ts`
 - `../settings.lib` → `*` (getDashboardResetAt, setSetting, SETTING_KEYS)
@@ -218,6 +284,25 @@
 - `@app/auth` → `requireAccountRole`
 - `../../../../lib/lava-api.client` → `*`
 - `../../../../lib/logger.lib` → `*`
+
+### `./api/admin/getcourse/verify/index.ts`
+- `@app/auth` → `requireAccountRole`
+- `../../../../lib/getcourse-api.client` → `verifyGcPlApiAccess`
+- `../../../../lib/logger.lib` → `*`
+- экспорт: `getcourseVerifyRoute`
+
+### `./api/integrations/lava/payment-link/index.ts`
+- `../../../../lib/logger.lib` → `*`
+- `../../../../lib/lava-payment.service` → `createPaymentLink`
+- `../../../../lib/lava-types` → `PaymentLinkRequest` (type)
+- `../../../../lib/settings.lib` → `getGcServiceToken`
+- валидация body через `.body((s) => …)` (`@app/schema`); экспорт: `lavaPaymentLinkRoute`
+
+### `./api/integrations/lava/webhook/index.ts`
+- `../../../../lib/logger.lib` → `*`
+- `../../../../lib/lava-webhook.service` → `processWebhook`
+- `../../../../lib/lava-types` → `LavaWebhookPayload` (type)
+- валидация body через `.body((s) => …)` (`@app/schema`); при неверном `X-Api-Key` — `ctx.resp.json({ success: false }, 401)`; экспорт: `lavaWebhookRoute`
 
 ### `./api/logger/log.ts`
 - `@app/auth` → `requireAnyUser`
@@ -287,3 +372,13 @@
 - `@app/auth` → `requireAnyUser`
 - `../../../lib/logger.lib` → `*`
 - `../../../lib/admin/dashboard.lib` → `*`
+
+### `./api/tests/endpoints-check/lava-api-client.ts`
+- `@app/auth` → `requireAnyUser`
+- `../../../lib/lava-api.client` → `*`
+- `../../../lib/logger.lib` → `*`
+
+### `./api/tests/endpoints-check/payment-link.ts`
+- `@app/auth` → `requireAnyUser`
+- `../../../lib/lava-payment.service` → `*`
+- `../../../lib/logger.lib` → `*`

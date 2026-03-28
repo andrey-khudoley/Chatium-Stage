@@ -21,7 +21,7 @@ Runtime: **`PATCH /api/v2/products/{productId}`** с телом **`ProductUpdate
 2. меняется в первую очередь стоимость;
 3. изменение делается непосредственно перед созданием контракта.
 
-Реализация в Chatium — через `request()` из `@app/request` (см. `inner/docs/004-request.md`).
+Реализация в Chatium — через `request()` из `@app/request` (см. `inner/docs/004-request.md`). Для исходящих вызовов из обычных роутов используйте **`request({ url, method, … })` без первого аргумента `ctx`**; иначе в outward-контексте возможна ошибка про `ctx.app` / proxy app. Обёртки в коде проекта: **`updateOfferPrice`** (`lib/lava-api.client.ts`).
 
 ## 10.3. Создание контракта
 
@@ -31,7 +31,7 @@ Runtime: **`PATCH /api/v2/products/{productId}`** с телом **`ProductUpdate
 
 Ответ **201** — **`InvoicePaymentParamsResponse`**: идентификатор контракта (`id`), **`paymentUrl`**, **`status`** и др. (полный состав — в YAML).
 
-Контракт создаётся **сразу** после обновления цены и **до** снятия блокировки.
+Контракт создаётся **сразу** после обновления цены и **до** снятия блокировки. Обёртка в коде: **`createContract`** (`lib/lava-api.client.ts`).
 
 ## 10.4. Получение списка продуктов
 
@@ -43,3 +43,5 @@ Runtime: **`PATCH /api/v2/products/{productId}`** с телом **`ProductUpdate
 2. диагностика;
 3. сверка конфигурации;
 4. ручная проверка существования шаблонного продукта.
+
+Для первой страницы ответа без обхода пагинации в проекте: **`getProducts`** (`lib/lava-api.client.ts`); полный каталог для мастера админки — **`fetchLavaProductsCatalog`** (тот же модуль).

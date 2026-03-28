@@ -1,0 +1,59 @@
+export type LavaCurrency = 'RUB' | 'USD' | 'EUR'
+
+export type LavaContractStatus =
+  | 'new'
+  | 'in-progress'
+  | 'completed'
+  | 'failed'
+  | 'cancelled'
+  | 'subscription-active'
+  | 'subscription-expired'
+  | 'subscription-cancelled'
+  | 'subscription-failed'
+
+export type LavaWebhookEventType =
+  | 'payment.success'
+  | 'payment.failed'
+  | 'subscription.recurring.payment.success'
+  | 'subscription.recurring.payment.failed'
+  | 'subscription.cancelled'
+
+export type LocalContractStatus = 'created' | 'in_progress' | 'paid' | 'failed' | 'cancelled' | 'unknown'
+
+export interface PaymentLinkRequest {
+  gcOrderId: string
+  gcUserId?: string
+  buyerEmail: string
+  amount: number
+  currency: LavaCurrency
+  description?: string
+  paymentProvider?: string
+  paymentMethod?: string
+  buyerLanguage?: string
+  utm?: Record<string, string>
+  requestId?: string
+}
+
+export interface PaymentLinkResponse {
+  success: boolean
+  gcOrderId?: string
+  lavaContractId?: string
+  paymentUrl?: string
+  status?: string
+  errorCode?: string
+  message?: string
+}
+
+export interface LavaWebhookPayload {
+  eventType: LavaWebhookEventType
+  product?: { id: string; title: string }
+  contractId: string
+  parentContractId?: string
+  buyer?: { email: string }
+  amount: number
+  currency: LavaCurrency
+  status: LavaContractStatus
+  timestamp: string
+  clientUtm?: Record<string, string>
+  errorMessage?: string
+}

@@ -23,6 +23,11 @@ export const lavaCatalogRoute = app.post('/', async (ctx, req) => {
   const lavaBaseUrl = typeof body.lavaBaseUrl === 'string' ? body.lavaBaseUrl : ''
 
   if (!lavaApiKey.trim()) {
+    await loggerLib.writeServerLog(ctx, {
+      severity: 7,
+      message: `[${LOG_PATH}] VALIDATION: пустой lavaApiKey`,
+      payload: {}
+    })
     return { success: false, errorCode: 'VALIDATION', message: 'Укажите API-ключ Lava' }
   }
 

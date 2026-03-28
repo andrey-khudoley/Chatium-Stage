@@ -1,7 +1,7 @@
 # Architecture
 
 ## Назначение
-Базовый шаблон проекта Chatium с минимальным набором страниц и документации. Спецификация целевой интеграции GetCourse + Lava — в [README.md](./README.md) и `integration-*.md`.
+Приложение Chatium: шаблонные страницы (главная, админка, профиль, логин, тесты) плюс **реализованная** интеграция GetCourse ↔ Lava.top (ссылка на оплату, webhook, клиенты API). Подробная спецификация продукта и HTTP — в [README.md](./README.md) и `docs/integration-*.md`.
 
 ## Ограничения платформы
 - Серверная инфраструктура предоставляется Chatium.
@@ -34,30 +34,29 @@
 Поток данных: `HTTP → API → lib → repos → Heap`.
 
 ## Структура каталогов
-- `config/` — маршруты и `PROJECT_ROOT`.
+- `config/` — `routes.tsx` и `project.tsx` (оба с `// @shared` в первой строке — для импорта в Vue и shared-роуты), маршруты и `PROJECT_ROOT`.
 - `web/` — браузерные роуты модулей (admin, profile, tests, login).
 - `pages/` — Vue‑страницы (минимальные).
 - `components/` — переиспользуемые Vue‑компоненты (Header, AppFooter, GlobalGlitch, LogoutModal).
-- `api/` — API‑эндпоинты (получение и валидация входных данных). File-based: один файл — один эндпоинт с `/`. Пример: `api/settings/list.ts`, `api/settings/get.ts`, `api/settings/save.ts`, `api/logger/log.ts`, `api/admin/logs/recent.ts`, `api/admin/logs/before.ts`, `api/tests/list.ts`, `api/tests/endpoints-check/health.ts`, `api/tests/endpoints-check/ping.ts`.
-- `tables/` — Heap‑таблицы (схемы: settings, logs).
-- `repos/` — репозитории (работа с БД: settings, logs; logs.repo включает findBeforeTimestamp для пагинации).
-- `lib/` — бизнес‑логика (settings.lib, logger.lib, lava-api.client: проверка уровня, запись в ctx/Heap/WebSocket/вебхук; запросы к Lava API).
+- `api/` — API‑эндпоинты (получение и валидация входных данных). File-based: один файл — один эндпоинт с `/`. Примеры: `api/settings/*`, `api/logger/log.ts`, `api/admin/logs/*`, `api/admin/lava/catalog`, **`api/admin/getcourse/verify`**, **`api/integrations/lava/payment-link`**, **`api/integrations/lava/webhook`**, `api/tests/*`.
+- `tables/` — Heap‑таблицы: `settings`, `logs`, **`lava_payment_contract`**, **`lava_webhook_event`**, **`lava_lock_log`**.
+- `repos/` — репозитории для всех таблиц выше (в т.ч. `logs.repo` — findBeforeTimestamp для пагинации; репозитории интеграции — см. [data.md](./data.md)). Репозитории `lava_*` дополнительно пишут трассировку в Heap через `logger.lib` (`severity: 7` на вход/выход методов).
+- `lib/` — бизнес‑логика: `settings.lib`, `logger.lib`, `admin/dashboard.lib`, **`lava-api.client`**, **`getcourse-api.client`**, **`lava-payment.service`**, **`lava-webhook.service`**, **`lava-types.ts`**.
 - `shared/lavaBaseUrl.ts` — нормализация базового URL Lava для форм и сервера.
 - `shared/` — общий код (preloader, logLevel для передачи уровня логирования на клиент, logger — уровни syslog RFC 5424, createComponentLogger, setLogSink/LogEntry для дашборда, logEmergency…logDebug в браузере с проверкой порога).
 - `docs/` — документация проекта.
 
 ## Интеграции
 
-### Планируемая интеграция GetCourse + Lava.top
-Полное описание — в **[docs/README.md](./README.md)** (оглавление) и файлах `integration-*.md`. Кратко:
+### GetCourse + Lava.top (реализовано)
+Полное описание сценариев и оглавление — **[docs/README.md](./README.md)** и файлы `integration-*.md`. В коде:
 
-- Входящие API: создание ссылки на оплату (`payment-link`), приём webhook Lava; file-based роуты под `api/`.
-- Критическая секция обновления цены оффера и создания контракта — под **`runWithExclusiveLock`** (`@app/sync`).
-- Исходящие вызовы к Lava и GetCourse — **`@app/request`**.
-- Персистентность контрактов и событий webhook — **Heap** (`tables/` + `repos/`), секреты — в settings или отдельных ключах.
+- **Входящие API:** `POST …/payment-link` (сервисный токен GetCourse), `POST …/webhook` (секрет Lava в `X-Api-Key`); file-based под `api/integrations/lava/`.
+- **Критическая секция** обновления цены оффера и создания контракта — **`runWithExclusiveLock`** (`@app/sync`), журнал в `lava_lock_log`.
+- **Исходящие вызовы** к Lava и GetCourse — **`@app/request`** (`lava-api.client`, `getcourse-api.client`); при уровне Debug — пошаговая трассировка (`writeServerLog`, `severity: 7`) по сервисам и клиентам интеграции.
+- **Данные** — Heap (`lava_payment_contract`, `lava_webhook_event`, `lava_lock_log`), секреты и URL — в `settings` (`SETTING_KEYS` в `settings.lib`).
 
-Контракты HTTP и приёмка — [integration-http-contracts.md](./integration-http-contracts.md), [integration-readiness-decisions-open-questions.md](./integration-readiness-decisions-open-questions.md). Пути и схемы Lava API — [reference/lavatop-openapi3.yaml](./reference/lavatop-openapi3.yaml), сводка — [integration-lava-openapi-reference.md](./integration-lava-openapi-reference.md). GetCourse PL API — [reference/getcourse-pl-api-spec.md](./reference/getcourse-pl-api-spec.md).
+Контракты HTTP и приёмка — [integration-http-contracts.md](./integration-http-contracts.md), [integration-readiness-decisions-open-questions.md](./integration-readiness-decisions-open-questions.md). Lava API — [reference/lavatop-openapi3.yaml](./reference/lavatop-openapi3.yaml), [integration-lava-openapi-reference.md](./integration-lava-openapi-reference.md). GetCourse PL API — [reference/getcourse-pl-api-spec.md](./reference/getcourse-pl-api-spec.md).
 
-### Текущее состояние
-- Внешние сервисы Lava/GetCourse в коде пока не подключены.
-- Внутренние SDK: стандартные модули Chatium.
+### Платформа
+- Внутренние SDK: стандартные модули Chatium (`@app/request`, `@app/sync`, `@app/heap`, и т.д.).

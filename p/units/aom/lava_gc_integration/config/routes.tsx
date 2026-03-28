@@ -1,3 +1,4 @@
+// @shared
 // PROJECT_ROOT — путь от корня воркспэйса до проекта (от /)
 export const PROJECT_ROOT = 'p/units/aom/lava_gc_integration'
 
@@ -10,7 +11,9 @@ export const ROUTES = {
   admin: './web/admin',
   profile: './web/profile',
   login: './web/login',
-  tests: './web/tests'
+  tests: './web/tests',
+  paymentLink: './api/integrations/lava/payment-link',
+  lavaWebhook: './api/integrations/lava/webhook'
 } as const
 
 /** Пути для getFullUrl (абсолютные от корня проекта) */
@@ -19,7 +22,9 @@ export const ROUTE_PATHS = {
   admin: '/web/admin',
   profile: '/web/profile',
   login: '/web/login',
-  tests: '/web/tests'
+  tests: '/web/tests',
+  paymentLink: '/api/integrations/lava/payment-link',
+  lavaWebhook: '/api/integrations/lava/webhook'
 } as const
 
 /**

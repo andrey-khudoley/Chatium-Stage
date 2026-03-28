@@ -7,6 +7,8 @@ import AppFooter from '../components/AppFooter.vue'
 import { getSettingRoute } from '../api/settings/get'
 import { saveSettingRoute } from '../api/settings/save'
 import { lavaCatalogRoute } from '../api/admin/lava/catalog'
+import { getcourseVerifyRoute } from '../api/admin/getcourse/verify'
+import { GC_SETTING_KEYS } from '../shared/gcSettingKeys'
 import { LAVA_SETTING_KEYS } from '../shared/lavaSettingKeys'
 import { normalizeLavaBaseUrlInput } from '../shared/lavaBaseUrl'
 import { createComponentLogger, setLogSink, type LogEntry } from '../shared/logger'
@@ -76,6 +78,19 @@ const lavaSaveStatus = ref<'saved' | 'error' | null>(null)
 const lavaSaveStatusTimeout = { id: null as ReturnType<typeof setTimeout> | null }
 const savedLavaProductId = ref('')
 const savedLavaOfferId = ref('')
+/** После успешного сохранения — скрываем шаг 2; сбрасывается при «Обновить каталог». */
+const lavaProductOfferSaved = ref(false)
+const savedLavaProductTitle = ref('')
+const savedLavaOfferTitle = ref('')
+
+const gcApiKey = ref('')
+const gcAccountDomain = ref('')
+const gcVerifyLoading = ref(false)
+const gcSaveLoading = ref(false)
+const gcVerifyHint = ref('')
+const gcSaveError = ref('')
+const gcSaveStatus = ref<'saved' | 'error' | null>(null)
+const gcSaveStatusTimeout = { id: null as ReturnType<typeof setTimeout> | null }
 
 function lavaRowKey(row: LavaCatalogRow): string {
   return `${row.productId}::${row.offerId}`
@@ -230,13 +245,98 @@ const loadLavaSettings = async () => {
     if (oidData?.success && typeof oidData.value === 'string') {
       savedLavaOfferId.value = oidData.value
     }
+    if (savedLavaProductId.value.trim() && savedLavaOfferId.value.trim()) {
+      lavaProductOfferSaved.value = true
+    }
   } catch (e) {
     log.warning('Не удалось загрузить настройки Lava', e)
   }
 }
 
+const loadGcSettings = async () => {
+  try {
+    const keyRes = await getSettingRoute.query({ key: GC_SETTING_KEYS.GC_API_KEY }).run(ctx)
+    const keyData = keyRes as { success?: boolean; value?: unknown }
+    if (keyData?.success && typeof keyData.value === 'string') {
+      gcApiKey.value = keyData.value
+    }
+    const domRes = await getSettingRoute.query({ key: GC_SETTING_KEYS.GC_ACCOUNT_DOMAIN }).run(ctx)
+    const domData = domRes as { success?: boolean; value?: unknown }
+    if (domData?.success && typeof domData.value === 'string') {
+      gcAccountDomain.value = domData.value
+    }
+  } catch (e) {
+    log.warning('Не удалось загрузить настройки GetCourse', e)
+  }
+}
+
+const verifyGcOnly = async () => {
+  gcSaveError.value = ''
+  gcVerifyHint.value = ''
+  gcVerifyLoading.value = true
+  try {
+    const res = await getcourseVerifyRoute.run(ctx, {
+      gcApiKey: gcApiKey.value,
+      gcAccountDomain: gcAccountDomain.value
+    })
+    const data = res as { success?: boolean; message?: string }
+    if (data?.success) {
+      gcVerifyHint.value = data.message || 'Подключение успешно.'
+      log.info('GetCourse: проверка ключа', data.message)
+    } else {
+      gcSaveError.value = (data as { message?: string }).message || 'Проверка не пройдена'
+      log.error('GetCourse: проверка ключа', gcSaveError.value)
+    }
+  } catch (e) {
+    gcSaveError.value = (e as Error)?.message || 'Ошибка сети'
+    log.error('GetCourse: проверка', e)
+  } finally {
+    gcVerifyLoading.value = false
+  }
+}
+
+const saveGcIntegration = async () => {
+  gcSaveError.value = ''
+  gcVerifyHint.value = ''
+  gcSaveLoading.value = true
+  try {
+    const verifyRes = await getcourseVerifyRoute.run(ctx, {
+      gcApiKey: gcApiKey.value,
+      gcAccountDomain: gcAccountDomain.value
+    })
+    const v = verifyRes as { success?: boolean; message?: string }
+    if (!v?.success) {
+      gcSaveError.value = v?.message || 'Сначала пройдите проверку ключа.'
+      showSaveStatus(gcSaveStatus, gcSaveStatusTimeout, 'error')
+      return
+    }
+
+    for (const pair of [
+      { key: GC_SETTING_KEYS.GC_API_KEY, value: gcApiKey.value.trim() },
+      { key: GC_SETTING_KEYS.GC_ACCOUNT_DOMAIN, value: gcAccountDomain.value.trim() }
+    ] as const) {
+      const res = await saveSettingRoute.run(ctx, { key: pair.key, value: pair.value })
+      if (res && (res as { success?: boolean }).success === false) {
+        gcSaveError.value = (res as { error?: string }).error || 'Ошибка сохранения'
+        showSaveStatus(gcSaveStatus, gcSaveStatusTimeout, 'error')
+        return
+      }
+    }
+
+    gcVerifyHint.value = v.message || 'Сохранено.'
+    showSaveStatus(gcSaveStatus, gcSaveStatusTimeout, 'saved')
+    log.info('Настройки GetCourse сохранены')
+  } catch (e) {
+    gcSaveError.value = (e as Error)?.message || 'Ошибка сохранения'
+    showSaveStatus(gcSaveStatus, gcSaveStatusTimeout, 'error')
+  } finally {
+    gcSaveLoading.value = false
+  }
+}
+
 const loadLavaCatalog = async () => {
   lavaLoadError.value = ''
+  lavaProductOfferSaved.value = false
   lavaCatalog.value = []
   lavaCatalogFetched.value = false
   lavaSelectedKey.value = ''
@@ -300,11 +400,28 @@ const saveLavaIntegration = async () => {
         return
       }
     }
+
+    const pidVerify = await getSettingRoute.query({ key: LAVA_SETTING_KEYS.LAVA_PRODUCT_ID }).run(ctx)
+    const oidVerify = await getSettingRoute.query({ key: LAVA_SETTING_KEYS.LAVA_OFFER_ID }).run(ctx)
+    const pidV = (pidVerify as { success?: boolean; value?: unknown })?.value
+    const oidV = (oidVerify as { success?: boolean; value?: unknown })?.value
+    if (pidV !== row.productId || oidV !== row.offerId) {
+      lavaSaveError.value =
+        'Запись в настройки не подтвердилась при чтении. Обновите страницу или повторите сохранение.'
+      showSaveStatus(lavaSaveStatus, lavaSaveStatusTimeout, 'error')
+      log.error('Lava save verify mismatch', { pidV, oidV, expected: [row.productId, row.offerId] })
+      return
+    }
+
     savedLavaProductId.value = row.productId
     savedLavaOfferId.value = row.offerId
+    savedLavaProductTitle.value = row.productTitle
+    savedLavaOfferTitle.value = row.offerName
     lavaBaseUrl.value = baseNorm
+    lavaProductOfferSaved.value = true
+    lavaSelectedKey.value = ''
     showSaveStatus(lavaSaveStatus, lavaSaveStatusTimeout, 'saved')
-    log.info('Настройки Lava сохранены', { productId: row.productId, offerId: row.offerId })
+    log.info('Настройки Lava сохранены и проверены', { productId: row.productId, offerId: row.offerId })
   } catch (e) {
     lavaSaveError.value = (e as Error)?.message || 'Ошибка сохранения'
     showSaveStatus(lavaSaveStatus, lavaSaveStatusTimeout, 'error')
@@ -367,6 +484,7 @@ onMounted(() => {
   log.info('Компонент смонтирован')
   loadProjectName()
   loadLavaSettings()
+  loadGcSettings()
   loadDashboardCounts()
   if (window.hideAppLoader) window.hideAppLoader()
   if (window.bootLoaderComplete) {
@@ -427,6 +545,10 @@ onBeforeUnmount(() => {
   if (lavaSaveStatusTimeout.id) {
     clearTimeout(lavaSaveStatusTimeout.id)
     lavaSaveStatusTimeout.id = null
+  }
+  if (gcSaveStatusTimeout.id) {
+    clearTimeout(gcSaveStatusTimeout.id)
+    gcSaveStatusTimeout.id = null
   }
   if (projectNameDebounceTimer.id) {
     clearTimeout(projectNameDebounceTimer.id)
@@ -678,8 +800,9 @@ const clearLogs = () => {
               <h2 class="admin-card-title">Интеграция Lava.top</h2>
             </div>
             <p class="lava-settings-hint">
-              Шаг 1: укажите API-ключ и базовый URL (по умолчанию gate.lava.top). Шаг 2: загрузите каталог и
-              выберите продукт и оффер. Шаг 3: сохраните в настройки.
+              Шаг 1: укажите API-ключ и базовый URL (по умолчанию gate.lava.top). Затем обновите каталог,
+              выберите продукт и оффер и сохраните. После сохранения список скрывается — для смены выбора
+              снова нажмите «Обновить продукты и офферы».
             </p>
             <div class="settings-form">
               <div class="settings-field">
@@ -711,27 +834,40 @@ const clearLogs = () => {
                   @click="loadLavaCatalog"
                 >
                   <i v-if="lavaLoading" class="fas fa-spinner fa-spin"></i>
-                  <i v-else class="fas fa-cloud-download-alt"></i>
-                  Загрузить продукты и офферы
+                  <i v-else class="fas fa-sync-alt"></i>
+                  Обновить продукты и офферы
                 </button>
               </div>
             </div>
             <p v-if="lavaLoadError" class="admin-card-error">{{ lavaLoadError }}</p>
 
-            <div v-if="lavaCatalog.length > 0" class="lava-catalog-block">
+            <div v-if="lavaProductOfferSaved" class="lava-saved-summary">
+              <i class="fas fa-check-circle lava-saved-icon"></i>
+              <div class="lava-saved-summary-text">
+                <span class="lava-saved-label">В настройках сохранены продукт и оффер.</span>
+                <span v-if="savedLavaProductTitle || savedLavaOfferTitle" class="lava-saved-titles">
+                  {{ savedLavaProductTitle || '—' }} — {{ savedLavaOfferTitle || '—' }}
+                </span>
+                <code class="lava-saved-code">{{ savedLavaProductId }} / {{ savedLavaOfferId }}</code>
+              </div>
+            </div>
+
+            <div v-if="lavaCatalog.length > 0 && !lavaProductOfferSaved" class="lava-catalog-block">
               <h3 class="lava-catalog-title">Шаг 2 — выбор продукта и оффера</h3>
               <div class="lava-catalog-list custom-scrollbar">
                 <label
                   v-for="row in lavaCatalog"
                   :key="lavaRowKey(row)"
                   class="lava-catalog-row"
+                  :class="{ 'lava-catalog-row--selected': lavaSelectedKey === lavaRowKey(row) }"
                 >
                   <input
                     v-model="lavaSelectedKey"
                     type="radio"
-                    class="lava-catalog-radio"
+                    class="lava-catalog-input"
                     :value="lavaRowKey(row)"
                   />
+                  <span class="lava-catalog-indicator" aria-hidden="true" />
                   <span class="lava-catalog-text">
                     <span class="lava-catalog-line">
                       <span class="lava-catalog-product">{{ row.productTitle || row.productId }}</span>
@@ -761,6 +897,74 @@ const clearLogs = () => {
               В ответе Lava нет продуктов с офферами. Проверьте ключ и кабинет Lava.
             </p>
             <p v-if="lavaSaveError" class="admin-card-error">{{ lavaSaveError }}</p>
+          </div>
+
+          <!-- GetCourse PL API -->
+          <div class="admin-card gc-settings-card">
+            <span
+              v-if="gcSaveStatus"
+              class="admin-card-status"
+              :class="gcSaveStatus === 'saved' ? 'status-saved' : 'status-error'"
+            >
+              {{ gcSaveStatus === 'saved' ? 'Сохранено' : 'Ошибка' }}
+            </span>
+            <div class="admin-card-header">
+              <i class="fas fa-graduation-cap admin-card-icon"></i>
+              <h2 class="admin-card-title">Интеграция GetCourse (PL API)</h2>
+            </div>
+            <p class="lava-settings-hint">
+              Ключ API и домен аккаунта из настроек GetCourse (формат домена:
+              <code class="lava-saved-code">school.getcourse.ru</code> или ваш кастомный хост без
+              <code class="lava-saved-code">https://</code>). Перед сохранением выполняется проверка запросом к
+              <code class="lava-saved-code">pl/api/deals</code>.
+            </p>
+            <div class="settings-form">
+              <div class="settings-field">
+                <label class="settings-label" for="gc-api-key">{{ GC_SETTING_KEYS.GC_API_KEY }}</label>
+                <input
+                  id="gc-api-key"
+                  v-model="gcApiKey"
+                  type="password"
+                  autocomplete="off"
+                  class="settings-input"
+                  placeholder="Секретный ключ Import API"
+                />
+              </div>
+              <div class="settings-field">
+                <label class="settings-label" for="gc-account-domain">{{ GC_SETTING_KEYS.GC_ACCOUNT_DOMAIN }}</label>
+                <input
+                  id="gc-account-domain"
+                  v-model="gcAccountDomain"
+                  type="text"
+                  class="settings-input"
+                  placeholder="school.getcourse.ru"
+                />
+              </div>
+              <div class="lava-step-actions gc-actions">
+                <button
+                  type="button"
+                  class="lava-primary-btn gc-secondary-btn"
+                  :disabled="gcVerifyLoading || !gcApiKey.trim() || !gcAccountDomain.trim()"
+                  @click="verifyGcOnly"
+                >
+                  <i v-if="gcVerifyLoading" class="fas fa-spinner fa-spin"></i>
+                  <i v-else class="fas fa-plug"></i>
+                  Проверить подключение
+                </button>
+                <button
+                  type="button"
+                  class="lava-primary-btn"
+                  :disabled="gcSaveLoading || !gcApiKey.trim() || !gcAccountDomain.trim()"
+                  @click="saveGcIntegration"
+                >
+                  <i v-if="gcSaveLoading" class="fas fa-spinner fa-spin"></i>
+                  <i v-else class="fas fa-save"></i>
+                  Сохранить в настройки
+                </button>
+              </div>
+            </div>
+            <p v-if="gcVerifyHint && !gcSaveError" class="gc-verify-ok">{{ gcVerifyHint }}</p>
+            <p v-if="gcSaveError" class="admin-card-error">{{ gcSaveError }}</p>
           </div>
 
           <!-- Logging Level -->
@@ -1548,41 +1752,109 @@ const clearLogs = () => {
 }
 
 .lava-catalog-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
   max-height: 280px;
   overflow: auto;
   margin-bottom: 1rem;
-  padding: 0.5rem;
-  background: rgba(0, 0, 0, 0.2);
+  padding: 0.6rem;
+  background: rgba(0, 0, 0, 0.22);
   border: 1px solid var(--color-border);
-  border-radius: 4px;
+  border-radius: 8px;
 }
 
 .lava-catalog-row {
-  display: flex;
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-rows: auto;
+  column-gap: 0.85rem;
   align-items: flex-start;
-  gap: 0.65rem;
-  padding: 0.45rem 0.35rem;
+  margin: 0;
+  padding: 0.85rem 1rem;
   cursor: pointer;
-  border-radius: 4px;
-  transition: background 0.15s ease;
+  border-radius: 8px;
+  border: 1px solid var(--color-border);
+  background: rgba(255, 255, 255, 0.02);
+  transition:
+    border-color 0.18s ease,
+    background 0.18s ease,
+    box-shadow 0.18s ease;
 }
 
 .lava-catalog-row:hover {
-  background: rgba(255, 255, 255, 0.04);
+  border-color: var(--color-border-light);
+  background: rgba(255, 255, 255, 0.05);
 }
 
-.lava-catalog-radio {
-  margin-top: 0.2rem;
+.lava-catalog-row--selected {
+  border-color: var(--color-accent);
+  background: rgba(211, 35, 75, 0.09);
+  box-shadow: 0 0 0 1px rgba(211, 35, 75, 0.35);
+}
+
+.lava-catalog-row:focus-within {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(211, 35, 75, 0.45);
+}
+
+.lava-catalog-row--selected:focus-within {
+  box-shadow:
+    0 0 0 1px rgba(211, 35, 75, 0.45),
+    0 0 0 3px rgba(211, 35, 75, 0.2);
+}
+
+/* скрытый нативный radio — клик по карточке переключает */
+.lava-catalog-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+  opacity: 0;
+}
+
+.lava-catalog-indicator {
+  grid-column: 1;
+  grid-row: 1;
+  width: 1.25rem;
+  height: 1.25rem;
+  margin-top: 0.12rem;
   flex-shrink: 0;
-  accent-color: var(--color-accent);
+  border-radius: 50%;
+  border: 2px solid var(--color-border-light);
+  background: transparent;
+  transition:
+    border-color 0.18s ease,
+    background 0.18s ease,
+    box-shadow 0.18s ease;
+  position: relative;
+}
+
+.lava-catalog-row:hover .lava-catalog-indicator {
+  border-color: rgba(211, 35, 75, 0.55);
+}
+
+.lava-catalog-row--selected .lava-catalog-indicator {
+  border-color: var(--color-accent);
+  background: var(--color-accent);
+  box-shadow: inset 0 0 0 3px rgba(10, 10, 10, 0.85);
 }
 
 .lava-catalog-text {
+  grid-column: 2;
+  grid-row: 1;
   display: flex;
   flex-direction: column;
-  gap: 0.2rem;
+  gap: 0.35rem;
   font-size: 0.88rem;
-  line-height: 1.35;
+  line-height: 1.4;
+  min-width: 0;
 }
 
 .lava-catalog-product {
@@ -1611,6 +1883,76 @@ const clearLogs = () => {
   margin: 0.75rem 0 0;
   font-size: 0.85rem;
   color: var(--color-text-secondary);
+}
+
+.lava-saved-summary {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  margin-top: 1rem;
+  padding: 0.85rem 1rem;
+  background: rgba(39, 174, 96, 0.1);
+  border: 1px solid rgba(39, 174, 96, 0.35);
+  border-radius: 6px;
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
+.lava-saved-icon {
+  color: #27ae60;
+  margin-top: 0.1rem;
+  flex-shrink: 0;
+}
+
+.lava-saved-summary-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.lava-saved-label {
+  color: var(--color-text);
+  font-weight: 500;
+}
+
+.lava-saved-titles {
+  color: var(--color-text-secondary);
+}
+
+.lava-saved-code {
+  font-size: 0.78rem;
+  color: var(--color-text-tertiary);
+  word-break: break-all;
+}
+
+.gc-settings-card .lava-saved-code {
+  font-size: 0.8rem;
+}
+
+.gc-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.gc-secondary-btn {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: var(--color-border-light);
+  color: var(--color-text);
+}
+
+.gc-secondary-btn:hover:not(:disabled) {
+  border-color: var(--color-accent);
+  box-shadow: none;
+}
+
+.gc-verify-ok {
+  margin: 0.75rem 0 0;
+  font-size: 0.85rem;
+  color: #27ae60;
+  line-height: 1.45;
 }
 
 @media (max-width: 768px) {

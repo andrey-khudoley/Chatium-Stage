@@ -587,7 +587,130 @@ async function runDashboardLibTests() {
   }
 }
 
-/** Запустить все тесты (все шесть блоков) и обновить метрики дашборда */
+/* --- Блок 7: Интеграция Lava + GetCourse --- */
+const LAVA_INTEGRATION_TESTS: Array<{ id: string; title: string; path: string; mode: 'results' | 'legacy' }> = [
+  {
+    id: 'lava-settings-getters',
+    title: 'Геттеры Lava/GC',
+    path: '/api/tests/endpoints-check/lava-settings-getters',
+    mode: 'results'
+  },
+  { id: 'lava-repos', title: 'Репозитории lava_*', path: '/api/tests/endpoints-check/lava-repos', mode: 'results' },
+  {
+    id: 'lava-webhook-service',
+    title: 'lava-webhook.service',
+    path: '/api/tests/endpoints-check/lava-webhook-service',
+    mode: 'results'
+  },
+  {
+    id: 'getcourse-deal-update',
+    title: 'GetCourse updateDealStatus',
+    path: '/api/tests/endpoints-check/getcourse-deal-update',
+    mode: 'legacy'
+  },
+  {
+    id: 'lava-api-catalog',
+    title: 'fetchLavaProductsCatalog',
+    path: '/api/tests/endpoints-check/lava-api-catalog',
+    mode: 'legacy'
+  },
+  {
+    id: 'lava-payment-link-route',
+    title: 'Роут payment-link',
+    path: '/api/tests/endpoints-check/lava-payment-link-route',
+    mode: 'results'
+  },
+  {
+    id: 'lava-api-client',
+    title: 'Lava getProducts',
+    path: '/api/tests/endpoints-check/lava-api-client',
+    mode: 'legacy'
+  },
+  {
+    id: 'payment-link',
+    title: 'createPaymentLink (50 RUB)',
+    path: '/api/tests/endpoints-check/payment-link',
+    mode: 'legacy'
+  }
+]
+const lavaIntegrationResults = ref<TestResult[]>([])
+const lavaIntegrationLoading = ref(false)
+const lavaIntegrationLastRunAt = ref<string | null>(null)
+
+const lavaIntegrationDisplay = computed(() => {
+  const byId = new Map(lavaIntegrationResults.value.map((r) => [r.id, r]))
+  return LAVA_INTEGRATION_TESTS.map((t) => {
+    const res = byId.get(t.id)
+    return {
+      id: t.id,
+      title: t.title,
+      status: res === undefined ? 'todo' : res.passed ? 'success' : 'fail',
+      error: res && !res.passed ? res.error : undefined
+    }
+  })
+})
+
+async function runLavaIntegrationTests() {
+  lavaIntegrationLoading.value = true
+  lavaIntegrationResults.value = []
+  const baseUrl = getApiBaseUrl().replace(/\/$/, '')
+  log.info('Запуск проверок интеграции Lava / GetCourse')
+  const out: TestResult[] = []
+  try {
+    for (const step of LAVA_INTEGRATION_TESTS) {
+      try {
+        const res = await fetch(`${baseUrl}${step.path}`, { method: 'GET', credentials: 'include' })
+        const data = (await res.json().catch(() => null)) as Record<string, unknown>
+        if (!res.ok) {
+          out.push({
+            id: step.id,
+            title: step.title,
+            passed: false,
+            error: `HTTP ${res.status}`
+          })
+          continue
+        }
+        if (step.mode === 'results' && Array.isArray(data.results)) {
+          const inner = data.results as TestResult[]
+          const allPassed = inner.length > 0 && inner.every((r) => r.passed)
+          out.push({
+            id: step.id,
+            title: step.title,
+            passed: allPassed,
+            error: allPassed
+              ? undefined
+              : inner
+                  .filter((r) => !r.passed)
+                  .map((r) => r.error || r.id)
+                  .join('; ')
+          })
+        } else {
+          const success = data.success === true
+          const skipped = data.skipped === true
+          out.push({
+            id: step.id,
+            title: step.title,
+            passed: success || skipped,
+            error: success || skipped ? undefined : String(data.error ?? 'Ошибка')
+          })
+        }
+      } catch (e) {
+        out.push({
+          id: step.id,
+          title: step.title,
+          passed: false,
+          error: (e as Error)?.message ?? String(e)
+        })
+      }
+    }
+    lavaIntegrationResults.value = out
+    lavaIntegrationLastRunAt.value = new Date().toLocaleString('ru-RU')
+  } finally {
+    lavaIntegrationLoading.value = false
+  }
+}
+
+/** Запустить все тесты (все семь блоков) и обновить метрики дашборда */
 const runAllTests = async () => {
   runAllTestsLoading.value = true
   log.info('Запуск всех тестов')
@@ -598,13 +721,15 @@ const runAllTests = async () => {
     await runLoggerLibTests()
     await runLogsRepoTests()
     await runDashboardLibTests()
+    await runLavaIntegrationTests()
     const all = [
       ...endpointsResults.value,
       ...settingsResults.value,
       ...settingsRepoResults.value,
       ...loggerLibResults.value,
       ...logsRepoResults.value,
-      ...dashboardLibResults.value
+      ...dashboardLibResults.value,
+      ...lavaIntegrationResults.value
     ]
     const passed = all.filter((r) => r.passed).length
     const failed = all.filter((r) => !r.passed).length
@@ -1017,6 +1142,47 @@ const runAllTests = async () => {
               >
                 <i class="fas" :class="dashboardLibLoading ? 'fa-spinner fa-spin' : 'fa-bolt'"></i>
                 {{ dashboardLibLoading ? 'Проверяем...' : 'Запустить проверку библиотеки админки' }}
+              </button>
+            </div>
+          </div>
+
+          <!-- Блок 7: Интеграция Lava + GetCourse -->
+          <div v-if="showContent" class="tests-card tests-endpoints-card">
+            <div class="tests-endpoints-header">
+              <i class="fas fa-plug tests-endpoints-icon"></i>
+              <h2 class="tests-endpoints-title">Интеграция Lava + GetCourse</h2>
+            </div>
+            <p class="tests-endpoints-desc">
+              Репозитории Heap, сервисы webhook и оплаты, клиенты API, роут payment-link и сценарий createPaymentLink.
+            </p>
+            <div v-if="lavaIntegrationLastRunAt" class="tests-endpoints-last-run">
+              Результаты от: {{ lavaIntegrationLastRunAt }}
+            </div>
+            <div class="tests-endpoints-list-wrap">
+              <ul class="tests-endpoints-list" role="list">
+                <li
+                  v-for="item in lavaIntegrationDisplay"
+                  :key="item.id"
+                  class="tests-endpoints-list-item"
+                  :class="`tests-endpoints-status-${item.status}`"
+                >
+                  <span class="tests-endpoints-badge" :class="`tests-endpoints-badge-${item.status}`">
+                    {{ item.status === 'todo' ? '[TODO]' : item.status === 'success' ? '[OK]' : '[FAIL]' }}
+                  </span>
+                  <span class="tests-endpoints-list-title-inline">{{ item.title }}</span>
+                  <span v-if="item.error" class="tests-endpoints-list-error">{{ item.error }}</span>
+                </li>
+              </ul>
+            </div>
+            <div class="tests-endpoints-actions">
+              <button
+                type="button"
+                class="tests-run-group-btn"
+                :disabled="lavaIntegrationLoading"
+                @click="runLavaIntegrationTests"
+              >
+                <i class="fas" :class="lavaIntegrationLoading ? 'fa-spinner fa-spin' : 'fa-bolt'"></i>
+                {{ lavaIntegrationLoading ? 'Проверяем...' : 'Запустить проверки интеграции Lava / GetCourse' }}
               </button>
             </div>
           </div>
