@@ -9,6 +9,7 @@ import * as loggerLib from '../../lib/logger.lib'
 import { getApiUrlForRoute, getFullUrl, ROUTES } from '../../config/routes'
 import { TESTS_PAGE_NAME, getPageTitle, getHeaderText } from '../../config/project'
 import * as settingsLib from '../../lib/settings.lib'
+import * as userSettingsLib from '../../lib/user-settings.lib'
 import { customScrollbarStyles, formControlStyles, mobileSafeAreaStyles, VIEWPORT_META_CONTENT } from '../../styles'
 import { toolsStateRoute } from '../../api/tools/state'
 import { toolsControlRoute } from '../../api/tools/control'
@@ -62,6 +63,7 @@ export const testsPageRoute = app.html('/', async (ctx, req) => {
   })
   const logLevel = await getLogLevelForPage(ctx)
   const projectName = await settingsLib.getSettingString(ctx, settingsLib.SETTING_KEYS.PROJECT_NAME)
+  const timezoneOffsetHours = await userSettingsLib.getTimezoneOffsetForCtxUser(ctx)
   const logsSocketId = isAdmin ? getAdminLogsSocketId(ctx) : ''
   const encodedLogsSocketId = isAdmin ? await genSocketId(ctx, logsSocketId) : undefined
   await loggerLib.writeServerLog(ctx, {
@@ -309,6 +311,7 @@ export const testsPageRoute = app.html('/', async (ctx, req) => {
           toolsControlUrl={toolsControlUrl}
           encodedFocusToolsSocketId={encodedFocusToolsSocketId}
           encodedLogsSocketId={encodedLogsSocketId}
+          timezoneOffsetHours={timezoneOffsetHours}
         />
       </body>
     </html>

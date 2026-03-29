@@ -161,11 +161,12 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, onMounted, onUnmounted } from 'vue'
+import { computed, ref, onMounted, onUnmounted, watch, withDefaults } from 'vue'
 import LogoutModal from './LogoutModal.vue'
 import { createComponentLogger } from '../shared/logger'
 import { formatPomodoroSecondsDisplay, type PomodoroPhase, type PomodoroStateDto } from '../lib/pomodoro-types'
-import { computePomodoroStatsDayKeyLocal } from '../lib/pomodoro-stats-day'
+import { computePomodoroStatsDayKeyForUtcOffsetHours } from '../lib/pomodoro-stats-day'
+import { DEFAULT_USER_TIMEZONE_OFFSET_HOURS } from '../shared/user-settings-defaults'
 import type { FocusToolsStateData, HeaderWidgetMode } from '../shared/focus-tools-types'
 import { createFocusDeadlineAlarms, type FocusDeadlineAlarmsHandle } from '../lib/focus-deadline-alarms'
 import { getOrCreateBrowserSocketClient } from '@app/socket'
@@ -173,21 +174,26 @@ import { getOrCreateBrowserSocketClient } from '@app/socket'
 const log = createComponentLogger('Header')
 type LocalClockStatus = 'stopped' | 'running' | 'paused'
 
-const props = defineProps<{
-  projectTitle: string
-  pageName?: string
-  indexUrl: string
-  profileUrl: string
-  loginUrl: string
-  isAuthenticated: boolean
-  isAdmin?: boolean
-  adminUrl?: string
-  testsUrl?: string
-  enableToolClockWidget?: boolean
-  toolsStateUrl?: string
-  toolsControlUrl?: string
-  encodedFocusToolsSocketId?: string
-}>()
+const props = withDefaults(
+  defineProps<{
+    projectTitle: string
+    pageName?: string
+    indexUrl: string
+    profileUrl: string
+    loginUrl: string
+    isAuthenticated: boolean
+    isAdmin?: boolean
+    adminUrl?: string
+    testsUrl?: string
+    /** Смещение UTC из профиля — граница суток статистики focus-tools (полночь). */
+    timezoneOffsetHours?: number
+    enableToolClockWidget?: boolean
+    toolsStateUrl?: string
+    toolsControlUrl?: string
+    encodedFocusToolsSocketId?: string
+  }>(),
+  { timezoneOffsetHours: DEFAULT_USER_TIMEZONE_OFFSET_HOURS },
+)
 
 const isGlitching = ref(false)
 const showLogoutModal = ref(false)
@@ -351,8 +357,12 @@ const readApiJson = async <T,>(response: Response): Promise<T> => {
   return response.json() as Promise<T>
 }
 
+const focusToolsStatsDayKey = computed(() =>
+  computePomodoroStatsDayKeyForUtcOffsetHours(nowTick.value, props.timezoneOffsetHours),
+)
+
 function toolsStateUrlWithDay(base: string): string {
-  const key = encodeURIComponent(computePomodoroStatsDayKeyLocal(Date.now()))
+  const key = encodeURIComponent(focusToolsStatsDayKey.value)
   return base.includes('?') ? `${base}&statsDayKey=${key}` : `${base}?statsDayKey=${key}`
 }
 
@@ -381,6 +391,12 @@ async function syncFocusToolsFromHttp(): Promise<void> {
   }
 }
 
+watch(focusToolsStatsDayKey, (next, prev) => {
+  if (prev !== undefined && next !== prev && props.toolsStateUrl) {
+    void syncFocusToolsFromHttp()
+  }
+})
+
 type FocusToolsCommand =
   | { kind: 'pomodoro'; action: 'start' | 'resume' | 'pause' | 'stop' | 'skip' | 'reset' }
   | { kind: 'timer'; action: 'start' | 'resume' | 'pause' | 'reset' }
@@ -400,7 +416,7 @@ async function postFocusToolsCommand(
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        statsDayKey: computePomodoroStatsDayKeyLocal(Date.now()),
+        statsDayKey: focusToolsStatsDayKey.value,
         command,
       }),
     })

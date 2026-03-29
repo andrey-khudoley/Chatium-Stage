@@ -1,3 +1,4 @@
+import { requireRealUser } from '@app/auth'
 import * as userSettingsRepo from '../repos/user-settings.repo'
 import {
   DEFAULT_USER_TIMEZONE_OFFSET_HOURS,
@@ -25,4 +26,17 @@ export async function saveTimezoneOffsetHours(ctx: app.Ctx, userId: string, offs
   const clamped = clampOffsetHours(offsetHours)
   await userSettingsRepo.upsertTimezone(ctx, userId, clamped)
   return clamped
+}
+
+/**
+ * Смещение UTC для текущего запроса: из Heap для вошедшего пользователя, иначе дефолт (+3).
+ */
+export async function getTimezoneOffsetForCtxUser(ctx: app.Ctx): Promise<number> {
+  if (!ctx.user) return DEFAULT_USER_TIMEZONE_OFFSET_HOURS
+  try {
+    const u = requireRealUser(ctx)
+    return await getEffectiveTimezoneOffsetHours(ctx, u.id)
+  } catch {
+    return DEFAULT_USER_TIMEZONE_OFFSET_HOURS
+  }
 }

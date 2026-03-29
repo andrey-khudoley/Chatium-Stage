@@ -44,12 +44,12 @@
 
 ## Библиотеки (lib/)
 - `lib/settings.lib.ts` — getSetting, getAllSettings, setSetting, getLogLevel, getLogsLimit, getLogWebhook (бизнес-логика, дефолты, валидация).
-- `lib/user-settings.lib.ts` — getEffectiveTimezoneOffsetHours, saveTimezoneOffsetHours (дефолт UTC+3, кламп −12…14).
+- `lib/user-settings.lib.ts` — getEffectiveTimezoneOffsetHours, saveTimezoneOffsetHours, getTimezoneOffsetForCtxUser (дефолт UTC+3, кламп −12…14).
 - `lib/logger.lib.ts` — getAdminLogsSocketId, shouldLogByLevel, writeServerLog (проверка уровня, запись в ctx.log/ctx.account.log, Heap, WebSocket, вебхук).
 - `lib/tasks-types.ts` — DTO дерева задач для UI/API (без импорта Heap).
 - `lib/focus-tools.lib.ts` — единая логика помидор + таймер + секундомер: `getFullState`, `executeCommand`, тик фаз помидора, завершение таймера по `endsAtMs`, сегменты в `tool-segments`, push WebSocket; все мутации под `runWithExclusiveLock`.
 - `lib/pomodoro-types.ts` — DTO состояния Pomodoro и тип входа настроек; `normalizePhaseChangeSoundId` для поля `phaseChangeSound` (1–5).
-- `lib/pomodoro-stats-day.ts` — ключ периода дневной статистики (граница 05:00 локально / fallback Europe/Moscow); `@shared`.
+- `lib/pomodoro-stats-day.ts` — ключ периода дневной статистики focus-tools: календарная дата в **полночь** по смещению UTC из профиля (`computePomodoroStatsDayKeyForUtcOffsetHours`), при отсутствии валидного `statsDayKey` в запросе — то же на сервере через `user-settings`; `@shared`.
 - `lib/journal-day-key.ts` — ключ периода дневника (граница 05:00 локально / fallback Europe/Moscow); `@shared`.
 - `lib/journal-week-key.ts` — ключ понедельника недели, сдвиг недели, список дней недели и номер недели; на сервере для «текущей недели» без TZ клиента — `computeJournalWeekMondayKeyInTimeZone(..., Europe/Moscow)` (не `*Local`, иначе при TZ=UTC сдвиг относительно GMT+3); `@shared`.
 - `lib/journal-habits-time.ts` — DTO привычек (в т.ч. `currentWeekMondayKey` для навигации), парсинг/сериализация JSON, ключ понедельника и колонка «сегодня» с границей 05:00 по **Europe/Moscow** на сервере (`computeJournalDayKeyInTimeZone`), режим просмотра недели, мерж отметок при сохранении; `@shared`.

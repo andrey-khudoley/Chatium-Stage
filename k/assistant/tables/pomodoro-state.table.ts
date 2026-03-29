@@ -26,7 +26,7 @@ export const TAssistantPomodoroState6Gs2mQ = Heap.Table(
     phaseChangeSound: Heap.Optional(Heap.Number({ customMeta: { title: 'Звук смены фазы (1–5)' } })),
     tasksCompletedToday: Heap.Optional(Heap.Number({ customMeta: { title: 'Задач завершено сегодня' } })),
     statsPeriodDayKey: Heap.Optional(
-      Heap.String({ customMeta: { title: 'Ключ периода дневной статистики (YYYY-MM-DD от 05:00)' } }),
+      Heap.String({ customMeta: { title: 'Ключ периода дневной статистики (YYYY-MM-DD, полночь по UTC+N из профиля)' } }),
     ),
   },
   { customMeta: { title: 'pomodoro-state.table.ts', description: '' } },

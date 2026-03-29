@@ -6,6 +6,7 @@ import ToolsPage from '../../pages/ToolsPage.vue'
 import { getApiUrlForRoute, getFullUrl, ROUTES } from '../../config/routes'
 import { TOOLS_PAGE_NAME, getPageTitle, getHeaderText } from '../../config/project'
 import * as settingsLib from '../../lib/settings.lib'
+import * as userSettingsLib from '../../lib/user-settings.lib'
 import { toolsStateRoute } from '../../api/tools/state'
 import { toolsControlRoute } from '../../api/tools/control'
 import { focusToolsSocketId } from '../../shared/focus-tools-types'
@@ -15,6 +16,7 @@ export const toolsPageRoute = app.html('/', async (ctx) => {
   const isAuthenticated = !!ctx.user
   const isAdmin = ctx.user?.is('Admin') ?? false
   const projectName = await settingsLib.getSettingString(ctx, settingsLib.SETTING_KEYS.PROJECT_NAME)
+  const timezoneOffsetHours = await userSettingsLib.getTimezoneOffsetForCtxUser(ctx)
   const toolsStateUrl = getApiUrlForRoute(toolsStateRoute.url())
   const toolsControlUrl = getApiUrlForRoute(toolsControlRoute.url())
   let encodedFocusToolsSocketId = ''
@@ -75,6 +77,7 @@ export const toolsPageRoute = app.html('/', async (ctx) => {
           isAdmin={isAdmin}
           adminUrl={isAdmin ? getFullUrl(ROUTES.admin) : ''}
           testsUrl={isAuthenticated ? getFullUrl(ROUTES.tests) : ''}
+          timezoneOffsetHours={timezoneOffsetHours}
           pomodoroUrl={getFullUrl(ROUTES.pomodoro)}
           toolsStateUrl={toolsStateUrl}
           toolsControlUrl={toolsControlUrl}

@@ -29,6 +29,7 @@ import { focusToolsSocketId } from '../../shared/focus-tools-types'
 import { getApiUrlForRoute, getFullUrl, ROUTES } from '../../config/routes'
 import { TASKS_PAGE_NAME, getPageTitle, getHeaderText } from '../../config/project'
 import * as settingsLib from '../../lib/settings.lib'
+import * as userSettingsLib from '../../lib/user-settings.lib'
 import { customScrollbarStyles, formControlStyles, mobileSafeAreaStyles, VIEWPORT_META_CONTENT } from '../../styles'
 
 const LOG_PATH = 'web/tasks/index'
@@ -89,6 +90,7 @@ export const tasksPageRoute = app.html('/', async (ctx, _req) => {
 
   const logLevel = await getLogLevelForPage(ctx)
   const projectName = await settingsLib.getSettingString(ctx, settingsLib.SETTING_KEYS.PROJECT_NAME)
+  const timezoneOffsetHours = await userSettingsLib.getTimezoneOffsetForCtxUser(ctx)
 
   await loggerLib.writeServerLog(ctx, {
     severity: 6,
@@ -345,6 +347,7 @@ export const tasksPageRoute = app.html('/', async (ctx, _req) => {
           toolsControlUrl={toolsControlUrl}
           toolsStateUrl={toolsStateUrl}
           encodedFocusToolsSocketId={encodedFocusToolsSocketId}
+          timezoneOffsetHours={timezoneOffsetHours}
         />
       </body>
     </html>

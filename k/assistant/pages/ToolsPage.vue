@@ -1,22 +1,28 @@
 <script setup lang="ts">
+import { withDefaults } from 'vue'
 import Header from '../components/Header.vue'
 import GlobalGlitch from '../components/GlobalGlitch.vue'
 import AppFooter from '../components/AppFooter.vue'
+import { DEFAULT_USER_TIMEZONE_OFFSET_HOURS } from '../shared/user-settings-defaults'
 
-const props = defineProps<{
-  projectTitle: string
-  indexUrl: string
-  profileUrl: string
-  loginUrl: string
-  isAuthenticated: boolean
-  isAdmin?: boolean
-  adminUrl?: string
-  testsUrl?: string
-  pomodoroUrl: string
-  toolsStateUrl?: string
-  toolsControlUrl?: string
-  encodedFocusToolsSocketId?: string
-}>()
+const props = withDefaults(
+  defineProps<{
+    projectTitle: string
+    indexUrl: string
+    profileUrl: string
+    loginUrl: string
+    isAuthenticated: boolean
+    isAdmin?: boolean
+    adminUrl?: string
+    testsUrl?: string
+    pomodoroUrl: string
+    toolsStateUrl?: string
+    toolsControlUrl?: string
+    encodedFocusToolsSocketId?: string
+    timezoneOffsetHours?: number
+  }>(),
+  { timezoneOffsetHours: DEFAULT_USER_TIMEZONE_OFFSET_HOURS },
+)
 </script>
 
 <template>
@@ -31,6 +37,7 @@ const props = defineProps<{
       :isAdmin="props.isAdmin"
       :adminUrl="props.adminUrl"
       :testsUrl="props.testsUrl"
+      :timezoneOffsetHours="props.timezoneOffsetHours"
       :enableToolClockWidget="true"
       :toolsStateUrl="props.toolsStateUrl"
       :toolsControlUrl="props.toolsControlUrl"
