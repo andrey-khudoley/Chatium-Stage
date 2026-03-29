@@ -69,3 +69,26 @@ export type PomodoroSettingsInput = {
   autoStartNextCycle: boolean
   phaseChangeSound: PomodoroPhaseChangeSoundId
 }
+
+/** Действие по окончании текущей фазы (совпадает с логикой `tickPomodoro` на сервере). */
+export function getPhaseCompletionActionForPhase(
+  state: Pick<
+    PomodoroStateDto,
+    'autoStartRest' | 'pauseAfterWork' | 'autoStartNextCycle' | 'pauseAfterRest' | 'afterLongRest'
+  >,
+  phase: PomodoroPhase,
+): PomodoroPhaseCompleteAction {
+  if (phase === 'work') {
+    if (state.autoStartRest) return 'auto'
+    if (state.pauseAfterWork) return 'pause'
+    return 'overtime'
+  }
+  if (phase === 'rest') {
+    if (state.autoStartNextCycle) return 'auto'
+    if (state.pauseAfterRest) return 'pause'
+    return 'overtime'
+  }
+  if (state.afterLongRest === 'auto') return 'auto'
+  if (state.afterLongRest === 'overtime') return 'overtime'
+  return 'pause'
+}
