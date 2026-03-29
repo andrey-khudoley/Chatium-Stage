@@ -1,7 +1,10 @@
 // @shared-route
 import { requireAccountRole } from '@app/auth'
+import * as gcApi from '../../lib/getcourse-api.client'
+import * as lavaApi from '../../lib/lava-api.client'
 import * as settingsLib from '../../lib/settings.lib'
 import * as loggerLib from '../../lib/logger.lib'
+import { normalizeLavaBaseUrlInput } from '../../shared/lavaBaseUrl'
 
 const LOG_PATH = 'api/settings/save'
 
@@ -65,6 +68,59 @@ export const saveSettingRoute = app.post('/', async (ctx, req) => {
       message: `[${LOG_PATH}] Нормализован log_level`,
       payload: { value }
     })
+  }
+
+  const sk = settingsLib.SETTING_KEYS
+
+  if (key === sk.GC_API_KEY || key === sk.GC_ACCOUNT_DOMAIN) {
+    const nextApiKey =
+      key === sk.GC_API_KEY ? String(value ?? '').trim() : (await settingsLib.getGcApiKey(ctx)).trim()
+    const nextDomain =
+      key === sk.GC_ACCOUNT_DOMAIN
+        ? String(value ?? '').trim()
+        : (await settingsLib.getGcAccountDomain(ctx)).trim()
+    if (nextApiKey && nextDomain) {
+      const v = await gcApi.verifyGcPlApiAccess(ctx, { apiKey: nextApiKey, domain: nextDomain })
+      if (!v.ok) {
+        await loggerLib.writeServerLog(ctx, {
+          severity: 4,
+          message: `[${LOG_PATH}] Проверка GetCourse PL API не пройдена`,
+          payload: {}
+        })
+        return { success: false, error: v.message }
+      }
+      await loggerLib.writeServerLog(ctx, {
+        severity: 7,
+        message: `[${LOG_PATH}] Проверка GetCourse PL API пройдена`,
+        payload: {}
+      })
+    }
+  }
+
+  if (key === sk.LAVA_API_KEY || key === sk.LAVA_BASE_URL) {
+    const nextApiKey =
+      key === sk.LAVA_API_KEY ? String(value ?? '').trim() : (await settingsLib.getLavaApiKey(ctx)).trim()
+    const nextBaseRaw =
+      key === sk.LAVA_BASE_URL ? String(value ?? '') : await settingsLib.getLavaBaseUrl(ctx)
+    const nextBase = normalizeLavaBaseUrlInput(
+      typeof nextBaseRaw === 'string' ? nextBaseRaw : String(nextBaseRaw ?? '')
+    )
+    if (nextApiKey && nextBase) {
+      const v = await lavaApi.verifyLavaCredentials(ctx, { apiKey: nextApiKey, baseUrl: nextBase })
+      if (!v.ok) {
+        await loggerLib.writeServerLog(ctx, {
+          severity: 4,
+          message: `[${LOG_PATH}] Проверка Lava GET /api/v2/products не пройдена`,
+          payload: { httpStatus: v.httpStatus }
+        })
+        return { success: false, error: v.message }
+      }
+      await loggerLib.writeServerLog(ctx, {
+        severity: 7,
+        message: `[${LOG_PATH}] Проверка Lava пройдена (HTTP ${v.httpStatus})`,
+        payload: {}
+      })
+    }
   }
 
   try {

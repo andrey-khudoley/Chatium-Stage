@@ -1,6 +1,6 @@
 # Импорты страниц и схема зависимостей
 
-Актуально для реализованной интеграции GetCourse + Lava: таблицы `lava_*`, репозитории в `repos/`, `lib/lava-types.ts`, `lib/lava-api.client.ts`, `lib/getcourse-api.client.ts`, `lib/lava-payment.service.ts`, `lib/lava-webhook.service.ts`, эндпоинты `api/integrations/lava/*`, тесты в `api/tests/endpoints-check/` — в т.ч. `lava-settings-getters.ts`, `lava-repos.ts`, `lava-webhook-service.ts`, `getcourse-deal-update.ts`, `lava-api-catalog.ts`, `lava-payment-link-route.ts`, `lava-api-client.ts`, `payment-link.ts`.
+Актуально для реализованной интеграции GetCourse + Lava: таблицы `lava_*`, репозитории в `repos/`, `lib/lava-types.ts`, `lib/lava-api.client.ts`, `lib/getcourse-api.client.ts`, `lib/lava-payment.service.ts`, `lib/lava-webhook.service.ts`, эндпоинты `api/integrations/lava/*`, тесты в `api/tests/endpoints-check/` — в т.ч. `integration-gc-credentials.ts`, `integration-lava-credentials.ts`, `lava-settings-getters.ts`, `lava-repos.ts`, `lava-webhook-service.ts`, `getcourse-deal-update.ts`, `lava-api-catalog.ts`, `lava-payment-link-route.ts`, `lava-api-client.ts`, `payment-link.ts`.
 
 ## 1) Страницы‑роуты (TSX entrypoints)
 
@@ -219,13 +219,19 @@
 - `./lava-types` → `LavaCurrency` (type)
 - `./logger.lib` → `*`
 - `./settings.lib` → `*` (геттеры Lava: base URL, API key, product/offer id)
-- экспортирует: `updateOfferPrice`, `createContract`, `getProducts`, `CreateContractParams`, `fetchLavaProductsCatalog`, `LavaCatalogRow`
+- экспортирует: `updateOfferPrice`, `createContract`, `fetchLavaProductsFirstPage`, `verifyLavaCredentials`, `getProducts`, `CreateContractParams`, `fetchLavaProductsCatalog`, `LavaCatalogRow`
 
 ### `./lib/getcourse-api.client.ts`
 - `@app/request` → `request`
 - `./logger.lib` → `*`
 - `./settings.lib` → `*` (`getGcApiKey`, `getGcAccountDomain`)
 - экспортирует: `normalizeGcAccountDomain`, `verifyGcPlApiAccess`, `VerifyGcPlApiParams`, `updateDealStatus`, `UpdateDealStatusParams`
+
+### `./lib/integration-credentials.lib.ts`
+- `./getcourse-api.client` → `verifyGcPlApiAccess`
+- `./lava-api.client` → `verifyLavaCredentials`
+- `./settings.lib` → геттеры ключей интеграции
+- экспортирует: `runGcCredentialCheckFromSettings`, `runLavaCredentialCheckFromSettings`, `runIntegrationCredentialChecksFromSettings`, типы `GcCredentialCheckFromSettings`, `LavaCredentialCheckFromSettings`
 
 ### `./lib/lava-payment.service.ts`
 - `@app/sync` → `runWithExclusiveLock`, `LockAcquisitionError`
@@ -281,8 +287,12 @@
 
 ### `./api/settings/save.ts`
 - `@app/auth` → `requireAccountRole`
+- `../../lib/getcourse-api.client` → `verifyGcPlApiAccess`
+- `../../lib/lava-api.client` → `verifyLavaCredentials`
 - `../../lib/settings.lib` → `*`
 - `../../lib/logger.lib` → `*`
+- `../../shared/lavaBaseUrl` → `normalizeLavaBaseUrlInput`
+- перед `setSetting`: при сохранении `gc_api_key` / `gc_account_domain` (если оба непусты после слияния с Heap) — проверка PL API; при `lava_api_key` / `lava_base_url` — GET Lava `/api/v2/products` (HTTP 200)
 
 ### `./api/admin/lava/catalog/index.ts`
 - `@app/auth` → `requireAccountRole`
@@ -376,6 +386,16 @@
 - `@app/auth` → `requireAnyUser`
 - `../../../lib/logger.lib` → `*`
 - `../../../lib/admin/dashboard.lib` → `*`
+
+### `./api/tests/endpoints-check/integration-gc-credentials.ts`
+- `@app/auth` → `requireAnyUser`
+- `../../../lib/integration-credentials.lib` → `*`
+- `../../../lib/logger.lib` → `*`
+
+### `./api/tests/endpoints-check/integration-lava-credentials.ts`
+- `@app/auth` → `requireAnyUser`
+- `../../../lib/integration-credentials.lib` → `*`
+- `../../../lib/logger.lib` → `*`
 
 ### `./api/tests/endpoints-check/lava-api-client.ts`
 - `@app/auth` → `requireAnyUser`

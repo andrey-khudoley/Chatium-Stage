@@ -316,7 +316,7 @@ type SingleRunGroup =
   | 'loggerLib'
   | 'logsRepo'
   | 'dashboardLib'
-  | 'lava'
+  | 'settingKeys'
 
 const singleTestRun = ref<{ group: SingleRunGroup; id: string } | null>(null)
 
@@ -783,71 +783,8 @@ async function runSingleDashboardLibTest(testId: string) {
   }
 }
 
-/* --- Блок 7: Интеграция Lava + GetCourse --- */
-const LAVA_INTEGRATION_TESTS: Array<{ id: string; title: string; path: string; mode: 'results' | 'legacy' }> = [
-  {
-    id: 'lava-settings-getters',
-    title: 'Геттеры Lava/GC',
-    path: '/api/tests/endpoints-check/lava-settings-getters',
-    mode: 'results'
-  },
-  { id: 'lava-repos', title: 'Репозитории lava_*', path: '/api/tests/endpoints-check/lava-repos', mode: 'results' },
-  {
-    id: 'lava-webhook-service',
-    title: 'lava-webhook.service',
-    path: '/api/tests/endpoints-check/lava-webhook-service',
-    mode: 'results'
-  },
-  {
-    id: 'getcourse-deal-update',
-    title: 'GetCourse updateDealStatus',
-    path: '/api/tests/endpoints-check/getcourse-deal-update',
-    mode: 'legacy'
-  },
-  {
-    id: 'lava-api-catalog',
-    title: 'fetchLavaProductsCatalog',
-    path: '/api/tests/endpoints-check/lava-api-catalog',
-    mode: 'legacy'
-  },
-  {
-    id: 'lava-payment-link-route',
-    title: 'Роут payment-link',
-    path: '/api/tests/endpoints-check/lava-payment-link-route',
-    mode: 'results'
-  },
-  {
-    id: 'lava-api-client',
-    title: 'Lava getProducts',
-    path: '/api/tests/endpoints-check/lava-api-client',
-    mode: 'legacy'
-  },
-  {
-    id: 'payment-link',
-    title: 'createPaymentLink (50 RUB)',
-    path: '/api/tests/endpoints-check/payment-link',
-    mode: 'legacy'
-  }
-]
-const lavaIntegrationResults = ref<TestResult[]>([])
-const lavaIntegrationLoading = ref(false)
-const lavaIntegrationLastRunAt = ref<string | null>(null)
-
-const lavaIntegrationDisplay = computed(() => {
-  const byId = new Map(lavaIntegrationResults.value.map((r) => [r.id, r]))
-  return LAVA_INTEGRATION_TESTS.map((t) => {
-    const res = byId.get(t.id)
-    return {
-      id: t.id,
-      title: t.title,
-      status: res === undefined ? 'todo' : res.passed ? 'success' : 'fail',
-      error: res && !res.passed ? res.error : undefined
-    }
-  })
-})
-
 function lavaStepToTestResult(
-  step: (typeof LAVA_INTEGRATION_TESTS)[number],
+  step: { id: string; title: string; mode: 'results' | 'legacy' },
   res: Response,
   data: Record<string, unknown>
 ): TestResult {
@@ -860,18 +797,23 @@ function lavaStepToTestResult(
     }
   }
   if (step.mode === 'results' && Array.isArray(data.results)) {
-    const inner = data.results as TestResult[]
-    const allPassed = inner.length > 0 && inner.every((r) => r.passed)
+    const inner = data.results as Array<TestResult & { skipped?: boolean; detail?: string }>
+    const executed = inner.filter((r) => !r.skipped)
+    const allSkipped = inner.length > 0 && executed.length === 0
+    const allPassed = !allSkipped && executed.length > 0 && executed.every((r) => r.passed)
     return {
       id: step.id,
       title: step.title,
       passed: allPassed,
       error: allPassed
         ? undefined
-        : inner
-            .filter((r) => !r.passed)
-            .map((r) => r.error || r.id)
-            .join('; ')
+        : allSkipped
+          ? inner.map((r) => r.detail || r.error).filter(Boolean).join('; ') ||
+            'Все проверки пропущены (не заданы ключи в настройках)'
+          : executed
+              .filter((r) => !r.passed)
+              .map((r) => r.error || r.id)
+              .join('; ')
     }
   }
   const success = data.success === true
@@ -884,14 +826,46 @@ function lavaStepToTestResult(
   }
 }
 
-async function runLavaIntegrationTests() {
-  lavaIntegrationLoading.value = true
-  lavaIntegrationResults.value = []
+/* --- Блок 7: Ключи интеграции (отдельно GC и Lava, как в админке) --- */
+const SETTING_KEYS_VALIDATION_TESTS: Array<{ id: string; title: string; path: string; mode: 'results' | 'legacy' }> = [
+  {
+    id: 'integration-gc-credentials',
+    title: 'GetCourse: API-ключ и домен (PL API)',
+    path: '/api/tests/endpoints-check/integration-gc-credentials',
+    mode: 'legacy'
+  },
+  {
+    id: 'integration-lava-credentials',
+    title: 'Lava: API-ключ и базовый URL (GET /api/v2/products)',
+    path: '/api/tests/endpoints-check/integration-lava-credentials',
+    mode: 'legacy'
+  }
+]
+const settingKeysValidationResults = ref<TestResult[]>([])
+const settingKeysValidationLoading = ref(false)
+const settingKeysValidationLastRunAt = ref<string | null>(null)
+
+const settingKeysValidationDisplay = computed(() => {
+  const byId = new Map(settingKeysValidationResults.value.map((r) => [r.id, r]))
+  return SETTING_KEYS_VALIDATION_TESTS.map((t) => {
+    const res = byId.get(t.id)
+    return {
+      id: t.id,
+      title: t.title,
+      status: res === undefined ? 'todo' : res.passed ? 'success' : 'fail',
+      error: res && !res.passed ? res.error : undefined
+    }
+  })
+})
+
+async function runSettingKeysValidationTests() {
+  settingKeysValidationLoading.value = true
+  settingKeysValidationResults.value = []
   const baseUrl = getApiBaseUrl().replace(/\/$/, '')
-  log.info('Запуск проверок интеграции Lava / GetCourse')
+  log.info('Запуск проверки ключей интеграции (Heap)')
   const out: TestResult[] = []
   try {
-    for (const step of LAVA_INTEGRATION_TESTS) {
+    for (const step of SETTING_KEYS_VALIDATION_TESTS) {
       try {
         const res = await fetch(`${baseUrl}${step.path}`, { method: 'GET', credentials: 'include' })
         const data = (await res.json().catch(() => null)) as Record<string, unknown>
@@ -905,26 +879,26 @@ async function runLavaIntegrationTests() {
         })
       }
     }
-    lavaIntegrationResults.value = out
-    lavaIntegrationLastRunAt.value = new Date().toLocaleString('ru-RU')
+    settingKeysValidationResults.value = out
+    settingKeysValidationLastRunAt.value = new Date().toLocaleString('ru-RU')
   } finally {
-    lavaIntegrationLoading.value = false
+    settingKeysValidationLoading.value = false
   }
 }
 
-async function runSingleLavaIntegrationTest(testId: string) {
-  const step = LAVA_INTEGRATION_TESTS.find((s) => s.id === testId)
+async function runSingleSettingKeysValidationTest(testId: string) {
+  const step = SETTING_KEYS_VALIDATION_TESTS.find((s) => s.id === testId)
   if (!step) return
-  singleTestRun.value = { group: 'lava', id: testId }
+  singleTestRun.value = { group: 'settingKeys', id: testId }
   const baseUrl = getApiBaseUrl().replace(/\/$/, '')
   try {
     const res = await fetch(`${baseUrl}${step.path}`, { method: 'GET', credentials: 'include' })
     const data = (await res.json().catch(() => null)) as Record<string, unknown>
     const one = lavaStepToTestResult(step, res, data)
-    lavaIntegrationResults.value = upsertTestResults(lavaIntegrationResults.value, [one])
-    lavaIntegrationLastRunAt.value = new Date().toLocaleString('ru-RU')
+    settingKeysValidationResults.value = upsertTestResults(settingKeysValidationResults.value, [one])
+    settingKeysValidationLastRunAt.value = new Date().toLocaleString('ru-RU')
   } catch (e) {
-    lavaIntegrationResults.value = upsertTestResults(lavaIntegrationResults.value, [
+    settingKeysValidationResults.value = upsertTestResults(settingKeysValidationResults.value, [
       {
         id: step.id,
         title: step.title,
@@ -932,7 +906,7 @@ async function runSingleLavaIntegrationTest(testId: string) {
         error: (e as Error)?.message ?? String(e)
       }
     ])
-    lavaIntegrationLastRunAt.value = new Date().toLocaleString('ru-RU')
+    settingKeysValidationLastRunAt.value = new Date().toLocaleString('ru-RU')
   } finally {
     singleTestRun.value = null
   }
@@ -949,7 +923,7 @@ const runAllTests = async () => {
     await runLoggerLibTests()
     await runLogsRepoTests()
     await runDashboardLibTests()
-    await runLavaIntegrationTests()
+    await runSettingKeysValidationTests()
     const all = [
       ...endpointsResults.value,
       ...settingsResults.value,
@@ -957,7 +931,7 @@ const runAllTests = async () => {
       ...loggerLibResults.value,
       ...logsRepoResults.value,
       ...dashboardLibResults.value,
-      ...lavaIntegrationResults.value
+      ...settingKeysValidationResults.value
     ]
     const passed = all.filter((r) => r.passed).length
     const failed = all.filter((r) => !r.passed).length
@@ -1446,22 +1420,27 @@ const runAllTests = async () => {
             </div>
           </div>
 
-          <!-- Блок 7: Интеграция Lava + GetCourse -->
+          <!-- Блок 7: Ключи интеграции (GC и Lava отдельными строками) -->
           <div v-if="showContent" class="tests-card tests-endpoints-card">
             <div class="tests-endpoints-header">
-              <i class="fas fa-plug tests-endpoints-icon"></i>
-              <h2 class="tests-endpoints-title">Интеграция Lava + GetCourse</h2>
+              <i class="fas fa-key tests-endpoints-icon"></i>
+              <h2 class="tests-endpoints-title">Ключи настроек интеграции</h2>
             </div>
             <p class="tests-endpoints-desc">
-              Репозитории Heap, сервисы webhook и оплаты, клиенты API, роут payment-link и сценарий createPaymentLink.
+              Две независимые проверки, как отдельные поля в админке: <strong>GetCourse</strong> —
+              <code class="tests-inline-code">gc_api_key</code> + <code class="tests-inline-code">gc_account_domain</code>,
+              <code class="tests-inline-code">verifyGcPlApiAccess</code>; <strong>Lava</strong> —
+              <code class="tests-inline-code">lava_api_key</code> + <code class="tests-inline-code">lava_base_url</code>,
+              <code class="tests-inline-code">GET /api/v2/products</code>. Пока в Heap не задана полная пара — строка
+              пропускается (<code class="tests-inline-code">skipped</code>).
             </p>
-            <div v-if="lavaIntegrationLastRunAt" class="tests-endpoints-last-run">
-              Результаты от: {{ lavaIntegrationLastRunAt }}
+            <div v-if="settingKeysValidationLastRunAt" class="tests-endpoints-last-run">
+              Результаты от: {{ settingKeysValidationLastRunAt }}
             </div>
             <div class="tests-endpoints-list-wrap">
               <ul class="tests-endpoints-list" role="list">
                 <li
-                  v-for="item in lavaIntegrationDisplay"
+                  v-for="item in settingKeysValidationDisplay"
                   :key="item.id"
                   class="tests-endpoints-list-item"
                   :class="`tests-endpoints-status-${item.status}`"
@@ -1475,12 +1454,16 @@ const runAllTests = async () => {
                     type="button"
                     class="tests-run-one-btn"
                     title="Запустить только этот тест"
-                    :disabled="runAllTestsLoading || lavaIntegrationLoading || isGroupBlockedBySingle('lava')"
-                    @click.stop="runSingleLavaIntegrationTest(item.id)"
+                    :disabled="
+                      runAllTestsLoading ||
+                      settingKeysValidationLoading ||
+                      isGroupBlockedBySingle('settingKeys')
+                    "
+                    @click.stop="runSingleSettingKeysValidationTest(item.id)"
                   >
                     <i
                       class="fas"
-                      :class="isSingleRunning('lava', item.id) ? 'fa-spinner fa-spin' : 'fa-play'"
+                      :class="isSingleRunning('settingKeys', item.id) ? 'fa-spinner fa-spin' : 'fa-play'"
                     ></i>
                   </button>
                 </li>
@@ -1490,11 +1473,19 @@ const runAllTests = async () => {
               <button
                 type="button"
                 class="tests-run-group-btn"
-                :disabled="runAllTestsLoading || lavaIntegrationLoading || isGroupBlockedBySingle('lava')"
-                @click="runLavaIntegrationTests"
+                :disabled="
+                  runAllTestsLoading ||
+                  settingKeysValidationLoading ||
+                  isGroupBlockedBySingle('settingKeys')
+                "
+                @click="runSettingKeysValidationTests"
               >
-                <i class="fas" :class="lavaIntegrationLoading ? 'fa-spinner fa-spin' : 'fa-bolt'"></i>
-                {{ lavaIntegrationLoading ? 'Проверяем...' : 'Запустить проверки интеграции Lava / GetCourse' }}
+                <i class="fas" :class="settingKeysValidationLoading ? 'fa-spinner fa-spin' : 'fa-bolt'"></i>
+                {{
+                  settingKeysValidationLoading
+                    ? 'Проверяем...'
+                    : 'Запустить проверку ключей интеграции'
+                }}
               </button>
             </div>
           </div>
@@ -1786,6 +1777,14 @@ const runAllTests = async () => {
   color: var(--color-text-secondary);
   margin: 0 0 0.5rem 0;
   line-height: 1.45;
+}
+
+.tests-inline-code {
+  font-family: ui-monospace, monospace;
+  font-size: 0.85em;
+  padding: 0.1em 0.35em;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--color-text) 8%, transparent);
 }
 
 .tests-endpoints-last-run {

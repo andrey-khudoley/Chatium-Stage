@@ -238,6 +238,76 @@ export async function createContract(
 }
 
 /**
+ * GET /api/v2/products — первая страница каталога (явные ключ и URL, без чтения Heap).
+ */
+export async function fetchLavaProductsFirstPage(
+  ctx: app.Ctx,
+  params: { apiKey: string; baseUrl: string }
+): Promise<{ statusCode: number; body: unknown }> {
+  const baseUrl = normalizeLavaBaseUrlInput(params.baseUrl)
+  const apiKey = params.apiKey.trim()
+  const url = `${baseUrl}/api/v2/products`
+  await loggerLib.writeServerLog(ctx, {
+    severity: 7,
+    message: `[${LOG_MODULE}] fetchLavaProductsFirstPage: GET`,
+    payload: { url, hasKey: Boolean(apiKey) }
+  })
+  const response = await request({
+    url,
+    method: 'get',
+    headers: {
+      'X-Api-Key': apiKey,
+      Accept: 'application/json'
+    },
+    responseType: 'json',
+    throwHttpErrors: false,
+    timeout: 15000
+  })
+  return { statusCode: response.statusCode ?? 0, body: response.body }
+}
+
+export type VerifyLavaCredentialsResult =
+  | { ok: true; message: string; httpStatus: number }
+  | { ok: false; message: string; httpStatus?: number }
+
+/**
+ * Проверка ключа: GET /api/v2/products — HTTP 200 означает, что авторизация прошла.
+ */
+export async function verifyLavaCredentials(
+  ctx: app.Ctx,
+  params: { apiKey: string; baseUrl: string }
+): Promise<VerifyLavaCredentialsResult> {
+  const apiKey = params.apiKey.trim()
+  const baseUrl = normalizeLavaBaseUrlInput(params.baseUrl)
+  if (!apiKey) {
+    return { ok: false, message: 'Не задан API-ключ Lava.' }
+  }
+  if (!baseUrl) {
+    return { ok: false, message: 'Не задан базовый URL Lava.' }
+  }
+  const { statusCode, body } = await fetchLavaProductsFirstPage(ctx, { apiKey, baseUrl })
+  if (statusCode === 200) {
+    await loggerLib.writeServerLog(ctx, {
+      severity: 6,
+      message: `[${LOG_MODULE}] verifyLavaCredentials: успех (HTTP 200)`,
+      payload: {}
+    })
+    return { ok: true, message: 'Ключ Lava принят, GET /api/v2/products вернул HTTP 200.', httpStatus: 200 }
+  }
+  const snippet = httpErrorSnippet(body)
+  await loggerLib.writeServerLog(ctx, {
+    severity: 7,
+    message: `[${LOG_MODULE}] verifyLavaCredentials: отказ Lava`,
+    payload: { statusCode, body: jsonForLog(body, 4000) }
+  })
+  return {
+    ok: false,
+    message: `Lava GET /api/v2/products: HTTP ${statusCode}${snippet ? `: ${snippet}` : ''}`,
+    httpStatus: statusCode
+  }
+}
+
+/**
  * GET /api/v2/products — первая страница каталога (диагностика и проверка ключа).
  */
 export async function getProducts(ctx: app.Ctx): Promise<unknown> {
@@ -259,53 +329,36 @@ export async function getProducts(ctx: app.Ctx): Promise<unknown> {
     throw err
   }
 
+  const { statusCode, body } = await fetchLavaProductsFirstPage(ctx, { apiKey, baseUrl })
   const url = `${baseUrl}/api/v2/products`
-  await loggerLib.writeServerLog(ctx, {
-    severity: 7,
-    message: `[${LOG_MODULE}] getProducts: GET запрос`,
-    payload: { url }
-  })
-  const response = await request({
-    url,
-    method: 'get',
-    headers: {
-      'X-Api-Key': apiKey,
-      Accept: 'application/json'
-    },
-    responseType: 'json',
-    throwHttpErrors: false,
-    timeout: 15000
-  })
 
-  if (response.statusCode !== 200) {
+  if (statusCode !== 200) {
     await loggerLib.writeServerLog(ctx, {
       severity: 7,
       message: `[${LOG_MODULE}] getProducts: ветка HTTP ≠ 200`,
-      payload: { statusCode: response.statusCode, url }
+      payload: { statusCode, url }
     })
     await loggerLib.writeServerLog(ctx, {
       severity: 3,
       message: `[${LOG_MODULE}] getProducts: ошибка Lava`,
-      payload: { statusCode: response.statusCode, body: jsonForLog(response.body, 8000) }
+      payload: { statusCode, body: jsonForLog(body, 8000) }
     })
-    throw new Error(
-      `Lava GET products: HTTP ${response.statusCode}: ${httpErrorSnippet(response.body)}`
-    )
+    throw new Error(`Lava GET products: HTTP ${statusCode}: ${httpErrorSnippet(body)}`)
   }
 
   await loggerLib.writeServerLog(ctx, {
     severity: 7,
     message: `[${LOG_MODULE}] getProducts: HTTP 200`,
-    payload: { url, statusCode: response.statusCode }
+    payload: { url, statusCode }
   })
 
   await loggerLib.writeServerLog(ctx, {
     severity: 6,
     message: `[${LOG_MODULE}] getProducts: успех`,
-    payload: { statusCode: response.statusCode }
+    payload: { statusCode }
   })
 
-  return response.body
+  return body
 }
 
 export type LavaCatalogRow = {

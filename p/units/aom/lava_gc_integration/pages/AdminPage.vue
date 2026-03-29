@@ -300,17 +300,6 @@ const saveGcIntegration = async () => {
   gcVerifyHint.value = ''
   gcSaveLoading.value = true
   try {
-    const verifyRes = await getcourseVerifyRoute.run(ctx, {
-      gcApiKey: gcApiKey.value,
-      gcAccountDomain: gcAccountDomain.value
-    })
-    const v = verifyRes as { success?: boolean; message?: string }
-    if (!v?.success) {
-      gcSaveError.value = v?.message || 'Сначала пройдите проверку ключа.'
-      showSaveStatus(gcSaveStatus, gcSaveStatusTimeout, 'error')
-      return
-    }
-
     for (const pair of [
       { key: GC_SETTING_KEYS.GC_API_KEY, value: gcApiKey.value.trim() },
       { key: GC_SETTING_KEYS.GC_ACCOUNT_DOMAIN, value: gcAccountDomain.value.trim() }
@@ -323,7 +312,8 @@ const saveGcIntegration = async () => {
       }
     }
 
-    gcVerifyHint.value = v.message || 'Сохранено.'
+    gcVerifyHint.value =
+      'Сохранено. Ключ и домен проверены запросом к GetCourse PL API при сохранении.'
     showSaveStatus(gcSaveStatus, gcSaveStatusTimeout, 'saved')
     log.info('Настройки GetCourse сохранены')
   } catch (e) {
@@ -387,8 +377,8 @@ const saveLavaIntegration = async () => {
   const baseNorm = normalizeLavaBaseUrlInput(lavaBaseUrl.value)
   try {
     for (const pair of [
-      { key: LAVA_SETTING_KEYS.LAVA_BASE_URL, value: baseNorm },
       { key: LAVA_SETTING_KEYS.LAVA_API_KEY, value: lavaApiKey.value.trim() },
+      { key: LAVA_SETTING_KEYS.LAVA_BASE_URL, value: baseNorm },
       { key: LAVA_SETTING_KEYS.LAVA_PRODUCT_ID, value: row.productId },
       { key: LAVA_SETTING_KEYS.LAVA_OFFER_ID, value: row.offerId }
     ] as const) {

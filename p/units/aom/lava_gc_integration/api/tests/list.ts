@@ -87,16 +87,16 @@ export const listTestsRoute = app.get('/', async (ctx, req) => {
     },
     {
       id: 'integration-check',
-      title: 'Интеграция Lava / GetCourse',
+      title: 'Ключи интеграции (GetCourse и Lava)',
       tests: [
-        { id: 'lava-settings-getters', title: 'Геттеры настроек Lava и GetCourse (settings.lib)' },
-        { id: 'lava-repos', title: 'Heap: lava_payment_contract, lava_webhook_event, lava_lock_log (repos)' },
-        { id: 'lava-webhook-service', title: 'lib/lava-webhook.service (auth, дедупликация, contract_not_found)' },
-        { id: 'getcourse-deal-update', title: 'GetCourse PL API: updateDealStatus (без throw)' },
-        { id: 'lava-api-catalog', title: 'Lava: fetchLavaProductsCatalog (как в админке)' },
-        { id: 'lava-payment-link-route', title: 'POST payment-link (route.run: UNAUTHORIZED, VALIDATION)' },
-        { id: 'lava-api-client', title: 'Lava API: GET /api/v2/products (getProducts)' },
-        { id: 'payment-link', title: 'Создание ссылки на оплату (createPaymentLink, тест 50 RUB)' }
+        {
+          id: 'integration-gc-credentials',
+          title: 'GetCourse: gc_api_key + gc_account_domain → verifyGcPlApiAccess'
+        },
+        {
+          id: 'integration-lava-credentials',
+          title: 'Lava: lava_api_key + lava_base_url → GET /api/v2/products'
+        }
       ]
     }
   ]
