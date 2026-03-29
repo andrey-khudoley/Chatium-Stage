@@ -262,6 +262,7 @@
 - `vue` → `computed`, `onMounted`, `onUnmounted`, `ref`, `watch`, `nextTick`
 - `@app/socket` → `getOrCreateBrowserSocketClient`
 - `../components/Header.vue`
+- слушатель `assistant:focus-tools-deadline` (синхронизация после срабатывания дедлайна из `Header` / `focus-deadline-alarms`)
 - `../components/GlobalGlitch.vue`
 - `../components/AppFooter.vue`
 - `../components/pomodoro/PomodoroToolsWorkspace.vue`
@@ -293,6 +294,7 @@
 - `../shared/logger` → `createComponentLogger`
 - `../lib/pomodoro-types` → `formatPomodoroSecondsDisplay`, типы `PomodoroPhase`, `PomodoroStateDto`
 - `../lib/pomodoro-stats-day` → `computePomodoroStatsDayKeyLocal`
+- `../lib/focus-deadline-alarms` → `createFocusDeadlineAlarms`, тип `FocusDeadlineAlarmsHandle` (wall-clock уведомление/звук по окончании фазы помидора в режиме овертайма и по окончании таймера)
 - `../shared/focus-tools-types` → `FocusToolsStateData`, `HeaderWidgetMode`
 - опциональные пропсы виджета: `enableToolClockWidget`, `toolsStateUrl`, `toolsControlUrl`, `encodedFocusToolsSocketId`
 
@@ -514,7 +516,13 @@
 
 ### `./lib/pomodoro-types.ts`
 - первая строка: `// @shared` (импорт из Vue)
-- нет импортов (типы статуса/фаз Pomodoro, DTO, `PomodoroPhaseChangeSoundId`, `normalizePhaseChangeSoundId`, `formatPomodoroSecondsDisplay`)
+- нет импортов (типы статуса/фаз Pomodoro, DTO, `PomodoroPhaseChangeSoundId`, `normalizePhaseChangeSoundId`, `formatPomodoroSecondsDisplay`, `getPhaseCompletionActionForPhase`)
+
+### `./lib/focus-deadline-alarms.ts`
+- `../shared/focus-tools-types` → `FocusToolsStateData`
+- `./pomodoro-types` → `getPhaseCompletionActionForPhase`, `normalizePhaseChangeSoundId`
+- `./pomodoro-phase-sounds` → `playPomodoroPhaseChangeSound`
+- планирование `setTimeout` до `phaseEndsAtMs` / `timer.endsAtMs`, звук + `Notification` + `dispatchEvent('assistant:focus-tools-deadline')`
 
 ## 7) Библиотеки (lib/)
 
@@ -550,7 +558,7 @@
 - `@app/socket` → `sendDataToSocket`
 - `@app/nanoid` → `nanoid`
 - `../repos/user-tool-state.repo`, `../repos/tool-segments.repo`, `../repos/tasks.repo`
-- `../shared/focus-tools-types`, `./pomodoro-types`, `./pomodoro-stats-day`
+- `../shared/focus-tools-types`, `./pomodoro-types` (`getPhaseCompletionActionForPhase`, …), `./pomodoro-stats-day`
 
 ## 8) API (api/)
 

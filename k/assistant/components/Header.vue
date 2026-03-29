@@ -167,6 +167,7 @@ import { createComponentLogger } from '../shared/logger'
 import { formatPomodoroSecondsDisplay, type PomodoroPhase, type PomodoroStateDto } from '../lib/pomodoro-types'
 import { computePomodoroStatsDayKeyLocal } from '../lib/pomodoro-stats-day'
 import type { FocusToolsStateData, HeaderWidgetMode } from '../shared/focus-tools-types'
+import { createFocusDeadlineAlarms, type FocusDeadlineAlarmsHandle } from '../lib/focus-deadline-alarms'
 import { getOrCreateBrowserSocketClient } from '@app/socket'
 
 const log = createComponentLogger('Header')
@@ -335,6 +336,7 @@ let focusToolsSocketUnsub: (() => void) | null = null
 let wsRetryTimer: ReturnType<typeof setTimeout> | null = null
 let wsAttempt = 0
 let onlineHandler: (() => void) | null = null
+let focusDeadlineAlarms: FocusDeadlineAlarmsHandle | null = null
 const toolPickerRef = ref<HTMLElement | null>(null)
 const clockTriggerRef = ref<HTMLElement | null>(null)
 
@@ -365,6 +367,7 @@ function applyFocusToolsState(snapshot: FocusToolsStateData): void {
   stopwatchStatus.value = snapshot.stopwatch.status
   stopwatchElapsedSec.value = snapshot.stopwatch.elapsedSec
   stopwatchStartedAtMs.value = snapshot.stopwatch.startedAtMs
+  focusDeadlineAlarms?.reschedule(snapshot)
 }
 
 async function syncFocusToolsFromHttp(): Promise<void> {
@@ -563,6 +566,16 @@ onMounted(() => {
   }, 1000)
 
   if (headerFocusToolsUi.value) {
+    focusDeadlineAlarms = createFocusDeadlineAlarms({
+      isEnabled: () => headerFocusToolsUi.value,
+      onAfterAlarm: () => {
+        window.dispatchEvent(new CustomEvent('assistant:focus-tools-deadline'))
+        void syncFocusToolsFromHttp()
+      },
+    })
+    if ('Notification' in window && Notification.permission === 'default') {
+      void Notification.requestPermission()
+    }
     void syncFocusToolsFromHttp().then(() => {
       void connectFocusToolsWebSocket()
     })
@@ -646,6 +659,8 @@ onUnmounted(() => {
     window.removeEventListener('online', onlineHandler)
     onlineHandler = null
   }
+  focusDeadlineAlarms?.dispose()
+  focusDeadlineAlarms = null
 })
 
 const triggerGlitch = () => {

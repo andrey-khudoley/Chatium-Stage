@@ -247,6 +247,7 @@ function applyIncomingState(
   if (serverNowMs === latestAppliedServerNowMs.value && source === 'poll' && incomingActionSeq <= actionSeq.value) return
 
   const oldPhase = state.value?.phase
+  const wasAwaitingContinue = state.value?.status === 'awaiting_continue'
   latestAppliedServerNowMs.value = serverNowMs
   if (source === 'action') actionSeq.value = Math.max(actionSeq.value, incomingActionSeq)
   state.value = nextState
@@ -256,7 +257,7 @@ function applyIncomingState(
 
   if (oldPhase && oldPhase !== nextState.phase) {
     previousPhase.value = oldPhase
-    onPhaseChange(nextState.phase)
+    onPhaseChange(nextState.phase, wasAwaitingContinue)
   }
 }
 
@@ -396,10 +397,11 @@ function showNotification(title: string, body: string) {
   }
 }
 
-function onPhaseChange(newPhase: 'work' | 'rest' | 'long_rest') {
+function onPhaseChange(newPhase: 'work' | 'rest' | 'long_rest', fromAwaitingContinue = false) {
+  if (fromAwaitingContinue) return
   playPomodoroPhaseChangeSound(state.value?.phaseChangeSound ?? 3)
   vibrate()
-  
+
   const phaseLabel = phaseLabels[newPhase]
   showNotification(`Pomodoro: ${phaseLabel}`, `Начинается фаза "${phaseLabel}"`)
 }
@@ -439,6 +441,7 @@ let wsRetryTimer: ReturnType<typeof setTimeout> | null = null
 let wsAttempt = 0
 let onlineHandler: (() => void) | null = null
 let focusTaskClearedHandler: (() => void) | null = null
+let focusToolsDeadlineHandler: (() => void) | null = null
 
 function clearFocusToolsWsRetry(): void {
   if (wsRetryTimer != null) {
@@ -490,7 +493,10 @@ async function connectFocusToolsWebSocket(): Promise<void> {
 }
 
 function onVisibilityBack(): void {
-  if (document.visibilityState === 'visible') void refresh({ maxAttempts: 1 })
+  if (document.visibilityState === 'visible') {
+    localTick.value = Date.now()
+    void refresh({ maxAttempts: 1 })
+  }
 }
 
 onMounted(() => {
@@ -531,6 +537,11 @@ onMounted(() => {
   }
   window.addEventListener('assistant:focus-task-cleared', focusTaskClearedHandler)
 
+  focusToolsDeadlineHandler = (): void => {
+    void refresh({ maxAttempts: 2 })
+  }
+  window.addEventListener('assistant:focus-tools-deadline', focusToolsDeadlineHandler)
+
   void requestNotificationPermission()
 })
 
@@ -541,6 +552,7 @@ onUnmounted(() => {
   clearFocusToolsWsRetry()
   if (onlineHandler) window.removeEventListener('online', onlineHandler)
   if (focusTaskClearedHandler) window.removeEventListener('assistant:focus-task-cleared', focusTaskClearedHandler)
+  if (focusToolsDeadlineHandler) window.removeEventListener('assistant:focus-tools-deadline', focusToolsDeadlineHandler)
   if (focusHandler) window.removeEventListener('focus', focusHandler)
   document.removeEventListener('visibilitychange', onVisibilityBack)
 })
@@ -577,16 +589,6 @@ watch(
   { immediate: true }
 )
 
-watch(
-  () => state.value?.status,
-  (next, prev) => {
-    if (prev === 'running' && next === 'awaiting_continue') {
-      playPomodoroPhaseChangeSound(state.value?.phaseChangeSound ?? 3)
-      vibrate()
-      showNotification('Фаза завершена', 'Секундомер овертайма. Нажмите «Продолжить» для следующего этапа.')
-    }
-  }
-)
 
 const settingsModel = computed(() => {
   const fallback: PomodoroState = {

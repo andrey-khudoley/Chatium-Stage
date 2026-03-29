@@ -11,6 +11,7 @@
 - Деплой происходит автоматически после пуша.
 
 ## Текущее состояние
+- 2026-03-29: focus-tools — овертайм помидора: на сервере `phaseEndsAtMs` при `awaiting_continue` фиксируется по запланированному концу фазы (не по моменту первого запроса после фона). В шапке: `lib/focus-deadline-alarms.ts` — по wall-clock срабатывание звука и системного уведомления («Цикл таймера завершён» / «Таймер завершён») в конце фазы овертайма и таймера; событие `assistant:focus-tools-deadline` обновляет `/web/timers`; звук смены фазы не воспроизводится при переходе с овертайма по «Продолжить» (`PomodoroPage.vue`).
 - 2026-03-29: страница тестов — каталог проверок в `shared/testCatalog.ts`; на `/web/tests` списки и id тестов видны до запуска, карточки разбиты на функциональные подблоки со сводкой статуса; метрики дашборда учитывают «не запускали» по числу тестов в каталоге.
 - 2026-03-29: тесты приведены к минимуму шаблона `p/template_project`: удалён `api/tests/endpoints-check/`, добавлены `GET /api/tests/unit` и `GET /api/tests/integration`, обновлены `list.ts`, `TestsPage.vue`, `docs/api.md`, `docs/imports.md`, `.CHATIUM-LLM.md`.
 - 2026-03-29: единый серверный контур focus-tools: Heap `user-tool-state`, `GET /api/tools/state`, `POST /api/tools/control`, WebSocket `assistant-focus-tools-{userId}`; шапка и `/web/timers` без localStorage для таймеров; `FocusClockPane` ходит в control API; удалены `api/pomodoro/*`, `api/tools/focus-log`, `lib/focus-clock-local-stats.ts`, `lib/pomodoro.lib.ts`, `repos/pomodoro.repo.ts`. Подробности — `docs/architecture.md`, `docs/api.md`.

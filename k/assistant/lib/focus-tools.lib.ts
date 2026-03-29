@@ -5,9 +5,8 @@ import * as userToolStateRepo from '../repos/user-tool-state.repo'
 import * as toolSegmentsRepo from '../repos/tool-segments.repo'
 import * as tasksRepo from '../repos/tasks.repo'
 import type { PomodoroSettingsInput, PomodoroStateDto } from './pomodoro-types'
-import { normalizePhaseChangeSoundId } from './pomodoro-types'
+import { getPhaseCompletionActionForPhase, normalizePhaseChangeSoundId } from './pomodoro-types'
 import type { PomodoroLaunchEndReason, PomodoroLaunchSource } from '../tables/pomodoro-launches.table'
-import type { PomodoroPhaseCompleteAction } from './pomodoro-types'
 import UserToolState from '../tables/user-tool-state.table'
 import type { FocusToolsFullStateDto, FocusToolsStateData, TimerStateEnvelope } from '../shared/focus-tools-types'
 import { focusToolsSocketId } from '../shared/focus-tools-types'
@@ -106,25 +105,6 @@ async function persist(
   const full: FocusToolsFullStateDto = { state: envelope.data, serverNowMs }
   if (doPush) await pushSocket(ctx, userId, full)
   return full
-}
-
-function getPhaseCompletionAction(
-  state: PomodoroStateDto,
-  phase: 'work' | 'rest' | 'long_rest',
-): PomodoroPhaseCompleteAction {
-  if (phase === 'work') {
-    if (state.autoStartRest) return 'auto'
-    if (state.pauseAfterWork) return 'pause'
-    return 'overtime'
-  }
-  if (phase === 'rest') {
-    if (state.autoStartNextCycle) return 'auto'
-    if (state.pauseAfterRest) return 'pause'
-    return 'overtime'
-  }
-  if (state.afterLongRest === 'auto') return 'auto'
-  if (state.afterLongRest === 'overtime') return 'overtime'
-  return 'pause'
 }
 
 async function startPomodoroSegment(
@@ -363,9 +343,10 @@ async function tickPomodoro(
 
     const completedPhase = state.phase
     await closePomodoroSegment(ctx, userId, state.updatedAtMs, 'phase_completed')
-    const action = getPhaseCompletionAction(state, completedPhase)
+    const action = getPhaseCompletionActionForPhase(state, completedPhase)
 
     if (action === 'overtime') {
+      const overtimeAnchorMs = state.phaseEndsAtMs
       if (completedPhase === 'work') {
         const nextCycles = state.cyclesCompleted + 1
         state = {
@@ -374,7 +355,7 @@ async function tickPomodoro(
           tasksCompletedToday: state.tasksCompletedToday + 1,
           status: 'awaiting_continue',
           phaseRemainingSec: 0,
-          phaseEndsAtMs: state.updatedAtMs,
+          phaseEndsAtMs: overtimeAnchorMs,
           updatedAtMs: Date.now(),
         }
       } else {
@@ -382,7 +363,7 @@ async function tickPomodoro(
           ...state,
           status: 'awaiting_continue',
           phaseRemainingSec: 0,
-          phaseEndsAtMs: state.updatedAtMs,
+          phaseEndsAtMs: overtimeAnchorMs,
           updatedAtMs: Date.now(),
         }
       }
