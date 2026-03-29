@@ -49,7 +49,7 @@
 - `lib/tasks-types.ts` — DTO дерева задач для UI/API (без импорта Heap).
 - `lib/focus-tools.lib.ts` — единая логика помидор + таймер + секундомер: `getFullState`, `executeCommand`, тик фаз помидора, завершение таймера по `endsAtMs`, сегменты в `tool-segments`, push WebSocket; все мутации под `runWithExclusiveLock`.
 - `lib/pomodoro-types.ts` — DTO состояния Pomodoro и тип входа настроек; `normalizePhaseChangeSoundId` для поля `phaseChangeSound` (1–5).
-- `lib/pomodoro-stats-day.ts` — ключ периода дневной статистики focus-tools: календарная дата в **полночь** по смещению UTC из профиля (`computePomodoroStatsDayKeyForUtcOffsetHours`), при отсутствии валидного `statsDayKey` в запросе — то же на сервере через `user-settings`; `@shared`.
+- `lib/pomodoro-stats-day.ts` — формула календарной даты в **полночь** по UTC+N (`computePomodoroStatsDayKeyForUtcOffsetHours`) для UI; на сервере граница суток статистики в `lib/focus-tools.lib.ts` считается только из Heap `timezoneOffsetHours` + `Date.now()` (клиентский `statsDayKey` не подменяет серверный ключ); `@shared`.
 - `lib/journal-day-key.ts` — ключ периода дневника (граница 05:00 локально / fallback Europe/Moscow); `@shared`.
 - `lib/journal-week-key.ts` — ключ понедельника недели, сдвиг недели, список дней недели и номер недели; на сервере для «текущей недели» без TZ клиента — `computeJournalWeekMondayKeyInTimeZone(..., Europe/Moscow)` (не `*Local`, иначе при TZ=UTC сдвиг относительно GMT+3); `@shared`.
 - `lib/journal-habits-time.ts` — DTO привычек (в т.ч. `currentWeekMondayKey` для навигации), парсинг/сериализация JSON, ключ понедельника и колонка «сегодня» с границей 05:00 по **Europe/Moscow** на сервере (`computeJournalDayKeyInTimeZone`), режим просмотра недели, мерж отметок при сохранении; `@shared`.

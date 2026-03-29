@@ -11,7 +11,7 @@ import UserToolState from '../tables/user-tool-state.table'
 import type { FocusToolsFullStateDto, FocusToolsStateData, TimerStateEnvelope } from '../shared/focus-tools-types'
 import { focusToolsSocketId } from '../shared/focus-tools-types'
 import type { PomodoroSliceInFocusTools } from '../shared/focus-tools-types'
-import { normalizeClientStatsDayKey, computePomodoroStatsDayKeyForUtcOffsetHours } from './pomodoro-stats-day'
+import { computePomodoroStatsDayKeyForUtcOffsetHours } from './pomodoro-stats-day'
 import * as userSettingsLib from './user-settings.lib'
 
 function lockKey(userId: string): string {
@@ -22,14 +22,12 @@ function newRunId(): string {
   return nanoid()
 }
 
-async function expectedDayKey(
-  ctx: app.Ctx,
-  userId: string,
-  nowMs: number,
-  clientStatsDayKey?: string,
-): Promise<string> {
-  const normalized = normalizeClientStatsDayKey(clientStatsDayKey)
-  if (normalized) return normalized
+/**
+ * Ключ календарных суток для статистики — только с сервера (Heap `timezoneOffsetHours` + `nowMs`).
+ * Не подставляем `statsDayKey` с клиента: иначе POST и следующий GET могут получить разные ключи
+ * (потерян query, иной парсинг, гонка) → {@link applyDayRollover} обнуляет счётчики после успешного действия.
+ */
+async function expectedDayKey(ctx: app.Ctx, userId: string, nowMs: number): Promise<string> {
   const offset = await userSettingsLib.getEffectiveTimezoneOffsetHours(ctx, userId)
   return computePomodoroStatsDayKeyForUtcOffsetHours(nowMs, offset)
 }
@@ -443,10 +441,10 @@ async function loadAndNormalize(
   return { row, envelope }
 }
 
-export async function getFullState(ctx: app.Ctx, userId: string, clientStatsDayKey?: string): Promise<FocusToolsFullStateDto> {
+export async function getFullState(ctx: app.Ctx, userId: string): Promise<FocusToolsFullStateDto> {
   return runWithExclusiveLock(ctx, lockKey(userId), async () => {
     const nowMs = Date.now()
-    const dayKey = await expectedDayKey(ctx, userId, nowMs, clientStatsDayKey)
+    const dayKey = await expectedDayKey(ctx, userId, nowMs)
     const { row, envelope } = await loadAndNormalize(ctx, userId, dayKey)
     let data = envelope.data
     data = applyDayRollover(data, dayKey)
@@ -465,10 +463,9 @@ export async function executeCommand(
   options?: { push?: boolean },
 ): Promise<FocusToolsFullStateDto> {
   const doPush = options?.push !== false
-  const clientStatsDayKey = body.statsDayKey
   return runWithExclusiveLock(ctx, lockKey(userId), async () => {
     const nowMs = Date.now()
-    const dayKey = await expectedDayKey(ctx, userId, nowMs, clientStatsDayKey)
+    const dayKey = await expectedDayKey(ctx, userId, nowMs)
     const { row, envelope } = await loadAndNormalize(ctx, userId, dayKey)
     let data = envelope.data
     data = applyDayRollover(data, dayKey)

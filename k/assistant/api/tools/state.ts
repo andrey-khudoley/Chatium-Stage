@@ -7,9 +7,9 @@ import { focusToolsSocketId } from '../../shared/focus-tools-types'
 export const toolsStateRoute = app.get('/', async (ctx, req) => {
   const user = requireRealUser(ctx)
   try {
-    const raw = req.query.statsDayKey
-    const statsDayKey = typeof raw === 'string' ? raw : undefined
-    const full = await focusToolsLib.getFullState(ctx, user.id, statsDayKey)
+    // Дневной ключ статистики на сервере: Heap timezone + Date.now() (см. focus-tools.lib expectedDayKey).
+    // Query statsDayKey не обязателен и не меняет логику — оставлен для совместимости клиентов.
+    const full = await focusToolsLib.getFullState(ctx, user.id)
     const encodedSocketId = await genSocketId(ctx, focusToolsSocketId(user.id))
     return { success: true, ...full, encodedSocketId }
   } catch (error) {

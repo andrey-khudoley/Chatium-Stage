@@ -8,7 +8,6 @@ import * as settingsLib from '../../lib/settings.lib'
 import * as userSettingsLib from '../../lib/user-settings.lib'
 import { genSocketId } from '@app/socket'
 import * as focusToolsLib from '../../lib/focus-tools.lib'
-import { computePomodoroStatsDayKeyForUtcOffsetHours } from '../../lib/pomodoro-stats-day'
 import { toolsStateRoute } from '../../api/tools/state'
 import { toolsControlRoute } from '../../api/tools/control'
 import { getInProgressTasksRoute } from '../../api/tasks/in-progress'
@@ -27,8 +26,7 @@ export const pomodoroPageRoute = app.html('/', async (ctx) => {
   if (isAuthenticated) {
     try {
       const user = requireRealUser(ctx)
-      const statsDayKey = computePomodoroStatsDayKeyForUtcOffsetHours(Date.now(), timezoneOffsetHours)
-      initialFocusToolsState = await focusToolsLib.getFullState(ctx, user.id, statsDayKey)
+      initialFocusToolsState = await focusToolsLib.getFullState(ctx, user.id)
       encodedFocusToolsSocketId = await genSocketId(ctx, focusToolsSocketId(user.id))
     } catch {
       initialFocusToolsState = null

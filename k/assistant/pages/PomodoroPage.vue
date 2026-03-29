@@ -289,6 +289,7 @@ async function control(action: 'start' | 'resume' | 'pause' | 'stop' | 'skip' | 
   if (actionPending.value) return
   actionPending.value = true
   const localActionSeq = actionSeq.value + 1
+  let ok = false
   try {
     const r = await fetch(props.toolsControlUrl, {
       method: 'POST',
@@ -314,6 +315,7 @@ async function control(action: 'start' | 'resume' | 'pause' | 'stop' | 'skip' | 
         j.state,
       )
       pageError.value = ''
+      ok = true
     } else {
       pageError.value = j.error ?? 'Не удалось выполнить действие'
     }
@@ -321,6 +323,8 @@ async function control(action: 'start' | 'resume' | 'pause' | 'stop' | 'skip' | 
     pageError.value = formatFetchError(error)
   } finally {
     actionPending.value = false
+  }
+  if (!ok) {
     await refresh({ maxAttempts: 1 })
   }
 }

@@ -150,7 +150,6 @@
 - `../../pages/PomodoroPage.vue`
 - `../../lib/focus-tools.lib` → `getFullState` (SSR начального снимка)
 - `../../lib/user-settings.lib` → `getTimezoneOffsetForCtxUser`
-- `../../lib/pomodoro-stats-day` → `computePomodoroStatsDayKeyForUtcOffsetHours`
 - `../../shared/focus-tools-types` → `focusToolsSocketId`, тип `FocusToolsFullStateDto`
 - `../../config/routes` → `getApiUrlForRoute`, `getFullUrl`, `ROUTES`
 - `../../config/project` → `POMODORO_PAGE_NAME`, `getPageTitle`, `getHeaderText`
@@ -588,7 +587,7 @@
 - `@app/socket` → `sendDataToSocket`
 - `@app/nanoid` → `nanoid`
 - `../repos/user-tool-state.repo`, `../repos/tool-segments.repo`, `../repos/tasks.repo`
-- `../shared/focus-tools-types`, `./pomodoro-types` (`getPhaseCompletionActionForPhase`, …), `./pomodoro-stats-day`, `./user-settings.lib` (ожидаемый дневной ключ без клиента)
+- `../shared/focus-tools-types`, `./pomodoro-types` (`getPhaseCompletionActionForPhase`, …), `./pomodoro-stats-day` (`computePomodoroStatsDayKeyForUtcOffsetHours`), `./user-settings.lib` (канонический дневной ключ: Heap offset + `nowMs`, без подстановки ключа с клиента)
 
 ## 8) API (api/)
 

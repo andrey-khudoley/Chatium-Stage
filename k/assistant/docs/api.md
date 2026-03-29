@@ -174,8 +174,8 @@
 
 | Method | Path | File | Auth | Назначение |
 | --- | --- | --- | --- | --- |
-| GET | /api/tools/state | api/tools/state.ts | RealUser | Полный снимок: `{ success, state, serverNowMs, encodedSocketId? }`. Query `statsDayKey` — дневная статистика (календарные сутки по **полночи** в часовом поясе из профиля, см. `lib/pomodoro-stats-day.ts`). |
-| POST | /api/tools/control | api/tools/control.ts | RealUser | Body: `{ statsDayKey?, command }`. `command.kind`: `pomodoro` (`action`: start/resume/pause/stop/skip/reset), `timer` / `stopwatch` (start/resume/pause/reset), `widget-mode` (`mode`: clock/pomodoro/timer/stopwatch), `save-pomodoro-settings`, `assign-task` (`taskId`), `timer-settings` (`minutes`, `seconds`). Ответ: `{ success, state, serverNowMs }`. |
+| GET | /api/tools/state | api/tools/state.ts | RealUser | Полный снимок: `{ success, state, serverNowMs, encodedSocketId? }`. Граница суток статистики на сервере — только Heap `timezoneOffsetHours` + время сервера (`lib/focus-tools.lib.ts`); query `statsDayKey` опционален и не меняет логику. |
+| POST | /api/tools/control | api/tools/control.ts | RealUser | Body: `{ statsDayKey?, command }` (`statsDayKey` в теле игнорируется для выбора дня — тот же серверный ключ). `command.kind`: `pomodoro` (`action`: start/resume/pause/stop/skip/reset), `timer` / `stopwatch` (start/resume/pause/reset), `widget-mode` (`mode`: clock/pomodoro/timer/stopwatch), `save-pomodoro-settings`, `assign-task` (`taskId`), `timer-settings` (`minutes`, `seconds`). Ответ: `{ success, state, serverNowMs }`. |
 
 ## Публичные эндпоинты
 | Method | Path | File | Auth | Назначение |
