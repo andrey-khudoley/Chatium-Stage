@@ -1,12 +1,33 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref } from 'vue'
+import { onMounted, onUnmounted, ref, withDefaults } from 'vue'
 import Header from '../components/Header.vue'
 import GlobalGlitch from '../components/GlobalGlitch.vue'
 import AppFooter from '../components/AppFooter.vue'
 import { subscribeBootStaticReady, scheduleHideBootLoader } from '../shared/bootUi'
 import { createComponentLogger } from '../shared/logger'
+import { saveUserSettingsRoute } from '../api/user-settings/save'
+import {
+  DEFAULT_USER_TIMEZONE_OFFSET_HOURS,
+  USER_TIMEZONE_OFFSET_MAX,
+  USER_TIMEZONE_OFFSET_MIN,
+} from '../shared/user-settings-defaults'
 
 const log = createComponentLogger('ProfilePage')
+
+declare const ctx: app.Ctx
+
+function formatUtcOffsetLabel(h: number): string {
+  if (h >= 0) return `UTC+${h}`
+  return `UTC${h}`
+}
+
+const timezoneOptions = Array.from(
+  { length: USER_TIMEZONE_OFFSET_MAX - USER_TIMEZONE_OFFSET_MIN + 1 },
+  (_, i) => {
+    const h = USER_TIMEZONE_OFFSET_MIN + i
+    return { value: h, label: formatUtcOffsetLabel(h) }
+  },
+)
 
 declare global {
   interface Window {
@@ -15,24 +36,53 @@ declare global {
   }
 }
 
-const props = defineProps<{
-  projectTitle: string
-  indexUrl: string
-  profileUrl: string
-  testsUrl?: string
-  toolsStateUrl?: string
-  toolsControlUrl?: string
-  encodedFocusToolsSocketId?: string
-  loginUrl: string
-  isAuthenticated: boolean
-  isAdmin?: boolean
-  adminUrl?: string
-  user: {
-    displayName?: string
-    confirmedEmail?: string
-    confirmedPhone?: string
+const props = withDefaults(
+  defineProps<{
+    projectTitle: string
+    indexUrl: string
+    profileUrl: string
+    testsUrl?: string
+    toolsStateUrl?: string
+    toolsControlUrl?: string
+    encodedFocusToolsSocketId?: string
+    loginUrl: string
+    isAuthenticated: boolean
+    isAdmin?: boolean
+    adminUrl?: string
+    user: {
+      displayName?: string
+      confirmedEmail?: string
+      confirmedPhone?: string
+    }
+    /** Смещение UTC в часах (SSR + сохранение в Heap `user-settings`). */
+    timezoneOffsetHours?: number
+  }>(),
+  {
+    timezoneOffsetHours: DEFAULT_USER_TIMEZONE_OFFSET_HOURS,
+  },
+)
+
+const selectedTimezoneOffset = ref(props.timezoneOffsetHours)
+const timezoneSaveStatus = ref<'idle' | 'saving' | 'saved' | 'error'>('idle')
+
+async function onTimezoneChange(): Promise<void> {
+  timezoneSaveStatus.value = 'saving'
+  try {
+    const res = await saveUserSettingsRoute.run(ctx, { timezoneOffsetHours: selectedTimezoneOffset.value })
+    if (res.success && typeof res.timezoneOffsetHours === 'number') {
+      selectedTimezoneOffset.value = res.timezoneOffsetHours
+      timezoneSaveStatus.value = 'saved'
+      setTimeout(() => {
+        if (timezoneSaveStatus.value === 'saved') timezoneSaveStatus.value = 'idle'
+      }, 2000)
+    } else {
+      timezoneSaveStatus.value = 'error'
+    }
+  } catch (e) {
+    log.error('timezone save failed', { error: String(e) })
+    timezoneSaveStatus.value = 'error'
   }
-}>()
+}
 
 const showContent = ref(false)
 const bootLoaderDone = ref(false)
@@ -192,6 +242,45 @@ const openChatiumLink = () => {
                 <div class="profile-field-value">
                   {{ props.user.confirmedPhone || 'Не подтвержден' }}
                 </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- User settings -->
+          <div v-if="showContent" class="profile-card profile-settings-card">
+            <h2 class="profile-settings-heading">Настройки</h2>
+            <div class="profile-card-content">
+              <div class="profile-field">
+                <div class="profile-field-header">
+                  <div class="profile-field-icon">
+                    <i class="fas fa-earth-europe"></i>
+                  </div>
+                  <label class="profile-field-label" for="profile-timezone-select">Часовой пояс</label>
+                </div>
+                <div class="profile-field-control">
+                  <select
+                    id="profile-timezone-select"
+                    v-model.number="selectedTimezoneOffset"
+                    class="profile-timezone-select"
+                    :disabled="timezoneSaveStatus === 'saving'"
+                    @change="onTimezoneChange"
+                  >
+                    <option v-for="opt in timezoneOptions" :key="opt.value" :value="opt.value">
+                      {{ opt.label }}
+                    </option>
+                  </select>
+                  <span v-if="timezoneSaveStatus === 'saving'" class="profile-settings-hint">Сохранение…</span>
+                  <span v-else-if="timezoneSaveStatus === 'saved'" class="profile-settings-hint profile-settings-hint--ok"
+                    >Сохранено</span
+                  >
+                  <span v-else-if="timezoneSaveStatus === 'error'" class="profile-settings-hint profile-settings-hint--err"
+                    >Ошибка сохранения</span
+                  >
+                </div>
+                <p class="profile-settings-note">
+                  По умолчанию {{ formatUtcOffsetLabel(DEFAULT_USER_TIMEZONE_OFFSET_HOURS) }} (Москва). Используется для
+                  отображения времени в приложении.
+                </p>
               </div>
             </div>
           </div>
@@ -503,6 +592,77 @@ body {
   padding-left: 2.75rem;
 }
 
+.profile-settings-card {
+  margin-top: 1.75rem;
+}
+
+.profile-settings-heading {
+  margin: 0 0 1.25rem 0;
+  font-size: 1.15rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+}
+
+.profile-field-control {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  padding-left: 2.75rem;
+}
+
+.profile-timezone-select {
+  flex: 1;
+  min-width: 12rem;
+  max-width: 22rem;
+  padding: 0.6rem 0.85rem;
+  font-family: inherit;
+  font-size: 1rem;
+  color: var(--color-text);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border-light);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.profile-timezone-select:hover:not(:disabled) {
+  border-color: var(--color-accent);
+}
+
+.profile-timezone-select:focus {
+  outline: none;
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 2px var(--color-accent-light);
+}
+
+.profile-timezone-select:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.profile-settings-hint {
+  font-size: 0.85rem;
+  color: var(--color-text-tertiary);
+}
+
+.profile-settings-hint--ok {
+  color: #7dffb8;
+}
+
+.profile-settings-hint--err {
+  color: var(--color-accent-hover);
+}
+
+.profile-settings-note {
+  margin: 0.75rem 0 0 2.75rem;
+  font-size: 0.85rem;
+  line-height: 1.45;
+  color: var(--color-text-tertiary);
+}
+
 @media (max-width: 768px) {
   .profile-heading {
     font-size: 2rem;
@@ -513,6 +673,11 @@ body {
   }
 
   .profile-field-value {
+    padding-left: 0;
+  }
+
+  .profile-field-control,
+  .profile-settings-note {
     padding-left: 0;
   }
 }

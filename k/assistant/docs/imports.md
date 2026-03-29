@@ -41,14 +41,19 @@
 ### `./web/profile/index.tsx`
 - `@app/html-jsx` → `jsx`
 - `@app/auth` → `requireRealUser`
+- `@app/socket` → `genSocketId`
 - `../../pages/ProfilePage.vue`
 - `../../shared/preloader` → `getPreloaderStyles`, `getPreloaderScript`
 - `../../shared/logLevel` → `getLogLevelForPage`, `getLogLevelScript`
 - `../../styles` → `customScrollbarStyles`, `mobileSafeAreaStyles`, `formControlStyles`, `VIEWPORT_META_CONTENT`
 - `../../lib/logger.lib` → `*`
-- `../../config/routes` → `getFullUrl`, `ROUTES`
+- `../../config/routes` → `getFullUrl`, `ROUTES`, `getApiUrlForRoute`
 - `../../config/project` → `PROFILE_PAGE_NAME`, `getPageTitle`, `getHeaderText`
 - `../../lib/settings.lib` → `*`
+- `../../lib/user-settings.lib` → `getEffectiveTimezoneOffsetHours` (SSR `timezoneOffsetHours` в `ProfilePage`)
+- `../../api/tools/state` → `toolsStateRoute`
+- `../../api/tools/control` → `toolsControlRoute`
+- `../../shared/focus-tools-types` → `focusToolsSocketId`
 
 ### `./web/tasks/index.tsx`
 - `@app/html-jsx` → `jsx`
@@ -203,12 +208,15 @@
 - `../shared/logger` → `createComponentLogger`, `setLogSink`, `LogEntry`
 
 ### `./pages/ProfilePage.vue`
-- `vue` → `onMounted`, `onUnmounted`, `ref`
+- `vue` → `onMounted`, `onUnmounted`, `ref`, `withDefaults`
 - `../components/Header.vue`
 - `../components/GlobalGlitch.vue`
 - `../components/AppFooter.vue`
+- `../api/user-settings/save` → `saveUserSettingsRoute`
+- `../shared/user-settings-defaults` → `DEFAULT_USER_TIMEZONE_OFFSET_HOURS`, `USER_TIMEZONE_OFFSET_MIN`, `USER_TIMEZONE_OFFSET_MAX`
 - `../shared/bootUi` → `subscribeBootStaticReady`, `scheduleHideBootLoader`
 - `../shared/logger` → `createComponentLogger`
+- глобально: `declare const ctx: app.Ctx` (сохранение пояса через `saveUserSettingsRoute.run`)
 
 ### `./pages/JournalPage.vue`
 - `vue` → `computed`, `markRaw`, `onMounted`, `onUnmounted`, `ref`, `watch`
@@ -577,6 +585,14 @@
 - `@app/auth` → `requireAccountRole`
 - `../../lib/settings.lib` → `*`
 - `../../lib/logger.lib` → `*`
+
+### `./api/user-settings/get.ts`
+- `@app/auth` → `requireRealUser`
+- `../../lib/user-settings.lib` → `getEffectiveTimezoneOffsetHours`
+
+### `./api/user-settings/save.ts`
+- `@app/auth` → `requireRealUser`
+- `../../lib/user-settings.lib` → `saveTimezoneOffsetHours`
 
 ### `./api/logger/log.ts`
 - `@app/auth` → `requireAnyUser`

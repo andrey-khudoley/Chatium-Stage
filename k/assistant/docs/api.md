@@ -12,6 +12,15 @@
 
 Каждый файл — один эндпоинт с путём `/`.
 
+## Персональные настройки пользователя (api/user-settings/)
+
+Смещение от UTC в целых часах; дефолт **+3** (если записи в Heap ещё нет). Данные: `tables/user-settings.table.ts`, `lib/user-settings.lib.ts`.
+
+| Method | Path | File | Auth | Назначение |
+| --- | --- | --- | --- | --- |
+| GET | /api/user-settings/get | api/user-settings/get.ts | RealUser | `{ success, timezoneOffsetHours }` |
+| POST | /api/user-settings/save | api/user-settings/save.ts | RealUser | Body: `{ timezoneOffsetHours: number }` (−12…14), ответ `{ success, timezoneOffsetHours }` |
+
 ## Логи (api/logger/, api/admin/logs/)
 
 Эндпоинты для записи и чтения серверных логов (проверка уровня, Heap, WebSocket, вебхук).

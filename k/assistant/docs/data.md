@@ -7,6 +7,7 @@
 | Table | File | Назначение | Основные поля |
 | --- | --- | --- | --- |
 | t__assistant__setting__7Fk2Qw | tables/settings.table.ts | Настройки проекта (key-value) | key (string), value (any) |
+| t__assistant__user_settings__9Wp2kL | tables/user-settings.table.ts | Персональные настройки пользователя | userId (string), timezoneOffsetHours (число, целые часы от UTC, по умолчанию при отсутствии строки — +3 в lib) |
 | t__assistant__log__9Xm3Kp | tables/logs.table.ts | Серверные логи (долгосрочное хранение) | message (string), payload (any), severity, level, timestamp |
 | t__assistant__journal_note__8Kp2Nx | tables/journal-notes.table.ts | Заметки блокнота журнала | userId (string), title (string), content (string); опционально: folderId (string), categoryIds (JSON string), linkedTaskId (string), linkedProjectId (string), linkedClientId (string), noteDate (string), isArchived (boolean), sortOrder (number); системные: id, createdAt, updatedAt |
 | t__assistant__inbox_note__7Np4Kx | tables/inbox-notes.table.ts | Заметки инбокса журнала (отдельно от блокнота) | userId, title, content, isArchived, sortOrder; системные: id, createdAt, updatedAt |
@@ -26,6 +27,7 @@
 
 ## Репозитории (repos/)
 - `repos/settings.repo.ts` — findByKey, findAll, upsert, deleteByKey (слой работы с БД; без вызовов logger.lib, т.к. getSetting/getLogLevel вызываются из writeServerLog и используют findByKey — иначе рекурсия).
+- `repos/user-settings.repo.ts` — findByUserId, upsertTimezone (одна строка на пользователя, `createOrUpdateBy` по `userId`).
 - `repos/logs.repo.ts` — create, findAll, findById, findBeforeTimestamp (слой работы с БД логов; findBeforeTimestamp использует нативную фильтрацию Heap API через `where: { timestamp: { $lt } }` для эффективной пагинации).
 - `repos/journal-notes.repo.ts` — findSummariesByUserId (расширенное DTO с folderId, categoryIds, noteDate, isArchived, sortOrder, linkedTaskId, linkedProjectId, linkedClientId), createForUser, findByIdForUser, updateForUser, deleteByIdForUser, reorderForUser, bulkArchiveForUser, bulkMoveToFolderForUser, bulkDeleteForUser, bulkSetCategoryForUser, archiveByFolderForUser, clearFolderIdForUser, removeCategoryFromAllNotes.
 - `repos/inbox-notes.repo.ts` — findSummariesByUserId (id, title, isArchived, sortOrder), createForUser, findByIdForUser, updateForUser, deleteByIdForUser — только таблица инбокса.
@@ -42,6 +44,7 @@
 
 ## Библиотеки (lib/)
 - `lib/settings.lib.ts` — getSetting, getAllSettings, setSetting, getLogLevel, getLogsLimit, getLogWebhook (бизнес-логика, дефолты, валидация).
+- `lib/user-settings.lib.ts` — getEffectiveTimezoneOffsetHours, saveTimezoneOffsetHours (дефолт UTC+3, кламп −12…14).
 - `lib/logger.lib.ts` — getAdminLogsSocketId, shouldLogByLevel, writeServerLog (проверка уровня, запись в ctx.log/ctx.account.log, Heap, WebSocket, вебхук).
 - `lib/tasks-types.ts` — DTO дерева задач для UI/API (без импорта Heap).
 - `lib/focus-tools.lib.ts` — единая логика помидор + таймер + секундомер: `getFullState`, `executeCommand`, тик фаз помидора, завершение таймера по `endsAtMs`, сегменты в `tool-segments`, push WebSocket; все мутации под `runWithExclusiveLock`.
