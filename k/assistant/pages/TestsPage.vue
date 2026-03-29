@@ -8,6 +8,14 @@ import { subscribeBootStaticReady, scheduleHideBootLoader } from '../shared/boot
 import { createComponentLogger, setLogSink, type LogEntry } from '../shared/logger'
 import { getRecentLogsRoute } from '../api/admin/logs/recent'
 import { getLogsBeforeRoute } from '../api/admin/logs/before'
+import {
+  UNIT_TEST_BLOCKS,
+  INTEGRATION_SERVER_TEST_BLOCKS,
+  INTEGRATION_HTTP_TEST_BLOCK,
+  flattenCatalogBlocks,
+  type TestCatalogBlock,
+  type TestCatalogEntry
+} from '../shared/testCatalog'
 
 const log = createComponentLogger('TestsPage')
 
@@ -288,20 +296,29 @@ const openChatiumLink = () => {
   window.open('https://chatium.ru/?start=pl-LGBT1Oge7c61RkKTU4t0start', '_blank')
 }
 
-/* Дашборд тестов */
-const testMetrics = ref({
-  total: 0,
-  passed: 0,
-  failed: 0,
-  skipped: 0,
-  lastRunAt: null as string | null
-})
+/** Шаблонный минимум (p/template_project): юнит без Heap + интеграция сервера + HTTP страниц */
+type SuiteRow = { id: string; title: string; passed: boolean; error?: string }
+
+type RowVisual = {
+  id: string
+  title: string
+  status: 'pending' | 'success' | 'fail'
+  badgeText: string
+  error?: string
+}
+
+const testsSuiteTab = ref<'unit' | 'integration'>('unit')
+const lastSuiteRunAt = ref<string | null>(null)
 const runAllTestsLoading = ref(false)
+const runTabTestsLoading = ref(false)
 
-/** Результат одного теста */
-type TestResult = { id: string; title: string; passed: boolean; error?: string }
+const unitResults = ref<SuiteRow[]>([])
+const integrationResults = ref<SuiteRow[]>([])
+const httpPageResults = ref<SuiteRow[]>([])
+const unitLoading = ref(false)
+const integrationLoading = ref(false)
+const httpPagesLoading = ref(false)
 
-/** Базовый URL (origin + путь проекта без trailing slash) */
 function getApiBaseUrl(): string {
   const path = props.indexUrl.startsWith('http')
     ? new URL(props.indexUrl).pathname
@@ -312,53 +329,176 @@ function getApiBaseUrl(): string {
   return `${origin}${basePath.startsWith('/') ? basePath : '/' + basePath}`
 }
 
-/* --- Блок 1: Проверка эндпоинтов (маршруты /, /web/admin, ...) --- */
-const ENDPOINTS_ROUTES: Array<{ id: string; path: string; title: string }> = [
-  { id: 'index', path: '/', title: 'Эндпоинт /' },
-  { id: 'web-admin', path: '/web/admin', title: 'Эндпоинт /web/admin' },
-  { id: 'web-profile', path: '/web/profile', title: 'Эндпоинт /web/profile' },
-  { id: 'web-login', path: '/web/login', title: 'Эндпоинт /web/login' },
-  { id: 'web-tests', path: '/web/tests', title: 'Эндпоинт /web/tests' },
-  { id: 'web-journal', path: '/web/journal', title: 'Эндпоинт /web/journal' },
-  { id: 'web-tasks', path: '/web/tasks', title: 'Эндпоинт /web/tasks' }
-]
-const endpointsResults = ref<TestResult[]>([])
-const endpointsLoading = ref(false)
-const endpointsLastRunAt = ref<string | null>(null)
+/** Путь страницы для HTTP-проверки (id совпадает с каталогом) */
+const HTTP_PATH_BY_TEST_ID: Record<string, string> = {
+  index: '/',
+  'web-admin': '/web/admin',
+  'web-profile': '/web/profile',
+  'web-login': '/web/login',
+  'web-tests': '/web/tests'
+}
 
-const endpointsDisplay = computed(() => {
-  const byId = new Map(endpointsResults.value.map((r) => [r.id, r]))
-  return ENDPOINTS_ROUTES.map((t) => {
-    const res = byId.get(t.id)
-    return {
-      id: t.id,
-      title: t.title,
-      path: t.path,
-      status: res === undefined ? 'todo' : res.passed ? 'success' : 'fail',
-      error: res && !res.passed ? res.error : undefined
-    }
-  })
+function resultById(results: SuiteRow[], id: string): SuiteRow | undefined {
+  return results.find((r) => r.id === id)
+}
+
+function rowVisual(test: TestCatalogEntry, results: SuiteRow[]): RowVisual {
+  const r = resultById(results, test.id)
+  if (!r) {
+    return { id: test.id, title: test.title, status: 'pending', badgeText: 'ОЖИД' }
+  }
+  return {
+    id: test.id,
+    title: test.title,
+    status: r.passed ? 'success' : 'fail',
+    badgeText: r.passed ? 'OK' : 'FAIL',
+    error: r.error
+  }
+}
+
+function blockRollup(block: TestCatalogBlock, results: SuiteRow[]) {
+  const n = block.tests.length
+  let ok = 0
+  let fail = 0
+  let pend = 0
+  for (const t of block.tests) {
+    const r = resultById(results, t.id)
+    if (!r) pend++
+    else if (r.passed) ok++
+    else fail++
+  }
+  let label: string
+  if (pend === n) {
+    label = 'не запускали'
+  } else if (fail > 0) {
+    label = `${ok} пройдено, ${fail} с ошибкой${pend ? `, ${pend} без прогона` : ''}`
+  } else if (pend > 0) {
+    label = `${ok}/${n} пройдено, ${pend} без прогона`
+  } else {
+    label = `все ${n} пройдены`
+  }
+  return { ok, fail, pend, n, label }
+}
+
+function metricsFromBlocks(blocks: TestCatalogBlock[], results: SuiteRow[]) {
+  const total = flattenCatalogBlocks(blocks).length
+  let passed = 0
+  let failed = 0
+  for (const t of flattenCatalogBlocks(blocks)) {
+    const r = resultById(results, t.id)
+    if (!r) continue
+    if (r.passed) passed++
+    else failed++
+  }
+  const skipped = total - passed - failed
+  return { total, passed, failed, skipped }
+}
+
+const tabTestMetrics = computed(() => {
+  if (testsSuiteTab.value === 'unit') {
+    return metricsFromBlocks(UNIT_TEST_BLOCKS, unitResults.value)
+  }
+  const server = metricsFromBlocks(INTEGRATION_SERVER_TEST_BLOCKS, integrationResults.value)
+  const http = metricsFromBlocks([INTEGRATION_HTTP_TEST_BLOCK], httpPageResults.value)
+  return {
+    total: server.total + http.total,
+    passed: server.passed + http.passed,
+    failed: server.failed + http.failed,
+    skipped: server.skipped + http.skipped
+  }
 })
 
-async function runEndpointsTests() {
-  endpointsLoading.value = true
-  endpointsResults.value = []
-  const baseUrl = getApiBaseUrl().replace(/\/$/, '')
-  log.info('Запуск проверки эндпоинтов')
+function summarizeRows(rows: SuiteRow[]) {
+  const passed = rows.filter((r) => r.passed).length
+  return { total: rows.length, passed, failed: rows.length - passed, todo: 0 }
+}
+
+type BlockSectionView = {
+  block: TestCatalogBlock
+  rollupLabel: string
+  rows: { test: TestCatalogEntry; visual: RowVisual }[]
+}
+
+function mapBlocksToView(blocks: TestCatalogBlock[], results: SuiteRow[]): BlockSectionView[] {
+  return blocks.map((block) => ({
+    block,
+    rollupLabel: blockRollup(block, results).label,
+    rows: block.tests.map((test) => ({
+      test,
+      visual: rowVisual(test, results)
+    }))
+  }))
+}
+
+const unitBlocksView = computed(() => mapBlocksToView(UNIT_TEST_BLOCKS, unitResults.value))
+
+const integrationServerBlocksView = computed(() =>
+  mapBlocksToView(INTEGRATION_SERVER_TEST_BLOCKS, integrationResults.value)
+)
+
+const integrationHttpBlocksView = computed(() =>
+  mapBlocksToView([INTEGRATION_HTTP_TEST_BLOCK], httpPageResults.value)
+)
+
+async function runUnitSuite() {
+  unitLoading.value = true
   try {
-    const results: TestResult[] = []
-    for (const t of ENDPOINTS_ROUTES) {
-      const url = `${baseUrl}${t.path === '/' ? '' : t.path}`
+    const base = getApiBaseUrl().replace(/\/$/, '')
+    const res = await fetch(`${base}/api/tests/unit`, { credentials: 'include' })
+    const data = (await res.json().catch(() => null)) as { results?: SuiteRow[] }
+    unitResults.value = Array.isArray(data?.results) ? data.results : []
+    lastSuiteRunAt.value = new Date().toLocaleString('ru-RU')
+    log.info('Юнит-набор', summarizeRows(unitResults.value))
+  } catch (e) {
+    unitResults.value = [
+      { id: 'fetch', title: 'GET /api/tests/unit', passed: false, error: (e as Error)?.message ?? String(e) }
+    ]
+  } finally {
+    unitLoading.value = false
+  }
+}
+
+async function runIntegrationSuite() {
+  integrationLoading.value = true
+  try {
+    const base = getApiBaseUrl().replace(/\/$/, '')
+    const res = await fetch(`${base}/api/tests/integration`, { credentials: 'include' })
+    const data = (await res.json().catch(() => null)) as { results?: SuiteRow[] }
+    integrationResults.value = Array.isArray(data?.results) ? data.results : []
+    lastSuiteRunAt.value = new Date().toLocaleString('ru-RU')
+    log.info('Интеграция (сервер)', summarizeRows(integrationResults.value))
+  } catch (e) {
+    integrationResults.value = [
+      {
+        id: 'fetch',
+        title: 'GET /api/tests/integration',
+        passed: false,
+        error: (e as Error)?.message ?? String(e)
+      }
+    ]
+  } finally {
+    integrationLoading.value = false
+  }
+}
+
+async function runHttpPageChecks() {
+  httpPagesLoading.value = true
+  const base = getApiBaseUrl().replace(/\/$/, '')
+  const out: SuiteRow[] = []
+  try {
+    for (const t of INTEGRATION_HTTP_TEST_BLOCK.tests) {
+      const path = HTTP_PATH_BY_TEST_ID[t.id] ?? '/'
+      const url = `${base}${path === '/' ? '' : path}`
       try {
         const res = await fetch(url, { method: 'GET', credentials: 'include' })
-        results.push({
+        out.push({
           id: t.id,
           title: t.title,
           passed: res.ok,
           error: res.ok ? undefined : `HTTP ${res.status}`
         })
       } catch (e) {
-        results.push({
+        out.push({
           id: t.id,
           title: t.title,
           passed: false,
@@ -366,259 +506,37 @@ async function runEndpointsTests() {
         })
       }
     }
-    endpointsResults.value = results
-    endpointsLastRunAt.value = new Date().toLocaleString('ru-RU')
-    log.info('Проверка эндпоинтов завершена', { passed: results.filter((r) => r.passed).length, failed: results.filter((r) => !r.passed).length })
+    httpPageResults.value = out
+    lastSuiteRunAt.value = new Date().toLocaleString('ru-RU')
+    log.info('HTTP страниц шаблона', summarizeRows(out))
   } finally {
-    endpointsLoading.value = false
+    httpPagesLoading.value = false
   }
 }
 
-/* --- Блок 2: Библиотека настроек (settings.lib) --- */
-const SETTINGS_LIB_TESTS: Array<{ id: string; title: string }> = [
-  { id: 'getSettingString', title: 'getSettingString (project_name)' },
-  { id: 'getLogLevel', title: 'getLogLevel' },
-  { id: 'getLogsLimit', title: 'getLogsLimit' },
-  { id: 'getLogWebhook', title: 'getLogWebhook' },
-  { id: 'getDashboardResetAt', title: 'getDashboardResetAt' },
-  { id: 'getAllSettings', title: 'getAllSettings' }
-]
-const settingsResults = ref<TestResult[]>([])
-const settingsLoading = ref(false)
-const settingsLastRunAt = ref<string | null>(null)
-
-const settingsDisplay = computed(() => {
-  const byId = new Map(settingsResults.value.map((r) => [r.id, r]))
-  return SETTINGS_LIB_TESTS.map((t) => {
-    const res = byId.get(t.id)
-    return {
-      id: t.id,
-      title: t.title,
-      status: res === undefined ? 'todo' : res.passed ? 'success' : 'fail',
-      error: res && !res.passed ? res.error : undefined
-    }
-  })
-})
-
-async function runSettingsTests() {
-  settingsLoading.value = true
-  settingsResults.value = []
-  const baseUrl = getApiBaseUrl().replace(/\/$/, '')
-  log.info('Запуск проверки библиотеки настроек')
+const runAllTestsOnCurrentTab = async () => {
+  runTabTestsLoading.value = true
   try {
-    const res = await fetch(`${baseUrl}/api/tests/endpoints-check/settings-lib`, { method: 'GET', credentials: 'include' })
-    const data = (await res.json().catch(() => null)) as { success?: boolean; results?: TestResult[] }
-    if (res.ok && data?.success && Array.isArray(data.results)) {
-      settingsResults.value = data.results
+    if (testsSuiteTab.value === 'unit') {
+      await runUnitSuite()
     } else {
-      settingsResults.value = SETTINGS_LIB_TESTS.map((t) => ({ id: t.id, title: t.title, passed: false, error: 'Ошибка запроса' }))
+      await runIntegrationSuite()
+      await runHttpPageChecks()
     }
-    settingsLastRunAt.value = new Date().toLocaleString('ru-RU')
+    lastSuiteRunAt.value = new Date().toLocaleString('ru-RU')
   } finally {
-    settingsLoading.value = false
+    runTabTestsLoading.value = false
   }
 }
 
-/* --- Блок 3: Репозиторий настроек (settings.repo) --- */
-const SETTINGS_REPO_TESTS: Array<{ id: string; title: string }> = [
-  { id: 'upsert', title: 'upsert' },
-  { id: 'deleteByKey', title: 'deleteByKey' },
-  { id: 'findByKey', title: 'findByKey' },
-  { id: 'findAll', title: 'findAll' }
-]
-const settingsRepoResults = ref<TestResult[]>([])
-const settingsRepoLoading = ref(false)
-const settingsRepoLastRunAt = ref<string | null>(null)
-
-const settingsRepoDisplay = computed(() => {
-  const byId = new Map(settingsRepoResults.value.map((r) => [r.id, r]))
-  return SETTINGS_REPO_TESTS.map((t) => {
-    const res = byId.get(t.id)
-    return {
-      id: t.id,
-      title: t.title,
-      status: res === undefined ? 'todo' : res.passed ? 'success' : 'fail',
-      error: res && !res.passed ? res.error : undefined
-    }
-  })
-})
-
-async function runSettingsRepoTests() {
-  settingsRepoLoading.value = true
-  settingsRepoResults.value = []
-  const baseUrl = getApiBaseUrl().replace(/\/$/, '')
-  log.info('Запуск проверки репозитория настроек')
-  try {
-    const res = await fetch(`${baseUrl}/api/tests/endpoints-check/settings-repo`, { method: 'GET', credentials: 'include' })
-    const data = (await res.json().catch(() => null)) as { success?: boolean; results?: TestResult[] }
-    if (res.ok && data?.success && Array.isArray(data.results)) {
-      settingsRepoResults.value = data.results
-    } else {
-      settingsRepoResults.value = SETTINGS_REPO_TESTS.map((t) => ({ id: t.id, title: t.title, passed: false, error: 'Ошибка запроса' }))
-    }
-    settingsRepoLastRunAt.value = new Date().toLocaleString('ru-RU')
-  } finally {
-    settingsRepoLoading.value = false
-  }
-}
-
-/* --- Блок 4: Библиотека логов (logger.lib) --- */
-const LOGGER_LIB_TESTS: Array<{ id: string; title: string }> = [
-  { id: 'getAdminLogsSocketId', title: 'getAdminLogsSocketId' },
-  { id: 'shouldLogByLevel_Info', title: 'shouldLogByLevel (Info, 6)' },
-  { id: 'shouldLogByLevel_Error', title: 'shouldLogByLevel (Error, 3)' },
-  { id: 'shouldLogByLevel_Disable', title: 'shouldLogByLevel (Disable, 7)' }
-]
-const loggerLibResults = ref<TestResult[]>([])
-const loggerLibLoading = ref(false)
-const loggerLibLastRunAt = ref<string | null>(null)
-
-const loggerLibDisplay = computed(() => {
-  const byId = new Map(loggerLibResults.value.map((r) => [r.id, r]))
-  return LOGGER_LIB_TESTS.map((t) => {
-    const res = byId.get(t.id)
-    return {
-      id: t.id,
-      title: t.title,
-      status: res === undefined ? 'todo' : res.passed ? 'success' : 'fail',
-      error: res && !res.passed ? res.error : undefined
-    }
-  })
-})
-
-async function runLoggerLibTests() {
-  loggerLibLoading.value = true
-  loggerLibResults.value = []
-  const baseUrl = getApiBaseUrl().replace(/\/$/, '')
-  log.info('Запуск проверки библиотеки логов')
-  try {
-    const res = await fetch(`${baseUrl}/api/tests/endpoints-check/logger-lib`, { method: 'GET', credentials: 'include' })
-    const data = (await res.json().catch(() => null)) as { success?: boolean; results?: TestResult[] }
-    if (res.ok && data?.success && Array.isArray(data.results)) {
-      loggerLibResults.value = data.results
-    } else {
-      loggerLibResults.value = LOGGER_LIB_TESTS.map((t) => ({ id: t.id, title: t.title, passed: false, error: 'Ошибка запроса' }))
-    }
-    loggerLibLastRunAt.value = new Date().toLocaleString('ru-RU')
-  } finally {
-    loggerLibLoading.value = false
-  }
-}
-
-/* --- Блок 5: Репозиторий логов (logs.repo) --- */
-const LOGS_REPO_TESTS: Array<{ id: string; title: string }> = [
-  { id: 'create', title: 'create' },
-  { id: 'findAll', title: 'findAll' },
-  { id: 'findBeforeTimestamp', title: 'findBeforeTimestamp' },
-  { id: 'countErrorsAfter', title: 'countErrorsAfter' },
-  { id: 'countWarningsAfter', title: 'countWarningsAfter' }
-]
-const logsRepoResults = ref<TestResult[]>([])
-const logsRepoLoading = ref(false)
-const logsRepoLastRunAt = ref<string | null>(null)
-
-const logsRepoDisplay = computed(() => {
-  const byId = new Map(logsRepoResults.value.map((r) => [r.id, r]))
-  return LOGS_REPO_TESTS.map((t) => {
-    const res = byId.get(t.id)
-    return {
-      id: t.id,
-      title: t.title,
-      status: res === undefined ? 'todo' : res.passed ? 'success' : 'fail',
-      error: res && !res.passed ? res.error : undefined
-    }
-  })
-})
-
-async function runLogsRepoTests() {
-  logsRepoLoading.value = true
-  logsRepoResults.value = []
-  const baseUrl = getApiBaseUrl().replace(/\/$/, '')
-  log.info('Запуск проверки репозитория логов')
-  try {
-    const res = await fetch(`${baseUrl}/api/tests/endpoints-check/logs-repo`, { method: 'GET', credentials: 'include' })
-    const data = (await res.json().catch(() => null)) as { success?: boolean; results?: TestResult[] }
-    if (res.ok && data?.success && Array.isArray(data.results)) {
-      logsRepoResults.value = data.results
-    } else {
-      logsRepoResults.value = LOGS_REPO_TESTS.map((t) => ({ id: t.id, title: t.title, passed: false, error: 'Ошибка запроса' }))
-    }
-    logsRepoLastRunAt.value = new Date().toLocaleString('ru-RU')
-  } finally {
-    logsRepoLoading.value = false
-  }
-}
-
-/* --- Блок 6: Библиотека админки (dashboard.lib) --- */
-const DASHBOARD_LIB_TESTS: Array<{ id: string; title: string }> = [
-  { id: 'getDashboardCounts', title: 'getDashboardCounts' },
-  { id: 'resetDashboard', title: 'resetDashboard' }
-]
-const dashboardLibResults = ref<TestResult[]>([])
-const dashboardLibLoading = ref(false)
-const dashboardLibLastRunAt = ref<string | null>(null)
-
-const dashboardLibDisplay = computed(() => {
-  const byId = new Map(dashboardLibResults.value.map((r) => [r.id, r]))
-  return DASHBOARD_LIB_TESTS.map((t) => {
-    const res = byId.get(t.id)
-    return {
-      id: t.id,
-      title: t.title,
-      status: res === undefined ? 'todo' : res.passed ? 'success' : 'fail',
-      error: res && !res.passed ? res.error : undefined
-    }
-  })
-})
-
-async function runDashboardLibTests() {
-  dashboardLibLoading.value = true
-  dashboardLibResults.value = []
-  const baseUrl = getApiBaseUrl().replace(/\/$/, '')
-  log.info('Запуск проверки библиотеки админки')
-  try {
-    const res = await fetch(`${baseUrl}/api/tests/endpoints-check/dashboard-lib`, { method: 'GET', credentials: 'include' })
-    const data = (await res.json().catch(() => null)) as { success?: boolean; results?: TestResult[] }
-    if (res.ok && data?.success && Array.isArray(data.results)) {
-      dashboardLibResults.value = data.results
-    } else {
-      dashboardLibResults.value = DASHBOARD_LIB_TESTS.map((t) => ({ id: t.id, title: t.title, passed: false, error: 'Ошибка запроса' }))
-    }
-    dashboardLibLastRunAt.value = new Date().toLocaleString('ru-RU')
-  } finally {
-    dashboardLibLoading.value = false
-  }
-}
-
-/** Запустить все тесты (все шесть блоков) и обновить метрики дашборда */
 const runAllTests = async () => {
   runAllTestsLoading.value = true
-  log.info('Запуск всех тестов')
+  log.info('Полный прогон шаблонных тестов')
   try {
-    await runEndpointsTests()
-    await runSettingsTests()
-    await runSettingsRepoTests()
-    await runLoggerLibTests()
-    await runLogsRepoTests()
-    await runDashboardLibTests()
-    const all = [
-      ...endpointsResults.value,
-      ...settingsResults.value,
-      ...settingsRepoResults.value,
-      ...loggerLibResults.value,
-      ...logsRepoResults.value,
-      ...dashboardLibResults.value
-    ]
-    const passed = all.filter((r) => r.passed).length
-    const failed = all.filter((r) => !r.passed).length
-    testMetrics.value = {
-      total: all.length,
-      passed,
-      failed,
-      skipped: 0,
-      lastRunAt: new Date().toLocaleString('ru-RU')
-    }
-    log.info('Все тесты завершены', testMetrics.value)
+    await runUnitSuite()
+    await runIntegrationSuite()
+    await runHttpPageChecks()
+    lastSuiteRunAt.value = new Date().toLocaleString('ru-RU')
   } finally {
     runAllTestsLoading.value = false
   }
@@ -748,282 +666,241 @@ const runAllTests = async () => {
               <i class="fas fa-chart-line tests-dashboard-icon"></i>
               <h2 class="tests-dashboard-title">Метрики тестов</h2>
             </div>
+            <!-- Вкладки: юнит / интеграция (внутри карточки метрик) -->
+            <div class="tests-suite-tabs-wrap tests-suite-tabs-wrap--in-dashboard">
+              <p class="tests-suite-tabs-hint">
+                Базовый минимум как в шаблоне <code class="tests-code-hint">p/template_project</code>: юнит — GET
+                <code class="tests-code-hint">/api/tests/unit</code> (без Heap). Интеграция —
+                <code class="tests-code-hint">/api/tests/integration</code> (Heap + либы) и GET страниц /, /web/admin, /web/profile, /web/login, /web/tests.
+              </p>
+              <div class="tests-suite-tabs" role="tablist" aria-label="Тип тестов">
+                <button
+                  type="button"
+                  role="tab"
+                  class="tests-suite-tab"
+                  :class="{ active: testsSuiteTab === 'unit' }"
+                  :aria-selected="testsSuiteTab === 'unit'"
+                  @click="testsSuiteTab = 'unit'"
+                >
+                  <i class="fas fa-microchip"></i>
+                  Юнит-тесты
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  class="tests-suite-tab"
+                  :class="{ active: testsSuiteTab === 'integration' }"
+                  :aria-selected="testsSuiteTab === 'integration'"
+                  @click="testsSuiteTab = 'integration'"
+                >
+                  <i class="fas fa-network-wired"></i>
+                  Интеграционные
+                </button>
+              </div>
+            </div>
+            <p class="tests-dashboard-tab-label">
+              Метрики для вкладки:
+              <strong>{{ testsSuiteTab === 'unit' ? 'Юнит-тесты' : 'Интеграционные' }}</strong>
+            </p>
             <div class="tests-dashboard-metrics">
               <div class="tests-metric tests-metric-total">
-                <span class="tests-metric-value">{{ testMetrics.total }}</span>
+                <span class="tests-metric-value">{{ tabTestMetrics.total }}</span>
                 <span class="tests-metric-label">всего</span>
               </div>
               <div class="tests-metric tests-metric-passed">
-                <span class="tests-metric-value">{{ testMetrics.passed }}</span>
+                <span class="tests-metric-value">{{ tabTestMetrics.passed }}</span>
                 <span class="tests-metric-label">пройдено</span>
               </div>
               <div class="tests-metric tests-metric-failed">
-                <span class="tests-metric-value">{{ testMetrics.failed }}</span>
+                <span class="tests-metric-value">{{ tabTestMetrics.failed }}</span>
                 <span class="tests-metric-label">провалено</span>
               </div>
               <div class="tests-metric tests-metric-skipped">
-                <span class="tests-metric-value">{{ testMetrics.skipped }}</span>
-                <span class="tests-metric-label">пропущено</span>
+                <span class="tests-metric-value">{{ tabTestMetrics.skipped }}</span>
+                <span class="tests-metric-label">не запускали</span>
               </div>
             </div>
-            <p v-if="testMetrics.lastRunAt" class="tests-dashboard-last-run">
-              Последний запуск: {{ testMetrics.lastRunAt }}
+            <p v-if="lastSuiteRunAt" class="tests-dashboard-last-run">
+              Последний запуск: {{ lastSuiteRunAt }}
             </p>
-            <div class="tests-dashboard-actions">
+            <div class="tests-dashboard-actions tests-dashboard-actions-row">
               <button
                 type="button"
                 class="tests-run-all-btn"
-                :disabled="runAllTestsLoading"
+                :disabled="runTabTestsLoading || runAllTestsLoading"
+                @click="runAllTestsOnCurrentTab"
+              >
+                <i class="fas" :class="runTabTestsLoading ? 'fa-spinner fa-spin' : 'fa-play'"></i>
+                {{ runTabTestsLoading ? 'Запуск...' : 'Запустить всё на вкладке' }}
+              </button>
+              <button
+                type="button"
+                class="tests-run-full-suite-btn"
+                :disabled="runAllTestsLoading || runTabTestsLoading"
+                title="Юнит + интеграция сервера + HTTP страниц шаблона"
                 @click="runAllTests"
               >
-                <i class="fas" :class="runAllTestsLoading ? 'fa-spinner fa-spin' : 'fa-play'"></i>
-                {{ runAllTestsLoading ? 'Запуск...' : 'Запустить все тесты' }}
+                <i class="fas" :class="runAllTestsLoading ? 'fa-spinner fa-spin' : 'fa-layer-group'"></i>
+                {{ runAllTestsLoading ? 'Полный прогон...' : 'Полный прогон' }}
               </button>
             </div>
           </div>
 
-          <!-- Блок 1: Проверка эндпоинтов -->
-          <div v-if="showContent" class="tests-card tests-endpoints-card">
+          <!-- Юнит: GET /api/tests/unit — блоки по слоям, список тестов до запуска -->
+          <div v-if="showContent" v-show="testsSuiteTab === 'unit'" class="tests-card tests-endpoints-card">
             <div class="tests-endpoints-header">
-              <i class="fas fa-plug tests-endpoints-icon"></i>
-              <h2 class="tests-endpoints-title">Проверка эндпоинтов</h2>
+              <i class="fas fa-microchip tests-endpoints-icon"></i>
+              <h2 class="tests-endpoints-title">Юнит-тесты</h2>
             </div>
             <p class="tests-endpoints-desc">
-              Проверка доступности маршрутов приложения (HTTP 200).
+              Синхронные проверки без Heap. Ниже — функциональные блоки; в каждом перечислены проверки (статус
+              <span class="tests-endpoints-badge tests-endpoints-badge-pending tests-endpoints-badge-inline">ОЖИД</span>
+              до первого запуска). Роут
+              <code class="tests-code-hint">GET /api/tests/unit</code>.
             </p>
-            <div v-if="endpointsLastRunAt" class="tests-endpoints-last-run">
-              Результаты от: {{ endpointsLastRunAt }}
+            <div
+              v-for="section in unitBlocksView"
+              :key="section.block.id"
+              class="tests-fn-block"
+            >
+              <div class="tests-fn-block-head">
+                <h3 class="tests-fn-block-title">{{ section.block.title }}</h3>
+                <span class="tests-fn-block-rollup" :title="'Сводка по блоку: ' + section.rollupLabel">{{
+                  section.rollupLabel
+                }}</span>
+              </div>
+              <p v-if="section.block.description" class="tests-fn-block-desc">{{ section.block.description }}</p>
+              <div class="tests-endpoints-list-wrap tests-fn-block-list">
+                <ul class="tests-endpoints-list" role="list">
+                  <li
+                    v-for="row in section.rows"
+                    :key="row.test.id"
+                    class="tests-endpoints-list-item"
+                    :class="`tests-endpoints-status-${row.visual.status}`"
+                  >
+                    <div class="tests-test-row">
+                      <span
+                        class="tests-endpoints-badge"
+                        :class="`tests-endpoints-badge-${row.visual.status}`"
+                      >
+                        {{ row.visual.badgeText }}
+                      </span>
+                      <span class="tests-endpoints-list-title-inline">{{ row.test.title }}</span>
+                    </div>
+                    <code class="tests-fn-test-id">{{ row.test.id }}</code>
+                    <div v-if="row.visual.error" class="tests-test-row-error">{{ row.visual.error }}</div>
+                  </li>
+                </ul>
+              </div>
             </div>
-            <div class="tests-endpoints-list-wrap">
-              <ul class="tests-endpoints-list" role="list">
-                <li
-                  v-for="item in endpointsDisplay"
-                :key="item.id"
-                class="tests-endpoints-list-item"
-                :class="`tests-endpoints-status-${item.status}`"
-              >
-                <span class="tests-endpoints-badge" :class="`tests-endpoints-badge-${item.status}`">
-                  {{ item.status === 'todo' ? '[TODO]' : item.status === 'success' ? '[OK]' : '[FAIL]' }}
-                </span>
-                <span class="tests-endpoints-list-title-inline">{{ item.title }}</span>
-                <span v-if="item.error" class="tests-endpoints-list-error">{{ item.error }}</span>
-              </li>
-              </ul>
+            <div class="tests-endpoints-actions">
+              <button type="button" class="tests-run-group-btn" :disabled="unitLoading" @click="runUnitSuite">
+                <i class="fas" :class="unitLoading ? 'fa-spinner fa-spin' : 'fa-bolt'"></i>
+                {{ unitLoading ? 'Выполняется...' : 'Запустить юнит-набор' }}
+              </button>
+            </div>
+          </div>
+
+          <!-- Интеграция: сервер — блоки по слоям -->
+          <div v-if="showContent" v-show="testsSuiteTab === 'integration'" class="tests-card tests-endpoints-card">
+            <div class="tests-endpoints-header">
+              <i class="fas fa-server tests-endpoints-icon"></i>
+              <h2 class="tests-endpoints-title">Интеграция (сервер + Heap)</h2>
+            </div>
+            <p class="tests-endpoints-desc">
+              settings.lib, репозитории, dashboard.lib. Список проверок виден до запуска. Роут
+              <code class="tests-code-hint">GET /api/tests/integration</code>.
+            </p>
+            <div
+              v-for="section in integrationServerBlocksView"
+              :key="section.block.id"
+              class="tests-fn-block"
+            >
+              <div class="tests-fn-block-head">
+                <h3 class="tests-fn-block-title">{{ section.block.title }}</h3>
+                <span class="tests-fn-block-rollup">{{ section.rollupLabel }}</span>
+              </div>
+              <p v-if="section.block.description" class="tests-fn-block-desc">{{ section.block.description }}</p>
+              <div class="tests-endpoints-list-wrap tests-fn-block-list">
+                <ul class="tests-endpoints-list" role="list">
+                  <li
+                    v-for="row in section.rows"
+                    :key="row.test.id"
+                    class="tests-endpoints-list-item"
+                    :class="`tests-endpoints-status-${row.visual.status}`"
+                  >
+                    <div class="tests-test-row">
+                      <span
+                        class="tests-endpoints-badge"
+                        :class="`tests-endpoints-badge-${row.visual.status}`"
+                      >
+                        {{ row.visual.badgeText }}
+                      </span>
+                      <span class="tests-endpoints-list-title-inline">{{ row.test.title }}</span>
+                    </div>
+                    <code class="tests-fn-test-id">{{ row.test.id }}</code>
+                    <div v-if="row.visual.error" class="tests-test-row-error">{{ row.visual.error }}</div>
+                  </li>
+                </ul>
+              </div>
             </div>
             <div class="tests-endpoints-actions">
               <button
                 type="button"
                 class="tests-run-group-btn"
-                :disabled="endpointsLoading"
-                @click="runEndpointsTests"
+                :disabled="integrationLoading"
+                @click="runIntegrationSuite"
               >
-                <i class="fas" :class="endpointsLoading ? 'fa-spinner fa-spin' : 'fa-bolt'"></i>
-                {{ endpointsLoading ? 'Проверяем...' : 'Запустить проверку эндпоинтов' }}
+                <i class="fas" :class="integrationLoading ? 'fa-spinner fa-spin' : 'fa-bolt'"></i>
+                {{ integrationLoading ? 'Выполняется...' : 'Запустить интеграцию (сервер)' }}
               </button>
             </div>
           </div>
 
-          <!-- Блок 2: Библиотека настроек -->
-          <div v-if="showContent" class="tests-card tests-endpoints-card">
+          <!-- Интеграция: HTTP страниц шаблона -->
+          <div v-if="showContent" v-show="testsSuiteTab === 'integration'" class="tests-card tests-endpoints-card">
             <div class="tests-endpoints-header">
-              <i class="fas fa-cog tests-endpoints-icon"></i>
-              <h2 class="tests-endpoints-title">Библиотека настроек</h2>
+              <i class="fas fa-globe tests-endpoints-icon"></i>
+              <h2 class="tests-endpoints-title">Интеграция (HTTP страниц)</h2>
             </div>
-            <p class="tests-endpoints-desc">
-              Тесты библиотеки настроек (settings.lib).
-            </p>
-            <div v-if="settingsLastRunAt" class="tests-endpoints-last-run">
-              Результаты от: {{ settingsLastRunAt }}
-            </div>
-            <div class="tests-endpoints-list-wrap">
-              <ul class="tests-endpoints-list" role="list">
-                <li
-                  v-for="item in settingsDisplay"
-                  :key="item.id"
-                  class="tests-endpoints-list-item"
-                  :class="`tests-endpoints-status-${item.status}`"
-                >
-                  <span class="tests-endpoints-badge" :class="`tests-endpoints-badge-${item.status}`">
-                    {{ item.status === 'todo' ? '[TODO]' : item.status === 'success' ? '[OK]' : '[FAIL]' }}
-                  </span>
-                  <span class="tests-endpoints-list-title-inline">{{ item.title }}</span>
-                  <span v-if="item.error" class="tests-endpoints-list-error">{{ item.error }}</span>
-                </li>
-              </ul>
+            <p class="tests-endpoints-desc">GET маршрутов из шаблона (ожидается HTTP 200). Список эндпоинтов — до запуска.</p>
+            <div
+              v-for="section in integrationHttpBlocksView"
+              :key="section.block.id"
+              class="tests-fn-block"
+            >
+              <div class="tests-fn-block-head">
+                <h3 class="tests-fn-block-title">{{ section.block.title }}</h3>
+                <span class="tests-fn-block-rollup">{{ section.rollupLabel }}</span>
+              </div>
+              <p v-if="section.block.description" class="tests-fn-block-desc">{{ section.block.description }}</p>
+              <div class="tests-endpoints-list-wrap tests-fn-block-list">
+                <ul class="tests-endpoints-list" role="list">
+                  <li
+                    v-for="row in section.rows"
+                    :key="row.test.id"
+                    class="tests-endpoints-list-item"
+                    :class="`tests-endpoints-status-${row.visual.status}`"
+                  >
+                    <div class="tests-test-row">
+                      <span
+                        class="tests-endpoints-badge"
+                        :class="`tests-endpoints-badge-${row.visual.status}`"
+                      >
+                        {{ row.visual.badgeText }}
+                      </span>
+                      <span class="tests-endpoints-list-title-inline">{{ row.test.title }}</span>
+                    </div>
+                    <code class="tests-fn-test-id">{{ row.test.id }}</code>
+                    <div v-if="row.visual.error" class="tests-test-row-error">{{ row.visual.error }}</div>
+                  </li>
+                </ul>
+              </div>
             </div>
             <div class="tests-endpoints-actions">
-              <button
-                type="button"
-                class="tests-run-group-btn"
-                :disabled="settingsLoading"
-                @click="runSettingsTests"
-              >
-                <i class="fas" :class="settingsLoading ? 'fa-spinner fa-spin' : 'fa-bolt'"></i>
-                {{ settingsLoading ? 'Проверяем...' : 'Запустить проверку библиотеки настроек' }}
-              </button>
-            </div>
-          </div>
-
-          <!-- Блок 3: Репозиторий настроек -->
-          <div v-if="showContent" class="tests-card tests-endpoints-card">
-            <div class="tests-endpoints-header">
-              <i class="fas fa-table tests-endpoints-icon"></i>
-              <h2 class="tests-endpoints-title">Репозиторий настроек</h2>
-            </div>
-            <p class="tests-endpoints-desc">
-              Тесты репозитория настроек (settings.repo).
-            </p>
-            <div v-if="settingsRepoLastRunAt" class="tests-endpoints-last-run">
-              Результаты от: {{ settingsRepoLastRunAt }}
-            </div>
-            <div class="tests-endpoints-list-wrap">
-              <ul class="tests-endpoints-list" role="list">
-                <li
-                  v-for="item in settingsRepoDisplay"
-                  :key="item.id"
-                  class="tests-endpoints-list-item"
-                  :class="`tests-endpoints-status-${item.status}`"
-                >
-                  <span class="tests-endpoints-badge" :class="`tests-endpoints-badge-${item.status}`">
-                    {{ item.status === 'todo' ? '[TODO]' : item.status === 'success' ? '[OK]' : '[FAIL]' }}
-                  </span>
-                  <span class="tests-endpoints-list-title-inline">{{ item.title }}</span>
-                  <span v-if="item.error" class="tests-endpoints-list-error">{{ item.error }}</span>
-                </li>
-              </ul>
-            </div>
-            <div class="tests-endpoints-actions">
-              <button
-                type="button"
-                class="tests-run-group-btn"
-                :disabled="settingsRepoLoading"
-                @click="runSettingsRepoTests"
-              >
-                <i class="fas" :class="settingsRepoLoading ? 'fa-spinner fa-spin' : 'fa-bolt'"></i>
-                {{ settingsRepoLoading ? 'Проверяем...' : 'Запустить проверку репозитория настроек' }}
-              </button>
-            </div>
-          </div>
-
-          <!-- Блок 4: Библиотека логов -->
-          <div v-if="showContent" class="tests-card tests-endpoints-card">
-            <div class="tests-endpoints-header">
-              <i class="fas fa-file-alt tests-endpoints-icon"></i>
-              <h2 class="tests-endpoints-title">Библиотека логов</h2>
-            </div>
-            <p class="tests-endpoints-desc">
-              Тесты библиотеки логов (logger.lib).
-            </p>
-            <div v-if="loggerLibLastRunAt" class="tests-endpoints-last-run">
-              Результаты от: {{ loggerLibLastRunAt }}
-            </div>
-            <div class="tests-endpoints-list-wrap">
-              <ul class="tests-endpoints-list" role="list">
-                <li
-                  v-for="item in loggerLibDisplay"
-                  :key="item.id"
-                  class="tests-endpoints-list-item"
-                  :class="`tests-endpoints-status-${item.status}`"
-                >
-                  <span class="tests-endpoints-badge" :class="`tests-endpoints-badge-${item.status}`">
-                    {{ item.status === 'todo' ? '[TODO]' : item.status === 'success' ? '[OK]' : '[FAIL]' }}
-                  </span>
-                  <span class="tests-endpoints-list-title-inline">{{ item.title }}</span>
-                  <span v-if="item.error" class="tests-endpoints-list-error">{{ item.error }}</span>
-                </li>
-              </ul>
-            </div>
-            <div class="tests-endpoints-actions">
-              <button
-                type="button"
-                class="tests-run-group-btn"
-                :disabled="loggerLibLoading"
-                @click="runLoggerLibTests"
-              >
-                <i class="fas" :class="loggerLibLoading ? 'fa-spinner fa-spin' : 'fa-bolt'"></i>
-                {{ loggerLibLoading ? 'Проверяем...' : 'Запустить проверку библиотеки логов' }}
-              </button>
-            </div>
-          </div>
-
-          <!-- Блок 5: Репозиторий логов -->
-          <div v-if="showContent" class="tests-card tests-endpoints-card">
-            <div class="tests-endpoints-header">
-              <i class="fas fa-database tests-endpoints-icon"></i>
-              <h2 class="tests-endpoints-title">Репозиторий логов</h2>
-            </div>
-            <p class="tests-endpoints-desc">
-              Тесты репозитория логов (logs.repo).
-            </p>
-            <div v-if="logsRepoLastRunAt" class="tests-endpoints-last-run">
-              Результаты от: {{ logsRepoLastRunAt }}
-            </div>
-            <div class="tests-endpoints-list-wrap">
-              <ul class="tests-endpoints-list" role="list">
-                <li
-                  v-for="item in logsRepoDisplay"
-                  :key="item.id"
-                  class="tests-endpoints-list-item"
-                  :class="`tests-endpoints-status-${item.status}`"
-                >
-                  <span class="tests-endpoints-badge" :class="`tests-endpoints-badge-${item.status}`">
-                    {{ item.status === 'todo' ? '[TODO]' : item.status === 'success' ? '[OK]' : '[FAIL]' }}
-                  </span>
-                  <span class="tests-endpoints-list-title-inline">{{ item.title }}</span>
-                  <span v-if="item.error" class="tests-endpoints-list-error">{{ item.error }}</span>
-                </li>
-              </ul>
-            </div>
-            <div class="tests-endpoints-actions">
-              <button
-                type="button"
-                class="tests-run-group-btn"
-                :disabled="logsRepoLoading"
-                @click="runLogsRepoTests"
-              >
-                <i class="fas" :class="logsRepoLoading ? 'fa-spinner fa-spin' : 'fa-bolt'"></i>
-                {{ logsRepoLoading ? 'Проверяем...' : 'Запустить проверку репозитория логов' }}
-              </button>
-            </div>
-          </div>
-
-          <!-- Блок 6: Библиотека админки -->
-          <div v-if="showContent" class="tests-card tests-endpoints-card">
-            <div class="tests-endpoints-header">
-              <i class="fas fa-chart-line tests-endpoints-icon"></i>
-              <h2 class="tests-endpoints-title">Библиотека админки</h2>
-            </div>
-            <p class="tests-endpoints-desc">
-              Тесты библиотеки админки (dashboard.lib).
-            </p>
-            <div v-if="dashboardLibLastRunAt" class="tests-endpoints-last-run">
-              Результаты от: {{ dashboardLibLastRunAt }}
-            </div>
-            <div class="tests-endpoints-list-wrap">
-              <ul class="tests-endpoints-list" role="list">
-                <li
-                  v-for="item in dashboardLibDisplay"
-                  :key="item.id"
-                  class="tests-endpoints-list-item"
-                  :class="`tests-endpoints-status-${item.status}`"
-                >
-                  <span class="tests-endpoints-badge" :class="`tests-endpoints-badge-${item.status}`">
-                    {{ item.status === 'todo' ? '[TODO]' : item.status === 'success' ? '[OK]' : '[FAIL]' }}
-                  </span>
-                  <span class="tests-endpoints-list-title-inline">{{ item.title }}</span>
-                  <span v-if="item.error" class="tests-endpoints-list-error">{{ item.error }}</span>
-                </li>
-              </ul>
-            </div>
-            <div class="tests-endpoints-actions">
-              <button
-                type="button"
-                class="tests-run-group-btn"
-                :disabled="dashboardLibLoading"
-                @click="runDashboardLibTests"
-              >
-                <i class="fas" :class="dashboardLibLoading ? 'fa-spinner fa-spin' : 'fa-bolt'"></i>
-                {{ dashboardLibLoading ? 'Проверяем...' : 'Запустить проверку библиотеки админки' }}
+              <button type="button" class="tests-run-group-btn" :disabled="httpPagesLoading" @click="runHttpPageChecks">
+                <i class="fas" :class="httpPagesLoading ? 'fa-spinner fa-spin' : 'fa-bolt'"></i>
+                {{ httpPagesLoading ? 'Проверяем...' : 'Проверить страницы' }}
               </button>
             </div>
           </div>
@@ -1140,6 +1017,15 @@ const runAllTests = async () => {
   min-height: 1.5rem;
 }
 
+.tests-code-hint {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.9em;
+  color: var(--color-accent);
+  background: rgba(211, 35, 75, 0.1);
+  padding: 0.1rem 0.35rem;
+  border-radius: 3px;
+}
+
 .typing-cursor {
   display: inline-block;
   color: var(--color-accent);
@@ -1207,6 +1093,18 @@ const runAllTests = async () => {
   margin: 0;
 }
 
+.tests-dashboard-tab-label {
+  font-size: 0.95rem;
+  color: var(--color-text-secondary);
+  margin: 0 0 1rem 0;
+  line-height: 1.4;
+}
+
+.tests-dashboard-tab-label strong {
+  color: var(--color-text);
+  font-weight: 600;
+}
+
 .tests-dashboard-metrics {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -1258,6 +1156,40 @@ const runAllTests = async () => {
   justify-content: flex-start;
 }
 
+.tests-dashboard-actions-row {
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.tests-run-full-suite-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.65rem 1.25rem;
+  font-family: inherit;
+  font-size: 1.06rem;
+  color: var(--color-text);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--color-border-light);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  letter-spacing: 0.03em;
+}
+
+.tests-run-full-suite-btn:hover:not(:disabled) {
+  border-color: var(--color-accent);
+  color: #fff;
+  box-shadow: 0 0 14px rgba(211, 35, 75, 0.22);
+}
+
+.tests-run-full-suite-btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
 .tests-run-all-btn {
   display: inline-flex;
   align-items: center;
@@ -1284,6 +1216,132 @@ const runAllTests = async () => {
   opacity: 0.7;
   cursor: not-allowed;
   transform: none;
+}
+
+/* Вкладки юнит / интеграция */
+.tests-suite-tabs-wrap {
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.tests-suite-tabs-wrap--in-dashboard {
+  margin-bottom: 1.25rem;
+  text-align: left;
+}
+
+.tests-suite-tabs-wrap--in-dashboard .tests-suite-tabs-hint {
+  max-width: none;
+  margin-left: 0;
+  margin-right: 0;
+}
+
+.tests-suite-tabs-hint {
+  font-size: 0.92rem;
+  color: var(--color-text-tertiary);
+  line-height: 1.45;
+  margin: 0 auto 1rem auto;
+  max-width: 34rem;
+}
+
+.tests-suite-tabs {
+  display: inline-flex;
+  gap: 0;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  overflow: hidden;
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.tests-suite-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.65rem 1.35rem;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.95rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+  background: rgba(0, 0, 0, 0.4);
+  border: none;
+  border-right: 1px solid var(--color-border);
+  cursor: pointer;
+  transition:
+    color 0.15s ease,
+    background 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.tests-suite-tab:last-child {
+  border-right: none;
+}
+
+.tests-suite-tab:hover {
+  color: var(--color-text);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.tests-suite-tab.active {
+  color: #fff;
+  background: linear-gradient(180deg, var(--color-accent-medium) 0%, rgba(211, 35, 75, 0.12) 100%);
+  box-shadow: inset 0 0 24px rgba(211, 35, 75, 0.15);
+}
+
+.tests-suite-tab i {
+  font-size: 0.9rem;
+  opacity: 0.9;
+}
+
+/* Строка теста: бейдж, название, кнопка запуска */
+.tests-test-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  width: 100%;
+  flex-wrap: nowrap;
+}
+
+.tests-test-row .tests-endpoints-list-title-inline {
+  flex: 1;
+  min-width: 0;
+}
+
+.tests-test-row-error {
+  font-size: 0.92rem;
+  color: var(--color-text-secondary);
+  width: 100%;
+  padding: 0.15rem 0 0 0.15rem;
+  line-height: 1.35;
+}
+
+.tests-run-single-btn {
+  flex-shrink: 0;
+  width: 2.5rem;
+  height: 2.5rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  font-size: 0.82rem;
+  color: var(--color-accent);
+  background: rgba(211, 35, 75, 0.08);
+  border: 1px solid rgba(211, 35, 75, 0.4);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.tests-run-single-btn:hover:not(:disabled) {
+  background: rgba(211, 35, 75, 0.2);
+  box-shadow: 0 0 12px rgba(211, 35, 75, 0.28);
+  color: #fff;
+}
+
+.tests-run-single-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 
 /* Блок «Проверка эндпоинтов» */
@@ -1313,8 +1371,67 @@ const runAllTests = async () => {
 .tests-endpoints-desc {
   font-size: 1.02rem;
   color: var(--color-text-secondary);
-  margin: 0 0 0.5rem 0;
+  margin: 0 0 1rem 0;
   line-height: 1.45;
+}
+
+/* Функциональные подблоки внутри карточки тестов */
+.tests-fn-block {
+  margin-bottom: 1.5rem;
+  padding: 1rem 1rem 0.25rem;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.tests-fn-block:last-of-type {
+  margin-bottom: 0.75rem;
+}
+
+.tests-fn-block-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  margin-bottom: 0.35rem;
+}
+
+.tests-fn-block-title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--color-text);
+  font-family: 'Share Tech Mono', monospace;
+  letter-spacing: 0.04em;
+}
+
+.tests-fn-block-rollup {
+  font-size: 0.82rem;
+  color: var(--color-text-secondary);
+  font-family: 'Share Tech Mono', monospace;
+  max-width: 100%;
+  text-align: right;
+}
+
+.tests-fn-block-desc {
+  margin: 0 0 0.65rem 0;
+  font-size: 0.92rem;
+  color: var(--color-text-tertiary);
+  line-height: 1.4;
+}
+
+.tests-fn-block-list {
+  margin-bottom: 0.5rem;
+}
+
+.tests-fn-test-id {
+  display: block;
+  margin: 0.2rem 0 0 0;
+  padding-left: 0.15rem;
+  font-size: 0.78rem;
+  color: var(--color-text-tertiary);
+  font-family: 'Share Tech Mono', monospace;
 }
 
 .tests-endpoints-last-run {
@@ -1370,9 +1487,9 @@ const runAllTests = async () => {
 
 .tests-endpoints-list-item {
   display: flex;
-  align-items: flex-start;
-  flex-wrap: wrap;
-  gap: 0.6rem;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.25rem;
   font-size: 1.02rem;
   min-height: 2.25rem;
   padding: 0.5rem 0;
@@ -1402,6 +1519,12 @@ const runAllTests = async () => {
   margin-left: -0.5rem;
 }
 
+.tests-endpoints-list-item.tests-endpoints-status-pending {
+  border-left: 3px solid rgba(245, 158, 11, 0.65);
+  padding-left: 0.5rem;
+  margin-left: -0.5rem;
+}
+
 .tests-endpoints-badge {
   flex-shrink: 0;
   font-size: 0.86rem;
@@ -1415,6 +1538,20 @@ const runAllTests = async () => {
   background: rgba(255, 255, 255, 0.06);
   color: var(--color-text-tertiary);
   border: 1px solid var(--color-border);
+}
+
+.tests-endpoints-badge-pending {
+  background: rgba(245, 158, 11, 0.14);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.45);
+}
+
+.tests-endpoints-badge-inline {
+  display: inline-flex;
+  vertical-align: middle;
+  margin: 0 0.15rem;
+  font-size: 0.72rem;
+  padding: 0.1rem 0.35rem;
 }
 
 .tests-endpoints-badge-success {
