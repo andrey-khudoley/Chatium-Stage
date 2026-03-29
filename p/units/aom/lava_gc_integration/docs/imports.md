@@ -2,7 +2,11 @@
 
 Роль **`ctx`** в тестах и запуск проверок со страницы тестов — [testing.md](./testing.md).
 
-Актуально для реализованной интеграции GetCourse + Lava: таблицы `lava_*`, репозитории в `repos/`, `lib/lava-types.ts`, `lib/lava-api.client.ts`, `lib/getcourse-api.client.ts`, `lib/settings-save-credentials.lib.ts`, `lib/lava-payment.service.ts`, `lib/lava-webhook.service.ts`, эндпоинты `api/integrations/lava/*`, тесты в `api/tests/endpoints-check/` — в т.ч. `integration-gc-credentials.ts`, `integration-lava-credentials.ts`, `integration-credentials-both.ts`, `settings-save-credentials-unit.ts`, `lava-settings-getters.ts`, `lava-repos.ts`, `lava-webhook-service.ts`, `getcourse-deal-update.ts`, `lava-api-catalog.ts`, `lava-payment-link-route.ts`, `lava-api-client.ts`, `payment-link.ts`.
+Актуально для реализованной интеграции GetCourse + Lava: таблицы `lava_*`, репозитории в `repos/`, `lib/lava-types.ts`, `lib/lava-api.client.ts`, `lib/getcourse-api.client.ts`, `lib/settings-save-credentials.lib.ts`, `lib/lava-payment.service.ts`, `lib/lava-webhook.service.ts`, эндпоинты `api/integrations/lava/*`, тесты в `api/tests/endpoints-check/` — в т.ч. `integration-gc-credentials.ts`, `integration-lava-credentials.ts`, `integration-credentials-both.ts`, `settings-save-credentials-unit.ts`, `page-routes-unit.ts`, `lava-settings-getters.ts`, `lava-repos.ts`, `lava-webhook-service.ts`, `getcourse-deal-update.ts`, `lava-api-catalog.ts`, `lava-payment-link-route.ts`, `lava-api-client.ts`, `payment-link.ts`.
+
+### `./shared/pageRouteProbe.ts`
+- первая строка: `// @shared`
+- `evaluatePageRouteResponse` — разбор ответа HTML-маршрута для интеграционных проверок на вкладке «Интеграция» (`TestsPage.vue`, `fetch` из браузера).
 
 ## 1) Страницы‑роуты (TSX entrypoints)
 
@@ -415,6 +419,17 @@
 - `../../../shared/gcSettingKeys` → `GC_SETTING_KEYS`
 - `../../../shared/lavaSettingKeys` → `LAVA_SETTING_KEYS`
 - `../../../lib/settings-save-credentials.lib` → `*`
+- `../../../lib/logger.lib` → `*`
+
+### `./api/tests/endpoints-check/page-routes-unit.ts`
+- **без** `@shared-route` (импорты `app.html`-роутов с Vue)
+- `@app/auth` → `requireRealUser`
+- `../../../index` → `indexPageRoute`
+- `../../../web/admin/index` → `adminPageRoute`
+- `../../../web/profile/index` → `profilePageRoute`
+- `../../../web/login/index` → `loginPageRoute`
+- `../../../web/tests/index` → `testsPageRoute`
+- `../../../shared/projectRoot` → `PROJECT_ROOT`
 - `../../../lib/logger.lib` → `*`
 
 ### `./api/tests/endpoints-check/lava-api-client.ts`

@@ -28,10 +28,13 @@
 
 То есть проверяемая логика не зависит от «мокнутого аккаунта»; зависимость от `ctx` минимальна и не относится к сценарию слияния ключей.
 
+**Юнит по страницам (`route.run`):** GET `api/tests/endpoints-check/page-routes-unit.ts` — `requireRealUser(ctx)`; для маршрутов `/`, `/web/admin`, `/web/profile`, `/web/login`, `/web/tests` вызывается `route.run(ctx, req)` с подставленным URL под `PROJECT_ROOT` (тот же реальный `ctx`, что у GET к API). Проверяется отсутствие исключений и «приемлемый» ответ (JSX или похожий на редирект). Это не HTTP-интеграция: сеть не используется; полная проверка ответа платформы по HTTP — на вкладке «Интеграция» (`pageRouteProbe`).
+
 ## Интеграционные проверки (Heap + внешние API)
 
 - GET `integration-gc-credentials` и `integration-lava-credentials` читают настройки из Heap через **реальный** `ctx` и выполняют живые запросы к GetCourse / Lava (по одному эндпоинту на интеграцию). На вкладке «Интеграция» страницы `/web/tests` эти проверки показываются **двумя строками**, как отдельные поля в админке.
-- Дополнительно в коде есть GET `integration-credentials-both` (оба чекера в одном ответе) — для API/диагностики; UI вкладки «Интеграция» использует два отдельных GET.
+- Дополнительно в коде есть GET `integration-credentials-both` (оба чекера в одном ответе) — для API/диагностики; UI вкладки «Интеграция» использует два отдельных GET к Heap **после** блока «Страницы приложения».
+- **Страницы (интеграция):** с браузера на `/web/tests` — `fetch` с `credentials: 'include'` и `redirect: 'manual'` по маршрутам `/`, `/web/admin`, `/web/profile`, `/web/login`, `/web/tests`; разбор через `shared/pageRouteProbe.ts` (серверный `request()` к тем же URL не подставляет сессию пользователя). См. `inner/docs/048-chatium-http-response-probes.md`.
 - Итог зависит от данных в Heap и доступности внешних сервисов.
 
 ## `route.run` в серверном коде
@@ -45,6 +48,27 @@
 - Список категорий тестов: `GET /api/tests/list` (`api/tests/list.ts`).
 - Таблица путей и ответов: `docs/api.md`, раздел «Тесты».
 
+## Временные HTTP-пробы (`temp/`)
+
+Для настройки интеграционных проверок маршрутов (серверный `request` и разбор ответа) иногда нужно увидеть, **как именно** Chatium отдаёт статус и тело при 3xx/4xx/5xx или при «логической» ошибке в JSON при HTTP 200.
+
+В корне проекта добавлен каталог **`temp/`** (только диагностика, не прод):
+
+| Маршрут (относительно `PROJECT_ROOT`) | Смысл |
+| --- | --- |
+| `./temp` | HTML-оглавление со ссылками на пробы |
+| `./temp/http-200` | Обычная HTML-страница (`app.html`) |
+| `./temp/http-200-json-error` | JSON, HTTP 200, в теле `ok: false` |
+| `./temp/http-301` | 301 + `Location` на `../http-200` |
+| `./temp/http-302` | `ctx.resp.redirect` (обычно 302) |
+| `./temp/http-400` … `./temp/http-403` | `ctx.resp.json(..., код)` |
+| `./temp/http-404`, `./temp/http-500` | HTML через `rawHttpBody` + статус |
+| `./temp/throws-error` | Намеренный `throw` в обработчике |
+
+Полный URL в браузере: `https://<домен-воркспейса>/p/units/aom/lava_gc_integration/temp` и далее сегменты из таблицы.
+
+Эмпирически зафиксированные форматы ответов (в т.ч. случай **HTTP 200** при `ctx.resp.json(..., 4xx)`) описаны в **`inner/docs/048-chatium-http-response-probes.md`** — использовать при интеграционных проверках маршрутов.
+
 ## Связанные файлы
 
 | Назначение | Путь |
@@ -53,3 +77,6 @@
 | Каталог тестов (API) | `api/tests/list.ts` |
 | Проверки эндпоинтов | `api/tests/endpoints-check/*.ts` |
 | Живые проверки учётных из Heap | `lib/integration-credentials.lib.ts` |
+| HTTP-пробы (форматы ответов) | `temp/*/index.tsx`, `temp/index.tsx` |
+| Разбор ответа страниц в UI | `shared/pageRouteProbe.ts` |
+| Юнит страниц (`route.run`) | `api/tests/endpoints-check/page-routes-unit.ts` |

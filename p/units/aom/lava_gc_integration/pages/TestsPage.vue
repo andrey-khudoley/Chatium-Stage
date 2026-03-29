@@ -8,6 +8,7 @@ import { createComponentLogger, setLogSink, type LogEntry } from '../shared/logg
 import { getRecentLogsRoute } from '../api/admin/logs/recent'
 import { getLogsBeforeRoute } from '../api/admin/logs/before'
 import { PROJECT_ROOT } from '../shared/projectRoot'
+import { evaluatePageRouteResponse } from '../shared/pageRouteProbe'
 
 const log = createComponentLogger('TestsPage')
 
@@ -277,7 +278,9 @@ type SingleRunGroup =
   | 'dashboardLib'
   | 'settingKeys'
   | 'unitSaveCreds'
+  | 'unitPageRoutes'
   | 'integrationBoth'
+  | 'integrationPages'
 
 const singleTestRun = ref<{ group: SingleRunGroup; id: string } | null>(null)
 
@@ -871,6 +874,184 @@ async function runSingleUnitSaveCredsTest(testId: string) {
   }
 }
 
+/* --- Вкладка «Юнит»: страницы через route.run (тот же ctx, без HTTP) --- */
+const UNIT_PAGE_ROUTES: Array<{ id: string; title: string }> = [
+  { id: 'index', title: 'Главная (/)' },
+  { id: 'web-admin', title: 'Админка /web/admin' },
+  { id: 'web-profile', title: 'Профиль /web/profile' },
+  { id: 'web-login', title: 'Вход /web/login' },
+  { id: 'web-tests', title: 'Тесты /web/tests' }
+]
+const unitPageRoutesResults = ref<TestResult[]>([])
+const unitPageRoutesLoading = ref(false)
+const unitPageRoutesLastRunAt = ref<string | null>(null)
+
+const unitPageRoutesDisplay = computed(() => {
+  const byId = new Map(unitPageRoutesResults.value.map((r) => [r.id, r]))
+  return UNIT_PAGE_ROUTES.map((t) => {
+    const res = byId.get(t.id)
+    return {
+      id: t.id,
+      title: t.title,
+      status: res === undefined ? 'todo' : res.passed ? 'success' : 'fail',
+      error: res && !res.passed ? res.error : undefined
+    }
+  })
+})
+
+async function runUnitPageRoutesTests() {
+  unitPageRoutesLoading.value = true
+  unitPageRoutesResults.value = []
+  const baseUrl = getApiBaseUrl().replace(/\/$/, '')
+  log.info('Юнит: страницы (route.run)')
+  try {
+    const res = await fetch(`${baseUrl}/api/tests/endpoints-check/page-routes-unit`, {
+      method: 'GET',
+      credentials: 'include'
+    })
+    const data = (await res.json().catch(() => null)) as {
+      success?: boolean
+      results?: TestResult[]
+      error?: string
+    }
+    if (data?.success && Array.isArray(data.results)) {
+      unitPageRoutesResults.value = data.results
+    } else {
+      unitPageRoutesResults.value = UNIT_PAGE_ROUTES.map((t) => ({
+        id: t.id,
+        title: t.title,
+        passed: false,
+        error: data?.error || 'Ошибка запроса'
+      }))
+    }
+    unitPageRoutesLastRunAt.value = new Date().toLocaleString('ru-RU')
+  } finally {
+    unitPageRoutesLoading.value = false
+  }
+}
+
+async function runSingleUnitPageRouteTest(testId: string) {
+  const meta = UNIT_PAGE_ROUTES.find((s) => s.id === testId)
+  if (!meta) return
+  singleTestRun.value = { group: 'unitPageRoutes', id: testId }
+  const baseUrl = getApiBaseUrl().replace(/\/$/, '')
+  try {
+    const res = await fetch(
+      `${baseUrl}/api/tests/endpoints-check/page-routes-unit?testId=${encodeURIComponent(testId)}`,
+      { method: 'GET', credentials: 'include' }
+    )
+    const data = (await res.json().catch(() => null)) as {
+      success?: boolean
+      results?: TestResult[]
+      error?: string
+    }
+    if (data?.success && Array.isArray(data.results) && data.results.length > 0) {
+      unitPageRoutesResults.value = upsertTestResults(unitPageRoutesResults.value, data.results)
+    } else {
+      unitPageRoutesResults.value = upsertTestResults(unitPageRoutesResults.value, [
+        { id: testId, title: meta.title, passed: false, error: data?.error || 'Ошибка запроса' }
+      ])
+    }
+    unitPageRoutesLastRunAt.value = new Date().toLocaleString('ru-RU')
+  } finally {
+    singleTestRun.value = null
+  }
+}
+
+/* --- Вкладка «Интеграция»: страницы — только fetch из браузера (cookies → сессия админа) --- */
+const INTEGRATION_PAGE_ROUTES: Array<{ id: string; path: string; title: string }> = [
+  { id: 'index', path: '/', title: 'Главная (/)' },
+  { id: 'web-admin', path: '/web/admin', title: 'Админка /web/admin' },
+  { id: 'web-profile', path: '/web/profile', title: 'Профиль /web/profile' },
+  { id: 'web-login', path: '/web/login', title: 'Вход /web/login' },
+  { id: 'web-tests', path: '/web/tests', title: 'Тесты /web/tests' }
+]
+const integrationPageResults = ref<TestResult[]>([])
+const integrationPageLoading = ref(false)
+const integrationPageLastRunAt = ref<string | null>(null)
+
+const integrationPageDisplay = computed(() => {
+  const byId = new Map(integrationPageResults.value.map((r) => [r.id, r]))
+  return INTEGRATION_PAGE_ROUTES.map((t) => {
+    const res = byId.get(t.id)
+    return {
+      id: t.id,
+      title: t.title,
+      status: res === undefined ? 'todo' : res.passed ? 'success' : 'fail',
+      error: res && !res.passed ? res.error : undefined
+    }
+  })
+})
+
+function buildIntegrationPageUrl(baseUrl: string, path: string): string {
+  const base = baseUrl.replace(/\/$/, '')
+  return path === '/' ? base : `${base}${path}`
+}
+
+async function probeIntegrationPage(
+  baseUrl: string,
+  route: { id: string; path: string; title: string }
+): Promise<TestResult> {
+  const url = buildIntegrationPageUrl(baseUrl, route.path)
+  try {
+    const res = await fetch(url, {
+      method: 'GET',
+      credentials: 'include',
+      redirect: 'manual'
+    })
+    const status = res.status
+    let bodyText = ''
+    if (status >= 200 && status < 300) {
+      bodyText = await res.text()
+    }
+    const ev = evaluatePageRouteResponse(status, bodyText, res.headers)
+    return {
+      id: route.id,
+      title: route.title,
+      passed: ev.ok,
+      error: ev.ok ? undefined : ev.detail
+    }
+  } catch (e) {
+    return {
+      id: route.id,
+      title: route.title,
+      passed: false,
+      error: (e as Error)?.message ?? String(e)
+    }
+  }
+}
+
+async function runIntegrationPageRoutesTests() {
+  integrationPageLoading.value = true
+  integrationPageResults.value = []
+  const baseUrl = getApiBaseUrl().replace(/\/$/, '')
+  log.info('Интеграция: проверка страниц (fetch из браузера + разбор тела)')
+  try {
+    const out: TestResult[] = []
+    for (const route of INTEGRATION_PAGE_ROUTES) {
+      out.push(await probeIntegrationPage(baseUrl, route))
+    }
+    integrationPageResults.value = out
+    integrationPageLastRunAt.value = new Date().toLocaleString('ru-RU')
+  } finally {
+    integrationPageLoading.value = false
+  }
+}
+
+async function runSingleIntegrationPageTest(testId: string) {
+  const meta = INTEGRATION_PAGE_ROUTES.find((s) => s.id === testId)
+  if (!meta) return
+  singleTestRun.value = { group: 'integrationPages', id: testId }
+  const baseUrl = getApiBaseUrl().replace(/\/$/, '')
+  try {
+    const one = await probeIntegrationPage(baseUrl, meta)
+    integrationPageResults.value = upsertTestResults(integrationPageResults.value, [one])
+    integrationPageLastRunAt.value = new Date().toLocaleString('ru-RU')
+  } finally {
+    singleTestRun.value = null
+  }
+}
+
 /* --- Вкладка «Интеграция»: GetCourse и Lava отдельными запросами (как в админке) --- */
 const INTEGRATION_TAB_CREDENTIAL_TESTS: Array<{
   id: string
@@ -1058,8 +1239,9 @@ const runAllTests = async () => {
   log.info('Запуск всех тестов', { mode: testSuiteMode.value })
   try {
     if (testSuiteMode.value === 'unit') {
+      await runUnitPageRoutesTests()
       await runUnitSaveCredsTests()
-      const all = [...unitSaveCredsResults.value]
+      const all = [...unitPageRoutesResults.value, ...unitSaveCredsResults.value]
       const passed = all.filter((r) => r.passed).length
       const failed = all.filter((r) => !r.passed).length
       testMetrics.value = {
@@ -1073,8 +1255,9 @@ const runAllTests = async () => {
       return
     }
     if (testSuiteMode.value === 'integration') {
+      await runIntegrationPageRoutesTests()
       await runIntegrationBothTests()
-      const all = [...integrationBothResults.value]
+      const all = [...integrationPageResults.value, ...integrationBothResults.value]
       const passed = all.filter((r) => r.passed).length
       const failed = all.filter((r) => !r.passed).length
       testMetrics.value = {
@@ -1178,10 +1361,11 @@ const runAllTests = async () => {
                 </div>
                 <p class="tests-mode-hint">
                   <template v-if="testSuiteMode === 'unit'">
-                    Изолированные проверки слияния полей gc_api_key / gc_account_domain и Lava при сохранении (без сети и Heap).
+                    Слияние ключей save (без сети) и быстрый <code class="tests-inline-code">route.run</code> по
+                    страницам (тот же ctx).
                   </template>
                   <template v-else-if="testSuiteMode === 'integration'">
-                    Два сценария: живые запросы к GetCourse PL API и к Lava по учётным данным из Heap (отдельно, как поля в админке).
+                    Страницы: серверный HTTP к маршрутам /, /web/* с разбором ответа; затем живые проверки GetCourse и Lava по Heap (как в админке).
                   </template>
                   <template v-else>
                     Прежний набор: эндпоинты, слои settings/logger/dashboard/repos и проверки ключей GetCourse / Lava в Heap.
@@ -1217,15 +1401,83 @@ const runAllTests = async () => {
                       !hasRunnableTestsInMode
                         ? 'Нет сценариев'
                         : testSuiteMode === 'unit'
-                          ? 'Запустить все юнит-проверки слияния ключей'
+                          ? 'Страницы (route.run) + слияние ключей'
                           : testSuiteMode === 'integration'
-                            ? 'Запустить проверки GetCourse и Lava (Heap)'
+                            ? 'Страницы (HTTP) + GetCourse и Lava (Heap)'
                             : 'Запустить весь устаревший набор'
                     "
                     @click="runAllTests"
                   >
                     <i class="fas" :class="runAllTestsLoading ? 'fa-spinner fa-spin' : 'fa-play'"></i>
                     {{ runAllTestsLoading ? 'Запуск...' : 'Запустить все тесты' }}
+                  </button>
+                </div>
+              </div>
+
+              <!-- Вкладка «Юнит»: страницы (route.run) -->
+              <div v-if="showContent && testSuiteMode === 'unit'" class="tests-card tests-endpoints-card tests-crt-card">
+                <div class="tests-endpoints-header">
+                  <i class="fas fa-code tests-endpoints-icon"></i>
+                  <h2 class="tests-endpoints-title">Юнит: страницы (route.run)</h2>
+                </div>
+                <p class="tests-endpoints-desc">
+                  GET{' '}
+                  <code class="tests-inline-code">/api/tests/endpoints-check/page-routes-unit</code>
+                  — тот же <code class="tests-inline-code">ctx</code>, что у запроса к API; для каждого
+                  <code class="tests-inline-code">app.html</code> вызывается
+                  <code class="tests-inline-code">route.run(ctx, req)</code>, проверяется отсутствие исключений и
+                  непустой результат (JSX / редирект). Без HTTP; интеграция по страницам — вкладка «Интеграция».
+                </p>
+                <div v-if="unitPageRoutesLastRunAt" class="tests-endpoints-last-run">
+                  Результаты от: {{ unitPageRoutesLastRunAt }}
+                </div>
+                <div class="tests-endpoints-list-wrap">
+                  <ul class="tests-endpoints-list" role="list">
+                    <li
+                      v-for="item in unitPageRoutesDisplay"
+                      :key="item.id"
+                      class="tests-endpoints-list-item"
+                      :class="`tests-endpoints-status-${item.status}`"
+                    >
+                      <span class="tests-endpoints-badge" :class="`tests-endpoints-badge-${item.status}`">
+                        {{ item.status === 'todo' ? '[TODO]' : item.status === 'success' ? '[OK]' : '[FAIL]' }}
+                      </span>
+                      <span class="tests-endpoints-list-title-inline">{{ item.title }}</span>
+                      <span v-if="item.error" class="tests-endpoints-list-error">{{ item.error }}</span>
+                      <button
+                        type="button"
+                        class="tests-run-one-btn"
+                        title="Запустить только эту страницу"
+                        :disabled="
+                          runAllTestsLoading ||
+                          unitPageRoutesLoading ||
+                          unitSaveCredsLoading ||
+                          isGroupBlockedBySingle('unitPageRoutes')
+                        "
+                        @click.stop="runSingleUnitPageRouteTest(item.id)"
+                      >
+                        <i
+                          class="fas"
+                          :class="isSingleRunning('unitPageRoutes', item.id) ? 'fa-spinner fa-spin' : 'fa-play'"
+                        ></i>
+                      </button>
+                    </li>
+                  </ul>
+                </div>
+                <div class="tests-endpoints-actions">
+                  <button
+                    type="button"
+                    class="tests-run-group-btn"
+                    :disabled="
+                      runAllTestsLoading ||
+                      unitPageRoutesLoading ||
+                      unitSaveCredsLoading ||
+                      isGroupBlockedBySingle('unitPageRoutes')
+                    "
+                    @click="runUnitPageRoutesTests"
+                  >
+                    <i class="fas" :class="unitPageRoutesLoading ? 'fa-spinner fa-spin' : 'fa-bolt'"></i>
+                    {{ unitPageRoutesLoading ? 'Проверяем...' : 'Запустить route.run по всем страницам' }}
                   </button>
                 </div>
               </div>
@@ -1263,7 +1515,12 @@ const runAllTests = async () => {
                         type="button"
                         class="tests-run-one-btn"
                         title="Запустить только этот тест"
-                        :disabled="runAllTestsLoading || unitSaveCredsLoading || isGroupBlockedBySingle('unitSaveCreds')"
+                        :disabled="
+                          runAllTestsLoading ||
+                          unitSaveCredsLoading ||
+                          unitPageRoutesLoading ||
+                          isGroupBlockedBySingle('unitSaveCreds')
+                        "
                         @click.stop="runSingleUnitSaveCredsTest(item.id)"
                       >
                         <i
@@ -1278,11 +1535,85 @@ const runAllTests = async () => {
                   <button
                     type="button"
                     class="tests-run-group-btn"
-                    :disabled="runAllTestsLoading || unitSaveCredsLoading || isGroupBlockedBySingle('unitSaveCreds')"
+                    :disabled="
+                      runAllTestsLoading ||
+                      unitSaveCredsLoading ||
+                      unitPageRoutesLoading ||
+                      isGroupBlockedBySingle('unitSaveCreds')
+                    "
                     @click="runUnitSaveCredsTests"
                   >
                     <i class="fas" :class="unitSaveCredsLoading ? 'fa-spinner fa-spin' : 'fa-bolt'"></i>
                     {{ unitSaveCredsLoading ? 'Проверяем...' : 'Запустить юнит-тесты слияния ключей' }}
+                  </button>
+                </div>
+              </div>
+
+              <!-- Вкладка «Интеграция»: страницы (fetch из браузера — сессия админа) -->
+              <div v-if="showContent && testSuiteMode === 'integration'" class="tests-card tests-endpoints-card tests-crt-card">
+                <div class="tests-endpoints-header">
+                  <i class="fas fa-globe tests-endpoints-icon"></i>
+                  <h2 class="tests-endpoints-title">Страницы приложения (HTTP)</h2>
+                </div>
+                <p class="tests-endpoints-desc">
+                  <code class="tests-inline-code">fetch</code> с{' '}
+                  <code class="tests-inline-code">credentials: 'include'</code> и{' '}
+                  <code class="tests-inline-code">redirect: 'manual'</code> — запросы идут из браузера, передаются
+                  cookies сессии (в т.ч. админа); разбор ответа в{' '}
+                  <code class="tests-inline-code">shared/pageRouteProbe.ts</code> (не только{' '}
+                  <code class="tests-inline-code">response.ok</code>). См.{' '}
+                  <code class="tests-inline-code">048-chatium-http-response-probes.md</code>.
+                </p>
+                <div v-if="integrationPageLastRunAt" class="tests-endpoints-last-run">
+                  Результаты от: {{ integrationPageLastRunAt }}
+                </div>
+                <div class="tests-endpoints-list-wrap">
+                  <ul class="tests-endpoints-list" role="list">
+                    <li
+                      v-for="item in integrationPageDisplay"
+                      :key="item.id"
+                      class="tests-endpoints-list-item"
+                      :class="`tests-endpoints-status-${item.status}`"
+                    >
+                      <span class="tests-endpoints-badge" :class="`tests-endpoints-badge-${item.status}`">
+                        {{ item.status === 'todo' ? '[TODO]' : item.status === 'success' ? '[OK]' : '[FAIL]' }}
+                      </span>
+                      <span class="tests-endpoints-list-title-inline">{{ item.title }}</span>
+                      <span v-if="item.error" class="tests-endpoints-list-error">{{ item.error }}</span>
+                      <button
+                        type="button"
+                        class="tests-run-one-btn"
+                        title="Запустить только эту страницу"
+                        :disabled="
+                          runAllTestsLoading ||
+                          integrationPageLoading ||
+                          integrationBothLoading ||
+                          isGroupBlockedBySingle('integrationPages')
+                        "
+                        @click.stop="runSingleIntegrationPageTest(item.id)"
+                      >
+                        <i
+                          class="fas"
+                          :class="isSingleRunning('integrationPages', item.id) ? 'fa-spinner fa-spin' : 'fa-play'"
+                        ></i>
+                      </button>
+                    </li>
+                  </ul>
+                </div>
+                <div class="tests-endpoints-actions">
+                  <button
+                    type="button"
+                    class="tests-run-group-btn"
+                    :disabled="
+                      runAllTestsLoading ||
+                      integrationPageLoading ||
+                      integrationBothLoading ||
+                      isGroupBlockedBySingle('integrationPages')
+                    "
+                    @click="runIntegrationPageRoutesTests"
+                  >
+                    <i class="fas" :class="integrationPageLoading ? 'fa-spinner fa-spin' : 'fa-bolt'"></i>
+                    {{ integrationPageLoading ? 'Проверяем...' : 'Проверить все страницы' }}
                   </button>
                 </div>
               </div>
@@ -1320,7 +1651,10 @@ const runAllTests = async () => {
                         class="tests-run-one-btn"
                         title="Запустить только этот тест"
                         :disabled="
-                          runAllTestsLoading || integrationBothLoading || isGroupBlockedBySingle('integrationBoth')
+                          runAllTestsLoading ||
+                          integrationBothLoading ||
+                          integrationPageLoading ||
+                          isGroupBlockedBySingle('integrationBoth')
                         "
                         @click.stop="runSingleIntegrationBothTest(item.id)"
                       >
@@ -1336,7 +1670,12 @@ const runAllTests = async () => {
                   <button
                     type="button"
                     class="tests-run-group-btn"
-                    :disabled="runAllTestsLoading || integrationBothLoading || isGroupBlockedBySingle('integrationBoth')"
+                    :disabled="
+                      runAllTestsLoading ||
+                      integrationBothLoading ||
+                      integrationPageLoading ||
+                      isGroupBlockedBySingle('integrationBoth')
+                    "
                     @click="runIntegrationBothTests"
                   >
                     <i class="fas" :class="integrationBothLoading ? 'fa-spinner fa-spin' : 'fa-bolt'"></i>

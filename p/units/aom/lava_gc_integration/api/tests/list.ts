@@ -34,6 +34,28 @@ export const listTestsRoute = app.get('/', async (ctx, req) => {
       ]
     },
     {
+      id: 'unit-page-routes',
+      title: 'Юнит: страницы (route.run, без HTTP)',
+      tests: [
+        { id: 'index', title: 'Главная (/)' },
+        { id: 'web-admin', title: 'Админка /web/admin' },
+        { id: 'web-profile', title: 'Профиль /web/profile' },
+        { id: 'web-login', title: 'Вход /web/login' },
+        { id: 'web-tests', title: 'Тесты /web/tests' }
+      ]
+    },
+    {
+      id: 'integration-pages-http',
+      title: 'Интеграция: страницы (fetch из браузера)',
+      tests: [
+        { id: 'index', title: 'Главная (/)' },
+        { id: 'web-admin', title: 'Админка /web/admin' },
+        { id: 'web-profile', title: 'Профиль /web/profile' },
+        { id: 'web-login', title: 'Вход /web/login' },
+        { id: 'web-tests', title: 'Тесты /web/tests' }
+      ]
+    },
+    {
       id: 'integration-credentials-heap',
       title: 'Интеграция: ключи из Heap (GetCourse и Lava)',
       tests: [
