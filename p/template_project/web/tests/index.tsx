@@ -14,8 +14,8 @@ import { customScrollbarStyles } from '../../styles'
 const LOG_PATH = 'web/tests/index'
 
 /**
- * Страница тестов: отображает TestsPage.vue и даёт доступ к каталогу тестов (api/tests/list)
- * и к проверкам всех слоёв: config, lib (settings, dashboard, logger), repo (settings, logs), API (admin).
+ * Страница тестов: TestsPage.vue — юнит (`/api/tests/unit`), интеграция сервера (`/api/tests/integration`),
+ * HTTP GET шаблонных страниц; каталог `GET /api/tests/list` (блоки из `shared/testCatalog.ts`).
  */
 export const testsPageRoute = app.html('/', async (ctx, req) => {
   await loggerLib.writeServerLog(ctx, {

@@ -102,6 +102,7 @@
 - `../components/GlobalGlitch.vue`
 - `../components/AppFooter.vue`
 - `../shared/logger` → `createComponentLogger`, `setLogSink`, `LogEntry`
+- `../shared/testCatalog` → блоки и тесты каталога (`UNIT_TEST_BLOCKS`, …)
 - `../api/admin/logs/recent` → `getRecentLogsRoute`
 - `../api/admin/logs/before` → `getLogsBeforeRoute`
 
@@ -139,6 +140,10 @@
 ### `./shared/logLevel.ts`
 - `../lib/settings.lib` → `getLogLevel`, `LogLevel`
 - `../lib/logger.lib` → `*`
+
+### `./shared/testCatalog.ts`
+- первая строка: `// @shared`
+- нет импортов — каталог блоков для `/api/tests/list` и UI тестов
 
 ### `./shared/logger.ts`
 - нет импортов (клиентский логгер по syslog RFC 5424: severity -1…7, LOG_LEVEL_OFF=-1, читает window.__BOOT__.logLevel; createComponentLogger, setLogSink, LogEntry)
@@ -225,42 +230,19 @@
 ### `./api/tests/list.ts`
 - `@app/auth` → `requireAnyUser`
 - `../../lib/logger.lib` → `*`
+- `../../shared/testCatalog` → `UNIT_TEST_BLOCKS`, `INTEGRATION_SERVER_TEST_BLOCKS`, `INTEGRATION_HTTP_TEST_BLOCK`, `flattenCatalogBlocks`
 
-### `./api/tests/endpoints-check/health.ts`
+### `./api/tests/unit/index.ts`
 - `@app/auth` → `requireAnyUser`
+- `../../../config/routes` → `getFullUrl`, `PROJECT_ROOT`
+- `../../../config/project` → `getPageTitle`, `INDEX_PAGE_NAME`
+- `../../../shared/logLevel` → `getLogLevelScript`
 - `../../../lib/logger.lib` → `*`
 
-### `./api/tests/endpoints-check/ping.ts`
+### `./api/tests/integration/index.ts`
 - `@app/auth` → `requireAnyUser`
-- `../../../lib/logger.lib` → `*`
-
-### `./api/tests/endpoints-check/config.ts`
-- `@app/auth` → `requireAnyUser`
-- `../../../lib/logger.lib` → `*`
-- `../../../config/routes` → `getFullUrl`, `ROUTES`
-- `../../../config/project` → `TESTS_PAGE_NAME`, `getPageTitle`, `getHeaderText`
-
-### `./api/tests/endpoints-check/settings-lib.ts`
-- `@app/auth` → `requireAnyUser`
-- `../../../lib/logger.lib` → `*`
 - `../../../lib/settings.lib` → `*`
-
-### `./api/tests/endpoints-check/settings-repo.ts`
-- `@app/auth` → `requireAnyUser`
-- `../../../lib/logger.lib` → `*`
-- `../../../lib/settings.lib` → `SETTING_KEYS`
 - `../../../repos/settings.repo` → `*`
-
-### `./api/tests/endpoints-check/logger-lib.ts`
-- `@app/auth` → `requireAnyUser`
-- `../../../lib/logger.lib` → `*`
-
-### `./api/tests/endpoints-check/logs-repo.ts`
-- `@app/auth` → `requireAnyUser`
-- `../../../lib/logger.lib` → `*`
 - `../../../repos/logs.repo` → `*`
-
-### `./api/tests/endpoints-check/dashboard-lib.ts`
-- `@app/auth` → `requireAnyUser`
-- `../../../lib/logger.lib` → `*`
 - `../../../lib/admin/dashboard.lib` → `*`
+- `../../../lib/logger.lib` → `*`
