@@ -10,14 +10,15 @@ import { getApiUrlForRoute, getFullUrl, ROUTES } from '../../config/routes'
 import { TESTS_PAGE_NAME, getPageTitle, getHeaderText } from '../../config/project'
 import * as settingsLib from '../../lib/settings.lib'
 import { customScrollbarStyles, formControlStyles, mobileSafeAreaStyles, VIEWPORT_META_CONTENT } from '../../styles'
-import { getPomodoroStateRoute } from '../../api/pomodoro/state/get'
-import { pomodoroControlRoute } from '../../api/pomodoro/control'
+import { toolsStateRoute } from '../../api/tools/state'
+import { toolsControlRoute } from '../../api/tools/control'
+import { focusToolsSocketId } from '../../shared/focus-tools-types'
 
 const LOG_PATH = 'web/tests/index'
 
 /**
- * Страница тестов: отображает TestsPage.vue и даёт доступ к каталогу тестов (api/tests/list)
- * и к проверкам всех слоёв: config, lib (settings, dashboard, logger), repo (settings, logs), API (admin).
+ * Страница тестов: TestsPage.vue — юнит (`/api/tests/unit`), интеграция сервера (`/api/tests/integration`),
+ * HTTP-проверки шаблонных страниц; каталог `GET /api/tests/list`.
  */
 export const testsPageRoute = app.html('/', async (ctx, req) => {
   await loggerLib.writeServerLog(ctx, {
@@ -51,8 +52,9 @@ export const testsPageRoute = app.html('/', async (ctx, req) => {
   const isAdmin = user.is('Admin')
   const adminUrl = isAdmin ? getFullUrl(ROUTES.admin) : ''
   const loginUrl = getFullUrl(ROUTES.login)
-  const pomodoroStateGetUrl = getApiUrlForRoute(getPomodoroStateRoute.url())
-  const pomodoroControlUrl = getApiUrlForRoute(pomodoroControlRoute.url())
+  const toolsStateUrl = getApiUrlForRoute(toolsStateRoute.url())
+  const toolsControlUrl = getApiUrlForRoute(toolsControlRoute.url())
+  const encodedFocusToolsSocketId = await genSocketId(ctx, focusToolsSocketId(user.id))
   await loggerLib.writeServerLog(ctx, {
     severity: 7,
     message: `[${LOG_PATH}] Переменные после user`,
@@ -303,8 +305,9 @@ export const testsPageRoute = app.html('/', async (ctx, req) => {
           isAuthenticated={true}
           isAdmin={isAdmin}
           adminUrl={adminUrl}
-          pomodoroStateGetUrl={pomodoroStateGetUrl}
-          pomodoroControlUrl={pomodoroControlUrl}
+          toolsStateUrl={toolsStateUrl}
+          toolsControlUrl={toolsControlUrl}
+          encodedFocusToolsSocketId={encodedFocusToolsSocketId}
           encodedLogsSocketId={encodedLogsSocketId}
         />
       </body>

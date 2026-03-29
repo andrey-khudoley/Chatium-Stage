@@ -168,7 +168,7 @@ const props = defineProps<{
   taskReleaseDayUrl: string
   taskItemUpdateUrl: string
   tasksPageUrl: string
-  pomodoroAssignTaskUrl: string
+  toolsControlUrl: string
 }>()
 
 const tree = ref<TasksTreeDto>({
@@ -442,9 +442,9 @@ async function releaseAll() {
 async function addToPomodoro(taskId: string) {
   globalError.value = ''
   try {
-    const j = await postJson<{ success: boolean; error?: string }>(props.pomodoroAssignTaskUrl, {
-      taskId,
+    const j = await postJson<{ success: boolean; error?: string }>(props.toolsControlUrl, {
       statsDayKey: computePomodoroStatsDayKeyLocal(Date.now()),
+      command: { kind: 'assign-task', taskId },
     })
     if (!j.success) {
       globalError.value = j.error ?? 'Не удалось добавить задачу в pomodoro'

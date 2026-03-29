@@ -13,10 +13,13 @@ const props = withDefaults(defineProps<{
   tasks: TaskOption[]
   selectedTaskId: string
   loading?: boolean
+  /** Блокировка (например, пока нет WebSocket к focus-tools). */
+  disabled?: boolean
   placeholder?: string
   clearLabel?: string
 }>(), {
   loading: false,
+  disabled: false,
   placeholder: 'Выберите задачу',
   clearLabel: 'Снять задачу'
 })
@@ -55,6 +58,7 @@ function selectTask(taskId: string): void {
 }
 
 function toggleDropdown(): void {
+  if (props.disabled || props.loading) return
   expanded.value = !expanded.value
   if (!expanded.value) searchQuery.value = ''
 }
@@ -62,7 +66,7 @@ function toggleDropdown(): void {
 
 <template>
   <div class="task-selector">
-    <button class="task-toggle" :disabled="loading" @click="toggleDropdown">
+    <button class="task-toggle" :disabled="loading || disabled" @click="toggleDropdown">
       <i class="fa-solid fa-clipboard-list task-toggle__icon" />
       <span class="task-toggle__text">
         <span v-if="currentTask">{{ currentTask.title }}</span>

@@ -149,9 +149,9 @@ interface JournalPageProps {
   taskReleaseDayUrl?: string
   taskItemUpdateUrl?: string
   tasksPageUrl?: string
-  pomodoroAssignTaskUrl?: string
-  pomodoroStateGetUrl?: string
-  pomodoroControlUrl?: string
+  toolsControlUrl?: string
+  toolsStateUrl?: string
+  encodedFocusToolsSocketId?: string
   journalMonthDataUrl?: string
   journalTabInitial?: JournalTabId
   inboxNotesInitial?: InboxNoteSummaryDto[]
@@ -210,9 +210,9 @@ const props = defineProps({
   taskReleaseDayUrl: String,
   taskItemUpdateUrl: String,
   tasksPageUrl: String,
-  pomodoroAssignTaskUrl: String,
-  pomodoroStateGetUrl: String,
-  pomodoroControlUrl: String,
+  toolsControlUrl: String,
+  toolsStateUrl: String,
+  encodedFocusToolsSocketId: String,
   journalMonthDataUrl: String,
   journalTabInitial: String,
   inboxNotesInitial: Array,
@@ -412,7 +412,7 @@ const tasksPaneProps = computed(() => ({
   taskReleaseDayUrl: props.taskReleaseDayUrl != null ? props.taskReleaseDayUrl : '',
   taskItemUpdateUrl: props.taskItemUpdateUrl != null ? props.taskItemUpdateUrl : '',
   tasksPageUrl: props.tasksPageUrl != null ? props.tasksPageUrl : '',
-  pomodoroAssignTaskUrl: props.pomodoroAssignTaskUrl != null ? props.pomodoroAssignTaskUrl : '',
+  toolsControlUrl: props.toolsControlUrl != null ? props.toolsControlUrl : '',
 }))
 
 const dayInDevelopmentPaneProps = computed(() => ({
@@ -528,8 +528,9 @@ const openChatiumLink = () => {
       :adminUrl="props.adminUrl"
       :testsUrl="props.testsUrl"
       :enableToolClockWidget="true"
-      :pomodoroStateGetUrl="props.pomodoroStateGetUrl"
-      :pomodoroControlUrl="props.pomodoroControlUrl"
+      :toolsStateUrl="props.toolsStateUrl"
+      :toolsControlUrl="props.toolsControlUrl"
+      :encodedFocusToolsSocketId="props.encodedFocusToolsSocketId"
     />
 
     <main class="content-wrapper flex-1 relative z-10 min-h-0 overflow-y-auto">

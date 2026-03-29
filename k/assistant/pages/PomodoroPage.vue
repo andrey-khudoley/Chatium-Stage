@@ -7,6 +7,14 @@ import PomodoroToolsWorkspace from '../components/pomodoro/PomodoroToolsWorkspac
 import { playPomodoroPhaseChangeSound } from '../lib/pomodoro-phase-sounds'
 import { formatPomodoroSecondsDisplay as fmt } from '../lib/pomodoro-types'
 import { computePomodoroStatsDayKeyLocal } from '../lib/pomodoro-stats-day'
+import type {
+  FocusToolsFullStateDto,
+  FocusToolsStateData,
+  PomodoroSliceInFocusTools,
+  StopwatchToolSnapshot,
+  TimerToolSnapshot,
+} from '../shared/focus-tools-types'
+import { getOrCreateBrowserSocketClient } from '@app/socket'
 
 type PomodoroState = {
   status: 'stopped' | 'running' | 'paused' | 'awaiting_continue'
@@ -31,9 +39,9 @@ type PomodoroState = {
   tasksCompletedToday: number
   updatedAtMs: number
 }
-type PersistedFocusTaskState = {
-  version: 1
-  taskId: string
+function pomodoroSliceToPageState(p: PomodoroSliceInFocusTools): PomodoroState {
+  const { statsPeriodDayKey: _sk, currentRunId: _rid, ...rest } = p
+  return rest as PomodoroState
 }
 
 const props = defineProps<{
@@ -45,18 +53,21 @@ const props = defineProps<{
   isAdmin?: boolean
   adminUrl?: string
   testsUrl?: string
-  /** Состояние с SSR (`web/timers/index.tsx`), чтобы не зависеть от первого клиентского fetch */
-  initialPomodoroState?: PomodoroState | null
-  initialServerNowMs?: number
-  stateGetUrl: string
-  controlUrl: string
-  settingsSaveUrl: string
-  assignTaskUrl: string
+  /** Полный снимок focus-tools с SSR (`web/timers/index.tsx`) */
+  initialFocusToolsState?: FocusToolsFullStateDto | null
+  toolsStateUrl: string
+  toolsControlUrl: string
+  encodedFocusToolsSocketId: string
   getTasksUrl: string
-  toolsFocusLogUrl: string
 }>()
 
-const state = ref<PomodoroState | null>(props.initialPomodoroState ?? null)
+const state = ref<PomodoroState | null>(
+  props.initialFocusToolsState?.state?.pomodoro
+    ? pomodoroSliceToPageState(props.initialFocusToolsState.state.pomodoro)
+    : null,
+)
+const focusToolsSnapshot = ref<FocusToolsStateData | null>(props.initialFocusToolsState?.state ?? null)
+const focusToolsWsConnected = ref(false)
 const localTick = ref(Date.now())
 const saving = ref(false)
 const pageError = ref('')
@@ -69,8 +80,7 @@ const notificationPermission = ref<NotificationPermission>('default')
 const hasVibration = ref(false)
 const previousPhase = ref<'work' | 'rest' | 'long_rest' | null>(null)
 const activeTool = ref<'pomodoro' | 'timer' | 'stopwatch'>('pomodoro')
-const sharedSelectedTaskId = ref('')
-const FOCUS_TASK_STORAGE_KEY = 'assistant:focus-clock-selected-task:v1'
+const sharedSelectedTaskId = ref(props.initialFocusToolsState?.state?.pomodoro?.currentTaskId ?? '')
 
 const phaseLabels: Record<PomodoroState['phase'], string> = {
   work: 'Работа',
@@ -107,11 +117,46 @@ function pomodoroStatsDayKeyNow(): string {
   return computePomodoroStatsDayKeyLocal(localTick.value)
 }
 
-function pomodoroStateGetUrlWithDay(): string {
+function defaultTimerSnapshot(): TimerToolSnapshot {
+  const dk = pomodoroStatsDayKeyNow()
+  return {
+    status: 'stopped',
+    remainingSec: 25 * 60,
+    endsAtMs: 0,
+    durationSettingMin: 25,
+    durationSettingSec: 0,
+    currentTaskId: '',
+    currentRunId: '',
+    sessionsCount: 0,
+    totalFocusSec: 0,
+    totalSec: 0,
+    statsPeriodDayKey: dk,
+  }
+}
+
+function defaultStopwatchSnapshot(): StopwatchToolSnapshot {
+  const dk = pomodoroStatsDayKeyNow()
+  return {
+    status: 'stopped',
+    elapsedSec: 0,
+    startedAtMs: 0,
+    currentTaskId: '',
+    currentRunId: '',
+    sessionsCount: 0,
+    totalFocusSec: 0,
+    totalSec: 0,
+    statsPeriodDayKey: dk,
+  }
+}
+
+const timerSlice = computed(() => focusToolsSnapshot.value?.timer ?? defaultTimerSnapshot())
+const stopwatchSlice = computed(() => focusToolsSnapshot.value?.stopwatch ?? defaultStopwatchSnapshot())
+
+function toolsStateUrlWithDay(): string {
   const key = encodeURIComponent(pomodoroStatsDayKeyNow())
-  return props.stateGetUrl.includes('?')
-    ? `${props.stateGetUrl}&statsDayKey=${key}`
-    : `${props.stateGetUrl}?statsDayKey=${key}`
+  return props.toolsStateUrl.includes('?')
+    ? `${props.toolsStateUrl}&statsDayKey=${key}`
+    : `${props.toolsStateUrl}?statsDayKey=${key}`
 }
 
 async function refresh(opts?: { maxAttempts?: number }): Promise<void> {
@@ -122,14 +167,19 @@ async function refresh(opts?: { maxAttempts?: number }): Promise<void> {
       if (attempt > 0) {
         await new Promise((r) => setTimeout(r, 350 * attempt))
       }
-      const r = await fetch(pomodoroStateGetUrlWithDay(), { credentials: 'include' })
-      const j = await readApiJson<{ success?: boolean; state?: PomodoroState; serverNowMs?: number; error?: string }>(r)
-      if (j.success && j.state) {
-        applyIncomingState(j.state, j.serverNowMs ?? 0, 'poll', 0)
+      const r = await fetch(toolsStateUrlWithDay(), { credentials: 'include' })
+      const j = await readApiJson<{
+        success?: boolean
+        state?: FocusToolsStateData
+        serverNowMs?: number
+        error?: string
+      }>(r)
+      if (j.success && j.state?.pomodoro) {
+        applyIncomingState(pomodoroSliceToPageState(j.state.pomodoro), j.serverNowMs ?? 0, 'poll', 0, j.state)
         pageError.value = ''
         return
       }
-      pageError.value = j.error ?? 'Не удалось обновить состояние pomodoro'
+      pageError.value = j.error ?? 'Не удалось обновить состояние таймеров'
       return
     } catch (error) {
       lastError = error
@@ -142,52 +192,37 @@ async function refresh(opts?: { maxAttempts?: number }): Promise<void> {
   }
 }
 
-function persistSelectedTaskToStorage(taskId: string): void {
-  if (!taskId) return
-  const payload: PersistedFocusTaskState = { version: 1, taskId }
-  try {
-    window.localStorage.setItem(FOCUS_TASK_STORAGE_KEY, JSON.stringify(payload))
-  } catch {
-    // ignore storage write errors
-  }
-}
-
-function clearSelectedTaskStorage(): void {
-  try {
-    window.localStorage.removeItem(FOCUS_TASK_STORAGE_KEY)
-  } catch {
-    // ignore storage write errors
-  }
-}
-
-function restoreSelectedTaskFromStorage(): void {
-  try {
-    const raw = window.localStorage.getItem(FOCUS_TASK_STORAGE_KEY)
-    if (!raw) return
-    const parsed = JSON.parse(raw) as PersistedFocusTaskState
-    if (parsed.version !== 1) return
-    if (!parsed.taskId) return
-    sharedSelectedTaskId.value = parsed.taskId
-  } catch {
-    // ignore broken localStorage data
-  }
-}
-
 async function assignTaskToPomodoro(taskId: string): Promise<void> {
-  const r = await fetch(props.assignTaskUrl, {
+  const r = await fetch(props.toolsControlUrl, {
     method: 'POST',
     credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ taskId, statsDayKey: pomodoroStatsDayKeyNow() })
+    body: JSON.stringify({
+      statsDayKey: pomodoroStatsDayKeyNow(),
+      command: { kind: 'assign-task', taskId },
+    }),
   })
-  const j = await readApiJson<{ success?: boolean; error?: string }>(r)
+  const j = await readApiJson<{
+    success?: boolean
+    error?: string
+    state?: FocusToolsStateData
+    serverNowMs?: number
+  }>(r)
   if (!j.success) throw new Error(j.error ?? 'Не удалось привязать задачу к Pomodoro')
+  if (j.state?.pomodoro) {
+    applyIncomingState(
+      pomodoroSliceToPageState(j.state.pomodoro),
+      j.serverNowMs ?? Date.now(),
+      'action',
+      actionSeq.value + 1,
+      j.state,
+    )
+  }
 }
 
 async function onSharedTaskSelected(taskId: string): Promise<void> {
   if (!taskId) return
   sharedSelectedTaskId.value = taskId
-  persistSelectedTaskToStorage(taskId)
   try {
     await assignTaskToPomodoro(taskId)
     await refresh({ maxAttempts: 2 })
@@ -198,23 +233,43 @@ async function onSharedTaskSelected(taskId: string): Promise<void> {
 
 function onPomodoroTaskAssigned(taskId: string): void {
   sharedSelectedTaskId.value = taskId
-  persistSelectedTaskToStorage(taskId)
   void refresh({ maxAttempts: 1 })
 }
 
-function applyIncomingState(nextState: PomodoroState, serverNowMs: number, source: 'poll' | 'action', incomingActionSeq: number): void {
+function applyIncomingState(
+  nextState: PomodoroState,
+  serverNowMs: number,
+  source: 'poll' | 'action',
+  incomingActionSeq: number,
+  fullSnapshot?: FocusToolsStateData | null,
+): void {
   if (serverNowMs < latestAppliedServerNowMs.value) return
   if (serverNowMs === latestAppliedServerNowMs.value && source === 'poll' && incomingActionSeq <= actionSeq.value) return
-  
+
   const oldPhase = state.value?.phase
   latestAppliedServerNowMs.value = serverNowMs
   if (source === 'action') actionSeq.value = Math.max(actionSeq.value, incomingActionSeq)
   state.value = nextState
-  
+  if (fullSnapshot) {
+    focusToolsSnapshot.value = fullSnapshot
+  }
+
   if (oldPhase && oldPhase !== nextState.phase) {
     previousPhase.value = oldPhase
     onPhaseChange(nextState.phase)
   }
+}
+
+function onFocusToolsSync(payload: FocusToolsFullStateDto): void {
+  const nextSeq = actionSeq.value + 1
+  applyIncomingState(
+    pomodoroSliceToPageState(payload.state.pomodoro),
+    payload.serverNowMs,
+    'action',
+    nextSeq,
+    payload.state,
+  )
+  pageError.value = ''
 }
 
 async function control(action: 'start' | 'resume' | 'pause' | 'stop' | 'skip' | 'reset') {
@@ -222,15 +277,29 @@ async function control(action: 'start' | 'resume' | 'pause' | 'stop' | 'skip' | 
   actionPending.value = true
   const localActionSeq = actionSeq.value + 1
   try {
-    const r = await fetch(props.controlUrl, {
+    const r = await fetch(props.toolsControlUrl, {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action, statsDayKey: pomodoroStatsDayKeyNow() }),
+      body: JSON.stringify({
+        statsDayKey: pomodoroStatsDayKeyNow(),
+        command: { kind: 'pomodoro', action },
+      }),
     })
-    const j = await readApiJson<{ success?: boolean; state?: PomodoroState; serverNowMs?: number; error?: string }>(r)
-    if (j.success && j.state) {
-      applyIncomingState(j.state, j.serverNowMs ?? 0, 'action', localActionSeq)
+    const j = await readApiJson<{
+      success?: boolean
+      state?: FocusToolsStateData
+      serverNowMs?: number
+      error?: string
+    }>(r)
+    if (j.success && j.state?.pomodoro) {
+      applyIncomingState(
+        pomodoroSliceToPageState(j.state.pomodoro),
+        j.serverNowMs ?? 0,
+        'action',
+        localActionSeq,
+        j.state,
+      )
       pageError.value = ''
     } else {
       pageError.value = j.error ?? 'Не удалось выполнить действие'
@@ -261,27 +330,43 @@ type PomodoroSettingsDraft = {
 async function saveSettings(draft: PomodoroSettingsDraft) {
   saving.value = true
   try {
-    const r = await fetch(props.settingsSaveUrl, {
+    const r = await fetch(props.toolsControlUrl, {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        workMinutes: draft.workMinutes,
-        restMinutes: draft.restMinutes,
-        longRestMinutes: draft.longRestMinutes,
-        cyclesUntilLongRest: draft.cyclesUntilLongRest,
-        pauseAfterWork: draft.pauseAfterWork,
-        pauseAfterRest: draft.pauseAfterRest,
-        afterLongRest: draft.afterLongRest,
-        autoStartRest: draft.autoStartRest,
-        autoStartNextCycle: draft.autoStartNextCycle,
-        phaseChangeSound: draft.phaseChangeSound,
-        statsDayKey: pomodoroStatsDayKeyNow()
-      })
+        statsDayKey: pomodoroStatsDayKeyNow(),
+        command: {
+          kind: 'save-pomodoro-settings',
+          settings: {
+            workMinutes: draft.workMinutes,
+            restMinutes: draft.restMinutes,
+            longRestMinutes: draft.longRestMinutes,
+            cyclesUntilLongRest: draft.cyclesUntilLongRest,
+            pauseAfterWork: draft.pauseAfterWork,
+            pauseAfterRest: draft.pauseAfterRest,
+            afterLongRest: draft.afterLongRest,
+            autoStartRest: draft.autoStartRest,
+            autoStartNextCycle: draft.autoStartNextCycle,
+            phaseChangeSound: draft.phaseChangeSound,
+          },
+        },
+      }),
     })
-    const j = await readApiJson<{ success?: boolean; state?: PomodoroState; serverNowMs?: number; error?: string }>(r)
-    if (j.success && j.state) {
-      applyIncomingState(j.state, j.serverNowMs ?? 0, 'action', actionSeq.value + 1)
+    const j = await readApiJson<{
+      success?: boolean
+      state?: FocusToolsStateData
+      serverNowMs?: number
+      error?: string
+    }>(r)
+    if (j.success && j.state?.pomodoro) {
+      applyIncomingState(
+        pomodoroSliceToPageState(j.state.pomodoro),
+        j.serverNowMs ?? 0,
+        'action',
+        actionSeq.value + 1,
+        j.state,
+      )
       pageError.value = ''
       settingsOpen.value = false
       return
@@ -348,8 +433,61 @@ async function requestNotificationPermission() {
 }
 
 let timer: number | null = null
-let poll: number | null = null
 let focusHandler: (() => void) | null = null
+let focusToolsSocketUnsub: (() => void) | null = null
+let wsRetryTimer: ReturnType<typeof setTimeout> | null = null
+let wsAttempt = 0
+let onlineHandler: (() => void) | null = null
+let focusTaskClearedHandler: (() => void) | null = null
+
+function clearFocusToolsWsRetry(): void {
+  if (wsRetryTimer != null) {
+    clearTimeout(wsRetryTimer)
+    wsRetryTimer = null
+  }
+}
+
+function scheduleFocusToolsWsRetry(): void {
+  clearFocusToolsWsRetry()
+  const delay = Math.min(30_000, 1000 * 2 ** Math.min(wsAttempt, 8))
+  wsAttempt += 1
+  wsRetryTimer = window.setTimeout(() => {
+    wsRetryTimer = null
+    void connectFocusToolsWebSocket()
+  }, delay)
+}
+
+async function connectFocusToolsWebSocket(): Promise<void> {
+  if (!props.isAuthenticated || !props.encodedFocusToolsSocketId) {
+    focusToolsWsConnected.value = false
+    return
+  }
+  try {
+    const client = await getOrCreateBrowserSocketClient()
+    focusToolsSocketUnsub?.()
+    const sub = client.subscribeToData(props.encodedFocusToolsSocketId)
+    focusToolsSocketUnsub = () => {
+      if (typeof sub.unsubscribe === 'function') sub.unsubscribe()
+      focusToolsSocketUnsub = null
+    }
+    focusToolsWsConnected.value = true
+    wsAttempt = 0
+    sub.listen((msg: { type?: string; data?: FocusToolsFullStateDto }) => {
+      if (msg?.type === 'state-update' && msg.data?.state) {
+        applyIncomingState(
+          pomodoroSliceToPageState(msg.data.state.pomodoro),
+          msg.data.serverNowMs ?? Date.now(),
+          'poll',
+          0,
+          msg.data.state,
+        )
+      }
+    })
+  } catch {
+    focusToolsWsConnected.value = false
+    scheduleFocusToolsWsRetry()
+  }
+}
 
 function onVisibilityBack(): void {
   if (document.visibilityState === 'visible') void refresh({ maxAttempts: 1 })
@@ -359,31 +497,50 @@ onMounted(() => {
   originalTitle.value = document.title
   notificationPermission.value = 'Notification' in window ? Notification.permission : 'denied'
   hasVibration.value = 'vibrate' in navigator
-  restoreSelectedTaskFromStorage()
 
   if (
-    props.initialPomodoroState != null &&
-    props.initialServerNowMs != null &&
-    props.initialServerNowMs > 0
+    props.initialFocusToolsState?.state?.pomodoro != null &&
+    props.initialFocusToolsState.serverNowMs > 0
   ) {
-    applyIncomingState(props.initialPomodoroState, props.initialServerNowMs, 'poll', 0)
+    applyIncomingState(
+      pomodoroSliceToPageState(props.initialFocusToolsState.state.pomodoro),
+      props.initialFocusToolsState.serverNowMs,
+      'poll',
+      0,
+      props.initialFocusToolsState.state,
+    )
     pageError.value = ''
   }
 
-  void refresh({ maxAttempts: 3 })
+  void refresh({ maxAttempts: 3 }).then(() => {
+    void connectFocusToolsWebSocket()
+  })
   timer = window.setInterval(() => (localTick.value = Date.now()), 1000)
-  poll = window.setInterval(() => void refresh({ maxAttempts: 1 }), 7000)
   focusHandler = () => void refresh({ maxAttempts: 1 })
   window.addEventListener('focus', focusHandler)
   document.addEventListener('visibilitychange', onVisibilityBack)
-  
+
+  onlineHandler = () => {
+    void refresh({ maxAttempts: 2 })
+    void connectFocusToolsWebSocket()
+  }
+  window.addEventListener('online', onlineHandler)
+
+  focusTaskClearedHandler = () => {
+    sharedSelectedTaskId.value = ''
+  }
+  window.addEventListener('assistant:focus-task-cleared', focusTaskClearedHandler)
+
   void requestNotificationPermission()
 })
 
 onUnmounted(() => {
   document.title = originalTitle.value
   if (timer) clearInterval(timer)
-  if (poll) clearInterval(poll)
+  focusToolsSocketUnsub?.()
+  clearFocusToolsWsRetry()
+  if (onlineHandler) window.removeEventListener('online', onlineHandler)
+  if (focusTaskClearedHandler) window.removeEventListener('assistant:focus-task-cleared', focusTaskClearedHandler)
   if (focusHandler) window.removeEventListener('focus', focusHandler)
   document.removeEventListener('visibilitychange', onVisibilityBack)
 })
@@ -404,16 +561,18 @@ watch([() => state.value?.status, () => state.value?.phase, remainSec, overtimeS
   nextTick(() => updateDocumentTitle())
 })
 
+watch(localTick, () => {
+  const t = focusToolsSnapshot.value?.timer
+  if (t?.status === 'running' && t.endsAtMs > 0 && localTick.value >= t.endsAtMs) {
+    void refresh({ maxAttempts: 1 })
+  }
+})
+
 watch(
   () => state.value?.currentTaskId,
   (taskId) => {
     if (typeof taskId !== 'string') return
     sharedSelectedTaskId.value = taskId
-    if (taskId) {
-      persistSelectedTaskToStorage(taskId)
-      return
-    }
-    clearSelectedTaskStorage()
   },
   { immediate: true }
 )
@@ -490,8 +649,9 @@ const phaseTheme = computed(() => {
       :adminUrl="props.adminUrl"
       :testsUrl="props.testsUrl"
       :enableToolClockWidget="true"
-      :pomodoroStateGetUrl="props.stateGetUrl"
-      :pomodoroControlUrl="props.controlUrl"
+      :toolsStateUrl="props.toolsStateUrl"
+      :toolsControlUrl="props.toolsControlUrl"
+      :encodedFocusToolsSocketId="props.encodedFocusToolsSocketId"
     />
     <main class="content-wrapper flex-1 relative z-10 min-h-0 overflow-y-auto">
       <div v-if="state" class="content-inner pomodoro-shell">
@@ -508,13 +668,17 @@ const phaseTheme = computed(() => {
           :settings-model="settingsModel"
           :saving="saving"
           :action-pending="actionPending"
-          :assign-task-url="props.assignTaskUrl"
+          :tools-control-url="props.toolsControlUrl"
           :get-tasks-url="props.getTasksUrl"
-          :tools-focus-log-url="props.toolsFocusLogUrl"
+          :stats-day-key="pomodoroStatsDayKeyNow()"
+          :timer-snapshot="timerSlice"
+          :stopwatch-snapshot="stopwatchSlice"
+          :focus-tools-ws-connected="focusToolsWsConnected"
           @control="control"
           @save-settings="saveSettings"
           @pomodoro-task-assigned="onPomodoroTaskAssigned"
           @shared-task-selected="onSharedTaskSelected"
+          @focus-tools-sync="onFocusToolsSync"
         />
       </div>
       <div v-else class="content-inner pomodoro-shell">

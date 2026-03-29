@@ -24,7 +24,7 @@
             ref="clockTriggerRef"
             class="header-clock"
             :class="{
-              'header-clock--interactive': isToolClockWidgetEnabled && widgetMode !== 'clock',
+              'header-clock--interactive': headerFocusToolsUi && widgetMode !== 'clock',
               'header-clock--attention': clockNeedsAttention
             }"
             @click="onClockClick"
@@ -37,23 +37,34 @@
             <span class="header-clock-row">
               <i :class="clockIconClass"></i>
               <span class="clock-time">{{ headerClockDisplay }}</span>
-              <template v-if="isToolClockWidgetEnabled && widgetMode !== 'clock'">
-                <button type="button" class="header-tool-btn" :disabled="clockActionPending" @click.stop="handleToolStartPause">
+              <template v-if="headerFocusToolsUi && widgetMode !== 'clock'">
+                <button
+                  type="button"
+                  class="header-tool-btn"
+                  :disabled="focusToolsControlsDisabled"
+                  @click.stop="handleToolStartPause"
+                >
                   {{ startPauseLabel }}
                 </button>
-                <button type="button" class="header-tool-btn header-tool-btn--danger" :disabled="clockActionPending" @click.stop="handleToolReset">
+                <button
+                  type="button"
+                  class="header-tool-btn header-tool-btn--danger"
+                  :disabled="focusToolsControlsDisabled"
+                  @click.stop="handleToolReset"
+                >
                   Сброс
                 </button>
               </template>
             </span>
           </span>
-          <div v-if="isToolClockWidgetEnabled && showToolPicker" ref="toolPickerRef" class="header-tool-picker" role="group" aria-label="Выбор инструмента">
+          <div v-if="headerFocusToolsUi && showToolPicker" ref="toolPickerRef" class="header-tool-picker" role="group" aria-label="Выбор инструмента">
             <button
               type="button"
               class="header-tool-picker-btn"
               :class="{ 'header-tool-picker-btn--active': widgetMode === 'clock' }"
               :aria-pressed="widgetMode === 'clock'"
               title="Показать часы"
+              :disabled="focusToolsControlsDisabled"
               @click="selectWidgetMode('clock')"
             >
               <i class="fas fa-clock" aria-hidden="true"></i>
@@ -65,6 +76,7 @@
               :class="{ 'header-tool-picker-btn--active': widgetMode === 'pomodoro' }"
               :aria-pressed="widgetMode === 'pomodoro'"
               title="Показать помидор"
+              :disabled="focusToolsControlsDisabled"
               @click="selectWidgetMode('pomodoro')"
             >
               <i class="fas fa-hourglass-half" aria-hidden="true"></i>
@@ -76,6 +88,7 @@
               :class="{ 'header-tool-picker-btn--active': widgetMode === 'timer' }"
               :aria-pressed="widgetMode === 'timer'"
               title="Показать таймер"
+              :disabled="focusToolsControlsDisabled"
               @click="selectWidgetMode('timer')"
             >
               <i class="fas fa-stopwatch-20" aria-hidden="true"></i>
@@ -87,6 +100,7 @@
               :class="{ 'header-tool-picker-btn--active': widgetMode === 'stopwatch' }"
               :aria-pressed="widgetMode === 'stopwatch'"
               title="Показать секундомер"
+              :disabled="focusToolsControlsDisabled"
               @click="selectWidgetMode('stopwatch')"
             >
               <i class="fas fa-stopwatch" aria-hidden="true"></i>
@@ -152,10 +166,10 @@ import LogoutModal from './LogoutModal.vue'
 import { createComponentLogger } from '../shared/logger'
 import { formatPomodoroSecondsDisplay, type PomodoroPhase, type PomodoroStateDto } from '../lib/pomodoro-types'
 import { computePomodoroStatsDayKeyLocal } from '../lib/pomodoro-stats-day'
+import type { FocusToolsStateData, HeaderWidgetMode } from '../shared/focus-tools-types'
+import { getOrCreateBrowserSocketClient } from '@app/socket'
 
 const log = createComponentLogger('Header')
-type HeaderTool = 'pomodoro' | 'timer' | 'stopwatch'
-type HeaderWidgetMode = 'clock' | HeaderTool
 type LocalClockStatus = 'stopped' | 'running' | 'paused'
 
 const props = defineProps<{
@@ -169,8 +183,9 @@ const props = defineProps<{
   adminUrl?: string
   testsUrl?: string
   enableToolClockWidget?: boolean
-  pomodoroStateGetUrl?: string
-  pomodoroControlUrl?: string
+  toolsStateUrl?: string
+  toolsControlUrl?: string
+  encodedFocusToolsSocketId?: string
 }>()
 
 const isGlitching = ref(false)
@@ -190,26 +205,13 @@ const clockActionPending = ref(false)
 const timerStatus = ref<LocalClockStatus>('stopped')
 const timerRemainingSec = ref(0)
 const timerEndsAtMs = ref(0)
+const timerDurationSettingMin = ref(25)
+const timerDurationSettingSec = ref(0)
 const stopwatchStatus = ref<LocalClockStatus>('stopped')
 const stopwatchElapsedSec = ref(0)
 const stopwatchStartedAtMs = ref(0)
-const TIMER_SETTINGS_STORAGE_KEY = 'assistant:focus-clock-settings:timer'
-const HEADER_WIDGET_STORAGE_KEY = 'assistant:header-clock-widget:v1'
-const HEADER_WIDGET_STORAGE_VERSION = 1
-const FOCUS_TASK_STORAGE_KEY = 'assistant:focus-clock-selected-task:v1'
-const isInitialAutoModeResolved = ref(false)
 const clockNeedsAttention = ref(false)
-
-type PersistedHeaderWidgetState = {
-  version: number
-  mode: HeaderWidgetMode
-  timer: { status: LocalClockStatus; remainingSec: number; endsAtMs: number }
-  stopwatch: { status: LocalClockStatus; elapsedSec: number; startedAtMs: number }
-}
-type PersistedFocusTaskState = {
-  version: 1
-  taskId: string
-}
+const focusToolsWsConnected = ref(false)
 const pomodoroDisplaySec = computed(() => {
   if (pomodoroStatus.value === 'running') {
     return Math.max(0, Math.floor((pomodoroEndsAtMs.value - nowTick.value) / 1000))
@@ -260,7 +262,11 @@ function applyPomodoroStateDto(state: PomodoroStateDto): void {
   pomodoroLongRestMinutes.value = state.longRestMinutes
 }
 
-/** Доля заполнения слева направо (0–1) для помидора и локального таймера в шапке */
+function timerDurationTotalSecFromSettings(): number {
+  return Math.max(1, timerDurationSettingMin.value * 60 + timerDurationSettingSec.value)
+}
+
+/** Доля заполнения слева направо (0–1) для помидора и таймера в шапке */
 const headerClockProgressFill = computed(() => {
   if (!isToolClockWidgetEnabled.value) return 0
   if (widgetMode.value === 'pomodoro') {
@@ -277,7 +283,7 @@ const headerClockProgressFill = computed(() => {
   }
   if (widgetMode.value === 'timer') {
     if (timerStatus.value === 'stopped') return 0
-    const total = readTimerSettingsDurationSec()
+    const total = timerDurationTotalSecFromSettings()
     if (total <= 0) return 0
     const rem = timerDisplaySec.value
     return Math.min(1, Math.max(0, 1 - rem / total))
@@ -298,6 +304,19 @@ const startPauseLabel = computed(() => {
 })
 const isToolClockWidgetEnabled = computed(() => !!props.enableToolClockWidget)
 
+/** Часы Pomodoro/таймер/секундомер в шапке только для авторизованных с API */
+const headerFocusToolsUi = computed(
+  () =>
+    isToolClockWidgetEnabled.value &&
+    props.isAuthenticated &&
+    !!props.toolsStateUrl &&
+    !!props.toolsControlUrl,
+)
+
+const focusToolsControlsDisabled = computed(
+  () => clockActionPending.value || !focusToolsWsConnected.value,
+)
+
 // Функция для форматирования времени
 const updateTime = () => {
   const now = new Date()
@@ -308,12 +327,14 @@ const updateTime = () => {
 }
 
 let timeInterval: number | null = null
-let pomodoroPollInterval: number | null = null
 let nowTickInterval: number | null = null
 let escHandler: ((e: KeyboardEvent) => void) | null = null
 let outsideToolPickerClickHandler: ((e: MouseEvent) => void) | null = null
 let focusTaskEventHandler: ((e: Event) => void) | null = null
-let headerClockStateChangedHandler: ((e: Event) => void) | null = null
+let focusToolsSocketUnsub: (() => void) | null = null
+let wsRetryTimer: ReturnType<typeof setTimeout> | null = null
+let wsAttempt = 0
+let onlineHandler: (() => void) | null = null
 const toolPickerRef = ref<HTMLElement | null>(null)
 const clockTriggerRef = ref<HTMLElement | null>(null)
 
@@ -328,300 +349,173 @@ const readApiJson = async <T,>(response: Response): Promise<T> => {
   return response.json() as Promise<T>
 }
 
-function pomodoroStateGetUrlWithDay(base: string): string {
+function toolsStateUrlWithDay(base: string): string {
   const key = encodeURIComponent(computePomodoroStatsDayKeyLocal(Date.now()))
   return base.includes('?') ? `${base}&statsDayKey=${key}` : `${base}?statsDayKey=${key}`
 }
 
-const syncPomodoro = async () => {
-  if (!props.pomodoroStateGetUrl) return
+function applyFocusToolsState(snapshot: FocusToolsStateData): void {
+  widgetMode.value = snapshot.activeMode
+  applyPomodoroStateDto(snapshot.pomodoro)
+  timerStatus.value = snapshot.timer.status
+  timerRemainingSec.value = snapshot.timer.remainingSec
+  timerEndsAtMs.value = snapshot.timer.endsAtMs
+  timerDurationSettingMin.value = snapshot.timer.durationSettingMin
+  timerDurationSettingSec.value = snapshot.timer.durationSettingSec
+  stopwatchStatus.value = snapshot.stopwatch.status
+  stopwatchElapsedSec.value = snapshot.stopwatch.elapsedSec
+  stopwatchStartedAtMs.value = snapshot.stopwatch.startedAtMs
+}
+
+async function syncFocusToolsFromHttp(): Promise<void> {
+  if (!props.toolsStateUrl) return
   try {
-    const r = await fetch(pomodoroStateGetUrlWithDay(props.pomodoroStateGetUrl), { credentials: 'include' })
-    const j = await readApiJson<{ success?: boolean; state?: PomodoroStateDto }>(r)
-    if (!j.success || !j.state) return
-    applyPomodoroStateDto(j.state)
-    resolveInitialAutoMode()
+    const r = await fetch(toolsStateUrlWithDay(props.toolsStateUrl), { credentials: 'include' })
+    const j = await readApiJson<{ success?: boolean; state?: FocusToolsStateData }>(r)
+    if (j.success && j.state) applyFocusToolsState(j.state)
   } catch (error) {
-    log.warning('Pomodoro sync failed', { error: String(error) })
-  } finally {
-    if (!isInitialAutoModeResolved.value) {
-      resolveInitialAutoMode()
-      if (!isInitialAutoModeResolved.value) isInitialAutoModeResolved.value = true
-    }
+    log.warning('Focus tools GET failed', { error: String(error) })
   }
 }
 
-function readTimerSettingsDurationSec(): number {
+type FocusToolsCommand =
+  | { kind: 'pomodoro'; action: 'start' | 'resume' | 'pause' | 'stop' | 'skip' | 'reset' }
+  | { kind: 'timer'; action: 'start' | 'resume' | 'pause' | 'reset' }
+  | { kind: 'stopwatch'; action: 'start' | 'resume' | 'pause' | 'reset' }
+  | { kind: 'widget-mode'; mode: HeaderWidgetMode }
+  | { kind: 'assign-task'; taskId: string }
+
+async function postFocusToolsCommand(
+  command: FocusToolsCommand,
+  options?: { allowDisconnected?: boolean },
+): Promise<boolean> {
+  if (!props.toolsControlUrl) return false
+  if (!focusToolsWsConnected.value && !options?.allowDisconnected) return false
   try {
-    const raw = window.localStorage.getItem(TIMER_SETTINGS_STORAGE_KEY)
-    if (!raw) return 25 * 60
-    const parsed = JSON.parse(raw) as { version?: number; minutes?: number; seconds?: number }
-    const minutes = Math.max(0, Math.min(999, Math.floor(parsed.minutes ?? 25)))
-    const seconds = Math.max(0, Math.min(59, Math.floor(parsed.seconds ?? 0)))
-    return Math.max(1, minutes * 60 + seconds)
-  } catch {
-    return 25 * 60
+    const r = await fetch(props.toolsControlUrl, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        statsDayKey: computePomodoroStatsDayKeyLocal(Date.now()),
+        command,
+      }),
+    })
+    const j = await readApiJson<{ success?: boolean; state?: FocusToolsStateData }>(r)
+    if (j.success && j.state) {
+      applyFocusToolsState(j.state)
+      return true
+    }
+  } catch (error) {
+    log.warning('Focus tools command failed', { error: String(error) })
+  }
+  return false
+}
+
+function clearWsRetry(): void {
+  if (wsRetryTimer != null) {
+    clearTimeout(wsRetryTimer)
+    wsRetryTimer = null
+  }
+}
+
+function scheduleFocusToolsWsRetry(): void {
+  clearWsRetry()
+  const delay = Math.min(30_000, 1000 * 2 ** Math.min(wsAttempt, 8))
+  wsAttempt += 1
+  wsRetryTimer = window.setTimeout(() => {
+    wsRetryTimer = null
+    void connectFocusToolsWebSocket()
+  }, delay)
+}
+
+async function connectFocusToolsWebSocket(): Promise<void> {
+  if (!headerFocusToolsUi.value || !props.encodedFocusToolsSocketId) {
+    focusToolsWsConnected.value = false
+    return
+  }
+  try {
+    const client = await getOrCreateBrowserSocketClient()
+    focusToolsSocketUnsub?.()
+    const sub = client.subscribeToData(props.encodedFocusToolsSocketId)
+    focusToolsSocketUnsub = () => {
+      if (typeof sub.unsubscribe === 'function') sub.unsubscribe()
+      focusToolsSocketUnsub = null
+    }
+    focusToolsWsConnected.value = true
+    wsAttempt = 0
+    sub.listen((msg: { type?: string; data?: { state?: FocusToolsStateData } }) => {
+      if (msg?.type === 'state-update' && msg.data?.state) {
+        applyFocusToolsState(msg.data.state)
+      }
+    })
+  } catch (error) {
+    log.warning('Focus tools WebSocket failed', { error: String(error) })
+    focusToolsWsConnected.value = false
+    scheduleFocusToolsWsRetry()
   }
 }
 
 function onClockClick(): void {
-  if (!isToolClockWidgetEnabled.value) return
+  if (!headerFocusToolsUi.value) return
   showToolPicker.value = !showToolPicker.value
 }
 
-function normalizeLocalClockStatus(raw: unknown): LocalClockStatus {
-  if (raw === 'running' || raw === 'paused' || raw === 'stopped') return raw
-  return 'stopped'
-}
-
-function persistHeaderWidgetState(): void {
-  if (!isToolClockWidgetEnabled.value) return
-  const payload: PersistedHeaderWidgetState = {
-    version: HEADER_WIDGET_STORAGE_VERSION,
-    mode: widgetMode.value,
-    timer: {
-      status: timerStatus.value,
-      remainingSec: Math.max(0, Math.floor(timerRemainingSec.value)),
-      endsAtMs: Math.max(0, Math.floor(timerEndsAtMs.value))
-    },
-    stopwatch: {
-      status: stopwatchStatus.value,
-      elapsedSec: Math.max(0, Math.floor(stopwatchElapsedSec.value)),
-      startedAtMs: Math.max(0, Math.floor(stopwatchStartedAtMs.value))
-    }
-  }
-  try {
-    window.localStorage.setItem(HEADER_WIDGET_STORAGE_KEY, JSON.stringify(payload))
-  } catch {
-    // ignore storage write errors
-  }
-  window.dispatchEvent(new CustomEvent('assistant:header-clock-state-changed'))
-}
-
-function restoreHeaderWidgetState(): void {
-  if (!isToolClockWidgetEnabled.value) return
-  try {
-    const raw = window.localStorage.getItem(HEADER_WIDGET_STORAGE_KEY)
-    if (!raw) return
-    const parsed = JSON.parse(raw) as PersistedHeaderWidgetState
-    if (parsed.version !== HEADER_WIDGET_STORAGE_VERSION) return
-    widgetMode.value = parsed.mode
-
-    timerStatus.value = normalizeLocalClockStatus(parsed.timer?.status)
-    timerRemainingSec.value = Math.max(0, Math.floor(parsed.timer?.remainingSec ?? 0))
-    timerEndsAtMs.value = Math.max(0, Math.floor(parsed.timer?.endsAtMs ?? 0))
-
-    stopwatchStatus.value = normalizeLocalClockStatus(parsed.stopwatch?.status)
-    stopwatchElapsedSec.value = Math.max(0, Math.floor(parsed.stopwatch?.elapsedSec ?? 0))
-    stopwatchStartedAtMs.value = Math.max(0, Math.floor(parsed.stopwatch?.startedAtMs ?? 0))
-
-    const ts = Date.now()
-    if (timerStatus.value === 'running' && timerEndsAtMs.value > 0) {
-      const remain = Math.max(0, Math.floor((timerEndsAtMs.value - ts) / 1000))
-      if (remain <= 0) {
-        timerStatus.value = 'stopped'
-        timerRemainingSec.value = 0
-        timerEndsAtMs.value = 0
-      } else {
-        timerRemainingSec.value = remain
-      }
-    }
-    if (stopwatchStatus.value !== 'running') {
-      stopwatchStartedAtMs.value = 0
-    }
-  } catch {
-    // ignore broken localStorage data
-  }
-}
-
-function persistSelectedFocusTask(taskId: string): void {
-  if (!taskId) return
-  const payload: PersistedFocusTaskState = { version: 1, taskId }
-  try {
-    window.localStorage.setItem(FOCUS_TASK_STORAGE_KEY, JSON.stringify(payload))
-  } catch {
-    // ignore storage write errors
-  }
-}
-
-function clearSelectedFocusTask(): void {
-  try {
-    window.localStorage.removeItem(FOCUS_TASK_STORAGE_KEY)
-  } catch {
-    // ignore storage write errors
-  }
-  window.dispatchEvent(new CustomEvent('assistant:focus-task-cleared'))
-}
-
-function resolveInitialAutoMode(): void {
-  if (isInitialAutoModeResolved.value || !isToolClockWidgetEnabled.value) return
-  if (pomodoroStatus.value === 'running' || pomodoroStatus.value === 'awaiting_continue') {
-    widgetMode.value = 'pomodoro'
-    isInitialAutoModeResolved.value = true
-    persistHeaderWidgetState()
-    return
-  }
-  if (timerStatus.value === 'running') {
-    widgetMode.value = 'timer'
-    isInitialAutoModeResolved.value = true
-    persistHeaderWidgetState()
-    return
-  }
-  if (stopwatchStatus.value === 'running') {
-    widgetMode.value = 'stopwatch'
-    isInitialAutoModeResolved.value = true
-    persistHeaderWidgetState()
-    return
-  }
-  if (!props.pomodoroStateGetUrl || !props.pomodoroControlUrl) {
-    isInitialAutoModeResolved.value = true
-  }
-}
-
-async function pauseOtherRunningTools(target: HeaderWidgetMode): Promise<void> {
-  // Local timer
-  if (target !== 'timer' && timerStatus.value === 'running') pauseTimer()
-  // Local stopwatch
-  if (target !== 'stopwatch' && stopwatchStatus.value === 'running') pauseStopwatch()
-  // Pomodoro (server)
-  if (target !== 'pomodoro' && pomodoroStatus.value === 'running') {
-    await controlPomodoro('pause')
-  }
-}
-
-function selectWidgetMode(mode: HeaderWidgetMode): void {
-  if (!isToolClockWidgetEnabled.value) return
-  widgetMode.value = mode
+async function selectWidgetMode(mode: HeaderWidgetMode): Promise<void> {
+  if (!headerFocusToolsUi.value) return
   showToolPicker.value = false
-  persistHeaderWidgetState()
-}
-
-async function controlPomodoro(action: 'start' | 'resume' | 'pause' | 'reset'): Promise<void> {
-  if (!props.pomodoroControlUrl) return
+  if (!focusToolsWsConnected.value) return
+  clockActionPending.value = true
   try {
-    const r = await fetch(props.pomodoroControlUrl, {
-      method: 'POST',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action, statsDayKey: computePomodoroStatsDayKeyLocal(Date.now()) })
-    })
-    const j = await readApiJson<{ success?: boolean; state?: PomodoroStateDto }>(r)
-    if (j.success && j.state) {
-      applyPomodoroStateDto(j.state)
-    }
-  } catch (error) {
-    log.warning('Pomodoro toggle failed', { error: String(error) })
+    await postFocusToolsCommand({ kind: 'widget-mode', mode })
+  } finally {
+    clockActionPending.value = false
   }
-}
-
-function startTimer(): void {
-  void pauseOtherRunningTools('timer')
-  const durationSec = readTimerSettingsDurationSec()
-  timerRemainingSec.value = durationSec
-  timerEndsAtMs.value = Date.now() + durationSec * 1000
-  timerStatus.value = 'running'
-  persistHeaderWidgetState()
-}
-
-function pauseTimer(): void {
-  timerRemainingSec.value = timerDisplaySec.value
-  timerEndsAtMs.value = 0
-  timerStatus.value = 'paused'
-  persistHeaderWidgetState()
-}
-
-function resumeTimer(): void {
-  void pauseOtherRunningTools('timer')
-  timerEndsAtMs.value = Date.now() + Math.max(1, timerRemainingSec.value) * 1000
-  timerStatus.value = 'running'
-  persistHeaderWidgetState()
-}
-
-function resetTimer(): void {
-  timerStatus.value = 'stopped'
-  timerEndsAtMs.value = 0
-  timerRemainingSec.value = readTimerSettingsDurationSec()
-  persistHeaderWidgetState()
-}
-
-function startStopwatch(): void {
-  void pauseOtherRunningTools('stopwatch')
-  stopwatchElapsedSec.value = 0
-  stopwatchStartedAtMs.value = Date.now()
-  stopwatchStatus.value = 'running'
-  persistHeaderWidgetState()
-}
-
-function pauseStopwatch(): void {
-  stopwatchElapsedSec.value = stopwatchDisplaySec.value
-  stopwatchStartedAtMs.value = 0
-  stopwatchStatus.value = 'paused'
-  persistHeaderWidgetState()
-}
-
-function resumeStopwatch(): void {
-  void pauseOtherRunningTools('stopwatch')
-  stopwatchStartedAtMs.value = Date.now()
-  stopwatchStatus.value = 'running'
-  persistHeaderWidgetState()
-}
-
-function resetStopwatch(): void {
-  stopwatchStatus.value = 'stopped'
-  stopwatchElapsedSec.value = 0
-  stopwatchStartedAtMs.value = 0
-  persistHeaderWidgetState()
 }
 
 async function handleToolStartPause(): Promise<void> {
-  if (clockActionPending.value) return
-  if (widgetMode.value === 'pomodoro') {
-    clockActionPending.value = true
-    try {
-      await pauseOtherRunningTools('pomodoro')
-      if (pomodoroStatus.value === 'running') await controlPomodoro('pause')
-      else if (pomodoroStatus.value === 'paused' || pomodoroStatus.value === 'awaiting_continue') await controlPomodoro('resume')
-      else await controlPomodoro('start')
-    } finally {
-      clockActionPending.value = false
+  if (clockActionPending.value || !focusToolsWsConnected.value) return
+  clockActionPending.value = true
+  try {
+    if (widgetMode.value === 'pomodoro') {
+      if (pomodoroStatus.value === 'running') await postFocusToolsCommand({ kind: 'pomodoro', action: 'pause' })
+      else if (pomodoroStatus.value === 'paused' || pomodoroStatus.value === 'awaiting_continue') {
+        await postFocusToolsCommand({ kind: 'pomodoro', action: 'resume' })
+      } else {
+        await postFocusToolsCommand({ kind: 'pomodoro', action: 'start' })
+      }
+      return
     }
-    persistHeaderWidgetState()
-    return
-  }
-  if (widgetMode.value === 'timer') {
-    if (timerStatus.value === 'running') pauseTimer()
-    else if (timerStatus.value === 'paused') resumeTimer()
-    else startTimer()
-    return
-  }
-  if (widgetMode.value === 'stopwatch') {
-    if (stopwatchStatus.value === 'running') pauseStopwatch()
-    else if (stopwatchStatus.value === 'paused') resumeStopwatch()
-    else startStopwatch()
+    if (widgetMode.value === 'timer') {
+      if (timerStatus.value === 'running') await postFocusToolsCommand({ kind: 'timer', action: 'pause' })
+      else if (timerStatus.value === 'paused') await postFocusToolsCommand({ kind: 'timer', action: 'resume' })
+      else await postFocusToolsCommand({ kind: 'timer', action: 'start' })
+      return
+    }
+    if (widgetMode.value === 'stopwatch') {
+      if (stopwatchStatus.value === 'running') await postFocusToolsCommand({ kind: 'stopwatch', action: 'pause' })
+      else if (stopwatchStatus.value === 'paused') await postFocusToolsCommand({ kind: 'stopwatch', action: 'resume' })
+      else await postFocusToolsCommand({ kind: 'stopwatch', action: 'start' })
+    }
+  } finally {
+    clockActionPending.value = false
   }
 }
 
 async function handleToolReset(): Promise<void> {
-  if (clockActionPending.value) return
-  if (widgetMode.value === 'pomodoro') {
-    clockActionPending.value = true
-    try {
-      await controlPomodoro('reset')
-    } finally {
-      clockActionPending.value = false
+  if (clockActionPending.value || !focusToolsWsConnected.value) return
+  clockActionPending.value = true
+  try {
+    if (widgetMode.value === 'pomodoro') await postFocusToolsCommand({ kind: 'pomodoro', action: 'reset' })
+    else if (widgetMode.value === 'timer') {
+      const ok = await postFocusToolsCommand({ kind: 'timer', action: 'reset' })
+      if (ok) window.dispatchEvent(new CustomEvent('assistant:focus-task-cleared'))
+    } else if (widgetMode.value === 'stopwatch') {
+      const ok = await postFocusToolsCommand({ kind: 'stopwatch', action: 'reset' })
+      if (ok) window.dispatchEvent(new CustomEvent('assistant:focus-task-cleared'))
     }
-    persistHeaderWidgetState()
-    return
-  }
-  if (widgetMode.value === 'timer') {
-    resetTimer()
-    clearSelectedFocusTask()
-    return
-  }
-  if (widgetMode.value === 'stopwatch') {
-    resetStopwatch()
-    clearSelectedFocusTask()
-    return
+  } finally {
+    clockActionPending.value = false
   }
 }
 
@@ -636,29 +530,26 @@ function blinkClockAttention(): void {
 }
 
 async function startSelectedToolIfStopped(): Promise<void> {
+  if (!focusToolsWsConnected.value) return
   if (widgetMode.value === 'pomodoro') {
     if (pomodoroStatus.value === 'running') return
-    clockActionPending.value = true
-    try {
-      await pauseOtherRunningTools('pomodoro')
-      if (pomodoroStatus.value === 'paused' || pomodoroStatus.value === 'awaiting_continue') await controlPomodoro('resume')
-      else await controlPomodoro('start')
-    } finally {
-      clockActionPending.value = false
+    if (pomodoroStatus.value === 'paused' || pomodoroStatus.value === 'awaiting_continue') {
+      await postFocusToolsCommand({ kind: 'pomodoro', action: 'resume' })
+    } else {
+      await postFocusToolsCommand({ kind: 'pomodoro', action: 'start' })
     }
-    persistHeaderWidgetState()
     return
   }
   if (widgetMode.value === 'timer') {
     if (timerStatus.value === 'running') return
-    if (timerStatus.value === 'paused') resumeTimer()
-    else startTimer()
+    if (timerStatus.value === 'paused') await postFocusToolsCommand({ kind: 'timer', action: 'resume' })
+    else await postFocusToolsCommand({ kind: 'timer', action: 'start' })
     return
   }
   if (widgetMode.value === 'stopwatch') {
     if (stopwatchStatus.value === 'running') return
-    if (stopwatchStatus.value === 'paused') resumeStopwatch()
-    else startStopwatch()
+    if (stopwatchStatus.value === 'paused') await postFocusToolsCommand({ kind: 'stopwatch', action: 'resume' })
+    else await postFocusToolsCommand({ kind: 'stopwatch', action: 'start' })
   }
 }
 
@@ -667,24 +558,21 @@ onMounted(() => {
   updateTime()
   timeInterval = window.setInterval(updateTime, 1000)
   nowTick.value = Date.now()
-  timerRemainingSec.value = readTimerSettingsDurationSec()
-  restoreHeaderWidgetState()
-  resolveInitialAutoMode()
   nowTickInterval = window.setInterval(() => {
     nowTick.value = Date.now()
-    if (timerStatus.value === 'running' && timerDisplaySec.value <= 0) {
-      timerStatus.value = 'stopped'
-      timerRemainingSec.value = 0
-      timerEndsAtMs.value = 0
-      persistHeaderWidgetState()
-    }
   }, 1000)
-  if (props.isAuthenticated && props.pomodoroStateGetUrl && props.pomodoroControlUrl) {
-    void syncPomodoro()
-    pomodoroPollInterval = window.setInterval(() => { void syncPomodoro() }, 7000)
+
+  if (headerFocusToolsUi.value) {
+    void syncFocusToolsFromHttp().then(() => {
+      void connectFocusToolsWebSocket()
+    })
+    onlineHandler = () => {
+      void syncFocusToolsFromHttp()
+      void connectFocusToolsWebSocket()
+    }
+    window.addEventListener('online', onlineHandler)
   }
 
-  // Обработчик Esc для закрытия модального окна выхода
   escHandler = (e: KeyboardEvent) => {
     if (e.key === 'Escape' && showToolPicker.value) {
       showToolPicker.value = false
@@ -712,34 +600,39 @@ onMounted(() => {
       pomodoroSessionStartedFromTasksPage?: boolean
     }>
     const taskId = customEvent.detail?.taskId
-    if (!taskId || !isToolClockWidgetEnabled.value) return
-    persistSelectedFocusTask(taskId)
-    if (widgetMode.value === 'clock') {
-      blinkClockAttention()
-      return
-    }
-    if (widgetMode.value === 'pomodoro' && customEvent.detail?.pomodoroSessionStartedFromTasksPage) {
-      void syncPomodoro()
-      return
-    }
-    void startSelectedToolIfStopped()
+    if (!taskId || !headerFocusToolsUi.value) return
+    void (async () => {
+      clockActionPending.value = true
+      try {
+        const ok = await postFocusToolsCommand({ kind: 'assign-task', taskId }, { allowDisconnected: true })
+        if (!ok) return
+        if (widgetMode.value === 'clock') {
+          blinkClockAttention()
+          return
+        }
+        if (widgetMode.value === 'pomodoro' && customEvent.detail?.pomodoroSessionStartedFromTasksPage) {
+          await syncFocusToolsFromHttp()
+          return
+        }
+        await startSelectedToolIfStopped()
+      } finally {
+        clockActionPending.value = false
+      }
+    })()
   }
   window.addEventListener('assistant:focus-task-selected', focusTaskEventHandler)
-  headerClockStateChangedHandler = () => {
-    restoreHeaderWidgetState()
-  }
-  window.addEventListener('assistant:header-clock-state-changed', headerClockStateChangedHandler)
 })
 
 onUnmounted(() => {
   log.info('Component unmounted')
+  clearWsRetry()
+  focusToolsSocketUnsub?.()
+  focusToolsSocketUnsub = null
   if (timeInterval) {
     clearInterval(timeInterval)
   }
-  if (pomodoroPollInterval) clearInterval(pomodoroPollInterval)
   if (nowTickInterval) clearInterval(nowTickInterval)
-  
-  // Удаляем обработчик Esc при размонтировании
+
   if (escHandler) {
     window.removeEventListener('keydown', escHandler)
   }
@@ -749,8 +642,9 @@ onUnmounted(() => {
   if (focusTaskEventHandler) {
     window.removeEventListener('assistant:focus-task-selected', focusTaskEventHandler)
   }
-  if (headerClockStateChangedHandler) {
-    window.removeEventListener('assistant:header-clock-state-changed', headerClockStateChangedHandler)
+  if (onlineHandler) {
+    window.removeEventListener('online', onlineHandler)
+    onlineHandler = null
   }
 })
 

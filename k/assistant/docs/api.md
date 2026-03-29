@@ -35,21 +35,13 @@
 
 ## Тесты (api/tests/)
 
-Каталог тестов: категории и отдельные тесты. Один файл — один эндпоинт с путём `/`. Внутри категории (например, «проверка эндпоинтов») — по одному файлу на тест.
+Набор ограничен **базовым минимумом шаблона** (`p/template_project`): юнит без Heap и интеграция с Heap/либами. Страница `/web/tests` дополнительно проверяет GET шаблонных маршрутов страниц с клиента.
 
 | Method | Path | File | Auth | Назначение |
 | --- | --- | --- | --- | --- |
-| GET | /api/tests/list | api/tests/list.ts | AnyUser | Каталог тестов: список категорий и тестов. Возвращает `{ success: true, categories }`. |
-| GET | /api/tests/endpoints-check/health | api/tests/endpoints-check/health.ts | AnyUser | Тест: health check. Возвращает `{ success: true, ok: true, test: 'health', at }`. |
-| GET | /api/tests/endpoints-check/ping | api/tests/endpoints-check/ping.ts | AnyUser | Тест: ping. Возвращает `{ success: true, pong: true, test: 'ping', at }`. |
-| GET | /api/tests/endpoints-check/config | api/tests/endpoints-check/config.ts | AnyUser | Тест слоя config (routes, project). Возвращает `{ success, test: 'config', routes: { index, admin, login, profile, tests, journal, tasks, tools, pomodoro }, pageTitle, headerText, at }`. |
-| GET | /api/tests/endpoints-check/settings-lib | api/tests/endpoints-check/settings-lib.ts | AnyUser | Тесты библиотеки настроек: массив `results` по каждой функции (getSettingString, getLogLevel, getLogsLimit, getLogWebhook, getDashboardResetAt, getAllSettings). |
-| GET | /api/tests/endpoints-check/settings-repo | api/tests/endpoints-check/settings-repo.ts | AnyUser | Тесты репозитория настроек: массив `results` (upsert, deleteByKey, findByKey, findAll). Порядок: создание до чтения. |
-| GET | /api/tests/endpoints-check/logger-lib | api/tests/endpoints-check/logger-lib.ts | AnyUser | Тесты библиотеки логов: массив `results` (getAdminLogsSocketId, shouldLogByLevel). |
-| GET | /api/tests/endpoints-check/logs-repo | api/tests/endpoints-check/logs-repo.ts | AnyUser | Тесты репозитория логов: массив `results` (create, findAll, findBeforeTimestamp, countErrorsAfter, countWarningsAfter). Порядок: create до чтения. |
-| GET | /api/tests/endpoints-check/dashboard-lib | api/tests/endpoints-check/dashboard-lib.ts | AnyUser | Тесты библиотеки админки: массив `results` (getDashboardCounts, resetDashboard). |
-
-Структура: `api/tests/` — общий каталог; `api/tests/<категория>/` — директория категории (например, `endpoints-check`); внутри категории — отдельные файлы с одним эндпоинтом `/` в каждом.
+| GET | /api/tests/list | api/tests/list.ts | AnyUser | Каталог: `{ success, categories }`. У каждой категории есть `blocks[]` (функциональные группы с `tests[]`: id, title) и плоский `tests` (тот же набор). Источник структуры — `shared/testCatalog.ts`. |
+| GET | /api/tests/unit | api/tests/unit/index.ts | AnyUser | Юнит: синхронные проверки (logger, routes, project, logLevel). Ответ: `{ success, kind: 'unit', results[], summary, at }`. |
+| GET | /api/tests/integration | api/tests/integration/index.ts | AnyUser | Интеграция: settings.lib, repos, dashboard.lib (без resetDashboard). Ответ: `{ success, kind: 'integration', results[], summary, at }`. |
 
 ## Журнал — блокнот (api/journal/notes/)
 
@@ -167,32 +159,21 @@
 | POST | `/tasks-ai-chat/:feedId/messages/add` | api/tasks/tasks-ai-chat-messages-add.ts | RealUser | `feedMessagesAddHandler`; после успешного add — `runTaskAiChatReplyIfNeeded` в `tasks-ai-chat-reply.ts` (`startCompletion`, в proxy context). В system перед каждым запросом подставляется актуальный блок из `buildTaskAiChatProjectContextBlock` (`tasks-ai-chat-lib.ts`): проект, задачи, **details**, служебные **context**, а также (если заданы) `eventAtMs`/`reminderMinutesBefore` у задач. Последнее пользовательское сообщение передаётся отдельным user-блоком «ТЕКУЩЕЕ СООБЩЕНИЕ ПОЛЬЗОВАТЕЛЯ». Системный текст: `getAiFormulateSystemPrompt` + `TASKS_AI_CHAT_JSON_APPENDIX` в `config/prompts.tsx`; в `actions` для `create_task`/`update_task` разрешены `eventAtMs` и `reminderMinutesBefore` (по умолчанию 15 минут, если пользователь не указал иначе). Ответ модели — JSON с `reply`, `actions`, `summary`; применение в Heap — `tasks-ai-chat-completion-completed.ts` → `tasks-ai-formulate-apply.ts` (create/update/delete/reorder, `reorder_tasks` с `$new:N`). В ленту пишется только текст `reply`. Отдельного роута `ai-formulate` нет. |
 | GET | /api/tasks/in-progress | api/tasks/in-progress.ts | RealUser | Список задач в статусе `in_progress` для Pomodoro/Timer/Stopwatch. Возвращает `{ success, tasks }`, где каждый элемент содержит поля задачи + `projectName` и `clientName`; порядок задач сохраняется из общего дерева задач пользователя (без отдельной пересортировки в endpoint). |
 
-## Pomodoro (api/pomodoro/)
+## Focus-tools: помидор, таймер, секундомер (api/tools/)
 
-Личный таймер пользователя (состояние и настройки в Heap), синхронизация с задачами и шапкой UI. Все маршруты работают для `requireRealUser`.
-Дополнительно внутри `lib/pomodoro.lib.ts` ведётся полный лог сегментов запуска в `tables/pomodoro-launches.table.ts` (каждый `start`/`resume`, автопереходы фаз и смена задачи во время `running`).
-
-| Method | Path | File | Auth | Назначение |
-| --- | --- | --- | --- | --- |
-| GET | /api/pomodoro/state/get | api/pomodoro/state/get.ts | RealUser | Текущее состояние таймера: `{ success, state, serverNowMs }`. Опционально query `statsDayKey=YYYY-MM-DD` — ключ «дня» дневной статистики (граница смены в **05:00 по локальному времени клиента**; считается в `lib/pomodoro-stats-day.ts`). Без параметра на сервере используется тот же алгоритм для `Europe/Moscow`. При смене ключа обнуляются `totalWorkSec`, `totalRestSec`, `tasksCompletedToday` (таймер и `cyclesCompleted` не трогаются). |
-| POST | /api/pomodoro/control | api/pomodoro/control.ts | RealUser | Управление состоянием. Body: `{ action, statsDayKey? }`, где `action ∈ { start, resume, pause, stop, skip, reset }` (`skip` — пропуск текущей фазы; `reset` — остановка и сброс к началу серии: `stopped`, полный work, `cyclesCompleted=0`). Ответ: `{ success, state, serverNowMs }`. В `state.status` возможно значение `awaiting_continue` (фаза закончилась по таймеру, ожидание «Продолжить»). |
-| POST | /api/pomodoro/settings/save | api/pomodoro/settings/save.ts | RealUser | Сохранить настройки таймера. Body: поля длительностей и флагов + опционально `statsDayKey` (см. выше). |
-| POST | /api/pomodoro/assign-task | api/pomodoro/assign-task.ts | RealUser | Привязать текущую задачу к Pomodoro. Body: `{ taskId, statsDayKey? }`. Проверяется, что задача принадлежит пользователю; при активном тике накопленное время задачи синхронизируется перед сменой привязки. |
-
-## Инструменты (api/tools/)
-
-Логирование фокус-сегментов со страницы `web/tools` (таймер и секундомер) в общий журнал фокуса Pomodoro.
+Единый серверный снимок состояния (`Heap user-tool-state`, ключ `timer_state`), WebSocket `assistant-focus-tools-{userId}` с push `{ type: 'state-update', data: { state, serverNowMs } }`. Бизнес-логика: `lib/focus-tools.lib.ts` под `runWithExclusiveLock`; сегменты запусков — `tables/pomodoro-launches` + `repos/tool-segments.repo.ts` (поля `tool`, `runId`).
 
 | Method | Path | File | Auth | Назначение |
 | --- | --- | --- | --- | --- |
-| POST | /api/tools/focus-log | api/tools/focus-log.ts | RealUser | Записать фокус-сегмент из `Таймера` или `Секундомера`. Body: `{ tool: 'timer'|'stopwatch', startedAtMs, endedAtMs, taskId? }`. Принимает только `endedAtMs > startedAtMs`, создаёт запись в `pomodoro-launches` с `phase='work'`, `source='tools_timer'|'tools_stopwatch'`; `taskId` сохраняется опционально, если выбран в инструменте. |
+| GET | /api/tools/state | api/tools/state.ts | RealUser | Полный снимок: `{ success, state, serverNowMs, encodedSocketId? }`. Query `statsDayKey` — дневная статистика (граница **05:00**, см. `lib/pomodoro-stats-day.ts`). |
+| POST | /api/tools/control | api/tools/control.ts | RealUser | Body: `{ statsDayKey?, command }`. `command.kind`: `pomodoro` (`action`: start/resume/pause/stop/skip/reset), `timer` / `stopwatch` (start/resume/pause/reset), `widget-mode` (`mode`: clock/pomodoro/timer/stopwatch), `save-pomodoro-settings`, `assign-task` (`taskId`), `timer-settings` (`minutes`, `seconds`). Ответ: `{ success, state, serverNowMs }`. |
 
 ## Публичные эндпоинты
 | Method | Path | File | Auth | Назначение |
 | --- | --- | --- | --- | --- |
 | - | - | - | - | - |
 
-Примечания по семантике `control`:
+Примечания по семантике `command.kind === 'pomodoro'`:
 - `start` запускает/перезапускает рабочую фазу (`phase=work`, полный `workMinutes`, `cyclesCompleted=0`); на странице Pomodoro кнопка доступна только в `stopped`, прямой вызов API из других статусов по-прежнему перезапускает работу.
 - `resume` изменяет состояние из `paused` или `awaiting_continue`; иначе возвращает текущее состояние без ошибки.
 - `pause` изменяет состояние только из `running` (в остальных случаях возвращает текущее состояние без ошибки).

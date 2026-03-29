@@ -29,8 +29,9 @@ const props = defineProps<{
   indexUrl: string
   profileUrl: string
   testsUrl?: string
-  pomodoroStateGetUrl?: string
-  pomodoroControlUrl?: string
+  toolsStateUrl?: string
+  toolsControlUrl?: string
+  encodedFocusToolsSocketId?: string
   loginUrl: string
   isAuthenticated: boolean
   isAdmin?: boolean
@@ -451,8 +452,9 @@ const clearLogs = () => {
       :adminUrl="props.adminUrl"
       :testsUrl="props.testsUrl"
       :enableToolClockWidget="true"
-      :pomodoroStateGetUrl="props.pomodoroStateGetUrl"
-      :pomodoroControlUrl="props.pomodoroControlUrl"
+      :toolsStateUrl="props.toolsStateUrl"
+      :toolsControlUrl="props.toolsControlUrl"
+      :encodedFocusToolsSocketId="props.encodedFocusToolsSocketId"
     />
 
     <main class="content-wrapper flex-1 relative z-10 min-h-0 overflow-y-auto">

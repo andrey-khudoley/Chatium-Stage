@@ -43,9 +43,10 @@ import { getTasksTreeRoute } from '../../api/tasks/tree/get'
 import { reorderTaskDayItemsRoute } from '../../api/tasks/items/reorder-day'
 import { releaseTaskDayItemsRoute } from '../../api/tasks/items/release-day'
 import { updateTaskItemRoute } from '../../api/tasks/items/update'
-import { pomodoroAssignTaskRoute } from '../../api/pomodoro/assign-task'
-import { getPomodoroStateRoute } from '../../api/pomodoro/state/get'
-import { pomodoroControlRoute } from '../../api/pomodoro/control'
+import { genSocketId } from '@app/socket'
+import { toolsStateRoute } from '../../api/tools/state'
+import { toolsControlRoute } from '../../api/tools/control'
+import { focusToolsSocketId } from '../../shared/focus-tools-types'
 import { getJournalMonthDataRoute } from '../../api/journal/month/data'
 import { getJournalHabitsRoute } from '../../api/journal/habits/get'
 import { saveJournalHabitsRoute } from '../../api/journal/habits/save'
@@ -157,9 +158,16 @@ export const journalPageRoute = app.html('/', async (ctx, req) => {
   const taskItemReorderDayUrl = getApiUrlForRoute(reorderTaskDayItemsRoute.url())
   const taskReleaseDayUrl = getApiUrlForRoute(releaseTaskDayItemsRoute.url())
   const taskItemUpdateUrl = getApiUrlForRoute(updateTaskItemRoute.url())
-  const pomodoroAssignTaskUrl = getApiUrlForRoute(pomodoroAssignTaskRoute.url())
-  const pomodoroStateGetUrl = getApiUrlForRoute(getPomodoroStateRoute.url())
-  const pomodoroControlUrl = getApiUrlForRoute(pomodoroControlRoute.url())
+  const toolsStateUrl = getApiUrlForRoute(toolsStateRoute.url())
+  const toolsControlUrl = getApiUrlForRoute(toolsControlRoute.url())
+  let encodedFocusToolsSocketId = ''
+  if (ctx.user) {
+    try {
+      encodedFocusToolsSocketId = await genSocketId(ctx, focusToolsSocketId(ctx.user.id))
+    } catch {
+      encodedFocusToolsSocketId = ''
+    }
+  }
   const journalMonthDataUrl = getApiUrlForRoute(getJournalMonthDataRoute.url())
   const journalHabitsGetUrl = getApiUrlForRoute(getJournalHabitsRoute.url())
   const journalHabitsSaveUrl = getApiUrlForRoute(saveJournalHabitsRoute.url())
@@ -446,9 +454,9 @@ export const journalPageRoute = app.html('/', async (ctx, req) => {
           taskReleaseDayUrl={taskReleaseDayUrl}
           taskItemUpdateUrl={taskItemUpdateUrl}
           tasksPageUrl={tasksPageUrl}
-          pomodoroAssignTaskUrl={pomodoroAssignTaskUrl}
-          pomodoroStateGetUrl={pomodoroStateGetUrl}
-          pomodoroControlUrl={pomodoroControlUrl}
+          toolsControlUrl={toolsControlUrl}
+          toolsStateUrl={toolsStateUrl}
+          encodedFocusToolsSocketId={encodedFocusToolsSocketId}
           journalMonthDataUrl={journalMonthDataUrl}
           journalTabInitial={journalTabInitial}
           journalHabitsGetUrl={journalHabitsGetUrl}

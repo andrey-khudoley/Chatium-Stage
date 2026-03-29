@@ -5,10 +5,10 @@ import PomodoroSettingsModal from './PomodoroSettingsModal.vue'
 import PomodoroTaskSelector from './PomodoroTaskSelector.vue'
 import FocusClockPane from './FocusClockPane.vue'
 import PomodoroToolStatsRow from './PomodoroToolStatsRow.vue'
-import { readFocusClockStatsFromStorage } from '../../lib/focus-clock-local-stats'
 import { formatPomodoroSecondsDisplay as fmt } from '../../lib/pomodoro-types'
-import { computePomodoroStatsDayKeyLocal } from '../../lib/pomodoro-stats-day'
 import type { PomodoroPhaseCompleteAction, PomodoroAfterLongRest } from '../../lib/pomodoro-types'
+import type { StopwatchToolSnapshot, TimerToolSnapshot } from '../../shared/focus-tools-types'
+import type { FocusToolsFullStateDto } from '../../shared/focus-tools-types'
 
 type PomodoroState = {
   status: 'stopped' | 'running' | 'paused' | 'awaiting_continue'
@@ -56,11 +56,14 @@ const props = defineProps<{
   settingsModel: SettingsDraft
   saving: boolean
   actionPending: boolean
-  assignTaskUrl: string
+  toolsControlUrl: string
   getTasksUrl: string
-  toolsFocusLogUrl: string
   activeTool: 'pomodoro' | 'timer' | 'stopwatch'
   settingsOpen: boolean
+  statsDayKey: string
+  timerSnapshot: TimerToolSnapshot
+  stopwatchSnapshot: StopwatchToolSnapshot
+  focusToolsWsConnected: boolean
 }>()
 
 const emit = defineEmits<{
@@ -70,16 +73,13 @@ const emit = defineEmits<{
   (e: 'save-settings', draft: SettingsDraft): void
   (e: 'pomodoro-task-assigned', taskId: string): void
   (e: 'shared-task-selected', taskId: string): void
+  (e: 'focus-tools-sync', payload: FocusToolsFullStateDto): void
 }>()
 
 const phaseLabels: Record<PomodoroState['phase'], string> = {
   work: 'Работа',
   rest: 'Отдых',
   long_rest: 'Длинный отдых'
-}
-
-function statsDayKey(): string {
-  return computePomodoroStatsDayKeyLocal(props.localTickMs)
 }
 
 const overtimeSec = computed(() => {
@@ -120,26 +120,24 @@ const pomodoroActionPanelLayout = computed(() => {
   return 'pomodoro-actions__panel--n2'
 })
 
-const unifiedSessionsCount = computed(() => {
-  const dayKey = statsDayKey()
-  const t = readFocusClockStatsFromStorage('timer', dayKey)?.sessionsCount ?? 0
-  const s = readFocusClockStatsFromStorage('stopwatch', dayKey)?.sessionsCount ?? 0
-  return props.state.tasksCompletedToday + t + s
-})
+const unifiedSessionsCount = computed(
+  () =>
+    props.state.tasksCompletedToday +
+    props.timerSnapshot.sessionsCount +
+    props.stopwatchSnapshot.sessionsCount,
+)
 
-const unifiedWorkFocusSec = computed(() => {
-  const dayKey = statsDayKey()
-  const t = readFocusClockStatsFromStorage('timer', dayKey)?.totalFocusSec ?? 0
-  const sw = readFocusClockStatsFromStorage('stopwatch', dayKey)?.totalFocusSec ?? 0
-  return props.state.totalWorkSec + t + sw
-})
+const unifiedWorkFocusSec = computed(
+  () => props.state.totalWorkSec + props.timerSnapshot.totalFocusSec + props.stopwatchSnapshot.totalFocusSec,
+)
 
-const unifiedTotalAllSec = computed(() => {
-  const dayKey = statsDayKey()
-  const t = readFocusClockStatsFromStorage('timer', dayKey)?.totalSec ?? 0
-  const sw = readFocusClockStatsFromStorage('stopwatch', dayKey)?.totalSec ?? 0
-  return props.state.totalWorkSec + props.state.totalRestSec + t + sw
-})
+const unifiedTotalAllSec = computed(
+  () =>
+    props.state.totalWorkSec +
+    props.state.totalRestSec +
+    props.timerSnapshot.totalSec +
+    props.stopwatchSnapshot.totalSec,
+)
 </script>
 
 <template>
@@ -205,10 +203,10 @@ const unifiedTotalAllSec = computed(() => {
       </transition>
 
       <PomodoroTaskSelector
-        :assign-task-url="assignTaskUrl"
+        :tools-control-url="toolsControlUrl"
         :get-tasks-url="getTasksUrl"
         :current-task-id="state.currentTaskId"
-        :stats-day-key="statsDayKey()"
+        :stats-day-key="statsDayKey"
         @task-assigned="emit('pomodoro-task-assigned', $event)"
       />
 
@@ -261,10 +259,16 @@ const unifiedTotalAllSec = computed(() => {
     <FocusClockPane
       v-if="activeTool === 'timer' || activeTool === 'stopwatch'"
       :mode="activeTool === 'timer' ? 'timer' : 'stopwatch'"
-      :focus-log-url="toolsFocusLogUrl"
       :get-tasks-url="getTasksUrl"
       :selected-task-id="sharedSelectedTaskId"
+      :tools-control-url="toolsControlUrl"
+      :stats-day-key="statsDayKey"
+      :timer-snapshot="timerSnapshot"
+      :stopwatch-snapshot="stopwatchSnapshot"
+      :local-tick-ms="localTickMs"
+      :focus-tools-ws-connected="focusToolsWsConnected"
       @task-selected="emit('shared-task-selected', $event)"
+      @focus-tools-sync="emit('focus-tools-sync', $event)"
     />
 
     <PomodoroToolStatsRow
