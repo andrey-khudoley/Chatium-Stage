@@ -24,6 +24,30 @@ export const listTestsRoute = app.get('/', async (ctx, req) => {
   })
   const categories = [
     {
+      id: 'unit-save-credentials',
+      title: 'Юнит: слияние ключей (save, без сети)',
+      tests: [
+        {
+          id: 'settings-save-credentials-unit',
+          title: 'resolveGcCredentialsForSave / resolveLavaCredentialsForSave'
+        }
+      ]
+    },
+    {
+      id: 'integration-credentials-heap',
+      title: 'Интеграция: ключи из Heap (GetCourse и Lava)',
+      tests: [
+        {
+          id: 'integration-gc-credentials',
+          title: 'GetCourse: gc_api_key + gc_account_domain → verifyGcPlApiAccess'
+        },
+        {
+          id: 'integration-lava-credentials',
+          title: 'Lava: lava_api_key + lava_base_url → GET /api/v2/products'
+        }
+      ]
+    },
+    {
       id: 'endpoints',
       title: 'Проверка эндпоинтов',
       tests: [

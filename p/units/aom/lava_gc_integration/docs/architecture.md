@@ -17,7 +17,7 @@
 - `index.tsx` — главная (SSR + Vue), единственный роут в корне.
 - `web/admin/index.tsx` — админка, `requireAccountRole('Admin')`.
 - `web/profile/index.tsx` — профиль, `requireRealUser()`.
-- `web/tests/index.tsx` — страница тестов, `requireRealUser()`.
+- `web/tests/index.tsx` — страница тестов, `requireRealUser()`; `TestsPage.vue` — вкладки «Юнит» (слияние ключей save без сети), «Интеграция» (два GET: GetCourse и Lava из Heap отдельно), «Устаревшее» (полный прежний набор), логи справа (CRT-оформление).
 - `web/login/index.tsx` — вход (редирект на системный `/s/auth/signin`).
 
 ## Разделение слоёв

@@ -4,7 +4,7 @@ import * as gcApi from '../../lib/getcourse-api.client'
 import * as lavaApi from '../../lib/lava-api.client'
 import * as settingsLib from '../../lib/settings.lib'
 import * as loggerLib from '../../lib/logger.lib'
-import { normalizeLavaBaseUrlInput } from '../../shared/lavaBaseUrl'
+import * as saveCredsLib from '../../lib/settings-save-credentials.lib'
 
 const LOG_PATH = 'api/settings/save'
 
@@ -73,13 +73,14 @@ export const saveSettingRoute = app.post('/', async (ctx, req) => {
   const sk = settingsLib.SETTING_KEYS
 
   if (key === sk.GC_API_KEY || key === sk.GC_ACCOUNT_DOMAIN) {
-    const nextApiKey =
-      key === sk.GC_API_KEY ? String(value ?? '').trim() : (await settingsLib.getGcApiKey(ctx)).trim()
-    const nextDomain =
-      key === sk.GC_ACCOUNT_DOMAIN
-        ? String(value ?? '').trim()
-        : (await settingsLib.getGcAccountDomain(ctx)).trim()
-    if (nextApiKey && nextDomain) {
+    const gcResolved = saveCredsLib.resolveGcCredentialsForSave(
+      key,
+      value,
+      await settingsLib.getGcApiKey(ctx),
+      await settingsLib.getGcAccountDomain(ctx)
+    )!
+    if (saveCredsLib.shouldVerifyCredentialPair(gcResolved.nextApiKey, gcResolved.nextDomain)) {
+      const { nextApiKey, nextDomain } = gcResolved
       const v = await gcApi.verifyGcPlApiAccess(ctx, { apiKey: nextApiKey, domain: nextDomain })
       if (!v.ok) {
         await loggerLib.writeServerLog(ctx, {
@@ -98,14 +99,14 @@ export const saveSettingRoute = app.post('/', async (ctx, req) => {
   }
 
   if (key === sk.LAVA_API_KEY || key === sk.LAVA_BASE_URL) {
-    const nextApiKey =
-      key === sk.LAVA_API_KEY ? String(value ?? '').trim() : (await settingsLib.getLavaApiKey(ctx)).trim()
-    const nextBaseRaw =
-      key === sk.LAVA_BASE_URL ? String(value ?? '') : await settingsLib.getLavaBaseUrl(ctx)
-    const nextBase = normalizeLavaBaseUrlInput(
-      typeof nextBaseRaw === 'string' ? nextBaseRaw : String(nextBaseRaw ?? '')
-    )
-    if (nextApiKey && nextBase) {
+    const lavaResolved = saveCredsLib.resolveLavaCredentialsForSave(
+      key,
+      value,
+      await settingsLib.getLavaApiKey(ctx),
+      await settingsLib.getLavaBaseUrl(ctx)
+    )!
+    if (saveCredsLib.shouldVerifyCredentialPair(lavaResolved.nextApiKey, lavaResolved.nextBaseNormalized)) {
+      const { nextApiKey, nextBaseNormalized: nextBase } = lavaResolved
       const v = await lavaApi.verifyLavaCredentials(ctx, { apiKey: nextApiKey, baseUrl: nextBase })
       if (!v.ok) {
         await loggerLib.writeServerLog(ctx, {
