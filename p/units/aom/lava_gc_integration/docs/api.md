@@ -8,7 +8,7 @@
 | --- | --- | --- | --- | --- |
 | GET | /api/settings/list | api/settings/list.ts | Admin | Список всех настроек (с дефолтами) |
 | GET | /api/settings/get?key= | api/settings/get.ts | Admin | Получить одну настройку |
-| POST | /api/settings/save | api/settings/save.ts | Admin | Сохранить настройку (body: `{ key, value }`). Для `log_level`: допускаются строки (Debug/Info/Warn/Error/Disable) и числа -1–4 (-1,0=Disable, 1=Info, 2=Warn, 3=Error, 4=Debug), нормализация в API. Перед записью в Heap: при сохранении `gc_api_key` или `gc_account_domain` (если после слияния с уже сохранённым вторым полем оба непусты) — запрос `verifyGcPlApiAccess` к GetCourse PL API; при `lava_api_key` или `lava_base_url` (оба непусты после слияния) — GET Lava `/api/v2/products`, успех только при HTTP 200. Иначе `{ success: false, error }` без записи. |
+| POST | /api/settings/save | api/settings/save.ts | Admin | Сохранить настройку (body: `{ key, value }`). Для `log_level`: допускаются строки (Debug/Info/Warn/Error/Disable) и числа -1–4 (-1,0=Disable, 1=Info, 2=Warn, 3=Error, 4=Debug), нормализация в API. Слияние пар ключей интеграции перед verify — `lib/settings-save-credentials.lib` (`resolveGcCredentialsForSave`, `resolveLavaCredentialsForSave`, `shouldVerifyCredentialPair`). Перед записью в Heap: при сохранении `gc_api_key` или `gc_account_domain` (если после слияния с уже сохранённым вторым полем оба непусты) — запрос `verifyGcPlApiAccess` к GetCourse PL API; при `lava_api_key` или `lava_base_url` (оба непусты после слияния и нормализации URL) — GET Lava `/api/v2/products`, успех только при HTTP 200. Иначе `{ success: false, error }` без записи. |
 
 Каждый файл — один эндпоинт с путём `/`.
 
@@ -61,7 +61,7 @@
 
 ## Тесты (api/tests/)
 
-Каталог тестов: категории и отдельные тесты. Один файл — один эндпоинт с путём `/`. Внутри категории (например, «проверка эндпоинтов») — по одному файлу на тест.
+Каталог тестов: категории и отдельные тесты. Один файл — один эндпоинт с путём `/`. Внутри категории (например, «проверка эндпоинтов») — по одному файлу на тест. Как устроены проверки, роль **`ctx`** (реальный контекст запроса, без «мока») и запуск со страницы `/web/tests` — см. **[testing.md](./testing.md)**.
 
 | Method | Path | File | Auth | Назначение |
 | --- | --- | --- | --- | --- |
@@ -77,6 +77,8 @@
 | GET | /api/tests/endpoints-check/lava-settings-getters | api/tests/endpoints-check/lava-settings-getters.ts | AnyUser | Геттеры интеграции в `settings.lib`: `getLavaApiKey`, `getLavaBaseUrl`, `getLavaProductId`, `getLavaOfferId`, `getLavaWebhookSecret`, `getGcApiKey`, `getGcAccountDomain`, `getGcServiceToken` — массив `results`. |
 | GET | /api/tests/endpoints-check/integration-gc-credentials | api/tests/endpoints-check/integration-gc-credentials.ts | AnyUser | Проверка GetCourse из Heap: `gc_api_key` + `gc_account_domain` → `verifyGcPlApiAccess`. Ответ: `{ success, skipped?, test, message?, error?, at }`; при неполной паре в настройках — `success: true`, `skipped: true`. |
 | GET | /api/tests/endpoints-check/integration-lava-credentials | api/tests/endpoints-check/integration-lava-credentials.ts | AnyUser | Проверка Lava из Heap: `lava_api_key` + `lava_base_url` → `verifyLavaCredentials` (GET `/api/v2/products`). Ответ: `{ success, skipped?, test, message?, error?, httpStatus?, at }`; при неполной паре — `skipped: true`. |
+| GET | /api/tests/endpoints-check/integration-credentials-both | api/tests/endpoints-check/integration-credentials-both.ts | AnyUser | Обе проверки из Heap за один запрос: `runIntegrationCredentialChecksFromSettings`. Успех, если для GetCourse и Lava либо `skipped` (неполная пара), либо `ran && ok`. Ответ: `{ success, test, gc, lava, at }`. |
+| GET | /api/tests/endpoints-check/settings-save-credentials-unit | api/tests/endpoints-check/settings-save-credentials-unit.ts | AnyUser | Юнит-проверки слияния полей для save (без сети): массив `results` с фикстурами. Query `testId` — один кейс (id из списка в файле). |
 | GET | /api/tests/endpoints-check/lava-repos | api/tests/endpoints-check/lava-repos.ts | AnyUser | Репозитории Heap интеграции: контракт оплаты, webhook-события, lock-log; массив `results`. |
 | GET | /api/tests/endpoints-check/lava-webhook-service | api/tests/endpoints-check/lava-webhook-service.ts | AnyUser | `processWebhook`: 401 при неверном ключе, сценарий без контракта в Heap, дедупликация; массив `results` (часть проверок пропускается, если не задан `lava_webhook_secret`). |
 | GET | /api/tests/endpoints-check/getcourse-deal-update | api/tests/endpoints-check/getcourse-deal-update.ts | AnyUser | Вызов `updateDealStatus` без исключения (при отсутствии ключей GetCourse — no-op в клиенте). |
@@ -85,7 +87,7 @@
 | GET | /api/tests/endpoints-check/lava-api-client | api/tests/endpoints-check/lava-api-client.ts | AnyUser | Интеграция: вызов `getProducts` (Lava GET `/api/v2/products`). Успех: `{ success: true, test, body }`; при ошибке конфигурации/API: `{ success: false, test, error }`. |
 | GET | /api/tests/endpoints-check/payment-link | api/tests/endpoints-check/payment-link.ts | AnyUser | Интеграция: `createPaymentLink` с тестовыми данными (уникальный `gcOrderId`, 50 RUB — минимум Lava для RUB, email `lava-test@example.com`). Ответ: `{ success: true, test, result }` с полями `createPaymentLink` или `{ success: false, test, error }`. |
 
-Структура: `api/tests/` — общий каталог; `api/tests/<категория>/` — директория категории (например, `endpoints-check`); внутри категории — отдельные файлы с одним эндпоинтом `/` в каждом. Каталог `GET /api/tests/list`: категория `integration-check` — только два GET учётных данных (`integration-gc-credentials`, `integration-lava-credentials`); остальные интеграционные GET в `endpoints-check/` перечислены в таблице выше, но в list не дублируются.
+Структура: `api/tests/` — общий каталог; `api/tests/<категория>/` — директория категории (например, `endpoints-check`); внутри категории — отдельные файлы с одним эндпоинтом `/` в каждом. Каталог `GET /api/tests/list`: категории `unit-save-credentials`, `integration-credentials-heap` (два теста: GetCourse и Lava), `integration-check` (те же два GET учётных данных), плюс прочие; опционально эндпоинт `integration-credentials-both` — таблица выше. Страница `/web/tests`, вкладка «Интеграция» — два отдельных GET, не объединённый ответ.
 
 ## Публичные эндпоинты
 | Method | Path | File | Auth | Назначение |

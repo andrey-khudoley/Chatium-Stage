@@ -1,6 +1,8 @@
 # Импорты страниц и схема зависимостей
 
-Актуально для реализованной интеграции GetCourse + Lava: таблицы `lava_*`, репозитории в `repos/`, `lib/lava-types.ts`, `lib/lava-api.client.ts`, `lib/getcourse-api.client.ts`, `lib/lava-payment.service.ts`, `lib/lava-webhook.service.ts`, эндпоинты `api/integrations/lava/*`, тесты в `api/tests/endpoints-check/` — в т.ч. `integration-gc-credentials.ts`, `integration-lava-credentials.ts`, `lava-settings-getters.ts`, `lava-repos.ts`, `lava-webhook-service.ts`, `getcourse-deal-update.ts`, `lava-api-catalog.ts`, `lava-payment-link-route.ts`, `lava-api-client.ts`, `payment-link.ts`.
+Роль **`ctx`** в тестах и запуск проверок со страницы тестов — [testing.md](./testing.md).
+
+Актуально для реализованной интеграции GetCourse + Lava: таблицы `lava_*`, репозитории в `repos/`, `lib/lava-types.ts`, `lib/lava-api.client.ts`, `lib/getcourse-api.client.ts`, `lib/settings-save-credentials.lib.ts`, `lib/lava-payment.service.ts`, `lib/lava-webhook.service.ts`, эндпоинты `api/integrations/lava/*`, тесты в `api/tests/endpoints-check/` — в т.ч. `integration-gc-credentials.ts`, `integration-lava-credentials.ts`, `integration-credentials-both.ts`, `settings-save-credentials-unit.ts`, `lava-settings-getters.ts`, `lava-repos.ts`, `lava-webhook-service.ts`, `getcourse-deal-update.ts`, `lava-api-catalog.ts`, `lava-payment-link-route.ts`, `lava-api-client.ts`, `payment-link.ts`.
 
 ## 1) Страницы‑роуты (TSX entrypoints)
 
@@ -233,6 +235,12 @@
 - `./settings.lib` → геттеры ключей интеграции
 - экспортирует: `runGcCredentialCheckFromSettings`, `runLavaCredentialCheckFromSettings`, `runIntegrationCredentialChecksFromSettings`, типы `GcCredentialCheckFromSettings`, `LavaCredentialCheckFromSettings`
 
+### `./lib/settings-save-credentials.lib.ts`
+- `../shared/lavaBaseUrl` → `normalizeLavaBaseUrlInput`
+- `../shared/gcSettingKeys` → `GC_SETTING_KEYS`
+- `../shared/lavaSettingKeys` → `LAVA_SETTING_KEYS`
+- экспортирует: `resolveGcCredentialsForSave`, `resolveLavaCredentialsForSave`, `shouldVerifyCredentialPair`, типы `GcCredentialsResolved`, `LavaCredentialsResolved`
+
 ### `./lib/lava-payment.service.ts`
 - `@app/sync` → `runWithExclusiveLock`, `LockAcquisitionError`
 - `./lava-types` → `PaymentLinkRequest`, `PaymentLinkResponse` (types)
@@ -289,10 +297,10 @@
 - `@app/auth` → `requireAccountRole`
 - `../../lib/getcourse-api.client` → `verifyGcPlApiAccess`
 - `../../lib/lava-api.client` → `verifyLavaCredentials`
+- `../../lib/settings-save-credentials.lib` → `resolveGcCredentialsForSave`, `resolveLavaCredentialsForSave`, `shouldVerifyCredentialPair`
 - `../../lib/settings.lib` → `*`
 - `../../lib/logger.lib` → `*`
-- `../../shared/lavaBaseUrl` → `normalizeLavaBaseUrlInput`
-- перед `setSetting`: при сохранении `gc_api_key` / `gc_account_domain` (если оба непусты после слияния с Heap) — проверка PL API; при `lava_api_key` / `lava_base_url` — GET Lava `/api/v2/products` (HTTP 200)
+- перед `setSetting`: при сохранении `gc_api_key` / `gc_account_domain` (если оба непусты после слияния с Heap) — проверка PL API; при `lava_api_key` / `lava_base_url` — GET Lava `/api/v2/products` (HTTP 200); слияние полей — `settings-save-credentials.lib`
 
 ### `./api/admin/lava/catalog/index.ts`
 - `@app/auth` → `requireAccountRole`
@@ -395,6 +403,18 @@
 ### `./api/tests/endpoints-check/integration-lava-credentials.ts`
 - `@app/auth` → `requireAnyUser`
 - `../../../lib/integration-credentials.lib` → `*`
+- `../../../lib/logger.lib` → `*`
+
+### `./api/tests/endpoints-check/integration-credentials-both.ts`
+- `@app/auth` → `requireAnyUser`
+- `../../../lib/integration-credentials.lib` → `runIntegrationCredentialChecksFromSettings`
+- `../../../lib/logger.lib` → `*`
+
+### `./api/tests/endpoints-check/settings-save-credentials-unit.ts`
+- `@app/auth` → `requireAnyUser`
+- `../../../shared/gcSettingKeys` → `GC_SETTING_KEYS`
+- `../../../shared/lavaSettingKeys` → `LAVA_SETTING_KEYS`
+- `../../../lib/settings-save-credentials.lib` → `*`
 - `../../../lib/logger.lib` → `*`
 
 ### `./api/tests/endpoints-check/lava-api-client.ts`

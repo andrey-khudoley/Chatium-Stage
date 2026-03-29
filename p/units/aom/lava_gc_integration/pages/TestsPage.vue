@@ -36,13 +36,12 @@ const props = defineProps<{
 const showContent = ref(false)
 const bootLoaderDone = ref(false)
 
-const displayedTitle = ref('')
-const displayedDescription = ref('')
-const showCursor = ref(false)
-const cursorPosition = ref<'title' | 'description' | 'final'>('title')
-const showTitleUnderline = ref(false)
+/** Режим набора тестов: новые юнит/интеграция (пока пусто) или устаревший набор всех текущих проверок. */
+const testSuiteMode = ref<'unit' | 'integration' | 'legacy'>('legacy')
 
-const intervalIds = { title: null as ReturnType<typeof setInterval> | null, desc: null as ReturnType<typeof setInterval> | null }
+const hasRunnableTestsInMode = computed(
+  () => testSuiteMode.value === 'legacy' || testSuiteMode.value === 'unit' || testSuiteMode.value === 'integration'
+)
 
 const MAX_LOG_ENTRIES = 500
 const logEntries = ref<LogEntry[]>([])
@@ -190,48 +189,10 @@ const clearLogs = () => {
   log.info('Логи очищены, таймштамп сдвинут на текущий — «Загрузить ещё 50» восстановит последние')
 }
 
-const typeTextSequence = () => {
-  log.debug('Tests title animation started')
-  const titleText = 'Тесты'
-  cursorPosition.value = 'title'
-
-  let titleIndex = 0
-  intervalIds.title = setInterval(() => {
-    if (titleIndex < titleText.length) {
-      displayedTitle.value = titleText.substring(0, titleIndex + 1)
-      titleIndex++
-    } else {
-      if (intervalIds.title) clearInterval(intervalIds.title)
-      intervalIds.title = null
-      showTitleUnderline.value = true
-      typeDescription()
-    }
-  }, 15)
-}
-
-const typeDescription = () => {
-  const descriptionText = 'Страница для тестов и проверок'
-  cursorPosition.value = 'description'
-  let descIndex = 0
-  intervalIds.desc = setInterval(() => {
-    if (descIndex < descriptionText.length) {
-      displayedDescription.value = descriptionText.substring(0, descIndex + 1)
-      descIndex++
-    } else {
-      if (intervalIds.desc) clearInterval(intervalIds.desc)
-      intervalIds.desc = null
-      cursorPosition.value = 'final'
-      showContent.value = true
-    }
-  }, 15)
-}
-
 const startAnimations = () => {
-  log.info('Boot loader complete, starting tests page animations')
+  log.info('Boot loader complete, tests page ready')
   bootLoaderDone.value = true
-  showCursor.value = true
-  cursorPosition.value = 'title'
-  setTimeout(() => typeTextSequence(), 200)
+  showContent.value = true
 }
 
 onMounted(() => {
@@ -278,8 +239,6 @@ onUnmounted(() => {
   log.info('Component unmounted')
   setLogSink(null)
   window.removeEventListener('bootloader-complete', startAnimations)
-  if (intervalIds.title) clearInterval(intervalIds.title)
-  if (intervalIds.desc) clearInterval(intervalIds.desc)
 })
 
 const openChatiumLink = () => {
@@ -317,6 +276,8 @@ type SingleRunGroup =
   | 'logsRepo'
   | 'dashboardLib'
   | 'settingKeys'
+  | 'unitSaveCreds'
+  | 'integrationBoth'
 
 const singleTestRun = ref<{ group: SingleRunGroup; id: string } | null>(null)
 
@@ -826,6 +787,181 @@ function lavaStepToTestResult(
   }
 }
 
+/* --- Вкладка «Юнит»: слияние ключей для save (без сети) --- */
+const UNIT_SAVE_CREDS_TESTS: Array<{ id: string; title: string }> = [
+  { id: 'gc_merge_save_key_only', title: 'GC: только gc_api_key — домен из Heap' },
+  { id: 'gc_merge_save_domain_only', title: 'GC: только gc_account_domain — ключ из Heap' },
+  { id: 'gc_verify_when_both_nonempty', title: 'GC: verify при полной паре' },
+  { id: 'gc_no_verify_when_one_empty', title: 'GC: без verify при неполной паре' },
+  { id: 'gc_wrong_key_null', title: 'GC: посторонний ключ → null' },
+  { id: 'lava_merge_save_key_only', title: 'Lava: только ключ — URL из Heap' },
+  { id: 'lava_merge_save_url_normalizes_host', title: 'Lava: нормализация base URL' },
+  { id: 'lava_verify_when_both_nonempty', title: 'Lava: verify при полной паре' },
+  { id: 'lava_no_verify_empty_api_key', title: 'Lava: без verify при пустом ключе' },
+  { id: 'lava_wrong_key_null', title: 'Lava: посторонний ключ → null' }
+]
+const unitSaveCredsResults = ref<TestResult[]>([])
+const unitSaveCredsLoading = ref(false)
+const unitSaveCredsLastRunAt = ref<string | null>(null)
+
+const unitSaveCredsDisplay = computed(() => {
+  const byId = new Map(unitSaveCredsResults.value.map((r) => [r.id, r]))
+  return UNIT_SAVE_CREDS_TESTS.map((t) => {
+    const res = byId.get(t.id)
+    return {
+      id: t.id,
+      title: t.title,
+      status: res === undefined ? 'todo' : res.passed ? 'success' : 'fail',
+      error: res && !res.passed ? res.error : undefined
+    }
+  })
+})
+
+async function runUnitSaveCredsTests() {
+  unitSaveCredsLoading.value = true
+  unitSaveCredsResults.value = []
+  const baseUrl = getApiBaseUrl().replace(/\/$/, '')
+  log.info('Юнит-тесты: слияние ключей save')
+  try {
+    const res = await fetch(`${baseUrl}/api/tests/endpoints-check/settings-save-credentials-unit`, {
+      method: 'GET',
+      credentials: 'include'
+    })
+    const data = (await res.json().catch(() => null)) as { success?: boolean; results?: TestResult[] }
+    if (res.ok && data?.success !== undefined && Array.isArray(data.results)) {
+      unitSaveCredsResults.value = data.results
+    } else {
+      unitSaveCredsResults.value = UNIT_SAVE_CREDS_TESTS.map((t) => ({
+        id: t.id,
+        title: t.title,
+        passed: false,
+        error: 'Ошибка запроса'
+      }))
+    }
+    unitSaveCredsLastRunAt.value = new Date().toLocaleString('ru-RU')
+  } finally {
+    unitSaveCredsLoading.value = false
+  }
+}
+
+async function runSingleUnitSaveCredsTest(testId: string) {
+  const title = UNIT_SAVE_CREDS_TESTS.find((x) => x.id === testId)?.title ?? testId
+  singleTestRun.value = { group: 'unitSaveCreds', id: testId }
+  const baseUrl = getApiBaseUrl().replace(/\/$/, '')
+  try {
+    const res = await fetch(
+      `${baseUrl}/api/tests/endpoints-check/settings-save-credentials-unit?testId=${encodeURIComponent(testId)}`,
+      { method: 'GET', credentials: 'include' }
+    )
+    const data = (await res.json().catch(() => null)) as {
+      success?: boolean
+      results?: TestResult[]
+      error?: string
+    }
+    if (res.ok && data?.success !== undefined && Array.isArray(data.results) && data.results.length > 0) {
+      unitSaveCredsResults.value = upsertTestResults(unitSaveCredsResults.value, data.results)
+    } else {
+      unitSaveCredsResults.value = upsertTestResults(unitSaveCredsResults.value, [
+        { id: testId, title, passed: false, error: data?.error || 'Ошибка запроса' }
+      ])
+    }
+    unitSaveCredsLastRunAt.value = new Date().toLocaleString('ru-RU')
+  } finally {
+    singleTestRun.value = null
+  }
+}
+
+/* --- Вкладка «Интеграция»: GetCourse и Lava отдельными запросами (как в админке) --- */
+const INTEGRATION_TAB_CREDENTIAL_TESTS: Array<{
+  id: string
+  title: string
+  path: string
+  mode: 'results' | 'legacy'
+}> = [
+  {
+    id: 'integration-gc-credentials',
+    title: 'GetCourse: API-ключ и домен (PL API)',
+    path: '/api/tests/endpoints-check/integration-gc-credentials',
+    mode: 'legacy'
+  },
+  {
+    id: 'integration-lava-credentials',
+    title: 'Lava: API-ключ и базовый URL (GET /api/v2/products)',
+    path: '/api/tests/endpoints-check/integration-lava-credentials',
+    mode: 'legacy'
+  }
+]
+const integrationBothResults = ref<TestResult[]>([])
+const integrationBothLoading = ref(false)
+const integrationBothLastRunAt = ref<string | null>(null)
+
+const integrationBothDisplay = computed(() => {
+  const byId = new Map(integrationBothResults.value.map((r) => [r.id, r]))
+  return INTEGRATION_TAB_CREDENTIAL_TESTS.map((t) => {
+    const res = byId.get(t.id)
+    return {
+      id: t.id,
+      title: t.title,
+      status: res === undefined ? 'todo' : res.passed ? 'success' : 'fail',
+      error: res && !res.passed ? res.error : undefined
+    }
+  })
+})
+
+async function runIntegrationBothTests() {
+  integrationBothLoading.value = true
+  integrationBothResults.value = []
+  const baseUrl = getApiBaseUrl().replace(/\/$/, '')
+  log.info('Интеграция: проверка GetCourse и Lava из Heap (отдельные GET)')
+  const out: TestResult[] = []
+  try {
+    for (const step of INTEGRATION_TAB_CREDENTIAL_TESTS) {
+      try {
+        const res = await fetch(`${baseUrl}${step.path}`, { method: 'GET', credentials: 'include' })
+        const data = (await res.json().catch(() => null)) as Record<string, unknown>
+        out.push(lavaStepToTestResult(step, res, data))
+      } catch (e) {
+        out.push({
+          id: step.id,
+          title: step.title,
+          passed: false,
+          error: (e as Error)?.message ?? String(e)
+        })
+      }
+    }
+    integrationBothResults.value = out
+    integrationBothLastRunAt.value = new Date().toLocaleString('ru-RU')
+  } finally {
+    integrationBothLoading.value = false
+  }
+}
+
+async function runSingleIntegrationBothTest(testId: string) {
+  const step = INTEGRATION_TAB_CREDENTIAL_TESTS.find((s) => s.id === testId)
+  if (!step) return
+  singleTestRun.value = { group: 'integrationBoth', id: testId }
+  const baseUrl = getApiBaseUrl().replace(/\/$/, '')
+  try {
+    const res = await fetch(`${baseUrl}${step.path}`, { method: 'GET', credentials: 'include' })
+    const data = (await res.json().catch(() => null)) as Record<string, unknown>
+    const one = lavaStepToTestResult(step, res, data)
+    integrationBothResults.value = upsertTestResults(integrationBothResults.value, [one])
+    integrationBothLastRunAt.value = new Date().toLocaleString('ru-RU')
+  } catch (e) {
+    integrationBothResults.value = upsertTestResults(integrationBothResults.value, [
+      {
+        id: step.id,
+        title: step.title,
+        passed: false,
+        error: (e as Error)?.message ?? String(e)
+      }
+    ])
+    integrationBothLastRunAt.value = new Date().toLocaleString('ru-RU')
+  } finally {
+    singleTestRun.value = null
+  }
+}
+
 /* --- Блок 7: Ключи интеграции (отдельно GC и Lava, как в админке) --- */
 const SETTING_KEYS_VALIDATION_TESTS: Array<{ id: string; title: string; path: string; mode: 'results' | 'legacy' }> = [
   {
@@ -912,11 +1048,45 @@ async function runSingleSettingKeysValidationTest(testId: string) {
   }
 }
 
-/** Запустить все тесты (все семь блоков) и обновить метрики дашборда */
+/** Запустить все тесты выбранного режима и обновить метрики дашборда */
 const runAllTests = async () => {
+  if (!hasRunnableTestsInMode.value) {
+    log.notice('Запуск всех тестов: в этой вкладке пока нет сценариев', testSuiteMode.value)
+    return
+  }
   runAllTestsLoading.value = true
-  log.info('Запуск всех тестов')
+  log.info('Запуск всех тестов', { mode: testSuiteMode.value })
   try {
+    if (testSuiteMode.value === 'unit') {
+      await runUnitSaveCredsTests()
+      const all = [...unitSaveCredsResults.value]
+      const passed = all.filter((r) => r.passed).length
+      const failed = all.filter((r) => !r.passed).length
+      testMetrics.value = {
+        total: all.length,
+        passed,
+        failed,
+        skipped: 0,
+        lastRunAt: new Date().toLocaleString('ru-RU')
+      }
+      log.info('Юнит-тесты завершены', testMetrics.value)
+      return
+    }
+    if (testSuiteMode.value === 'integration') {
+      await runIntegrationBothTests()
+      const all = [...integrationBothResults.value]
+      const passed = all.filter((r) => r.passed).length
+      const failed = all.filter((r) => !r.passed).length
+      testMetrics.value = {
+        total: all.length,
+        passed,
+        failed,
+        skipped: 0,
+        lastRunAt: new Date().toLocaleString('ru-RU')
+      }
+      log.info('Интеграционные тесты завершены', testMetrics.value)
+      return
+    }
     await runEndpointsTests()
     await runSettingsTests()
     await runSettingsRepoTests()
@@ -966,144 +1136,217 @@ const runAllTests = async () => {
 
     <main class="content-wrapper flex-1 relative z-10 min-h-0 overflow-y-auto">
       <div class="content-inner">
-        <section class="tests-section" :class="{ 'content-visible': showContent }">
-          <div class="tests-header">
-            <div class="tests-icon-wrapper">
-              <i class="fas fa-flask tests-icon"></i>
-            </div>
-            <h1 class="tests-heading" :class="{ 'show-underline': showTitleUnderline }">
-              {{ displayedTitle }}<span v-if="showCursor && (cursorPosition === 'title' || cursorPosition === 'final')" class="typing-cursor">▮</span>
-            </h1>
-            <p class="tests-description">
-              {{ displayedDescription }}<span v-if="showCursor && cursorPosition === 'description'" class="typing-cursor">▮</span>
-            </p>
-          </div>
-
-          <!-- Логи (тот же сокет, что в админке; только для админа) -->
-          <div v-if="showContent && props.encodedLogsSocketId" class="tests-logs-card">
-            <div class="tests-logs-card-header">
-              <i class="fas fa-terminal tests-logs-card-icon"></i>
-              <h2 class="tests-logs-card-title">Логи</h2>
-            </div>
-            <div class="tests-logs-filters">
-              <button
-                type="button"
-                class="tests-log-filter-chip chip-info"
-                :class="{ active: logFilters.info }"
-                @click="toggleLogFilter('info')"
-              >
-                <i class="fas fa-info-circle"></i>
-                Info
-              </button>
-              <button
-                type="button"
-                class="tests-log-filter-chip chip-warn"
-                :class="{ active: logFilters.warn }"
-                @click="toggleLogFilter('warn')"
-              >
-                <i class="fas fa-exclamation-triangle"></i>
-                Warn
-              </button>
-              <button
-                type="button"
-                class="tests-log-filter-chip chip-error"
-                :class="{ active: logFilters.error }"
-                @click="toggleLogFilter('error')"
-              >
-                <i class="fas fa-exclamation-circle"></i>
-                Error
-              </button>
-            </div>
-            <div class="tests-logs-output custom-scrollbar" ref="logsOutputRef">
-              <div v-if="displayedLogs.length === 0" class="tests-logs-empty">
-                Логи появятся здесь...
-              </div>
-              <div v-for="(item, index) in displayedLogs" :key="index" class="tests-log-item">
-                <div v-if="item.type === 'divider'" class="tests-log-date-divider">
-                  --- {{ item.date }} ---
+        <section class="tests-section tests-crt" :class="{ 'content-visible': showContent }">
+          <div
+            class="tests-crt-frame"
+            :class="{ 'tests-crt-frame--with-logs': showContent && props.encodedLogsSocketId }"
+          >
+            <div class="tests-main-stack">
+              <!-- Дашборд: режим + метрики + запуск -->
+              <div v-if="showContent" class="tests-card tests-dashboard tests-crt-card">
+                <div class="tests-dashboard-top">
+                  <div class="tests-dashboard-title-row">
+                    <span class="tests-crt-label">TEST_SUITE</span>
+                    <h2 class="tests-dashboard-title">Метрики</h2>
+                  </div>
+                  <div class="tests-mode-switch" role="group" aria-label="Тип тестов">
+                    <button
+                      type="button"
+                      class="tests-mode-btn"
+                      :class="{ 'tests-mode-btn--active': testSuiteMode === 'unit' }"
+                      @click="testSuiteMode = 'unit'"
+                    >
+                      Юнит
+                    </button>
+                    <button
+                      type="button"
+                      class="tests-mode-btn"
+                      :class="{ 'tests-mode-btn--active': testSuiteMode === 'integration' }"
+                      @click="testSuiteMode = 'integration'"
+                    >
+                      Интеграция
+                    </button>
+                    <button
+                      type="button"
+                      class="tests-mode-btn tests-mode-btn--legacy-tab"
+                      :class="{ 'tests-mode-btn--active': testSuiteMode === 'legacy' }"
+                      @click="testSuiteMode = 'legacy'"
+                    >
+                      Устаревшее
+                    </button>
+                  </div>
                 </div>
-                <div v-else class="tests-log-entry">
-                  <span class="tests-log-time">{{ item.formattedTime }}</span>
-                  <span class="tests-log-level" :class="`tests-log-level-${item.entry.level}`">
-                    [{{ item.entry.level.toUpperCase() }}]
-                  </span>
-                  <span class="tests-log-message">{{ item.formattedMessage }}</span>
+                <p class="tests-mode-hint">
+                  <template v-if="testSuiteMode === 'unit'">
+                    Изолированные проверки слияния полей gc_api_key / gc_account_domain и Lava при сохранении (без сети и Heap).
+                  </template>
+                  <template v-else-if="testSuiteMode === 'integration'">
+                    Два сценария: живые запросы к GetCourse PL API и к Lava по учётным данным из Heap (отдельно, как поля в админке).
+                  </template>
+                  <template v-else>
+                    Прежний набор: эндпоинты, слои settings/logger/dashboard/repos и проверки ключей GetCourse / Lava в Heap.
+                  </template>
+                </p>
+                <div class="tests-dashboard-metrics">
+                  <div class="tests-metric tests-metric-total">
+                    <span class="tests-metric-value">{{ testMetrics.total }}</span>
+                    <span class="tests-metric-label">всего</span>
+                  </div>
+                  <div class="tests-metric tests-metric-passed">
+                    <span class="tests-metric-value">{{ testMetrics.passed }}</span>
+                    <span class="tests-metric-label">пройдено</span>
+                  </div>
+                  <div class="tests-metric tests-metric-failed">
+                    <span class="tests-metric-value">{{ testMetrics.failed }}</span>
+                    <span class="tests-metric-label">провалено</span>
+                  </div>
+                  <div class="tests-metric tests-metric-skipped">
+                    <span class="tests-metric-value">{{ testMetrics.skipped }}</span>
+                    <span class="tests-metric-label">пропущено</span>
+                  </div>
+                </div>
+                <p v-if="testMetrics.lastRunAt" class="tests-dashboard-last-run">
+                  Последний запуск: {{ testMetrics.lastRunAt }}
+                </p>
+                <div class="tests-dashboard-actions">
+                  <button
+                    type="button"
+                    class="tests-run-all-btn"
+                    :disabled="runAllTestsLoading || singleTestRun !== null || !hasRunnableTestsInMode"
+                    :title="
+                      !hasRunnableTestsInMode
+                        ? 'Нет сценариев'
+                        : testSuiteMode === 'unit'
+                          ? 'Запустить все юнит-проверки слияния ключей'
+                          : testSuiteMode === 'integration'
+                            ? 'Запустить проверки GetCourse и Lava (Heap)'
+                            : 'Запустить весь устаревший набор'
+                    "
+                    @click="runAllTests"
+                  >
+                    <i class="fas" :class="runAllTestsLoading ? 'fa-spinner fa-spin' : 'fa-play'"></i>
+                    {{ runAllTestsLoading ? 'Запуск...' : 'Запустить все тесты' }}
+                  </button>
                 </div>
               </div>
-            </div>
-            <div class="tests-logs-actions">
-              <div v-if="logsLoading" class="tests-logs-loading">
-                <i class="fas fa-spinner fa-spin"></i>
-                Загрузка логов...
-              </div>
-              <p v-if="logsError" class="tests-logs-error">{{ logsError }}</p>
-              <div class="tests-logs-action-row">
-                <button
-                  v-if="!logsLoading"
-                  type="button"
-                  class="tests-load-more-btn"
-                  :class="{ 'tests-load-more-btn-disabled': !logsHasMore }"
-                  :disabled="!logsHasMore"
-                  :title="logsHasMore ? 'Загрузить более старые логи' : 'Нет более старых логов'"
-                  @click="loadMoreLogs"
-                >
-                  <i class="fas fa-arrow-down"></i>
-                  Загрузить ещё 50
-                </button>
-                <button
-                  type="button"
-                  class="tests-logs-clear-btn"
-                  title="Очистить логи"
-                  @click="clearLogs"
-                >
-                  <i class="fas fa-trash-alt"></i>
-                </button>
-              </div>
-            </div>
-          </div>
 
-          <!-- Дашборд с метриками по тестам -->
-          <div v-if="showContent" class="tests-card tests-dashboard">
-            <div class="tests-dashboard-header">
-              <i class="fas fa-chart-line tests-dashboard-icon"></i>
-              <h2 class="tests-dashboard-title">Метрики тестов</h2>
-            </div>
-            <div class="tests-dashboard-metrics">
-              <div class="tests-metric tests-metric-total">
-                <span class="tests-metric-value">{{ testMetrics.total }}</span>
-                <span class="tests-metric-label">всего</span>
+              <!-- Вкладка «Юнит»: слияние ключей для POST /api/settings/save -->
+              <div v-if="showContent && testSuiteMode === 'unit'" class="tests-card tests-endpoints-card tests-crt-card">
+                <div class="tests-endpoints-header">
+                  <i class="fas fa-flask tests-endpoints-icon"></i>
+                  <h2 class="tests-endpoints-title">Юнит: слияние ключей (save)</h2>
+                </div>
+                <p class="tests-endpoints-desc">
+                  GET
+                  <code class="tests-inline-code">/api/tests/endpoints-check/settings-save-credentials-unit</code>
+                  — проверка функций
+                  <code class="tests-inline-code">resolveGcCredentialsForSave</code> /
+                  <code class="tests-inline-code">resolveLavaCredentialsForSave</code> без сети.
+                </p>
+                <div v-if="unitSaveCredsLastRunAt" class="tests-endpoints-last-run">
+                  Результаты от: {{ unitSaveCredsLastRunAt }}
+                </div>
+                <div class="tests-endpoints-list-wrap">
+                  <ul class="tests-endpoints-list" role="list">
+                    <li
+                      v-for="item in unitSaveCredsDisplay"
+                      :key="item.id"
+                      class="tests-endpoints-list-item"
+                      :class="`tests-endpoints-status-${item.status}`"
+                    >
+                      <span class="tests-endpoints-badge" :class="`tests-endpoints-badge-${item.status}`">
+                        {{ item.status === 'todo' ? '[TODO]' : item.status === 'success' ? '[OK]' : '[FAIL]' }}
+                      </span>
+                      <span class="tests-endpoints-list-title-inline">{{ item.title }}</span>
+                      <span v-if="item.error" class="tests-endpoints-list-error">{{ item.error }}</span>
+                      <button
+                        type="button"
+                        class="tests-run-one-btn"
+                        title="Запустить только этот тест"
+                        :disabled="runAllTestsLoading || unitSaveCredsLoading || isGroupBlockedBySingle('unitSaveCreds')"
+                        @click.stop="runSingleUnitSaveCredsTest(item.id)"
+                      >
+                        <i
+                          class="fas"
+                          :class="isSingleRunning('unitSaveCreds', item.id) ? 'fa-spinner fa-spin' : 'fa-play'"
+                        ></i>
+                      </button>
+                    </li>
+                  </ul>
+                </div>
+                <div class="tests-endpoints-actions">
+                  <button
+                    type="button"
+                    class="tests-run-group-btn"
+                    :disabled="runAllTestsLoading || unitSaveCredsLoading || isGroupBlockedBySingle('unitSaveCreds')"
+                    @click="runUnitSaveCredsTests"
+                  >
+                    <i class="fas" :class="unitSaveCredsLoading ? 'fa-spinner fa-spin' : 'fa-bolt'"></i>
+                    {{ unitSaveCredsLoading ? 'Проверяем...' : 'Запустить юнит-тесты слияния ключей' }}
+                  </button>
+                </div>
               </div>
-              <div class="tests-metric tests-metric-passed">
-                <span class="tests-metric-value">{{ testMetrics.passed }}</span>
-                <span class="tests-metric-label">пройдено</span>
-              </div>
-              <div class="tests-metric tests-metric-failed">
-                <span class="tests-metric-value">{{ testMetrics.failed }}</span>
-                <span class="tests-metric-label">провалено</span>
-              </div>
-              <div class="tests-metric tests-metric-skipped">
-                <span class="tests-metric-value">{{ testMetrics.skipped }}</span>
-                <span class="tests-metric-label">пропущено</span>
-              </div>
-            </div>
-            <p v-if="testMetrics.lastRunAt" class="tests-dashboard-last-run">
-              Последний запуск: {{ testMetrics.lastRunAt }}
-            </p>
-            <div class="tests-dashboard-actions">
-              <button
-                type="button"
-                class="tests-run-all-btn"
-                :disabled="runAllTestsLoading || singleTestRun !== null"
-                @click="runAllTests"
-              >
-                <i class="fas" :class="runAllTestsLoading ? 'fa-spinner fa-spin' : 'fa-play'"></i>
-                {{ runAllTestsLoading ? 'Запуск...' : 'Запустить все тесты' }}
-              </button>
-            </div>
-          </div>
 
-          <!-- Блок 1: Проверка эндпоинтов -->
-          <div v-if="showContent" class="tests-card tests-endpoints-card">
+              <!-- Вкладка «Интеграция»: GetCourse и Lava отдельно -->
+              <div v-if="showContent && testSuiteMode === 'integration'" class="tests-card tests-endpoints-card tests-crt-card">
+                <div class="tests-endpoints-header">
+                  <i class="fas fa-link tests-endpoints-icon"></i>
+                  <h2 class="tests-endpoints-title">Интеграция: ключи из Heap</h2>
+                </div>
+                <p class="tests-endpoints-desc">
+                  Два GET:{' '}
+                  <code class="tests-inline-code">…/integration-gc-credentials</code> и{' '}
+                  <code class="tests-inline-code">…/integration-lava-credentials</code>
+                  — те же живые проверки, что при сохранении настроек, по парам полей из Heap (как отдельные блоки в админке).
+                </p>
+                <div v-if="integrationBothLastRunAt" class="tests-endpoints-last-run">
+                  Результаты от: {{ integrationBothLastRunAt }}
+                </div>
+                <div class="tests-endpoints-list-wrap">
+                  <ul class="tests-endpoints-list" role="list">
+                    <li
+                      v-for="item in integrationBothDisplay"
+                      :key="item.id"
+                      class="tests-endpoints-list-item"
+                      :class="`tests-endpoints-status-${item.status}`"
+                    >
+                      <span class="tests-endpoints-badge" :class="`tests-endpoints-badge-${item.status}`">
+                        {{ item.status === 'todo' ? '[TODO]' : item.status === 'success' ? '[OK]' : '[FAIL]' }}
+                      </span>
+                      <span class="tests-endpoints-list-title-inline">{{ item.title }}</span>
+                      <span v-if="item.error" class="tests-endpoints-list-error">{{ item.error }}</span>
+                      <button
+                        type="button"
+                        class="tests-run-one-btn"
+                        title="Запустить только этот тест"
+                        :disabled="
+                          runAllTestsLoading || integrationBothLoading || isGroupBlockedBySingle('integrationBoth')
+                        "
+                        @click.stop="runSingleIntegrationBothTest(item.id)"
+                      >
+                        <i
+                          class="fas"
+                          :class="isSingleRunning('integrationBoth', item.id) ? 'fa-spinner fa-spin' : 'fa-play'"
+                        ></i>
+                      </button>
+                    </li>
+                  </ul>
+                </div>
+                <div class="tests-endpoints-actions">
+                  <button
+                    type="button"
+                    class="tests-run-group-btn"
+                    :disabled="runAllTestsLoading || integrationBothLoading || isGroupBlockedBySingle('integrationBoth')"
+                    @click="runIntegrationBothTests"
+                  >
+                    <i class="fas" :class="integrationBothLoading ? 'fa-spinner fa-spin' : 'fa-bolt'"></i>
+                    {{ integrationBothLoading ? 'Проверяем...' : 'Запустить обе проверки (GetCourse и Lava)' }}
+                  </button>
+                </div>
+              </div>
+
+              <!-- Блок 1: Проверка эндпоинтов -->
+              <div v-if="showContent && testSuiteMode === 'legacy'" class="tests-card tests-endpoints-card tests-crt-card">
             <div class="tests-endpoints-header">
               <i class="fas fa-plug tests-endpoints-icon"></i>
               <h2 class="tests-endpoints-title">Проверка эндпоинтов</h2>
@@ -1155,8 +1398,8 @@ const runAllTests = async () => {
             </div>
           </div>
 
-          <!-- Блок 2: Библиотека настроек -->
-          <div v-if="showContent" class="tests-card tests-endpoints-card">
+              <!-- Блок 2: Библиотека настроек -->
+              <div v-if="showContent && testSuiteMode === 'legacy'" class="tests-card tests-endpoints-card tests-crt-card">
             <div class="tests-endpoints-header">
               <i class="fas fa-cog tests-endpoints-icon"></i>
               <h2 class="tests-endpoints-title">Библиотека настроек</h2>
@@ -1208,8 +1451,8 @@ const runAllTests = async () => {
             </div>
           </div>
 
-          <!-- Блок 3: Репозиторий настроек -->
-          <div v-if="showContent" class="tests-card tests-endpoints-card">
+              <!-- Блок 3: Репозиторий настроек -->
+              <div v-if="showContent && testSuiteMode === 'legacy'" class="tests-card tests-endpoints-card tests-crt-card">
             <div class="tests-endpoints-header">
               <i class="fas fa-table tests-endpoints-icon"></i>
               <h2 class="tests-endpoints-title">Репозиторий настроек</h2>
@@ -1261,8 +1504,8 @@ const runAllTests = async () => {
             </div>
           </div>
 
-          <!-- Блок 4: Библиотека логов -->
-          <div v-if="showContent" class="tests-card tests-endpoints-card">
+              <!-- Блок 4: Библиотека логов -->
+              <div v-if="showContent && testSuiteMode === 'legacy'" class="tests-card tests-endpoints-card tests-crt-card">
             <div class="tests-endpoints-header">
               <i class="fas fa-file-alt tests-endpoints-icon"></i>
               <h2 class="tests-endpoints-title">Библиотека логов</h2>
@@ -1314,8 +1557,8 @@ const runAllTests = async () => {
             </div>
           </div>
 
-          <!-- Блок 5: Репозиторий логов -->
-          <div v-if="showContent" class="tests-card tests-endpoints-card">
+              <!-- Блок 5: Репозиторий логов -->
+              <div v-if="showContent && testSuiteMode === 'legacy'" class="tests-card tests-endpoints-card tests-crt-card">
             <div class="tests-endpoints-header">
               <i class="fas fa-database tests-endpoints-icon"></i>
               <h2 class="tests-endpoints-title">Репозиторий логов</h2>
@@ -1367,8 +1610,8 @@ const runAllTests = async () => {
             </div>
           </div>
 
-          <!-- Блок 6: Библиотека админки -->
-          <div v-if="showContent" class="tests-card tests-endpoints-card">
+              <!-- Блок 6: Библиотека админки -->
+              <div v-if="showContent && testSuiteMode === 'legacy'" class="tests-card tests-endpoints-card tests-crt-card">
             <div class="tests-endpoints-header">
               <i class="fas fa-chart-line tests-endpoints-icon"></i>
               <h2 class="tests-endpoints-title">Библиотека админки</h2>
@@ -1420,8 +1663,8 @@ const runAllTests = async () => {
             </div>
           </div>
 
-          <!-- Блок 7: Ключи интеграции (GC и Lava отдельными строками) -->
-          <div v-if="showContent" class="tests-card tests-endpoints-card">
+              <!-- Блок 7: Ключи интеграции (GC и Lava отдельными строками) -->
+              <div v-if="showContent && testSuiteMode === 'legacy'" class="tests-card tests-endpoints-card tests-crt-card">
             <div class="tests-endpoints-header">
               <i class="fas fa-key tests-endpoints-icon"></i>
               <h2 class="tests-endpoints-title">Ключи настроек интеграции</h2>
@@ -1489,6 +1732,97 @@ const runAllTests = async () => {
               </button>
             </div>
           </div>
+            </div>
+
+            <!-- Логи справа (CRT), тот же сокет что в админке -->
+            <aside
+              v-if="showContent && props.encodedLogsSocketId"
+              class="tests-logs-aside tests-crt-logs"
+              aria-label="Логи приложения"
+            >
+              <div class="tests-logs-aside-inner">
+                <div class="tests-logs-card-header">
+                  <span class="tests-crt-bezel-title">MONITOR_01 // STREAM</span>
+                  <h2 class="tests-logs-card-title">Логи</h2>
+                </div>
+                <div class="tests-logs-filters">
+                  <button
+                    type="button"
+                    class="tests-log-filter-chip chip-info"
+                    :class="{ active: logFilters.info }"
+                    @click="toggleLogFilter('info')"
+                  >
+                    <i class="fas fa-info-circle"></i>
+                    Info
+                  </button>
+                  <button
+                    type="button"
+                    class="tests-log-filter-chip chip-warn"
+                    :class="{ active: logFilters.warn }"
+                    @click="toggleLogFilter('warn')"
+                  >
+                    <i class="fas fa-exclamation-triangle"></i>
+                    Warn
+                  </button>
+                  <button
+                    type="button"
+                    class="tests-log-filter-chip chip-error"
+                    :class="{ active: logFilters.error }"
+                    @click="toggleLogFilter('error')"
+                  >
+                    <i class="fas fa-exclamation-circle"></i>
+                    Error
+                  </button>
+                </div>
+                <div class="tests-logs-output custom-scrollbar" ref="logsOutputRef">
+                  <div v-if="displayedLogs.length === 0" class="tests-logs-empty">
+                    Логи появятся здесь...
+                  </div>
+                  <div v-for="(item, index) in displayedLogs" :key="index" class="tests-log-item">
+                    <div v-if="item.type === 'divider'" class="tests-log-date-divider">
+                      --- {{ item.date }} ---
+                    </div>
+                    <div v-else class="tests-log-entry">
+                      <span class="tests-log-time">{{ item.formattedTime }}</span>
+                      <span class="tests-log-level" :class="`tests-log-level-${item.entry.level}`">
+                        [{{ item.entry.level.toUpperCase() }}]
+                      </span>
+                      <span class="tests-log-message">{{ item.formattedMessage }}</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="tests-logs-actions">
+                  <div v-if="logsLoading" class="tests-logs-loading">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    Загрузка логов...
+                  </div>
+                  <p v-if="logsError" class="tests-logs-error">{{ logsError }}</p>
+                  <div class="tests-logs-action-row">
+                    <button
+                      v-if="!logsLoading"
+                      type="button"
+                      class="tests-load-more-btn"
+                      :class="{ 'tests-load-more-btn-disabled': !logsHasMore }"
+                      :disabled="!logsHasMore"
+                      :title="logsHasMore ? 'Загрузить более старые логи' : 'Нет более старых логов'"
+                      @click="loadMoreLogs"
+                    >
+                      <i class="fas fa-arrow-down"></i>
+                      Загрузить ещё 50
+                    </button>
+                    <button
+                      type="button"
+                      class="tests-logs-clear-btn"
+                      title="Очистить логи"
+                      @click="clearLogs"
+                    >
+                      <i class="fas fa-trash-alt"></i>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </aside>
+          </div>
         </section>
       </div>
     </main>
@@ -1515,9 +1849,9 @@ const runAllTests = async () => {
 }
 
 .content-inner {
-  max-width: 1000px;
+  max-width: 1320px;
   margin: 0 auto;
-  padding: 2rem;
+  padding: 1.25rem 1.25rem 2rem;
 }
 
 @media (max-width: 768px) {
@@ -1537,91 +1871,245 @@ const runAllTests = async () => {
   transform: translateY(0);
 }
 
-.tests-header {
-  text-align: center;
-  margin-bottom: 3rem;
+/* CRT-оболочка: основная колонка + боковой «монитор» логов */
+.tests-crt {
+  --crt-green: #39ff9c;
+  --crt-green-dim: rgba(57, 255, 156, 0.12);
+  --crt-amber: #ffb020;
+  font-family: 'Share Tech Mono', ui-monospace, monospace;
+  image-rendering: pixelated;
 }
 
-.tests-icon-wrapper {
-  width: 5rem;
-  height: 5rem;
-  margin: 0 auto 1.5rem;
-  border-radius: 0;
-  background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-accent-hover) 100%);
+.tests-crt-frame {
   display: flex;
-  align-items: center;
-  justify-content: center;
+  flex-direction: column;
+  gap: 0.75rem;
+  align-items: stretch;
+  position: relative;
+  border: 2px solid var(--color-border);
+  background: linear-gradient(180deg, #0c0c0c 0%, #080808 100%);
   box-shadow:
-    0 8px 24px rgba(211, 35, 75, 0.4),
-    0 4px 12px rgba(211, 35, 75, 0.3),
-    0 0 30px rgba(211, 35, 75, 0.2),
-    inset 0 0 0 2px rgba(0, 0, 0, 0.3);
+    inset 0 0 0 1px rgba(255, 255, 255, 0.04),
+    0 0 0 1px #000,
+    0 12px 40px rgba(0, 0, 0, 0.65);
+}
+
+.tests-crt-frame:not(.tests-crt-frame--with-logs) .tests-main-stack {
+  padding: 0.75rem;
+}
+
+.tests-crt-frame--with-logs {
+  flex-direction: row;
+  gap: 0;
+  align-items: stretch;
+}
+
+.tests-main-stack {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 0.75rem;
+}
+
+.tests-crt-frame--with-logs .tests-main-stack {
+  padding: 0.75rem 0.5rem 0.75rem 0.75rem;
+  border-right: 2px solid var(--color-border);
+}
+
+.tests-logs-aside {
+  flex: 0 0 min(360px, 34vw);
+  width: min(360px, 34vw);
+  min-width: 260px;
+  display: flex;
+  flex-direction: column;
   position: relative;
-  overflow: hidden;
-  clip-path: polygon(
-    0 4px, 4px 4px, 4px 0,
-    calc(100% - 4px) 0, calc(100% - 4px) 4px, 100% 4px,
-    100% calc(100% - 4px), calc(100% - 4px) calc(100% - 4px), calc(100% - 4px) 100%,
-    4px 100%, 4px calc(100% - 4px), 0 calc(100% - 4px)
+  background: #020403;
+}
+
+.tests-logs-aside-inner {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  padding: 0.65rem 0.65rem 0.75rem;
+  position: relative;
+  z-index: 1;
+}
+
+.tests-crt-logs::after {
+  content: '';
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.1) 0px,
+    rgba(0, 0, 0, 0.1) 1px,
+    transparent 1px,
+    transparent 3px
   );
+  opacity: 0.35;
+  z-index: 2;
 }
 
-.tests-icon {
-  font-size: 2rem;
-  color: #ffffff;
-  text-shadow: 0 0 10px rgba(255, 255, 255, 0.35);
-  position: relative;
-  z-index: 3;
+.tests-crt-bezel-title {
+  display: block;
+  font-size: 0.65rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--crt-amber);
+  margin-bottom: 0.35rem;
+  text-shadow: 0 0 8px rgba(255, 176, 32, 0.35);
 }
 
-.tests-heading {
-  font-size: 2.5rem;
+.tests-crt-label {
+  display: inline-block;
+  font-size: 0.65rem;
+  letter-spacing: 0.18em;
+  color: var(--color-text-tertiary);
+  margin-bottom: 0.25rem;
+}
+
+.tests-dashboard-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.tests-dashboard-title-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.tests-dashboard-title {
+  font-size: 1.1rem;
   font-weight: 700;
   color: var(--color-text);
-  margin: 0 0 1rem 0;
-  position: relative;
-  display: inline-block;
-}
-
-.tests-heading.show-underline::after {
-  content: '';
-  position: absolute;
-  left: 50%;
-  bottom: -10px;
-  transform: translateX(-50%);
-  width: 100px;
-  height: 2px;
-  background: var(--color-accent);
-  box-shadow: 0 0 10px var(--color-accent);
-}
-
-.tests-description {
-  color: var(--color-text-secondary);
-  font-size: 1.1rem;
   margin: 0;
-  min-height: 1.5rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
-.typing-cursor {
-  display: inline-block;
-  color: var(--color-accent);
-  animation: cursor-blink 1s step-end infinite;
-  margin-left: 2px;
+.tests-mode-switch {
+  display: inline-flex;
+  flex-wrap: wrap;
+  border: 2px solid var(--color-border);
+  background: #0a0a0a;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.8);
 }
 
-@keyframes cursor-blink {
-  0%, 50% { opacity: 1; }
-  51%, 100% { opacity: 0; }
+.tests-mode-btn {
+  margin: 0;
+  padding: 0.45rem 0.85rem;
+  font-family: inherit;
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-tertiary);
+  background: transparent;
+  border: none;
+  border-right: 2px solid var(--color-border);
+  cursor: pointer;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+
+.tests-mode-btn:last-child {
+  border-right: none;
+}
+
+.tests-mode-btn:hover {
+  color: var(--color-text);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.tests-mode-btn--active {
+  color: #0a0a0a;
+  background: var(--color-accent);
+  box-shadow: inset 0 0 12px rgba(255, 255, 255, 0.15);
+}
+
+.tests-mode-btn--legacy-tab.tests-mode-btn--active {
+  background: var(--crt-amber);
+  color: #1a0a00;
+  box-shadow: inset 0 0 12px rgba(255, 255, 255, 0.12);
+}
+
+.tests-empty-suite {
+  border: 2px dashed var(--color-border);
+  background: rgba(0, 0, 0, 0.35);
+  padding: 1.25rem 1.35rem;
+}
+
+.tests-empty-suite-title {
+  font-size: 0.88rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin: 0 0 0.5rem 0;
+  color: var(--color-text-secondary);
+}
+
+.tests-empty-suite-text {
+  margin: 0;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: var(--color-text-tertiary);
+}
+
+.tests-mode-hint {
+  font-size: 0.78rem;
+  line-height: 1.45;
+  color: var(--color-text-secondary);
+  margin: 0 0 0.85rem 0;
+  padding: 0.5rem 0.6rem;
+  border: 1px dashed var(--color-border);
+  background: rgba(0, 0, 0, 0.35);
+}
+
+@media (max-width: 1024px) {
+  .tests-crt-frame--with-logs {
+    flex-direction: column;
+    border: 2px solid var(--color-border);
+  }
+
+  .tests-crt-frame--with-logs .tests-main-stack {
+    border-right: none;
+    border-bottom: 2px solid var(--color-border);
+    padding: 0.75rem;
+  }
+
+  .tests-logs-aside {
+    flex: none;
+    width: 100%;
+    min-width: 0;
+    min-height: 280px;
+  }
 }
 
 .tests-card {
   background: linear-gradient(135deg, var(--color-bg-secondary) 0%, var(--color-bg-tertiary) 100%);
   border: 1px solid var(--color-border);
-  border-radius: 12px;
-  padding: 2rem;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+  border-radius: 0;
+  padding: 1.35rem 1.5rem;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 12px 28px rgba(0, 0, 0, 0.45);
   position: relative;
   overflow: hidden;
+}
+
+.tests-crt-card {
+  border: 2px solid var(--color-border);
+  background: linear-gradient(180deg, #121212 0%, #0d0d0d 100%);
+  box-shadow:
+    inset 0 0 0 1px rgba(0, 0, 0, 0.85),
+    inset 0 -24px 48px rgba(0, 0, 0, 0.35);
 }
 
 .tests-card::before {
@@ -1647,26 +2135,7 @@ const runAllTests = async () => {
 
 /* Дашборд метрик тестов */
 .tests-dashboard {
-  margin-bottom: 2rem;
-}
-
-.tests-dashboard-header {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  margin-bottom: 1.25rem;
-}
-
-.tests-dashboard-icon {
-  font-size: 1.25rem;
-  color: var(--color-accent);
-}
-
-.tests-dashboard-title {
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: var(--color-text);
-  margin: 0;
+  margin-bottom: 0;
 }
 
 .tests-dashboard-metrics {
@@ -1689,7 +2158,7 @@ const runAllTests = async () => {
   padding: 1rem;
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid var(--color-border);
-  border-radius: 8px;
+  border-radius: 0;
   gap: 0.25rem;
 }
 
@@ -1731,7 +2200,7 @@ const runAllTests = async () => {
   color: #fff;
   background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-accent-hover) 100%);
   border: 1px solid var(--color-accent);
-  border-radius: 6px;
+  border-radius: 0;
   cursor: pointer;
   transition: all 0.2s ease;
   box-shadow: 0 4px 12px rgba(211, 35, 75, 0.3);
@@ -1739,7 +2208,7 @@ const runAllTests = async () => {
 
 .tests-run-all-btn:hover:not(:disabled) {
   box-shadow: 0 6px 16px rgba(211, 35, 75, 0.4);
-  transform: translateY(-1px);
+  filter: brightness(1.05);
 }
 
 .tests-run-all-btn:disabled {
@@ -1750,7 +2219,7 @@ const runAllTests = async () => {
 
 /* Блок «Проверка эндпоинтов» */
 .tests-endpoints-card {
-  margin-bottom: 2rem;
+  margin-bottom: 0;
 }
 
 .tests-endpoints-header {
@@ -1783,7 +2252,7 @@ const runAllTests = async () => {
   font-family: ui-monospace, monospace;
   font-size: 0.85em;
   padding: 0.1em 0.35em;
-  border-radius: 4px;
+  border-radius: 0;
   background: color-mix(in srgb, var(--color-text) 8%, transparent);
 }
 
@@ -1824,7 +2293,7 @@ const runAllTests = async () => {
 .tests-endpoints-list-wrap {
   background: rgba(0, 0, 0, 0.25);
   border: 1px solid var(--color-border);
-  border-radius: 8px;
+  border-radius: 0;
   padding: 0.75rem 1rem;
   margin-bottom: 1.25rem;
 }
@@ -1877,7 +2346,7 @@ const runAllTests = async () => {
   font-size: 0.7rem;
   font-weight: 600;
   padding: 0.2rem 0.5rem;
-  border-radius: 4px;
+  border-radius: 0;
   letter-spacing: 0.03em;
 }
 
@@ -1956,7 +2425,7 @@ const runAllTests = async () => {
   color: #fff;
   background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-accent-hover) 100%);
   border: 1px solid var(--color-accent);
-  border-radius: 6px;
+  border-radius: 0;
   cursor: pointer;
   transition: all 0.2s ease;
   box-shadow: 0 4px 12px rgba(211, 35, 75, 0.25);
@@ -1964,7 +2433,7 @@ const runAllTests = async () => {
 
 .tests-run-group-btn:hover:not(:disabled) {
   box-shadow: 0 6px 16px rgba(211, 35, 75, 0.35);
-  transform: translateY(-1px);
+  filter: brightness(1.05);
 }
 
 .tests-run-group-btn:disabled {
@@ -1986,7 +2455,7 @@ const runAllTests = async () => {
   color: var(--color-text-secondary);
   background: rgba(255, 255, 255, 0.06);
   border: 1px solid var(--color-border);
-  border-radius: 4px;
+  border-radius: 0;
   cursor: pointer;
   transition: color 0.2s ease, border-color 0.2s ease, background 0.2s ease;
 }
@@ -2006,7 +2475,7 @@ const runAllTests = async () => {
 .tests-logs-card {
   background: linear-gradient(135deg, var(--color-bg-secondary) 0%, var(--color-bg-tertiary) 100%);
   border: 1px solid var(--color-border);
-  border-radius: 12px;
+  border-radius: 0;
   padding: 2rem;
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
   position: relative;
@@ -2031,6 +2500,15 @@ const runAllTests = async () => {
   margin-bottom: 1rem;
 }
 
+.tests-logs-aside .tests-logs-card-header {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.15rem;
+  margin-bottom: 0.65rem;
+  border-bottom: 1px solid rgba(57, 255, 156, 0.2);
+  padding-bottom: 0.5rem;
+}
+
 .tests-logs-card-icon {
   font-size: 1.25rem;
   color: var(--color-accent);
@@ -2041,6 +2519,14 @@ const runAllTests = async () => {
   font-weight: 600;
   color: var(--color-text);
   margin: 0;
+}
+
+.tests-logs-aside .tests-logs-card-title {
+  font-size: 1rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--crt-green);
+  text-shadow: 0 0 10px rgba(57, 255, 156, 0.35);
 }
 
 .tests-logs-filters {
@@ -2060,7 +2546,7 @@ const runAllTests = async () => {
   color: var(--color-text-tertiary);
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid var(--color-border);
-  border-radius: 4px;
+  border-radius: 0;
   cursor: pointer;
   transition: all 0.2s ease;
   letter-spacing: 0.04em;
@@ -2106,12 +2592,26 @@ const runAllTests = async () => {
 .tests-logs-output {
   background: #080808;
   border: 1px solid var(--color-border);
-  border-radius: 4px;
+  border-radius: 0;
   height: 400px;
   overflow: auto;
   padding: 1rem;
   font-family: 'Share Tech Mono', 'Courier New', monospace;
   font-size: 0.8rem;
+}
+
+.tests-logs-aside .tests-logs-output {
+  flex: 1;
+  min-height: 220px;
+  height: auto;
+  max-height: min(72vh, 640px);
+  background: #010403;
+  border: 1px solid rgba(57, 255, 156, 0.22);
+  box-shadow:
+    inset 0 0 40px rgba(0, 40, 20, 0.45),
+    inset 0 0 0 1px rgba(0, 0, 0, 0.9);
+  font-size: 0.72rem;
+  line-height: 1.35;
 }
 
 .tests-logs-empty {
@@ -2200,7 +2700,7 @@ const runAllTests = async () => {
   color: var(--color-text-secondary);
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid var(--color-border);
-  border-radius: 4px;
+  border-radius: 0;
   cursor: pointer;
   transition: all 0.2s ease;
 }
@@ -2232,7 +2732,7 @@ const runAllTests = async () => {
   padding: 0.5rem 0.75rem;
   background: rgba(231, 76, 60, 0.1);
   border: 1px solid rgba(231, 76, 60, 0.3);
-  border-radius: 4px;
+  border-radius: 0;
 }
 
 .tests-load-more-btn {
@@ -2246,7 +2746,7 @@ const runAllTests = async () => {
   color: var(--color-text);
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid var(--color-border);
-  border-radius: 4px;
+  border-radius: 0;
   cursor: pointer;
   transition: all 0.2s ease;
   letter-spacing: 0.04em;
