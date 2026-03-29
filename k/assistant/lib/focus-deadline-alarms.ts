@@ -1,3 +1,4 @@
+// @shared
 import type { FocusToolsStateData } from '../shared/focus-tools-types'
 import { getPhaseCompletionActionForPhase, normalizePhaseChangeSoundId } from './pomodoro-types'
 import { playPomodoroPhaseChangeSound } from './pomodoro-phase-sounds'

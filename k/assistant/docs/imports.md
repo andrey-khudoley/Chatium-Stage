@@ -519,6 +519,7 @@
 - нет импортов (типы статуса/фаз Pomodoro, DTO, `PomodoroPhaseChangeSoundId`, `normalizePhaseChangeSoundId`, `formatPomodoroSecondsDisplay`, `getPhaseCompletionActionForPhase`)
 
 ### `./lib/focus-deadline-alarms.ts`
+- первая строка: `// @shared` (импорт из `Header.vue`)
 - `../shared/focus-tools-types` → `FocusToolsStateData`
 - `./pomodoro-types` → `getPhaseCompletionActionForPhase`, `normalizePhaseChangeSoundId`
 - `./pomodoro-phase-sounds` → `playPomodoroPhaseChangeSound`
