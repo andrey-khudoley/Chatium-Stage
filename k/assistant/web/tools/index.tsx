@@ -1,19 +1,31 @@
 // @shared
 import { jsx } from '@app/html-jsx'
+import { requireRealUser } from '@app/auth'
+import { genSocketId } from '@app/socket'
 import ToolsPage from '../../pages/ToolsPage.vue'
 import { getApiUrlForRoute, getFullUrl, ROUTES } from '../../config/routes'
 import { TOOLS_PAGE_NAME, getPageTitle, getHeaderText } from '../../config/project'
 import * as settingsLib from '../../lib/settings.lib'
-import { getPomodoroStateRoute } from '../../api/pomodoro/state/get'
-import { pomodoroControlRoute } from '../../api/pomodoro/control'
+import { toolsStateRoute } from '../../api/tools/state'
+import { toolsControlRoute } from '../../api/tools/control'
+import { focusToolsSocketId } from '../../shared/focus-tools-types'
 import { customScrollbarStyles, mobileSafeAreaStyles, VIEWPORT_META_CONTENT } from '../../styles'
 
 export const toolsPageRoute = app.html('/', async (ctx) => {
   const isAuthenticated = !!ctx.user
   const isAdmin = ctx.user?.is('Admin') ?? false
   const projectName = await settingsLib.getSettingString(ctx, settingsLib.SETTING_KEYS.PROJECT_NAME)
-  const pomodoroStateGetUrl = getApiUrlForRoute(getPomodoroStateRoute.url())
-  const pomodoroControlUrl = getApiUrlForRoute(pomodoroControlRoute.url())
+  const toolsStateUrl = getApiUrlForRoute(toolsStateRoute.url())
+  const toolsControlUrl = getApiUrlForRoute(toolsControlRoute.url())
+  let encodedFocusToolsSocketId = ''
+  if (isAuthenticated) {
+    try {
+      const u = requireRealUser(ctx)
+      encodedFocusToolsSocketId = await genSocketId(ctx, focusToolsSocketId(u.id))
+    } catch {
+      encodedFocusToolsSocketId = ''
+    }
+  }
   return (
     <html>
       <head>
@@ -64,8 +76,9 @@ export const toolsPageRoute = app.html('/', async (ctx) => {
           adminUrl={isAdmin ? getFullUrl(ROUTES.admin) : ''}
           testsUrl={isAuthenticated ? getFullUrl(ROUTES.tests) : ''}
           pomodoroUrl={getFullUrl(ROUTES.pomodoro)}
-          pomodoroStateGetUrl={pomodoroStateGetUrl}
-          pomodoroControlUrl={pomodoroControlUrl}
+          toolsStateUrl={toolsStateUrl}
+          toolsControlUrl={toolsControlUrl}
+          encodedFocusToolsSocketId={encodedFocusToolsSocketId}
         />
       </body>
     </html>

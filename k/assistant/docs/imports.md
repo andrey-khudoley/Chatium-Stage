@@ -18,9 +18,11 @@
 - `./config/project` → `INDEX_PAGE_NAME`, `BODY_TEXT`, `BODY_SUBTEXT`, `getPageTitle`, `getHeaderText`
 - `./lib/logger.lib` → `*`
 - `./lib/settings.lib` → `*`
-- `./api/pomodoro/state/get` → `getPomodoroStateRoute`
-- `./api/pomodoro/control` → `pomodoroControlRoute`
-- передаёт в `HomePage`: `tasksUrl` (`getFullUrl(ROUTES.tasks)`), `journalUrl`, `toolsUrl`, `pomodoroStateGetUrl`, `pomodoroControlUrl`, др.
+- `@app/socket` → `genSocketId`
+- `./api/tools/state` → `toolsStateRoute`
+- `./api/tools/control` → `toolsControlRoute`
+- `./shared/focus-tools-types` → `focusToolsSocketId`
+- передаёт в `HomePage`: `tasksUrl`, `journalUrl`, `toolsUrl`, `toolsStateUrl`, `toolsControlUrl`, `encodedFocusToolsSocketId`, др.
 
 ### `./web/admin/index.tsx`
 - `@app/html-jsx` → `jsx`
@@ -69,9 +71,10 @@
 - `../../api/tasks/items/reorder` → `reorderTaskItemsRoute`
 - `../../api/tasks/tasks-ai-chat-ensure` → `taskAiChatEnsureRoute`
 - `../../api/tasks/tasks-ai-chat-reset` → `taskAiChatResetRoute`
-- `../../api/pomodoro/assign-task` → `pomodoroAssignTaskRoute`
-- `../../api/pomodoro/state/get` → `getPomodoroStateRoute`
-- `../../api/pomodoro/control` → `pomodoroControlRoute`
+- `@app/socket` → `genSocketId`
+- `../../api/tools/state` → `toolsStateRoute`
+- `../../api/tools/control` → `toolsControlRoute`
+- `../../shared/focus-tools-types` → `focusToolsSocketId`
 - `../../shared/preloader`, `../../shared/logLevel`, `../../styles` → `customScrollbarStyles`, `mobileSafeAreaStyles`, `formControlStyles`, `VIEWPORT_META_CONTENT`
 - `../../lib/logger.lib`, `../../lib/settings.lib`
 - `../../config/routes` → `getFullUrl`, `getApiUrlForRoute`, `ROUTES`
@@ -112,9 +115,10 @@
 - `../../api/tasks/items/reorder-day` → `reorderTaskDayItemsRoute`
 - `../../api/tasks/items/release-day` → `releaseTaskDayItemsRoute`
 - `../../api/tasks/items/update` → `updateTaskItemRoute`
-- `../../api/pomodoro/assign-task` → `pomodoroAssignTaskRoute`
-- `../../api/pomodoro/state/get` → `getPomodoroStateRoute`
-- `../../api/pomodoro/control` → `pomodoroControlRoute`
+- `@app/socket` → `genSocketId`
+- `../../api/tools/state` → `toolsStateRoute`
+- `../../api/tools/control` → `toolsControlRoute`
+- `../../shared/focus-tools-types` → `focusToolsSocketId`
 - `../../config/routes` → `getFullUrl`, `getApiUrlForRoute`, `ROUTES`
 - `../../config/project` → `JOURNAL_PAGE_NAME`, `getPageTitle`, `getHeaderText`
 - `../../lib/settings.lib` → `*`
@@ -133,19 +137,17 @@
 ### `./web/timers/index.tsx`
 - `@app/html-jsx` → `jsx`
 - `@app/auth` → `requireRealUser`
+- `@app/socket` → `genSocketId`
 - `../../pages/PomodoroPage.vue`
-- `../../lib/pomodoro.lib` → `getState` (SSR начального состояния)
+- `../../lib/focus-tools.lib` → `getFullState` (SSR начального снимка)
 - `../../lib/pomodoro-stats-day` → `computePomodoroStatsDayKeyInTimeZone`
-- `../../lib/pomodoro-types` → тип `PomodoroStateDto`
+- `../../shared/focus-tools-types` → `focusToolsSocketId`, тип `FocusToolsFullStateDto`
 - `../../config/routes` → `getApiUrlForRoute`, `getFullUrl`, `ROUTES`
 - `../../config/project` → `POMODORO_PAGE_NAME`, `getPageTitle`, `getHeaderText`
 - `../../lib/settings.lib` → `*`
-- `../../api/pomodoro/state/get` → `getPomodoroStateRoute`
-- `../../api/pomodoro/control` → `pomodoroControlRoute`
-- `../../api/pomodoro/settings/save` → `savePomodoroSettingsRoute`
-- `../../api/pomodoro/assign-task` → `pomodoroAssignTaskRoute`
+- `../../api/tools/state` → `toolsStateRoute`
+- `../../api/tools/control` → `toolsControlRoute`
 - `../../api/tasks/in-progress` → `getInProgressTasksRoute`
-- `../../api/tools/focus-log` → `toolsFocusLogRoute`
 - `../../styles` → `customScrollbarStyles`, `formControlStyles`, `mobileSafeAreaStyles`, `VIEWPORT_META_CONTENT`
 
 ### `./web/tests/index.tsx`
@@ -257,6 +259,7 @@
 
 ### `./pages/PomodoroPage.vue`
 - `vue` → `computed`, `onMounted`, `onUnmounted`, `ref`, `watch`, `nextTick`
+- `@app/socket` → `getOrCreateBrowserSocketClient`
 - `../components/Header.vue`
 - `../components/GlobalGlitch.vue`
 - `../components/AppFooter.vue`
@@ -264,7 +267,8 @@
 - `../lib/pomodoro-phase-sounds` → `playPomodoroPhaseChangeSound`
 - `../lib/pomodoro-types` → `formatPomodoroSecondsDisplay` (как `fmt`)
 - `../lib/pomodoro-stats-day` → `computePomodoroStatsDayKeyLocal`
-- пропсы SSR от `web/timers/index.tsx`: `initialPomodoroState`, `initialServerNowMs` (опционально)
+- `../shared/focus-tools-types` → `FocusToolsFullStateDto`, `FocusToolsStateData`, `PomodoroSliceInFocusTools`, типы таймера/секундомера
+- пропсы SSR от `web/timers/index.tsx`: `initialFocusToolsState`, `toolsStateUrl`, `toolsControlUrl`, `encodedFocusToolsSocketId`, `getTasksUrl`
 - второй блок `<style>` без `scoped` в этом же файле — глобальные CRT-стили (`.pomodoro-phase-bar`, `.pomodoro-actions`, `.pomo-btn`, …) для `/web/timers`; отдельные `.css` из `import` в `<script>` в этой среде не подключаются в бандл
 
 ### `./components/tasks/TasksAiChatPanel.vue`
@@ -282,11 +286,14 @@
 ## 3) Компоненты (components/)
 
 ### `./components/Header.vue`
-- `vue` → `ref`, `onMounted`, `onUnmounted`
+- `vue` → `ref`, `onMounted`, `onUnmounted`, `computed`
+- `@app/socket` → `getOrCreateBrowserSocketClient`
 - `./LogoutModal.vue`
 - `../shared/logger` → `createComponentLogger`
 - `../lib/pomodoro-types` → `formatPomodoroSecondsDisplay`, типы `PomodoroPhase`, `PomodoroStateDto`
 - `../lib/pomodoro-stats-day` → `computePomodoroStatsDayKeyLocal`
+- `../shared/focus-tools-types` → `FocusToolsStateData`, `HeaderWidgetMode`
+- опциональные пропсы виджета: `enableToolClockWidget`, `toolsStateUrl`, `toolsControlUrl`, `encodedFocusToolsSocketId`
 
 ### `./components/LogoutModal.vue`
 - `vue` → `watch`, `onMounted`
@@ -318,29 +325,28 @@
 
 ### `./components/pomodoro/PomodoroTaskSelector.vue`
 - `vue` → `computed`, `onMounted`, `ref`
-- `defineProps`: `assignTaskUrl`, `getTasksUrl`, `currentTaskId`, `statsDayKey` (передаётся в `assign-task` вместе с `taskId`)
+- `./PomodoroTaskSelectDropdown.vue`
+- `defineProps`: `toolsControlUrl`, `getTasksUrl`, `currentTaskId`, `statsDayKey` (POST `/api/tools/control`, `command: { kind: 'assign-task', taskId }`)
 
 ### `./components/pomodoro/PomodoroToolStatsRow.vue`
 - `defineProps`: `firstText`, `secondText`, `thirdText`, `firstLabel`, `secondLabel`, `thirdLabel`, `firstIcon`, `secondIcon`, `thirdIcon` (три ячейки `.stat-cell` в одной сетке; общая вёрстка для вкладок Pomodoro и таймера/секундомера)
 
 ### `./components/pomodoro/PomodoroToolsWorkspace.vue`
 - `vue` → `computed`
-- `../../lib/focus-clock-local-stats` → `readFocusClockStatsFromStorage`
+- `../../shared/focus-tools-types` → `TimerToolSnapshot`, `StopwatchToolSnapshot`, `FocusToolsFullStateDto`
 - `../../lib/pomodoro-types` → `formatPomodoroSecondsDisplay`, типы `PomodoroPhaseCompleteAction`, `PomodoroAfterLongRest`
-- `../../lib/pomodoro-stats-day` → `computePomodoroStatsDayKeyLocal`
 - `./PomodoroTimerDial.vue`, `./PomodoroSettingsModal.vue`, `./PomodoroTaskSelector.vue`, `./FocusClockPane.vue`, `./PomodoroToolStatsRow.vue`
-- `defineProps`: `state`, `localTickMs`, `sharedSelectedTaskId`, `settingsModel`, `saving`, `actionPending`, `assignTaskUrl`, `getTasksUrl`, `toolsFocusLogUrl`, `activeTool`, `settingsOpen`
-- `defineEmits`: `update:activeTool`, `update:settingsOpen`, `control`, `save-settings`, `pomodoro-task-assigned`, `shared-task-selected`
+- `defineProps`: `state`, `localTickMs`, `sharedSelectedTaskId`, `settingsModel`, `saving`, `actionPending`, `toolsControlUrl`, `getTasksUrl`, `activeTool`, `settingsOpen`, `statsDayKey`, `timerSnapshot`, `stopwatchSnapshot`, `focusToolsWsConnected`
+- `defineEmits`: `update:activeTool`, `update:settingsOpen`, `control`, `save-settings`, `pomodoro-task-assigned`, `shared-task-selected`, `focus-tools-sync`
 
 ### `./components/pomodoro/FocusClockPane.vue`
 - стили панели фазы и кнопок — глобальный блок в `PomodoroPage.vue` (см. выше); в scoped `FocusClockPane` остаются оболочка, модалка настроек (`clock-settings-*`), оформление секундомерного dial
-- `vue` → `computed`, `onMounted`, `onUnmounted`, `ref`, `watch`
+- `vue` → `computed`, `ref`, `watch`
 - `../../lib/pomodoro-types` → `formatPomodoroSecondsDisplay` (как `fmt`)
-- `../../lib/focus-clock-local-stats` → `buildFocusClockStatsPayload`, `readFocusClockStatsFromStorage`, `writeFocusClockStatsToStorage`
-- `../../lib/pomodoro-stats-day` → `computePomodoroStatsDayKeyLocal`
+- `../../shared/focus-tools-types` → `FocusToolsFullStateDto`, `TimerToolSnapshot`, `StopwatchToolSnapshot`
 - `./PomodoroTimerDial.vue`, `./PomodoroTaskSelectDropdown.vue`
-- `defineProps`: `mode`, `focusLogUrl`, `getTasksUrl`, `selectedTaskId?`
-- `defineEmits`: `taskSelected`
+- `defineProps`: `mode`, `getTasksUrl`, `selectedTaskId?`, `toolsControlUrl`, `statsDayKey`, `timerSnapshot`, `stopwatchSnapshot`, `localTickMs`, `focusToolsWsConnected`
+- `defineEmits`: `taskSelected`, `focus-tools-sync`
 
 ### `./components/journal/JournalStubPanel.vue`
 - (только разметка заглушки «В разработке»)
@@ -436,6 +442,9 @@
 - `@app/heap` → `Heap`
 
 ### `./tables/pomodoro-state.table.ts`
+- `@app/heap` → `Heap` (legacy, миграция в `user-tool-state`)
+
+### `./tables/user-tool-state.table.ts`
 - `@app/heap` → `Heap`
 
 ### `./tables/journal-day-entries.table.ts`
@@ -484,10 +493,11 @@
 - `../lib/tasks-types` → DTO и `TaskStatus`
 - реэкспорт типов из `lib/tasks-types`
 
-### `./repos/pomodoro.repo.ts`
-- `../tables/pomodoro-state.table` → `PomodoroState`
-- `../lib/pomodoro-types` → `PomodoroAfterLongRest`, `PomodoroPhase`, `PomodoroStatus`, `PomodoroSettingsInput`, `PomodoroStateDto`, `normalizePhaseChangeSoundId`
-- `../lib/pomodoro-stats-day` → `computePomodoroStatsDayKeyInTimeZone`, `normalizeClientStatsDayKey`
+### `./repos/user-tool-state.repo.ts`
+- `../tables/user-tool-state.table`, `../tables/pomodoro-state.table`, `../shared/focus-tools-types`, `../lib/pomodoro-types` — JSON-снимок `timer_state`, миграция из legacy
+
+### `./repos/tool-segments.repo.ts`
+- `../tables/pomodoro-launches.table` — сегменты помидор/таймер/секундомер
 
 ### `./lib/tasks-types.ts`
 - нет импортов (чистые типы DTO для задач)
@@ -530,12 +540,12 @@
 ### `./lib/journal-habits-time.ts`
 - `@shared` — привычки: `computeHabitsMondayKeyFromNow`, `normalizeHabitsMondayKey`, `getHabitsInteractionMode`, `getTodayColumnIndexForWeek`, DTO, `parseRowsJson`, `serializeRowsJson`, `mergeRowsPreserveLockedDays`; импорт `journal-day-key` (`computeJournalDayKeyInTimeZone`), `journal-week-key` (`computeJournalWeekMondayKeyInTimeZone` и др.); серверный fallback границы 05:00 — `Europe/Moscow`
 
-### `./lib/pomodoro.lib.ts`
+### `./lib/focus-tools.lib.ts`
 - `@app/sync` → `runWithExclusiveLock`
-- `../repos/pomodoro.repo` → `*`
-- `../repos/pomodoro-launches.repo` → `*`
-- `../repos/tasks.repo` → `*`
-- `./pomodoro-types` → `PomodoroSettingsInput`, `PomodoroStateDto`
+- `@app/socket` → `sendDataToSocket`
+- `@app/nanoid` → `nanoid`
+- `../repos/user-tool-state.repo`, `../repos/tool-segments.repo`, `../repos/tasks.repo`
+- `../shared/focus-tools-types`, `./pomodoro-types`, `./pomodoro-stats-day`
 
 ## 8) API (api/)
 
@@ -766,18 +776,12 @@
 - `../../../lib/logger.lib` → `*`
 - `../../../lib/admin/dashboard.lib` → `*`
 
-### `./api/pomodoro/assign-task.ts`
+### `./api/tools/state.ts`
 - `@app/auth` → `requireRealUser`
-- `../../lib/pomodoro.lib` → `*`
+- `@app/socket` → `genSocketId`
+- `../../lib/focus-tools.lib` → `getFullState`
+- `../../shared/focus-tools-types` → `focusToolsSocketId`
 
-### `./api/pomodoro/control.ts`
+### `./api/tools/control.ts`
 - `@app/auth` → `requireRealUser`
-- `../../lib/pomodoro.lib` → `start`, `resume`, `pause`, `stop`, `reset`, `skipPhase`
-
-### `./api/pomodoro/state/get.ts`
-- `@app/auth` → `requireRealUser`
-- `../../../lib/pomodoro.lib` → `*`
-
-### `./api/pomodoro/settings/save.ts`
-- `@app/auth` → `requireRealUser`
-- `../../../lib/pomodoro.lib` → `*`
+- `../../lib/focus-tools.lib` → `executeCommand`

@@ -11,7 +11,7 @@ type TaskItem = {
 }
 
 const props = defineProps<{
-  assignTaskUrl: string
+  toolsControlUrl: string
   getTasksUrl: string
   currentTaskId: string
   /** Ключ дневной статистики помодоро (YYYY-MM-DD от 05:00 локально), см. pomodoro-stats-day */
@@ -42,11 +42,14 @@ async function loadTasks() {
 
 async function assignTask(taskId: string) {
   try {
-    const r = await fetch(props.assignTaskUrl, {
+    const r = await fetch(props.toolsControlUrl, {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ taskId, statsDayKey: props.statsDayKey })
+      body: JSON.stringify({
+        statsDayKey: props.statsDayKey,
+        command: { kind: 'assign-task', taskId },
+      }),
     })
     const j = await r.json()
     if (j.success) {

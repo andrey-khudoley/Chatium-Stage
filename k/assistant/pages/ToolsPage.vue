@@ -13,8 +13,9 @@ const props = defineProps<{
   adminUrl?: string
   testsUrl?: string
   pomodoroUrl: string
-  pomodoroStateGetUrl?: string
-  pomodoroControlUrl?: string
+  toolsStateUrl?: string
+  toolsControlUrl?: string
+  encodedFocusToolsSocketId?: string
 }>()
 </script>
 
@@ -31,8 +32,9 @@ const props = defineProps<{
       :adminUrl="props.adminUrl"
       :testsUrl="props.testsUrl"
       :enableToolClockWidget="true"
-      :pomodoroStateGetUrl="props.pomodoroStateGetUrl"
-      :pomodoroControlUrl="props.pomodoroControlUrl"
+      :toolsStateUrl="props.toolsStateUrl"
+      :toolsControlUrl="props.toolsControlUrl"
+      :encodedFocusToolsSocketId="props.encodedFocusToolsSocketId"
     />
     <main class="content-wrapper flex-1 relative z-10 min-h-0 overflow-y-auto">
       <div class="content-inner tools-shell">

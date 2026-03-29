@@ -46,7 +46,14 @@ export const PomodoroLaunches = Heap.Table('t__assistant__pomodoro_launch__9Hk2t
       customMeta: { title: 'Причина завершения сегмента' },
       searchable: { langs: ['ru', 'en'], embeddings: false }
     })
-  )
+  ),
+  tool: Heap.Optional(
+    Heap.String({
+      customMeta: { title: 'Инструмент: pomodoro | timer | stopwatch' },
+      searchable: { langs: ['ru', 'en'], embeddings: false }
+    })
+  ),
+  runId: Heap.Optional(Heap.String({ customMeta: { title: 'ID непрерывного запуска (смена задачи — тот же runId)' } }))
 })
 
 export default PomodoroLaunches

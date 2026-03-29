@@ -43,9 +43,9 @@ const props = defineProps<{
   taskItemReorderUrl: string
   taskAiChatEnsureUrl: string
   taskAiChatResetUrl: string
-  pomodoroAssignTaskUrl: string
-  pomodoroStateGetUrl: string
-  pomodoroControlUrl: string
+  toolsControlUrl: string
+  toolsStateUrl: string
+  encodedFocusToolsSocketId: string
 }>()
 
 const bootLoaderDone = ref(false)
@@ -765,25 +765,25 @@ async function assignTaskToPomodoro(t: TaskItemDto) {
     const j = await postJson<{
       success: boolean
       error?: string
-      state?: { status: string }
-    }>(props.pomodoroAssignTaskUrl, {
-      taskId: t.id,
+      state?: { pomodoro?: { status: string } }
+    }>(props.toolsControlUrl, {
       statsDayKey,
+      command: { kind: 'assign-task', taskId: t.id },
     })
     if (!j.success) {
-      globalError.value = j.error ?? 'Не удалось добавить задачу в pomodoro'
+      globalError.value = j.error ?? 'Не удалось добавить задачу в помидор'
       return
     }
-    const status = j.state?.status
+    const status = j.state?.pomodoro?.status
     let pomodoroSessionStartedFromTasksPage = false
     if (status && status !== 'running') {
       let action: 'start' | 'resume' | null = null
       if (status === 'stopped') action = 'start'
       else if (status === 'paused' || status === 'awaiting_continue') action = 'resume'
       if (action) {
-        const cj = await postJson<{ success: boolean; error?: string }>(props.pomodoroControlUrl, {
-          action,
+        const cj = await postJson<{ success: boolean; error?: string }>(props.toolsControlUrl, {
           statsDayKey,
+          command: { kind: 'pomodoro', action },
         })
         if (!cj.success) {
           globalError.value = cj.error ?? 'Не удалось запустить таймер pomodoro'
@@ -1285,8 +1285,9 @@ function showProjectLineBefore(clientId: string, idx: number): boolean {
       :adminUrl="props.adminUrl"
       :testsUrl="props.testsUrl"
       :enableToolClockWidget="true"
-      :pomodoroStateGetUrl="props.pomodoroStateGetUrl"
-      :pomodoroControlUrl="props.pomodoroControlUrl"
+      :toolsStateUrl="props.toolsStateUrl"
+      :toolsControlUrl="props.toolsControlUrl"
+      :encodedFocusToolsSocketId="props.encodedFocusToolsSocketId"
     />
 
     <main class="content-wrapper tasks-page-main flex-1 relative z-10 min-h-0 overflow-y-auto">

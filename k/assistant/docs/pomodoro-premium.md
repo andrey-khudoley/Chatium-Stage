@@ -32,7 +32,7 @@
 ### 4. Интеграция с задачами
 - **Селектор задачи**: `PomodoroTaskSelector` — dropdown с задачами статуса `in_progress`
 - **API**: `api/tasks/in-progress` — получение списка активных задач
-- **Привязка задачи**: `api/pomodoro/assign-task` — связывание Pomodoro с конкретной задачей
+- **Привязка задачи**: `POST /api/tools/control` с `command: { kind: 'assign-task', taskId }` — обновляет задачу для помидора/таймера/секундомера на сервере
 - **Отображение**: название выбранной задачи под таймером
 - **Учёт времени**: автоматическое накопление `pomodoroWorkSec`/`pomodoroRestSec` в Heap
 
@@ -55,8 +55,7 @@
 
 **Сброс в 05:00**: «Сутки» для этих трёх счётчиков начинаются в **5:00 по локальному времени браузера**. В Heap хранится `statsPeriodDayKey` (строка `YYYY-MM-DD` для текущего периода); при каждом запросе клиент передаёт `statsDayKey` (тот же алгоритм — `lib/pomodoro-stats-day.ts`, `computePomodoroStatsDayKeyLocal`). Если ключ не совпадает с сохранённым, сервер обнуляет только статистику, **не** сбрасывая таймер и **не** меняя `cyclesCompleted`. Без `statsDayKey` в запросе fallback — граница 05:00 по `Europe/Moscow`.
 
-Для вкладок `Таймер` и `Секундомер` счётчики `Сессий / Фокус / Всего` сохраняются на клиенте в `localStorage` (в `components/pomodoro/FocusClockPane.vue`) и восстанавливаются после обновления страницы. Хранение разделено по режимам (`timer`/`stopwatch`) и по такому же дневному ключу с границей в 05:00.
-При переключении между вкладками восстановление выполняется принудительно по `mode`, чтобы на `Таймере` и `Секундомере` всегда показывались разные актуальные значения, а не последние данные предыдущей вкладки.
+Для вкладок `Таймер` и `Секундомер` счётчики `Сессий / Фокус / Всего` приходят с сервера в том же снимке `focus-tools` (`timer` / `stopwatch` в JSON), граница дня 05:00 — как у помидора. Нижняя строка на странице `/web/timers` суммирует помидор + таймер + секундомер.
 
 ### 8. Полный лог запусков
 - **Новая таблица**: `tables/pomodoro-launches.table.ts` (`t__assistant__pomodoro_launch__9Hk2tR`)
@@ -86,43 +85,31 @@
 ## Технические детали
 
 ### Архитектура состояния
-- **Хранение**: Heap таблица `tables/pomodoro-state.table.ts` (в т.ч. `statsPeriodDayKey` для сброса дневной статистики; после правки файла убедиться, что схема Heap на аккаунте обновлена через `createOrUpdateHeapTableFile` / привычный процесс деплоя)
-- **Репозиторий**: `repos/pomodoro.repo.ts` — CRUD операции с нормализацией
-- **Бизнес-логика**: `lib/pomodoro.lib.ts` — tick-engine, управление фазами
-- **Эксклюзивная блокировка**: все мутации под `runWithExclusiveLock(ctx, lockKey(userId), ...)`
+- **Хранение**: Heap `tables/user-tool-state.table.ts` (ключ `timer_state`, см. `shared/focus-tools-types.ts`); legacy `pomodoro-state` читается только при миграции.
+- **Сегменты**: `tables/pomodoro-launches.table.ts` + `repos/tool-segments.repo.ts` (поля `tool`, `runId`).
+- **Бизнес-логика**: `lib/focus-tools.lib.ts` — помидор, таймер, секундомер, WebSocket push.
+- **Эксклюзивная блокировка**: `runWithExclusiveLock(ctx, assistant:focus-tools:{userId}, ...)`.
 
 ### API endpoints
 ```
-GET  /api/pomodoro/state/get       — получение текущего состояния
-POST /api/pomodoro/control          — управление (start/pause/resume/stop)
-POST /api/pomodoro/settings/save    — сохранение настроек
-POST /api/pomodoro/assign-task      — привязка задачи
-GET  /api/tasks/in-progress         — список задач в работе
+GET  /api/tools/state              — полный снимок + encodedSocketId
+POST /api/tools/control          — команды (см. docs/api.md)
+GET  /api/tasks/in-progress      — список задач в работе
 ```
 
 ### Синхронизация и устойчивость
-- **Polling**: обновление состояния каждые 7 секунд
-- **Local tick**: локальный счётчик для плавного отсчёта без рывков
-- **Server time priority**: приоритет более свежего `serverNowMs` при конфликтах
-- **Action sequence**: защита от повторных действий через `actionSeq` и `actionPending`
-- **Visibility events**: обновление при возврате на вкладку (`focus`, `visibilitychange`)
+- **WebSocket**: канал `assistant-focus-tools-{userId}`, сообщения `state-update`; без соединения кнопки управления в шапке заблокированы (`assign-task` из события может уйти по HTTP).
+- **HTTP**: `GET /api/tools/state` при фокусе/видимости и после ошибок WS; на странице Pomodoro — при загрузке и по таймеру (в т.ч. догон при `endsAtMs` таймера).
+- **Local tick**: плавный отсчёт по `endsAtMs` / `startedAtMs` и локальным часам.
+- **Server time priority**: `serverNowMs` + `actionSeq` на странице помидора.
 
 ### Интеграция с Header
-`Header.vue` на странице `/web/timers` использует интерактивный виджет в `header-clock`:
-- При первом клике по часам открывается выбор инструмента: `Помидор`, `Таймер`, `Секундомер`.
-- Повторный клик по виджету открывает выбор снова, можно вернуться к `Часы` или переключиться на другой инструмент.
-- После выбора показываются кнопки `Запуск / Пауза / Сброс`.
-- Для `Помидор` кнопки управляют серверным состоянием через `api/pomodoro/control` (`start|pause|resume|reset`) и используют актуальные настройки Pomodoro из текущего state.
-- Для `Таймер` стартовая длительность читается из `localStorage`-настроек `assistant:focus-clock-settings:timer` (минуты/секунды), которые редактируются только в `FocusClockPane` на вкладке таймера.
-- Для `Секундомер` в шапке используется локальная логика `start/pause/resume/reset`.
-
-Дополнительно:
-- Состояние выбранного режима и локальных таймеров сохраняется после обновления страницы (localStorage `assistant:header-clock-widget:v1`).
-- Параллельный запуск не допускается: при старте одного инструмента остальные ставятся на паузу.
-- При загрузке страницы виджет автоматически активирует текущий работающий режим (если в фоне уже идёт `pomodoro`, `timer` или `stopwatch`).
-- Поведение доступно на всех страницах приложения с `Header`, включая `home/tasks/journal/tools/pomodoro/admin/profile/tests`.
-- UI выбора режима в шапке выполнен как выпадающий вертикальный picker под блоком часов (вместо горизонтальной полосы), чтобы на мобильных и узких экранах меню не раздвигало шапку; добавлены иконки, активное состояние, `aria-pressed` и `focus-visible`, закрытие по `Escape` и по клику вне блока.
-- Подложка dropdown-панели выбора инструментов непрозрачная (`background: var(--color-bg-secondary)`), чтобы исключить визуальное просвечивание фона/контента.
+`Header.vue` с `enableToolClockWidget` и пропами `toolsStateUrl`, `toolsControlUrl`, `encodedFocusToolsSocketId`:
+- Выбор режима `Часы / Помидор / Таймер / Секундомер` через `widget-mode` на сервере.
+- Управление всеми тремя инструментами через `POST /api/tools/control`.
+- Состояние и настройки таймера — на сервере (не `localStorage`).
+- Параллельный запуск на сервере снимается паузой остальных инструментов.
+- Вертикальный picker под часами, непрозрачная подложка — без изменений UX.
 
 ## UX-решения
 
@@ -210,18 +197,23 @@ components/pomodoro/
   PomodoroTimerDial.vue                   — SVG-таймер
   PomodoroSettingsModal.vue               — модалка настроек
   PomodoroTaskSelector.vue                — селектор задачи
+  FocusClockPane.vue                      — таймер/секундомер (HTTP + WS)
+shared/focus-tools-types.ts               — DTO снимка, команды (@shared)
 lib/
-  pomodoro.lib.ts                         — бизнес-логика
-  pomodoro-types.ts                       — TypeScript типы
-repos/pomodoro.repo.ts                    — слой данных
-tables/pomodoro-state.table               — Heap таблица
-api/pomodoro/
-  state/get.ts                            — GET состояния
-  control.ts                              — POST управление
-  settings/save.ts                        — POST настройки
-  assign-task.ts                          — POST привязка задачи
+  focus-tools.lib.ts                      — серверная логика инструментов
+  pomodoro-types.ts                       — типы/DTO помидора (@shared)
+repos/
+  user-tool-state.repo.ts
+  tool-segments.repo.ts
+tables/
+  user-tool-state.table.ts
+  pomodoro-state.table.ts                 — legacy, миграция
+  pomodoro-launches.table.ts
+api/tools/
+  state.ts                                — GET снимка
+  control.ts                              — POST команд
 api/tasks/in-progress.ts                  — GET задачи в работе
-web/timers/index.tsx                    — SSR точка входа
+web/timers/index.tsx                      — SSR точка входа
 ```
 
 ## Дальнейшие улучшения (опционально)

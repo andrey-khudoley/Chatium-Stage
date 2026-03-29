@@ -1,5 +1,6 @@
 // @shared
 import { jsx } from '@app/html-jsx'
+import { requireRealUser } from '@app/auth'
 import HomePage from './pages/HomePage.vue'
 import { getPreloaderStyles, getPreloaderScript } from './shared/preloader'
 import {
@@ -20,8 +21,10 @@ import {
 } from './config/project'
 import * as loggerLib from './lib/logger.lib'
 import * as settingsLib from './lib/settings.lib'
-import { getPomodoroStateRoute } from './api/pomodoro/state/get'
-import { pomodoroControlRoute } from './api/pomodoro/control'
+import { genSocketId } from '@app/socket'
+import { toolsStateRoute } from './api/tools/state'
+import { toolsControlRoute } from './api/tools/control'
+import { focusToolsSocketId } from './shared/focus-tools-types'
 
 const LOG_PATH = 'index'
 
@@ -45,8 +48,17 @@ export const indexPageRoute = app.html('/', async (ctx, req) => {
   const toolsUrl = getFullUrl(ROUTES.tools)
   const adminUrl = isAdmin ? getFullUrl(ROUTES.admin) : ''
   const testsUrl = isAuthenticated ? getFullUrl(ROUTES.tests) : ''
-  const pomodoroStateGetUrl = getApiUrlForRoute(getPomodoroStateRoute.url())
-  const pomodoroControlUrl = getApiUrlForRoute(pomodoroControlRoute.url())
+  const toolsStateUrl = getApiUrlForRoute(toolsStateRoute.url())
+  const toolsControlUrl = getApiUrlForRoute(toolsControlRoute.url())
+  let encodedFocusToolsSocketId = ''
+  if (isAuthenticated) {
+    try {
+      const u = requireRealUser(ctx)
+      encodedFocusToolsSocketId = await genSocketId(ctx, focusToolsSocketId(u.id))
+    } catch {
+      encodedFocusToolsSocketId = ''
+    }
+  }
   await loggerLib.writeServerLog(ctx, {
     severity: 7,
     message: `[${LOG_PATH}] URL-ы`,
@@ -454,8 +466,9 @@ export const indexPageRoute = app.html('/', async (ctx, req) => {
           isAdmin={isAdmin}
           adminUrl={adminUrl}
           testsUrl={testsUrl}
-          pomodoroStateGetUrl={pomodoroStateGetUrl}
-          pomodoroControlUrl={pomodoroControlUrl}
+          toolsStateUrl={toolsStateUrl}
+          toolsControlUrl={toolsControlUrl}
+          encodedFocusToolsSocketId={encodedFocusToolsSocketId}
         />
       </body>
     </html>
