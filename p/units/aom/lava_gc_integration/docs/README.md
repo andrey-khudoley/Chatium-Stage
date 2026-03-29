@@ -4,10 +4,11 @@
 
 ## Интеграция GetCourse + Lava (целевой продукт)
 
-Читать в указанном порядке при первом знакомстве или передаче задачи разработчику.
+**С нуля по потоку оплаты** — сначала [integration-full-flow.md](./integration-full-flow.md) (сквозная логика и ссылки на детали). Ниже — тематические документы; при первом знакомстве или передаче задачи разработчику можно читать в указанном порядке.
 
 | Файл | Содержание |
 | --- | --- |
+| [integration-full-flow.md](./integration-full-flow.md) | Сквозное описание: участники, этапы от `payment-link` до обновления заказа в GC, таблица соответствия входов и модулей кода |
 | [integration-overview.md](./integration-overview.md) | Назначение, бизнес-модель, границы ответственности GC / Chatium / Lava |
 | [integration-architecture-flows.md](./integration-architecture-flows.md) | Сценарии взаимодействия, допущения, ограничения пропускной способности, сущности в Lava |
 | [integration-critical-section.md](./integration-critical-section.md) | Критическая секция, гонки, блокировка, привязка к `@app/sync` в Chatium |

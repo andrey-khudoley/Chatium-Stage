@@ -1,3 +1,4 @@
+// @shared
 /** Название проекта по умолчанию (если в настройках не задано) */
 export const DEFAULT_PROJECT_TITLE = 'Интеграция Lava.top и GC'
 

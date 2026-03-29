@@ -8,7 +8,7 @@
 | --- | --- | --- | --- | --- |
 | GET | /api/settings/list | api/settings/list.ts | Admin | Список всех настроек (с дефолтами) |
 | GET | /api/settings/get?key= | api/settings/get.ts | Admin | Получить одну настройку |
-| POST | /api/settings/save | api/settings/save.ts | Admin | Сохранить настройку (body: `{ key, value }`). Для `log_level`: допускаются строки (Debug/Info/Warn/Error/Disable) и числа -1–4 (-1,0=Disable, 1=Info, 2=Warn, 3=Error, 4=Debug), нормализация в API. |
+| POST | /api/settings/save | api/settings/save.ts | Admin | Сохранить настройку (body: `{ key, value }`). Для `log_level`: допускаются строки (Debug/Info/Warn/Error/Disable) и числа -1–4 (-1,0=Disable, 1=Info, 2=Warn, 3=Error, 4=Debug), нормализация в API. Перед записью в Heap: при сохранении `gc_api_key` или `gc_account_domain` (если после слияния с уже сохранённым вторым полем оба непусты) — запрос `verifyGcPlApiAccess` к GetCourse PL API; при `lava_api_key` или `lava_base_url` (оба непусты после слияния) — GET Lava `/api/v2/products`, успех только при HTTP 200. Иначе `{ success: false, error }` без записи. |
 
 Каждый файл — один эндпоинт с путём `/`.
 
@@ -39,7 +39,25 @@
 | --- | --- | --- | --- | --- |
 | POST | /api/admin/lava/catalog | api/admin/lava/catalog/index.ts | Admin | Body: `{ lavaApiKey, lavaBaseUrl? }`. Запрос к Lava `GET /api/v2/products` с `X-Api-Key`, разбор `items` с `type: PRODUCT`, список пар продукт/оффер. Успех: `{ success: true, catalog: [{ productId, productTitle, offerId, offerName }] }`. Ошибка: `{ success: false, errorCode, message }`. Ключ в логах не записывается. |
 
+## GetCourse (api/admin/getcourse/)
+
+Проверка ключа Import API и домена аккаунта перед сохранением в Heap (`gc_api_key`, `gc_account_domain`). Реализация: `lib/getcourse-api.client` — `verifyGcPlApiAccess` (POST `https://{домен}/pl/api/deals` с тестовым `deal_number`).
+
+| Method | Path | File | Auth | Назначение |
+| --- | --- | --- | --- | --- |
+| POST | /api/admin/getcourse/verify | api/admin/getcourse/verify/index.ts | Admin | Body: `{ gcApiKey, gcAccountDomain }`. Успех: `{ success: true, message }`. Ошибка: `{ success: false, errorCode: 'GC_VERIFY', message }`. Ключ в логах не пишется. |
+
 Каждый файл — один эндпоинт с путём `/`.
+
+## Интеграции Lava + GetCourse (api/integrations/lava/)
+
+- **От GetCourse:** заголовок `X-Service-Token` или `Authorization: Bearer …` = настройка `gc_service_token`.
+- **От Lava (webhook):** заголовок `X-Api-Key` = настройка `lava_webhook_secret`.
+
+| Method | Path | File | Auth | Назначение |
+| --- | --- | --- | --- | --- |
+| POST | /api/integrations/lava/payment-link | api/integrations/lava/payment-link/index.ts | `X-Service-Token` или `Authorization: Bearer <token>` (= `gc_service_token`) | Тело валидируется через `@app/schema` (`.body`): обязательные `gcOrderId`, `buyerEmail`, `amount` (> 0 после парсинга), `currency` ∈ { RUB, USD, EUR }; опционально `gcUserId`, `description`, `paymentProvider`, `paymentMethod`, `buyerLanguage`, `utm` (record строка→строка), `requestId`. Вызывает `lib/lava-payment.service` → `createPaymentLink`. Успех: `success: true`, `paymentUrl`, `lavaContractId`, … Ошибки: `UNAUTHORIZED`, `VALIDATION_ERROR`, `CONFIG_ERROR`, `LAVA_*`, `PAYMENT_TEMPLATE_BUSY`, `INTERNAL_ERROR` (см. ответ сервиса). |
+| POST | /api/integrations/lava/webhook | api/integrations/lava/webhook/index.ts | `X-Api-Key` (= `lava_webhook_secret`) | Тело — payload Lava (`LavaWebhookPayload`), валидация `.body` (`@app/schema`). Экспорт `lavaWebhookRoute`, вызов `lib/lava-webhook.service` → `processWebhook`. Успех HTTP 200: `{ success: true }`. Неверный секрет: HTTP 401, `{ success: false }`. Логи входа/обработки через `writeServerLog`. |
 
 ## Тесты (api/tests/)
 
@@ -51,27 +69,32 @@
 | GET | /api/tests/endpoints-check/health | api/tests/endpoints-check/health.ts | AnyUser | Тест: health check. Возвращает `{ success: true, ok: true, test: 'health', at }`. |
 | GET | /api/tests/endpoints-check/ping | api/tests/endpoints-check/ping.ts | AnyUser | Тест: ping. Возвращает `{ success: true, pong: true, test: 'ping', at }`. |
 | GET | /api/tests/endpoints-check/config | api/tests/endpoints-check/config.ts | AnyUser | Тест слоя config (routes, project). Возвращает `{ success, test: 'config', routes, pageTitle, headerText, at }`. |
-| GET | /api/tests/endpoints-check/settings-lib | api/tests/endpoints-check/settings-lib.ts | AnyUser | Тесты библиотеки настроек: массив `results` по каждой функции (getSettingString, getLogLevel, getLogsLimit, getLogWebhook, getDashboardResetAt, getAllSettings). |
-| GET | /api/tests/endpoints-check/settings-repo | api/tests/endpoints-check/settings-repo.ts | AnyUser | Тесты репозитория настроек: массив `results` (upsert, deleteByKey, findByKey, findAll). Порядок: создание до чтения. |
-| GET | /api/tests/endpoints-check/logger-lib | api/tests/endpoints-check/logger-lib.ts | AnyUser | Тесты библиотеки логов: массив `results` (getAdminLogsSocketId, shouldLogByLevel). |
-| GET | /api/tests/endpoints-check/logs-repo | api/tests/endpoints-check/logs-repo.ts | AnyUser | Тесты репозитория логов: массив `results` (create, findAll, findBeforeTimestamp, countErrorsAfter, countWarningsAfter). Порядок: create до чтения. |
-| GET | /api/tests/endpoints-check/dashboard-lib | api/tests/endpoints-check/dashboard-lib.ts | AnyUser | Тесты библиотеки админки: массив `results` (getDashboardCounts, resetDashboard). |
+| GET | /api/tests/endpoints-check/settings-lib | api/tests/endpoints-check/settings-lib.ts | AnyUser | Тесты библиотеки настроек: массив `results` по каждой функции (getSettingString, getLogLevel, getLogsLimit, getLogWebhook, getDashboardResetAt, getAllSettings). Опционально: query `testId` — выполнить только одну проверку (id как в `results`). |
+| GET | /api/tests/endpoints-check/settings-repo | api/tests/endpoints-check/settings-repo.ts | AnyUser | Тесты репозитория настроек: массив `results` (upsert, deleteByKey, findByKey, findAll). Порядок: создание до чтения. Опционально: query `testId` — одна проверка. |
+| GET | /api/tests/endpoints-check/logger-lib | api/tests/endpoints-check/logger-lib.ts | AnyUser | Тесты библиотеки логов: массив `results` (getAdminLogsSocketId, shouldLogByLevel). Опционально: query `testId` — одна проверка. |
+| GET | /api/tests/endpoints-check/logs-repo | api/tests/endpoints-check/logs-repo.ts | AnyUser | Тесты репозитория логов: массив `results` (create, findAll, findBeforeTimestamp, countErrorsAfter, countWarningsAfter). Порядок: create до чтения. Опционально: query `testId` — одна проверка. |
+| GET | /api/tests/endpoints-check/dashboard-lib | api/tests/endpoints-check/dashboard-lib.ts | AnyUser | Тесты библиотеки админки: массив `results` (getDashboardCounts, resetDashboard). Опционально: query `testId` — одна проверка. |
+| GET | /api/tests/endpoints-check/lava-settings-getters | api/tests/endpoints-check/lava-settings-getters.ts | AnyUser | Геттеры интеграции в `settings.lib`: `getLavaApiKey`, `getLavaBaseUrl`, `getLavaProductId`, `getLavaOfferId`, `getLavaWebhookSecret`, `getGcApiKey`, `getGcAccountDomain`, `getGcServiceToken` — массив `results`. |
+| GET | /api/tests/endpoints-check/integration-gc-credentials | api/tests/endpoints-check/integration-gc-credentials.ts | AnyUser | Проверка GetCourse из Heap: `gc_api_key` + `gc_account_domain` → `verifyGcPlApiAccess`. Ответ: `{ success, skipped?, test, message?, error?, at }`; при неполной паре в настройках — `success: true`, `skipped: true`. |
+| GET | /api/tests/endpoints-check/integration-lava-credentials | api/tests/endpoints-check/integration-lava-credentials.ts | AnyUser | Проверка Lava из Heap: `lava_api_key` + `lava_base_url` → `verifyLavaCredentials` (GET `/api/v2/products`). Ответ: `{ success, skipped?, test, message?, error?, httpStatus?, at }`; при неполной паре — `skipped: true`. |
+| GET | /api/tests/endpoints-check/lava-repos | api/tests/endpoints-check/lava-repos.ts | AnyUser | Репозитории Heap интеграции: контракт оплаты, webhook-события, lock-log; массив `results`. |
+| GET | /api/tests/endpoints-check/lava-webhook-service | api/tests/endpoints-check/lava-webhook-service.ts | AnyUser | `processWebhook`: 401 при неверном ключе, сценарий без контракта в Heap, дедупликация; массив `results` (часть проверок пропускается, если не задан `lava_webhook_secret`). |
+| GET | /api/tests/endpoints-check/getcourse-deal-update | api/tests/endpoints-check/getcourse-deal-update.ts | AnyUser | Вызов `updateDealStatus` без исключения (при отсутствии ключей GetCourse — no-op в клиенте). |
+| GET | /api/tests/endpoints-check/lava-api-catalog | api/tests/endpoints-check/lava-api-catalog.ts | AnyUser | `fetchLavaProductsCatalog` с ключом и URL из настроек; при отсутствии ключа — `{ success: true, skipped: true }`. |
+| GET | /api/tests/endpoints-check/lava-payment-link-route | api/tests/endpoints-check/lava-payment-link-route.ts | AnyUser | `lavaPaymentLinkRoute.run`: UNAUTHORIZED / VALIDATION_ERROR; массив `results` (проверки с верным токеном пропускаются, если не задан `gc_service_token`). Файл **без** `@shared-route`: импорт `lavaPaymentLinkRoute` тянет схему `app.body` и не должен попадать в shared-бандл. |
+| GET | /api/tests/endpoints-check/lava-api-client | api/tests/endpoints-check/lava-api-client.ts | AnyUser | Интеграция: вызов `getProducts` (Lava GET `/api/v2/products`). Успех: `{ success: true, test, body }`; при ошибке конфигурации/API: `{ success: false, test, error }`. |
+| GET | /api/tests/endpoints-check/payment-link | api/tests/endpoints-check/payment-link.ts | AnyUser | Интеграция: `createPaymentLink` с тестовыми данными (уникальный `gcOrderId`, 50 RUB — минимум Lava для RUB, email `lava-test@example.com`). Ответ: `{ success: true, test, result }` с полями `createPaymentLink` или `{ success: false, test, error }`. |
 
-Структура: `api/tests/` — общий каталог; `api/tests/<категория>/` — директория категории (например, `endpoints-check`); внутри категории — отдельные файлы с одним эндпоинтом `/` в каждом.
+Структура: `api/tests/` — общий каталог; `api/tests/<категория>/` — директория категории (например, `endpoints-check`); внутри категории — отдельные файлы с одним эндпоинтом `/` в каждом. Каталог `GET /api/tests/list`: категория `integration-check` — только два GET учётных данных (`integration-gc-credentials`, `integration-lava-credentials`); остальные интеграционные GET в `endpoints-check/` перечислены в таблице выше, но в list не дублируются.
 
 ## Публичные эндпоинты
 | Method | Path | File | Auth | Назначение |
 | --- | --- | --- | --- | --- |
 | - | - | - | - | - |
 
-## Планируемые эндпоинты (интеграция Lava + GetCourse)
+## Дополнительно по интеграции Lava + GetCourse
 
-Реализации пока нет; пути относительно корня приложения. Детали — [integration-http-contracts.md](./integration-http-contracts.md), оглавление — [README.md](./README.md). Исходящие вызовы к Lava — [reference/lavatop-openapi3.yaml](./reference/lavatop-openapi3.yaml), сводка — [integration-lava-openapi-reference.md](./integration-lava-openapi-reference.md). Исходящие вызовы к GetCourse (обновление заказа) — [reference/getcourse-pl-api-spec.md](./reference/getcourse-pl-api-spec.md).
-
-| Method | Path (логический) | Auth | Назначение |
-| --- | --- | --- | --- |
-| POST | `api/integrations/lava/payment-link` | Сервисный токен / договорённость с GetCourse | Lock → обновить цену оффера Lava → создать контракт → сохранить в Heap → вернуть `paymentUrl` |
-| POST | `api/integrations/lava/webhook` | Секрет/подпись Lava | Приём webhook, дедупликация, обновление статуса, callback в GetCourse |
+Входящие эндпоинты интеграции перечислены в разделе «Интеграции Lava + GetCourse» выше (`payment-link`, `webhook`). Отдельный бэклог новых входящих URL под эту интеграцию не ведётся в этом файле. Детали контрактов и сценарии — [integration-http-contracts.md](./integration-http-contracts.md), оглавление — [README.md](./README.md). Исходящие вызовы к Lava — [reference/lavatop-openapi3.yaml](./reference/lavatop-openapi3.yaml), сводка — [integration-lava-openapi-reference.md](./integration-lava-openapi-reference.md). Исходящие вызовы к GetCourse — [reference/getcourse-pl-api-spec.md](./reference/getcourse-pl-api-spec.md).
 
 ## События и webhooks
-- В плане: webhook Lava (см. раздел выше). Сейчас не используются.
+- Webhook Lava реализован: `POST /api/integrations/lava/webhook` — см. таблицу в разделе «Интеграции Lava + GetCourse».

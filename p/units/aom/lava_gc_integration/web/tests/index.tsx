@@ -15,7 +15,7 @@ const LOG_PATH = 'web/tests/index'
 
 /**
  * Страница тестов: отображает TestsPage.vue и даёт доступ к каталогу тестов (api/tests/list)
- * и к проверкам всех слоёв: config, lib (settings, dashboard, logger), repo (settings, logs), API (admin).
+ * и к проверкам всех слоёв плюс интеграция Lava/GetCourse (config, lib, repo, API admin, lava_*).
  */
 export const testsPageRoute = app.html('/', async (ctx, req) => {
   await loggerLib.writeServerLog(ctx, {

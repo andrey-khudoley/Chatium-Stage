@@ -7,7 +7,7 @@ import AppFooter from '../components/AppFooter.vue'
 import { createComponentLogger, setLogSink, type LogEntry } from '../shared/logger'
 import { getRecentLogsRoute } from '../api/admin/logs/recent'
 import { getLogsBeforeRoute } from '../api/admin/logs/before'
-import { PROJECT_ROOT } from '../config/routes'
+import { PROJECT_ROOT } from '../shared/projectRoot'
 
 const log = createComponentLogger('TestsPage')
 
@@ -300,6 +300,35 @@ const runAllTestsLoading = ref(false)
 /** Результат одного теста */
 type TestResult = { id: string; title: string; passed: boolean; error?: string }
 
+/** Обновить результаты по id, не сбрасывая остальные строки блока */
+function upsertTestResults(existing: TestResult[], incoming: TestResult[]): TestResult[] {
+  const map = new Map(existing.map((r) => [r.id, r]))
+  for (const u of incoming) {
+    map.set(u.id, u)
+  }
+  return Array.from(map.values())
+}
+
+type SingleRunGroup =
+  | 'endpoints'
+  | 'settings'
+  | 'settingsRepo'
+  | 'loggerLib'
+  | 'logsRepo'
+  | 'dashboardLib'
+  | 'settingKeys'
+
+const singleTestRun = ref<{ group: SingleRunGroup; id: string } | null>(null)
+
+function isSingleRunning(group: SingleRunGroup, id: string): boolean {
+  const s = singleTestRun.value
+  return s !== null && s.group === group && s.id === id
+}
+
+function isGroupBlockedBySingle(group: SingleRunGroup): boolean {
+  return singleTestRun.value?.group === group
+}
+
 /** Базовый URL (origin + путь проекта без trailing slash) */
 function getApiBaseUrl(): string {
   const path = props.indexUrl.startsWith('http')
@@ -371,6 +400,38 @@ async function runEndpointsTests() {
   }
 }
 
+async function runSingleEndpointTest(testId: string) {
+  const t = ENDPOINTS_ROUTES.find((x) => x.id === testId)
+  if (!t) return
+  singleTestRun.value = { group: 'endpoints', id: testId }
+  const baseUrl = getApiBaseUrl().replace(/\/$/, '')
+  try {
+    const url = `${baseUrl}${t.path === '/' ? '' : t.path}`
+    const res = await fetch(url, { method: 'GET', credentials: 'include' })
+    endpointsResults.value = upsertTestResults(endpointsResults.value, [
+      {
+        id: t.id,
+        title: t.title,
+        passed: res.ok,
+        error: res.ok ? undefined : `HTTP ${res.status}`
+      }
+    ])
+    endpointsLastRunAt.value = new Date().toLocaleString('ru-RU')
+  } catch (e) {
+    endpointsResults.value = upsertTestResults(endpointsResults.value, [
+      {
+        id: t.id,
+        title: t.title,
+        passed: false,
+        error: (e as Error)?.message ?? String(e)
+      }
+    ])
+    endpointsLastRunAt.value = new Date().toLocaleString('ru-RU')
+  } finally {
+    singleTestRun.value = null
+  }
+}
+
 /* --- Блок 2: Библиотека настроек (settings.lib) --- */
 const SETTINGS_LIB_TESTS: Array<{ id: string; title: string }> = [
   { id: 'getSettingString', title: 'getSettingString (project_name)' },
@@ -413,6 +474,33 @@ async function runSettingsTests() {
     settingsLastRunAt.value = new Date().toLocaleString('ru-RU')
   } finally {
     settingsLoading.value = false
+  }
+}
+
+async function runSingleSettingsTest(testId: string) {
+  singleTestRun.value = { group: 'settings', id: testId }
+  const baseUrl = getApiBaseUrl().replace(/\/$/, '')
+  const title = SETTINGS_LIB_TESTS.find((x) => x.id === testId)?.title ?? testId
+  try {
+    const res = await fetch(
+      `${baseUrl}/api/tests/endpoints-check/settings-lib?testId=${encodeURIComponent(testId)}`,
+      { method: 'GET', credentials: 'include' }
+    )
+    const data = (await res.json().catch(() => null)) as {
+      success?: boolean
+      results?: TestResult[]
+      error?: string
+    }
+    if (res.ok && data?.success && Array.isArray(data.results) && data.results.length > 0) {
+      settingsResults.value = upsertTestResults(settingsResults.value, data.results)
+    } else {
+      settingsResults.value = upsertTestResults(settingsResults.value, [
+        { id: testId, title, passed: false, error: data?.error || 'Ошибка запроса' }
+      ])
+    }
+    settingsLastRunAt.value = new Date().toLocaleString('ru-RU')
+  } finally {
+    singleTestRun.value = null
   }
 }
 
@@ -459,6 +547,33 @@ async function runSettingsRepoTests() {
   }
 }
 
+async function runSingleSettingsRepoTest(testId: string) {
+  singleTestRun.value = { group: 'settingsRepo', id: testId }
+  const baseUrl = getApiBaseUrl().replace(/\/$/, '')
+  const title = SETTINGS_REPO_TESTS.find((x) => x.id === testId)?.title ?? testId
+  try {
+    const res = await fetch(
+      `${baseUrl}/api/tests/endpoints-check/settings-repo?testId=${encodeURIComponent(testId)}`,
+      { method: 'GET', credentials: 'include' }
+    )
+    const data = (await res.json().catch(() => null)) as {
+      success?: boolean
+      results?: TestResult[]
+      error?: string
+    }
+    if (res.ok && data?.success && Array.isArray(data.results) && data.results.length > 0) {
+      settingsRepoResults.value = upsertTestResults(settingsRepoResults.value, data.results)
+    } else {
+      settingsRepoResults.value = upsertTestResults(settingsRepoResults.value, [
+        { id: testId, title, passed: false, error: data?.error || 'Ошибка запроса' }
+      ])
+    }
+    settingsRepoLastRunAt.value = new Date().toLocaleString('ru-RU')
+  } finally {
+    singleTestRun.value = null
+  }
+}
+
 /* --- Блок 4: Библиотека логов (logger.lib) --- */
 const LOGGER_LIB_TESTS: Array<{ id: string; title: string }> = [
   { id: 'getAdminLogsSocketId', title: 'getAdminLogsSocketId' },
@@ -499,6 +614,33 @@ async function runLoggerLibTests() {
     loggerLibLastRunAt.value = new Date().toLocaleString('ru-RU')
   } finally {
     loggerLibLoading.value = false
+  }
+}
+
+async function runSingleLoggerLibTest(testId: string) {
+  singleTestRun.value = { group: 'loggerLib', id: testId }
+  const baseUrl = getApiBaseUrl().replace(/\/$/, '')
+  const title = LOGGER_LIB_TESTS.find((x) => x.id === testId)?.title ?? testId
+  try {
+    const res = await fetch(
+      `${baseUrl}/api/tests/endpoints-check/logger-lib?testId=${encodeURIComponent(testId)}`,
+      { method: 'GET', credentials: 'include' }
+    )
+    const data = (await res.json().catch(() => null)) as {
+      success?: boolean
+      results?: TestResult[]
+      error?: string
+    }
+    if (res.ok && data?.success && Array.isArray(data.results) && data.results.length > 0) {
+      loggerLibResults.value = upsertTestResults(loggerLibResults.value, data.results)
+    } else {
+      loggerLibResults.value = upsertTestResults(loggerLibResults.value, [
+        { id: testId, title, passed: false, error: data?.error || 'Ошибка запроса' }
+      ])
+    }
+    loggerLibLastRunAt.value = new Date().toLocaleString('ru-RU')
+  } finally {
+    singleTestRun.value = null
   }
 }
 
@@ -546,6 +688,33 @@ async function runLogsRepoTests() {
   }
 }
 
+async function runSingleLogsRepoTest(testId: string) {
+  singleTestRun.value = { group: 'logsRepo', id: testId }
+  const baseUrl = getApiBaseUrl().replace(/\/$/, '')
+  const title = LOGS_REPO_TESTS.find((x) => x.id === testId)?.title ?? testId
+  try {
+    const res = await fetch(
+      `${baseUrl}/api/tests/endpoints-check/logs-repo?testId=${encodeURIComponent(testId)}`,
+      { method: 'GET', credentials: 'include' }
+    )
+    const data = (await res.json().catch(() => null)) as {
+      success?: boolean
+      results?: TestResult[]
+      error?: string
+    }
+    if (res.ok && data?.success && Array.isArray(data.results) && data.results.length > 0) {
+      logsRepoResults.value = upsertTestResults(logsRepoResults.value, data.results)
+    } else {
+      logsRepoResults.value = upsertTestResults(logsRepoResults.value, [
+        { id: testId, title, passed: false, error: data?.error || 'Ошибка запроса' }
+      ])
+    }
+    logsRepoLastRunAt.value = new Date().toLocaleString('ru-RU')
+  } finally {
+    singleTestRun.value = null
+  }
+}
+
 /* --- Блок 6: Библиотека админки (dashboard.lib) --- */
 const DASHBOARD_LIB_TESTS: Array<{ id: string; title: string }> = [
   { id: 'getDashboardCounts', title: 'getDashboardCounts' },
@@ -587,7 +756,163 @@ async function runDashboardLibTests() {
   }
 }
 
-/** Запустить все тесты (все шесть блоков) и обновить метрики дашборда */
+async function runSingleDashboardLibTest(testId: string) {
+  singleTestRun.value = { group: 'dashboardLib', id: testId }
+  const baseUrl = getApiBaseUrl().replace(/\/$/, '')
+  const title = DASHBOARD_LIB_TESTS.find((x) => x.id === testId)?.title ?? testId
+  try {
+    const res = await fetch(
+      `${baseUrl}/api/tests/endpoints-check/dashboard-lib?testId=${encodeURIComponent(testId)}`,
+      { method: 'GET', credentials: 'include' }
+    )
+    const data = (await res.json().catch(() => null)) as {
+      success?: boolean
+      results?: TestResult[]
+      error?: string
+    }
+    if (res.ok && data?.success && Array.isArray(data.results) && data.results.length > 0) {
+      dashboardLibResults.value = upsertTestResults(dashboardLibResults.value, data.results)
+    } else {
+      dashboardLibResults.value = upsertTestResults(dashboardLibResults.value, [
+        { id: testId, title, passed: false, error: data?.error || 'Ошибка запроса' }
+      ])
+    }
+    dashboardLibLastRunAt.value = new Date().toLocaleString('ru-RU')
+  } finally {
+    singleTestRun.value = null
+  }
+}
+
+function lavaStepToTestResult(
+  step: { id: string; title: string; mode: 'results' | 'legacy' },
+  res: Response,
+  data: Record<string, unknown>
+): TestResult {
+  if (!res.ok) {
+    return {
+      id: step.id,
+      title: step.title,
+      passed: false,
+      error: `HTTP ${res.status}`
+    }
+  }
+  if (step.mode === 'results' && Array.isArray(data.results)) {
+    const inner = data.results as Array<TestResult & { skipped?: boolean; detail?: string }>
+    const executed = inner.filter((r) => !r.skipped)
+    const allSkipped = inner.length > 0 && executed.length === 0
+    const allPassed = !allSkipped && executed.length > 0 && executed.every((r) => r.passed)
+    return {
+      id: step.id,
+      title: step.title,
+      passed: allPassed,
+      error: allPassed
+        ? undefined
+        : allSkipped
+          ? inner.map((r) => r.detail || r.error).filter(Boolean).join('; ') ||
+            'Все проверки пропущены (не заданы ключи в настройках)'
+          : executed
+              .filter((r) => !r.passed)
+              .map((r) => r.error || r.id)
+              .join('; ')
+    }
+  }
+  const success = data.success === true
+  const skipped = data.skipped === true
+  return {
+    id: step.id,
+    title: step.title,
+    passed: success || skipped,
+    error: success || skipped ? undefined : String(data.error ?? 'Ошибка')
+  }
+}
+
+/* --- Блок 7: Ключи интеграции (отдельно GC и Lava, как в админке) --- */
+const SETTING_KEYS_VALIDATION_TESTS: Array<{ id: string; title: string; path: string; mode: 'results' | 'legacy' }> = [
+  {
+    id: 'integration-gc-credentials',
+    title: 'GetCourse: API-ключ и домен (PL API)',
+    path: '/api/tests/endpoints-check/integration-gc-credentials',
+    mode: 'legacy'
+  },
+  {
+    id: 'integration-lava-credentials',
+    title: 'Lava: API-ключ и базовый URL (GET /api/v2/products)',
+    path: '/api/tests/endpoints-check/integration-lava-credentials',
+    mode: 'legacy'
+  }
+]
+const settingKeysValidationResults = ref<TestResult[]>([])
+const settingKeysValidationLoading = ref(false)
+const settingKeysValidationLastRunAt = ref<string | null>(null)
+
+const settingKeysValidationDisplay = computed(() => {
+  const byId = new Map(settingKeysValidationResults.value.map((r) => [r.id, r]))
+  return SETTING_KEYS_VALIDATION_TESTS.map((t) => {
+    const res = byId.get(t.id)
+    return {
+      id: t.id,
+      title: t.title,
+      status: res === undefined ? 'todo' : res.passed ? 'success' : 'fail',
+      error: res && !res.passed ? res.error : undefined
+    }
+  })
+})
+
+async function runSettingKeysValidationTests() {
+  settingKeysValidationLoading.value = true
+  settingKeysValidationResults.value = []
+  const baseUrl = getApiBaseUrl().replace(/\/$/, '')
+  log.info('Запуск проверки ключей интеграции (Heap)')
+  const out: TestResult[] = []
+  try {
+    for (const step of SETTING_KEYS_VALIDATION_TESTS) {
+      try {
+        const res = await fetch(`${baseUrl}${step.path}`, { method: 'GET', credentials: 'include' })
+        const data = (await res.json().catch(() => null)) as Record<string, unknown>
+        out.push(lavaStepToTestResult(step, res, data))
+      } catch (e) {
+        out.push({
+          id: step.id,
+          title: step.title,
+          passed: false,
+          error: (e as Error)?.message ?? String(e)
+        })
+      }
+    }
+    settingKeysValidationResults.value = out
+    settingKeysValidationLastRunAt.value = new Date().toLocaleString('ru-RU')
+  } finally {
+    settingKeysValidationLoading.value = false
+  }
+}
+
+async function runSingleSettingKeysValidationTest(testId: string) {
+  const step = SETTING_KEYS_VALIDATION_TESTS.find((s) => s.id === testId)
+  if (!step) return
+  singleTestRun.value = { group: 'settingKeys', id: testId }
+  const baseUrl = getApiBaseUrl().replace(/\/$/, '')
+  try {
+    const res = await fetch(`${baseUrl}${step.path}`, { method: 'GET', credentials: 'include' })
+    const data = (await res.json().catch(() => null)) as Record<string, unknown>
+    const one = lavaStepToTestResult(step, res, data)
+    settingKeysValidationResults.value = upsertTestResults(settingKeysValidationResults.value, [one])
+    settingKeysValidationLastRunAt.value = new Date().toLocaleString('ru-RU')
+  } catch (e) {
+    settingKeysValidationResults.value = upsertTestResults(settingKeysValidationResults.value, [
+      {
+        id: step.id,
+        title: step.title,
+        passed: false,
+        error: (e as Error)?.message ?? String(e)
+      }
+    ])
+    settingKeysValidationLastRunAt.value = new Date().toLocaleString('ru-RU')
+  } finally {
+    singleTestRun.value = null
+  }
+}
+
+/** Запустить все тесты (все семь блоков) и обновить метрики дашборда */
 const runAllTests = async () => {
   runAllTestsLoading.value = true
   log.info('Запуск всех тестов')
@@ -598,13 +923,15 @@ const runAllTests = async () => {
     await runLoggerLibTests()
     await runLogsRepoTests()
     await runDashboardLibTests()
+    await runSettingKeysValidationTests()
     const all = [
       ...endpointsResults.value,
       ...settingsResults.value,
       ...settingsRepoResults.value,
       ...loggerLibResults.value,
       ...logsRepoResults.value,
-      ...dashboardLibResults.value
+      ...dashboardLibResults.value,
+      ...settingKeysValidationResults.value
     ]
     const passed = all.filter((r) => r.passed).length
     const failed = all.filter((r) => !r.passed).length
@@ -766,7 +1093,7 @@ const runAllTests = async () => {
               <button
                 type="button"
                 class="tests-run-all-btn"
-                :disabled="runAllTestsLoading"
+                :disabled="runAllTestsLoading || singleTestRun !== null"
                 @click="runAllTests"
               >
                 <i class="fas" :class="runAllTestsLoading ? 'fa-spinner fa-spin' : 'fa-play'"></i>
@@ -800,6 +1127,18 @@ const runAllTests = async () => {
                 </span>
                 <span class="tests-endpoints-list-title-inline">{{ item.title }}</span>
                 <span v-if="item.error" class="tests-endpoints-list-error">{{ item.error }}</span>
+                <button
+                  type="button"
+                  class="tests-run-one-btn"
+                  title="Запустить только этот тест"
+                  :disabled="runAllTestsLoading || endpointsLoading || isGroupBlockedBySingle('endpoints')"
+                  @click.stop="runSingleEndpointTest(item.id)"
+                >
+                  <i
+                    class="fas"
+                    :class="isSingleRunning('endpoints', item.id) ? 'fa-spinner fa-spin' : 'fa-play'"
+                  ></i>
+                </button>
               </li>
               </ul>
             </div>
@@ -807,7 +1146,7 @@ const runAllTests = async () => {
               <button
                 type="button"
                 class="tests-run-group-btn"
-                :disabled="endpointsLoading"
+                :disabled="runAllTestsLoading || endpointsLoading || isGroupBlockedBySingle('endpoints')"
                 @click="runEndpointsTests"
               >
                 <i class="fas" :class="endpointsLoading ? 'fa-spinner fa-spin' : 'fa-bolt'"></i>
@@ -841,6 +1180,18 @@ const runAllTests = async () => {
                   </span>
                   <span class="tests-endpoints-list-title-inline">{{ item.title }}</span>
                   <span v-if="item.error" class="tests-endpoints-list-error">{{ item.error }}</span>
+                  <button
+                    type="button"
+                    class="tests-run-one-btn"
+                    title="Запустить только этот тест"
+                    :disabled="runAllTestsLoading || settingsLoading || isGroupBlockedBySingle('settings')"
+                    @click.stop="runSingleSettingsTest(item.id)"
+                  >
+                    <i
+                      class="fas"
+                      :class="isSingleRunning('settings', item.id) ? 'fa-spinner fa-spin' : 'fa-play'"
+                    ></i>
+                  </button>
                 </li>
               </ul>
             </div>
@@ -848,7 +1199,7 @@ const runAllTests = async () => {
               <button
                 type="button"
                 class="tests-run-group-btn"
-                :disabled="settingsLoading"
+                :disabled="runAllTestsLoading || settingsLoading || isGroupBlockedBySingle('settings')"
                 @click="runSettingsTests"
               >
                 <i class="fas" :class="settingsLoading ? 'fa-spinner fa-spin' : 'fa-bolt'"></i>
@@ -882,6 +1233,18 @@ const runAllTests = async () => {
                   </span>
                   <span class="tests-endpoints-list-title-inline">{{ item.title }}</span>
                   <span v-if="item.error" class="tests-endpoints-list-error">{{ item.error }}</span>
+                  <button
+                    type="button"
+                    class="tests-run-one-btn"
+                    title="Запустить только этот тест"
+                    :disabled="runAllTestsLoading || settingsRepoLoading || isGroupBlockedBySingle('settingsRepo')"
+                    @click.stop="runSingleSettingsRepoTest(item.id)"
+                  >
+                    <i
+                      class="fas"
+                      :class="isSingleRunning('settingsRepo', item.id) ? 'fa-spinner fa-spin' : 'fa-play'"
+                    ></i>
+                  </button>
                 </li>
               </ul>
             </div>
@@ -889,7 +1252,7 @@ const runAllTests = async () => {
               <button
                 type="button"
                 class="tests-run-group-btn"
-                :disabled="settingsRepoLoading"
+                :disabled="runAllTestsLoading || settingsRepoLoading || isGroupBlockedBySingle('settingsRepo')"
                 @click="runSettingsRepoTests"
               >
                 <i class="fas" :class="settingsRepoLoading ? 'fa-spinner fa-spin' : 'fa-bolt'"></i>
@@ -923,6 +1286,18 @@ const runAllTests = async () => {
                   </span>
                   <span class="tests-endpoints-list-title-inline">{{ item.title }}</span>
                   <span v-if="item.error" class="tests-endpoints-list-error">{{ item.error }}</span>
+                  <button
+                    type="button"
+                    class="tests-run-one-btn"
+                    title="Запустить только этот тест"
+                    :disabled="runAllTestsLoading || loggerLibLoading || isGroupBlockedBySingle('loggerLib')"
+                    @click.stop="runSingleLoggerLibTest(item.id)"
+                  >
+                    <i
+                      class="fas"
+                      :class="isSingleRunning('loggerLib', item.id) ? 'fa-spinner fa-spin' : 'fa-play'"
+                    ></i>
+                  </button>
                 </li>
               </ul>
             </div>
@@ -930,7 +1305,7 @@ const runAllTests = async () => {
               <button
                 type="button"
                 class="tests-run-group-btn"
-                :disabled="loggerLibLoading"
+                :disabled="runAllTestsLoading || loggerLibLoading || isGroupBlockedBySingle('loggerLib')"
                 @click="runLoggerLibTests"
               >
                 <i class="fas" :class="loggerLibLoading ? 'fa-spinner fa-spin' : 'fa-bolt'"></i>
@@ -964,6 +1339,18 @@ const runAllTests = async () => {
                   </span>
                   <span class="tests-endpoints-list-title-inline">{{ item.title }}</span>
                   <span v-if="item.error" class="tests-endpoints-list-error">{{ item.error }}</span>
+                  <button
+                    type="button"
+                    class="tests-run-one-btn"
+                    title="Запустить только этот тест"
+                    :disabled="runAllTestsLoading || logsRepoLoading || isGroupBlockedBySingle('logsRepo')"
+                    @click.stop="runSingleLogsRepoTest(item.id)"
+                  >
+                    <i
+                      class="fas"
+                      :class="isSingleRunning('logsRepo', item.id) ? 'fa-spinner fa-spin' : 'fa-play'"
+                    ></i>
+                  </button>
                 </li>
               </ul>
             </div>
@@ -971,7 +1358,7 @@ const runAllTests = async () => {
               <button
                 type="button"
                 class="tests-run-group-btn"
-                :disabled="logsRepoLoading"
+                :disabled="runAllTestsLoading || logsRepoLoading || isGroupBlockedBySingle('logsRepo')"
                 @click="runLogsRepoTests"
               >
                 <i class="fas" :class="logsRepoLoading ? 'fa-spinner fa-spin' : 'fa-bolt'"></i>
@@ -1005,6 +1392,18 @@ const runAllTests = async () => {
                   </span>
                   <span class="tests-endpoints-list-title-inline">{{ item.title }}</span>
                   <span v-if="item.error" class="tests-endpoints-list-error">{{ item.error }}</span>
+                  <button
+                    type="button"
+                    class="tests-run-one-btn"
+                    title="Запустить только этот тест"
+                    :disabled="runAllTestsLoading || dashboardLibLoading || isGroupBlockedBySingle('dashboardLib')"
+                    @click.stop="runSingleDashboardLibTest(item.id)"
+                  >
+                    <i
+                      class="fas"
+                      :class="isSingleRunning('dashboardLib', item.id) ? 'fa-spinner fa-spin' : 'fa-play'"
+                    ></i>
+                  </button>
                 </li>
               </ul>
             </div>
@@ -1012,11 +1411,81 @@ const runAllTests = async () => {
               <button
                 type="button"
                 class="tests-run-group-btn"
-                :disabled="dashboardLibLoading"
+                :disabled="runAllTestsLoading || dashboardLibLoading || isGroupBlockedBySingle('dashboardLib')"
                 @click="runDashboardLibTests"
               >
                 <i class="fas" :class="dashboardLibLoading ? 'fa-spinner fa-spin' : 'fa-bolt'"></i>
                 {{ dashboardLibLoading ? 'Проверяем...' : 'Запустить проверку библиотеки админки' }}
+              </button>
+            </div>
+          </div>
+
+          <!-- Блок 7: Ключи интеграции (GC и Lava отдельными строками) -->
+          <div v-if="showContent" class="tests-card tests-endpoints-card">
+            <div class="tests-endpoints-header">
+              <i class="fas fa-key tests-endpoints-icon"></i>
+              <h2 class="tests-endpoints-title">Ключи настроек интеграции</h2>
+            </div>
+            <p class="tests-endpoints-desc">
+              Две независимые проверки, как отдельные поля в админке: <strong>GetCourse</strong> —
+              <code class="tests-inline-code">gc_api_key</code> + <code class="tests-inline-code">gc_account_domain</code>,
+              <code class="tests-inline-code">verifyGcPlApiAccess</code>; <strong>Lava</strong> —
+              <code class="tests-inline-code">lava_api_key</code> + <code class="tests-inline-code">lava_base_url</code>,
+              <code class="tests-inline-code">GET /api/v2/products</code>. Пока в Heap не задана полная пара — строка
+              пропускается (<code class="tests-inline-code">skipped</code>).
+            </p>
+            <div v-if="settingKeysValidationLastRunAt" class="tests-endpoints-last-run">
+              Результаты от: {{ settingKeysValidationLastRunAt }}
+            </div>
+            <div class="tests-endpoints-list-wrap">
+              <ul class="tests-endpoints-list" role="list">
+                <li
+                  v-for="item in settingKeysValidationDisplay"
+                  :key="item.id"
+                  class="tests-endpoints-list-item"
+                  :class="`tests-endpoints-status-${item.status}`"
+                >
+                  <span class="tests-endpoints-badge" :class="`tests-endpoints-badge-${item.status}`">
+                    {{ item.status === 'todo' ? '[TODO]' : item.status === 'success' ? '[OK]' : '[FAIL]' }}
+                  </span>
+                  <span class="tests-endpoints-list-title-inline">{{ item.title }}</span>
+                  <span v-if="item.error" class="tests-endpoints-list-error">{{ item.error }}</span>
+                  <button
+                    type="button"
+                    class="tests-run-one-btn"
+                    title="Запустить только этот тест"
+                    :disabled="
+                      runAllTestsLoading ||
+                      settingKeysValidationLoading ||
+                      isGroupBlockedBySingle('settingKeys')
+                    "
+                    @click.stop="runSingleSettingKeysValidationTest(item.id)"
+                  >
+                    <i
+                      class="fas"
+                      :class="isSingleRunning('settingKeys', item.id) ? 'fa-spinner fa-spin' : 'fa-play'"
+                    ></i>
+                  </button>
+                </li>
+              </ul>
+            </div>
+            <div class="tests-endpoints-actions">
+              <button
+                type="button"
+                class="tests-run-group-btn"
+                :disabled="
+                  runAllTestsLoading ||
+                  settingKeysValidationLoading ||
+                  isGroupBlockedBySingle('settingKeys')
+                "
+                @click="runSettingKeysValidationTests"
+              >
+                <i class="fas" :class="settingKeysValidationLoading ? 'fa-spinner fa-spin' : 'fa-bolt'"></i>
+                {{
+                  settingKeysValidationLoading
+                    ? 'Проверяем...'
+                    : 'Запустить проверку ключей интеграции'
+                }}
               </button>
             </div>
           </div>
@@ -1310,6 +1779,14 @@ const runAllTests = async () => {
   line-height: 1.45;
 }
 
+.tests-inline-code {
+  font-family: ui-monospace, monospace;
+  font-size: 0.85em;
+  padding: 0.1em 0.35em;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--color-text) 8%, transparent);
+}
+
 .tests-endpoints-last-run {
   font-size: 0.8rem;
   color: var(--color-text-tertiary);
@@ -1494,6 +1971,35 @@ const runAllTests = async () => {
   opacity: 0.7;
   cursor: not-allowed;
   transform: none;
+}
+
+.tests-run-one-btn {
+  flex-shrink: 0;
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: color 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+}
+
+.tests-run-one-btn:hover:not(:disabled) {
+  color: #fff;
+  border-color: var(--color-accent);
+  background: rgba(211, 35, 75, 0.15);
+}
+
+.tests-run-one-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 /* Блок логов (выше tests-card) */

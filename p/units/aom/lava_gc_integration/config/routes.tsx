@@ -1,10 +1,15 @@
-// PROJECT_ROOT — путь от корня воркспэйса до проекта (от /)
-export const PROJECT_ROOT = 'p/units/aom/lava_gc_integration'
+// @shared
+import { PROJECT_ROOT } from '../shared/projectRoot'
+
+export { PROJECT_ROOT }
 
 // Базовый путь проекта для формирования ссылок (от корня, без домена)
 const BASE_PATH = `/${PROJECT_ROOT}`
 
-// Все маршруты внутри проекта задаются ОТНОСИТЕЛЬНО (через ./)
+// Все маршруты внутри проекта задаются ОТНОСИТЕЛЬНО (через ./).
+// Не добавлять сюда `./api/integrations/...`: этот файл `// @shared`, его импортируют Vue/web —
+// иначе сборщик тянет серверные роуты с `.body` в клиентский бандл (ошибка при инициализации схемы).
+// URL интеграций — только в `ROUTE_PATHS` + `getFullUrl`.
 export const ROUTES = {
   index: './',
   admin: './web/admin',
@@ -13,7 +18,7 @@ export const ROUTES = {
   tests: './web/tests'
 } as const
 
-/** Пути для getFullUrl (абсолютные от корня проекта) */
+/** Пути для getFullUrl (абсолютные от корня проекта). Без `/api/integrations/...` — см. комментарий к `ROUTES`. */
 export const ROUTE_PATHS = {
   index: '/',
   admin: '/web/admin',

@@ -84,6 +84,20 @@ export const listTestsRoute = app.get('/', async (ctx, req) => {
         { id: 'getDashboardCounts', title: 'getDashboardCounts' },
         { id: 'resetDashboard', title: 'resetDashboard' }
       ]
+    },
+    {
+      id: 'integration-check',
+      title: 'Ключи интеграции (GetCourse и Lava)',
+      tests: [
+        {
+          id: 'integration-gc-credentials',
+          title: 'GetCourse: gc_api_key + gc_account_domain → verifyGcPlApiAccess'
+        },
+        {
+          id: 'integration-lava-credentials',
+          title: 'Lava: lava_api_key + lava_base_url → GET /api/v2/products'
+        }
+      ]
     }
   ]
 
