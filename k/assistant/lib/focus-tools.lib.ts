@@ -11,9 +11,8 @@ import UserToolState from '../tables/user-tool-state.table'
 import type { FocusToolsFullStateDto, FocusToolsStateData, TimerStateEnvelope } from '../shared/focus-tools-types'
 import { focusToolsSocketId } from '../shared/focus-tools-types'
 import type { PomodoroSliceInFocusTools } from '../shared/focus-tools-types'
-import { normalizeClientStatsDayKey, computePomodoroStatsDayKeyInTimeZone } from './pomodoro-stats-day'
-
-const STATS_FALLBACK_TIMEZONE = 'Europe/Moscow'
+import { normalizeClientStatsDayKey, computePomodoroStatsDayKeyForUtcOffsetHours } from './pomodoro-stats-day'
+import * as userSettingsLib from './user-settings.lib'
 
 function lockKey(userId: string): string {
   return `assistant:focus-tools:${userId}`
@@ -23,11 +22,16 @@ function newRunId(): string {
   return nanoid()
 }
 
-function expectedDayKey(nowMs: number, clientStatsDayKey?: string): string {
-  return (
-    normalizeClientStatsDayKey(clientStatsDayKey) ??
-    computePomodoroStatsDayKeyInTimeZone(nowMs, STATS_FALLBACK_TIMEZONE)
-  )
+async function expectedDayKey(
+  ctx: app.Ctx,
+  userId: string,
+  nowMs: number,
+  clientStatsDayKey?: string,
+): Promise<string> {
+  const normalized = normalizeClientStatsDayKey(clientStatsDayKey)
+  if (normalized) return normalized
+  const offset = await userSettingsLib.getEffectiveTimezoneOffsetHours(ctx, userId)
+  return computePomodoroStatsDayKeyForUtcOffsetHours(nowMs, offset)
 }
 
 function normalizeEnvelope(envelope: TimerStateEnvelope): TimerStateEnvelope {
@@ -442,7 +446,7 @@ async function loadAndNormalize(
 export async function getFullState(ctx: app.Ctx, userId: string, clientStatsDayKey?: string): Promise<FocusToolsFullStateDto> {
   return runWithExclusiveLock(ctx, lockKey(userId), async () => {
     const nowMs = Date.now()
-    const dayKey = expectedDayKey(nowMs, clientStatsDayKey)
+    const dayKey = await expectedDayKey(ctx, userId, nowMs, clientStatsDayKey)
     const { row, envelope } = await loadAndNormalize(ctx, userId, dayKey)
     let data = envelope.data
     data = applyDayRollover(data, dayKey)
@@ -464,7 +468,7 @@ export async function executeCommand(
   const clientStatsDayKey = body.statsDayKey
   return runWithExclusiveLock(ctx, lockKey(userId), async () => {
     const nowMs = Date.now()
-    const dayKey = expectedDayKey(nowMs, clientStatsDayKey)
+    const dayKey = await expectedDayKey(ctx, userId, nowMs, clientStatsDayKey)
     const { row, envelope } = await loadAndNormalize(ctx, userId, dayKey)
     let data = envelope.data
     data = applyDayRollover(data, dayKey)

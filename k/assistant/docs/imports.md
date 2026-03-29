@@ -18,11 +18,12 @@
 - `./config/project` → `INDEX_PAGE_NAME`, `BODY_TEXT`, `BODY_SUBTEXT`, `getPageTitle`, `getHeaderText`
 - `./lib/logger.lib` → `*`
 - `./lib/settings.lib` → `*`
+- `./lib/user-settings.lib` → `getTimezoneOffsetForCtxUser`
 - `@app/socket` → `genSocketId`
 - `./api/tools/state` → `toolsStateRoute`
 - `./api/tools/control` → `toolsControlRoute`
 - `./shared/focus-tools-types` → `focusToolsSocketId`
-- передаёт в `HomePage`: `tasksUrl`, `journalUrl`, `toolsUrl`, `toolsStateUrl`, `toolsControlUrl`, `encodedFocusToolsSocketId`, др.
+- передаёт в `HomePage`: `tasksUrl`, `journalUrl`, `toolsUrl`, `timezoneOffsetHours`, `toolsStateUrl`, `toolsControlUrl`, `encodedFocusToolsSocketId`, др.
 
 ### `./web/admin/index.tsx`
 - `@app/html-jsx` → `jsx`
@@ -37,18 +38,24 @@
 - `../../config/routes` → `getFullUrl`, `ROUTES`
 - `../../config/project` → `ADMIN_PAGE_NAME`, `getPageTitle`, `getHeaderText`
 - `../../lib/settings.lib` → `*`
+- `../../lib/user-settings.lib` → `getTimezoneOffsetForCtxUser`
 
 ### `./web/profile/index.tsx`
 - `@app/html-jsx` → `jsx`
 - `@app/auth` → `requireRealUser`
+- `@app/socket` → `genSocketId`
 - `../../pages/ProfilePage.vue`
 - `../../shared/preloader` → `getPreloaderStyles`, `getPreloaderScript`
 - `../../shared/logLevel` → `getLogLevelForPage`, `getLogLevelScript`
 - `../../styles` → `customScrollbarStyles`, `mobileSafeAreaStyles`, `formControlStyles`, `VIEWPORT_META_CONTENT`
 - `../../lib/logger.lib` → `*`
-- `../../config/routes` → `getFullUrl`, `ROUTES`
+- `../../config/routes` → `getFullUrl`, `ROUTES`, `getApiUrlForRoute`
 - `../../config/project` → `PROFILE_PAGE_NAME`, `getPageTitle`, `getHeaderText`
 - `../../lib/settings.lib` → `*`
+- `../../lib/user-settings.lib` → `getEffectiveTimezoneOffsetHours` (SSR `timezoneOffsetHours` в `ProfilePage`), `getTimezoneOffsetForCtxUser` (для других SSR при необходимости)
+- `../../api/tools/state` → `toolsStateRoute`
+- `../../api/tools/control` → `toolsControlRoute`
+- `../../shared/focus-tools-types` → `focusToolsSocketId`
 
 ### `./web/tasks/index.tsx`
 - `@app/html-jsx` → `jsx`
@@ -76,7 +83,7 @@
 - `../../api/tools/control` → `toolsControlRoute`
 - `../../shared/focus-tools-types` → `focusToolsSocketId`
 - `../../shared/preloader`, `../../shared/logLevel`, `../../styles` → `customScrollbarStyles`, `mobileSafeAreaStyles`, `formControlStyles`, `VIEWPORT_META_CONTENT`
-- `../../lib/logger.lib`, `../../lib/settings.lib`
+- `../../lib/logger.lib`, `../../lib/settings.lib`, `../../lib/user-settings.lib` → `getTimezoneOffsetForCtxUser`
 - `../../config/routes` → `getFullUrl`, `getApiUrlForRoute`, `ROUTES`
 - `../../config/project` → `TASKS_PAGE_NAME`, `getPageTitle`, `getHeaderText`
 
@@ -122,6 +129,7 @@
 - `../../config/routes` → `getFullUrl`, `getApiUrlForRoute`, `ROUTES`
 - `../../config/project` → `JOURNAL_PAGE_NAME`, `getPageTitle`, `getHeaderText`
 - `../../lib/settings.lib` → `*`
+- `../../lib/user-settings.lib` → `getTimezoneOffsetForCtxUser`
 - `../../repos/journal-day-entries.repo` → `*`
 - `../../lib/journal-day-key` → `computeJournalDayKeyInTimeZone`
 - `../../repos/journal-week-entries.repo` → `*`
@@ -133,6 +141,7 @@
 - `../../config/routes` → `getFullUrl`, `ROUTES`
 - `../../config/project` → `TOOLS_PAGE_NAME`, `getPageTitle`, `getHeaderText`
 - `../../lib/settings.lib` → `*`
+- `../../lib/user-settings.lib` → `getTimezoneOffsetForCtxUser`
 
 ### `./web/timers/index.tsx`
 - `@app/html-jsx` → `jsx`
@@ -140,7 +149,8 @@
 - `@app/socket` → `genSocketId`
 - `../../pages/PomodoroPage.vue`
 - `../../lib/focus-tools.lib` → `getFullState` (SSR начального снимка)
-- `../../lib/pomodoro-stats-day` → `computePomodoroStatsDayKeyInTimeZone`
+- `../../lib/user-settings.lib` → `getTimezoneOffsetForCtxUser`
+- `../../lib/pomodoro-stats-day` → `computePomodoroStatsDayKeyForUtcOffsetHours`
 - `../../shared/focus-tools-types` → `focusToolsSocketId`, тип `FocusToolsFullStateDto`
 - `../../config/routes` → `getApiUrlForRoute`, `getFullUrl`, `ROUTES`
 - `../../config/project` → `POMODORO_PAGE_NAME`, `getPageTitle`, `getHeaderText`
@@ -162,6 +172,7 @@
 - `../../config/routes` → `getFullUrl`, `ROUTES`
 - `../../config/project` → `TESTS_PAGE_NAME`, `getPageTitle`, `getHeaderText`
 - `../../lib/settings.lib` → `*`
+- `../../lib/user-settings.lib` → `getTimezoneOffsetForCtxUser`
 
 ### `./web/login/index.tsx`
 - `@app/html-jsx` → `jsx`
@@ -173,12 +184,13 @@
 ## 2) Страницы‑компоненты (Vue)
 
 ### `./pages/HomePage.vue`
-- `vue` → `onMounted`, `onUnmounted`, `ref`
+- `vue` → `onMounted`, `onUnmounted`, `ref`, `withDefaults`
 - `../components/Header.vue`
 - `../components/GlobalGlitch.vue`
 - `../components/AppFooter.vue`
 - `../shared/bootUi` → `subscribeBootStaticReady`, `scheduleHideBootLoader`
 - `../shared/logger` → `createComponentLogger`
+- `../shared/user-settings-defaults` → `DEFAULT_USER_TIMEZONE_OFFSET_HOURS`
 
 ### `./components/admin/AiSettings.vue`
 - `vue` → `ref`, `watch`, `onMounted`, `onBeforeUnmount`
@@ -188,7 +200,7 @@
 - `../config/prompts` → `AVAILABLE_AI_MODELS`, `DEFAULT_AI_MODEL`
 
 ### `./pages/AdminPage.vue`
-- `vue` → `onMounted`, `onBeforeUnmount`, `onUnmounted`, `ref`, `computed`, `watch`
+- `vue` → `onMounted`, `onBeforeUnmount`, `onUnmounted`, `ref`, `computed`, `watch`, `withDefaults`
 - `@app/socket` → `getOrCreateBrowserSocketClient`
 - `../components/Header.vue`
 - `../components/GlobalGlitch.vue`
@@ -199,19 +211,24 @@
 - `../api/admin/logs/before` → `getLogsBeforeRoute`
 - `../api/admin/dashboard/counts` → `getDashboardCountsRoute`
 - `../api/admin/dashboard/reset` → `resetDashboardRoute`
+- `../shared/user-settings-defaults` → `DEFAULT_USER_TIMEZONE_OFFSET_HOURS`
 - `../shared/bootUi` → `subscribeBootStaticReady`, `scheduleHideBootLoader`
 - `../shared/logger` → `createComponentLogger`, `setLogSink`, `LogEntry`
 
 ### `./pages/ProfilePage.vue`
-- `vue` → `onMounted`, `onUnmounted`, `ref`
+- `vue` → `onMounted`, `onUnmounted`, `ref`, `withDefaults`
 - `../components/Header.vue`
 - `../components/GlobalGlitch.vue`
 - `../components/AppFooter.vue`
+- `../api/user-settings/save` → `saveUserSettingsRoute`
+- `../shared/user-settings-defaults` → `DEFAULT_USER_TIMEZONE_OFFSET_HOURS`, `USER_TIMEZONE_OFFSET_MIN`, `USER_TIMEZONE_OFFSET_MAX`
 - `../shared/bootUi` → `subscribeBootStaticReady`, `scheduleHideBootLoader`
 - `../shared/logger` → `createComponentLogger`
+- глобально: `declare const ctx: app.Ctx` (сохранение пояса через `saveUserSettingsRoute.run`)
 
 ### `./pages/JournalPage.vue`
 - `vue` → `computed`, `markRaw`, `onMounted`, `onUnmounted`, `ref`, `watch`
+- `../shared/user-settings-defaults` → `DEFAULT_USER_TIMEZONE_OFFSET_HOURS`
 - `../components/Header.vue`
 - `../components/GlobalGlitch.vue`
 - `../components/AppFooter.vue`
@@ -229,7 +246,7 @@
 - пропсы: `journalTabInitial?` — вкладка из `?tab=` при SSR; блокнот — `notebookPaneProps` (`journalNotes*`, папки/категории); инбокс — `inboxPaneProps` (`inboxNotes*`, отдельная Heap-таблица), компонент `JournalInboxPane`; вкладка «Задачи» (`tasks`) — `tasksTreeInitial?`, …; активная вкладка синхронизируется с адресной строкой (`replaceState`, `popstate`; для инбокса по умолчанию `?tab=` не добавляется, для блокнота — `?tab=notebook`)
 
 ### `./pages/TestsPage.vue`
-- `vue` → `onMounted`, `onBeforeUnmount`, `onUnmounted`, `ref`, `computed`
+- `vue` → `onMounted`, `onBeforeUnmount`, `onUnmounted`, `ref`, `computed`, `withDefaults`
 - `@app/socket` → `getOrCreateBrowserSocketClient`
 - `../components/Header.vue`
 - `../components/GlobalGlitch.vue`
@@ -237,11 +254,12 @@
 - `../shared/bootUi` → `subscribeBootStaticReady`, `scheduleHideBootLoader`
 - `../shared/logger` → `createComponentLogger`, `setLogSink`, `LogEntry`
 - `../shared/testCatalog` → `UNIT_TEST_BLOCKS`, `INTEGRATION_SERVER_TEST_BLOCKS`, `INTEGRATION_HTTP_TEST_BLOCK`, `flattenCatalogBlocks`, типы каталога
+- `../shared/user-settings-defaults` → `DEFAULT_USER_TIMEZONE_OFFSET_HOURS`
 - `../api/admin/logs/recent` → `getRecentLogsRoute`
 - `../api/admin/logs/before` → `getLogsBeforeRoute`
 
 ### `./pages/TasksPage.vue`
-- `vue` → `computed`, `nextTick`, `onMounted`, `onUnmounted`, `ref`, `watch`
+- `vue` → `computed`, `nextTick`, `onMounted`, `onUnmounted`, `ref`, `watch`, `withDefaults`
 - `../components/Header.vue`
 - `../components/GlobalGlitch.vue`
 - `../components/AppFooter.vue`
@@ -250,17 +268,21 @@
 - `../shared/bootUi` → `subscribeBootStaticReady`, `scheduleHideBootLoader`
 - `../shared/logger` → `createComponentLogger`
 - `../lib/tasks-types` → `TasksTreeDto`, `TaskClientDto`, `TaskProjectDto`, `TaskItemDto`
-- `../lib/pomodoro-stats-day` → `computePomodoroStatsDayKeyLocal` (при привязке задачи к Pomodoro)
+- `../lib/pomodoro-stats-day` → `computePomodoroStatsDayKeyForUtcOffsetHours` (при привязке задачи к Pomodoro)
+- `../shared/user-settings-defaults` → `DEFAULT_USER_TIMEZONE_OFFSET_HOURS`
 - событие `tasks-maybe-changed` от чата — отложенный `refreshTree` после ответа ассистента
 
 ### `./pages/ToolsPage.vue`
+- `vue` → `withDefaults`
 - `../components/Header.vue`
 - `../components/GlobalGlitch.vue`
 - `../components/AppFooter.vue`
+- `../shared/user-settings-defaults` → `DEFAULT_USER_TIMEZONE_OFFSET_HOURS`
 
 ### `./pages/PomodoroPage.vue`
-- `vue` → `computed`, `onMounted`, `onUnmounted`, `ref`, `watch`, `nextTick`
+- `vue` → `computed`, `onMounted`, `onUnmounted`, `ref`, `watch`, `nextTick`, `withDefaults`
 - `@app/socket` → `getOrCreateBrowserSocketClient`
+- `../shared/user-settings-defaults` → `DEFAULT_USER_TIMEZONE_OFFSET_HOURS`
 - `../components/Header.vue`
 - слушатель `assistant:focus-tools-deadline` (синхронизация после срабатывания дедлайна из `Header` / `focus-deadline-alarms`)
 - `../components/GlobalGlitch.vue`
@@ -268,9 +290,9 @@
 - `../components/pomodoro/PomodoroToolsWorkspace.vue`
 - `../lib/pomodoro-phase-sounds` → `playPomodoroPhaseChangeSound`
 - `../lib/pomodoro-types` → `formatPomodoroSecondsDisplay` (как `fmt`)
-- `../lib/pomodoro-stats-day` → `computePomodoroStatsDayKeyLocal`
+- `../lib/pomodoro-stats-day` → `computePomodoroStatsDayKeyForUtcOffsetHours`
 - `../shared/focus-tools-types` → `FocusToolsFullStateDto`, `FocusToolsStateData`, `PomodoroSliceInFocusTools`, типы таймера/секундомера
-- пропсы SSR от `web/timers/index.tsx`: `initialFocusToolsState`, `toolsStateUrl`, `toolsControlUrl`, `encodedFocusToolsSocketId`, `getTasksUrl`
+- пропсы SSR от `web/timers/index.tsx`: `timezoneOffsetHours`, `initialFocusToolsState`, `toolsStateUrl`, `toolsControlUrl`, `encodedFocusToolsSocketId`, `getTasksUrl`
 - второй блок `<style>` без `scoped` в этом же файле — глобальные CRT-стили (`.pomodoro-phase-bar`, `.pomodoro-actions`, `.pomo-btn`, …) для `/web/timers`; отдельные `.css` из `import` в `<script>` в этой среде не подключаются в бандл
 
 ### `./components/tasks/TasksAiChatPanel.vue`
@@ -288,15 +310,16 @@
 ## 3) Компоненты (components/)
 
 ### `./components/Header.vue`
-- `vue` → `ref`, `onMounted`, `onUnmounted`, `computed`
+- `vue` → `computed`, `ref`, `onMounted`, `onUnmounted`, `watch`, `withDefaults`
 - `@app/socket` → `getOrCreateBrowserSocketClient`
 - `./LogoutModal.vue`
 - `../shared/logger` → `createComponentLogger`
 - `../lib/pomodoro-types` → `formatPomodoroSecondsDisplay`, типы `PomodoroPhase`, `PomodoroStateDto`
-- `../lib/pomodoro-stats-day` → `computePomodoroStatsDayKeyLocal`
+- `../lib/pomodoro-stats-day` → `computePomodoroStatsDayKeyForUtcOffsetHours`
+- `../shared/user-settings-defaults` → `DEFAULT_USER_TIMEZONE_OFFSET_HOURS`
 - `../lib/focus-deadline-alarms` → `createFocusDeadlineAlarms`, тип `FocusDeadlineAlarmsHandle` (wall-clock уведомление/звук по окончании фазы помидора в режиме овертайма и по окончании таймера)
 - `../shared/focus-tools-types` → `FocusToolsStateData`, `HeaderWidgetMode`
-- опциональные пропсы виджета: `enableToolClockWidget`, `toolsStateUrl`, `toolsControlUrl`, `encodedFocusToolsSocketId`
+- опциональные пропсы виджета: `enableToolClockWidget`, `timezoneOffsetHours`, `toolsStateUrl`, `toolsControlUrl`, `encodedFocusToolsSocketId`
 
 ### `./components/LogoutModal.vue`
 - `vue` → `watch`, `onMounted`
@@ -391,7 +414,7 @@
 - `vue` → `computed`, `onUnmounted`, `ref`, `watch`
 - `../JnCrtSelect.vue`
 - `../../lib/tasks-types` → `TasksTreeDto`, `TaskItemDto`, `TaskProjectDto`
-- `../../lib/pomodoro-stats-day` → `computePomodoroStatsDayKeyLocal` (добавление задачи в Pomodoro)
+- `../../lib/pomodoro-stats-day` → `computePomodoroStatsDayKeyForUtcOffsetHours` (добавление задачи в Pomodoro)
 - `../../shared/logger` → `createComponentLogger`
 - пропсы: `isAuthenticated`, `tasksTreeInitial`, `tasksTreeGetUrl`, `taskItemReorderDayUrl`, `taskReleaseDayUrl`, `taskItemUpdateUrl`, `tasksPageUrl` — список задач «В работе», сортировка (кнопки и drag-and-drop), клик по названию — модалка редактирования (POST `taskItemUpdateUrl`), ссылки на страницу задач с `?client=&project=`
 
@@ -531,6 +554,12 @@
 - `../repos/settings.repo` → `*` (findByKey, findAll, upsert, deleteByKey)
 - `./logger.lib` → `*` (только для функций, не вызываемых из logger.lib: getSettingString, getLogsLimit, getDashboardResetAt, getAllSettings, setSetting)
 
+### `./lib/user-settings.lib.ts`
+- `@app/auth` → `requireRealUser`
+- `../repos/user-settings.repo` → `findByUserId`, `upsertTimezone`
+- `../shared/user-settings-defaults` → `DEFAULT_USER_TIMEZONE_OFFSET_HOURS`, границы клампа
+- экспорт: `getEffectiveTimezoneOffsetHours`, `saveTimezoneOffsetHours`, `getTimezoneOffsetForCtxUser`
+
 ### `./lib/admin/dashboard.lib.ts`
 - `../settings.lib` → `*` (getDashboardResetAt, setSetting, SETTING_KEYS)
 - `../../repos/logs.repo` → `*` (countErrorsAfter, countWarningsAfter)
@@ -543,7 +572,7 @@
 - `@app/request` → `request`
 
 ### `./lib/pomodoro-stats-day.ts`
-- `@shared` — ключ периода дневной статистики (05:00 локально / Москва): `computePomodoroStatsDayKeyLocal`, `computePomodoroStatsDayKeyInTimeZone`, `normalizeClientStatsDayKey`
+- `@shared` — ключ периода дневной статистики focus-tools (полночь по UTC+N из профиля): `computePomodoroStatsDayKeyForUtcOffsetHours`, вспомогательно `computePomodoroStatsDayKeyLocal` (календарная дата в локальном браузере), `computePomodoroStatsDayKeyInTimeZone` (IANA), `normalizeClientStatsDayKey`
 
 ### `./lib/journal-day-key.ts`
 - `@shared` — ключ дневного периода (граница 05:00): `computeJournalDayKeyLocal`, `computeJournalDayKeyInTimeZone`, `normalizeClientJournalDayKey`
@@ -559,7 +588,7 @@
 - `@app/socket` → `sendDataToSocket`
 - `@app/nanoid` → `nanoid`
 - `../repos/user-tool-state.repo`, `../repos/tool-segments.repo`, `../repos/tasks.repo`
-- `../shared/focus-tools-types`, `./pomodoro-types` (`getPhaseCompletionActionForPhase`, …), `./pomodoro-stats-day`
+- `../shared/focus-tools-types`, `./pomodoro-types` (`getPhaseCompletionActionForPhase`, …), `./pomodoro-stats-day`, `./user-settings.lib` (ожидаемый дневной ключ без клиента)
 
 ## 8) API (api/)
 
@@ -577,6 +606,14 @@
 - `@app/auth` → `requireAccountRole`
 - `../../lib/settings.lib` → `*`
 - `../../lib/logger.lib` → `*`
+
+### `./api/user-settings/get.ts`
+- `@app/auth` → `requireRealUser`
+- `../../lib/user-settings.lib` → `getEffectiveTimezoneOffsetHours`
+
+### `./api/user-settings/save.ts`
+- `@app/auth` → `requireRealUser`
+- `../../lib/user-settings.lib` → `saveTimezoneOffsetHours`
 
 ### `./api/logger/log.ts`
 - `@app/auth` → `requireAnyUser`

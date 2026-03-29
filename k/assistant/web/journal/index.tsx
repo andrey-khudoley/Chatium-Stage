@@ -54,6 +54,7 @@ import { getApiUrlForRoute, getFullUrl, ROUTES } from '../../config/routes'
 import type { TasksTreeDto } from '../../lib/tasks-types'
 import { JOURNAL_PAGE_NAME, getPageTitle, getHeaderText } from '../../config/project'
 import * as settingsLib from '../../lib/settings.lib'
+import * as userSettingsLib from '../../lib/user-settings.lib'
 import * as journalDayRepo from '../../repos/journal-day-entries.repo'
 import { computeJournalDayKeyInTimeZone } from '../../lib/journal-day-key'
 import * as journalWeekRepo from '../../repos/journal-week-entries.repo'
@@ -176,6 +177,7 @@ export const journalPageRoute = app.html('/', async (ctx, req) => {
 
   const logLevel = await getLogLevelForPage(ctx)
   const projectName = await settingsLib.getSettingString(ctx, settingsLib.SETTING_KEYS.PROJECT_NAME)
+  const timezoneOffsetHours = await userSettingsLib.getTimezoneOffsetForCtxUser(ctx)
 
   await loggerLib.writeServerLog(ctx, {
     severity: 6,
@@ -462,6 +464,7 @@ export const journalPageRoute = app.html('/', async (ctx, req) => {
           journalHabitsGetUrl={journalHabitsGetUrl}
           journalHabitsSaveUrl={journalHabitsSaveUrl}
           journalHabitsInitial={journalHabitsInitial}
+          timezoneOffsetHours={timezoneOffsetHours}
         />
       </body>
     </html>

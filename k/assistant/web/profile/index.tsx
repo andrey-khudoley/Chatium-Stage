@@ -13,6 +13,7 @@ import { genSocketId } from '@app/socket'
 import { toolsStateRoute } from '../../api/tools/state'
 import { toolsControlRoute } from '../../api/tools/control'
 import { focusToolsSocketId } from '../../shared/focus-tools-types'
+import * as userSettingsLib from '../../lib/user-settings.lib'
 
 const LOG_PATH = 'web/profile/index'
 
@@ -68,6 +69,8 @@ export const profilePageRoute = app.html('/', async (ctx, req) => {
     message: `[${LOG_PATH}] Рендер страницы профиля`,
     payload: { isAdmin, displayName: user.displayName }
   })
+
+  const timezoneOffsetHours = await userSettingsLib.getEffectiveTimezoneOffsetHours(ctx, user.id)
 
   return (
     <html>
@@ -307,6 +310,7 @@ export const profilePageRoute = app.html('/', async (ctx, req) => {
             confirmedEmail: user.confirmedEmail,
             confirmedPhone: user.confirmedPhone
           }}
+          timezoneOffsetHours={timezoneOffsetHours}
         />
       </body>
     </html>

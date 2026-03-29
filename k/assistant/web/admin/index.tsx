@@ -11,6 +11,7 @@ import * as loggerLib from '../../lib/logger.lib'
 import { getApiUrlForRoute, getFullUrl, ROUTES } from '../../config/routes'
 import { ADMIN_PAGE_NAME, getPageTitle, getHeaderText } from '../../config/project'
 import * as settingsLib from '../../lib/settings.lib'
+import * as userSettingsLib from '../../lib/user-settings.lib'
 import { customScrollbarStyles, formControlStyles, mobileSafeAreaStyles, VIEWPORT_META_CONTENT } from '../../styles'
 import { toolsStateRoute } from '../../api/tools/state'
 import { toolsControlRoute } from '../../api/tools/control'
@@ -164,6 +165,7 @@ export const adminPageRoute = app.html('/', async (ctx, req) => {
     payload: { logLevel, logsSocketId, hasEncodedLogsSocketId: !!encodedLogsSocketId }
   })
   const projectName = await settingsLib.getSettingString(ctx, settingsLib.SETTING_KEYS.PROJECT_NAME)
+  const timezoneOffsetHours = await userSettingsLib.getTimezoneOffsetForCtxUser(ctx)
   await loggerLib.writeServerLog(ctx, {
     severity: 7,
     message: `[${LOG_PATH}] Переменные для рендера`,
@@ -215,6 +217,7 @@ export const adminPageRoute = app.html('/', async (ctx, req) => {
           toolsControlUrl={toolsControlUrl}
           encodedFocusToolsSocketId={encodedFocusToolsSocketId}
           encodedLogsSocketId={encodedLogsSocketId}
+          timezoneOffsetHours={timezoneOffsetHours}
         />
       </body>
     </html>

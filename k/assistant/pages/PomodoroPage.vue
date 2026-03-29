@@ -1,12 +1,13 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref, watch, nextTick } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch, nextTick, withDefaults } from 'vue'
 import Header from '../components/Header.vue'
 import GlobalGlitch from '../components/GlobalGlitch.vue'
 import AppFooter from '../components/AppFooter.vue'
 import PomodoroToolsWorkspace from '../components/pomodoro/PomodoroToolsWorkspace.vue'
 import { playPomodoroPhaseChangeSound } from '../lib/pomodoro-phase-sounds'
 import { formatPomodoroSecondsDisplay as fmt } from '../lib/pomodoro-types'
-import { computePomodoroStatsDayKeyLocal } from '../lib/pomodoro-stats-day'
+import { computePomodoroStatsDayKeyForUtcOffsetHours } from '../lib/pomodoro-stats-day'
+import { DEFAULT_USER_TIMEZONE_OFFSET_HOURS } from '../shared/user-settings-defaults'
 import type {
   FocusToolsFullStateDto,
   FocusToolsStateData,
@@ -44,22 +45,27 @@ function pomodoroSliceToPageState(p: PomodoroSliceInFocusTools): PomodoroState {
   return rest as PomodoroState
 }
 
-const props = defineProps<{
-  projectTitle: string
-  indexUrl: string
-  profileUrl: string
-  loginUrl: string
-  isAuthenticated: boolean
-  isAdmin?: boolean
-  adminUrl?: string
-  testsUrl?: string
-  /** Полный снимок focus-tools с SSR (`web/timers/index.tsx`) */
-  initialFocusToolsState?: FocusToolsFullStateDto | null
-  toolsStateUrl: string
-  toolsControlUrl: string
-  encodedFocusToolsSocketId: string
-  getTasksUrl: string
-}>()
+const props = withDefaults(
+  defineProps<{
+    projectTitle: string
+    indexUrl: string
+    profileUrl: string
+    loginUrl: string
+    isAuthenticated: boolean
+    isAdmin?: boolean
+    adminUrl?: string
+    testsUrl?: string
+    /** Смещение UTC из профиля (граница суток статистики в полночь по этому поясу). */
+    timezoneOffsetHours?: number
+    /** Полный снимок focus-tools с SSR (`web/timers/index.tsx`) */
+    initialFocusToolsState?: FocusToolsFullStateDto | null
+    toolsStateUrl: string
+    toolsControlUrl: string
+    encodedFocusToolsSocketId: string
+    getTasksUrl: string
+  }>(),
+  { timezoneOffsetHours: DEFAULT_USER_TIMEZONE_OFFSET_HOURS },
+)
 
 const state = ref<PomodoroState | null>(
   props.initialFocusToolsState?.state?.pomodoro
@@ -113,12 +119,12 @@ function formatFetchError(error: unknown): string {
   return msg
 }
 
-function pomodoroStatsDayKeyNow(): string {
-  return computePomodoroStatsDayKeyLocal(localTick.value)
-}
+const pomodoroStatsDayKey = computed(() =>
+  computePomodoroStatsDayKeyForUtcOffsetHours(localTick.value, props.timezoneOffsetHours),
+)
 
 function defaultTimerSnapshot(): TimerToolSnapshot {
-  const dk = pomodoroStatsDayKeyNow()
+  const dk = pomodoroStatsDayKey.value
   return {
     status: 'stopped',
     remainingSec: 25 * 60,
@@ -135,7 +141,7 @@ function defaultTimerSnapshot(): TimerToolSnapshot {
 }
 
 function defaultStopwatchSnapshot(): StopwatchToolSnapshot {
-  const dk = pomodoroStatsDayKeyNow()
+  const dk = pomodoroStatsDayKey.value
   return {
     status: 'stopped',
     elapsedSec: 0,
@@ -153,7 +159,7 @@ const timerSlice = computed(() => focusToolsSnapshot.value?.timer ?? defaultTime
 const stopwatchSlice = computed(() => focusToolsSnapshot.value?.stopwatch ?? defaultStopwatchSnapshot())
 
 function toolsStateUrlWithDay(): string {
-  const key = encodeURIComponent(pomodoroStatsDayKeyNow())
+  const key = encodeURIComponent(pomodoroStatsDayKey.value)
   return props.toolsStateUrl.includes('?')
     ? `${props.toolsStateUrl}&statsDayKey=${key}`
     : `${props.toolsStateUrl}?statsDayKey=${key}`
@@ -192,13 +198,19 @@ async function refresh(opts?: { maxAttempts?: number }): Promise<void> {
   }
 }
 
+watch(pomodoroStatsDayKey, (next, prev) => {
+  if (prev !== undefined && next !== prev) {
+    void refresh({ maxAttempts: 2 })
+  }
+})
+
 async function assignTaskToPomodoro(taskId: string): Promise<void> {
   const r = await fetch(props.toolsControlUrl, {
     method: 'POST',
     credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      statsDayKey: pomodoroStatsDayKeyNow(),
+      statsDayKey: pomodoroStatsDayKey.value,
       command: { kind: 'assign-task', taskId },
     }),
   })
@@ -283,7 +295,7 @@ async function control(action: 'start' | 'resume' | 'pause' | 'stop' | 'skip' | 
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        statsDayKey: pomodoroStatsDayKeyNow(),
+        statsDayKey: pomodoroStatsDayKey.value,
         command: { kind: 'pomodoro', action },
       }),
     })
@@ -336,7 +348,7 @@ async function saveSettings(draft: PomodoroSettingsDraft) {
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        statsDayKey: pomodoroStatsDayKeyNow(),
+        statsDayKey: pomodoroStatsDayKey.value,
         command: {
           kind: 'save-pomodoro-settings',
           settings: {
@@ -650,6 +662,7 @@ const phaseTheme = computed(() => {
       :isAdmin="props.isAdmin"
       :adminUrl="props.adminUrl"
       :testsUrl="props.testsUrl"
+      :timezoneOffsetHours="props.timezoneOffsetHours"
       :enableToolClockWidget="true"
       :toolsStateUrl="props.toolsStateUrl"
       :toolsControlUrl="props.toolsControlUrl"
@@ -672,7 +685,7 @@ const phaseTheme = computed(() => {
           :action-pending="actionPending"
           :tools-control-url="props.toolsControlUrl"
           :get-tasks-url="props.getTasksUrl"
-          :stats-day-key="pomodoroStatsDayKeyNow()"
+          :stats-day-key="pomodoroStatsDayKey"
           :timer-snapshot="timerSlice"
           :stopwatch-snapshot="stopwatchSlice"
           :focus-tools-ws-connected="focusToolsWsConnected"

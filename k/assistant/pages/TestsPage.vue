@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, onBeforeUnmount, onUnmounted, ref, computed } from 'vue'
+import { onMounted, onBeforeUnmount, onUnmounted, ref, computed, withDefaults } from 'vue'
 import { getOrCreateBrowserSocketClient } from '@app/socket'
 import Header from '../components/Header.vue'
 import GlobalGlitch from '../components/GlobalGlitch.vue'
@@ -16,6 +16,7 @@ import {
   type TestCatalogBlock,
   type TestCatalogEntry
 } from '../shared/testCatalog'
+import { DEFAULT_USER_TIMEZONE_OFFSET_HOURS } from '../shared/user-settings-defaults'
 
 const log = createComponentLogger('TestsPage')
 
@@ -28,20 +29,24 @@ declare global {
   }
 }
 
-const props = defineProps<{
-  projectTitle: string
-  indexUrl: string
-  profileUrl: string
-  testsUrl: string
-  toolsStateUrl?: string
-  toolsControlUrl?: string
-  encodedFocusToolsSocketId?: string
-  loginUrl: string
-  isAuthenticated: boolean
-  isAdmin?: boolean
-  adminUrl?: string
-  encodedLogsSocketId?: string
-}>()
+const props = withDefaults(
+  defineProps<{
+    projectTitle: string
+    indexUrl: string
+    profileUrl: string
+    testsUrl: string
+    toolsStateUrl?: string
+    toolsControlUrl?: string
+    encodedFocusToolsSocketId?: string
+    loginUrl: string
+    isAuthenticated: boolean
+    isAdmin?: boolean
+    adminUrl?: string
+    encodedLogsSocketId?: string
+    timezoneOffsetHours?: number
+  }>(),
+  { timezoneOffsetHours: DEFAULT_USER_TIMEZONE_OFFSET_HOURS },
+)
 
 const showContent = ref(false)
 const bootLoaderDone = ref(false)
@@ -556,6 +561,7 @@ const runAllTests = async () => {
       :isAdmin="props.isAdmin"
       :adminUrl="props.adminUrl"
       :testsUrl="props.testsUrl"
+      :timezoneOffsetHours="props.timezoneOffsetHours"
       :enableToolClockWidget="true"
       :toolsStateUrl="props.toolsStateUrl"
       :toolsControlUrl="props.toolsControlUrl"

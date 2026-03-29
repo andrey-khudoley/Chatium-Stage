@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref, watch, withDefaults } from 'vue'
 import Header from '../components/Header.vue'
 import GlobalGlitch from '../components/GlobalGlitch.vue'
 import AppFooter from '../components/AppFooter.vue'
@@ -8,7 +8,8 @@ import TasksAiChatPanel from '../components/tasks/TasksAiChatPanel.vue'
 import { subscribeBootStaticReady, scheduleHideBootLoader } from '../shared/bootUi'
 import { createComponentLogger } from '../shared/logger'
 import type { TasksTreeDto, TaskClientDto, TaskProjectDto, TaskItemDto } from '../lib/tasks-types'
-import { computePomodoroStatsDayKeyLocal } from '../lib/pomodoro-stats-day'
+import { computePomodoroStatsDayKeyForUtcOffsetHours } from '../lib/pomodoro-stats-day'
+import { DEFAULT_USER_TIMEZONE_OFFSET_HOURS } from '../shared/user-settings-defaults'
 
 const log = createComponentLogger('TasksPage')
 
@@ -18,35 +19,39 @@ declare global {
   }
 }
 
-const props = defineProps<{
-  projectTitle: string
-  indexUrl: string
-  profileUrl: string
-  testsUrl?: string
-  loginUrl: string
-  isAuthenticated: boolean
-  isAdmin?: boolean
-  adminUrl?: string
-  tasksTreeInitial: TasksTreeDto
-  tasksTreeGetUrl: string
-  taskClientCreateUrl: string
-  taskClientUpdateUrl: string
-  taskClientDeleteUrl: string
-  taskProjectCreateUrl: string
-  taskProjectUpdateUrl: string
-  taskProjectDeleteUrl: string
-  taskClientReorderUrl: string
-  taskProjectReorderUrl: string
-  taskItemCreateUrl: string
-  taskItemUpdateUrl: string
-  taskItemDeleteUrl: string
-  taskItemReorderUrl: string
-  taskAiChatEnsureUrl: string
-  taskAiChatResetUrl: string
-  toolsControlUrl: string
-  toolsStateUrl: string
-  encodedFocusToolsSocketId: string
-}>()
+const props = withDefaults(
+  defineProps<{
+    projectTitle: string
+    indexUrl: string
+    profileUrl: string
+    testsUrl?: string
+    loginUrl: string
+    isAuthenticated: boolean
+    isAdmin?: boolean
+    adminUrl?: string
+    tasksTreeInitial: TasksTreeDto
+    tasksTreeGetUrl: string
+    taskClientCreateUrl: string
+    taskClientUpdateUrl: string
+    taskClientDeleteUrl: string
+    taskProjectCreateUrl: string
+    taskProjectUpdateUrl: string
+    taskProjectDeleteUrl: string
+    taskClientReorderUrl: string
+    taskProjectReorderUrl: string
+    taskItemCreateUrl: string
+    taskItemUpdateUrl: string
+    taskItemDeleteUrl: string
+    taskItemReorderUrl: string
+    taskAiChatEnsureUrl: string
+    taskAiChatResetUrl: string
+    toolsControlUrl: string
+    toolsStateUrl: string
+    encodedFocusToolsSocketId: string
+    timezoneOffsetHours?: number
+  }>(),
+  { timezoneOffsetHours: DEFAULT_USER_TIMEZONE_OFFSET_HOURS },
+)
 
 const bootLoaderDone = ref(false)
 
@@ -760,7 +765,7 @@ async function markTaskForDay(t: TaskItemDto) {
 async function assignTaskToPomodoro(t: TaskItemDto) {
   if (!props.isAuthenticated) return
   globalError.value = ''
-  const statsDayKey = computePomodoroStatsDayKeyLocal(Date.now())
+  const statsDayKey = computePomodoroStatsDayKeyForUtcOffsetHours(Date.now(), props.timezoneOffsetHours)
   try {
     const j = await postJson<{
       success: boolean
@@ -1284,6 +1289,7 @@ function showProjectLineBefore(clientId: string, idx: number): boolean {
       :isAdmin="props.isAdmin"
       :adminUrl="props.adminUrl"
       :testsUrl="props.testsUrl"
+      :timezoneOffsetHours="props.timezoneOffsetHours"
       :enableToolClockWidget="true"
       :toolsStateUrl="props.toolsStateUrl"
       :toolsControlUrl="props.toolsControlUrl"

@@ -152,24 +152,29 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onUnmounted, ref, watch } from 'vue'
+import { computed, onUnmounted, ref, watch, withDefaults } from 'vue'
 import type { TasksTreeDto, TaskItemDto, TaskProjectDto } from '../../lib/tasks-types'
-import { computePomodoroStatsDayKeyLocal } from '../../lib/pomodoro-stats-day'
+import { computePomodoroStatsDayKeyForUtcOffsetHours } from '../../lib/pomodoro-stats-day'
+import { DEFAULT_USER_TIMEZONE_OFFSET_HOURS } from '../../shared/user-settings-defaults'
 import { createComponentLogger } from '../../shared/logger'
 import JnCrtSelect from '../JnCrtSelect.vue'
 
 const log = createComponentLogger('JournalDayPane')
 
-const props = defineProps<{
-  isAuthenticated: boolean
-  tasksTreeInitial: TasksTreeDto
-  tasksTreeGetUrl: string
-  taskItemReorderDayUrl: string
-  taskReleaseDayUrl: string
-  taskItemUpdateUrl: string
-  tasksPageUrl: string
-  toolsControlUrl: string
-}>()
+const props = withDefaults(
+  defineProps<{
+    isAuthenticated: boolean
+    tasksTreeInitial: TasksTreeDto
+    tasksTreeGetUrl: string
+    taskItemReorderDayUrl: string
+    taskReleaseDayUrl: string
+    taskItemUpdateUrl: string
+    tasksPageUrl: string
+    toolsControlUrl: string
+    timezoneOffsetHours?: number
+  }>(),
+  { timezoneOffsetHours: DEFAULT_USER_TIMEZONE_OFFSET_HOURS },
+)
 
 const tree = ref<TasksTreeDto>({
   clients: [...(props.tasksTreeInitial?.clients ?? [])],
@@ -443,7 +448,7 @@ async function addToPomodoro(taskId: string) {
   globalError.value = ''
   try {
     const j = await postJson<{ success: boolean; error?: string }>(props.toolsControlUrl, {
-      statsDayKey: computePomodoroStatsDayKeyLocal(Date.now()),
+      statsDayKey: computePomodoroStatsDayKeyForUtcOffsetHours(Date.now(), props.timezoneOffsetHours),
       command: { kind: 'assign-task', taskId },
     })
     if (!j.success) {

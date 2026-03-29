@@ -53,9 +53,9 @@
 - **Работа** — общее время фокуса (`totalWorkSec`)
 - **Отдых** — общее время отдыха (`totalRestSec`)
 
-**Сброс в 05:00**: «Сутки» для этих трёх счётчиков начинаются в **5:00 по локальному времени браузера**. В Heap хранится `statsPeriodDayKey` (строка `YYYY-MM-DD` для текущего периода); при каждом запросе клиент передаёт `statsDayKey` (тот же алгоритм — `lib/pomodoro-stats-day.ts`, `computePomodoroStatsDayKeyLocal`). Если ключ не совпадает с сохранённым, сервер обнуляет только статистику, **не** сбрасывая таймер и **не** меняя `cyclesCompleted`. Без `statsDayKey` в запросе fallback — граница 05:00 по `Europe/Moscow`.
+**Сброс в полночь по профилю**: «Сутки» для этих счётчиков — **календарные** в часовом поясе пользователя (`timezoneOffsetHours` в Heap `user-settings`, UTC+N). В Heap хранится `statsPeriodDayKey` (`YYYY-MM-DD`); клиент передаёт `statsDayKey` из `computePomodoroStatsDayKeyForUtcOffsetHours` (`lib/pomodoro-stats-day.ts`). Если ключ не совпадает с сохранённым, сервер обнуляет только статистику, **не** сбрасывая таймер и **не** меняя `cyclesCompleted`. Без валидного `statsDayKey` в запросе сервер вычисляет тот же ключ по `getEffectiveTimezoneOffsetHours`.
 
-Для вкладок `Таймер` и `Секундомер` счётчики `Сессий / Фокус / Всего` приходят с сервера в том же снимке `focus-tools` (`timer` / `stopwatch` в JSON), граница дня 05:00 — как у помидора. Нижняя строка на странице `/web/timers` суммирует помидор + таймер + секундомер.
+Для вкладок `Таймер` и `Секундомер` счётчики `Сессий / Работа / Всего` приходят с сервера в том же снимке `focus-tools` (`timer` / `stopwatch` в JSON), граница дня — как у помидора. Нижняя строка на странице `/web/timers` суммирует помидор + таймер + секундомер.
 
 ### 8. Полный лог запусков
 - **Новая таблица**: `tables/pomodoro-launches.table.ts` (`t__assistant__pomodoro_launch__9Hk2tR`)

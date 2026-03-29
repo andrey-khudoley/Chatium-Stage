@@ -21,6 +21,7 @@ import {
 } from './config/project'
 import * as loggerLib from './lib/logger.lib'
 import * as settingsLib from './lib/settings.lib'
+import * as userSettingsLib from './lib/user-settings.lib'
 import { genSocketId } from '@app/socket'
 import { toolsStateRoute } from './api/tools/state'
 import { toolsControlRoute } from './api/tools/control'
@@ -66,6 +67,7 @@ export const indexPageRoute = app.html('/', async (ctx, req) => {
   })
   const logLevel = await getLogLevelForPage(ctx)
   const projectName = await settingsLib.getSettingString(ctx, settingsLib.SETTING_KEYS.PROJECT_NAME)
+  const timezoneOffsetHours = await userSettingsLib.getTimezoneOffsetForCtxUser(ctx)
   await loggerLib.writeServerLog(ctx, {
     severity: 7,
     message: `[${LOG_PATH}] Переменные для рендера`,
@@ -469,6 +471,7 @@ export const indexPageRoute = app.html('/', async (ctx, req) => {
           toolsStateUrl={toolsStateUrl}
           toolsControlUrl={toolsControlUrl}
           encodedFocusToolsSocketId={encodedFocusToolsSocketId}
+          timezoneOffsetHours={timezoneOffsetHours}
         />
       </body>
     </html>

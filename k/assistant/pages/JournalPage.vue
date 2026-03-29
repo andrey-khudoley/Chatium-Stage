@@ -15,6 +15,7 @@ import type { JournalHabitsWeekDto } from '../lib/journal-habits-time'
 import JournalNav from '../components/journal/JournalNav.vue'
 import { subscribeBootStaticReady, scheduleHideBootLoader } from '../shared/bootUi'
 import { createComponentLogger } from '../shared/logger'
+import { DEFAULT_USER_TIMEZONE_OFFSET_HOURS } from '../shared/user-settings-defaults'
 
 /** Отдельный alias — union внутри `interface JournalPageProps` даёт parse error в части пайплайнов Vue. */
 type JournalHabitsInitialProp = JournalHabitsWeekDto | null
@@ -164,6 +165,7 @@ interface JournalPageProps {
   journalHabitsGetUrl?: string
   journalHabitsSaveUrl?: string
   journalHabitsInitial?: JournalHabitsInitialProp
+  timezoneOffsetHours?: number
 }
 
 /* Не использовать defineProps с дженериком и ref с дженериком: при ts+jsx символ «меньше» в коде читается как JSX. */
@@ -225,6 +227,7 @@ const props = defineProps({
   journalHabitsGetUrl: String,
   journalHabitsSaveUrl: String,
   journalHabitsInitial: Object,
+  timezoneOffsetHours: { type: Number, default: DEFAULT_USER_TIMEZONE_OFFSET_HOURS },
 }) as unknown as JournalPageProps
 
 const bootLoaderDone = ref(false)
@@ -413,6 +416,7 @@ const tasksPaneProps = computed(() => ({
   taskItemUpdateUrl: props.taskItemUpdateUrl != null ? props.taskItemUpdateUrl : '',
   tasksPageUrl: props.tasksPageUrl != null ? props.tasksPageUrl : '',
   toolsControlUrl: props.toolsControlUrl != null ? props.toolsControlUrl : '',
+  timezoneOffsetHours: props.timezoneOffsetHours,
 }))
 
 const dayInDevelopmentPaneProps = computed(() => ({
@@ -527,6 +531,7 @@ const openChatiumLink = () => {
       :isAdmin="props.isAdmin"
       :adminUrl="props.adminUrl"
       :testsUrl="props.testsUrl"
+      :timezoneOffsetHours="props.timezoneOffsetHours"
       :enableToolClockWidget="true"
       :toolsStateUrl="props.toolsStateUrl"
       :toolsControlUrl="props.toolsControlUrl"

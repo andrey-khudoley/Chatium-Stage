@@ -12,6 +12,15 @@
 
 Каждый файл — один эндпоинт с путём `/`.
 
+## Персональные настройки пользователя (api/user-settings/)
+
+Смещение от UTC в целых часах; дефолт **+3** (если записи в Heap ещё нет). Данные: `tables/user-settings.table.ts`, `lib/user-settings.lib.ts`.
+
+| Method | Path | File | Auth | Назначение |
+| --- | --- | --- | --- | --- |
+| GET | /api/user-settings/get | api/user-settings/get.ts | RealUser | `{ success, timezoneOffsetHours }` |
+| POST | /api/user-settings/save | api/user-settings/save.ts | RealUser | Body: `{ timezoneOffsetHours: number }` (−12…14), ответ `{ success, timezoneOffsetHours }` |
+
 ## Логи (api/logger/, api/admin/logs/)
 
 Эндпоинты для записи и чтения серверных логов (проверка уровня, Heap, WebSocket, вебхук).
@@ -165,7 +174,7 @@
 
 | Method | Path | File | Auth | Назначение |
 | --- | --- | --- | --- | --- |
-| GET | /api/tools/state | api/tools/state.ts | RealUser | Полный снимок: `{ success, state, serverNowMs, encodedSocketId? }`. Query `statsDayKey` — дневная статистика (граница **05:00**, см. `lib/pomodoro-stats-day.ts`). |
+| GET | /api/tools/state | api/tools/state.ts | RealUser | Полный снимок: `{ success, state, serverNowMs, encodedSocketId? }`. Query `statsDayKey` — дневная статистика (календарные сутки по **полночи** в часовом поясе из профиля, см. `lib/pomodoro-stats-day.ts`). |
 | POST | /api/tools/control | api/tools/control.ts | RealUser | Body: `{ statsDayKey?, command }`. `command.kind`: `pomodoro` (`action`: start/resume/pause/stop/skip/reset), `timer` / `stopwatch` (start/resume/pause/reset), `widget-mode` (`mode`: clock/pomodoro/timer/stopwatch), `save-pomodoro-settings`, `assign-task` (`taskId`), `timer-settings` (`minutes`, `seconds`). Ответ: `{ success, state, serverNowMs }`. |
 
 ## Публичные эндпоинты

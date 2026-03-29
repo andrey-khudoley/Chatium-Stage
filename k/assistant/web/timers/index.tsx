@@ -5,9 +5,10 @@ import PomodoroPage from '../../pages/PomodoroPage.vue'
 import { getApiUrlForRoute, getFullUrl, ROUTES } from '../../config/routes'
 import { POMODORO_PAGE_NAME, getPageTitle, getHeaderText } from '../../config/project'
 import * as settingsLib from '../../lib/settings.lib'
+import * as userSettingsLib from '../../lib/user-settings.lib'
 import { genSocketId } from '@app/socket'
 import * as focusToolsLib from '../../lib/focus-tools.lib'
-import { computePomodoroStatsDayKeyInTimeZone } from '../../lib/pomodoro-stats-day'
+import { computePomodoroStatsDayKeyForUtcOffsetHours } from '../../lib/pomodoro-stats-day'
 import { toolsStateRoute } from '../../api/tools/state'
 import { toolsControlRoute } from '../../api/tools/control'
 import { getInProgressTasksRoute } from '../../api/tasks/in-progress'
@@ -22,10 +23,11 @@ export const pomodoroPageRoute = app.html('/', async (ctx) => {
 
   let initialFocusToolsState: FocusToolsFullStateDto | null = null
   let encodedFocusToolsSocketId = ''
+  let timezoneOffsetHours = await userSettingsLib.getTimezoneOffsetForCtxUser(ctx)
   if (isAuthenticated) {
     try {
       const user = requireRealUser(ctx)
-      const statsDayKey = computePomodoroStatsDayKeyInTimeZone(Date.now(), 'Europe/Moscow')
+      const statsDayKey = computePomodoroStatsDayKeyForUtcOffsetHours(Date.now(), timezoneOffsetHours)
       initialFocusToolsState = await focusToolsLib.getFullState(ctx, user.id, statsDayKey)
       encodedFocusToolsSocketId = await genSocketId(ctx, focusToolsSocketId(user.id))
     } catch {
@@ -234,6 +236,7 @@ export const pomodoroPageRoute = app.html('/', async (ctx) => {
           isAdmin={isAdmin}
           adminUrl={isAdmin ? getFullUrl(ROUTES.admin) : ''}
           testsUrl={isAuthenticated ? getFullUrl(ROUTES.tests) : ''}
+          timezoneOffsetHours={timezoneOffsetHours}
           initialFocusToolsState={initialFocusToolsState}
           toolsStateUrl={getApiUrlForRoute(toolsStateRoute.url())}
           toolsControlUrl={getApiUrlForRoute(toolsControlRoute.url())}

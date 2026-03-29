@@ -14,7 +14,7 @@ const props = defineProps<{
   toolsControlUrl: string
   getTasksUrl: string
   currentTaskId: string
-  /** Ключ дневной статистики помодоро (YYYY-MM-DD от 05:00 локально), см. pomodoro-stats-day */
+  /** Ключ дневной статистики помодоро (YYYY-MM-DD, полночь по часовому поясу из профиля), см. pomodoro-stats-day */
   statsDayKey: string
 }>()
 

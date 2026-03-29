@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref } from 'vue'
+import { onMounted, onUnmounted, ref, withDefaults } from 'vue'
 import Header from '../components/Header.vue'
 import GlobalGlitch from '../components/GlobalGlitch.vue'
 import AppFooter from '../components/AppFooter.vue'
 import { subscribeBootStaticReady, scheduleHideBootLoader } from '../shared/bootUi'
 import { createComponentLogger } from '../shared/logger'
+import { DEFAULT_USER_TIMEZONE_OFFSET_HOURS } from '../shared/user-settings-defaults'
 
 const log = createComponentLogger('HomePage')
 
@@ -15,24 +16,28 @@ declare global {
   }
 }
 
-const props = defineProps<{
-  projectName: string
-  projectTitle: string
-  projectDescription: string
-  indexUrl: string
-  journalUrl: string
-  tasksUrl: string
-  toolsUrl: string
-  profileUrl: string
-  loginUrl: string
-  isAuthenticated: boolean
-  isAdmin?: boolean
-  adminUrl?: string
-  testsUrl?: string
-  toolsStateUrl: string
-  toolsControlUrl: string
-  encodedFocusToolsSocketId: string
-}>()
+const props = withDefaults(
+  defineProps<{
+    projectName: string
+    projectTitle: string
+    projectDescription: string
+    indexUrl: string
+    journalUrl: string
+    tasksUrl: string
+    toolsUrl: string
+    profileUrl: string
+    loginUrl: string
+    isAuthenticated: boolean
+    isAdmin?: boolean
+    adminUrl?: string
+    testsUrl?: string
+    toolsStateUrl: string
+    toolsControlUrl: string
+    encodedFocusToolsSocketId: string
+    timezoneOffsetHours?: number
+  }>(),
+  { timezoneOffsetHours: DEFAULT_USER_TIMEZONE_OFFSET_HOURS },
+)
 
 const displayedTitle = ref('')
 const displayedDescription = ref('')
@@ -153,6 +158,7 @@ const openChatiumLink = () => {
       :isAdmin="props.isAdmin"
       :adminUrl="props.adminUrl"
       :testsUrl="props.testsUrl"
+      :timezoneOffsetHours="props.timezoneOffsetHours"
       :enableToolClockWidget="true"
       :toolsStateUrl="props.toolsStateUrl"
       :toolsControlUrl="props.toolsControlUrl"
