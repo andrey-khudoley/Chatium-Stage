@@ -279,6 +279,7 @@ type SingleRunGroup =
   | 'settingKeys'
   | 'unitSaveCreds'
   | 'unitPageRoutes'
+  | 'unitWebhookRoute'
   | 'integrationBoth'
   | 'integrationPages'
 
@@ -953,6 +954,90 @@ async function runSingleUnitPageRouteTest(testId: string) {
       ])
     }
     unitPageRoutesLastRunAt.value = new Date().toLocaleString('ru-RU')
+  } finally {
+    singleTestRun.value = null
+  }
+}
+
+/* --- Вкладка «Юнит»: POST …/api/integrations/lava/webhook (lavaWebhookInfoRoute / lavaWebhookRoute.run) --- */
+const UNIT_WEBHOOK_ROUTE_TESTS: Array<{ id: string; title: string }> = [
+  { id: 'info_get', title: 'GET-проба: ok, ready, webhookSecretConfigured' },
+  { id: 'post_wrong_api_key', title: 'POST: неверный X-Api-Key → отказ' },
+  { id: 'post_missing_api_key', title: 'POST: без ключа при заданном секрете → отказ' },
+  { id: 'post_invalid_body', title: 'POST: невалидный eventType → валидация' },
+  { id: 'post_success_contract_not_found', title: 'POST: верный ключ + тело → success (контракт не в Heap)' }
+]
+const unitWebhookRouteResults = ref<TestResult[]>([])
+const unitWebhookRouteLoading = ref(false)
+const unitWebhookRouteLastRunAt = ref<string | null>(null)
+
+const unitWebhookRouteDisplay = computed(() => {
+  const byId = new Map(unitWebhookRouteResults.value.map((r) => [r.id, r]))
+  return UNIT_WEBHOOK_ROUTE_TESTS.map((t) => {
+    const res = byId.get(t.id)
+    return {
+      id: t.id,
+      title: t.title,
+      status: res === undefined ? 'todo' : res.passed ? 'success' : 'fail',
+      error: res && !res.passed ? res.error : undefined
+    }
+  })
+})
+
+async function runUnitWebhookRouteTests() {
+  unitWebhookRouteLoading.value = true
+  unitWebhookRouteResults.value = []
+  const baseUrl = getApiBaseUrl().replace(/\/$/, '')
+  log.info('Юнит: Lava webhook (route.run)')
+  try {
+    const res = await fetch(`${baseUrl}/api/tests/endpoints-check/lava-webhook-route`, {
+      method: 'GET',
+      credentials: 'include'
+    })
+    const data = (await res.json().catch(() => null)) as {
+      success?: boolean
+      results?: TestResult[]
+      error?: string
+    }
+    if (data?.success && Array.isArray(data.results)) {
+      unitWebhookRouteResults.value = data.results
+    } else {
+      unitWebhookRouteResults.value = UNIT_WEBHOOK_ROUTE_TESTS.map((t) => ({
+        id: t.id,
+        title: t.title,
+        passed: false,
+        error: data?.error || 'Ошибка запроса'
+      }))
+    }
+    unitWebhookRouteLastRunAt.value = new Date().toLocaleString('ru-RU')
+  } finally {
+    unitWebhookRouteLoading.value = false
+  }
+}
+
+async function runSingleUnitWebhookRouteTest(testId: string) {
+  const meta = UNIT_WEBHOOK_ROUTE_TESTS.find((s) => s.id === testId)
+  if (!meta) return
+  singleTestRun.value = { group: 'unitWebhookRoute', id: testId }
+  const baseUrl = getApiBaseUrl().replace(/\/$/, '')
+  try {
+    const res = await fetch(
+      `${baseUrl}/api/tests/endpoints-check/lava-webhook-route?testId=${encodeURIComponent(testId)}`,
+      { method: 'GET', credentials: 'include' }
+    )
+    const data = (await res.json().catch(() => null)) as {
+      success?: boolean
+      results?: TestResult[]
+      error?: string
+    }
+    if (data?.success && Array.isArray(data.results) && data.results.length > 0) {
+      unitWebhookRouteResults.value = upsertTestResults(unitWebhookRouteResults.value, data.results)
+    } else {
+      unitWebhookRouteResults.value = upsertTestResults(unitWebhookRouteResults.value, [
+        { id: testId, title: meta.title, passed: false, error: data?.error || 'Ошибка запроса' }
+      ])
+    }
+    unitWebhookRouteLastRunAt.value = new Date().toLocaleString('ru-RU')
   } finally {
     singleTestRun.value = null
   }
@@ -1683,7 +1768,12 @@ const runAllTests = async () => {
     if (testSuiteMode.value === 'unit') {
       await runUnitPageRoutesTests()
       await runUnitSaveCredsTests()
-      const all = [...unitPageRoutesResults.value, ...unitSaveCredsResults.value]
+      await runUnitWebhookRouteTests()
+      const all = [
+        ...unitPageRoutesResults.value,
+        ...unitSaveCredsResults.value,
+        ...unitWebhookRouteResults.value
+      ]
       const passed = all.filter((r) => r.passed).length
       const failed = all.filter((r) => !r.passed).length
       testMetrics.value = {
@@ -1804,8 +1894,9 @@ const runAllTests = async () => {
                 </div>
                 <p class="tests-mode-hint">
                   <template v-if="testSuiteMode === 'unit'">
-                    Слияние ключей save (без сети) и быстрый <code class="tests-inline-code">route.run</code> по
-                    страницам (тот же ctx).
+                    Слияние ключей save (без сети), быстрый <code class="tests-inline-code">route.run</code> по
+                    страницам и юнит <code class="tests-inline-code">POST …/lava/webhook</code> (тот же
+                    <code class="tests-inline-code">ctx</code>).
                   </template>
                   <template v-else-if="testSuiteMode === 'integration'">
                     Страницы (fetch + разбор); ключи Heap (GetCourse и Lava); POST payment-link: юнит
@@ -1846,7 +1937,7 @@ const runAllTests = async () => {
                       !hasRunnableTestsInMode
                         ? 'Нет сценариев'
                         : testSuiteMode === 'unit'
-                          ? 'Страницы (route.run) + слияние ключей'
+                          ? 'Страницы (route.run) + слияние ключей + Lava webhook (route.run)'
                           : testSuiteMode === 'integration'
                             ? 'Страницы + Heap + payment-link (dry-run и HTTP)'
                             : 'Запустить весь устаревший набор'
@@ -1897,6 +1988,7 @@ const runAllTests = async () => {
                           runAllTestsLoading ||
                           unitPageRoutesLoading ||
                           unitSaveCredsLoading ||
+                          unitWebhookRouteLoading ||
                           isGroupBlockedBySingle('unitPageRoutes')
                         "
                         @click.stop="runSingleUnitPageRouteTest(item.id)"
@@ -1917,6 +2009,7 @@ const runAllTests = async () => {
                       runAllTestsLoading ||
                       unitPageRoutesLoading ||
                       unitSaveCredsLoading ||
+                      unitWebhookRouteLoading ||
                       isGroupBlockedBySingle('unitPageRoutes')
                     "
                     @click="runUnitPageRoutesTests"
@@ -1964,6 +2057,7 @@ const runAllTests = async () => {
                           runAllTestsLoading ||
                           unitSaveCredsLoading ||
                           unitPageRoutesLoading ||
+                          unitWebhookRouteLoading ||
                           isGroupBlockedBySingle('unitSaveCreds')
                         "
                         @click.stop="runSingleUnitSaveCredsTest(item.id)"
@@ -1984,12 +2078,84 @@ const runAllTests = async () => {
                       runAllTestsLoading ||
                       unitSaveCredsLoading ||
                       unitPageRoutesLoading ||
+                      unitWebhookRouteLoading ||
                       isGroupBlockedBySingle('unitSaveCreds')
                     "
                     @click="runUnitSaveCredsTests"
                   >
                     <i class="fas" :class="unitSaveCredsLoading ? 'fa-spinner fa-spin' : 'fa-bolt'"></i>
                     {{ unitSaveCredsLoading ? 'Проверяем...' : 'Запустить юнит-тесты слияния ключей' }}
+                  </button>
+                </div>
+              </div>
+
+              <!-- Вкладка «Юнит»: роут Lava webhook (route.run) -->
+              <div v-if="showContent && testSuiteMode === 'unit'" class="tests-card tests-endpoints-card tests-crt-card">
+                <div class="tests-endpoints-header">
+                  <i class="fas fa-plug tests-endpoints-icon"></i>
+                  <h2 class="tests-endpoints-title">Юнит: Lava webhook (route.run)</h2>
+                </div>
+                <p class="tests-endpoints-desc">
+                  GET{' '}
+                  <code class="tests-inline-code">/api/tests/endpoints-check/lava-webhook-route</code>
+                  — вызовы <code class="tests-inline-code">lavaWebhookInfoRoute</code> и
+                  <code class="tests-inline-code">lavaWebhookRoute.run(ctx, { …тело, headers })</code> в том же
+                  <code class="tests-inline-code">ctx</code>, что у запроса к API. Отдельно от сервисного
+                  <code class="tests-inline-code">lava-webhook-service</code> (там только
+                  <code class="tests-inline-code">processWebhook</code>).
+                </p>
+                <div v-if="unitWebhookRouteLastRunAt" class="tests-endpoints-last-run">
+                  Результаты от: {{ unitWebhookRouteLastRunAt }}
+                </div>
+                <div class="tests-endpoints-list-wrap">
+                  <ul class="tests-endpoints-list" role="list">
+                    <li
+                      v-for="item in unitWebhookRouteDisplay"
+                      :key="item.id"
+                      class="tests-endpoints-list-item"
+                      :class="`tests-endpoints-status-${item.status}`"
+                    >
+                      <span class="tests-endpoints-badge" :class="`tests-endpoints-badge-${item.status}`">
+                        {{ item.status === 'todo' ? '[TODO]' : item.status === 'success' ? '[OK]' : '[FAIL]' }}
+                      </span>
+                      <span class="tests-endpoints-list-title-inline">{{ item.title }}</span>
+                      <span v-if="item.error" class="tests-endpoints-list-error">{{ item.error }}</span>
+                      <button
+                        type="button"
+                        class="tests-run-one-btn"
+                        title="Запустить только эту проверку"
+                        :disabled="
+                          runAllTestsLoading ||
+                          unitWebhookRouteLoading ||
+                          unitPageRoutesLoading ||
+                          unitSaveCredsLoading ||
+                          isGroupBlockedBySingle('unitWebhookRoute')
+                        "
+                        @click.stop="runSingleUnitWebhookRouteTest(item.id)"
+                      >
+                        <i
+                          class="fas"
+                          :class="isSingleRunning('unitWebhookRoute', item.id) ? 'fa-spinner fa-spin' : 'fa-play'"
+                        ></i>
+                      </button>
+                    </li>
+                  </ul>
+                </div>
+                <div class="tests-endpoints-actions">
+                  <button
+                    type="button"
+                    class="tests-run-group-btn"
+                    :disabled="
+                      runAllTestsLoading ||
+                      unitWebhookRouteLoading ||
+                      unitPageRoutesLoading ||
+                      unitSaveCredsLoading ||
+                      isGroupBlockedBySingle('unitWebhookRoute')
+                    "
+                    @click="runUnitWebhookRouteTests"
+                  >
+                    <i class="fas" :class="unitWebhookRouteLoading ? 'fa-spinner fa-spin' : 'fa-bolt'"></i>
+                    {{ unitWebhookRouteLoading ? 'Проверяем...' : 'Запустить все проверки webhook-роута' }}
                   </button>
                 </div>
               </div>

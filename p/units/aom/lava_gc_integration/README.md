@@ -48,6 +48,9 @@
 - Бизнес‑логика интеграции и модель данных описаны в `docs/` (`data.md`, `integration-*.md`); при изменении кода — синхронизировать документацию.
 
 ## Changelog
+- 2026-03-30: юнит `lava-webhook-route` — POST-сценарии с `X-Api-Key` через исходящий `request()` на боевой URL webhook (если нельзя собрать base URL — fallback `processWebhook`); валидация тела остаётся на `route.run`. Обновлены `docs/testing.md`, `docs/api.md`, `docs/LLM/0068_…`.
+- 2026-03-30: юнит `lava-webhook-route` — распознавание ответа `route.run` для `ctx.resp.json` / `{ success: true }` (обёртки Chatium, см. `048-chatium-http-response-probes.md`). Обновлены `docs/testing.md`, `docs/LLM/0068_…`.
+- 2026-03-30: вкладка «Юнит» на `/web/tests` — карточка «Lava webhook (route.run)» (`TestsPage.vue`), запуск всех юнит-тестов включает webhook; GET `lava-webhook-route` — query `testId` для одиночной проверки. Обновлены `docs/api.md`, `docs/testing.md`, `.CHATIUM-LLM.md`, `docs/LLM/0068_…`.
 - 2026-03-30: юнит-тест HTTP-роута webhook — GET `api/tests/endpoints-check/lava-webhook-route` (`lavaWebhookInfoRoute.run`, `lavaWebhookRoute.run` + `headers`); категория `webhook-route-unit` в `api/tests/list`. Обновлены `docs/api.md`, `docs/testing.md`, `docs/imports.md`, `.CHATIUM-LLM.md`, `docs/LLM/0068_…`.
 - 2026-03-30: `GET /api/integrations/lava/webhook` — проба доступности (браузер), JSON `ok` / `status: ready` / `webhookSecretConfigured`; экспорт `lavaWebhookInfoRoute`. Обновлены `docs/api.md`, `docs/imports.md`, `integration-full-flow.md`, `docs/LLM/0067_…`.
 - 2026-03-30: админка — блок `lava_webhook_secret`: автогенерация (256 бит hex), кнопки «Сгенерировать» / «Обновить», «Показать» / «Скрыть», сохранение через `POST /api/settings/save`. Обновлены README, `.CHATIUM-LLM.md`, `docs/LLM/0066_…`.
