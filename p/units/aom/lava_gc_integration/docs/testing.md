@@ -45,6 +45,8 @@
 
 В отдельных файлах тестовых роутов (например, проверка `lavaPaymentLinkRoute.run`) вызов делается **внутри обработчика GET**, где уже есть **реальный** `ctx` запроса к тестовому эндпоинту. Это не «подставление искусственного `ctx` в изолированном тесте», а выполнение в том же серверном контексте, что и обычный запрос приложения.
 
+**Юнит роута Lava webhook:** GET `api/tests/endpoints-check/lava-webhook-route.ts` — `lavaWebhookInfoRoute.run(ctx)`; `lavaWebhookRoute.run(ctx, { …поля тела, headers: { 'X-Api-Key': … } })` (поля тела и заголовки на верхнем уровне второго аргумента, как у payment-link). Сценарии: структура GET-пробы, отказ при неверном/отсутствующем ключе (при заданном секрете в Heap), ошибка валидации тела, успешная обработка при верном секрете и валидном теле (без контракта в Heap). Сервисный слой `processWebhook` покрыт отдельно — `lava-webhook-service.ts`.
+
 ## POST `payment-link`: юнит и HTTP-интеграция
 
 - **Юнит (быстро):** GET `api/tests/endpoints-check/payment-link-dry-run-unit.ts` — `lavaPaymentLinkRoute.run(ctx, { gcOrderId, …, integrationTestDryRun: true })` без исходящего HTTP к приложению и без Lava. Поля тела передаются **на верхнем уровне** второго аргумента, не вложенным `{ body: { … } }` (иначе схема видит пустое тело и отвечает 422).
@@ -103,3 +105,4 @@
 | HTTP-пробы (форматы ответов) | `temp/*/index.tsx`, `temp/index.tsx` |
 | Разбор ответа страниц в UI | `shared/pageRouteProbe.ts` |
 | Юнит страниц (`route.run`) | `api/tests/endpoints-check/page-routes-unit.ts` |
+| Юнит роута Lava webhook (`lavaWebhookInfoRoute` / `lavaWebhookRoute`) | `api/tests/endpoints-check/lava-webhook-route.ts` |

@@ -48,6 +48,7 @@
 - Бизнес‑логика интеграции и модель данных описаны в `docs/` (`data.md`, `integration-*.md`); при изменении кода — синхронизировать документацию.
 
 ## Changelog
+- 2026-03-30: юнит-тест HTTP-роута webhook — GET `api/tests/endpoints-check/lava-webhook-route` (`lavaWebhookInfoRoute.run`, `lavaWebhookRoute.run` + `headers`); категория `webhook-route-unit` в `api/tests/list`. Обновлены `docs/api.md`, `docs/testing.md`, `docs/imports.md`, `.CHATIUM-LLM.md`, `docs/LLM/0068_…`.
 - 2026-03-30: `GET /api/integrations/lava/webhook` — проба доступности (браузер), JSON `ok` / `status: ready` / `webhookSecretConfigured`; экспорт `lavaWebhookInfoRoute`. Обновлены `docs/api.md`, `docs/imports.md`, `integration-full-flow.md`, `docs/LLM/0067_…`.
 - 2026-03-30: админка — блок `lava_webhook_secret`: автогенерация (256 бит hex), кнопки «Сгенерировать» / «Обновить», «Показать» / «Скрыть», сохранение через `POST /api/settings/save`. Обновлены README, `.CHATIUM-LLM.md`, `docs/LLM/0066_…`.
 - 2026-03-30: лайв-проверка webhook на `/web/tests`: `lib/webhook-live-test.lib.ts`, пропуск GetCourse для `gc_order_id=test` в `lava-webhook.service`, POST/GET `webhook-live-test-arm` / `webhook-live-test-status`, карточка с URL webhook и ссылкой на оплату. Обновлены `docs/testing.md`, `docs/api.md`, `docs/imports.md`, `api/tests/list`, `.CHATIUM-LLM.md`, `docs/LLM/0065_…`.

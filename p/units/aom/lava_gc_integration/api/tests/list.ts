@@ -160,6 +160,16 @@ export const listTestsRoute = app.get('/', async (ctx, req) => {
       ]
     },
     {
+      id: 'webhook-route-unit',
+      title: 'Юнит: POST …/api/integrations/lava/webhook (route.run)',
+      tests: [
+        {
+          id: 'lava-webhook-route',
+          title: 'lavaWebhookInfoRoute + lavaWebhookRoute: GET-проба, 401, валидация тела, успех'
+        }
+      ]
+    },
+    {
       id: 'payment-link-live',
       title: 'POST payment-link (лайв: Heap + Lava, gcOrderId=test)',
       tests: [
