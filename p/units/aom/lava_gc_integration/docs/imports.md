@@ -2,7 +2,7 @@
 
 Роль **`ctx`** в тестах и запуск проверок со страницы тестов — [testing.md](./testing.md).
 
-Актуально для реализованной интеграции GetCourse + Lava: таблицы `lava_*`, репозитории в `repos/`, `lib/lava-types.ts`, `lib/heap-create-input.lib.ts` (тип `HeapCreateInput` для `Table.create` без служебных полей Heap), `lib/app-public-url.lib.ts` (абсолютный URL к своему UGC для `request()`), `lib/lava-api.client.ts`, `lib/getcourse-api.client.ts`, `lib/settings-save-credentials.lib.ts`, `lib/lava-payment.service.ts`, `lib/lava-webhook.service.ts`, эндпоинты `api/integrations/lava/*`, тесты в `api/tests/endpoints-check/` — в т.ч. `integration-gc-credentials.ts`, `integration-lava-credentials.ts`, `integration-credentials-both.ts`, `settings-save-credentials-unit.ts`, `page-routes-unit.ts`, `lava-settings-getters.ts`, `lava-repos.ts`, `lava-webhook-service.ts`, `getcourse-deal-update.ts`, `lava-api-catalog.ts`, `lava-payment-link-route.ts`, `payment-link-dry-run-unit.ts`, `payment-link-http-integration.ts`, `payment-link-heap-settings-read.ts`, `payment-link-full-route-run.ts`, `payment-link-full-http-integration.ts`, `lib/payment-link-live-test.lib.ts`, `lava-api-client.ts`, `payment-link.ts`.
+Актуально для реализованной интеграции GetCourse + Lava: таблицы `lava_*`, репозитории в `repos/`, `lib/lava-types.ts`, `lib/heap-create-input.lib.ts` (тип `HeapCreateInput` для `Table.create` без служебных полей Heap), `lib/app-public-url.lib.ts` (абсолютный URL к своему UGC для `request()`), `lib/lava-api.client.ts`, `lib/getcourse-api.client.ts`, `lib/settings-save-credentials.lib.ts`, `lib/lava-payment.service.ts`, `lib/lava-webhook.service.ts`, эндпоинты `api/integrations/lava/*`, тесты в `api/tests/endpoints-check/` — в т.ч. `integration-gc-credentials.ts`, `integration-lava-credentials.ts`, `integration-credentials-both.ts`, `settings-save-credentials-unit.ts`, `page-routes-unit.ts`, `lava-settings-getters.ts`, `lava-repos.ts`, `lava-webhook-service.ts`, `getcourse-deal-update.ts`, `lava-api-catalog.ts`, `lava-payment-link-route.ts`, `payment-link-dry-run-unit.ts`, `payment-link-http-integration.ts`, `payment-link-heap-settings-read.ts`, `payment-link-full-route-run.ts`, `payment-link-full-http-integration.ts`, `webhook-live-test-arm.ts`, `webhook-live-test-status.ts`, `lib/payment-link-live-test.lib.ts`, `lib/webhook-live-test.lib.ts`, `lava-api-client.ts`, `payment-link.ts`.
 
 ### `./shared/pageRouteProbe.ts`
 - первая строка: `// @shared`
@@ -99,7 +99,7 @@
 - `../api/admin/lava/catalog` → `lavaCatalogRoute`
 - `../api/admin/getcourse/verify` → `getcourseVerifyRoute`
 - `../shared/gcSettingKeys` → `GC_SETTING_KEYS`
-- `../shared/lavaSettingKeys` → `LAVA_SETTING_KEYS`
+- `../shared/lavaSettingKeys` → `LAVA_SETTING_KEYS` (в т.ч. UI `lava_webhook_secret`: генерация, показ)
 - `../shared/lavaBaseUrl` → `normalizeLavaBaseUrlInput`
 - `../api/admin/logs/recent` → `getRecentLogsRoute`
 - `../api/admin/logs/before` → `getLogsBeforeRoute`
@@ -273,11 +273,19 @@
 - `./lava-types` → `LavaWebhookPayload`, `LocalContractStatus` (types)
 - `./getcourse-api.client` → `*` (`updateDealStatus`)
 - `./logger.lib` → `*`
+- `./payment-link-live-test.lib` → `isPaymentLinkLiveTestGcOrderId`
 - `./settings.lib` → `*` (`getLavaWebhookSecret`)
+- `./webhook-live-test.lib` → `recordWebhookLiveTestAfterContract`, `recordWebhookLiveTestContractNotFound`, `recordWebhookLiveTestDuplicate`
 - `../repos/lava_payment_contract.repo` → `*`
 - `../repos/lava_webhook_event.repo` → `*`
 - `../tables/lava_webhook_event.table` → `LavaWebhookEventRow` (type)
 - экспортирует: `processWebhook`, `ProcessWebhookResult`
+
+### `./lib/webhook-live-test.lib.ts`
+- `./lava-types` → типы для payload
+- `../repos/settings.repo` → `findByKey`, `upsert` (служебный ключ состояния лайв-проверки)
+- `../tables/lava_payment_contract.table` → `LavaPaymentContractRow` (type)
+- экспортирует: `armWebhookLiveTest`, `getWebhookLiveTestState`, `WebhookLiveTestState`, функции `recordWebhookLiveTest*`
 
 ### `./shared/lavaBaseUrl.ts`
 - нет внутренних импортов (файл с `// @shared`)
@@ -366,6 +374,15 @@
 - `@app/request` → `request`
 - `@app/auth` → `requireAnyUser`
 - `../../../lib/app-public-url.lib`, `../../../lib/logger.lib`, `../../../lib/payment-link-live-test.lib`, `../../../repos/lava_payment_contract.repo`
+
+### `./api/tests/endpoints-check/webhook-live-test-arm.ts`
+- `@app/auth` → `requireAnyUser`
+- `../../../lib/logger.lib`, `../../../lib/webhook-live-test.lib` → `armWebhookLiveTest`
+- `app.body` — `expectedLavaContractId`, опционально `paymentUrl`
+
+### `./api/tests/endpoints-check/webhook-live-test-status.ts`
+- `@app/auth` → `requireAnyUser`
+- `../../../lib/app-public-url.lib`, `../../../lib/logger.lib`, `../../../lib/webhook-live-test.lib` → `getWebhookLiveTestState`
 
 ### `./api/integrations/lava/webhook/index.ts`
 - `../../../../lib/logger.lib` → `*`

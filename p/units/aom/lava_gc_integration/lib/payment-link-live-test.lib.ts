@@ -6,6 +6,11 @@ import * as settingsLib from './settings.lib'
 /** Фиксированный заказ GC для интеграционных прогонов (см. деактивацию контрактов перед тестом). */
 export const PAYMENT_LINK_LIVE_TEST_GC_ORDER_ID = 'test'
 
+/** Заказы с этим id не пробрасываются в GetCourse при webhook (лайв-тесты на странице `/web/tests`). */
+export function isPaymentLinkLiveTestGcOrderId(gcOrderId: string): boolean {
+  return gcOrderId.trim() === PAYMENT_LINK_LIVE_TEST_GC_ORDER_ID
+}
+
 export const PAYMENT_LINK_LIVE_TEST_BUYER_EMAIL = 'debug@khudoley.pro'
 
 /** Минимально допустимая для Lava сумма в RUB в ряде сценариев (см. README / docs по тестам). */

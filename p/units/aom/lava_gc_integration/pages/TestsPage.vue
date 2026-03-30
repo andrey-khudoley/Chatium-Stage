@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, onBeforeUnmount, onUnmounted, ref, computed } from 'vue'
+import { onMounted, onBeforeUnmount, onUnmounted, ref, computed, watch } from 'vue'
 import { getOrCreateBrowserSocketClient } from '@app/socket'
 import Header from '../components/Header.vue'
 import GlobalGlitch from '../components/GlobalGlitch.vue'
@@ -1109,14 +1109,188 @@ const paymentLinkFullHttpRow = ref<{ status: PaymentLinkTestVisualStatus; detail
 })
 const paymentLinkFullHttpRaw = ref<string | null>(null)
 
+/** Последний успешный лайв контракт (route.run или HTTP) для проверки webhook. */
+const paymentLinkLiveSnapshot = ref<{
+  lavaContractId: string
+  paymentUrl: string
+  source: 'route' | 'http'
+} | null>(null)
+
+type WebhookLiveTestStateUi = {
+  expectedLavaContractId: string
+  paymentUrl?: string
+  armedAt: number
+  status: 'armed' | 'success'
+  successAt?: number
+  otherEvents: Array<{ at: number; reason: string; payloadJson: string }>
+}
+
+const webhookLiveApiResponse = ref<{
+  webhookUrl: string | null
+  state: WebhookLiveTestStateUi | null
+} | null>(null)
+const webhookLiveStatusLoading = ref(false)
+const webhookLiveArmLoading = ref(false)
+let webhookLivePollTimer: ReturnType<typeof setInterval> | null = null
+
+function stopWebhookLivePolling() {
+  if (webhookLivePollTimer != null) {
+    clearInterval(webhookLivePollTimer)
+    webhookLivePollTimer = null
+  }
+}
+
+function startWebhookLivePolling() {
+  stopWebhookLivePolling()
+  webhookLivePollTimer = window.setInterval(() => {
+    void fetchWebhookLiveTestStatusQuiet()
+  }, 3000)
+}
+
+/** Без сброса loading — для фонового опроса. */
+async function fetchWebhookLiveTestStatusQuiet() {
+  const baseUrl = getApiBaseUrl().replace(/\/$/, '')
+  try {
+    const res = await fetch(`${baseUrl}/api/tests/endpoints-check/webhook-live-test-status`, {
+      method: 'GET',
+      credentials: 'include'
+    })
+    const data = (await res.json().catch(() => null)) as Record<string, unknown>
+    if (data?.success === true) {
+      webhookLiveApiResponse.value = {
+        webhookUrl: typeof data.webhookUrl === 'string' ? data.webhookUrl : null,
+        state: (data.state as WebhookLiveTestStateUi) ?? null
+      }
+      if (webhookLiveApiResponse.value.state?.status === 'success') {
+        stopWebhookLivePolling()
+      }
+    }
+  } catch {
+    /* ignore */
+  }
+}
+
+async function fetchWebhookLiveTestStatus() {
+  webhookLiveStatusLoading.value = true
+  try {
+    await fetchWebhookLiveTestStatusQuiet()
+    const st = webhookLiveApiResponse.value?.state?.status
+    if (st === 'armed') {
+      startWebhookLivePolling()
+    } else {
+      stopWebhookLivePolling()
+    }
+  } finally {
+    webhookLiveStatusLoading.value = false
+  }
+}
+
+async function armWebhookLiveTestFromSnapshot() {
+  const snap = paymentLinkLiveSnapshot.value
+  if (!snap?.lavaContractId) {
+    log.warn('arm webhook live test: нет lavaContractId — сначала успешный лайв payment-link')
+    return
+  }
+  webhookLiveArmLoading.value = true
+  const baseUrl = getApiBaseUrl().replace(/\/$/, '')
+  try {
+    const res = await fetch(`${baseUrl}/api/tests/endpoints-check/webhook-live-test-arm`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        expectedLavaContractId: snap.lavaContractId,
+        paymentUrl: snap.paymentUrl
+      })
+    })
+    const data = (await res.json().catch(() => null)) as Record<string, unknown>
+    if (data?.success === true) {
+      log.info('webhook live test: вооружено', snap.lavaContractId)
+      await fetchWebhookLiveTestStatus()
+      startWebhookLivePolling()
+    } else {
+      log.warn('webhook live test: arm failed', data)
+    }
+  } finally {
+    webhookLiveArmLoading.value = false
+  }
+}
+
+function extractLivePaymentLinkFromRouteData(data: unknown): { lavaContractId?: string; paymentUrl?: string } {
+  if (!data || typeof data !== 'object') return {}
+  const d = data as Record<string, unknown>
+  const rr = d.routeResult as Record<string, unknown> | undefined
+  if (rr?.success === true) {
+    return {
+      lavaContractId: typeof rr.lavaContractId === 'string' ? rr.lavaContractId : undefined,
+      paymentUrl: typeof rr.paymentUrl === 'string' ? rr.paymentUrl : undefined
+    }
+  }
+  return {}
+}
+
+function extractLivePaymentLinkFromHttpData(data: unknown): { lavaContractId?: string; paymentUrl?: string } {
+  if (!data || typeof data !== 'object') return {}
+  const d = data as Record<string, unknown>
+  const body = d.responseBody as Record<string, unknown> | undefined
+  if (body?.success === true) {
+    return {
+      lavaContractId: typeof body.lavaContractId === 'string' ? body.lavaContractId : undefined,
+      paymentUrl: typeof body.paymentUrl === 'string' ? body.paymentUrl : undefined
+    }
+  }
+  return {}
+}
+
+function maybeUpdatePaymentLinkLiveSnapshot(
+  source: 'route' | 'http',
+  data: unknown,
+  rowStatus: PaymentLinkTestVisualStatus
+) {
+  if (rowStatus !== 'success') return
+  const ex =
+    source === 'route' ? extractLivePaymentLinkFromRouteData(data) : extractLivePaymentLinkFromHttpData(data)
+  if (ex.lavaContractId && ex.paymentUrl) {
+    paymentLinkLiveSnapshot.value = {
+      lavaContractId: ex.lavaContractId,
+      paymentUrl: ex.paymentUrl,
+      source
+    }
+  }
+}
+
 const integrationPaymentLinkBusy = computed(
   () =>
     paymentLinkDryRunUnitLoading.value ||
     paymentLinkHttpIntegrationLoading.value ||
     paymentLinkHeapSettingsLoading.value ||
     paymentLinkFullRouteRunLoading.value ||
-    paymentLinkFullHttpLoading.value
+    paymentLinkFullHttpLoading.value ||
+    webhookLiveStatusLoading.value ||
+    webhookLiveArmLoading.value
 )
+
+const webhookLivePaymentUrlDisplay = computed(() => {
+  const fromState = webhookLiveApiResponse.value?.state?.paymentUrl
+  if (fromState && fromState.trim()) return fromState.trim()
+  return paymentLinkLiveSnapshot.value?.paymentUrl?.trim() ?? ''
+})
+
+watch(
+  () => [showContent.value, testSuiteMode.value] as const,
+  ([show, mode]) => {
+    if (show && mode === 'integration') {
+      void fetchWebhookLiveTestStatus()
+    } else {
+      stopWebhookLivePolling()
+    }
+  },
+  { immediate: true }
+)
+
+onBeforeUnmount(() => {
+  stopWebhookLivePolling()
+})
 
 function parsePaymentLinkDryRunResponse(data: unknown): {
   status: PaymentLinkTestVisualStatus
@@ -1351,6 +1525,7 @@ async function runPaymentLinkFullRouteRun() {
     paymentLinkFullRouteRunRow.value = parsePaymentLinkFullRouteRunResponse(data)
     paymentLinkFullRouteRunRaw.value = data ? JSON.stringify(data, null, 2) : null
     paymentLinkFullRouteRunLastAt.value = new Date().toLocaleString('ru-RU')
+    maybeUpdatePaymentLinkLiveSnapshot('route', data, paymentLinkFullRouteRunRow.value.status)
   } finally {
     paymentLinkFullRouteRunLoading.value = false
   }
@@ -1371,6 +1546,7 @@ async function runPaymentLinkFullHttpLive() {
     paymentLinkFullHttpRow.value = parsePaymentLinkFullHttpLiveResponse(data)
     paymentLinkFullHttpRaw.value = data ? JSON.stringify(data, null, 2) : null
     paymentLinkFullHttpLastAt.value = new Date().toLocaleString('ru-RU')
+    maybeUpdatePaymentLinkLiveSnapshot('http', data, paymentLinkFullHttpRow.value.status)
   } finally {
     paymentLinkFullHttpLoading.value = false
   }
@@ -2288,6 +2464,115 @@ const runAllTests = async () => {
                 <details v-if="paymentLinkFullHttpRaw" class="tests-payment-link-raw">
                   <summary>Сырой ответ (HTTP лайв)</summary>
                   <pre class="tests-payment-link-raw-pre">{{ paymentLinkFullHttpRaw }}</pre>
+                </details>
+              </div>
+
+              <div v-if="showContent && testSuiteMode === 'integration'" class="tests-card tests-endpoints-card tests-crt-card">
+                <div class="tests-endpoints-header">
+                  <i class="fas fa-link tests-endpoints-icon"></i>
+                  <h2 class="tests-endpoints-title">Лайв: webhook после оплаты</h2>
+                </div>
+                <p class="tests-endpoints-desc">
+                  Оплатите по ссылке из лайва payment-link выше. Lava отправит
+                  <code class="tests-inline-code">POST</code> на эндпоинт ниже с заголовком
+                  <code class="tests-inline-code">X-Api-Key</code> = секрет из Heap. Для заказа
+                  <code class="tests-inline-code">gc_order_id=test</code> вызов GetCourse из webhook не
+                  выполняется. Нажмите «Вооружить проверку» и укажите ожидаемый
+                  <code class="tests-inline-code">lava_contract_id</code> (подставляется из последнего
+                  успешного route.run или HTTP). Зелёный статус — первый успешный
+                  <code class="tests-inline-code">payment.success</code> +
+                  <code class="tests-inline-code">completed</code> по этому контракту.
+                </p>
+                <div class="tests-webhook-live-urls">
+                  <p class="tests-webhook-live-url-row">
+                    <span class="tests-webhook-live-label">Эндпоинт webhook (куда шлёт Lava):</span>
+                    <code class="tests-webhook-live-url-code">{{ webhookLiveApiResponse?.webhookUrl || '—' }}</code>
+                  </p>
+                  <p class="tests-webhook-live-url-row">
+                    <span class="tests-webhook-live-label">Ссылка на оплату (ожидаем проверку по ней):</span>
+                    <template v-if="webhookLivePaymentUrlDisplay">
+                      <a
+                        class="tests-webhook-live-pay-link"
+                        :href="webhookLivePaymentUrlDisplay"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        >{{ webhookLivePaymentUrlDisplay }}</a
+                      >
+                    </template>
+                    <template v-else>
+                      <span class="tests-endpoints-list-desc">Сначала успешно создайте ссылку в блоке выше.</span>
+                    </template>
+                  </p>
+                  <p v-if="paymentLinkLiveSnapshot" class="tests-webhook-live-meta">
+                    Последний контракт из лайва: <code class="tests-inline-code">{{ paymentLinkLiveSnapshot.lavaContractId }}</code>
+                    ({{ paymentLinkLiveSnapshot.source === 'http' ? 'HTTP' : 'route.run' }})
+                  </p>
+                </div>
+                <div class="tests-endpoints-list-wrap">
+                  <ul class="tests-endpoints-list" role="list">
+                    <li
+                      class="tests-endpoints-list-item"
+                      :class="`tests-endpoints-status-${webhookLiveApiResponse?.state?.status === 'success' ? 'success' : 'todo'}`"
+                    >
+                      <span
+                        class="tests-endpoints-badge"
+                        :class="`tests-endpoints-badge-${webhookLiveApiResponse?.state?.status === 'success' ? 'success' : 'todo'}`"
+                        >{{
+                          webhookLiveApiResponse?.state?.status === 'success'
+                            ? '[OK]'
+                            : webhookLiveApiResponse?.state?.status === 'armed'
+                              ? '[ЖДЁМ]'
+                              : '[TODO]'
+                        }}</span
+                      >
+                      <span class="tests-endpoints-list-title-inline">Проверка webhook по контракту</span>
+                      <span
+                        v-if="webhookLiveApiResponse?.state?.expectedLavaContractId"
+                        class="tests-endpoints-list-desc"
+                        >ожидаем: {{ webhookLiveApiResponse?.state?.expectedLavaContractId }}</span
+                      >
+                      <button
+                        type="button"
+                        class="tests-run-one-btn"
+                        title="Обновить статус"
+                        :disabled="integrationPaymentLinkBusy"
+                        @click.stop="fetchWebhookLiveTestStatus"
+                      >
+                        <i
+                          class="fas"
+                          :class="webhookLiveStatusLoading ? 'fa-spinner fa-spin' : 'fa-sync'"
+                        ></i>
+                      </button>
+                    </li>
+                  </ul>
+                </div>
+                <div class="tests-endpoints-actions">
+                  <button
+                    type="button"
+                    class="tests-run-group-btn"
+                    :disabled="integrationPaymentLinkBusy || !paymentLinkLiveSnapshot?.lavaContractId"
+                    @click="armWebhookLiveTestFromSnapshot"
+                  >
+                    <i class="fas" :class="webhookLiveArmLoading ? 'fa-spinner fa-spin' : 'fa-crosshairs'"></i>
+                    {{
+                      webhookLiveArmLoading
+                        ? 'Вооружаем…'
+                        : 'Вооружить проверку (snapshot: последний успешный лайв)'
+                    }}
+                  </button>
+                </div>
+                <details
+                  v-if="webhookLiveApiResponse?.state?.otherEvents?.length"
+                  class="tests-payment-link-raw"
+                >
+                  <summary>Прочие события webhook (сырой JSON)</summary>
+                  <pre
+                    v-for="(ev, idx) in webhookLiveApiResponse?.state?.otherEvents ?? []"
+                    :key="idx"
+                    class="tests-payment-link-raw-pre tests-webhook-live-other-pre"
+                    >{{ ev.reason }} @ {{ new Date(ev.at).toISOString() }}
+{{ ev.payloadJson }}</pre
+                  >
                 </details>
               </div>
 
@@ -3347,6 +3632,50 @@ const runAllTests = async () => {
   font-family: 'Share Tech Mono', monospace;
   background: rgba(0, 0, 0, 0.25);
   border: 1px solid var(--color-border);
+}
+
+.tests-webhook-live-urls {
+  margin-top: 0.5rem;
+  margin-bottom: 0.75rem;
+  font-size: 0.8rem;
+}
+
+.tests-webhook-live-url-row {
+  margin: 0.45rem 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.tests-webhook-live-label {
+  color: var(--color-text-secondary);
+  font-size: 0.75rem;
+}
+
+.tests-webhook-live-url-code {
+  display: block;
+  word-break: break-all;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.72rem;
+  padding: 0.35rem 0.5rem;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+}
+
+.tests-webhook-live-pay-link {
+  word-break: break-all;
+  color: var(--color-accent, #7dd3fc);
+}
+
+.tests-webhook-live-meta {
+  margin: 0.35rem 0 0;
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+}
+
+.tests-webhook-live-other-pre {
+  margin-bottom: 0.5rem;
 }
 
 .tests-endpoints-list-content {

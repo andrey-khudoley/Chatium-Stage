@@ -174,6 +174,14 @@ export const listTestsRoute = app.get('/', async (ctx, req) => {
         {
           id: 'payment-link-full-http-integration',
           title: 'Интеграция: HTTP POST без dry-run (сброс контрактов test → Lava)'
+        },
+        {
+          id: 'webhook-live-test-arm',
+          title: 'POST webhook-live-test-arm — вооружить проверку webhook (ожидаемый lava_contract_id)'
+        },
+        {
+          id: 'webhook-live-test-status',
+          title: 'GET webhook-live-test-status — URL эндпоинта webhook и состояние лайв-проверки'
         }
       ]
     }

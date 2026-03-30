@@ -9,6 +9,10 @@
 - **Нельзя** рассчитывать на «собрать мок `ctx` вручную» как в Jest/Vitest с фиктивным объектом: это не часть стандартного контура приложения.
 - В обработчике роута (в т.ч. в `api/tests/endpoints-check/*`) в ход всегда приходит **реальный** `ctx` текущего запроса.
 
+## Админка (`/web/admin`): секрет webhook Lava
+
+В блоке «Интеграция Lava.top» поле `lava_webhook_secret`: кнопка «Сгенерировать» (если секрета ещё нет) или «Обновить» (если уже сохранён), «Показать» / «Скрыть» для отображения значения; сохранение только через генератор (`POST /api/settings/save`, 64 hex-символа из `crypto.getRandomValues`).
+
 ## Запуск с страницы тестов (`/web/tests`)
 
 Типичный сценарий:
@@ -55,6 +59,10 @@
 - **Интеграция HTTP:** POST `api/tests/endpoints-check/payment-link-full-http-integration.ts` — то же + исходящий `request()` POST на `…/payment-link` без dry-run; при отсутствии абсолютного URL — `{ skipped: true }` (как у dry-run HTTP).
 
 На вкладке «Интеграция» страницы `/web/tests` — отдельная карточка «Лайв: payment-link» и кнопка «Запустить лайв-триаду».
+
+### Лайв: webhook после оплаты
+
+После успешного `route.run` или HTTP лайва страница сохраняет последний `lava_contract_id` и `payment_url`. Карточка «Лайв: webhook после оплаты» показывает абсолютный URL `POST …/api/integrations/lava/webhook` (из GET `webhook-live-test-status`) и ссылку на оплату. Кнопка «Вооружить проверку» вызывает POST `webhook-live-test-arm` с ожидаемым контрактом; при входе реального webhook на боевой эндпоинт `lib/webhook-live-test.lib.ts` фиксирует первый успешный `payment.success` + `completed` по этому `contractId` или складывает прочие события в `otherEvents`. Для `gc_order_id=test` вызовы GetCourse из `lava-webhook.service` не выполняются (`isPaymentLinkLiveTestGcOrderId`).
 
 См. также общий гайд платформы: `inner/docs/020-testing.md` (интерактивные тесты в браузере; различие `route.run` и HTTP).
 
