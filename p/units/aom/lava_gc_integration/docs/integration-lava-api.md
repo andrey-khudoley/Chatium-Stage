@@ -10,6 +10,8 @@
 
 Runtime: **`PATCH /api/v2/products/{productId}`** с телом **`ProductUpdateRequest`**: массив **`offers`** с элементами **`UpdateOfferRequest`** — идентификатор оффера **`id`**, цены **`prices`** (`UpdatePriceRequest`: `amount`, `currency`), при необходимости **`name`**, **`description`**.
 
+Для входящих запросов из GetCourse сумма сейчас считается как рублёвая (`RUB`) даже при валюте `USD`/`EUR`. Перед `PATCH` выполняется конвертация **RUB → USD/EUR** по актуальному курсу ЦБ из внешнего источника `https://www.cbr-xml-daily.ru/daily_json.js` (зеркало данных ЦБ); в Lava уходит уже сконвертированная сумма целевой валюты. Перед вызовом Lava сумма проверяется на допустимый диапазон для валюты оффера (`lib/lava-amount-limits.lib.ts`): для USD/EUR минимум **5** и максимум **10000** (как в ответе Lava HTTP 400 `allowed limits=(5, 10000) for EUR`); для RUB минимум **50** (как в лайв-тестах проекта). При выходе за пределы клиент получает `success: false`, `errorCode: AMOUNT_OUT_OF_RANGE` и непустой `message` (без запроса PATCH к Lava).
+
 **Назначение:**
 
 1. изменить цену оффера перед созданием контракта;

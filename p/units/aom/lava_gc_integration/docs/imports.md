@@ -2,7 +2,7 @@
 
 Роль **`ctx`** в тестах и запуск проверок со страницы тестов — [testing.md](./testing.md).
 
-Актуально для реализованной интеграции GetCourse + Lava: таблицы `lava_*`, репозитории в `repos/`, `lib/lava-types.ts`, `lib/heap-create-input.lib.ts` (тип `HeapCreateInput` для `Table.create` без служебных полей Heap), `lib/app-public-url.lib.ts` (абсолютный URL к своему UGC для `request()`), `lib/lava-api.client.ts`, `lib/getcourse-api.client.ts`, `lib/settings-save-credentials.lib.ts`, `lib/lava-payment.service.ts`, `lib/lava-webhook.service.ts`, эндпоинты `api/integrations/lava/*`, тесты в `api/tests/endpoints-check/` — в т.ч. `integration-gc-credentials.ts`, `integration-gc-order-pl-api.ts`, `integration-lava-credentials.ts`, `integration-credentials-both.ts`, `settings-save-credentials-unit.ts`, `page-routes-unit.ts`, `lava-settings-getters.ts`, `lava-repos.ts`, `lava-webhook-service.ts`, `lava-webhook-route.ts`, `getcourse-deal-update.ts`, `lava-api-catalog.ts`, `lava-payment-link-route.ts`, `payment-link-dry-run-unit.ts`, `payment-link-http-integration.ts`, `payment-link-heap-settings-read.ts`, `payment-link-full-route-run.ts`, `payment-link-full-http-integration.ts`, `webhook-live-test-arm.ts`, `webhook-live-test-status.ts`, `lib/payment-link-live-test.lib.ts`, `lib/webhook-live-test.lib.ts`, `lava-api-client.ts`, `payment-link.ts`.
+Актуально для реализованной интеграции GetCourse + Lava: таблицы `lava_*`, репозитории в `repos/`, `lib/lava-types.ts`, `lib/heap-create-input.lib.ts` (тип `HeapCreateInput` для `Table.create` без служебных полей Heap), `lib/app-public-url.lib.ts` (абсолютный URL к своему UGC для `request()`), `lib/lava-api.client.ts`, `lib/cbr-rates.client.ts`, `lib/lava-amount-limits.lib.ts`, `lib/getcourse-api.client.ts`, `lib/settings-save-credentials.lib.ts`, `lib/lava-payment.service.ts`, `lib/lava-webhook.service.ts`, эндпоинты `api/integrations/lava/*`, тесты в `api/tests/endpoints-check/` — в т.ч. `integration-gc-credentials.ts`, `integration-gc-order-pl-api.ts`, `integration-lava-credentials.ts`, `integration-credentials-both.ts`, `settings-save-credentials-unit.ts`, `page-routes-unit.ts`, `lava-settings-getters.ts`, `lava-repos.ts`, `lava-webhook-service.ts`, `lava-webhook-route.ts`, `getcourse-deal-update.ts`, `lava-api-catalog.ts`, `lava-payment-link-route.ts`, `lava-amount-limits-unit.ts`, `payment-link-dry-run-unit.ts`, `payment-link-http-integration.ts`, `payment-link-heap-settings-read.ts`, `payment-link-full-route-run.ts`, `payment-link-full-http-integration.ts`, `webhook-live-test-arm.ts`, `webhook-live-test-status.ts`, `lib/payment-link-live-test.lib.ts`, `lib/webhook-live-test.lib.ts`, `lava-api-client.ts`, `payment-link.ts`.
 
 ### `./shared/pageRouteProbe.ts`
 - первая строка: `// @shared`
@@ -290,11 +290,23 @@
 - `@app/sync` → `runWithExclusiveLock`, `LockAcquisitionError`
 - `./lava-types` → `PaymentLinkRequest`, `PaymentLinkResponse` (types)
 - `./lava-api.client` → `*` (`updateOfferPrice`, `createContract`)
+- `./cbr-rates.client` → `convertRubToCurrency` (RUB → USD/EUR по актуальному курсу ЦБ перед PATCH/contract)
+- `./lava-amount-limits.lib` → `getLavaOfferAmountLimits`, `isAmountWithinLavaOfferLimits`, `buildLavaOfferAmountOutOfRangeMessage` (до Lava: `AMOUNT_OUT_OF_RANGE` с непустым `message`)
 - `./logger.lib` → `*`
 - `./settings.lib` → `*` (`getLavaProductId`, `getLavaOfferId`)
 - `../repos/lava_payment_contract.repo` → `create` (как `createLavaPaymentContract`), `deactivateActiveContractsForGcOrderId`, `findActiveByGcOrderAmountAndCurrency`
 - `../repos/lava_lock_log.repo` → `*`
 - экспортирует: `createPaymentLink`
+
+### `./lib/cbr-rates.client.ts`
+- `@app/request` → `request` (внешний GET `https://www.cbr-xml-daily.ru/daily_json.js`)
+- `./lava-types` → `LavaCurrency` (type)
+- `./logger.lib` → `*`
+- экспортирует: `convertRubToCurrency` (конвертация рублей в `USD`/`EUR` по курсу ЦБ)
+
+### `./lib/lava-amount-limits.lib.ts`
+- `./lava-types` → `LavaCurrency` (type)
+- экспортирует: `LAVA_OFFER_AMOUNT_LIMITS`, `getLavaOfferAmountLimits`, `isAmountWithinLavaOfferLimits`, `buildLavaOfferAmountOutOfRangeMessage` (лимиты PATCH-цены Lava; USD/EUR 5…10000)
 
 ### `./lib/lava-webhook.service.ts`
 - `./lava-types` → `LavaWebhookPayload`, `LocalContractStatus` (types)
@@ -394,6 +406,19 @@
 - `@app/auth` → `requireAnyUser`
 - `../../../api/integrations/lava/payment-link/index` → `lavaPaymentLinkRoute`
 - `../../../lib/logger.lib`
+
+### `./api/tests/endpoints-check/lava-amount-limits-unit.ts`
+- `@app/auth` → `requireAnyUser`
+- `../../../lib/lava-amount-limits.lib` → `LAVA_OFFER_AMOUNT_LIMITS`, `getLavaOfferAmountLimits`, `isAmountWithinLavaOfferLimits`, `buildLavaOfferAmountOutOfRangeMessage`
+- `../../../lib/logger.lib`
+- экспорт: `lavaAmountLimitsUnitTestRoute`
+
+### `./api/tests/endpoints-check/lava-payment-link-route.ts`
+- `@app/auth` → `requireAnyUser`
+- `../../../api/integrations/lava/payment-link/index` → `lavaPaymentLinkRoute`
+- `../../../lib/lava-payment.service` → `createPaymentLink` (кейс `AMOUNT_OUT_OF_RANGE` для 49 RUB)
+- `../../../lib/logger.lib`
+- экспорт: `lavaPaymentLinkRouteTestRoute`
 
 ### `./api/tests/endpoints-check/payment-link-http-integration.ts`
 - `@app/request` → `request`

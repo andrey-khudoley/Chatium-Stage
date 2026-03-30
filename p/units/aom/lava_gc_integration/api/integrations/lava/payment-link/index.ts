@@ -152,7 +152,8 @@ export const lavaPaymentLinkRoute = app
         success: result.success,
         gcOrderId: result.gcOrderId,
         errorCode: result.errorCode,
-        hasPaymentUrl: !!result.paymentUrl
+        hasPaymentUrl: !!result.paymentUrl,
+        hasMessage: typeof result.message === 'string' && result.message.length > 0
       }
     })
 

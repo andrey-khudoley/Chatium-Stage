@@ -87,6 +87,13 @@ function fromDatetimeLocal(s: string): number {
   return Number.isFinite(t) ? t : NaN
 }
 
+function toDatetimeLocalUpperBoundMs(s: string): number {
+  const t = fromDatetimeLocal(s)
+  if (!Number.isFinite(t)) return NaN
+  // datetime-local в UI задаёт минуту без секунд; включаем всю выбранную минуту.
+  return t + 59_999
+}
+
 const summaryRows = computed(() => [
   { label: 'Заказов сформировано (контрактов)', value: String(formedCount.value) },
   { label: 'Заказов оплачено (status = paid)', value: String(paidCount.value) },
@@ -173,7 +180,7 @@ async function loadFilterOptions() {
 async function loadOrdersList(page: number) {
   ordersListError.value = ''
   const fromMs = fromDatetimeLocal(fromLocal.value)
-  const toMs = fromDatetimeLocal(toLocal.value)
+  const toMs = toDatetimeLocalUpperBoundMs(toLocal.value)
   if (!Number.isFinite(fromMs) || !Number.isFinite(toMs) || fromMs > toMs) {
     return
   }
@@ -229,7 +236,7 @@ async function applyFilters() {
   errorMsg.value = ''
   ordersListError.value = ''
   const fromMs = fromDatetimeLocal(fromLocal.value)
-  const toMs = fromDatetimeLocal(toLocal.value)
+  const toMs = toDatetimeLocalUpperBoundMs(toLocal.value)
   if (!Number.isFinite(fromMs) || !Number.isFinite(toMs)) {
     errorMsg.value = 'Укажите корректный интервал «от» и «до».'
     loading.value = false

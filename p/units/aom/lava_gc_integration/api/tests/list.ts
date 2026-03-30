@@ -167,6 +167,10 @@ export const listTestsRoute = app.get('/', async (ctx, req) => {
           title: 'Юнит: route.run + integrationTestDryRun (без HTTP к себе)'
         },
         {
+          id: 'lava-amount-limits-unit',
+          title: 'Юнит: лимиты суммы оффера Lava (RUB/USD/EUR, без сети)'
+        },
+        {
           id: 'payment-link-http-integration',
           title: 'Интеграция: HTTP POST через request() на payment-link'
         }
