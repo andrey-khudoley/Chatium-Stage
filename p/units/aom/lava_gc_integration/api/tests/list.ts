@@ -66,6 +66,11 @@ export const listTestsRoute = app.get('/', async (ctx, req) => {
         {
           id: 'integration-lava-credentials',
           title: 'Lava: lava_api_key + lava_base_url → GET /api/v2/products'
+        },
+        {
+          id: 'integration-gc-order-pl-api',
+          title:
+            'GetCourse: PL API по gcOrderId (+ buyerEmail или email из Heap-контракта) — проба обновления заказа'
         }
       ]
     },
@@ -142,6 +147,11 @@ export const listTestsRoute = app.get('/', async (ctx, req) => {
         {
           id: 'integration-lava-credentials',
           title: 'Lava: lava_api_key + lava_base_url → GET /api/v2/products'
+        },
+        {
+          id: 'integration-gc-order-pl-api',
+          title:
+            'GetCourse: PL API по gcOrderId (+ buyerEmail или email из Heap-контракта) — проба обновления заказа'
         }
       ]
     },

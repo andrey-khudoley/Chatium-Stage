@@ -1344,6 +1344,36 @@ function maybeUpdatePaymentLinkLiveSnapshot(
   }
 }
 
+const gcOrderPlProbeId = ref('')
+const gcOrderPlProbeBuyerEmail = ref('')
+const gcOrderPlApiLoading = ref(false)
+const gcOrderPlApiLastAt = ref<string | null>(null)
+const gcOrderPlApiRaw = ref<unknown>(null)
+
+async function runIntegrationGcOrderPlApiTest() {
+  const id = gcOrderPlProbeId.value.trim()
+  if (!id) return
+  gcOrderPlApiLoading.value = true
+  gcOrderPlApiRaw.value = null
+  try {
+    const baseUrl = getApiBaseUrl().replace(/\/$/, '')
+    const email = gcOrderPlProbeBuyerEmail.value.trim()
+    const q = new URLSearchParams({ gcOrderId: id })
+    if (email) q.set('buyerEmail', email)
+    const res = await fetch(`${baseUrl}/api/tests/endpoints-check/integration-gc-order-pl-api?${q.toString()}`, {
+      method: 'GET',
+      credentials: 'include'
+    })
+    gcOrderPlApiRaw.value = await res.json().catch(() => ({ parseError: true }))
+    gcOrderPlApiLastAt.value = new Date().toLocaleString('ru-RU')
+  } catch (e) {
+    gcOrderPlApiRaw.value = { error: String(e) }
+    gcOrderPlApiLastAt.value = new Date().toLocaleString('ru-RU')
+  } finally {
+    gcOrderPlApiLoading.value = false
+  }
+}
+
 const integrationPaymentLinkBusy = computed(
   () =>
     paymentLinkDryRunUnitLoading.value ||
@@ -1352,7 +1382,8 @@ const integrationPaymentLinkBusy = computed(
     paymentLinkFullRouteRunLoading.value ||
     paymentLinkFullHttpLoading.value ||
     webhookLiveStatusLoading.value ||
-    webhookLiveArmLoading.value
+    webhookLiveArmLoading.value ||
+    gcOrderPlApiLoading.value
 )
 
 const webhookLivePaymentUrlDisplay = computed(() => {
@@ -2297,6 +2328,69 @@ const runAllTests = async () => {
                     {{ integrationBothLoading ? 'Проверяем...' : 'Запустить обе проверки (GetCourse и Lava)' }}
                   </button>
                 </div>
+              </div>
+
+              <div v-if="showContent && testSuiteMode === 'integration'" class="tests-card tests-endpoints-card tests-crt-card">
+                <div class="tests-endpoints-header">
+                  <i class="fas fa-shopping-cart tests-endpoints-icon"></i>
+                  <h2 class="tests-endpoints-title">Интеграция: GetCourse по номеру заказа</h2>
+                </div>
+                <p class="tests-endpoints-desc">
+                  Введите <code class="tests-inline-code">deal_number</code> заказа в GetCourse (не
+                  <code class="tests-inline-code">test</code>). GET
+                  <code class="tests-inline-code">…/integration-gc-order-pl-api</code> — проба PL API
+                  (<code class="tests-inline-code">deal_status=payment_waiting</code>; на боевом заказе это может
+                  изменить статус в GetCourse). Email покупателя: передайте в поле ниже или оставьте пустым, если для
+                  этого <code class="tests-inline-code">gc_order_id</code> уже есть контракт в Heap (payment-link).
+                </p>
+                <div class="tests-gc-order-probe-fields">
+                  <div class="tests-webhook-live-url-row">
+                    <span class="tests-webhook-live-label">Номер заказа GetCourse (обязательно)</span>
+                    <input
+                      v-model="gcOrderPlProbeId"
+                      class="tests-gc-order-probe-input"
+                      type="text"
+                      name="gcOrderPlProbeId"
+                      autocomplete="off"
+                      placeholder="например 13667463"
+                    />
+                  </div>
+                  <div class="tests-webhook-live-url-row">
+                    <span class="tests-webhook-live-label">Email покупателя (необязательно, иначе из Heap)</span>
+                    <input
+                      v-model="gcOrderPlProbeBuyerEmail"
+                      class="tests-gc-order-probe-input"
+                      type="email"
+                      name="gcOrderPlProbeBuyerEmail"
+                      autocomplete="off"
+                      placeholder="если пусто — buyer_email из lava_payment_contract"
+                    />
+                  </div>
+                </div>
+                <div v-if="gcOrderPlApiLastAt" class="tests-endpoints-last-run">
+                  Последний запрос: {{ gcOrderPlApiLastAt }}
+                </div>
+                <div class="tests-endpoints-actions">
+                  <button
+                    type="button"
+                    class="tests-run-group-btn"
+                    :disabled="
+                      runAllTestsLoading ||
+                      integrationBothLoading ||
+                      integrationPageLoading ||
+                      integrationPaymentLinkBusy ||
+                      !gcOrderPlProbeId.trim()
+                    "
+                    @click="runIntegrationGcOrderPlApiTest"
+                  >
+                    <i class="fas" :class="gcOrderPlApiLoading ? 'fa-spinner fa-spin' : 'fa-plug'"></i>
+                    {{ gcOrderPlApiLoading ? 'Запрос к GetCourse…' : 'Проверить PL API по заказу' }}
+                  </button>
+                </div>
+                <details v-if="gcOrderPlApiRaw" class="tests-payment-link-raw">
+                  <summary>Ответ API</summary>
+                  <pre class="tests-payment-link-raw-pre">{{ JSON.stringify(gcOrderPlApiRaw, null, 2) }}</pre>
+                </details>
               </div>
 
               <div v-if="showContent && testSuiteMode === 'integration'" class="tests-card tests-endpoints-card tests-crt-card">
@@ -3838,6 +3932,28 @@ const runAllTests = async () => {
   margin: 0.35rem 0 0;
   font-size: 0.75rem;
   color: var(--color-text-secondary);
+}
+
+.tests-gc-order-probe-fields {
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.tests-gc-order-probe-input {
+  width: 100%;
+  max-width: 28rem;
+  box-sizing: border-box;
+  font-family: inherit;
+  font-size: 0.85rem;
+  padding: 0.45rem 0.55rem;
+  color: var(--color-text);
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+}
+
+.tests-gc-order-probe-input::placeholder {
+  color: var(--color-text-tertiary);
 }
 
 .tests-webhook-live-other-pre {
