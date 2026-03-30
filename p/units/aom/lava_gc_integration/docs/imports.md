@@ -196,7 +196,7 @@
 - `../lib/heap-create-input.lib` → `HeapCreateInput` (тип-only)
 - `../lib/logger.lib` → `writeServerLog` (severity 7: вход/выход каждой операции; не создаёт рекурсии с `logs.repo`)
 - внутри `create`: `LavaPaymentContract.create(ctx, data as Parameters<typeof LavaPaymentContract.create>[1])` — typings `@app/heap` требуют служебные поля; публичный вход — `LavaPaymentContractCreateInput`
-- экспортирует: `create`, `LavaPaymentContractCreateInput`, `findByGcOrderId`, `findByLavaContractId`, `updateStatus`, `findActiveByGcOrderId`, `deactivateActiveContractsForGcOrderId`
+- экспортирует: `create`, `LavaPaymentContractCreateInput`, `ActiveContractByOrderAmountLookup`, `findByGcOrderId`, `findByLavaContractId`, `updateStatus`, `findActiveByGcOrderAmountAndCurrency`, `deactivateActiveContractsForGcOrderId`
 
 ### `./repos/lava_webhook_event.repo.ts`
 - `../tables/lava_webhook_event.table` → `LavaWebhookEvent`, `LavaWebhookEventRow`
@@ -265,7 +265,7 @@
 - `./lava-api.client` → `*` (`updateOfferPrice`, `createContract`)
 - `./logger.lib` → `*`
 - `./settings.lib` → `*` (`getLavaProductId`, `getLavaOfferId`)
-- `../repos/lava_payment_contract.repo` → `create` (как `createLavaPaymentContract`), `findActiveByGcOrderId`
+- `../repos/lava_payment_contract.repo` → `create` (как `createLavaPaymentContract`), `deactivateActiveContractsForGcOrderId`, `findActiveByGcOrderAmountAndCurrency`
 - `../repos/lava_lock_log.repo` → `*`
 - экспортирует: `createPaymentLink`
 

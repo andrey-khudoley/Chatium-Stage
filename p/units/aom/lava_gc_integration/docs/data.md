@@ -15,7 +15,7 @@
 ## Репозитории (repos/)
 - `repos/settings.repo.ts` — findByKey, findAll, upsert, deleteByKey (слой работы с БД; без вызовов logger.lib, т.к. getSetting/getLogLevel вызываются из writeServerLog и используют findByKey — иначе рекурсия).
 - `repos/logs.repo.ts` — create, findAll, findById, findBeforeTimestamp (слой работы с БД логов; findBeforeTimestamp использует нативную фильтрацию Heap API через `where: { timestamp: { $lt } }` для эффективной пагинации).
-- `repos/lava_payment_contract.repo.ts` — create, findByGcOrderId, findByLavaContractId, updateStatus, findActiveByGcOrderId (активный контракт: статус в `created` / `in_progress` / `unknown` через `where: { status: { $in: [...] } }` для идемпотентности payment-link).
+- `repos/lava_payment_contract.repo.ts` — create, findByGcOrderId, findByLavaContractId, updateStatus, findActiveByGcOrderAmountAndCurrency (активный контракт по `gc_order_id` + `amount` + `currency`, статус в `created` / `in_progress` / `unknown` — идемпотентность payment-link), deactivateActiveContractsForGcOrderId (отмена прочих активных по заказу при смене суммы).
 - `repos/lava_webhook_event.repo.ts` — create, findByDedupeKey, markProcessed, findUnprocessed (очередь необработанных: `where: { processed: false }`, сортировка по `created_at` asc).
 - `repos/lava_lock_log.repo.ts` — create, updateReleased (аудит блокировки шаблона оплаты).
 
@@ -24,7 +24,7 @@
 - `lib/lava-api.client.ts` — `updateOfferPrice` (PATCH цены оффера перед оплатой), `createContract` (POST `/api/v3/invoice`), `getProducts` (диагностический GET), `fetchLavaProductsCatalog` (GET `/api/v2/products`, пары продукт/оффер для мастера в админке). Парсер каталога учитывает **два** формата `items[]`: лента `{ type: PRODUCT, data: { id, title, offers } }` и **плоский** ответ API `{ id, title, type, offers }` (например `type: CONSULTATION`). Исходящий `request` — **одним аргументом** (объект опций), без `ctx`. Debug-логи при загрузке каталога: сырой JSON, гистограмма `type` по элементам.
 - `lib/getcourse-api.client.ts` — `verifyGcPlApiAccess` (проверка ключа и домена для админки), `updateDealStatus` (POST `https://{домен}/pl/api/deals`, form + Base64 `params`; ошибки от GC только в лог).
 - `lib/integration-credentials.lib.ts` — `runGcCredentialCheckFromSettings`, `runLavaCredentialCheckFromSettings` (чтение из Heap и те же живые вызовы, что при сохранении в `api/settings/save`, без слияния с телом POST); `runIntegrationCredentialChecksFromSettings` — обе проверки подряд. GET-тесты: `integration-gc-credentials`, `integration-lava-credentials`, `integration-credentials-both`.
-- `lib/lava-payment.service.ts` — `createPaymentLink` (идемпотентность, `runWithExclusiveLock`, запись в `lava_payment_contract` и `lava_lock_log`).
+- `lib/lava-payment.service.ts` — `createPaymentLink` (идемпотентность по заказу+сумме+валюте; при новой сумме — отмена устаревших активных контрактов по `gc_order_id`; `runWithExclusiveLock`; запись в `lava_payment_contract` и `lava_lock_log`).
 - `lib/lava-webhook.service.ts` — `processWebhook` (секрет, дедупликация `lava_webhook_event`, обновление контракта, callback в GetCourse).
 - `lib/lava-types.ts` — типы валюты, webhook, запрос/ответ payment-link, локальный статус контракта.
 - `lib/normalize-string-record.lib.ts` — `normalizeStringRecord` для полей `utm` / `clientUtm` после `s.optional(s.unknown())` в схеме тела; **`s.record`** в UGC даёт ошибку `modifier`, поэтому record в схеме не используем.

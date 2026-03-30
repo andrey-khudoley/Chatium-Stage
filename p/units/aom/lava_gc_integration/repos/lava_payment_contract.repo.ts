@@ -82,35 +82,51 @@ export async function updateStatus(ctx: app.Ctx, id: string, status: string): Pr
   })
 }
 
-/**
- * Найти контракт по заказу GC со статусом не в терминальных (`paid`, `failed`, `cancelled`).
- * Для идемпотентности payment-link: эквивалентно статусам из `ACTIVE_CONTRACT_STATUSES`.
- */
-export async function findActiveByGcOrderId(
-  ctx: app.Ctx,
+/** Параметры поиска активного контракта для идемпотентности payment-link (заказ + сумма + валюта). */
+export type ActiveContractByOrderAmountLookup = {
   gcOrderId: string
+  amount: number
+  currency: string
+}
+
+/**
+ * Найти активный контракт по заказу GC, сумме и валюте (статус не терминальный).
+ * Идемпотентность payment-link: повторный запрос с теми же `gcOrderId` + `amount` + `currency`
+ * возвращает ту же ссылку; смена суммы (скидка и т.д.) при том же `gcOrderId` даёт новый контракт
+ * после отмены устаревших активных контрактов по заказу — см. `lava-payment.service`.
+ */
+export async function findActiveByGcOrderAmountAndCurrency(
+  ctx: app.Ctx,
+  lookup: ActiveContractByOrderAmountLookup
 ): Promise<LavaPaymentContractRow | null> {
   await loggerLib.writeServerLog(ctx, {
     severity: 7,
-    message: `[${LOG}] findActiveByGcOrderId`,
-    payload: { gcOrderId, statuses: [...ACTIVE_CONTRACT_STATUSES] }
+    message: `[${LOG}] findActiveByGcOrderAmountAndCurrency`,
+    payload: {
+      gcOrderId: lookup.gcOrderId,
+      amount: lookup.amount,
+      currency: lookup.currency,
+      statuses: [...ACTIVE_CONTRACT_STATUSES]
+    }
   })
   const row = await LavaPaymentContract.findOneBy(ctx, {
-    gc_order_id: gcOrderId,
+    gc_order_id: lookup.gcOrderId,
+    amount: lookup.amount,
+    currency: lookup.currency,
     status: { $in: [...ACTIVE_CONTRACT_STATUSES] }
   })
   await loggerLib.writeServerLog(ctx, {
     severity: 7,
-    message: `[${LOG}] findActiveByGcOrderId: результат`,
+    message: `[${LOG}] findActiveByGcOrderAmountAndCurrency: результат`,
     payload: { found: Boolean(row), id: row?.id, status: row?.status }
   })
   return row
 }
 
 /**
- * Перевести все «активные» контракты по заказу GC в терминальный статус,
- * чтобы сценарий payment-link снова прошёл полный путь (идемпотентность не коротким замыканием).
- * Использование: интеграционные тесты с фиксированным `gc_order_id` (например `test`).
+ * Перевести все «активные» контракты по заказу GC в терминальный статус (`cancelled`).
+ * Использование: перед созданием новой ссылки при смене суммы/валюты (`lava-payment.service`);
+ * интеграционные тесты с фиксированным `gc_order_id`.
  */
 export async function deactivateActiveContractsForGcOrderId(
   ctx: app.Ctx,

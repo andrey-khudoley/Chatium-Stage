@@ -5,7 +5,8 @@ import * as loggerLib from './logger.lib'
 import * as settingsLib from './settings.lib'
 import {
   create as createLavaPaymentContract,
-  findActiveByGcOrderId
+  deactivateActiveContractsForGcOrderId,
+  findActiveByGcOrderAmountAndCurrency
 } from '../repos/lava_payment_contract.repo'
 import * as lockLogRepo from '../repos/lava_lock_log.repo'
 
@@ -15,8 +16,9 @@ const LOCK_KEY = 'lava:template-offer:payment-lock'
 const LOCK_TIMEOUT_MS = 25000
 
 /**
- * Создание ссылки на оплату: идемпотентность по активному контракту заказа GC,
+ * Создание ссылки на оплату: идемпотентность по активному контракту (заказ GC + сумма + валюта),
  * эксклюзивная блокировка шаблонного оффера, PATCH цены → POST invoice → запись в Heap.
+ * При смене суммы при том же `gcOrderId` отменяются прочие активные контракты по заказу.
  */
 export async function createPaymentLink(
   ctx: app.Ctx,
@@ -33,13 +35,19 @@ export async function createPaymentLink(
     }
   })
 
-  const existing = await findActiveByGcOrderId(ctx, params.gcOrderId)
+  const existing = await findActiveByGcOrderAmountAndCurrency(ctx, {
+    gcOrderId: params.gcOrderId,
+    amount: params.amount,
+    currency: params.currency
+  })
   if (existing) {
     await loggerLib.writeServerLog(ctx, {
       severity: 7,
-      message: `[${LOG_MODULE}] createPaymentLink: идемпотентность — активный контракт уже есть`,
+      message: `[${LOG_MODULE}] createPaymentLink: идемпотентность — активный контракт уже есть (заказ+сумма+валюта)`,
       payload: {
         gcOrderId: params.gcOrderId,
+        amount: params.amount,
+        currency: params.currency,
         lavaContractId: existing.lava_contract_id
       }
     })
@@ -91,12 +99,21 @@ export async function createPaymentLink(
           payload: { lockRowId: lockRow.id, gcOrderId: params.gcOrderId }
         })
 
-        const underLock = await findActiveByGcOrderId(ctx, params.gcOrderId)
+        const underLock = await findActiveByGcOrderAmountAndCurrency(ctx, {
+          gcOrderId: params.gcOrderId,
+          amount: params.amount,
+          currency: params.currency
+        })
         if (underLock) {
           await loggerLib.writeServerLog(ctx, {
             severity: 7,
             message: `[${LOG_MODULE}] createPaymentLink: под блокировкой найден контракт (гонка устранена)`,
-            payload: { gcOrderId: params.gcOrderId, lavaContractId: underLock.lava_contract_id }
+            payload: {
+              gcOrderId: params.gcOrderId,
+              amount: params.amount,
+              currency: params.currency,
+              lavaContractId: underLock.lava_contract_id
+            }
           })
           await lockLogRepo.updateReleased(ctx, lockRow.id, 'success')
           return {
@@ -106,6 +123,15 @@ export async function createPaymentLink(
             paymentUrl: underLock.payment_url,
             status: 'in-progress'
           }
+        }
+
+        const superseded = await deactivateActiveContractsForGcOrderId(ctx, params.gcOrderId)
+        if (superseded > 0) {
+          await loggerLib.writeServerLog(ctx, {
+            severity: 7,
+            message: `[${LOG_MODULE}] createPaymentLink: отменены устаревшие активные контракты по заказу (другая сумма/валюта)`,
+            payload: { gcOrderId: params.gcOrderId, superseded }
+          })
         }
 
         await lockLogRepo.updateAcquiredAt(ctx, lockRow.id, Date.now())
