@@ -106,3 +106,36 @@ export async function findActiveByGcOrderId(
   })
   return row
 }
+
+/**
+ * Перевести все «активные» контракты по заказу GC в терминальный статус,
+ * чтобы сценарий payment-link снова прошёл полный путь (идемпотентность не коротким замыканием).
+ * Использование: интеграционные тесты с фиксированным `gc_order_id` (например `test`).
+ */
+export async function deactivateActiveContractsForGcOrderId(
+  ctx: app.Ctx,
+  gcOrderId: string
+): Promise<number> {
+  await loggerLib.writeServerLog(ctx, {
+    severity: 7,
+    message: `[${LOG}] deactivateActiveContractsForGcOrderId`,
+    payload: { gcOrderId }
+  })
+  const rows = await LavaPaymentContract.findAll(ctx, {
+    where: {
+      gc_order_id: gcOrderId,
+      status: { $in: [...ACTIVE_CONTRACT_STATUSES] }
+    }
+  })
+  let n = 0
+  for (const row of rows) {
+    await updateStatus(ctx, row.id, 'cancelled')
+    n += 1
+  }
+  await loggerLib.writeServerLog(ctx, {
+    severity: 7,
+    message: `[${LOG}] deactivateActiveContractsForGcOrderId: ok`,
+    payload: { gcOrderId, updated: n }
+  })
+  return n
+}

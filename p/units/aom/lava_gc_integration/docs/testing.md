@@ -46,6 +46,16 @@
 - **Юнит (быстро):** GET `api/tests/endpoints-check/payment-link-dry-run-unit.ts` — `lavaPaymentLinkRoute.run(ctx, { gcOrderId, …, integrationTestDryRun: true })` без исходящего HTTP к приложению и без Lava. Поля тела передаются **на верхнем уровне** второго аргумента, не вложенным `{ body: { … } }` (иначе схема видит пустое тело и отвечает 422).
 - **Интеграция (внешний вызов эндпоинта):** POST `api/tests/endpoints-check/payment-link-http-integration.ts` — на сервере вызывается `request()` на абсолютный URL того же `POST …/api/integrations/lava/payment-link` с тем же маркером dry-run в JSON. В теле тестового POST опционально **`paymentLinkOverrides`** — частичное переопределение полей тела. Нужны заголовки `Host`/`Origin`, чтобы собрать URL (из браузера на `/web/tests` обычно ок).
 
+### Лайв (без `integrationTestDryRun`): Heap + полный путь Lava
+
+Фиксированные данные: `gcOrderId: "test"`, `buyerEmail: debug@khudoley.pro`, `amount: 50`, `currency: RUB`. Перед полным сценарием **`repos/lava_payment_contract.deactivateActiveContractsForGcOrderId`** переводит все активные контракты с этим `gc_order_id` в `cancelled`, чтобы идемпотентность не возвращала старую ссылку без вызова Lava.
+
+- **Чтение Heap:** GET `api/tests/endpoints-check/payment-link-heap-settings-read.ts` — `lava_api_key` (маска), `lava_base_url`, `lava_product_id`, `lava_offer_id`; успех, если все четыре непустые.
+- **Интеграция `route.run`:** GET `api/tests/endpoints-check/payment-link-full-route-run.ts` — после чтения настроек и деактивации контрактов `test` вызывается `lavaPaymentLinkRoute.run` **без** dry-run.
+- **Интеграция HTTP:** POST `api/tests/endpoints-check/payment-link-full-http-integration.ts` — то же + исходящий `request()` POST на `…/payment-link` без dry-run; при отсутствии абсолютного URL — `{ skipped: true }` (как у dry-run HTTP).
+
+На вкладке «Интеграция» страницы `/web/tests` — отдельная карточка «Лайв: payment-link» и кнопка «Запустить лайв-триаду».
+
 См. также общий гайд платформы: `inner/docs/020-testing.md` (интерактивные тесты в браузере; различие `route.run` и HTTP).
 
 ## Каталог и документация эндпоинтов

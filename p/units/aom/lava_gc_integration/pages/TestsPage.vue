@@ -1088,10 +1088,34 @@ const paymentLinkHttpIntegrationLastAt = ref<string | null>(null)
 const paymentLinkHttpRow = ref<{ status: PaymentLinkTestVisualStatus; detail?: string }>({ status: 'todo' })
 const paymentLinkHttpRaw = ref<string | null>(null)
 
+const paymentLinkHeapSettingsLoading = ref(false)
+const paymentLinkHeapSettingsLastAt = ref<string | null>(null)
+const paymentLinkHeapSettingsRow = ref<{ status: PaymentLinkTestVisualStatus; detail?: string }>({
+  status: 'todo'
+})
+const paymentLinkHeapSettingsRaw = ref<string | null>(null)
+
+const paymentLinkFullRouteRunLoading = ref(false)
+const paymentLinkFullRouteRunLastAt = ref<string | null>(null)
+const paymentLinkFullRouteRunRow = ref<{ status: PaymentLinkTestVisualStatus; detail?: string }>({
+  status: 'todo'
+})
+const paymentLinkFullRouteRunRaw = ref<string | null>(null)
+
+const paymentLinkFullHttpLoading = ref(false)
+const paymentLinkFullHttpLastAt = ref<string | null>(null)
+const paymentLinkFullHttpRow = ref<{ status: PaymentLinkTestVisualStatus; detail?: string }>({
+  status: 'todo'
+})
+const paymentLinkFullHttpRaw = ref<string | null>(null)
+
 const integrationPaymentLinkBusy = computed(
   () =>
     paymentLinkDryRunUnitLoading.value ||
-    paymentLinkHttpIntegrationLoading.value
+    paymentLinkHttpIntegrationLoading.value ||
+    paymentLinkHeapSettingsLoading.value ||
+    paymentLinkFullRouteRunLoading.value ||
+    paymentLinkFullHttpLoading.value
 )
 
 function parsePaymentLinkDryRunResponse(data: unknown): {
@@ -1133,6 +1157,69 @@ function parsePaymentLinkHttpIntegrationResponse(data: unknown): {
   return {
     status: 'fail',
     detail: [d.error, d.hint].filter(Boolean).join(' — ') || 'Ошибка'
+  }
+}
+
+function parsePaymentLinkHeapSettingsRead(data: unknown): {
+  status: PaymentLinkTestVisualStatus
+  detail?: string
+} {
+  if (!data || typeof data !== 'object') {
+    return { status: 'fail', detail: 'Пустой или неверный ответ' }
+  }
+  const d = data as Record<string, unknown>
+  const sr = d.settingsRead as Record<string, unknown> | undefined
+  if (d.success === true && sr && sr.allRequiredPresent === true) {
+    return { status: 'success', detail: 'Heap: lava_api_key (маска), base_url, product_id, offer_id' }
+  }
+  return {
+    status: 'fail',
+    detail: String(d.errorCode ?? 'Неполные настройки в Heap')
+  }
+}
+
+function parsePaymentLinkFullRouteRunResponse(data: unknown): {
+  status: PaymentLinkTestVisualStatus
+  detail?: string
+} {
+  if (!data || typeof data !== 'object') {
+    return { status: 'fail', detail: 'Пустой или неверный ответ' }
+  }
+  const d = data as Record<string, unknown>
+  if (d.success === true) {
+    const rr = d.routeResult as Record<string, unknown> | undefined
+    if (rr?.success === true && typeof rr.paymentUrl === 'string') {
+      const n = typeof d.deactivatedActiveContracts === 'number' ? d.deactivatedActiveContracts : 0
+      return { status: 'success', detail: `контрактов снято с активных: ${n}` }
+    }
+    return { status: 'fail', detail: String(rr?.errorCode ?? 'route.run не вернул success') }
+  }
+  return { status: 'fail', detail: String(d.errorCode ?? 'Ошибка') }
+}
+
+function parsePaymentLinkFullHttpLiveResponse(data: unknown): {
+  status: PaymentLinkTestVisualStatus
+  detail?: string
+} {
+  if (!data || typeof data !== 'object') {
+    return { status: 'fail', detail: 'Пустой или неверный ответ' }
+  }
+  const d = data as Record<string, unknown>
+  if (d.skipped === true) {
+    const hint = typeof d.hint === 'string' ? ` ${d.hint}` : ''
+    return { status: 'skip', detail: `${String(d.reason ?? 'Пропуск')}.${hint}`.trim() }
+  }
+  if (d.success === true) {
+    const body = d.responseBody as Record<string, unknown> | undefined
+    const code = d.statusCode != null ? `HTTP ${d.statusCode}` : 'OK'
+    if (body?.success === true && typeof body.paymentUrl === 'string') {
+      return { status: 'success', detail: String(code) }
+    }
+    return { status: 'fail', detail: String(body?.errorCode ?? 'В теле нет success/paymentUrl') }
+  }
+  return {
+    status: 'fail',
+    detail: [d.error, d.errorCode].filter(Boolean).join(' — ') || 'Ошибка'
   }
 }
 
@@ -1231,6 +1318,69 @@ async function runPaymentLinkHttpIntegration() {
 async function runPaymentLinkBothTests() {
   await runPaymentLinkDryRunUnit()
   await runPaymentLinkHttpIntegration()
+}
+
+async function runPaymentLinkHeapSettingsRead() {
+  paymentLinkHeapSettingsLoading.value = true
+  const baseUrl = getApiBaseUrl().replace(/\/$/, '')
+  log.info('Лайв: чтение Heap (Lava для payment-link)')
+  try {
+    const res = await fetch(`${baseUrl}/api/tests/endpoints-check/payment-link-heap-settings-read`, {
+      method: 'GET',
+      credentials: 'include'
+    })
+    const data = await res.json().catch(() => null)
+    paymentLinkHeapSettingsRow.value = parsePaymentLinkHeapSettingsRead(data)
+    paymentLinkHeapSettingsRaw.value = data ? JSON.stringify(data, null, 2) : null
+    paymentLinkHeapSettingsLastAt.value = new Date().toLocaleString('ru-RU')
+  } finally {
+    paymentLinkHeapSettingsLoading.value = false
+  }
+}
+
+async function runPaymentLinkFullRouteRun() {
+  paymentLinkFullRouteRunLoading.value = true
+  const baseUrl = getApiBaseUrl().replace(/\/$/, '')
+  log.info('Лайв: payment-link route.run без dry-run')
+  try {
+    const res = await fetch(`${baseUrl}/api/tests/endpoints-check/payment-link-full-route-run`, {
+      method: 'GET',
+      credentials: 'include'
+    })
+    const data = await res.json().catch(() => null)
+    paymentLinkFullRouteRunRow.value = parsePaymentLinkFullRouteRunResponse(data)
+    paymentLinkFullRouteRunRaw.value = data ? JSON.stringify(data, null, 2) : null
+    paymentLinkFullRouteRunLastAt.value = new Date().toLocaleString('ru-RU')
+  } finally {
+    paymentLinkFullRouteRunLoading.value = false
+  }
+}
+
+async function runPaymentLinkFullHttpLive() {
+  paymentLinkFullHttpLoading.value = true
+  const baseUrl = getApiBaseUrl().replace(/\/$/, '')
+  log.info('Лайв: HTTP POST payment-link без dry-run')
+  try {
+    const res = await fetch(`${baseUrl}/api/tests/endpoints-check/payment-link-full-http-integration`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({})
+    })
+    const data = await res.json().catch(() => null)
+    paymentLinkFullHttpRow.value = parsePaymentLinkFullHttpLiveResponse(data)
+    paymentLinkFullHttpRaw.value = data ? JSON.stringify(data, null, 2) : null
+    paymentLinkFullHttpLastAt.value = new Date().toLocaleString('ru-RU')
+  } finally {
+    paymentLinkFullHttpLoading.value = false
+  }
+}
+
+/** Лайв-триада: Heap → route.run → HTTP (полные вызовы Lava для gcOrderId=test). */
+async function runPaymentLinkLiveAllTests() {
+  await runPaymentLinkHeapSettingsRead()
+  await runPaymentLinkFullRouteRun()
+  await runPaymentLinkFullHttpLive()
 }
 
 async function runSingleIntegrationBothTest(testId: string) {
@@ -1942,6 +2092,202 @@ const runAllTests = async () => {
                 <details v-if="paymentLinkHttpRaw" class="tests-payment-link-raw">
                   <summary>Сырой ответ (HTTP)</summary>
                   <pre class="tests-payment-link-raw-pre">{{ paymentLinkHttpRaw }}</pre>
+                </details>
+              </div>
+
+              <div v-if="showContent && testSuiteMode === 'integration'" class="tests-card tests-endpoints-card tests-crt-card">
+                <div class="tests-endpoints-header">
+                  <i class="fas fa-bolt tests-endpoints-icon"></i>
+                  <h2 class="tests-endpoints-title">Лайв: payment-link (Heap + Lava)</h2>
+                </div>
+                <p class="tests-endpoints-desc">
+                  Реальные вызовы Lava и Heap: перед каждым полным сценарием активные контракты с
+                  <code class="tests-inline-code">gc_order_id=test</code> переводятся в
+                  <code class="tests-inline-code">cancelled</code>, чтобы идемпотентность не обрывала цепочку.
+                  Тело:
+                  <code class="tests-inline-code">debug@khudoley.pro</code>, сумма 50 RUB. У HTTP-теста
+                  <strong>[SKIP]</strong> — нет абсолютного URL (откройте страницу из браузера).
+                </p>
+                <div
+                  v-if="
+                    paymentLinkHeapSettingsLastAt ||
+                    paymentLinkFullRouteRunLastAt ||
+                    paymentLinkFullHttpLastAt
+                  "
+                  class="tests-endpoints-last-run"
+                >
+                  Последний запуск: Heap {{ paymentLinkHeapSettingsLastAt ?? '—' }}, route.run
+                  {{ paymentLinkFullRouteRunLastAt ?? '—' }}, HTTP {{ paymentLinkFullHttpLastAt ?? '—' }}
+                </div>
+                <div class="tests-endpoints-list-wrap">
+                  <ul class="tests-endpoints-list" role="list">
+                    <li
+                      class="tests-endpoints-list-item"
+                      :class="`tests-endpoints-status-${paymentLinkHeapSettingsRow.status}`"
+                    >
+                      <span
+                        class="tests-endpoints-badge"
+                        :class="`tests-endpoints-badge-${paymentLinkHeapSettingsRow.status}`"
+                        >{{ paymentLinkRowBadgeLabel(paymentLinkHeapSettingsRow.status) }}</span
+                      >
+                      <span class="tests-endpoints-list-title-inline">Чтение Heap (4 поля Lava)</span>
+                      <span
+                        v-if="paymentLinkHeapSettingsRow.detail"
+                        :class="
+                          paymentLinkHeapSettingsRow.status === 'fail'
+                            ? 'tests-endpoints-list-error'
+                            : 'tests-endpoints-list-desc'
+                        "
+                        >{{ paymentLinkHeapSettingsRow.detail }}</span
+                      >
+                      <button
+                        type="button"
+                        class="tests-run-one-btn"
+                        title="GET payment-link-heap-settings-read"
+                        :disabled="
+                          runAllTestsLoading ||
+                          paymentLinkHeapSettingsLoading ||
+                          paymentLinkFullRouteRunLoading ||
+                          paymentLinkFullHttpLoading ||
+                          integrationPageLoading ||
+                          integrationBothLoading
+                        "
+                        @click.stop="runPaymentLinkHeapSettingsRead"
+                      >
+                        <i
+                          class="fas"
+                          :class="paymentLinkHeapSettingsLoading ? 'fa-spinner fa-spin' : 'fa-play'"
+                        ></i>
+                      </button>
+                    </li>
+                    <li
+                      class="tests-endpoints-list-item"
+                      :class="`tests-endpoints-status-${paymentLinkFullRouteRunRow.status}`"
+                    >
+                      <span
+                        class="tests-endpoints-badge"
+                        :class="`tests-endpoints-badge-${paymentLinkFullRouteRunRow.status}`"
+                        >{{ paymentLinkRowBadgeLabel(paymentLinkFullRouteRunRow.status) }}</span
+                      >
+                      <span class="tests-endpoints-list-title-inline"
+                        >Интеграция: <code>route.run</code> (без dry-run)</span
+                      >
+                      <span
+                        v-if="paymentLinkFullRouteRunRow.detail"
+                        :class="
+                          paymentLinkFullRouteRunRow.status === 'fail'
+                            ? 'tests-endpoints-list-error'
+                            : 'tests-endpoints-list-desc'
+                        "
+                        >{{ paymentLinkFullRouteRunRow.detail }}</span
+                      >
+                      <button
+                        type="button"
+                        class="tests-run-one-btn"
+                        title="GET payment-link-full-route-run"
+                        :disabled="
+                          runAllTestsLoading ||
+                          paymentLinkHeapSettingsLoading ||
+                          paymentLinkFullRouteRunLoading ||
+                          paymentLinkFullHttpLoading ||
+                          integrationPageLoading ||
+                          integrationBothLoading
+                        "
+                        @click.stop="runPaymentLinkFullRouteRun"
+                      >
+                        <i
+                          class="fas"
+                          :class="paymentLinkFullRouteRunLoading ? 'fa-spinner fa-spin' : 'fa-play'"
+                        ></i>
+                      </button>
+                    </li>
+                    <li
+                      class="tests-endpoints-list-item"
+                      :class="`tests-endpoints-status-${paymentLinkFullHttpRow.status}`"
+                    >
+                      <span
+                        class="tests-endpoints-badge"
+                        :class="`tests-endpoints-badge-${paymentLinkFullHttpRow.status}`"
+                        >{{ paymentLinkRowBadgeLabel(paymentLinkFullHttpRow.status) }}</span
+                      >
+                      <span class="tests-endpoints-list-title-inline"
+                        >Интеграция: HTTP POST (без dry-run)</span
+                      >
+                      <span
+                        v-if="paymentLinkFullHttpRow.detail"
+                        :class="
+                          paymentLinkFullHttpRow.status === 'fail'
+                            ? 'tests-endpoints-list-error'
+                            : 'tests-endpoints-list-desc'
+                        "
+                        >{{ paymentLinkFullHttpRow.detail }}</span
+                      >
+                      <button
+                        type="button"
+                        class="tests-run-one-btn"
+                        title="POST payment-link-full-http-integration"
+                        :disabled="
+                          runAllTestsLoading ||
+                          paymentLinkHeapSettingsLoading ||
+                          paymentLinkFullRouteRunLoading ||
+                          paymentLinkFullHttpLoading ||
+                          integrationPageLoading ||
+                          integrationBothLoading
+                        "
+                        @click.stop="runPaymentLinkFullHttpLive"
+                      >
+                        <i
+                          class="fas"
+                          :class="paymentLinkFullHttpLoading ? 'fa-spinner fa-spin' : 'fa-play'"
+                        ></i>
+                      </button>
+                    </li>
+                  </ul>
+                </div>
+                <div class="tests-endpoints-actions">
+                  <button
+                    type="button"
+                    class="tests-run-group-btn"
+                    :disabled="
+                      runAllTestsLoading ||
+                      paymentLinkHeapSettingsLoading ||
+                      paymentLinkFullRouteRunLoading ||
+                      paymentLinkFullHttpLoading ||
+                      integrationPageLoading ||
+                      integrationBothLoading
+                    "
+                    @click="runPaymentLinkLiveAllTests"
+                  >
+                    <i
+                      class="fas"
+                      :class="
+                        paymentLinkHeapSettingsLoading ||
+                        paymentLinkFullRouteRunLoading ||
+                        paymentLinkFullHttpLoading
+                          ? 'fa-spinner fa-spin'
+                          : 'fa-bolt'
+                      "
+                    ></i>
+                    {{
+                      paymentLinkHeapSettingsLoading ||
+                      paymentLinkFullRouteRunLoading ||
+                      paymentLinkFullHttpLoading
+                        ? 'Проверяем…'
+                        : 'Запустить лайв-триаду (Heap + route.run + HTTP)'
+                    }}
+                  </button>
+                </div>
+                <details v-if="paymentLinkHeapSettingsRaw" class="tests-payment-link-raw">
+                  <summary>Сырой ответ (Heap)</summary>
+                  <pre class="tests-payment-link-raw-pre">{{ paymentLinkHeapSettingsRaw }}</pre>
+                </details>
+                <details v-if="paymentLinkFullRouteRunRaw" class="tests-payment-link-raw">
+                  <summary>Сырой ответ (route.run)</summary>
+                  <pre class="tests-payment-link-raw-pre">{{ paymentLinkFullRouteRunRaw }}</pre>
+                </details>
+                <details v-if="paymentLinkFullHttpRaw" class="tests-payment-link-raw">
+                  <summary>Сырой ответ (HTTP лайв)</summary>
+                  <pre class="tests-payment-link-raw-pre">{{ paymentLinkFullHttpRaw }}</pre>
                 </details>
               </div>
 

@@ -158,6 +158,24 @@ export const listTestsRoute = app.get('/', async (ctx, req) => {
           title: 'Интеграция: HTTP POST через request() на payment-link'
         }
       ]
+    },
+    {
+      id: 'payment-link-live',
+      title: 'POST payment-link (лайв: Heap + Lava, gcOrderId=test)',
+      tests: [
+        {
+          id: 'payment-link-heap-settings-read',
+          title: 'Чтение Heap: lava_api_key (маска), base_url, product_id, offer_id'
+        },
+        {
+          id: 'payment-link-full-route-run',
+          title: 'Интеграция: route.run без dry-run (сброс контрактов test → Lava)'
+        },
+        {
+          id: 'payment-link-full-http-integration',
+          title: 'Интеграция: HTTP POST без dry-run (сброс контрактов test → Lava)'
+        }
+      ]
     }
   ]
 
