@@ -2,7 +2,7 @@
 
 Роль **`ctx`** в тестах и запуск проверок со страницы тестов — [testing.md](./testing.md).
 
-Актуально для реализованной интеграции GetCourse + Lava: таблицы `lava_*`, репозитории в `repos/`, `lib/lava-types.ts`, `lib/app-public-url.lib.ts` (абсолютный URL к своему UGC для `request()`), `lib/lava-api.client.ts`, `lib/getcourse-api.client.ts`, `lib/settings-save-credentials.lib.ts`, `lib/lava-payment.service.ts`, `lib/lava-webhook.service.ts`, эндпоинты `api/integrations/lava/*`, тесты в `api/tests/endpoints-check/` — в т.ч. `integration-gc-credentials.ts`, `integration-lava-credentials.ts`, `integration-credentials-both.ts`, `settings-save-credentials-unit.ts`, `page-routes-unit.ts`, `lava-settings-getters.ts`, `lava-repos.ts`, `lava-webhook-service.ts`, `getcourse-deal-update.ts`, `lava-api-catalog.ts`, `lava-payment-link-route.ts`, `payment-link-dry-run-unit.ts`, `payment-link-http-integration.ts`, `lava-api-client.ts`, `payment-link.ts`.
+Актуально для реализованной интеграции GetCourse + Lava: таблицы `lava_*`, репозитории в `repos/`, `lib/lava-types.ts`, `lib/heap-create-input.lib.ts` (тип `HeapCreateInput` для `Table.create` без служебных полей Heap), `lib/app-public-url.lib.ts` (абсолютный URL к своему UGC для `request()`), `lib/lava-api.client.ts`, `lib/getcourse-api.client.ts`, `lib/settings-save-credentials.lib.ts`, `lib/lava-payment.service.ts`, `lib/lava-webhook.service.ts`, эндпоинты `api/integrations/lava/*`, тесты в `api/tests/endpoints-check/` — в т.ч. `integration-gc-credentials.ts`, `integration-lava-credentials.ts`, `integration-credentials-both.ts`, `settings-save-credentials-unit.ts`, `page-routes-unit.ts`, `lava-settings-getters.ts`, `lava-repos.ts`, `lava-webhook-service.ts`, `getcourse-deal-update.ts`, `lava-api-catalog.ts`, `lava-payment-link-route.ts`, `payment-link-dry-run-unit.ts`, `payment-link-http-integration.ts`, `lava-api-client.ts`, `payment-link.ts`.
 
 ### `./shared/pageRouteProbe.ts`
 - первая строка: `// @shared`
@@ -193,23 +193,33 @@
 
 ### `./repos/lava_payment_contract.repo.ts`
 - `../tables/lava_payment_contract.table` → `LavaPaymentContract`, `LavaPaymentContractRow`
+- `../lib/heap-create-input.lib` → `HeapCreateInput` (тип-only)
 - `../lib/logger.lib` → `writeServerLog` (severity 7: вход/выход каждой операции; не создаёт рекурсии с `logs.repo`)
-- экспортирует: `create`, `findByGcOrderId`, `findByLavaContractId`, `updateStatus`, `findActiveByGcOrderId`
+- внутри `create`: `LavaPaymentContract.create(ctx, data as Parameters<typeof LavaPaymentContract.create>[1])` — typings `@app/heap` требуют служебные поля; публичный вход — `LavaPaymentContractCreateInput`
+- экспортирует: `create`, `LavaPaymentContractCreateInput`, `findByGcOrderId`, `findByLavaContractId`, `updateStatus`, `findActiveByGcOrderId`
 
 ### `./repos/lava_webhook_event.repo.ts`
 - `../tables/lava_webhook_event.table` → `LavaWebhookEvent`, `LavaWebhookEventRow`
+- `../lib/heap-create-input.lib` → `HeapCreateInput` (тип-only)
 - `../lib/logger.lib` → `writeServerLog` (severity 7 на каждый метод)
-- экспортирует: `create`, `findByDedupeKey`, `markProcessed`, `findUnprocessed`
+- внутри `create`: приведение второго аргумента к `Parameters<typeof LavaWebhookEvent.create>[1]` (как у контракта)
+- экспортирует: `create`, `LavaWebhookEventCreateInput`, `findByDedupeKey`, `markProcessed`, `findUnprocessed`
 
 ### `./repos/lava_lock_log.repo.ts`
 - `../tables/lava_lock_log.table` → `LavaLockLog`, `LavaLockLogRow`
+- `../lib/heap-create-input.lib` → `HeapCreateInput` (тип-only)
 - `../lib/logger.lib` → `writeServerLog` (severity 7 на каждый метод)
-- экспортирует: `create`, `updateReleased`, `updateAcquiredAt`
+- внутри `create`: приведение второго аргумента к `Parameters<typeof LavaLockLog.create>[1]`
+- экспортирует: `create`, `LavaLockLogCreateInput`, `updateReleased`, `updateAcquiredAt`
 
 ## 7) Библиотеки (lib/)
 
 ### `./lib/lava-types.ts`
 - нет внутренних импортов (типы TypeScript: валюта, webhook, payment-link request/response)
+
+### `./lib/heap-create-input.lib.ts`
+- нет внутренних импортов
+- экспортирует: `HeapSystemRowKeys`, `HeapCreateInput<Row>` (`Omit<Row, …>` по служебным ключам; в репозиториях к `Table.create` добавлено приведение к `Parameters<typeof Table.create>[1]` из‑за typings `@app/heap`)
 
 ### `./lib/settings.lib.ts`
 - `../repos/settings.repo` → `*` (findByKey, findAll, upsert, deleteByKey)
@@ -251,7 +261,7 @@
 - `./lava-api.client` → `*` (`updateOfferPrice`, `createContract`)
 - `./logger.lib` → `*`
 - `./settings.lib` → `*` (`getLavaProductId`, `getLavaOfferId`)
-- `../repos/lava_payment_contract.repo` → `*`
+- `../repos/lava_payment_contract.repo` → `create` (как `createLavaPaymentContract`), `findActiveByGcOrderId`
 - `../repos/lava_lock_log.repo` → `*`
 - экспортирует: `createPaymentLink`
 

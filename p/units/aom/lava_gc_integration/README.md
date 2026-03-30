@@ -48,6 +48,8 @@
 - Бизнес‑логика интеграции и модель данных описаны в `docs/` (`data.md`, `integration-*.md`); при изменении кода — синхронизировать документацию.
 
 ## Changelog
+- 2026-03-30: экспорт `LavaPaymentContractCreateInput` / `LavaLockLogCreateInput` / `LavaWebhookEventCreateInput`; внутри `create` репозиториев — `data as Parameters<typeof …Table.create>[1]` для `@app/heap`; `lava-payment.service` — именованные импорты `create` и `findActiveByGcOrderId` из `lava_payment_contract.repo` (устранение TS2345 / вывода типа как у `Table.create`). Обновлены `docs/imports.md`, `docs/LLM/0063_…`.
+- 2026-03-30: тип `HeapCreateInput` в `lib/heap-create-input.lib.ts`; репозитории `lava_*` — параметр `create` с `Omit<Row, …>` по служебным полям Heap (исправление TS2345 при вызове из сервисов). Обновлены `docs/imports.md`, `docs/LLM/0063_…`.
 - 2026-03-30: юнит `payment-link-dry-run-unit` и `lava-payment-link-route`: `lavaPaymentLinkRoute.run(ctx, { … })` — поля тела **без** обёртки `{ body: { … } }` (иначе 422 ValidationError). Обновлены `docs/testing.md`, `docs/LLM/0062_…`.
 - 2026-03-30: фикс загрузки `payment-link` / `webhook`: поля `utm` / `clientUtm` в схеме — **`s.optional(s.unknown())`**, без **`s.record`** (в UGC любой `s.record` давал 500 `modifier`); приведение к строкам — `normalizeStringRecord`. Обновлены `docs/data.md`, `docs/imports.md`, `docs/LLM/0062_…`.
 - 2026-03-30: убраны настройка `gc_service_token` и проверка заголовков для `POST …/api/integrations/lava/payment-link` (доступ с фронта/JS без секрета); обновлены `tests/endpoints-check/*payment-link*`, `lava-payment-link-route`, `lava-settings-getters`, `TestsPage.vue`, `docs/*`, `.CHATIUM-LLM.md`, `docs/LLM/`.

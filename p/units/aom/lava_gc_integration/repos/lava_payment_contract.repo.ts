@@ -1,7 +1,11 @@
 import LavaPaymentContract, { type LavaPaymentContractRow } from '../tables/lava_payment_contract.table'
+import type { HeapCreateInput } from '../lib/heap-create-input.lib'
 import * as loggerLib from '../lib/logger.lib'
 
 const LOG = 'repos/lava_payment_contract.repo'
+
+/** Вход `create`: только колонки схемы (типизации `Table.create` в `@app/heap` требуют и служебные поля — см. приведение ниже). */
+export type LavaPaymentContractCreateInput = HeapCreateInput<LavaPaymentContractRow>
 
 /** Статусы контракта, при которых ссылка на оплату ещё считается «активной» (не терминальные). */
 const ACTIVE_CONTRACT_STATUSES = ['created', 'in_progress', 'unknown'] as const
@@ -12,14 +16,17 @@ const ACTIVE_CONTRACT_STATUSES = ['created', 'in_progress', 'unknown'] as const
  */
 export async function create(
   ctx: app.Ctx,
-  data: Omit<LavaPaymentContractRow, 'id'>
+  data: LavaPaymentContractCreateInput
 ): Promise<LavaPaymentContractRow> {
   await loggerLib.writeServerLog(ctx, {
     severity: 7,
     message: `[${LOG}] create`,
     payload: { gc_order_id: data.gc_order_id, lava_contract_id: data.lava_contract_id }
   })
-  const row = await LavaPaymentContract.create(ctx, data)
+  const row = await LavaPaymentContract.create(
+    ctx,
+    data as Parameters<typeof LavaPaymentContract.create>[1]
+  )
   await loggerLib.writeServerLog(ctx, {
     severity: 7,
     message: `[${LOG}] create: ok`,

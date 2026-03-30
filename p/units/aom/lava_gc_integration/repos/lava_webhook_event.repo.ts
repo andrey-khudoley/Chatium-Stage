@@ -1,7 +1,10 @@
 import LavaWebhookEvent, { type LavaWebhookEventRow } from '../tables/lava_webhook_event.table'
+import type { HeapCreateInput } from '../lib/heap-create-input.lib'
 import * as loggerLib from '../lib/logger.lib'
 
 const LOG = 'repos/lava_webhook_event.repo'
+
+export type LavaWebhookEventCreateInput = HeapCreateInput<LavaWebhookEventRow>
 
 /**
  * Репозиторий событий webhook Lava — слой работы с Heap.
@@ -9,14 +12,14 @@ const LOG = 'repos/lava_webhook_event.repo'
  */
 export async function create(
   ctx: app.Ctx,
-  data: Omit<LavaWebhookEventRow, 'id'>
+  data: LavaWebhookEventCreateInput
 ): Promise<LavaWebhookEventRow> {
   await loggerLib.writeServerLog(ctx, {
     severity: 7,
     message: `[${LOG}] create`,
     payload: { dedupe_key: data.dedupe_key, lava_contract_id: data.lava_contract_id }
   })
-  const row = await LavaWebhookEvent.create(ctx, data)
+  const row = await LavaWebhookEvent.create(ctx, data as Parameters<typeof LavaWebhookEvent.create>[1])
   await loggerLib.writeServerLog(ctx, {
     severity: 7,
     message: `[${LOG}] create: ok`,

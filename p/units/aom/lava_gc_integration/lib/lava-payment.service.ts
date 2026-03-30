@@ -3,7 +3,10 @@ import type { PaymentLinkRequest, PaymentLinkResponse } from './lava-types'
 import * as lavaApi from './lava-api.client'
 import * as loggerLib from './logger.lib'
 import * as settingsLib from './settings.lib'
-import * as contractRepo from '../repos/lava_payment_contract.repo'
+import {
+  create as createLavaPaymentContract,
+  findActiveByGcOrderId
+} from '../repos/lava_payment_contract.repo'
 import * as lockLogRepo from '../repos/lava_lock_log.repo'
 
 const LOG_MODULE = 'lib/lava-payment.service'
@@ -30,7 +33,7 @@ export async function createPaymentLink(
     }
   })
 
-  const existing = await contractRepo.findActiveByGcOrderId(ctx, params.gcOrderId)
+  const existing = await findActiveByGcOrderId(ctx, params.gcOrderId)
   if (existing) {
     await loggerLib.writeServerLog(ctx, {
       severity: 7,
@@ -88,7 +91,7 @@ export async function createPaymentLink(
           payload: { lockRowId: lockRow.id, gcOrderId: params.gcOrderId }
         })
 
-        const underLock = await contractRepo.findActiveByGcOrderId(ctx, params.gcOrderId)
+        const underLock = await findActiveByGcOrderId(ctx, params.gcOrderId)
         if (underLock) {
           await loggerLib.writeServerLog(ctx, {
             severity: 7,
@@ -173,7 +176,7 @@ export async function createPaymentLink(
         })
 
         try {
-          await contractRepo.create(ctx, {
+          await createLavaPaymentContract(ctx, {
             gc_order_id: params.gcOrderId,
             gc_user_id: params.gcUserId ?? '',
             lava_contract_id: contractResult.contractId,
