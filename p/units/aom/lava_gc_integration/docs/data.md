@@ -8,7 +8,7 @@
 | --- | --- | --- | --- |
 | t__lava-gc-integration__setting__8Qm4Rt | tables/settings.table.ts | Настройки проекта (key-value) | key (string), value (any) |
 | t__lava-gc-integration__log__8Qm4Rt | tables/logs.table.ts | Серверные логи (долгосрочное хранение) | message (string), payload (any), severity, level, timestamp |
-| t__lava-gc-integration__payment-contract__9Xr5Bt | tables/lava_payment_contract.table.ts | Связь заказа GetCourse с контрактом Lava | gc_order_id, gc_user_id, lava_contract_id, lava_product_id, lava_offer_id, amount, currency, buyer_email, payment_url, status, request_id, created_at, updated_at |
+| t__lava-gc-integration__payment-contract__9Xr5Bt | tables/lava_payment_contract.table.ts | Связь заказа GetCourse с контрактом Lava | gc_order_id, gc_user_id, lava_contract_id, lava_product_id, lava_offer_id, amount, currency, buyer_email, gc_offer_title (текст offer из GC), gc_product_title (текст product из GC; в Lava — имя оффера при PATCH), payment_url, status, request_id, created_at, updated_at |
 | t__lava-gc-integration__webhook-event__3Kp7Qs | tables/lava_webhook_event.table.ts | Webhook Lava: сырой payload и дедупликация | event_type, lava_contract_id, payload_json, dedupe_key, processed, processed_at, processing_error, created_at |
 | t__lava-gc-integration__lock-log__5Fm2Nt | tables/lava_lock_log.table.ts | Аудит блокировок критической секции (payment-link) | lock_key, request_id, gc_order_id, acquired_at, released_at, result, error_message |
 

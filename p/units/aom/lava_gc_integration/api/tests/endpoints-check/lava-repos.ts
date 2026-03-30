@@ -54,6 +54,8 @@ export const lavaReposTestRoute = app.get('/', async (ctx, req) => {
       amount: 100,
       currency: 'RUB',
       buyer_email: 'repo-test@example.com',
+      gc_offer_title: '',
+      gc_product_title: '',
       payment_url: 'https://example.com/pay',
       status: 'created',
       request_id: `req-${suffix}`,

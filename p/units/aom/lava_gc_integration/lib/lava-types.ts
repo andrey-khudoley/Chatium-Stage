@@ -26,6 +26,12 @@ export interface PaymentLinkRequest {
   buyerEmail: string
   amount: number
   currency: LavaCurrency
+  /** Текст предложения GetCourse (offer). */
+  gcOfferTitle?: string
+  /**
+   * Название продукта/пакета GetCourse (product) — передаётся в Lava PATCH как `offers[].name`.
+   */
+  gcProductTitle?: string
   description?: string
   paymentProvider?: string
   paymentMethod?: string

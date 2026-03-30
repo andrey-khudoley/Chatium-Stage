@@ -57,5 +57,19 @@ export const lavaPaymentLinkRouteTestRoute = app.get('/', async (ctx, req) => {
     return res.success === true && res.integrationTestDryRun === true && res.gcOrderId === gcOrderId
   })
 
+  await check('gc_payload_aliases', 'payment-link: orderNumber+email+offer+product, валюта rub', async () => {
+    const orderNumber = `gc-alias-${Date.now()}`
+    const res = (await lavaPaymentLinkRoute.run(ctx, {
+      orderNumber,
+      email: 'gc@example.com',
+      amount: 50,
+      currency: 'rub',
+      offer: 'Предложение',
+      product: 'Пакет',
+      integrationTestDryRun: true
+    })) as { success?: boolean; gcOrderId?: string }
+    return res.success === true && res.gcOrderId === orderNumber
+  })
+
   return { success: true, test: 'lava-payment-link-route', results, at: Date.now() }
 })

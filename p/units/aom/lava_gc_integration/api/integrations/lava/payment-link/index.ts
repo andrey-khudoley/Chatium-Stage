@@ -1,16 +1,10 @@
 import * as loggerLib from '../../../../lib/logger.lib'
+import { normalizeLavaCurrency } from '../../../../lib/lava-currency.lib'
 import * as paymentService from '../../../../lib/lava-payment.service'
 import type { PaymentLinkRequest } from '../../../../lib/lava-types'
 import { normalizeStringRecord } from '../../../../lib/normalize-string-record.lib'
 
 const LOG_PATH = 'api/integrations/lava/payment-link'
-
-/** Валюта тела запроса (согласовано с Lava / `lib/lava-types`). */
-enum PaymentLinkCurrency {
-  RUB = 'RUB',
-  USD = 'USD',
-  EUR = 'EUR'
-}
 
 /**
  * POST …/api/integrations/lava/payment-link — создание ссылки на оплату для заказа GetCourse.
@@ -18,11 +12,21 @@ enum PaymentLinkCurrency {
  */
 export const lavaPaymentLinkRoute = app
   .body((s) => ({
-    gcOrderId: s.string(),
-    buyerEmail: s.string(),
+    /** Идентификатор заказа GetCourse (классическое имя поля). */
+    gcOrderId: s.optional(s.string()),
+    /** Алиас из сценариев GetCourse — то же, что `gcOrderId`. */
+    orderNumber: s.optional(s.string()),
+    buyerEmail: s.optional(s.string()),
+    /** Алиас для email покупателя (GetCourse). */
+    email: s.optional(s.string()),
     amount: s.number(),
-    currency: s.enum(PaymentLinkCurrency),
+    /** RUB / USD / EUR (регистр не важен; см. `normalizeLavaCurrency`). */
+    currency: s.string(),
     gcUserId: s.optional(s.string()),
+    /** Текст предложения GetCourse (offer). */
+    offer: s.optional(s.string()),
+    /** Название продукта/пакета GetCourse — в Lava PATCH как `offers[].name`. */
+    product: s.optional(s.string()),
     description: s.optional(s.string()),
     paymentProvider: s.optional(s.string()),
     paymentMethod: s.optional(s.string()),
@@ -42,15 +46,31 @@ export const lavaPaymentLinkRoute = app
       message: `[${LOG_PATH}] Вход`,
       payload: {
         gcOrderId: req.body.gcOrderId,
+        orderNumber: req.body.orderNumber,
         amount: req.body.amount,
         currency: req.body.currency,
+        hasOffer: req.body.offer != null,
+        hasProduct: req.body.product != null,
         hasRequestId: !!req.body.requestId,
         integrationTestDryRun: !!req.body.integrationTestDryRun
       }
     })
 
-    const gcOrderId = req.body.gcOrderId.trim()
-    const buyerEmail = req.body.buyerEmail.trim()
+    const gcOrderId = (req.body.gcOrderId ?? req.body.orderNumber ?? '').trim()
+    const buyerEmail = (req.body.buyerEmail ?? req.body.email ?? '').trim()
+    const currencyNorm = normalizeLavaCurrency(req.body.currency)
+    if (!currencyNorm) {
+      await loggerLib.writeServerLog(ctx, {
+        severity: 7,
+        message: `[${LOG_PATH}] VALIDATION_ERROR: неподдерживаемая валюта`,
+        payload: { raw: req.body.currency }
+      })
+      return {
+        success: false,
+        errorCode: 'VALIDATION_ERROR',
+        message: 'currency must be RUB, USD or EUR (Lava)'
+      }
+    }
     if (!gcOrderId) {
       await loggerLib.writeServerLog(ctx, {
         severity: 7,
@@ -66,13 +86,13 @@ export const lavaPaymentLinkRoute = app
     if (!buyerEmail) {
       await loggerLib.writeServerLog(ctx, {
         severity: 7,
-        message: `[${LOG_PATH}] VALIDATION_ERROR: пустой buyerEmail`,
+        message: `[${LOG_PATH}] VALIDATION_ERROR: пустой email (buyerEmail / email)`,
         payload: { gcOrderId }
       })
       return {
         success: false,
         errorCode: 'VALIDATION_ERROR',
-        message: 'buyerEmail must be non-empty'
+        message: 'buyerEmail or email must be non-empty'
       }
     }
     if (!Number.isFinite(req.body.amount) || req.body.amount <= 0) {
@@ -104,11 +124,16 @@ export const lavaPaymentLinkRoute = app
       }
     }
 
+    const gcOfferTitle = req.body.offer?.trim() ?? ''
+    const gcProductTitle = req.body.product?.trim() ?? ''
+
     const params: PaymentLinkRequest = {
       gcOrderId,
       buyerEmail,
       amount: req.body.amount,
-      currency: req.body.currency,
+      currency: currencyNorm,
+      gcOfferTitle: gcOfferTitle || undefined,
+      gcProductTitle: gcProductTitle || undefined,
       gcUserId: req.body.gcUserId?.trim() || undefined,
       description: req.body.description?.trim() || undefined,
       paymentProvider: req.body.paymentProvider?.trim() || undefined,

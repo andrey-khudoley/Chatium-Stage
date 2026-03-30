@@ -217,6 +217,10 @@
 ### `./lib/lava-types.ts`
 - нет внутренних импортов (типы TypeScript: валюта, webhook, payment-link request/response)
 
+### `./lib/lava-currency.lib.ts`
+- `./lava-types` → `LavaCurrency` (type)
+- экспортирует: `normalizeLavaCurrency` (строка → RUB/USD/EUR или `null`)
+
 ### `./lib/heap-create-input.lib.ts`
 - нет внутренних импортов
 - экспортирует: `HeapSystemRowKeys`, `HeapCreateInput<Row>` (`Omit<Row, …>` по служебным ключам; в репозиториях к `Table.create` добавлено приведение к `Parameters<typeof Table.create>[1]` из‑за typings `@app/heap`)
@@ -235,7 +239,7 @@
 - `./lava-types` → `LavaCurrency` (type)
 - `./logger.lib` → `*`
 - `./settings.lib` → `*` (геттеры Lava: base URL, API key, product/offer id)
-- экспортирует: `updateOfferPrice`, `createContract`, `fetchLavaProductsFirstPage`, `verifyLavaCredentials`, `getProducts`, `CreateContractParams`, `fetchLavaProductsCatalog`, `LavaCatalogRow`
+- экспортирует: `updateOfferPrice` (опционально `offerDisplayName` → `offers[].name` в PATCH), `createContract`, `fetchLavaProductsFirstPage`, `verifyLavaCredentials`, `getProducts`, `CreateContractParams`, `fetchLavaProductsCatalog`, `LavaCatalogRow`
 
 ### `./lib/getcourse-api.client.ts`
 - `@app/request` → `request`
@@ -341,10 +345,11 @@
 
 ### `./api/integrations/lava/payment-link/index.ts`
 - `../../../../lib/logger.lib` → `*`
+- `../../../../lib/lava-currency.lib` → `normalizeLavaCurrency`
 - `../../../../lib/lava-payment.service` → `createPaymentLink`
 - `../../../../lib/lava-types` → `PaymentLinkRequest` (type)
 - `../../../../lib/normalize-string-record.lib` → `normalizeStringRecord` (поле `utm`: `s.optional(s.unknown())`, не `s.record` — в UGC падает схема)
-- валидация body через `.body((s) => …)` (`@app/schema`); опционально `integrationTestDryRun`; экспорт: `lavaPaymentLinkRoute`
+- валидация body: алиасы GetCourse `orderNumber`/`email`, поля `offer`/`product`; опционально `integrationTestDryRun`; экспорт: `lavaPaymentLinkRoute`
 
 ### `./lib/app-public-url.lib.ts`
 - `../config/routes` → `getFullUrl`

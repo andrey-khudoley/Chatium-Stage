@@ -145,7 +145,8 @@ export async function createPaymentLink(
         try {
           await lavaApi.updateOfferPrice(ctx, {
             amount: params.amount,
-            currency: params.currency
+            currency: params.currency,
+            offerDisplayName: params.gcProductTitle?.trim() || undefined
           })
         } catch (e) {
           const msg = e instanceof Error ? e.message : String(e)
@@ -211,6 +212,8 @@ export async function createPaymentLink(
             amount: params.amount,
             currency: params.currency,
             buyer_email: params.buyerEmail,
+            gc_offer_title: params.gcOfferTitle?.trim() ?? '',
+            gc_product_title: params.gcProductTitle?.trim() ?? '',
             payment_url: contractResult.paymentUrl,
             status: 'created',
             request_id: params.requestId ?? '',
