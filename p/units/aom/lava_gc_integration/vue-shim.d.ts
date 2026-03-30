@@ -27,6 +27,8 @@ declare module 'vue' {
 declare namespace app {
   interface Req {
     body?: any
+    /** HTTP-заголовки входящего запроса (интеграции: X-Api-Key для webhook и т.д.) */
+    headers?: Record<string, string | string[] | undefined>
     query?: any
     params?: any
   }

@@ -1,7 +1,7 @@
 import * as loggerLib from '../../../../lib/logger.lib'
 import * as paymentService from '../../../../lib/lava-payment.service'
 import type { PaymentLinkRequest } from '../../../../lib/lava-types'
-import * as settingsLib from '../../../../lib/settings.lib'
+import { normalizeStringRecord } from '../../../../lib/normalize-string-record.lib'
 
 const LOG_PATH = 'api/integrations/lava/payment-link'
 
@@ -12,23 +12,9 @@ enum PaymentLinkCurrency {
   EUR = 'EUR'
 }
 
-function extractServiceToken(req: app.Req): string {
-  const headers = req.headers as Record<string, string | string[] | undefined>
-  const xRaw = headers['x-service-token'] ?? headers['X-Service-Token']
-  const x = Array.isArray(xRaw) ? xRaw[0] : xRaw
-  if (typeof x === 'string' && x.trim()) return x.trim()
-  const authRaw = headers.authorization ?? headers.Authorization
-  const auth = Array.isArray(authRaw) ? authRaw[0] : authRaw
-  if (typeof auth === 'string') {
-    const m = auth.match(/^Bearer\s+(\S+)/i)
-    if (m?.[1]) return m[1].trim()
-  }
-  return ''
-}
-
 /**
  * POST …/api/integrations/lava/payment-link — создание ссылки на оплату для заказа GetCourse.
- * Auth: заголовок `X-Service-Token` или `Authorization: Bearer …` = настройка `gc_service_token`.
+ * Вызов без заголовков авторизации (в т.ч. с браузера / встроенного JS на странице оплаты).
  */
 export const lavaPaymentLinkRoute = app
   .body((s) => ({
@@ -41,8 +27,14 @@ export const lavaPaymentLinkRoute = app
     paymentProvider: s.optional(s.string()),
     paymentMethod: s.optional(s.string()),
     buyerLanguage: s.optional(s.string()),
-    utm: s.optional(s.record(s.string())),
-    requestId: s.optional(s.string())
+    /** Произвольный JSON-объект; не `s.record(…)` — в UGC падает restrictModifiers. */
+    utm: s.optional(s.unknown()),
+    requestId: s.optional(s.string()),
+    /**
+     * Тестовый режим: при `true` после валидации полей возвращается успех без Lava/Heap.
+     * GetCourse в проде поле не передаёт.
+     */
+    integrationTestDryRun: s.optional(s.boolean())
   }))
   .post('/', async (ctx, req) => {
     await loggerLib.writeServerLog(ctx, {
@@ -52,29 +44,10 @@ export const lavaPaymentLinkRoute = app
         gcOrderId: req.body.gcOrderId,
         amount: req.body.amount,
         currency: req.body.currency,
-        hasRequestId: !!req.body.requestId
+        hasRequestId: !!req.body.requestId,
+        integrationTestDryRun: !!req.body.integrationTestDryRun
       }
     })
-
-    const expectedToken = (await settingsLib.getGcServiceToken(ctx)).trim()
-    if (!expectedToken) {
-      await loggerLib.writeServerLog(ctx, {
-        severity: 4,
-        message: `[${LOG_PATH}] Отказ: не задан gc_service_token`,
-        payload: {}
-      })
-      return { success: false, errorCode: 'UNAUTHORIZED' }
-    }
-
-    const token = extractServiceToken(req)
-    if (token !== expectedToken) {
-      await loggerLib.writeServerLog(ctx, {
-        severity: 4,
-        message: `[${LOG_PATH}] Отказ: неверный сервисный токен`,
-        payload: {}
-      })
-      return { success: false, errorCode: 'UNAUTHORIZED' }
-    }
 
     const gcOrderId = req.body.gcOrderId.trim()
     const buyerEmail = req.body.buyerEmail.trim()
@@ -115,6 +88,22 @@ export const lavaPaymentLinkRoute = app
       }
     }
 
+    if (req.body.integrationTestDryRun === true) {
+      await loggerLib.writeServerLog(ctx, {
+        severity: 6,
+        message: `[${LOG_PATH}] integrationTestDryRun — ответ без Lava`,
+        payload: { gcOrderId }
+      })
+      return {
+        success: true,
+        integrationTestDryRun: true,
+        gcOrderId,
+        lavaContractId: 'integration-test-dry-run-contract',
+        paymentUrl: 'https://integration-test.invalid/lava-dry-run',
+        status: 'dry-run'
+      }
+    }
+
     const params: PaymentLinkRequest = {
       gcOrderId,
       buyerEmail,
@@ -125,7 +114,7 @@ export const lavaPaymentLinkRoute = app
       paymentProvider: req.body.paymentProvider?.trim() || undefined,
       paymentMethod: req.body.paymentMethod?.trim() || undefined,
       buyerLanguage: req.body.buyerLanguage?.trim() || undefined,
-      utm: req.body.utm,
+      utm: normalizeStringRecord(req.body.utm),
       requestId: req.body.requestId?.trim() || undefined
     }
 

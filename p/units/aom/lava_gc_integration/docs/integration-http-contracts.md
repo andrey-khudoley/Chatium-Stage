@@ -44,6 +44,8 @@ POST /integrations/lava/payment-link
 }
 ```
 
+Опционально **`integrationTestDryRun`** (`boolean`): при `true` Chatium возвращает успешный ответ **без** вызова Lava и записи в Heap (только для проверок; GetCourse в проде поле не передаёт). См. тесты `payment-link-dry-run-unit` и `payment-link-http-integration`.
+
 Валидация в Chatium — `@app/schema` (`inner/docs` по schema).
 
 ### Response при успехе

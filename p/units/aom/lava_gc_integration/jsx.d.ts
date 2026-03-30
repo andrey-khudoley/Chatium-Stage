@@ -92,11 +92,18 @@ declare global {
   interface Window {
     __BOOT__?: { logLevel?: string | number }
   }
+  /** Цепочка после `app.body(schema)` — валидация тела через `@app/schema`. */
+  type AppBodyChain = {
+    get: (path: string, handler: (ctx: any, req: any) => any) => any
+    post: (path: string, handler: (ctx: any, req: any) => any) => any
+  }
+
   const app: {
     html: (path: string, handler: (ctx: any, req: any) => any) => any
     get: (path: string, handler: (ctx: any, req: any) => any) => any
     post: (path: string, handler: (ctx: any, req: any) => any) => any
     job: (name: string, handler: (ctx: any, data: any) => any) => any
+    body: (schema: (s: any) => Record<string, unknown>) => AppBodyChain
   }
 }
 

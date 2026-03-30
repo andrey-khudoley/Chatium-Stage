@@ -42,6 +42,8 @@ export interface PaymentLinkResponse {
   status?: string
   errorCode?: string
   message?: string
+  /** Ответ без Lava при `integrationTestDryRun: true` в теле и валидном сервисном токене */
+  integrationTestDryRun?: boolean
 }
 
 export interface LavaWebhookPayload {

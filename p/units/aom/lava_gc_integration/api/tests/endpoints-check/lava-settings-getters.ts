@@ -56,9 +56,6 @@ export const lavaSettingsGettersTestRoute = app.get('/', async (ctx, req) => {
   await check('getGcAccountDomain', 'getGcAccountDomain (string)', async () =>
     typeof (await settingsLib.getGcAccountDomain(ctx)) === 'string'
   )
-  await check('getGcServiceToken', 'getGcServiceToken (string)', async () =>
-    typeof (await settingsLib.getGcServiceToken(ctx)) === 'string'
-  )
 
   return { success: true, test: 'lava-settings-getters', results, at: Date.now() }
 })

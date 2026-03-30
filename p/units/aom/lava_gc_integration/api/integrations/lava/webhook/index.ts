@@ -1,6 +1,7 @@
 import * as loggerLib from '../../../../lib/logger.lib'
 import * as webhookService from '../../../../lib/lava-webhook.service'
 import type { LavaWebhookPayload } from '../../../../lib/lava-types'
+import { normalizeStringRecord } from '../../../../lib/normalize-string-record.lib'
 
 const LOG_PATH = 'api/integrations/lava/webhook'
 
@@ -55,7 +56,8 @@ export const lavaWebhookRoute = app
     currency: s.enum(LavaCurrencyEnum),
     status: s.enum(LavaContractStatusEnum),
     timestamp: s.string(),
-    clientUtm: s.optional(s.record(s.string())),
+    /** Не `s.record(…)` — в UGC падает restrictModifiers; нормализация в `normalizeStringRecord`. */
+    clientUtm: s.optional(s.unknown()),
     errorMessage: s.optional(s.string())
   }))
   .post('/', async (ctx, req) => {
@@ -76,7 +78,10 @@ export const lavaWebhookRoute = app
       payload: { hasApiKey: Boolean(apiKey) }
     })
 
-    const payload = req.body as LavaWebhookPayload
+    const payload: LavaWebhookPayload = {
+      ...(req.body as LavaWebhookPayload),
+      clientUtm: normalizeStringRecord(req.body.clientUtm)
+    }
 
     const result = await webhookService.processWebhook(ctx, payload, apiKey)
 

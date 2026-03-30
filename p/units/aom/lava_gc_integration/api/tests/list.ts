@@ -144,6 +144,20 @@ export const listTestsRoute = app.get('/', async (ctx, req) => {
           title: 'Lava: lava_api_key + lava_base_url → GET /api/v2/products'
         }
       ]
+    },
+    {
+      id: 'payment-link-integration',
+      title: 'POST payment-link (dry-run и HTTP)',
+      tests: [
+        {
+          id: 'payment-link-dry-run-unit',
+          title: 'Юнит: route.run + integrationTestDryRun (без HTTP к себе)'
+        },
+        {
+          id: 'payment-link-http-integration',
+          title: 'Интеграция: HTTP POST через request() на payment-link'
+        }
+      ]
     }
   ]
 

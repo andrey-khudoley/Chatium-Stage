@@ -8,14 +8,13 @@
 
 1. `lava_api_key` (исходящий заголовок **`X-Api-Key`** к API Lava; базовый URL уточнять в кабинете, в примерах OpenAPI встречается `https://gate.lava.top`);
 2. учётные данные **входящего** webhook от Lava: по OpenAPI — **HTTP Basic** (`BasicWebhookAuth`) или отдельный **`X-Api-Key`** для webhook (`ApiKeyWebhookAuth`); см. [integration-lava-openapi-reference.md](./integration-lava-openapi-reference.md);
-3. сервисный токен для вызовов GetCourse → Chatium;
-4. сервисный токен / ключ для callback Chatium → GetCourse.
+3. ключи и домен GetCourse PL API для **исходящих** вызовов Chatium → GetCourse (`gc_api_key`, `gc_account_domain` в настройках).
 
-### 17.2. Аутентификация GetCourse → Chatium
+В этом проекте **входящий** `POST …/payment-link` **не** защищён заголовком (сценарий с JS на странице оплаты); ограничение злоупотреблением — осознанный компромисс.
 
-1. сервисный токен в заголовке;
-2. опционально IP allowlist;
-3. корреляционный `requestId` в теле/логах.
+### 17.2. Опционально (другие схемы)
+
+Для обратных вызовов и жёстких интеграций можно дополнительно рассматривать: IP allowlist, подпись тела, корреляционный `requestId` в логах — см. обсуждение в документации GetCourse / вашей инфраструктуры.
 
 ### 17.3. Аутентификация Chatium → GetCourse
 

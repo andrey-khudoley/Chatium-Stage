@@ -51,7 +51,7 @@
 ### GetCourse + Lava.top (реализовано)
 Полное описание сценариев и оглавление — **[docs/README.md](./README.md)** и файлы `integration-*.md`. В коде:
 
-- **Входящие API:** `POST …/payment-link` (сервисный токен GetCourse), `POST …/webhook` (секрет Lava в `X-Api-Key`); file-based под `api/integrations/lava/`.
+- **Входящие API:** `POST …/payment-link` (без обязательных заголовков авторизации; опционально `integrationTestDryRun` для проверок без Lava), `POST …/webhook` (секрет Lava в `X-Api-Key`); file-based под `api/integrations/lava/`.
 - **Критическая секция** обновления цены оффера и создания контракта — **`runWithExclusiveLock`** (`@app/sync`), журнал в `lava_lock_log`.
 - **Исходящие вызовы** к Lava и GetCourse — **`@app/request`** (`lava-api.client`, `getcourse-api.client`); при уровне Debug — пошаговая трассировка (`writeServerLog`, `severity: 7`) по сервисам и клиентам интеграции.
 - **Данные** — Heap (`lava_payment_contract`, `lava_webhook_event`, `lava_lock_log`), секреты и URL — в `settings` (`SETTING_KEYS` в `settings.lib`).

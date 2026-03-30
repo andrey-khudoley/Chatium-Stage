@@ -2,7 +2,7 @@
 
 Роль **`ctx`** в тестах и запуск проверок со страницы тестов — [testing.md](./testing.md).
 
-Актуально для реализованной интеграции GetCourse + Lava: таблицы `lava_*`, репозитории в `repos/`, `lib/lava-types.ts`, `lib/lava-api.client.ts`, `lib/getcourse-api.client.ts`, `lib/settings-save-credentials.lib.ts`, `lib/lava-payment.service.ts`, `lib/lava-webhook.service.ts`, эндпоинты `api/integrations/lava/*`, тесты в `api/tests/endpoints-check/` — в т.ч. `integration-gc-credentials.ts`, `integration-lava-credentials.ts`, `integration-credentials-both.ts`, `settings-save-credentials-unit.ts`, `page-routes-unit.ts`, `lava-settings-getters.ts`, `lava-repos.ts`, `lava-webhook-service.ts`, `getcourse-deal-update.ts`, `lava-api-catalog.ts`, `lava-payment-link-route.ts`, `lava-api-client.ts`, `payment-link.ts`.
+Актуально для реализованной интеграции GetCourse + Lava: таблицы `lava_*`, репозитории в `repos/`, `lib/lava-types.ts`, `lib/app-public-url.lib.ts` (абсолютный URL к своему UGC для `request()`), `lib/lava-api.client.ts`, `lib/getcourse-api.client.ts`, `lib/settings-save-credentials.lib.ts`, `lib/lava-payment.service.ts`, `lib/lava-webhook.service.ts`, эндпоинты `api/integrations/lava/*`, тесты в `api/tests/endpoints-check/` — в т.ч. `integration-gc-credentials.ts`, `integration-lava-credentials.ts`, `integration-credentials-both.ts`, `settings-save-credentials-unit.ts`, `page-routes-unit.ts`, `lava-settings-getters.ts`, `lava-repos.ts`, `lava-webhook-service.ts`, `getcourse-deal-update.ts`, `lava-api-catalog.ts`, `lava-payment-link-route.ts`, `payment-link-dry-run-unit.ts`, `payment-link-http-integration.ts`, `lava-api-client.ts`, `payment-link.ts`.
 
 ### `./shared/pageRouteProbe.ts`
 - первая строка: `// @shared`
@@ -321,13 +321,29 @@
 - `../../../../lib/logger.lib` → `*`
 - `../../../../lib/lava-payment.service` → `createPaymentLink`
 - `../../../../lib/lava-types` → `PaymentLinkRequest` (type)
-- `../../../../lib/settings.lib` → `getGcServiceToken`
-- валидация body через `.body((s) => …)` (`@app/schema`); экспорт: `lavaPaymentLinkRoute`
+- `../../../../lib/normalize-string-record.lib` → `normalizeStringRecord` (поле `utm`: `s.optional(s.unknown())`, не `s.record` — в UGC падает схема)
+- валидация body через `.body((s) => …)` (`@app/schema`); опционально `integrationTestDryRun`; экспорт: `lavaPaymentLinkRoute`
+
+### `./lib/app-public-url.lib.ts`
+- `../config/routes` → `getFullUrl`
+- `getAbsoluteUrlForAppPath(ctx, pathFromProjectRoot)` — origin/host из `ctx.req.headers`
+
+### `./api/tests/endpoints-check/payment-link-dry-run-unit.ts`
+- `@app/auth` → `requireAnyUser`
+- `../../../api/integrations/lava/payment-link/index` → `lavaPaymentLinkRoute`
+- `../../../lib/logger.lib`
+
+### `./api/tests/endpoints-check/payment-link-http-integration.ts`
+- `@app/request` → `request`
+- `@app/auth` → `requireAnyUser`
+- `../../../lib/app-public-url.lib`, `../../../lib/logger.lib`
+- `app.body` — опционально `paymentLinkOverrides`; **без** `@shared-route`
 
 ### `./api/integrations/lava/webhook/index.ts`
 - `../../../../lib/logger.lib` → `*`
 - `../../../../lib/lava-webhook.service` → `processWebhook`
 - `../../../../lib/lava-types` → `LavaWebhookPayload` (type)
+- `../../../../lib/normalize-string-record.lib` → `normalizeStringRecord` для `clientUtm`
 - валидация body через `.body((s) => …)` (`@app/schema`); при неверном `X-Api-Key` — `ctx.resp.json({ success: false }, 401)`; экспорт: `lavaWebhookRoute`
 
 ### `./api/logger/log.ts`

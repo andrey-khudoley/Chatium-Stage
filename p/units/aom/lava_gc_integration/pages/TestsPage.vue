@@ -1076,6 +1076,79 @@ const integrationBothResults = ref<TestResult[]>([])
 const integrationBothLoading = ref(false)
 const integrationBothLastRunAt = ref<string | null>(null)
 
+type PaymentLinkTestVisualStatus = 'todo' | 'success' | 'skip' | 'fail'
+
+const paymentLinkDryRunUnitLoading = ref(false)
+const paymentLinkDryRunUnitLastAt = ref<string | null>(null)
+const paymentLinkDryRunRow = ref<{ status: PaymentLinkTestVisualStatus; detail?: string }>({ status: 'todo' })
+const paymentLinkDryRunRaw = ref<string | null>(null)
+
+const paymentLinkHttpIntegrationLoading = ref(false)
+const paymentLinkHttpIntegrationLastAt = ref<string | null>(null)
+const paymentLinkHttpRow = ref<{ status: PaymentLinkTestVisualStatus; detail?: string }>({ status: 'todo' })
+const paymentLinkHttpRaw = ref<string | null>(null)
+
+const integrationPaymentLinkBusy = computed(
+  () =>
+    paymentLinkDryRunUnitLoading.value ||
+    paymentLinkHttpIntegrationLoading.value
+)
+
+function parsePaymentLinkDryRunResponse(data: unknown): {
+  status: PaymentLinkTestVisualStatus
+  detail?: string
+} {
+  if (!data || typeof data !== 'object') {
+    return { status: 'fail', detail: 'Пустой или неверный ответ' }
+  }
+  const d = data as Record<string, unknown>
+  if (d.skipped === true) {
+    return { status: 'skip', detail: String(d.reason ?? 'Пропуск') }
+  }
+  if (d.success === true) {
+    return {
+      status: 'success',
+      detail: typeof d.gcOrderId === 'string' ? `order: ${d.gcOrderId}` : undefined
+    }
+  }
+  return { status: 'fail', detail: String(d.error ?? 'Проверка не прошла') }
+}
+
+function parsePaymentLinkHttpIntegrationResponse(data: unknown): {
+  status: PaymentLinkTestVisualStatus
+  detail?: string
+} {
+  if (!data || typeof data !== 'object') {
+    return { status: 'fail', detail: 'Пустой или неверный ответ' }
+  }
+  const d = data as Record<string, unknown>
+  if (d.skipped === true) {
+    const hint = typeof d.hint === 'string' ? ` ${d.hint}` : ''
+    return { status: 'skip', detail: `${String(d.reason ?? 'Пропуск')}.${hint}`.trim() }
+  }
+  if (d.success === true) {
+    const code = d.statusCode != null ? `HTTP ${d.statusCode}` : 'OK'
+    return { status: 'success', detail: String(code) }
+  }
+  return {
+    status: 'fail',
+    detail: [d.error, d.hint].filter(Boolean).join(' — ') || 'Ошибка'
+  }
+}
+
+function paymentLinkRowBadgeLabel(status: PaymentLinkTestVisualStatus): string {
+  switch (status) {
+    case 'success':
+      return '[OK]'
+    case 'fail':
+      return '[FAIL]'
+    case 'skip':
+      return '[SKIP]'
+    default:
+      return '[TODO]'
+  }
+}
+
 const integrationBothDisplay = computed(() => {
   const byId = new Map(integrationBothResults.value.map((r) => [r.id, r]))
   return INTEGRATION_TAB_CREDENTIAL_TESTS.map((t) => {
@@ -1115,6 +1188,49 @@ async function runIntegrationBothTests() {
   } finally {
     integrationBothLoading.value = false
   }
+}
+
+async function runPaymentLinkDryRunUnit() {
+  paymentLinkDryRunUnitLoading.value = true
+  const baseUrl = getApiBaseUrl().replace(/\/$/, '')
+  log.info('Юнит: payment-link dry-run (route.run)')
+  try {
+    const res = await fetch(`${baseUrl}/api/tests/endpoints-check/payment-link-dry-run-unit`, {
+      method: 'GET',
+      credentials: 'include'
+    })
+    const data = await res.json().catch(() => null)
+    paymentLinkDryRunRow.value = parsePaymentLinkDryRunResponse(data)
+    paymentLinkDryRunRaw.value = data ? JSON.stringify(data, null, 2) : null
+    paymentLinkDryRunUnitLastAt.value = new Date().toLocaleString('ru-RU')
+  } finally {
+    paymentLinkDryRunUnitLoading.value = false
+  }
+}
+
+async function runPaymentLinkHttpIntegration() {
+  paymentLinkHttpIntegrationLoading.value = true
+  const baseUrl = getApiBaseUrl().replace(/\/$/, '')
+  log.info('Интеграция: HTTP POST payment-link (request на сервере)')
+  try {
+    const res = await fetch(`${baseUrl}/api/tests/endpoints-check/payment-link-http-integration`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({})
+    })
+    const data = await res.json().catch(() => null)
+    paymentLinkHttpRow.value = parsePaymentLinkHttpIntegrationResponse(data)
+    paymentLinkHttpRaw.value = data ? JSON.stringify(data, null, 2) : null
+    paymentLinkHttpIntegrationLastAt.value = new Date().toLocaleString('ru-RU')
+  } finally {
+    paymentLinkHttpIntegrationLoading.value = false
+  }
+}
+
+async function runPaymentLinkBothTests() {
+  await runPaymentLinkDryRunUnit()
+  await runPaymentLinkHttpIntegration()
 }
 
 async function runSingleIntegrationBothTest(testId: string) {
@@ -1257,6 +1373,7 @@ const runAllTests = async () => {
     if (testSuiteMode.value === 'integration') {
       await runIntegrationPageRoutesTests()
       await runIntegrationBothTests()
+      await runPaymentLinkBothTests()
       const all = [...integrationPageResults.value, ...integrationBothResults.value]
       const passed = all.filter((r) => r.passed).length
       const failed = all.filter((r) => !r.passed).length
@@ -1365,7 +1482,9 @@ const runAllTests = async () => {
                     страницам (тот же ctx).
                   </template>
                   <template v-else-if="testSuiteMode === 'integration'">
-                    Страницы: серверный HTTP к маршрутам /, /web/* с разбором ответа; затем живые проверки GetCourse и Lava по Heap (как в админке).
+                    Страницы (fetch + разбор); ключи Heap (GetCourse и Lava); POST payment-link: юнит
+                    <code class="tests-inline-code">route.run</code> с dry-run и HTTP
+                    <code class="tests-inline-code">request()</code> на тот же эндпоинт.
                   </template>
                   <template v-else>
                     Прежний набор: эндпоинты, слои settings/logger/dashboard/repos и проверки ключей GetCourse / Lava в Heap.
@@ -1403,7 +1522,7 @@ const runAllTests = async () => {
                         : testSuiteMode === 'unit'
                           ? 'Страницы (route.run) + слияние ключей'
                           : testSuiteMode === 'integration'
-                            ? 'Страницы (HTTP) + GetCourse и Lava (Heap)'
+                            ? 'Страницы + Heap + payment-link (dry-run и HTTP)'
                             : 'Запустить весь устаревший набор'
                     "
                     @click="runAllTests"
@@ -1588,6 +1707,7 @@ const runAllTests = async () => {
                           runAllTestsLoading ||
                           integrationPageLoading ||
                           integrationBothLoading ||
+                          integrationPaymentLinkBusy ||
                           isGroupBlockedBySingle('integrationPages')
                         "
                         @click.stop="runSingleIntegrationPageTest(item.id)"
@@ -1608,6 +1728,7 @@ const runAllTests = async () => {
                       runAllTestsLoading ||
                       integrationPageLoading ||
                       integrationBothLoading ||
+                      integrationPaymentLinkBusy ||
                       isGroupBlockedBySingle('integrationPages')
                     "
                     @click="runIntegrationPageRoutesTests"
@@ -1654,6 +1775,7 @@ const runAllTests = async () => {
                           runAllTestsLoading ||
                           integrationBothLoading ||
                           integrationPageLoading ||
+                          integrationPaymentLinkBusy ||
                           isGroupBlockedBySingle('integrationBoth')
                         "
                         @click.stop="runSingleIntegrationBothTest(item.id)"
@@ -1674,6 +1796,7 @@ const runAllTests = async () => {
                       runAllTestsLoading ||
                       integrationBothLoading ||
                       integrationPageLoading ||
+                      integrationPaymentLinkBusy ||
                       isGroupBlockedBySingle('integrationBoth')
                     "
                     @click="runIntegrationBothTests"
@@ -1682,6 +1805,144 @@ const runAllTests = async () => {
                     {{ integrationBothLoading ? 'Проверяем...' : 'Запустить обе проверки (GetCourse и Lava)' }}
                   </button>
                 </div>
+              </div>
+
+              <div v-if="showContent && testSuiteMode === 'integration'" class="tests-card tests-endpoints-card tests-crt-card">
+                <div class="tests-endpoints-header">
+                  <i class="fas fa-credit-card tests-endpoints-icon"></i>
+                  <h2 class="tests-endpoints-title">POST /api/integrations/lava/payment-link</h2>
+                </div>
+                <p class="tests-endpoints-desc">
+                  <strong>[OK]</strong> — проверка прошла, <strong>[SKIP]</strong> у HTTP-теста — не удалось собрать абсолютный URL
+                  (нет <code class="tests-inline-code">Host</code> / <code class="tests-inline-code">Origin</code>), не ошибка. Юнит:
+                  GET <code class="tests-inline-code">…/payment-link-dry-run-unit</code> —
+                  <code class="tests-inline-code">route.run</code> + <code class="tests-inline-code">integrationTestDryRun</code>.
+                  Интеграция: POST <code class="tests-inline-code">…/payment-link-http-integration</code> —
+                  <code class="tests-inline-code">request()</code> на тот же URL без заголовков авторизации.
+                </p>
+                <div
+                  v-if="paymentLinkDryRunUnitLastAt || paymentLinkHttpIntegrationLastAt"
+                  class="tests-endpoints-last-run"
+                >
+                  Последний запуск: юнит
+                  {{ paymentLinkDryRunUnitLastAt ?? '—' }}, HTTP {{ paymentLinkHttpIntegrationLastAt ?? '—' }}
+                </div>
+                <div class="tests-endpoints-list-wrap">
+                  <ul class="tests-endpoints-list" role="list">
+                    <li
+                      class="tests-endpoints-list-item"
+                      :class="`tests-endpoints-status-${paymentLinkDryRunRow.status}`"
+                    >
+                      <span
+                        class="tests-endpoints-badge"
+                        :class="`tests-endpoints-badge-${paymentLinkDryRunRow.status}`"
+                        >{{ paymentLinkRowBadgeLabel(paymentLinkDryRunRow.status) }}</span
+                      >
+                      <span class="tests-endpoints-list-title-inline">Юнит: dry-run (<code>route.run</code>)</span>
+                      <span
+                        v-if="paymentLinkDryRunRow.detail"
+                        :class="
+                          paymentLinkDryRunRow.status === 'fail'
+                            ? 'tests-endpoints-list-error'
+                            : 'tests-endpoints-list-desc'
+                        "
+                        >{{ paymentLinkDryRunRow.detail }}</span
+                      >
+                      <button
+                        type="button"
+                        class="tests-run-one-btn"
+                        title="Запустить юнит"
+                        :disabled="
+                          runAllTestsLoading ||
+                          paymentLinkDryRunUnitLoading ||
+                          paymentLinkHttpIntegrationLoading ||
+                          integrationPageLoading ||
+                          integrationBothLoading
+                        "
+                        @click.stop="runPaymentLinkDryRunUnit"
+                      >
+                        <i
+                          class="fas"
+                          :class="paymentLinkDryRunUnitLoading ? 'fa-spinner fa-spin' : 'fa-play'"
+                        ></i>
+                      </button>
+                    </li>
+                    <li
+                      class="tests-endpoints-list-item"
+                      :class="`tests-endpoints-status-${paymentLinkHttpRow.status}`"
+                    >
+                      <span
+                        class="tests-endpoints-badge"
+                        :class="`tests-endpoints-badge-${paymentLinkHttpRow.status}`"
+                        >{{ paymentLinkRowBadgeLabel(paymentLinkHttpRow.status) }}</span
+                      >
+                      <span class="tests-endpoints-list-title-inline">Интеграция: HTTP POST (<code>request</code>)</span>
+                      <span
+                        v-if="paymentLinkHttpRow.detail"
+                        :class="
+                          paymentLinkHttpRow.status === 'fail'
+                            ? 'tests-endpoints-list-error'
+                            : 'tests-endpoints-list-desc'
+                        "
+                        >{{ paymentLinkHttpRow.detail }}</span
+                      >
+                      <button
+                        type="button"
+                        class="tests-run-one-btn"
+                        title="Запустить HTTP-интеграцию"
+                        :disabled="
+                          runAllTestsLoading ||
+                          paymentLinkDryRunUnitLoading ||
+                          paymentLinkHttpIntegrationLoading ||
+                          integrationPageLoading ||
+                          integrationBothLoading
+                        "
+                        @click.stop="runPaymentLinkHttpIntegration"
+                      >
+                        <i
+                          class="fas"
+                          :class="paymentLinkHttpIntegrationLoading ? 'fa-spinner fa-spin' : 'fa-play'"
+                        ></i>
+                      </button>
+                    </li>
+                  </ul>
+                </div>
+                <div class="tests-endpoints-actions">
+                  <button
+                    type="button"
+                    class="tests-run-group-btn"
+                    :disabled="
+                      runAllTestsLoading ||
+                      paymentLinkDryRunUnitLoading ||
+                      paymentLinkHttpIntegrationLoading ||
+                      integrationPageLoading ||
+                      integrationBothLoading
+                    "
+                    @click="runPaymentLinkBothTests"
+                  >
+                    <i
+                      class="fas"
+                      :class="
+                        paymentLinkDryRunUnitLoading || paymentLinkHttpIntegrationLoading
+                          ? 'fa-spinner fa-spin'
+                          : 'fa-bolt'
+                      "
+                    ></i>
+                    {{
+                      paymentLinkDryRunUnitLoading || paymentLinkHttpIntegrationLoading
+                        ? 'Проверяем…'
+                        : 'Запустить оба (юнит + HTTP)'
+                    }}
+                  </button>
+                </div>
+                <details v-if="paymentLinkDryRunRaw" class="tests-payment-link-raw">
+                  <summary>Сырой ответ (юнит)</summary>
+                  <pre class="tests-payment-link-raw-pre">{{ paymentLinkDryRunRaw }}</pre>
+                </details>
+                <details v-if="paymentLinkHttpRaw" class="tests-payment-link-raw">
+                  <summary>Сырой ответ (HTTP)</summary>
+                  <pre class="tests-payment-link-raw-pre">{{ paymentLinkHttpRaw }}</pre>
+                </details>
               </div>
 
               <!-- Блок 1: Проверка эндпоинтов -->
@@ -2705,6 +2966,41 @@ const runAllTests = async () => {
   background: rgba(211, 35, 75, 0.12);
   color: var(--color-accent);
   border: 1px solid rgba(211, 35, 75, 0.3);
+}
+
+.tests-endpoints-list-item.tests-endpoints-status-skip {
+  border-left: 3px solid #ca8a04;
+  padding-left: 0.5rem;
+  margin-left: -0.5rem;
+}
+
+.tests-endpoints-badge-skip {
+  background: rgba(234, 179, 8, 0.15);
+  color: #facc15;
+  border: 1px solid rgba(234, 179, 8, 0.35);
+}
+
+.tests-payment-link-raw {
+  margin-top: 0.75rem;
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+}
+
+.tests-payment-link-raw summary {
+  cursor: pointer;
+  user-select: none;
+  margin-bottom: 0.35rem;
+}
+
+.tests-payment-link-raw-pre {
+  max-height: 10rem;
+  overflow: auto;
+  margin: 0;
+  padding: 0.5rem;
+  white-space: pre-wrap;
+  font-family: 'Share Tech Mono', monospace;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--color-border);
 }
 
 .tests-endpoints-list-content {
