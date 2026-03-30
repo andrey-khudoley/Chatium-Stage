@@ -52,11 +52,12 @@
 ## Интеграции Lava + GetCourse (api/integrations/lava/)
 
 - **Входящий payment-link:** заголовки авторизации **не** требуются (в т.ч. вызов из браузера / скрипта на странице оплаты).
-- **От Lava (webhook):** заголовок `X-Api-Key` = настройка `lava_webhook_secret`.
+- **От Lava (webhook):** заголовок `X-Api-Key` = настройка `lava_webhook_secret`. Проверка, что URL открывается: **GET** `…/webhook` (без секрета) — JSON о готовности эндпоинта.
 
 | Method | Path | File | Auth | Назначение |
 | --- | --- | --- | --- | --- |
 | POST | /api/integrations/lava/payment-link | api/integrations/lava/payment-link/index.ts | — | Тело валидируется через `@app/schema` (`.body`): обязательные `gcOrderId`, `buyerEmail`, `amount` (> 0 после парсинга), `currency` ∈ { RUB, USD, EUR }; опционально `gcUserId`, `description`, `paymentProvider`, `paymentMethod`, `buyerLanguage`, `utm` (record строка→строка), `requestId`, **`integrationTestDryRun`** (boolean). При `integrationTestDryRun: true` после валидации полей возвращается успех **без** вызова Lava/Heap (тестовый контракт; GetCourse поле не шлёт). Иначе — `lib/lava-payment.service` → `createPaymentLink`. Успех: `success: true`, `paymentUrl`, `lavaContractId`, … Ошибки: `VALIDATION_ERROR`, `CONFIG_ERROR`, `LAVA_*`, `PAYMENT_TEMPLATE_BUSY`, `INTERNAL_ERROR` (см. ответ сервиса). |
+| GET | /api/integrations/lava/webhook | api/integrations/lava/webhook/index.ts | — | Проверка доступности (браузер): JSON `{ ok, status: 'ready', message, expectedMethod: 'POST', webhookSecretConfigured }`. Секрет не отдаётся. Экспорт `lavaWebhookInfoRoute`. |
 | POST | /api/integrations/lava/webhook | api/integrations/lava/webhook/index.ts | `X-Api-Key` (= `lava_webhook_secret`) | Тело — payload Lava (`LavaWebhookPayload`), валидация `.body` (`@app/schema`). Экспорт `lavaWebhookRoute`, вызов `lib/lava-webhook.service` → `processWebhook`. Успех HTTP 200: `{ success: true }`. Неверный секрет: HTTP 401, `{ success: false }`. Логи входа/обработки через `writeServerLog`. |
 
 ## Тесты (api/tests/)

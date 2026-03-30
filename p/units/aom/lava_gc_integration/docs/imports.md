@@ -386,10 +386,11 @@
 
 ### `./api/integrations/lava/webhook/index.ts`
 - `../../../../lib/logger.lib` → `*`
+- `../../../../lib/settings.lib` → `getLavaWebhookSecret` (GET-проба: флаг `webhookSecretConfigured`)
 - `../../../../lib/lava-webhook.service` → `processWebhook`
 - `../../../../lib/lava-types` → `LavaWebhookPayload` (type)
 - `../../../../lib/normalize-string-record.lib` → `normalizeStringRecord` для `clientUtm`
-- валидация body через `.body((s) => …)` (`@app/schema`); при неверном `X-Api-Key` — `ctx.resp.json({ success: false }, 401)`; экспорт: `lavaWebhookRoute`
+- валидация body через `.body((s) => …)` (`@app/schema`); при неверном `X-Api-Key` — `ctx.resp.json({ success: false }, 401)`; экспорт: `lavaWebhookInfoRoute` (GET `/`), `lavaWebhookRoute` (POST `/`)
 
 ### `./api/logger/log.ts`
 - `@app/auth` → `requireAnyUser`

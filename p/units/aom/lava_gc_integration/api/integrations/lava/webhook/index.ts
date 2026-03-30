@@ -1,4 +1,5 @@
 import * as loggerLib from '../../../../lib/logger.lib'
+import * as settingsLib from '../../../../lib/settings.lib'
 import * as webhookService from '../../../../lib/lava-webhook.service'
 import type { LavaWebhookPayload } from '../../../../lib/lava-types'
 import { normalizeStringRecord } from '../../../../lib/normalize-string-record.lib'
@@ -40,6 +41,27 @@ function extractApiKey(req: app.Req): string {
   const v = Array.isArray(raw) ? raw[0] : raw
   return typeof v === 'string' ? v.trim() : ''
 }
+
+/**
+ * GET …/api/integrations/lava/webhook — проверка доступности (браузер, curl): эндпоинт развёрнут и ожидает POST от Lava.
+ * Секрет в ответе не передаётся; только флаг, задан ли `lava_webhook_secret` в Heap.
+ */
+export const lavaWebhookInfoRoute = app.get('/', async (ctx, _req) => {
+  await loggerLib.writeServerLog(ctx, {
+    severity: 7,
+    message: `[${LOG_PATH}] GET: проверка доступности`,
+    payload: {}
+  })
+  const secretTrimmed = (await settingsLib.getLavaWebhookSecret(ctx)).trim()
+  return {
+    ok: true,
+    status: 'ready',
+    message:
+      'Эндпоинт активен. Рабочие уведомления от Lava — только POST с JSON-телом (PurchaseWebhookLog) и заголовком X-Api-Key, совпадающим с настройкой lava_webhook_secret в Heap.',
+    expectedMethod: 'POST',
+    webhookSecretConfigured: secretTrimmed.length > 0
+  }
+})
 
 /**
  * POST …/api/integrations/lava/webhook — приём webhook от Lava (PurchaseWebhookLog).
