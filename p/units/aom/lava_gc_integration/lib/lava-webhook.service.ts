@@ -187,13 +187,13 @@ export async function processWebhook(
     } else if (mappedStatus === 'paid') {
       await loggerLib.writeServerLog(ctx, {
         severity: 7,
-        message: `[${LOG_MODULE}] processWebhook: вызов GetCourse (оплачен)`,
+        message: `[${LOG_MODULE}] processWebhook: вызов GetCourse (оплачен -> В работе)`,
         payload: { gcOrderId: contract.gc_order_id }
       })
       await gcApi.updateDealStatus(ctx, {
         gcOrderId: contract.gc_order_id,
         buyerEmail: contract.buyer_email,
-        dealStatus: 'payed',
+        dealStatus: 'in_work',
         dealIsPaid: 1
       })
     } else if (mappedStatus === 'failed') {
