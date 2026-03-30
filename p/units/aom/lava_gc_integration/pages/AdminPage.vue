@@ -681,11 +681,6 @@ const resetDashboard = async () => {
   }
 }
 
-const openChatiumLink = () => {
-  log.notice('Открытие ссылки Chatium')
-  window.open('https://chatium.ru/?start=pl-LGBT1Oge7c61RkKTU4t0start', '_blank')
-}
-
 const loadRecentLogs = async () => {
   logsLoading.value = true
   logsError.value = ''
@@ -1234,7 +1229,7 @@ const clearLogs = () => {
       </div>
     </main>
 
-    <AppFooter v-if="bootLoaderDone" @chatium-click="openChatiumLink" />
+    <AppFooter v-if="bootLoaderDone" />
   </div>
 </template>
 

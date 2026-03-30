@@ -1,7 +1,7 @@
 # Architecture
 
 ## Назначение
-Приложение Chatium: шаблонные страницы (главная, админка, профиль, логин, тесты) плюс **реализованная** интеграция GetCourse ↔ Lava.top (ссылка на оплату, webhook, клиенты API). Сквозное описание потока — [integration-full-flow.md](./integration-full-flow.md). Подробная спецификация продукта и HTTP — в [README.md](./README.md) и `docs/integration-*.md`.
+Приложение Chatium: шаблонные страницы (главная, админка, профиль, логин, тесты, **текущие заказы** для Admin) плюс **реализованная** интеграция GetCourse ↔ Lava.top (ссылка на оплату, webhook, клиенты API). Сквозное описание потока — [integration-full-flow.md](./integration-full-flow.md). Подробная спецификация продукта и HTTP — в [README.md](./README.md) и `docs/integration-*.md`.
 
 ## Ограничения платформы
 - Серверная инфраструктура предоставляется Chatium.
@@ -12,12 +12,14 @@
 - Открыть главную страницу.
 - Авторизоваться и попасть в профиль.
 - Открыть админку (только роль Admin).
+- Открыть страницу заказов с метриками по контрактам (только Admin).
 
 ## Роутинг
 - `index.tsx` — главная (SSR + Vue), единственный роут в корне.
 - `web/admin/index.tsx` — админка, `requireAccountRole('Admin')`.
 - `web/profile/index.tsx` — профиль, `requireRealUser()`.
-- `web/tests/index.tsx` — страница тестов, `requireRealUser()`; `TestsPage.vue` — вкладки «Юнит» (слияние ключей save без сети; пять страниц — GET `page-routes-unit`, серверный `route.run`), «Интеграция» (те же пять HTML-маршрутов — браузерный `fetch` + `shared/pageRouteProbe.ts`, затем два GET: GetCourse и Lava из Heap отдельно), «Устаревшее» (полный прежний набор), логи справа (CRT-оформление).
+- `web/orders/index.tsx` — «Текущие заказы», `requireAccountRole('Admin')`; `OrdersPage.vue` — метрики по `lava_payment_contract`, фильтры по `created_at` и product/offer (`lib/admin/orders-metrics.lib`, API `api/admin/orders-metrics`, `api/admin/orders-filter-options`).
+- `web/tests/index.tsx` — страница тестов, `requireRealUser()`; `TestsPage.vue` — вкладки «Юнит» (слияние ключей save без сети; шесть страниц — GET `page-routes-unit`, серверный `route.run`), «Интеграция» (те же шесть HTML-маршрутов — браузерный `fetch` + `shared/pageRouteProbe.ts`, затем два GET: GetCourse и Lava из Heap отдельно), «Устаревшее» (полный прежний набор), логи справа (CRT-оформление).
 - `web/login/index.tsx` — вход (редирект на системный `/s/auth/signin`).
 
 ## Разделение слоёв
@@ -35,13 +37,13 @@
 
 ## Структура каталогов
 - `config/` — `routes.tsx` и `project.tsx` (оба с `// @shared` в первой строке — для импорта в Vue и shared-роуты), маршруты и `PROJECT_ROOT`.
-- `web/` — браузерные роуты модулей (admin, profile, tests, login).
+- `web/` — браузерные роуты модулей (admin, profile, tests, orders, login).
 - `pages/` — Vue‑страницы (минимальные).
 - `components/` — переиспользуемые Vue‑компоненты (Header, AppFooter, GlobalGlitch, LogoutModal).
-- `api/` — API‑эндпоинты (получение и валидация входных данных). File-based: один файл — один эндпоинт с `/`. Примеры: `api/settings/*`, `api/logger/log.ts`, `api/admin/logs/*`, `api/admin/lava/catalog`, **`api/admin/getcourse/verify`**, **`api/integrations/lava/payment-link`**, **`api/integrations/lava/webhook`**, `api/tests/*`.
+- `api/` — API‑эндпоинты (получение и валидация входных данных). File-based: один файл — один эндпоинт с `/`. Примеры: `api/settings/*`, `api/logger/log.ts`, `api/admin/logs/*`, `api/admin/lava/catalog`, **`api/admin/getcourse/verify`**, **`api/admin/orders-metrics`**, **`api/admin/orders-filter-options`**, **`api/integrations/lava/payment-link`**, **`api/integrations/lava/webhook`**, `api/tests/*`.
 - `tables/` — Heap‑таблицы: `settings`, `logs`, **`lava_payment_contract`**, **`lava_webhook_event`**, **`lava_lock_log`**.
 - `repos/` — репозитории для всех таблиц выше (в т.ч. `logs.repo` — findBeforeTimestamp для пагинации; репозитории интеграции — см. [data.md](./data.md)). Репозитории `lava_*` дополнительно пишут трассировку в Heap через `logger.lib` (`severity: 7` на вход/выход методов).
-- `lib/` — бизнес‑логика: `settings.lib`, `logger.lib`, `admin/dashboard.lib`, **`lava-api.client`**, **`getcourse-api.client`**, **`lava-payment.service`**, **`lava-webhook.service`**, **`lava-types.ts`**.
+- `lib/` — бизнес‑логика: `settings.lib`, `logger.lib`, `admin/dashboard.lib`, **`admin/orders-metrics.lib`**, **`lava-api.client`**, **`getcourse-api.client`**, **`lava-payment.service`**, **`lava-webhook.service`**, **`lava-types.ts`**.
 - `shared/lavaBaseUrl.ts` — нормализация базового URL Lava для форм и сервера.
 - `shared/` — общий код (preloader, logLevel для передачи уровня логирования на клиент, logger — уровни syslog RFC 5424, createComponentLogger, setLogSink/LogEntry для дашборда, logEmergency…logDebug в браузере с проверкой порога).
 - `docs/` — документация проекта.

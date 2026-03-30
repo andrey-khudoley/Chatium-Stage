@@ -20,7 +20,7 @@
 
 ### `./config/project.tsx`
 - первая строка: `// @shared` (как у `routes.tsx`, импортируется из тех же shared-роутов)
-- нет внутренних импортов (только экспорт DEFAULT_PROJECT_TITLE, INDEX_PAGE_NAME, PROFILE_PAGE_NAME, ADMIN_PAGE_NAME, TESTS_PAGE_NAME, getPageTitle, getHeaderText, BODY_TEXT, BODY_SUBTEXT)
+- нет внутренних импортов (только экспорт DEFAULT_PROJECT_TITLE, INDEX_PAGE_NAME, PROFILE_PAGE_NAME, ADMIN_PAGE_NAME, TESTS_PAGE_NAME, ORDERS_PAGE_NAME, getPageTitle, getHeaderText, BODY_TEXT)
 
 ### `./index.tsx`
 - `@app/html-jsx` → `jsx`
@@ -29,7 +29,7 @@
 - `./styles` → `customScrollbarStyles`
 - `./shared/logLevel` → `getLogLevelForPage`, `getLogLevelScript`
 - `./config/routes` → `getFullUrl`, `ROUTES`
-- `./config/project` → `INDEX_PAGE_NAME`, `BODY_TEXT`, `BODY_SUBTEXT`, `getPageTitle`, `getHeaderText`
+- `./config/project` → `INDEX_PAGE_NAME`, `BODY_TEXT`, `getPageTitle`, `getHeaderText`
 - `./lib/logger.lib` → `*`
 - `./lib/settings.lib` → `*`
 
@@ -72,6 +72,19 @@
 - `../../config/project` → `TESTS_PAGE_NAME`, `getPageTitle`, `getHeaderText`
 - `../../lib/settings.lib` → `*`
 
+### `./web/orders/index.tsx`
+- `@app/html-jsx` → `jsx`
+- `@app/auth` → `requireAccountRole`
+- `../../pages/OrdersPage.vue`
+- `../login` → `loginPageRoute`
+- `../../shared/preloader` → `getPreloaderStyles`, `getPreloaderScript`
+- `../../shared/logLevel` → `getLogLevelForPage`, `getLogLevelScript`
+- `../../styles` → `customScrollbarStyles`
+- `../../lib/logger.lib` → `*`
+- `../../config/routes` → `getFullUrl`, `ROUTES`
+- `../../config/project` → `ORDERS_PAGE_NAME`, `getPageTitle`, `getHeaderText`
+- `../../lib/settings.lib` → `*`
+
 ### `./web/login/index.tsx`
 - `@app/html-jsx` → `jsx`
 - `../../pages/LoginPage.vue`
@@ -106,6 +119,16 @@
 - `../api/admin/dashboard/counts` → `getDashboardCountsRoute`
 - `../api/admin/dashboard/reset` → `resetDashboardRoute`
 - `../shared/logger` → `createComponentLogger`, `setLogSink`, `LogEntry`
+
+### `./pages/OrdersPage.vue`
+- `vue` → `computed`, `onMounted`, `onUnmounted`, `ref`
+- `../components/Header.vue`
+- `../components/GlobalGlitch.vue`
+- `../components/AppFooter.vue`
+- `../api/admin/orders-metrics` → `getOrdersMetricsRoute`
+- `../api/admin/orders-filter-options` → `getOrdersFilterOptionsRoute`
+- `../api/admin/orders-list` → `getOrdersListRoute`
+- `../shared/logger` → `createComponentLogger`
 
 ### `./pages/ProfilePage.vue`
 - `vue` → `onMounted`, `onUnmounted`, `ref`
@@ -305,6 +328,18 @@
 - `../../repos/logs.repo` → `*` (countErrorsAfter, countWarningsAfter)
 - `../logger.lib` → `*`
 
+### `./lib/admin/orders-metrics.lib.ts`
+- `../../tables/lava_payment_contract.table` → `LavaPaymentContract`
+- `../logger.lib` → `*`
+- экспортирует: `buildPaymentContractWhere`, `getOrdersMetrics`, `getContractFilterOptions`, типы фильтра/результата
+- вызовы Heap: `countBy(ctx, where)` — условия **без** обёртки `{ where }`; `findAll(ctx, { where, limit, offset, order })` — с `where`, `limit` ≤ 1000 (`queryHeapRecords`)
+
+### `./lib/admin/orders-list.lib.ts`
+- `../../tables/lava_payment_contract.table` → `LavaPaymentContract`, тип строки
+- `./orders-metrics.lib` → `buildPaymentContractWhere`, тип `OrdersMetricsFilter`
+- `../logger.lib` → `*`
+- экспортирует: `ORDERS_LIST_PAGE_SIZE` (50), `getOrdersListPage`, тип `OrderListItem`
+
 ### `./lib/logger.lib.ts`
 - `./settings.lib` → `*` (getLogLevel, getLogWebhook, LogLevel)
 - `../repos/logs.repo` → `*` (create)
@@ -423,6 +458,21 @@
 - `../../../lib/admin/dashboard.lib` → `*`
 - `../../../lib/logger.lib` → `*`
 
+### `./api/admin/orders-metrics/index.ts`
+- `@app/auth` → `requireAccountRole`
+- `../../../lib/admin/orders-metrics.lib` → `*`
+- `../../../lib/logger.lib` → `*`
+
+### `./api/admin/orders-filter-options/index.ts`
+- `@app/auth` → `requireAccountRole`
+- `../../../lib/admin/orders-metrics.lib` → `getContractFilterOptions`
+- `../../../lib/logger.lib` → `*`
+
+### `./api/admin/orders-list/index.ts`
+- `@app/auth` → `requireAccountRole`
+- `../../../lib/admin/orders-list.lib` → `*`
+- `../../../lib/logger.lib` → `*`
+
 ### `./api/tests/list.ts`
 - `@app/auth` → `requireAnyUser`
 - `../../lib/logger.lib` → `*`
@@ -496,6 +546,7 @@
 - `../../../web/profile/index` → `profilePageRoute`
 - `../../../web/login/index` → `loginPageRoute`
 - `../../../web/tests/index` → `testsPageRoute`
+- `../../../web/orders/index` → `ordersPageRoute`
 - `../../../shared/projectRoot` → `PROJECT_ROOT`
 - `../../../lib/logger.lib` → `*`
 

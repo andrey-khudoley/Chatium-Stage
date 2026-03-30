@@ -33,14 +33,14 @@
 
 То есть проверяемая логика не зависит от «мокнутого аккаунта»; зависимость от `ctx` минимальна и не относится к сценарию слияния ключей.
 
-**Юнит по страницам (`route.run`):** GET `api/tests/endpoints-check/page-routes-unit.ts` — `requireRealUser(ctx)`; для маршрутов `/`, `/web/admin`, `/web/profile`, `/web/login`, `/web/tests` вызывается `route.run(ctx, req)` с подставленным URL под `PROJECT_ROOT` (тот же реальный `ctx`, что у GET к API). Проверяется отсутствие исключений и «приемлемый» ответ (JSX или похожий на редирект). Это не HTTP-интеграция: сеть не используется; полная проверка ответа платформы по HTTP — на вкладке «Интеграция» (`pageRouteProbe`).
+**Юнит по страницам (`route.run`):** GET `api/tests/endpoints-check/page-routes-unit.ts` — `requireRealUser(ctx)`; для маршрутов `/`, `/web/admin`, `/web/profile`, `/web/login`, `/web/tests`, `/web/orders` вызывается `route.run(ctx, req)` с подставленным URL под `PROJECT_ROOT` (тот же реальный `ctx`, что у GET к API). Проверяется отсутствие исключений и «приемлемый» ответ (JSX или похожий на редирект). Это не HTTP-интеграция: сеть не используется; полная проверка ответа платформы по HTTP — на вкладке «Интеграция» (`pageRouteProbe`).
 
 ## Интеграционные проверки (Heap + внешние API)
 
 - GET `integration-gc-credentials` и `integration-lava-credentials` читают настройки из Heap через **реальный** `ctx` и выполняют живые запросы к GetCourse / Lava (по одному эндпоинту на интеграцию). На вкладке «Интеграция» страницы `/web/tests` эти проверки показываются **двумя строками**, как отдельные поля в админке.
 - GET `integration-gc-order-pl-api` — проба PL API по **введённому** `gcOrderId` (query): опционально `buyerEmail`; если email не передан, подставляется `buyer_email` из контракта Heap (`lava_payment_contract`) с этим `gc_order_id`, если он есть. Реализация: `lib/getcourse-api.client` — `probeGcOrderPlApi` (запрос с `deal_status=cancelled`; может изменить заказ в GetCourse). Для `gc_order_id=test` ответ с ошибкой (как у лайва Lava).
 - Дополнительно в коде есть GET `integration-credentials-both` (оба чекера в одном ответе) — для API/диагностики; UI вкладки «Интеграция» использует два отдельных GET к Heap **после** блока «Страницы приложения».
-- **Страницы (интеграция):** с браузера на `/web/tests` — `fetch` с `credentials: 'include'` и `redirect: 'manual'` по маршрутам `/`, `/web/admin`, `/web/profile`, `/web/login`, `/web/tests`; разбор через `shared/pageRouteProbe.ts` (серверный `request()` к тем же URL не подставляет сессию пользователя). См. `inner/docs/048-chatium-http-response-probes.md`.
+- **Страницы (интеграция):** с браузера на `/web/tests` — `fetch` с `credentials: 'include'` и `redirect: 'manual'` по маршрутам `/`, `/web/admin`, `/web/profile`, `/web/login`, `/web/tests`, `/web/orders`; разбор через `shared/pageRouteProbe.ts` (серверный `request()` к тем же URL не подставляет сессию пользователя). См. `inner/docs/048-chatium-http-response-probes.md`.
 - Итог зависит от данных в Heap и доступности внешних сервисов.
 
 ## `route.run` в серверном коде

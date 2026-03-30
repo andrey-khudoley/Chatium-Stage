@@ -41,7 +41,8 @@ export const listTestsRoute = app.get('/', async (ctx, req) => {
         { id: 'web-admin', title: 'Админка /web/admin' },
         { id: 'web-profile', title: 'Профиль /web/profile' },
         { id: 'web-login', title: 'Вход /web/login' },
-        { id: 'web-tests', title: 'Тесты /web/tests' }
+        { id: 'web-tests', title: 'Тесты /web/tests' },
+        { id: 'web-orders', title: 'Заказы /web/orders' }
       ]
     },
     {
@@ -52,7 +53,8 @@ export const listTestsRoute = app.get('/', async (ctx, req) => {
         { id: 'web-admin', title: 'Админка /web/admin' },
         { id: 'web-profile', title: 'Профиль /web/profile' },
         { id: 'web-login', title: 'Вход /web/login' },
-        { id: 'web-tests', title: 'Тесты /web/tests' }
+        { id: 'web-tests', title: 'Тесты /web/tests' },
+        { id: 'web-orders', title: 'Заказы /web/orders' }
       ]
     },
     {
@@ -82,7 +84,8 @@ export const listTestsRoute = app.get('/', async (ctx, req) => {
         { id: 'web-admin', title: 'Эндпоинт /web/admin' },
         { id: 'web-profile', title: 'Эндпоинт /web/profile' },
         { id: 'web-login', title: 'Эндпоинт /web/login' },
-        { id: 'web-tests', title: 'Эндпоинт /web/tests' }
+        { id: 'web-tests', title: 'Эндпоинт /web/tests' },
+        { id: 'web-orders', title: 'Эндпоинт /web/orders' }
       ]
     },
     {

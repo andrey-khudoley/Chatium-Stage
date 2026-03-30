@@ -18,7 +18,6 @@ declare global {
 const props = defineProps<{
   projectName: string
   projectTitle: string
-  projectDescription: string
   indexUrl: string
   profileUrl: string
   loginUrl: string
@@ -26,17 +25,18 @@ const props = defineProps<{
   isAdmin?: boolean
   adminUrl?: string
   testsUrl?: string
+  /** Ссылка на страницу «Текущие заказы» (только Admin) */
+  ordersUrl?: string
 }>()
 
 const displayedTitle = ref('')
-const displayedDescription = ref('')
 const showCursor = ref(false)
 const bootLoaderDone = ref(false)
-const cursorPosition = ref<'title' | 'description' | 'final'>('title')
+const cursorPosition = ref<'title' | 'final'>('title')
 const showTitleUnderline = ref(false)
 const isGlitching = ref(false)
 
-const intervalIds = { title: null as ReturnType<typeof setInterval> | null, desc: null as ReturnType<typeof setInterval> | null }
+let titleInterval: ReturnType<typeof setInterval> | null = null
 
 const onAppLayoutAnimationEnd = (e: AnimationEvent) => {
   if (e.animationName === 'crt-power-on') {
@@ -50,31 +50,14 @@ const typeTextSequence = () => {
   const titleText = props.projectName
   cursorPosition.value = 'title'
   let titleIndex = 0
-  intervalIds.title = setInterval(() => {
+  titleInterval = setInterval(() => {
     if (titleIndex < titleText.length) {
       displayedTitle.value = titleText.substring(0, titleIndex + 1)
       titleIndex++
     } else {
-      if (intervalIds.title) clearInterval(intervalIds.title)
-      intervalIds.title = null
+      if (titleInterval) clearInterval(titleInterval)
+      titleInterval = null
       showTitleUnderline.value = true
-      typeDescription()
-    }
-  }, 30)
-}
-
-const typeDescription = () => {
-  log.debug('Typing description animation started')
-  const descriptionText = props.projectDescription
-  cursorPosition.value = 'description'
-  let descIndex = 0
-  intervalIds.desc = setInterval(() => {
-    if (descIndex < descriptionText.length) {
-      displayedDescription.value = descriptionText.substring(0, descIndex + 1)
-      descIndex++
-    } else {
-      if (intervalIds.desc) clearInterval(intervalIds.desc)
-      intervalIds.desc = null
       cursorPosition.value = 'final'
     }
   }, 30)
@@ -103,8 +86,7 @@ onMounted(() => {
 onUnmounted(() => {
   log.info('Component unmounted')
   window.removeEventListener('bootloader-complete', startAnimations)
-  if (intervalIds.title) clearInterval(intervalIds.title)
-  if (intervalIds.desc) clearInterval(intervalIds.desc)
+  if (titleInterval) clearInterval(titleInterval)
 })
 
 const triggerGlitch = () => {
@@ -125,11 +107,6 @@ const triggerGlitch = () => {
   }
 }
 
-const openChatiumLink = () => {
-  log.notice('Opening Chatium link')
-  triggerGlitch()
-  window.open('https://chatium.ru/?start=pl-LGBT1Oge7c61RkKTU4t0start', '_blank')
-}
 </script>
 
 <template>
@@ -158,16 +135,26 @@ const openChatiumLink = () => {
             <i class="fas fa-tasks hero-icon"></i>
           </div>
           <h1 class="hero-heading" :class="{ 'show-underline': showTitleUnderline }">
-            {{ displayedTitle }}<span v-if="showCursor && (cursorPosition === 'title' || cursorPosition === 'final')" class="typing-cursor">▮</span>
+            {{ displayedTitle }}<span v-if="showCursor && cursorPosition === 'title'" class="typing-cursor">▮</span>
           </h1>
-          <p class="hero-description">
-            {{ displayedDescription }}<span v-if="showCursor && cursorPosition === 'description'" class="typing-cursor">▮</span>
-          </p>
+          <div v-if="showCursor && cursorPosition === 'final'" class="hero-final-cursor" aria-hidden="true">
+            <span class="typing-cursor">▮</span>
+          </div>
+          <a
+            v-if="props.isAdmin && props.ordersUrl"
+            :href="props.ordersUrl"
+            class="hero-orders-btn"
+          >
+            <span class="hero-orders-btn__scan" aria-hidden="true" />
+            <i class="fas fa-receipt hero-orders-btn__icon" aria-hidden="true" />
+            <span class="hero-orders-btn__label">Текущие заказы</span>
+            <span class="hero-orders-btn__hint">heap · метрики · фильтры</span>
+          </a>
         </section>
       </div>
     </main>
 
-    <AppFooter v-if="bootLoaderDone" @chatium-click="openChatiumLink" />
+    <AppFooter v-if="bootLoaderDone" />
   </div>
 </template>
 
@@ -424,6 +411,11 @@ body {
   opacity: 1;
 }
 
+.hero-final-cursor {
+  min-height: 1.25rem;
+  margin: -0.5rem 0 0.25rem;
+}
+
 .typing-cursor {
   display: inline-block;
   margin-left: 0.25rem;
@@ -440,24 +432,84 @@ body {
   51%, 100% { opacity: 0; }
 }
 
-.hero-description {
+.hero-orders-btn {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 0.5rem;
+  padding: 1rem 1.75rem 1.1rem;
+  min-width: 220px;
+  text-decoration: none;
+  color: var(--color-text);
+  background: linear-gradient(180deg, rgba(20, 20, 20, 0.95) 0%, rgba(10, 10, 10, 0.98) 100%);
+  border: 2px solid var(--color-border);
+  clip-path: polygon(
+    0 6px, 6px 6px, 6px 0,
+    calc(100% - 6px) 0, calc(100% - 6px) 6px, 100% 6px,
+    100% calc(100% - 6px), calc(100% - 6px) calc(100% - 6px), calc(100% - 6px) 100%,
+    6px 100%, 6px calc(100% - 6px), 0 calc(100% - 6px)
+  );
+  box-shadow:
+    0 0 0 1px rgba(211, 35, 75, 0.15),
+    inset 0 0 40px rgba(0, 0, 0, 0.5),
+    0 8px 24px rgba(0, 0, 0, 0.45);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+  z-index: 10;
+}
+
+.hero-orders-btn__scan {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.12) 0px,
+    rgba(0, 0, 0, 0.12) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+  opacity: 0.5;
+}
+
+.hero-orders-btn__icon {
+  font-size: 1.25rem;
+  color: var(--color-accent);
+  text-shadow: 0 0 8px rgba(211, 35, 75, 0.4);
+}
+
+.hero-orders-btn__label {
   font-size: 1rem;
-  line-height: 1.6;
-  color: var(--color-text-secondary);
-  font-weight: 400;
-  margin: 0;
-  margin-bottom: 2rem;
-  min-height: 1.6rem;
-  max-width: 600px;
-  letter-spacing: 0.05em;
-  text-shadow: 0 0 6px rgba(160, 160, 160, 0.2);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.hero-orders-btn__hint {
+  font-size: 0.625rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--color-text-tertiary);
+}
+
+.hero-orders-btn:hover {
+  border-color: var(--color-accent);
+  box-shadow:
+    0 0 20px rgba(211, 35, 75, 0.25),
+    inset 0 0 0 1px rgba(211, 35, 75, 0.2),
+    0 10px 28px rgba(0, 0, 0, 0.5);
+  transform: translateY(-2px);
+}
+
+.hero-orders-btn:active {
+  transform: translateY(0);
 }
 
 @media (min-width: 1201px) {
   .content-wrapper { padding: 1rem 0; }
   .content-inner { gap: 1.5rem; }
   .hero-section { gap: 0.75rem; padding: 0.5rem 0; }
-  .hero-description { margin-bottom: 0.25rem; }
 }
 
 @media (max-width: 768px) {
@@ -465,7 +517,6 @@ body {
   .content-wrapper { padding: 2rem 0; }
   .hero-section { gap: 1.25rem; padding: 1rem 0; }
   .hero-heading { font-size: 2rem; }
-  .hero-description { font-size: 0.9375rem; }
 }
 
 @media (max-width: 480px) {
@@ -473,6 +524,6 @@ body {
   .content-wrapper { padding: 1.5rem 0; }
   .hero-section { gap: 1rem; }
   .hero-heading { font-size: 1.75rem; letter-spacing: 0.08em; }
-  .hero-description { font-size: 0.875rem; line-height: 1.5; }
+  .hero-orders-btn { min-width: 100%; padding-left: 1rem; padding-right: 1rem; }
 }
 </style>

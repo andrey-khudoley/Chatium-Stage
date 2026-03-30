@@ -5,13 +5,7 @@ import { getPreloaderStyles, getPreloaderScript } from './shared/preloader'
 import { customScrollbarStyles } from './styles'
 import { getLogLevelForPage, getLogLevelScript } from './shared/logLevel'
 import { getFullUrl, ROUTES } from './config/routes'
-import {
-  INDEX_PAGE_NAME,
-  BODY_TEXT,
-  BODY_SUBTEXT,
-  getPageTitle,
-  getHeaderText
-} from './config/project'
+import { INDEX_PAGE_NAME, BODY_TEXT, getPageTitle, getHeaderText } from './config/project'
 import * as loggerLib from './lib/logger.lib'
 import * as settingsLib from './lib/settings.lib'
 
@@ -34,10 +28,11 @@ export const indexPageRoute = app.html('/', async (ctx, req) => {
   const loginUrl = getFullUrl(ROUTES.login)
   const adminUrl = isAdmin ? getFullUrl(ROUTES.admin) : ''
   const testsUrl = isAuthenticated ? getFullUrl(ROUTES.tests) : ''
+  const ordersUrl = isAdmin ? getFullUrl(ROUTES.orders) : ''
   await loggerLib.writeServerLog(ctx, {
     severity: 7,
     message: `[${LOG_PATH}] URL-ы`,
-    payload: { loginUrl, adminUrl, testsUrl }
+    payload: { loginUrl, adminUrl, testsUrl, ordersUrl }
   })
   const logLevel = await getLogLevelForPage(ctx)
   const projectName = await settingsLib.getSettingString(ctx, settingsLib.SETTING_KEYS.PROJECT_NAME)
@@ -427,7 +422,6 @@ export const indexPageRoute = app.html('/', async (ctx, req) => {
         <HomePage
           projectName={BODY_TEXT}
           projectTitle={getHeaderText(INDEX_PAGE_NAME, projectName)}
-          projectDescription={BODY_SUBTEXT}
           indexUrl={getFullUrl(ROUTES.index)}
           profileUrl={getFullUrl(ROUTES.profile)}
           loginUrl={loginUrl}
@@ -435,6 +429,7 @@ export const indexPageRoute = app.html('/', async (ctx, req) => {
           isAdmin={isAdmin}
           adminUrl={adminUrl}
           testsUrl={testsUrl}
+          ordersUrl={ordersUrl}
         />
       </body>
     </html>

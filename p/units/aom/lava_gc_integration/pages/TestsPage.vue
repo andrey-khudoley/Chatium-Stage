@@ -242,11 +242,6 @@ onUnmounted(() => {
   window.removeEventListener('bootloader-complete', startAnimations)
 })
 
-const openChatiumLink = () => {
-  log.notice('Opening Chatium link')
-  window.open('https://chatium.ru/?start=pl-LGBT1Oge7c61RkKTU4t0start', '_blank')
-}
-
 /* Дашборд тестов */
 const testMetrics = ref({
   total: 0,
@@ -311,7 +306,8 @@ const ENDPOINTS_ROUTES: Array<{ id: string; path: string; title: string }> = [
   { id: 'web-admin', path: '/web/admin', title: 'Эндпоинт /web/admin' },
   { id: 'web-profile', path: '/web/profile', title: 'Эндпоинт /web/profile' },
   { id: 'web-login', path: '/web/login', title: 'Эндпоинт /web/login' },
-  { id: 'web-tests', path: '/web/tests', title: 'Эндпоинт /web/tests' }
+  { id: 'web-tests', path: '/web/tests', title: 'Эндпоинт /web/tests' },
+  { id: 'web-orders', path: '/web/orders', title: 'Эндпоинт /web/orders' }
 ]
 const endpointsResults = ref<TestResult[]>([])
 const endpointsLoading = ref(false)
@@ -881,7 +877,8 @@ const UNIT_PAGE_ROUTES: Array<{ id: string; title: string }> = [
   { id: 'web-admin', title: 'Админка /web/admin' },
   { id: 'web-profile', title: 'Профиль /web/profile' },
   { id: 'web-login', title: 'Вход /web/login' },
-  { id: 'web-tests', title: 'Тесты /web/tests' }
+  { id: 'web-tests', title: 'Тесты /web/tests' },
+  { id: 'web-orders', title: 'Заказы /web/orders' }
 ]
 const unitPageRoutesResults = ref<TestResult[]>([])
 const unitPageRoutesLoading = ref(false)
@@ -1049,7 +1046,8 @@ const INTEGRATION_PAGE_ROUTES: Array<{ id: string; path: string; title: string }
   { id: 'web-admin', path: '/web/admin', title: 'Админка /web/admin' },
   { id: 'web-profile', path: '/web/profile', title: 'Профиль /web/profile' },
   { id: 'web-login', path: '/web/login', title: 'Вход /web/login' },
-  { id: 'web-tests', path: '/web/tests', title: 'Тесты /web/tests' }
+  { id: 'web-tests', path: '/web/tests', title: 'Тесты /web/tests' },
+  { id: 'web-orders', path: '/web/orders', title: 'Заказы /web/orders' }
 ]
 const integrationPageResults = ref<TestResult[]>([])
 const integrationPageLoading = ref(false)
@@ -3318,7 +3316,7 @@ const runAllTests = async () => {
       </div>
     </main>
 
-    <AppFooter v-if="bootLoaderDone" @chatium-click="openChatiumLink" />
+    <AppFooter v-if="bootLoaderDone" />
   </div>
 </template>
 

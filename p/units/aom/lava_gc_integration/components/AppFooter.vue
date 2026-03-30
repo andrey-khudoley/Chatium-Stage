@@ -4,9 +4,9 @@
       <div class="footer-left">ИП Худолей Андрей Германович</div>
       <div class="footer-center">Все права сохранены © 2018-{{ currentYear }}</div>
       <div class="footer-right">
-        <button class="footer-link" @click="onChatiumClick">
-          Сделано с <i class="fas fa-heart footer-heart"></i> на Chatium
-        </button>
+        <span class="footer-credit">
+          Сделано с <i class="fas fa-heart footer-heart"></i> для НКО ДПО «АОМ»
+        </span>
       </div>
     </div>
   </footer>
@@ -18,12 +18,6 @@ import { createComponentLogger } from '../shared/logger'
 
 const log = createComponentLogger('AppFooter')
 const currentYear = new Date().getFullYear()
-const emit = defineEmits<{ 'chatium-click': [] }>()
-
-function onChatiumClick() {
-  log.notice('Chatium link clicked')
-  emit('chatium-click')
-}
 
 onMounted(() => {
   log.info('Component mounted')
@@ -94,21 +88,16 @@ onMounted(() => {
 .footer-center { flex: 0 0 auto; text-align: center; color: var(--color-text-secondary); }
 .footer-right { flex: 1; text-align: right; }
 
-.footer-link {
+.footer-credit {
   color: var(--color-text-secondary);
-  background: none;
-  border: none;
-  padding: 0;
   font: inherit;
-  cursor: pointer;
-  text-decoration: none;
   transition: color 0.25s ease;
   user-select: none;
   position: relative;
   z-index: 10;
 }
 
-.footer-link:hover {
+.footer-credit:hover {
   color: var(--color-text);
   animation: glitch-footer 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
 }
