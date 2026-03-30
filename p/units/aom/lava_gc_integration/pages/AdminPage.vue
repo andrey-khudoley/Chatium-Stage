@@ -141,6 +141,7 @@ const generateOrUpdateLavaWebhookSecret = async () => {
 
 const gcApiKey = ref('')
 const gcAccountDomain = ref('')
+const gcOrderFlagAddfieldId = ref('')
 const gcVerifyLoading = ref(false)
 const gcSaveLoading = ref(false)
 const gcVerifyHint = ref('')
@@ -329,6 +330,11 @@ const loadGcSettings = async () => {
     if (domData?.success && typeof domData.value === 'string') {
       gcAccountDomain.value = domData.value
     }
+    const addfieldRes = await getSettingRoute.query({ key: GC_SETTING_KEYS.GC_ORDER_FLAG_ADDFIELD_ID }).run(ctx)
+    const addfieldData = addfieldRes as { success?: boolean; value?: unknown }
+    if (addfieldData?.success && typeof addfieldData.value === 'string') {
+      gcOrderFlagAddfieldId.value = addfieldData.value
+    }
   } catch (e) {
     log.warning('Не удалось загрузить настройки GetCourse', e)
   }
@@ -366,7 +372,8 @@ const saveGcIntegration = async () => {
   try {
     for (const pair of [
       { key: GC_SETTING_KEYS.GC_API_KEY, value: gcApiKey.value.trim() },
-      { key: GC_SETTING_KEYS.GC_ACCOUNT_DOMAIN, value: gcAccountDomain.value.trim() }
+      { key: GC_SETTING_KEYS.GC_ACCOUNT_DOMAIN, value: gcAccountDomain.value.trim() },
+      { key: GC_SETTING_KEYS.GC_ORDER_FLAG_ADDFIELD_ID, value: gcOrderFlagAddfieldId.value.trim() }
     ] as const) {
       const res = await saveSettingRoute.run(ctx, { key: pair.key, value: pair.value })
       if (res && (res as { success?: boolean }).success === false) {
@@ -377,7 +384,7 @@ const saveGcIntegration = async () => {
     }
 
     gcVerifyHint.value =
-      'Сохранено. Ключ и домен проверены запросом к GetCourse PL API при сохранении.'
+      'Сохранено. Ключ и домен проверены запросом к GetCourse PL API; ID доп.поля заказа сохранён в Heap.'
     showSaveStatus(gcSaveStatus, gcSaveStatusTimeout, 'saved')
     log.info('Настройки GetCourse сохранены')
   } catch (e) {
@@ -1045,6 +1052,18 @@ const clearLogs = () => {
                   placeholder="school.getcourse.ru"
                 />
               </div>
+              <div class="settings-field">
+                <label class="settings-label" for="gc-order-flag-addfield-id">{{
+                  GC_SETTING_KEYS.GC_ORDER_FLAG_ADDFIELD_ID
+                }}</label>
+                <input
+                  id="gc-order-flag-addfield-id"
+                  v-model="gcOrderFlagAddfieldId"
+                  type="text"
+                  class="settings-input"
+                  placeholder="ID доп. поля заказа в GetCourse (boolean=true)"
+                />
+              </div>
               <div class="lava-step-actions gc-actions">
                 <button
                   type="button"
@@ -1059,7 +1078,9 @@ const clearLogs = () => {
                 <button
                   type="button"
                   class="lava-primary-btn"
-                  :disabled="gcSaveLoading || !gcApiKey.trim() || !gcAccountDomain.trim()"
+                  :disabled="
+                    gcSaveLoading || !gcApiKey.trim() || !gcAccountDomain.trim() || !gcOrderFlagAddfieldId.trim()
+                  "
                   @click="saveGcIntegration"
                 >
                   <i v-if="gcSaveLoading" class="fas fa-spinner fa-spin"></i>

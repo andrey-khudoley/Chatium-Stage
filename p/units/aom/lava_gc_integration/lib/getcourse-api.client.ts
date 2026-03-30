@@ -104,6 +104,12 @@ export type UpdateDealStatusParams = {
   dealIsPaid?: number
 }
 
+async function buildOrderAddfieldsForGc(ctx: app.Ctx): Promise<Record<string, boolean> | undefined> {
+  const addfieldId = (await settingsLib.getGcOrderFlagAddfieldId(ctx)).trim()
+  if (!addfieldId) return undefined
+  return { [addfieldId]: true }
+}
+
 /**
  * Разбор ответа PL API: верхний `success`, вложенный `result.success` / `result.error`
  * (HTTP 200 при ошибке в теле — норма для GetCourse).
@@ -320,6 +326,10 @@ export async function updateDealStatus(ctx: app.Ctx, params: UpdateDealStatusPar
   if (params.dealIsPaid !== undefined) {
     deal.deal_is_paid = params.dealIsPaid
   }
+  const addfields = await buildOrderAddfieldsForGc(ctx)
+  if (addfields) {
+    deal.addfields = addfields
+  }
 
   const paramsObj = {
     user: { email: params.buyerEmail },
@@ -420,7 +430,7 @@ export type ProbeGcOrderPlApiResult = {
 
 /**
  * Диагностический вызов PL API для существующего заказа: `deal_number` + email покупателя +
- * `deal_status: payment_waiting`. Может изменить статус заказа в GetCourse — использовать только на тестовых заказах.
+ * `deal_status: cancelled`. Может изменить статус заказа в GetCourse — использовать только на тестовых заказах.
  */
 export async function probeGcOrderPlApi(
   ctx: app.Ctx,
@@ -448,11 +458,13 @@ export async function probeGcOrderPlApi(
     }
   }
 
+  const probeAddfields = await buildOrderAddfieldsForGc(ctx)
   const paramsObj = {
     user: { email: buyerEmail },
     deal: {
       deal_number: gcOrderId,
-      deal_status: 'payment_waiting'
+      deal_status: 'cancelled',
+      ...(probeAddfields ? { addfields: probeAddfields } : {})
     }
   }
 
@@ -505,7 +517,7 @@ export async function probeGcOrderPlApi(
   })
 
   const message = parsed.ok
-    ? 'GetCourse принял запрос (deal_status=payment_waiting).'
+    ? 'GetCourse принял запрос (deal_status=cancelled).'
     : `Ответ PL API: ${parsed.detail}`
 
   return {

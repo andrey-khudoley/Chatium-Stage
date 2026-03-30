@@ -35,7 +35,8 @@ export const DEFAULTS = {
   [SETTING_KEYS.LAVA_OFFER_ID]: '',
   [SETTING_KEYS.LAVA_WEBHOOK_SECRET]: '',
   [SETTING_KEYS.GC_API_KEY]: '',
-  [SETTING_KEYS.GC_ACCOUNT_DOMAIN]: ''
+  [SETTING_KEYS.GC_ACCOUNT_DOMAIN]: '',
+  [SETTING_KEYS.GC_ORDER_FLAG_ADDFIELD_ID]: ''
 } as const
 
 /** Допустимые уровни логирования */
@@ -163,6 +164,11 @@ export async function getGcApiKey(ctx: app.Ctx): Promise<string> {
 /** Без writeServerLog — см. getIntegrationStringSetting. */
 export async function getGcAccountDomain(ctx: app.Ctx): Promise<string> {
   return getIntegrationStringSetting(ctx, SETTING_KEYS.GC_ACCOUNT_DOMAIN)
+}
+
+/** Без writeServerLog — см. getIntegrationStringSetting. */
+export async function getGcOrderFlagAddfieldId(ctx: app.Ctx): Promise<string> {
+  return getIntegrationStringSetting(ctx, SETTING_KEYS.GC_ORDER_FLAG_ADDFIELD_ID)
 }
 
 /**
@@ -295,7 +301,8 @@ export async function setSetting(ctx: app.Ctx, key: string, value: unknown): Pro
     key === SETTING_KEYS.LAVA_OFFER_ID ||
     key === SETTING_KEYS.LAVA_WEBHOOK_SECRET ||
     key === SETTING_KEYS.GC_API_KEY ||
-    key === SETTING_KEYS.GC_ACCOUNT_DOMAIN
+    key === SETTING_KEYS.GC_ACCOUNT_DOMAIN ||
+    key === SETTING_KEYS.GC_ORDER_FLAG_ADDFIELD_ID
   ) {
     normalized = typeof value === 'string' ? value.trim() : String(value).trim()
   }

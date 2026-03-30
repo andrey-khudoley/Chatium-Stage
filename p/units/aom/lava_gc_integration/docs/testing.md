@@ -9,9 +9,10 @@
 - **Нельзя** рассчитывать на «собрать мок `ctx` вручную» как в Jest/Vitest с фиктивным объектом: это не часть стандартного контура приложения.
 - В обработчике роута (в т.ч. в `api/tests/endpoints-check/*`) в ход всегда приходит **реальный** `ctx` текущего запроса.
 
-## Админка (`/web/admin`): секрет webhook Lava
+## Админка (`/web/admin`): секрет webhook Lava + поле заказа GetCourse
 
 В блоке «Интеграция Lava.top» поле `lava_webhook_secret`: кнопка «Сгенерировать» (если секрета ещё нет) или «Обновить» (если уже сохранён), «Показать» / «Скрыть» для отображения значения; сохранение только через генератор (`POST /api/settings/save`, 64 hex-символа из `crypto.getRandomValues`).
+В блоке GetCourse сохраняется `gc_order_flag_addfield_id` — ID булевого доп.поля заказа; при отправке заказа в GetCourse добавляется `deal.addfields = { [id]: true }` (если ID задан).
 
 ## Запуск с страницы тестов (`/web/tests`)
 
@@ -37,7 +38,7 @@
 ## Интеграционные проверки (Heap + внешние API)
 
 - GET `integration-gc-credentials` и `integration-lava-credentials` читают настройки из Heap через **реальный** `ctx` и выполняют живые запросы к GetCourse / Lava (по одному эндпоинту на интеграцию). На вкладке «Интеграция» страницы `/web/tests` эти проверки показываются **двумя строками**, как отдельные поля в админке.
-- GET `integration-gc-order-pl-api` — проба PL API по **введённому** `gcOrderId` (query): опционально `buyerEmail`; если email не передан, подставляется `buyer_email` из контракта Heap (`lava_payment_contract`) с этим `gc_order_id`, если он есть. Реализация: `lib/getcourse-api.client` — `probeGcOrderPlApi` (запрос с `deal_status=payment_waiting`; может изменить заказ в GetCourse). Для `gc_order_id=test` ответ с ошибкой (как у лайва Lava).
+- GET `integration-gc-order-pl-api` — проба PL API по **введённому** `gcOrderId` (query): опционально `buyerEmail`; если email не передан, подставляется `buyer_email` из контракта Heap (`lava_payment_contract`) с этим `gc_order_id`, если он есть. Реализация: `lib/getcourse-api.client` — `probeGcOrderPlApi` (запрос с `deal_status=cancelled`; может изменить заказ в GetCourse). Для `gc_order_id=test` ответ с ошибкой (как у лайва Lava).
 - Дополнительно в коде есть GET `integration-credentials-both` (оба чекера в одном ответе) — для API/диагностики; UI вкладки «Интеграция» использует два отдельных GET к Heap **после** блока «Страницы приложения».
 - **Страницы (интеграция):** с браузера на `/web/tests` — `fetch` с `credentials: 'include'` и `redirect: 'manual'` по маршрутам `/`, `/web/admin`, `/web/profile`, `/web/login`, `/web/tests`; разбор через `shared/pageRouteProbe.ts` (серверный `request()` к тем же URL не подставляет сессию пользователя). См. `inner/docs/048-chatium-http-response-probes.md`.
 - Итог зависит от данных в Heap и доступности внешних сервисов.
