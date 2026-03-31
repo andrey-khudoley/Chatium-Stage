@@ -316,6 +316,8 @@ const httpPageResults = ref<SuiteRow[]>([])
 const unitLoading = ref(false)
 const integrationLoading = ref(false)
 const httpPagesLoading = ref(false)
+type SingleRunGroup = 'unit' | 'integration' | 'http'
+const singleTestRun = ref<{ group: SingleRunGroup; id: string } | null>(null)
 
 function getApiBaseUrl(): string {
   const path = props.indexUrl.startsWith('http')
@@ -338,6 +340,21 @@ const HTTP_PATH_BY_TEST_ID: Record<string, string> = {
 
 function resultById(results: SuiteRow[], id: string): SuiteRow | undefined {
   return results.find((r) => r.id === id)
+}
+
+function upsertTestResults(existing: SuiteRow[], incoming: SuiteRow[]): SuiteRow[] {
+  const byId = new Map(existing.map((row) => [row.id, row]))
+  for (const row of incoming) byId.set(row.id, row)
+  return Array.from(byId.values())
+}
+
+function isSingleRunning(group: SingleRunGroup, id: string): boolean {
+  const active = singleTestRun.value
+  return active !== null && active.group === group && active.id === id
+}
+
+function isGroupBlockedBySingle(group: SingleRunGroup): boolean {
+  return singleTestRun.value?.group === group
 }
 
 function rowVisual(test: TestCatalogEntry, results: SuiteRow[]): RowVisual {
@@ -456,6 +473,32 @@ async function runUnitSuite() {
   }
 }
 
+async function runSingleUnitTest(testId: string) {
+  const fallbackTitle = flattenCatalogBlocks(UNIT_TEST_BLOCKS).find((t) => t.id === testId)?.title ?? testId
+  singleTestRun.value = { group: 'unit', id: testId }
+  try {
+    const base = getApiBaseUrl().replace(/\/$/, '')
+    const res = await fetch(`${base}/api/tests/unit`, { credentials: 'include' })
+    const data = (await res.json().catch(() => null)) as { results?: SuiteRow[] }
+    const one = Array.isArray(data?.results) ? data.results.find((r) => r.id === testId) : undefined
+    unitResults.value = upsertTestResults(unitResults.value, [
+      one ?? {
+        id: testId,
+        title: fallbackTitle,
+        passed: false,
+        error: 'Тест не найден в ответе /api/tests/unit'
+      }
+    ])
+    lastSuiteRunAt.value = new Date().toLocaleString('ru-RU')
+  } catch (e) {
+    unitResults.value = upsertTestResults(unitResults.value, [
+      { id: testId, title: fallbackTitle, passed: false, error: (e as Error)?.message ?? String(e) }
+    ])
+  } finally {
+    singleTestRun.value = null
+  }
+}
+
 async function runIntegrationSuite() {
   integrationLoading.value = true
   try {
@@ -476,6 +519,33 @@ async function runIntegrationSuite() {
     ]
   } finally {
     integrationLoading.value = false
+  }
+}
+
+async function runSingleIntegrationTest(testId: string) {
+  const fallbackTitle =
+    flattenCatalogBlocks(INTEGRATION_SERVER_TEST_BLOCKS).find((t) => t.id === testId)?.title ?? testId
+  singleTestRun.value = { group: 'integration', id: testId }
+  try {
+    const base = getApiBaseUrl().replace(/\/$/, '')
+    const res = await fetch(`${base}/api/tests/integration`, { credentials: 'include' })
+    const data = (await res.json().catch(() => null)) as { results?: SuiteRow[] }
+    const one = Array.isArray(data?.results) ? data.results.find((r) => r.id === testId) : undefined
+    integrationResults.value = upsertTestResults(integrationResults.value, [
+      one ?? {
+        id: testId,
+        title: fallbackTitle,
+        passed: false,
+        error: 'Тест не найден в ответе /api/tests/integration'
+      }
+    ])
+    lastSuiteRunAt.value = new Date().toLocaleString('ru-RU')
+  } catch (e) {
+    integrationResults.value = upsertTestResults(integrationResults.value, [
+      { id: testId, title: fallbackTitle, passed: false, error: (e as Error)?.message ?? String(e) }
+    ])
+  } finally {
+    singleTestRun.value = null
   }
 }
 
@@ -509,6 +579,38 @@ async function runHttpPageChecks() {
     log.info('HTTP страниц шаблона', summarizeRows(out))
   } finally {
     httpPagesLoading.value = false
+  }
+}
+
+async function runSingleHttpPageCheck(testId: string) {
+  const fallbackTitle = INTEGRATION_HTTP_TEST_BLOCK.tests.find((t) => t.id === testId)?.title ?? testId
+  const path = HTTP_PATH_BY_TEST_ID[testId]
+  singleTestRun.value = { group: 'http', id: testId }
+  try {
+    if (!path) {
+      httpPageResults.value = upsertTestResults(httpPageResults.value, [
+        { id: testId, title: fallbackTitle, passed: false, error: 'Маршрут не найден в HTTP_PATH_BY_TEST_ID' }
+      ])
+      return
+    }
+    const base = getApiBaseUrl().replace(/\/$/, '')
+    const url = `${base}${path === '/' ? '' : path}`
+    const res = await fetch(url, { method: 'GET', credentials: 'include' })
+    httpPageResults.value = upsertTestResults(httpPageResults.value, [
+      {
+        id: testId,
+        title: fallbackTitle,
+        passed: res.ok,
+        error: res.ok ? undefined : `HTTP ${res.status}`
+      }
+    ])
+    lastSuiteRunAt.value = new Date().toLocaleString('ru-RU')
+  } catch (e) {
+    httpPageResults.value = upsertTestResults(httpPageResults.value, [
+      { id: testId, title: fallbackTitle, passed: false, error: (e as Error)?.message ?? String(e) }
+    ])
+  } finally {
+    singleTestRun.value = null
   }
 }
 
@@ -780,6 +882,15 @@ const runAllTests = async () => {
                         {{ row.visual.badgeText }}
                       </span>
                       <span class="tests-endpoints-list-title-inline">{{ row.test.title }}</span>
+                      <button
+                        type="button"
+                        class="tests-run-single-btn"
+                        :disabled="unitLoading || isGroupBlockedBySingle('unit')"
+                        :title="'Запустить только ' + row.test.id"
+                        @click="runSingleUnitTest(row.test.id)"
+                      >
+                        <i class="fas" :class="isSingleRunning('unit', row.test.id) ? 'fa-spinner fa-spin' : 'fa-play'"></i>
+                      </button>
                     </div>
                     <code class="tests-fn-test-id">{{ row.test.id }}</code>
                     <div v-if="row.visual.error" class="tests-test-row-error">{{ row.visual.error }}</div>
@@ -788,7 +899,12 @@ const runAllTests = async () => {
               </div>
             </div>
             <div class="tests-endpoints-actions">
-              <button type="button" class="tests-run-group-btn" :disabled="unitLoading" @click="runUnitSuite">
+              <button
+                type="button"
+                class="tests-run-group-btn"
+                :disabled="unitLoading || isGroupBlockedBySingle('unit')"
+                @click="runUnitSuite"
+              >
                 <i class="fas" :class="unitLoading ? 'fa-spinner fa-spin' : 'fa-bolt'"></i>
                 {{ unitLoading ? 'Выполняется...' : 'Запустить юнит-набор' }}
               </button>
@@ -831,6 +947,18 @@ const runAllTests = async () => {
                         {{ row.visual.badgeText }}
                       </span>
                       <span class="tests-endpoints-list-title-inline">{{ row.test.title }}</span>
+                      <button
+                        type="button"
+                        class="tests-run-single-btn"
+                        :disabled="integrationLoading || isGroupBlockedBySingle('integration')"
+                        :title="'Запустить только ' + row.test.id"
+                        @click="runSingleIntegrationTest(row.test.id)"
+                      >
+                        <i
+                          class="fas"
+                          :class="isSingleRunning('integration', row.test.id) ? 'fa-spinner fa-spin' : 'fa-play'"
+                        ></i>
+                      </button>
                     </div>
                     <code class="tests-fn-test-id">{{ row.test.id }}</code>
                     <div v-if="row.visual.error" class="tests-test-row-error">{{ row.visual.error }}</div>
@@ -842,7 +970,7 @@ const runAllTests = async () => {
               <button
                 type="button"
                 class="tests-run-group-btn"
-                :disabled="integrationLoading"
+                :disabled="integrationLoading || isGroupBlockedBySingle('integration')"
                 @click="runIntegrationSuite"
               >
                 <i class="fas" :class="integrationLoading ? 'fa-spinner fa-spin' : 'fa-bolt'"></i>
@@ -884,6 +1012,15 @@ const runAllTests = async () => {
                         {{ row.visual.badgeText }}
                       </span>
                       <span class="tests-endpoints-list-title-inline">{{ row.test.title }}</span>
+                      <button
+                        type="button"
+                        class="tests-run-single-btn"
+                        :disabled="httpPagesLoading || isGroupBlockedBySingle('http')"
+                        :title="'Запустить только ' + row.test.id"
+                        @click="runSingleHttpPageCheck(row.test.id)"
+                      >
+                        <i class="fas" :class="isSingleRunning('http', row.test.id) ? 'fa-spinner fa-spin' : 'fa-play'"></i>
+                      </button>
                     </div>
                     <code class="tests-fn-test-id">{{ row.test.id }}</code>
                     <div v-if="row.visual.error" class="tests-test-row-error">{{ row.visual.error }}</div>
@@ -892,7 +1029,12 @@ const runAllTests = async () => {
               </div>
             </div>
             <div class="tests-endpoints-actions">
-              <button type="button" class="tests-run-group-btn" :disabled="httpPagesLoading" @click="runHttpPageChecks">
+              <button
+                type="button"
+                class="tests-run-group-btn"
+                :disabled="httpPagesLoading || isGroupBlockedBySingle('http')"
+                @click="runHttpPageChecks"
+              >
                 <i class="fas" :class="httpPagesLoading ? 'fa-spinner fa-spin' : 'fa-bolt'"></i>
                 {{ httpPagesLoading ? 'Проверяем...' : 'Проверить страницы' }}
               </button>

@@ -22,7 +22,8 @@ export const getcourseDealUpdateTestRoute = app.get('/', async (ctx, req) => {
     await gcApi.updateDealStatus(ctx, {
       gcOrderId: `test-gc-${Date.now()}`,
       buyerEmail: 'gc-api-test@example.com',
-      dealStatus: 'false'
+      dealStatus: 'in_work',
+      dealIsPaid: 1
     })
     await loggerLib.writeServerLog(ctx, {
       severity: 6,
