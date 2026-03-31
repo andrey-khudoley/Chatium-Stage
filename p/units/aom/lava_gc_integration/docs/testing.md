@@ -38,7 +38,7 @@
 ## Интеграционные проверки (Heap + внешние API)
 
 - GET `integration-gc-credentials` и `integration-lava-credentials` читают настройки из Heap через **реальный** `ctx` и выполняют живые запросы к GetCourse / Lava (по одному эндпоинту на интеграцию). На вкладке «Интеграция» страницы `/web/tests` эти проверки показываются **двумя строками**, как отдельные поля в админке.
-- GET `integration-gc-order-pl-api` — проба PL API по **введённому** `gcOrderId` (query): опционально `buyerEmail`; если email не передан, подставляется `buyer_email` из контракта Heap (`lava_payment_contract`) с этим `gc_order_id`, если он есть. Реализация: `lib/getcourse-api.client` — `probeGcOrderPlApi` (запрос с `deal_status=cancelled`; может изменить заказ в GetCourse). Для `gc_order_id=test` ответ с ошибкой (как у лайва Lava).
+- GET `integration-gc-order-pl-api` — проба PL API по **введённому** `gcOrderId` (query): опционально `buyerEmail`; если email не передан, подставляется `buyer_email` из контракта Heap (`lava_payment_contract`) с этим `gc_order_id`, если он есть. Реализация: `lib/getcourse-api.client` — `probeGcOrderPlApi` (запрос с `deal_status=in_work`; может изменить заказ в GetCourse). Для `gc_order_id=test` ответ с ошибкой (как у лайва Lava).
 - Дополнительно в коде есть GET `integration-credentials-both` (оба чекера в одном ответе) — для API/диагностики; UI вкладки «Интеграция» использует два отдельных GET к Heap **после** блока «Страницы приложения».
 - **Страницы (интеграция):** с браузера на `/web/tests` — `fetch` с `credentials: 'include'` и `redirect: 'manual'` по маршрутам `/`, `/web/admin`, `/web/profile`, `/web/login`, `/web/tests`, `/web/orders`; разбор через `shared/pageRouteProbe.ts` (серверный `request()` к тем же URL не подставляет сессию пользователя). См. `inner/docs/048-chatium-http-response-probes.md`.
 - Итог зависит от данных в Heap и доступности внешних сервисов.
@@ -66,7 +66,7 @@
 
 ### Лайв: webhook после оплаты
 
-После успешного `route.run` или HTTP лайва страница сохраняет последний `lava_contract_id` и `payment_url`. Карточка «Лайв: webhook после оплаты» показывает абсолютный URL `POST …/api/integrations/lava/webhook` (из GET `webhook-live-test-status`) и ссылку на оплату. Кнопка «Вооружить проверку» вызывает POST `webhook-live-test-arm` с ожидаемым контрактом; при входе реального webhook на боевой эндпоинт `lib/webhook-live-test.lib.ts` фиксирует первый успешный `payment.success` + `completed` по этому `contractId` или складывает прочие события в `otherEvents`. Для `gc_order_id=test` вызовы GetCourse из `lava-webhook.service` не выполняются (`isPaymentLinkLiveTestGcOrderId`).
+После успешного `route.run` или HTTP лайва страница сохраняет последний `lava_contract_id` и `payment_url`. Карточка «Лайв: webhook после оплаты» показывает абсолютный URL `POST …/api/integrations/lava/webhook` (из GET `webhook-live-test-status`) и ссылку на оплату. Кнопка «Вооружить проверку» вызывает POST `webhook-live-test-arm` с ожидаемым контрактом; при входе реального webhook на боевой эндпоинт `lib/webhook-live-test.lib.ts` фиксирует первый успешный `payment.success` + `completed` по этому `contractId` или складывает прочие события в `otherEvents`. В `lava-webhook.service` обрабатывается только успешный webhook оплаты; при обработке заказ в GetCourse переводится в `in_work` для любых `gc_order_id` (включая тестовые).
 
 См. также общий гайд платформы: `inner/docs/020-testing.md` (интерактивные тесты в браузере; различие `route.run` и HTTP).
 

@@ -200,7 +200,7 @@ export async function verifyGcPlApiAccess(
     user: { email: 'chatium-pl-verify@invalid.local' },
     deal: {
       deal_number: `__chatium_verify_${Date.now()}__`,
-      deal_status: 'false'
+      deal_status: 'in_work'
     }
   }
   const paramsBase64 = encodeBase64(JSON.stringify(paramsObj))
@@ -430,7 +430,7 @@ export type ProbeGcOrderPlApiResult = {
 
 /**
  * Диагностический вызов PL API для существующего заказа: `deal_number` + email покупателя +
- * `deal_status: cancelled`. Может изменить статус заказа в GetCourse — использовать только на тестовых заказах.
+ * `deal_status: in_work`. Может изменить статус заказа в GetCourse — использовать только на тестовых заказах.
  */
 export async function probeGcOrderPlApi(
   ctx: app.Ctx,
@@ -463,7 +463,7 @@ export async function probeGcOrderPlApi(
     user: { email: buyerEmail },
     deal: {
       deal_number: gcOrderId,
-      deal_status: 'cancelled',
+      deal_status: 'in_work',
       ...(probeAddfields ? { addfields: probeAddfields } : {})
     }
   }
@@ -517,7 +517,7 @@ export async function probeGcOrderPlApi(
   })
 
   const message = parsed.ok
-    ? 'GetCourse принял запрос (deal_status=cancelled).'
+    ? 'GetCourse принял запрос (deal_status=in_work).'
     : `Ответ PL API: ${parsed.detail}`
 
   return {

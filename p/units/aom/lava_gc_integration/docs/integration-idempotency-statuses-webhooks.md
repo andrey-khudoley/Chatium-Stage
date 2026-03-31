@@ -66,8 +66,8 @@ POST /integrations/lava/webhook
 
 | Событие Lava | Действие |
 | --- | --- |
-| `payment.success` | Статус контракта `paid`, уведомить GetCourse |
-| `payment.failed` | Статус `failed`, уведомить GetCourse |
+| `payment.success` + `status=completed` | Статус контракта `paid`, уведомить GetCourse (перевод заказа в `in_work`) |
+| `payment.failed` и прочие неуспешные/нерелевантные события | Не обрабатывать в бизнес-логике, в GetCourse не отправлять |
 
 Подписки и иные типы событий — отдельное расширение спецификации.
 

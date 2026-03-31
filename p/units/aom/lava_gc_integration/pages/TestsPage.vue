@@ -2337,7 +2337,7 @@ const runAllTests = async () => {
                   Введите <code class="tests-inline-code">deal_number</code> заказа в GetCourse (не
                   <code class="tests-inline-code">test</code>). GET
                   <code class="tests-inline-code">…/integration-gc-order-pl-api</code> — проба PL API
-                  (<code class="tests-inline-code">deal_status=cancelled</code>; на боевом заказе это может
+                  (<code class="tests-inline-code">deal_status=in_work</code>; на боевом заказе это может
                   изменить статус в GetCourse). Email покупателя: передайте в поле ниже или оставьте пустым, если для
                   этого <code class="tests-inline-code">gc_order_id</code> уже есть контракт в Heap (payment-link).
                 </p>
