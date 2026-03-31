@@ -57,7 +57,23 @@ export const lavaPaymentLinkRoute = app
     })
 
     const gcOrderId = (req.body.gcOrderId ?? req.body.orderNumber ?? '').trim()
-    const buyerEmail = (req.body.buyerEmail ?? req.body.email ?? '').trim()
+    const rawBuyerEmail = req.body.buyerEmail ?? req.body.email ?? ''
+    const buyerEmail = rawBuyerEmail.trim()
+    const emailCharCodes = Array.from(buyerEmail).map((char) => char.charCodeAt(0))
+
+    await loggerLib.writeServerLog(ctx, {
+      severity: 7,
+      message: `[${LOG_PATH}] DEBUG email payload`,
+      payload: {
+        rawBuyerEmail,
+        buyerEmail,
+        buyerEmailTrimmed: buyerEmail,
+        buyerEmailLength: buyerEmail.length,
+        buyerEmailEqualsTrimmed: rawBuyerEmail === buyerEmail,
+        buyerEmailLowercase: buyerEmail.toLowerCase(),
+        buyerEmailCharCodes: emailCharCodes
+      }
+    })
     const currencyNorm = normalizeLavaCurrency(req.body.currency)
     if (!currencyNorm) {
       await loggerLib.writeServerLog(ctx, {

@@ -50,3 +50,23 @@
 5. `currency`.
 
 В Chatium использовать `ctx.account.log()` и/или существующий `lib/logger.lib` (уровни, Heap-логи, админка).
+
+### Debug-расследование инцидентов email (актуально с 31-03-2026)
+
+Для инцидентов вида `Lava POST invoice: HTTP 400: Incorrect email to purchase` включено расширенное debug-логирование:
+
+1. На входе `POST /api/integrations/lava/payment-link` логируются сырые и нормализованные email-данные:
+   - `rawBuyerEmail`;
+   - `buyerEmail`/`buyerEmailTrimmed`;
+   - `buyerEmailLength`;
+   - `buyerEmailEqualsTrimmed`;
+   - `buyerEmailLowercase`;
+   - `buyerEmailCharCodes`.
+2. Перед исходящим `POST /api/v3/invoice` в Lava логируется сырой payload запроса:
+   - `body` (как отправляется в Lava);
+   - `emailRaw`;
+   - `emailLowercase`;
+   - `emailLength`;
+   - `emailCharCodes`.
+
+Это позволяет в одном расследовании доказуемо сверить «что пришло в Chatium» и «что ушло в Lava» без доступа к внешним трассировщикам.

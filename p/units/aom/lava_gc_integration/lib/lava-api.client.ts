@@ -179,6 +179,22 @@ export async function createContract(
   if (params.buyerLanguage) body.buyerLanguage = params.buyerLanguage
   if (params.clientUtm && typeof params.clientUtm === 'object') body.clientUtm = params.clientUtm
 
+  const emailValue = String(body.email ?? '')
+  const emailCharCodes = Array.from(emailValue).map((char) => char.charCodeAt(0))
+
+  await loggerLib.writeServerLog(ctx, {
+    severity: 7,
+    message: `[${LOG_MODULE}] createContract: RAW request payload`,
+    payload: {
+      invoiceUrl: `${baseUrl}/api/v3/invoice`,
+      body,
+      emailRaw: emailValue,
+      emailLowercase: emailValue.toLowerCase(),
+      emailLength: emailValue.length,
+      emailCharCodes
+    }
+  })
+
   const response = await request({
     url: `${baseUrl}/api/v3/invoice`,
     method: 'post',
