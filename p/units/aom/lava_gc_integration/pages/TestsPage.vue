@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, onBeforeUnmount, onUnmounted, ref, computed } from 'vue'
+import { onMounted, onBeforeUnmount, onUnmounted, ref, computed, watch } from 'vue'
 import { getOrCreateBrowserSocketClient } from '@app/socket'
 import Header from '../components/Header.vue'
 import GlobalGlitch from '../components/GlobalGlitch.vue'
@@ -242,11 +242,6 @@ onUnmounted(() => {
   window.removeEventListener('bootloader-complete', startAnimations)
 })
 
-const openChatiumLink = () => {
-  log.notice('Opening Chatium link')
-  window.open('https://chatium.ru/?start=pl-LGBT1Oge7c61RkKTU4t0start', '_blank')
-}
-
 /* Дашборд тестов */
 const testMetrics = ref({
   total: 0,
@@ -279,6 +274,7 @@ type SingleRunGroup =
   | 'settingKeys'
   | 'unitSaveCreds'
   | 'unitPageRoutes'
+  | 'unitWebhookRoute'
   | 'integrationBoth'
   | 'integrationPages'
 
@@ -310,7 +306,8 @@ const ENDPOINTS_ROUTES: Array<{ id: string; path: string; title: string }> = [
   { id: 'web-admin', path: '/web/admin', title: 'Эндпоинт /web/admin' },
   { id: 'web-profile', path: '/web/profile', title: 'Эндпоинт /web/profile' },
   { id: 'web-login', path: '/web/login', title: 'Эндпоинт /web/login' },
-  { id: 'web-tests', path: '/web/tests', title: 'Эндпоинт /web/tests' }
+  { id: 'web-tests', path: '/web/tests', title: 'Эндпоинт /web/tests' },
+  { id: 'web-orders', path: '/web/orders', title: 'Эндпоинт /web/orders' }
 ]
 const endpointsResults = ref<TestResult[]>([])
 const endpointsLoading = ref(false)
@@ -880,7 +877,8 @@ const UNIT_PAGE_ROUTES: Array<{ id: string; title: string }> = [
   { id: 'web-admin', title: 'Админка /web/admin' },
   { id: 'web-profile', title: 'Профиль /web/profile' },
   { id: 'web-login', title: 'Вход /web/login' },
-  { id: 'web-tests', title: 'Тесты /web/tests' }
+  { id: 'web-tests', title: 'Тесты /web/tests' },
+  { id: 'web-orders', title: 'Заказы /web/orders' }
 ]
 const unitPageRoutesResults = ref<TestResult[]>([])
 const unitPageRoutesLoading = ref(false)
@@ -958,13 +956,98 @@ async function runSingleUnitPageRouteTest(testId: string) {
   }
 }
 
+/* --- Вкладка «Юнит»: POST …/api/integrations/lava/webhook (lavaWebhookInfoRoute / lavaWebhookRoute.run) --- */
+const UNIT_WEBHOOK_ROUTE_TESTS: Array<{ id: string; title: string }> = [
+  { id: 'info_get', title: 'GET-проба: ok, ready, webhookSecretConfigured' },
+  { id: 'post_wrong_api_key', title: 'POST: неверный X-Api-Key → отказ' },
+  { id: 'post_missing_api_key', title: 'POST: без ключа при заданном секрете → отказ' },
+  { id: 'post_invalid_body', title: 'POST: невалидный eventType → валидация' },
+  { id: 'post_success_contract_not_found', title: 'POST: верный ключ + тело → success (контракт не в Heap)' }
+]
+const unitWebhookRouteResults = ref<TestResult[]>([])
+const unitWebhookRouteLoading = ref(false)
+const unitWebhookRouteLastRunAt = ref<string | null>(null)
+
+const unitWebhookRouteDisplay = computed(() => {
+  const byId = new Map(unitWebhookRouteResults.value.map((r) => [r.id, r]))
+  return UNIT_WEBHOOK_ROUTE_TESTS.map((t) => {
+    const res = byId.get(t.id)
+    return {
+      id: t.id,
+      title: t.title,
+      status: res === undefined ? 'todo' : res.passed ? 'success' : 'fail',
+      error: res && !res.passed ? res.error : undefined
+    }
+  })
+})
+
+async function runUnitWebhookRouteTests() {
+  unitWebhookRouteLoading.value = true
+  unitWebhookRouteResults.value = []
+  const baseUrl = getApiBaseUrl().replace(/\/$/, '')
+  log.info('Юнит: Lava webhook (route.run)')
+  try {
+    const res = await fetch(`${baseUrl}/api/tests/endpoints-check/lava-webhook-route`, {
+      method: 'GET',
+      credentials: 'include'
+    })
+    const data = (await res.json().catch(() => null)) as {
+      success?: boolean
+      results?: TestResult[]
+      error?: string
+    }
+    if (data?.success && Array.isArray(data.results)) {
+      unitWebhookRouteResults.value = data.results
+    } else {
+      unitWebhookRouteResults.value = UNIT_WEBHOOK_ROUTE_TESTS.map((t) => ({
+        id: t.id,
+        title: t.title,
+        passed: false,
+        error: data?.error || 'Ошибка запроса'
+      }))
+    }
+    unitWebhookRouteLastRunAt.value = new Date().toLocaleString('ru-RU')
+  } finally {
+    unitWebhookRouteLoading.value = false
+  }
+}
+
+async function runSingleUnitWebhookRouteTest(testId: string) {
+  const meta = UNIT_WEBHOOK_ROUTE_TESTS.find((s) => s.id === testId)
+  if (!meta) return
+  singleTestRun.value = { group: 'unitWebhookRoute', id: testId }
+  const baseUrl = getApiBaseUrl().replace(/\/$/, '')
+  try {
+    const res = await fetch(
+      `${baseUrl}/api/tests/endpoints-check/lava-webhook-route?testId=${encodeURIComponent(testId)}`,
+      { method: 'GET', credentials: 'include' }
+    )
+    const data = (await res.json().catch(() => null)) as {
+      success?: boolean
+      results?: TestResult[]
+      error?: string
+    }
+    if (data?.success && Array.isArray(data.results) && data.results.length > 0) {
+      unitWebhookRouteResults.value = upsertTestResults(unitWebhookRouteResults.value, data.results)
+    } else {
+      unitWebhookRouteResults.value = upsertTestResults(unitWebhookRouteResults.value, [
+        { id: testId, title: meta.title, passed: false, error: data?.error || 'Ошибка запроса' }
+      ])
+    }
+    unitWebhookRouteLastRunAt.value = new Date().toLocaleString('ru-RU')
+  } finally {
+    singleTestRun.value = null
+  }
+}
+
 /* --- Вкладка «Интеграция»: страницы — только fetch из браузера (cookies → сессия админа) --- */
 const INTEGRATION_PAGE_ROUTES: Array<{ id: string; path: string; title: string }> = [
   { id: 'index', path: '/', title: 'Главная (/)' },
   { id: 'web-admin', path: '/web/admin', title: 'Админка /web/admin' },
   { id: 'web-profile', path: '/web/profile', title: 'Профиль /web/profile' },
   { id: 'web-login', path: '/web/login', title: 'Вход /web/login' },
-  { id: 'web-tests', path: '/web/tests', title: 'Тесты /web/tests' }
+  { id: 'web-tests', path: '/web/tests', title: 'Тесты /web/tests' },
+  { id: 'web-orders', path: '/web/orders', title: 'Заказы /web/orders' }
 ]
 const integrationPageResults = ref<TestResult[]>([])
 const integrationPageLoading = ref(false)
@@ -1076,6 +1159,371 @@ const integrationBothResults = ref<TestResult[]>([])
 const integrationBothLoading = ref(false)
 const integrationBothLastRunAt = ref<string | null>(null)
 
+type PaymentLinkTestVisualStatus = 'todo' | 'success' | 'skip' | 'fail'
+
+const paymentLinkDryRunUnitLoading = ref(false)
+const paymentLinkDryRunUnitLastAt = ref<string | null>(null)
+const paymentLinkDryRunRow = ref<{ status: PaymentLinkTestVisualStatus; detail?: string }>({ status: 'todo' })
+const paymentLinkDryRunRaw = ref<string | null>(null)
+
+const paymentLinkHttpIntegrationLoading = ref(false)
+const paymentLinkHttpIntegrationLastAt = ref<string | null>(null)
+const paymentLinkHttpRow = ref<{ status: PaymentLinkTestVisualStatus; detail?: string }>({ status: 'todo' })
+const paymentLinkHttpRaw = ref<string | null>(null)
+
+const paymentLinkHeapSettingsLoading = ref(false)
+const paymentLinkHeapSettingsLastAt = ref<string | null>(null)
+const paymentLinkHeapSettingsRow = ref<{ status: PaymentLinkTestVisualStatus; detail?: string }>({
+  status: 'todo'
+})
+const paymentLinkHeapSettingsRaw = ref<string | null>(null)
+
+const paymentLinkFullRouteRunLoading = ref(false)
+const paymentLinkFullRouteRunLastAt = ref<string | null>(null)
+const paymentLinkFullRouteRunRow = ref<{ status: PaymentLinkTestVisualStatus; detail?: string }>({
+  status: 'todo'
+})
+const paymentLinkFullRouteRunRaw = ref<string | null>(null)
+
+const paymentLinkFullHttpLoading = ref(false)
+const paymentLinkFullHttpLastAt = ref<string | null>(null)
+const paymentLinkFullHttpRow = ref<{ status: PaymentLinkTestVisualStatus; detail?: string }>({
+  status: 'todo'
+})
+const paymentLinkFullHttpRaw = ref<string | null>(null)
+
+/** Последний успешный лайв контракт (route.run или HTTP) для проверки webhook. */
+const paymentLinkLiveSnapshot = ref<{
+  lavaContractId: string
+  paymentUrl: string
+  source: 'route' | 'http'
+} | null>(null)
+
+type WebhookLiveTestStateUi = {
+  expectedLavaContractId: string
+  paymentUrl?: string
+  armedAt: number
+  status: 'armed' | 'success'
+  successAt?: number
+  otherEvents: Array<{ at: number; reason: string; payloadJson: string }>
+}
+
+const webhookLiveApiResponse = ref<{
+  webhookUrl: string | null
+  state: WebhookLiveTestStateUi | null
+} | null>(null)
+const webhookLiveStatusLoading = ref(false)
+const webhookLiveArmLoading = ref(false)
+let webhookLivePollTimer: ReturnType<typeof setInterval> | null = null
+
+function stopWebhookLivePolling() {
+  if (webhookLivePollTimer != null) {
+    clearInterval(webhookLivePollTimer)
+    webhookLivePollTimer = null
+  }
+}
+
+function startWebhookLivePolling() {
+  stopWebhookLivePolling()
+  webhookLivePollTimer = window.setInterval(() => {
+    void fetchWebhookLiveTestStatusQuiet()
+  }, 3000)
+}
+
+/** Без сброса loading — для фонового опроса. */
+async function fetchWebhookLiveTestStatusQuiet() {
+  const baseUrl = getApiBaseUrl().replace(/\/$/, '')
+  try {
+    const res = await fetch(`${baseUrl}/api/tests/endpoints-check/webhook-live-test-status`, {
+      method: 'GET',
+      credentials: 'include'
+    })
+    const data = (await res.json().catch(() => null)) as Record<string, unknown>
+    if (data?.success === true) {
+      webhookLiveApiResponse.value = {
+        webhookUrl: typeof data.webhookUrl === 'string' ? data.webhookUrl : null,
+        state: (data.state as WebhookLiveTestStateUi) ?? null
+      }
+      if (webhookLiveApiResponse.value.state?.status === 'success') {
+        stopWebhookLivePolling()
+      }
+    }
+  } catch {
+    /* ignore */
+  }
+}
+
+async function fetchWebhookLiveTestStatus() {
+  webhookLiveStatusLoading.value = true
+  try {
+    await fetchWebhookLiveTestStatusQuiet()
+    const st = webhookLiveApiResponse.value?.state?.status
+    if (st === 'armed') {
+      startWebhookLivePolling()
+    } else {
+      stopWebhookLivePolling()
+    }
+  } finally {
+    webhookLiveStatusLoading.value = false
+  }
+}
+
+async function armWebhookLiveTestFromSnapshot() {
+  const snap = paymentLinkLiveSnapshot.value
+  if (!snap?.lavaContractId) {
+    log.warn('arm webhook live test: нет lavaContractId — сначала успешный лайв payment-link')
+    return
+  }
+  webhookLiveArmLoading.value = true
+  const baseUrl = getApiBaseUrl().replace(/\/$/, '')
+  try {
+    const res = await fetch(`${baseUrl}/api/tests/endpoints-check/webhook-live-test-arm`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        expectedLavaContractId: snap.lavaContractId,
+        paymentUrl: snap.paymentUrl
+      })
+    })
+    const data = (await res.json().catch(() => null)) as Record<string, unknown>
+    if (data?.success === true) {
+      log.info('webhook live test: вооружено', snap.lavaContractId)
+      await fetchWebhookLiveTestStatus()
+      startWebhookLivePolling()
+    } else {
+      log.warn('webhook live test: arm failed', data)
+    }
+  } finally {
+    webhookLiveArmLoading.value = false
+  }
+}
+
+function extractLivePaymentLinkFromRouteData(data: unknown): { lavaContractId?: string; paymentUrl?: string } {
+  if (!data || typeof data !== 'object') return {}
+  const d = data as Record<string, unknown>
+  const rr = d.routeResult as Record<string, unknown> | undefined
+  if (rr?.success === true) {
+    return {
+      lavaContractId: typeof rr.lavaContractId === 'string' ? rr.lavaContractId : undefined,
+      paymentUrl: typeof rr.paymentUrl === 'string' ? rr.paymentUrl : undefined
+    }
+  }
+  return {}
+}
+
+function extractLivePaymentLinkFromHttpData(data: unknown): { lavaContractId?: string; paymentUrl?: string } {
+  if (!data || typeof data !== 'object') return {}
+  const d = data as Record<string, unknown>
+  const body = d.responseBody as Record<string, unknown> | undefined
+  if (body?.success === true) {
+    return {
+      lavaContractId: typeof body.lavaContractId === 'string' ? body.lavaContractId : undefined,
+      paymentUrl: typeof body.paymentUrl === 'string' ? body.paymentUrl : undefined
+    }
+  }
+  return {}
+}
+
+function maybeUpdatePaymentLinkLiveSnapshot(
+  source: 'route' | 'http',
+  data: unknown,
+  rowStatus: PaymentLinkTestVisualStatus
+) {
+  if (rowStatus !== 'success') return
+  const ex =
+    source === 'route' ? extractLivePaymentLinkFromRouteData(data) : extractLivePaymentLinkFromHttpData(data)
+  if (ex.lavaContractId && ex.paymentUrl) {
+    paymentLinkLiveSnapshot.value = {
+      lavaContractId: ex.lavaContractId,
+      paymentUrl: ex.paymentUrl,
+      source
+    }
+  }
+}
+
+const gcOrderPlProbeId = ref('')
+const gcOrderPlProbeBuyerEmail = ref('')
+const gcOrderPlApiLoading = ref(false)
+const gcOrderPlApiLastAt = ref<string | null>(null)
+const gcOrderPlApiRaw = ref<unknown>(null)
+
+async function runIntegrationGcOrderPlApiTest() {
+  const id = gcOrderPlProbeId.value.trim()
+  if (!id) return
+  gcOrderPlApiLoading.value = true
+  gcOrderPlApiRaw.value = null
+  try {
+    const baseUrl = getApiBaseUrl().replace(/\/$/, '')
+    const email = gcOrderPlProbeBuyerEmail.value.trim()
+    const q = new URLSearchParams({ gcOrderId: id })
+    if (email) q.set('buyerEmail', email)
+    const res = await fetch(`${baseUrl}/api/tests/endpoints-check/integration-gc-order-pl-api?${q.toString()}`, {
+      method: 'GET',
+      credentials: 'include'
+    })
+    gcOrderPlApiRaw.value = await res.json().catch(() => ({ parseError: true }))
+    gcOrderPlApiLastAt.value = new Date().toLocaleString('ru-RU')
+  } catch (e) {
+    gcOrderPlApiRaw.value = { error: String(e) }
+    gcOrderPlApiLastAt.value = new Date().toLocaleString('ru-RU')
+  } finally {
+    gcOrderPlApiLoading.value = false
+  }
+}
+
+const integrationPaymentLinkBusy = computed(
+  () =>
+    paymentLinkDryRunUnitLoading.value ||
+    paymentLinkHttpIntegrationLoading.value ||
+    paymentLinkHeapSettingsLoading.value ||
+    paymentLinkFullRouteRunLoading.value ||
+    paymentLinkFullHttpLoading.value ||
+    webhookLiveStatusLoading.value ||
+    webhookLiveArmLoading.value ||
+    gcOrderPlApiLoading.value
+)
+
+const webhookLivePaymentUrlDisplay = computed(() => {
+  const fromState = webhookLiveApiResponse.value?.state?.paymentUrl
+  if (fromState && fromState.trim()) return fromState.trim()
+  return paymentLinkLiveSnapshot.value?.paymentUrl?.trim() ?? ''
+})
+
+watch(
+  () => [showContent.value, testSuiteMode.value] as const,
+  ([show, mode]) => {
+    if (show && mode === 'integration') {
+      void fetchWebhookLiveTestStatus()
+    } else {
+      stopWebhookLivePolling()
+    }
+  },
+  { immediate: true }
+)
+
+onBeforeUnmount(() => {
+  stopWebhookLivePolling()
+})
+
+function parsePaymentLinkDryRunResponse(data: unknown): {
+  status: PaymentLinkTestVisualStatus
+  detail?: string
+} {
+  if (!data || typeof data !== 'object') {
+    return { status: 'fail', detail: 'Пустой или неверный ответ' }
+  }
+  const d = data as Record<string, unknown>
+  if (d.skipped === true) {
+    return { status: 'skip', detail: String(d.reason ?? 'Пропуск') }
+  }
+  if (d.success === true) {
+    return {
+      status: 'success',
+      detail: typeof d.gcOrderId === 'string' ? `order: ${d.gcOrderId}` : undefined
+    }
+  }
+  return { status: 'fail', detail: String(d.error ?? 'Проверка не прошла') }
+}
+
+function parsePaymentLinkHttpIntegrationResponse(data: unknown): {
+  status: PaymentLinkTestVisualStatus
+  detail?: string
+} {
+  if (!data || typeof data !== 'object') {
+    return { status: 'fail', detail: 'Пустой или неверный ответ' }
+  }
+  const d = data as Record<string, unknown>
+  if (d.skipped === true) {
+    const hint = typeof d.hint === 'string' ? ` ${d.hint}` : ''
+    return { status: 'skip', detail: `${String(d.reason ?? 'Пропуск')}.${hint}`.trim() }
+  }
+  if (d.success === true) {
+    const code = d.statusCode != null ? `HTTP ${d.statusCode}` : 'OK'
+    return { status: 'success', detail: String(code) }
+  }
+  return {
+    status: 'fail',
+    detail: [d.error, d.hint].filter(Boolean).join(' — ') || 'Ошибка'
+  }
+}
+
+function parsePaymentLinkHeapSettingsRead(data: unknown): {
+  status: PaymentLinkTestVisualStatus
+  detail?: string
+} {
+  if (!data || typeof data !== 'object') {
+    return { status: 'fail', detail: 'Пустой или неверный ответ' }
+  }
+  const d = data as Record<string, unknown>
+  const sr = d.settingsRead as Record<string, unknown> | undefined
+  if (d.success === true && sr && sr.allRequiredPresent === true) {
+    return { status: 'success', detail: 'Heap: lava_api_key (маска), base_url, product_id, offer_id' }
+  }
+  return {
+    status: 'fail',
+    detail: String(d.errorCode ?? 'Неполные настройки в Heap')
+  }
+}
+
+function parsePaymentLinkFullRouteRunResponse(data: unknown): {
+  status: PaymentLinkTestVisualStatus
+  detail?: string
+} {
+  if (!data || typeof data !== 'object') {
+    return { status: 'fail', detail: 'Пустой или неверный ответ' }
+  }
+  const d = data as Record<string, unknown>
+  if (d.success === true) {
+    const rr = d.routeResult as Record<string, unknown> | undefined
+    if (rr?.success === true && typeof rr.paymentUrl === 'string') {
+      const n = typeof d.deactivatedActiveContracts === 'number' ? d.deactivatedActiveContracts : 0
+      return { status: 'success', detail: `контрактов снято с активных: ${n}` }
+    }
+    return { status: 'fail', detail: String(rr?.errorCode ?? 'route.run не вернул success') }
+  }
+  return { status: 'fail', detail: String(d.errorCode ?? 'Ошибка') }
+}
+
+function parsePaymentLinkFullHttpLiveResponse(data: unknown): {
+  status: PaymentLinkTestVisualStatus
+  detail?: string
+} {
+  if (!data || typeof data !== 'object') {
+    return { status: 'fail', detail: 'Пустой или неверный ответ' }
+  }
+  const d = data as Record<string, unknown>
+  if (d.skipped === true) {
+    const hint = typeof d.hint === 'string' ? ` ${d.hint}` : ''
+    return { status: 'skip', detail: `${String(d.reason ?? 'Пропуск')}.${hint}`.trim() }
+  }
+  if (d.success === true) {
+    const body = d.responseBody as Record<string, unknown> | undefined
+    const code = d.statusCode != null ? `HTTP ${d.statusCode}` : 'OK'
+    if (body?.success === true && typeof body.paymentUrl === 'string') {
+      return { status: 'success', detail: String(code) }
+    }
+    return { status: 'fail', detail: String(body?.errorCode ?? 'В теле нет success/paymentUrl') }
+  }
+  return {
+    status: 'fail',
+    detail: [d.error, d.errorCode].filter(Boolean).join(' — ') || 'Ошибка'
+  }
+}
+
+function paymentLinkRowBadgeLabel(status: PaymentLinkTestVisualStatus): string {
+  switch (status) {
+    case 'success':
+      return '[OK]'
+    case 'fail':
+      return '[FAIL]'
+    case 'skip':
+      return '[SKIP]'
+    default:
+      return '[TODO]'
+  }
+}
+
 const integrationBothDisplay = computed(() => {
   const byId = new Map(integrationBothResults.value.map((r) => [r.id, r]))
   return INTEGRATION_TAB_CREDENTIAL_TESTS.map((t) => {
@@ -1115,6 +1563,114 @@ async function runIntegrationBothTests() {
   } finally {
     integrationBothLoading.value = false
   }
+}
+
+async function runPaymentLinkDryRunUnit() {
+  paymentLinkDryRunUnitLoading.value = true
+  const baseUrl = getApiBaseUrl().replace(/\/$/, '')
+  log.info('Юнит: payment-link dry-run (route.run)')
+  try {
+    const res = await fetch(`${baseUrl}/api/tests/endpoints-check/payment-link-dry-run-unit`, {
+      method: 'GET',
+      credentials: 'include'
+    })
+    const data = await res.json().catch(() => null)
+    paymentLinkDryRunRow.value = parsePaymentLinkDryRunResponse(data)
+    paymentLinkDryRunRaw.value = data ? JSON.stringify(data, null, 2) : null
+    paymentLinkDryRunUnitLastAt.value = new Date().toLocaleString('ru-RU')
+  } finally {
+    paymentLinkDryRunUnitLoading.value = false
+  }
+}
+
+async function runPaymentLinkHttpIntegration() {
+  paymentLinkHttpIntegrationLoading.value = true
+  const baseUrl = getApiBaseUrl().replace(/\/$/, '')
+  log.info('Интеграция: HTTP POST payment-link (request на сервере)')
+  try {
+    const res = await fetch(`${baseUrl}/api/tests/endpoints-check/payment-link-http-integration`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({})
+    })
+    const data = await res.json().catch(() => null)
+    paymentLinkHttpRow.value = parsePaymentLinkHttpIntegrationResponse(data)
+    paymentLinkHttpRaw.value = data ? JSON.stringify(data, null, 2) : null
+    paymentLinkHttpIntegrationLastAt.value = new Date().toLocaleString('ru-RU')
+  } finally {
+    paymentLinkHttpIntegrationLoading.value = false
+  }
+}
+
+async function runPaymentLinkBothTests() {
+  await runPaymentLinkDryRunUnit()
+  await runPaymentLinkHttpIntegration()
+}
+
+async function runPaymentLinkHeapSettingsRead() {
+  paymentLinkHeapSettingsLoading.value = true
+  const baseUrl = getApiBaseUrl().replace(/\/$/, '')
+  log.info('Лайв: чтение Heap (Lava для payment-link)')
+  try {
+    const res = await fetch(`${baseUrl}/api/tests/endpoints-check/payment-link-heap-settings-read`, {
+      method: 'GET',
+      credentials: 'include'
+    })
+    const data = await res.json().catch(() => null)
+    paymentLinkHeapSettingsRow.value = parsePaymentLinkHeapSettingsRead(data)
+    paymentLinkHeapSettingsRaw.value = data ? JSON.stringify(data, null, 2) : null
+    paymentLinkHeapSettingsLastAt.value = new Date().toLocaleString('ru-RU')
+  } finally {
+    paymentLinkHeapSettingsLoading.value = false
+  }
+}
+
+async function runPaymentLinkFullRouteRun() {
+  paymentLinkFullRouteRunLoading.value = true
+  const baseUrl = getApiBaseUrl().replace(/\/$/, '')
+  log.info('Лайв: payment-link route.run без dry-run')
+  try {
+    const res = await fetch(`${baseUrl}/api/tests/endpoints-check/payment-link-full-route-run`, {
+      method: 'GET',
+      credentials: 'include'
+    })
+    const data = await res.json().catch(() => null)
+    paymentLinkFullRouteRunRow.value = parsePaymentLinkFullRouteRunResponse(data)
+    paymentLinkFullRouteRunRaw.value = data ? JSON.stringify(data, null, 2) : null
+    paymentLinkFullRouteRunLastAt.value = new Date().toLocaleString('ru-RU')
+    maybeUpdatePaymentLinkLiveSnapshot('route', data, paymentLinkFullRouteRunRow.value.status)
+  } finally {
+    paymentLinkFullRouteRunLoading.value = false
+  }
+}
+
+async function runPaymentLinkFullHttpLive() {
+  paymentLinkFullHttpLoading.value = true
+  const baseUrl = getApiBaseUrl().replace(/\/$/, '')
+  log.info('Лайв: HTTP POST payment-link без dry-run')
+  try {
+    const res = await fetch(`${baseUrl}/api/tests/endpoints-check/payment-link-full-http-integration`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({})
+    })
+    const data = await res.json().catch(() => null)
+    paymentLinkFullHttpRow.value = parsePaymentLinkFullHttpLiveResponse(data)
+    paymentLinkFullHttpRaw.value = data ? JSON.stringify(data, null, 2) : null
+    paymentLinkFullHttpLastAt.value = new Date().toLocaleString('ru-RU')
+    maybeUpdatePaymentLinkLiveSnapshot('http', data, paymentLinkFullHttpRow.value.status)
+  } finally {
+    paymentLinkFullHttpLoading.value = false
+  }
+}
+
+/** Лайв-триада: Heap → route.run → HTTP (полные вызовы Lava для gcOrderId=test). */
+async function runPaymentLinkLiveAllTests() {
+  await runPaymentLinkHeapSettingsRead()
+  await runPaymentLinkFullRouteRun()
+  await runPaymentLinkFullHttpLive()
 }
 
 async function runSingleIntegrationBothTest(testId: string) {
@@ -1241,7 +1797,12 @@ const runAllTests = async () => {
     if (testSuiteMode.value === 'unit') {
       await runUnitPageRoutesTests()
       await runUnitSaveCredsTests()
-      const all = [...unitPageRoutesResults.value, ...unitSaveCredsResults.value]
+      await runUnitWebhookRouteTests()
+      const all = [
+        ...unitPageRoutesResults.value,
+        ...unitSaveCredsResults.value,
+        ...unitWebhookRouteResults.value
+      ]
       const passed = all.filter((r) => r.passed).length
       const failed = all.filter((r) => !r.passed).length
       testMetrics.value = {
@@ -1257,6 +1818,7 @@ const runAllTests = async () => {
     if (testSuiteMode.value === 'integration') {
       await runIntegrationPageRoutesTests()
       await runIntegrationBothTests()
+      await runPaymentLinkBothTests()
       const all = [...integrationPageResults.value, ...integrationBothResults.value]
       const passed = all.filter((r) => r.passed).length
       const failed = all.filter((r) => !r.passed).length
@@ -1361,11 +1923,14 @@ const runAllTests = async () => {
                 </div>
                 <p class="tests-mode-hint">
                   <template v-if="testSuiteMode === 'unit'">
-                    Слияние ключей save (без сети) и быстрый <code class="tests-inline-code">route.run</code> по
-                    страницам (тот же ctx).
+                    Слияние ключей save (без сети), быстрый <code class="tests-inline-code">route.run</code> по
+                    страницам и юнит <code class="tests-inline-code">POST …/lava/webhook</code> (тот же
+                    <code class="tests-inline-code">ctx</code>).
                   </template>
                   <template v-else-if="testSuiteMode === 'integration'">
-                    Страницы: серверный HTTP к маршрутам /, /web/* с разбором ответа; затем живые проверки GetCourse и Lava по Heap (как в админке).
+                    Страницы (fetch + разбор); ключи Heap (GetCourse и Lava); POST payment-link: юнит
+                    <code class="tests-inline-code">route.run</code> с dry-run и HTTP
+                    <code class="tests-inline-code">request()</code> на тот же эндпоинт.
                   </template>
                   <template v-else>
                     Прежний набор: эндпоинты, слои settings/logger/dashboard/repos и проверки ключей GetCourse / Lava в Heap.
@@ -1401,9 +1966,9 @@ const runAllTests = async () => {
                       !hasRunnableTestsInMode
                         ? 'Нет сценариев'
                         : testSuiteMode === 'unit'
-                          ? 'Страницы (route.run) + слияние ключей'
+                          ? 'Страницы (route.run) + слияние ключей + Lava webhook (route.run)'
                           : testSuiteMode === 'integration'
-                            ? 'Страницы (HTTP) + GetCourse и Lava (Heap)'
+                            ? 'Страницы + Heap + payment-link (dry-run и HTTP)'
                             : 'Запустить весь устаревший набор'
                     "
                     @click="runAllTests"
@@ -1452,6 +2017,7 @@ const runAllTests = async () => {
                           runAllTestsLoading ||
                           unitPageRoutesLoading ||
                           unitSaveCredsLoading ||
+                          unitWebhookRouteLoading ||
                           isGroupBlockedBySingle('unitPageRoutes')
                         "
                         @click.stop="runSingleUnitPageRouteTest(item.id)"
@@ -1472,6 +2038,7 @@ const runAllTests = async () => {
                       runAllTestsLoading ||
                       unitPageRoutesLoading ||
                       unitSaveCredsLoading ||
+                      unitWebhookRouteLoading ||
                       isGroupBlockedBySingle('unitPageRoutes')
                     "
                     @click="runUnitPageRoutesTests"
@@ -1519,6 +2086,7 @@ const runAllTests = async () => {
                           runAllTestsLoading ||
                           unitSaveCredsLoading ||
                           unitPageRoutesLoading ||
+                          unitWebhookRouteLoading ||
                           isGroupBlockedBySingle('unitSaveCreds')
                         "
                         @click.stop="runSingleUnitSaveCredsTest(item.id)"
@@ -1539,12 +2107,84 @@ const runAllTests = async () => {
                       runAllTestsLoading ||
                       unitSaveCredsLoading ||
                       unitPageRoutesLoading ||
+                      unitWebhookRouteLoading ||
                       isGroupBlockedBySingle('unitSaveCreds')
                     "
                     @click="runUnitSaveCredsTests"
                   >
                     <i class="fas" :class="unitSaveCredsLoading ? 'fa-spinner fa-spin' : 'fa-bolt'"></i>
                     {{ unitSaveCredsLoading ? 'Проверяем...' : 'Запустить юнит-тесты слияния ключей' }}
+                  </button>
+                </div>
+              </div>
+
+              <!-- Вкладка «Юнит»: роут Lava webhook (route.run) -->
+              <div v-if="showContent && testSuiteMode === 'unit'" class="tests-card tests-endpoints-card tests-crt-card">
+                <div class="tests-endpoints-header">
+                  <i class="fas fa-plug tests-endpoints-icon"></i>
+                  <h2 class="tests-endpoints-title">Юнит: Lava webhook (route.run)</h2>
+                </div>
+                <p class="tests-endpoints-desc">
+                  GET{' '}
+                  <code class="tests-inline-code">/api/tests/endpoints-check/lava-webhook-route</code>
+                  — вызовы <code class="tests-inline-code">lavaWebhookInfoRoute</code> и
+                  <code class="tests-inline-code">lavaWebhookRoute.run(ctx, { …тело, headers })</code> в том же
+                  <code class="tests-inline-code">ctx</code>, что у запроса к API. Отдельно от сервисного
+                  <code class="tests-inline-code">lava-webhook-service</code> (там только
+                  <code class="tests-inline-code">processWebhook</code>).
+                </p>
+                <div v-if="unitWebhookRouteLastRunAt" class="tests-endpoints-last-run">
+                  Результаты от: {{ unitWebhookRouteLastRunAt }}
+                </div>
+                <div class="tests-endpoints-list-wrap">
+                  <ul class="tests-endpoints-list" role="list">
+                    <li
+                      v-for="item in unitWebhookRouteDisplay"
+                      :key="item.id"
+                      class="tests-endpoints-list-item"
+                      :class="`tests-endpoints-status-${item.status}`"
+                    >
+                      <span class="tests-endpoints-badge" :class="`tests-endpoints-badge-${item.status}`">
+                        {{ item.status === 'todo' ? '[TODO]' : item.status === 'success' ? '[OK]' : '[FAIL]' }}
+                      </span>
+                      <span class="tests-endpoints-list-title-inline">{{ item.title }}</span>
+                      <span v-if="item.error" class="tests-endpoints-list-error">{{ item.error }}</span>
+                      <button
+                        type="button"
+                        class="tests-run-one-btn"
+                        title="Запустить только эту проверку"
+                        :disabled="
+                          runAllTestsLoading ||
+                          unitWebhookRouteLoading ||
+                          unitPageRoutesLoading ||
+                          unitSaveCredsLoading ||
+                          isGroupBlockedBySingle('unitWebhookRoute')
+                        "
+                        @click.stop="runSingleUnitWebhookRouteTest(item.id)"
+                      >
+                        <i
+                          class="fas"
+                          :class="isSingleRunning('unitWebhookRoute', item.id) ? 'fa-spinner fa-spin' : 'fa-play'"
+                        ></i>
+                      </button>
+                    </li>
+                  </ul>
+                </div>
+                <div class="tests-endpoints-actions">
+                  <button
+                    type="button"
+                    class="tests-run-group-btn"
+                    :disabled="
+                      runAllTestsLoading ||
+                      unitWebhookRouteLoading ||
+                      unitPageRoutesLoading ||
+                      unitSaveCredsLoading ||
+                      isGroupBlockedBySingle('unitWebhookRoute')
+                    "
+                    @click="runUnitWebhookRouteTests"
+                  >
+                    <i class="fas" :class="unitWebhookRouteLoading ? 'fa-spinner fa-spin' : 'fa-bolt'"></i>
+                    {{ unitWebhookRouteLoading ? 'Проверяем...' : 'Запустить все проверки webhook-роута' }}
                   </button>
                 </div>
               </div>
@@ -1588,6 +2228,7 @@ const runAllTests = async () => {
                           runAllTestsLoading ||
                           integrationPageLoading ||
                           integrationBothLoading ||
+                          integrationPaymentLinkBusy ||
                           isGroupBlockedBySingle('integrationPages')
                         "
                         @click.stop="runSingleIntegrationPageTest(item.id)"
@@ -1608,6 +2249,7 @@ const runAllTests = async () => {
                       runAllTestsLoading ||
                       integrationPageLoading ||
                       integrationBothLoading ||
+                      integrationPaymentLinkBusy ||
                       isGroupBlockedBySingle('integrationPages')
                     "
                     @click="runIntegrationPageRoutesTests"
@@ -1654,6 +2296,7 @@ const runAllTests = async () => {
                           runAllTestsLoading ||
                           integrationBothLoading ||
                           integrationPageLoading ||
+                          integrationPaymentLinkBusy ||
                           isGroupBlockedBySingle('integrationBoth')
                         "
                         @click.stop="runSingleIntegrationBothTest(item.id)"
@@ -1674,6 +2317,7 @@ const runAllTests = async () => {
                       runAllTestsLoading ||
                       integrationBothLoading ||
                       integrationPageLoading ||
+                      integrationPaymentLinkBusy ||
                       isGroupBlockedBySingle('integrationBoth')
                     "
                     @click="runIntegrationBothTests"
@@ -1682,6 +2326,512 @@ const runAllTests = async () => {
                     {{ integrationBothLoading ? 'Проверяем...' : 'Запустить обе проверки (GetCourse и Lava)' }}
                   </button>
                 </div>
+              </div>
+
+              <div v-if="showContent && testSuiteMode === 'integration'" class="tests-card tests-endpoints-card tests-crt-card">
+                <div class="tests-endpoints-header">
+                  <i class="fas fa-shopping-cart tests-endpoints-icon"></i>
+                  <h2 class="tests-endpoints-title">Интеграция: GetCourse по номеру заказа</h2>
+                </div>
+                <p class="tests-endpoints-desc">
+                  Введите <code class="tests-inline-code">deal_number</code> заказа в GetCourse (не
+                  <code class="tests-inline-code">test</code>). GET
+                  <code class="tests-inline-code">…/integration-gc-order-pl-api</code> — проба PL API
+                  (<code class="tests-inline-code">deal_status=cancelled</code>; на боевом заказе это может
+                  изменить статус в GetCourse). Email покупателя: передайте в поле ниже или оставьте пустым, если для
+                  этого <code class="tests-inline-code">gc_order_id</code> уже есть контракт в Heap (payment-link).
+                </p>
+                <div class="tests-gc-order-probe-fields">
+                  <div class="tests-webhook-live-url-row">
+                    <span class="tests-webhook-live-label">Номер заказа GetCourse (обязательно)</span>
+                    <input
+                      v-model="gcOrderPlProbeId"
+                      class="tests-gc-order-probe-input"
+                      type="text"
+                      name="gcOrderPlProbeId"
+                      autocomplete="off"
+                      placeholder="например 13667463"
+                    />
+                  </div>
+                  <div class="tests-webhook-live-url-row">
+                    <span class="tests-webhook-live-label">Email покупателя (необязательно, иначе из Heap)</span>
+                    <input
+                      v-model="gcOrderPlProbeBuyerEmail"
+                      class="tests-gc-order-probe-input"
+                      type="email"
+                      name="gcOrderPlProbeBuyerEmail"
+                      autocomplete="off"
+                      placeholder="если пусто — buyer_email из lava_payment_contract"
+                    />
+                  </div>
+                </div>
+                <div v-if="gcOrderPlApiLastAt" class="tests-endpoints-last-run">
+                  Последний запрос: {{ gcOrderPlApiLastAt }}
+                </div>
+                <div class="tests-endpoints-actions">
+                  <button
+                    type="button"
+                    class="tests-run-group-btn"
+                    :disabled="
+                      runAllTestsLoading ||
+                      integrationBothLoading ||
+                      integrationPageLoading ||
+                      integrationPaymentLinkBusy ||
+                      !gcOrderPlProbeId.trim()
+                    "
+                    @click="runIntegrationGcOrderPlApiTest"
+                  >
+                    <i class="fas" :class="gcOrderPlApiLoading ? 'fa-spinner fa-spin' : 'fa-plug'"></i>
+                    {{ gcOrderPlApiLoading ? 'Запрос к GetCourse…' : 'Проверить PL API по заказу' }}
+                  </button>
+                </div>
+                <details v-if="gcOrderPlApiRaw" class="tests-payment-link-raw">
+                  <summary>Ответ API</summary>
+                  <pre class="tests-payment-link-raw-pre">{{ JSON.stringify(gcOrderPlApiRaw, null, 2) }}</pre>
+                </details>
+              </div>
+
+              <div v-if="showContent && testSuiteMode === 'integration'" class="tests-card tests-endpoints-card tests-crt-card">
+                <div class="tests-endpoints-header">
+                  <i class="fas fa-credit-card tests-endpoints-icon"></i>
+                  <h2 class="tests-endpoints-title">POST /api/integrations/lava/payment-link</h2>
+                </div>
+                <p class="tests-endpoints-desc">
+                  <strong>[OK]</strong> — проверка прошла, <strong>[SKIP]</strong> у HTTP-теста — не удалось собрать абсолютный URL
+                  (нет <code class="tests-inline-code">Host</code> / <code class="tests-inline-code">Origin</code>), не ошибка. Юнит:
+                  GET <code class="tests-inline-code">…/payment-link-dry-run-unit</code> —
+                  <code class="tests-inline-code">route.run</code> + <code class="tests-inline-code">integrationTestDryRun</code>.
+                  Интеграция: POST <code class="tests-inline-code">…/payment-link-http-integration</code> —
+                  <code class="tests-inline-code">request()</code> на тот же URL без заголовков авторизации.
+                </p>
+                <div
+                  v-if="paymentLinkDryRunUnitLastAt || paymentLinkHttpIntegrationLastAt"
+                  class="tests-endpoints-last-run"
+                >
+                  Последний запуск: юнит
+                  {{ paymentLinkDryRunUnitLastAt ?? '—' }}, HTTP {{ paymentLinkHttpIntegrationLastAt ?? '—' }}
+                </div>
+                <div class="tests-endpoints-list-wrap">
+                  <ul class="tests-endpoints-list" role="list">
+                    <li
+                      class="tests-endpoints-list-item"
+                      :class="`tests-endpoints-status-${paymentLinkDryRunRow.status}`"
+                    >
+                      <span
+                        class="tests-endpoints-badge"
+                        :class="`tests-endpoints-badge-${paymentLinkDryRunRow.status}`"
+                        >{{ paymentLinkRowBadgeLabel(paymentLinkDryRunRow.status) }}</span
+                      >
+                      <span class="tests-endpoints-list-title-inline">Юнит: dry-run (<code>route.run</code>)</span>
+                      <span
+                        v-if="paymentLinkDryRunRow.detail"
+                        :class="
+                          paymentLinkDryRunRow.status === 'fail'
+                            ? 'tests-endpoints-list-error'
+                            : 'tests-endpoints-list-desc'
+                        "
+                        >{{ paymentLinkDryRunRow.detail }}</span
+                      >
+                      <button
+                        type="button"
+                        class="tests-run-one-btn"
+                        title="Запустить юнит"
+                        :disabled="
+                          runAllTestsLoading ||
+                          paymentLinkDryRunUnitLoading ||
+                          paymentLinkHttpIntegrationLoading ||
+                          integrationPageLoading ||
+                          integrationBothLoading
+                        "
+                        @click.stop="runPaymentLinkDryRunUnit"
+                      >
+                        <i
+                          class="fas"
+                          :class="paymentLinkDryRunUnitLoading ? 'fa-spinner fa-spin' : 'fa-play'"
+                        ></i>
+                      </button>
+                    </li>
+                    <li
+                      class="tests-endpoints-list-item"
+                      :class="`tests-endpoints-status-${paymentLinkHttpRow.status}`"
+                    >
+                      <span
+                        class="tests-endpoints-badge"
+                        :class="`tests-endpoints-badge-${paymentLinkHttpRow.status}`"
+                        >{{ paymentLinkRowBadgeLabel(paymentLinkHttpRow.status) }}</span
+                      >
+                      <span class="tests-endpoints-list-title-inline">Интеграция: HTTP POST (<code>request</code>)</span>
+                      <span
+                        v-if="paymentLinkHttpRow.detail"
+                        :class="
+                          paymentLinkHttpRow.status === 'fail'
+                            ? 'tests-endpoints-list-error'
+                            : 'tests-endpoints-list-desc'
+                        "
+                        >{{ paymentLinkHttpRow.detail }}</span
+                      >
+                      <button
+                        type="button"
+                        class="tests-run-one-btn"
+                        title="Запустить HTTP-интеграцию"
+                        :disabled="
+                          runAllTestsLoading ||
+                          paymentLinkDryRunUnitLoading ||
+                          paymentLinkHttpIntegrationLoading ||
+                          integrationPageLoading ||
+                          integrationBothLoading
+                        "
+                        @click.stop="runPaymentLinkHttpIntegration"
+                      >
+                        <i
+                          class="fas"
+                          :class="paymentLinkHttpIntegrationLoading ? 'fa-spinner fa-spin' : 'fa-play'"
+                        ></i>
+                      </button>
+                    </li>
+                  </ul>
+                </div>
+                <div class="tests-endpoints-actions">
+                  <button
+                    type="button"
+                    class="tests-run-group-btn"
+                    :disabled="
+                      runAllTestsLoading ||
+                      paymentLinkDryRunUnitLoading ||
+                      paymentLinkHttpIntegrationLoading ||
+                      integrationPageLoading ||
+                      integrationBothLoading
+                    "
+                    @click="runPaymentLinkBothTests"
+                  >
+                    <i
+                      class="fas"
+                      :class="
+                        paymentLinkDryRunUnitLoading || paymentLinkHttpIntegrationLoading
+                          ? 'fa-spinner fa-spin'
+                          : 'fa-bolt'
+                      "
+                    ></i>
+                    {{
+                      paymentLinkDryRunUnitLoading || paymentLinkHttpIntegrationLoading
+                        ? 'Проверяем…'
+                        : 'Запустить оба (юнит + HTTP)'
+                    }}
+                  </button>
+                </div>
+                <details v-if="paymentLinkDryRunRaw" class="tests-payment-link-raw">
+                  <summary>Сырой ответ (юнит)</summary>
+                  <pre class="tests-payment-link-raw-pre">{{ paymentLinkDryRunRaw }}</pre>
+                </details>
+                <details v-if="paymentLinkHttpRaw" class="tests-payment-link-raw">
+                  <summary>Сырой ответ (HTTP)</summary>
+                  <pre class="tests-payment-link-raw-pre">{{ paymentLinkHttpRaw }}</pre>
+                </details>
+              </div>
+
+              <div v-if="showContent && testSuiteMode === 'integration'" class="tests-card tests-endpoints-card tests-crt-card">
+                <div class="tests-endpoints-header">
+                  <i class="fas fa-bolt tests-endpoints-icon"></i>
+                  <h2 class="tests-endpoints-title">Лайв: payment-link (Heap + Lava)</h2>
+                </div>
+                <p class="tests-endpoints-desc">
+                  Реальные вызовы Lava и Heap: перед каждым полным сценарием активные контракты с
+                  <code class="tests-inline-code">gc_order_id=test</code> переводятся в
+                  <code class="tests-inline-code">cancelled</code>, чтобы идемпотентность не обрывала цепочку.
+                  Тело:
+                  <code class="tests-inline-code">debug@khudoley.pro</code>, сумма 50 RUB. У HTTP-теста
+                  <strong>[SKIP]</strong> — нет абсолютного URL (откройте страницу из браузера).
+                </p>
+                <div
+                  v-if="
+                    paymentLinkHeapSettingsLastAt ||
+                    paymentLinkFullRouteRunLastAt ||
+                    paymentLinkFullHttpLastAt
+                  "
+                  class="tests-endpoints-last-run"
+                >
+                  Последний запуск: Heap {{ paymentLinkHeapSettingsLastAt ?? '—' }}, route.run
+                  {{ paymentLinkFullRouteRunLastAt ?? '—' }}, HTTP {{ paymentLinkFullHttpLastAt ?? '—' }}
+                </div>
+                <div class="tests-endpoints-list-wrap">
+                  <ul class="tests-endpoints-list" role="list">
+                    <li
+                      class="tests-endpoints-list-item"
+                      :class="`tests-endpoints-status-${paymentLinkHeapSettingsRow.status}`"
+                    >
+                      <span
+                        class="tests-endpoints-badge"
+                        :class="`tests-endpoints-badge-${paymentLinkHeapSettingsRow.status}`"
+                        >{{ paymentLinkRowBadgeLabel(paymentLinkHeapSettingsRow.status) }}</span
+                      >
+                      <span class="tests-endpoints-list-title-inline">Чтение Heap (4 поля Lava)</span>
+                      <span
+                        v-if="paymentLinkHeapSettingsRow.detail"
+                        :class="
+                          paymentLinkHeapSettingsRow.status === 'fail'
+                            ? 'tests-endpoints-list-error'
+                            : 'tests-endpoints-list-desc'
+                        "
+                        >{{ paymentLinkHeapSettingsRow.detail }}</span
+                      >
+                      <button
+                        type="button"
+                        class="tests-run-one-btn"
+                        title="GET payment-link-heap-settings-read"
+                        :disabled="
+                          runAllTestsLoading ||
+                          paymentLinkHeapSettingsLoading ||
+                          paymentLinkFullRouteRunLoading ||
+                          paymentLinkFullHttpLoading ||
+                          integrationPageLoading ||
+                          integrationBothLoading
+                        "
+                        @click.stop="runPaymentLinkHeapSettingsRead"
+                      >
+                        <i
+                          class="fas"
+                          :class="paymentLinkHeapSettingsLoading ? 'fa-spinner fa-spin' : 'fa-play'"
+                        ></i>
+                      </button>
+                    </li>
+                    <li
+                      class="tests-endpoints-list-item"
+                      :class="`tests-endpoints-status-${paymentLinkFullRouteRunRow.status}`"
+                    >
+                      <span
+                        class="tests-endpoints-badge"
+                        :class="`tests-endpoints-badge-${paymentLinkFullRouteRunRow.status}`"
+                        >{{ paymentLinkRowBadgeLabel(paymentLinkFullRouteRunRow.status) }}</span
+                      >
+                      <span class="tests-endpoints-list-title-inline"
+                        >Интеграция: <code>route.run</code> (без dry-run)</span
+                      >
+                      <span
+                        v-if="paymentLinkFullRouteRunRow.detail"
+                        :class="
+                          paymentLinkFullRouteRunRow.status === 'fail'
+                            ? 'tests-endpoints-list-error'
+                            : 'tests-endpoints-list-desc'
+                        "
+                        >{{ paymentLinkFullRouteRunRow.detail }}</span
+                      >
+                      <button
+                        type="button"
+                        class="tests-run-one-btn"
+                        title="GET payment-link-full-route-run"
+                        :disabled="
+                          runAllTestsLoading ||
+                          paymentLinkHeapSettingsLoading ||
+                          paymentLinkFullRouteRunLoading ||
+                          paymentLinkFullHttpLoading ||
+                          integrationPageLoading ||
+                          integrationBothLoading
+                        "
+                        @click.stop="runPaymentLinkFullRouteRun"
+                      >
+                        <i
+                          class="fas"
+                          :class="paymentLinkFullRouteRunLoading ? 'fa-spinner fa-spin' : 'fa-play'"
+                        ></i>
+                      </button>
+                    </li>
+                    <li
+                      class="tests-endpoints-list-item"
+                      :class="`tests-endpoints-status-${paymentLinkFullHttpRow.status}`"
+                    >
+                      <span
+                        class="tests-endpoints-badge"
+                        :class="`tests-endpoints-badge-${paymentLinkFullHttpRow.status}`"
+                        >{{ paymentLinkRowBadgeLabel(paymentLinkFullHttpRow.status) }}</span
+                      >
+                      <span class="tests-endpoints-list-title-inline"
+                        >Интеграция: HTTP POST (без dry-run)</span
+                      >
+                      <span
+                        v-if="paymentLinkFullHttpRow.detail"
+                        :class="
+                          paymentLinkFullHttpRow.status === 'fail'
+                            ? 'tests-endpoints-list-error'
+                            : 'tests-endpoints-list-desc'
+                        "
+                        >{{ paymentLinkFullHttpRow.detail }}</span
+                      >
+                      <button
+                        type="button"
+                        class="tests-run-one-btn"
+                        title="POST payment-link-full-http-integration"
+                        :disabled="
+                          runAllTestsLoading ||
+                          paymentLinkHeapSettingsLoading ||
+                          paymentLinkFullRouteRunLoading ||
+                          paymentLinkFullHttpLoading ||
+                          integrationPageLoading ||
+                          integrationBothLoading
+                        "
+                        @click.stop="runPaymentLinkFullHttpLive"
+                      >
+                        <i
+                          class="fas"
+                          :class="paymentLinkFullHttpLoading ? 'fa-spinner fa-spin' : 'fa-play'"
+                        ></i>
+                      </button>
+                    </li>
+                  </ul>
+                </div>
+                <div class="tests-endpoints-actions">
+                  <button
+                    type="button"
+                    class="tests-run-group-btn"
+                    :disabled="
+                      runAllTestsLoading ||
+                      paymentLinkHeapSettingsLoading ||
+                      paymentLinkFullRouteRunLoading ||
+                      paymentLinkFullHttpLoading ||
+                      integrationPageLoading ||
+                      integrationBothLoading
+                    "
+                    @click="runPaymentLinkLiveAllTests"
+                  >
+                    <i
+                      class="fas"
+                      :class="
+                        paymentLinkHeapSettingsLoading ||
+                        paymentLinkFullRouteRunLoading ||
+                        paymentLinkFullHttpLoading
+                          ? 'fa-spinner fa-spin'
+                          : 'fa-bolt'
+                      "
+                    ></i>
+                    {{
+                      paymentLinkHeapSettingsLoading ||
+                      paymentLinkFullRouteRunLoading ||
+                      paymentLinkFullHttpLoading
+                        ? 'Проверяем…'
+                        : 'Запустить лайв-триаду (Heap + route.run + HTTP)'
+                    }}
+                  </button>
+                </div>
+                <details v-if="paymentLinkHeapSettingsRaw" class="tests-payment-link-raw">
+                  <summary>Сырой ответ (Heap)</summary>
+                  <pre class="tests-payment-link-raw-pre">{{ paymentLinkHeapSettingsRaw }}</pre>
+                </details>
+                <details v-if="paymentLinkFullRouteRunRaw" class="tests-payment-link-raw">
+                  <summary>Сырой ответ (route.run)</summary>
+                  <pre class="tests-payment-link-raw-pre">{{ paymentLinkFullRouteRunRaw }}</pre>
+                </details>
+                <details v-if="paymentLinkFullHttpRaw" class="tests-payment-link-raw">
+                  <summary>Сырой ответ (HTTP лайв)</summary>
+                  <pre class="tests-payment-link-raw-pre">{{ paymentLinkFullHttpRaw }}</pre>
+                </details>
+              </div>
+
+              <div v-if="showContent && testSuiteMode === 'integration'" class="tests-card tests-endpoints-card tests-crt-card">
+                <div class="tests-endpoints-header">
+                  <i class="fas fa-link tests-endpoints-icon"></i>
+                  <h2 class="tests-endpoints-title">Лайв: webhook после оплаты</h2>
+                </div>
+                <p class="tests-endpoints-desc">
+                  Оплатите по ссылке из лайва payment-link выше. Lava отправит
+                  <code class="tests-inline-code">POST</code> на эндпоинт ниже с заголовком
+                  <code class="tests-inline-code">X-Api-Key</code> = секрет из Heap. Для заказа
+                  <code class="tests-inline-code">gc_order_id=test</code> вызов GetCourse из webhook не
+                  выполняется. Нажмите «Вооружить проверку» и укажите ожидаемый
+                  <code class="tests-inline-code">lava_contract_id</code> (подставляется из последнего
+                  успешного route.run или HTTP). Зелёный статус — первый успешный
+                  <code class="tests-inline-code">payment.success</code> +
+                  <code class="tests-inline-code">completed</code> по этому контракту.
+                </p>
+                <div class="tests-webhook-live-urls">
+                  <p class="tests-webhook-live-url-row">
+                    <span class="tests-webhook-live-label">Эндпоинт webhook (куда шлёт Lava):</span>
+                    <code class="tests-webhook-live-url-code">{{ webhookLiveApiResponse?.webhookUrl || '—' }}</code>
+                  </p>
+                  <p class="tests-webhook-live-url-row">
+                    <span class="tests-webhook-live-label">Ссылка на оплату (ожидаем проверку по ней):</span>
+                    <template v-if="webhookLivePaymentUrlDisplay">
+                      <a
+                        class="tests-webhook-live-pay-link"
+                        :href="webhookLivePaymentUrlDisplay"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        >{{ webhookLivePaymentUrlDisplay }}</a
+                      >
+                    </template>
+                    <template v-else>
+                      <span class="tests-endpoints-list-desc">Сначала успешно создайте ссылку в блоке выше.</span>
+                    </template>
+                  </p>
+                  <p v-if="paymentLinkLiveSnapshot" class="tests-webhook-live-meta">
+                    Последний контракт из лайва: <code class="tests-inline-code">{{ paymentLinkLiveSnapshot.lavaContractId }}</code>
+                    ({{ paymentLinkLiveSnapshot.source === 'http' ? 'HTTP' : 'route.run' }})
+                  </p>
+                </div>
+                <div class="tests-endpoints-list-wrap">
+                  <ul class="tests-endpoints-list" role="list">
+                    <li
+                      class="tests-endpoints-list-item"
+                      :class="`tests-endpoints-status-${webhookLiveApiResponse?.state?.status === 'success' ? 'success' : 'todo'}`"
+                    >
+                      <span
+                        class="tests-endpoints-badge"
+                        :class="`tests-endpoints-badge-${webhookLiveApiResponse?.state?.status === 'success' ? 'success' : 'todo'}`"
+                        >{{
+                          webhookLiveApiResponse?.state?.status === 'success'
+                            ? '[OK]'
+                            : webhookLiveApiResponse?.state?.status === 'armed'
+                              ? '[ЖДЁМ]'
+                              : '[TODO]'
+                        }}</span
+                      >
+                      <span class="tests-endpoints-list-title-inline">Проверка webhook по контракту</span>
+                      <span
+                        v-if="webhookLiveApiResponse?.state?.expectedLavaContractId"
+                        class="tests-endpoints-list-desc"
+                        >ожидаем: {{ webhookLiveApiResponse?.state?.expectedLavaContractId }}</span
+                      >
+                      <button
+                        type="button"
+                        class="tests-run-one-btn"
+                        title="Обновить статус"
+                        :disabled="integrationPaymentLinkBusy"
+                        @click.stop="fetchWebhookLiveTestStatus"
+                      >
+                        <i
+                          class="fas"
+                          :class="webhookLiveStatusLoading ? 'fa-spinner fa-spin' : 'fa-sync'"
+                        ></i>
+                      </button>
+                    </li>
+                  </ul>
+                </div>
+                <div class="tests-endpoints-actions">
+                  <button
+                    type="button"
+                    class="tests-run-group-btn"
+                    :disabled="integrationPaymentLinkBusy || !paymentLinkLiveSnapshot?.lavaContractId"
+                    @click="armWebhookLiveTestFromSnapshot"
+                  >
+                    <i class="fas" :class="webhookLiveArmLoading ? 'fa-spinner fa-spin' : 'fa-crosshairs'"></i>
+                    {{
+                      webhookLiveArmLoading
+                        ? 'Вооружаем…'
+                        : 'Вооружить проверку (snapshot: последний успешный лайв)'
+                    }}
+                  </button>
+                </div>
+                <details
+                  v-if="webhookLiveApiResponse?.state?.otherEvents?.length"
+                  class="tests-payment-link-raw"
+                >
+                  <summary>Прочие события webhook (сырой JSON)</summary>
+                  <pre
+                    v-for="(ev, idx) in webhookLiveApiResponse?.state?.otherEvents ?? []"
+                    :key="idx"
+                    class="tests-payment-link-raw-pre tests-webhook-live-other-pre"
+                    >{{ ev.reason }} @ {{ new Date(ev.at).toISOString() }}
+{{ ev.payloadJson }}</pre
+                  >
+                </details>
               </div>
 
               <!-- Блок 1: Проверка эндпоинтов -->
@@ -2166,7 +3316,7 @@ const runAllTests = async () => {
       </div>
     </main>
 
-    <AppFooter v-if="bootLoaderDone" @chatium-click="openChatiumLink" />
+    <AppFooter v-if="bootLoaderDone" />
   </div>
 </template>
 
@@ -2705,6 +3855,107 @@ const runAllTests = async () => {
   background: rgba(211, 35, 75, 0.12);
   color: var(--color-accent);
   border: 1px solid rgba(211, 35, 75, 0.3);
+}
+
+.tests-endpoints-list-item.tests-endpoints-status-skip {
+  border-left: 3px solid #ca8a04;
+  padding-left: 0.5rem;
+  margin-left: -0.5rem;
+}
+
+.tests-endpoints-badge-skip {
+  background: rgba(234, 179, 8, 0.15);
+  color: #facc15;
+  border: 1px solid rgba(234, 179, 8, 0.35);
+}
+
+.tests-payment-link-raw {
+  margin-top: 0.75rem;
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+}
+
+.tests-payment-link-raw summary {
+  cursor: pointer;
+  user-select: none;
+  margin-bottom: 0.35rem;
+}
+
+.tests-payment-link-raw-pre {
+  max-height: 10rem;
+  overflow: auto;
+  margin: 0;
+  padding: 0.5rem;
+  white-space: pre-wrap;
+  font-family: 'Share Tech Mono', monospace;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--color-border);
+}
+
+.tests-webhook-live-urls {
+  margin-top: 0.5rem;
+  margin-bottom: 0.75rem;
+  font-size: 0.8rem;
+}
+
+.tests-webhook-live-url-row {
+  margin: 0.45rem 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.tests-webhook-live-label {
+  color: var(--color-text-secondary);
+  font-size: 0.75rem;
+}
+
+.tests-webhook-live-url-code {
+  display: block;
+  word-break: break-all;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.72rem;
+  padding: 0.35rem 0.5rem;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+}
+
+.tests-webhook-live-pay-link {
+  word-break: break-all;
+  color: var(--color-accent, #7dd3fc);
+}
+
+.tests-webhook-live-meta {
+  margin: 0.35rem 0 0;
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+}
+
+.tests-gc-order-probe-fields {
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.tests-gc-order-probe-input {
+  width: 100%;
+  max-width: 28rem;
+  box-sizing: border-box;
+  font-family: inherit;
+  font-size: 0.85rem;
+  padding: 0.45rem 0.55rem;
+  color: var(--color-text);
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+}
+
+.tests-gc-order-probe-input::placeholder {
+  color: var(--color-text-tertiary);
+}
+
+.tests-webhook-live-other-pre {
+  margin-bottom: 0.5rem;
 }
 
 .tests-endpoints-list-content {

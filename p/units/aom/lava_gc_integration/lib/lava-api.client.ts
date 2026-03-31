@@ -40,7 +40,7 @@ export type CreateContractParams = {
  */
 export async function updateOfferPrice(
   ctx: app.Ctx,
-  params: { amount: number; currency: LavaCurrency }
+  params: { amount: number; currency: LavaCurrency; offerDisplayName?: string }
 ): Promise<unknown> {
   const baseUrl = normalizeLavaBaseUrlInput(await settingsLib.getLavaBaseUrl(ctx))
   const apiKey = (await settingsLib.getLavaApiKey(ctx)).trim()
@@ -82,7 +82,15 @@ export async function updateOfferPrice(
       'Content-Type': 'application/json'
     },
     json: {
-      offers: [{ id: offerId, prices: [{ amount: params.amount, currency: params.currency }] }]
+      offers: [
+        {
+          id: offerId,
+          ...(params.offerDisplayName != null && params.offerDisplayName.length > 0
+            ? { name: params.offerDisplayName }
+            : {}),
+          prices: [{ amount: params.amount, currency: params.currency }]
+        }
+      ]
     },
     responseType: 'json',
     throwHttpErrors: false,

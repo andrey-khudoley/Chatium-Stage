@@ -8,6 +8,7 @@ import { adminPageRoute } from '../../../web/admin/index'
 import { profilePageRoute } from '../../../web/profile/index'
 import { loginPageRoute } from '../../../web/login/index'
 import { testsPageRoute } from '../../../web/tests/index'
+import { ordersPageRoute } from '../../../web/orders/index'
 import { PROJECT_ROOT } from '../../../shared/projectRoot'
 import * as loggerLib from '../../../lib/logger.lib'
 
@@ -61,7 +62,8 @@ const PAGE_UNIT_TESTS: Array<{
   { id: 'web-admin', title: 'Админка /web/admin', pathSuffix: '/web/admin', route: adminPageRoute },
   { id: 'web-profile', title: 'Профиль /web/profile', pathSuffix: '/web/profile', route: profilePageRoute },
   { id: 'web-login', title: 'Вход /web/login', pathSuffix: '/web/login', route: loginPageRoute },
-  { id: 'web-tests', title: 'Тесты /web/tests', pathSuffix: '/web/tests', route: testsPageRoute }
+  { id: 'web-tests', title: 'Тесты /web/tests', pathSuffix: '/web/tests', route: testsPageRoute },
+  { id: 'web-orders', title: 'Заказы /web/orders', pathSuffix: '/web/orders', route: ordersPageRoute }
 ]
 
 /**

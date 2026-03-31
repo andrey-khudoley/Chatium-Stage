@@ -2,7 +2,7 @@
 
 Роль **`ctx`** в тестах и запуск проверок со страницы тестов — [testing.md](./testing.md).
 
-Актуально для реализованной интеграции GetCourse + Lava: таблицы `lava_*`, репозитории в `repos/`, `lib/lava-types.ts`, `lib/lava-api.client.ts`, `lib/getcourse-api.client.ts`, `lib/settings-save-credentials.lib.ts`, `lib/lava-payment.service.ts`, `lib/lava-webhook.service.ts`, эндпоинты `api/integrations/lava/*`, тесты в `api/tests/endpoints-check/` — в т.ч. `integration-gc-credentials.ts`, `integration-lava-credentials.ts`, `integration-credentials-both.ts`, `settings-save-credentials-unit.ts`, `page-routes-unit.ts`, `lava-settings-getters.ts`, `lava-repos.ts`, `lava-webhook-service.ts`, `getcourse-deal-update.ts`, `lava-api-catalog.ts`, `lava-payment-link-route.ts`, `lava-api-client.ts`, `payment-link.ts`.
+Актуально для реализованной интеграции GetCourse + Lava: таблицы `lava_*`, репозитории в `repos/`, `lib/lava-types.ts`, `lib/heap-create-input.lib.ts` (тип `HeapCreateInput` для `Table.create` без служебных полей Heap), `lib/app-public-url.lib.ts` (абсолютный URL к своему UGC для `request()`), `lib/lava-api.client.ts`, `lib/cbr-rates.client.ts`, `lib/lava-amount-limits.lib.ts`, `lib/getcourse-api.client.ts`, `lib/settings-save-credentials.lib.ts`, `lib/lava-payment.service.ts`, `lib/lava-webhook.service.ts`, эндпоинты `api/integrations/lava/*`, тесты в `api/tests/endpoints-check/` — в т.ч. `integration-gc-credentials.ts`, `integration-gc-order-pl-api.ts`, `integration-lava-credentials.ts`, `integration-credentials-both.ts`, `settings-save-credentials-unit.ts`, `page-routes-unit.ts`, `lava-settings-getters.ts`, `lava-repos.ts`, `lava-webhook-service.ts`, `lava-webhook-route.ts`, `getcourse-deal-update.ts`, `lava-api-catalog.ts`, `lava-payment-link-route.ts`, `lava-amount-limits-unit.ts`, `payment-link-dry-run-unit.ts`, `payment-link-http-integration.ts`, `payment-link-heap-settings-read.ts`, `payment-link-full-route-run.ts`, `payment-link-full-http-integration.ts`, `webhook-live-test-arm.ts`, `webhook-live-test-status.ts`, `lib/payment-link-live-test.lib.ts`, `lib/webhook-live-test.lib.ts`, `lava-api-client.ts`, `payment-link.ts`.
 
 ### `./shared/pageRouteProbe.ts`
 - первая строка: `// @shared`
@@ -20,7 +20,7 @@
 
 ### `./config/project.tsx`
 - первая строка: `// @shared` (как у `routes.tsx`, импортируется из тех же shared-роутов)
-- нет внутренних импортов (только экспорт DEFAULT_PROJECT_TITLE, INDEX_PAGE_NAME, PROFILE_PAGE_NAME, ADMIN_PAGE_NAME, TESTS_PAGE_NAME, getPageTitle, getHeaderText, BODY_TEXT, BODY_SUBTEXT)
+- нет внутренних импортов (только экспорт DEFAULT_PROJECT_TITLE, INDEX_PAGE_NAME, PROFILE_PAGE_NAME, ADMIN_PAGE_NAME, TESTS_PAGE_NAME, ORDERS_PAGE_NAME, getPageTitle, getHeaderText, BODY_TEXT)
 
 ### `./index.tsx`
 - `@app/html-jsx` → `jsx`
@@ -29,7 +29,7 @@
 - `./styles` → `customScrollbarStyles`
 - `./shared/logLevel` → `getLogLevelForPage`, `getLogLevelScript`
 - `./config/routes` → `getFullUrl`, `ROUTES`
-- `./config/project` → `INDEX_PAGE_NAME`, `BODY_TEXT`, `BODY_SUBTEXT`, `getPageTitle`, `getHeaderText`
+- `./config/project` → `INDEX_PAGE_NAME`, `BODY_TEXT`, `getPageTitle`, `getHeaderText`
 - `./lib/logger.lib` → `*`
 - `./lib/settings.lib` → `*`
 
@@ -72,6 +72,19 @@
 - `../../config/project` → `TESTS_PAGE_NAME`, `getPageTitle`, `getHeaderText`
 - `../../lib/settings.lib` → `*`
 
+### `./web/orders/index.tsx`
+- `@app/html-jsx` → `jsx`
+- `@app/auth` → `requireAccountRole`
+- `../../pages/OrdersPage.vue`
+- `../login` → `loginPageRoute`
+- `../../shared/preloader` → `getPreloaderStyles`, `getPreloaderScript`
+- `../../shared/logLevel` → `getLogLevelForPage`, `getLogLevelScript`
+- `../../styles` → `customScrollbarStyles`
+- `../../lib/logger.lib` → `*`
+- `../../config/routes` → `getFullUrl`, `ROUTES`
+- `../../config/project` → `ORDERS_PAGE_NAME`, `getPageTitle`, `getHeaderText`
+- `../../lib/settings.lib` → `*`
+
 ### `./web/login/index.tsx`
 - `@app/html-jsx` → `jsx`
 - `../../pages/LoginPage.vue`
@@ -99,13 +112,23 @@
 - `../api/admin/lava/catalog` → `lavaCatalogRoute`
 - `../api/admin/getcourse/verify` → `getcourseVerifyRoute`
 - `../shared/gcSettingKeys` → `GC_SETTING_KEYS`
-- `../shared/lavaSettingKeys` → `LAVA_SETTING_KEYS`
+- `../shared/lavaSettingKeys` → `LAVA_SETTING_KEYS` (в т.ч. UI `lava_webhook_secret`: генерация, показ)
 - `../shared/lavaBaseUrl` → `normalizeLavaBaseUrlInput`
 - `../api/admin/logs/recent` → `getRecentLogsRoute`
 - `../api/admin/logs/before` → `getLogsBeforeRoute`
 - `../api/admin/dashboard/counts` → `getDashboardCountsRoute`
 - `../api/admin/dashboard/reset` → `resetDashboardRoute`
 - `../shared/logger` → `createComponentLogger`, `setLogSink`, `LogEntry`
+
+### `./pages/OrdersPage.vue`
+- `vue` → `computed`, `onMounted`, `onUnmounted`, `ref`
+- `../components/Header.vue`
+- `../components/GlobalGlitch.vue`
+- `../components/AppFooter.vue`
+- `../api/admin/orders-metrics` → `getOrdersMetricsRoute`
+- `../api/admin/orders-filter-options` → `getOrdersFilterOptionsRoute`
+- `../api/admin/orders-list` → `getOrdersListRoute`
+- `../shared/logger` → `createComponentLogger`
 
 ### `./pages/ProfilePage.vue`
 - `vue` → `onMounted`, `onUnmounted`, `ref`
@@ -193,23 +216,37 @@
 
 ### `./repos/lava_payment_contract.repo.ts`
 - `../tables/lava_payment_contract.table` → `LavaPaymentContract`, `LavaPaymentContractRow`
+- `../lib/heap-create-input.lib` → `HeapCreateInput` (тип-only)
 - `../lib/logger.lib` → `writeServerLog` (severity 7: вход/выход каждой операции; не создаёт рекурсии с `logs.repo`)
-- экспортирует: `create`, `findByGcOrderId`, `findByLavaContractId`, `updateStatus`, `findActiveByGcOrderId`
+- внутри `create`: `LavaPaymentContract.create(ctx, data as Parameters<typeof LavaPaymentContract.create>[1])` — typings `@app/heap` требуют служебные поля; публичный вход — `LavaPaymentContractCreateInput`
+- экспортирует: `create`, `LavaPaymentContractCreateInput`, `ActiveContractByOrderAmountLookup`, `findByGcOrderId`, `findByLavaContractId`, `updateStatus`, `findActiveByGcOrderAmountAndCurrency`, `deactivateActiveContractsForGcOrderId`
 
 ### `./repos/lava_webhook_event.repo.ts`
 - `../tables/lava_webhook_event.table` → `LavaWebhookEvent`, `LavaWebhookEventRow`
+- `../lib/heap-create-input.lib` → `HeapCreateInput` (тип-only)
 - `../lib/logger.lib` → `writeServerLog` (severity 7 на каждый метод)
-- экспортирует: `create`, `findByDedupeKey`, `markProcessed`, `findUnprocessed`
+- внутри `create`: приведение второго аргумента к `Parameters<typeof LavaWebhookEvent.create>[1]` (как у контракта)
+- экспортирует: `create`, `LavaWebhookEventCreateInput`, `findByDedupeKey`, `markProcessed`, `findUnprocessed`
 
 ### `./repos/lava_lock_log.repo.ts`
 - `../tables/lava_lock_log.table` → `LavaLockLog`, `LavaLockLogRow`
+- `../lib/heap-create-input.lib` → `HeapCreateInput` (тип-only)
 - `../lib/logger.lib` → `writeServerLog` (severity 7 на каждый метод)
-- экспортирует: `create`, `updateReleased`, `updateAcquiredAt`
+- внутри `create`: приведение второго аргумента к `Parameters<typeof LavaLockLog.create>[1]`
+- экспортирует: `create`, `LavaLockLogCreateInput`, `updateReleased`, `updateAcquiredAt`
 
 ## 7) Библиотеки (lib/)
 
 ### `./lib/lava-types.ts`
 - нет внутренних импортов (типы TypeScript: валюта, webhook, payment-link request/response)
+
+### `./lib/lava-currency.lib.ts`
+- `./lava-types` → `LavaCurrency` (type)
+- экспортирует: `normalizeLavaCurrency` (строка → RUB/USD/EUR или `null`)
+
+### `./lib/heap-create-input.lib.ts`
+- нет внутренних импортов
+- экспортирует: `HeapSystemRowKeys`, `HeapCreateInput<Row>` (`Omit<Row, …>` по служебным ключам; в репозиториях к `Table.create` добавлено приведение к `Parameters<typeof Table.create>[1]` из‑за typings `@app/heap`)
 
 ### `./lib/settings.lib.ts`
 - `../repos/settings.repo` → `*` (findByKey, findAll, upsert, deleteByKey)
@@ -225,7 +262,7 @@
 - `./lava-types` → `LavaCurrency` (type)
 - `./logger.lib` → `*`
 - `./settings.lib` → `*` (геттеры Lava: base URL, API key, product/offer id)
-- экспортирует: `updateOfferPrice`, `createContract`, `fetchLavaProductsFirstPage`, `verifyLavaCredentials`, `getProducts`, `CreateContractParams`, `fetchLavaProductsCatalog`, `LavaCatalogRow`
+- экспортирует: `updateOfferPrice` (опционально `offerDisplayName` → `offers[].name` в PATCH), `createContract`, `fetchLavaProductsFirstPage`, `verifyLavaCredentials`, `getProducts`, `CreateContractParams`, `fetchLavaProductsCatalog`, `LavaCatalogRow`
 
 ### `./lib/getcourse-api.client.ts`
 - `@app/request` → `request`
@@ -239,6 +276,10 @@
 - `./settings.lib` → геттеры ключей интеграции
 - экспортирует: `runGcCredentialCheckFromSettings`, `runLavaCredentialCheckFromSettings`, `runIntegrationCredentialChecksFromSettings`, типы `GcCredentialCheckFromSettings`, `LavaCredentialCheckFromSettings`
 
+### `./lib/payment-link-live-test.lib.ts`
+- `./settings.lib` → геттеры Lava (`getLavaApiKey`, `getLavaBaseUrl`, `getLavaProductId`, `getLavaOfferId`)
+- экспортирует: константы `PAYMENT_LINK_LIVE_TEST_*`, `maskLavaApiKeyForTests`, `readLavaPaymentHeapSettings`, тип `LavaPaymentHeapSettingsRead`
+
 ### `./lib/settings-save-credentials.lib.ts`
 - `../shared/lavaBaseUrl` → `normalizeLavaBaseUrlInput`
 - `../shared/gcSettingKeys` → `GC_SETTING_KEYS`
@@ -249,21 +290,41 @@
 - `@app/sync` → `runWithExclusiveLock`, `LockAcquisitionError`
 - `./lava-types` → `PaymentLinkRequest`, `PaymentLinkResponse` (types)
 - `./lava-api.client` → `*` (`updateOfferPrice`, `createContract`)
+- `./cbr-rates.client` → `convertRubToCurrency` (RUB → USD/EUR по актуальному курсу ЦБ перед PATCH/contract)
+- `./lava-amount-limits.lib` → `getLavaOfferAmountLimits`, `isAmountWithinLavaOfferLimits`, `buildLavaOfferAmountOutOfRangeMessage` (до Lava: `AMOUNT_OUT_OF_RANGE` с непустым `message`)
 - `./logger.lib` → `*`
 - `./settings.lib` → `*` (`getLavaProductId`, `getLavaOfferId`)
-- `../repos/lava_payment_contract.repo` → `*`
+- `../repos/lava_payment_contract.repo` → `create` (как `createLavaPaymentContract`), `deactivateActiveContractsForGcOrderId`, `findActiveByGcOrderAmountAndCurrency`
 - `../repos/lava_lock_log.repo` → `*`
 - экспортирует: `createPaymentLink`
+
+### `./lib/cbr-rates.client.ts`
+- `@app/request` → `request` (внешний GET `https://www.cbr-xml-daily.ru/daily_json.js`)
+- `./lava-types` → `LavaCurrency` (type)
+- `./logger.lib` → `*`
+- экспортирует: `convertRubToCurrency` (конвертация рублей в `USD`/`EUR` по курсу ЦБ)
+
+### `./lib/lava-amount-limits.lib.ts`
+- `./lava-types` → `LavaCurrency` (type)
+- экспортирует: `LAVA_OFFER_AMOUNT_LIMITS`, `getLavaOfferAmountLimits`, `isAmountWithinLavaOfferLimits`, `buildLavaOfferAmountOutOfRangeMessage` (лимиты PATCH-цены Lava; USD/EUR 5…10000)
 
 ### `./lib/lava-webhook.service.ts`
 - `./lava-types` → `LavaWebhookPayload`, `LocalContractStatus` (types)
 - `./getcourse-api.client` → `*` (`updateDealStatus`)
 - `./logger.lib` → `*`
+- `./payment-link-live-test.lib` → `isPaymentLinkLiveTestGcOrderId`
 - `./settings.lib` → `*` (`getLavaWebhookSecret`)
+- `./webhook-live-test.lib` → `recordWebhookLiveTestAfterContract`, `recordWebhookLiveTestContractNotFound`, `recordWebhookLiveTestDuplicate`
 - `../repos/lava_payment_contract.repo` → `*`
 - `../repos/lava_webhook_event.repo` → `*`
 - `../tables/lava_webhook_event.table` → `LavaWebhookEventRow` (type)
 - экспортирует: `processWebhook`, `ProcessWebhookResult`
+
+### `./lib/webhook-live-test.lib.ts`
+- `./lava-types` → типы для payload
+- `../repos/settings.repo` → `findByKey`, `upsert` (служебный ключ состояния лайв-проверки)
+- `../tables/lava_payment_contract.table` → `LavaPaymentContractRow` (type)
+- экспортирует: `armWebhookLiveTest`, `getWebhookLiveTestState`, `WebhookLiveTestState`, функции `recordWebhookLiveTest*`
 
 ### `./shared/lavaBaseUrl.ts`
 - нет внутренних импортов (файл с `// @shared`)
@@ -278,6 +339,18 @@
 - `../settings.lib` → `*` (getDashboardResetAt, setSetting, SETTING_KEYS)
 - `../../repos/logs.repo` → `*` (countErrorsAfter, countWarningsAfter)
 - `../logger.lib` → `*`
+
+### `./lib/admin/orders-metrics.lib.ts`
+- `../../tables/lava_payment_contract.table` → `LavaPaymentContract`
+- `../logger.lib` → `*`
+- экспортирует: `buildPaymentContractWhere`, `getOrdersMetrics`, `getContractFilterOptions`, типы фильтра/результата
+- вызовы Heap: `countBy(ctx, where)` — условия **без** обёртки `{ where }`; `findAll(ctx, { where, limit, offset, order })` — с `where`, `limit` ≤ 1000 (`queryHeapRecords`)
+
+### `./lib/admin/orders-list.lib.ts`
+- `../../tables/lava_payment_contract.table` → `LavaPaymentContract`, тип строки
+- `./orders-metrics.lib` → `buildPaymentContractWhere`, тип `OrdersMetricsFilter`
+- `../logger.lib` → `*`
+- экспортирует: `ORDERS_LIST_PAGE_SIZE` (50), `getOrdersListPage`, тип `OrderListItem`
 
 ### `./lib/logger.lib.ts`
 - `./settings.lib` → `*` (getLogLevel, getLogWebhook, LogLevel)
@@ -319,16 +392,70 @@
 
 ### `./api/integrations/lava/payment-link/index.ts`
 - `../../../../lib/logger.lib` → `*`
+- `../../../../lib/lava-currency.lib` → `normalizeLavaCurrency`
 - `../../../../lib/lava-payment.service` → `createPaymentLink`
 - `../../../../lib/lava-types` → `PaymentLinkRequest` (type)
-- `../../../../lib/settings.lib` → `getGcServiceToken`
-- валидация body через `.body((s) => …)` (`@app/schema`); экспорт: `lavaPaymentLinkRoute`
+- `../../../../lib/normalize-string-record.lib` → `normalizeStringRecord` (поле `utm`: `s.optional(s.unknown())`, не `s.record` — в UGC падает схема)
+- валидация body: алиасы GetCourse `orderNumber`/`email`, поля `offer`/`product`; опционально `integrationTestDryRun`; экспорт: `lavaPaymentLinkRoute`
+
+### `./lib/app-public-url.lib.ts`
+- `../config/routes` → `getFullUrl`
+- `getAbsoluteUrlForAppPath(ctx, pathFromProjectRoot)` — origin/host из `ctx.req.headers`
+
+### `./api/tests/endpoints-check/payment-link-dry-run-unit.ts`
+- `@app/auth` → `requireAnyUser`
+- `../../../api/integrations/lava/payment-link/index` → `lavaPaymentLinkRoute`
+- `../../../lib/logger.lib`
+
+### `./api/tests/endpoints-check/lava-amount-limits-unit.ts`
+- `@app/auth` → `requireAnyUser`
+- `../../../lib/lava-amount-limits.lib` → `LAVA_OFFER_AMOUNT_LIMITS`, `getLavaOfferAmountLimits`, `isAmountWithinLavaOfferLimits`, `buildLavaOfferAmountOutOfRangeMessage`
+- `../../../lib/logger.lib`
+- экспорт: `lavaAmountLimitsUnitTestRoute`
+
+### `./api/tests/endpoints-check/lava-payment-link-route.ts`
+- `@app/auth` → `requireAnyUser`
+- `../../../api/integrations/lava/payment-link/index` → `lavaPaymentLinkRoute`
+- `../../../lib/lava-payment.service` → `createPaymentLink` (кейс `AMOUNT_OUT_OF_RANGE` для 49 RUB)
+- `../../../lib/logger.lib`
+- экспорт: `lavaPaymentLinkRouteTestRoute`
+
+### `./api/tests/endpoints-check/payment-link-http-integration.ts`
+- `@app/request` → `request`
+- `@app/auth` → `requireAnyUser`
+- `../../../lib/app-public-url.lib`, `../../../lib/logger.lib`
+- `app.body` — опционально `paymentLinkOverrides`; **без** `@shared-route`
+
+### `./api/tests/endpoints-check/payment-link-heap-settings-read.ts`
+- `@app/auth` → `requireAnyUser`
+- `../../../lib/logger.lib`, `../../../lib/payment-link-live-test.lib` → `readLavaPaymentHeapSettings`
+
+### `./api/tests/endpoints-check/payment-link-full-route-run.ts`
+- `@app/auth` → `requireAnyUser`
+- `../../../api/integrations/lava/payment-link/index` → `lavaPaymentLinkRoute`
+- `../../../lib/logger.lib`, `../../../lib/payment-link-live-test.lib`, `../../../repos/lava_payment_contract.repo` → `deactivateActiveContractsForGcOrderId`
+
+### `./api/tests/endpoints-check/payment-link-full-http-integration.ts`
+- `@app/request` → `request`
+- `@app/auth` → `requireAnyUser`
+- `../../../lib/app-public-url.lib`, `../../../lib/logger.lib`, `../../../lib/payment-link-live-test.lib`, `../../../repos/lava_payment_contract.repo`
+
+### `./api/tests/endpoints-check/webhook-live-test-arm.ts`
+- `@app/auth` → `requireAnyUser`
+- `../../../lib/logger.lib`, `../../../lib/webhook-live-test.lib` → `armWebhookLiveTest`
+- `app.body` — `expectedLavaContractId`, опционально `paymentUrl`
+
+### `./api/tests/endpoints-check/webhook-live-test-status.ts`
+- `@app/auth` → `requireAnyUser`
+- `../../../lib/app-public-url.lib`, `../../../lib/logger.lib`, `../../../lib/webhook-live-test.lib` → `getWebhookLiveTestState`
 
 ### `./api/integrations/lava/webhook/index.ts`
 - `../../../../lib/logger.lib` → `*`
+- `../../../../lib/settings.lib` → `getLavaWebhookSecret` (GET-проба: флаг `webhookSecretConfigured`)
 - `../../../../lib/lava-webhook.service` → `processWebhook`
 - `../../../../lib/lava-types` → `LavaWebhookPayload` (type)
-- валидация body через `.body((s) => …)` (`@app/schema`); при неверном `X-Api-Key` — `ctx.resp.json({ success: false }, 401)`; экспорт: `lavaWebhookRoute`
+- `../../../../lib/normalize-string-record.lib` → `normalizeStringRecord` для `clientUtm`
+- валидация body через `.body((s) => …)` (`@app/schema`); при неверном `X-Api-Key` — `ctx.resp.json({ success: false }, 401)`; экспорт: `lavaWebhookInfoRoute` (GET `/`), `lavaWebhookRoute` (POST `/`)
 
 ### `./api/logger/log.ts`
 - `@app/auth` → `requireAnyUser`
@@ -354,6 +481,21 @@
 ### `./api/admin/dashboard/reset.ts`
 - `@app/auth` → `requireAccountRole`
 - `../../../lib/admin/dashboard.lib` → `*`
+- `../../../lib/logger.lib` → `*`
+
+### `./api/admin/orders-metrics/index.ts`
+- `@app/auth` → `requireAccountRole`
+- `../../../lib/admin/orders-metrics.lib` → `*`
+- `../../../lib/logger.lib` → `*`
+
+### `./api/admin/orders-filter-options/index.ts`
+- `@app/auth` → `requireAccountRole`
+- `../../../lib/admin/orders-metrics.lib` → `getContractFilterOptions`
+- `../../../lib/logger.lib` → `*`
+
+### `./api/admin/orders-list/index.ts`
+- `@app/auth` → `requireAccountRole`
+- `../../../lib/admin/orders-list.lib` → `*`
 - `../../../lib/logger.lib` → `*`
 
 ### `./api/tests/list.ts`
@@ -429,6 +571,7 @@
 - `../../../web/profile/index` → `profilePageRoute`
 - `../../../web/login/index` → `loginPageRoute`
 - `../../../web/tests/index` → `testsPageRoute`
+- `../../../web/orders/index` → `ordersPageRoute`
 - `../../../shared/projectRoot` → `PROJECT_ROOT`
 - `../../../lib/logger.lib` → `*`
 

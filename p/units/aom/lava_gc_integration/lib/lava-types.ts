@@ -26,6 +26,12 @@ export interface PaymentLinkRequest {
   buyerEmail: string
   amount: number
   currency: LavaCurrency
+  /** Текст предложения GetCourse (offer). */
+  gcOfferTitle?: string
+  /**
+   * Название продукта/пакета GetCourse (product) — передаётся в Lava PATCH как `offers[].name`.
+   */
+  gcProductTitle?: string
   description?: string
   paymentProvider?: string
   paymentMethod?: string
@@ -42,6 +48,16 @@ export interface PaymentLinkResponse {
   status?: string
   errorCode?: string
   message?: string
+  /** Нижняя граница суммы оффера для Lava (PATCH), при `AMOUNT_OUT_OF_RANGE`. */
+  amountMin?: number
+  /** Верхняя граница суммы оффера для Lava (PATCH), при `AMOUNT_OUT_OF_RANGE`. */
+  amountMax?: number
+  /** Входная сумма в RUB до конвертации (при `USD`/`EUR`). */
+  sourceAmountRub?: number
+  /** Сумма в валюте оффера после конвертации (при `USD`/`EUR`). */
+  convertedAmount?: number
+  /** Ответ без Lava при `integrationTestDryRun: true` в теле и валидном сервисном токене */
+  integrationTestDryRun?: boolean
 }
 
 export interface LavaWebhookPayload {

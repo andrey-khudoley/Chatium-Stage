@@ -25,6 +25,23 @@ POST /integrations/lava/payment-link
 
 ### Request
 
+Идентификатор заказа: **`gcOrderId`** или **`orderNumber`** (одно из полей непустое после trim). Email: **`buyerEmail`** или **`email`**. **`currency`** — строка, для Lava нормализуется к `RUB` / `USD` / `EUR` (алиас `RUR` → `RUB`). Поля **`offer`** и **`product`** — тексты из GetCourse: сохраняются в Heap; **`product`** дополнительно передаётся в Lava как `offers[].name` при PATCH цены продукта.
+
+Пример в стиле GetCourse:
+
+```json
+{
+  "orderNumber": "440760671",
+  "currency": "RUB",
+  "amount": 100,
+  "email": "tester@example.com",
+  "offer": "Предложение по первому пакету",
+  "product": "Тестовый продукт - Первый пакет"
+}
+```
+
+Эквивалент с прежними именами полей:
+
 ```json
 {
   "gcOrderId": "order_12345",
@@ -32,6 +49,8 @@ POST /integrations/lava/payment-link
   "buyerEmail": "client@example.com",
   "amount": 4990.00,
   "currency": "RUB",
+  "offer": "Предложение",
+  "product": "Название пакета для виджета Lava",
   "description": "Оплата заказа order_12345",
   "paymentProvider": "SMART_GLOCAL",
   "paymentMethod": "CARD",
@@ -43,6 +62,8 @@ POST /integrations/lava/payment-link
   "requestId": "b7d1c87c-0cc8-46d8-a1d8-aabbccddee11"
 }
 ```
+
+Опционально **`integrationTestDryRun`** (`boolean`): при `true` Chatium возвращает успешный ответ **без** вызова Lava и записи в Heap (только для проверок; GetCourse в проде поле не передаёт). См. тесты `payment-link-dry-run-unit` и `payment-link-http-integration`.
 
 Валидация в Chatium — `@app/schema` (`inner/docs` по schema).
 

@@ -83,8 +83,65 @@ const lavaProductOfferSaved = ref(false)
 const savedLavaProductTitle = ref('')
 const savedLavaOfferTitle = ref('')
 
+/** Секрет входящего webhook Lava (`X-Api-Key`); только автогенерация + показ, поле только для чтения. */
+const lavaWebhookSecret = ref('')
+const lavaWebhookSecretVisible = ref(false)
+const lavaWebhookSecretLoading = ref(false)
+const lavaWebhookSecretError = ref('')
+const lavaWebhookSecretSaveStatus = ref<'saved' | 'error' | null>(null)
+const lavaWebhookSecretStatusTimeout = { id: null as ReturnType<typeof setTimeout> | null }
+
+const lavaWebhookGenerateButtonLabel = computed(() =>
+  lavaWebhookSecret.value.trim() ? 'Обновить' : 'Сгенерировать'
+)
+
+const lavaWebhookToggleVisibilityLabel = computed(() =>
+  lavaWebhookSecretVisible.value ? 'Скрыть' : 'Показать'
+)
+
+function randomLavaWebhookSecretHex(): string {
+  const bytes = new Uint8Array(32)
+  crypto.getRandomValues(bytes)
+  return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('')
+}
+
+function toggleLavaWebhookSecretVisible() {
+  if (!lavaWebhookSecret.value.trim()) return
+  lavaWebhookSecretVisible.value = !lavaWebhookSecretVisible.value
+}
+
+const generateOrUpdateLavaWebhookSecret = async () => {
+  lavaWebhookSecretError.value = ''
+  lavaWebhookSecretLoading.value = true
+  try {
+    const next = randomLavaWebhookSecretHex()
+    const res = await saveSettingRoute.run(ctx, {
+      key: LAVA_SETTING_KEYS.LAVA_WEBHOOK_SECRET,
+      value: next
+    })
+    if (res && (res as { success?: boolean }).success === false) {
+      const err = (res as { error?: string }).error || 'Ошибка сохранения'
+      lavaWebhookSecretError.value = err
+      showSaveStatus(lavaWebhookSecretSaveStatus, lavaWebhookSecretStatusTimeout, 'error')
+      log.error('lava_webhook_secret save', err)
+      return
+    }
+    lavaWebhookSecret.value = next
+    lavaWebhookSecretVisible.value = false
+    showSaveStatus(lavaWebhookSecretSaveStatus, lavaWebhookSecretStatusTimeout, 'saved')
+    log.info('lava_webhook_secret сгенерирован и сохранён')
+  } catch (e) {
+    lavaWebhookSecretError.value = (e as Error)?.message || 'Ошибка сохранения'
+    showSaveStatus(lavaWebhookSecretSaveStatus, lavaWebhookSecretStatusTimeout, 'error')
+    log.error('lava_webhook_secret', e)
+  } finally {
+    lavaWebhookSecretLoading.value = false
+  }
+}
+
 const gcApiKey = ref('')
 const gcAccountDomain = ref('')
+const gcOrderFlagAddfieldId = ref('')
 const gcVerifyLoading = ref(false)
 const gcSaveLoading = ref(false)
 const gcVerifyHint = ref('')
@@ -235,6 +292,14 @@ const loadLavaSettings = async () => {
     } else {
       lavaBaseUrl.value = normalizeLavaBaseUrlInput(lavaBaseUrl.value)
     }
+    const whRes = await getSettingRoute.query({ key: LAVA_SETTING_KEYS.LAVA_WEBHOOK_SECRET }).run(ctx)
+    const whData = whRes as { success?: boolean; value?: unknown }
+    if (whData?.success && typeof whData.value === 'string' && whData.value.length > 0) {
+      lavaWebhookSecret.value = whData.value
+    } else {
+      lavaWebhookSecret.value = ''
+    }
+    lavaWebhookSecretVisible.value = false
     const pidRes = await getSettingRoute.query({ key: LAVA_SETTING_KEYS.LAVA_PRODUCT_ID }).run(ctx)
     const pidData = pidRes as { success?: boolean; value?: unknown }
     if (pidData?.success && typeof pidData.value === 'string') {
@@ -264,6 +329,11 @@ const loadGcSettings = async () => {
     const domData = domRes as { success?: boolean; value?: unknown }
     if (domData?.success && typeof domData.value === 'string') {
       gcAccountDomain.value = domData.value
+    }
+    const addfieldRes = await getSettingRoute.query({ key: GC_SETTING_KEYS.GC_ORDER_FLAG_ADDFIELD_ID }).run(ctx)
+    const addfieldData = addfieldRes as { success?: boolean; value?: unknown }
+    if (addfieldData?.success && typeof addfieldData.value === 'string') {
+      gcOrderFlagAddfieldId.value = addfieldData.value
     }
   } catch (e) {
     log.warning('Не удалось загрузить настройки GetCourse', e)
@@ -302,7 +372,8 @@ const saveGcIntegration = async () => {
   try {
     for (const pair of [
       { key: GC_SETTING_KEYS.GC_API_KEY, value: gcApiKey.value.trim() },
-      { key: GC_SETTING_KEYS.GC_ACCOUNT_DOMAIN, value: gcAccountDomain.value.trim() }
+      { key: GC_SETTING_KEYS.GC_ACCOUNT_DOMAIN, value: gcAccountDomain.value.trim() },
+      { key: GC_SETTING_KEYS.GC_ORDER_FLAG_ADDFIELD_ID, value: gcOrderFlagAddfieldId.value.trim() }
     ] as const) {
       const res = await saveSettingRoute.run(ctx, { key: pair.key, value: pair.value })
       if (res && (res as { success?: boolean }).success === false) {
@@ -313,7 +384,7 @@ const saveGcIntegration = async () => {
     }
 
     gcVerifyHint.value =
-      'Сохранено. Ключ и домен проверены запросом к GetCourse PL API при сохранении.'
+      'Сохранено. Ключ и домен проверены запросом к GetCourse PL API; ID доп.поля заказа сохранён в Heap.'
     showSaveStatus(gcSaveStatus, gcSaveStatusTimeout, 'saved')
     log.info('Настройки GetCourse сохранены')
   } catch (e) {
@@ -610,11 +681,6 @@ const resetDashboard = async () => {
   }
 }
 
-const openChatiumLink = () => {
-  log.notice('Открытие ссылки Chatium')
-  window.open('https://chatium.ru/?start=pl-LGBT1Oge7c61RkKTU4t0start', '_blank')
-}
-
 const loadRecentLogs = async () => {
   logsLoading.value = true
   logsError.value = ''
@@ -816,6 +882,57 @@ const clearLogs = () => {
                   placeholder="https://gate.lava.top"
                 />
               </div>
+              <div class="settings-field lava-webhook-secret-field">
+                <label class="settings-label" for="lava-webhook-secret">{{ LAVA_SETTING_KEYS.LAVA_WEBHOOK_SECRET }}</label>
+                <p class="lava-webhook-secret-hint">
+                  Заголовок <code class="lava-inline-code">X-Api-Key</code> при POST на URL webhook в Chatium. Укажите тот же
+                  секрет в кабинете Lava. Генерация — 64 hex-символа (256 бит энтропии).
+                </p>
+                <div class="lava-webhook-secret-controls">
+                  <input
+                    id="lava-webhook-secret"
+                    v-model="lavaWebhookSecret"
+                    readonly
+                    tabindex="-1"
+                    :type="lavaWebhookSecretVisible ? 'text' : 'password'"
+                    class="settings-input lava-webhook-secret-input"
+                    placeholder="Ещё не сгенерирован"
+                    autocomplete="off"
+                    spellcheck="false"
+                  />
+                  <div class="lava-webhook-secret-buttons">
+                    <button
+                      type="button"
+                      class="lava-secondary-btn"
+                      :disabled="!lavaWebhookSecret.trim()"
+                      @click="toggleLavaWebhookSecretVisible"
+                    >
+                      {{ lavaWebhookToggleVisibilityLabel }}
+                    </button>
+                    <button
+                      type="button"
+                      class="lava-primary-btn lava-webhook-gen-btn"
+                      :disabled="lavaWebhookSecretLoading"
+                      @click="generateOrUpdateLavaWebhookSecret"
+                    >
+                      <i v-if="lavaWebhookSecretLoading" class="fas fa-spinner fa-spin" />
+                      <i v-else class="fas fa-key" />
+                      {{ lavaWebhookGenerateButtonLabel }}
+                    </button>
+                  </div>
+                </div>
+                <span
+                  v-if="lavaWebhookSecretSaveStatus === 'saved'"
+                  class="lava-webhook-secret-status lava-webhook-secret-status--ok"
+                  >Сохранено в Heap</span
+                >
+                <span
+                  v-else-if="lavaWebhookSecretSaveStatus === 'error'"
+                  class="lava-webhook-secret-status lava-webhook-secret-status--err"
+                  >Ошибка</span
+                >
+                <p v-if="lavaWebhookSecretError" class="admin-card-error">{{ lavaWebhookSecretError }}</p>
+              </div>
               <div class="lava-step-actions">
                 <button
                   type="button"
@@ -930,6 +1047,18 @@ const clearLogs = () => {
                   placeholder="school.getcourse.ru"
                 />
               </div>
+              <div class="settings-field">
+                <label class="settings-label" for="gc-order-flag-addfield-id">{{
+                  GC_SETTING_KEYS.GC_ORDER_FLAG_ADDFIELD_ID
+                }}</label>
+                <input
+                  id="gc-order-flag-addfield-id"
+                  v-model="gcOrderFlagAddfieldId"
+                  type="text"
+                  class="settings-input"
+                  placeholder="ID доп. поля заказа в GetCourse (boolean=true)"
+                />
+              </div>
               <div class="lava-step-actions gc-actions">
                 <button
                   type="button"
@@ -944,7 +1073,9 @@ const clearLogs = () => {
                 <button
                   type="button"
                   class="lava-primary-btn"
-                  :disabled="gcSaveLoading || !gcApiKey.trim() || !gcAccountDomain.trim()"
+                  :disabled="
+                    gcSaveLoading || !gcApiKey.trim() || !gcAccountDomain.trim() || !gcOrderFlagAddfieldId.trim()
+                  "
                   @click="saveGcIntegration"
                 >
                   <i v-if="gcSaveLoading" class="fas fa-spinner fa-spin"></i>
@@ -1098,7 +1229,7 @@ const clearLogs = () => {
       </div>
     </main>
 
-    <AppFooter v-if="bootLoaderDone" @chatium-click="openChatiumLink" />
+    <AppFooter v-if="bootLoaderDone" />
   </div>
 </template>
 
@@ -1701,6 +1832,91 @@ const clearLogs = () => {
 
 .lava-step-actions {
   margin-top: 0.5rem;
+}
+
+.lava-webhook-secret-field {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--color-border-light);
+}
+
+.lava-webhook-secret-hint {
+  margin: 0 0 0.5rem;
+  font-size: 0.8rem;
+  color: var(--color-text-secondary);
+  line-height: 1.45;
+}
+
+.lava-inline-code {
+  font-family: 'Share Tech Mono', ui-monospace, monospace;
+  font-size: 0.82em;
+  padding: 0.1em 0.35em;
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: 3px;
+}
+
+.lava-webhook-secret-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.lava-webhook-secret-input {
+  font-family: 'Share Tech Mono', ui-monospace, monospace;
+  font-size: 0.8rem;
+}
+
+.lava-webhook-secret-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.lava-secondary-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.5rem 0.85rem;
+  font-family: inherit;
+  font-size: 0.85rem;
+  color: var(--color-text);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  cursor: pointer;
+  letter-spacing: 0.03em;
+  transition:
+    background 0.18s ease,
+    border-color 0.18s ease;
+}
+
+.lava-secondary-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: var(--color-text-secondary);
+}
+
+.lava-secondary-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.lava-webhook-gen-btn {
+  min-height: 2.35rem;
+}
+
+.lava-webhook-secret-status {
+  display: inline-block;
+  margin-top: 0.35rem;
+  font-size: 0.78rem;
+}
+
+.lava-webhook-secret-status--ok {
+  color: #4ade80;
+}
+
+.lava-webhook-secret-status--err {
+  color: #f87171;
 }
 
 .lava-primary-btn {

@@ -1,6 +1,8 @@
 import * as loggerLib from '../../../../lib/logger.lib'
+import * as settingsLib from '../../../../lib/settings.lib'
 import * as webhookService from '../../../../lib/lava-webhook.service'
 import type { LavaWebhookPayload } from '../../../../lib/lava-types'
+import { normalizeStringRecord } from '../../../../lib/normalize-string-record.lib'
 
 const LOG_PATH = 'api/integrations/lava/webhook'
 
@@ -41,6 +43,27 @@ function extractApiKey(req: app.Req): string {
 }
 
 /**
+ * GET …/api/integrations/lava/webhook — проверка доступности (браузер, curl): эндпоинт развёрнут и ожидает POST от Lava.
+ * Секрет в ответе не передаётся; только флаг, задан ли `lava_webhook_secret` в Heap.
+ */
+export const lavaWebhookInfoRoute = app.get('/', async (ctx, _req) => {
+  await loggerLib.writeServerLog(ctx, {
+    severity: 7,
+    message: `[${LOG_PATH}] GET: проверка доступности`,
+    payload: {}
+  })
+  const secretTrimmed = (await settingsLib.getLavaWebhookSecret(ctx)).trim()
+  return {
+    ok: true,
+    status: 'ready',
+    message:
+      'Эндпоинт активен. Рабочие уведомления от Lava — только POST с JSON-телом (PurchaseWebhookLog) и заголовком X-Api-Key, совпадающим с настройкой lava_webhook_secret в Heap.',
+    expectedMethod: 'POST',
+    webhookSecretConfigured: secretTrimmed.length > 0
+  }
+})
+
+/**
  * POST …/api/integrations/lava/webhook — приём webhook от Lava (PurchaseWebhookLog).
  * Auth: заголовок `X-Api-Key` = настройка `lava_webhook_secret`.
  */
@@ -55,7 +78,8 @@ export const lavaWebhookRoute = app
     currency: s.enum(LavaCurrencyEnum),
     status: s.enum(LavaContractStatusEnum),
     timestamp: s.string(),
-    clientUtm: s.optional(s.record(s.string())),
+    /** Не `s.record(…)` — в UGC падает restrictModifiers; нормализация в `normalizeStringRecord`. */
+    clientUtm: s.optional(s.unknown()),
     errorMessage: s.optional(s.string())
   }))
   .post('/', async (ctx, req) => {
@@ -76,7 +100,10 @@ export const lavaWebhookRoute = app
       payload: { hasApiKey: Boolean(apiKey) }
     })
 
-    const payload = req.body as LavaWebhookPayload
+    const payload: LavaWebhookPayload = {
+      ...(req.body as LavaWebhookPayload),
+      clientUtm: normalizeStringRecord(req.body.clientUtm)
+    }
 
     const result = await webhookService.processWebhook(ctx, payload, apiKey)
 

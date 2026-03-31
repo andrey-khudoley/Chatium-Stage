@@ -15,8 +15,7 @@ export const SETTING_KEYS = {
   LOG_WEBHOOK: 'log_webhook',
   DASHBOARD_RESET_AT: 'dashboard_reset_at',
   ...LAVA_SETTING_KEYS,
-  ...GC_SETTING_KEYS,
-  GC_SERVICE_TOKEN: 'gc_service_token'
+  ...GC_SETTING_KEYS
 } as const
 
 /** Настройка вебхука логов: enable — активна ли отправка, url — куда отправлять. */
@@ -37,7 +36,7 @@ export const DEFAULTS = {
   [SETTING_KEYS.LAVA_WEBHOOK_SECRET]: '',
   [SETTING_KEYS.GC_API_KEY]: '',
   [SETTING_KEYS.GC_ACCOUNT_DOMAIN]: '',
-  [SETTING_KEYS.GC_SERVICE_TOKEN]: ''
+  [SETTING_KEYS.GC_ORDER_FLAG_ADDFIELD_ID]: ''
 } as const
 
 /** Допустимые уровни логирования */
@@ -168,8 +167,8 @@ export async function getGcAccountDomain(ctx: app.Ctx): Promise<string> {
 }
 
 /** Без writeServerLog — см. getIntegrationStringSetting. */
-export async function getGcServiceToken(ctx: app.Ctx): Promise<string> {
-  return getIntegrationStringSetting(ctx, SETTING_KEYS.GC_SERVICE_TOKEN)
+export async function getGcOrderFlagAddfieldId(ctx: app.Ctx): Promise<string> {
+  return getIntegrationStringSetting(ctx, SETTING_KEYS.GC_ORDER_FLAG_ADDFIELD_ID)
 }
 
 /**
@@ -228,8 +227,7 @@ function isSecretSettingKey(key: string): boolean {
   return (
     key === SETTING_KEYS.LAVA_API_KEY ||
     key === SETTING_KEYS.LAVA_WEBHOOK_SECRET ||
-    key === SETTING_KEYS.GC_API_KEY ||
-    key === SETTING_KEYS.GC_SERVICE_TOKEN
+    key === SETTING_KEYS.GC_API_KEY
   )
 }
 
@@ -304,7 +302,7 @@ export async function setSetting(ctx: app.Ctx, key: string, value: unknown): Pro
     key === SETTING_KEYS.LAVA_WEBHOOK_SECRET ||
     key === SETTING_KEYS.GC_API_KEY ||
     key === SETTING_KEYS.GC_ACCOUNT_DOMAIN ||
-    key === SETTING_KEYS.GC_SERVICE_TOKEN
+    key === SETTING_KEYS.GC_ORDER_FLAG_ADDFIELD_ID
   ) {
     normalized = typeof value === 'string' ? value.trim() : String(value).trim()
   }

@@ -106,10 +106,6 @@ onUnmounted(() => {
   if (intervalIds.desc) clearInterval(intervalIds.desc)
 })
 
-const openChatiumLink = () => {
-  log.notice('Opening Chatium link')
-  window.open('https://chatium.ru/?start=pl-LGBT1Oge7c61RkKTU4t0start', '_blank')
-}
 </script>
 
 <template>
@@ -193,7 +189,7 @@ const openChatiumLink = () => {
     </main>
 
     <!-- Footer -->
-    <AppFooter v-if="bootLoaderDone" @chatium-click="openChatiumLink" />
+    <AppFooter v-if="bootLoaderDone" />
   </div>
 </template>
 

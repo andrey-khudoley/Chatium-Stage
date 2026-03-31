@@ -9,6 +9,11 @@
 - **Нельзя** рассчитывать на «собрать мок `ctx` вручную» как в Jest/Vitest с фиктивным объектом: это не часть стандартного контура приложения.
 - В обработчике роута (в т.ч. в `api/tests/endpoints-check/*`) в ход всегда приходит **реальный** `ctx` текущего запроса.
 
+## Админка (`/web/admin`): секрет webhook Lava + поле заказа GetCourse
+
+В блоке «Интеграция Lava.top» поле `lava_webhook_secret`: кнопка «Сгенерировать» (если секрета ещё нет) или «Обновить» (если уже сохранён), «Показать» / «Скрыть» для отображения значения; сохранение только через генератор (`POST /api/settings/save`, 64 hex-символа из `crypto.getRandomValues`).
+В блоке GetCourse сохраняется `gc_order_flag_addfield_id` — ID булевого доп.поля заказа; при отправке заказа в GetCourse добавляется `deal.addfields = { [id]: true }` (если ID задан).
+
 ## Запуск с страницы тестов (`/web/tests`)
 
 Типичный сценарий:
@@ -28,20 +33,42 @@
 
 То есть проверяемая логика не зависит от «мокнутого аккаунта»; зависимость от `ctx` минимальна и не относится к сценарию слияния ключей.
 
-**Юнит по страницам (`route.run`):** GET `api/tests/endpoints-check/page-routes-unit.ts` — `requireRealUser(ctx)`; для маршрутов `/`, `/web/admin`, `/web/profile`, `/web/login`, `/web/tests` вызывается `route.run(ctx, req)` с подставленным URL под `PROJECT_ROOT` (тот же реальный `ctx`, что у GET к API). Проверяется отсутствие исключений и «приемлемый» ответ (JSX или похожий на редирект). Это не HTTP-интеграция: сеть не используется; полная проверка ответа платформы по HTTP — на вкладке «Интеграция» (`pageRouteProbe`).
+**Юнит по страницам (`route.run`):** GET `api/tests/endpoints-check/page-routes-unit.ts` — `requireRealUser(ctx)`; для маршрутов `/`, `/web/admin`, `/web/profile`, `/web/login`, `/web/tests`, `/web/orders` вызывается `route.run(ctx, req)` с подставленным URL под `PROJECT_ROOT` (тот же реальный `ctx`, что у GET к API). Проверяется отсутствие исключений и «приемлемый» ответ (JSX или похожий на редирект). Это не HTTP-интеграция: сеть не используется; полная проверка ответа платформы по HTTP — на вкладке «Интеграция» (`pageRouteProbe`).
 
 ## Интеграционные проверки (Heap + внешние API)
 
 - GET `integration-gc-credentials` и `integration-lava-credentials` читают настройки из Heap через **реальный** `ctx` и выполняют живые запросы к GetCourse / Lava (по одному эндпоинту на интеграцию). На вкладке «Интеграция» страницы `/web/tests` эти проверки показываются **двумя строками**, как отдельные поля в админке.
+- GET `integration-gc-order-pl-api` — проба PL API по **введённому** `gcOrderId` (query): опционально `buyerEmail`; если email не передан, подставляется `buyer_email` из контракта Heap (`lava_payment_contract`) с этим `gc_order_id`, если он есть. Реализация: `lib/getcourse-api.client` — `probeGcOrderPlApi` (запрос с `deal_status=cancelled`; может изменить заказ в GetCourse). Для `gc_order_id=test` ответ с ошибкой (как у лайва Lava).
 - Дополнительно в коде есть GET `integration-credentials-both` (оба чекера в одном ответе) — для API/диагностики; UI вкладки «Интеграция» использует два отдельных GET к Heap **после** блока «Страницы приложения».
-- **Страницы (интеграция):** с браузера на `/web/tests` — `fetch` с `credentials: 'include'` и `redirect: 'manual'` по маршрутам `/`, `/web/admin`, `/web/profile`, `/web/login`, `/web/tests`; разбор через `shared/pageRouteProbe.ts` (серверный `request()` к тем же URL не подставляет сессию пользователя). См. `inner/docs/048-chatium-http-response-probes.md`.
+- **Страницы (интеграция):** с браузера на `/web/tests` — `fetch` с `credentials: 'include'` и `redirect: 'manual'` по маршрутам `/`, `/web/admin`, `/web/profile`, `/web/login`, `/web/tests`, `/web/orders`; разбор через `shared/pageRouteProbe.ts` (серверный `request()` к тем же URL не подставляет сессию пользователя). См. `inner/docs/048-chatium-http-response-probes.md`.
 - Итог зависит от данных в Heap и доступности внешних сервисов.
 
 ## `route.run` в серверном коде
 
 В отдельных файлах тестовых роутов (например, проверка `lavaPaymentLinkRoute.run`) вызов делается **внутри обработчика GET**, где уже есть **реальный** `ctx` запроса к тестовому эндпоинту. Это не «подставление искусственного `ctx` в изолированном тесте», а выполнение в том же серверном контексте, что и обычный запрос приложения.
 
-См. также общий гайд платформы: `inner/docs/020-testing.md` (интерактивные тесты в браузере).
+**Юнит роута Lava webhook:** GET `api/tests/endpoints-check/lava-webhook-route.ts` — `lavaWebhookInfoRoute.run(ctx)`; POST с `X-Api-Key` — исходящий **`request()`** на абсолютный URL `…/api/integrations/lava/webhook` (как Lava; `lib/app-public-url.lib.ts`); если URL не собрать — те же кейсы через **`processWebhook`** (как `lava-webhook-service.ts`). Валидация тела — **`lavaWebhookRoute.run`**. Query `testId` — одна проверка. На `/web/tests`, вкладка «Юнит» — карточка «Lava webhook».
+
+## POST `payment-link`: юнит и HTTP-интеграция
+
+- **Юнит (быстро):** GET `api/tests/endpoints-check/payment-link-dry-run-unit.ts` — `lavaPaymentLinkRoute.run(ctx, { gcOrderId, …, integrationTestDryRun: true })` без исходящего HTTP к приложению и без Lava. Поля тела передаются **на верхнем уровне** второго аргумента, не вложенным `{ body: { … } }` (иначе схема видит пустое тело и отвечает 422).
+- **Интеграция (внешний вызов эндпоинта):** POST `api/tests/endpoints-check/payment-link-http-integration.ts` — на сервере вызывается `request()` на абсолютный URL того же `POST …/api/integrations/lava/payment-link` с тем же маркером dry-run в JSON. В теле тестового POST опционально **`paymentLinkOverrides`** — частичное переопределение полей тела. Нужны заголовки `Host`/`Origin`, чтобы собрать URL (из браузера на `/web/tests` обычно ок).
+
+### Лайв (без `integrationTestDryRun`): Heap + полный путь Lava
+
+Фиксированные данные: `gcOrderId: "test"`, `buyerEmail: debug@khudoley.pro`, `amount: 50`, `currency: RUB`. Перед полным сценарием **`repos/lava_payment_contract.deactivateActiveContractsForGcOrderId`** переводит все активные контракты с этим `gc_order_id` в `cancelled`, чтобы идемпотентность не возвращала старую ссылку без вызова Lava.
+
+- **Чтение Heap:** GET `api/tests/endpoints-check/payment-link-heap-settings-read.ts` — `lava_api_key` (маска), `lava_base_url`, `lava_product_id`, `lava_offer_id`; успех, если все четыре непустые.
+- **Интеграция `route.run`:** GET `api/tests/endpoints-check/payment-link-full-route-run.ts` — после чтения настроек и деактивации контрактов `test` вызывается `lavaPaymentLinkRoute.run` **без** dry-run.
+- **Интеграция HTTP:** POST `api/tests/endpoints-check/payment-link-full-http-integration.ts` — то же + исходящий `request()` POST на `…/payment-link` без dry-run; при отсутствии абсолютного URL — `{ skipped: true }` (как у dry-run HTTP).
+
+На вкладке «Интеграция» страницы `/web/tests` — отдельная карточка «Лайв: payment-link» и кнопка «Запустить лайв-триаду».
+
+### Лайв: webhook после оплаты
+
+После успешного `route.run` или HTTP лайва страница сохраняет последний `lava_contract_id` и `payment_url`. Карточка «Лайв: webhook после оплаты» показывает абсолютный URL `POST …/api/integrations/lava/webhook` (из GET `webhook-live-test-status`) и ссылку на оплату. Кнопка «Вооружить проверку» вызывает POST `webhook-live-test-arm` с ожидаемым контрактом; при входе реального webhook на боевой эндпоинт `lib/webhook-live-test.lib.ts` фиксирует первый успешный `payment.success` + `completed` по этому `contractId` или складывает прочие события в `otherEvents`. Для `gc_order_id=test` вызовы GetCourse из `lava-webhook.service` не выполняются (`isPaymentLinkLiveTestGcOrderId`).
+
+См. также общий гайд платформы: `inner/docs/020-testing.md` (интерактивные тесты в браузере; различие `route.run` и HTTP).
 
 ## Каталог и документация эндпоинтов
 
@@ -80,3 +107,4 @@
 | HTTP-пробы (форматы ответов) | `temp/*/index.tsx`, `temp/index.tsx` |
 | Разбор ответа страниц в UI | `shared/pageRouteProbe.ts` |
 | Юнит страниц (`route.run`) | `api/tests/endpoints-check/page-routes-unit.ts` |
+| Юнит роута Lava webhook (`lavaWebhookInfoRoute` / `lavaWebhookRoute`) | `api/tests/endpoints-check/lava-webhook-route.ts` |

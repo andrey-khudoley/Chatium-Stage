@@ -1,7 +1,13 @@
 import type { LavaWebhookPayload, LocalContractStatus } from './lava-types'
 import * as gcApi from './getcourse-api.client'
 import * as loggerLib from './logger.lib'
+import { isPaymentLinkLiveTestGcOrderId } from './payment-link-live-test.lib'
 import * as settingsLib from './settings.lib'
+import {
+  recordWebhookLiveTestAfterContract,
+  recordWebhookLiveTestContractNotFound,
+  recordWebhookLiveTestDuplicate
+} from './webhook-live-test.lib'
 import * as contractRepo from '../repos/lava_payment_contract.repo'
 import * as webhookRepo from '../repos/lava_webhook_event.repo'
 import type { LavaWebhookEventRow } from '../tables/lava_webhook_event.table'
@@ -90,6 +96,7 @@ export async function processWebhook(
       message: `[${LOG_MODULE}] processWebhook: дубликат, пропуск`,
       payload: { dedupeKey }
     })
+    await recordWebhookLiveTestDuplicate(ctx, payload)
     return { success: true, duplicate: true }
   }
 
@@ -131,6 +138,7 @@ export async function processWebhook(
       message: `[${LOG_MODULE}] контракт не найден по lava_contract_id, webhook сохранён`,
       payload: { contractId: payload.contractId, dedupeKey }
     })
+    await recordWebhookLiveTestContractNotFound(ctx, payload)
     await webhookRepo.markProcessed(ctx, webhookRow.id, 'contract_not_found')
     return { success: true }
   }
@@ -165,17 +173,27 @@ export async function processWebhook(
     payload: { heapContractId: contract.id, mappedStatus }
   })
 
+  await recordWebhookLiveTestAfterContract(ctx, payload, contract, mappedStatus)
+
+  const skipGcForLiveTest = isPaymentLinkLiveTestGcOrderId(contract.gc_order_id)
+
   try {
-    if (mappedStatus === 'paid') {
+    if (skipGcForLiveTest) {
       await loggerLib.writeServerLog(ctx, {
         severity: 7,
-        message: `[${LOG_MODULE}] processWebhook: вызов GetCourse (оплачен)`,
+        message: `[${LOG_MODULE}] processWebhook: пропуск GetCourse (лайв-тест gc_order_id=test)`,
+        payload: { gcOrderId: contract.gc_order_id, mappedStatus }
+      })
+    } else if (mappedStatus === 'paid') {
+      await loggerLib.writeServerLog(ctx, {
+        severity: 7,
+        message: `[${LOG_MODULE}] processWebhook: вызов GetCourse (оплачен -> В работе)`,
         payload: { gcOrderId: contract.gc_order_id }
       })
       await gcApi.updateDealStatus(ctx, {
         gcOrderId: contract.gc_order_id,
         buyerEmail: contract.buyer_email,
-        dealStatus: 'payed',
+        dealStatus: 'in_work',
         dealIsPaid: 1
       })
     } else if (mappedStatus === 'failed') {

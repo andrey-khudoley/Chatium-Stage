@@ -1,9 +1,19 @@
 import { LockAcquisitionError, runWithExclusiveLock } from '@app/sync'
 import type { PaymentLinkRequest, PaymentLinkResponse } from './lava-types'
 import * as lavaApi from './lava-api.client'
+import { convertRubToCurrency } from './cbr-rates.client'
+import {
+  buildLavaOfferAmountOutOfRangeMessage,
+  getLavaOfferAmountLimits,
+  isAmountWithinLavaOfferLimits
+} from './lava-amount-limits.lib'
 import * as loggerLib from './logger.lib'
 import * as settingsLib from './settings.lib'
-import * as contractRepo from '../repos/lava_payment_contract.repo'
+import {
+  create as createLavaPaymentContract,
+  deactivateActiveContractsForGcOrderId,
+  findActiveByGcOrderAmountAndCurrency
+} from '../repos/lava_payment_contract.repo'
 import * as lockLogRepo from '../repos/lava_lock_log.repo'
 
 const LOG_MODULE = 'lib/lava-payment.service'
@@ -12,31 +22,106 @@ const LOCK_KEY = 'lava:template-offer:payment-lock'
 const LOCK_TIMEOUT_MS = 25000
 
 /**
- * Создание ссылки на оплату: идемпотентность по активному контракту заказа GC,
+ * Создание ссылки на оплату: идемпотентность по активному контракту (заказ GC + сумма + валюта),
  * эксклюзивная блокировка шаблонного оффера, PATCH цены → POST invoice → запись в Heap.
+ * При смене суммы при том же `gcOrderId` отменяются прочие активные контракты по заказу.
  */
 export async function createPaymentLink(
   ctx: app.Ctx,
   params: PaymentLinkRequest
 ): Promise<PaymentLinkResponse> {
+  let effectiveAmount = params.amount
+  if (params.currency === 'USD' || params.currency === 'EUR') {
+    try {
+      const conversion = await convertRubToCurrency(ctx, {
+        amountRub: params.amount,
+        currency: params.currency
+      })
+      effectiveAmount = conversion.amount
+      await loggerLib.writeServerLog(ctx, {
+        severity: 6,
+        message: `[${LOG_MODULE}] createPaymentLink: сумма конвертирована из RUB в ${params.currency} по курсу ЦБ`,
+        payload: {
+          gcOrderId: params.gcOrderId,
+          sourceAmountRub: params.amount,
+          convertedAmount: effectiveAmount,
+          rateRubForOne: conversion.rateRubForOne,
+          source: conversion.source
+        }
+      })
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e)
+      await loggerLib.writeServerLog(ctx, {
+        severity: 3,
+        message: `[${LOG_MODULE}] createPaymentLink: ошибка курса ЦБ (CBR_RATE_ERROR)`,
+        payload: { gcOrderId: params.gcOrderId, error: msg }
+      })
+      return {
+        success: false,
+        errorCode: 'CBR_RATE_ERROR',
+        gcOrderId: params.gcOrderId,
+        message: `Не удалось получить курс валюты ЦБ для конвертации: ${msg}`
+      }
+    }
+  }
+
+  const limits = getLavaOfferAmountLimits(params.currency)
+  if (!isAmountWithinLavaOfferLimits(effectiveAmount, params.currency)) {
+    const message = buildLavaOfferAmountOutOfRangeMessage({
+      currency: params.currency,
+      effectiveAmount,
+      min: limits.min,
+      max: limits.max,
+      sourceAmountRub: params.currency === 'USD' || params.currency === 'EUR' ? params.amount : undefined
+    })
+    await loggerLib.writeServerLog(ctx, {
+      severity: 4,
+      message: `[${LOG_MODULE}] createPaymentLink: AMOUNT_OUT_OF_RANGE`,
+      payload: {
+        gcOrderId: params.gcOrderId,
+        currency: params.currency,
+        effectiveAmount,
+        min: limits.min,
+        max: limits.max
+      }
+    })
+    return {
+      success: false,
+      errorCode: 'AMOUNT_OUT_OF_RANGE',
+      gcOrderId: params.gcOrderId,
+      message,
+      amountMin: limits.min,
+      amountMax: limits.max,
+      sourceAmountRub: params.currency === 'USD' || params.currency === 'EUR' ? params.amount : undefined,
+      convertedAmount:
+        params.currency === 'USD' || params.currency === 'EUR' ? effectiveAmount : undefined
+    }
+  }
+
   await loggerLib.writeServerLog(ctx, {
     severity: 7,
     message: `[${LOG_MODULE}] createPaymentLink: вход`,
     payload: {
       gcOrderId: params.gcOrderId,
-      amount: params.amount,
+      amount: effectiveAmount,
       currency: params.currency,
       hasRequestId: Boolean(params.requestId)
     }
   })
 
-  const existing = await contractRepo.findActiveByGcOrderId(ctx, params.gcOrderId)
+  const existing = await findActiveByGcOrderAmountAndCurrency(ctx, {
+    gcOrderId: params.gcOrderId,
+    amount: effectiveAmount,
+    currency: params.currency
+  })
   if (existing) {
     await loggerLib.writeServerLog(ctx, {
       severity: 7,
-      message: `[${LOG_MODULE}] createPaymentLink: идемпотентность — активный контракт уже есть`,
+      message: `[${LOG_MODULE}] createPaymentLink: идемпотентность — активный контракт уже есть (заказ+сумма+валюта)`,
       payload: {
         gcOrderId: params.gcOrderId,
+        amount: effectiveAmount,
+        currency: params.currency,
         lavaContractId: existing.lava_contract_id
       }
     })
@@ -57,7 +142,13 @@ export async function createPaymentLink(
       message: `[${LOG_MODULE}] createPaymentLink: CONFIG_ERROR (нет product_id или offer_id)`,
       payload: { hasProductId: Boolean(productId), hasOfferId: Boolean(offerId) }
     })
-    return { success: false, errorCode: 'CONFIG_ERROR' }
+    return {
+      success: false,
+      errorCode: 'CONFIG_ERROR',
+      gcOrderId: params.gcOrderId,
+      message:
+        'Интеграция Lava не настроена: задайте lava_product_id и lava_offer_id в настройках приложения.'
+    }
   }
 
   const lockRow = await lockLogRepo.create(ctx, {
@@ -88,12 +179,21 @@ export async function createPaymentLink(
           payload: { lockRowId: lockRow.id, gcOrderId: params.gcOrderId }
         })
 
-        const underLock = await contractRepo.findActiveByGcOrderId(ctx, params.gcOrderId)
+        const underLock = await findActiveByGcOrderAmountAndCurrency(ctx, {
+          gcOrderId: params.gcOrderId,
+          amount: effectiveAmount,
+          currency: params.currency
+        })
         if (underLock) {
           await loggerLib.writeServerLog(ctx, {
             severity: 7,
             message: `[${LOG_MODULE}] createPaymentLink: под блокировкой найден контракт (гонка устранена)`,
-            payload: { gcOrderId: params.gcOrderId, lavaContractId: underLock.lava_contract_id }
+            payload: {
+              gcOrderId: params.gcOrderId,
+              amount: effectiveAmount,
+              currency: params.currency,
+              lavaContractId: underLock.lava_contract_id
+            }
           })
           await lockLogRepo.updateReleased(ctx, lockRow.id, 'success')
           return {
@@ -105,18 +205,28 @@ export async function createPaymentLink(
           }
         }
 
+        const superseded = await deactivateActiveContractsForGcOrderId(ctx, params.gcOrderId)
+        if (superseded > 0) {
+          await loggerLib.writeServerLog(ctx, {
+            severity: 7,
+            message: `[${LOG_MODULE}] createPaymentLink: отменены устаревшие активные контракты по заказу (другая сумма/валюта)`,
+            payload: { gcOrderId: params.gcOrderId, superseded }
+          })
+        }
+
         await lockLogRepo.updateAcquiredAt(ctx, lockRow.id, Date.now())
 
         await loggerLib.writeServerLog(ctx, {
           severity: 7,
           message: `[${LOG_MODULE}] createPaymentLink: PATCH цены оффера Lava`,
-          payload: { amount: params.amount, currency: params.currency }
+          payload: { amount: effectiveAmount, currency: params.currency }
         })
 
         try {
           await lavaApi.updateOfferPrice(ctx, {
-            amount: params.amount,
-            currency: params.currency
+            amount: effectiveAmount,
+            currency: params.currency,
+            offerDisplayName: params.gcProductTitle?.trim() || undefined
           })
         } catch (e) {
           const msg = e instanceof Error ? e.message : String(e)
@@ -131,7 +241,12 @@ export async function createPaymentLink(
             message: `[${LOG_MODULE}] createPaymentLink: LAVA_UPDATE_ERROR`,
             payload: { gcOrderId: params.gcOrderId, error: msg }
           })
-          return { success: false, errorCode: 'LAVA_UPDATE_ERROR' }
+          return {
+            success: false,
+            errorCode: 'LAVA_UPDATE_ERROR',
+            gcOrderId: params.gcOrderId,
+            message: `Не удалось обновить цену оффера в Lava: ${msg}`
+          }
         }
 
         await loggerLib.writeServerLog(ctx, {
@@ -163,7 +278,12 @@ export async function createPaymentLink(
             message: `[${LOG_MODULE}] createPaymentLink: LAVA_CONTRACT_ERROR`,
             payload: { gcOrderId: params.gcOrderId, error: msg }
           })
-          return { success: false, errorCode: 'LAVA_CONTRACT_ERROR' }
+          return {
+            success: false,
+            errorCode: 'LAVA_CONTRACT_ERROR',
+            gcOrderId: params.gcOrderId,
+            message: `Не удалось создать счёт (invoice) в Lava: ${msg}`
+          }
         }
 
         await loggerLib.writeServerLog(ctx, {
@@ -173,15 +293,17 @@ export async function createPaymentLink(
         })
 
         try {
-          await contractRepo.create(ctx, {
+          await createLavaPaymentContract(ctx, {
             gc_order_id: params.gcOrderId,
             gc_user_id: params.gcUserId ?? '',
             lava_contract_id: contractResult.contractId,
             lava_product_id: productId,
             lava_offer_id: offerId,
-            amount: params.amount,
+            amount: effectiveAmount,
             currency: params.currency,
             buyer_email: params.buyerEmail,
+            gc_offer_title: params.gcOfferTitle?.trim() ?? '',
+            gc_product_title: params.gcProductTitle?.trim() ?? '',
             payment_url: contractResult.paymentUrl,
             status: 'created',
             request_id: params.requestId ?? '',
@@ -247,7 +369,13 @@ export async function createPaymentLink(
         message: `[${LOG_MODULE}] createPaymentLink: PAYMENT_TEMPLATE_BUSY`,
         payload: { gcOrderId: params.gcOrderId }
       })
-      return { success: false, errorCode: 'PAYMENT_TEMPLATE_BUSY' }
+      return {
+        success: false,
+        errorCode: 'PAYMENT_TEMPLATE_BUSY',
+        gcOrderId: params.gcOrderId,
+        message:
+          'Создание ссылки временно недоступно: шаблон оффера обрабатывается другим запросом. Повторите попытку позже.'
+      }
     }
     throw e
   }

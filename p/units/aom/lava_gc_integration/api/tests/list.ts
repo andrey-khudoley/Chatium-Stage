@@ -41,7 +41,8 @@ export const listTestsRoute = app.get('/', async (ctx, req) => {
         { id: 'web-admin', title: 'Админка /web/admin' },
         { id: 'web-profile', title: 'Профиль /web/profile' },
         { id: 'web-login', title: 'Вход /web/login' },
-        { id: 'web-tests', title: 'Тесты /web/tests' }
+        { id: 'web-tests', title: 'Тесты /web/tests' },
+        { id: 'web-orders', title: 'Заказы /web/orders' }
       ]
     },
     {
@@ -52,7 +53,8 @@ export const listTestsRoute = app.get('/', async (ctx, req) => {
         { id: 'web-admin', title: 'Админка /web/admin' },
         { id: 'web-profile', title: 'Профиль /web/profile' },
         { id: 'web-login', title: 'Вход /web/login' },
-        { id: 'web-tests', title: 'Тесты /web/tests' }
+        { id: 'web-tests', title: 'Тесты /web/tests' },
+        { id: 'web-orders', title: 'Заказы /web/orders' }
       ]
     },
     {
@@ -66,6 +68,11 @@ export const listTestsRoute = app.get('/', async (ctx, req) => {
         {
           id: 'integration-lava-credentials',
           title: 'Lava: lava_api_key + lava_base_url → GET /api/v2/products'
+        },
+        {
+          id: 'integration-gc-order-pl-api',
+          title:
+            'GetCourse: PL API по gcOrderId (+ buyerEmail или email из Heap-контракта) — проба обновления заказа'
         }
       ]
     },
@@ -77,7 +84,8 @@ export const listTestsRoute = app.get('/', async (ctx, req) => {
         { id: 'web-admin', title: 'Эндпоинт /web/admin' },
         { id: 'web-profile', title: 'Эндпоинт /web/profile' },
         { id: 'web-login', title: 'Эндпоинт /web/login' },
-        { id: 'web-tests', title: 'Эндпоинт /web/tests' }
+        { id: 'web-tests', title: 'Эндпоинт /web/tests' },
+        { id: 'web-orders', title: 'Эндпоинт /web/orders' }
       ]
     },
     {
@@ -142,6 +150,65 @@ export const listTestsRoute = app.get('/', async (ctx, req) => {
         {
           id: 'integration-lava-credentials',
           title: 'Lava: lava_api_key + lava_base_url → GET /api/v2/products'
+        },
+        {
+          id: 'integration-gc-order-pl-api',
+          title:
+            'GetCourse: PL API по gcOrderId (+ buyerEmail или email из Heap-контракта) — проба обновления заказа'
+        }
+      ]
+    },
+    {
+      id: 'payment-link-integration',
+      title: 'POST payment-link (dry-run и HTTP)',
+      tests: [
+        {
+          id: 'payment-link-dry-run-unit',
+          title: 'Юнит: route.run + integrationTestDryRun (без HTTP к себе)'
+        },
+        {
+          id: 'lava-amount-limits-unit',
+          title: 'Юнит: лимиты суммы оффера Lava (RUB/USD/EUR, без сети)'
+        },
+        {
+          id: 'payment-link-http-integration',
+          title: 'Интеграция: HTTP POST через request() на payment-link'
+        }
+      ]
+    },
+    {
+      id: 'webhook-route-unit',
+      title: 'Юнит: POST …/api/integrations/lava/webhook (route.run)',
+      tests: [
+        {
+          id: 'lava-webhook-route',
+          title: 'lavaWebhookInfoRoute + lavaWebhookRoute: GET-проба, 401, валидация тела, успех'
+        }
+      ]
+    },
+    {
+      id: 'payment-link-live',
+      title: 'POST payment-link (лайв: Heap + Lava, gcOrderId=test)',
+      tests: [
+        {
+          id: 'payment-link-heap-settings-read',
+          title: 'Чтение Heap: lava_api_key (маска), base_url, product_id, offer_id'
+        },
+        {
+          id: 'payment-link-full-route-run',
+          title: 'Интеграция: route.run без dry-run (сброс контрактов test → Lava)'
+        },
+        {
+          id: 'payment-link-full-http-integration',
+          title: 'Интеграция: HTTP POST без dry-run (сброс контрактов test → Lava)'
+        },
+        {
+          id: 'webhook-live-test-arm',
+          title: 'POST webhook-live-test-arm — вооружить проверку webhook (ожидаемый lava_contract_id)'
+        },
+        {
+          id: 'webhook-live-test-status',
+          title: 'GET webhook-live-test-status — URL эндпоинта webhook и состояние лайв-проверки'
         }
       ]
     }

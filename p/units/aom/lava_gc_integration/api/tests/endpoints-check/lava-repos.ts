@@ -54,6 +54,8 @@ export const lavaReposTestRoute = app.get('/', async (ctx, req) => {
       amount: 100,
       currency: 'RUB',
       buyer_email: 'repo-test@example.com',
+      gc_offer_title: '',
+      gc_product_title: '',
       payment_url: 'https://example.com/pay',
       status: 'created',
       request_id: `req-${suffix}`,
@@ -65,11 +67,19 @@ export const lavaReposTestRoute = app.get('/', async (ctx, req) => {
     return Boolean(row.id && byOrder?.id === row.id && byLava?.id === row.id)
   })
 
-  await check('contract_findActive_update', 'lava_payment_contract: findActiveByGcOrderId, updateStatus', async () => {
-    const active = await contractRepo.findActiveByGcOrderId(ctx, gcOrderId)
+  await check('contract_findActive_update', 'lava_payment_contract: findActiveByGcOrderAmountAndCurrency, updateStatus', async () => {
+    const active = await contractRepo.findActiveByGcOrderAmountAndCurrency(ctx, {
+      gcOrderId,
+      amount: 100,
+      currency: 'RUB'
+    })
     if (!active) return false
     await contractRepo.updateStatus(ctx, active.id, 'paid')
-    const after = await contractRepo.findActiveByGcOrderId(ctx, gcOrderId)
+    const after = await contractRepo.findActiveByGcOrderAmountAndCurrency(ctx, {
+      gcOrderId,
+      amount: 100,
+      currency: 'RUB'
+    })
     return after === null
   })
 

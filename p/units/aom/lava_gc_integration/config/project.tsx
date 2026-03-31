@@ -7,6 +7,7 @@ export const INDEX_PAGE_NAME = 'Главная'
 export const PROFILE_PAGE_NAME = 'Профиль'
 export const ADMIN_PAGE_NAME = 'Админка'
 export const TESTS_PAGE_NAME = 'Тесты'
+export const ORDERS_PAGE_NAME = 'Текущие заказы'
 
 /** Текст для <title>: "Название страницы - Название из настроек" */
 export function getPageTitle(pageName: string, projectName: string): string {
@@ -21,5 +22,3 @@ export function getHeaderText(pageName: string, projectName: string): string {
 /** Текст контента домашней страницы (заголовок) */
 export const BODY_TEXT = 'Интеграция Lava.top и GetCourse'
 
-/** Подзаголовок домашней страницы */
-export const BODY_SUBTEXT = 'В разработке'

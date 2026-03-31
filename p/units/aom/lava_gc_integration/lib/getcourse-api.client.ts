@@ -104,6 +104,12 @@ export type UpdateDealStatusParams = {
   dealIsPaid?: number
 }
 
+async function buildOrderAddfieldsForGc(ctx: app.Ctx): Promise<Record<string, boolean> | undefined> {
+  const addfieldId = (await settingsLib.getGcOrderFlagAddfieldId(ctx)).trim()
+  if (!addfieldId) return undefined
+  return { [addfieldId]: true }
+}
+
 /**
  * Разбор ответа PL API: верхний `success`, вложенный `result.success` / `result.error`
  * (HTTP 200 при ошибке в теле — норма для GetCourse).
@@ -320,6 +326,10 @@ export async function updateDealStatus(ctx: app.Ctx, params: UpdateDealStatusPar
   if (params.dealIsPaid !== undefined) {
     deal.deal_is_paid = params.dealIsPaid
   }
+  const addfields = await buildOrderAddfieldsForGc(ctx)
+  if (addfields) {
+    deal.addfields = addfields
+  }
 
   const paramsObj = {
     user: { email: params.buyerEmail },
@@ -405,4 +415,117 @@ export async function updateDealStatus(ctx: app.Ctx, params: UpdateDealStatusPar
       dealStatus: params.dealStatus
     }
   })
+}
+
+export type ProbeGcOrderPlApiResult = {
+  httpOk: boolean
+  statusCode?: number
+  /** Успех по полям `success` / `result` в JSON GetCourse (как в `parseGcDealsResponse`). */
+  plApiLogicalSuccess: boolean
+  parseDetail: string
+  message: string
+  /** Нет `gc_api_key` / домена в настройках — запрос к GetCourse не отправлялся. */
+  skippedCredentials: boolean
+}
+
+/**
+ * Диагностический вызов PL API для существующего заказа: `deal_number` + email покупателя +
+ * `deal_status: cancelled`. Может изменить статус заказа в GetCourse — использовать только на тестовых заказах.
+ */
+export async function probeGcOrderPlApi(
+  ctx: app.Ctx,
+  params: { gcOrderId: string; buyerEmail: string }
+): Promise<ProbeGcOrderPlApiResult> {
+  const gcOrderId = params.gcOrderId.trim()
+  const buyerEmail = params.buyerEmail.trim()
+
+  await loggerLib.writeServerLog(ctx, {
+    severity: 7,
+    message: `[${LOG_MODULE}] probeGcOrderPlApi: вход`,
+    payload: { gcOrderId, hasEmail: Boolean(buyerEmail) }
+  })
+
+  const apiKey = (await settingsLib.getGcApiKey(ctx)).trim()
+  const domain = normalizeGcAccountDomain(await settingsLib.getGcAccountDomain(ctx))
+
+  if (!apiKey || !domain) {
+    return {
+      httpOk: false,
+      plApiLogicalSuccess: false,
+      parseDetail: 'no_credentials',
+      message: 'Задайте gc_api_key и gc_account_domain в настройках.',
+      skippedCredentials: true
+    }
+  }
+
+  const probeAddfields = await buildOrderAddfieldsForGc(ctx)
+  const paramsObj = {
+    user: { email: buyerEmail },
+    deal: {
+      deal_number: gcOrderId,
+      deal_status: 'cancelled',
+      ...(probeAddfields ? { addfields: probeAddfields } : {})
+    }
+  }
+
+  const paramsBase64 = encodeBase64(JSON.stringify(paramsObj))
+  const url = `https://${domain}/pl/api/deals`
+
+  let response: { statusCode?: number; body?: unknown }
+  try {
+    response = await request({
+      url,
+      method: 'post',
+      form: {
+        action: 'add',
+        key: apiKey,
+        params: paramsBase64
+      },
+      responseType: 'json',
+      throwHttpErrors: false,
+      timeout: 15000
+    })
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e)
+    await loggerLib.writeServerLog(ctx, {
+      severity: 3,
+      message: `[${LOG_MODULE}] probeGcOrderPlApi: сеть`,
+      payload: { error: msg }
+    })
+    return {
+      httpOk: false,
+      plApiLogicalSuccess: false,
+      parseDetail: 'network',
+      message: `Сеть: ${msg}`,
+      skippedCredentials: false
+    }
+  }
+
+  const statusOk =
+    typeof response.statusCode === 'number' && response.statusCode >= 200 && response.statusCode < 300
+  const parsed = parseGcDealsResponse(response.body)
+
+  await loggerLib.writeServerLog(ctx, {
+    severity: parsed.ok ? 6 : 4,
+    message: `[${LOG_MODULE}] probeGcOrderPlApi: ответ`,
+    payload: {
+      gcOrderId,
+      statusCode: response.statusCode,
+      parseOk: parsed.ok,
+      parseDetail: parsed.detail
+    }
+  })
+
+  const message = parsed.ok
+    ? 'GetCourse принял запрос (deal_status=cancelled).'
+    : `Ответ PL API: ${parsed.detail}`
+
+  return {
+    httpOk: statusOk,
+    statusCode: response.statusCode,
+    plApiLogicalSuccess: parsed.ok,
+    parseDetail: parsed.detail,
+    message,
+    skippedCredentials: false
+  }
 }
