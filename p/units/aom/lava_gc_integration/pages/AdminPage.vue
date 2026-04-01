@@ -169,7 +169,7 @@ const errorCount = ref(0)
 const warnCount = ref(0)
 const dashboardResetAt = ref(0)
 
-const MAX_LOG_ENTRIES = 500
+const MAX_LOG_ENTRIES = 5000
 const logEntries = ref<LogEntry[]>([])
 let logsSocketSubscription: any = null
 const logsOutputRef = ref<HTMLElement | null>(null)
@@ -178,6 +178,7 @@ const logsLoading = ref(false)
 const logsError = ref('')
 const logsHasMore = ref(false)
 const oldestLogTimestamp = ref<number | null>(null)
+let logsReloadRequestId = 0
 
 const logFilters = ref({
   info: true,
@@ -185,9 +186,25 @@ const logFilters = ref({
   error: true
 })
 
-const toggleLogFilter = (level: 'info' | 'warn' | 'error') => {
+const SERVER_LOG_BATCH_LIMIT = 200
+const MAX_LOG_FETCH_ITERATIONS = 200
+
+function activeSeveritiesFromFilters(): number[] {
+  const values: number[] = []
+  if (logFilters.value.error) values.push(0, 1, 2, 3)
+  if (logFilters.value.warn) values.push(4)
+  if (logFilters.value.info) values.push(5, 6, 7)
+  return Array.from(new Set(values))
+}
+
+function severitiesQueryValue(severities: number[]): string | undefined {
+  return severities.length > 0 ? severities.join(',') : undefined
+}
+
+const toggleLogFilter = async (level: 'info' | 'warn' | 'error') => {
   logFilters.value[level] = !logFilters.value[level]
   log.debug('Фильтр логов переключён', level, logFilters.value[level])
+  await reloadAllLogsByCurrentFilters()
 }
 
 const startAnimations = () => {
@@ -228,10 +245,102 @@ function trimOldLogs() {
   if (logEntries.value.length > MAX_LOG_ENTRIES) {
     const sorted = [...logEntries.value].sort((a, b) => b.timestamp - a.timestamp)
     logEntries.value = sorted.slice(0, MAX_LOG_ENTRIES)
-    log.debug('Обрезаны старые логи', { 
-      было: sorted.length, 
-      осталось: logEntries.value.length 
-    })
+  }
+}
+
+function updateOldestLogTimestampFromEntries(entries: Array<LogEntry & { id?: string }>) {
+  if (!entries.length) return
+  const oldest = entries.reduce((min, entry) => (entry.timestamp < min ? entry.timestamp : min), entries[0].timestamp)
+  oldestLogTimestamp.value = oldest
+}
+
+function mergeLogEntriesUnique(nextEntries: Array<LogEntry & { id: string }>) {
+  if (!nextEntries.length) return
+  const existingIds = new Set(logEntries.value.map((entry) => (entry as LogEntry & { id?: string }).id).filter(Boolean))
+  const uniqueToAdd = nextEntries.filter((entry) => !existingIds.has(entry.id))
+  if (!uniqueToAdd.length) return
+  logEntries.value = [...logEntries.value, ...uniqueToAdd]
+}
+
+async function reloadAllLogsByCurrentFilters() {
+  const requestId = ++logsReloadRequestId
+  const severities = activeSeveritiesFromFilters()
+  const severitiesQuery = severitiesQueryValue(severities)
+  if (!severities.length) {
+    logEntries.value = []
+    oldestLogTimestamp.value = null
+    logsHasMore.value = false
+    logsError.value = ''
+    return
+  }
+
+  logsLoading.value = true
+  logsError.value = ''
+  try {
+    const entriesById = new Map<string, LogEntry & { id: string }>()
+    let beforeTimestamp: number | null = null
+    let iteration = 0
+    let hasMore = true
+
+    while (hasMore && iteration < MAX_LOG_FETCH_ITERATIONS) {
+      if (requestId !== logsReloadRequestId) return
+
+      const response = beforeTimestamp == null
+        ? await getRecentLogsRoute.query({ limit: SERVER_LOG_BATCH_LIMIT, severities: severitiesQuery }).run(ctx)
+        : await getLogsBeforeRoute
+            .query({
+              beforeTimestamp: String(beforeTimestamp),
+              limit: SERVER_LOG_BATCH_LIMIT,
+              severities: severitiesQuery
+            })
+            .run(ctx)
+
+      const data = response as {
+        success?: boolean
+        entries?: Array<LogEntry & { id: string }>
+        hasMore?: boolean
+        error?: string
+      }
+
+      if (!data?.success || !Array.isArray(data.entries)) {
+        logsError.value = data?.error || 'Ошибка загрузки логов'
+        return
+      }
+
+      for (const entry of data.entries) entriesById.set(entry.id, entry)
+
+      if (!data.entries.length) {
+        hasMore = false
+      } else {
+        const oldestBatchTimestamp = data.entries.reduce(
+          (min, entry) => (entry.timestamp < min ? entry.timestamp : min),
+          data.entries[0].timestamp
+        )
+        beforeTimestamp = oldestBatchTimestamp
+        hasMore = beforeTimestamp != null && (data.hasMore ?? data.entries.length === SERVER_LOG_BATCH_LIMIT)
+      }
+
+      iteration += 1
+    }
+
+    if (requestId !== logsReloadRequestId) return
+    logEntries.value = Array.from(entriesById.values())
+    updateOldestLogTimestampFromEntries(logEntries.value as Array<LogEntry & { id?: string }>)
+    trimOldLogs()
+    logsHasMore.value = false
+    if (iteration >= MAX_LOG_FETCH_ITERATIONS && hasMore) {
+      logsError.value = 'Достигнут лимит подгрузки истории. Уточните фильтр для более точного поиска.'
+    } else {
+      logsError.value = ''
+    }
+  } catch (e) {
+    if (requestId !== logsReloadRequestId) return
+    logsError.value = (e as Error)?.message || 'Ошибка сети'
+    log.error('Ошибка полной загрузки логов по фильтрам', e)
+  } finally {
+    if (requestId === logsReloadRequestId) {
+      logsLoading.value = false
+    }
   }
 }
 
@@ -688,12 +797,8 @@ const loadRecentLogs = async () => {
     const res = await getRecentLogsRoute.query({ limit: 50 }).run(ctx)
     const data = res as { success?: boolean; entries?: Array<LogEntry & { id: string }>; error?: string }
     if (data?.success && Array.isArray(data.entries)) {
-      logEntries.value = [...logEntries.value, ...data.entries]
-      
-      if (data.entries.length > 0) {
-        const sorted = [...data.entries].sort((a, b) => a.timestamp - b.timestamp)
-        oldestLogTimestamp.value = sorted[0].timestamp
-      }
+      mergeLogEntriesUnique(data.entries)
+      updateOldestLogTimestampFromEntries(logEntries.value as Array<LogEntry & { id?: string }>)
       logsHasMore.value = data.entries.length === 50
       log.info('Последние логи загружены', { count: data.entries.length })
     } else {
@@ -716,9 +821,11 @@ const loadMoreLogs = async () => {
 
   logsLoading.value = true
   logsError.value = ''
+  const severities = activeSeveritiesFromFilters()
+  const severitiesQuery = severitiesQueryValue(severities)
   try {
     const res = await getLogsBeforeRoute
-      .query({ beforeTimestamp: String(oldestLogTimestamp.value), limit: 50 })
+      .query({ beforeTimestamp: String(oldestLogTimestamp.value), limit: 50, severities: severitiesQuery })
       .run(ctx)
     const data = res as {
       success?: boolean
@@ -727,12 +834,8 @@ const loadMoreLogs = async () => {
       error?: string
     }
     if (data?.success && Array.isArray(data.entries)) {
-      logEntries.value = [...logEntries.value, ...data.entries]
-      
-      if (data.entries.length > 0) {
-        const sorted = [...data.entries].sort((a, b) => a.timestamp - b.timestamp)
-        oldestLogTimestamp.value = sorted[0].timestamp
-      }
+      mergeLogEntriesUnique(data.entries)
+      updateOldestLogTimestampFromEntries(logEntries.value as Array<LogEntry & { id?: string }>)
       logsHasMore.value = data.hasMore ?? data.entries.length === 50
       log.info('Дополнительные логи загружены', { count: data.entries.length })
     } else {
