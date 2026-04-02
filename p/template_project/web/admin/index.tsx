@@ -30,7 +30,7 @@ const adminPageStyles = `
       transparent 0%, transparent 75%, rgba(0,0,0,0.3) 85%, rgba(0,0,0,0.7) 92%,
       rgba(0,0,0,0.95) 97%, rgba(0,0,0,0.99) 100%
     );
-    border-radius: 3% / 4%;
+    border-radius: 0;
     box-shadow: inset 0 0 200px 50px rgba(0,0,0,0.8), inset 0 0 100px 20px rgba(0,0,0,0.6);
     animation: crt-ambient-glow 3s ease-in-out infinite;
   }
@@ -45,7 +45,7 @@ const adminPageStyles = `
   body::after {
     content: ''; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
     background: repeating-linear-gradient(0deg, rgba(0,0,0,0.03) 0px, rgba(0,0,0,0.03) 1px, transparent 1px, transparent 2px);
-    pointer-events: none; z-index: 999999; border-radius: 3% / 4%; opacity: 0;
+    pointer-events: none; z-index: 999999; border-radius: 0; opacity: 0;
     animation: scanline-fade-in 0.6s ease-out 1s forwards, scanline-flicker 8s linear 1.6s infinite;
   }
   @keyframes scanline-fade-in { from { opacity: 0; } to { opacity: 0.3; } }
@@ -53,7 +53,7 @@ const adminPageStyles = `
 
   body::before {
     content: ''; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-    pointer-events: none; z-index: 999998; border-radius: 3% / 4%;
+    pointer-events: none; z-index: 999998; border-radius: 0;
     box-shadow: inset 0 0 80px rgba(0,0,0,0.3), inset 0 2px 1px rgba(255,255,255,0.01);
     opacity: 0; animation: bezel-fade-in 0.8s ease-out 1.2s forwards;
   }
@@ -76,7 +76,7 @@ const adminPageStyles = `
   #geometric-bg::after {
     content: ''; position: absolute; top: -50%; right: -10%; width: 600px; height: 600px;
     background: radial-gradient(circle, rgba(211,35,75,0.08) 0%, transparent 70%);
-    border-radius: 50%; animation: geometric-float 20s ease-in-out infinite;
+    border-radius: 0; animation: geometric-float 20s ease-in-out infinite;
   }
   @keyframes geometric-float { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(-50px,50px) scale(1.1); } }
 

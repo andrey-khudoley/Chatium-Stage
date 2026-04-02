@@ -117,7 +117,7 @@ export const testsPageRoute = app.html('/', async (ctx, req) => {
                 rgba(0, 0, 0, 0.95) 97%,
                 rgba(0, 0, 0, 0.99) 100%
               );
-            border-radius: 3% / 4%;
+            border-radius: 0;
             box-shadow:
               inset 0 0 200px 50px rgba(0, 0, 0, 0.8),
               inset 0 0 100px 20px rgba(0, 0, 0, 0.6);
@@ -162,7 +162,7 @@ export const testsPageRoute = app.html('/', async (ctx, req) => {
             );
             pointer-events: none;
             z-index: 999999;
-            border-radius: 3% / 4%;
+            border-radius: 0;
             opacity: 0;
             animation:
               scanline-fade-in 0.6s ease-out 1s forwards,
@@ -195,7 +195,7 @@ export const testsPageRoute = app.html('/', async (ctx, req) => {
             bottom: 0;
             pointer-events: none;
             z-index: 999998;
-            border-radius: 3% / 4%;
+            border-radius: 0;
             box-shadow:
               inset 0 0 80px rgba(0, 0, 0, 0.3),
               inset 0 2px 1px rgba(255, 255, 255, 0.01);
@@ -237,7 +237,7 @@ export const testsPageRoute = app.html('/', async (ctx, req) => {
             width: 600px;
             height: 600px;
             background: radial-gradient(circle, rgba(211, 35, 75, 0.08) 0%, transparent 70%);
-            border-radius: 50%;
+            border-radius: 0;
             animation: geometric-float 20s ease-in-out infinite;
           }
 

@@ -19,6 +19,17 @@ function rowToLogEntry(row: LogsRow) {
   }
 }
 
+function parseSeveritiesFilter(raw: unknown): number[] | null {
+  if (typeof raw !== 'string' || !raw.trim()) return []
+  const values = raw
+    .split(',')
+    .map((part) => Number(part.trim()))
+    .filter((n) => Number.isInteger(n))
+  const unique = Array.from(new Set(values))
+  if (!unique.every((n) => n >= 0 && n <= 7)) return null
+  return unique
+}
+
 /**
  * GET /api/admin/logs/before?beforeTimestamp=xxx&limit=50 — получить N логов старше указанного timestamp.
  * Только Admin.
@@ -64,19 +75,29 @@ export const getLogsBeforeRoute = app.get('/', async (ctx, req) => {
 
   const limitRaw = req.query.limit as string | undefined
   const limit = Math.min(Math.max(1, Number(limitRaw) || 50), 200)
+  const severitiesRaw = req.query.severities
+  const severities = parseSeveritiesFilter(severitiesRaw)
+  if (severities === null) {
+    await loggerLib.writeServerLog(ctx, {
+      severity: 4,
+      message: `[${LOG_PATH}] Валидация не пройдена: некорректный severities`,
+      payload: { severitiesRaw }
+    })
+    return { success: false, error: 'Параметр severities должен содержать числа 0..7 через запятую' }
+  }
   await loggerLib.writeServerLog(ctx, {
     severity: 7,
     message: `[${LOG_PATH}] Парсинг limit`,
-    payload: { limitRaw, limit }
+    payload: { limitRaw, limit, severitiesRaw, severities }
   })
 
   try {
     await loggerLib.writeServerLog(ctx, {
       severity: 7,
       message: `[${LOG_PATH}] Вызов logsRepo.findBeforeTimestamp`,
-      payload: { beforeTimestamp, limit }
+      payload: { beforeTimestamp, limit, severities }
     })
-    const logs = await logsRepo.findBeforeTimestamp(ctx, beforeTimestamp, limit)
+    const logs = await logsRepo.findBeforeTimestamp(ctx, beforeTimestamp, limit, severities)
     const entries = logs.map(rowToLogEntry)
     const hasMore = entries.length === limit
     await loggerLib.writeServerLog(ctx, {

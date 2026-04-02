@@ -37,6 +37,7 @@ onMounted(() => {
   flex-shrink: 0;
   position: relative;
   z-index: 200;
+  font-family: 'Share Tech Mono', 'Courier New', monospace;
 }
 
 .app-footer::before {
