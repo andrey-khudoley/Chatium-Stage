@@ -17,7 +17,7 @@ export async function create(
 
 export async function findAll(
   ctx: app.Ctx,
-  opts: { limit?: number; offset?: number } = {}
+  opts: { limit?: number; offset?: number; severities?: number[] } = {}
 ): Promise<LogsRow[]> {
   await loggerLib.writeServerLog(ctx, {
     severity: 7,
@@ -26,7 +26,10 @@ export async function findAll(
   })
   const limit = opts.limit ?? 1000
   const offset = opts.offset ?? 0
+  const severities = Array.isArray(opts.severities) ? opts.severities : []
+  const where = severities.length > 0 ? { severity: { $in: severities } } : undefined
   const rows = await Logs.findAll(ctx, {
+    where,
     order: [{ timestamp: 'desc' }],
     limit,
     offset
@@ -62,15 +65,21 @@ export async function findById(ctx: app.Ctx, id: string): Promise<LogsRow | null
 export async function findBeforeTimestamp(
   ctx: app.Ctx,
   beforeTimestamp: number,
-  limit: number
+  limit: number,
+  severities?: number[]
 ): Promise<LogsRow[]> {
   await loggerLib.writeServerLog(ctx, {
     severity: 7,
     message: `[${LOG_MODULE}] findBeforeTimestamp entry`,
     payload: { beforeTimestamp, limit }
   })
+  const safeSeverities = Array.isArray(severities) ? severities : []
+  const where =
+    safeSeverities.length > 0
+      ? { timestamp: { $lt: beforeTimestamp }, severity: { $in: safeSeverities } }
+      : { timestamp: { $lt: beforeTimestamp } }
   const rows = await Logs.findAll(ctx, {
-    where: { timestamp: { $lt: beforeTimestamp } },
+    where,
     order: [{ timestamp: 'desc' }],
     limit
   })

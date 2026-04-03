@@ -71,22 +71,82 @@ const dashboardResetAt = ref(0)
 const MAX_LOG_ENTRIES = 500
 const logEntries = ref<LogEntry[]>([])
 let logsSocketSubscription: any = null
+let logsSocketLifecycleCleanup: (() => void) | null = null
 const logsOutputRef = ref<HTMLElement | null>(null)
+
+/** Поток логов по WebSocket: подключён / нет канала / офлайн (ошибка, сеть или разрыв сокета). */
+const logsWsConnected = ref(false)
+/** Первая попытка подписки завершилась — до этого не показываем OFFLINE, чтобы не мигать при загрузке. */
+const logsWsInitialized = ref(false)
+
+const encodedLogsSocketOk = computed(() => Boolean(props.encodedLogsSocketId))
+
+const streamPillLabel = computed(() => {
+  if (!encodedLogsSocketOk.value) return 'LOGS'
+  if (!logsWsInitialized.value) return '···'
+  return logsWsConnected.value ? 'LIVE' : 'OFFLINE'
+})
+
+const streamPillAriaLabel = computed(() => {
+  if (!encodedLogsSocketOk.value) return 'Поток логов без канала WebSocket'
+  if (!logsWsInitialized.value) return 'Подключение WebSocket для логов'
+  return logsWsConnected.value
+    ? 'Поток логов в реальном времени, WebSocket подключён'
+    : 'WebSocket для логов недоступен'
+})
 
 const logsLoading = ref(false)
 const logsError = ref('')
 const logsHasMore = ref(false)
 const oldestLogTimestamp = ref<number | null>(null)
+const selectedLogStream = ref<'all' | 'info' | 'warn' | 'error'>('all')
+const logsRequestId = ref(0)
+const LOG_FETCH_LIMIT = 50
 
-const logFilters = ref({
-  info: true,
-  warn: true,
-  error: true
-})
+const LOG_STREAM_TO_SEVERITIES: Record<'all' | 'info' | 'warn' | 'error', number[]> = {
+  all: [0, 1, 2, 3, 4, 5, 6, 7],
+  info: [5, 6, 7],
+  warn: [4],
+  error: [0, 1, 2, 3]
+}
 
-const toggleLogFilter = (level: 'info' | 'warn' | 'error') => {
-  logFilters.value[level] = !logFilters.value[level]
-  log.debug('Фильтр логов переключён', level, logFilters.value[level])
+const LOG_STREAM_LABELS: Record<'all' | 'info' | 'warn' | 'error', string> = {
+  all: 'Весь поток',
+  info: 'Инфо',
+  warn: 'Предупреждения',
+  error: 'Ошибки'
+}
+
+const LOG_STREAM_KEYS: Array<'all' | 'info' | 'warn' | 'error'> = ['all', 'info', 'warn', 'error']
+
+const selectedLogStreamLabel = computed(() => LOG_STREAM_LABELS[selectedLogStream.value])
+const currentLogCount = computed(() => logEntries.value.length)
+
+function getSeveritiesQueryForStream(stream: 'all' | 'info' | 'warn' | 'error'): string | undefined {
+  if (stream === 'all') return undefined
+  return LOG_STREAM_TO_SEVERITIES[stream].join(',')
+}
+
+function doesEntryMatchSelectedStream(entry: LogEntry): boolean {
+  return LOG_STREAM_TO_SEVERITIES[selectedLogStream.value].includes(entry.severity)
+}
+
+function updateOldestTimestamp(entries: Array<LogEntry & { id?: string }>) {
+  if (!entries.length) return
+  const oldest = entries.reduce((min, item) => (item.timestamp < min ? item.timestamp : min), entries[0].timestamp)
+  oldestLogTimestamp.value = oldest
+}
+
+function pushVisibleLogEntry(entry: LogEntry) {
+  if (!doesEntryMatchSelectedStream(entry)) return
+  logEntries.value.push(entry)
+  trimOldLogs()
+}
+
+const toggleLogFilter = (stream: 'all' | 'info' | 'warn' | 'error') => {
+  if (selectedLogStream.value === stream) return
+  selectedLogStream.value = stream
+  log.info('Поток логов переключён', stream)
 }
 
 const startAnimations = () => {
@@ -135,16 +195,8 @@ function trimOldLogs() {
 }
 
 const displayedLogs = computed<LogDisplayItem[]>(() => {
-  const filtered = logEntries.value.filter((e) => {
-    if (e.severity <= 3 && logFilters.value.error) return true
-    if (e.severity === 4 && logFilters.value.warn) return true
-    if (e.severity >= 5 && logFilters.value.info) return true
-    return false
-  })
-
-  if (!filtered.length) return []
-
-  const sorted = [...filtered].sort((a, b) => b.timestamp - a.timestamp)
+  if (!logEntries.value.length) return []
+  const sorted = [...logEntries.value].sort((a, b) => b.timestamp - a.timestamp)
 
   const items: LogDisplayItem[] = []
   let lastDateKey = ''
@@ -153,7 +205,6 @@ const displayedLogs = computed<LogDisplayItem[]>(() => {
     const entry = sorted[i]
     const dateKey = getDateKey(entry.timestamp)
     
-    // Показываем разделитель только если это не первый лог и дата изменилась
     if (i > 0 && dateKey !== lastDateKey) {
       items.push({
         type: 'divider',
@@ -196,6 +247,16 @@ watch(projectName, () => {
       saveProjectName()
     }
   }, INPUT_DEBOUNCE_MS)
+})
+
+watch(selectedLogStream, () => {
+  logsRequestId.value += 1
+  logEntries.value = []
+  oldestLogTimestamp.value = null
+  logsHasMore.value = false
+  logsError.value = ''
+  expandedLogRows.value = {}
+  loadRecentLogs()
 })
 
 const saveProjectName = async () => {
@@ -243,36 +304,26 @@ onMounted(() => {
     }
   }
   setLogSink((entry: LogEntry) => {
-    logEntries.value.push(entry)
-    trimOldLogs()
     if (entry.timestamp >= dashboardResetAt.value) {
       if (entry.severity <= 3) errorCount.value += 1
       else if (entry.severity === 4) warnCount.value += 1
     }
+    pushVisibleLogEntry(entry)
   })
-  if (props.encodedLogsSocketId) {
-    getOrCreateBrowserSocketClient()
-      .then((socketClient) => {
-        logsSocketSubscription = socketClient.subscribeToData(props.encodedLogsSocketId!)
-        logsSocketSubscription.listen((data: { type?: string; data?: LogEntry }) => {
-          if (data?.type === 'new-log' && data.data) {
-            const entry = data.data as LogEntry
-            logEntries.value.push(entry)
-            trimOldLogs()
-            if (entry.timestamp >= dashboardResetAt.value) {
-              if (entry.severity <= 3) errorCount.value += 1
-              else if (entry.severity === 4) warnCount.value += 1
-            }
-          }
-        })
-      })
-      .catch((err) => log.error('Не удалось подписаться на логи по WebSocket', err))
-  }
+  void setupLogsWebSocket()
+
+  window.addEventListener('offline', onBrowserOffline)
+  window.addEventListener('online', onBrowserOnline)
+  document.addEventListener('visibilitychange', onVisibilityForLogsSocket)
 
   loadRecentLogs()
 })
 
 onBeforeUnmount(() => {
+  window.removeEventListener('offline', onBrowserOffline)
+  window.removeEventListener('online', onBrowserOnline)
+  document.removeEventListener('visibilitychange', onVisibilityForLogsSocket)
+  detachLogsSocketLifecycle()
   if (logsSocketSubscription?.unsubscribe) {
     logsSocketSubscription.unsubscribe()
     logsSocketSubscription = null
@@ -361,28 +412,32 @@ const openChatiumLink = () => {
 }
 
 const loadRecentLogs = async () => {
+  const requestId = ++logsRequestId.value
+  const severities = getSeveritiesQueryForStream(selectedLogStream.value)
+  const query: { limit: number; severities?: string } = { limit: LOG_FETCH_LIMIT }
+  if (severities) query.severities = severities
+
   logsLoading.value = true
   logsError.value = ''
   try {
-    const res = await getRecentLogsRoute.query({ limit: 50 }).run(ctx)
+    const res = await getRecentLogsRoute.query(query).run(ctx)
+    if (requestId !== logsRequestId.value) return
     const data = res as { success?: boolean; entries?: Array<LogEntry & { id: string }>; error?: string }
     if (data?.success && Array.isArray(data.entries)) {
-      logEntries.value = [...logEntries.value, ...data.entries]
-      
-      if (data.entries.length > 0) {
-        const sorted = [...data.entries].sort((a, b) => a.timestamp - b.timestamp)
-        oldestLogTimestamp.value = sorted[0].timestamp
-      }
-      logsHasMore.value = data.entries.length === 50
+      logEntries.value = [...data.entries]
+      updateOldestTimestamp(data.entries)
+      logsHasMore.value = data.entries.length === LOG_FETCH_LIMIT
       log.info('Последние логи загружены', { count: data.entries.length })
     } else {
       logsError.value = data?.error || 'Ошибка загрузки логов'
       log.error('Ошибка загрузки логов', logsError.value)
     }
   } catch (e) {
+    if (requestId !== logsRequestId.value) return
     logsError.value = (e as Error)?.message || 'Ошибка сети'
     log.error('Ошибка загрузки логов', e)
   } finally {
+    if (requestId !== logsRequestId.value) return
     logsLoading.value = false
   }
 }
@@ -393,12 +448,19 @@ const loadMoreLogs = async () => {
     return
   }
 
+  const requestId = ++logsRequestId.value
+  const severities = getSeveritiesQueryForStream(selectedLogStream.value)
+  const query: { beforeTimestamp: string; limit: number; severities?: string } = {
+    beforeTimestamp: String(oldestLogTimestamp.value),
+    limit: LOG_FETCH_LIMIT
+  }
+  if (severities) query.severities = severities
+
   logsLoading.value = true
   logsError.value = ''
   try {
-    const res = await getLogsBeforeRoute
-      .query({ beforeTimestamp: String(oldestLogTimestamp.value), limit: 50 })
-      .run(ctx)
+    const res = await getLogsBeforeRoute.query(query).run(ctx)
+    if (requestId !== logsRequestId.value) return
     const data = res as {
       success?: boolean
       entries?: Array<LogEntry & { id: string }>
@@ -407,36 +469,156 @@ const loadMoreLogs = async () => {
     }
     if (data?.success && Array.isArray(data.entries)) {
       logEntries.value = [...logEntries.value, ...data.entries]
-      
-      if (data.entries.length > 0) {
-        const sorted = [...data.entries].sort((a, b) => a.timestamp - b.timestamp)
-        oldestLogTimestamp.value = sorted[0].timestamp
-      }
-      logsHasMore.value = data.hasMore ?? data.entries.length === 50
+      updateOldestTimestamp(data.entries)
+      logsHasMore.value = data.hasMore ?? data.entries.length === LOG_FETCH_LIMIT
       log.info('Дополнительные логи загружены', { count: data.entries.length })
     } else {
       logsError.value = data?.error || 'Ошибка загрузки логов'
       log.error('Ошибка загрузки дополнительных логов', logsError.value)
     }
   } catch (e) {
+    if (requestId !== logsRequestId.value) return
     logsError.value = (e as Error)?.message || 'Ошибка сети'
     log.error('Ошибка загрузки дополнительных логов', e)
   } finally {
+    if (requestId !== logsRequestId.value) return
     logsLoading.value = false
   }
 }
 
 const clearLogs = () => {
+  logsRequestId.value += 1
   logEntries.value = []
   oldestLogTimestamp.value = Date.now()
   logsHasMore.value = true
   logsError.value = ''
-  log.debug('Логи очищены, таймштамп сдвинут на текущий — «Загрузить ещё 50» восстановит последние')
+  expandedLogRows.value = {}
+  log.debug('Логи очищены: монитор подготовлен к новому потоку')
+}
+
+const expandedLogRows = ref<Record<number, boolean>>({})
+const toggleLogRow = (idx: number) => {
+  expandedLogRows.value[idx] = !expandedLogRows.value[idx]
+}
+
+function detachLogsSocketLifecycle() {
+  if (logsSocketLifecycleCleanup) {
+    try {
+      logsSocketLifecycleCleanup()
+    } catch {
+      /* ignore */
+    }
+    logsSocketLifecycleCleanup = null
+  }
+}
+
+/**
+ * Подписка на события жизненного цоля сокета (если платформа их отдаёт).
+ * Без колбэков показываем OFFLINE только по offline/ошибке подключения и при ручном переподключении.
+ */
+function attachLogsSocketLifecycle(socketClient: unknown, subscription: unknown, onDisconnect: () => void): (() => void) | null {
+  const cleanups: Array<() => void> = []
+  try {
+    const sc = socketClient as Record<string, unknown>
+    if (typeof sc.addConnectionListener === 'function') {
+      const unsub = (sc.addConnectionListener as (fn: (connected: boolean) => void) => () => void)((connected) => {
+        if (!connected) onDisconnect()
+      })
+      if (typeof unsub === 'function') cleanups.push(unsub)
+    }
+    const sub = subscription as Record<string, unknown>
+    if (typeof sub.on === 'function') {
+      const subOn = sub.on as (ev: string, fn: () => void) => void
+      const handler = () => onDisconnect()
+      for (const ev of ['disconnect', 'close'] as const) {
+        try {
+          subOn(ev, handler)
+          if (typeof sub.off === 'function') {
+            const subOff = sub.off as (ev: string, fn: () => void) => void
+            cleanups.push(() => {
+              try {
+                subOff(ev, handler)
+              } catch {
+                /* ignore */
+              }
+            })
+          }
+        } catch {
+          /* ignore */
+        }
+      }
+    }
+  } catch {
+    /* ignore */
+  }
+  if (!cleanups.length) return null
+  return () => {
+    cleanups.forEach((fn) => {
+      try {
+        fn()
+      } catch {
+        /* ignore */
+      }
+    })
+  }
+}
+
+async function setupLogsWebSocket() {
+  if (!props.encodedLogsSocketId) {
+    logsWsConnected.value = false
+    logsWsInitialized.value = true
+    return
+  }
+  if (logsSocketSubscription?.unsubscribe) {
+    try {
+      logsSocketSubscription.unsubscribe()
+    } catch {
+      /* ignore */
+    }
+    logsSocketSubscription = null
+  }
+  detachLogsSocketLifecycle()
+  try {
+    const socketClient = await getOrCreateBrowserSocketClient()
+    logsSocketSubscription = socketClient.subscribeToData(props.encodedLogsSocketId)
+    logsSocketLifecycleCleanup = attachLogsSocketLifecycle(socketClient, logsSocketSubscription, () => {
+      logsWsConnected.value = false
+    })
+    logsSocketSubscription.listen((data: { type?: string; data?: LogEntry }) => {
+      if (data?.type === 'new-log' && data.data) {
+        const entry = data.data as LogEntry
+        if (entry.timestamp >= dashboardResetAt.value) {
+          if (entry.severity <= 3) errorCount.value += 1
+          else if (entry.severity === 4) warnCount.value += 1
+        }
+        pushVisibleLogEntry(entry)
+      }
+    })
+    logsWsConnected.value = true
+  } catch (err) {
+    logsWsConnected.value = false
+    log.error('Не удалось подписаться на логи по WebSocket', err)
+  } finally {
+    logsWsInitialized.value = true
+  }
+}
+
+function onBrowserOffline() {
+  logsWsConnected.value = false
+}
+
+function onBrowserOnline() {
+  void setupLogsWebSocket()
+}
+
+function onVisibilityForLogsSocket() {
+  if (document.visibilityState !== 'visible' || !props.encodedLogsSocketId) return
+  if (!logsWsConnected.value) void setupLogsWebSocket()
 }
 </script>
 
 <template>
-  <div class="app-layout bg-[var(--color-bg)] text-[var(--color-text)] flex flex-col">
+  <div class="app-layout flex flex-col">
     <GlobalGlitch />
     <Header
       v-if="bootLoaderDone"
@@ -450,215 +632,165 @@ const clearLogs = () => {
       :testsUrl="props.testsUrl"
     />
 
-    <main class="content-wrapper flex-1 relative z-10 min-h-0 overflow-y-auto">
-      <div class="content-inner">
-        <section class="admin-section" :class="{ 'admin-visible': bootLoaderDone }">
-          <div class="admin-header">
-            <div class="admin-icon-wrapper">
-              <i class="fas fa-cog admin-icon"></i>
-            </div>
-            <h1 class="admin-heading">Панель администратора</h1>
-            <p class="admin-description">Управление логированием и мониторинг системы</p>
-          </div>
+    <main class="ap-wrap flex-1 relative z-10 min-h-0 overflow-y-auto">
+      <div class="ap" :class="{ ready: bootLoaderDone }">
 
-          <!-- Dashboard -->
-          <div class="admin-card">
-            <div class="admin-card-header">
-              <i class="fas fa-bars admin-card-icon dashboard-card-icon"></i>
-              <h2 class="admin-card-title">Дашборд</h2>
-              <button
-                type="button"
-                class="dashboard-reset"
-                title="Сбросить счётчики"
-                @click="resetDashboard"
-              >
-                <i class="fas fa-sync-alt dashboard-reset-icon"></i>
-                Сбросить
-              </button>
-            </div>
-            <div class="dashboard-stats">
-              <div class="dashboard-stat stat-errors">
-                <i class="fas fa-exclamation-circle stat-icon"></i>
-                <div class="stat-content">
-                  <span class="stat-value">{{ errorCount }}</span>
-                  <span class="stat-label">Ошибок</span>
-                </div>
-              </div>
-              <div class="dashboard-stat stat-warnings">
-                <i class="fas fa-exclamation-triangle stat-icon"></i>
-                <div class="stat-content">
-                  <span class="stat-value">{{ warnCount }}</span>
-                  <span class="stat-label">Предупреждений</span>
-                </div>
-              </div>
-            </div>
+        <div class="ap-status">
+          <div class="ap-status-left">
+            <i class="fas fa-terminal ap-icon-muted"></i>
+            <span class="ap-path">/web/admin</span>
+            <span class="ap-separator">&#xB7;</span>
+            <span class="ap-project-label">{{ projectName || '—' }}</span>
           </div>
-
-          <!-- Project Settings -->
-          <div class="admin-card">
+          <div class="ap-status-right">
+            <span class="ap-status-tag"><i class="fas fa-layer-group ap-icon-muted"></i> LOG: {{ logLevel.toUpperCase() }}</span>
             <span
-              v-if="projectNameSaveStatus"
-              class="admin-card-status"
-              :class="projectNameSaveStatus === 'saved' ? 'status-saved' : 'status-error'"
+              class="ap-stream-pill"
+              :class="{
+                'ap-stream-pill--live': encodedLogsSocketOk && logsWsInitialized && logsWsConnected,
+                'ap-stream-pill--offline': encodedLogsSocketOk && logsWsInitialized && !logsWsConnected,
+                'ap-stream-pill--pending': encodedLogsSocketOk && !logsWsInitialized,
+                'ap-stream-pill--nosocket': !encodedLogsSocketOk,
+                'ap-stream-pill--syncing': logsLoading
+              }"
+              role="status"
+              :aria-label="streamPillAriaLabel"
             >
-              {{ projectNameSaveStatus === 'saved' ? 'Сохранено' : 'Ошибка' }}
+              <span class="ap-stream-pill__dot" aria-hidden="true"></span>
+              <span class="ap-stream-pill__label">{{ streamPillLabel }}</span>
+              <span v-if="logsLoading" class="ap-stream-pill__sync" title="Загрузка истории логов">
+                <i class="fas fa-circle-notch fa-spin" aria-hidden="true"></i>
+              </span>
             </span>
-            <div class="admin-card-header">
-              <i class="fas fa-wrench admin-card-icon"></i>
-              <h2 class="admin-card-title">Настройки проекта</h2>
-            </div>
-            <div class="settings-form">
-              <div class="settings-field">
-                <label class="settings-label" for="project-name">Название проекта</label>
-                <input
-                  id="project-name"
-                  v-model="projectName"
-                  type="text"
-                  class="settings-input"
-                />
-              </div>
-            </div>
-            <p v-if="projectNameError" class="admin-card-error">{{ projectNameError }}</p>
           </div>
+          <div class="ap-status-sweep"></div>
+        </div>
 
-          <!-- Logging Level -->
-          <div class="admin-card">
-            <span
-              v-if="logLevelSaveStatus"
-              class="admin-card-status"
-              :class="logLevelSaveStatus === 'saved' ? 'status-saved' : 'status-error'"
-            >
-              {{ logLevelSaveStatus === 'saved' ? 'Сохранено' : 'Ошибка' }}
-            </span>
-            <div class="admin-card-header">
-              <i class="fas fa-sliders-h admin-card-icon"></i>
-              <h2 class="admin-card-title">Уровень логирования</h2>
-            </div>
-            <div class="log-level-buttons">
-              <button
-                type="button"
-                class="log-level-btn"
-                :class="{ active: logLevel === 'debug' }"
-                @click="setLogLevel('debug')"
-              >
-                Debug
-              </button>
-              <button
-                type="button"
-                class="log-level-btn"
-                :class="{ active: logLevel === 'info' }"
-                @click="setLogLevel('info')"
-              >
-                Info
-              </button>
-              <button
-                type="button"
-                class="log-level-btn"
-                :class="{ active: logLevel === 'warn' }"
-                @click="setLogLevel('warn')"
-              >
-                Warn
-              </button>
-              <button
-                type="button"
-                class="log-level-btn"
-                :class="{ active: logLevel === 'error' }"
-                @click="setLogLevel('error')"
-              >
-                Error
-              </button>
-              <button
-                type="button"
-                class="log-level-btn"
-                :class="{ active: logLevel === 'disable' }"
-                @click="setLogLevel('disable')"
-              >
-                Disable
-              </button>
-            </div>
-            <p v-if="logLevelError" class="admin-card-error">{{ logLevelError }}</p>
-          </div>
+        <div class="ap-grid">
+          <div class="ap-main">
 
-          <!-- Logs Output -->
-          <div class="admin-card logs-card">
-            <div class="admin-card-header">
-              <i class="fas fa-terminal admin-card-icon"></i>
-              <h2 class="admin-card-title">Логи</h2>
-            </div>
-            <div class="logs-filters">
-              <button
-                type="button"
-                class="log-filter-chip chip-info"
-                :class="{ active: logFilters.info }"
-                @click="toggleLogFilter('info')"
-              >
-                <i class="fas fa-info-circle"></i>
-                Info
-              </button>
-              <button
-                type="button"
-                class="log-filter-chip chip-warn"
-                :class="{ active: logFilters.warn }"
-                @click="toggleLogFilter('warn')"
-              >
-                <i class="fas fa-exclamation-triangle"></i>
-                Warn
-              </button>
-              <button
-                type="button"
-                class="log-filter-chip chip-error"
-                :class="{ active: logFilters.error }"
-                @click="toggleLogFilter('error')"
-              >
-                <i class="fas fa-exclamation-circle"></i>
-                Error
-              </button>
-            </div>
-            <div class="logs-output custom-scrollbar" ref="logsOutputRef">
-              <div v-if="displayedLogs.length === 0" class="logs-empty">
-                Логи появятся здесь...
+            <section class="ap-card ap-card--stagger-1">
+              <div class="ap-card-hd">
+                <h2><i class="fas fa-chart-bar ap-icon-hd"></i> Счётчики</h2>
+                <button type="button" class="ap-btn ap-btn--sm" @click="resetDashboard">
+                  <i class="fas fa-redo-alt"></i> Сброс
+                </button>
               </div>
-              <div v-for="(item, index) in displayedLogs" :key="index" class="log-item">
-                <div v-if="item.type === 'divider'" class="log-date-divider">
-                  --- {{ item.date }} ---
+              <div class="ap-meters">
+                <div class="ap-meter ap-meter--err">
+                  <div class="ap-meter-accent"></div>
+                  <div class="ap-meter-body">
+                    <strong>{{ errorCount }}</strong>
+                    <span><i class="fas fa-times-circle"></i> Ошибки</span>
+                  </div>
                 </div>
-                <div v-else class="log-entry">
-                  <span class="log-time">{{ item.formattedTime }}</span>
-                  <span class="log-level" :class="`log-level-${item.entry.level}`">
-                    [{{ item.entry.level.toUpperCase() }}]
+                <div class="ap-meter ap-meter--wrn">
+                  <div class="ap-meter-accent"></div>
+                  <div class="ap-meter-body">
+                    <strong>{{ warnCount }}</strong>
+                    <span><i class="fas fa-exclamation-triangle"></i> Предупреждения</span>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <div class="ap-cfg-row">
+              <section class="ap-card ap-card--stagger-2">
+                <div class="ap-card-hd">
+                  <h2><i class="fas fa-pen ap-icon-hd"></i> Название проекта</h2>
+                  <span
+                    v-if="projectNameSaveStatus"
+                    class="ap-badge"
+                    :class="projectNameSaveStatus === 'saved' ? 'ap-badge--ok' : 'ap-badge--err'"
+                  >
+                    <i :class="projectNameSaveStatus === 'saved' ? 'fas fa-check' : 'fas fa-times'"></i>
+                    {{ projectNameSaveStatus === 'saved' ? 'OK' : 'ERR' }}
                   </span>
-                  <span class="log-message">{{ item.formattedMessage }}</span>
                 </div>
-              </div>
-            </div>
-            <div class="logs-actions">
-              <div v-if="logsLoading" class="logs-loading">
-                <i class="fas fa-spinner fa-spin"></i>
-                Загрузка логов...
-              </div>
-              <p v-if="logsError" class="logs-error">{{ logsError }}</p>
-              <div class="logs-action-row">
-                <button
-                  v-if="logsHasMore && !logsLoading"
-                  type="button"
-                  class="load-more-btn"
-                  @click="loadMoreLogs"
-                >
-                  <i class="fas fa-arrow-down"></i>
-                  Загрузить ещё 50
-                </button>
-                <button
-                  type="button"
-                  class="logs-clear-btn"
-                  title="Очистить логи"
-                  @click="clearLogs"
-                >
-                  <i class="fas fa-trash-alt"></i>
-                </button>
-              </div>
+                <input v-model="projectName" type="text" class="ap-input" placeholder="Имя проекта" />
+                <p v-if="projectNameError" class="ap-err"><i class="fas fa-exclamation-circle"></i> {{ projectNameError }}</p>
+              </section>
+
+              <section class="ap-card ap-card--stagger-3">
+                <div class="ap-card-hd">
+                  <h2><i class="fas fa-sliders-h ap-icon-hd"></i> Уровень логирования</h2>
+                  <span
+                    v-if="logLevelSaveStatus"
+                    class="ap-badge"
+                    :class="logLevelSaveStatus === 'saved' ? 'ap-badge--ok' : 'ap-badge--err'"
+                  >
+                    <i :class="logLevelSaveStatus === 'saved' ? 'fas fa-check' : 'fas fa-times'"></i>
+                    {{ logLevelSaveStatus === 'saved' ? 'OK' : 'ERR' }}
+                  </span>
+                </div>
+                <div class="ap-lvls">
+                  <button
+                    v-for="lvl in LOG_LEVEL_VALUES"
+                    :key="lvl"
+                    type="button"
+                    class="ap-lvl"
+                    :class="{ active: logLevel === lvl }"
+                    @click="setLogLevel(lvl)"
+                  >
+                    {{ lvl.toUpperCase() }}
+                  </button>
+                </div>
+                <p v-if="logLevelError" class="ap-err"><i class="fas fa-exclamation-circle"></i> {{ logLevelError }}</p>
+              </section>
             </div>
           </div>
-        </section>
+
+          <aside class="ap-side">
+            <section class="ap-card ap-logs ap-card--stagger-2">
+              <div class="ap-card-hd">
+                <h2><i class="fas fa-stream ap-icon-hd"></i> Монитор логов</h2>
+                <span class="ap-log-ct">{{ currentLogCount }} зап.</span>
+              </div>
+              <div class="ap-log-filters">
+                <button
+                  v-for="s in LOG_STREAM_KEYS"
+                  :key="s"
+                  type="button"
+                  class="ap-flt"
+                  :class="{ active: selectedLogStream === s }"
+                  @click="toggleLogFilter(s)"
+                >
+                  {{ LOG_STREAM_LABELS[s] }}
+                </button>
+              </div>
+              <div class="ap-log-out custom-scrollbar" ref="logsOutputRef">
+                <div v-if="!displayedLogs.length" class="ap-log-empty">
+                  <i class="fas fa-inbox" style="font-size:1.2rem;display:block;margin-bottom:0.5rem;opacity:0.4"></i>
+                  Поток «{{ selectedLogStreamLabel }}» пуст
+                </div>
+                <template v-for="(item, index) in displayedLogs" :key="index">
+                  <div v-if="item.type === 'divider'" class="ap-log-div">
+                    <span>{{ item.date }}</span>
+                  </div>
+                  <div v-else class="ap-log-row" :class="{ expanded: expandedLogRows[index] }" @click="toggleLogRow(index)">
+                    <span class="ap-log-t">{{ item.formattedTime }}</span>
+                    <span class="ap-log-l" :class="`lvl-${item.entry.level}`">[{{ item.entry.level.toUpperCase() }}]</span>
+                    <span class="ap-log-m">{{ item.formattedMessage }}</span>
+                  </div>
+                </template>
+              </div>
+              <div class="ap-log-ft">
+                <span v-if="logsLoading" class="ap-log-sync">
+                  <i class="fas fa-circle-notch fa-spin"></i> Загрузка...
+                </span>
+                <p v-if="logsError" class="ap-err"><i class="fas fa-exclamation-circle"></i> {{ logsError }}</p>
+                <div class="ap-log-btns">
+                  <button v-if="logsHasMore && !logsLoading" type="button" class="ap-btn" @click="loadMoreLogs">
+                    <i class="fas fa-chevron-down"></i> Ещё 50
+                  </button>
+                  <button type="button" class="ap-btn ap-btn--danger" @click="clearLogs">
+                    <i class="fas fa-trash-alt"></i> Очистить
+                  </button>
+                </div>
+              </div>
+            </section>
+          </aside>
+        </div>
       </div>
     </main>
 
@@ -666,607 +798,340 @@ const clearLogs = () => {
   </div>
 </template>
 
-<style>
-.content-wrapper {
-  position: relative;
-  z-index: 10;
-}
-
-.content-inner {
-  max-width: 1000px;
-  margin: 0 auto;
-  padding: 2rem;
-}
-
-@media (max-width: 768px) {
-  .content-inner {
-    padding: 1.5rem 1rem;
-  }
-}
-</style>
-
 <style scoped>
-.admin-section {
+.ap {
+  --c-bg: rgba(12, 11, 14, 0.97);
+  --c-bg2: rgba(16, 15, 19, 0.96);
+  --c-bg-deep: rgba(8, 7, 10, 0.98);
+  --c-bdr: rgba(50, 44, 54, 0.55);
+  --c-bdr-hi: rgba(75, 62, 78, 0.6);
+  --c-tx: #e0dcdf;
+  --c-tx2: #a39da0;
+  --c-tx3: #7e777b;
+  --c-red: #c4213f;
+  --c-red-s: #d95672;
+  --c-red-glow: rgba(217, 86, 114, 0.35);
+  --c-warn: #c9a660;
+  --c-alert: #d97a8a;
+  --c-ok: #6aaf7e;
+
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 0.75rem 1rem 1.5rem;
   opacity: 0;
-  transform: translateY(20px);
-  transition: opacity 0.6s ease, transform 0.6s ease;
-}
-
-.admin-section.admin-visible {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-.admin-header {
-  text-align: center;
-  margin-bottom: 2.5rem;
-}
-
-.admin-icon-wrapper {
-  width: 4rem;
-  height: 4rem;
-  margin: 0 auto 1.25rem;
-  background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-accent-hover) 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow:
-    0 6px 20px rgba(211, 35, 75, 0.35),
-    0 0 24px rgba(211, 35, 75, 0.15);
-  clip-path: polygon(
-    0 4px, 4px 4px, 4px 0,
-    calc(100% - 4px) 0, calc(100% - 4px) 4px, 100% 4px,
-    100% calc(100% - 4px), calc(100% - 4px) calc(100% - 4px), calc(100% - 4px) 100%,
-    4px 100%, 4px calc(100% - 4px), 0 calc(100% - 4px)
-  );
-  position: relative;
-  overflow: hidden;
-}
-
-.admin-icon-wrapper::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: repeating-linear-gradient(
-    0deg,
-    rgba(0, 0, 0, 0.15) 0px,
-    rgba(0, 0, 0, 0.15) 1px,
-    transparent 1px,
-    transparent 3px
-  );
-  pointer-events: none;
-  z-index: 2;
-  animation: admin-scanline-flicker 8s linear infinite;
-}
-
-@keyframes admin-scanline-flicker {
-  0%, 100% { opacity: 0.7; }
-  50% { opacity: 0.5; }
-}
-
-.admin-icon {
-  font-size: 1.5rem;
-  color: #fff;
-}
-
-.admin-heading {
-  font-size: 2rem;
-  font-weight: 600;
-  color: var(--color-text);
-  margin: 0 0 0.5rem 0;
-  letter-spacing: 0.05em;
-}
-
-.admin-description {
-  color: var(--color-text-secondary);
-  font-size: 0.95rem;
-  margin: 0;
-}
-
-/* Admin Cards */
-.admin-card {
-  background: linear-gradient(135deg, var(--color-bg-secondary) 0%, var(--color-bg-tertiary) 100%);
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
-  padding: 1.5rem;
-  margin-bottom: 1.5rem;
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
-  position: relative;
-  overflow: hidden;
-}
-
-.admin-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, var(--color-accent), transparent);
-}
-
-.admin-card-header {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  margin-bottom: 1.25rem;
-  flex-wrap: wrap;
-}
-
-.admin-card-icon {
-  color: var(--color-accent);
-  font-size: 1rem;
-}
-
-.admin-card-title {
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: var(--color-text);
-  margin: 0;
-  flex: 1;
-}
-
-/* Log Level Buttons */
-.log-level-buttons {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-
-.log-level-btn {
-  padding: 0.5rem 1rem;
-  font-family: inherit;
-  font-size: 0.9rem;
-  color: var(--color-text-secondary);
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid var(--color-border);
-  cursor: pointer;
-  transition: all 0.2s ease;
-  letter-spacing: 0.05em;
-}
-
-.log-level-btn:hover {
-  color: var(--color-text);
-  border-color: var(--color-border-light);
-  background: rgba(255, 255, 255, 0.05);
-}
-
-.log-level-btn.active {
-  color: #fff;
-  background: var(--color-accent);
-  border-color: var(--color-accent);
-  box-shadow: 0 0 12px rgba(211, 35, 75, 0.3);
-}
-
-.admin-card-error {
-  margin: 0.75rem 0 0;
-  font-size: 0.85rem;
-  color: #e74c3c;
-}
-
-.admin-card-status {
-  position: absolute;
-  top: 1rem;
-  right: 1rem;
-  font-size: 0.85rem;
-  font-weight: 500;
-  letter-spacing: 0.04em;
-  animation: statusFadeIn 0.2s ease;
-}
-
-.admin-card-status.status-saved {
-  color: #27ae60;
-}
-
-.admin-card-status.status-error {
-  color: #e74c3c;
-}
-
-@keyframes statusFadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-/* Project Settings */
-.settings-form {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.settings-field {
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-}
-
-.settings-label {
-  font-size: 0.85rem;
-  color: var(--color-text-secondary);
-  letter-spacing: 0.04em;
-}
-
-.settings-input {
-  padding: 0.6rem 0.9rem;
-  font-family: inherit;
-  font-size: 0.95rem;
-  color: var(--color-text);
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid var(--color-border);
-  border-radius: 4px;
-  transition: border-color 0.2s ease;
-}
-
-.settings-input:focus {
-  outline: none;
-  border-color: var(--color-accent);
-}
-
-.settings-input:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-/* Dashboard */
-.dashboard-card-icon {
-  color: var(--color-accent);
-}
-
-.dashboard-reset {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 0.9rem;
-  font-family: inherit;
-  font-size: 0.85rem;
-  color: var(--color-text-secondary);
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid var(--color-border-light);
-  border-radius: 6px;
-  cursor: pointer;
-  transition: color 0.2s ease, background 0.2s ease, border-color 0.2s ease;
-  letter-spacing: 0.04em;
-}
-
-.dashboard-reset:hover {
-  color: var(--color-text);
-  background: rgba(255, 255, 255, 0.08);
-  border-color: var(--color-border);
-}
-
-.dashboard-reset-icon {
-  font-size: 0.8rem;
-  opacity: 0.9;
-}
-
-.dashboard-stats {
-  display: flex;
-  gap: 1rem;
-}
-
-.dashboard-stat {
-  flex: 1 1 0;
-  min-width: 0;
-  display: flex;
-  align-items: flex-start;
-  gap: 0.75rem;
-  padding: 1rem 1.25rem;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid var(--color-border-light);
-  border-radius: 6px;
-}
-
-.dashboard-stat .stat-icon {
-  flex-shrink: 0;
-  margin-top: 0.15rem;
-}
-
-.dashboard-stat .stat-content {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.dashboard-stat .stat-value {
-  font-size: 1.5rem;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-  line-height: 1.2;
-}
-
-.dashboard-stat .stat-label {
-  font-size: 0.85rem;
-  color: var(--color-text-secondary);
-  line-height: 1.2;
-}
-
-.stat-icon {
-  font-size: 1.25rem;
-  opacity: 0.6;
-}
-
-.stat-errors .stat-value,
-.stat-errors .stat-icon {
-  color: #e74c3c;
-}
-
-.stat-warnings .stat-value,
-.stat-warnings .stat-icon {
-  color: #f39c12;
-}
-
-/* Logs Output */
-.logs-card {
-  margin-bottom: 0;
-}
-
-.logs-filters {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  margin-bottom: 1rem;
-}
-
-.log-filter-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  padding: 0.35rem 0.75rem;
-  font-family: inherit;
-  font-size: 0.8rem;
-  color: var(--color-text-tertiary);
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid var(--color-border);
-  border-radius: 4px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  letter-spacing: 0.04em;
-}
-
-.log-filter-chip:hover {
-  color: var(--color-text-secondary);
-  border-color: var(--color-border-light);
-  background: rgba(255, 255, 255, 0.05);
-}
-
-.log-filter-chip.active {
-  color: var(--color-text);
-}
-
-.log-filter-chip i {
-  font-size: 0.75rem;
-  opacity: 0.9;
-}
-
-.log-filter-chip.chip-info.active {
-  border-color: #3498db;
-  background: rgba(52, 152, 219, 0.12);
-}
-
-.log-filter-chip.chip-info.active i {
-  color: #3498db;
-}
-
-.log-filter-chip.chip-warn.active {
-  border-color: #f39c12;
-  background: rgba(243, 156, 18, 0.12);
-}
-
-.log-filter-chip.chip-warn.active i {
-  color: #f39c12;
-}
-
-.log-filter-chip.chip-error.active {
-  border-color: #e74c3c;
-  background: rgba(231, 76, 60, 0.12);
-}
-
-.log-filter-chip.chip-error.active i {
-  color: #e74c3c;
-}
-
-.logs-output {
-  background: #080808;
-  border: 1px solid var(--color-border);
-  border-radius: 4px;
-  min-height: 200px;
-  max-height: 400px;
-  overflow: auto;
-  padding: 1rem;
+  transform: translateY(8px);
+  transition: opacity 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94), transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
   font-family: 'Share Tech Mono', 'Courier New', monospace;
-  font-size: 0.8rem;
 }
 
-.logs-empty {
-  color: var(--color-text-secondary);
-  text-align: center;
-  padding: 2rem;
-}
+.ap.ready { opacity: 1; transform: none; }
+.ap, .ap :deep(*) { box-sizing: border-box; border-radius: 0 !important; line-height: 1.45; }
 
-.log-item {
-  margin-bottom: 0;
-}
+.ap-icon-muted { font-size: 0.65rem; opacity: 0.55; }
+.ap-icon-hd { font-size: 0.68rem; opacity: 0.6; margin-right: 0.15rem; }
 
-.log-date-divider {
-  text-align: center;
-  color: #555;
-  font-size: 0.75rem;
-  padding: 0.5rem 0;
-  margin: 0.5rem 0;
-  opacity: 0.7;
-  letter-spacing: 0.1em;
+/* ── STATUS BAR ── */
+.ap-status {
+  display: flex; align-items: center; justify-content: space-between; gap: 0.75rem;
+  padding: 0.5rem 0.85rem; margin-bottom: 0.85rem;
+  border: 1px solid var(--c-bdr); background: var(--c-bg-deep);
+  font-size: 0.78rem; color: var(--c-tx2); position: relative; overflow: hidden;
 }
-
-.log-entry {
-  display: flex;
-  gap: 0.5rem;
-  padding: 0.15rem 0;
-  line-height: 1.4;
+.ap-status::after {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--c-red), transparent); opacity: 0.3;
 }
-
-.log-time {
-  color: var(--color-text-tertiary);
-  flex-shrink: 0;
+.ap-status-sweep {
+  position: absolute; top: 0; left: -100%; width: 50%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(217, 86, 114, 0.03), transparent);
+  animation: ap-sweep 8s linear infinite; pointer-events: none;
 }
-
-.log-level {
-  flex-shrink: 0;
-  font-weight: 600;
+@keyframes ap-sweep { 0% { left: -50%; } 100% { left: 150%; } }
+.ap-status-left, .ap-status-right { display: flex; align-items: center; gap: 0.55rem; position: relative; z-index: 1; }
+.ap-path { color: var(--c-red-s); letter-spacing: 0.04em; font-weight: 600; }
+.ap-separator { color: var(--c-tx3); opacity: 0.4; }
+.ap-project-label { color: var(--c-tx); letter-spacing: 0.02em; }
+.ap-status-tag {
+  padding: 0.15rem 0.45rem; border: 1px solid var(--c-bdr);
+  background: rgba(16, 15, 19, 0.7); font-size: 0.7rem; letter-spacing: 0.05em; color: var(--c-tx2);
 }
-
-.log-level-debug {
-  color: #9b59b6;
-}
-
-.log-level-info {
-  color: #3498db;
-}
-
-.log-level-notice {
-  color: #1abc9c;
-}
-
-.log-level-warning {
-  color: #f39c12;
-}
-
-.log-level-error {
-  color: #e74c3c;
-}
-
-.log-level-critical {
-  color: #c0392b;
-}
-
-.log-level-alert {
-  color: #e67e22;
-}
-
-.log-level-emergency {
-  color: #d35400;
-}
-
-.log-message {
-  color: var(--color-text-secondary);
-  word-break: break-word;
-  flex: 1;
-  min-width: 0;
-}
-
-.logs-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  margin-top: 1rem;
-}
-
-.logs-action-row {
-  display: flex;
+/* Поток логов: фиксированная ширина подписи, отдельный индикатор загрузки — без скачков вёрстки */
+.ap-stream-pill {
+  display: inline-flex;
   align-items: center;
-  justify-content: flex-end;
-  gap: 0.5rem;
-  width: 100%;
-}
-
-.logs-action-row .load-more-btn {
-  flex: 1;
-  min-width: 0;
-  margin-right: auto;
-}
-
-.logs-clear-btn {
+  gap: 0.4rem;
+  min-width: 7.25rem;
+  padding: 0.28rem 0.5rem 0.28rem 0.4rem;
+  border: 1px solid var(--c-bdr);
+  background: rgba(10, 9, 12, 0.85);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  line-height: 1;
   flex-shrink: 0;
-  width: 2.75rem;
-  height: 2.75rem;
+  box-sizing: border-box;
+}
+.ap-stream-pill__dot {
+  width: 7px;
+  height: 7px;
+  flex: 0 0 7px;
+  align-self: center;
+  background: var(--c-tx3);
+  box-shadow: none;
+}
+.ap-stream-pill__label {
+  flex: 1 1 auto;
+  min-width: 4.25rem;
+  text-align: left;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  padding-top: 0.06em;
+}
+.ap-stream-pill__sync {
+  flex: 0 0 auto;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0;
-  font-size: 1rem;
-  color: var(--color-text-secondary);
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid var(--color-border);
-  border-radius: 4px;
-  cursor: pointer;
-  transition: all 0.2s ease;
+  width: 0.85rem;
+  font-size: 0.62rem;
+  opacity: 0.85;
+  color: var(--c-tx2);
+}
+.ap-stream-pill--live {
+  color: var(--c-red-s);
+  border-color: rgba(217, 86, 114, 0.35);
+}
+.ap-stream-pill--live .ap-stream-pill__dot {
+  background: var(--c-red-s);
+  box-shadow: 0 0 6px var(--c-red-glow);
+  animation: ap-stream-dot-pulse 2.2s ease-in-out infinite;
+}
+.ap-stream-pill--offline {
+  color: var(--c-tx3);
+  border-color: rgba(80, 75, 82, 0.55);
+}
+.ap-stream-pill--offline .ap-stream-pill__dot {
+  background: var(--c-tx3);
+  animation: none;
+}
+.ap-stream-pill--nosocket {
+  color: var(--c-tx3);
+  border-color: var(--c-bdr);
+}
+.ap-stream-pill--nosocket .ap-stream-pill__dot {
+  background: var(--c-tx3);
+  opacity: 0.5;
+  animation: none;
+}
+.ap-stream-pill--pending {
+  color: var(--c-tx2);
+  border-color: rgba(90, 82, 88, 0.45);
+}
+.ap-stream-pill--pending .ap-stream-pill__dot {
+  background: rgba(217, 86, 114, 0.55);
+  opacity: 1;
+  animation: ap-stream-dot-pulse 1.4s ease-in-out infinite;
+}
+.ap-stream-pill--syncing.ap-stream-pill--live {
+  border-color: rgba(217, 86, 114, 0.45);
+}
+@keyframes ap-stream-dot-pulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 6px var(--c-red-glow); transform: scale(1); }
+  50% { opacity: 0.4; box-shadow: 0 0 2px rgba(217, 86, 114, 0.25); transform: scale(0.92); }
 }
 
-.logs-clear-btn:hover {
-  color: #fff;
-  background: #e74c3c;
-  border-color: #e74c3c;
-  box-shadow: 0 0 12px rgba(231, 76, 60, 0.3);
+/* ── GRID ── */
+.ap-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(360px, 440px); gap: 0.85rem; align-items: start; }
+.ap-main { display: flex; flex-direction: column; gap: 0.85rem; min-width: 0; }
+
+/* ── CARDS ── */
+.ap-card {
+  border: 1px solid var(--c-bdr); background: linear-gradient(175deg, var(--c-bg), var(--c-bg2));
+  padding: 0.85rem 1rem; position: relative; transition: border-color 0.25s ease;
+}
+.ap-card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent 10%, var(--c-red) 50%, transparent 90%); opacity: 0.2;
+}
+.ap-card::after {
+  content: ''; position: absolute; inset: 0;
+  background: repeating-linear-gradient(0deg, rgba(0,0,0,0.012) 0px, rgba(0,0,0,0.012) 1px, transparent 1px, transparent 3px);
+  pointer-events: none; opacity: 0.4;
+}
+.ap-card:hover { border-color: var(--c-bdr-hi); }
+.ap-card--stagger-1 { animation: ap-card-enter 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.1s both; }
+.ap-card--stagger-2 { animation: ap-card-enter 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.2s both; }
+.ap-card--stagger-3 { animation: ap-card-enter 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.3s both; }
+@keyframes ap-card-enter { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.ap-card-hd {
+  display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;
+  margin-bottom: 0.7rem; position: relative; z-index: 1;
+}
+.ap-card-hd h2 {
+  margin: 0; font-size: 0.8rem; font-weight: 600; color: var(--c-tx2);
+  letter-spacing: 0.04em; text-transform: uppercase;
 }
 
-.logs-loading {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.85rem;
-  color: var(--color-text-secondary);
-  padding: 0.5rem 0;
+/* ── METERS ── */
+.ap-meters { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; position: relative; z-index: 1; }
+.ap-meter {
+  display: flex; overflow: hidden; border: 1px solid var(--c-bdr);
+  background: var(--c-bg-deep); transition: border-color 0.25s ease;
+}
+.ap-meter-accent { width: 3px; flex-shrink: 0; }
+.ap-meter-body { padding: 0.65rem 0.8rem; display: flex; flex-direction: column; gap: 0.15rem; }
+.ap-meter strong { font-size: 1.75rem; font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1.15; }
+.ap-meter span { font-size: 0.66rem; color: var(--c-tx3); letter-spacing: 0.04em; text-transform: uppercase; }
+.ap-meter span i { margin-right: 0.2rem; }
+
+.ap-meter--err .ap-meter-accent { background: var(--c-alert); }
+.ap-meter--err strong { color: var(--c-alert); }
+.ap-meter--err { border-color: rgba(217, 122, 138, 0.25); }
+.ap-meter--err:hover { border-color: rgba(217, 122, 138, 0.45); }
+
+.ap-meter--wrn .ap-meter-accent { background: var(--c-warn); }
+.ap-meter--wrn strong { color: var(--c-warn); }
+.ap-meter--wrn { border-color: rgba(201, 166, 96, 0.25); }
+.ap-meter--wrn:hover { border-color: rgba(201, 166, 96, 0.45); }
+
+/* ── CONFIG ── */
+.ap-cfg-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.85rem; }
+
+.ap-input {
+  width: 100%; padding: 0.55rem 0.7rem; border: 1px solid var(--c-bdr);
+  background: var(--c-bg-deep); color: var(--c-tx); font-family: inherit;
+  font-size: 0.85rem; letter-spacing: 0.02em; transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  position: relative; z-index: 1;
+}
+.ap-input:focus { outline: none; border-color: var(--c-red-s); box-shadow: 0 0 0 1px rgba(217, 86, 114, 0.2); }
+.ap-input::placeholder { color: var(--c-tx3); }
+
+.ap-lvls { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.4rem; position: relative; z-index: 1; }
+.ap-lvl {
+  padding: 0.42rem; border: 1px solid var(--c-bdr); background: var(--c-bg-deep);
+  color: var(--c-tx2); font-family: inherit; font-size: 0.72rem; cursor: pointer;
+  transition: all 0.15s ease; font-weight: 600; text-align: center; letter-spacing: 0.05em;
+  position: relative; overflow: hidden;
+  clip-path: polygon(0 2px, 2px 2px, 2px 0, calc(100% - 2px) 0, calc(100% - 2px) 2px, 100% 2px, 100% calc(100% - 2px), calc(100% - 2px) calc(100% - 2px), calc(100% - 2px) 100%, 2px 100%, 2px calc(100% - 2px), 0 calc(100% - 2px));
+}
+.ap-lvl::after {
+  content: ''; position: absolute; bottom: 0; left: 0; width: 100%; height: 2px;
+  background: var(--c-red); transform: scaleX(0); transform-origin: left; transition: transform 0.2s ease;
+}
+.ap-lvl:hover { border-color: var(--c-bdr-hi); background: rgba(22, 20, 26, 0.98); color: var(--c-tx); }
+.ap-lvl:hover::after { transform: scaleX(1); }
+.ap-lvl.active { border-color: var(--c-red-s); background: rgba(196, 33, 63, 0.14); color: #fff; }
+.ap-lvl.active::after { transform: scaleX(1); }
+
+/* ── BUTTONS ── */
+.ap-btn {
+  padding: 0.42rem 0.8rem; border: 1px solid var(--c-bdr); background: var(--c-bg-deep);
+  color: var(--c-tx); font-family: inherit; font-size: 0.76rem; cursor: pointer;
+  transition: all 0.15s ease; display: inline-flex; align-items: center; gap: 0.35rem;
+  letter-spacing: 0.03em; position: relative; overflow: hidden;
+  clip-path: polygon(0 2px, 2px 2px, 2px 0, calc(100% - 2px) 0, calc(100% - 2px) 2px, 100% 2px, 100% calc(100% - 2px), calc(100% - 2px) calc(100% - 2px), calc(100% - 2px) 100%, 2px 100%, 2px calc(100% - 2px), 0 calc(100% - 2px));
+}
+.ap-btn::before {
+  content: ''; position: absolute; inset: 0;
+  background: repeating-linear-gradient(0deg, rgba(0,0,0,0.04) 0px, rgba(0,0,0,0.04) 1px, transparent 1px, transparent 2px);
+  pointer-events: none;
+}
+.ap-btn::after {
+  content: ''; position: absolute; bottom: 0; left: 0; width: 100%; height: 2px;
+  background: var(--c-red); transform: scaleX(0); transform-origin: left; transition: transform 0.2s ease;
+}
+.ap-btn:hover { border-color: var(--c-bdr-hi); background: rgba(24, 22, 28, 0.98); transform: translateY(-1px); box-shadow: 0 3px 8px rgba(0,0,0,0.35); }
+.ap-btn:hover::after { transform: scaleX(1); }
+.ap-btn:active { transform: translateY(0); box-shadow: none; }
+.ap-btn i { font-size: 0.62rem; }
+.ap-btn--sm { padding: 0.28rem 0.55rem; font-size: 0.68rem; }
+.ap-btn--sm i { font-size: 0.58rem; }
+.ap-btn--danger { border-color: rgba(217, 122, 138, 0.3); color: #ecc8cf; background: rgba(45, 14, 22, 0.9); }
+.ap-btn--danger::after { background: var(--c-alert); }
+.ap-btn--danger:hover { border-color: rgba(217, 122, 138, 0.5); background: rgba(60, 20, 30, 0.95); }
+
+/* ── BADGES ── */
+.ap-badge {
+  font-size: 0.63rem; padding: 0.1rem 0.4rem; border: 1px solid; font-weight: 700;
+  letter-spacing: 0.06em; position: relative; z-index: 1; animation: ap-badge-flash 0.4s ease-out;
+}
+.ap-badge i { font-size: 0.55rem; margin-right: 0.1rem; }
+@keyframes ap-badge-flash { 0% { opacity: 0; transform: scale(0.85); } 50% { transform: scale(1.04); } 100% { opacity: 1; transform: scale(1); } }
+.ap-badge--ok { color: var(--c-ok); border-color: rgba(106, 175, 126, 0.4); }
+.ap-badge--err { color: var(--c-alert); border-color: rgba(217, 122, 138, 0.4); }
+
+.ap-err { margin: 0.4rem 0 0; color: var(--c-alert); font-size: 0.76rem; position: relative; z-index: 1; }
+.ap-err i { margin-right: 0.2rem; font-size: 0.65rem; }
+
+/* ── LOG MONITOR ── */
+.ap-side { min-width: 0; }
+.ap-logs { position: sticky; top: 0.75rem; }
+.ap-log-ct { font-size: 0.7rem; color: var(--c-tx3); letter-spacing: 0.04em; font-variant-numeric: tabular-nums; }
+.ap-log-filters { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.4rem; margin-bottom: 0.6rem; position: relative; z-index: 1; }
+.ap-flt {
+  padding: 0.35rem; border: 1px solid var(--c-bdr); background: var(--c-bg-deep);
+  color: var(--c-tx2); font-family: inherit; font-size: 0.7rem; cursor: pointer;
+  transition: all 0.15s ease; text-align: center; letter-spacing: 0.03em; position: relative; overflow: hidden;
+}
+.ap-flt::after {
+  content: ''; position: absolute; bottom: 0; left: 0; width: 100%; height: 2px;
+  background: var(--c-red); transform: scaleX(0); transition: transform 0.2s ease;
+}
+.ap-flt:hover { border-color: var(--c-bdr-hi); }
+.ap-flt:hover::after { transform: scaleX(1); }
+.ap-flt.active { border-color: var(--c-red-s); background: rgba(196, 33, 63, 0.12); color: #fff; }
+.ap-flt.active::after { transform: scaleX(1); }
+
+.ap-log-out {
+  min-height: 420px; max-height: calc(100vh - 300px); overflow-y: auto;
+  border: 1px solid rgba(50, 44, 54, 0.35); background: rgba(5, 4, 7, 0.98);
+  padding: 0.55rem; margin-bottom: 0.55rem; font-size: 0.74rem; line-height: 1.6;
+  position: relative; z-index: 1; box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.25);
+}
+.ap-log-empty { color: var(--c-tx3); padding: 2rem; text-align: center; font-size: 0.8rem; letter-spacing: 0.03em; }
+.ap-log-div { text-align: center; padding: 0.35rem 0; margin: 0.3rem 0; }
+.ap-log-div span {
+  font-size: 0.64rem; color: var(--c-warn); letter-spacing: 0.08em; text-transform: uppercase; opacity: 0.5;
+  padding: 0.1rem 0.6rem; border-top: 1px solid rgba(201, 166, 96, 0.12); border-bottom: 1px solid rgba(201, 166, 96, 0.12);
+}
+.ap-log-row {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 0.4rem;
+  padding: 0.2rem 0; border-bottom: 1px solid rgba(50, 44, 54, 0.1);
+  cursor: pointer; transition: background 0.1s ease; user-select: none;
+}
+.ap-log-row:hover { background: rgba(255, 255, 255, 0.02); }
+.ap-log-t { flex-shrink: 0; color: var(--c-tx3); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.ap-log-l { flex-shrink: 0; font-weight: 700; white-space: nowrap; }
+.ap-log-m { flex: 1 1 0; min-width: 0; color: var(--c-tx); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ap-log-row.expanded .ap-log-m {
+  flex-basis: 100%; white-space: pre-wrap; word-break: break-word;
+  overflow: visible; text-overflow: unset; margin-top: 0.15rem;
+  padding: 0.2rem 0 0.1rem 0.5rem; border-left: 2px solid rgba(50, 44, 54, 0.3);
+  user-select: text;
 }
 
-.logs-loading i {
-  color: var(--color-accent);
-}
+.lvl-debug { color: #7e767a; }
+.lvl-info { color: var(--c-tx2); }
+.lvl-notice { color: #8bb89c; }
+.lvl-warning { color: var(--c-warn); }
+.lvl-error, .lvl-critical, .lvl-alert, .lvl-emergency { color: var(--c-alert); }
 
-.logs-error {
-  font-size: 0.85rem;
-  color: #e74c3c;
-  margin: 0;
-  padding: 0.5rem 0.75rem;
-  background: rgba(231, 76, 60, 0.1);
-  border: 1px solid rgba(231, 76, 60, 0.3);
-  border-radius: 4px;
-}
+.ap-log-ft { display: flex; flex-direction: column; gap: 0.4rem; position: relative; z-index: 1; }
+.ap-log-sync { font-size: 0.74rem; color: var(--c-tx2); display: flex; align-items: center; gap: 0.35rem; }
+.ap-log-sync i { font-size: 0.62rem; }
+.ap-log-btns { display: flex; gap: 0.4rem; }
+.ap-log-btns .ap-btn:first-child { flex: 1; }
 
-.load-more-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  padding: 0.6rem 1.2rem;
-  font-family: inherit;
-  font-size: 0.9rem;
-  color: var(--color-text);
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid var(--color-border);
-  border-radius: 4px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  letter-spacing: 0.04em;
-}
-
-.load-more-btn:hover {
-  color: #fff;
-  background: var(--color-accent);
-  border-color: var(--color-accent);
-  box-shadow: 0 0 12px rgba(211, 35, 75, 0.3);
-}
-
-.load-more-btn i {
-  font-size: 0.85rem;
-}
-
-@media (max-width: 768px) {
-  .admin-heading {
-    font-size: 1.6rem;
-  }
-
-  .admin-card {
-    padding: 1.25rem;
-  }
-
-  .dashboard-stat {
-    min-width: 100%;
-  }
+@media (max-width: 1100px) { .ap-grid { grid-template-columns: 1fr; } .ap-logs { position: static; } .ap-log-out { max-height: 420px; } }
+@media (max-width: 680px) {
+  .ap { padding: 0.5rem 0.625rem 1rem; }
+  .ap-cfg-row { grid-template-columns: 1fr; }
+  .ap-meters { grid-template-columns: 1fr; }
+  .ap-log-filters { grid-template-columns: repeat(2, 1fr); }
+  .ap-log-row { grid-template-columns: 1fr; gap: 0.1rem; }
+  .ap-status { flex-direction: column; align-items: flex-start; gap: 0.35rem; }
+  .ap-lvls { grid-template-columns: repeat(2, 1fr); }
 }
 </style>

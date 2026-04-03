@@ -201,6 +201,7 @@ const cancelLogout = () => {
   position: relative;
   z-index: 200;
   transition: all 0.25s ease;
+  font-family: 'Share Tech Mono', 'Courier New', monospace;
 }
 
 .header-hidden {
