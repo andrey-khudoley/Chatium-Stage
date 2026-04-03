@@ -453,6 +453,9 @@ const HTTP_PATH_BY_TEST_ID: Record<string, string> = {
   'web-admin': '/web/admin',
   'web-profile': '/web/profile',
   'web-login': '/web/login',
+  'web-new': '/web/new',
+  'web-t1': '/web/t1',
+  'web-t2': '/web/t2',
   'web-tests': '/web/tests'
 }
 

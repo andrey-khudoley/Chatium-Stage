@@ -41,7 +41,7 @@ export const listTestsRoute = app.get('/', async (ctx) => {
     {
       id: 'integration-http',
       title: 'Интеграция HTTP (страницы шаблона)',
-      description: 'GET маршрутов: /, /web/admin, /web/profile, /web/login, /web/tests',
+      description: 'GET маршрутов: /, /web/admin, /web/profile, /web/login, /web/new, /web/t1, /web/t2, /web/tests',
       blocks: [INTEGRATION_HTTP_TEST_BLOCK],
       tests: flattenCatalogBlocks([INTEGRATION_HTTP_TEST_BLOCK])
     }

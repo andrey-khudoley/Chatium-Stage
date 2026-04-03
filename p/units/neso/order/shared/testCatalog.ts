@@ -95,6 +95,9 @@ export const INTEGRATION_HTTP_TEST_BLOCK: TestCatalogBlock = {
     { id: 'web-admin', title: 'GET /web/admin' },
     { id: 'web-profile', title: 'GET /web/profile' },
     { id: 'web-login', title: 'GET /web/login' },
+    { id: 'web-new', title: 'GET /web/new' },
+    { id: 'web-t1', title: 'GET /web/t1' },
+    { id: 'web-t2', title: 'GET /web/t2' },
     { id: 'web-tests', title: 'GET /web/tests' }
   ]
 }
