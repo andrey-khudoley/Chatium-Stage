@@ -6,7 +6,7 @@
 - нет внутренних импортов (только экспорт PROJECT_ROOT, ROUTES, getFullUrl, withProjectRoot, withProjectRootAndSubroute)
 
 ### `./config/project.tsx`
-- нет внутренних импортов (только экспорт DEFAULT_PROJECT_TITLE, INDEX_PAGE_NAME, PROFILE_PAGE_NAME, ADMIN_PAGE_NAME, TESTS_PAGE_NAME, getPageTitle, getHeaderText, BODY_TEXT, BODY_SUBTEXT)
+- нет внутренних импортов (только экспорт DEFAULT_PROJECT_TITLE, INDEX_PAGE_NAME, PROFILE_PAGE_NAME, ADMIN_PAGE_NAME, TESTS_PAGE_NAME, NEW_ORDER_PAGE_NAME, ORDER_T_FORM_PAGE_NAME, getPageTitle, getHeaderText, BODY_TEXT, BODY_SUBTEXT)
 
 ### `./index.tsx`
 - `@app/html-jsx` → `jsx`
@@ -65,6 +65,27 @@
 - `../../config/routes` → `PROJECT_ROOT`
 - `../../lib/logger.lib` → `*`
 
+### `./web/new/index.tsx`
+- `@app/html-jsx` → `jsx`
+- `../../pages/OrderNewFormPage.vue`
+- `../../shared/orderFormPageStyles` → `orderFormTailwindScript`, `orderFormCssVariables`, `orderFormCommonStyles`
+- `../../styles` → `customScrollbarStyles`
+- `../../config/project` → `NEW_ORDER_PAGE_NAME`, `getPageTitle`
+- `../../lib/logger.lib` → `*`
+- `../../lib/settings.lib` → `*`
+
+### `./web/t1/index.tsx`
+- `@app/html-jsx` → `jsx`
+- `../../pages/OrderTFormPage.vue`
+- `../../shared/orderFormPageStyles` → `orderFormTailwindScript`, `orderFormCssVariables`, `orderFormCommonStyles`
+- `../../styles` → `customScrollbarStyles`
+- `../../config/project` → `ORDER_T_FORM_PAGE_NAME`, `getPageTitle`
+- `../../lib/logger.lib` → `*`
+- `../../lib/settings.lib` → `*`
+
+### `./web/t2/index.tsx`
+- (те же импорты, что у `./web/t1/index.tsx`)
+
 ## 2) Страницы‑компоненты (Vue)
 
 ### `./pages/HomePage.vue`
@@ -111,6 +132,20 @@
 - `vue` → `computed`, `onMounted`
 - `../shared/logger` → `createComponentLogger`
 
+### `./pages/OrderNewFormPage.vue`
+- `vue` → `onMounted`, `onBeforeUnmount`, `ref`, `defineProps`
+
+### `./pages/OrderTFormPage.vue`
+- `vue` → `ref`
+- `../config/project` → `ORDER_T_FORM_PAGE_NAME`
+- `../components/orderT/OrderTFormLayout.vue`
+- `../components/orderT/OrderTFormHeader.vue`
+- `../components/orderT/OrderTCurrencySwitcher.vue`
+- `../components/orderT/OrderTTextFields.vue`
+- `../components/orderT/OrderTPhoneInput.vue`
+- `../components/orderT/OrderTFormAlerts.vue`
+- `../components/orderT/OrderTFormSubmit.vue`
+
 ## 3) Компоненты (components/)
 
 ### `./components/Header.vue`
@@ -125,6 +160,27 @@
 ### `./components/AppFooter.vue`
 - `vue` → `onMounted`
 - `../shared/logger` → `createComponentLogger`
+
+### `./components/orderT/OrderTFormLayout.vue`
+- `vue` (разметка фона и обёртки)
+
+### `./components/orderT/OrderTFormHeader.vue`
+- `vue` → `defineProps`
+
+### `./components/orderT/OrderTCurrencySwitcher.vue`
+- `vue` → `defineProps`, `defineEmits`
+
+### `./components/orderT/OrderTTextFields.vue`
+- `vue` → `computed`, `defineProps`, `defineEmits`
+
+### `./components/orderT/OrderTPhoneInput.vue`
+- `vue` → `onMounted`, `onBeforeUnmount`, `ref`, `defineExpose`, `defineProps`
+
+### `./components/orderT/OrderTFormAlerts.vue`
+- `vue` → `defineProps`
+
+### `./components/orderT/OrderTFormSubmit.vue`
+- `vue` → `defineProps`
 
 ### `./components/GlobalGlitch.vue`
 - `vue` → `onMounted`
@@ -145,6 +201,10 @@
 ### `./shared/testCatalog.ts`
 - первая строка: `// @shared`
 - нет импортов — каталог блоков для `/api/tests/list` и UI тестов
+
+### `./shared/orderFormPageStyles.ts`
+- первая строка: `// @shared`
+- нет импортов — стили формы (weblink-generator): `orderFormTailwindScript`, `orderFormCssVariables`, `orderFormCommonStyles`
 
 ### `./shared/logger.ts`
 - нет импортов (клиентский логгер по syslog RFC 5424: severity -1…7, LOG_LEVEL_OFF=-1, читает window.__BOOT__.logLevel; createComponentLogger, setLogSink, LogEntry)

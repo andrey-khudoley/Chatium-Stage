@@ -1,3 +1,4 @@
+// @shared
 // PROJECT_ROOT — путь от корня воркспэйса до проекта (от /)
 export const PROJECT_ROOT = 'p/units/neso/order'
 
@@ -10,7 +11,10 @@ export const ROUTES = {
   admin: './web/admin',
   profile: './web/profile',
   login: './web/login',
-  tests: './web/tests'
+  tests: './web/tests',
+  newOrder: './web/new',
+  orderT1: './web/t1',
+  orderT2: './web/t2'
 } as const
 
 /** Пути для getFullUrl (абсолютные от корня проекта) */
@@ -19,7 +23,10 @@ export const ROUTE_PATHS = {
   admin: '/web/admin',
   profile: '/web/profile',
   login: '/web/login',
-  tests: '/web/tests'
+  tests: '/web/tests',
+  newOrder: '/web/new',
+  orderT1: '/web/t1',
+  orderT2: '/web/t2'
 } as const
 
 /**

@@ -6,6 +6,9 @@ export const INDEX_PAGE_NAME = 'Главная'
 export const PROFILE_PAGE_NAME = 'Профиль'
 export const ADMIN_PAGE_NAME = 'Админка'
 export const TESTS_PAGE_NAME = 'Тесты'
+export const NEW_ORDER_PAGE_NAME = 'Заказать'
+/** Страницы формы по маршрутам /web/t1 и /web/t2 (отдельно от /web/new) */
+export const ORDER_T_FORM_PAGE_NAME = 'Заявка'
 
 /** Текст для <title>: "Название страницы - Название из настроек" */
 export function getPageTitle(pageName: string, projectName: string): string {
