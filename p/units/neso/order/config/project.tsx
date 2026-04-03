@@ -7,8 +7,12 @@ export const PROFILE_PAGE_NAME = 'Профиль'
 export const ADMIN_PAGE_NAME = 'Админка'
 export const TESTS_PAGE_NAME = 'Тесты'
 export const NEW_ORDER_PAGE_NAME = 'Заказать'
-/** Страницы формы по маршрутам /web/t1 и /web/t2 (отдельно от /web/new) */
-export const ORDER_T_FORM_PAGE_NAME = 'Заявка'
+
+export {
+  ORDER_T_FORM_PAGE_NAME,
+  ORDER_T1_PAGE_TITLE,
+  ORDER_T2_PAGE_TITLE
+} from '../shared/orderTFormConstants'
 
 /** Текст для <title>: "Название страницы - Название из настроек" */
 export function getPageTitle(pageName: string, projectName: string): string {

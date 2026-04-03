@@ -1,7 +1,7 @@
 <template>
   <OrderTFormLayout>
     <div class="card">
-      <OrderTFormHeader :title="pageTitle" />
+      <OrderTFormHeader :title="props.pageTitle" />
 
       <OrderTCurrencySwitcher v-model="selectedCurrency" :currencies="currencies" />
 
@@ -34,9 +34,14 @@ import OrderTTextFields from '../components/orderT/OrderTTextFields.vue'
 import OrderTPhoneInput from '../components/orderT/OrderTPhoneInput.vue'
 import OrderTFormAlerts from '../components/orderT/OrderTFormAlerts.vue'
 import OrderTFormSubmit from '../components/orderT/OrderTFormSubmit.vue'
-import { ORDER_T_FORM_PAGE_NAME } from '../config/project'
+import { getOfferId } from '../shared/orderTOfferMap'
+import type { OrderTVariant, OrderTCurrency } from '../shared/orderTOfferMap'
+import { createOrderRoute } from '../api/order/create'
 
-const pageTitle = ORDER_T_FORM_PAGE_NAME
+const props = defineProps<{
+  pageVariant: OrderTVariant
+  pageTitle: string
+}>()
 
 const currencies = ['RUB', 'EUR', 'UAH'] as const
 const selectedCurrency = ref<(typeof currencies)[number]>('EUR')
@@ -87,7 +92,25 @@ async function handleSubmit() {
       throw new Error('Пожалуйста, введите корректный номер телефона')
     }
 
-    await new Promise((resolve) => setTimeout(resolve, 1500))
+    const currency = selectedCurrency.value as OrderTCurrency
+    const offerId = getOfferId(props.pageVariant, currency)
+
+    const result = await createOrderRoute.run(ctx, {
+      name: form.value.name.trim(),
+      email: form.value.email.trim(),
+      phone: phoneNumber,
+      offerId,
+      currency,
+    })
+
+    if (!result.success) {
+      throw new Error(result.error || 'Ошибка создания заказа')
+    }
+
+    if (result.paymentUrl) {
+      window.location.href = result.paymentUrl
+      return
+    }
 
     success.value = true
     setTimeout(() => {

@@ -56,7 +56,7 @@
                 v-model="form.email"
                 type="email"
                 class="input"
-                placeholder="Например: anna@example.com"
+                placeholder="Например: ivan@example.com"
                 required
                 :disabled="loading"
               />
@@ -72,7 +72,7 @@
                 ref="phoneInput"
                 type="tel"
                 class="input"
-                placeholder="Введите номер телефона"
+                placeholder="123 456-78-90"
                 required
                 :disabled="loading"
                 @keypress="handlePhoneKeypress"
@@ -157,7 +157,7 @@ onMounted(() => {
       initialCountry: 'ru',
       preferredCountries: ['ru', 'kz', 'by', 'ua', 'us'],
       separateDialCode: true,
-      autoPlaceholder: 'aggressive',
+      autoPlaceholder: 'off',
       formatOnDisplay: true,
       nationalMode: false,
       strictMode: true,

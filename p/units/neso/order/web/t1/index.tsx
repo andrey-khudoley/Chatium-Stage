@@ -8,7 +8,7 @@ import {
 } from '../../shared/orderFormPageStyles'
 import { customScrollbarStyles } from '../../styles'
 import * as loggerLib from '../../lib/logger.lib'
-import { ORDER_T_FORM_PAGE_NAME, getPageTitle } from '../../config/project'
+import { ORDER_T1_PAGE_TITLE, getPageTitle } from '../../config/project'
 import * as settingsLib from '../../lib/settings.lib'
 
 const LOG_PATH = 'web/t1/index'
@@ -32,7 +32,7 @@ export const orderT1PageRoute = app.html('/', async (ctx, req) => {
   return (
     <html lang="ru">
       <head>
-        <title>{getPageTitle(ORDER_T_FORM_PAGE_NAME, projectName)}</title>
+        <title>{getPageTitle(ORDER_T1_PAGE_TITLE, projectName)}</title>
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <meta charset="UTF-8" />
         <meta name="description" content="Форма заявки" />
@@ -53,7 +53,7 @@ export const orderT1PageRoute = app.html('/', async (ctx, req) => {
         <script src="/s/metric/clarity.js"></script>
       </head>
       <body>
-        <OrderTFormPage />
+        <OrderTFormPage pageVariant="t1" pageTitle={ORDER_T1_PAGE_TITLE} />
       </body>
     </html>
   )

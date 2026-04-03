@@ -29,7 +29,7 @@
       v-model="emailModel"
       type="email"
       class="input"
-      placeholder="Например: anna@example.com"
+      placeholder="Например: ivan@example.com"
       required
       :disabled="disabled"
     />

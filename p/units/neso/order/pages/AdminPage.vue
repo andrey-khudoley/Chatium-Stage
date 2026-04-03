@@ -11,6 +11,9 @@ import { getRecentLogsRoute } from '../api/admin/logs/recent'
 import { getLogsBeforeRoute } from '../api/admin/logs/before'
 import { getDashboardCountsRoute } from '../api/admin/dashboard/counts'
 import { resetDashboardRoute } from '../api/admin/dashboard/reset'
+import { saveGcSettingsRoute } from '../api/getcourse/save'
+import { verifyGcRoute } from '../api/getcourse/verify'
+import { GC_SETTING_KEYS } from '../shared/gcSettingKeys'
 
 const log = createComponentLogger('AdminPage')
 
@@ -64,6 +67,25 @@ function showSaveStatus(
     timeoutHolder.id = null
   }, SAVE_STATUS_DURATION_MS)
 }
+const gcDomain = ref('')
+const gcApiKey = ref('')
+const gcOfferCode = ref('')
+const gcPrice = ref('0')
+const gcUtmSourceField = ref('')
+const gcUtmMediumField = ref('')
+const gcUtmCampaignField = ref('')
+const gcUtmContentField = ref('')
+const gcUtmTermField = ref('')
+const gcShowPassword = ref(false)
+const gcShowUtm = ref(false)
+const gcSaving = ref(false)
+const gcVerifying = ref(false)
+const gcSaveStatus = ref<'saved' | 'error' | null>(null)
+const gcSaveError = ref('')
+const gcVerifyResult = ref<{ ok: boolean; message: string } | null>(null)
+const gcStatusTimeout = { id: null as ReturnType<typeof setTimeout> | null }
+const gcConfigured = computed(() => Boolean(gcDomain.value && gcApiKey.value && gcOfferCode.value))
+
 const errorCount = ref(0)
 const warnCount = ref(0)
 const dashboardResetAt = ref(0)
@@ -238,6 +260,83 @@ const loadProjectName = async () => {
   }
 }
 
+const loadGcSettings = async () => {
+  const keys = Object.values(GC_SETTING_KEYS)
+  const refs: Record<string, { value: string }> = {
+    [GC_SETTING_KEYS.GC_ACCOUNT_DOMAIN]: gcDomain,
+    [GC_SETTING_KEYS.GC_API_KEY]: gcApiKey,
+    [GC_SETTING_KEYS.GC_OFFER_CODE]: gcOfferCode,
+    [GC_SETTING_KEYS.GC_PRICE]: gcPrice,
+    [GC_SETTING_KEYS.GC_UTM_SOURCE_FIELD]: gcUtmSourceField,
+    [GC_SETTING_KEYS.GC_UTM_MEDIUM_FIELD]: gcUtmMediumField,
+    [GC_SETTING_KEYS.GC_UTM_CAMPAIGN_FIELD]: gcUtmCampaignField,
+    [GC_SETTING_KEYS.GC_UTM_CONTENT_FIELD]: gcUtmContentField,
+    [GC_SETTING_KEYS.GC_UTM_TERM_FIELD]: gcUtmTermField,
+  }
+  for (const key of keys) {
+    try {
+      const res = await getSettingRoute.query({ key }).run(ctx)
+      const data = res as { success?: boolean; value?: unknown }
+      if (data?.success && data.value != null) {
+        refs[key].value = String(data.value)
+      }
+    } catch (e) {
+      log.warning('Не удалось загрузить настройку GC', key, e)
+    }
+  }
+}
+
+const saveGcSettings = async () => {
+  gcSaveError.value = ''
+  gcSaving.value = true
+  try {
+    const res = await saveGcSettingsRoute.run(ctx, {
+      domain: gcDomain.value,
+      apiKey: gcApiKey.value,
+      offerCode: gcOfferCode.value,
+      price: gcPrice.value,
+      utmSourceField: gcUtmSourceField.value,
+      utmMediumField: gcUtmMediumField.value,
+      utmCampaignField: gcUtmCampaignField.value,
+      utmContentField: gcUtmContentField.value,
+      utmTermField: gcUtmTermField.value,
+    })
+    const data = res as { success?: boolean; error?: string }
+    if (data?.success) {
+      showSaveStatus(gcSaveStatus, gcStatusTimeout, 'saved')
+      log.info('Настройки GetCourse сохранены')
+    } else {
+      gcSaveError.value = data?.error || 'Ошибка сохранения'
+      showSaveStatus(gcSaveStatus, gcStatusTimeout, 'error')
+    }
+  } catch (e) {
+    gcSaveError.value = (e as Error)?.message || 'Ошибка сохранения'
+    showSaveStatus(gcSaveStatus, gcStatusTimeout, 'error')
+  } finally {
+    gcSaving.value = false
+  }
+}
+
+const verifyGcConnection = async () => {
+  gcVerifyResult.value = null
+  gcVerifying.value = true
+  try {
+    const res = await verifyGcRoute.run(ctx, {
+      domain: gcDomain.value,
+      apiKey: gcApiKey.value,
+    })
+    const data = res as { success?: boolean; message?: string }
+    gcVerifyResult.value = {
+      ok: data?.success === true,
+      message: data?.message || (data?.success ? 'Подключение успешно' : 'Ошибка проверки'),
+    }
+  } catch (e) {
+    gcVerifyResult.value = { ok: false, message: (e as Error)?.message || 'Ошибка сети' }
+  } finally {
+    gcVerifying.value = false
+  }
+}
+
 watch(projectName, () => {
   if (projectNameDebounceTimer.id) clearTimeout(projectNameDebounceTimer.id)
   projectNameDebounceTimer.id = setTimeout(() => {
@@ -289,6 +388,7 @@ const saveProjectName = async () => {
 onMounted(() => {
   log.info('Компонент смонтирован')
   loadProjectName()
+  loadGcSettings()
   loadDashboardCounts()
   if (window.hideAppLoader) window.hideAppLoader()
   if (window.bootLoaderComplete) {
@@ -339,6 +439,10 @@ onBeforeUnmount(() => {
   if (projectNameDebounceTimer.id) {
     clearTimeout(projectNameDebounceTimer.id)
     projectNameDebounceTimer.id = null
+  }
+  if (gcStatusTimeout.id) {
+    clearTimeout(gcStatusTimeout.id)
+    gcStatusTimeout.id = null
   }
 })
 
@@ -738,6 +842,101 @@ function onVisibilityForLogsSocket() {
                 <p v-if="logLevelError" class="ap-err"><i class="fas fa-exclamation-circle"></i> {{ logLevelError }}</p>
               </section>
             </div>
+
+            <section class="ap-card ap-card--stagger-3 ap-gc">
+              <div class="ap-card-hd">
+                <h2><i class="fas fa-plug ap-icon-hd"></i> GetCourse</h2>
+                <span
+                  class="ap-badge"
+                  :class="gcConfigured ? 'ap-badge--ok' : 'ap-badge--err'"
+                >
+                  <i :class="gcConfigured ? 'fas fa-check' : 'fas fa-times'"></i>
+                  {{ gcConfigured ? 'Настроено' : 'Не настроено' }}
+                </span>
+                <span
+                  v-if="gcSaveStatus"
+                  class="ap-badge"
+                  :class="gcSaveStatus === 'saved' ? 'ap-badge--ok' : 'ap-badge--err'"
+                >
+                  <i :class="gcSaveStatus === 'saved' ? 'fas fa-check' : 'fas fa-times'"></i>
+                  {{ gcSaveStatus === 'saved' ? 'OK' : 'ERR' }}
+                </span>
+              </div>
+
+              <div class="ap-gc-grid">
+                <div class="ap-gc-field">
+                  <label class="ap-gc-label"><i class="fas fa-globe ap-icon-muted"></i> Домен аккаунта</label>
+                  <input v-model="gcDomain" type="text" class="ap-input" placeholder="school.getcourse.ru" />
+                  <span class="ap-gc-hint">Поддомен или кастомный хост</span>
+                </div>
+
+                <div class="ap-gc-field">
+                  <label class="ap-gc-label"><i class="fas fa-key ap-icon-muted"></i> API-ключ</label>
+                  <div class="ap-gc-pw-wrap">
+                    <input
+                      v-model="gcApiKey"
+                      :type="gcShowPassword ? 'text' : 'password'"
+                      class="ap-input"
+                      placeholder="секретный ключ"
+                      style="padding-right: 2.2rem;"
+                    />
+                    <button type="button" class="ap-gc-pw-toggle" @click="gcShowPassword = !gcShowPassword">
+                      <i :class="gcShowPassword ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
+                    </button>
+                  </div>
+                </div>
+
+                <div class="ap-gc-field">
+                  <label class="ap-gc-label"><i class="fas fa-tag ap-icon-muted"></i> Код оффера</label>
+                  <input v-model="gcOfferCode" type="text" class="ap-input" placeholder="OFFER_CODE" />
+                </div>
+
+                <div class="ap-gc-field">
+                  <label class="ap-gc-label"><i class="fas fa-ruble-sign ap-icon-muted"></i> Цена (руб.)</label>
+                  <input v-model="gcPrice" type="number" class="ap-input" placeholder="0" min="0" />
+                  <span class="ap-gc-hint">0 или пусто = цена из оффера GetCourse</span>
+                </div>
+              </div>
+
+              <details class="ap-gc-details" :open="gcShowUtm || undefined">
+                <summary class="ap-gc-summary" @click.prevent="gcShowUtm = !gcShowUtm">
+                  <i class="fas fa-chart-line ap-icon-muted"></i>
+                  UTM-маппинг (ID доп. полей)
+                  <i class="fas fa-chevron-down ap-gc-chevron" :class="{ rotated: gcShowUtm }"></i>
+                </summary>
+                <div v-if="gcShowUtm" class="ap-gc-utm-grid">
+                  <div class="ap-gc-field" v-for="utm in [
+                    { label: 'utm_source', model: gcUtmSourceField },
+                    { label: 'utm_medium', model: gcUtmMediumField },
+                    { label: 'utm_campaign', model: gcUtmCampaignField },
+                    { label: 'utm_content', model: gcUtmContentField },
+                    { label: 'utm_term', model: gcUtmTermField },
+                  ]" :key="utm.label">
+                    <label class="ap-gc-label"><i class="fas fa-hashtag ap-icon-muted"></i> {{ utm.label }}</label>
+                    <input v-model="utm.model.value" type="text" class="ap-input" placeholder="ID поля" />
+                  </div>
+                </div>
+              </details>
+
+              <div class="ap-gc-actions">
+                <button type="button" class="ap-btn" :disabled="gcVerifying || !gcDomain || !gcApiKey" @click="verifyGcConnection">
+                  <i v-if="gcVerifying" class="fas fa-circle-notch fa-spin"></i>
+                  <i v-else class="fas fa-wifi"></i>
+                  Проверить
+                </button>
+                <button type="button" class="ap-btn ap-btn--accent" :disabled="gcSaving || !gcDomain || !gcApiKey || !gcOfferCode" @click="saveGcSettings">
+                  <i v-if="gcSaving" class="fas fa-circle-notch fa-spin"></i>
+                  <i v-else class="fas fa-save"></i>
+                  Сохранить
+                </button>
+              </div>
+
+              <div v-if="gcVerifyResult" class="ap-gc-verify" :class="gcVerifyResult.ok ? 'ap-gc-verify--ok' : 'ap-gc-verify--err'">
+                <i :class="gcVerifyResult.ok ? 'fas fa-check-circle' : 'fas fa-exclamation-circle'"></i>
+                {{ gcVerifyResult.message }}
+              </div>
+              <p v-if="gcSaveError" class="ap-err"><i class="fas fa-exclamation-circle"></i> {{ gcSaveError }}</p>
+            </section>
           </div>
 
           <aside class="ap-side">
@@ -1124,6 +1323,53 @@ function onVisibilityForLogsSocket() {
 .ap-log-btns { display: flex; gap: 0.4rem; }
 .ap-log-btns .ap-btn:first-child { flex: 1; }
 
+/* ── GETCOURSE SETTINGS ── */
+.ap-gc { margin-top: 0; }
+.ap-gc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.65rem; position: relative; z-index: 1; margin-bottom: 0.65rem; }
+.ap-gc-field { display: flex; flex-direction: column; gap: 0.25rem; }
+.ap-gc-label { font-size: 0.72rem; color: var(--c-tx2); letter-spacing: 0.04em; display: flex; align-items: center; gap: 0.3rem; }
+.ap-gc-hint { font-size: 0.64rem; color: var(--c-tx3); letter-spacing: 0.02em; }
+.ap-gc-pw-wrap { position: relative; }
+.ap-gc-pw-toggle {
+  position: absolute; right: 0.55rem; top: 50%; transform: translateY(-50%);
+  background: none; border: none; color: var(--c-tx3); cursor: pointer; font-size: 0.72rem;
+  padding: 0.2rem; transition: color 0.2s;
+}
+.ap-gc-pw-toggle:hover { color: var(--c-tx); }
+
+.ap-gc-details { position: relative; z-index: 1; margin-bottom: 0.65rem; }
+.ap-gc-summary {
+  cursor: pointer; list-style: none; padding: 0.45rem 0.65rem;
+  border: 1px solid var(--c-bdr); background: var(--c-bg-deep);
+  font-size: 0.72rem; color: var(--c-tx2); letter-spacing: 0.04em;
+  display: flex; align-items: center; gap: 0.4rem; transition: border-color 0.2s;
+}
+.ap-gc-summary::-webkit-details-marker { display: none; }
+.ap-gc-summary:hover { border-color: var(--c-bdr-hi); }
+.ap-gc-chevron { font-size: 0.58rem; margin-left: auto; transition: transform 0.2s; }
+.ap-gc-chevron.rotated { transform: rotate(180deg); }
+.ap-gc-utm-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.55rem; padding: 0.65rem 0 0; }
+
+.ap-gc-actions { display: flex; gap: 0.5rem; position: relative; z-index: 1; margin-bottom: 0.55rem; }
+.ap-btn--accent {
+  border-color: rgba(196, 33, 63, 0.4); color: #fff;
+  background: linear-gradient(175deg, rgba(196, 33, 63, 0.25), rgba(196, 33, 63, 0.15));
+}
+.ap-btn--accent::after { background: var(--c-red); }
+.ap-btn--accent:hover:not(:disabled) {
+  border-color: rgba(196, 33, 63, 0.65);
+  background: linear-gradient(175deg, rgba(196, 33, 63, 0.35), rgba(196, 33, 63, 0.2));
+}
+.ap-btn--accent:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.ap-gc-verify {
+  font-size: 0.74rem; padding: 0.45rem 0.65rem; position: relative; z-index: 1;
+  display: flex; align-items: center; gap: 0.35rem; letter-spacing: 0.02em;
+}
+.ap-gc-verify--ok { color: var(--c-ok); border: 1px solid rgba(106, 175, 126, 0.25); background: rgba(106, 175, 126, 0.06); }
+.ap-gc-verify--err { color: var(--c-alert); border: 1px solid rgba(217, 122, 138, 0.25); background: rgba(217, 122, 138, 0.06); }
+.ap-gc-verify i { font-size: 0.66rem; }
+
 @media (max-width: 1100px) { .ap-grid { grid-template-columns: 1fr; } .ap-logs { position: static; } .ap-log-out { max-height: 420px; } }
 @media (max-width: 680px) {
   .ap { padding: 0.5rem 0.625rem 1rem; }
@@ -1133,5 +1379,7 @@ function onVisibilityForLogsSocket() {
   .ap-log-row { grid-template-columns: 1fr; gap: 0.1rem; }
   .ap-status { flex-direction: column; align-items: flex-start; gap: 0.35rem; }
   .ap-lvls { grid-template-columns: repeat(2, 1fr); }
+  .ap-gc-grid { grid-template-columns: 1fr; }
+  .ap-gc-utm-grid { grid-template-columns: 1fr; }
 }
 </style>

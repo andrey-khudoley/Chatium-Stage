@@ -1,5 +1,6 @@
 import * as repo from '../repos/settings.repo'
 import * as loggerLib from './logger.lib'
+import { GC_SETTING_KEYS } from '../shared/gcSettingKeys'
 
 const LOG_MODULE = 'lib/settings.lib'
 
@@ -10,7 +11,8 @@ export const SETTING_KEYS = {
   LOG_LEVEL: 'log_level',
   LOGS_LIMIT: 'logs_limit',
   LOG_WEBHOOK: 'log_webhook',
-  DASHBOARD_RESET_AT: 'dashboard_reset_at'
+  DASHBOARD_RESET_AT: 'dashboard_reset_at',
+  ...GC_SETTING_KEYS,
 } as const
 
 /** Настройка вебхука логов: enable — активна ли отправка, url — куда отправлять. */
@@ -23,7 +25,16 @@ export const DEFAULTS = {
   [SETTING_KEYS.LOG_LEVEL]: 'Info',
   [SETTING_KEYS.LOGS_LIMIT]: '100',
   [SETTING_KEYS.LOG_WEBHOOK]: { enable: false, url: '' } as LogWebhookSetting,
-  [SETTING_KEYS.DASHBOARD_RESET_AT]: null as number | null
+  [SETTING_KEYS.DASHBOARD_RESET_AT]: null as number | null,
+  [SETTING_KEYS.GC_ACCOUNT_DOMAIN]: '',
+  [SETTING_KEYS.GC_API_KEY]: '',
+  [SETTING_KEYS.GC_OFFER_CODE]: '',
+  [SETTING_KEYS.GC_PRICE]: '0',
+  [SETTING_KEYS.GC_UTM_SOURCE_FIELD]: '',
+  [SETTING_KEYS.GC_UTM_MEDIUM_FIELD]: '',
+  [SETTING_KEYS.GC_UTM_CAMPAIGN_FIELD]: '',
+  [SETTING_KEYS.GC_UTM_CONTENT_FIELD]: '',
+  [SETTING_KEYS.GC_UTM_TERM_FIELD]: '',
 } as const
 
 /** Допустимые уровни логирования */
@@ -229,4 +240,34 @@ export async function setSetting(ctx: app.Ctx, key: string, value: unknown): Pro
     message: `[${LOG_MODULE}] setSetting exit`,
     payload: { key, normalized }
   })
+}
+
+// ---------------------------------------------------------------------------
+// Геттеры настроек GetCourse
+// ---------------------------------------------------------------------------
+
+export async function getGcAccountDomain(ctx: app.Ctx): Promise<string> {
+  const v = await getSetting(ctx, SETTING_KEYS.GC_ACCOUNT_DOMAIN)
+  return typeof v === 'string' ? v : ''
+}
+
+export async function getGcApiKey(ctx: app.Ctx): Promise<string> {
+  const v = await getSetting(ctx, SETTING_KEYS.GC_API_KEY)
+  return typeof v === 'string' ? v : ''
+}
+
+export async function getGcOfferCode(ctx: app.Ctx): Promise<string> {
+  const v = await getSetting(ctx, SETTING_KEYS.GC_OFFER_CODE)
+  return typeof v === 'string' ? v : ''
+}
+
+export async function getGcPrice(ctx: app.Ctx): Promise<number> {
+  const v = await getSetting(ctx, SETTING_KEYS.GC_PRICE)
+  const n = typeof v === 'number' ? v : parseFloat(String(v || '0'))
+  return Number.isNaN(n) ? 0 : n
+}
+
+export async function getGcUtmFieldId(ctx: app.Ctx, key: string): Promise<string> {
+  const v = await getSetting(ctx, key)
+  return typeof v === 'string' ? v : ''
 }
