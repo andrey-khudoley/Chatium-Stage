@@ -96,6 +96,199 @@ function jsonForLog(value: unknown, maxLen = 12000): string {
   }
 }
 
+// ---------------------------------------------------------------------------
+// GetCourse REST API v1 — deal/get-fields, user/get-fields
+// ---------------------------------------------------------------------------
+
+export type GcDealPosition = {
+  id: number
+  offer_id: number
+  quantity: number
+  title: string
+  price: number
+  currency: string
+  order_pos: number
+}
+
+export type GcDealFields = {
+  id: number
+  user_id: number
+  cost: number
+  currency: string
+  status: string
+  title: string
+  number: number
+  positions: GcDealPosition[]
+}
+
+export type GcUserFields = {
+  id: number
+  first_name: string
+  last_name: string
+  email: string
+  phone: string
+}
+
+type GcV1ApiResponse<T> = {
+  status: boolean
+  message: string
+  code: number
+  errors: string[]
+  data: T
+}
+
+async function buildBearerToken(ctx: app.Ctx): Promise<string> {
+  const devKey = (await settingsLib.getGcDevKey(ctx)).trim()
+  const secretKey = (await settingsLib.getGcApiKey(ctx)).trim()
+  return `${devKey}_${secretKey}`
+}
+
+/**
+ * GET /pl/api/v1/deal/get-fields?dealId=... — получение полей заказа (REST API v1).
+ */
+export async function getDealFields(
+  ctx: app.Ctx,
+  dealId: string
+): Promise<{ ok: true; data: GcDealFields } | { ok: false; message: string }> {
+  const domain = normalizeGcAccountDomain(await settingsLib.getGcAccountDomain(ctx))
+  const token = await buildBearerToken(ctx)
+
+  if (!domain || !token || token === '_') {
+    return { ok: false, message: 'Не заданы gc_dev_key, gc_api_key или gc_account_domain.' }
+  }
+
+  const url = `https://${domain}/pl/api/v1/deal/get-fields?dealId=${encodeURIComponent(dealId)}`
+
+  await loggerLib.writeServerLog(ctx, {
+    severity: 7,
+    message: `[${LOG_MODULE}] getDealFields: запрос`,
+    payload: { dealId, host: domain }
+  })
+
+  let response: { statusCode?: number; body?: unknown }
+  try {
+    response = await request({
+      url,
+      method: 'get',
+      headers: { Authorization: `Bearer ${token}` },
+      responseType: 'json',
+      throwHttpErrors: false,
+      timeout: 15000
+    })
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e)
+    await loggerLib.writeServerLog(ctx, {
+      severity: 3,
+      message: `[${LOG_MODULE}] getDealFields: сеть`,
+      payload: { dealId, error: msg }
+    })
+    return { ok: false, message: `Не удалось подключиться к GetCourse: ${msg}` }
+  }
+
+  if (response.statusCode !== 200) {
+    await loggerLib.writeServerLog(ctx, {
+      severity: 3,
+      message: `[${LOG_MODULE}] getDealFields: HTTP ${response.statusCode}`,
+      payload: { dealId, body: jsonForLog(response.body) }
+    })
+    return { ok: false, message: `GetCourse API v1 ответил HTTP ${response.statusCode}` }
+  }
+
+  const body = response.body as GcV1ApiResponse<GcDealFields>
+  if (!body || body.status !== true) {
+    const errMsg = body?.message || body?.errors?.join('; ') || 'Неизвестная ошибка'
+    await loggerLib.writeServerLog(ctx, {
+      severity: 3,
+      message: `[${LOG_MODULE}] getDealFields: бизнес-ошибка`,
+      payload: { dealId, gcMessage: errMsg }
+    })
+    return { ok: false, message: `GetCourse: ${errMsg}` }
+  }
+
+  await loggerLib.writeServerLog(ctx, {
+    severity: 6,
+    message: `[${LOG_MODULE}] getDealFields: успех`,
+    payload: { dealId, cost: body.data.cost, currency: body.data.currency, userId: body.data.user_id }
+  })
+
+  return { ok: true, data: body.data }
+}
+
+/**
+ * GET /pl/api/v1/user/get-fields?userId=... — получение полей пользователя (REST API v1).
+ */
+export async function getUserFields(
+  ctx: app.Ctx,
+  userId: number
+): Promise<{ ok: true; data: GcUserFields } | { ok: false; message: string }> {
+  const domain = normalizeGcAccountDomain(await settingsLib.getGcAccountDomain(ctx))
+  const token = await buildBearerToken(ctx)
+
+  if (!domain || !token || token === '_') {
+    return { ok: false, message: 'Не заданы gc_dev_key, gc_api_key или gc_account_domain.' }
+  }
+
+  const url = `https://${domain}/pl/api/v1/user/get-fields?userId=${encodeURIComponent(String(userId))}`
+
+  await loggerLib.writeServerLog(ctx, {
+    severity: 7,
+    message: `[${LOG_MODULE}] getUserFields: запрос`,
+    payload: { userId, host: domain }
+  })
+
+  let response: { statusCode?: number; body?: unknown }
+  try {
+    response = await request({
+      url,
+      method: 'get',
+      headers: { Authorization: `Bearer ${token}` },
+      responseType: 'json',
+      throwHttpErrors: false,
+      timeout: 15000
+    })
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e)
+    await loggerLib.writeServerLog(ctx, {
+      severity: 3,
+      message: `[${LOG_MODULE}] getUserFields: сеть`,
+      payload: { userId, error: msg }
+    })
+    return { ok: false, message: `Не удалось подключиться к GetCourse: ${msg}` }
+  }
+
+  if (response.statusCode !== 200) {
+    await loggerLib.writeServerLog(ctx, {
+      severity: 3,
+      message: `[${LOG_MODULE}] getUserFields: HTTP ${response.statusCode}`,
+      payload: { userId, body: jsonForLog(response.body) }
+    })
+    return { ok: false, message: `GetCourse API v1 ответил HTTP ${response.statusCode}` }
+  }
+
+  const body = response.body as GcV1ApiResponse<GcUserFields>
+  if (!body || body.status !== true) {
+    const errMsg = body?.message || body?.errors?.join('; ') || 'Неизвестная ошибка'
+    await loggerLib.writeServerLog(ctx, {
+      severity: 3,
+      message: `[${LOG_MODULE}] getUserFields: бизнес-ошибка`,
+      payload: { userId, gcMessage: errMsg }
+    })
+    return { ok: false, message: `GetCourse: ${errMsg}` }
+  }
+
+  await loggerLib.writeServerLog(ctx, {
+    severity: 6,
+    message: `[${LOG_MODULE}] getUserFields: успех`,
+    payload: { userId, email: body.data.email }
+  })
+
+  return { ok: true, data: body.data }
+}
+
+// ---------------------------------------------------------------------------
+// GetCourse PL API (import/deals) — старое API для обновления статуса заказа
+// ---------------------------------------------------------------------------
+
 export type UpdateDealStatusParams = {
   gcOrderId: string
   buyerEmail: string

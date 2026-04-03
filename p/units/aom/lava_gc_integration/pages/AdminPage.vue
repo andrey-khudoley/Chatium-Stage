@@ -140,6 +140,7 @@ const generateOrUpdateLavaWebhookSecret = async () => {
 }
 
 const gcApiKey = ref('')
+const gcDevKey = ref('')
 const gcAccountDomain = ref('')
 const gcOrderFlagAddfieldId = ref('')
 const gcVerifyLoading = ref(false)
@@ -434,6 +435,11 @@ const loadGcSettings = async () => {
     if (keyData?.success && typeof keyData.value === 'string') {
       gcApiKey.value = keyData.value
     }
+    const devKeyRes = await getSettingRoute.query({ key: GC_SETTING_KEYS.GC_DEV_KEY }).run(ctx)
+    const devKeyData = devKeyRes as { success?: boolean; value?: unknown }
+    if (devKeyData?.success && typeof devKeyData.value === 'string') {
+      gcDevKey.value = devKeyData.value
+    }
     const domRes = await getSettingRoute.query({ key: GC_SETTING_KEYS.GC_ACCOUNT_DOMAIN }).run(ctx)
     const domData = domRes as { success?: boolean; value?: unknown }
     if (domData?.success && typeof domData.value === 'string') {
@@ -481,6 +487,7 @@ const saveGcIntegration = async () => {
   try {
     for (const pair of [
       { key: GC_SETTING_KEYS.GC_API_KEY, value: gcApiKey.value.trim() },
+      { key: GC_SETTING_KEYS.GC_DEV_KEY, value: gcDevKey.value.trim() },
       { key: GC_SETTING_KEYS.GC_ACCOUNT_DOMAIN, value: gcAccountDomain.value.trim() },
       { key: GC_SETTING_KEYS.GC_ORDER_FLAG_ADDFIELD_ID, value: gcOrderFlagAddfieldId.value.trim() }
     ] as const) {
@@ -1123,10 +1130,10 @@ const clearLogs = () => {
               <h2 class="admin-card-title">Интеграция GetCourse (PL API)</h2>
             </div>
             <p class="lava-settings-hint">
-              Ключ API и домен аккаунта из настроек GetCourse (формат домена:
-              <code class="lava-saved-code">school.getcourse.ru</code> или ваш кастомный хост без
-              <code class="lava-saved-code">https://</code>). Перед сохранением выполняется проверка запросом к
-              <code class="lava-saved-code">pl/api/deals</code>.
+              Ключ школы (Import API) и ключ разработчика (REST API v1) из настроек GetCourse, а также домен
+              аккаунта (формат: <code class="lava-saved-code">school.getcourse.ru</code> или кастомный хост без
+              <code class="lava-saved-code">https://</code>). Ключ разработчика нужен для получения данных заказа
+              и пользователя через API v1. Перед сохранением выполняется проверка подключения.
             </p>
             <div class="settings-form">
               <div class="settings-field">
@@ -1137,7 +1144,18 @@ const clearLogs = () => {
                   type="password"
                   autocomplete="off"
                   class="settings-input"
-                  placeholder="Секретный ключ Import API"
+                  placeholder="Секретный ключ Import API (ключ школы)"
+                />
+              </div>
+              <div class="settings-field">
+                <label class="settings-label" for="gc-dev-key">{{ GC_SETTING_KEYS.GC_DEV_KEY }}</label>
+                <input
+                  id="gc-dev-key"
+                  v-model="gcDevKey"
+                  type="password"
+                  autocomplete="off"
+                  class="settings-input"
+                  placeholder="Ключ разработчика (REST API v1)"
                 />
               </div>
               <div class="settings-field">

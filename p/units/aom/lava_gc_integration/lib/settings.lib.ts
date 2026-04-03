@@ -35,6 +35,7 @@ export const DEFAULTS = {
   [SETTING_KEYS.LAVA_OFFER_ID]: '',
   [SETTING_KEYS.LAVA_WEBHOOK_SECRET]: '',
   [SETTING_KEYS.GC_API_KEY]: '',
+  [SETTING_KEYS.GC_DEV_KEY]: '',
   [SETTING_KEYS.GC_ACCOUNT_DOMAIN]: '',
   [SETTING_KEYS.GC_ORDER_FLAG_ADDFIELD_ID]: ''
 } as const
@@ -162,6 +163,11 @@ export async function getGcApiKey(ctx: app.Ctx): Promise<string> {
 }
 
 /** Без writeServerLog — см. getIntegrationStringSetting. */
+export async function getGcDevKey(ctx: app.Ctx): Promise<string> {
+  return getIntegrationStringSetting(ctx, SETTING_KEYS.GC_DEV_KEY)
+}
+
+/** Без writeServerLog — см. getIntegrationStringSetting. */
 export async function getGcAccountDomain(ctx: app.Ctx): Promise<string> {
   return getIntegrationStringSetting(ctx, SETTING_KEYS.GC_ACCOUNT_DOMAIN)
 }
@@ -227,7 +233,8 @@ function isSecretSettingKey(key: string): boolean {
   return (
     key === SETTING_KEYS.LAVA_API_KEY ||
     key === SETTING_KEYS.LAVA_WEBHOOK_SECRET ||
-    key === SETTING_KEYS.GC_API_KEY
+    key === SETTING_KEYS.GC_API_KEY ||
+    key === SETTING_KEYS.GC_DEV_KEY
   )
 }
 
@@ -301,6 +308,7 @@ export async function setSetting(ctx: app.Ctx, key: string, value: unknown): Pro
     key === SETTING_KEYS.LAVA_OFFER_ID ||
     key === SETTING_KEYS.LAVA_WEBHOOK_SECRET ||
     key === SETTING_KEYS.GC_API_KEY ||
+    key === SETTING_KEYS.GC_DEV_KEY ||
     key === SETTING_KEYS.GC_ACCOUNT_DOMAIN ||
     key === SETTING_KEYS.GC_ORDER_FLAG_ADDFIELD_ID
   ) {
