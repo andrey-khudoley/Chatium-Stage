@@ -5,8 +5,10 @@ import Header from '../components/Header.vue'
 import GlobalGlitch from '../components/GlobalGlitch.vue'
 import AppFooter from '../components/AppFooter.vue'
 import { createComponentLogger, setLogSink, type LogEntry } from '../shared/logger'
+import { createBrowserRemoteLogger } from '../shared/browserRemoteLogger'
 import { getRecentLogsRoute } from '../api/admin/logs/recent'
 import { getLogsBeforeRoute } from '../api/admin/logs/before'
+import { postBrowserLogsRoute } from '../api/logger/browser'
 import {
   UNIT_TEST_BLOCKS,
   INTEGRATION_SERVER_TEST_BLOCKS,
@@ -62,6 +64,8 @@ const logsHasMore = ref(false)
 const oldestLogTimestamp = ref<number | null>(null)
 const logsRequestId = ref(0)
 const selectedLogStream = ref<'all' | 'info' | 'warn' | 'error'>('all')
+
+let browserRemoteLogger: ReturnType<typeof createBrowserRemoteLogger> | null = null
 
 const LOG_STREAM_TO_SEVERITIES: Record<'all' | 'info' | 'warn' | 'error', number[]> = {
   all: [0, 1, 2, 3, 4, 5, 6, 7],
@@ -136,6 +140,14 @@ function pushVisibleLogEntry(entry: LogEntry) {
   if (!doesEntryMatchSelectedStream(entry)) return
   logEntries.value.push(entry)
   trimOldLogs()
+}
+
+/** Записи приложения уже показаны через setLogSink; с сервера приходит тот же лог по WebSocket — пропускаем дубль. */
+function isBrowserSinkEchoFromSocket(entry: LogEntry): boolean {
+  const p = entry.args[1]
+  if (!p || typeof p !== 'object' || Array.isArray(p)) return false
+  const o = p as { source?: string; channel?: string }
+  return o.source === 'browser' && o.channel === 'sink'
 }
 
 const displayedLogs = computed<LogDisplayItem[]>(() => {
@@ -353,8 +365,13 @@ onMounted(() => {
   }
 
   if (props.encodedLogsSocketId) {
+    browserRemoteLogger = createBrowserRemoteLogger({
+      post: (payload) => postBrowserLogsRoute.run(ctx, payload)
+    })
+    browserRemoteLogger.installConsoleAndGlobalHandlers()
     setLogSink((entry: LogEntry) => {
       pushVisibleLogEntry(entry)
+      browserRemoteLogger!.pushSinkEntry(entry)
     })
     getOrCreateBrowserSocketClient()
       .then((socketClient) => {
@@ -362,6 +379,7 @@ onMounted(() => {
         logsSocketSubscription.listen((data: { type?: string; data?: LogEntry }) => {
           if (data?.type === 'new-log' && data.data) {
             const entry = data.data as LogEntry
+            if (isBrowserSinkEchoFromSocket(entry)) return
             pushVisibleLogEntry(entry)
           }
         })
@@ -381,6 +399,10 @@ onBeforeUnmount(() => {
 onUnmounted(() => {
   log.info('Component unmounted')
   setLogSink(null)
+  if (browserRemoteLogger) {
+    browserRemoteLogger.teardown()
+    browserRemoteLogger = null
+  }
   window.removeEventListener('bootloader-complete', startAnimations)
   if (intervalIds.title) clearInterval(intervalIds.title)
   if (intervalIds.desc) clearInterval(intervalIds.desc)
