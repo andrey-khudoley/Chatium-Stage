@@ -827,7 +827,7 @@ const runAllTests = async () => {
 </script>
 
 <template>
-  <div class="app-layout flex flex-col">
+  <div class="app-layout flex flex-col w-full min-w-0">
     <GlobalGlitch />
     <Header
       v-if="bootLoaderDone"
@@ -841,7 +841,7 @@ const runAllTests = async () => {
       :testsUrl="props.testsUrl"
     />
 
-    <main class="tp-wrap flex-1 relative z-10 min-h-0 overflow-y-auto">
+    <main class="tp-wrap flex flex-col flex-1 relative z-10 min-h-0 w-full min-w-0 overflow-hidden">
       <div class="tp" :class="{ ready: bootLoaderDone }">
 
         <div class="tp-toolbar">
@@ -908,7 +908,7 @@ const runAllTests = async () => {
         </div>
 
         <div class="tp-grid" :class="{ 'tp-grid--logs': props.encodedLogsSocketId }">
-          <div class="tp-main">
+          <div class="tp-main content-wrapper">
 
             <div class="tp-metrics">
               <div class="tp-metric">
@@ -1153,6 +1153,26 @@ const runAllTests = async () => {
 </template>
 
 <style scoped>
+/* Высота окна: хедер и футер фиксированы; вертикальный скролл у левой колонки, не у <main>. */
+.app-layout {
+  height: 100vh;
+  height: 100dvh;
+  max-height: 100vh;
+  max-height: 100dvh;
+  overflow: hidden;
+  position: relative;
+  width: 100%;
+}
+
+.tp-wrap {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  width: 100%;
+  overflow: hidden;
+}
+
 .tp {
   --c-bg: rgba(12, 11, 14, 0.97);
   --c-bg2: rgba(16, 15, 19, 0.96);
@@ -1170,6 +1190,12 @@ const runAllTests = async () => {
   --c-ok: #6aaf7e;
   --c-cyan: #7dbfcc;
 
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  width: 100%;
   max-width: 1440px; margin: 0 auto; padding: 0.75rem 1rem 1.5rem;
   opacity: 0; transform: translateY(8px);
   transition: opacity 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94), transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
@@ -1185,6 +1211,7 @@ const runAllTests = async () => {
 
 /* ── TOOLBAR ── */
 .tp-toolbar {
+  flex-shrink: 0;
   display: flex; align-items: center; justify-content: space-between; gap: 0.75rem;
   padding: 0.5rem 0.85rem; margin-bottom: 0.85rem; border: 1px solid var(--c-bdr);
   background: var(--c-bg-deep); font-size: 0.78rem; flex-wrap: wrap;
@@ -1224,9 +1251,25 @@ const runAllTests = async () => {
 .tp-tab.active .tp-icon-tab { opacity: 0.8; }
 
 /* ── GRID ── */
-.tp-grid { display: grid; grid-template-columns: 1fr; gap: 0.85rem; align-items: start; }
-.tp-grid--logs { grid-template-columns: minmax(0, 1fr) minmax(360px, 440px); }
-.tp-main { display: flex; flex-direction: column; gap: 0.85rem; min-width: 0; }
+.tp-grid {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: minmax(0, 1fr);
+  gap: 0.85rem;
+  align-items: stretch;
+}
+.tp-grid--logs { grid-template-columns: minmax(240px, 1fr) minmax(360px, 440px); }
+.tp-main {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  min-width: 0;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
 
 .tp-tab-panel { display: flex; flex-direction: column; gap: 0.85rem; }
 
@@ -1386,8 +1429,16 @@ const runAllTests = async () => {
 .tp-err { margin: 0.4rem 0 0; color: var(--c-alert); font-size: 0.76rem; }
 .tp-err i { font-size: 0.62rem; margin-right: 0.15rem; }
 
-/* ── LOG SIDEBAR ── */
-.tp-side { min-width: 0; }
+/* ── LOG SIDEBAR: высота по ячейке сетки; скролл только внутри .tp-log-out ── */
+.tp-side {
+  min-width: 0;
+  min-height: 0;
+  width: 100%;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
 .tp-card {
   border: 1px solid var(--c-bdr); background: linear-gradient(175deg, var(--c-bg), var(--c-bg2));
   padding: 0.85rem 1rem; position: relative;
@@ -1401,7 +1452,14 @@ const runAllTests = async () => {
   background: repeating-linear-gradient(0deg, rgba(0,0,0,0.012) 0px, rgba(0,0,0,0.012) 1px, transparent 1px, transparent 3px);
   pointer-events: none; opacity: 0.4;
 }
-.tp-log-card { position: sticky; top: 0.75rem; animation: tp-enter 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.15s both; }
+.tp-log-card {
+  position: relative;
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  animation: tp-enter 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.15s both;
+}
 .tp-card-hd {
   display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;
   margin-bottom: 0.55rem; position: relative; z-index: 1;
@@ -1411,8 +1469,12 @@ const runAllTests = async () => {
   letter-spacing: 0.04em; text-transform: uppercase;
 }
 .tp-log-ct { font-size: 0.7rem; color: var(--c-tx3); font-variant-numeric: tabular-nums; letter-spacing: 0.04em; }
-.tp-log-filters { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.4rem; margin-bottom: 0.45rem; position: relative; z-index: 1; }
-.tp-log-toggle-row { margin-bottom: 0.55rem; position: relative; z-index: 1; }
+.tp-log-filters {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.4rem; margin-bottom: 0.45rem; position: relative; z-index: 1;
+  flex-shrink: 0;
+}
+.tp-log-card > .tp-card-hd { flex-shrink: 0; }
+.tp-log-toggle-row { margin-bottom: 0.55rem; position: relative; z-index: 1; flex-shrink: 0; }
 .tp-btn--toggle-all { width: 100%; font-size: 0.72rem; padding: 0.32rem 0.55rem; }
 .tp-flt {
   padding: 0.35rem; border: 1px solid var(--c-bdr); background: var(--c-bg-deep);
@@ -1430,7 +1492,9 @@ const runAllTests = async () => {
 .tp-flt.active::after { transform: scaleX(1); }
 
 .tp-log-out {
-  min-height: 400px; max-height: calc(100vh - 300px); overflow-y: auto;
+  flex: 1 1 auto;
+  min-height: 7rem;
+  overflow-y: auto;
   border: 1px solid rgba(50, 44, 54, 0.35); background: rgba(5, 4, 7, 0.98);
   padding: 0.55rem; margin-bottom: 0.55rem; font-size: 0.74rem; line-height: 1.6;
   position: relative; z-index: 1; box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.25);
@@ -1463,13 +1527,32 @@ const runAllTests = async () => {
 .lvl-warning { color: var(--c-warn); }
 .lvl-error, .lvl-critical, .lvl-alert, .lvl-emergency { color: var(--c-alert); }
 
-.tp-log-ft { display: flex; flex-direction: column; gap: 0.4rem; position: relative; z-index: 1; }
+.tp-log-ft { display: flex; flex-direction: column; gap: 0.4rem; position: relative; z-index: 1; flex-shrink: 0; }
 .tp-log-sync { font-size: 0.74rem; color: var(--c-tx2); display: flex; align-items: center; gap: 0.35rem; }
 .tp-log-sync i { font-size: 0.62rem; }
 .tp-log-btns { display: flex; gap: 0.4rem; }
 .tp-log-btns .tp-btn:first-child { flex: 1; }
 
-@media (max-width: 1180px) { .tp-grid--logs { grid-template-columns: 1fr; } .tp-log-card { position: static; } .tp-log-out { max-height: 400px; } }
+@media (max-width: 1180px) {
+  .tp-wrap { overflow-y: auto; }
+  .tp {
+    flex: none;
+    min-height: auto;
+    overflow: visible;
+  }
+  .tp-grid,
+  .tp-grid--logs {
+    flex: none;
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto;
+    min-height: auto;
+    align-items: start;
+  }
+  .tp-main { overflow: visible; }
+  .tp-side { overflow: visible; }
+  .tp-log-card { flex: none; }
+  .tp-log-out { flex: none; min-height: 240px; max-height: 420px; }
+}
 @media (max-width: 720px) {
   .tp { padding: 0.5rem 0.625rem 1rem; }
   .tp-toolbar { flex-direction: column; align-items: stretch; gap: 0.5rem; }

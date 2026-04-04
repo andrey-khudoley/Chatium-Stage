@@ -96,8 +96,7 @@ export const testsPageRoute = app.html('/', async (ctx, req) => {
           }
 
           body.boot-complete {
-            overflow-x: hidden;
-            overflow-y: auto;
+            overflow: hidden;
           }
 
           #geometric-bg {
