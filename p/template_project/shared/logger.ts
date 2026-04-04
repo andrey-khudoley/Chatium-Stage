@@ -51,9 +51,15 @@ const CONFIG_TO_MAX_SEVERITY: Record<ConfigLevelName, number> = {
   Debug: 7
 }
 
+function getBrowserWindow(): { __BOOT__?: { logLevel?: unknown } } | undefined {
+  if (typeof window !== 'undefined') return window as { __BOOT__?: { logLevel?: unknown } }
+  return (globalThis as { window?: { __BOOT__?: { logLevel?: unknown } } }).window
+}
+
 function getBootLogLevel(): ConfigLevelName {
-  if (typeof window === 'undefined') return 'Info'
-  const boot = window.__BOOT__
+  const w = getBrowserWindow()
+  if (!w) return 'Info'
+  const boot = w.__BOOT__
   const raw = boot?.logLevel
   if (raw === LOG_LEVEL_OFF || raw === -1 || raw === '-1') return 'Disable'
   if (typeof raw === 'string' && CONFIG_LEVELS.includes(raw as ConfigLevelName)) {

@@ -50,10 +50,21 @@ export const saveSettingRoute = app.post('/', async (ctx, req) => {
   })
 
   if (!key) {
+    const keyRaw = body?.key
+    const reason =
+      keyRaw === undefined || keyRaw === null
+        ? 'missing'
+        : typeof keyRaw !== 'string'
+          ? 'not_string'
+          : 'empty_after_trim'
     await loggerLib.writeServerLog(ctx, {
-      severity: 4,
-      message: `[${LOG_PATH}] Валидация не пройдена: отсутствует key`,
-      payload: { bodyKeys: body ? Object.keys(body) : [] }
+      severity: 6,
+      message: `[${LOG_PATH}] Валидация: key не задан или пустая строка`,
+      payload: {
+        bodyKeys: body ? Object.keys(body) : [],
+        reason,
+        keyType: typeof keyRaw
+      }
     })
     return { success: false, error: 'Поле key обязательно' }
   }

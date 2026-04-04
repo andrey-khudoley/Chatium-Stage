@@ -27,21 +27,23 @@ export const listTestsRoute = app.get('/', async (ctx) => {
     {
       id: 'unit',
       title: 'Юнит-тесты (GET /api/tests/unit)',
-      description: 'Синхронные проверки без Heap: logger, routes, project, logLevel',
+      description:
+        'Синхронные проверки без Heap (lib/tests/templateUnitSuite): routes, project, logLevel script, logger.lib, shared/logger, каталог',
       blocks: UNIT_TEST_BLOCKS,
       tests: flattenCatalogBlocks(UNIT_TEST_BLOCKS)
     },
     {
       id: 'integration-server',
       title: 'Интеграция сервера (GET /api/tests/integration)',
-      description: 'Heap + settings.lib, repos, dashboard.lib',
+      description:
+        'Heap + libs + API route.run + e2e (lib/tests/integrationSuite); часть кейсов требует роль Admin',
       blocks: INTEGRATION_SERVER_TEST_BLOCKS,
       tests: flattenCatalogBlocks(INTEGRATION_SERVER_TEST_BLOCKS)
     },
     {
       id: 'integration-http',
       title: 'Интеграция HTTP (страницы шаблона)',
-      description: 'GET маршрутов: /, /web/admin, /web/profile, /web/login, /web/tests',
+      description: 'GET /, /web/* — статус и фрагменты SSR (страница /web/tests)',
       blocks: [INTEGRATION_HTTP_TEST_BLOCK],
       tests: flattenCatalogBlocks([INTEGRATION_HTTP_TEST_BLOCK])
     }

@@ -423,7 +423,7 @@ type RowVisual = {
   error?: string
 }
 
-const testsSuiteTab = ref<'unit' | 'integration' | 'archive'>('archive')
+const testsSuiteTab = ref<'unit' | 'integration' | 'http'>('unit')
 const lastSuiteRunAt = ref<string | null>(null)
 const runAllTestsLoading = ref(false)
 const runTabTestsLoading = ref(false)
@@ -453,6 +453,43 @@ const HTTP_PATH_BY_TEST_ID: Record<string, string> = {
   'web-profile': '/web/profile',
   'web-login': '/web/login',
   'web-tests': '/web/tests'
+}
+
+/** Минимальные фрагменты SSR для проверки (п. 6 плана). */
+const HTTP_HTML_SNIPPETS: Record<string, string[]> = {
+  index: ['window.__BOOT__', 'Шаблон проекта'],
+  'web-admin': ['window.__BOOT__', 'Админка'],
+  'web-profile': ['window.__BOOT__', 'Профиль'],
+  'web-login': ['Вход'],
+  /** Не «Юнит» из вкладок: в ответе может быть только head + boot, без полного тела до гидрации. См. meta в web/tests/index.tsx */
+  'web-tests': ['window.__BOOT__', 'template-project-page']
+}
+
+function httpPagePassed(testId: string, res: Response, html: string): { ok: boolean; error?: string } {
+  if (!res.ok) return { ok: false, error: `HTTP ${res.status}` }
+  const finalUrl = res.url || ''
+  if (testId === 'web-admin') {
+    if (finalUrl.includes('/web/admin')) {
+      const ok = html.includes('__BOOT__') && html.includes('Админка')
+      return ok ? { ok: true } : { ok: false, error: 'нет SSR админки' }
+    }
+    const ok = html.includes('Вход') || html.includes('Перенаправление')
+    return ok ? { ok: true } : { ok: false, error: 'ожидался редирект на вход' }
+  }
+  if (testId === 'web-profile') {
+    if (finalUrl.includes('/web/profile')) {
+      const ok = html.includes('__BOOT__') && html.includes('Профиль')
+      return ok ? { ok: true } : { ok: false, error: 'нет SSR профиля' }
+    }
+    const ok = html.includes('Вход') || html.includes('login')
+    return ok ? { ok: true } : { ok: false, error: 'ожидался редирект на вход' }
+  }
+  const need = HTTP_HTML_SNIPPETS[testId]
+  if (!need?.length) return { ok: true }
+  for (const s of need) {
+    if (!html.includes(s)) return { ok: false, error: `нет фрагмента: ${s.slice(0, 40)}…` }
+  }
+  return { ok: true }
 }
 
 function resultById(results: SuiteRow[], id: string): SuiteRow | undefined {
@@ -526,21 +563,20 @@ function metricsFromBlocks(blocks: TestCatalogBlock[], results: SuiteRow[]) {
   return { total, passed, failed, skipped }
 }
 
-const EMPTY_METRICS = { total: 0, passed: 0, failed: 0, skipped: 0 }
-
 const tabTestMetrics = computed(() => {
-  if (testsSuiteTab.value === 'unit' || testsSuiteTab.value === 'integration') {
-    return EMPTY_METRICS
+  if (testsSuiteTab.value === 'unit') {
+    return metricsFromBlocks(UNIT_TEST_BLOCKS, unitResults.value)
   }
-  const unit = metricsFromBlocks(UNIT_TEST_BLOCKS, unitResults.value)
-  const server = metricsFromBlocks(INTEGRATION_SERVER_TEST_BLOCKS, integrationResults.value)
-  const http = metricsFromBlocks([INTEGRATION_HTTP_TEST_BLOCK], httpPageResults.value)
-  return {
-    total: unit.total + server.total + http.total,
-    passed: unit.passed + server.passed + http.passed,
-    failed: unit.failed + server.failed + http.failed,
-    skipped: unit.skipped + server.skipped + http.skipped
+  if (testsSuiteTab.value === 'integration') {
+    return metricsFromBlocks(INTEGRATION_SERVER_TEST_BLOCKS, integrationResults.value)
   }
+  return metricsFromBlocks([INTEGRATION_HTTP_TEST_BLOCK], httpPageResults.value)
+})
+
+const tabRunButtonIdleLabel = computed(() => {
+  if (testsSuiteTab.value === 'unit') return 'Запустить юнит-набор'
+  if (testsSuiteTab.value === 'integration') return 'Запустить серверную интеграцию'
+  return 'Проверить HTTP-страницы'
 })
 
 function summarizeRows(rows: SuiteRow[]) {
@@ -574,6 +610,28 @@ const integrationServerBlocksView = computed(() =>
 const integrationHttpBlocksView = computed(() =>
   mapBlocksToView([INTEGRATION_HTTP_TEST_BLOCK], httpPageResults.value)
 )
+
+type SuiteSectionTab = 'unit' | 'integration' | 'http'
+
+/** Ключ `tab:blockId`. Если ключа нет — по умолчанию развёрнута только первая категория (index 0). */
+const suiteSectionOpen = ref<Record<string, boolean>>({})
+
+function suiteSectionStateKey(tab: SuiteSectionTab, blockId: string): string {
+  return `${tab}:${blockId}`
+}
+
+function isSuiteSectionExpanded(tab: SuiteSectionTab, blockId: string, blockIndex: number): boolean {
+  const key = suiteSectionStateKey(tab, blockId)
+  const v = suiteSectionOpen.value[key]
+  if (v !== undefined) return v
+  return blockIndex === 0
+}
+
+function toggleSuiteSection(tab: SuiteSectionTab, blockId: string, blockIndex: number): void {
+  const key = suiteSectionStateKey(tab, blockId)
+  const next = !isSuiteSectionExpanded(tab, blockId, blockIndex)
+  suiteSectionOpen.value = { ...suiteSectionOpen.value, [key]: next }
+}
 
 async function runUnitSuite() {
   unitLoading.value = true
@@ -679,11 +737,13 @@ async function runHttpPageChecks() {
       const url = `${base}${path === '/' ? '' : path}`
       try {
         const res = await fetch(url, { method: 'GET', credentials: 'include' })
+        const html = await res.text()
+        const chk = httpPagePassed(t.id, res, html)
         out.push({
           id: t.id,
           title: t.title,
-          passed: res.ok,
-          error: res.ok ? undefined : `HTTP ${res.status}`
+          passed: chk.ok,
+          error: chk.error
         })
       } catch (e) {
         out.push({
@@ -716,12 +776,14 @@ async function runSingleHttpPageCheck(testId: string) {
     const base = getApiBaseUrl().replace(/\/$/, '')
     const url = `${base}${path === '/' ? '' : path}`
     const res = await fetch(url, { method: 'GET', credentials: 'include' })
+    const html = await res.text()
+    const chk = httpPagePassed(testId, res, html)
     httpPageResults.value = upsertTestResults(httpPageResults.value, [
       {
         id: testId,
         title: fallbackTitle,
-        passed: res.ok,
-        error: res.ok ? undefined : `HTTP ${res.status}`
+        passed: chk.ok,
+        error: chk.error
       }
     ])
     lastSuiteRunAt.value = new Date().toLocaleString('ru-RU')
@@ -735,14 +797,15 @@ async function runSingleHttpPageCheck(testId: string) {
 }
 
 const runAllTestsOnCurrentTab = async () => {
-  if (testsSuiteTab.value === 'unit' || testsSuiteTab.value === 'integration') {
-    return
-  }
   runTabTestsLoading.value = true
   try {
-    await runUnitSuite()
-    await runIntegrationSuite()
-    await runHttpPageChecks()
+    if (testsSuiteTab.value === 'unit') {
+      await runUnitSuite()
+    } else if (testsSuiteTab.value === 'integration') {
+      await runIntegrationSuite()
+    } else {
+      await runHttpPageChecks()
+    }
     lastSuiteRunAt.value = new Date().toLocaleString('ru-RU')
   } finally {
     runTabTestsLoading.value = false
@@ -805,10 +868,10 @@ const runAllTests = async () => {
               <button
                 type="button"
                 class="tp-tab"
-                :class="{ active: testsSuiteTab === 'archive' }"
-                @click="testsSuiteTab = 'archive'"
+                :class="{ active: testsSuiteTab === 'http' }"
+                @click="testsSuiteTab = 'http'"
               >
-                <i class="fas fa-box-archive tp-icon-tab"></i> Архив
+                <i class="fas fa-globe tp-icon-tab"></i> HTTP
               </button>
             </div>
           </div>
@@ -820,14 +883,15 @@ const runAllTests = async () => {
               :disabled="
                 runTabTestsLoading ||
                 runAllTestsLoading ||
-                testsSuiteTab === 'unit' ||
-                testsSuiteTab === 'integration'
+                (testsSuiteTab === 'unit' && unitLoading) ||
+                (testsSuiteTab === 'integration' && integrationLoading) ||
+                (testsSuiteTab === 'http' && httpPagesLoading)
               "
               @click="runAllTestsOnCurrentTab"
             >
               <i v-if="runTabTestsLoading" class="fas fa-circle-notch fa-spin"></i>
               <i v-else class="fas fa-play"></i>
-              {{ runTabTestsLoading ? 'Запуск...' : 'Запустить вкладку' }}
+              {{ runTabTestsLoading ? 'Запуск...' : tabRunButtonIdleLabel }}
             </button>
             <button
               type="button"
@@ -872,49 +936,48 @@ const runAllTests = async () => {
               </div>
             </div>
 
-            <div v-show="testsSuiteTab === 'unit'" class="tp-suite tp-suite--placeholder">
-              <p class="tp-placeholder-msg">
-                <i class="fas fa-info-circle tp-icon-muted"></i>
-                Текущие сценарии перенесены во вкладку «Архив». Здесь можно будет разместить новые юнит-тесты.
-              </p>
-            </div>
-
-            <div v-show="testsSuiteTab === 'integration'" class="tp-suite tp-suite--placeholder">
-              <p class="tp-placeholder-msg">
-                <i class="fas fa-info-circle tp-icon-muted"></i>
-                Текущие сценарии перенесены во вкладку «Архив». Здесь можно будет разместить новые интеграционные тесты.
-              </p>
-            </div>
-
-            <div v-show="testsSuiteTab === 'archive'" class="tp-archive">
+            <div v-show="testsSuiteTab === 'unit'" class="tp-tab-panel">
             <div class="tp-suite">
               <div class="tp-suite-hd">
                 <h2><i class="fas fa-vial tp-icon-hd"></i> Юнит-тесты</h2>
                 <code class="tp-code">GET /api/tests/unit</code>
               </div>
-              <div v-for="section in unitBlocksView" :key="section.block.id" class="tp-block">
-                <div class="tp-block-hd">
-                  <h3><i class="fas fa-folder-open tp-icon-block"></i> {{ section.block.title }}</h3>
+              <div v-for="(section, sIdx) in unitBlocksView" :key="section.block.id" class="tp-block">
+                <button
+                  type="button"
+                  class="tp-block-hd tp-block-hd--toggle"
+                  :aria-expanded="isSuiteSectionExpanded('unit', section.block.id, sIdx)"
+                  @click="toggleSuiteSection('unit', section.block.id, sIdx)"
+                >
+                  <span class="tp-block-hd-title">
+                    <i
+                      class="tp-icon-block"
+                      :class="isSuiteSectionExpanded('unit', section.block.id, sIdx) ? 'fas fa-folder-open' : 'fas fa-folder'"
+                    ></i>
+                    {{ section.block.title }}
+                  </span>
                   <span class="tp-block-info">{{ section.rollupLabel }}</span>
-                </div>
-                <p v-if="section.block.description" class="tp-block-desc">{{ section.block.description }}</p>
-                <ul class="tp-tests" role="list">
-                  <li v-for="row in section.rows" :key="row.test.id" class="tp-test" :class="`tp-test--${row.visual.status}`">
-                    <div class="tp-test-accent" :class="`tp-test-accent--${row.visual.status}`"></div>
-                    <div class="tp-test-content">
-                      <div class="tp-test-main">
-                        <span class="tp-badge" :class="`tp-badge--${row.visual.status}`">{{ row.visual.badgeText }}</span>
-                        <span class="tp-test-name">{{ row.test.title }}</span>
-                        <button type="button" class="tp-test-run" :disabled="unitLoading || isGroupBlockedBySingle('unit')" @click="runSingleUnitTest(row.test.id)">
-                          <i v-if="isSingleRunning('unit', row.test.id)" class="fas fa-circle-notch fa-spin"></i>
-                          <i v-else class="fas fa-play"></i>
-                        </button>
+                </button>
+                <div v-show="isSuiteSectionExpanded('unit', section.block.id, sIdx)" class="tp-block-body">
+                  <p v-if="section.block.description" class="tp-block-desc">{{ section.block.description }}</p>
+                  <ul class="tp-tests" role="list">
+                    <li v-for="row in section.rows" :key="row.test.id" class="tp-test" :class="`tp-test--${row.visual.status}`">
+                      <div class="tp-test-accent" :class="`tp-test-accent--${row.visual.status}`"></div>
+                      <div class="tp-test-content">
+                        <div class="tp-test-main">
+                          <span class="tp-badge" :class="`tp-badge--${row.visual.status}`">{{ row.visual.badgeText }}</span>
+                          <span class="tp-test-name">{{ row.test.title }}</span>
+                          <button type="button" class="tp-test-run" :disabled="unitLoading || isGroupBlockedBySingle('unit')" @click="runSingleUnitTest(row.test.id)">
+                            <i v-if="isSingleRunning('unit', row.test.id)" class="fas fa-circle-notch fa-spin"></i>
+                            <i v-else class="fas fa-play"></i>
+                          </button>
+                        </div>
+                        <code class="tp-test-id">{{ row.test.id }}</code>
+                        <p v-if="row.visual.error" class="tp-test-err"><i class="fas fa-exclamation-circle"></i> {{ row.visual.error }}</p>
                       </div>
-                      <code class="tp-test-id">{{ row.test.id }}</code>
-                      <p v-if="row.visual.error" class="tp-test-err"><i class="fas fa-exclamation-circle"></i> {{ row.visual.error }}</p>
-                    </div>
-                  </li>
-                </ul>
+                    </li>
+                  </ul>
+                </div>
               </div>
               <button type="button" class="tp-btn tp-suite-run" :disabled="unitLoading || isGroupBlockedBySingle('unit')" @click="runUnitSuite">
                 <i v-if="unitLoading" class="fas fa-circle-notch fa-spin"></i>
@@ -922,35 +985,50 @@ const runAllTests = async () => {
                 {{ unitLoading ? 'Запуск...' : 'Запустить юнит-набор' }}
               </button>
             </div>
+            </div>
 
+            <div v-show="testsSuiteTab === 'integration'" class="tp-tab-panel">
             <div class="tp-suite">
               <div class="tp-suite-hd">
                 <h2><i class="fas fa-server tp-icon-hd"></i> Серверная интеграция</h2>
                 <code class="tp-code">GET /api/tests/integration</code>
               </div>
-              <div v-for="section in integrationServerBlocksView" :key="section.block.id" class="tp-block">
-                <div class="tp-block-hd">
-                  <h3><i class="fas fa-folder-open tp-icon-block"></i> {{ section.block.title }}</h3>
+              <div v-for="(section, sIdx) in integrationServerBlocksView" :key="section.block.id" class="tp-block">
+                <button
+                  type="button"
+                  class="tp-block-hd tp-block-hd--toggle"
+                  :aria-expanded="isSuiteSectionExpanded('integration', section.block.id, sIdx)"
+                  @click="toggleSuiteSection('integration', section.block.id, sIdx)"
+                >
+                  <span class="tp-block-hd-title">
+                    <i
+                      class="tp-icon-block"
+                      :class="isSuiteSectionExpanded('integration', section.block.id, sIdx) ? 'fas fa-folder-open' : 'fas fa-folder'"
+                    ></i>
+                    {{ section.block.title }}
+                  </span>
                   <span class="tp-block-info">{{ section.rollupLabel }}</span>
-                </div>
-                <p v-if="section.block.description" class="tp-block-desc">{{ section.block.description }}</p>
-                <ul class="tp-tests" role="list">
-                  <li v-for="row in section.rows" :key="row.test.id" class="tp-test" :class="`tp-test--${row.visual.status}`">
-                    <div class="tp-test-accent" :class="`tp-test-accent--${row.visual.status}`"></div>
-                    <div class="tp-test-content">
-                      <div class="tp-test-main">
-                        <span class="tp-badge" :class="`tp-badge--${row.visual.status}`">{{ row.visual.badgeText }}</span>
-                        <span class="tp-test-name">{{ row.test.title }}</span>
-                        <button type="button" class="tp-test-run" :disabled="integrationLoading || isGroupBlockedBySingle('integration')" @click="runSingleIntegrationTest(row.test.id)">
-                          <i v-if="isSingleRunning('integration', row.test.id)" class="fas fa-circle-notch fa-spin"></i>
-                          <i v-else class="fas fa-play"></i>
-                        </button>
+                </button>
+                <div v-show="isSuiteSectionExpanded('integration', section.block.id, sIdx)" class="tp-block-body">
+                  <p v-if="section.block.description" class="tp-block-desc">{{ section.block.description }}</p>
+                  <ul class="tp-tests" role="list">
+                    <li v-for="row in section.rows" :key="row.test.id" class="tp-test" :class="`tp-test--${row.visual.status}`">
+                      <div class="tp-test-accent" :class="`tp-test-accent--${row.visual.status}`"></div>
+                      <div class="tp-test-content">
+                        <div class="tp-test-main">
+                          <span class="tp-badge" :class="`tp-badge--${row.visual.status}`">{{ row.visual.badgeText }}</span>
+                          <span class="tp-test-name">{{ row.test.title }}</span>
+                          <button type="button" class="tp-test-run" :disabled="integrationLoading || isGroupBlockedBySingle('integration')" @click="runSingleIntegrationTest(row.test.id)">
+                            <i v-if="isSingleRunning('integration', row.test.id)" class="fas fa-circle-notch fa-spin"></i>
+                            <i v-else class="fas fa-play"></i>
+                          </button>
+                        </div>
+                        <code class="tp-test-id">{{ row.test.id }}</code>
+                        <p v-if="row.visual.error" class="tp-test-err"><i class="fas fa-exclamation-circle"></i> {{ row.visual.error }}</p>
                       </div>
-                      <code class="tp-test-id">{{ row.test.id }}</code>
-                      <p v-if="row.visual.error" class="tp-test-err"><i class="fas fa-exclamation-circle"></i> {{ row.visual.error }}</p>
-                    </div>
-                  </li>
-                </ul>
+                    </li>
+                  </ul>
+                </div>
               </div>
               <button type="button" class="tp-btn tp-suite-run" :disabled="integrationLoading || isGroupBlockedBySingle('integration')" @click="runIntegrationSuite">
                 <i v-if="integrationLoading" class="fas fa-circle-notch fa-spin"></i>
@@ -958,35 +1036,50 @@ const runAllTests = async () => {
                 {{ integrationLoading ? 'Запуск...' : 'Запустить серверную интеграцию' }}
               </button>
             </div>
+            </div>
 
+            <div v-show="testsSuiteTab === 'http'" class="tp-tab-panel">
             <div class="tp-suite">
               <div class="tp-suite-hd">
                 <h2><i class="fas fa-globe tp-icon-hd"></i> HTTP-проверки страниц</h2>
                 <code class="tp-code">GET /, /web/*</code>
               </div>
-              <div v-for="section in integrationHttpBlocksView" :key="section.block.id" class="tp-block">
-                <div class="tp-block-hd">
-                  <h3><i class="fas fa-folder-open tp-icon-block"></i> {{ section.block.title }}</h3>
+              <div v-for="(section, sIdx) in integrationHttpBlocksView" :key="section.block.id" class="tp-block">
+                <button
+                  type="button"
+                  class="tp-block-hd tp-block-hd--toggle"
+                  :aria-expanded="isSuiteSectionExpanded('http', section.block.id, sIdx)"
+                  @click="toggleSuiteSection('http', section.block.id, sIdx)"
+                >
+                  <span class="tp-block-hd-title">
+                    <i
+                      class="tp-icon-block"
+                      :class="isSuiteSectionExpanded('http', section.block.id, sIdx) ? 'fas fa-folder-open' : 'fas fa-folder'"
+                    ></i>
+                    {{ section.block.title }}
+                  </span>
                   <span class="tp-block-info">{{ section.rollupLabel }}</span>
-                </div>
-                <p v-if="section.block.description" class="tp-block-desc">{{ section.block.description }}</p>
-                <ul class="tp-tests" role="list">
-                  <li v-for="row in section.rows" :key="row.test.id" class="tp-test" :class="`tp-test--${row.visual.status}`">
-                    <div class="tp-test-accent" :class="`tp-test-accent--${row.visual.status}`"></div>
-                    <div class="tp-test-content">
-                      <div class="tp-test-main">
-                        <span class="tp-badge" :class="`tp-badge--${row.visual.status}`">{{ row.visual.badgeText }}</span>
-                        <span class="tp-test-name">{{ row.test.title }}</span>
-                        <button type="button" class="tp-test-run" :disabled="httpPagesLoading || isGroupBlockedBySingle('http')" @click="runSingleHttpPageCheck(row.test.id)">
-                          <i v-if="isSingleRunning('http', row.test.id)" class="fas fa-circle-notch fa-spin"></i>
-                          <i v-else class="fas fa-play"></i>
-                        </button>
+                </button>
+                <div v-show="isSuiteSectionExpanded('http', section.block.id, sIdx)" class="tp-block-body">
+                  <p v-if="section.block.description" class="tp-block-desc">{{ section.block.description }}</p>
+                  <ul class="tp-tests" role="list">
+                    <li v-for="row in section.rows" :key="row.test.id" class="tp-test" :class="`tp-test--${row.visual.status}`">
+                      <div class="tp-test-accent" :class="`tp-test-accent--${row.visual.status}`"></div>
+                      <div class="tp-test-content">
+                        <div class="tp-test-main">
+                          <span class="tp-badge" :class="`tp-badge--${row.visual.status}`">{{ row.visual.badgeText }}</span>
+                          <span class="tp-test-name">{{ row.test.title }}</span>
+                          <button type="button" class="tp-test-run" :disabled="httpPagesLoading || isGroupBlockedBySingle('http')" @click="runSingleHttpPageCheck(row.test.id)">
+                            <i v-if="isSingleRunning('http', row.test.id)" class="fas fa-circle-notch fa-spin"></i>
+                            <i v-else class="fas fa-play"></i>
+                          </button>
+                        </div>
+                        <code class="tp-test-id">{{ row.test.id }}</code>
+                        <p v-if="row.visual.error" class="tp-test-err"><i class="fas fa-exclamation-circle"></i> {{ row.visual.error }}</p>
                       </div>
-                      <code class="tp-test-id">{{ row.test.id }}</code>
-                      <p v-if="row.visual.error" class="tp-test-err"><i class="fas fa-exclamation-circle"></i> {{ row.visual.error }}</p>
-                    </div>
-                  </li>
-                </ul>
+                    </li>
+                  </ul>
+                </div>
               </div>
               <button type="button" class="tp-btn tp-suite-run" :disabled="httpPagesLoading || isGroupBlockedBySingle('http')" @click="runHttpPageChecks">
                 <i v-if="httpPagesLoading" class="fas fa-circle-notch fa-spin"></i>
@@ -1135,18 +1228,7 @@ const runAllTests = async () => {
 .tp-grid--logs { grid-template-columns: minmax(0, 1fr) minmax(360px, 440px); }
 .tp-main { display: flex; flex-direction: column; gap: 0.85rem; min-width: 0; }
 
-.tp-archive { display: flex; flex-direction: column; gap: 0.85rem; }
-.tp-suite--placeholder {
-  border: 1px dashed var(--c-bdr);
-  padding: 1rem 1.1rem;
-  background: rgba(8, 7, 10, 0.45);
-}
-.tp-placeholder-msg {
-  margin: 0;
-  font-size: 0.78rem;
-  color: var(--c-tx2);
-  line-height: 1.5;
-}
+.tp-tab-panel { display: flex; flex-direction: column; gap: 0.85rem; }
 
 /* ── METRICS ── */
 .tp-metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.55rem; animation: tp-enter 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.1s both; }
@@ -1221,6 +1303,12 @@ const runAllTests = async () => {
   padding: 0.45rem 0.6rem; border: 1px solid var(--c-bdr); background: var(--c-bg-deep);
   flex-wrap: wrap; position: relative; z-index: 1;
 }
+.tp-block-hd--toggle {
+  width: 100%; box-sizing: border-box; cursor: pointer;
+  font: inherit; color: inherit; text-align: left;
+}
+.tp-block-hd--toggle:hover { border-color: var(--c-bdr-hi); }
+.tp-block-hd-title,
 .tp-block-hd h3 { margin: 0; font-size: 0.78rem; font-weight: 600; color: var(--c-tx); letter-spacing: 0.03em; }
 .tp-block-info { font-size: 0.68rem; color: var(--c-tx3); letter-spacing: 0.03em; }
 .tp-block-desc { margin: 0.4rem 0; font-size: 0.76rem; color: var(--c-tx2); position: relative; z-index: 1; }

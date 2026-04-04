@@ -234,15 +234,21 @@
 
 ### `./api/tests/unit/index.ts`
 - `@app/auth` → `requireAnyUser`
-- `../../../config/routes` → `getFullUrl`, `PROJECT_ROOT`
-- `../../../config/project` → `getPageTitle`, `INDEX_PAGE_NAME`
-- `../../../shared/logLevel` → `getLogLevelScript`
 - `../../../lib/logger.lib` → `*`
+- `../../../lib/tests/templateUnitSuite` → `runTemplateUnitChecks`, `TemplateUnitTestResult`
+- `../../../lib/tests/logTestRunFailures` → `logTestRunFailures`
 
 ### `./api/tests/integration/index.ts`
 - `@app/auth` → `requireAnyUser`
-- `../../../lib/settings.lib` → `*`
-- `../../../repos/settings.repo` → `*`
-- `../../../repos/logs.repo` → `*`
-- `../../../lib/admin/dashboard.lib` → `*`
 - `../../../lib/logger.lib` → `*`
+- `../../../lib/tests/integrationSuite` → `runTemplateIntegrationChecks`
+- `../../../lib/tests/logTestRunFailures` → `logTestRunFailures`
+
+### `./lib/tests/logTestRunFailures.ts`
+- `../logger.lib` → `writeServerLog` — поштучное логирование провалов тестов (severity 3)
+
+### `./lib/tests/templateUnitSuite`
+- `../logger.lib`, `../settings.lib`, `config/*`, `shared/*`, `shared/testCatalog` — юнит-прогон без Heap
+
+### `./lib/tests/integrationSuite`
+- `../settings.lib`, `repos/*`, `../admin/dashboard.lib`, `../logger.lib`, `api/settings/*`, `api/logger/log`, `api/admin/*`, `api/tests/list`, `./templateUnitSuite` (`runTemplateUnitChecks`)
