@@ -14,7 +14,7 @@ import { customScrollbarStyles } from '../../styles'
 const LOG_PATH = 'web/tests/index'
 
 /**
- * Страница тестов: TestsPage.vue — юнит (`/api/tests/unit`), интеграция сервера (`/api/tests/integration`),
+ * Страница тестов: TestsPage.vue — три вкладки: юнит (`/api/tests/unit`), интеграция (`/api/tests/integration`),
  * HTTP GET шаблонных страниц; каталог `GET /api/tests/list` (блоки из `shared/testCatalog.ts`).
  */
 export const testsPageRoute = app.html('/', async (ctx, req) => {
@@ -75,6 +75,7 @@ export const testsPageRoute = app.html('/', async (ctx, req) => {
         <title>{getPageTitle(TESTS_PAGE_NAME, projectName)}</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta charset="UTF-8" />
+        <meta name="template-project-page" content="web-tests" />
         <script>{getLogLevelScript(logLevel)}</script>
         <script src="/s/metric/clarity.js"></script>
         <style>{getPreloaderStyles()}</style>
@@ -95,8 +96,7 @@ export const testsPageRoute = app.html('/', async (ctx, req) => {
           }
 
           body.boot-complete {
-            overflow-x: hidden;
-            overflow-y: auto;
+            overflow: hidden;
           }
 
           #geometric-bg {

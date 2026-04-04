@@ -618,7 +618,7 @@ function onVisibilityForLogsSocket() {
 </script>
 
 <template>
-  <div class="app-layout flex flex-col">
+  <div class="app-layout flex flex-col w-full min-w-0">
     <GlobalGlitch />
     <Header
       v-if="bootLoaderDone"
@@ -632,7 +632,7 @@ function onVisibilityForLogsSocket() {
       :testsUrl="props.testsUrl"
     />
 
-    <main class="ap-wrap flex-1 relative z-10 min-h-0 overflow-y-auto">
+    <main class="ap-wrap flex flex-col flex-1 relative z-10 min-h-0 w-full min-w-0 overflow-hidden">
       <div class="ap" :class="{ ready: bootLoaderDone }">
 
         <div class="ap-status">
@@ -667,7 +667,7 @@ function onVisibilityForLogsSocket() {
         </div>
 
         <div class="ap-grid">
-          <div class="ap-main">
+          <div class="ap-main content-wrapper">
 
             <section class="ap-card ap-card--stagger-1">
               <div class="ap-card-hd">
@@ -799,6 +799,27 @@ function onVisibilityForLogsSocket() {
 </template>
 
 <style scoped>
+/* Высота окна: хедер и футер фиксированы; <main> без вертикального скролла — крутится левая колонка, правая (логи) по высоте ряда = окно минус хедер/футер/тулбар. */
+.app-layout {
+  height: 100vh;
+  height: 100dvh;
+  max-height: 100vh;
+  max-height: 100dvh;
+  overflow: hidden;
+  position: relative;
+  width: 100%;
+}
+
+/* main: колонка на всю доступную высоту между шапкой и футером, без собственного scroll */
+.ap-wrap {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  width: 100%;
+  overflow: hidden;
+}
+
 .ap {
   --c-bg: rgba(12, 11, 14, 0.97);
   --c-bg2: rgba(16, 15, 19, 0.96);
@@ -815,6 +836,12 @@ function onVisibilityForLogsSocket() {
   --c-alert: #d97a8a;
   --c-ok: #6aaf7e;
 
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  width: 100%;
   max-width: 1440px;
   margin: 0 auto;
   padding: 0.75rem 1rem 1.5rem;
@@ -832,6 +859,7 @@ function onVisibilityForLogsSocket() {
 
 /* ── STATUS BAR ── */
 .ap-status {
+  flex-shrink: 0;
   display: flex; align-items: center; justify-content: space-between; gap: 0.75rem;
   padding: 0.5rem 0.85rem; margin-bottom: 0.85rem;
   border: 1px solid var(--c-bdr); background: var(--c-bg-deep);
@@ -942,9 +970,25 @@ function onVisibilityForLogsSocket() {
   50% { opacity: 0.4; box-shadow: 0 0 2px rgba(217, 86, 114, 0.25); transform: scale(0.92); }
 }
 
-/* ── GRID ── */
-.ap-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(360px, 440px); gap: 0.85rem; align-items: start; }
-.ap-main { display: flex; flex-direction: column; gap: 0.85rem; min-width: 0; }
+/* ── GRID: ровно оставшаяся высота main; левая колонка скроллится, правая (логи) тянется по высоте ряда и не уезжает при скролле слева ── */
+.ap-grid {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(240px, 1fr) minmax(360px, 440px);
+  grid-template-rows: minmax(0, 1fr);
+  gap: 0.85rem;
+  align-items: stretch;
+}
+.ap-main {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  min-width: 0;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
 
 /* ── CARDS ── */
 .ap-card {
@@ -1065,11 +1109,29 @@ function onVisibilityForLogsSocket() {
 .ap-err { margin: 0.4rem 0 0; color: var(--c-alert); font-size: 0.76rem; position: relative; z-index: 1; }
 .ap-err i { margin-right: 0.2rem; font-size: 0.65rem; }
 
-/* ── LOG MONITOR ── */
-.ap-side { min-width: 0; }
-.ap-logs { position: sticky; top: 0.75rem; }
+/* ── LOG MONITOR: высота = ячейка сетки (ровно ряд между шапкой страницы и футером); движется только список в .ap-log-out ── */
+.ap-side {
+  min-width: 0;
+  min-height: 0;
+  width: 100%;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.ap-logs {
+  position: relative;
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
 .ap-log-ct { font-size: 0.7rem; color: var(--c-tx3); letter-spacing: 0.04em; font-variant-numeric: tabular-nums; }
-.ap-log-filters { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.4rem; margin-bottom: 0.6rem; position: relative; z-index: 1; }
+.ap-log-filters {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.4rem; margin-bottom: 0.6rem; position: relative; z-index: 1;
+  flex-shrink: 0;
+}
+.ap-logs > .ap-card-hd { flex-shrink: 0; }
 .ap-flt {
   padding: 0.35rem; border: 1px solid var(--c-bdr); background: var(--c-bg-deep);
   color: var(--c-tx2); font-family: inherit; font-size: 0.7rem; cursor: pointer;
@@ -1085,7 +1147,9 @@ function onVisibilityForLogsSocket() {
 .ap-flt.active::after { transform: scaleX(1); }
 
 .ap-log-out {
-  min-height: 420px; max-height: calc(100vh - 300px); overflow-y: auto;
+  flex: 1 1 auto;
+  min-height: 7rem;
+  overflow-y: auto;
   border: 1px solid rgba(50, 44, 54, 0.35); background: rgba(5, 4, 7, 0.98);
   padding: 0.55rem; margin-bottom: 0.55rem; font-size: 0.74rem; line-height: 1.6;
   position: relative; z-index: 1; box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.25);
@@ -1118,13 +1182,31 @@ function onVisibilityForLogsSocket() {
 .lvl-warning { color: var(--c-warn); }
 .lvl-error, .lvl-critical, .lvl-alert, .lvl-emergency { color: var(--c-alert); }
 
-.ap-log-ft { display: flex; flex-direction: column; gap: 0.4rem; position: relative; z-index: 1; }
+.ap-log-ft { display: flex; flex-direction: column; gap: 0.4rem; position: relative; z-index: 1; flex-shrink: 0; }
 .ap-log-sync { font-size: 0.74rem; color: var(--c-tx2); display: flex; align-items: center; gap: 0.35rem; }
 .ap-log-sync i { font-size: 0.62rem; }
 .ap-log-btns { display: flex; gap: 0.4rem; }
 .ap-log-btns .ap-btn:first-child { flex: 1; }
 
-@media (max-width: 1100px) { .ap-grid { grid-template-columns: 1fr; } .ap-logs { position: static; } .ap-log-out { max-height: 420px; } }
+@media (max-width: 1100px) {
+  .ap-wrap { overflow-y: auto; }
+  .ap {
+    flex: none;
+    min-height: auto;
+    overflow: visible;
+  }
+  .ap-grid {
+    flex: none;
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto;
+    min-height: auto;
+    align-items: start;
+  }
+  .ap-main { overflow: visible; }
+  .ap-side { overflow: visible; }
+  .ap-logs { flex: none; }
+  .ap-log-out { min-height: 240px; max-height: 420px; flex: none; }
+}
 @media (max-width: 680px) {
   .ap { padding: 0.5rem 0.625rem 1rem; }
   .ap-cfg-row { grid-template-columns: 1fr; }
