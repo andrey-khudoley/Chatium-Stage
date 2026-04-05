@@ -103,11 +103,18 @@ function emitLog(
   consoleFn: (...a: unknown[]) => void,
   ...args: unknown[]
 ): void {
-  if (!shouldLog(severity)) return
-  consoleFn(...args)
+  const config = getBootLogLevel()
+  const maxSeverity = CONFIG_TO_MAX_SEVERITY[config]
+  if (maxSeverity < 0 || severity < 0 || severity > maxSeverity) return
+
+  // Debug: полная карта вызовов + сырые данные; иначе — только строковые аргументы (карта без данных)
+  const isDebugMode = config === 'Debug'
+  const effectiveArgs = isDebugMode ? args : args.filter(a => typeof a === 'string')
+
+  consoleFn(...effectiveArgs)
   if (logSink) {
     try {
-      logSink({ severity, level, args, timestamp: Date.now() })
+      logSink({ severity, level, args: effectiveArgs, timestamp: Date.now() })
     } catch {
       /* sink не должен ломать логирование */
     }

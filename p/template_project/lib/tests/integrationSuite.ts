@@ -192,7 +192,7 @@ export async function runTemplateIntegrationChecks(ctx: app.Ctx): Promise<Templa
     const row = await logsRepo.create(ctx, {
       message: '[tpl-test] integration create',
       payload: null,
-      severity: 7,
+      severity: 6,
       level: 'debug',
       timestamp: ts
     })
@@ -227,7 +227,7 @@ export async function runTemplateIntegrationChecks(ctx: app.Ctx): Promise<Templa
       await logsRepo.create(ctx, {
         message: `[tpl-test] stack ${i}`,
         payload: null,
-        severity: 7,
+        severity: 6,
         level: 'debug',
         timestamp: ts + i
       })
@@ -325,7 +325,7 @@ export async function runTemplateIntegrationChecks(ctx: app.Ctx): Promise<Templa
   await tryAsync(results, 'api_logger_log', 'POST logger/log', async () => {
     const r = (await logRoute.run(ctx, {
       message: '[tpl-integration] ping',
-      severity: 7
+      severity: 6
     })) as { success?: boolean }
     return r.success === true
   })

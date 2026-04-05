@@ -18,7 +18,7 @@ export const listTestsRoute = app.get('/', async (ctx) => {
   requireAnyUser(ctx)
 
   await loggerLib.writeServerLog(ctx, {
-    severity: 7,
+    severity: 6,
     message: `[${LOG_PATH}] Запрос каталога тестов`,
     payload: {}
   })
@@ -48,6 +48,12 @@ export const listTestsRoute = app.get('/', async (ctx) => {
       tests: flattenCatalogBlocks([INTEGRATION_HTTP_TEST_BLOCK])
     }
   ]
+
+  await loggerLib.writeServerLog(ctx, {
+    severity: 6,
+    message: `[${LOG_PATH}] listTestsRoute exit`,
+    payload: { categoriesCount: categories.length }
+  })
 
   return { success: true, categories, at: Date.now() }
 })

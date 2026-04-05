@@ -210,6 +210,7 @@ const toggleLogFilter = (stream: 'all' | 'info' | 'warn' | 'error') => {
 }
 
 const loadRecentLogs = async () => {
+  log.info('loadRecentLogs entry')
   const requestId = ++logsRequestId.value
   const severities = getSeveritiesQueryForStream(selectedLogStream.value)
   const query: { limit: number; severities?: string } = { limit: LOG_FETCH_LIMIT }
@@ -225,12 +226,15 @@ const loadRecentLogs = async () => {
       logEntries.value = [...data.entries]
       updateOldestTimestamp(data.entries)
       logsHasMore.value = data.entries.length === LOG_FETCH_LIMIT
+      log.info('loadRecentLogs loaded', { count: data.entries.length })
     } else {
       logsError.value = data?.error || 'Ошибка загрузки логов'
+      log.error('loadRecentLogs error', logsError.value)
     }
   } catch (e) {
     if (requestId !== logsRequestId.value) return
     logsError.value = (e as Error)?.message || 'Ошибка сети'
+    log.error('loadRecentLogs network error', e)
   } finally {
     if (requestId !== logsRequestId.value) return
     logsLoading.value = false
@@ -390,6 +394,7 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
+  log.info('onBeforeUnmount: cleaning up socket subscription')
   if (logsSocketSubscription?.unsubscribe) {
     logsSocketSubscription.unsubscribe()
     logsSocketSubscription = null

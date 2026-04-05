@@ -13,14 +13,14 @@ export const getSettingRoute = app.get('/', async (ctx, req) => {
   requireAccountRole(ctx, 'Admin')
 
   await loggerLib.writeServerLog(ctx, {
-    severity: 7,
+    severity: 6,
     message: `[${LOG_PATH}] Получен запрос на чтение настройки`,
     payload: { queryKeys: Object.keys(req.query ?? {}) }
   })
 
   const key = req.query.key as string
   await loggerLib.writeServerLog(ctx, {
-    severity: 7,
+    severity: 6,
     message: `[${LOG_PATH}] Парсинг query`,
     payload: { key, query: req.query }
   })
@@ -35,7 +35,7 @@ export const getSettingRoute = app.get('/', async (ctx, req) => {
 
   const keyTrimmed = key.trim()
   await loggerLib.writeServerLog(ctx, {
-    severity: 7,
+    severity: 6,
     message: `[${LOG_PATH}] Вызов lib getSetting`,
     payload: { keyTrimmed }
   })
@@ -47,7 +47,7 @@ export const getSettingRoute = app.get('/', async (ctx, req) => {
       payload: { key: keyTrimmed, hasValue: value !== undefined && value !== null }
     })
     await loggerLib.writeServerLog(ctx, {
-      severity: 7,
+      severity: 6,
       message: `[${LOG_PATH}] Возврат success`,
       payload: { keyTrimmed, value }
     })

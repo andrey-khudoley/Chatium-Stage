@@ -13,20 +13,20 @@ export const resetDashboardRoute = app.post('/', async (ctx, req) => {
   requireAccountRole(ctx, 'Admin')
 
   await loggerLib.writeServerLog(ctx, {
-    severity: 7,
+    severity: 6,
     message: `[${LOG_PATH}] Запрос сброса дашборда`,
     payload: {}
   })
 
   try {
     await loggerLib.writeServerLog(ctx, {
-      severity: 7,
+      severity: 6,
       message: `[${LOG_PATH}] Вызов dashboardLib.resetDashboard`,
       payload: {}
     })
     const counts = await dashboardLib.resetDashboard(ctx)
     await loggerLib.writeServerLog(ctx, {
-      severity: 7,
+      severity: 6,
       message: `[${LOG_PATH}] Переменные counts`,
       payload: counts
     })
@@ -36,7 +36,7 @@ export const resetDashboardRoute = app.post('/', async (ctx, req) => {
       payload: { resetAt: counts.resetAt }
     })
     await loggerLib.writeServerLog(ctx, {
-      severity: 7,
+      severity: 6,
       message: `[${LOG_PATH}] Возврат success`,
       payload: counts
     })

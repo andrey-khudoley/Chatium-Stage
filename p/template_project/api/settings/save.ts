@@ -34,7 +34,7 @@ export const saveSettingRoute = app.post('/', async (ctx, req) => {
   requireAccountRole(ctx, 'Admin')
 
   await loggerLib.writeServerLog(ctx, {
-    severity: 7,
+    severity: 6,
     message: `[${LOG_PATH}] Получен запрос на сохранение настройки`,
     payload: { bodyKeys: req.body ? Object.keys(req.body as object) : [] }
   })
@@ -44,7 +44,7 @@ export const saveSettingRoute = app.post('/', async (ctx, req) => {
   let value = body?.value
 
   await loggerLib.writeServerLog(ctx, {
-    severity: 7,
+    severity: 6,
     message: `[${LOG_PATH}] Парсинг body`,
     payload: { key, value, bodyKeys: body ? Object.keys(body) : [] }
   })
@@ -72,7 +72,7 @@ export const saveSettingRoute = app.post('/', async (ctx, req) => {
   if (key === settingsLib.SETTING_KEYS.LOG_LEVEL && value !== undefined && value !== null) {
     value = normalizeLogLevelValue(value)
     await loggerLib.writeServerLog(ctx, {
-      severity: 7,
+      severity: 6,
       message: `[${LOG_PATH}] Нормализован log_level`,
       payload: { value }
     })
@@ -80,7 +80,7 @@ export const saveSettingRoute = app.post('/', async (ctx, req) => {
 
   try {
     await loggerLib.writeServerLog(ctx, {
-      severity: 7,
+      severity: 6,
       message: `[${LOG_PATH}] Вызов lib setSetting`,
       payload: { key, value }
     })
@@ -92,7 +92,7 @@ export const saveSettingRoute = app.post('/', async (ctx, req) => {
       payload: { key, value: saved }
     })
     await loggerLib.writeServerLog(ctx, {
-      severity: 7,
+      severity: 6,
       message: `[${LOG_PATH}] Возврат success`,
       payload: { key, saved }
     })

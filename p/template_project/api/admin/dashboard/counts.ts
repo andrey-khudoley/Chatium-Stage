@@ -13,20 +13,20 @@ export const getDashboardCountsRoute = app.get('/', async (ctx, req) => {
   requireAccountRole(ctx, 'Admin')
 
   await loggerLib.writeServerLog(ctx, {
-    severity: 7,
+    severity: 6,
     message: `[${LOG_PATH}] Запрос счётчиков дашборда`,
     payload: { queryKeys: Object.keys(req.query ?? {}) }
   })
 
   try {
     await loggerLib.writeServerLog(ctx, {
-      severity: 7,
+      severity: 6,
       message: `[${LOG_PATH}] Вызов dashboardLib.getDashboardCounts`,
       payload: {}
     })
     const counts = await dashboardLib.getDashboardCounts(ctx)
     await loggerLib.writeServerLog(ctx, {
-      severity: 7,
+      severity: 6,
       message: `[${LOG_PATH}] Переменные counts`,
       payload: counts
     })
@@ -36,7 +36,7 @@ export const getDashboardCountsRoute = app.get('/', async (ctx, req) => {
       payload: { errorCount: counts.errorCount, warnCount: counts.warnCount, resetAt: counts.resetAt }
     })
     await loggerLib.writeServerLog(ctx, {
-      severity: 7,
+      severity: 6,
       message: `[${LOG_PATH}] Возврат success`,
       payload: counts
     })

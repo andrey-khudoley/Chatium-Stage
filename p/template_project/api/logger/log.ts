@@ -16,7 +16,7 @@ export const logRoute = app.post('/', async (ctx, req) => {
   requireAnyUser(ctx)
 
   await loggerLib.writeServerLog(ctx, {
-    severity: 7,
+    severity: 6,
     message: `[${LOG_PATH}] Получен запрос на запись лога`,
     payload: { bodyKeys: req.body ? Object.keys(req.body as object) : [] }
   })
@@ -24,7 +24,7 @@ export const logRoute = app.post('/', async (ctx, req) => {
   const body = req.body as { severity?: unknown; message?: unknown; payload?: unknown }
 
   await loggerLib.writeServerLog(ctx, {
-    severity: 7,
+    severity: 6,
     message: `[${LOG_PATH}] Парсинг body`,
     payload: { bodyKeys: body ? Object.keys(body) : [], body }
   })
@@ -37,7 +37,7 @@ export const logRoute = app.post('/', async (ctx, req) => {
   const payload = body?.payload
 
   await loggerLib.writeServerLog(ctx, {
-    severity: 7,
+    severity: 6,
     message: `[${LOG_PATH}] Переменные после парсинга`,
     payload: { severity, message, hasPayload: payload !== undefined }
   })
@@ -54,7 +54,7 @@ export const logRoute = app.post('/', async (ctx, req) => {
   try {
     await loggerLib.writeServerLog(ctx, { severity, message, payload })
     await loggerLib.writeServerLog(ctx, {
-      severity: 7,
+      severity: 6,
       message: `[${LOG_PATH}] Возврат success`,
       payload: { success: true }
     })

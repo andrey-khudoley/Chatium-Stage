@@ -45,8 +45,26 @@
 - `tables/` — Heap‑таблицы (схемы: settings, logs).
 - `repos/` — репозитории (работа с БД: settings, logs; logs.repo включает findBeforeTimestamp для пагинации).
 - `lib/` — бизнес‑логика (settings.lib, logger.lib: проверка уровня, запись в ctx/Heap/WebSocket/вебхук).
-- `shared/` — общий код (preloader, logLevel для передачи уровня логирования на клиент, logger — уровни syslog RFC 5424, createComponentLogger, setLogSink/LogEntry для дашборда, logEmergency…logDebug в браузере с проверкой порога).
+- `shared/` — общий код (preloader, logLevel для передачи уровня логирования на клиент, logger — уровни syslog RFC 5424, createComponentLogger, setLogSink/LogEntry для дашборда, logEmergency…logDebug в браузере с проверкой порога, browserRemoteLogger — пакетная отправка браузерных логов на сервер через POST /api/logger/browser).
 - `docs/` — документация проекта.
+
+## Стратегия логирования
+
+Логирование построено на стандарте syslog (RFC 5424), severity 0–7. Управление уровнем через настройку `log_level` (Debug/Info/Warn/Error/Disable).
+
+| Severity | Уровень | Что логируется |
+| --- | --- | --- |
+| 7 | Debug | Сырые данные (параметры, возвраты, промежуточные значения) — появляются только при Debug |
+| 6 | Info | Карта вызовов: entry/exit функций, ветвления — без сырых данных при уровне Info |
+| 5 | Notice | Пользовательские действия (клик, навигация, изменение настроек) |
+| 4 | Warning | Нештатные ситуации, не требующие немедленной реакции |
+| 3 | Error | Ошибки, требующие внимания |
+| 2 | Critical | Критические действия (выход из аккаунта) |
+| -1 | Disable | Логи выключены |
+
+**Ключевой принцип**: trace-логи (карта вызовов) имеют severity 6 (Info). Payload (сырые данные) автоматически отсекается при уровне != Debug:
+- **Сервер** (`lib/logger.lib.ts`): функция `shouldIncludePayload` — payload в ctx.account.log, Heap, WebSocket и webhook только при Debug.
+- **Браузер** (`shared/logger.ts`): `emitLog` фильтрует non-string args при уровне != Debug.
 
 ## Интеграции
 - Внешние сервисы: нет.

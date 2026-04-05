@@ -19,7 +19,7 @@ const LOG_PATH = 'index'
 
 export const indexPageRoute = app.html('/', async (ctx, req) => {
   await loggerLib.writeServerLog(ctx, {
-    severity: 7,
+    severity: 6,
     message: `[${LOG_PATH}] Рендер главной страницы`,
     payload: { hasUser: !!ctx.user, isAdmin: ctx.user?.is?.('Admin') ?? false }
   })
@@ -27,7 +27,7 @@ export const indexPageRoute = app.html('/', async (ctx, req) => {
   const isAuthenticated = !!ctx.user
   const isAdmin = ctx.user?.is('Admin') ?? false
   await loggerLib.writeServerLog(ctx, {
-    severity: 7,
+    severity: 6,
     message: `[${LOG_PATH}] Переменные auth`,
     payload: { isAuthenticated, isAdmin }
   })
@@ -35,14 +35,14 @@ export const indexPageRoute = app.html('/', async (ctx, req) => {
   const adminUrl = isAdmin ? getFullUrl(ROUTES.admin) : ''
   const testsUrl = isAuthenticated ? getFullUrl(ROUTES.tests) : ''
   await loggerLib.writeServerLog(ctx, {
-    severity: 7,
+    severity: 6,
     message: `[${LOG_PATH}] URL-ы`,
     payload: { loginUrl, adminUrl, testsUrl }
   })
   const logLevel = await getLogLevelForPage(ctx)
   const projectName = await settingsLib.getSettingString(ctx, settingsLib.SETTING_KEYS.PROJECT_NAME)
   await loggerLib.writeServerLog(ctx, {
-    severity: 7,
+    severity: 6,
     message: `[${LOG_PATH}] Переменные для рендера`,
     payload: { logLevel, projectName }
   })

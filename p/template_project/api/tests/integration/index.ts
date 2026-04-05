@@ -15,7 +15,7 @@ export const templateIntegrationTestsRoute = app.get('/', async (ctx) => {
   requireAnyUser(ctx)
 
   await loggerLib.writeServerLog(ctx, {
-    severity: 7,
+    severity: 6,
     message: `[${LOG_PATH}] Запуск интеграционного набора`,
     payload: {}
   })

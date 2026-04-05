@@ -13,21 +13,21 @@ export const listSettingsRoute = app.get('/', async (ctx, req) => {
   requireAccountRole(ctx, 'Admin')
 
   await loggerLib.writeServerLog(ctx, {
-    severity: 7,
+    severity: 6,
     message: `[${LOG_PATH}] Получен запрос на список настроек`,
     payload: {}
   })
 
   try {
     await loggerLib.writeServerLog(ctx, {
-      severity: 7,
+      severity: 6,
       message: `[${LOG_PATH}] Вызов lib getAllSettings`,
       payload: {}
     })
     const settings = await settingsLib.getAllSettings(ctx)
     const keys = Object.keys(settings)
     await loggerLib.writeServerLog(ctx, {
-      severity: 7,
+      severity: 6,
       message: `[${LOG_PATH}] Переменные после getAllSettings`,
       payload: { keysCount: keys.length, keys }
     })
@@ -37,7 +37,7 @@ export const listSettingsRoute = app.get('/', async (ctx, req) => {
       payload: { count: keys.length, keys }
     })
     await loggerLib.writeServerLog(ctx, {
-      severity: 7,
+      severity: 6,
       message: `[${LOG_PATH}] Возврат success`,
       payload: { settingsCount: keys.length }
     })

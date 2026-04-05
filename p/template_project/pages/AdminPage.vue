@@ -7,6 +7,8 @@ import AppFooter from '../components/AppFooter.vue'
 import { getSettingRoute } from '../api/settings/get'
 import { saveSettingRoute } from '../api/settings/save'
 import { createComponentLogger, setLogSink, type LogEntry } from '../shared/logger'
+import { createBrowserRemoteLogger } from '../shared/browserRemoteLogger'
+import { postBrowserLogsRoute } from '../api/logger/browser'
 import { getRecentLogsRoute } from '../api/admin/logs/recent'
 import { getLogsBeforeRoute } from '../api/admin/logs/before'
 import { getDashboardCountsRoute } from '../api/admin/dashboard/counts'
@@ -67,6 +69,8 @@ function showSaveStatus(
 const errorCount = ref(0)
 const warnCount = ref(0)
 const dashboardResetAt = ref(0)
+
+let browserRemoteLogger: ReturnType<typeof createBrowserRemoteLogger> | null = null
 
 const MAX_LOG_ENTRIES = 500
 const logEntries = ref<LogEntry[]>([])
@@ -225,6 +229,7 @@ const displayedLogs = computed<LogDisplayItem[]>(() => {
 })
 
 const loadProjectName = async () => {
+  log.info('loadProjectName entry')
   try {
     const res = await getSettingRoute.query({ key: 'project_name' }).run(ctx)
     const data = res as { success?: boolean; value?: unknown }
@@ -232,6 +237,10 @@ const loadProjectName = async () => {
       const loaded = data.value
       projectName.value = loaded
       lastSavedProjectName.value = loaded
+      log.info('loadProjectName loaded')
+      log.debug('loadProjectName loaded', { value: loaded })
+    } else {
+      log.info('loadProjectName no value')
     }
   } catch (e) {
     log.warning('Не удалось загрузить имя проекта', e)
@@ -260,6 +269,8 @@ watch(selectedLogStream, () => {
 })
 
 const saveProjectName = async () => {
+  log.info('saveProjectName entry')
+  log.debug('saveProjectName entry', { name: projectName.value })
   projectNameError.value = ''
   projectNameLoading.value = true
   const prev = projectName.value
@@ -283,20 +294,43 @@ const saveProjectName = async () => {
     showSaveStatus(projectNameSaveStatus, projectNameStatusTimeout, 'error')
   } finally {
     projectNameLoading.value = false
+    log.info('saveProjectName exit')
   }
 }
 
 onMounted(() => {
-  log.info('Компонент смонтирован')
+  log.info('Компонент смонтирован', {
+    projectTitle: props.projectTitle,
+    isAuthenticated: props.isAuthenticated,
+    isAdmin: props.isAdmin,
+    indexUrl: props.indexUrl,
+    profileUrl: props.profileUrl,
+    loginUrl: props.loginUrl,
+    adminUrl: props.adminUrl,
+    hasEncodedLogsSocketId: !!props.encodedLogsSocketId
+  })
+
+  browserRemoteLogger = createBrowserRemoteLogger({
+    post: (payload) => postBrowserLogsRoute.run(ctx, payload)
+  })
+  browserRemoteLogger.installConsoleAndGlobalHandlers()
+  log.debug('Browser remote logger initialized')
+
   loadProjectName()
   loadDashboardCounts()
-  if (window.hideAppLoader) window.hideAppLoader()
-  if (window.bootLoaderComplete) {
+  if (window.hideAppLoader) {
+    window.hideAppLoader()
+    log.debug('hideAppLoader called')
+  }
+  const bootReady = !!window.bootLoaderComplete
+  log.debug('Boot loader state on mount', { bootLoaderComplete: bootReady })
+  if (bootReady) {
     startAnimations()
   } else {
     window.addEventListener('bootloader-complete', startAnimations)
   }
   const bootLevel = (window as Window & { __BOOT__?: { logLevel?: string } }).__BOOT__?.logLevel
+  log.debug('Boot logLevel from SSR', { bootLevel })
   if (typeof bootLevel === 'string') {
     const normalized = bootLevel.toLowerCase()
     if (LOG_LEVEL_VALUES.includes(normalized as (typeof LOG_LEVEL_VALUES)[number])) {
@@ -309,6 +343,7 @@ onMounted(() => {
       else if (entry.severity === 4) warnCount.value += 1
     }
     pushVisibleLogEntry(entry)
+    browserRemoteLogger!.pushSinkEntry(entry)
   })
   void setupLogsWebSocket()
 
@@ -320,6 +355,7 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
+  log.info('onBeforeUnmount: cleaning up listeners and timers')
   window.removeEventListener('offline', onBrowserOffline)
   window.removeEventListener('online', onBrowserOnline)
   document.removeEventListener('visibilitychange', onVisibilityForLogsSocket)
@@ -345,6 +381,10 @@ onBeforeUnmount(() => {
 onUnmounted(() => {
   log.info('Компонент размонтирован')
   setLogSink(null)
+  if (browserRemoteLogger) {
+    browserRemoteLogger.teardown()
+    browserRemoteLogger = null
+  }
   window.removeEventListener('bootloader-complete', startAnimations)
 })
 
@@ -564,6 +604,7 @@ function attachLogsSocketLifecycle(socketClient: unknown, subscription: unknown,
 }
 
 async function setupLogsWebSocket() {
+  log.info('setupLogsWebSocket entry')
   if (!props.encodedLogsSocketId) {
     logsWsConnected.value = false
     logsWsInitialized.value = true
@@ -604,16 +645,21 @@ async function setupLogsWebSocket() {
 }
 
 function onBrowserOffline() {
+  log.info('onBrowserOffline: WebSocket marked disconnected')
   logsWsConnected.value = false
 }
 
 function onBrowserOnline() {
+  log.info('onBrowserOnline: reconnecting WebSocket')
   void setupLogsWebSocket()
 }
 
 function onVisibilityForLogsSocket() {
   if (document.visibilityState !== 'visible' || !props.encodedLogsSocketId) return
-  if (!logsWsConnected.value) void setupLogsWebSocket()
+  if (!logsWsConnected.value) {
+    log.info('onVisibilityForLogsSocket: tab visible, reconnecting')
+    void setupLogsWebSocket()
+  }
 }
 </script>
 

@@ -36,8 +36,15 @@ function parseEntry(raw: unknown): { severity: number; message: string; timestam
  * Body: { clrtUid?: string | null, entries: Array<{ severity: 0–7, message, timestamp?, channel?, method? }> }.
  * Только для авторизованных пользователей. Записи попадают в Heap и WebSocket админки наравне с серверными логами.
  */
+const LOG_PATH = 'api/logger/browser'
+
 export const postBrowserLogsRoute = app.post('/', async (ctx, req) => {
   requireAnyUser(ctx)
+
+  await loggerLib.writeServerLog(ctx, {
+    severity: 6,
+    message: `[${LOG_PATH}] postBrowserLogsRoute entry`
+  })
 
   const body = req.body as { clrtUid?: unknown; entries?: unknown }
   const clrtUidRaw = body?.clrtUid
@@ -50,11 +57,27 @@ export const postBrowserLogsRoute = app.post('/', async (ctx, req) => {
 
   const rawList = body?.entries
   if (!Array.isArray(rawList) || rawList.length === 0) {
+    await loggerLib.writeServerLog(ctx, {
+      severity: 4,
+      message: `[${LOG_PATH}] postBrowserLogsRoute invalid entries: not array or empty`,
+      payload: { clrtUid, entriesType: typeof rawList }
+    })
     return { success: false, error: 'Поле entries должно быть непустым массивом' }
   }
   if (rawList.length > MAX_ENTRIES) {
+    await loggerLib.writeServerLog(ctx, {
+      severity: 4,
+      message: `[${LOG_PATH}] postBrowserLogsRoute entries overflow`,
+      payload: { clrtUid, count: rawList.length, max: MAX_ENTRIES }
+    })
     return { success: false, error: `Не более ${MAX_ENTRIES} записей за запрос` }
   }
+
+  await loggerLib.writeServerLog(ctx, {
+    severity: 6,
+    message: `[${LOG_PATH}] postBrowserLogsRoute parsing ${rawList.length} entries`,
+    payload: { clrtUid, entriesCount: rawList.length }
+  })
 
   let written = 0
   for (const raw of rawList) {
@@ -75,6 +98,12 @@ export const postBrowserLogsRoute = app.post('/', async (ctx, req) => {
     })
     written += 1
   }
+
+  await loggerLib.writeServerLog(ctx, {
+    severity: 6,
+    message: `[${LOG_PATH}] postBrowserLogsRoute exit`,
+    payload: { clrtUid, written, total: rawList.length }
+  })
 
   return { success: true, written }
 })

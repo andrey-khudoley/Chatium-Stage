@@ -56,14 +56,14 @@ export async function getSetting(ctx: app.Ctx, key: string): Promise<unknown> {
  */
 export async function getSettingString(ctx: app.Ctx, key: string): Promise<string> {
   await loggerLib.writeServerLog(ctx, {
-    severity: 7,
+    severity: 6,
     message: `[${LOG_MODULE}] getSettingString entry`,
     payload: { key }
   })
   const value = await getSetting(ctx, key)
   const result = typeof value === 'string' ? value : String((DEFAULTS as Record<string, unknown>)[key] ?? '')
   await loggerLib.writeServerLog(ctx, {
-    severity: 7,
+    severity: 6,
     message: `[${LOG_MODULE}] getSettingString exit`,
     payload: { key, value, result }
   })
@@ -81,14 +81,14 @@ export async function getLogLevel(ctx: app.Ctx): Promise<LogLevel> {
  */
 export async function getLogsLimit(ctx: app.Ctx): Promise<number> {
   await loggerLib.writeServerLog(ctx, {
-    severity: 7,
+    severity: 6,
     message: `[${LOG_MODULE}] getLogsLimit entry`,
     payload: {}
   })
   const value = await getSetting(ctx, SETTING_KEYS.LOGS_LIMIT)
   const result = parseLogsLimit(value)
   await loggerLib.writeServerLog(ctx, {
-    severity: 7,
+    severity: 6,
     message: `[${LOG_MODULE}] getLogsLimit exit`,
     payload: { value, result }
   })
@@ -112,7 +112,7 @@ export async function getLogWebhook(ctx: app.Ctx): Promise<LogWebhookSetting> {
  */
 export async function getDashboardResetAt(ctx: app.Ctx): Promise<number> {
   await loggerLib.writeServerLog(ctx, {
-    severity: 7,
+    severity: 6,
     message: `[${LOG_MODULE}] getDashboardResetAt entry`,
     payload: {}
   })
@@ -120,7 +120,7 @@ export async function getDashboardResetAt(ctx: app.Ctx): Promise<number> {
   const result =
     typeof value === 'number' && Number.isFinite(value) && value >= 0 ? Math.floor(value) : 0
   await loggerLib.writeServerLog(ctx, {
-    severity: 7,
+    severity: 6,
     message: `[${LOG_MODULE}] getDashboardResetAt exit`,
     payload: { value, result }
   })
@@ -132,13 +132,13 @@ export async function getDashboardResetAt(ctx: app.Ctx): Promise<number> {
  */
 export async function getAllSettings(ctx: app.Ctx): Promise<Record<string, unknown>> {
   await loggerLib.writeServerLog(ctx, {
-    severity: 7,
+    severity: 6,
     message: `[${LOG_MODULE}] getAllSettings entry`,
     payload: {}
   })
   const rows = await repo.findAll(ctx)
   await loggerLib.writeServerLog(ctx, {
-    severity: 7,
+    severity: 6,
     message: `[${LOG_MODULE}] getAllSettings repo.findAll result`,
     payload: { rowsCount: rows.length, keys: rows.map((r) => r.key) }
   })
@@ -149,7 +149,7 @@ export async function getAllSettings(ctx: app.Ctx): Promise<Record<string, unkno
     }
   }
   await loggerLib.writeServerLog(ctx, {
-    severity: 7,
+    severity: 6,
     message: `[${LOG_MODULE}] getAllSettings exit`,
     payload: { resultKeys: Object.keys(result) }
   })
@@ -161,7 +161,7 @@ export async function getAllSettings(ctx: app.Ctx): Promise<Record<string, unkno
  */
 export async function setSetting(ctx: app.Ctx, key: string, value: unknown): Promise<void> {
   await loggerLib.writeServerLog(ctx, {
-    severity: 7,
+    severity: 6,
     message: `[${LOG_MODULE}] setSetting entry`,
     payload: { key, value }
   })
@@ -170,7 +170,7 @@ export async function setSetting(ctx: app.Ctx, key: string, value: unknown): Pro
   if (key === SETTING_KEYS.LOG_LEVEL) {
     const str = typeof value === 'string' ? value : String(value)
     await loggerLib.writeServerLog(ctx, {
-      severity: 7,
+      severity: 6,
       message: `[${LOG_MODULE}] setSetting LOG_LEVEL branch`,
       payload: { str, isLogLevel: isLogLevel(str) }
     })
@@ -181,7 +181,7 @@ export async function setSetting(ctx: app.Ctx, key: string, value: unknown): Pro
   } else if (key === SETTING_KEYS.LOGS_LIMIT) {
     const n = parseLogsLimit(value)
     await loggerLib.writeServerLog(ctx, {
-      severity: 7,
+      severity: 6,
       message: `[${LOG_MODULE}] setSetting LOGS_LIMIT branch`,
       payload: { n, value }
     })
@@ -192,7 +192,7 @@ export async function setSetting(ctx: app.Ctx, key: string, value: unknown): Pro
   } else if (key === SETTING_KEYS.PROJECT_NAME || key === SETTING_KEYS.PROJECT_TITLE) {
     normalized = typeof value === 'string' ? value.trim() : String(value)
     await loggerLib.writeServerLog(ctx, {
-      severity: 7,
+      severity: 6,
       message: `[${LOG_MODULE}] setSetting PROJECT_NAME/PROJECT_TITLE branch`,
       payload: { normalized }
     })
@@ -206,7 +206,7 @@ export async function setSetting(ctx: app.Ctx, key: string, value: unknown): Pro
       url: typeof o.url === 'string' ? o.url : ''
     }
     await loggerLib.writeServerLog(ctx, {
-      severity: 7,
+      severity: 6,
       message: `[${LOG_MODULE}] setSetting LOG_WEBHOOK branch`,
       payload: { normalized }
     })
@@ -217,7 +217,7 @@ export async function setSetting(ctx: app.Ctx, key: string, value: unknown): Pro
     }
     normalized = Math.floor(n)
     await loggerLib.writeServerLog(ctx, {
-      severity: 7,
+      severity: 6,
       message: `[${LOG_MODULE}] setSetting DASHBOARD_RESET_AT branch`,
       payload: { normalized }
     })
@@ -225,7 +225,7 @@ export async function setSetting(ctx: app.Ctx, key: string, value: unknown): Pro
 
   await repo.upsert(ctx, key, normalized)
   await loggerLib.writeServerLog(ctx, {
-    severity: 7,
+    severity: 6,
     message: `[${LOG_MODULE}] setSetting exit`,
     payload: { key, normalized }
   })

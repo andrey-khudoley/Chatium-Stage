@@ -15,13 +15,13 @@ export type DashboardCounts = {
  */
 export async function getDashboardCounts(ctx: app.Ctx): Promise<DashboardCounts> {
   await loggerLib.writeServerLog(ctx, {
-    severity: 7,
+    severity: 6,
     message: `[${LOG_MODULE}] getDashboardCounts entry`,
     payload: {}
   })
   const resetAt = await settingsLib.getDashboardResetAt(ctx)
   await loggerLib.writeServerLog(ctx, {
-    severity: 7,
+    severity: 6,
     message: `[${LOG_MODULE}] getDashboardCounts resetAt`,
     payload: { resetAt }
   })
@@ -30,13 +30,13 @@ export async function getDashboardCounts(ctx: app.Ctx): Promise<DashboardCounts>
     logsRepo.countWarningsAfter(ctx, resetAt)
   ])
   await loggerLib.writeServerLog(ctx, {
-    severity: 7,
+    severity: 6,
     message: `[${LOG_MODULE}] getDashboardCounts counts`,
     payload: { errorCount, warnCount }
   })
   const result = { errorCount, warnCount, resetAt }
   await loggerLib.writeServerLog(ctx, {
-    severity: 7,
+    severity: 6,
     message: `[${LOG_MODULE}] getDashboardCounts exit`,
     payload: result
   })
@@ -49,20 +49,20 @@ export async function getDashboardCounts(ctx: app.Ctx): Promise<DashboardCounts>
  */
 export async function resetDashboard(ctx: app.Ctx): Promise<DashboardCounts> {
   await loggerLib.writeServerLog(ctx, {
-    severity: 7,
+    severity: 6,
     message: `[${LOG_MODULE}] resetDashboard entry`,
     payload: {}
   })
   const resetAt = Date.now()
   await loggerLib.writeServerLog(ctx, {
-    severity: 7,
+    severity: 6,
     message: `[${LOG_MODULE}] resetDashboard resetAt`,
     payload: { resetAt }
   })
   await settingsLib.setSetting(ctx, settingsLib.SETTING_KEYS.DASHBOARD_RESET_AT, resetAt)
   const result = { errorCount: 0, warnCount: 0, resetAt }
   await loggerLib.writeServerLog(ctx, {
-    severity: 7,
+    severity: 6,
     message: `[${LOG_MODULE}] resetDashboard exit`,
     payload: result
   })

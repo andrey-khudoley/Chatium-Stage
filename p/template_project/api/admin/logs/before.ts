@@ -38,14 +38,14 @@ export const getLogsBeforeRoute = app.get('/', async (ctx, req) => {
   requireAccountRole(ctx, 'Admin')
 
   await loggerLib.writeServerLog(ctx, {
-    severity: 7,
+    severity: 6,
     message: `[${LOG_PATH}] Запрос логов до указанного timestamp`,
     payload: { queryKeys: Object.keys(req.query ?? {}) }
   })
 
   const beforeTimestampRaw = req.query.beforeTimestamp as string
   await loggerLib.writeServerLog(ctx, {
-    severity: 7,
+    severity: 6,
     message: `[${LOG_PATH}] Парсинг query`,
     payload: { beforeTimestampRaw, queryKeys: Object.keys(req.query ?? {}) }
   })
@@ -60,7 +60,7 @@ export const getLogsBeforeRoute = app.get('/', async (ctx, req) => {
 
   const beforeTimestamp = Number(beforeTimestampRaw)
   await loggerLib.writeServerLog(ctx, {
-    severity: 7,
+    severity: 6,
     message: `[${LOG_PATH}] Переменные после парсинга timestamp`,
     payload: { beforeTimestampRaw, beforeTimestamp }
   })
@@ -86,14 +86,14 @@ export const getLogsBeforeRoute = app.get('/', async (ctx, req) => {
     return { success: false, error: 'Параметр severities должен содержать числа 0..7 через запятую' }
   }
   await loggerLib.writeServerLog(ctx, {
-    severity: 7,
+    severity: 6,
     message: `[${LOG_PATH}] Парсинг limit`,
     payload: { limitRaw, limit, severitiesRaw, severities }
   })
 
   try {
     await loggerLib.writeServerLog(ctx, {
-      severity: 7,
+      severity: 6,
       message: `[${LOG_PATH}] Вызов logsRepo.findBeforeTimestamp`,
       payload: { beforeTimestamp, limit, severities }
     })
@@ -101,7 +101,7 @@ export const getLogsBeforeRoute = app.get('/', async (ctx, req) => {
     const entries = logs.map(rowToLogEntry)
     const hasMore = entries.length === limit
     await loggerLib.writeServerLog(ctx, {
-      severity: 7,
+      severity: 6,
       message: `[${LOG_PATH}] Переменные после findBeforeTimestamp`,
       payload: { logsCount: logs.length, entriesCount: entries.length, hasMore }
     })
@@ -113,7 +113,7 @@ export const getLogsBeforeRoute = app.get('/', async (ctx, req) => {
     })
 
     await loggerLib.writeServerLog(ctx, {
-      severity: 7,
+      severity: 6,
       message: `[${LOG_PATH}] Возврат success`,
       payload: { entriesCount: entries.length, hasMore }
     })

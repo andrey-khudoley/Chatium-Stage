@@ -38,7 +38,7 @@ export const getRecentLogsRoute = app.get('/', async (ctx, req) => {
   requireAccountRole(ctx, 'Admin')
 
   await loggerLib.writeServerLog(ctx, {
-    severity: 7,
+    severity: 6,
     message: `[${LOG_PATH}] Запрос последних логов`,
     payload: { queryKeys: Object.keys(req.query ?? {}) }
   })
@@ -56,21 +56,21 @@ export const getRecentLogsRoute = app.get('/', async (ctx, req) => {
     return { success: false, error: 'Параметр severities должен содержать числа 0..7 через запятую' }
   }
   await loggerLib.writeServerLog(ctx, {
-    severity: 7,
+    severity: 6,
     message: `[${LOG_PATH}] Парсинг query`,
     payload: { limitRaw, limit, severitiesRaw, severities, queryKeys: Object.keys(req.query ?? {}) }
   })
 
   try {
     await loggerLib.writeServerLog(ctx, {
-      severity: 7,
+      severity: 6,
       message: `[${LOG_PATH}] Вызов logsRepo.findAll`,
       payload: { limit, offset: 0, severities }
     })
     const logs = await logsRepo.findAll(ctx, { limit, offset: 0, severities })
     const entries = logs.map(rowToLogEntry)
     await loggerLib.writeServerLog(ctx, {
-      severity: 7,
+      severity: 6,
       message: `[${LOG_PATH}] Переменные после findAll`,
       payload: { logsCount: logs.length, entriesCount: entries.length }
     })
@@ -80,7 +80,7 @@ export const getRecentLogsRoute = app.get('/', async (ctx, req) => {
       payload: { count: entries.length, limit }
     })
     await loggerLib.writeServerLog(ctx, {
-      severity: 7,
+      severity: 6,
       message: `[${LOG_PATH}] Возврат success`,
       payload: { entriesCount: entries.length }
     })

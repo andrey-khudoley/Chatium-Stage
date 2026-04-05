@@ -10,7 +10,7 @@ const LOG_PATH = 'shared/logLevel'
 export async function getLogLevelForPage(ctx: app.Ctx): Promise<LogLevel> {
   const level = await getLogLevel(ctx)
   await loggerLib.writeServerLog(ctx, {
-    severity: 7,
+    severity: 6,
     message: `[${LOG_PATH}] getLogLevelForPage: уровень получен`,
     payload: { level }
   })

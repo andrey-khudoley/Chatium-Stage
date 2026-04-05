@@ -1,11 +1,15 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref } from 'vue'
+import { onMounted, onBeforeUnmount, onUnmounted, ref } from 'vue'
 import Header from '../components/Header.vue'
 import GlobalGlitch from '../components/GlobalGlitch.vue'
 import AppFooter from '../components/AppFooter.vue'
-import { createComponentLogger } from '../shared/logger'
+import { createComponentLogger, setLogSink, type LogEntry } from '../shared/logger'
+import { createBrowserRemoteLogger } from '../shared/browserRemoteLogger'
+import { postBrowserLogsRoute } from '../api/logger/browser'
 
 const log = createComponentLogger('ProfilePage')
+
+declare const ctx: app.Ctx
 
 declare global {
   interface Window {
@@ -29,6 +33,8 @@ const props = defineProps<{
     confirmedPhone?: string
   }
 }>()
+
+let browserRemoteLogger: ReturnType<typeof createBrowserRemoteLogger> | null = null
 
 const showContent = ref(false)
 const bootLoaderDone = ref(false)
@@ -62,6 +68,7 @@ const typeTextSequence = () => {
 }
 
 const typeDescription = () => {
+  log.debug('Profile description animation started')
   const descriptionText = 'Информация о вашем аккаунте'
   cursorPosition.value = 'description'
   let descIndex = 0
@@ -87,20 +94,58 @@ const startAnimations = () => {
 }
 
 onMounted(() => {
-  log.info('Component mounted')
+  log.info('Component mounted', {
+    projectTitle: props.projectTitle,
+    isAuthenticated: props.isAuthenticated,
+    isAdmin: props.isAdmin,
+    indexUrl: props.indexUrl,
+    profileUrl: props.profileUrl,
+    loginUrl: props.loginUrl,
+    adminUrl: props.adminUrl,
+    user: {
+      displayName: props.user.displayName,
+      hasEmail: !!props.user.confirmedEmail,
+      hasPhone: !!props.user.confirmedPhone
+    }
+  })
+
+  browserRemoteLogger = createBrowserRemoteLogger({
+    post: (payload) => postBrowserLogsRoute.run(ctx, payload)
+  })
+  browserRemoteLogger.installConsoleAndGlobalHandlers()
+  setLogSink((entry: LogEntry) => {
+    browserRemoteLogger!.pushSinkEntry(entry)
+  })
+  log.debug('Browser remote logger initialized')
+
   if (window.hideAppLoader) {
     window.hideAppLoader()
+    log.debug('hideAppLoader called')
   }
 
-  if ((window as any).bootLoaderComplete) {
+  const bootReady = !!(window as Window & { bootLoaderComplete?: boolean }).bootLoaderComplete
+  log.debug('Boot loader state on mount', { bootLoaderComplete: bootReady })
+  if (bootReady) {
     startAnimations()
   } else {
     window.addEventListener('bootloader-complete', startAnimations)
   }
 })
 
+onBeforeUnmount(() => {
+  log.info('onBeforeUnmount: flushing remote logger')
+  if (browserRemoteLogger) {
+    browserRemoteLogger.flush()
+  }
+})
+
 onUnmounted(() => {
   log.info('Component unmounted')
+  setLogSink(null)
+  if (browserRemoteLogger) {
+    browserRemoteLogger.teardown()
+    browserRemoteLogger = null
+  }
   window.removeEventListener('bootloader-complete', startAnimations)
   if (intervalIds.title) clearInterval(intervalIds.title)
   if (intervalIds.desc) clearInterval(intervalIds.desc)

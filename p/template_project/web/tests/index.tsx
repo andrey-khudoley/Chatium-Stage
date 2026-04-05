@@ -19,7 +19,7 @@ const LOG_PATH = 'web/tests/index'
  */
 export const testsPageRoute = app.html('/', async (ctx, req) => {
   await loggerLib.writeServerLog(ctx, {
-    severity: 7,
+    severity: 6,
     message: `[${LOG_PATH}] Запрос страницы тестов`,
     payload: { hasUser: !!ctx.user }
   })
@@ -27,13 +27,13 @@ export const testsPageRoute = app.html('/', async (ctx, req) => {
   let user
   try {
     await loggerLib.writeServerLog(ctx, {
-      severity: 7,
+      severity: 6,
       message: `[${LOG_PATH}] Проверка requireRealUser`,
       payload: { hasUser: !!ctx.user }
     })
     user = requireRealUser(ctx)
     await loggerLib.writeServerLog(ctx, {
-      severity: 7,
+      severity: 6,
       message: `[${LOG_PATH}] requireRealUser пройдена`,
       payload: { displayName: user.displayName }
     })
@@ -50,7 +50,7 @@ export const testsPageRoute = app.html('/', async (ctx, req) => {
   const adminUrl = isAdmin ? getFullUrl(ROUTES.admin) : ''
   const loginUrl = getFullUrl(ROUTES.login)
   await loggerLib.writeServerLog(ctx, {
-    severity: 7,
+    severity: 6,
     message: `[${LOG_PATH}] Переменные после user`,
     payload: { isAdmin, adminUrl, loginUrl, displayName: user.displayName }
   })
@@ -59,7 +59,7 @@ export const testsPageRoute = app.html('/', async (ctx, req) => {
   const logsSocketId = isAdmin ? getAdminLogsSocketId(ctx) : ''
   const encodedLogsSocketId = isAdmin ? await genSocketId(ctx, logsSocketId) : undefined
   await loggerLib.writeServerLog(ctx, {
-    severity: 7,
+    severity: 6,
     message: `[${LOG_PATH}] Переменные для рендера`,
     payload: { logLevel, projectName, logsSocketId, hasEncodedLogsSocketId: !!encodedLogsSocketId }
   })
