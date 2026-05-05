@@ -69,6 +69,28 @@ function showSaveStatus(
 const errorCount = ref(0)
 const warnCount = ref(0)
 const dashboardResetAt = ref(0)
+const invokeTotal = ref(0)
+const invokeSuccess = ref(0)
+const invokeFailed = ref(0)
+const invokeLatencyP50Ms = ref<number | null>(null)
+const invokeLatencyP95Ms = ref<number | null>(null)
+const invokePerOpSample = ref<Record<string, number>>({})
+
+const invokeLatencyLabel = computed(() => {
+  const p50 = invokeLatencyP50Ms.value
+  const p95 = invokeLatencyP95Ms.value
+  if (p50 === null && p95 === null) return ''
+  const a = p50 === null ? '—' : String(p50)
+  const b = p95 === null ? '—' : String(p95)
+  return `Задержка invoke (выборка после сброса): p50 ${a} ms · p95 ${b} ms`
+})
+
+const invokeTopOpsLine = computed(() => {
+  const entries = Object.entries(invokePerOpSample.value)
+  if (!entries.length) return ''
+  entries.sort((x, y) => y[1] - x[1])
+  return `Частые op: ${entries.slice(0, 8).map(([op, n]) => `${op}×${n}`).join(', ')}`
+})
 
 let browserRemoteLogger: ReturnType<typeof createBrowserRemoteLogger> | null = null
 
@@ -417,12 +439,49 @@ const setLogLevel = async (level: 'debug' | 'info' | 'warn' | 'error' | 'disable
 const loadDashboardCounts = async () => {
   try {
     const res = await getDashboardCountsRoute.run(ctx)
-    const data = res as { success?: boolean; errorCount?: number; warnCount?: number; resetAt?: number; error?: string }
-    if (data?.success && typeof data.errorCount === 'number' && typeof data.warnCount === 'number' && typeof data.resetAt === 'number') {
+    const data = res as {
+      success?: boolean
+      errorCount?: number
+      warnCount?: number
+      resetAt?: number
+      invokeTotal?: number
+      invokeSuccess?: number
+      invokeFailed?: number
+      invokeLatencyP50Ms?: number | null
+      invokeLatencyP95Ms?: number | null
+      invokePerOpSample?: Record<string, number>
+      error?: string
+    }
+    if (
+      data?.success &&
+      typeof data.errorCount === 'number' &&
+      typeof data.warnCount === 'number' &&
+      typeof data.resetAt === 'number'
+    ) {
       errorCount.value = data.errorCount
       warnCount.value = data.warnCount
       dashboardResetAt.value = data.resetAt
-      log.debug('Счётчики дашборда загружены', { errorCount: data.errorCount, warnCount: data.warnCount, resetAt: data.resetAt })
+      invokeTotal.value = typeof data.invokeTotal === 'number' ? data.invokeTotal : 0
+      invokeSuccess.value = typeof data.invokeSuccess === 'number' ? data.invokeSuccess : 0
+      invokeFailed.value = typeof data.invokeFailed === 'number' ? data.invokeFailed : 0
+      invokeLatencyP50Ms.value =
+        data.invokeLatencyP50Ms === null || typeof data.invokeLatencyP50Ms === 'number'
+          ? data.invokeLatencyP50Ms ?? null
+          : null
+      invokeLatencyP95Ms.value =
+        data.invokeLatencyP95Ms === null || typeof data.invokeLatencyP95Ms === 'number'
+          ? data.invokeLatencyP95Ms ?? null
+          : null
+      invokePerOpSample.value =
+        data.invokePerOpSample && typeof data.invokePerOpSample === 'object' ? data.invokePerOpSample : {}
+      log.debug('Счётчики дашборда загружены', {
+        errorCount: data.errorCount,
+        warnCount: data.warnCount,
+        resetAt: data.resetAt,
+        invokeTotal: invokeTotal.value,
+        invokeSuccess: invokeSuccess.value,
+        invokeFailed: invokeFailed.value
+      })
     }
   } catch (e) {
     log.warning('Не удалось загрузить счётчики дашборда', e)
@@ -432,11 +491,29 @@ const loadDashboardCounts = async () => {
 const resetDashboard = async () => {
   try {
     const res = await resetDashboardRoute.run(ctx)
-    const data = res as { success?: boolean; errorCount?: number; warnCount?: number; resetAt?: number; error?: string }
+    const data = res as {
+      success?: boolean
+      errorCount?: number
+      warnCount?: number
+      resetAt?: number
+      invokeTotal?: number
+      invokeSuccess?: number
+      invokeFailed?: number
+      invokeLatencyP50Ms?: number | null
+      invokeLatencyP95Ms?: number | null
+      invokePerOpSample?: Record<string, number>
+      error?: string
+    }
     if (data?.success && typeof data.resetAt === 'number') {
       dashboardResetAt.value = data.resetAt
       errorCount.value = data.errorCount ?? 0
       warnCount.value = data.warnCount ?? 0
+      invokeTotal.value = data.invokeTotal ?? 0
+      invokeSuccess.value = data.invokeSuccess ?? 0
+      invokeFailed.value = data.invokeFailed ?? 0
+      invokeLatencyP50Ms.value = data.invokeLatencyP50Ms ?? null
+      invokeLatencyP95Ms.value = data.invokeLatencyP95Ms ?? null
+      invokePerOpSample.value = data.invokePerOpSample ?? {}
       log.notice('Счётчики дашборда сброшены', { resetAt: data.resetAt })
     } else {
       log.error('Ошибка сброса дашборда', data?.error)
@@ -738,6 +815,32 @@ function onVisibilityForLogsSocket() {
                   </div>
                 </div>
               </div>
+              <p class="ap-gw-meter-caption">GC invoke (после сброса)</p>
+              <div class="ap-meters ap-meters--gw mt-2">
+                <div class="ap-meter ap-meter--info">
+                  <div class="ap-meter-accent"></div>
+                  <div class="ap-meter-body">
+                    <strong>{{ invokeTotal }}</strong>
+                    <span><i class="fas fa-plug"></i> Всего</span>
+                  </div>
+                </div>
+                <div class="ap-meter ap-meter--ok">
+                  <div class="ap-meter-accent"></div>
+                  <div class="ap-meter-body">
+                    <strong>{{ invokeSuccess }}</strong>
+                    <span><i class="fas fa-check"></i> Успех</span>
+                  </div>
+                </div>
+                <div class="ap-meter ap-meter--err">
+                  <div class="ap-meter-accent"></div>
+                  <div class="ap-meter-body">
+                    <strong>{{ invokeFailed }}</strong>
+                    <span><i class="fas fa-times"></i> Ошибки</span>
+                  </div>
+                </div>
+              </div>
+              <p v-if="invokeLatencyLabel" class="ap-gw-extra">{{ invokeLatencyLabel }}</p>
+              <p v-if="invokeTopOpsLine" class="ap-gw-extra">{{ invokeTopOpsLine }}</p>
             </section>
 
             <div class="ap-cfg-row">
@@ -1085,6 +1188,33 @@ function onVisibilityForLogsSocket() {
 .ap-meter--wrn strong { color: var(--c-warn); }
 .ap-meter--wrn { border-color: rgba(201, 166, 96, 0.25); }
 .ap-meter--wrn:hover { border-color: rgba(201, 166, 96, 0.45); }
+
+.ap-meters--gw { grid-template-columns: 1fr 1fr 1fr; }
+.ap-gw-meter-caption {
+  margin: 0.75rem 0 0 0;
+  font-size: 0.65rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--c-tx3);
+  position: relative;
+  z-index: 1;
+}
+.ap-meter--info .ap-meter-accent { background: var(--c-tx3); }
+.ap-meter--info strong { color: var(--c-tx2); }
+.ap-meter--info { border-color: rgba(126, 119, 123, 0.35); }
+
+.ap-meter--ok .ap-meter-accent { background: var(--c-ok); }
+.ap-meter--ok strong { color: var(--c-ok); }
+.ap-meter--ok { border-color: rgba(106, 175, 126, 0.35); }
+
+.ap-gw-extra {
+  margin: 0.5rem 0 0 0;
+  font-size: 0.72rem;
+  line-height: 1.35;
+  color: var(--c-tx3);
+  position: relative;
+  z-index: 1;
+}
 
 /* ── CONFIG ── */
 .ap-cfg-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.85rem; }

@@ -10,7 +10,13 @@ export const SETTING_KEYS = {
   LOG_LEVEL: 'log_level',
   LOGS_LIMIT: 'logs_limit',
   LOG_WEBHOOK: 'log_webhook',
-  DASHBOARD_RESET_AT: 'dashboard_reset_at'
+  DASHBOARD_RESET_AT: 'dashboard_reset_at',
+  /** 32 байта base64 — корень AES для секретов школы и gc_dev_key */
+  GATEWAY_MASTER_KEY: 'gateway_master_key',
+  /** { ciphertext, iv } — зашифрованный dev-ключ GC */
+  GC_DEV_KEY_ENCRYPTED: 'gc_dev_key_encrypted',
+  /** Shared secret для POST /v1/onboard (заголовок X-Onboarding-Token) */
+  ONBOARDING_TOKEN: 'onboarding_token'
 } as const
 
 /** Настройка вебхука логов: enable — активна ли отправка, url — куда отправлять. */
@@ -23,7 +29,10 @@ export const DEFAULTS = {
   [SETTING_KEYS.LOG_LEVEL]: 'Info',
   [SETTING_KEYS.LOGS_LIMIT]: '100',
   [SETTING_KEYS.LOG_WEBHOOK]: { enable: false, url: '' } as LogWebhookSetting,
-  [SETTING_KEYS.DASHBOARD_RESET_AT]: null as number | null
+  [SETTING_KEYS.DASHBOARD_RESET_AT]: null as number | null,
+  [SETTING_KEYS.GATEWAY_MASTER_KEY]: null as string | null,
+  [SETTING_KEYS.GC_DEV_KEY_ENCRYPTED]: null as Record<string, unknown> | null,
+  [SETTING_KEYS.ONBOARDING_TOKEN]: ''
 } as const
 
 /** Допустимые уровни логирования */
@@ -220,6 +229,56 @@ export async function setSetting(ctx: app.Ctx, key: string, value: unknown): Pro
       severity: 6,
       message: `[${LOG_MODULE}] setSetting DASHBOARD_RESET_AT branch`,
       payload: { normalized }
+    })
+  } else if (key === SETTING_KEYS.GATEWAY_MASTER_KEY) {
+    if (value === null || value === undefined || value === '') {
+      normalized = null
+    } else if (typeof value !== 'string') {
+      throw new Error('gateway_master_key должен быть строкой base64 (32 байта)')
+    } else {
+      const trimmed = value.trim()
+      const B = (globalThis as { Buffer?: { from(data: string, encoding: 'base64'): { length: number } } }).Buffer
+      let byteLen = -1
+      if (B) {
+        try {
+          byteLen = B.from(trimmed, 'base64').length
+        } catch {
+          byteLen = -1
+        }
+      }
+      if (byteLen !== 32) {
+        throw new Error('gateway_master_key: ожидается base64 ровно 32 байта')
+      }
+      normalized = trimmed
+    }
+    await loggerLib.writeServerLog(ctx, {
+      severity: 6,
+      message: `[${LOG_MODULE}] setSetting GATEWAY_MASTER_KEY branch`,
+      payload: { hasValue: normalized !== null }
+    })
+  } else if (key === SETTING_KEYS.GC_DEV_KEY_ENCRYPTED) {
+    if (value === null || value === undefined) {
+      normalized = null
+    } else if (typeof value === 'object' && value !== null) {
+      const o = value as Record<string, unknown>
+      if (typeof o.ciphertext !== 'string' || typeof o.iv !== 'string') {
+        throw new Error('gc_dev_key_encrypted: ожидается { ciphertext, iv }')
+      }
+      normalized = { ciphertext: o.ciphertext, iv: o.iv }
+    } else {
+      throw new Error('gc_dev_key_encrypted: объект или null')
+    }
+    await loggerLib.writeServerLog(ctx, {
+      severity: 6,
+      message: `[${LOG_MODULE}] setSetting GC_DEV_KEY_ENCRYPTED branch`,
+      payload: { hasValue: normalized !== null }
+    })
+  } else if (key === SETTING_KEYS.ONBOARDING_TOKEN) {
+    normalized = typeof value === 'string' ? value.trim() : String(value)
+    await loggerLib.writeServerLog(ctx, {
+      severity: 6,
+      message: `[${LOG_MODULE}] setSetting ONBOARDING_TOKEN branch`,
+      payload: { length: (normalized as string).length }
     })
   }
 
