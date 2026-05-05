@@ -2,7 +2,7 @@
 
 ## Назначение
 
-Приложение **`p/saas/gw/gc`** — экземпляр **GetCourse Gateway** на каркасе `template_project` (страницы, админка, Heap settings/logs, тестовая страница). Целевая доменная логика — публичное API **`/v1/{op}`** и связка с GetCourse по нормативу в **`docs/SPEC/`** (SSOT: `docs/SPEC/gateway-operation-manual.md`, реестр `op`, OpenAPI и маппинг в том же каталоге).
+Приложение **`p/saas/gw/gc`** — экземпляр **GetCourse Gateway** на каркасе `template_project` (страницы, админка, Heap settings/logs, тестовая страница). Целевая доменная логика — публичное API **`/v1/{op}`** и связка с GetCourse по нормативу в **`docs/SPEC/`** (SSOT: `docs/SPEC/gateway-operation-manual.md`, реестр `op`, OpenAPI и маппинг в том же каталоге). **План реализации (Прототип → MVP → Прод):** `docs/SPEC/implementation-plan.md`.
 
 ## Ограничения платформы
 - Серверная инфраструктура предоставляется Chatium.
