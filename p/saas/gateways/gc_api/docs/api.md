@@ -66,7 +66,7 @@
 
 ## Тесты (api/tests/)
 
-Набор: юнит без Heap (`lib/tests/templateUnitSuite.ts`) — в т.ч. **pure-проверки gateway** (crypto, opRegistry, errorNormalizer, JSON Schema); интеграция с Heap и `route.run` (`lib/tests/integrationSuite.ts`) — в т.ч. **`api/v1/*`**; HTTP GET страниц на клиенте (`TestsPage.vue`). Каталог — `shared/testCatalog.ts`; страница `/web/tests` — три вкладки (Юнит / Интеграция / HTTP). Для `GET /web/tests` фрагменты SSR — `window.__BOOT__` и подстрока `gc-api-gateway-page` из `<meta name="gc-api-gateway-page" content="web-tests">` в `web/tests/index.tsx`.
+Набор: юнит без Heap (`lib/tests/templateUnitSuite.ts`) — в т.ч. **pure-проверки gateway** (crypto, opRegistry, errorNormalizer, JSON Schema); интеграция с Heap и `route.run` (`lib/tests/integrationSuite.ts`) — в т.ч. **`api/v1/*`**; HTTP GET страниц на клиенте (`TestsPage.vue`, `fetch` по базовому URL проекта). Каталог — `shared/testCatalog.ts`; страница `/web/tests` — три вкладки (Юнит / Интеграция / HTTP): вкладки **Юнит** и **Интеграция** вызывают `templateUnitTestsRoute.run(ctx)` и `templateIntegrationTestsRoute.run(ctx)` (маршруты `@shared-route`), а не прямой `fetch` к `/api/tests/*`, чтобы запрос не зависал из-за неверного разрешения URL во вложенном приложении. Для `GET /web/tests` фрагменты SSR — `window.__BOOT__` и подстрока `gc-api-gateway-page` из `<meta name="gc-api-gateway-page" content="web-tests">` в `web/tests/index.tsx`.
 
 Проверки с `requireAccountRole(Admin)` в интеграционном прогоне при отсутствии роли Admin помечаются как провал с пояснением «нужна роль Admin» (один `ctx` на запрос).
 

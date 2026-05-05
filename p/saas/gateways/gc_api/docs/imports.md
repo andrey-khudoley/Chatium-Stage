@@ -96,15 +96,19 @@
 - `../shared/logger` → `createComponentLogger`
 
 ### `./pages/TestsPage.vue`
-- `vue` → `onMounted`, `onBeforeUnmount`, `onUnmounted`, `ref`, `computed`
+- `vue` → `onMounted`, `onBeforeUnmount`, `onUnmounted`, `ref`, `computed`, `watch`
 - `@app/socket` → `getOrCreateBrowserSocketClient`
 - `../components/Header.vue`
 - `../components/GlobalGlitch.vue`
 - `../components/AppFooter.vue`
 - `../shared/logger` → `createComponentLogger`, `setLogSink`, `LogEntry`
+- `../shared/browserRemoteLogger` → `createBrowserRemoteLogger`
 - `../shared/testCatalog` → блоки и тесты каталога (`UNIT_TEST_BLOCKS`, …)
 - `../api/admin/logs/recent` → `getRecentLogsRoute`
 - `../api/admin/logs/before` → `getLogsBeforeRoute`
+- `../api/logger/browser` → `postBrowserLogsRoute`
+- `../api/tests/unit` → `templateUnitTestsRoute` (прогон юнит-набора через `route.run(ctx)`, не `fetch`)
+- `../api/tests/integration` → `templateIntegrationTestsRoute` (интеграция через `route.run(ctx)`)
 
 ### `./pages/LoginPage.vue`
 - `vue` → `computed`, `onMounted`

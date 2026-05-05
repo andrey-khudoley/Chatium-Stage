@@ -9,6 +9,8 @@ import { createBrowserRemoteLogger } from '../shared/browserRemoteLogger'
 import { getRecentLogsRoute } from '../api/admin/logs/recent'
 import { getLogsBeforeRoute } from '../api/admin/logs/before'
 import { postBrowserLogsRoute } from '../api/logger/browser'
+import { templateUnitTestsRoute } from '../api/tests/unit'
+import { templateIntegrationTestsRoute } from '../api/tests/integration'
 import {
   UNIT_TEST_BLOCKS,
   INTEGRATION_SERVER_TEST_BLOCKS,
@@ -641,15 +643,18 @@ function toggleSuiteSection(tab: SuiteSectionTab, blockId: string, blockIndex: n
 async function runUnitSuite() {
   unitLoading.value = true
   try {
-    const base = getApiBaseUrl().replace(/\/$/, '')
-    const res = await fetch(`${base}/api/tests/unit`, { credentials: 'include' })
-    const data = (await res.json().catch(() => null)) as { results?: SuiteRow[] }
+    const data = (await templateUnitTestsRoute.run(ctx)) as { results?: SuiteRow[] }
     unitResults.value = Array.isArray(data?.results) ? data.results : []
     lastSuiteRunAt.value = new Date().toLocaleString('ru-RU')
     log.info('Юнит-набор', summarizeRows(unitResults.value))
   } catch (e) {
     unitResults.value = [
-      { id: 'fetch', title: 'GET /api/tests/unit', passed: false, error: (e as Error)?.message ?? String(e) }
+      {
+        id: 'fetch',
+        title: 'GET /api/tests/unit',
+        passed: false,
+        error: (e as Error)?.message ?? String(e)
+      }
     ]
   } finally {
     unitLoading.value = false
@@ -660,9 +665,7 @@ async function runSingleUnitTest(testId: string) {
   const fallbackTitle = flattenCatalogBlocks(UNIT_TEST_BLOCKS).find((t) => t.id === testId)?.title ?? testId
   singleTestRun.value = { group: 'unit', id: testId }
   try {
-    const base = getApiBaseUrl().replace(/\/$/, '')
-    const res = await fetch(`${base}/api/tests/unit`, { credentials: 'include' })
-    const data = (await res.json().catch(() => null)) as { results?: SuiteRow[] }
+    const data = (await templateUnitTestsRoute.run(ctx)) as { results?: SuiteRow[] }
     const one = Array.isArray(data?.results) ? data.results.find((r) => r.id === testId) : undefined
     unitResults.value = upsertTestResults(unitResults.value, [
       one ?? {
@@ -685,9 +688,7 @@ async function runSingleUnitTest(testId: string) {
 async function runIntegrationSuite() {
   integrationLoading.value = true
   try {
-    const base = getApiBaseUrl().replace(/\/$/, '')
-    const res = await fetch(`${base}/api/tests/integration`, { credentials: 'include' })
-    const data = (await res.json().catch(() => null)) as { results?: SuiteRow[] }
+    const data = (await templateIntegrationTestsRoute.run(ctx)) as { results?: SuiteRow[] }
     integrationResults.value = Array.isArray(data?.results) ? data.results : []
     lastSuiteRunAt.value = new Date().toLocaleString('ru-RU')
     log.info('Интеграция (сервер)', summarizeRows(integrationResults.value))
@@ -710,9 +711,7 @@ async function runSingleIntegrationTest(testId: string) {
     flattenCatalogBlocks(INTEGRATION_SERVER_TEST_BLOCKS).find((t) => t.id === testId)?.title ?? testId
   singleTestRun.value = { group: 'integration', id: testId }
   try {
-    const base = getApiBaseUrl().replace(/\/$/, '')
-    const res = await fetch(`${base}/api/tests/integration`, { credentials: 'include' })
-    const data = (await res.json().catch(() => null)) as { results?: SuiteRow[] }
+    const data = (await templateIntegrationTestsRoute.run(ctx)) as { results?: SuiteRow[] }
     const one = Array.isArray(data?.results) ? data.results.find((r) => r.id === testId) : undefined
     integrationResults.value = upsertTestResults(integrationResults.value, [
       one ?? {
