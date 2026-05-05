@@ -31,6 +31,7 @@
 - При необходимости — уточнить Legacy `legacyAction` под живой аккаунт GetCourse и расширить `shared/legacyArgSchemas.ts`.
 
 ## Changelog
+- 05-05-2026 08:08:47 MSK: юниты gateway crypto — в `templateUnitSuite` именованный импорт из `crypto.lib` + запасной `require`, если в UGC обнуляются экспорты; в `crypto.lib` переименован внутренний `import * as crypto` → `nodeCrypto` (исключение тени с глобалом).
 - 05-05-2026 08:03:50 MSK: `api/tests/unit` и `api/tests/integration` — снята метка `@shared-route`; на `/web/tests` снова `fetch` на `../api/tests/…` от `window.location`, чтобы юниты с `lib/crypto.lib` (Node `crypto`) не попадали в shared-бандл (`encryptUtf8 is not a function`).
 - 05-05-2026 07:59:29 MSK: `lib/tests/templateUnitSuite.ts` — ключи для crypto-юнитов заданы литералами base64 вместо `Buffer.alloc` (в UGC при загрузке модуля нет Node `Buffer` → падение и повторные попытки клиента).
 - 05-05-2026 07:55:55 MSK: страница `/web/tests` — прогон юнит- и интеграционных наборов через `templateUnitTestsRoute.run(ctx)` / `templateIntegrationTestsRoute.run(ctx)` вместо `fetch` к `/api/tests/*`, чтобы кнопки не зависали во вложенном приложении.

@@ -2,7 +2,7 @@
  * AES-256-GCM и медленный хэш для Bearer-токенов (PBKDF2).
  * Ключ шифрования — gateway_master_key (32 байта, base64).
  */
-import * as crypto from 'crypto'
+import * as nodeCrypto from 'crypto'
 
 const AES_ALGO = 'aes-256-gcm'
 const IV_LENGTH = 16
@@ -25,9 +25,9 @@ function masterKeyBuffer(masterKeyBase64: string): Buffer {
 
 /** Шифрование строки UTF-8 → base64(ciphertext+tag), iv base64 */
 export function encryptUtf8(plain: string, masterKeyBase64: string): { ciphertext: string; iv: string } {
-  const iv = crypto.randomBytes(IV_LENGTH)
+  const iv = nodeCrypto.randomBytes(IV_LENGTH)
   const key = masterKeyBuffer(masterKeyBase64)
-  const cipher = crypto.createCipheriv(AES_ALGO, key, iv)
+  const cipher = nodeCrypto.createCipheriv(AES_ALGO, key, iv)
   const enc = Buffer.concat([cipher.update(plain, 'utf8'), cipher.final()])
   const tag = cipher.getAuthTag()
   const combined = Buffer.concat([enc, tag])
@@ -44,14 +44,14 @@ export function decryptUtf8(ciphertextB64: string, ivB64: string, masterKeyBase6
   const tag = combined.subarray(combined.length - AUTH_TAG_LENGTH)
   const enc = combined.subarray(0, combined.length - AUTH_TAG_LENGTH)
   const key = masterKeyBuffer(masterKeyBase64)
-  const decipher = crypto.createDecipheriv(AES_ALGO, key, iv)
+  const decipher = nodeCrypto.createDecipheriv(AES_ALGO, key, iv)
   decipher.setAuthTag(tag)
   return Buffer.concat([decipher.update(enc), decipher.final()]).toString('utf8')
 }
 
 export function hashTokenSlow(plain: string): { hash: string; salt: string } {
-  const salt = crypto.randomBytes(SALT_BYTES).toString('base64')
-  const hash = crypto
+  const salt = nodeCrypto.randomBytes(SALT_BYTES).toString('base64')
+  const hash = nodeCrypto
     .pbkdf2Sync(plain, salt, PBKDF2_ITERATIONS, PBKDF2_KEYLEN, 'sha512')
     .toString('base64')
   return { hash, salt }
@@ -59,18 +59,18 @@ export function hashTokenSlow(plain: string): { hash: string; salt: string } {
 
 export function verifyTokenSlow(plain: string, hashB64: string, saltB64: string): boolean {
   try {
-    const derived = crypto
+    const derived = nodeCrypto
       .pbkdf2Sync(plain, saltB64, PBKDF2_ITERATIONS, PBKDF2_KEYLEN, 'sha512')
       .toString('base64')
     const a = Buffer.from(derived)
     const b = Buffer.from(hashB64)
     if (a.length !== b.length) return false
-    return crypto.timingSafeEqual(a, b)
+    return nodeCrypto.timingSafeEqual(a, b)
   } catch {
     return false
   }
 }
 
 export function randomUrlSafeToken(bytes = 32): string {
-  return crypto.randomBytes(bytes).toString('base64url')
+  return nodeCrypto.randomBytes(bytes).toString('base64url')
 }

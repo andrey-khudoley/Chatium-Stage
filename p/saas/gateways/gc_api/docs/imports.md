@@ -253,7 +253,7 @@
 - `../logger.lib` → `writeServerLog` — поштучное логирование провалов тестов (severity 3)
 
 ### `./lib/tests/templateUnitSuite`
-- `../logger.lib`, `../settings.lib`, `config/*`, `shared/*`, `shared/testCatalog`, `../crypto.lib`, `../authToken.lib`, `../errorNormalizer.lib`, `../jsonSchemaValidate.lib`, `../jsonSchemaToZType.lib`, `../../shared/opRegistry` — юнит-прогон без Heap; тестовые master key в base64 — строковые литералы (без `Buffer` на верхнем уровне модуля — совместимость с UGC).
+- `../logger.lib`, `../settings.lib`, `config/*`, `shared/*`, `shared/testCatalog`, `../crypto.lib` (именованный импорт + при необходимости `require('../crypto.lib')` для interop в UGC), `../authToken.lib`, `../errorNormalizer.lib`, `../jsonSchemaValidate.lib`, `../jsonSchemaToZType.lib`, `../../shared/opRegistry` — юнит-прогон без Heap; тестовые master key в base64 — строковые литералы (без `Buffer` на верхнем уровне модуля — совместимость с UGC).
 
 ### `./lib/tests/integrationSuite`
 - `../settings.lib`, `repos/*`, `../admin/dashboard.lib`, `../logger.lib`, `api/settings/*`, `api/logger/log`, `api/admin/*`, `api/tests/list`, `api/v1/health`, `api/v1/operations`, `api/v1/invoke`, `../gatewaySchoolSecrets.lib`, `../secretSettings.lib`, `../authToken.lib`, `./templateUnitSuite` (`runTemplateUnitChecks`)

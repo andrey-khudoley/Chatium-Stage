@@ -38,7 +38,12 @@ import {
   UNIT_TEST_BLOCKS,
   flattenCatalogBlocks
 } from '../../shared/testCatalog'
-import * as cryptoLib from '../crypto.lib'
+import {
+  decryptUtf8,
+  encryptUtf8,
+  hashTokenSlow,
+  verifyTokenSlow
+} from '../crypto.lib'
 import * as authToken from '../authToken.lib'
 import * as errorNormalizer from '../errorNormalizer.lib'
 import * as jsonSchemaValidate from '../jsonSchemaValidate.lib'
@@ -46,6 +51,42 @@ import { jsonSchemaToPermissiveBody } from '../jsonSchemaToZType.lib'
 import { OP_REGISTRY } from '../../shared/opRegistry'
 
 export type TemplateUnitTestResult = { id: string; title: string; passed: boolean; error?: string }
+
+type GatewayCryptoFns = {
+  encryptUtf8: typeof encryptUtf8
+  decryptUtf8: typeof decryptUtf8
+  hashTokenSlow: typeof hashTokenSlow
+  verifyTokenSlow: typeof verifyTokenSlow
+}
+
+let gatewayCryptoResolved: GatewayCryptoFns | null | undefined
+
+/**
+ * В UGC статический import иногда даёт «пустые» имена; тогда пробуем CommonJS require (сервер).
+ */
+function gatewayCrypto(): GatewayCryptoFns | null {
+  if (gatewayCryptoResolved !== undefined) return gatewayCryptoResolved
+
+  if (typeof encryptUtf8 === 'function') {
+    gatewayCryptoResolved = { encryptUtf8, decryptUtf8, hashTokenSlow, verifyTokenSlow }
+    return gatewayCryptoResolved
+  }
+
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
+    const req = require('../crypto.lib') as GatewayCryptoFns & { default?: GatewayCryptoFns }
+    const m = typeof req.encryptUtf8 === 'function' ? req : req.default
+    if (m && typeof m.encryptUtf8 === 'function') {
+      gatewayCryptoResolved = m
+      return m
+    }
+  } catch {
+    /* нет require или другой модуль — ниже вернём null */
+  }
+
+  gatewayCryptoResolved = null
+  return null
+}
 
 /** Как `BASE_PATH` в config/routes: `/${PROJECT_ROOT}` без лишнего префикса `/p/` */
 const BASE_EXPECTED = `/${PROJECT_ROOT}`
@@ -388,27 +429,41 @@ const UNIT_MASTER_KEY_B64 =
   'CQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQk='
 
 function runGatewayPureChecks(results: TemplateUnitTestResult[]): void {
-  tryPush(results, 'gw_crypto_encrypt_roundtrip', 'crypto encryptUtf8/decryptUtf8', () => {
-    const { ciphertext, iv } = cryptoLib.encryptUtf8('hello-gw', UNIT_MASTER_KEY_B64)
-    return cryptoLib.decryptUtf8(ciphertext, iv, UNIT_MASTER_KEY_B64) === 'hello-gw'
-  })
+  const C = gatewayCrypto()
+  if (!C) {
+    const msg = 'crypto.lib: encryptUtf8 недоступен (статический import и require не дали функций)'
+    tryPush(results, 'gw_crypto_encrypt_roundtrip', 'crypto encryptUtf8/decryptUtf8', () => {
+      throw new Error(msg)
+    })
+    tryPush(results, 'gw_crypto_wrong_master_fails', 'decrypt с другим ключом падает', () => {
+      throw new Error(msg)
+    })
+    tryPush(results, 'gw_auth_hash_verify', 'hashTokenSlow / verifyTokenSlow', () => {
+      throw new Error(msg)
+    })
+  } else {
+    tryPush(results, 'gw_crypto_encrypt_roundtrip', 'crypto encryptUtf8/decryptUtf8', () => {
+      const { ciphertext, iv } = C.encryptUtf8('hello-gw', UNIT_MASTER_KEY_B64)
+      return C.decryptUtf8(ciphertext, iv, UNIT_MASTER_KEY_B64) === 'hello-gw'
+    })
 
-  tryPush(results, 'gw_crypto_wrong_master_fails', 'decrypt с другим ключом падает', () => {
-    /** 32 байта 0x03 — другой валидный ключ */
-    const other = 'AwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwM='
-    const { ciphertext, iv } = cryptoLib.encryptUtf8('x', UNIT_MASTER_KEY_B64)
-    try {
-      cryptoLib.decryptUtf8(ciphertext, iv, other)
-      return false
-    } catch {
-      return true
-    }
-  })
+    tryPush(results, 'gw_crypto_wrong_master_fails', 'decrypt с другим ключом падает', () => {
+      /** 32 байта 0x03 — другой валидный ключ */
+      const other = 'AwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwM='
+      const { ciphertext, iv } = C.encryptUtf8('x', UNIT_MASTER_KEY_B64)
+      try {
+        C.decryptUtf8(ciphertext, iv, other)
+        return false
+      } catch {
+        return true
+      }
+    })
 
-  tryPush(results, 'gw_auth_hash_verify', 'hashTokenSlow / verifyTokenSlow', () => {
-    const { hash, salt } = cryptoLib.hashTokenSlow('secret-token')
-    return cryptoLib.verifyTokenSlow('secret-token', hash, salt) && !cryptoLib.verifyTokenSlow('other', hash, salt)
-  })
+    tryPush(results, 'gw_auth_hash_verify', 'hashTokenSlow / verifyTokenSlow', () => {
+      const { hash, salt } = C.hashTokenSlow('secret-token')
+      return C.verifyTokenSlow('secret-token', hash, salt) && !C.verifyTokenSlow('other', hash, salt)
+    })
+  }
 
   tryPush(results, 'gw_parse_bearer', 'parseBearer из заголовка', () => {
     return authToken.parseBearer('Bearer abc.def') === 'abc.def' && authToken.parseBearer('wrong') === null
