@@ -31,6 +31,7 @@
 - При необходимости — уточнить Legacy `legacyAction` под живой аккаунт GetCourse и расширить `shared/legacyArgSchemas.ts`.
 
 ## Changelog
+- 05-05-2026 07:59:29 MSK: `lib/tests/templateUnitSuite.ts` — ключи для crypto-юнитов заданы литералами base64 вместо `Buffer.alloc` (в UGC при загрузке модуля нет Node `Buffer` → падение и повторные попытки клиента).
 - 05-05-2026 07:55:55 MSK: страница `/web/tests` — прогон юнит- и интеграционных наборов через `templateUnitTestsRoute.run(ctx)` / `templateIntegrationTestsRoute.run(ctx)` вместо `fetch` к `/api/tests/*`, чтобы кнопки не зависали во вложенном приложении.
 - 05-05-2026 07:26:39 MSK: полная реализация gateway (v1 API, Heap-таблицы школ/каталога/логов/OpenAPI-кеш, админские API и UI, тесты unit+integration для gc_api, ADR 0003–0006, fallback OpenAPI stub при отсутствии сети и кеша).
 - 2026-05-05: инициализация копии под `p/saas/gateways/gc_api` — `PROJECT_ROOT`, `.dir.json`, дефолты названия, отдельные Heap-ключи settings/logs, правки тестов SSR/meta, обновлена документация; инструкция после копирования шаблона удалена (`docs/run.md`).

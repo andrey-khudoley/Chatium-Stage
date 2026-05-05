@@ -383,8 +383,9 @@ function runSharedLoggerChecks(results: TemplateUnitTestResult[]): void {
   tryPush(results, 'shared_logWarn_alias', 'logWarn === logWarning', () => logWarn === logWarning)
 }
 
-/** Фиксированный валидный master key (32 байта) для юнитов без Heap */
-const UNIT_MASTER_KEY_B64 = Buffer.alloc(32, 9).toString('base64')
+/** Фиксированный валидный master key (32 байта значения 0x09), base64 — без `Buffer` (в UGC нет Node Buffer при загрузке модуля). */
+const UNIT_MASTER_KEY_B64 =
+  'CQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQk='
 
 function runGatewayPureChecks(results: TemplateUnitTestResult[]): void {
   tryPush(results, 'gw_crypto_encrypt_roundtrip', 'crypto encryptUtf8/decryptUtf8', () => {
@@ -393,7 +394,8 @@ function runGatewayPureChecks(results: TemplateUnitTestResult[]): void {
   })
 
   tryPush(results, 'gw_crypto_wrong_master_fails', 'decrypt с другим ключом падает', () => {
-    const other = Buffer.alloc(32, 3).toString('base64')
+    /** 32 байта 0x03 — другой валидный ключ */
+    const other = 'AwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwM='
     const { ciphertext, iv } = cryptoLib.encryptUtf8('x', UNIT_MASTER_KEY_B64)
     try {
       cryptoLib.decryptUtf8(ciphertext, iv, other)
