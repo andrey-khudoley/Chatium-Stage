@@ -9,6 +9,8 @@
 - Деплой: коммит и push в репозиторий — Chatium задеплоит автоматически.
 
 ## Текущее состояние
+- **Gateway GetCourse:** публичные эндпоинты `/api/v1/invoke`, `/operations`, `/health`, `/onboard`, `/rotate-token`; реестр `shared/opRegistry.ts`, каталог из OpenAPI + статические Legacy-схемы; клиенты `lib/gcClients/*`, маппинг `lib/opMapper.lib.ts`; секреты и Bearer — [ADR-0004](docs/ADR/0004-key-encryption-strategy.md), [ADR-0005](docs/ADR/0005-bearer-token-rotation.md); входящие webhook от GC не обслуживаются ([ADR-0003](docs/ADR/0003-gateway-outgoing-only.md)).
+- Админка: страницы школ, каталога, логов invoke, настроек GC (роуты в `config/routes.tsx`); дашборд дополнен метриками invoke (включая выборочные p50/p95 и частоты по `op`).
 - Главная, админка, профиль и логин существуют как минимальные страницы.
 - Реализованы: API настроек (list, get, save), Heap-таблица settings, репозиторий, lib (бизнес-логика).
 - Серверные логи: Heap-таблица logs (message, payload, severity, level, timestamp), repos/logs.repo (create, findAll, findById, findBeforeTimestamp, countBySeverityAfter, countErrorsAfter, countWarningsAfter), lib/logger.lib (проверка уровня по настройке log_level, запись в ctx.log — только сообщение, в ctx.account.log — сообщение и payload, Heap, WebSocket с хэшем для уникальности канала, вебхук log_webhook { enable, url } по умолчанию url: ""). API POST /api/logger/log (AnyUser), body: { severity, level, message, payload?, timestamp? }; GET /api/admin/logs/recent (Admin) — последние N логов; GET /api/admin/logs/before (Admin) — N логов старше указанного timestamp для пагинации. Админка получает encodedLogsSocketId, подписывается на new-log для отображения в дашборде, загружает историю логов через recent при монтировании, может догружать старые логи через before (кнопка «Загрузить ещё 50»); кнопка «Очистить логи» очищает вывод и сдвигает таймштамп на текущий — повторное нажатие «Загрузить ещё 50» восстанавливает последние логи.
@@ -26,10 +28,10 @@
 - История диалогов: `docs/LLM/`
 
 ## TODO
-- Реализовать контракт gateway (`/v1/invoke`, `/v1/operations`, при необходимости вебхуки) и вызовы GC через `@app/request`.
-- Заполнить UI при необходимости под админку gateway (ключи школ, каталог).
+- При необходимости — уточнить Legacy `legacyAction` под живой аккаунт GetCourse и расширить `shared/legacyArgSchemas.ts`.
 
 ## Changelog
+- 05-05-2026 07:26:39 MSK: полная реализация gateway (v1 API, Heap-таблицы школ/каталога/логов/OpenAPI-кеш, админские API и UI, тесты unit+integration для gc_api, ADR 0003–0006, fallback OpenAPI stub при отсутствии сети и кеша).
 - 2026-05-05: инициализация копии под `p/saas/gateways/gc_api` — `PROJECT_ROOT`, `.dir.json`, дефолты названия, отдельные Heap-ключи settings/logs, правки тестов SSR/meta, обновлена документация; инструкция после копирования шаблона удалена (`docs/run.md`).
 - 2026-04-05: разделение логирования по уровням Info/Debug — trace-логи (карта вызовов) severity 6, видны при Info; payload (сырые данные) автоматически отсекается при уровне != Debug; shouldIncludePayload в lib/logger.lib.ts, фильтрация non-string args в shared/logger.ts; добавлены недостающие trace-логи на сервере (api/logger/browser, api/tests/list) и в Vue-компонентах (onBeforeUnmount, saveProjectName, loadProjectName, setupLogsWebSocket, loadRecentLogs и др.).
 - 2026-04-05: browserRemoteLogger подключён на всех страницах (главная, админка, профиль, тесты); logLevel SSR добавлен на страницу логина; подробное логирование этапов загрузки с сырыми данными на каждой странице; AdminPage — sink комбинирует дашборд-счётчики и remote logger.

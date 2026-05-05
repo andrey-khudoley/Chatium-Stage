@@ -41,12 +41,36 @@
 - `web/` — браузерные роуты модулей (admin, profile, tests, login).
 - `pages/` — Vue‑страницы (минимальные).
 - `components/` — переиспользуемые Vue‑компоненты (Header, AppFooter, GlobalGlitch, LogoutModal).
-- `api/` — API‑эндпоинты (получение и валидация входных данных). File-based: один файл — один эндпоинт с `/`. Пример: `api/settings/list.ts`, `api/logger/log.ts`, `api/admin/logs/recent.ts`, `api/tests/list.ts`, `api/tests/unit/index.ts`, `api/tests/integration/index.ts`.
-- `tables/` — Heap‑таблицы (схемы: settings, logs).
-- `repos/` — репозитории (работа с БД: settings, logs; logs.repo включает findBeforeTimestamp для пагинации).
-- `lib/` — бизнес‑логика (settings.lib, logger.lib: проверка уровня, запись в ctx/Heap/WebSocket/вебхук).
-- `shared/` — общий код (preloader, logLevel для передачи уровня логирования на клиент, logger — уровни syslog RFC 5424, createComponentLogger, setLogSink/LogEntry для дашборда, logEmergency…logDebug в браузере с проверкой порога, browserRemoteLogger — пакетная отправка браузерных логов на сервер через POST /api/logger/browser).
+- `api/` — API‑эндпоинты (получение и валидация входных данных). File-based: один файл — один эндпоинт с `/`. В т.ч. **`api/v1/`** — публичный контракт gateway (invoke, operations, health, onboard, rotate-token); **`api/admin/`** — школы, каталог, логи invoke, GC settings; шаблонные `api/settings/*`, `api/logger/*`, `api/tests/*`.
+- `tables/` — Heap‑таблицы: settings, logs, **gatewaySchool**, **opCatalog**, **requestLog**, **openapiCache**.
+- `repos/` — репозитории (settings, logs, **gatewaySchool**, **opCatalog**, **requestLog**, **openapiCache**).
+- `lib/` — бизнес‑логика: settings, logger, **crypto/authToken/correlation**, **openapiLoader/catalogBuilder/catalogEnsure**, **gcClients (new/legacy)**, **opMapper**, **errorNormalizer**, **argsValidator**, **jsonSchemaValidate**, **requestLogger**, **gatewayOnboard/gatewayRotate**, **legacyExportLimit**, admin/dashboard и др.
+- `shared/` — общий код (`// @shared`): **opRegistry**, **legacyArgSchemas**, preloader, logLevel, logger, browserRemoteLogger, testCatalog.
 - `docs/` — документация проекта.
+
+## Поток gateway (исходящий вызов)
+
+```mermaid
+flowchart LR
+  Client["Тонкий клиент / приложение"]
+  Invoke["POST /api/v1/invoke"]
+  Auth["authenticateBearer"]
+  Val["validateInvokeArgs"]
+  Map["opMapper.executeOp"]
+  New["newApi.client"]
+  Leg["legacy.client"]
+  GCn["GC new API"]
+  GCl["GC Legacy API"]
+  Log["RequestLog Heap"]
+
+  Client -->|"Bearer + schoolId + op + args"| Invoke
+  Invoke --> Auth --> Val --> Map
+  Map -->|"circuit=new"| New --> GCn
+  Map -->|"circuit=legacy"| Leg --> GCl
+  Map --> Log
+```
+
+Входящие HTTP от GetCourse на gateway **не** приходят — см. [ADR-0003](ADR/0003-gateway-outgoing-only.md).
 
 ## Стратегия логирования
 
@@ -67,5 +91,6 @@
 - **Браузер** (`shared/logger.ts`): `emitLog` фильтрует non-string args при уровне != Debug.
 
 ## Интеграции
-- **GetCourse:** планируется исходящий HTTP через `@app/request` (контуры new + Legacy); пока в коде не подключено — только инфраструктура шаблона.
-- Внутренние SDK: стандартные модули Chatium (`@app/heap`, `@app/request`, и т.д. по мере реализации gateway).
+- **GetCourse (исходящие вызовы):** `@app/request` в `lib/gcClients/*`; контуры **new** (Bearer devKey+school key по спецификации клиента) и **Legacy** (form key/action/params); ретраи и лимиты — см. `lib/opMapper.lib.ts`, `lib/legacyExportLimit.lib.ts`.
+- **OpenAPI:** загрузка и кеш схемы — `lib/openapiLoader.lib.ts` ([ADR-0006](ADR/0006-openapi-as-ssot.md)).
+- Внутренние SDK: `@app/heap`, `@app/request`, `@app/auth`, `@app/jobs`, `@app/sync` и др.

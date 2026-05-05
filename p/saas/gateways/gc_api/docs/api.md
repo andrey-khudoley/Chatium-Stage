@@ -26,18 +26,47 @@
 
 ## Дашборд админки (api/admin/dashboard/)
 
-Счётчики ошибок и предупреждений в дашборде; таймштамп сброса хранится в настройках (`dashboard_reset_at`). Логика: lib/admin/dashboard.lib, репо — countBy по severity и timestamp (Heap where).
+Счётчики ошибок и предупреждений в дашборде; таймштамп сброса хранится в настройках (`dashboard_reset_at`). Дополнительно — метрики **invoke** по таблице `RequestLog`: всего / успех / ошибка, выборочные **p50/p95** задержки и частоты по `op` (до 500 последних записей после сброса). Логика: `lib/admin/dashboard.lib`.
 
 | Method | Path | File | Auth | Назначение |
 | --- | --- | --- | --- | --- |
-| GET | /api/admin/dashboard/counts | api/admin/dashboard/counts.ts | Admin | Получить счётчики ошибок и предупреждений после таймштампа сброса. Возвращает `{ success: true, errorCount, warnCount, resetAt }`. |
-| POST | /api/admin/dashboard/reset | api/admin/dashboard/reset.ts | Admin | Сбросить дашборд: записать текущий таймштамп в настройки. Возвращает `{ success: true, errorCount: 0, warnCount: 0, resetAt }`. |
+| GET | /api/admin/dashboard/counts | api/admin/dashboard/counts.ts | Admin | `{ success, errorCount, warnCount, resetAt, invokeTotal, invokeSuccess, invokeFailed, invokeLatencyP50Ms, invokeLatencyP95Ms, invokePerOpSample }`. |
+| POST | /api/admin/dashboard/reset | api/admin/dashboard/reset.ts | Admin | Сбросить дашборд: записать текущий таймштамп в настройки. Возвращает обнулённые счётчики и те же поля invoke. |
 
 Каждый файл — один эндпоинт с путём `/`.
 
+## Gateway публичный API (api/v1/)
+
+Контракт для тонких клиентов. Файлы: по одному на роут, путь обработчика `'/'`.
+
+| Method | Path | File | Auth | Назначение |
+| --- | --- | --- | --- | --- |
+| POST | /api/v1/invoke | api/v1/invoke/index.ts | Bearer + школа | Body: `{ schoolId, op, args }`. Цепочка: Bearer → allowlist → каталог → валидация args → GC. |
+| GET | /api/v1/operations | api/v1/operations/index.ts | нет | Каталог операций (JSON + `ETag`, `Cache-Control`). Query `schoolId?` — фильтр по allowlist школы. |
+| GET | /api/v1/health | api/v1/health/index.ts | нет | Статус, флаг наличия dev-ключа, возраст кеша OpenAPI. |
+| POST | /api/v1/onboard | api/v1/onboard/index.ts | `X-Onboarding-Token` | Регистрация школы (секрет из настроек `onboarding_token`). |
+| POST | /api/v1/rotate-token | api/v1/rotate-token/index.ts | Bearer текущего токена | Новый client token (plain один раз в ответе). |
+
+## Gateway админка (api/admin/schools|catalog|gateway_logs|gc-settings)
+
+Только **Admin**. Управление школами, пересборка каталога из OpenAPI + реестра, просмотр последних invoke-логов, сохранение GC dev key и onboarding-токена.
+
+| Method | Path | File | Назначение |
+| --- | --- | --- | --- |
+| GET | /api/admin/schools/list | schools/list.ts | Список школ (пагинация). |
+| POST | /api/admin/schools/add | schools/add.ts | Добавить/обновить школу (как onboard). |
+| POST | /api/admin/schools/update | schools/update.ts | Поля школы, allowlist, enabled. |
+| POST | /api/admin/schools/rotate | schools/rotate.ts | Ротация Bearer. |
+| POST | /api/admin/schools/delete | schools/delete.ts | Удаление школы. |
+| GET | /api/admin/catalog/list | catalog/list.ts | Строки каталога op. |
+| POST | /api/admin/catalog/refresh | catalog/refresh.ts | Пересборка каталога. |
+| GET | /api/admin/gateway_logs/recent | gateway_logs/recent.ts | Последние `RequestLog`. |
+| GET | /api/admin/gc-settings/get | gc-settings/get.ts | Чтение маскированных GC-настроек. |
+| POST | /api/admin/gc-settings/save | gc-settings/save.ts | Сохранение dev-ключа / onboarding-токена. |
+
 ## Тесты (api/tests/)
 
-Набор: юнит без Heap (`lib/tests/templateUnitSuite.ts`), интеграция с Heap и `route.run` по API (`lib/tests/integrationSuite.ts`), HTTP GET страниц на клиенте (`TestsPage.vue`, проверка статуса и фрагментов SSR). Каталог — `shared/testCatalog.ts`; страница `/web/tests` — три вкладки (Юнит / Интеграция / HTTP), метрики по активной вкладке, прогон всей вкладки и точечный запуск (play). Блоки категорий на вкладке сворачиваются по клику на заголовок (по умолчанию развёрнута первая категория, остальные свёрнуты; иконка `fa-folder` / `fa-folder-open`). Для `GET /web/tests` фрагменты SSR — `window.__BOOT__` и подстрока `gc-api-gateway-page` из `<meta name="gc-api-gateway-page" content="web-tests">` в `web/tests/index.tsx` (текст вкладок в первичном HTML может отсутствовать до гидрации).
+Набор: юнит без Heap (`lib/tests/templateUnitSuite.ts`) — в т.ч. **pure-проверки gateway** (crypto, opRegistry, errorNormalizer, JSON Schema); интеграция с Heap и `route.run` (`lib/tests/integrationSuite.ts`) — в т.ч. **`api/v1/*`**; HTTP GET страниц на клиенте (`TestsPage.vue`). Каталог — `shared/testCatalog.ts`; страница `/web/tests` — три вкладки (Юнит / Интеграция / HTTP). Для `GET /web/tests` фрагменты SSR — `window.__BOOT__` и подстрока `gc-api-gateway-page` из `<meta name="gc-api-gateway-page" content="web-tests">` в `web/tests/index.tsx`.
 
 Проверки с `requireAccountRole(Admin)` в интеграционном прогоне при отсутствии роли Admin помечаются как провал с пояснением «нужна роль Admin» (один `ctx` на запрос).
 
@@ -49,10 +78,5 @@
 | GET | /api/tests/unit | api/tests/unit/index.ts | AnyUser | Юнит: `runTemplateUnitChecks()` — routes, project, logLevel script, logger.lib, shared/logger, целостность каталога. `{ success, kind: 'unit', results[], summary, at }`. |
 | GET | /api/tests/integration | api/tests/integration/index.ts | AnyUser | Интеграция: Heap, libs, API через `route.run`, e2e-сценарии; в конце добавляется проверка `api_tests_integration_shape`. `{ success, kind: 'integration', results[], summary, at }`. |
 
-## Публичные эндпоинты
-| Method | Path | File | Auth | Назначение |
-| --- | --- | --- | --- | --- |
-| - | - | - | - | - |
-
 ## События и webhooks
-- Не используются.
+- Входящие webhook от GetCourse **не** обслуживаются этим приложением ([ADR-0003](ADR/0003-gateway-outgoing-only.md)); регистрация URI — операция `setUri` через `/api/v1/invoke`.

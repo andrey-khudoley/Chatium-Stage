@@ -248,7 +248,12 @@
 - `../logger.lib` → `writeServerLog` — поштучное логирование провалов тестов (severity 3)
 
 ### `./lib/tests/templateUnitSuite`
-- `../logger.lib`, `../settings.lib`, `config/*`, `shared/*`, `shared/testCatalog` — юнит-прогон без Heap
+- `../logger.lib`, `../settings.lib`, `config/*`, `shared/*`, `shared/testCatalog`, `../crypto.lib`, `../authToken.lib`, `../errorNormalizer.lib`, `../jsonSchemaValidate.lib`, `../jsonSchemaToZType.lib`, `../../shared/opRegistry` — юнит-прогон без Heap
 
 ### `./lib/tests/integrationSuite`
-- `../settings.lib`, `repos/*`, `../admin/dashboard.lib`, `../logger.lib`, `api/settings/*`, `api/logger/log`, `api/admin/*`, `api/tests/list`, `./templateUnitSuite` (`runTemplateUnitChecks`)
+- `../settings.lib`, `repos/*`, `../admin/dashboard.lib`, `../logger.lib`, `api/settings/*`, `api/logger/log`, `api/admin/*`, `api/tests/list`, `api/v1/health`, `api/v1/operations`, `api/v1/invoke`, `../gatewaySchoolSecrets.lib`, `../secretSettings.lib`, `../authToken.lib`, `./templateUnitSuite` (`runTemplateUnitChecks`)
+
+### Gateway API (пример зависимостей)
+- `api/v1/invoke/index.ts` → `lib/authToken.lib`, `lib/correlation.lib`, `lib/argsValidator.lib`, `lib/opMapper.lib`, `lib/catalogEnsure.lib`, `repos/opCatalog.repo`, `shared/opRegistry`, `lib/httpJson.lib`, `lib/logger.lib`
+- `api/v1/operations/index.ts` → `lib/catalogEnsure.lib`, `repos/opCatalog.repo`, `repos/gatewaySchool.repo`, `lib/logger.lib`
+- `api/v1/health/index.ts` → `lib/secretSettings.lib`, `repos/openapiCache.repo`, `lib/httpJson.lib`
