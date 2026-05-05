@@ -2,7 +2,7 @@
 
 ## Назначение
 
-Приложение **`p/saas/gw/gc`** — экземпляр **GetCourse Gateway** на каркасе `template_project` (страницы, админка, Heap settings/logs, тестовая страница). Целевая доменная логика — публичное API **`/v1/{op}`** и связка с GetCourse по нормативу из Obsidian: `second-brain/03_Projects/active/course-chatium-gc-integration-3fa7c2/docs/specifications/gateway/gateway-operation-manual.md` (полный путь см. `README.md`).
+Приложение **`p/saas/gw/gc`** — экземпляр **GetCourse Gateway** на каркасе `template_project` (страницы, админка, Heap settings/logs, тестовая страница). Целевая доменная логика — публичное API **`/v1/{op}`** и связка с GetCourse по нормативу в **`docs/SPEC/`** (SSOT: `docs/SPEC/gateway-operation-manual.md`, реестр `op`, OpenAPI и маппинг в том же каталоге).
 
 ## Ограничения платформы
 - Серверная инфраструктура предоставляется Chatium.
@@ -47,7 +47,7 @@
 - `repos/` — репозитории (работа с БД: settings, logs; logs.repo включает findBeforeTimestamp для пагинации).
 - `lib/` — бизнес‑логика (settings.lib, logger.lib: проверка уровня, запись в ctx/Heap/WebSocket/вебхук).
 - `shared/` — общий код (preloader, logLevel для передачи уровня логирования на клиент, logger — уровни syslog RFC 5424, createComponentLogger, setLogSink/LogEntry для дашборда, logEmergency…logDebug в браузере с проверкой порога, browserRemoteLogger — пакетная отправка браузерных логов на сервер через POST /api/logger/browser).
-- `docs/` — документация проекта.
+- `docs/` — документация проекта; **`docs/SPEC/`** — спецификация gateway (manual, JSON, скрипты).
 
 ## Стратегия логирования
 
