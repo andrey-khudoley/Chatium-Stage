@@ -15,7 +15,7 @@
 
 ## Библиотеки (lib/)
 - `lib/settings.lib.ts` — getSetting, getAllSettings, setSetting, getLogLevel, getLogsLimit, getLogWebhook (бизнес-логика, дефолты, валидация).
-- `lib/logger.lib.ts` — getAdminLogsSocketId, shouldLogByLevel, writeServerLog (проверка уровня, запись в ctx.log/ctx.account.log, Heap, WebSocket, вебхук).
+- `lib/logger.lib.ts` — getAdminLogsSocketId, shouldLogByLevel, writeServerLog (проверка уровня; Heap всегда получает JSON `payload` при его передаче; обогащённый payload в ctx.account.log / WebSocket / вебхук — только при уровне Debug).
 
 ## Файлы и хранилище
 - Не используется.

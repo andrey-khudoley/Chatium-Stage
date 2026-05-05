@@ -77,10 +77,8 @@ export function shouldLogByLevel(configuredLevel: settingsLib.LogLevel, messageS
 }
 
 /**
- * Определяет, включать ли payload (сырые данные) в лог.
- *
- * - Debug: payload включается ВСЕГДА (полная карта вызовов с данными).
- * - Info и ниже: payload НЕ включается — видна только карта вызовов (сообщения).
+ * Включает ли payload в «обогащённые» каналы: ctx.account.log (json), WebSocket, вебхук.
+ * На Heap это не влияет — туда JSON пишется при любом уровне, если передан entry.payload.
  */
 function shouldIncludePayload(configuredLevel: settingsLib.LogLevel): boolean {
   return configuredLevel === 'Debug'
@@ -88,10 +86,10 @@ function shouldIncludePayload(configuredLevel: settingsLib.LogLevel): boolean {
 
 /**
  * Записывает лог на сервере: проверяет уровень, при прохождении — ctx.log (только сообщение),
- * ctx.account.log (сообщение + payload), запись в Heap, WebSocket, внешний URL (fire-and-forget).
+ * ctx.account.log, запись в Heap, WebSocket, внешний URL (fire-and-forget).
  *
- * Payload (сырые данные) включается во все выходы ТОЛЬКО при уровне Debug.
- * При Info и ниже записывается только текст сообщения — карта вызовов без данных.
+ * Heap: поле payload всегда сериализуется в JSON-строку (или null), независимо от настройки уровня.
+ * ctx.account.log / сокет / вебхук: структурированный payload только при уровне Debug.
  */
 export async function writeServerLog(ctx: app.Ctx, entry: ServerLogEntry): Promise<void> {
   const configuredLevel = await settingsLib.getLogLevel(ctx)
@@ -135,12 +133,13 @@ export async function writeServerLog(ctx: app.Ctx, entry: ServerLogEntry): Promi
     )
   }
 
+  const heapPayloadRaw = entry.payload
   const payloadForHeap =
-    effectivePayload == null
+    heapPayloadRaw == null
       ? null
-      : typeof effectivePayload === 'string'
-        ? effectivePayload
-        : JSON.stringify(effectivePayload)
+      : typeof heapPayloadRaw === 'string'
+        ? heapPayloadRaw
+        : JSON.stringify(heapPayloadRaw)
 
   await logsRepo.create(ctx, {
     message: entry.message,

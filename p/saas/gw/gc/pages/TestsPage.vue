@@ -467,9 +467,9 @@ const HTTP_PATH_BY_TEST_ID: Record<string, string> = {
   'web-tests': '/web/tests'
 }
 
-/** Минимальные фрагменты SSR для проверки (п. 6 плана). */
+/** Минимальные фрагменты SSR для проверки (п. 6 плана). GET /: заголовок шапки из getHeaderText — «{имя} / Главная», не зависит от переименования в настройках. */
 const HTTP_HTML_SNIPPETS: Record<string, string[]> = {
-  index: ['window.__BOOT__', 'Шаблон проекта'],
+  index: ['window.__BOOT__', ' / Главная'],
   'web-admin': ['window.__BOOT__', 'Админка'],
   'web-profile': ['window.__BOOT__', 'Профиль'],
   'web-login': ['Вход'],
