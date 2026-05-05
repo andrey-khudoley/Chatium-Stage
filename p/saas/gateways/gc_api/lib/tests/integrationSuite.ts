@@ -14,9 +14,57 @@ import { getRecentLogsRoute } from '../../api/admin/logs/recent'
 import { getLogsBeforeRoute } from '../../api/admin/logs/before'
 import { getDashboardCountsRoute } from '../../api/admin/dashboard/counts'
 import { listTestsRoute } from '../../api/tests/list'
+import { v1HealthRoute } from '../../api/v1/health/index'
+import { v1OperationsRoute } from '../../api/v1/operations/index'
+import { v1InvokeRoute } from '../../api/v1/invoke/index'
+import * as gatewaySchoolRepo from '../../repos/gatewaySchool.repo'
+import * as gatewaySchoolSecrets from '../gatewaySchoolSecrets.lib'
+import * as secretSettings from '../secretSettings.lib'
+import * as authToken from '../authToken.lib'
 import { runTemplateUnitChecks } from './templateUnitSuite'
 
 export type TemplateIntegrationTestResult = { id: string; title: string; passed: boolean; error?: string }
+
+function routeStatus(raw: unknown): number | undefined {
+  if (raw && typeof raw === 'object' && 'statusCode' in raw) {
+    const sc = (raw as { statusCode?: unknown }).statusCode
+    return typeof sc === 'number' ? sc : undefined
+  }
+  return undefined
+}
+
+function parseRawRouteJson(raw: unknown): unknown {
+  if (!raw || typeof raw !== 'object') return undefined
+  const body = (raw as { rawHttpBody?: unknown }).rawHttpBody
+  if (typeof body !== 'string') return undefined
+  try {
+    return JSON.parse(body) as unknown
+  } catch {
+    return undefined
+  }
+}
+
+async function createEphemeralGatewaySchool(ctx: app.Ctx): Promise<{
+  schoolId: string
+  plainToken: string
+  rowId: string
+}> {
+  const master = await secretSettings.ensureGatewayMasterKey(ctx)
+  const enc = gatewaySchoolSecrets.encryptSchoolApiKey('integration-test-key', master)
+  const creds = authToken.newClientTokenCredentials()
+  const schoolId = `tpl-gw-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
+  const row = await gatewaySchoolRepo.upsertBySchoolId(ctx, {
+    schoolId,
+    schoolSlug: 'integration-test',
+    ...enc,
+    clientTokenHash: creds.hash,
+    clientTokenSalt: creds.salt,
+    isEnabled: true,
+    createdAt: Date.now(),
+    notes: 'integration ephemeral'
+  })
+  return { schoolId, plainToken: creds.plainToken, rowId: row.id }
+}
 
 function push(
   results: TemplateIntegrationTestResult[],
@@ -80,7 +128,14 @@ export async function runTemplateIntegrationChecks(ctx: app.Ctx): Promise<Templa
     return (
       typeof c.errorCount === 'number' &&
       typeof c.warnCount === 'number' &&
-      typeof c.resetAt === 'number'
+      typeof c.resetAt === 'number' &&
+      typeof c.invokeTotal === 'number' &&
+      typeof c.invokeSuccess === 'number' &&
+      typeof c.invokeFailed === 'number' &&
+      (c.invokeLatencyP50Ms === null || typeof c.invokeLatencyP50Ms === 'number') &&
+      (c.invokeLatencyP95Ms === null || typeof c.invokeLatencyP95Ms === 'number') &&
+      typeof c.invokePerOpSample === 'object' &&
+      c.invokePerOpSample !== null
     )
   })
 
@@ -397,6 +452,56 @@ export async function runTemplateIntegrationChecks(ctx: app.Ctx): Promise<Templa
     const w = await settingsLib.getLogWebhook(ctx)
     return w.url === '' || typeof w.url === 'string'
   })
+
+  await tryAsync(results, 'api_v1_health', 'GET v1/health', async () => {
+    const raw = await v1HealthRoute.run(ctx)
+    const body = parseRawRouteJson(raw) as { ok?: boolean } | undefined
+    return routeStatus(raw) === 200 && body?.ok === true
+  })
+
+  await tryAsync(results, 'api_v1_operations_catalog', 'GET v1/operations', async () => {
+    const raw = await v1OperationsRoute.run(ctx)
+    const body = parseRawRouteJson(raw) as { operations?: Array<{ op: string }> } | undefined
+    const ops = body?.operations ?? []
+    const ids = new Set(ops.map((o) => o.op))
+    return routeStatus(raw) === 200 && ids.has('addUser') && ids.has('getUserFields')
+  })
+
+  await tryAsync(results, 'api_v1_invoke_unauthorized', 'POST v1/invoke без Bearer', async () => {
+    const raw = await v1InvokeRoute.run(ctx, {
+      headers: {},
+      body: { schoolId: 'no-such-school', op: 'addUser', args: {} }
+    })
+    return routeStatus(raw) === 401
+  })
+
+  let ephemeralSchool: { schoolId: string; plainToken: string; rowId: string } | null = null
+
+  await tryAsync(results, 'api_v1_invoke_bad_args_shape', 'POST v1/invoke args не объект', async () => {
+    ephemeralSchool = await createEphemeralGatewaySchool(ctx)
+    const raw = await v1InvokeRoute.run(ctx, {
+      headers: { authorization: `Bearer ${ephemeralSchool.plainToken}` },
+      body: { schoolId: ephemeralSchool.schoolId, op: 'addUser', args: [] }
+    })
+    return routeStatus(raw) === 400
+  })
+
+  await tryAsync(results, 'api_v1_invoke_op_not_found', 'POST v1/invoke неизвестный op', async () => {
+    if (!ephemeralSchool) ephemeralSchool = await createEphemeralGatewaySchool(ctx)
+    const raw = await v1InvokeRoute.run(ctx, {
+      headers: { authorization: `Bearer ${ephemeralSchool.plainToken}` },
+      body: { schoolId: ephemeralSchool.schoolId, op: '__unknown_tpl_op__', args: {} }
+    })
+    return routeStatus(raw) === 404
+  })
+
+  if (ephemeralSchool?.rowId) {
+    try {
+      await gatewaySchoolRepo.deleteById(ctx, ephemeralSchool.rowId)
+    } catch {
+      /* очистка тестовой школы — best effort */
+    }
+  }
 
   return results
 }

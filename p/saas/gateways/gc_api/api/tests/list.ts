@@ -28,7 +28,7 @@ export const listTestsRoute = app.get('/', async (ctx) => {
       id: 'unit',
       title: 'Юнит-тесты (GET /api/tests/unit)',
       description:
-        'Синхронные проверки без Heap (lib/tests/templateUnitSuite): routes, project, logLevel script, logger.lib, shared/logger, каталог',
+        'Синхронные проверки без Heap (lib/tests/templateUnitSuite): routes, project, logLevel script, logger.lib, shared/logger, gateway pure, каталог',
       blocks: UNIT_TEST_BLOCKS,
       tests: flattenCatalogBlocks(UNIT_TEST_BLOCKS)
     },
@@ -36,7 +36,7 @@ export const listTestsRoute = app.get('/', async (ctx) => {
       id: 'integration-server',
       title: 'Интеграция сервера (GET /api/tests/integration)',
       description:
-        'Heap + libs + API route.run + e2e (lib/tests/integrationSuite); часть кейсов требует роль Admin',
+        'Heap + libs + API route.run + e2e + gateway v1 (lib/tests/integrationSuite); часть кейсов требует роль Admin',
       blocks: INTEGRATION_SERVER_TEST_BLOCKS,
       tests: flattenCatalogBlocks(INTEGRATION_SERVER_TEST_BLOCKS)
     },

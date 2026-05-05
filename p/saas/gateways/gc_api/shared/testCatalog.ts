@@ -99,6 +99,23 @@ export const UNIT_TEST_BLOCKS: TestCatalogBlock[] = [
     ]
   },
   {
+    id: 'unit-gateway',
+    title: 'GC gateway (pure)',
+    description: 'crypto, auth parseBearer, opRegistry, errorNormalizer, jsonSchema',
+    tests: [
+      { id: 'gw_crypto_encrypt_roundtrip', title: 'encryptUtf8/decryptUtf8 round-trip' },
+      { id: 'gw_crypto_wrong_master_fails', title: 'decrypt с чужим ключом — ошибка' },
+      { id: 'gw_auth_hash_verify', title: 'PBKDF2 hash / verify токена' },
+      { id: 'gw_parse_bearer', title: 'parseBearer' },
+      { id: 'gw_op_registry_len', title: 'OP_REGISTRY — уникальные op, ≥50' },
+      { id: 'gw_op_registry_circuits', title: 'контуры new/legacy и пути' },
+      { id: 'gw_error_normalizer_new_429', title: 'normalizeNewApiError 429' },
+      { id: 'gw_error_normalizer_legacy_auth', title: 'normalizeLegacyApiError auth' },
+      { id: 'gw_json_schema_required', title: 'JSON Schema required' },
+      { id: 'gw_json_schema_to_z_stub', title: 'jsonSchemaToPermissiveBody' }
+    ]
+  },
+  {
     id: 'unit-catalog',
     title: 'Каталог тестов',
     description: 'Целостность shared/testCatalog и совпадение с прогоном',
@@ -195,6 +212,18 @@ export const INTEGRATION_SERVER_TEST_BLOCKS: TestCatalogBlock[] = [
       { id: 'api_tests_list_shape', title: 'GET tests/list структура' },
       { id: 'api_tests_unit_shape', title: 'GET tests/unit shape' },
       { id: 'api_tests_integration_shape', title: 'GET tests/integration shape' }
+    ]
+  },
+  {
+    id: 'int-gateway-v1',
+    title: 'GC gateway HTTP v1',
+    description: 'health, operations, invoke (auth/валидация/op)',
+    tests: [
+      { id: 'api_v1_health', title: 'GET v1/health' },
+      { id: 'api_v1_operations_catalog', title: 'GET v1/operations (каталог)' },
+      { id: 'api_v1_invoke_unauthorized', title: 'POST v1/invoke без Bearer → 401' },
+      { id: 'api_v1_invoke_bad_args_shape', title: 'POST v1/invoke args не объект → 400' },
+      { id: 'api_v1_invoke_op_not_found', title: 'POST v1/invoke неизвестный op → 404' }
     ]
   },
   {

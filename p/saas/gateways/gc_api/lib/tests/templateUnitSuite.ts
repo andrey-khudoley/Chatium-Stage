@@ -38,6 +38,12 @@ import {
   UNIT_TEST_BLOCKS,
   flattenCatalogBlocks
 } from '../../shared/testCatalog'
+import * as cryptoLib from '../crypto.lib'
+import * as authToken from '../authToken.lib'
+import * as errorNormalizer from '../errorNormalizer.lib'
+import * as jsonSchemaValidate from '../jsonSchemaValidate.lib'
+import { jsonSchemaToPermissiveBody } from '../jsonSchemaToZType.lib'
+import { OP_REGISTRY } from '../../shared/opRegistry'
 
 export type TemplateUnitTestResult = { id: string; title: string; passed: boolean; error?: string }
 
@@ -377,6 +383,83 @@ function runSharedLoggerChecks(results: TemplateUnitTestResult[]): void {
   tryPush(results, 'shared_logWarn_alias', 'logWarn === logWarning', () => logWarn === logWarning)
 }
 
+/** Фиксированный валидный master key (32 байта) для юнитов без Heap */
+const UNIT_MASTER_KEY_B64 = Buffer.alloc(32, 9).toString('base64')
+
+function runGatewayPureChecks(results: TemplateUnitTestResult[]): void {
+  tryPush(results, 'gw_crypto_encrypt_roundtrip', 'crypto encryptUtf8/decryptUtf8', () => {
+    const { ciphertext, iv } = cryptoLib.encryptUtf8('hello-gw', UNIT_MASTER_KEY_B64)
+    return cryptoLib.decryptUtf8(ciphertext, iv, UNIT_MASTER_KEY_B64) === 'hello-gw'
+  })
+
+  tryPush(results, 'gw_crypto_wrong_master_fails', 'decrypt с другим ключом падает', () => {
+    const other = Buffer.alloc(32, 3).toString('base64')
+    const { ciphertext, iv } = cryptoLib.encryptUtf8('x', UNIT_MASTER_KEY_B64)
+    try {
+      cryptoLib.decryptUtf8(ciphertext, iv, other)
+      return false
+    } catch {
+      return true
+    }
+  })
+
+  tryPush(results, 'gw_auth_hash_verify', 'hashTokenSlow / verifyTokenSlow', () => {
+    const { hash, salt } = cryptoLib.hashTokenSlow('secret-token')
+    return cryptoLib.verifyTokenSlow('secret-token', hash, salt) && !cryptoLib.verifyTokenSlow('other', hash, salt)
+  })
+
+  tryPush(results, 'gw_parse_bearer', 'parseBearer из заголовка', () => {
+    return authToken.parseBearer('Bearer abc.def') === 'abc.def' && authToken.parseBearer('wrong') === null
+  })
+
+  tryPush(results, 'gw_op_registry_len', 'OP_REGISTRY без дубликатов и ≥50 op', () => {
+    const ids = new Set(OP_REGISTRY.map((d) => d.op))
+    return ids.size === OP_REGISTRY.length && OP_REGISTRY.length >= 50
+  })
+
+  tryPush(results, 'gw_op_registry_circuits', 'у каждой op задан контур и маршрут', () => {
+    return OP_REGISTRY.every((d) => {
+      if (d.circuit === 'new') return !!(d.gcMethod && d.gcPath)
+      if (d.circuit === 'legacy') return !!(d.legacyPath && d.legacyAction)
+      return false
+    })
+  })
+
+  tryPush(results, 'gw_error_normalizer_new_429', 'normalizeNewApiError 429 → GC_RATE_LIMIT', () => {
+    return errorNormalizer.normalizeNewApiError(429, {}).code === 'GC_RATE_LIMIT'
+  })
+
+  tryPush(results, 'gw_error_normalizer_legacy_auth', 'normalizeLegacyApiError ключ → GC_AUTH', () => {
+    const n = errorNormalizer.normalizeLegacyApiError({
+      success: 'false',
+      result: { error_message: 'Неверный ключ доступа', error: true }
+    })
+    return n.code === 'GC_AUTH'
+  })
+
+  tryPush(results, 'gw_json_schema_required', 'validateAgainstJsonSchema required', () => {
+    const res = jsonSchemaValidate.validateAgainstJsonSchema(
+      {},
+      {
+        type: 'object',
+        properties: { a: { type: 'string' } },
+        required: ['a'],
+        additionalProperties: false
+      }
+    )
+    return res.ok === false
+  })
+
+  tryPush(results, 'gw_json_schema_to_z_stub', 'jsonSchemaToPermissiveBody → s.any', () => {
+    try {
+      jsonSchemaToPermissiveBody()
+      return true
+    } catch {
+      return false
+    }
+  })
+}
+
 function runCatalogIntegrityChecks(results: TemplateUnitTestResult[]): void {
   tryPush(results, 'catalog_block_ids_unique', 'id блоков уникальны', () => {
     const ids = [...UNIT_TEST_BLOCKS, ...INTEGRATION_SERVER_TEST_BLOCKS, INTEGRATION_HTTP_TEST_BLOCK].map((b) => b.id)
@@ -419,6 +502,7 @@ export function runTemplateUnitChecks(): TemplateUnitTestResult[] {
   runLogLevelScriptChecks(results)
   runLoggerLibPureChecks(results)
   runSharedLoggerChecks(results)
+  runGatewayPureChecks(results)
   runCatalogIntegrityChecks(results)
 
   const idsBeforeSyncCheck = results.map((r) => r.id)
