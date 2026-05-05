@@ -1,4 +1,3 @@
-// @shared-route
 import { requireAnyUser } from '@app/auth'
 import * as loggerLib from '../../../lib/logger.lib'
 import { runTemplateIntegrationChecks } from '../../../lib/tests/integrationSuite'

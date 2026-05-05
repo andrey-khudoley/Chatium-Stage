@@ -9,8 +9,6 @@ import { createBrowserRemoteLogger } from '../shared/browserRemoteLogger'
 import { getRecentLogsRoute } from '../api/admin/logs/recent'
 import { getLogsBeforeRoute } from '../api/admin/logs/before'
 import { postBrowserLogsRoute } from '../api/logger/browser'
-import { templateUnitTestsRoute } from '../api/tests/unit'
-import { templateIntegrationTestsRoute } from '../api/tests/integration'
 import {
   UNIT_TEST_BLOCKS,
   INTEGRATION_SERVER_TEST_BLOCKS,
@@ -454,6 +452,11 @@ function getApiBaseUrl(): string {
   return `${origin}${basePath.startsWith('/') ? basePath : '/' + basePath}`
 }
 
+/** GET /api/tests/unit|integration — только серверный бандл (без @shared-route), иначе crypto.lib из templateUnitSuite ломается в shared. URL от текущей страницы `/web/tests`. */
+function resolveTestsApiUrl(segment: 'unit' | 'integration'): string {
+  return new URL(`../api/tests/${segment}`, window.location.href).href
+}
+
 const HTTP_PATH_BY_TEST_ID: Record<string, string> = {
   index: '/',
   'web-admin': '/web/admin',
@@ -643,7 +646,8 @@ function toggleSuiteSection(tab: SuiteSectionTab, blockId: string, blockIndex: n
 async function runUnitSuite() {
   unitLoading.value = true
   try {
-    const data = (await templateUnitTestsRoute.run(ctx)) as { results?: SuiteRow[] }
+    const res = await fetch(resolveTestsApiUrl('unit'), { credentials: 'include' })
+    const data = (await res.json().catch(() => null)) as { results?: SuiteRow[] }
     unitResults.value = Array.isArray(data?.results) ? data.results : []
     lastSuiteRunAt.value = new Date().toLocaleString('ru-RU')
     log.info('Юнит-набор', summarizeRows(unitResults.value))
@@ -665,7 +669,8 @@ async function runSingleUnitTest(testId: string) {
   const fallbackTitle = flattenCatalogBlocks(UNIT_TEST_BLOCKS).find((t) => t.id === testId)?.title ?? testId
   singleTestRun.value = { group: 'unit', id: testId }
   try {
-    const data = (await templateUnitTestsRoute.run(ctx)) as { results?: SuiteRow[] }
+    const res = await fetch(resolveTestsApiUrl('unit'), { credentials: 'include' })
+    const data = (await res.json().catch(() => null)) as { results?: SuiteRow[] }
     const one = Array.isArray(data?.results) ? data.results.find((r) => r.id === testId) : undefined
     unitResults.value = upsertTestResults(unitResults.value, [
       one ?? {
@@ -688,7 +693,8 @@ async function runSingleUnitTest(testId: string) {
 async function runIntegrationSuite() {
   integrationLoading.value = true
   try {
-    const data = (await templateIntegrationTestsRoute.run(ctx)) as { results?: SuiteRow[] }
+    const res = await fetch(resolveTestsApiUrl('integration'), { credentials: 'include' })
+    const data = (await res.json().catch(() => null)) as { results?: SuiteRow[] }
     integrationResults.value = Array.isArray(data?.results) ? data.results : []
     lastSuiteRunAt.value = new Date().toLocaleString('ru-RU')
     log.info('Интеграция (сервер)', summarizeRows(integrationResults.value))
@@ -711,7 +717,8 @@ async function runSingleIntegrationTest(testId: string) {
     flattenCatalogBlocks(INTEGRATION_SERVER_TEST_BLOCKS).find((t) => t.id === testId)?.title ?? testId
   singleTestRun.value = { group: 'integration', id: testId }
   try {
-    const data = (await templateIntegrationTestsRoute.run(ctx)) as { results?: SuiteRow[] }
+    const res = await fetch(resolveTestsApiUrl('integration'), { credentials: 'include' })
+    const data = (await res.json().catch(() => null)) as { results?: SuiteRow[] }
     const one = Array.isArray(data?.results) ? data.results.find((r) => r.id === testId) : undefined
     integrationResults.value = upsertTestResults(integrationResults.value, [
       one ?? {

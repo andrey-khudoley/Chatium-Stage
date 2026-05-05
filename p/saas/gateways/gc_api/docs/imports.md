@@ -107,8 +107,7 @@
 - `../api/admin/logs/recent` → `getRecentLogsRoute`
 - `../api/admin/logs/before` → `getLogsBeforeRoute`
 - `../api/logger/browser` → `postBrowserLogsRoute`
-- `../api/tests/unit` → `templateUnitTestsRoute` (прогон юнит-набора через `route.run(ctx)`, не `fetch`)
-- `../api/tests/integration` → `templateIntegrationTestsRoute` (интеграция через `route.run(ctx)`)
+- импортов роутов `api/tests/unit` / `integration` нет — прогон через `fetch(resolveTestsApiUrl('unit'|'integration'))`, база URL от `window.location` (страница `/web/tests`)
 
 ### `./pages/LoginPage.vue`
 - `vue` → `computed`, `onMounted`
@@ -237,12 +236,14 @@
 - `../../shared/testCatalog` → `UNIT_TEST_BLOCKS`, `INTEGRATION_SERVER_TEST_BLOCKS`, `INTEGRATION_HTTP_TEST_BLOCK`, `flattenCatalogBlocks`
 
 ### `./api/tests/unit/index.ts`
+- **без** `// @shared-route` — иначе `templateUnitSuite` → `crypto.lib` попадает в shared-бандл и `encryptUtf8` недоступна в UGC
 - `@app/auth` → `requireAnyUser`
 - `../../../lib/logger.lib` → `*`
 - `../../../lib/tests/templateUnitSuite` → `runTemplateUnitChecks`, `TemplateUnitTestResult`
 - `../../../lib/tests/logTestRunFailures` → `logTestRunFailures`
 
 ### `./api/tests/integration/index.ts`
+- **без** `// @shared-route` — тот же контур, что unit (тяжёлый серверный стек)
 - `@app/auth` → `requireAnyUser`
 - `../../../lib/logger.lib` → `*`
 - `../../../lib/tests/integrationSuite` → `runTemplateIntegrationChecks`
