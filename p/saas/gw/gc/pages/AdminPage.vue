@@ -6,6 +6,8 @@ import GlobalGlitch from '../components/GlobalGlitch.vue'
 import AppFooter from '../components/AppFooter.vue'
 import { getSettingRoute } from '../api/settings/get'
 import { saveSettingRoute } from '../api/settings/save'
+import { GC_DEVELOPER_API_KEY, GC_TEST_SCHOOL_API_KEY, GC_TEST_SCHOOL_HOST } from '../shared/gatewaySettingKeys'
+import { getGcSchoolHostFieldError } from '../shared/gcSchoolHostValidation'
 import { createComponentLogger, setLogSink, type LogEntry } from '../shared/logger'
 import { createBrowserRemoteLogger } from '../shared/browserRemoteLogger'
 import { postBrowserLogsRoute } from '../api/logger/browser'
@@ -50,6 +52,16 @@ const logLevel = ref<'debug' | 'info' | 'warn' | 'error' | 'disable'>('info')
 const logLevelError = ref('')
 const logLevelSaveStatus = ref<'saved' | 'error' | null>(null)
 const logLevelStatusTimeout = { id: null as ReturnType<typeof setTimeout> | null }
+
+const gcDevKey = ref('')
+const gcSchoolApiKey = ref('')
+const gcSchoolHost = ref('')
+const showGcDevKey = ref(false)
+const showGcSchoolKey = ref(false)
+const gcGatewayErrors = ref({ dev: '', school: '', host: '' })
+const gcGatewaySaveLoading = ref(false)
+const gcGatewaySaveStatus = ref<'saved' | 'error' | null>(null)
+const gcGatewayStatusTimeout = { id: null as ReturnType<typeof setTimeout> | null }
 
 const SAVE_STATUS_DURATION_MS = 1500
 const INPUT_DEBOUNCE_MS = 300
@@ -228,6 +240,84 @@ const displayedLogs = computed<LogDisplayItem[]>(() => {
   return items
 })
 
+async function readSettingString(key: string): Promise<string> {
+  try {
+    const res = await getSettingRoute.query({ key }).run(ctx)
+    const data = res as { success?: boolean; value?: unknown }
+    if (data?.success && typeof data.value === 'string') {
+      return data.value
+    }
+  } catch (e) {
+    log.warning('Не удалось прочитать настройку', { key, e })
+  }
+  return ''
+}
+
+const loadGcGatewaySettings = async () => {
+  log.info('loadGcGatewaySettings entry')
+  gcDevKey.value = await readSettingString(GC_DEVELOPER_API_KEY)
+  gcSchoolApiKey.value = await readSettingString(GC_TEST_SCHOOL_API_KEY)
+  gcSchoolHost.value = await readSettingString(GC_TEST_SCHOOL_HOST)
+  gcGatewayErrors.value = { dev: '', school: '', host: '' }
+  log.info('loadGcGatewaySettings exit')
+}
+
+const saveGcGatewaySettings = async () => {
+  gcGatewayErrors.value = { dev: '', school: '', host: '' }
+  gcGatewaySaveStatus.value = null
+  const dev = gcDevKey.value.trim()
+  const school = gcSchoolApiKey.value.trim()
+  const hostRaw = gcSchoolHost.value
+  if (!dev) {
+    gcGatewayErrors.value.dev =
+      'Ключ разработчика GetCourse: укажите непустое значение после обрезки пробелов (разд. 5.4 manual).'
+    showSaveStatus(gcGatewaySaveStatus, gcGatewayStatusTimeout, 'error')
+    return
+  }
+  if (!school) {
+    gcGatewayErrors.value.school =
+      'Тестовый ключ школы: укажите непустое значение после обрезки пробелов (разд. 5.4–5.5 manual).'
+    showSaveStatus(gcGatewaySaveStatus, gcGatewayStatusTimeout, 'error')
+    return
+  }
+  const hostErr = getGcSchoolHostFieldError(hostRaw)
+  if (hostErr) {
+    gcGatewayErrors.value.host = hostErr
+    showSaveStatus(gcGatewaySaveStatus, gcGatewayStatusTimeout, 'error')
+    return
+  }
+  const host = hostRaw.trim()
+
+  gcGatewaySaveLoading.value = true
+  try {
+    const pairs: Array<{ key: string; value: string }> = [
+      { key: GC_DEVELOPER_API_KEY, value: dev },
+      { key: GC_TEST_SCHOOL_API_KEY, value: school },
+      { key: GC_TEST_SCHOOL_HOST, value: host }
+    ]
+    for (const { key, value } of pairs) {
+      const res = await saveSettingRoute.run(ctx, { key, value })
+      const data = res as { success?: boolean; error?: string }
+      if (data?.success === false) {
+        const msg = data.error || 'Ошибка сохранения'
+        if (key === GC_DEVELOPER_API_KEY) gcGatewayErrors.value.dev = msg
+        else if (key === GC_TEST_SCHOOL_API_KEY) gcGatewayErrors.value.school = msg
+        else gcGatewayErrors.value.host = msg
+        showSaveStatus(gcGatewaySaveStatus, gcGatewayStatusTimeout, 'error')
+        return
+      }
+    }
+    showSaveStatus(gcGatewaySaveStatus, gcGatewayStatusTimeout, 'saved')
+    await loadGcGatewaySettings()
+  } catch (e) {
+    const msg = (e as Error)?.message || 'Ошибка сохранения'
+    gcGatewayErrors.value.dev = msg
+    showSaveStatus(gcGatewaySaveStatus, gcGatewayStatusTimeout, 'error')
+  } finally {
+    gcGatewaySaveLoading.value = false
+  }
+}
+
 const loadProjectName = async () => {
   log.info('loadProjectName entry')
   try {
@@ -317,6 +407,7 @@ onMounted(() => {
   log.debug('Browser remote logger initialized')
 
   loadProjectName()
+  void loadGcGatewaySettings()
   loadDashboardCounts()
   if (window.hideAppLoader) {
     window.hideAppLoader()
@@ -371,6 +462,10 @@ onBeforeUnmount(() => {
   if (logLevelStatusTimeout.id) {
     clearTimeout(logLevelStatusTimeout.id)
     logLevelStatusTimeout.id = null
+  }
+  if (gcGatewayStatusTimeout.id) {
+    clearTimeout(gcGatewayStatusTimeout.id)
+    gcGatewayStatusTimeout.id = null
   }
   if (projectNameDebounceTimer.id) {
     clearTimeout(projectNameDebounceTimer.id)
@@ -784,6 +879,99 @@ function onVisibilityForLogsSocket() {
                 <p v-if="logLevelError" class="ap-err"><i class="fas fa-exclamation-circle"></i> {{ logLevelError }}</p>
               </section>
             </div>
+
+            <section class="ap-card ap-card--stagger-4 ap-card--gc">
+              <div class="ap-card-hd">
+                <h2><i class="fas fa-key ap-icon-hd"></i> GetCourse — тестовая школа</h2>
+                <span
+                  v-if="gcGatewaySaveStatus"
+                  class="ap-badge"
+                  :class="gcGatewaySaveStatus === 'saved' ? 'ap-badge--ok' : 'ap-badge--err'"
+                >
+                  <i :class="gcGatewaySaveStatus === 'saved' ? 'fas fa-check' : 'fas fa-times'"></i>
+                  {{ gcGatewaySaveStatus === 'saved' ? 'OK' : 'ERR' }}
+                </span>
+              </div>
+              <p class="ap-gc-lead">
+                Значения пишутся в Heap через <code class="ap-gc-code">api/settings/save</code>. Пустые и пробельные значения ключей отклоняются; хост — без схемы и без пробелов, как для заголовка <code class="ap-gc-code">X-Gc-School-Host</code> (разд. 5.4 и 2.5 в gateway-operation-manual).
+              </p>
+
+              <div class="ap-gc-field">
+                <label class="ap-gc-label" for="gc-dev-key-input">Ключ разработчика GetCourse</label>
+                <div class="ap-gc-input-row">
+                  <input
+                    id="gc-dev-key-input"
+                    v-model="gcDevKey"
+                    :type="showGcDevKey ? 'text' : 'password'"
+                    class="ap-input ap-input--grow"
+                    autocomplete="off"
+                    spellcheck="false"
+                    placeholder="devKey из GetCourse"
+                  />
+                  <button
+                    type="button"
+                    class="ap-btn ap-btn--sm ap-gc-toggle"
+                    :aria-pressed="showGcDevKey"
+                    :title="showGcDevKey ? 'Скрыть' : 'Показать'"
+                    @click="showGcDevKey = !showGcDevKey"
+                  >
+                    <i :class="showGcDevKey ? 'fas fa-eye-slash' : 'fas fa-eye'" aria-hidden="true"></i>
+                  </button>
+                </div>
+                <p v-if="gcGatewayErrors.dev" class="ap-err"><i class="fas fa-exclamation-circle"></i> {{ gcGatewayErrors.dev }}</p>
+              </div>
+
+              <div class="ap-gc-field">
+                <label class="ap-gc-label" for="gc-school-key-input">Тестовый ключ школы</label>
+                <div class="ap-gc-input-row">
+                  <input
+                    id="gc-school-key-input"
+                    v-model="gcSchoolApiKey"
+                    :type="showGcSchoolKey ? 'text' : 'password'"
+                    class="ap-input ap-input--grow"
+                    autocomplete="off"
+                    spellcheck="false"
+                    placeholder="API-ключ тестовой школы"
+                  />
+                  <button
+                    type="button"
+                    class="ap-btn ap-btn--sm ap-gc-toggle"
+                    :aria-pressed="showGcSchoolKey"
+                    :title="showGcSchoolKey ? 'Скрыть' : 'Показать'"
+                    @click="showGcSchoolKey = !showGcSchoolKey"
+                  >
+                    <i :class="showGcSchoolKey ? 'fas fa-eye-slash' : 'fas fa-eye'" aria-hidden="true"></i>
+                  </button>
+                </div>
+                <p v-if="gcGatewayErrors.school" class="ap-err"><i class="fas fa-exclamation-circle"></i> {{ gcGatewayErrors.school }}</p>
+              </div>
+
+              <div class="ap-gc-field">
+                <label class="ap-gc-label" for="gc-host-input">Хост тестовой школы</label>
+                <input
+                  id="gc-host-input"
+                  v-model="gcSchoolHost"
+                  type="text"
+                  class="ap-input"
+                  autocomplete="off"
+                  spellcheck="false"
+                  placeholder="schoolname.getcourse.ru (без https://)"
+                />
+                <p v-if="gcGatewayErrors.host" class="ap-err"><i class="fas fa-exclamation-circle"></i> {{ gcGatewayErrors.host }}</p>
+              </div>
+
+              <div class="ap-gc-actions">
+                <button
+                  type="button"
+                  class="ap-btn"
+                  :disabled="gcGatewaySaveLoading"
+                  @click="saveGcGatewaySettings"
+                >
+                  <i :class="gcGatewaySaveLoading ? 'fas fa-circle-notch fa-spin' : 'fas fa-save'"></i>
+                  Сохранить настройки GetCourse
+                </button>
+              </div>
+            </section>
           </div>
 
           <aside class="ap-side">
@@ -1054,7 +1242,32 @@ function onVisibilityForLogsSocket() {
 .ap-card--stagger-1 { animation: ap-card-enter 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.1s both; }
 .ap-card--stagger-2 { animation: ap-card-enter 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.2s both; }
 .ap-card--stagger-3 { animation: ap-card-enter 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.3s both; }
+.ap-card--stagger-4 { animation: ap-card-enter 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.4s both; }
 @keyframes ap-card-enter { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+.ap-gc-lead {
+  margin: 0 0 0.75rem;
+  font-size: 0.72rem;
+  color: var(--c-tx3);
+  line-height: 1.45;
+  position: relative;
+  z-index: 1;
+}
+.ap-gc-code { font-size: 0.68rem; color: var(--c-tx2); letter-spacing: 0.02em; }
+.ap-gc-field { margin-bottom: 0.75rem; position: relative; z-index: 1; }
+.ap-gc-label {
+  display: block;
+  margin-bottom: 0.35rem;
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--c-tx2);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.ap-gc-input-row { display: flex; gap: 0.4rem; align-items: stretch; }
+.ap-input--grow { flex: 1 1 auto; min-width: 0; }
+.ap-gc-toggle { flex-shrink: 0; align-self: stretch; }
+.ap-gc-actions { margin-top: 0.5rem; position: relative; z-index: 1; }
 .ap-card-hd {
   display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;
   margin-bottom: 0.7rem; position: relative; z-index: 1;

@@ -1,8 +1,25 @@
 import * as repo from '../repos/settings.repo'
 import * as loggerLib from './logger.lib'
-import { GC_DEVELOPER_API_KEY } from '../shared/gatewaySettingKeys'
+import {
+  GC_DEVELOPER_API_KEY,
+  GC_TEST_SCHOOL_API_KEY,
+  GC_TEST_SCHOOL_HOST
+} from '../shared/gatewaySettingKeys'
+import { validateGcSchoolHostTrimmed } from '../shared/gcSchoolHostValidation'
 
 const LOG_MODULE = 'lib/settings.lib'
+
+function isSecretHeapSettingKey(key: string): boolean {
+  return key === GC_DEVELOPER_API_KEY || key === GC_TEST_SCHOOL_API_KEY
+}
+
+/** В логах не передаём значения секретов Heap (manual §5.7). */
+function loggableSettingPayload(key: string, value: unknown): { key: string; value: unknown } {
+  if (isSecretHeapSettingKey(key)) {
+    return { key, value: '[redacted]' }
+  }
+  return { key, value }
+}
 
 /** Ключи настроек */
 export const SETTING_KEYS = {
@@ -12,7 +29,9 @@ export const SETTING_KEYS = {
   LOGS_LIMIT: 'logs_limit',
   LOG_WEBHOOK: 'log_webhook',
   DASHBOARD_RESET_AT: 'dashboard_reset_at',
-  GC_DEVELOPER_API_KEY
+  GC_DEVELOPER_API_KEY,
+  GC_TEST_SCHOOL_API_KEY,
+  GC_TEST_SCHOOL_HOST
 } as const
 
 /** Настройка вебхука логов: enable — активна ли отправка, url — куда отправлять. */
@@ -26,7 +45,9 @@ export const DEFAULTS = {
   [SETTING_KEYS.LOGS_LIMIT]: '100',
   [SETTING_KEYS.LOG_WEBHOOK]: { enable: false, url: '' } as LogWebhookSetting,
   [SETTING_KEYS.DASHBOARD_RESET_AT]: null as number | null,
-  [SETTING_KEYS.GC_DEVELOPER_API_KEY]: null as string | null
+  [SETTING_KEYS.GC_DEVELOPER_API_KEY]: null as string | null,
+  [SETTING_KEYS.GC_TEST_SCHOOL_API_KEY]: null as string | null,
+  [SETTING_KEYS.GC_TEST_SCHOOL_HOST]: null as string | null
 } as const
 
 /** Допустимые уровни логирования */
@@ -166,7 +187,7 @@ export async function setSetting(ctx: app.Ctx, key: string, value: unknown): Pro
   await loggerLib.writeServerLog(ctx, {
     severity: 6,
     message: `[${LOG_MODULE}] setSetting entry`,
-    payload: { key, value }
+    payload: loggableSettingPayload(key, value)
   })
   let normalized: unknown = value
 
@@ -178,7 +199,13 @@ export async function setSetting(ctx: app.Ctx, key: string, value: unknown): Pro
       payload: { str, isLogLevel: isLogLevel(str) }
     })
     if (!isLogLevel(str)) {
-      throw new Error(`Недопустимый уровень логирования: ${str}. Допустимо: ${LOG_LEVELS.join(', ')}`)
+      await loggerLib.throwLoggedServerError(
+        ctx,
+        `Недопустимый уровень логирования: ${str}. Допустимо: ${LOG_LEVELS.join(', ')}`,
+        {
+          payload: { key: SETTING_KEYS.LOG_LEVEL, str }
+        }
+      )
     }
     normalized = str
   } else if (key === SETTING_KEYS.LOGS_LIMIT) {
@@ -189,7 +216,11 @@ export async function setSetting(ctx: app.Ctx, key: string, value: unknown): Pro
       payload: { n, value }
     })
     if (n < 1 || n > 10000) {
-      throw new Error(`Лимит логов должен быть от 1 до 10000, получено: ${value}`)
+      await loggerLib.throwLoggedServerError(
+        ctx,
+        `Лимит логов должен быть от 1 до 10000, получено: ${value}`,
+        { payload: { key: SETTING_KEYS.LOGS_LIMIT, n, value } }
+      )
     }
     normalized = String(n)
   } else if (key === SETTING_KEYS.PROJECT_NAME || key === SETTING_KEYS.PROJECT_TITLE) {
@@ -201,7 +232,11 @@ export async function setSetting(ctx: app.Ctx, key: string, value: unknown): Pro
     })
   } else if (key === SETTING_KEYS.LOG_WEBHOOK) {
     if (typeof value !== 'object' || value === null) {
-      throw new Error('log_webhook должен быть объектом { enable: boolean, url: string }')
+      await loggerLib.throwLoggedServerError(
+        ctx,
+        'log_webhook должен быть объектом { enable: boolean, url: string }',
+        { payload: { key: SETTING_KEYS.LOG_WEBHOOK } }
+      )
     }
     const o = value as Record<string, unknown>
     normalized = {
@@ -216,12 +251,45 @@ export async function setSetting(ctx: app.Ctx, key: string, value: unknown): Pro
   } else if (key === SETTING_KEYS.DASHBOARD_RESET_AT) {
     const n = typeof value === 'number' ? value : Number(value)
     if (!Number.isFinite(n) || n < 0) {
-      throw new Error('dashboard_reset_at должен быть неотрицательным числом (Unix ms)')
+      await loggerLib.throwLoggedServerError(
+        ctx,
+        'dashboard_reset_at должен быть неотрицательным числом (Unix ms)',
+        { payload: { key: SETTING_KEYS.DASHBOARD_RESET_AT, value } }
+      )
     }
     normalized = Math.floor(n)
     await loggerLib.writeServerLog(ctx, {
       severity: 6,
       message: `[${LOG_MODULE}] setSetting DASHBOARD_RESET_AT branch`,
+      payload: { normalized }
+    })
+  } else if (key === SETTING_KEYS.GC_DEVELOPER_API_KEY || key === SETTING_KEYS.GC_TEST_SCHOOL_API_KEY) {
+    const s = typeof value === 'string' ? value.trim() : String(value ?? '').trim()
+    if (!s) {
+      const msg =
+        key === SETTING_KEYS.GC_DEVELOPER_API_KEY
+          ? 'Ключ разработчика GetCourse: нужна непустая строка после обрезки пробелов (разд. 5.4 manual).'
+          : 'Тестовый ключ школы: нужна непустая строка после обрезки пробелов (разд. 5.4–5.5 manual).'
+      await loggerLib.throwLoggedServerError(ctx, msg, { payload: { key } })
+    }
+    normalized = s
+    await loggerLib.writeServerLog(ctx, {
+      severity: 6,
+      message: `[${LOG_MODULE}] setSetting GC_* secret string`,
+      payload: { key, normalized: '[redacted]' }
+    })
+  } else if (key === SETTING_KEYS.GC_TEST_SCHOOL_HOST) {
+    const s = typeof value === 'string' ? value.trim() : String(value ?? '').trim()
+    const hostErr = validateGcSchoolHostTrimmed(s)
+    if (hostErr) {
+      await loggerLib.throwLoggedServerError(ctx, hostErr, {
+        payload: { key: SETTING_KEYS.GC_TEST_SCHOOL_HOST, source: 'gcSchoolHostValidation' }
+      })
+    }
+    normalized = s
+    await loggerLib.writeServerLog(ctx, {
+      severity: 6,
+      message: `[${LOG_MODULE}] setSetting GC_TEST_SCHOOL_HOST`,
       payload: { normalized }
     })
   }
@@ -230,6 +298,6 @@ export async function setSetting(ctx: app.Ctx, key: string, value: unknown): Pro
   await loggerLib.writeServerLog(ctx, {
     severity: 6,
     message: `[${LOG_MODULE}] setSetting exit`,
-    payload: { key, normalized }
+    payload: loggableSettingPayload(key, normalized)
   })
 }

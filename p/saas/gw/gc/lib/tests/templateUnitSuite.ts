@@ -38,6 +38,7 @@ import {
   UNIT_TEST_BLOCKS,
   flattenCatalogBlocks
 } from '../../shared/testCatalog'
+import { normalizeGcTestSchoolHost, validateGcSchoolHostTrimmed } from '../../shared/gcSchoolHostValidation'
 
 export type TemplateUnitTestResult = { id: string; title: string; passed: boolean; error?: string }
 
@@ -377,6 +378,43 @@ function runSharedLoggerChecks(results: TemplateUnitTestResult[]): void {
   tryPush(results, 'shared_logWarn_alias', 'logWarn === logWarning', () => logWarn === logWarning)
 }
 
+function runGcSchoolHostValidationChecks(results: TemplateUnitTestResult[]): void {
+  tryPush(results, 'gcHost_normalize_trim', 'normalizeGcTestSchoolHost trim', () => {
+    return normalizeGcTestSchoolHost('  my.getcourse.ru  ') === 'my.getcourse.ru'
+  })
+  tryPush(results, 'gcHost_reject_empty', 'пустая строка', () => {
+    try {
+      normalizeGcTestSchoolHost('   ')
+      return false
+    } catch {
+      return true
+    }
+  })
+  tryPush(results, 'gcHost_reject_https', 'без https://', () => {
+    try {
+      normalizeGcTestSchoolHost('https://school.getcourse.ru')
+      return false
+    } catch {
+      return true
+    }
+  })
+  tryPush(results, 'gcHost_reject_space', 'пробел внутри', () => {
+    try {
+      normalizeGcTestSchoolHost('school .getcourse.ru')
+      return false
+    } catch {
+      return true
+    }
+  })
+  tryPush(results, 'gcHost_reject_colon_port', 'имя хоста без :порт', () => {
+    return (
+      validateGcSchoolHostTrimmed('school.example:443') !== null &&
+      validateGcSchoolHostTrimmed('school.example:70000') !== null &&
+      validateGcSchoolHostTrimmed('school.getcourse.ru') === null
+    )
+  })
+}
+
 function runCatalogIntegrityChecks(results: TemplateUnitTestResult[]): void {
   tryPush(results, 'catalog_block_ids_unique', 'id блоков уникальны', () => {
     const ids = [...UNIT_TEST_BLOCKS, ...INTEGRATION_SERVER_TEST_BLOCKS, INTEGRATION_HTTP_TEST_BLOCK].map((b) => b.id)
@@ -419,6 +457,7 @@ export function runTemplateUnitChecks(): TemplateUnitTestResult[] {
   runLogLevelScriptChecks(results)
   runLoggerLibPureChecks(results)
   runSharedLoggerChecks(results)
+  runGcSchoolHostValidationChecks(results)
   runCatalogIntegrityChecks(results)
 
   const idsBeforeSyncCheck = results.map((r) => r.id)

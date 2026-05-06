@@ -158,6 +158,42 @@ export async function runTemplateIntegrationChecks(ctx: app.Ctx): Promise<Templa
     return v !== null && typeof v === 'object'
   })
 
+  await tryAsync(results, 'settings_setSetting_gc_dev_rejects_whitespace', 'gc_developer_api_key пробелы', async () => {
+    let threw = false
+    try {
+      await settingsLib.setSetting(ctx, settingsLib.SETTING_KEYS.GC_DEVELOPER_API_KEY, ' \t ')
+    } catch {
+      threw = true
+    }
+    return threw
+  })
+
+  await tryAsync(results, 'settings_setSetting_gc_host_trim', 'gc_test_school_host trim', async () => {
+    const key = settingsLib.SETTING_KEYS.GC_TEST_SCHOOL_HOST
+    const prev = await settingsLib.getSetting(ctx, key)
+    try {
+      await settingsLib.setSetting(ctx, key, '  integ-test-host.getcourse.ru  ')
+      const v = await settingsLib.getSetting(ctx, key)
+      return v === 'integ-test-host.getcourse.ru'
+    } finally {
+      if (typeof prev === 'string' && prev.trim()) {
+        await settingsLib.setSetting(ctx, key, prev)
+      } else {
+        await settingsRepo.deleteByKey(ctx, key)
+      }
+    }
+  })
+
+  await tryAsync(results, 'settings_setSetting_gc_host_rejects_https', 'gc_test_school_host без https', async () => {
+    let threw = false
+    try {
+      await settingsLib.setSetting(ctx, settingsLib.SETTING_KEYS.GC_TEST_SCHOOL_HOST, 'https://x.getcourse.ru')
+    } catch {
+      threw = true
+    }
+    return threw
+  })
+
   await tryAsync(results, 'regression_getLogLevel_no_recursion', 'getLogLevel x50', async () => {
     for (let i = 0; i < 50; i++) {
       await settingsLib.getLogLevel(ctx)

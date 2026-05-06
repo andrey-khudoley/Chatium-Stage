@@ -5,6 +5,16 @@ import * as loggerLib from '../../lib/logger.lib'
 
 const LOG_PATH = 'api/settings/save'
 
+function loggableSaveBody(key: string, value: unknown): { key: string; value: unknown } {
+  if (
+    key === settingsLib.SETTING_KEYS.GC_DEVELOPER_API_KEY ||
+    key === settingsLib.SETTING_KEYS.GC_TEST_SCHOOL_API_KEY
+  ) {
+    return { key, value: '[redacted]' }
+  }
+  return { key, value }
+}
+
 /** Маппинг числовых уровней: -1 = логи выключены, 0 = Disable, 1 = Info, 2 = Warn, 3 = Error, 4 = Debug. */
 const LOG_LEVEL_BY_NUMBER: Record<number, string> = {
   [-1]: 'Disable',
@@ -46,7 +56,7 @@ export const saveSettingRoute = app.post('/', async (ctx, req) => {
   await loggerLib.writeServerLog(ctx, {
     severity: 6,
     message: `[${LOG_PATH}] Парсинг body`,
-    payload: { key, value, bodyKeys: body ? Object.keys(body) : [] }
+    payload: { ...loggableSaveBody(key, value), bodyKeys: body ? Object.keys(body) : [] }
   })
 
   if (!key) {
@@ -82,27 +92,29 @@ export const saveSettingRoute = app.post('/', async (ctx, req) => {
     await loggerLib.writeServerLog(ctx, {
       severity: 6,
       message: `[${LOG_PATH}] Вызов lib setSetting`,
-      payload: { key, value }
+      payload: loggableSaveBody(key, value)
     })
     await settingsLib.setSetting(ctx, key, value)
     const saved = await settingsLib.getSetting(ctx, key)
     await loggerLib.writeServerLog(ctx, {
       severity: 6,
       message: `[${LOG_PATH}] Настройка сохранена`,
-      payload: { key, value: saved }
+      payload: loggableSaveBody(key, saved)
     })
     await loggerLib.writeServerLog(ctx, {
       severity: 6,
       message: `[${LOG_PATH}] Возврат success`,
-      payload: { key, saved }
+      payload: loggableSaveBody(key, saved)
     })
     return { success: true, key, value: saved }
   } catch (error) {
-    await loggerLib.writeServerLog(ctx, {
-      severity: 3,
-      message: `[${LOG_PATH}] Ошибка сохранения настройки`,
-      payload: { key, error: String(error) }
-    })
+    if (!loggerLib.isServerErrorAlreadyLogged(error)) {
+      await loggerLib.writeServerLog(ctx, {
+        severity: 3,
+        message: `[${LOG_PATH}] Ошибка сохранения настройки`,
+        payload: { key, error: String(error) }
+      })
+    }
     return { success: false, error: String(error) }
   }
 })

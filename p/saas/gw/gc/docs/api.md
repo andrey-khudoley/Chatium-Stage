@@ -12,6 +12,8 @@
 
 `key` должен быть непустой строкой после `trim`. Иначе `{ success: false }` и в серверный лог — severity 6, текст про валидацию key, в payload поля `reason` (`missing` | `not_string` | `empty_after_trim`), `keyType`, `bodyKeys`.
 
+Для ключей `gc_developer_api_key` и `gc_test_school_api_key` значение после `trim` должно быть непустой строкой (разд. 5.4–5.5 в `docs/SPEC/gateway-operation-manual.md`). Для `gc_test_school_host` — правила имени хоста без схемы (тот же manual, разд. 2.5): `validateGcSchoolHostTrimmed` в `shared/gcSchoolHostValidation.ts`, на сервере при ошибке — `throwLoggedServerError` из `lib/settings.lib.ts`. В логах `save`/`get` значения двух API-ключей не пишутся (подстановка `[redacted]`). Ошибки валидации из `setSetting` сначала пишутся через `throwLoggedServerError` в `lib/logger.lib.ts`; в `catch` этого роута повторная запись severity 3 не делается, если ошибка уже помечена `isServerErrorAlreadyLogged`.
+
 Каждый файл — один эндпоинт с путём `/`.
 
 ## Логи (api/logger/, api/admin/logs/)

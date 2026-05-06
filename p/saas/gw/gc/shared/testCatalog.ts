@@ -99,6 +99,18 @@ export const UNIT_TEST_BLOCKS: TestCatalogBlock[] = [
     ]
   },
   {
+    id: 'unit-gc-host',
+    title: 'shared/gcSchoolHostValidation',
+    description: 'Хост школы для gc_test_school_host / X-Gc-School-Host (manual §2.5)',
+    tests: [
+      { id: 'gcHost_normalize_trim', title: 'trim и допустимый хост' },
+      { id: 'gcHost_reject_empty', title: 'пустая строка' },
+      { id: 'gcHost_reject_https', title: 'без https://' },
+      { id: 'gcHost_reject_space', title: 'пробел внутри' },
+      { id: 'gcHost_reject_colon_port', title: 'имя хоста без :порт' }
+    ]
+  },
+  {
     id: 'unit-catalog',
     title: 'Каталог тестов',
     description: 'Целостность shared/testCatalog и совпадение с прогоном',
@@ -131,6 +143,9 @@ export const INTEGRATION_SERVER_TEST_BLOCKS: TestCatalogBlock[] = [
       { id: 'settings_setSetting_webhook', title: 'setSetting LOG_WEBHOOK' },
       { id: 'settings_setSetting_dashboard_reset', title: 'setSetting DASHBOARD_RESET_AT' },
       { id: 'settings_setSetting_unknown_key', title: 'setSetting неизвестный ключ' },
+      { id: 'settings_setSetting_gc_dev_rejects_whitespace', title: 'gc_developer_api_key: пробелы → ошибка' },
+      { id: 'settings_setSetting_gc_host_trim', title: 'gc_test_school_host: trim и запись' },
+      { id: 'settings_setSetting_gc_host_rejects_https', title: 'gc_test_school_host: https:// → ошибка' },
       { id: 'regression_getLogLevel_no_recursion', title: 'регрессия: getLogLevel без stack overflow' },
       { id: 'regression_getSetting_no_recursion', title: 'регрессия: getSetting без stack overflow' }
     ]

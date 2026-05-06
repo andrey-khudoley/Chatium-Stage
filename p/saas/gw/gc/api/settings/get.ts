@@ -46,10 +46,15 @@ export const getSettingRoute = app.get('/', async (ctx, req) => {
       message: `[${LOG_PATH}] Настройка получена`,
       payload: { key: keyTrimmed, hasValue: value !== undefined && value !== null }
     })
+    const logValue =
+      keyTrimmed === settingsLib.SETTING_KEYS.GC_DEVELOPER_API_KEY ||
+      keyTrimmed === settingsLib.SETTING_KEYS.GC_TEST_SCHOOL_API_KEY
+        ? '[redacted]'
+        : value
     await loggerLib.writeServerLog(ctx, {
       severity: 6,
       message: `[${LOG_PATH}] Возврат success`,
-      payload: { keyTrimmed, value }
+      payload: { keyTrimmed, value: logValue }
     })
     return { success: true, key: keyTrimmed, value }
   } catch (error) {

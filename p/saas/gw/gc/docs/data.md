@@ -14,8 +14,8 @@
 - `repos/logs.repo.ts` — create, findAll, findById, findBeforeTimestamp (слой работы с БД логов; findBeforeTimestamp использует нативную фильтрацию Heap API через `where: { timestamp: { $lt } }` для эффективной пагинации).
 
 ## Библиотеки (lib/)
-- `lib/settings.lib.ts` — getSetting, getAllSettings, setSetting, getLogLevel, getLogsLimit, getLogWebhook (бизнес-логика, дефолты, валидация). Имена ключей gateway для клиента дублируются в `shared/gatewaySettingKeys.ts` (`// @shared`), сервер тянет те же строки в `SETTING_KEYS` (например `GC_DEVELOPER_API_KEY` → `gc_developer_api_key`).
-- `lib/logger.lib.ts` — getAdminLogsSocketId, shouldLogByLevel, writeServerLog (проверка уровня; Heap всегда получает JSON `payload` при его передаче; обогащённый payload в ctx.account.log / WebSocket / вебхук — только при уровне Debug).
+- `lib/settings.lib.ts` — getSetting, getAllSettings, setSetting, getLogLevel, getLogsLimit, getLogWebhook (бизнес-логика, дефолты, валидация). Имена ключей gateway для клиента дублируются в `shared/gatewaySettingKeys.ts` (`// @shared`), сервер тянет те же строки в `SETTING_KEYS` (например `GC_DEVELOPER_API_KEY`, `GC_TEST_SCHOOL_API_KEY`, `GC_TEST_SCHOOL_HOST` → `gc_developer_api_key`, `gc_test_school_api_key`, `gc_test_school_host`). Валидация при записи: непустые строки после `trim` для двух ключей; хост — `validateGcSchoolHostTrimmed` в `shared/gcSchoolHostValidation.ts` + `throwLoggedServerError` в `setSetting`. Ввод в админке: `pages/AdminPage.vue` (секреты — `type="password"`, кнопка «показать»).
+- `lib/logger.lib.ts` — getAdminLogsSocketId, shouldLogByLevel, writeServerLog, `throwLoggedServerError` (сначала лог по правилам `writeServerLog`, затем `throw`), `isServerErrorAlreadyLogged` (чтобы `api/settings/save` не дублировал severity 3 при той же ошибке). Проверка уровня; Heap всегда получает JSON `payload` при его передаче; обогащённый payload в ctx.account.log / WebSocket / вебхук — только при уровне Debug.
 
 ## Файлы и хранилище
 - Не используется.

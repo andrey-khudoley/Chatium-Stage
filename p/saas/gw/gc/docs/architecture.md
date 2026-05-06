@@ -63,6 +63,8 @@
 | 2 | Critical | Критические действия (выход из аккаунта) |
 | -1 | Disable | Логи выключены |
 
+Для ошибок, которые нужно одновременно зафиксировать в серверном логе и пробросить вызывающему коду как `throw new Error(…)` (например, валидация в `lib/settings.lib.ts`), используется **`throwLoggedServerError`** в `lib/logger.lib.ts`: сначала `writeServerLog` с настраиваемым severity (по умолчанию 3), затем исключение с тем же текстом.
+
 **Ключевой принцип**: trace-логи (карта вызовов) имеют severity 6 (Info). Payload (сырые данные) автоматически отсекается при уровне != Debug:
 - **Сервер** (`lib/logger.lib.ts`): функция `shouldIncludePayload` — payload в ctx.account.log, Heap, WebSocket и webhook только при Debug.
 - **Браузер** (`shared/logger.ts`): `emitLog` фильтрует non-string args при уровне != Debug.

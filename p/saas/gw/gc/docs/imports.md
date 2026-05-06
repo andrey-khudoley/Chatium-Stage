@@ -82,6 +82,8 @@
 - `../components/AppFooter.vue`
 - `../api/settings/get` → `getSettingRoute`
 - `../api/settings/save` → `saveSettingRoute`
+- `../shared/gatewaySettingKeys` → `GC_DEVELOPER_API_KEY`, `GC_TEST_SCHOOL_API_KEY`, `GC_TEST_SCHOOL_HOST`
+- `../shared/gcSchoolHostValidation` → `getGcSchoolHostFieldError`
 - `../api/admin/logs/recent` → `getRecentLogsRoute`
 - `../api/admin/logs/before` → `getLogsBeforeRoute`
 - `../api/admin/dashboard/counts` → `getDashboardCountsRoute`
@@ -143,7 +145,11 @@
 
 ### `./shared/gatewaySettingKeys.ts`
 - первая строка: `// @shared`
-- нет импортов — строковые ключи Heap для gateway (`GC_DEVELOPER_API_KEY` и далее по плану)
+- нет импортов — строковые ключи Heap для gateway (`GC_DEVELOPER_API_KEY`, `GC_TEST_SCHOOL_API_KEY`, `GC_TEST_SCHOOL_HOST` и далее по плану)
+
+### `./shared/gcSchoolHostValidation.ts`
+- первая строка: `// @shared`
+- нет импортов — `validateGcSchoolHostTrimmed`, `GcSchoolHostValidationError`, `normalizeGcTestSchoolHost`, `getGcSchoolHostFieldError`, `assertValidGcSchoolHostTrimmed` (deprecated; хост / `X-Gc-School-Host`, manual §2.5)
 
 ### `./shared/testCatalog.ts`
 - первая строка: `// @shared`
@@ -174,7 +180,8 @@
 ## 7) Библиотеки (lib/)
 
 ### `./lib/settings.lib.ts`
-- `../shared/gatewaySettingKeys` → `GC_DEVELOPER_API_KEY`
+- `../shared/gatewaySettingKeys` → `GC_DEVELOPER_API_KEY`, `GC_TEST_SCHOOL_API_KEY`, `GC_TEST_SCHOOL_HOST`
+- `../shared/gcSchoolHostValidation` → `validateGcSchoolHostTrimmed`
 - `../repos/settings.repo` → `*` (findByKey, findAll, upsert, deleteByKey)
 - `./logger.lib` → `*` (только для функций, не вызываемых из logger.lib: getSettingString, getLogsLimit, getDashboardResetAt, getAllSettings, setSetting)
 
@@ -188,6 +195,7 @@
 - `../repos/logs.repo` → `*` (create)
 - `@app/socket` → `sendDataToSocket`
 - `@app/request` → `request`
+- экспортирует: `writeServerLog`, `throwLoggedServerError`, `ThrowLoggedServerErrorOptions`, `SERVER_ERROR_ALREADY_LOGGED`, `isServerErrorAlreadyLogged`, `getAdminLogsSocketId`, `shouldLogByLevel`, `ServerLogEntry`
 
 ## 8) API (api/)
 

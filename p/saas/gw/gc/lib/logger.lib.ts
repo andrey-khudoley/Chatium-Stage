@@ -203,3 +203,50 @@ export async function writeServerLog(ctx: app.Ctx, entry: ServerLogEntry): Promi
     )
   }
 }
+
+const THROW_LOG_MODULE = 'lib/logger.lib'
+
+/** Маркер на `Error`: исключение уже записано через `writeServerLog` в {@link throwLoggedServerError}. */
+export const SERVER_ERROR_ALREADY_LOGGED = '__gwGc_throwLoggedServerError'
+
+export function isServerErrorAlreadyLogged(error: unknown): boolean {
+  return typeof error === 'object' && error !== null && SERVER_ERROR_ALREADY_LOGGED in (error as object)
+}
+
+/** Опции для {@link throwLoggedServerError}. */
+export type ThrowLoggedServerErrorOptions = {
+  /**
+   * Severity для `writeServerLog` (0–7). По умолчанию **3** (error) — запись в Heap и поток админки
+   * по тем же правилам, что и у остальных сообщений с severity 3.
+   */
+  severity?: number
+  /** Дополнительный контекст в Heap (`payload` JSON); в сокет / вебхук — только при Debug. */
+  payload?: unknown
+  /**
+   * Текст строки `message` в логе. Если не задан — `[lib/logger.lib] …` + текст исключения.
+   * Текст `throw new Error(...)` всегда равен `errorMessage`.
+   */
+  logMessage?: string
+}
+
+/**
+ * Сначала пишет серверный лог через {@link writeServerLog} (Heap, фильтр уровня, сокет, вебхук по правилам lib),
+ * затем выбрасывает `Error` с тем же текстом, что ожидают существующие `catch` / `String(error)` в API.
+ */
+export async function throwLoggedServerError(
+  ctx: app.Ctx,
+  errorMessage: string,
+  options?: ThrowLoggedServerErrorOptions
+): Promise<never> {
+  const severity = options?.severity ?? 3
+  const message =
+    options?.logMessage ?? `[${THROW_LOG_MODULE}] ${errorMessage}`
+  await writeServerLog(ctx, {
+    severity,
+    message,
+    payload: options?.payload
+  })
+  const err = new Error(errorMessage) as Error & Record<string, unknown>
+  err[SERVER_ERROR_ALREADY_LOGGED] = true
+  throw err
+}
