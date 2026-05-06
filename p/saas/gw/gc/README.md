@@ -32,6 +32,9 @@
 
 ## Changelog
 
+- 2026-05-06: `shared/browserRemoteLogger.ts` — приведение `console` при патче методов через `unknown` для совместимости с TypeScript 5 (TS2352).
+- 2026-05-06: применены поправки spec-review (`inner/qna/spec_result.md`) к `docs/SPEC/gateway-operation-manual.md` — каталог хранится как TS-модуль `lib/gateway/operationsCatalog.ts` (без статического импорта `*.json`); схемы `args` — на платформенном билдере `s` из `@app/schema` (без JSON Schema / AJV); `withProjectRoot`/`PROJECT_ROOT` помечены как утилиты шаблона; `lib/logger.lib` — шаблонная обёртка; `@start/after-event-write`, `queryAi`, `gcQueryAi` помечены как платформенно-документированные/опциональные; роутинг — всегда «один файл — один роут»; ответ роутов — `TuneHttpHeadersResponse`. См. §13 manual.
+- 2026-05-06: ключ Heap `gc_developer_api_key` — константа `GC_DEVELOPER_API_KEY` в `shared/gatewaySettingKeys.ts` (`// @shared`) и в `lib/settings.lib.ts` (`SETTING_KEYS`, дефолт `null`); пункт **1.2** плана (первая строка) закрыт в `docs/SPEC/implementation-plan.md`.
 - 2026-05-06: в `docs/SPEC/implementation-plan.md` отмечен выполненным пункт **1.1** «Страница тестов шаблона» (`web/tests/index.tsx`, `pages/TestsPage.vue` — юнит-каталог и HTTP-проверки).
 - 2026-05-06: HTTP-тест `GET /` на вкладке тестов: ожидаемый SSR-фрагмент главной заменён с «Шаблон проекта» на подстроку заголовка шапки ` / Главная` (проект gateway, не копия шаблона).
 - 2026-05-06: `writeServerLog` — в Heap всегда сохраняется JSON `payload` (если передан), независимо от настройки уровня логов; обогащённый payload в account.log / WebSocket / вебхук по-прежнему только при Debug.

@@ -1,5 +1,6 @@
 import * as repo from '../repos/settings.repo'
 import * as loggerLib from './logger.lib'
+import { GC_DEVELOPER_API_KEY } from '../shared/gatewaySettingKeys'
 
 const LOG_MODULE = 'lib/settings.lib'
 
@@ -10,7 +11,8 @@ export const SETTING_KEYS = {
   LOG_LEVEL: 'log_level',
   LOGS_LIMIT: 'logs_limit',
   LOG_WEBHOOK: 'log_webhook',
-  DASHBOARD_RESET_AT: 'dashboard_reset_at'
+  DASHBOARD_RESET_AT: 'dashboard_reset_at',
+  GC_DEVELOPER_API_KEY
 } as const
 
 /** Настройка вебхука логов: enable — активна ли отправка, url — куда отправлять. */
@@ -23,7 +25,8 @@ export const DEFAULTS = {
   [SETTING_KEYS.LOG_LEVEL]: 'Info',
   [SETTING_KEYS.LOGS_LIMIT]: '100',
   [SETTING_KEYS.LOG_WEBHOOK]: { enable: false, url: '' } as LogWebhookSetting,
-  [SETTING_KEYS.DASHBOARD_RESET_AT]: null as number | null
+  [SETTING_KEYS.DASHBOARD_RESET_AT]: null as number | null,
+  [SETTING_KEYS.GC_DEVELOPER_API_KEY]: null as string | null
 } as const
 
 /** Допустимые уровни логирования */

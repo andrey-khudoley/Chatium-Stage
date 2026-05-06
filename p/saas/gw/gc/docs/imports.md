@@ -141,6 +141,10 @@
 - `../lib/settings.lib` → `getLogLevel`, `LogLevel`
 - `../lib/logger.lib` → `*`
 
+### `./shared/gatewaySettingKeys.ts`
+- первая строка: `// @shared`
+- нет импортов — строковые ключи Heap для gateway (`GC_DEVELOPER_API_KEY` и далее по плану)
+
 ### `./shared/testCatalog.ts`
 - первая строка: `// @shared`
 - нет импортов — каталог блоков для `/api/tests/list` и UI тестов
@@ -170,6 +174,7 @@
 ## 7) Библиотеки (lib/)
 
 ### `./lib/settings.lib.ts`
+- `../shared/gatewaySettingKeys` → `GC_DEVELOPER_API_KEY`
 - `../repos/settings.repo` → `*` (findByKey, findAll, upsert, deleteByKey)
 - `./logger.lib` → `*` (только для функций, не вызываемых из logger.lib: getSettingString, getLogsLimit, getDashboardResetAt, getAllSettings, setSetting)
 

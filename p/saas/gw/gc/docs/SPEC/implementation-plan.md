@@ -51,7 +51,7 @@ related_manual: "[gateway-operation-manual](./gateway-operation-manual.md)"
 
 ### 1.2. Настройки `gc_*` в Heap (минимум)
 
-- [ ] Константа `GC_DEVELOPER_API_KEY = 'gc_developer_api_key'` добавлена в `lib/settings.lib.ts` `SETTING_KEYS` и в `shared/gatewaySettingKeys.ts` (`// @shared`). См. **§5.4**.
+- [x] Константа `GC_DEVELOPER_API_KEY = 'gc_developer_api_key'` добавлена в `lib/settings.lib.ts` `SETTING_KEYS` и в `shared/gatewaySettingKeys.ts` (`// @shared`). См. **§5.4**.
 - [ ] Константа `GC_TEST_SCHOOL_API_KEY = 'gc_test_school_api_key'` добавлена туда же (**§5.5**).
 - [ ] Константа `GC_TEST_SCHOOL_HOST = 'gc_test_school_host'` добавлена туда же (**§5.8** уровень A).
 - [ ] Поля «Ключ разработчика GetCourse», «Тестовый ключ школы», «Хост тестовой школы» появились в `pages/AdminPage.vue` (тип `password` для секретов; чтение/запись через существующие `api/settings/*`). *Готово, когда:* администратор может задать значения и сохранить; пустые/пробельные строки отклоняются (валидация **§5.4**).
