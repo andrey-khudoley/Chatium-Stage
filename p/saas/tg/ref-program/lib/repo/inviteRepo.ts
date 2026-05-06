@@ -83,14 +83,16 @@ export async function acceptInvite(
 
   const access = await memberRepo.checkCampaignAccess(ctx, campaignId, userId)
   if (access.hasAccess) {
-    await CampaignInvites.update(ctx, invite.id, {
+    await CampaignInvites.update(ctx, {
+      id: invite.id,
       acceptedAt: new Date().toISOString()
     })
     return { success: true, campaignId }
   }
 
   await memberRepo.addMember(ctx, campaignId, userId, 'campaign-member')
-  await CampaignInvites.update(ctx, invite.id, {
+  await CampaignInvites.update(ctx, {
+    id: invite.id,
     acceptedAt: new Date().toISOString()
   })
   return { success: true, campaignId }

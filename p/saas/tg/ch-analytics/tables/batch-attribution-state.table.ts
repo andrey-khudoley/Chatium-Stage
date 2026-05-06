@@ -6,8 +6,7 @@ import { Heap } from '@app/heap'
  */
 export const BatchAttributionState = Heap.Table('t__tg_channel_analytics__batch_attribution_state__c7d8e9f0', {
   key: Heap.String({
-    customMeta: { title: 'Ключ состояния job' },
-    indexed: true
+    customMeta: { title: 'Ключ состояния job' }
   }),
   lastRunAt: Heap.Optional(
     Heap.DateTime({

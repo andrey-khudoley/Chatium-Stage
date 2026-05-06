@@ -117,6 +117,8 @@ declare global {
     get: (path: string, handler: (ctx: any, req: any) => any) => any
     post: (path: string, handler: (ctx: any, req: any) => any) => any
     job: (name: string, handler: (ctx: any, data: any) => any) => any
+    body: (fields: (s: any) => Record<string, unknown>) => any
+    accountHook: (name: string, handler: (ctx: any) => void | Promise<void>) => void
   }
 }
 

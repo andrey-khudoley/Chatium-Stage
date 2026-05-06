@@ -22,23 +22,19 @@ import { Heap } from '@app/heap'
  */
 export const JoinEvents = Heap.Table('t__tg_channel_analytics__join_events__e5f6a7b8', {
   joinId: Heap.String({
-    customMeta: { title: 'Уникальный ID события подписки' },
-    indexed: true
+    customMeta: { title: 'Уникальный ID события подписки' }
   }),
   chatId: Heap.String({
-    customMeta: { title: 'ID канала' },
-    indexed: true
+    customMeta: { title: 'ID канала' }
   }),
   botId: Heap.String({
     customMeta: { title: 'ID бота' }
   }),
   projectId: Heap.String({
-    customMeta: { title: 'ID проекта' },
-    indexed: true
+    customMeta: { title: 'ID проекта' }
   }),
   userId: Heap.String({
-    customMeta: { title: 'ID пользователя (Telegram user ID)' },
-    indexed: true
+    customMeta: { title: 'ID пользователя (Telegram user ID)' }
   }),
   userName: Heap.String({
     customMeta: { title: 'Имя пользователя' },
@@ -58,7 +54,7 @@ export const JoinEvents = Heap.Table('t__tg_channel_analytics__join_events__e5f6
     Heap.Literal('unknown')
   ], {
     customMeta: { title: 'Способ атрибуции' },
-    default: 'unknown'
+    defaultValue: 'unknown'
   }),
   attributedToLinkClickId: Heap.Optional(
     Heap.String({
@@ -81,7 +77,7 @@ export const JoinEvents = Heap.Table('t__tg_channel_analytics__join_events__e5f6
     Heap.Literal('expired')
   ], {
     customMeta: { title: 'Статус события' },
-    default: 'pending'
+    defaultValue: 'pending'
   })
 })
 

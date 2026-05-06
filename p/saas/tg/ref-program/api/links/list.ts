@@ -37,11 +37,11 @@ export const listLinksRoute = app.get('/', async (ctx, req) => {
       const pageId =
         typeof link.pageId === 'object' && link.pageId !== null && 'id' in link.pageId
           ? (link.pageId as { id: string }).id
-          : (link.pageId as string)
+          : (link.pageId as unknown as string)
       const partnerId =
         typeof link.partnerId === 'object' && link.partnerId !== null && 'id' in link.partnerId
           ? (link.partnerId as { id: string }).id
-          : (link.partnerId as string)
+          : (link.partnerId as unknown as string)
       const partner = partnerId ? await partnerRepo.getPartnerById(ctx, partnerId) : null
       const pageTitle = pageId ? pageMap.get(pageId) ?? '' : ''
       const partnerName =

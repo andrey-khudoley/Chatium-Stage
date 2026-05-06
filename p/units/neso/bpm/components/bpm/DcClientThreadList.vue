@@ -1,11 +1,6 @@
 <script setup lang="ts">
 import type { ClientThread } from '../../shared/clientSupportDemo'
-
-export interface ClientThreadFilter {
-  id: string
-  label: string
-  count?: number
-}
+import type { ClientThreadFilter } from '../../shared/bpmVueExportedTypes'
 
 const props = defineProps<{
   title: string

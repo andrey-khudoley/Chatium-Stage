@@ -26,13 +26,24 @@
     "jsxFactory": "jsx",
     "jsxFragmentFactory": "jsx.Fragment",
     "strict": true,
-    "noUncheckedIndexedAccess": true
+    "noUncheckedIndexedAccess": true,
+    "skipLibCheck": true
   },
   "include": [
-    "**/*", ".**/*"
-, ".cursor/references/design"  ],
+    "vue-global.d.ts",
+    "types/**/*.d.ts",
+    "inner/**/*.ts",
+    "inner/**/*.tsx",
+    "zoom-agent-tool/**/*.ts",
+    "zoom-agent-tool/**/*.tsx",
+    "zoom-agent-tool/**/*.vue"
+  ],
   "exclude": [
-    "./node_modules/**/*"
+    "node_modules",
+    "p",
+    ".deprecated",
+    "inner/samples",
+    ".cursor"
   ],
   "files": [
     "./node_modules/@app/types/globals.d.ts",

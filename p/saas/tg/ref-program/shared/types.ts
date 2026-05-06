@@ -9,9 +9,9 @@ import type { TSaasTgRefBotX7pQ2mRow } from '../tables/bots.table'
 import type { TSaasRefBotUpdate7Pq3RsRow } from '../tables/bot_updates.table'
 import type { TSaasRefReferral9Xy2ZkRow } from '../tables/referrals.table'
 import type { ReferralAggregatesRow } from '../tables/referral_aggregates.table'
-import type { TSaasRefRegistration4Ab3CdRow } from '../tables/registrations.table'
-import type { TSaasRefOrder5De6FgRow } from '../tables/orders.table'
-import type { TSaasRefPayment7Hi8JkRow } from '../tables/payments.table'
+import type { TSaasRefProgramRegistration4Ab3CdRow } from '../tables/registrations.table'
+import type { TSaasRefOrderTg5De6FgRow } from '../tables/orders.table'
+import type { TSaasRefProgramPayment7Hi8JkRow } from '../tables/payments.table'
 
 // ============================================
 // CAMPAIGN
@@ -110,13 +110,13 @@ export type ReferralRow = TSaasRefReferral9Xy2ZkRow
 export type ReferralAggregateRow = ReferralAggregatesRow
 
 /** Строка таблицы регистраций. */
-export type RegistrationRow = TSaasRefRegistration4Ab3CdRow
+export type RegistrationRow = TSaasRefProgramRegistration4Ab3CdRow
 
 /** Строка таблицы заказов. */
-export type OrderRow = TSaasRefOrder5De6FgRow
+export type OrderRow = TSaasRefOrderTg5De6FgRow
 
 /** Строка таблицы оплат. */
-export type PaymentRow = TSaasRefPayment7Hi8JkRow
+export type PaymentRow = TSaasRefProgramPayment7Hi8JkRow
 
 // ============================================
 // BOT

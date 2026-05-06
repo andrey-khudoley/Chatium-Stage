@@ -31,6 +31,7 @@
 - Описать бизнес‑логику и данные по мере развития.
 
 ## Changelog
+- 2026-05-06: `tsconfig.json` — в `include` добавлен `jsx.d.ts` (явное подключение типов JSX, тот же порядок, что в `p/saas/tg/ch-analytics`).
 - 2026-04-05: инициализация проекта Flow из шаблона — `PROJECT_ROOT` = `p/units/k/flow`, отдельные Heap-таблицы `t__units-k-flow__*`, дефолтные названия и тексты главной под бизнес-ассистента; удалён одноразовый `docs/run.md`.
 - 2026-04-05: разделение логирования по уровням Info/Debug — trace-логи (карта вызовов) severity 6, видны при Info; payload (сырые данные) автоматически отсекается при уровне != Debug; shouldIncludePayload в lib/logger.lib.ts, фильтрация non-string args в shared/logger.ts; добавлены недостающие trace-логи на сервере (api/logger/browser, api/tests/list) и в Vue-компонентах (onBeforeUnmount, saveProjectName, loadProjectName, setupLogsWebSocket, loadRecentLogs и др.).
 - 2026-04-05: browserRemoteLogger подключён на всех страницах (главная, админка, профиль, тесты); logLevel SSR добавлен на страницу логина; подробное логирование этапов загрузки с сырыми данными на каждой странице; AdminPage — sink комбинирует дашборд-счётчики и remote logger.

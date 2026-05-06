@@ -25,7 +25,7 @@ export const updatePageRoute = app.post('/', async (ctx, req) => {
   const campaignId =
     typeof page.campaignId === 'object' && page.campaignId !== null && 'id' in page.campaignId
       ? (page.campaignId as { id: string }).id
-      : (page.campaignId as string)
+      : (page.campaignId as unknown as string)
 
   const access = await memberRepo.checkCampaignAccess(ctx, campaignId, user.id)
   if (!access.hasAccess) {

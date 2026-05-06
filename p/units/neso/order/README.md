@@ -32,6 +32,7 @@
 - Описать бизнес‑логику и данные.
 
 ## Changelog
+- 2026-05-06: типы для `tsc -p` — `shared/browserRemoteLogger.ts` (патч `console` через промежуточный тип), `api/settings/save.ts` (нормализация log_level без `string | undefined` при индексации), `jsx.d.ts` (глобальный `JSX` в `declare global`, без дубля `*.vue` — объявление только в `vue-shim.d.ts`), `lib/getcourse.lib.ts` (байты UTF-8 при base64).
 - 2026-03-31: `pages/TestsPage.vue` — интерфейс тестов приближен к `p/units/aom/lava_gc_integration`: добавлен точечный запуск одного теста из строки (unit/integration/http), состояние одиночного прогона и блокировка групповой кнопки во время одиночного запуска.
 - 2026-03-29: тесты синхронизированы с `k/assistant`: `shared/testCatalog.ts`, `api/tests/unit`, `api/tests/integration`, обновлён `api/tests/list`; удалён `api/tests/endpoints-check/`; `pages/TestsPage.vue` и `web/tests/index.tsx` — новый UI и прогоны; документация обновлена.
 - 2026-02-04: фиксированная высота (400px) блока логов на странице тестов — TestsPage.vue, класс .tests-logs-output.

@@ -30,7 +30,7 @@ export const acceptInviteRoute = app.post('/', async (ctx, req) => {
   }
 
   const result = await inviteRepo.acceptInvite(ctx, token, user.id)
-  if (!result.success) {
+  if (result.success === false) {
     await loggerLib.writeServerLog(ctx, {
       severity: SEV.error,
       message: `[${LOG_PATH}] acceptInvite ошибка`,

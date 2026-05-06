@@ -1,23 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import type { NavChildItem, NavItem } from '../shared/bpmVueExportedTypes'
 import { setStoredSidebarCollapsed } from '../shared/sidebarStorage'
-
-export interface NavChildItem {
-  id: string
-  label: string
-  icon?: string
-  badge?: string | number
-  href?: string
-}
-
-export interface NavItem {
-  id: string
-  icon: string
-  label: string
-  badge?: string | number
-  href?: string
-  children?: NavChildItem[]
-}
 
 const props = defineProps<{
   theme?: 'dark' | 'light'

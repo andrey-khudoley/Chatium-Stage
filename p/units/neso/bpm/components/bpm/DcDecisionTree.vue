@@ -1,11 +1,5 @@
 <script setup lang="ts">
-export interface DecisionNode {
-  id: string
-  condition: string
-  action: string
-  owner: string
-  severity: 'low' | 'medium' | 'high' | 'critical'
-}
+import type { DecisionNode } from '../../shared/bpmVueExportedTypes'
 
 defineProps<{
   title: string

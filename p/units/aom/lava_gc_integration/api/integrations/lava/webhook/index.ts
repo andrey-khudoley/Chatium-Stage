@@ -107,7 +107,7 @@ export const lavaWebhookRoute = app
 
     const result = await webhookService.processWebhook(ctx, payload, apiKey)
 
-    if (!result.success) {
+    if ('statusCode' in result) {
       await loggerLib.writeServerLog(ctx, {
         severity: 4,
         message: `[${LOG_PATH}] Отказ: неверный или отсутствующий X-Api-Key`,
@@ -121,6 +121,5 @@ export const lavaWebhookRoute = app
       message: `[${LOG_PATH}] Обработано`,
       payload: { duplicate: result.duplicate === true }
     })
-
     return { success: true }
   })

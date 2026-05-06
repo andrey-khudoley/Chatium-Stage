@@ -1,11 +1,5 @@
 <script setup lang="ts">
-export interface MilestoneItem {
-  id: string
-  title: string
-  date: string
-  owner: string
-  state: 'done' | 'active' | 'next' | 'risk'
-}
+import type { MilestoneItem } from '../../shared/bpmVueExportedTypes'
 
 defineProps<{
   title: string

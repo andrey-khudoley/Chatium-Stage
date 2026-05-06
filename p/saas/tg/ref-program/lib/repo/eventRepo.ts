@@ -206,35 +206,51 @@ export async function getReferralEventLog(
     Payments.findAll(ctx, { where: { campaignId, ref }, limit: 200 })
   ])
   const events: ReferralEventItem[] = []
-  const rowWithCreated = (r: { id: string; createdAt?: string }) =>
-    (r as { createdAt?: string }).createdAt ?? r.id
+  const rowWithCreated = (r: { id: string; createdAt?: string | Date }) => {
+    const c = (r as { createdAt?: string | Date }).createdAt
+    if (c instanceof Date) return c.toISOString()
+    if (typeof c === 'string') return c
+    return r.id
+  }
   if (reg) {
     events.push({
       type: 'registration',
       id: reg.id,
       at: rowWithCreated(reg),
       summary: 'Регистрация',
-      payload: (reg as { rawPayload?: unknown }).rawPayload
+      payload: (reg as unknown as { rawPayload?: unknown }).rawPayload
     })
   }
   for (const o of orders) {
-    const order = o as { id: string; createdAt?: string; productName?: string; orderSum?: number }
+    const order = o as unknown as {
+      id: string
+      createdAt?: string | Date
+      productName?: string
+      orderSum?: number
+      rawPayload?: unknown
+    }
     events.push({
       type: 'order',
       id: order.id,
       at: rowWithCreated(o),
       summary: `Заказ: ${order.productName ?? '—'} — ${formatMoney(order.orderSum ?? 0)}`,
-      payload: (o as { rawPayload?: unknown }).rawPayload
+      payload: order.rawPayload
     })
   }
   for (const p of payments) {
-    const pay = p as { id: string; createdAt?: string; orderId?: string; paymentSum?: number }
+    const pay = p as unknown as {
+      id: string
+      createdAt?: string | Date
+      orderId?: string
+      paymentSum?: number
+      rawPayload?: unknown
+    }
     events.push({
       type: 'payment',
       id: pay.id,
       at: rowWithCreated(p),
       summary: `Оплата по заказу ${pay.orderId ?? '—'}: ${formatMoney(pay.paymentSum ?? 0)}`,
-      payload: (p as { rawPayload?: unknown }).rawPayload
+      payload: pay.rawPayload
     })
   }
   events.sort((a, b) => (a.at < b.at ? 1 : a.at > b.at ? -1 : 0))

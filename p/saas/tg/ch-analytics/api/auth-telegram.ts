@@ -1,3 +1,4 @@
+// @ts-ignore — модуль подключается платформой в runtime, локальных typings нет
 import { getTelegramOauthUrl } from '@users/sdk/auth'
 
 // @shared-route

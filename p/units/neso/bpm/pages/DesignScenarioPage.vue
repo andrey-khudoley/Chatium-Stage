@@ -46,58 +46,14 @@ import {
   type ThemeMode
 } from '../shared/themeCatalog'
 import type { BpmChartMode, BpmEditorMode, BpmInstanceRow } from '../shared/bpmTypes'
-
-interface SwimlaneItem {
-  id: string
-  title: string
-  owner: string
-  tag: string
-  eta: string
-}
-
-interface SwimlaneLane {
-  id: string
-  title: string
-  tone: 'neutral' | 'info' | 'warning' | 'danger' | 'success'
-  items: SwimlaneItem[]
-}
-
-interface DecisionNode {
-  id: string
-  condition: string
-  action: string
-  owner: string
-  severity: 'low' | 'medium' | 'high' | 'critical'
-}
-
-interface CapacityRow {
-  team: string
-  load: number
-  capacity: number
-  focus: string
-}
-
-interface MilestoneItem {
-  id: string
-  title: string
-  date: string
-  owner: string
-  state: 'done' | 'active' | 'next' | 'risk'
-}
-
-interface RoleStackItem {
-  id: string
-  name: string
-  role: string
-  state: 'online' | 'busy' | 'offline'
-}
-
-interface CommandAction {
-  id: string
-  title: string
-  description: string
-  tone: 'neutral' | 'info' | 'warning' | 'danger' | 'success'
-}
+import type {
+  CapacityRow,
+  CommandAction,
+  DecisionNode,
+  MilestoneItem,
+  RoleStackItem,
+  SwimlaneLane
+} from '../shared/bpmVueExportedTypes'
 
 const props = defineProps<{
   scenarioSlug: string

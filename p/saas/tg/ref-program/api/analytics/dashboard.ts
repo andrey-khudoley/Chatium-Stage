@@ -45,17 +45,22 @@ export const dashboardRoute = app.get('/', async (ctx, req) => {
     totalPaymentsSum += a.paymentsSum ?? 0
   }
 
-  const latest = latestReferrals.referrals.map((r) => ({
+  const latest = latestReferrals.referrals.map((r) => {
+    const reg = (r as unknown as { registeredAt?: string | Date }).registeredAt
+    const registeredAt =
+      reg instanceof Date ? reg.toISOString() : typeof reg === 'string' ? reg : undefined
+    return {
     id: r.id,
     ref: r.ref,
     name: r.name,
     email: r.email,
-    registeredAt: (r as { registeredAt?: string }).registeredAt,
+    registeredAt,
     ordersCount: r.ordersCount ?? 0,
     ordersSum: r.ordersSum ?? 0,
     paymentsCount: r.paymentsCount ?? 0,
     paymentsSum: r.paymentsSum ?? 0
-  }))
+    }
+  })
 
   return {
     success: true,

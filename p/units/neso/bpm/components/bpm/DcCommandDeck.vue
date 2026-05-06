@@ -1,10 +1,5 @@
 <script setup lang="ts">
-export interface CommandAction {
-  id: string
-  title: string
-  description: string
-  tone: 'neutral' | 'info' | 'warning' | 'danger' | 'success'
-}
+import type { CommandAction } from '../../shared/bpmVueExportedTypes'
 
 defineProps<{
   title: string

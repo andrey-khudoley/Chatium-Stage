@@ -1,4 +1,3 @@
-import { Base64 } from '@chatium/global-functions/base64'
 import { request } from '@app/request'
 import { nanoid } from '@app/nanoid'
 import { format, utcToZonedTime } from '@npm/date-fns-tz'
@@ -42,7 +41,13 @@ export async function getZoomAuthToken(ctx: app.Ctx): Promise<string | { ok: fal
     return { ok: false, message: 'Zoom настройки не configured. Пожалуйста, настройте интеграцию в панели администратора.' }
   }
   
-  const authString = Base64.encode(`${settings.client_id}:${settings.client_secret}`)
+  const authPayload = `${settings.client_id}:${settings.client_secret}`
+  const authBytes = new TextEncoder().encode(authPayload)
+  let authBinary = ''
+  for (const b of authBytes) {
+    authBinary += String.fromCharCode(b)
+  }
+  const authString = btoa(authBinary)
   
   const result = await request({
     url: `https://zoom.us/oauth/token?grant_type=account_credentials&account_id=${settings.account_id}`,

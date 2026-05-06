@@ -19,7 +19,7 @@ BPM проект после миграции из `p/neso/crm` в `p/units/neso/
 - `layout/` — layout primitives
 - `pages/` — Vue-страницы нового интерфейса
 - `web/` — file-based маршруты
-- `shared/` — тема, preloader, scenario dataset, demo factory
+- `shared/` — тема, preloader, scenario dataset, demo factory; `bpmVueExportedTypes.ts` — типы пропсов BPM Vue-компонентов (для `tsc` с `vue-shim`, без реэкспорта из `.vue`)
 
 ## Маршруты
 - `/` — главная

@@ -27,6 +27,7 @@
     "**/*.ts",
     "**/*.tsx",
     "**/*.vue",
+    "jsx.d.ts",
     "vue-shim.d.ts"
   ],
   "exclude": []

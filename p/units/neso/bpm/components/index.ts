@@ -1,5 +1,14 @@
 // @shared
-export type { NavItem } from './DcDemoSidebar.vue'
+export type {
+  CapacityRow,
+  ClientThreadFilter,
+  CommandAction,
+  DecisionNode,
+  MilestoneItem,
+  NavItem,
+  RoleStackItem,
+  SwimlaneLane
+} from '../shared/bpmVueExportedTypes'
 export type {
   BpmAutomationJob,
   BpmBottleneck,
@@ -16,13 +25,6 @@ export type {
   BpmTimelinePoint
 } from '../shared/bpmTypes'
 export type { ScenarioChecklistItem, ScenarioWidget } from '../shared/bpmScenarios'
-export type { CapacityRow } from './bpm/DcCapacityMatrix.vue'
-export type { ClientThreadFilter } from './bpm/DcClientThreadList.vue'
-export type { CommandAction } from './bpm/DcCommandDeck.vue'
-export type { DecisionNode } from './bpm/DcDecisionTree.vue'
-export type { MilestoneItem } from './bpm/DcMilestoneRail.vue'
-export type { RoleStackItem } from './bpm/DcRoleStack.vue'
-export type { SwimlaneLane } from './bpm/DcSwimlaneBoard.vue'
 
 export { default as DcBpmSidebar } from './DcBpmSidebar.vue'
 export { default as DcDemoSidebar } from './DcDemoSidebar.vue'

@@ -18,6 +18,7 @@ import { LinkClicks } from './tables/link-clicks.table'
 import { TelegramChats } from './tables/chats.table'
 import { BotTokens } from './tables/bot-tokens.table'
 import { request } from '@app/request'
+import { generateFingerprint } from './lib/fingerprint'
 
 export const indexPageRoute = app.html('/', async (ctx, req) => {
   // Применяем уровень логирования из настроек
@@ -3259,12 +3260,14 @@ export const publicLinkRoute = app.get('/:id', async (ctx, req) => {
     // Сохраняем LinkClick с query-параметрами
     const clickedAt = new Date()
     const queryParamsJson = JSON.stringify(queryParams)
-    
-    Debug.info(ctx, `[public-link] Начало сохранения LinkClick: linkId=${trimmedId}, inviteLink=${inviteLink}, clickedAt=${clickedAt.toISOString()}, queryParams=${queryParamsJson}`)
-    
+    const fingerprintHash = generateFingerprint(req, trimmedId)
+
+    Debug.info(ctx, `[public-link] Начало сохранения LinkClick: linkId=${trimmedId}, inviteLink=${inviteLink}, clickedAt=${clickedAt.toISOString()}, queryParams=${queryParamsJson}, fingerprint=${fingerprintHash}`)
+
     try {
       const linkClick = await LinkClicks.create(ctx, {
         linkId: trimmedId,
+        fingerprint: fingerprintHash,
         queryParams: queryParamsJson,
         inviteLink: inviteLink!,
         clickedAt: clickedAt,
