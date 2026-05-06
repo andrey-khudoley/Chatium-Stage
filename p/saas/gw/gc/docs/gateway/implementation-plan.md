@@ -202,8 +202,8 @@ related_manual: "[gateway-operation-manual](./gateway-operation-manual.md)"
 ### 2.5. Расширенная наблюдаемость и админка
 
 - [ ] `writeServerLog` пишется на каждой существенной ветке роутов и `lib/gateway/*` (**§7.2.1**); поле `requestId` присутствует в `payload`/`message`.
-- [ ] Регистрация события `gateway_gc.invoke.completed` через `writeWorkspaceEvent` после каждого ответа клиенту (**§7.3**, обязательные поля — таблица §7.3).
-- [ ] Регистрация события `gateway_gc.operations.catalog_served` после успешного `GET /v1/operations` (**§7.3**).
+- [x] Регистрация события `gateway_gc.invoke.completed` через `writeWorkspaceEvent` после каждого ответа клиенту (**§7.3**, обязательные поля — таблица §7.3). *Реализация: `lib/gateway/gatewayWorkspaceEvents.ts`, вызов из обёртки `handleV1OpRoute`.*
+- [x] Регистрация события `gateway_gc.operations.catalog_served` после успешного `GET /v1/operations` (**§7.3**). *Реализация: `api/v1/operations.ts`.*
 - [ ] В `AdminPage.vue` (или новые `components/`) реализованы экраны `§7.4.1`: обзор за период, таблица вызовов с поиском по `requestId`, фильтры, карточка вызова, экран «каталог + здоровье».
 - [ ] Уведомления админам по порогам ошибок (`GATEWAY_DEV_KEY_NOT_CONFIGURED`, доля 5xx) через `sendNotificationToAccountOwners` — **§7.5**.
 

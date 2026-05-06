@@ -89,7 +89,9 @@ export async function getSettingString(ctx: app.Ctx, key: string): Promise<strin
   await loggerLib.writeServerLog(ctx, {
     severity: 6,
     message: `[${LOG_MODULE}] getSettingString exit`,
-    payload: { key, value, result }
+    payload: isSecretHeapSettingKey(key)
+      ? { key, value: '[redacted]', result: '[redacted]' }
+      : { key, value, result }
   })
   return result
 }
@@ -300,4 +302,54 @@ export async function setSetting(ctx: app.Ctx, key: string, value: unknown): Pro
     message: `[${LOG_MODULE}] setSetting exit`,
     payload: loggableSettingPayload(key, normalized)
   })
+}
+
+/**
+ * Удалить настройку по ключу (manual §5.9: произвольные пары «ключ — значение»).
+ * Если строки нет — операция тихо завершается.
+ */
+export async function deleteSetting(ctx: app.Ctx, key: string): Promise<void> {
+  await loggerLib.writeServerLog(ctx, {
+    severity: 6,
+    message: `[${LOG_MODULE}] deleteSetting entry`,
+    payload: { key }
+  })
+  const trimmed = key.trim()
+  if (!trimmed) {
+    await loggerLib.throwLoggedServerError(
+      ctx,
+      'Поле key обязательно для удаления настройки',
+      { payload: { key } }
+    )
+  }
+  await repo.deleteByKey(ctx, trimmed)
+  await loggerLib.writeServerLog(ctx, {
+    severity: 6,
+    message: `[${LOG_MODULE}] deleteSetting exit`,
+    payload: { key: trimmed }
+  })
+}
+
+/** Имена ключей, валидируемых отдельно (используются админкой для отделения «известных» от произвольных). */
+export const KNOWN_SETTING_KEYS: ReadonlySet<string> = new Set(Object.values(SETTING_KEYS))
+
+/** Произвольные пары «ключ — значение» в Heap (manual §5.9): всё, что не входит в `KNOWN_SETTING_KEYS`. */
+export async function listArbitrarySettings(
+  ctx: app.Ctx
+): Promise<Array<{ key: string; value: unknown }>> {
+  await loggerLib.writeServerLog(ctx, {
+    severity: 7,
+    message: `[${LOG_MODULE}] listArbitrarySettings entry`,
+    payload: {}
+  })
+  const rows = await repo.findAll(ctx)
+  const arbitrary = rows
+    .filter((row) => row.key && !KNOWN_SETTING_KEYS.has(row.key))
+    .map((row) => ({ key: row.key, value: row.value }))
+  await loggerLib.writeServerLog(ctx, {
+    severity: 7,
+    message: `[${LOG_MODULE}] listArbitrarySettings exit`,
+    payload: { count: arbitrary.length, keys: arbitrary.map((r) => r.key) }
+  })
+  return arbitrary
 }

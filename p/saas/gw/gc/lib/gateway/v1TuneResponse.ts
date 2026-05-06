@@ -7,6 +7,20 @@ export type V1TuneResponse = {
   headers: Record<string, string>
 }
 
+/** Ручная политика CORS для браузерных клиентов /v1/* (manual §7.7, §8.7). */
+const V1_CORS_HEADERS: Record<string, string> = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'Access-Control-Allow-Headers': [
+    'Content-Type',
+    'Accept',
+    GW_HEADER_GATEWAY_REQUEST_ID,
+    'X-Gc-School-Host',
+    'X-Gc-School-Api-Key'
+  ].join(', '),
+  'Access-Control-Expose-Headers': [GW_HEADER_GATEWAY_REQUEST_ID].join(', ')
+}
+
 export function v1JsonResponse(
   statusCode: number,
   payload: Record<string, unknown>,
@@ -18,13 +32,22 @@ export function v1JsonResponse(
     rawHttpBody: JSON.stringify(body),
     headers: {
       'Content-Type': 'application/json',
-      [GW_HEADER_GATEWAY_REQUEST_ID]: requestId
+      [GW_HEADER_GATEWAY_REQUEST_ID]: requestId,
+      ...V1_CORS_HEADERS
     }
   }
 }
 
-export function v1SuccessResponse(data: unknown, requestId: string): V1TuneResponse {
-  return v1JsonResponse(200, { ok: true, data }, requestId)
+export function v1SuccessResponse(
+  data: unknown,
+  requestId: string,
+  warnings?: ReadonlyArray<{ code: string; message: string }>
+): V1TuneResponse {
+  const payload: Record<string, unknown> = { ok: true, data }
+  if (warnings && warnings.length > 0) {
+    payload.warnings = [...warnings]
+  }
+  return v1JsonResponse(200, payload, requestId)
 }
 
 export function v1ErrorResponse(

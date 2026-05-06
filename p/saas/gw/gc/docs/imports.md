@@ -88,6 +88,7 @@
 - `../api/admin/logs/before` → `getLogsBeforeRoute`
 - `../api/admin/dashboard/counts` → `getDashboardCountsRoute`
 - `../api/admin/dashboard/reset` → `resetDashboardRoute`
+- `../api/gateway-analytics/invocations` → `gatewayAnalyticsInvocationsRoute`
 - `../shared/logger` → `createComponentLogger`, `setLogSink`, `LogEntry`
 
 ### `./pages/ProfilePage.vue`
@@ -214,8 +215,21 @@
 - `../../lib/settings.lib` → `*`
 - `../../lib/logger.lib` → `*`
 
-### `./api/v1/addUser.ts`
-- `../../lib/gateway/v1AddUserHandler` → `handleV1AddUserPost` (регистрация `app.post`)
+### `./api/v1/{op}.ts` (59 операций из `gc-op-http-mapping.json`)
+
+- `../../lib/gateway/handleV1OpRoute` → `handleV1OpRoute` (регистрация `app.get` / `app.post`)
+
+### `./api/v1/operations.ts`
+
+- `../../lib/gateway/operationsCatalog` → `operationsCatalog`, `serializeArgsSchemaForCatalog`
+- `../../lib/gateway/requestId`, `v1TuneResponse`, `gatewayWorkspaceEvents`, `logger.lib`
+
+### `./api/gateway-analytics/invocations.ts`
+
+- `@app/auth` → `requireAccountRole`
+- `../../repos/logs.repo` → `*`
+- `../../lib/logger.lib` → `*`
+- `../../tables/logs.table` → `LogsRow` (type)
 
 ### `./api/logger/log.ts`
 - `@app/auth` → `requireAnyUser`
@@ -279,4 +293,14 @@
 - `../settings.lib`, `../gateway/v1AddUserHandler` → `handleV1AddUserPost`, `repos/*`, `../admin/dashboard.lib`, `../logger.lib`, `api/settings/*`, `api/logger/log`, `api/admin/*`, `api/tests/list`, `shared/gatewayHttpHeaders`, `shared/gcSchoolHostValidation`, `./templateUnitSuite` (`runTemplateUnitChecks`)
 
 ### `./lib/gateway/v1AddUserHandler.ts`
-- `../logger.lib`, `../settings.lib`, `./gcAddUserMapping`, `./interpretGcV1Response`, `./legacyGcImportClient`, `./constants`, `./operationsCatalog`, `./requestId`, `./v1IncomingPost`, `./v1TuneResponse`
+
+- `./handleV1OpRoute`, `./v1TuneResponse` — тонкая обёртка для тестов (`handleV1AddUserPost`)
+
+### `./lib/gateway/handleV1OpRoute.ts`
+
+- `logger.lib`, `settings.lib`, `gatewayBetaWarnings`, `interpretGcV1Response`, `legacyGcExportGet`, `legacyGcImportClient`, `newGcApiClient`, `pathTemplate`, `operationsCatalog` (`findOperationCatalogEntry`, `OperationCatalogEntry`), `requestId`, `v1IncomingPost` (`readHeaderInsensitive`), `v1GatewayQuery`, `gatewayWorkspaceEvents`, `v1TuneResponse`, `constants`, `../../shared/gatewayHttpHeaders` (`GW_HEADER_SCHOOL_HOST`)
+- Экспорт: **`handleV1OpRoute`** — публичные роуты `/v1/{op}`; **`handleV1OpRouteWithGcDiagnostic`** + тип **`V1GcDiagnostic`** — только для админского раннера (`lib/tests/gateway/v1OpsSuiteRunner.ts`), чтобы в ответ не утекало сырое тело GC через обычный API.
+
+### `./lib/tests/gateway/v1OpsSuiteRunner.ts`
+
+- `../../gateway/handleV1OpRoute` → **`handleV1OpRouteWithGcDiagnostic`**, `V1IncomingLike`; `../../gateway/operationsCatalog` → `findOperationCatalogEntry`; `../../logger.lib`, `../../settings.lib`, `../../../shared/gatewayHttpHeaders`, `./v1OpsRunContext`, `./v1OpsScenarios`

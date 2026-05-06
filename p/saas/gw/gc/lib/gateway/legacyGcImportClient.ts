@@ -13,13 +13,14 @@ export type LegacyGcImportResult = {
  */
 export async function invokeLegacyGcImportPost(input: {
   schoolHostTrimmed: string
-  pathTemplate: string
+  /** Путь под `/pl/api` с подставленными path params (ведущий `/`). */
+  resolvedPath: string
   schoolApiKey: string
   legacyImportAction: string
   /** Объект, сериализуемый в JSON внутри Base64(params). */
   paramsPayload: Record<string, unknown>
 }): Promise<LegacyGcImportResult> {
-  const path = input.pathTemplate.startsWith('/') ? input.pathTemplate : `/${input.pathTemplate}`
+  const path = input.resolvedPath.startsWith('/') ? input.resolvedPath : `/${input.resolvedPath}`
   const url = `https://${input.schoolHostTrimmed}/pl/api${path}`
   const form = buildLegacyImportFormBody(
     input.schoolApiKey,

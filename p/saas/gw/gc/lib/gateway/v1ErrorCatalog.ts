@@ -34,7 +34,8 @@ export const V1_ERROR_MESSAGES: Record<string, string> = {
   INVOKE_GC_TIMEOUT: 'Превышено время ожидания ответа от GetCourse.',
   INVOKE_GC_NETWORK_ERROR: 'Не удалось установить соединение с GetCourse или запрос был оборван.',
   INVOKE_INTERNAL_ERROR:
-    'Внутренняя ошибка gateway. Повторите запрос позже или обратитесь к администратору.'
+    'Внутренняя ошибка gateway. Повторите запрос позже или обратитесь к администратору.',
+  OPERATIONS_INTERNAL_ERROR: 'Не удалось сформировать каталог операций.'
 }
 
 /** HTTP status по error.code для /v1/{op} (manual §9.2, §10). */
@@ -56,5 +57,6 @@ export const V1_ERROR_HTTP_STATUS: Record<string, number> = {
   INVOKE_GC_SEMANTIC_ERROR: 502,
   INVOKE_GC_TIMEOUT: 504,
   INVOKE_GC_NETWORK_ERROR: 502,
-  INVOKE_INTERNAL_ERROR: 500
+  INVOKE_INTERNAL_ERROR: 500,
+  OPERATIONS_INTERNAL_ERROR: 500
 }

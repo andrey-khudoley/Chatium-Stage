@@ -6,6 +6,8 @@ import GlobalGlitch from '../components/GlobalGlitch.vue'
 import AppFooter from '../components/AppFooter.vue'
 import { getSettingRoute } from '../api/settings/get'
 import { saveSettingRoute } from '../api/settings/save'
+import { deleteSettingRoute } from '../api/settings/delete'
+import { listArbitrarySettingsRoute } from '../api/settings/list-arbitrary'
 import { GC_DEVELOPER_API_KEY, GC_TEST_SCHOOL_API_KEY, GC_TEST_SCHOOL_HOST } from '../shared/gatewaySettingKeys'
 import { getGcSchoolHostFieldError } from '../shared/gcSchoolHostValidation'
 import { createComponentLogger, setLogSink, type LogEntry } from '../shared/logger'
@@ -15,6 +17,7 @@ import { getRecentLogsRoute } from '../api/admin/logs/recent'
 import { getLogsBeforeRoute } from '../api/admin/logs/before'
 import { getDashboardCountsRoute } from '../api/admin/dashboard/counts'
 import { resetDashboardRoute } from '../api/admin/dashboard/reset'
+import { gatewayAnalyticsInvocationsRoute } from '../api/gateway-analytics/invocations'
 
 const log = createComponentLogger('AdminPage')
 
@@ -81,6 +84,60 @@ function showSaveStatus(
 const errorCount = ref(0)
 const warnCount = ref(0)
 const dashboardResetAt = ref(0)
+
+type GatewayAnalyticsItem = {
+  timestamp: number
+  requestId?: string
+  op?: string
+  httpMethod?: string
+  contour?: string
+  availability?: string
+  schoolHostPresent?: boolean
+  clientHttpStatus?: number
+  ok?: boolean
+  errorCode?: string
+  gcHttpStatus?: number
+  durationMs?: number
+}
+
+type GatewayAnalyticsSummary = {
+  total: number
+  okCount: number
+  errCount: number
+  topOps: Array<{ op: string; count: number }>
+  topErrors: Array<{ code: string; count: number }>
+  avgDurationMs: number
+  p50DurationMs: number
+  p95DurationMs: number
+}
+
+const gwFilters = ref<{
+  requestId: string
+  op: string
+  contour: '' | 'legacy' | 'new'
+  errorCode: string
+  availability: string
+  durationMsMin: string
+  durationMsMax: string
+  ok: '' | 'yes' | 'no'
+}>({
+  requestId: '',
+  op: '',
+  contour: '',
+  errorCode: '',
+  availability: '',
+  durationMsMin: '',
+  durationMsMax: '',
+  ok: ''
+})
+const gwItems = ref<GatewayAnalyticsItem[]>([])
+const gwSummary = ref<GatewayAnalyticsSummary | null>(null)
+const gwLoading = ref(false)
+const gwError = ref('')
+const gwScanned = ref(0)
+const gwMatched = ref(0)
+const GW_ANALYTICS_LIMIT = 100
+const GW_ANALYTICS_SCAN_LIMIT = 1000
 
 let browserRemoteLogger: ReturnType<typeof createBrowserRemoteLogger> | null = null
 
@@ -318,6 +375,114 @@ const saveGcGatewaySettings = async () => {
   }
 }
 
+// ── Произвольные пары «ключ — значение» в Heap (manual §5.9). ───────────────
+// Используется для `gc_itest_*` и других пользовательских ключей, в т.ч. для
+// снятия жёлтых предупреждений на странице тестов (стратегия §9.4).
+type ArbitrarySetting = { key: string; value: unknown }
+const kvItems = ref<ArbitrarySetting[]>([])
+const kvLoading = ref(false)
+const kvError = ref<string | null>(null)
+const kvDraftKey = ref('')
+const kvDraftValue = ref('')
+const kvDraftError = ref<string | null>(null)
+const kvSaveLoading = ref(false)
+const kvSaveStatus = ref<'saved' | 'error' | null>(null)
+const kvSaveStatusTimeout = { id: null as ReturnType<typeof setTimeout> | null }
+
+function arbitrarySettingValueToString(value: unknown): string {
+  if (value === null || value === undefined) return ''
+  if (typeof value === 'string') return value
+  if (typeof value === 'number' || typeof value === 'boolean') return String(value)
+  try {
+    return JSON.stringify(value)
+  } catch {
+    return String(value)
+  }
+}
+
+async function loadArbitrarySettings() {
+  kvLoading.value = true
+  kvError.value = null
+  try {
+    const res = await listArbitrarySettingsRoute.run(ctx)
+    const data = res as { success?: boolean; items?: ArbitrarySetting[]; error?: string }
+    if (data?.success && Array.isArray(data.items)) {
+      kvItems.value = data.items.slice().sort((a, b) => a.key.localeCompare(b.key))
+    } else {
+      kvError.value = data?.error || 'Не удалось получить список'
+      kvItems.value = []
+    }
+  } catch (e) {
+    kvError.value = (e as Error)?.message || String(e)
+    kvItems.value = []
+  } finally {
+    kvLoading.value = false
+  }
+}
+
+async function saveArbitrarySetting() {
+  kvDraftError.value = null
+  const key = kvDraftKey.value.trim()
+  if (!key) {
+    kvDraftError.value = 'Ключ обязателен (manual §5.9: непустая строка после обрезки пробелов).'
+    showSaveStatus(kvSaveStatus, kvSaveStatusTimeout, 'error')
+    return
+  }
+  if (/[\u0000-\u001F\u007F]/.test(key)) {
+    kvDraftError.value = 'Ключ содержит управляющие символы (manual §5.9).'
+    showSaveStatus(kvSaveStatus, kvSaveStatusTimeout, 'error')
+    return
+  }
+  const value = kvDraftValue.value
+  kvSaveLoading.value = true
+  try {
+    const res = await saveSettingRoute.run(ctx, { key, value })
+    const data = res as { success?: boolean; error?: string }
+    if (data?.success === false) {
+      kvDraftError.value = data.error || 'Ошибка сохранения'
+      showSaveStatus(kvSaveStatus, kvSaveStatusTimeout, 'error')
+      return
+    }
+    kvDraftKey.value = ''
+    kvDraftValue.value = ''
+    showSaveStatus(kvSaveStatus, kvSaveStatusTimeout, 'saved')
+    await loadArbitrarySettings()
+  } catch (e) {
+    kvDraftError.value = (e as Error)?.message || 'Ошибка сохранения'
+    showSaveStatus(kvSaveStatus, kvSaveStatusTimeout, 'error')
+  } finally {
+    kvSaveLoading.value = false
+  }
+}
+
+async function startEditArbitrarySetting(key: string) {
+  const item = kvItems.value.find((r) => r.key === key)
+  if (!item) return
+  kvDraftKey.value = item.key
+  kvDraftValue.value = arbitrarySettingValueToString(item.value)
+  kvDraftError.value = null
+}
+
+async function deleteArbitrarySetting(key: string) {
+  kvSaveLoading.value = true
+  try {
+    const res = await deleteSettingRoute.run(ctx, { key })
+    const data = res as { success?: boolean; error?: string }
+    if (data?.success === false) {
+      kvError.value = data.error || 'Ошибка удаления'
+      showSaveStatus(kvSaveStatus, kvSaveStatusTimeout, 'error')
+      return
+    }
+    showSaveStatus(kvSaveStatus, kvSaveStatusTimeout, 'saved')
+    await loadArbitrarySettings()
+  } catch (e) {
+    kvError.value = (e as Error)?.message || String(e)
+    showSaveStatus(kvSaveStatus, kvSaveStatusTimeout, 'error')
+  } finally {
+    kvSaveLoading.value = false
+  }
+}
+
 const loadProjectName = async () => {
   log.info('loadProjectName entry')
   try {
@@ -408,6 +573,7 @@ onMounted(() => {
 
   loadProjectName()
   void loadGcGatewaySettings()
+  void loadArbitrarySettings()
   loadDashboardCounts()
   if (window.hideAppLoader) {
     window.hideAppLoader()
@@ -544,6 +710,91 @@ const resetDashboard = async () => {
 const openChatiumLink = () => {
   log.notice('Открытие ссылки Chatium')
   window.open('https://chatium.ru/?start=pl-LGBT1Oge7c61RkKTU4t0start', '_blank')
+}
+
+const formatGwTime = (timestamp: number): string => {
+  const d = new Date(timestamp)
+  const date = `${String(d.getDate()).padStart(2, '0')}.${String(d.getMonth() + 1).padStart(2, '0')}`
+  const time = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}:${String(d.getSeconds()).padStart(2, '0')}`
+  return `${date} ${time}`
+}
+
+const copyToClipboard = async (text: string) => {
+  try {
+    if (navigator?.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text)
+      log.info('requestId скопирован', text)
+    }
+  } catch (e) {
+    log.warning('Не удалось скопировать requestId', e)
+  }
+}
+
+const loadGatewayAnalytics = async () => {
+  gwLoading.value = true
+  gwError.value = ''
+  const f = gwFilters.value
+  const filters: Record<string, unknown> = {}
+  if (f.requestId.trim()) filters.requestId = f.requestId.trim()
+  if (f.op.trim()) filters.op = f.op.trim()
+  if (f.contour) filters.contour = f.contour
+  if (f.errorCode.trim()) filters.errorCode = f.errorCode.trim()
+  if (f.availability.trim()) filters.availability = f.availability.trim()
+  const dMin = Number(f.durationMsMin)
+  if (Number.isFinite(dMin) && f.durationMsMin !== '') filters.durationMsMin = dMin
+  const dMax = Number(f.durationMsMax)
+  if (Number.isFinite(dMax) && f.durationMsMax !== '') filters.durationMsMax = dMax
+  if (f.ok === 'yes') filters.ok = true
+  if (f.ok === 'no') filters.ok = false
+
+  try {
+    const res = await gatewayAnalyticsInvocationsRoute.run(ctx, {
+      mode: 'list',
+      filters,
+      limit: GW_ANALYTICS_LIMIT,
+      scanLimit: GW_ANALYTICS_SCAN_LIMIT
+    })
+    const data = res as {
+      success?: boolean
+      items?: GatewayAnalyticsItem[]
+      summary?: GatewayAnalyticsSummary
+      scanned?: number
+      matched?: number
+      error?: string
+    }
+    if (data?.success && Array.isArray(data.items)) {
+      gwItems.value = data.items
+      gwSummary.value = data.summary ?? null
+      gwScanned.value = data.scanned ?? 0
+      gwMatched.value = data.matched ?? data.items.length
+      log.info('Аналитика вызовов /v1 загружена', {
+        items: data.items.length,
+        scanned: data.scanned,
+        matched: data.matched
+      })
+    } else {
+      gwError.value = data?.error || 'Ошибка загрузки аналитики'
+      log.error('Ошибка аналитики /v1', gwError.value)
+    }
+  } catch (e) {
+    gwError.value = (e as Error)?.message || 'Ошибка сети'
+    log.error('Ошибка аналитики /v1', e)
+  } finally {
+    gwLoading.value = false
+  }
+}
+
+const resetGatewayFilters = () => {
+  gwFilters.value = {
+    requestId: '',
+    op: '',
+    contour: '',
+    errorCode: '',
+    availability: '',
+    durationMsMin: '',
+    durationMsMax: '',
+    ok: ''
+  }
 }
 
 const loadRecentLogs = async () => {
@@ -972,6 +1223,230 @@ function onVisibilityForLogsSocket() {
                 </button>
               </div>
             </section>
+
+            <!--
+              Произвольные пары «ключ — значение» в Heap (manual §5.9).
+              Используется для `gc_itest_*` (стратегия §5.8 уровень B), а также для снятия
+              жёлтых предупреждений на странице тестирования (стратегия §9.4).
+            -->
+            <section class="ap-card ap-card--stagger-4 ap-kv">
+              <div class="ap-card-hd">
+                <h2><i class="fas fa-key ap-icon-hd"></i> Произвольные настройки Heap</h2>
+                <span
+                  v-if="kvSaveStatus"
+                  class="ap-badge"
+                  :class="kvSaveStatus === 'saved' ? 'ap-badge--ok' : 'ap-badge--err'"
+                >
+                  <i :class="kvSaveStatus === 'saved' ? 'fas fa-check' : 'fas fa-times'"></i>
+                  {{ kvSaveStatus === 'saved' ? 'OK' : 'ERR' }}
+                </span>
+              </div>
+              <p class="ap-gc-lead">
+                Универсальный ввод «ключ — значение» (manual §5.9). Используется для
+                <code class="ap-gc-code">gc_itest_*</code> (стратегия §5.8, уровень B) и
+                других пользовательских строк настроек школы. Секреты
+                (<code class="ap-gc-code">gc_developer_api_key</code>,
+                <code class="ap-gc-code">gc_test_school_api_key</code>) сюда не попадают —
+                они задаются в форме «Настройки GetCourse» выше.
+              </p>
+
+              <div class="ap-kv-form">
+                <div class="ap-kv-row">
+                  <label class="ap-kv-field">
+                    <span>Ключ</span>
+                    <input
+                      v-model="kvDraftKey"
+                      class="ap-input"
+                      placeholder="например, gc_itest_offer_id"
+                      autocomplete="off"
+                      spellcheck="false"
+                    />
+                  </label>
+                  <label class="ap-kv-field ap-kv-field--grow">
+                    <span>Значение</span>
+                    <input
+                      v-model="kvDraftValue"
+                      class="ap-input"
+                      placeholder="строковое значение"
+                      autocomplete="off"
+                      spellcheck="false"
+                    />
+                  </label>
+                  <button
+                    type="button"
+                    class="ap-btn ap-kv-save"
+                    :disabled="kvSaveLoading || !kvDraftKey.trim()"
+                    @click="saveArbitrarySetting"
+                  >
+                    <i :class="kvSaveLoading ? 'fas fa-circle-notch fa-spin' : 'fas fa-save'"></i>
+                    Сохранить
+                  </button>
+                </div>
+                <p v-if="kvDraftError" class="ap-err"><i class="fas fa-exclamation-circle"></i> {{ kvDraftError }}</p>
+              </div>
+
+              <div class="ap-kv-list">
+                <div v-if="kvLoading" class="ap-kv-empty">
+                  <i class="fas fa-circle-notch fa-spin"></i> Загрузка списка…
+                </div>
+                <div v-else-if="kvError" class="ap-err">
+                  <i class="fas fa-exclamation-circle"></i> {{ kvError }}
+                </div>
+                <div v-else-if="kvItems.length === 0" class="ap-kv-empty">
+                  Нет произвольных ключей. Добавьте, например, <code class="ap-gc-code">gc_itest_offer_id</code>,
+                  <code class="ap-gc-code">gc_itest_webhook_event_id</code>,
+                  <code class="ap-gc-code">gc_itest_webhook_event_object_id</code>,
+                  <code class="ap-gc-code">gc_itest_webhook_uri</code>.
+                </div>
+                <ul v-else class="ap-kv-rows">
+                  <li v-for="item in kvItems" :key="item.key" class="ap-kv-item">
+                    <code class="ap-gc-code ap-kv-key">{{ item.key }}</code>
+                    <span class="ap-kv-value">{{ arbitrarySettingValueToString(item.value) || '—' }}</span>
+                    <div class="ap-kv-actions">
+                      <button type="button" class="ap-btn ap-btn--sm" @click="startEditArbitrarySetting(item.key)">
+                        <i class="fas fa-pen"></i> Изменить
+                      </button>
+                      <button
+                        type="button"
+                        class="ap-btn ap-btn--sm ap-btn--danger"
+                        :disabled="kvSaveLoading"
+                        @click="deleteArbitrarySetting(item.key)"
+                      >
+                        <i class="fas fa-trash"></i> Удалить
+                      </button>
+                    </div>
+                  </li>
+                </ul>
+              </div>
+            </section>
+
+            <section class="ap-card ap-card--stagger-4 ap-gw">
+              <div class="ap-card-hd">
+                <h2><i class="fas fa-chart-line ap-icon-hd"></i> Аналитика вызовов /v1/{op}</h2>
+                <span class="ap-log-ct">{{ gwMatched }} из {{ gwScanned }}</span>
+              </div>
+              <p class="ap-gc-lead">
+                Источник — серверные логи <code class="ap-gc-code">writeServerLog</code>
+                с <code class="ap-gc-code">payload.logStage = v1_op_completed</code>
+                (manual §7.2, §7.4.2). Только Admin.
+              </p>
+
+              <div class="ap-gw-filters">
+                <label class="ap-gw-field">
+                  <span>requestId (поиск)</span>
+                  <input v-model="gwFilters.requestId" type="text" class="ap-input" placeholder="часть requestId" />
+                </label>
+                <label class="ap-gw-field">
+                  <span>op</span>
+                  <input v-model="gwFilters.op" type="text" class="ap-input" placeholder="addUser, getOffers, …" />
+                </label>
+                <label class="ap-gw-field">
+                  <span>contour</span>
+                  <select v-model="gwFilters.contour" class="ap-input">
+                    <option value="">любой</option>
+                    <option value="legacy">legacy</option>
+                    <option value="new">new</option>
+                  </select>
+                </label>
+                <label class="ap-gw-field">
+                  <span>error.code</span>
+                  <input v-model="gwFilters.errorCode" type="text" class="ap-input" placeholder="INVOKE_GC_TIMEOUT" />
+                </label>
+                <label class="ap-gw-field">
+                  <span>availability</span>
+                  <input v-model="gwFilters.availability" type="text" class="ap-input" placeholder="enabled, beta, disabled" />
+                </label>
+                <label class="ap-gw-field">
+                  <span>durationMs ≥</span>
+                  <input v-model="gwFilters.durationMsMin" type="number" min="0" class="ap-input" placeholder="0" />
+                </label>
+                <label class="ap-gw-field">
+                  <span>durationMs ≤</span>
+                  <input v-model="gwFilters.durationMsMax" type="number" min="0" class="ap-input" placeholder="10000" />
+                </label>
+                <label class="ap-gw-field">
+                  <span>ok</span>
+                  <select v-model="gwFilters.ok" class="ap-input">
+                    <option value="">любое</option>
+                    <option value="yes">true</option>
+                    <option value="no">false</option>
+                  </select>
+                </label>
+              </div>
+
+              <div class="ap-gw-actions">
+                <button type="button" class="ap-btn" :disabled="gwLoading" @click="loadGatewayAnalytics">
+                  <i :class="gwLoading ? 'fas fa-circle-notch fa-spin' : 'fas fa-search'"></i>
+                  Загрузить
+                </button>
+                <button type="button" class="ap-btn ap-btn--sm" @click="resetGatewayFilters">
+                  <i class="fas fa-times"></i> Сброс фильтров
+                </button>
+                <p v-if="gwError" class="ap-err"><i class="fas fa-exclamation-circle"></i> {{ gwError }}</p>
+              </div>
+
+              <div v-if="gwSummary" class="ap-gw-summary">
+                <div class="ap-gw-stat"><strong>{{ gwSummary.total }}</strong><span>всего</span></div>
+                <div class="ap-gw-stat ap-gw-stat--ok"><strong>{{ gwSummary.okCount }}</strong><span>ok</span></div>
+                <div class="ap-gw-stat ap-gw-stat--err"><strong>{{ gwSummary.errCount }}</strong><span>error</span></div>
+                <div class="ap-gw-stat"><strong>{{ gwSummary.avgDurationMs }}мс</strong><span>avg</span></div>
+                <div class="ap-gw-stat"><strong>{{ gwSummary.p50DurationMs }}мс</strong><span>p50</span></div>
+                <div class="ap-gw-stat"><strong>{{ gwSummary.p95DurationMs }}мс</strong><span>p95</span></div>
+              </div>
+
+              <div v-if="gwItems.length" class="ap-gw-table-wrap custom-scrollbar">
+                <table class="ap-gw-table">
+                  <thead>
+                    <tr>
+                      <th>Время</th>
+                      <th>requestId</th>
+                      <th>op</th>
+                      <th>method</th>
+                      <th>contour</th>
+                      <th>HTTP</th>
+                      <th>ok</th>
+                      <th>error.code</th>
+                      <th>gcHTTP</th>
+                      <th>ms</th>
+                      <th>host?</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="(item, idx) in gwItems" :key="idx">
+                      <td class="ap-gw-num">{{ formatGwTime(item.timestamp) }}</td>
+                      <td class="ap-gw-rid">
+                        <button
+                          type="button"
+                          class="ap-gw-copy"
+                          :title="item.requestId"
+                          @click="copyToClipboard(item.requestId ?? '')"
+                        >
+                          <i class="fas fa-clone"></i>
+                          {{ (item.requestId ?? '').slice(0, 10) }}…
+                        </button>
+                      </td>
+                      <td>{{ item.op ?? '—' }}</td>
+                      <td>{{ item.httpMethod ?? '—' }}</td>
+                      <td>{{ item.contour ?? '—' }}</td>
+                      <td class="ap-gw-num">{{ item.clientHttpStatus ?? '—' }}</td>
+                      <td>
+                        <span v-if="item.ok === true" class="ap-gw-pill ap-gw-pill--ok">true</span>
+                        <span v-else-if="item.ok === false" class="ap-gw-pill ap-gw-pill--err">false</span>
+                        <span v-else>—</span>
+                      </td>
+                      <td>{{ item.errorCode ?? '—' }}</td>
+                      <td class="ap-gw-num">{{ item.gcHttpStatus ?? '—' }}</td>
+                      <td class="ap-gw-num">{{ item.durationMs ?? '—' }}</td>
+                      <td>{{ item.schoolHostPresent === undefined ? '—' : (item.schoolHostPresent ? 'да' : 'нет') }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <p v-else-if="!gwLoading && !gwError" class="ap-gw-empty">
+                Нет данных за выбранными фильтрами. Выполните несколько вызовов
+                <code class="ap-gc-code">/v1/{op}</code> и нажмите «Загрузить».
+              </p>
+            </section>
           </div>
 
           <aside class="ap-side">
@@ -1268,6 +1743,36 @@ function onVisibilityForLogsSocket() {
 .ap-input--grow { flex: 1 1 auto; min-width: 0; }
 .ap-gc-toggle { flex-shrink: 0; align-self: stretch; }
 .ap-gc-actions { margin-top: 0.5rem; position: relative; z-index: 1; }
+
+/* ── Произвольные пары «ключ — значение» (manual §5.9) ─────────────────── */
+.ap-kv .ap-kv-form { margin-top: 0.55rem; }
+.ap-kv-row {
+  display: flex; gap: 0.45rem; flex-wrap: wrap; align-items: flex-end;
+}
+.ap-kv-field { display: flex; flex-direction: column; gap: 0.2rem; min-width: 12rem; }
+.ap-kv-field--grow { flex: 1; min-width: 14rem; }
+.ap-kv-field span {
+  font-size: 0.68rem; color: var(--c-tx2); letter-spacing: 0.04em; text-transform: uppercase;
+}
+.ap-kv-save { align-self: flex-end; }
+.ap-kv-list { margin-top: 0.6rem; }
+.ap-kv-empty { font-size: 0.74rem; color: var(--c-tx3); padding: 0.4rem 0.5rem; }
+.ap-kv-rows { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.35rem; }
+.ap-kv-item {
+  display: grid;
+  grid-template-columns: minmax(8rem, 16rem) minmax(0, 1fr) auto;
+  gap: 0.5rem;
+  align-items: center;
+  padding: 0.4rem 0.55rem;
+  border: 1px solid var(--c-bdr);
+  background: var(--c-bg-deep);
+}
+.ap-kv-key { font-size: 0.74rem; color: var(--c-tx); word-break: break-all; }
+.ap-kv-value {
+  font-size: 0.74rem; color: var(--c-tx2);
+  word-break: break-all; white-space: pre-wrap;
+}
+.ap-kv-actions { display: inline-flex; gap: 0.35rem; }
 .ap-card-hd {
   display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;
   margin-bottom: 0.7rem; position: relative; z-index: 1;
@@ -1440,6 +1945,68 @@ function onVisibilityForLogsSocket() {
 .lvl-notice { color: #8bb89c; }
 .lvl-warning { color: var(--c-warn); }
 .lvl-error, .lvl-critical, .lvl-alert, .lvl-emergency { color: var(--c-alert); }
+
+/* ── GATEWAY ANALYTICS (manual §7.4) ── */
+.ap-gw { position: relative; z-index: 1; }
+.ap-gw-filters {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 0.5rem; margin-bottom: 0.6rem; position: relative; z-index: 1;
+}
+.ap-gw-field { display: flex; flex-direction: column; gap: 0.2rem; }
+.ap-gw-field span {
+  font-size: 0.62rem; color: var(--c-tx3); letter-spacing: 0.05em; text-transform: uppercase;
+}
+.ap-gw-field .ap-input { font-size: 0.78rem; padding: 0.4rem 0.55rem; }
+.ap-gw-actions { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.7rem; flex-wrap: wrap; }
+.ap-gw-summary {
+  display: flex; gap: 0.4rem; flex-wrap: wrap; padding: 0.5rem; margin-bottom: 0.6rem;
+  border: 1px solid var(--c-bdr); background: var(--c-bg-deep);
+}
+.ap-gw-stat {
+  display: flex; flex-direction: column; gap: 0.1rem; padding: 0.2rem 0.55rem;
+  border-right: 1px solid rgba(50, 44, 54, 0.4);
+}
+.ap-gw-stat:last-child { border-right: none; }
+.ap-gw-stat strong { font-size: 1rem; font-variant-numeric: tabular-nums; color: var(--c-tx); }
+.ap-gw-stat span { font-size: 0.62rem; color: var(--c-tx3); letter-spacing: 0.05em; text-transform: uppercase; }
+.ap-gw-stat--ok strong { color: var(--c-ok); }
+.ap-gw-stat--err strong { color: var(--c-alert); }
+
+.ap-gw-table-wrap {
+  max-height: 320px; overflow-y: auto; overflow-x: auto;
+  border: 1px solid var(--c-bdr); background: rgba(5, 4, 7, 0.96);
+}
+.ap-gw-table {
+  width: 100%; border-collapse: collapse; font-size: 0.7rem; color: var(--c-tx);
+}
+.ap-gw-table th, .ap-gw-table td {
+  padding: 0.3rem 0.45rem; text-align: left; border-bottom: 1px solid rgba(50, 44, 54, 0.18);
+  white-space: nowrap;
+}
+.ap-gw-table th {
+  position: sticky; top: 0; background: var(--c-bg-deep); color: var(--c-tx2);
+  font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; font-size: 0.62rem;
+}
+.ap-gw-table tbody tr:hover { background: rgba(255, 255, 255, 0.02); }
+.ap-gw-num { font-variant-numeric: tabular-nums; }
+.ap-gw-rid { font-variant-numeric: tabular-nums; }
+.ap-gw-copy {
+  background: transparent; border: 1px solid var(--c-bdr); color: var(--c-tx2);
+  padding: 0.15rem 0.4rem; cursor: pointer; font-family: inherit; font-size: 0.7rem;
+  display: inline-flex; align-items: center; gap: 0.3rem;
+}
+.ap-gw-copy:hover { border-color: var(--c-bdr-hi); color: var(--c-tx); }
+.ap-gw-copy i { font-size: 0.6rem; }
+.ap-gw-pill {
+  display: inline-block; padding: 0.05rem 0.4rem; font-size: 0.65rem; font-weight: 700;
+  border: 1px solid;
+}
+.ap-gw-pill--ok { color: var(--c-ok); border-color: rgba(106, 175, 126, 0.4); }
+.ap-gw-pill--err { color: var(--c-alert); border-color: rgba(217, 122, 138, 0.4); }
+.ap-gw-empty {
+  margin: 0.4rem 0 0; padding: 0.85rem; color: var(--c-tx3); font-size: 0.78rem;
+  border: 1px dashed var(--c-bdr); background: rgba(5, 4, 7, 0.6); text-align: center;
+}
 
 .ap-log-ft { display: flex; flex-direction: column; gap: 0.4rem; position: relative; z-index: 1; flex-shrink: 0; }
 .ap-log-sync { font-size: 0.74rem; color: var(--c-tx2); display: flex; align-items: center; gap: 0.35rem; }

@@ -17,6 +17,7 @@ import {
   type TestCatalogBlock,
   type TestCatalogEntry
 } from '../shared/testCatalog'
+import { V1_OPS_LIST, type V1OpListEntry } from '../shared/v1OpsList.generated'
 
 const log = createComponentLogger('TestsPage')
 
@@ -367,6 +368,8 @@ onMounted(() => {
   } else {
     window.addEventListener('bootloader-complete', startAnimations)
   }
+
+  void loadV1OpsPreflight()
 
   if (props.encodedLogsSocketId) {
     browserRemoteLogger = createBrowserRemoteLogger({
@@ -774,6 +777,299 @@ async function runHttpPageChecks() {
   }
 }
 
+/** Результат прогона одного /v1/{op} (gateway-testing-strategy.md §3, §6). */
+type V1OpRunResult = {
+  op: string
+  phase: number
+  contour?: 'new' | 'legacy'
+  httpMethod?: 'GET' | 'POST'
+  availability?: string
+  status: 'passed' | 'failed' | 'skipped'
+  durationMs: number
+  clientHttpStatus?: number
+  ok?: boolean
+  errorCode?: string
+  gatewayRequestId?: string
+  parsedResponse?: unknown
+  /** Сырой ответ GetCourse (HTTP + тело), если исходящий вызов к школе был — см. `handleV1OpRouteWithGcDiagnostic`. */
+  gcUpstream?: { httpStatus: number; contentType: string; bodyText: string }
+  skipReason?: string
+  hint?: string
+  sentArgs?: Record<string, unknown>
+}
+
+type V1OpsRunSummary = {
+  startedAt: number
+  finishedAt: number
+  durationMs: number
+  total: number
+  passed: number
+  failed: number
+  skipped: number
+  results: V1OpRunResult[]
+  fatalError?: string
+}
+
+const v1OpsResults = ref<Record<string, V1OpRunResult>>({})
+const v1OpsExpanded = ref<Record<string, boolean>>({})
+const v1OpsRunningAll = ref(false)
+const v1OpsSingleRunning = ref<string | null>(null)
+const v1OpsFatalError = ref<string | null>(null)
+const v1OpsLastRunAt = ref<string | null>(null)
+
+// Preflight: статичный анализ готовности сьюита /v1/{op} (gateway-testing-strategy.md §1, §9).
+type V1OpRunStatus = 'ready' | 'blocked-availability' | 'warn-heap' | 'warn-deps'
+type V1OpPreflight = {
+  op: string
+  phase: 1 | 2 | 3 | 4
+  contour?: 'new' | 'legacy'
+  httpMethod?: 'GET' | 'POST'
+  availability?: 'enabled' | 'beta' | 'disabled' | 'unsupported'
+  dependsOn: readonly string[]
+  heapKeys: readonly string[]
+  missingHeapKeys: readonly string[]
+  blockedDependencies: readonly string[]
+  runStatus: V1OpRunStatus
+  blockReason?: string
+  hint?: string
+}
+type V1OpsPreflightSnapshot = {
+  levelA: { schoolHostSet: boolean; schoolApiKeySet: boolean; developerKeySet: boolean; ready: boolean }
+  setHeapKeys: readonly string[]
+  knownHeapKeys: readonly string[]
+  testerEmail: string
+  ops: V1OpPreflight[]
+  summary: { total: number; ready: number; blockedAvailability: number; warnHeap: number; warnDeps: number }
+}
+const v1OpsPreflight = ref<V1OpsPreflightSnapshot | null>(null)
+const v1OpsPreflightLoading = ref(false)
+const v1OpsPreflightError = ref<string | null>(null)
+
+const PHASE_LABELS: Record<number, string> = {
+  1: 'Ф1 каталог/Heap',
+  2: 'Ф2 производитель',
+  3: 'Ф3 потребитель',
+  4: 'Ф4 деструктор'
+}
+
+function v1OpStatusBadge(result: V1OpRunResult | undefined): { text: string; status: 'pending' | 'success' | 'fail' | 'skip' } {
+  if (!result) return { text: 'ОЖИД', status: 'pending' }
+  if (result.status === 'passed') return { text: 'OK', status: 'success' }
+  if (result.status === 'failed') return { text: 'FAIL', status: 'fail' }
+  return { text: 'SKIP', status: 'skip' }
+}
+
+function formatMs(ms: number | undefined): string {
+  if (ms === undefined) return ''
+  if (ms < 1000) return `${ms} мс`
+  return `${(ms / 1000).toFixed(1)} с`
+}
+
+function formatJsonForDisplay(value: unknown): string {
+  try {
+    return JSON.stringify(value, null, 2)
+  } catch {
+    return String(value)
+  }
+}
+
+/** Сырое тело ответа школы: заголовки + JSON с отступами, если парсится. */
+function formatGcUpstreamForDisplay(up: { httpStatus: number; contentType: string; bodyText: string }): string {
+  const head = `HTTP ${String(up.httpStatus)}\nContent-Type: ${up.contentType}\n\n`
+  const t = up.bodyText.trim()
+  if ((t.startsWith('{') && t.endsWith('}')) || (t.startsWith('[') && t.endsWith(']'))) {
+    try {
+      return head + JSON.stringify(JSON.parse(t) as unknown, null, 2)
+    } catch {
+      return head + up.bodyText
+    }
+  }
+  return head + up.bodyText
+}
+
+function applyV1OpsSummary(summary: V1OpsRunSummary) {
+  v1OpsFatalError.value = summary.fatalError ?? null
+  for (const r of summary.results) {
+    v1OpsResults.value[r.op] = r
+  }
+  v1OpsLastRunAt.value = new Date().toLocaleString('ru-RU')
+}
+
+async function loadV1OpsPreflight() {
+  v1OpsPreflightLoading.value = true
+  v1OpsPreflightError.value = null
+  try {
+    const base = getApiBaseUrl().replace(/\/$/, '')
+    const res = await fetch(`${base}/api/tests/v1-ops/preflight`, {
+      method: 'GET',
+      credentials: 'include'
+    })
+    const data = (await res.json().catch(() => null)) as
+      | { success?: boolean; snapshot?: V1OpsPreflightSnapshot; error?: string }
+      | null
+    if (data?.snapshot) {
+      v1OpsPreflight.value = data.snapshot
+    } else if (data?.error) {
+      v1OpsPreflightError.value = data.error
+    } else {
+      v1OpsPreflightError.value = `HTTP ${res.status}`
+    }
+  } catch (e) {
+    v1OpsPreflightError.value = (e as Error)?.message ?? String(e)
+  } finally {
+    v1OpsPreflightLoading.value = false
+  }
+}
+
+async function runV1OpsSuite() {
+  v1OpsRunningAll.value = true
+  v1OpsFatalError.value = null
+  try {
+    const base = getApiBaseUrl().replace(/\/$/, '')
+    const res = await fetch(`${base}/api/tests/v1-ops/run`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mode: 'all' })
+    })
+    const data = (await res.json().catch(() => null)) as
+      | { success?: boolean; summary?: V1OpsRunSummary; error?: string }
+      | null
+    if (data?.summary) {
+      applyV1OpsSummary(data.summary)
+    } else if (data?.error) {
+      v1OpsFatalError.value = data.error
+    } else {
+      v1OpsFatalError.value = `HTTP ${res.status}`
+    }
+    log.info('Сьюит /v1/{op} завершён', {
+      total: data?.summary?.total,
+      passed: data?.summary?.passed,
+      failed: data?.summary?.failed,
+      skipped: data?.summary?.skipped
+    })
+  } catch (e) {
+    v1OpsFatalError.value = (e as Error)?.message ?? String(e)
+    log.error('Ошибка сьюита /v1/{op}', e)
+  } finally {
+    v1OpsRunningAll.value = false
+    void loadV1OpsPreflight()
+  }
+}
+
+async function runSingleV1Op(op: string) {
+  v1OpsSingleRunning.value = op
+  v1OpsFatalError.value = null
+  try {
+    const base = getApiBaseUrl().replace(/\/$/, '')
+    const res = await fetch(`${base}/api/tests/v1-ops/run`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mode: 'single', opId: op })
+    })
+    const data = (await res.json().catch(() => null)) as
+      | { success?: boolean; summary?: V1OpsRunSummary; error?: string }
+      | null
+    if (data?.summary) {
+      applyV1OpsSummary(data.summary)
+    } else if (data?.error) {
+      v1OpsFatalError.value = data.error
+    } else {
+      v1OpsFatalError.value = `HTTP ${res.status}`
+    }
+  } catch (e) {
+    v1OpsFatalError.value = (e as Error)?.message ?? String(e)
+  } finally {
+    v1OpsSingleRunning.value = null
+    void loadV1OpsPreflight()
+  }
+}
+
+function toggleV1OpRow(op: string) {
+  v1OpsExpanded.value[op] = !v1OpsExpanded.value[op]
+}
+
+const v1OpsMetrics = computed(() => {
+  let passed = 0
+  let failed = 0
+  let skipped = 0
+  for (const op of V1_OPS_LIST) {
+    const r = v1OpsResults.value[op.op]
+    if (!r) continue
+    if (r.status === 'passed') passed++
+    else if (r.status === 'failed') failed++
+    else skipped++
+  }
+  const total = V1_OPS_LIST.length
+  return { total, passed, failed, skipped, pending: total - passed - failed - skipped }
+})
+
+type V1OpRow = {
+  entry: V1OpListEntry
+  result?: V1OpRunResult
+  preflight?: V1OpPreflight
+  /**
+   * Эффективный визуальный статус строки: после прогона приоритетен результат
+   * (success/fail), до прогона — статус префлайта (ready/blocked/warn).
+   */
+  visualStatus: 'success' | 'fail' | 'skip' | 'ready' | 'blocked-availability' | 'warn-heap' | 'warn-deps' | 'pending'
+}
+
+function deriveVisualStatus(result: V1OpRunResult | undefined, preflight: V1OpPreflight | undefined): V1OpRow['visualStatus'] {
+  if (result?.status === 'passed') return 'success'
+  if (result?.status === 'failed') return 'fail'
+  if (result?.status === 'skipped') return 'skip'
+  if (preflight) return preflight.runStatus
+  return 'pending'
+}
+
+const v1OpsViewRows = computed<V1OpRow[]>(() => {
+  const preflightByOp = new Map<string, V1OpPreflight>()
+  if (v1OpsPreflight.value) {
+    for (const op of v1OpsPreflight.value.ops) preflightByOp.set(op.op, op)
+  }
+  return V1_OPS_LIST.map((entry) => {
+    const result = v1OpsResults.value[entry.op]
+    const preflight = preflightByOp.get(entry.op)
+    return { entry, result, preflight, visualStatus: deriveVisualStatus(result, preflight) }
+  })
+})
+
+/** Группировка строк по фазам сценариев (стратегия §3.1) — для понятного порядка в UI. */
+const v1OpsRowsByPhase = computed<Array<{ phase: 1 | 2 | 3 | 4; label: string; rows: V1OpRow[] }>>(() => {
+  const buckets: Record<1 | 2 | 3 | 4, V1OpRow[]> = { 1: [], 2: [], 3: [], 4: [] }
+  for (const row of v1OpsViewRows.value) {
+    const phase = (row.preflight?.phase ?? row.result?.phase ?? 1) as 1 | 2 | 3 | 4
+    buckets[phase].push(row)
+  }
+  return ([1, 2, 3, 4] as const)
+    .filter((p) => buckets[p].length > 0)
+    .map((p) => ({ phase: p, label: PHASE_LABELS[p], rows: buckets[p] }))
+})
+
+function isV1OpRowRunnable(row: V1OpRow): boolean {
+  if (!row.preflight) return true // до загрузки префлайта не блокируем — ответственность за SKIP несёт раннер
+  return row.preflight.runStatus === 'ready'
+}
+
+/** Короткая подпись для тэга runStatus — только из script, без `{{ { ... } }}` в шаблоне (иначе UGC/Vue может распарсить `{` как блок и дать пустой ReferenceError). */
+function v1OpsPreflightRunStatusShortLabel(status: V1OpRunStatus | string): string {
+  switch (status) {
+    case 'blocked-availability':
+      return 'запуск запрещён'
+    case 'warn-heap':
+      return 'нужен Heap'
+    case 'warn-deps':
+      return 'нужен предшественник'
+    default:
+      return ''
+  }
+}
+
+const v1OpsAnyRunnable = computed(() => v1OpsViewRows.value.some(isV1OpRowRunnable))
+const v1OpsAdminUrl = computed(() => props.adminUrl ?? '')
+
 async function runSingleHttpPageCheck(testId: string) {
   const fallbackTitle = INTEGRATION_HTTP_TEST_BLOCK.tests.find((t) => t.id === testId)?.title ?? testId
   const path = HTTP_PATH_BY_TEST_ID[testId]
@@ -1097,6 +1393,209 @@ const runAllTests = async () => {
                 <i v-if="httpPagesLoading" class="fas fa-circle-notch fa-spin"></i>
                 <i v-else class="fas fa-play"></i>
                 {{ httpPagesLoading ? 'Запуск...' : 'Проверить HTTP-страницы' }}
+              </button>
+            </div>
+
+            <div class="tp-suite tp-v1ops">
+              <div class="tp-suite-hd">
+                <h2><i class="fas fa-bolt tp-icon-hd"></i> Gateway /v1/{op}</h2>
+                <code class="tp-code">POST /api/tests/v1-ops/run</code>
+              </div>
+              <p class="tp-block-desc">
+                Один запуск на каждый из {{ V1_OPS_LIST.length }} роутов <code>/v1/{op}</code>.
+                Заголовки школы — из Heap (<code>gc_test_school_host</code>, <code>gc_test_school_api_key</code>).
+                Порядок и фазы — по <code>docs/gateway/gateway-testing-strategy.md</code>.
+                Между исходящими вызовами — пауза ≥ 1 с (1 rps).
+              </p>
+
+              <div v-if="v1OpsFatalError" class="tp-err">
+                <i class="fas fa-exclamation-triangle"></i> {{ v1OpsFatalError }}
+              </div>
+
+              <div v-if="v1OpsPreflight" class="tp-v1ops-readiness">
+                <div class="tp-v1ops-readiness-row">
+                  <span class="tp-v1ops-readiness-h">Уровень A (Heap, manual §5.8):</span>
+                  <span
+                    class="tp-v1ops-readiness-tag"
+                    :class="v1OpsPreflight.levelA.schoolHostSet ? 'tp-v1ops-readiness-tag--ok' : 'tp-v1ops-readiness-tag--warn'"
+                  >gc_test_school_host {{ v1OpsPreflight.levelA.schoolHostSet ? '✓' : '—' }}</span>
+                  <span
+                    class="tp-v1ops-readiness-tag"
+                    :class="v1OpsPreflight.levelA.schoolApiKeySet ? 'tp-v1ops-readiness-tag--ok' : 'tp-v1ops-readiness-tag--warn'"
+                  >gc_test_school_api_key {{ v1OpsPreflight.levelA.schoolApiKeySet ? '✓' : '—' }}</span>
+                  <span
+                    class="tp-v1ops-readiness-tag"
+                    :class="v1OpsPreflight.levelA.developerKeySet ? 'tp-v1ops-readiness-tag--ok' : 'tp-v1ops-readiness-tag--warn'"
+                  >gc_developer_api_key {{ v1OpsPreflight.levelA.developerKeySet ? '✓' : '—' }}</span>
+                </div>
+                <div class="tp-v1ops-readiness-row">
+                  <span class="tp-v1ops-readiness-h">Готовность сценариев:</span>
+                  <span class="tp-v1ops-readiness-tag tp-v1ops-readiness-tag--ok">
+                    готовы {{ v1OpsPreflight.summary.ready }}
+                  </span>
+                  <span class="tp-v1ops-readiness-tag tp-v1ops-readiness-tag--warn">
+                    нужны Heap {{ v1OpsPreflight.summary.warnHeap }}
+                  </span>
+                  <span class="tp-v1ops-readiness-tag tp-v1ops-readiness-tag--warn">
+                    ждут предшественника {{ v1OpsPreflight.summary.warnDeps }}
+                  </span>
+                  <span class="tp-v1ops-readiness-tag tp-v1ops-readiness-tag--blocked">
+                    запрещены availability {{ v1OpsPreflight.summary.blockedAvailability }}
+                  </span>
+                  <a
+                    v-if="v1OpsAdminUrl"
+                    :href="v1OpsAdminUrl"
+                    class="tp-v1ops-readiness-link"
+                  >
+                    <i class="fas fa-cog"></i> Открыть админку (manual §5.9)
+                  </a>
+                </div>
+              </div>
+              <div v-else-if="v1OpsPreflightLoading" class="tp-v1ops-readiness tp-v1ops-readiness--loading">
+                <i class="fas fa-circle-notch fa-spin"></i> Подготовка статуса сьюита…
+              </div>
+              <div v-else-if="v1OpsPreflightError" class="tp-err">
+                <i class="fas fa-exclamation-triangle"></i> Ошибка префлайта: {{ v1OpsPreflightError }}
+              </div>
+
+              <div class="tp-v1ops-metrics">
+                <span class="tp-v1ops-metric"><i class="fas fa-list-ol"></i> {{ v1OpsMetrics.total }} всего</span>
+                <span class="tp-v1ops-metric tp-v1ops-metric--ok"><i class="fas fa-check-circle"></i> {{ v1OpsMetrics.passed }} прошли</span>
+                <span class="tp-v1ops-metric tp-v1ops-metric--fail"><i class="fas fa-times-circle"></i> {{ v1OpsMetrics.failed }} упали</span>
+                <span class="tp-v1ops-metric tp-v1ops-metric--skip"><i class="fas fa-minus-circle"></i> {{ v1OpsMetrics.skipped }} пропущено</span>
+                <span class="tp-v1ops-metric"><i class="fas fa-clock"></i> {{ v1OpsMetrics.pending }} без прогона</span>
+                <span v-if="v1OpsLastRunAt" class="tp-v1ops-metric tp-v1ops-time">
+                  <i class="fas fa-stopwatch"></i> {{ v1OpsLastRunAt }}
+                </span>
+              </div>
+
+              <div
+                v-for="phase in v1OpsRowsByPhase"
+                :key="phase.phase"
+                class="tp-v1ops-phase"
+              >
+                <div class="tp-v1ops-phase-hd">
+                  <span class="tp-v1ops-phase-num">Фаза {{ phase.phase }}</span>
+                  <span class="tp-v1ops-phase-label">{{ phase.label }}</span>
+                  <span class="tp-v1ops-phase-count">{{ phase.rows.length }} сценариев</span>
+                </div>
+                <ul class="tp-tests" role="list">
+                  <li
+                    v-for="row in phase.rows"
+                    :key="row.entry.op"
+                    class="tp-test tp-v1ops-row"
+                    :class="`tp-v1ops-row--${row.visualStatus}`"
+                  >
+                    <div class="tp-test-accent" :class="`tp-v1ops-accent--${row.visualStatus}`"></div>
+                    <div class="tp-test-content">
+                      <div class="tp-test-main">
+                        <span class="tp-badge" :class="`tp-badge--${v1OpStatusBadge(row.result).status}`">
+                          {{ v1OpStatusBadge(row.result).text }}
+                        </span>
+                        <span class="tp-test-name">
+                          <span class="tp-v1ops-method">{{ row.entry.httpMethod }}</span>
+                          <code class="tp-v1ops-op">/v1/{{ row.entry.op }}</code>
+                          <span class="tp-v1ops-tag tp-v1ops-tag--contour">{{ row.entry.contour }}</span>
+                          <span
+                            class="tp-v1ops-tag"
+                            :class="`tp-v1ops-tag--av-${row.entry.availability}`"
+                          >{{ row.entry.availability }}</span>
+                          <span
+                            v-if="row.preflight && row.preflight.runStatus !== 'ready'"
+                            class="tp-v1ops-tag"
+                            :class="`tp-v1ops-tag--st-${row.preflight.runStatus}`"
+                          >{{ v1OpsPreflightRunStatusShortLabel(row.preflight.runStatus) }}</span>
+                        </span>
+                        <button
+                          type="button"
+                          class="tp-test-run"
+                          :title="row.preflight && row.preflight.runStatus !== 'ready' ? row.preflight.blockReason : 'Запустить сценарий'"
+                          :disabled="v1OpsRunningAll || v1OpsSingleRunning !== null || !isV1OpRowRunnable(row)"
+                          @click="runSingleV1Op(row.entry.op)"
+                        >
+                          <i v-if="v1OpsSingleRunning === row.entry.op" class="fas fa-circle-notch fa-spin"></i>
+                          <i v-else-if="row.preflight && row.preflight.runStatus === 'blocked-availability'" class="fas fa-ban"></i>
+                          <i v-else-if="row.preflight && row.preflight.runStatus !== 'ready'" class="fas fa-pause"></i>
+                          <i v-else class="fas fa-play"></i>
+                        </button>
+                      </div>
+                      <div class="tp-v1ops-meta">
+                        <!-- UGC: в шаблоне не использовать ?. — старый компилятор даёт пустой ReferenceError при ре-рендере после fetch -->
+                        <span v-if="row.result && row.result.clientHttpStatus" class="tp-v1ops-meta-item">HTTP {{ row.result.clientHttpStatus }}</span>
+                        <span v-if="row.result" class="tp-v1ops-meta-item">{{ formatMs(row.result.durationMs) }}</span>
+                        <span v-if="row.result && row.result.errorCode" class="tp-v1ops-meta-item tp-v1ops-meta-err">{{ row.result.errorCode }}</span>
+                        <span v-if="row.result && row.result.gatewayRequestId" class="tp-v1ops-meta-item tp-v1ops-meta-req">req: {{ row.result.gatewayRequestId }}</span>
+                      </div>
+                      <p
+                        v-if="row.preflight && row.preflight.runStatus === 'blocked-availability'"
+                        class="tp-v1ops-block tp-v1ops-block--blocked"
+                      >
+                        <i class="fas fa-ban"></i>
+                        {{ row.preflight.blockReason }}
+                      </p>
+                      <p
+                        v-else-if="row.preflight && row.preflight.runStatus === 'warn-heap'"
+                        class="tp-v1ops-block tp-v1ops-block--warn"
+                      >
+                        <i class="fas fa-key"></i>
+                        {{ row.preflight.blockReason }}
+                        <a v-if="v1OpsAdminUrl" :href="v1OpsAdminUrl" class="tp-v1ops-block-link">
+                          <i class="fas fa-cog"></i> Задать в админке
+                        </a>
+                      </p>
+                      <p
+                        v-else-if="row.preflight && row.preflight.runStatus === 'warn-deps'"
+                        class="tp-v1ops-block tp-v1ops-block--warn"
+                      >
+                        <i class="fas fa-link"></i>
+                        {{ row.preflight.blockReason }}
+                      </p>
+                      <p v-if="row.result && row.result.skipReason" class="tp-test-err"><i class="fas fa-info-circle"></i> {{ row.result.skipReason }}</p>
+                      <p v-if="row.entry.op && row.result && row.result.hint" class="tp-v1ops-hint">{{ row.result.hint }}</p>
+                      <p v-else-if="row.preflight && row.preflight.hint && !row.result" class="tp-v1ops-hint">{{ row.preflight.hint }}</p>
+                      <p v-else-if="!row.result && !row.preflight" class="tp-v1ops-hint tp-v1ops-hint--idle">{{ row.entry.op }} — ожидает запуска</p>
+                      <button
+                        v-if="
+                          (row.result && row.result.sentArgs) ||
+                          (row.result && row.result.parsedResponse !== undefined) ||
+                          (row.result && row.result.gcUpstream)
+                        "
+                        type="button"
+                        class="tp-v1ops-toggle"
+                        @click="toggleV1OpRow(row.entry.op)"
+                      >
+                        <i :class="v1OpsExpanded[row.entry.op] ? 'fas fa-chevron-up' : 'fas fa-chevron-down'"></i>
+                        {{ v1OpsExpanded[row.entry.op] ? 'Скрыть детали' : 'Показать детали (args, gateway, GetCourse)' }}
+                      </button>
+                      <div v-if="v1OpsExpanded[row.entry.op] && row.result" class="tp-v1ops-payload">
+                        <div v-if="row.result.sentArgs" class="tp-v1ops-payload-block">
+                          <div class="tp-v1ops-payload-h">Отправленные args</div>
+                          <pre>{{ formatJsonForDisplay(row.result.sentArgs) }}</pre>
+                        </div>
+                        <div v-if="row.result.parsedResponse !== undefined" class="tp-v1ops-payload-block">
+                          <div class="tp-v1ops-payload-h">Ответ gateway /v1/{{ row.entry.op }} (обёртка)</div>
+                          <pre>{{ formatJsonForDisplay(row.result.parsedResponse) }}</pre>
+                        </div>
+                        <div v-if="row.result.gcUpstream" class="tp-v1ops-payload-block">
+                          <div class="tp-v1ops-payload-h">Сырой ответ GetCourse (школа)</div>
+                          <pre>{{ formatGcUpstreamForDisplay(row.result.gcUpstream) }}</pre>
+                        </div>
+                      </div>
+                    </div>
+                  </li>
+                </ul>
+              </div>
+
+              <button
+                type="button"
+                class="tp-btn tp-suite-run"
+                :title="!v1OpsAnyRunnable ? 'Нет ни одного готового сценария: задайте уровень A в Heap (manual §5.8) и недостающие gc_itest_* (§5.9).' : 'Запустить сьюит'"
+                :disabled="v1OpsRunningAll || v1OpsSingleRunning !== null || !v1OpsAnyRunnable"
+                @click="runV1OpsSuite"
+              >
+                <i v-if="v1OpsRunningAll" class="fas fa-circle-notch fa-spin"></i>
+                <i v-else class="fas fa-play"></i>
+                {{ v1OpsRunningAll ? 'Прогон сьюита /v1/{op}...' : `Запустить сьюит /v1/{op} (${V1_OPS_LIST.length} роутов)` }}
               </button>
             </div>
             </div>
@@ -1437,6 +1936,191 @@ const runAllTests = async () => {
 .tp-btn--danger:hover:not(:disabled) { border-color: rgba(217, 122, 138, 0.5); background: rgba(60, 20, 30, 0.95); }
 
 .tp-suite-run { margin-top: 0.7rem; width: 100%; justify-content: center; position: relative; z-index: 1; }
+
+/* ── V1 OPS SECTION ── */
+.tp-v1ops { margin-top: 0.85rem; }
+.tp-v1ops-metrics {
+  display: flex; flex-wrap: wrap; gap: 0.4rem 0.85rem;
+  margin: 0.5rem 0 0.6rem; font-size: 0.72rem; color: var(--c-tx2);
+  position: relative; z-index: 1;
+}
+.tp-v1ops-metric { display: inline-flex; align-items: center; gap: 0.3rem; }
+.tp-v1ops-metric i { font-size: 0.62rem; opacity: 0.65; }
+.tp-v1ops-metric--ok { color: var(--c-ok); }
+.tp-v1ops-metric--fail { color: var(--c-alert); }
+.tp-v1ops-metric--skip { color: var(--c-warn); }
+.tp-v1ops-time { margin-left: auto; font-variant-numeric: tabular-nums; }
+
+.tp-v1ops-method {
+  font-weight: 700; color: var(--c-tx); margin-right: 0.35rem;
+  letter-spacing: 0.04em; font-size: 0.72rem;
+}
+.tp-v1ops-op {
+  font-family: inherit; font-size: 0.78rem; color: var(--c-tx);
+  background: rgba(196, 33, 63, 0.08); border: 1px solid rgba(196, 33, 63, 0.2);
+  padding: 0.05rem 0.35rem; margin-right: 0.4rem;
+}
+.tp-v1ops-tag {
+  font-size: 0.62rem; padding: 0.05rem 0.3rem; border: 1px solid var(--c-bdr);
+  margin-right: 0.25rem; letter-spacing: 0.04em; color: var(--c-tx2);
+  text-transform: uppercase;
+}
+.tp-v1ops-tag--contour { color: var(--c-cyan); border-color: rgba(125, 191, 204, 0.3); }
+.tp-v1ops-tag--av-enabled { color: var(--c-ok); border-color: rgba(106, 175, 126, 0.3); }
+.tp-v1ops-tag--av-beta { color: var(--c-warn); border-color: rgba(201, 166, 96, 0.4); }
+.tp-v1ops-tag--av-disabled { color: var(--c-tx3); border-color: rgba(126, 119, 123, 0.3); opacity: 0.7; }
+.tp-v1ops-tag--av-unsupported { color: var(--c-alert); border-color: rgba(217, 122, 138, 0.3); opacity: 0.7; }
+
+.tp-v1ops-meta {
+  display: flex; flex-wrap: wrap; gap: 0.3rem 0.7rem;
+  margin-top: 0.25rem; font-size: 0.7rem; color: var(--c-tx3);
+  font-variant-numeric: tabular-nums;
+}
+.tp-v1ops-meta-item { display: inline-flex; align-items: center; gap: 0.2rem; }
+.tp-v1ops-meta-err { color: var(--c-alert); }
+.tp-v1ops-meta-req { font-family: inherit; opacity: 0.85; }
+
+.tp-v1ops-hint {
+  margin: 0.25rem 0 0; font-size: 0.72rem; color: var(--c-tx3); font-style: italic;
+}
+.tp-v1ops-hint--idle { opacity: 0.6; }
+
+.tp-v1ops-toggle {
+  margin-top: 0.3rem; padding: 0.2rem 0.45rem; border: 1px solid var(--c-bdr);
+  background: var(--c-bg-deep); color: var(--c-tx2); font-family: inherit;
+  font-size: 0.7rem; cursor: pointer; letter-spacing: 0.03em;
+}
+.tp-v1ops-toggle:hover { border-color: var(--c-bdr-hi); color: var(--c-tx); }
+.tp-v1ops-toggle i { font-size: 0.6rem; margin-right: 0.25rem; }
+
+.tp-v1ops-payload {
+  margin-top: 0.4rem; display: flex; flex-direction: column; gap: 0.45rem;
+}
+.tp-v1ops-payload-block { border: 1px solid var(--c-bdr); background: rgba(5, 4, 7, 0.95); }
+.tp-v1ops-payload-h {
+  padding: 0.25rem 0.5rem; border-bottom: 1px solid var(--c-bdr);
+  font-size: 0.66rem; color: var(--c-tx3); letter-spacing: 0.06em; text-transform: uppercase;
+  background: var(--c-bg-deep);
+}
+.tp-v1ops-payload pre {
+  margin: 0; padding: 0.5rem 0.65rem; max-height: 22rem; overflow: auto;
+  font-family: inherit; font-size: 0.72rem; color: var(--c-tx);
+  white-space: pre-wrap; word-break: break-word;
+}
+
+.tp-test--skip { border-color: rgba(201, 166, 96, 0.25); }
+.tp-test--skip:hover { border-color: rgba(201, 166, 96, 0.45); }
+.tp-test-accent--skip { background: var(--c-warn); }
+
+/*
+ * Визуальные состояния строк сценариев /v1/{op} (gateway-testing-strategy.md §9):
+ *   - blocked-availability — нейтральный серый фон, акцент серый, кнопка disabled (§9.1);
+ *   - warn-heap — приглушённый янтарный фон + жёлтая боковая полоса (§9.3);
+ *   - warn-deps — тот же оттенок (зависимости нет), чуть слабее;
+ *   - ready — обычный фон, нормальная активная кнопка.
+ */
+.tp-v1ops-row { transition: background-color 0.18s ease, border-color 0.18s ease; }
+.tp-v1ops-row--blocked-availability {
+  background: rgba(70, 70, 78, 0.28);
+  border-color: rgba(126, 119, 123, 0.3);
+}
+.tp-v1ops-row--blocked-availability:hover { border-color: rgba(126, 119, 123, 0.5); }
+.tp-v1ops-row--blocked-availability .tp-v1ops-method,
+.tp-v1ops-row--blocked-availability .tp-v1ops-op,
+.tp-v1ops-row--blocked-availability .tp-test-name { opacity: 0.7; }
+.tp-v1ops-row--warn-heap,
+.tp-v1ops-row--warn-deps {
+  background: rgba(201, 166, 96, 0.12);
+  border-color: rgba(201, 166, 96, 0.3);
+}
+.tp-v1ops-row--warn-heap:hover,
+.tp-v1ops-row--warn-deps:hover { border-color: rgba(201, 166, 96, 0.55); }
+.tp-v1ops-row--ready { /* обычный фон */ }
+.tp-v1ops-row--success { border-color: rgba(106, 175, 126, 0.3); }
+.tp-v1ops-row--fail { border-color: rgba(217, 122, 138, 0.4); }
+
+.tp-v1ops-accent--success { background: var(--c-ok); }
+.tp-v1ops-accent--fail { background: var(--c-alert); }
+.tp-v1ops-accent--skip { background: var(--c-warn); }
+.tp-v1ops-accent--ready { background: rgba(106, 175, 126, 0.55); }
+.tp-v1ops-accent--blocked-availability { background: rgba(126, 119, 123, 0.55); }
+.tp-v1ops-accent--warn-heap,
+.tp-v1ops-accent--warn-deps { background: rgba(201, 166, 96, 0.7); }
+.tp-v1ops-accent--pending { background: var(--c-tx3); opacity: 0.3; }
+
+/* Дополнительные тэги статуса сценария рядом с availability. */
+.tp-v1ops-tag--st-blocked-availability {
+  color: var(--c-tx3); border-color: rgba(126, 119, 123, 0.4);
+}
+.tp-v1ops-tag--st-warn-heap,
+.tp-v1ops-tag--st-warn-deps {
+  color: var(--c-warn); border-color: rgba(201, 166, 96, 0.5);
+}
+
+/* Подсказки-блокировки внутри строки. */
+.tp-v1ops-block {
+  margin: 0.3rem 0 0; font-size: 0.74rem;
+  padding: 0.35rem 0.5rem; border-left: 2px solid;
+}
+.tp-v1ops-block i { margin-right: 0.3rem; }
+.tp-v1ops-block--blocked {
+  color: var(--c-tx2); border-color: rgba(126, 119, 123, 0.6);
+  background: rgba(70, 70, 78, 0.18);
+}
+.tp-v1ops-block--warn {
+  color: var(--c-warn); border-color: rgba(201, 166, 96, 0.7);
+  background: rgba(201, 166, 96, 0.07);
+}
+.tp-v1ops-block-link {
+  margin-left: 0.5rem; color: var(--c-tx); border-bottom: 1px dotted var(--c-tx3);
+  text-decoration: none; font-size: 0.7rem;
+}
+.tp-v1ops-block-link:hover { border-bottom-color: var(--c-tx); }
+
+/* Заголовки фаз. */
+.tp-v1ops-phase { margin-top: 0.7rem; }
+.tp-v1ops-phase-hd {
+  display: flex; align-items: baseline; gap: 0.6rem;
+  padding: 0.25rem 0.5rem; margin-bottom: 0.25rem;
+  border-bottom: 1px dashed var(--c-bdr);
+}
+.tp-v1ops-phase-num {
+  font-size: 0.7rem; font-weight: 700; letter-spacing: 0.06em;
+  color: var(--c-tx); text-transform: uppercase;
+}
+.tp-v1ops-phase-label { font-size: 0.74rem; color: var(--c-tx2); }
+.tp-v1ops-phase-count { margin-left: auto; font-size: 0.68rem; color: var(--c-tx3); }
+
+/* Верхняя панель готовности. */
+.tp-v1ops-readiness {
+  margin: 0.5rem 0 0.6rem;
+  padding: 0.45rem 0.55rem;
+  border: 1px solid var(--c-bdr);
+  background: var(--c-bg-deep);
+  display: flex; flex-direction: column; gap: 0.3rem;
+}
+.tp-v1ops-readiness--loading { color: var(--c-tx3); font-size: 0.74rem; }
+.tp-v1ops-readiness-row {
+  display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center;
+}
+.tp-v1ops-readiness-h {
+  font-size: 0.7rem; color: var(--c-tx2); letter-spacing: 0.04em;
+  text-transform: uppercase; margin-right: 0.2rem;
+}
+.tp-v1ops-readiness-tag {
+  font-size: 0.68rem; padding: 0.12rem 0.4rem; border: 1px solid;
+  letter-spacing: 0.03em;
+}
+.tp-v1ops-readiness-tag--ok { color: var(--c-ok); border-color: rgba(106, 175, 126, 0.4); }
+.tp-v1ops-readiness-tag--warn { color: var(--c-warn); border-color: rgba(201, 166, 96, 0.5); }
+.tp-v1ops-readiness-tag--blocked { color: var(--c-tx3); border-color: rgba(126, 119, 123, 0.4); }
+.tp-v1ops-readiness-link {
+  margin-left: auto; font-size: 0.72rem; color: var(--c-tx);
+  text-decoration: none; border: 1px solid var(--c-bdr); padding: 0.18rem 0.45rem;
+}
+.tp-v1ops-readiness-link:hover { border-color: var(--c-bdr-hi); }
+.tp-v1ops-readiness-link i { margin-right: 0.25rem; }
+.tp-badge--skip { color: var(--c-warn); border-color: rgba(201, 166, 96, 0.4); }
 
 .tp-err { margin: 0.4rem 0 0; color: var(--c-alert); font-size: 0.76rem; }
 .tp-err i { font-size: 0.62rem; margin-right: 0.15rem; }

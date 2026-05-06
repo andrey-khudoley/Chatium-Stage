@@ -1,4 +1,4 @@
-import { handleV1AddUserPost } from '../../lib/gateway/v1AddUserHandler'
+import { handleV1OpRoute } from '../../lib/gateway/handleV1OpRoute'
 
-/** POST /v1/addUser — импорт пользователя (Legacy), см. `lib/gateway/v1AddUserHandler.ts`. */
-export const addUserRoute = app.post('/', handleV1AddUserPost)
+/** POST /v1/addUser — каталог: config/gc-op-http-mapping.json */
+export const addUserRoute = app.post('/', async (ctx, req) => handleV1OpRoute(ctx, 'addUser', req))

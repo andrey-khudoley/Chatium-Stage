@@ -407,10 +407,17 @@ function runGcSchoolHostValidationChecks(results: TemplateUnitTestResult[]): voi
       return true
     }
   })
-  tryPush(results, 'gcHost_reject_colon_port', 'имя хоста без :порт', () => {
+  tryPush(results, 'gcHost_optional_port', 'опциональный :порт 1–65535 (manual §2.5)', () => {
     return (
-      validateGcSchoolHostTrimmed('school.example:443') !== null &&
+      validateGcSchoolHostTrimmed('school.example:443') === null &&
+      validateGcSchoolHostTrimmed('school.example:1') === null &&
+      validateGcSchoolHostTrimmed('school.example:65535') === null &&
       validateGcSchoolHostTrimmed('school.example:70000') !== null &&
+      validateGcSchoolHostTrimmed('school.example:0') !== null &&
+      validateGcSchoolHostTrimmed('school.example:') !== null &&
+      validateGcSchoolHostTrimmed('school.example:abc') !== null &&
+      validateGcSchoolHostTrimmed('school.example:80:81') !== null &&
+      validateGcSchoolHostTrimmed(':80') !== null &&
       validateGcSchoolHostTrimmed('school.getcourse.ru') === null
     )
   })

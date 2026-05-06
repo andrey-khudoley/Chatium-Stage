@@ -42,10 +42,10 @@
 - `web/` — браузерные роуты модулей (admin, profile, tests, login).
 - `pages/` — Vue‑страницы (минимальные).
 - `components/` — переиспользуемые Vue‑компоненты (Header, AppFooter, GlobalGlitch, LogoutModal).
-- `api/` — API‑эндпоинты (получение и валидация входных данных). File-based: один файл — один эндпоинт с `/`. Пример: `api/settings/list.ts`, `api/logger/log.ts`, `api/admin/logs/recent.ts`, `api/tests/list.ts`, `api/tests/unit/index.ts`, `api/tests/integration/index.ts`, **`api/v1/addUser.ts`** (публичный gateway без сессии Chatium).
+- `api/` — API‑эндпоинты (получение и валидация входных данных). File-based: один файл — один эндпоинт с `/`. Пример: `api/settings/list.ts`, `api/logger/log.ts`, `api/admin/logs/recent.ts`, `api/tests/list.ts`, `api/tests/unit/index.ts`, `api/tests/integration/index.ts`, **`api/v1/*.ts`** (публичный gateway без сессии Chatium: по одному файлу на каждый **`op`** из `gc-op-http-mapping.json`, плюс **`api/v1/operations.ts`** для каталога), **`api/gateway-analytics/`** (Admin-only аналитика вызовов `/v1/{op}` поверх Heap-логов с `logStage = v1_op_completed` — manual §7.4.2).
 - `tables/` — Heap‑таблицы (схемы: settings, logs).
 - `repos/` — репозитории (работа с БД: settings, logs; logs.repo включает findBeforeTimestamp для пагинации).
-- `lib/` — бизнес‑логика (settings.lib, logger.lib: проверка уровня, запись в ctx/Heap/WebSocket/вебхук). Подкаталог **`lib/gateway/`** — общий слой публичного **`/v1/*`**: константы лимитов и таймаута, **`utf8Base64.ts`** (UTF-8 → Base64 для Legacy `params`, без платформенных глобалов; норматив **`inner/docs/047-base64.md`**), разбор входящего POST, каталог операций, Legacy-клиент GetCourse (`@app/request`), нормализованные ответы и коды ошибок по SPEC.
+- `lib/` — бизнес‑логика (settings.lib, logger.lib: проверка уровня, запись в ctx/Heap/WebSocket/вебхук). Подкаталог **`lib/gateway/`** — общий слой публичного **`/v1/*`**: **`handleV1OpRoute.ts`** (единая точка вызова GC), константы лимитов и таймаута, **`utf8Base64.ts`** (UTF-8 → Base64 для Legacy `params`, без платформенных глобалов; норматив **`inner/docs/047-base64.md`**), разбор входящего POST/query, **единый каталог операций `operationsCatalog`** (manual §3.1: `export const operationsCatalog = { schemaVersion, entries } as const`, в каждой записи — `op`, `httpMethod`, `contour`, `availability`, `pathTemplate`, `legacyImportAction` и live-объект схемы `args` через билдер `s` из `@app/schema`), генерируемые источники (`gcOpHttpMapping.generated`, `v1OpArgsSchemas.generated`), клиенты Legacy/new (`legacyGcImportClient`, `legacyGcExportGet`, `newGcApiClient`), **`gatewayWorkspaceEvents.ts`**, нормализованные ответы и коды ошибок по SPEC.
 - `shared/` — общий код (preloader, logLevel для передачи уровня логирования на клиент, logger — уровни syslog RFC 5424, createComponentLogger, setLogSink/LogEntry для дашборда, logEmergency…logDebug в браузере с проверкой порога, browserRemoteLogger — пакетная отправка браузерных логов на сервер через POST /api/logger/browser).
 - `docs/` — документация проекта; **`docs/gateway/`** — спецификация gateway (manual, JSON, скрипты).
 
@@ -68,6 +68,41 @@
 **Ключевой принцип**: trace-логи (карта вызовов) имеют severity 6 (Info). Payload (сырые данные) автоматически отсекается при уровне != Debug:
 - **Сервер** (`lib/logger.lib.ts`): функция `shouldIncludePayload` — payload в ctx.account.log, Heap, WebSocket и webhook только при Debug.
 - **Браузер** (`shared/logger.ts`): `emitLog` фильтрует non-string args при уровне != Debug.
+
+**Наблюдаемость `/v1/{op}` (manual §7):** общий обработчик `lib/gateway/handleV1OpRoute.ts` после возврата ответа клиенту делает **итоговую** запись `writeServerLog` со стабильным `logStage: v1_op_completed` и **минимальным набором** полей (manual §7.2): `requestId`, `op`, `httpMethod`, `contour`, `availability`, `schoolHostPresent`, `clientHttpStatus`, `ok`, `errorCode`, `gcHttpStatus`, `durationMs`. Параллельно — событие workspace `gateway_gc.invoke.completed` через `lib/gateway/gatewayWorkspaceEvents.ts`. Эти записи — единый источник для админской аналитики (`api/gateway-analytics/invocations.ts`, секция «Аналитика вызовов /v1/{op}» в `pages/AdminPage.vue`).
+
+## Интеграционный сьюит `/v1/{op}` (gateway-testing-strategy.md)
+
+Сьюит реализует норматив `docs/gateway/gateway-testing-strategy.md`: один прогон на каждый из 59 публичных роутов `api/v1/*`, фазовый порядок 1–4, минимизация Heap-входа, цепочки producer→consumer→destructor, throttle 1 rps.
+
+| Слой | Файл | Ответственность |
+| --- | --- | --- |
+| Контекст сессии | `lib/tests/gateway/v1OpsRunContext.ts` | Типы `V1OpsRunContext` (dealId, userId, groupId, webinarId, ...), реестр `gc_itest_*` Heap-ключей (manual §5.8), email тестового пользователя `tester@khudoley.pro`. |
+| Сценарии | `lib/tests/gateway/v1OpsScenarios.ts` | Реестр на каждый из 59 op: фаза, `dependsOn`, требуемые Heap-ключи, `build(args)` или `skip` с человеческим объяснением, `capture(parsed)` для наполнения контекста. |
+| Раннер | `lib/tests/gateway/v1OpsSuiteRunner.ts` | `runAllV1Ops` и `runSingleV1Op(opId)`: чтение Heap (хост/ключ школы + `gc_itest_*`), throttle 1 rps между сетевыми вызовами (ожидание по `Date.now()` без `setTimeout`: изолята нет глобального таймера; `@app/jobs` не подходит для паузы внутри одного запроса), проверка зависимостей, перенос результата в `runCtx`. Использует **`handleV1OpRouteWithGcDiagnostic`** (сырое тело ответа школы в `gcUpstream`), парсит `rawHttpBody` gateway. |
+| Эндпоинт | `api/tests/v1-ops/run.ts` | `POST /api/tests/v1-ops/run` (Admin), `body: { mode: 'all' \| 'single', opId? }`. Возвращает `V1OpsRunSummary` со списком результатов и сводкой. |
+| UI | `pages/TestsPage.vue`, секция «Gateway /v1/{op}» на вкладке HTTP | Метрики прогона, кнопка «Запустить сьюит», по строке на каждый op (бейдж availability, контур, метод), индивидуальная кнопка «Run», HTTP-статус, длительность, `requestId`, фаза, причина skip, раскрывающийся блок с распарсенным ответом и отправленными `args`. |
+| Список op для UI | `shared/v1OpsList.generated.ts` (// @shared) | Автоген из `config/gc-op-http-mapping.json` через `scripts/gen-gc-op-http-mapping.cjs` (рядом с `lib/gateway/gcOpHttpMapping.generated.ts`). Без notes, безопасен для клиентского бандла. |
+| Каталог тестов | `api/tests/list.ts` | Категория `gateway-v1` со списком 59 пунктов. |
+| Префлайт | `lib/tests/gateway/v1OpsPreflight.ts` | Статичный анализ готовности сьюита без сетевых вызовов: вычисляет для каждого op `runStatus ∈ {ready, blocked-availability, warn-heap, warn-deps}`, состояние «уровня A» (manual §5.8) и список заполненных `gc_itest_*` (только имена). Транзитивно учитывает порядок фаз (стратегия §3.1). |
+| Эндпоинт префлайта | `api/tests/v1-ops/preflight.ts` | `GET /api/tests/v1-ops/preflight` (Admin). Используется UI при монтировании страницы `/web/tests` и после каждого прогона. |
+| Произвольные настройки | `lib/settings.lib.ts` (`deleteSetting`, `listArbitrarySettings`, `KNOWN_SETTING_KEYS`), `api/settings/delete.ts`, `api/settings/list-arbitrary.ts` | Поддержка manual §5.9: универсальный ввод «ключ — значение» в Heap для `gc_itest_*` (§5.8 уровень B) и других пользовательских ключей. Секреты в этот список не включаются. |
+| UI настроек §5.9 | `pages/AdminPage.vue`, секция «Произвольные настройки Heap» | Форма «Ключ — Значение» с валидацией (непустой ключ, без управляющих символов), список существующих произвольных ключей с кнопками «Изменить» и «Удалить». |
+
+Артефакты, оставленные тестами в школе (комментарии, заметки), помечаются префиксом `[gateway-itest]` (стратегия §5). Деструктор фазы 4 — `updateDealFields` со `status: "false"` для тестовой сделки.
+
+### Визуальные состояния строк сценариев (стратегия §9.1, §9.3)
+
+UI блока «Gateway /v1/{op}» использует `runStatus` из префлайта:
+
+- `ready` — обычный фон, активная кнопка `Run`;
+- `blocked-availability` — нейтральный серый фон (`rgba(70,70,78,0.28)`), кнопка `Run` отключена с иконкой `fa-ban`, в строке — текст «availability=…, запуск запрещён» (§9.1);
+- `warn-heap` — приглушённый янтарный фон (`rgba(201,166,96,0.12)`) с боковой полосой `rgba(201,166,96,0.7)`, кнопка `Run` отключена, в строке — список недостающих `gc_itest_*` и ссылка «Задать в админке» (§9.3, §9.4);
+- `warn-deps` — тот же янтарный фон, в строке — перечень предшественников, которых ждёт сценарий.
+
+Сверху над списком — панель «Готовность к прогону»: статус трёх ключей уровня A (включая «✓»/«—»), counts по `runStatus`, ссылка на админку (§5.9).
+
+**Ограничение UGC в шаблоне:** в выражениях `v-if` / `{{ }}` секции `/v1/{op}` не использовать optional chaining (`?.`) и не начинать `{{` с `{ … }` (объектный литерал) — иначе при синхронизации/рендере возможен пустой `ReferenceError:` в логе UGC. Доступ к полям после `fetch` — через явные проверки `row.result && row.result.field`; маппинг подписей — функции в `<script setup>`.
 
 ## Интеграции
 - Внешние сервисы: нет.

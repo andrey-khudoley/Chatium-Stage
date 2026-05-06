@@ -5,10 +5,23 @@ import {
   UNIT_TEST_BLOCKS,
   INTEGRATION_SERVER_TEST_BLOCKS,
   INTEGRATION_HTTP_TEST_BLOCK,
-  flattenCatalogBlocks
+  flattenCatalogBlocks,
+  type TestCatalogBlock
 } from '../../shared/testCatalog'
+import { V1_OPS_LIST } from '../../shared/v1OpsList.generated'
 
 const LOG_PATH = 'api/tests/list'
+
+const GATEWAY_V1_TEST_BLOCK: TestCatalogBlock = {
+  id: 'gateway-v1',
+  title: 'Gateway /v1/{op}',
+  description:
+    'По одному прогону на каждый роут api/v1 (gateway-testing-strategy.md §3, §6). Запуск через POST /api/tests/v1-ops/run.',
+  tests: V1_OPS_LIST.map((entry) => ({
+    id: `v1_${entry.op}`,
+    title: `${entry.httpMethod} /v1/${entry.op} · ${entry.contour}/${entry.availability}`
+  }))
+}
 
 /**
  * GET /api/tests/list — каталог тестов (каркас на базе template_project).
@@ -46,6 +59,14 @@ export const listTestsRoute = app.get('/', async (ctx) => {
       description: 'GET /, /web/* — статус и фрагменты SSR (страница /web/tests)',
       blocks: [INTEGRATION_HTTP_TEST_BLOCK],
       tests: flattenCatalogBlocks([INTEGRATION_HTTP_TEST_BLOCK])
+    },
+    {
+      id: 'gateway-v1',
+      title: 'Gateway /v1/{op} (POST /api/tests/v1-ops/run)',
+      description:
+        'Реальные исходящие вызовы к GetCourse тестовой школы. Один тест на каждый из 59 роутов api/v1, фазовый порядок и контекст по docs/gateway/gateway-testing-strategy.md.',
+      blocks: [GATEWAY_V1_TEST_BLOCK],
+      tests: flattenCatalogBlocks([GATEWAY_V1_TEST_BLOCK])
     }
   ]
 
