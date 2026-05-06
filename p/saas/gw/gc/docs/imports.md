@@ -268,8 +268,14 @@
 ### `./lib/tests/templateUnitSuite`
 - `../logger.lib`, `../settings.lib`, `config/*`, `shared/*`, `shared/testCatalog`, `./gatewayUnitSuite` (`runGatewayUnitChecks`) — юнит-прогон без Heap
 
+### `./lib/gateway/utf8Base64.ts`
+- нет импортов — UTF-8 ↔ стандартный Base64 для Legacy GetCourse `params` (см. `inner/docs/047-base64.md`)
+
+### `./lib/gateway/legacyGcFormBody.ts`
+- `./utf8Base64` → `utf8StringToBase64`
+
 ### `./lib/tests/gatewayUnitSuite.ts`
-- `../gateway/*` — чистые функции gateway (без Heap, без сети)
+- `../gateway/*` — чистые функции gateway (без Heap, без сети); в т.ч. `utf8Base64` → `base64ToUtf8String`
 
 ### `./lib/tests/integrationSuite`
 - `../settings.lib`, `repos/*`, `../admin/dashboard.lib`, `../logger.lib`, `api/settings/*`, `api/logger/log`, `api/admin/*`, `api/tests/list`, `./templateUnitSuite` (`runTemplateUnitChecks`)

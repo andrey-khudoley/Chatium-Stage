@@ -2,6 +2,8 @@
  * Сборка полей form-urlencoded для Legacy POST импорта GetCourse (manual §4.5, inner/docs/047-base64.md).
  */
 
+import { utf8StringToBase64 } from './utf8Base64'
+
 export type LegacyImportFormFields = {
   key: string
   action: string
@@ -21,6 +23,6 @@ export function buildLegacyImportFormBody(
   return {
     key: schoolApiKey,
     action: legacyAction,
-    params: base64Encode(JSON.stringify(paramsObject))
+    params: utf8StringToBase64(JSON.stringify(paramsObject))
   }
 }

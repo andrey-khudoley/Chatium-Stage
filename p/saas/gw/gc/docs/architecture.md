@@ -2,7 +2,7 @@
 
 ## Назначение
 
-Приложение **`p/saas/gw/gc`** — экземпляр **GetCourse Gateway** на каркасе, изначально скопированном из `template_project` (страницы, админка, Heap settings/logs, тестовая страница). **Источник правды по коду** — дерево **`p/saas/gw/gc`** (в т.ч. `lib/logger.lib`, `web/admin`); каталог **`p/template_project`** — только происхождение каркаса при bootstrap, не место текущих правок. Целевая доменная логика — публичное API **`/v1/{op}`** и связка с GetCourse по нормативу в **`docs/SPEC/`** (SSOT: `docs/SPEC/gateway-operation-manual.md`, реестр `op`, OpenAPI и маппинг в том же каталоге). **План реализации (Прототип → MVP → Прод):** `docs/SPEC/implementation-plan.md`.
+Приложение **`p/saas/gw/gc`** — экземпляр **GetCourse Gateway** на каркасе, изначально скопированном из `template_project` (страницы, админка, Heap settings/logs, тестовая страница). **Источник правды по коду** — дерево **`p/saas/gw/gc`** (в т.ч. `lib/logger.lib`, `web/admin`); каталог **`p/template_project`** — только происхождение каркаса при bootstrap, не место текущих правок. Целевая доменная логика — публичное API **`/v1/{op}`** и связка с GetCourse по нормативу в **`docs/gateway/`** (SSOT: `docs/gateway/gateway-operation-manual.md`, реестр `op`, OpenAPI и маппинг в том же каталоге). **План реализации (Прототип → MVP → Прод):** `docs/gateway/implementation-plan.md`.
 
 ## Ограничения платформы
 - Серверная инфраструктура предоставляется Chatium.
@@ -45,9 +45,9 @@
 - `api/` — API‑эндпоинты (получение и валидация входных данных). File-based: один файл — один эндпоинт с `/`. Пример: `api/settings/list.ts`, `api/logger/log.ts`, `api/admin/logs/recent.ts`, `api/tests/list.ts`, `api/tests/unit/index.ts`, `api/tests/integration/index.ts`, **`api/v1/addUser.ts`** (публичный gateway без сессии Chatium).
 - `tables/` — Heap‑таблицы (схемы: settings, logs).
 - `repos/` — репозитории (работа с БД: settings, logs; logs.repo включает findBeforeTimestamp для пагинации).
-- `lib/` — бизнес‑логика (settings.lib, logger.lib: проверка уровня, запись в ctx/Heap/WebSocket/вебхук). Подкаталог **`lib/gateway/`** — общий слой публичного **`/v1/*`**: константы лимитов и таймаута, разбор входящего POST, каталог операций, Legacy-клиент GetCourse (`@app/request`), нормализованные ответы и коды ошибок по SPEC.
+- `lib/` — бизнес‑логика (settings.lib, logger.lib: проверка уровня, запись в ctx/Heap/WebSocket/вебхук). Подкаталог **`lib/gateway/`** — общий слой публичного **`/v1/*`**: константы лимитов и таймаута, **`utf8Base64.ts`** (UTF-8 → Base64 для Legacy `params`, без платформенных глобалов; норматив **`inner/docs/047-base64.md`**), разбор входящего POST, каталог операций, Legacy-клиент GetCourse (`@app/request`), нормализованные ответы и коды ошибок по SPEC.
 - `shared/` — общий код (preloader, logLevel для передачи уровня логирования на клиент, logger — уровни syslog RFC 5424, createComponentLogger, setLogSink/LogEntry для дашборда, logEmergency…logDebug в браузере с проверкой порога, browserRemoteLogger — пакетная отправка браузерных логов на сервер через POST /api/logger/browser).
-- `docs/` — документация проекта; **`docs/SPEC/`** — спецификация gateway (manual, JSON, скрипты).
+- `docs/` — документация проекта; **`docs/gateway/`** — спецификация gateway (manual, JSON, скрипты).
 
 ## Стратегия логирования
 

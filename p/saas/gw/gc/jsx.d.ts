@@ -89,10 +89,6 @@ declare module '*.vue' {
 }
 
 declare global {
-  /** UTF-8 Base64 (inner/docs/047-base64.md). */
-  function base64Encode(text: string): string
-  function base64Decode(text: string): string
-
   interface Window {
     __BOOT__?: { logLevel?: string | number }
   }

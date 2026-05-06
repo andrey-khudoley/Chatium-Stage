@@ -1,4 +1,5 @@
 import { buildLegacyImportFormBody } from '../gateway/legacyGcFormBody'
+import { base64ToUtf8String, utf8StringToBase64 } from '../gateway/utf8Base64'
 import { detectLegacySemanticErrorRule } from '../gateway/legacyGcSemantic'
 import { isApplicationJsonContentType, parseSchoolHeaders } from '../gateway/v1IncomingPost'
 
@@ -40,11 +41,16 @@ export function runGatewayUnitChecks(): GatewayUnitTestResult[] {
     return detectLegacySemanticErrorRule({ success: true, result: {} }) === null
   })
 
+  tryPush(results, 'gw_utf8_base64_roundtrip', 'utf8StringToBase64 ↔ base64ToUtf8String (кириллица)', () => {
+    const s = '{"x":"привет"}'
+    return base64ToUtf8String(utf8StringToBase64(s)) === s
+  })
+
   tryPush(results, 'gw_form_body_fields', 'form: key, action, params base64 json', () => {
     const f = buildLegacyImportFormBody('school-key', 'add', { user: { email: 'a@b.co' } })
     if (f.key !== 'school-key' || f.action !== 'add') return false
     if (!f.params || f.params.length < 8) return false
-    const decoded = JSON.parse(base64Decode(f.params)) as { user: { email: string } }
+    const decoded = JSON.parse(base64ToUtf8String(f.params)) as { user: { email: string } }
     return decoded.user.email === 'a@b.co'
   })
 

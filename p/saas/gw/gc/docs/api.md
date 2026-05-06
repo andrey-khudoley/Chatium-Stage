@@ -12,7 +12,7 @@
 
 `key` должен быть непустой строкой после `trim`. Иначе `{ success: false }` и в серверный лог — severity 6, текст про валидацию key, в payload поля `reason` (`missing` | `not_string` | `empty_after_trim`), `keyType`, `bodyKeys`.
 
-Для ключей `gc_developer_api_key` и `gc_test_school_api_key` значение после `trim` должно быть непустой строкой (разд. 5.4–5.5 в `docs/SPEC/gateway-operation-manual.md`). Для `gc_test_school_host` — правила имени хоста без схемы (тот же manual, разд. 2.5): `validateGcSchoolHostTrimmed` в `shared/gcSchoolHostValidation.ts`, на сервере при ошибке — `throwLoggedServerError` из `lib/settings.lib.ts`. В логах `save`/`get` значения двух API-ключей не пишутся (подстановка `[redacted]`). Ошибки валидации из `setSetting` сначала пишутся через `throwLoggedServerError` в `lib/logger.lib.ts`; в `catch` этого роута повторная запись severity 3 не делается, если ошибка уже помечена `isServerErrorAlreadyLogged`.
+Для ключей `gc_developer_api_key` и `gc_test_school_api_key` значение после `trim` должно быть непустой строкой (разд. 5.4–5.5 в `docs/gateway/gateway-operation-manual.md`). Для `gc_test_school_host` — правила имени хоста без схемы (тот же manual, разд. 2.5): `validateGcSchoolHostTrimmed` в `shared/gcSchoolHostValidation.ts`, на сервере при ошибке — `throwLoggedServerError` из `lib/settings.lib.ts`. В логах `save`/`get` значения двух API-ключей не пишутся (подстановка `[redacted]`). Ошибки валидации из `setSetting` сначала пишутся через `throwLoggedServerError` в `lib/logger.lib.ts`; в `catch` этого роута повторная запись severity 3 не делается, если ошибка уже помечена `isServerErrorAlreadyLogged`.
 
 Каждый файл — один эндпоинт с путём `/`.
 
@@ -53,7 +53,7 @@
 
 ## Публичный gateway (`/v1/*`)
 
-Норматив: `docs/SPEC/gateway-operation-manual.md` (§2, §9–§10). Ответ — объект **`TuneHttpHeadersResponse`**: `statusCode`, `rawHttpBody` (JSON-строка), `headers` с `Content-Type: application/json` и **`X-Gateway-Request-Id`** = **`requestId`** в JSON. **Без** сессии Chatium: секреты школы только в заголовках; **`gc_developer_api_key`** обязателен в Heap до любого исходящего вызова к GetCourse (§5.3–5.4).
+Норматив: `docs/gateway/gateway-operation-manual.md` (§2, §9–§10). Ответ — объект **`TuneHttpHeadersResponse`**: `statusCode`, `rawHttpBody` (JSON-строка), `headers` с `Content-Type: application/json` и **`X-Gateway-Request-Id`** = **`requestId`** в JSON. **Без** сессии Chatium: секреты школы только в заголовках; **`gc_developer_api_key`** обязателен в Heap до любого исходящего вызова к GetCourse (§5.3–5.4).
 
 | Method | Path | File | Auth | Назначение |
 | --- | --- | --- | --- | --- |
@@ -69,7 +69,7 @@ curl -sS -D - -X POST 'https://<app-base>/v1/addUser' \
   --data '{"params":{"user":{"email":"tester@khudoley.pro"}}}'
 ```
 
-Успех: HTTP **200**, заголовок **`X-Gateway-Request-Id`**, JSON с **`ok: true`**, **`data`**, **`requestId`**. Неверный метод (не POST) — **405** и код **`INVOKE_HTTP_METHOD_NOT_ALLOWED`**. Семантическая ошибка Legacy при 2xx от GC — **502**, **`INVOKE_GC_SEMANTIC_ERROR`**. Пустой или невалидный dev-ключ в Heap — **`GATEWAY_DEV_KEY_NOT_CONFIGURED`** без исходящего HTTP к GetCourse. Полный перечень кодов — **`docs/SPEC/gateway-operation-manual.md`** §9–§10.
+Успех: HTTP **200**, заголовок **`X-Gateway-Request-Id`**, JSON с **`ok: true`**, **`data`**, **`requestId`**. Неверный метод (не POST) — **405** и код **`INVOKE_HTTP_METHOD_NOT_ALLOWED`**. Семантическая ошибка Legacy при 2xx от GC — **502**, **`INVOKE_GC_SEMANTIC_ERROR`**. Пустой или невалидный dev-ключ в Heap — **`GATEWAY_DEV_KEY_NOT_CONFIGURED`** без исходящего HTTP к GetCourse. Полный перечень кодов — **`docs/gateway/gateway-operation-manual.md`** §9–§10.
 
 ## События и webhooks
 - Не используются.
