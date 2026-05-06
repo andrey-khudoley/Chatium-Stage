@@ -20,7 +20,7 @@
 
 Сохранены возможности шаблона: главная, админка, профиль, логин, страница тестов, API настроек, Heap-таблицы settings/logs (с **отдельными** ключами таблиц для этого проекта), серверные логи, дашборд админки.
 
-Реализован публичный **`POST /v1/addUser`** (Legacy импорт пользователя): заголовки школы, проверка **`gc_developer_api_key`** в Heap, JSON **`args`** с **`params.user.email`**, исходящий вызов GetCourse через **`@app/request`** (таймаут 10 s, без ретраев), ответ **`TuneHttpHeadersResponse`** и коды ошибок по **`docs/gateway/gateway-operation-manual.md`**. Код: `api/v1/addUser.ts`, общий слой `lib/gateway/*`, копия маппинга `config/gc-op-http-mapping.json`. Остальные операции **`/v1/{op}`** и **`GET /v1/operations`** — по плану в `docs/gateway/implementation-plan.md`.
+Реализован публичный **`POST /v1/addUser`** (Legacy импорт пользователя): заголовки школы, проверка **`gc_developer_api_key`** в Heap, JSON **`args`** с **`params.user.email`**, исходящий вызов GetCourse через **`@app/request`** (таймаут 10 s, без ретраев), ответ **`TuneHttpHeadersResponse`** и коды ошибок по **`docs/gateway/gateway-operation-manual.md`**. Обработчик: **`lib/gateway/v1AddUserHandler.ts`**; регистрация роута — `api/v1/addUser.ts`. Интеграционный прогон с реальной школой: кейс **`gateway_v1_addUser_live`** в `lib/tests/integrationSuite.ts` (нужен полный Heap уровня A и email **`tester@khudoley.pro`**). Остальные операции **`/v1/{op}`** и **`GET /v1/operations`** — по плану в `docs/gateway/implementation-plan.md`.
 
 ## Документация в репозитории
 
@@ -34,6 +34,7 @@
 
 ## Changelog
 
+- 2026-05-06: интеграционный тест **`gateway_v1_addUser_live`** (`lib/tests/integrationSuite.ts`): реальный вызов GetCourse через **`handleV1AddUserPost`**; логика POST `/v1/addUser` вынесена в **`lib/gateway/v1AddUserHandler.ts`**.
 - 2026-05-06: Legacy `params` — **`lib/gateway/utf8Base64.ts`** (`utf8StringToBase64` / `base64ToUtf8String`, логика как в `liveahalf/api/register.ts`); `legacyGcFormBody` больше не использует несуществующие глобалы `base64Encode`. Норматив в **`inner/docs/047-base64.md`** (глобалы запрещены к использованию).
 - 2026-05-06: **`POST /v1/addUser`**, слой `lib/gateway/` (константы `GW_*`, Legacy form + `@app/request`, семантика ответа GC §2.8, `TuneHttpHeadersResponse`), `shared/gatewayHttpHeaders.ts`, копия `config/gc-op-http-mapping.json` (в SPEC для `addUser` задано `availability: enabled`); юниты `lib/tests/gatewayUnitSuite.ts` в общем прогоне; см. `docs/api.md`.
 - 2026-05-06: валидация `gc_test_school_host`: в строке хоста **не** допускается суффикс `:порт` (имя хоста школы без порта); юнит `gcHost_reject_colon_port` вместо сценариев с портом.

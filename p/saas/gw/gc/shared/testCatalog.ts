@@ -117,6 +117,7 @@ export const UNIT_TEST_BLOCKS: TestCatalogBlock[] = [
     tests: [
       { id: 'gw_legacy_semantic_success_false', title: 'Legacy success:false → legacy_root_success_false' },
       { id: 'gw_legacy_semantic_ok', title: 'Legacy success:true → семантика ok' },
+      { id: 'gw_utf8_base64_roundtrip', title: 'utf8StringToBase64 ↔ base64ToUtf8String (кириллица)' },
       { id: 'gw_form_body_fields', title: 'form key/action/params (Base64 JSON)' },
       { id: 'gw_content_type_json', title: 'Content-Type application/json' },
       { id: 'gw_content_type_json_charset', title: 'Content-Type charset=utf-8' },
@@ -161,6 +162,10 @@ export const INTEGRATION_SERVER_TEST_BLOCKS: TestCatalogBlock[] = [
       { id: 'settings_setSetting_gc_dev_rejects_whitespace', title: 'gc_developer_api_key: пробелы → ошибка' },
       { id: 'settings_setSetting_gc_host_trim', title: 'gc_test_school_host: trim и запись' },
       { id: 'settings_setSetting_gc_host_rejects_https', title: 'gc_test_school_host: https:// → ошибка' },
+      {
+        id: 'gateway_v1_addUser_live',
+        title: 'POST /v1/addUser: Heap уровня A → реальный вызов GetCourse (tester@khudoley.pro)'
+      },
       { id: 'regression_getLogLevel_no_recursion', title: 'регрессия: getLogLevel без stack overflow' },
       { id: 'regression_getSetting_no_recursion', title: 'регрессия: getSetting без stack overflow' }
     ]

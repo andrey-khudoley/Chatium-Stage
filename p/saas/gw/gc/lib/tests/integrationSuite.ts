@@ -14,7 +14,17 @@ import { getRecentLogsRoute } from '../../api/admin/logs/recent'
 import { getLogsBeforeRoute } from '../../api/admin/logs/before'
 import { getDashboardCountsRoute } from '../../api/admin/dashboard/counts'
 import { listTestsRoute } from '../../api/tests/list'
+import { handleV1AddUserPost } from '../gateway/v1AddUserHandler'
+import {
+  GW_HEADER_GATEWAY_REQUEST_ID,
+  GW_HEADER_SCHOOL_API_KEY,
+  GW_HEADER_SCHOOL_HOST
+} from '../../shared/gatewayHttpHeaders'
+import { validateGcSchoolHostTrimmed } from '../../shared/gcSchoolHostValidation'
 import { runTemplateUnitChecks } from './templateUnitSuite'
+
+/** Email тестового пользователя для интеграции с GetCourse (gateway-testing-strategy §2, implementation-plan §1.3). */
+const GC_INTEGRATION_TESTER_EMAIL = 'tester@khudoley.pro'
 
 export type TemplateIntegrationTestResult = { id: string; title: string; passed: boolean; error?: string }
 
@@ -193,6 +203,69 @@ export async function runTemplateIntegrationChecks(ctx: app.Ctx): Promise<Templa
     }
     return threw
   })
+
+  await tryAsync(
+    results,
+    'gateway_v1_addUser_live',
+    'POST /v1/addUser → GetCourse (Heap уровня A)',
+    async () => {
+      const rawDev = await settingsLib.getSetting(ctx, settingsLib.SETTING_KEYS.GC_DEVELOPER_API_KEY)
+      const rawSchoolKey = await settingsLib.getSetting(ctx, settingsLib.SETTING_KEYS.GC_TEST_SCHOOL_API_KEY)
+      const rawHost = await settingsLib.getSetting(ctx, settingsLib.SETTING_KEYS.GC_TEST_SCHOOL_HOST)
+      const devKey = typeof rawDev === 'string' ? rawDev.trim() : ''
+      const schoolKey = typeof rawSchoolKey === 'string' ? rawSchoolKey.trim() : ''
+      const hostStr = typeof rawHost === 'string' ? rawHost.trim() : ''
+      if (!devKey || !schoolKey || !hostStr) {
+        throw new Error(
+          'В Heap нужны непустые gc_developer_api_key, gc_test_school_api_key, gc_test_school_host (gateway-testing-strategy §1.1).'
+        )
+      }
+      const hostErr = validateGcSchoolHostTrimmed(hostStr)
+      if (hostErr) {
+        throw new Error(`gc_test_school_host: ${hostErr}`)
+      }
+      const res = await handleV1AddUserPost(ctx, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json; charset=utf-8',
+          [GW_HEADER_SCHOOL_HOST]: hostStr,
+          [GW_HEADER_SCHOOL_API_KEY]: schoolKey
+        },
+        body: {
+          params: {
+            user: { email: GC_INTEGRATION_TESTER_EMAIL }
+          }
+        }
+      })
+      if (res.statusCode !== 200) {
+        let detail = `HTTP ${res.statusCode}`
+        try {
+          const j = JSON.parse(res.rawHttpBody) as { error?: { code?: string } }
+          if (j?.error?.code) {
+            detail += ` (${j.error.code})`
+          }
+        } catch {
+          /* ignore */
+        }
+        throw new Error(detail)
+      }
+      const parsed = JSON.parse(res.rawHttpBody) as { ok?: unknown; requestId?: unknown; data?: unknown }
+      if (parsed.ok !== true) {
+        throw new Error('В теле ответа нет ok: true')
+      }
+      const rid = parsed.requestId
+      if (typeof rid !== 'string' || rid.length < 8) {
+        throw new Error('В теле ответа нет валидного requestId')
+      }
+      if (res.headers[GW_HEADER_GATEWAY_REQUEST_ID] !== rid) {
+        throw new Error('Заголовок X-Gateway-Request-Id не совпадает с requestId в JSON')
+      }
+      if (parsed.data === undefined) {
+        throw new Error('В теле ответа нет поля data')
+      }
+      return true
+    }
+  )
 
   await tryAsync(results, 'regression_getLogLevel_no_recursion', 'getLogLevel x50', async () => {
     for (let i = 0; i < 50; i++) {

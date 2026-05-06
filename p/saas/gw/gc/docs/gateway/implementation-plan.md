@@ -195,7 +195,7 @@ related_manual: "[gateway-operation-manual](./gateway-operation-manual.md)"
 ### 2.4. Тесты (юнит + интеграция + страница)
 
 - [ ] Юнит-кейсы по `strategy §7.2` существуют для **каждого** `op`: маршрутизация → HTTP, сериализация тела/query, валидация входа, разбор ответа GC, ошибки сети/таймаута. Чек-лист — `strategy §7.3` (таблица §3.4 как контрольный лист).
-- [ ] Интеграционный сьюит организован по фазам `strategy §3.1`: `beforeAll` (`createDeal` → `dealId`, `addUser` → `userId`), потребители, `afterAll` (teardown — `updateDealFields` со `status: "false"`, `removeUserGroups` и т.д., `strategy §3.5`).
+- [x] Интеграция **`addUser`**: кейс **`gateway_v1_addUser_live`** в `lib/tests/integrationSuite.ts` (Heap уровня A, `handleV1AddUserPost`, email **`tester@khudoley.pro`**). *Полный* сьюит по фазам `strategy §3.1` (`beforeAll`: `createDeal` → `dealId`, `addUser` → `userId`; потребители; `afterAll` teardown — `strategy §3.5`) — впереди.
 - [ ] Соблюдён лимит **1 rps** на исходящие вызовы к GC в интеграционном раннере (`strategy §6`); при параллельных воркерах — глобальный семафор.
 - [ ] Страница тестирования в админке (`pages/TestsPage.vue` или новый блок) реализована по `strategy §9`: статусы `availability` отображаются, для `disabled`/`unsupported` нельзя запустить интеграцию; глобальный переключатель «форс юнитов»; жёлтое предупреждение `strategy §9.3`.
 

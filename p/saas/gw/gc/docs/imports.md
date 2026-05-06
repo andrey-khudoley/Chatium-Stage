@@ -215,9 +215,7 @@
 - `../../lib/logger.lib` → `*`
 
 ### `./api/v1/addUser.ts`
-- `../../lib/logger.lib` → `*`
-- `../../lib/settings.lib` → `*`
-- `../../lib/gateway/*` — константы, разбор заголовков/тела, `operationsCatalog`, Legacy-клиент `@app/request`, ответ `TuneHttpHeadersResponse` (`v1TuneResponse`)
+- `../../lib/gateway/v1AddUserHandler` → `handleV1AddUserPost` (регистрация `app.post`)
 
 ### `./api/logger/log.ts`
 - `@app/auth` → `requireAnyUser`
@@ -278,4 +276,7 @@
 - `../gateway/*` — чистые функции gateway (без Heap, без сети); в т.ч. `utf8Base64` → `base64ToUtf8String`
 
 ### `./lib/tests/integrationSuite`
-- `../settings.lib`, `repos/*`, `../admin/dashboard.lib`, `../logger.lib`, `api/settings/*`, `api/logger/log`, `api/admin/*`, `api/tests/list`, `./templateUnitSuite` (`runTemplateUnitChecks`)
+- `../settings.lib`, `../gateway/v1AddUserHandler` → `handleV1AddUserPost`, `repos/*`, `../admin/dashboard.lib`, `../logger.lib`, `api/settings/*`, `api/logger/log`, `api/admin/*`, `api/tests/list`, `shared/gatewayHttpHeaders`, `shared/gcSchoolHostValidation`, `./templateUnitSuite` (`runTemplateUnitChecks`)
+
+### `./lib/gateway/v1AddUserHandler.ts`
+- `../logger.lib`, `../settings.lib`, `./gcAddUserMapping`, `./interpretGcV1Response`, `./legacyGcImportClient`, `./constants`, `./operationsCatalog`, `./requestId`, `./v1IncomingPost`, `./v1TuneResponse`

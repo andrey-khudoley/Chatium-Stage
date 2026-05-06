@@ -254,6 +254,8 @@ related_manual: "[gateway-operation-manual](./gateway-operation-manual.md)"
 - **`tests/unit/`** — изоляция и моки по **§7**; полный прогон при включённом переключателе **§9.2**.
 - **`docs/testing.md`** — операционная памятка для разработчика; этот файл — **норматив по дизайну тестов**.
 
+В приложении **`p/saas/gw/gc`** серверный интеграционный прогон собран в **`lib/tests/integrationSuite.ts`** (вызывается из **`GET /api/tests/integration`**). Живой вызов GetCourse для **`addUser`** — кейс **`gateway_v1_addUser_live`** (уровень A Heap, email **`tester@khudoley.pro`**, обработчик **`lib/gateway/v1AddUserHandler.ts`**); дальнейшие цепочки по фазам **§3.1** добавляются в тот же сьют по мере появления роутов.
+
 ---
 
 ## 9. Страница тестирования в админке: фильтры, переключатели, визуальные состояния

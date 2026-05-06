@@ -7,7 +7,8 @@
 ## Скрипты в корневом `package.json`
 
 - **`npm run typings`** — генерация деклараций в `.typings` (см. скрипт в `package.json`).
-- **`npm run ts-lint`** — последовательная проверка типов для всех `tsconfig.json`, попадающих в git-индекс с учётом `.gitignore`, за исключением путей с `node_modules/` и `.typings/`. Скрипт: `scripts/lint-types-workspace.sh`. Подробности — в `inner/docs/020-testing.md` (раздел про TypeScript).
+- **`npm run ts-lint:touched -- <пути>`** — проверка типов только для `tsconfig.json`, которые соответствуют переданным файлам/каталогам (ближайший конфиг при подъёме к корню репозитория). Скрипт: `scripts/lint-types-touched.sh`. Это основной режим для агентов при работе в одном приложении; см. `.cursor/rules/ts-lint.mdc`.
+- **`npm run ts-lint`** — полная последовательная проверка для всех `tsconfig.json` из git-индекса с учётом `.gitignore`, за исключением `node_modules/` и `.typings/`. Скрипт: `scripts/lint-types-workspace.sh`. Использовать при явном запросе полного прогона или см. правило `ts-lint.mdc`.
 
 Подробнее о тестах и проверках: `inner/docs/020-testing.md`. Требования к обязательному прогону TypeScript для агентов: `.cursor/rules/ts-lint.mdc`.
 
