@@ -48,13 +48,28 @@
 | Method | Path | File | Auth | Назначение |
 | --- | --- | --- | --- | --- |
 | GET | /api/tests/list | api/tests/list.ts | AnyUser | Каталог: `{ success, categories }`. У категорий есть `blocks[]` и плоский `tests`. |
-| GET | /api/tests/unit | api/tests/unit/index.ts | AnyUser | Юнит: `runTemplateUnitChecks()` — routes, project, logLevel script, logger.lib, shared/logger, целостность каталога. `{ success, kind: 'unit', results[], summary, at }`. |
+| GET | /api/tests/unit | api/tests/unit/index.ts | AnyUser | Юнит: `runTemplateUnitChecks()` — routes, project, logLevel script, logger.lib, shared/logger, **lib/gateway** (Legacy form, семантика GC), целостность каталога. `{ success, kind: 'unit', results[], summary, at }`. |
 | GET | /api/tests/integration | api/tests/integration/index.ts | AnyUser | Интеграция: Heap, libs, API через `route.run`, e2e-сценарии; в конце добавляется проверка `api_tests_integration_shape`. `{ success, kind: 'integration', results[], summary, at }`. |
 
-## Публичные эндпоинты
+## Публичный gateway (`/v1/*`)
+
+Норматив: `docs/SPEC/gateway-operation-manual.md` (§2, §9–§10). Ответ — объект **`TuneHttpHeadersResponse`**: `statusCode`, `rawHttpBody` (JSON-строка), `headers` с `Content-Type: application/json` и **`X-Gateway-Request-Id`** = **`requestId`** в JSON. **Без** сессии Chatium: секреты школы только в заголовках; **`gc_developer_api_key`** обязателен в Heap до любого исходящего вызова к GetCourse (§5.3–5.4).
+
 | Method | Path | File | Auth | Назначение |
 | --- | --- | --- | --- | --- |
-| - | - | - | - | - |
+| POST | /v1/addUser | api/v1/addUser.ts | нет | Импорт пользователя (Legacy): заголовки **`X-Gc-School-Host`**, **`X-Gc-School-Api-Key`**; **`Content-Type: application/json`**; тело целиком — объект **`args`** с минимумом **`params.user.email`** (см. `gc-required-fields-by-op.json`, `lib/gateway/operationsCatalog.ts`). Исходящий вызов: `https://{host}/pl/api/users`, form `key` / `action` / `params` (Base64 JSON), таймаут **10 s**, без ретраев (`lib/gateway/legacyGcImportClient.ts`, `@app/request`). Лимит тела входящего POST — **1 MiB** (`GW_MAX_REQUEST_BODY_BYTES`). |
+
+Пример (подставьте базовый URL приложения, хост школы и API-ключ школы; **`gc_developer_api_key`** должен быть задан в Heap через админку):
+
+```bash
+curl -sS -D - -X POST 'https://<app-base>/v1/addUser' \
+  -H 'Content-Type: application/json' \
+  -H 'X-Gc-School-Host: <school-host>' \
+  -H 'X-Gc-School-Api-Key: <school-api-key>' \
+  --data '{"params":{"user":{"email":"tester@khudoley.pro"}}}'
+```
+
+Успех: HTTP **200**, заголовок **`X-Gateway-Request-Id`**, JSON с **`ok: true`**, **`data`**, **`requestId`**. Неверный метод (не POST) — **405** и код **`INVOKE_HTTP_METHOD_NOT_ALLOWED`**. Семантическая ошибка Legacy при 2xx от GC — **502**, **`INVOKE_GC_SEMANTIC_ERROR`**. Пустой или невалидный dev-ключ в Heap — **`GATEWAY_DEV_KEY_NOT_CONFIGURED`** без исходящего HTTP к GetCourse. Полный перечень кодов — **`docs/SPEC/gateway-operation-manual.md`** §9–§10.
 
 ## События и webhooks
 - Не используются.

@@ -111,6 +111,21 @@ export const UNIT_TEST_BLOCKS: TestCatalogBlock[] = [
     ]
   },
   {
+    id: 'unit-gateway',
+    title: 'lib/gateway',
+    description: 'POST /v1/addUser: Legacy form, семантика GC, заголовки (manual §2.8, §4.5)',
+    tests: [
+      { id: 'gw_legacy_semantic_success_false', title: 'Legacy success:false → legacy_root_success_false' },
+      { id: 'gw_legacy_semantic_ok', title: 'Legacy success:true → семантика ok' },
+      { id: 'gw_form_body_fields', title: 'form key/action/params (Base64 JSON)' },
+      { id: 'gw_content_type_json', title: 'Content-Type application/json' },
+      { id: 'gw_content_type_json_charset', title: 'Content-Type charset=utf-8' },
+      { id: 'gw_content_type_reject_form', title: 'отклонение не-JSON Content-Type' },
+      { id: 'gw_headers_ok', title: 'заголовки школы' },
+      { id: 'gw_headers_missing_key', title: 'нет X-Gc-School-Api-Key' }
+    ]
+  },
+  {
     id: 'unit-catalog',
     title: 'Каталог тестов',
     description: 'Целостность shared/testCatalog и совпадение с прогоном',

@@ -214,6 +214,11 @@
 - `../../lib/settings.lib` → `*`
 - `../../lib/logger.lib` → `*`
 
+### `./api/v1/addUser.ts`
+- `../../lib/logger.lib` → `*`
+- `../../lib/settings.lib` → `*`
+- `../../lib/gateway/*` — константы, разбор заголовков/тела, `operationsCatalog`, Legacy-клиент `@app/request`, ответ `TuneHttpHeadersResponse` (`v1TuneResponse`)
+
 ### `./api/logger/log.ts`
 - `@app/auth` → `requireAnyUser`
 - `../../lib/logger.lib` → `*`
@@ -261,7 +266,10 @@
 - `../logger.lib` → `writeServerLog` — поштучное логирование провалов тестов (severity 3)
 
 ### `./lib/tests/templateUnitSuite`
-- `../logger.lib`, `../settings.lib`, `config/*`, `shared/*`, `shared/testCatalog` — юнит-прогон без Heap
+- `../logger.lib`, `../settings.lib`, `config/*`, `shared/*`, `shared/testCatalog`, `./gatewayUnitSuite` (`runGatewayUnitChecks`) — юнит-прогон без Heap
+
+### `./lib/tests/gatewayUnitSuite.ts`
+- `../gateway/*` — чистые функции gateway (без Heap, без сети)
 
 ### `./lib/tests/integrationSuite`
 - `../settings.lib`, `repos/*`, `../admin/dashboard.lib`, `../logger.lib`, `api/settings/*`, `api/logger/log`, `api/admin/*`, `api/tests/list`, `./templateUnitSuite` (`runTemplateUnitChecks`)

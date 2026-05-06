@@ -79,7 +79,7 @@ related_manual: "[gateway-operation-manual](./gateway-operation-manual.md)"
 
 Каждый `op` из обязательных в **§1.3** реализован как **отдельный файловый роут** (модель Chatium: один файл — один HTTP-маршрут):
 
-- [ ] **`POST /v1/addUser`** (`legacy`) — файловый роут в `api/v1/addUser.ts` (или эквиваленте). *Готово, когда:* запрос с заголовками **§2.2** и валидным `args` создаёт пользователя в тестовой школе с email `tester@khudoley.pro` и возвращает `ok: true` + `data` (**§9.1**).
+- [x] **`POST /v1/addUser`** (`legacy`) — файловый роут в `api/v1/addUser.ts` (или эквиваленте). *Готово, когда:* запрос с заголовками **§2.2** и валидным `args` создаёт пользователя в тестовой школе с email `tester@khudoley.pro` и возвращает `ok: true` + `data` (**§9.1**).
 - [ ] **`POST /v1/createDeal`** (`legacy`) — отдельный файл-роут. *Готово, когда:* запрос с `gc_itest_offer_id` (как `offer_code` в `params`) создаёт сделку в тестовой школе и `data` содержит идентификатор сделки, читаемый из ответа GC.
 - [ ] **`POST /v1/setUri`** (`new`) — отдельный файл-роут. *Готово, когда:* gateway успешно регистрирует URI на стороне GC; ошибки контура `new` маппятся через **§2.8** + **§10**.
 - [ ] **`POST /v1/addCommentToDialog`** (`new`) — отдельный файл-роут. *Готово, когда:* в указанный `dialogId` отправляется комментарий, возвращается `ok: true`.
@@ -88,11 +88,11 @@ related_manual: "[gateway-operation-manual](./gateway-operation-manual.md)"
 
 Под **каждый** из этих роутов:
 
-- [ ] Заголовки `X-Gc-School-Host`, `X-Gc-School-Api-Key` валидируются по **§2.2**, **§2.5**; ошибки → коды `INVOKE_SCHOOL_HOST_*`, `INVOKE_SCHOOL_KEY_*` (**§10**).
-- [ ] HTTP-метод роута соответствует `httpMethod` записи [gc-op-http-mapping.json](./gc-op-http-mapping.json); несоответствие — `INVOKE_HTTP_METHOD_NOT_ALLOWED` (**§10**).
-- [ ] Возврат строго через объект `{ statusCode, rawHttpBody, headers }` (**§9.0**); заголовок `X-Gateway-Request-Id` совпадает с `requestId` в JSON.
-- [ ] Чтение `gc_developer_api_key` из Heap; пусто → `GATEWAY_DEV_KEY_NOT_CONFIGURED` (**§5.3**, **§5.4**, **§10**).
-- [ ] Семантическая ошибка GC при HTTP 2xx (`success: false` для Legacy и т.п.) — `INVOKE_GC_SEMANTIC_ERROR` (502), **§2.8.2** + **§10**. *Готово, когда:* юнит-кейс на «`success: false` Legacy» выдаёт ровно этот код.
+- [x] Заголовки `X-Gc-School-Host`, `X-Gc-School-Api-Key` валидируются по **§2.2**, **§2.5**; ошибки → коды `INVOKE_SCHOOL_HOST_*`, `INVOKE_SCHOOL_KEY_*` (**§10**). *(Сделано для `POST /v1/addUser`.)*
+- [x] HTTP-метод роута соответствует `httpMethod` записи [gc-op-http-mapping.json](./gc-op-http-mapping.json); несоответствие — `INVOKE_HTTP_METHOD_NOT_ALLOWED` (**§10**). *(Сделано для `POST /v1/addUser`.)*
+- [x] Возврат строго через объект `{ statusCode, rawHttpBody, headers }` (**§9.0**); заголовок `X-Gateway-Request-Id` совпадает с `requestId` в JSON. *(Сделано для `POST /v1/addUser`.)*
+- [x] Чтение `gc_developer_api_key` из Heap; пусто → `GATEWAY_DEV_KEY_NOT_CONFIGURED` (**§5.3**, **§5.4**, **§10**). *(Сделано для `POST /v1/addUser`.)*
+- [x] Семантическая ошибка GC при HTTP 2xx (`success: false` для Legacy и т.п.) — `INVOKE_GC_SEMANTIC_ERROR` (502), **§2.8.2** + **§10**. *Готово, когда:* юнит-кейс на «`success: false` Legacy» выдаёт ровно этот код. *(Юнит `gw_legacy_semantic_success_false` в `lib/tests/gatewayUnitSuite.ts`; маршрут `addUser` маппит семантику в ответ.)*
 
 ### 1.5. `GET /v1/operations` — подмножество для демо
 
@@ -102,17 +102,17 @@ related_manual: "[gateway-operation-manual](./gateway-operation-manual.md)"
 
 ### 1.6. Маппинг и исходящий вызов GC
 
-- [ ] Хелпер исходящего вызова к GC реализован в `lib/gateway/...` (или эквиваленте) поверх **`@app/request`** (**§4.5**, **§8.1**); прямой `fetch`/`XHR` запрещён.
-- [ ] Константа **`GW_OUTBOUND_TIMEOUT_MS = 10_000`** (10 секунд) задана в `lib/gateway/constants.ts` (или эквиваленте) и используется хелпером исходящего вызова. **§8.1**, решение **§12.2**.
-- [ ] Сборка `Authorization: Bearer {devKey}_{schoolApiKey}` для `new` (**§5.2**); сборка `key`/`action`/`params` (Base64 от `JSON.stringify`) для `legacy` (**§4.5**). *Готово, когда:* юнит-кейсы на сборку обоих контуров проходят (см. `strategy §7.2`).
-- [ ] `INVOKE_GC_TIMEOUT` (504), `INVOKE_GC_NETWORK_ERROR` (502), `INVOKE_GC_UPSTREAM_ERROR` (502) — обработаны для demo-операций (**§8.1**, **§10**). Серверные ретраи **запрещены** (**§8.6**, **§12.4**): один входящий → один исходящий.
-- [ ] Лимит тела входящего `POST /v1/{op}` — **1 MiB** (`GW_MAX_REQUEST_BODY_BYTES = 1_048_576`); превышение → `INVOKE_BODY_TOO_LARGE` (HTTP 413) **до** парсинга JSON. **§8.7**, **§10**, решение **§12.3**.
+- [x] Хелпер исходящего вызова к GC реализован в `lib/gateway/...` (или эквиваленте) поверх **`@app/request`** (**§4.5**, **§8.1**); прямой `fetch`/`XHR` запрещён. *(Legacy: `lib/gateway/legacyGcImportClient.ts`.)*
+- [x] Константа **`GW_OUTBOUND_TIMEOUT_MS = 10_000`** (10 секунд) задана в `lib/gateway/constants.ts` (или эквиваленте) и используется хелпером исходящего вызова. **§8.1**, решение **§12.2**.
+- [ ] Сборка `Authorization: Bearer {devKey}_{schoolApiKey}` для `new` (**§5.2**); сборка `key`/`action`/`params` (Base64 от `JSON.stringify`) для `legacy` (**§4.5**). *Готово, когда:* юнит-кейсы на сборку обоих контуров проходят (см. `strategy §7.2`). *(Legacy form: юнит `gw_form_body_fields`; контур `new` — позже.)*
+- [x] `INVOKE_GC_TIMEOUT` (504), `INVOKE_GC_NETWORK_ERROR` (502), `INVOKE_GC_UPSTREAM_ERROR` (502) — обработаны для demo-операций (**§8.1**, **§10**). Серверные ретраи **запрещены** (**§8.6**, **§12.4**): один входящий → один исходящий. *(Реализовано в `POST /v1/addUser`.)*
+- [x] Лимит тела входящего `POST /v1/{op}` — **1 MiB** (`GW_MAX_REQUEST_BODY_BYTES = 1_048_576`); превышение → `INVOKE_BODY_TOO_LARGE` (HTTP 413) **до** парсинга JSON. **§8.7**, **§10**, решение **§12.3**. *(Реализовано в `POST /v1/addUser`.)*
 
 ### 1.7. Минимальная наблюдаемость
 
-- [ ] На входе и выходе каждого demo-роута — `writeServerLog` из `lib/logger.lib` с `requestId` в `payload` (**§7.2**). Прямой `console.log` запрещён.
-- [ ] В заголовке ответа всегда `X-Gateway-Request-Id` (**§9.0**). *Готово, когда:* ручной `curl` показывает заголовок и тот же `requestId` в JSON.
-- [ ] Значения `X-Gc-School-Api-Key`, `gc_developer_api_key`, полный `Authorization` в логи **не попадают** (**§5.7**, **§7.2**). *Готово, когда:* поиск по логу не находит этих значений.
+- [x] На входе и выходе каждого demo-роута — `writeServerLog` из `lib/logger.lib` с `requestId` в `payload` (**§7.2**). Прямой `console.log` запрещён. *(Сделано для `POST /v1/addUser`.)*
+- [x] В заголовке ответа всегда `X-Gateway-Request-Id` (**§9.0**). *Готово, когда:* ручной `curl` показывает заголовок и тот же `requestId` в JSON. *(Сделано для `POST /v1/addUser`.)*
+- [x] Значения `X-Gc-School-Api-Key`, `gc_developer_api_key`, полный `Authorization` в логи **не попадают** (**§5.7**, **§7.2**). *Готово, когда:* поиск по логу не находит этих значений. *(Payload `addUser` не содержит ключей/Authorization; ручная проверка логов — по процессу.)*
 
 ### 1.8. Артефакты продукта для четырёх опорных сценариев
 

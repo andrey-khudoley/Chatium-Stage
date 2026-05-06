@@ -39,6 +39,7 @@ import {
   flattenCatalogBlocks
 } from '../../shared/testCatalog'
 import { normalizeGcTestSchoolHost, validateGcSchoolHostTrimmed } from '../../shared/gcSchoolHostValidation'
+import { runGatewayUnitChecks } from './gatewayUnitSuite'
 
 export type TemplateUnitTestResult = { id: string; title: string; passed: boolean; error?: string }
 
@@ -458,6 +459,9 @@ export function runTemplateUnitChecks(): TemplateUnitTestResult[] {
   runLoggerLibPureChecks(results)
   runSharedLoggerChecks(results)
   runGcSchoolHostValidationChecks(results)
+  for (const r of runGatewayUnitChecks()) {
+    results.push(r)
+  }
   runCatalogIntegrityChecks(results)
 
   const idsBeforeSyncCheck = results.map((r) => r.id)
