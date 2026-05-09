@@ -14,7 +14,8 @@
       "pathTemplate": "/set-uri",
       "openApiArtifact": "new_api_schema.json",
       "openApiOperationId": "set-uri",
-      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json"
+      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json",
+      "availability": "disabled"
     },
     {
       "op": "getAllGroups",
@@ -23,7 +24,8 @@
       "pathTemplate": "/common/get-groups",
       "openApiArtifact": "new_api_schema.json",
       "openApiOperationId": "app\\modules\\postback\\controllers\\api\\v1\\actions\\common\\GetGroupsAction::run",
-      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json"
+      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json",
+      "availability": "disabled"
     },
     {
       "op": "getAllPersonalManagers",
@@ -32,7 +34,8 @@
       "pathTemplate": "/common/get-personal-managers",
       "openApiArtifact": "new_api_schema.json",
       "openApiOperationId": "app\\modules\\postback\\controllers\\api\\v1\\actions\\common\\GetPersonalManagersListAction::run",
-      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json"
+      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json",
+      "availability": "disabled"
     },
     {
       "op": "getTrainings",
@@ -41,7 +44,8 @@
       "pathTemplate": "/common/get-trainings",
       "openApiArtifact": "new_api_schema.json",
       "openApiOperationId": "app\\modules\\postback\\controllers\\api\\v1\\actions\\common\\GetTrainingsAction::run",
-      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json"
+      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json",
+      "availability": "disabled"
     },
     {
       "op": "addCommentToDeal",
@@ -50,7 +54,8 @@
       "pathTemplate": "/deal/add-comment",
       "openApiArtifact": "new_api_schema.json",
       "openApiOperationId": null,
-      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json"
+      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json",
+      "availability": "disabled"
     },
     {
       "op": "addDealPositions",
@@ -59,7 +64,8 @@
       "pathTemplate": "/deal/add-positions",
       "openApiArtifact": "new_api_schema.json",
       "openApiOperationId": null,
-      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json"
+      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json",
+      "availability": "disabled"
     },
     {
       "op": "getDealCalls",
@@ -68,7 +74,8 @@
       "pathTemplate": "/deal/get-calls",
       "openApiArtifact": "new_api_schema.json",
       "openApiOperationId": null,
-      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json"
+      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json",
+      "availability": "disabled"
     },
     {
       "op": "getDealCancelReasons",
@@ -77,7 +84,8 @@
       "pathTemplate": "/deal/get-cancel-reasons",
       "openApiArtifact": "new_api_schema.json",
       "openApiOperationId": null,
-      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json"
+      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json",
+      "availability": "disabled"
     },
     {
       "op": "getDealComments",
@@ -86,7 +94,8 @@
       "pathTemplate": "/deal/get-comments",
       "openApiArtifact": "new_api_schema.json",
       "openApiOperationId": null,
-      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json"
+      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json",
+      "availability": "disabled"
     },
     {
       "op": "getDealCustomFields",
@@ -95,7 +104,8 @@
       "pathTemplate": "/deal/get-custom-fields",
       "openApiArtifact": "new_api_schema.json",
       "openApiOperationId": null,
-      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json"
+      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json",
+      "availability": "disabled"
     },
     {
       "op": "getDealsTags",
@@ -104,7 +114,8 @@
       "pathTemplate": "/deal/get-deals-tags",
       "openApiArtifact": "new_api_schema.json",
       "openApiOperationId": null,
-      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json"
+      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json",
+      "availability": "disabled"
     },
     {
       "op": "getDealFields",
@@ -113,7 +124,8 @@
       "pathTemplate": "/deal/get-fields",
       "openApiArtifact": "new_api_schema.json",
       "openApiOperationId": null,
-      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json"
+      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json",
+      "availability": "disabled"
     },
     {
       "op": "removeDealPositions",
@@ -122,7 +134,8 @@
       "pathTemplate": "/deal/remove-positions",
       "openApiArtifact": "new_api_schema.json",
       "openApiOperationId": null,
-      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json"
+      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json",
+      "availability": "disabled"
     },
     {
       "op": "updateDealFields",
@@ -131,7 +144,8 @@
       "pathTemplate": "/deal/update-fields",
       "openApiArtifact": "new_api_schema.json",
       "openApiOperationId": null,
-      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json"
+      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json",
+      "availability": "disabled"
     },
     {
       "op": "addCommentToDialog",
@@ -140,7 +154,8 @@
       "pathTemplate": "/dialog/add-comment",
       "openApiArtifact": "new_api_schema.json",
       "openApiOperationId": "app\\modules\\postback\\controllers\\api\\v1\\actions\\dialog\\AddCommentToDialogAction::run",
-      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json"
+      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json",
+      "availability": "disabled"
     },
     {
       "op": "changeDepartment",
@@ -149,7 +164,8 @@
       "pathTemplate": "/dialog/change-department",
       "openApiArtifact": "new_api_schema.json",
       "openApiOperationId": null,
-      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json"
+      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json",
+      "availability": "disabled"
     },
     {
       "op": "closeDialog",
@@ -158,7 +174,8 @@
       "pathTemplate": "/dialog/close",
       "openApiArtifact": "new_api_schema.json",
       "openApiOperationId": null,
-      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json"
+      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json",
+      "availability": "disabled"
     },
     {
       "op": "getDialogHistory",
@@ -167,7 +184,8 @@
       "pathTemplate": "/dialog/get-history",
       "openApiArtifact": "new_api_schema.json",
       "openApiOperationId": null,
-      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json"
+      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json",
+      "availability": "disabled"
     },
     {
       "op": "addCommentToLessonAnswer",
@@ -176,7 +194,8 @@
       "pathTemplate": "/lesson/add-comment-to-lesson-answer",
       "openApiArtifact": "new_api_schema.json",
       "openApiOperationId": "app\\modules\\postback\\controllers\\api\\v1\\actions\\lesson\\AddCommentToLessonAnswerAction::run",
-      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json"
+      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json",
+      "availability": "disabled"
     },
     {
       "op": "changeStatusAnswers",
@@ -185,7 +204,8 @@
       "pathTemplate": "/lesson/change-status-answers",
       "openApiArtifact": "new_api_schema.json",
       "openApiOperationId": "app\\modules\\postback\\controllers\\api\\v1\\actions\\lesson\\ChangeStatusAnswerAction::run",
-      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json"
+      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json",
+      "availability": "disabled"
     },
     {
       "op": "getLessonAnswers",
@@ -194,7 +214,8 @@
       "pathTemplate": "/lesson/get-answers",
       "openApiArtifact": "new_api_schema.json",
       "openApiOperationId": "app\\modules\\postback\\controllers\\api\\v1\\actions\\lesson\\GetLessonAnswersAction::run",
-      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json"
+      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json",
+      "availability": "disabled"
     },
     {
       "op": "addNote",
@@ -203,7 +224,8 @@
       "pathTemplate": "/note/add",
       "openApiArtifact": "new_api_schema.json",
       "openApiOperationId": "app\\modules\\postback\\controllers\\api\\v1\\actions\\note\\AddNoteAction::run",
-      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json"
+      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json",
+      "availability": "disabled"
     },
     {
       "op": "getOfferById",
@@ -212,7 +234,8 @@
       "pathTemplate": "/offer/get-offer-by-id",
       "openApiArtifact": "new_api_schema.json",
       "openApiOperationId": null,
-      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json"
+      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json",
+      "availability": "disabled"
     },
     {
       "op": "getOffers",
@@ -221,7 +244,8 @@
       "pathTemplate": "/offer/get-offers",
       "openApiArtifact": "new_api_schema.json",
       "openApiOperationId": null,
-      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json"
+      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json",
+      "availability": "disabled"
     },
     {
       "op": "getOffersTags",
@@ -230,7 +254,8 @@
       "pathTemplate": "/offer/get-offers-tags",
       "openApiArtifact": "new_api_schema.json",
       "openApiOperationId": "app\\modules\\postback\\controllers\\api\\v1\\actions\\offer\\GetOfferTagsAction::run",
-      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json"
+      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json",
+      "availability": "disabled"
     },
     {
       "op": "addUserBalance",
@@ -239,7 +264,8 @@
       "pathTemplate": "/user/add-balance",
       "openApiArtifact": "new_api_schema.json",
       "openApiOperationId": null,
-      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json"
+      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json",
+      "availability": "disabled"
     },
     {
       "op": "addUserGroups",
@@ -248,7 +274,8 @@
       "pathTemplate": "/user/add-groups",
       "openApiArtifact": "new_api_schema.json",
       "openApiOperationId": "app\\modules\\postback\\controllers\\api\\v1\\actions\\user\\AddUserGroupsAction::run",
-      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json"
+      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json",
+      "availability": "disabled"
     },
     {
       "op": "createDiploma",
@@ -257,7 +284,8 @@
       "pathTemplate": "/user/create-diploma",
       "openApiArtifact": "new_api_schema.json",
       "openApiOperationId": "app\\modules\\postback\\controllers\\api\\v1\\actions\\user\\CreateUserDiplomaAction::run",
-      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json"
+      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json",
+      "availability": "disabled"
     },
     {
       "op": "getUserAnswers",
@@ -266,7 +294,8 @@
       "pathTemplate": "/user/get-answers",
       "openApiArtifact": "new_api_schema.json",
       "openApiOperationId": "app\\modules\\postback\\controllers\\api\\v1\\actions\\user\\GetUserAnswersAction::run",
-      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json"
+      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json",
+      "availability": "disabled"
     },
     {
       "op": "getUserBalance",
@@ -275,7 +304,8 @@
       "pathTemplate": "/user/get-balance",
       "openApiArtifact": "new_api_schema.json",
       "openApiOperationId": "app\\modules\\postback\\controllers\\api\\v1\\actions\\user\\GetBalanceAction::run",
-      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json"
+      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json",
+      "availability": "disabled"
     },
     {
       "op": "getUserCustomFields",
@@ -284,7 +314,8 @@
       "pathTemplate": "/user/get-custom-fields",
       "openApiArtifact": "new_api_schema.json",
       "openApiOperationId": "app\\modules\\postback\\controllers\\api\\v1\\actions\\user\\GetUserCustomFieldsAction::run",
-      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json"
+      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json",
+      "availability": "disabled"
     },
     {
       "op": "getUserDeals",
@@ -293,7 +324,8 @@
       "pathTemplate": "/user/get-deals",
       "openApiArtifact": "new_api_schema.json",
       "openApiOperationId": "app\\modules\\postback\\controllers\\api\\v1\\actions\\user\\GetUserDealsAction::run",
-      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json"
+      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json",
+      "availability": "disabled"
     },
     {
       "op": "getUserDiplomas",
@@ -302,7 +334,8 @@
       "pathTemplate": "/user/get-diplomas",
       "openApiArtifact": "new_api_schema.json",
       "openApiOperationId": null,
-      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json"
+      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json",
+      "availability": "disabled"
     },
     {
       "op": "getUserFields",
@@ -311,7 +344,8 @@
       "pathTemplate": "/user/get-fields",
       "openApiArtifact": "new_api_schema.json",
       "openApiOperationId": "app\\modules\\postback\\controllers\\api\\v1\\actions\\user\\GetUserFieldsAction::run",
-      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json"
+      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json",
+      "availability": "disabled"
     },
     {
       "op": "getUserGoalRecords",
@@ -320,7 +354,8 @@
       "pathTemplate": "/user/get-goal-records",
       "openApiArtifact": "new_api_schema.json",
       "openApiOperationId": "app\\modules\\postback\\controllers\\api\\v1\\actions\\user\\GetUserGoalRecordsAction::run",
-      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json"
+      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json",
+      "availability": "disabled"
     },
     {
       "op": "getUserGroups",
@@ -329,7 +364,8 @@
       "pathTemplate": "/user/get-groups",
       "openApiArtifact": "new_api_schema.json",
       "openApiOperationId": "app\\modules\\postback\\controllers\\api\\v1\\actions\\user\\GetUserGroupsAction::run",
-      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json"
+      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json",
+      "availability": "disabled"
     },
     {
       "op": "getUserLessonAnswers",
@@ -338,7 +374,8 @@
       "pathTemplate": "/user/get-lesson-answers",
       "openApiArtifact": "new_api_schema.json",
       "openApiOperationId": "app\\modules\\postback\\controllers\\api\\v1\\actions\\user\\GetLessonAnswersAction::run",
-      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json"
+      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json",
+      "availability": "disabled"
     },
     {
       "op": "getUserPurchases",
@@ -347,7 +384,8 @@
       "pathTemplate": "/user/get-purchases",
       "openApiArtifact": "new_api_schema.json",
       "openApiOperationId": "app\\modules\\postback\\controllers\\api\\v1\\actions\\user\\GetUserPurchasesAction::run",
-      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json"
+      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json",
+      "availability": "disabled"
     },
     {
       "op": "getUserSchedule",
@@ -356,7 +394,8 @@
       "pathTemplate": "/user/get-schedule",
       "openApiArtifact": "new_api_schema.json",
       "openApiOperationId": "app\\modules\\postback\\controllers\\api\\v1\\actions\\user\\GetUserScheduleAction::run",
-      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json"
+      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json",
+      "availability": "disabled"
     },
     {
       "op": "getUserTrainings",
@@ -365,7 +404,8 @@
       "pathTemplate": "/user/get-trainings",
       "openApiArtifact": "new_api_schema.json",
       "openApiOperationId": "app\\modules\\postback\\controllers\\api\\v1\\actions\\user\\GetUserTrainingsAction::run",
-      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json"
+      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json",
+      "availability": "disabled"
     },
     {
       "op": "getUserByTelegramChatId",
@@ -374,7 +414,8 @@
       "pathTemplate": "/user/get-user-by-telegram-chat-id",
       "openApiArtifact": "new_api_schema.json",
       "openApiOperationId": "app\\modules\\postback\\controllers\\api\\v1\\actions\\user\\GetUserByTelegramChatIdAction::run",
-      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json"
+      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json",
+      "availability": "disabled"
     },
     {
       "op": "removeUserGroups",
@@ -383,7 +424,8 @@
       "pathTemplate": "/user/remove-groups",
       "openApiArtifact": "new_api_schema.json",
       "openApiOperationId": "app\\modules\\postback\\controllers\\api\\v1\\actions\\user\\RemoveUserGroupsAction::run",
-      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json"
+      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json",
+      "availability": "disabled"
     },
     {
       "op": "setUserGroups",
@@ -392,7 +434,8 @@
       "pathTemplate": "/user/set-groups",
       "openApiArtifact": "new_api_schema.json",
       "openApiOperationId": "app\\modules\\postback\\controllers\\api\\v1\\actions\\user\\SetUserGroupsAction::run",
-      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json"
+      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json",
+      "availability": "disabled"
     },
     {
       "op": "setPersonalManager",
@@ -401,7 +444,8 @@
       "pathTemplate": "/user/set-personal-manager",
       "openApiArtifact": "new_api_schema.json",
       "openApiOperationId": "app\\modules\\postback\\controllers\\api\\v1\\actions\\user\\SetPersonalManagerAction::run",
-      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json"
+      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json",
+      "availability": "disabled"
     },
     {
       "op": "updateUserCustomFields",
@@ -410,7 +454,8 @@
       "pathTemplate": "/user/update-custom-fields",
       "openApiArtifact": "new_api_schema.json",
       "openApiOperationId": "app\\modules\\postback\\controllers\\api\\v1\\actions\\user\\UpdateUserCustomFieldsAction::run",
-      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json"
+      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json",
+      "availability": "disabled"
     },
     {
       "op": "updateUserFields",
@@ -419,7 +464,8 @@
       "pathTemplate": "/user/update-fields",
       "openApiArtifact": "new_api_schema.json",
       "openApiOperationId": "app\\modules\\postback\\controllers\\api\\v1\\actions\\user\\UpdateUserFieldsAction::run",
-      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json"
+      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json",
+      "availability": "disabled"
     },
     {
       "op": "addCommentToWebinar",
@@ -428,7 +474,8 @@
       "pathTemplate": "/webinar/add-comment",
       "openApiArtifact": "new_api_schema.json",
       "openApiOperationId": "app\\modules\\postback\\controllers\\api\\v1\\actions\\webinar\\AddCommentWebinarAction::run",
-      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json"
+      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json",
+      "availability": "disabled"
     },
     {
       "op": "getAllWebinars",
@@ -437,7 +484,8 @@
       "pathTemplate": "/webinar/get-all-webinars",
       "openApiArtifact": "new_api_schema.json",
       "openApiOperationId": "app\\modules\\postback\\controllers\\api\\v1\\actions\\webinar\\GetAllWebinarsAction::run",
-      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json"
+      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json",
+      "availability": "disabled"
     },
     {
       "op": "getWebinarsByIds",
@@ -446,7 +494,8 @@
       "pathTemplate": "/webinar/get-webinars-by-ids",
       "openApiArtifact": "new_api_schema.json",
       "openApiOperationId": "app\\modules\\postback\\controllers\\api\\v1\\actions\\webinar\\GetWebinarsByIdsAction::run",
-      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json"
+      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json",
+      "availability": "disabled"
     },
     {
       "op": "moderateWebinarComment",
@@ -455,7 +504,8 @@
       "pathTemplate": "/webinar/moderation-comment",
       "openApiArtifact": "new_api_schema.json",
       "openApiOperationId": "app\\modules\\postback\\controllers\\api\\v1\\actions\\webinar\\ModerationWebinarCommentAction::run",
-      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json"
+      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json",
+      "availability": "disabled"
     },
     {
       "op": "moderateWebinarUser",
@@ -464,7 +514,8 @@
       "pathTemplate": "/webinar/moderation-user",
       "openApiArtifact": "new_api_schema.json",
       "openApiOperationId": "app\\modules\\postback\\controllers\\api\\v1\\actions\\webinar\\ModerationWebinarUserAction::run",
-      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json"
+      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json",
+      "availability": "disabled"
     },
     {
       "op": "addUser",
@@ -487,7 +538,8 @@
       "legacyImportAction": "add",
       "openApiArtifact": "legacy_api_schema.json",
       "openApiOperationId": "legacy-import-deals",
-      "notes": "Секрет школы: POST импорт — поле key в форме; GET экспорт — query key. См. legacy_api_schema.json и help GC."
+      "notes": "Секрет школы: POST импорт — поле key в форме; GET экспорт — query key. См. legacy_api_schema.json и help GC.",
+      "availability": "disabled"
     },
     {
       "op": "exportUsers",
@@ -498,7 +550,8 @@
       "legacyImportAction": null,
       "openApiArtifact": "legacy_api_schema.json",
       "openApiOperationId": "legacy-export-account-users",
-      "notes": "Секрет школы: POST импорт — поле key в форме; GET экспорт — query key. См. legacy_api_schema.json и help GC."
+      "notes": "Секрет школы: POST импорт — поле key в форме; GET экспорт — query key. См. legacy_api_schema.json и help GC.",
+      "availability": "disabled"
     },
     {
       "op": "exportGroupUsers",
@@ -511,7 +564,8 @@
       "legacyImportAction": null,
       "openApiArtifact": "legacy_api_schema.json",
       "openApiOperationId": "legacy-export-group-users",
-      "notes": "Секрет школы: POST импорт — поле key в форме; GET экспорт — query key. См. legacy_api_schema.json и help GC."
+      "notes": "Секрет школы: POST импорт — поле key в форме; GET экспорт — query key. См. legacy_api_schema.json и help GC.",
+      "availability": "disabled"
     },
     {
       "op": "exportDeals",
@@ -522,7 +576,8 @@
       "legacyImportAction": null,
       "openApiArtifact": "legacy_api_schema.json",
       "openApiOperationId": "legacy-export-deals",
-      "notes": "Секрет школы: POST импорт — поле key в форме; GET экспорт — query key. См. legacy_api_schema.json и help GC."
+      "notes": "Секрет школы: POST импорт — поле key в форме; GET экспорт — query key. См. legacy_api_schema.json и help GC.",
+      "availability": "disabled"
     },
     {
       "op": "exportPayments",
@@ -533,7 +588,8 @@
       "legacyImportAction": null,
       "openApiArtifact": "legacy_api_schema.json",
       "openApiOperationId": "legacy-export-payments",
-      "notes": "Секрет школы: POST импорт — поле key в форме; GET экспорт — query key. См. legacy_api_schema.json и help GC."
+      "notes": "Секрет школы: POST импорт — поле key в форме; GET экспорт — query key. См. legacy_api_schema.json и help GC.",
+      "availability": "disabled"
     },
     {
       "op": "getCustomFields",
@@ -544,7 +600,8 @@
       "legacyImportAction": null,
       "openApiArtifact": "legacy_api_schema.json",
       "openApiOperationId": "legacy-account-custom-fields",
-      "notes": "Секрет школы: POST импорт — поле key в форме; GET экспорт — query key. См. legacy_api_schema.json и help GC."
+      "notes": "Секрет школы: POST импорт — поле key в форме; GET экспорт — query key. См. legacy_api_schema.json и help GC.",
+      "availability": "disabled"
     },
     {
       "op": "getExportResult",
@@ -557,7 +614,8 @@
       "legacyImportAction": null,
       "openApiArtifact": "legacy_api_schema.json",
       "openApiOperationId": "legacy-export-result",
-      "notes": "Секрет школы: POST импорт — поле key в форме; GET экспорт — query key. См. legacy_api_schema.json и help GC."
+      "notes": "Секрет школы: POST импорт — поле key в форме; GET экспорт — query key. См. legacy_api_schema.json и help GC.",
+      "availability": "disabled"
     }
   ]
 }

@@ -7,23 +7,130 @@ import {
 import { V1_OP_ARGS_SCHEMAS } from './v1OpArgsSchemas.generated'
 
 /**
- * Строгая схема POST /v1/addUser (manual §2.4, gc-required-fields-by-op.json).
- * Перекрывает автогенерацию для демо-тестов (`params.user.email`).
+ * Ручные схемы `args` для legacy ops (manual §2.4, gc-required-fields-by-op.json,
+ * https://getcourse.ru/help/api).
+ *
+ * Источника, пригодного для машинной генерации, нет: `legacy_api_schema.json`
+ * описывает только транспорт (`POST /users` принимает форму `key/action/params`,
+ * GET — только `?key=...`); содержательная структура `params` и фильтры в legacy
+ * OpenAPI не описаны — поля ниже сняты с https://getcourse.ru/help/api руками.
+ *
+ * Все объекты `additionalProperties: true` — пропускаем неизвестные поля GC
+ * (forward-совместимость), а `INVOKE_ARGS_SCHEMA_VIOLATION` срабатывает только
+ * на отсутствии обязательных полей или несоответствии типов.
  */
+
+const passthrough = { additionalProperties: true } as const
+
+/** POST /pl/api/users (action=add). Обязателен `params.user.email`; остальное — опционально. */
 export const addUserArgsSchema = s.object({
   params: s.object({
     user: s.object({
-      email: s.string()
-    })
-  })
-})
+      email: s.string(),
+      phone: s.string().optional(),
+      first_name: s.string().optional(),
+      last_name: s.string().optional(),
+      city: s.string().optional(),
+      country: s.string().optional(),
+      group_name: s.array(s.string()).optional(),
+      addfields: s.any().optional()
+    }, passthrough),
+    system: s.any().optional(),
+    session: s.any().optional()
+  }, passthrough)
+}, passthrough)
+
+/**
+ * POST /pl/api/deals (action=add). Обязателен `params.user.email`;
+ * `params.deal` — объект (offer_code/offer_id «один из» — дизъюнкцию `s` напрямую
+ * не выражает, дальше валидирует семантика GC).
+ */
+const createDealArgsSchema = s.object({
+  params: s.object({
+    user: s.object({
+      email: s.string(),
+      phone: s.string().optional(),
+      first_name: s.string().optional(),
+      last_name: s.string().optional()
+    }, passthrough),
+    deal: s.object({
+      offer_code: s.string().optional(),
+      offer_id: s.number().optional(),
+      deal_number: s.string().optional(),
+      deal_cost: s.number().optional(),
+      deal_status: s.string().optional(),
+      deal_is_paid: s.string().optional(),
+      deal_currency: s.string().optional(),
+      funnel_id: s.number().optional(),
+      funnel_stage_id: s.number().optional()
+    }, passthrough),
+    system: s.any().optional()
+  }, passthrough)
+}, passthrough)
+
+/**
+ * GET /pl/api/account/users — формально обязательных нет, перечислены известные фильтры
+ * для документации в `GET /v1/operations`.
+ */
+const exportUsersArgsSchema = s.object({
+  'created_at[from]': s.string().optional(),
+  'created_at[to]': s.string().optional(),
+  status: s.string().optional(),
+  email: s.string().optional(),
+  idgrouplist: s.string().optional()
+}, passthrough)
+
+/** GET /pl/api/account/deals — известные фильтры. */
+const exportDealsArgsSchema = s.object({
+  'created_at[from]': s.string().optional(),
+  'created_at[to]': s.string().optional(),
+  status: s.string().optional(),
+  'payed_at[from]': s.string().optional(),
+  'payed_at[to]': s.string().optional(),
+  user_in_group: s.number().optional(),
+  user_id: s.number().optional()
+}, passthrough)
+
+/** GET /pl/api/account/payments — известные фильтры. */
+const exportPaymentsArgsSchema = s.object({
+  'created_at[from]': s.string().optional(),
+  'created_at[to]': s.string().optional(),
+  status: s.string().optional(),
+  'status_changed_at[from]': s.string().optional(),
+  'status_changed_at[to]': s.string().optional()
+}, passthrough)
+
+/** GET /pl/api/account/groups/{groupId}/users — обязателен `groupId` (path). */
+const exportGroupUsersArgsSchema = s.object({
+  groupId: s.string(),
+  'created_at[from]': s.string().optional(),
+  'created_at[to]': s.string().optional(),
+  'added_at[from]': s.string().optional(),
+  'added_at[to]': s.string().optional(),
+  status: s.string().optional()
+}, passthrough)
+
+/** GET /pl/api/account/fields — формально обязательных параметров нет, кроме `key`. */
+const getCustomFieldsArgsSchema = s.object({}, passthrough)
+
+/** GET /pl/api/account/exports/{exportId} — обязателен `exportId` (path). */
+const getExportResultArgsSchema = s.object({
+  exportId: s.string()
+}, passthrough)
 
 /** Любая объектная схема `args` (s.object с произвольными полями) — для каталога. */
 type AnyArgsSchema = ReturnType<typeof s.object> | ReturnType<typeof s.any>
 
 /** Точечные ручные перекрытия автогенерации (manual §3.1: SSOT каталога). */
 const ARGS_SCHEMA_OVERRIDES: Record<string, AnyArgsSchema> = {
-  addUser: addUserArgsSchema as unknown as AnyArgsSchema
+  addUser: addUserArgsSchema as unknown as AnyArgsSchema,
+  createDeal: createDealArgsSchema as unknown as AnyArgsSchema,
+  exportDeals: exportDealsArgsSchema as unknown as AnyArgsSchema,
+  exportGroupUsers: exportGroupUsersArgsSchema as unknown as AnyArgsSchema,
+  exportPayments: exportPaymentsArgsSchema as unknown as AnyArgsSchema,
+  exportUsers: exportUsersArgsSchema as unknown as AnyArgsSchema,
+  getCustomFields: getCustomFieldsArgsSchema as unknown as AnyArgsSchema,
+  getExportResult: getExportResultArgsSchema as unknown as AnyArgsSchema
 }
 
 /** Запись каталога: маппинг + живой объект схемы `args` для рантайм-валидации (manual §3.5). */
