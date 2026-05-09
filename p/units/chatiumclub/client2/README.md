@@ -26,9 +26,11 @@
 - История диалогов: `docs/LLM/`
 
 ## TODO
-- Реализовать сбор ответов квиза и отправку в GC (новый API) по спецификации quiz-table.
+- Vue-страница квиза для посетителей (поверх GET `/api/quiz/config` и POST `/api/quiz/save`); анти-спам — вне приложения.
+- Расширение `QUIZ_QUESTIONS` под реальные вопросы школы и проверка маппинга `quiz_<id>` на customFields GC.
 
 ## Changelog
+- 2026-05-06: реализован сценарий B — `lib/quizConfig.ts` (QUIZ_QUESTIONS), `lib/quizFlow.lib.ts` (`validateAnswers`, `answersToCustomFields`, `buildUpdateUserCustomFieldsArgs`, `processQuizSubmit`, `describeQuizForUi`), Heap-таблица `QuizAnswers` и `repos/quizAnswers.repo.ts`, публичные роуты POST `/api/quiz/save` (валидация + Heap = SSOT + опц. `invoke('updateUserCustomFields')`) и GET `/api/quiz/config`. Локальная копия SDK gateway-клиента (`lib/gateway/`, `shared/`); настройки `gateway_url`, `gc_school_host`, `gc_school_api_key` в `lib/settings.lib.ts`. Юнит-набор `lib/tests/quizFlowSuite.ts` и раннер `api/tests/scenario/index.ts`. Документация: `docs/scenario.md`.
 - 2026-05-05: bootstrap после копии шаблона — путь проекта, `.dir.json`, дефолты, Heap, SSR/meta для тестов; удалён `docs/run.md`.
 - 2026-04-05: разделение логирования по уровням Info/Debug — trace-логи (карта вызовов) severity 6, видны при Info; payload (сырые данные) автоматически отсекается при уровне != Debug; shouldIncludePayload в lib/logger.lib.ts, фильтрация non-string args в shared/logger.ts; добавлены недостающие trace-логи на сервере (api/logger/browser, api/tests/list) и в Vue-компонентах (onBeforeUnmount, saveProjectName, loadProjectName, setupLogsWebSocket, loadRecentLogs и др.).
 - 2026-04-05: browserRemoteLogger подключён на всех страницах (главная, админка, профиль, тесты); logLevel SSR добавлен на страницу логина; подробное логирование этапов загрузки с сырыми данными на каждой странице; AdminPage — sink комбинирует дашборд-счётчики и remote logger.
