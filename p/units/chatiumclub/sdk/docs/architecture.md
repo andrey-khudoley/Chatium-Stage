@@ -11,7 +11,7 @@
 ## Основные сценарии
 - Открыть главную страницу.
 - Авторизоваться и попасть в профиль.
-- Открыть админку (только роль Admin).
+- Открыть админку (только роль Admin): в том числе карточка **«Подключение к gateway»** — ввод и сохранение в Heap трёх обязательных параметров тонкого клиента (`gateway_url`, `gc_school_host`, `gc_school_api_key` через `shared/sdkSettingKeys.ts` и API `api/settings/get` + `api/settings/save`).
 
 ## Роутинг
 - `index.tsx` — главная (SSR + Vue), единственный роут в корне.
@@ -41,11 +41,11 @@
 - `web/` — браузерные роуты модулей (admin, profile, tests, login).
 - `pages/` — Vue‑страницы (минимальные).
 - `components/` — переиспользуемые Vue‑компоненты (Header, AppFooter, GlobalGlitch, LogoutModal).
-- `api/` — API‑эндпоинты (получение и валидация входных данных). File-based: один файл — один эндпоинт с `/`. Пример: `api/settings/list.ts`, `api/logger/log.ts`, `api/admin/logs/recent.ts`, `api/tests/list.ts`, `api/tests/unit/index.ts`, `api/tests/integration/index.ts`.
+- `api/` — API‑эндпоинты (получение и валидация входных данных). File-based: один файл — один эндпоинт с `/`. Пример: `api/settings/list.ts`, `api/logger/log.ts`, `api/admin/logs/recent.ts`, `api/tests/list.ts`, `api/tests/unit/index.ts`, `api/tests/integration/index.ts`, `api/gateway/invoke.ts`, `api/gateway/operations.ts`.
 - `tables/` — Heap‑таблицы (схемы: settings, logs).
 - `repos/` — репозитории (работа с БД: settings, logs; logs.repo включает findBeforeTimestamp для пагинации).
-- `lib/` — бизнес‑логика (settings.lib, logger.lib: проверка уровня, запись в ctx/Heap/WebSocket/вебхук).
-- `shared/` — общий код (preloader, logLevel для передачи уровня логирования на клиент, logger — уровни syslog RFC 5424, createComponentLogger, setLogSink/LogEntry для дашборда, logEmergency…logDebug в браузере с проверкой порога, browserRemoteLogger — пакетная отправка браузерных логов на сервер через POST /api/logger/browser).
+- `lib/` — бизнес‑логика (settings.lib, logger.lib: проверка уровня, запись в ctx/Heap/WebSocket/вебхук; `lib/gateway/` — тонкая прокладка к gateway).
+- `shared/` — общий код (preloader, logLevel для передачи уровня логирования на клиент, logger — уровни syslog RFC 5424, createComponentLogger, setLogSink/LogEntry для дашборда, logEmergency…logDebug в браузере с проверкой порога, browserRemoteLogger — пакетная отправка браузерных логов на сервер через POST /api/logger/browser; `sdkSettingKeys.ts`, `gatewayHttpHeaders.ts`, `v1OpsList.generated.ts` — константы и снимок каталога gateway).
 - `docs/` — документация проекта.
 
 ## Стратегия логирования
@@ -66,6 +66,31 @@
 - **Сервер** (`lib/logger.lib.ts`): функция `shouldIncludePayload` — payload в ctx.account.log, Heap, WebSocket и webhook только при Debug.
 - **Браузер** (`shared/logger.ts`): `emitLog` фильтрует non-string args при уровне != Debug.
 
+## Gateway-клиент
+
+SDK вызывает gateway-приложение `p/saas/gw/gc` **по обычному HTTP** через `@app/request` (manual §12.1: тонкий клиент и gateway — разные приложения на разных серверах, межприложенческие вызовы не используются). Логика вынесена в `lib/gateway/`:
+
+- `lib/gateway/constants.ts` — `SDK_GATEWAY_API_V1_PREFIX = '/api/v1'`, `SDK_GATEWAY_OPERATIONS_PATH = '/api/v1/operations'`, `SDK_GATEWAY_REQUEST_TIMEOUT_MS = 15_000` (с запасом над gateway-таймаутом 10 с — manual §8.1).
+- `lib/gateway/gatewayClient.ts`:
+  - `invoke(ctx, { op, args, httpMethod? })` — основной вызов: читает три gateway-настройки из Heap, выбирает HTTP-метод по локальному снимку каталога (`shared/v1OpsList.generated.ts`) или из аргумента, формирует `${gatewayUrl}/api/v1/${op}` с query (для GET) или JSON-телом (для POST), добавляет заголовки `X-Gc-School-Host` и `X-Gc-School-Api-Key`, отправляет один HTTP-запрос (без ретраев — manual §8.6), парсит ответ и возвращает `{ ok, data | error, requestId, warnings, gatewayHttpStatus }`.
+  - `getOperationsCatalog(ctx)` — `GET /api/v1/operations` (без заголовков школы — manual §3.3); возвращает `{ ok, catalog | error, requestId, gatewayHttpStatus }`.
+  - SDK-коды ошибок: `SDK_NOT_CONFIGURED`, `SDK_OP_HTTP_METHOD_UNKNOWN`, `SDK_GATEWAY_NETWORK_ERROR`, `SDK_GATEWAY_INVALID_RESPONSE`. Коды gateway (`INVOKE_*`, `GATEWAY_*` из manual §10) пробрасываются как есть.
+  - Логи без секретов (manual §5.7): фиксируются только `op`, `httpMethod`, длина школьного ключа, `gatewayHttpStatus`, `requestId`, код ошибки и имя этапа (`logStage`).
+
+Серверный фасад над тем же поведением — `api/gateway/invoke.ts` и `api/gateway/operations.ts` (Admin); см. `docs/api.md`, раздел «Gateway».
+
+## Настройки тонкого клиента (Heap)
+
+Три ключа лежат в той же key-value таблице настроек (`tables/settings.table.ts`); валидация — в `lib/settings.lib.ts#setSetting`:
+
+| Ключ | Назначение |
+| --- | --- |
+| `gateway_url` | Базовый URL gateway-приложения, например `https://s.chtm.khudoley.pro/p/saas/gw/gc`. Обязан начинаться с `http://` или `https://`; хвостовой `/` обрезается при сохранении. |
+| `gc_school_host` | Хост школы GetCourse без схемы (`myschool.getcourse.ru` или `customdomain.ru`). Подставляется в заголовок `X-Gc-School-Host` (manual §2.5). |
+| `gc_school_api_key` | API-ключ конкретной школы GetCourse (секрет). Подставляется в заголовок `X-Gc-School-Api-Key` (manual §5.6). gateway этот ключ в Heap не хранит — ответственность на SDK. |
+
+Имена ключей экспортируются для UI из `shared/sdkSettingKeys.ts` (с пометкой `// @shared`); сами значения секретов в shared-бандл не попадают.
+
 ## Интеграции
-- **Gateway GetCourse:** планируются исходящие HTTP-вызовы к gateway; пока не реализованы — только каркас шаблона.
-- Внутренние SDK: стандартные модули Chatium.
+- **Gateway GetCourse:** SDK обращается к gateway-приложению `p/saas/gw/gc` по обычному HTTP. Подробности — раздел «Gateway-клиент» выше; контракт ошибок и тел — `docs/api.md` и manual gateway (`p/saas/gw/gc/docs/gateway/gateway-operation-manual.md`).
+- Внутренние SDK: стандартные модули Chatium (`@app/request`, `@app/heap`, `@app/auth`, `@app/socket`).

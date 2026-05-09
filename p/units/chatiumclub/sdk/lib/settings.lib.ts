@@ -1,5 +1,6 @@
 import * as repo from '../repos/settings.repo'
 import * as loggerLib from './logger.lib'
+import { SDK_GATEWAY_SETTING_KEYS } from '../shared/sdkSettingKeys'
 
 const LOG_MODULE = 'lib/settings.lib'
 
@@ -10,7 +11,13 @@ export const SETTING_KEYS = {
   LOG_LEVEL: 'log_level',
   LOGS_LIMIT: 'logs_limit',
   LOG_WEBHOOK: 'log_webhook',
-  DASHBOARD_RESET_AT: 'dashboard_reset_at'
+  DASHBOARD_RESET_AT: 'dashboard_reset_at',
+  /** Базовый URL gateway (без хвостового `/`), напр. `https://s.chtm.khudoley.pro/p/saas/gw/gc`. */
+  GATEWAY_URL: SDK_GATEWAY_SETTING_KEYS.GATEWAY_URL,
+  /** Хост школы GetCourse без схемы для заголовка `X-Gc-School-Host`. */
+  GC_SCHOOL_HOST: SDK_GATEWAY_SETTING_KEYS.GC_SCHOOL_HOST,
+  /** API-ключ школы GetCourse для заголовка `X-Gc-School-Api-Key`. */
+  GC_SCHOOL_API_KEY: SDK_GATEWAY_SETTING_KEYS.GC_SCHOOL_API_KEY
 } as const
 
 /** Настройка вебхука логов: enable — активна ли отправка, url — куда отправлять. */
@@ -23,7 +30,10 @@ export const DEFAULTS = {
   [SETTING_KEYS.LOG_LEVEL]: 'Info',
   [SETTING_KEYS.LOGS_LIMIT]: '100',
   [SETTING_KEYS.LOG_WEBHOOK]: { enable: false, url: '' } as LogWebhookSetting,
-  [SETTING_KEYS.DASHBOARD_RESET_AT]: null as number | null
+  [SETTING_KEYS.DASHBOARD_RESET_AT]: null as number | null,
+  [SETTING_KEYS.GATEWAY_URL]: '',
+  [SETTING_KEYS.GC_SCHOOL_HOST]: '',
+  [SETTING_KEYS.GC_SCHOOL_API_KEY]: ''
 } as const
 
 /** Допустимые уровни логирования */
@@ -156,6 +166,40 @@ export async function getAllSettings(ctx: app.Ctx): Promise<Record<string, unkno
   return result
 }
 
+/** Конфигурация для тонкого клиента (значения трёх gateway-настроек, без логирования секрета). */
+export type GatewayClientSettings = {
+  gatewayUrl: string
+  gcSchoolHost: string
+  gcSchoolApiKey: string
+}
+
+/**
+ * Прочитать все три gateway-настройки разом. Значения возвращаются с `trim`,
+ * пустые строки означают «не задано». Логирует только длины и наличие, без сами значений
+ * gc_school_api_key (manual §5.7).
+ */
+export async function getGatewayClientSettings(ctx: app.Ctx): Promise<GatewayClientSettings> {
+  await loggerLib.writeServerLog(ctx, {
+    severity: 6,
+    message: `[${LOG_MODULE}] getGatewayClientSettings entry`,
+    payload: {}
+  })
+  const gatewayUrl = (await getSettingString(ctx, SETTING_KEYS.GATEWAY_URL)).trim()
+  const gcSchoolHost = (await getSettingString(ctx, SETTING_KEYS.GC_SCHOOL_HOST)).trim()
+  const gcSchoolApiKey = (await getSettingString(ctx, SETTING_KEYS.GC_SCHOOL_API_KEY)).trim()
+  await loggerLib.writeServerLog(ctx, {
+    severity: 6,
+    message: `[${LOG_MODULE}] getGatewayClientSettings exit`,
+    payload: {
+      gatewayUrl,
+      gcSchoolHost,
+      gcSchoolApiKeyLength: gcSchoolApiKey.length,
+      gcSchoolApiKeyPresent: gcSchoolApiKey.length > 0
+    }
+  })
+  return { gatewayUrl, gcSchoolHost, gcSchoolApiKey }
+}
+
 /**
  * Сохранить настройку. Валидирует значение для известных ключей.
  */
@@ -220,6 +264,33 @@ export async function setSetting(ctx: app.Ctx, key: string, value: unknown): Pro
       severity: 6,
       message: `[${LOG_MODULE}] setSetting DASHBOARD_RESET_AT branch`,
       payload: { normalized }
+    })
+  } else if (
+    key === SETTING_KEYS.GATEWAY_URL ||
+    key === SETTING_KEYS.GC_SCHOOL_HOST ||
+    key === SETTING_KEYS.GC_SCHOOL_API_KEY
+  ) {
+    const trimmed = typeof value === 'string' ? value.trim() : String(value ?? '').trim()
+    if (!trimmed) {
+      throw new Error(`Значение ${key} должно быть непустой строкой`)
+    }
+    if (key === SETTING_KEYS.GATEWAY_URL) {
+      if (!/^https?:\/\//i.test(trimmed)) {
+        throw new Error(`gateway_url должен начинаться с http:// или https://`)
+      }
+      normalized = trimmed.replace(/\/+$/, '')
+    } else if (key === SETTING_KEYS.GC_SCHOOL_HOST) {
+      if (/^https?:\/\//i.test(trimmed) || trimmed.includes('/') || /\s/.test(trimmed)) {
+        throw new Error(`gc_school_host — имя хоста без схемы и без пути (например myschool.getcourse.ru)`)
+      }
+      normalized = trimmed
+    } else {
+      normalized = trimmed
+    }
+    await loggerLib.writeServerLog(ctx, {
+      severity: 6,
+      message: `[${LOG_MODULE}] setSetting GATEWAY/GC branch`,
+      payload: { key, normalizedLength: typeof normalized === 'string' ? normalized.length : 0 }
     })
   }
 
