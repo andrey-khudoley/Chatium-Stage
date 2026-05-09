@@ -39,8 +39,8 @@
 ## Структура каталогов
 - `config/` — маршруты и `PROJECT_ROOT`.
 - `web/` — браузерные роуты модулей (admin, profile, tests, login).
-- `pages/` — Vue‑страницы (минимальные).
-- `components/` — переиспользуемые Vue‑компоненты (Header, AppFooter, GlobalGlitch, LogoutModal).
+- `pages/` — Vue‑страницы (минимальные). На главной (`HomePage.vue`) после hero-секции рендерится компонент `LeadForm` — публичная форма захвата лида.
+- `components/` — переиспользуемые Vue‑компоненты (Header, AppFooter, GlobalGlitch, LogoutModal, LeadForm). `LeadForm.vue` — лид-форма (имя, email, телефон), вызывает `submitLeadRoute.run(ctx, ...)` (POST `/api/lead/submit`); статусы idle/loading/success/error, попольная валидация и блокировка кнопки на время отправки. Стилистика CRT/моноширинная под общий дизайн.
 - `api/` — API‑эндпоинты (получение и валидация входных данных). File-based: один файл — один эндпоинт с `/`. Пример: `api/settings/list.ts`, `api/logger/log.ts`, `api/admin/logs/recent.ts`, `api/tests/list.ts`, `api/tests/unit/index.ts`, `api/tests/integration/index.ts`.
 - `tables/` — Heap‑таблицы (схемы: settings, logs).
 - `repos/` — репозитории (работа с БД: settings, logs; logs.repo включает findBeforeTimestamp для пагинации).

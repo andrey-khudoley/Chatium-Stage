@@ -68,11 +68,14 @@
 ## 2) Страницы‑компоненты (Vue)
 
 ### `./pages/HomePage.vue`
-- `vue` → `onMounted`, `onUnmounted`, `ref`
+- `vue` → `onMounted`, `onBeforeUnmount`, `onUnmounted`, `ref`
 - `../components/Header.vue`
 - `../components/GlobalGlitch.vue`
 - `../components/AppFooter.vue`
-- `../shared/logger` → `createComponentLogger`
+- `../components/LeadForm.vue`
+- `../shared/logger` → `createComponentLogger`, `setLogSink`, `LogEntry`
+- `../shared/browserRemoteLogger` → `createBrowserRemoteLogger`
+- `../api/logger/browser` → `postBrowserLogsRoute`
 
 ### `./pages/AdminPage.vue`
 - `vue` → `onMounted`, `onBeforeUnmount`, `onUnmounted`, `ref`, `computed`, `watch`
@@ -127,6 +130,11 @@
 
 ### `./components/GlobalGlitch.vue`
 - `vue` → `onMounted`
+- `../shared/logger` → `createComponentLogger`
+
+### `./components/LeadForm.vue`
+- `vue` → `computed`, `ref`
+- `../api/lead/submit` → `submitLeadRoute`
 - `../shared/logger` → `createComponentLogger`
 
 ## 4) Shared (общий код)
