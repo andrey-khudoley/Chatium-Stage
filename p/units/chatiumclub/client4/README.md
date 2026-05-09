@@ -26,9 +26,12 @@
 - История диалогов: `docs/LLM/`
 
 ## TODO
-- UI настройки приветствий и истории отправок — по спецификации registration-welcome; связка с gateway.
+- Vue-страница в админке: редактирование `welcome_message_template`, история webhook'ов из `WebhookLog`, ручной retry, отображение текущего `webhookUrlSuffix` из `/api/admin/webhook/info`.
+- Polling-вариант (сценарий D §2 Б) реализуется на стороне gateway — не в этом приложении.
+- P2: онбординг-чат через `@app/feed`, AI-агентский сценарий через `@app/agents`.
 
 ## Changelog
+- 2026-05-06: реализован сценарий D — `lib/webhookSecret.lib.ts` (идентичен client3), `lib/registrationWelcome.lib.ts` (`normalizeRegistrationEvent` с синонимами training/webinar/root, `renderWelcomeMessage` с placeholders {{name}}/{{activityName}}/{{activityDate}}, `processRegistrationEvent` с идемпотентностью по `gcEventId`), Heap-таблица `WebhookLog` (gcEventId, eventType, email, activityId, activityName, tokenValid, reactionOk, reactionErrorCode, gatewayRequestId, status, receivedAt) и `repos/webhookLog.repo.ts`. Роуты: POST `/api/webhook?token=<...>` (анонимно, ADR-0004 «токен в URL», 401 при invalid token), GET `/api/admin/webhook/info` (Admin), POST `/api/admin/webhook/rotate` (Admin). Локальная копия SDK gateway-клиента (`lib/gateway/`, `shared/`); настройки `gateway_url`, `gc_school_host`, `gc_school_api_key`, `webhook_token`, `welcome_message_template`, `lenochka_default_*` в `lib/settings.lib.ts`. Юнит-набор `lib/tests/registrationWelcomeSuite.ts` и раннер `api/tests/scenario/index.ts`. Документация: `docs/scenario.md`.
 - 2026-05-05: bootstrap после копии шаблона — путь проекта, `.dir.json`, дефолты, Heap, SSR/meta для тестов; удалён `docs/run.md`.
 - 2026-04-05: разделение логирования по уровням Info/Debug — trace-логи (карта вызовов) severity 6, видны при Info; payload (сырые данные) автоматически отсекается при уровне != Debug; shouldIncludePayload в lib/logger.lib.ts, фильтрация non-string args в shared/logger.ts; добавлены недостающие trace-логи на сервере (api/logger/browser, api/tests/list) и в Vue-компонентах (onBeforeUnmount, saveProjectName, loadProjectName, setupLogsWebSocket, loadRecentLogs и др.).
 - 2026-04-05: browserRemoteLogger подключён на всех страницах (главная, админка, профиль, тесты); logLevel SSR добавлен на страницу логина; подробное логирование этапов загрузки с сырыми данными на каждой странице; AdminPage — sink комбинирует дашборд-счётчики и remote logger.
