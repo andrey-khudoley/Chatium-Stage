@@ -1,0 +1,106 @@
+# Architecture
+
+## Назначение
+Базовый шаблон проекта Chatium с минимальным набором страниц и документации.
+
+## Ограничения платформы
+- Серверная инфраструктура предоставляется Chatium.
+- Нельзя менять стек и зависимости.
+- Деплой — автоматически при пуше.
+
+## Основные сценарии
+- Открыть главную страницу.
+- Авторизоваться и попасть в профиль.
+- Открыть админку (только роль Admin).
+
+## Роутинг
+- `index.tsx` — главная (SSR + Vue), единственный роут в корне.
+- `web/admin/index.tsx` — админка, `requireAccountRole('Admin')`.
+- `web/profile/index.tsx` — профиль, `requireRealUser()`.
+- `web/tests/index.tsx` — страница тестов, `requireRealUser()`.
+- `web/login/index.tsx` — вход (редирект на системный `/s/auth/signin`).
+- `api/v1/createBill.ts`, `api/v1/getBillStatus.ts`, `api/v1/cancelBill.ts` — публичные gateway-эндпоинты контура `bills_v1` LifePay. Авторизация: заголовки `X-Lp-Apikey`/`X-Lp-Login` (manual §2.2, §2.5). Общая цепочка через `handleV1Op`.
+- `api/v1/operations.ts` — каталог операций (`GET /v1/operations`, manual §3.3). Без заголовков `X-Lp-*`. Источник — `lib/gateway/operationsCatalog.ts`.
+
+## Gateway-слой (`lib/gateway/`, `shared/gatewayHttpHeaders.ts`)
+
+Общий код для публичных эндпоинтов `/v1/*` payments-gateway. SSOT — `olga-getcourse-payments-c7d5a1/docs/gateway/operation-manual.md`.
+
+- `lib/gateway/constants.ts` — жёсткие константы платформы: `GW_OUTBOUND_TIMEOUT_MS = 10_000` (§8.1, §12.2), `GW_MAX_REQUEST_BODY_BYTES = 1_048_576` (§8.7, §12.3), `LP_BILLS_V1_BASE_URL`.
+- `lib/gateway/requestId.ts` — UUID v4 канонического вида (§2.3) для корреляции лог-записей и заголовка `X-Gateway-Request-Id`.
+- `lib/gateway/gatewayErrors.ts` — каталог `INVOKE_*` с HTTP-статусами и каноническими текстами `error.message` строго по таблице §10 manual.
+- `lib/gateway/gatewayResponse.ts` — сборка ответа платформы `TuneHttpHeadersResponse` (§9.0): `{ statusCode, rawHttpBody: JSON.stringify({ ok, data | error, requestId }), headers: { 'Content-Type', 'X-Gateway-Request-Id' } }`.
+- `lib/gateway/lpCredentials.ts` — чтение и валидация заголовков `X-Lp-Apikey`/`X-Lp-Login` (нечувствительно к регистру, §2.5: 11 цифр, первая `7`); утилита `maskLpLogin('79161234567') → '+7916***4567'` для безопасных логов.
+- `lib/gateway/lifePayClient.ts` — обёртка над `@app/request` для исходящих вызовов к LifePay. Дискриминированное объединение `LpClientResult`: `json_ok`, `upstream_status`, `upstream_parse_error`, `network_error`, `timeout` (§2.8.1). Один входящий запрос → ровно один исходящий, серверные ретраи запрещены (§8.6, §12.4).
+- `lib/gateway/buildCreateBillBody.ts` — сборка тела `POST /v1/bill` LifePay: `apikey`/`login` из заголовков (§4.5), `method: "sbp"`, `order: { number }`, поля `args`.
+- `lib/gateway/billsV1Semantic.ts` — классификация ответов LifePay по реальному контракту (apidoc.life-pay.ru/bill/index) и извлечение успешных payload'ов. Тип `BillsV1SemanticRule` содержит ровно четыре канонических значения: `bills_v1_status_error`, `bills_v1_code_error`, `bills_v1_missing_payment_url`, `bills_v1_error_string`. Основной признак ошибки — `code !== 0` в корне → `bills_v1_code_error` с `lpNumericCode`. Для `createBill` дополнительно проверяется наличие `paymentUrl` (B3). Для `getBillStatus` `data` имеет форму словаря `{ [billNumber]: { status: number, msg: string } }`; gateway вытаскивает первую запись и маппит числовой `status` (0/10/15/20/30) в имя справочника (`initiated`/`success`/`pending`/`failed`/`cancelled`) через `billStatusName`. Для `cancelBill` LifePay возвращает пустой `data: {}`; `extractCancelBillSuccess` отдаёт синтетический `{ status: 'cancelled' }`. `extractCreateBillSuccess` извлекает `{ billNumber, paymentUrl, paymentUrlWeb }` (приводя числовой `number` LifePay к строке).
+- `lib/gateway/operationsCatalog.ts` — машиночитаемый каталог `op` (SSOT): для каждого записи поля `op`, `httpMethod`, `contour`, `availability`, рантайм-`argsValidator` (`s.object()` из `@app/schema`) и wire-`argsSchema` (plain JSON `{ fields[] }`). `toOperationSummaries()` — преобразование в wire-форму для клиента и `GET /v1/operations`. `validateCreateBillAmountPositive` — дополнительная проверка `amount > 0` сверх типа `s.number()`.
+- `lib/gateway/handleV1Op.ts` — общая цепочка обработки `/v1/{op}` (§2.6, §2.8.1, §2.11): requestId → `availability` → заголовки → body/query → валидация args через каталог → вызов прикладного `handler` → классификация транспорта LifePay → ответ. Прикладной handler в файле роута содержит только семантику конкретного `op` (сборка тела/query, разбор `lpJson`). Для `availability = 'beta'` в ответ добавляется `warnings: [GATEWAY_OP_BETA_UNSTABLE]`.
+- `shared/gatewayHttpHeaders.ts` (`// @shared`) — имена заголовков `X-Lp-Apikey`, `X-Lp-Login`, `X-Gateway-Request-Id`. Только строки имён, без значений секретов.
+- `shared/operationsCatalogShared.ts` (`// @shared`) — типы wire-формы каталога (`OperationSummary`, `ArgsFieldSchema`, `ArgsSchemaJson`) для передачи на клиент через SSR-пропсы или `GET /v1/operations`.
+
+Запрет логирования секретов (§5.7): полные значения `apikey` / `login` / `lp_test_*` в `writeServerLog` не попадают. Допустимо: длина `apikey`, маскированный `login`, имя `op`, `requestId`, коды ошибок.
+
+## Вкладка «Тест запроса» (TestsPage)
+
+`pages/TestsPage.vue` имеет четвёртую вкладку «Тест запроса», доступную только при роли Admin. Вкладка реализована в отдельном компоненте `components/RequestTestTab.vue`. Каталог `op` приходит на страницу через SSR-проп `operationsCatalog` в `web/tests/index.tsx` (только для Admin); проп типизируется через `shared/operationsCatalogShared.ts`.
+
+Сценарий:
+1. Дропдаун выбора `op` из каталога. Для `availability !== 'enabled'` — жёлтое предупреждение и заблокированная кнопка «Отправить».
+2. Поля `X-Lp-Apikey`, `X-Lp-Login` — по умолчанию вводятся вручную. Кнопка «Использовать тестовые» рядом с полями по явному клику подгружает значения `lp_test_apikey` / `lp_test_login` из Heap через `getSettingRoute.run(ctx)` (admin-only).
+3. Динамическая форма `args` из `argsSchema.fields`: обязательные (`*`), опциональные (`(опционально)`), описание поля как hint. Тип `number` приводится при отправке.
+4. Клиентская валидация на лету: непустые обязательные поля, X-Lp-Login по regexp `^7[0-9]{10}$`, тип `number` валиден.
+5. Кнопка «Отправить» активна только при отсутствии ошибок и `availability === 'enabled'`.
+6. Отправка — реальный `fetch` с фронта на `/${projectRoot}/api/v1/{op}` (метод из каталога), заголовки `X-Lp-*` + `Content-Type: application/json` (для POST). Никаких `credentials: 'include'`.
+7. Результат: статус «УСПЕХ» / «ПРОВАЛ» (по `body.ok` или HTTP), сырой JSON запроса (`{ method, url, headers, body | query }`) и ответа (`{ statusCode, headers, body }`) с отступами в `<pre>`. Маскирование отсутствует.
+
+## Вёрстка админки и страницы тестов
+- Корень Vue (`.app-layout` в `AdminPage.vue` / `TestsPage.vue`) ограничен высотой окна (`100vh` / `100dvh`) с `overflow: hidden`; после `boot-complete` у `body` нет вертикального скролла. Ширина: `.app-layout`, `<main class="ap-wrap|tp-wrap">` и блок `.ap` / `.tp` — на всю доступную ширину (`width: 100%`, у обёрток при необходимости `min-width: 0` для flex); контент по-прежнему ограничен `max-width: 1440px` у `.ap`/`.tp`. `<main>` — flex-колонка с `overflow: hidden` (сам не скроллится). Ниже — `.ap` / `.tp` (flex, `min-height: 0`), статус/тулбар `flex-shrink: 0`, сетка `.ap-grid` / `.tp-grid` с `grid-template-rows: minmax(0, 1fr)` и `flex: 1`; в двухколоночном режиме первая колонка — `minmax(240px, 1fr)` (не `minmax(0, 1fr)`), чтобы левая область не сжималась чрезмерно. Вертикальный скролл только у левой колонки `.ap-main` / `.tp-main` (`overflow-y: auto`, класс `content-wrapper` для стилей скроллбара). Правая колонка логов тянется по высоте ячейки сетки; список строк — `.ap-log-out` / `.tp-log-out` с внутренним `overflow-y`. На узкой вёрстке снова скроллится весь `<main>`.
+
+## Разделение слоёв
+
+Принцип разделения ответственности при работе с данными (см. [ADR-0002](ADR/0002-settings-heap-and-layered-api.md)):
+
+| Слой | Каталог | Ответственность |
+| --- | --- | --- |
+| **Таблицы** | `tables/` | Схемы Heap (поля, типы). Только определение структуры данных. |
+| **Репозитории** | `repos/` | Работа с БД: CRUD, запросы. Никакой бизнес‑логики, только вызовы Heap API. |
+| **Бизнес‑логика** | `lib/` | Правила, дефолты, валидация значений, вычисления. Вызывает репозитории. |
+| **API** | `api/` | HTTP‑эндпоинты, парсинг и первичная валидация запросов, проверка прав. Вызывает lib. |
+
+Поток данных: `HTTP → API → lib → repos → Heap`.
+
+## Структура каталогов
+- `config/` — маршруты и `PROJECT_ROOT`.
+- `web/` — браузерные роуты модулей (admin, profile, tests, login).
+- `pages/` — Vue‑страницы (минимальные).
+- `components/` — переиспользуемые Vue‑компоненты (Header, AppFooter, GlobalGlitch, LogoutModal).
+- `api/` — API‑эндпоинты (получение и валидация входных данных). File-based: один файл — один эндпоинт с `/`. Пример: `api/settings/list.ts`, `api/logger/log.ts`, `api/admin/logs/recent.ts`, `api/tests/list.ts`, `api/tests/unit/index.ts`, `api/tests/integration/index.ts`, `api/v1/createBill.ts`, `api/v1/getBillStatus.ts`, `api/v1/cancelBill.ts`, `api/v1/operations.ts`.
+- `components/RequestTestTab.vue` — Vue-компонент вкладки «Тест запроса» на странице `/web/tests`. Admin-only (видимость на уровне TestsPage.vue). Получает `operationsCatalog` и `projectRoot` через пропсы.
+- `tables/` — Heap‑таблицы (схемы: settings, logs).
+- `repos/` — репозитории (работа с БД: settings, logs; logs.repo включает findBeforeTimestamp для пагинации).
+- `lib/` — бизнес‑логика (settings.lib, logger.lib: проверка уровня, запись в ctx/Heap/WebSocket/вебхук). `lib/gateway/` — общий код gateway-эндпоинтов `/v1/*` (см. раздел «Gateway-слой» выше).
+- `shared/` — общий код (preloader, logLevel для передачи уровня логирования на клиент, logger — уровни syslog RFC 5424, createComponentLogger, setLogSink/LogEntry для дашборда, logEmergency…logDebug в браузере с проверкой порога, browserRemoteLogger — пакетная отправка браузерных логов на сервер через POST /api/logger/browser).
+- `docs/` — документация проекта.
+
+## Стратегия логирования
+
+Логирование построено на стандарте syslog (RFC 5424), severity 0–7. Управление уровнем через настройку `log_level` (Debug/Info/Warn/Error/Disable).
+
+| Severity | Уровень | Что логируется |
+| --- | --- | --- |
+| 7 | Debug | Сырые данные (параметры, возвраты, промежуточные значения) — появляются только при Debug |
+| 6 | Info | Карта вызовов: entry/exit функций, ветвления — без сырых данных при уровне Info |
+| 5 | Notice | Пользовательские действия (клик, навигация, изменение настроек) |
+| 4 | Warning | Нештатные ситуации, не требующие немедленной реакции |
+| 3 | Error | Ошибки, требующие внимания |
+| 2 | Critical | Критические действия (выход из аккаунта) |
+| -1 | Disable | Логи выключены |
+
+**Ключевой принцип**: trace-логи (карта вызовов) имеют severity 6 (Info). Payload (сырые данные) автоматически отсекается при уровне != Debug:
+- **Сервер** (`lib/logger.lib.ts`): функция `shouldIncludePayload` — payload в ctx.account.log, Heap, WebSocket и webhook только при Debug.
+- **Браузер** (`shared/logger.ts`): `emitLog` фильтрует non-string args при уровне != Debug.
+
+## Интеграции
+- Внешние сервисы: нет.
+- Внутренние SDK: стандартные модули Chatium.

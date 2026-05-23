@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//p/saas/gw/**)",
+      "Read(//p/saas/gw/gc/**)",
+      "Read(//home/aley/.cursor-server/data/User/globalStorage/chatium.chatium-sync/**)",
+      "Bash(ls /home/aley/.claude/commands/ /home/aley/.claude/agents/ 2>/dev/null && echo \"---\" && ls /home/aley/.cursor-server/data/User/globalStorage/chatium.chatium-sync/s.chtm.khudoley.pro/.claude/ 2>/dev/null || echo \"No .claude in project\")",
+      "Read(//home/aley/.claude/**)",
+      "Bash(mkdir -p /home/aley/.cursor-server/data/User/globalStorage/chatium.chatium-sync/s.chtm.khudoley.pro/.claude/agents /home/aley/.cursor-server/data/User/globalStorage/chatium.chatium-sync/s.chtm.khudoley.pro/.claude/commands && echo \"Created\")",
+      "Bash(npx -p typescript@5 --yes tsc --noEmit -p p/saas/gw/lifepay/tsconfig.json)",
+      "Bash(awk '/^## 9\\\\.|^### 9\\\\.|^## 10\\\\.|^### 10\\\\./,/^## [0-9]/' /home/aley/obsidian/second-brain/03_Projects/active/olga-getcourse-payments-c7d5a1/docs/gateway/operation-manual.md)",
+      "Bash(awk '/^### 10\\\\.2|^### 10\\\\.3|^### 10\\\\.4|^### 10\\\\.5/,/^---$/' /home/aley/obsidian/second-brain/03_Projects/active/olga-getcourse-payments-c7d5a1/docs/gateway/operation-manual.md)",
+      "Bash(grep -n \"INVOKE_\\\\|^### 10\\\\|^---$\" /home/aley/obsidian/second-brain/03_Projects/active/olga-getcourse-payments-c7d5a1/docs/gateway/operation-manual.md)",
+      "Bash(npx -y typescript@5.6 --noEmit -p tsconfig.json)",
+      "Bash(echo \"EXIT_CODE=$?\")",
+      "Bash(npx tsc *)",
+      "Bash(echo \"EXIT:$?\")"
+    ],
+    "additionalDirectories": [
+      "/home/aley/.cursor-server/data/User/globalStorage/chatium.chatium-sync/s.chtm.khudoley.pro/.claude"
+    ]
+  }
+}
