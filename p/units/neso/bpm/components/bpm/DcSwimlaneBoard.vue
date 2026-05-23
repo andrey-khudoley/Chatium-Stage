@@ -1,18 +1,5 @@
 <script setup lang="ts">
-export interface SwimlaneItem {
-  id: string
-  title: string
-  owner: string
-  tag: string
-  eta: string
-}
-
-export interface SwimlaneLane {
-  id: string
-  title: string
-  tone: 'neutral' | 'info' | 'warning' | 'danger' | 'success'
-  items: SwimlaneItem[]
-}
+import type { SwimlaneItem, SwimlaneLane } from '../../shared/bpmVueExportedTypes'
 
 defineProps<{
   title: string

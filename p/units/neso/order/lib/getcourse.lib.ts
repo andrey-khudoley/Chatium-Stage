@@ -46,9 +46,9 @@ function encodeBase64(str: string): string {
 
   let result = ''
   for (let i = 0; i < utf8Bytes.length; i += 3) {
-    const byte1 = utf8Bytes[i]
-    const byte2 = i + 1 < utf8Bytes.length ? utf8Bytes[i + 1] : 0
-    const byte3 = i + 2 < utf8Bytes.length ? utf8Bytes[i + 2] : 0
+    const byte1 = utf8Bytes[i] ?? 0
+    const byte2 = i + 1 < utf8Bytes.length ? (utf8Bytes[i + 1] ?? 0) : 0
+    const byte3 = i + 2 < utf8Bytes.length ? (utf8Bytes[i + 2] ?? 0) : 0
     const enc1 = byte1 >> 2
     const enc2 = ((byte1 & 0x3) << 4) | (byte2 >> 4)
     const enc3 = ((byte2 & 0xf) << 2) | (byte3 >> 6)

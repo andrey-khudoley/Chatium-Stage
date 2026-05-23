@@ -274,12 +274,13 @@
 ### `./shared/types.ts`
 - `../tables/visits.table` → `TSaasRefVisit1Vw7KxRow` (type, алиас VisitRow)
 - `../tables/partners.table` → `TSaasRefProgramPartner3Ab7CdRow` (type, алиас PartnerRow)
-- `../tables/bots.table` → `TSaasRefBot2Kf9MnRow` (type, алиас BotRow)
+- `../tables/bots.table` → `TSaasTgRefBotX7pQ2mRow` (type, алиас BotRow)
 - `../tables/bot_updates.table` → `TSaasRefBotUpdate7Pq3RsRow` (type, алиас BotUpdateRow)
 - `../tables/referrals.table` → `TSaasRefReferral9Xy2ZkRow` (type, алиас ReferralRow)
-- `../tables/registrations.table` → `TSaasRefRegistration4Ab3CdRow` (type, алиас RegistrationRow)
-- `../tables/orders.table` → `TSaasRefOrder5De6FgRow` (type, алиас OrderRow)
-- `../tables/payments.table` → `TSaasRefPayment7Hi8JkRow` (type, алиас PaymentRow)
+- `../tables/referral_aggregates.table` → `ReferralAggregatesRow` (type, алиас ReferralAggregateRow)
+- `../tables/registrations.table` → `TSaasRefProgramRegistration4Ab3CdRow` (type, алиас RegistrationRow)
+- `../tables/orders.table` → `TSaasRefOrderTg5De6FgRow` (type, алиас OrderRow)
+- `../tables/payments.table` → `TSaasRefProgramPayment7Hi8JkRow` (type, алиас PaymentRow)
 - экспорт: CampaignSettings, CampaignRow, MemberRow, PageRow, PartnerLinkRow, VisitRow, PartnerRow, PartnerStats, ReferralRow, RegistrationRow, OrderRow, PaymentRow, BotRow, BotUpdateRow, TelegramUser, TelegramChat, TelegramMessage, TelegramUpdate, CallbackQuery и др.
 
 ### `./shared/constants.ts`

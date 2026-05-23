@@ -14,17 +14,31 @@
 
 ### 2. Обязательно: путь проекта
 
-**`config/routes.tsx`**
+Шаблон содержит строковую константу `p/template_project` (и kebab-вариант `template-project` в ключах Heap) в нескольких файлах. После копирования её нужно полностью заменить на путь нового проекта. Иначе сломаются юнит-тесты (`routes_PROJECT_ROOT`) и/или произойдёт конфликт Heap-таблиц с другим проектом.
 
-- Замените значение `PROJECT_ROOT` на путь к новому каталогу (от корня воркспэйса, без ведущего слеша).
-- Пример: если проект лежит в `p/my_project`, укажите `export const PROJECT_ROOT = 'p/my_project'`.
-- От этого зависят все ссылки, редиректы и формирование URL в приложении.
+**Рекомендуется один глобальный поиск-и-замена** `template_project` → `<новый путь без слешей>` (например, `units/aayakovleva/sbp_client`) и `template-project` → `<новый kebab-идентификатор>` по корню проекта, **исключая каталог `docs/`** (там примеры в инструкциях).
 
-**`.dir.json`**
+Проверьте, что заменены минимум следующие места:
 
-- В поле `name` укажите путь к новому проекту (как в `PROJECT_ROOT`).
-- Пример: `"name": "[INWORK] p/my_project"`.
-- Нужно для корректной работы инструментов и навигации по воркспейсу.
+| Файл | Что меняется | Зачем |
+|------|--------------|-------|
+| `config/routes.tsx` | `export const PROJECT_ROOT = 'p/template_project'` → новый путь от корня воркспэйса без ведущего `/` | От этого зависят все ссылки, редиректы и `getFullUrl/withProjectRoot` |
+| `.dir.json` | поле `name`, например `"[INWORK] p/my_project"` | Инструменты и навигация по воркспейсу |
+| `lib/tests/templateUnitSuite.ts` | строка с `routes_PROJECT_ROOT`: `PROJECT_ROOT === 'p/template_project'` → новый путь | Иначе юнит-тест `routes_PROJECT_ROOT` будет фейлиться |
+| `api/tests/list.ts` | комментарий-шапка | Косметика, чтобы документация не вводила в заблуждение |
+| `api/logger/log.ts` | пример в шапке | То же |
+| `web/tests/index.tsx` | `<meta name="template-project-page" ...>` | Косметика; SSR-маркер страницы |
+| `tables/settings.table.ts` | ключ `t__template-project__setting__7Fk2Qw` | См. §4 — обязательно, если несколько проектов в одном воркспейсе |
+| `tables/logs.table.ts` | ключ `t__template-project__log__9Xm3Kp` | То же |
+
+Быстрая самопроверка после замены:
+
+```bash
+grep -rn "template_project\|template-project" \
+  --include="*.ts" --include="*.tsx" --include="*.json" .
+```
+
+В выводе не должно остаться ничего, кроме файлов из `docs/`.
 
 ### 3. По желанию: название и дефолты
 
@@ -48,7 +62,27 @@
 
 Если каждый проект деплоится в отдельный воркспейс или общие настройки/логи допустимы, этот шаг можно не выполнять.
 
-### 5. Деплой
+### 5. При добавлении своих юнит-тестов: синхронизация каталога с прогоном
+
+Юнит-тест `catalog_unit_ids_match_runner` в `lib/tests/templateUnitSuite.ts` проверяет, что множество `id` в `shared/testCatalog.ts → UNIT_TEST_BLOCKS` ровно совпадает с множеством `id`, реально запускаемых в `GET /api/tests/unit`. Если эти множества разойдутся — тест упадёт.
+
+Если вы добавляете в проект **новый ранер** юнит-тестов (например, для домена `lifepay`, `crm`, `pay`) рядом с шаблонным `runTemplateUnitChecks`, выполните три шага синхронизации:
+
+1. **Создайте свой `runXxxUnitChecks()`** по образцу `runTemplateUnitChecks` — отдельный файл `lib/tests/xxxUnitSuite.ts`, со своими `id` (рекомендуется префикс домена, например `lp_*`, `crm_*`).
+2. **Добавьте блок в каталог** `shared/testCatalog.ts → UNIT_TEST_BLOCKS` с тем же набором `id`.
+3. **Передайте id своего ранера в `runTemplateUnitChecks`** через параметр `extraRunnerIds`, например в `api/tests/unit/index.ts`:
+
+   ```ts
+   const xxxResults = await runXxxUnitChecks()
+   const templateResults = runTemplateUnitChecks(xxxResults.results.map((r) => r.id))
+   const results = [...templateResults, ...xxxResults.results]
+   ```
+
+   Порядок важен: свой ранер вызывается **до** `runTemplateUnitChecks`, чтобы его id попали в проверку синхронизации.
+
+После этого `catalog_unit_ids_match_runner` снова станет зелёным. Проверить — запустить `GET /api/tests/unit` и убедиться, что `failed: 0`.
+
+### 6. Деплой
 
 - Закоммитьте и запушьте изменения в репозиторий.
 - Chatium задеплоит обновления автоматически.

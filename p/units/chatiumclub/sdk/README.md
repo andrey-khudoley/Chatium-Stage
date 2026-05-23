@@ -10,6 +10,7 @@
 
 ## Текущее состояние
 - Главная, админка, профиль и логин существуют как минимальные страницы.
+- Админка: карточка **«Подключение к gateway»** — поля `gateway_url`, `gc_school_host`, `gc_school_api_key` (загрузка при открытии, отдельная кнопка «Сохранить» на каждое поле, индикатор «Конфигурация» когда все три заданы).
 - Реализованы: API настроек (list, get, save), Heap-таблица settings, репозиторий, lib (бизнес-логика).
 - Серверные логи: Heap-таблица logs (message, payload, severity, level, timestamp), repos/logs.repo (create, findAll, findById, findBeforeTimestamp, countBySeverityAfter, countErrorsAfter, countWarningsAfter), lib/logger.lib (проверка уровня по настройке log_level, запись в ctx.log — только сообщение, в ctx.account.log — сообщение и payload, Heap, WebSocket с хэшем для уникальности канала, вебхук log_webhook { enable, url } по умолчанию url: ""). API POST /api/logger/log (AnyUser), body: { severity, level, message, payload?, timestamp? }; GET /api/admin/logs/recent (Admin) — последние N логов; GET /api/admin/logs/before (Admin) — N логов старше указанного timestamp для пагинации. Админка получает encodedLogsSocketId, подписывается на new-log для отображения в дашборде, загружает историю логов через recent при монтировании, может догружать старые логи через before (кнопка «Загрузить ещё 50»); кнопка «Очистить логи» очищает вывод и сдвигает таймштамп на текущий — повторное нажатие «Загрузить ещё 50» восстанавливает последние логи.
 - Дашборд админки: счётчики ошибок и предупреждений. Настройка `dashboard_reset_at` (таймштамп сброса в ms); lib/admin/dashboard.lib (getDashboardCounts, resetDashboard), GET /api/admin/dashboard/counts и POST /api/admin/dashboard/reset (Admin). При монтировании загружаются счётчики; кнопка «Сбросить» записывает текущее время в настройки; при новых логах (sink/WebSocket) инкремент только если timestamp >= dashboardResetAt.
@@ -18,6 +19,7 @@
 - Клиентская часть полностью покрыта логами: страницы и компоненты используют `createComponentLogger`; все аутентифицированные страницы (главная, админка, профиль, тесты) подключают `browserRemoteLogger` (shared/browserRemoteLogger.ts) для пакетной отправки браузерных логов на сервер через POST /api/logger/browser. AdminPage дополнительно регистрирует sink для счётчиков дашборда и подписку на WebSocket для отображения логов в реальном времени. Каждая страница логирует этапы загрузки (монтирование, boot loader state, инициализация remote logger, анимации) и сырые данные (props, URL-ы, auth state) для полной трассировки.
 
 ## Навигация по документации
+- **Инструкция для ИИ-агента (как пользоваться SDK, типы, паттерны):** `000-llm-agent-chatiumclub-sdk.md`
 - Архитектура: `docs/architecture.md`
 - API: `docs/api.md`
 - Данные: `docs/data.md`
@@ -25,10 +27,27 @@
 - Решения: `docs/ADR/`
 - История диалогов: `docs/LLM/`
 
+## Тонкая прокладка к gateway
+
+Реализована (manual §12.1: SDK и gateway — разные приложения, общаются по обычному HTTP).
+
+- Логика — `lib/gateway/gatewayClient.ts`: `invoke(ctx, { op, args, httpMethod? })` и `getOperationsCatalog(ctx)`.
+- Настройки в Heap (та же key-value таблица): `gateway_url`, `gc_school_host`, `gc_school_api_key`. Имена ключей — `shared/sdkSettingKeys.ts` (`// @shared`).
+- HTTP-метод операции выбирается по локальному снимку каталога `shared/v1OpsList.generated.ts` (зеркало `p/saas/gw/gc/shared/v1OpsList.generated.ts`) или из аргумента `httpMethod`.
+- Заголовки на проводе к gateway: `X-Gc-School-Host`, `X-Gc-School-Api-Key`, `Accept: application/json`. Тело POST — JSON `args`; для GET — query из плоских ключей.
+- Серверные эндпоинты-фасады (Admin): `POST /api/gateway/invoke` и `GET /api/gateway/operations` — см. `docs/api.md`.
+- Без ретраев и идемпотентности (manual §8.6): один входящий → один исходящий HTTP к gateway.
+- В логи не попадают значения `gc_school_api_key`, полный `Authorization` и тела ответов GetCourse (manual §5.7).
+
 ## TODO
-- Реализовать вызов gateway (`invoke`, `op`, `args`), учёт школы и API-ключа GC по спецификации SDK.
+- Ручной тест `op` через `POST /api/gateway/invoke` из админки (форма поверх `AdminPage.vue`).
 
 ## Changelog
+- 2026-05-06: `000-llm-agent-chatiumclub-sdk.md` — приложение A: все поля `args` по 59 `op` внутри файла; убраны внешние ссылки и отсылки на manual; синхронизация со схемами gateway на 06-05-2026.
+- 2026-05-06: `000-llm-agent-chatiumclub-sdk.md` — полный справочник уровня inner/docs: все `op` из `v1OpsList.generated.ts`, коды ошибок SDK и gateway, фасады, примеры, сериализация GET-args, оглавление; обновлены `.CHATIUM-LLM.md`, `docs/LLM/0034_06-05-2026_13-47.md`.
+- 2026-05-06: переработан `000-llm-agent-chatiumclub-sdk.md` — инструкция для ИИ сфокусирована на использовании SDK (контракты, типы, паттерны); обновлены `README.md`, `.CHATIUM-LLM.md`, `docs/api.md` (ссылка и уточнение URL каталога gateway).
+- 2026-05-06: админка — карточка ввода и сохранения трёх gateway-настроек (`pages/AdminPage.vue`, ключи из `shared/sdkSettingKeys.ts`).
+- 2026-05-06: реализована тонкая прокладка к gateway (`lib/gateway/`, `api/gateway/*`, `shared/sdkSettingKeys.ts`, `shared/gatewayHttpHeaders.ts`, `shared/v1OpsList.generated.ts`); `lib/settings.lib.ts` расширен ключами `gateway_url`, `gc_school_host`, `gc_school_api_key`. Взаимодействие с `p/saas/gw/gc` — по обычному HTTP через `@app/request` (manual §12.1).
 - 2026-05-05: bootstrap после копии шаблона — путь проекта, `.dir.json`, дефолты, отдельные Heap-ключи, SSR/meta для тестов; удалён `docs/run.md`.
 - 2026-04-05: разделение логирования по уровням Info/Debug — trace-логи (карта вызовов) severity 6, видны при Info; payload (сырые данные) автоматически отсекается при уровне != Debug; shouldIncludePayload в lib/logger.lib.ts, фильтрация non-string args в shared/logger.ts; добавлены недостающие trace-логи на сервере (api/logger/browser, api/tests/list) и в Vue-компонентах (onBeforeUnmount, saveProjectName, loadProjectName, setupLogsWebSocket, loadRecentLogs и др.).
 - 2026-04-05: browserRemoteLogger подключён на всех страницах (главная, админка, профиль, тесты); logLevel SSR добавлен на страницу логина; подробное логирование этапов загрузки с сырыми данными на каждой странице; AdminPage — sink комбинирует дашборд-счётчики и remote logger.

@@ -156,7 +156,11 @@ export async function listReferrals(
       })
     ])
     const aggByReferralId = new Map(
-      aggregatesList.map((a) => [a.referralId, a])
+      aggregatesList.map((a) => {
+        const rid = a.referralId as { id?: string } | string | undefined
+        const key = typeof rid === 'object' && rid && 'id' in rid ? rid.id ?? '' : String(rid ?? '')
+        return [key, a] as const
+      })
     )
     const defaultAgg = {
       ordersCount: 0,
@@ -216,7 +220,11 @@ export async function listReferrals(
     where: { referralId: referralIds }
   })
   const aggByReferralId = new Map(
-    aggregatesList.map((a) => [a.referralId, a])
+    aggregatesList.map((a) => {
+      const rid = a.referralId as { id?: string } | string | undefined
+      const key = typeof rid === 'object' && rid && 'id' in rid ? rid.id ?? '' : String(rid ?? '')
+      return [key, a] as const
+    })
   )
   const defaultAgg = {
     ordersCount: 0,

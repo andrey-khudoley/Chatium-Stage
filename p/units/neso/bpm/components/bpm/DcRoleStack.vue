@@ -1,10 +1,5 @@
 <script setup lang="ts">
-export interface RoleStackItem {
-  id: string
-  name: string
-  role: string
-  state: 'online' | 'busy' | 'offline'
-}
+import type { RoleStackItem } from '../../shared/bpmVueExportedTypes'
 
 defineProps<{
   title: string

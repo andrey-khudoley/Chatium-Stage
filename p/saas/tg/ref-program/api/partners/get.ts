@@ -28,7 +28,7 @@ export const getPartnerRoute = app.get('/', async (ctx, req) => {
   const partnerCampaignId =
     typeof partner?.campaignId === 'object' && partner?.campaignId !== null && 'id' in partner.campaignId
       ? (partner.campaignId as { id: string }).id
-      : (partner?.campaignId as string | undefined)
+      : (partner?.campaignId as unknown as string | undefined)
   if (!partner || partnerCampaignId !== campaignId) {
     return { success: false, error: 'Партнёр не найден' }
   }
@@ -44,7 +44,7 @@ export const getPartnerRoute = app.get('/', async (ctx, req) => {
     const pageId =
       typeof link.pageId === 'object' && link.pageId !== null && 'id' in link.pageId
         ? (link.pageId as { id: string }).id
-        : (link.pageId as string)
+        : (link.pageId as unknown as string)
     const slug = link.publicSlug ?? ''
     return {
       id: link.id,

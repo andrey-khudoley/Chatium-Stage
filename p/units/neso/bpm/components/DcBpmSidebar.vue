@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import DcDemoSidebar from './DcDemoSidebar.vue'
-import type { NavItem } from './DcDemoSidebar.vue'
+import type { NavItem } from '../shared/bpmVueExportedTypes'
 import { filterNavItems } from '../lib/navVisibility.lib'
 import type { NavVisibilityContext } from '../lib/navVisibility.lib'
 import { BPM_HOME_NAV_ITEMS } from '../shared/bpmNavConfig'

@@ -18,12 +18,12 @@ import { applyDebugLevel } from '../lib/logging'
  * 5. Планирует следующее выполнение через 1 час (только если linkId не передан)
  */
 export const revokeLinksJob = app.job('/revoke-links', async (ctx, params) => {
+  const linkId = params?.linkId as string | undefined
+
   try {
     await applyDebugLevel(ctx, 'jobs/revoke-links')
     Debug.info(ctx, '[revoke-links] Начало выполнения job для отзыва ссылок')
-    
-    const linkId = params?.linkId as string | undefined
-    
+
     let linksToRevoke: any[] = []
     
     if (linkId) {
@@ -99,7 +99,7 @@ export const revokeLinksJob = app.job('/revoke-links', async (ctx, params) => {
         where: {
           inviteLinkCreatedAt: { $lt: oneHourAgo },
           revokedAt: null,
-          inviteLink: { $ne: null }
+          inviteLink: { $not: null }
         },
         limit: 1000
       })

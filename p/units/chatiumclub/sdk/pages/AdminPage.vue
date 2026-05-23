@@ -13,6 +13,7 @@ import { getRecentLogsRoute } from '../api/admin/logs/recent'
 import { getLogsBeforeRoute } from '../api/admin/logs/before'
 import { getDashboardCountsRoute } from '../api/admin/dashboard/counts'
 import { resetDashboardRoute } from '../api/admin/dashboard/reset'
+import { SDK_GATEWAY_SETTING_KEYS } from '../shared/sdkSettingKeys'
 
 const log = createComponentLogger('AdminPage')
 
@@ -50,6 +51,23 @@ const logLevel = ref<'debug' | 'info' | 'warn' | 'error' | 'disable'>('info')
 const logLevelError = ref('')
 const logLevelSaveStatus = ref<'saved' | 'error' | null>(null)
 const logLevelStatusTimeout = { id: null as ReturnType<typeof setTimeout> | null }
+
+/** Настройки тонкого клиента для HTTP к gateway (Heap key-value). */
+const gatewayUrlInput = ref('')
+const gcSchoolHostInput = ref('')
+const gcSchoolApiKeyInput = ref('')
+const gatewayUrlError = ref('')
+const gcSchoolHostError = ref('')
+const gcSchoolApiKeyError = ref('')
+const gatewayUrlSaveStatus = ref<'saved' | 'error' | null>(null)
+const gcSchoolHostSaveStatus = ref<'saved' | 'error' | null>(null)
+const gcSchoolApiKeySaveStatus = ref<'saved' | 'error' | null>(null)
+const gatewayUrlStatusTimeout = { id: null as ReturnType<typeof setTimeout> | null }
+const gcSchoolHostStatusTimeout = { id: null as ReturnType<typeof setTimeout> | null }
+const gcSchoolApiKeyStatusTimeout = { id: null as ReturnType<typeof setTimeout> | null }
+const gatewayUrlSaving = ref(false)
+const gcSchoolHostSaving = ref(false)
+const gcSchoolApiKeySaving = ref(false)
 
 const SAVE_STATUS_DURATION_MS = 1500
 const INPUT_DEBOUNCE_MS = 300
@@ -228,6 +246,108 @@ const displayedLogs = computed<LogDisplayItem[]>(() => {
   return items
 })
 
+const gatewayConfigured = computed(() => {
+  return (
+    gatewayUrlInput.value.trim().length > 0 &&
+    gcSchoolHostInput.value.trim().length > 0 &&
+    gcSchoolApiKeyInput.value.trim().length > 0
+  )
+})
+
+const loadGatewaySettings = async () => {
+  log.info('loadGatewaySettings entry')
+  const keys = SDK_GATEWAY_SETTING_KEYS
+  try {
+    const loadOne = async (key: string): Promise<string> => {
+      const res = await getSettingRoute.query({ key }).run(ctx)
+      const data = res as { success?: boolean; value?: unknown }
+      if (data?.success && typeof data.value === 'string') return data.value
+      return ''
+    }
+    gatewayUrlInput.value = (await loadOne(keys.GATEWAY_URL)).trim()
+    gcSchoolHostInput.value = (await loadOne(keys.GC_SCHOOL_HOST)).trim()
+    gcSchoolApiKeyInput.value = (await loadOne(keys.GC_SCHOOL_API_KEY)).trim()
+    log.info('loadGatewaySettings ok')
+  } catch (e) {
+    log.warning('Не удалось загрузить настройки gateway', e)
+  }
+}
+
+async function saveGatewayUrl() {
+  gatewayUrlError.value = ''
+  gatewayUrlSaving.value = true
+  try {
+    const res = await saveSettingRoute.run(ctx, {
+      key: SDK_GATEWAY_SETTING_KEYS.GATEWAY_URL,
+      value: gatewayUrlInput.value.trim()
+    })
+    const data = res as { success?: boolean; error?: string; value?: unknown }
+    if (data?.success === false) {
+      gatewayUrlError.value = data.error || 'Ошибка сохранения'
+      showSaveStatus(gatewayUrlSaveStatus, gatewayUrlStatusTimeout, 'error')
+    } else {
+      const saved = data?.value
+      if (typeof saved === 'string') gatewayUrlInput.value = saved.trim()
+      showSaveStatus(gatewayUrlSaveStatus, gatewayUrlStatusTimeout, 'saved')
+    }
+  } catch (e) {
+    gatewayUrlError.value = (e as Error)?.message || 'Ошибка сохранения'
+    showSaveStatus(gatewayUrlSaveStatus, gatewayUrlStatusTimeout, 'error')
+  } finally {
+    gatewayUrlSaving.value = false
+  }
+}
+
+async function saveGcSchoolHost() {
+  gcSchoolHostError.value = ''
+  gcSchoolHostSaving.value = true
+  try {
+    const res = await saveSettingRoute.run(ctx, {
+      key: SDK_GATEWAY_SETTING_KEYS.GC_SCHOOL_HOST,
+      value: gcSchoolHostInput.value.trim()
+    })
+    const data = res as { success?: boolean; error?: string; value?: unknown }
+    if (data?.success === false) {
+      gcSchoolHostError.value = data.error || 'Ошибка сохранения'
+      showSaveStatus(gcSchoolHostSaveStatus, gcSchoolHostStatusTimeout, 'error')
+    } else {
+      const saved = data?.value
+      if (typeof saved === 'string') gcSchoolHostInput.value = saved.trim()
+      showSaveStatus(gcSchoolHostSaveStatus, gcSchoolHostStatusTimeout, 'saved')
+    }
+  } catch (e) {
+    gcSchoolHostError.value = (e as Error)?.message || 'Ошибка сохранения'
+    showSaveStatus(gcSchoolHostSaveStatus, gcSchoolHostStatusTimeout, 'error')
+  } finally {
+    gcSchoolHostSaving.value = false
+  }
+}
+
+async function saveGcSchoolApiKey() {
+  gcSchoolApiKeyError.value = ''
+  gcSchoolApiKeySaving.value = true
+  try {
+    const res = await saveSettingRoute.run(ctx, {
+      key: SDK_GATEWAY_SETTING_KEYS.GC_SCHOOL_API_KEY,
+      value: gcSchoolApiKeyInput.value.trim()
+    })
+    const data = res as { success?: boolean; error?: string; value?: unknown }
+    if (data?.success === false) {
+      gcSchoolApiKeyError.value = data.error || 'Ошибка сохранения'
+      showSaveStatus(gcSchoolApiKeySaveStatus, gcSchoolApiKeyStatusTimeout, 'error')
+    } else {
+      const saved = data?.value
+      if (typeof saved === 'string') gcSchoolApiKeyInput.value = saved.trim()
+      showSaveStatus(gcSchoolApiKeySaveStatus, gcSchoolApiKeyStatusTimeout, 'saved')
+    }
+  } catch (e) {
+    gcSchoolApiKeyError.value = (e as Error)?.message || 'Ошибка сохранения'
+    showSaveStatus(gcSchoolApiKeySaveStatus, gcSchoolApiKeyStatusTimeout, 'error')
+  } finally {
+    gcSchoolApiKeySaving.value = false
+  }
+}
+
 const loadProjectName = async () => {
   log.info('loadProjectName entry')
   try {
@@ -317,6 +437,7 @@ onMounted(() => {
   log.debug('Browser remote logger initialized')
 
   loadProjectName()
+  void loadGatewaySettings()
   loadDashboardCounts()
   if (window.hideAppLoader) {
     window.hideAppLoader()
@@ -375,6 +496,18 @@ onBeforeUnmount(() => {
   if (projectNameDebounceTimer.id) {
     clearTimeout(projectNameDebounceTimer.id)
     projectNameDebounceTimer.id = null
+  }
+  if (gatewayUrlStatusTimeout.id) {
+    clearTimeout(gatewayUrlStatusTimeout.id)
+    gatewayUrlStatusTimeout.id = null
+  }
+  if (gcSchoolHostStatusTimeout.id) {
+    clearTimeout(gcSchoolHostStatusTimeout.id)
+    gcSchoolHostStatusTimeout.id = null
+  }
+  if (gcSchoolApiKeyStatusTimeout.id) {
+    clearTimeout(gcSchoolApiKeyStatusTimeout.id)
+    gcSchoolApiKeyStatusTimeout.id = null
   }
 })
 
@@ -784,6 +917,117 @@ function onVisibilityForLogsSocket() {
                 <p v-if="logLevelError" class="ap-err"><i class="fas fa-exclamation-circle"></i> {{ logLevelError }}</p>
               </section>
             </div>
+
+            <section class="ap-card ap-card--stagger-4 ap-gateway">
+              <div class="ap-card-hd">
+                <h2><i class="fas fa-plug ap-icon-hd"></i> Подключение к gateway</h2>
+                <span
+                  v-if="gatewayConfigured"
+                  class="ap-badge ap-badge--ok"
+                  title="Все три параметра заданы"
+                >
+                  <i class="fas fa-check"></i> Конфигурация
+                </span>
+              </div>
+              <p class="ap-gateway-hint">
+                Обязательные параметры для <code class="ap-code">lib/gateway/gatewayClient</code> и вызовов
+                <code class="ap-code">POST /api/gateway/invoke</code>: базовый URL приложения gateway, хост школы GetCourse
+                (без <code class="ap-code">https://</code> и без пути) и API-ключ школы.
+              </p>
+
+              <div class="ap-gateway-field">
+                <label class="ap-gateway-label" for="gw-base-url">Базовый URL gateway (<code class="ap-code">gateway_url</code>)</label>
+                <div class="ap-gateway-row">
+                  <input
+                    id="gw-base-url"
+                    v-model="gatewayUrlInput"
+                    type="url"
+                    autocomplete="off"
+                    class="ap-input ap-input--flex"
+                    placeholder="https://…/p/saas/gw/gc"
+                  />
+                  <button
+                    type="button"
+                    class="ap-btn ap-btn--sm"
+                    :disabled="gatewayUrlSaving"
+                    @click="saveGatewayUrl"
+                  >
+                    <i :class="gatewayUrlSaving ? 'fas fa-circle-notch fa-spin' : 'fas fa-save'"></i>
+                    Сохранить
+                  </button>
+                  <span
+                    v-if="gatewayUrlSaveStatus"
+                    class="ap-badge ap-gateway-badge"
+                    :class="gatewayUrlSaveStatus === 'saved' ? 'ap-badge--ok' : 'ap-badge--err'"
+                  >
+                    <i :class="gatewayUrlSaveStatus === 'saved' ? 'fas fa-check' : 'fas fa-times'"></i>
+                  </span>
+                </div>
+                <p v-if="gatewayUrlError" class="ap-err"><i class="fas fa-exclamation-circle"></i> {{ gatewayUrlError }}</p>
+              </div>
+
+              <div class="ap-gateway-field">
+                <label class="ap-gateway-label" for="gw-school-host">Хост школы (<code class="ap-code">gc_school_host</code>)</label>
+                <div class="ap-gateway-row">
+                  <input
+                    id="gw-school-host"
+                    v-model="gcSchoolHostInput"
+                    type="text"
+                    autocomplete="off"
+                    class="ap-input ap-input--flex"
+                    placeholder="myschool.getcourse.ru"
+                  />
+                  <button
+                    type="button"
+                    class="ap-btn ap-btn--sm"
+                    :disabled="gcSchoolHostSaving"
+                    @click="saveGcSchoolHost"
+                  >
+                    <i :class="gcSchoolHostSaving ? 'fas fa-circle-notch fa-spin' : 'fas fa-save'"></i>
+                    Сохранить
+                  </button>
+                  <span
+                    v-if="gcSchoolHostSaveStatus"
+                    class="ap-badge ap-gateway-badge"
+                    :class="gcSchoolHostSaveStatus === 'saved' ? 'ap-badge--ok' : 'ap-badge--err'"
+                  >
+                    <i :class="gcSchoolHostSaveStatus === 'saved' ? 'fas fa-check' : 'fas fa-times'"></i>
+                  </span>
+                </div>
+                <p v-if="gcSchoolHostError" class="ap-err"><i class="fas fa-exclamation-circle"></i> {{ gcSchoolHostError }}</p>
+              </div>
+
+              <div class="ap-gateway-field">
+                <label class="ap-gateway-label" for="gw-school-key">API-ключ школы (<code class="ap-code">gc_school_api_key</code>)</label>
+                <div class="ap-gateway-row">
+                  <input
+                    id="gw-school-key"
+                    v-model="gcSchoolApiKeyInput"
+                    type="password"
+                    autocomplete="new-password"
+                    class="ap-input ap-input--flex"
+                    placeholder="Секрет из GetCourse"
+                  />
+                  <button
+                    type="button"
+                    class="ap-btn ap-btn--sm"
+                    :disabled="gcSchoolApiKeySaving"
+                    @click="saveGcSchoolApiKey"
+                  >
+                    <i :class="gcSchoolApiKeySaving ? 'fas fa-circle-notch fa-spin' : 'fas fa-save'"></i>
+                    Сохранить
+                  </button>
+                  <span
+                    v-if="gcSchoolApiKeySaveStatus"
+                    class="ap-badge ap-gateway-badge"
+                    :class="gcSchoolApiKeySaveStatus === 'saved' ? 'ap-badge--ok' : 'ap-badge--err'"
+                  >
+                    <i :class="gcSchoolApiKeySaveStatus === 'saved' ? 'fas fa-check' : 'fas fa-times'"></i>
+                  </span>
+                </div>
+                <p v-if="gcSchoolApiKeyError" class="ap-err"><i class="fas fa-exclamation-circle"></i> {{ gcSchoolApiKeyError }}</p>
+              </div>
+            </section>
           </div>
 
           <aside class="ap-side">
@@ -1054,6 +1298,7 @@ function onVisibilityForLogsSocket() {
 .ap-card--stagger-1 { animation: ap-card-enter 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.1s both; }
 .ap-card--stagger-2 { animation: ap-card-enter 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.2s both; }
 .ap-card--stagger-3 { animation: ap-card-enter 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.3s both; }
+.ap-card--stagger-4 { animation: ap-card-enter 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.4s both; }
 @keyframes ap-card-enter { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 .ap-card-hd {
   display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;
@@ -1088,6 +1333,53 @@ function onVisibilityForLogsSocket() {
 
 /* ── CONFIG ── */
 .ap-cfg-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.85rem; }
+
+/* ── GATEWAY SETTINGS ── */
+.ap-gateway-hint {
+  position: relative;
+  z-index: 1;
+  font-size: 0.74rem;
+  color: var(--c-tx2);
+  margin: 0 0 0.9rem;
+  line-height: 1.55;
+}
+.ap-code {
+  font-family: inherit;
+  font-size: 0.92em;
+  color: var(--c-red-s);
+  padding: 0.05em 0.25em;
+  background: rgba(0, 0, 0, 0.28);
+  border: 1px solid rgba(50, 44, 54, 0.45);
+}
+.ap-gateway-field {
+  margin-bottom: 0.85rem;
+  position: relative;
+  z-index: 1;
+}
+.ap-gateway-field:last-child {
+  margin-bottom: 0;
+}
+.ap-gateway-label {
+  display: block;
+  font-size: 0.72rem;
+  color: var(--c-tx2);
+  margin-bottom: 0.35rem;
+  letter-spacing: 0.03em;
+}
+.ap-gateway-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: 0.45rem;
+}
+.ap-input--flex {
+  flex: 1 1 12rem;
+  min-width: 0;
+}
+.ap-gateway-badge {
+  align-self: center;
+  flex-shrink: 0;
+}
 
 .ap-input {
   width: 100%; padding: 0.55rem 0.7rem; border: 1px solid var(--c-bdr);
@@ -1256,6 +1548,10 @@ function onVisibilityForLogsSocket() {
 @media (max-width: 680px) {
   .ap { padding: 0.5rem 0.625rem 1rem; }
   .ap-cfg-row { grid-template-columns: 1fr; }
+  .ap-gateway-row .ap-btn {
+    flex: 1 1 auto;
+    justify-content: center;
+  }
   .ap-meters { grid-template-columns: 1fr; }
   .ap-log-filters { grid-template-columns: repeat(2, 1fr); }
   .ap-log-row { grid-template-columns: 1fr; gap: 0.1rem; }

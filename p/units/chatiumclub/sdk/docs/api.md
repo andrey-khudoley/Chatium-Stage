@@ -49,6 +49,29 @@
 | GET | /api/tests/unit | api/tests/unit/index.ts | AnyUser | Юнит: `runTemplateUnitChecks()` — routes, project, logLevel script, logger.lib, shared/logger, целостность каталога. `{ success, kind: 'unit', results[], summary, at }`. |
 | GET | /api/tests/integration | api/tests/integration/index.ts | AnyUser | Интеграция: Heap, libs, API через `route.run`, e2e-сценарии; в конце добавляется проверка `api_tests_integration_shape`. `{ success, kind: 'integration', results[], summary, at }`. |
 
+## Gateway (api/gateway/) — тонкая прокладка к gateway
+
+Тонкий клиент SDK — отдельное Chatium-приложение, которое по обычному HTTP вызывает gateway-приложение (`p/saas/gw/gc`). Базовая логика — `lib/gateway/gatewayClient.ts` (см. `docs/architecture.md`, раздел «Gateway-клиент»). Эти эндпоинты — серверный фасад того же поведения через сетевой канал и предназначены для админки и интеграционных проверок.
+
+Инструкция для ИИ-агента по использованию SDK — файл `000-llm-agent-chatiumclub-sdk.md` в корне проекта: полный перечень `op`, **все поля `args` по каждому `op` (приложение A)**, коды ошибок SDK и gateway, примеры, фасады, сериализация `args` (без внешних ссылок).
+
+| Method | Path | File | Auth | Назначение |
+| --- | --- | --- | --- | --- |
+| POST | /api/gateway/invoke | api/gateway/invoke.ts | Admin | Вызвать `op` через тонкого клиента. Body: `{ op: string, args?: object, httpMethod?: 'GET' \| 'POST' }`. Если `httpMethod` не задан — берётся из локального снимка `shared/v1OpsList.generated.ts`. Возвращает `{ ok, data \| error, requestId, warnings, gatewayHttpStatus }` — повторяет контракт `lib/gateway/gatewayClient.ts#invoke`. |
+| GET | /api/gateway/operations | api/gateway/operations.ts | Admin | Прочитать каталог операций gateway (`GET {gateway_url}/api/v1/operations`, manual §3.3). Возвращает `{ ok, catalog \| error, requestId, gatewayHttpStatus }`, где `catalog = { catalogSchemaVersion, operations[] }`. |
+
+Контракт ошибок (поле `error.code`):
+- Коды gateway (`INVOKE_*`, `GATEWAY_*`, manual §10) приходят как есть, если gateway вернул JSON с `ok: false`.
+- SDK-коды добавляются клиентом, когда до gateway не дошли:
+  - `SDK_NOT_CONFIGURED` — не заданы `gateway_url` / `gc_school_host` / `gc_school_api_key` в Heap.
+  - `SDK_OP_HTTP_METHOD_UNKNOWN` — клиент не знает HTTP-метод операции (нет в локальном снимке и не передан явно).
+  - `SDK_GATEWAY_NETWORK_ERROR` — `@app/request` бросил исключение.
+  - `SDK_GATEWAY_INVALID_RESPONSE` — gateway вернул не JSON или JSON без `ok` / `error.code`.
+  - `SDK_BAD_REQUEST` — пустое поле `op` в теле `POST /api/gateway/invoke`.
+  - `SDK_INTERNAL_ERROR` — необработанное исключение в роуте SDK.
+
+В лог не попадают значения `gc_school_api_key`, полный `Authorization` и тела ответов GC (manual §5.7); фиксируются только длины, наличие, имена `op`, коды ошибок и `requestId`.
+
 ## Публичные эндпоинты
 | Method | Path | File | Auth | Назначение |
 | --- | --- | --- | --- | --- |

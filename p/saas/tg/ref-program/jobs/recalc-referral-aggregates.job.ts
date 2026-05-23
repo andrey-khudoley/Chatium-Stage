@@ -75,8 +75,20 @@ export const recalcReferralAggregatesJob = app.job(
       })
 
       if (referrals.length === 0) {
+        if (specificCampaignId) {
+          ctx.account.log('info', '[recalc-referral-aggregates-job] Точечный пересчёт: нет рефералов в батче', {
+            json: { campaignId, referralOffset }
+          })
+          return
+        }
+        const pageCampaigns = (
+          await Campaigns.findAll(ctx, {
+            limit: BATCH_LIMIT,
+            offset: campaignOffset
+          })
+        ).filter((c) => c.isDeleted !== true)
         const nextCampaignIndex = campaignIndex + 1
-        if (nextCampaignIndex < campaigns.length) {
+        if (nextCampaignIndex < pageCampaigns.length) {
           recalcReferralAggregatesJob.scheduleJobAsap(ctx, {
             campaignOffset,
             campaignIndex: nextCampaignIndex,

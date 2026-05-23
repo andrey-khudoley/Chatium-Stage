@@ -79,7 +79,7 @@ export async function updatePage(
   const patch: { title?: string; urlTemplate?: string } = {}
   if (input.title !== undefined) patch.title = input.title
   if (input.urlTemplate !== undefined) patch.urlTemplate = input.urlTemplate
-  const updated = await Pages.update(ctx, pageId, patch)
+  const updated = await Pages.update(ctx, { id: pageId, ...patch })
   return updated as (typeof Pages.T) | null
 }
 

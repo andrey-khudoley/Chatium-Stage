@@ -1,38 +1,76 @@
 {
   "compilerOptions": {
     "target": "es2021",
-    "module": "es2020",
-    "moduleResolution": "node",
-    "lib": ["es2021", "dom"],
+    "module": "preserve",
+    "moduleResolution": "bundler",
+    "lib": [
+      "es2021",
+      "dom"
+    ],
     "rootDir": ".",
-    "baseUrl": ".",
     "paths": {
-      "@start/*": ["../start.chatium.ru/*"],
-      "@store/*": ["../store.chatium.ru/*"],
-      "@users/*": ["../users.chatium.ru/*"],
-      "@traffic/*": ["../traffic.chatium.ru/*"],
-      "@ai-agents/*": ["../ai-agents.chatium.ru/*"],
-      "@gc-mcp-server/*": ["../gc-mcp-server.chatium.ru/*"],
-      "@user-notifier/*": ["../user-notifier.chatium.ru/*"],
-      "/*": ["./*"],
-      "@khudoley-stage/*": ["./*"]
+      "/*": [
+        "./*"
+      ],
+      "@khudoley-stage/*": [
+        "./*"
+      ],
+      ".chatium/*": [
+        "./.chatium/*"
+      ],
+      ".claude/*": [
+        "./.claude/*"
+      ],
+      ".codex/*": [
+        "./.codex/*"
+      ],
+      ".cursor/*": [
+        "./.cursor/*"
+      ],
+      ".deprecated/*": [
+        "./.deprecated/*"
+      ],
+      "docs/*": [
+        "./docs/*"
+      ],
+      "inner/*": [
+        "./inner/*"
+      ],
+      "p/*": [
+        "./p/*"
+      ],
+      "scripts/*": [
+        "./scripts/*"
+      ],
+      "types/*": [
+        "./types/*"
+      ],
+      "zoom-agent-tool/*": [
+        "./zoom-agent-tool/*"
+      ]
     },
     "allowJs": false,
     "allowSyntheticDefaultImports": true,
     "experimentalDecorators": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true,
     "jsx": "react",
     "jsxFactory": "jsx",
     "jsxFragmentFactory": "jsx.Fragment",
     "strict": true,
     "noUncheckedIndexedAccess": true
   },
+  "vueCompilerOptions": {
+    "strictTemplates": true
+  },
   "include": [
-    "**/*", ".**/*"
-, ".cursor/references/design"  ],
+    "**/*",
+    ".**/*"
+  ],
   "exclude": [
-    "./node_modules/**/*"
+    "./node_modules/**/*",
+    "./.typings/**/*"
   ],
   "files": [
     "./node_modules/@app/types/globals.d.ts",

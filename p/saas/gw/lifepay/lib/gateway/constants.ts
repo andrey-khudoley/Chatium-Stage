@@ -1,0 +1,13 @@
+/**
+ * Жёсткие константы payments-gateway. SSOT — operation-manual §8.1, §8.7, §12.2, §12.3.
+ * Не конфигурируются через Heap или админку: одинаковые значения для всех `op` обоих контуров.
+ */
+
+/** Таймаут исходящего вызова к LifePay (operation-manual §8.1). */
+export const GW_OUTBOUND_TIMEOUT_MS = 10_000
+
+/** Лимит размера тела входящего POST /v1/{op} (operation-manual §8.7). */
+export const GW_MAX_REQUEST_BODY_BYTES = 1_048_576
+
+/** Базовый URL контура bills_v1 LifePay (см. api-contracts.md, operation-manual §4.5). */
+export const LP_BILLS_V1_BASE_URL = 'https://api.life-pay.ru'

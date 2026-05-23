@@ -104,7 +104,7 @@ export function createBrowserRemoteLogger(options: {
 
   const patchConsole = (method: keyof typeof orig): void => {
     const name = method as string
-    ;(console as Record<string, unknown>)[method] = (...args: unknown[]) => {
+    ;(console as unknown as Record<string, unknown>)[method] = (...args: unknown[]) => {
       ;(orig[method] as (...a: unknown[]) => void)(...args)
       const message = truncate(stringifyArgs(args))
       enqueue({

@@ -70,4 +70,4 @@
 - 2026-03-18: уточнены доки `POST /api/register` (валидация + retry на транзиентные 5xx) и параметры админских форм (`returnTo`) в `docs/api.md`.
 - 2026-03-18: исправлены префиксы FontAwesome (`fas`/`far`) в иконках лендинга.
 - 2026-03-19: исправлена ошибка сборки Vue (`Missing semicolon`) в `components/RegistrationModal.vue`.
-- 2026-03-19: для `params` в интеграции GetCourse используется Chatium-глобал `base64Encode(...)` (вместо `btoa`/`Buffer`) для совместимости текущего рантайма.
+- 2026-03-19: для `params` в интеграции GetCourse — локальный UTF-8 Base64 в коде проекта (аналог **`toBase64`** в `liveahalf`); глобалы **`base64Encode`** в UGC не использовать — **`inner/docs/047-base64.md`**.

@@ -61,7 +61,10 @@ async function postWebhookHttp(
   json: Record<string, unknown>,
   headers: Record<string, string>
 ): Promise<{ url: string; statusCode: number; body: unknown } | null> {
-  const url = appPublicUrl.getAbsoluteUrlForAppPath(ctx, WEBHOOK_APP_PATH)
+  const url = appPublicUrl.getAbsoluteUrlForAppPath(
+    ctx as { req?: { headers?: Record<string, string | string[] | undefined> } },
+    WEBHOOK_APP_PATH
+  )
   if (!url) {
     return null
   }

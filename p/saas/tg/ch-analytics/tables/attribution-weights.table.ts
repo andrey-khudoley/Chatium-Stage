@@ -15,13 +15,11 @@ import { Heap } from '@app/heap'
  */
 export const AttributionWeights = Heap.Table('t__tg_channel_analytics__attribution_weights__f6a7b8c9', {
   projectId: Heap.String({
-    customMeta: { title: 'ID проекта' },
-    indexed: true
+    customMeta: { title: 'ID проекта' }
   }),
   channelId: Heap.Optional(
     Heap.String({
-      customMeta: { title: 'ID канала (опционально, для канало-специфичных весов)' },
-      indexed: true
+      customMeta: { title: 'ID канала (опционально, для канало-специфичных весов)' }
     })
   ),
   parameter: Heap.Union([

@@ -19,8 +19,7 @@ import { Heap } from '@app/heap'
  */
 export const LinkClicks = Heap.Table('t__tg_channel_analytics__link_clicks__d2e3f4a5', {
   linkId: Heap.String({
-    customMeta: { title: 'ID ссылки из TrackingLinks' },
-    indexed: true
+    customMeta: { title: 'ID ссылки из TrackingLinks' }
   }),
   fingerprint: Heap.String({
     customMeta: { 
@@ -32,8 +31,7 @@ export const LinkClicks = Heap.Table('t__tg_channel_analytics__link_clicks__d2e3
     customMeta: { title: 'JSON с query-параметрами перехода' }
   }),
   inviteLink: Heap.String({
-    customMeta: { title: 'Инвайт-линк, на который был редирект' },
-    indexed: true
+    customMeta: { title: 'Инвайт-линк, на который был редирект' }
   }),
   clickedAt: Heap.DateTime({
     customMeta: { title: 'Время перехода' }

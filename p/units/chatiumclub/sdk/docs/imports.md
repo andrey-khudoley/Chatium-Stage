@@ -82,6 +82,7 @@
 - `../components/AppFooter.vue`
 - `../api/settings/get` → `getSettingRoute`
 - `../api/settings/save` → `saveSettingRoute`
+- `../shared/sdkSettingKeys` → `SDK_GATEWAY_SETTING_KEYS`
 - `../api/admin/logs/recent` → `getRecentLogsRoute`
 - `../api/admin/logs/before` → `getLogsBeforeRoute`
 - `../api/admin/dashboard/counts` → `getDashboardCountsRoute`
@@ -148,6 +149,15 @@
 ### `./shared/logger.ts`
 - нет импортов (клиентский логгер по syslog RFC 5424: severity -1…7, LOG_LEVEL_OFF=-1, читает window.__BOOT__.logLevel; createComponentLogger, setLogSink, LogEntry)
 
+### `./shared/sdkSettingKeys.ts`
+- первая строка `// @shared`; нет импортов. Экспорт `SDK_GATEWAY_SETTING_KEYS = { GATEWAY_URL, GC_SCHOOL_HOST, GC_SCHOOL_API_KEY }` — имена ключей gateway-настроек в Heap (без значений).
+
+### `./shared/gatewayHttpHeaders.ts`
+- первая строка `// @shared`; нет импортов. Экспорт `GW_HEADER_SCHOOL_HOST`, `GW_HEADER_SCHOOL_API_KEY`, `GW_HEADER_GATEWAY_REQUEST_ID` — канонические имена заголовков gateway.
+
+### `./shared/v1OpsList.generated.ts`
+- первая строка `// @shared`; нет импортов. Локальный снимок каталога публичных `op` gateway (`V1_OPS_LIST`, `findV1OpsListEntry`); SSOT — `p/saas/gw/gc/shared/v1OpsList.generated.ts`.
+
 ## 5) Таблицы (tables/)
 
 ### `./tables/settings.table.ts`
@@ -171,7 +181,8 @@
 
 ### `./lib/settings.lib.ts`
 - `../repos/settings.repo` → `*` (findByKey, findAll, upsert, deleteByKey)
-- `./logger.lib` → `*` (только для функций, не вызываемых из logger.lib: getSettingString, getLogsLimit, getDashboardResetAt, getAllSettings, setSetting)
+- `./logger.lib` → `*` (только для функций, не вызываемых из logger.lib: getSettingString, getLogsLimit, getDashboardResetAt, getAllSettings, setSetting, getGatewayClientSettings)
+- `../shared/sdkSettingKeys` → `SDK_GATEWAY_SETTING_KEYS`
 
 ### `./lib/admin/dashboard.lib.ts`
 - `../settings.lib` → `*` (getDashboardResetAt, setSetting, SETTING_KEYS)
@@ -183,6 +194,17 @@
 - `../repos/logs.repo` → `*` (create)
 - `@app/socket` → `sendDataToSocket`
 - `@app/request` → `request`
+
+### `./lib/gateway/constants.ts`
+- нет внутренних импортов (`SDK_GATEWAY_API_V1_PREFIX`, `SDK_GATEWAY_OPERATIONS_PATH`, `SDK_GATEWAY_REQUEST_TIMEOUT_MS`)
+
+### `./lib/gateway/gatewayClient.ts`
+- `@app/request` → `request`
+- `../logger.lib` → `*`
+- `../settings.lib` → `*` (getGatewayClientSettings)
+- `../../shared/gatewayHttpHeaders` → `GW_HEADER_GATEWAY_REQUEST_ID`, `GW_HEADER_SCHOOL_API_KEY`, `GW_HEADER_SCHOOL_HOST`
+- `../../shared/v1OpsList.generated` → `findV1OpsListEntry`
+- `./constants` → `SDK_GATEWAY_API_V1_PREFIX`, `SDK_GATEWAY_OPERATIONS_PATH`, `SDK_GATEWAY_REQUEST_TIMEOUT_MS`
 
 ## 8) API (api/)
 
@@ -243,6 +265,16 @@
 - `../../../lib/logger.lib` → `*`
 - `../../../lib/tests/integrationSuite` → `runTemplateIntegrationChecks`
 - `../../../lib/tests/logTestRunFailures` → `logTestRunFailures`
+
+### `./api/gateway/invoke.ts`
+- `@app/auth` → `requireAccountRole`
+- `../../lib/logger.lib` → `*`
+- `../../lib/gateway/gatewayClient` → `invoke`, `GatewayHttpMethod`
+
+### `./api/gateway/operations.ts`
+- `@app/auth` → `requireAccountRole`
+- `../../lib/logger.lib` → `*`
+- `../../lib/gateway/gatewayClient` → `getOperationsCatalog`
 
 ### `./lib/tests/logTestRunFailures.ts`
 - `../logger.lib` → `writeServerLog` — поштучное логирование провалов тестов (severity 3)

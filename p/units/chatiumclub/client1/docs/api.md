@@ -50,9 +50,10 @@
 | GET | /api/tests/integration | api/tests/integration/index.ts | AnyUser | Интеграция: Heap, libs, API через `route.run`, e2e-сценарии; в конце добавляется проверка `api_tests_integration_shape`. `{ success, kind: 'integration', results[], summary, at }`. |
 
 ## Публичные эндпоинты
+
 | Method | Path | File | Auth | Назначение |
 | --- | --- | --- | --- | --- |
-| - | - | - | - | - |
+| POST | /api/lead/submit | api/lead/submit.ts | публично (без авторизации) | Принять лид с лендинга. Body: `{ email, name, phone?, utmSource?, utmCampaign?, landingId?, customFields?, offerCode? }`. Поток: `lib/leadFlow.processLead` — валидация → `invoke('addUser')` через локальный SDK gateway-клиент → опц. `invoke('createDeal')` при `offerCode` → запись в Heap-таблицу `Leads`. Ответ: `{ success, leadId?, addUser, createDeal, validationErrors? }`. На клиенте используется компонентом `components/LeadForm.vue` (главная страница). Защита от спама на стороне приложения не реализована — это ответственность лендинга/инфраструктуры. |
 
 ## События и webhooks
 - Не используются.

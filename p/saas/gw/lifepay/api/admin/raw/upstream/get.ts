@@ -1,0 +1,61 @@
+/**
+ * GET /api/admin/raw/upstream/get?id=<heapId> — полная запись gatewayUpstreamLog
+ * со всеми полями включая `rawLpJson`. Admin-only.
+ */
+
+import { requireAccountRole } from '@app/auth'
+
+import * as repo from '../../../../repos/gatewayUpstreamLog.repo'
+import * as loggerLib from '../../../../lib/logger.lib'
+
+const LOG_PATH = 'api/admin/raw/upstream/get'
+
+export const getGatewayUpstreamRoute = app.get('/', async (ctx, req) => {
+  requireAccountRole(ctx, 'Admin')
+
+  const q = req.query as Record<string, unknown> | undefined
+  const idRaw = q?.id
+  const id =
+    typeof idRaw === 'string'
+      ? parseInt(idRaw, 10)
+      : typeof idRaw === 'number'
+      ? idRaw
+      : NaN
+
+  await loggerLib.writeServerLog(ctx, {
+    severity: 6,
+    message: `[${LOG_PATH}] entry`,
+    payload: { id: Number.isFinite(id) ? id : null }
+  })
+
+  if (!Number.isFinite(id) || id <= 0) {
+    return { success: false, error: 'Параметр id обязателен' }
+  }
+
+  const row = await repo.findById(ctx, id)
+
+  await loggerLib.writeServerLog(ctx, {
+    severity: 6,
+    message: `[${LOG_PATH}] exit`,
+    payload: { id, found: !!row }
+  })
+
+  if (!row) return { success: true, entry: null }
+
+  return {
+    success: true,
+    entry: {
+      id: row.id,
+      requestId: row.requestId,
+      op: row.op,
+      upstreamKind: row.upstreamKind,
+      rawLpJson: row.rawLpJson,
+      lpHttpStatus: row.lpHttpStatus,
+      semanticRule: row.semanticRule,
+      durationMs: row.durationMs,
+      sentAt: row.sentAt
+    }
+  }
+})
+
+export default getGatewayUpstreamRoute

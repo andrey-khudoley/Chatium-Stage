@@ -411,7 +411,7 @@ function runCatalogIntegrityChecks(results: TemplateUnitTestResult[]): void {
   })
 }
 
-export function runTemplateUnitChecks(): TemplateUnitTestResult[] {
+export function runTemplateUnitChecks(extraRunnerIds: readonly string[] = []): TemplateUnitTestResult[] {
   const results: TemplateUnitTestResult[] = []
 
   runRoutesChecks(results)
@@ -421,7 +421,7 @@ export function runTemplateUnitChecks(): TemplateUnitTestResult[] {
   runSharedLoggerChecks(results)
   runCatalogIntegrityChecks(results)
 
-  const idsBeforeSyncCheck = results.map((r) => r.id)
+  const idsBeforeSyncCheck = [...results.map((r) => r.id), ...extraRunnerIds]
   tryPush(results, 'catalog_unit_ids_match_runner', 'UNIT_TEST_BLOCKS содержит все id прогона', () => {
     const fromRunner = new Set(idsBeforeSyncCheck)
     const catalogUnitIds = flattenCatalogBlocks(UNIT_TEST_BLOCKS)

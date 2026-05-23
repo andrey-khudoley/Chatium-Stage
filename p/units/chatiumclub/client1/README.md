@@ -26,9 +26,13 @@
 - История диалогов: `docs/LLM/`
 
 ## TODO
-- Реализовать форму лида, вызов тонкого клиента/gateway и Legacy GC по спецификации landing-lead.
+- Защита от спама на `/api/lead/submit` (rate-limit/captcha) — вне приложения, ответственность лендинга/инфраструктуры.
+- При необходимости — расширение `customFields` под новые user_addfields школы.
+- Передача UTM/landingId в `LeadForm` (текущая версия отправляет только имя/email/телефон).
 
 ## Changelog
+- 2026-05-06: на главной (`pages/HomePage.vue`) появилась публичная лид-форма — компонент `components/LeadForm.vue`. Поля: имя, email, телефон; попольная и общая валидация (с дублированием серверной), статусы idle/loading/success/error, блокировка кнопки во время отправки, экран успеха с `leadId`. Вызов `submitLeadRoute.run(ctx, ...)` (POST `/api/lead/submit`) — без авторизации. Стилистика подогнана под общий CRT-дизайн (clip-path, скан-линии, акцент `#d3234b`, шрифт `Share Tech Mono`). Обновлены `docs/architecture.md`, `docs/api.md` (раздел «Публичные эндпоинты»), `docs/imports.md`.
+- 2026-05-06: реализован сценарий A — `lib/leadFlow.lib.ts` (`validateLeadInput`, `buildAddUserArgs`, `buildCreateDealArgs`, `processLead`), Heap-таблица `Leads` и репозиторий `repos/leads.repo.ts`, публичный POST `/api/lead/submit` (без авторизации, валидация + `invoke('addUser')` через локальный SDK gateway-клиент `lib/gateway/`, опц. `invoke('createDeal')` при `offerCode`, запись в Heap). Добавлены настройки `gateway_url`, `gc_school_host`, `gc_school_api_key` в `lib/settings.lib.ts`, `getGatewayClientSettings(ctx)`. Юнит-набор `lib/tests/leadFlowSuite.ts` и раннер `api/tests/scenario/index.ts` (GET `/api/tests/scenario`). Документация: `docs/scenario.md`.
 - 2026-05-05: bootstrap после копии шаблона — путь проекта, `.dir.json`, дефолты, Heap, SSR/meta для тестов; удалён `docs/run.md`.
 - 2026-04-05: разделение логирования по уровням Info/Debug — trace-логи (карта вызовов) severity 6, видны при Info; payload (сырые данные) автоматически отсекается при уровне != Debug; shouldIncludePayload в lib/logger.lib.ts, фильтрация non-string args в shared/logger.ts; добавлены недостающие trace-логи на сервере (api/logger/browser, api/tests/list) и в Vue-компонентах (onBeforeUnmount, saveProjectName, loadProjectName, setupLogsWebSocket, loadRecentLogs и др.).
 - 2026-04-05: browserRemoteLogger подключён на всех страницах (главная, админка, профиль, тесты); logLevel SSR добавлен на страницу логина; подробное логирование этапов загрузки с сырыми данными на каждой странице; AdminPage — sink комбинирует дашборд-счётчики и remote logger.

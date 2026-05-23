@@ -26,9 +26,11 @@
 - История диалогов: `docs/LLM/`
 
 ## TODO
-- Связать с gateway: история событий оплаты, настройки текстов уведомлений — по спецификации payment-reaction.
+- Vue-страница в админке: история webhook'ов из `WebhookLog`, ручной retry, отображение текущего `webhookUrlSuffix` из `/api/admin/webhook/info`.
+- P2: альтернативный канал отправки через `@app/sender` (личное сообщение в Chatium, не GC-комментарий).
 
 ## Changelog
+- 2026-05-06: реализован сценарий C — `lib/webhookSecret.lib.ts` (генерация/ротация токена через `accountNanoid`, `safeEqualToken`), `lib/paymentReaction.lib.ts` (`normalizePaymentEvent`, `renderReactionMessage`, `processPaymentEvent` с идемпотентностью по `gcEventId`), Heap-таблица `WebhookLog` (gcEventId, eventType, email, dealId, amount, tokenValid, reactionOk, reactionErrorCode, gatewayRequestId, status, receivedAt) и `repos/webhookLog.repo.ts`. Роуты: POST `/api/webhook?token=<...>` (анонимно, ADR-0004 «токен в URL», 401 при invalid token через `{ statusCode, rawHttpBody, headers }`, 200 при ошибке внутренней обработки чтобы GC не ретраил), GET `/api/admin/webhook/info` (Admin) и POST `/api/admin/webhook/rotate` (Admin). Локальная копия SDK gateway-клиента (`lib/gateway/`, `shared/`); настройки `gateway_url`, `gc_school_host`, `gc_school_api_key`, `webhook_token`, `lenochka_*` в `lib/settings.lib.ts`. Юнит-набор `lib/tests/paymentReactionSuite.ts` и раннер `api/tests/scenario/index.ts`. Документация: `docs/scenario.md`.
 - 2026-05-05: bootstrap после копии шаблона — путь проекта, `.dir.json`, дефолты, Heap, SSR/meta для тестов; удалён `docs/run.md`.
 - 2026-04-05: разделение логирования по уровням Info/Debug — trace-логи (карта вызовов) severity 6, видны при Info; payload (сырые данные) автоматически отсекается при уровне != Debug; shouldIncludePayload в lib/logger.lib.ts, фильтрация non-string args в shared/logger.ts; добавлены недостающие trace-логи на сервере (api/logger/browser, api/tests/list) и в Vue-компонентах (onBeforeUnmount, saveProjectName, loadProjectName, setupLogsWebSocket, loadRecentLogs и др.).
 - 2026-04-05: browserRemoteLogger подключён на всех страницах (главная, админка, профиль, тесты); logLevel SSR добавлен на страницу логина; подробное логирование этапов загрузки с сырыми данными на каждой странице; AdminPage — sink комбинирует дашборд-счётчики и remote logger.

@@ -3,6 +3,7 @@ import { onMounted, onBeforeUnmount, onUnmounted, ref } from 'vue'
 import Header from '../components/Header.vue'
 import GlobalGlitch from '../components/GlobalGlitch.vue'
 import AppFooter from '../components/AppFooter.vue'
+import LeadForm from '../components/LeadForm.vue'
 import { createComponentLogger, setLogSink, type LogEntry } from '../shared/logger'
 import { createBrowserRemoteLogger } from '../shared/browserRemoteLogger'
 import { postBrowserLogsRoute } from '../api/logger/browser'
@@ -204,6 +205,10 @@ const openChatiumLink = () => {
           <p class="hero-description">
             {{ displayedDescription }}<span v-if="showCursor && cursorPosition === 'description'" class="typing-cursor">▮</span>
           </p>
+        </section>
+
+        <section v-if="bootLoaderDone" class="lead-form-wrapper" :class="{ 'lead-form-wrapper--ready': cursorPosition === 'final' }">
+          <LeadForm />
         </section>
       </div>
     </main>
@@ -515,5 +520,23 @@ body {
   .hero-section { gap: 1rem; }
   .hero-heading { font-size: 1.75rem; letter-spacing: 0.08em; }
   .hero-description { font-size: 0.875rem; line-height: 1.5; }
+}
+
+.lead-form-wrapper {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+
+.lead-form-wrapper--ready {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@media (min-width: 1201px) {
+  .content-inner:has(.lead-form-wrapper) { gap: 2rem; }
 }
 </style>

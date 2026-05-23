@@ -1,12 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-
-export interface CapacityRow {
-  team: string
-  load: number
-  capacity: number
-  focus: string
-}
+import type { CapacityRow } from '../../shared/bpmVueExportedTypes'
 
 const props = defineProps<{
   title: string
