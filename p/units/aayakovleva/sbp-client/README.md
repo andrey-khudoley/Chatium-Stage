@@ -36,6 +36,12 @@
 - Решения: `docs/ADR/`
 - История диалогов: `docs/LLM/`
 
+### Спецификации проекта (перенесены из ваулта 2026-05-24)
+- **Бизнес-логика виджета** (раскладка способов оплаты, правило 50 000 ₽): `docs/architecture/payment-scheme.md`.
+- **ADR 0003 — внутренняя система прав доступа** к панели (`requireRealUser` + `requireInternalAccess` + пригласительные ссылки): `docs/ADR/0003-internal-access-control.md`.
+- **Проектный хаб** (бриф, реестр решений, data-flow, приёмка, база знаний сервисов): `../project-docs/README.md`.
+- Gateway-SSOT (контур `bills_v1`): `../../../saas/gw/lifepay/docs/gateway/operation-manual.md`.
+
 ## TODO
 - Боевой проход «createBill → QR → оплата → webhook» на тестовом магазине LifePay (Прототип §1.9, fixtures для `notes/2026-MM-DD--first-real-webhook.md`).
 - Расширить аналитику (фильтры по op, временные диапазоны).

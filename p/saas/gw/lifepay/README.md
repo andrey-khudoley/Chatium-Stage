@@ -1,7 +1,15 @@
-# template_project
+# lifepay — LifePay payments-gateway (Chatium)
 
 ## Назначение
-Шаблон проекта для Chatium. Минимальный старт: главная страница, админка, профиль и логин.
+Серверный шлюз к LifePay для проекта «GetCourse платежи (школа Яковлевых)». Публикует контур `bills_v1` (`/v1/createBill`, `/v1/getBillStatus`, `/v1/cancelBill`, `/v1/operations`) с маршрутизацией к LifePay через `@app/request`; на `/` — панель оператора с журналами. Каркас изначально скопирован из `p/template_project` (отсюда исторические упоминания шаблона в changelog ниже).
+
+## Спецификации проекта (SSOT)
+Перенесены в модуль 2026-05-24 (ранее жили в Obsidian-ваулте):
+- **`docs/gateway/operation-manual.md`** — единственный полный технический норматив (контракты `/v1/{op}`, секреты, коды ошибок, наблюдаемость). SSOT.
+- `docs/gateway/implementation-plan.md` — план Прототип → MVP → Прод (вкл. §1.11 внутренние права доступа).
+- `docs/gateway/testing-strategy.md` — стратегия юнит/интеграционных тестов.
+- `docs/ADR/0003-lifepay-api-choice.md` — выбор API LifePay (проектный ADR 0001).
+- **Проектный хаб** (бриф, реестр решений, приёмка, база знаний сервисов): `../../../units/aayakovleva/project-docs/README.md`.
 
 ## Важно
 - Платформа: Chatium. Серверная часть управляется платформой.
@@ -27,10 +35,10 @@
 - Архитектура: `docs/architecture.md`
 - API: `docs/api.md`
 - Данные: `docs/data.md`
-- Запуск и деплой: `docs/run.md`
 - Импорты/циклы: `docs/imports.md`
 - Решения: `docs/ADR/`
 - История диалогов: `docs/LLM/`
+- Спецификации проекта: `docs/gateway/` + проектный хаб `../../../units/aayakovleva/project-docs/README.md`
 
 ## TODO
 - Заполнить UI для главной/админки/профиля.
