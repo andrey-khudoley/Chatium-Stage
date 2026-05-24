@@ -7,11 +7,13 @@
  * клиенту **без изменений**; HTTP-статус — как у gateway. requestId берётся из заголовка
  * `X-Gateway-Request-Id`.
  *
- * Admin-only (§1.8.2). Без серверных ретраев. Без Idempotency-Key.
+ * Доступ: requireRealUser + requireInternalAccess (ADR 0003, §1.11.8).
+ * Без серверных ретраев. Без Idempotency-Key.
  */
 
 import { invokeGateway } from '../../lib/gateway/invokeClient'
 import { recordRequestLog } from '../../lib/gateway/recordRequestLog'
+import { guardInternalApi } from '../../lib/access/apiGuard'
 import * as loggerLib from '../../lib/logger.lib'
 import { findOperationInCatalog } from '../../shared/gatewayContract'
 import { INVOKE_PROXY_ERROR_CODES } from '../../shared/invokeApi'
@@ -24,6 +26,9 @@ function isObject(v: unknown): v is Record<string, unknown> {
 }
 
 export const invokeRoute = app.post('/', async (ctx, req) => {
+  const denied = await guardInternalApi(ctx)
+  if (denied) return denied
+
   await loggerLib.writeServerLog(ctx, {
     severity: 6,
     message: `[${LOG_PATH}] request_init`,

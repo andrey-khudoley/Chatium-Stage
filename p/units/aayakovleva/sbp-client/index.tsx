@@ -1,9 +1,14 @@
 import { jsx } from '@app/html-jsx'
+import { requireRealUser } from '@app/auth'
 import PanelHomePage from './pages/PanelHomePage.vue'
 import { getPreloaderStyles, getPreloaderScript } from './shared/preloader'
 import { crtBackgroundStyles, customScrollbarStyles } from './styles'
 import { getLogLevelForPage, getLogLevelScript } from './shared/logLevel'
-import { getFullUrl, ROUTES } from './config/routes'
+import { getFullUrl, ROUTES, ROUTE_PATHS } from './config/routes'
+import {
+  requireInternalAccess,
+  InternalAccessDeniedError
+} from './lib/access/requireInternalAccess'
 import {
   PANEL_PAGE_NAME,
   getPageTitle,
@@ -14,11 +19,35 @@ import * as settingsLib from './lib/settings.lib'
 
 const LOG_PATH = 'index'
 
-export const indexPageRoute = app.html('/', async (ctx, _req) => {
+export const indexPageRoute = app.html('/', async (ctx, req) => {
+  // Доступ: requireRealUser + requireInternalAccess (ADR 0003, §1.11.8).
+  // Анонимный → на вход; авторизованный без гранта → /web/forbidden.
+  try {
+    requireRealUser(ctx)
+    await requireInternalAccess(ctx)
+  } catch (err) {
+    if (err instanceof InternalAccessDeniedError) {
+      await loggerLib.writeServerLog(ctx, {
+        severity: 4,
+        message: `[${LOG_PATH}] forbidden_redirect`,
+        payload: { userId: ctx.user?.id ?? null }
+      })
+      return ctx.resp.redirect(getFullUrl(ROUTE_PATHS.forbidden))
+    }
+    await loggerLib.writeServerLog(ctx, {
+      severity: 4,
+      message: `[${LOG_PATH}] signin_redirect`,
+      payload: { backUrl: req.url }
+    })
+    return ctx.resp.redirect(`/s/auth/signin?back=${encodeURIComponent(req.url)}`)
+  }
+
+  const isAdmin = ctx.user?.is('Admin') ?? false
+
   await loggerLib.writeServerLog(ctx, {
     severity: 6,
     message: `[${LOG_PATH}] entry`,
-    payload: { hasUser: !!ctx.user, isAdmin: ctx.user?.is?.('Admin') ?? false }
+    payload: { hasUser: !!ctx.user, isAdmin }
   })
 
   const projectName = await settingsLib.getSettingString(
@@ -49,7 +78,12 @@ export const indexPageRoute = app.html('/', async (ctx, _req) => {
     settingsSave: `${getFullUrl('/api/settings/save')}`,
     settingsList: `${getFullUrl('/api/settings/list')}`,
     rawRequest: `${getFullUrl('/api/lp/raw-request')}`,
-    rawWebhook: `${getFullUrl('/api/lp/raw-webhook')}`
+    rawWebhook: `${getFullUrl('/api/lp/raw-webhook')}`,
+    accessGenerateInvite: `${getFullUrl('/api/access/generate-invite')}`,
+    accessRevokeInvite: `${getFullUrl('/api/access/revoke-invite')}`,
+    accessRevokeGrant: `${getFullUrl('/api/access/revoke-grant')}`,
+    accessInvites: `${getFullUrl('/api/access/invites')}`,
+    accessGrants: `${getFullUrl('/api/access/grants')}`
   }
 
   const indexUrl = getFullUrl(ROUTES.index)
@@ -100,7 +134,7 @@ export const indexPageRoute = app.html('/', async (ctx, _req) => {
           profileUrl={profileUrl}
           loginUrl={loginUrl}
           isAuthenticated={true}
-          isAdmin={true}
+          isAdmin={isAdmin}
           adminUrl={adminUrl}
           testsUrl={testsUrl}
           panelUrl={panelUrl}

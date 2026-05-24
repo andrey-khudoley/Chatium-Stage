@@ -3,16 +3,20 @@
  * (implementation-plan §1.8.4).
  *
  * Поиск конкретной записи request_log + связанные webhook_log по orderNumber.
- * Admin-only. Без полных тел запросов/ответов и секретов.
+ * Доступ: requireRealUser + requireInternalAccess (§1.11.8). Без полных тел запросов/ответов и секретов.
  */
 
 import * as requestLogRepo from '../../repos/requestLog.repo'
 import * as webhookLogRepo from '../../repos/webhookLog.repo'
+import { guardInternalApi } from '../../lib/access/apiGuard'
 import * as loggerLib from '../../lib/logger.lib'
 
 const LOG_PATH = 'api/lp/search-by-request-id'
 
 export const searchByRequestIdRoute = app.get('/', async (ctx, req) => {
+  const denied = await guardInternalApi(ctx)
+  if (denied) return denied
+
   const q = req.query as Record<string, unknown> | undefined
   const requestId = typeof q?.requestId === 'string' ? q.requestId.trim() : ''
 

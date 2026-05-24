@@ -170,6 +170,22 @@ export const UNIT_TEST_BLOCKS: TestCatalogBlock[] = [
       { id: 'lp_redactraw_array_root', title: 'redactRawDeep: массив-корень' },
       { id: 'lp_redactraw_primitive_root', title: 'redactRawDeep: примитивы как есть' }
     ]
+  },
+  {
+    id: 'unit-access',
+    title: 'Внутренняя авторизация (ADR 0003)',
+    description: 'classifyInvite, decideInternalAccess — чистая логика без Heap',
+    tests: [
+      { id: 'access_classify_unknown', title: 'classifyInvite: null → unknown' },
+      { id: 'access_classify_used', title: 'classifyInvite: usedAt → used' },
+      { id: 'access_classify_revoked', title: 'classifyInvite: revokedAt → revoked' },
+      { id: 'access_classify_expired', title: 'classifyInvite: истёк → expired' },
+      { id: 'access_classify_valid', title: 'classifyInvite: свежий → valid' },
+      { id: 'access_classify_used_precedence', title: 'classifyInvite: used приоритетнее' },
+      { id: 'access_decide_admin', title: 'decideInternalAccess: admin → true' },
+      { id: 'access_decide_grant', title: 'decideInternalAccess: grant → true' },
+      { id: 'access_decide_none', title: 'decideInternalAccess: нет → false' }
+    ]
   }
 ]
 
@@ -268,6 +284,21 @@ export const INTEGRATION_SERVER_TEST_BLOCKS: TestCatalogBlock[] = [
       { id: 'e2e_logs_pagination', title: 'recent + before пагинация' },
       { id: 'e2e_dashboard_reset_flow', title: 'counts → reset → counts' },
       { id: 'e2e_log_payload_roundtrip', title: 'payload объект → Heap → recent' }
+    ]
+  },
+  {
+    id: 'int-access',
+    title: 'Внутренняя авторизация (ADR 0003)',
+    description: 'Гранты, инвайты, потребление (Heap)',
+    tests: [
+      { id: 'access_require_admin_passes', title: 'requireInternalAccess(admin) не бросает' },
+      { id: 'access_repo_grant_lifecycle', title: 'panelAccess: upsert/active/revoke' },
+      { id: 'access_invite_generate_token_min_32', title: 'generateInvite: токен ≥ 32' },
+      { id: 'access_invite_get_does_not_consume', title: 'getInviteByToken не расходует' },
+      { id: 'access_invite_consume_expired', title: 'consumeInvite: expired' },
+      { id: 'access_invite_consume_revoked', title: 'consumeInvite: revoked' },
+      { id: 'access_invite_consume_flow', title: 'consumeInvite: ok → grant; повтор → used' },
+      { id: 'access_invite_already_has_access', title: 'consumeInvite: already_has_access' }
     ]
   }
 ]

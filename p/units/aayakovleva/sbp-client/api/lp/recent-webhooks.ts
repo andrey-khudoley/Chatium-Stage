@@ -1,9 +1,10 @@
 /**
  * GET /api/lp/recent-webhooks — последние записи webhook_log
- * (implementation-plan §1.8.4). Admin-only.
+ * (implementation-plan §1.8.4). Доступ: requireRealUser + requireInternalAccess (§1.11.8).
  */
 
 import * as webhookLogRepo from '../../repos/webhookLog.repo'
+import { guardInternalApi } from '../../lib/access/apiGuard'
 import * as loggerLib from '../../lib/logger.lib'
 import { RECENT_DEFAULT_LIMIT, RECENT_MAX_LIMIT } from '../../lib/gateway/constants'
 
@@ -16,6 +17,9 @@ function parseLimit(value: unknown): number {
 }
 
 export const recentWebhooksRoute = app.get('/', async (ctx, req) => {
+  const denied = await guardInternalApi(ctx)
+  if (denied) return denied
+
   const limit = parseLimit((req.query as Record<string, unknown> | undefined)?.limit)
   await loggerLib.writeServerLog(ctx, {
     severity: 6,

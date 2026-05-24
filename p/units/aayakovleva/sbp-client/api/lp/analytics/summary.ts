@@ -1,6 +1,6 @@
 /**
  * GET /api/lp/analytics/summary — карточки аналитики
- * (implementation-plan §1.8.4). Admin-only.
+ * (implementation-plan §1.8.4). Доступ: requireRealUser + requireInternalAccess (§1.11.8).
  *
  * Окно: по умолчанию 24 часа (query windowHours, max 24*30).
  *
@@ -12,6 +12,7 @@
 
 import * as requestLogRepo from '../../../repos/requestLog.repo'
 import * as webhookLogRepo from '../../../repos/webhookLog.repo'
+import { guardInternalApi } from '../../../lib/access/apiGuard'
 import * as loggerLib from '../../../lib/logger.lib'
 import { ANALYTICS_DEFAULT_WINDOW_HOURS } from '../../../lib/gateway/constants'
 
@@ -32,6 +33,9 @@ function computeP95(sortedAsc: number[]): number {
 }
 
 export const analyticsSummaryRoute = app.get('/', async (ctx, req) => {
+  const denied = await guardInternalApi(ctx)
+  if (denied) return denied
+
   const windowHours = parseWindow((req.query as Record<string, unknown> | undefined)?.windowHours)
   const sinceTimestamp = Date.now() - windowHours * 60 * 60 * 1000
 

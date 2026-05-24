@@ -5,17 +5,21 @@
  * сериализованный объект записи requestLog со всеми полями включая
  * `rawResponseBody` (отредактированный JSON ответа gateway).
  *
- * Admin-only. Тело ответа хранится сырым (клиент — оператор ПД); структурная
- * гигиена выполнена `shared/prepareRawLog.prepareRawLog` на этапе записи
- * (см. lib/gateway/recordRequestLog.ts).
+ * Доступ: requireRealUser + requireInternalAccess (§1.11.8). Тело ответа хранится
+ * сырым (клиент — оператор ПД); структурная гигиена выполнена
+ * `shared/prepareRawLog.prepareRawLog` на этапе записи (см. lib/gateway/recordRequestLog.ts).
  */
 
 import * as requestLogRepo from '../../repos/requestLog.repo'
+import { guardInternalApi } from '../../lib/access/apiGuard'
 import * as loggerLib from '../../lib/logger.lib'
 
 const LOG_PATH = 'api/lp/raw-request'
 
 export const rawRequestRoute = app.get('/', async (ctx, req) => {
+  const denied = await guardInternalApi(ctx)
+  if (denied) return denied
+
   const q = req.query as Record<string, unknown> | undefined
   const idRaw = q?.id
   const requestIdRaw = q?.requestId

@@ -18,9 +18,10 @@
 
 ## Роли и сценарии
 
-- **Admin** (Андрей-разработчик) — единственная аутентифицированная роль; имеет доступ ко всем `/api/lp/*`, `/web/panel`, `/web/admin`, `/web/tests`.
+- **Admin** (Андрей-разработчик) — полный доступ ко всем `/api/lp/*`, `/api/access/*`, `/`, `/web/admin`, `/web/tests`. Проходит `requireInternalAccess` без записи в `panel_access`.
+- **Сотрудник школы (не-Admin)** — доступ к `/` и `api/lp/*` при наличии активной записи в `panel_access`. Запись создаётся через одноразовую пригласительную ссылку (ADR 0003 / §1.11, реализовано 2026-05-24).
 - **Анонимный + token-в-query** — только `POST /web/webhook` (LifePay).
-- **Школа** — отдельная роль не реализуется (исключено из MVP Прототипа).
+- **Авторизованный без гранта** — попадает на `/web/forbidden` (403); может получить доступ через инвайт-ссылку `/web/access/invite?token=`.
 
 Основные сценарии:
 - Открыть `/web/panel`, заполнить настройки LifePay (apikey, login, webhook token, gateway base URL).
@@ -54,15 +55,21 @@
 
 File-based, один файл = один роут с путём `/`:
 
-- `index.tsx` — главная (SSR + Vue, шаблон шаблона).
+- `index.tsx` — главная `/` (requireRealUser + requireInternalAccess; аноним → /s/auth/signin, без гранта → /web/forbidden; SSR-пропсы для PanelHomePage.vue).
 - `web/admin/index.tsx` — админка шаблона (CRT-стиль; без LifePay-настроек).
 - `web/profile/index.tsx`, `web/login/index.tsx`, `web/tests/index.tsx` — шаблонные.
-- `web/panel/index.tsx` — главная панель LifePay (Admin-only, SSR-пропсы для PanelHomePage.vue).
+- `web/panel/index.tsx` — редирект на `/` (легаси-совместимость).
 - `web/webhook/index.tsx` — приёмник webhook LifePay (POST, анонимный + токен).
-- `api/lp/invoke.ts` — POST прокладка к gateway (Admin).
-- `api/lp/recent-requests.ts`, `api/lp/recent-webhooks.ts` — GET журналы (Admin).
-- `api/lp/analytics/summary.ts` — GET карточки аналитики (Admin).
-- `api/lp/search-by-request-id.ts` — GET поиск (Admin).
+- `web/access/invite/index.tsx` — страница инвайта `/web/access/invite?token=` (requireRealUser; не расходует инвайт). (ADR 0003.)
+- `web/forbidden/index.tsx` — страница 403 `/web/forbidden` (requireRealUser). (ADR 0003.)
+- `api/lp/invoke.ts` — POST прокладка к gateway (requireRealUser + requireInternalAccess).
+- `api/lp/recent-requests.ts`, `api/lp/recent-webhooks.ts` — GET журналы (requireRealUser + requireInternalAccess).
+- `api/lp/analytics/summary.ts` — GET карточки аналитики (requireRealUser + requireInternalAccess).
+- `api/lp/search-by-request-id.ts` — GET поиск (requireRealUser + requireInternalAccess).
+- `api/lp/raw-request.ts`, `api/lp/raw-webhook.ts` — GET raw-записи (requireRealUser + requireInternalAccess).
+- `api/access/consume-invite.ts` — POST потребление инвайта (requireRealUser). (ADR 0003.)
+- `api/access/generate-invite.ts`, `api/access/revoke-invite.ts`, `api/access/revoke-grant.ts` — POST Admin-управление. (ADR 0003.)
+- `api/access/invites.ts`, `api/access/grants.ts` — GET списки для Admin. (ADR 0003.)
 - `api/settings/*`, `api/logger/*`, `api/admin/*`, `api/tests/*` — без изменений (шаблон).
 
 Все ссылки и редиректы — через `withProjectRoot` / `withProjectRootAndSubroute` (хардкод URL запрещён).
@@ -90,9 +97,29 @@ File-based, один файл = один роут с путём `/`:
 - **payments-gateway** (`p/saas/gw/lifepay`) — единственный исходящий собеседник. Контракт: `POST/GET /api/v1/<op>` (префикс `/api/` от file-based роутинга gateway), заголовки `X-Lp-Apikey`, `X-Lp-Login`, ответ `X-Gateway-Request-Id`. Без серверных ретраев. Таймаут 15 секунд (на 5 секунд больше gateway-таймаута).
 - **LifePay** — только через gateway. Webhook от LifePay приходит на `/web/webhook?token=...` (URL передаётся в `callbackUrl` каждого `createBill`, не глобально).
 
+## Внутренняя авторизация (ADR 0003 / §1.11, реализовано 2026-05-24)
+
+Двухуровневая модель доступа для всех защищённых роутов (`/`, `api/lp/*`):
+
+```
+requireRealUser(ctx)           — реальный авторизованный пользователь
+guardInternalApi(ctx)          — requireRealUser + requireInternalAccess:
+                                   Admin → проход всегда
+                                   не-Admin → активная запись в panel_access, иначе HTTP 403
+```
+
+Поток выдачи доступа:
+1. Admin генерирует инвайт (`api/access/generate-invite`) → получает одноразовый URL `/web/access/invite?token=`.
+2. Сотрудник переходит по ссылке → страница подтверждения (`pages/InviteAcceptPage.vue`).
+3. Сотрудник нажимает «Подтвердить» → `POST /api/access/consume-invite` под `runWithExclusiveLock` → запись в `panel_access`, инвайт помечается `usedAt`.
+4. На последующих заходах сотрудник проходит `requireInternalAccess` через `repos/panelAccess.repo.ts`.
+
+Admin может отозвать инвайт (`revoke-invite`) или грант (`revoke-grant`). Ключевой инвариант: переход по URL инвайта не расходует его — расход только при нажатии «Подтвердить».
+
 ## Безопасность
 
-- `requireAccountRole(ctx, 'Admin')` первой строкой всех `/api/lp/*` и `/web/panel`.
+- `requireRealUser(ctx)` + `requireInternalAccess(ctx)` (через `guardInternalApi`) — все `/api/lp/*` и главный роут `/`. Реализовано 2026-05-24 (закрыт auth-разрыв аудита).
 - Webhook — анонимный, но с обязательной сверкой токена.
 - MD5-подпись webhook **не** проверяется: LifePay её не публикует (нет полей `check`/`signature`/`hash` в теле, нет описания алгоритма на apidoc.life-pay.ru/notification). Если LifePay в будущем добавит подпись — вернуться к этому пункту.
 - Дедупликация webhook через `runWithExclusiveLock` из `@app/sync` + `findByField` + create в `webhook_idempotency` (Heap-схема не выражает unique constraint напрямую).
+- Уникальность токена инвайта и userId гранта — на уровне приложения (`accountNanoid` + `runWithExclusiveLock`), Heap-схема unique constraint не выражает.

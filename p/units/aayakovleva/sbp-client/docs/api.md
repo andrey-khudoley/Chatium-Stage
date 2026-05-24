@@ -34,19 +34,32 @@
 | GET | /api/tests/unit | api/tests/unit/index.ts | AnyUser | Юнит-набор шаблона + LifePay (lifepayUnitSuite) |
 | GET | /api/tests/integration | api/tests/integration/index.ts | AnyUser | Интеграционный набор |
 
-## LifePay (api/lp/, web/webhook)
+## Внутренняя авторизация (api/access/)
 
-Серверная прокладка к payments-gateway + журнал + аналитика + приёмник webhook (implementation-plan §1.8.2 — §1.8.4).
+Управление доступом к панели: пригласительные ссылки и гранты (ADR 0003, §1.11). Реализовано 2026-05-24.
 
 | Method | Path | File | Auth | Назначение |
 | --- | --- | --- | --- | --- |
-| POST | /api/lp/invoke | api/lp/invoke.ts | Admin | Прокладка `{ op, args }` → `<gateway_base_url>/api/v1/<op>`. Возвращает тело gateway без изменений; `requestId` из `X-Gateway-Request-Id`. Журналирование в `request_log`. Без ретраев, без `Idempotency-Key`. |
-| GET | /api/lp/recent-requests?limit=&beforeRequestedAt= | api/lp/recent-requests.ts | Admin | Последние записи `request_log` (без полных тел) |
-| GET | /api/lp/recent-webhooks?limit= | api/lp/recent-webhooks.ts | Admin | Последние записи `webhook_log` |
-| GET | /api/lp/analytics/summary?windowHours= | api/lp/analytics/summary.ts | Admin | Карточки: requests {total, okShare, avgDurationMs, p95DurationMs, topErrorCode}, webhooks {total, successShare, tokenValidShare} |
-| GET | /api/lp/search-by-request-id?requestId= | api/lp/search-by-request-id.ts | Admin | `request_log` + связанные `webhook_log` по orderNumber |
-| GET | /api/lp/raw-request?id=\<heapId\>\|requestId=\<rid\> | api/lp/raw-request.ts | Admin | Полная raw-запись `request_log` со всеми полями включая `rawResponseBody` (JSON-объект, PII-маска через `shared/redactRaw.redactRawDeep`). Если задан `id` — приоритет по нему; иначе по `requestId`. |
-| GET | /api/lp/raw-webhook?id=\<heapId\> | api/lp/raw-webhook.ts | Admin | Полная raw-запись `webhook_log` включая `rawBody` (полное тело webhook с PII-маской) и `rawQuery` (token замаскирован). Дополнительно возвращает `linkedRequests` — записи `request_log` с тем же `orderNumber` (исходный `createBill` со стороны браузера: `argsRedacted`, `rawResponseBody`) — и `relatedWebhooks` (другие webhook по тому же заказу, без полных тел). Поля `rawBody`/`rawQuery` всегда присутствуют (null для старых записей без этих колонок). |
+| POST | /api/access/consume-invite | api/access/consume-invite.ts | requireRealUser | Потребить инвайт по токену (тело `{ token }`). Расходует инвайт и создаёт грант только при успехе; под `runWithExclusiveLock`. |
+| POST | /api/access/generate-invite | api/access/generate-invite.ts | Admin | Создать пригласительную ссылку (тело `{ note? }`). Возвращает `{ inviteId, token, fullUrl, expiresAt }`. Токен показывается один раз. |
+| POST | /api/access/revoke-invite | api/access/revoke-invite.ts | Admin | Отозвать инвайт (тело `{ inviteId }`). |
+| POST | /api/access/revoke-grant | api/access/revoke-grant.ts | Admin | Отозвать грант пользователя (тело `{ userId }`). |
+| GET | /api/access/invites | api/access/invites.ts | Admin | Список инвайтов без поля `token`. |
+| GET | /api/access/grants | api/access/grants.ts | Admin | Список грантов (активных и отозванных). |
+
+## LifePay (api/lp/, web/webhook)
+
+Серверная прокладка к payments-gateway + журнал + аналитика + приёмник webhook (implementation-plan §1.8.2 — §1.8.4). Все эндпоинты `api/lp/*` защищены `requireRealUser` + `requireInternalAccess` через `guardInternalApi(ctx)` (ADR 0003 / §1.11.8, реализовано 2026-05-24).
+
+| Method | Path | File | Auth | Назначение |
+| --- | --- | --- | --- | --- |
+| POST | /api/lp/invoke | api/lp/invoke.ts | requireRealUser + requireInternalAccess | Прокладка `{ op, args }` → `<gateway_base_url>/api/v1/<op>`. Возвращает тело gateway без изменений; `requestId` из `X-Gateway-Request-Id`. Журналирование в `request_log`. Без ретраев, без `Idempotency-Key`. |
+| GET | /api/lp/recent-requests?limit=&beforeRequestedAt= | api/lp/recent-requests.ts | requireRealUser + requireInternalAccess | Последние записи `request_log` (без полных тел) |
+| GET | /api/lp/recent-webhooks?limit= | api/lp/recent-webhooks.ts | requireRealUser + requireInternalAccess | Последние записи `webhook_log` |
+| GET | /api/lp/analytics/summary?windowHours= | api/lp/analytics/summary.ts | requireRealUser + requireInternalAccess | Карточки: requests {total, okShare, avgDurationMs, p95DurationMs, topErrorCode}, webhooks {total, successShare, tokenValidShare} |
+| GET | /api/lp/search-by-request-id?requestId= | api/lp/search-by-request-id.ts | requireRealUser + requireInternalAccess | `request_log` + связанные `webhook_log` по orderNumber |
+| GET | /api/lp/raw-request?id=\<heapId\>\|requestId=\<rid\> | api/lp/raw-request.ts | requireRealUser + requireInternalAccess | Полная raw-запись `request_log` со всеми полями включая `rawResponseBody`. Если задан `id` — приоритет по нему; иначе по `requestId`. |
+| GET | /api/lp/raw-webhook?id=\<heapId\> | api/lp/raw-webhook.ts | requireRealUser + requireInternalAccess | Полная raw-запись `webhook_log` включая `rawBody` и `rawQuery` (token замаскирован). Дополнительно возвращает `linkedRequests` и `relatedWebhooks`. |
 | POST | /webhook?token= | web/webhook/index.tsx | Анонимный + токен | Приёмник webhook от LifePay. Сверка токена в query; расхождение/отсутствие → 401/403 без тела и без записи. При валидном → `unwrapWebhookBody` снимает обёртку `data` (см. ниже), `parseWebhookBody` извлекает `number/type/status/method/amount/order.number/email`, запись в `webhook_log` (включая `rawBody`/`rawQuery` через `prepareRawLog` — сырые, без PII-маски) + дедупликация по `number` через `webhook_idempotency`, ответ 200 OK. MD5-подпись webhook **не** проверяется. LifePay-ретраи: 1/3/5/10 мин, далее раз в час, до 10 попыток — дедупликация по `number` защищает от двойного учёта. |
 
 ### Контракт `/api/lp/invoke`
@@ -98,7 +111,9 @@
   в журнал отвечаем 200 OK — дедупликация по `number` через `webhook_idempotency`
   защищает от двойного учёта на стороне клиента.
 
-## Публичные эндпоинты
+## Публичные эндпоинты и страницы доступа
 | Method | Path | File | Auth | Назначение |
 | --- | --- | --- | --- | --- |
 | POST | /web/webhook | web/webhook/index.tsx | Анонимный + токен в query | Приёмник webhook LifePay |
+| GET | /web/access/invite?token= | web/access/invite/index.tsx | requireRealUser | Страница подтверждения инвайта. Переход по ссылке не расходует инвайт; расход — только POST /api/access/consume-invite. |
+| GET | /web/forbidden | web/forbidden/index.tsx | requireRealUser | Страница 403 «Нет доступа к панели». |

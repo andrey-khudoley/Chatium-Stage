@@ -1,12 +1,13 @@
 /**
  * GET /api/lp/recent-requests — последние N записей request_log
- * (implementation-plan §1.8.4). Admin-only.
+ * (implementation-plan §1.8.4). Доступ: requireRealUser + requireInternalAccess (§1.11.8).
  *
  * Возвращает поля: время, requestId, op, clientHttpStatus, ok, errorCode,
  * lpSemanticRule, durationMs, orderNumber. Без полных тел запросов/ответов.
  */
 
 import * as requestLogRepo from '../../repos/requestLog.repo'
+import { guardInternalApi } from '../../lib/access/apiGuard'
 import * as loggerLib from '../../lib/logger.lib'
 import { RECENT_DEFAULT_LIMIT, RECENT_MAX_LIMIT } from '../../lib/gateway/constants'
 
@@ -19,6 +20,9 @@ function parseLimit(value: unknown): number {
 }
 
 export const recentRequestsRoute = app.get('/', async (ctx, req) => {
+  const denied = await guardInternalApi(ctx)
+  if (denied) return denied
+
   const limit = parseLimit((req.query as Record<string, unknown> | undefined)?.limit)
   const beforeRequestedAtRaw = (req.query as Record<string, unknown> | undefined)?.beforeRequestedAt
   const beforeRequestedAt =

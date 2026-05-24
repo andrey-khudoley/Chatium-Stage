@@ -15,16 +15,20 @@
  * была создана старым кодом без этих колонок) — чтобы клиент мог отличить
  * «нет данных» от «поле не вернулось из API».
  *
- * Admin-only.
+ * Доступ: requireRealUser + requireInternalAccess (§1.11.8).
  */
 
 import * as webhookLogRepo from '../../repos/webhookLog.repo'
 import * as requestLogRepo from '../../repos/requestLog.repo'
+import { guardInternalApi } from '../../lib/access/apiGuard'
 import * as loggerLib from '../../lib/logger.lib'
 
 const LOG_PATH = 'api/lp/raw-webhook'
 
 export const rawWebhookRoute = app.get('/', async (ctx, req) => {
+  const denied = await guardInternalApi(ctx)
+  if (denied) return denied
+
   const q = req.query as Record<string, unknown> | undefined
   const idRaw = q?.id
   const id =

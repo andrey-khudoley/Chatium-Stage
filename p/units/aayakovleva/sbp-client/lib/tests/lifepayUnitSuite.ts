@@ -38,6 +38,8 @@ import {
   unwrapWebhookBody,
   extractMultipartTextPayload
 } from '../webhook/processWebhook'
+import { classifyInvite } from '../access/invites'
+import { decideInternalAccess } from '../access/requireInternalAccess'
 
 export type LifepayUnitTestResult = {
   id: string
@@ -706,6 +708,44 @@ function runWebhookTokenChecks(results: LifepayUnitTestResult[]): void {
   )
 }
 
+function runAccessChecks(results: LifepayUnitTestResult[]): void {
+  const now = 1_000_000
+
+  // classifyInvite
+  tryPush(results, 'access_classify_unknown', 'classifyInvite(null) → unknown', () =>
+    classifyInvite(null, now) === 'unknown'
+  )
+  tryPush(results, 'access_classify_used', 'classifyInvite(usedAt) → used', () =>
+    classifyInvite({ usedAt: 5, expiresAt: now + 1000 }, now) === 'used'
+  )
+  tryPush(results, 'access_classify_revoked', 'classifyInvite(revokedAt) → revoked', () =>
+    classifyInvite({ revokedAt: 5, expiresAt: now + 1000 }, now) === 'revoked'
+  )
+  tryPush(results, 'access_classify_expired', 'classifyInvite(expiresAt<now) → expired', () =>
+    classifyInvite({ expiresAt: now - 1 }, now) === 'expired'
+  )
+  tryPush(results, 'access_classify_valid', 'classifyInvite(свежий) → valid', () =>
+    classifyInvite({ expiresAt: now + 1000 }, now) === 'valid'
+  )
+  tryPush(
+    results,
+    'access_classify_used_precedence',
+    'classifyInvite: used приоритетнее revoked/expired',
+    () => classifyInvite({ usedAt: 5, revokedAt: 5, expiresAt: now - 1 }, now) === 'used'
+  )
+
+  // decideInternalAccess
+  tryPush(results, 'access_decide_admin', 'decideInternalAccess(admin) → true', () =>
+    decideInternalAccess(true, false) === true
+  )
+  tryPush(results, 'access_decide_grant', 'decideInternalAccess(grant) → true', () =>
+    decideInternalAccess(false, true) === true
+  )
+  tryPush(results, 'access_decide_none', 'decideInternalAccess(нет) → false', () =>
+    decideInternalAccess(false, false) === false
+  )
+}
+
 export async function runLifepayUnitChecks(): Promise<{
   success: boolean
   results: LifepayUnitTestResult[]
@@ -720,6 +760,7 @@ export async function runLifepayUnitChecks(): Promise<{
   runSettingsValidationChecks(results)
   runWebhookParseChecks(results)
   runWebhookTokenChecks(results)
+  runAccessChecks(results)
 
   const passed = results.filter((r) => r.passed).length
   const failed = results.filter((r) => !r.passed).length

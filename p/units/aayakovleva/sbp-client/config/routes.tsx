@@ -13,7 +13,9 @@ export const ROUTES = {
   tests: './web/tests',
   panel: './web/panel',
   createBill: './web/create-bill',
-  webhook: './web/webhook'
+  webhook: './web/webhook',
+  accessInvite: './web/access/invite',
+  forbidden: './web/forbidden'
 } as const
 
 /** Пути для getFullUrl (абсолютные от корня проекта) */
@@ -25,7 +27,9 @@ export const ROUTE_PATHS = {
   tests: '/web/tests',
   panel: '/web/panel',
   createBill: '/web/create-bill',
-  webhook: '/web/webhook'
+  webhook: '/web/webhook',
+  accessInvite: '/web/access/invite',
+  forbidden: '/web/forbidden'
 } as const
 
 /**

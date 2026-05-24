@@ -53,7 +53,7 @@
         <nav class="panel-toolbar" aria-label="Разделы и поиск">
           <div class="panel-tabs" role="tablist">
             <button
-              v-for="t in tabs"
+              v-for="t in visibleTabs"
               :key="t.id"
               :class="['tab', { active: activeTab === t.id }]"
               :aria-selected="activeTab === t.id"
@@ -608,6 +608,99 @@
             </div>
           </form>
         </section>
+
+        <!-- ====== ACCESS (Admin-only) ====== -->
+        <section v-show="activeTab === 'access' && isAdmin" class="panel-section">
+          <header class="panel-section-head">
+            <span class="prompt">›</span>
+            <h2>Управление доступом</h2>
+            <button type="button" class="btn-mini head-action" @click="loadAccess" title="Обновить">
+              <i class="fas fa-rotate"></i> Обновить
+            </button>
+          </header>
+
+          <p v-if="accessError" class="form-msg is-err">
+            <i class="fas fa-circle-exclamation"></i> {{ accessError }}
+          </p>
+
+          <!-- Пригласительные ссылки -->
+          <div class="access-block">
+            <div class="access-block-head">
+              <h3><i class="fas fa-link"></i> Пригласительные ссылки</h3>
+              <button type="button" class="btn-primary" @click="openInviteModal">
+                <i class="fas fa-plus"></i> Создать ссылку
+              </button>
+            </div>
+            <div v-if="invites.length > 0" class="table-wrapper">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Комментарий</th><th>Создал</th><th>Создан</th>
+                    <th>Истекает</th><th>Использовал</th><th>Статус</th><th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="inv in invites" :key="inv.inviteId">
+                    <td>{{ inv.note || '—' }}</td>
+                    <td>{{ inv.createdByDisplayName }}</td>
+                    <td>{{ formatTime(inv.createdAt) }}</td>
+                    <td>{{ formatTime(inv.expiresAt) }}</td>
+                    <td>{{ inv.usedByDisplayName || '—' }}</td>
+                    <td><span :class="inviteStatusClass(inv.status)">{{ inviteStatusLabel(inv.status) }}</span></td>
+                    <td>
+                      <button
+                        v-if="inv.status === 'active'"
+                        type="button"
+                        class="btn-mini"
+                        @click="revokeInvite(inv.inviteId)"
+                      >
+                        <i class="fas fa-ban"></i> Отозвать
+                      </button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <p v-else class="muted">Пригласительных ссылок пока нет.</p>
+          </div>
+
+          <!-- Выданные доступы -->
+          <div class="access-block">
+            <div class="access-block-head">
+              <h3><i class="fas fa-user-check"></i> Выданные доступы</h3>
+            </div>
+            <div v-if="grants.length > 0" class="table-wrapper">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Пользователь</th><th>Email</th><th>Выдан</th>
+                    <th>Кем</th><th>Статус</th><th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="g in grants" :key="g.userId">
+                    <td>{{ g.userDisplayName }}</td>
+                    <td>{{ g.userEmail || '—' }}</td>
+                    <td>{{ formatTime(g.grantedAt) }}</td>
+                    <td>{{ g.grantedByDisplayName }}</td>
+                    <td><span :class="g.active ? 'cell-ok' : 'cell-err'">{{ g.active ? 'активен' : 'отозван' }}</span></td>
+                    <td>
+                      <button
+                        v-if="g.active"
+                        type="button"
+                        class="btn-mini"
+                        @click="revokeGrant(g.userId)"
+                      >
+                        <i class="fas fa-ban"></i> Отозвать доступ
+                      </button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <p v-else class="muted">Выданных доступов пока нет.</p>
+          </div>
+        </section>
       </div>
     </main>
 
@@ -647,6 +740,45 @@
         </div>
       </div>
     </div>
+
+    <!-- ====== CREATE INVITE MODAL ====== -->
+    <div v-if="inviteModal" class="raw-modal-backdrop" @click.self="closeInviteModal">
+      <div class="raw-modal" role="dialog" aria-modal="true">
+        <header class="raw-modal-head">
+          <span class="prompt">›</span>
+          <h2>Создать пригласительную ссылку</h2>
+          <button type="button" class="btn-mini head-action" @click="closeInviteModal" title="Закрыть">
+            <i class="fas fa-xmark"></i> Закрыть
+          </button>
+        </header>
+        <div class="raw-modal-body">
+          <template v-if="!inviteModal.result">
+            <label class="field field-full">
+              <span class="field-label">Комментарий (необязательно)</span>
+              <input v-model="inviteModal.note" type="text" placeholder="например «для Ольги»" class="field-input" />
+            </label>
+            <p v-if="inviteModal.error" class="form-msg is-err">
+              <i class="fas fa-circle-exclamation"></i> {{ inviteModal.error }}
+            </p>
+            <div class="settings-save-bar">
+              <button type="button" class="btn-primary" :disabled="inviteModal.creating" @click="createInvite">
+                <i class="fas fa-link"></i> {{ inviteModal.creating ? 'Создание…' : 'Создать' }}
+              </button>
+            </div>
+          </template>
+          <template v-else>
+            <p class="muted">Скопируйте ссылку и передайте сотруднику. Токен показывается один раз.</p>
+            <div class="raw-modal-actions">
+              <button class="btn-mini" @click="copyText(inviteModal.result.fullUrl)" title="Скопировать ссылку">
+                <i class="far fa-copy"></i> Скопировать
+              </button>
+            </div>
+            <pre class="json-block">{{ inviteModal.result.fullUrl }}</pre>
+            <p class="muted">Действительна до {{ formatTime(inviteModal.result.expiresAt) }}.</p>
+          </template>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -683,7 +815,12 @@ export default {
         settingsSave: '',
         settingsList: '',
         rawRequest: '',
-        rawWebhook: ''
+        rawWebhook: '',
+        accessGenerateInvite: '',
+        accessRevokeInvite: '',
+        accessRevokeGrant: '',
+        accessInvites: '',
+        accessGrants: ''
       })
     },
     initialSettings: {
@@ -705,7 +842,8 @@ export default {
         { id: 'requests',   label: 'Запросы',       icon: 'fa-list' },
         { id: 'webhooks',   label: 'Webhook',       icon: 'fa-bell' },
         { id: 'createBill', label: 'Создать',       icon: 'fa-file-invoice' },
-        { id: 'settings',   label: 'Настройки',     icon: 'fa-sliders' }
+        { id: 'settings',   label: 'Настройки',     icon: 'fa-sliders' },
+        { id: 'access',     label: 'Доступ',        icon: 'fa-user-shield', adminOnly: true }
       ],
       requestsFilters: [
         { id: 'all', label: 'Все' },
@@ -760,10 +898,17 @@ export default {
       billLoading: false,
       refreshTimer: null,
       tickTimer: null,
-      rawModal: null
+      rawModal: null,
+      invites: [],
+      grants: [],
+      accessError: '',
+      inviteModal: null
     }
   },
   computed: {
+    visibleTabs() {
+      return this.tabs.filter((t) => !t.adminOnly || this.isAdmin)
+    },
     configChips() {
       return [
         { key: 'lp_apikey',         label: 'API-ключ',      set: !!this.savedSettings.lp_apikey },
@@ -842,6 +987,8 @@ export default {
         this.loadRequests()
       } else if (tab === 'webhooks') {
         this.loadWebhooks()
+      } else if (tab === 'access') {
+        if (this.isAdmin) this.loadAccess()
       }
     },
     startAutoRefresh() {
@@ -933,6 +1080,93 @@ export default {
     },
     copyRequestId(r) {
       if (r && r.requestId) this.copyText(r.requestId)
+    },
+
+    /* ====== Управление доступом (Admin) ====== */
+    async loadAccess() {
+      this.accessError = ''
+      try {
+        const [invRes, grRes] = await Promise.all([
+          fetch(this.apiUrls?.accessInvites, { headers: { Accept: 'application/json' } }),
+          fetch(this.apiUrls?.accessGrants, { headers: { Accept: 'application/json' } })
+        ])
+        const invData = await invRes.json().catch(() => ({}))
+        const grData = await grRes.json().catch(() => ({}))
+        this.invites = invData && invData.success ? invData.invites || [] : []
+        this.grants = grData && grData.success ? grData.grants || [] : []
+        if (!(invData && invData.success) || !(grData && grData.success)) {
+          this.accessError = 'Не удалось загрузить данные доступа.'
+        }
+      } catch (e) {
+        this.accessError = 'Не удалось загрузить данные доступа.'
+      }
+    },
+    openInviteModal() {
+      this.inviteModal = { note: '', creating: false, error: '', result: null }
+    },
+    closeInviteModal() {
+      this.inviteModal = null
+      this.loadAccess()
+    },
+    async createInvite() {
+      if (!this.inviteModal || this.inviteModal.creating) return
+      this.inviteModal.creating = true
+      this.inviteModal.error = ''
+      try {
+        const resp = await fetch(this.apiUrls?.accessGenerateInvite, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ note: this.inviteModal.note || '' })
+        })
+        const data = await resp.json().catch(() => ({}))
+        if (data && data.success) {
+          this.inviteModal.result = { fullUrl: data.fullUrl, expiresAt: data.expiresAt }
+        } else {
+          this.inviteModal.error = (data && data.error) || 'Не удалось создать ссылку.'
+        }
+      } catch (e) {
+        this.inviteModal.error = 'Не удалось создать ссылку.'
+      } finally {
+        if (this.inviteModal) this.inviteModal.creating = false
+      }
+    },
+    async revokeInvite(inviteId) {
+      try {
+        await fetch(this.apiUrls?.accessRevokeInvite, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ inviteId })
+        })
+      } catch (e) {
+        // ignore — обновим список ниже
+      }
+      this.loadAccess()
+    },
+    async revokeGrant(userId) {
+      try {
+        await fetch(this.apiUrls?.accessRevokeGrant, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId })
+        })
+      } catch (e) {
+        // ignore — обновим список ниже
+      }
+      this.loadAccess()
+    },
+    inviteStatusLabel(status) {
+      switch (status) {
+        case 'active': return 'активна'
+        case 'used': return 'использована'
+        case 'revoked': return 'отозвана'
+        case 'expired': return 'истекла'
+        default: return status
+      }
+    },
+    inviteStatusClass(status) {
+      if (status === 'active') return 'cell-ok'
+      if (status === 'revoked' || status === 'expired') return 'cell-err'
+      return ''
     },
 
     /* ====== Raw payload modal ====== */
@@ -1145,6 +1379,27 @@ export default {
   min-height: 100vh;
   background: transparent;
   position: relative;
+}
+
+/* ====== Управление доступом ====== */
+.access-block {
+  margin-bottom: 2rem;
+}
+.access-block-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+.access-block-head h3 {
+  margin: 0;
+  font-size: 1rem;
+  color: var(--color-text, #e8e8e8);
+}
+.access-block-head h3 i {
+  color: var(--color-accent, #d3234b);
+  margin-right: 0.4rem;
 }
 
 .content-wrapper { padding: 1.5rem 0 2rem; }
