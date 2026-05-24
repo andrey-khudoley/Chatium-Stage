@@ -36,7 +36,9 @@ import {
   parseWebhookBody,
   checkWebhookToken,
   unwrapWebhookBody,
-  extractMultipartTextPayload
+  readWebhookDataField,
+  extractDataFromRawMultipart,
+  isSuccessfulPayment
 } from '../webhook/processWebhook'
 import { classifyInvite } from '../access/invites'
 import { decideInternalAccess } from '../access/requireInternalAccess'
@@ -66,6 +68,19 @@ function tryPush(
 ): void {
   try {
     push(results, id, title, fn())
+  } catch (e) {
+    push(results, id, title, false, (e as Error)?.message ?? String(e))
+  }
+}
+
+async function tryPushAsync(
+  results: LifepayUnitTestResult[],
+  id: string,
+  title: string,
+  fn: () => Promise<boolean>
+): Promise<void> {
+  try {
+    push(results, id, title, await fn())
   } catch (e) {
     push(results, id, title, false, (e as Error)?.message ?? String(e))
   }
@@ -608,70 +623,78 @@ function runWebhookParseChecks(results: LifepayUnitTestResult[]): void {
 
   tryPush(
     results,
-    'lp_webhook_multipart_files_data_string',
-    'extractMultipartTextPayload: req.files.data — строка',
+    'lp_webhook_raw_multipart_extract',
+    'extractDataFromRawMultipart: достаёт поле data из сырого multipart-тела',
     () => {
-      const got = extractMultipartTextPayload(
-        { data: '{"number":"M1","status":"success"}' },
-        undefined
-      )
-      return (
-        got !== undefined &&
-        typeof (got as Record<string, unknown>).data === 'string' &&
-        (got as Record<string, unknown>).data === '{"number":"M1","status":"success"}'
-      )
+      const json = '{"number":"M4","status":"success"}'
+      const raw =
+        '--BOUNDARY\r\n' +
+        'Content-Disposition: form-data; name="data"\r\n' +
+        '\r\n' +
+        json +
+        '\r\n--BOUNDARY--\r\n'
+      if (extractDataFromRawMultipart(raw, 'data') !== json) return false
+      // нет нужного поля → null
+      if (extractDataFromRawMultipart(raw, 'other') !== null) return false
+      // не multipart → null
+      if (extractDataFromRawMultipart('{"plain":"json"}', 'data') !== null) return false
+      return true
     }
   )
 
   tryPush(
     results,
-    'lp_webhook_multipart_files_data_wrapped',
-    'extractMultipartTextPayload: req.files.data — обёртка {content:"<json>"}',
+    'lp_webhook_success_condition',
+    'isSuccessfulPayment: только payment+success → true',
     () => {
-      const got = extractMultipartTextPayload(
-        { data: { content: '{"number":"M2"}' } },
-        undefined
-      ) as Record<string, unknown> | undefined
-      return !!got && typeof got.data === 'string' && got.data === '{"number":"M2"}'
+      const make = (type: string, status: string) =>
+        isSuccessfulPayment({ number: '1', type, status, method: 'sbp', amount: '1.00', orderNumber: 'O', email: '' })
+      if (make('payment', 'success') !== true) return false
+      if (make('payment', 'fail') !== false) return false
+      if (make('refund', 'success') !== false) return false
+      if (make('', '') !== false) return false
+      return true
+    }
+  )
+}
+
+async function runWebhookReadChecks(results: LifepayUnitTestResult[]): Promise<void> {
+  // FormData с текстовым полем `data` (типичный LifePay-multipart).
+  await tryPushAsync(
+    results,
+    'lp_webhook_formdata_string',
+    'readWebhookDataField: текстовое поле data → строка',
+    async () => {
+      const form = { get: (k: string) => (k === 'data' ? '{"number":"F1"}' : null) }
+      return (await readWebhookDataField(form, 'data')) === '{"number":"F1"}'
     }
   )
 
-  tryPush(
+  // FormData, где `data` пришёл File-подобным объектом — читаем через .text().
+  await tryPushAsync(
     results,
-    'lp_webhook_multipart_fields_data',
-    'extractMultipartTextPayload: data в req.fields, не в req.files',
-    () => {
-      const got = extractMultipartTextPayload(
-        undefined,
-        { data: '{"number":"M3"}' }
-      ) as Record<string, unknown> | undefined
-      return !!got && typeof got.data === 'string' && got.data === '{"number":"M3"}'
+    'lp_webhook_formdata_file',
+    'readWebhookDataField: File-подобное поле → .text()',
+    async () => {
+      const form = {
+        get: (k: string) =>
+          k === 'data' ? { name: 'data', type: 'application/json', text: async () => '{"number":"F2"}' } : null
+      }
+      return (await readWebhookDataField(form, 'data')) === '{"number":"F2"}'
     }
   )
 
-  tryPush(
+  // Поля нет / FormData отсутствует → null.
+  await tryPushAsync(
     results,
-    'lp_webhook_multipart_none',
-    'extractMultipartTextPayload: ни files, ни fields — undefined',
-    () => {
-      const got = extractMultipartTextPayload(undefined, undefined)
-      return got === undefined
-    }
-  )
-
-  tryPush(
-    results,
-    'lp_webhook_multipart_buffer_data',
-    'extractMultipartTextPayload: Buffer-like {type:"Buffer", data:[...bytes]}',
-    () => {
-      const jsonStr = '{"number":"M4"}'
-      const bytes = []
-      for (let i = 0; i < jsonStr.length; i++) bytes.push(jsonStr.charCodeAt(i))
-      const got = extractMultipartTextPayload(
-        { data: { type: 'Buffer', data: bytes } },
-        undefined
-      ) as Record<string, unknown> | undefined
-      return !!got && typeof got.data === 'string' && got.data === jsonStr
+    'lp_webhook_formdata_absent',
+    'readWebhookDataField: нет поля / нет form → null',
+    async () => {
+      const empty = { get: () => null }
+      if ((await readWebhookDataField(empty, 'data')) !== null) return false
+      if ((await readWebhookDataField(null, 'data')) !== null) return false
+      if ((await readWebhookDataField(undefined, 'data')) !== null) return false
+      return true
     }
   )
 }
@@ -759,6 +782,7 @@ export async function runLifepayUnitChecks(): Promise<{
   runRedactRawDeepChecks(results)
   runSettingsValidationChecks(results)
   runWebhookParseChecks(results)
+  await runWebhookReadChecks(results)
   runWebhookTokenChecks(results)
   runAccessChecks(results)
 

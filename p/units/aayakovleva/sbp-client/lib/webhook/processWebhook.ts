@@ -84,6 +84,15 @@ export function parseWebhookBody(body: unknown): ParsedWebhookFields {
 }
 
 /**
+ * Бизнес-условие «успешная оплата» (lifepay/webhooks §1.7): обновление заказа
+ * допустимо только при `type === 'payment'` И `status === 'success'`. Любая другая
+ * комбинация (`refund` / `fail` / прочее) — только запись в журнал, без downstream-действий.
+ */
+export function isSuccessfulPayment(parsed: ParsedWebhookFields): boolean {
+  return parsed.type === 'payment' && parsed.status === 'success'
+}
+
+/**
  * Сверить токен из query со значением в Heap. Точное равенство строк.
  * Расхождение / отсутствие → 401 / 403 без записи в webhook_log.
  *
@@ -236,90 +245,81 @@ export function unwrapWebhookBody(
 }
 
 /**
- * Достать текстовый payload из multipart/form-data полей (`req.files` /
- * `req.fields`), если Chatium-платформа разобрала multipart, но не положила
- * текстовые поля в `req.body`.
- *
- * LifePay шлёт webhook как `multipart/form-data` с одним полем `data`,
- * содержащим JSON-строку транзакции. Возможные shape-ы в Chatium:
- *   - `req.files.data = "<json>"` (строка),
- *   - `req.files.data = { data: "<json>" }` (объект с полем),
- *   - `req.files.data = { content/data/value/text: "<json>" }` (поле в обёртке),
- *   - `req.fields.data = "<json>"` (если Chatium разделяет files и fields).
- *
- * Возвращает «как бы distinguished body» совместимое с `unwrapWebhookBody`:
- *   - если нашли одно текстовое поле — отдадим `{ <fieldName>: "<json>" }`
- *     (затем unwrap превратит в JSON-объект),
- *   - если поле уже выглядит JSON-объектом — отдадим объект напрямую,
- *   - если ничего полезного не нашлось — вернёт `undefined`.
+ * Минимальный контракт File-подобного объекта, который `req.formData()` отдаёт
+ * для полей-файлов (chatium/multipart-form-data): `.name`, `.type`, `.text()`.
  */
-export function extractMultipartTextPayload(
-  files: unknown,
-  fields: unknown
-): unknown | undefined {
-  const candidates: Array<Record<string, unknown>> = []
-  if (files && typeof files === 'object' && !Array.isArray(files)) {
-    candidates.push(files as Record<string, unknown>)
-  }
-  if (fields && typeof fields === 'object' && !Array.isArray(fields)) {
-    candidates.push(fields as Record<string, unknown>)
-  }
-  if (candidates.length === 0) return undefined
+export type FileLike = {
+  name?: string
+  type?: string
+  text: () => Promise<string>
+}
 
-  // Сначала ищем поле "data" — оно по контракту LifePay.
-  for (const c of candidates) {
-    const v = c.data
-    const flattened = flattenMultipartField(v)
-    if (flattened !== undefined) {
-      return { data: flattened }
-    }
-  }
+/** Минимальный контракт результата `req.formData()` (стандартный FormData). */
+export type FormDataLike = {
+  get: (key: string) => string | FileLike | null
+}
 
-  // Иначе пробуем все ключи: если ровно одно поле — отдаём его как обёртку.
-  for (const c of candidates) {
-    const keys = Object.keys(c)
-    if (keys.length === 1) {
-      const k = keys[0]
-      const flattened = flattenMultipartField(c[k])
-      if (flattened !== undefined) {
-        return { [k]: flattened }
-      }
-    }
-  }
-
-  // Если несколько полей и среди них нет "data" — отдаём весь объект как есть
-  // (плоский form-like объект, unwrap пройдёт стратегией object/form_flat).
-  for (const c of candidates) {
-    if (Object.keys(c).length > 0) {
-      return c
-    }
-  }
-
-  return undefined
+function isFileLike(v: unknown): v is FileLike {
+  return !!v && typeof v === 'object' && typeof (v as { text?: unknown }).text === 'function'
 }
 
 /**
- * Достать значение текстового multipart-поля независимо от того, отдала ли
- * платформа его как строку, Buffer-подобный объект или контейнер с полем
- * `data/content/value/text`.
+ * Канонический способ прочитать тело webhook LifePay (chatium/multipart-form-data,
+ * патч Chatium 18-05-2026): из `req.formData()` достать текстовое поле `data`
+ * (JSON-строка транзакции). LifePay присылает `data` строкой; если платформа
+ * представит его File-подобным объектом — читаем через `.text()`.
+ *
+ * Возвращает строку значения поля или `null`, если FormData нет, поля нет,
+ * либо значение не читается как текст.
  */
-function flattenMultipartField(v: unknown): string | undefined {
-  if (typeof v === 'string') return v
-  if (v && typeof v === 'object' && !Array.isArray(v)) {
-    const o = v as Record<string, unknown>
-    // Buffer-like: { type: 'Buffer', data: number[] }
-    if (Array.isArray(o.data) && (o.data as unknown[]).every((n) => typeof n === 'number')) {
-      try {
-        const bytes = (o.data as number[]).filter((n) => n >= 0 && n < 256)
-        return String.fromCharCode(...bytes)
-      } catch {
-        // ignore
-      }
-    }
-    for (const k of ['content', 'value', 'text', 'data', 'body', 'string']) {
-      const inner = o[k]
-      if (typeof inner === 'string') return inner
+export async function readWebhookDataField(
+  form: FormDataLike | null | undefined,
+  field = 'data'
+): Promise<string | null> {
+  if (!form || typeof form.get !== 'function') return null
+  let value: unknown
+  try {
+    value = form.get(field)
+  } catch {
+    return null
+  }
+  if (typeof value === 'string') return value
+  if (isFileLike(value)) {
+    try {
+      const text = await value.text()
+      return typeof text === 'string' ? text : null
+    } catch {
+      return null
     }
   }
-  return undefined
+  return null
+}
+
+/** Экранировать строку для безопасной вставки в RegExp. */
+function escapeRegExp(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
+/**
+ * Защитный разбор СЫРОГО тела `multipart/form-data` строкой — на случай, если
+ * `req.formData()` в рантайме недоступен, а тело пришло как `req.rawBody` /
+ * `req.rawHttpBody`. Достаёт значение текстовой части с именем `field`
+ * (по умолчанию `data`). Возвращает строку значения или `null`.
+ *
+ * Формат части: `Content-Disposition: form-data; name="data"`, пустая строка,
+ * затем значение до следующего boundary (строка вида `--boundary`).
+ */
+export function extractDataFromRawMultipart(rawText: string, field = 'data'): string | null {
+  if (typeof rawText !== 'string' || rawText.indexOf('Content-Disposition') < 0) return null
+  const nameRe = new RegExp(`name="${escapeRegExp(field)}"`)
+  // Нормализуем CRLF → LF и режем по boundary-маркерам `\n--`.
+  const parts = rawText.replace(/\r\n/g, '\n').split(/\n--/)
+  for (const part of parts) {
+    if (!nameRe.test(part)) continue
+    const sep = part.indexOf('\n\n')
+    if (sep < 0) continue
+    const value = part.slice(sep + 2).trim()
+    if (value) return value
+  }
+  return null
 }

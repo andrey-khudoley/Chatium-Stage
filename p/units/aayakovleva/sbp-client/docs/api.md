@@ -82,14 +82,21 @@
 
 ### Контракт `/webhook`
 
-Внешний (LifePay → клиент), apidoc.life-pay.ru/notification:
-- Метод: `POST`, формат JSON.
+Внешний (LifePay → клиент), контракт — `../project-docs/knowledge/lifepay/webhooks.md` §1:
+- Метод: `POST`. Транспорт — `multipart/form-data` с единственным текстовым полем
+  `data` (JSON-строка транзакции), подтверждён живым webhook 2026-05-20. Подпись
+  LifePay не публикует — аутентификация только токеном в query.
 - Query: `?token=<lp_webhook_token>`.
-- Тело: payload в ключе `data` (либо JSON-обёртка `{"data":{...}}`, либо
-  `application/x-www-form-urlencoded` с полем `data=<urlencoded-json>`).
-  `lib/webhook/processWebhook.unwrapWebhookBody` снимает обёртку и поддерживает
-  также чистый JSON-объект / JSON-строку / плоский form-encoded — для гибкости
-  к разным версиям LifePay.
+- Чтение тела (`web/webhook/index.tsx`) — канонический `req.formData()` (Chatium native
+  multipart с патча 18-05-2026, см. `../project-docs/knowledge/chatium/multipart-form-data.md`).
+  Порядок источников с фоллбэками:
+  1. `req.formData()` → поле `data` (`readWebhookDataField`) — основной путь LifePay;
+  2. `req.body` → `unwrapWebhookBody` (если придёт `application/json` или
+     `x-www-form-urlencoded`, в т.ч. обёртка `{data:"<json>"}` / `{"data":{...}}`);
+  3. сырое тело строкой → `extractDataFromRawMultipart` (защитный фоллбэк, если
+     `req.formData()` недоступен в рантайме).
+  Выбранный источник и стратегия пишутся в лог `webhook_payload_parsed`
+  (`source`, `strategy`).
 - Поля payload (внутри `data`): `number`, `original_number`, `type` (payment/refund),
   `status` (success/fail), `method` (card / cash / recurrent / internetAcquiring /
   mobileInternetAcquiring), `terminal_serial`, `recipient_inn`, `operator_login`,
@@ -106,6 +113,10 @@
 - Токен отсутствует в query → 401, без тела, без записи.
 - Токен не совпадает → 403, без тела, без записи (значение в логи не попадает).
 - Токен валиден → запись в `webhook_log` (`tokenValid: true`, `duplicate` по результату дедупа), ответ 200 OK с `OK`.
+- Бизнес-исход: обновление заказа в GetCourse допустимо только при `type='payment'`
+  + `status='success'` (`isSuccessfulPayment`). В Прототипе обработка заканчивается
+  журналом; флаг `eligibleForOrderUpdate` пишется в лог `webhook_done` для будущего
+  downstream-вызова (MVP §2.8).
 - При не-200 ответе LifePay повторяет webhook: 1 мин, 3 мин, 5 мин, 10 мин,
   далее раз в час, всего не более 10 попыток. Поэтому даже при ошибке записи
   в журнал отвечаем 200 OK — дедупликация по `number` через `webhook_idempotency`
