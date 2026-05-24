@@ -227,7 +227,7 @@ export const someRoute = app.post('/').handle(async (ctx, req) => {
 
 #### 1.11.2. Утилита `lib/access/requireInternalAccess.ts`
 
-- [ ] Файл `lib/access/requireInternalAccess.ts`:
+- [x] Файл `lib/access/requireInternalAccess.ts`:
 
   ```ts
   import type { app } from '@app/types'  // или эквивалент
@@ -262,7 +262,7 @@ export const someRoute = app.post('/').handle(async (ctx, req) => {
   }
   ```
 
-- [ ] Юниты в `lib/tests/lifepayUnitSuite.ts` (или новый `accessUnitSuite.ts`):
+- [x] Юниты в `lib/tests/lifepayUnitSuite.ts` (или новый `accessUnitSuite.ts`):
   - `access_admin_passes` - mock `ctx.user.is('Admin') = true` → не бросает.
   - `access_grant_passes` - non-admin user, есть запись `panel_access` без `revokedAt` → не бросает.
   - `access_grant_revoked` - non-admin, запись с `revokedAt` → бросает `InternalAccessDeniedError`.
@@ -270,9 +270,9 @@ export const someRoute = app.post('/').handle(async (ctx, req) => {
 
 #### 1.11.3. Утилиты управления инвайтами `lib/access/invites.ts`
 
-- [ ] `generateInvite(ctx, options?: { note?: string }) → Promise<{ inviteId, token, fullUrl, expiresAt }>` - **Admin-only внутри**, ожидает что caller уже сделал `requireAccountRole(ctx, 'Admin')`. Генерирует `token = await accountNanoid(ctx)` (или `accountNanoid(ctx)` если синхронный), длина гарантируется ≥ 32; создаёт запись в `panel_invites` с `createdByUserId = ctx.user.id`, `expiresAt = now + 7d`; возвращает данные для UI. `fullUrl` - `<base>/p/units/aayakovleva/sbp-client/web/access/invite?token=<token>`.
+- [x] `generateInvite(ctx, options?: { note?: string }) → Promise<{ inviteId, token, fullUrl, expiresAt }>` - **Admin-only внутри**, ожидает что caller уже сделал `requireAccountRole(ctx, 'Admin')`. Генерирует `token = await accountNanoid(ctx)` (или `accountNanoid(ctx)` если синхронный), длина гарантируется ≥ 32; создаёт запись в `panel_invites` с `createdByUserId = ctx.user.id`, `expiresAt = now + 7d`; возвращает данные для UI. `fullUrl` - `<base>/p/units/aayakovleva/sbp-client/web/access/invite?token=<token>`.
 
-- [ ] `consumeInvite(ctx, token: string) → Promise<{ ok: true, grantId } | { ok: false, reason: 'unknown' | 'used' | 'revoked' | 'expired' | 'already_has_access' }>` - под `runWithExclusiveLock(ctx, 'invite:' + token, async (lockCtx) => { ... })`. **Важно: инвайт расходуется только в самом конце, при успешном создании grant'a. Любая ранняя ветка отказа не помечает инвайт `usedAt` и не меняет его состояние - инвайт остаётся валидным для следующей попытки.**
+- [x] `consumeInvite(ctx, token: string) → Promise<{ ok: true, grantId } | { ok: false, reason: 'unknown' | 'used' | 'revoked' | 'expired' | 'already_has_access' }>` - под `runWithExclusiveLock(ctx, 'invite:' + token, async (lockCtx) => { ... })`. **Важно: инвайт расходуется только в самом конце, при успешном создании grant'a. Любая ранняя ветка отказа не помечает инвайт `usedAt` и не меняет его состояние - инвайт остаётся валидным для следующей попытки.**
   1. Найти запись по `token`. Нет → `{ ok: false, reason: 'unknown' }`, **инвайт не трогаем**.
   2. `usedAt` уже есть → `{ ok: false, reason: 'used' }`, **инвайт не трогаем** (он уже в конечном состоянии).
   3. `revokedAt` есть → `{ ok: false, reason: 'revoked' }`, **инвайт не трогаем**.
@@ -282,11 +282,11 @@ export const someRoute = app.post('/').handle(async (ctx, req) => {
   7. **Только теперь** пометить инвайт `usedAt = now`, `usedByUserId = ctx.user.id`. С этого момента инвайт переходит в `used` и больше не может быть использован.
   8. Вернуть `{ ok: true, grantId }`.
 
-- [ ] `revokeInvite(ctx, inviteId: string)` - **Admin-only внутри**. Проставляет `revokedAt = now` на инвайт. На уже использованные инвайты не влияет (доступ уже выдан, его надо отзывать отдельно через `revokeGrant`).
+- [x] `revokeInvite(ctx, inviteId: string)` - **Admin-only внутри**. Проставляет `revokedAt = now` на инвайт. На уже использованные инвайты не влияет (доступ уже выдан, его надо отзывать отдельно через `revokeGrant`).
 
-- [ ] `revokeGrant(ctx, userId: string)` - **Admin-only внутри**. Проставляет `revokedAt` + `revokedByUserId` на запись `panel_access`. При следующем `requireInternalAccess` пользователь получит 403.
+- [x] `revokeGrant(ctx, userId: string)` - **Admin-only внутри**. Проставляет `revokedAt` + `revokedByUserId` на запись `panel_access`. При следующем `requireInternalAccess` пользователь получит 403.
 
-- [ ] Юниты:
+- [x] Юниты:
   - `invite_generated_token_length_min_32` - токен ≥ 32 символа.
   - `invite_consume_unknown_token` - возвращает `{ ok: false, reason: 'unknown' }`; **инвайт-таблица не модифицируется** (поскольку записи и нет).
   - `invite_consume_already_used` - повторный вызов с тем же токеном после успешного потребления возвращает `{ ok: false, reason: 'used' }`. **Состояние инвайта не меняется** (поля `usedAt`/`usedByUserId` остаются от первого потребления, не перезаписываются).
@@ -301,7 +301,7 @@ export const someRoute = app.post('/').handle(async (ctx, req) => {
 
 > **Жизненный цикл инвайта (норматив).** Сам факт перехода по URL и рендера страницы **не расходует** инвайт. Пользователь может открыть ссылку, закрыть вкладку, открыть снова, переслать кому-то - инвайт остаётся активным. Расходование происходит **только** при успешном `POST /api/access/consume-invite` (см. §1.11.5), то есть при нажатии авторизованным пользователем кнопки «Подтвердить». После этого инвайт переходит в состояние `used` и больше не активен. До этого момента ссылка валидна столько раз, сколько по ней зайдут (в пределах TTL и пока Admin не отозвал).
 
-- [ ] Файл `web/access/invite/index.tsx`:
+- [x] Файл `web/access/invite/index.tsx`:
   1. Прочитать `req.query.token` (string).
   2. Если не указан → HTTP 400, страница «Некорректная ссылка».
   3. Попытаться `requireRealUser(ctx)` в try/catch. Если бросило (анонимный/не авторизован):
@@ -316,24 +316,24 @@ export const someRoute = app.post('/').handle(async (ctx, req) => {
 
 #### 1.11.5. API `consume-invite`, `generate-invite`, `revoke-invite`, `revoke-grant`, списки
 
-- [ ] `POST /api/access/consume-invite` - `requireRealUser(ctx)` (без `requireInternalAccess` - суть в том, что у юзера ещё нет доступа); тело `{ token: string }`; вызывает `consumeInvite(ctx, token)`. Ответ:
+- [x] `POST /api/access/consume-invite` - `requireRealUser(ctx)` (без `requireInternalAccess` - суть в том, что у юзера ещё нет доступа); тело `{ token: string }`; вызывает `consumeInvite(ctx, token)`. Ответ:
   - `{ ok: true, redirectTo: '/' }` при успехе.
   - `{ ok: false, reason }` при отказе (HTTP 400 для `unknown`/`used`/`revoked`/`expired`, HTTP 200 + `reason: 'already_has_access'` с `redirectTo: '/'`).
   - Логирование: `access.invite_consumed` (поля `inviteId`, `userId`, без токена), `access.invite_invalid` (с `reason`).
 
-- [ ] `POST /api/access/generate-invite` - `requireRealUser(ctx)` + `requireAccountRole(ctx, 'Admin')`; тело `{ note?: string }`; вызывает `generateInvite`. Ответ - JSON с `{ inviteId, token, fullUrl, expiresAt }`. Логирование: `access.invite_generated` (`inviteId`, `createdByUserId`, **без токена**, токен в логи не пишется).
+- [x] `POST /api/access/generate-invite` - `requireRealUser(ctx)` + `requireAccountRole(ctx, 'Admin')`; тело `{ note?: string }`; вызывает `generateInvite`. Ответ - JSON с `{ inviteId, token, fullUrl, expiresAt }`. Логирование: `access.invite_generated` (`inviteId`, `createdByUserId`, **без токена**, токен в логи не пишется).
 
-- [ ] `POST /api/access/revoke-invite` - `requireRealUser` + `requireAccountRole('Admin')`; тело `{ inviteId }`; вызывает `revokeInvite`. Ответ `{ ok: true }`.
+- [x] `POST /api/access/revoke-invite` - `requireRealUser` + `requireAccountRole('Admin')`; тело `{ inviteId }`; вызывает `revokeInvite`. Ответ `{ ok: true }`.
 
-- [ ] `POST /api/access/revoke-grant` - `requireRealUser` + `requireAccountRole('Admin')`; тело `{ userId }`; вызывает `revokeGrant`. Ответ `{ ok: true }`. **Защита от селф-отзыва Admin'ом самого себя** - не нужна (Admin всегда проходит через ветку `ctx.user.is('Admin')` в `requireInternalAccess`, запись в `panel_access` для Admin не создаётся и не нужна).
+- [x] `POST /api/access/revoke-grant` - `requireRealUser` + `requireAccountRole('Admin')`; тело `{ userId }`; вызывает `revokeGrant`. Ответ `{ ok: true }`. **Защита от селф-отзыва Admin'ом самого себя** - не нужна (Admin всегда проходит через ветку `ctx.user.is('Admin')` в `requireInternalAccess`, запись в `panel_access` для Admin не создаётся и не нужна).
 
-- [ ] `GET /api/access/invites` - `requireRealUser` + `requireAccountRole('Admin')`; возвращает список инвайтов с метаданными (без поля `token` - токен показан Admin'у только в момент генерации, потом восстановить нельзя). Поля: `inviteId`, `note`, `createdByDisplayName`, `createdAt`, `expiresAt`, `usedAt`, `usedByDisplayName`, `revokedAt`, `status` (вычисляемое: `active` / `used` / `revoked` / `expired`).
+- [x] `GET /api/access/invites` - `requireRealUser` + `requireAccountRole('Admin')`; возвращает список инвайтов с метаданными (без поля `token` - токен показан Admin'у только в момент генерации, потом восстановить нельзя). Поля: `inviteId`, `note`, `createdByDisplayName`, `createdAt`, `expiresAt`, `usedAt`, `usedByDisplayName`, `revokedAt`, `status` (вычисляемое: `active` / `used` / `revoked` / `expired`).
 
-- [ ] `GET /api/access/grants` - `requireRealUser` + `requireAccountRole('Admin')`; возвращает список активных и отозванных grant'ов. Поля: `userId`, `userDisplayName`, `userEmail`, `grantedAt`, `grantedByDisplayName`, `inviteId`, `revokedAt`, `revokedByDisplayName`.
+- [x] `GET /api/access/grants` - `requireRealUser` + `requireAccountRole('Admin')`; возвращает список активных и отозванных grant'ов. Поля: `userId`, `userDisplayName`, `userEmail`, `grantedAt`, `grantedByDisplayName`, `inviteId`, `revokedAt`, `revokedByDisplayName`.
 
 #### 1.11.6. Страница 403 `/web/forbidden`
 
-- [ ] Файл `web/forbidden/index.tsx`:
+- [x] Файл `web/forbidden/index.tsx`:
   1. `requireRealUser(ctx)` (если анонимный - редирект на `/s/auth/signin?back=/`).
   2. Если `ctx.user.is('Admin')` либо есть активный grant - редирект на `/` (нет смысла показывать 403 тем, у кого есть доступ).
   3. Иначе - рендерить страницу с сообщением: «У вас нет доступа к панели управления интеграцией LifePay. Текущий аккаунт: `<displayName>` (`<email>`). Попросите администратора создать для вас пригласительную ссылку.» Кнопки: «Выйти и войти под другим аккаунтом» (POST `/s/auth/sign-out` → редирект на `/s/auth/signin`).
@@ -341,13 +341,13 @@ export const someRoute = app.post('/').handle(async (ctx, req) => {
 
 #### 1.11.7. UI «Управление доступом» в админке панели
 
-- [ ] Новая вкладка в `pages/PanelHomePage.vue` - **«Доступ»** (видна только если `ctx.user.is('Admin')`, передаётся пропсом `isAdmin: boolean` через SSR). Структура:
+- [x] Новая вкладка в `pages/PanelHomePage.vue` - **«Доступ»** (видна только если `ctx.user.is('Admin')`, передаётся пропсом `isAdmin: boolean` через SSR). Структура:
   - Блок «Пригласительные ссылки»: таблица текущих и прошлых инвайтов (поля из `GET /api/access/invites`), кнопка «Создать ссылку» (открывает модалку с полем «комментарий» и кнопкой «Создать»; после создания - показывает полный URL с кнопкой «Скопировать»; **токен показывается один раз**, далее в списке отображается только `inviteId` и `note`). У активных инвайтов кнопка «Отозвать».
   - Блок «Выданные доступы»: таблица из `GET /api/access/grants`, у активных - кнопка «Отозвать доступ».
 
 #### 1.11.8. Миграция существующих эндпоинтов
 
-- [ ] **Все 6 эндпоинтов `api/lp/*`** заменить:
+- [x] **Все 6 эндпоинтов `api/lp/*`** заменить:
   ```ts
   // было (только в комментарии, без вызова):
   // Admin-only
@@ -358,7 +358,7 @@ export const someRoute = app.post('/').handle(async (ctx, req) => {
   ```
   Это закрывает auth-разрыв из аудита 24-05-2026 для: `api/lp/invoke`, `api/lp/recent-requests`, `api/lp/recent-webhooks`, `api/lp/raw-request`, `api/lp/raw-webhook`, `api/lp/search-by-request-id`, плюс `api/lp/analytics/summary`.
 
-- [ ] **Страница панели `/` (`pages/PanelHomePage.vue` через `web/admin/index.tsx` или эквивалент)** - заменить `requireAccountRole(ctx, 'Admin')` на:
+- [x] **Страница панели `/` (`pages/PanelHomePage.vue` через `web/admin/index.tsx` или эквивалент)** - заменить `requireAccountRole(ctx, 'Admin')` на:
   ```ts
   try {
     requireRealUser(ctx)
@@ -372,14 +372,14 @@ export const someRoute = app.post('/').handle(async (ctx, req) => {
   }
   ```
 
-- [ ] **Старый редирект `/web/panel` → `/`** оставить как есть (он не защищён, просто редирект).
+- [x] **Старый редирект `/web/panel` → `/`** оставить как есть (он не защищён, просто редирект).
 
 #### 1.11.9. Что НЕ защищать
 
-- [ ] `POST /web/webhook` - анонимный, токен в query (§1.8.3). Внутреннюю систему прав сюда не применять.
-- [ ] `/web/access/invite` - только `requireRealUser`, без `requireInternalAccess`. **Это критично** - иначе пользователь без доступа никогда не сможет его получить.
-- [ ] `/web/forbidden` - только `requireRealUser`, без `requireInternalAccess`.
-- [ ] `GET /v1/*` payments-gateway - другое приложение, своя модель доступа (§5.6 [operation-manual](./operation-manual.md), заголовки `X-Lp-*`).
+- [x] `POST /web/webhook` - анонимный, токен в query (§1.8.3). Внутреннюю систему прав сюда не применять.
+- [x] `/web/access/invite` - только `requireRealUser`, без `requireInternalAccess`. **Это критично** - иначе пользователь без доступа никогда не сможет его получить.
+- [x] `/web/forbidden` - только `requireRealUser`, без `requireInternalAccess`.
+- [x] `GET /v1/*` payments-gateway - другое приложение, своя модель доступа (§5.6 [operation-manual](./operation-manual.md), заголовки `X-Lp-*`).
 
 #### 1.11.10. Критерий завершения §1.11
 
