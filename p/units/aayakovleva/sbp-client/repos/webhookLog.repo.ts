@@ -14,6 +14,7 @@ export type WebhookLogCreatePayload = {
   method: string
   amount: string
   orderNumber: string
+  correlationId?: string
   tokenValid: boolean
   duplicate: boolean
   processedAt: number
@@ -32,11 +33,12 @@ export async function create(
     payload: {
       number: data.number,
       orderNumber: data.orderNumber,
+      correlationId: data.correlationId || null,
       tokenValid: data.tokenValid,
       duplicate: data.duplicate
     }
   })
-  const row = await WebhookLog.create(ctx, data)
+  const row = await WebhookLog.create(ctx, { ...data, correlationId: data.correlationId || undefined })
   await loggerLib.writeServerLog(ctx, {
     severity: 6,
     message: `[${LOG_MODULE}] create exit`,
@@ -45,6 +47,7 @@ export async function create(
   return row
 }
 
+/** @deprecated используйте findInRange (учитывает фильтр по дате/времени). */
 export async function findRecent(ctx: app.Ctx, limit: number): Promise<WebhookLogRow[]> {
   await loggerLib.writeServerLog(ctx, {
     severity: 6,
@@ -107,6 +110,57 @@ export async function findByOrderNumber(
   return rows
 }
 
+/**
+ * Возвращает webhook-записи с `processedAt >= sinceTimestamp`, свежие первыми.
+ * Внутри cursor-пагинация по 1000 (HARD_BATCH — кэп Heap.findAll). Используется
+ * аналитикой для сумм/счётчиков оплат (поле amount недоступно через countBy).
+ */
+const HARD_BATCH = 1000
+
+/** @deprecated используйте findInRange(ctx, from, to) — обобщённый диапазон. */
+export async function findRecentSince(
+  ctx: app.Ctx,
+  sinceTimestamp: number,
+  limit: number = 5000
+): Promise<WebhookLogRow[]> {
+  await loggerLib.writeServerLog(ctx, {
+    severity: 6,
+    message: `[${LOG_MODULE}] findRecentSince entry`,
+    payload: { sinceTimestamp, limit }
+  })
+
+  const result: WebhookLogRow[] = []
+  let cursor: number | null = null
+
+  while (result.length < limit) {
+    const where: Record<string, unknown> =
+      cursor === null
+        ? { processedAt: { $gte: sinceTimestamp } }
+        : { processedAt: { $gte: sinceTimestamp, $lt: cursor } }
+
+    const remaining = limit - result.length
+    const batchSize = Math.min(HARD_BATCH, remaining)
+
+    const rows = await WebhookLog.findAll(ctx, {
+      where,
+      order: [{ processedAt: 'desc' }],
+      limit: batchSize
+    })
+
+    if (rows.length === 0) break
+    result.push(...rows)
+    cursor = rows[rows.length - 1].processedAt
+    if (rows.length < batchSize) break
+  }
+
+  await loggerLib.writeServerLog(ctx, {
+    severity: 6,
+    message: `[${LOG_MODULE}] findRecentSince exit`,
+    payload: { sinceTimestamp, count: result.length }
+  })
+  return result
+}
+
 export async function countSince(
   ctx: app.Ctx,
   sinceTimestamp: number
@@ -132,4 +186,156 @@ export async function countTokenValidSince(
     processedAt: { $gte: sinceTimestamp },
     tokenValid: true
   })
+}
+
+/**
+ * Условие по `processedAt` для диапазона [from?, to?]. Любая граница необязательна.
+ * Возвращает `{}` если границ нет.
+ */
+function rangeWhere(from?: number, to?: number): Record<string, unknown> {
+  const cond: Record<string, number> = {}
+  if (from !== undefined) cond.$gte = from
+  if (to !== undefined) cond.$lt = to
+  return Object.keys(cond).length > 0 ? { processedAt: cond } : {}
+}
+
+/**
+ * Webhook-записи в диапазоне дат [from?, to?] (Unix ms), свежие первыми. Любая
+ * граница необязательна; без границ — «последние limit записей». Cursor-пагинация
+ * по 1000 (один findAll не запрашивает > 1000). См. requestLog.repo.findInRange.
+ */
+export async function findInRange(
+  ctx: app.Ctx,
+  from?: number,
+  to?: number,
+  limit: number = 5000
+): Promise<WebhookLogRow[]> {
+  await loggerLib.writeServerLog(ctx, {
+    severity: 6,
+    message: `[${LOG_MODULE}] findInRange entry`,
+    payload: { from: from ?? null, to: to ?? null, limit }
+  })
+
+  const result: WebhookLogRow[] = []
+  let cursor: number | null = null
+
+  while (result.length < limit) {
+    const cond: Record<string, number> = {}
+    if (from !== undefined) cond.$gte = from
+    const upper = cursor !== null ? cursor : to
+    if (upper !== undefined) cond.$lt = upper
+    const where: Record<string, unknown> =
+      Object.keys(cond).length > 0 ? { processedAt: cond } : {}
+
+    const remaining = limit - result.length
+    const batchSize = Math.min(HARD_BATCH, remaining)
+
+    const rows = await WebhookLog.findAll(ctx, {
+      where,
+      order: [{ processedAt: 'desc' }],
+      limit: batchSize
+    })
+
+    if (rows.length === 0) break
+    result.push(...rows)
+    cursor = rows[rows.length - 1].processedAt
+    if (rows.length < batchSize) break
+  }
+
+  await loggerLib.writeServerLog(ctx, {
+    severity: 6,
+    message: `[${LOG_MODULE}] findInRange exit`,
+    payload: { from: from ?? null, to: to ?? null, count: result.length }
+  })
+  return result
+}
+
+export async function countInRange(
+  ctx: app.Ctx,
+  from?: number,
+  to?: number
+): Promise<number> {
+  return WebhookLog.countBy(ctx, rangeWhere(from, to))
+}
+
+export async function countStatusSuccessInRange(
+  ctx: app.Ctx,
+  from?: number,
+  to?: number
+): Promise<number> {
+  return WebhookLog.countBy(ctx, { ...rangeWhere(from, to), status: 'success' })
+}
+
+export async function countTokenValidInRange(
+  ctx: app.Ctx,
+  from?: number,
+  to?: number
+): Promise<number> {
+  return WebhookLog.countBy(ctx, { ...rangeWhere(from, to), tokenValid: true })
+}
+
+/**
+ * Webhook по orderNumber в пределах диапазона дат [from?, to?]. Без границ —
+ * как findByOrderNumber. Лимит 100 (один findAll, не превышает кэп 1000).
+ */
+export async function findByOrderNumberInRange(
+  ctx: app.Ctx,
+  orderNumber: string,
+  from?: number,
+  to?: number,
+  limit: number = 100
+): Promise<WebhookLogRow[]> {
+  await loggerLib.writeServerLog(ctx, {
+    severity: 6,
+    message: `[${LOG_MODULE}] findByOrderNumberInRange entry`,
+    payload: { orderNumber, from: from ?? null, to: to ?? null, limit }
+  })
+  const where: Record<string, unknown> = { orderNumber, ...rangeWhere(from, to) }
+  const rows = await WebhookLog.findAll(ctx, {
+    where,
+    order: [{ processedAt: 'desc' }],
+    limit
+  })
+  await loggerLib.writeServerLog(ctx, {
+    severity: 6,
+    message: `[${LOG_MODULE}] findByOrderNumberInRange exit`,
+    payload: { orderNumber, count: rows.length }
+  })
+  return rows
+}
+
+/**
+ * Webhook по correlationId в пределах диапазона дат [from?, to?]. Основной путь
+ * связки с request_log (LifePay не возвращает наш orderNumber в теле webhook).
+ * Без границ — как поиск по всему журналу. Лимит 100 (один findAll, не > кэп 1000).
+ *
+ * Поле `correlationId` намеренно объявлено без `searchable`: `searchable` нужен
+ * только для полнотекстового `searchBy` (008-heap.md §«Полнотекстовый поиск»), а
+ * точный `where`-матч работает по любому полю — ср. фильтры по `requestedAt`,
+ * `status`, `tokenValid` в этом же репозитории, тоже без `searchable`.
+ */
+export async function findByCorrelationIdInRange(
+  ctx: app.Ctx,
+  correlationId: string,
+  from?: number,
+  to?: number,
+  limit: number = 100
+): Promise<WebhookLogRow[]> {
+  await loggerLib.writeServerLog(ctx, {
+    severity: 6,
+    message: `[${LOG_MODULE}] findByCorrelationIdInRange entry`,
+    payload: { correlationId, from: from ?? null, to: to ?? null, limit }
+  })
+  const where: Record<string, unknown> = { correlationId, ...rangeWhere(from, to) }
+  const rows = await WebhookLog.findAll(ctx, {
+    where,
+    order: [{ processedAt: 'desc' }],
+    limit
+  })
+  await loggerLib.writeServerLog(ctx, {
+    severity: 6,
+    message: `[${LOG_MODULE}] findByCorrelationIdInRange exit`,
+    payload: { correlationId, count: rows.length }
+  })
+  return rows
 }

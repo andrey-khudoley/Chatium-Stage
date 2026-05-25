@@ -8,8 +8,11 @@
 
 import * as requestLogRepo from '../../repos/requestLog.repo'
 import * as webhookLogRepo from '../../repos/webhookLog.repo'
+import type { WebhookLogRow } from '../../tables/webhookLog.table'
 import { guardInternalApi } from '../../lib/access/apiGuard'
 import * as loggerLib from '../../lib/logger.lib'
+import { getPanelDateFilter } from '../../lib/settings.lib'
+import { mergeWebhooksById } from '../../shared/correlation'
 
 const LOG_PATH = 'api/lp/search-by-request-id'
 
@@ -30,14 +33,34 @@ export const searchByRequestIdRoute = app.get('/', async (ctx, req) => {
     return { success: false, error: 'requestId обязателен' }
   }
 
-  const row = await requestLogRepo.findByRequestId(ctx, requestId)
+  // Поиск работает в пределах глобального фильтра: запись вне диапазона не находится.
+  const { from, to } = await getPanelDateFilter(ctx)
+  const found = await requestLogRepo.findByRequestId(ctx, requestId)
+  const inRange =
+    !!found &&
+    (from === undefined || found.requestedAt >= from) &&
+    (to === undefined || found.requestedAt < to)
+  const row = inRange ? found : null
+
+  // Связываем webhook по двум ключам: исторический orderNumber (если LifePay его
+  // вернул) и наш correlationId (надёжный путь — LifePay orderNumber в webhook не
+  // присылает). Результаты объединяем без дублей по id.
   let webhooks: unknown[] = []
-  if (row && row.orderNumber) {
-    const whRows = await webhookLogRepo.findByOrderNumber(ctx, row.orderNumber)
-    webhooks = whRows.map((r) => ({
+  if (row) {
+    const [byOrderNumber, byCorrelation] = await Promise.all([
+      row.orderNumber
+        ? webhookLogRepo.findByOrderNumberInRange(ctx, row.orderNumber, from, to)
+        : Promise.resolve<WebhookLogRow[]>([]),
+      row.correlationId
+        ? webhookLogRepo.findByCorrelationIdInRange(ctx, row.correlationId, from, to)
+        : Promise.resolve<WebhookLogRow[]>([])
+    ])
+    const merged = mergeWebhooksById(byOrderNumber, byCorrelation)
+    webhooks = merged.map((r) => ({
       id: r.id,
       number: r.number,
       orderNumber: r.orderNumber,
+      correlationId: r.correlationId ?? null,
       tokenValid: r.tokenValid,
       duplicate: r.duplicate,
       type: r.type,
@@ -54,6 +77,7 @@ export const searchByRequestIdRoute = app.get('/', async (ctx, req) => {
         requestId: row.requestId,
         op: row.op,
         orderNumber: row.orderNumber,
+        correlationId: row.correlationId ?? null,
         argsRedacted: row.argsRedacted,
         clientHttpStatus: row.clientHttpStatus,
         ok: row.ok,
@@ -69,7 +93,12 @@ export const searchByRequestIdRoute = app.get('/', async (ctx, req) => {
   await loggerLib.writeServerLog(ctx, {
     severity: 6,
     message: `[${LOG_PATH}] exit`,
-    payload: { requestId, found: !!row, webhookCount: webhooks.length }
+    payload: {
+      requestId,
+      found: !!row,
+      hasCorrelationId: !!(row && row.correlationId),
+      webhookCount: webhooks.length
+    }
   })
 
   return { success: true, request, webhooks }

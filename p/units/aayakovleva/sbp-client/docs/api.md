@@ -30,9 +30,9 @@
 
 | Method | Path | File | Auth | Назначение |
 | --- | --- | --- | --- | --- |
-| GET | /api/tests/list | api/tests/list.ts | AnyUser | Каталог тестов |
-| GET | /api/tests/unit | api/tests/unit/index.ts | AnyUser | Юнит-набор шаблона + LifePay (lifepayUnitSuite) |
-| GET | /api/tests/integration | api/tests/integration/index.ts | AnyUser | Интеграционный набор |
+| GET | /api/tests/list | api/tests/list.ts | Admin | Каталог тестов |
+| GET | /api/tests/unit | api/tests/unit/index.ts | Admin | Юнит-набор шаблона + LifePay (lifepayUnitSuite) |
+| GET | /api/tests/integration | api/tests/integration/index.ts | Admin | Интеграционный набор |
 
 ## Внутренняя авторизация (api/access/)
 
@@ -53,21 +53,24 @@
 
 | Method | Path | File | Auth | Назначение |
 | --- | --- | --- | --- | --- |
-| POST | /api/lp/invoke | api/lp/invoke.ts | requireRealUser + requireInternalAccess | Прокладка `{ op, args }` → `<gateway_base_url>/api/v1/<op>`. Возвращает тело gateway без изменений; `requestId` из `X-Gateway-Request-Id`. Журналирование в `request_log`. Без ретраев, без `Idempotency-Key`. |
-| GET | /api/lp/recent-requests?limit=&beforeRequestedAt= | api/lp/recent-requests.ts | requireRealUser + requireInternalAccess | Последние записи `request_log` (без полных тел) |
-| GET | /api/lp/recent-webhooks?limit= | api/lp/recent-webhooks.ts | requireRealUser + requireInternalAccess | Последние записи `webhook_log` |
-| GET | /api/lp/analytics/summary?windowHours= | api/lp/analytics/summary.ts | requireRealUser + requireInternalAccess | Карточки: requests {total, okShare, avgDurationMs, p95DurationMs, topErrorCode}, webhooks {total, successShare, tokenValidShare} |
-| GET | /api/lp/search-by-request-id?requestId= | api/lp/search-by-request-id.ts | requireRealUser + requireInternalAccess | `request_log` + связанные `webhook_log` по orderNumber |
+| POST | /api/lp/invoke | api/lp/invoke.ts | requireRealUser + requireInternalAccess | Прокладка `{ op, args }` → `<gateway_base_url>/api/v1/<op>`. Возвращает тело gateway без изменений; `requestId` из `X-Gateway-Request-Id`. Журналирование в `request_log`, включая `correlationId` из `args` (извлекается через `shared/correlation.extractCorrelationId`, **не** пробрасывается в gateway). Без ретраев, без `Idempotency-Key`. |
+| GET | /api/lp/recent-requests?limit= | api/lp/recent-requests.ts | requireRealUser + requireInternalAccess | Последние записи `request_log` в пределах глобального фильтра `panel_date_filter` (без полных тел). Ответ: `{ success, entries, hasMore }`. |
+| GET | /api/lp/recent-webhooks?limit= | api/lp/recent-webhooks.ts | requireRealUser + requireInternalAccess | Последние записи `webhook_log` в пределах глобального фильтра `panel_date_filter`. Ответ: `{ success, entries, hasMore }`. Поле `entries[].orderNumber` обогащается из связанного `request_log` по `correlationId`, если в самом webhook оно пустое (LifePay SBP-webhook не возвращает orderNumber). Поле `entries[].correlationId` возвращается. Поле `entries[].method` возвращается в ответе, но в UI-таблицах не отображается (убрана колонка «метод»). |
+| GET | /api/lp/analytics/summary | api/lp/analytics/summary.ts | requireRealUser + requireInternalAccess | Карточки аналитики за диапазон из глобального фильтра `panel_date_filter` (без параметра `windowHours`). Если фильтр не задан — все данные (до `ANALYTICS_SCAN_LIMIT = 5000`). Ответ: `dateFilter: { from, to }` (null если граница не задана) + `orders { created, paid, createdSum, paidSum }` + `requests { total, okShare, avgDurationMs, p95DurationMs, topErrorCode, topErrorCount }` + `webhooks { total, successShare, tokenValidShare }`. |
+| POST | /api/lp/analytics/filter-save | api/lp/analytics/filter-save.ts | requireRealUser + requireInternalAccess | Сохранить или сбросить глобальный фильтр панели. Тело: `{ from?: number\|null, to?: number\|null }` (Unix ms). Обе границы отсутствуют или null → сброс. Валидация: число > 0; при обеих заданных `from <= to`; иначе 400. Ответ: `{ success, filter: null \| { from?, to? } }`. |
+| GET | /api/lp/search-by-request-id?requestId= | api/lp/search-by-request-id.ts | requireRealUser + requireInternalAccess | `request_log` + связанные `webhook_log`. Связка выполняется по двум ключам одновременно: `correlationId` (основной путь, надёжный) и `orderNumber` (исторический путь). Результаты объединяются без дублей (`mergeWebhooksById`). Поиск работает в пределах глобального фильтра `panel_date_filter`. Ответ включает `request.correlationId` и `webhook[].correlationId`. |
 | GET | /api/lp/raw-request?id=\<heapId\>\|requestId=\<rid\> | api/lp/raw-request.ts | requireRealUser + requireInternalAccess | Полная raw-запись `request_log` со всеми полями включая `rawResponseBody`. Если задан `id` — приоритет по нему; иначе по `requestId`. |
 | GET | /api/lp/raw-webhook?id=\<heapId\> | api/lp/raw-webhook.ts | requireRealUser + requireInternalAccess | Полная raw-запись `webhook_log` включая `rawBody` и `rawQuery` (token замаскирован). Дополнительно возвращает `linkedRequests` и `relatedWebhooks`. |
-| POST | /webhook?token= | web/webhook/index.tsx | Анонимный + токен | Приёмник webhook от LifePay. Сверка токена в query; расхождение/отсутствие → 401/403 без тела и без записи. При валидном → `unwrapWebhookBody` снимает обёртку `data` (см. ниже), `parseWebhookBody` извлекает `number/type/status/method/amount/order.number/email`, запись в `webhook_log` (включая `rawBody`/`rawQuery` через `prepareRawLog` — сырые, без PII-маски) + дедупликация по `number` через `webhook_idempotency`, ответ 200 OK. MD5-подпись webhook **не** проверяется. LifePay-ретраи: 1/3/5/10 мин, далее раз в час, до 10 попыток — дедупликация по `number` защищает от двойного учёта. |
+| POST | /webhook?token=&correlationId= | web/webhook/index.tsx | Анонимный + токен | Приёмник webhook от LifePay. Сверка токена в query; расхождение/отсутствие → 401/403 без тела и без записи. При валидном → `correlationId` извлекается из query (`extractCorrelationId`); `unwrapWebhookBody` снимает обёртку `data`, `parseWebhookBody` извлекает `number/type/status/method/amount/order.number/email`; запись в `webhook_log` (включая `correlationId`, `rawBody`/`rawQuery` через `prepareRawLog` — сырые, без PII-маски) + дедупликация по `number` через `webhook_idempotency`, ответ 200 OK. MD5-подпись webhook **не** проверяется. LifePay-ретраи: 1/3/5/10 мин, далее раз в час, до 10 попыток — дедупликация по `number` защищает от двойного учёта. |
 
 ### Контракт `/api/lp/invoke`
 
 Запрос:
 ```json
-{ "op": "createBill", "args": { "orderNumber": "A1", "amount": 1.0, "customerEmail": "x@y.z", "description": "...", "callbackUrl": "https://.../webhook?token=..." } }
+{ "op": "createBill", "args": { "orderNumber": "A1", "amount": 1.0, "customerEmail": "x@y.z", "description": "...", "callbackUrl": "https://.../webhook?token=...&correlationId=<uuid>", "correlationId": "<uuid>" } }
 ```
+
+`correlationId` в `args` извлекается сервером и сохраняется в `request_log`; в тело запроса к gateway **не** передаётся (отделяется перед `invokeGateway`). `callbackUrl` с `correlationId` в query доходит до LifePay и возвращается приёмнику webhook.
 
 Ответ (зеркало gateway §9.1):
 - Успех: `{ "ok": true, "data": {...}, "requestId": "lp-..." }`.
@@ -128,3 +131,4 @@
 | POST | /web/webhook | web/webhook/index.tsx | Анонимный + токен в query | Приёмник webhook LifePay |
 | GET | /web/access/invite?token= | web/access/invite/index.tsx | requireRealUser | Страница подтверждения инвайта. Переход по ссылке не расходует инвайт; расход — только POST /api/access/consume-invite. |
 | GET | /web/forbidden | web/forbidden/index.tsx | requireRealUser | Страница 403 «Нет доступа к панели». |
+| GET | /web/tests | web/tests/index.tsx | Admin (requireRealUser + requireAccountRole) | Страница тестов. Аноним → /web/login, авторизованный без роли Admin → /web/forbidden. |

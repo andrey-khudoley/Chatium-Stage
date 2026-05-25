@@ -172,6 +172,44 @@ export const UNIT_TEST_BLOCKS: TestCatalogBlock[] = [
     ]
   },
   {
+    id: 'unit-correlation',
+    title: 'Связка webhook по correlationId',
+    description: 'shared/correlation — генерация, сборка callbackUrl, извлечение, дедупликация (без Heap)',
+    tests: [
+      { id: 'lp_correlation_generate_nonempty', title: 'generateCorrelationId: непустые уникальные строки' },
+      { id: 'lp_correlation_append_valid', title: 'appendCorrelationId: добавляет в валидный URL' },
+      { id: 'lp_correlation_append_preserves_token', title: 'appendCorrelationId: сохраняет token' },
+      { id: 'lp_correlation_append_invalid', title: 'appendCorrelationId: невалидный URL → оригинал' },
+      { id: 'lp_correlation_extract_present', title: 'extractCorrelationId: значение из объекта' },
+      { id: 'lp_correlation_extract_absent', title: 'extractCorrelationId: "" при отсутствии' },
+      { id: 'lp_correlation_merge_dedup', title: 'mergeWebhooksById: дедуп по id + сортировка' }
+    ]
+  },
+  {
+    id: 'unit-date-filter',
+    title: 'Фильтр панели по дате/времени',
+    description: 'isValidDateFilter, normalizeDateFilter — чистая валидация без Heap',
+    tests: [
+      { id: 'df_isvalid_empty', title: 'isValidDateFilter({}) → true' },
+      { id: 'df_isvalid_only_from', title: 'isValidDateFilter({from})' },
+      { id: 'df_isvalid_only_to', title: 'isValidDateFilter({to})' },
+      { id: 'df_isvalid_both_ok', title: 'isValidDateFilter(from<to)' },
+      { id: 'df_isvalid_both_equal', title: 'isValidDateFilter(from===to)' },
+      { id: 'df_isvalid_from_gt_to', title: 'isValidDateFilter(from>to) → false' },
+      { id: 'df_isvalid_string_bound', title: 'isValidDateFilter строковая граница → false' },
+      { id: 'df_isvalid_zero', title: 'isValidDateFilter({from:0}) → false' },
+      { id: 'df_isvalid_negative', title: 'isValidDateFilter отрицательная → false' },
+      { id: 'df_isvalid_nan', title: 'isValidDateFilter NaN → false' },
+      { id: 'df_isvalid_non_object', title: 'isValidDateFilter не-объект → false' },
+      { id: 'df_norm_floor', title: 'normalizeDateFilter floor границ' },
+      { id: 'df_norm_only_from', title: 'normalizeDateFilter только from' },
+      { id: 'df_norm_drop_invalid', title: 'normalizeDateFilter отбрасывает невалидное' },
+      { id: 'df_norm_empty_on_from_gt_to', title: 'normalizeDateFilter from>to → {}' },
+      { id: 'df_norm_non_object', title: 'normalizeDateFilter не-объект → {}' },
+      { id: 'df_norm_empty_input', title: 'normalizeDateFilter({}) → {}' }
+    ]
+  },
+  {
     id: 'unit-access',
     title: 'Внутренняя авторизация (ADR 0003)',
     description: 'classifyInvite, decideInternalAccess — чистая логика без Heap',
@@ -221,6 +259,17 @@ export const INTEGRATION_SERVER_TEST_BLOCKS: TestCatalogBlock[] = [
       { id: 'settings_repo_findByKey', title: 'findByKey(project_name)' },
       { id: 'settings_repo_upsert_create_update', title: 'upsert create/update' },
       { id: 'settings_repo_deleteByKey', title: 'deleteByKey' }
+    ]
+  },
+  {
+    id: 'int-date-filter',
+    title: 'Фильтр панели (Heap)',
+    description: 'getPanelDateFilter roundtrip, валидация setSetting, границы выборок репозиториев',
+    tests: [
+      { id: 'df_getPanelDateFilter_roundtrip', title: 'getPanelDateFilter: save → read → reset' },
+      { id: 'df_setSetting_invalid_throws', title: 'setSetting PANEL_DATE_FILTER: невалидное → throw' },
+      { id: 'df_requestlog_range_bounds', title: 'requestLog: countInRange/findInRange границы' },
+      { id: 'df_webhooklog_range_bounds', title: 'webhookLog: countInRange/findInRange/byOrder границы' }
     ]
   },
   {

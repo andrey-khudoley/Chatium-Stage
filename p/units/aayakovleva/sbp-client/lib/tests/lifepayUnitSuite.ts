@@ -30,7 +30,9 @@ import {
   normalizeGatewayBaseUrl,
   isValidGatewayBaseUrl,
   generateWebhookToken,
-  LP_WEBHOOK_TOKEN_MIN_LENGTH
+  LP_WEBHOOK_TOKEN_MIN_LENGTH,
+  isValidDateFilter,
+  normalizeDateFilter
 } from '../settings.lib'
 import {
   parseWebhookBody,
@@ -42,6 +44,12 @@ import {
 } from '../webhook/processWebhook'
 import { classifyInvite } from '../access/invites'
 import { decideInternalAccess } from '../access/requireInternalAccess'
+import {
+  generateCorrelationId,
+  appendCorrelationId,
+  extractCorrelationId,
+  mergeWebhooksById
+} from '../../shared/correlation'
 
 export type LifepayUnitTestResult = {
   id: string
@@ -448,6 +456,72 @@ function runSettingsValidationChecks(results: LifepayUnitTestResult[]): void {
   )
 }
 
+function runDateFilterChecks(results: LifepayUnitTestResult[]): void {
+  // isValidDateFilter — предикат валидности фильтра панели.
+  tryPush(results, 'df_isvalid_empty', 'isValidDateFilter({}) → true (фильтр не задан)', () =>
+    isValidDateFilter({}) === true
+  )
+  tryPush(results, 'df_isvalid_only_from', 'isValidDateFilter({from}) → true', () =>
+    isValidDateFilter({ from: 1000 }) === true
+  )
+  tryPush(results, 'df_isvalid_only_to', 'isValidDateFilter({to}) → true', () =>
+    isValidDateFilter({ to: 2000 }) === true
+  )
+  tryPush(results, 'df_isvalid_both_ok', 'isValidDateFilter(from<to) → true', () =>
+    isValidDateFilter({ from: 1000, to: 2000 }) === true
+  )
+  tryPush(results, 'df_isvalid_both_equal', 'isValidDateFilter(from===to) → true', () =>
+    isValidDateFilter({ from: 1500, to: 1500 }) === true
+  )
+  tryPush(results, 'df_isvalid_from_gt_to', 'isValidDateFilter(from>to) → false', () =>
+    isValidDateFilter({ from: 2000, to: 1000 }) === false
+  )
+  tryPush(results, 'df_isvalid_string_bound', 'isValidDateFilter({from:"x"}) → false', () =>
+    isValidDateFilter({ from: 'x' as unknown as number }) === false
+  )
+  tryPush(results, 'df_isvalid_zero', 'isValidDateFilter({from:0}) → false (нужно > 0)', () =>
+    isValidDateFilter({ from: 0 }) === false
+  )
+  tryPush(results, 'df_isvalid_negative', 'isValidDateFilter({to:-5}) → false', () =>
+    isValidDateFilter({ to: -5 }) === false
+  )
+  tryPush(results, 'df_isvalid_nan', 'isValidDateFilter({from:NaN}) → false', () =>
+    isValidDateFilter({ from: NaN }) === false
+  )
+  tryPush(results, 'df_isvalid_non_object', 'isValidDateFilter(null/строка/число) → false', () =>
+    isValidDateFilter(null) === false &&
+    isValidDateFilter('x') === false &&
+    isValidDateFilter(5) === false
+  )
+
+  // normalizeDateFilter — нормализация (floor, отбрасывание невалидного, {} при from>to).
+  tryPush(results, 'df_norm_floor', 'normalizeDateFilter floors дробные границы', () => {
+    const r = normalizeDateFilter({ from: 1000.9, to: 2000.9 })
+    return r.from === 1000 && r.to === 2000
+  })
+  tryPush(results, 'df_norm_only_from', 'normalizeDateFilter({from}) → only from', () => {
+    const r = normalizeDateFilter({ from: 1500 })
+    return r.from === 1500 && r.to === undefined
+  })
+  tryPush(results, 'df_norm_drop_invalid', 'normalizeDateFilter отбрасывает невалидную границу', () => {
+    const r = normalizeDateFilter({ from: 'x' as unknown as number, to: 2000 })
+    return r.from === undefined && r.to === 2000
+  })
+  tryPush(results, 'df_norm_empty_on_from_gt_to', 'normalizeDateFilter(from>to) → {}', () => {
+    const r = normalizeDateFilter({ from: 5000, to: 1000 })
+    return r.from === undefined && r.to === undefined
+  })
+  tryPush(results, 'df_norm_non_object', 'normalizeDateFilter(null/число) → {}', () => {
+    const a = normalizeDateFilter(null)
+    const b = normalizeDateFilter(42)
+    return a.from === undefined && a.to === undefined && b.from === undefined && b.to === undefined
+  })
+  tryPush(results, 'df_norm_empty_input', 'normalizeDateFilter({}) → {}', () => {
+    const r = normalizeDateFilter({})
+    return r.from === undefined && r.to === undefined
+  })
+}
+
 function runWebhookParseChecks(results: LifepayUnitTestResult[]): void {
   tryPush(
     results,
@@ -731,6 +805,96 @@ function runWebhookTokenChecks(results: LifepayUnitTestResult[]): void {
   )
 }
 
+function runCorrelationChecks(results: LifepayUnitTestResult[]): void {
+  tryPush(
+    results,
+    'lp_correlation_generate_nonempty',
+    'generateCorrelationId возвращает непустые уникальные строки',
+    () => {
+      const a = generateCorrelationId()
+      const b = generateCorrelationId()
+      return typeof a === 'string' && a.length > 0 && typeof b === 'string' && a !== b
+    }
+  )
+
+  tryPush(
+    results,
+    'lp_correlation_append_valid',
+    'appendCorrelationId добавляет correlationId в валидный URL',
+    () => {
+      const r = appendCorrelationId('https://x.test/web/webhook', 'cid-1')
+      return r.appended === true && r.url.includes('correlationId=cid-1')
+    }
+  )
+
+  tryPush(
+    results,
+    'lp_correlation_append_preserves_token',
+    'appendCorrelationId сохраняет существующий token в callbackUrl',
+    () => {
+      const r = appendCorrelationId('https://x.test/web/webhook?token=ABC', 'cid-2')
+      return (
+        r.appended === true &&
+        r.url.includes('token=ABC') &&
+        r.url.includes('correlationId=cid-2')
+      )
+    }
+  )
+
+  tryPush(
+    results,
+    'lp_correlation_append_invalid',
+    'appendCorrelationId на невалидном URL возвращает оригинал без падения',
+    () => {
+      const r = appendCorrelationId('not-a-url', 'cid-3')
+      return r.appended === false && r.url === 'not-a-url'
+    }
+  )
+
+  tryPush(
+    results,
+    'lp_correlation_extract_present',
+    'extractCorrelationId извлекает значение из объекта',
+    () =>
+      extractCorrelationId({ correlationId: 'cid-4' }) === 'cid-4' &&
+      extractCorrelationId({ correlationId: '  cid-5  ' }) === 'cid-5'
+  )
+
+  tryPush(
+    results,
+    'lp_correlation_extract_absent',
+    'extractCorrelationId возвращает "" при отсутствии/неверном типе',
+    () =>
+      extractCorrelationId({}) === '' &&
+      extractCorrelationId(null) === '' &&
+      extractCorrelationId({ correlationId: 42 }) === '' &&
+      extractCorrelationId({ correlationId: '' }) === ''
+  )
+
+  tryPush(
+    results,
+    'lp_correlation_merge_dedup',
+    'mergeWebhooksById убирает дубли по id и сортирует по processedAt desc',
+    () => {
+      const a = [
+        { id: 'w1', processedAt: 100 },
+        { id: 'w2', processedAt: 300 }
+      ]
+      const b = [
+        { id: 'w2', processedAt: 300 },
+        { id: 'w3', processedAt: 200 }
+      ]
+      const merged = mergeWebhooksById(a, b)
+      return (
+        merged.length === 3 &&
+        merged[0].id === 'w2' &&
+        merged[1].id === 'w3' &&
+        merged[2].id === 'w1'
+      )
+    }
+  )
+}
+
 function runAccessChecks(results: LifepayUnitTestResult[]): void {
   const now = 1_000_000
 
@@ -781,9 +945,11 @@ export async function runLifepayUnitChecks(): Promise<{
   runRedactionChecks(results)
   runRedactRawDeepChecks(results)
   runSettingsValidationChecks(results)
+  runDateFilterChecks(results)
   runWebhookParseChecks(results)
   await runWebhookReadChecks(results)
   runWebhookTokenChecks(results)
+  runCorrelationChecks(results)
   runAccessChecks(results)
 
   const passed = results.filter((r) => r.passed).length

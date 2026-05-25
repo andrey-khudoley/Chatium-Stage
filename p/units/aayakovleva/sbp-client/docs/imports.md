@@ -47,7 +47,7 @@
 
 ### `./web/tests/index.tsx`
 - `@app/html-jsx` → `jsx`
-- `@app/auth` → `requireRealUser`
+- `@app/auth` → `requireRealUser`, `requireAccountRole` (страница только для роли Admin)
 - `@app/socket` → `genSocketId`
 - `../../lib/logger.lib` → `getAdminLogsSocketId`
 - `../../pages/TestsPage.vue`
@@ -148,6 +148,12 @@
 ### `./shared/logger.ts`
 - нет импортов (клиентский логгер по syslog RFC 5424: severity -1…7, LOG_LEVEL_OFF=-1, читает window.__BOOT__.logLevel; createComponentLogger, setLogSink, LogEntry)
 
+### `./shared/correlation.ts`
+- первая строка: `// @shared`
+- нет внутренних импортов — чистые функции без Heap/ctx/сети
+- экспортирует: `generateCorrelationId`, `appendCorrelationId`, `extractCorrelationId`, `mergeWebhooksById`
+- используется в: `pages/PanelHomePage.vue` (generateCorrelationId + appendCorrelationId), `api/lp/invoke.ts` (extractCorrelationId), `web/webhook/index.tsx` (extractCorrelationId), `api/lp/search-by-request-id.ts` (mergeWebhooksById), `lib/tests/lifepayUnitSuite.ts` (все четыре функции)
+
 ## 5) Таблицы (tables/)
 
 ### `./tables/settings.table.ts`
@@ -166,6 +172,16 @@
 - `../tables/logs.table` → `Logs`, `LogsRow`
 - `../lib/logger.lib` → `*`
 - экспортирует: `create`, `findAll`, `findById`, `findBeforeTimestamp`, `countBySeverityAfter`, `countErrorsAfter`, `countWarningsAfter`
+
+### `./repos/requestLog.repo.ts`
+- `../tables/requestLog.table` → `RequestLog`, `RequestLogRow`
+- `../lib/logger.lib` → `*`
+- экспортирует: `create`, `findById`, `findByOrderNumber`, `findByRequestId`, `countSince`, `countOkSince`, `findInRange`, `countInRange`, `countOkInRange` (диапазон `$gte/$lt` по `requestedAt`, cursor-пагинация ≤ 1000); `@deprecated`: `findRecent`, `findBeforeRequestedAt`, `findRecentSince`
+
+### `./repos/webhookLog.repo.ts`
+- `../tables/webhookLog.table` → `WebhookLog`, `WebhookLogRow`
+- `../lib/logger.lib` → `*`
+- экспортирует: `create`, `findById`, `findByOrderNumber`, `findByOrderNumberInRange`, `countSince`, `countStatusSuccessSince`, `countTokenValidSince`, `findInRange`, `countInRange`, `countStatusSuccessInRange`, `countTokenValidInRange` (диапазон `$gte/$lt` по `processedAt`); `@deprecated`: `findRecent`, `findRecentSince`
 
 ## 7) Библиотеки (lib/)
 
@@ -227,19 +243,30 @@
 - `../../../lib/admin/dashboard.lib` → `*`
 - `../../../lib/logger.lib` → `*`
 
+### `./api/lp/analytics/filter-save.ts` (новый — глобальный фильтр панели)
+- `../../../lib/access/apiGuard` → `guardInternalApi`
+- `../../../lib/logger.lib` → `*`
+- `../../../lib/settings.lib` → `*` (`setSetting`, `SETTING_KEYS`, `DateFilter`)
+- `../../../repos/settings.repo` → `*` (`deleteByKey` для сброса)
+- POST `/`; тело `{ from?, to? }` (Unix ms), сброс при отсутствии обеих границ; ответ `{ success, filter }`
+
+### `./api/lp/analytics/summary.ts`, `./api/lp/recent-requests.ts`, `./api/lp/recent-webhooks.ts`, `./api/lp/search-by-request-id.ts`
+- общий паттерн: `../../../lib/access/apiGuard`→`guardInternalApi`, `../../../lib/logger.lib`, `repos/*` (`requestLog.repo`, `webhookLog.repo`)
+- читают глобальный фильтр через `lib/settings.lib`→`getPanelDateFilter` и применяют `findInRange`/`countInRange*` (диапазон `$gte/$lt`)
+
 ### `./api/tests/list.ts`
-- `@app/auth` → `requireAnyUser`
+- `@app/auth` → `requireAccountRole` (Admin-only)
 - `../../lib/logger.lib` → `*`
 - `../../shared/testCatalog` → `UNIT_TEST_BLOCKS`, `INTEGRATION_SERVER_TEST_BLOCKS`, `INTEGRATION_HTTP_TEST_BLOCK`, `flattenCatalogBlocks`
 
 ### `./api/tests/unit/index.ts`
-- `@app/auth` → `requireAnyUser`
+- `@app/auth` → `requireAccountRole` (Admin-only)
 - `../../../lib/logger.lib` → `*`
 - `../../../lib/tests/templateUnitSuite` → `runTemplateUnitChecks`, `TemplateUnitTestResult`
 - `../../../lib/tests/logTestRunFailures` → `logTestRunFailures`
 
 ### `./api/tests/integration/index.ts`
-- `@app/auth` → `requireAnyUser`
+- `@app/auth` → `requireAccountRole` (Admin-only)
 - `../../../lib/logger.lib` → `*`
 - `../../../lib/tests/integrationSuite` → `runTemplateIntegrationChecks`
 - `../../../lib/tests/logTestRunFailures` → `logTestRunFailures`
@@ -251,4 +278,8 @@
 - `../logger.lib`, `../settings.lib`, `config/*`, `shared/*`, `shared/testCatalog` — юнит-прогон без Heap
 
 ### `./lib/tests/integrationSuite`
-- `../settings.lib`, `repos/*`, `../admin/dashboard.lib`, `../logger.lib`, `api/settings/*`, `api/logger/log`, `api/admin/*`, `api/tests/list`, `./templateUnitSuite` (`runTemplateUnitChecks`)
+- `../settings.lib`, `repos/*` (включая `requestLog.repo`, `webhookLog.repo` — границы выборок фильтра), `../admin/dashboard.lib`, `../logger.lib`, `api/settings/*`, `api/logger/log`, `api/admin/*`, `api/tests/list`, `./templateUnitSuite` (`runTemplateUnitChecks`)
+- проверки фильтра по дате/времени: `getPanelDateFilter` roundtrip, валидация `setSetting(PANEL_DATE_FILTER)`, границы `findInRange`/`countInRange`
+
+### `./lib/tests/lifepayUnitSuite`
+- `../gateway/buildInvokeUrl`, `../../shared/redact`, `../../shared/redactRaw`, `../../shared/gatewayContract`, `../settings.lib` (валидации, включая `isValidDateFilter`, `normalizeDateFilter`), `../webhook/processWebhook`, `../access/*`, `../../shared/correlation` (generateCorrelationId, appendCorrelationId, extractCorrelationId, mergeWebhooksById — блок `unit-correlation`, 7 тестов) — юнит-прогон без Heap

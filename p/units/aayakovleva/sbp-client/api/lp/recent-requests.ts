@@ -10,6 +10,7 @@ import * as requestLogRepo from '../../repos/requestLog.repo'
 import { guardInternalApi } from '../../lib/access/apiGuard'
 import * as loggerLib from '../../lib/logger.lib'
 import { RECENT_DEFAULT_LIMIT, RECENT_MAX_LIMIT } from '../../lib/gateway/constants'
+import { getPanelDateFilter } from '../../lib/settings.lib'
 
 const LOG_PATH = 'api/lp/recent-requests'
 
@@ -24,24 +25,15 @@ export const recentRequestsRoute = app.get('/', async (ctx, req) => {
   if (denied) return denied
 
   const limit = parseLimit((req.query as Record<string, unknown> | undefined)?.limit)
-  const beforeRequestedAtRaw = (req.query as Record<string, unknown> | undefined)?.beforeRequestedAt
-  const beforeRequestedAt =
-    typeof beforeRequestedAtRaw === 'string'
-      ? parseInt(beforeRequestedAtRaw, 10)
-      : typeof beforeRequestedAtRaw === 'number'
-      ? beforeRequestedAtRaw
-      : NaN
+  const { from, to } = await getPanelDateFilter(ctx)
 
   await loggerLib.writeServerLog(ctx, {
     severity: 6,
     message: `[${LOG_PATH}] entry`,
-    payload: { limit, beforeRequestedAt }
+    payload: { limit, from: from ?? null, to: to ?? null }
   })
 
-  const rows =
-    Number.isFinite(beforeRequestedAt) && beforeRequestedAt > 0
-      ? await requestLogRepo.findBeforeRequestedAt(ctx, beforeRequestedAt, limit)
-      : await requestLogRepo.findRecent(ctx, limit)
+  const rows = await requestLogRepo.findInRange(ctx, from, to, limit)
 
   const entries = rows.map((r) => ({
     id: r.id,

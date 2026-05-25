@@ -6,11 +6,11 @@
 | --- | --- | --- | --- |
 | t__lifepay-sbp-client__setting__a9Hk2P | tables/settings.table.ts | Настройки проекта (key-value) | key (string), value (any) |
 | t__lifepay-sbp-client__log__b3Lm7R | tables/logs.table.ts | Серверные логи (долгосрочное хранение) | message, payload, severity, level, timestamp |
-| t__lifepay-sbp-client__reqlog__c7Np4S | tables/requestLog.table.ts | Журнал исходящих вызовов payments-gateway (§1.8.1) | requestId (searchable), op, argsRedacted (хранится сырым, имя колонки оставлено), orderNumber (searchable), clientHttpStatus, ok, errorCode, lpHttpStatus, lpSemanticRule, lpNumericCode, durationMs, requestedAt, **rawResponseBody** (Heap.Any, полное тело ответа gateway, raw, без маскирования) |
-| t__lifepay-sbp-client__whlog__d2Pq8T | tables/webhookLog.table.ts | Журнал входящих webhook от LifePay (§1.8.1, записывается только при валидном токене) | number (searchable), type, status, method, amount, orderNumber (searchable), tokenValid, duplicate, processedAt, **email** (Heap.Optional, сырой email; старое имя `emailMasked` удалено), **rawBody** (Heap.Optional Heap.Any, полное тело webhook, raw), **rawQuery** (Heap.Optional Heap.Any, query параметры с raw token) |
+| t__lifepay-sbp-client__reqlog__c7Np4S | tables/requestLog.table.ts | Журнал исходящих вызовов payments-gateway (§1.8.1) | requestId (searchable), op, argsRedacted (хранится сырым, имя колонки оставлено), orderNumber (searchable), **correlationId** (Heap.Optional String; UUID из args, для надёжной связки с webhook; без searchable — точный where-матч), clientHttpStatus, ok, errorCode, lpHttpStatus, lpSemanticRule, lpNumericCode, durationMs, requestedAt, **rawResponseBody** (Heap.Any, полное тело ответа gateway, raw, без маскирования) |
+| t__lifepay-sbp-client__whlog__d2Pq8T | tables/webhookLog.table.ts | Журнал входящих webhook от LifePay (§1.8.1, записывается только при валидном токене) | number (searchable), type, status, method, amount, orderNumber (searchable), **correlationId** (Heap.Optional String; из query callbackUrl, для связки с request_log; без searchable — точный where-матч), tokenValid, duplicate, processedAt, **email** (Heap.Optional, сырой email; старое имя `emailMasked` удалено), **rawBody** (Heap.Optional Heap.Any, полное тело webhook, raw), **rawQuery** (Heap.Optional Heap.Any, query параметры с raw token) |
 | t__lifepay-sbp-client__whidem__e8Rs1V | tables/webhookIdempotency.table.ts | Дедупликация webhook по transaction number (§1.8.3) | number (searchable), firstSeenAt |
 | t__lifepay-sbp-client__paccess__g7Cy3M | tables/panelAccess.table.ts | Выданные доступы к панели для не-Admin (ADR 0003). **Реализовано 2026-05-24**, используется `repos/panelAccess.repo.ts`, `lib/access/*` | userId (searchable), grantedAt, grantedByUserId, inviteId, revokedAt?, revokedByUserId? |
-| t__lifepay-sbp-client__pinvite__f4Wb9K | tables/panelInvites.table.ts | Одноразовые пригласительные токены (ADR 0003). **Реализовано 2026-05-24**, используется `repos/panelInvites.repo.ts`, `lib/access/*` | token (searchable), createdByUserId, createdAt, expiresAt, usedAt?, usedByUserId?, revokedAt?, note? |
+| t__lifepay-sbp-client__pinvite__f4Wb9K | tables/panelInvites.table.ts | Одноразовые пригласительные токены (ADR 0003). **Реализовано 2026-05-24**, используется `repos/panelInvites.repo.ts`, `lib/access/*` | token (searchable), createdByUserId, issuedAt, expiresAt, usedAt?, usedByUserId?, revokedAt?, note? |
 
 ## Таблицы внутренней авторизации (ADR 0003)
 
@@ -41,8 +41,8 @@
 |---|---|---|
 | `token` | String (searchable) | Токен ≥ 32 символа, генерируется `accountNanoid(ctx)`. Уникальность — на уровне приложения (`runWithExclusiveLock` при потреблении). Searchable: путь чтения — поиск по строке из query. |
 | `createdByUserId` | String | ID Admin'а, создавшего инвайт. |
-| `createdAt` | Number (Unix ms) | Момент создания. |
-| `expiresAt` | Number (Unix ms) | `createdAt + INVITE_TTL_DAYS` (план — 7 дней, константа в `lib/access/constants.ts`). |
+| `issuedAt` | Number (Unix ms) | Момент создания. Имя `createdAt` зарезервировано Heap под системное поле — используем явное `issuedAt` (как `requestedAt` в `request_log`). |
+| `expiresAt` | Number (Unix ms) | `issuedAt + INVITE_TTL_DAYS` (план — 7 дней, константа в `lib/access/constants.ts`). |
 | `usedAt` | Optional Number | Момент потребления (null = не использован). |
 | `usedByUserId` | Optional String | Кто использовал. |
 | `revokedAt` | Optional Number | Момент отзыва Admin'ом (null = активен). |
@@ -64,23 +64,26 @@ LifePay-настройки (§1.8.1, валидируются в `lib/settings.l
 - `lp_webhook_token` — случайный токен ≥ 32 символов (тип password, генерируется кнопкой «Сгенерировать» в панели).
 - `gateway_base_url` — публичный базовый URL payments-gateway (http(s)://...).
 
+Фильтр панели:
+- `panel_date_filter` — глобальный фильтр вкладки «Обзор» по дате/времени: `{ from?: number, to?: number }` (Unix ms, таймзона браузера). При отсутствии или пустом значении — все данные (до кэпа `ANALYTICS_SCAN_LIMIT`). Читается на сервере через `getPanelDateFilter(ctx)` в `lib/settings.lib.ts`; меняется через `POST /api/lp/analytics/filter-save` (доступен любому пользователю с доступом к панели). Общий для всех пользователей и сессий.
+
 Секреты в логи (`writeServerLog`, `argsRedacted`) **не пишутся**. В Heap значения хранятся как строки.
 
 ## Репозитории (repos/)
 
 - `repos/settings.repo.ts` — findByKey, findAll, upsert, deleteByKey.
 - `repos/logs.repo.ts` — create, findAll, findById, findBeforeTimestamp, countBySeverityAfter / Errors / Warnings.
-- `repos/requestLog.repo.ts` — create, findRecent, findBeforeRequestedAt, findByRequestId, **findById**, findRecentSince, countSince, countOkSince. Поле упорядочения — `requestedAt` (Unix ms, наше явное поле; не системное `createdAt`).
-- `repos/webhookLog.repo.ts` — create, findRecent, **findById**, findByOrderNumber, countSince, countStatusSuccessSince, countTokenValidSince.
+- `repos/requestLog.repo.ts` — create, **findInRange** (основной путь; cursor-пагинация ≤ 1000, up to limit), **countInRange**, **countOkInRange**, findByRequestId, **findById**, findByOrderNumber, **findByCorrelationIds** (батч-выборка по списку correlationId через `where: { correlationId: { $in: ids } }`; используется для обогащения orderNumber в `/api/lp/recent-webhooks`). `findRecent`, `findBeforeRequestedAt`, `findRecentSince` — **@deprecated**, заменены на `findInRange`. Поле упорядочения — `requestedAt` (Unix ms, наше явное поле; не системное `createdAt`).
+- `repos/webhookLog.repo.ts` — create, **findInRange** (cursor-пагинация), **countInRange**, **countStatusSuccessInRange**, **countTokenValidInRange**, **findByOrderNumberInRange**, **findByCorrelationIdInRange** (основной путь связки: `where: { correlationId, processedAt: { $gte/$lt } }`, лимит 100, без searchable), **findById**. `findRecent`, `findRecentSince` — **@deprecated**, заменены на `findInRange`.
 - `repos/webhookIdempotency.repo.ts` — tryRegister (через `runWithExclusiveLock` из `@app/sync`), findByNumber.
 - `repos/panelAccess.repo.ts` — findByUserId, findActiveByUserId, upsertGrant (создать или реактивировать), revokeByUserId, findAll, deleteByUserId. (ADR 0003, реализовано 2026-05-24.)
 - `repos/panelInvites.repo.ts` — findByToken, findById, create, markUsed, revokeById, findAll, deleteById. (ADR 0003, реализовано 2026-05-24.)
 
 ## Библиотеки (lib/)
 
-- `lib/settings.lib.ts` — getSetting/getAllSettings/setSetting; ключи и дефолты; валидации `isValidLpLogin` (`^7\d{10}$`), `normalizeGatewayBaseUrl`, `isValidGatewayBaseUrl`; getLpApikey / getLpLogin / getLpWebhookToken / getGatewayBaseUrl; `generateWebhookToken(byteCount)`.
+- `lib/settings.lib.ts` — getSetting/getAllSettings/setSetting; ключи и дефолты; валидации `isValidLpLogin` (`^7\d{10}$`), `normalizeGatewayBaseUrl`, `isValidGatewayBaseUrl`; getLpApikey / getLpLogin / getLpWebhookToken / getGatewayBaseUrl; `generateWebhookToken(byteCount)`; **`getPanelDateFilter(ctx)`** — читает ключ `panel_date_filter` из Heap, возвращает `{ from?: number, to?: number }` (серверный вызов, только для API-эндпоинтов и SSR).
 - `lib/logger.lib.ts` — без изменений: writeServerLog проверяет уровень, пишет в ctx.log, ctx.account.log, Heap, WebSocket, опц. webhook.
-- `lib/gateway/constants.ts` — `INVOKE_TIMEOUT_MS = 15_000` (на 5 секунд больше gateway-таймаута 10 с), `RECENT_DEFAULT_LIMIT`, `RECENT_MAX_LIMIT`, `ANALYTICS_DEFAULT_WINDOW_HOURS`.
+- `lib/gateway/constants.ts` — `INVOKE_TIMEOUT_MS = 15_000` (на 5 секунд больше gateway-таймаута 10 с), `RECENT_DEFAULT_LIMIT`, `RECENT_MAX_LIMIT`, `ANALYTICS_SCAN_LIMIT = 5000` (максимум записей, выгружаемых для аналитики через cursor-пагинацию ≤ 1000 на запрос; `ANALYTICS_DEFAULT_WINDOW_HOURS` удалён).
 - `lib/gateway/buildInvokeUrl.ts` — чистая функция сборки URL `<base>/api/v1/<op>` + метода по `shared/gatewayContract`. Префикс `/api/` соответствует file-based роутингу gateway (`p/saas/gw/lifepay/api/v1/<op>.ts`).
 - `lib/gateway/invokeClient.ts` — `invokeGateway(ctx, op, args)`: один исходящий вызов через `@app/request`, без серверных ретраев, без Idempotency-Key; читает секреты из Heap, заголовки `X-Lp-Apikey`/`X-Lp-Login`, тело JSON для POST или query для GET; `requestId` из заголовка `X-Gateway-Request-Id` ответа.
 - `lib/gateway/recordRequestLog.ts` — запись результата invoke в Heap-таблицу `request_log`. `argsRedacted` и `rawResponseBody` хранятся **сырыми** (клиент — оператор ПД), структурная гигиена через `shared/prepareRawLog.prepareRawLog`. Для `rawResponseBody`: предпочтительно из `invoke.responseBody`; иначе пытается `JSON.parse(rawResponseBody)`; иначе пишет `{ __nonJson: true, __preview }`; для пустого ответа — `{ __noBody: true }`.

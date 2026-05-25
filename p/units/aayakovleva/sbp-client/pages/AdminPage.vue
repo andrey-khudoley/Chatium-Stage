@@ -36,6 +36,12 @@ const props = defineProps<{
   adminUrl?: string
   panelUrl?: string
   encodedLogsSocketId?: string
+  initialSettings?: {
+    lp_apikey: string
+    lp_login: string
+    lp_webhook_token: string
+    gateway_base_url: string
+  }
 }>()
 
 const bootLoaderDone = ref(false)
@@ -51,6 +57,66 @@ const logLevel = ref<'debug' | 'info' | 'warn' | 'error' | 'disable'>('info')
 const logLevelError = ref('')
 const logLevelSaveStatus = ref<'saved' | 'error' | null>(null)
 const logLevelStatusTimeout = { id: null as ReturnType<typeof setTimeout> | null }
+
+// ── Настройки LifePay (перенесены с главной панели; страница admin-only) ──
+// Источник истины при загрузке — SSR-проп initialSettings; редактируемые поля
+// и снимок сохранённых значений для индикатора «не сохранено».
+const LP_SETTINGS_KEYS = ['lp_apikey', 'lp_login', 'lp_webhook_token', 'gateway_base_url'] as const
+type LpSettingKey = (typeof LP_SETTINGS_KEYS)[number]
+
+const lpSettings = ref<Record<LpSettingKey, string>>({
+  lp_apikey: props.initialSettings?.lp_apikey ?? '',
+  lp_login: props.initialSettings?.lp_login ?? '',
+  lp_webhook_token: props.initialSettings?.lp_webhook_token ?? '',
+  gateway_base_url: props.initialSettings?.gateway_base_url ?? ''
+})
+const savedLpSettings = ref<Record<LpSettingKey, string>>({ ...lpSettings.value })
+const lpSettingsMessage = ref('')
+const lpSettingsError = ref(false)
+const lpSettingsSaving = ref(false)
+
+const hasUnsavedLpSettings = computed(() =>
+  LP_SETTINGS_KEYS.some((k) => (lpSettings.value[k] || '') !== (savedLpSettings.value[k] || ''))
+)
+
+const generateWebhookToken = () => {
+  const chars = 'abcdef0123456789'
+  let t = ''
+  for (let i = 0; i < 64; i++) {
+    t += chars.charAt(Math.floor(Math.random() * chars.length))
+  }
+  lpSettings.value.lp_webhook_token = t
+  log.notice('Сгенерирован webhook-токен', { length: t.length })
+}
+
+const saveLpSettings = async () => {
+  log.info('saveLpSettings entry')
+  lpSettingsMessage.value = ''
+  lpSettingsError.value = false
+  lpSettingsSaving.value = true
+  try {
+    for (const key of LP_SETTINGS_KEYS) {
+      const value = lpSettings.value[key] || ''
+      // Пустые значения не отправляем — валидация lib отвергнет пустые секреты.
+      if (!value) continue
+      const res = await saveSettingRoute.run(ctx, { key, value })
+      const data = res as { success?: boolean; error?: string }
+      if (data?.success === false) {
+        throw new Error(`${key}: ${data.error || 'ошибка'}`)
+      }
+    }
+    savedLpSettings.value = { ...lpSettings.value }
+    lpSettingsMessage.value = 'Сохранено.'
+    log.notice('Настройки LifePay сохранены')
+  } catch (e) {
+    lpSettingsMessage.value = (e as Error)?.message || String(e)
+    lpSettingsError.value = true
+    log.error('Ошибка сохранения настроек LifePay', lpSettingsMessage.value)
+  } finally {
+    lpSettingsSaving.value = false
+    log.info('saveLpSettings exit')
+  }
+}
 
 const SAVE_STATUS_DURATION_MS = 1500
 const INPUT_DEBOUNCE_MS = 300
@@ -787,6 +853,86 @@ function onVisibilityForLogsSocket() {
                 <p v-if="logLevelError" class="ap-err"><i class="fas fa-exclamation-circle"></i> {{ logLevelError }}</p>
               </section>
             </div>
+
+            <section class="ap-card ap-card--stagger-3 ap-settings">
+              <div class="ap-card-hd">
+                <h2><i class="fas fa-plug ap-icon-hd"></i> Настройки LifePay</h2>
+                <span
+                  v-if="lpSettingsMessage"
+                  class="ap-badge"
+                  :class="lpSettingsError ? 'ap-badge--err' : 'ap-badge--ok'"
+                >
+                  <i :class="lpSettingsError ? 'fas fa-times' : 'fas fa-check'"></i>
+                  {{ lpSettingsError ? 'ERR' : 'OK' }}
+                </span>
+              </div>
+
+              <form class="ap-set-form" @submit.prevent="saveLpSettings">
+                <fieldset class="ap-set-grp">
+                  <legend class="ap-set-legend"><i class="fas fa-key"></i> Авторизация</legend>
+                  <p class="ap-hint">Учётные данные магазина для подписи API-вызовов к gateway.</p>
+                  <div class="ap-set-fields">
+                    <label class="ap-field">
+                      <span class="ap-field-label">lp_apikey (API-ключ магазина)</span>
+                      <input v-model="lpSettings.lp_apikey" type="password" autocomplete="off" class="ap-input" />
+                      <span class="ap-field-hint">Передаётся в заголовке <code>X-Lp-Apikey</code>.</span>
+                    </label>
+                    <label class="ap-field">
+                      <span class="ap-field-label">lp_login (телефон, 11 цифр, первая 7)</span>
+                      <input v-model="lpSettings.lp_login" type="text" placeholder="79991234567" class="ap-input" />
+                      <span class="ap-field-hint">Передаётся в заголовке <code>X-Lp-Login</code>.</span>
+                    </label>
+                  </div>
+                </fieldset>
+
+                <fieldset class="ap-set-grp">
+                  <legend class="ap-set-legend"><i class="fas fa-bell"></i> Webhook</legend>
+                  <p class="ap-hint">
+                    Токен для аутентификации входящего webhook от LifePay (query <code>?token=…</code>). Минимум 32 символа.
+                  </p>
+                  <div class="ap-set-fields">
+                    <label class="ap-field ap-field-full">
+                      <span class="ap-field-label">lp_webhook_token</span>
+                      <div class="ap-field-row">
+                        <input v-model="lpSettings.lp_webhook_token" type="password" autocomplete="off" class="ap-input" />
+                        <button type="button" class="ap-btn" @click="generateWebhookToken">
+                          <i class="fas fa-bolt"></i> Сгенерировать
+                        </button>
+                      </div>
+                    </label>
+                  </div>
+                </fieldset>
+
+                <fieldset class="ap-set-grp">
+                  <legend class="ap-set-legend"><i class="fas fa-server"></i> Gateway</legend>
+                  <p class="ap-hint">Публичный URL payments-gateway, через который выполняются все вызовы LifePay API.</p>
+                  <div class="ap-set-fields">
+                    <label class="ap-field ap-field-full">
+                      <span class="ap-field-label">gateway_base_url</span>
+                      <input
+                        v-model="lpSettings.gateway_base_url"
+                        type="text"
+                        placeholder="https://.../p/saas/gw/lifepay"
+                        class="ap-input"
+                      />
+                    </label>
+                  </div>
+                </fieldset>
+
+                <div class="ap-save-bar">
+                  <button type="submit" class="ap-btn ap-btn--primary" :disabled="!hasUnsavedLpSettings || lpSettingsSaving">
+                    <i class="fas fa-save"></i> {{ lpSettingsSaving ? 'Сохранение…' : 'Сохранить' }}
+                  </button>
+                  <span v-if="hasUnsavedLpSettings" class="ap-unsaved" title="Есть несохранённые изменения">
+                    <i class="fas fa-circle"></i> Не сохранено
+                  </span>
+                  <p v-if="lpSettingsMessage" class="ap-msg" :class="lpSettingsError ? 'ap-msg--err' : 'ap-msg--ok'">
+                    <i class="fas" :class="lpSettingsError ? 'fa-exclamation-circle' : 'fa-check-circle'"></i>
+                    {{ lpSettingsMessage }}
+                  </p>
+                </div>
+              </form>
+            </section>
           </div>
 
           <aside class="ap-side">
@@ -1157,6 +1303,47 @@ function onVisibilityForLogsSocket() {
 
 .ap-err { margin: 0.4rem 0 0; color: var(--c-alert); font-size: 0.76rem; position: relative; z-index: 1; }
 .ap-err i { margin-right: 0.2rem; font-size: 0.65rem; }
+
+/* ── SETTINGS (LifePay) ── */
+.ap-set-form { display: flex; flex-direction: column; gap: 0.9rem; position: relative; z-index: 1; }
+.ap-set-grp { border: 1px solid var(--c-bdr); background: var(--c-bg-deep); padding: 0.7rem 0.85rem 0.85rem; margin: 0; }
+.ap-set-legend {
+  font-size: 0.7rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase;
+  color: var(--c-tx2); padding: 0 0.4rem;
+}
+.ap-set-legend i { color: var(--c-red-s); margin-right: 0.3rem; font-size: 0.66rem; }
+.ap-hint { margin: 0 0 0.7rem; font-size: 0.72rem; color: var(--c-tx3); line-height: 1.5; }
+.ap-set-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 0.7rem 0.85rem; }
+.ap-field { display: flex; flex-direction: column; gap: 0.3rem; min-width: 0; }
+.ap-field-full { grid-column: 1 / -1; }
+.ap-field-label { font-size: 0.72rem; color: var(--c-tx2); letter-spacing: 0.02em; }
+.ap-field-hint { font-size: 0.68rem; color: var(--c-tx3); line-height: 1.4; }
+.ap-field-row { display: flex; gap: 0.5rem; align-items: stretch; }
+.ap-field-row .ap-input { flex: 1 1 auto; }
+.ap-field-row .ap-btn { flex-shrink: 0; }
+.ap-set-grp code,
+.ap-field-hint code,
+.ap-hint code {
+  background: rgba(20, 18, 24, 0.9); border: 1px solid var(--c-bdr);
+  padding: 0.02rem 0.28rem; font-size: 0.92em; color: var(--c-tx);
+}
+
+.ap-btn--primary { border-color: var(--c-red-s); color: #fff; background: rgba(196, 33, 63, 0.16); }
+.ap-btn--primary::after { background: var(--c-red-s); }
+.ap-btn--primary:hover { border-color: var(--c-red-s); background: rgba(196, 33, 63, 0.24); }
+.ap-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+
+.ap-save-bar { display: flex; align-items: center; gap: 0.8rem; flex-wrap: wrap; }
+.ap-unsaved { font-size: 0.72rem; color: var(--c-warn); letter-spacing: 0.03em; }
+.ap-unsaved i { font-size: 0.45rem; margin-right: 0.3rem; vertical-align: middle; }
+.ap-msg { margin: 0; font-size: 0.74rem; display: inline-flex; align-items: center; gap: 0.35rem; }
+.ap-msg i { font-size: 0.7rem; }
+.ap-msg--ok { color: var(--c-ok); }
+.ap-msg--err { color: var(--c-alert); }
+
+@media (max-width: 680px) {
+  .ap-set-fields { grid-template-columns: 1fr; }
+}
 
 /* ── LOG MONITOR: высота = ячейка сетки (ровно ряд между шапкой страницы и футером); движется только список в .ap-log-out ── */
 .ap-side {

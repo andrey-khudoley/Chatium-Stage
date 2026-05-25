@@ -49,6 +49,7 @@ import {
   type FormDataLike
 } from '../../lib/webhook/processWebhook'
 import { prepareRawLog } from '../../shared/prepareRawLog'
+import { extractCorrelationId } from '../../shared/correlation'
 
 const LOG_PATH = 'web/webhook'
 
@@ -72,6 +73,9 @@ export const webhookRoute = app.post('/', async (ctx, req) => {
       ? (queryRaw as Record<string, unknown>)
       : {}
   const tokenFromQuery = typeof queryObj.token === 'string' ? queryObj.token : null
+  // correlationId из query callbackUrl — ключ связки с request_log (см. shared/correlation).
+  // Пусто, если счёт создан не через нашу панель или это старый callbackUrl.
+  const correlationId = extractCorrelationId(queryObj)
 
   await loggerLib.writeServerLog(ctx, {
     severity: 6,
@@ -195,7 +199,8 @@ export const webhookRoute = app.post('/', async (ctx, req) => {
       type: parsed.type,
       status: parsed.status,
       method: parsed.method,
-      orderNumber: parsed.orderNumber
+      orderNumber: parsed.orderNumber,
+      correlationId: correlationId || null
     }
   })
 
@@ -223,6 +228,7 @@ export const webhookRoute = app.post('/', async (ctx, req) => {
       method: parsed.method,
       amount: parsed.amount,
       orderNumber: parsed.orderNumber,
+      correlationId,
       tokenValid: true,
       duplicate: dedupeResult === 'duplicate',
       processedAt: Date.now(),

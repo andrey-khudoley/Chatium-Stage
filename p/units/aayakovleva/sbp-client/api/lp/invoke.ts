@@ -13,6 +13,7 @@
 
 import { invokeGateway } from '../../lib/gateway/invokeClient'
 import { recordRequestLog } from '../../lib/gateway/recordRequestLog'
+import { extractCorrelationId } from '../../shared/correlation'
 import { guardInternalApi } from '../../lib/access/apiGuard'
 import * as loggerLib from '../../lib/logger.lib'
 import { findOperationInCatalog } from '../../shared/gatewayContract'
@@ -103,12 +104,19 @@ export const invokeRoute = app.post('/', async (ctx, req) => {
     }
   }
 
-  const invoke = await invokeGateway(ctx, op, args)
+  // correlationId — наш ключ связки request_log ↔ webhook (LifePay не возвращает
+  // orderNumber в webhook). Клиент кладёт его и в callbackUrl, и в args. В gateway
+  // НЕ пробрасываем (LifePay его не ждёт): отделяем от args перед вызовом.
+  const correlationId = extractCorrelationId(args)
+  const argsForGateway: Record<string, unknown> = { ...args }
+  delete argsForGateway.correlationId
+
+  const invoke = await invokeGateway(ctx, op, argsForGateway)
 
   // Запись в журнал — синхронно перед возвратом (журнал важнее производительности UI;
   // запись в Heap занимает ~5-50ms).
   try {
-    await recordRequestLog(ctx, { op, args, invoke })
+    await recordRequestLog(ctx, { op, args: argsForGateway, invoke, correlationId })
   } catch (e) {
     await loggerLib.writeServerLog(ctx, {
       severity: 3,

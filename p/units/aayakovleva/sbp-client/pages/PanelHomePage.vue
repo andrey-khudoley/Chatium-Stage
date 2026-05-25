@@ -24,24 +24,28 @@
         <section class="status-strip" aria-label="Состояние конфигурации">
           <div class="status-chips">
             <span
-              v-for="c in configChips"
-              :key="c.key"
-              :class="['chip', c.set ? 'is-ok' : 'is-warn']"
-              :title="c.set ? 'Заполнено' : 'Не заполнено — откройте «Настройки»'"
+              :class="['chip', 'config-status', allConfigured ? 'is-ok' : 'is-warn']"
+              tabindex="0"
             >
-              <i class="fas" :class="c.set ? 'fa-check' : 'fa-triangle-exclamation'"></i>
-              <span>{{ c.label }}</span>
+              <i class="fas" :class="allConfigured ? 'fa-check' : 'fa-triangle-exclamation'"></i>
+              <span>{{ allConfigured ? 'Настройки выполнены успешно' : 'Требуется настройка' }}</span>
+              <span v-if="!allConfigured" class="config-status-tooltip" role="tooltip">
+                <span class="config-status-tooltip-title">Не хватает для зелёного статуса:</span>
+                <ul>
+                  <li v-for="m in missingConfig" :key="m">{{ m }}</li>
+                </ul>
+              </span>
             </span>
           </div>
           <div class="status-webhook">
             <span class="status-webhook-label">
-              <i class="fas fa-link"></i> Webhook URL
+              <i class="fas fa-link"></i> Base URL
             </span>
-            <code class="status-webhook-url">{{ webhookUrl }}</code>
+            <code class="status-webhook-url">{{ baseUrl }}</code>
             <button
               type="button"
               class="btn-mini"
-              @click="copyText(webhookUrl)"
+              @click="copyText(baseUrl)"
               title="Скопировать"
             >
               <i class="far fa-copy"></i>
@@ -51,22 +55,82 @@
 
         <!-- ====== SUB-TOOLBAR ====== -->
         <nav class="panel-toolbar" aria-label="Разделы и поиск">
-          <div class="panel-tabs" role="tablist">
-            <button
-              v-for="t in visibleTabs"
-              :key="t.id"
-              :class="['tab', { active: activeTab === t.id }]"
-              :aria-selected="activeTab === t.id"
-              role="tab"
-              type="button"
-              @click="setTab(t.id)"
-            >
-              <i class="fas" :class="t.icon"></i>
-              <span>{{ t.label }}</span>
-            </button>
+          <div class="toolbar-row toolbar-row--tabs">
+            <div class="panel-tabs" role="tablist">
+              <button
+                v-for="t in visibleTabs"
+                :key="t.id"
+                :class="['tab', { active: activeTab === t.id }]"
+                :aria-selected="activeTab === t.id"
+                role="tab"
+                type="button"
+                @click="setTab(t.id)"
+              >
+                <i class="fas" :class="t.icon"></i>
+                <span>{{ t.label }}</span>
+              </button>
+            </div>
           </div>
-          <div class="panel-toolbar-right">
-            <label class="live-toggle" :class="{ on: liveMode }" :title="liveMode ? 'Авто-обновление включено' : 'Включить авто-обновление'">
+          <div class="toolbar-row toolbar-row--tools">
+            <div class="date-filter" role="group" aria-label="Фильтр по дате и времени">
+              <i class="fas fa-calendar-day date-filter-icon" title="Фильтр по дате/времени"></i>
+              <div class="date-filter-field">
+                <span class="date-filter-cap">с</span>
+                <input
+                  type="date"
+                  class="date-filter-input"
+                  v-model="fromDate"
+                  :max="toDate || undefined"
+                  @change="onFilterChange"
+                  aria-label="Дата начала"
+                />
+                <input
+                  type="time"
+                  class="date-filter-input date-filter-time"
+                  v-model="fromTime"
+                  @change="onFilterChange"
+                  title="Пусто = 00:00"
+                  aria-label="Время начала (пусто = 00:00)"
+                />
+              </div>
+              <span class="date-filter-sep">—</span>
+              <div class="date-filter-field">
+                <span class="date-filter-cap">по</span>
+                <input
+                  type="date"
+                  class="date-filter-input"
+                  v-model="toDate"
+                  :min="fromDate || undefined"
+                  @change="onFilterChange"
+                  aria-label="Дата окончания"
+                />
+                <input
+                  type="time"
+                  class="date-filter-input date-filter-time"
+                  v-model="toTime"
+                  @change="onFilterChange"
+                  title="Пусто = 00:00"
+                  aria-label="Время окончания (пусто = 00:00)"
+                />
+              </div>
+              <button
+                v-if="hasActiveFilter"
+                type="button"
+                class="btn-mini date-filter-reset"
+                :disabled="dateFilterSaving"
+                @click="resetDateFilter"
+                title="Сбросить фильтр"
+              >
+                <i class="fas fa-rotate-left"></i> Сброс
+              </button>
+              <span v-if="dateFilterError" class="date-filter-error" role="alert">{{ dateFilterError }}</span>
+            </div>
+            <label
+              v-show="!hasActiveFilter"
+              class="live-toggle"
+              :class="{ on: liveMode }"
+              :title="liveMode ? 'Авто-обновление включено' : 'Включить авто-обновление'"
+            >
               <input v-model="liveMode" type="checkbox" />
               <span class="live-dot"></span>
               <span class="live-label">LIVE</span>
@@ -110,6 +174,7 @@
                   <tr><th>requestId</th><td><code>{{ searchResult.request.requestId }}</code></td></tr>
                   <tr><th>op</th><td>{{ searchResult.request.op }}</td></tr>
                   <tr><th>orderNumber</th><td>{{ searchResult.request.orderNumber }}</td></tr>
+                  <tr><th>correlationId</th><td><code>{{ searchResult.request.correlationId || '—' }}</code></td></tr>
                   <tr><th>HTTP</th><td>{{ searchResult.request.clientHttpStatus }}</td></tr>
                   <tr><th>ok</th><td :class="searchResult.request.ok ? 'cell-ok' : 'cell-err'">{{ searchResult.request.ok ? '✓ успех' : '✗ ошибка' }}</td></tr>
                   <tr><th>errorCode</th><td>{{ searchResult.request.errorCode || '—' }}</td></tr>
@@ -122,7 +187,7 @@
                 </tbody>
               </table>
             </div>
-            <h3 class="search-h3">Связанные webhook (по orderNumber)</h3>
+            <h3 class="search-h3">Связанные webhook (по orderNumber / correlationId)</h3>
             <div v-if="searchResult.webhooks.length > 0" class="table-wrapper">
               <table class="data-table">
                 <thead>
@@ -145,10 +210,44 @@
 
         <!-- ====== TAB: ОБЗОР ====== -->
         <template v-if="activeTab === 'overview'">
-          <section class="kpi-grid" aria-label="Ключевые метрики за 24 часа">
+          <section class="manager-summary" aria-label="Сводка для менеджера">
+            <h2 class="summary-title">
+              <span class="prompt">›</span> Сводка для менеджера
+              <span class="summary-period">{{ periodLabel }}</span>
+            </h2>
+            <div class="kpi-grid">
+              <article class="kpi-card kpi-hero">
+                <div class="kpi-icon"><i class="fas fa-file-invoice"></i></div>
+                <div class="kpi-label">Сформировано заказов</div>
+                <div class="kpi-value">{{ formatKpiNumber(analytics?.orders?.created) }}</div>
+              </article>
+              <article class="kpi-card kpi-hero kpi-success">
+                <div class="kpi-icon"><i class="fas fa-circle-check"></i></div>
+                <div class="kpi-label">Оплачено заказов</div>
+                <div class="kpi-value">{{ formatKpiNumber(analytics?.orders?.paid) }}</div>
+              </article>
+              <article class="kpi-card kpi-hero">
+                <div class="kpi-icon"><i class="fas fa-ruble-sign"></i></div>
+                <div class="kpi-label">Сумма заказов</div>
+                <div class="kpi-value">{{ formatMoney(analytics?.orders?.createdSum) }}</div>
+              </article>
+              <article class="kpi-card kpi-hero kpi-success">
+                <div class="kpi-icon"><i class="fas fa-coins"></i></div>
+                <div class="kpi-label">Сумма оплат</div>
+                <div class="kpi-value">{{ formatMoney(analytics?.orders?.paidSum) }}</div>
+              </article>
+            </div>
+          </section>
+
+          <section class="admin-summary" aria-label="Сводка для администратора">
+          <h2 class="summary-title">
+            <span class="prompt">›</span> Сводка для администратора
+            <span class="summary-period">{{ periodLabel }}</span>
+          </h2>
+          <section class="kpi-grid" aria-label="Ключевые метрики">
             <article class="kpi-card kpi-hero">
               <div class="kpi-icon"><i class="fas fa-paper-plane"></i></div>
-              <div class="kpi-label">Запросов за 24ч</div>
+              <div class="kpi-label">Запросов</div>
               <div class="kpi-value">{{ formatKpiNumber(analytics?.requests?.total) }}</div>
             </article>
             <article class="kpi-card kpi-hero kpi-success">
@@ -166,7 +265,7 @@
             </article>
             <article class="kpi-card kpi-hero">
               <div class="kpi-icon"><i class="fas fa-bell"></i></div>
-              <div class="kpi-label">Webhook за 24ч</div>
+              <div class="kpi-label">Webhook</div>
               <div class="kpi-value">{{ formatKpiNumber(analytics?.webhooks?.total) }}</div>
             </article>
           </section>
@@ -196,6 +295,7 @@
               <div class="stat-label"><i class="fas fa-key"></i> tokenValid</div>
               <div class="stat-value">{{ formatKpiPercent(analytics?.webhooks?.tokenValidShare) }}</div>
             </article>
+          </section>
           </section>
 
           <section class="feed-grid">
@@ -255,7 +355,7 @@
               <div v-if="recentWebhooksPreview.length > 0" class="table-wrapper">
                 <table class="data-table compact-table">
                   <thead>
-                    <tr><th>Время</th><th>orderNumber</th><th>type</th><th>статус</th><th>метод</th></tr>
+                    <tr><th>Время</th><th>orderNumber</th><th>сумма</th><th>type</th><th>статус</th></tr>
                   </thead>
                   <tbody>
                     <tr
@@ -265,12 +365,12 @@
                     >
                       <td>{{ formatTime(w.processedAt) }}</td>
                       <td>{{ w.orderNumber }}</td>
+                      <td>{{ w.amount }}</td>
                       <td>{{ w.type }}</td>
                       <td :class="w.status === 'success' ? 'cell-ok' : 'cell-err'">
                         <span v-if="!w.tokenValid" class="cell-warn">токен ✗</span>
                         <span v-else>{{ w.status }}</span>
                       </td>
-                      <td>{{ w.method }}</td>
                     </tr>
                   </tbody>
                 </table>
@@ -406,9 +506,9 @@
                   <th>orderNumber</th>
                   <th>токен</th>
                   <th>dup</th>
+                  <th>сумма</th>
                   <th>type</th>
                   <th>статус</th>
-                  <th>метод</th>
                   <th>raw</th>
                 </tr>
               </thead>
@@ -423,9 +523,9 @@
                   <td>
                     <span v-if="w.duplicate" class="dup-badge">дубль</span>
                   </td>
+                  <td>{{ w.amount }}</td>
                   <td>{{ w.type }}</td>
                   <td :class="w.status === 'success' ? 'cell-ok' : 'cell-err'">{{ w.status }}</td>
-                  <td>{{ w.method }}</td>
                   <td>
                     <button class="btn-mini" @click="openRaw('webhook', w.id)" title="Полное тело webhook">
                       <i class="fas fa-code"></i>
@@ -528,87 +628,6 @@
           </div>
         </section>
 
-        <!-- ====== TAB: НАСТРОЙКИ ====== -->
-        <section v-show="activeTab === 'settings'" class="panel-section">
-          <header class="panel-section-head">
-            <span class="prompt">›</span>
-            <h2>Настройки LifePay</h2>
-          </header>
-
-          <form class="settings-form" @submit.prevent="saveSettings">
-            <fieldset class="settings-fieldset">
-              <legend class="settings-legend">
-                <i class="fas fa-key"></i> Авторизация
-              </legend>
-              <p class="hint">Учётные данные магазина для подписи API-вызовов к gateway.</p>
-              <div class="grid-form">
-                <label class="field">
-                  <span class="field-label">lp_apikey (API-ключ магазина)</span>
-                  <input v-model="settings.lp_apikey" type="password" autocomplete="off" class="field-input" />
-                  <span class="field-hint">Передаётся в заголовке <code>X-Lp-Apikey</code>.</span>
-                </label>
-                <label class="field">
-                  <span class="field-label">lp_login (телефон, 11 цифр, первая 7)</span>
-                  <input v-model="settings.lp_login" type="text" placeholder="79991234567" class="field-input" />
-                  <span class="field-hint">Передаётся в заголовке <code>X-Lp-Login</code>.</span>
-                </label>
-              </div>
-            </fieldset>
-
-            <fieldset class="settings-fieldset">
-              <legend class="settings-legend">
-                <i class="fas fa-bell"></i> Webhook
-              </legend>
-              <p class="hint">
-                Токен для аутентификации входящего webhook от LifePay (передаётся в query <code>?token=…</code>).
-                Минимум 32 символа.
-              </p>
-              <div class="grid-form">
-                <label class="field field-full">
-                  <span class="field-label">lp_webhook_token</span>
-                  <div class="field-row">
-                    <input v-model="settings.lp_webhook_token" type="password" autocomplete="off" class="field-input" />
-                    <button type="button" class="btn-secondary" @click="generateToken">
-                      <i class="fas fa-bolt"></i> Сгенерировать
-                    </button>
-                  </div>
-                </label>
-              </div>
-            </fieldset>
-
-            <fieldset class="settings-fieldset">
-              <legend class="settings-legend">
-                <i class="fas fa-server"></i> Gateway
-              </legend>
-              <p class="hint">Публичный URL payments-gateway, через который выполняются все вызовы LifePay API.</p>
-              <div class="grid-form">
-                <label class="field field-full">
-                  <span class="field-label">gateway_base_url</span>
-                  <input
-                    v-model="settings.gateway_base_url"
-                    type="text"
-                    placeholder="https://.../p/saas/gw/lifepay"
-                    class="field-input"
-                  />
-                </label>
-              </div>
-            </fieldset>
-
-            <div class="settings-save-bar">
-              <button type="submit" class="btn-primary" :disabled="!hasUnsavedSettings">
-                <i class="fas fa-save"></i> Сохранить
-              </button>
-              <span v-if="hasUnsavedSettings" class="unsaved-dot" title="Есть несохранённые изменения">
-                <i class="fas fa-circle"></i> Не сохранено
-              </span>
-              <p v-if="settingsMessage" :class="['form-msg', settingsError ? 'is-err' : 'is-ok']">
-                <i class="fas" :class="settingsError ? 'fa-circle-exclamation' : 'fa-circle-check'"></i>
-                {{ settingsMessage }}
-              </p>
-            </div>
-          </form>
-        </section>
-
         <!-- ====== ACCESS (Admin-only) ====== -->
         <section v-show="activeTab === 'access' && isAdmin" class="panel-section">
           <header class="panel-section-head">
@@ -643,7 +662,7 @@
                   <tr v-for="inv in invites" :key="inv.inviteId">
                     <td>{{ inv.note || '—' }}</td>
                     <td>{{ inv.createdByDisplayName }}</td>
-                    <td>{{ formatTime(inv.createdAt) }}</td>
+                    <td>{{ formatTime(inv.issuedAt) }}</td>
                     <td>{{ formatTime(inv.expiresAt) }}</td>
                     <td>{{ inv.usedByDisplayName || '—' }}</td>
                     <td><span :class="inviteStatusClass(inv.status)">{{ inviteStatusLabel(inv.status) }}</span></td>
@@ -786,9 +805,33 @@
 import Header from '../components/Header.vue'
 import GlobalGlitch from '../components/GlobalGlitch.vue'
 import AppFooter from '../components/AppFooter.vue'
+import { generateCorrelationId, appendCorrelationId } from '../shared/correlation'
 
 const REFRESH_INTERVAL_MS = 15000
 const TICK_INTERVAL_MS = 5000
+
+const pad2 = (n) => String(n).padStart(2, '0')
+
+// Unix ms → строка локальной даты YYYY-MM-DD (для input[type=date]); '' если нет.
+function msToLocalDate(ms) {
+  if (ms === null || ms === undefined || !Number.isFinite(ms)) return ''
+  const d = new Date(ms)
+  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`
+}
+// Unix ms → строка локального времени HH:MM (для input[type=time]); '' если нет.
+function msToLocalTime(ms) {
+  if (ms === null || ms === undefined || !Number.isFinite(ms)) return ''
+  const d = new Date(ms)
+  return `${pad2(d.getHours())}:${pad2(d.getMinutes())}`
+}
+// Дата + (необязательное) время → Unix ms (локальное время браузера).
+// Пустое время трактуется как 00:00. Без даты граница не задана (null).
+function localPartsToMs(dateStr, timeStr) {
+  if (!dateStr) return null
+  const time = /^\d{2}:\d{2}/.test(timeStr || '') ? timeStr : '00:00'
+  const ms = new Date(`${dateStr}T${time}`).getTime()
+  return Number.isFinite(ms) && ms > 0 ? ms : null
+}
 
 export default {
   name: 'PanelHomePage',
@@ -804,6 +847,7 @@ export default {
     testsUrl: { type: String, default: '' },
     panelUrl: { type: String, default: '' },
     webhookUrl: { type: String, default: '' },
+    baseUrlPath: { type: String, default: '' },
     apiUrls: {
       type: Object,
       default: () => ({
@@ -812,15 +856,14 @@ export default {
         recentWebhooks: '',
         analyticsSummary: '',
         searchByRequestId: '',
-        settingsSave: '',
-        settingsList: '',
         rawRequest: '',
         rawWebhook: '',
         accessGenerateInvite: '',
         accessRevokeInvite: '',
         accessRevokeGrant: '',
         accessInvites: '',
-        accessGrants: ''
+        accessGrants: '',
+        filterSave: ''
       })
     },
     initialSettings: {
@@ -831,18 +874,30 @@ export default {
         lp_webhook_token: '',
         gateway_base_url: ''
       })
+    },
+    initialDateFilter: {
+      type: Object,
+      default: () => ({})
     }
   },
   data() {
     return {
       bootLoaderDone: false,
+      origin: '',
+      // Границы фильтра как строки полей: дата (обязательна) + время (необязательно).
+      // Пустое время = 00:00. Источник истины — эти строки; ms выводится в computed.
+      fromDate: msToLocalDate(typeof this.initialDateFilter?.from === 'number' ? this.initialDateFilter.from : null),
+      fromTime: msToLocalTime(typeof this.initialDateFilter?.from === 'number' ? this.initialDateFilter.from : null),
+      toDate: msToLocalDate(typeof this.initialDateFilter?.to === 'number' ? this.initialDateFilter.to : null),
+      toTime: msToLocalTime(typeof this.initialDateFilter?.to === 'number' ? this.initialDateFilter.to : null),
+      dateFilterSaving: false,
+      dateFilterError: '',
       activeTab: 'overview',
       tabs: [
         { id: 'overview',   label: 'Обзор',         icon: 'fa-chart-line' },
         { id: 'requests',   label: 'Запросы',       icon: 'fa-list' },
         { id: 'webhooks',   label: 'Webhook',       icon: 'fa-bell' },
         { id: 'createBill', label: 'Создать',       icon: 'fa-file-invoice' },
-        { id: 'settings',   label: 'Настройки',     icon: 'fa-sliders' },
         { id: 'access',     label: 'Доступ',        icon: 'fa-user-shield', adminOnly: true }
       ],
       requestsFilters: [
@@ -865,20 +920,14 @@ export default {
         requests: 0,
         webhooks: 0
       },
-      settings: {
-        lp_apikey: this.initialSettings?.lp_apikey || '',
-        lp_login: this.initialSettings?.lp_login || '',
-        lp_webhook_token: this.initialSettings?.lp_webhook_token || '',
-        gateway_base_url: this.initialSettings?.gateway_base_url || ''
-      },
+      // Снимок сохранённых настроек (из SSR) — только для индикатора статуса в шапке.
+      // Редактирование настроек перенесено на страницу настроек проекта (/web/admin).
       savedSettings: {
         lp_apikey: this.initialSettings?.lp_apikey || '',
         lp_login: this.initialSettings?.lp_login || '',
         lp_webhook_token: this.initialSettings?.lp_webhook_token || '',
         gateway_base_url: this.initialSettings?.gateway_base_url || ''
       },
-      settingsMessage: '',
-      settingsError: false,
       analytics: null,
       requests: [],
       webhooks: [],
@@ -906,6 +955,29 @@ export default {
     }
   },
   computed: {
+    // Base URL = хост (читается на фронте) + путь до создания счёта (из config через проп).
+    baseUrl() {
+      if (!this.origin) return ''
+      return `${this.origin}${this.baseUrlPath}`
+    },
+    // Границы в Unix ms, выведенные из строк полей. Пустое время → 00:00.
+    fromMs() {
+      return localPartsToMs(this.fromDate, this.fromTime)
+    },
+    toMs() {
+      return localPartsToMs(this.toDate, this.toTime)
+    },
+    hasActiveFilter() {
+      return this.fromMs !== null || this.toMs !== null
+    },
+    periodLabel() {
+      const f = this.fromMs
+      const t = this.toMs
+      if (f === null && t === null) return 'за всё время'
+      if (f !== null && t !== null) return `с ${this.formatTime(f)} по ${this.formatTime(t)}`
+      if (f !== null) return `с ${this.formatTime(f)}`
+      return `по ${this.formatTime(t)}`
+    },
     visibleTabs() {
       return this.tabs.filter((t) => !t.adminOnly || this.isAdmin)
     },
@@ -917,9 +989,11 @@ export default {
         { key: 'gateway_base_url',  label: 'Gateway URL',   set: !!this.savedSettings.gateway_base_url }
       ]
     },
-    hasUnsavedSettings() {
-      const keys = ['lp_apikey', 'lp_login', 'lp_webhook_token', 'gateway_base_url']
-      return keys.some(k => (this.settings[k] || '') !== (this.savedSettings[k] || ''))
+    allConfigured() {
+      return this.configChips.every(c => c.set)
+    },
+    missingConfig() {
+      return this.configChips.filter(c => !c.set).map(c => c.label)
     },
     filteredRequests() {
       if (this.requestsFilter === 'ok')  return this.requests.filter(r => r.ok)
@@ -942,11 +1016,17 @@ export default {
     liveMode(on) {
       if (on) this.startAutoRefresh()
       else this.stopAutoRefresh()
+    },
+    hasActiveFilter(active) {
+      // При активном фильтре авто-обновление недоступно: выключаем Live,
+      // watcher liveMode сам остановит таймер (без дублирующего stopAutoRefresh).
+      if (active && this.liveMode) this.liveMode = false
     }
   },
   mounted() {
     this.loadQrcodeLib()
     if (typeof window !== 'undefined') {
+      this.origin = window.location.origin
       if (window.hideAppLoader) window.hideAppLoader()
       if (window.bootLoaderComplete) {
         this.bootLoaderDone = true
@@ -1025,6 +1105,14 @@ export default {
       if (share === null || share === undefined) return '—'
       if (typeof share !== 'number' || Number.isNaN(share)) return '—'
       return (share * 100).toFixed(1) + ' %'
+    },
+    formatMoney(value) {
+      if (value === null || value === undefined) return '—'
+      if (typeof value !== 'number' || Number.isNaN(value)) return '—'
+      return Intl.NumberFormat('ru-RU', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      }).format(value) + ' ₽'
     },
     formatTime(ts) {
       if (!ts) return ''
@@ -1220,45 +1308,6 @@ export default {
       this.billSuccessData = null
     },
 
-    /* ====== Generator / Settings ====== */
-    generateToken() {
-      const chars = 'abcdef0123456789'
-      let t = ''
-      for (let i = 0; i < 64; i++) {
-        t += chars.charAt(Math.floor(Math.random() * chars.length))
-      }
-      this.settings.lp_webhook_token = t
-    },
-    async saveSettings() {
-      this.settingsMessage = ''
-      this.settingsError = false
-      const url = this.apiUrls?.settingsSave || ''
-      if (!url) {
-        this.settingsMessage = 'API URL не настроен.'
-        this.settingsError = true
-        return
-      }
-      const keys = ['lp_apikey', 'lp_login', 'lp_webhook_token', 'gateway_base_url']
-      try {
-        for (const k of keys) {
-          const v = this.settings[k] || ''
-          if (!v) continue
-          const resp = await fetch(url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ key: k, value: v })
-          })
-          const data = await resp.json()
-          if (!data.success) throw new Error(`${k}: ${data.error || 'ошибка'}`)
-        }
-        this.settingsMessage = 'Сохранено.'
-        this.savedSettings = { ...this.settings }
-      } catch (e) {
-        this.settingsMessage = String(e.message || e)
-        this.settingsError = true
-      }
-    },
-
     /* ====== Data loaders ====== */
     async loadAnalytics() {
       const url = this.apiUrls?.analyticsSummary
@@ -1309,6 +1358,61 @@ export default {
         this.searchResult = { request: null, webhooks: [] }
       }
     },
+
+    /* ====== Date filter ====== */
+    // Любое изменение полей даты/времени — пересчитать ms и сохранить.
+    onFilterChange() {
+      this.saveDateFilter()
+    },
+    // Синхронизировать строки полей с сохранённым на сервере фильтром (Unix ms).
+    applySavedFilter(saved) {
+      const from = saved && typeof saved.from === 'number' ? saved.from : null
+      const to = saved && typeof saved.to === 'number' ? saved.to : null
+      this.fromDate = msToLocalDate(from)
+      this.fromTime = msToLocalTime(from)
+      this.toDate = msToLocalDate(to)
+      this.toTime = msToLocalTime(to)
+    },
+    async saveDateFilter() {
+      const url = this.apiUrls?.filterSave
+      if (!url) return
+      const from = this.fromMs
+      const to = this.toMs
+      // Клиентская проверка диапазона до запроса — не шлём заведомо невалидное.
+      if (from !== null && to !== null && from > to) {
+        this.dateFilterError = 'Дата начала не может быть позже даты окончания'
+        return
+      }
+      this.dateFilterError = ''
+      this.dateFilterSaving = true
+      try {
+        const resp = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ from, to })
+        })
+        const data = await resp.json()
+        if (!resp.ok || !data.success) {
+          this.dateFilterError = (data && data.error) || 'Не удалось сохранить фильтр'
+          return
+        }
+        // Источник истины — сервер: синхронизируем поля с сохранённым фильтром.
+        this.applySavedFilter(data.filter || {})
+        this.searchResult = null
+        this.loadForTab(this.activeTab)
+      } catch (e) {
+        this.dateFilterError = 'Ошибка сети при сохранении фильтра'
+      } finally {
+        this.dateFilterSaving = false
+      }
+    },
+    resetDateFilter() {
+      this.fromDate = ''
+      this.fromTime = ''
+      this.toDate = ''
+      this.toTime = ''
+      this.saveDateFilter()
+    },
     async createBill() {
       const url = this.apiUrls?.invoke
       if (!url) return
@@ -1316,12 +1420,24 @@ export default {
       this.billResult = null
       this.billSuccessData = null
       try {
+        // correlationId — уникальный ключ связки счёта с входящим webhook.
+        // LifePay не возвращает наш orderNumber в webhook, поэтому кладём ключ
+        // и в callbackUrl (query), и в args (сервер сохранит в request_log).
+        const correlationId = generateCorrelationId()
+        // appendCorrelationId не бросает: при невалидном callbackUrl вернёт оригинал
+        // с appended:false (correlationId уйдёт только в args, связка по query не
+        // сработает). Счёт всё равно создаётся. Кейс практически недостижим: поле
+        // предзаполнено валидным серверным webhookUrl, а с «битым» URL LifePay
+        // не доставит webhook вовсе. Логирование на клиенте не ведём (console
+        // запрещён стандартом; ctx-логгера в Vue нет).
+        const cb = appendCorrelationId(this.bill.callbackUrl, correlationId)
         const args = {
           orderNumber: this.bill.orderNumber,
           amount: Number(this.bill.amount),
           customerEmail: this.bill.customerEmail,
           description: this.bill.description,
-          callbackUrl: this.bill.callbackUrl
+          callbackUrl: cb.url,
+          correlationId
         }
         if (this.bill.customerPhone && this.bill.customerPhone.trim()) {
           args.customerPhone = this.bill.customerPhone.trim()
@@ -1458,6 +1574,49 @@ export default {
   border-color: rgba(212, 168, 90, 0.4);
   background: rgba(212, 168, 90, 0.08);
 }
+.config-status {
+  position: relative;
+  cursor: default;
+}
+.config-status-tooltip {
+  position: absolute;
+  top: calc(100% + 0.4rem);
+  left: 0;
+  z-index: 50;
+  min-width: 200px;
+  padding: 0.5rem 0.7rem;
+  background: var(--color-bg);
+  border: 1px solid rgba(212, 168, 90, 0.4);
+  color: var(--color-text);
+  text-transform: none;
+  letter-spacing: normal;
+  font-size: 0.72rem;
+  text-align: left;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-4px);
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  pointer-events: none;
+}
+.config-status:hover .config-status-tooltip,
+.config-status:focus-visible .config-status-tooltip {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+.config-status-tooltip-title {
+  display: block;
+  margin-bottom: 0.35rem;
+  color: #f0c989;
+}
+.config-status-tooltip ul {
+  margin: 0;
+  padding-left: 1rem;
+  list-style: disc;
+}
+.config-status-tooltip li {
+  line-height: 1.5;
+}
 
 .status-webhook {
   display: flex;
@@ -1485,6 +1644,7 @@ export default {
   padding: 0.2rem 0.5rem;
   font-size: 0.7rem;
   max-width: 100%;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1494,13 +1654,10 @@ export default {
 /* ===================== TOOLBAR ===================== */
 .panel-toolbar {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
-  padding: 0.5rem 0.75rem;
+  flex-direction: column;
+  padding: 0 0.75rem;
   background: rgba(20, 20, 20, 0.65);
   border: 1px solid var(--color-border);
-  flex-wrap: wrap;
   position: sticky;
   top: 0;
   z-index: 50;
@@ -1510,6 +1667,23 @@ export default {
     100% calc(100% - 3px), calc(100% - 3px) calc(100% - 3px), calc(100% - 3px) 100%,
     3px 100%, 3px calc(100% - 3px), 0 calc(100% - 3px)
   );
+}
+.toolbar-row {
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+.toolbar-row--tabs {
+  padding: 0.5rem 0;
+}
+.toolbar-row--tools {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.5rem 0;
+  border-top: 1px solid var(--color-border-light);
 }
 .panel-tabs {
   display: flex;
@@ -1571,15 +1745,10 @@ export default {
 }
 .tab.active::after { transform: scaleX(1); }
 
-.panel-toolbar-right {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
 /* live toggle */
 .live-toggle {
   display: inline-flex;
+  flex-shrink: 0;
   align-items: center;
   gap: 0.4rem;
   cursor: pointer;
@@ -1614,11 +1783,61 @@ export default {
   50%      { opacity: 0.55; }
 }
 
+/* date filter */
+.date-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.7rem;
+  color: var(--color-text-tertiary);
+  padding: 0.25rem 0.5rem;
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-tertiary);
+  flex-wrap: wrap;
+  min-width: 0;
+}
+.date-filter-icon {
+  color: var(--color-accent);
+  font-size: 0.8rem;
+}
+.date-filter-field {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+.date-filter-cap {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.date-filter-input {
+  background: var(--color-bg);
+  color: var(--color-text);
+  border: 1px solid var(--color-border-light);
+  padding: 0.2rem 0.4rem;
+  font-size: 0.7rem;
+  font-family: inherit;
+  color-scheme: dark;
+}
+.date-filter-sep {
+  color: var(--color-text-tertiary);
+}
+.date-filter-reset {
+  white-space: nowrap;
+}
+.date-filter-error {
+  color: #f0a0a0;
+  font-size: 0.68rem;
+  max-width: 220px;
+}
+
 /* quick search */
 .quick-search {
   position: relative;
   display: flex;
   align-items: center;
+  flex: 1 1 200px;
+  max-width: 480px;
+  min-width: 0;
 }
 .quick-search-icon {
   position: absolute;
@@ -1635,7 +1854,8 @@ export default {
   font-family: inherit;
   letter-spacing: inherit;
   font-size: 0.75rem;
-  width: 260px;
+  width: 100%;
+  min-width: 0;
   outline: none;
   transition: border-color 0.2s, box-shadow 0.2s;
 }
@@ -1733,6 +1953,33 @@ export default {
 }
 
 /* ===================== KPI ===================== */
+.manager-summary {
+  margin-bottom: 1.1rem;
+}
+.admin-summary .kpi-grid + .kpi-grid {
+  margin-top: 0.9rem;
+}
+.summary-title {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0 0 0.7rem;
+  font-size: 0.95rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text);
+}
+.summary-title .prompt {
+  color: var(--color-accent);
+}
+.summary-period {
+  margin-left: 0.5rem;
+  font-size: 0.72rem;
+  text-transform: none;
+  letter-spacing: normal;
+  color: var(--color-accent);
+  font-weight: normal;
+}
 .kpi-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -1991,55 +2238,13 @@ export default {
 .link-button:hover { color: var(--color-accent-hover); border-color: var(--color-accent-hover); }
 
 /* ===================== SETTINGS ===================== */
-.settings-form { display: flex; flex-direction: column; gap: 1rem; }
-.settings-fieldset {
-  border: 1px solid var(--color-border);
-  background: rgba(10, 10, 10, 0.4);
-  padding: 0.9rem 1rem 1rem;
-  margin: 0;
-  position: relative;
-}
-.settings-fieldset::before,
-.settings-fieldset::after {
-  content: '';
-  position: absolute;
-  top: 6px;
-  width: 12px; height: 12px;
-  border-top: 1px solid rgba(211, 35, 75, 0.25);
-  pointer-events: none;
-}
-.settings-fieldset::before { left: 6px;  border-left:  1px solid rgba(211, 35, 75, 0.25); }
-.settings-fieldset::after  { right: 6px; border-right: 1px solid rgba(211, 35, 75, 0.25); }
-.settings-legend {
-  font-size: 0.72rem;
-  color: var(--color-accent);
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  padding: 0 0.4rem;
-}
-.settings-legend i { margin-right: 0.4rem; opacity: 0.85; }
+/* Форма настроек LifePay перенесена на страницу настроек проекта (/web/admin).
+   Класс ниже переиспользуется модалкой создания пригласительной ссылки. */
 .settings-save-bar {
   display: flex;
   align-items: center;
   gap: 1rem;
   padding-top: 0.5rem;
-}
-.unsaved-dot {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  color: #d4a85a;
-  font-size: 0.72rem;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-.unsaved-dot i {
-  font-size: 0.45rem;
-  animation: unsaved-pulse 1.4s ease-in-out infinite;
-}
-@keyframes unsaved-pulse {
-  0%, 100% { opacity: 1; }
-  50%      { opacity: 0.45; }
 }
 
 /* ===================== FORMS ===================== */
@@ -2245,11 +2450,9 @@ export default {
   .content-inner { padding: 0 1rem; gap: 1rem; }
   .panel-section { padding: 1rem 0.9rem 0.85rem; }
   .status-strip { flex-direction: column; align-items: flex-start; gap: 0.5rem; }
-  .status-webhook { justify-content: flex-start; }
-  .panel-toolbar { position: static; flex-direction: column; align-items: flex-start; gap: 0.75rem; }
-  .panel-toolbar-right { width: 100%; flex-wrap: wrap; }
-  .quick-search-input { width: 100%; flex: 1; }
-  .quick-search { flex: 1; width: 100%; }
+  .status-webhook { flex: 0 0 auto; width: 100%; justify-content: flex-start; }
+  .panel-toolbar { position: static; }
+  .quick-search { flex: 1 1 100%; }
   .kpi-grid, .kpi-grid-secondary { grid-template-columns: 1fr 1fr; }
   .kpi-value { font-size: 1.4rem; }
   .grid-form { grid-template-columns: 1fr; }
@@ -2260,6 +2463,10 @@ export default {
   .kpi-grid, .kpi-grid-secondary { grid-template-columns: 1fr; }
   .tab span { display: none; }
   .tab { padding: 0.5rem 0.65rem; }
+  .date-filter { flex-direction: column; align-items: flex-start; width: 100%; }
+  .date-filter-sep { display: none; }
+  .date-filter-field { width: 100%; min-width: 0; }
+  .date-filter-field .date-filter-input { flex: 1; min-width: 0; }
 }
 
 /* ====== RAW PAYLOAD MODAL ====== */

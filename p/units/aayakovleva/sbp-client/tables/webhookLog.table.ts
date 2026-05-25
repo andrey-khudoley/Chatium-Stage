@@ -41,6 +41,9 @@ export const WebhookLog = Heap.Table('t__lifepay-sbp-client__whlog__d2Pq8T', {
     customMeta: { title: 'order.number из вложенного JSON (наш orderNumber)' },
     searchable: { langs: ['en'], embeddings: false }
   }),
+  correlationId: Heap.Optional(Heap.String({
+    customMeta: { title: 'correlationId из query callbackUrl (связка с request_log; пусто если нет)' }
+  })),
   tokenValid: Heap.Boolean({
     customMeta: { title: 'Был ли токен в query валиден' }
   }),

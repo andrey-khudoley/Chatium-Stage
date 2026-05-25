@@ -2,10 +2,13 @@
  * GET /api/lp/analytics/summary — карточки аналитики
  * (implementation-plan §1.8.4). Доступ: requireRealUser + requireInternalAccess (§1.11.8).
  *
- * Окно: по умолчанию 24 часа (query windowHours, max 24*30).
+ * Окно выборки задаётся глобальным фильтром панели по дате/времени
+ * (settings.PANEL_DATE_FILTER, [from?, to?] Unix ms). Если фильтр не задан —
+ * учитываются все данные (до кэпа сканирования ANALYTICS_SCAN_LIMIT).
  *
- * Возвращает: requests {total, okShare, avgDurationMs, p95DurationMs, topErrorCode},
- * webhooks {total, successShare, tokenValidShare}.
+ * Возвращает: dateFilter {from, to}, orders {created, paid, createdSum, paidSum}
+ * (сводка для менеджера), requests {total, okShare, avgDurationMs, p95DurationMs,
+ * topErrorCode}, webhooks {total, successShare, tokenValidShare}.
  *
  * Эндпоинт не возвращает секретов и не выводит полных тел запросов/ответов.
  */
@@ -14,17 +17,10 @@ import * as requestLogRepo from '../../../repos/requestLog.repo'
 import * as webhookLogRepo from '../../../repos/webhookLog.repo'
 import { guardInternalApi } from '../../../lib/access/apiGuard'
 import * as loggerLib from '../../../lib/logger.lib'
-import { ANALYTICS_DEFAULT_WINDOW_HOURS } from '../../../lib/gateway/constants'
+import { ANALYTICS_SCAN_LIMIT } from '../../../lib/gateway/constants'
+import { getPanelDateFilter } from '../../../lib/settings.lib'
 
 const LOG_PATH = 'api/lp/analytics/summary'
-
-const MAX_WINDOW_HOURS = 24 * 30
-
-function parseWindow(value: unknown): number {
-  const n = typeof value === 'string' ? parseInt(value, 10) : typeof value === 'number' ? value : NaN
-  if (!Number.isFinite(n) || n < 1) return ANALYTICS_DEFAULT_WINDOW_HOURS
-  return Math.min(Math.floor(n), MAX_WINDOW_HOURS)
-}
 
 function computeP95(sortedAsc: number[]): number {
   if (sortedAsc.length === 0) return 0
@@ -32,35 +28,59 @@ function computeP95(sortedAsc: number[]): number {
   return sortedAsc[idx]
 }
 
+/**
+ * Извлекает сумму заказа из args createBill (поле amount, рубли). Args может быть
+ * любого типа (Heap.Any), поэтому проверяем структуру. Возвращает null, если суммы нет.
+ */
+function extractOrderAmount(args: unknown): number | null {
+  if (!args || typeof args !== 'object') return null
+  const raw = (args as Record<string, unknown>).amount
+  if (typeof raw === 'number' && Number.isFinite(raw)) return raw
+  if (typeof raw === 'string') {
+    const n = parseFloat(raw)
+    if (Number.isFinite(n)) return n
+  }
+  return null
+}
+
 export const analyticsSummaryRoute = app.get('/', async (ctx, req) => {
   const denied = await guardInternalApi(ctx)
   if (denied) return denied
 
-  const windowHours = parseWindow((req.query as Record<string, unknown> | undefined)?.windowHours)
-  const sinceTimestamp = Date.now() - windowHours * 60 * 60 * 1000
+  // Окно выборки — из глобального фильтра панели (Unix ms). Любая граница опциональна.
+  const { from, to } = await getPanelDateFilter(ctx)
 
   await loggerLib.writeServerLog(ctx, {
     severity: 6,
     message: `[${LOG_PATH}] entry`,
-    payload: { windowHours, sinceTimestamp }
+    payload: { from: from ?? null, to: to ?? null }
   })
 
   // Подсчёт total и ok через countBy.
-  const requestsTotal = await requestLogRepo.countSince(ctx, sinceTimestamp)
-  const requestsOk = await requestLogRepo.countOkSince(ctx, sinceTimestamp)
+  const requestsTotal = await requestLogRepo.countInRange(ctx, from, to)
+  const requestsOk = await requestLogRepo.countOkInRange(ctx, from, to)
 
-  // Для avg/p95 и top errorCode — выгрузка записей окна. findRecentSince
+  // Для avg/p95 и top errorCode — выгрузка записей диапазона. findInRange
   // внутри ходит cursor-пагинацией по 1000 (платформенный кэп findAll); внешний
-  // limit ограничивает общее число записей (берём свежие, если их больше 5000).
-  const recent = await requestLogRepo.findRecentSince(ctx, sinceTimestamp, 5000)
+  // limit ограничивает общее число записей (берём свежие, если их больше кэпа).
+  const recent = await requestLogRepo.findInRange(ctx, from, to, ANALYTICS_SCAN_LIMIT)
   const durations: number[] = []
   const errorCodeCount: Record<string, number> = {}
+  // Сводка для менеджера: сформированные заказы = успешные createBill.
+  // Суммы копим в копейках (целые), чтобы избежать дрейфа float.
+  let ordersCreated = 0
+  let ordersSumKopecks = 0
   for (const row of recent) {
     if (typeof row.durationMs === 'number' && Number.isFinite(row.durationMs)) {
       durations.push(row.durationMs)
     }
     if (!row.ok && row.errorCode) {
       errorCodeCount[row.errorCode] = (errorCodeCount[row.errorCode] || 0) + 1
+    }
+    if (row.op === 'createBill' && row.ok) {
+      ordersCreated += 1
+      const amount = extractOrderAmount(row.argsRedacted)
+      if (amount !== null) ordersSumKopecks += Math.round(amount * 100)
     }
   }
   durations.sort((a, b) => a - b)
@@ -78,13 +98,32 @@ export const analyticsSummaryRoute = app.get('/', async (ctx, req) => {
   }
 
   // Webhooks
-  const webhooksTotal = await webhookLogRepo.countSince(ctx, sinceTimestamp)
-  const webhooksSuccess = await webhookLogRepo.countStatusSuccessSince(ctx, sinceTimestamp)
-  const webhooksTokenValid = await webhookLogRepo.countTokenValidSince(ctx, sinceTimestamp)
+  const webhooksTotal = await webhookLogRepo.countInRange(ctx, from, to)
+  const webhooksSuccess = await webhookLogRepo.countStatusSuccessInRange(ctx, from, to)
+  const webhooksTokenValid = await webhookLogRepo.countTokenValidInRange(ctx, from, to)
+
+  // Сводка для менеджера: оплаченные заказы = успешные payment-webhook (без дублей).
+  // amount хранится строкой → парсим и копим в копейках.
+  const recentWebhooks = await webhookLogRepo.findInRange(ctx, from, to, ANALYTICS_SCAN_LIMIT)
+  let ordersPaid = 0
+  let paymentsSumKopecks = 0
+  for (const w of recentWebhooks) {
+    if (w.type === 'payment' && w.status === 'success' && !w.duplicate) {
+      ordersPaid += 1
+      const amount = parseFloat(w.amount)
+      if (Number.isFinite(amount)) paymentsSumKopecks += Math.round(amount * 100)
+    }
+  }
 
   const result = {
     success: true,
-    windowHours,
+    dateFilter: { from: from ?? null, to: to ?? null },
+    orders: {
+      created: ordersCreated,
+      paid: ordersPaid,
+      createdSum: ordersSumKopecks / 100,
+      paidSum: paymentsSumKopecks / 100
+    },
     requests: {
       total: requestsTotal,
       okShare: requestsTotal > 0 ? Math.round((requestsOk / requestsTotal) * 1000) / 1000 : 0,
@@ -105,7 +144,7 @@ export const analyticsSummaryRoute = app.get('/', async (ctx, req) => {
   await loggerLib.writeServerLog(ctx, {
     severity: 6,
     message: `[${LOG_PATH}] exit`,
-    payload: { windowHours, requestsTotal, webhooksTotal }
+    payload: { from: from ?? null, to: to ?? null, requestsTotal, webhooksTotal, ordersCreated, ordersPaid }
   })
 
   return result

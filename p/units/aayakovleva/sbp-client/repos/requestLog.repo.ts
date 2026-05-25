@@ -18,6 +18,7 @@ export type RequestLogCreatePayload = {
   op: string
   argsRedacted: unknown
   orderNumber: string
+  correlationId?: string
   clientHttpStatus: number
   ok: boolean
   errorCode: string
@@ -36,9 +37,15 @@ export async function create(
   await loggerLib.writeServerLog(ctx, {
     severity: 6,
     message: `[${LOG_MODULE}] create entry`,
-    payload: { requestId: data.requestId, op: data.op, ok: data.ok, errorCode: data.errorCode }
+    payload: {
+      requestId: data.requestId,
+      op: data.op,
+      ok: data.ok,
+      errorCode: data.errorCode,
+      correlationId: data.correlationId ?? null
+    }
   })
-  const row = await RequestLog.create(ctx, data)
+  const row = await RequestLog.create(ctx, { ...data, correlationId: data.correlationId || undefined })
   await loggerLib.writeServerLog(ctx, {
     severity: 6,
     message: `[${LOG_MODULE}] create exit`,
@@ -47,6 +54,7 @@ export async function create(
   return row
 }
 
+/** @deprecated используйте findInRange (учитывает фильтр по дате/времени). */
 export async function findRecent(ctx: app.Ctx, limit: number): Promise<RequestLogRow[]> {
   await loggerLib.writeServerLog(ctx, {
     severity: 6,
@@ -65,6 +73,7 @@ export async function findRecent(ctx: app.Ctx, limit: number): Promise<RequestLo
   return rows
 }
 
+/** @deprecated используйте findInRange (учитывает фильтр по дате/времени). */
 export async function findBeforeRequestedAt(
   ctx: app.Ctx,
   beforeRequestedAt: number,
@@ -133,6 +142,36 @@ export async function findByOrderNumber(
   return rows
 }
 
+/**
+ * Записи request_log по списку correlationId (батч через `$in`). Используется
+ * для обогащения списка webhook полем orderNumber: LifePay не возвращает наш
+ * orderNumber в webhook, но он есть в исходном createBill-запросе, связанном по
+ * correlationId. Пустой список → пустой результат (без запроса к Heap).
+ * Лимит ограничен числом уникальных id (createBill даёт 1 запись на correlationId).
+ */
+export async function findByCorrelationIds(
+  ctx: app.Ctx,
+  correlationIds: string[]
+): Promise<RequestLogRow[]> {
+  if (correlationIds.length === 0) return []
+  await loggerLib.writeServerLog(ctx, {
+    severity: 6,
+    message: `[${LOG_MODULE}] findByCorrelationIds entry`,
+    payload: { count: correlationIds.length }
+  })
+  const rows = await RequestLog.findAll(ctx, {
+    where: { correlationId: { $in: correlationIds } },
+    order: [{ requestedAt: 'desc' }],
+    limit: correlationIds.length
+  })
+  await loggerLib.writeServerLog(ctx, {
+    severity: 6,
+    message: `[${LOG_MODULE}] findByCorrelationIds exit`,
+    payload: { requested: correlationIds.length, found: rows.length }
+  })
+  return rows
+}
+
 export async function findByRequestId(
   ctx: app.Ctx,
   requestId: string
@@ -167,6 +206,7 @@ export async function findByRequestId(
  */
 const HARD_BATCH = 1000
 
+/** @deprecated используйте findInRange(ctx, from, to) — обобщённый диапазон. */
 export async function findRecentSince(
   ctx: app.Ctx,
   sinceTimestamp: number,
@@ -238,4 +278,85 @@ export async function countOkSince(
     requestedAt: { $gte: sinceTimestamp },
     ok: true
   })
+}
+
+/**
+ * Собирает условие по `requestedAt` для диапазона [from?, to?]. Любая граница
+ * необязательна. Возвращает `{}` если границ нет (без фильтра по времени).
+ */
+function rangeWhere(from?: number, to?: number): Record<string, unknown> {
+  const cond: Record<string, number> = {}
+  if (from !== undefined) cond.$gte = from
+  if (to !== undefined) cond.$lt = to
+  return Object.keys(cond).length > 0 ? { requestedAt: cond } : {}
+}
+
+/**
+ * Возвращает записи журнала в диапазоне дат [from?, to?] (Unix ms), свежие первыми.
+ * Любая граница необязательна; без границ ведёт себя как «последние limit записей».
+ * Внутри cursor-пагинация по 1000 (HARD_BATCH — кэп Heap.findAll), один `findAll`
+ * никогда не запрашивает > 1000. Верхняя граница окна — `$lt: to`; при пагинации
+ * курсор (минимальный requestedAt предыдущего батча) всегда < to, поэтому в
+ * последующих батчах используется `$lt: cursor`.
+ */
+export async function findInRange(
+  ctx: app.Ctx,
+  from?: number,
+  to?: number,
+  limit: number = 5000
+): Promise<RequestLogRow[]> {
+  await loggerLib.writeServerLog(ctx, {
+    severity: 6,
+    message: `[${LOG_MODULE}] findInRange entry`,
+    payload: { from: from ?? null, to: to ?? null, limit }
+  })
+
+  const result: RequestLogRow[] = []
+  let cursor: number | null = null
+
+  while (result.length < limit) {
+    const cond: Record<string, number> = {}
+    if (from !== undefined) cond.$gte = from
+    const upper = cursor !== null ? cursor : to
+    if (upper !== undefined) cond.$lt = upper
+    const where: Record<string, unknown> =
+      Object.keys(cond).length > 0 ? { requestedAt: cond } : {}
+
+    const remaining = limit - result.length
+    const batchSize = Math.min(HARD_BATCH, remaining)
+
+    const rows = await RequestLog.findAll(ctx, {
+      where,
+      order: [{ requestedAt: 'desc' }],
+      limit: batchSize
+    })
+
+    if (rows.length === 0) break
+    result.push(...rows)
+    cursor = rows[rows.length - 1].requestedAt
+    if (rows.length < batchSize) break
+  }
+
+  await loggerLib.writeServerLog(ctx, {
+    severity: 6,
+    message: `[${LOG_MODULE}] findInRange exit`,
+    payload: { from: from ?? null, to: to ?? null, count: result.length }
+  })
+  return result
+}
+
+export async function countInRange(
+  ctx: app.Ctx,
+  from?: number,
+  to?: number
+): Promise<number> {
+  return RequestLog.countBy(ctx, rangeWhere(from, to))
+}
+
+export async function countOkInRange(
+  ctx: app.Ctx,
+  from?: number,
+  to?: number
+): Promise<number> {
+  return RequestLog.countBy(ctx, { ...rangeWhere(from, to), ok: true })
 }

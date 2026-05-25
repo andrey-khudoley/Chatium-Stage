@@ -21,6 +21,8 @@ export type RecordParams = {
   op: string
   args: Record<string, unknown>
   invoke: InvokeResult
+  /** correlationId из args запроса (не пробрасывается в gateway, хранится для связки с webhook). */
+  correlationId?: string
 }
 
 /**
@@ -108,6 +110,7 @@ export async function recordRequestLog(
       op: params.op,
       argsRedacted: argsForLog,
       orderNumber,
+      correlationId: params.correlationId || undefined,
       clientHttpStatus: params.invoke.httpStatus,
       ok: params.invoke.ok,
       errorCode,

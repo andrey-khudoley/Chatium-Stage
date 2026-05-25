@@ -11,5 +11,8 @@ export const INVOKE_TIMEOUT_MS = 15_000
 export const RECENT_DEFAULT_LIMIT = 20
 export const RECENT_MAX_LIMIT = 100
 
-/** Окно аналитики по умолчанию (часов). */
-export const ANALYTICS_DEFAULT_WINDOW_HOURS = 24
+/**
+ * Максимум записей, сканируемых аналитикой/выборками в одном проходе.
+ * Достигается cursor-пагинацией по батчам ≤ 1000 (платформенный кэп Heap.findAll).
+ */
+export const ANALYTICS_SCAN_LIMIT = 5000

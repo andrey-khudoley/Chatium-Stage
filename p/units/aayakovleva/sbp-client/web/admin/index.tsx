@@ -159,10 +159,25 @@ export const adminPageRoute = app.html('/', async (ctx, req) => {
     payload: { logLevel, logsSocketId, hasEncodedLogsSocketId: !!encodedLogsSocketId }
   })
   const projectName = await settingsLib.getSettingString(ctx, settingsLib.SETTING_KEYS.PROJECT_NAME)
+
+  // Настройки LifePay для формы на странице настроек (перенесены с главной панели).
+  // Значения секретов читаются без логирования значений (только наличие — ниже).
+  const initialSettings = {
+    lp_apikey: await settingsLib.getLpApikey(ctx),
+    lp_login: await settingsLib.getLpLogin(ctx),
+    lp_webhook_token: await settingsLib.getLpWebhookToken(ctx),
+    gateway_base_url: await settingsLib.getGatewayBaseUrl(ctx)
+  }
   await loggerLib.writeServerLog(ctx, {
     severity: 6,
     message: `[${LOG_PATH}] Переменные для рендера`,
-    payload: { projectName }
+    payload: {
+      projectName,
+      hasApikey: !!initialSettings.lp_apikey,
+      hasLogin: !!initialSettings.lp_login,
+      hasWebhookToken: !!initialSettings.lp_webhook_token,
+      hasGatewayBaseUrl: !!initialSettings.gateway_base_url
+    }
   })
   await loggerLib.writeServerLog(ctx, {
     severity: 6,
@@ -206,6 +221,7 @@ export const adminPageRoute = app.html('/', async (ctx, req) => {
           adminUrl={adminUrl}
           panelUrl={panelUrl}
           encodedLogsSocketId={encodedLogsSocketId}
+          initialSettings={initialSettings}
         />
       </body>
     </html>

@@ -69,21 +69,28 @@ export const indexPageRoute = app.html('/', async (ctx, req) => {
   const webhookPath = getFullUrl(ROUTES.webhook)
   const webhookUrl = `https://${ctx.account.host}${webhookPath}?token=${tokenForUrl}`
 
+  // Base URL: путь до эндпоинта создания счёта (из config/routes). Хост дописывается
+  // на фронте через window.location.origin — см. PanelHomePage.vue computed baseUrl.
+  const baseUrlPath = getFullUrl(ROUTES.createBill)
+
+  // Глобальный фильтр панели по дате/времени (Unix ms). Читается из Heap на SSR
+  // и передаётся пропсом — общий для всех пользователей и сессий.
+  const initialDateFilter = await settingsLib.getPanelDateFilter(ctx)
+
   const apiUrls = {
     invoke: `${getFullUrl('/api/lp/invoke')}`,
     recentRequests: `${getFullUrl('/api/lp/recent-requests')}`,
     recentWebhooks: `${getFullUrl('/api/lp/recent-webhooks')}`,
     analyticsSummary: `${getFullUrl('/api/lp/analytics/summary')}`,
     searchByRequestId: `${getFullUrl('/api/lp/search-by-request-id')}`,
-    settingsSave: `${getFullUrl('/api/settings/save')}`,
-    settingsList: `${getFullUrl('/api/settings/list')}`,
     rawRequest: `${getFullUrl('/api/lp/raw-request')}`,
     rawWebhook: `${getFullUrl('/api/lp/raw-webhook')}`,
     accessGenerateInvite: `${getFullUrl('/api/access/generate-invite')}`,
     accessRevokeInvite: `${getFullUrl('/api/access/revoke-invite')}`,
     accessRevokeGrant: `${getFullUrl('/api/access/revoke-grant')}`,
     accessInvites: `${getFullUrl('/api/access/invites')}`,
-    accessGrants: `${getFullUrl('/api/access/grants')}`
+    accessGrants: `${getFullUrl('/api/access/grants')}`,
+    filterSave: `${getFullUrl('/api/lp/analytics/filter-save')}`
   }
 
   const indexUrl = getFullUrl(ROUTES.index)
@@ -139,8 +146,10 @@ export const indexPageRoute = app.html('/', async (ctx, req) => {
           testsUrl={testsUrl}
           panelUrl={panelUrl}
           webhookUrl={webhookUrl}
+          baseUrlPath={baseUrlPath}
           apiUrls={apiUrls}
           initialSettings={initialSettings}
+          initialDateFilter={initialDateFilter}
         />
       </body>
     </html>
