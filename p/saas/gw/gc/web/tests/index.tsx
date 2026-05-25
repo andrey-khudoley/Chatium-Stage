@@ -1,5 +1,5 @@
 import { jsx } from '@app/html-jsx'
-import { requireRealUser } from '@app/auth'
+import { requireRealUser, requireAccountRole } from '@app/auth'
 import { genSocketId } from '@app/socket'
 import { getAdminLogsSocketId } from '../../lib/logger.lib'
 import TestsPage from '../../pages/TestsPage.vue'
@@ -44,6 +44,19 @@ export const testsPageRoute = app.html('/', async (ctx, req) => {
       payload: { error: String(error), backUrl: req.url }
     })
     return ctx.resp.redirect('../login?back=' + encodeURIComponent(req.url))
+  }
+
+  // Страница тестов доступна только системной роли Admin.
+  // Анонимный отсеян выше (requireRealUser); здесь — авторизованный без роли Admin.
+  try {
+    requireAccountRole(ctx, 'Admin')
+  } catch (error: unknown) {
+    await loggerLib.writeServerLog(ctx, {
+      severity: 4,
+      message: `[${LOG_PATH}] Доступ запрещён: требуется роль Admin`,
+      payload: { error: String(error), displayName: user.displayName }
+    })
+    return ctx.resp.redirect(getFullUrl(ROUTES.forbidden))
   }
 
   const isAdmin = user.is('Admin')

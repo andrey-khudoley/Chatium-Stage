@@ -1,4 +1,5 @@
 import Logs, { type LogsRow } from '../tables/logs.table'
+import { collectLimitedPaged } from '../lib/heapPaging'
 import * as loggerLib from '../lib/logger.lib'
 
 const LOG_MODULE = 'repos/logs.repo'
@@ -28,12 +29,14 @@ export async function findAll(
   const offset = opts.offset ?? 0
   const severities = Array.isArray(opts.severities) ? opts.severities : []
   const where = severities.length > 0 ? { severity: { $in: severities } } : undefined
-  const rows = await Logs.findAll(ctx, {
-    where,
-    order: [{ timestamp: 'desc' }],
+  // Heap.findAll отдаёт максимум 1000 строк за вызов (008-heap.md); при limit > 1000
+  // (например scanLimit аналитики) листаем страницами, иначе выборка тихо усекается.
+  const rows = await collectLimitedPaged(
+    (pageLimit, pageOffset) =>
+      Logs.findAll(ctx, { where, order: [{ timestamp: 'desc' }], limit: pageLimit, offset: pageOffset }),
     limit,
     offset
-  })
+  )
   await loggerLib.writeServerLog(ctx, {
     severity: 6,
     message: `[${LOG_MODULE}] findAll exit`,

@@ -1,4 +1,5 @@
 import Settings, { type SettingsRow } from '../tables/settings.table'
+import { collectAllPaged } from '../lib/heapPaging'
 
 /**
  * Репозиторий настроек — слой работы с БД.
@@ -11,7 +12,8 @@ export async function findByKey(ctx: app.Ctx, key: string): Promise<SettingsRow 
 }
 
 export async function findAll(ctx: app.Ctx): Promise<SettingsRow[]> {
-  return Settings.findAll(ctx, {})
+  // Пагинация: при >1000 настроек одиночный findAll тихо усёк бы список (008-heap.md).
+  return collectAllPaged((limit, offset) => Settings.findAll(ctx, { limit, offset }))
 }
 
 export async function upsert(ctx: app.Ctx, key: string, value: unknown): Promise<void> {

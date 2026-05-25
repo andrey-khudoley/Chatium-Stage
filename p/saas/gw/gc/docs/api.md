@@ -72,9 +72,23 @@
 
 | Method | Path | File | Auth | Назначение |
 | --- | --- | --- | --- | --- |
-| POST | /api/gateway-analytics/invocations | api/gateway-analytics/invocations.ts | Admin | Режимы `list` / `poll`; body `{ mode?, filters?: { dateFromMs?, dateToMs?, op?, errorCode?, contour?, availability?, durationMsMin?, durationMsMax?, ok?, requestId? }, limit?, scanLimit?, afterTimestampMs? }`. Возвращает `{ success, mode, scanned, matched, items[], maxTimestamp, summary: { total, okCount, errCount, topOps[], topErrors[], avgDurationMs, p50DurationMs, p95DurationMs } }`. |
+| POST | /api/gateway-analytics/invocations | api/gateway-analytics/invocations.ts | guardInternalApi | Режимы `list` / `poll`; body `{ mode?, filters?: { dateFromMs?, dateToMs?, op?, errorCode?, contour?, availability?, durationMsMin?, durationMsMax?, ok?, requestId? }, limit?, scanLimit?, afterTimestampMs? }`. Возвращает `{ success, mode, scanned, matched, items[], maxTimestamp, summary: { total, okCount, errCount, topOps[], topErrors[], avgDurationMs, p50DurationMs, p95DurationMs } }`. Фильтрация по дате выполняется in-memory (поля `filters.dateFromMs`/`filters.dateToMs`). |
+| POST | /api/gateway-analytics/filter-save | api/gateway-analytics/filter-save.ts | guardInternalApi | Сохранить или сбросить глобальный фильтр по дате. Body: `{ from?, to? }` (Unix ms); пустое тело → сброс (deleteByKey). Возвращает `{ success, filter: { from?, to? } \| null }`. Значение читается из `panel_date_filter` в Heap через `lib/settings.lib.ts`. |
 
 Для каждого `op` итоговая запись `writeServerLog` с `logStage: v1_op_completed` пишется в `lib/gateway/handleV1OpRoute.ts` после возврата ответа клиенту и содержит **минимальный набор** полей по manual §7.2: `requestId`, `op`, `httpMethod`, `contour`, `availability`, `schoolHostPresent` (булево), `clientHttpStatus`, `ok`, `errorCode` (при ошибке), `gcHttpStatus` (если запрос дошёл до GC), `durationMs`. Параллельно — событие workspace `gateway_gc.invoke.completed` (manual §7.3) с теми же значениями + `incomingMethod` и `gcSemanticRule`.
+
+## Доступы к панели (api/access/)
+
+Система внутренних доступов (по образцу `sbp-client`). Логика — `lib/access/`. Таблицы — `panelAccess`, `panelInvites`.
+
+| Method | Path | File | Auth | Назначение |
+| --- | --- | --- | --- | --- |
+| POST | /api/access/generate-invite | api/access/generate-invite.ts | Admin | Создать инвайт-токен (TTL 7 дней). Возвращает `{ success, token, expiresAt }`. |
+| POST | /api/access/consume-invite | api/access/consume-invite.ts | requireRealUser | Принять инвайт по токену; выдаёт грант текущему пользователю (через `runWithExclusiveLock`). Возвращает `{ success }` или ошибку (истёк / отозван / уже использован). |
+| POST | /api/access/revoke-invite | api/access/revoke-invite.ts | Admin | Отозвать инвайт по id. |
+| POST | /api/access/revoke-grant | api/access/revoke-grant.ts | Admin | Отозвать грант у пользователя по userId. |
+| GET | /api/access/invites | api/access/invites.ts | Admin | Список всех инвайтов. |
+| GET | /api/access/grants | api/access/grants.ts | Admin | Список всех выданных грантов. |
 
 Пример (подставьте базовый URL приложения, хост школы и API-ключ школы; **`gc_developer_api_key`** должен быть задан в Heap через админку):
 

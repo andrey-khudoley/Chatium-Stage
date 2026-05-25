@@ -1,5 +1,5 @@
 // @shared-route
-import { requireAccountRole } from '@app/auth'
+import { guardInternalApi } from '../../lib/access/apiGuard'
 import * as logsRepo from '../../repos/logs.repo'
 import * as loggerLib from '../../lib/logger.lib'
 import type { LogsRow } from '../../tables/logs.table'
@@ -156,7 +156,8 @@ function summarize(items: CompletionItem[]) {
  * с `payload.logStage === 'v1_op_completed'` (см. handleV1OpRoute.ts).
  */
 export const gatewayAnalyticsInvocationsRoute = app.post('/', async (ctx, req) => {
-  requireAccountRole(ctx, 'Admin')
+  const denied = await guardInternalApi(ctx)
+  if (denied) return denied
 
   const body = (req.body ?? {}) as GatewayAnalyticsBody
   const mode = body.mode === 'poll' ? 'poll' : 'list'
@@ -192,8 +193,9 @@ export const gatewayAnalyticsInvocationsRoute = app.post('/', async (ctx, req) =
     }
 
     const matched = items.length
-    items = items.slice(0, limit)
+    // summary считаем по ВСЕМ совпавшим записям (до среза), иначе KPI занижаются.
     const summary = summarize(items)
+    items = items.slice(0, limit)
     const maxTimestamp = items.reduce((m, i) => (i.timestamp > m ? i.timestamp : m), 0)
 
     await loggerLib.writeServerLog(ctx, {

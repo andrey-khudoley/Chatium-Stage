@@ -18,9 +18,15 @@
 
 ## Текущее состояние
 
-Сохранены возможности шаблона: главная, админка, профиль, логин, страница тестов, API настроек, Heap-таблицы settings/logs (с **отдельными** ключами таблиц для этого проекта), серверные логи, дашборд админки.
+Сохранены возможности шаблона: админка, профиль, логин, страница тестов, API настроек, Heap-таблицы settings/logs (с **отдельными** ключами таблиц для этого проекта), серверные логи, дашборд админки.
 
 Реализованы публичные **`GET`/`POST /v1/{op}`** для всех записей **`config/gc-op-http-mapping.json`** (59 операций): общий обработчик **`lib/gateway/handleV1OpRoute.ts`** (Legacy POST import, Legacy GET export, контур new), **`GET /v1/operations`** (`api/v1/operations.ts`), заголовки школы, **`gc_developer_api_key`**, ответ **`TuneHttpHeadersResponse`** + CORS для браузерных клиентов, события workspace **`gateway_gc.invoke.completed`** / **`gateway_gc.operations.catalog_served`**. Тонкая обёртка **`handleV1AddUserPost`** (`lib/gateway/v1AddUserHandler.ts`) нужна для интеграционных тестов. Генераторы: `scripts/gen-api-v1-routes.cjs`, `scripts/gen-gc-op-http-mapping.cjs`, `scripts/gen-v1-op-args-schemas.cjs`; проверка согласованности `scripts/check-gateway-catalog-consistency.cjs`. Интеграционный кейс **`gateway_v1_addUser_live`** — `lib/tests/integrationSuite.ts`. Детали — **`docs/api.md`**, **`docs/gateway/implementation-plan.md`**.
+
+**Панель (`PanelHomePage.vue`):** главная `/` теперь рендерит панель мониторинга вместо лендинга. Вкладки: Обзор, Вызовы (таблица завершённых `/v1/{op}` с KPI: total/ok/err/avg/p50/p95/topOps), Доступы (Admin: управление грантами и инвайтами). Toolbar фильтра по дате. Страница тестов ограничена только ролью Admin.
+
+**Система доступов к панели:** новые Heap-таблицы `panelAccess` и `panelInvites`; `lib/access/` (requireInternalAccess, guardInternalApi, invites); API `api/access/` (6 эндпоинтов); страницы `/web/forbidden` и `/web/access/invite`. Доступ: Admin или активный грант.
+
+**Фильтр по дате:** настройка `panel_date_filter` в Heap; эндпоинт `api/gateway-analytics/filter-save`; фильтрация in-memory в `invocations.ts`; SSR-проп `initialDateFilter`.
 
 ## Документация в репозитории
 
@@ -32,8 +38,12 @@
 - История диалогов: `docs/LLM/`
 - Спецификация gateway (SSOT): `docs/gateway/`
 
+> Новые разделы в `docs/architecture.md`: «Система доступов к панели» и «Фильтр по дате». В `docs/api.md`: секции «Доступы к панели» и обновлённая аналитика с `guardInternalApi`. В `docs/data.md`: таблицы `panelAccess`, `panelInvites` и `lib/access/`.
+
 ## Changelog
 
+- 2026-05-25: визуальный дизайн приведён к референсу `p/units/aayakovleva/sbp-client` — общий `crtBackgroundStyles` (CRT-фон/vignette/scanlines/glitch) вынесен в `styles.tsx` и подключён в `index.tsx` вместо инлайна (на `body` добавлены `color`/`font-family`/`letter-spacing`); `Header.vue` — `min-width: 0`; на панели `PanelHomePage.vue` 38 общих селекторов выровнены к референсу (clip-path-скосы вместо `border-radius`, полупрозрачные фоны, uppercase-типографика), а проектные `.panel-toolbar`/`.filter-bar`/`.filter-input`/`.badge` переведены на тот же острый bevelled-стиль. Только CSS/визуал, логика и API не затронуты.
+- 2026-05-25: внутренняя система доступов к панели (`lib/access/`, `panelAccess`, `panelInvites`, `api/access/*`); фильтр по дате (`panel_date_filter`, `api/gateway-analytics/filter-save`); главная `/` теперь панель `PanelHomePage.vue` (вкладки Обзор/Вызовы/Доступы); доступ `guardInternalApi` на эндпоинты аналитики; страница тестов ограничена ролью Admin; добавлены `/web/forbidden` и `/web/access/invite`.
 - 2026-05-06: сьюит `/v1/{op}` — в ответ `POST /api/tests/v1-ops/run` добавлено поле **`gcUpstream`** (сырой HTTP-ответ GetCourse: статус, Content-Type, тело); публичные роуты по-прежнему вызывают только `handleV1OpRoute`, раннер — `handleV1OpRouteWithGcDiagnostic` (`lib/gateway/handleV1OpRoute.ts`). На странице тестов три блока: args, обёртка gateway, сырой ответ школы.
 - 2026-05-06: `lib/tests/gateway/v1OpsSuiteRunner.ts` — троттлинг 1 rps без `setTimeout` и без Node `timers`: короткое ожидание по `Date.now()` (в изоляте Chatium глобального таймера может не быть; `@app/jobs` планирует отложенную работу и не заменяет паузу внутри одного `POST /api/tests/v1-ops/run`).
 - 2026-05-06: `pages/TestsPage.vue` — в шаблоне секции Gateway `/v1/{op}` убран optional chaining (`row.result?.…`): заменён на `row.result && row.result.…` (UGC может давать пустой `ReferenceError:` при ре-рендере после прогона, в т.ч. для `updateUserCustomFields`).
