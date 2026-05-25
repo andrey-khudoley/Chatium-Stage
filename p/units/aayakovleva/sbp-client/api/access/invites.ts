@@ -35,7 +35,7 @@ export const listInvitesRoute = app.get('/', async (ctx) => {
     inviteId: r.id,
     note: r.note ?? '',
     createdByDisplayName: nameById.get(r.createdByUserId) ?? r.createdByUserId,
-    createdAt: r.createdAt,
+    issuedAt: r.issuedAt,
     expiresAt: r.expiresAt,
     usedAt: r.usedAt ?? null,
     usedByDisplayName: r.usedByUserId ? (nameById.get(r.usedByUserId) ?? r.usedByUserId) : null,

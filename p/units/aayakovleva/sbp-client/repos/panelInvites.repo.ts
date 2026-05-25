@@ -30,7 +30,7 @@ export async function findById(
 export type CreateInvitePayload = {
   token: string
   createdByUserId: string
-  createdAt: number
+  issuedAt: number
   expiresAt: number
   note?: string
 }
@@ -48,7 +48,7 @@ export async function create(
   const data: Record<string, unknown> = {
     token: payload.token,
     createdByUserId: payload.createdByUserId,
-    createdAt: payload.createdAt,
+    issuedAt: payload.issuedAt,
     expiresAt: payload.expiresAt
   }
   if (payload.note !== undefined) {
@@ -102,7 +102,7 @@ export async function revokeById(
 /** Все инвайты (для списка в админке), свежие первыми. */
 export async function findAll(ctx: app.Ctx): Promise<PanelInvitesRow[]> {
   return PanelInvites.findAll(ctx, {
-    order: [{ createdAt: 'desc' }]
+    order: [{ issuedAt: 'desc' }]
   })
 }
 

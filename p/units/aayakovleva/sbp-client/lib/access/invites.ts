@@ -67,14 +67,14 @@ export async function generateInvite(
 ): Promise<GenerateInviteResult> {
   const createdByUserId = requireUserId(ctx)
   const token = `${accountNanoid(ctx)}${accountNanoid(ctx)}`
-  const createdAt = Date.now()
-  const expiresAt = createdAt + INVITE_TTL_MS
+  const issuedAt = Date.now()
+  const expiresAt = issuedAt + INVITE_TTL_MS
 
   const note = options?.note?.trim()
   const row = await panelInvitesRepo.create(ctx, {
     token,
     createdByUserId,
-    createdAt,
+    issuedAt,
     expiresAt,
     ...(note ? { note } : {})
   })

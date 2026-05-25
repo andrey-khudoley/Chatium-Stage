@@ -13,8 +13,13 @@
  *
  * `token` — searchable, поскольку основной путь чтения — поиск по строке из query.
  *
- * TTL `expiresAt = createdAt + INVITE_TTL_DAYS дней` (константа в `lib/access/constants.ts`,
+ * TTL `expiresAt = issuedAt + INVITE_TTL_DAYS дней` (константа в `lib/access/constants.ts`,
  * по плану — 7 дней).
+ *
+ * Момент создания хранится в собственном поле `issuedAt` (Unix ms), а не `createdAt`:
+ * имя `createdAt` зарезервировано Heap под системное поле `createdAt: HsDateTime`,
+ * добавляемое автоматически (см. inner/docs/008-heap.md, «Ошибка #4»). Тот же приём —
+ * в `repos/requestLog.repo.ts` (`requestedAt`).
  */
 
 import { Heap } from '@app/heap'
@@ -27,11 +32,11 @@ export const PanelInvites = Heap.Table('t__lifepay-sbp-client__pinvite__f4Wb9K',
   createdByUserId: Heap.String({
     customMeta: { title: 'ID Admin\'а, создавшего инвайт' }
   }),
-  createdAt: Heap.Number({
-    customMeta: { title: 'Unix ms момента создания' }
+  issuedAt: Heap.Number({
+    customMeta: { title: 'Unix ms момента создания (createdAt зарезервировано Heap)' }
   }),
   expiresAt: Heap.Number({
-    customMeta: { title: 'Unix ms момента истечения (createdAt + INVITE_TTL_DAYS)' }
+    customMeta: { title: 'Unix ms момента истечения (issuedAt + INVITE_TTL_DAYS)' }
   }),
   usedAt: Heap.Optional(Heap.Number({
     customMeta: { title: 'Unix ms момента потребления (null если не использован)' }
