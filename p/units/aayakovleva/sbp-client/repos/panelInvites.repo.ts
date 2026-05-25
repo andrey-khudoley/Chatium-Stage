@@ -8,6 +8,7 @@
  */
 
 import PanelInvites, { type PanelInvitesRow } from '../tables/panelInvites.table'
+import { collectAllPaged } from '../lib/heapPaging'
 import * as loggerLib from '../lib/logger.lib'
 
 const LOG_MODULE = 'repos/panelInvites.repo'
@@ -99,11 +100,15 @@ export async function revokeById(
   })
 }
 
-/** Все инвайты (для списка в админке), свежие первыми. */
+/**
+ * Все инвайты (для списка в админке), свежие первыми.
+ * Через `collectAllPaged` — инвайты со временем копятся (не удаляются, лишь
+ * помечаются used/revoked), поэтому без пагинации >1000 записей тихо усекаются.
+ */
 export async function findAll(ctx: app.Ctx): Promise<PanelInvitesRow[]> {
-  return PanelInvites.findAll(ctx, {
-    order: [{ issuedAt: 'desc' }]
-  })
+  return collectAllPaged((limit, offset) =>
+    PanelInvites.findAll(ctx, { order: [{ issuedAt: 'desc' }], limit, offset })
+  )
 }
 
 /** Удалить инвайт по id (используется в тестах для очистки). */

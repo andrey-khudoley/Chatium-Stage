@@ -10,6 +10,7 @@
  */
 
 import PanelAccess, { type PanelAccessRow } from '../tables/panelAccess.table'
+import { collectAllPaged } from '../lib/heapPaging'
 import * as loggerLib from '../lib/logger.lib'
 
 const LOG_MODULE = 'repos/panelAccess.repo'
@@ -108,11 +109,15 @@ export async function revokeByUserId(
   return true
 }
 
-/** Все записи грантов (активные и отозванные) для списка в админке. */
+/**
+ * Все записи грантов (активные и отозванные) для списка в админке.
+ * Через `collectAllPaged` — иначе при >1000 грантов список тихо усекается
+ * (Heap.findAll отдаёт максимум 1000 строк, 008-heap.md).
+ */
 export async function findAll(ctx: app.Ctx): Promise<PanelAccessRow[]> {
-  return PanelAccess.findAll(ctx, {
-    order: [{ grantedAt: 'desc' }]
-  })
+  return collectAllPaged((limit, offset) =>
+    PanelAccess.findAll(ctx, { order: [{ grantedAt: 'desc' }], limit, offset })
+  )
 }
 
 /** Удалить грант пользователя (используется в тестах для очистки). No-op, если записи нет. */
