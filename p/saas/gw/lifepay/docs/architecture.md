@@ -14,11 +14,13 @@
 - Открыть админку (только роль Admin).
 
 ## Роутинг
-- `index.tsx` — главная (SSR + Vue), единственный роут в корне.
+- `index.tsx` — панель оператора (`pages/HomePage.vue`; `requireRealUser` + `requireInternalAccess`). Аноним → `/s/auth/signin`; без доступа → `/web/forbidden`. Передаёт `isAdmin`, `initialDateFilter`, расширенные `apiUrls`.
 - `web/admin/index.tsx` — админка, `requireAccountRole('Admin')`.
 - `web/profile/index.tsx` — профиль, `requireRealUser()`.
-- `web/tests/index.tsx` — страница тестов, `requireRealUser()`.
+- `web/tests/index.tsx` — страница тестов, `requireRealUser()` + `requireAccountRole('Admin')`. Без роли Admin → `/web/forbidden`.
 - `web/login/index.tsx` — вход (редирект на системный `/s/auth/signin`).
+- `web/forbidden/index.tsx` — страница 403 (отсутствие доступа к панели).
+- `web/access/invite/index.tsx` — страница приёма инвайта (`requireRealUser`; рендерит `InviteAcceptPage.vue`).
 - `api/v1/createBill.ts`, `api/v1/getBillStatus.ts`, `api/v1/cancelBill.ts` — публичные gateway-эндпоинты контура `bills_v1` LifePay. Авторизация: заголовки `X-Lp-Apikey`/`X-Lp-Login` (manual §2.2, §2.5). Общая цепочка через `handleV1Op`.
 - `api/v1/operations.ts` — каталог операций (`GET /v1/operations`, manual §3.3). Без заголовков `X-Lp-*`. Источник — `lib/gateway/operationsCatalog.ts`.
 
@@ -72,15 +74,14 @@
 
 ## Структура каталогов
 - `config/` — маршруты и `PROJECT_ROOT`.
-- `web/` — браузерные роуты модулей (admin, profile, tests, login).
-- `pages/` — Vue‑страницы (минимальные).
-- `components/` — переиспользуемые Vue‑компоненты (Header, AppFooter, GlobalGlitch, LogoutModal).
-- `api/` — API‑эндпоинты (получение и валидация входных данных). File-based: один файл — один эндпоинт с `/`. Пример: `api/settings/list.ts`, `api/logger/log.ts`, `api/admin/logs/recent.ts`, `api/tests/list.ts`, `api/tests/unit/index.ts`, `api/tests/integration/index.ts`, `api/v1/createBill.ts`, `api/v1/getBillStatus.ts`, `api/v1/cancelBill.ts`, `api/v1/operations.ts`.
-- `components/RequestTestTab.vue` — Vue-компонент вкладки «Тест запроса» на странице `/web/tests`. Admin-only (видимость на уровне TestsPage.vue). Получает `operationsCatalog` и `projectRoot` через пропсы.
-- `tables/` — Heap‑таблицы (схемы: settings, logs).
-- `repos/` — репозитории (работа с БД: settings, logs; logs.repo включает findBeforeTimestamp для пагинации).
-- `lib/` — бизнес‑логика (settings.lib, logger.lib: проверка уровня, запись в ctx/Heap/WebSocket/вебхук). `lib/gateway/` — общий код gateway-эндпоинтов `/v1/*` (см. раздел «Gateway-слой» выше).
-- `shared/` — общий код (preloader, logLevel для передачи уровня логирования на клиент, logger — уровни syslog RFC 5424, createComponentLogger, setLogSink/LogEntry для дашборда, logEmergency…logDebug в браузере с проверкой порога, browserRemoteLogger — пакетная отправка браузерных логов на сервер через POST /api/logger/browser).
+- `web/` — браузерные роуты модулей (admin, profile, tests, login, forbidden, access/invite).
+- `pages/` — Vue‑страницы: **`HomePage.vue`** (панель оператора; вкладки Обзор/Входящие/К LifePay/Доступы; KPI, raw-модалки, LIVE, toolbar фильтра по дате; вкладка «Доступы» — Admin: grants, invites, создание/отзыв), `InviteAcceptPage.vue` (приём инвайта).
+- `components/` — переиспользуемые Vue‑компоненты (Header, AppFooter, GlobalGlitch, LogoutModal, RequestTestTab).
+- `api/` — API‑эндпоинты. File-based: один файл — один эндпоинт с `/`. Включает: `api/v1/` (gateway), `api/admin/raw/` и `api/admin/dashboard/` (доступ `guardInternalApi`), **`api/admin/analytics/filter-save.ts`** (фильтр по дате), **`api/access/`** (управление доступами к панели).
+- `tables/` — Heap‑таблицы (схемы: settings, logs, gatewayRequestLog, gatewayUpstreamLog, **panelAccess**, **panelInvites**).
+- `repos/` — репозитории (settings, logs, gatewayRequestLog с `findRecentFiltered`, gatewayUpstreamLog с `findRecentFiltered`, **panelAccess**, **panelInvites**).
+- `lib/` — бизнес‑логика: settings.lib (включая `getPanelDateFilter`), logger.lib, `lib/gateway/` (gateway-слой), **`lib/access/`** (система доступов: constants, requireInternalAccess, apiGuard, invites).
+- `shared/` — общий код (preloader, logLevel, logger syslog RFC 5424, browserRemoteLogger, redactRaw, **`accessPages.tsx`** — JSX-страницы сообщений доступа).
 - `docs/` — документация проекта.
 
 ## Стратегия логирования
@@ -100,6 +101,19 @@
 **Ключевой принцип**: trace-логи (карта вызовов) имеют severity 6 (Info). Payload (сырые данные) автоматически отсекается при уровне != Debug:
 - **Сервер** (`lib/logger.lib.ts`): функция `shouldIncludePayload` — payload в ctx.account.log, Heap, WebSocket и webhook только при Debug.
 - **Браузер** (`shared/logger.ts`): `emitLog` фильтрует non-string args при уровне != Debug.
+
+## Система доступов к панели (`lib/access/`)
+
+Доступ к главной `/`, `/web/tests` и API панели защищён двухуровневой схемой: **Admin** (роль аккаунта) или **активный грант** (запись в `panelAccess`).
+
+- `decideInternalAccess` — проверяет роль Admin или наличие записи в `panelAccess` для `ctx.userId`.
+- `requireInternalAccess` — вызывается в `index.tsx` и `web/tests/index.tsx`; при отказе — редирект на `/web/forbidden`.
+- `guardInternalApi` — аналог для API-эндпоинтов (возвращает 403 вместо редиректа). Применяется к `api/admin/dashboard/gatewayCounts`, `api/admin/raw/*`, `api/admin/analytics/filter-save`.
+- Инвайты: Admin генерирует токен (TTL 7 дней), пользователь принимает через `/web/access/invite` → `consumeInvite` (под `runWithExclusiveLock`). Отзыв — только Admin.
+
+## Фильтр по дате (`panel_date_filter`)
+
+Глобальный фильтр хранится в Heap-настройке `panel_date_filter` (`{ from?, to? }`, Unix ms). Управляется через `api/admin/analytics/filter-save.ts` (`guardInternalApi`). Репозитории `gatewayRequestLog.repo.ts` и `gatewayUpstreamLog.repo.ts` имеют метод `findRecentFiltered(ctx, limit, dateFrom?, dateTo?)`, применяющий `where: { requestedAt/$sentAt: { $gte, $lte } }` — без границ переходит на `findRecent`. Эндпоинты `recent.ts` принимают query `dateFrom`/`dateTo`. SSR-проп `initialDateFilter` передаётся из `index.tsx` в `HomePage.vue`.
 
 ## Интеграции
 - Внешние сервисы: нет.

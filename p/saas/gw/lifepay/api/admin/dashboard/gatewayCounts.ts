@@ -1,9 +1,9 @@
 /**
  * GET /api/admin/dashboard/gatewayCounts — KPI за 24ч для gateway-панели.
- * Admin-only.
+ * Доступ: панель (Admin или активный грант).
  */
 
-import { requireAccountRole } from '@app/auth'
+import { guardInternalApi } from '../../../lib/access/apiGuard'
 
 import * as gatewayRequestLogRepo from '../../../repos/gatewayRequestLog.repo'
 import * as gatewayUpstreamLogRepo from '../../../repos/gatewayUpstreamLog.repo'
@@ -13,7 +13,8 @@ const LOG_PATH = 'api/admin/dashboard/gatewayCounts'
 const WINDOW_MS = 24 * 60 * 60 * 1000
 
 export const gatewayCountsRoute = app.get('/', async (ctx, _req) => {
-  requireAccountRole(ctx, 'Admin')
+  const denied = await guardInternalApi(ctx)
+  if (denied) return denied
 
   const since = Date.now() - WINDOW_MS
 

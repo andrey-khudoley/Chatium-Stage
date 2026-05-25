@@ -54,6 +54,29 @@ export async function findRecent(
   })
 }
 
+/**
+ * Последние N записей с опциональным фильтром по `sentAt` (Unix ms).
+ * Если ни одна граница не задана — поведение эквивалентно `findRecent`.
+ */
+export async function findRecentFiltered(
+  ctx: app.Ctx,
+  limit: number,
+  dateFrom?: number,
+  dateTo?: number
+): Promise<GatewayUpstreamLogRow[]> {
+  if (dateFrom === undefined && dateTo === undefined) {
+    return findRecent(ctx, limit)
+  }
+  const range: { $gte?: number; $lte?: number } = {}
+  if (dateFrom !== undefined) range.$gte = dateFrom
+  if (dateTo !== undefined) range.$lte = dateTo
+  return GatewayUpstreamLog.findAll(ctx, {
+    where: { sentAt: range },
+    order: [{ sentAt: 'desc' }],
+    limit
+  })
+}
+
 export async function findById(
   ctx: app.Ctx,
   id: number

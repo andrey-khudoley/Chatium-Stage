@@ -1,9 +1,10 @@
 /**
  * GET /api/admin/raw/requests/get?id=<heapId> — полная запись gatewayRequestLog
- * со всеми полями включая `rawArgs` и `rawHeadersSafe`. Admin-only.
+ * со всеми полями включая `rawArgs` и `rawHeadersSafe`.
+ * Доступ: панель (Admin или активный грант).
  */
 
-import { requireAccountRole } from '@app/auth'
+import { guardInternalApi } from '../../../../lib/access/apiGuard'
 
 import * as repo from '../../../../repos/gatewayRequestLog.repo'
 import * as loggerLib from '../../../../lib/logger.lib'
@@ -11,7 +12,8 @@ import * as loggerLib from '../../../../lib/logger.lib'
 const LOG_PATH = 'api/admin/raw/requests/get'
 
 export const getGatewayRequestRoute = app.get('/', async (ctx, req) => {
-  requireAccountRole(ctx, 'Admin')
+  const denied = await guardInternalApi(ctx)
+  if (denied) return denied
 
   const q = req.query as Record<string, unknown> | undefined
   const idRaw = q?.id

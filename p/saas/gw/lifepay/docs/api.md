@@ -51,10 +51,10 @@
 
 | Method | Path | File | Auth | Назначение |
 | --- | --- | --- | --- | --- |
-| GET | /api/admin/raw/requests/recent?limit= | api/admin/raw/requests/recent.ts | Admin | Последние N записей `gatewayRequestLog` (мета: id, requestId, op, contour, method, clientHttpStatus, errorCode, durationMs, requestedAt). Без rawArgs/rawHeadersSafe. limit 1..200, default 50. |
-| GET | /api/admin/raw/requests/get?id=\<heapId\> | api/admin/raw/requests/get.ts | Admin | Полная запись `gatewayRequestLog` включая `rawArgs` (PII-маска) и `rawHeadersSafe` (без секретов). |
-| GET | /api/admin/raw/upstream/recent?limit= | api/admin/raw/upstream/recent.ts | Admin | Последние N записей `gatewayUpstreamLog` (мета: id, requestId, op, upstreamKind, lpHttpStatus, semanticRule, durationMs, sentAt). limit 1..200, default 50. |
-| GET | /api/admin/raw/upstream/get?id=\<heapId\> | api/admin/raw/upstream/get.ts | Admin | Полная запись `gatewayUpstreamLog` включая `rawLpJson` (полное тело LifePay с PII-маской, либо marker `{ __kind, lpHttpStatus, __rawText }` для не-json вариантов). |
+| GET | /api/admin/raw/requests/recent?limit=&dateFrom=&dateTo= | api/admin/raw/requests/recent.ts | guardInternalApi | Последние N записей `gatewayRequestLog` (мета: id, requestId, op, contour, method, clientHttpStatus, errorCode, durationMs, requestedAt). Query: `dateFrom`/`dateTo` (Unix ms) передаются в `findRecentFiltered`. |
+| GET | /api/admin/raw/requests/get?id=\<heapId\> | api/admin/raw/requests/get.ts | guardInternalApi | Полная запись `gatewayRequestLog` включая `rawArgs` (PII-маска) и `rawHeadersSafe` (без секретов). |
+| GET | /api/admin/raw/upstream/recent?limit=&dateFrom=&dateTo= | api/admin/raw/upstream/recent.ts | guardInternalApi | Последние N записей `gatewayUpstreamLog` (мета: id, requestId, op, upstreamKind, lpHttpStatus, semanticRule, durationMs, sentAt). Query: `dateFrom`/`dateTo` передаются в `findRecentFiltered`. |
+| GET | /api/admin/raw/upstream/get?id=\<heapId\> | api/admin/raw/upstream/get.ts | guardInternalApi | Полная запись `gatewayUpstreamLog` включая `rawLpJson` (полное тело LifePay с PII-маской, либо marker `{ __kind, lpHttpStatus, __rawText }` для не-json вариантов). |
 
 ## Дашборд админки (api/admin/dashboard/)
 
@@ -64,7 +64,26 @@
 | --- | --- | --- | --- | --- |
 | GET | /api/admin/dashboard/counts | api/admin/dashboard/counts.ts | Admin | Получить счётчики ошибок и предупреждений после таймштампа сброса. Возвращает `{ success: true, errorCount, warnCount, resetAt }`. |
 | POST | /api/admin/dashboard/reset | api/admin/dashboard/reset.ts | Admin | Сбросить дашборд: записать текущий таймштамп в настройки. Возвращает `{ success: true, errorCount: 0, warnCount: 0, resetAt }`. |
-| GET | /api/admin/dashboard/gatewayCounts | api/admin/dashboard/gatewayCounts.ts | Admin | KPI за 24ч для главной панели: `{ counts: { totalRequests, totalOk, totalErrors, upstreamTotal, upstreamOk, upstreamErrors }, windowMs, since }`. |
+| GET | /api/admin/dashboard/gatewayCounts | api/admin/dashboard/gatewayCounts.ts | guardInternalApi | KPI за 24ч для главной панели: `{ counts: { totalRequests, totalOk, totalErrors, upstreamTotal, upstreamOk, upstreamErrors }, windowMs, since }`. |
+
+## Доступы к панели (api/access/)
+
+Система внутренних доступов (по образцу `sbp-client`). Логика — `lib/access/`. Таблицы — `panelAccess`, `panelInvites`.
+
+| Method | Path | File | Auth | Назначение |
+| --- | --- | --- | --- | --- |
+| POST | /api/access/generate-invite | api/access/generate-invite.ts | Admin | Создать инвайт-токен (TTL 7 дней). Возвращает `{ success, token, expiresAt }`. |
+| POST | /api/access/consume-invite | api/access/consume-invite.ts | requireRealUser | Принять инвайт по токену; выдаёт грант текущему пользователю (через `runWithExclusiveLock`). |
+| POST | /api/access/revoke-invite | api/access/revoke-invite.ts | Admin | Отозвать инвайт по id. |
+| POST | /api/access/revoke-grant | api/access/revoke-grant.ts | Admin | Отозвать грант у пользователя по userId. |
+| GET | /api/access/invites | api/access/invites.ts | Admin | Список всех инвайтов. |
+| GET | /api/access/grants | api/access/grants.ts | Admin | Список всех выданных грантов. |
+
+## Фильтр по дате (api/admin/analytics/)
+
+| Method | Path | File | Auth | Назначение |
+| --- | --- | --- | --- | --- |
+| POST | /api/admin/analytics/filter-save | api/admin/analytics/filter-save.ts | guardInternalApi | Сохранить или сбросить глобальный фильтр по дате. Body: `{ from?, to? }` (Unix ms); пустое тело → сброс. Возвращает `{ success, filter: { from?, to? } \| null }`. Значение хранится в `panel_date_filter` (Heap). |
 
 Каждый файл — один эндпоинт с путём `/`.
 

@@ -20,7 +20,7 @@
         <nav class="panel-toolbar" aria-label="Разделы и live-режим">
           <div class="panel-tabs" role="tablist">
             <button
-              v-for="t in tabs"
+              v-for="t in visibleTabs"
               :key="t.id"
               :class="['tab', { active: activeTab === t.id }]"
               :aria-selected="activeTab === t.id"
@@ -40,6 +40,31 @@
             </label>
           </div>
         </nav>
+
+        <!-- ====== DATE FILTER (для журналов) ====== -->
+        <section v-show="activeTab === 'requests' || activeTab === 'upstream'" class="filter-bar">
+          <div class="filter-group">
+            <span class="filter-label"><i class="far fa-calendar"></i> С</span>
+            <input v-model="filter.fromDate" type="date" class="filter-input" />
+            <input v-model="filter.fromTime" type="time" class="filter-input filter-time" />
+          </div>
+          <div class="filter-group">
+            <span class="filter-label">по</span>
+            <input v-model="filter.toDate" type="date" class="filter-input" />
+            <input v-model="filter.toTime" type="time" class="filter-input filter-time" />
+          </div>
+          <div class="filter-actions">
+            <button type="button" class="btn-mini" :disabled="filterSaving || !filterValid" @click="applyFilter" title="Применить фильтр">
+              <i class="fas fa-filter"></i> Применить
+            </button>
+            <button type="button" class="btn-mini" :disabled="filterSaving || !hasFilter" @click="resetFilter" title="Сбросить фильтр">
+              <i class="fas fa-xmark"></i> Сбросить
+            </button>
+            <span v-if="!filterValid" class="filter-msg is-err">Начало не может быть позже окончания</span>
+            <span v-else-if="filterError" class="filter-msg is-err">{{ filterError }}</span>
+            <span v-else-if="hasFilter" class="filter-msg muted">Фильтр активен</span>
+          </div>
+        </section>
 
         <!-- ====== TAB: OVERVIEW ====== -->
         <template v-if="activeTab === 'overview'">
@@ -122,7 +147,7 @@
           </div>
           <div v-else class="empty-state">
             <i class="fas fa-inbox empty-icon"></i>
-            <p class="empty-title">Запросов пока нет</p>
+            <p class="empty-title">{{ hasFilter ? 'За выбранный период записей нет' : 'Запросов пока нет' }}</p>
             <p class="empty-hint">Сюда попадут все обращения клиентов к /api/v1/{op}.</p>
           </div>
         </section>
@@ -171,10 +196,104 @@
           </div>
           <div v-else class="empty-state">
             <i class="fas fa-tower-broadcast empty-icon"></i>
-            <p class="empty-title">Вызовов LifePay пока нет</p>
+            <p class="empty-title">{{ hasFilter ? 'За выбранный период вызовов нет' : 'Вызовов LifePay пока нет' }}</p>
             <p class="empty-hint">Сюда попадут все исходящие запросы к LifePay.</p>
           </div>
         </section>
+
+        <!-- ====== TAB: ACCESS (Admin only) ====== -->
+        <template v-if="activeTab === 'access' && isAdmin">
+          <section class="panel-section">
+            <header class="panel-section-head">
+              <span class="prompt">›</span>
+              <h2>Пригласительные ссылки</h2>
+              <button type="button" class="btn-mini head-action" @click="loadInvites" title="Обновить">
+                <i class="fas fa-rotate"></i>
+              </button>
+              <button type="button" class="btn-mini" @click="openCreateInvite" title="Создать пригласительную ссылку">
+                <i class="fas fa-plus"></i> Создать инвайт
+              </button>
+            </header>
+            <div v-if="invites.length > 0" class="table-wrapper">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Статус</th>
+                    <th>Комментарий</th>
+                    <th>Создал</th>
+                    <th>Создан</th>
+                    <th>Истекает</th>
+                    <th>Использован</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="inv in invites" :key="inv.inviteId">
+                    <td><span class="badge" :class="'badge-' + inv.status">{{ inviteStatusLabel(inv.status) }}</span></td>
+                    <td>{{ inv.note || '—' }}</td>
+                    <td>{{ inv.createdByDisplayName }}</td>
+                    <td>{{ formatDateTime(inv.issuedAt) }}</td>
+                    <td>{{ formatDateTime(inv.expiresAt) }}</td>
+                    <td>{{ inv.usedByDisplayName ? `${inv.usedByDisplayName} (${formatDateTime(inv.usedAt)})` : '—' }}</td>
+                    <td>
+                      <button v-if="inv.status === 'active'" class="btn-mini btn-danger" @click="revokeInvite(inv.inviteId)" title="Отозвать инвайт">
+                        <i class="fas fa-ban"></i>
+                      </button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div v-else class="empty-state">
+              <i class="fas fa-link empty-icon"></i>
+              <p class="empty-title">Инвайтов пока нет</p>
+              <p class="empty-hint">Создайте ссылку и передайте её сотруднику, которому нужен доступ к панели.</p>
+            </div>
+          </section>
+
+          <section class="panel-section">
+            <header class="panel-section-head">
+              <span class="prompt">›</span>
+              <h2>Выданные доступы</h2>
+              <button type="button" class="btn-mini head-action" @click="loadGrants" title="Обновить">
+                <i class="fas fa-rotate"></i>
+              </button>
+            </header>
+            <div v-if="grants.length > 0" class="table-wrapper">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Статус</th>
+                    <th>Пользователь</th>
+                    <th>Email</th>
+                    <th>Выдан</th>
+                    <th>Кем</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="g in grants" :key="g.userId" :class="{ 'row-revoked': !g.active }">
+                    <td><span class="badge" :class="g.active ? 'badge-active' : 'badge-revoked'">{{ g.active ? 'активен' : 'отозван' }}</span></td>
+                    <td>{{ g.userDisplayName }}</td>
+                    <td>{{ g.userEmail || '—' }}</td>
+                    <td>{{ formatDateTime(g.grantedAt) }}</td>
+                    <td>{{ g.grantedByDisplayName }}</td>
+                    <td>
+                      <button v-if="g.active" class="btn-mini btn-danger" @click="revokeGrant(g.userId)" title="Отозвать доступ">
+                        <i class="fas fa-user-slash"></i>
+                      </button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div v-else class="empty-state">
+              <i class="fas fa-users empty-icon"></i>
+              <p class="empty-title">Выданных доступов нет</p>
+              <p class="empty-hint">Администраторы аккаунта имеют доступ автоматически, без записи здесь.</p>
+            </div>
+          </section>
+        </template>
 
       </div>
     </main>
@@ -215,6 +334,40 @@
         </div>
       </div>
     </div>
+
+    <!-- ====== CREATE INVITE MODAL ====== -->
+    <div v-if="createModal" class="raw-modal-backdrop" @click.self="closeCreateInvite">
+      <div class="raw-modal raw-modal-narrow" role="dialog" aria-modal="true">
+        <header class="raw-modal-head">
+          <span class="prompt">›</span>
+          <h2>Создать пригласительную ссылку</h2>
+          <button type="button" class="btn-mini head-action" @click="closeCreateInvite" title="Закрыть">
+            <i class="fas fa-xmark"></i> Закрыть
+          </button>
+        </header>
+        <div class="raw-modal-body">
+          <template v-if="!createModal.result">
+            <label class="field-label">Комментарий (необязательно)</label>
+            <input v-model="createModal.note" type="text" class="filter-input field-full" placeholder="например: для Ольги" />
+            <p v-if="createModal.error" class="form-msg is-err">{{ createModal.error }}</p>
+            <div class="raw-modal-actions">
+              <button class="btn-mini btn-primary" :disabled="createModal.submitting" @click="submitCreateInvite">
+                <i v-if="createModal.submitting" class="fas fa-spinner fa-spin"></i>
+                <span>{{ createModal.submitting ? 'Создание…' : 'Создать ссылку' }}</span>
+              </button>
+            </div>
+          </template>
+          <template v-else>
+            <p class="form-msg is-ok"><i class="fas fa-circle-check"></i> Ссылка создана. Скопируйте её — повторно она не показывается.</p>
+            <pre class="json-block">{{ createModal.result.fullUrl }}</pre>
+            <div class="raw-modal-actions">
+              <button class="btn-mini" @click="copyText(createModal.result.fullUrl)"><i class="far fa-copy"></i> Скопировать ссылку</button>
+              <button class="btn-mini btn-primary" @click="closeCreateInvite"><i class="fas fa-check"></i> Готово</button>
+            </div>
+          </template>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -229,6 +382,24 @@ const TICK_INTERVAL_MS = 5000
 
 const log = createComponentLogger('GatewayHomePage')
 
+/** Разбивает Unix ms на компоненты date (YYYY-MM-DD) и time (HH:MM) в локальной зоне. */
+function msToDateTimeParts(ms) {
+  if (!ms || !Number.isFinite(ms)) return { date: '', time: '' }
+  const d = new Date(ms)
+  const pad = (n) => String(n).padStart(2, '0')
+  const date = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+  const time = `${pad(d.getHours())}:${pad(d.getMinutes())}`
+  return { date, time }
+}
+
+/** Собирает Unix ms из date+time. Если date пуст — возвращает undefined. */
+function partsToMs(date, time, endOfDay) {
+  if (!date) return undefined
+  const t = time || (endOfDay ? '23:59' : '00:00')
+  const ms = new Date(`${date}T${t}`).getTime()
+  return Number.isFinite(ms) ? ms : undefined
+}
+
 export default {
   name: 'GatewayHomePage',
   components: { Header, GlobalGlitch, AppFooter },
@@ -241,6 +412,10 @@ export default {
     isAdmin: { type: Boolean, default: false },
     adminUrl: { type: String, default: '' },
     testsUrl: { type: String, default: '' },
+    initialDateFilter: {
+      type: Object,
+      default: () => ({})
+    },
     apiUrls: {
       type: Object,
       default: () => ({
@@ -248,19 +423,22 @@ export default {
         recentUpstream: '',
         rawRequest: '',
         rawUpstream: '',
-        counts: ''
+        counts: '',
+        filterSave: '',
+        accessGenerateInvite: '',
+        accessRevokeInvite: '',
+        accessRevokeGrant: '',
+        accessInvites: '',
+        accessGrants: ''
       })
     }
   },
   data() {
+    const fromParts = msToDateTimeParts(this.initialDateFilter && this.initialDateFilter.from)
+    const toParts = msToDateTimeParts(this.initialDateFilter && this.initialDateFilter.to)
     return {
       bootLoaderDone: false,
       activeTab: 'overview',
-      tabs: [
-        { id: 'overview', label: 'Обзор', icon: 'fa-chart-line' },
-        { id: 'requests', label: 'Входящие', icon: 'fa-list' },
-        { id: 'upstream', label: 'К LifePay', icon: 'fa-tower-broadcast' }
-      ],
       liveMode: false,
       now: Date.now(),
       counts: {
@@ -280,7 +458,48 @@ export default {
       },
       refreshTimer: null,
       tickTimer: null,
-      rawModal: null
+      rawModal: null,
+      // Фильтр по дате/времени
+      filter: {
+        fromDate: fromParts.date,
+        fromTime: fromParts.time,
+        toDate: toParts.date,
+        toTime: toParts.time
+      },
+      filterSaving: false,
+      filterError: '',
+      // Доступы
+      grants: [],
+      invites: [],
+      createModal: null
+    }
+  },
+  computed: {
+    visibleTabs() {
+      const tabs = [
+        { id: 'overview', label: 'Обзор', icon: 'fa-chart-line' },
+        { id: 'requests', label: 'Входящие', icon: 'fa-list' },
+        { id: 'upstream', label: 'К LifePay', icon: 'fa-tower-broadcast' }
+      ]
+      if (this.isAdmin) {
+        tabs.push({ id: 'access', label: 'Доступы', icon: 'fa-user-shield' })
+      }
+      return tabs
+    },
+    fromMs() {
+      return partsToMs(this.filter.fromDate, this.filter.fromTime, false)
+    },
+    toMs() {
+      return partsToMs(this.filter.toDate, this.filter.toTime, true)
+    },
+    hasFilter() {
+      return this.fromMs !== undefined || this.toMs !== undefined
+    },
+    filterValid() {
+      if (this.fromMs !== undefined && this.toMs !== undefined) {
+        return this.fromMs <= this.toMs
+      }
+      return true
     }
   },
   watch: {
@@ -293,6 +512,7 @@ export default {
       if (value === 'requests') this.loadRequests()
       else if (value === 'upstream') this.loadUpstream()
       else if (value === 'overview') this.loadCounts()
+      else if (value === 'access') { this.loadInvites(); this.loadGrants() }
     }
   },
   mounted() {
@@ -339,8 +559,19 @@ export default {
       if (this.refreshTimer) { clearInterval(this.refreshTimer); this.refreshTimer = null }
     },
 
+    /** Дописывает dateFrom/dateTo к URL журнала, если фильтр активен. */
+    withDateRange(url) {
+      if (!this.hasFilter) return url
+      const params = []
+      if (this.fromMs !== undefined) params.push(`dateFrom=${this.fromMs}`)
+      if (this.toMs !== undefined) params.push(`dateTo=${this.toMs}`)
+      if (params.length === 0) return url
+      const sep = url.includes('?') ? '&' : '?'
+      return `${url}${sep}${params.join('&')}`
+    },
+
     async loadCounts() {
-      const url = this.apiUrls?.counts
+      const url = this.apiUrls && this.apiUrls.counts
       if (!url) return
       try {
         const res = await fetch(url, { headers: { Accept: 'application/json' } })
@@ -354,10 +585,10 @@ export default {
       }
     },
     async loadRequests() {
-      const url = this.apiUrls?.recentRequests
-      if (!url) return
+      const base = this.apiUrls && this.apiUrls.recentRequests
+      if (!base) return
       try {
-        const res = await fetch(url, { headers: { Accept: 'application/json' } })
+        const res = await fetch(this.withDateRange(base), { headers: { Accept: 'application/json' } })
         const data = await res.json()
         if (data && data.success && Array.isArray(data.entries)) {
           this.requests = data.entries
@@ -368,10 +599,10 @@ export default {
       }
     },
     async loadUpstream() {
-      const url = this.apiUrls?.recentUpstream
-      if (!url) return
+      const base = this.apiUrls && this.apiUrls.recentUpstream
+      if (!base) return
       try {
-        const res = await fetch(url, { headers: { Accept: 'application/json' } })
+        const res = await fetch(this.withDateRange(base), { headers: { Accept: 'application/json' } })
         const data = await res.json()
         if (data && data.success && Array.isArray(data.entries)) {
           this.upstream = data.entries
@@ -382,8 +613,60 @@ export default {
       }
     },
 
+    /* ===== Date filter ===== */
+    async applyFilter() {
+      if (!this.filterValid || this.filterSaving) return
+      const url = this.apiUrls && this.apiUrls.filterSave
+      if (!url) return
+      this.filterSaving = true
+      this.filterError = ''
+      try {
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ from: this.fromMs ?? null, to: this.toMs ?? null })
+        })
+        const data = await res.json().catch(() => ({}))
+        if (!data || data.success !== true) {
+          this.filterError = (data && data.error) || 'Не удалось сохранить фильтр'
+        } else {
+          this.loadRequests()
+          this.loadUpstream()
+        }
+      } catch (e) {
+        this.filterError = String(e)
+      } finally {
+        this.filterSaving = false
+      }
+    },
+    async resetFilter() {
+      const url = this.apiUrls && this.apiUrls.filterSave
+      if (!url || this.filterSaving) return
+      this.filterSaving = true
+      this.filterError = ''
+      try {
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ from: null, to: null })
+        })
+        const data = await res.json().catch(() => ({}))
+        if (data && data.success === true) {
+          this.filter = { fromDate: '', fromTime: '', toDate: '', toTime: '' }
+          this.loadRequests()
+          this.loadUpstream()
+        } else {
+          this.filterError = (data && data.error) || 'Не удалось сбросить фильтр'
+        }
+      } catch (e) {
+        this.filterError = String(e)
+      } finally {
+        this.filterSaving = false
+      }
+    },
+
     async openRaw(kind, id) {
-      const url = kind === 'upstream' ? this.apiUrls?.rawUpstream : this.apiUrls?.rawRequest
+      const url = kind === 'upstream' ? (this.apiUrls && this.apiUrls.rawUpstream) : (this.apiUrls && this.apiUrls.rawRequest)
       if (!url || !id) {
         this.rawModal = { kind, id, entry: null, loading: false, error: 'URL или id отсутствуют' }
         return
@@ -397,7 +680,7 @@ export default {
         })
         const data = await res.json()
         if (!data || data.success !== true) {
-          this.rawModal = { kind, id, entry: null, loading: false, error: data?.error || 'Ошибка загрузки' }
+          this.rawModal = { kind, id, entry: null, loading: false, error: (data && data.error) || 'Ошибка загрузки' }
           return
         }
         this.rawModal = { kind, id, entry: data.entry || null, loading: false, error: '' }
@@ -411,6 +694,101 @@ export default {
       try { return JSON.stringify(entry, null, 2) } catch (_e) { return '<unstringifiable>' }
     },
 
+    /* ===== Access (Admin only) ===== */
+    async loadInvites() {
+      const url = this.apiUrls && this.apiUrls.accessInvites
+      if (!url) return
+      try {
+        const res = await fetch(url, { headers: { Accept: 'application/json' } })
+        const data = await res.json()
+        if (data && data.success && Array.isArray(data.invites)) {
+          this.invites = data.invites
+        }
+      } catch (e) {
+        log.error('loadInvites failed', { error: String(e) })
+      }
+    },
+    async loadGrants() {
+      const url = this.apiUrls && this.apiUrls.accessGrants
+      if (!url) return
+      try {
+        const res = await fetch(url, { headers: { Accept: 'application/json' } })
+        const data = await res.json()
+        if (data && data.success && Array.isArray(data.grants)) {
+          this.grants = data.grants
+        }
+      } catch (e) {
+        log.error('loadGrants failed', { error: String(e) })
+      }
+    },
+    openCreateInvite() {
+      this.createModal = { note: '', submitting: false, error: '', result: null }
+    },
+    closeCreateInvite() {
+      this.createModal = null
+      this.loadInvites()
+    },
+    async submitCreateInvite() {
+      const url = this.apiUrls && this.apiUrls.accessGenerateInvite
+      if (!url || !this.createModal || this.createModal.submitting) return
+      this.createModal.submitting = true
+      this.createModal.error = ''
+      try {
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ note: this.createModal.note || '' })
+        })
+        const data = await res.json().catch(() => ({}))
+        if (data && data.success && data.fullUrl) {
+          this.createModal.result = { fullUrl: data.fullUrl }
+        } else {
+          this.createModal.error = (data && data.error) || 'Не удалось создать ссылку'
+        }
+      } catch (e) {
+        this.createModal.error = String(e)
+      } finally {
+        if (this.createModal) this.createModal.submitting = false
+      }
+    },
+    async revokeInvite(inviteId) {
+      const url = this.apiUrls && this.apiUrls.accessRevokeInvite
+      if (!url || !inviteId) return
+      try {
+        await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ inviteId })
+        })
+        this.loadInvites()
+      } catch (e) {
+        log.error('revokeInvite failed', { error: String(e) })
+      }
+    },
+    async revokeGrant(userId) {
+      const url = this.apiUrls && this.apiUrls.accessRevokeGrant
+      if (!url || !userId) return
+      try {
+        await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId })
+        })
+        this.loadGrants()
+      } catch (e) {
+        log.error('revokeGrant failed', { error: String(e) })
+      }
+    },
+    inviteStatusLabel(status) {
+      switch (status) {
+        case 'active': return 'активен'
+        case 'used': return 'использован'
+        case 'revoked': return 'отозван'
+        case 'expired': return 'истёк'
+        default: return status
+      }
+    },
+
     /* helpers */
     formatKpi(n) {
       if (typeof n !== 'number' || !Number.isFinite(n)) return '0'
@@ -420,6 +798,10 @@ export default {
       if (!ts) return '—'
       const d = new Date(ts)
       return d.toLocaleTimeString('ru-RU', { hour12: false })
+    },
+    formatDateTime(ts) {
+      if (!ts) return '—'
+      try { return new Date(ts).toLocaleString('ru-RU', { hour12: false }) } catch (_e) { return '—' }
     },
     updatedSince(ts) {
       if (!ts) return ''
@@ -448,24 +830,15 @@ export default {
 /* === Layout === */
 .app-layout {
   min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
   background: transparent;
   position: relative;
 }
-.content-wrapper {
-  flex: 1;
-  min-height: 0;
-  position: relative;
-  z-index: 100;
-  padding: 1.5rem 0;
-}
+.content-wrapper { padding: 1.5rem 0 2rem; }
 .content-inner {
   width: 100%;
   max-width: 1280px;
   margin: 0 auto;
-  padding: 0 1.25rem;
+  padding: 0 1.5rem;
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
@@ -476,33 +849,64 @@ export default {
   display: flex;
   align-items: center;
   gap: 1rem;
-  padding: 0.5rem 0;
+  padding: 0.5rem 0.75rem;
+  flex-wrap: wrap;
+  background: rgba(20, 20, 20, 0.65);
+  border: 1px solid var(--color-border);
+  clip-path: polygon(
+    0 3px, 3px 3px, 3px 0,
+    calc(100% - 3px) 0, calc(100% - 3px) 3px, 100% 3px,
+    100% calc(100% - 3px), calc(100% - 3px) calc(100% - 3px), calc(100% - 3px) 100%,
+    3px 100%, 3px calc(100% - 3px), 0 calc(100% - 3px)
+  );
+}
+.panel-tabs {
+  display: flex;
+  gap: 0.35rem;
   flex-wrap: wrap;
 }
-.panel-tabs { display: flex; gap: 0.25rem; flex-wrap: wrap; }
 .tab {
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
-  padding: 0.5rem 0.85rem;
-  background: var(--color-bg-secondary);
+  gap: 0.45rem;
+  background: var(--color-bg-tertiary);
   color: var(--color-text-secondary);
   border: 1px solid var(--color-border);
-  border-radius: 4px;
+  padding: 0.45rem 0.85rem;
+  font-family: inherit;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-size: 0.72rem;
   cursor: pointer;
-  font-size: 0.85rem;
+  position: relative;
+  overflow: hidden;
+  transition: color 0.2s ease, border-color 0.2s ease, transform 0.2s ease, background 0.2s ease;
+  clip-path: polygon(
+    0 3px, 3px 3px, 3px 0,
+    calc(100% - 3px) 0, calc(100% - 3px) 3px, 100% 3px,
+    100% calc(100% - 3px), calc(100% - 3px) calc(100% - 3px), calc(100% - 3px) 100%,
+    3px 100%, 3px calc(100% - 3px), 0 calc(100% - 3px)
+  );
 }
 .tab.active {
-  background: var(--color-accent-light);
   color: var(--color-text);
   border-color: var(--color-accent);
+  background: var(--color-accent-light);
 }
 .panel-toolbar-right { margin-left: auto; display: flex; align-items: center; gap: 0.75rem; }
 .live-toggle {
-  display: inline-flex; align-items: center; gap: 0.4rem;
-  padding: 0.4rem 0.75rem; border: 1px solid var(--color-border);
-  border-radius: 4px; cursor: pointer; background: var(--color-bg-secondary);
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 0.4rem;
+  cursor: pointer;
   user-select: none;
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  color: var(--color-text-tertiary);
+  padding: 0.3rem 0.6rem;
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-tertiary);
 }
 .live-toggle input { display: none; }
 .live-toggle .live-dot {
@@ -510,76 +914,231 @@ export default {
   background: var(--color-text-tertiary);
 }
 .live-toggle.on .live-dot {
-  background: var(--color-accent);
-  box-shadow: 0 0 8px var(--color-accent);
+  background: #d97a8a;
+  box-shadow: 0 0 0 2px rgba(217, 122, 138, 0.2);
+  animation: live-pulse 1.5s ease-in-out infinite;
 }
 .live-label { font-size: 0.75rem; letter-spacing: 0.1em; color: var(--color-text-secondary); }
+
+/* === Date filter bar === */
+.filter-bar {
+  display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;
+  background: rgba(20, 20, 20, 0.6);
+  border: 1px solid var(--color-border);
+  padding: 0.65rem 0.9rem;
+  clip-path: polygon(
+    0 3px, 3px 3px, 3px 0,
+    calc(100% - 3px) 0, calc(100% - 3px) 3px, 100% 3px,
+    100% calc(100% - 3px), calc(100% - 3px) calc(100% - 3px), calc(100% - 3px) 100%,
+    3px 100%, 3px calc(100% - 3px), 0 calc(100% - 3px)
+  );
+}
+.filter-group { display: inline-flex; align-items: center; gap: 0.4rem; }
+.filter-label { font-size: 0.75rem; color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: 0.06em; }
+.filter-label i { color: var(--color-accent); margin-right: 0.25rem; }
+.filter-input {
+  background: var(--color-bg); color: var(--color-text);
+  border: 1px solid var(--color-border-light);
+  padding: 0.3rem 0.5rem; font-family: inherit; font-size: 0.8rem;
+  color-scheme: dark;
+}
+.filter-time { width: 6.5rem; }
+.filter-actions { display: inline-flex; align-items: center; gap: 0.5rem; margin-left: auto; flex-wrap: wrap; }
+.filter-msg { font-size: 0.75rem; }
+.filter-msg.is-err { color: var(--color-accent); }
 
 /* === KPI === */
 .kpi-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 1rem;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.9rem;
 }
-.kpi-grid-secondary { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.kpi-grid-secondary { grid-template-columns: repeat(4, 1fr); }
 .kpi-card {
   position: relative;
-  background: var(--color-bg-secondary);
+  background: rgba(20, 20, 20, 0.65);
   border: 1px solid var(--color-border);
-  border-radius: 6px;
-  padding: 1rem 1.1rem;
-  min-height: 100px;
-  display: flex; flex-direction: column; justify-content: center;
+  padding: 1.1rem 1.25rem;
+  overflow: hidden;
+  clip-path: polygon(
+    0 4px, 4px 4px, 4px 0,
+    calc(100% - 4px) 0, calc(100% - 4px) 4px, 100% 4px,
+    100% calc(100% - 4px), calc(100% - 4px) calc(100% - 4px), calc(100% - 4px) 100%,
+    4px 100%, 4px calc(100% - 4px), 0 calc(100% - 4px)
+  );
 }
 .kpi-card.kpi-success { border-left: 3px solid var(--color-accent); }
-.kpi-icon { color: var(--color-accent); font-size: 1.1rem; margin-bottom: 0.4rem; }
-.kpi-label { font-size: 0.7rem; color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: 0.08em; }
-.kpi-value { font-size: 1.75rem; color: var(--color-text); font-weight: 500; }
-.stat-card {
-  background: var(--color-bg-secondary);
-  border: 1px solid var(--color-border);
-  border-radius: 6px;
-  padding: 0.85rem 1rem;
+.kpi-icon {
+  font-size: 1rem;
+  color: var(--color-accent);
+  margin-bottom: 0.4rem;
 }
-.stat-label { font-size: 0.7rem; color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.25rem; }
-.stat-label i { margin-right: 0.35rem; color: var(--color-accent); }
-.stat-value { font-size: 1.25rem; color: var(--color-text); }
+.kpi-label {
+  font-size: 0.65rem;
+  color: var(--color-text-tertiary);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.kpi-value {
+  font-size: 1.85rem;
+  color: var(--color-text);
+  margin-top: 0.3rem;
+  text-shadow: 0 0 8px rgba(232, 232, 232, 0.2);
+  line-height: 1;
+}
+.stat-card {
+  position: relative;
+  background: var(--color-bg-tertiary);
+  border: 1px solid var(--color-border);
+  padding: 0.7rem 0.85rem;
+  overflow: hidden;
+  clip-path: polygon(
+    0 3px, 3px 3px, 3px 0,
+    calc(100% - 3px) 0, calc(100% - 3px) 3px, 100% 3px,
+    100% calc(100% - 3px), calc(100% - 3px) calc(100% - 3px), calc(100% - 3px) 100%,
+    3px 100%, 3px calc(100% - 3px), 0 calc(100% - 3px)
+  );
+}
+.stat-label {
+  font-size: 0.65rem;
+  color: var(--color-text-tertiary);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.stat-label i { margin-right: 0.3rem; color: var(--color-accent); opacity: 0.85; }
+.stat-value {
+  font-size: 1.2rem;
+  color: var(--color-text);
+  margin-top: 0.15rem;
+  line-height: 1.1;
+}
 
 /* === Sections / tables === */
 .panel-section {
-  background: var(--color-bg-secondary);
+  position: relative;
+  background: rgba(20, 20, 20, 0.6);
   border: 1px solid var(--color-border);
-  border-radius: 6px;
-  padding: 1rem 1.1rem;
+  padding: 1.25rem 1.25rem 1rem;
+  clip-path: polygon(
+    0 4px, 4px 4px, 4px 0,
+    calc(100% - 4px) 0, calc(100% - 4px) 4px, 100% 4px,
+    100% calc(100% - 4px), calc(100% - 4px) calc(100% - 4px), calc(100% - 4px) 100%,
+    4px 100%, 4px calc(100% - 4px), 0 calc(100% - 4px)
+  );
 }
 .panel-section-head {
-  display: flex; align-items: center; gap: 0.5rem;
-  margin-bottom: 0.6rem;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0 0 0.85rem;
+  padding-bottom: 0.6rem;
+  border-bottom: 1px solid var(--color-border);
+  flex-wrap: wrap;
 }
-.panel-section-head h2 { font-size: 1rem; margin: 0; flex: 1; font-weight: 500; }
-.panel-section-head .prompt { color: var(--color-accent); font-weight: 700; }
+.panel-section-head h2 {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--color-accent);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-shadow: 0 0 5px rgba(211, 35, 75, 0.25);
+}
+.panel-section-head .prompt {
+  color: var(--color-accent);
+  font-size: 1.1rem;
+  line-height: 1;
+}
 .panel-section-head .muted { color: var(--color-text-tertiary); font-size: 0.75rem; margin-left: 0.5rem; }
 .btn-mini {
-  display: inline-flex; align-items: center; gap: 0.25rem;
-  padding: 0.25rem 0.5rem;
-  background: var(--color-bg-tertiary); color: var(--color-text-secondary);
-  border: 1px solid var(--color-border); border-radius: 3px; cursor: pointer;
-  font-size: 0.75rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  background: transparent;
+  color: var(--color-text-tertiary);
+  border: 1px solid var(--color-border);
+  padding: 0.15rem 0.4rem;
+  font-size: 0.68rem;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  margin-left: 0.35rem;
+  transition: color 0.2s, border-color 0.2s;
 }
-.btn-mini:hover { color: var(--color-text); border-color: var(--color-accent); }
+.btn-mini:hover {
+  color: var(--color-accent);
+  border-color: var(--color-accent);
+}
+.btn-mini:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-mini.btn-primary { background: var(--color-accent); border-color: var(--color-accent); color: #fff; }
+.btn-mini.btn-primary:hover { background: var(--color-accent-hover); border-color: var(--color-accent-hover); }
+.btn-mini.btn-danger:hover { color: var(--color-accent); border-color: var(--color-accent); }
 .head-action { margin-left: 0.5rem; }
-.table-wrapper { overflow-x: auto; }
-.data-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+.table-wrapper {
+  overflow-x: auto;
+  border: 1px solid var(--color-border);
+  background: rgba(10, 10, 10, 0.65);
+}
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.78rem;
+}
 .data-table th, .data-table td {
-  text-align: left; padding: 0.4rem 0.5rem;
+  padding: 0.45rem 0.6rem;
+  text-align: left;
+  vertical-align: top;
   border-bottom: 1px solid var(--color-border);
 }
-.data-table th { color: var(--color-text-tertiary); font-weight: 500; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.06em; }
+.data-table th {
+  background: var(--color-bg-tertiary);
+  color: var(--color-text-secondary);
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.65rem;
+  border-bottom: 1px solid var(--color-border-light);
+}
 .data-table .row-err td { color: var(--color-accent); }
-.empty-state { padding: 1.5rem; text-align: center; color: var(--color-text-tertiary); }
-.empty-icon { font-size: 1.5rem; display: block; margin-bottom: 0.5rem; color: var(--color-accent); }
-.empty-title { color: var(--color-text-secondary); margin: 0.25rem 0; }
-.empty-hint { font-size: 0.85rem; }
+.data-table .row-revoked td { opacity: 0.55; }
+.badge {
+  display: inline-block; padding: 0.1rem 0.45rem;
+  font-size: 0.7rem; border: 1px solid var(--color-border);
+}
+.badge-active { color: #6aaf7e; border-color: rgba(106, 175, 126, 0.4); }
+.badge-used { color: var(--color-text-secondary); }
+.badge-revoked { color: var(--color-accent); border-color: var(--color-accent); }
+.badge-expired { color: var(--color-text-tertiary); }
+.empty-state {
+  padding: 1.75rem 1rem;
+  text-align: center;
+  color: var(--color-text-tertiary);
+  border: 1px dashed var(--color-border);
+  background: rgba(10, 10, 10, 0.4);
+}
+.empty-icon {
+  font-size: 1.5rem;
+  color: var(--color-text-tertiary);
+  opacity: 0.6;
+  display: block;
+  margin-bottom: 0.5rem;
+}
+.empty-title {
+  color: var(--color-text-secondary);
+  font-size: 0.85rem;
+  margin: 0 0 0.25rem;
+  letter-spacing: 0.04em;
+}
+.empty-hint {
+  margin: 0;
+  font-size: 0.75rem;
+}
+.field-label {
+  font-size: 0.68rem;
+  color: var(--color-text-tertiary);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.field-full { width: 100%; box-sizing: border-box; }
 
 /* === Raw modal === */
 .raw-modal-backdrop {
@@ -597,6 +1156,7 @@ export default {
   display: flex; flex-direction: column;
   box-shadow: 0 12px 60px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(211, 35, 75, 0.15);
 }
+.raw-modal-narrow { max-width: 560px; }
 .raw-modal-head {
   display: flex; align-items: center; gap: 0.75rem;
   padding: 0.75rem 1rem;
@@ -606,18 +1166,26 @@ export default {
 .raw-modal-head h2 { font-size: 1rem; margin: 0; font-weight: 500; flex: 1; }
 .raw-modal-head .muted { margin-left: 0.4rem; color: var(--color-text-tertiary); font-weight: 400; }
 .raw-modal-body { padding: 1rem; overflow: auto; flex: 1; }
-.raw-modal-actions { display: flex; justify-content: flex-end; gap: 0.5rem; margin-bottom: 0.5rem; }
-.json-block {
-  white-space: pre-wrap; word-break: break-all;
-  font-size: 0.78rem;
-  background: var(--color-bg-tertiary);
-  border: 1px solid var(--color-border);
-  border-radius: 4px; padding: 0.75rem; margin: 0;
-  color: var(--color-text);
-  max-height: 70vh; overflow: auto;
+.raw-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
 }
-.form-msg.is-err { color: var(--color-accent); }
-.muted { color: var(--color-text-tertiary); }
+.json-block {
+  margin: 0;
+  font-size: 0.75rem;
+  white-space: pre-wrap;
+  word-break: break-all;
+  color: var(--color-text);
+}
+.form-msg.is-err { color: #d97a8a; }
+.form-msg.is-ok { color: #6aaf7e; }
+.muted {
+  color: var(--color-text-tertiary);
+  font-size: 0.78rem;
+  margin: 0;
+}
 
 @media (max-width: 1024px) {
   .kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -628,5 +1196,6 @@ export default {
   .kpi-grid-secondary { grid-template-columns: 1fr; }
   .data-table { font-size: 0.72rem; }
   .raw-modal-backdrop { padding: 0.5rem; }
+  .filter-actions { margin-left: 0; }
 }
 </style>

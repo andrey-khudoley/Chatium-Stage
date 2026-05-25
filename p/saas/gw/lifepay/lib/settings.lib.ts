@@ -8,6 +8,16 @@ import {
 
 const LOG_MODULE = 'lib/settings.lib'
 
+/** Секретные ключи: их значения не должны попадать в логи. */
+function isSecretSettingKey(key: string): boolean {
+  return key === SHARED_LP_TEST_APIKEY
+}
+
+/** Безопасный payload для логов: маскирует значения секретных ключей. */
+function loggableSettingPayload(key: string, value: unknown): { key: string; value: unknown } {
+  return isSecretSettingKey(key) ? { key, value: '[redacted]' } : { key, value }
+}
+
 /** Ключи настроек */
 export const SETTING_KEYS = {
   PROJECT_NAME: 'project_name',
@@ -17,11 +27,54 @@ export const SETTING_KEYS = {
   LOG_WEBHOOK: 'log_webhook',
   DASHBOARD_RESET_AT: 'dashboard_reset_at',
   LP_TEST_APIKEY: SHARED_LP_TEST_APIKEY,
-  LP_TEST_LOGIN: SHARED_LP_TEST_LOGIN
+  LP_TEST_LOGIN: SHARED_LP_TEST_LOGIN,
+  // Глобальный фильтр панели по дате/времени (один на всё приложение).
+  PANEL_DATE_FILTER: 'panel_date_filter'
 } as const
 
 /** Настройка вебхука логов: enable — активна ли отправка, url — куда отправлять. */
 export type LogWebhookSetting = { enable: boolean; url: string }
+
+/**
+ * Глобальный фильтр панели по дате/времени (Unix ms). Любая граница может
+ * отсутствовать: только from — «всё после», только to — «всё до», обе — диапазон.
+ * Пустой объект `{}` означает «фильтр не задан» (показываются все данные).
+ */
+export type DateFilter = { from?: number; to?: number }
+
+/** Проверяет одну границу фильтра: число, конечное, > 0. */
+function isValidBound(value: unknown): value is number {
+  return typeof value === 'number' && Number.isFinite(value) && value > 0
+}
+
+/**
+ * Валидирует фильтр дат. Объект; каждая присутствующая граница — корректное
+ * число (> 0); если обе заданы — from <= to. Отсутствие границ допустимо.
+ */
+export function isValidDateFilter(value: unknown): value is DateFilter {
+  if (typeof value !== 'object' || value === null) return false
+  const o = value as Record<string, unknown>
+  if (o.from !== undefined && !isValidBound(o.from)) return false
+  if (o.to !== undefined && !isValidBound(o.to)) return false
+  if (isValidBound(o.from) && isValidBound(o.to) && o.from > o.to) return false
+  return true
+}
+
+/**
+ * Нормализует фильтр: оставляет только валидные границы (Math.floor), отбрасывает
+ * отсутствующие/невалидные. Возвращает `{}` если ничего валидного нет.
+ */
+export function normalizeDateFilter(value: unknown): DateFilter {
+  if (typeof value !== 'object' || value === null) return {}
+  const o = value as Record<string, unknown>
+  const result: DateFilter = {}
+  if (isValidBound(o.from)) result.from = Math.floor(o.from)
+  if (isValidBound(o.to)) result.to = Math.floor(o.to)
+  if (result.from !== undefined && result.to !== undefined && result.from > result.to) {
+    return {}
+  }
+  return result
+}
 
 /** Значения по умолчанию */
 export const DEFAULTS = {
@@ -137,6 +190,26 @@ export async function getDashboardResetAt(ctx: app.Ctx): Promise<number> {
 }
 
 /**
+ * Получить глобальный фильтр панели по дате/времени. При отсутствии или невалидных
+ * данных возвращает `{}` (фильтр не задан). Гарантирует только валидные границы.
+ */
+export async function getPanelDateFilter(ctx: app.Ctx): Promise<DateFilter> {
+  await loggerLib.writeServerLog(ctx, {
+    severity: 6,
+    message: `[${LOG_MODULE}] getPanelDateFilter entry`,
+    payload: {}
+  })
+  const value = await getSetting(ctx, SETTING_KEYS.PANEL_DATE_FILTER)
+  const result = isValidDateFilter(value) ? normalizeDateFilter(value) : {}
+  await loggerLib.writeServerLog(ctx, {
+    severity: 6,
+    message: `[${LOG_MODULE}] getPanelDateFilter exit`,
+    payload: { from: result.from ?? null, to: result.to ?? null }
+  })
+  return result
+}
+
+/**
  * Получить все настройки в виде объекта ключ-значение (с дефолтами).
  */
 export async function getAllSettings(ctx: app.Ctx): Promise<Record<string, unknown>> {
@@ -172,7 +245,7 @@ export async function setSetting(ctx: app.Ctx, key: string, value: unknown): Pro
   await loggerLib.writeServerLog(ctx, {
     severity: 6,
     message: `[${LOG_MODULE}] setSetting entry`,
-    payload: { key, value }
+    payload: loggableSettingPayload(key, value)
   })
   let normalized: unknown = value
 
@@ -255,12 +328,22 @@ export async function setSetting(ctx: app.Ctx, key: string, value: unknown): Pro
       message: `[${LOG_MODULE}] setSetting DASHBOARD_RESET_AT branch`,
       payload: { normalized }
     })
+  } else if (key === SETTING_KEYS.PANEL_DATE_FILTER) {
+    if (!isValidDateFilter(value)) {
+      throw new Error('panel_date_filter должен быть объектом { from?: number > 0, to?: number > 0 }, при обеих границах from <= to')
+    }
+    normalized = normalizeDateFilter(value)
+    await loggerLib.writeServerLog(ctx, {
+      severity: 6,
+      message: `[${LOG_MODULE}] setSetting PANEL_DATE_FILTER branch`,
+      payload: { normalized }
+    })
   }
 
   await repo.upsert(ctx, key, normalized)
   await loggerLib.writeServerLog(ctx, {
     severity: 6,
     message: `[${LOG_MODULE}] setSetting exit`,
-    payload: { key, normalized }
+    payload: loggableSettingPayload(key, normalized)
   })
 }

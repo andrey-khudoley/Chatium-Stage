@@ -1,9 +1,12 @@
 /**
  * GET /api/admin/raw/requests/recent — последние N записей gatewayRequestLog
- * (мета-поля, БЕЗ rawArgs/rawHeadersSafe). Admin-only.
+ * (мета-поля, БЕЗ rawArgs/rawHeadersSafe). Доступ: панель (Admin или активный грант).
+ *
+ * Опциональные query-параметры dateFrom/dateTo (Unix ms) — фильтр по requestedAt.
+ * При отсутствии границ — поведение без изменений (последние N).
  */
 
-import { requireAccountRole } from '@app/auth'
+import { guardInternalApi } from '../../../../lib/access/apiGuard'
 
 import * as repo from '../../../../repos/gatewayRequestLog.repo'
 import * as loggerLib from '../../../../lib/logger.lib'
@@ -19,18 +22,29 @@ function parseLimit(value: unknown): number {
   return Math.min(Math.floor(n), MAX_LIMIT)
 }
 
-export const recentGatewayRequestsRoute = app.get('/', async (ctx, req) => {
-  requireAccountRole(ctx, 'Admin')
+/** Парсит границу фильтра (Unix ms): число > 0 → значение, иначе undefined. */
+function parseBound(value: unknown): number | undefined {
+  const n = typeof value === 'string' ? Number(value) : typeof value === 'number' ? value : NaN
+  if (!Number.isFinite(n) || n <= 0) return undefined
+  return Math.floor(n)
+}
 
-  const limit = parseLimit((req.query as Record<string, unknown> | undefined)?.limit)
+export const recentGatewayRequestsRoute = app.get('/', async (ctx, req) => {
+  const denied = await guardInternalApi(ctx)
+  if (denied) return denied
+
+  const query = (req.query as Record<string, unknown> | undefined) ?? {}
+  const limit = parseLimit(query.limit)
+  const dateFrom = parseBound(query.dateFrom)
+  const dateTo = parseBound(query.dateTo)
 
   await loggerLib.writeServerLog(ctx, {
     severity: 6,
     message: `[${LOG_PATH}] entry`,
-    payload: { limit }
+    payload: { limit, dateFrom: dateFrom ?? null, dateTo: dateTo ?? null }
   })
 
-  const rows = await repo.findRecent(ctx, limit)
+  const rows = await repo.findRecentFiltered(ctx, limit, dateFrom, dateTo)
 
   const entries = rows.map((r) => ({
     id: r.id,
