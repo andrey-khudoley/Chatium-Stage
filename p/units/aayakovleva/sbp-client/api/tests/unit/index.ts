@@ -1,5 +1,5 @@
 // @shared-route
-import { requireAnyUser } from '@app/auth'
+import { requireAccountRole } from '@app/auth'
 import * as loggerLib from '../../../lib/logger.lib'
 import { runTemplateUnitChecks, type TemplateUnitTestResult } from '../../../lib/tests/templateUnitSuite'
 import { runLifepayUnitChecks } from '../../../lib/tests/lifepayUnitSuite'
@@ -14,7 +14,7 @@ export type { TemplateUnitTestResult }
  * юнит-набор LifePay-панели (без Heap и сети).
  */
 export const templateUnitTestsRoute = app.get('/', async (ctx) => {
-  requireAnyUser(ctx)
+  requireAccountRole(ctx, 'Admin')
 
   await loggerLib.writeServerLog(ctx, {
     severity: 6,

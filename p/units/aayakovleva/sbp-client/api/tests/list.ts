@@ -1,5 +1,5 @@
 // @shared-route
-import { requireAnyUser } from '@app/auth'
+import { requireAccountRole } from '@app/auth'
 import * as loggerLib from '../../lib/logger.lib'
 import {
   UNIT_TEST_BLOCKS,
@@ -15,7 +15,7 @@ const LOG_PATH = 'api/tests/list'
  * Каждая категория содержит `blocks` (функциональные группы) и плоский `tests` для совместимости.
  */
 export const listTestsRoute = app.get('/', async (ctx) => {
-  requireAnyUser(ctx)
+  requireAccountRole(ctx, 'Admin')
 
   await loggerLib.writeServerLog(ctx, {
     severity: 6,

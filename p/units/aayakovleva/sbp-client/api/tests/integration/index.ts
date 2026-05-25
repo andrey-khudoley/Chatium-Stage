@@ -1,5 +1,5 @@
 // @shared-route
-import { requireAnyUser } from '@app/auth'
+import { requireAccountRole } from '@app/auth'
 import * as loggerLib from '../../../lib/logger.lib'
 import { runTemplateIntegrationChecks } from '../../../lib/tests/integrationSuite'
 import { logTestRunFailures } from '../../../lib/tests/logTestRunFailures'
@@ -12,7 +12,7 @@ export type TemplateIntegrationTestResult = { id: string; title: string; passed:
  * GET /api/tests/integration — интеграция Heap + либ шаблонного минимума.
  */
 export const templateIntegrationTestsRoute = app.get('/', async (ctx) => {
-  requireAnyUser(ctx)
+  requireAccountRole(ctx, 'Admin')
 
   await loggerLib.writeServerLog(ctx, {
     severity: 6,

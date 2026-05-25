@@ -33,7 +33,7 @@
           <i class="fas fa-cog"></i>
         </a>
         <a
-          v-if="props.testsUrl"
+          v-if="props.isAdmin && props.testsUrl"
           :href="props.testsUrl"
           class="header-action-btn"
           title="Тесты"
@@ -267,6 +267,7 @@ const cancelLogout = () => {
   gap: 1rem;
   cursor: pointer;
   text-decoration: none;
+  min-width: 0;
 }
 
 .header-right {
@@ -409,6 +410,7 @@ const cancelLogout = () => {
   font-weight: 400;
   color: var(--color-text);
   margin: 0;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
