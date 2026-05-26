@@ -6,10 +6,12 @@ import TestsPage from '../../pages/TestsPage.vue'
 import { getPreloaderStyles, getPreloaderScript } from '../../shared/preloader'
 import { getLogLevelForPage, getLogLevelScript } from '../../shared/logLevel'
 import * as loggerLib from '../../lib/logger.lib'
+import { htmlRedirect } from '../../lib/htmlRedirect'
 import { getFullUrl, ROUTES } from '../../config/routes'
 import { TESTS_PAGE_NAME, getPageTitle, getHeaderText } from '../../config/project'
 import * as settingsLib from '../../lib/settings.lib'
 import { customScrollbarStyles } from '../../styles'
+import { toOperationSummaries } from '../../lib/gateway/operationsCatalog'
 
 const LOG_PATH = 'web/tests/index'
 
@@ -43,7 +45,7 @@ export const testsPageRoute = app.html('/', async (ctx, req) => {
       message: `[${LOG_PATH}] Редирект на логин: требуется авторизация`,
       payload: { error: String(error), backUrl: req.url }
     })
-    return ctx.resp.redirect('../login?back=' + encodeURIComponent(req.url))
+    return htmlRedirect(ctx, '../login?back=' + encodeURIComponent(req.url))
   }
 
   // Страница тестов доступна только системной роли Admin.
@@ -56,7 +58,7 @@ export const testsPageRoute = app.html('/', async (ctx, req) => {
       message: `[${LOG_PATH}] Доступ запрещён: требуется роль Admin`,
       payload: { error: String(error), displayName: user.displayName }
     })
-    return ctx.resp.redirect(getFullUrl(ROUTES.forbidden))
+    return htmlRedirect(ctx, getFullUrl(ROUTES.forbidden))
   }
 
   const isAdmin = user.is('Admin')
@@ -311,6 +313,7 @@ export const testsPageRoute = app.html('/', async (ctx, req) => {
           isAdmin={isAdmin}
           adminUrl={adminUrl}
           encodedLogsSocketId={encodedLogsSocketId}
+          operationsList={toOperationSummaries()}
         />
       </body>
     </html>

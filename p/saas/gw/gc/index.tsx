@@ -15,6 +15,7 @@ import {
 } from './config/project'
 import * as loggerLib from './lib/logger.lib'
 import * as settingsLib from './lib/settings.lib'
+import { htmlRedirect } from './lib/htmlRedirect'
 
 const PANEL_PAGE_NAME = 'Панель'
 
@@ -39,14 +40,14 @@ export const indexPageRoute = app.html('/', async (ctx, req) => {
         message: `[${LOG_PATH}] forbidden_redirect`,
         payload: { userId: ctx.user?.id ?? null }
       })
-      return ctx.resp.redirect(getFullUrl(ROUTE_PATHS.forbidden))
+      return htmlRedirect(ctx, getFullUrl(ROUTE_PATHS.forbidden))
     }
     await loggerLib.writeServerLog(ctx, {
       severity: 4,
       message: `[${LOG_PATH}] signin_redirect`,
       payload: { backUrl: req.url }
     })
-    return ctx.resp.redirect(`/s/auth/signin?back=${encodeURIComponent(req.url)}`)
+    return htmlRedirect(ctx, `/s/auth/signin?back=${encodeURIComponent(req.url)}`)
   }
 
   const isAdmin = ctx.user?.is('Admin') ?? false
@@ -61,8 +62,12 @@ export const indexPageRoute = app.html('/', async (ctx, req) => {
   const initialDateFilter = await settingsLib.getPanelDateFilter(ctx)
 
   const apiUrls = {
-    invocations: getFullUrl('/api/gateway-analytics/invocations'),
-    filterSave: getFullUrl('/api/gateway-analytics/filter-save'),
+    recentRequests: getFullUrl('/api/admin/raw/requests/recent'),
+    recentUpstream: getFullUrl('/api/admin/raw/upstream/recent'),
+    rawRequest: getFullUrl('/api/admin/raw/requests/get'),
+    rawUpstream: getFullUrl('/api/admin/raw/upstream/get'),
+    counts: getFullUrl('/api/admin/dashboard/gatewayCounts'),
+    filterSave: getFullUrl('/api/admin/analytics/filter-save'),
     accessGenerateInvite: getFullUrl('/api/access/generate-invite'),
     accessRevokeInvite: getFullUrl('/api/access/revoke-invite'),
     accessRevokeGrant: getFullUrl('/api/access/revoke-grant'),

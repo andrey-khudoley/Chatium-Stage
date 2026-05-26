@@ -1,5 +1,5 @@
 /**
- * POST /api/gateway-analytics/filter-save — сохранить или сбросить глобальный фильтр
+ * POST /api/admin/analytics/filter-save — сохранить или сбросить глобальный фильтр
  * панели по дате/времени (settings.PANEL_DATE_FILTER). Доступ: requireRealUser +
  * requireInternalAccess (guardInternalApi) — менять фильтр может любой пользователь
  * с доступом к панели.
@@ -11,12 +11,12 @@
  * Ответ всегда единой формы: { success, filter: null | { from?: number, to?: number } }.
  */
 
-import { guardInternalApi } from '../../lib/access/apiGuard'
-import * as loggerLib from '../../lib/logger.lib'
-import * as settingsLib from '../../lib/settings.lib'
-import * as settingsRepo from '../../repos/settings.repo'
+import { guardInternalApi } from '../../../lib/access/apiGuard'
+import * as loggerLib from '../../../lib/logger.lib'
+import * as settingsLib from '../../../lib/settings.lib'
+import * as settingsRepo from '../../../repos/settings.repo'
 
-const LOG_PATH = 'api/gateway-analytics/filter-save'
+const LOG_PATH = 'api/admin/analytics/filter-save'
 
 function isObject(v: unknown): v is Record<string, unknown> {
   return typeof v === 'object' && v !== null && !Array.isArray(v)

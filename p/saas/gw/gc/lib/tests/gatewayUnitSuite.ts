@@ -1,12 +1,13 @@
-import { GC_OP_HTTP_MAPPING_ENTRIES } from '../gateway/gcOpHttpMapping.generated'
 import { buildLegacyImportFormBody } from '../gateway/legacyGcFormBody'
 import { base64ToUtf8String, utf8StringToBase64 } from '../gateway/utf8Base64'
 import { detectLegacySemanticErrorRule } from '../gateway/legacyGcSemantic'
 import { detectNewSemanticErrorRule } from '../gateway/newGcSemantic'
-import { operationsCatalog, findOperationCatalogEntry } from '../gateway/operationsCatalog'
+import { operationsCatalog, findOperationCatalogEntry, CATALOG_SCHEMA_VERSION } from '../gateway/operationsCatalog'
 import { isApplicationJsonContentType, parseSchoolHeaders } from '../gateway/v1IncomingPost'
-import { V1_OP_ARGS_SCHEMAS } from '../gateway/v1OpArgsSchemas.generated'
 import { parseFlatQueryArgs } from '../gateway/v1GatewayQuery'
+
+/** Полный перечень операций каталога (рукописный SSOT, manual §3.1, §3.4). */
+const EXPECTED_OPERATIONS_COUNT = 59
 
 export type GatewayUnitTestResult = { id: string; title: string; passed: boolean; error?: string }
 
@@ -113,43 +114,44 @@ export function runGatewayUnitChecks(): GatewayUnitTestResult[] {
     )
   })
 
-  tryPush(results, 'gw_catalog_entries_have_schema', 'каждый op из gc-op-http-mapping есть в V1_OP_ARGS_SCHEMAS', () => {
-    for (const e of GC_OP_HTTP_MAPPING_ENTRIES) {
-      if (!(e.op in V1_OP_ARGS_SCHEMAS)) return false
+  // manual §3.1, §3.4: рукописный operationsCatalog — единственный источник. Проверяем
+  // полноту (59 записей) и наличие plain JSON-описателя argsSchema.fields у каждой записи.
+  tryPush(results, 'gw_catalog_entries_have_schema', 'каждая запись каталога имеет argsSchema.fields[]', () => {
+    if (CATALOG_SCHEMA_VERSION !== 1) return false
+    for (const e of operationsCatalog) {
+      if (!e.argsSchema || !Array.isArray(e.argsSchema.fields)) return false
     }
     return true
   })
 
-  tryPush(results, 'gw_catalog_ops_sorted_unique', 'GC_OP_HTTP_MAPPING_ENTRIES: уникальные op', () => {
-    const ops = GC_OP_HTTP_MAPPING_ENTRIES.map((e) => e.op)
+  // manual §3.1: все op уникальны (Set size === длине массива).
+  tryPush(results, 'gw_catalog_ops_sorted_unique', 'operationsCatalog: уникальные op', () => {
+    const ops = operationsCatalog.map((e) => e.op)
     return ops.length === new Set(ops).size
   })
 
-  // manual §3.1, §3.2: единый источник каталога — operationsCatalog (TS-модуль).
-  tryPush(results, 'gw_operations_catalog_matches_mapping', 'operationsCatalog.entries покрывает все op маппинга', () => {
-    const fromCatalog = operationsCatalog.entries.map((e) => e.op).sort()
-    const fromMapping = GC_OP_HTTP_MAPPING_ENTRIES.map((e) => e.op).sort()
-    if (fromCatalog.length !== fromMapping.length) return false
-    for (let i = 0; i < fromCatalog.length; i++) {
-      if (fromCatalog[i] !== fromMapping[i]) return false
-    }
-    return true
+  // manual §3.1, §3.2: единый источник каталога — operationsCatalog (TS-модуль). После
+  // отказа от автогенерации проверяем полноту (59 op) и уникальность вместо сверки с mapping.
+  tryPush(results, 'gw_operations_catalog_matches_mapping', 'operationsCatalog: 59 уникальных op', () => {
+    if (operationsCatalog.length !== EXPECTED_OPERATIONS_COUNT) return false
+    const ops = operationsCatalog.map((e) => e.op)
+    return new Set(ops).size === EXPECTED_OPERATIONS_COUNT
   })
 
   // manual §3.5: и роут /v1/{op}, и каталог берут запись из одного источника.
-  tryPush(results, 'gw_operations_catalog_has_args_schema', 'каждая запись каталога имеет live-объект argsSchema', () => {
-    for (const e of operationsCatalog.entries) {
-      const sch = e.argsSchema as { safeParse?: unknown }
+  tryPush(results, 'gw_operations_catalog_has_args_schema', 'каждая запись каталога имеет live-объект argsValidator', () => {
+    for (const e of operationsCatalog) {
+      const sch = e.argsValidator as { safeParse?: unknown }
       if (!sch || typeof sch.safeParse !== 'function') return false
     }
     return true
   })
 
   // manual §3.5: addUser имеет ручную перекрывающую схему params.user.email.
-  tryPush(results, 'gw_operations_catalog_addUser_strict', 'addUser argsSchema валидирует params.user.email', () => {
+  tryPush(results, 'gw_operations_catalog_addUser_strict', 'addUser argsValidator валидирует params.user.email', () => {
     const e = findOperationCatalogEntry('addUser')
     if (!e) return false
-    const sch = e.argsSchema as { safeParse: (d: unknown) => { success: boolean } }
+    const sch = e.argsValidator as { safeParse: (d: unknown) => { success: boolean } }
     const ok = sch.safeParse({ params: { user: { email: 'a@b.co' } } })
     const bad = sch.safeParse({ params: { user: {} } })
     return ok.success === true && bad.success === false

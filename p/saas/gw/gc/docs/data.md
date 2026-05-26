@@ -10,12 +10,18 @@
 | t__saas-gw-gc__log__K7n2Tp | tables/logs.table.ts | Серверные логи (долгосрочное хранение) | message (string), payload (any), severity, level, timestamp |
 | t__saas-gw-gc__paccess__GDgDvk | tables/panelAccess.table.ts | Выданные доступы к панели (не Admin) | userId (searchable), grantedAt, grantedBy |
 | t__saas-gw-gc__pinvite__U7FaXD | tables/panelInvites.table.ts | Пригласительные токены для выдачи доступа | token (searchable), issuedAt, expiresAt, consumedAt, consumedByUserId, revokedAt, createdBy |
+| t__saas-gw-gc__greq__Gr9Qm2 | tables/gatewayRequestLog.table.ts | Входящие запросы `/v1/{op}` — raw-журнал (PII-маска) | requestId (searchable), op, contour, method, rawArgs, rawHeadersSafe, clientHttpStatus, errorCode, durationMs, requestedAt |
+| t__saas-gw-gc__gups__Up7Mn3 | tables/gatewayUpstreamLog.table.ts | Исходящие вызовы к GetCourse — raw-журнал (PII-маска) | requestId (searchable), op, upstreamKind, rawGcJson, gcHttpStatus, semanticRule, durationMs, sentAt |
+
+**Связь между таблицами:** `gatewayRequestLog` и `gatewayUpstreamLog` связаны по полю `requestId` (один входящий запрос — один исходящий вызов GC, если availability позволила).
 
 ## Репозитории (repos/)
 - `repos/settings.repo.ts` — findByKey, findAll, upsert, deleteByKey (слой работы с БД; без вызовов logger.lib, т.к. getSetting/getLogLevel вызываются из writeServerLog и используют findByKey — иначе рекурсия).
 - `repos/logs.repo.ts` — create, findAll, findById, findBeforeTimestamp (слой работы с БД логов; findBeforeTimestamp использует нативную фильтрацию Heap API через `where: { timestamp: { $lt } }` для эффективной пагинации).
 - `repos/panelAccess.repo.ts` — create, findByUserId, findAll, deleteByUserId (гранты доступа к панели).
 - `repos/panelInvites.repo.ts` — create, findByToken, findAll, updateConsumed, updateRevoked (инвайты доступа к панели).
+- `repos/gatewayRequestLog.repo.ts` — create, findRecent, findRecentFiltered, findById, countSince, countErrorsSince (через `countBy`/`where`; не `findAll().length`).
+- `repos/gatewayUpstreamLog.repo.ts` — create, findRecent, findByRequestId, countSince, countOkSince (через `countBy`/`where`).
 
 ## Библиотеки (lib/)
 - `lib/settings.lib.ts` — getSetting, getAllSettings, setSetting, getLogLevel, getLogsLimit, getLogWebhook, `getPanelDateFilter` (бизнес-логика, дефолты, валидация). Ключ `panel_date_filter` (`PANEL_DATE_FILTER`) хранит глобальный фильтр по дате в формате `{ from?, to? }` (Unix ms); запись через `setSetting` с валидацией; сброс — `deleteByKey`. Имена ключей gateway для клиента дублируются в `shared/gatewaySettingKeys.ts` (`// @shared`), сервер тянет те же строки в `SETTING_KEYS` (например `GC_DEVELOPER_API_KEY`, `GC_TEST_SCHOOL_API_KEY`, `GC_TEST_SCHOOL_HOST` → `gc_developer_api_key`, `gc_test_school_api_key`, `gc_test_school_host`). Валидация при записи: непустые строки после `trim` для двух ключей; хост — `validateGcSchoolHostTrimmed` в `shared/gcSchoolHostValidation.ts` + `throwLoggedServerError` в `setSetting`. Ввод в админке: `pages/AdminPage.vue` (секреты — `type="password"`, кнопка «показать»).

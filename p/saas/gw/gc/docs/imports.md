@@ -10,14 +10,16 @@
 
 ### `./index.tsx`
 - `@app/html-jsx` → `jsx`
-- `./pages/HomePage.vue`
+- `./pages/PanelHomePage.vue`
 - `./shared/preloader` → `getPreloaderStyles`, `getPreloaderScript`
 - `./styles` → `customScrollbarStyles`
 - `./shared/logLevel` → `getLogLevelForPage`, `getLogLevelScript`
 - `./config/routes` → `getFullUrl`, `ROUTES`
-- `./config/project` → `INDEX_PAGE_NAME`, `BODY_TEXT`, `BODY_SUBTEXT`, `getPageTitle`, `getHeaderText`
+- `./config/project` → `INDEX_PAGE_NAME`, `getPageTitle`, `getHeaderText`
 - `./lib/logger.lib` → `*`
-- `./lib/settings.lib` → `*`
+- `./lib/settings.lib` → `*` (включая `getPanelDateFilter`)
+- `./lib/access/requireInternalAccess` → `requireInternalAccess`
+- `./lib/gateway/operationsCatalog` → `toOperationSummaries` (передаётся как SSR-проп в `web/tests/index.tsx`)
 
 ### `./web/admin/index.tsx`
 - `@app/html-jsx` → `jsx`
@@ -67,12 +69,13 @@
 
 ## 2) Страницы‑компоненты (Vue)
 
-### `./pages/HomePage.vue`
-- `vue` → `onMounted`, `onUnmounted`, `ref`
+### `./pages/PanelHomePage.vue` (бывшая главная; лендинг `HomePage.vue` не используется)
+- `vue` → `onMounted`, `onBeforeUnmount`, `onUnmounted`, `ref`, `computed`, `watch`
 - `../components/Header.vue`
 - `../components/GlobalGlitch.vue`
 - `../components/AppFooter.vue`
-- `../shared/logger` → `createComponentLogger`
+- `../shared/logger` → `createComponentLogger`, `setLogSink`, `LogEntry`
+- Данные через `fetch` по `props.apiUrls`: recentRequests, recentUpstream, rawRequest, rawUpstream, counts, filterSave
 
 ### `./pages/AdminPage.vue`
 - `vue` → `onMounted`, `onBeforeUnmount`, `onUnmounted`, `ref`, `computed`, `watch`
@@ -88,8 +91,8 @@
 - `../api/admin/logs/before` → `getLogsBeforeRoute`
 - `../api/admin/dashboard/counts` → `getDashboardCountsRoute`
 - `../api/admin/dashboard/reset` → `resetDashboardRoute`
-- `../api/gateway-analytics/invocations` → `gatewayAnalyticsInvocationsRoute`
 - `../shared/logger` → `createComponentLogger`, `setLogSink`, `LogEntry`
+- (секция «Аналитика вызовов /v1/{op}» и `gatewayAnalyticsInvocationsRoute` удалены)
 
 ### `./pages/ProfilePage.vue`
 - `vue` → `onMounted`, `onUnmounted`, `ref`
@@ -152,6 +155,14 @@
 - первая строка: `// @shared`
 - нет импортов — `validateGcSchoolHostTrimmed`, `GcSchoolHostValidationError`, `normalizeGcTestSchoolHost`, `getGcSchoolHostFieldError`, `assertValidGcSchoolHostTrimmed` (deprecated; хост / `X-Gc-School-Host`, manual §2.5)
 
+### `./shared/redactRaw.ts`
+- первая строка: `// @shared`
+- нет импортов — `redactRawDeep`: маскирование секретов GC (`gc_developer_api_key`, `x-gc-school-api-key` и др.) и PII; лимит 64 KiB; защита от циклических ссылок
+
+### `./shared/operationsCatalogShared.ts`
+- первая строка: `// @shared`
+- нет импортов — тип `OperationSummary` и `OperationSummaryField` для wire-формата `GET /v1/operations` (`fields[]`)
+
 ### `./shared/testCatalog.ts`
 - первая строка: `// @shared`
 - нет импортов — каталог блоков для `/api/tests/list` и UI тестов
@@ -167,6 +178,12 @@
 ### `./tables/logs.table.ts`
 - `@app/heap` → `Heap`
 
+### `./tables/gatewayRequestLog.table.ts`
+- `@app/heap` → `Heap`
+
+### `./tables/gatewayUpstreamLog.table.ts`
+- `@app/heap` → `Heap`
+
 ## 6) Репозитории (repos/)
 
 ### `./repos/settings.repo.ts`
@@ -177,6 +194,14 @@
 - `../tables/logs.table` → `Logs`, `LogsRow`
 - `../lib/logger.lib` → `*`
 - экспортирует: `create`, `findAll`, `findById`, `findBeforeTimestamp`, `countBySeverityAfter`, `countErrorsAfter`, `countWarningsAfter`
+
+### `./repos/gatewayRequestLog.repo.ts`
+- `../tables/gatewayRequestLog.table` → `GatewayRequestLog`, `GatewayRequestLogRow`
+- экспортирует: `create`, `findRecent`, `findRecentFiltered`, `findById`, `countSince`, `countErrorsSince`
+
+### `./repos/gatewayUpstreamLog.repo.ts`
+- `../tables/gatewayUpstreamLog.table` → `GatewayUpstreamLog`, `GatewayUpstreamLogRow`
+- экспортирует: `create`, `findRecent`, `findByRequestId`, `countSince`, `countOkSince`
 
 ## 7) Библиотеки (lib/)
 
@@ -215,21 +240,42 @@
 - `../../lib/settings.lib` → `*`
 - `../../lib/logger.lib` → `*`
 
-### `./api/v1/{op}.ts` (59 операций из `gc-op-http-mapping.json`)
+### `./api/v1/{op}.ts` (59 операций, рукописные per-op хендлеры)
 
-- `../../lib/gateway/handleV1OpRoute` → `handleV1OpRoute` (регистрация `app.get` / `app.post`)
+- `../../lib/gateway/handleV1Op` → `handleV1Op` / `handleV1OpWithGcDiagnostic`
+- `../../lib/gateway/newGcApiClient` или `legacyGcImportClient` / `legacyGcExportGet` (зависит от контура op)
+- экспорт: `{op}Handler: V1GcHandler`, `{op}Route`
 
 ### `./api/v1/operations.ts`
 
-- `../../lib/gateway/operationsCatalog` → `operationsCatalog`, `serializeArgsSchemaForCatalog`
-- `../../lib/gateway/requestId`, `v1TuneResponse`, `gatewayWorkspaceEvents`, `logger.lib`
+- `../../lib/gateway/operationsCatalog` → `toOperationSummaries`, `CATALOG_SCHEMA_VERSION`
+- `../../lib/gateway/requestId`, `v1TuneResponse`, `logger.lib`
+- (gatewayWorkspaceEvents и serializeArgsSchemaForCatalog — удалены)
 
-### `./api/gateway-analytics/invocations.ts`
+### `./api/admin/raw/requests/recent.ts`, `./api/admin/raw/requests/get.ts`
 
-- `@app/auth` → `requireAccountRole`
-- `../../repos/logs.repo` → `*`
-- `../../lib/logger.lib` → `*`
-- `../../tables/logs.table` → `LogsRow` (type)
+- `../../../../lib/access/apiGuard` → `guardInternalApi`
+- `../../../../repos/gatewayRequestLog.repo` → `*`
+- `../../../../lib/logger.lib` → `*`
+
+### `./api/admin/raw/upstream/recent.ts`, `./api/admin/raw/upstream/get.ts`
+
+- `../../../../lib/access/apiGuard` → `guardInternalApi`
+- `../../../../repos/gatewayUpstreamLog.repo` → `*`
+- `../../../../lib/logger.lib` → `*`
+
+### `./api/admin/dashboard/gatewayCounts.ts`
+
+- `../../../../lib/access/apiGuard` → `guardInternalApi`
+- `../../../../repos/gatewayRequestLog.repo` → `countSince`, `countErrorsSince`
+- `../../../../repos/gatewayUpstreamLog.repo` → `countOkSince`
+- `../../../../lib/logger.lib` → `*`
+
+### `./api/admin/analytics/filter-save.ts`
+
+- `../../../../lib/access/apiGuard` → `guardInternalApi`
+- `../../../../lib/settings.lib` → `getPanelDateFilter`, `setSetting`, `SETTING_KEYS`
+- `../../../../lib/logger.lib` → `*`
 
 ### `./api/logger/log.ts`
 - `@app/auth` → `requireAnyUser`
@@ -296,10 +342,22 @@
 
 - `./handleV1OpRoute`, `./v1TuneResponse` — тонкая обёртка для тестов (`handleV1AddUserPost`)
 
-### `./lib/gateway/handleV1OpRoute.ts`
+### `./lib/gateway/handleV1Op.ts` (НОВЫЙ; основной обработчик)
 
-- `logger.lib`, `settings.lib`, `gatewayBetaWarnings`, `interpretGcV1Response`, `legacyGcExportGet`, `legacyGcImportClient`, `newGcApiClient`, `pathTemplate`, `operationsCatalog` (`findOperationCatalogEntry`, `OperationCatalogEntry`), `requestId`, `v1IncomingPost` (`readHeaderInsensitive`), `v1GatewayQuery`, `gatewayWorkspaceEvents`, `v1TuneResponse`, `constants`, `../../shared/gatewayHttpHeaders` (`GW_HEADER_SCHOOL_HOST`)
-- Экспорт: **`handleV1OpRoute`** — публичные роуты `/v1/{op}`; **`handleV1OpRouteWithGcDiagnostic`** + тип **`V1GcDiagnostic`** — только для админского раннера (`lib/tests/gateway/v1OpsSuiteRunner.ts`), чтобы в ответ не утекало сырое тело GC через обычный API.
+- `logger.lib`, `settings.lib`, `interpretGcV1Response`, `legacyGcExportGet`, `legacyGcImportClient`, `newGcApiClient`, `pathTemplate`, `operationsCatalog` (`findOperationCatalogEntry`, `OperationCatalogEntry`), `requestId`, `v1IncomingPost` (`readHeaderInsensitive`), `v1GatewayQuery`, `v1TuneResponse`, `constants`, `../../shared/gatewayHttpHeaders`, `../../repos/gatewayRequestLog.repo`, `../../repos/gatewayUpstreamLog.repo`, `../../shared/redactRaw`
+- Экспорт: **`handleV1Op`** (публичные роуты), **`handleV1OpWithGcDiagnostic`** + тип **`V1GcDiagnostic`** (для раннера), переэкспорт `V1IncomingLike`
+
+### `./lib/gateway/v1OpHandlers.ts` (НОВЫЙ; реестр хендлеров)
+
+- 59 файлов `../../api/v1/{op}` → `{op}Handler`
+- Экспорт: `V1_OP_HANDLERS`, `findV1OpHandler`, тип `V1GcHandler`
+
+### `./lib/gateway/handleV1OpRoute.ts` (совместимостный shim)
+
+- `./handleV1Op` → `handleV1Op`, `handleV1OpWithGcDiagnostic`
+- `./v1OpHandlers` → `findV1OpHandler`
+- Экспорт: **`handleV1OpRoute`**, **`handleV1OpRouteWithGcDiagnostic`** (через реестр + handleV1Op)
+- (весь прежний inline-код удалён; gatewayWorkspaceEvents — не импортируется)
 
 ### `./lib/tests/gateway/v1OpsSuiteRunner.ts`
 

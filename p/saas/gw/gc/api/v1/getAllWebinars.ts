@@ -1,4 +1,19 @@
-import { handleV1OpRoute } from '../../lib/gateway/handleV1OpRoute'
+import { handleV1Op, type V1GcHandler } from '../../lib/gateway/handleV1Op'
+import { invokeNewGcApi } from '../../lib/gateway/newGcApiClient'
 
-/** GET /v1/getAllWebinars — каталог: config/gc-op-http-mapping.json */
-export const getAllWebinarsRoute = app.get('/', async (ctx, req) => handleV1OpRoute(ctx, 'getAllWebinars', req))
+/** GET /v1/getAllWebinars — контур new, GET /webinar/get-all-webinars. */
+export const getAllWebinarsHandler: V1GcHandler = async (_ctx, a) => {
+  const gc = await invokeNewGcApi({
+    schoolHostTrimmed: a.schoolHost,
+    resolvedPath: a.resolvedPath,
+    httpMethod: 'GET',
+    developerKey: a.devKey,
+    schoolApiKey: a.schoolApiKey,
+    args: a.restArgs
+  })
+  return { kind: 'gc_result', gc }
+}
+
+export const getAllWebinarsRoute = app.get('/', async (ctx, req) => handleV1Op(ctx, req, 'getAllWebinars', getAllWebinarsHandler))
+
+export default getAllWebinarsRoute

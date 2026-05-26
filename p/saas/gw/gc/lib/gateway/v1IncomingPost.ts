@@ -46,8 +46,9 @@ export function isApplicationJsonContentType(headers: unknown): boolean {
   const parts = lower.split(';').map((p) => p.trim())
   if (parts[0] !== 'application/json') return false
   for (let i = 1; i < parts.length; i++) {
-    if (parts[i].startsWith('charset=')) {
-      const cs = parts[i].slice('charset='.length).trim().toLowerCase()
+    const part = parts[i]
+    if (part && part.startsWith('charset=')) {
+      const cs = part.slice('charset='.length).trim().toLowerCase()
       if (cs !== 'utf-8') return false
     }
   }

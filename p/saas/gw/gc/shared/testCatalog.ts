@@ -128,9 +128,9 @@ export const UNIT_TEST_BLOCKS: TestCatalogBlock[] = [
       { id: 'gw_new_semantic_n2', title: 'new code≠200 → new_code_non_200' },
       { id: 'gw_new_semantic_n3', title: 'new data.result:false → new_data_result_false' },
       { id: 'gw_new_semantic_ok', title: 'new успех без признаков ошибки → null' },
-      { id: 'gw_catalog_entries_have_schema', title: 'каждый op из mapping есть в V1_OP_ARGS_SCHEMAS' },
-      { id: 'gw_catalog_ops_sorted_unique', title: 'GC_OP_HTTP_MAPPING_ENTRIES: уникальные op' },
-      { id: 'gw_operations_catalog_matches_mapping', title: 'operationsCatalog.entries покрывает mapping' },
+      { id: 'gw_catalog_entries_have_schema', title: 'каждая запись каталога имеет argsSchema.fields[]' },
+      { id: 'gw_catalog_ops_sorted_unique', title: 'operationsCatalog: уникальные op' },
+      { id: 'gw_operations_catalog_matches_mapping', title: 'operationsCatalog: 59 уникальных op' },
       { id: 'gw_operations_catalog_has_args_schema', title: 'каждая запись каталога имеет live argsSchema' },
       { id: 'gw_operations_catalog_addUser_strict', title: 'addUser: params.user.email обязателен' },
       { id: 'gw_query_dup_keys_keep_last', title: 'дубликаты query → последнее значение (manual §3.5)' }

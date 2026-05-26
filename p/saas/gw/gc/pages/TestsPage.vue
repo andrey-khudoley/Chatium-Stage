@@ -17,7 +17,7 @@ import {
   type TestCatalogBlock,
   type TestCatalogEntry
 } from '../shared/testCatalog'
-import { V1_OPS_LIST, type V1OpListEntry } from '../shared/v1OpsList.generated'
+import type { OperationSummary } from '../shared/operationsCatalogShared'
 
 const log = createComponentLogger('TestsPage')
 
@@ -41,7 +41,11 @@ const props = defineProps<{
   isAdmin?: boolean
   adminUrl?: string
   encodedLogsSocketId?: string
+  operationsList?: OperationSummary[]
 }>()
+
+/** Каталог операций /v1/{op} (SSR-проп; источник — lib/gateway/operationsCatalog на сервере). */
+const operationsList = computed<OperationSummary[]>(() => props.operationsList ?? [])
 
 const showContent = ref(false)
 const bootLoaderDone = ref(false)
@@ -57,7 +61,8 @@ const intervalIds = { title: null as ReturnType<typeof setInterval> | null, desc
 const MAX_LOG_ENTRIES = 500
 const LOG_FETCH_LIMIT = 50
 const logEntries = ref<LogEntry[]>([])
-let logsSocketSubscription: { unsubscribe?: () => void } | null = null
+// `DataSocketSubscription.listen()` возвращает функцию отписки — её и храним для очистки.
+let logsSocketUnsubscribe: (() => void) | null = null
 const logsOutputRef = ref<HTMLElement | null>(null)
 const logsLoading = ref(false)
 const logsError = ref('')
@@ -132,8 +137,9 @@ function trimOldLogs() {
 }
 
 function updateOldestTimestamp(entries: Array<LogEntry & { id?: string }>) {
-  if (!entries.length) return
-  const oldest = entries.reduce((min, item) => (item.timestamp < min ? item.timestamp : min), entries[0].timestamp)
+  const first = entries[0]
+  if (!first) return
+  const oldest = entries.reduce((min, item) => (item.timestamp < min ? item.timestamp : min), first.timestamp)
   oldestLogTimestamp.value = oldest
 }
 
@@ -158,6 +164,7 @@ const displayedLogs = computed<LogDisplayItem[]>(() => {
   let lastDateKey = ''
   for (let i = 0; i < sorted.length; i++) {
     const entry = sorted[i]
+    if (!entry) continue
     const dateKey = getDateKey(entry.timestamp)
     if (i > 0 && dateKey !== lastDateKey) {
       items.push({ type: 'divider', date: formatDateDivider(entry.timestamp) })
@@ -177,7 +184,7 @@ const displayedLogRowIndices = computed(() => {
   const items = displayedLogs.value
   const indices: number[] = []
   for (let i = 0; i < items.length; i++) {
-    if (items[i].type === 'log') indices.push(i)
+    if (items[i]?.type === 'log') indices.push(i)
   }
   return indices
 })
@@ -214,7 +221,7 @@ const loadRecentLogs = async () => {
   log.info('loadRecentLogs entry')
   const requestId = ++logsRequestId.value
   const severities = getSeveritiesQueryForStream(selectedLogStream.value)
-  const query: { limit: number; severities?: string } = { limit: LOG_FETCH_LIMIT }
+  const query: { limit: string; severities?: string } = { limit: String(LOG_FETCH_LIMIT) }
   if (severities) query.severities = severities
 
   logsLoading.value = true
@@ -250,9 +257,9 @@ const loadMoreLogs = async () => {
 
   const requestId = ++logsRequestId.value
   const severities = getSeveritiesQueryForStream(selectedLogStream.value)
-  const query: { beforeTimestamp: string; limit: number; severities?: string } = {
+  const query: { beforeTimestamp: string; limit: string; severities?: string } = {
     beforeTimestamp: String(oldestLogTimestamp.value),
-    limit: LOG_FETCH_LIMIT
+    limit: String(LOG_FETCH_LIMIT)
   }
   if (severities) query.severities = severities
 
@@ -382,8 +389,8 @@ onMounted(() => {
     })
     getOrCreateBrowserSocketClient()
       .then((socketClient) => {
-        logsSocketSubscription = socketClient.subscribeToData(props.encodedLogsSocketId!)
-        logsSocketSubscription.listen((data: { type?: string; data?: LogEntry }) => {
+        const logsSocketSubscription = socketClient.subscribeToData(props.encodedLogsSocketId!)
+        logsSocketUnsubscribe = logsSocketSubscription.listen((data: { type?: string; data?: LogEntry }) => {
           if (data?.type === 'new-log' && data.data) {
             const entry = data.data as LogEntry
             if (isBrowserSinkEchoFromSocket(entry)) return
@@ -398,9 +405,9 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   log.info('onBeforeUnmount: cleaning up socket subscription')
-  if (logsSocketSubscription?.unsubscribe) {
-    logsSocketSubscription.unsubscribe()
-    logsSocketSubscription = null
+  if (logsSocketUnsubscribe) {
+    logsSocketUnsubscribe()
+    logsSocketUnsubscribe = null
   }
 })
 
@@ -994,19 +1001,19 @@ const v1OpsMetrics = computed(() => {
   let passed = 0
   let failed = 0
   let skipped = 0
-  for (const op of V1_OPS_LIST) {
+  for (const op of operationsList.value) {
     const r = v1OpsResults.value[op.op]
     if (!r) continue
     if (r.status === 'passed') passed++
     else if (r.status === 'failed') failed++
     else skipped++
   }
-  const total = V1_OPS_LIST.length
+  const total = operationsList.value.length
   return { total, passed, failed, skipped, pending: total - passed - failed - skipped }
 })
 
 type V1OpRow = {
-  entry: V1OpListEntry
+  entry: OperationSummary
   result?: V1OpRunResult
   preflight?: V1OpPreflight
   /**
@@ -1029,7 +1036,7 @@ const v1OpsViewRows = computed<V1OpRow[]>(() => {
   if (v1OpsPreflight.value) {
     for (const op of v1OpsPreflight.value.ops) preflightByOp.set(op.op, op)
   }
-  return V1_OPS_LIST.map((entry) => {
+  return operationsList.value.map((entry) => {
     const result = v1OpsResults.value[entry.op]
     const preflight = preflightByOp.get(entry.op)
     return { entry, result, preflight, visualStatus: deriveVisualStatus(result, preflight) }
@@ -1044,8 +1051,8 @@ const v1OpsRowsByPhase = computed<Array<{ phase: 1 | 2 | 3 | 4; label: string; r
     buckets[phase].push(row)
   }
   return ([1, 2, 3, 4] as const)
-    .filter((p) => buckets[p].length > 0)
-    .map((p) => ({ phase: p, label: PHASE_LABELS[p], rows: buckets[p] }))
+    .map((p) => ({ phase: p, label: PHASE_LABELS[p] ?? '', rows: buckets[p] ?? [] }))
+    .filter((g) => g.rows.length > 0)
 })
 
 function isV1OpRowRunnable(row: V1OpRow): boolean {
@@ -1402,7 +1409,7 @@ const runAllTests = async () => {
                 <code class="tp-code">POST /api/tests/v1-ops/run</code>
               </div>
               <p class="tp-block-desc">
-                Один запуск на каждый из {{ V1_OPS_LIST.length }} роутов <code>/v1/{op}</code>.
+                Один запуск на каждый из {{ operationsList.length }} роутов <code>/v1/{op}</code>.
                 Заголовки школы — из Heap (<code>gc_test_school_host</code>, <code>gc_test_school_api_key</code>).
                 Порядок и фазы — по <code>docs/gateway/gateway-testing-strategy.md</code>.
                 Между исходящими вызовами — пауза ≥ 1 с (1 rps).
@@ -1595,7 +1602,7 @@ const runAllTests = async () => {
               >
                 <i v-if="v1OpsRunningAll" class="fas fa-circle-notch fa-spin"></i>
                 <i v-else class="fas fa-play"></i>
-                {{ v1OpsRunningAll ? 'Прогон сьюита /v1/{op}...' : `Запустить сьюит /v1/{op} (${V1_OPS_LIST.length} роутов)` }}
+                {{ v1OpsRunningAll ? 'Прогон сьюита /v1/{op}...' : `Запустить сьюит /v1/{op} (${operationsList.length} роутов)` }}
               </button>
             </div>
             </div>

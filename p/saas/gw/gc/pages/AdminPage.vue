@@ -17,7 +17,6 @@ import { getRecentLogsRoute } from '../api/admin/logs/recent'
 import { getLogsBeforeRoute } from '../api/admin/logs/before'
 import { getDashboardCountsRoute } from '../api/admin/dashboard/counts'
 import { resetDashboardRoute } from '../api/admin/dashboard/reset'
-import { gatewayAnalyticsInvocationsRoute } from '../api/gateway-analytics/invocations'
 
 const log = createComponentLogger('AdminPage')
 
@@ -85,60 +84,6 @@ const errorCount = ref(0)
 const warnCount = ref(0)
 const dashboardResetAt = ref(0)
 
-type GatewayAnalyticsItem = {
-  timestamp: number
-  requestId?: string
-  op?: string
-  httpMethod?: string
-  contour?: string
-  availability?: string
-  schoolHostPresent?: boolean
-  clientHttpStatus?: number
-  ok?: boolean
-  errorCode?: string
-  gcHttpStatus?: number
-  durationMs?: number
-}
-
-type GatewayAnalyticsSummary = {
-  total: number
-  okCount: number
-  errCount: number
-  topOps: Array<{ op: string; count: number }>
-  topErrors: Array<{ code: string; count: number }>
-  avgDurationMs: number
-  p50DurationMs: number
-  p95DurationMs: number
-}
-
-const gwFilters = ref<{
-  requestId: string
-  op: string
-  contour: '' | 'legacy' | 'new'
-  errorCode: string
-  availability: string
-  durationMsMin: string
-  durationMsMax: string
-  ok: '' | 'yes' | 'no'
-}>({
-  requestId: '',
-  op: '',
-  contour: '',
-  errorCode: '',
-  availability: '',
-  durationMsMin: '',
-  durationMsMax: '',
-  ok: ''
-})
-const gwItems = ref<GatewayAnalyticsItem[]>([])
-const gwSummary = ref<GatewayAnalyticsSummary | null>(null)
-const gwLoading = ref(false)
-const gwError = ref('')
-const gwScanned = ref(0)
-const gwMatched = ref(0)
-const GW_ANALYTICS_LIMIT = 100
-const GW_ANALYTICS_SCAN_LIMIT = 1000
-
 let browserRemoteLogger: ReturnType<typeof createBrowserRemoteLogger> | null = null
 
 const MAX_LOG_ENTRIES = 500
@@ -205,8 +150,9 @@ function doesEntryMatchSelectedStream(entry: LogEntry): boolean {
 }
 
 function updateOldestTimestamp(entries: Array<LogEntry & { id?: string }>) {
-  if (!entries.length) return
-  const oldest = entries.reduce((min, item) => (item.timestamp < min ? item.timestamp : min), entries[0].timestamp)
+  const first = entries[0]
+  if (!first) return
+  const oldest = entries.reduce((min, item) => (item.timestamp < min ? item.timestamp : min), first.timestamp)
   oldestLogTimestamp.value = oldest
 }
 
@@ -276,6 +222,7 @@ const displayedLogs = computed<LogDisplayItem[]>(() => {
 
   for (let i = 0; i < sorted.length; i++) {
     const entry = sorted[i]
+    if (!entry) continue
     const dateKey = getDateKey(entry.timestamp)
     
     if (i > 0 && dateKey !== lastDateKey) {
@@ -712,95 +659,10 @@ const openChatiumLink = () => {
   window.open('https://chatium.ru/?start=pl-LGBT1Oge7c61RkKTU4t0start', '_blank')
 }
 
-const formatGwTime = (timestamp: number): string => {
-  const d = new Date(timestamp)
-  const date = `${String(d.getDate()).padStart(2, '0')}.${String(d.getMonth() + 1).padStart(2, '0')}`
-  const time = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}:${String(d.getSeconds()).padStart(2, '0')}`
-  return `${date} ${time}`
-}
-
-const copyToClipboard = async (text: string) => {
-  try {
-    if (navigator?.clipboard?.writeText) {
-      await navigator.clipboard.writeText(text)
-      log.info('requestId скопирован', text)
-    }
-  } catch (e) {
-    log.warning('Не удалось скопировать requestId', e)
-  }
-}
-
-const loadGatewayAnalytics = async () => {
-  gwLoading.value = true
-  gwError.value = ''
-  const f = gwFilters.value
-  const filters: Record<string, unknown> = {}
-  if (f.requestId.trim()) filters.requestId = f.requestId.trim()
-  if (f.op.trim()) filters.op = f.op.trim()
-  if (f.contour) filters.contour = f.contour
-  if (f.errorCode.trim()) filters.errorCode = f.errorCode.trim()
-  if (f.availability.trim()) filters.availability = f.availability.trim()
-  const dMin = Number(f.durationMsMin)
-  if (Number.isFinite(dMin) && f.durationMsMin !== '') filters.durationMsMin = dMin
-  const dMax = Number(f.durationMsMax)
-  if (Number.isFinite(dMax) && f.durationMsMax !== '') filters.durationMsMax = dMax
-  if (f.ok === 'yes') filters.ok = true
-  if (f.ok === 'no') filters.ok = false
-
-  try {
-    const res = await gatewayAnalyticsInvocationsRoute.run(ctx, {
-      mode: 'list',
-      filters,
-      limit: GW_ANALYTICS_LIMIT,
-      scanLimit: GW_ANALYTICS_SCAN_LIMIT
-    })
-    const data = res as {
-      success?: boolean
-      items?: GatewayAnalyticsItem[]
-      summary?: GatewayAnalyticsSummary
-      scanned?: number
-      matched?: number
-      error?: string
-    }
-    if (data?.success && Array.isArray(data.items)) {
-      gwItems.value = data.items
-      gwSummary.value = data.summary ?? null
-      gwScanned.value = data.scanned ?? 0
-      gwMatched.value = data.matched ?? data.items.length
-      log.info('Аналитика вызовов /v1 загружена', {
-        items: data.items.length,
-        scanned: data.scanned,
-        matched: data.matched
-      })
-    } else {
-      gwError.value = data?.error || 'Ошибка загрузки аналитики'
-      log.error('Ошибка аналитики /v1', gwError.value)
-    }
-  } catch (e) {
-    gwError.value = (e as Error)?.message || 'Ошибка сети'
-    log.error('Ошибка аналитики /v1', e)
-  } finally {
-    gwLoading.value = false
-  }
-}
-
-const resetGatewayFilters = () => {
-  gwFilters.value = {
-    requestId: '',
-    op: '',
-    contour: '',
-    errorCode: '',
-    availability: '',
-    durationMsMin: '',
-    durationMsMax: '',
-    ok: ''
-  }
-}
-
 const loadRecentLogs = async () => {
   const requestId = ++logsRequestId.value
   const severities = getSeveritiesQueryForStream(selectedLogStream.value)
-  const query: { limit: number; severities?: string } = { limit: LOG_FETCH_LIMIT }
+  const query: { limit: string; severities?: string } = { limit: String(LOG_FETCH_LIMIT) }
   if (severities) query.severities = severities
 
   logsLoading.value = true
@@ -836,9 +698,9 @@ const loadMoreLogs = async () => {
 
   const requestId = ++logsRequestId.value
   const severities = getSeveritiesQueryForStream(selectedLogStream.value)
-  const query: { beforeTimestamp: string; limit: number; severities?: string } = {
+  const query: { beforeTimestamp: string; limit: string; severities?: string } = {
     beforeTimestamp: String(oldestLogTimestamp.value),
-    limit: LOG_FETCH_LIMIT
+    limit: String(LOG_FETCH_LIMIT)
   }
   if (severities) query.severities = severities
 
@@ -1320,133 +1182,6 @@ function onVisibilityForLogsSocket() {
               </div>
             </section>
 
-            <section class="ap-card ap-card--stagger-4 ap-gw">
-              <div class="ap-card-hd">
-                <h2><i class="fas fa-chart-line ap-icon-hd"></i> Аналитика вызовов /v1/{op}</h2>
-                <span class="ap-log-ct">{{ gwMatched }} из {{ gwScanned }}</span>
-              </div>
-              <p class="ap-gc-lead">
-                Источник — серверные логи <code class="ap-gc-code">writeServerLog</code>
-                с <code class="ap-gc-code">payload.logStage = v1_op_completed</code>
-                (manual §7.2, §7.4.2). Только Admin.
-              </p>
-
-              <div class="ap-gw-filters">
-                <label class="ap-gw-field">
-                  <span>requestId (поиск)</span>
-                  <input v-model="gwFilters.requestId" type="text" class="ap-input" placeholder="часть requestId" />
-                </label>
-                <label class="ap-gw-field">
-                  <span>op</span>
-                  <input v-model="gwFilters.op" type="text" class="ap-input" placeholder="addUser, getOffers, …" />
-                </label>
-                <label class="ap-gw-field">
-                  <span>contour</span>
-                  <select v-model="gwFilters.contour" class="ap-input">
-                    <option value="">любой</option>
-                    <option value="legacy">legacy</option>
-                    <option value="new">new</option>
-                  </select>
-                </label>
-                <label class="ap-gw-field">
-                  <span>error.code</span>
-                  <input v-model="gwFilters.errorCode" type="text" class="ap-input" placeholder="INVOKE_GC_TIMEOUT" />
-                </label>
-                <label class="ap-gw-field">
-                  <span>availability</span>
-                  <input v-model="gwFilters.availability" type="text" class="ap-input" placeholder="enabled, beta, disabled" />
-                </label>
-                <label class="ap-gw-field">
-                  <span>durationMs ≥</span>
-                  <input v-model="gwFilters.durationMsMin" type="number" min="0" class="ap-input" placeholder="0" />
-                </label>
-                <label class="ap-gw-field">
-                  <span>durationMs ≤</span>
-                  <input v-model="gwFilters.durationMsMax" type="number" min="0" class="ap-input" placeholder="10000" />
-                </label>
-                <label class="ap-gw-field">
-                  <span>ok</span>
-                  <select v-model="gwFilters.ok" class="ap-input">
-                    <option value="">любое</option>
-                    <option value="yes">true</option>
-                    <option value="no">false</option>
-                  </select>
-                </label>
-              </div>
-
-              <div class="ap-gw-actions">
-                <button type="button" class="ap-btn" :disabled="gwLoading" @click="loadGatewayAnalytics">
-                  <i :class="gwLoading ? 'fas fa-circle-notch fa-spin' : 'fas fa-search'"></i>
-                  Загрузить
-                </button>
-                <button type="button" class="ap-btn ap-btn--sm" @click="resetGatewayFilters">
-                  <i class="fas fa-times"></i> Сброс фильтров
-                </button>
-                <p v-if="gwError" class="ap-err"><i class="fas fa-exclamation-circle"></i> {{ gwError }}</p>
-              </div>
-
-              <div v-if="gwSummary" class="ap-gw-summary">
-                <div class="ap-gw-stat"><strong>{{ gwSummary.total }}</strong><span>всего</span></div>
-                <div class="ap-gw-stat ap-gw-stat--ok"><strong>{{ gwSummary.okCount }}</strong><span>ok</span></div>
-                <div class="ap-gw-stat ap-gw-stat--err"><strong>{{ gwSummary.errCount }}</strong><span>error</span></div>
-                <div class="ap-gw-stat"><strong>{{ gwSummary.avgDurationMs }}мс</strong><span>avg</span></div>
-                <div class="ap-gw-stat"><strong>{{ gwSummary.p50DurationMs }}мс</strong><span>p50</span></div>
-                <div class="ap-gw-stat"><strong>{{ gwSummary.p95DurationMs }}мс</strong><span>p95</span></div>
-              </div>
-
-              <div v-if="gwItems.length" class="ap-gw-table-wrap custom-scrollbar">
-                <table class="ap-gw-table">
-                  <thead>
-                    <tr>
-                      <th>Время</th>
-                      <th>requestId</th>
-                      <th>op</th>
-                      <th>method</th>
-                      <th>contour</th>
-                      <th>HTTP</th>
-                      <th>ok</th>
-                      <th>error.code</th>
-                      <th>gcHTTP</th>
-                      <th>ms</th>
-                      <th>host?</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr v-for="(item, idx) in gwItems" :key="idx">
-                      <td class="ap-gw-num">{{ formatGwTime(item.timestamp) }}</td>
-                      <td class="ap-gw-rid">
-                        <button
-                          type="button"
-                          class="ap-gw-copy"
-                          :title="item.requestId"
-                          @click="copyToClipboard(item.requestId ?? '')"
-                        >
-                          <i class="fas fa-clone"></i>
-                          {{ (item.requestId ?? '').slice(0, 10) }}…
-                        </button>
-                      </td>
-                      <td>{{ item.op ?? '—' }}</td>
-                      <td>{{ item.httpMethod ?? '—' }}</td>
-                      <td>{{ item.contour ?? '—' }}</td>
-                      <td class="ap-gw-num">{{ item.clientHttpStatus ?? '—' }}</td>
-                      <td>
-                        <span v-if="item.ok === true" class="ap-gw-pill ap-gw-pill--ok">true</span>
-                        <span v-else-if="item.ok === false" class="ap-gw-pill ap-gw-pill--err">false</span>
-                        <span v-else>—</span>
-                      </td>
-                      <td>{{ item.errorCode ?? '—' }}</td>
-                      <td class="ap-gw-num">{{ item.gcHttpStatus ?? '—' }}</td>
-                      <td class="ap-gw-num">{{ item.durationMs ?? '—' }}</td>
-                      <td>{{ item.schoolHostPresent === undefined ? '—' : (item.schoolHostPresent ? 'да' : 'нет') }}</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-              <p v-else-if="!gwLoading && !gwError" class="ap-gw-empty">
-                Нет данных за выбранными фильтрами. Выполните несколько вызовов
-                <code class="ap-gc-code">/v1/{op}</code> и нажмите «Загрузить».
-              </p>
-            </section>
           </div>
 
           <aside class="ap-side">
@@ -1945,68 +1680,6 @@ function onVisibilityForLogsSocket() {
 .lvl-notice { color: #8bb89c; }
 .lvl-warning { color: var(--c-warn); }
 .lvl-error, .lvl-critical, .lvl-alert, .lvl-emergency { color: var(--c-alert); }
-
-/* ── GATEWAY ANALYTICS (manual §7.4) ── */
-.ap-gw { position: relative; z-index: 1; }
-.ap-gw-filters {
-  display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-  gap: 0.5rem; margin-bottom: 0.6rem; position: relative; z-index: 1;
-}
-.ap-gw-field { display: flex; flex-direction: column; gap: 0.2rem; }
-.ap-gw-field span {
-  font-size: 0.62rem; color: var(--c-tx3); letter-spacing: 0.05em; text-transform: uppercase;
-}
-.ap-gw-field .ap-input { font-size: 0.78rem; padding: 0.4rem 0.55rem; }
-.ap-gw-actions { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.7rem; flex-wrap: wrap; }
-.ap-gw-summary {
-  display: flex; gap: 0.4rem; flex-wrap: wrap; padding: 0.5rem; margin-bottom: 0.6rem;
-  border: 1px solid var(--c-bdr); background: var(--c-bg-deep);
-}
-.ap-gw-stat {
-  display: flex; flex-direction: column; gap: 0.1rem; padding: 0.2rem 0.55rem;
-  border-right: 1px solid rgba(50, 44, 54, 0.4);
-}
-.ap-gw-stat:last-child { border-right: none; }
-.ap-gw-stat strong { font-size: 1rem; font-variant-numeric: tabular-nums; color: var(--c-tx); }
-.ap-gw-stat span { font-size: 0.62rem; color: var(--c-tx3); letter-spacing: 0.05em; text-transform: uppercase; }
-.ap-gw-stat--ok strong { color: var(--c-ok); }
-.ap-gw-stat--err strong { color: var(--c-alert); }
-
-.ap-gw-table-wrap {
-  max-height: 320px; overflow-y: auto; overflow-x: auto;
-  border: 1px solid var(--c-bdr); background: rgba(5, 4, 7, 0.96);
-}
-.ap-gw-table {
-  width: 100%; border-collapse: collapse; font-size: 0.7rem; color: var(--c-tx);
-}
-.ap-gw-table th, .ap-gw-table td {
-  padding: 0.3rem 0.45rem; text-align: left; border-bottom: 1px solid rgba(50, 44, 54, 0.18);
-  white-space: nowrap;
-}
-.ap-gw-table th {
-  position: sticky; top: 0; background: var(--c-bg-deep); color: var(--c-tx2);
-  font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; font-size: 0.62rem;
-}
-.ap-gw-table tbody tr:hover { background: rgba(255, 255, 255, 0.02); }
-.ap-gw-num { font-variant-numeric: tabular-nums; }
-.ap-gw-rid { font-variant-numeric: tabular-nums; }
-.ap-gw-copy {
-  background: transparent; border: 1px solid var(--c-bdr); color: var(--c-tx2);
-  padding: 0.15rem 0.4rem; cursor: pointer; font-family: inherit; font-size: 0.7rem;
-  display: inline-flex; align-items: center; gap: 0.3rem;
-}
-.ap-gw-copy:hover { border-color: var(--c-bdr-hi); color: var(--c-tx); }
-.ap-gw-copy i { font-size: 0.6rem; }
-.ap-gw-pill {
-  display: inline-block; padding: 0.05rem 0.4rem; font-size: 0.65rem; font-weight: 700;
-  border: 1px solid;
-}
-.ap-gw-pill--ok { color: var(--c-ok); border-color: rgba(106, 175, 126, 0.4); }
-.ap-gw-pill--err { color: var(--c-alert); border-color: rgba(217, 122, 138, 0.4); }
-.ap-gw-empty {
-  margin: 0.4rem 0 0; padding: 0.85rem; color: var(--c-tx3); font-size: 0.78rem;
-  border: 1px dashed var(--c-bdr); background: rgba(5, 4, 7, 0.6); text-align: center;
-}
 
 .ap-log-ft { display: flex; flex-direction: column; gap: 0.4rem; position: relative; z-index: 1; flex-shrink: 0; }
 .ap-log-sync { font-size: 0.74rem; color: var(--c-tx2); display: flex; align-items: center; gap: 0.35rem; }

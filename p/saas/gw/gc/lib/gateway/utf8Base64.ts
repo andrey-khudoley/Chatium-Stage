@@ -32,7 +32,7 @@ export function utf8StringToBase64(str: string): string {
   let result = ''
   let j = 0
   while (j < utf8Bytes.length) {
-    const b1 = utf8Bytes[j++]
+    const b1 = utf8Bytes[j++] ?? 0
     const b2 = j < utf8Bytes.length ? utf8Bytes[j++] : undefined
     const b3 = j < utf8Bytes.length ? utf8Bytes[j++] : undefined
     const bitmap = (b1 << 16) | ((b2 ?? 0) << 8) | (b3 ?? 0)
@@ -47,7 +47,7 @@ export function utf8StringToBase64(str: string): string {
 function decodeBase64ToBytes(clean: string): number[] {
   const inv = new Map<string, number>()
   for (let i = 0; i < B64_ALPHABET.length; i++) {
-    inv.set(B64_ALPHABET[i], i)
+    inv.set(B64_ALPHABET.charAt(i), i)
   }
   const bytes: number[] = []
   for (let i = 0; i < clean.length; i += 4) {

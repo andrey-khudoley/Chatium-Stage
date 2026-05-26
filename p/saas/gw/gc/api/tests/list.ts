@@ -8,7 +8,7 @@ import {
   flattenCatalogBlocks,
   type TestCatalogBlock
 } from '../../shared/testCatalog'
-import { V1_OPS_LIST } from '../../shared/v1OpsList.generated'
+import { operationsCatalog } from '../../lib/gateway/operationsCatalog'
 
 const LOG_PATH = 'api/tests/list'
 
@@ -17,9 +17,9 @@ const GATEWAY_V1_TEST_BLOCK: TestCatalogBlock = {
   title: 'Gateway /v1/{op}',
   description:
     'По одному прогону на каждый роут api/v1 (gateway-testing-strategy.md §3, §6). Запуск через POST /api/tests/v1-ops/run.',
-  tests: V1_OPS_LIST.map((entry) => ({
-    id: `v1_${entry.op}`,
-    title: `${entry.httpMethod} /v1/${entry.op} · ${entry.contour}/${entry.availability}`
+  tests: operationsCatalog.map((e) => ({
+    id: `v1_${e.op}`,
+    title: `${e.httpMethod} /v1/${e.op} · ${e.contour}/${e.availability}`
   }))
 }
 

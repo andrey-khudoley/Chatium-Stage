@@ -41,8 +41,8 @@
           </div>
         </nav>
 
-        <!-- ====== DATE FILTER ====== -->
-        <section v-show="activeTab === 'overview' || activeTab === 'invocations'" class="filter-bar">
+        <!-- ====== DATE FILTER (для журналов) ====== -->
+        <section v-show="activeTab === 'requests' || activeTab === 'upstream'" class="filter-bar">
           <div class="filter-group">
             <span class="filter-label"><i class="far fa-calendar"></i> С</span>
             <input v-model="filter.fromDate" type="date" class="filter-input" />
@@ -68,75 +68,60 @@
 
         <!-- ====== TAB: OVERVIEW ====== -->
         <template v-if="activeTab === 'overview'">
-          <section class="kpi-grid" aria-label="Ключевые метрики">
+          <section class="kpi-grid" aria-label="Ключевые метрики за 24 часа">
             <article class="kpi-card kpi-hero">
-              <div class="kpi-icon"><i class="fas fa-arrows-rotate"></i></div>
-              <div class="kpi-label">Вызовов /v1/&#123;op&#125;</div>
-              <div class="kpi-value">{{ formatKpi(summary.total) }}</div>
+              <div class="kpi-icon"><i class="fas fa-paper-plane"></i></div>
+              <div class="kpi-label">Входящих за 24ч</div>
+              <div class="kpi-value">{{ formatKpi(counts.totalRequests) }}</div>
             </article>
             <article class="kpi-card kpi-hero kpi-success">
               <div class="kpi-icon"><i class="fas fa-circle-check"></i></div>
               <div class="kpi-label">Успешных</div>
-              <div class="kpi-value">{{ formatKpi(summary.okCount) }}</div>
+              <div class="kpi-value">{{ formatKpi(counts.totalOk) }}</div>
             </article>
             <article class="kpi-card kpi-hero">
               <div class="kpi-icon"><i class="fas fa-bug"></i></div>
-              <div class="kpi-label">Ошибок</div>
-              <div class="kpi-value">{{ formatKpi(summary.errCount) }}</div>
+              <div class="kpi-label">Ошибок ответа</div>
+              <div class="kpi-value">{{ formatKpi(counts.totalErrors) }}</div>
             </article>
             <article class="kpi-card kpi-hero">
-              <div class="kpi-icon"><i class="fas fa-gauge-high"></i></div>
-              <div class="kpi-label">avg, ms</div>
-              <div class="kpi-value">{{ formatKpi(summary.avgDurationMs) }}</div>
+              <div class="kpi-icon"><i class="fas fa-tower-broadcast"></i></div>
+              <div class="kpi-label">Запросов к GetCourse</div>
+              <div class="kpi-value">{{ formatKpi(counts.upstreamTotal) }}</div>
             </article>
           </section>
 
-          <section class="kpi-grid kpi-grid-secondary" aria-label="Латентность">
+          <section class="kpi-grid kpi-grid-secondary" aria-label="GetCourse">
             <article class="stat-card">
-              <div class="stat-label"><i class="fas fa-stopwatch"></i> p50, ms</div>
-              <div class="stat-value">{{ formatKpi(summary.p50DurationMs) }}</div>
+              <div class="stat-label"><i class="fas fa-circle-check"></i> Upstream OK</div>
+              <div class="stat-value">{{ formatKpi(counts.upstreamOk) }}</div>
             </article>
             <article class="stat-card">
-              <div class="stat-label"><i class="fas fa-stopwatch-20"></i> p95, ms</div>
-              <div class="stat-value">{{ formatKpi(summary.p95DurationMs) }}</div>
+              <div class="stat-label"><i class="fas fa-circle-xmark"></i> Upstream errors</div>
+              <div class="stat-value">{{ formatKpi(counts.upstreamErrors) }}</div>
             </article>
-          </section>
-
-          <section v-if="summary.topOps && summary.topOps.length" class="panel-section">
-            <header class="panel-section-head">
-              <span class="prompt">›</span>
-              <h2>Топ операций</h2>
-            </header>
-            <div class="table-wrapper">
-              <table class="data-table">
-                <thead><tr><th>op</th><th>вызовов</th></tr></thead>
-                <tbody>
-                  <tr v-for="o in summary.topOps" :key="o.op"><td>{{ o.op }}</td><td>{{ o.count }}</td></tr>
-                </tbody>
-              </table>
-            </div>
           </section>
         </template>
 
-        <!-- ====== TAB: INVOCATIONS ====== -->
-        <section v-show="activeTab === 'invocations'" class="panel-section">
+        <!-- ====== TAB: REQUESTS ====== -->
+        <section v-show="activeTab === 'requests'" class="panel-section">
           <header class="panel-section-head">
             <span class="prompt">›</span>
-            <h2>Завершённые вызовы /v1/&#123;op&#125;</h2>
-            <span class="updated-since muted">{{ updatedSince(lastUpdated.invocations) }}</span>
-            <button type="button" class="btn-mini head-action" @click="loadInvocations" title="Обновить">
+            <h2>Входящие запросы клиентов</h2>
+            <span class="updated-since muted">{{ updatedSince(lastUpdated.requests) }}</span>
+            <button type="button" class="btn-mini head-action" @click="loadRequests" title="Обновить">
               <i class="fas fa-rotate"></i>
             </button>
           </header>
-          <div v-if="items.length > 0" class="table-wrapper">
+          <div v-if="requests.length > 0" class="table-wrapper">
             <table class="data-table">
               <thead>
                 <tr>
                   <th>Время</th>
                   <th>requestId</th>
                   <th>op</th>
-                  <th>метод</th>
                   <th>контур</th>
+                  <th>метод</th>
                   <th>HTTP</th>
                   <th>errorCode</th>
                   <th>ms</th>
@@ -144,17 +129,17 @@
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="(it, idx) in items" :key="it.requestId || idx" :class="it.ok ? 'row-ok' : 'row-err'">
-                  <td>{{ formatTime(it.timestamp) }}</td>
-                  <td><code>{{ it.requestId || '—' }}</code></td>
-                  <td>{{ it.op || '—' }}</td>
-                  <td>{{ it.httpMethod || '—' }}</td>
-                  <td>{{ it.contour || '—' }}</td>
-                  <td>{{ it.clientHttpStatus || '—' }}</td>
-                  <td>{{ it.errorCode || '—' }}</td>
-                  <td>{{ it.durationMs != null ? it.durationMs : '—' }}</td>
+                <tr v-for="r in requests" :key="r.id" :class="rowClassRequest(r)">
+                  <td>{{ formatTime(r.requestedAt) }}</td>
+                  <td><code>{{ r.requestId }}</code></td>
+                  <td>{{ r.op }}</td>
+                  <td>{{ r.contour || '—' }}</td>
+                  <td>{{ r.method }}</td>
+                  <td>{{ r.clientHttpStatus }}</td>
+                  <td>{{ r.errorCode || '—' }}</td>
+                  <td>{{ r.durationMs }}</td>
                   <td>
-                    <button class="btn-mini" @click="openRaw(it)" title="Полная запись">
+                    <button class="btn-mini" @click="openRaw('request', r.id)" title="Полное тело запроса">
                       <i class="fas fa-code"></i>
                     </button>
                   </td>
@@ -164,8 +149,57 @@
           </div>
           <div v-else class="empty-state">
             <i class="fas fa-inbox empty-icon"></i>
-            <p class="empty-title">{{ hasFilter ? 'За выбранный период вызовов нет' : 'Завершённых вызовов пока нет' }}</p>
-            <p class="empty-hint">Источник — серверные логи завершения /v1/&#123;op&#125;.</p>
+            <p class="empty-title">{{ hasFilter ? 'За выбранный период записей нет' : 'Запросов пока нет' }}</p>
+            <p class="empty-hint">Сюда попадут все обращения клиентов к /v1/&#123;op&#125;.</p>
+          </div>
+        </section>
+
+        <!-- ====== TAB: UPSTREAM ====== -->
+        <section v-show="activeTab === 'upstream'" class="panel-section">
+          <header class="panel-section-head">
+            <span class="prompt">›</span>
+            <h2>Исходящие вызовы к GetCourse</h2>
+            <span class="updated-since muted">{{ updatedSince(lastUpdated.upstream) }}</span>
+            <button type="button" class="btn-mini head-action" @click="loadUpstream" title="Обновить">
+              <i class="fas fa-rotate"></i>
+            </button>
+          </header>
+          <div v-if="upstream.length > 0" class="table-wrapper">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Время</th>
+                  <th>requestId</th>
+                  <th>op</th>
+                  <th>kind</th>
+                  <th>HTTP GC</th>
+                  <th>semanticRule</th>
+                  <th>ms</th>
+                  <th>raw</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="u in upstream" :key="u.id" :class="rowClassUpstream(u)">
+                  <td>{{ formatTime(u.sentAt) }}</td>
+                  <td><code>{{ u.requestId }}</code></td>
+                  <td>{{ u.op }}</td>
+                  <td>{{ u.upstreamKind }}</td>
+                  <td>{{ u.gcHttpStatus || '—' }}</td>
+                  <td>{{ u.semanticRule || '—' }}</td>
+                  <td>{{ u.durationMs }}</td>
+                  <td>
+                    <button class="btn-mini" @click="openRaw('upstream', u.id)" title="Полное тело ответа GetCourse">
+                      <i class="fas fa-code"></i>
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div v-else class="empty-state">
+            <i class="fas fa-tower-broadcast empty-icon"></i>
+            <p class="empty-title">{{ hasFilter ? 'За выбранный период вызовов нет' : 'Вызовов GetCourse пока нет' }}</p>
+            <p class="empty-hint">Сюда попадут все исходящие запросы к GetCourse.</p>
           </div>
         </section>
 
@@ -273,18 +307,32 @@
       <div class="raw-modal" role="dialog" aria-modal="true">
         <header class="raw-modal-head">
           <span class="prompt">›</span>
-          <h2>Запись вызова <span class="muted">{{ rawModal.entry && rawModal.entry.requestId }}</span></h2>
+          <h2>
+            {{ rawModal.kind === 'upstream' ? 'Ответ GetCourse' : 'Запрос клиента' }}
+            <span class="muted">#{{ rawModal.id }}</span>
+          </h2>
           <button type="button" class="btn-mini head-action" @click="closeRaw" title="Закрыть">
             <i class="fas fa-xmark"></i> Закрыть
           </button>
         </header>
         <div class="raw-modal-body">
-          <div class="raw-modal-actions">
-            <button class="btn-mini" @click="copyText(rawJsonString(rawModal.entry))" title="Скопировать JSON">
-              <i class="far fa-copy"></i> Скопировать
-            </button>
-          </div>
-          <pre class="json-block">{{ rawJsonString(rawModal.entry) }}</pre>
+          <p v-if="rawModal.loading" class="muted">
+            <i class="fas fa-spinner fa-spin"></i> Загрузка…
+          </p>
+          <p v-else-if="rawModal.error" class="form-msg is-err">
+            <i class="fas fa-circle-exclamation"></i> {{ rawModal.error }}
+          </p>
+          <template v-else-if="rawModal.entry">
+            <div class="raw-modal-actions">
+              <button class="btn-mini" @click="copyText(rawJsonString(rawModal.entry))" title="Скопировать JSON">
+                <i class="far fa-copy"></i> Скопировать
+              </button>
+            </div>
+            <pre class="json-block">{{ rawJsonString(rawModal.entry) }}</pre>
+          </template>
+          <p v-else class="muted">
+            <i class="fas fa-circle-info"></i> Запись не найдена.
+          </p>
         </div>
       </div>
     </div>
@@ -333,7 +381,6 @@ import { createComponentLogger } from '../shared/logger'
 
 const REFRESH_INTERVAL_MS = 15000
 const TICK_INTERVAL_MS = 5000
-const LIST_LIMIT = 100
 
 const log = createComponentLogger('GcPanelHomePage')
 
@@ -355,17 +402,6 @@ function partsToMs(date, time, endOfDay) {
   return Number.isFinite(ms) ? ms : undefined
 }
 
-const EMPTY_SUMMARY = {
-  total: 0,
-  okCount: 0,
-  errCount: 0,
-  avgDurationMs: 0,
-  p50DurationMs: 0,
-  p95DurationMs: 0,
-  topOps: [],
-  topErrors: []
-}
-
 export default {
   name: 'GcPanelHomePage',
   components: { Header, GlobalGlitch, AppFooter },
@@ -385,7 +421,11 @@ export default {
     apiUrls: {
       type: Object,
       default: () => ({
-        invocations: '',
+        recentRequests: '',
+        recentUpstream: '',
+        rawRequest: '',
+        rawUpstream: '',
+        counts: '',
         filterSave: '',
         accessGenerateInvite: '',
         accessRevokeInvite: '',
@@ -403,12 +443,25 @@ export default {
       activeTab: 'overview',
       liveMode: false,
       now: Date.now(),
-      items: [],
-      summary: { ...EMPTY_SUMMARY },
-      lastUpdated: { invocations: 0 },
+      counts: {
+        totalRequests: 0,
+        totalOk: 0,
+        totalErrors: 0,
+        upstreamTotal: 0,
+        upstreamOk: 0,
+        upstreamErrors: 0
+      },
+      requests: [],
+      upstream: [],
+      lastUpdated: {
+        counts: 0,
+        requests: 0,
+        upstream: 0
+      },
       refreshTimer: null,
       tickTimer: null,
       rawModal: null,
+      // Фильтр по дате/времени
       filter: {
         fromDate: fromParts.date,
         fromTime: fromParts.time,
@@ -417,6 +470,7 @@ export default {
       },
       filterSaving: false,
       filterError: '',
+      // Доступы
       grants: [],
       invites: [],
       createModal: null
@@ -426,7 +480,8 @@ export default {
     visibleTabs() {
       const tabs = [
         { id: 'overview', label: 'Обзор', icon: 'fa-chart-line' },
-        { id: 'invocations', label: 'Вызовы', icon: 'fa-list' }
+        { id: 'requests', label: 'Входящие', icon: 'fa-list' },
+        { id: 'upstream', label: 'К GetCourse', icon: 'fa-tower-broadcast' }
       ]
       if (this.isAdmin) {
         tabs.push({ id: 'access', label: 'Доступы', icon: 'fa-user-shield' })
@@ -456,7 +511,9 @@ export default {
     },
     activeTab(value) {
       log.info('activeTab changed', { value })
-      if (value === 'overview' || value === 'invocations') this.loadInvocations()
+      if (value === 'requests') this.loadRequests()
+      else if (value === 'upstream') this.loadUpstream()
+      else if (value === 'overview') this.loadCounts()
       else if (value === 'access') { this.loadInvites(); this.loadGrants() }
     }
   },
@@ -478,7 +535,9 @@ export default {
     onBootComplete() {
       this.bootLoaderDone = true
       log.info('Boot complete — initial load')
-      this.loadInvocations()
+      this.loadCounts()
+      this.loadRequests()
+      this.loadUpstream()
     },
     onAppLayoutAnimationEnd(e) {
       if (e.animationName === 'crt-power-on') {
@@ -493,37 +552,66 @@ export default {
     startRefresh() {
       this.stopRefresh()
       this.refreshTimer = setInterval(() => {
-        if (this.activeTab === 'overview' || this.activeTab === 'invocations') this.loadInvocations()
+        this.loadCounts()
+        if (this.activeTab === 'requests') this.loadRequests()
+        if (this.activeTab === 'upstream') this.loadUpstream()
       }, REFRESH_INTERVAL_MS)
     },
     stopRefresh() {
       if (this.refreshTimer) { clearInterval(this.refreshTimer); this.refreshTimer = null }
     },
 
-    buildFilters() {
-      const filters = {}
-      if (this.fromMs !== undefined) filters.dateFromMs = this.fromMs
-      if (this.toMs !== undefined) filters.dateToMs = this.toMs
-      return filters
+    /** Дописывает dateFrom/dateTo к URL журнала, если фильтр активен. */
+    withDateRange(url) {
+      if (!this.hasFilter) return url
+      const params = []
+      if (this.fromMs !== undefined) params.push(`dateFrom=${this.fromMs}`)
+      if (this.toMs !== undefined) params.push(`dateTo=${this.toMs}`)
+      if (params.length === 0) return url
+      const sep = url.includes('?') ? '&' : '?'
+      return `${url}${sep}${params.join('&')}`
     },
 
-    async loadInvocations() {
-      const url = this.apiUrls && this.apiUrls.invocations
+    async loadCounts() {
+      const url = this.apiUrls && this.apiUrls.counts
       if (!url) return
       try {
-        const res = await fetch(url, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-          body: JSON.stringify({ mode: 'list', limit: LIST_LIMIT, filters: this.buildFilters() })
-        })
+        const res = await fetch(url, { headers: { Accept: 'application/json' } })
         const data = await res.json()
-        if (data && data.success) {
-          this.items = Array.isArray(data.items) ? data.items : []
-          this.summary = data.summary ? { ...EMPTY_SUMMARY, ...data.summary } : { ...EMPTY_SUMMARY }
-          this.lastUpdated.invocations = Date.now()
+        if (data && data.success && data.counts) {
+          this.counts = { ...this.counts, ...data.counts }
+          this.lastUpdated.counts = Date.now()
         }
       } catch (e) {
-        log.error('loadInvocations failed', { error: String(e) })
+        log.error('loadCounts failed', { error: String(e) })
+      }
+    },
+    async loadRequests() {
+      const base = this.apiUrls && this.apiUrls.recentRequests
+      if (!base) return
+      try {
+        const res = await fetch(this.withDateRange(base), { headers: { Accept: 'application/json' } })
+        const data = await res.json()
+        if (data && data.success && Array.isArray(data.entries)) {
+          this.requests = data.entries
+          this.lastUpdated.requests = Date.now()
+        }
+      } catch (e) {
+        log.error('loadRequests failed', { error: String(e) })
+      }
+    },
+    async loadUpstream() {
+      const base = this.apiUrls && this.apiUrls.recentUpstream
+      if (!base) return
+      try {
+        const res = await fetch(this.withDateRange(base), { headers: { Accept: 'application/json' } })
+        const data = await res.json()
+        if (data && data.success && Array.isArray(data.entries)) {
+          this.upstream = data.entries
+          this.lastUpdated.upstream = Date.now()
+        }
+      } catch (e) {
+        log.error('loadUpstream failed', { error: String(e) })
       }
     },
 
@@ -544,7 +632,8 @@ export default {
         if (!data || data.success !== true) {
           this.filterError = (data && data.error) || 'Не удалось сохранить фильтр'
         } else {
-          this.loadInvocations()
+          this.loadRequests()
+          this.loadUpstream()
         }
       } catch (e) {
         this.filterError = String(e)
@@ -566,7 +655,8 @@ export default {
         const data = await res.json().catch(() => ({}))
         if (data && data.success === true) {
           this.filter = { fromDate: '', fromTime: '', toDate: '', toTime: '' }
-          this.loadInvocations()
+          this.loadRequests()
+          this.loadUpstream()
         } else {
           this.filterError = (data && data.error) || 'Не удалось сбросить фильтр'
         }
@@ -577,8 +667,28 @@ export default {
       }
     },
 
-    openRaw(entry) {
-      this.rawModal = { entry }
+    async openRaw(kind, id) {
+      const url = kind === 'upstream' ? (this.apiUrls && this.apiUrls.rawUpstream) : (this.apiUrls && this.apiUrls.rawRequest)
+      if (!url || !id) {
+        this.rawModal = { kind, id, entry: null, loading: false, error: 'URL или id отсутствуют' }
+        return
+      }
+      this.rawModal = { kind, id, entry: null, loading: true, error: '' }
+      try {
+        const sep = url.includes('?') ? '&' : '?'
+        const res = await fetch(`${url}${sep}id=${encodeURIComponent(String(id))}`, {
+          method: 'GET',
+          headers: { Accept: 'application/json' }
+        })
+        const data = await res.json()
+        if (!data || data.success !== true) {
+          this.rawModal = { kind, id, entry: null, loading: false, error: (data && data.error) || 'Ошибка загрузки' }
+          return
+        }
+        this.rawModal = { kind, id, entry: data.entry || null, loading: false, error: '' }
+      } catch (e) {
+        this.rawModal = { kind, id, entry: null, loading: false, error: String(e) }
+      }
     },
     closeRaw() { this.rawModal = null },
     rawJsonString(entry) {
@@ -702,6 +812,14 @@ export default {
       if (diffSec < 60) return `${diffSec} с назад`
       const min = Math.floor(diffSec / 60)
       return `${min} мин назад`
+    },
+    rowClassRequest(r) {
+      if (!r.errorCode && r.clientHttpStatus < 400) return 'row-ok'
+      return 'row-err'
+    },
+    rowClassUpstream(u) {
+      if (!u.semanticRule && (u.upstreamKind === 'json_ok' || u.upstreamKind === 'ok')) return 'row-ok'
+      return 'row-err'
     },
     copyText(text) {
       try { if (navigator && navigator.clipboard) navigator.clipboard.writeText(text) } catch (_e) {}

@@ -9,7 +9,7 @@ export function extractPathParamNames(pathTemplate: string): string[] {
   let m: RegExpExecArray | null
   const re = new RegExp(PATH_PARAM_RE.source, 'g')
   while ((m = re.exec(pathTemplate)) !== null) {
-    names.push(m[1])
+    if (m[1] !== undefined) names.push(m[1])
   }
   return names
 }

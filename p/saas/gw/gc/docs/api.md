@@ -59,23 +59,34 @@
 
 Норматив: `docs/gateway/gateway-operation-manual.md` (§2, §9–§10). Ответ — объект **`TuneHttpHeadersResponse`**: `statusCode`, `rawHttpBody` (JSON-строка), `headers` с `Content-Type: application/json`, **`X-Gateway-Request-Id`** = **`requestId`** в JSON и заголовки **CORS** (§7.7). **Без** сессии Chatium: секреты школы только в заголовках **`X-Gc-School-Host`** и **`X-Gc-School-Api-Key`**; **`gc_developer_api_key`** обязателен в Heap до любого исходящего вызова к GetCourse (§5.3–5.4).
 
-Общая логика: **`lib/gateway/handleV1OpRoute.ts`**; единый SSOT каталога — **`lib/gateway/operationsCatalog.ts`** (`export const operationsCatalog = { schemaVersion, entries } as const`, manual §3.1–§3.5): собирает `entries` из `lib/gateway/gcOpHttpMapping.generated.ts` (генерация из `config/gc-op-http-mapping.json`) и live-объекты схем `args` из `lib/gateway/v1OpArgsSchemas.generated.ts` плюс ручное перекрытие **`addUser`**. И `GET /v1/operations`, и обработчик `/v1/{op}` берут запись из этого же каталога (`findOperationCatalogEntry`). Для каждого **`op`** — отдельный файл **`api/v1/{op}.ts`** (генератор `scripts/gen-api-v1-routes.cjs`). Исходящие контуры: Legacy POST (`legacyGcImportClient`), Legacy GET (`legacyGcExportGet`), new (`newGcApiClient`). События аналитики: **`gateway_gc.invoke.completed`**, каталог — **`gateway_gc.operations.catalog_served`** (`lib/gateway/gatewayWorkspaceEvents.ts`).
+Общая логика: **`lib/gateway/handleV1Op.ts`** (`handleV1Op(ctx, req, op, handler)` / `handleV1OpWithGcDiagnostic`). Единый каталог — **`lib/gateway/operationsCatalog.ts`** (рукописный массив 59 записей: `op`/`httpMethod`/`contour`/`availability`/`pathTemplate`/`legacyImportAction`/`argsValidator`/`argsSchema.fields[]`; без generated-файлов). Для каждого **`op`** — файл **`api/v1/{op}.ts`** с per-op хендлером и явным выбором клиента GC. Реестр хендлеров — **`lib/gateway/v1OpHandlers.ts`**. Исходящие контуры: Legacy POST (`legacyGcImportClient`), Legacy GET (`legacyGcExportGet`), new (`newGcApiClient`). События workspace (`@start/sdk`) не используются.
 
 Порядок проверок в `handleV1OpRoute` (manual §2.6, §2.11): **(1)** существование записи каталога для `op` → `INVOKE_INTERNAL_ERROR` при рассогласовании файла роута и каталога, иначе платформенный 404 для неизвестного `/v1/<op>` (manual §3.5); **(2)** соответствие HTTP-метода `entry.httpMethod` → `INVOKE_HTTP_METHOD_NOT_ALLOWED` (405); **(3)** `availability` (manual §2.11): `disabled` → `INVOKE_OP_DISABLED` (503), `unsupported` → `INVOKE_OP_UNSUPPORTED_BY_GC` (501) — оба без вызова GC и **до** проверки заголовков школы и чтения `gc_developer_api_key`; **(4)** лимит размера тела `POST /v1/{op}` (`Content-Length` либо измерение JSON-сериализации; manual §8.7); **(5)** заголовки школы `X-Gc-School-Host` / `X-Gc-School-Api-Key` (manual §2.2, §2.5, валидатор `validateGcSchoolHostTrimmed` с опциональным `:порт` 1–65535); **(6)** `gc_developer_api_key` из Heap (manual §5.3, §5.4); **(7)** для `POST` — `Content-Type: application/json` (`application/json; charset=utf-8` тоже ок, manual §2.2) и тело-объект; **(8)** валидация `args` через схему каталога (`safeParse`, manual §2.4, §3.5); **(9)** подстановка `{path-param}` из `args` (`pathTemplate`); **(10)** один исходящий HTTP к GC; **(11)** классификация ответа (manual §2.8.1–§2.8.3) и итоговая запись `v1_op_completed`.
 
 | Method | Path | File | Auth | Назначение |
 | --- | --- | --- | --- | --- |
-| GET | /v1/operations | api/v1/operations.ts | нет | Каталог операций (без заголовков школы, без вызова GC и без чтения Heap, manual §3.3–§3.4): тело — `ok=true`, `requestId`, `data.catalogSchemaVersion` (= `operationsCatalog.schemaVersion`), `data.operations[]` (упорядочены лексикографически по `op`) с полями `op`, `httpMethod`, `contour`, `availability`, `argsSchema` (сериализация TypeBox-объекта `s` из `@app/schema`). При сбое сборки — `ok=false`, HTTP 500, `error.code=OPERATIONS_INTERNAL_ERROR`. |
+| GET | /v1/operations | api/v1/operations.ts | нет | Каталог операций (без заголовков школы, без вызова GC и без чтения Heap, manual §3.3–§3.4): тело — `ok=true`, `requestId`, `data.catalogSchemaVersion` (= `CATALOG_SCHEMA_VERSION=1`), `data.operations[]` (через `toOperationSummaries()`, тип `OperationSummary` из `shared/operationsCatalogShared.ts`) — поля `op`, `httpMethod`, `contour`, `availability`, `argsSchema.fields[]`. **Формат изменён** с TypeBox JSON-Schema на plain `fields[]`. При сбое — `ok=false`, HTTP 500, `error.code=OPERATIONS_INTERNAL_ERROR`. |
 | GET/POST | /v1/{op} | api/v1/{op}.ts | нет | Одна операция из реестра (59 шт.): см. каталог и **`docs/gateway/gc-unified-op-registry-v0.md`**. Для **`POST`** — JSON **`args`**; для **`GET`** — query-параметры. Пример **`addUser`**: POST, тело с **`params.user.email`** (минимум для демо). |
 
-Админская аналитика вызовов `/v1/{op}` (manual §7.4): источник — серверные логи (`writeServerLog` → Heap) с `payload.logStage = v1_op_completed` (см. `lib/gateway/handleV1OpRoute.ts`).
+Наблюдаемость: `lib/gateway/handleV1Op.ts` в `finally` записывает в Heap `gatewayRequestLog` (входящий) и `gatewayUpstreamLog` (исходящий к GC). Данные маскируются `shared/redactRaw.ts`. Событий workspace нет; каталог `api/gateway-analytics/` удалён.
+
+## Raw-журналы gateway (api/admin/raw/)
+
+Доступны только через `guardInternalApi` (Admin или активный грант).
 
 | Method | Path | File | Auth | Назначение |
 | --- | --- | --- | --- | --- |
-| POST | /api/gateway-analytics/invocations | api/gateway-analytics/invocations.ts | guardInternalApi | Режимы `list` / `poll`; body `{ mode?, filters?: { dateFromMs?, dateToMs?, op?, errorCode?, contour?, availability?, durationMsMin?, durationMsMax?, ok?, requestId? }, limit?, scanLimit?, afterTimestampMs? }`. Возвращает `{ success, mode, scanned, matched, items[], maxTimestamp, summary: { total, okCount, errCount, topOps[], topErrors[], avgDurationMs, p50DurationMs, p95DurationMs } }`. Фильтрация по дате выполняется in-memory (поля `filters.dateFromMs`/`filters.dateToMs`). |
-| POST | /api/gateway-analytics/filter-save | api/gateway-analytics/filter-save.ts | guardInternalApi | Сохранить или сбросить глобальный фильтр по дате. Body: `{ from?, to? }` (Unix ms); пустое тело → сброс (deleteByKey). Возвращает `{ success, filter: { from?, to? } \| null }`. Значение читается из `panel_date_filter` в Heap через `lib/settings.lib.ts`. |
+| GET | /api/admin/raw/requests/recent | api/admin/raw/requests/recent.ts | guardInternalApi | Последние N записей `gatewayRequestLog`. |
+| GET | /api/admin/raw/requests/get | api/admin/raw/requests/get.ts | guardInternalApi | Одна запись `gatewayRequestLog` по `requestId`. |
+| GET | /api/admin/raw/upstream/recent | api/admin/raw/upstream/recent.ts | guardInternalApi | Последние N записей `gatewayUpstreamLog`. |
+| GET | /api/admin/raw/upstream/get | api/admin/raw/upstream/get.ts | guardInternalApi | Одна запись `gatewayUpstreamLog` по `requestId`. |
 
-Для каждого `op` итоговая запись `writeServerLog` с `logStage: v1_op_completed` пишется в `lib/gateway/handleV1OpRoute.ts` после возврата ответа клиенту и содержит **минимальный набор** полей по manual §7.2: `requestId`, `op`, `httpMethod`, `contour`, `availability`, `schoolHostPresent` (булево), `clientHttpStatus`, `ok`, `errorCode` (при ошибке), `gcHttpStatus` (если запрос дошёл до GC), `durationMs`. Параллельно — событие workspace `gateway_gc.invoke.completed` (manual §7.3) с теми же значениями + `incomingMethod` и `gcSemanticRule`.
+## KPI и фильтр (api/admin/dashboard/, api/admin/analytics/)
+
+| Method | Path | File | Auth | Назначение |
+| --- | --- | --- | --- | --- |
+| GET | /api/admin/dashboard/gatewayCounts | api/admin/dashboard/gatewayCounts.ts | guardInternalApi | KPI за 24ч: total/ok/err через `countBy` на `gatewayRequestLog`. |
+| POST | /api/admin/analytics/filter-save | api/admin/analytics/filter-save.ts | guardInternalApi | Сохранить или сбросить глобальный фильтр по дате. Body: `{ from?, to? }` (Unix ms); пустое тело → сброс (deleteByKey). Возвращает `{ success, filter: { from?, to? } \| null }`. Значение — `panel_date_filter` в Heap. |
 
 ## Доступы к панели (api/access/)
 

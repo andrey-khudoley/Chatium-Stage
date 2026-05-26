@@ -36,7 +36,7 @@ export type ScenarioBuildCtx = {
 }
 
 export type V1OpScenario = {
-  /** Имя `op` (совпадает с `GC_OP_HTTP_MAPPING_ENTRIES.op`). */
+  /** Имя `op` (совпадает с `operationsCatalog[].op`). */
   op: string
   /** Фаза §3.1 стратегии: 1 — каталог/Heap, 2 — производитель, 3 — потребитель, 4 — деструктор. */
   phase: 1 | 2 | 3 | 4
