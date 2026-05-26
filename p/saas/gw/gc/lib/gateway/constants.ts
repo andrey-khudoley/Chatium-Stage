@@ -11,5 +11,8 @@ export const GW_GC_RAW_BODY_CAP_BYTES = 512 * 1024
  * Верхний предел сканирования журнала при расчёте метрик дашборда
  * (avg/p95 latency, top errorCode). Тоталы считаются точно через countBy,
  * а для производных метрик берётся срез последних N записей диапазона.
+ *
+ * Не выше 1000 — платформенный максимум `limit` для `findAll` (008-heap.md): при большем
+ * значении `queryHeapRecords` бросает ошибку «maximum allowed limit ... is 1000».
  */
-export const DASHBOARD_SCAN_LIMIT = 2000
+export const DASHBOARD_SCAN_LIMIT = 1000

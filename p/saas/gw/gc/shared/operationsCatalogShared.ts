@@ -23,10 +23,29 @@ export type ArgsSchemaJson = {
   fields: ArgsFieldSchema[]
 }
 
+/**
+ * Полное дерево формата запроса операции, выведенное из рантайм-валидатора (`argsValidator`)
+ * на сервере. В отличие от плоского `argsSchema.fields`, раскрывает вложенные объекты/массивы
+ * со всеми ключами — используется подсказкой «Формат запроса» на клиенте.
+ */
+export type ArgsTreeNode =
+  | { kind: 'object'; fields: ArgsTreeField[]; additionalProperties: boolean }
+  | { kind: 'array'; items: ArgsTreeNode }
+  | { kind: 'scalar'; type: string }
+  | { kind: 'any' }
+
+export type ArgsTreeField = {
+  name: string
+  required: boolean
+  description?: string
+  node: ArgsTreeNode
+}
+
 export type OperationSummary = {
   op: string
   httpMethod: HttpMethod
   contour: GcContour
   availability: OpAvailability
   argsSchema: ArgsSchemaJson
+  argsTree: ArgsTreeNode
 }

@@ -4,18 +4,17 @@ import PanelHomePage from './pages/PanelHomePage.vue'
 import { getPreloaderStyles, getPreloaderScript } from './lib/preloader'
 import { crtBackgroundStyles, customScrollbarStyles } from './styles'
 import { getLogLevelForPage, getLogLevelScript } from './lib/logLevel'
-import { getFullUrl, ROUTES, ROUTE_PATHS } from './config/routes'
+import { getFullUrl, ROUTES, ROUTE_PATHS, PROJECT_ROOT } from './config/routes'
 import {
   requireInternalAccess,
   InternalAccessDeniedError
 } from './lib/access/requireInternalAccess'
-import {
-  getPageTitle,
-  getHeaderText
-} from './config/project'
+import { getPageTitle, getHeaderText } from './config/project'
 import * as loggerLib from './lib/logger.lib'
 import * as settingsLib from './lib/settings.lib'
 import { htmlRedirect } from './lib/htmlRedirect'
+import { toOperationSummaries } from './lib/gateway/operationsCatalog'
+import { GC_TEST_SCHOOL_API_KEY, GC_TEST_SCHOOL_HOST } from './shared/gatewaySettingKeys'
 
 const PANEL_PAGE_NAME = 'Панель'
 
@@ -77,10 +76,21 @@ export const indexPageRoute = app.html('/', async (ctx, req) => {
 
   const logLevel = await getLogLevelForPage(ctx)
   const projectName = await settingsLib.getSettingString(ctx, settingsLib.SETTING_KEYS.PROJECT_NAME)
+
+  // Каталог операций и тестовые значения для вкладки «Создать запрос».
+  // ВНИМАНИЕ: тестовые значения (gc_test_school_api_key, gc_test_school_host) попадают в HTML
+  // SSR-страницы. Это намеренно — страница за requireInternalAccess, ключи тестовые (не продакшен).
+  const operationsCatalog = toOperationSummaries()
+  const [testSchoolApiKey, testSchoolHost] = await Promise.all([
+    settingsLib.getSettingString(ctx, GC_TEST_SCHOOL_API_KEY),
+    settingsLib.getSettingString(ctx, GC_TEST_SCHOOL_HOST)
+  ])
+  const testValues = { testSchoolApiKey, testSchoolHost }
+
   await loggerLib.writeServerLog(ctx, {
     severity: 6,
     message: `[${LOG_PATH}] Переменные для рендера`,
-    payload: { logLevel, projectName, isAdmin }
+    payload: { logLevel, projectName, isAdmin, operationsCount: operationsCatalog.length }
   })
 
   return (
@@ -123,6 +133,9 @@ export const indexPageRoute = app.html('/', async (ctx, req) => {
           testsUrl={testsUrl}
           initialDateFilter={initialDateFilter}
           apiUrls={apiUrls}
+          operationsCatalog={operationsCatalog}
+          testValues={testValues}
+          projectRoot={PROJECT_ROOT}
         />
       </body>
     </html>

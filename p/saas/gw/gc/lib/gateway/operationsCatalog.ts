@@ -16,7 +16,10 @@ import type {
   GcContour,
   HttpMethod,
   OpAvailability,
+  ArgsFieldSchema,
   ArgsSchemaJson,
+  ArgsTreeNode,
+  ArgsTreeField,
   OperationSummary
 } from '../../shared/operationsCatalogShared'
 
@@ -124,13 +127,22 @@ export const operationsCatalog: OperationEntry[] = [
     argsValidator: s.object({
       dealId: s.number(),
       positions: s.array(
-        s.object({ offerId: s.number().optional(), price: s.number().optional(), quantity: s.number().optional() })
+        s.object({
+          offerId: s.number().optional(),
+          price: s.number().optional(),
+          quantity: s.number().optional()
+        })
       )
     }),
     argsSchema: {
       fields: [
         { name: 'dealId', type: 'number', required: true },
-        { name: 'positions', type: 'array', required: true, items: { name: 'item', type: 'object', required: true } }
+        {
+          name: 'positions',
+          type: 'array',
+          required: true,
+          items: { name: 'item', type: 'object', required: true }
+        }
       ]
     }
   },
@@ -210,7 +222,12 @@ export const operationsCatalog: OperationEntry[] = [
     argsSchema: {
       fields: [
         { name: 'dealId', type: 'number', required: true },
-        { name: 'positionIds', type: 'array', required: true, items: { name: 'item', type: 'number', required: true } }
+        {
+          name: 'positionIds',
+          type: 'array',
+          required: true,
+          items: { name: 'item', type: 'number', required: true }
+        }
       ]
     }
   },
@@ -234,7 +251,12 @@ export const operationsCatalog: OperationEntry[] = [
         { name: 'manager_user_id', type: 'number', required: false },
         { name: 'status', type: 'string', required: false },
         { name: 'cancel_reason_comment', type: 'number', required: false },
-        { name: 'tags', type: 'array', required: false, items: { name: 'item', type: 'string', required: true } }
+        {
+          name: 'tags',
+          type: 'array',
+          required: false,
+          items: { name: 'item', type: 'string', required: true }
+        }
       ]
     }
   },
@@ -255,7 +277,12 @@ export const operationsCatalog: OperationEntry[] = [
       fields: [
         { name: 'dialogId', type: 'number', required: true },
         { name: 'commentText', type: 'string', required: true },
-        { name: 'transport', type: 'array', required: true, items: { name: 'item', type: 'number', required: true } },
+        {
+          name: 'transport',
+          type: 'array',
+          required: true,
+          items: { name: 'item', type: 'number', required: true }
+        },
         { name: 'userId', type: 'number', required: true }
       ]
     }
@@ -416,7 +443,14 @@ export const operationsCatalog: OperationEntry[] = [
     legacyImportAction: null,
     argsValidator: s.object({ groups: s.array(s.number()) }),
     argsSchema: {
-      fields: [{ name: 'groups', type: 'array', required: true, items: { name: 'item', type: 'number', required: true } }]
+      fields: [
+        {
+          name: 'groups',
+          type: 'array',
+          required: true,
+          items: { name: 'item', type: 'number', required: true }
+        }
+      ]
     }
   },
   {
@@ -582,7 +616,14 @@ export const operationsCatalog: OperationEntry[] = [
     legacyImportAction: null,
     argsValidator: s.object({ groups: s.array(s.number()) }),
     argsSchema: {
-      fields: [{ name: 'groups', type: 'array', required: true, items: { name: 'item', type: 'number', required: true } }]
+      fields: [
+        {
+          name: 'groups',
+          type: 'array',
+          required: true,
+          items: { name: 'item', type: 'number', required: true }
+        }
+      ]
     }
   },
   {
@@ -594,7 +635,14 @@ export const operationsCatalog: OperationEntry[] = [
     legacyImportAction: null,
     argsValidator: s.object({ groups: s.array(s.number()) }),
     argsSchema: {
-      fields: [{ name: 'groups', type: 'array', required: true, items: { name: 'item', type: 'number', required: true } }]
+      fields: [
+        {
+          name: 'groups',
+          type: 'array',
+          required: true,
+          items: { name: 'item', type: 'number', required: true }
+        }
+      ]
     }
   },
   {
@@ -616,7 +664,14 @@ export const operationsCatalog: OperationEntry[] = [
     legacyImportAction: null,
     argsValidator: s.object({ customFields: s.any() }),
     argsSchema: {
-      fields: [{ name: 'customFields', type: 'object', required: true, description: 'произвольная структура' }]
+      fields: [
+        {
+          name: 'customFields',
+          type: 'object',
+          required: true,
+          description: 'произвольная структура'
+        }
+      ]
     }
   },
   {
@@ -696,7 +751,14 @@ export const operationsCatalog: OperationEntry[] = [
     legacyImportAction: null,
     argsValidator: s.object({ ids: s.array(s.number()) }),
     argsSchema: {
-      fields: [{ name: 'ids', type: 'array', required: true, items: { name: 'item', type: 'number', required: true } }]
+      fields: [
+        {
+          name: 'ids',
+          type: 'array',
+          required: true,
+          items: { name: 'item', type: 'number', required: true }
+        }
+      ]
     }
   },
   {
@@ -755,28 +817,49 @@ export const operationsCatalog: OperationEntry[] = [
     pathTemplate: '/users',
     availability: 'disabled',
     legacyImportAction: 'add',
+    // Назначения полей — по официальной документации GetCourse (getcourse.ru/help/api, /pl/api/users).
     argsValidator: s.object(
       {
-        params: s.object(
-          {
-            user: s.object(
-              {
-                email: s.string(),
-                phone: s.string().optional(),
-                first_name: s.string().optional(),
-                last_name: s.string().optional(),
-                city: s.string().optional(),
-                country: s.string().optional(),
-                group_name: s.array(s.string()).optional(),
-                addfields: s.any().optional()
-              },
-              passthrough
-            ),
-            system: s.any().optional(),
-            session: s.any().optional()
-          },
-          passthrough
-        )
+        params: s
+          .object(
+            {
+              user: s
+                .object(
+                  {
+                    email: s
+                      .string()
+                      .describe('Email пользователя — обязателен, ключ идентификации'),
+                    phone: s.string().describe('Телефон пользователя').optional(),
+                    first_name: s.string().describe('Имя пользователя').optional(),
+                    last_name: s.string().describe('Фамилия пользователя').optional(),
+                    city: s.string().describe('Город проживания').optional(),
+                    country: s.string().describe('Страна').optional(),
+                    group_name: s
+                      .array(s.string())
+                      .describe('Массив названий групп для добавления пользователя')
+                      .optional(),
+                    addfields: s
+                      .any()
+                      .describe('Дополнительные поля пользователя (произвольные)')
+                      .optional()
+                  },
+                  passthrough
+                )
+                .describe('Данные пользователя'),
+              system: s
+                .any()
+                .describe(
+                  'Системные параметры импорта: refresh_if_exists, partner_email, user_status и др.'
+                )
+                .optional(),
+              session: s
+                .any()
+                .describe('Данные сессии/источника (utm-метки, ip и т. п.)')
+                .optional()
+            },
+            passthrough
+          )
+          .describe('Корневой объект импорта пользователя GetCourse (/pl/api/users)')
       },
       passthrough
     ),
@@ -786,7 +869,7 @@ export const operationsCatalog: OperationEntry[] = [
           name: 'params',
           type: 'object',
           required: true,
-          description: 'вложенная структура user/system/session, см. docs GetCourse'
+          description: 'Корневой объект импорта пользователя: user / system / session'
         }
       ]
     }
@@ -798,37 +881,63 @@ export const operationsCatalog: OperationEntry[] = [
     pathTemplate: '/deals',
     availability: 'enabled',
     legacyImportAction: 'add',
+    // Назначения полей — по официальной документации GetCourse (getcourse.ru/help/api, /pl/api/deals).
     argsValidator: s.object(
       {
-        params: s.object(
-          {
-            user: s.object(
-              {
-                email: s.string(),
-                phone: s.string().optional(),
-                first_name: s.string().optional(),
-                last_name: s.string().optional()
-              },
-              passthrough
-            ),
-            deal: s.object(
-              {
-                offer_code: s.string().optional(),
-                offer_id: s.number().optional(),
-                deal_number: s.string().optional(),
-                deal_cost: s.number().optional(),
-                deal_status: s.string().optional(),
-                deal_is_paid: s.string().optional(),
-                deal_currency: s.string().optional(),
-                funnel_id: s.number().optional(),
-                funnel_stage_id: s.number().optional()
-              },
-              passthrough
-            ),
-            system: s.any().optional()
-          },
-          passthrough
-        )
+        params: s
+          .object(
+            {
+              user: s
+                .object(
+                  {
+                    email: s
+                      .string()
+                      .describe('Email клиента — обязателен, ключ идентификации пользователя'),
+                    phone: s.string().describe('Телефон клиента').optional(),
+                    first_name: s.string().describe('Имя клиента').optional(),
+                    last_name: s.string().describe('Фамилия клиента').optional()
+                  },
+                  passthrough
+                )
+                .describe('Данные покупателя (владельца заказа)'),
+              deal: s
+                .object(
+                  {
+                    offer_code: s
+                      .string()
+                      .describe('Символьный код предложения (offer); альтернатива offer_id')
+                      .optional(),
+                    offer_id: s.number().describe('ID предложения (offer) в GetCourse').optional(),
+                    deal_number: s
+                      .string()
+                      .describe('Номер заказа — для привязки/редактирования существующей сделки')
+                      .optional(),
+                    deal_cost: s.number().describe('Сумма заказа').optional(),
+                    deal_status: s
+                      .string()
+                      .describe('Статус сделки: new, payed, cancelled, in_work и др.')
+                      .optional(),
+                    deal_is_paid: s.string().describe('Признак оплаты заказа (да/нет)').optional(),
+                    deal_currency: s
+                      .string()
+                      .describe('Код валюты заказа (RUB, USD, EUR…)')
+                      .optional(),
+                    funnel_id: s.number().describe('ID воронки (доски продаж)').optional(),
+                    funnel_stage_id: s.number().describe('ID этапа воронки').optional()
+                  },
+                  passthrough
+                )
+                .describe('Данные заказа/сделки'),
+              system: s
+                .any()
+                .describe(
+                  'Системные параметры импорта: refresh_if_exists, multiple_offers, return_payment_link, partner_email и др.'
+                )
+                .optional()
+            },
+            passthrough
+          )
+          .describe('Корневой объект импорта сделки GetCourse (/pl/api/deals)')
       },
       passthrough
     ),
@@ -838,7 +947,7 @@ export const operationsCatalog: OperationEntry[] = [
           name: 'params',
           type: 'object',
           required: true,
-          description: 'вложенная структура user/deal/system, см. docs GetCourse'
+          description: 'Корневой объект импорта сделки: user / deal / system'
         }
       ]
     }
@@ -983,6 +1092,182 @@ export function findOperation(op: string): OperationEntry | null {
   return operationsCatalog.find((e) => e.op === op) ?? null
 }
 
+/**
+ * Структурная (JSON-Schema-подобная) проекция рантайм-валидатора `@app/schema`:
+ * у каждого `ZType` есть `type` ('object'/'array'/'string'/'number'/'integer'/'boolean'),
+ * у `ZObject` — `properties` + `required` + `additionalProperties`, у `ZArray` — `items`.
+ * Необязательность определяется отсутствием имени в `required` родителя.
+ */
+type RawSchema = {
+  type?: string
+  properties?: Record<string, RawSchema | undefined>
+  required?: string[]
+  items?: RawSchema
+  additionalProperties?: boolean
+  description?: string
+}
+
+/** Рекурсивно переводит рантайм-валидатор в сериализуемое дерево формата запроса. */
+function schemaToArgsNode(schema: RawSchema | undefined): ArgsTreeNode {
+  if (!schema || typeof schema !== 'object') return { kind: 'any' }
+  if (schema.type === 'object') {
+    const required = new Set(schema.required ?? [])
+    const props = schema.properties ?? {}
+    const fields: ArgsTreeField[] = Object.keys(props).map((name) => ({
+      name,
+      required: required.has(name),
+      description: props[name]?.description,
+      node: schemaToArgsNode(props[name])
+    }))
+    return { kind: 'object', fields, additionalProperties: schema.additionalProperties !== false }
+  }
+  if (schema.type === 'array') {
+    return { kind: 'array', items: schemaToArgsNode(schema.items) }
+  }
+  if (
+    schema.type === 'string' ||
+    schema.type === 'number' ||
+    schema.type === 'integer' ||
+    schema.type === 'boolean'
+  ) {
+    return { kind: 'scalar', type: schema.type }
+  }
+  return { kind: 'any' }
+}
+
+/**
+ * Назначение полей GetCourse по официальной документации (getcourse.ru/help/api): fallback-подписи
+ * для полей, у которых нет явного `.describe()` в валидаторе и описания в `argsSchema`. Ключ — имя поля.
+ */
+const FIELD_DESCRIPTIONS: Record<string, string> = {
+  // Идентификаторы сущностей
+  dealId: 'ID сделки в GetCourse',
+  userId: 'ID пользователя в GetCourse',
+  user_id: 'ID пользователя в GetCourse',
+  dialogId: 'ID диалога',
+  chatId: 'ID чата',
+  lessonId: 'ID урока',
+  lessonAnswerId: 'ID ответа на задание урока',
+  offerId: 'ID предложения (offer)',
+  groupId: 'ID группы',
+  managerId: 'ID менеджера',
+  manager_user_id: 'ID пользователя-менеджера сделки',
+  moderatorId: 'ID модератора',
+  newDepartmentId: 'ID нового отдела (куда переводится диалог)',
+  templateId: 'ID шаблона (например, диплома)',
+  productId: 'ID продукта',
+  webinarId: 'ID вебинара',
+  commentId: 'ID комментария',
+  exportId: 'ID задания экспорта (для получения результата)',
+  replyToUserId: 'ID пользователя, которому адресован ответ',
+  // Списки идентификаторов
+  ids: 'Список идентификаторов',
+  positionIds: 'Список ID позиций сделки',
+  positions: 'Позиции сделки (массив объектов)',
+  idgrouplist: 'Список ID групп (через запятую)',
+  groups: 'Список групп',
+  tags: 'Теги',
+  customFields: 'Пользовательские (дополнительные) поля',
+  // Контакт/профиль
+  email: 'Email пользователя',
+  phone: 'Телефон',
+  first_name: 'Имя',
+  last_name: 'Фамилия',
+  userName: 'Имя пользователя',
+  city: 'Город',
+  country: 'Страна',
+  gender: 'Пол',
+  birthday: 'Дата рождения',
+  // Тексты/комментарии
+  text: 'Текст',
+  comment: 'Комментарий',
+  commentText: 'Текст комментария',
+  cancel_reason_comment: 'Комментарий причины отмены сделки',
+  // Статусы/типы/действия (значение зависит от операции)
+  status: 'Статус (допустимые значения зависят от операции)',
+  type: 'Тип (допустимые значения зависят от операции)',
+  action: 'Выполняемое действие',
+  userType: 'Тип пользователя',
+  replyToUserType: 'Тип пользователя, которому адресован ответ',
+  value: 'Значение (например, сумма для операции с балансом)',
+  number: 'Номер (например, номер диплома)',
+  trainingName: 'Название тренинга',
+  allowDuplicates: 'Разрешить дубликаты',
+  isPrivateReply: 'Приватный ответ',
+  user_in_group: 'Фильтр: пользователь состоит в группе',
+  transport: 'Канал доставки (transport)',
+  uri: 'URI/адрес',
+  event_id: 'ID события',
+  event_object_id: 'ID объекта события',
+  webinarLaunchNumber: 'Номер запуска вебинара',
+  // Пагинация
+  limit: 'Максимум записей в ответе (постранично)',
+  offset: 'Смещение выборки (постранично)',
+  // Фильтры по датам (bracket-параметры GetCourse)
+  'created_at[from]': 'Фильтр по дате создания: начало периода',
+  'created_at[to]': 'Фильтр по дате создания: конец периода',
+  'added_at[from]': 'Фильтр по дате добавления: начало периода',
+  'added_at[to]': 'Фильтр по дате добавления: конец периода',
+  'payed_at[from]': 'Фильтр по дате оплаты: начало периода',
+  'payed_at[to]': 'Фильтр по дате оплаты: конец периода',
+  'status_changed_at[from]': 'Фильтр по дате смены статуса: начало периода',
+  'status_changed_at[to]': 'Фильтр по дате смены статуса: конец периода'
+}
+
+/** Узел дерева из плоского описателя `argsSchema` (для полей, задокументированных только в нём). */
+function argsFieldToNode(field: ArgsFieldSchema): ArgsTreeNode {
+  if (field.type === 'array') {
+    return { kind: 'array', items: field.items ? argsFieldToNode(field.items) : { kind: 'any' } }
+  }
+  if (field.type === 'object') {
+    return { kind: 'object', fields: [], additionalProperties: true }
+  }
+  return { kind: 'scalar', type: field.type }
+}
+
+/** Рекурсивно проставляет fallback-подписи из `FIELD_DESCRIPTIONS` полям без описания. */
+function fillFieldDescriptions(node: ArgsTreeNode): void {
+  if (node.kind === 'object') {
+    for (const field of node.fields) {
+      if (!field.description) field.description = FIELD_DESCRIPTIONS[field.name]
+      fillFieldDescriptions(field.node)
+    }
+  } else if (node.kind === 'array') {
+    fillFieldDescriptions(node.items)
+  }
+}
+
+/**
+ * Дерево формата запроса из `argsValidator` (вся вложенность) + поля, задокументированные только
+ * в `argsSchema` (bracket-параметры GC через passthrough), + наложение UI-описаний и словаря.
+ */
+function buildArgsTree(validator: AnyArgsValidator, argsSchema: ArgsSchemaJson): ArgsTreeNode {
+  const node = schemaToArgsNode(validator as unknown as RawSchema)
+  if (node.kind === 'object') {
+    // Описания верхнего уровня из argsSchema (в валидаторе их нет).
+    for (const field of node.fields) {
+      if (!field.description) {
+        const fromSchema = argsSchema.fields.find((f) => f.name === field.name)?.description
+        if (fromSchema) field.description = fromSchema
+      }
+    }
+    // Поля, описанные только в argsSchema (passthrough-параметры GC), которых нет в валидаторе.
+    const present = new Set(node.fields.map((f) => f.name))
+    for (const sf of argsSchema.fields) {
+      if (!present.has(sf.name)) {
+        node.fields.push({
+          name: sf.name,
+          required: sf.required,
+          description: sf.description,
+          node: argsFieldToNode(sf)
+        })
+      }
+    }
+  }
+  fillFieldDescriptions(node)
+  return node
+}
+
 /** Преобразование каталога в wire-форму для клиента (SSR-пропсы, GET /v1/operations). */
 export function toOperationSummaries(): OperationSummary[] {
   return operationsCatalog.map((e) => ({
@@ -990,6 +1275,7 @@ export function toOperationSummaries(): OperationSummary[] {
     httpMethod: e.httpMethod,
     contour: e.contour,
     availability: e.availability,
-    argsSchema: e.argsSchema
+    argsSchema: e.argsSchema,
+    argsTree: buildArgsTree(e.argsValidator, e.argsSchema)
   }))
 }

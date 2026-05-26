@@ -115,9 +115,15 @@ export const UNIT_TEST_BLOCKS: TestCatalogBlock[] = [
     title: 'lib/gateway',
     description: 'Legacy/new: form, семантика GC, заголовки, каталог op (manual §2.8, §4.5)',
     tests: [
-      { id: 'gw_legacy_semantic_success_false', title: 'Legacy success:false → legacy_root_success_false' },
+      {
+        id: 'gw_legacy_semantic_success_false',
+        title: 'Legacy success:false → legacy_root_success_false'
+      },
       { id: 'gw_legacy_semantic_ok', title: 'Legacy success:true → семантика ok' },
-      { id: 'gw_utf8_base64_roundtrip', title: 'utf8StringToBase64 ↔ base64ToUtf8String (кириллица)' },
+      {
+        id: 'gw_utf8_base64_roundtrip',
+        title: 'utf8StringToBase64 ↔ base64ToUtf8String (кириллица)'
+      },
       { id: 'gw_form_body_fields', title: 'form key/action/params (Base64 JSON)' },
       { id: 'gw_content_type_json', title: 'Content-Type application/json' },
       { id: 'gw_content_type_json_charset', title: 'Content-Type charset=utf-8' },
@@ -128,12 +134,28 @@ export const UNIT_TEST_BLOCKS: TestCatalogBlock[] = [
       { id: 'gw_new_semantic_n2', title: 'new code≠200 → new_code_non_200' },
       { id: 'gw_new_semantic_n3', title: 'new data.result:false → new_data_result_false' },
       { id: 'gw_new_semantic_ok', title: 'new успех без признаков ошибки → null' },
-      { id: 'gw_catalog_entries_have_schema', title: 'каждая запись каталога имеет argsSchema.fields[]' },
+      {
+        id: 'gw_catalog_entries_have_schema',
+        title: 'каждая запись каталога имеет argsSchema.fields[]'
+      },
       { id: 'gw_catalog_ops_sorted_unique', title: 'operationsCatalog: уникальные op' },
       { id: 'gw_operations_catalog_matches_mapping', title: 'operationsCatalog: 59 уникальных op' },
-      { id: 'gw_operations_catalog_has_args_schema', title: 'каждая запись каталога имеет live argsSchema' },
-      { id: 'gw_operations_catalog_addUser_strict', title: 'addUser: params.user.email обязателен' },
-      { id: 'gw_query_dup_keys_keep_last', title: 'дубликаты query → последнее значение (manual §3.5)' }
+      {
+        id: 'gw_operations_catalog_has_args_schema',
+        title: 'каждая запись каталога имеет live argsSchema'
+      },
+      {
+        id: 'gw_operations_catalog_addUser_strict',
+        title: 'addUser: params.user.email обязателен'
+      },
+      {
+        id: 'gw_query_dup_keys_keep_last',
+        title: 'дубликаты query → последнее значение (manual §3.5)'
+      },
+      {
+        id: 'gw_catalog_argsTree_resolved',
+        title: 'argsTree createDeal раскрыт (params.user.email)'
+      }
     ]
   },
   {
@@ -169,15 +191,27 @@ export const INTEGRATION_SERVER_TEST_BLOCKS: TestCatalogBlock[] = [
       { id: 'settings_setSetting_webhook', title: 'setSetting LOG_WEBHOOK' },
       { id: 'settings_setSetting_dashboard_reset', title: 'setSetting DASHBOARD_RESET_AT' },
       { id: 'settings_setSetting_unknown_key', title: 'setSetting неизвестный ключ' },
-      { id: 'settings_setSetting_gc_dev_rejects_whitespace', title: 'gc_developer_api_key: пробелы → ошибка' },
+      {
+        id: 'settings_setSetting_gc_dev_rejects_whitespace',
+        title: 'gc_developer_api_key: пробелы → ошибка'
+      },
       { id: 'settings_setSetting_gc_host_trim', title: 'gc_test_school_host: trim и запись' },
-      { id: 'settings_setSetting_gc_host_rejects_https', title: 'gc_test_school_host: https:// → ошибка' },
+      {
+        id: 'settings_setSetting_gc_host_rejects_https',
+        title: 'gc_test_school_host: https:// → ошибка'
+      },
       {
         id: 'gateway_v1_addUser_live',
         title: 'POST /v1/addUser: Heap уровня A → реальный вызов GetCourse (tester@khudoley.pro)'
       },
-      { id: 'regression_getLogLevel_no_recursion', title: 'регрессия: getLogLevel без stack overflow' },
-      { id: 'regression_getSetting_no_recursion', title: 'регрессия: getSetting без stack overflow' }
+      {
+        id: 'regression_getLogLevel_no_recursion',
+        title: 'регрессия: getLogLevel без stack overflow'
+      },
+      {
+        id: 'regression_getSetting_no_recursion',
+        title: 'регрессия: getSetting без stack overflow'
+      }
     ]
   },
   {
