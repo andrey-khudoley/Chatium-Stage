@@ -753,7 +753,7 @@ export const operationsCatalog: OperationEntry[] = [
     contour: 'legacy',
     httpMethod: 'POST',
     pathTemplate: '/users',
-    availability: 'enabled',
+    availability: 'disabled',
     legacyImportAction: 'add',
     argsValidator: s.object(
       {
@@ -796,7 +796,7 @@ export const operationsCatalog: OperationEntry[] = [
     contour: 'legacy',
     httpMethod: 'POST',
     pathTemplate: '/deals',
-    availability: 'disabled',
+    availability: 'enabled',
     legacyImportAction: 'add',
     argsValidator: s.object(
       {
