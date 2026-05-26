@@ -6,8 +6,18 @@
  * Здесь только строки имён ключей в Heap, никаких значений секретов.
  */
 
-export const LP_TEST_APIKEY = 'lp_test_apikey'
-export const LP_TEST_LOGIN = 'lp_test_login'
+export const LP_TEST_APIKEY = 'lp_test_apikey' as const
+export const LP_TEST_LOGIN = 'lp_test_login' as const
+
+/**
+ * Тестовые значения для формы «Создать запрос» (вкладка панели). Читаются из Heap на SSR
+ * (`index.tsx`) и передаются в компонент через пропсы, чтобы кнопки «Подставить» работали
+ * без клиентского fetch к Admin-only роуту `getSettingRoute`. Пустая строка = настройка не задана.
+ */
+export type LpTestValues = {
+  testApiKey: string
+  testLogin: string
+}
 
 /**
  * Валидация значения `X-Lp-Login` (operation-manual §2.5):

@@ -43,18 +43,26 @@ LifePay payments-gateway: серверный шлюз, реализующий п
 
 Запрет логирования секретов (§5.7): полные значения `apikey` / `login` / `lp_test_*` в `writeServerLog` не попадают. Допустимо: длина `apikey`, маскированный `login`, имя `op`, `requestId`, коды ошибок.
 
-## Вкладка «Тест запроса» (TestsPage)
+## Компонент «Создать запрос» (RequestTestTab)
 
-`pages/TestsPage.vue` имеет четвёртую вкладку «Тест запроса», доступную только при роли Admin. Вкладка реализована в отдельном компоненте `components/RequestTestTab.vue`. Каталог `op` приходит на страницу через SSR-проп `operationsCatalog` в `web/tests/index.tsx` (только для Admin); проп типизируется через `shared/operationsCatalogShared.ts`.
+`components/RequestTestTab.vue` — форма имитации внешнего вызова `/api/v1/{op}`. Используется в двух контекстах:
 
-Сценарий:
-1. Дропдаун выбора `op` из каталога. Для `availability !== 'enabled'` — жёлтое предупреждение и заблокированная кнопка «Отправить».
-2. Поля `X-Lp-Apikey`, `X-Lp-Login` — по умолчанию вводятся вручную. Кнопка «Использовать тестовые» рядом с полями по явному клику подгружает значения `lp_test_apikey` / `lp_test_login` из Heap через `getSettingRoute.run(ctx)` (admin-only).
-3. Динамическая форма `args` из `argsSchema.fields`: обязательные (`*`), опциональные (`(опционально)`), описание поля как hint. Тип `number` приводится при отправке.
-4. Клиентская валидация на лету: непустые обязательные поля, X-Lp-Login по regexp `^7[0-9]{10}$`, тип `number` валиден.
-5. Кнопка «Отправить» активна только при отсутствии ошибок и `availability === 'enabled'`.
-6. Отправка — реальный `fetch` с фронта на `/${projectRoot}/api/v1/{op}` (метод из каталога), заголовки `X-Lp-*` + `Content-Type: application/json` (для POST). Никаких `credentials: 'include'`.
-7. Результат: статус «УСПЕХ» / «ПРОВАЛ» (по `body.ok` или HTTP), сырой JSON запроса (`{ method, url, headers, body | query }`) и ответа (`{ statusCode, headers, body }`) с отступами в `<pre>`. Маскирование отсутствует.
+| Контекст | Страница | Доступ | Источник testValues |
+|----------|----------|--------|---------------------|
+| Панель оператора | `HomePage.vue`, вкладка «Создать запрос» | `requireInternalAccess` (Admin или грант) | SSR-проп `testValues` из `index.tsx` (Heap через `settingsLib.getSettingString`) |
+| Страница тестов | `TestsPage.vue`, вкладка «Тест запроса» | Admin-only | fallback: `getSettingRoute.run(ctx)` при нажатии «Использовать тестовые» |
+
+Проп `testValues: LpTestValues | undefined` — опциональный (`shared/gatewaySettingKeys.ts`). `useTestCredentials` внутри компонента берёт значения из пропа (если задан) или запрашивает через `getSettingRoute`.
+
+Сценарий формы:
+1. Дропдаун выбора `op` из каталога. Для `availability !== 'enabled'` — предупреждение, кнопка «Отправить» заблокирована.
+2. Поля `X-Lp-Apikey` (type=password, кнопка показать/скрыть), `X-Lp-Login`; кнопка «Подставить» тестовые значения (`lp_test_apikey`/`lp_test_login`). Без заголовков `X-Lp-*` работает только `GET /v1/operations`.
+3. Динамическая форма `args` из `argsSchema.fields`: обязательные (`*`), опциональные; тип `number` приводится при отправке. Кнопка «Подставить» email вставляет `tester@khudoley.pro`; кнопка «Очистить» сбрасывает форму.
+4. Клиентская валидация на лету: непустые обязательные поля, `X-Lp-Login` по `^7[0-9]{10}$`, тип `number` валиден.
+5. Отправка — реальный `fetch` с фронта на `/{projectRoot}/api/v1/{op}`.
+6. Четыре снапшот-блока: заголовки запроса, тело запроса, ответ LifePay (upstream), ответ гейтвея.
+
+**Тестовые ключи в SSR-HTML:** `lp_test_apikey`/`lp_test_login` попадают в HTML панели. Осознанное допущение — страница защищена `requireInternalAccess`, ключи тестовые. Новых API-роутов нет.
 
 ## Вёрстка админки и страницы тестов
 - Корень Vue (`.app-layout` в `AdminPage.vue` / `TestsPage.vue`) ограничен высотой окна (`100vh` / `100dvh`) с `overflow: hidden`; после `boot-complete` у `body` нет вертикального скролла. Ширина: `.app-layout`, `<main class="ap-wrap|tp-wrap">` и блок `.ap` / `.tp` — на всю доступную ширину (`width: 100%`, у обёрток при необходимости `min-width: 0` для flex); контент по-прежнему ограничен `max-width: 1440px` у `.ap`/`.tp`. `<main>` — flex-колонка с `overflow: hidden` (сам не скроллится). Ниже — `.ap` / `.tp` (flex, `min-height: 0`), статус/тулбар `flex-shrink: 0`, сетка `.ap-grid` / `.tp-grid` с `grid-template-rows: minmax(0, 1fr)` и `flex: 1`; в двухколоночном режиме первая колонка — `minmax(240px, 1fr)` (не `minmax(0, 1fr)`), чтобы левая область не сжималась чрезмерно. Вертикальный скролл только у левой колонки `.ap-main` / `.tp-main` (`overflow-y: auto`, класс `content-wrapper` для стилей скроллбара). Правая колонка логов тянется по высоте ячейки сетки; список строк — `.ap-log-out` / `.tp-log-out` с внутренним `overflow-y`. На узкой вёрстке снова скроллится весь `<main>`.
@@ -75,8 +83,8 @@ LifePay payments-gateway: серверный шлюз, реализующий п
 ## Структура каталогов
 - `config/` — маршруты и `PROJECT_ROOT`.
 - `web/` — браузерные роуты модулей (admin, profile, tests, login, forbidden, access/invite).
-- `pages/` — Vue‑страницы: **`HomePage.vue`** (панель оператора; вкладки Обзор/Входящие/К LifePay/Доступы; KPI, raw-модалки, LIVE, toolbar фильтра по дате; вкладка «Доступы» — Admin: grants, invites, создание/отзыв), `InviteAcceptPage.vue` (приём инвайта).
-- `components/` — переиспользуемые Vue‑компоненты (Header, AppFooter, GlobalGlitch, LogoutModal, RequestTestTab).
+- `pages/` — Vue‑страницы: **`HomePage.vue`** (панель оператора; вкладки Обзор/Входящие/К LifePay/Доступы/**Создать запрос**; KPI, raw-модалки, LIVE, toolbar фильтра по дате; вкладка «Доступы» — Admin: grants, invites, создание/отзыв), `InviteAcceptPage.vue` (приём инвайта).
+- `components/` — переиспользуемые Vue‑компоненты (Header, AppFooter, GlobalGlitch, LogoutModal, **`RequestTestTab.vue`** — форма имитации вызова `/api/v1/{op}`; используется в `HomePage.vue` (панель) и `TestsPage.vue` (Admin)).
 - `api/` — API‑эндпоинты. File-based: один файл — один эндпоинт с `/`. Включает: `api/v1/` (gateway), `api/admin/raw/` и `api/admin/dashboard/` (доступ `guardInternalApi`), **`api/admin/analytics/filter-save.ts`** (фильтр по дате), **`api/access/`** (управление доступами к панели).
 - `tables/` — Heap‑таблицы (схемы: settings, logs, gatewayRequestLog, gatewayUpstreamLog, **panelAccess**, **panelInvites**).
 - `repos/` — репозитории (settings, logs, gatewayRequestLog с `findRecentFiltered`, gatewayUpstreamLog с `findRecentFiltered`, **panelAccess**, **panelInvites**).

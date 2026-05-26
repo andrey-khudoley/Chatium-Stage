@@ -115,30 +115,79 @@ export const UNIT_TEST_BLOCKS: TestCatalogBlock[] = [
     title: 'lib/gateway (юниты)',
     description: 'billsV1Semantic по реальному контракту LifePay, маскировка секретов',
     tests: [
-      { id: 'gw_get_bill_status_success', title: 'getBillStatus: каноничный ответ LifePay → null + extract' },
-      { id: 'gw_get_bill_status_empty_data', title: 'getBillStatus: code=0 + пустой data → bills_v1_code_error' },
-      { id: 'gw_get_bill_status_code_error', title: 'getBillStatus: code≠0 → bills_v1_code_error + lpNumericCode' },
-      { id: 'gw_cancel_bill_success', title: 'cancelBill: code=0 + пустой data → null; success status=cancelled' },
+      {
+        id: 'gw_get_bill_status_success',
+        title: 'getBillStatus: каноничный ответ LifePay → null + extract'
+      },
+      {
+        id: 'gw_get_bill_status_empty_data',
+        title: 'getBillStatus: code=0 + пустой data → bills_v1_code_error'
+      },
+      {
+        id: 'gw_get_bill_status_code_error',
+        title: 'getBillStatus: code≠0 → bills_v1_code_error + lpNumericCode'
+      },
+      {
+        id: 'gw_cancel_bill_success',
+        title: 'cancelBill: code=0 + пустой data → null; success status=cancelled'
+      },
       { id: 'gw_cancel_bill_code_error', title: 'cancelBill: code≠0 → bills_v1_code_error' },
       { id: 'gw_create_bill_success', title: 'createBill: каноничный успех с paymentUrl' },
-      { id: 'gw_create_bill_missing_payment_url', title: 'createBill: нет paymentUrl → bills_v1_missing_payment_url' },
+      {
+        id: 'gw_create_bill_missing_payment_url',
+        title: 'createBill: нет paymentUrl → bills_v1_missing_payment_url'
+      },
       { id: 'gw_bill_status_name_mapping', title: 'billStatusName: 0/10/15/20/30 → имена' },
       { id: 'gw_bills_v1_semantic_rule_type', title: 'BillsV1SemanticRule: правила в каноне §10' },
-      { id: 'gw_get_bill_status_query_fields', title: 'getBillStatus: args.billNumber → query.number' },
-      { id: 'gw_create_bill_body_amount_string', title: 'createBill body: amount как "X.XX" строка' },
-      { id: 'gw_create_bill_body_phone_normalized', title: 'createBill body: customer_phone в формат 7xxxxxxxxxx' },
-      { id: 'gw_create_bill_body_redact_secrets', title: 'createBill body: redact убирает apikey/login' },
-      { id: 'gw_credentials_not_in_log_payload', title: 'maskLpLogin / apikeyLength: секреты не в payload' },
+      {
+        id: 'gw_get_bill_status_query_fields',
+        title: 'getBillStatus: args.billNumber → query.number'
+      },
+      {
+        id: 'gw_create_bill_body_amount_string',
+        title: 'createBill body: amount как "X.XX" строка'
+      },
+      {
+        id: 'gw_create_bill_body_phone_normalized',
+        title: 'createBill body: customer_phone в формат 7xxxxxxxxxx'
+      },
+      {
+        id: 'gw_create_bill_body_redact_secrets',
+        title: 'createBill body: redact убирает apikey/login'
+      },
+      {
+        id: 'gw_credentials_not_in_log_payload',
+        title: 'maskLpLogin / apikeyLength: секреты не в payload'
+      },
       { id: 'gw_masked_login_short_form', title: 'maskLpLogin: некорректная длина → +7***' },
-      { id: 'gw_redactraw_secrets_top', title: 'redactRawDeep: удаление apikey/login/token верхнего уровня' },
-      { id: 'gw_redactraw_headers_secrets', title: 'redactRawDeep: Authorization/X-Lp-*/Cookie удалены' },
-      { id: 'gw_redactraw_pii_nested', title: 'redactRawDeep: маска email/phone/passport в вложенных' },
+      {
+        id: 'gw_redactraw_secrets_top',
+        title: 'redactRawDeep: удаление apikey/login/token верхнего уровня'
+      },
+      {
+        id: 'gw_redactraw_headers_secrets',
+        title: 'redactRawDeep: Authorization/X-Lp-*/Cookie удалены'
+      },
+      {
+        id: 'gw_redactraw_pii_nested',
+        title: 'redactRawDeep: маска email/phone/passport в вложенных'
+      },
       { id: 'gw_redactraw_truncation', title: 'redactRawDeep: усечение > 64KB' },
       { id: 'gw_redactraw_circular', title: 'redactRawDeep: цикл → __circular' },
-      { id: 'gw_redactraw_function_nonserializable', title: 'redactRawDeep: function → __nonSerializable' },
+      {
+        id: 'gw_redactraw_function_nonserializable',
+        title: 'redactRawDeep: function → __nonSerializable'
+      },
       { id: 'gw_redactraw_array_root', title: 'redactRawDeep: массив-корень' },
       { id: 'gw_redactraw_primitive_root', title: 'redactRawDeep: примитивы как есть' },
-      { id: 'catalog_gateway_ids_match_runner', title: 'unit-gateway: каталог содержит все id прогона' }
+      {
+        id: 'gw_catalog_argsTree_resolved',
+        title: 'argsTree createBill раскрыт (amount, customerEmail)'
+      },
+      {
+        id: 'catalog_gateway_ids_match_runner',
+        title: 'unit-gateway: каталог содержит все id прогона'
+      }
     ]
   }
 ]
@@ -162,8 +211,14 @@ export const INTEGRATION_SERVER_TEST_BLOCKS: TestCatalogBlock[] = [
       { id: 'settings_setSetting_webhook', title: 'setSetting LOG_WEBHOOK' },
       { id: 'settings_setSetting_dashboard_reset', title: 'setSetting DASHBOARD_RESET_AT' },
       { id: 'settings_setSetting_unknown_key', title: 'setSetting неизвестный ключ' },
-      { id: 'regression_getLogLevel_no_recursion', title: 'регрессия: getLogLevel без stack overflow' },
-      { id: 'regression_getSetting_no_recursion', title: 'регрессия: getSetting без stack overflow' }
+      {
+        id: 'regression_getLogLevel_no_recursion',
+        title: 'регрессия: getLogLevel без stack overflow'
+      },
+      {
+        id: 'regression_getSetting_no_recursion',
+        title: 'регрессия: getSetting без stack overflow'
+      }
     ]
   },
   {

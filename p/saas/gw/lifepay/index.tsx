@@ -4,18 +4,17 @@ import HomePage from './pages/HomePage.vue'
 import { getPreloaderStyles, getPreloaderScript } from './shared/preloader'
 import { crtBackgroundStyles, customScrollbarStyles } from './styles'
 import { getLogLevelForPage, getLogLevelScript } from './shared/logLevel'
-import { getFullUrl, ROUTES, ROUTE_PATHS } from './config/routes'
+import { getFullUrl, ROUTES, ROUTE_PATHS, PROJECT_ROOT } from './config/routes'
 import {
   requireInternalAccess,
   InternalAccessDeniedError
 } from './lib/access/requireInternalAccess'
-import {
-  getPageTitle,
-  getHeaderText
-} from './config/project'
+import { getPageTitle, getHeaderText } from './config/project'
 import * as loggerLib from './lib/logger.lib'
 import * as settingsLib from './lib/settings.lib'
 import { htmlRedirect } from './lib/htmlRedirect'
+import { toOperationSummaries } from './lib/gateway/operationsCatalog'
+import { LP_TEST_APIKEY, LP_TEST_LOGIN } from './shared/gatewaySettingKeys'
 
 const PANEL_PAGE_NAME = 'Панель'
 
@@ -79,10 +78,20 @@ export const indexPageRoute = app.html('/', async (ctx, req) => {
   const logLevel = await getLogLevelForPage(ctx)
   const projectName = await settingsLib.getSettingString(ctx, settingsLib.SETTING_KEYS.PROJECT_NAME)
 
+  // Каталог операций и тестовые значения для вкладки «Создать запрос».
+  // ВНИМАНИЕ: тестовые значения (lp_test_apikey, lp_test_login) попадают в HTML SSR-страницы.
+  // Это намеренно — страница за requireInternalAccess, ключи тестовые (не продакшен-секреты).
+  const operationsCatalog = toOperationSummaries()
+  const [testApiKey, testLogin] = await Promise.all([
+    settingsLib.getSettingString(ctx, LP_TEST_APIKEY),
+    settingsLib.getSettingString(ctx, LP_TEST_LOGIN)
+  ])
+  const testValues = { testApiKey, testLogin }
+
   await loggerLib.writeServerLog(ctx, {
     severity: 6,
     message: `[${LOG_PATH}] render`,
-    payload: { logLevel, projectName }
+    payload: { logLevel, projectName, operationsCount: operationsCatalog.length }
   })
 
   return (
@@ -125,6 +134,9 @@ export const indexPageRoute = app.html('/', async (ctx, req) => {
           testsUrl={testsUrl}
           initialDateFilter={initialDateFilter}
           apiUrls={apiUrls}
+          operationsCatalog={operationsCatalog}
+          testValues={testValues}
+          projectRoot={PROJECT_ROOT}
         />
       </body>
     </html>

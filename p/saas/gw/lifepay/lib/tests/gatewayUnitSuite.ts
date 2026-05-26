@@ -15,6 +15,7 @@ import {
   type BillsV1SemanticResult
 } from '../gateway/billsV1Semantic'
 import { buildCreateBillBody, redactCreateBillBodyForLog } from '../gateway/buildCreateBillBody'
+import { toOperationSummaries } from '../gateway/operationsCatalog'
 import { maskLpLogin } from '../gateway/lpCredentials'
 import { UNIT_TEST_BLOCKS, flattenCatalogBlocks } from '../../shared/testCatalog'
 import { redactRawDeep, MAX_RAW_BYTES } from '../../shared/redactRaw'
@@ -96,8 +97,16 @@ function runBillsV1SemanticChecks(results: GatewayUnitTestResult[]): void {
     'gw_get_bill_status_empty_data',
     'classifyGetBillStatusResponse: code=0 + пустой словарь data → bills_v1_code_error',
     () => {
-      if (ruleOf(classifyGetBillStatusResponse({ code: 0, message: '', data: {} })) !== 'bills_v1_code_error') return false
-      if (ruleOf(classifyGetBillStatusResponse({ code: 0, data: { '10197087498032': {} } })) !== 'bills_v1_code_error') return false
+      if (
+        ruleOf(classifyGetBillStatusResponse({ code: 0, message: '', data: {} })) !==
+        'bills_v1_code_error'
+      )
+        return false
+      if (
+        ruleOf(classifyGetBillStatusResponse({ code: 0, data: { '10197087498032': {} } })) !==
+        'bills_v1_code_error'
+      )
+        return false
       return true
     }
   )
@@ -264,23 +273,30 @@ function runBillsV1SemanticChecks(results: GatewayUnitTestResult[]): void {
     'gw_create_bill_body_phone_normalized',
     'buildCreateBillBody: customer_phone приводится к формату 7xxxxxxxxxx (apidoc.life-pay.ru)',
     () => {
-      const make = (phone: string) => buildCreateBillBody(
-        { apikey: 'a', login: '79161234567' },
-        {
-          amount: 1,
-          customerEmail: 't@example.com',
-          orderNumber: 'ORD',
-          callbackUrl: 'https://cb',
-          description: 'X',
-          customerPhone: phone
-        }
-      ).customer_phone
+      const make = (phone: string) =>
+        buildCreateBillBody(
+          { apikey: 'a', login: '79161234567' },
+          {
+            amount: 1,
+            customerEmail: 't@example.com',
+            orderNumber: 'ORD',
+            callbackUrl: 'https://cb',
+            description: 'X',
+            customerPhone: phone
+          }
+        ).customer_phone
       if (make('+71234567890') !== '71234567890') return false
       if (make('7 (123) 456-78-90') !== '71234567890') return false
       if (make('79161234567') !== '79161234567') return false
       const noPhone = buildCreateBillBody(
         { apikey: 'a', login: '79161234567' },
-        { amount: 1, customerEmail: 't@example.com', orderNumber: 'O', callbackUrl: 'https://cb', description: 'X' }
+        {
+          amount: 1,
+          customerEmail: 't@example.com',
+          orderNumber: 'O',
+          callbackUrl: 'https://cb',
+          description: 'X'
+        }
       ).customer_phone
       if (noPhone !== null) return false
       return true
@@ -348,19 +364,14 @@ function runCredentialsMaskingChecks(results: GatewayUnitTestResult[]): void {
     }
   )
 
-  tryPush(
-    results,
-    'gw_masked_login_short_form',
-    'maskLpLogin: некорректная длина → +7***',
-    () => {
-      if (maskLpLogin('123') !== '+7***') return false
-      if (maskLpLogin('') !== '+7***') return false
-      const masked = maskLpLogin('79161234567')
-      if (!masked.startsWith('+')) return false
-      if (!masked.includes('***')) return false
-      return true
-    }
-  )
+  tryPush(results, 'gw_masked_login_short_form', 'maskLpLogin: некорректная длина → +7***', () => {
+    if (maskLpLogin('123') !== '+7***') return false
+    if (maskLpLogin('') !== '+7***') return false
+    const masked = maskLpLogin('79161234567')
+    if (!masked.startsWith('+')) return false
+    if (!masked.includes('***')) return false
+    return true
+  })
 }
 
 function runRedactRawDeepChecks(results: GatewayUnitTestResult[]): void {
@@ -370,13 +381,23 @@ function runRedactRawDeepChecks(results: GatewayUnitTestResult[]): void {
     'redactRawDeep удаляет apikey/login/token на верхнем уровне',
     () => {
       const r = redactRawDeep({
-        apikey: 'A', login: 'L', token: 'T',
-        lp_apikey: 'X', lp_login: 'Y', lp_webhook_token: 'Z',
+        apikey: 'A',
+        login: 'L',
+        token: 'T',
+        lp_apikey: 'X',
+        lp_login: 'Y',
+        lp_webhook_token: 'Z',
         keep: 'visible'
       }) as Record<string, unknown>
-      return !('apikey' in r) && !('login' in r) && !('token' in r) &&
-        !('lp_apikey' in r) && !('lp_login' in r) && !('lp_webhook_token' in r) &&
+      return (
+        !('apikey' in r) &&
+        !('login' in r) &&
+        !('token' in r) &&
+        !('lp_apikey' in r) &&
+        !('lp_login' in r) &&
+        !('lp_webhook_token' in r) &&
         r.keep === 'visible'
+      )
     }
   )
   tryPush(
@@ -385,11 +406,22 @@ function runRedactRawDeepChecks(results: GatewayUnitTestResult[]): void {
     'redactRawDeep удаляет Authorization / X-Lp-* / Cookie',
     () => {
       const r = redactRawDeep({
-        headers: { authorization: 'Bearer xx', 'X-Lp-Apikey': 'A', 'X-Lp-Login': 'L', cookie: 'c=1', other: 'ok' }
+        headers: {
+          authorization: 'Bearer xx',
+          'X-Lp-Apikey': 'A',
+          'X-Lp-Login': 'L',
+          cookie: 'c=1',
+          other: 'ok'
+        }
       }) as Record<string, unknown>
       const h = r.headers as Record<string, unknown>
-      return !('authorization' in h) && !('X-Lp-Apikey' in h) &&
-        !('X-Lp-Login' in h) && !('cookie' in h) && h.other === 'ok'
+      return (
+        !('authorization' in h) &&
+        !('X-Lp-Apikey' in h) &&
+        !('X-Lp-Login' in h) &&
+        !('cookie' in h) &&
+        h.other === 'ok'
+      )
     }
   )
   tryPush(
@@ -404,9 +436,15 @@ function runRedactRawDeepChecks(results: GatewayUnitTestResult[]): void {
       const c = r.customer as Record<string, unknown>
       const d = r.data as Record<string, unknown>
       const d1 = d['1'] as Record<string, unknown>
-      return typeof c.email === 'string' && c.email !== 'a@b.com' &&
-        typeof c.phone === 'string' && c.phone !== '79991234567' &&
-        c.passport === '***' && d1.fio === '***' && d1.address === '***'
+      return (
+        typeof c.email === 'string' &&
+        c.email !== 'a@b.com' &&
+        typeof c.phone === 'string' &&
+        c.phone !== '79991234567' &&
+        c.passport === '***' &&
+        d1.fio === '***' &&
+        d1.address === '***'
+      )
     }
   )
   tryPush(
@@ -416,24 +454,21 @@ function runRedactRawDeepChecks(results: GatewayUnitTestResult[]): void {
     () => {
       const big = { data: 'x'.repeat(MAX_RAW_BYTES + 100) }
       const r = redactRawDeep(big) as Record<string, unknown>
-      return r.__truncated === true &&
+      return (
+        r.__truncated === true &&
         typeof r.__originalBytes === 'number' &&
         (r.__originalBytes as number) > MAX_RAW_BYTES &&
         typeof r.__preview === 'string' &&
         (r.__preview as string).length === MAX_RAW_BYTES
+      )
     }
   )
-  tryPush(
-    results,
-    'gw_redactraw_circular',
-    'redactRawDeep заменяет цикл на __circular',
-    () => {
-      const obj: Record<string, unknown> = { a: 1 }
-      obj.self = obj
-      const r = redactRawDeep(obj) as Record<string, unknown>
-      return r.a === 1 && r.self === '__circular'
-    }
-  )
+  tryPush(results, 'gw_redactraw_circular', 'redactRawDeep заменяет цикл на __circular', () => {
+    const obj: Record<string, unknown> = { a: 1 }
+    obj.self = obj
+    const r = redactRawDeep(obj) as Record<string, unknown>
+    return r.a === 1 && r.self === '__circular'
+  })
   tryPush(
     results,
     'gw_redactraw_function_nonserializable',
@@ -451,9 +486,13 @@ function runRedactRawDeepChecks(results: GatewayUnitTestResult[]): void {
       const r = redactRawDeep([{ email: 'a@b.c' }, { passport: '1' }]) as unknown[]
       const r0 = r[0] as Record<string, unknown>
       const r1 = r[1] as Record<string, unknown>
-      return Array.isArray(r) && r.length === 2 &&
-        typeof r0.email === 'string' && r0.email !== 'a@b.c' &&
+      return (
+        Array.isArray(r) &&
+        r.length === 2 &&
+        typeof r0.email === 'string' &&
+        r0.email !== 'a@b.c' &&
         r1.passport === '***'
+      )
     }
   )
   tryPush(
@@ -495,6 +534,27 @@ export function runGatewayUnitChecks(): GatewayUnitTestResult[] {
   runBillsV1SemanticChecks(results)
   runCredentialsMaskingChecks(results)
   runRedactRawDeepChecks(results)
+
+  // Smoke: обход рантайм-валидатора (`@app/schema`) в argsTree не деградировал в 'any'.
+  // Ловит тихий слом интроспекции (`as RawSchema`) при смене внутренней структуры схемы.
+  tryPush(
+    results,
+    'gw_catalog_argsTree_resolved',
+    'toOperationSummaries: argsTree createBill раскрыт (amount, customerEmail)',
+    () => {
+      const createBill = toOperationSummaries().find((s) => s.op === 'createBill')
+      if (!createBill || createBill.argsTree.kind !== 'object') return false
+      const amount = createBill.argsTree.fields.find((f) => f.name === 'amount')
+      const email = createBill.argsTree.fields.find((f) => f.name === 'customerEmail')
+      return (
+        !!amount &&
+        amount.node.kind === 'scalar' &&
+        amount.node.type === 'number' &&
+        !!email &&
+        email.node.kind === 'scalar'
+      )
+    }
+  )
 
   const idsBeforeSyncCheck = results.map((r) => r.id)
   runGatewayCatalogSyncCheck(results, idsBeforeSyncCheck)

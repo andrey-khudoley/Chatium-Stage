@@ -15,7 +15,6 @@
 
     <main class="content-wrapper flex-1 relative z-10 min-h-0 overflow-y-auto">
       <div class="content-inner" :class="{ ready: bootLoaderDone }">
-
         <!-- ====== TABS ====== -->
         <nav class="panel-toolbar" aria-label="Разделы и live-режим">
           <div class="panel-tabs" role="tablist">
@@ -33,7 +32,11 @@
             </button>
           </div>
           <div class="panel-toolbar-right">
-            <label class="live-toggle" :class="{ on: liveMode }" :title="liveMode ? 'Авто-обновление включено' : 'Включить авто-обновление'">
+            <label
+              class="live-toggle"
+              :class="{ on: liveMode }"
+              :title="liveMode ? 'Авто-обновление включено' : 'Включить авто-обновление'"
+            >
               <input v-model="liveMode" type="checkbox" />
               <span class="live-dot"></span>
               <span class="live-label">LIVE</span>
@@ -42,7 +45,10 @@
         </nav>
 
         <!-- ====== DATE FILTER (обзор и журналы) ====== -->
-        <section v-show="activeTab === 'overview' || activeTab === 'requests' || activeTab === 'upstream'" class="filter-bar">
+        <section
+          v-show="activeTab === 'overview' || activeTab === 'requests' || activeTab === 'upstream'"
+          class="filter-bar"
+        >
           <div class="filter-group">
             <span class="filter-label"><i class="far fa-calendar"></i> С</span>
             <input v-model="filter.fromDate" type="date" class="filter-input" />
@@ -54,13 +60,27 @@
             <input v-model="filter.toTime" type="time" class="filter-input filter-time" />
           </div>
           <div class="filter-actions">
-            <button type="button" class="btn-mini" :disabled="filterSaving || !filterValid" @click="applyFilter" title="Применить фильтр">
+            <button
+              type="button"
+              class="btn-mini"
+              :disabled="filterSaving || !filterValid"
+              @click="applyFilter"
+              title="Применить фильтр"
+            >
               <i class="fas fa-filter"></i> Применить
             </button>
-            <button type="button" class="btn-mini" :disabled="filterSaving || !hasFilter" @click="resetFilter" title="Сбросить фильтр">
+            <button
+              type="button"
+              class="btn-mini"
+              :disabled="filterSaving || !hasFilter"
+              @click="resetFilter"
+              title="Сбросить фильтр"
+            >
               <i class="fas fa-xmark"></i> Сбросить
             </button>
-            <span v-if="!filterValid" class="filter-msg is-err">Начало не может быть позже окончания</span>
+            <span v-if="!filterValid" class="filter-msg is-err"
+              >Начало не может быть позже окончания</span
+            >
             <span v-else-if="filterError" class="filter-msg is-err">{{ filterError }}</span>
             <span v-else-if="hasFilter" class="filter-msg muted">Фильтр активен</span>
           </div>
@@ -162,8 +182,12 @@
               </div>
               <div v-else class="empty-state">
                 <i class="fas fa-inbox empty-icon"></i>
-                <p class="empty-title">{{ hasFilter ? 'За выбранный период записей нет' : 'Запросов пока нет' }}</p>
-                <p class="empty-hint">Сюда попадут все обращения клиентов к /api/v1/&#123;op&#125;.</p>
+                <p class="empty-title">
+                  {{ hasFilter ? 'За выбранный период записей нет' : 'Запросов пока нет' }}
+                </p>
+                <p class="empty-hint">
+                  Сюда попадут все обращения клиентов к /api/v1/&#123;op&#125;.
+                </p>
               </div>
             </article>
 
@@ -204,7 +228,9 @@
               </div>
               <div v-else class="empty-state">
                 <i class="fas fa-tower-broadcast empty-icon"></i>
-                <p class="empty-title">{{ hasFilter ? 'За выбранный период вызовов нет' : 'Вызовов LifePay пока нет' }}</p>
+                <p class="empty-title">
+                  {{ hasFilter ? 'За выбранный период вызовов нет' : 'Вызовов LifePay пока нет' }}
+                </p>
                 <p class="empty-hint">Сюда попадут все исходящие запросы к LifePay.</p>
               </div>
             </article>
@@ -217,7 +243,12 @@
             <span class="prompt">›</span>
             <h2>Входящие запросы клиентов</h2>
             <span class="updated-since muted">{{ updatedSince(lastUpdated.requests) }}</span>
-            <button type="button" class="btn-mini head-action" @click="loadRequests" title="Обновить">
+            <button
+              type="button"
+              class="btn-mini head-action"
+              @click="loadRequests"
+              title="Обновить"
+            >
               <i class="fas fa-rotate"></i>
             </button>
           </header>
@@ -238,14 +269,20 @@
               <tbody>
                 <tr v-for="r in requests" :key="r.id" :class="rowClassRequest(r)">
                   <td>{{ formatTime(r.requestedAt) }}</td>
-                  <td><code>{{ r.requestId }}</code></td>
+                  <td>
+                    <code>{{ r.requestId }}</code>
+                  </td>
                   <td>{{ r.op }}</td>
                   <td>{{ r.method }}</td>
                   <td>{{ r.clientHttpStatus }}</td>
                   <td>{{ r.errorCode || '—' }}</td>
                   <td>{{ r.durationMs }}</td>
                   <td>
-                    <button class="btn-mini" @click="openRaw('request', r.id)" title="Полное тело запроса">
+                    <button
+                      class="btn-mini"
+                      @click="openRaw('request', r.id)"
+                      title="Полное тело запроса"
+                    >
                       <i class="fas fa-code"></i>
                     </button>
                   </td>
@@ -255,7 +292,9 @@
           </div>
           <div v-else class="empty-state">
             <i class="fas fa-inbox empty-icon"></i>
-            <p class="empty-title">{{ hasFilter ? 'За выбранный период записей нет' : 'Запросов пока нет' }}</p>
+            <p class="empty-title">
+              {{ hasFilter ? 'За выбранный период записей нет' : 'Запросов пока нет' }}
+            </p>
             <p class="empty-hint">Сюда попадут все обращения клиентов к /api/v1/{op}.</p>
           </div>
         </section>
@@ -266,7 +305,12 @@
             <span class="prompt">›</span>
             <h2>Исходящие вызовы к LifePay</h2>
             <span class="updated-since muted">{{ updatedSince(lastUpdated.upstream) }}</span>
-            <button type="button" class="btn-mini head-action" @click="loadUpstream" title="Обновить">
+            <button
+              type="button"
+              class="btn-mini head-action"
+              @click="loadUpstream"
+              title="Обновить"
+            >
               <i class="fas fa-rotate"></i>
             </button>
           </header>
@@ -287,14 +331,20 @@
               <tbody>
                 <tr v-for="u in upstream" :key="u.id" :class="rowClassUpstream(u)">
                   <td>{{ formatTime(u.sentAt) }}</td>
-                  <td><code>{{ u.requestId }}</code></td>
+                  <td>
+                    <code>{{ u.requestId }}</code>
+                  </td>
                   <td>{{ u.op }}</td>
                   <td>{{ u.upstreamKind }}</td>
                   <td>{{ u.lpHttpStatus || '—' }}</td>
                   <td>{{ u.semanticRule || '—' }}</td>
                   <td>{{ u.durationMs }}</td>
                   <td>
-                    <button class="btn-mini" @click="openRaw('upstream', u.id)" title="Полное тело ответа LifePay">
+                    <button
+                      class="btn-mini"
+                      @click="openRaw('upstream', u.id)"
+                      title="Полное тело ответа LifePay"
+                    >
                       <i class="fas fa-code"></i>
                     </button>
                   </td>
@@ -304,7 +354,9 @@
           </div>
           <div v-else class="empty-state">
             <i class="fas fa-tower-broadcast empty-icon"></i>
-            <p class="empty-title">{{ hasFilter ? 'За выбранный период вызовов нет' : 'Вызовов LifePay пока нет' }}</p>
+            <p class="empty-title">
+              {{ hasFilter ? 'За выбранный период вызовов нет' : 'Вызовов LifePay пока нет' }}
+            </p>
             <p class="empty-hint">Сюда попадут все исходящие запросы к LifePay.</p>
           </div>
         </section>
@@ -315,10 +367,20 @@
             <header class="panel-section-head">
               <span class="prompt">›</span>
               <h2>Пригласительные ссылки</h2>
-              <button type="button" class="btn-mini head-action" @click="loadInvites" title="Обновить">
+              <button
+                type="button"
+                class="btn-mini head-action"
+                @click="loadInvites"
+                title="Обновить"
+              >
                 <i class="fas fa-rotate"></i>
               </button>
-              <button type="button" class="btn-mini" @click="openCreateInvite" title="Создать пригласительную ссылку">
+              <button
+                type="button"
+                class="btn-mini"
+                @click="openCreateInvite"
+                title="Создать пригласительную ссылку"
+              >
                 <i class="fas fa-plus"></i> Создать инвайт
               </button>
             </header>
@@ -337,14 +399,29 @@
                 </thead>
                 <tbody>
                   <tr v-for="inv in invites" :key="inv.inviteId">
-                    <td><span class="badge" :class="'badge-' + inv.status">{{ inviteStatusLabel(inv.status) }}</span></td>
+                    <td>
+                      <span class="badge" :class="'badge-' + inv.status">{{
+                        inviteStatusLabel(inv.status)
+                      }}</span>
+                    </td>
                     <td>{{ inv.note || '—' }}</td>
                     <td>{{ inv.createdByDisplayName }}</td>
                     <td>{{ formatDateTime(inv.issuedAt) }}</td>
                     <td>{{ formatDateTime(inv.expiresAt) }}</td>
-                    <td>{{ inv.usedByDisplayName ? `${inv.usedByDisplayName} (${formatDateTime(inv.usedAt)})` : '—' }}</td>
                     <td>
-                      <button v-if="inv.status === 'active'" class="btn-mini btn-danger" @click="revokeInvite(inv.inviteId)" title="Отозвать инвайт">
+                      {{
+                        inv.usedByDisplayName
+                          ? `${inv.usedByDisplayName} (${formatDateTime(inv.usedAt)})`
+                          : '—'
+                      }}
+                    </td>
+                    <td>
+                      <button
+                        v-if="inv.status === 'active'"
+                        class="btn-mini btn-danger"
+                        @click="revokeInvite(inv.inviteId)"
+                        title="Отозвать инвайт"
+                      >
                         <i class="fas fa-ban"></i>
                       </button>
                     </td>
@@ -355,7 +432,9 @@
             <div v-else class="empty-state">
               <i class="fas fa-link empty-icon"></i>
               <p class="empty-title">Инвайтов пока нет</p>
-              <p class="empty-hint">Создайте ссылку и передайте её сотруднику, которому нужен доступ к панели.</p>
+              <p class="empty-hint">
+                Создайте ссылку и передайте её сотруднику, которому нужен доступ к панели.
+              </p>
             </div>
           </section>
 
@@ -363,7 +442,12 @@
             <header class="panel-section-head">
               <span class="prompt">›</span>
               <h2>Выданные доступы</h2>
-              <button type="button" class="btn-mini head-action" @click="loadGrants" title="Обновить">
+              <button
+                type="button"
+                class="btn-mini head-action"
+                @click="loadGrants"
+                title="Обновить"
+              >
                 <i class="fas fa-rotate"></i>
               </button>
             </header>
@@ -381,13 +465,22 @@
                 </thead>
                 <tbody>
                   <tr v-for="g in grants" :key="g.userId" :class="{ 'row-revoked': !g.active }">
-                    <td><span class="badge" :class="g.active ? 'badge-active' : 'badge-revoked'">{{ g.active ? 'активен' : 'отозван' }}</span></td>
+                    <td>
+                      <span class="badge" :class="g.active ? 'badge-active' : 'badge-revoked'">{{
+                        g.active ? 'активен' : 'отозван'
+                      }}</span>
+                    </td>
                     <td>{{ g.userDisplayName }}</td>
                     <td>{{ g.userEmail || '—' }}</td>
                     <td>{{ formatDateTime(g.grantedAt) }}</td>
                     <td>{{ g.grantedByDisplayName }}</td>
                     <td>
-                      <button v-if="g.active" class="btn-mini btn-danger" @click="revokeGrant(g.userId)" title="Отозвать доступ">
+                      <button
+                        v-if="g.active"
+                        class="btn-mini btn-danger"
+                        @click="revokeGrant(g.userId)"
+                        title="Отозвать доступ"
+                      >
                         <i class="fas fa-user-slash"></i>
                       </button>
                     </td>
@@ -398,11 +491,26 @@
             <div v-else class="empty-state">
               <i class="fas fa-users empty-icon"></i>
               <p class="empty-title">Выданных доступов нет</p>
-              <p class="empty-hint">Администраторы аккаунта имеют доступ автоматически, без записи здесь.</p>
+              <p class="empty-hint">
+                Администраторы аккаунта имеют доступ автоматически, без записи здесь.
+              </p>
             </div>
           </section>
         </template>
 
+        <!-- ====== TAB: REQUEST BUILDER ====== -->
+        <section v-show="activeTab === 'request-builder'" class="panel-section">
+          <header class="panel-section-head">
+            <span class="prompt">›</span>
+            <h2>Создать запрос</h2>
+            <span class="updated-since muted">Имитация внешнего вызова /api/v1/&#123;op&#125;</span>
+          </header>
+          <RequestTestTab
+            :operationsCatalog="operationsCatalog"
+            :projectRoot="projectRoot"
+            :testValues="testValues"
+          />
+        </section>
       </div>
     </main>
 
@@ -430,15 +538,17 @@
           </p>
           <template v-else-if="rawModal.entry">
             <div class="raw-modal-actions">
-              <button class="btn-mini" @click="copyText(rawJsonString(rawModal.entry))" title="Скопировать JSON">
+              <button
+                class="btn-mini"
+                @click="copyText(rawJsonString(rawModal.entry))"
+                title="Скопировать JSON"
+              >
                 <i class="far fa-copy"></i> Скопировать
               </button>
             </div>
             <pre class="json-block">{{ rawJsonString(rawModal.entry) }}</pre>
           </template>
-          <p v-else class="muted">
-            <i class="fas fa-circle-info"></i> Запись не найдена.
-          </p>
+          <p v-else class="muted"><i class="fas fa-circle-info"></i> Запись не найдена.</p>
         </div>
       </div>
     </div>
@@ -449,28 +559,49 @@
         <header class="raw-modal-head">
           <span class="prompt">›</span>
           <h2>Создать пригласительную ссылку</h2>
-          <button type="button" class="btn-mini head-action" @click="closeCreateInvite" title="Закрыть">
+          <button
+            type="button"
+            class="btn-mini head-action"
+            @click="closeCreateInvite"
+            title="Закрыть"
+          >
             <i class="fas fa-xmark"></i> Закрыть
           </button>
         </header>
         <div class="raw-modal-body">
           <template v-if="!createModal.result">
             <label class="field-label">Комментарий (необязательно)</label>
-            <input v-model="createModal.note" type="text" class="filter-input field-full" placeholder="например: для Ольги" />
+            <input
+              v-model="createModal.note"
+              type="text"
+              class="filter-input field-full"
+              placeholder="например: для Ольги"
+            />
             <p v-if="createModal.error" class="form-msg is-err">{{ createModal.error }}</p>
             <div class="raw-modal-actions">
-              <button class="btn-mini btn-primary" :disabled="createModal.submitting" @click="submitCreateInvite">
+              <button
+                class="btn-mini btn-primary"
+                :disabled="createModal.submitting"
+                @click="submitCreateInvite"
+              >
                 <i v-if="createModal.submitting" class="fas fa-spinner fa-spin"></i>
                 <span>{{ createModal.submitting ? 'Создание…' : 'Создать ссылку' }}</span>
               </button>
             </div>
           </template>
           <template v-else>
-            <p class="form-msg is-ok"><i class="fas fa-circle-check"></i> Ссылка создана. Скопируйте её — повторно она не показывается.</p>
+            <p class="form-msg is-ok">
+              <i class="fas fa-circle-check"></i> Ссылка создана. Скопируйте её — повторно она не
+              показывается.
+            </p>
             <pre class="json-block">{{ createModal.result.fullUrl }}</pre>
             <div class="raw-modal-actions">
-              <button class="btn-mini" @click="copyText(createModal.result.fullUrl)"><i class="far fa-copy"></i> Скопировать ссылку</button>
-              <button class="btn-mini btn-primary" @click="closeCreateInvite"><i class="fas fa-check"></i> Готово</button>
+              <button class="btn-mini" @click="copyText(createModal.result.fullUrl)">
+                <i class="far fa-copy"></i> Скопировать ссылку
+              </button>
+              <button class="btn-mini btn-primary" @click="closeCreateInvite">
+                <i class="fas fa-check"></i> Готово
+              </button>
             </div>
           </template>
         </div>
@@ -483,6 +614,7 @@
 import Header from '../components/Header.vue'
 import GlobalGlitch from '../components/GlobalGlitch.vue'
 import AppFooter from '../components/AppFooter.vue'
+import RequestTestTab from '../components/RequestTestTab.vue'
 import { createComponentLogger } from '../shared/logger'
 
 const REFRESH_INTERVAL_MS = 15000
@@ -510,7 +642,7 @@ function partsToMs(date, time, endOfDay) {
 
 export default {
   name: 'GatewayHomePage',
-  components: { Header, GlobalGlitch, AppFooter },
+  components: { Header, GlobalGlitch, AppFooter, RequestTestTab },
   props: {
     projectTitle: { type: String, default: 'LifePay Gateway / Панель' },
     indexUrl: { type: String, default: '/' },
@@ -520,6 +652,12 @@ export default {
     isAdmin: { type: Boolean, default: false },
     adminUrl: { type: String, default: '' },
     testsUrl: { type: String, default: '' },
+    // Каталог интеграционных операций для формы «Создать запрос» (SSR-проп).
+    operationsCatalog: { type: Array, default: () => [] },
+    // Тестовые значения из Heap для кнопок «Подставить» (SSR-проп). Пустые строки = не заданы.
+    testValues: { type: Object, default: () => ({ testApiKey: '', testLogin: '' }) },
+    // Путь проекта от корня воркспэйса (для fetch к /{projectRoot}/api/v1/{op}).
+    projectRoot: { type: String, default: 'p/saas/gw/lifepay' },
     initialDateFilter: {
       type: Object,
       default: () => ({})
@@ -595,6 +733,9 @@ export default {
         { id: 'requests', label: 'Входящие', icon: 'fa-list' },
         { id: 'upstream', label: 'К LifePay', icon: 'fa-tower-broadcast' }
       ]
+      if (this.operationsCatalog && this.operationsCatalog.length > 0) {
+        tabs.push({ id: 'request-builder', label: 'Создать запрос', icon: 'fa-paper-plane' })
+      }
       if (this.isAdmin) {
         tabs.push({ id: 'access', label: 'Доступы', icon: 'fa-user-shield' })
       }
@@ -619,7 +760,8 @@ export default {
       const f = this.fromMs
       const t = this.toMs
       if (f === undefined && t === undefined) return 'за всё время'
-      if (f !== undefined && t !== undefined) return `с ${this.formatDateTime(f)} по ${this.formatDateTime(t)}`
+      if (f !== undefined && t !== undefined)
+        return `с ${this.formatDateTime(f)} по ${this.formatDateTime(t)}`
       if (f !== undefined) return `с ${this.formatDateTime(f)}`
       return `по ${this.formatDateTime(t)}`
     },
@@ -640,7 +782,10 @@ export default {
       if (value === 'requests') this.loadRequests()
       else if (value === 'upstream') this.loadUpstream()
       else if (value === 'overview') this.loadCounts()
-      else if (value === 'access') { this.loadInvites(); this.loadGrants() }
+      else if (value === 'access') {
+        this.loadInvites()
+        this.loadGrants()
+      }
     }
   },
   mounted() {
@@ -649,12 +794,17 @@ export default {
     const bootReady = !!window.bootLoaderComplete
     if (bootReady) this.onBootComplete()
     else window.addEventListener('bootloader-complete', this.onBootComplete)
-    this.tickTimer = setInterval(() => { this.now = Date.now() }, TICK_INTERVAL_MS)
+    this.tickTimer = setInterval(() => {
+      this.now = Date.now()
+    }, TICK_INTERVAL_MS)
   },
   beforeUnmount() {
     log.info('beforeUnmount')
     this.stopRefresh()
-    if (this.tickTimer) { clearInterval(this.tickTimer); this.tickTimer = null }
+    if (this.tickTimer) {
+      clearInterval(this.tickTimer)
+      this.tickTimer = null
+    }
     window.removeEventListener('bootloader-complete', this.onBootComplete)
   },
   methods: {
@@ -670,7 +820,9 @@ export default {
         e.target.classList.add('app-layout-appeared')
       }
     },
-    setTab(id) { this.activeTab = id },
+    setTab(id) {
+      this.activeTab = id
+    },
     applyLiveMode() {
       if (this.liveMode) this.startRefresh()
       else this.stopRefresh()
@@ -684,7 +836,10 @@ export default {
       }, REFRESH_INTERVAL_MS)
     },
     stopRefresh() {
-      if (this.refreshTimer) { clearInterval(this.refreshTimer); this.refreshTimer = null }
+      if (this.refreshTimer) {
+        clearInterval(this.refreshTimer)
+        this.refreshTimer = null
+      }
     },
 
     /** Дописывает dateFrom/dateTo к URL журнала, если фильтр активен. */
@@ -716,7 +871,9 @@ export default {
       const base = this.apiUrls && this.apiUrls.recentRequests
       if (!base) return
       try {
-        const res = await fetch(this.withDateRange(base), { headers: { Accept: 'application/json' } })
+        const res = await fetch(this.withDateRange(base), {
+          headers: { Accept: 'application/json' }
+        })
         const data = await res.json()
         if (data && data.success && Array.isArray(data.entries)) {
           this.requests = data.entries
@@ -730,7 +887,9 @@ export default {
       const base = this.apiUrls && this.apiUrls.recentUpstream
       if (!base) return
       try {
-        const res = await fetch(this.withDateRange(base), { headers: { Accept: 'application/json' } })
+        const res = await fetch(this.withDateRange(base), {
+          headers: { Accept: 'application/json' }
+        })
         const data = await res.json()
         if (data && data.success && Array.isArray(data.entries)) {
           this.upstream = data.entries
@@ -796,7 +955,10 @@ export default {
     },
 
     async openRaw(kind, id) {
-      const url = kind === 'upstream' ? (this.apiUrls && this.apiUrls.rawUpstream) : (this.apiUrls && this.apiUrls.rawRequest)
+      const url =
+        kind === 'upstream'
+          ? this.apiUrls && this.apiUrls.rawUpstream
+          : this.apiUrls && this.apiUrls.rawRequest
       if (!url || !id) {
         this.rawModal = { kind, id, entry: null, loading: false, error: 'URL или id отсутствуют' }
         return
@@ -810,7 +972,13 @@ export default {
         })
         const data = await res.json()
         if (!data || data.success !== true) {
-          this.rawModal = { kind, id, entry: null, loading: false, error: (data && data.error) || 'Ошибка загрузки' }
+          this.rawModal = {
+            kind,
+            id,
+            entry: null,
+            loading: false,
+            error: (data && data.error) || 'Ошибка загрузки'
+          }
           return
         }
         this.rawModal = { kind, id, entry: data.entry || null, loading: false, error: '' }
@@ -818,10 +986,16 @@ export default {
         this.rawModal = { kind, id, entry: null, loading: false, error: String(e) }
       }
     },
-    closeRaw() { this.rawModal = null },
+    closeRaw() {
+      this.rawModal = null
+    },
     rawJsonString(entry) {
       if (!entry) return ''
-      try { return JSON.stringify(entry, null, 2) } catch (_e) { return '<unstringifiable>' }
+      try {
+        return JSON.stringify(entry, null, 2)
+      } catch (_e) {
+        return '<unstringifiable>'
+      }
     },
 
     /* ===== Access (Admin only) ===== */
@@ -911,11 +1085,16 @@ export default {
     },
     inviteStatusLabel(status) {
       switch (status) {
-        case 'active': return 'активен'
-        case 'used': return 'использован'
-        case 'revoked': return 'отозван'
-        case 'expired': return 'истёк'
-        default: return status
+        case 'active':
+          return 'активен'
+        case 'used':
+          return 'использован'
+        case 'revoked':
+          return 'отозван'
+        case 'expired':
+          return 'истёк'
+        default:
+          return status
       }
     },
 
@@ -941,7 +1120,11 @@ export default {
     },
     formatDateTime(ts) {
       if (!ts) return '—'
-      try { return new Date(ts).toLocaleString('ru-RU', { hour12: false }) } catch (_e) { return '—' }
+      try {
+        return new Date(ts).toLocaleString('ru-RU', { hour12: false })
+      } catch (_e) {
+        return '—'
+      }
     },
     updatedSince(ts) {
       if (!ts) return ''
@@ -960,7 +1143,9 @@ export default {
       return 'row-err'
     },
     copyText(text) {
-      try { if (navigator && navigator.clipboard) navigator.clipboard.writeText(text) } catch (_e) {}
+      try {
+        if (navigator && navigator.clipboard) navigator.clipboard.writeText(text)
+      } catch (_e) {}
     }
   }
 }
@@ -973,7 +1158,9 @@ export default {
   background: transparent;
   position: relative;
 }
-.content-wrapper { padding: 1.5rem 0 2rem; }
+.content-wrapper {
+  padding: 1.5rem 0 2rem;
+}
 .content-inner {
   width: 100%;
   max-width: 1280px;
@@ -994,10 +1181,18 @@ export default {
   background: rgba(20, 20, 20, 0.65);
   border: 1px solid var(--color-border);
   clip-path: polygon(
-    0 3px, 3px 3px, 3px 0,
-    calc(100% - 3px) 0, calc(100% - 3px) 3px, 100% 3px,
-    100% calc(100% - 3px), calc(100% - 3px) calc(100% - 3px), calc(100% - 3px) 100%,
-    3px 100%, 3px calc(100% - 3px), 0 calc(100% - 3px)
+    0 3px,
+    3px 3px,
+    3px 0,
+    calc(100% - 3px) 0,
+    calc(100% - 3px) 3px,
+    100% 3px,
+    100% calc(100% - 3px),
+    calc(100% - 3px) calc(100% - 3px),
+    calc(100% - 3px) 100%,
+    3px 100%,
+    3px calc(100% - 3px),
+    0 calc(100% - 3px)
   );
 }
 .panel-tabs {
@@ -1020,12 +1215,24 @@ export default {
   cursor: pointer;
   position: relative;
   overflow: hidden;
-  transition: color 0.2s ease, border-color 0.2s ease, transform 0.2s ease, background 0.2s ease;
+  transition:
+    color 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.2s ease,
+    background 0.2s ease;
   clip-path: polygon(
-    0 3px, 3px 3px, 3px 0,
-    calc(100% - 3px) 0, calc(100% - 3px) 3px, 100% 3px,
-    100% calc(100% - 3px), calc(100% - 3px) calc(100% - 3px), calc(100% - 3px) 100%,
-    3px 100%, 3px calc(100% - 3px), 0 calc(100% - 3px)
+    0 3px,
+    3px 3px,
+    3px 0,
+    calc(100% - 3px) 0,
+    calc(100% - 3px) 3px,
+    100% 3px,
+    100% calc(100% - 3px),
+    calc(100% - 3px) calc(100% - 3px),
+    calc(100% - 3px) 100%,
+    3px 100%,
+    3px calc(100% - 3px),
+    0 calc(100% - 3px)
   );
 }
 .tab.active {
@@ -1033,7 +1240,12 @@ export default {
   border-color: var(--color-accent);
   background: var(--color-accent-light);
 }
-.panel-toolbar-right { margin-left: auto; display: flex; align-items: center; gap: 0.75rem; }
+.panel-toolbar-right {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
 .live-toggle {
   display: inline-flex;
   flex-shrink: 0;
@@ -1048,9 +1260,13 @@ export default {
   border: 1px solid var(--color-border);
   background: var(--color-bg-tertiary);
 }
-.live-toggle input { display: none; }
+.live-toggle input {
+  display: none;
+}
 .live-toggle .live-dot {
-  width: 8px; height: 8px; border-radius: 50%;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
   background: var(--color-text-tertiary);
 }
 .live-toggle.on .live-dot {
@@ -1058,34 +1274,76 @@ export default {
   box-shadow: 0 0 0 2px rgba(217, 122, 138, 0.2);
   animation: live-pulse 1.5s ease-in-out infinite;
 }
-.live-label { font-size: 0.75rem; letter-spacing: 0.1em; color: var(--color-text-secondary); }
+.live-label {
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  color: var(--color-text-secondary);
+}
 
 /* === Date filter bar === */
 .filter-bar {
-  display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
   background: rgba(20, 20, 20, 0.6);
   border: 1px solid var(--color-border);
   padding: 0.65rem 0.9rem;
   clip-path: polygon(
-    0 3px, 3px 3px, 3px 0,
-    calc(100% - 3px) 0, calc(100% - 3px) 3px, 100% 3px,
-    100% calc(100% - 3px), calc(100% - 3px) calc(100% - 3px), calc(100% - 3px) 100%,
-    3px 100%, 3px calc(100% - 3px), 0 calc(100% - 3px)
+    0 3px,
+    3px 3px,
+    3px 0,
+    calc(100% - 3px) 0,
+    calc(100% - 3px) 3px,
+    100% 3px,
+    100% calc(100% - 3px),
+    calc(100% - 3px) calc(100% - 3px),
+    calc(100% - 3px) 100%,
+    3px 100%,
+    3px calc(100% - 3px),
+    0 calc(100% - 3px)
   );
 }
-.filter-group { display: inline-flex; align-items: center; gap: 0.4rem; }
-.filter-label { font-size: 0.75rem; color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: 0.06em; }
-.filter-label i { color: var(--color-accent); margin-right: 0.25rem; }
+.filter-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.filter-label {
+  font-size: 0.75rem;
+  color: var(--color-text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.filter-label i {
+  color: var(--color-accent);
+  margin-right: 0.25rem;
+}
 .filter-input {
-  background: var(--color-bg); color: var(--color-text);
+  background: var(--color-bg);
+  color: var(--color-text);
   border: 1px solid var(--color-border-light);
-  padding: 0.3rem 0.5rem; font-family: inherit; font-size: 0.8rem;
+  padding: 0.3rem 0.5rem;
+  font-family: inherit;
+  font-size: 0.8rem;
   color-scheme: dark;
 }
-.filter-time { width: 6.5rem; }
-.filter-actions { display: inline-flex; align-items: center; gap: 0.5rem; margin-left: auto; flex-wrap: wrap; }
-.filter-msg { font-size: 0.75rem; }
-.filter-msg.is-err { color: var(--color-accent); }
+.filter-time {
+  width: 6.5rem;
+}
+.filter-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-left: auto;
+  flex-wrap: wrap;
+}
+.filter-msg {
+  font-size: 0.75rem;
+}
+.filter-msg.is-err {
+  color: var(--color-accent);
+}
 
 /* === KPI === */
 .kpi-grid {
@@ -1093,7 +1351,9 @@ export default {
   grid-template-columns: repeat(4, 1fr);
   gap: 0.9rem;
 }
-.kpi-grid-secondary { grid-template-columns: repeat(4, 1fr); }
+.kpi-grid-secondary {
+  grid-template-columns: repeat(4, 1fr);
+}
 .kpi-card {
   position: relative;
   background: rgba(20, 20, 20, 0.65);
@@ -1101,13 +1361,23 @@ export default {
   padding: 1.1rem 1.25rem;
   overflow: hidden;
   clip-path: polygon(
-    0 4px, 4px 4px, 4px 0,
-    calc(100% - 4px) 0, calc(100% - 4px) 4px, 100% 4px,
-    100% calc(100% - 4px), calc(100% - 4px) calc(100% - 4px), calc(100% - 4px) 100%,
-    4px 100%, 4px calc(100% - 4px), 0 calc(100% - 4px)
+    0 4px,
+    4px 4px,
+    4px 0,
+    calc(100% - 4px) 0,
+    calc(100% - 4px) 4px,
+    100% 4px,
+    100% calc(100% - 4px),
+    calc(100% - 4px) calc(100% - 4px),
+    calc(100% - 4px) 100%,
+    4px 100%,
+    4px calc(100% - 4px),
+    0 calc(100% - 4px)
   );
 }
-.kpi-card.kpi-success { border-left: 3px solid var(--color-accent); }
+.kpi-card.kpi-success {
+  border-left: 3px solid var(--color-accent);
+}
 .kpi-icon {
   font-size: 1rem;
   color: var(--color-accent);
@@ -1133,10 +1403,18 @@ export default {
   padding: 0.7rem 0.85rem;
   overflow: hidden;
   clip-path: polygon(
-    0 3px, 3px 3px, 3px 0,
-    calc(100% - 3px) 0, calc(100% - 3px) 3px, 100% 3px,
-    100% calc(100% - 3px), calc(100% - 3px) calc(100% - 3px), calc(100% - 3px) 100%,
-    3px 100%, 3px calc(100% - 3px), 0 calc(100% - 3px)
+    0 3px,
+    3px 3px,
+    3px 0,
+    calc(100% - 3px) 0,
+    calc(100% - 3px) 3px,
+    100% 3px,
+    100% calc(100% - 3px),
+    calc(100% - 3px) calc(100% - 3px),
+    calc(100% - 3px) 100%,
+    3px 100%,
+    3px calc(100% - 3px),
+    0 calc(100% - 3px)
   );
 }
 .stat-label {
@@ -1145,19 +1423,35 @@ export default {
   letter-spacing: 0.1em;
   text-transform: uppercase;
 }
-.stat-label i { margin-right: 0.3rem; color: var(--color-accent); opacity: 0.85; }
+.stat-label i {
+  margin-right: 0.3rem;
+  color: var(--color-accent);
+  opacity: 0.85;
+}
 .stat-value {
   font-size: 1.2rem;
   color: var(--color-text);
   margin-top: 0.15rem;
   line-height: 1.1;
 }
-.stat-value.small { font-size: 0.95rem; }
-.stat-unit { font-size: 0.7rem; color: var(--color-text-tertiary); margin-left: 0.15rem; }
-.kpi-unit { font-size: 0.85rem; color: var(--color-text-tertiary); margin-left: 0.1rem; }
+.stat-value.small {
+  font-size: 0.95rem;
+}
+.stat-unit {
+  font-size: 0.7rem;
+  color: var(--color-text-tertiary);
+  margin-left: 0.15rem;
+}
+.kpi-unit {
+  font-size: 0.85rem;
+  color: var(--color-text-tertiary);
+  margin-left: 0.1rem;
+}
 
 /* === Admin summary === */
-.admin-summary .kpi-grid + .kpi-grid { margin-top: 0.9rem; }
+.admin-summary .kpi-grid + .kpi-grid {
+  margin-top: 0.9rem;
+}
 .summary-title {
   display: flex;
   align-items: center;
@@ -1168,7 +1462,9 @@ export default {
   letter-spacing: 0.05em;
   color: var(--color-text);
 }
-.summary-title .prompt { color: var(--color-accent); }
+.summary-title .prompt {
+  color: var(--color-accent);
+}
 .summary-period {
   margin-left: 0.5rem;
   font-size: 0.72rem;
@@ -1184,9 +1480,17 @@ export default {
   grid-template-columns: 1fr 1fr;
   gap: 0.9rem;
 }
-.compact-table th, .compact-table td { padding: 0.35rem 0.5rem; font-size: 0.72rem; }
-.data-table td.cell-ok { color: #6aaf7e; }
-.data-table td.cell-err { color: #d97a8a; }
+.compact-table th,
+.compact-table td {
+  padding: 0.35rem 0.5rem;
+  font-size: 0.72rem;
+}
+.data-table td.cell-ok {
+  color: #6aaf7e;
+}
+.data-table td.cell-err {
+  color: #d97a8a;
+}
 
 /* === Sections / tables === */
 .panel-section {
@@ -1195,10 +1499,18 @@ export default {
   border: 1px solid var(--color-border);
   padding: 1.25rem 1.25rem 1rem;
   clip-path: polygon(
-    0 4px, 4px 4px, 4px 0,
-    calc(100% - 4px) 0, calc(100% - 4px) 4px, 100% 4px,
-    100% calc(100% - 4px), calc(100% - 4px) calc(100% - 4px), calc(100% - 4px) 100%,
-    4px 100%, 4px calc(100% - 4px), 0 calc(100% - 4px)
+    0 4px,
+    4px 4px,
+    4px 0,
+    calc(100% - 4px) 0,
+    calc(100% - 4px) 4px,
+    100% 4px,
+    100% calc(100% - 4px),
+    calc(100% - 4px) calc(100% - 4px),
+    calc(100% - 4px) 100%,
+    4px 100%,
+    4px calc(100% - 4px),
+    0 calc(100% - 4px)
   );
 }
 .panel-section-head {
@@ -1223,7 +1535,11 @@ export default {
   font-size: 1.1rem;
   line-height: 1;
 }
-.panel-section-head .muted { color: var(--color-text-tertiary); font-size: 0.75rem; margin-left: 0.5rem; }
+.panel-section-head .muted {
+  color: var(--color-text-tertiary);
+  font-size: 0.75rem;
+  margin-left: 0.5rem;
+}
 .btn-mini {
   display: inline-flex;
   align-items: center;
@@ -1237,17 +1553,34 @@ export default {
   letter-spacing: 0.04em;
   cursor: pointer;
   margin-left: 0.35rem;
-  transition: color 0.2s, border-color 0.2s;
+  transition:
+    color 0.2s,
+    border-color 0.2s;
 }
 .btn-mini:hover {
   color: var(--color-accent);
   border-color: var(--color-accent);
 }
-.btn-mini:disabled { opacity: 0.5; cursor: not-allowed; }
-.btn-mini.btn-primary { background: var(--color-accent); border-color: var(--color-accent); color: #fff; }
-.btn-mini.btn-primary:hover { background: var(--color-accent-hover); border-color: var(--color-accent-hover); }
-.btn-mini.btn-danger:hover { color: var(--color-accent); border-color: var(--color-accent); }
-.head-action { margin-left: 0.5rem; }
+.btn-mini:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.btn-mini.btn-primary {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: #fff;
+}
+.btn-mini.btn-primary:hover {
+  background: var(--color-accent-hover);
+  border-color: var(--color-accent-hover);
+}
+.btn-mini.btn-danger:hover {
+  color: var(--color-accent);
+  border-color: var(--color-accent);
+}
+.head-action {
+  margin-left: 0.5rem;
+}
 .table-wrapper {
   overflow-x: auto;
   border: 1px solid var(--color-border);
@@ -1258,7 +1591,8 @@ export default {
   border-collapse: collapse;
   font-size: 0.78rem;
 }
-.data-table th, .data-table td {
+.data-table th,
+.data-table td {
   padding: 0.45rem 0.6rem;
   text-align: left;
   vertical-align: top;
@@ -1273,16 +1607,32 @@ export default {
   font-size: 0.65rem;
   border-bottom: 1px solid var(--color-border-light);
 }
-.data-table .row-err td { color: var(--color-accent); }
-.data-table .row-revoked td { opacity: 0.55; }
-.badge {
-  display: inline-block; padding: 0.1rem 0.45rem;
-  font-size: 0.7rem; border: 1px solid var(--color-border);
+.data-table .row-err td {
+  color: var(--color-accent);
 }
-.badge-active { color: #6aaf7e; border-color: rgba(106, 175, 126, 0.4); }
-.badge-used { color: var(--color-text-secondary); }
-.badge-revoked { color: var(--color-accent); border-color: var(--color-accent); }
-.badge-expired { color: var(--color-text-tertiary); }
+.data-table .row-revoked td {
+  opacity: 0.55;
+}
+.badge {
+  display: inline-block;
+  padding: 0.1rem 0.45rem;
+  font-size: 0.7rem;
+  border: 1px solid var(--color-border);
+}
+.badge-active {
+  color: #6aaf7e;
+  border-color: rgba(106, 175, 126, 0.4);
+}
+.badge-used {
+  color: var(--color-text-secondary);
+}
+.badge-revoked {
+  color: var(--color-accent);
+  border-color: var(--color-accent);
+}
+.badge-expired {
+  color: var(--color-text-tertiary);
+}
 .empty-state {
   padding: 1.75rem 1rem;
   text-align: center;
@@ -1313,13 +1663,20 @@ export default {
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
-.field-full { width: 100%; box-sizing: border-box; }
+.field-full {
+  width: 100%;
+  box-sizing: border-box;
+}
 
 /* === Raw modal === */
 .raw-modal-backdrop {
-  position: fixed; inset: 0; z-index: 999999;
+  position: fixed;
+  inset: 0;
+  z-index: 999999;
   background: rgba(0, 0, 0, 0.75);
-  display: flex; align-items: center; justify-content: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   padding: 2rem;
   backdrop-filter: blur(2px);
 }
@@ -1327,20 +1684,42 @@ export default {
   background: var(--color-bg-secondary);
   border: 1px solid var(--color-border-light);
   border-radius: 6px;
-  width: 100%; max-width: 980px; max-height: 86vh;
-  display: flex; flex-direction: column;
-  box-shadow: 0 12px 60px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(211, 35, 75, 0.15);
+  width: 100%;
+  max-width: 980px;
+  max-height: 86vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow:
+    0 12px 60px rgba(0, 0, 0, 0.6),
+    0 0 0 1px rgba(211, 35, 75, 0.15);
 }
-.raw-modal-narrow { max-width: 560px; }
+.raw-modal-narrow {
+  max-width: 560px;
+}
 .raw-modal-head {
-  display: flex; align-items: center; gap: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
   padding: 0.75rem 1rem;
   border-bottom: 1px solid var(--color-border);
   background: var(--color-bg-tertiary);
 }
-.raw-modal-head h2 { font-size: 1rem; margin: 0; font-weight: 500; flex: 1; }
-.raw-modal-head .muted { margin-left: 0.4rem; color: var(--color-text-tertiary); font-weight: 400; }
-.raw-modal-body { padding: 1rem; overflow: auto; flex: 1; }
+.raw-modal-head h2 {
+  font-size: 1rem;
+  margin: 0;
+  font-weight: 500;
+  flex: 1;
+}
+.raw-modal-head .muted {
+  margin-left: 0.4rem;
+  color: var(--color-text-tertiary);
+  font-weight: 400;
+}
+.raw-modal-body {
+  padding: 1rem;
+  overflow: auto;
+  flex: 1;
+}
 .raw-modal-actions {
   display: flex;
   justify-content: flex-end;
@@ -1354,8 +1733,12 @@ export default {
   word-break: break-all;
   color: var(--color-text);
 }
-.form-msg.is-err { color: #d97a8a; }
-.form-msg.is-ok { color: #6aaf7e; }
+.form-msg.is-err {
+  color: #d97a8a;
+}
+.form-msg.is-ok {
+  color: #6aaf7e;
+}
 .muted {
   color: var(--color-text-tertiary);
   font-size: 0.78rem;
@@ -1363,15 +1746,31 @@ export default {
 }
 
 @media (max-width: 1024px) {
-  .kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .kpi-grid-secondary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .feed-grid { grid-template-columns: 1fr; }
+  .kpi-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .kpi-grid-secondary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .feed-grid {
+    grid-template-columns: 1fr;
+  }
 }
 @media (max-width: 768px) {
-  .kpi-grid { grid-template-columns: 1fr; }
-  .kpi-grid-secondary { grid-template-columns: 1fr; }
-  .data-table { font-size: 0.72rem; }
-  .raw-modal-backdrop { padding: 0.5rem; }
-  .filter-actions { margin-left: 0; }
+  .kpi-grid {
+    grid-template-columns: 1fr;
+  }
+  .kpi-grid-secondary {
+    grid-template-columns: 1fr;
+  }
+  .data-table {
+    font-size: 0.72rem;
+  }
+  .raw-modal-backdrop {
+    padding: 0.5rem;
+  }
+  .filter-actions {
+    margin-left: 0;
+  }
 }
 </style>
