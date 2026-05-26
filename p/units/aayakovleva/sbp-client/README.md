@@ -41,6 +41,7 @@
 
 ## Навигация по документации
 
+- Индекс каталога docs: `docs/README.md`
 - Архитектура: `docs/architecture.md`
 - API: `docs/api.md`
 - Данные: `docs/data.md`
