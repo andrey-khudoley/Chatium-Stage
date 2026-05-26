@@ -180,7 +180,8 @@ async function sendRequest() {
       params.set(k, s)
       query[k] = s
     }
-    if (Array.from(params.keys()).length > 0) url += `?${params.toString()}`
+    const queryString = params.toString()
+    if (queryString) url += `?${queryString}`
   } else {
     headers['Content-Type'] = 'application/json'
     body = JSON.stringify(argsObj)
@@ -256,6 +257,10 @@ function responseSnapshotJson(): string {
   const { statusCode, headers, parsedBody } = responseSnapshot.value
   return formatJson({ statusCode, headers, body: parsedBody })
 }
+
+function onSelectOpChange(event: Event) {
+  selectedOp.value = (event.target as HTMLSelectElement).value
+}
 </script>
 
 <template>
@@ -266,7 +271,7 @@ function responseSnapshotJson(): string {
         id="rt-op"
         class="rt-input"
         :value="selectedOp"
-        @change="(e) => (selectedOp = (e.target as HTMLSelectElement).value)"
+        @change="onSelectOpChange"
       >
         <option v-for="entry in catalog" :key="entry.op" :value="entry.op">
           {{ entry.httpMethod }} /v1/{{ entry.op }} — {{ entry.availability }}

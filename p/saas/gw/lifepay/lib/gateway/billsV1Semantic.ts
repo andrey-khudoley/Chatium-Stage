@@ -156,6 +156,7 @@ function readBillStatusEntry(
   const keys = Object.keys(data)
   if (keys.length === 0) return null
   const billNumber = keys[0]
+  if (billNumber === undefined) return null
   const inner = data[billNumber]
   if (!isObject(inner)) return null
   return { billNumber, inner }

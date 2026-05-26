@@ -1,4 +1,3 @@
-// @shared
 import { jsx } from '@app/html-jsx'
 import { requireRealUser } from '@app/auth'
 import ProfilePage from '../../pages/ProfilePage.vue'
@@ -9,6 +8,7 @@ import { getFullUrl, ROUTES } from '../../config/routes'
 import { PROFILE_PAGE_NAME, getPageTitle, getHeaderText } from '../../config/project'
 import * as settingsLib from '../../lib/settings.lib'
 import { customScrollbarStyles } from '../../styles'
+import { htmlRedirect } from '../../lib/htmlRedirect'
 
 const LOG_PATH = 'web/profile/index'
 
@@ -38,7 +38,7 @@ export const profilePageRoute = app.html('/', async (ctx, req) => {
       message: `[${LOG_PATH}] Редирект на логин: требуется авторизация`,
       payload: { error: String(error), backUrl: req.url }
     })
-    return ctx.resp.redirect('../login?back=' + encodeURIComponent(req.url))
+    return htmlRedirect(ctx, '../login?back=' + encodeURIComponent(req.url))
   }
 
   const isAdmin = user.is('Admin')

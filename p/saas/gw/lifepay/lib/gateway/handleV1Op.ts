@@ -81,7 +81,13 @@ function stripSecretHeaders(headers: Record<string, unknown>): Record<string, un
 }
 
 function extractErrorCodeFromResponse(resp: GatewayHttpResponse): string {
-  const body = resp.body as Record<string, unknown> | null | undefined
+  let body: Record<string, unknown> | null = null
+  try {
+    const parsed = JSON.parse(resp.rawHttpBody)
+    if (parsed && typeof parsed === 'object') body = parsed as Record<string, unknown>
+  } catch {
+    return ''
+  }
   if (!body || body.ok === true) return ''
   const error = body.error
   if (error && typeof error === 'object') {
@@ -288,8 +294,9 @@ function extractLpJsonShape(lpJson: unknown): Record<string, unknown> | undefine
     // Если data — словарь { [billNumber]: object } (как у LifePay bill/status), показать
     // структуру первой записи: ключи + только признаковые скаляры. Персональные значения
     // (телефон, email, ФИО, суммы клиента) не пишутся.
-    if (dataKeys.length > 0) {
-      const firstEntry = (data as Record<string, unknown>)[dataKeys[0]]
+    const firstKey = dataKeys[0]
+    if (firstKey !== undefined) {
+      const firstEntry = (data as Record<string, unknown>)[firstKey]
       if (isObject(firstEntry)) {
         const entryShape: Record<string, unknown> = { keys: Object.keys(firstEntry) }
         for (const probe of ['status', 'state', 'code', 'message', 'paid', 'cancelled', 'created', 'success']) {

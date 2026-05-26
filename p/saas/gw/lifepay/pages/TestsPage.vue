@@ -60,7 +60,8 @@ const intervalIds = { title: null as ReturnType<typeof setInterval> | null, desc
 const MAX_LOG_ENTRIES = 500
 const LOG_FETCH_LIMIT = 50
 const logEntries = ref<LogEntry[]>([])
-let logsSocketSubscription: { unsubscribe?: () => void } | null = null
+// `DataSocketSubscription.listen()` возвращает функцию отписки — её и храним для очистки.
+let logsSocketUnsubscribe: (() => void) | null = null
 const logsOutputRef = ref<HTMLElement | null>(null)
 const logsLoading = ref(false)
 const logsError = ref('')
@@ -135,8 +136,9 @@ function trimOldLogs() {
 }
 
 function updateOldestTimestamp(entries: Array<LogEntry & { id?: string }>) {
-  if (!entries.length) return
-  const oldest = entries.reduce((min, item) => (item.timestamp < min ? item.timestamp : min), entries[0].timestamp)
+  const first = entries[0]
+  if (!first) return
+  const oldest = entries.reduce((min, item) => (item.timestamp < min ? item.timestamp : min), first.timestamp)
   oldestLogTimestamp.value = oldest
 }
 
@@ -159,8 +161,7 @@ const displayedLogs = computed<LogDisplayItem[]>(() => {
   const sorted = [...logEntries.value].sort((a, b) => b.timestamp - a.timestamp)
   const items: LogDisplayItem[] = []
   let lastDateKey = ''
-  for (let i = 0; i < sorted.length; i++) {
-    const entry = sorted[i]
+  for (const [i, entry] of sorted.entries()) {
     const dateKey = getDateKey(entry.timestamp)
     if (i > 0 && dateKey !== lastDateKey) {
       items.push({ type: 'divider', date: formatDateDivider(entry.timestamp) })
@@ -179,8 +180,8 @@ const displayedLogs = computed<LogDisplayItem[]>(() => {
 const displayedLogRowIndices = computed(() => {
   const items = displayedLogs.value
   const indices: number[] = []
-  for (let i = 0; i < items.length; i++) {
-    if (items[i].type === 'log') indices.push(i)
+  for (const [i, item] of items.entries()) {
+    if (item.type === 'log') indices.push(i)
   }
   return indices
 })
@@ -217,7 +218,7 @@ const loadRecentLogs = async () => {
   log.info('loadRecentLogs entry')
   const requestId = ++logsRequestId.value
   const severities = getSeveritiesQueryForStream(selectedLogStream.value)
-  const query: { limit: number; severities?: string } = { limit: LOG_FETCH_LIMIT }
+  const query: { limit: string; severities?: string } = { limit: String(LOG_FETCH_LIMIT) }
   if (severities) query.severities = severities
 
   logsLoading.value = true
@@ -253,9 +254,9 @@ const loadMoreLogs = async () => {
 
   const requestId = ++logsRequestId.value
   const severities = getSeveritiesQueryForStream(selectedLogStream.value)
-  const query: { beforeTimestamp: string; limit: number; severities?: string } = {
+  const query: { beforeTimestamp: string; limit: string; severities?: string } = {
     beforeTimestamp: String(oldestLogTimestamp.value),
-    limit: LOG_FETCH_LIMIT
+    limit: String(LOG_FETCH_LIMIT)
   }
   if (severities) query.severities = severities
 
@@ -383,8 +384,8 @@ onMounted(() => {
     })
     getOrCreateBrowserSocketClient()
       .then((socketClient) => {
-        logsSocketSubscription = socketClient.subscribeToData(props.encodedLogsSocketId!)
-        logsSocketSubscription.listen((data: { type?: string; data?: LogEntry }) => {
+        const logsSocketSubscription = socketClient.subscribeToData(props.encodedLogsSocketId!)
+        logsSocketUnsubscribe = logsSocketSubscription.listen((data: { type?: string; data?: LogEntry }) => {
           if (data?.type === 'new-log' && data.data) {
             const entry = data.data as LogEntry
             if (isBrowserSinkEchoFromSocket(entry)) return
@@ -399,9 +400,9 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   log.info('onBeforeUnmount: cleaning up socket subscription')
-  if (logsSocketSubscription?.unsubscribe) {
-    logsSocketSubscription.unsubscribe()
-    logsSocketSubscription = null
+  if (logsSocketUnsubscribe) {
+    logsSocketUnsubscribe()
+    logsSocketUnsubscribe = null
   }
 })
 

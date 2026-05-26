@@ -11,6 +11,7 @@ import { TESTS_PAGE_NAME, getPageTitle, getHeaderText } from '../../config/proje
 import * as settingsLib from '../../lib/settings.lib'
 import { customScrollbarStyles } from '../../styles'
 import { toOperationSummaries } from '../../lib/gateway/operationsCatalog'
+import { htmlRedirect } from '../../lib/htmlRedirect'
 
 const LOG_PATH = 'web/tests/index'
 
@@ -44,7 +45,7 @@ export const testsPageRoute = app.html('/', async (ctx, req) => {
       message: `[${LOG_PATH}] Редирект на логин: требуется авторизация`,
       payload: { error: String(error), backUrl: req.url }
     })
-    return ctx.resp.redirect('../login?back=' + encodeURIComponent(req.url))
+    return htmlRedirect(ctx, '../login?back=' + encodeURIComponent(req.url))
   }
 
   // Страница тестов доступна только системной роли Admin.
@@ -57,7 +58,7 @@ export const testsPageRoute = app.html('/', async (ctx, req) => {
       message: `[${LOG_PATH}] Доступ запрещён: требуется роль Admin`,
       payload: { error: String(error), displayName: user.displayName }
     })
-    return ctx.resp.redirect(getFullUrl(ROUTES.forbidden))
+    return htmlRedirect(ctx, getFullUrl(ROUTES.forbidden))
   }
 
   const isAdmin = user.is('Admin')

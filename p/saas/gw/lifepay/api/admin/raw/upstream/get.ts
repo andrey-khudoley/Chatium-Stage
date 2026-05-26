@@ -17,20 +17,15 @@ export const getGatewayUpstreamRoute = app.get('/', async (ctx, req) => {
 
   const q = req.query as Record<string, unknown> | undefined
   const idRaw = q?.id
-  const id =
-    typeof idRaw === 'string'
-      ? parseInt(idRaw, 10)
-      : typeof idRaw === 'number'
-      ? idRaw
-      : NaN
+  const id = typeof idRaw === 'string' ? idRaw.trim() : ''
 
   await loggerLib.writeServerLog(ctx, {
     severity: 6,
     message: `[${LOG_PATH}] entry`,
-    payload: { id: Number.isFinite(id) ? id : null }
+    payload: { id: id || null }
   })
 
-  if (!Number.isFinite(id) || id <= 0) {
+  if (!id) {
     return { success: false, error: 'Параметр id обязателен' }
   }
 

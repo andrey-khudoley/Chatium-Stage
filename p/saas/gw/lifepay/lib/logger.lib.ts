@@ -46,6 +46,26 @@ function severityToLevelName(severity: number): string {
   return SEVERITY_TO_LEVEL[s] ?? 'info'
 }
 
+/** Уровень логирования платформы (значения совпадают с типом параметра `ctx.account.log`). */
+type AccountLogLevel = 'fatal' | 'error' | 'warn' | 'info' | 'debug' | 'trace' | 'unknown'
+
+/** Маппинг severity (0–7) в уровень логирования платформы (тип параметра `ctx.account.log`). */
+const SEVERITY_TO_ACCOUNT_LEVEL: Record<number, AccountLogLevel> = {
+  0: 'fatal',
+  1: 'fatal',
+  2: 'fatal',
+  3: 'error',
+  4: 'warn',
+  5: 'info',
+  6: 'info',
+  7: 'debug'
+}
+
+function severityToAccountLogLevel(severity: number): AccountLogLevel {
+  const s = Math.max(0, Math.min(7, Math.floor(severity)))
+  return SEVERITY_TO_ACCOUNT_LEVEL[s] ?? 'info'
+}
+
 /** Внутренняя запись с timestamp и level, вычисленными в lib. */
 type FormattedEntry = { timestamp: number; level: string; message: string }
 
@@ -124,7 +144,10 @@ export async function writeServerLog(ctx: app.Ctx, entry: ServerLogEntry): Promi
     includePayload && typeof effectivePayload === 'object' && effectivePayload !== null && !Array.isArray(effectivePayload)
       ? (effectivePayload as Record<string, unknown>)
       : {}
-  const logPayload = { level, json: { ...payloadObj, message: entry.message } }
+  const logPayload = {
+    level: severityToAccountLogLevel(entry.severity),
+    json: { ...payloadObj, message: entry.message }
+  }
 
   ;(ctx.log as (msg: string) => void)(formattedMessage)
   ctx.account.log(formattedMessage, logPayload)

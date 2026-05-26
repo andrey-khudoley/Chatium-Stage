@@ -15,6 +15,7 @@ import {
 } from './config/project'
 import * as loggerLib from './lib/logger.lib'
 import * as settingsLib from './lib/settings.lib'
+import { htmlRedirect } from './lib/htmlRedirect'
 
 const PANEL_PAGE_NAME = 'Панель'
 
@@ -39,14 +40,14 @@ export const indexPageRoute = app.html('/', async (ctx, req) => {
         message: `[${LOG_PATH}] forbidden_redirect`,
         payload: { userId: ctx.user?.id ?? null }
       })
-      return ctx.resp.redirect(getFullUrl(ROUTE_PATHS.forbidden))
+      return htmlRedirect(ctx, getFullUrl(ROUTE_PATHS.forbidden))
     }
     await loggerLib.writeServerLog(ctx, {
       severity: 4,
       message: `[${LOG_PATH}] signin_redirect`,
       payload: { backUrl: req.url }
     })
-    return ctx.resp.redirect(`/s/auth/signin?back=${encodeURIComponent(req.url)}`)
+    return htmlRedirect(ctx, `/s/auth/signin?back=${encodeURIComponent(req.url)}`)
   }
 
   const isAdmin = ctx.user?.is('Admin') ?? false

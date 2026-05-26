@@ -58,7 +58,7 @@ const PHONE_KEYS = new Set<string>(['phone', 'customerphone', 'userphone', 'tel'
 /** Маскировка email: a@b.c → a***@b***.c. */
 function redactEmail(email: string): string {
   if (typeof email !== 'string' || !email.includes('@')) return '***'
-  const [local, domain] = email.split('@', 2)
+  const [local = '', domain] = email.split('@', 2)
   const localMasked = local.length > 0 ? `${local.charAt(0)}***` : '***'
   if (!domain || !domain.includes('.')) return `${localMasked}@***`
   const lastDot = domain.lastIndexOf('.')

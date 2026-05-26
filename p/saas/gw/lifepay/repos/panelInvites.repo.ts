@@ -25,7 +25,7 @@ export async function findById(
   id: string
 ): Promise<PanelInvitesRow | null> {
   const rows = await PanelInvites.findAll(ctx, { where: { id }, limit: 1 })
-  return rows.length > 0 ? rows[0] : null
+  return rows[0] ?? null
 }
 
 export type CreateInvitePayload = {

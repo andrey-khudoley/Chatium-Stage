@@ -67,11 +67,14 @@ export async function findRecentFiltered(
   if (dateFrom === undefined && dateTo === undefined) {
     return findRecent(ctx, limit)
   }
-  const range: { $gte?: number; $lte?: number } = {}
-  if (dateFrom !== undefined) range.$gte = dateFrom
-  if (dateTo !== undefined) range.$lte = dateTo
+  const sentAt =
+    dateFrom !== undefined && dateTo !== undefined
+      ? { $gte: dateFrom, $lte: dateTo }
+      : dateFrom !== undefined
+        ? { $gte: dateFrom }
+        : { $lte: dateTo as number }
   return GatewayUpstreamLog.findAll(ctx, {
-    where: { sentAt: range },
+    where: { sentAt },
     order: [{ sentAt: 'desc' }],
     limit
   })
@@ -79,13 +82,9 @@ export async function findRecentFiltered(
 
 export async function findById(
   ctx: app.Ctx,
-  id: number
+  id: string
 ): Promise<GatewayUpstreamLogRow | null> {
-  const rows = await GatewayUpstreamLog.findAll(ctx, {
-    where: { id },
-    limit: 1
-  })
-  return rows.length > 0 ? rows[0] : null
+  return GatewayUpstreamLog.findById(ctx, id)
 }
 
 export async function findByRequestId(
@@ -96,7 +95,7 @@ export async function findByRequestId(
     where: { requestId },
     limit: 1
   })
-  return rows.length > 0 ? rows[0] : null
+  return rows[0] ?? null
 }
 
 export async function countSince(

@@ -1,4 +1,3 @@
-// @shared
 /**
  * GET /web/access/invite?token=… — страница приглашения (внутренняя система доступов).
  *
@@ -15,6 +14,7 @@ import * as panelAccessRepo from '../../../repos/panelAccess.repo'
 import { getFullUrl, ROUTE_PATHS } from '../../../config/routes'
 import { AccessMessagePage } from '../../../shared/accessPages'
 import * as loggerLib from '../../../lib/logger.lib'
+import { htmlRedirect } from '../../../lib/htmlRedirect'
 
 const LOG_PATH = 'web/access/invite'
 
@@ -43,7 +43,7 @@ export const inviteAcceptPageRoute = app.html('/', async (ctx, req) => {
     user = requireRealUser(ctx)
   } catch {
     const back = encodeURIComponent(req.url)
-    return ctx.resp.redirect(`/s/auth/signin?back=${back}`)
+    return htmlRedirect(ctx, `/s/auth/signin?back=${back}`)
   }
 
   // Read-only проверка инвайта (без потребления).

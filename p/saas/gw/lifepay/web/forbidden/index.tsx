@@ -1,4 +1,3 @@
-// @shared
 /**
  * GET /web/forbidden — страница 403 (внутренняя система доступов).
  *
@@ -13,6 +12,7 @@ import * as panelAccessRepo from '../../repos/panelAccess.repo'
 import { getFullUrl, ROUTE_PATHS } from '../../config/routes'
 import { AccessMessagePage } from '../../shared/accessPages'
 import * as loggerLib from '../../lib/logger.lib'
+import { htmlRedirect } from '../../lib/htmlRedirect'
 
 const LOG_PATH = 'web/forbidden'
 
@@ -22,18 +22,18 @@ export const forbiddenPageRoute = app.html('/', async (ctx, req) => {
     user = requireRealUser(ctx)
   } catch {
     const back = encodeURIComponent(getFullUrl(ROUTE_PATHS.index))
-    return ctx.resp.redirect(`/s/auth/signin?back=${back}`)
+    return htmlRedirect(ctx, `/s/auth/signin?back=${back}`)
   }
 
   const indexUrl = getFullUrl(ROUTE_PATHS.index)
 
   // У кого есть доступ — на главную (403 им не показываем).
   if (user.is('Admin')) {
-    return ctx.resp.redirect(indexUrl)
+    return htmlRedirect(ctx, indexUrl)
   }
   const activeGrant = await panelAccessRepo.findActiveByUserId(ctx, user.id)
   if (activeGrant) {
-    return ctx.resp.redirect(indexUrl)
+    return htmlRedirect(ctx, indexUrl)
   }
 
   await loggerLib.writeServerLog(ctx, {

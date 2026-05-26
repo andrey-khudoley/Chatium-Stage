@@ -151,8 +151,9 @@ function doesEntryMatchSelectedStream(entry: LogEntry): boolean {
 }
 
 function updateOldestTimestamp(entries: Array<LogEntry & { id?: string }>) {
-  if (!entries.length) return
-  const oldest = entries.reduce((min, item) => (item.timestamp < min ? item.timestamp : min), entries[0].timestamp)
+  const first = entries[0]
+  if (!first) return
+  const oldest = entries.reduce((min, item) => (item.timestamp < min ? item.timestamp : min), first.timestamp)
   oldestLogTimestamp.value = oldest
 }
 
@@ -220,8 +221,7 @@ const displayedLogs = computed<LogDisplayItem[]>(() => {
   const items: LogDisplayItem[] = []
   let lastDateKey = ''
 
-  for (let i = 0; i < sorted.length; i++) {
-    const entry = sorted[i]
+  for (const [i, entry] of sorted.entries()) {
     const dateKey = getDateKey(entry.timestamp)
     
     if (i > 0 && dateKey !== lastDateKey) {
@@ -600,7 +600,7 @@ const openChatiumLink = () => {
 const loadRecentLogs = async () => {
   const requestId = ++logsRequestId.value
   const severities = getSeveritiesQueryForStream(selectedLogStream.value)
-  const query: { limit: number; severities?: string } = { limit: LOG_FETCH_LIMIT }
+  const query: { limit: string; severities?: string } = { limit: String(LOG_FETCH_LIMIT) }
   if (severities) query.severities = severities
 
   logsLoading.value = true
@@ -636,9 +636,9 @@ const loadMoreLogs = async () => {
 
   const requestId = ++logsRequestId.value
   const severities = getSeveritiesQueryForStream(selectedLogStream.value)
-  const query: { beforeTimestamp: string; limit: number; severities?: string } = {
+  const query: { beforeTimestamp: string; limit: string; severities?: string } = {
     beforeTimestamp: String(oldestLogTimestamp.value),
-    limit: LOG_FETCH_LIMIT
+    limit: String(LOG_FETCH_LIMIT)
   }
   if (severities) query.severities = severities
 

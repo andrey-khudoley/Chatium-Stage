@@ -292,7 +292,7 @@ export async function runTemplateIntegrationChecks(ctx: app.Ctx): Promise<Templa
     })
 
     await tryAsync(results, 'api_admin_logs_recent', 'admin/logs/recent', async () => {
-      const r = (await getRecentLogsRoute.query({ limit: 5 }).run(ctx)) as {
+      const r = (await getRecentLogsRoute.query({ limit: '5' }).run(ctx)) as {
         success?: boolean
         entries?: unknown[]
       }
@@ -301,7 +301,7 @@ export async function runTemplateIntegrationChecks(ctx: app.Ctx): Promise<Templa
 
     await tryAsync(results, 'api_admin_logs_before', 'admin/logs/before', async () => {
       const r = (await getLogsBeforeRoute
-        .query({ beforeTimestamp: String(Date.now()), limit: 2 })
+        .query({ beforeTimestamp: String(Date.now()), limit: '2' })
         .run(ctx)) as { success?: boolean }
       return r.success === true
     })
@@ -364,13 +364,13 @@ export async function runTemplateIntegrationChecks(ctx: app.Ctx): Promise<Templa
 
   await tryAsync(results, 'e2e_logs_pagination', 'recent + before', async () => {
     if (!admin) return true
-    const recent = (await getRecentLogsRoute.query({ limit: 3 }).run(ctx)) as {
+    const recent = (await getRecentLogsRoute.query({ limit: '3' }).run(ctx)) as {
       entries?: Array<{ timestamp: number }>
     }
     const ts = recent.entries?.[recent.entries.length - 1]?.timestamp
     if (!ts) return true
     const before = (await getLogsBeforeRoute
-      .query({ beforeTimestamp: String(ts), limit: 2 })
+      .query({ beforeTimestamp: String(ts), limit: '2' })
       .run(ctx)) as { entries?: unknown[]; success?: boolean }
     return before.success === true && Array.isArray(before.entries)
   })
@@ -388,7 +388,7 @@ export async function runTemplateIntegrationChecks(ctx: app.Ctx): Promise<Templa
     await settingsLib.setSetting(ctx, settingsLib.SETTING_KEYS.LOG_LEVEL, 'Debug')
     try {
       await loggerLib.writeServerLog(ctx, { severity: 6, message: mark, payload: { x: 1 } })
-      const recent = (await getRecentLogsRoute.query({ limit: 20 }).run(ctx)) as {
+      const recent = (await getRecentLogsRoute.query({ limit: '20' }).run(ctx)) as {
         entries?: Array<{ args?: unknown[] }>
       }
       return (
