@@ -1,76 +1,121 @@
-// @shared
 import { jsx } from '@app/html-jsx'
+import { requireRealUser } from '@app/auth'
 import HomePage from './pages/HomePage.vue'
 import { getPreloaderStyles, getPreloaderScript } from './shared/preloader'
 import { customScrollbarStyles } from './styles'
 import { getLogLevelForPage, getLogLevelScript } from './shared/logLevel'
-import { getFullUrl, ROUTES } from './config/routes'
+import { getFullUrl, ROUTES, ROUTE_PATHS, PROJECT_ROOT } from './config/routes'
 import {
-  INDEX_PAGE_NAME,
-  BODY_TEXT,
-  BODY_SUBTEXT,
-  getPageTitle,
-  getHeaderText
-} from './config/project'
+  requireInternalAccess,
+  InternalAccessDeniedError
+} from './lib/access/requireInternalAccess'
+import { getPageTitle, getHeaderText } from './config/project'
 import * as loggerLib from './lib/logger.lib'
 import * as settingsLib from './lib/settings.lib'
+import { htmlRedirect } from './lib/htmlRedirect'
+import { toOperationSummaries } from './lib/gateway/operationsCatalog'
+
+const PANEL_PAGE_NAME = 'Панель'
 
 const LOG_PATH = 'index'
 
 export const indexPageRoute = app.html('/', async (ctx, req) => {
   await loggerLib.writeServerLog(ctx, {
     severity: 6,
-    message: `[${LOG_PATH}] Рендер главной страницы`,
+    message: `[${LOG_PATH}] entry`,
     payload: { hasUser: !!ctx.user, isAdmin: ctx.user?.is?.('Admin') ?? false }
   })
 
-  const isAuthenticated = !!ctx.user
+  // Главная gateway — это панель. Доступ: requireRealUser + requireInternalAccess.
+  // Анонимный → на вход; авторизованный без гранта → /web/forbidden.
+  try {
+    requireRealUser(ctx)
+    await requireInternalAccess(ctx)
+  } catch (err) {
+    if (err instanceof InternalAccessDeniedError) {
+      await loggerLib.writeServerLog(ctx, {
+        severity: 4,
+        message: `[${LOG_PATH}] forbidden_redirect`,
+        payload: { userId: ctx.user?.id ?? null }
+      })
+      return htmlRedirect(ctx, getFullUrl(ROUTE_PATHS.forbidden))
+    }
+    await loggerLib.writeServerLog(ctx, {
+      severity: 4,
+      message: `[${LOG_PATH}] signin_redirect`,
+      payload: { backUrl: req.url }
+    })
+    return htmlRedirect(ctx, `/s/auth/signin?back=${encodeURIComponent(req.url)}`)
+  }
+
   const isAdmin = ctx.user?.is('Admin') ?? false
-  await loggerLib.writeServerLog(ctx, {
-    severity: 6,
-    message: `[${LOG_PATH}] Переменные auth`,
-    payload: { isAuthenticated, isAdmin }
-  })
+
   const loginUrl = getFullUrl(ROUTES.login)
   const adminUrl = isAdmin ? getFullUrl(ROUTES.admin) : ''
-  const testsUrl = isAuthenticated ? getFullUrl(ROUTES.tests) : ''
-  await loggerLib.writeServerLog(ctx, {
-    severity: 6,
-    message: `[${LOG_PATH}] URL-ы`,
-    payload: { loginUrl, adminUrl, testsUrl }
-  })
+  // Тесты доступны только роли Admin — ссылку в шапке показываем лишь админу.
+  const testsUrl = isAdmin ? getFullUrl(ROUTES.tests) : ''
+  const indexUrl = getFullUrl(ROUTES.index)
+  const profileUrl = getFullUrl(ROUTES.profile)
+
+  // Глобальный фильтр панели по дате/времени (Unix ms). Читается из Heap на SSR.
+  const initialDateFilter = await settingsLib.getPanelDateFilter(ctx)
+
+  const apiUrls = {
+    recentRequests: getFullUrl('/api/admin/raw/requests/recent'),
+    recentUpstream: getFullUrl('/api/admin/raw/upstream/recent'),
+    rawRequest: getFullUrl('/api/admin/raw/requests/get'),
+    rawUpstream: getFullUrl('/api/admin/raw/upstream/get'),
+    counts: getFullUrl('/api/admin/dashboard/gatewayCounts'),
+    filterSave: getFullUrl('/api/admin/analytics/filter-save'),
+    recentWebhooks: getFullUrl('/api/admin/webhooks/recent'),
+    reforwardWebhook: getFullUrl('/api/admin/webhooks/reforward'),
+    accessGenerateInvite: getFullUrl('/api/access/generate-invite'),
+    accessRevokeInvite: getFullUrl('/api/access/revoke-invite'),
+    accessRevokeGrant: getFullUrl('/api/access/revoke-grant'),
+    accessInvites: getFullUrl('/api/access/invites'),
+    accessGrants: getFullUrl('/api/access/grants')
+  }
+
   const logLevel = await getLogLevelForPage(ctx)
   const projectName = await settingsLib.getSettingString(ctx, settingsLib.SETTING_KEYS.PROJECT_NAME)
+
+  // Каталог операций и тестовые значения для вкладки «Создать запрос».
+  // ВНИМАНИЕ: тестовое значение (lava_test_apikey) попадает в HTML SSR-страницы.
+  // Это намеренно — страница за requireInternalAccess, ключ тестовый (не продакшен-секрет).
+  const operationsCatalog = toOperationSummaries()
+  const testApiKey = await settingsLib.getLavaTestApiKey(ctx)
+  const testValues = { testApiKey }
+
   await loggerLib.writeServerLog(ctx, {
     severity: 6,
-    message: `[${LOG_PATH}] Переменные для рендера`,
-    payload: { logLevel, projectName }
+    message: `[${LOG_PATH}] render`,
+    payload: { logLevel, projectName, operationsCount: operationsCatalog.length }
   })
 
   return (
     <html>
       <head>
-        <title>{getPageTitle(INDEX_PAGE_NAME, projectName)}</title>
+        <title>{getPageTitle(PANEL_PAGE_NAME, projectName)}</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta charset="UTF-8" />
         <script>{getLogLevelScript(logLevel)}</script>
         <style>{`
-          html { 
+          html {
             background: #0a0a0a;
           }
-          body { 
-            margin: 0; 
+          body {
+            margin: 0;
             background: #0a0a0a;
             position: relative;
             min-height: 100vh;
             overflow: hidden;
           }
-          
+
           body.boot-complete {
             overflow-x: hidden;
             overflow-y: auto;
           }
-          
+
           /* Скрываем контент до завершения загрузки */
           .app-layout:not(.global-glitch-active) {
             opacity: 0;
@@ -79,24 +124,24 @@ export const indexPageRoute = app.html('/', async (ctx, req) => {
             transform: scale(0.96);
             filter: blur(1px);
           }
-          
+
           /* Анимация появления запускается только один раз при загрузке */
           body.boot-complete .app-layout:not(.app-layout-appeared) {
             animation: crt-power-on 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.5s forwards;
           }
-          
+
           /* После завершения анимации появления класс предотвращает её повторный запуск */
           body.boot-complete .app-layout.app-layout-appeared:not(.global-glitch-active) {
             opacity: 1 !important;
             transform: scale(1) translate(0, 0) !important;
             filter: blur(0) !important;
           }
-          
+
           /* При активном глитче убираем все конфликтующие стили */
           body.boot-complete .app-layout.global-glitch-active {
             opacity: 1 !important;
           }
-          
+
           @keyframes crt-power-on {
             0% {
               opacity: 0;
@@ -169,7 +214,7 @@ export const indexPageRoute = app.html('/', async (ctx, req) => {
               filter: blur(0);
             }
           }
-          
+
           /* LAYER 1: Realistic CRT Screen Vignette (BEHIND content, z-index: 1) */
           #geometric-bg {
             position: fixed;
@@ -179,7 +224,7 @@ export const indexPageRoute = app.html('/', async (ctx, req) => {
             bottom: 0;
             z-index: 1;
             pointer-events: none;
-            background: 
+            background:
               radial-gradient(
                 ellipse 100% 100% at 50% 50%,
                 transparent 0%,
@@ -190,15 +235,15 @@ export const indexPageRoute = app.html('/', async (ctx, req) => {
                 rgba(0, 0, 0, 0.99) 100%
               );
             border-radius: 3% / 4%;
-            box-shadow: 
+            box-shadow:
               inset 0 0 200px 50px rgba(0, 0, 0, 0.8),
               inset 0 0 100px 20px rgba(0, 0, 0, 0.6);
             animation: crt-ambient-glow 3s ease-in-out infinite;
           }
-          
+
           @media (max-width: 768px) {
             #geometric-bg {
-              background: 
+              background:
                 radial-gradient(
                   ellipse 150% 100% at 50% 50%,
                   transparent 0%,
@@ -207,17 +252,17 @@ export const indexPageRoute = app.html('/', async (ctx, req) => {
                   rgba(0, 0, 0, 0.95) 100%
                 );
               border-radius: 0;
-              box-shadow: 
+              box-shadow:
                 inset 0 100px 80px -50px rgba(0, 0, 0, 0.9),
                 inset 0 -100px 80px -50px rgba(0, 0, 0, 0.9);
             }
           }
-          
+
           @keyframes crt-ambient-glow {
             0%, 100% { opacity: 1; }
             50% { opacity: 0.97; }
           }
-          
+
           /* LAYER 3: Cosmetic overlay - Scanlines and subtle effects (TOP, z-index: 999999) */
           body::after {
             content: '';
@@ -237,28 +282,28 @@ export const indexPageRoute = app.html('/', async (ctx, req) => {
             z-index: 999999;
             border-radius: 3% / 4%;
             opacity: 0;
-            animation: 
+            animation:
               scanline-fade-in 0.6s ease-out 1s forwards,
               scanline-flicker 8s linear 1.6s infinite;
           }
-          
+
           @keyframes scanline-fade-in {
             from { opacity: 0; }
             to { opacity: 0.3; }
           }
-          
+
           @keyframes scanline-flicker {
             0% { opacity: 0.25; }
             50% { opacity: 0.35; }
             100% { opacity: 0.25; }
           }
-          
+
           @media (max-width: 768px) {
             body::after {
               border-radius: 0;
             }
           }
-          
+
           /* Screen bezel effect */
           body::before {
             content: '';
@@ -270,18 +315,18 @@ export const indexPageRoute = app.html('/', async (ctx, req) => {
             pointer-events: none;
             z-index: 999998;
             border-radius: 3% / 4%;
-            box-shadow: 
+            box-shadow:
               inset 0 0 80px rgba(0, 0, 0, 0.3),
               inset 0 2px 1px rgba(255, 255, 255, 0.01);
             opacity: 0;
             animation: bezel-fade-in 0.8s ease-out 1.2s forwards;
           }
-          
+
           @keyframes bezel-fade-in {
             from { opacity: 0; }
             to { opacity: 1; }
           }
-          
+
           @media (max-width: 768px) {
             body::before {
               border-radius: 0;
@@ -318,7 +363,7 @@ export const indexPageRoute = app.html('/', async (ctx, req) => {
             50% { transform: translate(-50px, 50px) scale(1.1); }
           }
           ${getPreloaderStyles()}
-          
+
           /* TV Glitch Effect */
           #tv-glitch {
             position: fixed;
@@ -330,16 +375,16 @@ export const indexPageRoute = app.html('/', async (ctx, req) => {
             pointer-events: none;
             opacity: 0;
           }
-          
+
           #tv-glitch.active {
             animation: glitch-wave 1s cubic-bezier(0.4, 0, 0.2, 1);
           }
-          
+
           @keyframes glitch-wave {
             0%, 100% { opacity: 0; }
             10%, 90% { opacity: 0.8; }
           }
-          
+
           #tv-glitch::before {
             content: '';
             position: absolute;
@@ -348,23 +393,23 @@ export const indexPageRoute = app.html('/', async (ctx, req) => {
             height: 80px;
             background: transparent;
           }
-          
+
           #tv-glitch.active::before {
             animation: glitch-zone-move 1s cubic-bezier(0.4, 0, 0.2, 1);
           }
-          
+
           @keyframes glitch-zone-move {
             0% { top: -80px; opacity: 0; }
             10% { opacity: 1; }
             90% { opacity: 1; }
             100% { top: 100%; opacity: 0; }
           }
-          
+
           body.glitch-active .app-layout {
             animation: body-glitch 1s cubic-bezier(0.4, 0, 0.2, 1);
             will-change: transform;
           }
-          
+
           @keyframes body-glitch {
             0%, 100% { transform: translateX(0); }
             15% { transform: translateX(-2px); }
@@ -386,7 +431,10 @@ export const indexPageRoute = app.html('/', async (ctx, req) => {
         <link rel="stylesheet" href="/s/static/lib/fontawesome/6.7.2/css/all.min.css" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
-        <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap"
+          rel="stylesheet"
+        />
         <style>{`
           :root {
             --color-bg: #0a0a0a;
@@ -402,12 +450,12 @@ export const indexPageRoute = app.html('/', async (ctx, req) => {
             --color-accent-light: rgba(211, 35, 75, 0.15);
             --color-accent-medium: rgba(211, 35, 75, 0.25);
           }
-          
+
           ::selection {
             background: #e0335a;
             color: #ffffff;
           }
-          
+
           ::-moz-selection {
             background: #e0335a;
             color: #ffffff;
@@ -425,16 +473,19 @@ export const indexPageRoute = app.html('/', async (ctx, req) => {
           </div>
         </div>
         <HomePage
-          projectName={BODY_TEXT}
-          projectTitle={getHeaderText(INDEX_PAGE_NAME, projectName)}
-          projectDescription={BODY_SUBTEXT}
-          indexUrl={getFullUrl(ROUTES.index)}
-          profileUrl={getFullUrl(ROUTES.profile)}
+          projectTitle={getHeaderText(PANEL_PAGE_NAME, projectName)}
+          indexUrl={indexUrl}
+          profileUrl={profileUrl}
           loginUrl={loginUrl}
-          isAuthenticated={isAuthenticated}
+          isAuthenticated={true}
           isAdmin={isAdmin}
           adminUrl={adminUrl}
           testsUrl={testsUrl}
+          initialDateFilter={initialDateFilter}
+          apiUrls={apiUrls}
+          operationsCatalog={operationsCatalog}
+          testValues={testValues}
+          projectRoot={PROJECT_ROOT}
         />
       </body>
     </html>

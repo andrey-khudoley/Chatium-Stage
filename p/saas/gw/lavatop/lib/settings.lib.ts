@@ -1,5 +1,13 @@
 import * as repo from '../repos/settings.repo'
 import * as loggerLib from './logger.lib'
+import {
+  LAVA_TEST_APIKEY,
+  LAVA_BASE_URL_KEY,
+  LAVA_WEBHOOK_SECRET_KEY,
+  PANEL_DATE_FILTER_KEY,
+  LAVA_DEFAULT_BASE_URL,
+  normalizeLavaBaseUrlInput
+} from '../shared/gatewaySettingKeys'
 
 const LOG_MODULE = 'lib/settings.lib'
 
@@ -10,8 +18,16 @@ export const SETTING_KEYS = {
   LOG_LEVEL: 'log_level',
   LOGS_LIMIT: 'logs_limit',
   LOG_WEBHOOK: 'log_webhook',
-  DASHBOARD_RESET_AT: 'dashboard_reset_at'
+  DASHBOARD_RESET_AT: 'dashboard_reset_at',
+  // Lava.Top gateway
+  LAVA_TEST_APIKEY,
+  LAVA_BASE_URL: LAVA_BASE_URL_KEY,
+  LAVA_WEBHOOK_SECRET: LAVA_WEBHOOK_SECRET_KEY,
+  PANEL_DATE_FILTER: PANEL_DATE_FILTER_KEY
 } as const
+
+/** Фильтр по дате панели оператора (Unix ms); null-границы = без ограничения. */
+export type PanelDateFilter = { from: number | null; to: number | null }
 
 /** Настройка вебхука логов: enable — активна ли отправка, url — куда отправлять. */
 export type LogWebhookSetting = { enable: boolean; url: string }
@@ -23,7 +39,11 @@ export const DEFAULTS = {
   [SETTING_KEYS.LOG_LEVEL]: 'Info',
   [SETTING_KEYS.LOGS_LIMIT]: '100',
   [SETTING_KEYS.LOG_WEBHOOK]: { enable: false, url: '' } as LogWebhookSetting,
-  [SETTING_KEYS.DASHBOARD_RESET_AT]: null as number | null
+  [SETTING_KEYS.DASHBOARD_RESET_AT]: null as number | null,
+  [SETTING_KEYS.LAVA_TEST_APIKEY]: '',
+  [SETTING_KEYS.LAVA_BASE_URL]: LAVA_DEFAULT_BASE_URL,
+  [SETTING_KEYS.LAVA_WEBHOOK_SECRET]: '',
+  [SETTING_KEYS.PANEL_DATE_FILTER]: null as PanelDateFilter | null
 } as const
 
 /** Допустимые уровни логирования */
@@ -61,7 +81,8 @@ export async function getSettingString(ctx: app.Ctx, key: string): Promise<strin
     payload: { key }
   })
   const value = await getSetting(ctx, key)
-  const result = typeof value === 'string' ? value : String((DEFAULTS as Record<string, unknown>)[key] ?? '')
+  const result =
+    typeof value === 'string' ? value : String((DEFAULTS as Record<string, unknown>)[key] ?? '')
   await loggerLib.writeServerLog(ctx, {
     severity: 6,
     message: `[${LOG_MODULE}] getSettingString exit`,
@@ -175,7 +196,9 @@ export async function setSetting(ctx: app.Ctx, key: string, value: unknown): Pro
       payload: { str, isLogLevel: isLogLevel(str) }
     })
     if (!isLogLevel(str)) {
-      throw new Error(`Недопустимый уровень логирования: ${str}. Допустимо: ${LOG_LEVELS.join(', ')}`)
+      throw new Error(
+        `Недопустимый уровень логирования: ${str}. Допустимо: ${LOG_LEVELS.join(', ')}`
+      )
     }
     normalized = str
   } else if (key === SETTING_KEYS.LOGS_LIMIT) {
@@ -228,5 +251,70 @@ export async function setSetting(ctx: app.Ctx, key: string, value: unknown): Pro
     severity: 6,
     message: `[${LOG_MODULE}] setSetting exit`,
     payload: { key, normalized }
+  })
+}
+
+// --- Lava.Top gateway settings (тихие геттеры: вызываются на каждый v1-запрос, без trace-логов) ---
+
+/**
+ * Тестовый API-ключ Lava.Top из настроек (`lava_test_apikey`). Используется формой «Создать
+ * запрос» в панели и интеграционным тестом `verifyLavaCredentials`. Боевые вызовы `/v1/{op}`
+ * берут ключ из заголовка `X-Lava-Apikey`, а не отсюда. Пустая строка = не задан.
+ */
+export async function getLavaTestApiKey(ctx: app.Ctx): Promise<string> {
+  const value = await getSetting(ctx, SETTING_KEYS.LAVA_TEST_APIKEY)
+  return typeof value === 'string' ? value : ''
+}
+
+/**
+ * Базовый URL Lava.Top из настроек (`lava_base_url`), нормализованный.
+ * По умолчанию — `https://gate.lava.top`.
+ */
+export async function getLavaBaseUrl(ctx: app.Ctx): Promise<string> {
+  const value = await getSetting(ctx, SETTING_KEYS.LAVA_BASE_URL)
+  return normalizeLavaBaseUrlInput(typeof value === 'string' ? value : '')
+}
+
+/**
+ * Секрет приёма вебхуков Lava.Top (`lava_webhook_secret`). Пустая строка = не задан
+ * (эндпоинт вебхука вернёт 500 «конфигурация неполная», не 401).
+ */
+export async function getLavaWebhookSecret(ctx: app.Ctx): Promise<string> {
+  const value = await getSetting(ctx, SETTING_KEYS.LAVA_WEBHOOK_SECRET)
+  return typeof value === 'string' ? value : ''
+}
+
+function isPanelDateFilter(value: unknown): value is PanelDateFilter {
+  if (typeof value !== 'object' || value === null) return false
+  const o = value as Record<string, unknown>
+  const okFrom = o.from === null || (typeof o.from === 'number' && Number.isFinite(o.from))
+  const okTo = o.to === null || (typeof o.to === 'number' && Number.isFinite(o.to))
+  return okFrom && okTo
+}
+
+/**
+ * Фильтр по дате панели (`panel_date_filter`). При отсутствии/невалидности — `{ from: null, to: null }`
+ * («за всё время»).
+ */
+export async function getPanelDateFilter(ctx: app.Ctx): Promise<PanelDateFilter> {
+  const value = await getSetting(ctx, SETTING_KEYS.PANEL_DATE_FILTER)
+  return isPanelDateFilter(value) ? value : { from: null, to: null }
+}
+
+/** Сохранить фильтр по дате панели. `null` границы = снять ограничение. */
+export async function setPanelDateFilter(
+  ctx: app.Ctx,
+  from: number | null,
+  to: number | null
+): Promise<void> {
+  const normalized: PanelDateFilter = {
+    from: typeof from === 'number' && Number.isFinite(from) && from >= 0 ? Math.floor(from) : null,
+    to: typeof to === 'number' && Number.isFinite(to) && to >= 0 ? Math.floor(to) : null
+  }
+  await repo.upsert(ctx, SETTING_KEYS.PANEL_DATE_FILTER, normalized)
+  await loggerLib.writeServerLog(ctx, {
+    severity: 6,
+    message: `[${LOG_MODULE}] setPanelDateFilter`,
+    payload: { normalized }
   })
 }
