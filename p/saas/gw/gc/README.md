@@ -30,6 +30,7 @@
 
 ## Документация в репозитории
 
+- Индекс каталога docs: `docs/README.md`
 - Архитектура и отсылка к спеке: `docs/architecture.md`
 - API: `docs/api.md`
 - Данные и Heap: `docs/data.md`
