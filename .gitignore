@@ -10,5 +10,8 @@ node_modules/
 # LLM files
 **/docs/LLM/
 
+# Временные конфиги строгой проверки типов (scripts/check-types.mjs)
+.tsconfig.strict-check.*.tmp.json
+
 # Chatium config
 @.chatiumrc

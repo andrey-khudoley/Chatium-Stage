@@ -1,31 +1,41 @@
 ---
-description: Запускает полный набор технических проверок (TypeScript, стандарты, роутинг, рантайм, тесты) на текущих изменениях.
-argument-hint: [опционально: список файлов через пробел]
+description: Технические проверки Chatium — строгая проверка типов (vue-tsc), стиль (Prettier), стандарты, роутинг, рантайм, тесты. Фрагмент или весь workspace.
+argument-hint: "[пути через пробел | --all для всего workspace | пусто = текущие изменения]"
 ---
 
 # /check
 
-Запусти технические проверки на текущих изменениях через субагента `verification-runner`.
+Запусти технические проверки через субагента `verification-runner`.
 
 ## Что произойдёт
 
 `verification-runner` выполнит:
 
-1. **TypeScript-компиляция** через `npx tsc --noEmit` или скрипт из package.json.
-2. **Стандарты** — параллельный вызов `standards-checker` (по 001-standards.md).
-3. **File-based роутинг** — параллельный вызов `file-based-routing-checker`.
-4. **Рантайм и архитектура** — параллельный вызов `runtime-architecture-checker`.
-5. **Тесты** — определит способ запуска (страница `./web/tests`, `api/tests/endpoints-check`, `*.test.ts`) или отметит «не применимо».
-6. **Сводный отчёт** с приоритизированными проблемами.
+1. **Строгая проверка типов** — `node scripts/check-types.mjs` (vue-tsc + конфиг, наследующий корневой `tsconfig.json`: `strict: true`, `noUncheckedIndexedAccess`, реальные глобальные типы Chatium; облегчённые локальные шимы проектов исключаются, `.vue` проверяются).
+2. **Стиль** — `node scripts/check-style.mjs` (Prettier по `.prettierrc`).
+3. **Стандарты** — параллельный вызов `standards-checker` (по 001-standards.md).
+4. **File-based роутинг** — параллельный вызов `file-based-routing-checker`.
+5. **Рантайм и архитектура** — параллельный вызов `runtime-architecture-checker`.
+6. **Тесты** — определит способ запуска (страница `./web/tests`, `api/tests/endpoints-check`, `*.test.ts`) или отметит «не применимо».
+7. **Сводный отчёт** с приоритизированными проблемами.
+
+## Режимы
+
+- **Текущие изменения** (по умолчанию, без аргументов): проверяются файлы из `git diff` + untracked.
+- **Фрагмент(ы):** `/check p/saas/gw/gc` или `/check p/a/index.tsx p/b` — проверяются указанные пути/проекты.
+- **Весь workspace:** `/check --all` (также `всё` / `workspace`) — типы и стиль прогоняются по всему репозиторию, sub-checker'ам передаётся полный охват.
 
 ## Инструкция запуска
 
-Сейчас вызови **Agent** с `subagent_type: verification-runner` и передай в промпт:
+Вызови **Agent** с `subagent_type: verification-runner` и передай в промпт:
 
-1. **Список файлов:** $ARGUMENTS (если пусто — пусть определит сам через `git diff --name-only` + untracked).
-2. **Контекст задачи** из переписки (acceptance criteria, план — если они обсуждались).
+1. **Аргументы:** $ARGUMENTS
+   - пусто → пусть определит затронутые файлы сам (`git diff --name-only` + untracked), режим «фрагмент»;
+   - `--all` / `всё` / `workspace` → режим «весь workspace»;
+   - иначе → переданные пути как фрагменты.
+2. **Контекст задачи** из переписки (acceptance criteria, план — если обсуждались).
 
-Не запускай sub-checker'ов сам — `verification-runner` сделает это параллельно.
+Не запускай проверки и sub-checker'ов сам — это делает `verification-runner` (типы/стиль — через скрипты, остальное — параллельно через Agent).
 
 ## Когда использовать
 
