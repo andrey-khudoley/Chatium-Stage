@@ -25,13 +25,8 @@ export const rawRequestRoute = app.get('/', async (ctx, req) => {
   const requestIdRaw = q?.requestId
 
   const id =
-    typeof idRaw === 'string'
-      ? idRaw.trim()
-      : typeof idRaw === 'number'
-      ? String(idRaw)
-      : ''
-  const requestId =
-    typeof requestIdRaw === 'string' ? requestIdRaw.trim() : ''
+    typeof idRaw === 'string' ? idRaw.trim() : typeof idRaw === 'number' ? String(idRaw) : ''
+  const requestId = typeof requestIdRaw === 'string' ? requestIdRaw.trim() : ''
 
   await loggerLib.writeServerLog(ctx, {
     severity: 6,

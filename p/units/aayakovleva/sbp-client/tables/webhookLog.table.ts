@@ -41,9 +41,13 @@ export const WebhookLog = Heap.Table('t__lifepay-sbp-client__whlog__d2Pq8T', {
     customMeta: { title: 'order.number из вложенного JSON (наш orderNumber)' },
     searchable: { langs: ['en'], embeddings: false }
   }),
-  correlationId: Heap.Optional(Heap.String({
-    customMeta: { title: 'correlationId из query callbackUrl (связка с request_log; пусто если нет)' }
-  })),
+  correlationId: Heap.Optional(
+    Heap.String({
+      customMeta: {
+        title: 'correlationId из query callbackUrl (связка с request_log; пусто если нет)'
+      }
+    })
+  ),
   tokenValid: Heap.Boolean({
     customMeta: { title: 'Был ли токен в query валиден' }
   }),
@@ -53,15 +57,21 @@ export const WebhookLog = Heap.Table('t__lifepay-sbp-client__whlog__d2Pq8T', {
   processedAt: Heap.Number({
     customMeta: { title: 'Unix ms момента приёма' }
   }),
-  email: Heap.Optional(Heap.String({
-    customMeta: { title: 'Email покупателя (raw, без маскирования)' }
-  })),
-  rawBody: Heap.Optional(Heap.Any({
-    customMeta: { title: 'Полное тело webhook (raw, без PII-маски)' }
-  })),
-  rawQuery: Heap.Optional(Heap.Any({
-    customMeta: { title: 'Query параметры (raw, token не маскируется)' }
-  }))
+  email: Heap.Optional(
+    Heap.String({
+      customMeta: { title: 'Email покупателя (raw, без маскирования)' }
+    })
+  ),
+  rawBody: Heap.Optional(
+    Heap.Any({
+      customMeta: { title: 'Полное тело webhook (raw, без PII-маски)' }
+    })
+  ),
+  rawQuery: Heap.Optional(
+    Heap.Any({
+      customMeta: { title: 'Query параметры (raw, token не маскируется)' }
+    })
+  )
 })
 
 export default WebhookLog

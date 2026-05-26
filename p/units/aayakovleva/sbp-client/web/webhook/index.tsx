@@ -69,9 +69,7 @@ export const webhookRoute = app.post('/', async (ctx, req) => {
   // Зафиксировать факт вызова без значения токена и тела (минимизация утечки).
   const queryRaw = (req as unknown as { query?: unknown }).query
   const queryObj =
-    typeof queryRaw === 'object' && queryRaw !== null
-      ? (queryRaw as Record<string, unknown>)
-      : {}
+    typeof queryRaw === 'object' && queryRaw !== null ? (queryRaw as Record<string, unknown>) : {}
   const tokenFromQuery = typeof queryObj.token === 'string' ? queryObj.token : null
   // correlationId из query callbackUrl — ключ связки с request_log (см. shared/correlation).
   // Пусто, если счёт создан не через нашу панель или это старый callbackUrl.
@@ -147,7 +145,9 @@ export const webhookRoute = app.post('/', async (ctx, req) => {
     // 2.2. Фоллбэк — req.body (application/json или x-www-form-urlencoded, в т.ч. {data:"<json>"}).
     const body = reqAny.body
     const bodyIsEmptyObject =
-      body !== null && typeof body === 'object' && !Array.isArray(body) &&
+      body !== null &&
+      typeof body === 'object' &&
+      !Array.isArray(body) &&
       Object.keys(body as Record<string, unknown>).length === 0
     if (body !== undefined && body !== null && typeof body !== 'function' && !bodyIsEmptyObject) {
       const u = unwrapWebhookBody(body, contentType)
@@ -160,13 +160,16 @@ export const webhookRoute = app.post('/', async (ctx, req) => {
         typeof reqAny.rawBody === 'string'
           ? reqAny.rawBody
           : typeof reqAny.rawHttpBody === 'string'
-          ? reqAny.rawHttpBody
-          : null
+            ? reqAny.rawHttpBody
+            : null
       if (rawText) {
         const fromRaw = extractDataFromRawMultipart(rawText, 'data')
         if (fromRaw) {
           const inner = tryJsonParse(fromRaw)
-          payload = inner && typeof inner === 'object' ? inner : unwrapWebhookBody(fromRaw, contentType).payload
+          payload =
+            inner && typeof inner === 'object'
+              ? inner
+              : unwrapWebhookBody(fromRaw, contentType).payload
           source = 'raw_multipart'
           strategy = 'raw_multipart_data'
         } else {
@@ -254,7 +257,8 @@ export const webhookRoute = app.post('/', async (ctx, req) => {
       dedupeResult,
       successfulPayment,
       // помечаем заказы, готовые к обновлению в GetCourse (для будущего §2.8)
-      eligibleForOrderUpdate: successfulPayment && dedupeResult !== 'duplicate' && !!parsed.orderNumber
+      eligibleForOrderUpdate:
+        successfulPayment && dedupeResult !== 'duplicate' && !!parsed.orderNumber
     }
   })
 

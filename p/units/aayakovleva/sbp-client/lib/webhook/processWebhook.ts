@@ -172,10 +172,7 @@ function parseFormUrlEncoded(s: string): Record<string, string> | undefined {
  * Если развернуть не удалось — `payload` совпадает с исходным `body`,
  * стратегия `failed` / `noop`.
  */
-export function unwrapWebhookBody(
-  body: unknown,
-  contentType: string
-): UnwrappedBody {
+export function unwrapWebhookBody(body: unknown, contentType: string): UnwrappedBody {
   if (body === null || body === undefined) {
     return { payload: body, strategy: 'noop' }
   }

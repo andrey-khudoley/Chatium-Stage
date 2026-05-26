@@ -7,7 +7,10 @@ const LOG_PATH = 'api/settings/save'
 
 /** Маскировка секретных значений перед логированием. Зеркало lib/settings.lib.ts setSetting exit. */
 function maskValueForLog(key: string, value: unknown): unknown {
-  if (key === settingsLib.SETTING_KEYS.LP_APIKEY || key === settingsLib.SETTING_KEYS.LP_WEBHOOK_TOKEN) {
+  if (
+    key === settingsLib.SETTING_KEYS.LP_APIKEY ||
+    key === settingsLib.SETTING_KEYS.LP_WEBHOOK_TOKEN
+  ) {
     return typeof value === 'string' && value.length > 0 ? '***' : value
   }
   if (
@@ -33,7 +36,7 @@ const LOG_LEVEL_BY_NUMBER: Record<number, string> = {
 /** Нормализация значения уровня логирования для lib (Debug | Info | Warn | Error | Disable). Числа -1–4 и строки. */
 function normalizeLogLevelValue(value: unknown): string {
   if (typeof value === 'number' && Number.isFinite(value) && value in LOG_LEVEL_BY_NUMBER) {
-    return LOG_LEVEL_BY_NUMBER[value]
+    return LOG_LEVEL_BY_NUMBER[value] ?? 'Info'
   }
   const s = typeof value === 'string' ? value.trim().toLowerCase() : String(value).toLowerCase()
   if (!s) return 'Info'

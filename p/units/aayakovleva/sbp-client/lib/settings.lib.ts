@@ -134,7 +134,8 @@ export async function getSettingString(ctx: app.Ctx, key: string): Promise<strin
     payload: { key }
   })
   const value = await getSetting(ctx, key)
-  const result = typeof value === 'string' ? value : String((DEFAULTS as Record<string, unknown>)[key] ?? '')
+  const result =
+    typeof value === 'string' ? value : String((DEFAULTS as Record<string, unknown>)[key] ?? '')
   await loggerLib.writeServerLog(ctx, {
     severity: 6,
     message: `[${LOG_MODULE}] getSettingString exit`,
@@ -268,7 +269,9 @@ export async function setSetting(ctx: app.Ctx, key: string, value: unknown): Pro
       payload: { str, isLogLevel: isLogLevel(str) }
     })
     if (!isLogLevel(str)) {
-      throw new Error(`Недопустимый уровень логирования: ${str}. Допустимо: ${LOG_LEVELS.join(', ')}`)
+      throw new Error(
+        `Недопустимый уровень логирования: ${str}. Допустимо: ${LOG_LEVELS.join(', ')}`
+      )
     }
     normalized = str
   } else if (key === SETTING_KEYS.LOGS_LIMIT) {
@@ -328,7 +331,9 @@ export async function setSetting(ctx: app.Ctx, key: string, value: unknown): Pro
   } else if (key === SETTING_KEYS.LP_LOGIN) {
     const str = typeof value === 'string' ? value.trim() : ''
     if (!isValidLpLogin(str)) {
-      throw new Error('lp_login должен быть номером телефона в формате 7XXXXXXXXXX (11 цифр, начинается с 7).')
+      throw new Error(
+        'lp_login должен быть номером телефона в формате 7XXXXXXXXXX (11 цифр, начинается с 7).'
+      )
     }
     normalized = str
     await loggerLib.writeServerLog(ctx, {
@@ -339,7 +344,9 @@ export async function setSetting(ctx: app.Ctx, key: string, value: unknown): Pro
   } else if (key === SETTING_KEYS.LP_WEBHOOK_TOKEN) {
     const str = typeof value === 'string' ? value.trim() : ''
     if (str.length < LP_WEBHOOK_TOKEN_MIN_LENGTH) {
-      throw new Error(`lp_webhook_token должен содержать не менее ${LP_WEBHOOK_TOKEN_MIN_LENGTH} символов`)
+      throw new Error(
+        `lp_webhook_token должен содержать не менее ${LP_WEBHOOK_TOKEN_MIN_LENGTH} символов`
+      )
     }
     normalized = str
     await loggerLib.writeServerLog(ctx, {
@@ -361,7 +368,9 @@ export async function setSetting(ctx: app.Ctx, key: string, value: unknown): Pro
     })
   } else if (key === SETTING_KEYS.PANEL_DATE_FILTER) {
     if (!isValidDateFilter(value)) {
-      throw new Error('panel_date_filter должен быть объектом { from?: number > 0, to?: number > 0 }, при обеих границах from <= to')
+      throw new Error(
+        'panel_date_filter должен быть объектом { from?: number > 0, to?: number > 0 }, при обеих границах from <= to'
+      )
     }
     normalized = normalizeDateFilter(value)
     await loggerLib.writeServerLog(ctx, {
@@ -377,8 +386,8 @@ export async function setSetting(ctx: app.Ctx, key: string, value: unknown): Pro
     key === SETTING_KEYS.LP_APIKEY || key === SETTING_KEYS.LP_WEBHOOK_TOKEN
       ? '***'
       : key === SETTING_KEYS.LP_LOGIN && typeof normalized === 'string' && normalized.length === 11
-      ? `+${normalized.slice(0, 4)}***${normalized.slice(-4)}`
-      : normalized
+        ? `+${normalized.slice(0, 4)}***${normalized.slice(-4)}`
+        : normalized
   await loggerLib.writeServerLog(ctx, {
     severity: 6,
     message: `[${LOG_MODULE}] setSetting exit`,

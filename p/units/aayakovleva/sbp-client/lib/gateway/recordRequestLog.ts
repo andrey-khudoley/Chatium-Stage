@@ -68,10 +68,7 @@ function extractDetailString(invoke: InvokeResult, key: string): string {
   return ''
 }
 
-export async function recordRequestLog(
-  ctx: app.Ctx,
-  params: RecordParams
-): Promise<void> {
+export async function recordRequestLog(ctx: app.Ctx, params: RecordParams): Promise<void> {
   await loggerLib.writeServerLog(ctx, {
     severity: 6,
     message: `[${LOG_MODULE}] recordRequestLog entry`,

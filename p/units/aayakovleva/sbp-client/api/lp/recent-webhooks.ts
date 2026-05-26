@@ -13,7 +13,8 @@ import { getPanelDateFilter } from '../../lib/settings.lib'
 const LOG_PATH = 'api/lp/recent-webhooks'
 
 function parseLimit(value: unknown): number {
-  const n = typeof value === 'string' ? parseInt(value, 10) : typeof value === 'number' ? value : NaN
+  const n =
+    typeof value === 'string' ? parseInt(value, 10) : typeof value === 'number' ? value : NaN
   if (!Number.isFinite(n) || n < 1) return RECENT_DEFAULT_LIMIT
   return Math.min(Math.floor(n), RECENT_MAX_LIMIT)
 }
@@ -51,7 +52,8 @@ export const recentWebhooksRoute = app.get('/', async (ctx, req) => {
     id: r.id,
     number: r.number,
     // приоритет: orderNumber из самого webhook (legacy), иначе из связанного запроса.
-    orderNumber: r.orderNumber || (r.correlationId ? orderByCorrelation.get(r.correlationId) ?? '' : ''),
+    orderNumber:
+      r.orderNumber || (r.correlationId ? (orderByCorrelation.get(r.correlationId) ?? '') : ''),
     correlationId: r.correlationId ?? '',
     tokenValid: r.tokenValid,
     duplicate: r.duplicate,

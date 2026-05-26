@@ -13,12 +13,7 @@
  */
 
 import { buildInvokeUrl } from '../gateway/buildInvokeUrl'
-import {
-  redactEmail,
-  redactPhone,
-  redactArgsForLog,
-  extractOrderNumber
-} from '../../shared/redact'
+import { redactEmail, redactPhone, redactArgsForLog, extractOrderNumber } from '../../shared/redact'
 import { redactRawDeep, MAX_RAW_BYTES } from '../../shared/redactRaw'
 import {
   findOperationInCatalog,
@@ -136,7 +131,11 @@ function runUrlBuildChecks(results: LifepayUnitTestResult[]): void {
     'buildInvokeUrl(base, createBill) → POST /api/v1/createBill',
     () => {
       const r = buildInvokeUrl('https://gw.example.com/p/saas/gw/lifepay', 'createBill')
-      return r.kind === 'ok' && r.method === 'POST' && r.url === 'https://gw.example.com/p/saas/gw/lifepay/api/v1/createBill'
+      return (
+        r.kind === 'ok' &&
+        r.method === 'POST' &&
+        r.url === 'https://gw.example.com/p/saas/gw/lifepay/api/v1/createBill'
+      )
     }
   )
 
@@ -146,19 +145,18 @@ function runUrlBuildChecks(results: LifepayUnitTestResult[]): void {
     'buildInvokeUrl(base, getBillStatus) → GET /api/v1/getBillStatus',
     () => {
       const r = buildInvokeUrl('https://gw.example.com', 'getBillStatus')
-      return r.kind === 'ok' && r.method === 'GET' && r.url === 'https://gw.example.com/api/v1/getBillStatus'
+      return (
+        r.kind === 'ok' &&
+        r.method === 'GET' &&
+        r.url === 'https://gw.example.com/api/v1/getBillStatus'
+      )
     }
   )
 
-  tryPush(
-    results,
-    'lp_invoke_url_trailing_slash',
-    'buildInvokeUrl обрезает trailing slash',
-    () => {
-      const r = buildInvokeUrl('https://gw.example.com/', 'createBill')
-      return r.kind === 'ok' && r.url === 'https://gw.example.com/api/v1/createBill'
-    }
-  )
+  tryPush(results, 'lp_invoke_url_trailing_slash', 'buildInvokeUrl обрезает trailing slash', () => {
+    const r = buildInvokeUrl('https://gw.example.com/', 'createBill')
+    return r.kind === 'ok' && r.url === 'https://gw.example.com/api/v1/createBill'
+  })
 
   tryPush(
     results,
@@ -239,12 +237,7 @@ function runRedactionChecks(results: LifepayUnitTestResult[]): void {
         token: 'WEBHOOK_SECRET',
         orderNumber: 'A2'
       }) as Record<string, unknown>
-      return (
-        !('apikey' in r) &&
-        !('login' in r) &&
-        !('token' in r) &&
-        r.orderNumber === 'A2'
-      )
+      return !('apikey' in r) && !('login' in r) && !('token' in r) && r.orderNumber === 'A2'
     }
   )
 
@@ -275,9 +268,15 @@ function runRedactRawDeepChecks(results: LifepayUnitTestResult[]): void {
         lp_webhook_token: 'Z',
         keep: 'visible'
       }) as Record<string, unknown>
-      return !('apikey' in r) && !('login' in r) && !('token' in r) &&
-        !('lp_apikey' in r) && !('lp_login' in r) && !('lp_webhook_token' in r) &&
+      return (
+        !('apikey' in r) &&
+        !('login' in r) &&
+        !('token' in r) &&
+        !('lp_apikey' in r) &&
+        !('lp_login' in r) &&
+        !('lp_webhook_token' in r) &&
         r.keep === 'visible'
+      )
     }
   )
   tryPush(
@@ -291,8 +290,14 @@ function runRedactRawDeepChecks(results: LifepayUnitTestResult[]): void {
       }) as Record<string, unknown>
       const h = r.headers as Record<string, unknown>
       const list0 = (r.list as Array<Record<string, unknown>>)[0]
-      return !('authorization' in h) && !('X-Lp-Apikey' in h) && h.other === 'ok' &&
-        !('apikey' in list0) && list0.name === 'n'
+      return (
+        !('authorization' in h) &&
+        !('X-Lp-Apikey' in h) &&
+        h.other === 'ok' &&
+        list0 != null &&
+        !('apikey' in list0) &&
+        list0.name === 'n'
+      )
     }
   )
 
@@ -306,8 +311,12 @@ function runRedactRawDeepChecks(results: LifepayUnitTestResult[]): void {
         customer: { email: 'user@example.com', phone: '79991234567' }
       }) as Record<string, unknown>
       const c = r.customer as Record<string, unknown>
-      return typeof c.email === 'string' && c.email !== 'user@example.com' &&
-        typeof c.phone === 'string' && c.phone !== '79991234567'
+      return (
+        typeof c.email === 'string' &&
+        c.email !== 'user@example.com' &&
+        typeof c.phone === 'string' &&
+        c.phone !== '79991234567'
+      )
     }
   )
 
@@ -325,8 +334,13 @@ function runRedactRawDeepChecks(results: LifepayUnitTestResult[]): void {
         nested: { fullname: 'Some One' }
       }) as Record<string, unknown>
       const n = r.nested as Record<string, unknown>
-      return r.passport === '***' && r.inn === '***' && r.fio === '***' &&
-        r.address === '***' && n.fullname === '***'
+      return (
+        r.passport === '***' &&
+        r.inn === '***' &&
+        r.fio === '***' &&
+        r.address === '***' &&
+        n.fullname === '***'
+      )
     }
   )
 
@@ -338,9 +352,13 @@ function runRedactRawDeepChecks(results: LifepayUnitTestResult[]): void {
     () => {
       const big = { data: 'x'.repeat(MAX_RAW_BYTES + 100) }
       const r = redactRawDeep(big) as Record<string, unknown>
-      return r.__truncated === true && typeof r.__originalBytes === 'number' &&
+      return (
+        r.__truncated === true &&
+        typeof r.__originalBytes === 'number' &&
         (r.__originalBytes as number) > MAX_RAW_BYTES &&
-        typeof r.__preview === 'string' && (r.__preview as string).length === MAX_RAW_BYTES
+        typeof r.__preview === 'string' &&
+        (r.__preview as string).length === MAX_RAW_BYTES
+      )
     }
   )
 
@@ -356,17 +374,12 @@ function runRedactRawDeepChecks(results: LifepayUnitTestResult[]): void {
   )
 
   // 6. Циклические ссылки.
-  tryPush(
-    results,
-    'lp_redactraw_circular',
-    'redactRawDeep ловит циклические ссылки',
-    () => {
-      const obj: Record<string, unknown> = { name: 'a' }
-      obj.self = obj
-      const r = redactRawDeep(obj) as Record<string, unknown>
-      return r.name === 'a' && r.self === '__circular'
-    }
-  )
+  tryPush(results, 'lp_redactraw_circular', 'redactRawDeep ловит циклические ссылки', () => {
+    const obj: Record<string, unknown> = { name: 'a' }
+    obj.self = obj
+    const r = redactRawDeep(obj) as Record<string, unknown>
+    return r.name === 'a' && r.self === '__circular'
+  })
 
   // 7. Массивы как корень.
   tryPush(
@@ -377,9 +390,13 @@ function runRedactRawDeepChecks(results: LifepayUnitTestResult[]): void {
       const r = redactRawDeep([{ email: 'a@b.c' }, { passport: '1' }]) as unknown[]
       const r0 = r[0] as Record<string, unknown>
       const r1 = r[1] as Record<string, unknown>
-      return Array.isArray(r) && r.length === 2 &&
-        typeof r0.email === 'string' && r0.email !== 'a@b.c' &&
+      return (
+        Array.isArray(r) &&
+        r.length === 2 &&
+        typeof r0.email === 'string' &&
+        r0.email !== 'a@b.c' &&
         r1.passport === '***'
+      )
     }
   )
 
@@ -458,40 +475,74 @@ function runSettingsValidationChecks(results: LifepayUnitTestResult[]): void {
 
 function runDateFilterChecks(results: LifepayUnitTestResult[]): void {
   // isValidDateFilter — предикат валидности фильтра панели.
-  tryPush(results, 'df_isvalid_empty', 'isValidDateFilter({}) → true (фильтр не задан)', () =>
-    isValidDateFilter({}) === true
+  tryPush(
+    results,
+    'df_isvalid_empty',
+    'isValidDateFilter({}) → true (фильтр не задан)',
+    () => isValidDateFilter({}) === true
   )
-  tryPush(results, 'df_isvalid_only_from', 'isValidDateFilter({from}) → true', () =>
-    isValidDateFilter({ from: 1000 }) === true
+  tryPush(
+    results,
+    'df_isvalid_only_from',
+    'isValidDateFilter({from}) → true',
+    () => isValidDateFilter({ from: 1000 }) === true
   )
-  tryPush(results, 'df_isvalid_only_to', 'isValidDateFilter({to}) → true', () =>
-    isValidDateFilter({ to: 2000 }) === true
+  tryPush(
+    results,
+    'df_isvalid_only_to',
+    'isValidDateFilter({to}) → true',
+    () => isValidDateFilter({ to: 2000 }) === true
   )
-  tryPush(results, 'df_isvalid_both_ok', 'isValidDateFilter(from<to) → true', () =>
-    isValidDateFilter({ from: 1000, to: 2000 }) === true
+  tryPush(
+    results,
+    'df_isvalid_both_ok',
+    'isValidDateFilter(from<to) → true',
+    () => isValidDateFilter({ from: 1000, to: 2000 }) === true
   )
-  tryPush(results, 'df_isvalid_both_equal', 'isValidDateFilter(from===to) → true', () =>
-    isValidDateFilter({ from: 1500, to: 1500 }) === true
+  tryPush(
+    results,
+    'df_isvalid_both_equal',
+    'isValidDateFilter(from===to) → true',
+    () => isValidDateFilter({ from: 1500, to: 1500 }) === true
   )
-  tryPush(results, 'df_isvalid_from_gt_to', 'isValidDateFilter(from>to) → false', () =>
-    isValidDateFilter({ from: 2000, to: 1000 }) === false
+  tryPush(
+    results,
+    'df_isvalid_from_gt_to',
+    'isValidDateFilter(from>to) → false',
+    () => isValidDateFilter({ from: 2000, to: 1000 }) === false
   )
-  tryPush(results, 'df_isvalid_string_bound', 'isValidDateFilter({from:"x"}) → false', () =>
-    isValidDateFilter({ from: 'x' as unknown as number }) === false
+  tryPush(
+    results,
+    'df_isvalid_string_bound',
+    'isValidDateFilter({from:"x"}) → false',
+    () => isValidDateFilter({ from: 'x' as unknown as number }) === false
   )
-  tryPush(results, 'df_isvalid_zero', 'isValidDateFilter({from:0}) → false (нужно > 0)', () =>
-    isValidDateFilter({ from: 0 }) === false
+  tryPush(
+    results,
+    'df_isvalid_zero',
+    'isValidDateFilter({from:0}) → false (нужно > 0)',
+    () => isValidDateFilter({ from: 0 }) === false
   )
-  tryPush(results, 'df_isvalid_negative', 'isValidDateFilter({to:-5}) → false', () =>
-    isValidDateFilter({ to: -5 }) === false
+  tryPush(
+    results,
+    'df_isvalid_negative',
+    'isValidDateFilter({to:-5}) → false',
+    () => isValidDateFilter({ to: -5 }) === false
   )
-  tryPush(results, 'df_isvalid_nan', 'isValidDateFilter({from:NaN}) → false', () =>
-    isValidDateFilter({ from: NaN }) === false
+  tryPush(
+    results,
+    'df_isvalid_nan',
+    'isValidDateFilter({from:NaN}) → false',
+    () => isValidDateFilter({ from: NaN }) === false
   )
-  tryPush(results, 'df_isvalid_non_object', 'isValidDateFilter(null/строка/число) → false', () =>
-    isValidDateFilter(null) === false &&
-    isValidDateFilter('x') === false &&
-    isValidDateFilter(5) === false
+  tryPush(
+    results,
+    'df_isvalid_non_object',
+    'isValidDateFilter(null/строка/число) → false',
+    () =>
+      isValidDateFilter(null) === false &&
+      isValidDateFilter('x') === false &&
+      isValidDateFilter(5) === false
   )
 
   // normalizeDateFilter — нормализация (floor, отбрасывание невалидного, {} при from>to).
@@ -503,10 +554,15 @@ function runDateFilterChecks(results: LifepayUnitTestResult[]): void {
     const r = normalizeDateFilter({ from: 1500 })
     return r.from === 1500 && r.to === undefined
   })
-  tryPush(results, 'df_norm_drop_invalid', 'normalizeDateFilter отбрасывает невалидную границу', () => {
-    const r = normalizeDateFilter({ from: 'x' as unknown as number, to: 2000 })
-    return r.from === undefined && r.to === 2000
-  })
+  tryPush(
+    results,
+    'df_norm_drop_invalid',
+    'normalizeDateFilter отбрасывает невалидную границу',
+    () => {
+      const r = normalizeDateFilter({ from: 'x' as unknown as number, to: 2000 })
+      return r.from === undefined && r.to === 2000
+    }
+  )
   tryPush(results, 'df_norm_empty_on_from_gt_to', 'normalizeDateFilter(from>to) → {}', () => {
     const r = normalizeDateFilter({ from: 5000, to: 1000 })
     return r.from === undefined && r.to === undefined
@@ -523,29 +579,24 @@ function runDateFilterChecks(results: LifepayUnitTestResult[]): void {
 }
 
 function runWebhookParseChecks(results: LifepayUnitTestResult[]): void {
-  tryPush(
-    results,
-    'lp_webhook_parse_basic',
-    'parseWebhookBody читает основные поля',
-    () => {
-      const r = parseWebhookBody({
-        number: '123',
-        type: 'payment',
-        status: 'success',
-        method: 'internetAcquiring',
-        amount: '1.00',
-        order: { number: 'A4' }
-      })
-      return (
-        r.number === '123' &&
-        r.type === 'payment' &&
-        r.status === 'success' &&
-        r.method === 'internetAcquiring' &&
-        r.amount === '1.00' &&
-        r.orderNumber === 'A4'
-      )
-    }
-  )
+  tryPush(results, 'lp_webhook_parse_basic', 'parseWebhookBody читает основные поля', () => {
+    const r = parseWebhookBody({
+      number: '123',
+      type: 'payment',
+      status: 'success',
+      method: 'internetAcquiring',
+      amount: '1.00',
+      order: { number: 'A4' }
+    })
+    return (
+      r.number === '123' &&
+      r.type === 'payment' &&
+      r.status === 'success' &&
+      r.method === 'internetAcquiring' &&
+      r.amount === '1.00' &&
+      r.orderNumber === 'A4'
+    )
+  })
 
   tryPush(
     results,
@@ -653,10 +704,7 @@ function runWebhookParseChecks(results: LifepayUnitTestResult[]): void {
     'lp_webhook_unwrap_json_string_data_object',
     'unwrapWebhookBody: \'{"data":{...}}\' → strategy=object_data_field',
     () => {
-      const u = unwrapWebhookBody(
-        '{"data":{"number":"U6","type":"refund"}}',
-        'application/json'
-      )
+      const u = unwrapWebhookBody('{"data":{"number":"U6","type":"refund"}}', 'application/json')
       const p = u.payload as Record<string, unknown>
       return u.strategy === 'object_data_field' && p.number === 'U6' && p.type === 'refund'
     }
@@ -685,15 +733,10 @@ function runWebhookParseChecks(results: LifepayUnitTestResult[]): void {
     }
   )
 
-  tryPush(
-    results,
-    'lp_webhook_unwrap_null',
-    'unwrapWebhookBody(null) → strategy=noop',
-    () => {
-      const u = unwrapWebhookBody(null, '')
-      return u.strategy === 'noop' && u.payload === null
-    }
-  )
+  tryPush(results, 'lp_webhook_unwrap_null', 'unwrapWebhookBody(null) → strategy=noop', () => {
+    const u = unwrapWebhookBody(null, '')
+    return u.strategy === 'noop' && u.payload === null
+  })
 
   tryPush(
     results,
@@ -722,7 +765,15 @@ function runWebhookParseChecks(results: LifepayUnitTestResult[]): void {
     'isSuccessfulPayment: только payment+success → true',
     () => {
       const make = (type: string, status: string) =>
-        isSuccessfulPayment({ number: '1', type, status, method: 'sbp', amount: '1.00', orderNumber: 'O', email: '' })
+        isSuccessfulPayment({
+          number: '1',
+          type,
+          status,
+          method: 'sbp',
+          amount: '1.00',
+          orderNumber: 'O',
+          email: ''
+        })
       if (make('payment', 'success') !== true) return false
       if (make('payment', 'fail') !== false) return false
       if (make('refund', 'success') !== false) return false
@@ -752,7 +803,9 @@ async function runWebhookReadChecks(results: LifepayUnitTestResult[]): Promise<v
     async () => {
       const form = {
         get: (k: string) =>
-          k === 'data' ? { name: 'data', type: 'application/json', text: async () => '{"number":"F2"}' } : null
+          k === 'data'
+            ? { name: 'data', type: 'application/json', text: async () => '{"number":"F2"}' }
+            : null
       }
       return (await readWebhookDataField(form, 'data')) === '{"number":"F2"}'
     }
@@ -834,9 +887,7 @@ function runCorrelationChecks(results: LifepayUnitTestResult[]): void {
     () => {
       const r = appendCorrelationId('https://x.test/web/webhook?token=ABC', 'cid-2')
       return (
-        r.appended === true &&
-        r.url.includes('token=ABC') &&
-        r.url.includes('correlationId=cid-2')
+        r.appended === true && r.url.includes('token=ABC') && r.url.includes('correlationId=cid-2')
       )
     }
   )
@@ -887,9 +938,9 @@ function runCorrelationChecks(results: LifepayUnitTestResult[]): void {
       const merged = mergeWebhooksById(a, b)
       return (
         merged.length === 3 &&
-        merged[0].id === 'w2' &&
-        merged[1].id === 'w3' &&
-        merged[2].id === 'w1'
+        merged[0]?.id === 'w2' &&
+        merged[1]?.id === 'w3' &&
+        merged[2]?.id === 'w1'
       )
     }
   )
@@ -899,20 +950,35 @@ function runAccessChecks(results: LifepayUnitTestResult[]): void {
   const now = 1_000_000
 
   // classifyInvite
-  tryPush(results, 'access_classify_unknown', 'classifyInvite(null) → unknown', () =>
-    classifyInvite(null, now) === 'unknown'
+  tryPush(
+    results,
+    'access_classify_unknown',
+    'classifyInvite(null) → unknown',
+    () => classifyInvite(null, now) === 'unknown'
   )
-  tryPush(results, 'access_classify_used', 'classifyInvite(usedAt) → used', () =>
-    classifyInvite({ usedAt: 5, expiresAt: now + 1000 }, now) === 'used'
+  tryPush(
+    results,
+    'access_classify_used',
+    'classifyInvite(usedAt) → used',
+    () => classifyInvite({ usedAt: 5, expiresAt: now + 1000 }, now) === 'used'
   )
-  tryPush(results, 'access_classify_revoked', 'classifyInvite(revokedAt) → revoked', () =>
-    classifyInvite({ revokedAt: 5, expiresAt: now + 1000 }, now) === 'revoked'
+  tryPush(
+    results,
+    'access_classify_revoked',
+    'classifyInvite(revokedAt) → revoked',
+    () => classifyInvite({ revokedAt: 5, expiresAt: now + 1000 }, now) === 'revoked'
   )
-  tryPush(results, 'access_classify_expired', 'classifyInvite(expiresAt<now) → expired', () =>
-    classifyInvite({ expiresAt: now - 1 }, now) === 'expired'
+  tryPush(
+    results,
+    'access_classify_expired',
+    'classifyInvite(expiresAt<now) → expired',
+    () => classifyInvite({ expiresAt: now - 1 }, now) === 'expired'
   )
-  tryPush(results, 'access_classify_valid', 'classifyInvite(свежий) → valid', () =>
-    classifyInvite({ expiresAt: now + 1000 }, now) === 'valid'
+  tryPush(
+    results,
+    'access_classify_valid',
+    'classifyInvite(свежий) → valid',
+    () => classifyInvite({ expiresAt: now + 1000 }, now) === 'valid'
   )
   tryPush(
     results,
@@ -922,14 +988,23 @@ function runAccessChecks(results: LifepayUnitTestResult[]): void {
   )
 
   // decideInternalAccess
-  tryPush(results, 'access_decide_admin', 'decideInternalAccess(admin) → true', () =>
-    decideInternalAccess(true, false) === true
+  tryPush(
+    results,
+    'access_decide_admin',
+    'decideInternalAccess(admin) → true',
+    () => decideInternalAccess(true, false) === true
   )
-  tryPush(results, 'access_decide_grant', 'decideInternalAccess(grant) → true', () =>
-    decideInternalAccess(false, true) === true
+  tryPush(
+    results,
+    'access_decide_grant',
+    'decideInternalAccess(grant) → true',
+    () => decideInternalAccess(false, true) === true
   )
-  tryPush(results, 'access_decide_none', 'decideInternalAccess(нет) → false', () =>
-    decideInternalAccess(false, false) === false
+  tryPush(
+    results,
+    'access_decide_none',
+    'decideInternalAccess(нет) → false',
+    () => decideInternalAccess(false, false) === false
   )
 }
 

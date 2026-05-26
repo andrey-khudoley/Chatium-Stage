@@ -6,7 +6,12 @@ import { logTestRunFailures } from '../../../lib/tests/logTestRunFailures'
 
 const LOG_PATH = 'api/tests/integration'
 
-export type TemplateIntegrationTestResult = { id: string; title: string; passed: boolean; error?: string }
+export type TemplateIntegrationTestResult = {
+  id: string
+  title: string
+  passed: boolean
+  error?: string
+}
 
 /**
  * GET /api/tests/integration — интеграция Heap + либ шаблонного минимума.

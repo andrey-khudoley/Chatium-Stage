@@ -3,7 +3,7 @@ import { jsx } from '@app/html-jsx'
 import LoginPage from '../../pages/LoginPage.vue'
 import { baseHtmlStyles, customScrollbarStyles } from '../../styles'
 import { PROJECT_ROOT } from '../../config/routes'
-import { getLogLevelForPage, getLogLevelScript } from '../../shared/logLevel'
+import { getLogLevelForPage, getLogLevelScript } from '../../lib/logLevel'
 import * as loggerLib from '../../lib/logger.lib'
 
 const LOG_PATH = 'web/login/index'

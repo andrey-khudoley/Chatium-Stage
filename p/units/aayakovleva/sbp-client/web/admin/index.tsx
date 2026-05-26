@@ -4,8 +4,8 @@ import { requireAccountRole } from '@app/auth'
 import { genSocketId } from '@app/socket'
 import AdminPage from '../../pages/AdminPage.vue'
 import { loginPageRoute } from '../login'
-import { getPreloaderStyles, getPreloaderScript } from '../../shared/preloader'
-import { getLogLevelForPage, getLogLevelScript } from '../../shared/logLevel'
+import { getPreloaderStyles, getPreloaderScript } from '../../lib/preloader'
+import { getLogLevelForPage, getLogLevelScript } from '../../lib/logLevel'
 import { getAdminLogsSocketId } from '../../lib/logger.lib'
 import * as loggerLib from '../../lib/logger.lib'
 import { getFullUrl, ROUTES } from '../../config/routes'
@@ -201,7 +201,10 @@ export const adminPageRoute = app.html('/', async (ctx, req) => {
         <link rel="stylesheet" href="/s/static/lib/fontawesome/6.7.2/css/all.min.css" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
-        <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap"
+          rel="stylesheet"
+        />
       </head>
       <body>
         <div id="geometric-bg"></div>

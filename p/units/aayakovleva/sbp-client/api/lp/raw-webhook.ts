@@ -32,11 +32,7 @@ export const rawWebhookRoute = app.get('/', async (ctx, req) => {
   const q = req.query as Record<string, unknown> | undefined
   const idRaw = q?.id
   const id =
-    typeof idRaw === 'string'
-      ? idRaw.trim()
-      : typeof idRaw === 'number'
-      ? String(idRaw)
-      : ''
+    typeof idRaw === 'string' ? idRaw.trim() : typeof idRaw === 'number' ? String(idRaw) : ''
 
   await loggerLib.writeServerLog(ctx, {
     severity: 6,
@@ -65,9 +61,7 @@ export const rawWebhookRoute = app.get('/', async (ctx, req) => {
   }
 
   const orderNumber = row.orderNumber || ''
-  const linkedRequests = orderNumber
-    ? await requestLogRepo.findByOrderNumber(ctx, orderNumber)
-    : []
+  const linkedRequests = orderNumber ? await requestLogRepo.findByOrderNumber(ctx, orderNumber) : []
   const relatedWebhooksAll = orderNumber
     ? await webhookLogRepo.findByOrderNumber(ctx, orderNumber)
     : []

@@ -1,7 +1,7 @@
-import { getLogLevel, type LogLevel } from '../lib/settings.lib'
-import * as loggerLib from '../lib/logger.lib'
+import { getLogLevel, type LogLevel } from './settings.lib'
+import * as loggerLib from './logger.lib'
 
-const LOG_PATH = 'shared/logLevel'
+const LOG_PATH = 'lib/logLevel'
 
 /**
  * Получить уровень логирования для страницы (при серверной генерации).

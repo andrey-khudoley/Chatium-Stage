@@ -47,7 +47,10 @@ const showCursor = ref(false)
 const cursorPosition = ref<'title' | 'description' | 'final'>('title')
 const showTitleUnderline = ref(false)
 
-const intervalIds = { title: null as ReturnType<typeof setInterval> | null, desc: null as ReturnType<typeof setInterval> | null }
+const intervalIds = {
+  title: null as ReturnType<typeof setInterval> | null,
+  desc: null as ReturnType<typeof setInterval> | null
+}
 
 const typeTextSequence = () => {
   log.debug('Profile title animation started')
@@ -186,10 +189,18 @@ const openChatiumLink = () => {
               <i class="fas fa-fingerprint profile-icon"></i>
             </div>
             <h1 class="profile-heading" :class="{ 'show-underline': showTitleUnderline }">
-              {{ displayedTitle }}<span v-if="showCursor && (cursorPosition === 'title' || cursorPosition === 'final')" class="typing-cursor">▮</span>
+              {{ displayedTitle
+              }}<span
+                v-if="showCursor && (cursorPosition === 'title' || cursorPosition === 'final')"
+                class="typing-cursor"
+                >▮</span
+              >
             </h1>
             <p class="profile-description">
-              {{ displayedDescription }}<span v-if="showCursor && cursorPosition === 'description'" class="typing-cursor">▮</span>
+              {{ displayedDescription
+              }}<span v-if="showCursor && cursorPosition === 'description'" class="typing-cursor"
+                >▮</span
+              >
             </p>
           </div>
 
@@ -314,7 +325,9 @@ body {
 .profile-section {
   opacity: 0;
   transform: translateY(20px);
-  transition: opacity 0.8s ease, transform 0.8s ease;
+  transition:
+    opacity 0.8s ease,
+    transform 0.8s ease;
 }
 
 .profile-section.content-visible {
@@ -344,10 +357,18 @@ body {
   position: relative;
   overflow: hidden;
   clip-path: polygon(
-    0 4px, 4px 4px, 4px 0,
-    calc(100% - 4px) 0, calc(100% - 4px) 4px, 100% 4px,
-    100% calc(100% - 4px), calc(100% - 4px) calc(100% - 4px), calc(100% - 4px) 100%,
-    4px 100%, 4px calc(100% - 4px), 0 calc(100% - 4px)
+    0 4px,
+    4px 4px,
+    4px 0,
+    calc(100% - 4px) 0,
+    calc(100% - 4px) 4px,
+    100% 4px,
+    100% calc(100% - 4px),
+    calc(100% - 4px) calc(100% - 4px),
+    calc(100% - 4px) 100%,
+    4px 100%,
+    4px calc(100% - 4px),
+    0 calc(100% - 4px)
   );
 }
 
@@ -390,8 +411,13 @@ body {
 }
 
 @keyframes scanline-flicker {
-  0%, 100% { opacity: 0.7; }
-  50% { opacity: 0.5; }
+  0%,
+  100% {
+    opacity: 0.7;
+  }
+  50% {
+    opacity: 0.5;
+  }
 }
 
 @keyframes fingerprint-scan {
@@ -467,8 +493,14 @@ body {
 }
 
 @keyframes cursor-blink {
-  0%, 50% { opacity: 1; }
-  51%, 100% { opacity: 0; }
+  0%,
+  50% {
+    opacity: 1;
+  }
+  51%,
+  100% {
+    opacity: 0;
+  }
 }
 
 /* Profile Card */
@@ -557,5 +589,4 @@ body {
     padding-left: 0;
   }
 }
-
 </style>

@@ -25,7 +25,7 @@ const LOG_PATH = 'api/lp/analytics/summary'
 function computeP95(sortedAsc: number[]): number {
   if (sortedAsc.length === 0) return 0
   const idx = Math.min(sortedAsc.length - 1, Math.floor(sortedAsc.length * 0.95))
-  return sortedAsc[idx]
+  return sortedAsc[idx] ?? 0
 }
 
 /**
@@ -144,7 +144,14 @@ export const analyticsSummaryRoute = app.get('/', async (ctx, req) => {
   await loggerLib.writeServerLog(ctx, {
     severity: 6,
     message: `[${LOG_PATH}] exit`,
-    payload: { from: from ?? null, to: to ?? null, requestsTotal, webhooksTotal, ordersCreated, ordersPaid }
+    payload: {
+      from: from ?? null,
+      to: to ?? null,
+      requestsTotal,
+      webhooksTotal,
+      ordersCreated,
+      ordersPaid
+    }
   })
 
   return result

@@ -30,10 +30,7 @@ export type RequestLogCreatePayload = {
   rawResponseBody: unknown
 }
 
-export async function create(
-  ctx: app.Ctx,
-  data: RequestLogCreatePayload
-): Promise<RequestLogRow> {
+export async function create(ctx: app.Ctx, data: RequestLogCreatePayload): Promise<RequestLogRow> {
   await loggerLib.writeServerLog(ctx, {
     severity: 6,
     message: `[${LOG_MODULE}] create entry`,
@@ -45,7 +42,10 @@ export async function create(
       correlationId: data.correlationId ?? null
     }
   })
-  const row = await RequestLog.create(ctx, { ...data, correlationId: data.correlationId || undefined })
+  const row = await RequestLog.create(ctx, {
+    ...data,
+    correlationId: data.correlationId || undefined
+  })
   await loggerLib.writeServerLog(ctx, {
     severity: 6,
     message: `[${LOG_MODULE}] create exit`,
@@ -97,10 +97,7 @@ export async function findBeforeRequestedAt(
   return rows
 }
 
-export async function findById(
-  ctx: app.Ctx,
-  id: string
-): Promise<RequestLogRow | null> {
+export async function findById(ctx: app.Ctx, id: string): Promise<RequestLogRow | null> {
   await loggerLib.writeServerLog(ctx, {
     severity: 6,
     message: `[${LOG_MODULE}] findById entry`,
@@ -110,7 +107,7 @@ export async function findById(
     where: { id },
     limit: 1
   })
-  const row = rows.length > 0 ? rows[0] : null
+  const row = rows[0] ?? null
   await loggerLib.writeServerLog(ctx, {
     severity: 6,
     message: `[${LOG_MODULE}] findById exit`,
@@ -185,7 +182,7 @@ export async function findByRequestId(
     where: { requestId },
     limit: 1
   })
-  const row = rows.length > 0 ? rows[0] : null
+  const row = rows[0] ?? null
   await loggerLib.writeServerLog(ctx, {
     severity: 6,
     message: `[${LOG_MODULE}] findByRequestId exit`,
@@ -236,9 +233,10 @@ export async function findRecentSince(
       limit: batchSize
     })
 
-    if (rows.length === 0) break
+    const last = rows[rows.length - 1]
+    if (!last) break
     result.push(...rows)
-    cursor = rows[rows.length - 1].requestedAt
+    cursor = last.requestedAt
     if (rows.length < batchSize) break
   }
 
@@ -250,10 +248,7 @@ export async function findRecentSince(
   return result
 }
 
-export async function countSince(
-  ctx: app.Ctx,
-  sinceTimestamp: number
-): Promise<number> {
+export async function countSince(ctx: app.Ctx, sinceTimestamp: number): Promise<number> {
   await loggerLib.writeServerLog(ctx, {
     severity: 6,
     message: `[${LOG_MODULE}] countSince entry`,
@@ -270,10 +265,7 @@ export async function countSince(
   return count
 }
 
-export async function countOkSince(
-  ctx: app.Ctx,
-  sinceTimestamp: number
-): Promise<number> {
+export async function countOkSince(ctx: app.Ctx, sinceTimestamp: number): Promise<number> {
   return RequestLog.countBy(ctx, {
     requestedAt: { $gte: sinceTimestamp },
     ok: true
@@ -319,8 +311,7 @@ export async function findInRange(
     if (from !== undefined) cond.$gte = from
     const upper = cursor !== null ? cursor : to
     if (upper !== undefined) cond.$lt = upper
-    const where: Record<string, unknown> =
-      Object.keys(cond).length > 0 ? { requestedAt: cond } : {}
+    const where: Record<string, unknown> = Object.keys(cond).length > 0 ? { requestedAt: cond } : {}
 
     const remaining = limit - result.length
     const batchSize = Math.min(HARD_BATCH, remaining)
@@ -331,9 +322,10 @@ export async function findInRange(
       limit: batchSize
     })
 
-    if (rows.length === 0) break
+    const last = rows[rows.length - 1]
+    if (!last) break
     result.push(...rows)
-    cursor = rows[rows.length - 1].requestedAt
+    cursor = last.requestedAt
     if (rows.length < batchSize) break
   }
 
@@ -345,18 +337,10 @@ export async function findInRange(
   return result
 }
 
-export async function countInRange(
-  ctx: app.Ctx,
-  from?: number,
-  to?: number
-): Promise<number> {
+export async function countInRange(ctx: app.Ctx, from?: number, to?: number): Promise<number> {
   return RequestLog.countBy(ctx, rangeWhere(from, to))
 }
 
-export async function countOkInRange(
-  ctx: app.Ctx,
-  from?: number,
-  to?: number
-): Promise<number> {
+export async function countOkInRange(ctx: app.Ctx, from?: number, to?: number): Promise<number> {
   return RequestLog.countBy(ctx, { ...rangeWhere(from, to), ok: true })
 }

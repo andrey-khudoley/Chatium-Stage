@@ -27,9 +27,13 @@ export const RequestLog = Heap.Table('t__lifepay-sbp-client__reqlog__c7Np4S', {
     customMeta: { title: 'orderNumber из args (для связки с webhook)' },
     searchable: { langs: ['en'], embeddings: false }
   }),
-  correlationId: Heap.Optional(Heap.String({
-    customMeta: { title: 'correlationId (UUID из callbackUrl/args, для надёжной связки с webhook)' }
-  })),
+  correlationId: Heap.Optional(
+    Heap.String({
+      customMeta: {
+        title: 'correlationId (UUID из callbackUrl/args, для надёжной связки с webhook)'
+      }
+    })
+  ),
   clientHttpStatus: Heap.Number({
     customMeta: { title: 'HTTP-статус ответа gateway' }
   }),

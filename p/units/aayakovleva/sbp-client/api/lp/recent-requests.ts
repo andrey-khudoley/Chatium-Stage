@@ -15,7 +15,8 @@ import { getPanelDateFilter } from '../../lib/settings.lib'
 const LOG_PATH = 'api/lp/recent-requests'
 
 function parseLimit(value: unknown): number {
-  const n = typeof value === 'string' ? parseInt(value, 10) : typeof value === 'number' ? value : NaN
+  const n =
+    typeof value === 'string' ? parseInt(value, 10) : typeof value === 'number' ? value : NaN
   if (!Number.isFinite(n) || n < 1) return RECENT_DEFAULT_LIMIT
   return Math.min(Math.floor(n), RECENT_MAX_LIMIT)
 }

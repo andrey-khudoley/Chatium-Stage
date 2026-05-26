@@ -10,6 +10,7 @@ import { requireAccountRole } from '@app/auth'
 import { loginPageRoute } from '../login'
 import { getFullUrl, ROUTES } from '../../config/routes'
 import * as loggerLib from '../../lib/logger.lib'
+import { htmlRedirect } from '../../lib/htmlRedirect'
 
 const LOG_PATH = 'web/panel/index'
 
@@ -29,7 +30,7 @@ export const panelPageRoute = app.html('/', async (ctx, req) => {
       payload: { error: String(error) }
     })
     const loginUrl = loginPageRoute.url() + `?back=${encodeURIComponent(req.url)}`
-    return ctx.resp.redirect(loginUrl)
+    return htmlRedirect(ctx, loginUrl)
   }
 
   // Админ — перенаправляем на новую главную (которая теперь = панель).
@@ -39,7 +40,7 @@ export const panelPageRoute = app.html('/', async (ctx, req) => {
     message: `[${LOG_PATH}] redirect_to_index`,
     payload: { indexUrl }
   })
-  return ctx.resp.redirect(indexUrl)
+  return htmlRedirect(ctx, indexUrl)
 })
 
 export default panelPageRoute

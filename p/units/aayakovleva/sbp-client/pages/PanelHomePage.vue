@@ -1,8 +1,5 @@
 <template>
-  <div
-    class="app-layout flex flex-col"
-    @animationend="onAppLayoutAnimationEnd"
-  >
+  <div class="app-layout flex flex-col" @animationend="onAppLayoutAnimationEnd">
     <GlobalGlitch />
     <Header
       v-if="bootLoaderDone"
@@ -19,7 +16,6 @@
 
     <main class="content-wrapper flex-1 relative z-10 min-h-0 overflow-y-auto">
       <div class="content-inner" :class="{ ready: bootLoaderDone }">
-
         <!-- ====== STATUS STRIP ====== -->
         <section class="status-strip" aria-label="Состояние конфигурации">
           <div class="status-chips">
@@ -28,7 +24,9 @@
               tabindex="0"
             >
               <i class="fas" :class="allConfigured ? 'fa-check' : 'fa-triangle-exclamation'"></i>
-              <span>{{ allConfigured ? 'Настройки выполнены успешно' : 'Требуется настройка' }}</span>
+              <span>{{
+                allConfigured ? 'Настройки выполнены успешно' : 'Требуется настройка'
+              }}</span>
               <span v-if="!allConfigured" class="config-status-tooltip" role="tooltip">
                 <span class="config-status-tooltip-title">Не хватает для зелёного статуса:</span>
                 <ul>
@@ -38,16 +36,9 @@
             </span>
           </div>
           <div class="status-webhook">
-            <span class="status-webhook-label">
-              <i class="fas fa-link"></i> Base URL
-            </span>
+            <span class="status-webhook-label"> <i class="fas fa-link"></i> Base URL </span>
             <code class="status-webhook-url">{{ baseUrl }}</code>
-            <button
-              type="button"
-              class="btn-mini"
-              @click="copyText(baseUrl)"
-              title="Скопировать"
-            >
+            <button type="button" class="btn-mini" @click="copyText(baseUrl)" title="Скопировать">
               <i class="far fa-copy"></i>
             </button>
           </div>
@@ -123,7 +114,9 @@
               >
                 <i class="fas fa-rotate-left"></i> Сброс
               </button>
-              <span v-if="dateFilterError" class="date-filter-error" role="alert">{{ dateFilterError }}</span>
+              <span v-if="dateFilterError" class="date-filter-error" role="alert">{{
+                dateFilterError
+              }}</span>
             </div>
             <label
               v-show="!hasActiveFilter"
@@ -163,7 +156,12 @@
             <span class="prompt">›</span>
             <h2>Результат поиска</h2>
             <code v-if="searchedQuery" class="search-query">{{ searchedQuery }}</code>
-            <button type="button" class="btn-mini head-action" @click="searchResult = null" title="Закрыть">
+            <button
+              type="button"
+              class="btn-mini head-action"
+              @click="searchResult = null"
+              title="Закрыть"
+            >
               <i class="fas fa-xmark"></i> Закрыть
             </button>
           </header>
@@ -171,18 +169,55 @@
             <div class="table-wrapper">
               <table class="data-table data-table-vertical">
                 <tbody>
-                  <tr><th>requestId</th><td><code>{{ searchResult.request.requestId }}</code></td></tr>
-                  <tr><th>op</th><td>{{ searchResult.request.op }}</td></tr>
-                  <tr><th>orderNumber</th><td>{{ searchResult.request.orderNumber }}</td></tr>
-                  <tr><th>correlationId</th><td><code>{{ searchResult.request.correlationId || '—' }}</code></td></tr>
-                  <tr><th>HTTP</th><td>{{ searchResult.request.clientHttpStatus }}</td></tr>
-                  <tr><th>ok</th><td :class="searchResult.request.ok ? 'cell-ok' : 'cell-err'">{{ searchResult.request.ok ? '✓ успех' : '✗ ошибка' }}</td></tr>
-                  <tr><th>errorCode</th><td>{{ searchResult.request.errorCode || '—' }}</td></tr>
-                  <tr><th>lpHttpStatus</th><td>{{ searchResult.request.lpHttpStatus || '—' }}</td></tr>
-                  <tr><th>lpSemanticRule</th><td>{{ searchResult.request.lpSemanticRule || '—' }}</td></tr>
+                  <tr>
+                    <th>requestId</th>
+                    <td>
+                      <code>{{ searchResult.request.requestId }}</code>
+                    </td>
+                  </tr>
+                  <tr>
+                    <th>op</th>
+                    <td>{{ searchResult.request.op }}</td>
+                  </tr>
+                  <tr>
+                    <th>orderNumber</th>
+                    <td>{{ searchResult.request.orderNumber }}</td>
+                  </tr>
+                  <tr>
+                    <th>correlationId</th>
+                    <td>
+                      <code>{{ searchResult.request.correlationId || '—' }}</code>
+                    </td>
+                  </tr>
+                  <tr>
+                    <th>HTTP</th>
+                    <td>{{ searchResult.request.clientHttpStatus }}</td>
+                  </tr>
+                  <tr>
+                    <th>ok</th>
+                    <td :class="searchResult.request.ok ? 'cell-ok' : 'cell-err'">
+                      {{ searchResult.request.ok ? '✓ успех' : '✗ ошибка' }}
+                    </td>
+                  </tr>
+                  <tr>
+                    <th>errorCode</th>
+                    <td>{{ searchResult.request.errorCode || '—' }}</td>
+                  </tr>
+                  <tr>
+                    <th>lpHttpStatus</th>
+                    <td>{{ searchResult.request.lpHttpStatus || '—' }}</td>
+                  </tr>
+                  <tr>
+                    <th>lpSemanticRule</th>
+                    <td>{{ searchResult.request.lpSemanticRule || '—' }}</td>
+                  </tr>
                   <tr>
                     <th>argsRedacted</th>
-                    <td><pre class="json-block">{{ JSON.stringify(searchResult.request.argsRedacted, null, 2) }}</pre></td>
+                    <td>
+                      <pre class="json-block">{{
+                        JSON.stringify(searchResult.request.argsRedacted, null, 2)
+                      }}</pre>
+                    </td>
                   </tr>
                 </tbody>
               </table>
@@ -191,7 +226,12 @@
             <div v-if="searchResult.webhooks.length > 0" class="table-wrapper">
               <table class="data-table">
                 <thead>
-                  <tr><th>Время</th><th>number</th><th>type</th><th>status</th></tr>
+                  <tr>
+                    <th>Время</th>
+                    <th>number</th>
+                    <th>type</th>
+                    <th>status</th>
+                  </tr>
                 </thead>
                 <tbody>
                   <tr v-for="w in searchResult.webhooks" :key="w.id" :class="rowClassWebhook(w)">
@@ -205,7 +245,9 @@
             </div>
             <p v-else class="muted"><i class="fas fa-circle-info"></i> Связанных webhook нет.</p>
           </div>
-          <p v-else class="muted"><i class="fas fa-circle-exclamation"></i> По указанному requestId записей не найдено.</p>
+          <p v-else class="muted">
+            <i class="fas fa-circle-exclamation"></i> По указанному requestId записей не найдено.
+          </p>
         </section>
 
         <!-- ====== TAB: ОБЗОР ====== -->
@@ -240,62 +282,66 @@
           </section>
 
           <section class="admin-summary" aria-label="Сводка для администратора">
-          <h2 class="summary-title">
-            <span class="prompt">›</span> Сводка для администратора
-            <span class="summary-period">{{ periodLabel }}</span>
-          </h2>
-          <section class="kpi-grid" aria-label="Ключевые метрики">
-            <article class="kpi-card kpi-hero">
-              <div class="kpi-icon"><i class="fas fa-paper-plane"></i></div>
-              <div class="kpi-label">Запросов</div>
-              <div class="kpi-value">{{ formatKpiNumber(analytics?.requests?.total) }}</div>
-            </article>
-            <article class="kpi-card kpi-hero kpi-success">
-              <div class="kpi-icon"><i class="fas fa-circle-check"></i></div>
-              <div class="kpi-label">Успешных</div>
-              <div class="kpi-value">{{ formatKpiPercent(analytics?.requests?.okShare) }}</div>
-            </article>
-            <article class="kpi-card kpi-hero">
-              <div class="kpi-icon"><i class="fas fa-gauge-high"></i></div>
-              <div class="kpi-label">p95 latency</div>
-              <div class="kpi-value">
-                {{ formatKpiNumber(analytics?.requests?.p95DurationMs) }}
-                <span class="kpi-unit">мс</span>
-              </div>
-            </article>
-            <article class="kpi-card kpi-hero">
-              <div class="kpi-icon"><i class="fas fa-bell"></i></div>
-              <div class="kpi-label">Webhook</div>
-              <div class="kpi-value">{{ formatKpiNumber(analytics?.webhooks?.total) }}</div>
-            </article>
-          </section>
+            <h2 class="summary-title">
+              <span class="prompt">›</span> Сводка для администратора
+              <span class="summary-period">{{ periodLabel }}</span>
+            </h2>
+            <section class="kpi-grid" aria-label="Ключевые метрики">
+              <article class="kpi-card kpi-hero">
+                <div class="kpi-icon"><i class="fas fa-paper-plane"></i></div>
+                <div class="kpi-label">Запросов</div>
+                <div class="kpi-value">{{ formatKpiNumber(analytics?.requests?.total) }}</div>
+              </article>
+              <article class="kpi-card kpi-hero kpi-success">
+                <div class="kpi-icon"><i class="fas fa-circle-check"></i></div>
+                <div class="kpi-label">Успешных</div>
+                <div class="kpi-value">{{ formatKpiPercent(analytics?.requests?.okShare) }}</div>
+              </article>
+              <article class="kpi-card kpi-hero">
+                <div class="kpi-icon"><i class="fas fa-gauge-high"></i></div>
+                <div class="kpi-label">p95 latency</div>
+                <div class="kpi-value">
+                  {{ formatKpiNumber(analytics?.requests?.p95DurationMs) }}
+                  <span class="kpi-unit">мс</span>
+                </div>
+              </article>
+              <article class="kpi-card kpi-hero">
+                <div class="kpi-icon"><i class="fas fa-bell"></i></div>
+                <div class="kpi-label">Webhook</div>
+                <div class="kpi-value">{{ formatKpiNumber(analytics?.webhooks?.total) }}</div>
+              </article>
+            </section>
 
-          <section class="kpi-grid kpi-grid-secondary" aria-label="Дополнительные метрики">
-            <article class="stat-card">
-              <div class="stat-label"><i class="fas fa-stopwatch"></i> avg latency</div>
-              <div class="stat-value">
-                {{ formatKpiNumber(analytics?.requests?.avgDurationMs) }}
-                <span class="stat-unit">мс</span>
-              </div>
-            </article>
-            <article class="stat-card">
-              <div class="stat-label"><i class="fas fa-bug"></i> Top errorCode</div>
-              <div class="stat-value small">
-                {{ analytics?.requests?.topErrorCode || '—' }}
-                <span v-if="analytics?.requests?.topErrorCount" class="stat-unit">
-                  ({{ analytics.requests.topErrorCount }})
-                </span>
-              </div>
-            </article>
-            <article class="stat-card">
-              <div class="stat-label"><i class="fas fa-shield-halved"></i> webhook success</div>
-              <div class="stat-value">{{ formatKpiPercent(analytics?.webhooks?.successShare) }}</div>
-            </article>
-            <article class="stat-card">
-              <div class="stat-label"><i class="fas fa-key"></i> tokenValid</div>
-              <div class="stat-value">{{ formatKpiPercent(analytics?.webhooks?.tokenValidShare) }}</div>
-            </article>
-          </section>
+            <section class="kpi-grid kpi-grid-secondary" aria-label="Дополнительные метрики">
+              <article class="stat-card">
+                <div class="stat-label"><i class="fas fa-stopwatch"></i> avg latency</div>
+                <div class="stat-value">
+                  {{ formatKpiNumber(analytics?.requests?.avgDurationMs) }}
+                  <span class="stat-unit">мс</span>
+                </div>
+              </article>
+              <article class="stat-card">
+                <div class="stat-label"><i class="fas fa-bug"></i> Top errorCode</div>
+                <div class="stat-value small">
+                  {{ analytics?.requests?.topErrorCode || '—' }}
+                  <span v-if="analytics?.requests?.topErrorCount" class="stat-unit">
+                    ({{ analytics.requests.topErrorCount }})
+                  </span>
+                </div>
+              </article>
+              <article class="stat-card">
+                <div class="stat-label"><i class="fas fa-shield-halved"></i> webhook success</div>
+                <div class="stat-value">
+                  {{ formatKpiPercent(analytics?.webhooks?.successShare) }}
+                </div>
+              </article>
+              <article class="stat-card">
+                <div class="stat-label"><i class="fas fa-key"></i> tokenValid</div>
+                <div class="stat-value">
+                  {{ formatKpiPercent(analytics?.webhooks?.tokenValidShare) }}
+                </div>
+              </article>
+            </section>
           </section>
 
           <section class="feed-grid">
@@ -311,7 +357,13 @@
               <div v-if="recentRequestsPreview.length > 0" class="table-wrapper">
                 <table class="data-table compact-table">
                   <thead>
-                    <tr><th>Время</th><th>op</th><th>HTTP</th><th>статус</th><th>ms</th></tr>
+                    <tr>
+                      <th>Время</th>
+                      <th>op</th>
+                      <th>HTTP</th>
+                      <th>статус</th>
+                      <th>ms</th>
+                    </tr>
                   </thead>
                   <tbody>
                     <tr
@@ -355,14 +407,16 @@
               <div v-if="recentWebhooksPreview.length > 0" class="table-wrapper">
                 <table class="data-table compact-table">
                   <thead>
-                    <tr><th>Время</th><th>orderNumber</th><th>сумма</th><th>type</th><th>статус</th></tr>
+                    <tr>
+                      <th>Время</th>
+                      <th>orderNumber</th>
+                      <th>сумма</th>
+                      <th>type</th>
+                      <th>статус</th>
+                    </tr>
                   </thead>
                   <tbody>
-                    <tr
-                      v-for="w in recentWebhooksPreview"
-                      :key="w.id"
-                      :class="rowClassWebhook(w)"
-                    >
+                    <tr v-for="w in recentWebhooksPreview" :key="w.id" :class="rowClassWebhook(w)">
                       <td>{{ formatTime(w.processedAt) }}</td>
                       <td>{{ w.orderNumber }}</td>
                       <td>{{ w.amount }}</td>
@@ -378,7 +432,9 @@
               <div v-else class="empty-state">
                 <i class="fas fa-inbox empty-icon"></i>
                 <p class="empty-title">Webhook ещё не приходили</p>
-                <p class="empty-hint">LifePay присылает уведомления по callbackUrl после оплаты счёта.</p>
+                <p class="empty-hint">
+                  LifePay присылает уведомления по callbackUrl после оплаты счёта.
+                </p>
               </div>
             </article>
           </section>
@@ -390,7 +446,12 @@
             <span class="prompt">›</span>
             <h2>Журнал исходящих запросов</h2>
             <span class="updated-since muted">{{ updatedSince(lastUpdated.requests) }}</span>
-            <button type="button" class="btn-mini head-action" @click="loadRequests" title="Обновить">
+            <button
+              type="button"
+              class="btn-mini head-action"
+              @click="loadRequests"
+              title="Обновить"
+            >
               <i class="fas fa-rotate"></i>
             </button>
           </header>
@@ -422,11 +483,7 @@
                 </tr>
               </thead>
               <tbody>
-                <tr
-                  v-for="r in filteredRequests"
-                  :key="r.id"
-                  :class="rowClassRequest(r)"
-                >
+                <tr v-for="r in filteredRequests" :key="r.id" :class="rowClassRequest(r)">
                   <td>{{ formatTime(r.requestedAt) }}</td>
                   <td class="cell-id">
                     <code>{{ r.requestId }}</code>
@@ -456,7 +513,11 @@
                   <td>{{ r.lpSemanticRule || '—' }}</td>
                   <td>{{ r.durationMs }}</td>
                   <td>
-                    <button class="btn-mini" @click="openRaw('request', r.id)" title="Полное тело ответа">
+                    <button
+                      class="btn-mini"
+                      @click="openRaw('request', r.id)"
+                      title="Полное тело ответа"
+                    >
                       <i class="fas fa-code"></i>
                     </button>
                   </td>
@@ -481,7 +542,12 @@
             <span class="prompt">›</span>
             <h2>Журнал входящих webhook</h2>
             <span class="updated-since muted">{{ updatedSince(lastUpdated.webhooks) }}</span>
-            <button type="button" class="btn-mini head-action" @click="loadWebhooks" title="Обновить">
+            <button
+              type="button"
+              class="btn-mini head-action"
+              @click="loadWebhooks"
+              title="Обновить"
+            >
               <i class="fas fa-rotate"></i>
             </button>
           </header>
@@ -527,7 +593,11 @@
                   <td>{{ w.type }}</td>
                   <td :class="w.status === 'success' ? 'cell-ok' : 'cell-err'">{{ w.status }}</td>
                   <td>
-                    <button class="btn-mini" @click="openRaw('webhook', w.id)" title="Полное тело webhook">
+                    <button
+                      class="btn-mini"
+                      @click="openRaw('webhook', w.id)"
+                      title="Полное тело webhook"
+                    >
                       <i class="fas fa-code"></i>
                     </button>
                   </td>
@@ -549,7 +619,9 @@
           <header class="panel-section-head">
             <span class="prompt">›</span>
             <h2>Создать счёт вручную</h2>
-            <span class="head-meta muted">Тестовый вызов <code>createBill</code> через gateway</span>
+            <span class="head-meta muted"
+              >Тестовый вызов <code>createBill</code> через gateway</span
+            >
           </header>
           <form class="grid-form" @submit.prevent="createBill">
             <label class="field">
@@ -558,7 +630,14 @@
             </label>
             <label class="field">
               <span class="field-label">amount, рубли <span class="field-required">*</span></span>
-              <input v-model.number="bill.amount" type="number" step="0.01" min="0.01" required class="field-input" />
+              <input
+                v-model.number="bill.amount"
+                type="number"
+                step="0.01"
+                min="0.01"
+                required
+                class="field-input"
+              />
             </label>
             <label class="field">
               <span class="field-label">customerEmail <span class="field-required">*</span></span>
@@ -571,24 +650,40 @@
             <label class="field field-full">
               <span class="field-label">callbackUrl <span class="field-required">*</span></span>
               <input v-model="bill.callbackUrl" type="url" required class="field-input" />
-              <span class="field-hint">Адрес для входящего webhook от LifePay. Авто-подставлен из настроек.</span>
+              <span class="field-hint"
+                >Адрес для входящего webhook от LifePay. Авто-подставлен из настроек.</span
+              >
             </label>
             <label class="field">
               <span class="field-label">customerPhone</span>
-              <input v-model="bill.customerPhone" type="text" placeholder="7XXXXXXXXXX" class="field-input" />
+              <input
+                v-model="bill.customerPhone"
+                type="text"
+                placeholder="7XXXXXXXXXX"
+                class="field-input"
+              />
             </label>
             <div class="form-actions field-full">
               <button type="submit" class="btn-primary" :disabled="billLoading">
                 <i class="fas" :class="billLoading ? 'fa-spinner fa-spin' : 'fa-paper-plane'"></i>
                 {{ billLoading ? 'Отправка...' : 'Создать счёт' }}
               </button>
-              <button v-if="billResult" type="button" class="btn-secondary" @click="resetBillResult">
+              <button
+                v-if="billResult"
+                type="button"
+                class="btn-secondary"
+                @click="resetBillResult"
+              >
                 <i class="fas fa-eraser"></i> Очистить результат
               </button>
             </div>
           </form>
 
-          <div v-if="billResult" class="bill-result" :class="billResult.ok ? 'bill-result-ok' : 'bill-result-err'">
+          <div
+            v-if="billResult"
+            class="bill-result"
+            :class="billResult.ok ? 'bill-result-ok' : 'bill-result-err'"
+          >
             <p v-if="billResult.ok" class="form-msg is-ok">
               <i class="fas fa-circle-check"></i> Счёт создан
             </p>
@@ -598,7 +693,11 @@
             </p>
             <p v-if="billResult.requestId" class="bill-meta">
               requestId: <code>{{ billResult.requestId }}</code>
-              <button class="btn-mini" @click="lookupRequest(billResult.requestId)" title="Открыть в журнале">
+              <button
+                class="btn-mini"
+                @click="lookupRequest(billResult.requestId)"
+                title="Открыть в журнале"
+              >
                 <i class="fas fa-magnifying-glass"></i> найти
               </button>
               <button class="btn-mini" @click="copyText(billResult.requestId)" title="Скопировать">
@@ -606,7 +705,9 @@
               </button>
             </p>
             <div v-if="billSuccessData" class="bill-success">
-              <p>billNumber: <code>{{ billSuccessData.billNumber }}</code></p>
+              <p>
+                billNumber: <code>{{ billSuccessData.billNumber }}</code>
+              </p>
               <p v-if="billSuccessData.paymentUrl">
                 paymentUrl: <code class="paymenturl">{{ billSuccessData.paymentUrl }}</code>
               </p>
@@ -654,8 +755,13 @@
               <table class="data-table">
                 <thead>
                   <tr>
-                    <th>Комментарий</th><th>Создал</th><th>Создан</th>
-                    <th>Истекает</th><th>Использовал</th><th>Статус</th><th></th>
+                    <th>Комментарий</th>
+                    <th>Создал</th>
+                    <th>Создан</th>
+                    <th>Истекает</th>
+                    <th>Использовал</th>
+                    <th>Статус</th>
+                    <th></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -665,7 +771,11 @@
                     <td>{{ formatTime(inv.issuedAt) }}</td>
                     <td>{{ formatTime(inv.expiresAt) }}</td>
                     <td>{{ inv.usedByDisplayName || '—' }}</td>
-                    <td><span :class="inviteStatusClass(inv.status)">{{ inviteStatusLabel(inv.status) }}</span></td>
+                    <td>
+                      <span :class="inviteStatusClass(inv.status)">{{
+                        inviteStatusLabel(inv.status)
+                      }}</span>
+                    </td>
                     <td>
                       <button
                         v-if="inv.status === 'active'"
@@ -692,8 +802,12 @@
               <table class="data-table">
                 <thead>
                   <tr>
-                    <th>Пользователь</th><th>Email</th><th>Выдан</th>
-                    <th>Кем</th><th>Статус</th><th></th>
+                    <th>Пользователь</th>
+                    <th>Email</th>
+                    <th>Выдан</th>
+                    <th>Кем</th>
+                    <th>Статус</th>
+                    <th></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -702,7 +816,11 @@
                     <td>{{ g.userEmail || '—' }}</td>
                     <td>{{ formatTime(g.grantedAt) }}</td>
                     <td>{{ g.grantedByDisplayName }}</td>
-                    <td><span :class="g.active ? 'cell-ok' : 'cell-err'">{{ g.active ? 'активен' : 'отозван' }}</span></td>
+                    <td>
+                      <span :class="g.active ? 'cell-ok' : 'cell-err'">{{
+                        g.active ? 'активен' : 'отозван'
+                      }}</span>
+                    </td>
                     <td>
                       <button
                         v-if="g.active"
@@ -747,15 +865,17 @@
           </p>
           <template v-else-if="rawModal.entry">
             <div class="raw-modal-actions">
-              <button class="btn-mini" @click="copyText(rawJsonString(rawModal.entry))" title="Скопировать JSON">
+              <button
+                class="btn-mini"
+                @click="copyText(rawJsonString(rawModal.entry))"
+                title="Скопировать JSON"
+              >
                 <i class="far fa-copy"></i> Скопировать
               </button>
             </div>
             <pre class="json-block">{{ rawJsonString(rawModal.entry) }}</pre>
           </template>
-          <p v-else class="muted">
-            <i class="fas fa-circle-info"></i> Запись не найдена.
-          </p>
+          <p v-else class="muted"><i class="fas fa-circle-info"></i> Запись не найдена.</p>
         </div>
       </div>
     </div>
@@ -766,7 +886,12 @@
         <header class="raw-modal-head">
           <span class="prompt">›</span>
           <h2>Создать пригласительную ссылку</h2>
-          <button type="button" class="btn-mini head-action" @click="closeInviteModal" title="Закрыть">
+          <button
+            type="button"
+            class="btn-mini head-action"
+            @click="closeInviteModal"
+            title="Закрыть"
+          >
             <i class="fas fa-xmark"></i> Закрыть
           </button>
         </header>
@@ -774,21 +899,37 @@
           <template v-if="!inviteModal.result">
             <label class="field field-full">
               <span class="field-label">Комментарий (необязательно)</span>
-              <input v-model="inviteModal.note" type="text" placeholder="например «для Ольги»" class="field-input" />
+              <input
+                v-model="inviteModal.note"
+                type="text"
+                placeholder="например «для Ольги»"
+                class="field-input"
+              />
             </label>
             <p v-if="inviteModal.error" class="form-msg is-err">
               <i class="fas fa-circle-exclamation"></i> {{ inviteModal.error }}
             </p>
             <div class="settings-save-bar">
-              <button type="button" class="btn-primary" :disabled="inviteModal.creating" @click="createInvite">
+              <button
+                type="button"
+                class="btn-primary"
+                :disabled="inviteModal.creating"
+                @click="createInvite"
+              >
                 <i class="fas fa-link"></i> {{ inviteModal.creating ? 'Создание…' : 'Создать' }}
               </button>
             </div>
           </template>
           <template v-else>
-            <p class="muted">Скопируйте ссылку и передайте сотруднику. Токен показывается один раз.</p>
+            <p class="muted">
+              Скопируйте ссылку и передайте сотруднику. Токен показывается один раз.
+            </p>
             <div class="raw-modal-actions">
-              <button class="btn-mini" @click="copyText(inviteModal.result.fullUrl)" title="Скопировать ссылку">
+              <button
+                class="btn-mini"
+                @click="copyText(inviteModal.result.fullUrl)"
+                title="Скопировать ссылку"
+              >
                 <i class="far fa-copy"></i> Скопировать
               </button>
             </div>
@@ -886,29 +1027,37 @@ export default {
       origin: '',
       // Границы фильтра как строки полей: дата (обязательна) + время (необязательно).
       // Пустое время = 00:00. Источник истины — эти строки; ms выводится в computed.
-      fromDate: msToLocalDate(typeof this.initialDateFilter?.from === 'number' ? this.initialDateFilter.from : null),
-      fromTime: msToLocalTime(typeof this.initialDateFilter?.from === 'number' ? this.initialDateFilter.from : null),
-      toDate: msToLocalDate(typeof this.initialDateFilter?.to === 'number' ? this.initialDateFilter.to : null),
-      toTime: msToLocalTime(typeof this.initialDateFilter?.to === 'number' ? this.initialDateFilter.to : null),
+      fromDate: msToLocalDate(
+        typeof this.initialDateFilter?.from === 'number' ? this.initialDateFilter.from : null
+      ),
+      fromTime: msToLocalTime(
+        typeof this.initialDateFilter?.from === 'number' ? this.initialDateFilter.from : null
+      ),
+      toDate: msToLocalDate(
+        typeof this.initialDateFilter?.to === 'number' ? this.initialDateFilter.to : null
+      ),
+      toTime: msToLocalTime(
+        typeof this.initialDateFilter?.to === 'number' ? this.initialDateFilter.to : null
+      ),
       dateFilterSaving: false,
       dateFilterError: '',
       activeTab: 'overview',
       tabs: [
-        { id: 'overview',   label: 'Обзор',         icon: 'fa-chart-line' },
-        { id: 'requests',   label: 'Запросы',       icon: 'fa-list' },
-        { id: 'webhooks',   label: 'Webhook',       icon: 'fa-bell' },
-        { id: 'createBill', label: 'Создать',       icon: 'fa-file-invoice' },
-        { id: 'access',     label: 'Доступ',        icon: 'fa-user-shield', adminOnly: true }
+        { id: 'overview', label: 'Обзор', icon: 'fa-chart-line' },
+        { id: 'requests', label: 'Запросы', icon: 'fa-list' },
+        { id: 'webhooks', label: 'Webhook', icon: 'fa-bell' },
+        { id: 'createBill', label: 'Создать', icon: 'fa-file-invoice' },
+        { id: 'access', label: 'Доступ', icon: 'fa-user-shield', adminOnly: true }
       ],
       requestsFilters: [
         { id: 'all', label: 'Все' },
-        { id: 'ok',  label: 'Успешные' },
+        { id: 'ok', label: 'Успешные' },
         { id: 'err', label: 'Ошибки' }
       ],
       webhooksFilters: [
-        { id: 'all',     label: 'Все' },
+        { id: 'all', label: 'Все' },
         { id: 'success', label: 'success' },
-        { id: 'fail',    label: 'fail' },
+        { id: 'fail', label: 'fail' },
         { id: 'invalid', label: 'токен ✗' }
       ],
       requestsFilter: 'all',
@@ -983,31 +1132,45 @@ export default {
     },
     configChips() {
       return [
-        { key: 'lp_apikey',         label: 'API-ключ',      set: !!this.savedSettings.lp_apikey },
-        { key: 'lp_login',          label: 'Login',         set: !!this.savedSettings.lp_login },
-        { key: 'lp_webhook_token',  label: 'Webhook-токен', set: !!this.savedSettings.lp_webhook_token },
-        { key: 'gateway_base_url',  label: 'Gateway URL',   set: !!this.savedSettings.gateway_base_url }
+        { key: 'lp_apikey', label: 'API-ключ', set: !!this.savedSettings.lp_apikey },
+        { key: 'lp_login', label: 'Login', set: !!this.savedSettings.lp_login },
+        {
+          key: 'lp_webhook_token',
+          label: 'Webhook-токен',
+          set: !!this.savedSettings.lp_webhook_token
+        },
+        {
+          key: 'gateway_base_url',
+          label: 'Gateway URL',
+          set: !!this.savedSettings.gateway_base_url
+        }
       ]
     },
     allConfigured() {
-      return this.configChips.every(c => c.set)
+      return this.configChips.every((c) => c.set)
     },
     missingConfig() {
-      return this.configChips.filter(c => !c.set).map(c => c.label)
+      return this.configChips.filter((c) => !c.set).map((c) => c.label)
     },
     filteredRequests() {
-      if (this.requestsFilter === 'ok')  return this.requests.filter(r => r.ok)
-      if (this.requestsFilter === 'err') return this.requests.filter(r => !r.ok)
+      if (this.requestsFilter === 'ok') return this.requests.filter((r) => r.ok)
+      if (this.requestsFilter === 'err') return this.requests.filter((r) => !r.ok)
       return this.requests
     },
     filteredWebhooks() {
-      if (this.webhooksFilter === 'success') return this.webhooks.filter(w => w.status === 'success' && w.tokenValid)
-      if (this.webhooksFilter === 'fail')    return this.webhooks.filter(w => w.status === 'fail' && w.tokenValid)
-      if (this.webhooksFilter === 'invalid') return this.webhooks.filter(w => !w.tokenValid)
+      if (this.webhooksFilter === 'success')
+        return this.webhooks.filter((w) => w.status === 'success' && w.tokenValid)
+      if (this.webhooksFilter === 'fail')
+        return this.webhooks.filter((w) => w.status === 'fail' && w.tokenValid)
+      if (this.webhooksFilter === 'invalid') return this.webhooks.filter((w) => !w.tokenValid)
       return this.webhooks
     },
-    recentRequestsPreview() { return this.requests.slice(0, 5) },
-    recentWebhooksPreview() { return this.webhooks.slice(0, 5) }
+    recentRequestsPreview() {
+      return this.requests.slice(0, 5)
+    },
+    recentWebhooksPreview() {
+      return this.webhooks.slice(0, 5)
+    }
   },
   watch: {
     activeTab(newVal) {
@@ -1035,7 +1198,9 @@ export default {
         window.addEventListener('bootloader-complete', this.handleBootComplete)
       }
     }
-    this.tickTimer = setInterval(() => { this.now = Date.now() }, TICK_INTERVAL_MS)
+    this.tickTimer = setInterval(() => {
+      this.now = Date.now()
+    }, TICK_INTERVAL_MS)
   },
   beforeUnmount() {
     if (typeof window !== 'undefined') {
@@ -1109,10 +1274,12 @@ export default {
     formatMoney(value) {
       if (value === null || value === undefined) return '—'
       if (typeof value !== 'number' || Number.isNaN(value)) return '—'
-      return Intl.NumberFormat('ru-RU', {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
-      }).format(value) + ' ₽'
+      return (
+        Intl.NumberFormat('ru-RU', {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
+        }).format(value) + ' ₽'
+      )
     },
     formatTime(ts) {
       if (!ts) return ''
@@ -1127,10 +1294,10 @@ export default {
     updatedSince(ts) {
       if (!ts) return ''
       const diff = Math.max(0, Math.floor((this.now - ts) / 1000))
-      if (diff < 5)   return 'сейчас'
-      if (diff < 60)  return diff + ' сек назад'
+      if (diff < 5) return 'сейчас'
+      if (diff < 60) return diff + ' сек назад'
       const min = Math.floor(diff / 60)
-      if (min < 60)   return min + ' мин назад'
+      if (min < 60) return min + ' мин назад'
       const h = Math.floor(min / 60)
       return h + ' ч назад'
     },
@@ -1143,18 +1310,20 @@ export default {
     rowClassWebhook(w) {
       return {
         'row-error': w.tokenValid && w.status !== 'success',
-        'row-warn':  !w.tokenValid
+        'row-warn': !w.tokenValid
       }
     },
     countRequests(id) {
-      if (id === 'ok')  return this.requests.filter(r => r.ok).length
-      if (id === 'err') return this.requests.filter(r => !r.ok).length
+      if (id === 'ok') return this.requests.filter((r) => r.ok).length
+      if (id === 'err') return this.requests.filter((r) => !r.ok).length
       return this.requests.length
     },
     countWebhooks(id) {
-      if (id === 'success') return this.webhooks.filter(w => w.status === 'success' && w.tokenValid).length
-      if (id === 'fail')    return this.webhooks.filter(w => w.status === 'fail' && w.tokenValid).length
-      if (id === 'invalid') return this.webhooks.filter(w => !w.tokenValid).length
+      if (id === 'success')
+        return this.webhooks.filter((w) => w.status === 'success' && w.tokenValid).length
+      if (id === 'fail')
+        return this.webhooks.filter((w) => w.status === 'fail' && w.tokenValid).length
+      if (id === 'invalid') return this.webhooks.filter((w) => !w.tokenValid).length
       return this.webhooks.length
     },
 
@@ -1244,11 +1413,16 @@ export default {
     },
     inviteStatusLabel(status) {
       switch (status) {
-        case 'active': return 'активна'
-        case 'used': return 'использована'
-        case 'revoked': return 'отозвана'
-        case 'expired': return 'истекла'
-        default: return status
+        case 'active':
+          return 'активна'
+        case 'used':
+          return 'использована'
+        case 'revoked':
+          return 'отозвана'
+        case 'expired':
+          return 'истекла'
+        default:
+          return status
       }
     },
     inviteStatusClass(status) {
@@ -1274,7 +1448,13 @@ export default {
         })
         const data = await res.json()
         if (!data || data.success !== true) {
-          this.rawModal = { kind, id, entry: null, loading: false, error: data?.error || 'Ошибка загрузки' }
+          this.rawModal = {
+            kind,
+            id,
+            entry: null,
+            loading: false,
+            error: data?.error || 'Ошибка загрузки'
+          }
           return
         }
         this.rawModal = { kind, id, entry: data.entry || null, loading: false, error: '' }
@@ -1518,7 +1698,9 @@ export default {
   margin-right: 0.4rem;
 }
 
-.content-wrapper { padding: 1.5rem 0 2rem; }
+.content-wrapper {
+  padding: 1.5rem 0 2rem;
+}
 .content-inner {
   width: 100%;
   max-width: 1280px;
@@ -1540,10 +1722,18 @@ export default {
   border: 1px solid var(--color-border);
   flex-wrap: wrap;
   clip-path: polygon(
-    0 3px, 3px 3px, 3px 0,
-    calc(100% - 3px) 0, calc(100% - 3px) 3px, 100% 3px,
-    100% calc(100% - 3px), calc(100% - 3px) calc(100% - 3px), calc(100% - 3px) 100%,
-    3px 100%, 3px calc(100% - 3px), 0 calc(100% - 3px)
+    0 3px,
+    3px 3px,
+    3px 0,
+    calc(100% - 3px) 0,
+    calc(100% - 3px) 3px,
+    100% 3px,
+    100% calc(100% - 3px),
+    calc(100% - 3px) calc(100% - 3px),
+    calc(100% - 3px) 100%,
+    3px 100%,
+    3px calc(100% - 3px),
+    0 calc(100% - 3px)
   );
 }
 .status-chips {
@@ -1563,7 +1753,9 @@ export default {
   background: var(--color-bg-tertiary);
   color: var(--color-text-secondary);
 }
-.chip i { font-size: 0.7rem; }
+.chip i {
+  font-size: 0.7rem;
+}
 .chip.is-ok {
   color: #b5dec1;
   border-color: rgba(106, 175, 126, 0.35);
@@ -1595,7 +1787,9 @@ export default {
   opacity: 0;
   visibility: hidden;
   transform: translateY(-4px);
-  transition: opacity 0.15s ease, transform 0.15s ease;
+  transition:
+    opacity 0.15s ease,
+    transform 0.15s ease;
   pointer-events: none;
 }
 .config-status:hover .config-status-tooltip,
@@ -1662,10 +1856,18 @@ export default {
   top: 0;
   z-index: 50;
   clip-path: polygon(
-    0 3px, 3px 3px, 3px 0,
-    calc(100% - 3px) 0, calc(100% - 3px) 3px, 100% 3px,
-    100% calc(100% - 3px), calc(100% - 3px) calc(100% - 3px), calc(100% - 3px) 100%,
-    3px 100%, 3px calc(100% - 3px), 0 calc(100% - 3px)
+    0 3px,
+    3px 3px,
+    3px 0,
+    calc(100% - 3px) 0,
+    calc(100% - 3px) 3px,
+    100% 3px,
+    100% calc(100% - 3px),
+    calc(100% - 3px) calc(100% - 3px),
+    calc(100% - 3px) 100%,
+    3px 100%,
+    3px calc(100% - 3px),
+    0 calc(100% - 3px)
   );
 }
 .toolbar-row {
@@ -1705,45 +1907,74 @@ export default {
   cursor: pointer;
   position: relative;
   overflow: hidden;
-  transition: color 0.2s ease, border-color 0.2s ease, transform 0.2s ease, background 0.2s ease;
+  transition:
+    color 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.2s ease,
+    background 0.2s ease;
   clip-path: polygon(
-    0 3px, 3px 3px, 3px 0,
-    calc(100% - 3px) 0, calc(100% - 3px) 3px, 100% 3px,
-    100% calc(100% - 3px), calc(100% - 3px) calc(100% - 3px), calc(100% - 3px) 100%,
-    3px 100%, 3px calc(100% - 3px), 0 calc(100% - 3px)
+    0 3px,
+    3px 3px,
+    3px 0,
+    calc(100% - 3px) 0,
+    calc(100% - 3px) 3px,
+    100% 3px,
+    100% calc(100% - 3px),
+    calc(100% - 3px) calc(100% - 3px),
+    calc(100% - 3px) 100%,
+    3px 100%,
+    3px calc(100% - 3px),
+    0 calc(100% - 3px)
   );
 }
 .tab::before {
   content: '';
-  position: absolute; inset: 0;
-  background: repeating-linear-gradient(0deg, rgba(0,0,0,0.1) 0px, rgba(0,0,0,0.1) 1px, transparent 1px, transparent 2px);
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.1) 0px,
+    rgba(0, 0, 0, 0.1) 1px,
+    transparent 1px,
+    transparent 2px
+  );
   pointer-events: none;
   z-index: 0;
 }
 .tab::after {
   content: '';
   position: absolute;
-  bottom: 0; left: 0;
-  width: 100%; height: 2px;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
   background: var(--color-accent);
   transform: scaleX(0);
   transform-origin: left;
   transition: transform 0.3s ease;
   z-index: 2;
 }
-.tab i, .tab span { position: relative; z-index: 2; }
+.tab i,
+.tab span {
+  position: relative;
+  z-index: 2;
+}
 .tab:hover {
   color: var(--color-text);
   border-color: var(--color-border-light);
   transform: translateY(-1px);
 }
-.tab:hover::after { transform: scaleX(1); }
+.tab:hover::after {
+  transform: scaleX(1);
+}
 .tab.active {
   color: var(--color-text);
   border-color: var(--color-accent);
   background: var(--color-accent-light);
 }
-.tab.active::after { transform: scaleX(1); }
+.tab.active::after {
+  transform: scaleX(1);
+}
 
 /* live toggle */
 .live-toggle {
@@ -1760,13 +1991,18 @@ export default {
   border: 1px solid var(--color-border);
   background: var(--color-bg-tertiary);
 }
-.live-toggle input { display: none; }
+.live-toggle input {
+  display: none;
+}
 .live-dot {
-  width: 0.5rem; height: 0.5rem;
+  width: 0.5rem;
+  height: 0.5rem;
   border-radius: 50%;
   background: #4a4a4a;
   box-shadow: 0 0 0 2px rgba(74, 74, 74, 0.15);
-  transition: background 0.2s, box-shadow 0.2s;
+  transition:
+    background 0.2s,
+    box-shadow 0.2s;
 }
 .live-toggle.on {
   color: var(--color-text);
@@ -1779,8 +2015,13 @@ export default {
   animation: live-pulse 1.5s ease-in-out infinite;
 }
 @keyframes live-pulse {
-  0%, 100% { opacity: 1; }
-  50%      { opacity: 0.55; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
 }
 
 /* date filter */
@@ -1857,7 +2098,9 @@ export default {
   width: 100%;
   min-width: 0;
   outline: none;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
 }
 .quick-search-input:focus {
   border-color: var(--color-accent);
@@ -1873,7 +2116,9 @@ export default {
   font-size: 0.85rem;
   padding: 0.15rem 0.35rem;
 }
-.quick-search-clear:hover { color: var(--color-accent); }
+.quick-search-clear:hover {
+  color: var(--color-accent);
+}
 
 /* ===================== PANEL SECTIONS ===================== */
 .panel-section {
@@ -1882,10 +2127,18 @@ export default {
   border: 1px solid var(--color-border);
   padding: 1.25rem 1.25rem 1rem;
   clip-path: polygon(
-    0 4px, 4px 4px, 4px 0,
-    calc(100% - 4px) 0, calc(100% - 4px) 4px, 100% 4px,
-    100% calc(100% - 4px), calc(100% - 4px) calc(100% - 4px), calc(100% - 4px) 100%,
-    4px 100%, 4px calc(100% - 4px), 0 calc(100% - 4px)
+    0 4px,
+    4px 4px,
+    4px 0,
+    calc(100% - 4px) 0,
+    calc(100% - 4px) 4px,
+    100% 4px,
+    100% calc(100% - 4px),
+    calc(100% - 4px) calc(100% - 4px),
+    calc(100% - 4px) 100%,
+    4px 100%,
+    4px calc(100% - 4px),
+    0 calc(100% - 4px)
   );
 }
 .panel-section::before,
@@ -1893,12 +2146,19 @@ export default {
   content: '';
   position: absolute;
   top: 8px;
-  width: 16px; height: 16px;
+  width: 16px;
+  height: 16px;
   border-top: 2px solid rgba(211, 35, 75, 0.35);
   pointer-events: none;
 }
-.panel-section::before { left: 8px;  border-left:  2px solid rgba(211, 35, 75, 0.35); }
-.panel-section::after  { right: 8px; border-right: 2px solid rgba(211, 35, 75, 0.35); }
+.panel-section::before {
+  left: 8px;
+  border-left: 2px solid rgba(211, 35, 75, 0.35);
+}
+.panel-section::after {
+  right: 8px;
+  border-right: 2px solid rgba(211, 35, 75, 0.35);
+}
 
 .panel-section-head {
   display: flex;
@@ -1925,7 +2185,10 @@ export default {
 .panel-section-head .head-action {
   margin-left: auto;
 }
-.panel-section-head .head-meta { margin-left: auto; font-size: 0.7rem; }
+.panel-section-head .head-meta {
+  margin-left: auto;
+  font-size: 0.7rem;
+}
 .updated-since {
   font-size: 0.7rem;
   letter-spacing: 0.04em;
@@ -1940,9 +2203,13 @@ export default {
 }
 
 /* search result section accent */
-.search-result-section { border-color: var(--color-accent); }
+.search-result-section {
+  border-color: var(--color-accent);
+}
 .search-result-section::before,
-.search-result-section::after { border-color: var(--color-accent); }
+.search-result-section::after {
+  border-color: var(--color-accent);
+}
 .search-query {
   margin-left: 0.4rem;
   font-size: 0.7rem;
@@ -1985,7 +2252,9 @@ export default {
   grid-template-columns: repeat(4, 1fr);
   gap: 0.9rem;
 }
-.kpi-grid-secondary { grid-template-columns: repeat(4, 1fr); }
+.kpi-grid-secondary {
+  grid-template-columns: repeat(4, 1fr);
+}
 .kpi-card {
   position: relative;
   background: rgba(20, 20, 20, 0.65);
@@ -1993,28 +2262,50 @@ export default {
   padding: 1.1rem 1.25rem;
   overflow: hidden;
   clip-path: polygon(
-    0 4px, 4px 4px, 4px 0,
-    calc(100% - 4px) 0, calc(100% - 4px) 4px, 100% 4px,
-    100% calc(100% - 4px), calc(100% - 4px) calc(100% - 4px), calc(100% - 4px) 100%,
-    4px 100%, 4px calc(100% - 4px), 0 calc(100% - 4px)
+    0 4px,
+    4px 4px,
+    4px 0,
+    calc(100% - 4px) 0,
+    calc(100% - 4px) 4px,
+    100% 4px,
+    100% calc(100% - 4px),
+    calc(100% - 4px) calc(100% - 4px),
+    calc(100% - 4px) 100%,
+    4px 100%,
+    4px calc(100% - 4px),
+    0 calc(100% - 4px)
   );
 }
 .kpi-card::before {
   content: '';
-  position: absolute; inset: 0;
-  background: repeating-linear-gradient(0deg, rgba(0,0,0,0.08) 0px, rgba(0,0,0,0.08) 1px, transparent 1px, transparent 3px);
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.08) 0px,
+    rgba(0, 0, 0, 0.08) 1px,
+    transparent 1px,
+    transparent 3px
+  );
   pointer-events: none;
   z-index: 0;
 }
 .kpi-card::after {
   content: '';
   position: absolute;
-  top: 0; left: 0;
-  width: 100%; height: 2px;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
   background: linear-gradient(90deg, transparent, var(--color-accent), transparent);
   opacity: 0.5;
 }
-.kpi-icon, .kpi-label, .kpi-value { position: relative; z-index: 1; }
+.kpi-icon,
+.kpi-label,
+.kpi-value {
+  position: relative;
+  z-index: 1;
+}
 .kpi-icon {
   font-size: 1rem;
   color: var(--color-accent);
@@ -2033,9 +2324,17 @@ export default {
   text-shadow: 0 0 8px rgba(232, 232, 232, 0.2);
   line-height: 1;
 }
-.kpi-unit { font-size: 0.85rem; color: var(--color-text-tertiary); margin-left: 0.2rem; }
-.kpi-success .kpi-icon { color: #6aaf7e; }
-.kpi-success .kpi-value { text-shadow: 0 0 8px rgba(106, 175, 126, 0.25); }
+.kpi-unit {
+  font-size: 0.85rem;
+  color: var(--color-text-tertiary);
+  margin-left: 0.2rem;
+}
+.kpi-success .kpi-icon {
+  color: #6aaf7e;
+}
+.kpi-success .kpi-value {
+  text-shadow: 0 0 8px rgba(106, 175, 126, 0.25);
+}
 
 .stat-card {
   position: relative;
@@ -2044,17 +2343,27 @@ export default {
   padding: 0.7rem 0.85rem;
   overflow: hidden;
   clip-path: polygon(
-    0 3px, 3px 3px, 3px 0,
-    calc(100% - 3px) 0, calc(100% - 3px) 3px, 100% 3px,
-    100% calc(100% - 3px), calc(100% - 3px) calc(100% - 3px), calc(100% - 3px) 100%,
-    3px 100%, 3px calc(100% - 3px), 0 calc(100% - 3px)
+    0 3px,
+    3px 3px,
+    3px 0,
+    calc(100% - 3px) 0,
+    calc(100% - 3px) 3px,
+    100% 3px,
+    100% calc(100% - 3px),
+    calc(100% - 3px) calc(100% - 3px),
+    calc(100% - 3px) 100%,
+    3px 100%,
+    3px calc(100% - 3px),
+    0 calc(100% - 3px)
   );
 }
 .stat-card::after {
   content: '';
   position: absolute;
-  top: 0; left: 0;
-  width: 100%; height: 1px;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 1px;
   background: linear-gradient(90deg, transparent, var(--color-accent), transparent);
   opacity: 0.35;
 }
@@ -2064,15 +2373,25 @@ export default {
   letter-spacing: 0.1em;
   text-transform: uppercase;
 }
-.stat-label i { margin-right: 0.3rem; color: var(--color-accent); opacity: 0.85; }
+.stat-label i {
+  margin-right: 0.3rem;
+  color: var(--color-accent);
+  opacity: 0.85;
+}
 .stat-value {
   font-size: 1.2rem;
   color: var(--color-text);
   margin-top: 0.15rem;
   line-height: 1.1;
 }
-.stat-value.small { font-size: 0.95rem; }
-.stat-unit { font-size: 0.7rem; color: var(--color-text-tertiary); margin-left: 0.15rem; }
+.stat-value.small {
+  font-size: 0.95rem;
+}
+.stat-unit {
+  font-size: 0.7rem;
+  color: var(--color-text-tertiary);
+  margin-left: 0.15rem;
+}
 
 /* ===================== FEED GRID ===================== */
 .feed-grid {
@@ -2101,9 +2420,15 @@ export default {
   letter-spacing: 0.06em;
   text-transform: uppercase;
   cursor: pointer;
-  transition: color 0.2s, border-color 0.2s, background 0.2s;
+  transition:
+    color 0.2s,
+    border-color 0.2s,
+    background 0.2s;
 }
-.pill:hover { color: var(--color-text); border-color: var(--color-border-light); }
+.pill:hover {
+  color: var(--color-text);
+  border-color: var(--color-border-light);
+}
 .pill.active {
   color: var(--color-text);
   border-color: var(--color-accent);
@@ -2112,7 +2437,7 @@ export default {
 .pill-count {
   font-size: 0.65rem;
   color: var(--color-text-tertiary);
-  background: rgba(0,0,0,0.3);
+  background: rgba(0, 0, 0, 0.3);
   padding: 0.05rem 0.35rem;
   border: 1px solid var(--color-border);
 }
@@ -2148,9 +2473,15 @@ export default {
   font-size: 0.65rem;
   border-bottom: 1px solid var(--color-border-light);
 }
-.data-table tbody tr:hover { background: rgba(211, 35, 75, 0.05); }
-.data-table tbody tr:last-child td { border-bottom: 0; }
-.data-table .row-clickable { cursor: pointer; }
+.data-table tbody tr:hover {
+  background: rgba(211, 35, 75, 0.05);
+}
+.data-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+.data-table .row-clickable {
+  cursor: pointer;
+}
 .data-table .row-error {
   background: rgba(217, 122, 138, 0.06);
   box-shadow: inset 3px 0 0 #d97a8a;
@@ -2159,9 +2490,15 @@ export default {
   background: rgba(212, 168, 90, 0.06);
   box-shadow: inset 3px 0 0 #d4a85a;
 }
-.data-table td.cell-ok { color: #6aaf7e; }
-.data-table td.cell-err { color: #d97a8a; }
-.data-table td.cell-warn { color: #d4a85a; }
+.data-table td.cell-ok {
+  color: #6aaf7e;
+}
+.data-table td.cell-err {
+  color: #d97a8a;
+}
+.data-table td.cell-warn {
+  color: #d4a85a;
+}
 .data-table .cell-id {
   white-space: nowrap;
   max-width: 320px;
@@ -2235,7 +2572,10 @@ export default {
   padding: 0;
   cursor: pointer;
 }
-.link-button:hover { color: var(--color-accent-hover); border-color: var(--color-accent-hover); }
+.link-button:hover {
+  color: var(--color-accent-hover);
+  border-color: var(--color-accent-hover);
+}
 
 /* ===================== SETTINGS ===================== */
 /* Форма настроек LifePay перенесена на страницу настроек проекта (/web/admin).
@@ -2259,14 +2599,19 @@ export default {
   flex-direction: column;
   gap: 0.3rem;
 }
-.field-full { grid-column: 1 / -1; }
+.field-full {
+  grid-column: 1 / -1;
+}
 .field-label {
   font-size: 0.68rem;
   color: var(--color-text-tertiary);
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
-.field-required { color: var(--color-accent); margin-left: 0.2rem; }
+.field-required {
+  color: var(--color-accent);
+  margin-left: 0.2rem;
+}
 .field-hint {
   font-size: 0.7rem;
   color: var(--color-text-tertiary);
@@ -2286,7 +2631,9 @@ export default {
   letter-spacing: inherit;
   font-size: 0.875rem;
   outline: none;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
 }
 .field-input:focus {
   border-color: var(--color-accent);
@@ -2297,7 +2644,9 @@ export default {
   gap: 0.5rem;
   align-items: stretch;
 }
-.field-row .field-input { flex: 1; }
+.field-row .field-input {
+  flex: 1;
+}
 
 .form-actions {
   display: flex;
@@ -2311,8 +2660,12 @@ export default {
   align-items: center;
   gap: 0.35rem;
 }
-.form-msg.is-ok { color: #6aaf7e; }
-.form-msg.is-err { color: #d97a8a; }
+.form-msg.is-ok {
+  color: #6aaf7e;
+}
+.form-msg.is-err {
+  color: #d97a8a;
+}
 .hint {
   color: var(--color-text-secondary);
   font-size: 0.78rem;
@@ -2330,7 +2683,9 @@ export default {
   font-size: 0.78rem;
   margin: 0;
 }
-.muted i { margin-right: 0.3rem; }
+.muted i {
+  margin-right: 0.3rem;
+}
 
 /* ===================== BUTTONS ===================== */
 .btn-primary,
@@ -2348,10 +2703,18 @@ export default {
   transition: all 0.2s ease;
   text-decoration: none;
   clip-path: polygon(
-    0 3px, 3px 3px, 3px 0,
-    calc(100% - 3px) 0, calc(100% - 3px) 3px, 100% 3px,
-    100% calc(100% - 3px), calc(100% - 3px) calc(100% - 3px), calc(100% - 3px) 100%,
-    3px 100%, 3px calc(100% - 3px), 0 calc(100% - 3px)
+    0 3px,
+    3px 3px,
+    3px 0,
+    calc(100% - 3px) 0,
+    calc(100% - 3px) 3px,
+    100% 3px,
+    100% calc(100% - 3px),
+    calc(100% - 3px) calc(100% - 3px),
+    calc(100% - 3px) 100%,
+    3px 100%,
+    3px calc(100% - 3px),
+    0 calc(100% - 3px)
   );
 }
 .btn-primary {
@@ -2399,7 +2762,9 @@ export default {
   letter-spacing: 0.04em;
   cursor: pointer;
   margin-left: 0.35rem;
-  transition: color 0.2s, border-color 0.2s;
+  transition:
+    color 0.2s,
+    border-color 0.2s;
 }
 .btn-mini:hover {
   color: var(--color-accent);
@@ -2414,14 +2779,21 @@ export default {
   border: 1px solid var(--color-border);
   position: relative;
 }
-.bill-result-ok { border-color: rgba(106, 175, 126, 0.4); }
-.bill-result-err { border-color: rgba(217, 122, 138, 0.4); }
+.bill-result-ok {
+  border-color: rgba(106, 175, 126, 0.4);
+}
+.bill-result-err {
+  border-color: rgba(217, 122, 138, 0.4);
+}
 .bill-meta {
   margin: 0.5rem 0;
   font-size: 0.78rem;
   color: var(--color-text-secondary);
 }
-.bill-success p { margin: 0.3rem 0; font-size: 0.8rem; }
+.bill-success p {
+  margin: 0.3rem 0;
+  font-size: 0.8rem;
+}
 .bill-success code,
 .bill-meta code {
   color: var(--color-text);
@@ -2429,44 +2801,107 @@ export default {
   padding: 0.1rem 0.35rem;
   border: 1px solid var(--color-border);
 }
-.bill-success .paymenturl { word-break: break-all; display: inline-block; }
-.qr-block { margin-top: 0.85rem; }
+.bill-success .paymenturl {
+  word-break: break-all;
+  display: inline-block;
+}
+.qr-block {
+  margin-top: 0.85rem;
+}
 .qr-container {
   background: #fff;
   padding: 0.5rem;
   display: inline-block;
   margin-top: 0.4rem;
 }
-.bill-action { margin-top: 0.85rem; }
+.bill-action {
+  margin-top: 0.85rem;
+}
 
 /* ===================== RESPONSIVE ===================== */
 @media (max-width: 1100px) {
-  .kpi-grid { grid-template-columns: repeat(2, 1fr); }
-  .kpi-grid-secondary { grid-template-columns: repeat(2, 1fr); }
-  .feed-grid { grid-template-columns: 1fr; }
+  .kpi-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .kpi-grid-secondary {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .feed-grid {
+    grid-template-columns: 1fr;
+  }
 }
 @media (max-width: 760px) {
-  .content-wrapper { padding: 1rem 0 1.5rem; }
-  .content-inner { padding: 0 1rem; gap: 1rem; }
-  .panel-section { padding: 1rem 0.9rem 0.85rem; }
-  .status-strip { flex-direction: column; align-items: flex-start; gap: 0.5rem; }
-  .status-webhook { flex: 0 0 auto; width: 100%; justify-content: flex-start; }
-  .panel-toolbar { position: static; }
-  .quick-search { flex: 1 1 100%; }
-  .kpi-grid, .kpi-grid-secondary { grid-template-columns: 1fr 1fr; }
-  .kpi-value { font-size: 1.4rem; }
-  .grid-form { grid-template-columns: 1fr; }
-  .form-actions { flex-direction: column; align-items: flex-start; }
-  .data-table { font-size: 0.72rem; }
+  .content-wrapper {
+    padding: 1rem 0 1.5rem;
+  }
+  .content-inner {
+    padding: 0 1rem;
+    gap: 1rem;
+  }
+  .panel-section {
+    padding: 1rem 0.9rem 0.85rem;
+  }
+  .status-strip {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+  .status-webhook {
+    flex: 0 0 auto;
+    width: 100%;
+    justify-content: flex-start;
+  }
+  .panel-toolbar {
+    position: static;
+  }
+  .quick-search {
+    flex: 1 1 100%;
+  }
+  .kpi-grid,
+  .kpi-grid-secondary {
+    grid-template-columns: 1fr 1fr;
+  }
+  .kpi-value {
+    font-size: 1.4rem;
+  }
+  .grid-form {
+    grid-template-columns: 1fr;
+  }
+  .form-actions {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .data-table {
+    font-size: 0.72rem;
+  }
 }
 @media (max-width: 480px) {
-  .kpi-grid, .kpi-grid-secondary { grid-template-columns: 1fr; }
-  .tab span { display: none; }
-  .tab { padding: 0.5rem 0.65rem; }
-  .date-filter { flex-direction: column; align-items: flex-start; width: 100%; }
-  .date-filter-sep { display: none; }
-  .date-filter-field { width: 100%; min-width: 0; }
-  .date-filter-field .date-filter-input { flex: 1; min-width: 0; }
+  .kpi-grid,
+  .kpi-grid-secondary {
+    grid-template-columns: 1fr;
+  }
+  .tab span {
+    display: none;
+  }
+  .tab {
+    padding: 0.5rem 0.65rem;
+  }
+  .date-filter {
+    flex-direction: column;
+    align-items: flex-start;
+    width: 100%;
+  }
+  .date-filter-sep {
+    display: none;
+  }
+  .date-filter-field {
+    width: 100%;
+    min-width: 0;
+  }
+  .date-filter-field .date-filter-input {
+    flex: 1;
+    min-width: 0;
+  }
 }
 
 /* ====== RAW PAYLOAD MODAL ====== */
@@ -2490,7 +2925,9 @@ export default {
   max-height: 86vh;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 12px 60px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(211, 35, 75, 0.15);
+  box-shadow:
+    0 12px 60px rgba(0, 0, 0, 0.6),
+    0 0 0 1px rgba(211, 35, 75, 0.15);
 }
 .raw-modal-head {
   display: flex;
@@ -2536,7 +2973,11 @@ export default {
   overflow: auto;
 }
 @media (max-width: 768px) {
-  .raw-modal-backdrop { padding: 0.5rem; }
-  .raw-modal { max-height: 96vh; }
+  .raw-modal-backdrop {
+    padding: 0.5rem;
+  }
+  .raw-modal {
+    max-height: 96vh;
+  }
 }
 </style>

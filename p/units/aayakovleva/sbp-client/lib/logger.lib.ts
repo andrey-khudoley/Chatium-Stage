@@ -46,6 +46,17 @@ function severityToLevelName(severity: number): string {
   return SEVERITY_TO_LEVEL[s] ?? 'info'
 }
 
+/**
+ * Платформенный LogLevel для `ctx.account.log` (структурное логирование рантайма).
+ * Наши syslog-уровни 0–7 сводятся к допустимому набору `@app` ('error'|'warn'|'info'|'debug').
+ */
+function severityToPlatformLogLevel(severity: number): 'error' | 'warn' | 'info' | 'debug' {
+  if (severity <= 3) return 'error'
+  if (severity === 4) return 'warn'
+  if (severity >= 7) return 'debug'
+  return 'info'
+}
+
 /** Внутренняя запись с timestamp и level, вычисленными в lib. */
 type FormattedEntry = { timestamp: number; level: string; message: string }
 
@@ -70,7 +81,10 @@ function formatLogMessage(entry: FormattedEntry): string {
  * Проверяет, нужно ли логировать сообщение с данным severity при текущей настройке уровня.
  * Логируем, когда severity сообщения <= порога (сообщение не строже порога).
  */
-export function shouldLogByLevel(configuredLevel: settingsLib.LogLevel, messageSeverity: number): boolean {
+export function shouldLogByLevel(
+  configuredLevel: settingsLib.LogLevel,
+  messageSeverity: number
+): boolean {
   const maxSeverity = CONFIG_TO_MAX_SEVERITY[configuredLevel]
   if (maxSeverity < 0) return false
   return messageSeverity >= 0 && messageSeverity <= maxSeverity
@@ -121,10 +135,16 @@ export async function writeServerLog(ctx: app.Ctx, entry: ServerLogEntry): Promi
   const effectivePayload = includePayload ? entry.payload : undefined
 
   const payloadObj =
-    includePayload && typeof effectivePayload === 'object' && effectivePayload !== null && !Array.isArray(effectivePayload)
+    includePayload &&
+    typeof effectivePayload === 'object' &&
+    effectivePayload !== null &&
+    !Array.isArray(effectivePayload)
       ? (effectivePayload as Record<string, unknown>)
       : {}
-  const logPayload = { level, json: { ...payloadObj, message: entry.message } }
+  const logPayload = {
+    level: severityToPlatformLogLevel(entry.severity),
+    json: { ...payloadObj, message: entry.message }
+  }
 
   ;(ctx.log as (msg: string) => void)(formattedMessage)
   ctx.account.log(formattedMessage, logPayload)
@@ -151,33 +171,36 @@ export async function writeServerLog(ctx: app.Ctx, entry: ServerLogEntry): Promi
   })
 
   if (isDebug) {
-    ;(ctx.log as (msg: string) => void)(
-      '[DEBUG] [lib/logger.lib] writeServerLog Heap create done'
-    )
+    ;(ctx.log as (msg: string) => void)('[DEBUG] [lib/logger.lib] writeServerLog Heap create done')
   }
 
   const socketId = getAdminLogsSocketId(ctx)
-  await sendDataToSocket(ctx, socketId, {
+  // effectivePayload — динамический JSON (Heap.Any), на границе с @app/socket приводим
+  // к ожидаемому JSONInputValue (тип второго аргумента sendDataToSocket), без `any`.
+  const socketData: Parameters<typeof sendDataToSocket>[1] = {
     type: 'new-log',
     data: {
       severity: entry.severity,
       level,
-      args: effectivePayload !== undefined ? [entry.message, effectivePayload] : [entry.message],
+      args: (effectivePayload !== undefined
+        ? [entry.message, effectivePayload]
+        : [entry.message]) as Parameters<typeof sendDataToSocket>[1],
       timestamp
     }
-  } as any)
+  }
+  await sendDataToSocket(ctx, socketId, socketData)
 
   if (isDebug) {
-    ;(ctx.log as (msg: string) => void)(
-      '[DEBUG] [lib/logger.lib] writeServerLog WebSocket sent'
-    )
+    ;(ctx.log as (msg: string) => void)('[DEBUG] [lib/logger.lib] writeServerLog WebSocket sent')
   }
 
   const webhook = await settingsLib.getLogWebhook(ctx)
   if (webhook.enable && webhook.url && webhook.url.trim() !== '') {
     const url = webhook.url.trim()
     const fullUrl = url.startsWith('http://') || url.startsWith('https://') ? url : `https://${url}`
-    const webhookPayload = includePayload ? entry : { severity: entry.severity, message: entry.message }
+    const webhookPayload = includePayload
+      ? entry
+      : { severity: entry.severity, message: entry.message }
     request({
       url: fullUrl,
       method: 'post',
@@ -199,8 +222,6 @@ export async function writeServerLog(ctx: app.Ctx, entry: ServerLogEntry): Promi
   }
 
   if (isDebug) {
-    ;(ctx.log as (msg: string) => void)(
-      '[DEBUG] [lib/logger.lib] writeServerLog exit'
-    )
+    ;(ctx.log as (msg: string) => void)('[DEBUG] [lib/logger.lib] writeServerLog exit')
   }
 }

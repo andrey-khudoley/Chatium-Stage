@@ -5,22 +5,27 @@
  * — этого добиваемся фильтрацией ключей `redactArgsForLog`.
  */
 
-const SECRET_KEYS = new Set(['apikey', 'login', 'token', 'lp_apikey', 'lp_login', 'lp_webhook_token'])
+const SECRET_KEYS = new Set([
+  'apikey',
+  'login',
+  'token',
+  'lp_apikey',
+  'lp_login',
+  'lp_webhook_token'
+])
 
 /** Маскировать email: a@b.c → a***@b***.c (первый символ + домен инициал). */
 export function redactEmail(email: string): string {
   if (typeof email !== 'string' || !email.includes('@')) return '***'
   const [local, domain] = email.split('@', 2)
-  const localMasked =
-    local.length > 0 ? `${local.charAt(0)}***` : '***'
+  const localMasked = local && local.length > 0 ? `${local.charAt(0)}***` : '***'
   if (!domain || !domain.includes('.')) {
     return `${localMasked}@***`
   }
   const lastDot = domain.lastIndexOf('.')
   const domainName = domain.slice(0, lastDot)
   const tld = domain.slice(lastDot + 1)
-  const domainMasked =
-    domainName.length > 0 ? `${domainName.charAt(0)}***.${tld}` : `***.${tld}`
+  const domainMasked = domainName.length > 0 ? `${domainName.charAt(0)}***.${tld}` : `***.${tld}`
   return `${localMasked}@${domainMasked}`
 }
 

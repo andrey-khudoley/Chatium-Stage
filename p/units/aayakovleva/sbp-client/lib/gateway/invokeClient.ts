@@ -13,11 +13,7 @@ import { INVOKE_TIMEOUT_MS } from './constants'
 import { buildInvokeUrl } from './buildInvokeUrl'
 import * as settingsLib from '../settings.lib'
 import * as loggerLib from '../logger.lib'
-import {
-  X_LP_APIKEY,
-  X_LP_LOGIN,
-  X_GATEWAY_REQUEST_ID
-} from '../../shared/gatewayContract'
+import { X_LP_APIKEY, X_LP_LOGIN, X_GATEWAY_REQUEST_ID } from '../../shared/gatewayContract'
 import { INVOKE_PROXY_ERROR_CODES } from '../../shared/invokeApi'
 
 const LOG_MODULE = 'lib/gateway/invokeClient'

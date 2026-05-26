@@ -58,7 +58,7 @@ export const UNIT_TEST_BLOCKS: TestCatalogBlock[] = [
   },
   {
     id: 'unit-log-level',
-    title: 'shared/logLevel',
+    title: 'lib/logLevel',
     description: 'Скрипт window.__BOOT__.logLevel',
     tests: [
       { id: 'logLevel_script_Debug', title: 'getLogLevelScript(Debug)' },
@@ -129,7 +129,10 @@ export const UNIT_TEST_BLOCKS: TestCatalogBlock[] = [
       { id: 'lp_redact_phone_short', title: 'redactPhone короткий' },
       { id: 'lp_invoke_redact_email_in_args', title: 'argsRedacted: email маскируется' },
       { id: 'lp_invoke_redact_phone_in_args', title: 'argsRedacted: phone маскируется' },
-      { id: 'lp_invoke_no_secrets_in_args_redacted', title: 'argsRedacted: без apikey/login/token' },
+      {
+        id: 'lp_invoke_no_secrets_in_args_redacted',
+        title: 'argsRedacted: без apikey/login/token'
+      },
       { id: 'lp_extract_order_number', title: 'extractOrderNumber' },
       { id: 'lp_login_valid', title: 'isValidLpLogin: ok' },
       { id: 'lp_login_invalid_wrong_first', title: 'isValidLpLogin: не 7 первая' },
@@ -139,7 +142,10 @@ export const UNIT_TEST_BLOCKS: TestCatalogBlock[] = [
       { id: 'lp_generate_webhook_token_min_length', title: 'generateWebhookToken: длина' },
       { id: 'lp_generate_webhook_token_hex', title: 'generateWebhookToken: hex' },
       { id: 'lp_webhook_parse_basic', title: 'parseWebhookBody основные поля' },
-      { id: 'lp_webhook_extract_order_number_nested', title: 'parseWebhookBody вложенный order.number' },
+      {
+        id: 'lp_webhook_extract_order_number_nested',
+        title: 'parseWebhookBody вложенный order.number'
+      },
       { id: 'lp_webhook_email_raw', title: 'parseWebhookBody возвращает сырой email' },
       { id: 'lp_webhook_email_from_customer', title: 'parseWebhookBody email из customer.email' },
       { id: 'lp_webhook_no_body', title: 'parseWebhookBody пустое body' },
@@ -147,11 +153,23 @@ export const UNIT_TEST_BLOCKS: TestCatalogBlock[] = [
       { id: 'lp_webhook_unwrap_json_string', title: 'unwrapWebhookBody: JSON-строка' },
       { id: 'lp_webhook_unwrap_form_data_field', title: 'unwrapWebhookBody: {data:"<json>"}' },
       { id: 'lp_webhook_unwrap_object_data_field', title: 'unwrapWebhookBody: {data:{<obj>}}' },
-      { id: 'lp_webhook_unwrap_json_string_data_object', title: 'unwrapWebhookBody: \'{"data":{...}}\'' },
-      { id: 'lp_webhook_unwrap_form_urlencoded_string', title: 'unwrapWebhookBody: form-urlencoded строка' },
-      { id: 'lp_webhook_unwrap_form_urlencoded_data_json', title: 'unwrapWebhookBody: data=<urlencoded-json>' },
+      {
+        id: 'lp_webhook_unwrap_json_string_data_object',
+        title: 'unwrapWebhookBody: \'{"data":{...}}\''
+      },
+      {
+        id: 'lp_webhook_unwrap_form_urlencoded_string',
+        title: 'unwrapWebhookBody: form-urlencoded строка'
+      },
+      {
+        id: 'lp_webhook_unwrap_form_urlencoded_data_json',
+        title: 'unwrapWebhookBody: data=<urlencoded-json>'
+      },
       { id: 'lp_webhook_unwrap_null', title: 'unwrapWebhookBody: null' },
-      { id: 'lp_webhook_raw_multipart_extract', title: 'extractDataFromRawMultipart: поле data из сырого multipart' },
+      {
+        id: 'lp_webhook_raw_multipart_extract',
+        title: 'extractDataFromRawMultipart: поле data из сырого multipart'
+      },
       { id: 'lp_webhook_success_condition', title: 'isSuccessfulPayment: только payment+success' },
       { id: 'lp_webhook_formdata_string', title: 'readWebhookDataField: текстовое поле data' },
       { id: 'lp_webhook_formdata_file', title: 'readWebhookDataField: File-подобное поле .text()' },
@@ -174,12 +192,22 @@ export const UNIT_TEST_BLOCKS: TestCatalogBlock[] = [
   {
     id: 'unit-correlation',
     title: 'Связка webhook по correlationId',
-    description: 'shared/correlation — генерация, сборка callbackUrl, извлечение, дедупликация (без Heap)',
+    description:
+      'shared/correlation — генерация, сборка callbackUrl, извлечение, дедупликация (без Heap)',
     tests: [
-      { id: 'lp_correlation_generate_nonempty', title: 'generateCorrelationId: непустые уникальные строки' },
+      {
+        id: 'lp_correlation_generate_nonempty',
+        title: 'generateCorrelationId: непустые уникальные строки'
+      },
       { id: 'lp_correlation_append_valid', title: 'appendCorrelationId: добавляет в валидный URL' },
-      { id: 'lp_correlation_append_preserves_token', title: 'appendCorrelationId: сохраняет token' },
-      { id: 'lp_correlation_append_invalid', title: 'appendCorrelationId: невалидный URL → оригинал' },
+      {
+        id: 'lp_correlation_append_preserves_token',
+        title: 'appendCorrelationId: сохраняет token'
+      },
+      {
+        id: 'lp_correlation_append_invalid',
+        title: 'appendCorrelationId: невалидный URL → оригинал'
+      },
       { id: 'lp_correlation_extract_present', title: 'extractCorrelationId: значение из объекта' },
       { id: 'lp_correlation_extract_absent', title: 'extractCorrelationId: "" при отсутствии' },
       { id: 'lp_correlation_merge_dedup', title: 'mergeWebhooksById: дедуп по id + сортировка' }
@@ -246,8 +274,14 @@ export const INTEGRATION_SERVER_TEST_BLOCKS: TestCatalogBlock[] = [
       { id: 'settings_setSetting_webhook', title: 'setSetting LOG_WEBHOOK' },
       { id: 'settings_setSetting_dashboard_reset', title: 'setSetting DASHBOARD_RESET_AT' },
       { id: 'settings_setSetting_unknown_key', title: 'setSetting неизвестный ключ' },
-      { id: 'regression_getLogLevel_no_recursion', title: 'регрессия: getLogLevel без stack overflow' },
-      { id: 'regression_getSetting_no_recursion', title: 'регрессия: getSetting без stack overflow' }
+      {
+        id: 'regression_getLogLevel_no_recursion',
+        title: 'регрессия: getLogLevel без stack overflow'
+      },
+      {
+        id: 'regression_getSetting_no_recursion',
+        title: 'регрессия: getSetting без stack overflow'
+      }
     ]
   },
   {
@@ -267,9 +301,15 @@ export const INTEGRATION_SERVER_TEST_BLOCKS: TestCatalogBlock[] = [
     description: 'getPanelDateFilter roundtrip, валидация setSetting, границы выборок репозиториев',
     tests: [
       { id: 'df_getPanelDateFilter_roundtrip', title: 'getPanelDateFilter: save → read → reset' },
-      { id: 'df_setSetting_invalid_throws', title: 'setSetting PANEL_DATE_FILTER: невалидное → throw' },
+      {
+        id: 'df_setSetting_invalid_throws',
+        title: 'setSetting PANEL_DATE_FILTER: невалидное → throw'
+      },
       { id: 'df_requestlog_range_bounds', title: 'requestLog: countInRange/findInRange границы' },
-      { id: 'df_webhooklog_range_bounds', title: 'webhookLog: countInRange/findInRange/byOrder границы' }
+      {
+        id: 'df_webhooklog_range_bounds',
+        title: 'webhookLog: countInRange/findInRange/byOrder границы'
+      }
     ]
   },
   {

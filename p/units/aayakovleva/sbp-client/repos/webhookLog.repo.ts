@@ -23,10 +23,7 @@ export type WebhookLogCreatePayload = {
   rawQuery: unknown
 }
 
-export async function create(
-  ctx: app.Ctx,
-  data: WebhookLogCreatePayload
-): Promise<WebhookLogRow> {
+export async function create(ctx: app.Ctx, data: WebhookLogCreatePayload): Promise<WebhookLogRow> {
   await loggerLib.writeServerLog(ctx, {
     severity: 6,
     message: `[${LOG_MODULE}] create entry`,
@@ -38,7 +35,10 @@ export async function create(
       duplicate: data.duplicate
     }
   })
-  const row = await WebhookLog.create(ctx, { ...data, correlationId: data.correlationId || undefined })
+  const row = await WebhookLog.create(ctx, {
+    ...data,
+    correlationId: data.correlationId || undefined
+  })
   await loggerLib.writeServerLog(ctx, {
     severity: 6,
     message: `[${LOG_MODULE}] create exit`,
@@ -66,10 +66,7 @@ export async function findRecent(ctx: app.Ctx, limit: number): Promise<WebhookLo
   return rows
 }
 
-export async function findById(
-  ctx: app.Ctx,
-  id: string
-): Promise<WebhookLogRow | null> {
+export async function findById(ctx: app.Ctx, id: string): Promise<WebhookLogRow | null> {
   await loggerLib.writeServerLog(ctx, {
     severity: 6,
     message: `[${LOG_MODULE}] findById entry`,
@@ -79,7 +76,7 @@ export async function findById(
     where: { id },
     limit: 1
   })
-  const row = rows.length > 0 ? rows[0] : null
+  const row = rows[0] ?? null
   await loggerLib.writeServerLog(ctx, {
     severity: 6,
     message: `[${LOG_MODULE}] findById exit`,
@@ -147,9 +144,10 @@ export async function findRecentSince(
       limit: batchSize
     })
 
-    if (rows.length === 0) break
+    const last = rows[rows.length - 1]
+    if (!last) break
     result.push(...rows)
-    cursor = rows[rows.length - 1].processedAt
+    cursor = last.processedAt
     if (rows.length < batchSize) break
   }
 
@@ -161,10 +159,7 @@ export async function findRecentSince(
   return result
 }
 
-export async function countSince(
-  ctx: app.Ctx,
-  sinceTimestamp: number
-): Promise<number> {
+export async function countSince(ctx: app.Ctx, sinceTimestamp: number): Promise<number> {
   return WebhookLog.countBy(ctx, { processedAt: { $gte: sinceTimestamp } })
 }
 
@@ -178,10 +173,7 @@ export async function countStatusSuccessSince(
   })
 }
 
-export async function countTokenValidSince(
-  ctx: app.Ctx,
-  sinceTimestamp: number
-): Promise<number> {
+export async function countTokenValidSince(ctx: app.Ctx, sinceTimestamp: number): Promise<number> {
   return WebhookLog.countBy(ctx, {
     processedAt: { $gte: sinceTimestamp },
     tokenValid: true
@@ -224,8 +216,7 @@ export async function findInRange(
     if (from !== undefined) cond.$gte = from
     const upper = cursor !== null ? cursor : to
     if (upper !== undefined) cond.$lt = upper
-    const where: Record<string, unknown> =
-      Object.keys(cond).length > 0 ? { processedAt: cond } : {}
+    const where: Record<string, unknown> = Object.keys(cond).length > 0 ? { processedAt: cond } : {}
 
     const remaining = limit - result.length
     const batchSize = Math.min(HARD_BATCH, remaining)
@@ -236,9 +227,10 @@ export async function findInRange(
       limit: batchSize
     })
 
-    if (rows.length === 0) break
+    const last = rows[rows.length - 1]
+    if (!last) break
     result.push(...rows)
-    cursor = rows[rows.length - 1].processedAt
+    cursor = last.processedAt
     if (rows.length < batchSize) break
   }
 
@@ -250,11 +242,7 @@ export async function findInRange(
   return result
 }
 
-export async function countInRange(
-  ctx: app.Ctx,
-  from?: number,
-  to?: number
-): Promise<number> {
+export async function countInRange(ctx: app.Ctx, from?: number, to?: number): Promise<number> {
   return WebhookLog.countBy(ctx, rangeWhere(from, to))
 }
 

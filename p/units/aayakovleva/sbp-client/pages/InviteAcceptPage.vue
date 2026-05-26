@@ -22,11 +22,7 @@
       <!-- Подтверждение -->
       <template v-else>
         <p v-if="error" class="invite-msg invite-error">{{ error }}</p>
-        <button
-          class="invite-btn invite-btn-primary"
-          :disabled="submitting"
-          @click="confirm"
-        >
+        <button class="invite-btn invite-btn-primary" :disabled="submitting" @click="confirm">
           <i v-if="submitting" class="fa-solid fa-spinner fa-spin"></i>
           <span>{{ submitting ? 'Подтверждение…' : 'Подтвердить' }}</span>
         </button>

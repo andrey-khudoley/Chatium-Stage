@@ -7,9 +7,7 @@
 
 import { runWithExclusiveLock } from '@app/sync'
 
-import WebhookIdempotency, {
-  type WebhookIdempotencyRow
-} from '../tables/webhookIdempotency.table'
+import WebhookIdempotency, { type WebhookIdempotencyRow } from '../tables/webhookIdempotency.table'
 import * as loggerLib from '../lib/logger.lib'
 
 const LOG_MODULE = 'repos/webhookIdempotency.repo'
@@ -69,5 +67,5 @@ export async function findByNumber(
     where: { number: transactionNumber },
     limit: 1
   })
-  return rows.length > 0 ? rows[0] : null
+  return rows[0] ?? null
 }

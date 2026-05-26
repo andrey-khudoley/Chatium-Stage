@@ -3,13 +3,14 @@ import { requireRealUser, requireAccountRole } from '@app/auth'
 import { genSocketId } from '@app/socket'
 import { getAdminLogsSocketId } from '../../lib/logger.lib'
 import TestsPage from '../../pages/TestsPage.vue'
-import { getPreloaderStyles, getPreloaderScript } from '../../shared/preloader'
-import { getLogLevelForPage, getLogLevelScript } from '../../shared/logLevel'
+import { getPreloaderStyles, getPreloaderScript } from '../../lib/preloader'
+import { getLogLevelForPage, getLogLevelScript } from '../../lib/logLevel'
 import * as loggerLib from '../../lib/logger.lib'
 import { getFullUrl, ROUTES } from '../../config/routes'
 import { TESTS_PAGE_NAME, getPageTitle, getHeaderText } from '../../config/project'
 import * as settingsLib from '../../lib/settings.lib'
 import { customScrollbarStyles } from '../../styles'
+import { htmlRedirect } from '../../lib/htmlRedirect'
 
 const LOG_PATH = 'web/tests/index'
 
@@ -43,7 +44,7 @@ export const testsPageRoute = app.html('/', async (ctx, req) => {
       message: `[${LOG_PATH}] Редирект на логин: требуется авторизация`,
       payload: { error: String(error), backUrl: req.url }
     })
-    return ctx.resp.redirect('../login?back=' + encodeURIComponent(req.url))
+    return htmlRedirect(ctx, '../login?back=' + encodeURIComponent(req.url))
   }
 
   // Страница тестов доступна только системной роли Admin.
@@ -61,7 +62,7 @@ export const testsPageRoute = app.html('/', async (ctx, req) => {
       message: `[${LOG_PATH}] Доступ запрещён: требуется роль Admin`,
       payload: { error: String(error), displayName: user.displayName }
     })
-    return ctx.resp.redirect(getFullUrl(ROUTES.forbidden))
+    return htmlRedirect(ctx, getFullUrl(ROUTES.forbidden))
   }
 
   const isAdmin = user.is('Admin')
@@ -272,7 +273,10 @@ export const testsPageRoute = app.html('/', async (ctx, req) => {
         <link rel="stylesheet" href="/s/static/lib/fontawesome/6.7.2/css/all.min.css" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
-        <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap"
+          rel="stylesheet"
+        />
         <style>{`
           :root {
             --color-bg: #0a0a0a;

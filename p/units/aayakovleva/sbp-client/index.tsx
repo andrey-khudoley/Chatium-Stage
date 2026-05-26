@@ -1,21 +1,18 @@
 import { jsx } from '@app/html-jsx'
 import { requireRealUser } from '@app/auth'
 import PanelHomePage from './pages/PanelHomePage.vue'
-import { getPreloaderStyles, getPreloaderScript } from './shared/preloader'
+import { getPreloaderStyles, getPreloaderScript } from './lib/preloader'
 import { crtBackgroundStyles, customScrollbarStyles } from './styles'
-import { getLogLevelForPage, getLogLevelScript } from './shared/logLevel'
+import { getLogLevelForPage, getLogLevelScript } from './lib/logLevel'
 import { getFullUrl, ROUTES, ROUTE_PATHS } from './config/routes'
 import {
   requireInternalAccess,
   InternalAccessDeniedError
 } from './lib/access/requireInternalAccess'
-import {
-  PANEL_PAGE_NAME,
-  getPageTitle,
-  getHeaderText
-} from './config/project'
+import { PANEL_PAGE_NAME, getPageTitle, getHeaderText } from './config/project'
 import * as loggerLib from './lib/logger.lib'
 import * as settingsLib from './lib/settings.lib'
+import { htmlRedirect } from './lib/htmlRedirect'
 
 const LOG_PATH = 'index'
 
@@ -32,14 +29,14 @@ export const indexPageRoute = app.html('/', async (ctx, req) => {
         message: `[${LOG_PATH}] forbidden_redirect`,
         payload: { userId: ctx.user?.id ?? null }
       })
-      return ctx.resp.redirect(getFullUrl(ROUTE_PATHS.forbidden))
+      return htmlRedirect(ctx, getFullUrl(ROUTE_PATHS.forbidden))
     }
     await loggerLib.writeServerLog(ctx, {
       severity: 4,
       message: `[${LOG_PATH}] signin_redirect`,
       payload: { backUrl: req.url }
     })
-    return ctx.resp.redirect(`/s/auth/signin?back=${encodeURIComponent(req.url)}`)
+    return htmlRedirect(ctx, `/s/auth/signin?back=${encodeURIComponent(req.url)}`)
   }
 
   const isAdmin = ctx.user?.is('Admin') ?? false
@@ -50,10 +47,7 @@ export const indexPageRoute = app.html('/', async (ctx, req) => {
     payload: { hasUser: !!ctx.user, isAdmin }
   })
 
-  const projectName = await settingsLib.getSettingString(
-    ctx,
-    settingsLib.SETTING_KEYS.PROJECT_NAME
-  )
+  const projectName = await settingsLib.getSettingString(ctx, settingsLib.SETTING_KEYS.PROJECT_NAME)
   const logLevel = await getLogLevelForPage(ctx)
 
   const initialSettings = {
@@ -103,7 +97,10 @@ export const indexPageRoute = app.html('/', async (ctx, req) => {
   await loggerLib.writeServerLog(ctx, {
     severity: 6,
     message: `[${LOG_PATH}] render`,
-    payload: { hasApikey: !!initialSettings.lp_apikey, hasGatewayBaseUrl: !!initialSettings.gateway_base_url }
+    payload: {
+      hasApikey: !!initialSettings.lp_apikey,
+      hasGatewayBaseUrl: !!initialSettings.gateway_base_url
+    }
   })
 
   return (

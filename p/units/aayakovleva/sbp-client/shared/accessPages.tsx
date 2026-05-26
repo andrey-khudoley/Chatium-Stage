@@ -59,11 +59,17 @@ function ActionEl(a: AccessPageAction) {
   if (a.postUrl) {
     return (
       <form method="POST" action={a.postUrl} style="margin:0">
-        <button type="submit" class={cls}>{a.label}</button>
+        <button type="submit" class={cls}>
+          {a.label}
+        </button>
       </form>
     )
   }
-  return <a class={cls} href={a.href ?? '#'}>{a.label}</a>
+  return (
+    <a class={cls} href={a.href ?? '#'}>
+      {a.label}
+    </a>
+  )
 }
 
 /** Полная HTML-страница-сообщение (JSX.SingleElement). */
@@ -87,9 +93,7 @@ export function AccessMessagePage(props: AccessMessagePageProps) {
             <p class="msg">{p}</p>
           ))}
           {props.actions && props.actions.length > 0 ? (
-            <div class="actions">
-              {props.actions.map((a) => ActionEl(a))}
-            </div>
+            <div class="actions">{props.actions.map((a) => ActionEl(a))}</div>
           ) : null}
         </div>
       </body>

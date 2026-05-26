@@ -1,7 +1,10 @@
 // @shared-route
 import { requireAccountRole } from '@app/auth'
 import * as loggerLib from '../../../lib/logger.lib'
-import { runTemplateUnitChecks, type TemplateUnitTestResult } from '../../../lib/tests/templateUnitSuite'
+import {
+  runTemplateUnitChecks,
+  type TemplateUnitTestResult
+} from '../../../lib/tests/templateUnitSuite'
 import { runLifepayUnitChecks } from '../../../lib/tests/lifepayUnitSuite'
 import { logTestRunFailures } from '../../../lib/tests/logTestRunFailures'
 

@@ -1,14 +1,17 @@
 # sbp-client (LifePay SBP Client)
 
 ## Назначение
+
 Клиентская панель LifePay (implementation-plan §1.8). Одно Chatium-приложение совмещает три роли: хранилище секретов магазина, серверная прокладка `POST /api/lp/invoke` между UI и payments-gateway с журналом запросов, приёмник входящего webhook LifePay.
 
 ## Важно
+
 - Платформа: Chatium. Серверная часть управляется платформой.
 - Стек фиксирован платформой, новые зависимости не добавляем.
 - Деплой происходит автоматически после пуша.
 
 ## Текущее состояние (LifePay panel)
+
 - Каталог скопирован из `p/template_project`; переименован (`PROJECT_ROOT = 'p/units/aayakovleva/sbp-client'`, `.dir.json`, Heap-ключи settings/logs, `DEFAULT_PROJECT_TITLE = 'LifePay SBP Client'`). Файл `docs/run.md` удалён.
 - Heap-настройки расширены ключами `lp_apikey`, `lp_login`, `lp_webhook_token`, `gateway_base_url` (с валидациями: `lp_login` — `^7\d{10}$`, `lp_webhook_token` ≥ 32 символа, `gateway_base_url` — `http(s)://...`).
 - Heap-таблицы: `request_log` (журнал исходящих вызовов gateway), `webhook_log` (журнал webhook), `webhook_idempotency` (дедупликация по transaction number; гонки защищены `runWithExclusiveLock` из `@app/sync`).
@@ -20,8 +23,15 @@
 - Юнит-набор `lib/tests/lifepayUnitSuite.ts` — 31 + 7 проверок LifePay (новый блок `unit-correlation`: generateCorrelationId, appendCorrelationId, extractCorrelationId, mergeWebhooksById) + 9 чистых юнитов `runAccessChecks`. Интеграционный набор `lib/tests/integrationSuite.ts` расширен 8 Heap-тестами `runAccessIntegrationChecks`. Каталог: `shared/testCatalog.ts` блоки `unit-access` (9 id), `int-access` (8 id), `unit-correlation` (7 id).
 - Связка webhook с request_log через correlationId: `shared/correlation.ts` (`// @shared`, чистые хелперы: `generateCorrelationId`, `appendCorrelationId`, `extractCorrelationId`, `mergeWebhooksById`). Поле `correlationId` добавлено в таблицы `request_log` и `webhook_log` (`Heap.Optional String`, без searchable — точный where-матч). Новый метод `webhookLogRepo.findByCorrelationIdInRange`. Поиск `/api/lp/search-by-request-id` связывает webhook по correlationId И orderNumber без дублей.
 - Документация: обновлены `docs/architecture.md`, `docs/api.md`, `docs/data.md`, `docs/imports.md`.
+- Строгая типизация (vue-tsc, strict + noUncheckedIndexedAccess): устранены все 50 ошибок компилятора. Безопасное чтение индексируемых массивов (`rows[0] ?? null`, `?? 0`, guards) в repos, API, Vue computed. Числовой `limit` → строка в `.query()`.
+- `lib/htmlRedirect.ts` — новая функция `htmlRedirect(ctx, location, statusCode?)` для редиректа из `app.html`-роутов; применена в `index.tsx`, `web/access/invite`, `web/forbidden`, `web/panel`, `web/profile`, `web/tests`.
+- `lib/logger.lib.ts` — добавлен `severityToPlatformLogLevel` (маппинг syslog severity → платформенный LogLevel для `ctx.account.log`); убран `as any` на `sendDataToSocket`.
+- SSR-хелперы перенесены из `shared/` в `lib/`: `shared/logLevel.ts` → `lib/logLevel.ts`, `shared/preloader.ts` → `lib/preloader.ts`. Импорты обновлены во всех TSX-роутах; `lib/tests/templateUnitSuite.ts` теперь импортирует `../logLevel`.
+- Общий компонент `components/LogStreamPanel.vue`: визуальная лог-панель (загрузка/фильтры/отображение/разворачивание). `AdminPage.vue` и `TestsPage.vue` используют его через `pushEntry` / `loadRecent`; объём страниц сокращён (~340 и ~394 строки соответственно).
+- Prettier `style:fix` прогнан по всему проекту.
 
 ## Текущее состояние (шаблон, без изменений)
+
 - Главная, админка, профиль и логин существуют как минимальные страницы.
 - Реализованы: API настроек (list, get, save), Heap-таблица settings, репозиторий, lib (бизнес-логика).
 - Серверные логи: Heap-таблица logs (message, payload, severity, level, timestamp), repos/logs.repo, lib/logger.lib (проверка уровня по log_level, ctx.log/ctx.account.log/Heap/WebSocket/опц. webhook). API POST /api/logger/log; GET /api/admin/logs/recent (Admin), GET /api/admin/logs/before (Admin) — пагинация.
@@ -30,6 +40,7 @@
 - Логи на клиенте: shared/logger по syslog RFC 5424, browserRemoteLogger для пакетной отправки, SSR-инжект уровня в `window.__BOOT__.logLevel`.
 
 ## Навигация по документации
+
 - Архитектура: `docs/architecture.md`
 - API: `docs/api.md`
 - Данные: `docs/data.md`
@@ -38,24 +49,28 @@
 - История диалогов: `docs/LLM/`
 
 ### Спецификации проекта (перенесены из ваулта 2026-05-24)
+
 - **Бизнес-логика виджета** (раскладка способов оплаты, правило 50 000 ₽): `docs/architecture/payment-scheme.md`.
 - **ADR 0003 — внутренняя система прав доступа** к панели (`requireRealUser` + `requireInternalAccess` + пригласительные ссылки): `docs/ADR/0003-internal-access-control.md`.
 - **Проектный хаб** (бриф, реестр решений, data-flow, приёмка, база знаний сервисов): `../project-docs/README.md`.
 - Gateway-SSOT (контур `bills_v1`): `../../../saas/gw/lifepay/docs/gateway/operation-manual.md`.
 
 ## TODO
+
 - Боевой проход «createBill → QR → оплата → webhook» на тестовом магазине LifePay (Прототип §1.9, fixtures для `notes/2026-MM-DD--first-real-webhook.md`).
 - Расширить аналитику (фильтры по op; временные диапазоны реализованы через global panel_date_filter).
 - Опц.: серверный SVG-fallback для QR (на случай блокировки CDN).
 - Часть 2 §2.7-§2.8 (виджет-бандл, обновление заказа GetCourse) — вне MVP Прототипа.
 
 ## Changelog
+
+- 2026-05-26: Строгая типизация (vue-tsc, 50 ошибок): безопасная индексация массивов во всех repos, API и Vue computed. Новый `lib/htmlRedirect.ts` (типобезопасный редирект для `app.html`-роутов). Перенос SSR-хелперов: `shared/logLevel` → `lib/logLevel`, `shared/preloader` → `lib/preloader`. Новый `components/LogStreamPanel.vue` — общая лог-панель для AdminPage и TestsPage. `lib/logger.lib.ts`: добавлен `severityToPlatformLogLevel`. Prettier `style:fix`.
 - 2026-05-25: Follow-up correlationId-связки: в список webhook на главной странице подставляется orderNumber из связанного createBill-запроса (LifePay SBP-webhook не присылает orderNumber; берём из request_log по correlationId через батч-выборку `findByCorrelationIds`). UI-таблицы webhook (превью и вкладка): убрана колонка «метод», добавлена колонка «сумма» (amount). Поле method API по-прежнему возвращается. `docs/api.md`, `docs/data.md` обновлены.
 - 2026-05-25: Реализована надёжная связка webhook ↔ request_log через correlationId. Причина: LifePay в SBP-webhook не возвращает `orderNumber` (order=null), поэтому прежняя связка по orderNumber не работала. Новый модуль `shared/correlation.ts` (`// @shared`): `generateCorrelationId` (crypto.randomUUID + фоллбэк), `appendCorrelationId` (вшивает в callbackUrl query-параметром), `extractCorrelationId`, `mergeWebhooksById`. Поле `correlationId` добавлено в `request_log` и `webhook_log` (`Heap.Optional String`). `api/lp/invoke.ts` читает correlationId из args, НЕ пробрасывает в gateway, сохраняет в request_log. `web/webhook/index.tsx` читает correlationId из query и пишет в webhook_log. `repos/webhookLog.repo.ts` расширен методом `findByCorrelationIdInRange`. Поиск `search-by-request-id` связывает webhook по correlationId+orderNumber (mergeWebhooksById, без дублей). Панель: generateCorrelationId вызывается в createBill, correlationId отображается в результате поиска. Юниты: +7 тестов блока `unit-correlation` в `lifepayUnitSuite.ts`.
 - 2026-05-25: Реорганизован тулбар главной страницы (`pages/PanelHomePage.vue`): переход от однорядной flex-строки к двухрядному sticky-тулбару. Строка A — только навигационные вкладки на всю ширину; строка B — фильтр дат, LIVE-переключатель, поиск по requestId, отделена горизонтальным разделителем. Адаптивность: ≤760px тулбар статичен, ≤480px фильтр дат вертикальный. Логика, API, таблицы, роутинг не затронуты. CRT-эстетика сохранена.
 - 2026-05-25: Кнопки «Настройки» и «Тесты» в шапке (`components/Header.vue`) видны и доступны только системной роли Admin. Кнопка «Тесты» (`fa-flask`) переведена с `v-if="props.testsUrl"` на `v-if="props.isAdmin && props.testsUrl"` (кнопка «Настройки» уже была под `isAdmin`). Серверная защита: страница `/web/tests` (`web/tests/index.tsx`) — добавлен `requireAccountRole(ctx, 'Admin')` после `requireRealUser` (аноним → /web/login, авторизованный без роли → /web/forbidden); эндпоинты `GET /api/tests/list`, `/api/tests/unit`, `/api/tests/integration` переведены с `requireAnyUser` на `requireAccountRole(ctx, 'Admin')`. Изменение согласовано с интеграционным набором (`api_tests_list_shape` уже помечен admin-only/skip для не-админа). Обновлены `docs/api.md`, `docs/imports.md`.
 - 2026-05-25: Настройки LifePay (`lp_apikey`, `lp_login`, `lp_webhook_token`, `gateway_base_url`) перенесены с главной панели на страницу `/web/admin` (`pages/AdminPage.vue`, admin-only). Вкладка «Настройки» удалена из `PanelHomePage.vue`; индикатор статуса конфигурации оставлен на главной read-only. Мёртвый код формы и apiUrls `settingsSave`/`settingsList` удалены из `PanelHomePage.vue` и `index.tsx`. `AdminPage.vue` расширена реактивной формой LifePay (сохранение/валидация/генерация токена) с загрузкой начальных значений через `web/admin/index.tsx`.
-- 2026-05-25: Добавлен глобальный персистентный фильтр панели по дате/времени (`panel_date_filter` в Heap settings, ключ `PANEL_DATE_FILTER`). Все аналитические эндпоинты (`summary`, `recent-requests`, `recent-webhooks`, `search-by-request-id`) читают фильтр через `getPanelDateFilter(ctx)` в `lib/settings.lib.ts`. Параметр `windowHours` и константа `ANALYTICS_DEFAULT_WINDOW_HOURS` удалены. Новая константа `ANALYTICS_SCAN_LIMIT = 5000` (cursor-пагинация ≤ 1000/запрос). Новый эндпоинт `POST /api/lp/analytics/filter-save` (guardInternalApi). Репозитории `requestLog.repo` и `webhookLog.repo` расширены методами `findInRange`/`countInRange`/`countOk(StatusSuccess/TokenValid)InRange`/`findByOrderNumberInRange`; старые `findRecent`/`findBeforeRequestedAt`/`findRecentSince` помечены `@deprecated`. UI: поля datetime-local (с/по) + кнопка «Сброс» + блок «Live» в вкладке «Обзор`; фильтр хранится на сервере — общий для всех пользователей и сессий. SSR-проп `initialDateFilter` передаётся из `index.tsx` в `PanelHomePage.vue`.
+- 2026-05-25: Добавлен глобальный персистентный фильтр панели по дате/времени (`panel_date_filter` в Heap settings, ключ `PANEL_DATE_FILTER`). Все аналитические эндпоинты (`summary`, `recent-requests`, `recent-webhooks`, `search-by-request-id`) читают фильтр через `getPanelDateFilter(ctx)` в `lib/settings.lib.ts`. Параметр `windowHours` и константа `ANALYTICS_DEFAULT_WINDOW_HOURS` удалены. Новая константа `ANALYTICS_SCAN_LIMIT = 5000` (cursor-пагинация ≤ 1000/запрос). Новый эндпоинт `POST /api/lp/analytics/filter-save` (guardInternalApi). Репозитории `requestLog.repo` и `webhookLog.repo` расширены методами `findInRange`/`countInRange`/`countOk(StatusSuccess/TokenValid)InRange`/`findByOrderNumberInRange`; старые `findRecent`/`findBeforeRequestedAt`/`findRecentSince` помечены `@deprecated`. UI: поля datetime-local (с/по) + кнопка «Сброс» + блок «Live» в вкладке «Обзор`; фильтр хранится на сервере — общий для всех пользователей и сессий. SSR-проп `initialDateFilter`передаётся из`index.tsx`в`PanelHomePage.vue`.
 - 2026-05-24: Приёмник webhook переведён на канонический `req.formData()` (Chatium native multipart, патч 18-05-2026). Удалён мёртвый путь `extractMultipartTextPayload`/`flattenMultipartField` — он читал `req.files`/`req.fields`, которые платформа никогда не заполняет (подтверждено Chatium-core, см. `../project-docs/knowledge/chatium/multipart-form-data.md`). Роут переведён с цепочечной формы `app.post('/').body(...).handle(...)` на простую `app.post('/', handler)` (несовместима с `req.formData()`, и больше не нужна). Чтение тела: `req.formData().get('data')` → JSON; фоллбэки на `req.body`/`unwrapWebhookBody` и сырое multipart-тело (`extractDataFromRawMultipart`). Убрана многословная диагностика `body_received`; источник/стратегия пишутся в `webhook_payload_parsed`. Добавлен `isSuccessfulPayment` (`type=payment`+`status=success`) и флаг `eligibleForOrderUpdate` в `webhook_done`. Тесты: 5 `lp_webhook_multipart_*` заменены на `lp_webhook_raw_multipart_extract`, `lp_webhook_success_condition`, `lp_webhook_formdata_string`/`_file`/`_absent`; добавлен `tryPushAsync`. Обновлены `docs/api.md`, `shared/testCatalog.ts`.
 - 2026-05-24: Реализована внутренняя авторизация панели (ADR 0003 / §1.11): `requireInternalAccess`, пригласительные ссылки (`lib/access/invites.ts`), `/web/access/invite`, `/web/forbidden`, `api/access/*` (6 эндпоинтов), вкладка «Доступ» в PanelHomePage.vue. Все 7 эндпоинтов `api/lp/*` и главный роут `/` переведены с `requireAccountRole('Admin')` на `guardInternalApi` (requireRealUser + requireInternalAccess). Закрыт auth-разрыв аудита 24-05-2026. Добавлены юнит (9) и интеграционные (8) тесты доступа.
 - 2026-05-16: webhook-роут переведён на цепочечную форму `app.post('/').body(s => ({ data: s.string().optional() })).handle(...)` (`inner/docs/002-routing.md:400-427`). Диагностика прошлого webhook показала, что в простой форме `app.post('/', handler)` Chatium-платформа для `multipart/form-data` не парсит ни `req.body`, ни `req.files`/`req.fields` — `reqKeys` содержит только `body/method/path/query/headers/getSchema/params/url`. Цепочечная форма со схемой тела — попытка побудить платформу к разбору multipart-формы в `req.body.data`. На следующем webhook от LifePay по логу `body_received.bodyType` будет видно, помогло ли.
@@ -98,9 +113,9 @@
 - 2026-02-02: серверные логи: таблица logs, repos/logs.repo, lib/logger.lib, api/logger/log (POST), админка — encodedLogsSocketId и подписка на new-log; сокет без accountId. Body API: только message (обяз.), severity? (0–7), payload?; timestamp и level вычисляются в lib; имя модуля в тексте message. Формат вывода: `[DD.MM.YYYY HH:mm:ss.SSS] [LEVEL] message` (пробелы между группами в скобках).
 - 2026-02-01: клиентская часть покрыта логами (createComponentLogger, setLogSink, sink в AdminPage дашборде; HomePage, AdminPage, ProfilePage, LoginPage, Header, AppFooter, GlobalGlitch, LogoutModal).
 - 2026-02-01: добавлен уровень логирования Debug (кнопка в админке перед Info, lib LOG_LEVELS, logger CONFIG_LEVELS и порог, API save -1–4), порядок: Debug, Info, Warn, Error, Disable.
-- 2026-02-01: уровень логирования -1 (логи выключены): LOG_LEVEL_OFF в shared/logger, приём -1 в window.__BOOT__.logLevel, API save принимает -1 → Disable.
-- 2026-02-01: shared/logger — логгер для браузера (logInfo, logWarn, logError с проверкой уровня по window.__BOOT__.logLevel), импорт в HomePage, AdminPage, ProfilePage.
-- 2026-02-01: чтение уровня логирования при загрузке страницы — shared/logLevel.ts, вызов getLogLevel в lib, скрипт window.__BOOT__.logLevel на главной, админке и профиле (без логина).
+- 2026-02-01: уровень логирования -1 (логи выключены): LOG_LEVEL_OFF в shared/logger, приём -1 в window.**BOOT**.logLevel, API save принимает -1 → Disable.
+- 2026-02-01: shared/logger — логгер для браузера (logInfo, logWarn, logError с проверкой уровня по window.**BOOT**.logLevel), импорт в HomePage, AdminPage, ProfilePage.
+- 2026-02-01: чтение уровня логирования при загрузке страницы — shared/logLevel.ts, вызов getLogLevel в lib, скрипт window.**BOOT**.logLevel на главной, админке и профиле (без логина).
 - 2026-02-01: мгновенное сохранение уровня логирования в админке (кнопки → .run() → POST /api/settings/save), нормализация чисел 0–3 и строк в API.
 - 2026-02-01: добавлен ADR-0002 — настройки в Heap и слоистая архитектура API (решения коммита aaf4a0a).
 - 2026-02-01: обновлено «Текущее состояние» — отражены API настроек, таблица, репозиторий, lib.

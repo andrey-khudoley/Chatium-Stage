@@ -16,10 +16,7 @@ import * as loggerLib from '../lib/logger.lib'
 const LOG_MODULE = 'repos/panelAccess.repo'
 
 /** Любая запись по `userId` (активная или отозванная). */
-export async function findByUserId(
-  ctx: app.Ctx,
-  userId: string
-): Promise<PanelAccessRow | null> {
+export async function findByUserId(ctx: app.Ctx, userId: string): Promise<PanelAccessRow | null> {
   return PanelAccess.findOneBy(ctx, { userId })
 }
 
