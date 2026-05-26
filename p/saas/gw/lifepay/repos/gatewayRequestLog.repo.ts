@@ -113,3 +113,32 @@ export async function countErrorsSince(
     clientHttpStatus: { $gte: 400 }
   })
 }
+
+/** Диапазон `requestedAt` для countBy. Отсутствующая нижняя граница → с начала времён (0). */
+function rangeFilter(dateFrom?: number, dateTo?: number): { $gte: number; $lte?: number } {
+  const from = dateFrom ?? 0
+  return dateTo !== undefined ? { $gte: from, $lte: dateTo } : { $gte: from }
+}
+
+/** Всего входящих запросов в диапазоне [from?, to?] (Unix ms). */
+export async function countInRange(
+  ctx: app.Ctx,
+  dateFrom?: number,
+  dateTo?: number
+): Promise<number> {
+  return GatewayRequestLog.countBy(ctx, {
+    requestedAt: rangeFilter(dateFrom, dateTo)
+  })
+}
+
+/** Запросов с HTTP-ответом клиенту ≥ 400 в диапазоне [from?, to?]. */
+export async function countErrorsInRange(
+  ctx: app.Ctx,
+  dateFrom?: number,
+  dateTo?: number
+): Promise<number> {
+  return GatewayRequestLog.countBy(ctx, {
+    requestedAt: rangeFilter(dateFrom, dateTo),
+    clientHttpStatus: { $gte: 400 }
+  })
+}

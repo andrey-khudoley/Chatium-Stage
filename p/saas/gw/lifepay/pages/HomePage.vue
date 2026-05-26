@@ -41,8 +41,8 @@
           </div>
         </nav>
 
-        <!-- ====== DATE FILTER (для журналов) ====== -->
-        <section v-show="activeTab === 'requests' || activeTab === 'upstream'" class="filter-bar">
+        <!-- ====== DATE FILTER (обзор и журналы) ====== -->
+        <section v-show="activeTab === 'overview' || activeTab === 'requests' || activeTab === 'upstream'" class="filter-bar">
           <div class="filter-group">
             <span class="filter-label"><i class="far fa-calendar"></i> С</span>
             <input v-model="filter.fromDate" type="date" class="filter-input" />
@@ -68,37 +68,145 @@
 
         <!-- ====== TAB: OVERVIEW ====== -->
         <template v-if="activeTab === 'overview'">
-          <section class="kpi-grid" aria-label="Ключевые метрики за 24 часа">
-            <article class="kpi-card kpi-hero">
-              <div class="kpi-icon"><i class="fas fa-paper-plane"></i></div>
-              <div class="kpi-label">Входящих за 24ч</div>
-              <div class="kpi-value">{{ formatKpi(counts.totalRequests) }}</div>
-            </article>
-            <article class="kpi-card kpi-hero kpi-success">
-              <div class="kpi-icon"><i class="fas fa-circle-check"></i></div>
-              <div class="kpi-label">Успешных</div>
-              <div class="kpi-value">{{ formatKpi(counts.totalOk) }}</div>
-            </article>
-            <article class="kpi-card kpi-hero">
-              <div class="kpi-icon"><i class="fas fa-bug"></i></div>
-              <div class="kpi-label">Ошибок ответа</div>
-              <div class="kpi-value">{{ formatKpi(counts.totalErrors) }}</div>
-            </article>
-            <article class="kpi-card kpi-hero">
-              <div class="kpi-icon"><i class="fas fa-tower-broadcast"></i></div>
-              <div class="kpi-label">Запросов к LifePay</div>
-              <div class="kpi-value">{{ formatKpi(counts.upstreamTotal) }}</div>
-            </article>
+          <section class="admin-summary" aria-label="Сводка для администратора">
+            <h2 class="summary-title">
+              <span class="prompt">›</span> Сводка для администратора
+              <span class="summary-period">{{ periodLabel }}</span>
+            </h2>
+            <section class="kpi-grid" aria-label="Ключевые метрики">
+              <article class="kpi-card kpi-hero">
+                <div class="kpi-icon"><i class="fas fa-paper-plane"></i></div>
+                <div class="kpi-label">Запросов</div>
+                <div class="kpi-value">{{ formatKpi(counts.totalRequests) }}</div>
+              </article>
+              <article class="kpi-card kpi-hero kpi-success">
+                <div class="kpi-icon"><i class="fas fa-circle-check"></i></div>
+                <div class="kpi-label">Успешных</div>
+                <div class="kpi-value">{{ formatPercent(counts.okShare) }}</div>
+              </article>
+              <article class="kpi-card kpi-hero">
+                <div class="kpi-icon"><i class="fas fa-gauge-high"></i></div>
+                <div class="kpi-label">p95 latency</div>
+                <div class="kpi-value">
+                  {{ formatKpi(counts.p95DurationMs) }} <span class="kpi-unit">мс</span>
+                </div>
+              </article>
+              <article class="kpi-card kpi-hero">
+                <div class="kpi-icon"><i class="fas fa-tower-broadcast"></i></div>
+                <div class="kpi-label">Вызовов к LifePay</div>
+                <div class="kpi-value">{{ formatKpi(counts.upstreamTotal) }}</div>
+              </article>
+            </section>
+
+            <section class="kpi-grid kpi-grid-secondary" aria-label="Дополнительные метрики">
+              <article class="stat-card">
+                <div class="stat-label"><i class="fas fa-stopwatch"></i> avg latency</div>
+                <div class="stat-value">
+                  {{ formatKpi(counts.avgDurationMs) }} <span class="stat-unit">мс</span>
+                </div>
+              </article>
+              <article class="stat-card">
+                <div class="stat-label"><i class="fas fa-bug"></i> Top errorCode</div>
+                <div class="stat-value small">
+                  {{ counts.topErrorCode || '—' }}
+                  <span v-if="counts.topErrorCount" class="stat-unit"
+                    >({{ counts.topErrorCount }})</span
+                  >
+                </div>
+              </article>
+              <article class="stat-card">
+                <div class="stat-label"><i class="fas fa-shield-halved"></i> upstream success</div>
+                <div class="stat-value">{{ formatPercent(counts.upstreamOkShare) }}</div>
+              </article>
+              <article class="stat-card">
+                <div class="stat-label"><i class="fas fa-circle-xmark"></i> Ошибок ответа</div>
+                <div class="stat-value">{{ formatKpi(counts.totalErrors) }}</div>
+              </article>
+            </section>
           </section>
 
-          <section class="kpi-grid kpi-grid-secondary" aria-label="LifePay">
-            <article class="stat-card">
-              <div class="stat-label"><i class="fas fa-circle-check"></i> Upstream OK</div>
-              <div class="stat-value">{{ formatKpi(counts.upstreamOk) }}</div>
+          <section class="feed-grid">
+            <article class="panel-section">
+              <header class="panel-section-head">
+                <span class="prompt">›</span>
+                <h2>Последние входящие запросы</h2>
+                <span class="updated-since muted">{{ updatedSince(lastUpdated.requests) }}</span>
+                <button type="button" class="btn-mini head-action" @click="setTab('requests')">
+                  Все <i class="fas fa-arrow-right"></i>
+                </button>
+              </header>
+              <div v-if="recentRequestsPreview.length > 0" class="table-wrapper">
+                <table class="data-table compact-table">
+                  <thead>
+                    <tr>
+                      <th>Время</th>
+                      <th>op</th>
+                      <th>HTTP</th>
+                      <th>статус</th>
+                      <th>ms</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="r in recentRequestsPreview" :key="r.id" :class="rowClassRequest(r)">
+                      <td>{{ formatTime(r.requestedAt) }}</td>
+                      <td>{{ r.op }}</td>
+                      <td>{{ r.clientHttpStatus }}</td>
+                      <td :class="isRequestOk(r) ? 'cell-ok' : 'cell-err'">
+                        <span v-if="isRequestOk(r)">✓ ok</span>
+                        <span v-else>✗ {{ r.errorCode || 'err' }}</span>
+                      </td>
+                      <td>{{ r.durationMs }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <div v-else class="empty-state">
+                <i class="fas fa-inbox empty-icon"></i>
+                <p class="empty-title">{{ hasFilter ? 'За выбранный период записей нет' : 'Запросов пока нет' }}</p>
+                <p class="empty-hint">Сюда попадут все обращения клиентов к /api/v1/&#123;op&#125;.</p>
+              </div>
             </article>
-            <article class="stat-card">
-              <div class="stat-label"><i class="fas fa-circle-xmark"></i> Upstream errors</div>
-              <div class="stat-value">{{ formatKpi(counts.upstreamErrors) }}</div>
+
+            <article class="panel-section">
+              <header class="panel-section-head">
+                <span class="prompt">›</span>
+                <h2>Последние вызовы к LifePay</h2>
+                <span class="updated-since muted">{{ updatedSince(lastUpdated.upstream) }}</span>
+                <button type="button" class="btn-mini head-action" @click="setTab('upstream')">
+                  Все <i class="fas fa-arrow-right"></i>
+                </button>
+              </header>
+              <div v-if="recentUpstreamPreview.length > 0" class="table-wrapper">
+                <table class="data-table compact-table">
+                  <thead>
+                    <tr>
+                      <th>Время</th>
+                      <th>op</th>
+                      <th>kind</th>
+                      <th>HTTP</th>
+                      <th>статус</th>
+                      <th>ms</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="u in recentUpstreamPreview" :key="u.id" :class="rowClassUpstream(u)">
+                      <td>{{ formatTime(u.sentAt) }}</td>
+                      <td>{{ u.op }}</td>
+                      <td>{{ u.upstreamKind }}</td>
+                      <td>{{ u.lpHttpStatus || '—' }}</td>
+                      <td :class="isUpstreamOk(u) ? 'cell-ok' : 'cell-err'">
+                        {{ isUpstreamOk(u) ? '✓ ok' : '✗ err' }}
+                      </td>
+                      <td>{{ u.durationMs }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <div v-else class="empty-state">
+                <i class="fas fa-tower-broadcast empty-icon"></i>
+                <p class="empty-title">{{ hasFilter ? 'За выбранный период вызовов нет' : 'Вызовов LifePay пока нет' }}</p>
+                <p class="empty-hint">Сюда попадут все исходящие запросы к LifePay.</p>
+              </div>
             </article>
           </section>
         </template>
@@ -445,9 +553,15 @@ export default {
         totalRequests: 0,
         totalOk: 0,
         totalErrors: 0,
+        okShare: 0,
+        avgDurationMs: 0,
+        p95DurationMs: 0,
+        topErrorCode: '',
+        topErrorCount: 0,
         upstreamTotal: 0,
         upstreamOk: 0,
-        upstreamErrors: 0
+        upstreamErrors: 0,
+        upstreamOkShare: 0
       },
       requests: [],
       upstream: [],
@@ -500,6 +614,20 @@ export default {
         return this.fromMs <= this.toMs
       }
       return true
+    },
+    periodLabel() {
+      const f = this.fromMs
+      const t = this.toMs
+      if (f === undefined && t === undefined) return 'за всё время'
+      if (f !== undefined && t !== undefined) return `с ${this.formatDateTime(f)} по ${this.formatDateTime(t)}`
+      if (f !== undefined) return `с ${this.formatDateTime(f)}`
+      return `по ${this.formatDateTime(t)}`
+    },
+    recentRequestsPreview() {
+      return this.requests.slice(0, 5)
+    },
+    recentUpstreamPreview() {
+      return this.upstream.slice(0, 5)
     }
   },
   watch: {
@@ -630,6 +758,7 @@ export default {
         if (!data || data.success !== true) {
           this.filterError = (data && data.error) || 'Не удалось сохранить фильтр'
         } else {
+          this.loadCounts()
           this.loadRequests()
           this.loadUpstream()
         }
@@ -653,6 +782,7 @@ export default {
         const data = await res.json().catch(() => ({}))
         if (data && data.success === true) {
           this.filter = { fromDate: '', fromTime: '', toDate: '', toTime: '' }
+          this.loadCounts()
           this.loadRequests()
           this.loadUpstream()
         } else {
@@ -793,6 +923,16 @@ export default {
     formatKpi(n) {
       if (typeof n !== 'number' || !Number.isFinite(n)) return '0'
       return String(n)
+    },
+    formatPercent(v) {
+      if (typeof v !== 'number' || !Number.isFinite(v)) return '0.0 %'
+      return `${(v * 100).toFixed(1)} %`
+    },
+    isRequestOk(r) {
+      return !r.errorCode && r.clientHttpStatus < 400
+    },
+    isUpstreamOk(u) {
+      return u.upstreamKind === 'json_ok' && !u.semanticRule
     },
     formatTime(ts) {
       if (!ts) return '—'
@@ -1012,6 +1152,41 @@ export default {
   margin-top: 0.15rem;
   line-height: 1.1;
 }
+.stat-value.small { font-size: 0.95rem; }
+.stat-unit { font-size: 0.7rem; color: var(--color-text-tertiary); margin-left: 0.15rem; }
+.kpi-unit { font-size: 0.85rem; color: var(--color-text-tertiary); margin-left: 0.1rem; }
+
+/* === Admin summary === */
+.admin-summary .kpi-grid + .kpi-grid { margin-top: 0.9rem; }
+.summary-title {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0 0 0.7rem;
+  font-size: 0.95rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text);
+}
+.summary-title .prompt { color: var(--color-accent); }
+.summary-period {
+  margin-left: 0.5rem;
+  font-size: 0.72rem;
+  text-transform: none;
+  letter-spacing: normal;
+  color: var(--color-accent);
+  font-weight: normal;
+}
+
+/* === Feed grid (two preview tables) === */
+.feed-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.9rem;
+}
+.compact-table th, .compact-table td { padding: 0.35rem 0.5rem; font-size: 0.72rem; }
+.data-table td.cell-ok { color: #6aaf7e; }
+.data-table td.cell-err { color: #d97a8a; }
 
 /* === Sections / tables === */
 .panel-section {
@@ -1190,6 +1365,7 @@ export default {
 @media (max-width: 1024px) {
   .kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .kpi-grid-secondary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .feed-grid { grid-template-columns: 1fr; }
 }
 @media (max-width: 768px) {
   .kpi-grid { grid-template-columns: 1fr; }

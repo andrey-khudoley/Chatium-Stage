@@ -11,3 +11,10 @@ export const GW_MAX_REQUEST_BODY_BYTES = 1_048_576
 
 /** Базовый URL контура bills_v1 LifePay (см. api-contracts.md, operation-manual §4.5). */
 export const LP_BILLS_V1_BASE_URL = 'https://api.life-pay.ru'
+
+/**
+ * Верхний предел сканирования журнала при расчёте метрик дашборда
+ * (avg/p95 latency, top errorCode). Тоталы считаются точно через countBy,
+ * а для производных метрик берётся срез последних N записей диапазона.
+ */
+export const DASHBOARD_SCAN_LIMIT = 2000
