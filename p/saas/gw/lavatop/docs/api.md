@@ -49,10 +49,62 @@
 | GET | /api/tests/unit | api/tests/unit/index.ts | AnyUser | Юнит: `runTemplateUnitChecks()` — routes, project, logLevel script, logger.lib, shared/logger, целостность каталога. `{ success, kind: 'unit', results[], summary, at }`. |
 | GET | /api/tests/integration | api/tests/integration/index.ts | AnyUser | Интеграция: Heap, libs, API через `route.run`, e2e-сценарии; в конце добавляется проверка `api_tests_integration_shape`. `{ success, kind: 'integration', results[], summary, at }`. |
 
-## Публичные эндпоинты
+## Публичный контур `invoices_v1` (api/v1/)
+
+Авторизация клиента — заголовок `X-Lava-Apikey`. Проксируется в Lava.Top как `X-Api-Key`. Ответ: `{ ok, data | error, requestId }` + заголовок `X-Gateway-Request-Id`. Коды ошибок — `INVOKE_*` из `lib/gateway/gatewayErrors.ts`.
+
 | Method | Path | File | Auth | Назначение |
 | --- | --- | --- | --- | --- |
-| - | - | - | - | - |
+| POST | /v1/createInvoice | api/v1/createInvoice.ts | X-Lava-Apikey | Создание инвойса. Тело: `{ email, offerId, currency, paymentProvider?, paymentMethod?, buyerLanguage?, periodicity?, clientUtm?, callbackUrl?, clientOrderId? }`. `callbackUrl`/`clientOrderId` остаются в gateway для webhook-маппинга, в Lava.Top не уходят. Проксируется в POST /api/v3/invoice. |
+| GET | /v1/getInvoiceStatus | api/v1/getInvoiceStatus.ts | X-Lava-Apikey | Статус инвойса. Query: `id` (contractId). Проксируется в GET /api/v2/invoices/{id}. |
+| GET | /v1/listProducts | api/v1/listProducts.ts | X-Lava-Apikey | Список продуктов. Query: `nextPage?` (URL следующей страницы, SSRF-защита). Проксируется в GET /api/v2/products. |
+| POST | /v1/updateOfferPrice | api/v1/updateOfferPrice.ts | X-Lava-Apikey | Обновление цены оффера. Тело: `{ productId, offers: [{ id, prices: [{ amount, currency }], name?, description? }] }`. Проксируется в PATCH /api/v2/products/{productId}. |
+| GET | /v1/operations | api/v1/operations.ts | — | Каталог операций (wire-форма из operationsCatalog). Без заголовков авторизации. |
 
-## События и webhooks
-- Не используются.
+Каждый файл — один эндпоинт с путём `/`. Общая цепочка — `handleV1Op`.
+
+## Вебхуки Lava.Top (api/webhook/)
+
+| Method | Path | File | Auth | Назначение |
+| --- | --- | --- | --- | --- |
+| GET | /api/webhook/receive | api/webhook/receive.ts | — | Проверка доступности. Возвращает `{ ok, status: 'ready', webhookSecretConfigured }`. |
+| POST | /api/webhook/receive | api/webhook/receive.ts | X-Api-Key или Basic = lava_webhook_secret | Приём `PurchaseWebhookLog` от Lava.Top. Авторизация по `lava_webhook_secret`. Ответ: 401 при неверном секрете; 2xx при успехе/contract_not_found; 500 при незаданном секрете. Body: `{ success, duplicate?, forwarded?, contractNotFound? }`. |
+
+## Журнал вебхуков для панели (api/admin/webhooks/)
+
+| Method | Path | File | Auth | Назначение |
+| --- | --- | --- | --- | --- |
+| GET | /api/admin/webhooks/recent | api/admin/webhooks/recent.ts | guardInternalApi | Последние события вебхуков (query: `limit`, `dateFrom?`, `dateTo?`). |
+| POST | /api/admin/webhooks/reforward | api/admin/webhooks/reforward.ts | guardInternalApi | Повторный форвард события (body: `{ id }`). Вызывает `reforwardEvent`. |
+
+## Сырые журналы gateway (api/admin/raw/)
+
+| Method | Path | File | Auth | Назначение |
+| --- | --- | --- | --- | --- |
+| GET | /api/admin/raw/requests/recent | api/admin/raw/requests/recent.ts | guardInternalApi | Последние входящие запросы (query: `limit`, `dateFrom?`, `dateTo?`). |
+| GET | /api/admin/raw/requests/get | api/admin/raw/requests/get.ts | guardInternalApi | Запись входящего запроса по `id`. |
+| GET | /api/admin/raw/upstream/recent | api/admin/raw/upstream/recent.ts | guardInternalApi | Последние вызовы к Lava.Top (query: `limit`, `dateFrom?`, `dateTo?`). |
+| GET | /api/admin/raw/upstream/get | api/admin/raw/upstream/get.ts | guardInternalApi | Запись вызова к Lava.Top по `id`. |
+
+## KPI-дашборд панели (api/admin/dashboard/)
+
+| Method | Path | File | Auth | Назначение |
+| --- | --- | --- | --- | --- |
+| GET | /api/admin/dashboard/gatewayCounts | api/admin/dashboard/gatewayCounts.ts | guardInternalApi | KPI за период фильтра: запросов, okShare, avg/p95 latency, topErrorCode, upstream stats. |
+
+## Фильтр по дате (api/admin/analytics/)
+
+| Method | Path | File | Auth | Назначение |
+| --- | --- | --- | --- | --- |
+| POST | /api/admin/analytics/filter-save | api/admin/analytics/filter-save.ts | guardInternalApi | Сохранить фильтр по дате (`{ from?, to? }`, Unix ms) в настройку `panel_date_filter`. |
+
+## Доступы к панели (api/access/)
+
+| Method | Path | File | Auth | Назначение |
+| --- | --- | --- | --- | --- |
+| GET | /api/access/grants | api/access/grants.ts | guardInternalApi | Список активных грантов. |
+| GET | /api/access/invites | api/access/invites.ts | guardInternalApi | Список инвайтов. |
+| POST | /api/access/generate-invite | api/access/generate-invite.ts | Admin | Сгенерировать инвайт-токен (TTL 7 дней). |
+| POST | /api/access/consume-invite | api/access/consume-invite.ts | AnyUser | Принять инвайт (body: `{ token }`). Создаёт грант под `runWithExclusiveLock`. |
+| POST | /api/access/revoke-invite | api/access/revoke-invite.ts | Admin | Отозвать инвайт (body: `{ id }`). |
+| POST | /api/access/revoke-grant | api/access/revoke-grant.ts | Admin | Отозвать грант (body: `{ id }`). |

@@ -1,7 +1,7 @@
 # lavatop — Lava.Top gateway (Chatium)
 
 ## Назначение
-Заготовка серверного шлюза к Lava.Top (каталог `p/saas/gw/lavatop`), аналогичного соседним шлюзам `lifepay` и `gc`. Каркас изначально скопирован из `p/template_project` (отсюда исторические упоминания шаблона в `docs/LLM/` и changelog ниже). Минимальный старт: главная, админка, профиль, логин, страница тестов, настройки и серверные логи. Бизнес-логика интеграции с Lava.Top пока не реализована.
+Серверный шлюз к Lava.Top (`p/saas/gw/lavatop`), аналогичный соседним шлюзам `lifepay` и `gc`. Публикует публичный контур `invoices_v1` (`/v1/createInvoice`, `/v1/getInvoiceStatus`, `/v1/listProducts`, `/v1/updateOfferPrice`, `/v1/operations`) с маршрутизацией к `https://gate.lava.top`; принимает вебхуки Lava.Top и проксирует их на клиентский callback (`webhook-relay`); на `/` — панель оператора с журналами, KPI и управлением доступами. Каркас изначально скопирован из `p/template_project` (отсюда исторические упоминания шаблона в `docs/LLM/` и changelog ниже).
 
 ## Важно
 - Платформа: Chatium. Серверная часть управляется платформой.
@@ -9,29 +9,31 @@
 - Деплой происходит автоматически после пуша.
 
 ## Текущее состояние
-- Главная, админка, профиль и логин существуют как минимальные страницы.
-- Реализованы: API настроек (list, get, save), Heap-таблица settings, репозиторий, lib (бизнес-логика).
-- Серверные логи: Heap-таблица logs (message, payload, severity, level, timestamp), repos/logs.repo (create, findAll, findById, findBeforeTimestamp, countBySeverityAfter, countErrorsAfter, countWarningsAfter), lib/logger.lib (проверка уровня по настройке log_level, запись в ctx.log — только сообщение, в ctx.account.log — сообщение и payload, Heap, WebSocket с хэшем для уникальности канала, вебхук log_webhook { enable, url } по умолчанию url: ""). API POST /api/logger/log (AnyUser), body: { severity, level, message, payload?, timestamp? }; GET /api/admin/logs/recent (Admin) — последние N логов; GET /api/admin/logs/before (Admin) — N логов старше указанного timestamp для пагинации. Админка получает encodedLogsSocketId, подписывается на new-log для отображения в дашборде, загружает историю логов через recent при монтировании, может догружать старые логи через before (кнопка «Загрузить ещё 50»); кнопка «Очистить логи» очищает вывод и сдвигает таймштамп на текущий — повторное нажатие «Загрузить ещё 50» восстанавливает последние логи.
-- Дашборд админки: счётчики ошибок и предупреждений. Настройка `dashboard_reset_at` (таймштамп сброса в ms); lib/admin/dashboard.lib (getDashboardCounts, resetDashboard), GET /api/admin/dashboard/counts и POST /api/admin/dashboard/reset (Admin). При монтировании загружаются счётчики; кнопка «Сбросить» записывает текущее время в настройки; при новых логах (sink/WebSocket) инкремент только если timestamp >= dashboardResetAt.
-- API тестов: `GET /api/tests/list`, `GET /api/tests/unit` (логика в `lib/tests/templateUnitSuite.ts`), `GET /api/tests/integration` (`lib/tests/integrationSuite.ts`); при провале кейса пишется серверный лог через `lib/tests/logTestRunFailures.ts` (severity 3, чтобы сообщения были видны при строгом `log_level`). На `/web/tests` — три вкладки (Юнит / Интеграция / HTTP), метрики по активной вкладке, HTTP-проверки с фрагментами SSR, точечный запуск теста (play); категории внутри вкладки можно сворачивать (по умолчанию открыта первая). Каталог `api/tests/endpoints-check/` удалён (логика перенесена из `k/assistant`).
-- При серверной загрузке **всех страниц** (главная, админка, профиль, тесты, логин) уровень логирования читается из настроек и передаётся на клиент в `window.__BOOT__.logLevel` (shared/logLevel.ts). В браузере доступен shared/logger по стандарту syslog (RFC 5424): уровни -1 (логи выключены, LOG_LEVEL_OFF), 0–7 (Emergency…Debug), функции `logEmergency`, `logAlert`, `logCritical`, `logError`, `logWarning`, `logNotice`, `logInfo`, `logDebug`; `createComponentLogger(name)` для логов с префиксом; `setLogSink`, `LogEntry` для дашборда. Вывод только если severity не строже настроенного порога.
-- Клиентская часть полностью покрыта логами: страницы и компоненты используют `createComponentLogger`; все аутентифицированные страницы (главная, админка, профиль, тесты) подключают `browserRemoteLogger` (shared/browserRemoteLogger.ts) для пакетной отправки браузерных логов на сервер через POST /api/logger/browser. AdminPage дополнительно регистрирует sink для счётчиков дашборда и подписку на WebSocket для отображения логов в реальном времени. Каждая страница логирует этапы загрузки (монтирование, boot loader state, инициализация remote logger, анимации) и сырые данные (props, URL-ы, auth state) для полной трассировки.
+- **Публичный контур `invoices_v1`**: `POST /v1/createInvoice`, `GET /v1/getInvoiceStatus`, `GET /v1/listProducts`, `POST /v1/updateOfferPrice`, `GET /v1/operations`. Авторизация клиента — заголовок `X-Lava-Apikey`, проксируется в Lava.Top как `X-Api-Key`. Общая цепочка инкапсулирована в `lib/gateway/handleV1Op.ts`. Клиент Lava.Top — `lib/gateway/lavaTopClient.ts` (обработка 429→rate_limited, timeout, network). Семантика ответов — `lib/gateway/invoicesV1Semantic.ts`. Каталог операций (SSOT) — `lib/gateway/operationsCatalog.ts`.
+- **Webhook-relay**: `GET/POST /api/webhook/receive` принимает `PurchaseWebhookLog` от Lava.Top. Авторизация по `lava_webhook_secret` (заголовок `X-Api-Key` или Basic). Сервис `lib/webhook/webhookRelay.service.ts` — дедупликация по `eventType:contractId:status`, поиск маппинга по `contractId` (для рекуррентных — fallback по `parentContractId`), форвард best-effort на клиентский callback. Маппинг создаётся в `createInvoice` при наличии `callbackUrl`. Вся цепочка под `runWithExclusiveLock`. Решение — `docs/ADR/0003-webhook-relay.md`.
+- **Панель оператора `/`** (`pages/HomePage.vue`; `requireInternalAccess`): вкладки Обзор (KPI + webhook-метрики) / Входящие / К Lava / Вебхуки / Доступы / Создать запрос; фильтр по дате (`panel_date_filter`). Вкладка «Создать запрос» — `components/RequestTestTab.vue`.
+- **Система доступов** (по модели lifepay): `lib/access/*`, `api/access/*` (6 эндпоинтов), `/web/forbidden`, `/web/access/invite`, `pages/InviteAcceptPage.vue`. Heap-таблицы `panelAccess` / `panelInvites`.
+- **Сырые журналы**: `api/admin/raw/{requests,upstream}/{recent,get}` (`guardInternalApi`), `api/admin/webhooks/{recent,reforward}`.
+- **Настройки gateway**: `lava_test_apikey`, `lava_base_url` (default `https://gate.lava.top`), `lava_webhook_secret`, `panel_date_filter`.
+- **Тесты**: юнит-набор gateway (`lib/gateway/gatewayUnitSuite.ts`, ~21 кейс — каталог/маскирование/семантика/дедуп); интеграционные тесты с roundtrip и идемпотентностью маппинга (`lib/tests/integrationSuite.ts`).
+- Сервисная инфраструктура (настройки, серверные логи, дашборд, API тестов) — без изменений. Детали — `docs/api.md`, `docs/data.md`.
 
 ## Навигация по документации
-- Архитектура: `docs/architecture.md`
-- API: `docs/api.md`
-- Данные: `docs/data.md`
-- Запуск и деплой: `docs/run.md`
+- Архитектура (роутинг, слои, gateway, webhook-relay, доступы): `docs/architecture.md`
+- API (все эндпоинты, включая `api/v1/`, `api/webhook/`, `api/access/`): `docs/api.md`
+- Данные (Heap-таблицы, репозитории): `docs/data.md`
 - Импорты/циклы: `docs/imports.md`
 - Решения: `docs/ADR/`
 - История диалогов: `docs/LLM/`
 
 ## TODO
-- Заполнить UI для главной/админки/профиля.
-- Добавить реальные сценарии авторизации.
-- Описать бизнес‑логику и данные.
+- Портировать webhook-relay в `lifepay` и `gc` — Этап B (отдельная задача).
+- Настройка webhook-URL в ЛК Lava.Top — ручная операция (документировать в ops-инструкции).
+- Ретрай форварда вебхука — вне scope текущей реализации.
+- Описать доменную модель на уровне `docs/data.md` (бизнес-смысл полей).
 
 ## Changelog
+- 2026-05-27: реализован полноценный gateway Lava.Top (был каркас-заготовка): публичный контур `invoices_v1` (createInvoice/getInvoiceStatus/listProducts/updateOfferPrice/operations), webhook-relay (приём PurchaseWebhookLog, дедупликация, маппинг contractId→callback_url, форвард best-effort), панель оператора с KPI и вкладкой «Вебхуки», внутренняя система доступов (panelAccess/panelInvites), 6 новых Heap-таблиц, юнит-набор gateway (~21 кейс). Добавлены ADR-0003 (webhook-relay), docs/architecture.md, docs/api.md, docs/data.md обновлены.
 - 2026-05-26: исправлены интеграционные тесты `regression_payload_not_object_object` и `e2e_log_payload_roundtrip` — падали при `log_level != Debug` (payload по дизайну отсекается на не-Debug). Тесты теперь временно выставляют `Debug` на время прогона и восстанавливают прежний уровень через `try/finally` (паттерн как в `logger_writeServerLog_filter`). Поведение логгера не менялось. Портировано из `lifepay`.
 - 2026-05-26: адаптация копии шаблона под новый шлюз `lavatop` (Lava.Top): `PROJECT_ROOT` → `p/saas/gw/lavatop`, `.dir.json`, уникальные ключи Heap-таблиц `t__saas-gw-lavatop__setting__pGtfce` / `t__saas-gw-lavatop__log__4RhPFp`, юнит-тест `routes_PROJECT_ROOT`, SSR-маркер `saas-gw-lavatop-page`; убран хардкод пути в `TestsPage.vue` (теперь через проп `projectRoot` из `config/routes.PROJECT_ROOT`); название проекта по умолчанию → «Lava.Top». Обновлены `docs/data.md`, `docs/api.md`, README, `.CHATIUM-LLM.md`. Удалён `docs/run.md` (инструкция по адаптации шаблона выполнена).
 - 2026-05-26: строгая проверка типов приведена к 0 ошибок (паритет с соседними `lifepay`/`gc`), исправления портированы из них: новый `lib/htmlRedirect.ts` (типобезопасный редирект из html-роутов, заменил `ctx.resp.redirect` в `web/profile` и `web/tests`); маппинг severity → уровень `ctx.account.log` в `lib/logger.lib.ts`; `?? 'Info'` в `api/settings/save.ts`; `limit` как строка в `.query()` (`AdminPage.vue`, `TestsPage.vue`, `lib/tests/integrationSuite.ts`); защита от `undefined` при индексации массивов логов (`for…of .entries()`, guard `first`) в `AdminPage.vue` и `TestsPage.vue`; хранение функции отписки WebSocket (`logsSocketUnsubscribe`) в `TestsPage.vue`.

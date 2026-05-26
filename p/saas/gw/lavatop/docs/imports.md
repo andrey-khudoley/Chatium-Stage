@@ -156,6 +156,24 @@
 ### `./tables/logs.table.ts`
 - `@app/heap` → `Heap`
 
+### `./tables/gatewayRequestLog.table.ts`
+- `@app/heap` → `Heap`
+
+### `./tables/gatewayUpstreamLog.table.ts`
+- `@app/heap` → `Heap`
+
+### `./tables/lavatopWebhookEvent.table.ts`
+- `@app/heap` → `Heap`
+
+### `./tables/lavatopWebhookMapping.table.ts`
+- `@app/heap` → `Heap`
+
+### `./tables/panelAccess.table.ts`
+- `@app/heap` → `Heap`
+
+### `./tables/panelInvites.table.ts`
+- `@app/heap` → `Heap`
+
 ## 6) Репозитории (repos/)
 
 ### `./repos/settings.repo.ts`
@@ -167,11 +185,34 @@
 - `../lib/logger.lib` → `*`
 - экспортирует: `create`, `findAll`, `findById`, `findBeforeTimestamp`, `countBySeverityAfter`, `countErrorsAfter`, `countWarningsAfter`
 
+### `./repos/gatewayRequestLog.repo.ts`
+- `../tables/gatewayRequestLog.table` → `GatewayRequestLog`, `GatewayRequestLogRow`
+- `../lib/logger.lib` → `*`
+
+### `./repos/gatewayUpstreamLog.repo.ts`
+- `../tables/gatewayUpstreamLog.table` → `GatewayUpstreamLog`, `GatewayUpstreamLogRow`
+- `../lib/logger.lib` → `*`
+
+### `./repos/lavatopWebhookEvent.repo.ts`
+- `../tables/lavatopWebhookEvent.table` → `LavatopWebhookEvent`, `LavatopWebhookEventRow`
+- `../lib/logger.lib` → `*`
+
+### `./repos/lavatopWebhookMapping.repo.ts`
+- `../tables/lavatopWebhookMapping.table` → `LavatopWebhookMapping`, `LavatopWebhookMappingRow`
+- `@app/sync` → `runWithExclusiveLock`
+
+### `./repos/panelAccess.repo.ts`
+- `../tables/panelAccess.table` → `PanelAccess`, `PanelAccessRow`
+
+### `./repos/panelInvites.repo.ts`
+- `../tables/panelInvites.table` → `PanelInvites`, `PanelInvitesRow`
+
 ## 7) Библиотеки (lib/)
 
 ### `./lib/settings.lib.ts`
 - `../repos/settings.repo` → `*` (findByKey, findAll, upsert, deleteByKey)
-- `./logger.lib` → `*` (только для функций, не вызываемых из logger.lib: getSettingString, getLogsLimit, getDashboardResetAt, getAllSettings, setSetting)
+- `./logger.lib` → `*` (только для функций, не вызываемых из logger.lib)
+- `../shared/gatewaySettingKeys` → константы ключей gateway-настроек
 
 ### `./lib/admin/dashboard.lib.ts`
 - `../settings.lib` → `*` (getDashboardResetAt, setSetting, SETTING_KEYS)
@@ -184,71 +225,124 @@
 - `@app/socket` → `sendDataToSocket`
 - `@app/request` → `request`
 
+### `./lib/gateway/handleV1Op.ts`
+- `../logger.lib` → `*`
+- `./operationsCatalog` → `findOperation`, `OperationEntry`
+- `./requestId`, `./gatewayResponse`, `./lavaCredentials`, `./constants`, `./lavaTopClient` (types)
+- `./invoicesV1Semantic` (types)
+- `../../shared/redactRaw` → `redactRawDeep`
+- `../../repos/gatewayRequestLog.repo`, `../../repos/gatewayUpstreamLog.repo`
+
+### `./lib/gateway/lavaTopClient.ts`
+- `@app/request` → `request`
+- `../logger.lib` → `*`
+- `./constants` → тайм-аут, лимиты
+
+### `./lib/gateway/operationsCatalog.ts`
+- `@app/schema` → `s` (рантайм-валидатор, @ts-ignore системный модуль)
+
+### `./lib/webhook/webhookRelay.service.ts`
+- `@app/sync` → `runWithExclusiveLock`
+- `@app/request` → `request`
+- `../logger.lib` → `*`
+- `../settings.lib` → `getLavaWebhookSecret`
+- `../../repos/lavatopWebhookEvent.repo`, `../../repos/lavatopWebhookMapping.repo`
+- `../gateway/lavaTypes` → `LavaWebhookPayload`
+- `../gateway/constants` → `GW_FORWARD_TIMEOUT_MS`
+
+### `./lib/access/requireInternalAccess.ts`, `apiGuard.ts`
+- `../logger.lib` → `*`
+- `../../repos/panelAccess.repo` → `*`
+
+### `./lib/access/invites.ts`
+- `@app/sync` → `runWithExclusiveLock`
+- `../../repos/panelInvites.repo`, `../../repos/panelAccess.repo`
+- `../logger.lib` → `*`
+
 ## 8) API (api/)
 
-### `./api/settings/list.ts`
+### `./api/settings/list.ts`, `./api/settings/get.ts`, `./api/settings/save.ts`
 - `@app/auth` → `requireAccountRole`
-- `../../lib/settings.lib` → `*`
-- `../../lib/logger.lib` → `*`
-
-### `./api/settings/get.ts`
-- `@app/auth` → `requireAccountRole`
-- `../../lib/settings.lib` → `*`
-- `../../lib/logger.lib` → `*`
-
-### `./api/settings/save.ts`
-- `@app/auth` → `requireAccountRole`
-- `../../lib/settings.lib` → `*`
-- `../../lib/logger.lib` → `*`
+- `../../lib/settings.lib`, `../../lib/logger.lib`
 
 ### `./api/logger/log.ts`
 - `@app/auth` → `requireAnyUser`
-- `../../lib/logger.lib` → `*`
+- `../../lib/logger.lib`
 
-### `./api/admin/logs/recent.ts`
+### `./api/admin/logs/recent.ts`, `./api/admin/logs/before.ts`
 - `@app/auth` → `requireAccountRole`
-- `../../../repos/logs.repo` → `*`
-- `../../../lib/logger.lib` → `*`
-- `../../../tables/logs.table` → `LogsRow` (type)
+- `../../../repos/logs.repo`, `../../../lib/logger.lib`, `../../../tables/logs.table` (type)
 
-### `./api/admin/logs/before.ts`
+### `./api/admin/dashboard/counts.ts`, `./api/admin/dashboard/reset.ts`
 - `@app/auth` → `requireAccountRole`
-- `../../../repos/logs.repo` → `*`
-- `../../../lib/logger.lib` → `*`
-- `../../../tables/logs.table` → `LogsRow` (type)
+- `../../../lib/admin/dashboard.lib`, `../../../lib/logger.lib`
 
-### `./api/admin/dashboard/counts.ts`
-- `@app/auth` → `requireAccountRole`
-- `../../../lib/admin/dashboard.lib` → `*`
-- `../../../lib/logger.lib` → `*`
+### `./api/admin/dashboard/gatewayCounts.ts`
+- `../../lib/access/apiGuard` → `guardInternalApi`
+- `../../../repos/gatewayRequestLog.repo`, `../../../repos/lavatopWebhookEvent.repo`
+- `../../../lib/settings.lib` → `getPanelDateFilter`
 
-### `./api/admin/dashboard/reset.ts`
-- `@app/auth` → `requireAccountRole`
-- `../../../lib/admin/dashboard.lib` → `*`
-- `../../../lib/logger.lib` → `*`
+### `./api/admin/raw/requests/recent.ts`, `./api/admin/raw/requests/get.ts`
+- `../../lib/access/apiGuard`, `../../../../repos/gatewayRequestLog.repo`, `../../../../lib/logger.lib`
+
+### `./api/admin/raw/upstream/recent.ts`, `./api/admin/raw/upstream/get.ts`
+- `../../lib/access/apiGuard`, `../../../../repos/gatewayUpstreamLog.repo`, `../../../../lib/logger.lib`
+
+### `./api/admin/webhooks/recent.ts`
+- `../../lib/access/apiGuard`, `../../../../repos/lavatopWebhookEvent.repo`, `../../../../lib/logger.lib`
+
+### `./api/admin/webhooks/reforward.ts`
+- `../../lib/access/apiGuard`, `../../../../lib/webhook/webhookRelay.service` → `reforwardEvent`
+
+### `./api/admin/analytics/filter-save.ts`
+- `../../lib/access/apiGuard`, `../../../../lib/settings.lib` → `setPanelDateFilter`
+
+### `./api/v1/createInvoice.ts`
+- `../../../lib/gateway/handleV1Op`, `../../../lib/gateway/lavaTopClient`, `../../../lib/gateway/buildCreateInvoiceBody`, `../../../lib/gateway/invoicesV1Semantic`
+- `../../../repos/lavatopWebhookMapping.repo` → `upsertByContractId`
+
+### `./api/v1/getInvoiceStatus.ts`, `./api/v1/listProducts.ts`, `./api/v1/updateOfferPrice.ts`
+- `../../../lib/gateway/handleV1Op`, `../../../lib/gateway/lavaTopClient`, `../../../lib/gateway/invoicesV1Semantic`
+
+### `./api/v1/operations.ts`
+- `../../../lib/gateway/operationsCatalog` → `toOperationSummaries`
+
+### `./api/webhook/receive.ts`
+- `../../lib/logger.lib`, `../../lib/settings.lib`
+- `../../lib/webhook/webhookRelay.service` → `processWebhook`
+- `../../lib/gateway/lavaTypes` → `LavaWebhookPayload` (type)
+
+### `./api/access/generate-invite.ts`, `consume-invite.ts`, `invites.ts`, `grants.ts`, `revoke-invite.ts`, `revoke-grant.ts`
+- `../../lib/access/*`, `../../lib/logger.lib`
 
 ### `./api/tests/list.ts`
 - `@app/auth` → `requireAnyUser`
-- `../../lib/logger.lib` → `*`
-- `../../shared/testCatalog` → `UNIT_TEST_BLOCKS`, `INTEGRATION_SERVER_TEST_BLOCKS`, `INTEGRATION_HTTP_TEST_BLOCK`, `flattenCatalogBlocks`
+- `../../lib/logger.lib`
+- `../../shared/testCatalog`
 
 ### `./api/tests/unit/index.ts`
 - `@app/auth` → `requireAnyUser`
-- `../../../lib/logger.lib` → `*`
-- `../../../lib/tests/templateUnitSuite` → `runTemplateUnitChecks`, `TemplateUnitTestResult`
-- `../../../lib/tests/logTestRunFailures` → `logTestRunFailures`
+- `../../../lib/logger.lib`
+- `../../../lib/tests/templateUnitSuite` → `runTemplateUnitChecks`
+- `../../../lib/gateway/gatewayUnitSuite` → `runGatewayUnitChecks`
+- `../../../lib/tests/logTestRunFailures`
 
 ### `./api/tests/integration/index.ts`
 - `@app/auth` → `requireAnyUser`
-- `../../../lib/logger.lib` → `*`
+- `../../../lib/logger.lib`
 - `../../../lib/tests/integrationSuite` → `runTemplateIntegrationChecks`
-- `../../../lib/tests/logTestRunFailures` → `logTestRunFailures`
+- `../../../lib/tests/logTestRunFailures`
 
 ### `./lib/tests/logTestRunFailures.ts`
-- `../logger.lib` → `writeServerLog` — поштучное логирование провалов тестов (severity 3)
+- `../logger.lib` → `writeServerLog`
 
 ### `./lib/tests/templateUnitSuite`
-- `../logger.lib`, `../settings.lib`, `config/*`, `shared/*`, `shared/testCatalog` — юнит-прогон без Heap
+- `../logger.lib`, `../settings.lib`, `config/*`, `shared/*`, `shared/testCatalog`
 
 ### `./lib/tests/integrationSuite`
-- `../settings.lib`, `repos/*`, `../admin/dashboard.lib`, `../logger.lib`, `api/settings/*`, `api/logger/log`, `api/admin/*`, `api/tests/list`, `./templateUnitSuite` (`runTemplateUnitChecks`)
+- `../settings.lib`, `repos/*`, `../admin/dashboard.lib`, `../logger.lib`, `api/settings/*`, `api/logger/log`, `api/admin/*`, `api/tests/list`, `./templateUnitSuite`
+- `../../repos/lavatopWebhookMapping.repo` → roundtrip-тест маппинга
+
+### `./lib/gateway/gatewayUnitSuite.ts`
+- `./operationsCatalog`, `./gatewayErrors`, `./lavaCredentials`, `./invoicesV1Semantic`, `./requestId`
+- `../logger.lib` → `writeServerLog` (логирование провалов)
