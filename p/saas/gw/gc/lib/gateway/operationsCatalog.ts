@@ -852,8 +852,8 @@ export const operationsCatalog: OperationEntry[] = [
     legacyImportAction: null,
     argsValidator: s.object(
       {
-        'created_at[from]': s.string().optional(),
-        'created_at[to]': s.string().optional(),
+        // bracket-ключи GC (created_at[from]/[to]) — невалидные имена Heap.Object,
+        // проходят через passthrough; описаны в argsSchema для UI-формы.
         status: s.string().optional(),
         email: s.string().optional(),
         idgrouplist: s.string().optional()
@@ -880,10 +880,8 @@ export const operationsCatalog: OperationEntry[] = [
     argsValidator: s.object(
       {
         groupId: s.string(),
-        'created_at[from]': s.string().optional(),
-        'created_at[to]': s.string().optional(),
-        'added_at[from]': s.string().optional(),
-        'added_at[to]': s.string().optional(),
+        // bracket-ключи GC (created_at[from]/[to], added_at[from]/[to]) — невалидные имена
+        // Heap.Object, проходят через passthrough; описаны в argsSchema для UI-формы.
         status: s.string().optional()
       },
       passthrough
@@ -908,11 +906,9 @@ export const operationsCatalog: OperationEntry[] = [
     legacyImportAction: null,
     argsValidator: s.object(
       {
-        'created_at[from]': s.string().optional(),
-        'created_at[to]': s.string().optional(),
+        // bracket-ключи GC (created_at[from]/[to], payed_at[from]/[to]) — невалидные имена
+        // Heap.Object, проходят через passthrough; описаны в argsSchema для UI-формы.
         status: s.string().optional(),
-        'payed_at[from]': s.string().optional(),
-        'payed_at[to]': s.string().optional(),
         user_in_group: s.number().optional(),
         user_id: s.number().optional()
       },
@@ -939,11 +935,9 @@ export const operationsCatalog: OperationEntry[] = [
     legacyImportAction: null,
     argsValidator: s.object(
       {
-        'created_at[from]': s.string().optional(),
-        'created_at[to]': s.string().optional(),
-        status: s.string().optional(),
-        'status_changed_at[from]': s.string().optional(),
-        'status_changed_at[to]': s.string().optional()
+        // bracket-ключи GC (created_at[from]/[to], status_changed_at[from]/[to]) — невалидные
+        // имена Heap.Object, проходят через passthrough; описаны в argsSchema для UI-формы.
+        status: s.string().optional()
       },
       passthrough
     ),
