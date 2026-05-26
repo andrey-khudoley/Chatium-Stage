@@ -117,3 +117,33 @@ export async function countOkSince(
     semanticRule: ''
   })
 }
+
+/** Диапазон `sentAt` для countBy. Отсутствующая нижняя граница → с начала времён (0). */
+function rangeFilter(dateFrom?: number, dateTo?: number): { $gte: number; $lte?: number } {
+  const from = dateFrom ?? 0
+  return dateTo !== undefined ? { $gte: from, $lte: dateTo } : { $gte: from }
+}
+
+/** Всего исходящих вызовов в диапазоне [from?, to?] (Unix ms). */
+export async function countInRange(
+  ctx: app.Ctx,
+  dateFrom?: number,
+  dateTo?: number
+): Promise<number> {
+  return GatewayUpstreamLog.countBy(ctx, {
+    sentAt: rangeFilter(dateFrom, dateTo)
+  })
+}
+
+/** Успешных исходящих вызовов (json_ok без семантической ошибки) в диапазоне [from?, to?]. */
+export async function countOkInRange(
+  ctx: app.Ctx,
+  dateFrom?: number,
+  dateTo?: number
+): Promise<number> {
+  return GatewayUpstreamLog.countBy(ctx, {
+    sentAt: rangeFilter(dateFrom, dateTo),
+    upstreamKind: 'json_ok',
+    semanticRule: ''
+  })
+}
