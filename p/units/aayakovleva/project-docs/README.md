@@ -3,7 +3,7 @@ title: "Документация проекта: GetCourse платежи (Як�
 type: index
 project_hash: c7d5a1
 created: 2026-05-24
-updated: 2026-05-24
+updated: 2026-05-26
 tags:
   - note/index
   - project/olga-getcourse-payments
@@ -66,6 +66,7 @@ tags:
 ## Документация модулей (рядом с кодом)
 
 **Gateway `p/saas/gw/lifepay/docs/`:**
+- [docs/README.md](../../../saas/gw/lifepay/docs/README.md) — **индекс документации модуля** (карта `architecture.md`/`api.md`/`data.md`/`imports.md`, ADR, gateway, LLM).
 - [gateway/operation-manual.md](../../../saas/gw/lifepay/docs/gateway/operation-manual.md) — SSOT разработки (контракты `/v1/{op}`, секреты, коды ошибок, наблюдаемость).
 - [gateway/implementation-plan.md](../../../saas/gw/lifepay/docs/gateway/implementation-plan.md) — план Прототип → MVP → Прод (вкл. §1.11 внутренние права доступа).
 - [gateway/testing-strategy.md](../../../saas/gw/lifepay/docs/gateway/testing-strategy.md) — стратегия юнит/интеграционных тестов.
@@ -73,6 +74,7 @@ tags:
 - Сопутствующие реестры операций: `gateway/lp-unified-op-registry-v0.md`, `gateway/lp-op-http-mapping.json`, `gateway/lp-required-fields-by-op.json` (стабы-указатели на код-каталог).
 
 **Клиентская панель `p/units/aayakovleva/sbp-client/docs/`:**
+- [docs/README.md](../sbp-client/docs/README.md) — **индекс документации модуля** (карта `architecture.md`/`api.md`/`data.md`/`imports.md`, ADR, payment-scheme, LLM).
 - [architecture/payment-scheme.md](../sbp-client/docs/architecture/payment-scheme.md) — бизнес-логика виджета (раскладка способов, правило 50 000 ₽).
 - [ADR 0003 — internal-access-control](../sbp-client/docs/ADR/0003-internal-access-control.md) — проектный ADR 0003.
 

@@ -2,7 +2,7 @@
 title: "Decisions — реестр ADR проекта"
 type: index
 created: 2026-05-13
-updated: 2026-05-24
+updated: 2026-05-26
 project: "[Бриф проекта](../brief.md)"
 tags:
   - note/index
@@ -21,7 +21,7 @@ tags:
 |---|---|---|---|
 | 0001 | Выбор API LifePay для платёжной страницы | gateway: [gw/lifepay/docs/ADR/0003-lifepay-api-choice](../../../../saas/gw/lifepay/docs/ADR/0003-lifepay-api-choice.md) | Принято 13.05.2026 (контур `bills_v1` основной, `ecom_v1` fallback) |
 | 0002 | Активация контура `ecom_v1` LifePay | — (не написан) | Зарезервирован: откроется при ответе инженеров LifePay по условиям эквайринга, см. [operation-manual §12.6](../../../../saas/gw/lifepay/docs/gateway/operation-manual.md) |
-| 0003 | Внутренняя система прав доступа к панели `sbp-client` | client: [sbp-client/docs/ADR/0003-internal-access-control](../../sbp-client/docs/ADR/0003-internal-access-control.md) | Принято 24.05.2026 (`requireRealUser` + `requireInternalAccess` + одноразовые пригласительные ссылки). ⚠️ **Реализация НЕ начата** — заведены только Heap-таблицы; `api/lp/*` пока без авторизации. План — [data.md](../../sbp-client/docs/data.md#план-реализации-внутренней-авторизации-adr-0003) |
+| 0003 | Внутренняя система прав доступа к панели `sbp-client` | client: [sbp-client/docs/ADR/0003-internal-access-control](../../sbp-client/docs/ADR/0003-internal-access-control.md) | Принято и **реализовано 24.05.2026** (`requireRealUser` + `requireInternalAccess` + одноразовые пригласительные ссылки). Реализация: `lib/access/`, `api/access/` (6 эндпоинтов), `guardInternalApi` на всех `api/lp/*`, Heap-таблицы `panel_access`/`panel_invites` — см. [data.md](../../sbp-client/docs/data.md#таблицы-внутренней-авторизации-adr-0003) |
 
 ## Шаблон
 
