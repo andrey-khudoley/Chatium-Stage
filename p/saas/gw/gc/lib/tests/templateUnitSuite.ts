@@ -22,7 +22,7 @@ import {
   PROFILE_PAGE_NAME,
   TESTS_PAGE_NAME
 } from '../../config/project'
-import { getLogLevelScript } from '../../shared/logLevel'
+import { getLogLevelScript } from '../logLevel'
 import {
   createComponentLogger,
   logWarn,

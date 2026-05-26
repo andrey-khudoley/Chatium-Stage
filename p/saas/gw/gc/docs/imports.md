@@ -11,9 +11,9 @@
 ### `./index.tsx`
 - `@app/html-jsx` → `jsx`
 - `./pages/PanelHomePage.vue`
-- `./shared/preloader` → `getPreloaderStyles`, `getPreloaderScript`
+- `./lib/preloader` → `getPreloaderStyles`, `getPreloaderScript`
 - `./styles` → `customScrollbarStyles`
-- `./shared/logLevel` → `getLogLevelForPage`, `getLogLevelScript`
+- `./lib/logLevel` → `getLogLevelForPage`, `getLogLevelScript`
 - `./config/routes` → `getFullUrl`, `ROUTES`
 - `./config/project` → `INDEX_PAGE_NAME`, `getPageTitle`, `getHeaderText`
 - `./lib/logger.lib` → `*`
@@ -27,8 +27,8 @@
 - `@app/socket` → `genSocketId`
 - `../../pages/AdminPage.vue`
 - `../login` → `loginPageRoute`
-- `../../shared/preloader` → `getPreloaderStyles`, `getPreloaderScript`
-- `../../shared/logLevel` → `getLogLevelForPage`, `getLogLevelScript`
+- `../../lib/preloader` → `getPreloaderStyles`, `getPreloaderScript`
+- `../../lib/logLevel` → `getLogLevelForPage`, `getLogLevelScript`
 - `../../styles` → `customScrollbarStyles`
 - `../../lib/logger.lib` → `getAdminLogsSocketId`, `writeServerLog` (и др.)
 - `../../config/routes` → `getFullUrl`, `ROUTES`
@@ -39,8 +39,8 @@
 - `@app/html-jsx` → `jsx`
 - `@app/auth` → `requireRealUser`
 - `../../pages/ProfilePage.vue`
-- `../../shared/preloader` → `getPreloaderStyles`, `getPreloaderScript`
-- `../../shared/logLevel` → `getLogLevelForPage`, `getLogLevelScript`
+- `../../lib/preloader` → `getPreloaderStyles`, `getPreloaderScript`
+- `../../lib/logLevel` → `getLogLevelForPage`, `getLogLevelScript`
 - `../../styles` → `customScrollbarStyles`
 - `../../lib/logger.lib` → `*`
 - `../../config/routes` → `getFullUrl`, `ROUTES`
@@ -53,8 +53,8 @@
 - `@app/socket` → `genSocketId`
 - `../../lib/logger.lib` → `getAdminLogsSocketId`
 - `../../pages/TestsPage.vue`
-- `../../shared/preloader` → `getPreloaderStyles`, `getPreloaderScript`
-- `../../shared/logLevel` → `getLogLevelForPage`, `getLogLevelScript`
+- `../../lib/preloader` → `getPreloaderStyles`, `getPreloaderScript`
+- `../../lib/logLevel` → `getLogLevelForPage`, `getLogLevelScript`
 - `../../styles` → `customScrollbarStyles`
 - `../../config/routes` → `getFullUrl`, `ROUTES`
 - `../../config/project` → `TESTS_PAGE_NAME`, `getPageTitle`, `getHeaderText`
@@ -140,13 +140,6 @@
 ### `./styles.tsx`
 - нет внутренних импортов (только экспорт `baseHtmlStyles`, `customScrollbarStyles`)
 
-### `./shared/preloader.ts`
-- нет импортов
-
-### `./shared/logLevel.ts`
-- `../lib/settings.lib` → `getLogLevel`, `LogLevel`
-- `../lib/logger.lib` → `*`
-
 ### `./shared/gatewaySettingKeys.ts`
 - первая строка: `// @shared`
 - нет импортов — строковые ключи Heap для gateway (`GC_DEVELOPER_API_KEY`, `GC_TEST_SCHOOL_API_KEY`, `GC_TEST_SCHOOL_HOST` и далее по плану)
@@ -165,7 +158,7 @@
 
 ### `./shared/testCatalog.ts`
 - первая строка: `// @shared`
-- нет импортов — каталог блоков для `/api/tests/list` и UI тестов
+- нет импортов — каталог блоков для `/api/tests/list` и UI тестов (заголовок блока logLevel ссылается на `lib/logLevel`)
 
 ### `./shared/logger.ts`
 - нет импортов (клиентский логгер по syslog RFC 5424: severity -1…7, LOG_LEVEL_OFF=-1, читает window.__BOOT__.logLevel; createComponentLogger, setLogSink, LogEntry)
@@ -204,6 +197,14 @@
 - экспортирует: `create`, `findRecent`, `findByRequestId`, `countSince`, `countOkSince`
 
 ## 7) Библиотеки (lib/)
+
+### `./lib/preloader.ts`
+- нет импортов — SSR-хелперы `getPreloaderStyles`, `getPreloaderScript` (серверный код; перенесён из `shared/` для соблюдения слоёв)
+
+### `./lib/logLevel.ts`
+- `./settings.lib` → `getLogLevel`, `LogLevel`
+- `./logger.lib` → `*`
+- экспортирует `getLogLevelForPage`, `getLogLevelScript` (серверные SSR-хелперы; перенесён из `shared/` для соблюдения слоёв; `LOG_PATH = 'lib/logLevel'`)
 
 ### `./lib/settings.lib.ts`
 - `../shared/gatewaySettingKeys` → `GC_DEVELOPER_API_KEY`, `GC_TEST_SCHOOL_API_KEY`, `GC_TEST_SCHOOL_HOST`
@@ -324,7 +325,7 @@
 - `../logger.lib` → `writeServerLog` — поштучное логирование провалов тестов (severity 3)
 
 ### `./lib/tests/templateUnitSuite`
-- `../logger.lib`, `../settings.lib`, `config/*`, `shared/*`, `shared/testCatalog`, `./gatewayUnitSuite` (`runGatewayUnitChecks`) — юнит-прогон без Heap
+- `../logger.lib`, `../settings.lib`, `../logLevel` (`../logLevel` — после переноса из `shared/`), `config/*`, `shared/*`, `shared/testCatalog`, `./gatewayUnitSuite` (`runGatewayUnitChecks`) — юнит-прогон без Heap
 
 ### `./lib/gateway/utf8Base64.ts`
 - нет импортов — UTF-8 ↔ стандартный Base64 для Legacy GetCourse `params` (см. `inner/docs/047-base64.md`)

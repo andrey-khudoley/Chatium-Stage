@@ -58,7 +58,7 @@ export const UNIT_TEST_BLOCKS: TestCatalogBlock[] = [
   },
   {
     id: 'unit-log-level',
-    title: 'shared/logLevel',
+    title: 'lib/logLevel',
     description: 'Скрипт window.__BOOT__.logLevel',
     tests: [
       { id: 'logLevel_script_Debug', title: 'getLogLevelScript(Debug)' },

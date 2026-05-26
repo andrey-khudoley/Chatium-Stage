@@ -1,9 +1,9 @@
 import { jsx } from '@app/html-jsx'
 import { requireRealUser } from '@app/auth'
 import PanelHomePage from './pages/PanelHomePage.vue'
-import { getPreloaderStyles, getPreloaderScript } from './shared/preloader'
+import { getPreloaderStyles, getPreloaderScript } from './lib/preloader'
 import { crtBackgroundStyles, customScrollbarStyles } from './styles'
-import { getLogLevelForPage, getLogLevelScript } from './shared/logLevel'
+import { getLogLevelForPage, getLogLevelScript } from './lib/logLevel'
 import { getFullUrl, ROUTES, ROUTE_PATHS } from './config/routes'
 import {
   requireInternalAccess,

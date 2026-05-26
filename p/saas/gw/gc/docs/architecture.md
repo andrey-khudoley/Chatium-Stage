@@ -47,8 +47,8 @@
 - `api/` — API‑эндпоинты. File-based: один файл — один эндпоинт с `/`. Включает: **`api/v1/*.ts`** (публичный gateway без сессии Chatium), **`api/admin/raw/`** (raw-журналы запросов/upstream, `guardInternalApi`), **`api/admin/analytics/`** (filter-save, `guardInternalApi`), **`api/admin/dashboard/gatewayCounts.ts`** (KPI за 24ч), **`api/access/`** (управление доступами к панели: generate-invite, consume-invite, revoke-invite, revoke-grant, invites, grants).
 - `tables/` — Heap‑таблицы (схемы: settings, logs, **panelAccess**, **panelInvites**, **gatewayRequestLog**, **gatewayUpstreamLog**).
 - `repos/` — репозитории (работа с БД: settings, logs, **panelAccess**, **panelInvites**, **gatewayRequestLog**, **gatewayUpstreamLog**).
-- `lib/` — бизнес‑логика: settings.lib (включая `getPanelDateFilter`), logger.lib, **`lib/access/`** (система доступов: constants, requireInternalAccess, apiGuard, invites). Подкаталог **`lib/gateway/`** — общий слой публичного `/v1/*`.
-- `shared/` — общий код (preloader, logLevel, logger syslog RFC 5424, browserRemoteLogger, **`accessPages.tsx`** — JSX-страницы сообщений доступа, **`redactRaw.ts`** — PII-маскирование для raw-журналов, **`operationsCatalogShared.ts`** — wire-типы каталога для UI).
+- `lib/` — бизнес‑логика: settings.lib (включая `getPanelDateFilter`), logger.lib, **`lib/logLevel.ts`** (SSR-хелперы уровня логов; серверный код, перенесён из `shared/`), **`lib/preloader.ts`** (SSR-хелперы прелоадера; перенесён из `shared/`), **`lib/access/`** (система доступов: constants, requireInternalAccess, apiGuard, invites). Подкаталог **`lib/gateway/`** — общий слой публичного `/v1/*`.
+- `shared/` — только действительно общий (клиент+сервер) код: logger syslog RFC 5424, browserRemoteLogger, **`accessPages.tsx`** — JSX-страницы сообщений доступа, **`redactRaw.ts`** — PII-маскирование для raw-журналов, **`operationsCatalogShared.ts`** — wire-типы каталога для UI, **`gatewaySettingKeys.ts`**, **`gcSchoolHostValidation.ts`**, **`testCatalog.ts`**.
 - `docs/` — документация проекта; **`docs/gateway/`** — спецификация gateway (manual, JSON, скрипты).
 
 ## Стратегия логирования
