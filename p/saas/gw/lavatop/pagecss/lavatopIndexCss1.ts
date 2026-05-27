@@ -1,91 +1,10 @@
 // @shared
-import { jsx } from '@app/html-jsx'
-import { requireRealUser } from '@app/auth'
-import ProfilePage from '../../pages/ProfilePage.vue'
-import { getPreloaderStyles, getPreloaderScript } from '../../shared/preloader'
-import { getLogLevelForPage, getLogLevelScript } from '../../shared/logLevel'
-import * as loggerLib from '../../lib/logger.lib'
-import { getFullUrl, ROUTES } from '../../config/routes'
-import { PROFILE_PAGE_NAME, getPageTitle, getHeaderText } from '../../config/project'
-import * as settingsLib from '../../lib/settings.lib'
-import { customScrollbarStyles } from '../../styles'
-import { lavatopHeaderCss1 } from '../../pagecss/lavatopHeaderCss1'
-import { lavatopHeaderCss2 } from '../../pagecss/lavatopHeaderCss2'
-import { lavatopProfileCss1 } from '../../pagecss/lavatopProfileCss1'
-import { lavatopProfileCss2 } from '../../pagecss/lavatopProfileCss2'
-import { htmlRedirect } from '../../lib/htmlRedirect'
-
-const LOG_PATH = 'web/profile/index'
-
-export const profilePageRoute = app.html('/', async (ctx, req) => {
-  await loggerLib.writeServerLog(ctx, {
-    severity: 6,
-    message: `[${LOG_PATH}] Запрос страницы профиля`,
-    payload: { hasUser: !!ctx.user }
-  })
-
-  let user
-  try {
-    await loggerLib.writeServerLog(ctx, {
-      severity: 6,
-      message: `[${LOG_PATH}] Проверка requireRealUser`,
-      payload: { hasUser: !!ctx.user }
-    })
-    user = requireRealUser(ctx)
-    await loggerLib.writeServerLog(ctx, {
-      severity: 6,
-      message: `[${LOG_PATH}] requireRealUser пройдена`,
-      payload: { displayName: user.displayName }
-    })
-  } catch (error: unknown) {
-    await loggerLib.writeServerLog(ctx, {
-      severity: 4,
-      message: `[${LOG_PATH}] Редирект на логин: требуется авторизация`,
-      payload: { error: String(error), backUrl: req.url }
-    })
-    return htmlRedirect(ctx, '../login?back=' + encodeURIComponent(req.url))
-  }
-
-  const isAdmin = user.is('Admin')
-  const adminUrl = isAdmin ? getFullUrl(ROUTES.admin) : ''
-  const loginUrl = getFullUrl(ROUTES.login)
-  await loggerLib.writeServerLog(ctx, {
-    severity: 6,
-    message: `[${LOG_PATH}] Переменные после user`,
-    payload: { isAdmin, adminUrl, loginUrl, displayName: user.displayName }
-  })
-  const logLevel = await getLogLevelForPage(ctx)
-  const projectName = await settingsLib.getSettingString(ctx, settingsLib.SETTING_KEYS.PROJECT_NAME)
-  await loggerLib.writeServerLog(ctx, {
-    severity: 6,
-    message: `[${LOG_PATH}] Переменные для рендера`,
-    payload: { logLevel, projectName }
-  })
-  await loggerLib.writeServerLog(ctx, {
-    severity: 6,
-    message: `[${LOG_PATH}] Рендер страницы профиля`,
-    payload: { isAdmin, displayName: user.displayName }
-  })
-
-  return (
-    <html>
-      <head>
-        <title>{getPageTitle(PROFILE_PAGE_NAME, projectName)}</title>
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <meta charset="UTF-8" />
-        <script>{getLogLevelScript(logLevel)}</script>
-        <script src="/s/metric/clarity.js"></script>
-        <style>{getPreloaderStyles()}</style>
-        <style>{customScrollbarStyles}</style>
-        <style>{`
+export const crtBackgroundStyles1 = `
           html {
-            margin: 0;
-            padding: 0;
             background: #0a0a0a;
           }
           body {
             margin: 0;
-            padding: 0;
             background: #0a0a0a;
             position: relative;
             min-height: 100vh;
@@ -97,6 +16,106 @@ export const profilePageRoute = app.html('/', async (ctx, req) => {
             overflow-y: auto;
           }
 
+          /* Скрываем контент до завершения загрузки */
+          .app-layout:not(.global-glitch-active) {
+            opacity: 0;
+            position: relative;
+            z-index: 2;
+            transform: scale(0.96);
+            filter: blur(1px);
+          }
+
+          /* Анимация появления запускается только один раз при загрузке */
+          body.boot-complete .app-layout:not(.app-layout-appeared) {
+            animation: crt-power-on 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.5s forwards;
+          }
+
+          /* После завершения анимации появления класс предотвращает её повторный запуск */
+          body.boot-complete .app-layout.app-layout-appeared:not(.global-glitch-active) {
+            opacity: 1 !important;
+            transform: scale(1) translate(0, 0) !important;
+            filter: blur(0) !important;
+          }
+
+          /* При активном глитче убираем все конфликтующие стили */
+          body.boot-complete .app-layout.global-glitch-active {
+            opacity: 1 !important;
+          }
+
+          @keyframes crt-power-on {
+            0% {
+              opacity: 0;
+              transform: scale(0.96) translate(0, 0);
+              filter: blur(1.2px);
+            }
+            8% {
+              opacity: 0.2;
+              transform: scale(0.97) translate(0.15px, -0.1px);
+              filter: blur(1px);
+            }
+            16% {
+              opacity: 0.4;
+              transform: scale(0.98) translate(-0.12px, 0.08px);
+              filter: blur(0.8px);
+            }
+            24% {
+              opacity: 0.55;
+              transform: scale(0.985) translate(0.1px, -0.06px);
+              filter: blur(0.6px);
+            }
+            32% {
+              opacity: 0.68;
+              transform: scale(0.99) translate(-0.08px, 0.05px);
+              filter: blur(0.5px);
+            }
+            40% {
+              opacity: 0.78;
+              transform: scale(0.995) translate(0.06px, -0.04px);
+              filter: blur(0.4px);
+            }
+            48% {
+              opacity: 0.85;
+              transform: scale(0.998) translate(-0.04px, 0.03px);
+              filter: blur(0.3px);
+            }
+            56% {
+              opacity: 0.9;
+              transform: scale(1.0) translate(0.03px, -0.02px);
+              filter: blur(0.2px);
+            }
+            64% {
+              opacity: 0.94;
+              transform: scale(1.0) translate(-0.02px, 0.015px);
+              filter: blur(0.15px);
+            }
+            72% {
+              opacity: 0.97;
+              transform: scale(1.0) translate(0.015px, -0.01px);
+              filter: blur(0.1px);
+            }
+            80% {
+              opacity: 0.99;
+              transform: scale(1.0) translate(-0.01px, 0.008px);
+              filter: blur(0.05px);
+            }
+            88% {
+              opacity: 1;
+              transform: scale(1.0) translate(0.008px, -0.005px);
+              filter: blur(0.02px);
+            }
+            96% {
+              opacity: 1;
+              transform: scale(1.0) translate(-0.005px, 0.003px);
+              filter: blur(0.01px);
+            }
+            100% {
+              opacity: 1;
+              transform: scale(1.0) translate(0, 0);
+              filter: blur(0);
+            }
+          }
+
+          /* LAYER 1: Realistic CRT Screen Vignette (BEHIND content, z-index: 1) */
           #geometric-bg {
             position: fixed;
             top: 0;
@@ -144,6 +163,7 @@ export const profilePageRoute = app.html('/', async (ctx, req) => {
             50% { opacity: 0.97; }
           }
 
+          /* LAYER 3: Cosmetic overlay - Scanlines and subtle effects (TOP, z-index: 999999) */
           body::after {
             content: '';
             position: fixed;
@@ -184,6 +204,7 @@ export const profilePageRoute = app.html('/', async (ctx, req) => {
             }
           }
 
+          /* Screen bezel effect */
           body::before {
             content: '';
             position: fixed;
@@ -212,7 +233,7 @@ export const profilePageRoute = app.html('/', async (ctx, req) => {
               box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.2);
             }
           }
-
+          /* CRT grid */
           #geometric-bg::before {
             content: '';
             position: absolute;
@@ -226,7 +247,6 @@ export const profilePageRoute = app.html('/', async (ctx, req) => {
             background-repeat: no-repeat;
             opacity: 0.3;
           }
-
           #geometric-bg::after {
             content: '';
             position: absolute;
@@ -238,79 +258,9 @@ export const profilePageRoute = app.html('/', async (ctx, req) => {
             border-radius: 50%;
             animation: geometric-float 20s ease-in-out infinite;
           }
-
           @keyframes geometric-float {
             0%, 100% { transform: translate(0, 0) scale(1); }
             50% { transform: translate(-50px, 50px) scale(1.1); }
           }
-
-          ${getPreloaderStyles()}
-        `}</style>
-        <script>{getPreloaderScript()}</script>
-        <script src="/s/static/lib/tailwind.3.4.16.min.js"></script>
-        <link rel="stylesheet" href="/s/static/lib/fontawesome/6.7.2/css/all.min.css" />
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap"
-          rel="stylesheet"
-        />
-        <style>{`
-          :root {
-            --color-bg: #0a0a0a;
-            --color-bg-secondary: #141414;
-            --color-bg-tertiary: #1a1a1a;
-            --color-text: #e8e8e8;
-            --color-text-secondary: #a0a0a0;
-            --color-text-tertiary: #707070;
-            --color-border: #2a2a2a;
-            --color-border-light: #3a3a3a;
-            --color-accent: #d3234b;
-            --color-accent-hover: #e6395f;
-            --color-accent-light: rgba(211, 35, 75, 0.1);
-            --color-accent-medium: rgba(211, 35, 75, 0.2);
-          }
-
-          ::selection {
-            background: #e0335a;
-            color: #ffffff;
-          }
-
-          ::-moz-selection {
-            background: #e0335a;
-            color: #ffffff;
-          }
-        `}</style>
-        <style>{lavatopHeaderCss1}</style>
-        <style>{lavatopHeaderCss2}</style>
-        <style>{lavatopProfileCss1}</style>
-        <style>{lavatopProfileCss2}</style>
-      </head>
-      <body>
-        <div id="geometric-bg"></div>
-        <div id="boot-loader">
-          <div class="boot-messages">
-            <div id="boot-messages-container"></div>
-          </div>
-        </div>
-        <ProfilePage
-          projectTitle={getHeaderText(PROFILE_PAGE_NAME, projectName)}
-          indexUrl={getFullUrl(ROUTES.index)}
-          profileUrl={getFullUrl(ROUTES.profile)}
-          testsUrl={getFullUrl(ROUTES.tests)}
-          loginUrl={loginUrl}
-          isAuthenticated={true}
-          isAdmin={isAdmin}
-          adminUrl={adminUrl}
-          user={{
-            displayName: user.displayName,
-            confirmedEmail: user.confirmedEmail,
-            confirmedPhone: user.confirmedPhone
-          }}
-        />
-      </body>
-    </html>
-  )
-})
-
-export default profilePageRoute
+          
+`

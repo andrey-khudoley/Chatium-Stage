@@ -12,6 +12,11 @@ import { getFullUrl, ROUTES } from '../../config/routes'
 import { ADMIN_PAGE_NAME, getPageTitle, getHeaderText } from '../../config/project'
 import * as settingsLib from '../../lib/settings.lib'
 import { customScrollbarStyles } from '../../styles'
+import { lavatopHeaderCss1 } from '../../pagecss/lavatopHeaderCss1'
+import { lavatopHeaderCss2 } from '../../pagecss/lavatopHeaderCss2'
+import { lavatopAdminCss1 } from '../../pagecss/lavatopAdminCss1'
+import { lavatopAdminCss2 } from '../../pagecss/lavatopAdminCss2'
+import { lavatopAdminCss3 } from '../../pagecss/lavatopAdminCss3'
 
 const LOG_PATH = 'web/admin/index'
 
@@ -180,6 +185,11 @@ export const adminPageRoute = app.html('/', async (ctx, req) => {
         <style>{adminPageStyles}</style>
         <style>{customScrollbarStyles}</style>
         <style>{getPreloaderStyles()}</style>
+        <style>{lavatopHeaderCss1}</style>
+        <style>{lavatopHeaderCss2}</style>
+        <style>{lavatopAdminCss1}</style>
+        <style>{lavatopAdminCss2}</style>
+        <style>{lavatopAdminCss3}</style>
         <script>{getPreloaderScript()}</script>
         <script src="/s/static/lib/tailwind.3.4.16.min.js"></script>
         <link rel="stylesheet" href="/s/static/lib/fontawesome/6.7.2/css/all.min.css" />

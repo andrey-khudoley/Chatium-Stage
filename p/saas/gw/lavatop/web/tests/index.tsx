@@ -10,6 +10,12 @@ import { getFullUrl, PROJECT_ROOT, ROUTES } from '../../config/routes'
 import { TESTS_PAGE_NAME, getPageTitle, getHeaderText } from '../../config/project'
 import * as settingsLib from '../../lib/settings.lib'
 import { customScrollbarStyles } from '../../styles'
+import { lavatopHeaderCss1 } from '../../pagecss/lavatopHeaderCss1'
+import { lavatopHeaderCss2 } from '../../pagecss/lavatopHeaderCss2'
+import { lavatopTestsCss1 } from '../../pagecss/lavatopTestsCss1'
+import { lavatopTestsCss2 } from '../../pagecss/lavatopTestsCss2'
+import { lavatopTestsCss3 } from '../../pagecss/lavatopTestsCss3'
+import { lavatopTestsCss4 } from '../../pagecss/lavatopTestsCss4'
 import { htmlRedirect } from '../../lib/htmlRedirect'
 
 const LOG_PATH = 'web/tests/index'
@@ -284,6 +290,12 @@ export const testsPageRoute = app.html('/', async (ctx, req) => {
             color: #ffffff;
           }
         `}</style>
+        <style>{lavatopHeaderCss1}</style>
+        <style>{lavatopHeaderCss2}</style>
+        <style>{lavatopTestsCss1}</style>
+        <style>{lavatopTestsCss2}</style>
+        <style>{lavatopTestsCss3}</style>
+        <style>{lavatopTestsCss4}</style>
       </head>
       <body>
         <div id="geometric-bg"></div>
