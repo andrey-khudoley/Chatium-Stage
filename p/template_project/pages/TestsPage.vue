@@ -137,10 +137,11 @@ function trimOldLogs() {
 }
 
 function updateOldestTimestamp(entries: Array<LogEntry & { id?: string }>) {
-  if (!entries.length) return
+  const first = entries[0]
+  if (!first) return
   const oldest = entries.reduce(
     (min, item) => (item.timestamp < min ? item.timestamp : min),
-    entries[0].timestamp
+    first.timestamp
   )
   oldestLogTimestamp.value = oldest
 }
@@ -186,7 +187,7 @@ const displayedLogRowIndices = computed(() => {
   const items = displayedLogs.value
   const indices: number[] = []
   for (let i = 0; i < items.length; i++) {
-    if (items[i].type === 'log') indices.push(i)
+    if (items[i]?.type === 'log') indices.push(i)
   }
   return indices
 })
@@ -459,12 +460,18 @@ type SingleRunGroup = 'unit' | 'integration' | 'http'
 const singleTestRun = ref<{ group: SingleRunGroup; id: string } | null>(null)
 
 function getApiBaseUrl(): string {
-  const path = props.indexUrl.startsWith('http') ? new URL(props.indexUrl).pathname : props.indexUrl
-  const basePath = path.replace(/\/$/, '') || '/p/template_project'
+  const indexPath = (
+    props.indexUrl.startsWith('http') ? new URL(props.indexUrl).pathname : props.indexUrl
+  ).replace(/\/$/, '')
+  const testsPath = (
+    props.testsUrl.startsWith('http') ? new URL(props.testsUrl).pathname : props.testsUrl
+  ).replace(/\/$/, '')
+  const basePath = indexPath || testsPath.replace(/\/web\/tests$/i, '') || '/'
   const origin = props.indexUrl.startsWith('http')
     ? new URL(props.indexUrl).origin
     : window.location.origin
-  return `${origin}${basePath.startsWith('/') ? basePath : '/' + basePath}`
+  const normalized = basePath.startsWith('/') ? basePath : `/${basePath}`
+  return `${origin}${normalized}`
 }
 
 const HTTP_PATH_BY_TEST_ID: Record<string, string> = {

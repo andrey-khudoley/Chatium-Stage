@@ -184,6 +184,8 @@ export async function writeServerLog(ctx: app.Ctx, entry: ServerLogEntry): Promi
   }
 
   const socketId = getAdminLogsSocketId(ctx)
+  // sendDataToSocket из @app/socket типизирует data как узкую структуру — наш payload
+  // (произвольный JSON лога) в неё не укладывается; any здесь для системного вызова.
   await sendDataToSocket(ctx, socketId, {
     type: 'new-log',
     data: {

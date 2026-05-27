@@ -138,10 +138,11 @@ function doesEntryMatchSelectedStream(entry: LogEntry): boolean {
 }
 
 function updateOldestTimestamp(entries: Array<LogEntry & { id?: string }>) {
-  if (!entries.length) return
+  const first = entries[0]
+  if (!first) return
   const oldest = entries.reduce(
     (min, item) => (item.timestamp < min ? item.timestamp : min),
-    entries[0].timestamp
+    first.timestamp
   )
   oldestLogTimestamp.value = oldest
 }
