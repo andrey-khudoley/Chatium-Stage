@@ -3,6 +3,11 @@ import { requireRealUser } from '@app/auth'
 import HomePage from './pages/HomePage.vue'
 import { getPreloaderStyles, getPreloaderScript } from './lib/preloader'
 import { crtBackgroundStyles, customScrollbarStyles } from './styles'
+import { gcHeaderCss1 } from './pagecss/gcHeaderCss1'
+import { gcHeaderCss2 } from './pagecss/gcHeaderCss2'
+import { gcHomeCss1 } from './pagecss/gcHomeCss1'
+import { gcHomeCss2 } from './pagecss/gcHomeCss2'
+import { gcHomeCss3 } from './pagecss/gcHomeCss3'
 import { requestTestTabStyles } from './styles.requestTest'
 import { getLogLevelForPage, getLogLevelScript } from './lib/logLevel'
 import { getFullUrl, ROUTES, ROUTE_PATHS, PROJECT_ROOT } from './config/routes'
@@ -103,6 +108,11 @@ export const indexPageRoute = app.html('/', async (ctx, req) => {
         <script>{getLogLevelScript(logLevel)}</script>
         <style>{crtBackgroundStyles}</style>
         <style>{customScrollbarStyles}</style>
+        <style>{gcHeaderCss1}</style>
+        <style>{gcHeaderCss2}</style>
+        <style>{gcHomeCss1}</style>
+        <style>{gcHomeCss2}</style>
+        <style>{gcHomeCss3}</style>
         <style>{requestTestTabStyles}</style>
         <style>{getPreloaderStyles()}</style>
         <script>{getPreloaderScript()}</script>

@@ -10,6 +10,10 @@ import { getFullUrl, ROUTES } from '../../config/routes'
 import { PROFILE_PAGE_NAME, getPageTitle, getHeaderText } from '../../config/project'
 import * as settingsLib from '../../lib/settings.lib'
 import { customScrollbarStyles } from '../../styles'
+import { gcHeaderCss1 } from '../../pagecss/gcHeaderCss1'
+import { gcHeaderCss2 } from '../../pagecss/gcHeaderCss2'
+import { gcProfileCss1 } from '../../pagecss/gcProfileCss1'
+import { gcProfileCss2 } from '../../pagecss/gcProfileCss2'
 
 const LOG_PATH = 'web/profile/index'
 
@@ -73,6 +77,10 @@ export const profilePageRoute = app.html('/', async (ctx, req) => {
         <script src="/s/metric/clarity.js"></script>
         <style>{getPreloaderStyles()}</style>
         <style>{customScrollbarStyles}</style>
+        <style>{gcHeaderCss1}</style>
+        <style>{gcHeaderCss2}</style>
+        <style>{gcProfileCss1}</style>
+        <style>{gcProfileCss2}</style>
         <style>{`
           html {
             margin: 0;

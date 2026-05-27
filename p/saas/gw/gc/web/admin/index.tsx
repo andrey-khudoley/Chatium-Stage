@@ -12,6 +12,12 @@ import { getFullUrl, ROUTES } from '../../config/routes'
 import { ADMIN_PAGE_NAME, getPageTitle, getHeaderText } from '../../config/project'
 import * as settingsLib from '../../lib/settings.lib'
 import { customScrollbarStyles } from '../../styles'
+import { gcHeaderCss1 } from '../../pagecss/gcHeaderCss1'
+import { gcHeaderCss2 } from '../../pagecss/gcHeaderCss2'
+import { gcAdminCss1 } from '../../pagecss/gcAdminCss1'
+import { gcAdminCss2 } from '../../pagecss/gcAdminCss2'
+import { gcAdminCss3 } from '../../pagecss/gcAdminCss3'
+import { gcAdminCss4 } from '../../pagecss/gcAdminCss4'
 
 const LOG_PATH = 'web/admin/index'
 
@@ -179,6 +185,12 @@ export const adminPageRoute = app.html('/', async (ctx, req) => {
         <script src="/s/metric/clarity.js"></script>
         <style>{adminPageStyles}</style>
         <style>{customScrollbarStyles}</style>
+        <style>{gcHeaderCss1}</style>
+        <style>{gcHeaderCss2}</style>
+        <style>{gcAdminCss1}</style>
+        <style>{gcAdminCss2}</style>
+        <style>{gcAdminCss3}</style>
+        <style>{gcAdminCss4}</style>
         <style>{getPreloaderStyles()}</style>
         <script>{getPreloaderScript()}</script>
         <script src="/s/static/lib/tailwind.3.4.16.min.js"></script>

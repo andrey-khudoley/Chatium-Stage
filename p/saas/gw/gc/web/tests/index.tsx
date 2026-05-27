@@ -11,6 +11,13 @@ import { getFullUrl, ROUTES } from '../../config/routes'
 import { TESTS_PAGE_NAME, getPageTitle, getHeaderText } from '../../config/project'
 import * as settingsLib from '../../lib/settings.lib'
 import { customScrollbarStyles } from '../../styles'
+import { gcHeaderCss1 } from '../../pagecss/gcHeaderCss1'
+import { gcHeaderCss2 } from '../../pagecss/gcHeaderCss2'
+import { gcTestsCss1 } from '../../pagecss/gcTestsCss1'
+import { gcTestsCss2 } from '../../pagecss/gcTestsCss2'
+import { gcTestsCss3 } from '../../pagecss/gcTestsCss3'
+import { gcTestsCss4 } from '../../pagecss/gcTestsCss4'
+import { gcTestsCss5 } from '../../pagecss/gcTestsCss5'
 import { toOperationSummaries } from '../../lib/gateway/operationsCatalog'
 
 const LOG_PATH = 'web/tests/index'
@@ -95,6 +102,13 @@ export const testsPageRoute = app.html('/', async (ctx, req) => {
         <script src="/s/metric/clarity.js"></script>
         <style>{getPreloaderStyles()}</style>
         <style>{customScrollbarStyles}</style>
+        <style>{gcHeaderCss1}</style>
+        <style>{gcHeaderCss2}</style>
+        <style>{gcTestsCss1}</style>
+        <style>{gcTestsCss2}</style>
+        <style>{gcTestsCss3}</style>
+        <style>{gcTestsCss4}</style>
+        <style>{gcTestsCss5}</style>
         <style>{`
           html {
             margin: 0;
