@@ -11,6 +11,12 @@ import { getFullUrl, ROUTES } from '../../config/routes'
 import { TESTS_PAGE_NAME, getPageTitle, getHeaderText } from '../../config/project'
 import * as settingsLib from '../../lib/settings.lib'
 import { customScrollbarStyles } from '../../styles'
+import { testsPageCss1 } from '../../pagecss/testsPageCss1'
+import { testsPageCss2 } from '../../pagecss/testsPageCss2'
+import { testsPageCss3 } from '../../pagecss/testsPageCss3'
+import { testsPageCss4 } from '../../pagecss/testsPageCss4'
+import { headerCss1 } from '../../pagecss/headerCss1'
+import { headerCss2 } from '../../pagecss/headerCss2'
 
 const LOG_PATH = 'web/tests/index'
 
@@ -81,6 +87,12 @@ export const testsPageRoute = app.html('/', async (ctx, req) => {
         <script src="/s/metric/clarity.js"></script>
         <style>{getPreloaderStyles()}</style>
         <style>{customScrollbarStyles}</style>
+        <style>{testsPageCss1}</style>
+        <style>{testsPageCss2}</style>
+        <style>{testsPageCss3}</style>
+        <style>{testsPageCss4}</style>
+        <style>{headerCss1}</style>
+        <style>{headerCss2}</style>
         <style>{`
           html {
             margin: 0;

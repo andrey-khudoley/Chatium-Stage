@@ -12,6 +12,11 @@ import { getFullUrl, ROUTES } from '../../config/routes'
 import { ADMIN_PAGE_NAME, getPageTitle, getHeaderText } from '../../config/project'
 import * as settingsLib from '../../lib/settings.lib'
 import { customScrollbarStyles } from '../../styles'
+import { adminPageCss1 } from '../../pagecss/adminPageCss1'
+import { adminPageCss2 } from '../../pagecss/adminPageCss2'
+import { adminPageCss3 } from '../../pagecss/adminPageCss3'
+import { headerCss1 } from '../../pagecss/headerCss1'
+import { headerCss2 } from '../../pagecss/headerCss2'
 
 const LOG_PATH = 'web/admin/index'
 
@@ -179,6 +184,11 @@ export const adminPageRoute = app.html('/', async (ctx, req) => {
         <script src="/s/metric/clarity.js"></script>
         <style>{adminPageStyles}</style>
         <style>{customScrollbarStyles}</style>
+        <style>{adminPageCss1}</style>
+        <style>{adminPageCss2}</style>
+        <style>{adminPageCss3}</style>
+        <style>{headerCss1}</style>
+        <style>{headerCss2}</style>
         <style>{getPreloaderStyles()}</style>
         <script>{getPreloaderScript()}</script>
         <script src="/s/static/lib/tailwind.3.4.16.min.js"></script>

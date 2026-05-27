@@ -4,14 +4,6 @@
 import * as loggerLib from '../logger.lib'
 import * as settingsLib from '../settings.lib'
 import {
-  getFullUrl,
-  PROJECT_ROOT,
-  ROUTES,
-  ROUTE_PATHS,
-  withProjectRoot,
-  withProjectRootAndSubroute
-} from '../../config/routes'
-import {
   ADMIN_PAGE_NAME,
   BODY_SUBTEXT,
   BODY_TEXT,
@@ -39,33 +31,10 @@ import {
   flattenCatalogBlocks
 } from '../../shared/testCatalog'
 
-export type TemplateUnitTestResult = { id: string; title: string; passed: boolean; error?: string }
+import { type TemplateUnitTestResult, push, tryPush } from './templateUnitSuiteHelpers'
+import { runRoutesChecks } from './templateUnitRoutesChecks'
 
-/** Как `BASE_PATH` в config/routes: `/${PROJECT_ROOT}` без лишнего префикса `/p/` */
-const BASE_EXPECTED = `/${PROJECT_ROOT}`
-
-function push(
-  results: TemplateUnitTestResult[],
-  id: string,
-  title: string,
-  passed: boolean,
-  error?: string
-): void {
-  results.push({ id, title, passed, ...(error ? { error } : {}) })
-}
-
-function tryPush(
-  results: TemplateUnitTestResult[],
-  id: string,
-  title: string,
-  fn: () => boolean
-): void {
-  try {
-    push(results, id, title, fn())
-  } catch (e) {
-    push(results, id, title, false, (e as Error)?.message ?? String(e))
-  }
-}
+export type { TemplateUnitTestResult } from './templateUnitSuiteHelpers'
 
 function setMockWindow(boot?: { logLevel?: unknown }): void {
   const g = globalThis as { window?: { __BOOT__?: { logLevel?: unknown; keep?: string } } }
@@ -86,119 +55,6 @@ function expectShouldLogForConfig(config: string, expectations: boolean[]): bool
     }
   }
   return true
-}
-
-function runRoutesChecks(results: TemplateUnitTestResult[]): void {
-  const expRoot = `${BASE_EXPECTED}/`
-  tryPush(
-    results,
-    'routes_getFullUrl_dot_slash',
-    'getFullUrl("./")',
-    () => getFullUrl('./') === expRoot
-  )
-  tryPush(results, 'routes_getFullUrl_slash', 'getFullUrl("/")', () => getFullUrl('/') === expRoot)
-  tryPush(
-    results,
-    'routes_getFullUrl_web_admin_rel',
-    'getFullUrl("./web/admin")',
-    () => getFullUrl('./web/admin') === `${BASE_EXPECTED}/web/admin`
-  )
-  tryPush(
-    results,
-    'routes_getFullUrl_web_admin_abs',
-    'getFullUrl("/web/admin")',
-    () => getFullUrl('/web/admin') === `${BASE_EXPECTED}/web/admin`
-  )
-  tryPush(
-    results,
-    'routes_getFullUrl_web_admin_bare',
-    'getFullUrl("web/admin")',
-    () => getFullUrl('web/admin') === `${BASE_EXPECTED}/web/admin`
-  )
-  tryPush(results, 'routes_getFullUrl_empty', 'getFullUrl("")', () => getFullUrl('') === expRoot)
-
-  tryPush(
-    results,
-    'routes_withProjectRoot_rel',
-    'withProjectRoot("./web/admin")',
-    () => withProjectRoot('./web/admin') === `./${PROJECT_ROOT}/web/admin`
-  )
-  tryPush(
-    results,
-    'routes_withProjectRoot_bare',
-    'withProjectRoot("web/admin")',
-    () => withProjectRoot('web/admin') === `./${PROJECT_ROOT}/web/admin`
-  )
-  tryPush(
-    results,
-    'routes_withProjectRoot_dot',
-    'withProjectRoot("./")',
-    () => withProjectRoot('./') === `./${PROJECT_ROOT}/`
-  )
-  tryPush(
-    results,
-    'routes_withProjectRoot_empty',
-    'withProjectRoot("")',
-    () => withProjectRoot('') === `./${PROJECT_ROOT}/`
-  )
-
-  tryPush(
-    results,
-    'routes_subroute_omit',
-    'withProjectRootAndSubroute("./web/admin")',
-    () => withProjectRootAndSubroute('./web/admin') === `./${PROJECT_ROOT}/web/admin`
-  )
-  tryPush(
-    results,
-    'routes_subroute_slash',
-    'withProjectRootAndSubroute("./web/admin", "/")',
-    () => withProjectRootAndSubroute('./web/admin', '/') === `./${PROJECT_ROOT}/web/admin`
-  )
-  tryPush(
-    results,
-    'routes_subroute_edit',
-    'withProjectRootAndSubroute("./web/admin", "edit")',
-    () => withProjectRootAndSubroute('./web/admin', 'edit') === `./${PROJECT_ROOT}/web/admin~edit`
-  )
-  tryPush(
-    results,
-    'routes_subroute_slash_edit',
-    'withProjectRootAndSubroute("./web/admin", "/edit")',
-    () => withProjectRootAndSubroute('./web/admin', '/edit') === `./${PROJECT_ROOT}/web/admin~edit`
-  )
-  tryPush(
-    results,
-    'routes_subroute_nested',
-    'withProjectRootAndSubroute("./web/admin", "users/123")',
-    () =>
-      withProjectRootAndSubroute('./web/admin', 'users/123') ===
-      `./${PROJECT_ROOT}/web/admin~users/123`
-  )
-
-  tryPush(
-    results,
-    'routes_PROJECT_ROOT',
-    'PROJECT_ROOT',
-    () => PROJECT_ROOT === 'p/template_project'
-  )
-
-  tryPush(results, 'routes_ROUTES_KEYS_match_PATHS', 'ROUTES vs ROUTE_PATHS keys', () => {
-    const a = Object.keys(ROUTES).sort().join(',')
-    const b = Object.keys(ROUTE_PATHS).sort().join(',')
-    return a === b && a.length > 0
-  })
-
-  tryPush(results, 'routes_no_domain_in_urls', 'getFullUrl без домена', () => {
-    const u = getFullUrl('./web/tests')
-    return !u.includes('://') && u.startsWith('/')
-  })
-
-  tryPush(results, 'routes_internal_start_with_dot', 'ROUTES значения с ./', () => {
-    for (const v of Object.values(ROUTES)) {
-      if (!String(v).startsWith('./')) return false
-    }
-    return true
-  })
 }
 
 function runProjectChecks(results: TemplateUnitTestResult[]): void {
