@@ -6,6 +6,13 @@ import GlobalGlitch from '../components/GlobalGlitch.vue'
 import AppFooter from '../components/AppFooter.vue'
 import { getSettingRoute } from '../api/settings/get'
 import { saveSettingRoute } from '../api/settings/save'
+import {
+  LAVA_TEST_APIKEY,
+  LAVA_WEBHOOK_SECRET_KEY,
+  LAVA_BASE_URL_KEY,
+  LAVA_DEFAULT_BASE_URL,
+  normalizeLavaBaseUrlInput
+} from '../shared/gatewaySettingKeys'
 import { createComponentLogger, setLogSink, type LogEntry } from '../shared/logger'
 import { createBrowserRemoteLogger } from '../shared/browserRemoteLogger'
 import { postBrowserLogsRoute } from '../api/logger/browser'
@@ -50,6 +57,28 @@ const logLevel = ref<'debug' | 'info' | 'warn' | 'error' | 'disable'>('info')
 const logLevelError = ref('')
 const logLevelSaveStatus = ref<'saved' | 'error' | null>(null)
 const logLevelStatusTimeout = { id: null as ReturnType<typeof setTimeout> | null }
+
+// Настройки шлюза Lava.Top — редактируются админом, сохраняются с дебаунсом (как имя проекта).
+const lavaTestApikey = ref('')
+const lastSavedLavaTestApikey = ref('')
+const lavaTestApikeyError = ref('')
+const lavaTestApikeyDebounceTimer = { id: null as ReturnType<typeof setTimeout> | null }
+const lavaTestApikeySaveStatus = ref<'saved' | 'error' | null>(null)
+const lavaTestApikeyStatusTimeout = { id: null as ReturnType<typeof setTimeout> | null }
+
+const lavaWebhookSecret = ref('')
+const lastSavedLavaWebhookSecret = ref('')
+const lavaWebhookSecretError = ref('')
+const lavaWebhookSecretDebounceTimer = { id: null as ReturnType<typeof setTimeout> | null }
+const lavaWebhookSecretSaveStatus = ref<'saved' | 'error' | null>(null)
+const lavaWebhookSecretStatusTimeout = { id: null as ReturnType<typeof setTimeout> | null }
+
+const lavaBaseUrl = ref('')
+const lastSavedLavaBaseUrl = ref('')
+const lavaBaseUrlError = ref('')
+const lavaBaseUrlDebounceTimer = { id: null as ReturnType<typeof setTimeout> | null }
+const lavaBaseUrlSaveStatus = ref<'saved' | 'error' | null>(null)
+const lavaBaseUrlStatusTimeout = { id: null as ReturnType<typeof setTimeout> | null }
 
 const SAVE_STATUS_DURATION_MS = 1500
 const INPUT_DEBOUNCE_MS = 300
@@ -126,7 +155,9 @@ const LOG_STREAM_KEYS: Array<'all' | 'info' | 'warn' | 'error'> = ['all', 'info'
 const selectedLogStreamLabel = computed(() => LOG_STREAM_LABELS[selectedLogStream.value])
 const currentLogCount = computed(() => logEntries.value.length)
 
-function getSeveritiesQueryForStream(stream: 'all' | 'info' | 'warn' | 'error'): string | undefined {
+function getSeveritiesQueryForStream(
+  stream: 'all' | 'info' | 'warn' | 'error'
+): string | undefined {
   if (stream === 'all') return undefined
   return LOG_STREAM_TO_SEVERITIES[stream].join(',')
 }
@@ -138,7 +169,10 @@ function doesEntryMatchSelectedStream(entry: LogEntry): boolean {
 function updateOldestTimestamp(entries: Array<LogEntry & { id?: string }>) {
   const first = entries[0]
   if (!first) return
-  const oldest = entries.reduce((min, item) => (item.timestamp < min ? item.timestamp : min), first.timestamp)
+  const oldest = entries.reduce(
+    (min, item) => (item.timestamp < min ? item.timestamp : min),
+    first.timestamp
+  )
   oldestLogTimestamp.value = oldest
 }
 
@@ -160,7 +194,7 @@ const startAnimations = () => {
 
 const LOG_LEVEL_VALUES = ['debug', 'info', 'warn', 'error', 'disable'] as const
 
-type LogDisplayItem = 
+type LogDisplayItem =
   | { type: 'log'; entry: LogEntry; formattedTime: string; formattedMessage: string }
   | { type: 'divider'; date: string }
 
@@ -170,9 +204,9 @@ function formatLogTime(timestamp: number): string {
 }
 
 function formatLogMessage(e: LogEntry): string {
-  return e.args.map((a) =>
-    typeof a === 'object' && a !== null ? JSON.stringify(a) : String(a)
-  ).join(' ')
+  return e.args
+    .map((a) => (typeof a === 'object' && a !== null ? JSON.stringify(a) : String(a)))
+    .join(' ')
 }
 
 function formatDateDivider(timestamp: number): string {
@@ -192,9 +226,9 @@ function trimOldLogs() {
   if (logEntries.value.length > MAX_LOG_ENTRIES) {
     const sorted = [...logEntries.value].sort((a, b) => b.timestamp - a.timestamp)
     logEntries.value = sorted.slice(0, MAX_LOG_ENTRIES)
-    log.debug('Обрезаны старые логи', { 
-      было: sorted.length, 
-      осталось: logEntries.value.length 
+    log.debug('Обрезаны старые логи', {
+      было: sorted.length,
+      осталось: logEntries.value.length
     })
   }
 }
@@ -208,14 +242,14 @@ const displayedLogs = computed<LogDisplayItem[]>(() => {
 
   for (const [i, entry] of sorted.entries()) {
     const dateKey = getDateKey(entry.timestamp)
-    
+
     if (i > 0 && dateKey !== lastDateKey) {
       items.push({
         type: 'divider',
         date: formatDateDivider(entry.timestamp)
       })
     }
-    
+
     lastDateKey = dateKey
     items.push({
       type: 'log',
@@ -298,6 +332,162 @@ const saveProjectName = async () => {
   }
 }
 
+// --- Настройки шлюза Lava.Top: загрузка/сохранение ---
+
+const loadLavaTestApikey = async () => {
+  try {
+    const res = await getSettingRoute.query({ key: LAVA_TEST_APIKEY }).run(ctx)
+    const data = res as { success?: boolean; value?: unknown }
+    if (data?.success && typeof data.value === 'string') {
+      lavaTestApikey.value = data.value
+      lastSavedLavaTestApikey.value = data.value
+      log.debug('loadLavaTestApikey loaded', { length: data.value.length })
+    }
+  } catch (e) {
+    log.warning('Не удалось загрузить lava_test_apikey', e)
+  }
+}
+
+const loadLavaWebhookSecret = async () => {
+  try {
+    const res = await getSettingRoute.query({ key: LAVA_WEBHOOK_SECRET_KEY }).run(ctx)
+    const data = res as { success?: boolean; value?: unknown }
+    if (data?.success && typeof data.value === 'string') {
+      lavaWebhookSecret.value = data.value
+      lastSavedLavaWebhookSecret.value = data.value
+      log.debug('loadLavaWebhookSecret loaded', { length: data.value.length })
+    }
+  } catch (e) {
+    log.warning('Не удалось загрузить lava_webhook_secret', e)
+  }
+}
+
+const loadLavaBaseUrl = async () => {
+  try {
+    const res = await getSettingRoute.query({ key: LAVA_BASE_URL_KEY }).run(ctx)
+    const data = res as { success?: boolean; value?: unknown }
+    if (data?.success && typeof data.value === 'string' && data.value.trim()) {
+      lavaBaseUrl.value = data.value
+      lastSavedLavaBaseUrl.value = normalizeLavaBaseUrlInput(data.value)
+      log.debug('loadLavaBaseUrl loaded', { value: data.value })
+    }
+  } catch (e) {
+    log.warning('Не удалось загрузить lava_base_url', e)
+  }
+}
+
+const saveLavaTestApikey = async () => {
+  log.info('saveLavaTestApikey entry')
+  lavaTestApikeyError.value = ''
+  const trimmed = String(lavaTestApikey.value ?? '').trim()
+  if (!trimmed) {
+    lavaTestApikeyError.value = 'Значение не должно быть пустым'
+    showSaveStatus(lavaTestApikeySaveStatus, lavaTestApikeyStatusTimeout, 'error')
+    return
+  }
+  const prev = lavaTestApikey.value
+  try {
+    const res = await saveSettingRoute.run(ctx, { key: LAVA_TEST_APIKEY, value: trimmed })
+    const data = res as { success?: boolean; error?: string }
+    if (data?.success === false) {
+      lavaTestApikeyError.value = data.error || 'Ошибка сохранения'
+      lavaTestApikey.value = prev
+      showSaveStatus(lavaTestApikeySaveStatus, lavaTestApikeyStatusTimeout, 'error')
+    } else {
+      lastSavedLavaTestApikey.value = trimmed
+      showSaveStatus(lavaTestApikeySaveStatus, lavaTestApikeyStatusTimeout, 'saved')
+    }
+  } catch (e) {
+    lavaTestApikeyError.value = (e as Error)?.message || 'Ошибка сохранения'
+    lavaTestApikey.value = prev
+    showSaveStatus(lavaTestApikeySaveStatus, lavaTestApikeyStatusTimeout, 'error')
+  }
+}
+
+const saveLavaWebhookSecret = async () => {
+  log.info('saveLavaWebhookSecret entry')
+  lavaWebhookSecretError.value = ''
+  const trimmed = String(lavaWebhookSecret.value ?? '').trim()
+  if (!trimmed) {
+    lavaWebhookSecretError.value = 'Значение не должно быть пустым'
+    showSaveStatus(lavaWebhookSecretSaveStatus, lavaWebhookSecretStatusTimeout, 'error')
+    return
+  }
+  const prev = lavaWebhookSecret.value
+  try {
+    const res = await saveSettingRoute.run(ctx, { key: LAVA_WEBHOOK_SECRET_KEY, value: trimmed })
+    const data = res as { success?: boolean; error?: string }
+    if (data?.success === false) {
+      lavaWebhookSecretError.value = data.error || 'Ошибка сохранения'
+      lavaWebhookSecret.value = prev
+      showSaveStatus(lavaWebhookSecretSaveStatus, lavaWebhookSecretStatusTimeout, 'error')
+    } else {
+      lastSavedLavaWebhookSecret.value = trimmed
+      showSaveStatus(lavaWebhookSecretSaveStatus, lavaWebhookSecretStatusTimeout, 'saved')
+    }
+  } catch (e) {
+    lavaWebhookSecretError.value = (e as Error)?.message || 'Ошибка сохранения'
+    lavaWebhookSecret.value = prev
+    showSaveStatus(lavaWebhookSecretSaveStatus, lavaWebhookSecretStatusTimeout, 'error')
+  }
+}
+
+const saveLavaBaseUrl = async () => {
+  log.info('saveLavaBaseUrl entry')
+  lavaBaseUrlError.value = ''
+  const normalized = normalizeLavaBaseUrlInput(String(lavaBaseUrl.value ?? ''))
+  const prev = lavaBaseUrl.value
+  try {
+    const res = await saveSettingRoute.run(ctx, { key: LAVA_BASE_URL_KEY, value: normalized })
+    const data = res as { success?: boolean; error?: string }
+    if (data?.success === false) {
+      lavaBaseUrlError.value = data.error || 'Ошибка сохранения'
+      lavaBaseUrl.value = prev
+      showSaveStatus(lavaBaseUrlSaveStatus, lavaBaseUrlStatusTimeout, 'error')
+    } else {
+      lastSavedLavaBaseUrl.value = normalized
+      showSaveStatus(lavaBaseUrlSaveStatus, lavaBaseUrlStatusTimeout, 'saved')
+    }
+  } catch (e) {
+    lavaBaseUrlError.value = (e as Error)?.message || 'Ошибка сохранения'
+    lavaBaseUrl.value = prev
+    showSaveStatus(lavaBaseUrlSaveStatus, lavaBaseUrlStatusTimeout, 'error')
+  }
+}
+
+watch(lavaTestApikey, () => {
+  if (lavaTestApikeyDebounceTimer.id) clearTimeout(lavaTestApikeyDebounceTimer.id)
+  lavaTestApikeyDebounceTimer.id = setTimeout(() => {
+    lavaTestApikeyDebounceTimer.id = null
+    const trimmed = String(lavaTestApikey.value ?? '').trim()
+    if (trimmed && trimmed !== lastSavedLavaTestApikey.value) {
+      saveLavaTestApikey()
+    }
+  }, INPUT_DEBOUNCE_MS)
+})
+
+watch(lavaWebhookSecret, () => {
+  if (lavaWebhookSecretDebounceTimer.id) clearTimeout(lavaWebhookSecretDebounceTimer.id)
+  lavaWebhookSecretDebounceTimer.id = setTimeout(() => {
+    lavaWebhookSecretDebounceTimer.id = null
+    const trimmed = String(lavaWebhookSecret.value ?? '').trim()
+    if (trimmed && trimmed !== lastSavedLavaWebhookSecret.value) {
+      saveLavaWebhookSecret()
+    }
+  }, INPUT_DEBOUNCE_MS)
+})
+
+watch(lavaBaseUrl, () => {
+  if (lavaBaseUrlDebounceTimer.id) clearTimeout(lavaBaseUrlDebounceTimer.id)
+  lavaBaseUrlDebounceTimer.id = setTimeout(() => {
+    lavaBaseUrlDebounceTimer.id = null
+    const normalized = normalizeLavaBaseUrlInput(String(lavaBaseUrl.value ?? ''))
+    if (normalized !== lastSavedLavaBaseUrl.value) {
+      saveLavaBaseUrl()
+    }
+  }, INPUT_DEBOUNCE_MS)
+})
+
 onMounted(() => {
   log.info('Компонент смонтирован', {
     projectTitle: props.projectTitle,
@@ -317,6 +507,9 @@ onMounted(() => {
   log.debug('Browser remote logger initialized')
 
   loadProjectName()
+  loadLavaTestApikey()
+  loadLavaWebhookSecret()
+  loadLavaBaseUrl()
   loadDashboardCounts()
   if (window.hideAppLoader) {
     window.hideAppLoader()
@@ -376,6 +569,30 @@ onBeforeUnmount(() => {
     clearTimeout(projectNameDebounceTimer.id)
     projectNameDebounceTimer.id = null
   }
+  if (lavaTestApikeyStatusTimeout.id) {
+    clearTimeout(lavaTestApikeyStatusTimeout.id)
+    lavaTestApikeyStatusTimeout.id = null
+  }
+  if (lavaTestApikeyDebounceTimer.id) {
+    clearTimeout(lavaTestApikeyDebounceTimer.id)
+    lavaTestApikeyDebounceTimer.id = null
+  }
+  if (lavaWebhookSecretStatusTimeout.id) {
+    clearTimeout(lavaWebhookSecretStatusTimeout.id)
+    lavaWebhookSecretStatusTimeout.id = null
+  }
+  if (lavaWebhookSecretDebounceTimer.id) {
+    clearTimeout(lavaWebhookSecretDebounceTimer.id)
+    lavaWebhookSecretDebounceTimer.id = null
+  }
+  if (lavaBaseUrlStatusTimeout.id) {
+    clearTimeout(lavaBaseUrlStatusTimeout.id)
+    lavaBaseUrlStatusTimeout.id = null
+  }
+  if (lavaBaseUrlDebounceTimer.id) {
+    clearTimeout(lavaBaseUrlDebounceTimer.id)
+    lavaBaseUrlDebounceTimer.id = null
+  }
 })
 
 onUnmounted(() => {
@@ -417,12 +634,27 @@ const setLogLevel = async (level: 'debug' | 'info' | 'warn' | 'error' | 'disable
 const loadDashboardCounts = async () => {
   try {
     const res = await getDashboardCountsRoute.run(ctx)
-    const data = res as { success?: boolean; errorCount?: number; warnCount?: number; resetAt?: number; error?: string }
-    if (data?.success && typeof data.errorCount === 'number' && typeof data.warnCount === 'number' && typeof data.resetAt === 'number') {
+    const data = res as {
+      success?: boolean
+      errorCount?: number
+      warnCount?: number
+      resetAt?: number
+      error?: string
+    }
+    if (
+      data?.success &&
+      typeof data.errorCount === 'number' &&
+      typeof data.warnCount === 'number' &&
+      typeof data.resetAt === 'number'
+    ) {
       errorCount.value = data.errorCount
       warnCount.value = data.warnCount
       dashboardResetAt.value = data.resetAt
-      log.debug('Счётчики дашборда загружены', { errorCount: data.errorCount, warnCount: data.warnCount, resetAt: data.resetAt })
+      log.debug('Счётчики дашборда загружены', {
+        errorCount: data.errorCount,
+        warnCount: data.warnCount,
+        resetAt: data.resetAt
+      })
     }
   } catch (e) {
     log.warning('Не удалось загрузить счётчики дашборда', e)
@@ -432,7 +664,13 @@ const loadDashboardCounts = async () => {
 const resetDashboard = async () => {
   try {
     const res = await resetDashboardRoute.run(ctx)
-    const data = res as { success?: boolean; errorCount?: number; warnCount?: number; resetAt?: number; error?: string }
+    const data = res as {
+      success?: boolean
+      errorCount?: number
+      warnCount?: number
+      resetAt?: number
+      error?: string
+    }
     if (data?.success && typeof data.resetAt === 'number') {
       dashboardResetAt.value = data.resetAt
       errorCount.value = data.errorCount ?? 0
@@ -462,7 +700,11 @@ const loadRecentLogs = async () => {
   try {
     const res = await getRecentLogsRoute.query(query).run(ctx)
     if (requestId !== logsRequestId.value) return
-    const data = res as { success?: boolean; entries?: Array<LogEntry & { id: string }>; error?: string }
+    const data = res as {
+      success?: boolean
+      entries?: Array<LogEntry & { id: string }>
+      error?: string
+    }
     if (data?.success && Array.isArray(data.entries)) {
       logEntries.value = [...data.entries]
       updateOldestTimestamp(data.entries)
@@ -556,14 +798,20 @@ function detachLogsSocketLifecycle() {
  * Подписка на события жизненного цоля сокета (если платформа их отдаёт).
  * Без колбэков показываем OFFLINE только по offline/ошибке подключения и при ручном переподключении.
  */
-function attachLogsSocketLifecycle(socketClient: unknown, subscription: unknown, onDisconnect: () => void): (() => void) | null {
+function attachLogsSocketLifecycle(
+  socketClient: unknown,
+  subscription: unknown,
+  onDisconnect: () => void
+): (() => void) | null {
   const cleanups: Array<() => void> = []
   try {
     const sc = socketClient as Record<string, unknown>
     if (typeof sc.addConnectionListener === 'function') {
-      const unsub = (sc.addConnectionListener as (fn: (connected: boolean) => void) => () => void)((connected) => {
-        if (!connected) onDisconnect()
-      })
+      const unsub = (sc.addConnectionListener as (fn: (connected: boolean) => void) => () => void)(
+        (connected) => {
+          if (!connected) onDisconnect()
+        }
+      )
       if (typeof unsub === 'function') cleanups.push(unsub)
     }
     const sub = subscription as Record<string, unknown>
@@ -622,9 +870,13 @@ async function setupLogsWebSocket() {
   try {
     const socketClient = await getOrCreateBrowserSocketClient()
     logsSocketSubscription = socketClient.subscribeToData(props.encodedLogsSocketId)
-    logsSocketLifecycleCleanup = attachLogsSocketLifecycle(socketClient, logsSocketSubscription, () => {
-      logsWsConnected.value = false
-    })
+    logsSocketLifecycleCleanup = attachLogsSocketLifecycle(
+      socketClient,
+      logsSocketSubscription,
+      () => {
+        logsWsConnected.value = false
+      }
+    )
     logsSocketSubscription.listen((data: { type?: string; data?: LogEntry }) => {
       if (data?.type === 'new-log' && data.data) {
         const entry = data.data as LogEntry
@@ -680,7 +932,6 @@ function onVisibilityForLogsSocket() {
 
     <main class="ap-wrap flex flex-col flex-1 relative z-10 min-h-0 w-full min-w-0 overflow-hidden">
       <div class="ap" :class="{ ready: bootLoaderDone }">
-
         <div class="ap-status">
           <div class="ap-status-left">
             <i class="fas fa-terminal ap-icon-muted"></i>
@@ -689,12 +940,16 @@ function onVisibilityForLogsSocket() {
             <span class="ap-project-label">{{ projectName || '—' }}</span>
           </div>
           <div class="ap-status-right">
-            <span class="ap-status-tag"><i class="fas fa-layer-group ap-icon-muted"></i> LOG: {{ logLevel.toUpperCase() }}</span>
+            <span class="ap-status-tag"
+              ><i class="fas fa-layer-group ap-icon-muted"></i> LOG:
+              {{ logLevel.toUpperCase() }}</span
+            >
             <span
               class="ap-stream-pill"
               :class="{
                 'ap-stream-pill--live': encodedLogsSocketOk && logsWsInitialized && logsWsConnected,
-                'ap-stream-pill--offline': encodedLogsSocketOk && logsWsInitialized && !logsWsConnected,
+                'ap-stream-pill--offline':
+                  encodedLogsSocketOk && logsWsInitialized && !logsWsConnected,
                 'ap-stream-pill--pending': encodedLogsSocketOk && !logsWsInitialized,
                 'ap-stream-pill--nosocket': !encodedLogsSocketOk,
                 'ap-stream-pill--syncing': logsLoading
@@ -714,7 +969,6 @@ function onVisibilityForLogsSocket() {
 
         <div class="ap-grid">
           <div class="ap-main content-wrapper">
-
             <section class="ap-card ap-card--stagger-1">
               <div class="ap-card-hd">
                 <h2><i class="fas fa-chart-bar ap-icon-hd"></i> Счётчики</h2>
@@ -749,12 +1003,21 @@ function onVisibilityForLogsSocket() {
                     class="ap-badge"
                     :class="projectNameSaveStatus === 'saved' ? 'ap-badge--ok' : 'ap-badge--err'"
                   >
-                    <i :class="projectNameSaveStatus === 'saved' ? 'fas fa-check' : 'fas fa-times'"></i>
+                    <i
+                      :class="projectNameSaveStatus === 'saved' ? 'fas fa-check' : 'fas fa-times'"
+                    ></i>
                     {{ projectNameSaveStatus === 'saved' ? 'OK' : 'ERR' }}
                   </span>
                 </div>
-                <input v-model="projectName" type="text" class="ap-input" placeholder="Имя проекта" />
-                <p v-if="projectNameError" class="ap-err"><i class="fas fa-exclamation-circle"></i> {{ projectNameError }}</p>
+                <input
+                  v-model="projectName"
+                  type="text"
+                  class="ap-input"
+                  placeholder="Имя проекта"
+                />
+                <p v-if="projectNameError" class="ap-err">
+                  <i class="fas fa-exclamation-circle"></i> {{ projectNameError }}
+                </p>
               </section>
 
               <section class="ap-card ap-card--stagger-3">
@@ -765,7 +1028,9 @@ function onVisibilityForLogsSocket() {
                     class="ap-badge"
                     :class="logLevelSaveStatus === 'saved' ? 'ap-badge--ok' : 'ap-badge--err'"
                   >
-                    <i :class="logLevelSaveStatus === 'saved' ? 'fas fa-check' : 'fas fa-times'"></i>
+                    <i
+                      :class="logLevelSaveStatus === 'saved' ? 'fas fa-check' : 'fas fa-times'"
+                    ></i>
                     {{ logLevelSaveStatus === 'saved' ? 'OK' : 'ERR' }}
                   </span>
                 </div>
@@ -781,9 +1046,107 @@ function onVisibilityForLogsSocket() {
                     {{ lvl.toUpperCase() }}
                   </button>
                 </div>
-                <p v-if="logLevelError" class="ap-err"><i class="fas fa-exclamation-circle"></i> {{ logLevelError }}</p>
+                <p v-if="logLevelError" class="ap-err">
+                  <i class="fas fa-exclamation-circle"></i> {{ logLevelError }}
+                </p>
               </section>
             </div>
+
+            <div class="ap-cfg-row">
+              <section class="ap-card ap-card--stagger-2">
+                <div class="ap-card-hd">
+                  <h2><i class="fas fa-key ap-icon-hd"></i> Тестовый API-ключ Lava.Top</h2>
+                  <span
+                    v-if="lavaTestApikeySaveStatus"
+                    class="ap-badge"
+                    :class="lavaTestApikeySaveStatus === 'saved' ? 'ap-badge--ok' : 'ap-badge--err'"
+                  >
+                    <i
+                      :class="
+                        lavaTestApikeySaveStatus === 'saved' ? 'fas fa-check' : 'fas fa-times'
+                      "
+                    ></i>
+                    {{ lavaTestApikeySaveStatus === 'saved' ? 'OK' : 'ERR' }}
+                  </span>
+                </div>
+                <input
+                  v-model="lavaTestApikey"
+                  type="password"
+                  autocomplete="off"
+                  class="ap-input"
+                  placeholder="API-ключ тестового магазина Lava.Top"
+                />
+                <p class="ap-hint">
+                  Подставляется в форме «Создать запрос» (заголовок X-Lava-Apikey).
+                </p>
+                <p v-if="lavaTestApikeyError" class="ap-err">
+                  <i class="fas fa-exclamation-circle"></i> {{ lavaTestApikeyError }}
+                </p>
+              </section>
+
+              <section class="ap-card ap-card--stagger-3">
+                <div class="ap-card-hd">
+                  <h2><i class="fas fa-shield-alt ap-icon-hd"></i> Секрет вебхуков Lava.Top</h2>
+                  <span
+                    v-if="lavaWebhookSecretSaveStatus"
+                    class="ap-badge"
+                    :class="
+                      lavaWebhookSecretSaveStatus === 'saved' ? 'ap-badge--ok' : 'ap-badge--err'
+                    "
+                  >
+                    <i
+                      :class="
+                        lavaWebhookSecretSaveStatus === 'saved' ? 'fas fa-check' : 'fas fa-times'
+                      "
+                    ></i>
+                    {{ lavaWebhookSecretSaveStatus === 'saved' ? 'OK' : 'ERR' }}
+                  </span>
+                </div>
+                <input
+                  v-model="lavaWebhookSecret"
+                  type="password"
+                  autocomplete="off"
+                  class="ap-input"
+                  placeholder="Секрет X-Api-Key / Basic для приёма вебхуков"
+                />
+                <p class="ap-hint">
+                  Сверяется с заголовком входящих вебхуков. Без него приём вернёт 500.
+                </p>
+                <p v-if="lavaWebhookSecretError" class="ap-err">
+                  <i class="fas fa-exclamation-circle"></i> {{ lavaWebhookSecretError }}
+                </p>
+              </section>
+            </div>
+
+            <section class="ap-card ap-card--stagger-3">
+              <div class="ap-card-hd">
+                <h2><i class="fas fa-link ap-icon-hd"></i> Базовый URL API Lava.Top</h2>
+                <span
+                  v-if="lavaBaseUrlSaveStatus"
+                  class="ap-badge"
+                  :class="lavaBaseUrlSaveStatus === 'saved' ? 'ap-badge--ok' : 'ap-badge--err'"
+                >
+                  <i
+                    :class="lavaBaseUrlSaveStatus === 'saved' ? 'fas fa-check' : 'fas fa-times'"
+                  ></i>
+                  {{ lavaBaseUrlSaveStatus === 'saved' ? 'OK' : 'ERR' }}
+                </span>
+              </div>
+              <input
+                v-model="lavaBaseUrl"
+                type="text"
+                inputmode="url"
+                autocomplete="off"
+                class="ap-input"
+                :placeholder="LAVA_DEFAULT_BASE_URL"
+              />
+              <p class="ap-hint">
+                По умолчанию {{ LAVA_DEFAULT_BASE_URL }}. Пустое значение вернёт URL к дефолту.
+              </p>
+              <p v-if="lavaBaseUrlError" class="ap-err">
+                <i class="fas fa-exclamation-circle"></i> {{ lavaBaseUrlError }}
+              </p>
+            </section>
           </div>
 
           <aside class="ap-side">
@@ -806,16 +1169,26 @@ function onVisibilityForLogsSocket() {
               </div>
               <div class="ap-log-out custom-scrollbar" ref="logsOutputRef">
                 <div v-if="!displayedLogs.length" class="ap-log-empty">
-                  <i class="fas fa-inbox" style="font-size:1.2rem;display:block;margin-bottom:0.5rem;opacity:0.4"></i>
+                  <i
+                    class="fas fa-inbox"
+                    style="font-size: 1.2rem; display: block; margin-bottom: 0.5rem; opacity: 0.4"
+                  ></i>
                   Поток «{{ selectedLogStreamLabel }}» пуст
                 </div>
                 <template v-for="(item, index) in displayedLogs" :key="index">
                   <div v-if="item.type === 'divider'" class="ap-log-div">
                     <span>{{ item.date }}</span>
                   </div>
-                  <div v-else class="ap-log-row" :class="{ expanded: expandedLogRows[index] }" @click="toggleLogRow(index)">
+                  <div
+                    v-else
+                    class="ap-log-row"
+                    :class="{ expanded: expandedLogRows[index] }"
+                    @click="toggleLogRow(index)"
+                  >
                     <span class="ap-log-t">{{ item.formattedTime }}</span>
-                    <span class="ap-log-l" :class="`lvl-${item.entry.level}`">[{{ item.entry.level.toUpperCase() }}]</span>
+                    <span class="ap-log-l" :class="`lvl-${item.entry.level}`"
+                      >[{{ item.entry.level.toUpperCase() }}]</span
+                    >
                     <span class="ap-log-m">{{ item.formattedMessage }}</span>
                   </div>
                 </template>
@@ -824,9 +1197,16 @@ function onVisibilityForLogsSocket() {
                 <span v-if="logsLoading" class="ap-log-sync">
                   <i class="fas fa-circle-notch fa-spin"></i> Загрузка...
                 </span>
-                <p v-if="logsError" class="ap-err"><i class="fas fa-exclamation-circle"></i> {{ logsError }}</p>
+                <p v-if="logsError" class="ap-err">
+                  <i class="fas fa-exclamation-circle"></i> {{ logsError }}
+                </p>
                 <div class="ap-log-btns">
-                  <button v-if="logsHasMore && !logsLoading" type="button" class="ap-btn" @click="loadMoreLogs">
+                  <button
+                    v-if="logsHasMore && !logsLoading"
+                    type="button"
+                    class="ap-btn"
+                    @click="loadMoreLogs"
+                  >
                     <i class="fas fa-chevron-down"></i> Ещё 50
                   </button>
                   <button type="button" class="ap-btn ap-btn--danger" @click="clearLogs">
@@ -893,41 +1273,105 @@ function onVisibilityForLogsSocket() {
   padding: 0.75rem 1rem 1.5rem;
   opacity: 0;
   transform: translateY(8px);
-  transition: opacity 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94), transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  transition:
+    opacity 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+    transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
   font-family: 'Share Tech Mono', 'Courier New', monospace;
 }
 
-.ap.ready { opacity: 1; transform: none; }
-.ap, .ap :deep(*) { box-sizing: border-box; border-radius: 0 !important; line-height: 1.45; }
+.ap.ready {
+  opacity: 1;
+  transform: none;
+}
+.ap,
+.ap :deep(*) {
+  box-sizing: border-box;
+  border-radius: 0 !important;
+  line-height: 1.45;
+}
 
-.ap-icon-muted { font-size: 0.65rem; opacity: 0.55; }
-.ap-icon-hd { font-size: 0.68rem; opacity: 0.6; margin-right: 0.15rem; }
+.ap-icon-muted {
+  font-size: 0.65rem;
+  opacity: 0.55;
+}
+.ap-icon-hd {
+  font-size: 0.68rem;
+  opacity: 0.6;
+  margin-right: 0.15rem;
+}
 
 /* ── STATUS BAR ── */
 .ap-status {
   flex-shrink: 0;
-  display: flex; align-items: center; justify-content: space-between; gap: 0.75rem;
-  padding: 0.5rem 0.85rem; margin-bottom: 0.85rem;
-  border: 1px solid var(--c-bdr); background: var(--c-bg-deep);
-  font-size: 0.78rem; color: var(--c-tx2); position: relative; overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.5rem 0.85rem;
+  margin-bottom: 0.85rem;
+  border: 1px solid var(--c-bdr);
+  background: var(--c-bg-deep);
+  font-size: 0.78rem;
+  color: var(--c-tx2);
+  position: relative;
+  overflow: hidden;
 }
 .ap-status::after {
-  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
-  background: linear-gradient(90deg, transparent, var(--c-red), transparent); opacity: 0.3;
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--c-red), transparent);
+  opacity: 0.3;
 }
 .ap-status-sweep {
-  position: absolute; top: 0; left: -100%; width: 50%; height: 100%;
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 50%;
+  height: 100%;
   background: linear-gradient(90deg, transparent, rgba(217, 86, 114, 0.03), transparent);
-  animation: ap-sweep 8s linear infinite; pointer-events: none;
+  animation: ap-sweep 8s linear infinite;
+  pointer-events: none;
 }
-@keyframes ap-sweep { 0% { left: -50%; } 100% { left: 150%; } }
-.ap-status-left, .ap-status-right { display: flex; align-items: center; gap: 0.55rem; position: relative; z-index: 1; }
-.ap-path { color: var(--c-red-s); letter-spacing: 0.04em; font-weight: 600; }
-.ap-separator { color: var(--c-tx3); opacity: 0.4; }
-.ap-project-label { color: var(--c-tx); letter-spacing: 0.02em; }
+@keyframes ap-sweep {
+  0% {
+    left: -50%;
+  }
+  100% {
+    left: 150%;
+  }
+}
+.ap-status-left,
+.ap-status-right {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  position: relative;
+  z-index: 1;
+}
+.ap-path {
+  color: var(--c-red-s);
+  letter-spacing: 0.04em;
+  font-weight: 600;
+}
+.ap-separator {
+  color: var(--c-tx3);
+  opacity: 0.4;
+}
+.ap-project-label {
+  color: var(--c-tx);
+  letter-spacing: 0.02em;
+}
 .ap-status-tag {
-  padding: 0.15rem 0.45rem; border: 1px solid var(--c-bdr);
-  background: rgba(16, 15, 19, 0.7); font-size: 0.7rem; letter-spacing: 0.05em; color: var(--c-tx2);
+  padding: 0.15rem 0.45rem;
+  border: 1px solid var(--c-bdr);
+  background: rgba(16, 15, 19, 0.7);
+  font-size: 0.7rem;
+  letter-spacing: 0.05em;
+  color: var(--c-tx2);
 }
 /* Поток логов: фиксированная ширина подписи, отдельный индикатор загрузки — без скачков вёрстки */
 .ap-stream-pill {
@@ -1012,8 +1456,17 @@ function onVisibilityForLogsSocket() {
   border-color: rgba(217, 86, 114, 0.45);
 }
 @keyframes ap-stream-dot-pulse {
-  0%, 100% { opacity: 1; box-shadow: 0 0 6px var(--c-red-glow); transform: scale(1); }
-  50% { opacity: 0.4; box-shadow: 0 0 2px rgba(217, 86, 114, 0.25); transform: scale(0.92); }
+  0%,
+  100% {
+    opacity: 1;
+    box-shadow: 0 0 6px var(--c-red-glow);
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.4;
+    box-shadow: 0 0 2px rgba(217, 86, 114, 0.25);
+    transform: scale(0.92);
+  }
 }
 
 /* ── GRID: ровно оставшаяся высота main; левая колонка скроллится, правая (логи) тянется по высоте ряда и не уезжает при скролле слева ── */
@@ -1038,122 +1491,387 @@ function onVisibilityForLogsSocket() {
 
 /* ── CARDS ── */
 .ap-card {
-  border: 1px solid var(--c-bdr); background: linear-gradient(175deg, var(--c-bg), var(--c-bg2));
-  padding: 0.85rem 1rem; position: relative; transition: border-color 0.25s ease;
+  border: 1px solid var(--c-bdr);
+  background: linear-gradient(175deg, var(--c-bg), var(--c-bg2));
+  padding: 0.85rem 1rem;
+  position: relative;
+  transition: border-color 0.25s ease;
 }
 .ap-card::before {
-  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
-  background: linear-gradient(90deg, transparent 10%, var(--c-red) 50%, transparent 90%); opacity: 0.2;
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent 10%, var(--c-red) 50%, transparent 90%);
+  opacity: 0.2;
 }
 .ap-card::after {
-  content: ''; position: absolute; inset: 0;
-  background: repeating-linear-gradient(0deg, rgba(0,0,0,0.012) 0px, rgba(0,0,0,0.012) 1px, transparent 1px, transparent 3px);
-  pointer-events: none; opacity: 0.4;
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.012) 0px,
+    rgba(0, 0, 0, 0.012) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+  pointer-events: none;
+  opacity: 0.4;
 }
-.ap-card:hover { border-color: var(--c-bdr-hi); }
-.ap-card--stagger-1 { animation: ap-card-enter 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.1s both; }
-.ap-card--stagger-2 { animation: ap-card-enter 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.2s both; }
-.ap-card--stagger-3 { animation: ap-card-enter 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.3s both; }
-@keyframes ap-card-enter { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.ap-card:hover {
+  border-color: var(--c-bdr-hi);
+}
+.ap-card--stagger-1 {
+  animation: ap-card-enter 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.1s both;
+}
+.ap-card--stagger-2 {
+  animation: ap-card-enter 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.2s both;
+}
+.ap-card--stagger-3 {
+  animation: ap-card-enter 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.3s both;
+}
+@keyframes ap-card-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
 .ap-card-hd {
-  display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;
-  margin-bottom: 0.7rem; position: relative; z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.7rem;
+  position: relative;
+  z-index: 1;
 }
 .ap-card-hd h2 {
-  margin: 0; font-size: 0.8rem; font-weight: 600; color: var(--c-tx2);
-  letter-spacing: 0.04em; text-transform: uppercase;
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--c-tx2);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
 /* ── METERS ── */
-.ap-meters { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; position: relative; z-index: 1; }
-.ap-meter {
-  display: flex; overflow: hidden; border: 1px solid var(--c-bdr);
-  background: var(--c-bg-deep); transition: border-color 0.25s ease;
+.ap-meters {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6rem;
+  position: relative;
+  z-index: 1;
 }
-.ap-meter-accent { width: 3px; flex-shrink: 0; }
-.ap-meter-body { padding: 0.65rem 0.8rem; display: flex; flex-direction: column; gap: 0.15rem; }
-.ap-meter strong { font-size: 1.75rem; font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1.15; }
-.ap-meter span { font-size: 0.66rem; color: var(--c-tx3); letter-spacing: 0.04em; text-transform: uppercase; }
-.ap-meter span i { margin-right: 0.2rem; }
+.ap-meter {
+  display: flex;
+  overflow: hidden;
+  border: 1px solid var(--c-bdr);
+  background: var(--c-bg-deep);
+  transition: border-color 0.25s ease;
+}
+.ap-meter-accent {
+  width: 3px;
+  flex-shrink: 0;
+}
+.ap-meter-body {
+  padding: 0.65rem 0.8rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+.ap-meter strong {
+  font-size: 1.75rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.15;
+}
+.ap-meter span {
+  font-size: 0.66rem;
+  color: var(--c-tx3);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.ap-meter span i {
+  margin-right: 0.2rem;
+}
 
-.ap-meter--err .ap-meter-accent { background: var(--c-alert); }
-.ap-meter--err strong { color: var(--c-alert); }
-.ap-meter--err { border-color: rgba(217, 122, 138, 0.25); }
-.ap-meter--err:hover { border-color: rgba(217, 122, 138, 0.45); }
+.ap-meter--err .ap-meter-accent {
+  background: var(--c-alert);
+}
+.ap-meter--err strong {
+  color: var(--c-alert);
+}
+.ap-meter--err {
+  border-color: rgba(217, 122, 138, 0.25);
+}
+.ap-meter--err:hover {
+  border-color: rgba(217, 122, 138, 0.45);
+}
 
-.ap-meter--wrn .ap-meter-accent { background: var(--c-warn); }
-.ap-meter--wrn strong { color: var(--c-warn); }
-.ap-meter--wrn { border-color: rgba(201, 166, 96, 0.25); }
-.ap-meter--wrn:hover { border-color: rgba(201, 166, 96, 0.45); }
+.ap-meter--wrn .ap-meter-accent {
+  background: var(--c-warn);
+}
+.ap-meter--wrn strong {
+  color: var(--c-warn);
+}
+.ap-meter--wrn {
+  border-color: rgba(201, 166, 96, 0.25);
+}
+.ap-meter--wrn:hover {
+  border-color: rgba(201, 166, 96, 0.45);
+}
 
 /* ── CONFIG ── */
-.ap-cfg-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.85rem; }
+.ap-cfg-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.85rem;
+}
 
 .ap-input {
-  width: 100%; padding: 0.55rem 0.7rem; border: 1px solid var(--c-bdr);
-  background: var(--c-bg-deep); color: var(--c-tx); font-family: inherit;
-  font-size: 0.85rem; letter-spacing: 0.02em; transition: border-color 0.2s ease, box-shadow 0.2s ease;
-  position: relative; z-index: 1;
+  width: 100%;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid var(--c-bdr);
+  background: var(--c-bg-deep);
+  color: var(--c-tx);
+  font-family: inherit;
+  font-size: 0.85rem;
+  letter-spacing: 0.02em;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+  position: relative;
+  z-index: 1;
 }
-.ap-input:focus { outline: none; border-color: var(--c-red-s); box-shadow: 0 0 0 1px rgba(217, 86, 114, 0.2); }
-.ap-input::placeholder { color: var(--c-tx3); }
+.ap-input:focus {
+  outline: none;
+  border-color: var(--c-red-s);
+  box-shadow: 0 0 0 1px rgba(217, 86, 114, 0.2);
+}
+.ap-input::placeholder {
+  color: var(--c-tx3);
+}
 
-.ap-lvls { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.4rem; position: relative; z-index: 1; }
+.ap-lvls {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.4rem;
+  position: relative;
+  z-index: 1;
+}
 .ap-lvl {
-  padding: 0.42rem; border: 1px solid var(--c-bdr); background: var(--c-bg-deep);
-  color: var(--c-tx2); font-family: inherit; font-size: 0.72rem; cursor: pointer;
-  transition: all 0.15s ease; font-weight: 600; text-align: center; letter-spacing: 0.05em;
-  position: relative; overflow: hidden;
-  clip-path: polygon(0 2px, 2px 2px, 2px 0, calc(100% - 2px) 0, calc(100% - 2px) 2px, 100% 2px, 100% calc(100% - 2px), calc(100% - 2px) calc(100% - 2px), calc(100% - 2px) 100%, 2px 100%, 2px calc(100% - 2px), 0 calc(100% - 2px));
+  padding: 0.42rem;
+  border: 1px solid var(--c-bdr);
+  background: var(--c-bg-deep);
+  color: var(--c-tx2);
+  font-family: inherit;
+  font-size: 0.72rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-weight: 600;
+  text-align: center;
+  letter-spacing: 0.05em;
+  position: relative;
+  overflow: hidden;
+  clip-path: polygon(
+    0 2px,
+    2px 2px,
+    2px 0,
+    calc(100% - 2px) 0,
+    calc(100% - 2px) 2px,
+    100% 2px,
+    100% calc(100% - 2px),
+    calc(100% - 2px) calc(100% - 2px),
+    calc(100% - 2px) 100%,
+    2px 100%,
+    2px calc(100% - 2px),
+    0 calc(100% - 2px)
+  );
 }
 .ap-lvl::after {
-  content: ''; position: absolute; bottom: 0; left: 0; width: 100%; height: 2px;
-  background: var(--c-red); transform: scaleX(0); transform-origin: left; transition: transform 0.2s ease;
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: var(--c-red);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.2s ease;
 }
-.ap-lvl:hover { border-color: var(--c-bdr-hi); background: rgba(22, 20, 26, 0.98); color: var(--c-tx); }
-.ap-lvl:hover::after { transform: scaleX(1); }
-.ap-lvl.active { border-color: var(--c-red-s); background: rgba(196, 33, 63, 0.14); color: #fff; }
-.ap-lvl.active::after { transform: scaleX(1); }
+.ap-lvl:hover {
+  border-color: var(--c-bdr-hi);
+  background: rgba(22, 20, 26, 0.98);
+  color: var(--c-tx);
+}
+.ap-lvl:hover::after {
+  transform: scaleX(1);
+}
+.ap-lvl.active {
+  border-color: var(--c-red-s);
+  background: rgba(196, 33, 63, 0.14);
+  color: #fff;
+}
+.ap-lvl.active::after {
+  transform: scaleX(1);
+}
 
 /* ── BUTTONS ── */
 .ap-btn {
-  padding: 0.42rem 0.8rem; border: 1px solid var(--c-bdr); background: var(--c-bg-deep);
-  color: var(--c-tx); font-family: inherit; font-size: 0.76rem; cursor: pointer;
-  transition: all 0.15s ease; display: inline-flex; align-items: center; gap: 0.35rem;
-  letter-spacing: 0.03em; position: relative; overflow: hidden;
-  clip-path: polygon(0 2px, 2px 2px, 2px 0, calc(100% - 2px) 0, calc(100% - 2px) 2px, 100% 2px, 100% calc(100% - 2px), calc(100% - 2px) calc(100% - 2px), calc(100% - 2px) 100%, 2px 100%, 2px calc(100% - 2px), 0 calc(100% - 2px));
+  padding: 0.42rem 0.8rem;
+  border: 1px solid var(--c-bdr);
+  background: var(--c-bg-deep);
+  color: var(--c-tx);
+  font-family: inherit;
+  font-size: 0.76rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  letter-spacing: 0.03em;
+  position: relative;
+  overflow: hidden;
+  clip-path: polygon(
+    0 2px,
+    2px 2px,
+    2px 0,
+    calc(100% - 2px) 0,
+    calc(100% - 2px) 2px,
+    100% 2px,
+    100% calc(100% - 2px),
+    calc(100% - 2px) calc(100% - 2px),
+    calc(100% - 2px) 100%,
+    2px 100%,
+    2px calc(100% - 2px),
+    0 calc(100% - 2px)
+  );
 }
 .ap-btn::before {
-  content: ''; position: absolute; inset: 0;
-  background: repeating-linear-gradient(0deg, rgba(0,0,0,0.04) 0px, rgba(0,0,0,0.04) 1px, transparent 1px, transparent 2px);
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.04) 0px,
+    rgba(0, 0, 0, 0.04) 1px,
+    transparent 1px,
+    transparent 2px
+  );
   pointer-events: none;
 }
 .ap-btn::after {
-  content: ''; position: absolute; bottom: 0; left: 0; width: 100%; height: 2px;
-  background: var(--c-red); transform: scaleX(0); transform-origin: left; transition: transform 0.2s ease;
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: var(--c-red);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.2s ease;
 }
-.ap-btn:hover { border-color: var(--c-bdr-hi); background: rgba(24, 22, 28, 0.98); transform: translateY(-1px); box-shadow: 0 3px 8px rgba(0,0,0,0.35); }
-.ap-btn:hover::after { transform: scaleX(1); }
-.ap-btn:active { transform: translateY(0); box-shadow: none; }
-.ap-btn i { font-size: 0.62rem; }
-.ap-btn--sm { padding: 0.28rem 0.55rem; font-size: 0.68rem; }
-.ap-btn--sm i { font-size: 0.58rem; }
-.ap-btn--danger { border-color: rgba(217, 122, 138, 0.3); color: #ecc8cf; background: rgba(45, 14, 22, 0.9); }
-.ap-btn--danger::after { background: var(--c-alert); }
-.ap-btn--danger:hover { border-color: rgba(217, 122, 138, 0.5); background: rgba(60, 20, 30, 0.95); }
+.ap-btn:hover {
+  border-color: var(--c-bdr-hi);
+  background: rgba(24, 22, 28, 0.98);
+  transform: translateY(-1px);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.35);
+}
+.ap-btn:hover::after {
+  transform: scaleX(1);
+}
+.ap-btn:active {
+  transform: translateY(0);
+  box-shadow: none;
+}
+.ap-btn i {
+  font-size: 0.62rem;
+}
+.ap-btn--sm {
+  padding: 0.28rem 0.55rem;
+  font-size: 0.68rem;
+}
+.ap-btn--sm i {
+  font-size: 0.58rem;
+}
+.ap-btn--danger {
+  border-color: rgba(217, 122, 138, 0.3);
+  color: #ecc8cf;
+  background: rgba(45, 14, 22, 0.9);
+}
+.ap-btn--danger::after {
+  background: var(--c-alert);
+}
+.ap-btn--danger:hover {
+  border-color: rgba(217, 122, 138, 0.5);
+  background: rgba(60, 20, 30, 0.95);
+}
 
 /* ── BADGES ── */
 .ap-badge {
-  font-size: 0.63rem; padding: 0.1rem 0.4rem; border: 1px solid; font-weight: 700;
-  letter-spacing: 0.06em; position: relative; z-index: 1; animation: ap-badge-flash 0.4s ease-out;
+  font-size: 0.63rem;
+  padding: 0.1rem 0.4rem;
+  border: 1px solid;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  position: relative;
+  z-index: 1;
+  animation: ap-badge-flash 0.4s ease-out;
 }
-.ap-badge i { font-size: 0.55rem; margin-right: 0.1rem; }
-@keyframes ap-badge-flash { 0% { opacity: 0; transform: scale(0.85); } 50% { transform: scale(1.04); } 100% { opacity: 1; transform: scale(1); } }
-.ap-badge--ok { color: var(--c-ok); border-color: rgba(106, 175, 126, 0.4); }
-.ap-badge--err { color: var(--c-alert); border-color: rgba(217, 122, 138, 0.4); }
+.ap-badge i {
+  font-size: 0.55rem;
+  margin-right: 0.1rem;
+}
+@keyframes ap-badge-flash {
+  0% {
+    opacity: 0;
+    transform: scale(0.85);
+  }
+  50% {
+    transform: scale(1.04);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+.ap-badge--ok {
+  color: var(--c-ok);
+  border-color: rgba(106, 175, 126, 0.4);
+}
+.ap-badge--err {
+  color: var(--c-alert);
+  border-color: rgba(217, 122, 138, 0.4);
+}
 
-.ap-err { margin: 0.4rem 0 0; color: var(--c-alert); font-size: 0.76rem; position: relative; z-index: 1; }
-.ap-err i { margin-right: 0.2rem; font-size: 0.65rem; }
+.ap-err {
+  margin: 0.4rem 0 0;
+  color: var(--c-alert);
+  font-size: 0.76rem;
+  position: relative;
+  z-index: 1;
+}
+.ap-err i {
+  margin-right: 0.2rem;
+  font-size: 0.65rem;
+}
+.ap-hint {
+  margin: 0.4rem 0 0;
+  color: var(--c-tx3);
+  font-size: 0.72rem;
+  line-height: 1.4;
+  position: relative;
+  z-index: 1;
+}
 
 /* ── LOG MONITOR: высота = ячейка сетки (ровно ряд между шапкой страницы и футером); движется только список в .ap-log-out ── */
 .ap-side {
@@ -1172,70 +1890,194 @@ function onVisibilityForLogsSocket() {
   flex-direction: column;
   min-height: 0;
 }
-.ap-log-ct { font-size: 0.7rem; color: var(--c-tx3); letter-spacing: 0.04em; font-variant-numeric: tabular-nums; }
+.ap-log-ct {
+  font-size: 0.7rem;
+  color: var(--c-tx3);
+  letter-spacing: 0.04em;
+  font-variant-numeric: tabular-nums;
+}
 .ap-log-filters {
-  display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.4rem; margin-bottom: 0.6rem; position: relative; z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.4rem;
+  margin-bottom: 0.6rem;
+  position: relative;
+  z-index: 1;
   flex-shrink: 0;
 }
-.ap-logs > .ap-card-hd { flex-shrink: 0; }
+.ap-logs > .ap-card-hd {
+  flex-shrink: 0;
+}
 .ap-flt {
-  padding: 0.35rem; border: 1px solid var(--c-bdr); background: var(--c-bg-deep);
-  color: var(--c-tx2); font-family: inherit; font-size: 0.7rem; cursor: pointer;
-  transition: all 0.15s ease; text-align: center; letter-spacing: 0.03em; position: relative; overflow: hidden;
+  padding: 0.35rem;
+  border: 1px solid var(--c-bdr);
+  background: var(--c-bg-deep);
+  color: var(--c-tx2);
+  font-family: inherit;
+  font-size: 0.7rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: center;
+  letter-spacing: 0.03em;
+  position: relative;
+  overflow: hidden;
 }
 .ap-flt::after {
-  content: ''; position: absolute; bottom: 0; left: 0; width: 100%; height: 2px;
-  background: var(--c-red); transform: scaleX(0); transition: transform 0.2s ease;
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: var(--c-red);
+  transform: scaleX(0);
+  transition: transform 0.2s ease;
 }
-.ap-flt:hover { border-color: var(--c-bdr-hi); }
-.ap-flt:hover::after { transform: scaleX(1); }
-.ap-flt.active { border-color: var(--c-red-s); background: rgba(196, 33, 63, 0.12); color: #fff; }
-.ap-flt.active::after { transform: scaleX(1); }
+.ap-flt:hover {
+  border-color: var(--c-bdr-hi);
+}
+.ap-flt:hover::after {
+  transform: scaleX(1);
+}
+.ap-flt.active {
+  border-color: var(--c-red-s);
+  background: rgba(196, 33, 63, 0.12);
+  color: #fff;
+}
+.ap-flt.active::after {
+  transform: scaleX(1);
+}
 
 .ap-log-out {
   flex: 1 1 auto;
   min-height: 7rem;
   overflow-y: auto;
-  border: 1px solid rgba(50, 44, 54, 0.35); background: rgba(5, 4, 7, 0.98);
-  padding: 0.55rem; margin-bottom: 0.55rem; font-size: 0.74rem; line-height: 1.6;
-  position: relative; z-index: 1; box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(50, 44, 54, 0.35);
+  background: rgba(5, 4, 7, 0.98);
+  padding: 0.55rem;
+  margin-bottom: 0.55rem;
+  font-size: 0.74rem;
+  line-height: 1.6;
+  position: relative;
+  z-index: 1;
+  box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.25);
 }
-.ap-log-empty { color: var(--c-tx3); padding: 2rem; text-align: center; font-size: 0.8rem; letter-spacing: 0.03em; }
-.ap-log-div { text-align: center; padding: 0.35rem 0; margin: 0.3rem 0; }
+.ap-log-empty {
+  color: var(--c-tx3);
+  padding: 2rem;
+  text-align: center;
+  font-size: 0.8rem;
+  letter-spacing: 0.03em;
+}
+.ap-log-div {
+  text-align: center;
+  padding: 0.35rem 0;
+  margin: 0.3rem 0;
+}
 .ap-log-div span {
-  font-size: 0.64rem; color: var(--c-warn); letter-spacing: 0.08em; text-transform: uppercase; opacity: 0.5;
-  padding: 0.1rem 0.6rem; border-top: 1px solid rgba(201, 166, 96, 0.12); border-bottom: 1px solid rgba(201, 166, 96, 0.12);
+  font-size: 0.64rem;
+  color: var(--c-warn);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.5;
+  padding: 0.1rem 0.6rem;
+  border-top: 1px solid rgba(201, 166, 96, 0.12);
+  border-bottom: 1px solid rgba(201, 166, 96, 0.12);
 }
 .ap-log-row {
-  display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 0.4rem;
-  padding: 0.2rem 0; border-bottom: 1px solid rgba(50, 44, 54, 0.1);
-  cursor: pointer; transition: background 0.1s ease; user-select: none;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 0.4rem;
+  padding: 0.2rem 0;
+  border-bottom: 1px solid rgba(50, 44, 54, 0.1);
+  cursor: pointer;
+  transition: background 0.1s ease;
+  user-select: none;
 }
-.ap-log-row:hover { background: rgba(255, 255, 255, 0.02); }
-.ap-log-t { flex-shrink: 0; color: var(--c-tx3); white-space: nowrap; font-variant-numeric: tabular-nums; }
-.ap-log-l { flex-shrink: 0; font-weight: 700; white-space: nowrap; }
-.ap-log-m { flex: 1 1 0; min-width: 0; color: var(--c-tx); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ap-log-row:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+.ap-log-t {
+  flex-shrink: 0;
+  color: var(--c-tx3);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.ap-log-l {
+  flex-shrink: 0;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.ap-log-m {
+  flex: 1 1 0;
+  min-width: 0;
+  color: var(--c-tx);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .ap-log-row.expanded .ap-log-m {
-  flex-basis: 100%; white-space: pre-wrap; word-break: break-word;
-  overflow: visible; text-overflow: unset; margin-top: 0.15rem;
-  padding: 0.2rem 0 0.1rem 0.5rem; border-left: 2px solid rgba(50, 44, 54, 0.3);
+  flex-basis: 100%;
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow: visible;
+  text-overflow: unset;
+  margin-top: 0.15rem;
+  padding: 0.2rem 0 0.1rem 0.5rem;
+  border-left: 2px solid rgba(50, 44, 54, 0.3);
   user-select: text;
 }
 
-.lvl-debug { color: #7e767a; }
-.lvl-info { color: var(--c-tx2); }
-.lvl-notice { color: #8bb89c; }
-.lvl-warning { color: var(--c-warn); }
-.lvl-error, .lvl-critical, .lvl-alert, .lvl-emergency { color: var(--c-alert); }
+.lvl-debug {
+  color: #7e767a;
+}
+.lvl-info {
+  color: var(--c-tx2);
+}
+.lvl-notice {
+  color: #8bb89c;
+}
+.lvl-warning {
+  color: var(--c-warn);
+}
+.lvl-error,
+.lvl-critical,
+.lvl-alert,
+.lvl-emergency {
+  color: var(--c-alert);
+}
 
-.ap-log-ft { display: flex; flex-direction: column; gap: 0.4rem; position: relative; z-index: 1; flex-shrink: 0; }
-.ap-log-sync { font-size: 0.74rem; color: var(--c-tx2); display: flex; align-items: center; gap: 0.35rem; }
-.ap-log-sync i { font-size: 0.62rem; }
-.ap-log-btns { display: flex; gap: 0.4rem; }
-.ap-log-btns .ap-btn:first-child { flex: 1; }
+.ap-log-ft {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  position: relative;
+  z-index: 1;
+  flex-shrink: 0;
+}
+.ap-log-sync {
+  font-size: 0.74rem;
+  color: var(--c-tx2);
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+.ap-log-sync i {
+  font-size: 0.62rem;
+}
+.ap-log-btns {
+  display: flex;
+  gap: 0.4rem;
+}
+.ap-log-btns .ap-btn:first-child {
+  flex: 1;
+}
 
 @media (max-width: 1100px) {
-  .ap-wrap { overflow-y: auto; }
+  .ap-wrap {
+    overflow-y: auto;
+  }
   .ap {
     flex: none;
     min-height: auto;
@@ -1248,18 +2090,45 @@ function onVisibilityForLogsSocket() {
     min-height: auto;
     align-items: start;
   }
-  .ap-main { overflow: visible; }
-  .ap-side { overflow: visible; }
-  .ap-logs { flex: none; }
-  .ap-log-out { min-height: 240px; max-height: 420px; flex: none; }
+  .ap-main {
+    overflow: visible;
+  }
+  .ap-side {
+    overflow: visible;
+  }
+  .ap-logs {
+    flex: none;
+  }
+  .ap-log-out {
+    min-height: 240px;
+    max-height: 420px;
+    flex: none;
+  }
 }
 @media (max-width: 680px) {
-  .ap { padding: 0.5rem 0.625rem 1rem; }
-  .ap-cfg-row { grid-template-columns: 1fr; }
-  .ap-meters { grid-template-columns: 1fr; }
-  .ap-log-filters { grid-template-columns: repeat(2, 1fr); }
-  .ap-log-row { grid-template-columns: 1fr; gap: 0.1rem; }
-  .ap-status { flex-direction: column; align-items: flex-start; gap: 0.35rem; }
-  .ap-lvls { grid-template-columns: repeat(2, 1fr); }
+  .ap {
+    padding: 0.5rem 0.625rem 1rem;
+  }
+  .ap-cfg-row {
+    grid-template-columns: 1fr;
+  }
+  .ap-meters {
+    grid-template-columns: 1fr;
+  }
+  .ap-log-filters {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .ap-log-row {
+    grid-template-columns: 1fr;
+    gap: 0.1rem;
+  }
+  .ap-status {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.35rem;
+  }
+  .ap-lvls {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 </style>
