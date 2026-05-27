@@ -51,7 +51,7 @@ export const forbiddenPageRoute = app.html('/', async (ctx, req) => {
     title: 'Нет доступа',
     heading: 'Нет доступа к панели',
     paragraphs: [
-      'У вас нет доступа к панели управления GC Gateway.',
+      'У вас нет доступа к панели управления GetCourse Gateway.',
       `Текущий аккаунт: ${account}.`,
       'Попросите администратора создать для вас пригласительную ссылку.'
     ],

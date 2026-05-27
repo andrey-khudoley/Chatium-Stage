@@ -83,7 +83,7 @@ export function normalizeDateFilter(value: unknown): DateFilter {
 /** Значения по умолчанию */
 export const DEFAULTS = {
   [SETTING_KEYS.PROJECT_NAME]: 'GetCourse Gateway',
-  [SETTING_KEYS.PROJECT_TITLE]: 'GC Gateway',
+  [SETTING_KEYS.PROJECT_TITLE]: 'GetCourse',
   [SETTING_KEYS.LOG_LEVEL]: 'Info',
   [SETTING_KEYS.LOGS_LIMIT]: '100',
   [SETTING_KEYS.LOG_WEBHOOK]: { enable: false, url: '' } as LogWebhookSetting,
@@ -128,7 +128,8 @@ export async function getSettingString(ctx: app.Ctx, key: string): Promise<strin
     payload: { key }
   })
   const value = await getSetting(ctx, key)
-  const result = typeof value === 'string' ? value : String((DEFAULTS as Record<string, unknown>)[key] ?? '')
+  const result =
+    typeof value === 'string' ? value : String((DEFAULTS as Record<string, unknown>)[key] ?? '')
   await loggerLib.writeServerLog(ctx, {
     severity: 6,
     message: `[${LOG_MODULE}] getSettingString exit`,
@@ -328,7 +329,10 @@ export async function setSetting(ctx: app.Ctx, key: string, value: unknown): Pro
       message: `[${LOG_MODULE}] setSetting DASHBOARD_RESET_AT branch`,
       payload: { normalized }
     })
-  } else if (key === SETTING_KEYS.GC_DEVELOPER_API_KEY || key === SETTING_KEYS.GC_TEST_SCHOOL_API_KEY) {
+  } else if (
+    key === SETTING_KEYS.GC_DEVELOPER_API_KEY ||
+    key === SETTING_KEYS.GC_TEST_SCHOOL_API_KEY
+  ) {
     const s = typeof value === 'string' ? value.trim() : String(value ?? '').trim()
     if (!s) {
       const msg =
@@ -393,11 +397,9 @@ export async function deleteSetting(ctx: app.Ctx, key: string): Promise<void> {
   })
   const trimmed = key.trim()
   if (!trimmed) {
-    await loggerLib.throwLoggedServerError(
-      ctx,
-      'Поле key обязательно для удаления настройки',
-      { payload: { key } }
-    )
+    await loggerLib.throwLoggedServerError(ctx, 'Поле key обязательно для удаления настройки', {
+      payload: { key }
+    })
   }
   await repo.deleteByKey(ctx, trimmed)
   await loggerLib.writeServerLog(ctx, {

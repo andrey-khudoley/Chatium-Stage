@@ -1,6 +1,6 @@
 import { jsx } from '@app/html-jsx'
 import { requireRealUser } from '@app/auth'
-import PanelHomePage from './pages/PanelHomePage.vue'
+import HomePage from './pages/HomePage.vue'
 import { getPreloaderStyles, getPreloaderScript } from './lib/preloader'
 import { crtBackgroundStyles, customScrollbarStyles } from './styles'
 import { requestTestTabStyles } from './styles.requestTest'
@@ -124,7 +124,7 @@ export const indexPageRoute = app.html('/', async (ctx, req) => {
             <div id="boot-messages-container"></div>
           </div>
         </div>
-        <PanelHomePage
+        <HomePage
           projectTitle={getHeaderText(PANEL_PAGE_NAME, projectName)}
           indexUrl={indexUrl}
           profileUrl={profileUrl}

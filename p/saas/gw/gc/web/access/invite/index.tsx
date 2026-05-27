@@ -34,7 +34,9 @@ export const inviteAcceptPageRoute = app.html('/', async (ctx, req) => {
     return AccessMessagePage({
       title: 'Некорректная ссылка',
       heading: 'Некорректная ссылка',
-      paragraphs: ['В ссылке отсутствует пригласительный токен. Запросите новую ссылку у администратора.']
+      paragraphs: [
+        'В ссылке отсутствует пригласительный токен. Запросите новую ссылку у администратора.'
+      ]
     })
   }
 
@@ -56,7 +58,9 @@ export const inviteAcceptPageRoute = app.html('/', async (ctx, req) => {
     return AccessMessagePage({
       title: 'Ссылка уже использована',
       heading: 'Ссылка уже была использована',
-      paragraphs: ['Эта пригласительная ссылка уже была активирована. Запросите новую у администратора.']
+      paragraphs: [
+        'Эта пригласительная ссылка уже была активирована. Запросите новую у администратора.'
+      ]
     })
   }
 
@@ -66,7 +70,9 @@ export const inviteAcceptPageRoute = app.html('/', async (ctx, req) => {
     return AccessMessagePage({
       title: 'Ссылка недействительна',
       heading: 'Ссылка недействительна',
-      paragraphs: ['Эта пригласительная ссылка недействительна или истёк её срок действия. Запросите новую у администратора.']
+      paragraphs: [
+        'Эта пригласительная ссылка недействительна или истёк её срок действия. Запросите новую у администратора.'
+      ]
     })
   }
 
@@ -86,7 +92,7 @@ export const inviteAcceptPageRoute = app.html('/', async (ctx, req) => {
   return (
     <html>
       <head>
-        <title>Доступ к панели GC Gateway</title>
+        <title>Доступ к панели GetCourse Gateway</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta charset="UTF-8" />
         <script src="/s/static/lib/tailwind.3.4.16.min.js"></script>

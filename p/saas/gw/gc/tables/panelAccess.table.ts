@@ -1,5 +1,5 @@
 /**
- * Выданные доступы к панели GC Gateway для не-Admin пользователей
+ * Выданные доступы к панели GetCourse Gateway для не-Admin пользователей
  * (внутренняя система доступов, по модели sbp-client).
  *
  * Одна запись на пользователя. Admin Chatium-аккаунта проходит проверку
@@ -29,17 +29,21 @@ export const PanelAccess = Heap.Table('t__saas-gw-gc__paccess__GDgDvk', {
     customMeta: { title: 'Unix ms момента выдачи доступа' }
   }),
   grantedByUserId: Heap.String({
-    customMeta: { title: 'ID Admin\'а, через инвайт которого выдан доступ' }
+    customMeta: { title: "ID Admin'а, через инвайт которого выдан доступ" }
   }),
   inviteId: Heap.String({
     customMeta: { title: 'ID использованного инвайта (panel_invites.id, для аудита)' }
   }),
-  revokedAt: Heap.Optional(Heap.Number({
-    customMeta: { title: 'Unix ms момента отзыва доступа (null если активен)' }
-  })),
-  revokedByUserId: Heap.Optional(Heap.String({
-    customMeta: { title: 'ID пользователя, отозвавшего доступ (null если активен)' }
-  }))
+  revokedAt: Heap.Optional(
+    Heap.Number({
+      customMeta: { title: 'Unix ms момента отзыва доступа (null если активен)' }
+    })
+  ),
+  revokedByUserId: Heap.Optional(
+    Heap.String({
+      customMeta: { title: 'ID пользователя, отозвавшего доступ (null если активен)' }
+    })
+  )
 })
 
 export default PanelAccess

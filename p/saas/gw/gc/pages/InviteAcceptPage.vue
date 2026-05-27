@@ -2,7 +2,7 @@
   <div class="invite-wrap">
     <div class="invite-card">
       <div class="invite-logo"><i class="fa-solid fa-shield-halved"></i></div>
-      <h1 class="invite-title">Получить доступ к панели управления GC Gateway</h1>
+      <h1 class="invite-title">Получить доступ к панели управления GetCourse Gateway</h1>
 
       <div class="invite-user">
         <div class="invite-user-label">Вы войдёте как</div>
@@ -22,11 +22,7 @@
       <!-- Подтверждение -->
       <template v-else>
         <p v-if="error" class="invite-msg invite-error">{{ error }}</p>
-        <button
-          class="invite-btn invite-btn-primary"
-          :disabled="submitting"
-          @click="confirm"
-        >
+        <button class="invite-btn invite-btn-primary" :disabled="submitting" @click="confirm">
           <i v-if="submitting" class="fa-solid fa-spinner fa-spin"></i>
           <span>{{ submitting ? 'Подтверждение…' : 'Подтвердить' }}</span>
         </button>
