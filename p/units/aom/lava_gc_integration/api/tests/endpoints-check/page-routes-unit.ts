@@ -60,10 +60,20 @@ const PAGE_UNIT_TESTS: Array<{
 }> = [
   { id: 'index', title: 'Главная (/)', pathSuffix: '/', route: indexPageRoute },
   { id: 'web-admin', title: 'Админка /web/admin', pathSuffix: '/web/admin', route: adminPageRoute },
-  { id: 'web-profile', title: 'Профиль /web/profile', pathSuffix: '/web/profile', route: profilePageRoute },
+  {
+    id: 'web-profile',
+    title: 'Профиль /web/profile',
+    pathSuffix: '/web/profile',
+    route: profilePageRoute
+  },
   { id: 'web-login', title: 'Вход /web/login', pathSuffix: '/web/login', route: loginPageRoute },
   { id: 'web-tests', title: 'Тесты /web/tests', pathSuffix: '/web/tests', route: testsPageRoute },
-  { id: 'web-orders', title: 'Заказы /web/orders', pathSuffix: '/web/orders', route: ordersPageRoute }
+  {
+    id: 'web-orders',
+    title: 'Заказы /web/orders',
+    pathSuffix: '/web/orders',
+    route: ordersPageRoute
+  }
 ]
 
 /**
@@ -75,7 +85,9 @@ export const pageRoutesUnitTestRoute = app.get('/', async (ctx, req) => {
   requireRealUser(ctx)
 
   const testId =
-    typeof req.query?.testId === 'string' && req.query.testId.trim() ? req.query.testId.trim() : null
+    typeof req.query?.testId === 'string' && req.query.testId.trim()
+      ? req.query.testId.trim()
+      : null
 
   const tests = testId ? PAGE_UNIT_TESTS.filter((t) => t.id === testId) : PAGE_UNIT_TESTS
   if (testId && tests.length === 0) {

@@ -1,8 +1,8 @@
-import ZoomSettingsTable from "../../tables/zoom_settings.table"
+import ZoomSettingsTable from '../../tables/zoom_settings.table'
 
 export const apiSettingsGetRoute = app.get('/', async (ctx, req) => {
   const settings = await ZoomSettingsTable.findAll(ctx, { limit: 1 })
-  
+
   if (settings.length === 0) {
     return {
       account_id: '',
@@ -15,7 +15,7 @@ export const apiSettingsGetRoute = app.get('/', async (ctx, req) => {
       default_timezone: 'Europe/Moscow'
     }
   }
-  
+
   const s = settings[0]!
   return {
     account_id: s.account_id || '',

@@ -14,6 +14,8 @@ export const addCommentToWebinarHandler: V1GcHandler = async (_ctx, a) => {
   return { kind: 'gc_result', gc }
 }
 
-export const addCommentToWebinarRoute = app.post('/', async (ctx, req) => handleV1Op(ctx, req, 'addCommentToWebinar', addCommentToWebinarHandler))
+export const addCommentToWebinarRoute = app.post('/', async (ctx, req) =>
+  handleV1Op(ctx, req, 'addCommentToWebinar', addCommentToWebinarHandler)
+)
 
 export default addCommentToWebinarRoute

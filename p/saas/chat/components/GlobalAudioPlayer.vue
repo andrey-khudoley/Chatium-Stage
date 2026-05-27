@@ -1,11 +1,15 @@
 <template>
   <Transition name="player-slide">
-    <div v-if="currentTrack" class="global-audio-player" :class="{ 'floating': isFloating }">
+    <div v-if="currentTrack" class="global-audio-player" :class="{ floating: isFloating }">
       <div class="player-content">
         <!-- Первая строка: управление -->
         <div class="player-row player-controls-row">
           <!-- Кнопка Play/Pause слева -->
-          <button class="btn-play" @click="togglePlay" :title="isPlaying ? 'Пауза' : 'Воспроизвести'">
+          <button
+            class="btn-play"
+            @click="togglePlay"
+            :title="isPlaying ? 'Пауза' : 'Воспроизвести'"
+          >
             <i class="fas" :class="isPlaying ? 'fa-pause' : 'fa-play'"></i>
           </button>
 
@@ -318,30 +322,30 @@ function handleProgressClick(event) {
 }
 
 /* Тёмная тема */
-[data-theme="dark"] .global-audio-player {
+[data-theme='dark'] .global-audio-player {
   background: var(--bg-primary, #111b21);
   border-color: var(--border-color, #2a3942);
 }
 
-[data-theme="dark"] .track-sender {
+[data-theme='dark'] .track-sender {
   color: var(--text-primary, #e9edef);
 }
 
-[data-theme="dark"] .track-chat {
+[data-theme='dark'] .track-chat {
   color: var(--text-secondary, #8696a0);
 }
 
-[data-theme="dark"] .btn-speed {
+[data-theme='dark'] .btn-speed {
   background: var(--bg-secondary, #1f2c33);
   border-color: var(--border-light, #374045);
   color: var(--text-primary, #e9edef);
 }
 
-[data-theme="dark"] .time {
+[data-theme='dark'] .time {
   color: var(--text-muted, #667781);
 }
 
-[data-theme="dark"] .progress-track {
+[data-theme='dark'] .progress-track {
   background: var(--bg-secondary, #2a3942);
 }
 </style>

@@ -21,8 +21,8 @@
 
           <div class="chat-messages" ref="messagesEl">
             <template v-for="(msg, i) in visibleMessages" :key="i">
-              <div 
-                class="msg" 
+              <div
+                class="msg"
                 :class="{ 'msg-user': msg.type === 'user', 'msg-bot': msg.type === 'bot' }"
               >
                 <div class="msg-avatar" v-if="msg.type === 'bot'">
@@ -49,9 +49,9 @@
           <div class="chat-commands">
             <div class="cmd-label">Попробуйте:</div>
             <div class="cmd-list">
-              <button 
-                v-for="(cmd, i) in commands" 
-                :key="i" 
+              <button
+                v-for="(cmd, i) in commands"
+                :key="i"
                 class="cmd-btn"
                 :class="{ active: activeCommand === i, done: completedCommands.has(i) }"
                 @click="runCommand(i)"
@@ -68,9 +68,7 @@
       <div class="preview-side">
         <div class="browser-frame">
           <div class="browser-bar">
-            <div class="browser-dots">
-              <span></span><span></span><span></span>
-            </div>
+            <div class="browser-dots"><span></span><span></span><span></span></div>
             <div class="browser-url">
               <i class="fas fa-lock"></i>
               <span>{{ currentUrl || 'chatium.ru/...' }}</span>
@@ -99,14 +97,14 @@
                 <div class="placeholder-icon">
                   <i class="fas fa-arrow-left"></i>
                 </div>
-                <p>Напишите команду в чат —<br>результат появится здесь</p>
+                <p>Напишите команду в чат —<br />результат появится здесь</p>
               </div>
 
-              <iframe 
-                v-else 
+              <iframe
+                v-else
                 :key="currentIframeUrl"
-                :src="currentIframeUrl" 
-                class="preview-iframe" 
+                :src="currentIframeUrl"
+                class="preview-iframe"
                 frameborder="0"
               ></iframe>
             </transition>
@@ -142,7 +140,13 @@ const commands = [
     botMsg: 'Принял! Создаю лендинг с формой, описанием услуг и блоком преимуществ...',
     url: 'chatium.ru/t-biznes',
     iframeUrl: 'https://chatium.ru/t-biznes',
-    buildLog: ['Создаю структуру страниц', 'Генерирую дизайн', 'Подключаю формы', 'Настраиваю адаптив', 'Публикую'],
+    buildLog: [
+      'Создаю структуру страниц',
+      'Генерирую дизайн',
+      'Подключаю формы',
+      'Настраиваю адаптив',
+      'Публикую'
+    ]
   },
   {
     short: 'Сделай агента',
@@ -151,7 +155,13 @@ const commands = [
     botMsg: 'Создаю ИИ-агента! Настраиваю базу знаний, подключаю каналы, обучаю продавать...',
     url: 'chatium.ru/hakaton-avito-demo',
     iframeUrl: 'https://chatium.ru/hakaton-avito-demo',
-    buildLog: ['Создаю агента', 'Загружаю базу знаний', 'Подключаю каналы', 'Настраиваю инструменты', 'Агент готов'],
+    buildLog: [
+      'Создаю агента',
+      'Загружаю базу знаний',
+      'Подключаю каналы',
+      'Настраиваю инструменты',
+      'Агент готов'
+    ]
   },
   {
     short: 'Сделай LMS',
@@ -160,7 +170,13 @@ const commands = [
     botMsg: 'Отлично! Разворачиваю LMS: курсы, уроки, прогресс, личный кабинет, видеоплеер...',
     url: 'chatium.ru/lms',
     iframeUrl: 'https://chatium.ru/lms',
-    buildLog: ['Создаю базу курсов', 'Настраиваю авторизацию', 'Подключаю видеоплеер', 'Делаю личный кабинет', 'Готово!'],
+    buildLog: [
+      'Создаю базу курсов',
+      'Настраиваю авторизацию',
+      'Подключаю видеоплеер',
+      'Делаю личный кабинет',
+      'Готово!'
+    ]
   },
   {
     short: 'Контент-завод',
@@ -169,7 +185,13 @@ const commands = [
     botMsg: 'Запускаю! Генерация уроков, статей, постов — полный конвейер контента...',
     url: 'chatium.ru/kontent-zavod-dlya-onlain-shkol',
     iframeUrl: 'https://chatium.ru/kontent-zavod-dlya-onlain-shkol',
-    buildLog: ['Создаю шаблоны контента', 'Подключаю ИИ-генерацию', 'Настраиваю конвейер', 'Добавляю форматы', 'Завод запущен!'],
+    buildLog: [
+      'Создаю шаблоны контента',
+      'Подключаю ИИ-генерацию',
+      'Настраиваю конвейер',
+      'Добавляю форматы',
+      'Завод запущен!'
+    ]
   },
   {
     short: 'Доска задач',
@@ -178,8 +200,14 @@ const commands = [
     botMsg: 'Создаю! Канбан-доска, статусы, исполнители, дедлайны — всё как надо...',
     url: 'chatium.ru/doska-zadach',
     iframeUrl: 'https://chatium.ru/doska-zadach',
-    buildLog: ['Создаю структуру доски', 'Добавляю колонки статусов', 'Настраиваю карточки', 'Подключаю фильтры', 'Доска готова!'],
-  },
+    buildLog: [
+      'Создаю структуру доски',
+      'Добавляю колонки статусов',
+      'Настраиваю карточки',
+      'Подключаю фильтры',
+      'Доска готова!'
+    ]
+  }
 ]
 
 function scrollChat() {
@@ -191,7 +219,7 @@ function scrollChat() {
 }
 
 function sleep(ms) {
-  return new Promise(r => setTimeout(r, ms))
+  return new Promise((r) => setTimeout(r, ms))
 }
 
 async function runCommand(index) {
@@ -234,14 +262,15 @@ async function runCommand(index) {
   currentIframeUrl.value = cmd.iframeUrl
 
   await sleep(300)
-  visibleMessages.value.push({ type: 'bot', text: '✅ <strong>Готово!</strong> Смотрите результат справа →' })
+  visibleMessages.value.push({
+    type: 'bot',
+    text: '✅ <strong>Готово!</strong> Смотрите результат справа →'
+  })
   scrollChat()
 
   completedCommands.add(index)
   isAnimating.value = false
 }
-
-
 </script>
 
 <style scoped>
@@ -263,9 +292,8 @@ async function runCommand(index) {
 .grid-bg {
   position: absolute;
   inset: 0;
-  background-image: 
-    linear-gradient(rgba(99,102,241,0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(99,102,241,0.03) 1px, transparent 1px);
+  background-image: linear-gradient(rgba(99, 102, 241, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(99, 102, 241, 0.03) 1px, transparent 1px);
   background-size: 50px 50px;
   mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
 }
@@ -297,8 +325,13 @@ async function runCommand(index) {
 }
 
 @keyframes glow-float {
-  0%, 100% { transform: translateY(0) scale(1); }
-  50% { transform: translateY(-25px) scale(1.04); }
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+  }
+  50% {
+    transform: translateY(-25px) scale(1.04);
+  }
 }
 
 .layout {
@@ -308,7 +341,6 @@ async function runCommand(index) {
   display: flex;
   gap: 0;
 }
-
 
 /* ========= CHAT SIDE ========= */
 .chat-side {
@@ -323,7 +355,7 @@ async function runCommand(index) {
   flex: 1;
   display: flex;
   flex-direction: column;
-  background: rgba(255,255,255,0.02);
+  background: rgba(255, 255, 255, 0.02);
   border: 1px solid var(--border-subtle);
   border-radius: 20px;
   overflow: hidden;
@@ -334,7 +366,7 @@ async function runCommand(index) {
   align-items: center;
   gap: 12px;
   padding: 16px 20px;
-  background: rgba(255,255,255,0.03);
+  background: rgba(255, 255, 255, 0.03);
   border-bottom: 1px solid var(--border-subtle);
 }
 
@@ -379,8 +411,14 @@ async function runCommand(index) {
 }
 
 @keyframes msg-in {
-  from { opacity: 0; transform: translateY(12px) scale(0.95); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 .msg-user {
@@ -391,8 +429,8 @@ async function runCommand(index) {
   width: 32px;
   height: 32px;
   border-radius: 10px;
-  background: rgba(6,182,212,0.15);
-  border: 1px solid rgba(6,182,212,0.3);
+  background: rgba(6, 182, 212, 0.15);
+  border: 1px solid rgba(6, 182, 212, 0.3);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -410,14 +448,14 @@ async function runCommand(index) {
 }
 
 .msg-user .msg-bubble {
-  background: linear-gradient(135deg, rgba(99,102,241,0.2), rgba(139,92,246,0.15));
-  border: 1px solid rgba(99,102,241,0.3);
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(139, 92, 246, 0.15));
+  border: 1px solid rgba(99, 102, 241, 0.3);
   color: var(--text-primary);
   border-bottom-right-radius: 4px;
 }
 
 .msg-bot .msg-bubble {
-  background: rgba(255,255,255,0.04);
+  background: rgba(255, 255, 255, 0.04);
   border: 1px solid var(--border-subtle);
   color: var(--text-secondary);
   border-bottom-left-radius: 4px;
@@ -439,19 +477,31 @@ async function runCommand(index) {
   animation: dot-bounce 1.4s ease-in-out infinite;
 }
 
-.dot:nth-child(2) { animation-delay: 0.2s; }
-.dot:nth-child(3) { animation-delay: 0.4s; }
+.dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+.dot:nth-child(3) {
+  animation-delay: 0.4s;
+}
 
 @keyframes dot-bounce {
-  0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
-  30% { transform: translateY(-6px); opacity: 1; }
+  0%,
+  60%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.4;
+  }
+  30% {
+    transform: translateY(-6px);
+    opacity: 1;
+  }
 }
 
 /* Commands */
 .chat-commands {
   padding: 14px 16px;
   border-top: 1px solid var(--border-subtle);
-  background: rgba(255,255,255,0.02);
+  background: rgba(255, 255, 255, 0.02);
 }
 
 .cmd-label {
@@ -472,8 +522,8 @@ async function runCommand(index) {
 .cmd-btn {
   padding: 7px 12px;
   border-radius: 10px;
-  border: 1px solid rgba(99,102,241,0.2);
-  background: rgba(99,102,241,0.06);
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  background: rgba(99, 102, 241, 0.06);
   color: #a5b4fc;
   font-size: 12px;
   font-weight: 600;
@@ -485,20 +535,20 @@ async function runCommand(index) {
 }
 
 .cmd-btn:hover:not(:disabled) {
-  background: rgba(99,102,241,0.15);
-  border-color: rgba(99,102,241,0.4);
+  background: rgba(99, 102, 241, 0.15);
+  border-color: rgba(99, 102, 241, 0.4);
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(99,102,241,0.15);
+  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.15);
 }
 
 .cmd-btn.active {
-  background: rgba(99,102,241,0.2);
+  background: rgba(99, 102, 241, 0.2);
   border-color: #6366f1;
   color: white;
 }
 
 .cmd-btn.done {
-  border-color: rgba(16,185,129,0.3);
+  border-color: rgba(16, 185, 129, 0.3);
   color: #34d399;
 }
 
@@ -529,7 +579,7 @@ async function runCommand(index) {
   flex: 1;
   display: flex;
   flex-direction: column;
-  background: rgba(255,255,255,0.02);
+  background: rgba(255, 255, 255, 0.02);
   border: 1px solid var(--border-subtle);
   border-radius: 20px;
   overflow: hidden;
@@ -541,7 +591,7 @@ async function runCommand(index) {
   align-items: center;
   gap: 14px;
   padding: 12px 18px;
-  background: rgba(255,255,255,0.03);
+  background: rgba(255, 255, 255, 0.03);
   border-bottom: 1px solid var(--border-subtle);
 }
 
@@ -556,9 +606,15 @@ async function runCommand(index) {
   border-radius: 50%;
 }
 
-.browser-dots span:nth-child(1) { background: #f43f5e; }
-.browser-dots span:nth-child(2) { background: #f59e0b; }
-.browser-dots span:nth-child(3) { background: #10b981; }
+.browser-dots span:nth-child(1) {
+  background: #f43f5e;
+}
+.browser-dots span:nth-child(2) {
+  background: #f59e0b;
+}
+.browser-dots span:nth-child(3) {
+  background: #10b981;
+}
 
 .browser-url {
   flex: 1;
@@ -566,7 +622,7 @@ async function runCommand(index) {
   align-items: center;
   gap: 8px;
   padding: 10px 16px;
-  background: rgba(255,255,255,0.04);
+  background: rgba(255, 255, 255, 0.04);
   border-radius: 10px;
   font-family: var(--font-mono);
   font-size: 15px;
@@ -616,7 +672,9 @@ async function runCommand(index) {
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .build-spinner i {
@@ -626,8 +684,15 @@ async function runCommand(index) {
 }
 
 @keyframes pulse-code {
-  0%, 100% { opacity: 0.6; transform: scale(1); }
-  50% { opacity: 1; transform: scale(1.1); }
+  0%,
+  100% {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.1);
+  }
 }
 
 .build-text {
@@ -640,7 +705,7 @@ async function runCommand(index) {
 .build-progress {
   width: 300px;
   height: 6px;
-  background: rgba(255,255,255,0.06);
+  background: rgba(255, 255, 255, 0.06);
   border-radius: 4px;
   overflow: hidden;
 }
@@ -650,7 +715,7 @@ async function runCommand(index) {
   background: linear-gradient(90deg, #6366f1, #06b6d4);
   border-radius: 4px;
   transition: width 0.5s cubic-bezier(0.16, 1, 0.3, 1);
-  box-shadow: 0 0 10px rgba(99,102,241,0.4);
+  box-shadow: 0 0 10px rgba(99, 102, 241, 0.4);
 }
 
 .build-log {
@@ -667,8 +732,14 @@ async function runCommand(index) {
 }
 
 @keyframes log-in {
-  from { opacity: 0; transform: translateX(-10px); }
-  to { opacity: 1; transform: translateX(0); }
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 .log-check {
@@ -691,8 +762,8 @@ async function runCommand(index) {
   width: 64px;
   height: 64px;
   border-radius: 50%;
-  background: rgba(99,102,241,0.08);
-  border: 1px solid rgba(99,102,241,0.2);
+  background: rgba(99, 102, 241, 0.08);
+  border: 1px solid rgba(99, 102, 241, 0.2);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -702,8 +773,13 @@ async function runCommand(index) {
 }
 
 @keyframes point-left {
-  0%, 100% { transform: translateX(0); }
-  50% { transform: translateX(-10px); }
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(-10px);
+  }
 }
 
 .placeholder p {

@@ -38,10 +38,20 @@ const emit = defineEmits<{
 <template>
   <div class="dc-bpm-header-controls__group">
     <span class="dc-bpm-header-controls__label">{{ languageLabel }}</span>
-    <button type="button" class="dc-bpm-header-controls__chip" :class="{ active: locale === 'ru' }" @click="emit('changeLocale', 'ru')">
+    <button
+      type="button"
+      class="dc-bpm-header-controls__chip"
+      :class="{ active: locale === 'ru' }"
+      @click="emit('changeLocale', 'ru')"
+    >
       RU
     </button>
-    <button type="button" class="dc-bpm-header-controls__chip" :class="{ active: locale === 'en' }" @click="emit('changeLocale', 'en')">
+    <button
+      type="button"
+      class="dc-bpm-header-controls__chip"
+      :class="{ active: locale === 'en' }"
+      @click="emit('changeLocale', 'en')"
+    >
       EN
     </button>
   </div>

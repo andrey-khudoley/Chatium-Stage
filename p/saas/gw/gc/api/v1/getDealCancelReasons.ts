@@ -14,6 +14,8 @@ export const getDealCancelReasonsHandler: V1GcHandler = async (_ctx, a) => {
   return { kind: 'gc_result', gc }
 }
 
-export const getDealCancelReasonsRoute = app.get('/', async (ctx, req) => handleV1Op(ctx, req, 'getDealCancelReasons', getDealCancelReasonsHandler))
+export const getDealCancelReasonsRoute = app.get('/', async (ctx, req) =>
+  handleV1Op(ctx, req, 'getDealCancelReasons', getDealCancelReasonsHandler)
+)
 
 export default getDealCancelReasonsRoute

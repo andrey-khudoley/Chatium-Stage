@@ -9,17 +9,16 @@ async function main() {
   }
 }
 
-
-app.function('/').handle(async ctx => {
+app.function('/').handle(async (ctx) => {
   try {
     return {
       success: true,
-      result: await main(ctx),
+      result: await main(ctx)
     }
   } catch (err: any) {
     return {
       success: false,
-      error: err.message,
+      error: err.message
     }
   }
 })

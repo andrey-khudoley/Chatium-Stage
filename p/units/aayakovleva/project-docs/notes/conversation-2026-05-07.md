@@ -1,9 +1,9 @@
 ---
-title: "Переписка 2026-05-07 — Ольга Шавковская"
+title: 'Переписка 2026-05-07 — Ольга Шавковская'
 status: captured
 created: 2026-05-07
 updated: 2026-05-07
-project: "[Бриф проекта](../brief.md)"
+project: '[Бриф проекта](../brief.md)'
 tags:
   - note/context
   - source/telegram

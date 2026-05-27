@@ -81,16 +81,16 @@
 
 В корне проекта добавлен каталог **`temp/`** (только диагностика, не прод):
 
-| Маршрут (относительно `PROJECT_ROOT`) | Смысл |
-| --- | --- |
-| `./temp` | HTML-оглавление со ссылками на пробы |
-| `./temp/http-200` | Обычная HTML-страница (`app.html`) |
-| `./temp/http-200-json-error` | JSON, HTTP 200, в теле `ok: false` |
-| `./temp/http-301` | 301 + `Location` на `../http-200` |
-| `./temp/http-302` | `ctx.resp.redirect` (обычно 302) |
-| `./temp/http-400` … `./temp/http-403` | `ctx.resp.json(..., код)` |
-| `./temp/http-404`, `./temp/http-500` | HTML через `rawHttpBody` + статус |
-| `./temp/throws-error` | Намеренный `throw` в обработчике |
+| Маршрут (относительно `PROJECT_ROOT`) | Смысл                                |
+| ------------------------------------- | ------------------------------------ |
+| `./temp`                              | HTML-оглавление со ссылками на пробы |
+| `./temp/http-200`                     | Обычная HTML-страница (`app.html`)   |
+| `./temp/http-200-json-error`          | JSON, HTTP 200, в теле `ok: false`   |
+| `./temp/http-301`                     | 301 + `Location` на `../http-200`    |
+| `./temp/http-302`                     | `ctx.resp.redirect` (обычно 302)     |
+| `./temp/http-400` … `./temp/http-403` | `ctx.resp.json(..., код)`            |
+| `./temp/http-404`, `./temp/http-500`  | HTML через `rawHttpBody` + статус    |
+| `./temp/throws-error`                 | Намеренный `throw` в обработчике     |
 
 Полный URL в браузере: `https://<домен-воркспейса>/p/units/aom/lava_gc_integration/temp` и далее сегменты из таблицы.
 
@@ -98,13 +98,13 @@
 
 ## Связанные файлы
 
-| Назначение | Путь |
-| --- | --- |
-| Страница тестов (UI) | `web/tests/index.tsx`, `pages/TestsPage.vue` |
-| Каталог тестов (API) | `api/tests/list.ts` |
-| Проверки эндпоинтов | `api/tests/endpoints-check/*.ts` |
-| Живые проверки учётных из Heap | `lib/integration-credentials.lib.ts` |
-| HTTP-пробы (форматы ответов) | `temp/*/index.tsx`, `temp/index.tsx` |
-| Разбор ответа страниц в UI | `shared/pageRouteProbe.ts` |
-| Юнит страниц (`route.run`) | `api/tests/endpoints-check/page-routes-unit.ts` |
+| Назначение                                                            | Путь                                              |
+| --------------------------------------------------------------------- | ------------------------------------------------- |
+| Страница тестов (UI)                                                  | `web/tests/index.tsx`, `pages/TestsPage.vue`      |
+| Каталог тестов (API)                                                  | `api/tests/list.ts`                               |
+| Проверки эндпоинтов                                                   | `api/tests/endpoints-check/*.ts`                  |
+| Живые проверки учётных из Heap                                        | `lib/integration-credentials.lib.ts`              |
+| HTTP-пробы (форматы ответов)                                          | `temp/*/index.tsx`, `temp/index.tsx`              |
+| Разбор ответа страниц в UI                                            | `shared/pageRouteProbe.ts`                        |
+| Юнит страниц (`route.run`)                                            | `api/tests/endpoints-check/page-routes-unit.ts`   |
 | Юнит роута Lava webhook (`lavaWebhookInfoRoute` / `lavaWebhookRoute`) | `api/tests/endpoints-check/lava-webhook-route.ts` |

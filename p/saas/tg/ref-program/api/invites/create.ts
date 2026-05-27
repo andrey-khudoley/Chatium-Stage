@@ -22,7 +22,11 @@ export const createInviteRoute = app.post('/', async (ctx, req) => {
   const body = (req.body || {}) as { campaignId?: unknown; expiresInDays?: unknown }
   const campaignId = typeof body.campaignId === 'string' ? body.campaignId.trim() : ''
   if (!campaignId) {
-    await loggerLib.writeServerLog(ctx, { severity: SEV.warn, message: `[${LOG_PATH}] campaignId не указан`, payload: {} })
+    await loggerLib.writeServerLog(ctx, {
+      severity: SEV.warn,
+      message: `[${LOG_PATH}] campaignId не указан`,
+      payload: {}
+    })
     return { success: false, error: 'Поле campaignId обязательно' }
   }
 

@@ -1,13 +1,17 @@
-import { jsx } from "@app/html-jsx"
+import { jsx } from '@app/html-jsx'
 
 export function Styles() {
-  return <>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
-    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
-    <link href="/s/static/lib/fontawesome/6.7.2/css/all.min.css" rel="stylesheet" />
-    <script src="/s/static/lib/tailwind.3.4.16.min.js"></script>
-    <script>{`
+  return (
+    <>
+      <link rel="preconnect" href="https://fonts.googleapis.com" />
+      <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
+      <link
+        href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Inter:wght@300;400;500;600&display=swap"
+        rel="stylesheet"
+      />
+      <link href="/s/static/lib/fontawesome/6.7.2/css/all.min.css" rel="stylesheet" />
+      <script src="/s/static/lib/tailwind.3.4.16.min.js"></script>
+      <script>{`
       tailwind.config = {
         theme: {
           extend: {
@@ -40,7 +44,7 @@ export function Styles() {
         }
       }
     `}</script>
-    <style>{`
+      <style>{`
       * { margin: 0; padding: 0; box-sizing: border-box; }
       html { scroll-behavior: smooth; }
       body { 
@@ -324,5 +328,6 @@ export function Styles() {
         html { font-size: 20px; }
       }
     `}</style>
-  </>
+    </>
+  )
 }

@@ -5,21 +5,28 @@ export const TWebinarRoomWebinarRoomAutowebinarSchedules = Heap.Table(
   't_webinar_room_webinar_room_autowebinar_schedules_jkd',
   {
     autowebinar: Heap.Optional(
-      Heap.RefLink('t_webinar_room_webinar_room_autowebinars_CRj', { customMeta: { title: 'Автовебинар' } }),
+      Heap.RefLink('t_webinar_room_webinar_room_autowebinars_CRj', {
+        customMeta: { title: 'Автовебинар' }
+      })
     ),
-    scheduledDate: Heap.Optional(Heap.DateTime({ customMeta: { title: 'Запланированная дата/время' } })),
+    scheduledDate: Heap.Optional(
+      Heap.DateTime({ customMeta: { title: 'Запланированная дата/время' } })
+    ),
     status: Heap.Optional(
-      Heap.String({ customMeta: { title: 'Статус (scheduled / waiting_room / live / finished)' } }),
+      Heap.String({ customMeta: { title: 'Статус (scheduled / waiting_room / live / finished)' } })
     ),
     chatFeedId: Heap.Optional(Heap.String({ customMeta: { title: 'ID общего чата' } })),
-    startedAt: Heap.Optional(Heap.DateTime({ customMeta: { title: 'Реальное время старта видео' } })),
-    finishedAt: Heap.Optional(Heap.DateTime({ customMeta: { title: 'Время завершения' } })),
+    startedAt: Heap.Optional(
+      Heap.DateTime({ customMeta: { title: 'Реальное время старта видео' } })
+    ),
+    finishedAt: Heap.Optional(Heap.DateTime({ customMeta: { title: 'Время завершения' } }))
   },
-  { customMeta: { title: 'Расписания автовебинаров', description: 'Расписания автовебинаров' } },
+  { customMeta: { title: 'Расписания автовебинаров', description: 'Расписания автовебинаров' } }
 )
 
 export default TWebinarRoomWebinarRoomAutowebinarSchedules
 
-export type TWebinarRoomWebinarRoomAutowebinarSchedulesRow = typeof TWebinarRoomWebinarRoomAutowebinarSchedules.T
+export type TWebinarRoomWebinarRoomAutowebinarSchedulesRow =
+  typeof TWebinarRoomWebinarRoomAutowebinarSchedules.T
 export type TWebinarRoomWebinarRoomAutowebinarSchedulesRowJson =
   typeof TWebinarRoomWebinarRoomAutowebinarSchedules.JsonT

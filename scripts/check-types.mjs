@@ -86,12 +86,7 @@ function writeStrictConfig(projectDir) {
     vueCompilerOptions: { strictTemplates: true },
     files: [...GLOBAL_FILES.map((f) => './' + f), VUE_SHIM],
     include: [`${projectDir}/**/*`],
-    exclude: [
-      `${projectDir}/jsx.d.ts`,
-      `${projectDir}/vue-shim.d.ts`,
-      'node_modules',
-      '.typings'
-    ]
+    exclude: [`${projectDir}/jsx.d.ts`, `${projectDir}/vue-shim.d.ts`, 'node_modules', '.typings']
   }
   writeFileSync(TMP, JSON.stringify(cfg, null, 2))
 }
@@ -147,7 +142,9 @@ function main() {
   }
 
   console.log('\n================ ИТОГ (типы) ================')
-  console.log(`Проектов: ${projects.length} | с ошибками: ${failed.length} | всего ошибок: ${totalErrors}`)
+  console.log(
+    `Проектов: ${projects.length} | с ошибками: ${failed.length} | всего ошибок: ${totalErrors}`
+  )
   failed.forEach((f) => console.log(`  FAIL ${f.projectDir} — ${f.count}`))
 
   process.exit(failed.length > 0 ? 1 : 0)

@@ -3,29 +3,24 @@
     <!-- Hero Section -->
     <section class="relative h-screen flex items-center justify-center text-white overflow-hidden">
       <div class="absolute inset-0 z-0">
-        <img 
-          src="https://msk.cdn-chatium.io/get/image_msk_VMS5Dc99wb.433x650.jpeg" 
-          alt="Стилист за работой" 
+        <img
+          src="https://msk.cdn-chatium.io/get/image_msk_VMS5Dc99wb.433x650.jpeg"
+          alt="Стилист за работой"
           class="w-full h-full object-cover"
         />
         <div class="hero-overlay absolute inset-0"></div>
       </div>
-      
+
       <div class="relative z-10 text-center px-4 max-w-4xl mx-auto">
-        <h1 class="text-5xl md:text-7xl font-bold mb-6 font-serif animate-fade-in">
-          Анна Стилист
-        </h1>
+        <h1 class="text-5xl md:text-7xl font-bold mb-6 font-serif animate-fade-in">Анна Стилист</h1>
         <p class="text-xl md:text-2xl mb-8 font-light">
           Создаю уникальные образы и помогаю раскрыть вашу индивидуальность
         </p>
-        <button 
-          @click="scrollToBooking" 
-          class="btn-primary text-lg"
-        >
+        <button @click="scrollToBooking" class="btn-primary text-lg">
           Записаться на консультацию
         </button>
       </div>
-      
+
       <div class="absolute bottom-10 left-1/2 transform -translate-x-1/2 animate-bounce">
         <i class="fas fa-chevron-down text-3xl text-white opacity-70"></i>
       </div>
@@ -36,14 +31,15 @@
       <div class="max-w-6xl mx-auto">
         <div class="grid md:grid-cols-2 gap-12 items-center">
           <div>
-            <h2 class="section-title gradient-text">
-              Обо мне
-            </h2>
+            <h2 class="section-title gradient-text">Обо мне</h2>
             <p class="text-gray-700 text-lg leading-relaxed mb-6">
-              Я профессиональный стилист с 10-летним опытом работы. Моя миссия — помочь каждому найти свой уникальный стиль, который подчеркнет индивидуальность и придаст уверенности.
+              Я профессиональный стилист с 10-летним опытом работы. Моя миссия — помочь каждому
+              найти свой уникальный стиль, который подчеркнет индивидуальность и придаст
+              уверенности.
             </p>
             <p class="text-gray-700 text-lg leading-relaxed mb-6">
-              Работаю с образами любой сложности: от повседневных луков до торжественных мероприятий. Использую индивидуальный подход к каждому клиенту.
+              Работаю с образами любой сложности: от повседневных луков до торжественных
+              мероприятий. Использую индивидуальный подход к каждому клиенту.
             </p>
             <div class="flex gap-4 mt-8">
               <div class="text-center">
@@ -57,9 +53,9 @@
             </div>
           </div>
           <div class="relative">
-            <img 
-              src="https://msk.cdn-chatium.io/get/image_msk_kcHWvKURcC.433x650.jpeg" 
-              alt="Стилист" 
+            <img
+              src="https://msk.cdn-chatium.io/get/image_msk_kcHWvKURcC.433x650.jpeg"
+              alt="Стилист"
               class="rounded-2xl shadow-2xl w-full"
             />
           </div>
@@ -70,10 +66,8 @@
     <!-- Services Section -->
     <section class="py-20 px-4 bg-accent">
       <div class="max-w-6xl mx-auto">
-        <h2 class="section-title text-center gradient-text mb-16">
-          Мои услуги
-        </h2>
-        
+        <h2 class="section-title text-center gradient-text mb-16">Мои услуги</h2>
+
         <div class="grid md:grid-cols-3 gap-8">
           <div class="service-card">
             <div class="text-primary text-5xl mb-4">
@@ -81,7 +75,8 @@
             </div>
             <h3 class="text-2xl font-semibold mb-4 text-secondary">Разбор гардероба</h3>
             <p class="text-gray-600 mb-4">
-              Анализ существующего гардероба, рекомендации по оптимизации и составлению базового гардероба
+              Анализ существующего гардероба, рекомендации по оптимизации и составлению базового
+              гардероба
             </p>
             <div class="text-primary font-semibold text-xl">от 5000 ₽</div>
           </div>
@@ -113,9 +108,7 @@
               <i class="fas fa-tshirt"></i>
             </div>
             <h3 class="text-2xl font-semibold mb-4 text-secondary">Капсульный гардероб</h3>
-            <p class="text-gray-600 mb-4">
-              Создание универсального капсульного гардероба на сезон
-            </p>
+            <p class="text-gray-600 mb-4">Создание универсального капсульного гардероба на сезон</p>
             <div class="text-primary font-semibold text-xl">от 12000 ₽</div>
           </div>
 
@@ -147,36 +140,40 @@
     <!-- Portfolio Section -->
     <section class="py-20 px-4">
       <div class="max-w-6xl mx-auto">
-        <h2 class="section-title text-center gradient-text mb-16">
-          Портфолио
-        </h2>
-        
+        <h2 class="section-title text-center gradient-text mb-16">Портфолио</h2>
+
         <div class="grid md:grid-cols-3 gap-6">
           <div class="relative overflow-hidden rounded-xl shadow-lg group cursor-pointer">
-            <img 
-              src="https://msk.cdn-chatium.io/get/image_msk_10DaFsFpyP.940x627.jpeg" 
-              alt="Работа 1" 
+            <img
+              src="https://msk.cdn-chatium.io/get/image_msk_10DaFsFpyP.940x627.jpeg"
+              alt="Работа 1"
               class="w-full h-80 object-cover transform transition-transform duration-500 group-hover:scale-110"
             />
-            <div class="absolute inset-0 bg-gradient-to-t from-black to-transparent opacity-0 group-hover:opacity-70 transition-opacity duration-300"></div>
+            <div
+              class="absolute inset-0 bg-gradient-to-t from-black to-transparent opacity-0 group-hover:opacity-70 transition-opacity duration-300"
+            ></div>
           </div>
-          
+
           <div class="relative overflow-hidden rounded-xl shadow-lg group cursor-pointer">
-            <img 
-              src="https://msk.cdn-chatium.io/get/image_msk_q7avVbG0oc.940x627.jpeg" 
-              alt="Работа 2" 
+            <img
+              src="https://msk.cdn-chatium.io/get/image_msk_q7avVbG0oc.940x627.jpeg"
+              alt="Работа 2"
               class="w-full h-80 object-cover transform transition-transform duration-500 group-hover:scale-110"
             />
-            <div class="absolute inset-0 bg-gradient-to-t from-black to-transparent opacity-0 group-hover:opacity-70 transition-opacity duration-300"></div>
+            <div
+              class="absolute inset-0 bg-gradient-to-t from-black to-transparent opacity-0 group-hover:opacity-70 transition-opacity duration-300"
+            ></div>
           </div>
-          
+
           <div class="relative overflow-hidden rounded-xl shadow-lg group cursor-pointer">
-            <img 
-              src="https://msk.cdn-chatium.io/get/image_msk_aNI3NbTKzB.940x627.jpeg" 
-              alt="Работа 3" 
+            <img
+              src="https://msk.cdn-chatium.io/get/image_msk_aNI3NbTKzB.940x627.jpeg"
+              alt="Работа 3"
               class="w-full h-80 object-cover transform transition-transform duration-500 group-hover:scale-110"
             />
-            <div class="absolute inset-0 bg-gradient-to-t from-black to-transparent opacity-0 group-hover:opacity-70 transition-opacity duration-300"></div>
+            <div
+              class="absolute inset-0 bg-gradient-to-t from-black to-transparent opacity-0 group-hover:opacity-70 transition-opacity duration-300"
+            ></div>
           </div>
         </div>
       </div>
@@ -185,20 +182,18 @@
     <!-- Booking Section -->
     <section id="booking" class="py-20 px-4 bg-gradient-to-br from-accent via-white to-white">
       <div class="max-w-2xl mx-auto">
-        <h2 class="section-title text-center gradient-text mb-4">
-          Записаться на консультацию
-        </h2>
+        <h2 class="section-title text-center gradient-text mb-4">Записаться на консультацию</h2>
         <p class="text-center text-gray-600 mb-12 text-lg">
           Заполните форму, и я свяжусь с вами в ближайшее время
         </p>
-        
+
         <div class="card">
           <form @submit.prevent="submitBooking">
             <div class="mb-6">
               <label class="block text-gray-700 font-medium mb-2">Ваше имя *</label>
-              <input 
-                v-model="form.clientName" 
-                type="text" 
+              <input
+                v-model="form.clientName"
+                type="text"
                 placeholder="Введите ваше имя"
                 required
               />
@@ -206,21 +201,12 @@
 
             <div class="mb-6">
               <label class="block text-gray-700 font-medium mb-2">Телефон *</label>
-              <input 
-                v-model="form.phone" 
-                type="tel" 
-                placeholder="+7 (___) ___-__-__"
-                required
-              />
+              <input v-model="form.phone" type="tel" placeholder="+7 (___) ___-__-__" required />
             </div>
 
             <div class="mb-6">
               <label class="block text-gray-700 font-medium mb-2">Email</label>
-              <input 
-                v-model="form.email" 
-                type="email" 
-                placeholder="your@email.com"
-              />
+              <input v-model="form.email" type="email" placeholder="your@email.com" />
             </div>
 
             <div class="mb-6">
@@ -239,12 +225,7 @@
             <div class="grid md:grid-cols-2 gap-6 mb-6">
               <div>
                 <label class="block text-gray-700 font-medium mb-2">Предпочтительная дата *</label>
-                <input 
-                  v-model="form.date" 
-                  type="date" 
-                  :min="minDate"
-                  required
-                />
+                <input v-model="form.date" type="date" :min="minDate" required />
               </div>
 
               <div>
@@ -266,18 +247,14 @@
 
             <div class="mb-6">
               <label class="block text-gray-700 font-medium mb-2">Комментарий</label>
-              <textarea 
-                v-model="form.comment" 
-                rows="4" 
+              <textarea
+                v-model="form.comment"
+                rows="4"
                 placeholder="Расскажите о ваших пожеланиях..."
               ></textarea>
             </div>
 
-            <button 
-              type="submit" 
-              class="btn-primary w-full text-lg"
-              :disabled="isSubmitting"
-            >
+            <button type="submit" class="btn-primary w-full text-lg" :disabled="isSubmitting">
               <span v-if="!isSubmitting">Отправить заявку</span>
               <span v-else>Отправка...</span>
             </button>
@@ -298,18 +275,18 @@
     <section class="py-20 px-4 bg-dark text-white">
       <div class="max-w-6xl mx-auto text-center">
         <h2 class="text-4xl font-bold mb-8 font-serif">Контакты</h2>
-        
+
         <div class="grid md:grid-cols-3 gap-8 mb-12">
           <div>
             <i class="fas fa-phone text-4xl text-primary mb-4"></i>
             <p class="text-xl">+7 (999) 123-45-67</p>
           </div>
-          
+
           <div>
             <i class="fas fa-envelope text-4xl text-primary mb-4"></i>
             <p class="text-xl">anna@stylist.ru</p>
           </div>
-          
+
           <div>
             <i class="fas fa-map-marker-alt text-4xl text-primary mb-4"></i>
             <p class="text-xl">Москва, ул. Примерная, 1</p>
@@ -366,7 +343,7 @@ async function submitBooking() {
 
   try {
     const result = await apiCreateAppointmentRoute.run(ctx, form.value)
-    
+
     if (result.success) {
       successMessage.value = 'Спасибо! Ваша заявка отправлена. Я свяжусь с вами в ближайшее время.'
       form.value = {

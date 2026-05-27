@@ -7,18 +7,18 @@ export const apiPinnedChatsListRoute = app.get('/list', async (ctx, req) => {
 
   const pinnedChats = await UserPinnedChats.findAll(ctx, {
     where: {
-      userId: ctx.user.id,
+      userId: ctx.user.id
     },
     order: [{ sortOrder: 'asc' }],
-    limit: 1000,
+    limit: 1000
   })
 
   return {
-    pinnedChats: pinnedChats.map(p => ({
+    pinnedChats: pinnedChats.map((p) => ({
       id: p.id,
       feedId: p.feedId,
-      sortOrder: p.sortOrder,
-    })),
+      sortOrder: p.sortOrder
+    }))
   }
 })
 
@@ -31,7 +31,7 @@ export const apiPinnedChatsPinRoute = app.post('/pin', async (ctx, req) => {
   // Проверяем, не закреплен ли уже
   const existing = await UserPinnedChats.findOneBy(ctx, {
     userId: ctx.user.id,
-    feedId,
+    feedId
   })
 
   if (existing) {
@@ -42,7 +42,7 @@ export const apiPinnedChatsPinRoute = app.post('/pin', async (ctx, req) => {
   const allPinned = await UserPinnedChats.findAll(ctx, {
     where: { userId: ctx.user.id },
     order: [{ sortOrder: 'desc' }],
-    limit: 1,
+    limit: 1
   })
 
   const maxOrder = allPinned.length > 0 ? allPinned[0].sortOrder : 0
@@ -50,7 +50,7 @@ export const apiPinnedChatsPinRoute = app.post('/pin', async (ctx, req) => {
   const pinnedChat = await UserPinnedChats.create(ctx, {
     userId: ctx.user.id,
     feedId,
-    sortOrder: maxOrder + 1,
+    sortOrder: maxOrder + 1
   })
 
   return { success: true, pinnedChat }
@@ -64,7 +64,7 @@ export const apiPinnedChatsUnpinRoute = app.post('/unpin', async (ctx, req) => {
 
   const existing = await UserPinnedChats.findOneBy(ctx, {
     userId: ctx.user.id,
-    feedId,
+    feedId
   })
 
   if (existing) {
@@ -88,13 +88,13 @@ export const apiPinnedChatsReorderRoute = app.post('/reorder', async (ctx, req) 
   for (let i = 0; i < feedIds.length; i++) {
     const existing = await UserPinnedChats.findOneBy(ctx, {
       userId: ctx.user.id,
-      feedId: feedIds[i],
+      feedId: feedIds[i]
     })
 
     if (existing) {
       await UserPinnedChats.update(ctx, {
         id: existing.id,
-        sortOrder: i,
+        sortOrder: i
       })
     }
   }
@@ -110,11 +110,11 @@ export const apiPinnedChatsCheckRoute = app.post('/check', async (ctx, req) => {
 
   const existing = await UserPinnedChats.findOneBy(ctx, {
     userId: ctx.user.id,
-    feedId,
+    feedId
   })
 
   return {
     isPinned: !!existing,
-    sortOrder: existing?.sortOrder,
+    sortOrder: existing?.sortOrder
   }
 })

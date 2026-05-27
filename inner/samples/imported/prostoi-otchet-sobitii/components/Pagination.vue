@@ -1,35 +1,48 @@
 <template>
   <div class="pagination" v-if="totalPages > 1">
     <div class="pagination-info">
-      Показано {{ formatNumber(startItem) }}-{{ formatNumber(endItem) }} из {{ formatNumber(total) }} записей
+      Показано {{ formatNumber(startItem) }}-{{ formatNumber(endItem) }} из
+      {{ formatNumber(total) }} записей
     </div>
-    
+
     <div class="pagination-controls">
-      <button 
+      <button
         @click="goToPage(1)"
         :disabled="currentPage === 1"
         class="pagination-btn"
         title="Первая страница"
       >
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-          <path d="M11 17L6 12L11 7M18 17L13 12L18 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path
+            d="M11 17L6 12L11 7M18 17L13 12L18 7"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
         </svg>
       </button>
-      
-      <button 
+
+      <button
         @click="goToPage(currentPage - 1)"
         :disabled="currentPage === 1"
         class="pagination-btn"
         title="Предыдущая страница"
       >
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-          <path d="M15 18L9 12L15 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path
+            d="M15 18L9 12L15 6"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
         </svg>
       </button>
 
       <div class="page-numbers">
-        <button 
-          v-for="page in visiblePages" 
+        <button
+          v-for="page in visiblePages"
           :key="page"
           @click="goToPage(page)"
           :class="['page-btn', { active: page === currentPage }]"
@@ -38,25 +51,37 @@
         </button>
       </div>
 
-      <button 
+      <button
         @click="goToPage(currentPage + 1)"
         :disabled="currentPage === totalPages"
         class="pagination-btn"
         title="Следующая страница"
       >
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-          <path d="M9 18L15 12L9 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path
+            d="M9 18L15 12L9 6"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
         </svg>
       </button>
-      
-      <button 
+
+      <button
         @click="goToPage(totalPages)"
         :disabled="currentPage === totalPages"
         class="pagination-btn"
         title="Последняя страница"
       >
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-          <path d="M13 17L18 12L13 7M6 17L11 12L6 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path
+            d="M13 17L18 12L13 7M6 17L11 12L6 7"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
         </svg>
       </button>
     </div>
@@ -99,7 +124,7 @@ const visiblePages = computed(() => {
   const pages = []
   const total = totalPages.value
   const current = props.currentPage
-  
+
   if (total <= 7) {
     // Показываем все страницы если их мало
     for (let i = 1; i <= total; i++) {
@@ -129,12 +154,17 @@ const visiblePages = computed(() => {
       pages.push(total)
     }
   }
-  
+
   return pages
 })
 
 function goToPage(page) {
-  if (typeof page === 'number' && page !== props.currentPage && page >= 1 && page <= totalPages.value) {
+  if (
+    typeof page === 'number' &&
+    page !== props.currentPage &&
+    page >= 1 &&
+    page <= totalPages.value
+  ) {
     emit('page-change', page)
   }
 }
@@ -228,7 +258,7 @@ function formatNumber(num) {
     flex-direction: column;
     gap: 12px;
   }
-  
+
   .pagination-info {
     text-align: center;
   }

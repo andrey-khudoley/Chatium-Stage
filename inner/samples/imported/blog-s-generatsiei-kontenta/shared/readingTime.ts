@@ -10,7 +10,7 @@ export function calculateReadingTime(content: string): number {
     .trim()
 
   // Считаем количество слов
-  const wordCount = textContent.split(' ').filter(word => word.length > 0).length
+  const wordCount = textContent.split(' ').filter((word) => word.length > 0).length
 
   // Среднескоростное чтение: 200 слов в минуту
   const readingTime = Math.ceil(wordCount / 200)

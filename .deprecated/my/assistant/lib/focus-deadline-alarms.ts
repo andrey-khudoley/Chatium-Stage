@@ -14,7 +14,7 @@ function showDeadlineNotification(title: string): void {
     new Notification(title, {
       icon: '/favicon.ico',
       badge: '/favicon.ico',
-      tag: 'assistant-focus-deadline',
+      tag: 'assistant-focus-deadline'
     })
   } catch {
     // ignore
@@ -84,6 +84,6 @@ export function createFocusDeadlineAlarms(options: {
 
   return {
     reschedule,
-    dispose: clearAll,
+    dispose: clearAll
   }
 }

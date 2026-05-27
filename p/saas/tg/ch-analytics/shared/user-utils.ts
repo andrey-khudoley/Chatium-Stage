@@ -2,7 +2,7 @@
 
 /**
  * Утилиты для работы с ID пользователей
- * 
+ *
  * Предоставляет функции для безопасного сравнения и нормализации ID пользователей,
  * учитывающие возможные различия в типах данных (string, number, UUID объекты и т.д.)
  */
@@ -29,4 +29,3 @@ export const userIdsMatch = (id1: any, id2: any): boolean => {
   const normalized2 = normalizeUserId(id2)
   return normalized1 !== null && normalized2 !== null && normalized1 === normalized2
 }
-

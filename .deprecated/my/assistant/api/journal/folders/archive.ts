@@ -21,7 +21,12 @@ export const archiveNotebookFolderRoute = app
     })
 
     try {
-      const folder = await foldersRepo.archiveForUser(ctx, user.id, req.body.id, req.body.isArchived)
+      const folder = await foldersRepo.archiveForUser(
+        ctx,
+        user.id,
+        req.body.id,
+        req.body.isArchived
+      )
       if (!folder) {
         return { success: false, error: 'Папка не найдена' }
       }

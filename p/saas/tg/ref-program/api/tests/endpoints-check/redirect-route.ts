@@ -59,7 +59,9 @@ export const redirectRouteTestRoute = app.get('/', async (ctx, req) => {
         id: 'redirect-404-unknown-slug',
         title: 'GET /r?linkId= — неизвестный slug → «Ссылка не найдена»',
         passed,
-        error: passed ? undefined : `status=${status ?? '?'}, body содержит текст: ${body.includes('Ссылка не найдена')}`
+        error: passed
+          ? undefined
+          : `status=${status ?? '?'}, body содержит текст: ${body.includes('Ссылка не найдена')}`
       })
     } catch (e) {
       results.push({
@@ -78,8 +80,18 @@ export const redirectRouteTestRoute = app.get('/', async (ctx, req) => {
 
     if (!campaignId) {
       results.push(
-        { id: 'redirect-success', title: 'GET /r?linkId= — редирект и визит', passed: false, error: 'Кампания не создана' },
-        { id: 'redirect-idempotent', title: 'GET /r?linkId= — повторный клик (тот же ref)', passed: false, error: 'Пропущен' }
+        {
+          id: 'redirect-success',
+          title: 'GET /r?linkId= — редирект и визит',
+          passed: false,
+          error: 'Кампания не создана'
+        },
+        {
+          id: 'redirect-idempotent',
+          title: 'GET /r?linkId= — повторный клик (тот же ref)',
+          passed: false,
+          error: 'Пропущен'
+        }
       )
     } else {
       const partner = await Partners.create(ctx, {
@@ -100,8 +112,18 @@ export const redirectRouteTestRoute = app.get('/', async (ctx, req) => {
 
       if (!partnerId || !pageId) {
         results.push(
-          { id: 'redirect-success', title: 'GET /r?linkId= — редирект и визит', passed: false, error: !partnerId ? 'Партнёр не создан' : 'Страница не создана' },
-          { id: 'redirect-idempotent', title: 'GET /r?linkId= — повторный клик (тот же ref)', passed: false, error: 'Пропущен' }
+          {
+            id: 'redirect-success',
+            title: 'GET /r?linkId= — редирект и визит',
+            passed: false,
+            error: !partnerId ? 'Партнёр не создан' : 'Страница не создана'
+          },
+          {
+            id: 'redirect-idempotent',
+            title: 'GET /r?linkId= — повторный клик (тот же ref)',
+            passed: false,
+            error: 'Пропущен'
+          }
         )
       } else {
         const link = await linkRepo.getOrCreatePartnerLink(ctx, campaignId, partnerId, pageId)
@@ -109,8 +131,18 @@ export const redirectRouteTestRoute = app.get('/', async (ctx, req) => {
 
         if (!linkSlug) {
           results.push(
-            { id: 'redirect-success', title: 'GET /r?linkId= — редирект и визит', passed: false, error: 'Нет publicSlug у ссылки' },
-            { id: 'redirect-idempotent', title: 'GET /r?linkId= — повторный клик (тот же ref)', passed: false, error: 'Пропущен' }
+            {
+              id: 'redirect-success',
+              title: 'GET /r?linkId= — редирект и визит',
+              passed: false,
+              error: 'Нет publicSlug у ссылки'
+            },
+            {
+              id: 'redirect-idempotent',
+              title: 'GET /r?linkId= — повторный клик (тот же ref)',
+              passed: false,
+              error: 'Пропущен'
+            }
           )
         } else {
           const visitsBefore = await Visits.findAll(ctx, { where: { campaignId }, limit: 10 })

@@ -1,5 +1,5 @@
 ---
-title: "ОТП Банк — POS-кредитование — Индекс"
+title: 'ОТП Банк — POS-кредитование — Индекс'
 type: reference
 tags:
   - topic/otp-bank
@@ -21,12 +21,12 @@ project: olga-getcourse-payments-c7d5a1
 
 ## Содержание раздела
 
-| Файл | Что внутри |
-|---|---|
-| [js-integration](js-integration.md) | JS-виджет b2otp.ru: скрипт, accessID, poscreditServices.creditProcess, poscreditCheckStatus |
-| [api-contracts](api-contracts.md) | SOAP API b2pos.ru: методы, параметры заявки, структуры данных, PHP-клиенты |
-| [webhooks](webhooks.md) | Уведомления о статусе: JS callback, серверный polling, статусы заявки |
-| [getcourse-order-update](getcourse-order-update.md) | GetCourse API для обновления заказа: endpoint, deal_status, deal_is_paid, PHP+JS примеры |
+| Файл                                                | Что внутри                                                                                  |
+| --------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| [js-integration](js-integration.md)                 | JS-виджет b2otp.ru: скрипт, accessID, poscreditServices.creditProcess, poscreditCheckStatus |
+| [api-contracts](api-contracts.md)                   | SOAP API b2pos.ru: методы, параметры заявки, структуры данных, PHP-клиенты                  |
+| [webhooks](webhooks.md)                             | Уведомления о статусе: JS callback, серверный polling, статусы заявки                       |
+| [getcourse-order-update](getcourse-order-update.md) | GetCourse API для обновления заказа: endpoint, deal_status, deal_is_paid, PHP+JS примеры    |
 
 ## Продукт и условия
 
@@ -38,24 +38,27 @@ project: olga-getcourse-payments-c7d5a1
 
 ## Две технических системы
 
-| Система | Назначение | URL |
-|---------|-----------|-----|
+| Система    | Назначение         | URL                               |
+| ---------- | ------------------ | --------------------------------- |
 | `b2otp.ru` | Фронтенд JS-виджет | https://api.b2otp.ru/shop/manual/ |
-| `b2pos.ru` | Бэкенд SOAP API | https://api.b2pos.ru/loan/manual/ |
+| `b2pos.ru` | Бэкенд SOAP API    | https://api.b2pos.ru/loan/manual/ |
 
 ## Ключевые ссылки
 
 ### Официальная документация
+
 - [Документация для интернет-магазинов (JS)](https://api.b2otp.ru/shop/manual/)
 - [SOAP API краткая форма v2.4](https://api.b2pos.ru/loan/manual/)
 - [SOAP API полная форма v2.7](https://api.b2pos.ru/loan/manual/full/)
 - [ОТП Банк — онлайн-продажи (продуктовый лендинг)](https://www.otpbank.ru/onlinesales/)
 
 ### PHP-клиенты (open source)
+
 - [vanta/b2pos-soap-client (GitHub)](https://github.com/VantaFinance/b2pos-soap-client) — актуальная, PHP 8.1+
 - [AxelPAL/poscredit-php (GitHub)](https://github.com/AxelPAL/poscredit-php) — альтернативная
 
 ### Примеры интеграций
+
 - [HelixMedia: RetailCRM + ОТП Банк](https://helixmedia.ru/blogs/manual/instruktsiya-po-integratsii-retailcrm-i-otp-bank-kreditovanie-pokupateley)
 - [Robokassa + ОТП Банк рассрочка](https://robokassa.com/blog/news/rassrochka-i-kredit-otp-banka-uzhe-v-robokassa-/)
 - [Prodamus + ОТП Банк рассрочка](https://prodamus.ru/blog/rassrochka-ot-otp-banka)

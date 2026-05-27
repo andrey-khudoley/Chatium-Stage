@@ -67,8 +67,12 @@ export function getBootLoaderDiv(theme: DemoTheme, projectName: string, themePre
           <span id="boot-progress-bar" class="boot-progress-bar"></span>
         </div>
         <div class="boot-meta">
-          <span id="boot-status-text" class="boot-status-text">Building process control layers...</span>
-          <span id="boot-progress-value" class="boot-progress-value">0%</span>
+          <span id="boot-status-text" class="boot-status-text">
+            Building process control layers...
+          </span>
+          <span id="boot-progress-value" class="boot-progress-value">
+            0%
+          </span>
         </div>
         <div class="boot-theme-chip" id="boot-theme-pill">
           {preset.name}

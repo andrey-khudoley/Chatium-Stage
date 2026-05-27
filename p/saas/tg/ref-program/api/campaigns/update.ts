@@ -22,9 +22,10 @@ export const updateCampaignRoute = app.post('/', async (ctx, req) => {
     return { success: false, error: 'Нет доступа к кампании' }
   }
 
-  const settings = body.settings && typeof body.settings === 'object' && !Array.isArray(body.settings)
-    ? (body.settings as Partial<CampaignSettings>)
-    : undefined
+  const settings =
+    body.settings && typeof body.settings === 'object' && !Array.isArray(body.settings)
+      ? (body.settings as Partial<CampaignSettings>)
+      : undefined
   if (!settings) {
     return { success: false, error: 'Поле settings обязательно (объект)' }
   }

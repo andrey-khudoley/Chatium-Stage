@@ -2,7 +2,10 @@
 import { reactive, watch } from 'vue'
 import type { PomodoroAfterLongRest, PomodoroPhaseCompleteAction } from '../../lib/pomodoro-types'
 import { normalizePhaseChangeSoundId } from '../../lib/pomodoro-types'
-import { POMODORO_PHASE_CHANGE_SOUND_OPTIONS, playPomodoroPhaseChangeSound } from '../../lib/pomodoro-phase-sounds'
+import {
+  POMODORO_PHASE_CHANGE_SOUND_OPTIONS,
+  playPomodoroPhaseChangeSound
+} from '../../lib/pomodoro-phase-sounds'
 
 type SettingsDraft = {
   workMinutes: number
@@ -42,7 +45,7 @@ const draft = reactive<SettingsDraft>({
   autoStartNextCycle: false,
   phaseChangeSound: 3,
   afterWorkAction: 'overtime',
-  afterRestAction: 'overtime',
+  afterRestAction: 'overtime'
 })
 
 function clamp(v: number, min: number, max: number): number {
@@ -61,8 +64,16 @@ function syncDraft(source: SettingsDraft): void {
   draft.autoStartRest = !!source.autoStartRest
   draft.autoStartNextCycle = !!source.autoStartNextCycle
   draft.phaseChangeSound = normalizePhaseChangeSoundId(source.phaseChangeSound)
-  draft.afterWorkAction = source.autoStartRest ? 'auto' : source.pauseAfterWork ? 'pause' : 'overtime'
-  draft.afterRestAction = source.autoStartNextCycle ? 'auto' : source.pauseAfterRest ? 'pause' : 'overtime'
+  draft.afterWorkAction = source.autoStartRest
+    ? 'auto'
+    : source.pauseAfterWork
+      ? 'pause'
+      : 'overtime'
+  draft.afterRestAction = source.autoStartNextCycle
+    ? 'auto'
+    : source.pauseAfterRest
+      ? 'pause'
+      : 'overtime'
 }
 
 watch(
@@ -106,7 +117,13 @@ function previewPhaseSound(): void {
 
 <template>
   <teleport to="body">
-    <div v-if="props.isOpen" class="settings-overlay" @click="onBackdropClick" @keydown="onKeyDown" tabindex="0">
+    <div
+      v-if="props.isOpen"
+      class="settings-overlay"
+      @click="onBackdropClick"
+      @keydown="onKeyDown"
+      tabindex="0"
+    >
       <section class="settings-modal crt-form-panel">
         <div class="modal-scanlines"></div>
         <header class="settings-head">
@@ -118,35 +135,57 @@ function previewPhaseSound(): void {
 
         <div class="settings-body">
           <div class="settings-section">
-            <div class="section-title">
-              <i class="fa-solid fa-clock" /> Таймеры
-            </div>
+            <div class="section-title"><i class="fa-solid fa-clock" /> Таймеры</div>
             <div class="settings-row-grid">
               <label class="field-label">
                 <span class="field-name">Работа</span>
                 <div class="field-input-wrap">
-                  <input v-model.number="draft.workMinutes" class="field-input" type="number" min="1" max="180" />
+                  <input
+                    v-model.number="draft.workMinutes"
+                    class="field-input"
+                    type="number"
+                    min="1"
+                    max="180"
+                  />
                   <span class="field-unit">мин</span>
                 </div>
               </label>
               <label class="field-label">
                 <span class="field-name">Отдых</span>
                 <div class="field-input-wrap">
-                  <input v-model.number="draft.restMinutes" class="field-input" type="number" min="1" max="180" />
+                  <input
+                    v-model.number="draft.restMinutes"
+                    class="field-input"
+                    type="number"
+                    min="1"
+                    max="180"
+                  />
                   <span class="field-unit">мин</span>
                 </div>
               </label>
               <label class="field-label">
                 <span class="field-name">Длинный отдых</span>
                 <div class="field-input-wrap">
-                  <input v-model.number="draft.longRestMinutes" class="field-input" type="number" min="1" max="180" />
+                  <input
+                    v-model.number="draft.longRestMinutes"
+                    class="field-input"
+                    type="number"
+                    min="1"
+                    max="180"
+                  />
                   <span class="field-unit">мин</span>
                 </div>
               </label>
               <label class="field-label">
                 <span class="field-name">Циклов до длинного</span>
                 <div class="field-input-wrap">
-                  <input v-model.number="draft.cyclesUntilLongRest" class="field-input" type="number" min="1" max="12" />
+                  <input
+                    v-model.number="draft.cyclesUntilLongRest"
+                    class="field-input"
+                    type="number"
+                    min="1"
+                    max="12"
+                  />
                   <span class="field-unit">шт</span>
                 </div>
               </label>
@@ -160,13 +199,18 @@ function previewPhaseSound(): void {
               <i class="fa-solid fa-volume-high" /> Сигнал при смене этапа
             </div>
             <p class="sound-hint">
-              От тихого до заметного — при переходе между работой и отдыхом и при окончании фазы по таймеру.
+              От тихого до заметного — при переходе между работой и отдыхом и при окончании фазы по
+              таймеру.
             </p>
             <div class="sound-row">
               <label class="field-label sound-select-label">
                 <span class="field-name">Пресет</span>
                 <select v-model.number="draft.phaseChangeSound" class="field-input field-select">
-                  <option v-for="opt in POMODORO_PHASE_CHANGE_SOUND_OPTIONS" :key="opt.id" :value="opt.id">
+                  <option
+                    v-for="opt in POMODORO_PHASE_CHANGE_SOUND_OPTIONS"
+                    :key="opt.id"
+                    :value="opt.id"
+                  >
                     {{ opt.id }}. {{ opt.label }} — {{ opt.hint }}
                   </option>
                 </select>
@@ -185,9 +229,7 @@ function previewPhaseSound(): void {
           <div class="settings-divider"></div>
 
           <div class="settings-section">
-            <div class="section-title">
-              <i class="fa-solid fa-robot" /> После завершения этапа
-            </div>
+            <div class="section-title"><i class="fa-solid fa-robot" /> После завершения этапа</div>
             <label class="field-label">
               <span class="field-name">После работы</span>
               <select v-model="draft.afterWorkAction" class="field-input field-select">
@@ -209,9 +251,7 @@ function previewPhaseSound(): void {
           <div class="settings-divider"></div>
 
           <div class="settings-section">
-            <div class="section-title">
-              <i class="fa-solid fa-hand" /> После длинного отдыха
-            </div>
+            <div class="section-title"><i class="fa-solid fa-hand" /> После длинного отдыха</div>
             <label class="field-label">
               <span class="field-name">Режим</span>
               <select v-model="draft.afterLongRest" class="field-input field-select">
@@ -224,10 +264,20 @@ function previewPhaseSound(): void {
         </div>
 
         <footer class="settings-actions">
-          <button class="pomo-modal-btn pomo-modal-btn--ghost" type="button" :disabled="props.saving" @click="emit('close')">
+          <button
+            class="pomo-modal-btn pomo-modal-btn--ghost"
+            type="button"
+            :disabled="props.saving"
+            @click="emit('close')"
+          >
             Отмена
           </button>
-          <button class="pomo-modal-btn pomo-modal-btn--primary" type="button" :disabled="props.saving" @click="submit">
+          <button
+            class="pomo-modal-btn pomo-modal-btn--primary"
+            type="button"
+            :disabled="props.saving"
+            @click="submit"
+          >
             {{ props.saving ? 'Сохранение...' : 'Сохранить' }}
           </button>
         </footer>
@@ -240,11 +290,11 @@ function previewPhaseSound(): void {
 .settings-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(5, 5, 5, .8);
+  background: rgba(5, 5, 5, 0.8);
   z-index: 80;
   display: grid;
   place-items: center;
-  padding: .8rem;
+  padding: 0.8rem;
   backdrop-filter: blur(2px);
 }
 
@@ -258,10 +308,18 @@ function previewPhaseSound(): void {
   padding: 0;
   position: relative;
   clip-path: polygon(
-    0 6px, 6px 6px, 6px 0,
-    calc(100% - 6px) 0, calc(100% - 6px) 6px, 100% 6px,
-    100% calc(100% - 6px), calc(100% - 6px) calc(100% - 6px), calc(100% - 6px) 100%,
-    6px 100%, 6px calc(100% - 6px), 0 calc(100% - 6px)
+    0 6px,
+    6px 6px,
+    6px 0,
+    calc(100% - 6px) 0,
+    calc(100% - 6px) 6px,
+    100% 6px,
+    100% calc(100% - 6px),
+    calc(100% - 6px) calc(100% - 6px),
+    calc(100% - 6px) 100%,
+    6px 100%,
+    6px calc(100% - 6px),
+    0 calc(100% - 6px)
   );
   box-shadow:
     inset 0 0 0 1px var(--color-border-light),
@@ -272,7 +330,10 @@ function previewPhaseSound(): void {
 
 .modal-scanlines {
   position: absolute;
-  top: 0; left: 0; right: 0; bottom: 0;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   background: repeating-linear-gradient(
     0deg,
     rgba(0, 0, 0, 0.04) 0px,
@@ -288,8 +349,8 @@ function previewPhaseSound(): void {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: .6rem;
-  padding: .7rem .85rem;
+  gap: 0.6rem;
+  padding: 0.7rem 0.85rem;
   border-bottom: 1px solid var(--color-border);
   position: relative;
   z-index: 1;
@@ -297,18 +358,18 @@ function previewPhaseSound(): void {
 
 .settings-head h3 {
   margin: 0;
-  font-size: .85rem;
-  letter-spacing: .08em;
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   display: flex;
   align-items: center;
-  gap: .45rem;
+  gap: 0.45rem;
   color: var(--color-text);
 }
 
 .settings-head h3 i {
   color: var(--color-accent);
-  font-size: .8rem;
+  font-size: 0.8rem;
 }
 
 .modal-close {
@@ -321,12 +382,20 @@ function previewPhaseSound(): void {
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: all .2s ease;
+  transition: all 0.2s ease;
   clip-path: polygon(
-    0 2px, 2px 2px, 2px 0,
-    calc(100% - 2px) 0, calc(100% - 2px) 2px, 100% 2px,
-    100% calc(100% - 2px), calc(100% - 2px) calc(100% - 2px), calc(100% - 2px) 100%,
-    2px 100%, 2px calc(100% - 2px), 0 calc(100% - 2px)
+    0 2px,
+    2px 2px,
+    2px 0,
+    calc(100% - 2px) 0,
+    calc(100% - 2px) 2px,
+    100% 2px,
+    100% calc(100% - 2px),
+    calc(100% - 2px) calc(100% - 2px),
+    calc(100% - 2px) 100%,
+    2px 100%,
+    2px calc(100% - 2px),
+    0 calc(100% - 2px)
   );
 }
 
@@ -336,43 +405,43 @@ function previewPhaseSound(): void {
 }
 
 .settings-body {
-  padding: .75rem .85rem;
+  padding: 0.75rem 0.85rem;
   position: relative;
   z-index: 1;
 }
 
 .settings-section {
   display: grid;
-  gap: .45rem;
+  gap: 0.45rem;
 }
 
 .section-title {
   font-weight: 600;
   text-transform: uppercase;
-  font-size: .7rem;
-  letter-spacing: .1em;
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
   color: var(--color-text-secondary);
   display: flex;
   align-items: center;
-  gap: .4rem;
-  margin-bottom: .15rem;
+  gap: 0.4rem;
+  margin-bottom: 0.15rem;
 }
 
 .section-title i {
   color: var(--color-accent);
-  font-size: .65rem;
-  opacity: .8;
+  font-size: 0.65rem;
+  opacity: 0.8;
 }
 
 .settings-divider {
   height: 1px;
   background: var(--color-border);
-  margin: .6rem 0;
+  margin: 0.6rem 0;
 }
 
 .sound-hint {
-  margin: 0 0 .35rem;
-  font-size: .68rem;
+  margin: 0 0 0.35rem;
+  font-size: 0.68rem;
   line-height: 1.35;
   color: var(--color-text-secondary);
 }
@@ -381,7 +450,7 @@ function previewPhaseSound(): void {
   display: flex;
   flex-wrap: wrap;
   align-items: flex-end;
-  gap: .45rem;
+  gap: 0.45rem;
 }
 
 .sound-select-label {
@@ -393,44 +462,44 @@ function previewPhaseSound(): void {
   flex: 0 0 auto;
   display: inline-flex;
   align-items: center;
-  gap: .35rem;
+  gap: 0.35rem;
 }
 
 .settings-row-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: .4rem;
+  gap: 0.4rem;
 }
 
 .field-label {
   display: flex;
   flex-direction: column;
-  gap: .2rem;
-  font-size: .78rem;
+  gap: 0.2rem;
+  font-size: 0.78rem;
 }
 
 .field-name {
   color: var(--color-text-secondary);
-  font-size: .7rem;
+  font-size: 0.7rem;
   text-transform: uppercase;
-  letter-spacing: .06em;
+  letter-spacing: 0.06em;
 }
 
 .field-input-wrap {
   display: flex;
   align-items: center;
-  gap: .3rem;
+  gap: 0.3rem;
 }
 
 .field-input {
   width: 100%;
-  padding: .35rem .5rem;
+  padding: 0.35rem 0.5rem;
   background: var(--color-bg-tertiary);
   border: 1px solid var(--color-border);
   color: var(--color-text);
   font-family: inherit;
-  font-size: .8rem;
-  transition: border-color .2s ease;
+  font-size: 0.8rem;
+  transition: border-color 0.2s ease;
 }
 
 .field-input:focus {
@@ -440,7 +509,7 @@ function previewPhaseSound(): void {
 }
 
 .field-unit {
-  font-size: .68rem;
+  font-size: 0.68rem;
   color: var(--color-text-secondary);
   white-space: nowrap;
 }
@@ -451,17 +520,17 @@ function previewPhaseSound(): void {
   padding-right: 1.5rem;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M3 5l3 3 3-3' stroke='%23a0a0a0' fill='none' stroke-width='1.5'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
-  background-position: right .4rem center;
+  background-position: right 0.4rem center;
   background-size: 12px;
 }
 
 .toggle-label {
   display: flex;
   align-items: center;
-  gap: .45rem;
+  gap: 0.45rem;
   cursor: pointer;
-  font-size: .78rem;
-  padding: .15rem 0;
+  font-size: 0.78rem;
+  padding: 0.15rem 0;
 }
 
 .toggle-checkbox {
@@ -473,7 +542,7 @@ function previewPhaseSound(): void {
   cursor: pointer;
   position: relative;
   flex-shrink: 0;
-  transition: all .15s ease;
+  transition: all 0.15s ease;
 }
 
 .toggle-checkbox:checked {
@@ -484,8 +553,10 @@ function previewPhaseSound(): void {
 .toggle-checkbox:checked::after {
   content: '';
   position: absolute;
-  top: 1px; left: 4px;
-  width: 4px; height: 8px;
+  top: 1px;
+  left: 4px;
+  width: 4px;
+  height: 8px;
   border: solid #fff;
   border-width: 0 1.5px 1.5px 0;
   transform: rotate(45deg);
@@ -496,34 +567,42 @@ function previewPhaseSound(): void {
 }
 
 .settings-actions {
-  padding: .65rem .85rem;
+  padding: 0.65rem 0.85rem;
   border-top: 1px solid var(--color-border);
   display: flex;
   justify-content: flex-end;
-  gap: .4rem;
+  gap: 0.4rem;
   position: relative;
   z-index: 1;
 }
 
 .pomo-modal-btn {
-  padding: .45rem .9rem;
-  font-size: .78rem;
+  padding: 0.45rem 0.9rem;
+  font-size: 0.78rem;
   font-family: inherit;
   border: 1px solid var(--color-border);
   background: transparent;
   color: var(--color-text);
   cursor: pointer;
-  transition: all .2s ease;
+  transition: all 0.2s ease;
   clip-path: polygon(
-    0 3px, 3px 3px, 3px 0,
-    calc(100% - 3px) 0, calc(100% - 3px) 3px, 100% 3px,
-    100% calc(100% - 3px), calc(100% - 3px) calc(100% - 3px), calc(100% - 3px) 100%,
-    3px 100%, 3px calc(100% - 3px), 0 calc(100% - 3px)
+    0 3px,
+    3px 3px,
+    3px 0,
+    calc(100% - 3px) 0,
+    calc(100% - 3px) 3px,
+    100% 3px,
+    100% calc(100% - 3px),
+    calc(100% - 3px) calc(100% - 3px),
+    calc(100% - 3px) 100%,
+    3px 100%,
+    3px calc(100% - 3px),
+    0 calc(100% - 3px)
   );
 }
 
 .pomo-modal-btn:disabled {
-  opacity: .45;
+  opacity: 0.45;
   cursor: not-allowed;
 }
 

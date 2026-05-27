@@ -12,7 +12,11 @@ import {
   type JournalHabitRowDto,
   type JournalHabitsWeekDto
 } from '../lib/journal-habits-time'
-import { getWeekDayKeysFromMonday, getWeekNumberFromMondayKey, shiftWeekMondayKey } from '../lib/journal-week-key'
+import {
+  getWeekDayKeysFromMonday,
+  getWeekNumberFromMondayKey,
+  shiftWeekMondayKey
+} from '../lib/journal-week-key'
 
 async function findWeekRow(ctx: app.Ctx, userId: string, mondayKey: string) {
   return JournalHabitsWeek.findOneBy(ctx, { userId, mondayKey })

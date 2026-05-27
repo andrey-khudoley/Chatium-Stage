@@ -1,5 +1,5 @@
 // API для сохранения результатов квиза
-import QuizLeads from "../tables/quiz_leads.table"
+import QuizLeads from '../tables/quiz_leads.table'
 
 export interface QuizAnswer {
   question: string

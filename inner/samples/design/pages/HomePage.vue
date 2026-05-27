@@ -29,7 +29,7 @@ onMounted(() => {
   // Принудительно устанавливаем тёмную тему
   document.documentElement.classList.add('dark')
   localStorage.setItem('theme', 'dark')
-  
+
   if (window.hideAppLoader) {
     window.hideAppLoader()
   }
@@ -51,7 +51,7 @@ onMounted(() => {
   const typeTitle = () => {
     const fullText = props.projectTitle
     let currentIndex = 0
-    
+
     const typeInterval = setInterval(() => {
       if (currentIndex < fullText.length) {
         displayedTitle.value = fullText.substring(0, currentIndex + 1)
@@ -65,7 +65,6 @@ onMounted(() => {
       }
     }, 40) // 40ms на символ
   }
-
 })
 
 const openChatiumLink = () => {
@@ -76,13 +75,23 @@ const openChatiumLink = () => {
 <template>
   <div class="app-layout bg-[var(--color-bg)] text-[var(--color-text)] flex flex-col">
     <!-- Header -->
-    <Header v-if="bootLoaderDone" :pageTitle="'A/Ley Services'" :indexUrl="props.indexUrl" :profileUrl="props.profileUrl" :loginUrl="props.loginUrl" :isAuthenticated="props.isAuthenticated" />
+    <Header
+      v-if="bootLoaderDone"
+      :pageTitle="'A/Ley Services'"
+      :indexUrl="props.indexUrl"
+      :profileUrl="props.profileUrl"
+      :loginUrl="props.loginUrl"
+      :isAuthenticated="props.isAuthenticated"
+    />
 
     <!-- Content -->
     <main class="content-wrapper flex-1 relative z-10 min-h-0 overflow-y-auto">
       <div class="content-inner">
         <!-- Hero Section -->
-        <section class="hero-section" :class="{ 'hero-ready': bootLoaderDone, 'hero-glow-visible': showCards }">
+        <section
+          class="hero-section"
+          :class="{ 'hero-ready': bootLoaderDone, 'hero-glow-visible': showCards }"
+        >
           <div class="hero-icon-wrapper" :class="{ 'hero-icon-visible': showCards }">
             <i class="fas fa-chart-line hero-icon"></i>
           </div>
@@ -93,9 +102,7 @@ const openChatiumLink = () => {
             <i class="fas fa-question-circle"></i>
             Как это работает
           </p>
-          <p class="hero-description">
-            Выберите раздел для управления
-          </p>
+          <p class="hero-description">Выберите раздел для управления</p>
         </section>
 
         <!-- Navigation Cards -->
@@ -109,7 +116,8 @@ const openChatiumLink = () => {
                 </div>
                 <h2 class="nav-card-title">Управлять аналитикой</h2>
                 <p class="nav-card-description">
-                  Просматривайте статистику переходов, анализируйте источники трафика и создавайте отчёты
+                  Просматривайте статистику переходов, анализируйте источники трафика и создавайте
+                  отчёты
                 </p>
                 <div class="nav-card-arrow">
                   <i class="fas fa-arrow-right"></i>
@@ -125,7 +133,8 @@ const openChatiumLink = () => {
                 </div>
                 <h2 class="nav-card-title">Управлять каналами</h2>
                 <p class="nav-card-description">
-                  Настройте отслеживание переходов для ваших Telegram-каналов и создавайте отслеживаемые ссылки
+                  Настройте отслеживание переходов для ваших Telegram-каналов и создавайте
+                  отслеживаемые ссылки
                 </p>
                 <div class="nav-card-arrow">
                   <i class="fas fa-arrow-right"></i>
@@ -159,10 +168,7 @@ const openChatiumLink = () => {
         <div class="footer-left">ИП Худолей Андрей Германович</div>
         <div class="footer-center">Все права сохранены © 2025</div>
         <div class="footer-right">
-          <button 
-            class="footer-link"
-            @click="openChatiumLink"
-          >
+          <button class="footer-link" @click="openChatiumLink">
             Сделано с <i class="fas fa-heart footer-heart"></i> на Chatium
           </button>
         </div>
@@ -227,7 +233,6 @@ body {
   background: #e0335a;
   color: #ffffff;
 }
-
 
 /* App Layout */
 .app-layout {
@@ -296,7 +301,13 @@ body {
   transform: translate(-50%, -50%);
   width: 300px;
   height: 300px;
-  background: radial-gradient(ellipse, rgba(211, 35, 75, 0.08) 0%, rgba(211, 35, 75, 0.04) 40%, rgba(211, 35, 75, 0.015) 60%, transparent 75%);
+  background: radial-gradient(
+    ellipse,
+    rgba(211, 35, 75, 0.08) 0%,
+    rgba(211, 35, 75, 0.04) 40%,
+    rgba(211, 35, 75, 0.015) 60%,
+    transparent 75%
+  );
   border-radius: 50%;
   z-index: -1;
   opacity: 0;
@@ -323,7 +334,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 
+  box-shadow:
     0 8px 24px rgba(211, 35, 75, 0.4),
     0 4px 12px rgba(211, 35, 75, 0.3),
     0 0 30px rgba(211, 35, 75, 0.2),
@@ -331,15 +342,25 @@ body {
   margin-bottom: 0.5rem;
   opacity: 0;
   transform: scale(0.8);
-  transition: opacity 0.6s cubic-bezier(0.34, 1.3, 0.64, 1), transform 0.6s cubic-bezier(0.34, 1.3, 0.64, 1);
+  transition:
+    opacity 0.6s cubic-bezier(0.34, 1.3, 0.64, 1),
+    transform 0.6s cubic-bezier(0.34, 1.3, 0.64, 1);
   position: relative;
   cursor: pointer;
   overflow: hidden;
   clip-path: polygon(
-    0 4px, 4px 4px, 4px 0,
-    calc(100% - 4px) 0, calc(100% - 4px) 4px, 100% 4px,
-    100% calc(100% - 4px), calc(100% - 4px) calc(100% - 4px), calc(100% - 4px) 100%,
-    4px 100%, 4px calc(100% - 4px), 0 calc(100% - 4px)
+    0 4px,
+    4px 4px,
+    4px 0,
+    calc(100% - 4px) 0,
+    calc(100% - 4px) 4px,
+    100% 4px,
+    100% calc(100% - 4px),
+    calc(100% - 4px) calc(100% - 4px),
+    calc(100% - 4px) 100%,
+    4px 100%,
+    4px calc(100% - 4px),
+    0 calc(100% - 4px)
   );
 }
 
@@ -364,14 +385,19 @@ body {
 }
 
 @keyframes scanline-flicker {
-  0%, 100% { opacity: 0.7; }
-  50% { opacity: 0.5; }
+  0%,
+  100% {
+    opacity: 0.7;
+  }
+  50% {
+    opacity: 0.5;
+  }
 }
 
 /* Усиленное свечение иконки на ПК */
 @media (min-width: 769px) {
   .hero-icon-wrapper {
-    box-shadow: 
+    box-shadow:
       0 10px 28px rgba(211, 35, 75, 0.45),
       0 5px 14px rgba(211, 35, 75, 0.35),
       0 0 40px rgba(211, 35, 75, 0.25);
@@ -383,10 +409,11 @@ body {
 }
 
 @keyframes glitch-icon {
-  0%, 100% {
+  0%,
+  100% {
     transform: scale(1) translate(0);
     filter: none;
-    box-shadow: 
+    box-shadow:
       0 8px 24px rgba(211, 35, 75, 0.4),
       0 4px 12px rgba(211, 35, 75, 0.3);
   }
@@ -482,10 +509,12 @@ body {
 }
 
 @keyframes cursor-blink {
-  0%, 50% {
+  0%,
+  50% {
     opacity: 1;
   }
-  51%, 100% {
+  51%,
+  100% {
     opacity: 0;
   }
 }
@@ -546,73 +575,108 @@ body {
 }
 
 @keyframes glitch-text {
-  0%, 100% {
+  0%,
+  100% {
     transform: translate(0);
     text-shadow: 0 0 8px rgba(211, 35, 75, 0.3);
   }
   10% {
     transform: translate(-1.5px, 0);
-    text-shadow: 1px 0 #ff00ff, -1px 0 #00ffff;
+    text-shadow:
+      1px 0 #ff00ff,
+      -1px 0 #00ffff;
   }
   20% {
     transform: translate(1.5px, 0);
-    text-shadow: -1px 0 #ff00ff, 1px 0 #00ffff;
+    text-shadow:
+      -1px 0 #ff00ff,
+      1px 0 #00ffff;
   }
   30% {
     transform: translate(-1px, 0);
-    text-shadow: 1.5px 0 #ff00ff, -1.5px 0 #00ffff;
+    text-shadow:
+      1.5px 0 #ff00ff,
+      -1.5px 0 #00ffff;
   }
   40% {
     transform: translate(1px, 0);
-    text-shadow: -1.5px 0 #ff00ff, 1.5px 0 #00ffff;
+    text-shadow:
+      -1.5px 0 #ff00ff,
+      1.5px 0 #00ffff;
   }
   50% {
     transform: translate(-1.5px, 0);
-    text-shadow: 1px 0 #ff00ff, -1px 0 #00ffff;
+    text-shadow:
+      1px 0 #ff00ff,
+      -1px 0 #00ffff;
   }
   60% {
     transform: translate(1.5px, 0);
-    text-shadow: -1px 0 #ff00ff, 1px 0 #00ffff;
+    text-shadow:
+      -1px 0 #ff00ff,
+      1px 0 #00ffff;
   }
   70% {
     transform: translate(-1px, 0);
-    text-shadow: 1px 0 #ff00ff, -1px 0 #00ffff;
+    text-shadow:
+      1px 0 #ff00ff,
+      -1px 0 #00ffff;
   }
   80% {
     transform: translate(1px, 0);
-    text-shadow: -1px 0 #ff00ff, 1px 0 #00ffff;
+    text-shadow:
+      -1px 0 #ff00ff,
+      1px 0 #00ffff;
   }
   90% {
     transform: translate(-0.5px, 0);
-    text-shadow: 0.5px 0 #ff00ff, -0.5px 0 #00ffff;
+    text-shadow:
+      0.5px 0 #ff00ff,
+      -0.5px 0 #00ffff;
   }
 }
 
 @keyframes glitch-text-1 {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 0;
     transform: translate(0);
   }
-  10%, 30%, 50%, 70%, 90% {
+  10%,
+  30%,
+  50%,
+  70%,
+  90% {
     opacity: 0.9;
     transform: translate(-2px, 0);
   }
-  20%, 40%, 60%, 80% {
+  20%,
+  40%,
+  60%,
+  80% {
     opacity: 0;
     transform: translate(2px, 0);
   }
 }
 
 @keyframes glitch-text-2 {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 0;
     transform: translate(0);
   }
-  10%, 30%, 50%, 70%, 90% {
+  10%,
+  30%,
+  50%,
+  70%,
+  90% {
     opacity: 0.9;
     transform: translate(2px, 0);
   }
-  20%, 40%, 60%, 80% {
+  20%,
+  40%,
+  60%,
+  80% {
     opacity: 0;
     transform: translate(-2px, 0);
   }
@@ -699,20 +763,32 @@ body {
   height: 100%;
   display: flex;
   flex-direction: column;
-  transition: transform 0.6s cubic-bezier(0.34, 1.3, 0.64, 1), border-color 0.25s ease, box-shadow 0.25s ease, filter 0.3s ease;
+  transition:
+    transform 0.6s cubic-bezier(0.34, 1.3, 0.64, 1),
+    border-color 0.25s ease,
+    box-shadow 0.25s ease,
+    filter 0.3s ease;
   position: relative;
   z-index: 1;
-  box-shadow: 
+  box-shadow:
     0 0 0 0 rgba(0, 0, 0, 0),
     0 0 0 0 rgba(0, 0, 0, 0),
     inset 0 0 0 0 rgba(255, 255, 255, 0);
   overflow: hidden;
   transform-style: preserve-3d;
   clip-path: polygon(
-    0 4px, 4px 4px, 4px 0,
-    calc(100% - 4px) 0, calc(100% - 4px) 4px, 100% 4px,
-    100% calc(100% - 4px), calc(100% - 4px) calc(100% - 4px), calc(100% - 4px) 100%,
-    4px 100%, 4px calc(100% - 4px), 0 calc(100% - 4px)
+    0 4px,
+    4px 4px,
+    4px 0,
+    calc(100% - 4px) 0,
+    calc(100% - 4px) 4px,
+    100% 4px,
+    100% calc(100% - 4px),
+    calc(100% - 4px) calc(100% - 4px),
+    calc(100% - 4px) 100%,
+    4px 100%,
+    4px calc(100% - 4px),
+    0 calc(100% - 4px)
   );
 }
 
@@ -767,7 +843,8 @@ body {
 }
 
 @keyframes crt-flicker {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 0;
   }
   50% {
@@ -776,11 +853,14 @@ body {
 }
 
 .nav-card:hover .nav-card-content::after {
-  animation: crt-flicker-intense 0.15s ease-in-out infinite, crt-flicker 3s ease-in-out infinite;
+  animation:
+    crt-flicker-intense 0.15s ease-in-out infinite,
+    crt-flicker 3s ease-in-out infinite;
 }
 
 @keyframes crt-flicker-intense {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 0.2;
   }
   50% {
@@ -811,7 +891,7 @@ body {
 .nav-card:hover .nav-card-content {
   transform: translateY(-4px) rotateX(0.8deg) rotateY(-0.4deg);
   border-color: var(--color-border-light);
-  box-shadow: 
+  box-shadow:
     0 8px 16px rgba(0, 0, 0, 0.4),
     0 4px 8px rgba(0, 0, 0, 0.3),
     0 2px 4px rgba(0, 0, 0, 0.2),
@@ -823,7 +903,7 @@ body {
 .nav-card-channels:hover .nav-card-content,
 .nav-card-bots:hover .nav-card-content {
   border-color: rgba(211, 35, 75, 0.5);
-  box-shadow: 
+  box-shadow:
     0 8px 20px rgba(211, 35, 75, 0.15),
     0 4px 10px rgba(0, 0, 0, 0.3),
     0 2px 4px rgba(0, 0, 0, 0.2),
@@ -833,7 +913,9 @@ body {
 
 /* RGB-разделение и искривление для карточек при hover */
 @keyframes card-glitch {
-  0%, 90%, 100% {
+  0%,
+  90%,
+  100% {
     filter: none;
   }
   91% {
@@ -845,7 +927,9 @@ body {
   93% {
     filter: drop-shadow(2px 0 0 rgba(255, 0, 255, 0.5)) drop-shadow(-2px 0 0 rgba(0, 255, 255, 0.5));
   }
-  94%, 96%, 98% {
+  94%,
+  96%,
+  98% {
     filter: none;
   }
   95% {
@@ -855,7 +939,6 @@ body {
     filter: drop-shadow(-1px 0 0 rgba(255, 0, 255, 0.4)) drop-shadow(1px 0 0 rgba(0, 255, 255, 0.4));
   }
 }
-
 
 .nav-card-icon {
   width: 3rem;
@@ -869,18 +952,29 @@ body {
   font-size: 1.25rem;
   background: var(--color-bg-tertiary);
   border: 2px solid var(--color-border);
-  transition: transform 0.5s ease-out, border-color 0.25s ease, box-shadow 0.25s ease;
+  transition:
+    transform 0.5s ease-out,
+    border-color 0.25s ease,
+    box-shadow 0.25s ease;
   position: relative;
-  box-shadow: 
+  box-shadow:
     0 2px 4px rgba(0, 0, 0, 0.3),
     inset 0 1px 0 rgba(255, 255, 255, 0.03),
     inset 0 0 0 1px rgba(0, 0, 0, 0.2);
   overflow: hidden;
   clip-path: polygon(
-    0 3px, 3px 3px, 3px 0,
-    calc(100% - 3px) 0, calc(100% - 3px) 3px, 100% 3px,
-    100% calc(100% - 3px), calc(100% - 3px) calc(100% - 3px), calc(100% - 3px) 100%,
-    3px 100%, 3px calc(100% - 3px), 0 calc(100% - 3px)
+    0 3px,
+    3px 3px,
+    3px 0,
+    calc(100% - 3px) 0,
+    calc(100% - 3px) 3px,
+    100% 3px,
+    100% calc(100% - 3px),
+    calc(100% - 3px) calc(100% - 3px),
+    calc(100% - 3px) 100%,
+    3px 100%,
+    3px calc(100% - 3px),
+    0 calc(100% - 3px)
   );
 }
 
@@ -928,27 +1022,38 @@ body {
 
 /* Цветные иконки для карточек - красный акцент с разной интенсивностью */
 .nav-card-icon-analytics {
-  background: linear-gradient(135deg, var(--color-accent-medium) 0%, var(--color-accent-light) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--color-accent-medium) 0%,
+    var(--color-accent-light) 100%
+  );
   border-color: rgba(211, 35, 75, 0.4);
   color: var(--color-accent);
 }
 
 .nav-card-icon-channels {
-  background: linear-gradient(135deg, var(--color-accent-medium) 0%, var(--color-accent-light) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--color-accent-medium) 0%,
+    var(--color-accent-light) 100%
+  );
   border-color: rgba(211, 35, 75, 0.35);
   color: var(--color-accent);
 }
 
 .nav-card-icon-bots {
-  background: linear-gradient(135deg, var(--color-accent-medium) 0%, var(--color-accent-light) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--color-accent-medium) 0%,
+    var(--color-accent-light) 100%
+  );
   border-color: rgba(211, 35, 75, 0.3);
   color: var(--color-accent);
 }
 
-
 .nav-card:hover .nav-card-icon {
   border-color: var(--color-border-light);
-  box-shadow: 
+  box-shadow:
     0 4px 8px rgba(0, 0, 0, 0.4),
     0 2px 4px rgba(0, 0, 0, 0.3),
     inset 0 1px 0 rgba(255, 255, 255, 0.05);
@@ -960,7 +1065,7 @@ body {
 .nav-card-bots:hover .nav-card-icon-bots {
   background: linear-gradient(135deg, rgba(211, 35, 75, 0.3) 0%, rgba(211, 35, 75, 0.2) 100%);
   border-color: var(--color-accent);
-  box-shadow: 
+  box-shadow:
     0 4px 12px rgba(211, 35, 75, 0.3),
     0 2px 6px rgba(211, 35, 75, 0.2),
     inset 0 1px 0 rgba(255, 255, 255, 0.1);
@@ -996,7 +1101,9 @@ body {
   justify-content: flex-end;
   color: var(--color-text-tertiary);
   font-size: 1rem;
-  transition: transform 0.5s ease-out, color 0.25s ease;
+  transition:
+    transform 0.5s ease-out,
+    color 0.25s ease;
   margin-top: auto;
   position: relative;
   z-index: 1;
@@ -1061,45 +1168,64 @@ body {
 }
 
 @keyframes glitch-footer {
-  0%, 100% {
+  0%,
+  100% {
     transform: translate(0);
     text-shadow: none;
   }
   10% {
     transform: translate(-1.5px, 0);
-    text-shadow: 1px 0 #ff00ff, -1px 0 #00ffff;
+    text-shadow:
+      1px 0 #ff00ff,
+      -1px 0 #00ffff;
   }
   20% {
     transform: translate(1.5px, 0);
-    text-shadow: -1px 0 #ff00ff, 1px 0 #00ffff;
+    text-shadow:
+      -1px 0 #ff00ff,
+      1px 0 #00ffff;
   }
   30% {
     transform: translate(-1px, 0);
-    text-shadow: 1.5px 0 #ff00ff, -1.5px 0 #00ffff;
+    text-shadow:
+      1.5px 0 #ff00ff,
+      -1.5px 0 #00ffff;
   }
   40% {
     transform: translate(1px, 0);
-    text-shadow: -1.5px 0 #ff00ff, 1.5px 0 #00ffff;
+    text-shadow:
+      -1.5px 0 #ff00ff,
+      1.5px 0 #00ffff;
   }
   50% {
     transform: translate(-1.5px, 0);
-    text-shadow: 1px 0 #ff00ff, -1px 0 #00ffff;
+    text-shadow:
+      1px 0 #ff00ff,
+      -1px 0 #00ffff;
   }
   60% {
     transform: translate(1.5px, 0);
-    text-shadow: -1px 0 #ff00ff, 1px 0 #00ffff;
+    text-shadow:
+      -1px 0 #ff00ff,
+      1px 0 #00ffff;
   }
   70% {
     transform: translate(-1px, 0);
-    text-shadow: 1px 0 #ff00ff, -1px 0 #00ffff;
+    text-shadow:
+      1px 0 #ff00ff,
+      -1px 0 #00ffff;
   }
   80% {
     transform: translate(1px, 0);
-    text-shadow: -1px 0 #ff00ff, 1px 0 #00ffff;
+    text-shadow:
+      -1px 0 #ff00ff,
+      1px 0 #00ffff;
   }
   90% {
     transform: translate(-0.5px, 0);
-    text-shadow: 0.5px 0 #ff00ff, -0.5px 0 #00ffff;
+    text-shadow:
+      0.5px 0 #ff00ff,
+      -0.5px 0 #00ffff;
   }
 }
 
@@ -1244,7 +1370,8 @@ body {
 
 /* Глобальные анимации глитча */
 @keyframes glitch-skew {
-  0%, 100% {
+  0%,
+  100% {
     transform: translate(0) skew(0deg);
   }
   10% {
@@ -1277,7 +1404,8 @@ body {
 }
 
 @keyframes glitch-anim-1 {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 0;
     transform: translate(0);
   }
@@ -1320,7 +1448,8 @@ body {
 }
 
 @keyframes glitch-anim-2 {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 0;
     transform: translate(0);
   }
@@ -1368,63 +1497,55 @@ body {
 }
 
 @keyframes global-page-glitch {
-  0%, 100% {
+  0%,
+  100% {
     transform: translate(0) skew(0deg);
     filter: none;
   }
   10% {
     transform: translate(-3px, 0) skew(-0.5deg);
-    filter: drop-shadow(2px 0 0 rgba(255, 0, 255, 0.7)) 
-            drop-shadow(-2px 0 0 rgba(0, 255, 255, 0.7))
-            hue-rotate(90deg);
+    filter: drop-shadow(2px 0 0 rgba(255, 0, 255, 0.7)) drop-shadow(-2px 0 0 rgba(0, 255, 255, 0.7))
+      hue-rotate(90deg);
   }
   20% {
     transform: translate(3px, 0) skew(0.5deg);
-    filter: drop-shadow(-2px 0 0 rgba(255, 0, 255, 0.7)) 
-            drop-shadow(2px 0 0 rgba(0, 255, 255, 0.7))
-            hue-rotate(-90deg);
+    filter: drop-shadow(-2px 0 0 rgba(255, 0, 255, 0.7)) drop-shadow(2px 0 0 rgba(0, 255, 255, 0.7))
+      hue-rotate(-90deg);
   }
   30% {
     transform: translate(-2px, 0) skew(-0.3deg);
-    filter: drop-shadow(2px 0 0 rgba(255, 0, 255, 0.8)) 
-            drop-shadow(-2px 0 0 rgba(0, 255, 255, 0.8))
-            brightness(1.2);
+    filter: drop-shadow(2px 0 0 rgba(255, 0, 255, 0.8)) drop-shadow(-2px 0 0 rgba(0, 255, 255, 0.8))
+      brightness(1.2);
   }
   40% {
     transform: translate(2px, 0) skew(0.3deg);
-    filter: drop-shadow(-2px 0 0 rgba(255, 0, 255, 0.8)) 
-            drop-shadow(2px 0 0 rgba(0, 255, 255, 0.8))
-            contrast(1.3);
+    filter: drop-shadow(-2px 0 0 rgba(255, 0, 255, 0.8)) drop-shadow(2px 0 0 rgba(0, 255, 255, 0.8))
+      contrast(1.3);
   }
   50% {
     transform: translate(-3px, 0) skew(-0.5deg);
-    filter: drop-shadow(2px 0 0 rgba(255, 0, 255, 0.7)) 
-            drop-shadow(-2px 0 0 rgba(0, 255, 255, 0.7))
-            saturate(2);
+    filter: drop-shadow(2px 0 0 rgba(255, 0, 255, 0.7)) drop-shadow(-2px 0 0 rgba(0, 255, 255, 0.7))
+      saturate(2);
   }
   60% {
     transform: translate(3px, 0) skew(0.5deg);
-    filter: drop-shadow(-2px 0 0 rgba(255, 0, 255, 0.7)) 
-            drop-shadow(2px 0 0 rgba(0, 255, 255, 0.7))
-            invert(0.1);
+    filter: drop-shadow(-2px 0 0 rgba(255, 0, 255, 0.7)) drop-shadow(2px 0 0 rgba(0, 255, 255, 0.7))
+      invert(0.1);
   }
   70% {
     transform: translate(-2px, 0) skew(-0.2deg);
-    filter: drop-shadow(1px 0 0 rgba(255, 0, 255, 0.6)) 
-            drop-shadow(-1px 0 0 rgba(0, 255, 255, 0.6))
-            brightness(1.1);
+    filter: drop-shadow(1px 0 0 rgba(255, 0, 255, 0.6)) drop-shadow(-1px 0 0 rgba(0, 255, 255, 0.6))
+      brightness(1.1);
   }
   80% {
     transform: translate(2px, 0) skew(0.2deg);
-    filter: drop-shadow(-1px 0 0 rgba(255, 0, 255, 0.6)) 
-            drop-shadow(1px 0 0 rgba(0, 255, 255, 0.6))
-            contrast(1.2);
+    filter: drop-shadow(-1px 0 0 rgba(255, 0, 255, 0.6)) drop-shadow(1px 0 0 rgba(0, 255, 255, 0.6))
+      contrast(1.2);
   }
   90% {
     transform: translate(-1px, 0) skew(0deg);
-    filter: drop-shadow(1px 0 0 rgba(255, 0, 255, 0.5)) 
-            drop-shadow(-1px 0 0 rgba(0, 255, 255, 0.5))
-            brightness(1.05);
+    filter: drop-shadow(1px 0 0 rgba(255, 0, 255, 0.5)) drop-shadow(-1px 0 0 rgba(0, 255, 255, 0.5))
+      brightness(1.05);
   }
 }
 

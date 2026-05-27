@@ -1,5 +1,5 @@
-import BookingsTable from "../tables/bookings.table"
-import { sendNotificationToAccountOwners } from "@user-notifier/sdk"
+import BookingsTable from '../tables/bookings.table'
+import { sendNotificationToAccountOwners } from '@user-notifier/sdk'
 import { writeWorkspaceEvent, getWorkspaceEventUrl } from '@start/sdk'
 
 // @shared-route
@@ -24,7 +24,7 @@ export const apiBookingsCreateRoute = app.post('/create', async (ctx, req) => {
 
   // Отправка уведомления владельцу
   await sendNotificationToAccountOwners(ctx, {
-    title: "Новая запись на маникюр",
+    title: 'Новая запись на маникюр',
     html: `
       <h2>Новая запись на прием</h2>
       <p><strong>Клиент:</strong> ${name}</p>
@@ -58,8 +58,10 @@ export const apiBookingsCreateRoute = app.post('/create', async (ctx, req) => {
 })
 
 app.accountHook('@start/agent/events', async (ctx, params) => {
-  return [{
-    name: 'Создана запись на маникюр',
-    url: await getWorkspaceEventUrl(ctx, 'booking_created'),
-  }]
+  return [
+    {
+      name: 'Создана запись на маникюр',
+      url: await getWorkspaceEventUrl(ctx, 'booking_created')
+    }
+  ]
 })

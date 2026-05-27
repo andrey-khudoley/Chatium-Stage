@@ -141,7 +141,11 @@ export function createBrowserRemoteLogger(options: {
   const onUnhandledRejection = (ev: PromiseRejectionEvent): void => {
     const r = ev.reason
     const text =
-      r instanceof Error ? r.stack || r.message : typeof r === 'object' && r !== null ? JSON.stringify(r) : String(r)
+      r instanceof Error
+        ? r.stack || r.message
+        : typeof r === 'object' && r !== null
+          ? JSON.stringify(r)
+          : String(r)
     enqueue({
       severity: 3,
       message: truncate(`unhandledrejection: ${text}`),

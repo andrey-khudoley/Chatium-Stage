@@ -32,10 +32,38 @@
 defineProps({ active: Boolean })
 
 const items = [
-  { icon: 'fas fa-graduation-cap', name: 'Онлайн-школа', desc: 'LMS с уроками, домашками и прогрессом', price: '4 990 ₽', free: false, bg: 'rgba(168,85,247,0.18)' },
-  { icon: 'fas fa-store', name: 'Интернет-магазин', desc: 'Каталог, корзина, оплата', price: 'Бесплатно', free: true, bg: 'rgba(59,130,246,0.18)' },
-  { icon: 'fas fa-calendar-check', name: 'Запись на услуги', desc: 'Расписание и бронирование', price: '2 490 ₽', free: false, bg: 'rgba(16,185,129,0.18)' },
-  { icon: 'fas fa-robot', name: 'AI-ассистент', desc: 'Бот-консультант для сайта', price: 'Бесплатно', free: true, bg: 'rgba(244,63,94,0.18)' },
+  {
+    icon: 'fas fa-graduation-cap',
+    name: 'Онлайн-школа',
+    desc: 'LMS с уроками, домашками и прогрессом',
+    price: '4 990 ₽',
+    free: false,
+    bg: 'rgba(168,85,247,0.18)'
+  },
+  {
+    icon: 'fas fa-store',
+    name: 'Интернет-магазин',
+    desc: 'Каталог, корзина, оплата',
+    price: 'Бесплатно',
+    free: true,
+    bg: 'rgba(59,130,246,0.18)'
+  },
+  {
+    icon: 'fas fa-calendar-check',
+    name: 'Запись на услуги',
+    desc: 'Расписание и бронирование',
+    price: '2 490 ₽',
+    free: false,
+    bg: 'rgba(16,185,129,0.18)'
+  },
+  {
+    icon: 'fas fa-robot',
+    name: 'AI-ассистент',
+    desc: 'Бот-консультант для сайта',
+    price: 'Бесплатно',
+    free: true,
+    bg: 'rgba(244,63,94,0.18)'
+  }
 ]
 </script>
 
@@ -52,14 +80,43 @@ const items = [
   overflow-x: hidden;
 }
 
-.bg-effects { position: fixed; inset: 0; pointer-events: none; overflow: hidden; }
-.glow-orb { position: absolute; border-radius: 50%; filter: blur(140px); opacity: 0.12; animation: float 20s ease-in-out infinite; }
-.orb-1 { width: 500px; height: 500px; background: #a855f7; top: -15%; right: -10%; }
-.orb-2 { width: 400px; height: 400px; background: #7c3aed; bottom: -15%; left: -5%; animation-delay: -7s; }
+.bg-effects {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+.glow-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(140px);
+  opacity: 0.12;
+  animation: float 20s ease-in-out infinite;
+}
+.orb-1 {
+  width: 500px;
+  height: 500px;
+  background: #a855f7;
+  top: -15%;
+  right: -10%;
+}
+.orb-2 {
+  width: 400px;
+  height: 400px;
+  background: #7c3aed;
+  bottom: -15%;
+  left: -5%;
+  animation-delay: -7s;
+}
 
 @keyframes float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-30px); }
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-30px);
+  }
 }
 
 .content {
@@ -199,19 +256,66 @@ const items = [
 }
 
 @media (max-width: 768px) {
-  .slide { padding: 24px 12px 12px; align-items: center; }
-  .content { gap: 16px; }
-  .title { white-space: normal; font-size: clamp(26px, 5.5vw, 38px); }
-  .subtitle { font-size: 15px; margin: 0; }
-  .grid { grid-template-columns: 1fr; gap: 8px; }
-  .card { padding: 12px; flex-direction: row; align-items: center; gap: 10px; }
-  .card-icon { width: 36px; height: 36px; flex-shrink: 0; border-radius: 10px; }
-  .card-icon i { font-size: 16px; }
-  .card-body { flex: 1; min-width: 0; }
-  .card-name { font-size: 14px; }
-  .card-desc { font-size: 12px; line-height: 1.3; }
-  .card-footer { flex-direction: column; align-items: flex-end; flex-shrink: 0; padding-top: 0; gap: 4px; }
-  .card-price { font-size: 13px; white-space: nowrap; }
-  .card-btn { font-size: 11px; padding: 4px 10px; white-space: nowrap; }
+  .slide {
+    padding: 24px 12px 12px;
+    align-items: center;
+  }
+  .content {
+    gap: 16px;
+  }
+  .title {
+    white-space: normal;
+    font-size: clamp(26px, 5.5vw, 38px);
+  }
+  .subtitle {
+    font-size: 15px;
+    margin: 0;
+  }
+  .grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  .card {
+    padding: 12px;
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+  }
+  .card-icon {
+    width: 36px;
+    height: 36px;
+    flex-shrink: 0;
+    border-radius: 10px;
+  }
+  .card-icon i {
+    font-size: 16px;
+  }
+  .card-body {
+    flex: 1;
+    min-width: 0;
+  }
+  .card-name {
+    font-size: 14px;
+  }
+  .card-desc {
+    font-size: 12px;
+    line-height: 1.3;
+  }
+  .card-footer {
+    flex-direction: column;
+    align-items: flex-end;
+    flex-shrink: 0;
+    padding-top: 0;
+    gap: 4px;
+  }
+  .card-price {
+    font-size: 13px;
+    white-space: nowrap;
+  }
+  .card-btn {
+    font-size: 11px;
+    padding: 4px 10px;
+    white-space: nowrap;
+  }
 }
 </style>

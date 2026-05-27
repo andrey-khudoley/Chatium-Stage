@@ -12,7 +12,7 @@
           </button>
         </div>
       </div>
-      
+
       <!-- Поле поиска -->
       <div v-if="isSearchMode" class="search-container">
         <div class="search-box">
@@ -29,36 +29,36 @@
             <i class="fas fa-times"></i>
           </button>
         </div>
-        
+
         <!-- Типы поиска -->
         <div class="search-tabs">
-          <button 
-            @click="searchType = 'all'" 
+          <button
+            @click="searchType = 'all'"
             :class="['search-tab', { active: searchType === 'all' }]"
           >
             Все
           </button>
-          <button 
-            @click="searchType = 'chats'" 
+          <button
+            @click="searchType = 'chats'"
             :class="['search-tab', { active: searchType === 'chats' }]"
           >
             Чаты
           </button>
-          <button 
-            @click="searchType = 'messages'" 
+          <button
+            @click="searchType = 'messages'"
             :class="['search-tab', { active: searchType === 'messages' }]"
           >
             Сообщения
           </button>
-          <button 
-            @click="searchType = 'users'" 
+          <button
+            @click="searchType = 'users'"
             :class="['search-tab', { active: searchType === 'users' }]"
           >
             Пользователи
           </button>
         </div>
       </div>
-      
+
       <!-- Фильтры чатов (когда не в режиме поиска) -->
       <ChatFilters
         v-else
@@ -77,10 +77,10 @@
     </div>
 
     <!-- Список приглашений (не показываем в режиме поиска) -->
-    <InvitesList 
-      v-if="ctx.user && !isSearchMode" 
+    <InvitesList
+      v-if="ctx.user && !isSearchMode"
       :invites="invites"
-      @accepted="onInviteAccepted" 
+      @accepted="onInviteAccepted"
       @declined="onInviteDeclined"
     />
 
@@ -99,7 +99,14 @@
       </div>
 
       <!-- Нет результатов -->
-      <div v-else-if="searchResults.chats.length === 0 && searchResults.messages.length === 0 && searchResults.users.length === 0" class="search-empty">
+      <div
+        v-else-if="
+          searchResults.chats.length === 0 &&
+          searchResults.messages.length === 0 &&
+          searchResults.users.length === 0
+        "
+        class="search-empty"
+      >
         <i class="fas fa-inbox"></i>
         <p>Ничего не найдено</p>
         <span class="search-hint">Попробуйте изменить запрос</span>
@@ -108,7 +115,10 @@
       <!-- Результаты поиска -->
       <div v-else class="search-results">
         <!-- Найденные пользователи -->
-        <div v-if="searchResults.users.length > 0 && (searchType === 'all' || searchType === 'users')" class="search-section">
+        <div
+          v-if="searchResults.users.length > 0 && (searchType === 'all' || searchType === 'users')"
+          class="search-section"
+        >
           <h4 class="search-section-title">
             <i class="fas fa-users"></i>
             Пользователи ({{ searchResults.users.length }})
@@ -146,7 +156,10 @@
         </div>
 
         <!-- Найденные чаты -->
-        <div v-if="searchResults.chats.length > 0 && (searchType === 'all' || searchType === 'chats')" class="search-section">
+        <div
+          v-if="searchResults.chats.length > 0 && (searchType === 'all' || searchType === 'chats')"
+          class="search-section"
+        >
           <h4 class="search-section-title">
             <i class="fas fa-comments"></i>
             Чаты ({{ searchResults.chats.length }})
@@ -156,7 +169,11 @@
               v-for="chat in searchResults.chats"
               :key="chat.feedId"
               @click="selectChat(chat.feedId)"
-              :class="['search-item', 'chat-result', { 'paid-chat': chat.isPaid && chat.requiresSubscription }]"
+              :class="[
+                'search-item',
+                'chat-result',
+                { 'paid-chat': chat.isPaid && chat.requiresSubscription }
+              ]"
             >
               <div class="chat-avatar" :style="getAvatarStyle(chat)">
                 <span v-if="!hasChatAvatar(chat)">{{ getChatInitials(chat.title) }}</span>
@@ -183,7 +200,12 @@
         </div>
 
         <!-- Найденные сообщения -->
-        <div v-if="searchResults.messages.length > 0 && (searchType === 'all' || searchType === 'messages')" class="search-section">
+        <div
+          v-if="
+            searchResults.messages.length > 0 && (searchType === 'all' || searchType === 'messages')
+          "
+          class="search-section"
+        >
           <h4 class="search-section-title">
             <i class="fas fa-comment-dots"></i>
             Сообщения ({{ searchResults.messages.length }})
@@ -200,7 +222,9 @@
                 <span class="message-time">{{ formatTime(message.createdAt) }}</span>
               </div>
               <div class="message-result-author" v-if="message.author">
-                <span class="author-name">{{ message.author.displayName || message.author.firstName }}</span>
+                <span class="author-name">{{
+                  message.author.displayName || message.author.firstName
+                }}</span>
               </div>
               <p class="message-result-text" v-html="highlightMatch(message.text)"></p>
             </div>
@@ -211,12 +235,13 @@
 
     <!-- Обычный список чатов -->
     <template v-else>
-      <div v-if="filteredChats.length === 0 && filteredPinnedChats.length === 0" class="empty-state">
+      <div
+        v-if="filteredChats.length === 0 && filteredPinnedChats.length === 0"
+        class="empty-state"
+      >
         <i class="fas fa-comments"></i>
         <p>У вас пока нет чатов</p>
-        <button @click="$emit('create-chat')" class="btn-create-empty">
-          Создать первый чат
-        </button>
+        <button @click="$emit('create-chat')" class="btn-create-empty">Создать первый чат</button>
       </div>
 
       <!-- Единый прокручиваемый список чатов -->
@@ -241,16 +266,26 @@
           @touchstart="handleTouchStart($event, chat)"
           @touchend="handleTouchEnd"
           @touchmove="handleTouchMove"
-          :class="['chat-item', 'pinned-chat-item', { 
-            active: chat.feedId === selectedChat,
-            dragging: draggedPinnedIndex === index
-          }]"
+          :class="[
+            'chat-item',
+            'pinned-chat-item',
+            {
+              active: chat.feedId === selectedChat,
+              dragging: draggedPinnedIndex === index
+            }
+          ]"
         >
-          <div v-if="activeFilter === 'all'" class="drag-handle" title="Перетащить для изменения порядка">
+          <div
+            v-if="activeFilter === 'all'"
+            class="drag-handle"
+            title="Перетащить для изменения порядка"
+          >
             <i class="fas fa-grip-lines"></i>
           </div>
           <div class="chat-avatar" :style="getAvatarStyle(chat)">
-            <span v-if="!hasChatAvatar(chat)">{{ getChatInitials(chat.displayTitle || chat.title) }}</span>
+            <span v-if="!hasChatAvatar(chat)">{{
+              getChatInitials(chat.displayTitle || chat.title)
+            }}</span>
           </div>
           <div class="chat-content">
             <div class="chat-row">
@@ -264,8 +299,14 @@
                 </span>
               </h3>
               <div class="chat-meta">
-                <span v-if="chat.isMember" class="chat-time">{{ formatTime(chat.lastMessage?.createdAt || chat.updatedAt) }}</span>
-                <span v-if="getBadgeCount(chat) > 0" class="unread-badge" :title="`${getBadgeCount(chat)} непрочитанных`">
+                <span v-if="chat.isMember" class="chat-time">{{
+                  formatTime(chat.lastMessage?.createdAt || chat.updatedAt)
+                }}</span>
+                <span
+                  v-if="getBadgeCount(chat) > 0"
+                  class="unread-badge"
+                  :title="`${getBadgeCount(chat)} непрочитанных`"
+                >
                   {{ getBadgeCount(chat) }}
                 </span>
               </div>
@@ -274,12 +315,20 @@
               <p class="chat-preview">
                 <template v-if="chat.lastMessage && chat.isMember">
                   <span class="last-message-author">{{ getLastMessageAuthorName(chat) }}:</span>
-                  <span class="last-message-text">{{ cleanMentionsForPreview(chat.lastMessage.text) }}</span>
+                  <span class="last-message-text">{{
+                    cleanMentionsForPreview(chat.lastMessage.text)
+                  }}</span>
                 </template>
                 <template v-else-if="chat.isPublic && !chat.isMember">
                   <span class="join-hint">
                     <i class="fas fa-lock-open"></i>
-                    Публичный {{ chat.type === 'channel' ? 'канал' : 'чат' }} · {{ chat.participantsCount || 0 }} {{ chat.type === 'channel' ? getSubscribersWord(chat.participantsCount) : getParticipantsWord(chat.participantsCount) }}
+                    Публичный {{ chat.type === 'channel' ? 'канал' : 'чат' }} ·
+                    {{ chat.participantsCount || 0 }}
+                    {{
+                      chat.type === 'channel'
+                        ? getSubscribersWord(chat.participantsCount)
+                        : getParticipantsWord(chat.participantsCount)
+                    }}
                   </span>
                 </template>
                 <template v-else>
@@ -297,18 +346,17 @@
               </p>
             </div>
           </div>
-          <button 
-            class="unpin-btn" 
-            @click.stop="unpinChat(chat.feedId)"
-            title="Открепить"
-          >
+          <button class="unpin-btn" @click.stop="unpinChat(chat.feedId)" title="Открепить">
             <i class="fas fa-times"></i>
           </button>
         </div>
-        
+
         <!-- Разделитель между закрепленными и обычными -->
-        <div v-if="filteredPinnedChats.length > 0 && sortedChats.length > 0" class="chats-divider"></div>
-        
+        <div
+          v-if="filteredPinnedChats.length > 0 && sortedChats.length > 0"
+          class="chats-divider"
+        ></div>
+
         <!-- Обычные чаты -->
         <div
           v-for="chat in sortedChats"
@@ -318,14 +366,19 @@
           @touchstart="handleTouchStart($event, chat)"
           @touchend="handleTouchEnd"
           @touchmove="handleTouchMove"
-          :class="['chat-item', { 
-            active: chat.feedId === selectedChat,
-            'public-chat': chat.isPublic && !chat.isMember,
-            'long-press': longPressChat?.feedId === chat.feedId
-          }]"
+          :class="[
+            'chat-item',
+            {
+              active: chat.feedId === selectedChat,
+              'public-chat': chat.isPublic && !chat.isMember,
+              'long-press': longPressChat?.feedId === chat.feedId
+            }
+          ]"
         >
           <div class="chat-avatar" :style="getAvatarStyle(chat)">
-            <span v-if="!hasChatAvatar(chat)">{{ getChatInitials(chat.displayTitle || chat.title) }}</span>
+            <span v-if="!hasChatAvatar(chat)">{{
+              getChatInitials(chat.displayTitle || chat.title)
+            }}</span>
           </div>
           <div class="chat-content">
             <div class="chat-row">
@@ -339,8 +392,14 @@
                 </span>
               </h3>
               <div class="chat-meta">
-                <span v-if="chat.isMember" class="chat-time">{{ formatTime(chat.lastMessage?.createdAt || chat.updatedAt) }}</span>
-                <span v-if="getBadgeCount(chat) > 0" class="unread-badge" :title="`${getBadgeCount(chat)} непрочитанных`">
+                <span v-if="chat.isMember" class="chat-time">{{
+                  formatTime(chat.lastMessage?.createdAt || chat.updatedAt)
+                }}</span>
+                <span
+                  v-if="getBadgeCount(chat) > 0"
+                  class="unread-badge"
+                  :title="`${getBadgeCount(chat)} непрочитанных`"
+                >
                   {{ getBadgeCount(chat) }}
                 </span>
               </div>
@@ -349,12 +408,20 @@
               <p class="chat-preview">
                 <template v-if="chat.lastMessage && chat.isMember">
                   <span class="last-message-author">{{ getLastMessageAuthorName(chat) }}:</span>
-                  <span class="last-message-text">{{ cleanMentionsForPreview(chat.lastMessage.text) }}</span>
+                  <span class="last-message-text">{{
+                    cleanMentionsForPreview(chat.lastMessage.text)
+                  }}</span>
                 </template>
                 <template v-else-if="chat.isPublic && !chat.isMember">
                   <span class="join-hint">
                     <i class="fas fa-lock-open"></i>
-                    Публичный {{ chat.type === 'channel' ? 'канал' : 'чат' }} · {{ chat.participantsCount || 0 }} {{ chat.type === 'channel' ? getSubscribersWord(chat.participantsCount) : getParticipantsWord(chat.participantsCount) }}
+                    Публичный {{ chat.type === 'channel' ? 'канал' : 'чат' }} ·
+                    {{ chat.participantsCount || 0 }}
+                    {{
+                      chat.type === 'channel'
+                        ? getSubscribersWord(chat.participantsCount)
+                        : getParticipantsWord(chat.participantsCount)
+                    }}
                   </span>
                 </template>
                 <template v-else>
@@ -379,16 +446,16 @@
     <!-- Модалки для работы с папками -->
     <!-- Drag & Drop для закрепленных -->
     <div v-if="draggedPinnedIndex !== -1" class="drag-overlay"></div>
-    
+
     <FolderModal
       :is-open="folderModalOpen"
       :folder="editingFolder"
-      :folder-chats="editingFolder ? (editingFolder.chatIds || []) : []"
+      :folder-chats="editingFolder ? editingFolder.chatIds || [] : []"
       :all-chats="props.chats"
       @close="closeFolderModal"
       @save="saveFolder"
     />
-    
+
     <AddToFolderModal
       :is-open="addToFolderModalOpen"
       :folders="customFolders"
@@ -411,9 +478,9 @@
 
     <!-- Меню профиля -->
     <div v-if="showMenu" class="menu-overlay" @click="showMenu = false">
-      <div 
+      <div
         ref="menuElement"
-        class="menu-dropdown" 
+        class="menu-dropdown"
         @click.stop
         :style="{ top: menuPosition.y + 'px', left: menuPosition.x + 'px', right: 'auto' }"
       >
@@ -427,19 +494,37 @@
           </div>
         </div>
         <div class="menu-divider"></div>
-        <button @click="$emit('show-profile'); showMenu = false" class="menu-item profile-link">
+        <button
+          @click="
+            $emit('show-profile')
+            showMenu = false
+          "
+          class="menu-item profile-link"
+        >
           <i class="fas fa-user-cog"></i>
           <span>Профиль</span>
         </button>
-        <button @click="$emit('show-settings'); showMenu = false" class="menu-item settings-link">
+        <button
+          @click="
+            $emit('show-settings')
+            showMenu = false
+          "
+          class="menu-item settings-link"
+        >
           <i class="fas fa-cog"></i>
           <span>Настройки чатов</span>
         </button>
-        <button @click="toggleTheme(); showMenu = false" class="menu-item theme-toggle">
+        <button
+          @click="
+            toggleTheme()
+            showMenu = false
+          "
+          class="menu-item theme-toggle"
+        >
           <i :class="isDark ? 'fas fa-sun' : 'fas fa-moon'"></i>
           <span>{{ isDark ? 'Светлая тема' : 'Тёмная тема' }}</span>
         </button>
-        
+
         <!-- Scale Control -->
         <div class="menu-divider"></div>
         <div class="menu-scale-control" @click.stop>
@@ -459,7 +544,7 @@
             </button>
           </div>
         </div>
-        
+
         <div class="menu-divider"></div>
         <button class="menu-item logout" @click="logout">
           <i class="fas fa-sign-out-alt"></i>
@@ -467,27 +552,47 @@
         </button>
       </div>
     </div>
-    
+
     <!-- Контекстное меню для чата -->
-    <div 
-      v-if="showChatContextMenu" 
+    <div
+      v-if="showChatContextMenu"
       class="context-menu-overlay"
       @click="showChatContextMenu = false"
     >
-      <div 
+      <div
         class="context-menu"
         :style="{ top: chatContextMenuPos.y + 'px', left: chatContextMenuPos.x + 'px' }"
         @click.stop
       >
-        <button @click="openAddToFolder(contextMenuChat); showChatContextMenu = false" class="context-item">
+        <button
+          @click="
+            openAddToFolder(contextMenuChat)
+            showChatContextMenu = false
+          "
+          class="context-item"
+        >
           <i class="fas fa-folder-plus"></i>
           <span>Добавить в папку</span>
         </button>
-        <button v-if="!isChatPinned(contextMenuChat)" @click="pinChat(contextMenuChat); showChatContextMenu = false" class="context-item">
+        <button
+          v-if="!isChatPinned(contextMenuChat)"
+          @click="
+            pinChat(contextMenuChat)
+            showChatContextMenu = false
+          "
+          class="context-item"
+        >
           <i class="fas fa-thumbtack"></i>
           <span>Закрепить</span>
         </button>
-        <button v-else @click="unpinChat(contextMenuChat?.feedId); showChatContextMenu = false" class="context-item">
+        <button
+          v-else
+          @click="
+            unpinChat(contextMenuChat?.feedId)
+            showChatContextMenu = false
+          "
+          class="context-item"
+        >
           <i class="fas fa-times"></i>
           <span>Открепить</span>
         </button>
@@ -522,18 +627,18 @@ import {
   apiChatFoldersAddChatRoute,
   apiChatFoldersRemoveChatRoute,
   apiChatFoldersGetChatsRoute,
-  apiChatFoldersGetForChatRoute,
+  apiChatFoldersGetForChatRoute
 } from '../api/chat-folders'
 import {
   apiChatFilterOrdersGetRoute,
-  apiChatFilterOrdersUpdateRoute,
+  apiChatFilterOrdersUpdateRoute
 } from '../api/chat-filter-orders'
 import {
   apiPinnedChatsListRoute,
   apiPinnedChatsPinRoute,
   apiPinnedChatsUnpinRoute,
   apiPinnedChatsReorderRoute,
-  apiPinnedChatsCheckRoute,
+  apiPinnedChatsCheckRoute
 } from '../api/pinned-chats'
 
 const { makeApiUrl } = useApiUrl()
@@ -551,10 +656,19 @@ const props = defineProps({
   inboxBadges: {
     type: Map,
     default: () => new Map()
-  },
+  }
 })
 
-const emit = defineEmits(['select-chat', 'show-profile', 'show-settings', 'create-chat', 'accept-invite', 'decline-invite', 'go-to-message', 'chat-created'])
+const emit = defineEmits([
+  'select-chat',
+  'show-profile',
+  'show-settings',
+  'create-chat',
+  'accept-invite',
+  'decline-invite',
+  'go-to-message',
+  'chat-created'
+])
 
 const { theme, toggleTheme, isDark } = useTheme()
 const { scale, scaleDisplay, setScale } = useScale()
@@ -578,7 +692,7 @@ const filterOrders = ref([])
 
 // Закрепленные чаты
 const pinnedChats = ref([])
-const pinnedChatIds = computed(() => new Set(pinnedChats.value.map(p => p.feedId)))
+const pinnedChatIds = computed(() => new Set(pinnedChats.value.map((p) => p.feedId)))
 
 // Drag & Drop для закрепленных чатов
 const draggedPinnedIndex = ref(-1)
@@ -586,8 +700,8 @@ const draggedPinnedIndex = ref(-1)
 // Закрепленные чаты с полными данными
 const pinnedChatsWithData = computed(() => {
   return pinnedChats.value
-    .map(pinned => {
-      const fullChat = props.chats.find(c => c.feedId === pinned.feedId)
+    .map((pinned) => {
+      const fullChat = props.chats.find((c) => c.feedId === pinned.feedId)
       return fullChat ? { ...fullChat, sortOrder: pinned.sortOrder } : null
     })
     .filter(Boolean)
@@ -600,17 +714,17 @@ const filteredPinnedChats = computed(() => {
 
   // Фильтрация по выбранному фильтру
   if (activeFilter.value === 'groups') {
-    result = result.filter(c => c.type === 'group')
+    result = result.filter((c) => c.type === 'group')
   } else if (activeFilter.value === 'personal') {
-    result = result.filter(c => c.type === 'direct')
+    result = result.filter((c) => c.type === 'direct')
   } else if (activeFilter.value === 'channels') {
-    result = result.filter(c => c.type === 'channel')
+    result = result.filter((c) => c.type === 'channel')
   } else if (activeFilter.value.startsWith('folder-')) {
     // Фильтрация по кастомной папке
     const folderId = activeFilter.value.replace('folder-', '')
-    const folder = customFolders.value.find(f => f.id === folderId)
+    const folder = customFolders.value.find((f) => f.id === folderId)
     if (folder && folder.chatIds) {
-      result = result.filter(c => folder.chatIds.includes(c.feedId))
+      result = result.filter((c) => folder.chatIds.includes(c.feedId))
     }
   }
 
@@ -640,7 +754,7 @@ async function loadBlockedUsers() {
   try {
     const response = await apiBlockedUsersListRoute.run(ctx)
     blockedUsers.value = response.blockedUsers
-    blockedUserIds.value = new Set(response.blockedUsers.map(b => b.blockedUserId))
+    blockedUserIds.value = new Set(response.blockedUsers.map((b) => b.blockedUserId))
   } catch (error) {
     console.error('Ошибка загрузки чёрного списка:', error)
   }
@@ -656,42 +770,54 @@ const searchInput = ref(null)
 let searchTimeout = null
 
 const filteredChats = computed(() => {
-  let result = props.chats.map(chat => ({
+  let result = props.chats.map((chat) => ({
     ...chat,
     // Комбинируем isMember из пропсов и локальное состояние
     isMember: chat.isMember || joinedChats.value.has(chat.feedId)
   }))
-  
+
   // Фильтруем личные чаты с заблокированными пользователями
-  result = result.filter(chat => {
+  result = result.filter((chat) => {
     if (chat.type !== 'direct') return true
     // Для личных чатов проверяем, не заблокирован ли собеседник
-    const otherParticipant = chat.participants?.find(p => p.userId !== ctx.user?.id)
+    const otherParticipant = chat.participants?.find((p) => p.userId !== ctx.user?.id)
     if (otherParticipant && blockedUserIds.value.has(otherParticipant.userId)) {
       return false
     }
     return true
   })
-  
+
   // Фильтрация по выбранному фильтру
   if (activeFilter.value === 'groups') {
-    result = result.filter(c => c.type === 'group')
+    result = result.filter((c) => c.type === 'group')
   } else if (activeFilter.value === 'personal') {
-    result = result.filter(c => c.type === 'direct')
+    result = result.filter((c) => c.type === 'direct')
   } else if (activeFilter.value === 'channels') {
-    result = result.filter(c => c.type === 'channel')
+    result = result.filter((c) => c.type === 'channel')
   } else if (activeFilter.value.startsWith('folder-')) {
     // Фильтрация по кастомной папке
     const folderId = activeFilter.value.replace('folder-', '')
-    const folder = customFolders.value.find(f => f.id === folderId)
-    console.log('filteredChats debug: folderId =', folderId, 'folder =', folder, 'allFolders =', customFolders.value)
+    const folder = customFolders.value.find((f) => f.id === folderId)
+    console.log(
+      'filteredChats debug: folderId =',
+      folderId,
+      'folder =',
+      folder,
+      'allFolders =',
+      customFolders.value
+    )
     if (folder && folder.chatIds) {
-      console.log('filteredChats debug: folder.chatIds =', folder.chatIds, 'chats feedIds =', result.map(c => c.feedId))
-      result = result.filter(c => folder.chatIds.includes(c.feedId))
+      console.log(
+        'filteredChats debug: folder.chatIds =',
+        folder.chatIds,
+        'chats feedIds =',
+        result.map((c) => c.feedId)
+      )
+      result = result.filter((c) => folder.chatIds.includes(c.feedId))
       console.log('filteredChats debug: filtered result =', result.length)
     }
   }
-  
+
   return result
 })
 
@@ -714,7 +840,7 @@ async function toggleMenu() {
       placement: 'bottom',
       alignment: 'end',
       offset: 8,
-      fallbackPlacements: ['top', 'left'],
+      fallbackPlacements: ['top', 'left']
     })
   }
 }
@@ -736,12 +862,12 @@ function onSearchInput() {
   if (searchTimeout) {
     clearTimeout(searchTimeout)
   }
-  
+
   if (!searchQuery.value || searchQuery.value.length < 2) {
     searchResults.value = { chats: [], messages: [], users: [], totalCount: 0 }
     return
   }
-  
+
   searchTimeout = setTimeout(() => {
     performSearch()
   }, 300)
@@ -749,50 +875,54 @@ function onSearchInput() {
 
 async function performSearch() {
   if (!searchQuery.value || searchQuery.value.length < 2) return
-  
+
   isSearching.value = true
-  
+
   try {
     // Параллельный поиск по чатам/сообщениям и пользователям
     const promises = []
-    
+
     // Поиск по чатам и сообщениям (если не выбран тип 'users')
     if (searchType.value !== 'users') {
       promises.push(
-        apiSearchRoute.run(ctx, {
-          query: searchQuery.value,
-          type: searchType.value === 'all' ? 'all' : searchType.value,
-        }).catch(() => ({ chats: [], messages: [], totalCount: 0 }))
+        apiSearchRoute
+          .run(ctx, {
+            query: searchQuery.value,
+            type: searchType.value === 'all' ? 'all' : searchType.value
+          })
+          .catch(() => ({ chats: [], messages: [], totalCount: 0 }))
       )
     } else {
       promises.push(Promise.resolve({ chats: [], messages: [], totalCount: 0 }))
     }
-    
+
     // Поиск пользователей (если не выбран тип 'messages' или 'chats')
     if (searchType.value === 'all' || searchType.value === 'users') {
       // Если запрос начинается с @ — ищем только по username
       const searchType = searchQuery.value.startsWith('@') ? 'username' : undefined
-      const query = searchQuery.value.startsWith('@') 
-        ? searchQuery.value.slice(1) 
+      const query = searchQuery.value.startsWith('@')
+        ? searchQuery.value.slice(1)
         : searchQuery.value
-      
+
       promises.push(
-        apiUsersSearchRoute.run(ctx, {
-          query,
-          type: searchType,
-        }).catch(() => ({ users: [] }))
+        apiUsersSearchRoute
+          .run(ctx, {
+            query,
+            type: searchType
+          })
+          .catch(() => ({ users: [] }))
       )
     } else {
       promises.push(Promise.resolve({ users: [] }))
     }
-    
+
     const [chatResult, userResult] = await Promise.all(promises)
-    
+
     searchResults.value = {
       chats: chatResult.chats || [],
       messages: chatResult.messages || [],
       users: userResult.users || [],
-      totalCount: (chatResult.totalCount || 0) + (userResult.users?.length || 0),
+      totalCount: (chatResult.totalCount || 0) + (userResult.users?.length || 0)
     }
   } catch (error) {
     console.error('Ошибка поиска:', error)
@@ -805,15 +935,15 @@ async function performSearch() {
 async function startDirectChat(user) {
   try {
     const result = await apiDirectChatCreateRoute.run(ctx, {
-      userId: user.id,
+      userId: user.id
     })
-    
+
     if (result.success) {
       // Переходим в чат
       emit('select-chat', result.feedId)
       window.location.hash = `#/chat/${result.feedId}`
       closeSearch()
-      
+
       // Если чат новый — обновляем список чатов
       if (result.isNew) {
         emit('chat-created')
@@ -829,35 +959,40 @@ async function startDirectChat(user) {
 function getUserAvatarStyle(user) {
   if (user.avatar) {
     return {
-      background: `url(${user.avatar}) center/cover no-repeat`,
+      background: `url(${user.avatar}) center/cover no-repeat`
     }
   }
-  
+
   // Градиент по умолчанию на основе ID
   const colors = [
     ['#667eea', '#764ba2'],
     ['#f093fb', '#f5576c'],
     ['#4facfe', '#00f2fe'],
     ['#43e97b', '#38f9d7'],
-    ['#fa709a', '#fee140'],
+    ['#fa709a', '#fee140']
   ]
   const index = (user.id?.charCodeAt(0) || 0) % colors.length
   const [from, to] = colors[index]
   return {
-    background: `linear-gradient(135deg, ${from} 0%, ${to} 100%)`,
+    background: `linear-gradient(135deg, ${from} 0%, ${to} 100%)`
   }
 }
 
 // Получить инициалы из имени
 function getUserInitialsFromName(name) {
   if (!name) return '?'
-  return name.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase()
+  return name
+    .split(' ')
+    .map((w) => w[0])
+    .join('')
+    .substring(0, 2)
+    .toUpperCase()
 }
 
 // Подсветка совпадений
 function highlightMatch(text) {
   if (!text || !searchQuery.value) return text
-  
+
   const query = searchQuery.value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
   const regex = new RegExp(`(${query})`, 'gi')
   return text.replace(regex, '<mark>$1</mark>')
@@ -867,7 +1002,7 @@ function getChatTypeLabel(type) {
   const labels = {
     group: 'Группа',
     direct: 'Личный',
-    channel: 'Канал',
+    channel: 'Канал'
   }
   return labels[type] || 'Чат'
 }
@@ -876,7 +1011,7 @@ function goToMessage(message) {
   emit('go-to-message', {
     feedId: message.chatFeedId,
     messageId: message.id,
-    chatTitle: message.chatTitle,
+    chatTitle: message.chatTitle
   })
   closeSearch()
 }
@@ -890,7 +1025,12 @@ watch(searchType, () => {
 
 function getChatInitials(title) {
   if (!title) return '?'
-  return title.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase()
+  return title
+    .split(' ')
+    .map((w) => w[0])
+    .join('')
+    .substring(0, 2)
+    .toUpperCase()
 }
 
 function getUserInitials() {
@@ -902,20 +1042,20 @@ function getAvatarStyle(chat) {
   // Если у чата есть аватарка - показываем её как фон
   if (chat.avatarHash) {
     return {
-      background: `url(https://fs.chatium.ru/thumbnail/${chat.avatarHash}/s/200x) center/cover no-repeat`,
+      background: `url(https://fs.chatium.ru/thumbnail/${chat.avatarHash}/s/200x) center/cover no-repeat`
     }
   }
-  
+
   // Для личного чата показываем аватарку собеседника
   if (chat.type === 'direct' && chat.participants) {
-    const otherParticipant = chat.participants.find(p => p.userId !== ctx.user?.id)
+    const otherParticipant = chat.participants.find((p) => p.userId !== ctx.user?.id)
     if (otherParticipant?.user?.avatar) {
       return {
-        background: `url(${otherParticipant.user.avatar}) center/cover no-repeat`,
+        background: `url(${otherParticipant.user.avatar}) center/cover no-repeat`
       }
     }
   }
-  
+
   // Градиент по умолчанию
   const colors = [
     ['#667eea', '#764ba2'],
@@ -925,12 +1065,12 @@ function getAvatarStyle(chat) {
     ['#fa709a', '#fee140'],
     ['#a8edea', '#fed6e3'],
     ['#d299c2', '#fef9d7'],
-    ['#89f7fe', '#66a6ff'],
+    ['#89f7fe', '#66a6ff']
   ]
   const index = (chat.id?.charCodeAt(0) || 0) % colors.length
   const [from, to] = colors[index]
   return {
-    background: `linear-gradient(135deg, ${from} 0%, ${to} 100%)`,
+    background: `linear-gradient(135deg, ${from} 0%, ${to} 100%)`
   }
 }
 
@@ -938,7 +1078,7 @@ function getAvatarStyle(chat) {
 function hasChatAvatar(chat) {
   if (chat.avatarHash) return true
   if (chat.type === 'direct' && chat.participants) {
-    const otherParticipant = chat.participants.find(p => p.userId !== ctx.user?.id)
+    const otherParticipant = chat.participants.find((p) => p.userId !== ctx.user?.id)
     if (otherParticipant?.user?.avatar) return true
   }
   return false
@@ -949,23 +1089,23 @@ function formatTime(date) {
   const d = new Date(date)
   const now = new Date()
   const isToday = d.toDateString() === now.toDateString()
-  
+
   if (isToday) {
     return d.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })
   }
-  
+
   const yesterday = new Date(now)
   yesterday.setDate(yesterday.getDate() - 1)
   if (d.toDateString() === yesterday.toDateString()) {
     return 'Вчера'
   }
-  
+
   return d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })
 }
 
 async function selectChat(feedId) {
   // Если чат публичный и пользователь не участник - сначала присоединяемся
-  const chat = props.chats.find(c => c.feedId === feedId)
+  const chat = props.chats.find((c) => c.feedId === feedId)
   if (chat && chat.isPublic && !chat.isMember && !joinedChats.value.has(feedId)) {
     joiningChat.value = feedId
     try {
@@ -982,7 +1122,7 @@ async function selectChat(feedId) {
     }
     joiningChat.value = null
   }
-  
+
   emit('select-chat', feedId)
   window.location.hash = `#/chat/${feedId}`
 }
@@ -1017,22 +1157,22 @@ function getMessageAuthorId(message) {
 
 function getLastMessageAuthorName(chat) {
   if (!chat.lastMessage) return 'Нет сообщений'
-  
+
   const authorId = getMessageAuthorId(chat.lastMessage)
-  
+
   if (authorId === ctx.user?.id) {
     return 'Вы'
   }
-  
+
   if (chat.lastMessage.author) {
     const author = chat.lastMessage.author
     return author.firstName || author.displayName?.split(' ')[0] || 'Пользователь'
   }
-  
+
   if (authorId) {
     return 'Пользователь'
   }
-  
+
   return 'Неизвестно'
 }
 
@@ -1046,7 +1186,7 @@ function getParticipantsWord(count) {
   if (!count) return 'участников'
   const lastDigit = count % 10
   const lastTwoDigits = count % 100
-  
+
   if (lastTwoDigits >= 11 && lastTwoDigits <= 19) return 'участников'
   if (lastDigit === 1) return 'участник'
   if (lastDigit >= 2 && lastDigit <= 4) return 'участника'
@@ -1057,7 +1197,7 @@ function getSubscribersWord(count) {
   if (!count) return 'подписчиков'
   const lastDigit = count % 10
   const lastTwoDigits = count % 100
-  
+
   if (lastTwoDigits >= 11 && lastTwoDigits <= 19) return 'подписчиков'
   if (lastDigit === 1) return 'подписчик'
   if (lastDigit >= 2 && lastDigit <= 4) return 'подписчика'
@@ -1066,10 +1206,10 @@ function getSubscribersWord(count) {
 
 async function joinChat(feedId) {
   joiningChat.value = feedId
-  
+
   try {
     const result = await apiChatJoinRoute({ feedId }).run(ctx, {})
-    
+
     if (result.success) {
       // Добавляем в локальный Set для реактивности
       joinedChats.value.add(feedId)
@@ -1091,11 +1231,11 @@ async function loadFolders() {
   try {
     const [folders, orders] = await Promise.all([
       apiChatFoldersListRoute.run(ctx),
-      apiChatFilterOrdersGetRoute.run(ctx).catch(() => []),
+      apiChatFilterOrdersGetRoute.run(ctx).catch(() => [])
     ])
-    
+
     filterOrders.value = orders
-    
+
     // Загружаем чаты для каждой папки
     const foldersWithChats = await Promise.all(
       folders.map(async (folder) => {
@@ -1123,24 +1263,22 @@ async function onFiltersReorder(newOrder) {
     const orders = newOrder.map((item, index) => ({
       filterId: item.id,
       filterType: item.isCustom ? 'custom' : 'base',
-      position: index,
+      position: index
     }))
-    
+
     // Сохраняем в БД
     await apiChatFilterOrdersUpdateRoute.run(ctx, { orders })
-    
+
     // Обновляем локальное состояние
     filterOrders.value = orders
-    
+
     // Отправляем порядок кастомных папок отдельно (для совместимости)
-    const folderIds = newOrder
-      .filter(item => item.isCustom)
-      .map(item => item.originalId)
-    
+    const folderIds = newOrder.filter((item) => item.isCustom).map((item) => item.originalId)
+
     if (folderIds.length > 0) {
       await apiChatFoldersReorderRoute.run(ctx, { folderIds })
     }
-    
+
     // Перезагружаем папки
     await loadFolders()
   } catch (error) {
@@ -1154,7 +1292,7 @@ function openFolderModal() {
 }
 
 function editFolder(folderId) {
-  const folder = customFolders.value.find(f => f.id === folderId)
+  const folder = customFolders.value.find((f) => f.id === folderId)
   if (folder) {
     editingFolder.value = folder
     folderModalOpen.value = true
@@ -1163,7 +1301,7 @@ function editFolder(folderId) {
 
 async function deleteFolder(folderId) {
   if (!confirm('Удалить эту папку? Чаты не будут удалены.')) return
-  
+
   try {
     await apiChatFoldersDeleteRoute({ id: folderId }).run(ctx, {})
     await loadFolders()
@@ -1214,16 +1352,20 @@ async function openAddToFolder(chat) {
 
 async function toggleChatInFolder(folderId) {
   if (!selectedChatForFolder.value) return
-  
+
   const isInFolder = selectedChatFolderIds.value.includes(folderId)
-  console.log('toggleChatInFolder debug:', { folderId, feedId: selectedChatForFolder.value.feedId, isInFolder })
-  
+  console.log('toggleChatInFolder debug:', {
+    folderId,
+    feedId: selectedChatForFolder.value.feedId,
+    isInFolder
+  })
+
   try {
     if (isInFolder) {
       await apiChatFoldersRemoveChatRoute({ id: folderId }).run(ctx, {
         feedId: selectedChatForFolder.value.feedId
       })
-      selectedChatFolderIds.value = selectedChatFolderIds.value.filter(id => id !== folderId)
+      selectedChatFolderIds.value = selectedChatFolderIds.value.filter((id) => id !== folderId)
     } else {
       const result = await apiChatFoldersAddChatRoute({ id: folderId }).run(ctx, {
         feedId: selectedChatForFolder.value.feedId
@@ -1250,9 +1392,9 @@ function openChatContextMenu(event, chat) {
 function handleTouchStart(event, chat) {
   // Не обрабатываем если есть несколько касаний
   if (event.touches.length > 1) return
-  
+
   longPressChat.value = chat
-  
+
   longPressTimer.value = setTimeout(() => {
     // Отменяем стандартное поведение (клик)
     event.preventDefault()
@@ -1262,13 +1404,13 @@ function handleTouchStart(event, chat) {
     // Позиционируем меню по центру экрана для мобильных
     const viewportWidth = window.innerWidth
     const viewportHeight = window.innerHeight
-    chatContextMenuPos.value = { 
+    chatContextMenuPos.value = {
       x: viewportWidth / 2 - 100, // примерная ширина меню 200px
       y: viewportHeight / 2 - 50
     }
     showChatContextMenu.value = true
     longPressChat.value = null
-    
+
     // Вибрация если поддерживается
     if (navigator.vibrate) {
       navigator.vibrate(50)
@@ -1296,7 +1438,7 @@ function handleTouchMove() {
 // Сортировка чатов по дате последнего сообщения (исключаем закрепленные)
 const sortedChats = computed(() => {
   return [...filteredChats.value]
-    .filter(chat => !pinnedChatIds.value.has(chat.feedId))
+    .filter((chat) => !pinnedChatIds.value.has(chat.feedId))
     .sort((a, b) => {
       const dateA = a.lastMessage?.createdAt || a.updatedAt || a.createdAt
       const dateB = b.lastMessage?.createdAt || b.updatedAt || b.createdAt
@@ -1314,7 +1456,7 @@ function handleResize() {
       placement: 'bottom',
       alignment: 'end',
       offset: 8,
-      fallbackPlacements: ['top', 'left'],
+      fallbackPlacements: ['top', 'left']
     })
   }
 }
@@ -1327,7 +1469,7 @@ onMounted(() => {
   loadFolders()
   // Загружаем закрепленные чаты
   loadPinnedChats()
-  
+
   // Слушаем событие открытия модалки создания папки (из ChatView)
   window.addEventListener('open-create-folder-modal', openFolderModal)
 })
@@ -1394,21 +1536,21 @@ function onPinnedDragOver(event, index) {
 async function onPinnedDrop(event, dropIndex) {
   event.preventDefault()
   const dragIndex = draggedPinnedIndex.value
-  
+
   if (dragIndex === -1 || dragIndex === dropIndex) return
-  
+
   const newOrder = [...pinnedChatsWithData.value]
   const [removed] = newOrder.splice(dragIndex, 1)
   newOrder.splice(dropIndex, 0, removed)
-  
-  const feedIds = newOrder.map(c => c.feedId)
-  
+
+  const feedIds = newOrder.map((c) => c.feedId)
+
   // Обновляем локально сразу для отзывчивости
   pinnedChats.value = newOrder.map((chat, index) => ({
     feedId: chat.feedId,
     sortOrder: index
   }))
-  
+
   try {
     await apiPinnedChatsReorderRoute.run(ctx, { feedIds })
     await loadPinnedChats()
@@ -1417,7 +1559,7 @@ async function onPinnedDrop(event, dropIndex) {
     // Откатываем при ошибке
     await loadPinnedChats()
   }
-  
+
   draggedPinnedIndex.value = -1
 }
 
@@ -1807,7 +1949,7 @@ function onPinnedDragEnd(event) {
     opacity: 1;
     transform: scale(1);
   }
-  
+
   .user-avatar-search {
     width: 44px;
     height: 44px;
@@ -1928,7 +2070,9 @@ function onPinnedDragEnd(event) {
 .chat-item.long-press {
   background: var(--bg-hover);
   transform: scale(0.98);
-  transition: transform 0.1s, background 0.1s;
+  transition:
+    transform 0.1s,
+    background 0.1s;
 }
 
 .chat-avatar {
@@ -2018,7 +2162,6 @@ function onPinnedDragEnd(event) {
 
 .last-message-text {
   color: var(--text-secondary);
-  
 }
 
 .type-badge {
@@ -2094,7 +2237,9 @@ function onPinnedDragEnd(event) {
   align-items: center;
   justify-content: center;
   font-size: 1.5rem;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3), 0 2px 6px rgba(0, 0, 0, 0.2);
+  box-shadow:
+    0 4px 12px rgba(0, 0, 0, 0.3),
+    0 2px 6px rgba(0, 0, 0, 0.2);
   transition: all 0.2s;
   z-index: 50;
 }
@@ -2102,7 +2247,9 @@ function onPinnedDragEnd(event) {
 .fab:hover {
   background: var(--accent-hover);
   transform: scale(1.05);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35), 0 3px 8px rgba(0, 0, 0, 0.25);
+  box-shadow:
+    0 6px 16px rgba(0, 0, 0, 0.35),
+    0 3px 8px rgba(0, 0, 0, 0.25);
 }
 
 .fab:active {
@@ -2304,12 +2451,12 @@ function onPinnedDragEnd(event) {
     border-radius: 0.75rem;
     padding: 0.5rem 0;
   }
-  
+
   .context-item {
     padding: 0.875rem 1.25rem;
     font-size: 1rem;
   }
-  
+
   .context-item i {
     font-size: 1.125rem;
     width: 1.5rem;
@@ -2358,21 +2505,21 @@ function onPinnedDragEnd(event) {
   .sidebar-header {
     padding: 0.625rem 0.75rem;
   }
-  
+
   .app-title {
     font-size: 1.125rem;
   }
-  
+
   .chat-item {
     padding: 0.625rem 0.75rem;
   }
-  
+
   .chat-avatar {
     width: 3rem;
     height: 3rem;
     font-size: 1rem;
   }
-  
+
   .fab {
     bottom: 1rem;
     right: 1rem;
@@ -2380,11 +2527,11 @@ function onPinnedDragEnd(event) {
     height: 3.125rem;
     font-size: 1.25rem;
   }
-  
+
   .search-item {
     padding: 0.625rem 0.75rem;
   }
-  
+
   .chat-avatar {
     width: 2.75rem;
     height: 2.75rem;
@@ -2493,11 +2640,11 @@ function onPinnedDragEnd(event) {
   .drag-handle {
     opacity: 1;
   }
-  
+
   .unpin-btn {
     opacity: 1;
   }
-  
+
   .section-header {
     padding: 0.625rem 0.75rem 0.375rem;
   }

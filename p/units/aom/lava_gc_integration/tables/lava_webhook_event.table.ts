@@ -8,7 +8,7 @@ export const LavaWebhookEvent = Heap.Table('t__lava-gc-integration__webhook-even
   processed: Heap.Boolean({ customMeta: { title: 'Обработано' } }),
   processed_at: Heap.Number({ customMeta: { title: 'Время обработки (Unix ms)' } }),
   processing_error: Heap.String({ customMeta: { title: 'Ошибка обработки' } }),
-  created_at: Heap.Number({ customMeta: { title: 'Время приёма (Unix ms)' } }),
+  created_at: Heap.Number({ customMeta: { title: 'Время приёма (Unix ms)' } })
 })
 
 export default LavaWebhookEvent

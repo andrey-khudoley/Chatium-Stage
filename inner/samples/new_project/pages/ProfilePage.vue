@@ -43,11 +43,11 @@ onMounted(() => {
   // Ждём завершения bootloader
   const startAnimations = () => {
     bootLoaderDone.value = true
-    
+
     // 1. Короткая задержка перед началом печати
     showCursor.value = true
     cursorPosition.value = 'title'
-    
+
     setTimeout(() => {
       // 2. Начинаем последовательный набор текста
       typeTextSequence()
@@ -63,7 +63,7 @@ onMounted(() => {
   const typeTextSequence = () => {
     const titleText = 'Профиль пользователя'
     cursorPosition.value = 'title'
-    
+
     // Набираем заголовок
     let titleIndex = 0
     const titleInterval = setInterval(() => {
@@ -129,10 +129,18 @@ const openChatiumLink = () => {
               <i class="fas fa-fingerprint profile-icon"></i>
             </div>
             <h1 class="profile-heading" :class="{ 'show-underline': showTitleUnderline }">
-              {{ displayedTitle }}<span v-if="showCursor && (cursorPosition === 'title' || cursorPosition === 'final')" class="typing-cursor">▮</span>
+              {{ displayedTitle
+              }}<span
+                v-if="showCursor && (cursorPosition === 'title' || cursorPosition === 'final')"
+                class="typing-cursor"
+                >▮</span
+              >
             </h1>
             <p class="profile-description">
-              {{ displayedDescription }}<span v-if="showCursor && cursorPosition === 'description'" class="typing-cursor">▮</span>
+              {{ displayedDescription
+              }}<span v-if="showCursor && cursorPosition === 'description'" class="typing-cursor"
+                >▮</span
+              >
             </p>
           </div>
 
@@ -189,10 +197,7 @@ const openChatiumLink = () => {
         <div class="footer-left">ИП Худолей Андрей Германович</div>
         <div class="footer-center">Все права сохранены © 2026</div>
         <div class="footer-right">
-          <button 
-            class="footer-link"
-            @click="openChatiumLink"
-          >
+          <button class="footer-link" @click="openChatiumLink">
             Сделано с <i class="fas fa-heart footer-heart"></i> на Chatium
           </button>
         </div>
@@ -268,7 +273,9 @@ body {
 .profile-section {
   opacity: 0;
   transform: translateY(20px);
-  transition: opacity 0.8s ease, transform 0.8s ease;
+  transition:
+    opacity 0.8s ease,
+    transform 0.8s ease;
 }
 
 .profile-section.content-visible {
@@ -290,7 +297,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 
+  box-shadow:
     0 8px 24px rgba(211, 35, 75, 0.4),
     0 4px 12px rgba(211, 35, 75, 0.3),
     0 0 30px rgba(211, 35, 75, 0.2),
@@ -298,10 +305,18 @@ body {
   position: relative;
   overflow: hidden;
   clip-path: polygon(
-    0 4px, 4px 4px, 4px 0,
-    calc(100% - 4px) 0, calc(100% - 4px) 4px, 100% 4px,
-    100% calc(100% - 4px), calc(100% - 4px) calc(100% - 4px), calc(100% - 4px) 100%,
-    4px 100%, 4px calc(100% - 4px), 0 calc(100% - 4px)
+    0 4px,
+    4px 4px,
+    4px 0,
+    calc(100% - 4px) 0,
+    calc(100% - 4px) 4px,
+    100% 4px,
+    100% calc(100% - 4px),
+    calc(100% - 4px) calc(100% - 4px),
+    calc(100% - 4px) 100%,
+    4px 100%,
+    4px calc(100% - 4px),
+    0 calc(100% - 4px)
   );
 }
 
@@ -344,8 +359,13 @@ body {
 }
 
 @keyframes scanline-flicker {
-  0%, 100% { opacity: 0.7; }
-  50% { opacity: 0.5; }
+  0%,
+  100% {
+    opacity: 0.7;
+  }
+  50% {
+    opacity: 0.5;
+  }
 }
 
 @keyframes fingerprint-scan {
@@ -370,7 +390,7 @@ body {
 
 @media (min-width: 769px) {
   .profile-icon-wrapper {
-    box-shadow: 
+    box-shadow:
       0 10px 28px rgba(211, 35, 75, 0.45),
       0 5px 14px rgba(211, 35, 75, 0.35),
       0 0 40px rgba(211, 35, 75, 0.25);
@@ -421,8 +441,14 @@ body {
 }
 
 @keyframes cursor-blink {
-  0%, 50% { opacity: 1; }
-  51%, 100% { opacity: 0; }
+  0%,
+  50% {
+    opacity: 1;
+  }
+  51%,
+  100% {
+    opacity: 0;
+  }
 }
 
 /* Profile Card */
@@ -502,11 +528,11 @@ body {
   .profile-heading {
     font-size: 2rem;
   }
-  
+
   .profile-card {
     padding: 1.5rem;
   }
-  
+
   .profile-field-value {
     padding-left: 0;
   }
@@ -566,45 +592,64 @@ body {
 }
 
 @keyframes glitch-footer {
-  0%, 100% {
+  0%,
+  100% {
     transform: translate(0);
     text-shadow: none;
   }
   10% {
     transform: translate(-1.5px, 0);
-    text-shadow: 1px 0 #ff00ff, -1px 0 #00ffff;
+    text-shadow:
+      1px 0 #ff00ff,
+      -1px 0 #00ffff;
   }
   20% {
     transform: translate(1.5px, 0);
-    text-shadow: -1px 0 #ff00ff, 1px 0 #00ffff;
+    text-shadow:
+      -1px 0 #ff00ff,
+      1px 0 #00ffff;
   }
   30% {
     transform: translate(-1px, 0);
-    text-shadow: 1.5px 0 #ff00ff, -1.5px 0 #00ffff;
+    text-shadow:
+      1.5px 0 #ff00ff,
+      -1.5px 0 #00ffff;
   }
   40% {
     transform: translate(1px, 0);
-    text-shadow: -1.5px 0 #ff00ff, 1.5px 0 #00ffff;
+    text-shadow:
+      -1.5px 0 #ff00ff,
+      1.5px 0 #00ffff;
   }
   50% {
     transform: translate(-1.5px, 0);
-    text-shadow: 1px 0 #ff00ff, -1px 0 #00ffff;
+    text-shadow:
+      1px 0 #ff00ff,
+      -1px 0 #00ffff;
   }
   60% {
     transform: translate(1.5px, 0);
-    text-shadow: -1px 0 #ff00ff, 1px 0 #00ffff;
+    text-shadow:
+      -1px 0 #ff00ff,
+      1px 0 #00ffff;
   }
   70% {
     transform: translate(-1px, 0);
-    text-shadow: 1px 0 #ff00ff, -1px 0 #00ffff;
+    text-shadow:
+      1px 0 #ff00ff,
+      -1px 0 #00ffff;
   }
   80% {
     transform: translate(1px, 0);
-    text-shadow: -1px 0 #ff00ff, 1px 0 #00ffff;
+    text-shadow:
+      -1px 0 #ff00ff,
+      1px 0 #00ffff;
   }
   90% {
     transform: translate(-0.5px, 0);
-    text-shadow: 0.5px 0 #ff00ff, -0.5px 0 #00ffff;
+    text-shadow:
+      0.5px 0 #ff00ff,
+      -0.5px 0 #00ffff;
   }
 }
 

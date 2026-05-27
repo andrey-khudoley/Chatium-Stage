@@ -9,15 +9,15 @@ export async function getProjectName(ctx: app.Ctx): Promise<string> {
   try {
     // Обеспечиваем инициализацию настроек по умолчанию
     await ensureDefaultSettings(ctx)
-    
+
     const setting = await AnalyticsSettings.findOneBy(ctx, {
       key: 'project_name'
     })
-    
+
     if (!setting || !setting.value) {
       throw new Error('Настройка project_name не найдена после инициализации')
     }
-    
+
     return setting.value
   } catch (error) {
     // В случае ошибки повторно пытаемся инициализировать и получить значение
@@ -36,4 +36,3 @@ export async function getProjectName(ctx: app.Ctx): Promise<string> {
     return ''
   }
 }
-

@@ -98,7 +98,11 @@ export const webhooksFeature5TestRoute = app.get('/', async (ctx, req) => {
       if (!partnerId || !pageId || !key) {
         pushSkipped(
           results,
-          !partnerId ? 'Партнёр не создан' : !pageId ? 'Страница не создана' : 'Нет webhookSecret у страницы'
+          !partnerId
+            ? 'Партнёр не создан'
+            : !pageId
+              ? 'Страница не создана'
+              : 'Нет webhookSecret у страницы'
         )
       } else {
         const link = await linkRepo.getOrCreatePartnerLink(ctx, campaignId, partnerId, pageId)

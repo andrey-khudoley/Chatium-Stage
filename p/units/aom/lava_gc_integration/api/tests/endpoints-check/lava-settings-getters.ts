@@ -35,29 +35,45 @@ export const lavaSettingsGettersTestRoute = app.get('/', async (ctx, req) => {
     }
   }
 
-  await check('getLavaApiKey', 'getLavaApiKey (string)', async () =>
-    typeof (await settingsLib.getLavaApiKey(ctx)) === 'string'
+  await check(
+    'getLavaApiKey',
+    'getLavaApiKey (string)',
+    async () => typeof (await settingsLib.getLavaApiKey(ctx)) === 'string'
   )
-  await check('getLavaBaseUrl', 'getLavaBaseUrl (string)', async () =>
-    typeof (await settingsLib.getLavaBaseUrl(ctx)) === 'string'
+  await check(
+    'getLavaBaseUrl',
+    'getLavaBaseUrl (string)',
+    async () => typeof (await settingsLib.getLavaBaseUrl(ctx)) === 'string'
   )
-  await check('getLavaProductId', 'getLavaProductId (string)', async () =>
-    typeof (await settingsLib.getLavaProductId(ctx)) === 'string'
+  await check(
+    'getLavaProductId',
+    'getLavaProductId (string)',
+    async () => typeof (await settingsLib.getLavaProductId(ctx)) === 'string'
   )
-  await check('getLavaOfferId', 'getLavaOfferId (string)', async () =>
-    typeof (await settingsLib.getLavaOfferId(ctx)) === 'string'
+  await check(
+    'getLavaOfferId',
+    'getLavaOfferId (string)',
+    async () => typeof (await settingsLib.getLavaOfferId(ctx)) === 'string'
   )
-  await check('getLavaWebhookSecret', 'getLavaWebhookSecret (string)', async () =>
-    typeof (await settingsLib.getLavaWebhookSecret(ctx)) === 'string'
+  await check(
+    'getLavaWebhookSecret',
+    'getLavaWebhookSecret (string)',
+    async () => typeof (await settingsLib.getLavaWebhookSecret(ctx)) === 'string'
   )
-  await check('getGcApiKey', 'getGcApiKey (string)', async () =>
-    typeof (await settingsLib.getGcApiKey(ctx)) === 'string'
+  await check(
+    'getGcApiKey',
+    'getGcApiKey (string)',
+    async () => typeof (await settingsLib.getGcApiKey(ctx)) === 'string'
   )
-  await check('getGcAccountDomain', 'getGcAccountDomain (string)', async () =>
-    typeof (await settingsLib.getGcAccountDomain(ctx)) === 'string'
+  await check(
+    'getGcAccountDomain',
+    'getGcAccountDomain (string)',
+    async () => typeof (await settingsLib.getGcAccountDomain(ctx)) === 'string'
   )
-  await check('getGcOrderFlagAddfieldId', 'getGcOrderFlagAddfieldId (string)', async () =>
-    typeof (await settingsLib.getGcOrderFlagAddfieldId(ctx)) === 'string'
+  await check(
+    'getGcOrderFlagAddfieldId',
+    'getGcOrderFlagAddfieldId (string)',
+    async () => typeof (await settingsLib.getGcOrderFlagAddfieldId(ctx)) === 'string'
   )
 
   return { success: true, test: 'lava-settings-getters', results, at: Date.now() }

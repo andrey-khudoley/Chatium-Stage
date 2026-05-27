@@ -94,11 +94,26 @@ export const listTestsRoute = app.get('/', async (ctx, req) => {
       id: 'fingerprint',
       title: 'Fingerprint (дедупликация визитов)',
       tests: [
-        { id: 'computeFingerprint-basic', title: 'computeFingerprint — hash и parts по заголовкам' },
-        { id: 'computeFingerprint-x-forwarded-for-first', title: 'IP из X-Forwarded-For — берётся первый адрес' },
-        { id: 'computeFingerprint-x-real-ip', title: 'IP из X-Real-IP при отсутствии X-Forwarded-For' },
-        { id: 'computeFingerprint-empty-headers', title: 'Пустые заголовки — ip unknown, строки пустые' },
-        { id: 'computeFingerprint-deterministic', title: 'Один и тот же запрос — один и тот же hash' },
+        {
+          id: 'computeFingerprint-basic',
+          title: 'computeFingerprint — hash и parts по заголовкам'
+        },
+        {
+          id: 'computeFingerprint-x-forwarded-for-first',
+          title: 'IP из X-Forwarded-For — берётся первый адрес'
+        },
+        {
+          id: 'computeFingerprint-x-real-ip',
+          title: 'IP из X-Real-IP при отсутствии X-Forwarded-For'
+        },
+        {
+          id: 'computeFingerprint-empty-headers',
+          title: 'Пустые заголовки — ip unknown, строки пустые'
+        },
+        {
+          id: 'computeFingerprint-deterministic',
+          title: 'Один и тот же запрос — один и тот же hash'
+        },
         { id: 'computeFingerprint-optional-fields', title: 'Опциональные поля platform и timezone' }
       ]
     },
@@ -108,7 +123,10 @@ export const listTestsRoute = app.get('/', async (ctx, req) => {
       tests: [
         { id: 'substituteRef-single', title: 'substituteRef — одна подстановка {ref}' },
         { id: 'substituteRef-multiple', title: 'substituteRef — несколько вхождений {ref}' },
-        { id: 'buildPartnerLinkUrl', title: 'buildPartnerLinkUrl — URL содержит slug и путь редиректа' }
+        {
+          id: 'buildPartnerLinkUrl',
+          title: 'buildPartnerLinkUrl — URL содержит slug и путь редиректа'
+        }
       ]
     },
     {
@@ -126,7 +144,10 @@ export const listTestsRoute = app.get('/', async (ctx, req) => {
       title: 'Репозиторий партнёрских ссылок',
       tests: [
         { id: 'getOrCreatePartnerLink', title: 'getOrCreatePartnerLink' },
-        { id: 'getOrCreatePartnerLink-idempotent', title: 'getOrCreatePartnerLink (повтор — та же ссылка)' },
+        {
+          id: 'getOrCreatePartnerLink-idempotent',
+          title: 'getOrCreatePartnerLink (повтор — та же ссылка)'
+        },
         { id: 'getPartnerLinks', title: 'getPartnerLinks' },
         { id: 'findLinkByPublicSlug', title: 'findLinkByPublicSlug' }
       ]
@@ -211,7 +232,7 @@ export const listTestsRoute = app.get('/', async (ctx, req) => {
     },
     {
       id: 'webhooks-feature5',
-      title: 'Webhook\'и фичи 5 (register, order, payment)',
+      title: "Webhook'и фичи 5 (register, order, payment)",
       tests: [
         { id: 'hook-register', title: 'POST hook/register → success' },
         { id: 'hook-order', title: 'POST hook/order → success' },
@@ -251,9 +272,7 @@ export const listTestsRoute = app.get('/', async (ctx, req) => {
     {
       id: 'telegram-hook',
       title: 'Webhook Telegram',
-      tests: [
-        { id: 'hook-unknown-botId-200', title: 'POST hook — неизвестный botId → 200' }
-      ]
+      tests: [{ id: 'hook-unknown-botId-200', title: 'POST hook — неизвестный botId → 200' }]
     }
   ]
 

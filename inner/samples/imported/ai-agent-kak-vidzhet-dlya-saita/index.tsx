@@ -11,7 +11,7 @@ export const indexPageRoute = app.get('/', async (ctx, req) => {
     return (
       <html>
         <head>
-          <meta name='viewport' content='width=device-width, initial-scale=1' />
+          <meta name="viewport" content="width=device-width, initial-scale=1" />
           <title>AI-Виджет чата - Галерея</title>
         </head>
         <body>
@@ -52,8 +52,8 @@ export const indexPageRoute = app.get('/', async (ctx, req) => {
   return (
     <html>
       <head>
-        <meta name='viewport' content='width=device-width, initial-scale=1' />
-        <script src='/s/metric/clarity.js'></script>
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <script src="/s/metric/clarity.js"></script>
         <style>{`
           * {
             margin: 0;
@@ -214,42 +214,42 @@ export const indexPageRoute = app.get('/', async (ctx, req) => {
         `}</style>
       </head>
       <body>
-        <div class='content'>
-          <h1 class='content__title'>Виджет на сайт</h1>
-          <p class='content__description'>
+        <div class="content">
+          <h1 class="content__title">Виджет на сайт</h1>
+          <p class="content__description">
             Добавьте код ниже на свой сайт, чтобы агент мог получать и отвечать на сообщения.
           </p>
 
-          <div class='code-block'>
-            <span class='code-block__label'>Код для встройки</span>
-            <textarea id='widget-code' class='code-block__input' spellcheck='false' read-only>
+          <div class="code-block">
+            <span class="code-block__label">Код для встройки</span>
+            <textarea id="widget-code" class="code-block__input" spellcheck="false" read-only>
               {embedCode.replaceAll('<', '&lt;').replaceAll('>', '&gt;')}
             </textarea>
-            <div class='code-block__actions'>
-              <button type='button' id='copy-button' class='copy-button'>
+            <div class="code-block__actions">
+              <button type="button" id="copy-button" class="copy-button">
                 Скопировать
               </button>
             </div>
           </div>
         </div>
 
-        <div class='arrow-note' aria-hidden='true'>
-          <span class='arrow-note__label'>Протестировать</span>
+        <div class="arrow-note" aria-hidden="true">
+          <span class="arrow-note__label">Протестировать</span>
         </div>
 
         <script
-          id='chatium-sender-widget-loader'
+          id="chatium-sender-widget-loader"
           src={ctx.account.url('/app/sender/v2/widget/loader.v1.js')}
           async
           data-host={ctx.account.host}
           data-popup={`${workspace.path}/popup`}
           data-button={`${workspace.path}/button`}
-          data-lang='ru'
-          data-position='br'
-          data-z-index='2147483000'
-          data-popup-styles-border-radius='12px 12px 28px 28px'
-          crossorigin='anonymous'
-          referrerpolicy='strict-origin-when-cross-origin'
+          data-lang="ru"
+          data-position="br"
+          data-z-index="2147483000"
+          data-popup-styles-border-radius="12px 12px 28px 28px"
+          crossorigin="anonymous"
+          referrerpolicy="strict-origin-when-cross-origin"
         ></script>
 
         <script>{`

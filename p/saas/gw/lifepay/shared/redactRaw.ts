@@ -64,8 +64,7 @@ function redactEmail(email: string): string {
   const lastDot = domain.lastIndexOf('.')
   const domainName = domain.slice(0, lastDot)
   const tld = domain.slice(lastDot + 1)
-  const domainMasked =
-    domainName.length > 0 ? `${domainName.charAt(0)}***.${tld}` : `***.${tld}`
+  const domainMasked = domainName.length > 0 ? `${domainName.charAt(0)}***.${tld}` : `***.${tld}`
   return `${localMasked}@${domainMasked}`
 }
 

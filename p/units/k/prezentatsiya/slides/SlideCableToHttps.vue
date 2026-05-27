@@ -11,7 +11,7 @@
           <div
             class="step"
             :class="{ accent: step.accent }"
-            :style="{ animationDelay: (0.05 + i * 0.07) + 's' }"
+            :style="{ animationDelay: 0.05 + i * 0.07 + 's' }"
           >
             <div class="ico">
               <i :class="step.icon"></i>
@@ -41,7 +41,7 @@ const steps = [
   { icon: 'fas fa-shield-halved', title: 'Надёжность', caption: 'дошло / не дошло → L4' },
   { icon: 'fas fa-clock', title: 'Сеанс', caption: 'долгий обмен → L5' },
   { icon: 'fas fa-compress', title: 'Сжатие', caption: 'единый формат → L6' },
-  { icon: 'fas fa-lock', title: 'HTTPS', caption: 'про него эфир', accent: true },
+  { icon: 'fas fa-lock', title: 'HTTPS', caption: 'про него эфир', accent: true }
 ]
 </script>
 
@@ -72,7 +72,14 @@ const steps = [
   color: var(--text-primary);
   letter-spacing: -1px;
 }
-.strip { display: block; width: 80px; height: 4px; background: var(--accent-cyan); border-radius: 2px; margin-top: 20px; }
+.strip {
+  display: block;
+  width: 80px;
+  height: 4px;
+  background: var(--accent-cyan);
+  border-radius: 2px;
+  margin-top: 20px;
+}
 
 .chain {
   display: flex;
@@ -98,7 +105,9 @@ const steps = [
   animation: fadeInUp 460ms ease-out forwards;
   transition: transform 0.25s ease;
 }
-.step:hover { transform: translateY(-4px); }
+.step:hover {
+  transform: translateY(-4px);
+}
 .step.accent {
   background: var(--bg-elevated);
   border: 2px solid var(--border-accent);
@@ -106,7 +115,8 @@ const steps = [
 }
 
 .ico {
-  width: 48px; height: 48px;
+  width: 48px;
+  height: 48px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -131,7 +141,9 @@ const steps = [
   color: var(--text-primary);
   margin-bottom: 6px;
 }
-.step.accent .step-title { color: var(--accent-cyan); }
+.step.accent .step-title {
+  color: var(--accent-cyan);
+}
 
 .step-caption {
   font-family: var(--font-body-new);
@@ -165,13 +177,23 @@ const steps = [
 }
 
 @media (max-width: 1024px) {
-  .slide { padding: 40px 24px; }
-  .chain { gap: 8px; }
-  .arrow { display: none; }
-  .step { min-width: 110px; }
+  .slide {
+    padding: 40px 24px;
+  }
+  .chain {
+    gap: 8px;
+  }
+  .arrow {
+    display: none;
+  }
+  .step {
+    min-width: 110px;
+  }
 }
 
 @media (max-width: 768px) {
-  .step { min-width: 45%; }
+  .step {
+    min-width: 45%;
+  }
 }
 </style>

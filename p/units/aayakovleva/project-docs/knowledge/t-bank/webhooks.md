@@ -1,5 +1,5 @@
 ---
-title: "Т-Банк Эквайринг — Webhooks и статусы платежа"
+title: 'Т-Банк Эквайринг — Webhooks и статусы платежа'
 type: reference
 tags:
   - topic/t-bank
@@ -35,22 +35,23 @@ created: 2026-05-08
 
 ### Поля уведомления
 
-| Поле | Тип | Описание |
-|---|---|---|
-| `TerminalKey` | string | Ключ терминала |
-| `OrderId` | string | ID заказа мерчанта (из Init) |
-| `Success` | boolean | `true` при успешном статусе |
-| `Status` | string | Текущий статус платежа |
-| `PaymentId` | integer | ID платежа в системе банка |
-| `ErrorCode` | string | `0` при отсутствии ошибок |
-| `Amount` | integer | Сумма в копейках |
-| `Pan` | string | Маскированный номер карты, напр. `430000******0777` |
-| `ExpDate` | string | Срок действия карты, формат `MMYY` |
-| `CardId` | integer | ID привязанной карты (если есть) |
-| `RebillId` | string | ID рекуррентного платежа (если есть) |
-| `Token` | string | Подпись уведомления для верификации |
+| Поле          | Тип     | Описание                                            |
+| ------------- | ------- | --------------------------------------------------- |
+| `TerminalKey` | string  | Ключ терминала                                      |
+| `OrderId`     | string  | ID заказа мерчанта (из Init)                        |
+| `Success`     | boolean | `true` при успешном статусе                         |
+| `Status`      | string  | Текущий статус платежа                              |
+| `PaymentId`   | integer | ID платежа в системе банка                          |
+| `ErrorCode`   | string  | `0` при отсутствии ошибок                           |
+| `Amount`      | integer | Сумма в копейках                                    |
+| `Pan`         | string  | Маскированный номер карты, напр. `430000******0777` |
+| `ExpDate`     | string  | Срок действия карты, формат `MMYY`                  |
+| `CardId`      | integer | ID привязанной карты (если есть)                    |
+| `RebillId`    | string  | ID рекуррентного платежа (если есть)                |
+| `Token`       | string  | Подпись уведомления для верификации                 |
 
 **Пример тела уведомления (URL-encoded):**
+
 ```
 TerminalKey=TinkoffBankTest&OrderId=order_42&Success=true&Status=CONFIRMED&PaymentId=13660038&ErrorCode=0&Amount=149900&Pan=430000******0777&Token=<hash>
 ```
@@ -71,6 +72,7 @@ TerminalKey=TinkoffBankTest&OrderId=order_42&Success=true&Status=CONFIRMED&Payme
 6. Сравнить с полученным `Token`.
 
 **Пример верификации (PHP):**
+
 ```php
 function verifyWebhook(array $params, string $password): bool {
     $receivedToken = $params['Token'];
@@ -97,6 +99,7 @@ Body: OK
 Без HTML-тегов, только английские заглавные буквы `OK`.
 
 **Что происходит при не-200 или отсутствии `OK`:**
+
 - Т-Банк считает доставку неуспешной.
 - Повторяет отправку **раз в час в течение 24 часов**.
 - Затем повторяет **раз в сутки в течение месяца**.
@@ -124,12 +127,14 @@ Init → NEW
 ```
 
 Альтернативные ветки:
+
 ```
 AUTHORIZED → REVERSING → REVERSED (отмена до списания)
 CONFIRMED  → REFUNDING → REFUNDED / PARTIAL_REFUNDED (возврат после списания)
 ```
 
 Ошибочные статусы:
+
 ```
 AUTHORIZING → AUTH_FAIL (ошибка авторизации)
 AUTHORIZING → REJECTED (отклонён банком)
@@ -139,26 +144,26 @@ AUTHORIZING → REJECTED (отклонён банком)
 
 ### Полная таблица статусов
 
-| Статус | Описание |
-|---|---|
-| `NEW` | Платёж создан (после Init) |
-| `FORM_SHOWED` | Покупатель открыл платёжную форму |
-| `DEADLINE_EXPIRED` | Истёк срок жизни ссылки |
-| `CANCELED` | Отменён |
-| `PREAUTHORIZING` | Проверка данных карты |
-| `AUTHORIZING` | Резервирование средств |
-| `AUTH_FAIL` | Ошибка авторизации |
-| `AUTHORIZED` | Средства зарезервированы (двухстадийный: ждёт Confirm) |
-| `REJECTED` | Отклонён банком эмитентом |
-| `3DS_CHECKING` | Проверка через 3-D Secure |
-| `3DS_CHECKED` | 3-D Secure пройден |
-| `REVERSING` | Отмена резервирования |
-| `REVERSED` | Резервирование отменено |
-| `CONFIRMING` | Подтверждение списания |
-| `CONFIRMED` | **Деньги списаны — успех** |
-| `REFUNDING` | Идёт возврат |
-| `PARTIAL_REFUNDED` | Частичный возврат выполнен |
-| `REFUNDED` | Полный возврат выполнен |
+| Статус             | Описание                                               |
+| ------------------ | ------------------------------------------------------ |
+| `NEW`              | Платёж создан (после Init)                             |
+| `FORM_SHOWED`      | Покупатель открыл платёжную форму                      |
+| `DEADLINE_EXPIRED` | Истёк срок жизни ссылки                                |
+| `CANCELED`         | Отменён                                                |
+| `PREAUTHORIZING`   | Проверка данных карты                                  |
+| `AUTHORIZING`      | Резервирование средств                                 |
+| `AUTH_FAIL`        | Ошибка авторизации                                     |
+| `AUTHORIZED`       | Средства зарезервированы (двухстадийный: ждёт Confirm) |
+| `REJECTED`         | Отклонён банком эмитентом                              |
+| `3DS_CHECKING`     | Проверка через 3-D Secure                              |
+| `3DS_CHECKED`      | 3-D Secure пройден                                     |
+| `REVERSING`        | Отмена резервирования                                  |
+| `REVERSED`         | Резервирование отменено                                |
+| `CONFIRMING`       | Подтверждение списания                                 |
+| `CONFIRMED`        | **Деньги списаны — успех**                             |
+| `REFUNDING`        | Идёт возврат                                           |
+| `PARTIAL_REFUNDED` | Частичный возврат выполнен                             |
+| `REFUNDED`         | Полный возврат выполнен                                |
 
 ---
 
@@ -166,12 +171,14 @@ AUTHORIZING → REJECTED (отклонён банком)
 
 **Одностадийный платёж (PayType=O):**  
 Придут оба уведомления почти одновременно:
+
 1. `Status=AUTHORIZED`
 2. `Status=CONFIRMED`
 
 Обновлять статус заказа следует на основании **`CONFIRMED`**.
 
 **Двухстадийный платёж (PayType=T):**
+
 1. `Status=AUTHORIZED` — деньги зарезервированы, ждём Confirm
 2. `Status=CONFIRMED` — деньги списаны (после вашего вызова Confirm)
 
@@ -180,6 +187,7 @@ AUTHORIZING → REJECTED (отклонён банком)
 ## Типы уведомлений (не только о платежах)
 
 Т-Банк может присылать уведомления не только о статусах платежа:
+
 - Привязка карты
 - Фискализация (чек ОФД)
 - Привязка счёта по QR-коду (СБП)

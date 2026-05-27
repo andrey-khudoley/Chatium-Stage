@@ -1,10 +1,13 @@
-import { jsx } from "@app/html-jsx"
+import { jsx } from '@app/html-jsx'
 
 export const StylesHead = () => (
   <>
     <script src="/s/static/lib/tailwind.3.4.16.min.js"></script>
     <link href="/s/static/lib/fontawesome/6.7.2/css/all.min.css" rel="stylesheet" />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Roboto:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
     <script>{`
       tailwind.config = {
         theme: {

@@ -16,20 +16,14 @@
       <div class="video-modal-content">
         <!-- Видео превью -->
         <div class="video-preview-container" :class="{ 'is-recording': isRecording }">
-          <video
-            ref="videoPreview"
-            class="video-preview"
-            autoplay
-            playsinline
-            muted
-          />
-          
+          <video ref="videoPreview" class="video-preview" autoplay playsinline muted />
+
           <!-- Круглая маска для кружочка -->
           <div class="circle-mask" v-if="!recordedBlob">
             <svg viewBox="0 0 100 100">
               <defs>
                 <clipPath id="circleClip">
-                  <circle cx="50" cy="50" r="48"/>
+                  <circle cx="50" cy="50" r="48" />
                 </clipPath>
               </defs>
             </svg>
@@ -44,15 +38,8 @@
           <!-- Прогресс максимальной длительности -->
           <div v-if="isRecording" class="duration-progress">
             <svg viewBox="0 0 100 100">
-              <circle 
-                class="progress-bg" 
-                cx="50" cy="50" r="48"
-              />
-              <circle 
-                class="progress-fill" 
-                cx="50" cy="50" r="48"
-                :style="progressStyle"
-              />
+              <circle class="progress-bg" cx="50" cy="50" r="48" />
+              <circle class="progress-fill" cx="50" cy="50" r="48" :style="progressStyle" />
             </svg>
           </div>
         </div>
@@ -61,14 +48,14 @@
         <div class="video-controls">
           <template v-if="!recordedBlob">
             <!-- Кнопка записи/остановки -->
-            <button 
+            <button
               class="btn-record-circle"
               :class="{ 'is-recording': isRecording }"
               @click="toggleRecording"
             >
               <div class="record-inner"></div>
             </button>
-            
+
             <p class="record-hint">
               {{ isRecording ? 'Нажмите для остановки' : 'Нажмите для начала записи' }}
             </p>
@@ -84,7 +71,7 @@
               playsinline
               controls
             />
-            
+
             <div class="recorded-actions">
               <button class="btn-retake" @click="retake">
                 <i class="fas fa-redo"></i>
@@ -132,7 +119,7 @@ const progressStyle = computed(() => {
   const circumference = 2 * Math.PI * 48
   const progress = recordingDuration.value / MAX_DURATION
   const dashoffset = circumference * (1 - progress)
-  
+
   return {
     strokeDasharray: `${circumference} ${circumference}`,
     strokeDashoffset: dashoffset,
@@ -151,7 +138,7 @@ function formatDuration(seconds) {
 // Открытие модалки
 async function openModal() {
   showModal.value = true
-  
+
   try {
     // Запрашиваем доступ к камере
     stream.value = await navigator.mediaDevices.getUserMedia({
@@ -162,7 +149,7 @@ async function openModal() {
       },
       audio: true
     })
-    
+
     // Показываем превью
     if (videoPreview.value) {
       videoPreview.value.srcObject = stream.value
@@ -192,7 +179,7 @@ function toggleRecording() {
     openModal()
     return
   }
-  
+
   if (isRecording.value) {
     stopRecording()
   } else {
@@ -203,37 +190,36 @@ function toggleRecording() {
 // Начало записи
 function startRecording() {
   if (!stream.value) return
-  
+
   const mimeType = getSupportedVideoMimeType()
-  
+
   try {
     mediaRecorder.value = new MediaRecorder(stream.value, { mimeType })
     chunks.value = []
-    
+
     mediaRecorder.value.ondataavailable = (event) => {
       if (event.data.size > 0) {
         chunks.value.push(event.data)
       }
     }
-    
+
     mediaRecorder.value.onstop = () => {
       handleRecordingComplete()
     }
-    
+
     mediaRecorder.value.start(100)
     isRecording.value = true
     recordingDuration.value = 0
-    
+
     // Таймер записи
     timerInterval.value = setInterval(() => {
       recordingDuration.value++
-      
+
       // Автоматическая остановка по достижении максимума
       if (recordingDuration.value >= MAX_DURATION) {
         stopRecording()
       }
     }, 1000)
-    
   } catch (err) {
     console.error('Failed to start recording:', err)
     alert('Не удалось начать запись')
@@ -245,9 +231,9 @@ function stopRecording() {
   if (mediaRecorder.value && mediaRecorder.value.state !== 'inactive') {
     mediaRecorder.value.stop()
   }
-  
+
   isRecording.value = false
-  
+
   if (timerInterval.value) {
     clearInterval(timerInterval.value)
     timerInterval.value = null
@@ -257,11 +243,11 @@ function stopRecording() {
 // Обработка завершения записи
 function handleRecordingComplete() {
   if (chunks.value.length === 0) return
-  
+
   const mimeType = mediaRecorder.value?.mimeType || 'video/webm'
   recordedBlob.value = new Blob(chunks.value, { type: mimeType })
   recordedUrl.value = URL.createObjectURL(recordedBlob.value)
-  
+
   // Останавливаем превью камеры
   if (videoPreview.value) {
     videoPreview.value.srcObject = null
@@ -275,7 +261,7 @@ function retake() {
     URL.revokeObjectURL(recordedUrl.value)
     recordedUrl.value = ''
   }
-  
+
   // Возвращаем превью камеры
   if (videoPreview.value && stream.value) {
     videoPreview.value.srcObject = stream.value
@@ -285,16 +271,16 @@ function retake() {
 // Отправка видео
 function sendVideo() {
   if (!recordedBlob.value) return
-  
+
   const extension = getExtensionFromMimeType(recordedBlob.value.type)
   const file = new File([recordedBlob.value], `video-note-${Date.now()}.${extension}`, {
     type: recordedBlob.value.type
   })
-  
+
   // Маркируем как видео-кружочек
   file.isVideoNote = true
   file.duration = recordingDuration.value
-  
+
   emit('recorded', { file, duration: recordingDuration.value })
   closeModal()
 }
@@ -308,13 +294,13 @@ function getSupportedVideoMimeType() {
     'video/mp4;codecs=h264,aac',
     'video/mp4'
   ]
-  
+
   for (const type of types) {
     if (MediaRecorder.isTypeSupported(type)) {
       return type
     }
   }
-  
+
   return 'video/webm'
 }
 
@@ -332,12 +318,12 @@ function cleanup() {
     clearInterval(timerInterval.value)
     timerInterval.value = null
   }
-  
+
   if (stream.value) {
-    stream.value.getTracks().forEach(track => track.stop())
+    stream.value.getTracks().forEach((track) => track.stop())
     stream.value = null
   }
-  
+
   mediaRecorder.value = null
   chunks.value = []
   isRecording.value = false
@@ -456,8 +442,13 @@ onUnmounted(() => {
 }
 
 @keyframes blink {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.3; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
 }
 
 .record-timer {
@@ -627,7 +618,7 @@ onUnmounted(() => {
     border-radius: 0;
     justify-content: center;
   }
-  
+
   .video-preview-container,
   .recorded-preview {
     width: 280px;

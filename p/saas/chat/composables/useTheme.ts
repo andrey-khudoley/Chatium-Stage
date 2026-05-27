@@ -12,7 +12,10 @@ const currentTheme = ref<Theme>('light')
 export function useTheme() {
   // Загрузка темы из localStorage при инициализации
   onMounted(() => {
-    const saved = typeof localStorage !== 'undefined' ? localStorage.getItem(STORAGE_KEY) as Theme | null : null
+    const saved =
+      typeof localStorage !== 'undefined'
+        ? (localStorage.getItem(STORAGE_KEY) as Theme | null)
+        : null
     if (saved && (saved === 'light' || saved === 'dark')) {
       currentTheme.value = saved
     }
@@ -53,6 +56,6 @@ export function useTheme() {
     theme: currentTheme,
     toggleTheme,
     setTheme,
-    isDark: computed(() => currentTheme.value === 'dark'),
+    isDark: computed(() => currentTheme.value === 'dark')
   }
 }

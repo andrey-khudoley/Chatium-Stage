@@ -60,7 +60,9 @@ export async function getSetting(ctx: app.Ctx, key: string): Promise<unknown> {
  */
 export async function getProjectDomain(ctx: app.Ctx): Promise<string> {
   const value = await getSetting(ctx, SETTING_KEYS.PROJECT_DOMAIN)
-  return typeof value === 'string' && value.trim() ? value.trim() : DEFAULTS[SETTING_KEYS.PROJECT_DOMAIN]
+  return typeof value === 'string' && value.trim()
+    ? value.trim()
+    : DEFAULTS[SETTING_KEYS.PROJECT_DOMAIN]
 }
 
 /**
@@ -73,7 +75,8 @@ export async function getSettingString(ctx: app.Ctx, key: string): Promise<strin
     payload: { key }
   })
   const value = await getSetting(ctx, key)
-  const result = typeof value === 'string' ? value : String((DEFAULTS as Record<string, unknown>)[key] ?? '')
+  const result =
+    typeof value === 'string' ? value : String((DEFAULTS as Record<string, unknown>)[key] ?? '')
   await loggerLib.writeServerLog(ctx, {
     severity: 7,
     message: `[${LOG_MODULE}] getSettingString exit`,
@@ -187,7 +190,9 @@ export async function setSetting(ctx: app.Ctx, key: string, value: unknown): Pro
       payload: { str, isLogLevel: isLogLevel(str) }
     })
     if (!isLogLevel(str)) {
-      throw new Error(`Недопустимый уровень логирования: ${str}. Допустимо: ${LOG_LEVELS.join(', ')}`)
+      throw new Error(
+        `Недопустимый уровень логирования: ${str}. Допустимо: ${LOG_LEVELS.join(', ')}`
+      )
     }
     normalized = str
   } else if (key === SETTING_KEYS.LOGS_LIMIT) {

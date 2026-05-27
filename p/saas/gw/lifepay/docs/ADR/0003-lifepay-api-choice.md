@@ -1,10 +1,10 @@
 ---
-title: "ADR 0001 — Выбор API LifePay для платёжной страницы"
+title: 'ADR 0001 — Выбор API LifePay для платёжной страницы'
 status: accepted
 created: 2026-05-13
 updated: 2026-05-13
 decided: 2026-05-13
-project: "[Бриф проекта](../../../../../units/aayakovleva/project-docs/brief.md)"
+project: '[Бриф проекта](../../../../../units/aayakovleva/project-docs/brief.md)'
 tags:
   - note/adr
   - topic/lifepay

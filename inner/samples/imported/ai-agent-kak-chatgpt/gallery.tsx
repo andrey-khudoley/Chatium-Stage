@@ -7,15 +7,15 @@ export const galleryPageRoute = app.get('/gallery', async (ctx, req) => {
     <html>
       <head>
         <title>Gallery - GPT</title>
-        <meta name='viewport' content='width=device-width, initial-scale=1' />
-        <link rel='preconnect' href='https://fonts.googleapis.com' />
-        <link rel='preconnect' href='https://fonts.gstatic.com' crossorigin='anonymous' />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
         <link
-          href='https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap'
-          rel='stylesheet'
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+          rel="stylesheet"
         />
-        <script src='/s/static/lib/tailwind.3.4.16.min.js'></script>
-        <style type='text/tailwindcss'>{`
+        <script src="/s/static/lib/tailwind.3.4.16.min.js"></script>
+        <style type="text/tailwindcss">{`
           @layer base {
             * {
               margin: 0;

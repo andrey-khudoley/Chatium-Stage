@@ -28,7 +28,7 @@ export type WeightParameters = {
 
 /**
  * Получает значение параметра из таблицы AttributionWeights с дефолтным значением
- * 
+ *
  * @param ctx - контекст
  * @param projectId - ID проекта
  * @param parameter - название параметра
@@ -63,7 +63,9 @@ async function getWeightParameter(
     }
   })
   // Явная проверка на null/undefined, чтобы не обрабатывать 0 или "" как отсутствие channelId
-  const projectWeight = projectWeights.find(w => w.channelId === null || w.channelId === undefined)
+  const projectWeight = projectWeights.find(
+    (w) => w.channelId === null || w.channelId === undefined
+  )
 
   if (projectWeight) {
     return projectWeight.value
@@ -161,11 +163,11 @@ const PRIOR_ANALYSIS_WINDOW_DAYS = 30
 
 /**
  * Вычисляет prior вероятность для TrackingLink на основе бэйесовского сглаживания
- * 
+ *
  * Формула: prior = (joins + α) / (clicks + α + β)
- * 
+ *
  * УЛУЧШЕНИЕ: Учитывает только данные за последние 30 дней для актуальности статистики
- * 
+ *
  * @param ctx - контекст
  * @param trackingLinkId - ID TrackingLink
  * @param projectId - ID проекта
@@ -223,9 +225,9 @@ export async function prior(
 
 /**
  * Вычисляет likelihood вероятность на основе времени между кликом и подпиской
- * 
+ *
  * Формула: likelihood = λ * exp(-Δt/τ_fast) + (1-λ) * exp(-Δt/τ_slow)
- * 
+ *
  * @param ctx - контекст
  * @param deltaTSeconds - разница времени между кликом и подпиской в секундах
  * @param projectId - ID проекта
@@ -258,15 +260,15 @@ export async function likelihood(
 
 /**
  * Вычисляет quality score для LinkClick на основе query параметров
- * 
+ *
  * Качество повышается при наличии UTM-меток:
  * - utm_source: +0.1
  * - utm_medium: +0.05
  * - utm_campaign: +0.05
- * 
+ *
  * Базовое качество: 0.8
  * Максимальное качество: 1.0
- * 
+ *
  * @param queryParams - JSON строка с query параметрами или null
  * @returns quality score (0.8 - 1.0)
  */
@@ -275,16 +277,16 @@ export function quality(queryParams: string | null | undefined): number {
   const UTM_SOURCE_BONUS = 0.1
   const UTM_MEDIUM_BONUS = 0.05
   const UTM_CAMPAIGN_BONUS = 0.05
-  
+
   if (!queryParams) {
     return BASE_QUALITY
   }
-  
+
   let qualityScore = BASE_QUALITY
-  
+
   try {
     const params = JSON.parse(queryParams)
-    
+
     // Проверяем наличие UTM-меток
     if (params.utm_source) {
       qualityScore += UTM_SOURCE_BONUS
@@ -299,17 +301,17 @@ export function quality(queryParams: string | null | undefined): number {
     // Если не удалось распарсить JSON, возвращаем базовое качество
     return BASE_QUALITY
   }
-  
+
   return Math.min(1.0, qualityScore)
 }
 
 /**
  * Вычисляет комбинированный score для пары (linkClick, joinEvent)
- * 
+ *
  * Формула: score = prior(trackingLink) * likelihood(Δt) * quality(linkClick)
- * 
+ *
  * УЛУЧШЕНИЕ: quality теперь учитывает наличие UTM-параметров в query
- * 
+ *
  * @param ctx - контекст
  * @param linkClick - объект LinkClick (или его ID и данные)
  * @param joinEvent - объект JoinEvent (или его ID и данные)
@@ -345,9 +347,9 @@ export async function score(
 
 /**
  * Нормализует массив scores в вероятности (сумма = 1)
- * 
+ *
  * Формула: p_i = score_i / Σ score_j
- * 
+ *
  * @param scores - массив scores
  * @returns массив нормализованных вероятностей
  */
@@ -365,5 +367,5 @@ export function normalizeScores(scores: number[]): number[] {
   }
 
   // Нормализуем: делим каждый score на сумму
-  return scores.map(score => score / sum)
+  return scores.map((score) => score / sum)
 }

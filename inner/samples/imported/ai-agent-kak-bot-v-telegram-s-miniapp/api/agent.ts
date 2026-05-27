@@ -23,6 +23,6 @@ export const apiGetToolsRoute = app.get('/tools').handle(async (ctx, req) => {
 
   return {
     workspaceTools: await findWorkspaceTools(ctx),
-    agentTools: (agent.enabledToolKeys ?? [])
+    agentTools: agent.enabledToolKeys ?? []
   }
 })

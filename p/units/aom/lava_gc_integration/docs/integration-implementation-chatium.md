@@ -16,26 +16,26 @@
 
 ## Платформа Chatium: ограничения
 
-| Область | Требование |
-| --- | --- |
-| **Роутинг** | File-based: один файл = один эндпоинт с путём `/`. Ссылки — `withProjectRoot(route.url())` из `config/routes.tsx`. |
-| **Heap** | Только на сервере (API, `web/*.tsx` SSR). В Vue не импортировать таблицы; данные в браузер — `fetch` к своим API или props с SSR. |
-| **Гонки** | `runWithExclusiveLock` / `tryRunWithExclusiveLock` из `@app/sync`. |
-| **HTTP** | `@app/request` для Lava и GetCourse. |
-| **Валидация** | `@app/schema`. |
-| **Ошибки** | `@app/errors` + единый JSON для внешних клиентов. |
-| **Логи** | `ctx.account.log()` / проектный logger, не `console.log` в проде. |
-| **Зависимости** | Без npm в рантайме; только модули платформы (`@app/*`, см. `inner/docs/025-app-modules.md`). |
+| Область         | Требование                                                                                                                        |
+| --------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| **Роутинг**     | File-based: один файл = один эндпоинт с путём `/`. Ссылки — `withProjectRoot(route.url())` из `config/routes.tsx`.                |
+| **Heap**        | Только на сервере (API, `web/*.tsx` SSR). В Vue не импортировать таблицы; данные в браузер — `fetch` к своим API или props с SSR. |
+| **Гонки**       | `runWithExclusiveLock` / `tryRunWithExclusiveLock` из `@app/sync`.                                                                |
+| **HTTP**        | `@app/request` для Lava и GetCourse.                                                                                              |
+| **Валидация**   | `@app/schema`.                                                                                                                    |
+| **Ошибки**      | `@app/errors` + единый JSON для внешних клиентов.                                                                                 |
+| **Логи**        | `ctx.account.log()` / проектный logger, не `console.log` в проде.                                                                 |
+| **Зависимости** | Без npm в рантайме; только модули платформы (`@app/*`, см. `inner/docs/025-app-modules.md`).                                      |
 
 ## Целевая раскладка по каталогам
 
 Согласовано с [ADR-0002](./ADR/0002-settings-heap-and-layered-api.md):
 
-| Слой | Каталог | Интеграция |
-| --- | --- | --- |
-| Таблицы | `tables/` | Контракты, webhook-события, опционально lock-log |
-| Репозитории | `repos/` | CRUD, `where`, `countBy` |
-| Логика | `lib/` | Lava client, payment flow, webhook, идемпотентность |
-| API | `api/` | `integrations/lava/payment-link`, `integrations/lava/webhook` |
+| Слой        | Каталог   | Интеграция                                                    |
+| ----------- | --------- | ------------------------------------------------------------- |
+| Таблицы     | `tables/` | Контракты, webhook-события, опционально lock-log              |
+| Репозитории | `repos/`  | CRUD, `where`, `countBy`                                      |
+| Логика      | `lib/`    | Lava client, payment flow, webhook, идемпотентность           |
+| API         | `api/`    | `integrations/lava/payment-link`, `integrations/lava/webhook` |
 
 Под блокировкой не выполнять долгие вызовы в GetCourse и полную цепочку retry — только Lava + запись в Heap.

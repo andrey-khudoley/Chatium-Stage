@@ -6,7 +6,13 @@
   >
     <span class="custom-checkbox__indicator">
       <svg class="custom-checkbox__icon" width="12" height="12" viewBox="0 0 12 12" fill="none">
-        <path d="M2.5 6L5 8.5L9.5 3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <path
+          d="M2.5 6L5 8.5L9.5 3.5"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
       </svg>
     </span>
     <span v-if="labelHtml || $slots.default" class="custom-checkbox__label">
@@ -20,7 +26,7 @@
 const props = defineProps({
   modelValue: { type: Boolean, default: false },
   disabled: { type: Boolean, default: false },
-  labelHtml: { type: String, default: '' },
+  labelHtml: { type: String, default: '' }
 })
 
 const emit = defineEmits(['update:modelValue'])

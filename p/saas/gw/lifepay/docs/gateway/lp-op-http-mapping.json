@@ -12,9 +12,29 @@
   ],
   "contour": "bills_v1",
   "operations": {
-    "createBill":    { "gatewayMethod": "POST", "gatewayPath": "/v1/createBill",    "upstreamMethod": "POST", "upstreamPath": "https://api.life-pay.ru/v1/bill" },
-    "getBillStatus": { "gatewayMethod": "GET",  "gatewayPath": "/v1/getBillStatus", "upstreamMethod": "GET",  "upstreamPath": "https://api.life-pay.ru/v1/bill" },
-    "cancelBill":    { "gatewayMethod": "POST", "gatewayPath": "/v1/cancelBill",    "upstreamMethod": "POST", "upstreamPath": "https://api.life-pay.ru/v1/bill" },
-    "operations":    { "gatewayMethod": "GET",  "gatewayPath": "/v1/operations",    "upstreamMethod": null,   "upstreamPath": null }
+    "createBill": {
+      "gatewayMethod": "POST",
+      "gatewayPath": "/v1/createBill",
+      "upstreamMethod": "POST",
+      "upstreamPath": "https://api.life-pay.ru/v1/bill"
+    },
+    "getBillStatus": {
+      "gatewayMethod": "GET",
+      "gatewayPath": "/v1/getBillStatus",
+      "upstreamMethod": "GET",
+      "upstreamPath": "https://api.life-pay.ru/v1/bill"
+    },
+    "cancelBill": {
+      "gatewayMethod": "POST",
+      "gatewayPath": "/v1/cancelBill",
+      "upstreamMethod": "POST",
+      "upstreamPath": "https://api.life-pay.ru/v1/bill"
+    },
+    "operations": {
+      "gatewayMethod": "GET",
+      "gatewayPath": "/v1/operations",
+      "upstreamMethod": null,
+      "upstreamPath": null
+    }
   }
 }

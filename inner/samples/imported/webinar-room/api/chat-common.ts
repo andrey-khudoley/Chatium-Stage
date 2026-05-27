@@ -38,7 +38,7 @@ export async function checkUserBan(ctx: app.Ctx, userId: string, episodeId: stri
 
   const ban = await ChatBans.findOneBy(ctx, {
     user: userId,
-    episode: episodeId,
+    episode: episodeId
   })
 
   if (!ban) return null
@@ -54,7 +54,7 @@ export async function checkUserBan(ctx: app.Ctx, userId: string, episodeId: stri
 export async function ensureUserHaveAccessToFeed(ctx: app.Ctx, feed: any, user: any) {
   const [participant] = await findFeedParticipants(ctx, feed, {
     where: { userId: user.id },
-    limit: 1,
+    limit: 1
   })
 
   if (!participant) {
@@ -62,7 +62,11 @@ export async function ensureUserHaveAccessToFeed(ctx: app.Ctx, feed: any, user: 
   }
 }
 
-export function mapAuthor(author: Author, currentUser: SmartUser, smartUsersMap: Map<string, SmartUser>) {
+export function mapAuthor(
+  author: Author,
+  currentUser: SmartUser,
+  smartUsersMap: Map<string, SmartUser>
+) {
   if (!author.avatar) author.avatar = {}
 
   const isCurrentUser = author.id === currentUser.id
@@ -74,7 +78,9 @@ export function mapAuthor(author: Author, currentUser: SmartUser, smartUsersMap:
         ? [smartUser?.firstName, smartUser?.lastName].filter(Boolean).join(' ')
         : 'Вы'
 
-    author.avatar.image = currentUser.getImageThumbnailUrl ? currentUser.getImageThumbnailUrl(200) : undefined
+    author.avatar.image = currentUser.getImageThumbnailUrl
+      ? currentUser.getImageThumbnailUrl(200)
+      : undefined
   } else {
     author.name =
       smartUser?.firstName || smartUser?.lastName
@@ -92,7 +98,11 @@ export function mapAuthor(author: Author, currentUser: SmartUser, smartUsersMap:
   return author
 }
 
-export function mapMessage(msg: any, currentUser: SmartUser, smartUsersMap: Map<string, SmartUser>) {
+export function mapMessage(
+  msg: any,
+  currentUser: SmartUser,
+  smartUsersMap: Map<string, SmartUser>
+) {
   msg.author = mapAuthor(msg.author, currentUser, smartUsersMap)
 
   if (msg.replyTo) {
@@ -102,7 +112,10 @@ export function mapMessage(msg: any, currentUser: SmartUser, smartUsersMap: Map<
   return msg
 }
 
-export async function resolveChatTargetContext(ctx: app.Ctx, feedId: string): Promise<ChatTargetContext> {
+export async function resolveChatTargetContext(
+  ctx: app.Ctx,
+  feedId: string
+): Promise<ChatTargetContext> {
   const episode = await Episodes.findOneBy(ctx, { chatFeedId: feedId })
 
   if (episode) {
@@ -110,7 +123,7 @@ export async function resolveChatTargetContext(ctx: app.Ctx, feedId: string): Pr
       episode,
       isAutowebinar: false,
       chatAccessMode: (episode.chatAccessMode as ChatAccessMode) || ChatAccessMode.Open,
-      isFinished: episode.status === EpisodeStatus.Finished,
+      isFinished: episode.status === EpisodeStatus.Finished
     }
   }
 
@@ -126,7 +139,9 @@ export async function resolveChatTargetContext(ctx: app.Ctx, feedId: string): Pr
   if (!aw) throw new Error('Автовебинар не найден')
 
   const nextChatAccessMode = aw.chatAccessMode as ChatAccessMode | undefined
-  const chatAccessMode = Object.values(ChatAccessMode).includes(nextChatAccessMode as ChatAccessMode)
+  const chatAccessMode = Object.values(ChatAccessMode).includes(
+    nextChatAccessMode as ChatAccessMode
+  )
     ? (nextChatAccessMode as ChatAccessMode)
     : ChatAccessMode.Open
 
@@ -136,7 +151,7 @@ export async function resolveChatTargetContext(ctx: app.Ctx, feedId: string): Pr
     autowebinarId: aw.id,
     autowebinarSchedule: schedule,
     chatAccessMode,
-    isFinished: schedule.status === ScheduleStatus.Finished,
+    isFinished: schedule.status === ScheduleStatus.Finished
   }
 }
 

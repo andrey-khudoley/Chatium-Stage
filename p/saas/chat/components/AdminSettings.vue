@@ -14,11 +14,7 @@
       <AppNotification v-if="loggingLoadError" type="error" :message="loggingLoadError" />
       <template v-else>
         <div class="form-row">
-          <AppSelect
-            v-model="logLevel"
-            label="Уровень логирования"
-            :options="logLevelOptions"
-          />
+          <AppSelect v-model="logLevel" label="Уровень логирования" :options="logLevelOptions" />
           <AppButton
             variant="primary"
             :loading="logLevelSaving"
@@ -81,7 +77,7 @@ const logLevelOptions = [
   { value: 'Error', label: 'Error' },
   { value: 'Warn', label: 'Warn' },
   { value: 'Info', label: 'Info' },
-  { value: 'Debug', label: 'Debug' },
+  { value: 'Debug', label: 'Debug' }
 ]
 
 const logLevel = ref('Info')

@@ -91,10 +91,9 @@ const currentYear = computed(() => new Date().getFullYear())
   .footer-content {
     flex-direction: row;
   }
-  
+
   .footer-info {
     text-align: left;
   }
 }
 </style>
-

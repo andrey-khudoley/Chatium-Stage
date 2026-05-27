@@ -21,7 +21,7 @@ const props = withDefaults(
     encodedFocusToolsSocketId?: string
     timezoneOffsetHours?: number
   }>(),
-  { timezoneOffsetHours: DEFAULT_USER_TIMEZONE_OFFSET_HOURS },
+  { timezoneOffsetHours: DEFAULT_USER_TIMEZONE_OFFSET_HOURS }
 )
 </script>
 
@@ -59,14 +59,49 @@ const props = withDefaults(
 </template>
 
 <style scoped>
-.app-layout { min-height: 100vh; }
-.content-wrapper { display: flex; }
-.content-inner { width: 100%; }
-.tools-shell { max-width: 860px; margin: 0 auto; padding: 1rem; }
-.tools-title { margin: 0 0 1rem; text-transform: uppercase; letter-spacing: .12em; font-size: .9rem; }
-.tools-grid { display: grid; gap: .8rem; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
-.tools-card { border: 1px solid var(--color-border); background: var(--color-bg-secondary); color: var(--color-text); text-decoration: none; }
-.tools-card--link { display: inline-flex; gap: .6rem; align-items: center; padding: .9rem 1rem; min-height: 3.2rem; }
-.tools-card:hover { border-color: var(--color-accent); box-shadow: 0 0 10px var(--color-accent-light); }
-.tools-card-icon { color: var(--color-accent-hover); }
+.app-layout {
+  min-height: 100vh;
+}
+.content-wrapper {
+  display: flex;
+}
+.content-inner {
+  width: 100%;
+}
+.tools-shell {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 1rem;
+}
+.tools-title {
+  margin: 0 0 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 0.9rem;
+}
+.tools-grid {
+  display: grid;
+  gap: 0.8rem;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+.tools-card {
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-secondary);
+  color: var(--color-text);
+  text-decoration: none;
+}
+.tools-card--link {
+  display: inline-flex;
+  gap: 0.6rem;
+  align-items: center;
+  padding: 0.9rem 1rem;
+  min-height: 3.2rem;
+}
+.tools-card:hover {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 10px var(--color-accent-light);
+}
+.tools-card-icon {
+  color: var(--color-accent-hover);
+}
 </style>

@@ -50,7 +50,7 @@ const props = withDefaults(
     encodedFocusToolsSocketId: string
     timezoneOffsetHours?: number
   }>(),
-  { timezoneOffsetHours: DEFAULT_USER_TIMEZONE_OFFSET_HOURS },
+  { timezoneOffsetHours: DEFAULT_USER_TIMEZONE_OFFSET_HOURS }
 )
 
 const bootLoaderDone = ref(false)
@@ -113,11 +113,15 @@ const visibleTasksForProject = computed(() =>
 )
 
 const selectedClient = computed(() =>
-  selectedClientId.value ? tree.value.clients.find((c) => c.id === selectedClientId.value) ?? null : null
+  selectedClientId.value
+    ? (tree.value.clients.find((c) => c.id === selectedClientId.value) ?? null)
+    : null
 )
 
 const selectedProject = computed(() =>
-  selectedProjectId.value ? tree.value.projects.find((p) => p.id === selectedProjectId.value) ?? null : null
+  selectedProjectId.value
+    ? (tree.value.projects.find((p) => p.id === selectedProjectId.value) ?? null)
+    : null
 )
 
 watch(sortedClients, (list) => {
@@ -246,12 +250,8 @@ function syncMobileLayout() {
   }
 }
 
-const showTasksSidebar = computed(
-  () => !isMobileTasksLayout.value || mobilePane.value === 'tree'
-)
-const showTasksPanel = computed(
-  () => !isMobileTasksLayout.value || mobilePane.value === 'tasks'
-)
+const showTasksSidebar = computed(() => !isMobileTasksLayout.value || mobilePane.value === 'tree')
+const showTasksPanel = computed(() => !isMobileTasksLayout.value || mobilePane.value === 'tasks')
 
 /** Правая колонка чата: только десктоп (≥1024px). */
 const showDesktopAiChat = computed(() => !isMobileTasksLayout.value)
@@ -352,7 +352,9 @@ async function submitClientModal() {
   }
 }
 
-const deleteTarget = ref<{ kind: 'client' | 'project' | 'task'; id: string; label: string } | null>(null)
+const deleteTarget = ref<{ kind: 'client' | 'project' | 'task'; id: string; label: string } | null>(
+  null
+)
 
 function openDelete(kind: 'client' | 'project' | 'task', id: string, label: string) {
   deleteTarget.value = { kind, id, label }
@@ -420,7 +422,11 @@ async function submitProjectModal() {
     if (projectModal.value === 'create') {
       const j = await postJson<{ success: boolean; project?: TaskProjectDto; error?: string }>(
         props.taskProjectCreateUrl,
-        { clientId: selectedClientId.value!, name: projectFormName.value, details: projectFormDetails.value }
+        {
+          clientId: selectedClientId.value!,
+          name: projectFormName.value,
+          details: projectFormDetails.value
+        }
       )
       if (!j.success || !j.project) {
         projectError.value = j.error ?? 'Ошибка'
@@ -444,7 +450,9 @@ async function submitProjectModal() {
         projectError.value = j.error ?? 'Ошибка'
         return
       }
-      tree.value.projects = tree.value.projects.map((x) => (x.id === j.project!.id ? j.project! : x))
+      tree.value.projects = tree.value.projects.map((x) =>
+        x.id === j.project!.id ? j.project! : x
+      )
       closeProjectModal()
     }
   } catch (e) {
@@ -612,7 +620,11 @@ function fireTaskReminder(task: TaskItemDto, remindAtMs: number) {
   if (!task.eventAtMs) return
   const title = task.title || 'Событие'
   const body = `Событие по задаче начнется в ${task.reminderMinutesBefore} мин.`
-  if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+  if (
+    typeof window !== 'undefined' &&
+    'Notification' in window &&
+    Notification.permission === 'granted'
+  ) {
     try {
       const notification = new Notification(title, { body, tag: `task-reminder:${task.id}` })
       notification.onclick = () => {
@@ -745,16 +757,22 @@ async function markTaskForDay(t: TaskItemDto) {
   loading.value = true
   globalError.value = ''
   try {
-    const j = await postJson<{ success: boolean; task?: TaskItemDto; error?: string }>(props.taskItemUpdateUrl, {
-      id: t.id,
-      status: nextStatus
-    })
+    const j = await postJson<{ success: boolean; task?: TaskItemDto; error?: string }>(
+      props.taskItemUpdateUrl,
+      {
+        id: t.id,
+        status: nextStatus
+      }
+    )
     if (!j.success || !j.task) {
       globalError.value = j.error ?? 'Не удалось обновить задачу'
       return
     }
     tree.value.tasks = tree.value.tasks.map((x) => (x.id === j.task!.id ? j.task! : x))
-    log.info(nextStatus === 'in_progress' ? 'Task marked for day (in progress)' : 'Task back to todo', { id: t.id })
+    log.info(
+      nextStatus === 'in_progress' ? 'Task marked for day (in progress)' : 'Task back to todo',
+      { id: t.id }
+    )
   } catch (e) {
     globalError.value = String(e)
   } finally {
@@ -765,7 +783,10 @@ async function markTaskForDay(t: TaskItemDto) {
 async function assignTaskToPomodoro(t: TaskItemDto) {
   if (!props.isAuthenticated) return
   globalError.value = ''
-  const statsDayKey = computePomodoroStatsDayKeyForUtcOffsetHours(Date.now(), props.timezoneOffsetHours)
+  const statsDayKey = computePomodoroStatsDayKeyForUtcOffsetHours(
+    Date.now(),
+    props.timezoneOffsetHours
+  )
   try {
     const j = await postJson<{
       success: boolean
@@ -773,7 +794,7 @@ async function assignTaskToPomodoro(t: TaskItemDto) {
       state?: { pomodoro?: { status: string } }
     }>(props.toolsControlUrl, {
       statsDayKey,
-      command: { kind: 'assign-task', taskId: t.id },
+      command: { kind: 'assign-task', taskId: t.id }
     })
     if (!j.success) {
       globalError.value = j.error ?? 'Не удалось добавить задачу в помидор'
@@ -788,7 +809,7 @@ async function assignTaskToPomodoro(t: TaskItemDto) {
       if (action) {
         const cj = await postJson<{ success: boolean; error?: string }>(props.toolsControlUrl, {
           statsDayKey,
-          command: { kind: 'pomodoro', action },
+          command: { kind: 'pomodoro', action }
         })
         if (!cj.success) {
           globalError.value = cj.error ?? 'Не удалось запустить таймер pomodoro'
@@ -800,7 +821,7 @@ async function assignTaskToPomodoro(t: TaskItemDto) {
     if (typeof window !== 'undefined') {
       window.dispatchEvent(
         new CustomEvent('assistant:focus-task-selected', {
-          detail: { taskId: t.id, pomodoroSessionStartedFromTasksPage },
+          detail: { taskId: t.id, pomodoroSessionStartedFromTasksPage }
         })
       )
     }
@@ -829,10 +850,13 @@ async function updateTaskStatus(t: TaskItemDto, status: TaskItemDto['status']) {
   loading.value = true
   globalError.value = ''
   try {
-    const j = await postJson<{ success: boolean; task?: TaskItemDto; error?: string }>(props.taskItemUpdateUrl, {
-      id: t.id,
-      status
-    })
+    const j = await postJson<{ success: boolean; task?: TaskItemDto; error?: string }>(
+      props.taskItemUpdateUrl,
+      {
+        id: t.id,
+        status
+      }
+    )
     if (!j.success || !j.task) {
       globalError.value = j.error ?? 'Не удалось обновить статус'
       return
@@ -1112,7 +1136,11 @@ function isSameIdOrder(next: string[], prev: string[]): boolean {
  * insertBefore — индекс в исходном массиве: «вставить перед элементом с этим индексом» (0…length).
  * Значение `length` — вставка в конец.
  */
-function reorderIdsWithInsertBefore(originalIds: string[], fromIdx: number, insertBefore: number): string[] {
+function reorderIdsWithInsertBefore(
+  originalIds: string[],
+  fromIdx: number,
+  insertBefore: number
+): string[] {
   const next = [...originalIds]
   const [removed] = next.splice(fromIdx, 1)
   let insertAt = insertBefore
@@ -1122,7 +1150,11 @@ function reorderIdsWithInsertBefore(originalIds: string[], fromIdx: number, inse
 }
 
 /** true, если после перемещения элемента с индекса `fromIdx` к позиции «перед insertBefore» порядок id изменится */
-function reorderIdsWouldChange(originalIds: string[], fromIdx: number, insertBefore: number): boolean {
+function reorderIdsWouldChange(
+  originalIds: string[],
+  fromIdx: number,
+  insertBefore: number
+): boolean {
   if (fromIdx < 0 || insertBefore < 0 || insertBefore > originalIds.length) return false
   const next = reorderIdsWithInsertBefore(originalIds, fromIdx, insertBefore)
   return !isSameIdOrder(next, originalIds)
@@ -1136,7 +1168,9 @@ async function persistClientOrder(movedId: string, insertBefore: number) {
   const originalIds = list.map((c) => c.id)
   const orderedIds = reorderIdsWithInsertBefore(originalIds, fromIdx, insertBefore)
   if (isSameIdOrder(orderedIds, originalIds)) return
-  const r = await postJson<{ success: boolean; error?: string }>(props.taskClientReorderUrl, { orderedIds })
+  const r = await postJson<{ success: boolean; error?: string }>(props.taskClientReorderUrl, {
+    orderedIds
+  })
   if (!r.success) {
     globalError.value = r.error ?? 'Не удалось сохранить порядок клиентов'
     await refreshTree()
@@ -1157,7 +1191,12 @@ function projectItemDropRowRect(e: DragEvent): DOMRect {
 
 function onProjectDragOver(e: DragEvent, clientId: string, pIdx: number) {
   e.preventDefault()
-  if (dragKind.value !== 'project' || dragProjectClientId.value !== clientId || !dragProjectId.value) return
+  if (
+    dragKind.value !== 'project' ||
+    dragProjectClientId.value !== clientId ||
+    !dragProjectId.value
+  )
+    return
   e.dataTransfer!.dropEffect = 'move'
   const r = projectItemDropRowRect(e)
   const mid = r.top + r.height / 2
@@ -1185,7 +1224,12 @@ function projectListEndZoneBottomPx(el: HTMLElement): number {
 }
 
 function trySetProjectInsertAtEnd(clientId: string) {
-  if (dragKind.value !== 'project' || dragProjectClientId.value !== clientId || !dragProjectId.value) return
+  if (
+    dragKind.value !== 'project' ||
+    dragProjectClientId.value !== clientId ||
+    !dragProjectId.value
+  )
+    return
   const listLen = projectsForClientId(clientId).length
   const originalIds = projectsForClientId(clientId).map((p) => p.id)
   const fromIdx = originalIds.indexOf(dragProjectId.value)
@@ -1198,7 +1242,12 @@ function trySetProjectInsertAtEnd(clientId: string) {
 
 function onProjectListDragOver(e: DragEvent, clientId: string) {
   e.preventDefault()
-  if (dragKind.value !== 'project' || dragProjectClientId.value !== clientId || !dragProjectId.value) return
+  if (
+    dragKind.value !== 'project' ||
+    dragProjectClientId.value !== clientId ||
+    !dragProjectId.value
+  )
+    return
   e.dataTransfer!.dropEffect = 'move'
   const el = e.currentTarget as HTMLElement
   const r = el.getBoundingClientRect()
@@ -1226,7 +1275,8 @@ function onProjectListDrop(e: DragEvent, clientId: string, listLen: number) {
   const id = dragProjectId.value
   const fromClient = dragProjectClientId.value
   const wantEnd =
-    projectInsertBefore.value?.clientId === clientId && projectInsertBefore.value.beforeIdx === listLen
+    projectInsertBefore.value?.clientId === clientId &&
+    projectInsertBefore.value.beforeIdx === listLen
   const el = e.currentTarget as HTMLElement
   const r = el.getBoundingClientRect()
   const inEndZone = e.clientY >= r.bottom - projectListEndZoneBottomPx(el)
@@ -1277,7 +1327,9 @@ function showProjectLineBefore(clientId: string, idx: number): boolean {
 </script>
 
 <template>
-  <div class="app-layout tasks-page-app bg-[var(--color-bg)] text-[var(--color-text)] flex flex-col">
+  <div
+    class="app-layout tasks-page-app bg-[var(--color-bg)] text-[var(--color-text)] flex flex-col"
+  >
     <GlobalGlitch />
     <Header
       v-if="bootLoaderDone"
@@ -1318,21 +1370,21 @@ function showProjectLineBefore(clientId: string, idx: number): boolean {
             @dragover="onHierarchyDragOver"
             @drop="onHierarchyDrop"
           >
-            <p v-if="!sortedClients.length" class="tasks-hint tasks-hint--muted">Пока нет клиентов — создайте первого.</p>
+            <p v-if="!sortedClients.length" class="tasks-hint tasks-hint--muted">
+              Пока нет клиентов — создайте первого.
+            </p>
             <div
               v-for="(c, cIdx) in sortedClients"
               :key="c.id"
               class="tasks-client-block"
-              :class="{ 'tasks-client-block--dragging': dragKind === 'client' && dragClientId === c.id }"
+              :class="{
+                'tasks-client-block--dragging': dragKind === 'client' && dragClientId === c.id
+              }"
               @dragover="onClientDragOver($event, cIdx)"
               @dragleave="onClientDragLeave"
               @drop="onClientDrop($event, cIdx)"
             >
-              <div
-                v-if="showClientLineBefore(cIdx)"
-                class="tasks-dnd-line"
-                aria-hidden="true"
-              />
+              <div v-if="showClientLineBefore(cIdx)" class="tasks-dnd-line" aria-hidden="true" />
               <div class="tasks-client-row">
                 <span
                   v-if="props.isAuthenticated"
@@ -1347,7 +1399,9 @@ function showProjectLineBefore(clientId: string, idx: number): boolean {
                 </span>
                 <div
                   class="tasks-client-select tasks-client-select--static"
-                  :class="{ 'tasks-client-select--project-active': selectedProject?.clientId === c.id }"
+                  :class="{
+                    'tasks-client-select--project-active': selectedProject?.clientId === c.id
+                  }"
                 >
                   {{ c.name }}
                 </div>
@@ -1360,7 +1414,12 @@ function showProjectLineBefore(clientId: string, idx: number): boolean {
                   >
                     <i class="fas fa-folder-plus" aria-hidden="true" />
                   </button>
-                  <button type="button" class="tasks-icon-btn" title="Переименовать" @click="openClientEdit(c)">
+                  <button
+                    type="button"
+                    class="tasks-icon-btn"
+                    title="Переименовать"
+                    @click="openClientEdit(c)"
+                  >
                     <i class="fas fa-pen" aria-hidden="true" />
                   </button>
                   <button
@@ -1384,7 +1443,9 @@ function showProjectLineBefore(clientId: string, idx: number): boolean {
                   v-for="(p, pIdx) in projectsForClientId(c.id)"
                   :key="p.id"
                   class="tasks-project-item"
-                  :class="{ 'tasks-project-item--dragging': dragKind === 'project' && dragProjectId === p.id }"
+                  :class="{
+                    'tasks-project-item--dragging': dragKind === 'project' && dragProjectId === p.id
+                  }"
                 >
                   <div
                     v-if="showProjectLineBefore(c.id, pIdx)"
@@ -1419,7 +1480,12 @@ function showProjectLineBefore(clientId: string, idx: number): boolean {
                         {{ p.name }}
                       </button>
                       <div v-if="props.isAuthenticated" class="tasks-item-actions">
-                        <button type="button" class="tasks-icon-btn" title="Переименовать" @click="openProjectEdit(p)">
+                        <button
+                          type="button"
+                          class="tasks-icon-btn"
+                          title="Переименовать"
+                          @click="openProjectEdit(p)"
+                        >
                           <i class="fas fa-pen" aria-hidden="true" />
                         </button>
                         <button
@@ -1513,7 +1579,9 @@ function showProjectLineBefore(clientId: string, idx: number): boolean {
           <p v-if="globalError" class="tasks-global-err" role="alert">{{ globalError }}</p>
           <p v-if="loading" class="tasks-loading">Обновление…</p>
 
-          <div v-if="!selectedProjectId" class="tasks-placeholder">Выберите проект, чтобы увидеть задачи.</div>
+          <div v-if="!selectedProjectId" class="tasks-placeholder">
+            Выберите проект, чтобы увидеть задачи.
+          </div>
 
           <table v-else class="tasks-table">
             <thead>
@@ -1575,10 +1643,20 @@ function showProjectLineBefore(clientId: string, idx: number): boolean {
                   </div>
                 </td>
                 <td class="tasks-reorder" data-label="Порядок">
-                  <button type="button" class="tasks-reorder-btn" title="Выше" @click="moveTask(t, -1)">
+                  <button
+                    type="button"
+                    class="tasks-reorder-btn"
+                    title="Выше"
+                    @click="moveTask(t, -1)"
+                  >
                     <i class="fas fa-chevron-up" aria-hidden="true" />
                   </button>
-                  <button type="button" class="tasks-reorder-btn" title="Ниже" @click="moveTask(t, 1)">
+                  <button
+                    type="button"
+                    class="tasks-reorder-btn"
+                    title="Ниже"
+                    @click="moveTask(t, 1)"
+                  >
                     <i class="fas fa-chevron-down" aria-hidden="true" />
                   </button>
                 </td>
@@ -1597,7 +1675,12 @@ function showProjectLineBefore(clientId: string, idx: number): boolean {
                   >
                     <i class="fas fa-bookmark" aria-hidden="true" />
                   </button>
-                  <button type="button" class="tasks-icon-btn" title="Изменить" @click="openTaskEdit(t)">
+                  <button
+                    type="button"
+                    class="tasks-icon-btn"
+                    title="Изменить"
+                    @click="openTaskEdit(t)"
+                  >
                     <i class="fas fa-pen" aria-hidden="true" />
                   </button>
                   <button
@@ -1623,15 +1706,13 @@ function showProjectLineBefore(clientId: string, idx: number): boolean {
           </table>
 
           <p v-if="selectedProjectId && !visibleTasksForProject.length" class="tasks-placeholder">
-            {{ showArchive ? 'В архиве пока нет задач.' : 'В этом проекте пока нет активных задач.' }}
+            {{
+              showArchive ? 'В архиве пока нет задач.' : 'В этом проекте пока нет активных задач.'
+            }}
           </p>
         </section>
 
-        <aside
-          v-if="showDesktopAiChat"
-          class="tasks-ai-chat-sidebar"
-          aria-label="Чат с AI"
-        >
+        <aside v-if="showDesktopAiChat" class="tasks-ai-chat-sidebar" aria-label="Чат с AI">
           <TasksAiChatPanel
             :projectId="selectedProjectId"
             :isAuthenticated="props.isAuthenticated"
@@ -1699,13 +1780,28 @@ function showProjectLineBefore(clientId: string, idx: number): boolean {
           @click.self="closeClientModal"
         >
           <div class="jn-modal" @click.stop>
-            <h2 class="jn-modal-heading">{{ clientModal === 'create' ? 'Новый клиент' : 'Клиент' }}</h2>
+            <h2 class="jn-modal-heading">
+              {{ clientModal === 'create' ? 'Новый клиент' : 'Клиент' }}
+            </h2>
             <label class="jn-label" for="tc-name">Название</label>
-            <input id="tc-name" v-model="clientFormName" type="text" class="jn-input" maxlength="200" />
+            <input
+              id="tc-name"
+              v-model="clientFormName"
+              type="text"
+              class="jn-input"
+              maxlength="200"
+            />
             <p v-if="clientError" class="jn-modal-error" role="alert">{{ clientError }}</p>
             <div class="jn-modal-actions">
-              <button type="button" class="journal-nav-btn" @click="closeClientModal">Отмена</button>
-              <button type="button" class="journal-nav-action" :disabled="clientSaving" @click="submitClientModal">
+              <button type="button" class="journal-nav-btn" @click="closeClientModal">
+                Отмена
+              </button>
+              <button
+                type="button"
+                class="journal-nav-action"
+                :disabled="clientSaving"
+                @click="submitClientModal"
+              >
                 {{ clientSaving ? '…' : 'Сохранить' }}
               </button>
             </div>
@@ -1724,15 +1820,30 @@ function showProjectLineBefore(clientId: string, idx: number): boolean {
           @click.self="closeProjectModal"
         >
           <div class="jn-modal" @click.stop>
-            <h2 class="jn-modal-heading">{{ projectModal === 'create' ? 'Новый проект' : 'Проект' }}</h2>
+            <h2 class="jn-modal-heading">
+              {{ projectModal === 'create' ? 'Новый проект' : 'Проект' }}
+            </h2>
             <label class="jn-label" for="tp-name">Название</label>
-            <input id="tp-name" v-model="projectFormName" type="text" class="jn-input" maxlength="200" />
+            <input
+              id="tp-name"
+              v-model="projectFormName"
+              type="text"
+              class="jn-input"
+              maxlength="200"
+            />
             <label class="jn-label" for="tp-details">Детали</label>
             <textarea id="tp-details" v-model="projectFormDetails" class="jn-textarea" rows="4" />
             <p v-if="projectError" class="jn-modal-error" role="alert">{{ projectError }}</p>
             <div class="jn-modal-actions">
-              <button type="button" class="journal-nav-btn" @click="closeProjectModal">Отмена</button>
-              <button type="button" class="journal-nav-action" :disabled="projectSaving" @click="submitProjectModal">
+              <button type="button" class="journal-nav-btn" @click="closeProjectModal">
+                Отмена
+              </button>
+              <button
+                type="button"
+                class="journal-nav-action"
+                :disabled="projectSaving"
+                @click="submitProjectModal"
+              >
                 {{ projectSaving ? '…' : 'Сохранить' }}
               </button>
             </div>
@@ -1751,9 +1862,17 @@ function showProjectLineBefore(clientId: string, idx: number): boolean {
           @click.self="closeTaskModal"
         >
           <div class="jn-modal jn-modal--wide crt-form-panel" @click.stop>
-            <h2 class="jn-modal-heading">{{ taskModal === 'create' ? 'Новая задача' : 'Задача' }}</h2>
+            <h2 class="jn-modal-heading">
+              {{ taskModal === 'create' ? 'Новая задача' : 'Задача' }}
+            </h2>
             <label class="jn-label" for="tt-title">Заголовок</label>
-            <input id="tt-title" v-model="taskForm.title" type="text" class="jn-input" maxlength="500" />
+            <input
+              id="tt-title"
+              v-model="taskForm.title"
+              type="text"
+              class="jn-input"
+              maxlength="500"
+            />
             <label class="jn-label" for="tt-desc">Детали</label>
             <textarea id="tt-desc" v-model="taskForm.details" class="jn-textarea" rows="5" />
             <label class="jn-label" for="tt-p">Приоритет</label>
@@ -1812,7 +1931,12 @@ function showProjectLineBefore(clientId: string, idx: number): boolean {
             <p v-if="taskError" class="jn-modal-error" role="alert">{{ taskError }}</p>
             <div class="jn-modal-actions">
               <button type="button" class="journal-nav-btn" @click="closeTaskModal">Отмена</button>
-              <button type="button" class="journal-nav-action" :disabled="taskSaving" @click="submitTaskModal">
+              <button
+                type="button"
+                class="journal-nav-action"
+                :disabled="taskSaving"
+                @click="submitTaskModal"
+              >
                 {{ taskSaving ? '…' : 'Сохранить' }}
               </button>
             </div>
@@ -1835,10 +1959,16 @@ function showProjectLineBefore(clientId: string, idx: number): boolean {
             <p v-if="deleteTarget.kind === 'client'" class="tasks-delete-warn">
               Будут удалены все проекты и задачи этого клиента.
             </p>
-            <p v-else-if="deleteTarget.kind === 'project'" class="tasks-delete-warn">Будут удалены все задачи проекта.</p>
+            <p v-else-if="deleteTarget.kind === 'project'" class="tasks-delete-warn">
+              Будут удалены все задачи проекта.
+            </p>
             <div class="jn-modal-actions">
-              <button type="button" class="journal-nav-btn" @click="deleteTarget = null">Отмена</button>
-              <button type="button" class="journal-nav-action" @click="confirmDelete">Удалить</button>
+              <button type="button" class="journal-nav-btn" @click="deleteTarget = null">
+                Отмена
+              </button>
+              <button type="button" class="journal-nav-action" @click="confirmDelete">
+                Удалить
+              </button>
             </div>
           </div>
         </div>
@@ -2046,7 +2176,9 @@ function showProjectLineBefore(clientId: string, idx: number): boolean {
   color: var(--color-text-tertiary);
   cursor: grab;
   user-select: none;
-  transition: color 0.2s ease, transform 0.2s ease;
+  transition:
+    color 0.2s ease,
+    transform 0.2s ease;
 }
 
 .tasks-dnd-grip:hover {
@@ -2065,7 +2197,14 @@ function showProjectLineBefore(clientId: string, idx: number): boolean {
   height: 4px;
   margin: 0.15rem 0 0.5rem;
   border-radius: 2px;
-  background: linear-gradient(90deg, transparent 0%, rgba(229, 57, 53, 0.55) 15%, #e53935 50%, rgba(229, 57, 53, 0.55) 85%, transparent 100%);
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(229, 57, 53, 0.55) 15%,
+    #e53935 50%,
+    rgba(229, 57, 53, 0.55) 85%,
+    transparent 100%
+  );
   box-shadow:
     0 0 12px rgba(229, 57, 53, 0.45),
     0 0 2px rgba(255, 255, 255, 0.25);
@@ -2156,12 +2295,16 @@ function showProjectLineBefore(clientId: string, idx: number): boolean {
 .tasks-client-select--static.tasks-client-select--project-active:hover {
   border-color: rgba(229, 57, 53, 0.55);
   background: rgba(229, 57, 53, 0.14);
-  box-shadow: inset 2px 0 0 0 #e53935, 0 0 10px rgba(229, 57, 53, 0.28);
+  box-shadow:
+    inset 2px 0 0 0 #e53935,
+    0 0 10px rgba(229, 57, 53, 0.28);
 }
 
 .tasks-client-select--project-active {
   background: rgba(229, 57, 53, 0.12);
-  box-shadow: inset 2px 0 0 0 #e53935, 0 0 10px rgba(229, 57, 53, 0.28);
+  box-shadow:
+    inset 2px 0 0 0 #e53935,
+    0 0 10px rgba(229, 57, 53, 0.28);
   color: #ffcdd2;
 }
 
@@ -2346,7 +2489,9 @@ function showProjectLineBefore(clientId: string, idx: number): boolean {
   border-radius: 4px;
   cursor: pointer;
   touch-action: manipulation;
-  transition: border-color 0.2s ease, color 0.2s ease;
+  transition:
+    border-color 0.2s ease,
+    color 0.2s ease;
 }
 
 .tasks-mobile-back:hover {
@@ -3056,7 +3201,9 @@ body {
   color: var(--color-text);
   border-color: var(--color-border-light);
   background: var(--color-accent-light);
-  box-shadow: inset 2px 0 0 0 var(--color-accent), 0 0 12px var(--color-accent-medium);
+  box-shadow:
+    inset 2px 0 0 0 var(--color-accent),
+    0 0 12px var(--color-accent-medium);
 }
 
 .jn-modal-actions .journal-nav-btn,
@@ -3196,7 +3343,7 @@ html.tasks-page-html-mobile .header-clock {
   .tasks-panel-head-actions {
     width: 100%;
   }
-  
+
   .tasks-panel-head-actions .journal-nav-action {
     flex: 1;
     justify-content: center;

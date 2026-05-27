@@ -1,21 +1,22 @@
 <template>
   <section class="py-20 md:py-28 relative overflow-hidden">
     <div class="absolute inset-0 z-0">
-      <img
-        :src="bgImage"
-        alt=""
-        class="w-full h-full object-cover opacity-[0.05]"
-      />
+      <img :src="bgImage" alt="" class="w-full h-full object-cover opacity-[0.05]" />
       <div class="absolute inset-0 bg-cream-50/95"></div>
     </div>
     <div class="relative z-10 max-w-5xl mx-auto px-5 md:px-8">
       <div class="text-center mb-14">
         <div class="animate-on-scroll section-divider mb-6"></div>
-        <h2 class="animate-on-scroll delay-1 font-display text-3xl md:text-4xl font-semibold text-bark-800 mb-4">
+        <h2
+          class="animate-on-scroll delay-1 font-display text-3xl md:text-4xl font-semibold text-bark-800 mb-4"
+        >
           Практические ориентиры, которые вы получите
         </h2>
-        <p class="animate-on-scroll delay-2 text-lg text-bark-700/70 max-w-2xl mx-auto leading-relaxed">
-          На встрече Алексей Волков разберёт несколько базовых направлений, через которые можно мягко поддерживать восстановление ресурса.
+        <p
+          class="animate-on-scroll delay-2 text-lg text-bark-700/70 max-w-2xl mx-auto leading-relaxed"
+        >
+          На встрече Алексей Волков разберёт несколько базовых направлений, через которые можно
+          мягко поддерживать восстановление ресурса.
         </p>
       </div>
 
@@ -37,7 +38,8 @@
 
       <div class="animate-on-scroll delay-6 mt-12 text-center">
         <p class="text-bark-600 text-lg max-w-2xl mx-auto italic">
-          Это не&nbsp;жёсткая программа и&nbsp;не&nbsp;универсальный рецепт для всех, а&nbsp;ориентиры, которые помогают начать действовать точнее.
+          Это не&nbsp;жёсткая программа и&nbsp;не&nbsp;универсальный рецепт для всех,
+          а&nbsp;ориентиры, которые помогают начать действовать точнее.
         </p>
       </div>
     </div>
@@ -51,17 +53,17 @@ const tips = [
   {
     icon: 'fa-solid fa-moon',
     title: 'Режим',
-    text: 'Как выстроить сон и ритм дня так, чтобы организм действительно восстанавливался.',
+    text: 'Как выстроить сон и ритм дня так, чтобы организм действительно восстанавливался.'
   },
   {
     icon: 'fa-solid fa-apple-whole',
     title: 'Питание',
-    text: 'Какие привычки питания могут постепенно забирать ресурс и как выстроить питание так, чтобы оно поддерживало состояние.',
+    text: 'Какие привычки питания могут постепенно забирать ресурс и как выстроить питание так, чтобы оно поддерживало состояние.'
   },
   {
     icon: 'fa-solid fa-person-walking',
     title: 'Движение',
-    text: 'Несколько простых упражнений, которые помогают мягко поддерживать состояние организма и уровень внутренней энергии.',
-  },
+    text: 'Несколько простых упражнений, которые помогают мягко поддерживать состояние организма и уровень внутренней энергии.'
+  }
 ]
 </script>

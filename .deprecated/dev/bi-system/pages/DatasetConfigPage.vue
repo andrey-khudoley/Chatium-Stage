@@ -1,5 +1,8 @@
- <template>
-  <div class="min-h-screen" :class="isDark ? 'bg-gray-900 text-gray-100' : 'bg-gray-50 text-gray-900'">
+<template>
+  <div
+    class="min-h-screen"
+    :class="isDark ? 'bg-gray-900 text-gray-100' : 'bg-gray-50 text-gray-900'"
+  >
     <!-- Основной контент -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <!-- Кнопки действий -->
@@ -8,9 +11,11 @@
           <button
             @click="saveDataset"
             class="px-4 py-2 rounded-lg font-medium transition-colors"
-            :class="isDark 
-              ? 'bg-blue-600 hover:bg-blue-700 text-white' 
-              : 'bg-blue-500 hover:bg-blue-600 text-white'"
+            :class="
+              isDark
+                ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                : 'bg-blue-500 hover:bg-blue-600 text-white'
+            "
             :disabled="isSaving"
           >
             <i class="fas fa-save mr-2"></i>
@@ -19,9 +24,11 @@
           <a
             :href="indexUrl"
             class="px-4 py-2 rounded-lg font-medium transition-colors"
-            :class="isDark 
-              ? 'bg-gray-700 hover:bg-gray-600 text-white' 
-              : 'bg-gray-200 hover:bg-gray-300 text-gray-900'"
+            :class="
+              isDark
+                ? 'bg-gray-700 hover:bg-gray-600 text-white'
+                : 'bg-gray-200 hover:bg-gray-300 text-gray-900'
+            "
           >
             <i class="fas fa-times mr-2"></i>
             Отменить
@@ -30,7 +37,11 @@
       </div>
 
       <!-- Прогресс загрузки кэша -->
-      <div v-if="cacheLoading.show" class="mb-6 p-6 rounded-lg border-2" :class="isDark ? 'bg-gray-800 border-blue-500' : 'bg-white border-blue-500'">
+      <div
+        v-if="cacheLoading.show"
+        class="mb-6 p-6 rounded-lg border-2"
+        :class="isDark ? 'bg-gray-800 border-blue-500' : 'bg-white border-blue-500'"
+      >
         <div class="flex items-center justify-between mb-4">
           <h3 class="text-lg font-bold">
             <i class="fas fa-database mr-2"></i>
@@ -44,20 +55,25 @@
             <i class="fas fa-times"></i>
           </button>
         </div>
-        
+
         <!-- Общий прогресс -->
         <div class="mb-4">
           <div class="flex justify-between items-center mb-2">
             <span class="text-sm font-medium">Общий прогресс</span>
             <span class="text-sm font-bold">{{ cacheLoading.overallProgress }}%</span>
           </div>
-          <div class="w-full bg-gray-200 rounded-full h-3" :class="isDark ? 'bg-gray-700' : 'bg-gray-200'">
-            <div 
-              :class="cacheLoading.error 
-                ? 'bg-red-500' 
-                : (cacheLoading.complete && !cacheLoading.error 
-                  ? 'bg-green-500' 
-                  : 'bg-blue-500')"
+          <div
+            class="w-full bg-gray-200 rounded-full h-3"
+            :class="isDark ? 'bg-gray-700' : 'bg-gray-200'"
+          >
+            <div
+              :class="
+                cacheLoading.error
+                  ? 'bg-red-500'
+                  : cacheLoading.complete && !cacheLoading.error
+                    ? 'bg-green-500'
+                    : 'bg-blue-500'
+              "
               class="h-3 rounded-full transition-all duration-300"
               :style="{ width: cacheLoading.overallProgress + '%' }"
             ></div>
@@ -66,11 +82,11 @@
             Компонент {{ cacheLoading.currentComponent }} из {{ cacheLoading.totalComponents }}
           </div>
         </div>
-        
+
         <!-- Прогресс по компонентам -->
         <div v-if="cacheLoading.components && cacheLoading.components.length > 0" class="space-y-3">
-          <div 
-            v-for="(comp, index) in cacheLoading.components" 
+          <div
+            v-for="(comp, index) in cacheLoading.components"
             :key="comp.componentId"
             class="p-3 rounded-lg"
             :class="isDark ? 'bg-gray-700' : 'bg-gray-50'"
@@ -79,8 +95,11 @@
               <span class="text-sm font-medium">{{ comp.componentTitle || comp.componentId }}</span>
               <span class="text-sm font-bold">{{ comp.percentage }}%</span>
             </div>
-            <div class="w-full bg-gray-200 rounded-full h-2" :class="isDark ? 'bg-gray-600' : 'bg-gray-200'">
-              <div 
+            <div
+              class="w-full bg-gray-200 rounded-full h-2"
+              :class="isDark ? 'bg-gray-600' : 'bg-gray-200'"
+            >
+              <div
                 :class="comp.isDeleting ? 'bg-red-500' : 'bg-green-500'"
                 class="h-2 rounded-full transition-all duration-300"
                 :style="{ width: comp.percentage + '%' }"
@@ -91,12 +110,19 @@
             </div>
           </div>
         </div>
-        
+
         <!-- Сообщение об ошибке -->
-        <div v-if="cacheLoading.error" class="mt-4 p-3 rounded-lg bg-red-100 border border-red-300" :class="isDark ? 'bg-red-900 border-red-700' : 'bg-red-100 border-red-300'">
+        <div
+          v-if="cacheLoading.error"
+          class="mt-4 p-3 rounded-lg bg-red-100 border border-red-300"
+          :class="isDark ? 'bg-red-900 border-red-700' : 'bg-red-100 border-red-300'"
+        >
           <div class="flex items-center">
             <i class="fas fa-exclamation-triangle text-red-500 mr-2"></i>
-            <span class="text-red-700 font-medium" :class="isDark ? 'text-red-300' : 'text-red-700'">
+            <span
+              class="text-red-700 font-medium"
+              :class="isDark ? 'text-red-300' : 'text-red-700'"
+            >
               Ошибка загрузки: {{ cacheLoading.error }}
             </span>
           </div>
@@ -117,9 +143,11 @@
               type="text"
               placeholder="Введите название датасета"
               class="w-full px-4 py-2 rounded-lg border transition-colors"
-              :class="isDark 
-                ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
-                : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'"
+              :class="
+                isDark
+                  ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400'
+                  : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
+              "
             />
           </div>
           <div>
@@ -129,9 +157,11 @@
               rows="3"
               placeholder="Введите описание датасета"
               class="w-full px-4 py-2 rounded-lg border transition-colors"
-              :class="isDark 
-                ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
-                : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'"
+              :class="
+                isDark
+                  ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400'
+                  : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
+              "
             ></textarea>
           </div>
         </div>
@@ -147,9 +177,11 @@
           <button
             @click="addNewComponent"
             class="px-4 py-2 rounded-lg font-medium transition-colors"
-            :class="isDark 
-              ? 'bg-green-600 hover:bg-green-700 text-white' 
-              : 'bg-green-500 hover:bg-green-600 text-white'"
+            :class="
+              isDark
+                ? 'bg-green-600 hover:bg-green-700 text-white'
+                : 'bg-green-500 hover:bg-green-600 text-white'
+            "
           >
             <i class="fas fa-plus mr-2"></i>
             Добавить компонент
@@ -166,50 +198,74 @@
             v-for="(component, index) in components"
             :key="component.id"
             class="p-4 rounded-lg border transition-all relative"
-            :class="isDark 
-              ? 'bg-gray-700 border-gray-600 hover:border-gray-500' 
-              : 'bg-gray-50 border-gray-200 hover:border-gray-300'"
+            :class="
+              isDark
+                ? 'bg-gray-700 border-gray-600 hover:border-gray-500'
+                : 'bg-gray-50 border-gray-200 hover:border-gray-300'
+            "
           >
             <!-- Индикатор каскадной связи -->
-            <div v-if="index > 0" class="absolute -top-2 left-8 px-2 py-0.5 rounded text-xs font-medium"
-              :class="isDark 
-                ? 'bg-blue-600 text-blue-100' 
-                : 'bg-blue-100 text-blue-800'">
+            <div
+              v-if="index > 0"
+              class="absolute -top-2 left-8 px-2 py-0.5 rounded text-xs font-medium"
+              :class="isDark ? 'bg-blue-600 text-blue-100' : 'bg-blue-100 text-blue-800'"
+            >
               <i class="fas fa-link mr-1"></i>
               Уточнение предыдущих
             </div>
-            
+
             <div class="flex justify-between items-start">
               <div class="flex-1">
                 <div class="flex items-center space-x-2 mb-2">
                   <i class="fas fa-chart-bar text-lg"></i>
                   <span class="font-medium">{{ component.title }}</span>
-                  <span v-if="index === 0" class="text-xs px-2 py-0.5 rounded"
-                    :class="isDark 
-                      ? 'bg-green-900/50 text-green-300' 
-                      : 'bg-green-100 text-green-800'">
+                  <span
+                    v-if="index === 0"
+                    class="text-xs px-2 py-0.5 rounded"
+                    :class="
+                      isDark ? 'bg-green-900/50 text-green-300' : 'bg-green-100 text-green-800'
+                    "
+                  >
                     Базовый
                   </span>
                 </div>
                 <div class="text-sm opacity-70 mb-1">
                   Событие: {{ getComponentEventDescription(component) }}
                 </div>
-                <div v-if="index > 0" class="text-xs opacity-60 mt-1 mb-1 italic"
-                  :class="isDark ? 'text-blue-300' : 'text-blue-700'">
+                <div
+                  v-if="index > 0"
+                  class="text-xs opacity-60 mt-1 mb-1 italic"
+                  :class="isDark ? 'text-blue-300' : 'text-blue-700'"
+                >
                   <i class="fas fa-database mr-1"></i>
                   Загружено записей: {{ getComponentRecordCount(component.id) }}
                 </div>
                 <div v-if="component.settings?.description" class="text-sm opacity-70 mt-1">
                   {{ component.settings.description }}
                 </div>
-                <div v-if="component.settings?.filter && (
-                  (component.settings.filter.operator && Array.isArray(component.settings.filter.conditions) && component.settings.filter.conditions.length > 0) ||
-                  (Array.isArray(component.settings.filter) && component.settings.filter.length > 0)
-                )" class="text-sm opacity-70 mt-1">
+                <div
+                  v-if="
+                    component.settings?.filter &&
+                    ((component.settings.filter.operator &&
+                      Array.isArray(component.settings.filter.conditions) &&
+                      component.settings.filter.conditions.length > 0) ||
+                      (Array.isArray(component.settings.filter) &&
+                        component.settings.filter.length > 0))
+                  "
+                  class="text-sm opacity-70 mt-1"
+                >
                   <i class="fas fa-filter mr-1"></i>
-                  Фильтры: {{ getFilterDescription(component.settings.filter.conditions || component.settings.filter) }}
+                  Фильтры:
+                  {{
+                    getFilterDescription(
+                      component.settings.filter.conditions || component.settings.filter
+                    )
+                  }}
                 </div>
-                <div v-else-if="component.settings?.urls && component.settings.urls.length > 0" class="text-sm opacity-70 mt-1">
+                <div
+                  v-else-if="component.settings?.urls && component.settings.urls.length > 0"
+                  class="text-sm opacity-70 mt-1"
+                >
                   <i class="fas fa-filter mr-1"></i>
                   URL: {{ component.settings.urls.join(' или ') }}
                 </div>
@@ -238,21 +294,37 @@
       </div>
 
       <!-- Сообщения -->
-      <div v-if="message" class="mb-6 p-4 rounded-lg" 
-        :class="message.type === 'success' 
-          ? (isDark ? 'bg-green-900/50 text-green-300' : 'bg-green-100 text-green-800')
-          : (isDark ? 'bg-red-900/50 text-red-300' : 'bg-red-100 text-red-800')">
-        <i :class="message.type === 'success' ? 'fas fa-check-circle' : 'fas fa-exclamation-circle'" class="mr-2"></i>
+      <div
+        v-if="message"
+        class="mb-6 p-4 rounded-lg"
+        :class="
+          message.type === 'success'
+            ? isDark
+              ? 'bg-green-900/50 text-green-300'
+              : 'bg-green-100 text-green-800'
+            : isDark
+              ? 'bg-red-900/50 text-red-300'
+              : 'bg-red-100 text-red-800'
+        "
+      >
+        <i
+          :class="message.type === 'success' ? 'fas fa-check-circle' : 'fas fa-exclamation-circle'"
+          class="mr-2"
+        ></i>
         {{ message.text }}
       </div>
     </div>
 
     <!-- Модальное окно редактирования компонента -->
-    <div v-if="editingComponentIndex !== null" 
+    <div
+      v-if="editingComponentIndex !== null"
       class="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center z-50 p-4 pt-24"
-      @click.self="cancelEdit">
-      <div class="rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto" 
-        :class="isDark ? 'bg-gray-800' : 'bg-white'">
+      @click.self="cancelEdit"
+    >
+      <div
+        class="rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto"
+        :class="isDark ? 'bg-gray-800' : 'bg-white'"
+      >
         <div class="p-6">
           <div class="flex justify-between items-center mb-6">
             <h3 class="text-xl font-bold">
@@ -273,9 +345,11 @@
                 type="text"
                 placeholder="Например: Регистрации пользователей"
                 class="w-full px-4 py-2 rounded-lg border"
-                :class="isDark 
-                  ? 'bg-gray-700 border-gray-600 text-white' 
-                  : 'bg-white border-gray-300 text-gray-900'"
+                :class="
+                  isDark
+                    ? 'bg-gray-700 border-gray-600 text-white'
+                    : 'bg-white border-gray-300 text-gray-900'
+                "
               />
             </div>
 
@@ -287,18 +361,21 @@
                 rows="2"
                 placeholder="Краткое описание компонента"
                 class="w-full px-4 py-2 rounded-lg border"
-                :class="isDark 
-                  ? 'bg-gray-700 border-gray-600 text-white' 
-                  : 'bg-white border-gray-300 text-gray-900'"
+                :class="
+                  isDark
+                    ? 'bg-gray-700 border-gray-600 text-white'
+                    : 'bg-white border-gray-300 text-gray-900'
+                "
               ></textarea>
             </div>
 
             <!-- Выбор ОДНОГО типа события -->
             <div>
               <label class="block text-sm font-medium mb-2">Тип события из ClickHouse</label>
-              <div class="border rounded-lg p-4 max-h-48 overflow-y-auto"
-                :class="isDark ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'">
-                
+              <div
+                class="border rounded-lg p-4 max-h-48 overflow-y-auto"
+                :class="isDark ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'"
+              >
                 <!-- HTTP События -->
                 <div class="mb-4">
                   <div class="font-medium mb-2 flex items-center">
@@ -372,14 +449,21 @@
                 </div>
               </div>
               <p class="text-xs mt-2 opacity-70">
-                Выбрано: {{ editingComponent.eventType ? getComponentEventDescription({ eventType: editingComponent.eventType }) : 'не выбрано' }}
+                Выбрано:
+                {{
+                  editingComponent.eventType
+                    ? getComponentEventDescription({ eventType: editingComponent.eventType })
+                    : 'не выбрано'
+                }}
               </p>
             </div>
 
             <!-- Динамические настройки события -->
             <div v-if="showEventSettings" :key="`settings-${editingComponent.eventType}`">
-              <div class="border-t pt-4 mt-4"
-                :class="isDark ? 'border-gray-700' : 'border-gray-200'">
+              <div
+                class="border-t pt-4 mt-4"
+                :class="isDark ? 'border-gray-700' : 'border-gray-200'"
+              >
                 <h3 class="text-sm font-semibold mb-3">
                   <i class="fas fa-sliders-h mr-2"></i>
                   Настройки события
@@ -396,23 +480,29 @@
             </div>
 
             <!-- Кнопки действий -->
-            <div class="flex justify-end space-x-3 pt-4 border-t"
-              :class="isDark ? 'border-gray-700' : 'border-gray-200'">
+            <div
+              class="flex justify-end space-x-3 pt-4 border-t"
+              :class="isDark ? 'border-gray-700' : 'border-gray-200'"
+            >
               <button
                 @click="cancelEdit"
                 class="px-4 py-2 rounded-lg font-medium transition-colors"
-                :class="isDark 
-                  ? 'bg-gray-700 hover:bg-gray-600 text-white' 
-                  : 'bg-gray-200 hover:bg-gray-300 text-gray-900'"
+                :class="
+                  isDark
+                    ? 'bg-gray-700 hover:bg-gray-600 text-white'
+                    : 'bg-gray-200 hover:bg-gray-300 text-gray-900'
+                "
               >
                 Отменить
               </button>
               <button
                 @click="saveEditingComponent"
                 class="px-4 py-2 rounded-lg font-medium transition-colors"
-                :class="isDark 
-                  ? 'bg-blue-600 hover:bg-blue-700 text-white' 
-                  : 'bg-blue-500 hover:bg-blue-600 text-white'"
+                :class="
+                  isDark
+                    ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                    : 'bg-blue-500 hover:bg-blue-600 text-white'
+                "
               >
                 Сохранить изменения
               </button>
@@ -426,7 +516,12 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
-import { getTrafficEvents, getGetCourseEvents, getEventCategories, getAllEvents } from '../shared/eventTypes'
+import {
+  getTrafficEvents,
+  getGetCourseEvents,
+  getEventCategories,
+  getAllEvents
+} from '../shared/eventTypes'
 import PageviewEventSettings from '../components/dataset-event-settings/PageviewEventSettings.vue'
 import { getOrCreateBrowserSocketClient } from '@app/socket'
 
@@ -438,7 +533,7 @@ const props = defineProps({
   },
   apiUrls: {
     type: Object,
-    required: true  // ОБЯЗАТЕЛЬНО! Без хардкода!
+    required: true // ОБЯЗАТЕЛЬНО! Без хардкода!
   }
 })
 
@@ -482,16 +577,16 @@ const availableEvents = getAllEvents()
 // Определение компонента настроек в зависимости от типа события
 const eventSettingsComponent = computed(() => {
   const eventType = editingComponent.value?.eventType
-  
+
   if (!eventType) {
     return null
   }
-  
+
   // Настройки для конкретных событий
   switch (eventType) {
     case 'pageview':
       return PageviewEventSettings
-    
+
     // Другие события пока не имеют специфичных настроек
     default:
       return null
@@ -512,7 +607,7 @@ async function loadComponentCounts() {
   if (!datasetId.value) {
     return
   }
-  
+
   try {
     // Получаем URL для API endpoint
     // URL имеет формат /api/datasets/component-counts/:datasetId, нужно заменить :datasetId
@@ -523,10 +618,10 @@ async function loadComponentCounts() {
       // Fallback, если URL не передан или не содержит :datasetId
       apiUrl = `/api/datasets/component-counts/${datasetId.value}`
     }
-    
+
     const response = await fetch(apiUrl)
     const result = await response.json()
-    
+
     if (result.success && result.componentCounts) {
       componentCounts.value = result.componentCounts
     }
@@ -548,15 +643,15 @@ onMounted(async () => {
 
       // Загружаем компоненты
       const loadedComponents = config.components || []
-      
+
       // Нормализация компонентов - гарантируем наличие всех обязательных полей
-      components.value = loadedComponents.map(comp => {
+      components.value = loadedComponents.map((comp) => {
         const settings = comp.settings || {}
         // Поддерживаем новый формат (filter), старый формат (urlGroups) и очень старый (urls) для обратной совместимости
         const normalizedSettings = {
           description: settings.description || ''
         }
-        
+
         // Если есть новый формат filter - используем его
         // Поддерживаем и объект { operator, conditions }, и массив (для обратной совместимости)
         if (settings.filter) {
@@ -570,9 +665,13 @@ onMounted(async () => {
             // Старый формат: массив (для обратной совместимости)
             normalizedSettings.filter = JSON.parse(JSON.stringify(settings.filter))
           }
-        } else if (settings.urlGroups && Array.isArray(settings.urlGroups) && settings.urlGroups.length > 0) {
+        } else if (
+          settings.urlGroups &&
+          Array.isArray(settings.urlGroups) &&
+          settings.urlGroups.length > 0
+        ) {
           // Старый формат urlGroups - сохраняем для обратной совместимости, компонент преобразует
-          normalizedSettings.urlGroups = settings.urlGroups.map(group => ({
+          normalizedSettings.urlGroups = settings.urlGroups.map((group) => ({
             urls: Array.isArray(group.urls) ? [...group.urls] : []
           }))
         } else if (settings.urls && Array.isArray(settings.urls) && settings.urls.length > 0) {
@@ -580,7 +679,7 @@ onMounted(async () => {
           normalizedSettings.urls = [...settings.urls]
           normalizedSettings.urlOperator = settings.urlOperator || 'OR'
         }
-        
+
         return {
           id: comp.id || `component_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
           title: comp.title || 'Компонент без названия',
@@ -588,7 +687,7 @@ onMounted(async () => {
           settings: normalizedSettings
         }
       })
-      
+
       // Загружаем количество записей для компонентов
       await loadComponentCounts()
     } catch (error) {
@@ -610,16 +709,19 @@ watch(editingComponentIndex, (newValue) => {
 })
 
 // Очистка специфичных настроек при смене типа события
-watch(() => editingComponent.value?.eventType, (newType, oldType) => {
-  if (newType && oldType && newType !== oldType && editingComponent.value) {
-    // Сохраняем только description, очищаем остальные настройки
-    const description = editingComponent.value.settings.description
-    editingComponent.value.settings = {
-      description: description || '',
-      urlGroups: []
+watch(
+  () => editingComponent.value?.eventType,
+  (newType, oldType) => {
+    if (newType && oldType && newType !== oldType && editingComponent.value) {
+      // Сохраняем только description, очищаем остальные настройки
+      const description = editingComponent.value.settings.description
+      editingComponent.value.settings = {
+        description: description || '',
+        urlGroups: []
+      }
     }
   }
-})
+)
 
 // Восстанавливаем скролл при размонтировании компонента
 onUnmounted(() => {
@@ -637,7 +739,7 @@ function getComponentEventDescription(component) {
   if (!component.eventType) {
     return 'Событие не выбрано'
   }
-  const event = availableEvents.find(e => e.name === component.eventType)
+  const event = availableEvents.find((e) => e.name === component.eventType)
   return event ? event.description : component.eventType
 }
 
@@ -646,7 +748,7 @@ function getFilterDescription(filter) {
   if (!filter || !Array.isArray(filter) || filter.length === 0) {
     return 'нет фильтров'
   }
-  
+
   const count = filter.length
   if (count === 1) {
     const item = filter[0]
@@ -656,7 +758,7 @@ function getFilterDescription(filter) {
       return `Группа ${item.operator} (${item.conditions.length} правил)`
     }
   }
-  
+
   return `${count} правил`
 }
 
@@ -689,13 +791,13 @@ function addNewComponent() {
 function editComponent(index) {
   editingComponentIndex.value = index
   const component = components.value[index]
-  
+
   // Создаём глубокую копию для редактирования с гарантией всех полей
   const settings = component.settings || {}
   const normalizedSettings = {
     description: settings.description || ''
   }
-  
+
   // Поддерживаем новый формат (filter), старый формат (urlGroups) и очень старый (urls) для обратной совместимости
   // Поддерживаем и объект { operator, conditions }, и массив (для обратной совместимости)
   if (settings.filter) {
@@ -709,9 +811,13 @@ function editComponent(index) {
       // Старый формат: массив (для обратной совместимости)
       normalizedSettings.filter = JSON.parse(JSON.stringify(settings.filter))
     }
-  } else if (settings.urlGroups && Array.isArray(settings.urlGroups) && settings.urlGroups.length > 0) {
+  } else if (
+    settings.urlGroups &&
+    Array.isArray(settings.urlGroups) &&
+    settings.urlGroups.length > 0
+  ) {
     // Старый формат - сохраняем для обратной совместимости, компонент преобразует
-    normalizedSettings.urlGroups = settings.urlGroups.map(group => ({
+    normalizedSettings.urlGroups = settings.urlGroups.map((group) => ({
       urls: Array.isArray(group.urls) ? [...group.urls] : []
     }))
   } else if (settings.urls && Array.isArray(settings.urls) && settings.urls.length > 0) {
@@ -721,7 +827,7 @@ function editComponent(index) {
   } else {
     normalizedSettings.filter = []
   }
-  
+
   editingComponent.value = {
     id: component.id,
     title: component.title,
@@ -740,10 +846,13 @@ function saveEditingComponent() {
     showMessage('Выберите тип события', 'error')
     return
   }
-  
+
   console.log('[DatasetConfigPage] saveEditingComponent вызвана')
-  console.log('[DatasetConfigPage] editingComponent.value.settings:', editingComponent.value.settings)
-  
+  console.log(
+    '[DatasetConfigPage] editingComponent.value.settings:',
+    editingComponent.value.settings
+  )
+
   // Создаём глубокую копию для сохранения
   const componentToSave = {
     ...editingComponent.value,
@@ -751,10 +860,13 @@ function saveEditingComponent() {
       ...editingComponent.value.settings
     }
   }
-  
+
   // Убеждаемся, что filter правильно сериализуется
   if (componentToSave.settings.filter) {
-    if (componentToSave.settings.filter.operator && Array.isArray(componentToSave.settings.filter.conditions)) {
+    if (
+      componentToSave.settings.filter.operator &&
+      Array.isArray(componentToSave.settings.filter.conditions)
+    ) {
       // Уже правильный формат
       componentToSave.settings.filter = {
         operator: componentToSave.settings.filter.operator,
@@ -762,9 +874,9 @@ function saveEditingComponent() {
       }
     }
   }
-  
+
   console.log('[DatasetConfigPage] componentToSave перед сохранением:', componentToSave)
-  
+
   components.value[editingComponentIndex.value] = componentToSave
   cancelEdit()
   showMessage('Компонент обновлён', 'success')
@@ -791,7 +903,10 @@ function updateEventSettings(newSettings) {
     ...editingComponent.value.settings,
     ...newSettings
   }
-  console.log('[DatasetConfigPage] editingComponent.value.settings после обновления:', editingComponent.value.settings)
+  console.log(
+    '[DatasetConfigPage] editingComponent.value.settings после обновления:',
+    editingComponent.value.settings
+  )
 }
 
 // Сохранение датасета
@@ -845,7 +960,7 @@ async function saveDataset() {
 
     if (result.success) {
       showMessage('Датасет успешно сохранён!', 'success')
-      
+
       // Обновляем datasetId если это было создание
       if (!isEditMode.value && result.dataset?.id) {
         datasetId.value = result.dataset.id
@@ -855,7 +970,7 @@ async function saveDataset() {
           window.history.pushState({}, '', newUrl)
         }
       }
-      
+
       // Если есть socketId, подписываемся на WebSocket и показываем прогресс
       if (result.socketId && result.dataset?.id) {
         // Инициализируем прогресс-бар
@@ -864,17 +979,20 @@ async function saveDataset() {
           overallProgress: 0,
           currentComponent: 0,
           totalComponents: components.value.length || 1,
-          components: components.value.length > 0 ? components.value.map(comp => ({
-            componentId: comp.id,
-            componentTitle: comp.title,
-            percentage: 0,
-            loaded: 0,
-            total: 0
-          })) : [],
+          components:
+            components.value.length > 0
+              ? components.value.map((comp) => ({
+                  componentId: comp.id,
+                  componentTitle: comp.title,
+                  percentage: 0,
+                  loaded: 0,
+                  total: 0
+                }))
+              : [],
           error: null,
           complete: false
         }
-        
+
         // Подписываемся на WebSocket и ждем завершения
         try {
           await subscribeToCacheProgress(result.socketId)
@@ -919,22 +1037,22 @@ async function subscribeToCacheProgress(socketId) {
     }
     socketSubscription = null
   }
-  
+
   try {
     // Подключаемся к WebSocket
     socketClient = await getOrCreateBrowserSocketClient()
     socketSubscription = socketClient.subscribeToData(socketId)
-    
+
     if (!socketSubscription || typeof socketSubscription.listen !== 'function') {
       console.error('[DatasetConfigPage] Не удалось создать подписку на WebSocket')
       cacheLoading.value.error = 'Ошибка подключения к WebSocket'
       return
     }
-    
+
     // Устанавливаем обработчик сообщений
     socketSubscription.listen((message) => {
       console.log('[DatasetConfigPage] WebSocket message:', message.type, message.data)
-      
+
       if (message.type === 'dataset-cache-delete-start') {
         // Начало удаления кэша
         // Убеждаемся, что прогресс-бар виден
@@ -944,9 +1062,9 @@ async function subscribeToCacheProgress(socketId) {
           cacheLoading.value.error = null
           cacheLoading.value.overallProgress = 0
         }
-        
+
         const compId = message.data.componentId
-        let compIndex = cacheLoading.value.components.findIndex(c => c.componentId === compId)
+        let compIndex = cacheLoading.value.components.findIndex((c) => c.componentId === compId)
         if (compIndex === -1) {
           cacheLoading.value.components.push({
             componentId: compId,
@@ -967,16 +1085,17 @@ async function subscribeToCacheProgress(socketId) {
       } else if (message.type === 'dataset-cache-delete-progress') {
         // Прогресс удаления
         const compId = message.data.componentId
-        let compIndex = cacheLoading.value.components.findIndex(c => c.componentId === compId)
+        let compIndex = cacheLoading.value.components.findIndex((c) => c.componentId === compId)
         if (compIndex === -1) {
-          compIndex = cacheLoading.value.components.push({
-            componentId: compId,
-            componentTitle: `Удаление компонента`,
-            percentage: message.data.progress || 0,
-            loaded: message.data.deleted || 0,
-            total: message.data.total || 0,
-            isDeleting: true
-          }) - 1
+          compIndex =
+            cacheLoading.value.components.push({
+              componentId: compId,
+              componentTitle: `Удаление компонента`,
+              percentage: message.data.progress || 0,
+              loaded: message.data.deleted || 0,
+              total: message.data.total || 0,
+              isDeleting: true
+            }) - 1
           cacheLoading.value.totalComponents = cacheLoading.value.components.length
         } else {
           cacheLoading.value.components[compIndex].percentage = message.data.progress || 0
@@ -989,10 +1108,11 @@ async function subscribeToCacheProgress(socketId) {
       } else if (message.type === 'dataset-cache-delete-complete') {
         // Удаление завершено
         const compId = message.data.componentId
-        let compIndex = cacheLoading.value.components.findIndex(c => c.componentId === compId)
+        let compIndex = cacheLoading.value.components.findIndex((c) => c.componentId === compId)
         if (compIndex !== -1) {
           cacheLoading.value.components[compIndex].percentage = 100
-          cacheLoading.value.components[compIndex].loaded = cacheLoading.value.components[compIndex].total
+          cacheLoading.value.components[compIndex].loaded =
+            cacheLoading.value.components[compIndex].total
           cacheLoading.value.components[compIndex].isDeleting = true
         } else {
           // Компонент не найден - добавляем его как завершенный
@@ -1007,11 +1127,12 @@ async function subscribeToCacheProgress(socketId) {
           cacheLoading.value.totalComponents = cacheLoading.value.components.length
         }
         updateOverallProgress()
-        
+
         // Если нет компонентов для загрузки, проверяем, все ли удаления завершены
         if (components.value.length === 0) {
-          const allComplete = cacheLoading.value.components.length > 0 && 
-                              cacheLoading.value.components.every(c => c.percentage === 100)
+          const allComplete =
+            cacheLoading.value.components.length > 0 &&
+            cacheLoading.value.components.every((c) => c.percentage === 100)
           if (allComplete) {
             cacheLoading.value.complete = true
             cacheLoading.value.overallProgress = 100
@@ -1032,12 +1153,12 @@ async function subscribeToCacheProgress(socketId) {
       } else if (message.type === 'dataset-cache-progress') {
         // Прогресс загрузки компонента
         const compId = message.data.componentId
-        let compIndex = cacheLoading.value.components.findIndex(c => c.componentId === compId)
-        
+        let compIndex = cacheLoading.value.components.findIndex((c) => c.componentId === compId)
+
         // Если компонент не найден, добавляем его
         if (compIndex === -1) {
           // Ищем компонент в списке components для получения названия
-          const component = components.value.find(c => c.id === compId)
+          const component = components.value.find((c) => c.id === compId)
           cacheLoading.value.components.push({
             componentId: compId,
             componentTitle: component?.title || `Компонент ${compId}`,
@@ -1057,7 +1178,7 @@ async function subscribeToCacheProgress(socketId) {
           // Поэтому всегда устанавливаем isDeleting = false
           cacheLoading.value.components[compIndex].isDeleting = false
         }
-        
+
         // Обновляем общий прогресс после обновления компонента
         updateOverallProgress()
       } else if (message.type === 'dataset-cache-overall-progress') {
@@ -1083,7 +1204,10 @@ async function subscribeToCacheProgress(socketId) {
             cleanupWebSocket()
           }, 2000)
         }
-      } else if (message.type === 'dataset-cache-error' || message.type === 'dataset-cache-delete-error') {
+      } else if (
+        message.type === 'dataset-cache-error' ||
+        message.type === 'dataset-cache-delete-error'
+      ) {
         // Ошибка
         cacheLoading.value.error = message.data?.error || 'Неизвестная ошибка'
         showMessage(`Ошибка: ${cacheLoading.value.error}`, 'error')
@@ -1093,7 +1217,7 @@ async function subscribeToCacheProgress(socketId) {
         }, 3000)
       }
     })
-    
+
     // Ждем завершения операции (максимум 5 минут)
     await new Promise((resolve) => {
       // Проверяем сразу, может быть уже завершено
@@ -1101,7 +1225,7 @@ async function subscribeToCacheProgress(socketId) {
         resolve()
         return
       }
-      
+
       const checkInterval = setInterval(() => {
         if (cacheLoading.value.complete || cacheLoading.value.error) {
           clearInterval(checkInterval)
@@ -1109,22 +1233,30 @@ async function subscribeToCacheProgress(socketId) {
           resolve()
         }
       }, 100) // Уменьшаем интервал для более быстрой реакции
-      
-      setTimeout(() => {
-        clearInterval(checkInterval)
-        if (!cacheLoading.value.complete && !cacheLoading.value.error) {
-          console.warn('[DatasetConfigPage] Превышено время ожидания, но продолжаем слушать WebSocket сообщения')
-          // НЕ закрываем WebSocket и НЕ скрываем прогресс-бар
-          // Показываем предупреждение, но продолжаем получать обновления прогресса
-          showMessage('Загрузка занимает больше времени, чем ожидалось. Пожалуйста, подождите...', 'warning')
-          // НЕ вызываем cleanupWebSocket() и НЕ скрываем прогресс-бар
-          // Promise разрешаем, чтобы не блокировать основной поток,
-          // но подписка продолжит работать и получать сообщения
-        }
-        resolve()
-      }, 5 * 60 * 1000)
+
+      setTimeout(
+        () => {
+          clearInterval(checkInterval)
+          if (!cacheLoading.value.complete && !cacheLoading.value.error) {
+            console.warn(
+              '[DatasetConfigPage] Превышено время ожидания, но продолжаем слушать WebSocket сообщения'
+            )
+            // НЕ закрываем WebSocket и НЕ скрываем прогресс-бар
+            // Показываем предупреждение, но продолжаем получать обновления прогресса
+            showMessage(
+              'Загрузка занимает больше времени, чем ожидалось. Пожалуйста, подождите...',
+              'warning'
+            )
+            // НЕ вызываем cleanupWebSocket() и НЕ скрываем прогресс-бар
+            // Promise разрешаем, чтобы не блокировать основной поток,
+            // но подписка продолжит работать и получать сообщения
+          }
+          resolve()
+        },
+        5 * 60 * 1000
+      )
     })
-    
+
     console.log('[DatasetConfigPage] subscribeToCacheProgress завершена')
   } catch (error) {
     console.error('[DatasetConfigPage] Ошибка подключения к WebSocket:', error)
@@ -1139,17 +1271,20 @@ function updateOverallProgress() {
     cacheLoading.value.overallProgress = 0
     return
   }
-  
+
   // Вычисляем общий прогресс на основе загруженных/всего записей, а не среднего процента
   // Это правильно, т.к. разные компоненты могут иметь разное количество записей
-  const totalLoaded = cacheLoading.value.components.reduce((sum, comp) => sum + (comp.loaded || 0), 0)
+  const totalLoaded = cacheLoading.value.components.reduce(
+    (sum, comp) => sum + (comp.loaded || 0),
+    0
+  )
   const totalNeed = cacheLoading.value.components.reduce((sum, comp) => sum + (comp.total || 0), 0)
-  
+
   if (totalNeed === 0) {
     cacheLoading.value.overallProgress = 0
     return
   }
-  
+
   cacheLoading.value.overallProgress = Math.round((totalLoaded / totalNeed) * 100)
 }
 
@@ -1174,4 +1309,3 @@ onUnmounted(() => {
   socketClient = null
 })
 </script>
-

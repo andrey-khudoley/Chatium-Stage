@@ -7,9 +7,9 @@ export const TProjektChatChatFolderItemsGKC = Heap.Table(
     folderId: Heap.Optional(Heap.String({ customMeta: { title: 'ID папки' } })),
     feedId: Heap.Optional(Heap.String({ customMeta: { title: 'ID чата (feedId)' } })),
     userId: Heap.Optional(Heap.String({ customMeta: { title: 'ID пользователя-владельца' } })),
-    addedAt: Heap.Optional(Heap.DateTime({ customMeta: { title: 'Дата добавления' } })),
+    addedAt: Heap.Optional(Heap.DateTime({ customMeta: { title: 'Дата добавления' } }))
   },
-  { customMeta: { title: 'Чаты в папках', description: '' } },
+  { customMeta: { title: 'Чаты в папках', description: '' } }
 )
 
 export default TProjektChatChatFolderItemsGKC

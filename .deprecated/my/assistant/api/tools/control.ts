@@ -15,7 +15,7 @@ export const toolsControlRoute = app.post('/', async (ctx, req) => {
     }
     ctx.account.log('tools.control error', {
       level: 'error',
-      json: { userId: user.id, error: msg },
+      json: { userId: user.id, error: msg }
     })
     return { success: false, error: 'Не удалось выполнить команду' }
   }

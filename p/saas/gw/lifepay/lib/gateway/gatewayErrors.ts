@@ -52,8 +52,7 @@ export const GATEWAY_ERRORS: Record<GatewayErrorCode, ErrorMeta> = {
   },
   INVOKE_BODY_TOO_LARGE: {
     statusCode: 413,
-    message:
-      'Размер тела запроса превышает допустимый лимит gateway. Сократите объём аргументов.'
+    message: 'Размер тела запроса превышает допустимый лимит gateway. Сократите объём аргументов.'
   },
   INVOKE_HTTP_METHOD_NOT_ALLOWED: {
     statusCode: 405,
@@ -85,8 +84,7 @@ export const GATEWAY_ERRORS: Record<GatewayErrorCode, ErrorMeta> = {
   },
   INVOKE_LP_SEMANTIC_ERROR: {
     statusCode: 502,
-    message:
-      'LifePay вернул HTTP 200-299, но в JSON ответа признаки ошибки провайдера (§2.8.2).'
+    message: 'LifePay вернул HTTP 200-299, но в JSON ответа признаки ошибки провайдера (§2.8.2).'
   },
   INVOKE_LP_TIMEOUT: {
     statusCode: 504,

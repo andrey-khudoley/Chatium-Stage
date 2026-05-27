@@ -26,7 +26,12 @@ import { runTemplateUnitChecks } from './templateUnitSuite'
 /** Email тестового пользователя для интеграции с GetCourse (gateway-testing-strategy §2, implementation-plan §1.3). */
 const GC_INTEGRATION_TESTER_EMAIL = 'tester@khudoley.pro'
 
-export type TemplateIntegrationTestResult = { id: string; title: string; passed: boolean; error?: string }
+export type TemplateIntegrationTestResult = {
+  id: string
+  title: string
+  passed: boolean
+  error?: string
+}
 
 function push(
   results: TemplateIntegrationTestResult[],
@@ -56,18 +61,27 @@ function isAdmin(ctx: app.Ctx): boolean {
   return u?.is?.('Admin') === true
 }
 
-export async function runTemplateIntegrationChecks(ctx: app.Ctx): Promise<TemplateIntegrationTestResult[]> {
+export async function runTemplateIntegrationChecks(
+  ctx: app.Ctx
+): Promise<TemplateIntegrationTestResult[]> {
   const results: TemplateIntegrationTestResult[] = []
   const admin = isAdmin(ctx)
 
-  await tryAsync(results, 'settings_get_project_name', 'getSettingString(PROJECT_NAME)', async () => {
-    const name = await settingsLib.getSettingString(ctx, settingsLib.SETTING_KEYS.PROJECT_NAME)
-    return typeof name === 'string'
-  })
+  await tryAsync(
+    results,
+    'settings_get_project_name',
+    'getSettingString(PROJECT_NAME)',
+    async () => {
+      const name = await settingsLib.getSettingString(ctx, settingsLib.SETTING_KEYS.PROJECT_NAME)
+      return typeof name === 'string'
+    }
+  )
 
   await tryAsync(results, 'settings_get_log_level', 'getLogLevel валиден', async () => {
     const level = await settingsLib.getLogLevel(ctx)
-    return typeof level === 'string' && settingsLib.LOG_LEVELS.includes(level as settingsLib.LogLevel)
+    return (
+      typeof level === 'string' && settingsLib.LOG_LEVELS.includes(level as settingsLib.LogLevel)
+    )
   })
 
   await tryAsync(results, 'settings_repo_findAll', 'settings.repo findAll', async () => {
@@ -99,10 +113,15 @@ export async function runTemplateIntegrationChecks(ctx: app.Ctx): Promise<Templa
     return typeof socketId === 'string' && socketId.length > 0
   })
 
-  await tryAsync(results, 'settings_getSetting_branches', 'getSetting неизвестный ключ → null', async () => {
-    const v = await settingsLib.getSetting(ctx, 'totally_unknown_key_xyz')
-    return v === null
-  })
+  await tryAsync(
+    results,
+    'settings_getSetting_branches',
+    'getSetting неизвестный ключ → null',
+    async () => {
+      const v = await settingsLib.getSetting(ctx, 'totally_unknown_key_xyz')
+      return v === null
+    }
+  )
 
   await tryAsync(results, 'settings_getLogsLimit_parse', 'getLogsLimit', async () => {
     const n = await settingsLib.getLogsLimit(ctx)
@@ -139,79 +158,129 @@ export async function runTemplateIntegrationChecks(ctx: app.Ctx): Promise<Templa
     return true
   })
 
-  await tryAsync(results, 'settings_setSetting_project_fields', 'setSetting PROJECT_NAME trim', async () => {
-    const prev = await settingsLib.getSettingString(ctx, settingsLib.SETTING_KEYS.PROJECT_NAME)
-    await settingsLib.setSetting(ctx, settingsLib.SETTING_KEYS.PROJECT_NAME, '  x  ')
-    const v = await settingsLib.getSettingString(ctx, settingsLib.SETTING_KEYS.PROJECT_NAME)
-    await settingsLib.setSetting(ctx, settingsLib.SETTING_KEYS.PROJECT_NAME, prev)
-    return v === 'x'
-  })
+  await tryAsync(
+    results,
+    'settings_setSetting_project_fields',
+    'setSetting PROJECT_NAME trim',
+    async () => {
+      const prev = await settingsLib.getSettingString(ctx, settingsLib.SETTING_KEYS.PROJECT_NAME)
+      await settingsLib.setSetting(ctx, settingsLib.SETTING_KEYS.PROJECT_NAME, '  x  ')
+      const v = await settingsLib.getSettingString(ctx, settingsLib.SETTING_KEYS.PROJECT_NAME)
+      await settingsLib.setSetting(ctx, settingsLib.SETTING_KEYS.PROJECT_NAME, prev)
+      return v === 'x'
+    }
+  )
 
   await tryAsync(results, 'settings_setSetting_webhook', 'setSetting LOG_WEBHOOK', async () => {
     const prev = await settingsLib.getLogWebhook(ctx)
-    await settingsLib.setSetting(ctx, settingsLib.SETTING_KEYS.LOG_WEBHOOK, { enable: false, url: '' })
+    await settingsLib.setSetting(ctx, settingsLib.SETTING_KEYS.LOG_WEBHOOK, {
+      enable: false,
+      url: ''
+    })
     await settingsLib.setSetting(ctx, settingsLib.SETTING_KEYS.LOG_WEBHOOK, prev)
     return true
   })
 
-  await tryAsync(results, 'settings_setSetting_dashboard_reset', 'setSetting DASHBOARD_RESET_AT', async () => {
-    const prev = await settingsLib.getDashboardResetAt(ctx)
-    await settingsLib.setSetting(ctx, settingsLib.SETTING_KEYS.DASHBOARD_RESET_AT, Math.floor(prev) + 0)
-    return true
-  })
-
-  await tryAsync(results, 'settings_setSetting_unknown_key', 'неизвестный ключ upsert', async () => {
-    const k = '__tpl_unknown_' + Date.now()
-    await settingsLib.setSetting(ctx, k, { a: 1 })
-    const v = await settingsLib.getSetting(ctx, k)
-    await settingsRepo.deleteByKey(ctx, k)
-    return v !== null && typeof v === 'object'
-  })
-
-  await tryAsync(results, 'settings_setSetting_gc_dev_rejects_whitespace', 'gc_developer_api_key пробелы', async () => {
-    let threw = false
-    try {
-      await settingsLib.setSetting(ctx, settingsLib.SETTING_KEYS.GC_DEVELOPER_API_KEY, ' \t ')
-    } catch {
-      threw = true
+  await tryAsync(
+    results,
+    'settings_setSetting_dashboard_reset',
+    'setSetting DASHBOARD_RESET_AT',
+    async () => {
+      const prev = await settingsLib.getDashboardResetAt(ctx)
+      await settingsLib.setSetting(
+        ctx,
+        settingsLib.SETTING_KEYS.DASHBOARD_RESET_AT,
+        Math.floor(prev) + 0
+      )
+      return true
     }
-    return threw
-  })
+  )
 
-  await tryAsync(results, 'settings_setSetting_gc_host_trim', 'gc_test_school_host trim', async () => {
-    const key = settingsLib.SETTING_KEYS.GC_TEST_SCHOOL_HOST
-    const prev = await settingsLib.getSetting(ctx, key)
-    try {
-      await settingsLib.setSetting(ctx, key, '  integ-test-host.getcourse.ru  ')
-      const v = await settingsLib.getSetting(ctx, key)
-      return v === 'integ-test-host.getcourse.ru'
-    } finally {
-      if (typeof prev === 'string' && prev.trim()) {
-        await settingsLib.setSetting(ctx, key, prev)
-      } else {
-        await settingsRepo.deleteByKey(ctx, key)
+  await tryAsync(
+    results,
+    'settings_setSetting_unknown_key',
+    'неизвестный ключ upsert',
+    async () => {
+      const k = '__tpl_unknown_' + Date.now()
+      await settingsLib.setSetting(ctx, k, { a: 1 })
+      const v = await settingsLib.getSetting(ctx, k)
+      await settingsRepo.deleteByKey(ctx, k)
+      return v !== null && typeof v === 'object'
+    }
+  )
+
+  await tryAsync(
+    results,
+    'settings_setSetting_gc_dev_rejects_whitespace',
+    'gc_developer_api_key пробелы',
+    async () => {
+      let threw = false
+      try {
+        await settingsLib.setSetting(ctx, settingsLib.SETTING_KEYS.GC_DEVELOPER_API_KEY, ' \t ')
+      } catch {
+        threw = true
+      }
+      return threw
+    }
+  )
+
+  await tryAsync(
+    results,
+    'settings_setSetting_gc_host_trim',
+    'gc_test_school_host trim',
+    async () => {
+      const key = settingsLib.SETTING_KEYS.GC_TEST_SCHOOL_HOST
+      const prev = await settingsLib.getSetting(ctx, key)
+      try {
+        await settingsLib.setSetting(ctx, key, '  integ-test-host.getcourse.ru  ')
+        const v = await settingsLib.getSetting(ctx, key)
+        return v === 'integ-test-host.getcourse.ru'
+      } finally {
+        if (typeof prev === 'string' && prev.trim()) {
+          await settingsLib.setSetting(ctx, key, prev)
+        } else {
+          await settingsRepo.deleteByKey(ctx, key)
+        }
       }
     }
-  })
+  )
 
-  await tryAsync(results, 'settings_setSetting_gc_host_rejects_https', 'gc_test_school_host без https', async () => {
-    let threw = false
-    try {
-      await settingsLib.setSetting(ctx, settingsLib.SETTING_KEYS.GC_TEST_SCHOOL_HOST, 'https://x.getcourse.ru')
-    } catch {
-      threw = true
+  await tryAsync(
+    results,
+    'settings_setSetting_gc_host_rejects_https',
+    'gc_test_school_host без https',
+    async () => {
+      let threw = false
+      try {
+        await settingsLib.setSetting(
+          ctx,
+          settingsLib.SETTING_KEYS.GC_TEST_SCHOOL_HOST,
+          'https://x.getcourse.ru'
+        )
+      } catch {
+        threw = true
+      }
+      return threw
     }
-    return threw
-  })
+  )
 
   await tryAsync(
     results,
     'gateway_v1_addUser_live',
     'POST /v1/addUser → GetCourse (Heap уровня A)',
     async () => {
-      const rawDev = await settingsLib.getSetting(ctx, settingsLib.SETTING_KEYS.GC_DEVELOPER_API_KEY)
-      const rawSchoolKey = await settingsLib.getSetting(ctx, settingsLib.SETTING_KEYS.GC_TEST_SCHOOL_API_KEY)
-      const rawHost = await settingsLib.getSetting(ctx, settingsLib.SETTING_KEYS.GC_TEST_SCHOOL_HOST)
+      const rawDev = await settingsLib.getSetting(
+        ctx,
+        settingsLib.SETTING_KEYS.GC_DEVELOPER_API_KEY
+      )
+      const rawSchoolKey = await settingsLib.getSetting(
+        ctx,
+        settingsLib.SETTING_KEYS.GC_TEST_SCHOOL_API_KEY
+      )
+      const rawHost = await settingsLib.getSetting(
+        ctx,
+        settingsLib.SETTING_KEYS.GC_TEST_SCHOOL_HOST
+      )
       const devKey = typeof rawDev === 'string' ? rawDev.trim() : ''
       const schoolKey = typeof rawSchoolKey === 'string' ? rawSchoolKey.trim() : ''
       const hostStr = typeof rawHost === 'string' ? rawHost.trim() : ''
@@ -249,7 +318,11 @@ export async function runTemplateIntegrationChecks(ctx: app.Ctx): Promise<Templa
         }
         throw new Error(detail)
       }
-      const parsed = JSON.parse(res.rawHttpBody) as { ok?: unknown; requestId?: unknown; data?: unknown }
+      const parsed = JSON.parse(res.rawHttpBody) as {
+        ok?: unknown
+        requestId?: unknown
+        data?: unknown
+      }
       if (parsed.ok !== true) {
         throw new Error('В теле ответа нет ok: true')
       }
@@ -309,18 +382,23 @@ export async function runTemplateIntegrationChecks(ctx: app.Ctx): Promise<Templa
     return again !== null && again.id === row.id
   })
 
-  await tryAsync(results, 'logs_repo_findBeforeTimestamp_where', 'findBeforeTimestamp $lt', async () => {
-    const ts = Date.now()
-    await logsRepo.create(ctx, {
-      message: '[tpl-test] before',
-      payload: 'null',
-      severity: 6,
-      level: 'info',
-      timestamp: ts - 10
-    })
-    const rows = await logsRepo.findBeforeTimestamp(ctx, ts, 5)
-    return Array.isArray(rows) && rows.every((r) => r.timestamp < ts)
-  })
+  await tryAsync(
+    results,
+    'logs_repo_findBeforeTimestamp_where',
+    'findBeforeTimestamp $lt',
+    async () => {
+      const ts = Date.now()
+      await logsRepo.create(ctx, {
+        message: '[tpl-test] before',
+        payload: 'null',
+        severity: 6,
+        level: 'info',
+        timestamp: ts - 10
+      })
+      const rows = await logsRepo.findBeforeTimestamp(ctx, ts, 5)
+      return Array.isArray(rows) && rows.every((r) => r.timestamp < ts)
+    }
+  )
 
   await tryAsync(results, 'logs_repo_count_severities', 'count helpers', async () => {
     const since = 0
@@ -344,16 +422,21 @@ export async function runTemplateIntegrationChecks(ctx: app.Ctx): Promise<Templa
     return true
   })
 
-  await tryAsync(results, 'regression_payload_not_object_object', 'payload JSON в Heap', async () => {
-    await loggerLib.writeServerLog(ctx, {
-      severity: 6,
-      message: '[tpl] payload obj',
-      payload: { a: 1 }
-    })
-    const rows = await logsRepo.findAll(ctx, { limit: 30, offset: 0 })
-    const hit = rows.find((r) => r.message === '[tpl] payload obj')
-    return hit != null && typeof hit.payload === 'string' && hit.payload.includes('"a"')
-  })
+  await tryAsync(
+    results,
+    'regression_payload_not_object_object',
+    'payload JSON в Heap',
+    async () => {
+      await loggerLib.writeServerLog(ctx, {
+        severity: 6,
+        message: '[tpl] payload obj',
+        payload: { a: 1 }
+      })
+      const rows = await logsRepo.findAll(ctx, { limit: 30, offset: 0 })
+      const hit = rows.find((r) => r.message === '[tpl] payload obj')
+      return hit != null && typeof hit.payload === 'string' && hit.payload.includes('"a"')
+    }
+  )
 
   await tryAsync(results, 'logger_writeServerLog_filter', 'Error отсекает severity 6', async () => {
     const prev = await settingsLib.getLogLevel(ctx)
@@ -385,14 +468,23 @@ export async function runTemplateIntegrationChecks(ctx: app.Ctx): Promise<Templa
     })
 
     await tryAsync(results, 'api_settings_get', 'settings/get', async () => {
-      const r = (await getSettingRoute.query({ key: 'project_name' }).run(ctx)) as { success?: boolean }
+      const r = (await getSettingRoute.query({ key: 'project_name' }).run(ctx)) as {
+        success?: boolean
+      }
       return r.success === true
     })
 
-    await tryAsync(results, 'api_settings_save_validation', 'settings/save пустой key', async () => {
-      const r = (await saveSettingRoute.run(ctx, { key: '', value: 'x' })) as { success?: boolean }
-      return r.success === false
-    })
+    await tryAsync(
+      results,
+      'api_settings_save_validation',
+      'settings/save пустой key',
+      async () => {
+        const r = (await saveSettingRoute.run(ctx, { key: '', value: 'x' })) as {
+          success?: boolean
+        }
+        return r.success === false
+      }
+    )
 
     await tryAsync(results, 'api_admin_logs_recent', 'admin/logs/recent', async () => {
       const r = (await getRecentLogsRoute.query({ limit: '5' }).run(ctx)) as {
@@ -454,16 +546,21 @@ export async function runTemplateIntegrationChecks(ctx: app.Ctx): Promise<Templa
     return g === tag
   })
 
-  await tryAsync(results, 'e2e_log_level_filters_storage', 'Error + severity 6 не в Heap', async () => {
-    const prev = await settingsLib.getLogLevel(ctx)
-    await settingsLib.setSetting(ctx, settingsLib.SETTING_KEYS.LOG_LEVEL, 'Error')
-    const msg = `[tpl-e2e-${Date.now()}]`
-    await loggerLib.writeServerLog(ctx, { severity: 6, message: msg, payload: {} })
-    const rows = await logsRepo.findAll(ctx, { limit: 80, offset: 0 })
-    const leaked = rows.some((r) => r.message === msg)
-    await settingsLib.setSetting(ctx, settingsLib.SETTING_KEYS.LOG_LEVEL, prev)
-    return !leaked
-  })
+  await tryAsync(
+    results,
+    'e2e_log_level_filters_storage',
+    'Error + severity 6 не в Heap',
+    async () => {
+      const prev = await settingsLib.getLogLevel(ctx)
+      await settingsLib.setSetting(ctx, settingsLib.SETTING_KEYS.LOG_LEVEL, 'Error')
+      const msg = `[tpl-e2e-${Date.now()}]`
+      await loggerLib.writeServerLog(ctx, { severity: 6, message: msg, payload: {} })
+      const rows = await logsRepo.findAll(ctx, { limit: 80, offset: 0 })
+      const leaked = rows.some((r) => r.message === msg)
+      await settingsLib.setSetting(ctx, settingsLib.SETTING_KEYS.LOG_LEVEL, prev)
+      return !leaked
+    }
+  )
 
   await tryAsync(results, 'e2e_logs_pagination', 'recent + before', async () => {
     if (!admin) return true
@@ -497,10 +594,15 @@ export async function runTemplateIntegrationChecks(ctx: app.Ctx): Promise<Templa
     )
   })
 
-  await tryAsync(results, 'logger_writeServerLog_socket', 'getAdminLogsSocketId для сокета', async () => {
-    const id = loggerLib.getAdminLogsSocketId(ctx)
-    return id.length > 10
-  })
+  await tryAsync(
+    results,
+    'logger_writeServerLog_socket',
+    'getAdminLogsSocketId для сокета',
+    async () => {
+      const id = loggerLib.getAdminLogsSocketId(ctx)
+      return id.length > 10
+    }
+  )
 
   await tryAsync(results, 'logger_writeServerLog_webhook_url', 'getLogWebhook дефолт', async () => {
     const w = await settingsLib.getLogWebhook(ctx)

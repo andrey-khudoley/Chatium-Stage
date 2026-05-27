@@ -7,12 +7,15 @@ export const webAppPageRoute = app.get('/', async (ctx, req) => {
     <html>
       <head>
         <title>Telegram MiniApp</title>
-        <meta charset='UTF-8' />
-        <meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no' />
-        <script src='https://telegram.org/js/telegram-web-app.js'></script>
-        <script src='/s/static/lib/tailwind.3.4.16.min.js'></script>
-        <script src='/s/metric/clarity.js'></script>
-        <style type='text/tailwindcss'>{`
+        <meta charset="UTF-8" />
+        <meta
+          name="viewport"
+          content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+        />
+        <script src="https://telegram.org/js/telegram-web-app.js"></script>
+        <script src="/s/static/lib/tailwind.3.4.16.min.js"></script>
+        <script src="/s/metric/clarity.js"></script>
+        <style type="text/tailwindcss">{`
           body {
             margin: 0;
             padding: 0;

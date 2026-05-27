@@ -22,13 +22,13 @@ const props = defineProps({
   modelValue: { type: [String, Number], default: '' },
   options: { type: Array, required: true },
   direction: { type: String, default: 'vertical' },
-  disabled: { type: Boolean, default: false },
+  disabled: { type: Boolean, default: false }
 })
 
 const emit = defineEmits(['update:modelValue'])
 
 const parsedOptions = computed(() => {
-  return props.options.map(opt => {
+  return props.options.map((opt) => {
     if (typeof opt === 'object' && opt !== null) {
       return { value: opt.value ?? '', label: opt.label ?? String(opt.value ?? '') }
     }
@@ -37,7 +37,9 @@ const parsedOptions = computed(() => {
 })
 
 const directionClass = computed(() =>
-  props.direction === 'horizontal' ? 'custom-radio-group--horizontal' : 'custom-radio-group--vertical'
+  props.direction === 'horizontal'
+    ? 'custom-radio-group--horizontal'
+    : 'custom-radio-group--vertical'
 )
 
 function select(val) {

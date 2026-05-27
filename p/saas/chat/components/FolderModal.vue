@@ -7,14 +7,14 @@
           <i class="fas fa-times"></i>
         </button>
       </div>
-      
+
       <div class="modal-body">
         <!-- Название папки -->
         <div class="form-group">
           <label>Название</label>
-          <input 
-            v-model="folderName" 
-            type="text" 
+          <input
+            v-model="folderName"
+            type="text"
             placeholder="Название папки"
             maxlength="30"
             ref="nameInput"
@@ -22,7 +22,7 @@
           />
           <span class="char-count">{{ folderName.length }}/30</span>
         </div>
-        
+
         <!-- Иконка -->
         <div class="form-group">
           <label>Иконка</label>
@@ -37,17 +37,17 @@
             </button>
           </div>
         </div>
-        
+
         <!-- Выбор чатов -->
         <div class="form-group chats-section">
           <label>Чаты в папке ({{ selectedChats.length }})</label>
-          
+
           <!-- Поиск по чатам -->
           <div class="search-box">
             <i class="fas fa-search search-icon"></i>
-            <input 
-              v-model="chatSearchQuery" 
-              type="text" 
+            <input
+              v-model="chatSearchQuery"
+              type="text"
               placeholder="Поиск чатов..."
               class="search-input"
             />
@@ -55,19 +55,19 @@
               <i class="fas fa-times"></i>
             </button>
           </div>
-          
+
           <!-- Список чатов -->
           <div class="chats-list">
             <div v-if="filteredAvailableChats.length === 0 && chatSearchQuery" class="no-results">
               <i class="fas fa-search"></i>
               <span>Ничего не найдено</span>
             </div>
-            
+
             <div v-else-if="filteredAvailableChats.length === 0" class="no-results">
               <i class="fas fa-comments"></i>
               <span>Нет доступных чатов</span>
             </div>
-            
+
             <label
               v-for="chat in filteredAvailableChats"
               :key="chat.feedId"
@@ -81,7 +81,9 @@
                 class="chat-checkbox"
               />
               <div class="chat-avatar-small" :style="getAvatarStyle(chat)">
-                <span v-if="!hasChatAvatar(chat)">{{ getChatInitials(chat.displayTitle || chat.title) }}</span>
+                <span v-if="!hasChatAvatar(chat)">{{
+                  getChatInitials(chat.displayTitle || chat.title)
+                }}</span>
               </div>
               <div class="chat-info">
                 <span class="chat-name">{{ chat.displayTitle || chat.title }}</span>
@@ -95,11 +97,11 @@
           </div>
         </div>
       </div>
-      
+
       <div class="modal-footer">
         <button @click="close" class="btn-secondary">Отмена</button>
-        <button 
-          @click="save" 
+        <button
+          @click="save"
           :class="['btn-primary', { loading: isSaving }]"
           :disabled="!folderName.trim() || isSaving"
         >
@@ -142,9 +144,29 @@ const selectedChats = ref([])
 const isEditing = computed(() => !!props.folder)
 
 const availableIcons = [
-  '📁', '💼', '📚', '⭐', '🔥', '💡', '🎯', '🚀',
-  '📌', '🏠', '📅', '✅', '💬', '👥', '🤖',
-  '🎮', '🎵', '📺', '💰', '🛒', '📷', '🎨', '⚙️'
+  '📁',
+  '💼',
+  '📚',
+  '⭐',
+  '🔥',
+  '💡',
+  '🎯',
+  '🚀',
+  '📌',
+  '🏠',
+  '📅',
+  '✅',
+  '💬',
+  '👥',
+  '🤖',
+  '🎮',
+  '🎵',
+  '📺',
+  '💰',
+  '🛒',
+  '📷',
+  '🎨',
+  '⚙️'
 ]
 
 // Фильтруем чаты по поиску
@@ -152,32 +174,35 @@ const filteredAvailableChats = computed(() => {
   if (!chatSearchQuery.value.trim()) {
     return props.allChats
   }
-  
+
   const query = chatSearchQuery.value.toLowerCase()
-  return props.allChats.filter(chat => {
+  return props.allChats.filter((chat) => {
     const title = (chat.displayTitle || chat.title || '').toLowerCase()
     return title.includes(query)
   })
 })
 
-watch(() => props.isOpen, (open) => {
-  if (open) {
-    if (props.folder) {
-      folderName.value = props.folder.name || ''
-      selectedIcon.value = props.folder.icon || '📁'
-      // Загружаем чаты папки
-      selectedChats.value = [...props.folderChats]
-    } else {
-      folderName.value = ''
-      selectedIcon.value = '📁'
-      selectedChats.value = []
+watch(
+  () => props.isOpen,
+  (open) => {
+    if (open) {
+      if (props.folder) {
+        folderName.value = props.folder.name || ''
+        selectedIcon.value = props.folder.icon || '📁'
+        // Загружаем чаты папки
+        selectedChats.value = [...props.folderChats]
+      } else {
+        folderName.value = ''
+        selectedIcon.value = '📁'
+        selectedChats.value = []
+      }
+      chatSearchQuery.value = ''
+      nextTick(() => {
+        nameInput.value?.focus()
+      })
     }
-    chatSearchQuery.value = ''
-    nextTick(() => {
-      nameInput.value?.focus()
-    })
   }
-})
+)
 
 function close() {
   emit('close')
@@ -198,9 +223,9 @@ function toggleChat(feedId) {
 
 async function save() {
   if (!folderName.value.trim()) return
-  
+
   isSaving.value = true
-  
+
   try {
     emit('save', {
       id: props.folder?.id,
@@ -215,43 +240,48 @@ async function save() {
 
 function getChatInitials(title) {
   if (!title) return '?'
-  return title.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase()
+  return title
+    .split(' ')
+    .map((w) => w[0])
+    .join('')
+    .substring(0, 2)
+    .toUpperCase()
 }
 
 function getAvatarStyle(chat) {
   if (chat.avatarHash) {
     return {
-      background: `url(https://fs.chatium.ru/thumbnail/${chat.avatarHash}/s/100x) center/cover no-repeat`,
+      background: `url(https://fs.chatium.ru/thumbnail/${chat.avatarHash}/s/100x) center/cover no-repeat`
     }
   }
-  
+
   if (chat.type === 'direct' && chat.participants) {
-    const otherParticipant = chat.participants.find(p => p.userId !== ctx.user?.id)
+    const otherParticipant = chat.participants.find((p) => p.userId !== ctx.user?.id)
     if (otherParticipant?.user?.avatar) {
       return {
-        background: `url(${otherParticipant.user.avatar}) center/cover no-repeat`,
+        background: `url(${otherParticipant.user.avatar}) center/cover no-repeat`
       }
     }
   }
-  
+
   const colors = [
     ['#667eea', '#764ba2'],
     ['#f093fb', '#f5576c'],
     ['#4facfe', '#00f2fe'],
     ['#43e97b', '#38f9d7'],
-    ['#fa709a', '#fee140'],
+    ['#fa709a', '#fee140']
   ]
   const index = (chat.id?.charCodeAt(0) || 0) % colors.length
   const [from, to] = colors[index]
   return {
-    background: `linear-gradient(135deg, ${from} 0%, ${to} 100%)`,
+    background: `linear-gradient(135deg, ${from} 0%, ${to} 100%)`
   }
 }
 
 function hasChatAvatar(chat) {
   if (chat.avatarHash) return true
   if (chat.type === 'direct' && chat.participants) {
-    const otherParticipant = chat.participants.find(p => p.userId !== ctx.user?.id)
+    const otherParticipant = chat.participants.find((p) => p.userId !== ctx.user?.id)
     if (otherParticipant?.user?.avatar) return true
   }
   return false
@@ -333,7 +363,7 @@ function hasChatAvatar(chat) {
   margin-bottom: 0.5rem;
 }
 
-.form-group input[type="text"] {
+.form-group input[type='text'] {
   width: 100%;
   padding: 0.75rem 1rem;
   border: 1px solid var(--border-color);
@@ -345,7 +375,7 @@ function hasChatAvatar(chat) {
   transition: border-color 0.2s;
 }
 
-.form-group input[type="text"]:focus {
+.form-group input[type='text']:focus {
   border-color: var(--accent-primary);
 }
 
@@ -565,15 +595,15 @@ function hasChatAvatar(chat) {
     max-height: 95vh;
     margin: 0.5rem;
   }
-  
+
   .chats-list {
     max-height: 12rem;
   }
-  
+
   .icon-picker {
     gap: 0.375rem;
   }
-  
+
   .icon-btn {
     width: 2rem;
     height: 2rem;

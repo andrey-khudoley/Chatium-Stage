@@ -14,6 +14,8 @@ export const setUriHandler: V1GcHandler = async (_ctx, a) => {
   return { kind: 'gc_result', gc }
 }
 
-export const setUriRoute = app.post('/', async (ctx, req) => handleV1Op(ctx, req, 'setUri', setUriHandler))
+export const setUriRoute = app.post('/', async (ctx, req) =>
+  handleV1Op(ctx, req, 'setUri', setUriHandler)
+)
 
 export default setUriRoute

@@ -1,13 +1,9 @@
-import PostsTable from "../tables/posts.table"
-import BlogSettingsTable from "../tables/blogsettings.table"
-import { editPostPageRoute } from "../editPost"
-import { calculateReadingTime } from "../shared/readingTime"
+import PostsTable from '../tables/posts.table'
+import BlogSettingsTable from '../tables/blogsettings.table'
+import { editPostPageRoute } from '../editPost'
+import { calculateReadingTime } from '../shared/readingTime'
 import { sendDataToSocket } from '@app/socket'
-import {
-  CompletionCompletedBody,
-  CompletionFailedBody,
-  startCompletion,
-} from '@start/sdk'
+import { CompletionCompletedBody, CompletionFailedBody, startCompletion } from '@start/sdk'
 import { validateCaller } from '@pay/sdk'
 import { requireAccountRole } from '@app/auth'
 
@@ -34,7 +30,7 @@ export const apiBlogPostsListRoute = app.get('/list', async (ctx, req) => {
     limit: 50
   })
 
-  return posts.map(post => ({
+  return posts.map((post) => ({
     id: post.id,
     title: post.title,
     slug: post.slug,
@@ -50,9 +46,9 @@ export const apiBlogPostsListRoute = app.get('/list', async (ctx, req) => {
 // @shared-route
 export const apiBlogPostBySlugRoute = app.get('/post/:slug', async (ctx, req) => {
   const [post] = await PostsTable.findAll(ctx, {
-    where: { 
+    where: {
       slug: req.params.slug,
-      published: true 
+      published: true
     },
     limit: 1
   })
@@ -147,7 +143,7 @@ export const apiBlogGetSettingsRoute = app.get('/settings', async (ctx, req) => 
     where: { key: 'systemPrompt' },
     limit: 1
   })
-  
+
   return {
     systemPrompt: systemPromptSetting?.value || getDefaultSystemPrompt()
   }
@@ -157,12 +153,12 @@ export const apiBlogGetSettingsRoute = app.get('/settings', async (ctx, req) => 
 export const apiBlogSaveSettingsRoute = app.post('/settings', async (ctx, req) => {
   requireAccountRole(ctx, 'Admin')
   const { systemPrompt } = req.body
-  
+
   const [existingSetting] = await BlogSettingsTable.findAll(ctx, {
     where: { key: 'systemPrompt' },
     limit: 1
   })
-  
+
   if (existingSetting) {
     await BlogSettingsTable.update(ctx, {
       id: existingSetting.id,
@@ -175,7 +171,7 @@ export const apiBlogSaveSettingsRoute = app.post('/settings', async (ctx, req) =
       description: 'Системный промпт для генерации постов с помощью ИИ'
     })
   }
-  
+
   return { success: true }
 })
 
@@ -183,7 +179,7 @@ export const apiBlogSaveSettingsRoute = app.post('/settings', async (ctx, req) =
 export const apiBlogGeneratePostRoute = app.post('/generate', async (ctx, req) => {
   requireAccountRole(ctx, 'Admin')
   const { topic } = req.body
-  
+
   if (!topic || topic.trim() === '') {
     return { error: 'Тема поста обязательна' }
   }
@@ -235,10 +231,14 @@ export const apiBlogGeneratePostRoute = app.post('/generate', async (ctx, req) =
     context: {
       postId: draftPost.id,
       topic
-    },
+    }
   })
 
-  return { postId: draftPost.id, message: 'Генерация поста запущена', redirectUrl: editPostPageRoute({ id: draftPost.id }).url() }
+  return {
+    postId: draftPost.id,
+    message: 'Генерация поста запущена',
+    redirectUrl: editPostPageRoute({ id: draftPost.id }).url()
+  }
 })
 
 function getDefaultSystemPrompt() {
@@ -264,29 +264,34 @@ const onPostGenerationCompleted = app
     }
 
     const generatedContent = messageTexts.join('\n')
-    
+
     // Парсим сгенерированный контент
     const lines = generatedContent.split('\n')
-    const title = lines.find(line => line.startsWith('# '))?.replace('# ', '') || `Пост на тему: ${topic}`
-    
+    const title =
+      lines.find((line) => line.startsWith('# '))?.replace('# ', '') || `Пост на тему: ${topic}`
+
     // Извлекаем теги из конца текста
-    const tagsLine = lines.find(line => line.startsWith('ТЕГИ:'))
+    const tagsLine = lines.find((line) => line.startsWith('ТЕГИ:'))
     const tags = tagsLine ? tagsLine.replace('ТЕГИ:', '').trim() : 'блог, разработка'
-    
+
     // Создаем slug из заголовка
-    const slug = title.toLowerCase()
+    const slug = title
+      .toLowerCase()
       .replace(/[^\p{L}\p{N}\s-]/gu, '')
       .replace(/\s+/g, '-')
       .replace(/-+/g, '-')
       .trim('-')
       .substring(0, 100)
-    
+
     // Первый абзац как краткое описание
-    const excerpt = lines.find(line => line.trim() && !line.startsWith('#') && !line.startsWith('ТЕГИ:'))?.substring(0, 200) + '...' || ''
-    
+    const excerpt =
+      lines
+        .find((line) => line.trim() && !line.startsWith('#') && !line.startsWith('ТЕГИ:'))
+        ?.substring(0, 200) + '...' || ''
+
     // Убираем строку с тегами из основного контента
     const cleanContent = generatedContent.replace(/ТЕГИ:.*$/gm, '').trim()
-    
+
     const readingTime = calculateReadingTime(cleanContent)
 
     // Обновляем пост с сгенерированным контентом

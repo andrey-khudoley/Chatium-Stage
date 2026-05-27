@@ -1,9 +1,11 @@
 # Импорты страниц и схема зависимостей
 
 ## Назначение
+
 Сводный список импортов **всех страниц** + схема зависимостей для быстрого поиска циклов.
 
 ## Когда обновлять
+
 - При добавлении/удалении страниц (tsx/vues).
 - При изменении импортов в файлах страниц.
 - При реорганизации роутинга или shared‑модулей.
@@ -13,6 +15,7 @@
 ## 1) Страницы‑роуты (TSX entrypoints)
 
 ### `./index.tsx`
+
 - `@app/html-jsx` → `jsx`
 - `./pages/HomePage.vue`
 - `./profile`
@@ -23,6 +26,7 @@
 - `./lib/logs-init` (side‑effect)
 
 ### `./login.tsx`
+
 - `@app/html-jsx` → `jsx`
 - `@app/auth/provider` → `getEnabledAuthProviders`
 - `./pages/LoginPage.vue`
@@ -34,6 +38,7 @@
 - `./lib/logs-init` (side‑effect)
 
 ### `./profile.tsx`
+
 - `@app/html-jsx` → `jsx`
 - `@app/auth` → `requireRealUser`
 - `./pages/ProfilePage.vue`
@@ -44,6 +49,7 @@
 - `./lib/logs-init` (side‑effect)
 
 ### `./admin.tsx`
+
 - `@app/html-jsx` → `jsx`
 - `@app/auth` → `requireAccountRole`
 - `@app/socket` → `genSocketId`
@@ -58,12 +64,14 @@
 - `./lib/logs-init` (side‑effect)
 
 ### `./tests/index.tsx`
+
 - `@app/html-jsx` → `jsx`
 - `@app/auth` → `requireAnyUser`
 - `./pages/UnitTestsPage.vue`
 - `../lib/logs-init` (side‑effect)
 
 ### `./tests/ai.tsx`
+
 - `@app/auth` → `requireAnyUser`
 - `./shared/test-definitions`
 - `./api/run-tests`
@@ -74,11 +82,13 @@
 ## 2) Страницы‑компоненты (Vue)
 
 ### `./pages/HomePage.vue`
+
 - `vue` → `onMounted`, `ref`
 - `../shared/Header.vue`
 - `../shared/GlobalGlitch.vue`
 
 ### `./pages/LoginPage.vue`
+
 - `vue` → `ref`, `computed`, `onMounted`, `onUnmounted`
 - `../sdk/auth`
 - `../api/auth-password`
@@ -86,11 +96,13 @@
 - `../shared/GlobalGlitch.vue`
 
 ### `./pages/ProfilePage.vue`
+
 - `vue` → `onMounted`, `ref`
 - `../shared/Header.vue`
 - `../shared/GlobalGlitch.vue`
 
 ### `./pages/AdminPage.vue`
+
 - `vue` → `ref`, `onMounted`, `onBeforeUnmount`, `computed`
 - `@app/socket` → `getOrCreateBrowserSocketClient`
 - `../shared/Header.vue`
@@ -99,11 +111,13 @@
 - `../api/admin-logs`
 
 ### `./tests/pages/UnitTestsPage.vue`
+
 - `vue` → `ref`, `computed`, `onMounted` (1‑й import‑блок)
 - `../shared/test-definitions` (1‑й import‑блок)
 - `../api/start-tests` (1‑й import‑блок)
 
 > В файле есть **второй import‑блок** (начиная с ~379 строки), который частично дублирует первый и добавляет `@app/socket`:
+>
 > - `vue` → `ref`, `onMounted`, `onUnmounted`, `computed`
 > - `../api/start-tests`
 > - `../shared/test-definitions`
@@ -197,7 +211,8 @@ graph TD
 **⚠️ НОВОЕ ПРАВИЛО** (с 2026-01-30):
 
 **На серверной стороне (в роутах TSX):**
-- ✅ Используйте **относительные пути**: 
+
+- ✅ Используйте **относительные пути**:
   - `./admin` - для файлов на том же уровне
   - `../profile` - для выхода на уровень вверх
 - ❌ НЕ используйте `.url()` на сервере (вызывает циклические зависимости)
@@ -206,14 +221,17 @@ graph TD
   - Правильно: `'./admin'` (если на одном уровне) → `https://domain.com/p/gc/partnership/admin`
 
 **Для фронтенда (Vue компоненты):**
+
 - ✅ Можно использовать `.url()` — это фронтенд (см. 002-routing.md)
 - ✅ Или используйте относительные пути, если есть циклические зависимости
 
 **При циклических зависимостях:**
+
 - Используйте переменные из `/config/routes.ts`
 - ⚠️ **КРИТИЧЕСКАЯ ОШИБКА**: Хардкодить URL запрещено!
 
 **Другие правила:**
+
 - ✅ Выносите общие функции/константы в `lib/` и `shared/`.
 - ✅ Для файлов таблиц: **НЕ импортируйте** ничего кроме `{ Heap } from '@app/heap'` (см. ошибку #7 в 008-heap.md).
 
@@ -224,14 +242,14 @@ graph TD
 const url = '/admin'
 
 // ❌ НЕПРАВИЛЬНО - .url() на сервере с циклическими зависимостями
-import { adminRoute } from '../admin'  // Цикл!
+import { adminRoute } from '../admin' // Цикл!
 const url = adminRoute.url()
 
 // ✅ ПРАВИЛЬНО - относительный путь на сервере
 const url = './admin'
 
 // ✅ ПРАВИЛЬНО - .url() для передачи на фронтенд (без циклов)
-import { settingsRoute } from '../settings'  // Нет цикла
+import { settingsRoute } from '../settings' // Нет цикла
 const frontendUrl = settingsRoute.url()
 
 // ✅ ПРАВИЛЬНО - полный URL при циклических зависимостях
@@ -242,10 +260,12 @@ const adminUrl = getFullUrl(ROUTES.admin)
 ---
 
 ## 5) Примечания
+
 - В большинстве страниц есть `./lib/logs-init` как side‑effect‑импорт — учитывать при рефакторинге.
 - В `tests/pages/UnitTestsPage.vue` есть два import‑блока; при чистке оставить один, чтобы схема была однозначной.
 
 ## Связанные документы платформы
+
 - **002-routing.md** — **ОБНОВЛЕНО**: Относительные пути на сервере, `.url()` только для фронтенда
 - **006-arch.md** — Структура проекта и правила организации файлов
 - **008-heap.md** — Ошибка #7: Циклические зависимости в файлах таблиц (критическая ошибка!)

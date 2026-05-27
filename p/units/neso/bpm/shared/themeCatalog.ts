@@ -78,9 +78,12 @@ export const THEME_PRESETS: ThemePreset[] = [
       '--shadow-lg': '0 28px 56px rgba(0, 0, 0, 0.42)',
       '--glow-accent': '0 0 28px rgba(181, 204, 109, 0.24)',
       '--gradient-app': 'linear-gradient(148deg, #05090b 0%, #0d1517 54%, #122022 100%)',
-      '--gradient-ambient-top': 'radial-gradient(72% 54% at 88% 0%, rgba(181, 204, 109, 0.14), transparent 72%)',
-      '--gradient-ambient-bottom': 'radial-gradient(66% 58% at 10% 100%, rgba(110, 128, 72, 0.2), transparent 76%)',
-      '--gradient-glass': 'linear-gradient(158deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.02) 48%, rgba(0, 0, 0, 0.2) 100%)',
+      '--gradient-ambient-top':
+        'radial-gradient(72% 54% at 88% 0%, rgba(181, 204, 109, 0.14), transparent 72%)',
+      '--gradient-ambient-bottom':
+        'radial-gradient(66% 58% at 10% 100%, rgba(110, 128, 72, 0.2), transparent 76%)',
+      '--gradient-glass':
+        'linear-gradient(158deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.02) 48%, rgba(0, 0, 0, 0.2) 100%)',
       '--grid-color': 'rgba(207, 224, 168, 0.05)',
       '--noise-opacity': '0.05',
       '--kanban-backlog': 'rgba(122, 184, 234, 0.16)',
@@ -131,9 +134,12 @@ export const THEME_PRESETS: ThemePreset[] = [
       '--shadow-lg': '0 26px 50px rgba(76, 91, 50, 0.24)',
       '--glow-accent': '0 0 24px rgba(86, 115, 55, 0.18)',
       '--gradient-app': 'linear-gradient(152deg, #f1e9d5 0%, #e7ddc4 55%, #ddd3bb 100%)',
-      '--gradient-ambient-top': 'radial-gradient(74% 56% at 90% 0%, rgba(86, 115, 55, 0.16), transparent 72%)',
-      '--gradient-ambient-bottom': 'radial-gradient(66% 58% at 8% 100%, rgba(142, 171, 89, 0.2), transparent 76%)',
-      '--gradient-glass': 'linear-gradient(160deg, rgba(255, 255, 255, 0.64) 0%, rgba(255, 255, 255, 0.22) 54%, rgba(86, 115, 55, 0.08) 100%)',
+      '--gradient-ambient-top':
+        'radial-gradient(74% 56% at 90% 0%, rgba(86, 115, 55, 0.16), transparent 72%)',
+      '--gradient-ambient-bottom':
+        'radial-gradient(66% 58% at 8% 100%, rgba(142, 171, 89, 0.2), transparent 76%)',
+      '--gradient-glass':
+        'linear-gradient(160deg, rgba(255, 255, 255, 0.64) 0%, rgba(255, 255, 255, 0.22) 54%, rgba(86, 115, 55, 0.08) 100%)',
       '--grid-color': 'rgba(86, 115, 55, 0.07)',
       '--noise-opacity': '0.055',
       '--kanban-backlog': 'rgba(47, 97, 143, 0.14)',
@@ -184,9 +190,12 @@ export const THEME_PRESETS: ThemePreset[] = [
       '--shadow-lg': '0 28px 56px rgba(2, 4, 6, 0.46)',
       '--glow-accent': '0 0 28px rgba(142, 209, 191, 0.22)',
       '--gradient-app': 'linear-gradient(150deg, #081016 0%, #101923 52%, #162532 100%)',
-      '--gradient-ambient-top': 'radial-gradient(72% 54% at 90% 0%, rgba(142, 209, 191, 0.16), transparent 72%)',
-      '--gradient-ambient-bottom': 'radial-gradient(66% 58% at 8% 100%, rgba(90, 170, 148, 0.2), transparent 76%)',
-      '--gradient-glass': 'linear-gradient(160deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.03) 48%, rgba(0, 0, 0, 0.18) 100%)',
+      '--gradient-ambient-top':
+        'radial-gradient(72% 54% at 90% 0%, rgba(142, 209, 191, 0.16), transparent 72%)',
+      '--gradient-ambient-bottom':
+        'radial-gradient(66% 58% at 8% 100%, rgba(90, 170, 148, 0.2), transparent 76%)',
+      '--gradient-glass':
+        'linear-gradient(160deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.03) 48%, rgba(0, 0, 0, 0.18) 100%)',
       '--grid-color': 'rgba(184, 239, 224, 0.06)',
       '--noise-opacity': '0.05',
       '--kanban-backlog': 'rgba(128, 189, 233, 0.18)',
@@ -237,9 +246,12 @@ export const THEME_PRESETS: ThemePreset[] = [
       '--shadow-lg': '0 26px 50px rgba(34, 56, 67, 0.24)',
       '--glow-accent': '0 0 24px rgba(45, 91, 112, 0.18)',
       '--gradient-app': 'linear-gradient(152deg, #e8ecef 0%, #dbe2e7 55%, #cfd8df 100%)',
-      '--gradient-ambient-top': 'radial-gradient(74% 56% at 90% 0%, rgba(45, 91, 112, 0.15), transparent 72%)',
-      '--gradient-ambient-bottom': 'radial-gradient(66% 58% at 8% 100%, rgba(107, 154, 177, 0.2), transparent 76%)',
-      '--gradient-glass': 'linear-gradient(160deg, rgba(255, 255, 255, 0.66) 0%, rgba(255, 255, 255, 0.24) 54%, rgba(45, 91, 112, 0.08) 100%)',
+      '--gradient-ambient-top':
+        'radial-gradient(74% 56% at 90% 0%, rgba(45, 91, 112, 0.15), transparent 72%)',
+      '--gradient-ambient-bottom':
+        'radial-gradient(66% 58% at 8% 100%, rgba(107, 154, 177, 0.2), transparent 76%)',
+      '--gradient-glass':
+        'linear-gradient(160deg, rgba(255, 255, 255, 0.66) 0%, rgba(255, 255, 255, 0.24) 54%, rgba(45, 91, 112, 0.08) 100%)',
       '--grid-color': 'rgba(45, 91, 112, 0.08)',
       '--noise-opacity': '0.05',
       '--kanban-backlog': 'rgba(46, 99, 142, 0.14)',
@@ -255,7 +267,9 @@ export const THEME_PRESETS: ThemePreset[] = [
   }
 ]
 
-const PRESET_BY_ID = new Map<string, ThemePreset>(THEME_PRESETS.map((preset) => [preset.id, preset]))
+const PRESET_BY_ID = new Map<string, ThemePreset>(
+  THEME_PRESETS.map((preset) => [preset.id, preset])
+)
 
 const DEFAULT_PRESET_BY_MODE: Record<ThemeMode, string> = {
   dark: 'forest-night',

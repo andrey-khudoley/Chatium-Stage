@@ -13,12 +13,20 @@ type IncomingEntry = {
   method?: unknown
 }
 
-function parseEntry(raw: unknown): { severity: number; message: string; timestamp: number; channel: string; method?: string } | null {
+function parseEntry(raw: unknown): {
+  severity: number
+  message: string
+  timestamp: number
+  channel: string
+  method?: string
+} | null {
   if (raw === null || typeof raw !== 'object') return null
   const o = raw as IncomingEntry
   const sevRaw = o.severity
   const severity =
-    typeof sevRaw === 'number' && Number.isFinite(sevRaw) ? Math.max(0, Math.min(7, Math.floor(sevRaw))) : null
+    typeof sevRaw === 'number' && Number.isFinite(sevRaw)
+      ? Math.max(0, Math.min(7, Math.floor(sevRaw)))
+      : null
   if (severity === null) return null
   const msg = typeof o.message === 'string' ? o.message : String(o.message ?? '')
   if (!msg.trim()) return null

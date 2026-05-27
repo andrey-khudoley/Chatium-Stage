@@ -21,8 +21,8 @@ const props = defineProps<{
   loginUrl: string
   isAuthenticated: boolean
   encodedSocketId: string
-  botId?: string | null  // Опциональный фильтр по botId
-  chatId?: string | null  // Опциональный фильтр по chatId
+  botId?: string | null // Опциональный фильтр по botId
+  chatId?: string | null // Опциональный фильтр по chatId
 }>()
 
 const displayedTitle = ref('')
@@ -36,14 +36,16 @@ const cursorPosition = ref<'title' | 'help' | 'description' | 'final'>('title')
 const showTitleUnderline = ref(false)
 const showHelpIcon = ref(false)
 
-const webhooks = ref<Array<{
-  id?: string
-  timestamp: number
-  botId?: string
-  botName?: string | null
-  botUsername?: string | null
-  raw: any
-}>>([])
+const webhooks = ref<
+  Array<{
+    id?: string
+    timestamp: number
+    botId?: string
+    botName?: string | null
+    botUsername?: string | null
+    raw: any
+  }>
+>([])
 
 const loadingWebhooks = ref(false)
 let socketSubscription: any = null
@@ -52,13 +54,13 @@ let socketSubscription: any = null
 const loadRecentWebhooks = async () => {
   loadingWebhooks.value = true
   try {
-    const filterDesc = props.chatId 
+    const filterDesc = props.chatId
       ? `для канала ${props.chatId}${props.botId ? ` (бот ${props.botId})` : ''}`
-      : props.botId 
+      : props.botId
         ? `для бота ${props.botId}`
         : 'для всех ботов'
     console.log('[WebhooksPage] Загрузка последних вебхуков из таблицы', filterDesc)
-    
+
     // Формируем query параметры
     const queryParams: any = {}
     if (props.botId) {
@@ -67,12 +69,13 @@ const loadRecentWebhooks = async () => {
     if (props.chatId) {
       queryParams.chatId = props.chatId
     }
-    
+
     // Выполняем запрос с параметрами
-    const result = Object.keys(queryParams).length > 0
-      ? await apiGetWebhooksListRoute.query(queryParams).run(ctx)
-      : await apiGetWebhooksListRoute.run(ctx)
-    
+    const result =
+      Object.keys(queryParams).length > 0
+        ? await apiGetWebhooksListRoute.query(queryParams).run(ctx)
+        : await apiGetWebhooksListRoute.run(ctx)
+
     if (result.success && result.webhooks) {
       console.log(`[WebhooksPage] Получено вебхуков: ${result.webhooks.length}`)
       webhooks.value = result.webhooks.map((webhook: any) => ({
@@ -102,11 +105,11 @@ onMounted(async () => {
   // Ждём завершения bootloader
   const startAnimations = () => {
     bootLoaderDone.value = true
-    
+
     // 1. Сначала 1 секунда мигает курсор без текста
     showCursor.value = true
     cursorPosition.value = 'title'
-    
+
     setTimeout(() => {
       // 2. Начинаем последовательный набор текста
       typeTextSequence()
@@ -122,7 +125,7 @@ onMounted(async () => {
   const typeTextSequence = () => {
     const titleText = 'Вебхуки Telegram'
     cursorPosition.value = 'title'
-    
+
     // Набираем заголовок
     let titleIndex = 0
     const titleInterval = setInterval(() => {
@@ -180,14 +183,14 @@ onMounted(async () => {
     try {
       const socketClient = await getOrCreateBrowserSocketClient()
       socketSubscription = socketClient.subscribeToData(props.encodedSocketId)
-      
+
       socketSubscription.listen((data: any) => {
         if (data.type === 'webhook') {
           // Фильтруем по botId, если указан
           if (props.botId && data.data.botId !== props.botId) {
             return
           }
-          
+
           // Фильтруем по chatId, если указан
           if (props.chatId) {
             try {
@@ -200,12 +203,12 @@ onMounted(async () => {
               return
             }
           }
-          
+
           // Добавляем вебхук в список, если он прошел все фильтры
           const existingIndex = webhooks.value.findIndex(
-            w => w.timestamp === data.data.timestamp && w.botId === data.data.botId
+            (w) => w.timestamp === data.data.timestamp && w.botId === data.data.botId
           )
-          
+
           if (existingIndex === -1) {
             webhooks.value.unshift({
               timestamp: data.data.timestamp,
@@ -214,7 +217,7 @@ onMounted(async () => {
               botUsername: data.data.botUsername,
               raw: data.data.raw
             })
-            
+
             if (webhooks.value.length > 100) {
               webhooks.value = webhooks.value.slice(0, 100)
             }
@@ -223,7 +226,7 @@ onMounted(async () => {
           }
         }
       })
-      
+
       console.log('[WebhooksPage] Подписка на WebSocket установлена')
     } catch (error: any) {
       console.error('[WebhooksPage] Ошибка подписки на WebSocket:', error)
@@ -256,14 +259,14 @@ const openChatiumLink = () => {
 
 const triggerGlitch = () => {
   if (isGlitching.value) return
-  
+
   isGlitching.value = true
-  
+
   // Добавляем глитч эффект ко всей странице
   const appLayout = document.querySelector('.app-layout')
   if (appLayout) {
     appLayout.classList.add('global-glitch-active')
-    
+
     setTimeout(() => {
       appLayout.classList.remove('global-glitch-active')
       isGlitching.value = false
@@ -279,25 +282,44 @@ const handleHelpClick = () => {
 <template>
   <div class="app-layout bg-[var(--color-bg)] text-[var(--color-text)] flex flex-col">
     <!-- Header -->
-    <Header v-if="bootLoaderDone" :pageTitle="'A/Ley Services'" :indexUrl="props.indexUrl" :profileUrl="props.profileUrl" :loginUrl="props.loginUrl" :isAuthenticated="props.isAuthenticated" />
+    <Header
+      v-if="bootLoaderDone"
+      :pageTitle="'A/Ley Services'"
+      :indexUrl="props.indexUrl"
+      :profileUrl="props.profileUrl"
+      :loginUrl="props.loginUrl"
+      :isAuthenticated="props.isAuthenticated"
+    />
 
     <!-- Content -->
     <main class="content-wrapper flex-1 relative z-10 min-h-0 overflow-y-auto">
       <div class="content-inner">
         <!-- Hero Section -->
-        <section class="hero-section" :class="{ 'hero-ready': bootLoaderDone, 'hero-glow-visible': showWebhooks }">
+        <section
+          class="hero-section"
+          :class="{ 'hero-ready': bootLoaderDone, 'hero-glow-visible': showWebhooks }"
+        >
           <div class="hero-icon-wrapper" :class="{ 'hero-icon-visible': showWebhooks }">
             <i class="fas fa-code hero-icon"></i>
           </div>
           <h1 class="hero-heading" :class="{ 'show-underline': showTitleUnderline }">
-            {{ displayedTitle }}<span v-if="showCursor && (cursorPosition === 'title' || cursorPosition === 'final')" class="typing-cursor">▮</span>
+            {{ displayedTitle
+            }}<span
+              v-if="showCursor && (cursorPosition === 'title' || cursorPosition === 'final')"
+              class="typing-cursor"
+              >▮</span
+            >
           </h1>
           <p class="hero-help" @click="handleHelpClick">
             <i v-if="showHelpIcon" class="fas fa-question-circle"></i>
-            {{ displayedHelp }}<span v-if="showCursor && cursorPosition === 'help'" class="typing-cursor">▮</span>
+            {{ displayedHelp
+            }}<span v-if="showCursor && cursorPosition === 'help'" class="typing-cursor">▮</span>
           </p>
           <p class="hero-description">
-            {{ displayedDescription }}<span v-if="showCursor && cursorPosition === 'description'" class="typing-cursor">▮</span>
+            {{ displayedDescription
+            }}<span v-if="showCursor && cursorPosition === 'description'" class="typing-cursor"
+              >▮</span
+            >
           </p>
         </section>
 
@@ -310,8 +332,8 @@ const handleHelpClick = () => {
             <p>Загрузка вебхуков...</p>
           </div>
           <div v-else class="webhooks-list">
-            <div 
-              v-for="(webhook, index) in webhooks" 
+            <div
+              v-for="(webhook, index) in webhooks"
               :key="`webhook-${webhook.timestamp}-${webhook.botId}-${index}`"
               class="webhook-item"
             >
@@ -320,7 +342,9 @@ const handleHelpClick = () => {
                   <span class="webhook-timestamp">{{ formatTimestamp(webhook.timestamp) }}</span>
                   <div v-if="webhook.botName || webhook.botUsername" class="webhook-bot-info">
                     <span v-if="webhook.botName" class="bot-name">{{ webhook.botName }}</span>
-                    <span v-if="webhook.botUsername" class="bot-username">@{{ webhook.botUsername }}</span>
+                    <span v-if="webhook.botUsername" class="bot-username"
+                      >@{{ webhook.botUsername }}</span
+                    >
                   </div>
                 </div>
                 <div class="webhook-content">
@@ -339,10 +363,7 @@ const handleHelpClick = () => {
         <div class="footer-left">ИП Худолей Андрей Германович</div>
         <div class="footer-center">Все права сохранены © 2025</div>
         <div class="footer-right">
-          <button 
-            class="footer-link"
-            @click="openChatiumLink"
-          >
+          <button class="footer-link" @click="openChatiumLink">
             Сделано с <i class="fas fa-heart footer-heart"></i> на Chatium
           </button>
         </div>
@@ -392,7 +413,6 @@ body {
   background: #e0335a;
   color: #ffffff;
 }
-
 
 /* App Layout */
 .app-layout {
@@ -452,7 +472,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 
+  box-shadow:
     0 8px 24px rgba(211, 35, 75, 0.4),
     0 4px 12px rgba(211, 35, 75, 0.3),
     0 0 30px rgba(211, 35, 75, 0.2),
@@ -462,10 +482,18 @@ body {
   cursor: pointer;
   overflow: hidden;
   clip-path: polygon(
-    0 4px, 4px 4px, 4px 0,
-    calc(100% - 4px) 0, calc(100% - 4px) 4px, 100% 4px,
-    100% calc(100% - 4px), calc(100% - 4px) calc(100% - 4px), calc(100% - 4px) 100%,
-    4px 100%, 4px calc(100% - 4px), 0 calc(100% - 4px)
+    0 4px,
+    4px 4px,
+    4px 0,
+    calc(100% - 4px) 0,
+    calc(100% - 4px) 4px,
+    100% 4px,
+    100% calc(100% - 4px),
+    calc(100% - 4px) calc(100% - 4px),
+    calc(100% - 4px) 100%,
+    4px 100%,
+    4px calc(100% - 4px),
+    0 calc(100% - 4px)
   );
 }
 
@@ -490,14 +518,19 @@ body {
 }
 
 @keyframes scanline-flicker {
-  0%, 100% { opacity: 0.7; }
-  50% { opacity: 0.5; }
+  0%,
+  100% {
+    opacity: 0.7;
+  }
+  50% {
+    opacity: 0.5;
+  }
 }
 
 /* Усиленное свечение иконки на ПК */
 @media (min-width: 769px) {
   .hero-icon-wrapper {
-    box-shadow: 
+    box-shadow:
       0 10px 28px rgba(211, 35, 75, 0.45),
       0 5px 14px rgba(211, 35, 75, 0.35),
       0 0 40px rgba(211, 35, 75, 0.25);
@@ -509,10 +542,11 @@ body {
 }
 
 @keyframes glitch-icon {
-  0%, 100% {
+  0%,
+  100% {
     transform: scale(1) translate(0);
     filter: none;
-    box-shadow: 
+    box-shadow:
       0 8px 24px rgba(211, 35, 75, 0.4),
       0 4px 12px rgba(211, 35, 75, 0.3);
   }
@@ -618,10 +652,12 @@ body {
 }
 
 @keyframes terminal-cursor-blink {
-  0%, 50% {
+  0%,
+  50% {
     opacity: 1;
   }
-  51%, 100% {
+  51%,
+  100% {
     opacity: 0;
   }
 }
@@ -685,73 +721,108 @@ body {
 }
 
 @keyframes glitch-text {
-  0%, 100% {
+  0%,
+  100% {
     transform: translate(0);
     text-shadow: 0 0 8px rgba(211, 35, 75, 0.3);
   }
   10% {
     transform: translate(-1.5px, 0);
-    text-shadow: 1px 0 #ff00ff, -1px 0 #00ffff;
+    text-shadow:
+      1px 0 #ff00ff,
+      -1px 0 #00ffff;
   }
   20% {
     transform: translate(1.5px, 0);
-    text-shadow: -1px 0 #ff00ff, 1px 0 #00ffff;
+    text-shadow:
+      -1px 0 #ff00ff,
+      1px 0 #00ffff;
   }
   30% {
     transform: translate(-1px, 0);
-    text-shadow: 1.5px 0 #ff00ff, -1.5px 0 #00ffff;
+    text-shadow:
+      1.5px 0 #ff00ff,
+      -1.5px 0 #00ffff;
   }
   40% {
     transform: translate(1px, 0);
-    text-shadow: -1.5px 0 #ff00ff, 1.5px 0 #00ffff;
+    text-shadow:
+      -1.5px 0 #ff00ff,
+      1.5px 0 #00ffff;
   }
   50% {
     transform: translate(-1.5px, 0);
-    text-shadow: 1px 0 #ff00ff, -1px 0 #00ffff;
+    text-shadow:
+      1px 0 #ff00ff,
+      -1px 0 #00ffff;
   }
   60% {
     transform: translate(1.5px, 0);
-    text-shadow: -1px 0 #ff00ff, 1px 0 #00ffff;
+    text-shadow:
+      -1px 0 #ff00ff,
+      1px 0 #00ffff;
   }
   70% {
     transform: translate(-1px, 0);
-    text-shadow: 1px 0 #ff00ff, -1px 0 #00ffff;
+    text-shadow:
+      1px 0 #ff00ff,
+      -1px 0 #00ffff;
   }
   80% {
     transform: translate(1px, 0);
-    text-shadow: -1px 0 #ff00ff, 1px 0 #00ffff;
+    text-shadow:
+      -1px 0 #ff00ff,
+      1px 0 #00ffff;
   }
   90% {
     transform: translate(-0.5px, 0);
-    text-shadow: 0.5px 0 #ff00ff, -0.5px 0 #00ffff;
+    text-shadow:
+      0.5px 0 #ff00ff,
+      -0.5px 0 #00ffff;
   }
 }
 
 @keyframes glitch-text-1 {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 0;
     transform: translate(0);
   }
-  10%, 30%, 50%, 70%, 90% {
+  10%,
+  30%,
+  50%,
+  70%,
+  90% {
     opacity: 0.9;
     transform: translate(-2px, 0);
   }
-  20%, 40%, 60%, 80% {
+  20%,
+  40%,
+  60%,
+  80% {
     opacity: 0;
     transform: translate(2px, 0);
   }
 }
 
 @keyframes glitch-text-2 {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 0;
     transform: translate(0);
   }
-  10%, 30%, 50%, 70%, 90% {
+  10%,
+  30%,
+  50%,
+  70%,
+  90% {
     opacity: 0.9;
     transform: translate(2px, 0);
   }
-  20%, 40%, 60%, 80% {
+  20%,
+  40%,
+  60%,
+  80% {
     opacity: 0;
     transform: translate(-2px, 0);
   }
@@ -839,87 +910,101 @@ body {
   /* Плавное начало развертки */
   0.5% {
     transform: scaleY(0.03) perspective(590px) rotateX(0.5deg);
-    filter: brightness(1.45) contrast(1.32) drop-shadow(0.5px 0 0 rgba(255, 0, 0, 0.15)) drop-shadow(-0.5px 0 0 rgba(0, 0, 255, 0.15));
+    filter: brightness(1.45) contrast(1.32) drop-shadow(0.5px 0 0 rgba(255, 0, 0, 0.15))
+      drop-shadow(-0.5px 0 0 rgba(0, 0, 255, 0.15));
     clip-path: polygon(0 49%, 100% 49.5%, 100% 50.5%, 0 51%);
     opacity: 1;
   }
   1.5% {
     transform: scaleY(0.08) perspective(570px) rotateX(1.2deg);
-    filter: brightness(1.38) contrast(1.36) drop-shadow(1.2px 0 0 rgba(255, 0, 0, 0.22)) drop-shadow(-1.2px 0 0 rgba(0, 0, 255, 0.22));
+    filter: brightness(1.38) contrast(1.36) drop-shadow(1.2px 0 0 rgba(255, 0, 0, 0.22))
+      drop-shadow(-1.2px 0 0 rgba(0, 0, 255, 0.22));
     clip-path: polygon(0 47%, 100% 48%, 100% 52%, 0 53%);
     opacity: 1;
   }
   2.5% {
     transform: scaleY(0.12) perspective(560px) rotateX(1.6deg);
-    filter: brightness(1.32) contrast(1.38) drop-shadow(1.6px 0 0 rgba(255, 0, 0, 0.27)) drop-shadow(-1.6px 0 0 rgba(0, 0, 255, 0.27));
+    filter: brightness(1.32) contrast(1.38) drop-shadow(1.6px 0 0 rgba(255, 0, 0, 0.27))
+      drop-shadow(-1.6px 0 0 rgba(0, 0, 255, 0.27));
     clip-path: polygon(0 46%, 100% 47.5%, 100% 52.5%, 0 54%);
     opacity: 1;
   }
   4.5% {
     transform: scaleY(0.2) perspective(525px) rotateX(2.4deg) scaleX(1.015);
-    filter: brightness(1.25) blur(0.4px) contrast(1.42) drop-shadow(2.2px 0 0 rgba(255, 0, 0, 0.31)) drop-shadow(-2.2px 0 0 rgba(0, 0, 255, 0.31));
+    filter: brightness(1.25) blur(0.4px) contrast(1.42) drop-shadow(2.2px 0 0 rgba(255, 0, 0, 0.31))
+      drop-shadow(-2.2px 0 0 rgba(0, 0, 255, 0.31));
     clip-path: polygon(0 42%, 100% 44.5%, 100% 55.5%, 0 58%);
     opacity: 0.99;
   }
   8% {
     transform: scaleY(0.32) perspective(475px) rotateX(2.9deg) scaleX(1.04);
-    filter: brightness(1.15) blur(1px) contrast(1.48) drop-shadow(3px 0 0 rgba(255, 0, 0, 0.34)) drop-shadow(-3px 0 0 rgba(0, 0, 255, 0.34));
+    filter: brightness(1.15) blur(1px) contrast(1.48) drop-shadow(3px 0 0 rgba(255, 0, 0, 0.34))
+      drop-shadow(-3px 0 0 rgba(0, 0, 255, 0.34));
     clip-path: polygon(0 37%, 100% 40.5%, 100% 59.5%, 0 63%);
     opacity: 0.97;
   }
   /* Плавное продолжение развертки */
   13% {
     transform: scaleY(0.47) perspective(425px) rotateX(-1.2deg) scaleX(0.995);
-    filter: brightness(1.05) blur(1.05px) contrast(1.47) drop-shadow(-2.6px 0 0 rgba(255, 0, 0, 0.33)) drop-shadow(2.6px 0 0 rgba(0, 0, 255, 0.33));
+    filter: brightness(1.05) blur(1.05px) contrast(1.47)
+      drop-shadow(-2.6px 0 0 rgba(255, 0, 0, 0.33)) drop-shadow(2.6px 0 0 rgba(0, 0, 255, 0.33));
     clip-path: polygon(0 32%, 100% 35.5%, 100% 64.5%, 0 68%);
     opacity: 0.95;
   }
   17.5% {
     transform: scaleY(0.62) perspective(380px) rotateX(0.8deg) scaleX(1.015);
-    filter: brightness(0.96) blur(0.95px) contrast(1.38) drop-shadow(2.1px 0 0 rgba(255, 0, 0, 0.29)) drop-shadow(-2.1px 0 0 rgba(0, 0, 255, 0.29));
+    filter: brightness(0.96) blur(0.95px) contrast(1.38)
+      drop-shadow(2.1px 0 0 rgba(255, 0, 0, 0.29)) drop-shadow(-2.1px 0 0 rgba(0, 0, 255, 0.29));
     clip-path: polygon(0 26%, 100% 29.5%, 100% 70.5%, 0 74%);
     opacity: 0.935;
   }
   24% {
     transform: scaleY(0.77) perspective(340px) rotateX(-0.3deg) scaleX(1.01);
-    filter: brightness(0.9) blur(0.8px) contrast(1.32) drop-shadow(-1.9px 0 0 rgba(255, 0, 0, 0.25)) drop-shadow(1.9px 0 0 rgba(0, 0, 255, 0.25));
+    filter: brightness(0.9) blur(0.8px) contrast(1.32) drop-shadow(-1.9px 0 0 rgba(255, 0, 0, 0.25))
+      drop-shadow(1.9px 0 0 rgba(0, 0, 255, 0.25));
     clip-path: polygon(0 18.5%, 100% 21.5%, 100% 78.5%, 0 81.5%);
     opacity: 0.94;
   }
   31.5% {
     transform: scaleY(0.88) perspective(300px) rotateX(0.1deg) scaleX(1.003);
-    filter: brightness(0.91) blur(0.6px) contrast(1.27) drop-shadow(1.4px 0 0 rgba(255, 0, 0, 0.21)) drop-shadow(-1.4px 0 0 rgba(0, 0, 255, 0.21));
+    filter: brightness(0.91) blur(0.6px) contrast(1.27) drop-shadow(1.4px 0 0 rgba(255, 0, 0, 0.21))
+      drop-shadow(-1.4px 0 0 rgba(0, 0, 255, 0.21));
     clip-path: polygon(0 12.5%, 100% 14.5%, 100% 85.5%, 0 87.5%);
     opacity: 0.95;
   }
   40% {
     transform: scaleY(0.94) perspective(260px) rotateX(-0.1deg) scaleX(1.001);
-    filter: brightness(0.94) blur(0.45px) contrast(1.22) drop-shadow(-1px 0 0 rgba(255, 0, 0, 0.19)) drop-shadow(1px 0 0 rgba(0, 0, 255, 0.19));
+    filter: brightness(0.94) blur(0.45px) contrast(1.22) drop-shadow(-1px 0 0 rgba(255, 0, 0, 0.19))
+      drop-shadow(1px 0 0 rgba(0, 0, 255, 0.19));
     clip-path: polygon(0 8%, 100% 9.5%, 100% 90.5%, 0 91%);
     opacity: 0.965;
   }
   /* Плавная стабилизация */
   50% {
     transform: scaleY(0.97) perspective(220px) rotateX(0.08deg) scaleX(1.001);
-    filter: brightness(1) blur(0.35px) contrast(1.12) drop-shadow(0.8px 0 0 rgba(255, 0, 0, 0.16)) drop-shadow(-0.8px 0 0 rgba(0, 0, 255, 0.16));
+    filter: brightness(1) blur(0.35px) contrast(1.12) drop-shadow(0.8px 0 0 rgba(255, 0, 0, 0.16))
+      drop-shadow(-0.8px 0 0 rgba(0, 0, 255, 0.16));
     clip-path: polygon(0 4.5%, 100% 5.5%, 100% 94.5%, 0 95.5%);
     opacity: 0.98;
   }
   62.5% {
     transform: scaleY(0.985) perspective(175px) rotateX(0.04deg) scaleX(1);
-    filter: brightness(1.01) blur(0.22px) contrast(1.08) drop-shadow(0.55px 0 0 rgba(255, 0, 0, 0.12)) drop-shadow(-0.55px 0 0 rgba(0, 0, 255, 0.12));
+    filter: brightness(1.01) blur(0.22px) contrast(1.08)
+      drop-shadow(0.55px 0 0 rgba(255, 0, 0, 0.12)) drop-shadow(-0.55px 0 0 rgba(0, 0, 255, 0.12));
     clip-path: polygon(0 2.2%, 100% 2.8%, 100% 97.2%, 0 97.8%);
     opacity: 0.995;
   }
   77.5% {
     transform: scaleY(0.995) perspective(115px) rotateX(0.02deg) scaleX(1);
-    filter: brightness(1) blur(0.12px) contrast(1.05) drop-shadow(0.35px 0 0 rgba(255, 0, 0, 0.09)) drop-shadow(-0.35px 0 0 rgba(0, 0, 255, 0.09));
+    filter: brightness(1) blur(0.12px) contrast(1.05) drop-shadow(0.35px 0 0 rgba(255, 0, 0, 0.09))
+      drop-shadow(-0.35px 0 0 rgba(0, 0, 255, 0.09));
     clip-path: polygon(0 1.1%, 100% 1.4%, 100% 98.6%, 0 98.9%);
     opacity: 1;
   }
   92.5% {
     transform: scaleY(1) perspective(40px) rotateX(0.01deg) scaleX(1);
-    filter: brightness(1) blur(0.04px) contrast(1.015) drop-shadow(0.2px 0 0 rgba(255, 0, 0, 0.05)) drop-shadow(-0.2px 0 0 rgba(0, 0, 255, 0.05));
+    filter: brightness(1) blur(0.04px) contrast(1.015) drop-shadow(0.2px 0 0 rgba(255, 0, 0, 0.05))
+      drop-shadow(-0.2px 0 0 rgba(0, 0, 255, 0.05));
     clip-path: polygon(0 0.4%, 100% 0.5%, 100% 99.5%, 0 99.6%);
     opacity: 1;
   }
@@ -961,7 +1046,7 @@ body {
   animation-delay: 0.2s;
 }
 
-.webhook-item:nth-child(n+4) {
+.webhook-item:nth-child(n + 4) {
   animation-delay: 0.25s;
 }
 
@@ -977,78 +1062,90 @@ body {
   1% {
     opacity: 0.6;
     transform: scaleY(0.04) perspective(490px) rotateX(0.8deg);
-    filter: brightness(1.45) contrast(1.32) drop-shadow(0.8px 0 0 rgba(255, 0, 0, 0.2)) drop-shadow(-0.8px 0 0 rgba(0, 0, 255, 0.2));
+    filter: brightness(1.45) contrast(1.32) drop-shadow(0.8px 0 0 rgba(255, 0, 0, 0.2))
+      drop-shadow(-0.8px 0 0 rgba(0, 0, 255, 0.2));
     clip-path: polygon(0 48%, 100% 49%, 100% 51%, 0 52%);
   }
   3.5% {
     opacity: 0.76;
     transform: scaleY(0.14) perspective(460px) rotateX(2deg);
-    filter: brightness(1.35) contrast(1.37) drop-shadow(2px 0 0 rgba(255, 0, 0, 0.3)) drop-shadow(-2px 0 0 rgba(0, 0, 255, 0.3));
+    filter: brightness(1.35) contrast(1.37) drop-shadow(2px 0 0 rgba(255, 0, 0, 0.3))
+      drop-shadow(-2px 0 0 rgba(0, 0, 255, 0.3));
     clip-path: polygon(0 44%, 100% 46%, 100% 54%, 0 56%);
   }
   /* Плавное расширение с искажениями */
   7.5% {
     opacity: 0.85;
     transform: scaleY(0.28) perspective(420px) rotateX(2.65deg) scaleX(1.015);
-    filter: brightness(1.25) blur(0.5px) contrast(1.43) drop-shadow(2.7px 0 0 rgba(255, 0, 0, 0.36)) drop-shadow(-2.7px 0 0 rgba(0, 0, 255, 0.36));
+    filter: brightness(1.25) blur(0.5px) contrast(1.43) drop-shadow(2.7px 0 0 rgba(255, 0, 0, 0.36))
+      drop-shadow(-2.7px 0 0 rgba(0, 0, 255, 0.36));
     clip-path: polygon(0 38%, 100% 41.5%, 100% 58.5%, 0 62%);
   }
   12.5% {
     opacity: 0.89;
     transform: scaleY(0.42) perspective(385px) rotateX(-1.5deg) scaleX(0.992);
-    filter: brightness(1.08) blur(1.05px) contrast(1.47) drop-shadow(-2.7px 0 0 rgba(255, 0, 0, 0.34)) drop-shadow(2.7px 0 0 rgba(0, 0, 255, 0.34));
+    filter: brightness(1.08) blur(1.05px) contrast(1.47)
+      drop-shadow(-2.7px 0 0 rgba(255, 0, 0, 0.34)) drop-shadow(2.7px 0 0 rgba(0, 0, 255, 0.34));
     clip-path: polygon(0 32%, 100% 35.5%, 100% 64.5%, 0 68%);
   }
   /* Плавное продолжение развертки */
   18.5% {
     opacity: 0.905;
     transform: scaleY(0.57) perspective(355px) rotateX(1.1deg) scaleX(1.015);
-    filter: brightness(0.94) blur(0.95px) contrast(1.38) drop-shadow(2.15px 0 0 rgba(255, 0, 0, 0.3)) drop-shadow(-2.15px 0 0 rgba(0, 0, 255, 0.3));
+    filter: brightness(0.94) blur(0.95px) contrast(1.38)
+      drop-shadow(2.15px 0 0 rgba(255, 0, 0, 0.3)) drop-shadow(-2.15px 0 0 rgba(0, 0, 255, 0.3));
     clip-path: polygon(0 26%, 100% 29.5%, 100% 70.5%, 0 74%);
   }
   26% {
     opacity: 0.92;
     transform: scaleY(0.71) perspective(325px) rotateX(-0.5deg) scaleX(1.01);
-    filter: brightness(0.89) blur(0.75px) contrast(1.31) drop-shadow(-1.85px 0 0 rgba(255, 0, 0, 0.26)) drop-shadow(1.85px 0 0 rgba(0, 0, 255, 0.26));
+    filter: brightness(0.89) blur(0.75px) contrast(1.31)
+      drop-shadow(-1.85px 0 0 rgba(255, 0, 0, 0.26)) drop-shadow(1.85px 0 0 rgba(0, 0, 255, 0.26));
     clip-path: polygon(0 20%, 100% 23%, 100% 77%, 0 80%);
   }
   /* Плавное разворачивание */
   35% {
     opacity: 0.94;
     transform: scaleY(0.83) perspective(290px) rotateX(0.3deg) scaleX(1.003);
-    filter: brightness(0.9) blur(0.6px) contrast(1.28) drop-shadow(1.3px 0 0 rgba(255, 0, 0, 0.23)) drop-shadow(-1.3px 0 0 rgba(0, 0, 255, 0.23));
+    filter: brightness(0.9) blur(0.6px) contrast(1.28) drop-shadow(1.3px 0 0 rgba(255, 0, 0, 0.23))
+      drop-shadow(-1.3px 0 0 rgba(0, 0, 255, 0.23));
     clip-path: polygon(0 14%, 100% 16.5%, 100% 83.5%, 0 86%);
   }
   45% {
     opacity: 0.955;
     transform: scaleY(0.91) perspective(250px) rotateX(-0.2deg) scaleX(1.001);
-    filter: brightness(0.93) blur(0.47px) contrast(1.23) drop-shadow(-0.95px 0 0 rgba(255, 0, 0, 0.2)) drop-shadow(0.95px 0 0 rgba(0, 0, 255, 0.2));
+    filter: brightness(0.93) blur(0.47px) contrast(1.23)
+      drop-shadow(-0.95px 0 0 rgba(255, 0, 0, 0.2)) drop-shadow(0.95px 0 0 rgba(0, 0, 255, 0.2));
     clip-path: polygon(0 10%, 100% 11.5%, 100% 88.5%, 0 89%);
   }
   /* Плавная стабилизация */
   55% {
     opacity: 0.97;
     transform: scaleY(0.96) perspective(215px) rotateX(0.1deg) scaleX(1.001);
-    filter: brightness(0.98) blur(0.35px) contrast(1.17) drop-shadow(0.75px 0 0 rgba(255, 0, 0, 0.16)) drop-shadow(-0.75px 0 0 rgba(0, 0, 255, 0.16));
+    filter: brightness(0.98) blur(0.35px) contrast(1.17)
+      drop-shadow(0.75px 0 0 rgba(255, 0, 0, 0.16)) drop-shadow(-0.75px 0 0 rgba(0, 0, 255, 0.16));
     clip-path: polygon(0 6.5%, 100% 7.5%, 100% 92.5%, 0 93.5%);
   }
   67.5% {
     opacity: 0.985;
     transform: scaleY(0.98) perspective(160px) rotateX(0.05deg) scaleX(1);
-    filter: brightness(1.01) blur(0.22px) contrast(1.11) drop-shadow(0.55px 0 0 rgba(255, 0, 0, 0.13)) drop-shadow(-0.55px 0 0 rgba(0, 0, 255, 0.13));
+    filter: brightness(1.01) blur(0.22px) contrast(1.11)
+      drop-shadow(0.55px 0 0 rgba(255, 0, 0, 0.13)) drop-shadow(-0.55px 0 0 rgba(0, 0, 255, 0.13));
     clip-path: polygon(0 3.5%, 100% 4.5%, 100% 95.5%, 0 96.5%);
   }
   81.5% {
     opacity: 0.995;
     transform: scaleY(0.995) perspective(90px) rotateX(0.02deg) scaleX(1);
-    filter: brightness(1) blur(0.12px) contrast(1.06) drop-shadow(0.32px 0 0 rgba(255, 0, 0, 0.09)) drop-shadow(-0.32px 0 0 rgba(0, 0, 255, 0.09));
+    filter: brightness(1) blur(0.12px) contrast(1.06) drop-shadow(0.32px 0 0 rgba(255, 0, 0, 0.09))
+      drop-shadow(-0.32px 0 0 rgba(0, 0, 255, 0.09));
     clip-path: polygon(0 1.4%, 100% 1.8%, 100% 98.2%, 0 98.6%);
   }
   /* Финальная стабилизация */
   94% {
     opacity: 1;
     transform: scaleY(1) perspective(30px) rotateX(0.01deg) scaleX(1);
-    filter: brightness(1) blur(0.04px) contrast(1.02) drop-shadow(0.15px 0 0 rgba(255, 0, 0, 0.05)) drop-shadow(-0.15px 0 0 rgba(0, 0, 255, 0.05));
+    filter: brightness(1) blur(0.04px) contrast(1.02) drop-shadow(0.15px 0 0 rgba(255, 0, 0, 0.05))
+      drop-shadow(-0.15px 0 0 rgba(0, 0, 255, 0.05));
     clip-path: polygon(0 0.5%, 100% 0.6%, 100% 99.4%, 0 99.5%);
   }
   100% {
@@ -1079,10 +1176,14 @@ body {
   padding: 2.5rem;
   display: flex;
   flex-direction: column;
-  transition: transform 0.6s cubic-bezier(0.34, 1.3, 0.64, 1), border-color 0.25s ease, box-shadow 0.25s ease, filter 0.3s ease;
+  transition:
+    transform 0.6s cubic-bezier(0.34, 1.3, 0.64, 1),
+    border-color 0.25s ease,
+    box-shadow 0.25s ease,
+    filter 0.3s ease;
   position: relative;
   z-index: 11;
-  box-shadow: 
+  box-shadow:
     0 0 0 0 rgba(0, 0, 0, 0),
     0 0 0 0 rgba(0, 0, 0, 0),
     inset 0 0 0 0 rgba(255, 255, 255, 0);
@@ -1090,10 +1191,18 @@ body {
   transform-style: preserve-3d;
   cursor: pointer;
   clip-path: polygon(
-    0 4px, 4px 4px, 4px 0,
-    calc(100% - 4px) 0, calc(100% - 4px) 4px, 100% 4px,
-    100% calc(100% - 4px), calc(100% - 4px) calc(100% - 4px), calc(100% - 4px) 100%,
-    4px 100%, 4px calc(100% - 4px), 0 calc(100% - 4px)
+    0 4px,
+    4px 4px,
+    4px 0,
+    calc(100% - 4px) 0,
+    calc(100% - 4px) 4px,
+    100% 4px,
+    100% calc(100% - 4px),
+    calc(100% - 4px) calc(100% - 4px),
+    calc(100% - 4px) 100%,
+    4px 100%,
+    4px calc(100% - 4px),
+    0 calc(100% - 4px)
   );
 }
 
@@ -1148,7 +1257,8 @@ body {
 }
 
 @keyframes crt-flicker {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 0;
   }
   50% {
@@ -1157,11 +1267,14 @@ body {
 }
 
 .webhook-item:hover .webhook-content-wrapper::after {
-  animation: crt-flicker-intense 0.15s ease-in-out infinite, crt-flicker 3s ease-in-out infinite;
+  animation:
+    crt-flicker-intense 0.15s ease-in-out infinite,
+    crt-flicker 3s ease-in-out infinite;
 }
 
 @keyframes crt-flicker-intense {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 0.2;
   }
   50% {
@@ -1171,7 +1284,7 @@ body {
 
 .webhook-item:hover .webhook-content-wrapper {
   border-color: rgba(211, 35, 75, 0.5);
-  box-shadow: 
+  box-shadow:
     0 8px 20px rgba(211, 35, 75, 0.15),
     0 4px 10px rgba(0, 0, 0, 0.3),
     0 2px 4px rgba(0, 0, 0, 0.2),
@@ -1182,7 +1295,9 @@ body {
 
 /* RGB-разделение и искривление для вебхуков при hover */
 @keyframes webhook-glitch {
-  0%, 90%, 100% {
+  0%,
+  90%,
+  100% {
     filter: none;
   }
   91% {
@@ -1194,7 +1309,9 @@ body {
   93% {
     filter: drop-shadow(2px 0 0 rgba(255, 0, 255, 0.5)) drop-shadow(-2px 0 0 rgba(0, 0, 255, 0.5));
   }
-  94%, 96%, 98% {
+  94%,
+  96%,
+  98% {
     filter: none;
   }
   95% {
@@ -1327,45 +1444,64 @@ body {
 }
 
 @keyframes glitch-footer {
-  0%, 100% {
+  0%,
+  100% {
     transform: translate(0);
     text-shadow: none;
   }
   10% {
     transform: translate(-1.5px, 0);
-    text-shadow: 1px 0 #ff00ff, -1px 0 #00ffff;
+    text-shadow:
+      1px 0 #ff00ff,
+      -1px 0 #00ffff;
   }
   20% {
     transform: translate(1.5px, 0);
-    text-shadow: -1px 0 #ff00ff, 1px 0 #00ffff;
+    text-shadow:
+      -1px 0 #ff00ff,
+      1px 0 #00ffff;
   }
   30% {
     transform: translate(-1px, 0);
-    text-shadow: 1.5px 0 #ff00ff, -1.5px 0 #00ffff;
+    text-shadow:
+      1.5px 0 #ff00ff,
+      -1.5px 0 #00ffff;
   }
   40% {
     transform: translate(1px, 0);
-    text-shadow: -1.5px 0 #ff00ff, 1.5px 0 #00ffff;
+    text-shadow:
+      -1.5px 0 #ff00ff,
+      1.5px 0 #00ffff;
   }
   50% {
     transform: translate(-1.5px, 0);
-    text-shadow: 1px 0 #ff00ff, -1px 0 #00ffff;
+    text-shadow:
+      1px 0 #ff00ff,
+      -1px 0 #00ffff;
   }
   60% {
     transform: translate(1.5px, 0);
-    text-shadow: -1px 0 #ff00ff, 1px 0 #00ffff;
+    text-shadow:
+      -1px 0 #ff00ff,
+      1px 0 #00ffff;
   }
   70% {
     transform: translate(-1px, 0);
-    text-shadow: 1px 0 #ff00ff, -1px 0 #00ffff;
+    text-shadow:
+      1px 0 #ff00ff,
+      -1px 0 #00ffff;
   }
   80% {
     transform: translate(1px, 0);
-    text-shadow: -1px 0 #ff00ff, 1px 0 #00ffff;
+    text-shadow:
+      -1px 0 #ff00ff,
+      1px 0 #00ffff;
   }
   90% {
     transform: translate(-0.5px, 0);
-    text-shadow: 0.5px 0 #ff00ff, -0.5px 0 #00ffff;
+    text-shadow:
+      0.5px 0 #ff00ff,
+      -0.5px 0 #00ffff;
   }
 }
 
@@ -1494,7 +1630,8 @@ body {
 
 /* Глобальные анимации глитча */
 @keyframes glitch-skew {
-  0%, 100% {
+  0%,
+  100% {
     transform: translate(0) skew(0deg);
   }
   10% {
@@ -1527,7 +1664,8 @@ body {
 }
 
 @keyframes glitch-anim-1 {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 0;
     transform: translate(0);
   }
@@ -1570,7 +1708,8 @@ body {
 }
 
 @keyframes glitch-anim-2 {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 0;
     transform: translate(0);
   }
@@ -1618,63 +1757,55 @@ body {
 }
 
 @keyframes global-page-glitch {
-  0%, 100% {
+  0%,
+  100% {
     transform: translate(0) skew(0deg);
     filter: none;
   }
   10% {
     transform: translate(-3px, 0) skew(-0.5deg);
-    filter: drop-shadow(2px 0 0 rgba(255, 0, 255, 0.7)) 
-            drop-shadow(-2px 0 0 rgba(0, 255, 255, 0.7))
-            hue-rotate(90deg);
+    filter: drop-shadow(2px 0 0 rgba(255, 0, 255, 0.7)) drop-shadow(-2px 0 0 rgba(0, 255, 255, 0.7))
+      hue-rotate(90deg);
   }
   20% {
     transform: translate(3px, 0) skew(0.5deg);
-    filter: drop-shadow(-2px 0 0 rgba(255, 0, 255, 0.7)) 
-            drop-shadow(2px 0 0 rgba(0, 0, 255, 0.7))
-            hue-rotate(-90deg);
+    filter: drop-shadow(-2px 0 0 rgba(255, 0, 255, 0.7)) drop-shadow(2px 0 0 rgba(0, 0, 255, 0.7))
+      hue-rotate(-90deg);
   }
   30% {
     transform: translate(-2px, 0) skew(-0.3deg);
-    filter: drop-shadow(2px 0 0 rgba(255, 0, 255, 0.8)) 
-            drop-shadow(-2px 0 0 rgba(0, 255, 255, 0.8))
-            brightness(1.2);
+    filter: drop-shadow(2px 0 0 rgba(255, 0, 255, 0.8)) drop-shadow(-2px 0 0 rgba(0, 255, 255, 0.8))
+      brightness(1.2);
   }
   40% {
     transform: translate(2px, 0) skew(0.3deg);
-    filter: drop-shadow(-2px 0 0 rgba(255, 0, 255, 0.8)) 
-            drop-shadow(2px 0 0 rgba(0, 0, 255, 0.8))
-            contrast(1.3);
+    filter: drop-shadow(-2px 0 0 rgba(255, 0, 255, 0.8)) drop-shadow(2px 0 0 rgba(0, 0, 255, 0.8))
+      contrast(1.3);
   }
   50% {
     transform: translate(-3px, 0) skew(-0.5deg);
-    filter: drop-shadow(2px 0 0 rgba(255, 0, 255, 0.7)) 
-            drop-shadow(-2px 0 0 rgba(0, 0, 255, 0.7))
-            saturate(2);
+    filter: drop-shadow(2px 0 0 rgba(255, 0, 255, 0.7)) drop-shadow(-2px 0 0 rgba(0, 0, 255, 0.7))
+      saturate(2);
   }
   60% {
     transform: translate(3px, 0) skew(0.5deg);
-    filter: drop-shadow(-2px 0 0 rgba(255, 0, 255, 0.7)) 
-            drop-shadow(2px 0 0 rgba(0, 0, 255, 0.7))
-            invert(0.1);
+    filter: drop-shadow(-2px 0 0 rgba(255, 0, 255, 0.7)) drop-shadow(2px 0 0 rgba(0, 0, 255, 0.7))
+      invert(0.1);
   }
   70% {
     transform: translate(-2px, 0) skew(-0.2deg);
-    filter: drop-shadow(1px 0 0 rgba(255, 0, 255, 0.6)) 
-            drop-shadow(-1px 0 0 rgba(0, 0, 255, 0.6))
-            brightness(1.1);
+    filter: drop-shadow(1px 0 0 rgba(255, 0, 255, 0.6)) drop-shadow(-1px 0 0 rgba(0, 0, 255, 0.6))
+      brightness(1.1);
   }
   80% {
     transform: translate(2px, 0) skew(0.2deg);
-    filter: drop-shadow(-1px 0 0 rgba(255, 0, 255, 0.6)) 
-            drop-shadow(1px 0 0 rgba(0, 0, 255, 0.6))
-            contrast(1.2);
+    filter: drop-shadow(-1px 0 0 rgba(255, 0, 255, 0.6)) drop-shadow(1px 0 0 rgba(0, 0, 255, 0.6))
+      contrast(1.2);
   }
   90% {
     transform: translate(-1px, 0) skew(0deg);
-    filter: drop-shadow(1px 0 0 rgba(255, 0, 255, 0.5)) 
-            drop-shadow(-1px 0 0 rgba(0, 0, 255, 0.5))
-            brightness(1.05);
+    filter: drop-shadow(1px 0 0 rgba(255, 0, 255, 0.5)) drop-shadow(-1px 0 0 rgba(0, 0, 255, 0.5))
+      brightness(1.05);
   }
 }
 

@@ -2,18 +2,22 @@
   <section id="gallery" class="py-20 bg-white">
     <div class="container mx-auto px-4">
       <h2 class="section-title">Наши работы</h2>
-      <p class="section-subtitle">
-        Результаты, которые говорят сами за себя
-      </p>
-      
+      <p class="section-subtitle">Результаты, которые говорят сами за себя</p>
+
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        <div v-for="image in gallery" :key="image.id" class="group relative overflow-hidden rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300">
-          <img 
-            :src="image.url" 
-            :alt="image.title" 
+        <div
+          v-for="image in gallery"
+          :key="image.id"
+          class="group relative overflow-hidden rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300"
+        >
+          <img
+            :src="image.url"
+            :alt="image.title"
             class="w-full h-80 object-cover transform group-hover:scale-110 transition-transform duration-500"
           />
-          <div class="absolute inset-0 bg-gradient-to-t from-dark/80 via-dark/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end">
+          <div
+            class="absolute inset-0 bg-gradient-to-t from-dark/80 via-dark/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end"
+          >
             <div class="p-6 text-white">
               <h4 class="text-xl font-bold mb-2">{{ image.title }}</h4>
               <p class="text-sm text-gray-200">{{ image.description }}</p>
@@ -21,17 +25,26 @@
           </div>
         </div>
       </div>
-      
+
       <div class="text-center mt-12">
         <p class="text-gray-600 mb-4">Следите за нашими новыми работами в социальных сетях</p>
         <div class="flex justify-center space-x-4">
-          <a href="#" class="w-12 h-12 bg-primary hover:bg-accent text-white rounded-full flex items-center justify-center text-xl transition-colors duration-200">
+          <a
+            href="#"
+            class="w-12 h-12 bg-primary hover:bg-accent text-white rounded-full flex items-center justify-center text-xl transition-colors duration-200"
+          >
             <i class="fab fa-instagram"></i>
           </a>
-          <a href="#" class="w-12 h-12 bg-primary hover:bg-accent text-white rounded-full flex items-center justify-center text-xl transition-colors duration-200">
+          <a
+            href="#"
+            class="w-12 h-12 bg-primary hover:bg-accent text-white rounded-full flex items-center justify-center text-xl transition-colors duration-200"
+          >
             <i class="fab fa-vk"></i>
           </a>
-          <a href="#" class="w-12 h-12 bg-primary hover:bg-accent text-white rounded-full flex items-center justify-center text-xl transition-colors duration-200">
+          <a
+            href="#"
+            class="w-12 h-12 bg-primary hover:bg-accent text-white rounded-full flex items-center justify-center text-xl transition-colors duration-200"
+          >
             <i class="fab fa-telegram"></i>
           </a>
         </div>

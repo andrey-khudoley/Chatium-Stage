@@ -3,8 +3,20 @@
     <div class="header">
       <div class="back-navigation">
         <a :href="indexPageRoute.url()" class="back-link">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M19 12H5M12 19L5 12L12 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M19 12H5M12 19L5 12L12 5"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
           </svg>
           Назад к отчетам
         </a>
@@ -13,13 +25,13 @@
     </div>
 
     <div v-if="loading" class="loading">Загрузка...</div>
-    
+
     <div v-if="error" class="error-banner">
       <div class="error-content">
         <svg class="error-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
-          <line x1="12" y1="8" x2="12" y2="12" stroke="currentColor" stroke-width="2"/>
-          <line x1="12" y1="16" x2="12.01" y2="16" stroke="currentColor" stroke-width="2"/>
+          <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" />
+          <line x1="12" y1="8" x2="12" y2="12" stroke="currentColor" stroke-width="2" />
+          <line x1="12" y1="16" x2="12.01" y2="16" stroke="currentColor" stroke-width="2" />
         </svg>
         <div class="error-text">
           <div class="error-title">Ошибка загрузки</div>
@@ -143,11 +155,15 @@
                 </div>
                 <div class="detail-item">
                   <span class="label">Широта:</span>
-                  <span class="value">{{ event.location_coordinates_latitude || 'Не определена' }}</span>
+                  <span class="value">{{
+                    event.location_coordinates_latitude || 'Не определена'
+                  }}</span>
                 </div>
                 <div class="detail-item">
                   <span class="label">Долгота:</span>
-                  <span class="value">{{ event.location_coordinates_longitude || 'Не определена' }}</span>
+                  <span class="value">{{
+                    event.location_coordinates_longitude || 'Не определена'
+                  }}</span>
                 </div>
               </div>
 
@@ -199,7 +215,7 @@
             </div>
           </div>
         </div>
-        
+
         <!-- Правая колонка с JSON -->
         <div class="right-column">
           <div class="json-section">
@@ -229,12 +245,13 @@ const event = ref(null)
 
 // Computed свойства
 const hasUtmData = computed(() => {
-  return event.value && (
-    event.value.utm_source || 
-    event.value.utm_medium || 
-    event.value.utm_campaign || 
-    event.value.utm_term || 
-    event.value.utm_content
+  return (
+    event.value &&
+    (event.value.utm_source ||
+      event.value.utm_medium ||
+      event.value.utm_campaign ||
+      event.value.utm_term ||
+      event.value.utm_content)
   )
 })
 
@@ -253,13 +270,13 @@ async function loadEventDetails() {
   try {
     loading.value = true
     error.value = ''
-    
+
     const response = await apiEventDetailsRoute.run(ctx, { id: eventId })
-    
+
     if (!response.success) {
       throw new Error(response.error || 'Событие не найдено')
     }
-    
+
     event.value = response.event
   } catch (err) {
     console.error('Ошибка загрузки события:', err)
@@ -360,7 +377,7 @@ onMounted(() => {
 .main-container {
   background: white;
   border-radius: 12px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   padding: 0;
 }
 
@@ -384,7 +401,8 @@ onMounted(() => {
   gap: 20px;
 }
 
-.detail-section, .json-section {
+.detail-section,
+.json-section {
   border-radius: 8px;
   padding: 20px;
   background: white;
@@ -481,7 +499,7 @@ onMounted(() => {
   .two-column-layout {
     grid-template-columns: 1fr;
   }
-  
+
   .json-section {
     position: static;
   }
@@ -491,26 +509,27 @@ onMounted(() => {
   .event-details {
     padding: 15px;
   }
-  
+
   .main-container {
     padding: 20px;
   }
-  
-  .detail-section, .json-section {
+
+  .detail-section,
+  .json-section {
     padding: 16px;
   }
-  
+
   .detail-item {
     flex-direction: column;
     align-items: flex-start;
   }
-  
+
   .value {
     margin-left: 0;
     margin-top: 4px;
     text-align: left;
   }
-  
+
   .json-container {
     max-height: 60vh;
   }

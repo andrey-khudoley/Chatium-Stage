@@ -1,5 +1,5 @@
 // @shared
-import { jsx } from "@app/html-jsx"
+import { jsx } from '@app/html-jsx'
 import { getEnabledAuthProviders } from '@app/auth/provider'
 import LoginPage from './pages/LoginPage.vue'
 import { getTelegramOauthUrlRoute } from './api/auth-telegram'
@@ -10,21 +10,21 @@ import './lib/logs-init'
 
 export const loginPageRoute = app.html('/', async (ctx, req) => {
   const back = (req.query.back as string) || '/'
-  
+
   const providers = await getEnabledAuthProviders(ctx)
   // Загружаем настройки проекта из БД
   const { projectTitle } = await loadProjectSettings(ctx)
-  
+
   // Проверяем авторизацию пользователя
   const isAuthenticated = !!ctx.user
   const isAdmin = ctx.user?.is('Admin') ?? false
   const adminUrl = isAdmin ? getFullUrl(ROUTES.admin) : ''
-  
+
   // ✅ API URLs для клиентской части
   const apiUrls = {
     getTelegramOauthUrl: getTelegramOauthUrlRoute.url()
   }
-  
+
   return (
     <html>
       <head>
@@ -306,12 +306,15 @@ export const loginPageRoute = app.html('/', async (ctx, req) => {
             }
           }
         `}</style>
-        <script>{getPreloaderScript()}</script> 
+        <script>{getPreloaderScript()}</script>
         <script src="/s/static/lib/tailwind.3.4.16.min.js"></script>
         <link rel="stylesheet" href="/s/static/lib/fontawesome/6.7.2/css/all.min.css" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
-        <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap"
+          rel="stylesheet"
+        />
         <style>{`
           :root {
             --color-bg: #0a0a0a;
@@ -344,10 +347,10 @@ export const loginPageRoute = app.html('/', async (ctx, req) => {
         <div id="geometric-bg"></div>
         <div id="tv-glitch"></div>
         {jsx(getPreloaderHTML())}
-        <LoginPage 
-          providers={providers} 
-          back={back} 
-          projectTitle={projectTitle} 
+        <LoginPage
+          providers={providers}
+          back={back}
+          projectTitle={projectTitle}
           apiUrls={apiUrls}
           indexUrl={getFullUrl(ROUTES.index)}
           profileUrl={getFullUrl(ROUTES.profile)}

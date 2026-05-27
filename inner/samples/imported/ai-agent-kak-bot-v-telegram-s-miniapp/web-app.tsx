@@ -11,35 +11,35 @@ export const indexPageRoute = app.get('/', async (ctx, req) => {
       <head>
         <title>Telegram Web App</title>
         {/* Базовые мета данные для мобильных устройств */}
-        <meta charset='UTF-8' />
+        <meta charset="UTF-8" />
         <meta
-          name='viewport'
-          content='width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover'
+          name="viewport"
+          content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
         />
 
         {/* Мета данные для предотвращения зума и создания нативного опыта */}
-        <meta name='format-detection' content='telephone=no' />
-        <meta name='msapplication-tap-highlight' content='no' />
-        <meta name='apple-mobile-web-app-capable' content='yes' />
-        <meta name='apple-mobile-web-app-status-bar-style' content='default' />
-        <meta name='apple-mobile-web-app-title' content='Telegram Web App' />
+        <meta name="format-detection" content="telephone=no" />
+        <meta name="msapplication-tap-highlight" content="no" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta name="apple-mobile-web-app-title" content="Telegram Web App" />
 
         {/* Предотвращение выделения текста и контекстных меню */}
-        <meta name='theme-color' content='#ffffff' />
+        <meta name="theme-color" content="#ffffff" />
 
         {/* Telegram Web App SDK */}
-        <script src='https://telegram.org/js/telegram-web-app.js'></script>
+        <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
         {/* TailwindCSS для современной стилизации */}
-        <script src='/s/static/lib/tailwind.3.4.16.min.js'></script>
+        <script src="/s/static/lib/tailwind.3.4.16.min.js"></script>
 
-        <link href='/s/static/lib/fontawesome/6.7.2/css/all.min.css' rel='stylesheet'></link>
+        <link href="/s/static/lib/fontawesome/6.7.2/css/all.min.css" rel="stylesheet"></link>
 
         {/* Аналитика */}
-        <script src='/s/metric/clarity.js'></script>
+        <script src="/s/metric/clarity.js"></script>
 
         {/* Стили для Telegram Web App */}
-        <style type='text/tailwindcss'>{`
+        <style type="text/tailwindcss">{`
           @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
           /* Light theme (default) */
@@ -241,7 +241,7 @@ export const indexPageRoute = app.get('/', async (ctx, req) => {
         `}</script>
       </head>
       <body>
-        <div id='app'>
+        <div id="app">
           <WebAppIndex user={user} />
         </div>
       </body>

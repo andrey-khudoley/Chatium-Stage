@@ -47,7 +47,7 @@ export async function createCampaign(
 export async function getCampaignById(
   ctx: app.Ctx,
   campaignId: string
-): Promise<(typeof Campaigns.T) | null> {
+): Promise<typeof Campaigns.T | null> {
   return Campaigns.findById(ctx, campaignId)
 }
 
@@ -58,7 +58,7 @@ export async function getCampaignById(
 export async function findCampaignBySecret(
   ctx: app.Ctx,
   key: string
-): Promise<(typeof Campaigns.T) | null> {
+): Promise<typeof Campaigns.T | null> {
   const campaign = await Campaigns.findOneBy(ctx, { webhookSecret: key })
   if (!campaign || campaign.isDeleted === true) return null
   return campaign
@@ -94,7 +94,7 @@ export async function updateCampaignSettings(
   ctx: app.Ctx,
   campaignId: string,
   settings: Partial<CampaignSettings>
-): Promise<(typeof Campaigns.T) | null> {
+): Promise<typeof Campaigns.T | null> {
   const campaign = await Campaigns.findById(ctx, campaignId)
   if (!campaign) return null
   const current = (campaign.settings as CampaignSettings) || {}
@@ -110,10 +110,7 @@ export async function updateCampaignSettings(
 /**
  * Мягкое удаление кампании (isDeleted = true).
  */
-export async function deleteCampaign(
-  ctx: app.Ctx,
-  campaignId: string
-): Promise<boolean> {
+export async function deleteCampaign(ctx: app.Ctx, campaignId: string): Promise<boolean> {
   const campaign = await Campaigns.findById(ctx, campaignId)
   if (!campaign) return false
   await Campaigns.update(ctx, { id: campaign.id, isDeleted: true })

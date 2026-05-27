@@ -1,4 +1,4 @@
-import Documents from "../tables/documents.table"
+import Documents from '../tables/documents.table'
 import { requireAnyUser, requireAccountRole } from '@app/auth'
 import { nanoid } from '@app/nanoid'
 
@@ -27,7 +27,7 @@ export const apiDocumentsRootRoute = app.get('/root', async (ctx, req) => {
     limit: 1,
     order: [{ order: 'asc' }]
   })
-  
+
   return rootDocuments.length > 0 ? rootDocuments[0] : null
 })
 
@@ -37,7 +37,7 @@ export const apiDocumentsListRoute = app.get('/list', async (ctx, req) => {
     limit: 1000,
     order: [{ order: 'asc' }, { title: 'asc' }]
   })
-  
+
   return documents
 })
 
@@ -49,17 +49,17 @@ export const apiDocumentsTreeRoute = app.get('/tree', async (ctx, req) => {
 
   // If parentId provided, return that section's children
   if (parentId) {
-    const parent = documents.find(d => d.id === parentId)
+    const parent = documents.find((d) => d.id === parentId)
     if (!parent) return []
-    
+
     return buildChildrenTree(documents, parentId)
   }
 
   // Build tree structure for top-level items only (no parentId)
   const topLevelItems = documents
-    .filter(d => !d.parentId)
+    .filter((d) => !d.parentId)
     .sort((a, b) => (a.order || 0) - (b.order || 0))
-    .map(item => ({
+    .map((item) => ({
       type: item.type,
       id: item.id,
       title: item.title,
@@ -77,12 +77,12 @@ export const apiDocumentsTreeRoute = app.get('/tree', async (ctx, req) => {
 
 function buildChildrenTree(documents: any[], parentId: string): any[] {
   return documents
-    .filter(doc => {
+    .filter((doc) => {
       const docParentId = typeof doc.parentId === 'string' ? doc.parentId : doc.parentId?.id
       return docParentId === parentId
     })
     .sort((a, b) => (a.order || 0) - (b.order || 0))
-    .map(doc => ({
+    .map((doc) => ({
       type: doc.type,
       id: doc.id,
       title: doc.title,
@@ -100,13 +100,13 @@ function buildChildrenTree(documents: any[], parentId: string): any[] {
 export const apiDocumentByIdRoute = app.get('/:id', async (ctx, req) => {
   const document = await Documents.findById(ctx, req.params.id)
   if (!document) return null
-  
+
   // Get full path (all ancestors from root to this document)
   const path = await getDocumentPath(ctx, document)
-  
+
   // Build slug-based URL if all elements have slug
   const slugPath = buildSlugPath(path)
-  
+
   return {
     document,
     path, // array of ancestors: [root, ..., parent, self]
@@ -114,13 +114,12 @@ export const apiDocumentByIdRoute = app.get('/:id', async (ctx, req) => {
   }
 })
 
-
 // Helper function to find document by slug path
 // Optimized: loads documents sequentially by slug instead of loading all at once
 export async function findDocumentBySlugPath(ctx: any, slugs: string[]): Promise<any | null> {
   let current: any = null
   let currentParentId: string | null = null
-  
+
   for (let i = 0; i < slugs.length; i++) {
     const slug = slugs[i]
 
@@ -132,25 +131,25 @@ export async function findDocumentBySlugPath(ctx: any, slugs: string[]): Promise
       },
       limit: 1
     })
-    
+
     if (candidates.length === 0) return null
-    
+
     current = candidates[0]
     currentParentId = current.id
   }
-  
+
   return current
 }
 
 // Helper function to build slug path from document path array
 function buildSlugPath(path: any[]): string | null {
   // Check if all documents in path have slug
-  const allHaveSlugs = path.every(doc => doc.slug && doc.slug.trim().length > 0)
-  
+  const allHaveSlugs = path.every((doc) => doc.slug && doc.slug.trim().length > 0)
+
   if (!allHaveSlugs) return null
-  
+
   // Build slug path
-  return path.map(doc => doc.slug).join('/')
+  return path.map((doc) => doc.slug).join('/')
 }
 
 // Helper function to get full path of a document
@@ -159,20 +158,20 @@ export async function getDocumentPath(ctx: any, document: any): Promise<any[]> {
   let current = document
   let iterations = 0
   const maxIterations = 100
-  
+
   while (current && iterations < maxIterations) {
     iterations++
     const parentId = typeof current.parentId === 'string' ? current.parentId : current.parentId?.id
-    
+
     if (!parentId) break
-    
+
     const parent = await Documents.findById(ctx, parentId)
     if (!parent) break
-    
+
     path.unshift(parent) // Add to beginning
     current = parent
   }
-  
+
   return path
 }
 
@@ -187,16 +186,17 @@ export const apiDocumentCreateRoute = app.post('/create', async (ctx, req) => {
   }
 
   // Use provided slug or generate from title
-  let slug = req.body.slug && req.body.slug.trim() !== '' 
-    ? req.body.slug 
-    : req.body.title
-        .toLowerCase()
-        .replace(/[^a-zа-яё0-9\s-]/gi, '')
-        .replace(/\s+/g, '-')
-        .substring(0, 100)
+  let slug =
+    req.body.slug && req.body.slug.trim() !== ''
+      ? req.body.slug
+      : req.body.title
+          .toLowerCase()
+          .replace(/[^a-zа-яё0-9\s-]/gi, '')
+          .replace(/\s+/g, '-')
+          .substring(0, 100)
 
   let defaultMdxCode = ''
-  
+
   // Only create content for pages, not sections
   if (req.body.type === 'page') {
     defaultMdxCode = `# ${req.body.title || 'Untitled'}\n\n`
@@ -228,16 +228,16 @@ export const apiDocumentCreateRoute = app.post('/create', async (ctx, req) => {
 // @shared-route
 export const apiDocumentUpdateRoute = app.post('/update/:id', async (ctx, req) => {
   requireAccountRole(ctx, 'Admin')
-  
+
   console.log('apiDocumentUpdateRoute received:', {
     id: req.params.id,
     body: req.body,
     mdxCodeLength: req.body.mdxCode?.length || 0
   })
-  
+
   // Get current document to check type
   const currentDocument = await Documents.findById(ctx, req.params.id)
-  
+
   const updateData: any = {
     id: req.params.id
   }
@@ -256,7 +256,12 @@ export const apiDocumentUpdateRoute = app.post('/update/:id', async (ctx, req) =
 
   // Determine final type and parentId
   const finalType = updateData.type !== undefined ? updateData.type : currentDocument.type
-  const finalParentId = updateData.parentId !== undefined ? updateData.parentId : (typeof currentDocument.parentId === 'string' ? currentDocument.parentId : currentDocument.parentId?.id)
+  const finalParentId =
+    updateData.parentId !== undefined
+      ? updateData.parentId
+      : typeof currentDocument.parentId === 'string'
+        ? currentDocument.parentId
+        : currentDocument.parentId?.id
 
   // Validate: pages must have a parent
   if (finalType === 'page' && !finalParentId) {
@@ -264,7 +269,7 @@ export const apiDocumentUpdateRoute = app.post('/update/:id', async (ctx, req) =
   }
 
   const document = await Documents.update(ctx, updateData)
-  
+
   console.log('Document updated, result:', {
     id: document.id,
     title: document.title,
@@ -289,7 +294,7 @@ export const apiDocumentMoveRoute = app.post('/move/:id', async (ctx, req) => {
 
   // Get the document being moved
   const document = await Documents.findById(ctx, documentId)
-  
+
   // Validate: pages must have a parent
   if (document.type === 'page' && !targetParentId) {
     throw new Error('Страница должна иметь родительский элемент')
@@ -302,7 +307,7 @@ export const apiDocumentMoveRoute = app.post('/move/:id', async (ctx, req) => {
       parentId: targetParentId !== undefined ? targetParentId : null,
       order: targetOrder
     })
-    
+
     // Reindex orders in this context to make them sequential integers
     await reindexOrders(ctx, targetParentId)
   } else {
@@ -360,7 +365,7 @@ export const apiDocumentSearchRoute = app.get('/search', async (ctx, req) => {
     limit: 20
   })
 
-  return results.filter(doc => doc.type === 'page')
+  return results.filter((doc) => doc.type === 'page')
 })
 
 // Helper function to find first page in a section (recursive)
@@ -372,14 +377,14 @@ async function findFirstPageInSection(ctx: any, sectionId: string): Promise<any 
     limit: 1000,
     order: [{ order: 'asc' }]
   })
-  
+
   // First, look for direct page children
   for (const child of children) {
     if (child.type === 'page') {
       return child
     }
   }
-  
+
   // If no pages, recursively search in sections
   for (const child of children) {
     if (child.type === 'section') {
@@ -389,7 +394,7 @@ async function findFirstPageInSection(ctx: any, sectionId: string): Promise<any 
       }
     }
   }
-  
+
   return null
 }
 
@@ -619,7 +624,7 @@ function hello() {
 export const apiDocumentNextRoute = app.get('/next/:id', async (ctx, req) => {
   const currentDocument = await Documents.findById(ctx, req.params.id)
   if (!currentDocument) return null
-  
+
   // First, check if current document has children
   const children = await Documents.findAll(ctx, {
     where: {
@@ -629,23 +634,26 @@ export const apiDocumentNextRoute = app.get('/next/:id', async (ctx, req) => {
     limit: 1000,
     order: [{ order: 'asc' }]
   })
-  
+
   // If has children, return first child
   if (children.length > 0) {
     const firstChild = children[0]
     const path = await getDocumentPath(ctx, firstChild)
     const slugPath = buildSlugPath(path)
-    
+
     return {
       document: firstChild,
       path,
       slugPath
     }
   }
-  
+
   // If no children, look for next sibling
-  const parentId = typeof currentDocument.parentId === 'string' ? currentDocument.parentId : currentDocument.parentId?.id
-  
+  const parentId =
+    typeof currentDocument.parentId === 'string'
+      ? currentDocument.parentId
+      : currentDocument.parentId?.id
+
   // Get all siblings (pages and sections) with the same parent
   const siblings = await Documents.findAll(ctx, {
     where: {
@@ -654,33 +662,33 @@ export const apiDocumentNextRoute = app.get('/next/:id', async (ctx, req) => {
     limit: 1000,
     order: [{ order: 'asc' }]
   })
-  
+
   // Find current document index
-  const currentIndex = siblings.findIndex(doc => doc.id === currentDocument.id)
-  
+  const currentIndex = siblings.findIndex((doc) => doc.id === currentDocument.id)
+
   // Look for next sibling
   if (currentIndex !== -1 && currentIndex < siblings.length - 1) {
     const nextSibling = siblings[currentIndex + 1]
-    
+
     // If next sibling is a page, return it
     if (nextSibling.type === 'page') {
       const path = await getDocumentPath(ctx, nextSibling)
       const slugPath = buildSlugPath(path)
-      
+
       return {
         document: nextSibling,
         path,
         slugPath
       }
     }
-    
+
     // If next sibling is a section, find first page inside
     if (nextSibling.type === 'section') {
       const firstPage = await findFirstPageInSection(ctx, nextSibling.id)
       if (firstPage) {
         const path = await getDocumentPath(ctx, firstPage)
         const slugPath = buildSlugPath(path)
-        
+
         return {
           document: firstPage,
           path,
@@ -689,21 +697,22 @@ export const apiDocumentNextRoute = app.get('/next/:id', async (ctx, req) => {
       }
     }
   }
-  
+
   // No next sibling - go up to parent and look for their next sibling
   if (parentId) {
     let currentParentId: string | null = parentId
     let iterations = 0
     const maxIterations = 10
-    
+
     while (currentParentId && iterations < maxIterations) {
       iterations++
-      
+
       const parent = await Documents.findById(ctx, currentParentId)
       if (!parent) break
-      
-      const grandParentId = typeof parent.parentId === 'string' ? parent.parentId : parent.parentId?.id
-      
+
+      const grandParentId =
+        typeof parent.parentId === 'string' ? parent.parentId : parent.parentId?.id
+
       // Get parent's siblings
       const parentSiblings = await Documents.findAll(ctx, {
         where: {
@@ -712,21 +721,21 @@ export const apiDocumentNextRoute = app.get('/next/:id', async (ctx, req) => {
         limit: 1000,
         order: [{ order: 'asc' }]
       })
-      
+
       // Find parent's index
-      const parentIndex = parentSiblings.findIndex(doc => doc.id === currentParentId)
-      
+      const parentIndex = parentSiblings.findIndex((doc) => doc.id === currentParentId)
+
       // Look for parent's next sibling
       if (parentIndex !== -1 && parentIndex < parentSiblings.length - 1) {
         const nextParentSibling = parentSiblings[parentIndex + 1]
-        
+
         // If it's a section, find first page inside
         if (nextParentSibling.type === 'section') {
           const firstPage = await findFirstPageInSection(ctx, nextParentSibling.id)
           if (firstPage) {
             const path = await getDocumentPath(ctx, firstPage)
             const slugPath = buildSlugPath(path)
-            
+
             return {
               document: firstPage,
               path,
@@ -734,12 +743,12 @@ export const apiDocumentNextRoute = app.get('/next/:id', async (ctx, req) => {
             }
           }
         }
-        
+
         // If it's a page, return it
         if (nextParentSibling.type === 'page') {
           const path = await getDocumentPath(ctx, nextParentSibling)
           const slugPath = buildSlugPath(path)
-          
+
           return {
             document: nextParentSibling,
             path,
@@ -747,11 +756,11 @@ export const apiDocumentNextRoute = app.get('/next/:id', async (ctx, req) => {
           }
         }
       }
-      
+
       // Move up to grandparent
       currentParentId = grandParentId
     }
   }
-  
+
   return null
 })

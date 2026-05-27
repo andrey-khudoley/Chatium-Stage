@@ -1,7 +1,9 @@
 <template>
   <div class="min-h-screen bg-dark">
     <header class="glass sticky top-0 z-50">
-      <div class="max-w-6xl mx-auto px-3 sm:px-4 lg:px-6 py-3 sm:py-4 flex items-center gap-3 sm:gap-4">
+      <div
+        class="max-w-6xl mx-auto px-3 sm:px-4 lg:px-6 py-3 sm:py-4 flex items-center gap-3 sm:gap-4"
+      >
         <h1 class="wr-text-primary font-bold text-base sm:text-lg truncate">Ответы на формы</h1>
         <div class="ml-auto flex items-center gap-2">
           <button
@@ -9,14 +11,19 @@
             :disabled="exporting || submissions.length === 0"
             class="admin-btn-subtle px-3 py-2 rounded-lg text-xs sm:text-sm font-medium inline-flex items-center gap-1.5 transition"
           >
-            <i :class="exporting ? 'fas fa-spinner fa-spin' : 'fas fa-file-csv'" class="text-xs"></i>
+            <i
+              :class="exporting ? 'fas fa-spinner fa-spin' : 'fas fa-file-csv'"
+              class="text-xs"
+            ></i>
             <span class="hidden sm:inline">Экспорт CSV</span>
           </button>
         </div>
       </div>
     </header>
 
-    <main class="max-w-6xl mx-auto px-3 sm:px-4 lg:px-6 py-4 sm:py-6 lg:py-8 space-y-4 sm:space-y-6">
+    <main
+      class="max-w-6xl mx-auto px-3 sm:px-4 lg:px-6 py-4 sm:py-6 lg:py-8 space-y-4 sm:space-y-6"
+    >
       <!-- Фильтры -->
       <div class="glass rounded-2xl p-4 sm:p-5 space-y-4">
         <h3 class="wr-text-primary font-semibold text-sm flex items-center gap-2">
@@ -34,7 +41,9 @@
             />
           </div>
           <div>
-            <label class="wr-text-tertiary text-xs font-medium mb-1.5 block">{{ mode === 'autowebinars' ? 'Автовебинар' : 'Эфир' }}</label>
+            <label class="wr-text-tertiary text-xs font-medium mb-1.5 block">{{
+              mode === 'autowebinars' ? 'Автовебинар' : 'Эфир'
+            }}</label>
             <CustomSelect
               v-model="filterEpisodeId"
               :options="episodeSelectOptions"
@@ -52,9 +61,14 @@
           <span class="wr-text-secondary text-sm font-medium">{{ totalCount }}</span>
           <span class="wr-text-tertiary text-xs">{{ pluralSubmissions(totalCount) }}</span>
         </div>
-        <div v-if="totalPages > 1" class="glass-light rounded-xl px-4 py-2.5 flex items-center gap-2">
+        <div
+          v-if="totalPages > 1"
+          class="glass-light rounded-xl px-4 py-2.5 flex items-center gap-2"
+        >
           <i class="fas fa-file-alt text-primary text-sm"></i>
-          <span class="wr-text-secondary text-sm font-medium">Страница {{ currentPage }} из {{ totalPages }}</span>
+          <span class="wr-text-secondary text-sm font-medium"
+            >Страница {{ currentPage }} из {{ totalPages }}</span
+          >
         </div>
         <button
           v-if="filterFormId || filterEpisodeId"
@@ -67,7 +81,9 @@
 
       <!-- Загрузка -->
       <div v-if="loading" class="flex justify-center py-12">
-        <div class="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+        <div
+          class="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin"
+        ></div>
       </div>
 
       <!-- Пусто -->
@@ -85,11 +101,31 @@
           <table class="w-full text-sm">
             <thead>
               <tr class="border-b" style="border-color: var(--wr-border)">
-                <th class="text-left px-4 py-3 wr-text-tertiary text-xs font-semibold uppercase tracking-wider">Дата</th>
-                <th class="text-left px-4 py-3 wr-text-tertiary text-xs font-semibold uppercase tracking-wider">Форма</th>
-                <th class="text-left px-4 py-3 wr-text-tertiary text-xs font-semibold uppercase tracking-wider">{{ mode === 'autowebinars' ? 'Автовебинар' : 'Эфир' }}</th>
-                <th class="text-left px-4 py-3 wr-text-tertiary text-xs font-semibold uppercase tracking-wider">Пользователь</th>
-                <th class="text-left px-4 py-3 wr-text-tertiary text-xs font-semibold uppercase tracking-wider">Данные</th>
+                <th
+                  class="text-left px-4 py-3 wr-text-tertiary text-xs font-semibold uppercase tracking-wider"
+                >
+                  Дата
+                </th>
+                <th
+                  class="text-left px-4 py-3 wr-text-tertiary text-xs font-semibold uppercase tracking-wider"
+                >
+                  Форма
+                </th>
+                <th
+                  class="text-left px-4 py-3 wr-text-tertiary text-xs font-semibold uppercase tracking-wider"
+                >
+                  {{ mode === 'autowebinars' ? 'Автовебинар' : 'Эфир' }}
+                </th>
+                <th
+                  class="text-left px-4 py-3 wr-text-tertiary text-xs font-semibold uppercase tracking-wider"
+                >
+                  Пользователь
+                </th>
+                <th
+                  class="text-left px-4 py-3 wr-text-tertiary text-xs font-semibold uppercase tracking-wider"
+                >
+                  Данные
+                </th>
                 <th class="w-10"></th>
               </tr>
             </thead>
@@ -105,14 +141,22 @@
                     <div class="wr-text-muted text-[10px]">{{ formatTime(sub.createdAt) }}</div>
                   </td>
                   <td class="px-4 py-3">
-                    <span class="wr-text-primary text-xs font-medium">{{ getFormTitle(sub.formId) }}</span>
+                    <span class="wr-text-primary text-xs font-medium">{{
+                      getFormTitle(sub.formId)
+                    }}</span>
                   </td>
                   <td class="px-4 py-3">
-                    <span class="wr-text-secondary text-xs">{{ getEpisodeTitle(sub.episodeId, sub.autowebinarId) || '—' }}</span>
+                    <span class="wr-text-secondary text-xs">{{
+                      getEpisodeTitle(sub.episodeId, sub.autowebinarId) || '—'
+                    }}</span>
                   </td>
                   <td class="px-4 py-3">
-                    <div class="wr-text-primary text-xs font-medium">{{ getUserName(sub.userId) }}</div>
-                    <div v-if="getUserContact(sub)" class="wr-text-tertiary text-[10px]">{{ getUserContact(sub) }}</div>
+                    <div class="wr-text-primary text-xs font-medium">
+                      {{ getUserName(sub.userId) }}
+                    </div>
+                    <div v-if="getUserContact(sub)" class="wr-text-tertiary text-[10px]">
+                      {{ getUserContact(sub) }}
+                    </div>
                   </td>
                   <td class="px-4 py-3 max-w-xs">
                     <div class="flex flex-wrap gap-1">
@@ -129,7 +173,10 @@
                   </td>
                   <td class="px-4 py-3">
                     <button @click="toggleExpand(sub.id)" class="admin-icon-btn">
-                      <i :class="expandedId === sub.id ? 'fas fa-chevron-up' : 'fas fa-chevron-down'" class="text-[9px]"></i>
+                      <i
+                        :class="expandedId === sub.id ? 'fas fa-chevron-up' : 'fas fa-chevron-down'"
+                        class="text-[9px]"
+                      ></i>
                     </button>
                   </td>
                 </tr>
@@ -138,10 +185,15 @@
                     <div class="space-y-2 max-w-2xl">
                       <h4 class="wr-text-primary text-xs font-semibold mb-2">Все данные ответа</h4>
                       <div v-for="(val, key) in sub.data" :key="key" class="flex gap-3 text-xs">
-                        <span class="wr-text-tertiary font-medium min-w-[100px]">{{ getFieldLabel(sub.formId, key) || key }}</span>
+                        <span class="wr-text-tertiary font-medium min-w-[100px]">{{
+                          getFieldLabel(sub.formId, key) || key
+                        }}</span>
                         <span class="wr-text-primary break-all">{{ val }}</span>
                       </div>
-                      <div class="flex gap-3 text-xs pt-1 border-t" style="border-color: var(--wr-border-light)">
+                      <div
+                        class="flex gap-3 text-xs pt-1 border-t"
+                        style="border-color: var(--wr-border-light)"
+                      >
                         <span class="wr-text-muted font-medium min-w-[100px]">ID</span>
                         <span class="wr-text-muted font-mono text-[10px]">{{ sub.id }}</span>
                       </div>
@@ -156,33 +208,49 @@
 
       <!-- Карточки (мобайл) -->
       <div v-if="!loading && submissions.length > 0" class="md:hidden space-y-3">
-        <div
-          v-for="sub in submissions"
-          :key="'m-' + sub.id"
-          class="glass rounded-xl p-4 space-y-3"
-        >
+        <div v-for="sub in submissions" :key="'m-' + sub.id" class="glass rounded-xl p-4 space-y-3">
           <div class="flex items-start justify-between gap-2">
             <div class="min-w-0">
-              <span class="wr-text-primary text-sm font-medium block truncate">{{ getFormTitle(sub.formId) }}</span>
-              <span class="wr-text-tertiary text-[11px] block mt-0.5">{{ formatDate(sub.createdAt) }} · {{ formatTime(sub.createdAt) }}</span>
+              <span class="wr-text-primary text-sm font-medium block truncate">{{
+                getFormTitle(sub.formId)
+              }}</span>
+              <span class="wr-text-tertiary text-[11px] block mt-0.5"
+                >{{ formatDate(sub.createdAt) }} · {{ formatTime(sub.createdAt) }}</span
+              >
             </div>
             <button @click="toggleExpand(sub.id)" class="admin-icon-btn flex-shrink-0">
-              <i :class="expandedId === sub.id ? 'fas fa-chevron-up' : 'fas fa-chevron-down'" class="text-[9px]"></i>
+              <i
+                :class="expandedId === sub.id ? 'fas fa-chevron-up' : 'fas fa-chevron-down'"
+                class="text-[9px]"
+              ></i>
             </button>
           </div>
 
           <div class="flex items-center gap-2">
-            <div class="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white" style="background: linear-gradient(135deg, #f8005b 0%, #c7004a 100%)">
+            <div
+              class="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white"
+              style="background: linear-gradient(135deg, #f8005b 0%, #c7004a 100%)"
+            >
               {{ getUserInitials(sub.userId) }}
             </div>
             <div class="min-w-0">
-              <span class="wr-text-primary text-xs font-medium block truncate">{{ getUserName(sub.userId) }}</span>
-              <span v-if="getUserContact(sub)" class="wr-text-tertiary text-[10px] block truncate">{{ getUserContact(sub) }}</span>
+              <span class="wr-text-primary text-xs font-medium block truncate">{{
+                getUserName(sub.userId)
+              }}</span>
+              <span
+                v-if="getUserContact(sub)"
+                class="wr-text-tertiary text-[10px] block truncate"
+                >{{ getUserContact(sub) }}</span
+              >
             </div>
           </div>
 
-          <div v-if="getEpisodeTitle(sub.episodeId, sub.autowebinarId)" class="wr-text-tertiary text-[11px]">
-            <i class="fas fa-tv mr-1 text-[9px]"></i> {{ getEpisodeTitle(sub.episodeId, sub.autowebinarId) }}
+          <div
+            v-if="getEpisodeTitle(sub.episodeId, sub.autowebinarId)"
+            class="wr-text-tertiary text-[11px]"
+          >
+            <i class="fas fa-tv mr-1 text-[9px]"></i>
+            {{ getEpisodeTitle(sub.episodeId, sub.autowebinarId) }}
           </div>
 
           <!-- Краткий обзор данных -->
@@ -199,9 +267,15 @@
           </div>
 
           <!-- Развёрнутые данные -->
-          <div v-if="expandedId === sub.id" class="pt-3 border-t space-y-2" style="border-color: var(--wr-border-light)">
+          <div
+            v-if="expandedId === sub.id"
+            class="pt-3 border-t space-y-2"
+            style="border-color: var(--wr-border-light)"
+          >
             <div v-for="(val, key) in sub.data" :key="key" class="flex gap-2 text-xs">
-              <span class="wr-text-tertiary font-medium min-w-[80px] flex-shrink-0">{{ getFieldLabel(sub.formId, key) || key }}</span>
+              <span class="wr-text-tertiary font-medium min-w-[80px] flex-shrink-0">{{
+                getFieldLabel(sub.formId, key) || key
+              }}</span>
               <span class="wr-text-primary break-all">{{ val }}</span>
             </div>
           </div>
@@ -211,7 +285,10 @@
       <!-- Пагинация -->
       <div v-if="!loading && totalPages > 1" class="flex items-center justify-center gap-2 py-4">
         <button
-          @click="currentPage--; loadSubmissions()"
+          @click="
+            currentPage--
+            loadSubmissions()
+          "
           :disabled="currentPage === 1"
           class="admin-btn-subtle px-3 py-2 rounded-lg text-xs sm:text-sm font-medium inline-flex items-center gap-1.5 transition"
         >
@@ -223,7 +300,10 @@
           <template v-for="page in getPageNumbers()" :key="page">
             <button
               v-if="page !== '...'"
-              @click="currentPage = page; loadSubmissions()"
+              @click="
+                currentPage = page
+                loadSubmissions()
+              "
               :class="{
                 'admin-btn-primary': currentPage === page,
                 'admin-btn-subtle': currentPage !== page
@@ -237,7 +317,10 @@
         </div>
 
         <button
-          @click="currentPage++; loadSubmissions()"
+          @click="
+            currentPage++
+            loadSubmissions()
+          "
           :disabled="currentPage === totalPages"
           class="admin-btn-subtle px-3 py-2 rounded-lg text-xs sm:text-sm font-medium inline-flex items-center gap-1.5 transition"
         >
@@ -258,14 +341,17 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
 import { apiFormsAllRoute } from '../../api/forms-admin-routes'
-import { apiFormSubmissionsRoute, apiFormSubmissionsExportRoute } from '../../api/forms-submissions-routes'
+import {
+  apiFormSubmissionsRoute,
+  apiFormSubmissionsExportRoute
+} from '../../api/forms-submissions-routes'
 import { apiEpisodesListRoute } from '../../api/episodes'
 import { apiAutowebinarsListRoute } from '../../api/autowebinars'
 import CustomSelect from '../../components/CustomSelect.vue'
 
 const props = defineProps({
   indexUrl: String,
-  mode: { type: String, default: 'episodes' }, // 'episodes' | 'autowebinars'
+  mode: { type: String, default: 'episodes' } // 'episodes' | 'autowebinars'
 })
 
 const loading = ref(true)
@@ -289,18 +375,16 @@ const episodes = ref([])
 const autowebinars = ref([])
 const forms = ref([])
 
-const formSelectOptions = computed(() =>
-  forms.value.map(f => ({ value: f.id, label: f.title }))
-)
+const formSelectOptions = computed(() => forms.value.map((f) => ({ value: f.id, label: f.title })))
 
 const episodeSelectOptions = computed(() => {
   if (props.mode === 'autowebinars') {
-    return autowebinars.value.map(aw => ({
+    return autowebinars.value.map((aw) => ({
       value: `autowebinar:${aw.id}`,
       label: aw.title
     }))
   } else {
-    return episodes.value.map(ep => ({
+    return episodes.value.map((ep) => ({
       value: `episode:${ep.id}`,
       label: `${ep.title} — ${formatDate(ep.scheduledDate)}`
     }))
@@ -324,7 +408,7 @@ async function loadSubmissions() {
   try {
     const query = { page: currentPage.value.toString(), mode: props.mode }
     if (filterFormId.value) query.formId = filterFormId.value
-    
+
     if (filterEpisodeId.value) {
       const [type, id] = filterEpisodeId.value.split(':')
       if (type === 'episode') query.episodeId = id
@@ -353,7 +437,7 @@ async function exportCsv() {
   try {
     const query = { mode: props.mode }
     if (filterFormId.value) query.formId = filterFormId.value
-    
+
     if (filterEpisodeId.value) {
       const [type, id] = filterEpisodeId.value.split(':')
       if (type === 'episode') query.episodeId = id
@@ -411,7 +495,7 @@ function getUserContact(sub) {
 function getFieldLabel(formId, key) {
   const form = formsMap.value[formId]
   if (!form?.fields) return null
-  const field = form.fields.find(f => f.id === key || f.label === key)
+  const field = form.fields.find((f) => f.id === key || f.label === key)
   return field?.label || null
 }
 
@@ -427,7 +511,7 @@ function formatDate(d) {
   return new Date(d).toLocaleDateString('ru-RU', {
     day: 'numeric',
     month: 'short',
-    year: 'numeric',
+    year: 'numeric'
   })
 }
 
@@ -435,7 +519,7 @@ function formatTime(d) {
   if (!d) return ''
   return new Date(d).toLocaleTimeString('ru-RU', {
     hour: '2-digit',
-    minute: '2-digit',
+    minute: '2-digit'
   })
 }
 
@@ -451,7 +535,7 @@ function pluralSubmissions(n) {
 function getPageNumbers() {
   const pages = []
   const maxVisible = 7 // максимум видимых кнопок
-  
+
   if (totalPages.value <= maxVisible) {
     // Показываем все страницы
     for (let i = 1; i <= totalPages.value; i++) {
@@ -478,7 +562,7 @@ function getPageNumbers() {
       pages.push(totalPages.value)
     }
   }
-  
+
   return pages
 }
 
@@ -486,16 +570,16 @@ onMounted(async () => {
   // Загрузка только нужных данных в зависимости от mode
   try {
     const promises = [apiFormsAllRoute.run(ctx)]
-    
+
     if (props.mode === 'autowebinars') {
       promises.push(apiAutowebinarsListRoute.run(ctx))
     } else {
       promises.push(apiEpisodesListRoute.run(ctx))
     }
-    
+
     const [formsRes, listRes] = await Promise.all(promises)
     forms.value = formsRes || []
-    
+
     if (props.mode === 'autowebinars') {
       autowebinars.value = listRes || []
     } else {
@@ -504,29 +588,29 @@ onMounted(async () => {
   } catch (e) {
     console.error('Failed to load data:', e)
   }
-  
+
   // Инициализация фильтров из URL query параметров
   const urlParams = new URLSearchParams(window.location.search)
   const formIdFromUrl = urlParams.get('formId')
   const episodeIdFromUrl = urlParams.get('episodeId')
   const autowebinarIdFromUrl = urlParams.get('autowebinarId')
-  
-  if (formIdFromUrl && forms.value.some(f => f.id === formIdFromUrl)) {
+
+  if (formIdFromUrl && forms.value.some((f) => f.id === formIdFromUrl)) {
     filterFormId.value = formIdFromUrl
   }
-  
+
   if (props.mode === 'episodes' && episodeIdFromUrl) {
     // Проверяем что эпизод существует
-    if (episodes.value.some(ep => ep.id === episodeIdFromUrl)) {
+    if (episodes.value.some((ep) => ep.id === episodeIdFromUrl)) {
       filterEpisodeId.value = `episode:${episodeIdFromUrl}`
     }
   } else if (props.mode === 'autowebinars' && autowebinarIdFromUrl) {
     // Проверяем что автовебинар существует
-    if (autowebinars.value.some(aw => aw.id === autowebinarIdFromUrl)) {
+    if (autowebinars.value.some((aw) => aw.id === autowebinarIdFromUrl)) {
       filterEpisodeId.value = `autowebinar:${autowebinarIdFromUrl}`
     }
   }
-  
+
   loadSubmissions()
 })
 </script>

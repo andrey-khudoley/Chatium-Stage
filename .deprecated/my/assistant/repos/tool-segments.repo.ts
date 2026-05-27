@@ -1,6 +1,9 @@
 import PomodoroLaunches from '../tables/pomodoro-launches.table'
 import type { PomodoroStateDto } from '../lib/pomodoro-types'
-import type { PomodoroLaunchEndReason, PomodoroLaunchSource } from '../tables/pomodoro-launches.table'
+import type {
+  PomodoroLaunchEndReason,
+  PomodoroLaunchSource
+} from '../tables/pomodoro-launches.table'
 import type { SegmentToolKind } from '../shared/focus-tools-types'
 
 export type StartSegmentInput = {
@@ -12,16 +15,22 @@ export type StartSegmentInput = {
   runId: string
 }
 
-export async function findOpenSegmentByUser(ctx: app.Ctx, userId: string): Promise<typeof PomodoroLaunches.T | null> {
+export async function findOpenSegmentByUser(
+  ctx: app.Ctx,
+  userId: string
+): Promise<typeof PomodoroLaunches.T | null> {
   const rows = await PomodoroLaunches.findAll(ctx, {
     where: { userId, endedAtMs: null },
     order: [{ startedAtMs: 'desc' }],
-    limit: 1,
+    limit: 1
   })
   return rows[0] ?? null
 }
 
-function rowMatchesToolKind(row: typeof PomodoroLaunches.T, kind: SegmentToolKind | 'pomodoro'): boolean {
+function rowMatchesToolKind(
+  row: typeof PomodoroLaunches.T,
+  kind: SegmentToolKind | 'pomodoro'
+): boolean {
   if (kind === 'pomodoro') {
     if (row.tool === 'pomodoro') return true
     if (row.tool === 'timer' || row.tool === 'stopwatch') return false
@@ -34,17 +43,20 @@ function rowMatchesToolKind(row: typeof PomodoroLaunches.T, kind: SegmentToolKin
 export async function findOpenSegmentByUserAndTool(
   ctx: app.Ctx,
   userId: string,
-  kind: SegmentToolKind | 'pomodoro',
+  kind: SegmentToolKind | 'pomodoro'
 ): Promise<typeof PomodoroLaunches.T | null> {
   const rows = await PomodoroLaunches.findAll(ctx, {
     where: { userId, endedAtMs: null },
     order: [{ startedAtMs: 'desc' }],
-    limit: 8,
+    limit: 8
   })
   return rows.find((r) => rowMatchesToolKind(r, kind)) ?? null
 }
 
-export async function startSegment(ctx: app.Ctx, input: StartSegmentInput): Promise<typeof PomodoroLaunches.T> {
+export async function startSegment(
+  ctx: app.Ctx,
+  input: StartSegmentInput
+): Promise<typeof PomodoroLaunches.T> {
   return PomodoroLaunches.create(ctx, {
     userId: input.userId,
     startedAtMs: input.startedAtMs,
@@ -53,7 +65,7 @@ export async function startSegment(ctx: app.Ctx, input: StartSegmentInput): Prom
     cyclesCompletedAtStart: Math.max(0, Math.floor(input.state.cyclesCompleted)),
     source: input.source,
     tool: input.tool,
-    runId: input.runId,
+    runId: input.runId
   })
 }
 
@@ -61,7 +73,7 @@ export async function closeSegment(
   ctx: app.Ctx,
   segmentId: string,
   endedAtMs: number,
-  endReason: PomodoroLaunchEndReason,
+  endReason: PomodoroLaunchEndReason
 ): Promise<typeof PomodoroLaunches.T> {
   const launch = await PomodoroLaunches.findById(ctx, segmentId)
   if (!launch) throw new Error('Tool segment not found')
@@ -72,7 +84,7 @@ export async function closeSegment(
     id: launch.id,
     endedAtMs: safeEndedAt,
     durationSec,
-    endReason,
+    endReason
   })
 }
 
@@ -80,7 +92,7 @@ export async function closeOpenSegmentByUser(
   ctx: app.Ctx,
   userId: string,
   endedAtMs: number,
-  endReason: PomodoroLaunchEndReason,
+  endReason: PomodoroLaunchEndReason
 ): Promise<typeof PomodoroLaunches.T | null> {
   const open = await findOpenSegmentByUser(ctx, userId)
   if (!open) return null
@@ -92,7 +104,7 @@ export async function closeOpenSegmentByUserAndTool(
   userId: string,
   kind: SegmentToolKind | 'pomodoro',
   endedAtMs: number,
-  endReason: PomodoroLaunchEndReason,
+  endReason: PomodoroLaunchEndReason
 ): Promise<typeof PomodoroLaunches.T | null> {
   const open = await findOpenSegmentByUserAndTool(ctx, userId, kind)
   if (!open) return null
@@ -100,18 +112,21 @@ export async function closeOpenSegmentByUserAndTool(
 }
 
 /** Закрытый сегмент целиком (например завершённый интервал таймера с клиентскими границами времени — не используем; сервер сам закрывает). */
-export async function appendClosedSegment(ctx: app.Ctx, input: {
-  userId: string
-  startedAtMs: number
-  endedAtMs: number
-  phase: string
-  taskId: string | null
-  source: PomodoroLaunchSource
-  endReason: PomodoroLaunchEndReason
-  tool: SegmentToolKind
-  runId: string
-  cyclesCompletedAtStart?: number
-}): Promise<typeof PomodoroLaunches.T> {
+export async function appendClosedSegment(
+  ctx: app.Ctx,
+  input: {
+    userId: string
+    startedAtMs: number
+    endedAtMs: number
+    phase: string
+    taskId: string | null
+    source: PomodoroLaunchSource
+    endReason: PomodoroLaunchEndReason
+    tool: SegmentToolKind
+    runId: string
+    cyclesCompletedAtStart?: number
+  }
+): Promise<typeof PomodoroLaunches.T> {
   const startedAtMs = Math.max(0, Math.floor(input.startedAtMs))
   const endedAtMs = Math.max(startedAtMs, Math.floor(input.endedAtMs))
   const durationSec = Math.max(0, Math.floor((endedAtMs - startedAtMs) / 1000))
@@ -126,7 +141,7 @@ export async function appendClosedSegment(ctx: app.Ctx, input: {
     source: input.source,
     endReason: input.endReason,
     tool: input.tool,
-    runId: input.runId,
+    runId: input.runId
   })
 }
 
@@ -139,7 +154,7 @@ export async function getWorkFocusByDayForMonth(
   ctx: app.Ctx,
   userId: string,
   year: number,
-  month: number,
+  month: number
 ): Promise<Record<string, number>> {
   const monthStartMs = new Date(year, month - 1, 1).getTime()
   const monthEndMs = new Date(year, month, 1).getTime()

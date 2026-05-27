@@ -1,5 +1,5 @@
 ---
-title: "ОТП Банк — Webhook и уведомления о статусе"
+title: 'ОТП Банк — Webhook и уведомления о статусе'
 type: reference
 tags:
   - topic/otp-bank
@@ -24,18 +24,18 @@ project: olga-getcourse-payments-c7d5a1
 // Определяется ДО вызова creditProcess
 function poscreditCheckStatus(result) {
   // Автоматически вызывается банком после завершения заявки
-  
-  switch(result.status) {
+
+  switch (result.status) {
     case 'approved':
       // Заявка одобрена
-      notifyBackend(result.orderId, 'approved');
-      break;
+      notifyBackend(result.orderId, 'approved')
+      break
     case 'rejected':
       // Отказ
-      showMessage('Банк отклонил заявку');
-      break;
+      showMessage('Банк отклонил заявку')
+      break
     default:
-      console.log('Неизвестный статус:', result.status);
+      console.log('Неизвестный статус:', result.status)
   }
 }
 
@@ -45,14 +45,15 @@ function notifyBackend(orderId, status) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ orderId, status, source: 'otp-bank-js' })
   })
-  .then(r => r.json())
-  .then(data => {
-    if (data.ok) window.location.href = '/order/' + orderId + '/success';
-  });
+    .then((r) => r.json())
+    .then((data) => {
+      if (data.ok) window.location.href = '/order/' + orderId + '/success'
+    })
 }
 ```
 
 **Ограничения JS callback:**
+
 - Срабатывает только при открытой странице
 - Уязвим к закрытию браузера, потере сети
 - Не даёт гарантии доставки уведомления в backend
@@ -76,7 +77,7 @@ $pendingApplications = db()->query(
 
 foreach ($pendingApplications as $app) {
     $statusResponse = $loanApplicationClient->getLoanApplicationStatus($app->profile_id);
-    
+
     if ($statusResponse->isApproved()) {
         updateGetCourseOrderStatus($app->order_id, 'paid');
         db()->update('otp_applications', ['status' => 'approved'], $app->profile_id);
@@ -87,10 +88,12 @@ foreach ($pendingApplications as $app) {
 ```
 
 **Плюсы polling:**
+
 - Работает независимо от клиентской части
 - Надёжен — не зависит от браузера покупателя
 
 **Минусы:**
+
 - Задержка обновления (время между опросами)
 - Нагрузка на API (частые запросы к банку)
 - Банк может ограничить rate-limit
@@ -106,6 +109,7 @@ foreach ($pendingApplications as $app) {
 ### Регистрация URL
 
 При подключении к сервису менеджер банка регистрирует URL вашего endpoint:
+
 ```
 https://your-site.ru/api/otp-bank/webhook
 ```
@@ -157,24 +161,24 @@ echo json_encode(['ok' => true]);
 
 ### JS callback (result.status — строки, уточнить у банка)
 
-| Значение | Описание |
-|----------|---------|
-| `approved` | Заявка одобрена |
-| `rejected` | Отказ банка |
-| _другие_ | Уточнить полный список у банка |
+| Значение   | Описание                       |
+| ---------- | ------------------------------ |
+| `approved` | Заявка одобрена                |
+| `rejected` | Отказ банка                    |
+| _другие_   | Уточнить полный список у банка |
 
 ### SOAP API — BankDecision enum (числовые коды)
 
 Из исходного кода [BankDecision.php](https://github.com/VantaFinance/b2pos-soap-client/blob/main/src/Client/LoanApplication/Struct/BankDecision.php):
 
-| Код | Константа | Описание | Действие |
-|-----|-----------|---------|---------|
-| `-1` | `IN_PROCESSING` | На рассмотрении | Продолжить polling |
-| `0` | `DENIED` | Отказ банка | Предложить альтернативу |
-| `1` | `APPROVED` | ✅ **Одобрено** | Обновить заказ → `payed` |
-| `2` | `ERROR` | Ошибка | Логировать, уведомить |
-| `4` | `REQUIRED_ADDITIONAL_FILLING_OUT` | Нужны доп. данные | Уведомить покупателя |
-| `5` | `REQUIRED_CORRECTION_DATA_OR_DOCUMENTS` | Нужна корректировка | Уведомить покупателя |
+| Код  | Константа                               | Описание            | Действие                 |
+| ---- | --------------------------------------- | ------------------- | ------------------------ |
+| `-1` | `IN_PROCESSING`                         | На рассмотрении     | Продолжить polling       |
+| `0`  | `DENIED`                                | Отказ банка         | Предложить альтернативу  |
+| `1`  | `APPROVED`                              | ✅ **Одобрено**     | Обновить заказ → `payed` |
+| `2`  | `ERROR`                                 | Ошибка              | Логировать, уведомить    |
+| `4`  | `REQUIRED_ADDITIONAL_FILLING_OUT`       | Нужны доп. данные   | Уведомить покупателя     |
+| `5`  | `REQUIRED_CORRECTION_DATA_OR_DOCUMENTS` | Нужна корректировка | Уведомить покупателя     |
 
 > Поле `decision` в объекте `ResultFromBank` — один результат на каждый банк-партнёр (b2pos отправляет заявку сразу в несколько банков). Одобрение хотя бы одного — успех.
 

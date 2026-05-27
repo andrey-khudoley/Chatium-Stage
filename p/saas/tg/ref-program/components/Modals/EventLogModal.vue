@@ -52,11 +52,17 @@ function typeLabel(t: EventLogItem['type']): string {
     class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60"
     @click.self="emit('close')"
   >
-    <div class="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-secondary)] w-full max-w-lg max-h-[80vh] flex flex-col shadow-xl">
-      <div class="p-4 border-b border-[var(--color-border)] flex items-center justify-between shrink-0">
+    <div
+      class="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-secondary)] w-full max-w-lg max-h-[80vh] flex flex-col shadow-xl"
+    >
+      <div
+        class="p-4 border-b border-[var(--color-border)] flex items-center justify-between shrink-0"
+      >
         <h2 class="text-lg text-[var(--color-text)]">
           {{ title ?? 'Лог событий' }}
-          <span v-if="refLabel" class="text-[var(--color-text-secondary)] font-normal"> — {{ refLabel }}</span>
+          <span v-if="refLabel" class="text-[var(--color-text-secondary)] font-normal">
+            — {{ refLabel }}</span
+          >
         </h2>
         <button
           type="button"
@@ -71,7 +77,10 @@ function typeLabel(t: EventLogItem['type']): string {
         <div v-if="loading" class="text-center py-8 text-[var(--color-text-secondary)]">
           <i class="fas fa-spinner fa-spin"></i>
         </div>
-        <div v-else-if="events.length === 0" class="text-center py-8 text-[var(--color-text-secondary)]">
+        <div
+          v-else-if="events.length === 0"
+          class="text-center py-8 text-[var(--color-text-secondary)]"
+        >
           Нет событий
         </div>
         <ul v-else class="space-y-2">

@@ -1,4 +1,5 @@
 @chatium
+
 # Модуль @app/feed: Фиды и чаты в Chatium
 
 Исчерпывающее руководство по работе с модулем `@app/feed` для создания лент сообщений (фидов), чатов и омниканальной переписки в Chatium. Документ опирается на типизацию `node_modules/@app/feed/index.d.ts` и стиль документации платформы.
@@ -58,7 +59,7 @@
 - ✅ Чаты в веб-приложении (лента сообщений)
 - ✅ Омниканальная переписка (веб + Telegram и др.) с единой историей в фиде
 - ✅ Inbox-лента диалогов с кастомным отображением (хуки getInboxInfo / getParticipantInboxInfo)
-- ✅ Связь сообщений мессенджеров с внутренней историей через external_id / origin_*
+- ✅ Связь сообщений мессенджеров с внутренней историей через external*id / origin*\*
 
 ---
 
@@ -70,18 +71,18 @@
 
 **Публичные поля (UgcFeed):**
 
-| Поле | Тип | Описание |
-|------|-----|----------|
-| `id` | string | UID фида (основной идентификатор для API) |
-| `title` | string \| null | Заголовок |
-| `pinnedMessageId` | string \| null | ID закреплённого сообщения |
-| `lastMessageId` | string \| null | ID последнего сообщения |
-| `createdAt` | Date | Дата создания |
-| `updatedAt` | Date | Дата обновления |
-| `inboxSubjectId` | string | Идентификатор субъекта для inbox (обновление элемента ленты при изменении фида) |
-| `inboxUrl` | string \| null | URL перехода из inbox |
-| `inboxExtraData` | object \| null | Дополнительные данные для отображения в inbox |
-| `hooks` | FeedHooks \| null | Хуки getInboxInfo, getParticipantInboxInfo |
+| Поле              | Тип               | Описание                                                                        |
+| ----------------- | ----------------- | ------------------------------------------------------------------------------- |
+| `id`              | string            | UID фида (основной идентификатор для API)                                       |
+| `title`           | string \| null    | Заголовок                                                                       |
+| `pinnedMessageId` | string \| null    | ID закреплённого сообщения                                                      |
+| `lastMessageId`   | string \| null    | ID последнего сообщения                                                         |
+| `createdAt`       | Date              | Дата создания                                                                   |
+| `updatedAt`       | Date              | Дата обновления                                                                 |
+| `inboxSubjectId`  | string            | Идентификатор субъекта для inbox (обновление элемента ленты при изменении фида) |
+| `inboxUrl`        | string \| null    | URL перехода из inbox                                                           |
+| `inboxExtraData`  | object \| null    | Дополнительные данные для отображения в inbox                                   |
+| `hooks`           | FeedHooks \| null | Хуки getInboxInfo, getParticipantInboxInfo                                      |
 
 ### Message (сообщение)
 
@@ -89,25 +90,25 @@
 
 **Основные поля:**
 
-| Поле | Тип | Описание |
-|------|-----|----------|
-| `id` | string | Уникальный ID сообщения в фиде (канонический идентификатор) |
-| `feed_id` | number | ID фида (внутренний) |
-| `external_id` | string \| null | ID сообщения во внешней системе (например, Telegram message_id) |
-| `origin_id` | string \| null | Идентификатор источника (например, chat_id в Telegram) |
-| `origin_type` | string \| null | Тип источника (например, `'telegram'`) |
-| `type` | MessageType | `'Message'` \| `'System'` \| `'Change'` \| `'Blocks'` |
-| `text` | string \| null | Текст сообщения |
-| `as_feed` | boolean | Отображать как ленту (например, пересланное) |
-| `reply_to` | string \| null | ID сообщения, на которое отвечаем |
-| `files` | MessageFile[] \| null | Вложения |
-| `sticker` | MessageSticker \| null | Стикер |
-| `data` | object \| null | Произвольные данные или блоки (`blocks`) |
-| `reactions` | Record<string, { user_id: HeapId }[]> \| null | Реакции по эмодзи |
-| `created_at` | Date | Время создания |
-| `updated_at` | Date | Время обновления |
-| `created_by` | string | ID автора (User) |
-| `is_deleted` | boolean | Признак удаления |
+| Поле          | Тип                                           | Описание                                                        |
+| ------------- | --------------------------------------------- | --------------------------------------------------------------- |
+| `id`          | string                                        | Уникальный ID сообщения в фиде (канонический идентификатор)     |
+| `feed_id`     | number                                        | ID фида (внутренний)                                            |
+| `external_id` | string \| null                                | ID сообщения во внешней системе (например, Telegram message_id) |
+| `origin_id`   | string \| null                                | Идентификатор источника (например, chat_id в Telegram)          |
+| `origin_type` | string \| null                                | Тип источника (например, `'telegram'`)                          |
+| `type`        | MessageType                                   | `'Message'` \| `'System'` \| `'Change'` \| `'Blocks'`           |
+| `text`        | string \| null                                | Текст сообщения                                                 |
+| `as_feed`     | boolean                                       | Отображать как ленту (например, пересланное)                    |
+| `reply_to`    | string \| null                                | ID сообщения, на которое отвечаем                               |
+| `files`       | MessageFile[] \| null                         | Вложения                                                        |
+| `sticker`     | MessageSticker \| null                        | Стикер                                                          |
+| `data`        | object \| null                                | Произвольные данные или блоки (`blocks`)                        |
+| `reactions`   | Record<string, { user_id: HeapId }[]> \| null | Реакции по эмодзи                                               |
+| `created_at`  | Date                                          | Время создания                                                  |
+| `updated_at`  | Date                                          | Время обновления                                                |
+| `created_by`  | string                                        | ID автора (User)                                                |
+| `is_deleted`  | boolean                                       | Признак удаления                                                |
 
 **MessageFile:**
 
@@ -143,15 +144,15 @@ type MessageSticker = {
 
 **Поля (UgcParticipant):**
 
-| Поле | Тип | Описание |
-|------|-----|----------|
-| `id` | string | ID участника |
-| `userId` | HeapId | ID пользователя (User) |
-| `muted` | boolean | Отключить уведомления |
-| `inboxDisabled` | boolean | Скрыть в inbox |
-| `inboxExtraData` | object \| null | Доп. данные для inbox |
-| `createdAt` | string | Дата добавления |
-| `updatedAt` | string | Дата обновления |
+| Поле             | Тип            | Описание               |
+| ---------------- | -------------- | ---------------------- |
+| `id`             | string         | ID участника           |
+| `userId`         | HeapId         | ID пользователя (User) |
+| `muted`          | boolean        | Отключить уведомления  |
+| `inboxDisabled`  | boolean        | Скрыть в inbox         |
+| `inboxExtraData` | object \| null | Доп. данные для inbox  |
+| `createdAt`      | string         | Дата добавления        |
+| `updatedAt`      | string         | Дата обновления        |
 
 ---
 
@@ -179,7 +180,7 @@ import { createFeed } from '@app/feed'
 
 const feed = await createFeed(ctx, {
   title: 'Чат поддержки',
-  inboxSubjectId: 'support_chat_1',  // для связи с элементом inbox
+  inboxSubjectId: 'support_chat_1', // для связи с элементом inbox
   inboxUrl: '/chat/support',
   inboxExtraData: { priority: 'high' },
   hooks: {
@@ -262,12 +263,7 @@ const participant = await getOrCreateParticipant(ctx, feedOrUid, ctx.user.id, {
 ```typescript
 import { createOrUpdateFeedParticipant } from '@app/feed'
 
-const participant = await createOrUpdateFeedParticipant(
-  ctx,
-  feedOrUid,
-  userId,
-  { muted: true }
-)
+const participant = await createOrUpdateFeedParticipant(ctx, feedOrUid, userId, { muted: true })
 ```
 
 ### deleteFeedParticipant
@@ -321,12 +317,18 @@ const msg = await createFeedMessage(ctx, feedOrUid, ctx.user.id, {
 })
 
 // С внешним ID (например, из Telegram)
-const msgFromTg = await createFeedMessage(ctx, feedOrUid, authorUserId, {
-  text: 'Сообщение из Telegram',
-  external_id: String(telegramMessageId),
-  origin_id: String(telegramChatId),
-  origin_type: 'telegram'
-}, { sendPush: true })
+const msgFromTg = await createFeedMessage(
+  ctx,
+  feedOrUid,
+  authorUserId,
+  {
+    text: 'Сообщение из Telegram',
+    external_id: String(telegramMessageId),
+    origin_id: String(telegramChatId),
+    origin_type: 'telegram'
+  },
+  { sendPush: true }
+)
 ```
 
 **MessageData** может быть:
@@ -367,12 +369,7 @@ const messages = await findMessagesByExternalId(ctx, feedOrUid, String(telegramM
 ```typescript
 import { findMessagesByOriginIdType } from '@app/feed'
 
-const messages = await findMessagesByOriginIdType(
-  ctx,
-  feedOrUid,
-  String(chatId),
-  'telegram'
-)
+const messages = await findMessagesByOriginIdType(ctx, feedOrUid, String(chatId), 'telegram')
 ```
 
 ### findFeedMessages
@@ -432,8 +429,8 @@ await deleteFeedMessage(ctx, feedOrUid, messageId)
 ```typescript
 import { setFeedPinnedMessage } from '@app/feed'
 
-await setFeedPinnedMessage(ctx, feedOrUid, messageId)   // закрепить
-await setFeedPinnedMessage(ctx, feedOrUid, null)        // открепить
+await setFeedPinnedMessage(ctx, feedOrUid, messageId) // закрепить
+await setFeedPinnedMessage(ctx, feedOrUid, null) // открепить
 ```
 
 ---
@@ -450,7 +447,12 @@ await setFeedPinnedMessage(ctx, feedOrUid, null)        // открепить
 import { feedMessagesGetHandler } from '@app/feed'
 
 // В роуте
-const result = await feedMessagesGetHandler(ctx, feedOrUid, req.query as Record<string, string>, true)
+const result = await feedMessagesGetHandler(
+  ctx,
+  feedOrUid,
+  req.query as Record<string, string>,
+  true
+)
 // result: FeedMessagesJson
 ```
 
@@ -461,7 +463,11 @@ const result = await feedMessagesGetHandler(ctx, feedOrUid, req.query as Record<
 ```typescript
 import { feedMessagesChangesHandler } from '@app/feed'
 
-const changes = await feedMessagesChangesHandler(ctx, feedOrUid, req.query as Record<string, string>)
+const changes = await feedMessagesChangesHandler(
+  ctx,
+  feedOrUid,
+  req.query as Record<string, string>
+)
 // changes: FeedChangesJson
 ```
 
@@ -606,7 +612,7 @@ import {
 ## Лучшие практики
 
 - **Всегда использовать feed message id** как единый идентификатор сообщения в приложении и при обмене между вебом и мессенджерами.
-- **Заполнять external_id и origin_*** при интеграции с внешними каналами — это нужно для дедупликации, редактирования и удаления по событиям из мессенджера.
+- **Заполнять external*id и origin*\*** при интеграции с внешними каналами — это нужно для дедупликации, редактирования и удаления по событиям из мессенджера.
 - **Проверять доступ** к фиду перед отдачей данных клиенту; при использовании `feedMessagesGetHandler` передавать `checkAccess: true` при необходимости.
 - **Ограничивать объём выборки** в findFeedMessages (лимит 1000 сообщений за запрос); для длинных историй использовать режим `around` и пагинацию на клиенте.
 - **Логировать важные действия** через `ctx.account.log()` (создание/удаление фидов, ошибки при создании сообщений из вебхуков мессенджеров).

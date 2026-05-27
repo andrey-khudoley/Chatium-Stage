@@ -2,17 +2,13 @@
   <div ref="appRef" class="app">
     <!-- Главный вид: список чатов или выбранный чат -->
     <div v-if="currentView === 'chats'" class="main-view">
-      <div 
-        ref="sidebarRef"
-        class="sidebar-wrapper" 
-        :style="{ width: sidebarWidth + 'px' }"
-      >
+      <div ref="sidebarRef" class="sidebar-wrapper" :style="{ width: sidebarWidth + 'px' }">
         <!-- Глобальный аудиоплеер в списке чатов -->
         <GlobalAudioPlayer v-if="!selectedChat" />
-        <ChatsList 
+        <ChatsList
           ref="chatsListRef"
           :chats="chatsList"
-          :selected-chat="selectedChat" 
+          :selected-chat="selectedChat"
           :invites="invites"
           :inbox-badges="inboxBadges"
           @select-chat="selectChat"
@@ -25,7 +21,7 @@
           @chat-created="handleChatCreated"
         />
         <!-- Resize handle -->
-        <div 
+        <div
           class="resize-handle"
           :class="{ resizing: isResizing }"
           @mousedown="startResize"
@@ -34,12 +30,12 @@
           <div class="resize-indicator"></div>
         </div>
       </div>
-      
+
       <!-- Область чата или приветствия -->
       <div :class="['content-area', { 'chat-active': selectedChat }]">
         <!-- Глобальный аудиоплеер в чате -->
         <GlobalAudioPlayer v-if="selectedChat" class="chat-player" />
-        <ChatView 
+        <ChatView
           v-if="selectedChat"
           :feed-id="selectedChat"
           :chats-list="chatsList"
@@ -60,13 +56,10 @@
     </div>
 
     <!-- Вид профиля -->
-    <ProfileView 
-      v-else-if="currentView === 'profile'"
-      @back="currentView = 'chats'"
-    />
+    <ProfileView v-else-if="currentView === 'profile'" @back="currentView = 'chats'" />
 
     <!-- Вид настроек чатов -->
-    <ChatSettings 
+    <ChatSettings
       v-else-if="currentView === 'settings'"
       :user="currentUser"
       :chats="chatsList"
@@ -101,9 +94,8 @@ import { apiProfileGetRoute } from './api/profile'
 import { useScale } from './composables/useScale'
 import { apiInboxBadgesGetRoute } from './api/inbox-badges'
 
-
 const props = defineProps({
-  userSocketId: String,
+  userSocketId: String
 })
 
 // Делаем userSocketId доступным через provide для дочерних компонентов
@@ -136,7 +128,7 @@ const sidebarRef = ref(null)
 
 // Обновление lastMessage для чата при получении нового сообщения
 function updateChatLastMessage(feedId, message) {
-  const chatIndex = chatsList.value.findIndex(c => c.feedId === feedId)
+  const chatIndex = chatsList.value.findIndex((c) => c.feedId === feedId)
   if (chatIndex !== -1) {
     // Нормализуем поля сообщения (WebSocket присылает snake_case)
     const normalizedMessage = {
@@ -144,7 +136,7 @@ function updateChatLastMessage(feedId, message) {
       createdBy: message.createdBy || message.created_by,
       updatedBy: message.updatedBy || message.updated_by,
       createdAt: message.createdAt || message.created_at,
-      updatedAt: message.updatedAt || message.updated_at,
+      updatedAt: message.updatedAt || message.updated_at
     }
     chatsList.value[chatIndex] = {
       ...chatsList.value[chatIndex],
@@ -183,7 +175,7 @@ function closeChat() {
 // Обработка удаления чата
 function handleChatDeleted(feedId) {
   // Удаляем чат из списка
-  chatsList.value = chatsList.value.filter(c => c.feedId !== feedId)
+  chatsList.value = chatsList.value.filter((c) => c.feedId !== feedId)
   // Закрываем чат (если он ещё открыт)
   if (selectedChat.value === feedId) {
     closeChat()
@@ -193,7 +185,7 @@ function handleChatDeleted(feedId) {
 // Обработка выхода из чата/отписки от канала
 async function handleChatLeft(feedId) {
   // Удаляем чат из списка
-  chatsList.value = chatsList.value.filter(c => c.feedId !== feedId)
+  chatsList.value = chatsList.value.filter((c) => c.feedId !== feedId)
   // Закрываем чат
   if (selectedChat.value === feedId) {
     closeChat()
@@ -218,10 +210,10 @@ function handleGoToMessage({ feedId, messageId, chatTitle }) {
 
 async function onChatCreated(feedId) {
   showCreateModal.value = false
-  
+
   // Небольшая задержка, чтобы Feed API успел обновить данные
-  await new Promise(resolve => setTimeout(resolve, 500))
-  
+  await new Promise((resolve) => setTimeout(resolve, 500))
+
   // Перезагружаем список чатов
   if (chatsListRef.value) {
     await chatsListRef.value.reload()
@@ -242,7 +234,7 @@ async function loadChats() {
   try {
     const response = await apiChatsListRoute.run(ctx)
     chatsList.value = response.chats
-    
+
     // Загружаем inbox данные для счетчиков непрочитанных
     await loadInboxBadges()
   } catch (error) {
@@ -279,8 +271,6 @@ function handleInviteDeclined() {
   loadInvites()
 }
 
-
-
 // Подписка на вебсокет-события с fallback polling
 let fallbackChatsPollTimer = null
 
@@ -302,24 +292,24 @@ function stopChatsFallbackPolling() {
 
 async function setupSocketSubscription() {
   if (!props.userSocketId) return
-  
+
   try {
     const socketClient = await getOrCreateBrowserSocketClient()
-    
+
     // Подписка на события пользователя
     const userSubscription = socketClient.subscribeToData(props.userSocketId)
-    
+
     userSubscription.listen((data) => {
       if (data.type === 'invite-event') {
         if (data.event === 'new-invite') {
           invites.value.unshift(data.invite)
         } else if (data.event === 'invite-accepted') {
           loadChats()
-          invites.value = invites.value.filter(i => i.id !== data.inviteId)
+          invites.value = invites.value.filter((i) => i.id !== data.inviteId)
         } else if (data.event === 'invite-declined') {
-          invites.value = invites.value.filter(i => i.id !== data.inviteId)
+          invites.value = invites.value.filter((i) => i.id !== data.inviteId)
         } else if (data.event === 'invite-revoked') {
-          invites.value = invites.value.filter(i => i.id !== data.inviteId)
+          invites.value = invites.value.filter((i) => i.id !== data.inviteId)
         }
       } else if (data.type === 'chat-event') {
         if (data.event === 'new-message') {
@@ -335,19 +325,19 @@ async function setupSocketSubscription() {
         loadInboxBadges()
       }
     })
-    
+
     // Подписка на inbox события
     const inboxSocketId = `${ctx.user.id}/inbox`
     const inboxSubscription = socketClient.subscribeToData(inboxSocketId)
-    
+
     inboxSubscription.listen(() => {
       // Любое обновление inbox - перезагружаем badges
       loadInboxBadges()
     })
-    
+
     // Запускаем fallback polling для списка чатов
     startChatsFallbackPolling()
-    
+
     return () => {
       userSubscription.unsubscribe()
       inboxSubscription.unsubscribe()
@@ -374,7 +364,7 @@ onMounted(() => {
   loadChats()
   loadInvites()
   loadCurrentUser()
-  
+
   // Проверяем hash для прямой ссылки на чат
   const hash = window.location.hash
   if (hash.startsWith('#/chat/')) {
@@ -383,12 +373,10 @@ onMounted(() => {
       selectedChat.value = feedId
     }
   }
-  
+
   // Подписываемся на вебсокет-события
   setupSocketSubscription()
-  
 
-  
   // Дополнительная синхронизация при возврате на вкладку
   const visibilityHandler = () => {
     if (document.visibilityState === 'visible') {
@@ -409,14 +397,14 @@ function startResize(e) {
   isResizing.value = true
   const startX = e.clientX
   const startWidth = sidebarWidth.value
-  
+
   function handleMouseMove(e) {
     if (!isResizing.value) return
     const diff = e.clientX - startX
     const newWidth = Math.max(280, Math.min(600, startWidth + diff))
     setSidebarWidth(newWidth)
   }
-  
+
   function handleMouseUp() {
     isResizing.value = false
     document.removeEventListener('mousemove', handleMouseMove)
@@ -424,7 +412,7 @@ function startResize(e) {
     document.body.style.cursor = ''
     document.body.style.userSelect = ''
   }
-  
+
   document.addEventListener('mousemove', handleMouseMove)
   document.addEventListener('mouseup', handleMouseUp)
   document.body.style.cursor = 'col-resize'
@@ -453,48 +441,47 @@ function startResize(e) {
   --bg-input: #ffffff;
   --bg-modal: #ffffff;
   --bg-panel: #ffffff;
-  
+
   --text-primary: #111b21;
   --text-secondary: #667781;
   --text-muted: #8696a0;
   --text-link: #008069;
   --text-inverse: #ffffff;
-  
+
   --border-color: #e0e0e0;
   --border-light: #d1d7db;
   --border-input: #d1d7db;
-  
+
   --accent-primary: #008069;
   --accent-hover: #007a62;
   --accent-light: #e3f2fd;
-  
+
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.1);
   --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.15);
   --shadow-lg: 0 4px 20px rgba(0, 0, 0, 0.15);
-  
+
   --menu-bg: #ffffff;
   --menu-hover: #f5f6f8;
   --menu-divider: #e0e0e0;
-  
+
   --status-online: #008069;
   --status-typing: #008069;
-  
+
   --danger-color: #e74c3c;
   --danger-hover: #c0392b;
   --warning-color: #f59e0b;
   --warning-hover: #d97706;
-  
+
   --participant-owner-bg: #fef3c7;
   --participant-owner-text: #92400e;
   --participant-admin-bg: #dbeafe;
   --participant-admin-text: #1e40af;
   --participant-guest-bg: #f3f4f6;
   --participant-guest-text: #6b7280;
-  
 }
 
 /* Dark theme */
-[data-theme="dark"] {
+[data-theme='dark'] {
   --bg-primary: #111b21;
   --bg-secondary: #1f2c33;
   --bg-tertiary: #2a3942;
@@ -506,37 +493,37 @@ function startResize(e) {
   --bg-input: #2a3942;
   --bg-modal: #111b21;
   --bg-panel: #1f2c33;
-  
+
   --text-primary: #e9edef;
   --text-secondary: #8696a0;
   --text-muted: #667781;
   --text-link: #00a884;
   --text-inverse: #111b21;
-  
+
   --border-color: #2a3942;
   --border-light: #374045;
   --border-input: #374045;
-  
+
   --accent-primary: #00a884;
   --accent-hover: #00c298;
   --accent-light: #005c4b;
-  
+
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
   --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
   --shadow-lg: 0 4px 20px rgba(0, 0, 0, 0.5);
-  
+
   --menu-bg: #233138;
   --menu-hover: #2a3942;
   --menu-divider: #374045;
-  
+
   --status-online: #00a884;
   --status-typing: #00a884;
-  
+
   --danger-color: #ef4444;
   --danger-hover: #dc2626;
   --warning-color: #fbbf24;
   --warning-hover: #f59e0b;
-  
+
   --participant-owner-bg: #78350f;
   --participant-owner-text: #fbbf24;
   --participant-admin-bg: #1e3a8a;
@@ -545,7 +532,8 @@ function startResize(e) {
   --participant-guest-text: #9ca3af;
 }
 
-html, body {
+html,
+body {
   height: 100%;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
   background: var(--bg-secondary);
@@ -641,7 +629,7 @@ html, body {
   background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23000000' fill-opacity='0.05' fill-rule='evenodd'/%3E%3C/svg%3E");
 }
 
-[data-theme="dark"] .content-area {
+[data-theme='dark'] .content-area {
   background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23ffffff' fill-opacity='0.03' fill-rule='evenodd'/%3E%3C/svg%3E");
 }
 
@@ -650,15 +638,15 @@ html, body {
   .main-view {
     flex-direction: column;
   }
-  
+
   .sidebar-wrapper {
     width: 100% !important;
   }
-  
+
   .resize-handle {
     display: none;
   }
-  
+
   .content-area {
     position: fixed;
     inset: 0;

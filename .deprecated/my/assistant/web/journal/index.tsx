@@ -61,7 +61,12 @@ import * as journalWeekRepo from '../../repos/journal-week-entries.repo'
 import * as journalHabitsRepo from '../../repos/journal-habits.repo'
 import { computeHabitsMondayKeyFromNow } from '../../lib/journal-habits-time'
 import { computeJournalWeekMondayKeyInTimeZone } from '../../lib/journal-week-key'
-import { customScrollbarStyles, formControlStyles, mobileSafeAreaStyles, VIEWPORT_META_CONTENT } from '../../styles'
+import {
+  customScrollbarStyles,
+  formControlStyles,
+  mobileSafeAreaStyles,
+  VIEWPORT_META_CONTENT
+} from '../../styles'
 
 const LOG_PATH = 'web/journal/index'
 
@@ -96,24 +101,39 @@ export const journalPageRoute = app.html('/', async (ctx, req) => {
   let tasksTreeInitial: TasksTreeDto = { clients: [], projects: [], tasks: [] }
   let journalDayEntryInitial: journalDayRepo.JournalDayEntryDto | null = null
   let journalWeekEntryInitial: journalWeekRepo.JournalWeekEntryDto | null = null
-  let journalHabitsInitial: import('../../lib/journal-habits-time').JournalHabitsWeekDto | null = null
+  let journalHabitsInitial: import('../../lib/journal-habits-time').JournalHabitsWeekDto | null =
+    null
   if (ctx.user) {
     try {
       const user = requireRealUser(ctx)
-      ;[journalNotesInitial, inboxNotesInitial, notebookFoldersInitial, notebookCategoriesInitial, tasksTreeInitial] =
-        await Promise.all([
-          journalNotesRepo.findSummariesByUserId(ctx, user.id),
-          inboxNotesRepo.findSummariesByUserId(ctx, user.id, { includeArchived: true }),
-          notebookFoldersRepo.findByUserId(ctx, user.id, true),
-          notebookCategoriesRepo.findByUserId(ctx, user.id),
-          tasksRepo.getTreeForUser(ctx, user.id)
-        ])
+      ;[
+        journalNotesInitial,
+        inboxNotesInitial,
+        notebookFoldersInitial,
+        notebookCategoriesInitial,
+        tasksTreeInitial
+      ] = await Promise.all([
+        journalNotesRepo.findSummariesByUserId(ctx, user.id),
+        inboxNotesRepo.findSummariesByUserId(ctx, user.id, { includeArchived: true }),
+        notebookFoldersRepo.findByUserId(ctx, user.id, true),
+        notebookCategoriesRepo.findByUserId(ctx, user.id),
+        tasksRepo.getTreeForUser(ctx, user.id)
+      ])
       const dayKey = computeJournalDayKeyInTimeZone(Date.now(), SERVER_FALLBACK_TIME_ZONE)
       journalDayEntryInitial = await journalDayRepo.getByUserAndDay(ctx, user.id, dayKey)
       const mondayKey = computeJournalWeekMondayKeyInTimeZone(Date.now(), SERVER_FALLBACK_TIME_ZONE)
-      journalWeekEntryInitial = await journalWeekRepo.getWeekByUserAndMonday(ctx, user.id, mondayKey)
+      journalWeekEntryInitial = await journalWeekRepo.getWeekByUserAndMonday(
+        ctx,
+        user.id,
+        mondayKey
+      )
       const habitsMonday = computeHabitsMondayKeyFromNow(Date.now())
-      journalHabitsInitial = await journalHabitsRepo.getHabitsWeekForUser(ctx, user.id, habitsMonday, Date.now())
+      journalHabitsInitial = await journalHabitsRepo.getHabitsWeekForUser(
+        ctx,
+        user.id,
+        habitsMonday,
+        Date.now()
+      )
     } catch {
       journalNotesInitial = []
       inboxNotesInitial = []
@@ -371,7 +391,10 @@ export const journalPageRoute = app.html('/', async (ctx, req) => {
         <link rel="stylesheet" href="/s/static/lib/fontawesome/6.7.2/css/all.min.css" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
-        <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap"
+          rel="stylesheet"
+        />
         <style>{`
           :root {
             --color-bg: #0a0a0a;

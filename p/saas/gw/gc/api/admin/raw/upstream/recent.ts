@@ -17,7 +17,8 @@ const DEFAULT_LIMIT = 50
 const MAX_LIMIT = 200
 
 function parseLimit(value: unknown): number {
-  const n = typeof value === 'string' ? parseInt(value, 10) : typeof value === 'number' ? value : NaN
+  const n =
+    typeof value === 'string' ? parseInt(value, 10) : typeof value === 'number' ? value : NaN
   if (!Number.isFinite(n) || n < 1) return DEFAULT_LIMIT
   return Math.min(Math.floor(n), MAX_LIMIT)
 }

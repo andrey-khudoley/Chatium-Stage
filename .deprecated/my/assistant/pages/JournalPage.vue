@@ -43,7 +43,15 @@ type JournalTabComponentMap = {
 
 const TAB_QUERY_KEY = 'tab'
 
-const JOURNAL_TAB_IDS: JournalTabId[] = ['inbox', 'notebook', 'tasks', 'day', 'week', 'month', 'habits']
+const JOURNAL_TAB_IDS: JournalTabId[] = [
+  'inbox',
+  'notebook',
+  'tasks',
+  'day',
+  'week',
+  'month',
+  'habits'
+]
 
 function parseTabFromSearch(search: string): JournalTabId | null {
   const q = search.startsWith('?') ? search.slice(1) : search
@@ -81,7 +89,13 @@ type JournalNoteSummary = {
   sortOrder: number
 }
 
-type NotebookFolderDto = { id: string; name: string; color: string; sortOrder: number; isArchived: boolean }
+type NotebookFolderDto = {
+  id: string
+  name: string
+  color: string
+  sortOrder: number
+  isArchived: boolean
+}
 type NotebookCategoryDto = { id: string; name: string; color: string; sortOrder: number }
 
 /** Сводка инбокса с сервера (отдельная Heap-таблица `inbox-notes`) */
@@ -227,7 +241,7 @@ const props = defineProps({
   journalHabitsGetUrl: String,
   journalHabitsSaveUrl: String,
   journalHabitsInitial: Object,
-  timezoneOffsetHours: { type: Number, default: DEFAULT_USER_TIMEZONE_OFFSET_HOURS },
+  timezoneOffsetHours: { type: Number, default: DEFAULT_USER_TIMEZONE_OFFSET_HOURS }
 }) as unknown as JournalPageProps
 
 const bootLoaderDone = ref(false)
@@ -239,7 +253,7 @@ const tabComponents: JournalTabComponentMap = {
   week: JournalWeekPane,
   tasks: JournalDayPane,
   day: JournalDayInDevelopmentPane,
-  habits: JournalHabitsPane,
+  habits: JournalHabitsPane
 }
 
 const tabs: { id: JournalTabId; label: string }[] = [
@@ -249,7 +263,7 @@ const tabs: { id: JournalTabId; label: string }[] = [
   { id: 'day', label: 'День' },
   { id: 'week', label: 'Неделя' },
   { id: 'month', label: 'Месяц' },
-  { id: 'habits', label: 'Привычки' },
+  { id: 'habits', label: 'Привычки' }
 ]
 
 function resolveInitialTab(): JournalTabId {
@@ -264,31 +278,41 @@ const activeTab = ref(resolveInitialTab())
 
 const journalNotes = ref([...(props.journalNotesInitial != null ? props.journalNotesInitial : [])])
 const inboxNotes = ref(
-  (props.inboxNotesInitial != null ? props.inboxNotesInitial : []).map(mapInboxToJournalSummary),
+  (props.inboxNotesInitial != null ? props.inboxNotesInitial : []).map(mapInboxToJournalSummary)
 )
-const notebookFolders = ref([...(props.notebookFoldersInitial != null ? props.notebookFoldersInitial : [])])
+const notebookFolders = ref([
+  ...(props.notebookFoldersInitial != null ? props.notebookFoldersInitial : [])
+])
 const notebookCategories = ref([
-  ...(props.notebookCategoriesInitial != null ? props.notebookCategoriesInitial : []),
+  ...(props.notebookCategoriesInitial != null ? props.notebookCategoriesInitial : [])
 ])
 
 watch(
   () => props.journalNotesInitial,
-  (next) => { journalNotes.value = [...(next != null ? next : [])] }
+  (next) => {
+    journalNotes.value = [...(next != null ? next : [])]
+  }
 )
 
 watch(
   () => props.inboxNotesInitial,
-  (next) => { inboxNotes.value = (next != null ? next : []).map(mapInboxToJournalSummary) }
+  (next) => {
+    inboxNotes.value = (next != null ? next : []).map(mapInboxToJournalSummary)
+  }
 )
 
 watch(
   () => props.notebookFoldersInitial,
-  (next) => { notebookFolders.value = [...(next != null ? next : [])] }
+  (next) => {
+    notebookFolders.value = [...(next != null ? next : [])]
+  }
 )
 
 watch(
   () => props.notebookCategoriesInitial,
-  (next) => { notebookCategories.value = [...(next != null ? next : [])] }
+  (next) => {
+    notebookCategories.value = [...(next != null ? next : [])]
+  }
 )
 
 const showTasksNavToolbar = computed(() => {
@@ -329,7 +353,7 @@ async function reloadNotebookData() {
   try {
     const url = `${props.journalNotesListUrl}?includeArchived=true`
     const res = await fetch(url, { method: 'GET', credentials: 'include' })
-    const data = await res.json() as {
+    const data = (await res.json()) as {
       success?: boolean
       notes?: JournalNoteSummary[]
       folders?: NotebookFolderDto[]
@@ -350,7 +374,7 @@ async function reloadInboxData() {
   try {
     const url = `${props.inboxNotesListUrl}?includeArchived=true`
     const res = await fetch(url, { method: 'GET', credentials: 'include' })
-    const data = await res.json() as {
+    const data = (await res.json()) as {
       success?: boolean
       notes?: InboxNoteSummaryDto[]
     }
@@ -365,7 +389,7 @@ async function reloadInboxData() {
 const currentPane = computed(() => tabComponents[activeTab.value])
 
 const tasksTree = computed(() =>
-  props.tasksTreeInitial != null ? props.tasksTreeInitial : { clients: [], projects: [], tasks: [] },
+  props.tasksTreeInitial != null ? props.tasksTreeInitial : { clients: [], projects: [], tasks: [] }
 )
 
 const notebookPaneProps = computed(() => ({
@@ -374,8 +398,16 @@ const notebookPaneProps = computed(() => ({
   categories: notebookCategories.value,
   isAuthenticated: props.isAuthenticated,
   taskClients: tasksTree.value.clients.map((c) => ({ id: c.id, name: c.name })),
-  taskProjects: tasksTree.value.projects.map((p) => ({ id: p.id, clientId: p.clientId, name: p.name })),
-  taskItems: tasksTree.value.tasks.map((t) => ({ id: t.id, projectId: t.projectId, title: t.title })),
+  taskProjects: tasksTree.value.projects.map((p) => ({
+    id: p.id,
+    clientId: p.clientId,
+    name: p.name
+  })),
+  taskItems: tasksTree.value.tasks.map((t) => ({
+    id: t.id,
+    projectId: t.projectId,
+    title: t.title
+  })),
   journalNotesCreateUrl: props.journalNotesCreateUrl,
   journalNotesGetUrl: props.journalNotesGetUrl,
   journalNotesUpdateUrl: props.journalNotesUpdateUrl,
@@ -393,7 +425,7 @@ const notebookPaneProps = computed(() => ({
   notebookCategoriesListUrl: props.notebookCategoriesListUrl,
   notebookCategoriesCreateUrl: props.notebookCategoriesCreateUrl,
   notebookCategoriesUpdateUrl: props.notebookCategoriesUpdateUrl,
-  notebookCategoriesDeleteUrl: props.notebookCategoriesDeleteUrl,
+  notebookCategoriesDeleteUrl: props.notebookCategoriesDeleteUrl
 }))
 
 const inboxPaneProps = computed(() => ({
@@ -403,27 +435,29 @@ const inboxPaneProps = computed(() => ({
   inboxNotesGetUrl: props.inboxNotesGetUrl,
   inboxNotesUpdateUrl: props.inboxNotesUpdateUrl,
   inboxNotesArchiveUrl: props.inboxNotesArchiveUrl,
-  inboxNotesDeleteUrl: props.inboxNotesDeleteUrl,
+  inboxNotesDeleteUrl: props.inboxNotesDeleteUrl
 }))
 
 const tasksPaneProps = computed(() => ({
   isAuthenticated: props.isAuthenticated,
   tasksTreeInitial:
-    props.tasksTreeInitial != null ? props.tasksTreeInitial : { clients: [], projects: [], tasks: [] },
+    props.tasksTreeInitial != null
+      ? props.tasksTreeInitial
+      : { clients: [], projects: [], tasks: [] },
   tasksTreeGetUrl: props.tasksTreeGetUrl != null ? props.tasksTreeGetUrl : '',
   taskItemReorderDayUrl: props.taskItemReorderDayUrl != null ? props.taskItemReorderDayUrl : '',
   taskReleaseDayUrl: props.taskReleaseDayUrl != null ? props.taskReleaseDayUrl : '',
   taskItemUpdateUrl: props.taskItemUpdateUrl != null ? props.taskItemUpdateUrl : '',
   tasksPageUrl: props.tasksPageUrl != null ? props.tasksPageUrl : '',
   toolsControlUrl: props.toolsControlUrl != null ? props.toolsControlUrl : '',
-  timezoneOffsetHours: props.timezoneOffsetHours,
+  timezoneOffsetHours: props.timezoneOffsetHours
 }))
 
 const dayInDevelopmentPaneProps = computed(() => ({
   isAuthenticated: props.isAuthenticated,
   journalDayGetUrl: props.journalDayGetUrl != null ? props.journalDayGetUrl : '',
   journalDaySaveUrl: props.journalDaySaveUrl != null ? props.journalDaySaveUrl : '',
-  journalDayEntryInitial: props.journalDayEntryInitial != null ? props.journalDayEntryInitial : null,
+  journalDayEntryInitial: props.journalDayEntryInitial != null ? props.journalDayEntryInitial : null
 }))
 
 const panePropsForTab = computed(() => {
@@ -438,7 +472,8 @@ const panePropsForTab = computed(() => {
       journalWeekSaveUrl: props.journalWeekSaveUrl != null ? props.journalWeekSaveUrl : '',
       journalWeekSaveSummaryUrl:
         props.journalWeekSaveSummaryUrl != null ? props.journalWeekSaveSummaryUrl : '',
-      journalWeekEntryInitial: props.journalWeekEntryInitial != null ? props.journalWeekEntryInitial : null,
+      journalWeekEntryInitial:
+        props.journalWeekEntryInitial != null ? props.journalWeekEntryInitial : null
     }
   }
   if (activeTab.value === 'month') {
@@ -448,7 +483,7 @@ const panePropsForTab = computed(() => {
       journalDayGetUrl: props.journalDayGetUrl != null ? props.journalDayGetUrl : '',
       journalDaySaveUrl: props.journalDaySaveUrl != null ? props.journalDaySaveUrl : '',
       journalWeekGetUrl: props.journalWeekGetUrl != null ? props.journalWeekGetUrl : '',
-      journalWeekSaveUrl: props.journalWeekSaveUrl != null ? props.journalWeekSaveUrl : '',
+      journalWeekSaveUrl: props.journalWeekSaveUrl != null ? props.journalWeekSaveUrl : ''
     }
   }
   if (activeTab.value === 'habits') {
@@ -456,7 +491,7 @@ const panePropsForTab = computed(() => {
       isAuthenticated: props.isAuthenticated,
       journalHabitsGetUrl: props.journalHabitsGetUrl != null ? props.journalHabitsGetUrl : '',
       journalHabitsSaveUrl: props.journalHabitsSaveUrl != null ? props.journalHabitsSaveUrl : '',
-      journalHabitsInitial: props.journalHabitsInitial != null ? props.journalHabitsInitial : null,
+      journalHabitsInitial: props.journalHabitsInitial != null ? props.journalHabitsInitial : null
     }
   }
   return {}

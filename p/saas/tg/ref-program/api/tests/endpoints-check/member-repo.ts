@@ -77,7 +77,7 @@ export const memberRepoTestRoute = app.get('/', async (ctx, req) => {
             type_campaignId: typeof campaignId,
             type_userId: typeof userId
           }
-        });
+        })
         await loggerLib.writeServerLog(ctx, {
           severity: 7,
           message: `[${LOG_PATH}] Тест addMember: входные значения`,
@@ -99,7 +99,9 @@ export const memberRepoTestRoute = app.get('/', async (ctx, req) => {
         await loggerLib.writeServerLog(ctx, {
           severity: passed ? 7 : 4,
           message: `[${LOG_PATH}] Тест addMember: ${passed ? 'OK' : 'FAIL'}`,
-          payload: passed ? { memberId: member.id } : { member: member != null ? Object.keys(member) : null }
+          payload: passed
+            ? { memberId: member.id }
+            : { member: member != null ? Object.keys(member) : null }
         })
       } catch (e) {
         const errMsg = (e as Error)?.message ?? String(e)
@@ -157,7 +159,11 @@ export const memberRepoTestRoute = app.get('/', async (ctx, req) => {
           message: `[${LOG_PATH}] Тест checkCampaignAccess (нет доступа): запуск`,
           payload: { campaignId, fakeUserId: 'fake-user-id-xyz-123' }
         })
-        const noAccess = await memberRepo.checkCampaignAccess(ctx, campaignId, 'fake-user-id-xyz-123')
+        const noAccess = await memberRepo.checkCampaignAccess(
+          ctx,
+          campaignId,
+          'fake-user-id-xyz-123'
+        )
         const passed = noAccess.hasAccess === false && noAccess.role === null
         results.push({
           id: 'checkCampaignAccess-noAccess',

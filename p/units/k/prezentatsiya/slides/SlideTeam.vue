@@ -4,14 +4,12 @@
       <div class="glow-orb orb-1"></div>
       <div class="glow-orb orb-2"></div>
     </div>
-    
+
     <div class="container">
       <!-- Заголовок + стоимость в одном ряду -->
       <div class="top-section">
         <div class="titles">
-          <h2 class="title">
-            За Chatium — <span class="gradient-text">8 лет разработки</span>
-          </h2>
+          <h2 class="title">За Chatium — <span class="gradient-text">8 лет разработки</span></h2>
           <p class="subtitle">Создатели Геткурс, Мегаплан, Финолог</p>
         </div>
         <div class="cost-badge">
@@ -56,13 +54,41 @@
 defineProps({ active: Boolean })
 
 const team = [
-  { name: 'Тимур Каримбаев', position: 'CEO', photo: 'https://fs.chatium.ru/thumbnail/image_msk_P70ueZO8Qu.2257x3385.jpeg/s/400x' },
-  { name: 'Артур Эшенбренер', position: 'Директор Ботана', photo: 'https://fs.chatium.ru/thumbnail/image_msk_qMETMGEC9Z.3523x2318.jpeg/s/400x' },
-  { name: 'Александр Галченков', position: 'Продукт', photo: 'https://fs.chatium.ru/thumbnail/image_msk_3abUfStTH2.3544x4250.jpeg/s/400x' },
-  { name: 'Давид Галоян', position: 'CTO', photo: 'https://fs.chatium.ru/thumbnail/image_msk_A46XUoVA0q.3548x4236.jpeg/s/400x' },
-  { name: 'Ратмир Насыров', position: 'Интеграции', photo: 'https://fs.chatium.ru/thumbnail/image_msk_4GooGn1Y5K.3433x3947.jpeg/s/400x' },
-  { name: 'Даниил Бондаренко', position: 'Леночка', photo: 'https://fs.chatium.ru/thumbnail/image_msk_Tx9OFRnizo.3567x5351.jpeg/s/400x' },
-  { name: 'Денис Карасик', position: 'Инженер', photo: 'https://fs.chatium.ru/thumbnail/image_msk_TazTT3UuvY.3574x5361.jpeg/s/400x' },
+  {
+    name: 'Тимур Каримбаев',
+    position: 'CEO',
+    photo: 'https://fs.chatium.ru/thumbnail/image_msk_P70ueZO8Qu.2257x3385.jpeg/s/400x'
+  },
+  {
+    name: 'Артур Эшенбренер',
+    position: 'Директор Ботана',
+    photo: 'https://fs.chatium.ru/thumbnail/image_msk_qMETMGEC9Z.3523x2318.jpeg/s/400x'
+  },
+  {
+    name: 'Александр Галченков',
+    position: 'Продукт',
+    photo: 'https://fs.chatium.ru/thumbnail/image_msk_3abUfStTH2.3544x4250.jpeg/s/400x'
+  },
+  {
+    name: 'Давид Галоян',
+    position: 'CTO',
+    photo: 'https://fs.chatium.ru/thumbnail/image_msk_A46XUoVA0q.3548x4236.jpeg/s/400x'
+  },
+  {
+    name: 'Ратмир Насыров',
+    position: 'Интеграции',
+    photo: 'https://fs.chatium.ru/thumbnail/image_msk_4GooGn1Y5K.3433x3947.jpeg/s/400x'
+  },
+  {
+    name: 'Даниил Бондаренко',
+    position: 'Леночка',
+    photo: 'https://fs.chatium.ru/thumbnail/image_msk_Tx9OFRnizo.3567x5351.jpeg/s/400x'
+  },
+  {
+    name: 'Денис Карасик',
+    position: 'Инженер',
+    photo: 'https://fs.chatium.ru/thumbnail/image_msk_TazTT3UuvY.3574x5361.jpeg/s/400x'
+  }
 ]
 </script>
 
@@ -146,8 +172,13 @@ const team = [
 }
 
 @keyframes gradient-shift {
-  0%, 100% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
 }
 
 .subtitle {
@@ -158,8 +189,8 @@ const team = [
 
 .cost-badge {
   flex-shrink: 0;
-  background: linear-gradient(135deg, rgba(245,158,11,0.12), rgba(251,191,36,0.06));
-  border: 1px solid rgba(245,158,11,0.3);
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.12), rgba(251, 191, 36, 0.06));
+  border: 1px solid rgba(245, 158, 11, 0.3);
   border-radius: 20px;
   padding: 18px 32px;
   text-align: center;

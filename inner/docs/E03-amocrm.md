@@ -1,9 +1,11 @@
 @chatium
+
 # AmoCRM API v4: Полное руководство для Chatium
 
 Исчерпывающее руководство по интеграции AmoCRM в Chatium. Документ адаптирован для использования с `@app/request` и покрывает все аспекты работы с AmoCRM API v4.
 
 **Источники документации:**
+
 - [Официальная документация AmoCRM API](https://www.amocrm.ru/developers/)
 - [AmoCRM API Reference](https://www.amocrm.ru/developers/content/crm_platform/api-reference)
 
@@ -89,13 +91,14 @@
 
 **⚠️ Важно: Разные URL для разных целей!**
 
-| Цель | URL | Пример |
-|------|-----|--------|
-| **Авторизация OAuth** | `https://www.amocrm.ru/oauth` | Получение кода авторизации |
-| **API запросы** | `https://{subdomain}.amocrm.ru/api/v4/...` | Работа с данными |
-| **Обмен токенов** | `https://{subdomain}.amocrm.ru/oauth2/access_token` | Получение/обновление токенов |
+| Цель                  | URL                                                 | Пример                       |
+| --------------------- | --------------------------------------------------- | ---------------------------- |
+| **Авторизация OAuth** | `https://www.amocrm.ru/oauth`                       | Получение кода авторизации   |
+| **API запросы**       | `https://{subdomain}.amocrm.ru/api/v4/...`          | Работа с данными             |
+| **Обмен токенов**     | `https://{subdomain}.amocrm.ru/oauth2/access_token` | Получение/обновление токенов |
 
 **Общие параметры:**
+
 - **Авторизация**: OAuth 2.0 (Bearer token)
 - **Формат**: JSON (application/json)
 - **Документация**: https://www.amocrm.ru/developers/
@@ -133,10 +136,12 @@ AmoCRM использует OAuth 2.0 по схеме Authorization Code Grant.
 ```
 
 **Почему так?**
+
 - **www.amocrm.ru** — единый сервер авторизации для всех аккаунтов
 - **{subdomain}.amocrm.ru** — используется только для API запросов (обмен кода, получение данных)
 
 **Формат URL авторизации**:
+
 ```
 https://www.amocrm.ru/oauth
   ?client_id={CLIENT_ID}
@@ -146,6 +151,7 @@ https://www.amocrm.ru/oauth
 ```
 
 После успешной авторизации пользователь будет перенаправлен на:
+
 ```
 {redirect_uri}?code={AUTH_CODE}&state={STATE}
 ```
@@ -155,7 +161,7 @@ https://www.amocrm.ru/oauth
 **Обмен кода на токены**:
 
 ```typescript
-import { request } from "@app/request"
+import { request } from '@app/request'
 
 async function exchangeCodeForTokens(
   ctx,
@@ -183,32 +189,32 @@ async function exchangeCodeForTokens(
       responseType: 'json',
       throwHttpErrors: false
     })
-    
+
     if (response.statusCode === 200) {
       ctx.account.log('AmoCRM: токены успешно получены', {
         level: 'info',
-        json: { 
+        json: {
           hasAccessToken: !!response.body.access_token,
           expiresIn: response.body.expires_in
         }
       })
-      
+
       return {
         success: true,
         accessToken: response.body.access_token,
         refreshToken: response.body.refresh_token,
-        expiresIn: response.body.expires_in  // 86400 (24 часа)
+        expiresIn: response.body.expires_in // 86400 (24 часа)
       }
     }
-    
+
     ctx.account.log('AmoCRM: ошибка обмена кода на токены', {
       level: 'error',
-      json: { 
+      json: {
         status: response.statusCode,
         errorBody: response.body
       }
     })
-    
+
     return {
       success: false,
       error: response.body?.title || 'Token exchange failed'
@@ -228,7 +234,7 @@ async function exchangeCodeForTokens(
 `access_token` живёт 24 часа, обновляйте через `refresh_token`:
 
 ```typescript
-import { request } from "@app/request"
+import { request } from '@app/request'
 
 async function refreshAccessToken(
   ctx,
@@ -254,7 +260,7 @@ async function refreshAccessToken(
       responseType: 'json',
       throwHttpErrors: false
     })
-    
+
     if (response.statusCode === 200) {
       return {
         success: true,
@@ -263,7 +269,7 @@ async function refreshAccessToken(
         expiresIn: response.body.expires_in
       }
     }
-    
+
     return {
       success: false,
       error: 'Token refresh failed',
@@ -307,7 +313,7 @@ export const AmoCRMTokens = Heap.Table('amocrm_tokens', {
 async function saveTokens(ctx, subdomain: string, tokens) {
   const expiresAt = new Date()
   expiresAt.setSeconds(expiresAt.getSeconds() + tokens.expiresIn)
-  
+
   await AmoCRMTokens.createOrUpdateBy(ctx, 'subdomain', {
     subdomain,
     accountName: subdomain,
@@ -315,7 +321,7 @@ async function saveTokens(ctx, subdomain: string, tokens) {
     refreshToken: tokens.refreshToken,
     expiresAt
   })
-  
+
   ctx.account.log('AmoCRM tokens saved', {
     level: 'info',
     json: { subdomain }
@@ -325,15 +331,15 @@ async function saveTokens(ctx, subdomain: string, tokens) {
 // Получение актуального токена с автообновлением
 async function getValidAccessToken(ctx, subdomain: string, clientId: string, clientSecret: string) {
   const tokenRecord = await AmoCRMTokens.findOneBy(ctx, { subdomain })
-  
+
   if (!tokenRecord) {
     return { success: false, error: 'Tokens not found' }
   }
-  
+
   // Проверяем срок действия
   const now = new Date()
   const expiresAt = new Date(tokenRecord.expiresAt)
-  
+
   // Если токен истёк или истечёт в ближайшие 5 минут — обновляем
   if (expiresAt.getTime() - now.getTime() < 5 * 60 * 1000) {
     const refreshed = await refreshAccessToken(
@@ -343,15 +349,15 @@ async function getValidAccessToken(ctx, subdomain: string, clientId: string, cli
       clientSecret,
       tokenRecord.refreshToken
     )
-    
+
     if (refreshed.success) {
       await saveTokens(ctx, subdomain, refreshed)
       return { success: true, token: refreshed.accessToken }
     }
-    
+
     return refreshed
   }
-  
+
   return { success: true, token: tokenRecord.accessToken }
 }
 ```
@@ -363,7 +369,7 @@ async function getValidAccessToken(ctx, subdomain: string, clientId: string, cli
 Создайте универсальную функцию для запросов к AmoCRM:
 
 ```typescript
-import { request } from "@app/request"
+import { request } from '@app/request'
 
 interface AmoCRMRequestOptions {
   subdomain: string
@@ -376,47 +382,47 @@ interface AmoCRMRequestOptions {
 
 async function amoCRMRequest(options: AmoCRMRequestOptions) {
   const { subdomain, accessToken, endpoint, method, data, params } = options
-  
+
   const baseUrl = `https://${subdomain}.amocrm.ru`
   let url = `${baseUrl}${endpoint}`
-  
+
   // Добавляем query параметры
   if (params) {
     const queryParams = new URLSearchParams()
     Object.entries(params).forEach(([key, value]) => {
       if (Array.isArray(value)) {
-        value.forEach(v => queryParams.append(`${key}[]`, String(v)))
+        value.forEach((v) => queryParams.append(`${key}[]`, String(v)))
       } else {
         queryParams.append(key, String(value))
       }
     })
     url += `?${queryParams}`
   }
-  
+
   try {
     const response = await request({
       url,
       method,
       headers: {
-        'Authorization': `Bearer ${accessToken}`,
+        Authorization: `Bearer ${accessToken}`,
         'Content-Type': 'application/json',
-        'Accept': 'application/json'
+        Accept: 'application/json'
       },
       json: data,
       responseType: 'json',
       throwHttpErrors: false
     })
-    
+
     if (response.statusCode >= 200 && response.statusCode < 300) {
       return {
         success: true,
         data: response.body
       }
     }
-    
+
     // Обработка ошибок
     const errorDetail = response.body?.detail || response.body?.title || 'API error'
-    
+
     ctx.account.log('AmoCRM API error', {
       level: 'error',
       json: {
@@ -426,7 +432,7 @@ async function amoCRMRequest(options: AmoCRMRequestOptions) {
         error: errorDetail
       }
     })
-    
+
     return {
       success: false,
       error: errorDetail,
@@ -453,26 +459,26 @@ async function amoCRMRequest(options: AmoCRMRequestOptions) {
 ```typescript
 export const apiGetAccountInfoRoute = app.get('/account-info', async (ctx, req) => {
   const { subdomain } = req.query
-  
+
   const token = await getValidAccessToken(ctx, subdomain, clientId, clientSecret)
-  
+
   if (!token.success) {
     return token
   }
-  
+
   const result = await amoCRMRequest({
     subdomain,
     accessToken: token.token,
     endpoint: '/api/v4/account',
     method: 'get',
     params: {
-      with: 'users,task_types,pipelines,custom_fields'  // Опционально
+      with: 'users,task_types,pipelines,custom_fields' // Опционально
     }
   })
-  
+
   if (result.success) {
     const account = result.data
-    
+
     return {
       success: true,
       account: {
@@ -488,12 +494,13 @@ export const apiGetAccountInfoRoute = app.get('/account-info', async (ctx, req) 
       }
     }
   }
-  
+
   return result
 })
 ```
 
 **Возвращаемые данные:**
+
 - `id` — идентификатор аккаунта
 - `name` — название аккаунта
 - `subdomain` — поддомен
@@ -518,10 +525,10 @@ interface User {
   id: number
   name: string
   email: string
-  lang: string  // ru, en
+  lang: string // ru, en
   rights: {
     leads: {
-      view: 'A' | 'D' | 'M'  // All, Department, My
+      view: 'A' | 'D' | 'M' // All, Department, My
       edit: 'A' | 'D' | 'M'
       add: 'A' | 'D' | 'M'
       delete: 'A' | 'D' | 'M'
@@ -537,13 +544,13 @@ interface User {
 ```typescript
 export const apiGetUsersRoute = app.get('/users', async (ctx, req) => {
   const { subdomain, limit = 50 } = req.query
-  
+
   const token = await getValidAccessToken(ctx, subdomain, clientId, clientSecret)
-  
+
   if (!token.success) {
     return token
   }
-  
+
   const result = await amoCRMRequest({
     subdomain,
     accessToken: token.token,
@@ -551,17 +558,17 @@ export const apiGetUsersRoute = app.get('/users', async (ctx, req) => {
     method: 'get',
     params: {
       limit,
-      with: 'role,group'  // Дополнительная информация
+      with: 'role,group' // Дополнительная информация
     }
   })
-  
+
   if (result.success) {
     return {
       success: true,
       users: result.data._embedded?.users || []
     }
   }
-  
+
   return result
 })
 ```
@@ -572,20 +579,20 @@ export const apiGetUsersRoute = app.get('/users', async (ctx, req) => {
 export const apiGetUserRoute = app.get('/user/:userId', async (ctx, req) => {
   const { userId } = req.params
   const { subdomain } = req.query
-  
+
   const token = await getValidAccessToken(ctx, subdomain, clientId, clientSecret)
-  
+
   if (!token.success) {
     return token
   }
-  
+
   const result = await amoCRMRequest({
     subdomain,
     accessToken: token.token,
     endpoint: `/api/v4/users/${userId}`,
     method: 'get'
   })
-  
+
   return result
 })
 ```
@@ -624,13 +631,13 @@ interface Lead {
   responsible_user_id: number
   created_by: number
   updated_by: number
-  created_at: number  // Unix timestamp
+  created_at: number // Unix timestamp
   updated_at: number
   custom_fields_values?: CustomFieldValue[]
   _embedded?: {
     contacts?: Array<{ id: number }>
     companies?: Array<{ id: number }>
-    tags?: Array<{ id: number, name: string }>
+    tags?: Array<{ id: number; name: string }>
   }
 }
 ```
@@ -642,13 +649,13 @@ import { amoCRMRequest } from './amocrmClient'
 
 export const apiGetLeadsRoute = app.get('/leads', async (ctx, req) => {
   const { subdomain, limit = 20, page = 1 } = req.query
-  
+
   const token = await getValidAccessToken(ctx, subdomain, clientId, clientSecret)
-  
+
   if (!token.success) {
     return token
   }
-  
+
   const result = await amoCRMRequest({
     subdomain,
     accessToken: token.token,
@@ -659,14 +666,14 @@ export const apiGetLeadsRoute = app.get('/leads', async (ctx, req) => {
       page: parseInt(page as string)
     }
   })
-  
+
   if (result.success) {
     return {
       success: true,
       leads: result.data._embedded?.leads || []
     }
   }
-  
+
   return result
 })
 ```
@@ -677,20 +684,20 @@ export const apiGetLeadsRoute = app.get('/leads', async (ctx, req) => {
 export const apiGetLeadRoute = app.get('/lead/:leadId', async (ctx, req) => {
   const { leadId } = req.params
   const { subdomain } = req.query
-  
+
   const token = await getValidAccessToken(ctx, subdomain, clientId, clientSecret)
-  
+
   if (!token.success) {
     return token
   }
-  
+
   const result = await amoCRMRequest({
     subdomain,
     accessToken: token.token,
     endpoint: `/api/v4/leads/${leadId}`,
     method: 'get'
   })
-  
+
   return result
 })
 ```
@@ -700,42 +707,44 @@ export const apiGetLeadRoute = app.get('/lead/:leadId', async (ctx, req) => {
 ```typescript
 export const apiCreateLeadRoute = app.post('/create-lead', async (ctx, req) => {
   const { subdomain, lead } = req.body
-  
+
   const token = await getValidAccessToken(ctx, subdomain, clientId, clientSecret)
-  
+
   if (!token.success) {
     return token
   }
-  
+
   const result = await amoCRMRequest({
     subdomain,
     accessToken: token.token,
     endpoint: '/api/v4/leads',
     method: 'post',
-    data: [{
-      name: lead.name,
-      price: lead.price,
-      pipeline_id: lead.pipelineId,
-      status_id: lead.statusId,
-      responsible_user_id: lead.responsibleUserId,
-      custom_fields_values: lead.customFields || []
-    }]
+    data: [
+      {
+        name: lead.name,
+        price: lead.price,
+        pipeline_id: lead.pipelineId,
+        status_id: lead.statusId,
+        responsible_user_id: lead.responsibleUserId,
+        custom_fields_values: lead.customFields || []
+      }
+    ]
   })
-  
+
   if (result.success) {
     const createdLead = result.data._embedded?.leads?.[0]
-    
+
     ctx.account.log('AmoCRM lead created', {
       level: 'info',
       json: { leadId: createdLead?.id }
     })
-    
+
     return {
       success: true,
       lead: createdLead
     }
   }
-  
+
   return result
 })
 ```
@@ -745,13 +754,13 @@ export const apiCreateLeadRoute = app.post('/create-lead', async (ctx, req) => {
 ```typescript
 export const apiUpdateLeadRoute = app.post('/update-lead', async (ctx, req) => {
   const { subdomain, leadId, updates } = req.body
-  
+
   const token = await getValidAccessToken(ctx, subdomain, clientId, clientSecret)
-  
+
   if (!token.success) {
     return token
   }
-  
+
   const result = await amoCRMRequest({
     subdomain,
     accessToken: token.token,
@@ -759,14 +768,14 @@ export const apiUpdateLeadRoute = app.post('/update-lead', async (ctx, req) => {
     method: 'patch',
     data: updates
   })
-  
+
   if (result.success) {
     ctx.account.log('AmoCRM lead updated', {
       level: 'info',
       json: { leadId }
     })
   }
-  
+
   return result
 })
 ```
@@ -780,13 +789,13 @@ AmoCRM поддерживает мощные возможности фильтр
 ```typescript
 export const apiFilterLeadsRoute = app.get('/leads/filter', async (ctx, req) => {
   const { subdomain } = req.query
-  
+
   const token = await getValidAccessToken(ctx, subdomain, clientId, clientSecret)
-  
+
   if (!token.success) {
     return token
   }
-  
+
   const result = await amoCRMRequest({
     subdomain,
     accessToken: token.token,
@@ -795,36 +804,36 @@ export const apiFilterLeadsRoute = app.get('/leads/filter', async (ctx, req) => 
     params: {
       // Фильтр по ID
       'filter[id]': [123, 456, 789],
-      
+
       // Фильтр по статусу
       'filter[statuses][0][pipeline_id]': 123,
       'filter[statuses][0][status_id]': [456, 789],
-      
+
       // Фильтр по ответственному
       'filter[responsible_user_id]': [100, 200],
-      
+
       // Фильтр по дате создания (timestamp)
-      'filter[created_at][from]': 1609459200,  // с 01.01.2021
-      'filter[created_at][to]': 1640995199,    // до 31.12.2021
-      
+      'filter[created_at][from]': 1609459200, // с 01.01.2021
+      'filter[created_at][to]': 1640995199, // до 31.12.2021
+
       // Фильтр по дате обновления
       'filter[updated_at][from]': 1609459200,
-      
+
       // Фильтр по цене
       'filter[price][from]': 1000,
       'filter[price][to]': 10000,
-      
+
       // Фильтр по дате закрытия
       'filter[closed_at][from]': 1609459200,
-      
+
       // Сортировка
-      'order[created_at]': 'asc',  // или 'desc'
-      
-      limit: 250,  // Максимум 250
+      'order[created_at]': 'asc', // или 'desc'
+
+      limit: 250, // Максимум 250
       page: 1
     }
   })
-  
+
   return result
 })
 ```
@@ -834,13 +843,13 @@ export const apiFilterLeadsRoute = app.get('/leads/filter', async (ctx, req) => 
 ```typescript
 export const apiSearchLeadsRoute = app.get('/leads/search', async (ctx, req) => {
   const { subdomain, query } = req.query
-  
+
   const token = await getValidAccessToken(ctx, subdomain, clientId, clientSecret)
-  
+
   if (!token.success) {
     return token
   }
-  
+
   // Поиск по названию, email, телефону и т.д.
   const result = await amoCRMRequest({
     subdomain,
@@ -848,11 +857,11 @@ export const apiSearchLeadsRoute = app.get('/leads/search', async (ctx, req) => 
     endpoint: '/api/v4/leads',
     method: 'get',
     params: {
-      query,  // Поисковый запрос
+      query, // Поисковый запрос
       limit: 50
     }
   })
-  
+
   if (result.success) {
     return {
       success: true,
@@ -860,7 +869,7 @@ export const apiSearchLeadsRoute = app.get('/leads/search', async (ctx, req) => 
       total: result.data._page?.total_items
     }
   }
-  
+
   return result
 })
 ```
@@ -882,7 +891,7 @@ const result = await amoCRMRequest({
 
 // В ответе будет _embedded с запрошенными данными
 const leads = result.data._embedded?.leads || []
-leads.forEach(lead => {
+leads.forEach((lead) => {
   const contacts = lead._embedded?.contacts || []
   const companies = lead._embedded?.companies || []
   const tags = lead._embedded?.tags || []
@@ -908,7 +917,7 @@ interface Contact {
   created_at: number
   updated_at: number
   custom_fields_values?: Array<{
-    field_code?: string  // PHONE, EMAIL
+    field_code?: string // PHONE, EMAIL
     field_id?: number
     values: Array<{
       value: string
@@ -923,13 +932,13 @@ interface Contact {
 ```typescript
 export const apiGetContactsRoute = app.get('/contacts', async (ctx, req) => {
   const { subdomain, limit = 50 } = req.query
-  
+
   const token = await getValidAccessToken(ctx, subdomain, clientId, clientSecret)
-  
+
   if (!token.success) {
     return token
   }
-  
+
   const result = await amoCRMRequest({
     subdomain,
     accessToken: token.token,
@@ -937,14 +946,14 @@ export const apiGetContactsRoute = app.get('/contacts', async (ctx, req) => {
     method: 'get',
     params: { limit }
   })
-  
+
   if (result.success) {
     return {
       success: true,
       contacts: result.data._embedded?.contacts || []
     }
   }
-  
+
   return result
 })
 ```
@@ -954,50 +963,52 @@ export const apiGetContactsRoute = app.get('/contacts', async (ctx, req) => {
 ```typescript
 export const apiCreateContactRoute = app.post('/create-contact', async (ctx, req) => {
   const { subdomain, contact } = req.body
-  
+
   const token = await getValidAccessToken(ctx, subdomain, clientId, clientSecret)
-  
+
   if (!token.success) {
     return token
   }
-  
+
   const result = await amoCRMRequest({
     subdomain,
     accessToken: token.token,
     endpoint: '/api/v4/contacts',
     method: 'post',
-    data: [{
-      name: contact.name,
-      first_name: contact.firstName,
-      last_name: contact.lastName,
-      responsible_user_id: contact.responsibleUserId,
-      custom_fields_values: [
-        {
-          field_code: 'PHONE',
-          values: [{ value: contact.phone }]
-        },
-        {
-          field_code: 'EMAIL',
-          values: [{ value: contact.email }]
-        }
-      ]
-    }]
+    data: [
+      {
+        name: contact.name,
+        first_name: contact.firstName,
+        last_name: contact.lastName,
+        responsible_user_id: contact.responsibleUserId,
+        custom_fields_values: [
+          {
+            field_code: 'PHONE',
+            values: [{ value: contact.phone }]
+          },
+          {
+            field_code: 'EMAIL',
+            values: [{ value: contact.email }]
+          }
+        ]
+      }
+    ]
   })
-  
+
   if (result.success) {
     const createdContact = result.data._embedded?.contacts?.[0]
-    
+
     ctx.account.log('AmoCRM contact created', {
       level: 'info',
       json: { contactId: createdContact?.id }
     })
-    
+
     return {
       success: true,
       contact: createdContact
     }
   }
-  
+
   return result
 })
 ```
@@ -1007,13 +1018,13 @@ export const apiCreateContactRoute = app.post('/create-contact', async (ctx, req
 ```typescript
 export const apiUpdateContactRoute = app.post('/update-contact', async (ctx, req) => {
   const { subdomain, contactId, updates } = req.body
-  
+
   const token = await getValidAccessToken(ctx, subdomain, clientId, clientSecret)
-  
+
   if (!token.success) {
     return token
   }
-  
+
   const result = await amoCRMRequest({
     subdomain,
     accessToken: token.token,
@@ -1021,7 +1032,7 @@ export const apiUpdateContactRoute = app.post('/update-contact', async (ctx, req
     method: 'patch',
     data: updates
   })
-  
+
   return result
 })
 ```
@@ -1031,13 +1042,13 @@ export const apiUpdateContactRoute = app.post('/update-contact', async (ctx, req
 ```typescript
 export const apiSearchContactsRoute = app.get('/contacts/search', async (ctx, req) => {
   const { subdomain, query } = req.query
-  
+
   const token = await getValidAccessToken(ctx, subdomain, clientId, clientSecret)
-  
+
   if (!token.success) {
     return token
   }
-  
+
   // Поиск по имени, email, телефону
   const result = await amoCRMRequest({
     subdomain,
@@ -1047,10 +1058,10 @@ export const apiSearchContactsRoute = app.get('/contacts/search', async (ctx, re
     params: {
       query,
       limit: 250,
-      with: 'leads,customers,catalog_elements'  // Связанные сущности
+      with: 'leads,customers,catalog_elements' // Связанные сущности
     }
   })
-  
+
   if (result.success) {
     return {
       success: true,
@@ -1058,7 +1069,7 @@ export const apiSearchContactsRoute = app.get('/contacts/search', async (ctx, re
       total: result.data._page?.total_items
     }
   }
-  
+
   return result
 })
 ```
@@ -1094,32 +1105,34 @@ params: {
 ```typescript
 export const apiCreateCompanyRoute = app.post('/create-company', async (ctx, req) => {
   const { subdomain, company } = req.body
-  
+
   const token = await getValidAccessToken(ctx, subdomain, clientId, clientSecret)
-  
+
   if (!token.success) {
     return token
   }
-  
+
   const result = await amoCRMRequest({
     subdomain,
     accessToken: token.token,
     endpoint: '/api/v4/companies',
     method: 'post',
-    data: [{
-      name: company.name,
-      responsible_user_id: company.responsibleUserId,
-      custom_fields_values: company.customFields || []
-    }]
+    data: [
+      {
+        name: company.name,
+        responsible_user_id: company.responsibleUserId,
+        custom_fields_values: company.customFields || []
+      }
+    ]
   })
-  
+
   if (result.success) {
     return {
       success: true,
       company: result.data._embedded?.companies?.[0]
     }
   }
-  
+
   return result
 })
 ```
@@ -1135,26 +1148,26 @@ export const apiCreateCompanyRoute = app.post('/create-company', async (ctx, req
 ```typescript
 export const apiGetPipelinesRoute = app.get('/pipelines', async (ctx, req) => {
   const { subdomain } = req.query
-  
+
   const token = await getValidAccessToken(ctx, subdomain, clientId, clientSecret)
-  
+
   if (!token.success) {
     return token
   }
-  
+
   const result = await amoCRMRequest({
     subdomain,
     accessToken: token.token,
     endpoint: '/api/v4/leads/pipelines',
     method: 'get'
   })
-  
+
   if (result.success) {
     const pipelines = result.data._embedded?.pipelines || []
-    
+
     return {
       success: true,
-      pipelines: pipelines.map(p => ({
+      pipelines: pipelines.map((p) => ({
         id: p.id,
         name: p.name,
         isMain: p.is_main,
@@ -1162,7 +1175,7 @@ export const apiGetPipelinesRoute = app.get('/pipelines', async (ctx, req) => {
       }))
     }
   }
-  
+
   return result
 })
 ```
@@ -1173,13 +1186,13 @@ export const apiGetPipelinesRoute = app.get('/pipelines', async (ctx, req) => {
 // Изменение статуса сделки
 export const apiMoveLeadRoute = app.post('/move-lead', async (ctx, req) => {
   const { subdomain, leadId, statusId, pipelineId } = req.body
-  
+
   const token = await getValidAccessToken(ctx, subdomain, clientId, clientSecret)
-  
+
   if (!token.success) {
     return token
   }
-  
+
   const result = await amoCRMRequest({
     subdomain,
     accessToken: token.token,
@@ -1190,7 +1203,7 @@ export const apiMoveLeadRoute = app.post('/move-lead', async (ctx, req) => {
       pipeline_id: pipelineId
     }
   })
-  
+
   return result
 })
 ```
@@ -1215,62 +1228,70 @@ export const apiMoveLeadRoute = app.post('/move-lead', async (ctx, req) => {
 ```typescript
 export const apiCreateUnsortedFormRoute = app.post('/unsorted/form', async (ctx, req) => {
   const { subdomain, form } = req.body
-  
+
   const token = await getValidAccessToken(ctx, subdomain, clientId, clientSecret)
-  
+
   if (!token.success) {
     return token
   }
-  
+
   const result = await amoCRMRequest({
     subdomain,
     accessToken: token.token,
     endpoint: '/api/v4/leads/unsorted/forms',
     method: 'post',
-    data: [{
-      source_name: form.sourceName || 'Website Form',
-      source_uid: form.sourceUid || `form_${Date.now()}`,
-      pipeline_id: form.pipelineId,
-      created_at: Math.floor(Date.now() / 1000),
-      metadata: {
-        form_id: form.formId,
-        form_name: form.formName,
-        form_page: form.formPage,
-        ip: form.ip,
-        form_sent_at: Math.floor(Date.now() / 1000),
-        referer: form.referer
-      },
-      _embedded: {
-        leads: [{
-          name: form.leadName || 'Заявка с формы',
-          price: form.price || 0
-        }],
-        contacts: form.contact ? [{
-          name: form.contact.name,
-          custom_fields_values: [
+    data: [
+      {
+        source_name: form.sourceName || 'Website Form',
+        source_uid: form.sourceUid || `form_${Date.now()}`,
+        pipeline_id: form.pipelineId,
+        created_at: Math.floor(Date.now() / 1000),
+        metadata: {
+          form_id: form.formId,
+          form_name: form.formName,
+          form_page: form.formPage,
+          ip: form.ip,
+          form_sent_at: Math.floor(Date.now() / 1000),
+          referer: form.referer
+        },
+        _embedded: {
+          leads: [
             {
-              field_code: 'PHONE',
-              values: [{ value: form.contact.phone }]
-            },
-            {
-              field_code: 'EMAIL',
-              values: [{ value: form.contact.email }]
+              name: form.leadName || 'Заявка с формы',
+              price: form.price || 0
             }
-          ]
-        }] : []
+          ],
+          contacts: form.contact
+            ? [
+                {
+                  name: form.contact.name,
+                  custom_fields_values: [
+                    {
+                      field_code: 'PHONE',
+                      values: [{ value: form.contact.phone }]
+                    },
+                    {
+                      field_code: 'EMAIL',
+                      values: [{ value: form.contact.email }]
+                    }
+                  ]
+                }
+              ]
+            : []
+        }
       }
-    }]
+    ]
   })
-  
+
   if (result.success) {
     ctx.account.log('AmoCRM unsorted form created', {
       level: 'info',
-      json: { 
-        uid: result.data._embedded?.unsorted?.[0]?.uid 
+      json: {
+        uid: result.data._embedded?.unsorted?.[0]?.uid
       }
     })
   }
-  
+
   return result
 })
 ```
@@ -1280,55 +1301,63 @@ export const apiCreateUnsortedFormRoute = app.post('/unsorted/form', async (ctx,
 ```typescript
 export const apiCreateUnsortedSipRoute = app.post('/unsorted/sip', async (ctx, req) => {
   const { subdomain, call } = req.body
-  
+
   const token = await getValidAccessToken(ctx, subdomain, clientId, clientSecret)
-  
+
   if (!token.success) {
     return token
   }
-  
+
   const result = await amoCRMRequest({
     subdomain,
     accessToken: token.token,
     endpoint: '/api/v4/leads/unsorted/sip',
     method: 'post',
-    data: [{
-      source_name: call.sourceName || 'Phone System',
-      source_uid: call.sourceUid || `call_${Date.now()}`,
-      pipeline_id: call.pipelineId,
-      created_at: call.calledAt || Math.floor(Date.now() / 1000),
-      metadata: {
-        phone: call.phone,
-        called_at: call.calledAt,
-        duration: call.duration || 0,
-        link: call.recordingUrl,
-        service_code: call.serviceCode || 'custom_pbx',
-        uniq: call.uniq || `call_${Date.now()}_${call.phone}`,
-        is_call_event_needed: true
-      },
-      _embedded: {
-        leads: [{
-          name: `Входящий звонок ${call.phone}`,
-          price: 0
-        }],
-        contacts: [{
-          name: call.contactName || 'Неизвестный',
-          custom_fields_values: [{
-            field_code: 'PHONE',
-            values: [{ value: call.phone }]
-          }]
-        }]
+    data: [
+      {
+        source_name: call.sourceName || 'Phone System',
+        source_uid: call.sourceUid || `call_${Date.now()}`,
+        pipeline_id: call.pipelineId,
+        created_at: call.calledAt || Math.floor(Date.now() / 1000),
+        metadata: {
+          phone: call.phone,
+          called_at: call.calledAt,
+          duration: call.duration || 0,
+          link: call.recordingUrl,
+          service_code: call.serviceCode || 'custom_pbx',
+          uniq: call.uniq || `call_${Date.now()}_${call.phone}`,
+          is_call_event_needed: true
+        },
+        _embedded: {
+          leads: [
+            {
+              name: `Входящий звонок ${call.phone}`,
+              price: 0
+            }
+          ],
+          contacts: [
+            {
+              name: call.contactName || 'Неизвестный',
+              custom_fields_values: [
+                {
+                  field_code: 'PHONE',
+                  values: [{ value: call.phone }]
+                }
+              ]
+            }
+          ]
+        }
       }
-    }]
+    ]
   })
-  
+
   if (result.success) {
     ctx.account.log('AmoCRM unsorted call created', {
       level: 'info',
       json: { uid: result.data._embedded?.unsorted?.[0]?.uid }
     })
   }
-  
+
   return result
 })
 ```
@@ -1338,17 +1367,17 @@ export const apiCreateUnsortedSipRoute = app.post('/unsorted/sip', async (ctx, r
 ```typescript
 export const apiAcceptUnsortedRoute = app.post('/accept-unsorted', async (ctx, req) => {
   const { subdomain, uid, userId, statusId } = req.body
-  
+
   const token = await getValidAccessToken(ctx, subdomain, clientId, clientSecret)
-  
+
   if (!token.success) {
     return token
   }
-  
+
   const data: any = {}
   if (userId) data.user_id = userId
   if (statusId) data.status_id = statusId
-  
+
   const result = await amoCRMRequest({
     subdomain,
     accessToken: token.token,
@@ -1356,14 +1385,14 @@ export const apiAcceptUnsortedRoute = app.post('/accept-unsorted', async (ctx, r
     method: 'post',
     data: Object.keys(data).length > 0 ? data : undefined
   })
-  
+
   if (result.success) {
     ctx.account.log('AmoCRM unsorted accepted', {
       level: 'info',
       json: { uid }
     })
   }
-  
+
   return result
 })
 ```
@@ -1373,13 +1402,13 @@ export const apiAcceptUnsortedRoute = app.post('/accept-unsorted', async (ctx, r
 ```typescript
 export const apiDeclineUnsortedRoute = app.post('/decline-unsorted', async (ctx, req) => {
   const { subdomain, uid, userId } = req.body
-  
+
   const token = await getValidAccessToken(ctx, subdomain, clientId, clientSecret)
-  
+
   if (!token.success) {
     return token
   }
-  
+
   const result = await amoCRMRequest({
     subdomain,
     accessToken: token.token,
@@ -1387,7 +1416,7 @@ export const apiDeclineUnsortedRoute = app.post('/decline-unsorted', async (ctx,
     method: 'delete',
     data: userId ? { user_id: userId } : undefined
   })
-  
+
   return result
 })
 ```
@@ -1397,18 +1426,18 @@ export const apiDeclineUnsortedRoute = app.post('/decline-unsorted', async (ctx,
 ```typescript
 export const apiGetUnsortedRoute = app.get('/unsorted', async (ctx, req) => {
   const { subdomain, category, limit = 100 } = req.query
-  
+
   const token = await getValidAccessToken(ctx, subdomain, clientId, clientSecret)
-  
+
   if (!token.success) {
     return token
   }
-  
+
   const params: any = { limit }
   if (category) {
-    params['filter[category]'] = category  // 'forms', 'sip', 'chats', 'mail'
+    params['filter[category]'] = category // 'forms', 'sip', 'chats', 'mail'
   }
-  
+
   const result = await amoCRMRequest({
     subdomain,
     accessToken: token.token,
@@ -1416,14 +1445,14 @@ export const apiGetUnsortedRoute = app.get('/unsorted', async (ctx, req) => {
     method: 'get',
     params
   })
-  
+
   if (result.success) {
     return {
       success: true,
       unsorted: result.data._embedded?.unsorted || []
     }
   }
-  
+
   return result
 })
 ```
@@ -1439,6 +1468,7 @@ export const apiGetUnsortedRoute = app.get('/unsorted', async (ctx, req) => {
 Вебхуки можно настроить двумя способами:
 
 **Способ 1: Через интерфейс AmoCRM**
+
 1. **Настройки** → **Интеграции** → **Ваша интеграция**
 2. В разделе "Вебхуки" указать URL и события
 
@@ -1451,20 +1481,20 @@ export const apiGetUnsortedRoute = app.get('/unsorted', async (ctx, req) => {
 ```typescript
 export const apiSubscribeWebhookRoute = app.post('/subscribe-webhook', async (ctx, req) => {
   const { subdomain, destination, settings } = req.body
-  
+
   const token = await getValidAccessToken(ctx, subdomain, clientId, clientSecret)
-  
+
   if (!token.success) {
     return token
   }
-  
+
   const result = await amoCRMRequest({
     subdomain,
     accessToken: token.token,
     endpoint: '/api/v4/webhooks',
     method: 'post',
     data: {
-      destination: destination,  // URL для получения вебхуков
+      destination: destination, // URL для получения вебхуков
       settings: settings || [
         'add_lead',
         'update_lead',
@@ -1489,17 +1519,17 @@ export const apiSubscribeWebhookRoute = app.post('/subscribe-webhook', async (ct
       ]
     }
   })
-  
+
   if (result.success) {
     ctx.account.log('AmoCRM webhook subscribed', {
       level: 'info',
-      json: { 
+      json: {
         destination,
         webhookId: result.data.id
       }
     })
   }
-  
+
   return result
 })
 ```
@@ -1509,27 +1539,27 @@ export const apiSubscribeWebhookRoute = app.post('/subscribe-webhook', async (ct
 ```typescript
 export const apiGetWebhooksRoute = app.get('/webhooks', async (ctx, req) => {
   const { subdomain } = req.query
-  
+
   const token = await getValidAccessToken(ctx, subdomain, clientId, clientSecret)
-  
+
   if (!token.success) {
     return token
   }
-  
+
   const result = await amoCRMRequest({
     subdomain,
     accessToken: token.token,
     endpoint: '/api/v4/webhooks',
     method: 'get'
   })
-  
+
   if (result.success) {
     return {
       success: true,
       webhooks: result.data._embedded?.webhooks || []
     }
   }
-  
+
   return result
 })
 ```
@@ -1539,58 +1569,58 @@ export const apiGetWebhooksRoute = app.get('/webhooks', async (ctx, req) => {
 ```typescript
 export const apiUnsubscribeWebhookRoute = app.post('/unsubscribe-webhook', async (ctx, req) => {
   const { subdomain, destination } = req.body
-  
+
   const token = await getValidAccessToken(ctx, subdomain, clientId, clientSecret)
-  
+
   if (!token.success) {
     return token
   }
-  
+
   const result = await amoCRMRequest({
     subdomain,
     accessToken: token.token,
     endpoint: '/api/v4/webhooks',
     method: 'delete',
     data: {
-      destination: destination  // URL вебхука для удаления
+      destination: destination // URL вебхука для удаления
     }
   })
-  
+
   if (result.success) {
     ctx.account.log('AmoCRM webhook unsubscribed', {
       level: 'info',
       json: { destination }
     })
   }
-  
+
   return result
 })
 ```
 
 **Доступные события для подписки:**
 
-| Событие | Описание |
-|---------|----------|
-| `add_lead` | Создание сделки |
-| `update_lead` | Обновление сделки |
-| `delete_lead` | Удаление сделки |
-| `status_lead` | Изменение статуса сделки |
-| `responsible_lead` | Изменение ответственного за сделку |
-| `note_lead` | Добавление примечания к сделке |
-| `add_contact` | Создание контакта |
-| `update_contact` | Обновление контакта |
-| `delete_contact` | Удаление контакта |
-| `responsible_contact` | Изменение ответственного за контакт |
-| `note_contact` | Добавление примечания к контакту |
-| `add_company` | Создание компании |
-| `update_company` | Обновление компании |
-| `delete_company` | Удаление компании |
+| Событие               | Описание                             |
+| --------------------- | ------------------------------------ |
+| `add_lead`            | Создание сделки                      |
+| `update_lead`         | Обновление сделки                    |
+| `delete_lead`         | Удаление сделки                      |
+| `status_lead`         | Изменение статуса сделки             |
+| `responsible_lead`    | Изменение ответственного за сделку   |
+| `note_lead`           | Добавление примечания к сделке       |
+| `add_contact`         | Создание контакта                    |
+| `update_contact`      | Обновление контакта                  |
+| `delete_contact`      | Удаление контакта                    |
+| `responsible_contact` | Изменение ответственного за контакт  |
+| `note_contact`        | Добавление примечания к контакту     |
+| `add_company`         | Создание компании                    |
+| `update_company`      | Обновление компании                  |
+| `delete_company`      | Удаление компании                    |
 | `responsible_company` | Изменение ответственного за компанию |
-| `note_company` | Добавление примечания к компании |
-| `add_task` | Создание задачи |
-| `update_task` | Обновление задачи |
-| `delete_task` | Удаление задачи |
-| `responsible_task` | Изменение ответственного за задачу |
+| `note_company`        | Добавление примечания к компании     |
+| `add_task`            | Создание задачи                      |
+| `update_task`         | Обновление задачи                    |
+| `delete_task`         | Удаление задачи                      |
+| `responsible_task`    | Изменение ответственного за задачу   |
 
 ### Обработка событий
 
@@ -1598,43 +1628,43 @@ export const apiUnsubscribeWebhookRoute = app.post('/unsubscribe-webhook', async
 // Роут для приёма вебхуков
 export const amoCRMWebhookRoute = app.post('/webhook', async (ctx, req) => {
   const payload = req.body
-  
+
   ctx.account.log('AmoCRM webhook received', {
     level: 'info',
     json: { payload }
   })
-  
+
   // Обработка создания сделок
   if (payload?.leads?.add) {
     for (const lead of payload.leads.add) {
       ctx.account.log('New lead from webhook', {
         level: 'info',
-        json: { 
+        json: {
           leadId: lead.id,
           name: lead.name,
           status: lead.status_id
         }
       })
-      
+
       // Ваша логика обработки
       await processNewLead(ctx, lead)
     }
   }
-  
+
   // Обработка обновления сделок
   if (payload?.leads?.update) {
     for (const lead of payload.leads.update) {
       await processLeadUpdate(ctx, lead)
     }
   }
-  
+
   // Обработка контактов
   if (payload?.contacts?.add) {
     for (const contact of payload.contacts.add) {
       await processNewContact(ctx, contact)
     }
   }
-  
+
   // Всегда возвращайте 200
   return { success: true }
 })
@@ -1642,16 +1672,16 @@ export const amoCRMWebhookRoute = app.post('/webhook', async (ctx, req) => {
 
 ### Типы событий
 
-| Сущность | Событие | Ключ в payload |
-|----------|---------|----------------|
-| Сделки | Создание | `leads.add` |
-| Сделки | Обновление | `leads.update` |
-| Контакты | Создание | `contacts.add` |
-| Контакты | Обновление | `contacts.update` |
-| Компании | Создание | `companies.add` |
+| Сущность | Событие    | Ключ в payload     |
+| -------- | ---------- | ------------------ |
+| Сделки   | Создание   | `leads.add`        |
+| Сделки   | Обновление | `leads.update`     |
+| Контакты | Создание   | `contacts.add`     |
+| Контакты | Обновление | `contacts.update`  |
+| Компании | Создание   | `companies.add`    |
 | Компании | Обновление | `companies.update` |
-| Задачи | Создание | `tasks.add` |
-| Задачи | Обновление | `tasks.update` |
+| Задачи   | Создание   | `tasks.add`        |
+| Задачи   | Обновление | `tasks.update`     |
 
 **Формат payload**:
 
@@ -1684,37 +1714,39 @@ export const amoCRMWebhookRoute = app.post('/webhook', async (ctx, req) => {
 ```typescript
 export const apiCreateTaskRoute = app.post('/create-task', async (ctx, req) => {
   const { subdomain, task } = req.body
-  
+
   const token = await getValidAccessToken(ctx, subdomain, clientId, clientSecret)
-  
+
   if (!token.success) {
     return token
   }
-  
+
   const completeTill = task.completeTill || Math.floor(Date.now() / 1000) + 86400
-  
+
   const result = await amoCRMRequest({
     subdomain,
     accessToken: token.token,
     endpoint: '/api/v4/tasks',
     method: 'post',
-    data: [{
-      text: task.text,
-      complete_till: completeTill,
-      entity_id: task.entityId,      // ID сделки/контакта
-      entity_type: task.entityType,  // 'leads', 'contacts', 'companies'
-      responsible_user_id: task.responsibleUserId,
-      task_type_id: task.taskTypeId || 1  // 1=звонок, 2=встреча, 3=письмо
-    }]
+    data: [
+      {
+        text: task.text,
+        complete_till: completeTill,
+        entity_id: task.entityId, // ID сделки/контакта
+        entity_type: task.entityType, // 'leads', 'contacts', 'companies'
+        responsible_user_id: task.responsibleUserId,
+        task_type_id: task.taskTypeId || 1 // 1=звонок, 2=встреча, 3=письмо
+      }
+    ]
   })
-  
+
   if (result.success) {
     ctx.account.log('AmoCRM task created', {
       level: 'info',
       json: { taskId: result.data._embedded?.tasks?.[0]?.id }
     })
   }
-  
+
   return result
 })
 ```
@@ -1724,13 +1756,13 @@ export const apiCreateTaskRoute = app.post('/create-task', async (ctx, req) => {
 ```typescript
 export const apiGetTasksRoute = app.get('/tasks', async (ctx, req) => {
   const { subdomain, limit = 50 } = req.query
-  
+
   const token = await getValidAccessToken(ctx, subdomain, clientId, clientSecret)
-  
+
   if (!token.success) {
     return token
   }
-  
+
   const result = await amoCRMRequest({
     subdomain,
     accessToken: token.token,
@@ -1739,24 +1771,24 @@ export const apiGetTasksRoute = app.get('/tasks', async (ctx, req) => {
     params: {
       limit,
       // Фильтр по выполненным/невыполненным
-      'filter[is_completed]': 0,  // 0 = не выполнена, 1 = выполнена
-      
+      'filter[is_completed]': 0, // 0 = не выполнена, 1 = выполнена
+
       // Фильтр по ответственному
       'filter[responsible_user_id]': 100,
-      
+
       // Фильтр по сущности
-      'filter[entity_type]': 'leads',  // leads, contacts, companies
+      'filter[entity_type]': 'leads', // leads, contacts, companies
       'filter[entity_id]': 12345
     }
   })
-  
+
   if (result.success) {
     return {
       success: true,
       tasks: result.data._embedded?.tasks || []
     }
   }
-  
+
   return result
 })
 ```
@@ -1766,13 +1798,13 @@ export const apiGetTasksRoute = app.get('/tasks', async (ctx, req) => {
 ```typescript
 export const apiUpdateTaskRoute = app.post('/update-task', async (ctx, req) => {
   const { subdomain, taskId, updates } = req.body
-  
+
   const token = await getValidAccessToken(ctx, subdomain, clientId, clientSecret)
-  
+
   if (!token.success) {
     return token
   }
-  
+
   const result = await amoCRMRequest({
     subdomain,
     accessToken: token.token,
@@ -1781,10 +1813,10 @@ export const apiUpdateTaskRoute = app.post('/update-task', async (ctx, req) => {
     data: {
       text: updates.text,
       complete_till: updates.completeTill,
-      is_completed: updates.isCompleted  // true для завершения
+      is_completed: updates.isCompleted // true для завершения
     }
   })
-  
+
   return result
 })
 ```
@@ -1793,11 +1825,11 @@ export const apiUpdateTaskRoute = app.post('/update-task', async (ctx, req) => {
 
 AmoCRM поддерживает различные типы задач:
 
-| ID | Название | Описание |
-|----|----------|----------|
-| 1 | Звонок | Напоминание позвонить |
-| 2 | Встреча | Запланировать встречу |
-| 3 | Письмо | Написать письмо |
+| ID  | Название | Описание              |
+| --- | -------- | --------------------- |
+| 1   | Звонок   | Напоминание позвонить |
+| 2   | Встреча  | Запланировать встречу |
+| 3   | Письмо   | Написать письмо       |
 
 Получение списка типов задач:
 
@@ -1828,32 +1860,32 @@ const taskTypes = accountInfo.data._embedded?.task_types || []
 ```typescript
 export const apiGetEventsRoute = app.get('/events', async (ctx, req) => {
   const { subdomain, entityType, entityId } = req.query
-  
+
   const token = await getValidAccessToken(ctx, subdomain, clientId, clientSecret)
-  
+
   if (!token.success) {
     return token
   }
-  
+
   const result = await amoCRMRequest({
     subdomain,
     accessToken: token.token,
     endpoint: '/api/v4/events',
     method: 'get',
     params: {
-      'filter[entity]': entityType,  // leads, contacts, companies
+      'filter[entity]': entityType, // leads, contacts, companies
       'filter[entity_id]': entityId,
       limit: 100
     }
   })
-  
+
   if (result.success) {
     return {
       success: true,
       events: result.data._embedded?.events || []
     }
   }
-  
+
   return result
 })
 ```
@@ -1865,42 +1897,45 @@ export const apiGetEventsRoute = app.get('/events', async (ctx, req) => {
 ```typescript
 export const apiAddNoteRoute = app.post('/add-note', async (ctx, req) => {
   const { subdomain, entityType, entityId, note } = req.body
-  
+
   const token = await getValidAccessToken(ctx, subdomain, clientId, clientSecret)
-  
+
   if (!token.success) {
     return token
   }
-  
+
   const result = await amoCRMRequest({
     subdomain,
     accessToken: token.token,
     endpoint: `/api/v4/${entityType}/${entityId}/notes`,
     method: 'post',
-    data: [{
-      note_type: 'common',  // common, call_in, call_out, service_message
-      params: {
-        text: note.text
+    data: [
+      {
+        note_type: 'common', // common, call_in, call_out, service_message
+        params: {
+          text: note.text
+        }
       }
-    }]
+    ]
   })
-  
+
   if (result.success) {
     ctx.account.log('AmoCRM note added', {
       level: 'info',
-      json: { 
+      json: {
         noteId: result.data._embedded?.notes?.[0]?.id,
         entityType,
         entityId
       }
     })
   }
-  
+
   return result
 })
 ```
 
 **Типы примечаний:**
+
 - `common` — обычное примечание
 - `call_in` — входящий звонок
 - `call_out` — исходящий звонок
@@ -1920,8 +1955,8 @@ export const apiAddNoteRoute = app.post('/add-note', async (ctx, req) => {
 ```typescript
 interface Talk {
   id: number
-  entity_id: number      // ID сделки/контакта
-  entity_type: string    // leads, contacts
+  entity_id: number // ID сделки/контакта
+  entity_type: string // leads, contacts
   created_by: number
   created_at: number
   updated_at: number
@@ -1945,13 +1980,13 @@ interface Talk {
 ```typescript
 export const apiGetTalksRoute = app.get('/talks', async (ctx, req) => {
   const { subdomain, limit = 50 } = req.query
-  
+
   const token = await getValidAccessToken(ctx, subdomain, clientId, clientSecret)
-  
+
   if (!token.success) {
     return token
   }
-  
+
   const result = await amoCRMRequest({
     subdomain,
     accessToken: token.token,
@@ -1959,17 +1994,17 @@ export const apiGetTalksRoute = app.get('/talks', async (ctx, req) => {
     method: 'get',
     params: {
       limit,
-      'filter[is_unread]': 1  // Только непрочитанные
+      'filter[is_unread]': 1 // Только непрочитанные
     }
   })
-  
+
   if (result.success) {
     return {
       success: true,
       talks: result.data._embedded?.talks || []
     }
   }
-  
+
   return result
 })
 ```
@@ -1980,20 +2015,20 @@ export const apiGetTalksRoute = app.get('/talks', async (ctx, req) => {
 export const apiGetChatHistoryRoute = app.get('/talks/:talkId', async (ctx, req) => {
   const { talkId } = req.params
   const { subdomain } = req.query
-  
+
   const token = await getValidAccessToken(ctx, subdomain, clientId, clientSecret)
-  
+
   if (!token.success) {
     return token
   }
-  
+
   const result = await amoCRMRequest({
     subdomain,
     accessToken: token.token,
     endpoint: `/api/v4/talks/${talkId}`,
     method: 'get'
   })
-  
+
   return result
 })
 ```
@@ -2011,27 +2046,27 @@ export const apiGetChatHistoryRoute = app.get('/talks/:talkId', async (ctx, req)
 ```typescript
 export const apiGetTagsRoute = app.get('/tags', async (ctx, req) => {
   const { subdomain, entityType = 'leads' } = req.query
-  
+
   const token = await getValidAccessToken(ctx, subdomain, clientId, clientSecret)
-  
+
   if (!token.success) {
     return token
   }
-  
+
   const result = await amoCRMRequest({
     subdomain,
     accessToken: token.token,
-    endpoint: `/api/v4/${entityType}/tags`,  // leads, contacts, companies
+    endpoint: `/api/v4/${entityType}/tags`, // leads, contacts, companies
     method: 'get'
   })
-  
+
   if (result.success) {
     return {
       success: true,
       tags: result.data._embedded?.tags || []
     }
   }
-  
+
   return result
 })
 ```
@@ -2041,13 +2076,13 @@ export const apiGetTagsRoute = app.get('/tags', async (ctx, req) => {
 ```typescript
 export const apiAddTagRoute = app.post('/add-tag', async (ctx, req) => {
   const { subdomain, entityType, entityId, tagName } = req.body
-  
+
   const token = await getValidAccessToken(ctx, subdomain, clientId, clientSecret)
-  
+
   if (!token.success) {
     return token
   }
-  
+
   const result = await amoCRMRequest({
     subdomain,
     accessToken: token.token,
@@ -2055,20 +2090,22 @@ export const apiAddTagRoute = app.post('/add-tag', async (ctx, req) => {
     method: 'patch',
     data: {
       _embedded: {
-        tags: [{
-          name: tagName
-        }]
+        tags: [
+          {
+            name: tagName
+          }
+        ]
       }
     }
   })
-  
+
   if (result.success) {
     ctx.account.log('AmoCRM tag added', {
       level: 'info',
       json: { tagName, entityType, entityId }
     })
   }
-  
+
   return result
 })
 ```
@@ -2086,36 +2123,39 @@ export const apiAddTagRoute = app.post('/add-tag', async (ctx, req) => {
 ```typescript
 export const apiLinkEntitiesRoute = app.post('/link-entities', async (ctx, req) => {
   const { subdomain, fromType, fromId, toType, toId } = req.body
-  
+
   const token = await getValidAccessToken(ctx, subdomain, clientId, clientSecret)
-  
+
   if (!token.success) {
     return token
   }
-  
+
   const result = await amoCRMRequest({
     subdomain,
     accessToken: token.token,
     endpoint: `/api/v4/${fromType}/${fromId}/link`,
     method: 'post',
-    data: [{
-      to_entity_id: toId,
-      to_entity_type: toType  // leads, contacts, companies, catalog_elements
-    }]
+    data: [
+      {
+        to_entity_id: toId,
+        to_entity_type: toType // leads, contacts, companies, catalog_elements
+      }
+    ]
   })
-  
+
   if (result.success) {
     ctx.account.log('AmoCRM entities linked', {
       level: 'info',
       json: { fromType, fromId, toType, toId }
     })
   }
-  
+
   return result
 })
 ```
 
 **Примеры связей:**
+
 - Привязать контакт к сделке
 - Привязать компанию к контакту
 - Привязать сделку к другой сделке
@@ -2127,10 +2167,12 @@ await amoCRMRequest({
   accessToken: token.token,
   endpoint: '/api/v4/leads/200/link',
   method: 'post',
-  data: [{
-    to_entity_id: 100,
-    to_entity_type: 'contacts'
-  }]
+  data: [
+    {
+      to_entity_id: 100,
+      to_entity_type: 'contacts'
+    }
+  ]
 })
 ```
 
@@ -2139,24 +2181,26 @@ await amoCRMRequest({
 ```typescript
 export const apiUnlinkEntitiesRoute = app.post('/unlink-entities', async (ctx, req) => {
   const { subdomain, fromType, fromId, toType, toId } = req.body
-  
+
   const token = await getValidAccessToken(ctx, subdomain, clientId, clientSecret)
-  
+
   if (!token.success) {
     return token
   }
-  
+
   const result = await amoCRMRequest({
     subdomain,
     accessToken: token.token,
     endpoint: `/api/v4/${fromType}/${fromId}/unlink`,
     method: 'post',
-    data: [{
-      to_entity_id: toId,
-      to_entity_type: toType
-    }]
+    data: [
+      {
+        to_entity_id: toId,
+        to_entity_type: toType
+      }
+    ]
   })
-  
+
   return result
 })
 ```
@@ -2173,15 +2217,15 @@ export const apiUnlinkEntitiesRoute = app.post('/unlink-entities', async (ctx, r
 
 ```typescript
 interface File {
-  uuid: string           // Уникальный ID файла
-  version_uuid: string   // ID версии файла
-  name: string          // Имя файла
-  size: number          // Размер в байтах
-  created_at: number    // Unix timestamp
-  created_by: number    // ID пользователя
+  uuid: string // Уникальный ID файла
+  version_uuid: string // ID версии файла
+  name: string // Имя файла
+  size: number // Размер в байтах
+  created_at: number // Unix timestamp
+  created_by: number // ID пользователя
   _links: {
     download: {
-      href: string      // Ссылка для скачивания
+      href: string // Ссылка для скачивания
     }
   }
 }
@@ -2192,13 +2236,13 @@ interface File {
 ```typescript
 export const apiGetEntityFilesRoute = app.get('/entity-files', async (ctx, req) => {
   const { subdomain, entityType, entityId } = req.query
-  
+
   const token = await getValidAccessToken(ctx, subdomain, clientId, clientSecret)
-  
+
   if (!token.success) {
     return token
   }
-  
+
   // entityType: leads, contacts, companies, customers
   const result = await amoCRMRequest({
     subdomain,
@@ -2206,14 +2250,14 @@ export const apiGetEntityFilesRoute = app.get('/entity-files', async (ctx, req) 
     endpoint: `/api/v4/${entityType}/${entityId}/files`,
     method: 'get'
   })
-  
+
   if (result.success) {
     return {
       success: true,
       files: result.data._embedded?.files || []
     }
   }
-  
+
   return result
 })
 ```
@@ -2223,13 +2267,13 @@ export const apiGetEntityFilesRoute = app.get('/entity-files', async (ctx, req) 
 ```typescript
 export const apiAttachFileToEntityRoute = app.post('/attach-file', async (ctx, req) => {
   const { subdomain, entityType, entityId, fileUuid, versionUuid } = req.body
-  
+
   const token = await getValidAccessToken(ctx, subdomain, clientId, clientSecret)
-  
+
   if (!token.success) {
     return token
   }
-  
+
   const result = await amoCRMRequest({
     subdomain,
     accessToken: token.token,
@@ -2240,18 +2284,18 @@ export const apiAttachFileToEntityRoute = app.post('/attach-file', async (ctx, r
       version_uuid: versionUuid
     }
   })
-  
+
   if (result.success) {
     ctx.account.log('AmoCRM file attached', {
       level: 'info',
-      json: { 
+      json: {
         entityType,
         entityId,
         fileUuid
       }
     })
   }
-  
+
   return result
 })
 ```
@@ -2263,43 +2307,43 @@ export const apiAttachFileToEntityRoute = app.post('/attach-file', async (ctx, r
 ```typescript
 export const apiUploadFileRoute = app.post('/upload-file', async (ctx, req) => {
   const { subdomain, fileName, fileContent, contentType } = req.body
-  
+
   const token = await getValidAccessToken(ctx, subdomain, clientId, clientSecret)
-  
+
   if (!token.success) {
     return token
   }
-  
+
   // Шаг 1: Загрузить файл
   const uploadResult = await request({
     url: `https://${subdomain}.amocrm.ru/api/v4/files`,
     method: 'post',
     headers: {
-      'Authorization': `Bearer ${token.token}`,
+      Authorization: `Bearer ${token.token}`,
       'Content-Type': contentType || 'application/octet-stream'
     },
-    body: fileContent,  // Buffer или Stream
+    body: fileContent, // Buffer или Stream
     responseType: 'json',
     throwHttpErrors: false
   })
-  
+
   if (uploadResult.statusCode === 200) {
     const fileData = uploadResult.body
-    
+
     ctx.account.log('AmoCRM file uploaded', {
       level: 'info',
-      json: { 
+      json: {
         uuid: fileData.uuid,
         name: fileName
       }
     })
-    
+
     return {
       success: true,
       file: fileData
     }
   }
-  
+
   return {
     success: false,
     error: 'File upload failed',
@@ -2321,11 +2365,11 @@ async function uploadAndAttachFile(ctx, subdomain, entityType, entityId, file) {
       contentType: file.mimeType
     }
   })
-  
+
   if (!uploadResult.success) {
     return uploadResult
   }
-  
+
   // 2. Привязываем файл к сущности
   const attachResult = await apiAttachFileToEntityRoute(ctx, {
     body: {
@@ -2336,12 +2380,13 @@ async function uploadAndAttachFile(ctx, subdomain, entityType, entityId, file) {
       versionUuid: uploadResult.file.version_uuid
     }
   })
-  
+
   return attachResult
 }
 ```
 
 **Поддерживаемые типы сущностей:**
+
 - `leads` — сделки
 - `contacts` — контакты
 - `companies` — компании
@@ -2360,27 +2405,27 @@ async function uploadAndAttachFile(ctx, subdomain, entityType, entityId, file) {
 ```typescript
 export const apiGetCatalogsRoute = app.get('/catalogs', async (ctx, req) => {
   const { subdomain } = req.query
-  
+
   const token = await getValidAccessToken(ctx, subdomain, clientId, clientSecret)
-  
+
   if (!token.success) {
     return token
   }
-  
+
   const result = await amoCRMRequest({
     subdomain,
     accessToken: token.token,
     endpoint: '/api/v4/catalogs',
     method: 'get'
   })
-  
+
   if (result.success) {
     return {
       success: true,
       catalogs: result.data._embedded?.catalogs || []
     }
   }
-  
+
   return result
 })
 ```
@@ -2390,13 +2435,13 @@ export const apiGetCatalogsRoute = app.get('/catalogs', async (ctx, req) => {
 ```typescript
 export const apiGetCatalogElementsRoute = app.get('/catalog-elements', async (ctx, req) => {
   const { subdomain, catalogId, limit = 250 } = req.query
-  
+
   const token = await getValidAccessToken(ctx, subdomain, clientId, clientSecret)
-  
+
   if (!token.success) {
     return token
   }
-  
+
   const result = await amoCRMRequest({
     subdomain,
     accessToken: token.token,
@@ -2404,14 +2449,14 @@ export const apiGetCatalogElementsRoute = app.get('/catalog-elements', async (ct
     method: 'get',
     params: { limit }
   })
-  
+
   if (result.success) {
     return {
       success: true,
       elements: result.data._embedded?.elements || []
     }
   }
-  
+
   return result
 })
 ```
@@ -2421,24 +2466,24 @@ export const apiGetCatalogElementsRoute = app.get('/catalog-elements', async (ct
 ```typescript
 export const apiLinkProductsToLeadRoute = app.post('/link-products', async (ctx, req) => {
   const { subdomain, leadId, products } = req.body
-  
+
   const token = await getValidAccessToken(ctx, subdomain, clientId, clientSecret)
-  
+
   if (!token.success) {
     return token
   }
-  
+
   // products - массив товаров с количеством
-  const linksData = products.map(product => ({
-    to_entity_id: product.elementId,      // ID товара из каталога
+  const linksData = products.map((product) => ({
+    to_entity_id: product.elementId, // ID товара из каталога
     to_entity_type: 'catalog_elements',
     metadata: {
-      catalog_id: product.catalogId,      // ID каталога
-      quantity: product.quantity || 1,    // Количество
-      price_id: product.priceId          // ID прайса (опционально)
+      catalog_id: product.catalogId, // ID каталога
+      quantity: product.quantity || 1, // Количество
+      price_id: product.priceId // ID прайса (опционально)
     }
   }))
-  
+
   const result = await amoCRMRequest({
     subdomain,
     accessToken: token.token,
@@ -2446,17 +2491,17 @@ export const apiLinkProductsToLeadRoute = app.post('/link-products', async (ctx,
     method: 'post',
     data: linksData
   })
-  
+
   if (result.success) {
     ctx.account.log('AmoCRM products linked to lead', {
       level: 'info',
-      json: { 
+      json: {
         leadId,
         productsCount: products.length
       }
     })
   }
-  
+
   return result
 })
 ```
@@ -2472,7 +2517,7 @@ await apiLinkProductsToLeadRoute(ctx, {
     products: [
       {
         catalogId: 100,
-        elementId: 500,  // ID товара
+        elementId: 500, // ID товара
         quantity: 2
       },
       {
@@ -2490,27 +2535,27 @@ await apiLinkProductsToLeadRoute(ctx, {
 ```typescript
 export const apiGetLeadProductsRoute = app.get('/lead-products', async (ctx, req) => {
   const { subdomain, leadId } = req.query
-  
+
   const token = await getValidAccessToken(ctx, subdomain, clientId, clientSecret)
-  
+
   if (!token.success) {
     return token
   }
-  
+
   const result = await amoCRMRequest({
     subdomain,
     accessToken: token.token,
     endpoint: `/api/v4/leads/${leadId}`,
     method: 'get',
     params: {
-      with: 'catalog_elements'  // Включить товары в ответ
+      with: 'catalog_elements' // Включить товары в ответ
     }
   })
-  
+
   if (result.success) {
     const lead = result.data
     const products = lead._embedded?.catalog_elements || []
-    
+
     return {
       success: true,
       leadId: lead.id,
@@ -2518,7 +2563,7 @@ export const apiGetLeadProductsRoute = app.get('/lead-products', async (ctx, req
       products
     }
   }
-  
+
   return result
 })
 ```
@@ -2533,49 +2578,49 @@ export const apiGetLeadProductsRoute = app.get('/lead-products', async (ctx, req
 
 ### Типы полей
 
-| Тип | Описание | Значение |
-|-----|----------|----------|
-| `text` | Текстовое поле | Строка |
-| `numeric` | Числовое поле | Число |
-| `checkbox` | Флажок | Boolean |
-| `select` | Список (один выбор) | ID опции или текст |
-| `multiselect` | Список (множественный выбор) | Массив ID опций |
-| `date` | Дата | Unix timestamp |
-| `url` | URL-адрес | Строка |
-| `textarea` | Многострочный текст | Строка |
-| `radiobutton` | Радиокнопки | ID опции |
-| `streetaddress` | Адрес | Строка |
-| `smart_address` | Умный адрес | Объект с координатами |
-| `birthday` | День рождения | Unix timestamp |
-| `legal_entity` | Юридическое лицо | Объект |
-| `price` | Цена | Число |
+| Тип             | Описание                     | Значение              |
+| --------------- | ---------------------------- | --------------------- |
+| `text`          | Текстовое поле               | Строка                |
+| `numeric`       | Числовое поле                | Число                 |
+| `checkbox`      | Флажок                       | Boolean               |
+| `select`        | Список (один выбор)          | ID опции или текст    |
+| `multiselect`   | Список (множественный выбор) | Массив ID опций       |
+| `date`          | Дата                         | Unix timestamp        |
+| `url`           | URL-адрес                    | Строка                |
+| `textarea`      | Многострочный текст          | Строка                |
+| `radiobutton`   | Радиокнопки                  | ID опции              |
+| `streetaddress` | Адрес                        | Строка                |
+| `smart_address` | Умный адрес                  | Объект с координатами |
+| `birthday`      | День рождения                | Unix timestamp        |
+| `legal_entity`  | Юридическое лицо             | Объект                |
+| `price`         | Цена                         | Число                 |
 
 ### Получение дополнительных полей
 
 ```typescript
 export const apiGetCustomFieldsRoute = app.get('/custom-fields', async (ctx, req) => {
   const { subdomain, entityType = 'leads' } = req.query
-  
+
   const token = await getValidAccessToken(ctx, subdomain, clientId, clientSecret)
-  
+
   if (!token.success) {
     return token
   }
-  
+
   const result = await amoCRMRequest({
     subdomain,
     accessToken: token.token,
     endpoint: `/api/v4/${entityType}/custom_fields`,
     method: 'get'
   })
-  
+
   if (result.success) {
     return {
       success: true,
       customFields: result.data._embedded?.custom_fields || []
     }
   }
-  
+
   return result
 })
 ```
@@ -2585,50 +2630,54 @@ export const apiGetCustomFieldsRoute = app.get('/custom-fields', async (ctx, req
 ```typescript
 export const apiCreateCustomFieldRoute = app.post('/create-custom-field', async (ctx, req) => {
   const { subdomain, entityType = 'leads', field } = req.body
-  
+
   const token = await getValidAccessToken(ctx, subdomain, clientId, clientSecret)
-  
+
   if (!token.success) {
     return token
   }
-  
+
   const result = await amoCRMRequest({
     subdomain,
     accessToken: token.token,
     endpoint: `/api/v4/${entityType}/custom_fields`,
     method: 'post',
-    data: [{
-      name: field.name,
-      type: field.type || 'text',
-      sort: field.sort || 10,
-      is_required: field.isRequired || false,
-      is_visible: field.isVisible !== false,
-      // Для select/multiselect/radiobutton
-      enums: field.options ? field.options.map((opt, idx) => ({
-        value: opt.value,
-        sort: idx + 1
-      })) : undefined
-    }]
+    data: [
+      {
+        name: field.name,
+        type: field.type || 'text',
+        sort: field.sort || 10,
+        is_required: field.isRequired || false,
+        is_visible: field.isVisible !== false,
+        // Для select/multiselect/radiobutton
+        enums: field.options
+          ? field.options.map((opt, idx) => ({
+              value: opt.value,
+              sort: idx + 1
+            }))
+          : undefined
+      }
+    ]
   })
-  
+
   if (result.success) {
     const createdField = result.data._embedded?.custom_fields?.[0]
-    
+
     ctx.account.log('AmoCRM custom field created', {
       level: 'info',
-      json: { 
+      json: {
         fieldId: createdField?.id,
         name: field.name,
         type: field.type
       }
     })
-    
+
     return {
       success: true,
       field: createdField
     }
   }
-  
+
   return result
 })
 ```
@@ -2653,13 +2702,13 @@ const field = {
 ```typescript
 export const apiUpdateCustomFieldRoute = app.post('/update-custom-field', async (ctx, req) => {
   const { subdomain, entityType = 'leads', fieldId, updates } = req.body
-  
+
   const token = await getValidAccessToken(ctx, subdomain, clientId, clientSecret)
-  
+
   if (!token.success) {
     return token
   }
-  
+
   const result = await amoCRMRequest({
     subdomain,
     accessToken: token.token,
@@ -2667,7 +2716,7 @@ export const apiUpdateCustomFieldRoute = app.post('/update-custom-field', async 
     method: 'patch',
     data: updates
   })
-  
+
   return result
 })
 ```
@@ -2677,20 +2726,20 @@ export const apiUpdateCustomFieldRoute = app.post('/update-custom-field', async 
 ```typescript
 export const apiDeleteCustomFieldRoute = app.post('/delete-custom-field', async (ctx, req) => {
   const { subdomain, entityType = 'leads', fieldId } = req.body
-  
+
   const token = await getValidAccessToken(ctx, subdomain, clientId, clientSecret)
-  
+
   if (!token.success) {
     return token
   }
-  
+
   const result = await amoCRMRequest({
     subdomain,
     accessToken: token.token,
     endpoint: `/api/v4/${entityType}/custom_fields/${fieldId}`,
     method: 'delete'
   })
-  
+
   return result
 })
 ```
@@ -2705,68 +2754,78 @@ const customFieldsValues = [
   // Текстовое поле
   {
     field_id: 123,
-    values: [{
-      value: 'Текстовое значение'
-    }]
+    values: [
+      {
+        value: 'Текстовое значение'
+      }
+    ]
   },
-  
+
   // Числовое поле
   {
     field_id: 456,
-    values: [{
-      value: 12345
-    }]
+    values: [
+      {
+        value: 12345
+      }
+    ]
   },
-  
+
   // Список (select)
   {
     field_id: 789,
-    values: [{
-      enum_id: 100  // ID опции из списка
-    }]
+    values: [
+      {
+        enum_id: 100 // ID опции из списка
+      }
+    ]
   },
-  
+
   // Множественный выбор (multiselect)
   {
     field_id: 999,
-    values: [
-      { enum_id: 100 },
-      { enum_id: 200 },
-      { enum_id: 300 }
-    ]
+    values: [{ enum_id: 100 }, { enum_id: 200 }, { enum_id: 300 }]
   },
-  
+
   // Флажок
   {
     field_id: 111,
-    values: [{
-      value: true
-    }]
+    values: [
+      {
+        value: true
+      }
+    ]
   },
-  
+
   // Дата
   {
     field_id: 222,
-    values: [{
-      value: Math.floor(Date.now() / 1000)
-    }]
+    values: [
+      {
+        value: Math.floor(Date.now() / 1000)
+      }
+    ]
   },
-  
+
   // Системные поля (PHONE, EMAIL)
   {
     field_code: 'PHONE',
-    values: [{
-      value: '+79991234567',
-      enum_code: 'WORK'  // WORK, WORKDD, MOB, FAX, HOME, OTHER
-    }]
+    values: [
+      {
+        value: '+79991234567',
+        enum_code: 'WORK' // WORK, WORKDD, MOB, FAX, HOME, OTHER
+      }
+    ]
   },
-  
+
   {
     field_code: 'EMAIL',
-    values: [{
-      value: 'user@example.com',
-      enum_code: 'WORK'  // WORK, PRIV, OTHER
-    }]
+    values: [
+      {
+        value: 'user@example.com',
+        enum_code: 'WORK' // WORK, PRIV, OTHER
+      }
+    ]
   }
 ]
 
@@ -2786,12 +2845,12 @@ const lead = {
 
 AmoCRM имеет следующие лимиты:
 
-| Параметр | Значение |
-|----------|----------|
-| Максимальный limit | 250 записей за запрос |
-| Rate limit | 7 запросов в секунду (базовый) |
-| Rate limit (расширенный) | Зависит от тарифа |
-| Максимум записей в batch-операциях | 50 |
+| Параметр                           | Значение                       |
+| ---------------------------------- | ------------------------------ |
+| Максимальный limit                 | 250 записей за запрос          |
+| Rate limit                         | 7 запросов в секунду (базовый) |
+| Rate limit (расширенный)           | Зависит от тарифа              |
+| Максимум записей в batch-операциях | 50                             |
 
 ### Пагинация
 
@@ -2802,7 +2861,7 @@ async function getAllLeads(ctx, subdomain, accessToken) {
   const allLeads = []
   let page = 1
   let hasMore = true
-  
+
   while (hasMore) {
     const result = await amoCRMRequest({
       subdomain,
@@ -2814,37 +2873,37 @@ async function getAllLeads(ctx, subdomain, accessToken) {
         page
       }
     })
-    
+
     if (result.success) {
       const leads = result.data._embedded?.leads || []
       allLeads.push(...leads)
-      
+
       // Проверяем, есть ли ещё страницы
       const pageInfo = result.data._page
       hasMore = page < pageInfo.total_pages
       page++
-      
+
       ctx.account.log('AmoCRM leads fetched', {
         level: 'info',
-        json: { 
+        json: {
           page,
           totalPages: pageInfo.total_pages,
           totalItems: pageInfo.total_items
         }
       })
-      
+
       // Задержка для соблюдения rate limit
-      await new Promise(resolve => setTimeout(resolve, 150))
+      await new Promise((resolve) => setTimeout(resolve, 150))
     } else {
       hasMore = false
     }
   }
-  
+
   return allLeads
 }
 ```
 
-**Структура _page:**
+**Структура \_page:**
 
 ```typescript
 {
@@ -2863,17 +2922,17 @@ async function getAllLeads(ctx, subdomain, accessToken) {
 
 ### Коды ошибок
 
-| Код | Описание | Причина | Действие |
-|-----|----------|---------|----------|
-| 200-204 | Успех | Операция выполнена успешно | OK |
-| 400 | Bad Request | Некорректные данные | Проверить payload и параметры |
-| 401 | Unauthorized | Токен недействителен или истёк | Обновить access_token через refresh_token |
-| 403 | Forbidden | Недостаточно прав | Проверить права пользователя в AmoCRM |
-| 404 | Not Found | Ресурс не найден | Проверить URL, ID сущности |
-| 429 | Too Many Requests | Превышен rate limit | Подождать и повторить (exponential backoff) |
-| 500 | Internal Server Error | Ошибка на стороне AmoCRM | Повторить позже |
-| 502 | Bad Gateway | Проблемы с сервером AmoCRM | Повторить позже |
-| 503 | Service Unavailable | Сервис временно недоступен | Повторить позже |
+| Код     | Описание              | Причина                        | Действие                                    |
+| ------- | --------------------- | ------------------------------ | ------------------------------------------- |
+| 200-204 | Успех                 | Операция выполнена успешно     | OK                                          |
+| 400     | Bad Request           | Некорректные данные            | Проверить payload и параметры               |
+| 401     | Unauthorized          | Токен недействителен или истёк | Обновить access_token через refresh_token   |
+| 403     | Forbidden             | Недостаточно прав              | Проверить права пользователя в AmoCRM       |
+| 404     | Not Found             | Ресурс не найден               | Проверить URL, ID сущности                  |
+| 429     | Too Many Requests     | Превышен rate limit            | Подождать и повторить (exponential backoff) |
+| 500     | Internal Server Error | Ошибка на стороне AmoCRM       | Повторить позже                             |
+| 502     | Bad Gateway           | Проблемы с сервером AmoCRM     | Повторить позже                             |
+| 503     | Service Unavailable   | Сервис временно недоступен     | Повторить позже                             |
 
 ### Структура ошибок
 
@@ -2896,6 +2955,7 @@ AmoCRM возвращает ошибки в следующем формате:
 ```
 
 **Поля ошибки:**
+
 - `status` — HTTP код ошибки
 - `title` — краткое описание
 - `detail` — подробное описание
@@ -2915,31 +2975,31 @@ async function amoCRMRequestWithRetry(
 ) {
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     const result = await amoCRMRequest(options)
-    
+
     if (result.success) {
       return result
     }
-    
+
     // Если 429 (rate limit) — ждём и повторяем
     if (result.statusCode === 429) {
       const delay = Math.min(1000 * Math.pow(2, attempt), 10000)
-      
+
       ctx.account.log('Rate limit, retrying', {
         level: 'warn',
         json: { attempt, delay }
       })
-      
-      await new Promise(resolve => setTimeout(resolve, delay))
+
+      await new Promise((resolve) => setTimeout(resolve, delay))
       continue
     }
-    
+
     // Если 401 — пробуем обновить токен
     if (result.statusCode === 401 && attempt < maxRetries) {
       ctx.account.log('Token expired, refreshing', {
         level: 'info',
         json: { attempt }
       })
-      
+
       // Обновление токена и повтор
       const newToken = await refreshAccessToken(
         ctx,
@@ -2953,11 +3013,11 @@ async function amoCRMRequestWithRetry(
         continue
       }
     }
-    
+
     // Другие ошибки — не повторяем
     return result
   }
-  
+
   return { success: false, error: 'Max retries exceeded' }
 }
 ```
@@ -2969,6 +3029,7 @@ async function amoCRMRequestWithRetry(
 ### Авторизация
 
 ✅ **Храните токены в Heap**:
+
 ```typescript
 // Используйте createOrUpdateBy для безопасного обновления
 await AmoCRMTokens.createOrUpdateBy(ctx, 'subdomain', {
@@ -2980,6 +3041,7 @@ await AmoCRMTokens.createOrUpdateBy(ctx, 'subdomain', {
 ```
 
 ✅ **Проверяйте срок действия токена**:
+
 ```typescript
 // Обновляйте токен за 5 минут до истечения
 if (expiresAt.getTime() - now.getTime() < 5 * 60 * 1000) {
@@ -2988,12 +3050,14 @@ if (expiresAt.getTime() - now.getTime() < 5 * 60 * 1000) {
 ```
 
 ✅ **Храните subdomain отдельно**:
+
 ```typescript
 // Не хардкодите subdomain в коде
 const subdomain = await getSubdomainFromSettings(ctx)
 ```
 
 ❌ **НЕ храните токены в переменных окружения**:
+
 ```typescript
 // ПЛОХО - токены истекают каждые 24 часа
 const ACCESS_TOKEN = process.env.AMOCRM_TOKEN
@@ -3005,12 +3069,14 @@ const token = await getValidAccessToken(ctx, subdomain, clientId, clientSecret)
 ### Запросы к API
 
 ✅ **Используйте @app/request**:
+
 ```typescript
-import { request } from "@app/request"
+import { request } from '@app/request'
 // НЕ используйте axios, fetch, node-fetch
 ```
 
 ✅ **Логируйте через ctx.account.log()**:
+
 ```typescript
 ctx.account.log('AmoCRM operation', {
   level: 'info',
@@ -3019,12 +3085,13 @@ ctx.account.log('AmoCRM operation', {
 ```
 
 ✅ **Обрабатывайте ошибки**:
+
 ```typescript
 if (response.statusCode !== 200) {
   ctx.account.log('AmoCRM error', {
     level: 'error',
-    json: { 
-      status: response.statusCode, 
+    json: {
+      status: response.statusCode,
       error: response.body,
       endpoint: options.endpoint
     }
@@ -3033,12 +3100,13 @@ if (response.statusCode !== 200) {
 ```
 
 ✅ **Используйте `throwHttpErrors: false`**:
+
 ```typescript
 // Это позволяет обработать ошибки вручную
 const response = await request({
   url,
   method: 'post',
-  throwHttpErrors: false  // ⚠️ Важно!
+  throwHttpErrors: false // ⚠️ Важно!
 })
 
 if (response.statusCode >= 400) {
@@ -3047,14 +3115,16 @@ if (response.statusCode >= 400) {
 ```
 
 ✅ **Соблюдайте rate limits**:
+
 ```typescript
 // Добавляйте задержки между запросами
-await new Promise(resolve => setTimeout(resolve, 150)) // ~7 запросов/сек
+await new Promise((resolve) => setTimeout(resolve, 150)) // ~7 запросов/сек
 ```
 
 ### Вебхуки
 
 ✅ **Всегда возвращайте 200 немедленно**:
+
 ```typescript
 export const webhookRoute = app.post('/webhook', async (ctx, req) => {
   // Сохраняем событие для асинхронной обработки
@@ -3062,13 +3132,14 @@ export const webhookRoute = app.post('/webhook', async (ctx, req) => {
     payload: req.body,
     receivedAt: new Date()
   })
-  
+
   // Немедленно возвращаем 200
   return { success: true }
 })
 ```
 
 ✅ **Делайте обработку идемпотентной**:
+
 ```typescript
 // Проверяйте, не обработали ли уже это событие
 const processed = await EventsTable.findOneBy(ctx, {
@@ -3096,6 +3167,7 @@ await EventsTable.create(ctx, {
 ```
 
 ✅ **Обрабатывайте массовые события**:
+
 ```typescript
 // AmoCRM может отправить несколько сущностей за раз
 if (payload?.leads?.add) {
@@ -3116,30 +3188,35 @@ if (payload?.leads?.add) {
 ### Создание сущностей
 
 ✅ **Используйте source_uid для дедупликации**:
+
 ```typescript
 // Уникальный ID для предотвращения дублей
 const sourceUid = `form_${formId}_${Date.now()}_${userEmail}`
 ```
 
 ✅ **Добавляйте request_id для отладки**:
+
 ```typescript
-data: [{
-  ...leadData,
-  request_id: `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
-}]
+data: [
+  {
+    ...leadData,
+    request_id: `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+  }
+]
 ```
 
 ✅ **Валидируйте данные перед отправкой**:
+
 ```typescript
 function validateLead(lead) {
   if (!lead.name || lead.name.trim() === '') {
     throw new Error('Lead name is required')
   }
-  
+
   if (lead.price && typeof lead.price !== 'number') {
     throw new Error('Lead price must be a number')
   }
-  
+
   // ... другие проверки
 }
 
@@ -3158,6 +3235,7 @@ try {
 ### Производительность
 
 ✅ **Кэшируйте редко меняющиеся данные**:
+
 ```typescript
 // Воронки, пользователи, custom fields редко меняются
 const CACHE_TTL = 3600 * 1000 // 1 час
@@ -3165,26 +3243,27 @@ const CACHE_TTL = 3600 * 1000 // 1 час
 async function getCachedPipelines(ctx, subdomain, accessToken) {
   const cacheKey = `pipelines_${subdomain}`
   const cached = await Cache.get(ctx, cacheKey)
-  
+
   if (cached && cached.expiresAt > Date.now()) {
     return cached.data
   }
-  
+
   const pipelines = await fetchPipelines(ctx, subdomain, accessToken)
-  
+
   await Cache.set(ctx, cacheKey, {
     data: pipelines,
     expiresAt: Date.now() + CACHE_TTL
   })
-  
+
   return pipelines
 }
 ```
 
 ✅ **Используйте пакетные операции**:
+
 ```typescript
 // Создавайте до 50 сущностей за раз
-const leads = [lead1, lead2, lead3, /* ... */]
+const leads = [lead1, lead2, lead3 /* ... */]
 const batches = []
 
 for (let i = 0; i < leads.length; i += 50) {
@@ -3199,13 +3278,14 @@ for (const batch of batches) {
     method: 'post',
     data: batch
   })
-  
+
   // Задержка между батчами
-  await new Promise(resolve => setTimeout(resolve, 200))
+  await new Promise((resolve) => setTimeout(resolve, 200))
 }
 ```
 
 ✅ **Используйте параллельные запросы с осторожностью**:
+
 ```typescript
 // Максимум 5-7 параллельных запросов
 async function fetchMultipleLeads(leadIds) {
@@ -3213,17 +3293,17 @@ async function fetchMultipleLeads(leadIds) {
   for (let i = 0; i < leadIds.length; i += 5) {
     chunks.push(leadIds.slice(i, i + 5))
   }
-  
+
   const results = []
   for (const chunk of chunks) {
-    const promises = chunk.map(id => fetchLead(id))
+    const promises = chunk.map((id) => fetchLead(id))
     const chunkResults = await Promise.all(promises)
     results.push(...chunkResults)
-    
+
     // Задержка между чанками
-    await new Promise(resolve => setTimeout(resolve, 150))
+    await new Promise((resolve) => setTimeout(resolve, 150))
   }
-  
+
   return results
 }
 ```
@@ -3231,17 +3311,18 @@ async function fetchMultipleLeads(leadIds) {
 ### Безопасность
 
 ✅ **Не логируйте sensitive данные**:
+
 ```typescript
 // ПЛОХО
 ctx.account.log('Token received', {
   level: 'info',
-  json: { accessToken: token.accessToken }  // ❌ Не делайте так!
+  json: { accessToken: token.accessToken } // ❌ Не делайте так!
 })
 
 // ХОРОШО
 ctx.account.log('Token received', {
   level: 'info',
-  json: { 
+  json: {
     hasAccessToken: !!token.accessToken,
     expiresIn: token.expiresIn
   }
@@ -3249,10 +3330,11 @@ ctx.account.log('Token received', {
 ```
 
 ✅ **Валидируйте webhook payload**:
+
 ```typescript
 export const webhookRoute = app.post('/webhook', async (ctx, req) => {
   const payload = req.body
-  
+
   // Базовая валидация структуры
   if (!payload || typeof payload !== 'object') {
     ctx.account.log('Invalid webhook payload', {
@@ -3261,7 +3343,7 @@ export const webhookRoute = app.post('/webhook', async (ctx, req) => {
     })
     return { success: false, error: 'Invalid payload' }
   }
-  
+
   // Обработка...
   return { success: true }
 })
@@ -3270,6 +3352,7 @@ export const webhookRoute = app.post('/webhook', async (ctx, req) => {
 ### Отладка
 
 ✅ **Логируйте запросы и ответы**:
+
 ```typescript
 async function amoCRMRequestWithLogging(ctx, options) {
   ctx.account.log('AmoCRM request', {
@@ -3280,9 +3363,9 @@ async function amoCRMRequestWithLogging(ctx, options) {
       params: options.params
     }
   })
-  
+
   const result = await amoCRMRequest(options)
-  
+
   ctx.account.log('AmoCRM response', {
     level: result.success ? 'debug' : 'error',
     json: {
@@ -3292,14 +3375,15 @@ async function amoCRMRequestWithLogging(ctx, options) {
       error: result.error
     }
   })
-  
+
   return result
 }
 ```
 
 ✅ **Используйте флаги для debug режима**:
+
 ```typescript
-const DEBUG = false  // Включайте только при отладке
+const DEBUG = false // Включайте только при отладке
 
 if (DEBUG) {
   ctx.account.log('Full response body', {
@@ -3312,6 +3396,7 @@ if (DEBUG) {
 ### Обработка специфичных случаев
 
 ✅ **Обработка дублей контактов**:
+
 ```typescript
 // AmoCRM автоматически ищет дубли по телефону/email
 // Если контакт найден, он будет обновлён, а не создан заново
@@ -3327,9 +3412,9 @@ async function createOrUpdateContact(ctx, subdomain, accessToken, contact) {
       query: contact.phone
     }
   })
-  
+
   const existingContacts = searchResult.data?._embedded?.contacts || []
-  
+
   if (existingContacts.length > 0) {
     // Обновляем существующий
     const contactId = existingContacts[0].id
@@ -3354,13 +3439,14 @@ async function createOrUpdateContact(ctx, subdomain, accessToken, contact) {
 ```
 
 ✅ **Работа с большими объёмами данных**:
+
 ```typescript
 // Экспорт всех сделок за период
 async function exportLeadsForPeriod(ctx, subdomain, accessToken, fromDate, toDate) {
   const allLeads = []
   let page = 1
   let hasMore = true
-  
+
   while (hasMore) {
     try {
       const result = await amoCRMRequest({
@@ -3375,7 +3461,7 @@ async function exportLeadsForPeriod(ctx, subdomain, accessToken, fromDate, toDat
           page
         }
       })
-      
+
       if (!result.success) {
         ctx.account.log('Export error', {
           level: 'error',
@@ -3383,27 +3469,26 @@ async function exportLeadsForPeriod(ctx, subdomain, accessToken, fromDate, toDat
         })
         break
       }
-      
+
       const leads = result.data._embedded?.leads || []
       allLeads.push(...leads)
-      
+
       const pageInfo = result.data._page
       hasMore = page < pageInfo.total_pages
       page++
-      
+
       ctx.account.log('Exported page', {
         level: 'info',
-        json: { 
+        json: {
           page,
           totalPages: pageInfo.total_pages,
           leadsCount: leads.length,
           totalExported: allLeads.length
         }
       })
-      
+
       // Обязательная задержка
-      await new Promise(resolve => setTimeout(resolve, 200))
-      
+      await new Promise((resolve) => setTimeout(resolve, 200))
     } catch (error) {
       ctx.account.log('Export exception', {
         level: 'error',
@@ -3412,7 +3497,7 @@ async function exportLeadsForPeriod(ctx, subdomain, accessToken, fromDate, toDat
       break
     }
   }
-  
+
   return allLeads
 }
 ```
@@ -3424,6 +3509,7 @@ async function exportLeadsForPeriod(ctx, subdomain, accessToken, fromDate, toDat
 ### Ошибка 1: 404 при авторизации
 
 **Проблема:**
+
 ```
 URL: https://subdomain.amocrm.ru/oauth?...
 Результат: 404 Not Found
@@ -3431,7 +3517,8 @@ URL: https://subdomain.amocrm.ru/oauth?...
 
 **Причина:** Неправильный URL авторизации.
 
-**Решение:** 
+**Решение:**
+
 ```typescript
 // ❌ НЕПРАВИЛЬНО
 const authUrl = `https://${subdomain}.amocrm.ru/oauth?...`
@@ -3443,6 +3530,7 @@ const authUrl = `https://www.amocrm.ru/oauth?client_id=...&state=...&redirect_ur
 ### Ошибка 2: "Authorization code has expired"
 
 **Проблема:**
+
 ```json
 {
   "hint": "Authorization code has expired",
@@ -3459,7 +3547,7 @@ const authUrl = `https://www.amocrm.ru/oauth?client_id=...&state=...&redirect_ur
 onMounted(async () => {
   const urlParams = new URLSearchParams(window.location.search)
   const code = urlParams.get('code')
-  
+
   if (code) {
     // Немедленно обмениваем код на токен!
     await exchangeCodeForTokens(code)
@@ -3470,6 +3558,7 @@ onMounted(async () => {
 ### Ошибка 3: "fetch is not defined"
 
 **Проблема:**
+
 ```
 ReferenceError: fetch is not defined
 ```
@@ -3501,6 +3590,7 @@ const response = await request({
 **Причина:** Интеграция отключена или не активирована в AmoCRM.
 
 **Решение:**
+
 1. Откройте AmoCRM → Настройки → Интеграции
 2. Найдите вашу интеграцию
 3. Убедитесь, что статус **"Установлено"** (зелёный)
@@ -3565,16 +3655,26 @@ ctx.account.log('Error occurred', {
 ### Минимальная интеграция (5 шагов)
 
 1. **Создайте интеграцию в AmoCRM**:
+
    - Настройки → API → Добавить интеграцию
    - Получите `client_id`, `client_secret`, `redirect_uri`
 
 2. **Получите токены**:
+
    ```typescript
    // Авторизация через https://www.amocrm.ru/oauth
-   const tokens = await exchangeCodeForTokens(ctx, subdomain, clientId, clientSecret, code, redirectUri)
+   const tokens = await exchangeCodeForTokens(
+     ctx,
+     subdomain,
+     clientId,
+     clientSecret,
+     code,
+     redirectUri
+   )
    ```
 
 3. **Сохраните токены в Heap**:
+
    ```typescript
    await AmoCRMTokens.createOrUpdateBy(ctx, 'subdomain', {
      subdomain,
@@ -3585,13 +3685,14 @@ ctx.account.log('Error occurred', {
    ```
 
 4. **Создайте универсальную функцию запросов**:
+
    ```typescript
    async function amoCRMRequest(options) {
      return await request({
        url: `https://${options.subdomain}.amocrm.ru${options.endpoint}`,
        method: options.method,
        headers: {
-         'Authorization': `Bearer ${options.accessToken}`,
+         Authorization: `Bearer ${options.accessToken}`,
          'Content-Type': 'application/json'
        },
        json: options.data,
@@ -3609,32 +3710,34 @@ ctx.account.log('Error occurred', {
      accessToken: token.token,
      endpoint: '/api/v4/leads',
      method: 'post',
-     data: [{
-       name: 'Новая сделка',
-       price: 50000
-     }]
+     data: [
+       {
+         name: 'Новая сделка',
+         price: 50000
+       }
+     ]
    })
    ```
 
 ### Ключевые URL
 
-| Назначение | URL |
-|------------|-----|
-| **Авторизация** | `https://www.amocrm.ru/oauth` |
+| Назначение        | URL                                                 |
+| ----------------- | --------------------------------------------------- |
+| **Авторизация**   | `https://www.amocrm.ru/oauth`                       |
 | **Обмен токенов** | `https://{subdomain}.amocrm.ru/oauth2/access_token` |
-| **API** | `https://{subdomain}.amocrm.ru/api/v4/...` |
+| **API**           | `https://{subdomain}.amocrm.ru/api/v4/...`          |
 
 ### Основные эндпоинты
 
-| Сущность | GET | POST | PATCH | DELETE |
-|----------|-----|------|-------|--------|
-| Сделки | `/api/v4/leads` | `/api/v4/leads` | `/api/v4/leads/{id}` | - |
-| Контакты | `/api/v4/contacts` | `/api/v4/contacts` | `/api/v4/contacts/{id}` | - |
-| Компании | `/api/v4/companies` | `/api/v4/companies` | `/api/v4/companies/{id}` | - |
-| Задачи | `/api/v4/tasks` | `/api/v4/tasks` | `/api/v4/tasks/{id}` | - |
-| Воронки | `/api/v4/leads/pipelines` | - | - | - |
-| Пользователи | `/api/v4/users` | - | - | - |
-| Аккаунт | `/api/v4/account` | - | - | - |
+| Сущность     | GET                       | POST                | PATCH                    | DELETE |
+| ------------ | ------------------------- | ------------------- | ------------------------ | ------ |
+| Сделки       | `/api/v4/leads`           | `/api/v4/leads`     | `/api/v4/leads/{id}`     | -      |
+| Контакты     | `/api/v4/contacts`        | `/api/v4/contacts`  | `/api/v4/contacts/{id}`  | -      |
+| Компании     | `/api/v4/companies`       | `/api/v4/companies` | `/api/v4/companies/{id}` | -      |
+| Задачи       | `/api/v4/tasks`           | `/api/v4/tasks`     | `/api/v4/tasks/{id}`     | -      |
+| Воронки      | `/api/v4/leads/pipelines` | -                   | -                        | -      |
+| Пользователи | `/api/v4/users`           | -                   | -                        | -      |
+| Аккаунт      | `/api/v4/account`         | -                   | -                        | -      |
 
 ### Частые проблемы
 
@@ -3658,6 +3761,7 @@ ctx.account.log('Error occurred', {
 **Последнее обновление**: 2025-11-03
 
 **Изменения в версии 2.1:**
+
 - 🔧 **ИСПРАВЛЕНО**: URL для обновления токенов (должен быть `subdomain.amocrm.ru`, а не `www.amocrm.ru`)
 - ✅ **ДОБАВЛЕНО**: Полный раздел "Файлы (Files)" с загрузкой, привязкой файлов к сущностям
 - ✅ **ДОБАВЛЕНО**: Раздел "Каталоги и товары (Catalogs)" с привязкой товаров к сделкам
@@ -3665,6 +3769,7 @@ ctx.account.log('Error occurred', {
 - 🔧 Обновлены сигнатуры функций `refreshAccessToken` и `amoCRMRequestWithRetry` для корректной работы
 
 **Изменения в версии 2.0:**
+
 - Добавлены разделы: Параметры аккаунта, Пользователи, События и Примечания, Беседы, Теги, Связи сущностей
 - Расширен раздел о дополнительных полях с подробным описанием типов
 - Добавлены разделы о фильтрации и поиске
@@ -3674,6 +3779,7 @@ ctx.account.log('Error occurred', {
 - Добавлен раздел "Резюме: Быстрый старт" для новых разработчиков
 
 **Источники:**
+
 - [AmoCRM API Documentation](https://www.amocrm.ru/developers/)
 - [AmoCRM Webhooks API](https://www.amocrm.ru/developers/content/crm_platform/webhooks-api)
 - [AmoCRM Files API](https://www.amocrm.ru/developers/content/files/files-api)

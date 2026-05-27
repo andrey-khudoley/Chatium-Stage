@@ -14,6 +14,8 @@ export const updateDealFieldsHandler: V1GcHandler = async (_ctx, a) => {
   return { kind: 'gc_result', gc }
 }
 
-export const updateDealFieldsRoute = app.post('/', async (ctx, req) => handleV1Op(ctx, req, 'updateDealFields', updateDealFieldsHandler))
+export const updateDealFieldsRoute = app.post('/', async (ctx, req) =>
+  handleV1Op(ctx, req, 'updateDealFields', updateDealFieldsHandler)
+)
 
 export default updateDealFieldsRoute

@@ -22,9 +22,9 @@
             <p class="text-blue-800 font-medium mb-1">Как получить API-ключи?</p>
             <p class="text-blue-700 text-sm">
               Создайте приложение в Zoom Marketplace для получения credentials.
-              <a 
-                href="https://marketplace.zoom.us/user/build" 
-                target="_blank" 
+              <a
+                href="https://marketplace.zoom.us/user/build"
+                target="_blank"
                 class="underline hover:text-blue-900"
               >
                 Перейти в Zoom Marketplace
@@ -43,7 +43,6 @@
       <!-- Settings Form -->
       <div v-else class="bg-white rounded-lg shadow-sm">
         <form @submit.prevent="saveSettings" class="p-6 space-y-8">
-          
           <!-- API Credentials Section -->
           <div>
             <h2 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
@@ -133,16 +132,16 @@
             </h2>
             <div class="space-y-4">
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">
-                  Тема встречи
-                </label>
+                <label class="block text-sm font-medium text-gray-700 mb-1"> Тема встречи </label>
                 <input
                   v-model="settings.default_topic"
                   type="text"
                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   placeholder="Zoom-встреча"
                 />
-                <p class="text-xs text-gray-500 mt-1">Заголовок, который будет использоваться по умолчанию для новых встреч</p>
+                <p class="text-xs text-gray-500 mt-1">
+                  Заголовок, который будет использоваться по умолчанию для новых встреч
+                </p>
               </div>
 
               <div>
@@ -184,7 +183,9 @@
                   <optgroup label="Россия">
                     <option value="Europe/Moscow">Europe/Moscow (Москва)</option>
                     <option value="Europe/Samara">Europe/Samara (Самара)</option>
-                    <option value="Europe/Yekaterinburg">Europe/Yekaterinburg (Екатеринбург)</option>
+                    <option value="Europe/Yekaterinburg">
+                      Europe/Yekaterinburg (Екатеринбург)
+                    </option>
                     <option value="Asia/Novosibirsk">Asia/Novosibirsk (Новосибирск)</option>
                     <option value="Asia/Vladivostok">Asia/Vladivostok (Владивосток)</option>
                   </optgroup>
@@ -219,7 +220,9 @@
                     <option value="UTC">UTC</option>
                   </optgroup>
                 </select>
-                <p class="text-xs text-gray-500 mt-1">Часовой пояс по умолчанию для новых встреч (IANA формат)</p>
+                <p class="text-xs text-gray-500 mt-1">
+                  Часовой пояс по умолчанию для новых встреч (IANA формат)
+                </p>
               </div>
             </div>
           </div>
@@ -251,20 +254,36 @@
       </div>
 
       <!-- Test Result -->
-      <div v-if="testResult" :class="[
-        'mt-4 rounded-lg p-4',
-        testResult.success ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'
-      ]">
+      <div
+        v-if="testResult"
+        :class="[
+          'mt-4 rounded-lg p-4',
+          testResult.success
+            ? 'bg-green-50 border border-green-200'
+            : 'bg-red-50 border border-red-200'
+        ]"
+      >
         <div class="flex items-start gap-3">
-          <i :class="[
-            testResult.success ? 'fas fa-check-circle text-green-600' : 'fas fa-exclamation-circle text-red-600',
-            'mt-0.5'
-          ]"></i>
+          <i
+            :class="[
+              testResult.success
+                ? 'fas fa-check-circle text-green-600'
+                : 'fas fa-exclamation-circle text-red-600',
+              'mt-0.5'
+            ]"
+          ></i>
           <div>
-            <p :class="testResult.success ? 'text-green-800 font-medium' : 'text-red-800 font-medium'">
+            <p
+              :class="
+                testResult.success ? 'text-green-800 font-medium' : 'text-red-800 font-medium'
+              "
+            >
               {{ testResult.success ? 'Подключение успешно!' : 'Ошибка подключения' }}
             </p>
-            <p v-if="testResult.message" :class="testResult.success ? 'text-green-700 text-sm' : 'text-red-700 text-sm'">
+            <p
+              v-if="testResult.message"
+              :class="testResult.success ? 'text-green-700 text-sm' : 'text-red-700 text-sm'"
+            >
               {{ testResult.message }}
             </p>
           </div>
@@ -272,20 +291,36 @@
       </div>
 
       <!-- Save Result -->
-      <div v-if="saveResult" :class="[
-        'mt-4 rounded-lg p-4',
-        saveResult.success ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'
-      ]">
+      <div
+        v-if="saveResult"
+        :class="[
+          'mt-4 rounded-lg p-4',
+          saveResult.success
+            ? 'bg-green-50 border border-green-200'
+            : 'bg-red-50 border border-red-200'
+        ]"
+      >
         <div class="flex items-start gap-3">
-          <i :class="[
-            saveResult.success ? 'fas fa-check-circle text-green-600' : 'fas fa-exclamation-circle text-red-600',
-            'mt-0.5'
-          ]"></i>
+          <i
+            :class="[
+              saveResult.success
+                ? 'fas fa-check-circle text-green-600'
+                : 'fas fa-exclamation-circle text-red-600',
+              'mt-0.5'
+            ]"
+          ></i>
           <div>
-            <p :class="saveResult.success ? 'text-green-800 font-medium' : 'text-red-800 font-medium'">
+            <p
+              :class="
+                saveResult.success ? 'text-green-800 font-medium' : 'text-red-800 font-medium'
+              "
+            >
               {{ saveResult.success ? 'Настройки сохранены!' : 'Ошибка сохранения' }}
             </p>
-            <p v-if="saveResult.message" :class="saveResult.success ? 'text-green-700 text-sm' : 'text-red-700 text-sm'">
+            <p
+              v-if="saveResult.message"
+              :class="saveResult.success ? 'text-green-700 text-sm' : 'text-red-700 text-sm'"
+            >
               {{ saveResult.message }}
             </p>
           </div>
@@ -332,9 +367,7 @@ const testResult = ref<{ success: boolean; message?: string } | null>(null)
 const saveResult = ref<{ success: boolean; message?: string } | null>(null)
 
 const canTest = computed(() => {
-  return settings.value.account_id && 
-         settings.value.client_id && 
-         settings.value.client_secret
+  return settings.value.account_id && settings.value.client_id && settings.value.client_secret
 })
 
 async function loadSettings() {
@@ -355,7 +388,7 @@ async function loadSettings() {
 async function saveSettings() {
   saving.value = true
   saveResult.value = null
-  
+
   try {
     await apiSettingsSaveRoute.run(ctx, {
       account_id: settings.value.account_id,
@@ -367,12 +400,12 @@ async function saveSettings() {
       default_auto_recording: settings.value.default_auto_recording as 'none' | 'local' | 'cloud',
       default_timezone: settings.value.default_timezone
     })
-    
+
     saveResult.value = {
       success: true,
       message: 'Настройки успешно сохранены в базе данных.'
     }
-    
+
     // Clear success message after 3 seconds
     setTimeout(() => {
       saveResult.value = null
@@ -390,7 +423,7 @@ async function saveSettings() {
 async function testConnection() {
   testing.value = true
   testResult.value = null
-  
+
   try {
     // First save current settings
     await apiSettingsSaveRoute.run(ctx, {
@@ -403,10 +436,10 @@ async function testConnection() {
       default_auto_recording: settings.value.default_auto_recording as 'none' | 'local' | 'cloud',
       default_timezone: settings.value.default_timezone
     })
-    
+
     // Then test the connection
     const result = await apiZoomTestRoute.run(ctx)
-    
+
     testResult.value = {
       success: result.success,
       message: result.message

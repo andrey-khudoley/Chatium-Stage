@@ -11,39 +11,35 @@
       <div class="avatar-modal-body">
         <!-- File Input -->
         <div v-if="!cropperImage" class="file-upload-area" @click="$refs.fileInput.click()">
-          <input 
+          <input
             ref="fileInput"
-            type="file" 
-            accept="image/*" 
+            type="file"
+            accept="image/*"
             class="hidden"
             @change="onFileSelect"
-          >
-          <i class="fas fa-cloud-arrow-up text-4xl mb-4" style="color: var(--primary-color);"></i>
+          />
+          <i class="fas fa-cloud-arrow-up text-4xl mb-4" style="color: var(--primary-color)"></i>
           <p class="text-gray-600 mb-2">Нажмите или перетащите фото</p>
           <p class="text-sm text-gray-400">JPG, PNG до 5MB</p>
         </div>
 
         <!-- Cropper -->
         <div v-else class="cropper-container">
-          <img 
+          <img
             ref="cropperImageElement"
-            :src="cropperImage" 
+            :src="cropperImage"
             class="max-w-full"
-            style="max-height: 400px;"
-          >
+            style="max-height: 400px"
+          />
         </div>
       </div>
 
       <div class="avatar-modal-footer">
-        <button 
-          v-if="cropperImage" 
-          @click="resetFileInput"
-          class="btn-secondary"
-        >
+        <button v-if="cropperImage" @click="resetFileInput" class="btn-secondary">
           Выбрать другое
         </button>
-        <button 
-          v-if="cropperImage" 
+        <button
+          v-if="cropperImage"
           @click="saveCroppedAvatar"
           :disabled="uploading"
           class="btn-primary"
@@ -52,11 +48,7 @@
           <i v-if="uploading" class="fas fa-spinner fa-spin"></i>
           <span v-else>{{ saveButtonText }}</span>
         </button>
-        <button 
-          v-if="!cropperImage && currentAvatarHash" 
-          @click="removeAvatar" 
-          class="btn-danger"
-        >
+        <button v-if="!cropperImage && currentAvatarHash" @click="removeAvatar" class="btn-danger">
           <i class="fas fa-trash"></i>
           Удалить фото
         </button>
@@ -94,11 +86,14 @@ const cropperInstance = ref(null)
 const uploading = ref(false)
 
 // Очистка при закрытии
-watch(() => props.isOpen, (isOpen) => {
-  if (!isOpen) {
-    resetFileInput()
+watch(
+  () => props.isOpen,
+  (isOpen) => {
+    if (!isOpen) {
+      resetFileInput()
+    }
   }
-})
+)
 
 function close() {
   emit('close')
@@ -165,7 +160,7 @@ function initCropper() {
     ready() {
       const imageData = this.cropper.getImageData()
       const containerData = this.cropper.getContainerData()
-      
+
       // Если изображение квадратное (допуск 5%), выделяем все
       const aspectRatio = imageData.width / imageData.height
       if (Math.abs(aspectRatio - 1) < 0.05) {
@@ -202,11 +197,11 @@ async function saveCroppedAvatar() {
       height: 400,
       fillColor: '#fff',
       imageSmoothingEnabled: true,
-      imageSmoothingQuality: 'high',
+      imageSmoothingQuality: 'high'
     })
 
     // Convert canvas to Blob
-    const blob = await new Promise(resolve => {
+    const blob = await new Promise((resolve) => {
       canvas.toBlob(resolve, 'image/jpeg', 0.9)
     })
 
@@ -223,7 +218,6 @@ async function saveCroppedAvatar() {
     // Emit save event with hash
     emit('save', uploadedFile.hash)
     close()
-
   } catch (error) {
     console.error('Ошибка загрузки аватара:', error)
     alert('Не удалось загрузить аватар: ' + error.message)
@@ -599,7 +593,7 @@ function removeAvatar() {
   width: 10px;
   border-radius: 50%;
   border: 2px solid white;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
 :deep(.cropper-point.point-e) {
@@ -663,7 +657,7 @@ function removeAvatar() {
     max-width: 100%;
     margin: 16px;
   }
-  
+
   .file-upload-area {
     padding: 2rem 1rem;
   }

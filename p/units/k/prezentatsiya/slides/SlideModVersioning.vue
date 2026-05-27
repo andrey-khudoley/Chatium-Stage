@@ -31,7 +31,9 @@
         <div class="speed-icon"><i class="fas fa-bolt"></i></div>
         <div class="speed-text">
           <div class="speed-title">Скорость изменений</div>
-          <div class="speed-desc">Меняешь код — видишь результат мгновенно. Как на вебе. Без деплоя, без ожидания.</div>
+          <div class="speed-desc">
+            Меняешь код — видишь результат мгновенно. Как на вебе. Без деплоя, без ожидания.
+          </div>
         </div>
       </div>
     </div>
@@ -48,7 +50,7 @@ const steps = [
     status: 'DRAFT',
     statusIcon: 'fas fa-code',
     color: '#fbbf24',
-    cls: 'step-dev',
+    cls: 'step-dev'
   },
   {
     name: 'Публикация',
@@ -56,7 +58,7 @@ const steps = [
     status: 'PUBLISH',
     statusIcon: 'fas fa-rocket',
     color: '#34d399',
-    cls: 'step-prod',
+    cls: 'step-prod'
   },
   {
     name: 'Откат',
@@ -64,8 +66,8 @@ const steps = [
     status: 'ROLLBACK',
     statusIcon: 'fas fa-rotate-left',
     color: '#fb7185',
-    cls: 'step-rollback',
-  },
+    cls: 'step-rollback'
+  }
 ]
 </script>
 
@@ -82,14 +84,43 @@ const steps = [
   overflow-x: hidden;
 }
 
-.bg-effects { position: fixed; inset: 0; pointer-events: none; overflow: hidden; }
-.glow-orb { position: absolute; border-radius: 50%; filter: blur(140px); opacity: 0.12; animation: float 20s ease-in-out infinite; }
-.orb-1 { width: 500px; height: 500px; background: #f97316; top: -15%; right: -10%; }
-.orb-2 { width: 400px; height: 400px; background: #ea580c; bottom: -15%; left: -5%; animation-delay: -7s; }
+.bg-effects {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+.glow-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(140px);
+  opacity: 0.12;
+  animation: float 20s ease-in-out infinite;
+}
+.orb-1 {
+  width: 500px;
+  height: 500px;
+  background: #f97316;
+  top: -15%;
+  right: -10%;
+}
+.orb-2 {
+  width: 400px;
+  height: 400px;
+  background: #ea580c;
+  bottom: -15%;
+  left: -5%;
+  animation-delay: -7s;
+}
 
 @keyframes float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-30px); }
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-30px);
+  }
 }
 
 .content {
@@ -103,7 +134,9 @@ const steps = [
   gap: 44px;
 }
 
-.header { text-align: center; }
+.header {
+  text-align: center;
+}
 
 .title {
   font-family: var(--font-display);
@@ -247,18 +280,52 @@ const steps = [
 }
 
 @media (max-width: 768px) {
-  .slide { padding: 30px 16px 16px; align-items: flex-start; }
-  .content { gap: 24px; }
-  .pipeline { flex-direction: column; gap: 0; }
-  .pipe-arrow { padding: 4px 0; justify-content: center; font-size: 14px; }
-  .pipe-arrow i { transform: rotate(90deg); }
-  .step-card { padding: 16px 14px; }
-  .step-name { font-size: 18px; }
-  .step-desc { font-size: 13px; }
-  .speed-block { flex-direction: row; text-align: left; padding: 16px 14px; gap: 14px; }
-  .speed-icon { width: 44px; height: 44px; }
-  .speed-icon i { font-size: 20px; }
-  .speed-title { font-size: 16px; }
-  .speed-desc { font-size: 13px; }
+  .slide {
+    padding: 30px 16px 16px;
+    align-items: flex-start;
+  }
+  .content {
+    gap: 24px;
+  }
+  .pipeline {
+    flex-direction: column;
+    gap: 0;
+  }
+  .pipe-arrow {
+    padding: 4px 0;
+    justify-content: center;
+    font-size: 14px;
+  }
+  .pipe-arrow i {
+    transform: rotate(90deg);
+  }
+  .step-card {
+    padding: 16px 14px;
+  }
+  .step-name {
+    font-size: 18px;
+  }
+  .step-desc {
+    font-size: 13px;
+  }
+  .speed-block {
+    flex-direction: row;
+    text-align: left;
+    padding: 16px 14px;
+    gap: 14px;
+  }
+  .speed-icon {
+    width: 44px;
+    height: 44px;
+  }
+  .speed-icon i {
+    font-size: 20px;
+  }
+  .speed-title {
+    font-size: 16px;
+  }
+  .speed-desc {
+    font-size: 13px;
+  }
 }
 </style>

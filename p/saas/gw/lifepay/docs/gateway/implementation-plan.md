@@ -1,5 +1,5 @@
 ---
-title: "Payments Gateway (LifePay) - пошаговый план реализации"
+title: 'Payments Gateway (LifePay) - пошаговый план реализации'
 project_hash: c7d5a1
 type: implementation-plan
 date: 2026-05-14
@@ -10,8 +10,8 @@ tags:
   - topic/lifepay
   - topic/chatium
   - rag/actionable
-related_manual: "[operation-manual](./operation-manual.md)"
-related_strategy: "[testing-strategy](./testing-strategy.md)"
+related_manual: '[operation-manual](./operation-manual.md)'
+related_strategy: '[testing-strategy](./testing-strategy.md)'
 ---
 
 # Payments Gateway (LifePay) - пошаговый план реализации
@@ -48,26 +48,26 @@ related_strategy: "[testing-strategy](./testing-strategy.md)"
 
 ### 1.1. Каркас и инфраструктура `template_project`
 
-- [x] **PROJECT_ROOT и `.dir.json`** соответствуют `p/saas/gw/lifepay/` (`config/routes.tsx`, `.dir.json`); подтверждено успешной загрузкой главной страницы. *Готово, когда:* `https://<домен>/p/saas/gw/lifepay/` отдаёт SSR-главную без ошибок. (См. `docs/architecture.md` приложения.) — `PROJECT_ROOT` в `config/routes.tsx` = `'p/saas/gw/lifepay'`, `.dir.json` с именем `[INWORK] p/saas/gw/lifepay`.
-- [x] **Heap settings и logs** живут на собственных ключах таблиц приложения (`tables/settings.table.ts`, `tables/logs.table.ts`), не пересекаются с другими экземплярами шаблона. *Готово, когда:* запись настройки и появление лога подтверждены через админку. — файлы [tables/settings.table.ts](../../tables/settings.table.ts) и [tables/logs.table.ts](../../tables/logs.table.ts) существуют (шаблон). Запись/чтение через админку фактически не проверены — оставить [x] условно или понизить.
-- [x] **Админка шаблона** доступна под `Admin` (`web/admin/index.tsx`, `pages/AdminPage.vue`): настройки, дашборд, логи. *Готово, когда:* админ видит счётчики и поток новых логов. — каталоги `web/admin/`, `pages/AdminPage.vue` (49 KiB), `api/admin/`, `lib/admin/` присутствуют (шаблон).
-- [x] **Страница тестов шаблона** (`web/tests/index.tsx`, `pages/TestsPage.vue`) запускает юнит-каталог шаблона и показывает HTTP-проверки. *Готово, когда:* нажатие «Запустить юниты» выдаёт зелёный отчёт. — `web/tests/`, `pages/TestsPage.vue` (65 KiB), `api/tests/`, `lib/tests/`, `shared/testCatalog.ts` присутствуют (шаблон). Зелёный прогон фактически не проверен.
+- [x] **PROJECT_ROOT и `.dir.json`** соответствуют `p/saas/gw/lifepay/` (`config/routes.tsx`, `.dir.json`); подтверждено успешной загрузкой главной страницы. _Готово, когда:_ `https://<домен>/p/saas/gw/lifepay/` отдаёт SSR-главную без ошибок. (См. `docs/architecture.md` приложения.) — `PROJECT_ROOT` в `config/routes.tsx` = `'p/saas/gw/lifepay'`, `.dir.json` с именем `[INWORK] p/saas/gw/lifepay`.
+- [x] **Heap settings и logs** живут на собственных ключах таблиц приложения (`tables/settings.table.ts`, `tables/logs.table.ts`), не пересекаются с другими экземплярами шаблона. _Готово, когда:_ запись настройки и появление лога подтверждены через админку. — файлы [tables/settings.table.ts](../../tables/settings.table.ts) и [tables/logs.table.ts](../../tables/logs.table.ts) существуют (шаблон). Запись/чтение через админку фактически не проверены — оставить [x] условно или понизить.
+- [x] **Админка шаблона** доступна под `Admin` (`web/admin/index.tsx`, `pages/AdminPage.vue`): настройки, дашборд, логи. _Готово, когда:_ админ видит счётчики и поток новых логов. — каталоги `web/admin/`, `pages/AdminPage.vue` (49 KiB), `api/admin/`, `lib/admin/` присутствуют (шаблон).
+- [x] **Страница тестов шаблона** (`web/tests/index.tsx`, `pages/TestsPage.vue`) запускает юнит-каталог шаблона и показывает HTTP-проверки. _Готово, когда:_ нажатие «Запустить юниты» выдаёт зелёный отчёт. — `web/tests/`, `pages/TestsPage.vue` (65 KiB), `api/tests/`, `lib/tests/`, `shared/testCatalog.ts` присутствуют (шаблон). Зелёный прогон фактически не проверен.
 
 ### 1.2. Настройки `lp_*` в Heap (минимум)
 
 - [x] Константа `LP_TEST_APIKEY = 'lp_test_apikey'` добавлена в `lib/settings.lib.ts` `SETTING_KEYS` и в `shared/gatewaySettingKeys.ts` (`// @shared`). См. §5.5.
 - [x] Константа `LP_TEST_LOGIN = 'lp_test_login'` добавлена туда же (§5.5).
-- [x] Поля «Тестовый API-ключ LifePay» (тип `password`) и «Тестовый логин LifePay (телефон 7XXXXXXXXXX)» (тип `text`) появились в `pages/AdminPage.vue` (чтение / запись через существующие `api/settings/*`). *Готово, когда:* администратор может задать значения и сохранить; пустые / пробельные строки отклоняются (валидация §5.5); для `lp_test_login` проверка по правилам §2.5 (11 цифр, первая `7`).
+- [x] Поля «Тестовый API-ключ LifePay» (тип `password`) и «Тестовый логин LifePay (телефон 7XXXXXXXXXX)» (тип `text`) появились в `pages/AdminPage.vue` (чтение / запись через существующие `api/settings/*`). _Готово, когда:_ администратор может задать значения и сохранить; пустые / пробельные строки отклоняются (валидация §5.5); для `lp_test_login` проверка по правилам §2.5 (11 цифр, первая `7`).
 
 ### 1.3. Перечень `op` для Прототипа
 
 Полный список вызовов к LifePay, который должен быть реализован на payments-gateway в фазе Прототипа, чтобы сценарий «создать счёт → QR → оплата → webhook» прошёл сквозной проход.
 
-| `op` | Контур | HTTP-метод gateway | Сценарий | Обязательно для прототипа | Назначение | Обязательные `args` |
-| --- | --- | --- | --- | --- | --- | --- |
-| **`createBill`** | `bills_v1` | `POST` | основной | да | Создать счёт LifePay с `method: "sbp"`, получить `paymentUrl` (deeplink на qr.nspk.ru) и `paymentUrlWeb` (страница оплаты в браузере) | `amount` (число > 0), `customerEmail` (строка), `orderNumber` (строка), `callbackUrl` (строка-URL), `description` (строка, обязательно по контракту LifePay — отражается в чеке покупателю; отсутствие → code 6020). Опционально: `customerPhone` |
-| **`getBillStatus`** | `bills_v1` | `GET` | smoke | да | Smoke-операция для проверки связи и аутентификации с LifePay через ручной запуск из браузера / админки тестов | `billNumber` (строка) |
-| **`cancelBill`** | `bills_v1` | `POST` | teardown | да | Отмена счёта в Фазе 4 интеграционного сьюита (`strategy §3.5`) и в админке для ручной разборки | `billNumber` (строка) |
+| `op`                | Контур     | HTTP-метод gateway | Сценарий | Обязательно для прототипа | Назначение                                                                                                                            | Обязательные `args`                                                                                                                                                                                                                               |
+| ------------------- | ---------- | ------------------ | -------- | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **`createBill`**    | `bills_v1` | `POST`             | основной | да                        | Создать счёт LifePay с `method: "sbp"`, получить `paymentUrl` (deeplink на qr.nspk.ru) и `paymentUrlWeb` (страница оплаты в браузере) | `amount` (число > 0), `customerEmail` (строка), `orderNumber` (строка), `callbackUrl` (строка-URL), `description` (строка, обязательно по контракту LifePay — отражается в чеке покупателю; отсутствие → code 6020). Опционально: `customerPhone` |
+| **`getBillStatus`** | `bills_v1` | `GET`              | smoke    | да                        | Smoke-операция для проверки связи и аутентификации с LifePay через ручной запуск из браузера / админки тестов                         | `billNumber` (строка)                                                                                                                                                                                                                             |
+| **`cancelBill`**    | `bills_v1` | `POST`             | teardown | да                        | Отмена счёта в Фазе 4 интеграционного сьюита (`strategy §3.5`) и в админке для ручной разборки                                        | `billNumber` (строка)                                                                                                                                                                                                                             |
 
 **Итог по перечню для Прототипа.** 3 обязательных `op` контура `bills_v1`. Все три на момент Прототипа имеют статус `availability` = `disabled` в [lp-op-http-mapping.json](./lp-op-http-mapping.json) (безопасная сторона по §2.11; включение в `enabled` происходит по §2.4 этого плана через открытый вопрос §12.8 manual). Контур `ecom_v1` весь `disabled` (§4.4 manual, открытый вопрос §12.6).
 
@@ -77,9 +77,9 @@ related_strategy: "[testing-strategy](./testing-strategy.md)"
 
 Каждый `op` из обязательных в §1.3 реализован как отдельный файловый роут:
 
-- [x] **`POST /v1/createBill`** (`bills_v1`) - файловый роут в `api/v1/createBill.ts`. *Готово, когда:* запрос с заголовками `X-Lp-Apikey`, `X-Lp-Login` и валидным `args` создаёт счёт в тестовом магазине LifePay с email `tester@khudoley.pro` и возвращает `ok: true` + `data: { billNumber, paymentUrl, paymentUrlWeb }` (§9.1).
-- [x] **`GET /v1/getBillStatus`** (`bills_v1`) - файловый роут в `api/v1/getBillStatus.ts`; `billNumber` берётся из query. *Готово, когда:* запрос с заголовками и `?billNumber=<lp_bill_id>` возвращает текущий статус счёта в форме `data: { billNumber, status, msg? }`, где `status` - имя по справочнику LifePay (`initiated`/`success`/`pending`/`failed`/`cancelled`), `msg` - сопровождающее сообщение от провайдера. LifePay возвращает `data` как словарь `{ [billNumber]: { status: number, msg: string } }`; gateway разворачивает в плоскую форму. *Подтверждено боевым запросом 2026-05-15 на счёт 10197087498032.*
-- [x] **`POST /v1/cancelBill`** (`bills_v1`) - файловый роут в `api/v1/cancelBill.ts`. *Готово, когда:* запрос с заголовками и валидным `billNumber` отменяет счёт в LifePay (LifePay при успехе возвращает пустой `data: {}`; gateway отдаёт синтетический `data: { status: "cancelled" }`); повторный вызов на уже отменённый счёт возвращает `INVOKE_LP_SEMANTIC_ERROR` с `lpRule: "bills_v1_code_error"` и `lpNumericCode` из ответа LifePay.
+- [x] **`POST /v1/createBill`** (`bills_v1`) - файловый роут в `api/v1/createBill.ts`. _Готово, когда:_ запрос с заголовками `X-Lp-Apikey`, `X-Lp-Login` и валидным `args` создаёт счёт в тестовом магазине LifePay с email `tester@khudoley.pro` и возвращает `ok: true` + `data: { billNumber, paymentUrl, paymentUrlWeb }` (§9.1).
+- [x] **`GET /v1/getBillStatus`** (`bills_v1`) - файловый роут в `api/v1/getBillStatus.ts`; `billNumber` берётся из query. _Готово, когда:_ запрос с заголовками и `?billNumber=<lp_bill_id>` возвращает текущий статус счёта в форме `data: { billNumber, status, msg? }`, где `status` - имя по справочнику LifePay (`initiated`/`success`/`pending`/`failed`/`cancelled`), `msg` - сопровождающее сообщение от провайдера. LifePay возвращает `data` как словарь `{ [billNumber]: { status: number, msg: string } }`; gateway разворачивает в плоскую форму. _Подтверждено боевым запросом 2026-05-15 на счёт 10197087498032._
+- [x] **`POST /v1/cancelBill`** (`bills_v1`) - файловый роут в `api/v1/cancelBill.ts`. _Готово, когда:_ запрос с заголовками и валидным `billNumber` отменяет счёт в LifePay (LifePay при успехе возвращает пустой `data: {}`; gateway отдаёт синтетический `data: { status: "cancelled" }`); повторный вызов на уже отменённый счёт возвращает `INVOKE_LP_SEMANTIC_ERROR` с `lpRule: "bills_v1_code_error"` и `lpNumericCode` из ответа LifePay.
 
 Под каждый из этих роутов:
 
@@ -87,7 +87,7 @@ related_strategy: "[testing-strategy](./testing-strategy.md)"
 - [x] HTTP-метод роута соответствует `httpMethod` записи каталога; несоответствие → `INVOKE_HTTP_METHOD_NOT_ALLOWED` (§10). Файловые роуты `api/v1/createBill.ts` (POST), `getBillStatus.ts` (GET), `cancelBill.ts` (POST) совпадают с `operationsCatalog.ts`.
 - [x] Возврат строго через объект `{ statusCode, rawHttpBody, headers }` (§9.0); заголовок `X-Gateway-Request-Id` совпадает с `requestId` в JSON. Реализовано в `lib/gateway/gatewayResponse.ts`; подтверждено боевым ответом 15-05-2026 (`x-gateway-request-id` в HTTP-headers равен `requestId` в теле).
 - [x] Поля `apikey` / `login` собираются gateway из заголовков и подставляются в исходящий запрос к LifePay (тело JSON для `POST`, query для `GET`); в `args` от клиента эти поля игнорируются (§4.5). Реализовано в `buildCreateBillBody.ts` (POST) и `lifePayGetJson` (GET).
-- [x] Семантическая ошибка LifePay при HTTP 2xx (правила B1-B4 по §2.8.2) - `INVOKE_LP_SEMANTIC_ERROR` (502), `error.details.lpRule` равно одному из значений `bills_v1_status_error`, `bills_v1_code_error`, `bills_v1_missing_payment_url`, `bills_v1_error_string`. **По факту контракта LifePay (apidoc.life-pay.ru/bill/index):** основной признак ошибки - `code !== 0` в корне → `bills_v1_code_error` с `lpNumericCode`. Правило B1 (`status === 'error'`) формально присутствует в каноне §10, но фактически не применяется к bills_v1: LifePay возвращает `status` числом-кодом состояния счёта (0/10/15/20/30), не флагом ошибки. Для `getBillStatus` отсутствие записи `data[billNumber]` или поля `status` в ней при `code === 0` → `bills_v1_code_error` без `lpNumericCode`. *Готово, когда:* юнит-кейс на «отсутствует `paymentUrl` при HTTP 200» выдаёт ровно этот код.
+- [x] Семантическая ошибка LifePay при HTTP 2xx (правила B1-B4 по §2.8.2) - `INVOKE_LP_SEMANTIC_ERROR` (502), `error.details.lpRule` равно одному из значений `bills_v1_status_error`, `bills_v1_code_error`, `bills_v1_missing_payment_url`, `bills_v1_error_string`. **По факту контракта LifePay (apidoc.life-pay.ru/bill/index):** основной признак ошибки - `code !== 0` в корне → `bills_v1_code_error` с `lpNumericCode`. Правило B1 (`status === 'error'`) формально присутствует в каноне §10, но фактически не применяется к bills*v1: LifePay возвращает `status` числом-кодом состояния счёта (0/10/15/20/30), не флагом ошибки. Для `getBillStatus` отсутствие записи `data[billNumber]` или поля `status` в ней при `code === 0` → `bills_v1_code_error` без `lpNumericCode`. *Готово, когда:\_ юнит-кейс на «отсутствует `paymentUrl` при HTTP 200» выдаёт ровно этот код.
 
 ### 1.5. `GET /v1/operations` - подмножество для демо
 
@@ -120,10 +120,10 @@ related_strategy: "[testing-strategy](./testing-strategy.md)"
 #### 1.8.1. Heap, настройки, журнал
 
 - [x] **Heap-настройки** реализованы в `lib/settings.lib.ts` `SETTING_KEYS` (валидация - см. `validateSetting`):
-    - `lp_apikey` (password, непустой после `trim`) - подставляется в заголовок `X-Lp-Apikey`.
-    - `lp_login` (text, регулярка `^7\d{10}$` - 11 цифр, первая `7`) - подставляется в `X-Lp-Login`.
-    - `lp_webhook_token` (password, ≥ 32 символа) - проверка query-параметра `?token=...` приёмником webhook. **Единственный механизм аутентификации входящего webhook**: live-документация [apidoc.life-pay.ru/notification](https://apidoc.life-pay.ru/notification/index) подпись не публикует, MD5 не реализуется (см. §1.8.3, manual §6.2).
-    - `gateway_base_url` (text, формат `https?://...` без trailing slash) - публичный базовый URL payments-gateway. Хранится в Heap, не в коде - смена эндпоинта gateway не требует пересборки панели.
+  - `lp_apikey` (password, непустой после `trim`) - подставляется в заголовок `X-Lp-Apikey`.
+  - `lp_login` (text, регулярка `^7\d{10}$` - 11 цифр, первая `7`) - подставляется в `X-Lp-Login`.
+  - `lp_webhook_token` (password, ≥ 32 символа) - проверка query-параметра `?token=...` приёмником webhook. **Единственный механизм аутентификации входящего webhook**: live-документация [apidoc.life-pay.ru/notification](https://apidoc.life-pay.ru/notification/index) подпись не публикует, MD5 не реализуется (см. §1.8.3, manual §6.2).
+  - `gateway_base_url` (text, формат `https?://...` без trailing slash) - публичный базовый URL payments-gateway. Хранится в Heap, не в коде - смена эндпоинта gateway не требует пересборки панели.
 - [x] **Heap-таблица `request_log`** (`tables/requestLog.table.ts`) - одна запись на каждый `invoke`: `requestId` (из заголовка `X-Gateway-Request-Id` gateway), `op`, `argsRedacted`, `clientHttpStatus`, `ok`, `errorCode`, `lpHttpStatus`, `lpSemanticRule`, `lpNumericCode`, `durationMs`, `requestedAt`, `rawResponseBody`. Запись организована через `lib/gateway/recordRequestLog.ts`; raw payload не маскируется (клиент - оператор ПДн, решение 16-05-2026), но проходит структурную гигиену `shared/prepareRawLog.ts` (циклы → `__circular`, лимит 64KB).
 - [x] **Heap-таблица `webhook_log`** (`tables/webhookLog.table.ts`) - поля: `number` (transaction LifePay), `type`, `status`, `method`, `amount` (строка), `orderNumber` (из вложенного `order.number`), `tokenValid`, `duplicate`, `processedAt`, `email` (raw), `rawBody` (полный JSON, без маски), `rawQuery` (с замаскированным токеном). Извлечение полей через `lib/webhook/processWebhook.parseWebhookBody`.
 - [x] **Heap-таблица `webhook_idempotency`** (`tables/webhookIdempotency.table.ts`) - уникальность по `number`, поле `firstSeenAt`. Гонки защищены `runWithExclusiveLock` из `@app/sync`.
@@ -148,26 +148,28 @@ related_strategy: "[testing-strategy](./testing-strategy.md)"
 #### 1.8.4. Главная страница панели: журнал и аналитика (Admin-only)
 
 - [~] `pages/PanelHomePage.vue` доступна на `/`. **Auth-схема (24-05-2026):** изначально `requireAccountRole(ctx, 'Admin')` с редиректом неадминов на `/web/login?back=/`. Заменено на `requireRealUser(ctx)` + `requireInternalAccess(ctx)`, см. §1.11 и [ADR 0003](../../../../../units/aayakovleva/sbp-client/docs/ADR/0003-internal-access-control.md):
+
   - Анонимный → редирект на `/s/auth/signin?back=/`.
   - Авторизованный без доступа (не Admin и нет grant в `panel_access`) → редирект на `/web/forbidden` (HTTP 403).
   - Admin или авторизованный с активным grant → панель.
-  
+
   Старый роут `/web/panel` оставлен редиректом для совместимости. Вкладки: Настройки, Аналитика (24ч), Запросы (журнал `request_log`), Webhook (журнал `webhook_log`), Поиск (по `requestId` со связанными webhook по `orderNumber`), Создать счёт, **Доступ** (только если `isAdmin = true`, §1.11.7).
+
 - [x] Таблицы журналов с кнопкой `raw` (`fa-code`) в каждой строке - открывает модалку с полным JSON через `GET /api/lp/raw-request?id=...` или `?requestId=...` и `GET /api/lp/raw-webhook?id=...`. Источники списков - `GET /api/lp/recent-requests`, `GET /api/lp/recent-webhooks`.
 - [x] **Базовая аналитика** (карточки за 24ч): всего запросов, доля `ok: true`, среднее и p95 `durationMs`, топ `errorCode`, всего webhook, доля `status: success`, доля `tokenValid: true`. Источник - `GET /api/lp/analytics/summary`.
 - [~] **Auth-схема (24-05-2026):** изначально все эндпоинты `api/lp/*` планировались Admin-only, но в коде проверка не вызывалась (аудит 24-05). Закрытие - в §1.11 ниже: единая утилита `requireInternalAccess(ctx)` ставится в начало каждого `api/lp/*` после `requireRealUser(ctx)`. Сотрудник школы видит панель после однократного подтверждения пригласительной ссылки от Admin (§1.11.4). Для эндпоинтов аналитики (`recent-requests`, `recent-webhooks`, `raw-request`, `raw-webhook`, `search-by-request-id`, `analytics/summary`) - та же пара проверок. Для `consume-invite` - только `requireRealUser` (юзер ещё не имеет доступа в момент потребления).
 - [x] Эндпоинты не возвращают секретов (`apikey`, `login` не входят в payload `request_log`/`webhook_log`). Поиск по `requestId` - `GET /api/lp/search-by-request-id`, возвращает карточку с полями `request_log` + связанные `webhook_log` по `orderNumber`.
-- [x] Вкладка «Создать счёт» (admin-only) с полями `orderNumber`, `amount`, `customerEmail`, `description`, `callbackUrl`, `customerPhone`. По клику UI отправляет POST на `api/lp/invoke` с `op: 'createBill'`. Результат: `billNumber`, `paymentUrl` (QR через CDN `qrcode.js`), `paymentUrlWeb` (кнопка «Открыть в браузере»). *Подтверждение мобильного флоу (`window.open(paymentUrl)` в банковское приложение) - в §1.9 ниже, после сквозного прохода.*
+- [x] Вкладка «Создать счёт» (admin-only) с полями `orderNumber`, `amount`, `customerEmail`, `description`, `callbackUrl`, `customerPhone`. По клику UI отправляет POST на `api/lp/invoke` с `op: 'createBill'`. Результат: `billNumber`, `paymentUrl` (QR через CDN `qrcode.js`), `paymentUrlWeb` (кнопка «Открыть в браузере»). _Подтверждение мобильного флоу (`window.open(paymentUrl)` в банковское приложение) - в §1.9 ниже, после сквозного прохода._
 
 ### 1.9. Демо-следы для Прототипа
 
 Один сквозной проход на тестовом магазине LifePay с минимальной суммой (1 ₽). **Статус на 23-05-2026:** разблокирован после патча Chatium от 18-05-2026 (multipart-поля доступны в `req.body`). До патча шаг 4 не воспроизводился: тело webhook не доходило до обработчика, см. [operation-manual §6.2 актуализация 18-05-2026](./operation-manual.md). Сейчас можно запускать.
 
-- [ ] **Шаг 1.** На вкладке «Создать счёт» клиентской панели (§1.8.4) ввести `orderNumber = itest-{timestamp}-{rand4}`, `amount = 1.00`, `customerEmail = tester@khudoley.pro`; нажать «Создать счёт». *Готово, когда:* страница показывает QR и кнопку «Открыть в браузере»; в `request_log` (§1.8.1) появилась запись с `op: 'createBill'`, `ok: true`.
-- [ ] **Шаг 2.** В админке gateway (`p/saas/gw/lifepay/`, главная) убедиться, что в `gatewayRequestLog` есть входящий вызов и в `gatewayUpstreamLog` - запись о `POST https://api.life-pay.ru/v1/bill` с возвращённым `paymentUrl`. *Готово, когда:* `billNumber` совпадает с тем, что показала панель.
-- [ ] **Шаг 3.** Оплатить QR со своего банковского приложения (1 ₽). *Готово, когда:* банк подтверждает успешный платёж.
-- [ ] **Шаг 4.** Убедиться, что роут `/web/webhook` клиентской панели (§1.8.3) получил уведомление от LifePay (токен в query совпал), в `webhook_log` появилась запись с тем же `orderNumber`, `tokenValid: true`, `type: 'payment'`, `status: 'success'`. *Готово, когда:* запись присутствует, поля совпадают; на главной странице панели она видна в таблице последних webhook. **Подзадача «сохранить сырое тело первого боевого webhook» закрыта 20-05-2026:** captured через Postman Mock, сохранён в [notes/2026-05-20--first-real-webhook.md](../../../../../units/aayakovleva/project-docs/notes/2026-05-20--first-real-webhook.md); knowledge-база актуализирована - [lifepay/webhooks §1](../../../../../units/aayakovleva/project-docs/knowledge/lifepay/webhooks.md). Остаётся подтвердить, что **наш** приёмник `sbp-client` обрабатывает webhook корректно (тот пример был отправлен на Postman, не на нас).
-- [ ] **Шаг 5.** В `my.life-pay.ru` → Касса проверить, что чек по этому счёту сформирован и ушёл в ОФД (письмо на `tester@khudoley.pro`). *Готово, когда:* письмо получено или чек виден в журнале кассы.
+- [ ] **Шаг 1.** На вкладке «Создать счёт» клиентской панели (§1.8.4) ввести `orderNumber = itest-{timestamp}-{rand4}`, `amount = 1.00`, `customerEmail = tester@khudoley.pro`; нажать «Создать счёт». _Готово, когда:_ страница показывает QR и кнопку «Открыть в браузере»; в `request_log` (§1.8.1) появилась запись с `op: 'createBill'`, `ok: true`.
+- [ ] **Шаг 2.** В админке gateway (`p/saas/gw/lifepay/`, главная) убедиться, что в `gatewayRequestLog` есть входящий вызов и в `gatewayUpstreamLog` - запись о `POST https://api.life-pay.ru/v1/bill` с возвращённым `paymentUrl`. _Готово, когда:_ `billNumber` совпадает с тем, что показала панель.
+- [ ] **Шаг 3.** Оплатить QR со своего банковского приложения (1 ₽). _Готово, когда:_ банк подтверждает успешный платёж.
+- [ ] **Шаг 4.** Убедиться, что роут `/web/webhook` клиентской панели (§1.8.3) получил уведомление от LifePay (токен в query совпал), в `webhook_log` появилась запись с тем же `orderNumber`, `tokenValid: true`, `type: 'payment'`, `status: 'success'`. _Готово, когда:_ запись присутствует, поля совпадают; на главной странице панели она видна в таблице последних webhook. **Подзадача «сохранить сырое тело первого боевого webhook» закрыта 20-05-2026:** captured через Postman Mock, сохранён в [notes/2026-05-20--first-real-webhook.md](../../../../../units/aayakovleva/project-docs/notes/2026-05-20--first-real-webhook.md); knowledge-база актуализирована - [lifepay/webhooks §1](../../../../../units/aayakovleva/project-docs/knowledge/lifepay/webhooks.md). Остаётся подтвердить, что **наш** приёмник `sbp-client` обрабатывает webhook корректно (тот пример был отправлен на Postman, не на нас).
+- [ ] **Шаг 5.** В `my.life-pay.ru` → Касса проверить, что чек по этому счёту сформирован и ушёл в ОФД (письмо на `tester@khudoley.pro`). _Готово, когда:_ письмо получено или чек виден в журнале кассы.
 
 ### 1.10. Критерий выхода из фазы Прототип
 
@@ -184,44 +186,45 @@ import { requireRealUser } from '@app/auth'
 import { requireInternalAccess } from './lib/access/requireInternalAccess'
 
 export const someRoute = app.post('/').handle(async (ctx, req) => {
-  requireRealUser(ctx)                  // 1. реальный авторизованный пользователь
-  await requireInternalAccess(ctx)      // 2. в panel_access ИЛИ Admin
+  requireRealUser(ctx) // 1. реальный авторизованный пользователь
+  await requireInternalAccess(ctx) // 2. в panel_access ИЛИ Admin
   // ... дальше бизнес-логика
 })
 ```
 
 **Исключения** (не защищаются):
+
 - `POST /web/webhook` (приёмник LifePay) - анонимный, аутентификация через токен в query (§1.8.3).
-- `/web/access/invite` (страница приглашения) - защищена только `requireRealUser`; *внутренняя* проверка не применяется (иначе пользователь, у которого нет доступа, не сможет его получить через инвайт).
+- `/web/access/invite` (страница приглашения) - защищена только `requireRealUser`; _внутренняя_ проверка не применяется (иначе пользователь, у которого нет доступа, не сможет его получить через инвайт).
 - `/web/forbidden` (страница 403) - публичная, чтобы показывать понятное сообщение.
 
 #### 1.11.1. Heap-таблицы
 
-- [x] **`panel_invites`** (`tables/panelInvites.table.ts`) - одноразовые пригласительные токены. *Создан 2026-05-24.* `UserRefLink`/`DateTime` плана физически выражены как `Heap.String` (для user IDs) и `Heap.Number` (Unix ms) — Heap-API проекта не предоставляет дедицированных типов (см. `requestLog.table.ts`, `webhookIdempotency.table.ts`). Уникальность `token` обеспечивается на уровне приложения (`accountNanoid` + `runWithExclusiveLock` в §1.11.3), Heap-схема её не выражает (зеркало комментария в `webhookIdempotency.table.ts`):
+- [x] **`panel_invites`** (`tables/panelInvites.table.ts`) - одноразовые пригласительные токены. _Создан 2026-05-24._ `UserRefLink`/`DateTime` плана физически выражены как `Heap.String` (для user IDs) и `Heap.Number` (Unix ms) — Heap-API проекта не предоставляет дедицированных типов (см. `requestLog.table.ts`, `webhookIdempotency.table.ts`). Уникальность `token` обеспечивается на уровне приложения (`accountNanoid` + `runWithExclusiveLock` в §1.11.3), Heap-схема её не выражает (зеркало комментария в `webhookIdempotency.table.ts`):
 
-  | Поле | Тип | Описание |
-  |---|---|---|
-  | `id` | auto | Heap PK |
-  | `token` | String (unique) | Случайный токен ≥ 32 символа, сгенерированный `accountNanoid(ctx)`. По нему ищется инвайт при переходе. |
-  | `createdByUserId` | UserRefLink | Admin, создавший инвайт |
-  | `createdAt` | DateTime | Время создания |
-  | `expiresAt` | DateTime | `createdAt + 7 дней` (константа `INVITE_TTL_DAYS = 7` в `lib/access/constants.ts`) |
-  | `usedAt` | Optional DateTime | Время использования (null если не использован) |
-  | `usedByUserId` | Optional UserRefLink | Кто использовал |
-  | `revokedAt` | Optional DateTime | Время отзыва Admin'ом (null если активен) |
-  | `note` | Optional String | Комментарий Admin'a при создании (например «для Ольги») |
+  | Поле              | Тип                  | Описание                                                                                                |
+  | ----------------- | -------------------- | ------------------------------------------------------------------------------------------------------- |
+  | `id`              | auto                 | Heap PK                                                                                                 |
+  | `token`           | String (unique)      | Случайный токен ≥ 32 символа, сгенерированный `accountNanoid(ctx)`. По нему ищется инвайт при переходе. |
+  | `createdByUserId` | UserRefLink          | Admin, создавший инвайт                                                                                 |
+  | `createdAt`       | DateTime             | Время создания                                                                                          |
+  | `expiresAt`       | DateTime             | `createdAt + 7 дней` (константа `INVITE_TTL_DAYS = 7` в `lib/access/constants.ts`)                      |
+  | `usedAt`          | Optional DateTime    | Время использования (null если не использован)                                                          |
+  | `usedByUserId`    | Optional UserRefLink | Кто использовал                                                                                         |
+  | `revokedAt`       | Optional DateTime    | Время отзыва Admin'ом (null если активен)                                                               |
+  | `note`            | Optional String      | Комментарий Admin'a при создании (например «для Ольги»)                                                 |
 
-- [x] **`panel_access`** (`tables/panelAccess.table.ts`) - выданные доступы. *Создан 2026-05-24.* Те же подстановки типов (`UserRefLink` → `Heap.String`, `DateTime` → `Heap.Number` Unix ms), уникальность `userId` обеспечивается в `consumeInvite` (шаг 5 в §1.11.3):
+- [x] **`panel_access`** (`tables/panelAccess.table.ts`) - выданные доступы. _Создан 2026-05-24._ Те же подстановки типов (`UserRefLink` → `Heap.String`, `DateTime` → `Heap.Number` Unix ms), уникальность `userId` обеспечивается в `consumeInvite` (шаг 5 в §1.11.3):
 
-  | Поле | Тип | Описание |
-  |---|---|---|
-  | `id` | auto | Heap PK |
-  | `userId` | UserRefLink (unique) | Кому выдан доступ |
-  | `grantedAt` | DateTime | Когда |
-  | `grantedByUserId` | UserRefLink | Какой Admin (через какой инвайт) |
-  | `inviteId` | String | ID использованного инвайта (для аудита) |
-  | `revokedAt` | Optional DateTime | Время отзыва (null если активен) |
-  | `revokedByUserId` | Optional UserRefLink | Кто отозвал |
+  | Поле              | Тип                  | Описание                                |
+  | ----------------- | -------------------- | --------------------------------------- |
+  | `id`              | auto                 | Heap PK                                 |
+  | `userId`          | UserRefLink (unique) | Кому выдан доступ                       |
+  | `grantedAt`       | DateTime             | Когда                                   |
+  | `grantedByUserId` | UserRefLink          | Какой Admin (через какой инвайт)        |
+  | `inviteId`        | String               | ID использованного инвайта (для аудита) |
+  | `revokedAt`       | Optional DateTime    | Время отзыва (null если активен)        |
+  | `revokedByUserId` | Optional UserRefLink | Кто отозвал                             |
 
   Запись с непустым `revokedAt` считается недействительной (можно удалять, но для аудита проще оставлять с пометкой; при выдаче нового доступа тому же пользователю - обновить, сбросив `revokedAt`).
 
@@ -230,7 +233,7 @@ export const someRoute = app.post('/').handle(async (ctx, req) => {
 - [x] Файл `lib/access/requireInternalAccess.ts`:
 
   ```ts
-  import type { app } from '@app/types'  // или эквивалент
+  import type { app } from '@app/types' // или эквивалент
   import { PanelAccessTable } from '../../tables/panelAccess.table'
 
   export class InternalAccessDeniedError extends Error {
@@ -251,10 +254,10 @@ export const someRoute = app.post('/').handle(async (ctx, req) => {
       throw new InternalAccessDeniedError('no user (requireRealUser must run first)')
     }
     if (ctx.user.is('Admin')) {
-      return  // Admin-владелец всегда имеет доступ
+      return // Admin-владелец всегда имеет доступ
     }
     const record = await PanelAccessTable.findOneBy(ctx, {
-      userId: ctx.user.id,
+      userId: ctx.user.id
     })
     if (!record || record.revokedAt) {
       throw new InternalAccessDeniedError(`user ${ctx.user.id} not in panel_access`)
@@ -273,6 +276,7 @@ export const someRoute = app.post('/').handle(async (ctx, req) => {
 - [x] `generateInvite(ctx, options?: { note?: string }) → Promise<{ inviteId, token, fullUrl, expiresAt }>` - **Admin-only внутри**, ожидает что caller уже сделал `requireAccountRole(ctx, 'Admin')`. Генерирует `token = await accountNanoid(ctx)` (или `accountNanoid(ctx)` если синхронный), длина гарантируется ≥ 32; создаёт запись в `panel_invites` с `createdByUserId = ctx.user.id`, `expiresAt = now + 7d`; возвращает данные для UI. `fullUrl` - `<base>/p/units/aayakovleva/sbp-client/web/access/invite?token=<token>`.
 
 - [x] `consumeInvite(ctx, token: string) → Promise<{ ok: true, grantId } | { ok: false, reason: 'unknown' | 'used' | 'revoked' | 'expired' | 'already_has_access' }>` - под `runWithExclusiveLock(ctx, 'invite:' + token, async (lockCtx) => { ... })`. **Важно: инвайт расходуется только в самом конце, при успешном создании grant'a. Любая ранняя ветка отказа не помечает инвайт `usedAt` и не меняет его состояние - инвайт остаётся валидным для следующей попытки.**
+
   1. Найти запись по `token`. Нет → `{ ok: false, reason: 'unknown' }`, **инвайт не трогаем**.
   2. `usedAt` уже есть → `{ ok: false, reason: 'used' }`, **инвайт не трогаем** (он уже в конечном состоянии).
   3. `revokedAt` есть → `{ ok: false, reason: 'revoked' }`, **инвайт не трогаем**.
@@ -317,6 +321,7 @@ export const someRoute = app.post('/').handle(async (ctx, req) => {
 #### 1.11.5. API `consume-invite`, `generate-invite`, `revoke-invite`, `revoke-grant`, списки
 
 - [x] `POST /api/access/consume-invite` - `requireRealUser(ctx)` (без `requireInternalAccess` - суть в том, что у юзера ещё нет доступа); тело `{ token: string }`; вызывает `consumeInvite(ctx, token)`. Ответ:
+
   - `{ ok: true, redirectTo: '/' }` при успехе.
   - `{ ok: false, reason }` при отказе (HTTP 400 для `unknown`/`used`/`revoked`/`expired`, HTTP 200 + `reason: 'already_has_access'` с `redirectTo: '/'`).
   - Логирование: `access.invite_consumed` (поля `inviteId`, `userId`, без токена), `access.invite_invalid` (с `reason`).
@@ -348,6 +353,7 @@ export const someRoute = app.post('/').handle(async (ctx, req) => {
 #### 1.11.8. Миграция существующих эндпоинтов
 
 - [x] **Все 6 эндпоинтов `api/lp/*`** заменить:
+
   ```ts
   // было (только в комментарии, без вызова):
   // Admin-only
@@ -356,9 +362,11 @@ export const someRoute = app.post('/').handle(async (ctx, req) => {
   requireRealUser(ctx)
   await requireInternalAccess(ctx)
   ```
+
   Это закрывает auth-разрыв из аудита 24-05-2026 для: `api/lp/invoke`, `api/lp/recent-requests`, `api/lp/recent-webhooks`, `api/lp/raw-request`, `api/lp/raw-webhook`, `api/lp/search-by-request-id`, плюс `api/lp/analytics/summary`.
 
 - [x] **Страница панели `/` (`pages/PanelHomePage.vue` через `web/admin/index.tsx` или эквивалент)** - заменить `requireAccountRole(ctx, 'Admin')` на:
+
   ```ts
   try {
     requireRealUser(ctx)
@@ -386,32 +394,20 @@ export const someRoute = app.post('/').handle(async (ctx, req) => {
 Закрыты пункты 1.11.1-1.11.9. Тест-сценарии (вручную или через юниты):
 
 **Базовые проверки доступа:**
+
 1. Admin заходит на `/` - видит панель.
 2. Анонимный пользователь заходит на `/` - редирект на `/s/auth/signin?back=/`.
 3. Авторизованный non-Admin без доступа заходит на `/` - редирект на `/web/forbidden` со статусом 403.
 
-**Сценарий выдачи доступа через инвайт:**
-4. Admin генерирует инвайт через UI - получает URL с токеном.
-5. Анонимный пользователь переходит по URL - редирект на `/s/auth/signin?back=...` с токеном в `back`. **Инвайт остаётся активным** (в `panel_invites` `usedAt` всё ещё `null`).
-6. После входа - попадает на страницу подтверждения с кнопкой «Подтвердить».
-7. После нажатия «Подтвердить» - редирект на `/`, доступ работает. **Только теперь** в `panel_invites` поле `usedAt` заполнено.
+**Сценарий выдачи доступа через инвайт:** 4. Admin генерирует инвайт через UI - получает URL с токеном. 5. Анонимный пользователь переходит по URL - редирект на `/s/auth/signin?back=...` с токеном в `back`. **Инвайт остаётся активным** (в `panel_invites` `usedAt` всё ещё `null`). 6. После входа - попадает на страницу подтверждения с кнопкой «Подтвердить». 7. После нажатия «Подтвердить» - редирект на `/`, доступ работает. **Только теперь** в `panel_invites` поле `usedAt` заполнено.
 
-**Сценарии «ссылка живёт до подтверждения» (ключевой инвариант, см. §1.11.4 норматив):**
-8. Авторизованный пользователь без доступа заходит на URL инвайта, **закрывает вкладку без нажатия «Подтвердить»**. В `panel_invites` `usedAt` всё ещё `null`. Тот же пользователь снова открывает URL - видит ту же страницу подтверждения.
-9. Авторизованный пользователь A заходит на URL инвайта, видит форму, **не нажимает «Подтвердить»**. Авторизованный пользователь B открывает тот же URL - тоже видит форму подтверждения (со своим displayName). Кто первый нажмёт «Подтвердить», тот и получит доступ; второй на следующем заходе получит «Ссылка уже была использована».
-10. Авторизованный пользователь, у которого **уже есть активный grant**, открывает URL свежего (не использованного) инвайта - видит «У вас уже есть доступ» + кнопку «Перейти в панель». Инвайт **не расходуется** (поле `usedAt` остаётся `null`), Admin может передать его другому получателю.
+**Сценарии «ссылка живёт до подтверждения» (ключевой инвариант, см. §1.11.4 норматив):** 8. Авторизованный пользователь без доступа заходит на URL инвайта, **закрывает вкладку без нажатия «Подтвердить»**. В `panel_invites` `usedAt` всё ещё `null`. Тот же пользователь снова открывает URL - видит ту же страницу подтверждения. 9. Авторизованный пользователь A заходит на URL инвайта, видит форму, **не нажимает «Подтвердить»**. Авторизованный пользователь B открывает тот же URL - тоже видит форму подтверждения (со своим displayName). Кто первый нажмёт «Подтвердить», тот и получит доступ; второй на следующем заходе получит «Ссылка уже была использована». 10. Авторизованный пользователь, у которого **уже есть активный grant**, открывает URL свежего (не использованного) инвайта - видит «У вас уже есть доступ» + кнопку «Перейти в панель». Инвайт **не расходуется** (поле `usedAt` остаётся `null`), Admin может передать его другому получателю.
 
-**После подтверждения:**
-11. Повторный заход по тому же URL после успешного подтверждения - страница «Ссылка уже была использована» (HTTP 410).
+**После подтверждения:** 11. Повторный заход по тому же URL после успешного подтверждения - страница «Ссылка уже была использована» (HTTP 410).
 
-**Управление со стороны Admin:**
-12. Admin отзывает grant в UI - на следующем заходе пользователь получает `/web/forbidden`.
-13. Admin отзывает **неиспользованный** инвайт через `revoke-invite` - переход по URL показывает «Ссылка недействительна» (HTTP 410). Уже выданные через этот инвайт grant'ы не затрагиваются.
-14. Прошло > 7 дней с создания неиспользованного инвайта - переход по URL показывает «Ссылка недействительна» (TTL).
+**Управление со стороны Admin:** 12. Admin отзывает grant в UI - на следующем заходе пользователь получает `/web/forbidden`. 13. Admin отзывает **неиспользованный** инвайт через `revoke-invite` - переход по URL показывает «Ссылка недействительна» (HTTP 410). Уже выданные через этот инвайт grant'ы не затрагиваются. 14. Прошло > 7 дней с создания неиспользованного инвайта - переход по URL показывает «Ссылка недействительна» (TTL).
 
-**Прямой HTTP без UI:**
-15. Прямой HTTP к `/api/lp/invoke` от non-admin без grant'a - HTTP 403.
-16. Прямой POST к `/api/access/consume-invite` с заведомо невалидным токеном - HTTP 400 с `reason: 'unknown'`, инвайт-таблица не меняется.
+**Прямой HTTP без UI:** 15. Прямой HTTP к `/api/lp/invoke` от non-admin без grant'a - HTTP 403. 16. Прямой POST к `/api/access/consume-invite` с заведомо невалидным токеном - HTTP 400 с `reason: 'unknown'`, инвайт-таблица не меняется.
 
 ---
 
@@ -423,7 +419,7 @@ export const someRoute = app.post('/').handle(async (ctx, req) => {
 
 - [x] Для каждого из трёх `op` создан отдельный файловый роут в `api/v1/` с правильным методом, все идут через единый `handleV1Op` (§2.1).
 - [x] Каждому `op` присвоен статус `availability` = `enabled` после прохождения юнит-набора и боевой проверки через test tab 15-05-2026 (§2.11; §12.8 закрыт).
-- [ ] Скрипт согласованности «файл роута ↔ строка каталога» - `scripts/check-gateway-catalog-consistency.cjs` (§3.2, §8.8); юнит `gw_operations_catalog_matches_mapping` в `lib/tests/gatewayUnitSuite.ts` дублирует проверку на странице тестов (`strategy §9`). *Открыто:* отдельный скрипт и юнит ещё не добавлены; согласованность сейчас гарантируется тем, что `operationsCatalog.ts` - единственный SSOT, а роуты ссылаются на op через `handleV1Op(ctx, req, 'opName', ...)`. **Приоритет понижен:** при трёх операциях ручная проверка достаточна; скрипт нужен, если v1 разрастётся.
+- [ ] Скрипт согласованности «файл роута ↔ строка каталога» - `scripts/check-gateway-catalog-consistency.cjs` (§3.2, §8.8); юнит `gw_operations_catalog_matches_mapping` в `lib/tests/gatewayUnitSuite.ts` дублирует проверку на странице тестов (`strategy §9`). _Открыто:_ отдельный скрипт и юнит ещё не добавлены; согласованность сейчас гарантируется тем, что `operationsCatalog.ts` - единственный SSOT, а роуты ссылаются на op через `handleV1Op(ctx, req, 'opName', ...)`. **Приоритет понижен:** при трёх операциях ручная проверка достаточна; скрипт нужен, если v1 разрастётся.
 - [x] `argsSchema` для всех трёх `op` собрана в `lib/gateway/operationsCatalog.ts` через билдер `s` из `@app/schema` (§3.1); `INVOKE_ARGS_SCHEMA_VIOLATION` отрабатывает в `handleV1Op` до исходящего вызова LifePay.
 
 ### 2.2. Семантические правила контура `bills_v1`
@@ -443,7 +439,7 @@ export const someRoute = app.post('/').handle(async (ctx, req) => {
 
 - [x] Юнит-набор gateway (`lib/tests/gatewayUnitSuite.ts`, **27 кейсов** в блоке `unit-gateway`): классификаторы и extract'ы по реальному контракту LifePay (`classifyCreateBillResponse`, `classifyGetBillStatusResponse`, `classifyCancelBillResponse`), справочник `billStatusName`, отсутствие неканонических `lpRule`, маскировка секретов в payload лога, sync-check каталога (`gw_operations_catalog_matches_runner`), сборка тела (`gw_create_bill_body_amount_string`, `gw_create_bill_body_phone_normalized`, `gw_create_bill_body_redact_secrets`), GET-query для `getBillStatus`.
 - [x] Юнит-набор клиентской панели (`lib/tests/lifepayUnitSuite.ts`, **55 кейсов** в блоке `unit-lifepay`): сборка URL invoke, маскировка email/phone, валидации Heap-ключей, 6 стратегий unwrap webhook, 5 multipart-сценариев, проверка токена (4 кейса), извлечение `order.number`.
-- [ ] Интеграция `createBill`: кейс `gateway_v1_createBill_live` в `lib/tests/integrationSuite.ts` (Heap уровня A, `tester@khudoley.pro`, `amount: 1.00`). Полный сьюит по фазам `strategy §3.1` (`beforeAll`: `createBill` → `billNumber`; потребители `getBillStatus`, `cancelBill`; `afterAll` teardown). *Статус:* интеграционный сьют ещё не собран - все боевые проверки шли через RequestTestTab вручную. К моменту сквозного прохода §1.9 - дособрать.
+- [ ] Интеграция `createBill`: кейс `gateway_v1_createBill_live` в `lib/tests/integrationSuite.ts` (Heap уровня A, `tester@khudoley.pro`, `amount: 1.00`). Полный сьюит по фазам `strategy §3.1` (`beforeAll`: `createBill` → `billNumber`; потребители `getBillStatus`, `cancelBill`; `afterAll` teardown). _Статус:_ интеграционный сьют ещё не собран - все боевые проверки шли через RequestTestTab вручную. К моменту сквозного прохода §1.9 - дособрать.
 - [ ] Соблюдён лимит **1 rps** на исходящие вызовы к LifePay в интеграционном раннере (`strategy §6`); при параллельных воркерах - глобальный семафор.
 - [x] Страница тестирования в админке (`pages/TestsPage.vue`) с тремя вкладками (Юнит / Интеграция / HTTP) и вкладкой «Тест запроса» (`components/RequestTestTab.vue`, Admin-only): дропдаун op из каталога, ручной ввод `X-Lp-*` или кнопка «Использовать тестовые» (подгружает `lp_test_apikey`/`lp_test_login` из Heap), динамическая форма `args` со схемой каталога, сырые JSON snapshot запроса/ответа без маскирования. Глобальный переключатель «форс юнитов» и жёлтое предупреждение `strategy §9.3` - не реализованы (актуально, когда появятся `disabled` / `unsupported` op).
 
@@ -584,16 +580,16 @@ export const someRoute = app.post('/').handle(async (ctx, req) => {
 
 Зеркало §12 [operation-manual](./operation-manual.md). На текущий момент закрыты пять универсальных пунктов (12.1-12.5) и открыты три LifePay-специфичных (12.6-12.8).
 
-| № | Тема | Статус | Решение / критерий закрытия (где зафиксировано) |
-| --- | --- | --- | --- |
-| 12.1 | Транспорт между клиентским приложением и payments-gateway | ЗАКРЫТО 15-05-2026 (пересмотрено) | Промежуточного SDK-приложения нет: единственная клиентская панель `p/units/aayakovleva/sbp-client` (`§1.8`) делает прямой HTTP-запрос к gateway. `apikey` / `login` магазина - заголовки `X-Lp-Apikey` / `X-Lp-Login`, хранятся в Heap самой панели. Manual §2.1, §5.6, §12.1 (пересмотр); план - 1.8, 2.6. Изначально 14-05-2026 предполагался слой `sdk/payments` поверх HTTP - 15-05-2026 признан избыточным и снят; одновременно три client-приложения (widget/test/webhook) объединены в одну панель с журналом и дашбордом. |
-| 12.2 | Таймаут исходящего вызова к LifePay | ЗАКРЫТО 14-05-2026 | 10 000 мс (`GW_OUTBOUND_TIMEOUT_MS`), жёсткая константа. Manual §8.1; план - 1.6, 2.4. |
-| 12.3 | Лимит размера тела `POST /v1/{op}` | ЗАКРЫТО 14-05-2026 | 1 MiB (`GW_MAX_REQUEST_BODY_BYTES = 1_048_576`); превышение → `INVOKE_BODY_TOO_LARGE` (HTTP 413). Manual §8.7, §9.2, §10; план - 1.6, 3.5. |
-| 12.4 | Идемпотентность и серверные ретраи в gateway | ЗАКРЫТО 14-05-2026 | Запрещено в gateway - ни в Прототипе, ни в MVP, ни в Проде. Manual §8.6, §8.1; план - 1.6, 3.5. Введение в будущем - только через новый ADR + правки manual. |
-| 12.5 | Версионирование публичного API gateway | ЗАКРЫТО 14-05-2026 | Единственная версия - `/v1/`; политика перехода на `/v2/` появляется при первом ломающем изменении и оформляется отдельным ADR. Manual §9.3; план - 3.6. |
-| 12.6 | Активация контура `ecom_v1` | ОТКРЫТО | Ожидание ответа инженеров LifePay по условиям эквайринга. Критерий закрытия: получение коммерческих условий с комиссией СБП ≤ 0.4%; оформление ADR 0002; правки §2.8.2, §4.1, §4.5, [lp-op-http-mapping.json](./lp-op-http-mapping.json). Manual §12.6. |
-| 12.7 | Точная классификация семантических ошибок LifePay (правила B1-B4) | ЗАКРЫТО 15-05-2026 | Контракт LifePay изучен по [apidoc.life-pay.ru/bill/index](https://apidoc.life-pay.ru/bill/index/) и подтверждён боевым запросом `getBillStatus` на счёт 10197087498032 (структура `data: { [billNumber]: { status: number, msg } }`). Уточнения: (1) B1 `status === 'error'` фактически не применяется к bills_v1 - LifePay возвращает `status` числом-кодом состояния счёта (0/10/15/20/30), не флагом ошибки; правило сохранено в каноне §10 как резерв для других контуров. (2) Основной признак ошибки - `code !== 0` в корне → `bills_v1_code_error` с `lpNumericCode`. (3) Для `getBillStatus` пустой словарь `data` или отсутствие `status` внутри записи → `bills_v1_code_error` без `lpNumericCode`. (4) Для `cancelBill` LifePay возвращает пустой `data: {}`; gateway отдаёт синтетический `{ status: 'cancelled' }`. Зафиксировано в шапке `lib/gateway/billsV1Semantic.ts`, юнитах `lib/tests/gatewayUnitSuite.ts` и `docs/api.md` проекта. Manual §12.7; план - 2.2. |
-| 12.8 | Активация `availability` для каждого `op` | ЗАКРЫТО 15-05-2026 | Все три `op` (`createBill`, `getBillStatus`, `cancelBill`) переведены в `availability: 'enabled'` в `lib/gateway/operationsCatalog.ts`. Критерий выполнен: юнит-набор `unit-gateway` зелёный, и каждый op прошёл боевую проверку через RequestTestTab на тестовом магазине LifePay (createBill вернул `paymentUrl`/`paymentUrlWeb`, getBillStatus вернул `pending`/`success`, cancelBill вернул `cancelled`). Manual §12.8; план - 2.1. |
+| №    | Тема                                                              | Статус                            | Решение / критерий закрытия (где зафиксировано)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| ---- | ----------------------------------------------------------------- | --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 12.1 | Транспорт между клиентским приложением и payments-gateway         | ЗАКРЫТО 15-05-2026 (пересмотрено) | Промежуточного SDK-приложения нет: единственная клиентская панель `p/units/aayakovleva/sbp-client` (`§1.8`) делает прямой HTTP-запрос к gateway. `apikey` / `login` магазина - заголовки `X-Lp-Apikey` / `X-Lp-Login`, хранятся в Heap самой панели. Manual §2.1, §5.6, §12.1 (пересмотр); план - 1.8, 2.6. Изначально 14-05-2026 предполагался слой `sdk/payments` поверх HTTP - 15-05-2026 признан избыточным и снят; одновременно три client-приложения (widget/test/webhook) объединены в одну панель с журналом и дашбордом.                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| 12.2 | Таймаут исходящего вызова к LifePay                               | ЗАКРЫТО 14-05-2026                | 10 000 мс (`GW_OUTBOUND_TIMEOUT_MS`), жёсткая константа. Manual §8.1; план - 1.6, 2.4.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| 12.3 | Лимит размера тела `POST /v1/{op}`                                | ЗАКРЫТО 14-05-2026                | 1 MiB (`GW_MAX_REQUEST_BODY_BYTES = 1_048_576`); превышение → `INVOKE_BODY_TOO_LARGE` (HTTP 413). Manual §8.7, §9.2, §10; план - 1.6, 3.5.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| 12.4 | Идемпотентность и серверные ретраи в gateway                      | ЗАКРЫТО 14-05-2026                | Запрещено в gateway - ни в Прототипе, ни в MVP, ни в Проде. Manual §8.6, §8.1; план - 1.6, 3.5. Введение в будущем - только через новый ADR + правки manual.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| 12.5 | Версионирование публичного API gateway                            | ЗАКРЫТО 14-05-2026                | Единственная версия - `/v1/`; политика перехода на `/v2/` появляется при первом ломающем изменении и оформляется отдельным ADR. Manual §9.3; план - 3.6.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| 12.6 | Активация контура `ecom_v1`                                       | ОТКРЫТО                           | Ожидание ответа инженеров LifePay по условиям эквайринга. Критерий закрытия: получение коммерческих условий с комиссией СБП ≤ 0.4%; оформление ADR 0002; правки §2.8.2, §4.1, §4.5, [lp-op-http-mapping.json](./lp-op-http-mapping.json). Manual §12.6.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| 12.7 | Точная классификация семантических ошибок LifePay (правила B1-B4) | ЗАКРЫТО 15-05-2026                | Контракт LifePay изучен по [apidoc.life-pay.ru/bill/index](https://apidoc.life-pay.ru/bill/index/) и подтверждён боевым запросом `getBillStatus` на счёт 10197087498032 (структура `data: { [billNumber]: { status: number, msg } }`). Уточнения: (1) B1 `status === 'error'` фактически не применяется к bills_v1 - LifePay возвращает `status` числом-кодом состояния счёта (0/10/15/20/30), не флагом ошибки; правило сохранено в каноне §10 как резерв для других контуров. (2) Основной признак ошибки - `code !== 0` в корне → `bills_v1_code_error` с `lpNumericCode`. (3) Для `getBillStatus` пустой словарь `data` или отсутствие `status` внутри записи → `bills_v1_code_error` без `lpNumericCode`. (4) Для `cancelBill` LifePay возвращает пустой `data: {}`; gateway отдаёт синтетический `{ status: 'cancelled' }`. Зафиксировано в шапке `lib/gateway/billsV1Semantic.ts`, юнитах `lib/tests/gatewayUnitSuite.ts` и `docs/api.md` проекта. Manual §12.7; план - 2.2. |
+| 12.8 | Активация `availability` для каждого `op`                         | ЗАКРЫТО 15-05-2026                | Все три `op` (`createBill`, `getBillStatus`, `cancelBill`) переведены в `availability: 'enabled'` в `lib/gateway/operationsCatalog.ts`. Критерий выполнен: юнит-набор `unit-gateway` зелёный, и каждый op прошёл боевую проверку через RequestTestTab на тестовом магазине LifePay (createBill вернул `paymentUrl`/`paymentUrlWeb`, getBillStatus вернул `pending`/`success`, cancelBill вернул `cancelled`). Manual §12.8; план - 2.1.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 
 Если в ходе разработки появятся новые открытые места - добавлять их в §12 manual и здесь как новые строки.
 

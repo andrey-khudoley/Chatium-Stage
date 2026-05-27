@@ -1,7 +1,11 @@
 // @shared-route
 import { requireRealUser } from '@app/auth'
 import * as loggerLib from '../../../lib/logger.lib'
-import { computeHabitsMondayKeyFromNow, normalizeHabitsMondayKey, type JournalHabitRowDto } from '../../../lib/journal-habits-time'
+import {
+  computeHabitsMondayKeyFromNow,
+  normalizeHabitsMondayKey,
+  type JournalHabitRowDto
+} from '../../../lib/journal-habits-time'
 import * as journalHabitsRepo from '../../../repos/journal-habits.repo'
 import { getWeekMondayKeyForDateKey } from '../../../lib/journal-week-key'
 
@@ -12,8 +16,12 @@ function normalizeIncomingRows(raw: unknown): JournalHabitRowDto[] {
   const out: JournalHabitRowDto[] = []
   for (const item of raw) {
     if (!item || typeof item !== 'object') continue
-    const id = typeof (item as { id?: unknown }).id === 'string' ? (item as { id: string }).id.trim() : ''
-    const title = typeof (item as { title?: unknown }).title === 'string' ? (item as { title: string }).title : ''
+    const id =
+      typeof (item as { id?: unknown }).id === 'string' ? (item as { id: string }).id.trim() : ''
+    const title =
+      typeof (item as { title?: unknown }).title === 'string'
+        ? (item as { title: string }).title
+        : ''
     const daysRaw = (item as { days?: unknown }).days
     const days: boolean[] = []
     if (Array.isArray(daysRaw)) {
@@ -47,7 +55,13 @@ export const saveJournalHabitsRoute = app
     const incoming = normalizeIncomingRows(req.body.rows)
 
     try {
-      const habits = await journalHabitsRepo.saveHabitsWeekForUser(ctx, user.id, mondayKey, incoming, Date.now())
+      const habits = await journalHabitsRepo.saveHabitsWeekForUser(
+        ctx,
+        user.id,
+        mondayKey,
+        incoming,
+        Date.now()
+      )
       return { success: true, habits }
     } catch (error) {
       await loggerLib.writeServerLog(ctx, {

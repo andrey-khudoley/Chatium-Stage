@@ -61,11 +61,14 @@ defineProps({ active: Boolean })
   text-shadow: 0 0 60px rgba(0, 217, 255, 0.2);
   max-width: 1300px;
 }
-.hl { color: var(--accent-cyan); }
+.hl {
+  color: var(--accent-cyan);
+}
 
 .strip {
   display: block;
-  width: 280px; height: 4px;
+  width: 280px;
+  height: 4px;
   background: var(--accent-cyan);
   border-radius: 2px;
   margin-top: 32px;
@@ -99,7 +102,9 @@ defineProps({ active: Boolean })
   flex-direction: column;
   gap: 8px;
   min-height: 180px;
-  transition: transform 0.3s ease, border-color 0.3s ease;
+  transition:
+    transform 0.3s ease,
+    border-color 0.3s ease;
 }
 .cap:hover {
   transform: translateY(-4px);
@@ -135,8 +140,17 @@ defineProps({ active: Boolean })
 }
 
 @media (max-width: 768px) {
-  .caps { grid-template-columns: 1fr; gap: 16px; margin-top: 40px; }
-  .cap { min-height: auto; padding: 20px 22px; }
-  .strip { width: 180px; }
+  .caps {
+    grid-template-columns: 1fr;
+    gap: 16px;
+    margin-top: 40px;
+  }
+  .cap {
+    min-height: auto;
+    padding: 20px 22px;
+  }
+  .strip {
+    width: 180px;
+  }
 }
 </style>

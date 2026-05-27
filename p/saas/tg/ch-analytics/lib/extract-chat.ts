@@ -1,7 +1,7 @@
 // @shared
 /**
  * Утилита для извлечения информации о чате из вебхука Telegram
- * 
+ *
  * Telegram вебхуки могут содержать chat в разных местах:
  * - message.chat
  * - channel_post.chat
@@ -13,10 +13,10 @@
  * - chat_join_request.chat
  * - chat_boost.chat (Bot API 9.0+)
  * - removed_chat_boost.chat (Bot API 9.0+)
- * 
+ *
  * ВАЖНО: Извлекаем только Chat объекты, НЕ User объекты!
  * User объекты (.from, .user) имеют другой тип и не должны попадать в таблицу чатов.
- * 
+ *
  * НЕ обрабатываем (не содержат Chat):
  * - inline_query (содержит только from, query, location, chat_type)
  * - chosen_inline_result (содержит только from, result_id, query)
@@ -98,7 +98,7 @@ export function hasChatInUpdate(update: any): boolean {
 /**
  * Извлекает статус бота в канале из вебхука Telegram
  * Статус находится в my_chat_member.new_chat_member.status или chat_member.new_chat_member.status
- * 
+ *
  * Возможные статусы:
  * - 'member' - бот является участником
  * - 'administrator' - бот является администратором
@@ -106,7 +106,7 @@ export function hasChatInUpdate(update: any): boolean {
  * - 'kicked' - бот был удален из канала
  * - 'restricted' - бот ограничен
  * - 'creator' - бот является создателем
- * 
+ *
  * @param update - объект вебхука от Telegram
  * @returns статус бота или null, если статус не найден
  */
@@ -129,6 +129,3 @@ export function extractBotStatusFromUpdate(update: any): string | null {
 
   return null
 }
-
-
-

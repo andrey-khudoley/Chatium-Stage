@@ -16,12 +16,11 @@ export const testsAiRoute = app.get('/', async (ctx) => {
     }
   }
 
-  const passed = results.filter(r => r.success).length
-  const failed = results.filter(r => !r.success).length
+  const passed = results.filter((r) => r.success).length
+  const failed = results.filter((r) => !r.success).length
 
   return {
     summary: { total: results.length, passed, failed },
     results
   }
 })
-

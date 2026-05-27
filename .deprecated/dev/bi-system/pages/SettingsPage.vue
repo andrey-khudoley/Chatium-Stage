@@ -13,12 +13,16 @@
           </button>
         </div>
 
-        <div class="mb-6 p-5 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-secondary)] shadow-sm">
+        <div
+          class="mb-6 p-5 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-secondary)] shadow-sm"
+        >
           <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
               <div class="flex items-center gap-2 mb-2">
                 <i class="fas fa-bug text-lg" style="color: var(--color-primary)"></i>
-                <span class="text-lg font-semibold text-[var(--color-text)]">Уровень логирования</span>
+                <span class="text-lg font-semibold text-[var(--color-text)]"
+                  >Уровень логирования</span
+                >
               </div>
               <p class="text-sm text-[var(--color-text-secondary)]">
                 Упрвляет количеством и детализацией отображаемой в логах информации
@@ -33,30 +37,52 @@
               tabindex="0"
               class="p-3 rounded-lg border text-sm cursor-pointer transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--color-primary)]"
               :aria-pressed="logLevel === option.value"
-              :class="logLevel === option.value ? 'border-[var(--color-primary)] bg-[var(--color-border)] shadow-sm' : 'border-[var(--color-border)] hover:border-[var(--color-primary)]/60 hover:bg-[var(--color-bg-secondary)]'"
+              :class="
+                logLevel === option.value
+                  ? 'border-[var(--color-primary)] bg-[var(--color-border)] shadow-sm'
+                  : 'border-[var(--color-border)] hover:border-[var(--color-primary)]/60 hover:bg-[var(--color-bg-secondary)]'
+              "
               @click="changeLogLevel(option.value)"
               @keydown.enter="changeLogLevel(option.value)"
               @keydown.space.prevent="changeLogLevel(option.value)"
             >
               <div class="flex items-center gap-2 mb-1">
                 <span class="font-semibold">{{ option.label }}</span>
-                <span v-if="logLevel === option.value" class="text-xs uppercase text-[var(--color-primary)]">активен</span>
+                <span
+                  v-if="logLevel === option.value"
+                  class="text-xs uppercase text-[var(--color-primary)]"
+                  >активен</span
+                >
               </div>
               <p class="text-[var(--color-text-secondary)]">{{ option.description }}</p>
             </div>
           </div>
-          <div v-if="logLevelStatus" class="mt-4 text-sm" :class="logLevelStatus.success ? 'text-green-600' : 'text-red-500'">
-            <i :class="logLevelStatus.success ? 'fas fa-check-circle mr-2' : 'fas fa-exclamation-triangle mr-2'"></i>
+          <div
+            v-if="logLevelStatus"
+            class="mt-4 text-sm"
+            :class="logLevelStatus.success ? 'text-green-600' : 'text-red-500'"
+          >
+            <i
+              :class="
+                logLevelStatus.success
+                  ? 'fas fa-check-circle mr-2'
+                  : 'fas fa-exclamation-triangle mr-2'
+              "
+            ></i>
             {{ logLevelStatus.message }}
           </div>
         </div>
 
-        <div class="mb-6 p-5 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-secondary)] shadow-sm">
+        <div
+          class="mb-6 p-5 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-secondary)] shadow-sm"
+        >
           <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
               <div class="flex items-center gap-2 mb-2">
                 <i class="fas fa-tasks text-lg" style="color: var(--color-primary)"></i>
-                <span class="text-lg font-semibold text-[var(--color-text)]">Управление задачами</span>
+                <span class="text-lg font-semibold text-[var(--color-text)]"
+                  >Управление задачами</span
+                >
               </div>
               <p class="text-sm text-[var(--color-text-secondary)]">
                 Остановка всех активных фоновых задач (загрузка кэша, мониторинг событий и т.д.)
@@ -64,20 +90,30 @@
             </div>
           </div>
           <div class="mt-4">
-            <button 
-              @click="stopAllJobs" 
+            <button
+              @click="stopAllJobs"
               :disabled="stoppingJobs"
               class="btn"
               :class="stoppingJobs ? 'opacity-50 cursor-not-allowed' : ''"
-              style="background: var(--color-danger); color: white; padding: 0.75rem 1.5rem;"
+              style="background: var(--color-danger); color: white; padding: 0.75rem 1.5rem"
             >
               <i v-if="stoppingJobs" class="fas fa-spinner animate-spin mr-2"></i>
               <i v-else class="fas fa-stop-circle mr-2"></i>
               {{ stoppingJobs ? 'Останавливаю...' : 'Остановить все задачи' }}
             </button>
           </div>
-          <div v-if="stopJobsStatus" class="mt-4 text-sm" :class="stopJobsStatus.success ? 'text-green-600' : 'text-red-500'">
-            <i :class="stopJobsStatus.success ? 'fas fa-check-circle mr-2' : 'fas fa-exclamation-triangle mr-2'"></i>
+          <div
+            v-if="stopJobsStatus"
+            class="mt-4 text-sm"
+            :class="stopJobsStatus.success ? 'text-green-600' : 'text-red-500'"
+          >
+            <i
+              :class="
+                stopJobsStatus.success
+                  ? 'fas fa-check-circle mr-2'
+                  : 'fas fa-exclamation-triangle mr-2'
+              "
+            ></i>
             {{ stopJobsStatus.message }}
           </div>
         </div>
@@ -88,7 +124,10 @@
         </div>
 
         <div v-else-if="error" class="text-center py-12">
-          <i class="fas fa-exclamation-triangle text-4xl mb-4" style="color: var(--color-danger)"></i>
+          <i
+            class="fas fa-exclamation-triangle text-4xl mb-4"
+            style="color: var(--color-danger)"
+          ></i>
           <p style="color: var(--color-danger)">{{ error }}</p>
           <button @click="loadSettings" class="btn btn-primary mt-4">
             <i class="fas fa-redo mr-2"></i>
@@ -122,17 +161,17 @@
                 <td>{{ setting.value }}</td>
                 <td class="text-[var(--color-text-secondary)]">{{ setting.description }}</td>
                 <td class="text-right">
-                  <button 
-                    @click="editSetting(setting)" 
+                  <button
+                    @click="editSetting(setting)"
                     class="btn btn-primary mr-2"
-                    style="padding: 0.5rem 1rem;"
+                    style="padding: 0.5rem 1rem"
                   >
                     <i class="fas fa-edit"></i>
                   </button>
-                  <button 
-                    @click="deleteSetting(setting.id)" 
+                  <button
+                    @click="deleteSetting(setting.id)"
                     class="btn"
-                    style="background: var(--color-danger); color: white; padding: 0.5rem 1rem;"
+                    style="background: var(--color-danger); color: white; padding: 0.5rem 1rem"
                   >
                     <i class="fas fa-trash"></i>
                   </button>
@@ -150,7 +189,10 @@
           <h3 class="text-2xl font-bold text-[var(--color-text)]">
             {{ showEditModal ? 'Редактировать настройку' : 'Добавить настройку' }}
           </h3>
-          <button @click="closeModal" class="text-[var(--color-text-secondary)] hover:text-[var(--color-text)]">
+          <button
+            @click="closeModal"
+            class="text-[var(--color-text-secondary)] hover:text-[var(--color-text)]"
+          >
             <i class="fas fa-times text-2xl"></i>
           </button>
         </div>
@@ -160,10 +202,10 @@
             <label class="block text-sm font-medium mb-2 text-[var(--color-text)]">
               Ключ настройки
             </label>
-            <input 
-              v-model="currentSetting.key" 
-              type="text" 
-              class="input" 
+            <input
+              v-model="currentSetting.key"
+              type="text"
+              class="input"
               placeholder="api_key"
               required
               :disabled="showEditModal"
@@ -174,10 +216,10 @@
             <label class="block text-sm font-medium mb-2 text-[var(--color-text)]">
               Значение
             </label>
-            <input 
-              v-model="currentSetting.value" 
-              type="text" 
-              class="input" 
+            <input
+              v-model="currentSetting.value"
+              type="text"
+              class="input"
               placeholder="Значение настройки"
               required
             />
@@ -187,9 +229,9 @@
             <label class="block text-sm font-medium mb-2 text-[var(--color-text)]">
               Описание
             </label>
-            <textarea 
-              v-model="currentSetting.description" 
-              class="input" 
+            <textarea
+              v-model="currentSetting.description"
+              class="input"
               rows="3"
               placeholder="Описание настройки..."
             ></textarea>
@@ -201,14 +243,18 @@
               <i v-else class="fas fa-save mr-2"></i>
               {{ saving ? 'Сохранение...' : 'Сохранить' }}
             </button>
-            <button type="button" @click="closeModal" class="btn" style="background: var(--color-border);">
+            <button
+              type="button"
+              @click="closeModal"
+              class="btn"
+              style="background: var(--color-border)"
+            >
               Отмена
             </button>
           </div>
         </form>
       </div>
     </div>
-
   </div>
 </template>
 
@@ -265,18 +311,15 @@ const indexPageUrl = computed(() => props.apiUrls.indexPage)
 
 // Отфильтрованные настройки (скрываем служебные настройки)
 const filteredSettings = computed(() => {
-  const hiddenKeys = [
-    'events_filter',
-    LOG_LEVEL_KEY
-  ]
-  return settings.value.filter(s => !hiddenKeys.includes(s.key))
+  const hiddenKeys = ['events_filter', LOG_LEVEL_KEY]
+  return settings.value.filter((s) => !hiddenKeys.includes(s.key))
 })
 
 onMounted(async () => {
   if (window.hideAppLoader) {
     window.hideAppLoader()
   }
-  
+
   await loadSettings()
 })
 
@@ -286,7 +329,7 @@ function parseLogLevel(value) {
 }
 
 function syncLogLevelFromSettings() {
-  const levelSetting = settings.value.find(s => s.key === LOG_LEVEL_KEY)
+  const levelSetting = settings.value.find((s) => s.key === LOG_LEVEL_KEY)
   logLevel.value = parseLogLevel(levelSetting?.value || 'error')
 }
 
@@ -295,10 +338,10 @@ async function loadSettings(showLoader = true) {
     loading.value = true
   }
   error.value = null
-  
+
   try {
     const result = await apiGetSettingsRoute.run(ctx)
-    
+
     if (result.success) {
       settings.value = result.settings
       syncLogLevelFromSettings()
@@ -319,24 +362,24 @@ async function changeLogLevel(level) {
   if (normalized === logLevel.value || logLevelSaving.value) {
     return
   }
-  
+
   logLevelSaving.value = true
   logLevelStatus.value = null
-  
+
   try {
     const result = await apiUpdateSettingRoute.run(ctx, {
       key: LOG_LEVEL_KEY,
       value: normalized,
       description: 'Уровень детализации логов Debug'
     })
-    
+
     if (!result.success) {
       throw new Error(result.error || 'Не удалось сохранить уровень логирования')
     }
-    
+
     logLevel.value = normalized
     await loadSettings(false)
-    
+
     logLevelStatus.value = {
       success: true,
       message: `Уровень обновлён на ${normalized.toUpperCase()}`
@@ -366,14 +409,14 @@ function editSetting(setting) {
 
 async function saveSetting() {
   saving.value = true
-  
+
   try {
     const result = await apiUpdateSettingRoute.run(ctx, {
       key: currentSetting.value.key,
       value: currentSetting.value.value,
       description: currentSetting.value.description
     })
-    
+
     if (result.success) {
       await loadSettings()
       closeModal()
@@ -391,10 +434,10 @@ async function deleteSetting(id) {
   if (!confirm('Вы уверены, что хотите удалить эту настройку?')) {
     return
   }
-  
+
   try {
     const result = await apiDeleteSettingRoute.run(ctx, { id })
-    
+
     if (result.success) {
       await loadSettings()
     } else {
@@ -420,22 +463,26 @@ async function stopAllJobs() {
   if (stoppingJobs.value) {
     return
   }
-  
-  if (!confirm('Вы уверены, что хотите остановить все активные задачи? Это может прервать загрузку кэша, мониторинг событий и другие фоновые процессы.')) {
+
+  if (
+    !confirm(
+      'Вы уверены, что хотите остановить все активные задачи? Это может прервать загрузку кэша, мониторинг событий и другие фоновые процессы.'
+    )
+  ) {
     return
   }
-  
+
   stoppingJobs.value = true
   stopJobsStatus.value = null
-  
+
   try {
     // Используем fetch для POST запроса
     const stopAllJobsUrl = props.apiUrls.stopAllJobs
-    
+
     if (!stopAllJobsUrl) {
       throw new Error('URL для остановки задач не указан')
     }
-    
+
     const response = await fetch(stopAllJobsUrl, {
       method: 'POST',
       headers: {
@@ -443,7 +490,7 @@ async function stopAllJobs() {
       },
       body: JSON.stringify({}) // Отправляем пустой JSON объект
     })
-    
+
     // Проверяем статус HTTP ответа
     if (!response.ok) {
       let errorMessage = `HTTP ошибка: ${response.status} ${response.statusText}`
@@ -457,7 +504,7 @@ async function stopAllJobs() {
       }
       throw new Error(errorMessage)
     }
-    
+
     // Парсим JSON ответ
     let result
     try {
@@ -465,16 +512,16 @@ async function stopAllJobs() {
     } catch (parseError) {
       throw new Error('Не удалось обработать ответ сервера')
     }
-    
+
     // Обрабатываем результат
     if (result.success) {
       // Используем сообщение из ответа, если оно есть, иначе формируем своё
-      const message = result.message || (
-        result.stopped > 0 
+      const message =
+        result.message ||
+        (result.stopped > 0
           ? `Остановлено задач: ${result.stopped}${result.errors > 0 ? `. Ошибок: ${result.errors}` : ''}`
-          : 'Активных задач не найдено'
-      )
-      
+          : 'Активных задач не найдено')
+
       stopJobsStatus.value = {
         success: true,
         message: message
@@ -482,7 +529,7 @@ async function stopAllJobs() {
     } else {
       // Обрабатываем ошибки
       let errorMessage = 'Неизвестная ошибка'
-      
+
       if (result.message) {
         errorMessage = result.message
       } else if (result.errorsList && result.errorsList.length > 0) {
@@ -490,7 +537,7 @@ async function stopAllJobs() {
       } else if (result.error) {
         errorMessage = result.error
       }
-      
+
       stopJobsStatus.value = {
         success: false,
         message: `Ошибка остановки задач: ${errorMessage}`
@@ -499,7 +546,7 @@ async function stopAllJobs() {
   } catch (e) {
     // Обрабатываем различные типы ошибок
     let errorMessage = 'Не удалось остановить задачи'
-    
+
     if (e instanceof TypeError && e.message.includes('fetch')) {
       errorMessage = 'Ошибка сети: не удалось подключиться к серверу'
     } else if (e instanceof SyntaxError) {
@@ -511,7 +558,7 @@ async function stopAllJobs() {
     } else {
       errorMessage = `Неизвестная ошибка: ${String(e)}`
     }
-    
+
     stopJobsStatus.value = {
       success: false,
       message: errorMessage

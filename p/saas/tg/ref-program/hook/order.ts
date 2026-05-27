@@ -44,7 +44,11 @@ function normalizeProductName(value: unknown): string {
   if (typeof value === 'string') return value.trim()
   if (Array.isArray(value)) {
     const titles = value
-      .map((item) => (item && typeof item === 'object' && 'title' in item ? String((item as { title: unknown }).title) : null))
+      .map((item) =>
+        item && typeof item === 'object' && 'title' in item
+          ? String((item as { title: unknown }).title)
+          : null
+      )
       .filter((t): t is string => t != null && t.trim() !== '')
     return titles.length > 0 ? titles.join(', ') : ''
   }

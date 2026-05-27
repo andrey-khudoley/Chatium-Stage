@@ -80,7 +80,7 @@ async function loadNote(id: string) {
       method: 'GET',
       credentials: 'include'
     })
-    const data = await res.json() as { success?: boolean; note?: NoteFullData; error?: string }
+    const data = (await res.json()) as { success?: boolean; note?: NoteFullData; error?: string }
     if (data.success && data.note) {
       title.value = data.note.title
       content.value = data.note.content
@@ -214,7 +214,11 @@ async function save() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body)
     })
-    const data = await res.json() as { success?: boolean; note?: { id: string; title: string }; error?: string }
+    const data = (await res.json()) as {
+      success?: boolean
+      note?: { id: string; title: string }
+      error?: string
+    }
     if (data.success && data.note) {
       emit('saved', data.note)
     } else {
@@ -300,21 +304,34 @@ function inlineToMarkdown(node: ChildNode): string {
 
 function listToMarkdown(listEl: HTMLElement, level = 0): string {
   const isOrdered = listEl.tagName.toLowerCase() === 'ol'
-  const items = Array.from(listEl.children).filter((x): x is HTMLElement => x.tagName.toLowerCase() === 'li')
-  return items.map((item, i) => {
-    const prefix = isOrdered ? `${i + 1}. ` : '- '
-    const indent = '  '.repeat(level)
-    const own = Array.from(item.childNodes)
-      .filter((child) => !(child instanceof HTMLElement && (child.tagName.toLowerCase() === 'ul' || child.tagName.toLowerCase() === 'ol')))
-      .map(inlineToMarkdown)
-      .join('')
-      .trim()
-    const nested = Array.from(item.children)
-      .filter((child): child is HTMLElement => child.tagName.toLowerCase() === 'ul' || child.tagName.toLowerCase() === 'ol')
-      .map((child) => `\n${listToMarkdown(child, level + 1)}`)
-      .join('')
-    return `${indent}${prefix}${own}${nested}`
-  }).join('\n')
+  const items = Array.from(listEl.children).filter(
+    (x): x is HTMLElement => x.tagName.toLowerCase() === 'li'
+  )
+  return items
+    .map((item, i) => {
+      const prefix = isOrdered ? `${i + 1}. ` : '- '
+      const indent = '  '.repeat(level)
+      const own = Array.from(item.childNodes)
+        .filter(
+          (child) =>
+            !(
+              child instanceof HTMLElement &&
+              (child.tagName.toLowerCase() === 'ul' || child.tagName.toLowerCase() === 'ol')
+            )
+        )
+        .map(inlineToMarkdown)
+        .join('')
+        .trim()
+      const nested = Array.from(item.children)
+        .filter(
+          (child): child is HTMLElement =>
+            child.tagName.toLowerCase() === 'ul' || child.tagName.toLowerCase() === 'ol'
+        )
+        .map((child) => `\n${listToMarkdown(child, level + 1)}`)
+        .join('')
+      return `${indent}${prefix}${own}${nested}`
+    })
+    .join('\n')
 }
 
 function blockToMarkdown(node: ChildNode): string {
@@ -330,7 +347,11 @@ function blockToMarkdown(node: ChildNode): string {
   if (tag === 'h4') return `#### ${text}`
   if (tag === 'h5') return `##### ${text}`
   if (tag === 'h6') return `###### ${text}`
-  if (tag === 'blockquote') return text.split('\n').map((line) => `> ${line}`).join('\n')
+  if (tag === 'blockquote')
+    return text
+      .split('\n')
+      .map((line) => `> ${line}`)
+      .join('\n')
   if (tag === 'pre') {
     const lang = node.dataset?.language || ''
     return `\`\`\`${lang}\n${node.textContent?.trim() || ''}\n\`\`\``
@@ -368,10 +389,7 @@ function exportAsMarkdown() {
 }
 
 function escapePrintHtml(s: string): string {
-  return s
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 }
 
 function exportAsPdf() {
@@ -442,23 +460,28 @@ function exportAsPdf() {
           <span>В архиве</span>
         </label>
         <div class="nb-editor-export-wrap">
-          <button type="button" class="nb-editor-export-btn" @click.stop="exportDropOpen = !exportDropOpen">
+          <button
+            type="button"
+            class="nb-editor-export-btn"
+            @click.stop="exportDropOpen = !exportDropOpen"
+          >
             <i class="fa-solid fa-file-export" aria-hidden="true" />
             <span>Экспорт</span>
             <i class="fa-solid fa-chevron-down" aria-hidden="true" />
           </button>
           <div v-if="exportDropOpen" class="nb-editor-export-drop">
-            <button type="button" class="nb-editor-export-item" @click="exportAsTxt">Скачать TXT (без разметки)</button>
-            <button type="button" class="nb-editor-export-item" @click="exportAsMarkdown">Скачать MD (с разметкой)</button>
-            <button type="button" class="nb-editor-export-item" @click="exportAsPdf">Печать в PDF…</button>
+            <button type="button" class="nb-editor-export-item" @click="exportAsTxt">
+              Скачать TXT (без разметки)
+            </button>
+            <button type="button" class="nb-editor-export-item" @click="exportAsMarkdown">
+              Скачать MD (с разметкой)
+            </button>
+            <button type="button" class="nb-editor-export-item" @click="exportAsPdf">
+              Печать в PDF…
+            </button>
           </div>
         </div>
-        <button
-          type="button"
-          class="nb-editor-save"
-          :disabled="saving"
-          @click="save"
-        >
+        <button type="button" class="nb-editor-save" :disabled="saving" @click="save">
           <span v-if="saving" class="nb-editor-spinner" />
           {{ saving ? 'Сохранение…' : 'Сохранить' }}
         </button>
@@ -477,10 +500,7 @@ function exportAsPdf() {
           placeholder="Название заметки"
           autocomplete="off"
         />
-        <WysiwygEditor
-          v-model="content"
-          placeholder="Содержимое заметки"
-        />
+        <WysiwygEditor v-model="content" placeholder="Содержимое заметки" />
         <p v-if="error" class="nb-editor-error" role="alert">{{ error }}</p>
       </div>
 
@@ -503,11 +523,7 @@ function exportAsPdf() {
               <i class="fa-solid fa-chevron-down" aria-hidden="true" />
             </button>
             <div v-if="catDropOpen" class="nb-editor-cat-drop">
-              <label
-                v-for="cat in props.categories"
-                :key="cat.id"
-                class="nb-editor-cat-item"
-              >
+              <label v-for="cat in props.categories" :key="cat.id" class="nb-editor-cat-item">
                 <input
                   type="checkbox"
                   :checked="selectedCategoryIds.includes(cat.id)"
@@ -537,7 +553,14 @@ function exportAsPdf() {
 
         <div class="nb-editor-meta-section">
           <label class="nb-editor-meta-label">Привязка</label>
-          <select v-model="linkedClientId" class="nb-editor-select" @change="linkedProjectId = null; linkedTaskId = null">
+          <select
+            v-model="linkedClientId"
+            class="nb-editor-select"
+            @change="
+              linkedProjectId = null
+              linkedTaskId = null
+            "
+          >
             <option :value="null">— клиент —</option>
             <option v-for="c in props.taskClients" :key="c.id" :value="c.id">{{ c.name }}</option>
           </select>
@@ -632,7 +655,9 @@ function exportAsPdf() {
 
 .nb-editor-archive-check:has(input:focus-visible) {
   outline: none;
-  box-shadow: 0 0 0 2px var(--color-bg), 0 0 0 4px var(--color-accent-medium);
+  box-shadow:
+    0 0 0 2px var(--color-bg),
+    0 0 0 4px var(--color-accent-medium);
 }
 
 .nb-editor-archive-check input[type='checkbox'] {
@@ -748,7 +773,9 @@ function exportAsPdf() {
 }
 
 @keyframes nb-spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .nb-editor-loading {

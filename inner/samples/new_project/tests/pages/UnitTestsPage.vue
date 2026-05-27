@@ -2,7 +2,11 @@
 declare const ctx: any
 
 import { ref, onMounted, onUnmounted, computed } from 'vue'
-import { apiRunAllTestsRoute, apiRunSingleTestRoute, apiGetManualSocketIdRoute } from '../api/start-tests'
+import {
+  apiRunAllTestsRoute,
+  apiRunSingleTestRoute,
+  apiGetManualSocketIdRoute
+} from '../api/start-tests'
 import { TEST_CATEGORIES } from '../shared/test-definitions'
 import { getOrCreateBrowserSocketClient } from '@app/socket'
 
@@ -25,7 +29,9 @@ interface ConsoleLine {
 }
 
 const testResults = ref<Record<string, Record<string, TestResult>>>({})
-const testStatuses = ref<Record<string, Record<string, 'pending' | 'running' | 'passed' | 'failed'>>>({})
+const testStatuses = ref<
+  Record<string, Record<string, 'pending' | 'running' | 'passed' | 'failed'>>
+>({})
 const isRunning = ref(false)
 const consoleLines = ref<ConsoleLine[]>([])
 const consoleContainer = ref<HTMLElement | null>(null)
@@ -43,7 +49,7 @@ const stats = computed(() => {
   let total = 0
   let passed = 0
   let failed = 0
-  
+
   for (const category of TEST_CATEGORIES) {
     for (const test of category.tests) {
       total++
@@ -57,12 +63,12 @@ const stats = computed(() => {
       }
     }
   }
-  
+
   return { total, passed, failed }
 })
 
 const filteredConsoleLines = computed(() => {
-  return consoleLines.value.filter(line => levelFilters.value[line.level])
+  return consoleLines.value.filter((line) => levelFilters.value[line.level])
 })
 
 function addConsoleLine(line: ConsoleLine) {
@@ -76,17 +82,22 @@ function addConsoleLine(line: ConsoleLine) {
 
 function getTimestamp(): string {
   const now = new Date()
-  return now.toLocaleTimeString('ru-RU', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })
+  return now.toLocaleTimeString('ru-RU', {
+    hour12: false,
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit'
+  })
 }
 
 function setupSocketListener() {
   if (!socketSubscription.value) {
     return
   }
-  
+
   socketSubscription.value.listen((data: any) => {
     const timestamp = getTimestamp()
-    
+
     if (data.type === 'all-tests-started') {
       addConsoleLine({
         id: `header-${Date.now()}`,
@@ -115,10 +126,12 @@ function setupSocketListener() {
         testStatuses.value[category] = {}
       }
       testStatuses.value[category][testName] = 'running'
-      
-      const test = TEST_CATEGORIES.find(c => c.name === category)?.tests.find(t => t.name === testName)
+
+      const test = TEST_CATEGORIES.find((c) => c.name === category)?.tests.find(
+        (t) => t.name === testName
+      )
       const runningLineId = `test-${category}-${testName}-${Date.now()}`
-      
+
       addConsoleLine({
         id: runningLineId,
         timestamp,
@@ -131,17 +144,17 @@ function setupSocketListener() {
       })
     } else if (data.type === 'test-completed') {
       const { category, testName, result } = data.data
-      
+
       if (!testResults.value[category]) {
         testResults.value[category] = {}
       }
       if (!testStatuses.value[category]) {
         testStatuses.value[category] = {}
       }
-      
+
       testResults.value[category][testName] = result
       testStatuses.value[category][testName] = result.success ? 'passed' : 'failed'
-      
+
       // Обновляем существующую строку - ищем последнюю строку с этой категорией и тестом
       let lineIndex = -1
       for (let i = consoleLines.value.length - 1; i >= 0; i--) {
@@ -151,10 +164,12 @@ function setupSocketListener() {
           break
         }
       }
-      
-      const test = TEST_CATEGORIES.find(c => c.name === category)?.tests.find(t => t.name === testName)
+
+      const test = TEST_CATEGORIES.find((c) => c.name === category)?.tests.find(
+        (t) => t.name === testName
+      )
       const message = `${test?.description || testName} - ${result.message}`
-      
+
       if (lineIndex !== -1) {
         consoleLines.value[lineIndex] = {
           ...consoleLines.value[lineIndex],
@@ -184,22 +199,22 @@ function setupSocketListener() {
       if (!testStatuses.value[category]) {
         testStatuses.value[category] = {}
       }
-      
+
       testResults.value[category][testName] = {
         success: false,
         message: error
       }
       testStatuses.value[category][testName] = 'failed'
-      
+
       // Обновляем существующую строку
-      const lineIndex = consoleLines.value.findIndex(line => 
-        line.category === category && 
-        line.test === testName && 
-        line.status === 'running'
+      const lineIndex = consoleLines.value.findIndex(
+        (line) => line.category === category && line.test === testName && line.status === 'running'
       )
-      
+
       if (lineIndex !== -1) {
-        const test = TEST_CATEGORIES.find(c => c.name === category)?.tests.find(t => t.name === testName)
+        const test = TEST_CATEGORIES.find((c) => c.name === category)?.tests.find(
+          (t) => t.name === testName
+        )
         consoleLines.value[lineIndex] = {
           ...consoleLines.value[lineIndex],
           status: 'failed',
@@ -244,7 +259,7 @@ async function subscribeToSocket(encodedSocketId: string) {
   if (socketSubscription.value && currentEncodedSocketId.value === encodedSocketId) {
     return
   }
-  
+
   // Отписываемся от предыдущей подписки
   if (socketSubscription.value) {
     if (typeof socketSubscription.value.unsubscribe === 'function') {
@@ -252,17 +267,17 @@ async function subscribeToSocket(encodedSocketId: string) {
     }
     socketSubscription.value = null
   }
-  
+
   try {
     const socketClient = await getOrCreateBrowserSocketClient()
     socketSubscription.value = socketClient.subscribeToData(encodedSocketId)
     currentEncodedSocketId.value = encodedSocketId
-    
+
     if (!socketSubscription.value) {
       console.error('[UnitTestsPage] Failed to create subscription!')
       return
     }
-    
+
     // Устанавливаем обработчик событий
     setupSocketListener()
   } catch (error: any) {
@@ -274,7 +289,7 @@ function checkAllTestsCompleted() {
   // Проверяем, все ли тесты завершены
   let allCompleted = true
   let hasRunning = false
-  
+
   for (const category of TEST_CATEGORIES) {
     for (const test of category.tests) {
       const status = testStatuses.value[category.name]?.[test.name]
@@ -286,10 +301,10 @@ function checkAllTestsCompleted() {
       }
     }
   }
-  
+
   if (allCompleted && !hasRunning) {
     isRunning.value = false
-    
+
     addConsoleLine({
       id: `summary-${Date.now()}`,
       timestamp: getTimestamp(),
@@ -305,22 +320,22 @@ function checkAllTestsCompleted() {
 
 async function startAllTests() {
   console.log('[CLIENT] startAllTests вызван')
-  
+
   if (isRunning.value) {
     console.log('[CLIENT] Тесты уже выполняются, выход')
     return
   }
-  
+
   try {
     isRunning.value = true
     consoleLines.value = []
     console.log('[CLIENT] Флаг isRunning установлен, консоль очищена')
-    
+
     // Сбрасываем статусы и результаты
     testResults.value = {}
     testStatuses.value = {}
     console.log('[CLIENT] Результаты и статусы сброшены')
-    
+
     const timestamp = getTimestamp()
     addConsoleLine({
       id: `header-start-${Date.now()}`,
@@ -333,11 +348,11 @@ async function startAllTests() {
       message: 'Запуск всех тестов...'
     })
     console.log('[CLIENT] Заголовок добавлен в консоль')
-    
+
     console.log('[CLIENT] Вызов API apiRunAllTestsRoute.run(ctx)')
     const result = await apiRunAllTestsRoute.run(ctx)
     console.log('[CLIENT] Результат API вызова:', result)
-    
+
     if (!result.success) {
       console.error('[CLIENT] Ошибка запуска всех тестов:', result.error)
       isRunning.value = false
@@ -353,10 +368,10 @@ async function startAllTests() {
       })
       return
     }
-    
+
     currentTestRunId.value = result.testRunId
     console.log('[CLIENT] testRunId установлен:', result.testRunId)
-    
+
     if (result.encodedSocketId) {
       console.log('[CLIENT] Подписка на WebSocket с encodedSocketId:', result.encodedSocketId)
       await subscribeToSocket(result.encodedSocketId)
@@ -367,7 +382,7 @@ async function startAllTests() {
   } catch (error: any) {
     console.error('[CLIENT] Критическая ошибка в startAllTests:', error)
     console.error('[CLIENT] Stack trace:', error?.stack)
-    
+
     isRunning.value = false
     addConsoleLine({
       id: `error-start-${Date.now()}`,
@@ -386,34 +401,39 @@ async function ensureManualSocketSubscription() {
   if (socketSubscription.value && currentEncodedSocketId.value) {
     return
   }
-  
+
   const res = await apiGetManualSocketIdRoute.run(ctx, {})
   if (!res.success || !res.encodedSocketId) {
-    console.error('[UnitTestsPage] Не удалось получить encodedSocketId для ручных тестов', res.error)
+    console.error(
+      '[UnitTestsPage] Не удалось получить encodedSocketId для ручных тестов',
+      res.error
+    )
     return
   }
-  
+
   await subscribeToSocket(res.encodedSocketId)
 }
 
 async function runSingleTest(categoryName: string, testName: string) {
   console.log('[CLIENT] runSingleTest вызван:', { categoryName, testName })
-  
+
   try {
     console.log('[CLIENT] Проверка подписки на WebSocket...')
     await ensureManualSocketSubscription()
     console.log('[CLIENT] Подписка на WebSocket установлена')
-    
+
     if (!testStatuses.value[categoryName]) {
       testStatuses.value[categoryName] = {}
     }
     testStatuses.value[categoryName][testName] = 'running'
     console.log('[CLIENT] Статус теста установлен: running')
-    
+
     const timestamp = getTimestamp()
-    const test = TEST_CATEGORIES.find(c => c.name === categoryName)?.tests.find(t => t.name === testName)
+    const test = TEST_CATEGORIES.find((c) => c.name === categoryName)?.tests.find(
+      (t) => t.name === testName
+    )
     console.log('[CLIENT] Тест найден:', test)
-    
+
     addConsoleLine({
       id: `manual-${categoryName}-${testName}-${Date.now()}`,
       timestamp,
@@ -425,23 +445,23 @@ async function runSingleTest(categoryName: string, testName: string) {
       message: test?.description || testName
     })
     console.log('[CLIENT] Лог в консоль добавлен')
-    
+
     console.log('[CLIENT] Вызов API apiRunSingleTestRoute.run с параметрами:', {
       route: 'apiRunSingleTestRoute',
       params: { category: categoryName, test: testName }
     })
-    
+
     const result = await apiRunSingleTestRoute.run(ctx, {
       category: categoryName,
       test: testName
     })
-    
+
     console.log('[CLIENT] Результат API вызова:', result)
-    
+
     if (!result.success) {
       console.error('[CLIENT] Тест завершился с ошибкой:', result.error)
       testStatuses.value[categoryName][testName] = 'failed'
-      
+
       addConsoleLine({
         id: `manual-error-${categoryName}-${testName}-${Date.now()}`,
         timestamp: getTimestamp(),
@@ -461,7 +481,9 @@ async function runSingleTest(categoryName: string, testName: string) {
       testResults.value[categoryName][testName] = testResult
       testStatuses.value[categoryName][testName] = testResult.success ? 'passed' : 'failed'
 
-      const test = TEST_CATEGORIES.find(c => c.name === categoryName)?.tests.find(t => t.name === testName)
+      const test = TEST_CATEGORIES.find((c) => c.name === categoryName)?.tests.find(
+        (t) => t.name === testName
+      )
       const message = `${test?.description || testName} - ${testResult.message}`
 
       // Обновляем строку консоли со статусом "running" на итоговый результат
@@ -497,7 +519,7 @@ async function runSingleTest(categoryName: string, testName: string) {
   } catch (error: any) {
     console.error('[CLIENT] Критическая ошибка в runSingleTest:', error)
     console.error('[CLIENT] Stack trace:', error?.stack)
-    
+
     testStatuses.value[categoryName][testName] = 'failed'
     addConsoleLine({
       id: `manual-error-${categoryName}-${testName}-${Date.now()}`,
@@ -512,7 +534,10 @@ async function runSingleTest(categoryName: string, testName: string) {
   }
 }
 
-function getTestStatus(categoryName: string, testName: string): 'pending' | 'running' | 'passed' | 'failed' {
+function getTestStatus(
+  categoryName: string,
+  testName: string
+): 'pending' | 'running' | 'passed' | 'failed' {
   return testStatuses.value[categoryName]?.[testName] || 'pending'
 }
 
@@ -577,7 +602,9 @@ onUnmounted(() => {
       <header class="mb-6 md:mb-8">
         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
-            <h1 class="text-2xl md:text-3xl font-normal text-[var(--color-text)] tracking-[0.2em] uppercase">
+            <h1
+              class="text-2xl md:text-3xl font-normal text-[var(--color-text)] tracking-[0.2em] uppercase"
+            >
               UNIT TESTS
             </h1>
             <p class="text-sm md:text-base text-[var(--color-text-secondary)] mt-2">
@@ -604,11 +631,17 @@ onUnmounted(() => {
       </header>
 
       <!-- Main content -->
-      <div class="grid grid-cols-1 lg:grid-cols-[minmax(0,2fr)_minmax(0,1.4fr)] gap-4 md:gap-6 items-start">
+      <div
+        class="grid grid-cols-1 lg:grid-cols-[minmax(0,2fr)_minmax(0,1.4fr)] gap-4 md:gap-6 items-start"
+      >
         <!-- Tests list -->
-        <section class="bg-[var(--color-bg-secondary)] border-2 border-[var(--color-border)] p-4 md:p-5">
+        <section
+          class="bg-[var(--color-bg-secondary)] border-2 border-[var(--color-border)] p-4 md:p-5"
+        >
           <div class="flex items-center justify-between mb-4 md:mb-5">
-            <h2 class="text-sm md:text-base tracking-[0.18em] uppercase text-[var(--color-text-secondary)]">
+            <h2
+              class="text-sm md:text-base tracking-[0.18em] uppercase text-[var(--color-text-secondary)]"
+            >
               Категории тестов
             </h2>
           </div>
@@ -619,9 +652,13 @@ onUnmounted(() => {
               :key="category.name"
               class="border border-[var(--color-border)] bg-[var(--color-bg-tertiary)]"
             >
-              <header class="px-3 md:px-4 py-2.5 md:py-3 flex items-center justify-between border-b border-[var(--color-border)] bg-[rgba(211,35,75,0.08)]">
+              <header
+                class="px-3 md:px-4 py-2.5 md:py-3 flex items-center justify-between border-b border-[var(--color-border)] bg-[rgba(211,35,75,0.08)]"
+              >
                 <div class="flex items-center gap-3">
-                  <div class="w-8 h-8 rounded-full border border-[var(--color-border-light)] flex items-center justify-center bg-[rgba(0,0,0,0.5)]">
+                  <div
+                    class="w-8 h-8 rounded-full border border-[var(--color-border-light)] flex items-center justify-center bg-[rgba(0,0,0,0.5)]"
+                  >
                     <i :class="['fas', category.icon, 'text-[var(--color-accent)]']"></i>
                   </div>
                   <div>
@@ -645,7 +682,9 @@ onUnmounted(() => {
                     <i :class="getStatusIcon(getTestStatus(category.name, test.name))"></i>
                   </div>
                   <div class="flex-1 min-w-0">
-                    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-1 md:gap-2">
+                    <div
+                      class="flex flex-col md:flex-row md:items-center md:justify-between gap-1 md:gap-2"
+                    >
                       <div class="min-w-0">
                         <p class="text-xs md:text-sm text-[var(--color-text)] truncate">
                           {{ test.description }}
@@ -677,8 +716,12 @@ onUnmounted(() => {
         </section>
 
         <!-- Console -->
-        <section class="bg-[var(--color-bg-secondary)] border-2 border-[var(--color-border)] flex flex-col self-start">
-          <header class="px-4 py-3 border-b border-[var(--color-border)] flex items-center justify-between">
+        <section
+          class="bg-[var(--color-bg-secondary)] border-2 border-[var(--color-border)] flex flex-col self-start"
+        >
+          <header
+            class="px-4 py-3 border-b border-[var(--color-border)] flex items-center justify-between"
+          >
             <div class="flex items-center gap-2">
               <i class="fas fa-terminal text-[var(--color-accent)]"></i>
               <span class="text-sm tracking-[0.18em] uppercase text-[var(--color-text-secondary)]">
@@ -687,15 +730,29 @@ onUnmounted(() => {
             </div>
             <div class="flex items-center gap-3 text-[10px] text-[var(--color-text-tertiary)]">
               <label class="flex items-center gap-1 cursor-pointer">
-                <input v-model="levelFilters.info" type="checkbox" class="accent-[var(--color-accent)]" />
-                <span class="uppercase tracking-[0.18em] text-[var(--color-text-secondary)]">info</span>
+                <input
+                  v-model="levelFilters.info"
+                  type="checkbox"
+                  class="accent-[var(--color-accent)]"
+                />
+                <span class="uppercase tracking-[0.18em] text-[var(--color-text-secondary)]"
+                  >info</span
+                >
               </label>
               <label class="flex items-center gap-1 cursor-pointer">
-                <input v-model="levelFilters.warn" type="checkbox" class="accent-[var(--color-accent)]" />
+                <input
+                  v-model="levelFilters.warn"
+                  type="checkbox"
+                  class="accent-[var(--color-accent)]"
+                />
                 <span class="uppercase tracking-[0.18em] text-yellow-300">warn</span>
               </label>
               <label class="flex items-center gap-1 cursor-pointer">
-                <input v-model="levelFilters.error" type="checkbox" class="accent-[var(--color-accent)]" />
+                <input
+                  v-model="levelFilters.error"
+                  type="checkbox"
+                  class="accent-[var(--color-accent)]"
+                />
                 <span class="uppercase tracking-[0.18em] text-[var(--color-error)]">error</span>
               </label>
               <span class="flex items-center gap-1 ml-1">
@@ -710,7 +767,8 @@ onUnmounted(() => {
             class="flex-1 max-h-[70vh] overflow-y-auto px-3 md:px-4 py-3 md:py-4 text-[11px] md:text-xs font-mono bg-[radial-gradient(circle_at_top,_rgba(211,35,75,0.12),_transparent_55%),_var(--color-bg-secondary)]"
           >
             <div v-if="consoleLines.length === 0" class="text-[var(--color-text-tertiary)] italic">
-              Нажмите «Запустить все тесты» или кнопку «Запустить» рядом с конкретным тестом, чтобы увидеть вывод.
+              Нажмите «Запустить все тесты» или кнопку «Запустить» рядом с конкретным тестом, чтобы
+              увидеть вывод.
             </div>
 
             <div
@@ -725,19 +783,19 @@ onUnmounted(() => {
               >
                 {{ line.level }}
               </span>
-              
+
               <template v-if="line.type === 'header'">
                 <span class="text-[var(--color-accent)] font-semibold">{{ line.message }}</span>
               </template>
-              
+
               <template v-else-if="line.type === 'summary'">
                 <span class="text-[var(--color-success)] font-semibold">{{ line.message }}</span>
               </template>
-              
+
               <template v-else-if="line.type === 'info'">
                 <span class="text-[var(--color-text-secondary)]">{{ line.message }}</span>
               </template>
-              
+
               <template v-else>
                 <span
                   v-if="line.category && line.test"
@@ -762,4 +820,3 @@ onUnmounted(() => {
     </div>
   </div>
 </template>
-

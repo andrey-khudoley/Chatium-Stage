@@ -1,7 +1,7 @@
 <template>
   <div class="video-note" :class="{ 'is-playing': isPlaying }">
     <!-- Видео в кружочке -->
-    <div 
+    <div
       class="video-circle"
       @click="togglePlay"
       @mouseenter="handleMouseEnter"
@@ -15,39 +15,32 @@
         preload="metadata"
         @ended="onEnded"
       />
-      
+
       <!-- Превью (пока видео не загружено) -->
       <div v-if="!isLoaded" class="video-placeholder">
         <i class="fas fa-spinner fa-spin"></i>
       </div>
-      
+
       <!-- Иконка воспроизведения (когда на паузе) -->
       <div v-if="!isPlaying && isLoaded" class="play-overlay">
         <i class="fas fa-play"></i>
       </div>
-      
+
       <!-- Иконка паузы (при наведении на играющее видео) -->
       <div v-if="isPlaying && showPauseOverlay" class="pause-overlay" @click.stop="togglePlay">
         <i class="fas fa-pause"></i>
       </div>
-      
+
       <!-- Длительность -->
       <div v-if="duration > 0 && !isPlaying" class="duration-badge">
         {{ formatDuration(duration) }}
       </div>
     </div>
-    
+
     <!-- Прогресс (показывается при наведении/воспроизведении) -->
-    <div 
-      v-if="isPlaying || showProgress"
-      class="video-progress-container"
-      @click="seekTo"
-    >
+    <div v-if="isPlaying || showProgress" class="video-progress-container" @click="seekTo">
       <div class="video-progress-bar">
-        <div 
-          class="video-progress-fill"
-          :style="{ width: progressPercent + '%' }"
-        />
+        <div class="video-progress-fill" :style="{ width: progressPercent + '%' }" />
       </div>
     </div>
   </div>
@@ -95,34 +88,37 @@ function formatDuration(seconds) {
 // Переключение воспроизведения
 function togglePlay() {
   if (!videoElement.value) return
-  
+
   if (isPlaying.value) {
     videoElement.value.pause()
     isPlaying.value = false
   } else {
     // Останавливаем другие видео
-    document.querySelectorAll('video').forEach(video => {
+    document.querySelectorAll('video').forEach((video) => {
       if (video !== videoElement.value) {
         video.pause()
       }
     })
-    
-    videoElement.value.play().then(() => {
-      isPlaying.value = true
-    }).catch(err => {
-      console.error('Failed to play video:', err)
-    })
+
+    videoElement.value
+      .play()
+      .then(() => {
+        isPlaying.value = true
+      })
+      .catch((err) => {
+        console.error('Failed to play video:', err)
+      })
   }
 }
 
 // Перемотка
 function seekTo(event) {
   if (!videoElement.value || videoDuration.value === 0) return
-  
+
   const rect = event.currentTarget.getBoundingClientRect()
   const x = event.clientX - rect.left
   const percent = x / rect.width
-  
+
   videoElement.value.currentTime = percent * videoDuration.value
 }
 
@@ -139,7 +135,7 @@ function updateProgress() {
       videoDuration.value = videoElement.value.duration
     }
   }
-  
+
   if (isPlaying.value) {
     requestAnimationFrame(updateProgress)
   }
@@ -167,28 +163,28 @@ onMounted(() => {
         videoDuration.value = videoElement.value.duration
       }
     })
-    
+
     // Логируем ошибки
     videoElement.value.addEventListener('error', (e) => {
       console.error('[VideoNote] Video error:', videoElement.value?.error)
     })
-    
+
     // Слушаем обновление времени
     videoElement.value.addEventListener('timeupdate', () => {
       currentTime.value = videoElement.value.currentTime
     })
-    
+
     // Слушаем начало воспроизведения
     videoElement.value.addEventListener('play', () => {
       isPlaying.value = true
       updateProgress()
     })
-    
+
     // Слушаем паузу
     videoElement.value.addEventListener('pause', () => {
       isPlaying.value = false
     })
-    
+
     // Проверяем, что видео уже загружено
     if (videoElement.value?.readyState >= 1) {
       isLoaded.value = true
@@ -347,7 +343,7 @@ onUnmounted(() => {
     width: 160px;
     height: 160px;
   }
-  
+
   .video-progress-container {
     width: 140px;
   }

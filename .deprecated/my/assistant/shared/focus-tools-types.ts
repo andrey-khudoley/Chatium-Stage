@@ -43,7 +43,10 @@ export type StopwatchToolSnapshot = {
 }
 
 /** Помидор в снимке + ключ дневной статистики и runId открытого сегмента. */
-export type PomodoroSliceInFocusTools = PomodoroStateDto & { statsPeriodDayKey: string; currentRunId: string }
+export type PomodoroSliceInFocusTools = PomodoroStateDto & {
+  statsPeriodDayKey: string
+  currentRunId: string
+}
 
 /** Полезная нагрузка снимка (внутри JSON-обёртки). */
 export type FocusToolsStateData = {

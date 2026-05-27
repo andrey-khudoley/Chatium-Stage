@@ -8,7 +8,9 @@ import { getProjectDomain } from './settings.lib'
 
 /** Собрать origin (схема + домен) из строки домена. */
 export function getOrigin(domain: string): string {
-  return domain.startsWith('http://') || domain.startsWith('https://') ? domain : `https://${domain}`
+  return domain.startsWith('http://') || domain.startsWith('https://')
+    ? domain
+    : `https://${domain}`
 }
 
 /** Полный URL страницы по относительному пути из ROUTES и домену. */

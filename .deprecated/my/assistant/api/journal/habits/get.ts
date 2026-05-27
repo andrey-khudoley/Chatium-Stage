@@ -1,7 +1,10 @@
 // @shared-route
 import { requireRealUser } from '@app/auth'
 import * as loggerLib from '../../../lib/logger.lib'
-import { computeHabitsMondayKeyFromNow, normalizeHabitsMondayKey } from '../../../lib/journal-habits-time'
+import {
+  computeHabitsMondayKeyFromNow,
+  normalizeHabitsMondayKey
+} from '../../../lib/journal-habits-time'
 import * as journalHabitsRepo from '../../../repos/journal-habits.repo'
 import { getWeekMondayKeyForDateKey } from '../../../lib/journal-week-key'
 

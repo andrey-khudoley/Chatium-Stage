@@ -5,7 +5,7 @@
       <div
         v-if="mobileMenuOpen"
         class="fixed inset-0 z-[60] lg:hidden"
-        style="background: rgba(0,0,0,0.5); backdrop-filter: blur(2px)"
+        style="background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(2px)"
         @click="mobileMenuOpen = false"
       ></div>
     </Transition>
@@ -20,7 +20,9 @@
       <!-- Логотип -->
       <div class="p-6 border-b border-wr-border">
         <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-lg bg-gradient-primary flex items-center justify-center flex-shrink-0">
+          <div
+            class="w-10 h-10 rounded-lg bg-gradient-primary flex items-center justify-center flex-shrink-0"
+          >
             <i class="fas fa-tv text-white"></i>
           </div>
           <div class="flex-1 min-w-0">
@@ -54,7 +56,9 @@
               @click="switchTab('episodes')"
               :class="[
                 'flex-1 px-3 py-2 text-xs font-semibold transition',
-                mainTab === 'episodes' ? 'bg-gradient-primary text-white' : 'wr-text-secondary hover:wr-text-primary'
+                mainTab === 'episodes'
+                  ? 'bg-gradient-primary text-white'
+                  : 'wr-text-secondary hover:wr-text-primary'
               ]"
             >
               <i class="fas fa-tv mr-1"></i> Эфиры
@@ -63,7 +67,9 @@
               @click="switchTab('autowebinars')"
               :class="[
                 'flex-1 px-3 py-2 text-xs font-semibold transition',
-                mainTab === 'autowebinars' ? 'bg-gradient-primary text-white' : 'wr-text-secondary hover:wr-text-primary'
+                mainTab === 'autowebinars'
+                  ? 'bg-gradient-primary text-white'
+                  : 'wr-text-secondary hover:wr-text-primary'
               ]"
             >
               <i class="fas fa-robot mr-1"></i> Автовеб
@@ -74,7 +80,10 @@
         <button
           v-for="item in filteredMenuItems"
           :key="item.id"
-          @click="navigate(item.id); mobileMenuOpen = false"
+          @click="
+            navigate(item.id)
+            mobileMenuOpen = false
+          "
           :class="[
             'w-full flex items-center gap-3 px-4 py-3 rounded-lg transition',
             currentSection === item.id
@@ -93,7 +102,6 @@
           </span>
         </button>
       </nav>
-
     </aside>
 
     <!-- Основной контент -->
@@ -123,8 +131,11 @@
         </div>
       </div>
 
-
-      <component :is="currentComponent" :key="currentSection + (episodeId || '') + (autowebinarId || '')" v-bind="componentProps" />
+      <component
+        :is="currentComponent"
+        :key="currentSection + (episodeId || '') + (autowebinarId || '')"
+        v-bind="componentProps"
+      />
     </main>
   </div>
 </template>
@@ -145,7 +156,7 @@ import { currentTheme, initThemeWatcher, toggleTheme } from '../../shared/theme'
 const props = defineProps({
   initialSection: { type: String, default: 'episodes' },
   episodeId: String,
-  indexUrl: String,
+  indexUrl: String
 })
 
 const currentSection = ref(props.initialSection)
@@ -163,14 +174,14 @@ const episodeMenuItems = [
   { id: 'episodes', label: 'Эфиры', icon: 'fas fa-tv' },
   { id: 'forms', label: 'Формы', icon: 'fas fa-clipboard-list' },
   { id: 'submissions', label: 'Ответы', icon: 'fas fa-inbox' },
-  { id: 'analytics', label: 'Аналитика', icon: 'fas fa-chart-line' },
+  { id: 'analytics', label: 'Аналитика', icon: 'fas fa-chart-line' }
 ]
 
 const autowebinarMenuItems = [
   { id: 'autowebinars', label: 'Автовебинары', icon: 'fas fa-robot' },
   { id: 'forms', label: 'Формы', icon: 'fas fa-clipboard-list' },
   { id: 'submissions', label: 'Ответы', icon: 'fas fa-inbox' },
-  { id: 'aw-analytics', label: 'Аналитика', icon: 'fas fa-chart-line' },
+  { id: 'aw-analytics', label: 'Аналитика', icon: 'fas fa-chart-line' }
 ]
 
 const filteredMenuItems = computed(() => {
@@ -181,9 +192,10 @@ const currentLabel = computed(() => {
   if (episodeId.value && currentSection.value === 'episodes') return 'Редактирование'
   if (currentSection.value === 'create') return 'Создание эфира'
   if (currentSection.value === 'aw-create') return 'Создание автовебинара'
-  if (autowebinarId.value && currentSection.value === 'autowebinars') return 'Редактирование автовебинара'
+  if (autowebinarId.value && currentSection.value === 'autowebinars')
+    return 'Редактирование автовебинара'
   const allItems = [...episodeMenuItems, ...autowebinarMenuItems]
-  const item = allItems.find(i => i.id === currentSection.value)
+  const item = allItems.find((i) => i.id === currentSection.value)
   return item?.label || 'Админка'
 })
 
@@ -197,7 +209,7 @@ const components = {
   autowebinars: AdminAutowebinarListPage,
   'aw-create': AdminAutowebinarCreatePage,
   'aw-edit': AdminAutowebinarEditPage,
-  'aw-analytics': AdminAnalyticsPage,
+  'aw-analytics': AdminAnalyticsPage
 }
 
 const currentComponent = computed(() => {
@@ -212,11 +224,11 @@ const currentComponent = computed(() => {
 
 const componentProps = computed(() => {
   const base = { indexUrl: props.indexUrl }
-  
+
   if (episodeId.value && currentSection.value === 'episodes') {
     return { ...base, episodeId: episodeId.value }
   }
-  
+
   if (autowebinarId.value && currentSection.value === 'autowebinars') {
     return { ...base, autowebinarId: autowebinarId.value }
   }
@@ -225,18 +237,18 @@ const componentProps = computed(() => {
   if (currentSection.value === 'aw-analytics') {
     return { ...base, mode: 'autowebinars' }
   }
-  
+
   // Ответы на формы: передаём mode в зависимости от текущего таба
   if (currentSection.value === 'submissions') {
     return { ...base, mode: mainTab.value === 'autowebinars' ? 'autowebinars' : 'episodes' }
   }
-  
+
   return base
 })
 
 function switchTab(tab) {
   mainTab.value = tab
-  
+
   // Очищаем query параметры другого типа при переключении табов
   const url = new URL(window.location.href)
   if (tab === 'episodes') {
@@ -245,8 +257,10 @@ function switchTab(tab) {
     url.searchParams.delete('autowebinarId')
     autowebinarId.value = null
     // Переходим на список эфиров если были в секции автовебинаров
-    const targetSection = ['autowebinars', 'aw-create', 'aw-edit', 'aw-analytics'].includes(currentSection.value) 
-      ? 'episodes' 
+    const targetSection = ['autowebinars', 'aw-create', 'aw-edit', 'aw-analytics'].includes(
+      currentSection.value
+    )
+      ? 'episodes'
       : currentSection.value
     navigate(targetSection)
   } else {
@@ -265,9 +279,9 @@ function navigate(sectionId) {
   if (sectionId === 'autowebinars' && autowebinarId.value) {
     autowebinarId.value = null
   }
-  
+
   currentSection.value = sectionId
-  
+
   const url = new URL(window.location.href)
   url.searchParams.set('section', sectionId)
   if (episodeId.value && sectionId === 'episodes') {
@@ -308,7 +322,7 @@ onMounted(() => {
     if (e.detail.mainTab) {
       mainTab.value = e.detail.mainTab
     }
-    
+
     const url = new URL(window.location.href)
     url.searchParams.set('section', currentSection.value)
     if (episodeId.value) {

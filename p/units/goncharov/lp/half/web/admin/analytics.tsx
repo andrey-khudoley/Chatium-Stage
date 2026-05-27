@@ -1,6 +1,6 @@
-import { jsx } from "@app/html-jsx"
+import { jsx } from '@app/html-jsx'
 import { requireAccountRole } from '@app/auth'
-import Registrations from "../../tables/registrations.table"
+import Registrations from '../../tables/registrations.table'
 
 export const adminAnalyticsRoute = app.get('/', async (ctx, req) => {
   requireAccountRole(ctx, 'Admin')
@@ -17,7 +17,10 @@ export const adminAnalyticsRoute = app.get('/', async (ctx, req) => {
       <head>
         <title>Аналитика регистраций — Жизнь вполсилы</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Source+Sans+3:wght@300;400;500;600&display=swap" rel="stylesheet" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Source+Sans+3:wght@300;400;500;600&display=swap"
+          rel="stylesheet"
+        />
         <link href="/s/static/lib/fontawesome/6.7.2/css/all.min.css" rel="stylesheet" />
         <script src="/s/static/lib/tailwind.3.4.16.min.js"></script>
         <style>{`
@@ -111,7 +114,8 @@ export const adminAnalyticsRoute = app.get('/', async (ctx, req) => {
           <div class="glass-panel" style="padding: 40px;">
             <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 32px; flex-wrap: wrap; gap: 20px;">
               <div>
-                <div style="
+                <div
+                  style="
                   width: 64px;
                   height: 64px;
                   background: linear-gradient(135deg, #c9a86c 0%, #b8956a 100%);
@@ -121,44 +125,65 @@ export const adminAnalyticsRoute = app.get('/', async (ctx, req) => {
                   justify-content: center;
                   margin-bottom: 16px;
                   box-shadow: 0 4px 16px rgba(201, 168, 108, 0.3);
-                ">
+                "
+                >
                   <i class="fas fa-chart-line" style="color: white; font-size: 28px;"></i>
                 </div>
-                <h1 class="font-display" style="
+                <h1
+                  class="font-display"
+                  style="
                   font-size: 32px;
                   font-weight: 600;
                   color: #3d3229;
                   margin: 0 0 8px;
                   letter-spacing: 0.01em;
-                ">Аналитика регистраций</h1>
-                <p style="color: #8b7355; margin: 0; font-size: 15px;">Все заявки на вебинар «Жизнь вполсилы»</p>
+                "
+                >
+                  Аналитика регистраций
+                </h1>
+                <p style="color: #8b7355; margin: 0; font-size: 15px;">
+                  Все заявки на вебинар «Жизнь вполсилы»
+                </p>
               </div>
 
               <div class="stat-card" style="min-width: 180px;">
-                <div style="
+                <div
+                  style="
                   font-size: 48px;
                   font-weight: 700;
                   color: #c9a86c;
                   margin-bottom: 8px;
                   font-family: 'Cormorant Garamond', serif;
-                ">{totalCount}</div>
-                <div style="
+                "
+                >
+                  {totalCount}
+                </div>
+                <div
+                  style="
                   font-size: 14px;
                   color: #8b7355;
                   font-weight: 500;
                   text-transform: uppercase;
                   letter-spacing: 0.5px;
-                ">Всего регистраций</div>
+                "
+                >
+                  Всего регистраций
+                </div>
               </div>
             </div>
 
             {registrations.length === 0 ? (
-              <div style="
+              <div
+                style="
                 text-align: center;
                 padding: 60px 20px;
                 color: #8b7355;
-              ">
-                <i class="fas fa-inbox" style="font-size: 64px; margin-bottom: 20px; opacity: 0.3;"></i>
+              "
+              >
+                <i
+                  class="fas fa-inbox"
+                  style="font-size: 64px; margin-bottom: 20px; opacity: 0.3;"
+                ></i>
                 <p style="font-size: 18px; margin: 0;">Пока нет регистраций</p>
               </div>
             ) : (
@@ -176,7 +201,7 @@ export const adminAnalyticsRoute = app.get('/', async (ctx, req) => {
                     </tr>
                   </thead>
                   <tbody>
-                    {registrations.map(reg => (
+                    {registrations.map((reg) => (
                       <tr>
                         <td style="white-space: nowrap;">
                           <i class="far fa-clock" style="color: #c9a86c; margin-right: 8px;"></i>
@@ -229,7 +254,8 @@ export const adminAnalyticsRoute = app.get('/', async (ctx, req) => {
             )}
 
             {registrations.length > 0 && registrations.length < totalCount && (
-              <div style="
+              <div
+                style="
                 margin-top: 24px;
                 padding: 16px;
                 background: rgba(201, 168, 108, 0.1);
@@ -237,19 +263,22 @@ export const adminAnalyticsRoute = app.get('/', async (ctx, req) => {
                 text-align: center;
                 color: #8b7355;
                 font-size: 14px;
-              ">
+              "
+              >
                 <i class="fas fa-info-circle" style="margin-right: 8px;"></i>
                 Показаны последние {registrations.length} из {totalCount} регистраций
               </div>
             )}
           </div>
 
-          <p style="
+          <p
+            style="
             text-align: center;
             color: #a89a8a;
             font-size: 13px;
             margin-top: 24px;
-          ">
+          "
+          >
             <i class="fas fa-shield-alt" style="margin-right: 6px;"></i>
             Доступ только для администраторов
           </p>

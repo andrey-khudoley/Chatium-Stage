@@ -4,7 +4,7 @@ import type { LogsRow } from '../tables/logs.table'
 if (!Logs) {
   throw new Error(
     'Logs table is not initialized. ' +
-    'Check if table "t__tg-ref-program__log__x7Kp9m" exists in Heap and is properly exported from tables/logs.table.ts'
+      'Check if table "t__tg-ref-program__log__x7Kp9m" exists in Heap and is properly exported from tables/logs.table.ts'
   )
 }
 

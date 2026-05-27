@@ -12,7 +12,7 @@
           v-for="(c, i) in cards"
           :key="c.title"
           class="card"
-          :style="{ animationDelay: (0.1 + i * 0.1) + 's' }"
+          :style="{ animationDelay: 0.1 + i * 0.1 + 's' }"
         >
           <div class="ico">
             <span class="dot d1"></span>
@@ -32,9 +32,12 @@
 defineProps({ active: Boolean })
 
 const cards = [
-  { title: 'Endpoints, которых нет', text: 'AI генерирует правдоподобные URL, которых не существует' },
+  {
+    title: 'Endpoints, которых нет',
+    text: 'AI генерирует правдоподобные URL, которых не существует'
+  },
   { title: 'Старые названия полей', text: 'Передаёт name, когда API ждёт full_name' },
-  { title: 'Перепутанная авторизация', text: 'Кладёт ключ в заголовок, который API не читает' },
+  { title: 'Перепутанная авторизация', text: 'Кладёт ключ в заголовок, который API не читает' }
 ]
 </script>
 
@@ -58,7 +61,10 @@ const cards = [
   gap: 32px;
 }
 
-.head { display: flex; flex-direction: column; }
+.head {
+  display: flex;
+  flex-direction: column;
+}
 .title {
   font-family: var(--font-display-new);
   font-weight: 700;
@@ -68,7 +74,8 @@ const cards = [
 }
 .strip {
   display: block;
-  width: 80px; height: 4px;
+  width: 80px;
+  height: 4px;
   background: var(--accent-cyan);
   border-radius: 2px;
   margin: 20px 0 16px;
@@ -96,7 +103,9 @@ const cards = [
   min-height: 220px;
   opacity: 0;
   animation: fadeInUp 500ms ease-out forwards;
-  transition: transform 0.3s ease, border-color 0.3s ease;
+  transition:
+    transform 0.3s ease,
+    border-color 0.3s ease;
 }
 .card:hover {
   transform: translateY(-4px);
@@ -108,16 +117,33 @@ const cards = [
   grid-template-columns: repeat(2, 24px);
   grid-template-rows: repeat(2, 24px);
   gap: 4px;
-  width: 56px; height: 56px;
+  width: 56px;
+  height: 56px;
 }
 .dot {
   background: rgba(255, 179, 71, 0.8);
   border-radius: 4px;
 }
-.d1 { width: 24px; height: 6px; align-self: center; }
-.d2 { width: 6px; height: 24px; justify-self: end; }
-.d3 { width: 6px; height: 24px; justify-self: start; }
-.d4 { width: 24px; height: 6px; align-self: center; }
+.d1 {
+  width: 24px;
+  height: 6px;
+  align-self: center;
+}
+.d2 {
+  width: 6px;
+  height: 24px;
+  justify-self: end;
+}
+.d3 {
+  width: 6px;
+  height: 24px;
+  justify-self: start;
+}
+.d4 {
+  width: 24px;
+  height: 6px;
+  align-self: center;
+}
 
 .card-title {
   font-family: var(--font-display-new);
@@ -133,8 +159,16 @@ const cards = [
 }
 
 @media (max-width: 1024px) {
-  .slide { padding: 40px 24px; }
-  .cards { grid-template-columns: 1fr; gap: 16px; }
-  .card { min-height: auto; padding: 22px; }
+  .slide {
+    padding: 40px 24px;
+  }
+  .cards {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .card {
+    min-height: auto;
+    padding: 22px;
+  }
 }
 </style>

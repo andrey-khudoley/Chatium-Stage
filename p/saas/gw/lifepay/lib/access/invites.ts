@@ -117,43 +117,47 @@ export async function consumeInvite(ctx: app.Ctx, token: string): Promise<Consum
   const userId = requireUserId(ctx)
   const lockKey = `${INVITE_CONSUME_LOCK_PREFIX}${token}`
 
-  return runWithExclusiveLock(ctx, lockKey, async (lockCtx: app.Ctx): Promise<ConsumeInviteResult> => {
-    const now = Date.now()
-    const invite = await panelInvitesRepo.findByToken(lockCtx, token)
-    const state = classifyInvite(invite, now)
+  return runWithExclusiveLock(
+    ctx,
+    lockKey,
+    async (lockCtx: app.Ctx): Promise<ConsumeInviteResult> => {
+      const now = Date.now()
+      const invite = await panelInvitesRepo.findByToken(lockCtx, token)
+      const state = classifyInvite(invite, now)
 
-    // unknown / used / revoked / expired — инвайт не модифицируем.
-    if (state !== 'valid' || !invite) {
+      // unknown / used / revoked / expired — инвайт не модифицируем.
+      if (state !== 'valid' || !invite) {
+        await loggerLib.writeServerLog(lockCtx, {
+          severity: 6,
+          message: `[${LOG_MODULE}] invite_invalid`,
+          payload: { reason: state, userId, inviteId: invite?.id ?? null }
+        })
+        return { ok: false, reason: state as Exclude<InviteState, 'valid'> }
+      }
+
+      // У пользователя уже есть активный доступ — инвайт не расходуем (может пригодиться другому).
+      const activeGrant = await panelAccessRepo.findActiveByUserId(lockCtx, userId)
+      if (activeGrant) {
+        return { ok: false, reason: 'already_has_access' }
+      }
+
+      // Создаём грант, и только ПОТОМ помечаем инвайт использованным.
+      const grant = await panelAccessRepo.upsertGrant(lockCtx, {
+        userId,
+        grantedByUserId: invite.createdByUserId,
+        inviteId: invite.id
+      })
+      await panelInvitesRepo.markUsed(lockCtx, invite.id, userId, now)
+
       await loggerLib.writeServerLog(lockCtx, {
         severity: 6,
-        message: `[${LOG_MODULE}] invite_invalid`,
-        payload: { reason: state, userId, inviteId: invite?.id ?? null }
+        message: `[${LOG_MODULE}] invite_consumed`,
+        payload: { inviteId: invite.id, userId, grantId: grant.id }
       })
-      return { ok: false, reason: state as Exclude<InviteState, 'valid'> }
+
+      return { ok: true, grantId: grant.id }
     }
-
-    // У пользователя уже есть активный доступ — инвайт не расходуем (может пригодиться другому).
-    const activeGrant = await panelAccessRepo.findActiveByUserId(lockCtx, userId)
-    if (activeGrant) {
-      return { ok: false, reason: 'already_has_access' }
-    }
-
-    // Создаём грант, и только ПОТОМ помечаем инвайт использованным.
-    const grant = await panelAccessRepo.upsertGrant(lockCtx, {
-      userId,
-      grantedByUserId: invite.createdByUserId,
-      inviteId: invite.id
-    })
-    await panelInvitesRepo.markUsed(lockCtx, invite.id, userId, now)
-
-    await loggerLib.writeServerLog(lockCtx, {
-      severity: 6,
-      message: `[${LOG_MODULE}] invite_consumed`,
-      payload: { inviteId: invite.id, userId, grantId: grant.id }
-    })
-
-    return { ok: true, grantId: grant.id }
-  })
+  )
 }
 
 /** Read-only чтение инвайта по токену (для страницы; не расходует инвайт). */

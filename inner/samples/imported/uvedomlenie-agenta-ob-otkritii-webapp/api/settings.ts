@@ -7,10 +7,10 @@ import { sendMessageToChatTool } from '@sender/sdk'
 // @shared-route
 export const apiGetChannelsRoute = app.get('/channels').handle(async (ctx, req) => {
   await requireAccountRole(ctx, 'Admin')
-  
+
   const channels = await getChannels(ctx)
-  
-  return channels.map(channel => ({
+
+  return channels.map((channel) => ({
     id: channel.id,
     title: channel.title,
     source: channel.source,
@@ -21,9 +21,9 @@ export const apiGetChannelsRoute = app.get('/channels').handle(async (ctx, req) 
 // @shared-route
 export const apiGetAgentsRoute = app.get('/agents').handle(async (ctx, req) => {
   await requireAccountRole(ctx, 'Admin')
-  
+
   const agents = await findAgents(ctx)
-  return agents.map(agent => ({
+  return agents.map((agent) => ({
     id: agent.id,
     title: agent.title
   }))
@@ -32,7 +32,7 @@ export const apiGetAgentsRoute = app.get('/agents').handle(async (ctx, req) => {
 // @shared-route
 export const apiGetSettingsRoute = app.get('/settings').handle(async (ctx, req) => {
   await requireAccountRole(ctx, 'Admin')
-  
+
   const settings = await SettingsTable.getSingleton(ctx)
   return settings
 })
@@ -40,14 +40,23 @@ export const apiGetSettingsRoute = app.get('/settings').handle(async (ctx, req) 
 // @shared-route
 export const apiSaveSettingsRoute = app.post('/settings').handle(async (ctx, req) => {
   await requireAccountRole(ctx, 'Admin')
-  
-  const { agentId, agentTitle, onlyFirstVisit, messageTemplate, wakeAgent, channelId, channelTitle } = req.body
-  
+
+  const {
+    agentId,
+    agentTitle,
+    onlyFirstVisit,
+    messageTemplate,
+    wakeAgent,
+    channelId,
+    channelTitle
+  } = req.body
+
   return await SettingsTable.updateSingleton(ctx, {
     agentId,
     agentTitle,
     onlyFirstVisit: onlyFirstVisit ?? false,
-    messageTemplate: messageTemplate || 'Пользователь открыл WebApp.\n\nДанные пользователя:\n[userData]',
+    messageTemplate:
+      messageTemplate || 'Пользователь открыл WebApp.\n\nДанные пользователя:\n[userData]',
     wakeAgent: wakeAgent ?? true,
     channelId,
     channelTitle
@@ -57,19 +66,19 @@ export const apiSaveSettingsRoute = app.post('/settings').handle(async (ctx, req
 // @shared-route
 export const apiCreateAgentRoute = app.post('/create-agent').handle(async (ctx, req) => {
   await requireAccountRole(ctx, 'Admin')
-  
+
   const { title, instructions } = req.body
-  
+
   if (!title) {
     throw new Error('Название агента обязательно')
   }
-  
+
   const agent = await getOrCreateAgentForWorkspace(ctx, 'webappOpenedAgent', {
     title,
     instructions: instructions || 'Ты агент, который обрабатывает события открытия WebApp.',
     enabledTools: [sendMessageToChatTool]
   })
-  
+
   return {
     id: agent.id,
     title: agent.title

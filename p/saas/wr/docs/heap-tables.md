@@ -17,4 +17,3 @@
 - **FormSubmissions**: `t_webinar_room_webinar_room_form_submissions_V3c`
 - **ScenarioEvents**: `t_webinar_room_webinar_room_scenario_events_u6D`
 - **GlobalConfig**: `t_webinar_room_webinar_room_global_config_b1F`
-

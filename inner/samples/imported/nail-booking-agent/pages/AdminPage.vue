@@ -142,13 +142,14 @@
     >
       <div class="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
         <h3 class="text-2xl font-display font-bold text-dark mb-4">Перенести запись</h3>
-        
+
         <div v-if="selectedBooking" class="mb-4">
           <p class="text-gray-600 mb-2">
             <strong>Клиент:</strong> {{ selectedBooking.clientName }}
           </p>
           <p class="text-gray-600 mb-4">
-            <strong>Текущее время:</strong> {{ formatDate(selectedBooking.date) }} в {{ selectedBooking.time }}
+            <strong>Текущее время:</strong> {{ formatDate(selectedBooking.date) }} в
+            {{ selectedBooking.time }}
           </p>
 
           <div class="space-y-4">
@@ -195,10 +196,10 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { indexPageRoute } from '../index'
-import { 
-  apiBookingsListRoute, 
-  apiBookingsUpdateRoute, 
-  apiBookingsDeleteRoute 
+import {
+  apiBookingsListRoute,
+  apiBookingsUpdateRoute,
+  apiBookingsDeleteRoute
 } from '../api/bookings'
 
 const loading = ref(true)
@@ -214,19 +215,19 @@ const tabs = [
   { label: 'Ожидают подтверждения', value: 'pending', badgeClass: 'bg-yellow-100 text-yellow-700' },
   { label: 'Подтверждены', value: 'confirmed', badgeClass: 'bg-green-100 text-green-700' },
   { label: 'Завершены', value: 'completed', badgeClass: 'bg-blue-100 text-blue-700' },
-  { label: 'Отменены', value: 'cancelled', badgeClass: 'bg-red-100 text-red-700' },
+  { label: 'Отменены', value: 'cancelled', badgeClass: 'bg-red-100 text-red-700' }
 ]
 
 const filteredBookings = computed(() => {
   if (currentTab.value === 'all') {
     return bookings.value
   }
-  return bookings.value.filter(b => b.status === currentTab.value)
+  return bookings.value.filter((b) => b.status === currentTab.value)
 })
 
 const getCountByStatus = (status) => {
   if (status === 'all') return bookings.value.length
-  return bookings.value.filter(b => b.status === status).length
+  return bookings.value.filter((b) => b.status === status).length
 }
 
 const getStatusLabel = (status) => {
@@ -273,7 +274,7 @@ const loadBookings = async () => {
 
 const confirmBooking = async (booking) => {
   if (!confirm(`Подтвердить запись для ${booking.clientName}?`)) return
-  
+
   try {
     await apiBookingsUpdateRoute({ id: booking.id }).run(ctx, {
       status: 'confirmed'
@@ -287,7 +288,7 @@ const confirmBooking = async (booking) => {
 
 const completeBooking = async (booking) => {
   if (!confirm(`Отметить запись как завершенную?`)) return
-  
+
   try {
     await apiBookingsUpdateRoute({ id: booking.id }).run(ctx, {
       status: 'completed'
@@ -301,7 +302,7 @@ const completeBooking = async (booking) => {
 
 const cancelBooking = async (booking) => {
   if (!confirm(`Отменить запись для ${booking.clientName}?`)) return
-  
+
   try {
     await apiBookingsUpdateRoute({ id: booking.id }).run(ctx, {
       status: 'cancelled'
@@ -329,7 +330,7 @@ const closeRescheduleModal = () => {
 
 const saveReschedule = async () => {
   if (!selectedBooking.value || !newDate.value || !newTime.value) return
-  
+
   try {
     await apiBookingsUpdateRoute({ id: selectedBooking.value.id }).run(ctx, {
       date: newDate.value,

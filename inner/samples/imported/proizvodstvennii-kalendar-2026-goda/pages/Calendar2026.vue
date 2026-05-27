@@ -56,26 +56,35 @@
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <div v-for="month in months" :key="month.index" class="bg-white rounded-lg shadow-md p-4">
           <h3 class="text-xl font-bold text-gray-800 mb-4 text-center">{{ month.name }}</h3>
-          
+
           <!-- Weekday headers -->
           <div class="grid grid-cols-7 gap-1 mb-2">
-            <div v-for="day in weekDays" :key="day" class="text-center text-xs font-semibold text-gray-600">
+            <div
+              v-for="day in weekDays"
+              :key="day"
+              class="text-center text-xs font-semibold text-gray-600"
+            >
               {{ day }}
             </div>
           </div>
-          
+
           <!-- Days -->
           <div class="grid grid-cols-7 gap-1">
-            <div v-for="day in month.days" :key="day.key" 
-                 :class="getDayClass(day)"
-                 class="aspect-square flex items-center justify-center text-sm font-medium rounded transition-all hover:scale-110 cursor-pointer relative"
-                 :title="getDayTitle(day)">
+            <div
+              v-for="day in month.days"
+              :key="day.key"
+              :class="getDayClass(day)"
+              class="aspect-square flex items-center justify-center text-sm font-medium rounded transition-all hover:scale-110 cursor-pointer relative"
+              :title="getDayTitle(day)"
+            >
               <span v-if="day.date">{{ day.date }}</span>
             </div>
           </div>
 
           <!-- Month statistics -->
-          <div class="mt-3 pt-3 border-t border-gray-200 text-xs text-gray-600 flex justify-between">
+          <div
+            class="mt-3 pt-3 border-t border-gray-200 text-xs text-gray-600 flex justify-between"
+          >
             <span>Рабочих: {{ month.workDaysCount }}</span>
             <span>Выходных: {{ month.weekendsCount }}</span>
           </div>
@@ -86,12 +95,20 @@
       <div class="mt-8 bg-white rounded-lg shadow-md p-6">
         <h3 class="text-lg font-semibold mb-3 text-gray-800">Примечания:</h3>
         <ul class="text-sm text-gray-600 space-y-2">
-          <li>• Нерабочие праздничные дни установлены в соответствии с частью первой ст. 112 ТК РФ</li>
-          <li>• Перенос выходных дней: с субботы 3 января на пятницу 9 января, с воскресенья 4 января на четверг 31 декабря</li>
+          <li>
+            • Нерабочие праздничные дни установлены в соответствии с частью первой ст. 112 ТК РФ
+          </li>
+          <li>
+            • Перенос выходных дней: с субботы 3 января на пятницу 9 января, с воскресенья 4 января
+            на четверг 31 декабря
+          </li>
           <li>• Дополнительные выходные: 9 января, 9 марта, 11 мая, 31 декабря</li>
           <li>• Новогодний отдых 2026: с 31 декабря 2025 по 11 января 2026 (12 дней)</li>
           <li>• Предпраздничные дни (сокращенные на 1 час): 30 апреля, 8 мая, 11 июня, 3 ноября</li>
-          <li>• Календарь составлен на основании проекта Постановления Правительства РФ "О переносе выходных дней в 2026 году"</li>
+          <li>
+            • Календарь составлен на основании проекта Постановления Правительства РФ "О переносе
+            выходных дней в 2026 году"
+          </li>
         </ul>
       </div>
     </div>
@@ -118,7 +135,7 @@ const holidays = {
   '05-01': 'Праздник Весны и Труда',
   '05-09': 'День Победы',
   '06-12': 'День России',
-  '11-04': 'День народного единства',
+  '11-04': 'День народного единства'
 }
 
 // Переносные выходные дни (не являются праздничными)
@@ -126,20 +143,30 @@ const extraWeekends = {
   '01-09': 'Перенос выходного дня (с 3 января)',
   '03-09': 'Выходной день',
   '05-11': 'Выходной день',
-  '12-31': 'Перенос выходного дня (с 4 января)',
+  '12-31': 'Перенос выходного дня (с 4 января)'
 }
 
 // Сокращенные рабочие дни (предпраздничные дни согласно ТК РФ)
 const shortenedDays = {
-  '04-30': true,  // перед Праздником Весны и Труда
-  '05-08': true,  // перед Днем Победы
-  '06-11': true,  // перед Днем России
-  '11-03': true   // перед Днем народного единства
+  '04-30': true, // перед Праздником Весны и Труда
+  '05-08': true, // перед Днем Победы
+  '06-11': true, // перед Днем России
+  '11-03': true // перед Днем народного единства
 }
 
 const monthNames = [
-  'Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь',
-  'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'
+  'Январь',
+  'Февраль',
+  'Март',
+  'Апрель',
+  'Май',
+  'Июнь',
+  'Июль',
+  'Август',
+  'Сентябрь',
+  'Октябрь',
+  'Ноябрь',
+  'Декабрь'
 ]
 
 function isHoliday(month, date) {
@@ -162,21 +189,21 @@ function generateMonth(monthIndex) {
   const firstDay = new Date(year, monthIndex, 1)
   const lastDay = new Date(year, monthIndex + 1, 0)
   const daysInMonth = lastDay.getDate()
-  
+
   // Get day of week (0 = Sunday, 1 = Monday, etc.)
   let firstDayOfWeek = firstDay.getDay()
   // Convert to Monday = 0, Sunday = 6
   firstDayOfWeek = firstDayOfWeek === 0 ? 6 : firstDayOfWeek - 1
-  
+
   const days = []
   let workDaysCount = 0
   let weekendsCount = 0
-  
+
   // Add empty cells for days before month starts
   for (let i = 0; i < firstDayOfWeek; i++) {
     days.push({ date: null, key: `empty-${i}` })
   }
-  
+
   // Add all days of the month
   for (let date = 1; date <= daysInMonth; date++) {
     const currentDate = new Date(year, monthIndex, date)
@@ -185,16 +212,16 @@ function generateMonth(monthIndex) {
     const holiday = isHoliday(monthIndex + 1, date)
     const extraWeekend = isExtraWeekend(monthIndex + 1, date)
     const shortened = isShortened(monthIndex + 1, date)
-    
+
     // День считается рабочим, если это не выходной, не праздник и не переносной выходной
     const isWorkDay = !isWeekend && !holiday && !extraWeekend
-    
+
     if (isWorkDay) {
       workDaysCount++
     } else {
       weekendsCount++
     }
-    
+
     days.push({
       date,
       isWeekend: isWeekend || !!extraWeekend,
@@ -205,7 +232,7 @@ function generateMonth(monthIndex) {
       key: `day-${date}`
     })
   }
-  
+
   return {
     index: monthIndex,
     name: monthNames[monthIndex],
@@ -224,9 +251,9 @@ const stats = computed(() => {
   let workDays = 0
   let weekends = 0
   let holidays = 0
-  
-  months.value.forEach(month => {
-    month.days.forEach(day => {
+
+  months.value.forEach((month) => {
+    month.days.forEach((day) => {
       if (day.date) {
         if (day.isHoliday) {
           holidays++
@@ -238,15 +265,15 @@ const stats = computed(() => {
       }
     })
   })
-  
+
   totalDays = workDays + weekends + holidays
-  
+
   return { totalDays, workDays, weekends, holidays }
 })
 
 function getDayClass(day) {
   if (!day.date) return 'invisible'
-  
+
   if (day.isHoliday) {
     return 'bg-red-100 border-2 border-red-400 text-red-800 font-bold'
   }

@@ -4,12 +4,20 @@
       <i class="fas fa-spinner fa-spin"></i> Загрузка...
     </div>
     <div v-else-if="providers.length === 0" class="wr-text-tertiary text-xs">
-      Нет доступных провайдеров. <a href="/app/pay?tab=providers&action=add" target="_blank" class="text-primary hover:underline">Настройте платёжную систему</a>.
-    </div> 
+      Нет доступных провайдеров.
+      <a
+        href="/app/pay?tab=providers&action=add"
+        target="_blank"
+        class="text-primary hover:underline"
+        >Настройте платёжную систему</a
+      >.
+    </div>
     <div v-else class="space-y-3">
       <!-- Настроенные провайдеры -->
       <div v-if="configuredProviders.length > 0">
-        <p class="wr-text-secondary text-[11px] font-medium mb-3 opacity-70">Настроенные провайдеры</p>
+        <p class="wr-text-secondary text-[11px] font-medium mb-3 opacity-70">
+          Настроенные провайдеры
+        </p>
         <div class="grid gap-3" :class="gridClass">
           <div
             v-for="provider in configuredProviders"
@@ -23,7 +31,9 @@
                 <img v-if="provider.iconUrl" :src="provider.iconUrl" class="provider-img" />
                 <span v-else>💳</span>
               </div>
-              <span class="text-sm font-semibold wr-text-primary truncate">{{ provider.title || provider.slug }}</span>
+              <span class="text-sm font-semibold wr-text-primary truncate">{{
+                provider.title || provider.slug
+              }}</span>
             </div>
             <div class="provider-check">
               <i class="fas fa-check"></i>
@@ -34,7 +44,9 @@
 
       <!-- Не настроенные провайдеры -->
       <div v-if="unconfiguredProviders.length > 0">
-        <p class="wr-text-secondary text-[11px] font-medium mb-3 opacity-70">Не настроенные провайдеры</p>
+        <p class="wr-text-secondary text-[11px] font-medium mb-3 opacity-70">
+          Не настроенные провайдеры
+        </p>
         <div class="grid gap-3" :class="gridClass">
           <div
             v-for="provider in unconfiguredProviders"
@@ -46,7 +58,9 @@
                 <img v-if="provider.iconUrl" :src="provider.iconUrl" class="provider-img" />
                 <span v-else>💳</span>
               </div>
-              <span class="text-sm font-semibold wr-text-primary truncate">{{ provider.title || provider.slug }}</span>
+              <span class="text-sm font-semibold wr-text-primary truncate">{{
+                provider.title || provider.slug
+              }}</span>
             </div>
             <a
               href="/app/pay?tab=providers&action=add"
@@ -61,7 +75,11 @@
         </div>
       </div>
 
-      <p v-if="showHint" class="wr-text-tertiary text-[10px] mt-2 pt-2" style="border-top: 1px solid var(--wr-border)">
+      <p
+        v-if="showHint"
+        class="wr-text-tertiary text-[10px] mt-2 pt-2"
+        style="border-top: 1px solid var(--wr-border)"
+      >
         <slot name="hint"></slot>
       </p>
     </div>
@@ -76,7 +94,7 @@ const props = defineProps({
   providers: { type: Array, default: () => [] },
   loading: { type: Boolean, default: false },
   columns: { type: Number, default: 1 }, // 1 для модалки, 2 для страницы
-  showHint: { type: Boolean, default: true },
+  showHint: { type: Boolean, default: true }
 })
 
 const emit = defineEmits(['update:modelValue'])
@@ -86,13 +104,9 @@ const selectedProviders = computed({
   set: (value) => emit('update:modelValue', value)
 })
 
-const configuredProviders = computed(() => 
-  props.providers.filter(p => p._configured !== false)
-)
+const configuredProviders = computed(() => props.providers.filter((p) => p._configured !== false))
 
-const unconfiguredProviders = computed(() => 
-  props.providers.filter(p => p._configured === false)
-)
+const unconfiguredProviders = computed(() => props.providers.filter((p) => p._configured === false))
 
 const gridClass = computed(() => {
   return props.columns === 2 ? 'grid-cols-2' : 'grid-cols-1'
@@ -216,7 +230,7 @@ function toggleProvider(slug) {
   width: 32px;
   height: 32px;
   border-radius: 8px;
-  background: #F8005B;
+  background: #f8005b;
   color: white;
   font-size: 13px;
   text-decoration: none;

@@ -55,17 +55,21 @@ function pickString(o: unknown, ...keys: string[]): string {
  * Учитывает разные форматы (Legacy/new, разные поля) — поэтому смотрит на синонимы.
  */
 export function normalizeRegistrationEvent(raw: unknown): NormalizedRegistrationEvent {
-  const root = (raw && typeof raw === 'object') ? (raw as Record<string, unknown>) : {}
-  const user = (root.user && typeof root.user === 'object') ? (root.user as Record<string, unknown>) : {}
-  const training = (root.training && typeof root.training === 'object') ? (root.training as Record<string, unknown>) : {}
-  const webinar = (root.webinar && typeof root.webinar === 'object') ? (root.webinar as Record<string, unknown>) : {}
+  const root = raw && typeof raw === 'object' ? (raw as Record<string, unknown>) : {}
+  const user =
+    root.user && typeof root.user === 'object' ? (root.user as Record<string, unknown>) : {}
+  const training =
+    root.training && typeof root.training === 'object'
+      ? (root.training as Record<string, unknown>)
+      : {}
+  const webinar =
+    root.webinar && typeof root.webinar === 'object'
+      ? (root.webinar as Record<string, unknown>)
+      : {}
 
-  const email =
-    pickString(user, 'email', 'Email') ||
-    pickString(root, 'email', 'user_email')
+  const email = pickString(user, 'email', 'Email') || pickString(root, 'email', 'user_email')
   const name =
-    pickString(user, 'name', 'first_name', 'fullName') ||
-    pickString(root, 'name', 'user_name')
+    pickString(user, 'name', 'first_name', 'fullName') || pickString(root, 'name', 'user_name')
   const activityId =
     pickString(training, 'id') ||
     pickString(webinar, 'id') ||
@@ -79,11 +83,9 @@ export function normalizeRegistrationEvent(raw: unknown): NormalizedRegistration
     pickString(webinar, 'start_date', 'startDate') ||
     pickString(root, 'start_date', 'startDate')
   const dialogId =
-    pickString(root, 'dialog_id', 'dialogId') ||
-    pickString(user, 'dialog_id', 'dialogId')
+    pickString(root, 'dialog_id', 'dialogId') || pickString(user, 'dialog_id', 'dialogId')
   const userId =
-    pickString(user, 'id', 'user_id', 'userId') ||
-    pickString(root, 'user_id', 'userId')
+    pickString(user, 'id', 'user_id', 'userId') || pickString(root, 'user_id', 'userId')
   const gcEventId =
     pickString(root, 'event_id', 'eventId', 'id') ||
     (email && activityId ? `reg_${email}_${activityId}` : '')
@@ -161,11 +163,9 @@ export async function processRegistrationEvent(
   }
 
   const dialogId =
-    event.dialogId ||
-    (await settingsLib.getSettingString(ctx, WELCOME_DEFAULT_DIALOG_KEY)).trim()
+    event.dialogId || (await settingsLib.getSettingString(ctx, WELCOME_DEFAULT_DIALOG_KEY)).trim()
   const userId =
-    event.userId ||
-    (await settingsLib.getSettingString(ctx, WELCOME_DEFAULT_USER_KEY)).trim()
+    event.userId || (await settingsLib.getSettingString(ctx, WELCOME_DEFAULT_USER_KEY)).trim()
 
   if (!dialogId || !userId) {
     await loggerLib.writeServerLog(ctx, {

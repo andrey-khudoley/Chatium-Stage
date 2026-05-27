@@ -1,5 +1,5 @@
 // @shared
-import { jsx } from "@app/html-jsx"
+import { jsx } from '@app/html-jsx'
 import { requireRealUser } from '@app/auth'
 import SettingsPage from './pages/SettingsPage.vue'
 import { TgChannelAnalyticsSettings, ensureDefaultSettings } from './tables/settings.table'
@@ -21,12 +21,12 @@ export const settingsPageRoute = app.html('/', async (ctx, req) => {
       </html>
     )
   }
-  
+
   await ensureDefaultSettings(ctx)
   const settings = await TgChannelAnalyticsSettings.findAll(ctx, {})
-  const titleSetting = settings.find(s => s.key === 'project_title')
+  const titleSetting = settings.find((s) => s.key === 'project_title')
   const projectTitle = titleSetting?.value || 'Аналитика телеграм-каналов'
-  
+
   return (
     <html>
       <head>
@@ -37,7 +37,10 @@ export const settingsPageRoute = app.html('/', async (ctx, req) => {
         <link rel="stylesheet" href="/s/static/lib/fontawesome/6.7.2/css/all.min.css" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
-        <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap"
+          rel="stylesheet"
+        />
         <style>{`
           /* Стилизация выделения текста */
           ::selection {
@@ -57,4 +60,3 @@ export const settingsPageRoute = app.html('/', async (ctx, req) => {
     </html>
   )
 })
-

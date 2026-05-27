@@ -1,10 +1,16 @@
 // @shared
-import { jsx } from "@app/html-jsx"
+import { jsx } from '@app/html-jsx'
 import { requireAccountRole } from '@app/auth'
 import IndexPage from './pages/IndexPage.vue'
 import Header from './components/Header.vue'
 import Footer from './components/Footer.vue'
-import { tailwindScript, cssVariables, commonStyles, preloaderStyles, preloaderScript } from './styles'
+import {
+  tailwindScript,
+  cssVariables,
+  commonStyles,
+  preloaderStyles,
+  preloaderScript
+} from './styles'
 import { integrationIsEnabled } from '@gc-mcp-server/sdk'
 import { installPluginRoute } from './api/install-plugin'
 import { loginPageRoute } from './login'
@@ -45,13 +51,13 @@ export const indexPageRoute = app.html('/', async (ctx, req) => {
       </html>
     )
   }
-  
+
   const isConfigured = await integrationIsEnabled(ctx)
   Debug.info(ctx, `[index] Статус интеграции GetCourse: ${isConfigured ? 'готов' : 'не настроен'}`)
-  
+
   // Получаем название проекта из настроек
   const projectName = await getProjectName(ctx)
-  
+
   // Загружаем датасеты на сервере (SSR)
   let datasets: any[] = []
   try {
@@ -60,7 +66,10 @@ export const indexPageRoute = app.html('/', async (ctx, req) => {
     })
     Debug.info(ctx, `[index] Загружено датасетов: ${datasets.length}`)
   } catch (error) {
-    Debug.error(ctx, `Failed to load datasets: ${error instanceof Error ? error.message : String(error)}`)
+    Debug.error(
+      ctx,
+      `Failed to load datasets: ${error instanceof Error ? error.message : String(error)}`
+    )
   }
 
   // Загружаем дашборды на сервере (SSR)
@@ -71,9 +80,12 @@ export const indexPageRoute = app.html('/', async (ctx, req) => {
     })
     Debug.info(ctx, `[index] Загружено дашбордов: ${dashboards.length}`)
   } catch (error) {
-    Debug.error(ctx, `Failed to load dashboards: ${error instanceof Error ? error.message : String(error)}`)
+    Debug.error(
+      ctx,
+      `Failed to load dashboards: ${error instanceof Error ? error.message : String(error)}`
+    )
   }
-  
+
   // Генерируем URL на сервере для передачи в клиент
   const apiUrls = {
     deleteDataset: apiDatasetDeleteByIdRoute.url(),
@@ -88,7 +100,7 @@ export const indexPageRoute = app.html('/', async (ctx, req) => {
     licensePage: licensePageRoute.url(),
     settingsList: apiGetSettingsRoute.url()
   }
-  
+
   return (
     <html>
       <head>
@@ -96,18 +108,22 @@ export const indexPageRoute = app.html('/', async (ctx, req) => {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta charset="UTF-8" />
         <meta name="description" content="Шаблон со списком событий" />
-        
+
         <script src="/s/static/lib/tailwind.3.4.16.min.js"></script>
         <script dangerouslySetInnerHTML={{ __html: tailwindScript }} />
-        
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+        <link
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+          rel="stylesheet"
+        />
         <link href="/s/static/lib/fontawesome/6.7.2/css/all.min.css" rel="stylesheet" />
-        
+
         <style type="text/tailwindcss">{cssVariables}</style>
         <style>{commonStyles}</style>
         {isConfigured && <style>{preloaderStyles}</style>}
-        
-        {isConfigured && <script>{`
+
+        {isConfigured && (
+          <script>{`
           // Инициализация темы при загрузке страницы (до монтирования Vue)
           (function() {
             const savedTheme = localStorage.getItem('theme');
@@ -142,89 +158,108 @@ export const indexPageRoute = app.html('/', async (ctx, req) => {
               appContent.style.transition = 'opacity 0.3s ease-in';
             }
           }
-        `}</script>}
+        `}</script>
+        )}
       </head>
       <body>
         {isConfigured ? (
           <>
-        <div id="app-loader">
-          <div class="loader-content">
-            <div class="loader-logo">
-              <i class="fas fa-wrench"></i>
+            <div id="app-loader">
+              <div class="loader-content">
+                <div class="loader-logo">
+                  <i class="fas fa-wrench"></i>
+                </div>
+                <div class="loader-spinner">
+                  <div class="loader-ring"></div>
+                </div>
+                <p class="loader-text">Загрузка приложения...</p>
+              </div>
             </div>
-            <div class="loader-spinner">
-              <div class="loader-ring"></div>
-            </div>
-            <p class="loader-text">Загрузка приложения...</p>
-          </div>
-        </div>
 
-        <div id="app-content" style="opacity: 0;" class="flex flex-col min-h-screen">
-          <Header 
-            projectName={projectName} 
-            indexPageUrl={indexPageRoute.url()} 
-            isAdmin={true}
-            settingsPageUrl={settingsPageRoute.url()}
-            eventsPageUrl={eventsPageRoute.url()}
-            pageTitle=""
-          />
-          <div class="flex-1">
-            <IndexPage initialDatasets={datasets} initialDashboards={dashboards} apiUrls={apiUrls} />
-          </div>
-          <Footer licenseUrl={licensePageRoute.url()} />
-        </div>
-        <div style="display: none;">Шаблон со списком событий</div>
+            <div id="app-content" style="opacity: 0;" class="flex flex-col min-h-screen">
+              <Header
+                projectName={projectName}
+                indexPageUrl={indexPageRoute.url()}
+                isAdmin={true}
+                settingsPageUrl={settingsPageRoute.url()}
+                eventsPageUrl={eventsPageRoute.url()}
+                pageTitle=""
+              />
+              <div class="flex-1">
+                <IndexPage
+                  initialDatasets={datasets}
+                  initialDashboards={dashboards}
+                  apiUrls={apiUrls}
+                />
+              </div>
+              <Footer licenseUrl={licensePageRoute.url()} />
+            </div>
+            <div style="display: none;">Шаблон со списком событий</div>
           </>
         ) : (
-          <div style={{
-            display: 'flex', 
-            flexDirection: 'column', 
-            alignItems: 'center', 
-            justifyContent: 'center', 
-            minHeight: '100vh',
-            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-            padding: '20px'
-          }}>
-            <div style={{
-              backgroundColor: 'white',
-              padding: '48px 32px',
-              borderRadius: '12px',
-              boxShadow: '0 10px 25px rgba(0,0,0,0.15)',
-              textAlign: 'center',
-              maxWidth: '600px',
-              width: '100%'
-            }}>
-              <div style={{
-                fontSize: '48px',
-                color: '#667eea',
-                marginBottom: '24px'
-              }}>
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              minHeight: '100vh',
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              padding: '20px'
+            }}
+          >
+            <div
+              style={{
+                backgroundColor: 'white',
+                padding: '48px 32px',
+                borderRadius: '12px',
+                boxShadow: '0 10px 25px rgba(0,0,0,0.15)',
+                textAlign: 'center',
+                maxWidth: '600px',
+                width: '100%'
+              }}
+            >
+              <div
+                style={{
+                  fontSize: '48px',
+                  color: '#667eea',
+                  marginBottom: '24px'
+                }}
+              >
                 <i class="fas fa-plug"></i>
               </div>
-              <h1 style={{
-                margin: '0 0 16px 0', 
-                color: '#2d3748', 
-                fontSize: '28px', 
-                fontWeight: '700'
-              }}>
+              <h1
+                style={{
+                  margin: '0 0 16px 0',
+                  color: '#2d3748',
+                  fontSize: '28px',
+                  fontWeight: '700'
+                }}
+              >
                 {projectName}
               </h1>
-              <p style={{
-                color: '#718096',
-                fontSize: '14px',
-                marginBottom: '24px'
-              }}>
+              <p
+                style={{
+                  color: '#718096',
+                  fontSize: '14px',
+                  marginBottom: '24px'
+                }}
+              >
                 Соединение с GetCourse не настроено
               </p>
-              <p style={{
-                color: '#718096',
-                fontSize: '16px',
-                marginBottom: '32px',
-                lineHeight: '1.6'
-              }}>
-                Для работы аналитики необходимо установить и настроить подключение к GetCourse MCP Server
+              <p
+                style={{
+                  color: '#718096',
+                  fontSize: '16px',
+                  marginBottom: '32px',
+                  lineHeight: '1.6'
+                }}
+              >
+                Для работы аналитики необходимо установить и настроить подключение к GetCourse MCP
+                Server
               </p>
-              <button onclick={`
+              <button
+                onclick={`
                 this.disabled = true;
                 this.textContent = 'Устанавливаю...';
                 this.style.opacity = '0.7';
@@ -246,20 +281,24 @@ export const indexPageRoute = app.html('/', async (ctx, req) => {
                     this.textContent = 'Настроить GetCourse';
                     this.style.opacity = '1';
                   });
-              `} style={{
-                display: 'inline-block',
-                backgroundColor: '#667eea',
-                color: 'white',
-                padding: '16px 32px',
-                borderRadius: '8px',
-                border: 'none',
-                cursor: 'pointer',
-                fontWeight: '600',
-                fontSize: '16px',
-                transition: 'all 0.3s ease',
-                boxShadow: '0 4px 6px rgba(102, 126, 234, 0.3)'
-              }} onmouseover="this.style.backgroundColor='#5a67d8'; this.style.transform='translateY(-2px)'" onmouseout="this.style.backgroundColor='#667eea'; this.style.transform='translateY(0)'">
-                <i class="fas fa-cog" style={{marginRight: '8px'}}></i>
+              `}
+                style={{
+                  display: 'inline-block',
+                  backgroundColor: '#667eea',
+                  color: 'white',
+                  padding: '16px 32px',
+                  borderRadius: '8px',
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontWeight: '600',
+                  fontSize: '16px',
+                  transition: 'all 0.3s ease',
+                  boxShadow: '0 4px 6px rgba(102, 126, 234, 0.3)'
+                }}
+                onmouseover="this.style.backgroundColor='#5a67d8'; this.style.transform='translateY(-2px)'"
+                onmouseout="this.style.backgroundColor='#667eea'; this.style.transform='translateY(0)'"
+              >
+                <i class="fas fa-cog" style={{ marginRight: '8px' }}></i>
                 Настроить GetCourse
               </button>
             </div>

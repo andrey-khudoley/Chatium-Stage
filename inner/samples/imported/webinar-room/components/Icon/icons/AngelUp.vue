@@ -21,5 +21,5 @@ defineProps({
     type: String,
     default: 'currentColor'
   }
-});
+})
 </script>

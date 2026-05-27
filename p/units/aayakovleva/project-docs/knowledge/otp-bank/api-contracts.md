@@ -1,5 +1,5 @@
 ---
-title: "ОТП Банк — SOAP API контракты (b2pos.ru)"
+title: 'ОТП Банк — SOAP API контракты (b2pos.ru)'
 type: reference
 tags:
   - topic/otp-bank
@@ -23,11 +23,11 @@ project: olga-getcourse-payments-c7d5a1
 
 Каждый SOAP-запрос включает:
 
-| Параметр | Описание | Где получить |
-|----------|---------|-------------|
-| `userId` | ID пользователя/магазина | Менеджер ОТП Банка |
-| `userToken` | Токен доступа | Менеджер ОТП Банка |
-| `pointOfSaleId` | ID торговой точки | Менеджер ОТП Банка |
+| Параметр        | Описание                 | Где получить       |
+| --------------- | ------------------------ | ------------------ |
+| `userId`        | ID пользователя/магазина | Менеджер ОТП Банка |
+| `userToken`     | Токен доступа            | Менеджер ОТП Банка |
+| `pointOfSaleId` | ID торговой точки        | Менеджер ОТП Банка |
 
 ---
 
@@ -79,32 +79,32 @@ public function newLoanApplicationShort(
 
 **Параметры запроса (NewLoanApplicationRequestShort):**
 
-| Параметр | Тип | Описание | Обязательный |
-|----------|-----|---------|-------------|
-| `requestId` | string | Уникальный ID заявки в вашей системе | ✅ |
-| `pointOfSaleId` | string | ID торговой точки | ✅ |
-| `loanType` | LoanTypeShort | Тип кредита (enum: `LOAN`) | ✅ |
-| `loanPeriodInMonths` | int | Срок кредита в месяцах | ✅ |
-| `firstname` | string | Имя клиента | ✅ |
-| `lastname` | string | Фамилия клиента | ✅ |
-| `secondname` | string | Отчество клиента | ✅ |
-| `phoneNumber` | PhoneNumber | Телефон (`PhoneNumber::parse('+79611234567')`) | ✅ |
-| `userInn` | string | ИНН клиента (12 цифр) | ✅ |
-| `russianPassportDocument` | RussianPassportDocument | Серия + номер паспорта | ✅ |
-| `firstPaymentAmount` | MoneyPositiveOrZero | Первоначальный взнос (**в копейках**) | ✅ |
-| `basketProducts` | BasketProduct[] | Товары в корзине | ✅ |
-| `comment` | string | Комментарий к заявке | ❌ |
+| Параметр                  | Тип                     | Описание                                       | Обязательный |
+| ------------------------- | ----------------------- | ---------------------------------------------- | ------------ |
+| `requestId`               | string                  | Уникальный ID заявки в вашей системе           | ✅           |
+| `pointOfSaleId`           | string                  | ID торговой точки                              | ✅           |
+| `loanType`                | LoanTypeShort           | Тип кредита (enum: `LOAN`)                     | ✅           |
+| `loanPeriodInMonths`      | int                     | Срок кредита в месяцах                         | ✅           |
+| `firstname`               | string                  | Имя клиента                                    | ✅           |
+| `lastname`                | string                  | Фамилия клиента                                | ✅           |
+| `secondname`              | string                  | Отчество клиента                               | ✅           |
+| `phoneNumber`             | PhoneNumber             | Телефон (`PhoneNumber::parse('+79611234567')`) | ✅           |
+| `userInn`                 | string                  | ИНН клиента (12 цифр)                          | ✅           |
+| `russianPassportDocument` | RussianPassportDocument | Серия + номер паспорта                         | ✅           |
+| `firstPaymentAmount`      | MoneyPositiveOrZero     | Первоначальный взнос (**в копейках**)          | ✅           |
+| `basketProducts`          | BasketProduct[]         | Товары в корзине                               | ✅           |
+| `comment`                 | string                  | Комментарий к заявке                           | ❌           |
 
 > ⚠️ **Суммы передаются в копейках!** 50 000 руб. → `5000000`
 
 **Структура BasketProduct:**
 
-| Поле | Описание |
-|------|---------|
-| name | Название товара/услуги |
+| Поле  | Описание                                        |
+| ----- | ----------------------------------------------- |
+| name  | Название товара/услуги                          |
 | price | Стоимость (MoneyPositiveOrZero, в **копейках**) |
-| model | Модель товара |
-| brand | Бренд / производитель |
+| model | Модель товара                                   |
+| brand | Бренд / производитель                           |
 
 **Пример:**
 
@@ -251,26 +251,26 @@ final class GetLoanApplicationStatusResponse {
 
 **Исходник:** [`ResultFromBank.php`](https://github.com/VantaFinance/b2pos-soap-client/blob/main/src/Client/LoanApplication/Response/ResultFromBank.php)
 
-| Поле | Тип | SOAP путь | Описание |
-|------|-----|-----------|---------|
-| `$bankId` | string | `[ns1:bank]` | ID банка |
-| `$bankName` | string | `[ns1:bankName]` | Название банка |
-| `$bankCode` | string | `[ns1:bankCode]` | Код банка |
-| `$decision` | ?BankDecision | `[ns1:decision]` | **Решение банка (enum)** |
-| `$errorText` | ?string | `[ns1:error_text]` | Текст ошибки |
-| `$chosenBankProductId` | ?string | `[ns1:selectedVariant]` | ID выбранного продукта |
-| `$isLoanAgreementAuthorized` | ?bool | `[ns1:authStatus]` | Авторизован ли кредитный договор |
-| `$loanAgreementNumber` | ?string | `[ns1:contractNumber]` | Номер договора |
-| `$authorizationCode` | ?string | `[ns1:authCode]` | Код авторизации |
-| `$isLoanApplicationCanceled` | ?bool | `[ns1:requestCancel]` | Заявка отменена |
-| `$isLoanAgreementAuthorizationCancel` | ?bool | `[ns1:authCancel]` | Авторизация договора отменена |
-| `$isIncreasedLimitApproved` | ?bool | `[ns1:increasedLimit]` | Одобрен повышенный лимит |
-| `$offer` | ?Offer | `[ns1:offer]` | Параметры предложения |
-| `$signType` | SignType | `[ns1:signedType]` | Тип подписи |
-| `$isSesSigned` | bool | `[ns1:signedTypeStatus]` | Статус простой электронной подписи |
-| `$sesAvailable` | ?bool | `[ns1:isActiveSES]` | Доступна ли ПЭП |
-| `$insurances` | array | `[ns1:insurances][ns1:insurance]` | Страховки |
-| `$branchCode` | ?string | `[ns1:branchCode]` | Код отделения |
+| Поле                                  | Тип           | SOAP путь                         | Описание                           |
+| ------------------------------------- | ------------- | --------------------------------- | ---------------------------------- |
+| `$bankId`                             | string        | `[ns1:bank]`                      | ID банка                           |
+| `$bankName`                           | string        | `[ns1:bankName]`                  | Название банка                     |
+| `$bankCode`                           | string        | `[ns1:bankCode]`                  | Код банка                          |
+| `$decision`                           | ?BankDecision | `[ns1:decision]`                  | **Решение банка (enum)**           |
+| `$errorText`                          | ?string       | `[ns1:error_text]`                | Текст ошибки                       |
+| `$chosenBankProductId`                | ?string       | `[ns1:selectedVariant]`           | ID выбранного продукта             |
+| `$isLoanAgreementAuthorized`          | ?bool         | `[ns1:authStatus]`                | Авторизован ли кредитный договор   |
+| `$loanAgreementNumber`                | ?string       | `[ns1:contractNumber]`            | Номер договора                     |
+| `$authorizationCode`                  | ?string       | `[ns1:authCode]`                  | Код авторизации                    |
+| `$isLoanApplicationCanceled`          | ?bool         | `[ns1:requestCancel]`             | Заявка отменена                    |
+| `$isLoanAgreementAuthorizationCancel` | ?bool         | `[ns1:authCancel]`                | Авторизация договора отменена      |
+| `$isIncreasedLimitApproved`           | ?bool         | `[ns1:increasedLimit]`            | Одобрен повышенный лимит           |
+| `$offer`                              | ?Offer        | `[ns1:offer]`                     | Параметры предложения              |
+| `$signType`                           | SignType      | `[ns1:signedType]`                | Тип подписи                        |
+| `$isSesSigned`                        | bool          | `[ns1:signedTypeStatus]`          | Статус простой электронной подписи |
+| `$sesAvailable`                       | ?bool         | `[ns1:isActiveSES]`               | Доступна ли ПЭП                    |
+| `$insurances`                         | array         | `[ns1:insurances][ns1:insurance]` | Страховки                          |
+| `$branchCode`                         | ?string       | `[ns1:branchCode]`                | Код отделения                      |
 
 ### BankDecision — enum значений решения банка
 

@@ -3,25 +3,25 @@
 // SMS авторизация
 export async function sendSmsCode(phone: string) {
   const normalizedPhone = phone.replace(/[^0-9]/g, '')
-  
+
   const response = await fetch('/s/auth/sms/send', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ phone: normalizedPhone }),
+    body: JSON.stringify({ phone: normalizedPhone })
   })
-  
+
   return await response.json()
 }
 
 export async function confirmSmsCode(phone: string, verificationCode: string) {
   const normalizedPhone = phone.replace(/[^0-9]/g, '')
-  
+
   const response = await fetch('/s/auth/sms/confirm', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ phone: normalizedPhone, verificationCode }),
+    body: JSON.stringify({ phone: normalizedPhone, verificationCode })
   })
-  
+
   return await response.json()
 }
 
@@ -30,9 +30,9 @@ export async function sendEmailCode(email: string) {
   const response = await fetch('/s/auth/email/send', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email }),
+    body: JSON.stringify({ email })
   })
-  
+
   return await response.json()
 }
 
@@ -40,9 +40,9 @@ export async function confirmEmailCode(email: string, code: string) {
   const response = await fetch('/s/auth/email/confirm', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, code }),
+    body: JSON.stringify({ email, code })
   })
-  
+
   return await response.json()
 }
 
@@ -51,7 +51,7 @@ export async function loginWithPassword(
   type: 'Phone' | 'Email',
   identifier: string,
   checkHashUrl: string,
-  password: string,
+  password: string
 ) {
   try {
     // Получение хеша пароля через API
@@ -61,27 +61,27 @@ export async function loginWithPassword(
       body: JSON.stringify({
         it: type,
         ik: identifier,
-        pwd: password,
-      }),
+        pwd: password
+      })
     })
-    
+
     if (!response.ok) {
       return { success: false, error: 'Ошибка при получении хеша пароля' }
     }
-    
+
     const passwordHash = await response.text()
-    
+
     // Авторизация с хешем пароля
     const authResponse = await fetch('/s/auth/password', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
-        it: type, 
-        ik: identifier, 
-        s: { hash: passwordHash } 
-      }),
+      body: JSON.stringify({
+        it: type,
+        ik: identifier,
+        s: { hash: passwordHash }
+      })
     })
-    
+
     return await authResponse.json()
   } catch (error) {
     return { success: false, error: 'Произошла ошибка при авторизации' }
@@ -97,7 +97,7 @@ export function handleAuthError(error: any): string {
     if (error.includes('blocked')) return 'Аккаунт заблокирован'
     return error
   }
-  
+
   return 'Произошла ошибка при авторизации'
 }
 
@@ -121,4 +121,3 @@ export function isValidPhone(phone: string): boolean {
   const cleanPhone = phone.replace(/[^0-9]/g, '')
   return cleanPhone.length >= 10 && cleanPhone.length <= 15
 }
-

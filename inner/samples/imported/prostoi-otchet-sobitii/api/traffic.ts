@@ -6,13 +6,13 @@ export const apiRecentVisitsRoute = app.get('/recent-visits', async (ctx, req) =
   requireAccountRole(ctx, 'Admin')
   const { dateFrom, dateTo, url, userId, page = '1', limit = '20' } = req.query
   const offset = (parseInt(page) - 1) * parseInt(limit)
- 
+
   let whereClause = `
     dt BETWEEN '${dateFrom || '2024-01-01'}' AND '${dateTo || new Date().toISOString().split('T')[0]}'
   `
-  
+
   if (url && url.trim()) {
-    if ( url.startsWith('https://') || url.startsWith('event://')) {
+    if (url.startsWith('https://') || url.startsWith('event://')) {
       whereClause += ` AND startsWith(url, '${url.trim()}')`
     } else {
       whereClause += ` AND startsWith(urlPath, '${url.trim()}')`
@@ -53,17 +53,17 @@ export const apiRecentVisitsRoute = app.get('/recent-visits', async (ctx, req) =
     ORDER BY 
       ts DESC
   `
-  
+
   const response = await queryAi(ctx, eventsQuery)
   ctx.log(response)
-  
+
   if (!response.rows?.length) {
     return { rows: [], data: { total: 0, page: parseInt(page), limit: parseInt(limit) } }
   }
-  
+
   // Group events by clrt_run_id and structure parent/child relationships
   const groupedEvents = new Map()
-  
+
   for (const event of response.rows) {
     // Only group if clrt_run_id exists and is not 0
     if (!event.clrt_run_id || event.clrt_run_id === '0') {
@@ -75,30 +75,30 @@ export const apiRecentVisitsRoute = app.get('/recent-visits', async (ctx, req) =
       })
       continue
     }
-    
+
     const sessionId = event.clrt_run_id
-    
+
     if (!groupedEvents.has(sessionId)) {
       groupedEvents.set(sessionId, { events: [] })
     }
-    
+
     groupedEvents.get(sessionId).events.push({
       ...event,
       id: event.clrt_run_id || `${event.url}/${event.ts64}`
     })
   }
-  
+
   // Process groups to determine parent/child relationships
   const structuredEvents = []
   for (const [sessionId, group] of groupedEvents.entries()) {
     if (group.events) {
       // Sort events by timestamp (earliest first)
       const sortedEvents = group.events.sort((a, b) => new Date(a.ts) - new Date(b.ts))
-      
+
       // First event becomes parent, rest are children
       const parent = sortedEvents[0]
       const children = sortedEvents.slice(1)
-      
+
       structuredEvents.push({
         ...parent,
         isParent: true,
@@ -113,36 +113,35 @@ export const apiRecentVisitsRoute = app.get('/recent-visits', async (ctx, req) =
       })
     }
   }
-  
+
   // Sort by latest activity in each group
   structuredEvents.sort((a, b) => {
-    const aLatest = Math.max(new Date(a.ts), ...a.children.map(c => new Date(c.ts)))
-    const bLatest = Math.max(new Date(b.ts), ...b.children.map(c => new Date(c.ts)))
+    const aLatest = Math.max(new Date(a.ts), ...a.children.map((c) => new Date(c.ts)))
+    const bLatest = Math.max(new Date(b.ts), ...b.children.map((c) => new Date(c.ts)))
     return bLatest - aLatest
   })
-  
+
   // Apply pagination to structured events
   const totalCount = structuredEvents.length
   const paginatedEvents = structuredEvents.slice(offset, offset + parseInt(limit))
-  
-  return { 
-    rows: paginatedEvents, 
-    data: { total: totalCount, page: parseInt(page), limit: parseInt(limit) } 
+
+  return {
+    rows: paginatedEvents,
+    data: { total: totalCount, page: parseInt(page), limit: parseInt(limit) }
   }
 })
-
 
 // @shared-route
 export const apiStatisticsRoute = app.get('/statistics', async (ctx, req) => {
   requireAccountRole(ctx, 'Admin')
   const { dateFrom, dateTo, url, userId } = req.query
- 
+
   let whereClause = `
     dt BETWEEN '${dateFrom || '2024-01-01'}' AND '${dateTo || new Date().toISOString().split('T')[0]}'
   `
-  
+
   if (url && url.trim()) {
-    if ( url.startsWith('https://') || url.startsWith('event://')) {
+    if (url.startsWith('https://') || url.startsWith('event://')) {
       whereClause += ` AND startsWith(url, '${url.trim()}')`
     } else {
       whereClause += ` AND startsWith(urlPath, '${url.trim()}')`
@@ -167,22 +166,22 @@ export const apiStatisticsRoute = app.get('/statistics', async (ctx, req) => {
     WHERE
       ${whereClause}
   `
-  
+
   return await queryAi(ctx, statsQuery)
 })
 
 // @shared-route
 export const apiEventDetailsRoute = app.post('/event', async (ctx, req) => {
   const eventId = req.body.id
-  
+
   let query
-  
+
   // Если ID содержит ":", значит это url:ts для пустого clrt_run_id
   if (eventId.includes(':')) {
     const lastColonIndex = eventId.lastIndexOf('/')
     const url = eventId.substring(0, lastColonIndex)
     const ts64 = eventId.substring(lastColonIndex + 1)
-    
+
     query = `
       SELECT *
       FROM chatium_ai.access_log
@@ -198,9 +197,9 @@ export const apiEventDetailsRoute = app.post('/event', async (ctx, req) => {
       LIMIT 1
     `
   }
-  
+
   const response = await queryAi(ctx, query)
-  
+
   if (response.rows?.length > 0) {
     return { success: true, event: response.rows[0] }
   } else {

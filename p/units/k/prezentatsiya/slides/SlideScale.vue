@@ -14,12 +14,12 @@
       </div>
 
       <h2 class="title">
-        сотрудников.<br>
+        сотрудников.<br />
         <span class="gradient-text">Ноль собеседований.</span>
       </h2>
 
       <p class="subtitle">
-        Chatium — это команда AI-агентов, живущая<br class="hide-mobile">
+        Chatium — это команда AI-агентов, живущая<br class="hide-mobile" />
         в готовой инфраструктуре. Ваш виртуальный офис.
       </p>
 
@@ -58,7 +58,6 @@
           </div>
         </div>
       </div>
-
     </div>
   </div>
 </template>
@@ -125,16 +124,20 @@ defineProps({ active: Boolean })
 .grid-pattern {
   position: absolute;
   inset: 0;
-  background-image: 
-    linear-gradient(rgba(16,185,129,0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(16,185,129,0.03) 1px, transparent 1px);
+  background-image: linear-gradient(rgba(16, 185, 129, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(16, 185, 129, 0.03) 1px, transparent 1px);
   background-size: 50px 50px;
   mask-image: radial-gradient(ellipse at center, black 40%, transparent 80%);
 }
 
 @keyframes float {
-  0%, 100% { transform: translateY(0) scale(1); }
-  50% { transform: translateY(-25px) scale(1.04); }
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+  }
+  50% {
+    transform: translateY(-25px) scale(1.04);
+  }
 }
 
 .container {
@@ -158,7 +161,7 @@ defineProps({ active: Boolean })
   font-family: var(--font-display);
   font-size: clamp(48px, 10vw, 100px);
   font-weight: 800;
-  color: rgba(16,185,129,0.4);
+  color: rgba(16, 185, 129, 0.4);
   line-height: 1;
 }
 
@@ -177,8 +180,13 @@ defineProps({ active: Boolean })
 }
 
 @keyframes gradient-shift {
-  0%, 100% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
 }
 
 .title {
@@ -211,12 +219,11 @@ defineProps({ active: Boolean })
   gap: 0;
   width: 100%;
   max-width: 820px;
-  background: rgba(255,255,255,0.02);
+  background: rgba(255, 255, 255, 0.02);
   border: 1px solid var(--border-subtle);
   border-radius: 24px;
   padding: 28px 8px;
 }
-
 
 .prop {
   flex: 1;
@@ -229,7 +236,7 @@ defineProps({ active: Boolean })
 
 .prop-divider {
   width: 1px;
-  background: linear-gradient(180deg, transparent, rgba(255,255,255,0.08), transparent);
+  background: linear-gradient(180deg, transparent, rgba(255, 255, 255, 0.08), transparent);
   flex-shrink: 0;
 }
 
@@ -241,35 +248,35 @@ defineProps({ active: Boolean })
   justify-content: center;
   border-radius: 18px;
   font-size: 22px;
-  background: rgba(16,185,129,0.1);
-  border: 1px solid rgba(16,185,129,0.25);
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.25);
   color: #10b981;
   transition: all 0.3s ease;
 }
 
 .prop:hover .prop-icon {
   transform: scale(1.1) translateY(-4px);
-  box-shadow: 0 12px 32px rgba(16,185,129,0.2);
+  box-shadow: 0 12px 32px rgba(16, 185, 129, 0.2);
 }
 
 .icon-scale {
-  background: rgba(99,102,241,0.1);
-  border-color: rgba(99,102,241,0.25);
+  background: rgba(99, 102, 241, 0.1);
+  border-color: rgba(99, 102, 241, 0.25);
   color: #818cf8;
 }
 
 .prop:hover .icon-scale {
-  box-shadow: 0 12px 32px rgba(99,102,241,0.2);
+  box-shadow: 0 12px 32px rgba(99, 102, 241, 0.2);
 }
 
 .icon-clock {
-  background: rgba(6,182,212,0.1);
-  border-color: rgba(6,182,212,0.25);
+  background: rgba(6, 182, 212, 0.1);
+  border-color: rgba(6, 182, 212, 0.25);
   color: #22d3ee;
 }
 
 .prop:hover .icon-clock {
-  box-shadow: 0 12px 32px rgba(6,182,212,0.2);
+  box-shadow: 0 12px 32px rgba(6, 182, 212, 0.2);
 }
 
 .prop-text {
@@ -292,7 +299,6 @@ defineProps({ active: Boolean })
   line-height: 1.4;
   text-align: center;
 }
-
 
 @media (max-width: 768px) {
   .props {
@@ -318,7 +324,7 @@ defineProps({ active: Boolean })
   .prop-divider {
     width: 100%;
     height: 1px;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.06), transparent);
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.06), transparent);
   }
 
   .prop-icon {
@@ -338,15 +344,42 @@ defineProps({ active: Boolean })
 }
 
 @media (max-width: 480px) {
-  .slide { padding: 24px 16px 16px; }
-  .hero-number { margin-bottom: 4px; }
-  .number-prefix { font-size: 36px; }
-  .number-value { font-size: 52px; }
-  .title { font-size: 24px; margin-bottom: 12px; }
-  .subtitle { font-size: 14px; margin-bottom: 24px; }
-  .props { padding: 18px 16px; border-radius: 18px; gap: 16px; }
-  .prop-title { font-size: 16px; }
-  .prop-desc { font-size: 12px; }
-  .prop-icon { width: 42px; height: 42px; font-size: 16px; border-radius: 14px; }
+  .slide {
+    padding: 24px 16px 16px;
+  }
+  .hero-number {
+    margin-bottom: 4px;
+  }
+  .number-prefix {
+    font-size: 36px;
+  }
+  .number-value {
+    font-size: 52px;
+  }
+  .title {
+    font-size: 24px;
+    margin-bottom: 12px;
+  }
+  .subtitle {
+    font-size: 14px;
+    margin-bottom: 24px;
+  }
+  .props {
+    padding: 18px 16px;
+    border-radius: 18px;
+    gap: 16px;
+  }
+  .prop-title {
+    font-size: 16px;
+  }
+  .prop-desc {
+    font-size: 12px;
+  }
+  .prop-icon {
+    width: 42px;
+    height: 42px;
+    font-size: 16px;
+    border-radius: 14px;
+  }
 }
 </style>

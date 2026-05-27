@@ -4,7 +4,7 @@ import type { TimerStateEnvelope } from '../shared/focus-tools-types'
 import {
   TIMER_STATE_ENVELOPE_TYPE,
   TIMER_STATE_SCHEMA,
-  USER_TOOL_STATE_KEY,
+  USER_TOOL_STATE_KEY
 } from '../shared/focus-tools-types'
 import { normalizePhaseChangeSoundId, type PomodoroStateDto } from '../lib/pomodoro-types'
 import type { PomodoroSliceInFocusTools } from '../shared/focus-tools-types'
@@ -23,7 +23,7 @@ function defaultTimerSnapshot(statsDayKey: string) {
     sessionsCount: 0,
     totalFocusSec: 0,
     totalSec: 0,
-    statsPeriodDayKey: statsDayKey,
+    statsPeriodDayKey: statsDayKey
   }
 }
 
@@ -37,11 +37,14 @@ function defaultStopwatchSnapshot(statsDayKey: string) {
     sessionsCount: 0,
     totalFocusSec: 0,
     totalSec: 0,
-    statsPeriodDayKey: statsDayKey,
+    statsPeriodDayKey: statsDayKey
   }
 }
 
-function rowToPomodoroDto(row: typeof PomodoroState.T, statsDayKey: string): PomodoroSliceInFocusTools {
+function rowToPomodoroDto(
+  row: typeof PomodoroState.T,
+  statsDayKey: string
+): PomodoroSliceInFocusTools {
   const rawAfterLongRest = row.afterLongRest as PomodoroStateDto['afterLongRest'] | 'stop'
   const afterLongRest =
     rawAfterLongRest === 'auto' || rawAfterLongRest === 'overtime' || rawAfterLongRest === 'stop'
@@ -71,14 +74,14 @@ function rowToPomodoroDto(row: typeof PomodoroState.T, statsDayKey: string): Pom
     phaseChangeSound: normalizePhaseChangeSoundId(row.phaseChangeSound ?? 3),
     tasksCompletedToday: Math.max(0, Math.floor(row.tasksCompletedToday ?? 0)),
     updatedAtMs: row.updatedAtMs ?? Date.now(),
-    statsPeriodDayKey: row.statsPeriodDayKey ?? statsDayKey,
+    statsPeriodDayKey: row.statsPeriodDayKey ?? statsDayKey
   }
 }
 
 export async function findUserToolStateRow(
   ctx: app.Ctx,
   userId: string,
-  key: string,
+  key: string
 ): Promise<typeof UserToolState.T | null> {
   const rows = await UserToolState.findAll(ctx, { where: { userId, key }, limit: 1 })
   return rows[0] ?? null
@@ -87,7 +90,7 @@ export async function findUserToolStateRow(
 export async function createDefaultEnvelope(
   ctx: app.Ctx,
   userId: string,
-  statsDayKey: string,
+  statsDayKey: string
 ): Promise<TimerStateEnvelope> {
   const workM = DEFAULT_WORK_MIN
   const pomodoro: PomodoroSliceInFocusTools = {
@@ -113,7 +116,7 @@ export async function createDefaultEnvelope(
     phaseChangeSound: 3,
     tasksCompletedToday: 0,
     updatedAtMs: Date.now(),
-    statsPeriodDayKey: statsDayKey,
+    statsPeriodDayKey: statsDayKey
   }
   return {
     type: TIMER_STATE_ENVELOPE_TYPE,
@@ -122,8 +125,8 @@ export async function createDefaultEnvelope(
       activeMode: 'clock',
       pomodoro,
       timer: defaultTimerSnapshot(statsDayKey),
-      stopwatch: defaultStopwatchSnapshot(statsDayKey),
-    },
+      stopwatch: defaultStopwatchSnapshot(statsDayKey)
+    }
   }
 }
 
@@ -131,7 +134,7 @@ async function migrateFromLegacyPomodoroRow(
   ctx: app.Ctx,
   _userId: string,
   legacy: typeof PomodoroState.T,
-  statsDayKey: string,
+  statsDayKey: string
 ): Promise<TimerStateEnvelope> {
   const pomodoro = rowToPomodoroDto(legacy, statsDayKey)
   return {
@@ -141,8 +144,8 @@ async function migrateFromLegacyPomodoroRow(
       activeMode: 'clock',
       pomodoro,
       timer: defaultTimerSnapshot(statsDayKey),
-      stopwatch: defaultStopwatchSnapshot(statsDayKey),
-    },
+      stopwatch: defaultStopwatchSnapshot(statsDayKey)
+    }
   }
 }
 
@@ -150,7 +153,7 @@ async function migrateFromLegacyPomodoroRow(
 export async function getOrCreateTimerStateEnvelope(
   ctx: app.Ctx,
   userId: string,
-  statsDayKey: string,
+  statsDayKey: string
 ): Promise<{ row: typeof UserToolState.T; envelope: TimerStateEnvelope }> {
   const existing = await findUserToolStateRow(ctx, userId, USER_TOOL_STATE_KEY)
   if (existing?.value && typeof existing.value === 'object') {
@@ -174,7 +177,7 @@ export async function getOrCreateTimerStateEnvelope(
       userId,
       key: USER_TOOL_STATE_KEY,
       value: envelope as unknown as Record<string, unknown>,
-      updatedAtMs: now,
+      updatedAtMs: now
     })
     return { row, envelope }
   }
@@ -183,7 +186,7 @@ export async function getOrCreateTimerStateEnvelope(
   const updated = await UserToolState.update(ctx, {
     id: existing.id,
     value: envelope as unknown as Record<string, unknown>,
-    updatedAtMs: Date.now(),
+    updatedAtMs: Date.now()
   })
   return { row: updated, envelope }
 }
@@ -191,11 +194,11 @@ export async function getOrCreateTimerStateEnvelope(
 export async function saveTimerStateEnvelope(
   ctx: app.Ctx,
   rowId: string,
-  envelope: TimerStateEnvelope,
+  envelope: TimerStateEnvelope
 ): Promise<typeof UserToolState.T> {
   return UserToolState.update(ctx, {
     id: rowId,
     value: envelope as unknown as Record<string, unknown>,
-    updatedAtMs: Date.now(),
+    updatedAtMs: Date.now()
   })
 }

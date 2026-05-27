@@ -12,7 +12,7 @@ export const bookServiceTool = app
     name: 'book-service',
     description: `Use this tool to book a client for a nail service. Use this when a client wants to make a booking. Required information: client name, phone, service ID, date (YYYY-MM-DD), and time (HH:MM). Optional: email and notes.`
   })
-  .body(s =>
+  .body((s) =>
     s.object(
       {
         context: s.object(
@@ -25,10 +25,7 @@ export const bookServiceTool = app
         input: s.object({
           clientName: s.string().describe('Имя клиента'),
           clientPhone: s.string().describe('Телефон клиента в формате +7XXXXXXXXXX'),
-          clientEmail: s
-            .string()
-            .optional()
-            .describe('Email клиента (опционально)'),
+          clientEmail: s.string().optional().describe('Email клиента (опционально)'),
           serviceId: s.string().describe('ID услуги из списка услуг'),
           date: s.string().describe('Дата записи в формате YYYY-MM-DD'),
           time: s.string().describe('Время записи в формате HH:MM'),
@@ -45,11 +42,11 @@ export const bookServiceTool = app
 
     try {
       // Проверяем существование услуги
-      const service = servicesConfig.services.find(s => s.id === input.serviceId)
+      const service = servicesConfig.services.find((s) => s.id === input.serviceId)
       if (!service) {
         return {
           ok: false,
-          error: `Услуга с ID "${input.serviceId}" не найдена. Доступные услуги: ${servicesConfig.services.map(s => `${s.id} (${s.name})`).join(', ')}`
+          error: `Услуга с ID "${input.serviceId}" не найдена. Доступные услуги: ${servicesConfig.services.map((s) => `${s.id} (${s.name})`).join(', ')}`
         }
       }
 

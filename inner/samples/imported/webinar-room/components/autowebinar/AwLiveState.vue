@@ -3,11 +3,15 @@
     <header class="glass sticky top-0 z-50">
       <div class="max-w-7xl mx-auto px-3 sm:px-6 py-3 flex items-center justify-between">
         <div class="flex items-center gap-2 sm:gap-3 min-w-0">
-          <div class="hidden sm:flex items-center gap-2 px-3 h-7 rounded-full wr-badge-red flex-shrink-0">
+          <div
+            class="hidden sm:flex items-center gap-2 px-3 h-7 rounded-full wr-badge-red flex-shrink-0"
+          >
             <span class="w-2 h-2 rounded-full wr-dot-red animate-pulse"></span>
             <span class="wr-status-red text-xs font-semibold uppercase tracking-wider">Live</span>
           </div>
-          <h1 class="font-semibold text-sm sm:text-base truncate wr-text-primary leading-7">{{ autowebinar.title }}</h1>
+          <h1 class="font-semibold text-sm sm:text-base truncate wr-text-primary leading-7">
+            {{ autowebinar.title }}
+          </h1>
         </div>
         <HeaderActions />
       </div>
@@ -17,14 +21,18 @@
       <div class="live-player-area">
         <div class="live-player-wrapper">
           <div v-if="props.nameConfirmed" class="live-player-iframe relative">
-            <div id="kinescope-aw-player" style="width: 100%; height: 100%;"></div>
+            <div id="kinescope-aw-player" style="width: 100%; height: 100%"></div>
             <div v-if="playerLoading" class="live-player-loading">
-              <div class="w-10 h-10 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+              <div
+                class="w-10 h-10 border-2 border-primary border-t-transparent rounded-full animate-spin"
+              ></div>
             </div>
           </div>
           <div v-else class="live-player-iframe flex items-center justify-center">
             <div class="text-center">
-              <div class="w-16 h-16 rounded-2xl glass mx-auto mb-4 flex items-center justify-center">
+              <div
+                class="w-16 h-16 rounded-2xl glass mx-auto mb-4 flex items-center justify-center"
+              >
                 <i class="fas fa-play text-primary text-2xl"></i>
               </div>
               <p class="wr-text-tertiary text-sm">Подтвердите имя, чтобы начать просмотр</p>
@@ -32,11 +40,22 @@
           </div>
         </div>
 
-        <FormButtons :forms="shownForms" :episode-id="autowebinar.id" @open-form="(id) => emit('open-form', id)" />
+        <FormButtons
+          :forms="shownForms"
+          :episode-id="autowebinar.id"
+          @open-form="(id) => emit('open-form', id)"
+        />
 
         <div class="py-3 px-3 sm:py-4 lg:block">
-          <h2 class="font-bold text-base sm:text-lg lg:text-xl mb-1 lg:mb-2 wr-text-primary">{{ autowebinar.title }}</h2>
-          <p v-if="autowebinar.description" class="text-xs sm:text-sm leading-relaxed line-clamp-2 lg:line-clamp-none wr-text-tertiary">{{ autowebinar.description }}</p>
+          <h2 class="font-bold text-base sm:text-lg lg:text-xl mb-1 lg:mb-2 wr-text-primary">
+            {{ autowebinar.title }}
+          </h2>
+          <p
+            v-if="autowebinar.description"
+            class="text-xs sm:text-sm leading-relaxed line-clamp-2 lg:line-clamp-none wr-text-tertiary"
+          >
+            {{ autowebinar.description }}
+          </p>
         </div>
       </div>
 
@@ -50,7 +69,9 @@
           </div>
         </div>
         <div v-if="chatLoading" class="flex-1 flex items-center justify-center p-6">
-          <div class="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+          <div
+            class="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin"
+          ></div>
         </div>
         <HybridChatScreen
           v-else-if="chatScreen"
@@ -78,7 +99,9 @@
     >
       <span class="mobile-chat-fab-ring"></span>
       <i class="fas fa-comments"></i>
-      <span v-if="unreadCount > 0" class="mobile-chat-fab-badge">{{ unreadCount > 99 ? '99+' : unreadCount }}</span>
+      <span v-if="unreadCount > 0" class="mobile-chat-fab-badge">{{
+        unreadCount > 99 ? '99+' : unreadCount
+      }}</span>
     </button>
 
     <Teleport to="body">
@@ -103,7 +126,9 @@
 
           <div class="mobile-chat-overlay-body">
             <div v-if="chatLoading" class="flex-1 flex items-center justify-center p-6">
-              <div class="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+              <div
+                class="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin"
+              ></div>
             </div>
 
             <HybridChatScreen
@@ -150,7 +175,7 @@ const props = defineProps({
   schedule: { type: Object, required: true },
   shownForms: { type: Array, default: () => [] },
   hideCta: { type: Boolean, default: false },
-  nameConfirmed: { type: Boolean, default: false },
+  nameConfirmed: { type: Boolean, default: false }
 })
 
 const emit = defineEmits(['open-form', 'update-shown-forms', 'hide-form'])
@@ -201,14 +226,17 @@ function processPastEvents(pastEvents) {
     processedEventIds.add(evt.id)
 
     if (evt.eventType === 'show_form' && evt.formId && !props.hideCta) {
-      apiFormByIdRoute({ id: evt.formId }).run(ctx).then(formData => {
-        const storageKey = `form_shown_${props.autowebinar.id}_${formData.id}`
-        if (!localStorage.getItem(storageKey)) {
-          trackFormShown(props.autowebinar.id, formData.id, formData.title, formData.submitAction)
-          localStorage.setItem(storageKey, 'true')
-        }
-        emit('update-shown-forms', formData)
-      }).catch(() => {})
+      apiFormByIdRoute({ id: evt.formId })
+        .run(ctx)
+        .then((formData) => {
+          const storageKey = `form_shown_${props.autowebinar.id}_${formData.id}`
+          if (!localStorage.getItem(storageKey)) {
+            trackFormShown(props.autowebinar.id, formData.id, formData.title, formData.submitAction)
+            localStorage.setItem(storageKey, 'true')
+          }
+          emit('update-shown-forms', formData)
+        })
+        .catch(() => {})
     }
 
     if (evt.eventType === 'hide_form' && evt.formId) {
@@ -230,15 +258,23 @@ function processNewEvents() {
     switch (evt.eventType) {
       case 'show_form':
         if (evt.formId && !props.hideCta) {
-          apiFormByIdRoute({ id: evt.formId }).run(ctx).then(formData => {
-            const storageKey = `form_shown_${props.autowebinar.id}_${formData.id}`
-            if (!localStorage.getItem(storageKey)) {
-              trackFormShown(props.autowebinar.id, formData.id, formData.title, formData.submitAction)
-              localStorage.setItem(storageKey, 'true')
-            }
-            emit('update-shown-forms', formData)
-            emit('open-form', formData.id)
-          }).catch(() => {})
+          apiFormByIdRoute({ id: evt.formId })
+            .run(ctx)
+            .then((formData) => {
+              const storageKey = `form_shown_${props.autowebinar.id}_${formData.id}`
+              if (!localStorage.getItem(storageKey)) {
+                trackFormShown(
+                  props.autowebinar.id,
+                  formData.id,
+                  formData.title,
+                  formData.submitAction
+                )
+                localStorage.setItem(storageKey, 'true')
+              }
+              emit('update-shown-forms', formData)
+              emit('open-form', formData.id)
+            })
+            .catch(() => {})
         }
         break
       case 'hide_form':
@@ -257,7 +293,9 @@ function processNewEvents() {
     }
   }
 
-  const remainingEvents = scenarioEvents.value.filter(evt => !processedEventIds.has(evt.id)).length
+  const remainingEvents = scenarioEvents.value.filter(
+    (evt) => !processedEventIds.has(evt.id)
+  ).length
   if (remainingEvents < 100 && !allEventsLoaded.value && !isLoadingMoreEvents.value) {
     loadMoreEvents()
   }
@@ -310,21 +348,26 @@ function initKinescopePlayer() {
     if (!container) return
     const currentOffset = currentElapsedSeconds.value
 
-    playerFactory.create('kinescope-aw-player', {
-      url: playerUrl.value,
-      size: { width: '100%', height: '100%' },
-      behavior: { autoPlay: true, muted: false },
-    }).then((player) => {
-      kinescopePlayer = player
-      analytics.setupPlayer(player)
-      player.once('ready', () => { playerLoading.value = false })
-      if (currentOffset > 0) {
-        player.seekTo(currentOffset)
-      }
-    }).catch((err) => {
-      console.error('Kinescope player creation error:', err)
-      playerLoading.value = false
-    })
+    playerFactory
+      .create('kinescope-aw-player', {
+        url: playerUrl.value,
+        size: { width: '100%', height: '100%' },
+        behavior: { autoPlay: true, muted: false }
+      })
+      .then((player) => {
+        kinescopePlayer = player
+        analytics.setupPlayer(player)
+        player.once('ready', () => {
+          playerLoading.value = false
+        })
+        if (currentOffset > 0) {
+          player.seekTo(currentOffset)
+        }
+      })
+      .catch((err) => {
+        console.error('Kinescope player creation error:', err)
+        playerLoading.value = false
+      })
   }
 }
 
@@ -377,11 +420,17 @@ onMounted(async () => {
     apiAutowebinarScenarioRoute({ autowebinarId: props.autowebinar.id })
       .query({ mode: 'past', elapsedSeconds: String(elapsed) })
       .run(ctx)
-      .catch(e => { console.error('Failed to load past events:', e); return null }),
+      .catch((e) => {
+        console.error('Failed to load past events:', e)
+        return null
+      }),
     apiAutowebinarScenarioRoute({ autowebinarId: props.autowebinar.id })
       .query({ mode: 'future', elapsedSeconds: String(elapsed) })
       .run(ctx)
-      .catch(e => { console.error('Failed to load future events:', e); return null }),
+      .catch((e) => {
+        console.error('Failed to load future events:', e)
+        return null
+      })
   ])
 
   // Фаза 1: обработать прошедшие события (кнопки + чат-сообщения, без popup, без реакций)
@@ -412,11 +461,14 @@ onMounted(async () => {
   chatLoading.value = false
 })
 
-watch(() => props.nameConfirmed, (confirmed) => {
-  if (confirmed && !kinescopePlayer) {
-    nextTick(() => initKinescopePlayer())
+watch(
+  () => props.nameConfirmed,
+  (confirmed) => {
+    if (confirmed && !kinescopePlayer) {
+      nextTick(() => initKinescopePlayer())
+    }
   }
-})
+)
 
 onUnmounted(() => {
   if (typeof window !== 'undefined') {
@@ -459,7 +511,10 @@ async function debugSeek(newOffset) {
     kinescopePlayer.seekTo(newOffset)
   }
 
-  if (timer) { clearInterval(timer); timer = null }
+  if (timer) {
+    clearInterval(timer)
+    timer = null
+  }
   processedEventIds.clear()
   serverNextOffset = 0
   allEventsLoaded.value = false
@@ -469,10 +524,12 @@ async function debugSeek(newOffset) {
   const [pastData, futureData] = await Promise.all([
     apiAutowebinarScenarioRoute({ autowebinarId: props.autowebinar.id })
       .query({ mode: 'past', elapsedSeconds: String(elapsed) })
-      .run(ctx).catch(() => null),
+      .run(ctx)
+      .catch(() => null),
     apiAutowebinarScenarioRoute({ autowebinarId: props.autowebinar.id })
       .query({ mode: 'future', elapsedSeconds: String(elapsed) })
-      .run(ctx).catch(() => null),
+      .run(ctx)
+      .catch(() => null)
   ])
 
   // Собираем новые события ДО сброса — чтобы сразу заменить, не мерцая
@@ -490,7 +547,7 @@ async function debugSeek(newOffset) {
   // Атомарная замена: сброс фейков + новые события + явная пересинхронизация
   scenarioEvents.value = newEvents
   hybridChatRef.value?.resetFakeMessages()
-  
+
   // Ждём обновления computed currentElapsedSeconds и затем пересинхронизируем фейки
   await nextTick()
   hybridChatRef.value?.syncFakeMessages()
@@ -502,23 +559,112 @@ defineExpose({ reloadChat, exitFullscreen, handleReaction, debugSeek, currentEla
 </script>
 
 <style scoped>
-.live-page { min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column; background: var(--wr-bg); }
-.live-content { flex: 1; display: flex; flex-direction: column; max-width: 80rem; margin: 0 auto; width: 100%; }
-@media (min-width: 1024px) { .live-content { flex-direction: row; } }
-.live-player-area { flex: 1; display: flex; flex-direction: column; min-width: 0; overflow: visible; }
-.live-player-wrapper { position: relative; width: 100%; aspect-ratio: 16 / 9; flex-shrink: 0; }
-@media (min-width: 640px) { .live-player-wrapper { margin: 0.75rem; width: calc(100% - 1.5rem); } }
-.live-player-iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none; }
-@media (min-width: 640px) { .live-player-iframe { border-radius: 1rem; } }
-.live-chat-desktop { display: none; }
-@media (min-width: 1024px) { .live-chat-desktop { display: flex; } }
-.live-chat-area { flex-direction: column; border-left: 1px solid var(--wr-border-light); }
-@media (min-width: 1024px) { .live-chat-area { width: 380px; flex-shrink: 0; max-height: 80vh; } }
-.live-chat-header-bar { background: var(--wr-chat-header-bg); backdrop-filter: blur(10px); border-bottom: 1px solid var(--wr-border-light); }
-.live-online-count { display: flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 6px; background: var(--wr-btn-subtle-bg); }
-.live-online-count i { font-size: 11px; color: var(--wr-text-tertiary); }
-.live-online-count span { font-size: 12px; font-weight: 500; color: var(--wr-text-secondary); font-feature-settings: 'tnum'; }
-.live-player-loading { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: var(--wr-bg); z-index: 10; }
+.live-page {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background: var(--wr-bg);
+}
+.live-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  max-width: 80rem;
+  margin: 0 auto;
+  width: 100%;
+}
+@media (min-width: 1024px) {
+  .live-content {
+    flex-direction: row;
+  }
+}
+.live-player-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: visible;
+}
+.live-player-wrapper {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  flex-shrink: 0;
+}
+@media (min-width: 640px) {
+  .live-player-wrapper {
+    margin: 0.75rem;
+    width: calc(100% - 1.5rem);
+  }
+}
+.live-player-iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+@media (min-width: 640px) {
+  .live-player-iframe {
+    border-radius: 1rem;
+  }
+}
+.live-chat-desktop {
+  display: none;
+}
+@media (min-width: 1024px) {
+  .live-chat-desktop {
+    display: flex;
+  }
+}
+.live-chat-area {
+  flex-direction: column;
+  border-left: 1px solid var(--wr-border-light);
+}
+@media (min-width: 1024px) {
+  .live-chat-area {
+    width: 380px;
+    flex-shrink: 0;
+    max-height: 80vh;
+  }
+}
+.live-chat-header-bar {
+  background: var(--wr-chat-header-bg);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--wr-border-light);
+}
+.live-online-count {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: var(--wr-btn-subtle-bg);
+}
+.live-online-count i {
+  font-size: 11px;
+  color: var(--wr-text-tertiary);
+}
+.live-online-count span {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--wr-text-secondary);
+  font-feature-settings: 'tnum';
+}
+.live-player-loading {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--wr-bg);
+  z-index: 10;
+}
 
 .mobile-chat-fab {
   position: fixed;
@@ -537,9 +683,14 @@ defineExpose({ reloadChat, exitFullscreen, handleReaction, debugSeek, currentEla
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
 }
 @media (min-width: 1024px) {
-  .mobile-chat-fab { display: none; }
+  .mobile-chat-fab {
+    display: none;
+  }
 }
-.mobile-chat-fab--hidden { opacity: 0; pointer-events: none; }
+.mobile-chat-fab--hidden {
+  opacity: 0;
+  pointer-events: none;
+}
 .mobile-chat-fab-ring {
   position: absolute;
   inset: -4px;
@@ -572,7 +723,9 @@ defineExpose({ reloadChat, exitFullscreen, handleReaction, debugSeek, currentEla
   flex-direction: column;
 }
 @media (min-width: 1024px) {
-  .mobile-chat-overlay { display: none; }
+  .mobile-chat-overlay {
+    display: none;
+  }
 }
 .mobile-chat-overlay-header {
   display: flex;
@@ -607,7 +760,9 @@ defineExpose({ reloadChat, exitFullscreen, handleReaction, debugSeek, currentEla
 }
 .mobile-chat-overlay-enter-active,
 .mobile-chat-overlay-leave-active {
-  transition: transform 0.22s ease, opacity 0.22s ease;
+  transition:
+    transform 0.22s ease,
+    opacity 0.22s ease;
 }
 .mobile-chat-overlay-enter-from,
 .mobile-chat-overlay-leave-to {

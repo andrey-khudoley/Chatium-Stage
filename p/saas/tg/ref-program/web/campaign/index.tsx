@@ -24,7 +24,7 @@ function getCampaignIdFromRequest(url: string): string | null {
   } catch {
     const q = url.includes('?') ? url.split('?')[1] : ''
     const match = /(?:^|&)campaignId=([^&]*)/.exec(q)
-    return match ? (decodeURIComponent(match[1]).trim() || null) : null
+    return match ? decodeURIComponent(match[1]).trim() || null : null
   }
 }
 
@@ -73,7 +73,9 @@ export const campaignPageRoute = app.html('/', async (ctx, req) => {
           <script>{`window.location.href = '${loginUrl}'`}</script>
           <style>{campaignPageStyles}</style>
         </head>
-        <body><p>Перенаправление на вход...</p></body>
+        <body>
+          <p>Перенаправление на вход...</p>
+        </body>
       </html>
     )
   }
@@ -148,7 +150,10 @@ export const campaignPageRoute = app.html('/', async (ctx, req) => {
         <script>{getPreloaderScript()}</script>
         <script src="/s/static/lib/tailwind.3.4.16.min.js"></script>
         <link rel="stylesheet" href="/s/static/lib/fontawesome/6.7.2/css/all.min.css" />
-        <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap"
+          rel="stylesheet"
+        />
       </head>
       <body>
         <div id="geometric-bg"></div>

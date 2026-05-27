@@ -1,4 +1,5 @@
 @chatium
+
 # Уведомления администраторов в Chatium
 
 Исчерпывающее руководство по отправке уведомлений владельцам аккаунта в Chatium. Документ структурирован для удобства полнотекстового поиска и работы с эмбеддингами.
@@ -46,13 +47,13 @@
 Отправляет уведомление всем владельцам аккаунта.
 
 ```typescript
-import { sendNotificationToAccountOwners } from "@user-notifier/sdk"
+import { sendNotificationToAccountOwners } from '@user-notifier/sdk'
 
 await sendNotificationToAccountOwners(ctx, {
-  title: "Заголовок уведомления",
-  html: "<h1>HTML версия</h1><p>Детали...</p>",
-  plain: "Plain text версия\nДетали...",
-  md: "**Markdown версия**\nДетали..."
+  title: 'Заголовок уведомления',
+  html: '<h1>HTML версия</h1><p>Детали...</p>',
+  plain: 'Plain text версия\nДетали...',
+  md: '**Markdown версия**\nДетали...'
 })
 ```
 
@@ -63,7 +64,8 @@ await sendNotificationToAccountOwners(ctx, {
 - `plain` — Plain text версия (опционально)
 - `md` — Markdown версия (опционально)
 
-**⚠️ Важно**: 
+**⚠️ Важно**:
+
 - Импортируй `@user-notifier/sdk` **только в папке `/api/`**
 - **НЕ** используй в Vue компонентах или shared файлах
 - Укажи хотя бы один из форматов: html, plain или md
@@ -76,7 +78,7 @@ await sendNotificationToAccountOwners(ctx, {
 
 ```typescript
 await sendNotificationToAccountOwners(ctx, {
-  title: "Новая заявка",
+  title: 'Новая заявка',
   html: `
     <h1>Новая заявка от пользователя</h1>
     <table>
@@ -104,7 +106,7 @@ await sendNotificationToAccountOwners(ctx, {
 
 ```typescript
 await sendNotificationToAccountOwners(ctx, {
-  title: "Новый заказ",
+  title: 'Новый заказ',
   md: `
 ## Новый заказ #12345
 
@@ -129,7 +131,7 @@ await sendNotificationToAccountOwners(ctx, {
 
 ```typescript
 await sendNotificationToAccountOwners(ctx, {
-  title: "Новое сообщение",
+  title: 'Новое сообщение',
   plain: `
 Новое сообщение от пользователя
 
@@ -153,18 +155,18 @@ Email: ivan@example.com
 
 ```typescript
 // api/leads.ts
-import { sendNotificationToAccountOwners } from "@user-notifier/sdk"
-import LeadsTable from "../tables/leads.table"
+import { sendNotificationToAccountOwners } from '@user-notifier/sdk'
+import LeadsTable from '../tables/leads.table'
 
 // @shared-route
 export const apiSubmitLeadRoute = app.post('/submit-lead', async (ctx, req) => {
   const { name, email, phone, message } = req.body
-  
+
   // Валидация
   if (!name || !email) {
     return { success: false, error: 'Заполните обязательные поля' }
   }
-  
+
   // Сохраняем заявку
   const lead = await LeadsTable.create(ctx, {
     name,
@@ -173,10 +175,10 @@ export const apiSubmitLeadRoute = app.post('/submit-lead', async (ctx, req) => {
     message,
     createdAt: new Date()
   })
-  
+
   // Отправляем уведомление админам
   await sendNotificationToAccountOwners(ctx, {
-    title: "Новая заявка на сайте",
+    title: 'Новая заявка на сайте',
     html: `
       <h2>Новая заявка</h2>
       <table style="border-collapse: collapse; width: 100%;">
@@ -190,20 +192,28 @@ export const apiSubmitLeadRoute = app.post('/submit-lead', async (ctx, req) => {
             <a href="mailto:${email}">${email}</a>
           </td>
         </tr>
-        ${phone ? `
+        ${
+          phone
+            ? `
         <tr>
           <td style="padding: 8px; border: 1px solid #ddd;"><strong>Телефон:</strong></td>
           <td style="padding: 8px; border: 1px solid #ddd;">
             <a href="tel:${phone}">${phone}</a>
           </td>
         </tr>
-        ` : ''}
-        ${message ? `
+        `
+            : ''
+        }
+        ${
+          message
+            ? `
         <tr>
           <td style="padding: 8px; border: 1px solid #ddd;"><strong>Сообщение:</strong></td>
           <td style="padding: 8px; border: 1px solid #ddd;">${message}</td>
         </tr>
-        ` : ''}
+        `
+            : ''
+        }
       </table>
       <p>
         <a href="${ctx.account.url(`/app/heap/leads/~${lead.id}`)}" 
@@ -224,12 +234,12 @@ ${message ? `\nСообщение:\n${message}` : ''}
 Посмотреть: ${ctx.account.url(`/app/heap/leads/~${lead.id}`)}
     `
   })
-  
+
   ctx.account.log('Новая заявка', {
     level: 'info',
     json: { leadId: lead.id, email }
   })
-  
+
   return { success: true, leadId: lead.id }
 })
 ```
@@ -238,20 +248,20 @@ ${message ? `\nСообщение:\n${message}` : ''}
 
 ```typescript
 // api/orders.ts
-import { sendNotificationToAccountOwners } from "@user-notifier/sdk"
-import OrdersTable from "../tables/orders.table"
-import { Money } from "@app/heap"
+import { sendNotificationToAccountOwners } from '@user-notifier/sdk'
+import OrdersTable from '../tables/orders.table'
+import { Money } from '@app/heap'
 
 // @shared-route
 export const apiCreateOrderRoute = app.post('/create-order', async (ctx, req) => {
   const { customerName, customerEmail, customerPhone, items } = req.body
-  
+
   // Подсчет суммы
   let total = new Money(0, 'RUB')
   for (const item of items) {
     total = total.add(new Money(item.price * item.quantity, 'RUB'))
   }
-  
+
   // Создаём заказ
   const order = await OrdersTable.create(ctx, {
     customerName,
@@ -262,12 +272,15 @@ export const apiCreateOrderRoute = app.post('/create-order', async (ctx, req) =>
     status: 'new',
     createdAt: new Date()
   })
-  
+
   // Формируем список товаров для уведомления
-  const itemsList = items.map(item => 
-    `<li>${item.name} - ${item.quantity} шт. - ${new Money(item.price * item.quantity, 'RUB').format(ctx)}</li>`
-  ).join('')
-  
+  const itemsList = items
+    .map(
+      (item) =>
+        `<li>${item.name} - ${item.quantity} шт. - ${new Money(item.price * item.quantity, 'RUB').format(ctx)}</li>`
+    )
+    .join('')
+
   // Уведомляем админов
   await sendNotificationToAccountOwners(ctx, {
     title: `Новый заказ #${order.id}`,
@@ -301,14 +314,14 @@ export const apiCreateOrderRoute = app.post('/create-order', async (ctx, req) =>
 - **Телефон:** ${customerPhone}
 
 ### Товары:
-${items.map(item => `- ${item.name} - ${item.quantity} шт. - ${new Money(item.price * item.quantity, 'RUB').format(ctx)}`).join('\n')}
+${items.map((item) => `- ${item.name} - ${item.quantity} шт. - ${new Money(item.price * item.quantity, 'RUB').format(ctx)}`).join('\n')}
 
 **Итого:** ${total.format(ctx)}
 
 [Посмотреть заказ](${ctx.account.url(`/app/heap/orders/~${order.id}`)})
     `
   })
-  
+
   return { success: true, orderId: order.id }
 })
 ```
@@ -317,7 +330,7 @@ ${items.map(item => `- ${item.name} - ${item.quantity} шт. - ${new Money(item.
 
 ```typescript
 // api/process.ts
-import { sendNotificationToAccountOwners } from "@user-notifier/sdk"
+import { sendNotificationToAccountOwners } from '@user-notifier/sdk'
 
 const processDataJob = app.job('/process-data', async (ctx, params) => {
   try {
@@ -327,16 +340,16 @@ const processDataJob = app.job('/process-data', async (ctx, params) => {
     // Логируем ошибку
     ctx.account.log('Критическая ошибка обработки', {
       level: 'error',
-      json: { 
+      json: {
         error: error.message,
         stack: error.stack,
         params
       }
     })
-    
+
     // Уведомляем админов
     await sendNotificationToAccountOwners(ctx, {
-      title: "⚠️ Критическая ошибка в системе",
+      title: '⚠️ Критическая ошибка в системе',
       html: `
         <h2 style="color: #dc2626;">⚠️ Критическая ошибка</h2>
         <p><strong>Задача:</strong> process-data</p>
@@ -370,7 +383,7 @@ ${error.stack}
 ${JSON.stringify(params, null, 2)}
       `
     })
-    
+
     throw error
   }
 })
@@ -383,6 +396,7 @@ ${JSON.stringify(params, null, 2)}
 ### Когда отправлять уведомления
 
 ✅ **Отправляйте уведомления**:
+
 - При получении контактных данных пользователя
 - При создании заказа
 - При заполнении формы
@@ -390,6 +404,7 @@ ${JSON.stringify(params, null, 2)}
 - При важных системных событиях
 
 ❌ **НЕ отправляйте уведомления**:
+
 - При каждом входе пользователя
 - При обычных операциях
 - При частых событиях (> 10 в минуту)
@@ -401,7 +416,7 @@ ${JSON.stringify(params, null, 2)}
 
 ```typescript
 await sendNotificationToAccountOwners(ctx, {
-  title: "Четкий заголовок",
+  title: 'Четкий заголовок',
   html: `
     <h2>Основная информация</h2>
     <ul>
@@ -448,7 +463,7 @@ const safeHtml = `<h1>${escapeHtml(userInput)}</h1>` // Безопасно
 
 ```typescript
 await sendNotificationToAccountOwners(ctx, {
-  title: "Новая заявка",
+  title: 'Новая заявка',
   html: `
     <p>Информация...</p>
     <p>
@@ -466,13 +481,13 @@ await sendNotificationToAccountOwners(ctx, {
 
 ```typescript
 await sendNotificationToAccountOwners(ctx, {
-  title: "Новая заявка",
-  html: "..."
+  title: 'Новая заявка',
+  html: '...'
 })
 
 ctx.account.log('Уведомление отправлено', {
   level: 'info',
-  json: { 
+  json: {
     type: 'new_lead',
     leadId: lead.id
   }
@@ -486,8 +501,8 @@ ctx.account.log('Уведомление отправлено', {
 ```typescript
 try {
   await sendNotificationToAccountOwners(ctx, {
-    title: "Уведомление",
-    html: "..."
+    title: 'Уведомление',
+    html: '...'
   })
 } catch (error: any) {
   ctx.account.log('Ошибка отправки уведомления', {
@@ -506,8 +521,8 @@ try {
 // Плохо: уведомление при каждом событии
 app.accountHook('@sender/message-received', async (ctx, params) => {
   await sendNotificationToAccountOwners(ctx, {
-    title: "Новое сообщение",
-    html: "..."
+    title: 'Новое сообщение',
+    html: '...'
   })
 })
 
@@ -515,8 +530,8 @@ app.accountHook('@sender/message-received', async (ctx, params) => {
 app.accountHook('@sender/message-received', async (ctx, params) => {
   if (params.message.text?.includes('СРОЧНО')) {
     await sendNotificationToAccountOwners(ctx, {
-      title: "Срочное сообщение",
-      html: "..."
+      title: 'Срочное сообщение',
+      html: '...'
     })
   }
 })
@@ -536,4 +551,3 @@ app.accountHook('@sender/message-received', async (ctx, params) => {
 **Версия**: 1.0  
 **Дата**: 2025-11-03  
 **Последнее обновление**: Создание инструкции по уведомлениям
-

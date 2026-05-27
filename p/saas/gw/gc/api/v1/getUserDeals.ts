@@ -14,6 +14,8 @@ export const getUserDealsHandler: V1GcHandler = async (_ctx, a) => {
   return { kind: 'gc_result', gc }
 }
 
-export const getUserDealsRoute = app.get('/', async (ctx, req) => handleV1Op(ctx, req, 'getUserDeals', getUserDealsHandler))
+export const getUserDealsRoute = app.get('/', async (ctx, req) =>
+  handleV1Op(ctx, req, 'getUserDeals', getUserDealsHandler)
+)
 
 export default getUserDealsRoute

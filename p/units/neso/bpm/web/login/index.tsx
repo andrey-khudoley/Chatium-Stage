@@ -11,7 +11,9 @@ export const loginPageRoute = app.html('/', async (ctx, req) => {
 
   return (
     <html>
-      <head>{getDemoPageHead('dark', LOGIN_PAGE_NAME, DEFAULT_PROJECT_TITLE, 'Info', 'midnight-pine')}</head>
+      <head>
+        {getDemoPageHead('dark', LOGIN_PAGE_NAME, DEFAULT_PROJECT_TITLE, 'Info', 'midnight-pine')}
+      </head>
       <body>
         {getBootLoaderDiv('dark', DEFAULT_PROJECT_TITLE, 'midnight-pine')}
         <LoginPage back={back} homeUrl={navUrls.homeUrl} />

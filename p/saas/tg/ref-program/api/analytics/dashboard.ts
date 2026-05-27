@@ -23,16 +23,15 @@ export const dashboardRoute = app.get('/', async (ctx, req) => {
     return { success: false, error: 'Нет доступа к кампании' }
   }
 
-  const [partnersCount, referralsCount, aggregatesRows, latestReferrals] =
-    await Promise.all([
-      Partners.countBy(ctx, { campaignId }),
-      Referrals.countBy(ctx, { campaignId }),
-      ReferralAggregates.findAll(ctx, {
-        where: { campaignId },
-        limit: 10000
-      }),
-      referralRepo.listReferrals(ctx, campaignId, { limit: 10, offset: 0 })
-    ])
+  const [partnersCount, referralsCount, aggregatesRows, latestReferrals] = await Promise.all([
+    Partners.countBy(ctx, { campaignId }),
+    Referrals.countBy(ctx, { campaignId }),
+    ReferralAggregates.findAll(ctx, {
+      where: { campaignId },
+      limit: 10000
+    }),
+    referralRepo.listReferrals(ctx, campaignId, { limit: 10, offset: 0 })
+  ])
 
   let totalOrdersCount = 0
   let totalOrdersSum = 0
@@ -50,15 +49,15 @@ export const dashboardRoute = app.get('/', async (ctx, req) => {
     const registeredAt =
       reg instanceof Date ? reg.toISOString() : typeof reg === 'string' ? reg : undefined
     return {
-    id: r.id,
-    ref: r.ref,
-    name: r.name,
-    email: r.email,
-    registeredAt,
-    ordersCount: r.ordersCount ?? 0,
-    ordersSum: r.ordersSum ?? 0,
-    paymentsCount: r.paymentsCount ?? 0,
-    paymentsSum: r.paymentsSum ?? 0
+      id: r.id,
+      ref: r.ref,
+      name: r.name,
+      email: r.email,
+      registeredAt,
+      ordersCount: r.ordersCount ?? 0,
+      ordersSum: r.ordersSum ?? 0,
+      paymentsCount: r.paymentsCount ?? 0,
+      paymentsSum: r.paymentsSum ?? 0
     }
   })
 

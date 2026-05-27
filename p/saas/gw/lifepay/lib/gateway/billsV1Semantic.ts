@@ -38,12 +38,18 @@ export type BillsV1SemanticResult = {
  */
 export function billStatusName(code: number): string {
   switch (code) {
-    case 0: return 'initiated'
-    case 10: return 'success'
-    case 15: return 'pending'
-    case 20: return 'failed'
-    case 30: return 'cancelled'
-    default: return String(code)
+    case 0:
+      return 'initiated'
+    case 10:
+      return 'success'
+    case 15:
+      return 'pending'
+    case 20:
+      return 'failed'
+    case 30:
+      return 'cancelled'
+    default:
+      return String(code)
   }
 }
 
@@ -100,7 +106,10 @@ function classifyCommonBillsV1Errors(lpJson: unknown): BillsV1SemanticResult | n
     return { rule: 'bills_v1_code_error', lpNumericCode: numericCode }
   }
 
-  if (typeof readString(root, 'error') === 'string' || typeof readString(data, 'error') === 'string') {
+  if (
+    typeof readString(root, 'error') === 'string' ||
+    typeof readString(data, 'error') === 'string'
+  ) {
     return { rule: 'bills_v1_error_string' }
   }
 
@@ -147,9 +156,7 @@ export function extractCreateBillSuccess(
  * `getBillStatus`: `data = { [billNumber]: { status, msg } }`. Возвращает `null`, если
  * `data` отсутствует, не объект, пустой словарь или значение записи не объект.
  */
-function readBillStatusEntry(
-  lpJson: unknown
-): { billNumber: string; inner: LpObject } | null {
+function readBillStatusEntry(lpJson: unknown): { billNumber: string; inner: LpObject } | null {
   const root = isObject(lpJson) ? lpJson : null
   const data = readObject(root, 'data')
   if (!data) return null
@@ -196,7 +203,9 @@ export function extractGetBillStatusSuccess(
   if (statusCode === undefined) return null
   const msg = readString(entry.inner, 'msg')
   const status = billStatusName(statusCode)
-  return msg !== undefined ? { billNumber: entry.billNumber, status, msg } : { billNumber: entry.billNumber, status }
+  return msg !== undefined
+    ? { billNumber: entry.billNumber, status, msg }
+    : { billNumber: entry.billNumber, status }
 }
 
 /**

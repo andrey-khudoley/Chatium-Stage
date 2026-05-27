@@ -28,13 +28,19 @@ defineProps<{
           <span>{{ entry.label }}</span>
         </div>
 
-        <article v-else class="dc-client-conversation-panel__message" :class="`direction-${entry.direction}`">
+        <article
+          v-else
+          class="dc-client-conversation-panel__message"
+          :class="`direction-${entry.direction}`"
+        >
           <div class="dc-client-conversation-panel__bubble">
             <strong>{{ entry.author }}</strong>
             <p>{{ entry.text }}</p>
             <time>{{ entry.time }}</time>
           </div>
-          <span v-if="entry.avatar" class="dc-client-conversation-panel__avatar">{{ entry.avatar }}</span>
+          <span v-if="entry.avatar" class="dc-client-conversation-panel__avatar">{{
+            entry.avatar
+          }}</span>
         </article>
       </template>
     </div>
@@ -103,12 +109,11 @@ defineProps<{
   display: grid;
   gap: 8px;
   align-content: start;
-  background:
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--surface-1) 94%, transparent),
-      color-mix(in srgb, var(--surface-1) 98%, transparent)
-    );
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--surface-1) 94%, transparent),
+    color-mix(in srgb, var(--surface-1) 98%, transparent)
+  );
 }
 
 .dc-client-conversation-panel__divider {

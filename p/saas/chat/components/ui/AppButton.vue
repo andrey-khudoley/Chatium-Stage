@@ -16,12 +16,12 @@ defineProps({
   variant: {
     type: String,
     default: 'primary',
-    validator: (v) => ['primary', 'secondary'].includes(v),
+    validator: (v) => ['primary', 'secondary'].includes(v)
   },
   disabled: Boolean,
   loading: Boolean,
   loadingText: { type: String, default: '…' },
-  icon: String,
+  icon: String
 })
 defineEmits(['click'])
 </script>

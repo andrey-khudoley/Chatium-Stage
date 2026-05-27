@@ -1,10 +1,10 @@
-import { jsx } from "@app/html-jsx"
-import { requireAccountRole } from "@app/auth"
-import SettingsPage from "./pages/SettingsPage.vue"
+import { jsx } from '@app/html-jsx'
+import { requireAccountRole } from '@app/auth'
+import SettingsPage from './pages/SettingsPage.vue'
 
 export const settingsRoute = app.get('/', async (ctx, req) => {
   requireAccountRole(ctx, 'Admin')
-  
+
   return (
     <html>
       <head>

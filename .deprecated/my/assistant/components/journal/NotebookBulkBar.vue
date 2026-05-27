@@ -40,12 +40,7 @@ const emit = defineEmits<{
         <span>Из архива</span>
       </button>
       <div v-if="props.showFolderMove" class="nb-bulk-move-group">
-        <button
-          type="button"
-          class="nb-bulk-btn"
-          @click="emit('move', null)"
-          title="В корень"
-        >
+        <button type="button" class="nb-bulk-btn" @click="emit('move', null)" title="В корень">
           <i class="fa-solid fa-arrow-right-from-bracket" aria-hidden="true" />
           <span>В корень</span>
         </button>

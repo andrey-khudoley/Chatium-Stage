@@ -8,10 +8,14 @@ export const ChatBans = Heap.Table(
     bannedBy: Heap.Optional(Heap.UserRefLink()),
     episode: Heap.Optional(Heap.RefLink(Episodes, { onDelete: 'none' })),
     reason: Heap.Optional(Heap.String({ customMeta: { title: 'Причина блокировки' } })),
-    expiresAt: Heap.Optional(Heap.DateTime({ customMeta: { title: 'Истекает (null = навсегда)' } })),
-    type: Heap.Optional(Heap.String({ customMeta: { title: 'Тип блокировки (permanent/timeout)' } })),
+    expiresAt: Heap.Optional(
+      Heap.DateTime({ customMeta: { title: 'Истекает (null = навсегда)' } })
+    ),
+    type: Heap.Optional(
+      Heap.String({ customMeta: { title: 'Тип блокировки (permanent/timeout)' } })
+    )
   },
-  { customMeta: { title: 'Баны в чате', description: 'Баны в чате' } },
+  { customMeta: { title: 'Баны в чате', description: 'Баны в чате' } }
 )
 
 export default ChatBans

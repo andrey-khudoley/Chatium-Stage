@@ -3,7 +3,7 @@
 function px(value: number | undefined) {
   return value !== undefined ? value + 'px' : undefined
 }
-  
+
 export interface AppUiStyle {
   flexDirection?: 'row' | 'column'
   flexGrow?: number
@@ -16,7 +16,7 @@ export interface AppUiStyle {
   marginTop?: number
   marginBottom?: number
 }
- 
+
 export function appUiStyleToCss(style: AppUiStyle = {}) {
   return {
     display: style.flexDirection ? 'flex' : 'block',
@@ -29,6 +29,6 @@ export function appUiStyleToCss(style: AppUiStyle = {}) {
     'margin-left': px(style.marginLeft),
     'margin-right': px(style.marginRight),
     'margin-top': px(style.marginTop),
-    'margin-bottom': px(style.marginBottom),
+    'margin-bottom': px(style.marginBottom)
   }
 }

@@ -1,4 +1,4 @@
-import { jsx } from "@app/html-jsx"
+import { jsx } from '@app/html-jsx'
 import SettingsPage from './pages/SettingsPage.vue'
 import './bot/handler' // Подключаем обработчик сообщений бота
 

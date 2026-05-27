@@ -3,7 +3,7 @@ import { invokeLegacyGcImportPost } from '../../lib/gateway/legacyGcImportClient
 
 /** POST /v1/addUser — контур legacy (import), POST /users, action=add. */
 export const addUserHandler: V1GcHandler = async (_ctx, a) => {
-  const paramsPayload = ((a.args as { params?: Record<string, unknown> }).params) ?? {}
+  const paramsPayload = (a.args as { params?: Record<string, unknown> }).params ?? {}
   const gc = await invokeLegacyGcImportPost({
     schoolHostTrimmed: a.schoolHost,
     resolvedPath: a.resolvedPath,
@@ -14,6 +14,8 @@ export const addUserHandler: V1GcHandler = async (_ctx, a) => {
   return { kind: 'gc_result', gc }
 }
 
-export const addUserRoute = app.post('/', async (ctx, req) => handleV1Op(ctx, req, 'addUser', addUserHandler))
+export const addUserRoute = app.post('/', async (ctx, req) =>
+  handleV1Op(ctx, req, 'addUser', addUserHandler)
+)
 
 export default addUserRoute

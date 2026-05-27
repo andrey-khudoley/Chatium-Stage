@@ -57,10 +57,7 @@ export async function getOrCreatePartner(
 /**
  * Возвращает партнёра по id или null.
  */
-export async function getPartnerById(
-  ctx: app.Ctx,
-  partnerId: string
-): Promise<PartnerRow | null> {
+export async function getPartnerById(ctx: app.Ctx, partnerId: string): Promise<PartnerRow | null> {
   const row = await Partners.findById(ctx, partnerId)
   return row as PartnerRow | null
 }

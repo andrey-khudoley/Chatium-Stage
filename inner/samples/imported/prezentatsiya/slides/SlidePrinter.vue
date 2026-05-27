@@ -14,20 +14,19 @@
           </div>
           <div class="printer-beam"></div>
         </div>
-        <h2 class="title">
-          Печатай <span class="grad">что угодно</span>
-        </h2>
+        <h2 class="title">Печатай <span class="grad">что угодно</span></h2>
         <p class="sub">Пишешь в чат — получаешь готовый продукт</p>
-        <p class="sub-hint">Управляй всем через один чат. Без кода, без программистов, без ожиданий.</p>
+        <p class="sub-hint">
+          Управляй всем через один чат. Без кода, без программистов, без ожиданий.
+        </p>
       </div>
 
       <div class="conveyors">
         <div class="conv-row">
-
           <div class="conveyor">
             <div class="conv-track track-left">
-              <div 
-                v-for="(item, i) in [...services, ...services]" 
+              <div
+                v-for="(item, i) in [...services, ...services]"
                 :key="'s' + i"
                 class="conv-item"
                 :style="{ '--accent': item.color }"
@@ -42,11 +41,10 @@
         </div>
 
         <div class="conv-row">
-
           <div class="conveyor">
             <div class="conv-track track-right">
-              <div 
-                v-for="(item, i) in [...agents, ...agents]" 
+              <div
+                v-for="(item, i) in [...agents, ...agents]"
                 :key="'a' + i"
                 class="conv-item"
                 :style="{ '--accent': item.color }"
@@ -89,7 +87,7 @@ const services = [
   { label: 'Чат-бот', icon: 'fas fa-comment-dots', color: '#a855f7' },
   { label: 'Личный кабинет', icon: 'fas fa-user-circle', color: '#6366f1' },
   { label: 'Вебинар', icon: 'fas fa-video', color: '#8b5cf6' },
-  { label: 'База знаний', icon: 'fas fa-book', color: '#a855f7' },
+  { label: 'База знаний', icon: 'fas fa-book', color: '#a855f7' }
 ]
 
 const agents = [
@@ -102,10 +100,8 @@ const agents = [
   { label: 'HR-ассистент', icon: 'fas fa-users', color: '#06b6d4' },
   { label: 'Контент-менеджер', icon: 'fas fa-images', color: '#22d3ee' },
   { label: 'Финансист', icon: 'fas fa-calculator', color: '#06b6d4' },
-  { label: 'Ассистент', icon: 'fas fa-crown', color: '#22d3ee' },
+  { label: 'Ассистент', icon: 'fas fa-crown', color: '#22d3ee' }
 ]
-
-
 </script>
 
 <style scoped>
@@ -130,9 +126,8 @@ const agents = [
 .grid-bg {
   position: absolute;
   inset: 0;
-  background-image: 
-    linear-gradient(rgba(99,102,241,0.04) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(99,102,241,0.04) 1px, transparent 1px);
+  background-image: linear-gradient(rgba(99, 102, 241, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(99, 102, 241, 0.04) 1px, transparent 1px);
   background-size: 60px 60px;
   mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
 }
@@ -164,8 +159,13 @@ const agents = [
 }
 
 @keyframes glow-float {
-  0%, 100% { transform: translateY(0) scale(1); }
-  50% { transform: translateY(-30px) scale(1.06); }
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+  }
+  50% {
+    transform: translateY(-30px) scale(1.06);
+  }
 }
 
 .content {
@@ -178,7 +178,6 @@ const agents = [
   align-items: center;
   gap: 40px;
 }
-
 
 /* Hero */
 .hero {
@@ -205,8 +204,8 @@ const agents = [
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(99,102,241,0.1);
-  border: 1px solid rgba(99,102,241,0.3);
+  background: rgba(99, 102, 241, 0.1);
+  border: 1px solid rgba(99, 102, 241, 0.3);
   border-radius: 18px;
   font-size: 28px;
   color: #818cf8;
@@ -214,8 +213,13 @@ const agents = [
 }
 
 @keyframes printer-pulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(99,102,241,0.2); }
-  50% { box-shadow: 0 0 40px 10px rgba(99,102,241,0.15); }
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 40px 10px rgba(99, 102, 241, 0.15);
+  }
 }
 
 .printer-beam {
@@ -232,8 +236,15 @@ const agents = [
 }
 
 @keyframes beam-scan {
-  0%, 100% { width: 28px; opacity: 0.5; }
-  50% { width: 52px; opacity: 1; }
+  0%,
+  100% {
+    width: 28px;
+    opacity: 0.5;
+  }
+  50% {
+    width: 52px;
+    opacity: 1;
+  }
 }
 
 .title {
@@ -254,8 +265,13 @@ const agents = [
 }
 
 @keyframes grad-shift {
-  0%, 100% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
 }
 
 .sub {
@@ -332,13 +348,21 @@ const agents = [
 }
 
 @keyframes scroll-left {
-  0% { transform: translateX(0); }
-  100% { transform: translateX(-50%); }
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
 }
 
 @keyframes scroll-right {
-  0% { transform: translateX(-50%); }
-  100% { transform: translateX(0); }
+  0% {
+    transform: translateX(-50%);
+  }
+  100% {
+    transform: translateX(0);
+  }
 }
 
 .conv-item {
@@ -346,8 +370,8 @@ const agents = [
   align-items: center;
   gap: 10px;
   padding: 10px 20px;
-  background: rgba(255,255,255,0.03);
-  border: 1px solid rgba(255,255,255,0.07);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.07);
   border-radius: 14px;
   white-space: nowrap;
   cursor: default;
@@ -355,10 +379,12 @@ const agents = [
 }
 
 .conv-item:hover {
-  border-color: var(--accent, rgba(99,102,241,0.5));
-  background: rgba(255,255,255,0.06);
+  border-color: var(--accent, rgba(99, 102, 241, 0.5));
+  background: rgba(255, 255, 255, 0.06);
   transform: translateY(-3px) scale(1.03);
-  box-shadow: 0 10px 36px rgba(0,0,0,0.3), 0 0 18px color-mix(in srgb, var(--accent) 20%, transparent);
+  box-shadow:
+    0 10px 36px rgba(0, 0, 0, 0.3),
+    0 0 18px color-mix(in srgb, var(--accent) 20%, transparent);
 }
 
 .item-icon {
@@ -381,7 +407,7 @@ const agents = [
 .item-label {
   font-size: 14px;
   font-weight: 600;
-  color: rgba(255,255,255,0.85);
+  color: rgba(255, 255, 255, 0.85);
   letter-spacing: 0.2px;
 }
 
@@ -396,7 +422,7 @@ const agents = [
 .bottom-line {
   width: 60px;
   height: 2px;
-  background: linear-gradient(90deg, transparent, rgba(99,102,241,0.4), transparent);
+  background: linear-gradient(90deg, transparent, rgba(99, 102, 241, 0.4), transparent);
   border-radius: 2px;
 }
 

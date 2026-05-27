@@ -15,13 +15,8 @@ export interface TelegramInlineButton {
 /** Главная клавиатура (ReplyKeyboard) — кнопки под полем ввода. */
 export function getMainKeyboard(): TelegramReplyButton[][] {
   return [
-    [
-      { text: '🔗 Управлять ссылками' },
-      { text: '📈 Статистика' }
-    ],
-    [
-      { text: '💰 Запросить вывод' }
-    ]
+    [{ text: '🔗 Управлять ссылками' }, { text: '📈 Статистика' }],
+    [{ text: '💰 Запросить вывод' }]
   ]
 }
 

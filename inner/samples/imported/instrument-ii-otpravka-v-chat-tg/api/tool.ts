@@ -22,32 +22,32 @@ export const sendSupportRequestTool = app
   .function('/sendSupportRequest')
   .meta({
     name: 'sendSupportRequest',
-    description: `Отправляет заявку в техподдержку когда пользователь сообщает о проблемах с оплатой, неработающих функциях или требует помощи техподдержки`,
+    description: `Отправляет заявку в техподдержку когда пользователь сообщает о проблемах с оплатой, неработающих функциях или требует помощи техподдержки`
   })
-  .body(s =>
+  .body((s) =>
     s.object(
       {
         context: s.object(
           {
             userId: s.string().optional(),
             chainId: s.string().optional(),
-            chainKey: s.string().optional(),
+            chainKey: s.string().optional()
           },
-          { additionalProperties: true },
+          { additionalProperties: true }
         ),
         input: s.object(
           {
             text: s
               .string()
               .describe(
-                `Текст обращения пользователя с описанием проблемы. Укажи Имя и фамилию пользователя, если они известны`,
-              ),
+                `Текст обращения пользователя с описанием проблемы. Укажи Имя и фамилию пользователя, если они известны`
+              )
           },
-          { additionalProperties: true },
-        ),
+          { additionalProperties: true }
+        )
       },
-      { additionalProperties: true },
-    ),
+      { additionalProperties: true }
+    )
   )
   .handle(async (ctx, body) => {
     const { text } = body.input
@@ -59,21 +59,23 @@ export const sendSupportRequestTool = app
       if (!config?.tgBotId) {
         return {
           ok: false,
-          result: 'ID бота-менеджера не настроен. Перейдите в настройки инструмента и выберите бота-менеджера.',
+          result:
+            'ID бота-менеджера не настроен. Перейдите в настройки инструмента и выберите бота-менеджера.'
         }
       }
 
       if (!config?.tgChannelId) {
         return {
           ok: false,
-          result: 'ID канала/группы не настроен. Перейдите в настройки инструмента и выберите канал.',
+          result:
+            'ID канала/группы не настроен. Перейдите в настройки инструмента и выберите канал.'
         }
       }
 
       if (!config?.agentId) {
         return {
           ok: false,
-          result: 'AI агент не выбран. Перейдите в настройки инструмента и выберите агента.',
+          result: 'AI агент не выбран. Перейдите в настройки инструмента и выберите агента.'
         }
       }
 
@@ -82,7 +84,7 @@ export const sendSupportRequestTool = app
         userId,
         chainId,
         chainKey,
-        text,
+        text
       })
 
       // Подставляем текст от агента в обертку
@@ -95,20 +97,20 @@ export const sendSupportRequestTool = app
         text: `${wrappedText}\n⛓️Ссылка на диалог: ${ctx.account.url('/')}app/agent-process/~agent/${config.agentId}/chain/${chainId}`,
         parse_mode: 'HTML'
       })
-      
+
       if (!result || !result[0]) {
         return {
           ok: false,
-          result: 'Ошибка при отправке сообщения',
+          result: 'Ошибка при отправке сообщения'
         }
       }
-      
+
       const [success, telegramResult, error] = result
-      
+
       if (!success) {
         return {
           ok: false,
-          result: `Ошибка Telegram API: ${error || 'неизвестная ошибка'}`,
+          result: `Ошибка Telegram API: ${error || 'неизвестная ошибка'}`
         }
       }
 
@@ -116,17 +118,17 @@ export const sendSupportRequestTool = app
       await SupportRequests.update(ctx, {
         id: supportRequest.id,
         chatId: config.tgChannelId,
-        telegramMessageId: telegramResult?.message_id,
+        telegramMessageId: telegramResult?.message_id
       })
 
       return {
         ok: true,
-        result: `Сообщение успешно отправлено в Telegram. ID сообщения: ${telegramResult?.message_id || 'неизвестно'}`,
+        result: `Сообщение успешно отправлено в Telegram. ID сообщения: ${telegramResult?.message_id || 'неизвестно'}`
       }
     } catch (error) {
       return {
         ok: false,
-        result: `Ошибка отправки сообщения в Telegram: ${error.message}`,
+        result: `Ошибка отправки сообщения в Telegram: ${error.message}`
       }
     }
   })

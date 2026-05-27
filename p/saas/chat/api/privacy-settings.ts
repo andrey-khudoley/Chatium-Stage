@@ -6,7 +6,7 @@ export const apiPrivacySettingsGetRoute = app.get('/', async (ctx, req) => {
   requireRealUser(ctx)
 
   let settings = await PrivacySettings.findOneBy(ctx, {
-    user: ctx.user.id,
+    user: ctx.user.id
   })
 
   if (!settings) {
@@ -15,14 +15,14 @@ export const apiPrivacySettingsGetRoute = app.get('/', async (ctx, req) => {
       user: ctx.user.id,
       allowDirectMessages: 'everyone', // 'everyone' | 'contacts' | 'none'
       allowedUsers: [],
-      blockedUsers: [],
+      blockedUsers: []
     })
   }
 
   return {
     allowDirectMessages: settings.allowDirectMessages || 'everyone',
     allowedUsers: settings.allowedUsers || [],
-    blockedUsers: settings.blockedUsers || [],
+    blockedUsers: settings.blockedUsers || []
   }
 })
 
@@ -31,13 +31,13 @@ export const apiPrivacySettingsUpdateRoute = app
   .body((s) => ({
     allowDirectMessages: s.string().optional(), // 'everyone' | 'contacts' | 'none'
     allowedUsers: s.array(s.string()).optional(),
-    blockedUsers: s.array(s.string()).optional(),
+    blockedUsers: s.array(s.string()).optional()
   }))
   .post('/update', async (ctx, req) => {
     requireRealUser(ctx)
 
     let settings = await PrivacySettings.findOneBy(ctx, {
-      user: ctx.user.id,
+      user: ctx.user.id
     })
 
     const updateData: any = {}
@@ -54,14 +54,14 @@ export const apiPrivacySettingsUpdateRoute = app
     if (settings) {
       settings = await PrivacySettings.update(ctx, {
         id: settings.id,
-        ...updateData,
+        ...updateData
       })
     } else {
       settings = await PrivacySettings.create(ctx, {
         user: ctx.user.id,
         allowDirectMessages: updateData.allowDirectMessages || 'everyone',
         allowedUsers: updateData.allowedUsers || [],
-        blockedUsers: updateData.blockedUsers || [],
+        blockedUsers: updateData.blockedUsers || []
       })
     }
 
@@ -70,15 +70,15 @@ export const apiPrivacySettingsUpdateRoute = app
       settings: {
         allowDirectMessages: settings.allowDirectMessages,
         allowedUsers: settings.allowedUsers || [],
-        blockedUsers: settings.blockedUsers || [],
-      },
+        blockedUsers: settings.blockedUsers || []
+      }
     }
   })
 
 // Проверить, может ли пользователь писать в личку другому пользователю
 export const apiPrivacySettingsCanMessageRoute = app
   .body((s) => ({
-    targetUserId: s.string(),
+    targetUserId: s.string()
   }))
   .post('/can-message', async (ctx, req) => {
     requireRealUser(ctx)
@@ -97,7 +97,7 @@ export async function canSendDirectMessage(ctx, senderId: string, targetUserId: 
 
   // Проверяем настройки приватности целевого пользователя
   const settings = await PrivacySettings.findOneBy(ctx, {
-    user: targetUserId,
+    user: targetUserId
   })
 
   const allowMode = settings?.allowDirectMessages || 'everyone'
@@ -118,9 +118,9 @@ export async function canSendDirectMessage(ctx, senderId: string, targetUserId: 
       if (allowedUsers.includes(senderId)) {
         return { allowed: true }
       }
-      return { 
-        allowed: false, 
-        reason: 'Пользователь принимает сообщения только от избранных контактов' 
+      return {
+        allowed: false,
+        reason: 'Пользователь принимает сообщения только от избранных контактов'
       }
     case 'none':
       return { allowed: false, reason: 'Пользователь отключил личные сообщения' }
@@ -132,13 +132,13 @@ export async function canSendDirectMessage(ctx, senderId: string, targetUserId: 
 // Добавить пользователя в список разрешенных
 export const apiPrivacySettingsAllowUserRoute = app
   .body((s) => ({
-    userId: s.string(),
+    userId: s.string()
   }))
   .post('/allow-user', async (ctx, req) => {
     requireRealUser(ctx)
 
     let settings = await PrivacySettings.findOneBy(ctx, {
-      user: ctx.user.id,
+      user: ctx.user.id
     })
 
     if (!settings) {
@@ -146,7 +146,7 @@ export const apiPrivacySettingsAllowUserRoute = app
         user: ctx.user.id,
         allowDirectMessages: 'contacts',
         allowedUsers: [req.body.userId],
-        blockedUsers: [],
+        blockedUsers: []
       })
     } else {
       const allowedUsers = settings.allowedUsers || []
@@ -154,7 +154,7 @@ export const apiPrivacySettingsAllowUserRoute = app
         allowedUsers.push(req.body.userId)
         settings = await PrivacySettings.update(ctx, {
           id: settings.id,
-          allowedUsers,
+          allowedUsers
         })
       }
     }
@@ -165,20 +165,20 @@ export const apiPrivacySettingsAllowUserRoute = app
 // Удалить пользователя из списка разрешенных
 export const apiPrivacySettingsRemoveAllowedRoute = app
   .body((s) => ({
-    userId: s.string(),
+    userId: s.string()
   }))
   .post('/remove-allowed', async (ctx, req) => {
     requireRealUser(ctx)
 
     const settings = await PrivacySettings.findOneBy(ctx, {
-      user: ctx.user.id,
+      user: ctx.user.id
     })
 
     if (settings) {
-      const allowedUsers = (settings.allowedUsers || []).filter(id => id !== req.body.userId)
+      const allowedUsers = (settings.allowedUsers || []).filter((id) => id !== req.body.userId)
       await PrivacySettings.update(ctx, {
         id: settings.id,
-        allowedUsers,
+        allowedUsers
       })
     }
 

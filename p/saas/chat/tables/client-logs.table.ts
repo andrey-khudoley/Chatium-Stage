@@ -9,9 +9,9 @@ export const TProjektChatClientLogs29e = Heap.Table(
     message: Heap.Optional(Heap.String({ customMeta: { title: 'Сообщение' } })),
     details: Heap.Optional(Heap.String({ customMeta: { title: 'Детали' } })),
     userAgent: Heap.Optional(Heap.String({ customMeta: { title: 'User Agent' } })),
-    url: Heap.Optional(Heap.String({ customMeta: { title: 'URL' } })),
+    url: Heap.Optional(Heap.String({ customMeta: { title: 'URL' } }))
   },
-  { customMeta: { title: 'Клиентские логи', description: '' } },
+  { customMeta: { title: 'Клиентские логи', description: '' } }
 )
 
 export default TProjektChatClientLogs29e

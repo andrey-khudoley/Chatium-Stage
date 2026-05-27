@@ -6,43 +6,64 @@
         @click="toggleParentOperator"
         type="button"
         class="px-3 py-1.5 rounded text-xs font-medium transition-all flex items-center gap-1"
-        :class="isDark 
-          ? (parentOperator === 'AND' ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-purple-600 text-white hover:bg-purple-700')
-          : (parentOperator === 'AND' ? 'bg-blue-500 text-white hover:bg-blue-600' : 'bg-purple-500 text-white hover:bg-purple-600')"
+        :class="
+          isDark
+            ? parentOperator === 'AND'
+              ? 'bg-blue-600 text-white hover:bg-blue-700'
+              : 'bg-purple-600 text-white hover:bg-purple-700'
+            : parentOperator === 'AND'
+              ? 'bg-blue-500 text-white hover:bg-blue-600'
+              : 'bg-purple-500 text-white hover:bg-purple-600'
+        "
       >
         {{ parentOperator }}
         <i class="fas fa-chevron-down text-xs"></i>
       </button>
     </div>
-    
+
     <div class="filter-item" :class="{ 'filter-item-group': isGroup }">
       <!-- Условие (правило) -->
-      <div v-if="isCondition" class="flex items-center gap-2 p-2.5 rounded-lg border group hover:shadow-sm transition-all"
-        :class="isDark ? 'border-gray-600 bg-gray-800/50 hover:bg-gray-800' : 'border-gray-300 bg-gray-50 hover:bg-gray-100'">
+      <div
+        v-if="isCondition"
+        class="flex items-center gap-2 p-2.5 rounded-lg border group hover:shadow-sm transition-all"
+        :class="
+          isDark
+            ? 'border-gray-600 bg-gray-800/50 hover:bg-gray-800'
+            : 'border-gray-300 bg-gray-50 hover:bg-gray-100'
+        "
+      >
         <span class="text-xs font-medium opacity-70">Where</span>
-        
+
         <select
           :value="item.property"
           @change="updateItem({ property: $event.target.value })"
           class="px-2.5 py-1.5 rounded text-xs border font-medium"
-          :class="isDark ? 'bg-gray-700 border-gray-600 text-white hover:border-gray-500' : 'bg-white border-gray-300 text-gray-900 hover:border-gray-400'"
+          :class="
+            isDark
+              ? 'bg-gray-700 border-gray-600 text-white hover:border-gray-500'
+              : 'bg-white border-gray-300 text-gray-900 hover:border-gray-400'
+          "
         >
           <option v-for="prop in properties" :key="prop.value" :value="prop.value">
             {{ prop.label }}
           </option>
         </select>
-        
+
         <select
           :value="item.operator"
           @change="updateItem({ operator: $event.target.value })"
           class="px-2.5 py-1.5 rounded text-xs border font-medium"
-          :class="isDark ? 'bg-gray-700 border-gray-600 text-white hover:border-gray-500' : 'bg-white border-gray-300 text-gray-900 hover:border-gray-400'"
+          :class="
+            isDark
+              ? 'bg-gray-700 border-gray-600 text-white hover:border-gray-500'
+              : 'bg-white border-gray-300 text-gray-900 hover:border-gray-400'
+          "
         >
           <option v-for="op in operators" :key="op.value" :value="op.value">
             {{ op.label }}
           </option>
         </select>
-        
+
         <input
           v-if="item.operator !== 'isEmpty' && item.operator !== 'isNotEmpty'"
           :value="item.value || ''"
@@ -50,21 +71,29 @@
           type="text"
           placeholder="Значение"
           class="flex-1 px-2.5 py-1.5 rounded text-xs border"
-          :class="isDark ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:border-blue-500' : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500 focus:border-blue-500'"
+          :class="
+            isDark
+              ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:border-blue-500'
+              : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500 focus:border-blue-500'
+          "
         />
-        
+
         <!-- Контекстное меню -->
-        <div class="relative" v-click-outside="() => showContextMenu = false">
+        <div class="relative" v-click-outside="() => (showContextMenu = false)">
           <button
             @click.prevent.stop="showContextMenu = !showContextMenu"
             type="button"
             class="p-1.5 rounded transition-all opacity-0 group-hover:opacity-100"
-            :class="isDark ? 'hover:bg-gray-700 text-gray-400 hover:text-white' : 'hover:bg-gray-200 text-gray-500 hover:text-gray-900'"
+            :class="
+              isDark
+                ? 'hover:bg-gray-700 text-gray-400 hover:text-white'
+                : 'hover:bg-gray-200 text-gray-500 hover:text-gray-900'
+            "
             title="Дополнительные действия"
           >
             <i class="fas fa-ellipsis-v text-xs"></i>
           </button>
-          
+
           <!-- Выпадающее меню -->
           <div
             v-if="showContextMenu"
@@ -72,28 +101,49 @@
             :class="isDark ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'"
           >
             <button
-              @click.prevent.stop="duplicateItem(); showContextMenu = false"
+              @click.prevent.stop="
+                duplicateItem()
+                showContextMenu = false
+              "
               type="button"
               class="w-full text-left px-4 py-2 text-sm rounded-t-lg transition-colors"
-              :class="isDark ? 'bg-gray-800 text-white hover:bg-gray-700' : 'bg-white text-gray-900 hover:bg-gray-50'"
+              :class="
+                isDark
+                  ? 'bg-gray-800 text-white hover:bg-gray-700'
+                  : 'bg-white text-gray-900 hover:bg-gray-50'
+              "
             >
               <i class="fas fa-copy mr-2"></i>
               Дублировать
             </button>
             <button
-              @click.prevent.stop="turnIntoGroup(); showContextMenu = false"
+              @click.prevent.stop="
+                turnIntoGroup()
+                showContextMenu = false
+              "
               type="button"
               class="w-full text-left px-4 py-2 text-sm transition-colors"
-              :class="isDark ? 'bg-gray-800 text-white hover:bg-gray-700' : 'bg-white text-gray-900 hover:bg-gray-50'"
+              :class="
+                isDark
+                  ? 'bg-gray-800 text-white hover:bg-gray-700'
+                  : 'bg-white text-gray-900 hover:bg-gray-50'
+              "
             >
               <i class="fas fa-folder-plus mr-2"></i>
               Превратить в группу
             </button>
             <button
-              @click.prevent.stop="removeItem(); showContextMenu = false"
+              @click.prevent.stop="
+                removeItem()
+                showContextMenu = false
+              "
               type="button"
               class="w-full text-left px-4 py-2 text-sm rounded-b-lg transition-colors"
-              :class="isDark ? 'bg-gray-800 text-red-400 hover:bg-red-900/20' : 'bg-white text-red-600 hover:bg-red-50'"
+              :class="
+                isDark
+                  ? 'bg-gray-800 text-red-400 hover:bg-red-900/20'
+                  : 'bg-white text-red-600 hover:bg-red-50'
+              "
             >
               <i class="fas fa-trash mr-2"></i>
               Удалить
@@ -101,35 +151,48 @@
           </div>
         </div>
       </div>
-      
+
       <!-- Группа -->
-      <div v-if="isGroup" class="filter-group border rounded-lg p-3"
-        :class="isDark ? 'border-gray-600 bg-gray-800/30' : 'border-gray-300 bg-gray-50/50'">
+      <div
+        v-if="isGroup"
+        class="filter-group border rounded-lg p-3"
+        :class="isDark ? 'border-gray-600 bg-gray-800/30' : 'border-gray-300 bg-gray-50/50'"
+      >
         <div class="flex items-center gap-2 mb-3">
           <button
             @click="toggleGroupOperator"
             type="button"
             class="px-3 py-1.5 rounded text-xs font-medium transition-all flex items-center gap-1"
-            :class="isDark 
-              ? (item.operator === 'AND' ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-purple-600 text-white hover:bg-purple-700')
-              : (item.operator === 'AND' ? 'bg-blue-500 text-white hover:bg-blue-600' : 'bg-purple-500 text-white hover:bg-purple-600')"
+            :class="
+              isDark
+                ? item.operator === 'AND'
+                  ? 'bg-blue-600 text-white hover:bg-blue-700'
+                  : 'bg-purple-600 text-white hover:bg-purple-700'
+                : item.operator === 'AND'
+                  ? 'bg-blue-500 text-white hover:bg-blue-600'
+                  : 'bg-purple-500 text-white hover:bg-purple-600'
+            "
           >
             {{ item.operator }}
             <i class="fas fa-chevron-down text-xs"></i>
           </button>
-          
+
           <!-- Контекстное меню для группы -->
-          <div class="relative ml-auto" v-click-outside="() => showContextMenu = false">
+          <div class="relative ml-auto" v-click-outside="() => (showContextMenu = false)">
             <button
               @click.prevent.stop="showContextMenu = !showContextMenu"
               type="button"
               class="p-1.5 rounded transition-all opacity-70 hover:opacity-100"
-              :class="isDark ? 'hover:bg-gray-700 text-gray-400 hover:text-white' : 'hover:bg-gray-200 text-gray-500 hover:text-gray-900'"
+              :class="
+                isDark
+                  ? 'hover:bg-gray-700 text-gray-400 hover:text-white'
+                  : 'hover:bg-gray-200 text-gray-500 hover:text-gray-900'
+              "
               title="Дополнительные действия"
             >
               <i class="fas fa-ellipsis-v text-xs"></i>
             </button>
-            
+
             <!-- Выпадающее меню -->
             <div
               v-if="showContextMenu"
@@ -137,19 +200,33 @@
               :class="isDark ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'"
             >
               <button
-                @click.prevent.stop="duplicateItem(); showContextMenu = false"
+                @click.prevent.stop="
+                  duplicateItem()
+                  showContextMenu = false
+                "
                 type="button"
                 class="w-full text-left px-4 py-2 text-sm rounded-t-lg transition-colors"
-                :class="isDark ? 'bg-gray-800 text-white hover:bg-gray-700' : 'bg-white text-gray-900 hover:bg-gray-50'"
+                :class="
+                  isDark
+                    ? 'bg-gray-800 text-white hover:bg-gray-700'
+                    : 'bg-white text-gray-900 hover:bg-gray-50'
+                "
               >
                 <i class="fas fa-copy mr-2"></i>
                 Дублировать
               </button>
               <button
-                @click.prevent.stop="removeItem(); showContextMenu = false"
+                @click.prevent.stop="
+                  removeItem()
+                  showContextMenu = false
+                "
                 type="button"
                 class="w-full text-left px-4 py-2 text-sm rounded-b-lg transition-colors"
-                :class="isDark ? 'bg-gray-800 text-red-400 hover:bg-red-900/20' : 'bg-white text-red-600 hover:bg-red-50'"
+                :class="
+                  isDark
+                    ? 'bg-gray-800 text-red-400 hover:bg-red-900/20'
+                    : 'bg-white text-red-600 hover:bg-red-50'
+                "
               >
                 <i class="fas fa-trash mr-2"></i>
                 Удалить
@@ -157,10 +234,12 @@
             </div>
           </div>
         </div>
-        
+
         <!-- Вложенные элементы -->
-        <div class="ml-4 space-y-2 border-l-2 pl-4"
-          :class="isDark ? 'border-gray-600' : 'border-gray-300'">
+        <div
+          class="ml-4 space-y-2 border-l-2 pl-4"
+          :class="isDark ? 'border-gray-600' : 'border-gray-300'"
+        >
           <FilterItem
             v-for="(childItem, childIndex) in item.conditions"
             :key="childItem.id"
@@ -180,23 +259,25 @@
             @toggle-parent-operator="(path) => toggleGroupOperatorInParent([index, ...path])"
           />
         </div>
-        
+
         <!-- Кнопки добавления внутри группы -->
         <div class="mt-3 ml-4">
-          <div class="relative" v-click-outside="() => showAddMenu = false">
+          <div class="relative" v-click-outside="() => (showAddMenu = false)">
             <button
               @click.prevent.stop="showAddMenu = !showAddMenu"
               type="button"
               class="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-medium transition-all"
-              :class="isDark 
-                ? 'bg-gray-700 hover:bg-gray-600 text-white' 
-                : 'bg-gray-200 hover:bg-gray-300 text-gray-900'"
+              :class="
+                isDark
+                  ? 'bg-gray-700 hover:bg-gray-600 text-white'
+                  : 'bg-gray-200 hover:bg-gray-300 text-gray-900'
+              "
             >
               <i class="fas fa-plus text-xs"></i>
               <span>Добавить</span>
               <i class="fas fa-chevron-down ml-1 text-xs"></i>
             </button>
-            
+
             <!-- Выпадающее меню -->
             <div
               v-if="showAddMenu"
@@ -204,23 +285,42 @@
               :class="isDark ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'"
             >
               <button
-                @click.prevent.stop="addRuleToItem(); showAddMenu = false"
+                @click.prevent.stop="
+                  addRuleToItem()
+                  showAddMenu = false
+                "
                 type="button"
                 class="w-full text-left px-4 py-2 text-sm rounded-t-lg transition-colors"
-                :class="isDark ? 'bg-gray-800 text-white hover:bg-gray-700' : 'bg-white text-gray-900 hover:bg-gray-50'"
+                :class="
+                  isDark
+                    ? 'bg-gray-800 text-white hover:bg-gray-700'
+                    : 'bg-white text-gray-900 hover:bg-gray-50'
+                "
               >
                 <i class="fas fa-filter mr-2"></i>
                 Добавить правило
               </button>
               <button
-                @click.prevent.stop="addGroupToItem(); showAddMenu = false"
+                @click.prevent.stop="
+                  addGroupToItem()
+                  showAddMenu = false
+                "
                 type="button"
                 class="w-full text-left px-4 py-2 text-sm rounded-b-lg transition-colors"
-                :class="isDark ? 'bg-gray-800 text-white hover:bg-gray-700' : 'bg-white text-gray-900 hover:bg-gray-50'"
+                :class="
+                  isDark
+                    ? 'bg-gray-800 text-white hover:bg-gray-700'
+                    : 'bg-white text-gray-900 hover:bg-gray-50'
+                "
               >
                 <i class="fas fa-folder mr-2"></i>
                 Добавить группу
-                <div class="text-xs opacity-70 mt-0.5" :class="isDark ? 'text-gray-300' : 'text-gray-600'">Группа для вложенных фильтров</div>
+                <div
+                  class="text-xs opacity-70 mt-0.5"
+                  :class="isDark ? 'text-gray-300' : 'text-gray-600'"
+                >
+                  Группа для вложенных фильтров
+                </div>
               </button>
             </div>
           </div>
@@ -264,7 +364,15 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['update', 'remove', 'add-group', 'add-rule', 'duplicate', 'turn-into-group', 'toggle-parent-operator'])
+const emit = defineEmits([
+  'update',
+  'remove',
+  'add-group',
+  'add-rule',
+  'duplicate',
+  'turn-into-group',
+  'toggle-parent-operator'
+])
 
 const isCondition = 'property' in props.item
 const isGroup = 'conditions' in props.item

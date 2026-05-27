@@ -13,7 +13,7 @@
 <script setup>
 defineProps({
   title: String,
-  icon: String,
+  icon: String
 })
 </script>
 

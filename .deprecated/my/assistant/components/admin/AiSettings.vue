@@ -60,7 +60,10 @@ const loadSettings = async () => {
       lastSavedPrompt.value = promptData.value
     }
 
-    log.debug('Настройки AI загружены', { model: aiModel.value, promptLength: aiPrompt.value.length })
+    log.debug('Настройки AI загружены', {
+      model: aiModel.value,
+      promptLength: aiPrompt.value.length
+    })
   } catch (e) {
     log.warning('Не удалось загрузить настройки AI', e)
   }
@@ -161,9 +164,13 @@ onBeforeUnmount(() => {
     <span
       v-if="modelSaveStatus || promptSaveStatus"
       class="admin-card-status"
-      :class="(modelSaveStatus === 'saved' || promptSaveStatus === 'saved') ? 'status-saved' : 'status-error'"
+      :class="
+        modelSaveStatus === 'saved' || promptSaveStatus === 'saved'
+          ? 'status-saved'
+          : 'status-error'
+      "
     >
-      {{ (modelSaveStatus === 'saved' || promptSaveStatus === 'saved') ? 'Сохранено' : 'Ошибка' }}
+      {{ modelSaveStatus === 'saved' || promptSaveStatus === 'saved' ? 'Сохранено' : 'Ошибка' }}
     </span>
     <div class="admin-card-header">
       <i class="fas fa-brain admin-card-icon"></i>
@@ -173,16 +180,8 @@ onBeforeUnmount(() => {
     <div class="settings-form">
       <div class="settings-field">
         <label class="settings-label" for="ai-model">Модель AI</label>
-        <select
-          id="ai-model"
-          v-model="aiModel"
-          class="settings-select"
-        >
-          <option
-            v-for="model in AVAILABLE_AI_MODELS"
-            :key="model.value"
-            :value="model.value"
-          >
+        <select id="ai-model" v-model="aiModel" class="settings-select">
+          <option v-for="model in AVAILABLE_AI_MODELS" :key="model.value" :value="model.value">
             {{ model.label }}
           </option>
         </select>
@@ -236,7 +235,9 @@ onBeforeUnmount(() => {
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid var(--color-border);
   border-radius: 4px;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .settings-select:focus,

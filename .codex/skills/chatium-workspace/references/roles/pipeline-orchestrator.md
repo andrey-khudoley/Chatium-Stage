@@ -5,6 +5,7 @@
 Описание: Ведёт Chatium-задачу через полный 12-шаговый конвейер от формализации до финального отчёта. Активируется командой `/pipeline` или явной отсылкой «полный конвейер». В Codex текущий чат обычно является оркестратором; специализированные шаги 2–5, 8–9, 10 делегируются через `spawn_agent`, потому что `/pipeline` явно запрашивает delegated workflow. Не завершает задачу без шага 12.
 
 Claude metadata преобразована в инструкции Codex:
+
 - Бывшие инструменты Claude: `Agent, Read, Edit, Write, Glob, Grep, Bash`. В Codex используй `exec_command`, `rg`, чтение файлов через shell и `apply_patch` для правок.
 - Бывшая модель Claude: `inherit`. В Codex не закрепляй модель; следуй текущей модели и reasoning mode сессии.
 - Делегирование через `spawn_agent` допустимо только если пользователь явно попросил subagents/делегирование/параллельных агентов или вызвал workflow, который сам явно является делегирующим (`/pipeline`, `/pp`). В остальных случаях выполняй роль локально.
@@ -23,26 +24,27 @@ Claude metadata преобразована в инструкции Codex:
 
 ## Карта 12 шагов
 
-| Шаг | Этап | Кто выполняет | Reference |
-|-----|------|---------------|-------------------------|
-| 1 | Получить задачу | оркестратор | — |
-| 2 | Формализация | `spawn_agent` | `task-formalizer` |
-| 3 | План | `spawn_agent` | `planner` |
-| 4 | Ревью плана | `spawn_agent` | `plan-reviewer` |
-| 5 | Полнота ревью плана | `spawn_agent` | `completeness-reviewer` |
-| 6 | Решение по плану (цикл 3→4→5) | оркестратор | — |
-| 7 | **Реализация кода** | оркестратор (правки в чате) | — |
-| 8 | Ревью кода | `spawn_agent` | `code-reviewer` |
-| 9 | Полнота ревью кода | `spawn_agent` | `completeness-reviewer` |
-| 10 | Технические проверки | `spawn_agent` | `verification-runner` |
-| 11 | Цикл исправлений (8→9→10) | оркестратор | — |
-| 12 | Финальный отчёт + docs | оркестратор + опц. `docs-keeper` | — |
+| Шаг | Этап                          | Кто выполняет                    | Reference               |
+| --- | ----------------------------- | -------------------------------- | ----------------------- |
+| 1   | Получить задачу               | оркестратор                      | —                       |
+| 2   | Формализация                  | `spawn_agent`                    | `task-formalizer`       |
+| 3   | План                          | `spawn_agent`                    | `planner`               |
+| 4   | Ревью плана                   | `spawn_agent`                    | `plan-reviewer`         |
+| 5   | Полнота ревью плана           | `spawn_agent`                    | `completeness-reviewer` |
+| 6   | Решение по плану (цикл 3→4→5) | оркестратор                      | —                       |
+| 7   | **Реализация кода**           | оркестратор (правки в чате)      | —                       |
+| 8   | Ревью кода                    | `spawn_agent`                    | `code-reviewer`         |
+| 9   | Полнота ревью кода            | `spawn_agent`                    | `completeness-reviewer` |
+| 10  | Технические проверки          | `spawn_agent`                    | `verification-runner`   |
+| 11  | Цикл исправлений (8→9→10)     | оркестратор                      | —                       |
+| 12  | Финальный отчёт + docs        | оркестратор + опц. `docs-keeper` | —                       |
 
 ## Workflow по шагам
 
 ### Шаг 1. Принять задачу
 
 Прочитай:
+
 - формулировку пользователя (из текущего сообщения и контекста чата);
 - если упоминалось `/pipeline <текст>` — этот текст и есть основная формулировка;
 - предыдущие сообщения переписки, если они существенны.
@@ -52,6 +54,7 @@ Claude metadata преобразована в инструкции Codex:
 ### Шаг 2. Формализация (`spawn_agent` -> `task-formalizer`)
 
 Вызови `spawn_agent`; в промпте первой строкой укажи `Use .codex/skills/chatium-workspace/references/roles/task-formalizer.md`. Передай:
+
 - сырой текст задачи от пользователя;
 - релевантную часть переписки;
 - явное указание: «Если есть пробелы — задай уточняющие вопросы; если все 7 критериев закрыты — выдай финальную формализацию.»
@@ -63,6 +66,7 @@ Claude metadata преобразована в инструкции Codex:
 ### Шаг 3. План (`spawn_agent` -> `planner`)
 
 Вызови `spawn_agent`; в промпте укажи `Use .codex/skills/chatium-workspace/references/roles/planner.md`. Передай:
+
 - финальную формализацию (из шага 2);
 - acceptance criteria;
 - если это повторный заход после ревью — замечания plan-reviewer'а.
@@ -72,6 +76,7 @@ Claude metadata преобразована в инструкции Codex:
 ### Шаг 4. Ревью плана (`spawn_agent` -> `plan-reviewer`)
 
 Вызови `spawn_agent`; в промпте укажи `Use .codex/skills/chatium-workspace/references/roles/plan-reviewer.md`. Передай:
+
 - план из шага 3;
 - acceptance criteria из шага 2.
 
@@ -80,6 +85,7 @@ Claude metadata преобразована в инструкции Codex:
 ### Шаг 5. Полнота ревью плана (`spawn_agent` -> `completeness-reviewer`)
 
 Вызови `spawn_agent`; в промпте укажи `Use .codex/skills/chatium-workspace/references/roles/completeness-reviewer.md`. Передай:
+
 - тип ревью: `plan`;
 - исходный план (из шага 3);
 - отчёт plan-reviewer (из шага 4).
@@ -99,6 +105,7 @@ Claude metadata преобразована в инструкции Codex:
 **Этот шаг выполняешь ты сам в этом чате.** Не делегируй на `general-purpose`, если объём не критичен.
 
 Иди по плану шаг за шагом:
+
 - читай файлы перед изменением (чтение файлов через shell (`sed`, `nl`) или доступные инструменты Codex);
 - правки через `apply_patch`; новые файлы через `apply_patch`;
 - придерживайся стандартов и инвариантов Chatium из CLAUDE.md;
@@ -109,6 +116,7 @@ Claude metadata преобразована в инструкции Codex:
 ### Шаг 8. Ревью кода (`spawn_agent` -> `code-reviewer`)
 
 Вызови `spawn_agent`; в промпте укажи `Use .codex/skills/chatium-workspace/references/roles/code-reviewer.md`. Передай:
+
 - список изменённых файлов;
 - acceptance criteria;
 - одобренный план;
@@ -117,6 +125,7 @@ Claude metadata преобразована в инструкции Codex:
 ### Шаг 9. Полнота ревью кода (`spawn_agent` -> `completeness-reviewer`)
 
 Вызови `spawn_agent`; в промпте укажи `Use .codex/skills/chatium-workspace/references/roles/completeness-reviewer.md`. Передай:
+
 - тип ревью: `code`;
 - список изменённых файлов;
 - отчёт code-reviewer (из шага 8).
@@ -126,6 +135,7 @@ Claude metadata преобразована в инструкции Codex:
 ### Шаг 10. Технические проверки (`spawn_agent` -> `verification-runner`)
 
 Вызови `spawn_agent`; в промпте укажи `Use .codex/skills/chatium-workspace/references/roles/verification-runner.md`. Передай:
+
 - список изменённых файлов (одним блоком, чтобы sub-checker'ы не пересчитывали);
 - ссылку на план и acceptance criteria для контекста.
 
@@ -191,6 +201,7 @@ Claude metadata преобразована в инструкции Codex:
 ## Контекст для субагентов (чек-лист передачи)
 
 При каждом вызове `spawn_agent` проверь, что в промпт передано:
+
 - Формулировка задачи и acceptance criteria
 - Артефакты предыдущих шагов (формализация / план / отчёты ревью / список файлов)
 - Явное ожидание формата выхода (см. соответствующий агент)

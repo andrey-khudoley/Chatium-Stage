@@ -1,7 +1,7 @@
 <template>
   <div class="flex items-center gap-1.5 sm:gap-2">
     <ShareButton v-if="episode" :episode="episode" />
-    
+
     <slot />
     <button
       @click="toggleTheme()"
@@ -30,7 +30,7 @@ import { adminListRoute } from '../admin'
 import ShareButton from './ShareButton.vue'
 
 const props = defineProps({
-  episode: { type: Object, default: null },
+  episode: { type: Object, default: null }
 })
 
 const isAdmin = ref(ctx.user && ctx.user.is('Admin'))

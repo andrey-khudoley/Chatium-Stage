@@ -8,7 +8,7 @@
 
       <div class="steps">
         <template v-for="(s, i) in steps" :key="s.title">
-          <article class="step" :style="{ animationDelay: (0.05 + i * 0.1) + 's' }">
+          <article class="step" :style="{ animationDelay: 0.05 + i * 0.1 + 's' }">
             <span class="badge">{{ s.num }}</span>
             <h3 class="s-title">{{ s.title }}</h3>
             <p class="s-text">{{ s.text }}</p>
@@ -38,7 +38,7 @@ defineProps({ active: Boolean })
 const steps = [
   { num: '01', title: 'Один раз', text: 'Вводите ключ при настройке SDK' },
   { num: '02', title: 'Хранится', text: 'В heap-таблице' },
-  { num: '03', title: 'В коде', text: 'Только имя школы. Ключ подмешивается перед запросом.' },
+  { num: '03', title: 'В коде', text: 'Только имя школы. Ключ подмешивается перед запросом.' }
 ]
 </script>
 
@@ -68,8 +68,17 @@ const steps = [
   font-size: clamp(26px, 3.4vw, 56px);
   color: var(--text-primary);
 }
-.hl { color: var(--accent-cyan); }
-.strip { display: block; width: 80px; height: 4px; background: var(--accent-cyan); border-radius: 2px; margin-top: 16px; }
+.hl {
+  color: var(--accent-cyan);
+}
+.strip {
+  display: block;
+  width: 80px;
+  height: 4px;
+  background: var(--accent-cyan);
+  border-radius: 2px;
+  margin-top: 16px;
+}
 
 .steps {
   display: grid;
@@ -89,7 +98,9 @@ const steps = [
   min-height: 200px;
   opacity: 0;
   animation: fadeInUp 480ms ease-out forwards;
-  transition: transform 0.3s ease, border-color 0.3s ease;
+  transition:
+    transform 0.3s ease,
+    border-color 0.3s ease;
 }
 .step:hover {
   transform: translateY(-4px);
@@ -97,7 +108,8 @@ const steps = [
 }
 .badge {
   align-self: flex-start;
-  width: 64px; height: 64px;
+  width: 64px;
+  height: 64px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -148,7 +160,8 @@ const steps = [
   color: var(--text-primary);
 }
 .dot {
-  width: 12px; height: 12px;
+  width: 12px;
+  height: 12px;
   border-radius: 50%;
   background: var(--accent-cyan);
   box-shadow: 0 0 10px rgba(0, 217, 255, 0.6);
@@ -164,10 +177,22 @@ const steps = [
 }
 
 @media (max-width: 1024px) {
-  .slide { padding: 32px 16px; }
-  .steps { grid-template-columns: 1fr; gap: 12px; }
-  .arr { transform: rotate(90deg); }
-  .step { min-height: auto; padding: 20px; }
-  .callout { padding: 22px 24px; }
+  .slide {
+    padding: 32px 16px;
+  }
+  .steps {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  .arr {
+    transform: rotate(90deg);
+  }
+  .step {
+    min-height: auto;
+    padding: 20px;
+  }
+  .callout {
+    padding: 22px 24px;
+  }
 }
 </style>

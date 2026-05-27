@@ -1,11 +1,12 @@
 <template>
   <div class="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-pink-100">
     <div class="container mx-auto px-4 py-8 max-w-4xl">
-      
       <!-- Шапка с информацией о подарке -->
       <div class="bg-white rounded-3xl shadow-2xl p-4 md:p-6 mb-6">
         <div class="text-center mb-4">
-          <div class="inline-block bg-gradient-to-r from-pink-500 to-purple-600 text-white px-4 py-1.5 rounded-full text-xs md:text-sm font-semibold mb-3">
+          <div
+            class="inline-block bg-gradient-to-r from-pink-500 to-purple-600 text-white px-4 py-1.5 rounded-full text-xs md:text-sm font-semibold mb-3"
+          >
             🎁 Урок из платного курса — БЕСПЛАТНО
           </div>
           <h1 class="text-xl md:text-3xl font-bold text-gray-800 mb-2">
@@ -21,53 +22,73 @@
           <!-- Мобильная версия: карусель -->
           <div class="md:hidden">
             <div class="overflow-hidden rounded-2xl">
-              <div 
-                class="flex transition-transform duration-500 ease-in-out slider-container" 
+              <div
+                class="flex transition-transform duration-500 ease-in-out slider-container"
                 :style="{ transform: `translate3d(-${currentSlide * 100}%, 0, 0)` }"
                 @touchstart="handleTouchStart"
                 @touchmove="handleTouchMove"
                 @touchend="handleTouchEnd"
               >
-                <img 
-                  src="https://fs.chatium.io/thumbnail/image_gc_lHPfef9j6k.720x1280.jpeg/s/800x" 
-                  alt="До" 
+                <img
+                  src="https://fs.chatium.io/thumbnail/image_gc_lHPfef9j6k.720x1280.jpeg/s/800x"
+                  alt="До"
                   class="w-full h-64 object-cover flex-shrink-0"
                 />
-                <img 
-                  src="https://fs.chatium.io/thumbnail/image_gc_DbNXWY1o6q.831x1280.jpeg/s/800x" 
-                  alt="Процесс" 
+                <img
+                  src="https://fs.chatium.io/thumbnail/image_gc_DbNXWY1o6q.831x1280.jpeg/s/800x"
+                  alt="Процесс"
                   class="w-full h-64 object-cover flex-shrink-0"
                 />
-                <img 
-                  src="https://fs.chatium.io/thumbnail/image_gc_ShetQQ1v2E.821x1280.jpeg/s/800x" 
-                  alt="После" 
+                <img
+                  src="https://fs.chatium.io/thumbnail/image_gc_ShetQQ1v2E.821x1280.jpeg/s/800x"
+                  alt="После"
                   class="w-full h-64 object-cover flex-shrink-0"
                 />
               </div>
             </div>
-            
+
             <!-- Стрелки навигации (только мобайл) -->
-            <button 
-              @click="prevSlide" 
+            <button
+              @click="prevSlide"
               class="absolute left-2 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white rounded-full p-2 shadow-lg transition-all"
             >
-              <svg class="w-6 h-6 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+              <svg
+                class="w-6 h-6 text-gray-800"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M15 19l-7-7 7-7"
+                ></path>
               </svg>
             </button>
-            <button 
-              @click="nextSlide" 
+            <button
+              @click="nextSlide"
               class="absolute right-2 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white rounded-full p-2 shadow-lg transition-all"
             >
-              <svg class="w-6 h-6 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+              <svg
+                class="w-6 h-6 text-gray-800"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M9 5l7 7-7 7"
+                ></path>
               </svg>
             </button>
-            
+
             <!-- Индикаторы (только мобайл) -->
             <div class="flex justify-center gap-2 mt-3">
-              <button 
-                v-for="i in 3" 
+              <button
+                v-for="i in 3"
                 :key="i"
                 @click="currentSlide = i - 1"
                 class="w-2 h-2 rounded-full transition-all"
@@ -79,32 +100,38 @@
           <!-- Десктопная версия: все 3 фото в ряд -->
           <div class="hidden md:grid md:grid-cols-3 gap-4">
             <div class="relative group">
-              <img 
-                src="https://fs.chatium.io/thumbnail/image_gc_lHPfef9j6k.720x1280.jpeg/s/800x" 
-                alt="До" 
+              <img
+                src="https://fs.chatium.io/thumbnail/image_gc_lHPfef9j6k.720x1280.jpeg/s/800x"
+                alt="До"
                 class="w-full h-80 object-cover rounded-2xl shadow-lg transition-transform group-hover:scale-105"
               />
-              <div class="absolute bottom-4 left-4 bg-black/70 text-white px-4 py-2 rounded-full text-sm font-semibold">
+              <div
+                class="absolute bottom-4 left-4 bg-black/70 text-white px-4 py-2 rounded-full text-sm font-semibold"
+              >
                 До
               </div>
             </div>
             <div class="relative group">
-              <img 
-                src="https://fs.chatium.io/thumbnail/image_gc_DbNXWY1o6q.831x1280.jpeg/s/800x" 
-                alt="Процесс" 
+              <img
+                src="https://fs.chatium.io/thumbnail/image_gc_DbNXWY1o6q.831x1280.jpeg/s/800x"
+                alt="Процесс"
                 class="w-full h-80 object-cover rounded-2xl shadow-lg transition-transform group-hover:scale-105"
               />
-              <div class="absolute bottom-4 left-4 bg-black/70 text-white px-4 py-2 rounded-full text-sm font-semibold">
+              <div
+                class="absolute bottom-4 left-4 bg-black/70 text-white px-4 py-2 rounded-full text-sm font-semibold"
+              >
                 Процесс
               </div>
             </div>
             <div class="relative group">
-              <img 
-                src="https://fs.chatium.io/thumbnail/image_gc_ShetQQ1v2E.821x1280.jpeg/s/800x" 
-                alt="После" 
+              <img
+                src="https://fs.chatium.io/thumbnail/image_gc_ShetQQ1v2E.821x1280.jpeg/s/800x"
+                alt="После"
                 class="w-full h-80 object-cover rounded-2xl shadow-lg transition-transform group-hover:scale-105"
               />
-              <div class="absolute bottom-4 left-4 bg-black/70 text-white px-4 py-2 rounded-full text-sm font-semibold">
+              <div
+                class="absolute bottom-4 left-4 bg-black/70 text-white px-4 py-2 rounded-full text-sm font-semibold"
+              >
                 После
               </div>
             </div>
@@ -126,7 +153,7 @@
             {{ questions[currentStep - 1].question }}
           </h2>
         </div>
-        
+
         <div class="space-y-3 md:space-y-4">
           <button
             v-for="(option, index) in questions[currentStep - 1].options"
@@ -136,8 +163,12 @@
             :class="selectedAnswer === option ? 'border-pink-500 bg-pink-50' : 'border-gray-200'"
           >
             <div class="flex items-center">
-              <div class="w-6 h-6 rounded-full border-2 mr-4 flex items-center justify-center flex-shrink-0"
-                   :class="selectedAnswer === option ? 'border-pink-500 bg-pink-500' : 'border-gray-300'">
+              <div
+                class="w-6 h-6 rounded-full border-2 mr-4 flex items-center justify-center flex-shrink-0"
+                :class="
+                  selectedAnswer === option ? 'border-pink-500 bg-pink-500' : 'border-gray-300'
+                "
+              >
                 <div v-if="selectedAnswer === option" class="w-3 h-3 bg-white rounded-full"></div>
               </div>
               <span class="text-base md:text-lg text-gray-700">{{ option }}</span>
@@ -145,7 +176,7 @@
           </button>
         </div>
 
-        <button 
+        <button
           v-if="selectedAnswer"
           @click="nextStep"
           class="w-full mt-6 md:mt-8 bg-gradient-to-r from-pink-500 to-purple-600 text-white font-bold py-4 px-8 rounded-full text-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
@@ -153,9 +184,6 @@
           Далее →
         </button>
       </div>
-
-
-
     </div>
   </div>
 </template>
@@ -215,12 +243,7 @@ const questions = [
   },
   {
     question: 'Что останавливает от развития?',
-    options: [
-      'Нет времени',
-      'Дорогое обучение',
-      'Не знаю, с чего начать',
-      'Боюсь не получится'
-    ]
+    options: ['Нет времени', 'Дорогое обучение', 'Не знаю, с чего начать', 'Боюсь не получится']
   }
 ]
 
@@ -230,7 +253,7 @@ function nextStep() {
     selectedAnswer.value = ''
   }
   currentStep.value++
-  
+
   // Если прошли все вопросы — сохраняем ответы и переходим на форму
   if (currentStep.value > totalQuestions) {
     sessionStorage.setItem('quizAnswers', JSON.stringify(answers.value))
@@ -272,10 +295,10 @@ function handleTouchMove(e) {
 function handleTouchEnd() {
   if (!isSwiping) return
   isSwiping = false
-  
+
   const swipeDistance = touchStartX - touchEndX
   const minSwipeDistance = 50 // минимальное расстояние для свайпа
-  
+
   if (Math.abs(swipeDistance) > minSwipeDistance) {
     if (swipeDistance > 0) {
       // Свайп влево - следующий слайд
@@ -285,7 +308,7 @@ function handleTouchEnd() {
       prevSlide()
     }
   }
-  
+
   // Возобновляем автопрокрутку
   resetSlideInterval()
 }
@@ -312,8 +335,6 @@ onUnmounted(() => {
     clearInterval(slideInterval)
   }
 })
-
-
 </script>
 
 <style scoped>

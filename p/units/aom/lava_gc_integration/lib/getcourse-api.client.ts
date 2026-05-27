@@ -208,7 +208,12 @@ export async function getDealFields(
   await loggerLib.writeServerLog(ctx, {
     severity: 6,
     message: `[${LOG_MODULE}] getDealFields: успех`,
-    payload: { dealId, cost: body.data.cost, currency: body.data.currency, userId: body.data.user_id }
+    payload: {
+      dealId,
+      cost: body.data.cost,
+      currency: body.data.currency,
+      userId: body.data.user_id
+    }
   })
 
   return { ok: true, data: body.data }
@@ -297,7 +302,9 @@ export type UpdateDealStatusParams = {
   dealIsPaid?: number
 }
 
-async function buildOrderAddfieldsForGc(ctx: app.Ctx): Promise<Record<string, boolean> | undefined> {
+async function buildOrderAddfieldsForGc(
+  ctx: app.Ctx
+): Promise<Record<string, boolean> | undefined> {
   const addfieldId = (await settingsLib.getGcOrderFlagAddfieldId(ctx)).trim()
   if (!addfieldId) return undefined
   return { [addfieldId]: true }
@@ -348,7 +355,12 @@ function responseSuggestsInvalidApiKey(body: unknown): boolean {
 function responseSuggestsKeyAcceptedBusinessError(body: unknown): boolean {
   const raw = JSON.stringify(body ?? '').toLowerCase()
   if (raw.includes('не найден') || raw.includes('not found')) return true
-  if (raw.includes('сделк') || raw.includes('deal') || raw.includes('заказ') || raw.includes('order'))
+  if (
+    raw.includes('сделк') ||
+    raw.includes('deal') ||
+    raw.includes('заказ') ||
+    raw.includes('order')
+  )
     return true
   if (raw.includes('user') && (raw.includes('email') || raw.includes('пользоват'))) return true
   return false
@@ -380,7 +392,10 @@ export async function verifyGcPlApiAccess(
   const apiKey = params.apiKey.trim()
   const domain = normalizeGcAccountDomain(params.domain)
   if (!apiKey || !domain) {
-    return { ok: false, message: 'Укажите ключ API и домен аккаунта (например school.getcourse.ru).' }
+    return {
+      ok: false,
+      message: 'Укажите ключ API и домен аккаунта (например school.getcourse.ru).'
+    }
   }
 
   await loggerLib.writeServerLog(ctx, {
@@ -427,7 +442,9 @@ export async function verifyGcPlApiAccess(
   }
 
   const statusOk =
-    typeof response.statusCode === 'number' && response.statusCode >= 200 && response.statusCode < 300
+    typeof response.statusCode === 'number' &&
+    response.statusCode >= 200 &&
+    response.statusCode < 300
   if (!statusOk) {
     await loggerLib.writeServerLog(ctx, {
       severity: 7,
@@ -481,7 +498,10 @@ export async function verifyGcPlApiAccess(
  * POST `https://{domain}/pl/api/deals` — обновление заказа (deal_status, опционально оплата).
  * Ошибки только логируются; исключения не бросаются (вызов из webhook не должен падать).
  */
-export async function updateDealStatus(ctx: app.Ctx, params: UpdateDealStatusParams): Promise<void> {
+export async function updateDealStatus(
+  ctx: app.Ctx,
+  params: UpdateDealStatusParams
+): Promise<void> {
   await loggerLib.writeServerLog(ctx, {
     severity: 7,
     message: `[${LOG_MODULE}] updateDealStatus: вход`,
@@ -556,7 +576,9 @@ export async function updateDealStatus(ctx: app.Ctx, params: UpdateDealStatusPar
   })
 
   const statusOk =
-    typeof response.statusCode === 'number' && response.statusCode >= 200 && response.statusCode < 300
+    typeof response.statusCode === 'number' &&
+    response.statusCode >= 200 &&
+    response.statusCode < 300
   const parsed = parseGcDealsResponse(response.body)
 
   await loggerLib.writeServerLog(ctx, {
@@ -695,7 +717,9 @@ export async function probeGcOrderPlApi(
   }
 
   const statusOk =
-    typeof response.statusCode === 'number' && response.statusCode >= 200 && response.statusCode < 300
+    typeof response.statusCode === 'number' &&
+    response.statusCode >= 200 &&
+    response.statusCode < 300
   const parsed = parseGcDealsResponse(response.body)
 
   await loggerLib.writeServerLog(ctx, {

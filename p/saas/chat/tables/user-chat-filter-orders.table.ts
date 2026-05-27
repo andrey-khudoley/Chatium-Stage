@@ -7,12 +7,13 @@ export const TProjektChatUserChatFilterOrdersL7K = Heap.Table(
     userId: Heap.Optional(Heap.String({ customMeta: { title: 'ID пользователя' } })),
     filterId: Heap.Optional(Heap.String({ customMeta: { title: 'ID фильтра' } })),
     filterType: Heap.Optional(Heap.String({ customMeta: { title: 'Тип фильтра' } })),
-    position: Heap.Optional(Heap.Number({ customMeta: { title: 'Позиция в списке' } })),
+    position: Heap.Optional(Heap.Number({ customMeta: { title: 'Позиция в списке' } }))
   },
-  { customMeta: { title: 'Порядок фильтров чатов пользователя', description: '' } },
+  { customMeta: { title: 'Порядок фильтров чатов пользователя', description: '' } }
 )
 
 export default TProjektChatUserChatFilterOrdersL7K
 
 export type TProjektChatUserChatFilterOrdersL7KRow = typeof TProjektChatUserChatFilterOrdersL7K.T
-export type TProjektChatUserChatFilterOrdersL7KRowJson = typeof TProjektChatUserChatFilterOrdersL7K.JsonT
+export type TProjektChatUserChatFilterOrdersL7KRowJson =
+  typeof TProjektChatUserChatFilterOrdersL7K.JsonT

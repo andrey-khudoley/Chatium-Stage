@@ -7,9 +7,9 @@ export const TProjektChatPinnedMessagesUFF = Heap.Table(
     chatId: Heap.Optional(Heap.String({ customMeta: { title: 'ID чата (feedId)' } })),
     messageId: Heap.Optional(Heap.String({ customMeta: { title: 'ID сообщения' } })),
     pinnedBy: Heap.Optional(Heap.UserRefLink({ customMeta: { title: 'Кто закрепил' } })),
-    pinnedAt: Heap.Optional(Heap.DateTime({ customMeta: { title: 'Когда закреплено' } })),
+    pinnedAt: Heap.Optional(Heap.DateTime({ customMeta: { title: 'Когда закреплено' } }))
   },
-  { customMeta: { title: 'Закрепленные сообщения', description: '' } },
+  { customMeta: { title: 'Закрепленные сообщения', description: '' } }
 )
 
 export default TProjektChatPinnedMessagesUFF

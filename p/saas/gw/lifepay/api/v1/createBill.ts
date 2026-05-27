@@ -27,37 +27,42 @@ const LP_URL = `${LP_BILLS_V1_BASE_URL}/v1/bill`
 const LOG_PATH = 'api/v1/createBill'
 
 export const createBillRoute = app.post('/', async (ctx, req) => {
-  return handleV1Op<CreateBillArgs>(ctx, req, 'createBill', async (handlerCtx, { requestId, credentials, args }) => {
-    const lpBody = buildCreateBillBody(credentials, args)
+  return handleV1Op<CreateBillArgs>(
+    ctx,
+    req,
+    'createBill',
+    async (handlerCtx, { requestId, credentials, args }) => {
+      const lpBody = buildCreateBillBody(credentials, args)
 
-    await loggerLib.writeServerLog(handlerCtx, {
-      severity: 6,
-      message: `[${LOG_PATH}] lp_outbound_body`,
-      payload: { requestId, body: redactCreateBillBodyForLog(lpBody) }
-    })
+      await loggerLib.writeServerLog(handlerCtx, {
+        severity: 6,
+        message: `[${LOG_PATH}] lp_outbound_body`,
+        payload: { requestId, body: redactCreateBillBodyForLog(lpBody) }
+      })
 
-    const lp = await lifePayPostJson(LP_URL, lpBody)
+      const lp = await lifePayPostJson(LP_URL, lpBody)
 
-    if (lp.kind !== 'json_ok') {
-      return { kind: 'lp_result', lp }
-    }
-
-    const semantic = classifyCreateBillResponse(lp.lpJson)
-    if (semantic) {
-      return { kind: 'lp_result', lp, semantic }
-    }
-
-    const success = extractCreateBillSuccess(lp.lpJson)
-    if (!success) {
-      return {
-        kind: 'lp_result',
-        lp,
-        semantic: { rule: 'bills_v1_missing_payment_url' }
+      if (lp.kind !== 'json_ok') {
+        return { kind: 'lp_result', lp }
       }
-    }
 
-    return { kind: 'lp_result', lp, semantic: null, successData: success }
-  })
+      const semantic = classifyCreateBillResponse(lp.lpJson)
+      if (semantic) {
+        return { kind: 'lp_result', lp, semantic }
+      }
+
+      const success = extractCreateBillSuccess(lp.lpJson)
+      if (!success) {
+        return {
+          kind: 'lp_result',
+          lp,
+          semantic: { rule: 'bills_v1_missing_payment_url' }
+        }
+      }
+
+      return { kind: 'lp_result', lp, semantic: null, successData: success }
+    }
+  )
 })
 
 export default createBillRoute

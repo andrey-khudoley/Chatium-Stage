@@ -37,12 +37,7 @@ export async function notifyPartnerRegistration(
     })
     return
   }
-  const text = buildRegistrationNotification(
-    params.ref,
-    params.name,
-    params.email,
-    params.phone
-  )
+  const text = buildRegistrationNotification(params.ref, params.name, params.email, params.phone)
   const result = await sendTelegramMessage(ctx, bot.tokenEncrypted.trim(), partner.tgId.trim(), {
     text
   })

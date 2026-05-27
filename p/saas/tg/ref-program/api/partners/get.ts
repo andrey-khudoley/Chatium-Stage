@@ -26,7 +26,9 @@ export const getPartnerRoute = app.get('/', async (ctx, req) => {
 
   const partner = await partnerRepo.getPartnerById(ctx, partnerId)
   const partnerCampaignId =
-    typeof partner?.campaignId === 'object' && partner?.campaignId !== null && 'id' in partner.campaignId
+    typeof partner?.campaignId === 'object' &&
+    partner?.campaignId !== null &&
+    'id' in partner.campaignId
       ? (partner.campaignId as { id: string }).id
       : (partner?.campaignId as unknown as string | undefined)
   if (!partner || partnerCampaignId !== campaignId) {
@@ -49,7 +51,7 @@ export const getPartnerRoute = app.get('/', async (ctx, req) => {
     return {
       id: link.id,
       pageId,
-      pageTitle: pageId ? pageMap.get(pageId) ?? '' : '',
+      pageTitle: pageId ? (pageMap.get(pageId) ?? '') : '',
       publicSlug: slug,
       fullUrl: slug ? buildPartnerLinkUrl(slug) : ''
     }

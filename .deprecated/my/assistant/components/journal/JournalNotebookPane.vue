@@ -92,9 +92,7 @@ const filteredNotes = computed(() => {
   }
 
   if (selectedCategoryIds.value.length > 0) {
-    list = list.filter((n) =>
-      selectedCategoryIds.value.some((cId) => n.categoryIds.includes(cId))
-    )
+    list = list.filter((n) => selectedCategoryIds.value.some((cId) => n.categoryIds.includes(cId)))
   }
 
   return list
@@ -207,8 +205,12 @@ async function bulkAction(action: string, extra?: Record<string, unknown>) {
   }
 }
 
-async function onBulkArchive() { await bulkAction('archive') }
-async function onBulkUnarchive() { await bulkAction('unarchive') }
+async function onBulkArchive() {
+  await bulkAction('archive')
+}
+async function onBulkUnarchive() {
+  await bulkAction('unarchive')
+}
 async function onBulkDelete() {
   if (!confirm('Удалить выбранные заметки?')) return
   await bulkAction('delete')
@@ -217,7 +219,9 @@ async function onBulkDelete() {
 async function archiveNoteFromList(id: string) {
   if (!props.journalNotesArchiveUrl) return
   try {
-    const data = (await postJson(props.journalNotesArchiveUrl, { id, isArchived: true })) as { success?: boolean }
+    const data = (await postJson(props.journalNotesArchiveUrl, { id, isArchived: true })) as {
+      success?: boolean
+    }
     if (data.success) {
       emit('noteUpdated', { id, title: '' })
       emit('foldersChanged')
@@ -230,7 +234,9 @@ async function archiveNoteFromList(id: string) {
 async function unarchiveNoteFromList(id: string) {
   if (!props.journalNotesArchiveUrl) return
   try {
-    const data = (await postJson(props.journalNotesArchiveUrl, { id, isArchived: false })) as { success?: boolean }
+    const data = (await postJson(props.journalNotesArchiveUrl, { id, isArchived: false })) as {
+      success?: boolean
+    }
     if (data.success) {
       emit('noteUpdated', { id, title: '' })
       emit('foldersChanged')
@@ -429,7 +435,11 @@ function onDragEnd() {
                 <div v-for="cat in props.categories" :key="cat.id" class="nb-cat-manager-item">
                   <span class="nb-cat-manager-dot" :style="{ background: cat.color }" />
                   <span class="nb-cat-manager-name">{{ cat.name }}</span>
-                  <button type="button" class="nb-cat-manager-del" @click="onDeleteCategory(cat.id)">
+                  <button
+                    type="button"
+                    class="nb-cat-manager-del"
+                    @click="onDeleteCategory(cat.id)"
+                  >
                     <i class="fa-solid fa-trash-can" aria-hidden="true" />
                   </button>
                 </div>

@@ -56,10 +56,17 @@ const webhookModalPage = ref<PageRow | null>(null)
 async function loadPages() {
   const base = getApiBaseUrl().replace(/\/$/, '')
   try {
-    const res = await fetch(`${base}/api/pages/list?campaignId=${encodeURIComponent(props.campaignId)}`, {
-      credentials: 'include'
-    })
-    const data = (await res.json().catch(() => null)) as { success?: boolean; error?: string; pages?: PageRow[] }
+    const res = await fetch(
+      `${base}/api/pages/list?campaignId=${encodeURIComponent(props.campaignId)}`,
+      {
+        credentials: 'include'
+      }
+    )
+    const data = (await res.json().catch(() => null)) as {
+      success?: boolean
+      error?: string
+      pages?: PageRow[]
+    }
     if (res.ok && data?.success && Array.isArray(data.pages)) {
       pages.value = data.pages
     } else {
@@ -76,10 +83,17 @@ async function loadLinks() {
   linksLoading.value = true
   const base = getApiBaseUrl().replace(/\/$/, '')
   try {
-    const res = await fetch(`${base}/api/links/list?campaignId=${encodeURIComponent(props.campaignId)}`, {
-      credentials: 'include'
-    })
-    const data = (await res.json().catch(() => null)) as { success?: boolean; error?: string; links?: LinkRow[] }
+    const res = await fetch(
+      `${base}/api/links/list?campaignId=${encodeURIComponent(props.campaignId)}`,
+      {
+        credentials: 'include'
+      }
+    )
+    const data = (await res.json().catch(() => null)) as {
+      success?: boolean
+      error?: string
+      links?: LinkRow[]
+    }
     if (res.ok && data?.success && Array.isArray(data.links)) {
       links.value = data.links
     }
@@ -189,7 +203,8 @@ watch(
         v-else-if="pages.length === 0"
         class="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-secondary)] p-6 text-center text-[var(--color-text-secondary)]"
       >
-        Нет страниц. Добавьте целевую страницу с URL-шаблоном (плейсхолдер <code class="px-1 rounded bg-[var(--color-bg-tertiary)]">{ref}</code>).
+        Нет страниц. Добавьте целевую страницу с URL-шаблоном (плейсхолдер
+        <code class="px-1 rounded bg-[var(--color-bg-tertiary)]">{ref}</code>).
       </div>
       <ul v-else class="space-y-2">
         <li
@@ -199,7 +214,10 @@ watch(
         >
           <div class="min-w-0 flex-1">
             <span class="text-[var(--color-text)] font-medium">{{ p.title || '—' }}</span>
-            <p class="text-[var(--color-text-secondary)] text-sm truncate font-mono" :title="p.urlTemplate">
+            <p
+              class="text-[var(--color-text-secondary)] text-sm truncate font-mono"
+              :title="p.urlTemplate"
+            >
               {{ p.urlTemplate || '—' }}
             </p>
           </div>
@@ -234,7 +252,8 @@ watch(
     <section>
       <h2 class="text-lg text-[var(--color-text)] mb-4">Партнёрские ссылки</h2>
       <p class="text-[var(--color-text-secondary)] text-sm mb-3">
-        Ссылки создаются при переходе партнёров по целевым страницам (через бота или вручную). Здесь — просмотр и копирование.
+        Ссылки создаются при переходе партнёров по целевым страницам (через бота или вручную). Здесь
+        — просмотр и копирование.
       </p>
       <div v-if="linksLoading" class="text-[var(--color-text-secondary)] py-4 text-center">
         <i class="fas fa-spinner fa-spin"></i>
@@ -245,7 +264,10 @@ watch(
       >
         Нет партнёрских ссылок.
       </div>
-      <div v-else class="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-secondary)] overflow-hidden">
+      <div
+        v-else
+        class="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-secondary)] overflow-hidden"
+      >
         <table class="w-full text-sm">
           <thead class="bg-[var(--color-bg-tertiary)] text-[var(--color-text-secondary)] text-left">
             <tr>
@@ -263,7 +285,9 @@ watch(
             >
               <td class="px-4 py-2">{{ link.pageTitle || '—' }}</td>
               <td class="px-4 py-2">{{ link.partnerName }}</td>
-              <td class="px-4 py-2 font-mono truncate max-w-xs" :title="link.fullUrl">{{ link.fullUrl }}</td>
+              <td class="px-4 py-2 font-mono truncate max-w-xs" :title="link.fullUrl">
+                {{ link.fullUrl }}
+              </td>
               <td class="px-4 py-2">
                 <button
                   v-if="link.fullUrl"
@@ -289,7 +313,10 @@ watch(
       :initial-title="editingPage?.title ?? ''"
       :initial-url-template="editingPage?.urlTemplate ?? ''"
       @saved="onFormSaved"
-      @cancel="showForm = false; editingPage = null"
+      @cancel="
+        showForm = false
+        editingPage = null
+      "
     />
 
     <ConfirmModal

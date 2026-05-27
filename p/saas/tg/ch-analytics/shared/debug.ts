@@ -35,7 +35,7 @@ export class Debug extends Error {
   static info(ctx: RichUgcCtx, message: string): void {
     // eslint-disable-next-line no-new
     new Debug(ctx, message, 'info')
-    
+
     // Если есть socketId для тестов, отправляем через WebSocket
     const socketId = (ctx as any)._testSocketId
     const category = (ctx as any)._testCategory
@@ -99,7 +99,11 @@ export class Debug extends Error {
     const head = `[${level.toUpperCase()}][${ts}]${code ? `[${code}]` : ''}`
     const line = `${head}: ${message}`
 
-    try { ctx.log?.(line) } catch {}
-    try { ctx.account?.log?.(`${Debug.logPrefix}${line}`) } catch {}
+    try {
+      ctx.log?.(line)
+    } catch {}
+    try {
+      ctx.account?.log?.(`${Debug.logPrefix}${line}`)
+    } catch {}
   }
 }

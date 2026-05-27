@@ -1,34 +1,37 @@
 <template>
   <div class="min-h-screen flex items-center justify-center p-4 py-8">
     <div class="w-full max-w-3xl">
-      
       <!-- Вся страница - один экран -->
       <div class="quiz-card p-6 md:p-8">
-        
         <!-- Привлекательный заголовок-плашка -->
         <div class="hero-banner mb-5">
           <p class="text-center text-white text-base md:text-lg font-semibold leading-snug">
-            Тест для девушек, которые хотят больше зарабатывать и жить<br class="hidden md:block"> в свободном графике в новой бьюти-профессии
+            Тест для девушек, которые хотят больше зарабатывать и жить<br class="hidden md:block" />
+            в свободном графике в новой бьюти-профессии
           </p>
         </div>
-        
+
         <!-- Информация про бонус (компактная) -->
-        <div class="bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl p-4 mb-6 border-2 border-amber-200">
+        <div
+          class="bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl p-4 mb-6 border-2 border-amber-200"
+        >
           <div class="flex items-center gap-3 mb-2">
-            <div class="bg-gradient-to-br from-orange-500 to-red-500 rounded-full p-2 flex-shrink-0">
+            <div
+              class="bg-gradient-to-br from-orange-500 to-red-500 rounded-full p-2 flex-shrink-0"
+            >
               <i class="fas fa-gift text-white text-xl"></i>
             </div>
             <div class="flex-1">
-              <h3 class="text-lg font-bold text-gray-800">
-                Ваш подарок за прохождение теста
-              </h3>
+              <h3 class="text-lg font-bold text-gray-800">Ваш подарок за прохождение теста</h3>
               <p class="text-sm text-gray-700">
-                <span class="font-bold text-orange-600">147 страниц</span> профессионального руководства мастера-педикюра
+                <span class="font-bold text-orange-600">147 страниц</span> профессионального
+                руководства мастера-педикюра
               </p>
             </div>
           </div>
           <p class="text-xs text-gray-600 pl-12">
-            Эксклюзивный материал из платного курса стоимостью <span class="font-semibold">15 000 ₽</span> — получите бесплатно!
+            Эксклюзивный материал из платного курса стоимостью
+            <span class="font-semibold">15 000 ₽</span> — получите бесплатно!
           </p>
         </div>
 
@@ -63,15 +66,19 @@
                 @click="selectAnswer(index)"
                 :class="[
                   'option-button w-full text-left p-4 rounded-xl font-medium transition-all',
-                  selectedAnswer === index 
-                    ? 'bg-orange-100 border-2 border-orange-500 text-gray-800' 
+                  selectedAnswer === index
+                    ? 'bg-orange-100 border-2 border-orange-500 text-gray-800'
                     : 'bg-white border-2 border-gray-200 text-gray-700 hover:border-orange-300'
                 ]"
               >
-                <i :class="[
-                  'mr-3',
-                  selectedAnswer === index ? 'fas fa-check-circle text-orange-500' : 'far fa-circle text-gray-400'
-                ]"></i>
+                <i
+                  :class="[
+                    'mr-3',
+                    selectedAnswer === index
+                      ? 'fas fa-check-circle text-orange-500'
+                      : 'far fa-circle text-gray-400'
+                  ]"
+                ></i>
                 {{ option }}
               </button>
             </div>
@@ -177,15 +184,15 @@ function selectAnswer(index) {
 
 function nextStep() {
   if (selectedAnswer.value === null) return
-  
+
   answers.value.push(selectedAnswer.value)
-  
+
   // Если это последний вопрос - переходим на страницу благодарности
   if (currentStep.value === questions.length) {
     window.location.href = thankYouPageRoute.url()
     return
   }
-  
+
   selectedAnswer.value = null
   currentStep.value++
 }
@@ -243,7 +250,8 @@ function prevStep() {
 }
 
 @keyframes pulse {
-  0%, 100% {
+  0%,
+  100% {
     transform: scale(1);
   }
   50% {

@@ -14,6 +14,8 @@ export const getWebinarsByIdsHandler: V1GcHandler = async (_ctx, a) => {
   return { kind: 'gc_result', gc }
 }
 
-export const getWebinarsByIdsRoute = app.post('/', async (ctx, req) => handleV1Op(ctx, req, 'getWebinarsByIds', getWebinarsByIdsHandler))
+export const getWebinarsByIdsRoute = app.post('/', async (ctx, req) =>
+  handleV1Op(ctx, req, 'getWebinarsByIds', getWebinarsByIdsHandler)
+)
 
 export default getWebinarsByIdsRoute

@@ -11,7 +11,16 @@
       <!-- Preview placeholder -->
       <div
         v-if="dropPosition === 'before' && localDraggedData"
-        :style="{ paddingLeft: (level === 0 ? 12 : (level === 1 && parentNode?.type === 'page' ? 20 : (level === 1 ? 12 : (level - 1) * 20))) + 'px' }"
+        :style="{
+          paddingLeft:
+            (level === 0
+              ? 12
+              : level === 1 && parentNode?.type === 'page'
+                ? 20
+                : level === 1
+                  ? 12
+                  : (level - 1) * 20) + 'px'
+        }"
         class="flex items-center py-2 px-3 text-sm bg-blue-50 border-2 border-dashed border-blue-400 rounded opacity-75"
       >
         <i class="fas fa-file-alt mr-2 text-sm text-blue-500"></i>
@@ -22,7 +31,7 @@
       <div
         v-if="dropPosition === 'before' && !localDraggedData"
         :class="['h-1 transition-all bg-blue-500']"
-        :style="{ marginLeft: (Math.max(12, (level - 1) * 16 + 12)) + 'px' }"
+        :style="{ marginLeft: Math.max(12, (level - 1) * 16 + 12) + 'px' }"
       ></div>
     </div>
 
@@ -42,46 +51,70 @@
         isActive ? 'bg-blue-50 text-blue-500' : 'text-gray-700 hover:bg-gray-50',
         isDragging ? 'opacity-40' : '',
         isMovingToParent ? 'ring-2 ring-purple-400 ring-inset bg-purple-50' : '',
-        isDropTarget && localDraggedData ? 'ring-2 ring-blue-400 ring-inset' : isDropTarget ? 'bg-blue-100 border-l-4 border-blue-500' : '',
+        isDropTarget && localDraggedData
+          ? 'ring-2 ring-blue-400 ring-inset'
+          : isDropTarget
+            ? 'bg-blue-100 border-l-4 border-blue-500'
+            : '',
         !node.isPublished && ctx.user?.is('Admin') ? 'italic text-gray-400' : ''
       ]"
-      :style="{ paddingLeft: (level === 0 ? 12 : (level === 1 && parentNode?.type === 'page' ? 20 : (level === 1 ? 12 : (level - 1) * 20))) + 'px' }"
+      :style="{
+        paddingLeft:
+          (level === 0
+            ? 12
+            : level === 1 && parentNode?.type === 'page'
+              ? 20
+              : level === 1
+                ? 12
+                : (level - 1) * 20) + 'px'
+      }"
     >
       <!-- Icon (clickable for admins only in edit mode) -->
       <img
         v-if="node.imageHash"
         :src="getThumbnailUrl(node.imageHash, 48)"
         class="w-6 h-6 flex-shrink-0 object-cover rounded"
-        style="margin-right: 12px;"
+        style="margin-right: 12px"
         @click.prevent.stop="showIconSelector = true"
         :style="{ cursor: ctx.user?.is('Admin') && !isViewMode ? 'pointer' : 'default' }"
       />
       <i
         v-else-if="node.icon"
-        :class="['fas', `fa-${node.icon}`, 'text-base flex-shrink-0', isActive ? 'text-blue-500' : 'text-gray-400']"
-        style="margin-right: 12px; display: inline-block;"
+        :class="[
+          'fas',
+          `fa-${node.icon}`,
+          'text-base flex-shrink-0',
+          isActive ? 'text-blue-500' : 'text-gray-400'
+        ]"
+        style="margin-right: 12px; display: inline-block"
         @click.prevent.stop="showIconSelector = true"
         :style="{ cursor: ctx.user?.is('Admin') && !isViewMode ? 'pointer' : 'default' }"
       ></i>
       <i
         v-else
-        :class="['fas fa-file-lines text-base flex-shrink-0', isActive ? 'text-blue-500' : 'text-gray-400']"
-        style="margin-right: 12px; display: inline-block;"
+        :class="[
+          'fas fa-file-lines text-base flex-shrink-0',
+          isActive ? 'text-blue-500' : 'text-gray-400'
+        ]"
+        style="margin-right: 12px; display: inline-block"
         @click.prevent.stop="showIconSelector = true"
         :style="{ cursor: ctx.user?.is('Admin') && !isViewMode ? 'pointer' : 'default' }"
       ></i>
-      
+
       <span class="flex-1">{{ node.title }}</span>
-      
+
       <!-- Unsaved Indicator -->
       <div v-if="isUnsaved" class="w-2 h-2 rounded-full bg-red-500 flex-shrink-0 mr-2"></div>
-      
+
       <!-- Move to parent indicator -->
-      <div v-if="isMovingToParent" class="ml-2 flex items-center space-x-1 text-purple-600 flex-shrink-0">
+      <div
+        v-if="isMovingToParent"
+        class="ml-2 flex items-center space-x-1 text-purple-600 flex-shrink-0"
+      >
         <i class="fas fa-level-up-alt text-xs"></i>
         <span class="text-xs">to parent</span>
       </div>
-      
+
       <!-- Expand/Collapse Arrow (right side, only for pages) -->
       <i
         v-if="node.type === 'page' && node.children && node.children.length > 0"
@@ -92,8 +125,11 @@
         ]"
         @click.prevent.stop="toggleExpand"
       ></i>
-      
-      <div v-if="ctx.user?.is('Admin') && !isViewMode" class="ml-2 flex items-center space-x-1 opacity-0 group-hover:opacity-100 flex-shrink-0">
+
+      <div
+        v-if="ctx.user?.is('Admin') && !isViewMode"
+        class="ml-2 flex items-center space-x-1 opacity-0 group-hover:opacity-100 flex-shrink-0"
+      >
         <button
           v-if="index > 0"
           @click.prevent="$emit('move-up', { nodeId: node.id, nodeType: node.type })"
@@ -129,7 +165,9 @@
 
     <!-- Section Node (Header) -->
     <div
-      v-else-if="node.type === 'section' && (node.isPublished || !isViewMode || ctx.user?.is('Admin'))"
+      v-else-if="
+        node.type === 'section' && (node.isPublished || !isViewMode || ctx.user?.is('Admin'))
+      "
       :draggable="ctx.user?.is('Admin') && !isViewMode ? 'true' : 'false'"
       @dragstart="handleDragStart"
       @dragend="handleDragEnd"
@@ -142,13 +180,29 @@
         'text-gray-900 font-semibold',
         isDragging ? 'opacity-40' : '',
         isMovingToParent ? 'ring-2 ring-purple-400 ring-inset bg-purple-50' : '',
-        isDropTarget && localDraggedData ? 'ring-2 ring-blue-400 ring-inset' : isDropTarget ? 'bg-blue-50 border-l-4 border-blue-500' : ''
+        isDropTarget && localDraggedData
+          ? 'ring-2 ring-blue-400 ring-inset'
+          : isDropTarget
+            ? 'bg-blue-50 border-l-4 border-blue-500'
+            : ''
       ]"
-      :style="{ paddingLeft: (level === 0 ? 12 : (level === 1 && parentNode?.type === 'page' ? 20 : (level === 1 ? 12 : (level - 1) * 20))) + 'px' }"
+      :style="{
+        paddingLeft:
+          (level === 0
+            ? 12
+            : level === 1 && parentNode?.type === 'page'
+              ? 20
+              : level === 1
+                ? 12
+                : (level - 1) * 20) + 'px'
+      }"
     >
       <span class="flex-1 cursor-pointer">{{ node.title }}</span>
-      
-      <div v-if="ctx.user?.is('Admin') && !isViewMode" class="ml-2 flex items-center space-x-1 opacity-0 group-hover:opacity-100 flex-shrink-0">
+
+      <div
+        v-if="ctx.user?.is('Admin') && !isViewMode"
+        class="ml-2 flex items-center space-x-1 opacity-0 group-hover:opacity-100 flex-shrink-0"
+      >
         <button
           v-if="index > 0"
           @click.prevent="$emit('move-up', { nodeId: node.id, nodeType: node.type })"
@@ -181,7 +235,7 @@
         </button>
       </div>
     </div>
-    
+
     <!-- Children (collapsed unless in path) -->
     <div v-if="shouldShowChildren && node.children && node.children.length > 0">
       <TreeNode
@@ -209,7 +263,7 @@
         @edit="$emit('edit', $event)"
         @icon-change="$emit('icon-change', $event)"
       />
-      
+
       <!-- Drop zone inside section (to remove parent, keep section) -->
       <div
         v-if="node.type === 'section'"
@@ -220,9 +274,12 @@
           'transition-all py-2',
           isSectionDropZone ? 'bg-blue-50 border-2 border-dashed border-blue-400' : ''
         ]"
-        :style="{ paddingLeft: (Math.max(12, level * 16 + 12)) + 'px' }"
+        :style="{ paddingLeft: Math.max(12, level * 16 + 12) + 'px' }"
       >
-        <div v-if="isSectionDropZone && localDraggedData" class="flex items-center text-xs text-blue-600 py-1">
+        <div
+          v-if="isSectionDropZone && localDraggedData"
+          class="flex items-center text-xs text-blue-600 py-1"
+        >
           <i class="fas fa-file-alt mr-2 text-blue-500"></i>
           <span class="font-medium">{{ localDraggedData.title }}</span>
           <i class="fas fa-level-up-alt ml-auto"></i>
@@ -233,7 +290,7 @@
         </div>
       </div>
     </div>
-    
+
     <!-- Drop zone inside empty section -->
     <div
       v-if="node.type === 'section' && (!node.children || node.children.length === 0)"
@@ -244,9 +301,12 @@
         'transition-all py-2',
         isSectionDropZone ? 'bg-blue-50 border-2 border-dashed border-blue-400' : ''
       ]"
-      :style="{ paddingLeft: ((level + 1) * 16 + 12) + 'px' }"
+      :style="{ paddingLeft: (level + 1) * 16 + 12 + 'px' }"
     >
-      <div v-if="isSectionDropZone && localDraggedData" class="flex items-center text-sm text-blue-600 py-1">
+      <div
+        v-if="isSectionDropZone && localDraggedData"
+        class="flex items-center text-sm text-blue-600 py-1"
+      >
         <i class="fas fa-file-alt mr-2 text-blue-500"></i>
         <span class="font-medium">{{ localDraggedData.title }}</span>
         <i class="fas fa-arrow-right ml-auto"></i>
@@ -268,7 +328,16 @@
       <!-- Preview placeholder -->
       <div
         v-if="dropPosition === 'after' && localDraggedData"
-        :style="{ paddingLeft: (level === 0 ? 12 : (level === 1 && parentNode?.type === 'page' ? 20 : (level === 1 ? 12 : (level - 1) * 20))) + 'px' }"
+        :style="{
+          paddingLeft:
+            (level === 0
+              ? 12
+              : level === 1 && parentNode?.type === 'page'
+                ? 20
+                : level === 1
+                  ? 12
+                  : (level - 1) * 20) + 'px'
+        }"
         class="flex items-center py-2 px-3 text-sm bg-blue-50 border-2 border-dashed border-blue-400 rounded opacity-75"
       >
         <i class="fas fa-file-alt mr-2sm text-blue-500"></i>
@@ -279,7 +348,7 @@
       <div
         v-if="dropPosition === 'after' && !localDraggedData"
         :class="['h-1 transition-all bg-blue-500']"
-        :style="{ marginLeft: (Math.max(12, (level - 1) * 16 + 12)) + 'px' }"
+        :style="{ marginLeft: Math.max(12, (level - 1) * 16 + 12) + 'px' }"
       ></div>
     </div>
 
@@ -319,7 +388,16 @@ const props = defineProps({
   isViewMode: Boolean // If true, hide admin controls and disable drag
 })
 
-const emit = defineEmits(['navigate', 'delete-document', 'create-child', 'node-move', 'move-up', 'move-down', 'edit', 'icon-change'])
+const emit = defineEmits([
+  'navigate',
+  'delete-document',
+  'create-child',
+  'node-move',
+  'move-up',
+  'move-down',
+  'edit',
+  'icon-change'
+])
 
 // Local expand/collapse state
 const isManuallyExpanded = ref(true) // Start expanded by default
@@ -341,16 +419,16 @@ const isUnsaved = computed(() => {
 
 const isInPath = computed(() => {
   if (!props.currentPath || props.currentPath.length === 0) return false
-  return props.currentPath.some(doc => doc.id === props.node.id)
+  return props.currentPath.some((doc) => doc.id === props.node.id)
 })
 
 const shouldShowChildren = computed(() => {
   // If manually collapsed, don't show children
   if (!isManuallyExpanded.value) return false
-  
+
   // For sections, show children if expanded
   if (props.node.type === 'section') return true
-  
+
   // For pages, show children only if this node is in the current path
   return isInPath.value
 })
@@ -362,33 +440,33 @@ function toggleExpand() {
 function handlePageClick(e) {
   // Ignore if clicking on buttons
   if (e.target.closest('button')) return
-  
+
   emit('navigate', props.node.id)
 }
 
 function handlePageDoubleClick(e) {
   // Ignore if clicking on buttons
   if (e.target.closest('button')) return
-  
+
   // Only admins can edit - works in any mode
   if (!ctx.user?.is('Admin')) return
-  
+
   e.preventDefault()
   e.stopPropagation()
-  
+
   emit('edit', { nodeId: props.node.id, nodeType: props.node.type, type: props.node.type })
 }
 
 function handleSectionDoubleClick(e) {
   // Ignore if clicking on buttons
   if (e.target.closest('button')) return
-  
+
   // Only admins can edit - works in any mode
   if (!ctx.user?.is('Admin')) return
-  
+
   e.preventDefault()
   e.stopPropagation()
-  
+
   emit('edit', { nodeId: props.node.id, nodeType: props.node.type, type: props.node.type })
 }
 
@@ -406,20 +484,23 @@ function handleDragStart(e) {
     e.preventDefault()
     return
   }
-  
+
   isDragging.value = true
   e.dataTransfer.effectAllowed = 'move'
-  e.dataTransfer.setData('application/json', JSON.stringify({
-    id: props.node.id,
-    type: props.node.type,
-    title: props.node.title,
-    parentId: props.node.parentId,
-    order: props.node.order
-  }))
-  
+  e.dataTransfer.setData(
+    'application/json',
+    JSON.stringify({
+      id: props.node.id,
+      type: props.node.type,
+      title: props.node.title,
+      parentId: props.node.parentId,
+      order: props.node.order
+    })
+  )
+
   // Notify parent about dragging with full node data and starting X position
-  emit('node-move', { 
-    type: 'drag-start', 
+  emit('node-move', {
+    type: 'drag-start',
     nodeId: props.node.id,
     startX: e.clientX, // Pass starting X position
     nodeData: {
@@ -439,24 +520,24 @@ function handleDragEnd(e) {
   isSectionDropZone.value = false
   localDraggedData.value = null
   isMovingToParent.value = false
-  
+
   // Notify parent about drag end
   emit('node-move', { type: 'drag-end' })
 }
 
 function handleDragOver(e) {
   e.preventDefault()
-  
+
   // Use draggingNodeData from props
   if (!props.draggingNodeData) return
-  
+
   // Don't allow drop on self
   if (props.draggingNodeData.id === props.node.id) return
-  
+
   // Check drag direction (right to left = move to parent)
   const currentX = e.clientX
   const threshold = 30 // pixels threshold
-  
+
   if (props.draggingNodeData.id && currentX < props.dragStartX - threshold && props.parentNode) {
     // Moving to parent level (left direction)
     isMovingToParent.value = true
@@ -464,12 +545,12 @@ function handleDragOver(e) {
     localDraggedData.value = props.draggingNodeData
     return
   }
-  
+
   isMovingToParent.value = false
-  
+
   // Don't allow dropping section into page
   if (props.draggingNodeData.type === 'section' && props.node.type === 'page') return
-  
+
   isDropTarget.value = true
   localDraggedData.value = props.draggingNodeData
 }
@@ -490,16 +571,16 @@ function handleDrop(e) {
   isDropTarget.value = false
   isMovingToParent.value = false
   localDraggedData.value = null
-  
+
   const dragData = e.dataTransfer.getData('application/json')
   if (!dragData) return
-  
+
   try {
     const dragged = JSON.parse(dragData)
-    
+
     // Don't allow drop on self
     if (dragged.id === props.node.id) return
-    
+
     // Handle moving to parent level
     if (wasMovingToParent && props.parentNode) {
       emit('node-move', {
@@ -510,13 +591,13 @@ function handleDrop(e) {
       })
       return
     }
-    
+
     // Don't allow dropping section into page
     if (dragged.type === 'section' && props.node.type === 'page') return
-    
+
     // Determine drop target
     let targetParentId = null
-    
+
     if (props.node.type === 'section') {
       // Drop into section
       targetParentId = props.node.id
@@ -524,7 +605,7 @@ function handleDrop(e) {
       // Drop into page (as child)
       targetParentId = props.node.id
     }
-    
+
     // Notify parent to handle the move
     emit('node-move', {
       type: 'drop',
@@ -542,7 +623,7 @@ function handleDrop(e) {
 // Drop zone handlers (for reordering)
 function handleDropZoneDragOver(e, position) {
   e.preventDefault()
-  
+
   // Use draggingNodeData from props (passed from Sidebar)
   if (props.draggingNodeData && props.draggingNodeData.id !== props.node.id) {
     localDraggedData.value = props.draggingNodeData
@@ -562,19 +643,17 @@ function handleDropZoneDrop(e, position) {
   e.stopPropagation()
   dropPosition.value = null
   localDraggedData.value = null
-  
+
   const dragData = e.dataTransfer.getData('application/json')
   if (!dragData) return
-  
+
   try {
     const dragged = JSON.parse(dragData)
     if (dragged.id === props.node.id) return
-    
+
     // Calculate new order based on position
-    const newOrder = position === 'before' 
-      ? props.node.order - 0.5 
-      : props.node.order + 0.5
-    
+    const newOrder = position === 'before' ? props.node.order - 0.5 : props.node.order + 0.5
+
     // Emit reorder event
     emit('node-move', {
       type: 'reorder',
@@ -595,11 +674,11 @@ function handleDropZoneDrop(e, position) {
 // Section drop zone handlers (to remove parent but keep section)
 function handleSectionDropZoneDragOver(e) {
   e.preventDefault()
-  
+
   if (!props.draggingNodeData) return
   if (props.draggingNodeData.type !== 'page' && props.draggingNodeData.type !== 'section') return
   if (props.draggingNodeData.id === props.node.id) return
-  
+
   isSectionDropZone.value = true
   localDraggedData.value = props.draggingNodeData
 }
@@ -616,14 +695,14 @@ function handleSectionDropZoneDrop(e) {
   e.stopPropagation()
   isSectionDropZone.value = false
   localDraggedData.value = null
-  
+
   const dragData = e.dataTransfer.getData('application/json')
   if (!dragData) return
-  
+
   try {
     const dragged = JSON.parse(dragData)
     if (dragged.type !== 'page' && dragged.type !== 'section') return
-    
+
     // Move to section root (remove parent, keep section)
     emit('node-move', {
       type: 'move-to-section-root',

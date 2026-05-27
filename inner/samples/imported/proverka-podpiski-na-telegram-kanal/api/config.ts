@@ -1,5 +1,10 @@
 import { getConfig, writeConfig } from '../shared/configHelpers'
-import { getChannels, createOrUpdateChannelBySecret, getTelegramGroups, getOrCreateTelegramGroup } from '@sender/sdk'
+import {
+  getChannels,
+  createOrUpdateChannelBySecret,
+  getTelegramGroups,
+  getOrCreateTelegramGroup
+} from '@sender/sdk'
 
 // @shared-route
 export const apiGetConfigRoute = app.get('/get', async (ctx, req) => {
@@ -16,37 +21,39 @@ export const apiGetConfigRoute = app.get('/get', async (ctx, req) => {
 })
 
 // @shared-route
-export const apiSaveConfigRoute = app.body(s => ({
-  botId: s.string(),
-  senderChannelId: s.string(),
-  messages: s.object({
-    start: s.string(),
-    buttonText: s.string(),
-    subscribed: s.string(),
-    notSubscribed: s.string()
-  })
-})).post('/save', async (ctx, req) => {
-  try {
-    await writeConfig(ctx, req.body)
-    return { success: true }
-  } catch (error) {
-    ctx.account.log('Error saving config', {
-      level: 'error',
-      err: error
+export const apiSaveConfigRoute = app
+  .body((s) => ({
+    botId: s.string(),
+    senderChannelId: s.string(),
+    messages: s.object({
+      start: s.string(),
+      buttonText: s.string(),
+      subscribed: s.string(),
+      notSubscribed: s.string()
     })
-    return { success: false, error: error.message }
-  }
-})
+  }))
+  .post('/save', async (ctx, req) => {
+    try {
+      await writeConfig(ctx, req.body)
+      return { success: true }
+    } catch (error) {
+      ctx.account.log('Error saving config', {
+        level: 'error',
+        err: error
+      })
+      return { success: false, error: error.message }
+    }
+  })
 
 // @shared-route
 export const apiGetBotsRoute = app.get('/bots', async (ctx, req) => {
   try {
     const channels = await getChannels(ctx)
-    const telegramBots = channels.filter(ch => ch.source === 'Telegram')
-    
+    const telegramBots = channels.filter((ch) => ch.source === 'Telegram')
+
     return {
       success: true,
-      bots: telegramBots.map(bot => ({
+      bots: telegramBots.map((bot) => ({
         id: bot.id,
         title: bot.title,
         username: bot.username
@@ -62,47 +69,49 @@ export const apiGetBotsRoute = app.get('/bots', async (ctx, req) => {
 })
 
 // @shared-route
-export const apiAddBotRoute = app.body(s => ({
-  token: s.string()
-})).post('/add-bot', async (ctx, req) => {
-  try {
-    const { token } = req.body
+export const apiAddBotRoute = app
+  .body((s) => ({
+    token: s.string()
+  }))
+  .post('/add-bot', async (ctx, req) => {
+    try {
+      const { token } = req.body
 
-    if (!token) {
-      return { success: false, error: 'Токен бота обязателен' }
-    }
-
-    const channel = await createOrUpdateChannelBySecret(ctx, {
-      source: 'Telegram',
-      secret: token,
-      setWebhook: true
-    })
-
-    return {
-      success: true,
-      bot: {
-        id: channel.id,
-        title: channel.title,
-        username: channel.username
+      if (!token) {
+        return { success: false, error: 'Токен бота обязателен' }
       }
+
+      const channel = await createOrUpdateChannelBySecret(ctx, {
+        source: 'Telegram',
+        secret: token,
+        setWebhook: true
+      })
+
+      return {
+        success: true,
+        bot: {
+          id: channel.id,
+          title: channel.title,
+          username: channel.username
+        }
+      }
+    } catch (error) {
+      ctx.account.log('Error adding bot', {
+        level: 'error',
+        err: error
+      })
+      return { success: false, error: error.message }
     }
-  } catch (error) {
-    ctx.account.log('Error adding bot', {
-      level: 'error',
-      err: error
-    })
-    return { success: false, error: error.message }
-  }
-})
+  })
 
 // @shared-route
 export const apiGetChannelsRoute = app.get('/channels', async (ctx, req) => {
   try {
     const channels = await getTelegramGroups(ctx)
-    
+
     return {
       success: true,
-      channels: channels.map(ch => ({
+      channels: channels.map((ch) => ({
         id: ch.id,
         title: ch.title,
         externalId: ch.externalId
@@ -118,31 +127,33 @@ export const apiGetChannelsRoute = app.get('/channels', async (ctx, req) => {
 })
 
 // @shared-route
-export const apiAddChannelRoute = app.body(s => ({
-  externalId: s.string()
-})).post('/add-channel', async (ctx, req) => {
-  try {
-    const { externalId } = req.body
+export const apiAddChannelRoute = app
+  .body((s) => ({
+    externalId: s.string()
+  }))
+  .post('/add-channel', async (ctx, req) => {
+    try {
+      const { externalId } = req.body
 
-    if (!externalId) {
-      return { success: false, error: 'ID канала обязателен' }
-    }
-
-    const channel = await getOrCreateTelegramGroup(ctx, { externalId })
-
-    return {
-      success: true,
-      channel: {
-        id: channel.id,
-        title: channel.title,
-        externalId: channel.externalId
+      if (!externalId) {
+        return { success: false, error: 'ID канала обязателен' }
       }
+
+      const channel = await getOrCreateTelegramGroup(ctx, { externalId })
+
+      return {
+        success: true,
+        channel: {
+          id: channel.id,
+          title: channel.title,
+          externalId: channel.externalId
+        }
+      }
+    } catch (error) {
+      ctx.account.log('Error adding channel', {
+        level: 'error',
+        err: error
+      })
+      return { success: false, error: error.message }
     }
-  } catch (error) {
-    ctx.account.log('Error adding channel', {
-      level: 'error',
-      err: error
-    })
-    return { success: false, error: error.message }
-  }
-})
+  })

@@ -2,8 +2,7 @@
  * Генерация уникальных идентификаторов (по плану 9.2).
  */
 
-const ALPHABET =
-  'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
+const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
 
 /**
  * Генерация URL-safe идентификатора (base62).

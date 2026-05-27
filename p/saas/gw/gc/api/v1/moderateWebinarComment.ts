@@ -14,6 +14,8 @@ export const moderateWebinarCommentHandler: V1GcHandler = async (_ctx, a) => {
   return { kind: 'gc_result', gc }
 }
 
-export const moderateWebinarCommentRoute = app.post('/', async (ctx, req) => handleV1Op(ctx, req, 'moderateWebinarComment', moderateWebinarCommentHandler))
+export const moderateWebinarCommentRoute = app.post('/', async (ctx, req) =>
+  handleV1Op(ctx, req, 'moderateWebinarComment', moderateWebinarCommentHandler)
+)
 
 export default moderateWebinarCommentRoute

@@ -44,7 +44,13 @@ const rules = computed(() => getBpmRules('ru'))
 const jobs = computed(() => getBpmAutomationJobs('ru'))
 const timeline = computed(() => getBpmExecutionTimeline('ru'))
 const widgets = computed<ScenarioWidget[]>(() => [
-  { id: 'admin-1', label: 'Design scenarios', value: String(props.scenariosTotal), delta: '+30+', tone: 'info' },
+  {
+    id: 'admin-1',
+    label: 'Design scenarios',
+    value: String(props.scenariosTotal),
+    delta: '+30+',
+    tone: 'info'
+  },
   { id: 'admin-2', label: 'Data layers', value: '3', delta: 'stable', tone: 'success' },
   { id: 'admin-3', label: 'Reusable sets', value: 'design_2', delta: 'imported', tone: 'warning' },
   { id: 'admin-4', label: 'Project root', value: 'bpm', delta: '/p/units/neso', tone: 'danger' }
@@ -60,8 +66,8 @@ const widgets = computed<ScenarioWidget[]>(() => [
         <p class="bpm-admin-header__kicker">Admin Console</p>
         <h1>{{ projectTitle }}</h1>
         <p>
-          Админка показывает новый BPM-контур: data-layer, reusable-компоненты,
-          и configuration snapshot без legacy CRM UI.
+          Админка показывает новый BPM-контур: data-layer, reusable-компоненты, и configuration
+          snapshot без legacy CRM UI.
         </p>
       </div>
       <nav>
@@ -136,9 +142,7 @@ const widgets = computed<ScenarioWidget[]>(() => [
   display: grid;
   grid-template-columns: 1fr auto;
   gap: 12px;
-  background:
-    var(--gradient-glass),
-    color-mix(in srgb, var(--surface-1) 82%, transparent);
+  background: var(--gradient-glass), color-mix(in srgb, var(--surface-1) 82%, transparent);
 }
 
 .bpm-admin-header__kicker {

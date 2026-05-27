@@ -1,6 +1,7 @@
 # Run
 
 ## Требования
+
 - Проект работает внутри Chatium, локальный сервер не нужен.
 - Зависимости фиксированы платформой.
 
@@ -20,16 +21,16 @@
 
 Проверьте, что заменены минимум следующие места:
 
-| Файл | Что меняется | Зачем |
-|------|--------------|-------|
-| `config/routes.tsx` | `export const PROJECT_ROOT = 'p/template_project'` → новый путь от корня воркспэйса без ведущего `/` | От этого зависят все ссылки, редиректы и `getFullUrl/withProjectRoot` |
-| `.dir.json` | поле `name`, например `"[INWORK] p/my_project"` | Инструменты и навигация по воркспейсу |
-| `lib/tests/templateUnitSuite.ts` | строка с `routes_PROJECT_ROOT`: `PROJECT_ROOT === 'p/template_project'` → новый путь | Иначе юнит-тест `routes_PROJECT_ROOT` будет фейлиться |
-| `api/tests/list.ts` | комментарий-шапка | Косметика, чтобы документация не вводила в заблуждение |
-| `api/logger/log.ts` | пример в шапке | То же |
-| `web/tests/index.tsx` | `<meta name="template-project-page" ...>` | Косметика; SSR-маркер страницы |
-| `tables/settings.table.ts` | ключ `t__template-project__setting__7Fk2Qw` | См. §4 — обязательно, если несколько проектов в одном воркспейсе |
-| `tables/logs.table.ts` | ключ `t__template-project__log__9Xm3Kp` | То же |
+| Файл                             | Что меняется                                                                                         | Зачем                                                                 |
+| -------------------------------- | ---------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| `config/routes.tsx`              | `export const PROJECT_ROOT = 'p/template_project'` → новый путь от корня воркспэйса без ведущего `/` | От этого зависят все ссылки, редиректы и `getFullUrl/withProjectRoot` |
+| `.dir.json`                      | поле `name`, например `"[INWORK] p/my_project"`                                                      | Инструменты и навигация по воркспейсу                                 |
+| `lib/tests/templateUnitSuite.ts` | строка с `routes_PROJECT_ROOT`: `PROJECT_ROOT === 'p/template_project'` → новый путь                 | Иначе юнит-тест `routes_PROJECT_ROOT` будет фейлиться                 |
+| `api/tests/list.ts`              | комментарий-шапка                                                                                    | Косметика, чтобы документация не вводила в заблуждение                |
+| `api/logger/log.ts`              | пример в шапке                                                                                       | То же                                                                 |
+| `web/tests/index.tsx`            | `<meta name="template-project-page" ...>`                                                            | Косметика; SSR-маркер страницы                                        |
+| `tables/settings.table.ts`       | ключ `t__template-project__setting__7Fk2Qw`                                                          | См. §4 — обязательно, если несколько проектов в одном воркспейсе      |
+| `tables/logs.table.ts`           | ключ `t__template-project__log__9Xm3Kp`                                                              | То же                                                                 |
 
 Быстрая самопроверка после замены:
 
@@ -91,13 +92,16 @@ grep -rn "template_project\|template-project" \
 ---
 
 ## Запуск/деплой
+
 - Внести изменения в репозиторий.
 - Запушить изменения.
 - Chatium автоматически задеплоит обновления.
 
 ## Конфигурация
+
 - `config.json` пока не используется.
 
 ## Проверки
+
 - Открыть главную страницу и убедиться, что страницы открываются.
 - Проверить редирект на логин при входе в профиль/админку без авторизации.

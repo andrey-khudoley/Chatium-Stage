@@ -9,27 +9,27 @@ import { getWorkspacePath, resolveAnalyticsEntity } from './utils'
 // Прогресс считается последовательным, если разница между минутами < 2
 function calculateSequentialMinutes(minutes: number[]): number {
   if (minutes.length === 0) return 0
-  
+
   // Массив уже отсортирован в SQL через arraySort
   let total = 0
   let segmentStart = minutes[0]
   let segmentEnd = minutes[0]
-  
+
   for (let i = 1; i < minutes.length; i++) {
     if (minutes[i] - minutes[i - 1] < 2) {
       // Продолжаем текущий отрезок
       segmentEnd = minutes[i]
     } else {
       // Завершаем текущий отрезок и начинаем новый
-      total += (segmentEnd - segmentStart + 1)
+      total += segmentEnd - segmentStart + 1
       segmentStart = minutes[i]
       segmentEnd = minutes[i]
     }
   }
-  
+
   // Добавляем последний отрезок
-  total += (segmentEnd - segmentStart + 1)
-  
+  total += segmentEnd - segmentStart + 1
+
   return total
 }
 
@@ -46,9 +46,9 @@ export const apiPlayerAnalyticsViewersRoute = reporterApp.get('/viewers', async 
   const offset = (page - 1) * limit
 
   // Сортировка и фильтрация
-  const sortBy = req.query.sortBy as string || 'firstSeen' // 'firstSeen' | 'engagement'
-  const sortOrder = req.query.sortOrder as string || 'desc' // 'asc' | 'desc'
-  const paymentFilter = req.query.paymentFilter as string || 'all' // 'all' | 'paid' | 'not_paid'
+  const sortBy = (req.query.sortBy as string) || 'firstSeen' // 'firstSeen' | 'engagement'
+  const sortOrder = (req.query.sortOrder as string) || 'desc' // 'asc' | 'desc'
+  const paymentFilter = (req.query.paymentFilter as string) || 'all' // 'all' | 'paid' | 'not_paid'
 
   const safeId = escapeSql(episodeId)
   const workspacePath = await getWorkspacePath(ctx)
@@ -57,18 +57,24 @@ export const apiPlayerAnalyticsViewersRoute = reporterApp.get('/viewers', async 
 
   const entity = await resolveAnalyticsEntity(ctx, episodeId)
   const startedAtStr = entity?.startedAt
-    ? `toDateTime('${entity.startedAt.toISOString().replace('T', ' ').replace(/\.\d+Z$/, '')}', 'UTC')`
+    ? `toDateTime('${entity.startedAt
+        .toISOString()
+        .replace('T', ' ')
+        .replace(/\.\d+Z$/, '')}', 'UTC')`
     : null
 
   const streamDurationSeconds = entity?.durationSeconds || 0
 
   // Подсчёт с учётом фильтра по оплате
-  const countQuery = paymentFilter === 'all' ? `
+  const countQuery =
+    paymentFilter === 'all'
+      ? `
     SELECT uniq(if(user_id != '', user_id, uid)) as cnt
     FROM chatium_ai.access_log
     WHERE startsWith(urlPath, '${EVENT_PREFIX}')
       AND action_param1 = '${safeId}'
-  ` : `
+  `
+      : `
     WITH ${startedAtStr ? `episode_start AS (SELECT ${startedAtStr} as start_time),` : `episode_start AS (SELECT min(ts64) as start_time FROM chatium_ai.access_log WHERE startsWith(urlPath, '${EVENT_PREFIX}') AND action_param1 = '${safeId}'),`}
     viewer_analytics AS (
       SELECT if(user_id != '', user_id, uid) as viewer_id
@@ -136,7 +142,7 @@ export const apiPlayerAnalyticsViewersRoute = reporterApp.get('/viewers', async 
 
   const [countResult, viewersResult] = await Promise.all([
     queryAi(ctx, countQuery),
-    queryAi(ctx, viewersQuery),
+    queryAi(ctx, viewersQuery)
   ])
 
   const totalCount = countResult.rows?.[0]?.cnt || 0
@@ -146,7 +152,8 @@ export const apiPlayerAnalyticsViewersRoute = reporterApp.get('/viewers', async 
     const minutesArray = row.minutes_array || []
     const sequentialMinutes = calculateSequentialMinutes(minutesArray)
     const watchedSeconds = sequentialMinutes * 60
-    const engagementPercent = streamDurationSeconds > 0 ? Math.round((watchedSeconds / streamDurationSeconds) * 100) : 0
+    const engagementPercent =
+      streamDurationSeconds > 0 ? Math.round((watchedSeconds / streamDurationSeconds) * 100) : 0
 
     return {
       userId: row.orig_user_id || null,
@@ -164,7 +171,7 @@ export const apiPlayerAnalyticsViewersRoute = reporterApp.get('/viewers', async 
       engagementPercent: Math.min(engagementPercent, 100),
       watchedSeconds,
       totalPaid: row.totalPaid || 0,
-      currency: row.currency || 'RUB',
+      currency: row.currency || 'RUB'
     }
   })
 
@@ -173,25 +180,30 @@ export const apiPlayerAnalyticsViewersRoute = reporterApp.get('/viewers', async 
 
 // Экспорт всех зрителей (авторизованных и анонимных) в CSV
 // @shared-route
-export const apiPlayerAnalyticsViewersExportRoute = reporterApp.get('/viewers-export', async (ctx, req) => {
-  requireAccountRole(ctx, 'Admin')
+export const apiPlayerAnalyticsViewersExportRoute = reporterApp.get(
+  '/viewers-export',
+  async (ctx, req) => {
+    requireAccountRole(ctx, 'Admin')
 
-  const episodeId = req.query.episodeId as string
-  if (!episodeId) throw new Error('episodeId обязателен')
+    const episodeId = req.query.episodeId as string
+    if (!episodeId) throw new Error('episodeId обязателен')
 
-  const safeId = escapeSql(episodeId)
-  const workspacePath = await getWorkspacePath(ctx)
-  const EVENT_PREFIX = `event://custom/${workspacePath}/player_`
-  const FORM_EVENT_PREFIX = `event://custom/${workspacePath}/form_`
+    const safeId = escapeSql(episodeId)
+    const workspacePath = await getWorkspacePath(ctx)
+    const EVENT_PREFIX = `event://custom/${workspacePath}/player_`
+    const FORM_EVENT_PREFIX = `event://custom/${workspacePath}/form_`
 
-  const entityExp = await resolveAnalyticsEntity(ctx, episodeId)
-  const startedAtStrExp = entityExp?.startedAt
-    ? `toDateTime('${entityExp.startedAt.toISOString().replace('T', ' ').replace(/\.\d+Z$/, '')}', 'UTC')`
-    : null
+    const entityExp = await resolveAnalyticsEntity(ctx, episodeId)
+    const startedAtStrExp = entityExp?.startedAt
+      ? `toDateTime('${entityExp.startedAt
+          .toISOString()
+          .replace('T', ' ')
+          .replace(/\.\d+Z$/, '')}', 'UTC')`
+      : null
 
-  const exportStreamDurationSeconds = entityExp?.durationSeconds || 0
+    const exportStreamDurationSeconds = entityExp?.durationSeconds || 0
 
-  const query = `
+    const query = `
     WITH ${startedAtStrExp ? `episode_start AS (SELECT ${startedAtStrExp} as start_time),` : `episode_start AS (SELECT min(ts64) as start_time FROM chatium_ai.access_log WHERE startsWith(urlPath, '${EVENT_PREFIX}') AND action_param1 = '${safeId}'),`}
     viewer_analytics AS (
       SELECT
@@ -233,60 +245,76 @@ export const apiPlayerAnalyticsViewersExportRoute = reporterApp.get('/viewers-ex
     LIMIT 10000
   `
 
-  const result = await queryAi(ctx, query)
-  const rows: Record<string, string>[] = []
-
-  rows.push({
-    name: 'Имя',
-    email: 'Email',
-    phone: 'Телефон',
-    device: 'Устройство',
-    firstSeen: 'Первый визит',
-    lastSeen: 'Последний визит',
-    plays: 'Запусков',
-    completions: 'Досмотров',
-    engagementPercent: 'Просмотренность %',
-    watchedTime: 'Время просмотра',
-    totalPaid: 'Оплата',
-  })
-
-  for (const r of (result.rows || [])) {
-    const minutesArray = r.minutes_array || []
-    const sequentialMinutes = calculateSequentialMinutes(minutesArray)
-    const watchedSeconds = sequentialMinutes * 60
-    const engagementPercent = exportStreamDurationSeconds > 0 ? Math.round((watchedSeconds / exportStreamDurationSeconds) * 100) : 0
-    const watchedMinutes = Math.floor(watchedSeconds / 60)
-    const watchedSecondsRemainder = watchedSeconds % 60
-
-    const totalPaid = r.totalPaid || 0
-    const currency = r.currency || 'RUB'
-    const paymentStr = totalPaid > 0 ? `${totalPaid} ${currency}` : '-'
+    const result = await queryAi(ctx, query)
+    const rows: Record<string, string>[] = []
 
     rows.push({
-      name: [r.firstName, r.lastName].filter(Boolean).join(' ') || 'Аноним',
-      email: r.email || '',
-      phone: r.phone || '',
-      device: r.device || '',
-      firstSeen: r.firstSeen ? new Date(r.firstSeen).toISOString() : '',
-      lastSeen: r.lastSeen ? new Date(r.lastSeen).toISOString() : '',
-      plays: String(r.plays || 0),
-      completions: String(r.completions || 0),
-      engagementPercent: String(Math.min(engagementPercent, 100)),
-      watchedTime: `${watchedMinutes}:${String(watchedSecondsRemainder).padStart(2, '0')}`,
-      totalPaid: paymentStr,
+      name: 'Имя',
+      email: 'Email',
+      phone: 'Телефон',
+      device: 'Устройство',
+      firstSeen: 'Первый визит',
+      lastSeen: 'Последний визит',
+      plays: 'Запусков',
+      completions: 'Досмотров',
+      engagementPercent: 'Просмотренность %',
+      watchedTime: 'Время просмотра',
+      totalPaid: 'Оплата'
     })
-  }
 
-  const escCsv = (v: string) => `"${(v ?? '').replace(/"/g, '""')}"`
-  const keys = ['name', 'email', 'phone', 'device', 'firstSeen', 'lastSeen', 'plays', 'completions', 'engagementPercent', 'watchedTime', 'totalPaid']
-  const csvString = rows.map(r => keys.map(k => escCsv(r[k])).join(',')).join('\r\n')
+    for (const r of result.rows || []) {
+      const minutesArray = r.minutes_array || []
+      const sequentialMinutes = calculateSequentialMinutes(minutesArray)
+      const watchedSeconds = sequentialMinutes * 60
+      const engagementPercent =
+        exportStreamDurationSeconds > 0
+          ? Math.round((watchedSeconds / exportStreamDurationSeconds) * 100)
+          : 0
+      const watchedMinutes = Math.floor(watchedSeconds / 60)
+      const watchedSecondsRemainder = watchedSeconds % 60
 
-  return {
-    statusCode: 200,
-    rawHttpBody: csvString,
-    headers: {
-      'Content-Type': 'text/csv;charset=utf-8',
-      'Content-disposition': `attachment;filename=viewers-${episodeId}.csv`,
-    },
+      const totalPaid = r.totalPaid || 0
+      const currency = r.currency || 'RUB'
+      const paymentStr = totalPaid > 0 ? `${totalPaid} ${currency}` : '-'
+
+      rows.push({
+        name: [r.firstName, r.lastName].filter(Boolean).join(' ') || 'Аноним',
+        email: r.email || '',
+        phone: r.phone || '',
+        device: r.device || '',
+        firstSeen: r.firstSeen ? new Date(r.firstSeen).toISOString() : '',
+        lastSeen: r.lastSeen ? new Date(r.lastSeen).toISOString() : '',
+        plays: String(r.plays || 0),
+        completions: String(r.completions || 0),
+        engagementPercent: String(Math.min(engagementPercent, 100)),
+        watchedTime: `${watchedMinutes}:${String(watchedSecondsRemainder).padStart(2, '0')}`,
+        totalPaid: paymentStr
+      })
+    }
+
+    const escCsv = (v: string) => `"${(v ?? '').replace(/"/g, '""')}"`
+    const keys = [
+      'name',
+      'email',
+      'phone',
+      'device',
+      'firstSeen',
+      'lastSeen',
+      'plays',
+      'completions',
+      'engagementPercent',
+      'watchedTime',
+      'totalPaid'
+    ]
+    const csvString = rows.map((r) => keys.map((k) => escCsv(r[k])).join(',')).join('\r\n')
+
+    return {
+      statusCode: 200,
+      rawHttpBody: csvString,
+      headers: {
+        'Content-Type': 'text/csv;charset=utf-8',
+        'Content-disposition': `attachment;filename=viewers-${episodeId}.csv`
+      }
+    }
   }
-})
+)

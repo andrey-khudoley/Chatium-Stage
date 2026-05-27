@@ -31,7 +31,7 @@ export function useMessageSync(
   const state = ref<SyncState>({
     lastSyncAt: null,
     isSyncing: false,
-    missedMessages: [],
+    missedMessages: []
   })
 
   let syncTimer: any = null
@@ -81,17 +81,17 @@ export function useMessageSync(
     try {
       const messages = await loadMessagesFn({
         afterId: syncAfterId,
-        limit: 20,
+        limit: 20
       })
 
       // Фильтруем только новые сообщения (которых ещё нет в текущих)
       const currentMessages = getCurrentMessages()
-      const existingIds = new Set(currentMessages.map(m => m.id))
-      const newMessages = messages.filter(m => !existingIds.has(m.id))
+      const existingIds = new Set(currentMessages.map((m) => m.id))
+      const newMessages = messages.filter((m) => !existingIds.has(m.id))
 
       if (newMessages.length > 0) {
         // console.log('[MessageSync] Found', newMessages.length, 'new messages')
-        
+
         // Вызываем callback для добавления сообщений с компенсацией высоты
         if (onNewMessages) {
           onNewMessages(newMessages, 'sync')
@@ -126,7 +126,7 @@ export function useMessageSync(
     if (isVisible) {
       // Страница стала видимой - выполняем синхронизацию
       // console.log('[MessageSync] Page became visible, triggering sync')
-      
+
       // Небольшая задержка, чтобы дать WebSocket время на переподключение
       setTimeout(() => {
         performSync()
@@ -152,7 +152,7 @@ export function useMessageSync(
    */
   function startPeriodicCheck() {
     if (syncTimer) clearInterval(syncTimer)
-    
+
     syncTimer = setInterval(() => {
       if (isPageVisible.value && document.visibilityState === 'visible') {
         // Проверяем, нужна ли синхронизация
@@ -187,6 +187,6 @@ export function useMessageSync(
   return {
     syncState: state,
     forceSync,
-    isPageVisible: computed(() => isPageVisible.value),
+    isPageVisible: computed(() => isPageVisible.value)
   }
 }

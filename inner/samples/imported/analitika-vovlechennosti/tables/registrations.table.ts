@@ -7,35 +7,53 @@ export const TAnalitikaLendovRegistrationsCfT = Heap.Table(
     lend: Heap.Optional(
       Heap.String({
         customMeta: { title: 'Лендинг (путь без слеша)' },
-        searchable: { langs: ['ru', 'en'], embeddings: true },
-      }),
+        searchable: { langs: ['ru', 'en'], embeddings: true }
+      })
     ),
     date_reg: Heap.Optional(
       Heap.String({
         customMeta: { title: 'Дата регистрации (DD.MM.YYYY)' },
-        searchable: { langs: ['ru', 'en'], embeddings: true },
-      }),
+        searchable: { langs: ['ru', 'en'], embeddings: true }
+      })
     ),
     utm_source: Heap.Optional(
-      Heap.String({ customMeta: { title: 'UTM Source' }, searchable: { langs: ['ru', 'en'], embeddings: true } }),
+      Heap.String({
+        customMeta: { title: 'UTM Source' },
+        searchable: { langs: ['ru', 'en'], embeddings: true }
+      })
     ),
     utm_medium: Heap.Optional(
-      Heap.String({ customMeta: { title: 'UTM Medium' }, searchable: { langs: ['ru', 'en'], embeddings: true } }),
+      Heap.String({
+        customMeta: { title: 'UTM Medium' },
+        searchable: { langs: ['ru', 'en'], embeddings: true }
+      })
     ),
     utm_campaign: Heap.Optional(
-      Heap.String({ customMeta: { title: 'UTM Campaign' }, searchable: { langs: ['ru', 'en'], embeddings: true } }),
+      Heap.String({
+        customMeta: { title: 'UTM Campaign' },
+        searchable: { langs: ['ru', 'en'], embeddings: true }
+      })
     ),
     utm_term: Heap.Optional(
-      Heap.String({ customMeta: { title: 'UTM Term' }, searchable: { langs: ['ru', 'en'], embeddings: true } }),
+      Heap.String({
+        customMeta: { title: 'UTM Term' },
+        searchable: { langs: ['ru', 'en'], embeddings: true }
+      })
     ),
     utm_content: Heap.Optional(
-      Heap.String({ customMeta: { title: 'UTM Content' }, searchable: { langs: ['ru', 'en'], embeddings: true } }),
+      Heap.String({
+        customMeta: { title: 'UTM Content' },
+        searchable: { langs: ['ru', 'en'], embeddings: true }
+      })
     ),
     uid: Heap.Optional(
-      Heap.String({ customMeta: { title: 'ID пользователя' }, searchable: { langs: ['ru', 'en'], embeddings: true } }),
-    ),
+      Heap.String({
+        customMeta: { title: 'ID пользователя' },
+        searchable: { langs: ['ru', 'en'], embeddings: true }
+      })
+    )
   },
-  { customMeta: { title: 'Регистрации', description: 'Регистрации' } },
+  { customMeta: { title: 'Регистрации', description: 'Регистрации' } }
 )
 
 export default TAnalitikaLendovRegistrationsCfT

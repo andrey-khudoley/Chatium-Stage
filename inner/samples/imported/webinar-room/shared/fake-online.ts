@@ -20,7 +20,7 @@ export function calculateFakeOnline(
   const defaultConfig: Array<{ minute: number; count: number }> = [
     { minute: 0, count: 50 },
     { minute: Math.floor(duration / 2 / 60), count: 100 },
-    { minute: Math.floor(duration / 60), count: 80 },
+    { minute: Math.floor(duration / 60), count: 80 }
   ]
 
   const activeConfig = config && config.length > 0 ? config : defaultConfig

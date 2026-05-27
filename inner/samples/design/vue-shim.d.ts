@@ -18,7 +18,7 @@ declare module 'vue' {
   export function defineProps<T>(): T
   export function defineEmits<T>(): T
   export function withDefaults<T, D>(props: T, defaults: D): T & D
-  
+
   export type Ref<T> = { value: T }
   export type ComputedRef<T> = { value: T }
   export type DefineComponent = any
@@ -30,7 +30,7 @@ declare namespace app {
     query?: any
     params?: any
   }
-  
+
   interface Ctx {
     user?: any
     account?: any

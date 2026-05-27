@@ -1,5 +1,5 @@
-import { createZoomMeeting } from "../zoom-api"
-import ZoomMeetingsTable from "../../tables/zoom_meetings.table"
+import { createZoomMeeting } from '../zoom-api'
+import ZoomMeetingsTable from '../../tables/zoom_meetings.table'
 
 interface ZoomMeetingResponse {
   id: string | number
@@ -12,8 +12,9 @@ interface ZoomMeetingResponse {
   timezone: string
 }
 
-export const apiZoomCreateRoute = app.post('/')
-  .body(s => ({
+export const apiZoomCreateRoute = app
+  .post('/')
+  .body((s) => ({
     topic: s.string().optional(),
     agenda: s.string().optional(),
     duration: s.number().optional(),
@@ -30,13 +31,13 @@ export const apiZoomCreateRoute = app.post('/')
       start_timestamp: req.body.start_timestamp,
       timezone: req.body.timezone
     })
-    
+
     if (!result.ok || !result.meeting) {
       return result
     }
-    
+
     const meeting = result.meeting as unknown as ZoomMeetingResponse
-    
+
     // Save to table
     await ZoomMeetingsTable.create(ctx, {
       meeting_id: meeting.id.toString(),
@@ -47,7 +48,7 @@ export const apiZoomCreateRoute = app.post('/')
       password: meeting.password || '',
       created_at: new Date()
     })
-    
+
     return {
       ok: true,
       meeting: {

@@ -4,9 +4,9 @@ import { Heap } from '@app/heap'
 export const GlobalConfig = Heap.Table(
   't_webinar_room_webinar_room_global_config_YtT',
   {
-    kinescopeAutowebinarPlayerId: Heap.Optional(Heap.String()),
+    kinescopeAutowebinarPlayerId: Heap.Optional(Heap.String())
   },
-  { customMeta: { title: 'Конфиг вебинарной комнаты' } },
+  { customMeta: { title: 'Конфиг вебинарной комнаты' } }
 )
 
 export default GlobalConfig

@@ -2,7 +2,12 @@
 import AnalyticsSettings from '../tables/settings.table'
 import { ActiveJobs, getActiveTaskIds } from '../tables/active-jobs.table'
 import { Debug, DebugLevel } from '../shared/debug'
-import { applyDebugLevel, LOG_LEVEL_SETTING_KEY, parseDebugLevel, persistLogLevel } from '../lib/logging'
+import {
+  applyDebugLevel,
+  LOG_LEVEL_SETTING_KEY,
+  parseDebugLevel,
+  persistLogLevel
+} from '../lib/logging'
 import { cancelScheduledJob } from '@app/jobs'
 import { requireAccountRole } from '@app/auth'
 
@@ -16,7 +21,7 @@ export const apiGetSettingsRoute = app.get('/list', async (ctx, req) => {
     })
 
     Debug.info(ctx, `[settings:list] найдено ${settings.length} записей`)
-    
+
     return {
       success: true,
       settings
@@ -35,7 +40,7 @@ export const apiUpdateSettingRoute = app.post('/update', async (ctx, req) => {
 
   try {
     const { key, value, description } = req.body
-    
+
     if (!key) {
       Debug.warn(ctx, '[settings:update] отсутствует ключ настройки')
       return { success: false, error: 'Key is required' }
@@ -56,15 +61,15 @@ export const apiUpdateSettingRoute = app.post('/update', async (ctx, req) => {
         }
       }
     }
-    
+
     const setting = await AnalyticsSettings.createOrUpdateBy(ctx, 'key', {
       key,
       value: value || '',
       description: description || ''
     })
-    
+
     Debug.info(ctx, `[settings:update] сохранена настройка ${key}`)
-    
+
     return {
       success: true,
       setting
@@ -83,26 +88,26 @@ export const apiDeleteSettingRoute = app.post('/delete', async (ctx, req) => {
 
   try {
     const { id } = req.body
-    
+
     if (!id) {
       return { success: false, error: 'ID is required' }
     }
-    
+
     const existing = await AnalyticsSettings.findById(ctx, id)
     if (!existing) {
       Debug.warn(ctx, `[settings:delete] настройка ${id} не найдена`)
       return { success: false, error: 'Setting not found' }
     }
-    
+
     if (existing.key === LOG_LEVEL_SETTING_KEY) {
       Debug.warn(ctx, '[settings:delete] попытка удалить системный ключ log_level')
       return { success: false, error: 'System key log_level cannot be removed' }
     }
-    
+
     await AnalyticsSettings.delete(ctx, id)
-    
+
     Debug.info(ctx, `[settings:delete] удалена настройка ${existing.key}`)
-    
+
     return { success: true }
   } catch (error: any) {
     Debug.error(ctx, `[settings:delete] ошибка: ${error?.message || error}`)
@@ -121,7 +126,7 @@ export const apiGetEventFilterRoute = app.get('/event-filter', async (ctx, req) 
     const setting = await AnalyticsSettings.findOneBy(ctx, {
       key: 'events_filter'
     })
-    
+
     let eventTypes = []
     if (setting && setting.value) {
       try {
@@ -131,7 +136,7 @@ export const apiGetEventFilterRoute = app.get('/event-filter', async (ctx, req) 
         eventTypes = []
       }
     }
-    
+
     return {
       success: true,
       eventTypes
@@ -146,40 +151,42 @@ export const apiGetEventFilterRoute = app.get('/event-filter', async (ctx, req) 
   }
 })
 
-export const apiSaveEventFilterRoute = app.body(s => ({
-  eventTypes: s.array(s.string())
-})).post('/event-filter', async (ctx, req) => {
-  await applyDebugLevel(ctx, 'settings:event-filter:save')
+export const apiSaveEventFilterRoute = app
+  .body((s) => ({
+    eventTypes: s.array(s.string())
+  }))
+  .post('/event-filter', async (ctx, req) => {
+    await applyDebugLevel(ctx, 'settings:event-filter:save')
 
-  try {
-    const { eventTypes } = req.body
-    
-    // Сохраняем фильтр в настройках
-    await AnalyticsSettings.createOrUpdateBy(ctx, 'key', {
-      key: 'events_filter',
-      value: JSON.stringify(eventTypes),
-      description: 'Фильтр типов событий для мониторинга'
-    })
-    
-    Debug.info(ctx, `[settings:event-filter:save] сохранено типов: ${eventTypes.length}`)
-    
-    return {
-      success: true,
-      message: 'Фильтр событий обновлён'
+    try {
+      const { eventTypes } = req.body
+
+      // Сохраняем фильтр в настройках
+      await AnalyticsSettings.createOrUpdateBy(ctx, 'key', {
+        key: 'events_filter',
+        value: JSON.stringify(eventTypes),
+        description: 'Фильтр типов событий для мониторинга'
+      })
+
+      Debug.info(ctx, `[settings:event-filter:save] сохранено типов: ${eventTypes.length}`)
+
+      return {
+        success: true,
+        message: 'Фильтр событий обновлён'
+      }
+    } catch (error: any) {
+      Debug.error(ctx, `[settings:event-filter:save] ошибка: ${error?.message || error}`)
+      return {
+        success: false,
+        error: error.message
+      }
     }
-  } catch (error: any) {
-    Debug.error(ctx, `[settings:event-filter:save] ошибка: ${error?.message || error}`)
-    return {
-      success: false,
-      error: error.message
-    }
-  }
-})
+  })
 
 /**
  * Вспомогательные функции для управления активными джобами
  * Используются для отслеживания и остановки всех джобов
- * 
+ *
  * Каждая активная задача хранится в отдельной записи таблицы ActiveJobs
  * Это исключает race condition при одновременном добавлении/удалении
  */
@@ -198,7 +205,10 @@ export async function isStopAllJobsFlagSet(ctx: app.Ctx): Promise<boolean> {
     })
     return !!setting
   } catch (error) {
-    Debug.error(ctx, `[jobs:check-stop-flag] ошибка проверки флага остановки: ${error instanceof Error ? error.message : String(error)}`)
+    Debug.error(
+      ctx,
+      `[jobs:check-stop-flag] ошибка проверки флага остановки: ${error instanceof Error ? error.message : String(error)}`
+    )
     return false
   }
 }
@@ -212,7 +222,10 @@ export async function getActiveJobIds(ctx: app.Ctx): Promise<Set<string>> {
     const taskIds = await getActiveTaskIds(ctx)
     return new Set(taskIds)
   } catch (error) {
-    Debug.error(ctx, `[jobs:get-active] ошибка получения списка активных джобов: ${error instanceof Error ? error.message : String(error)}`)
+    Debug.error(
+      ctx,
+      `[jobs:get-active] ошибка получения списка активных джобов: ${error instanceof Error ? error.message : String(error)}`
+    )
     return new Set<string>()
   }
 }
@@ -234,7 +247,7 @@ export function normalizeParentTaskId(parentTaskId?: string | number | null): st
  * Атомарная операция Heap.create - нет race condition!
  */
 export async function addActiveJobId(
-  ctx: app.Ctx, 
+  ctx: app.Ctx,
   taskId: string | number,
   options?: {
     jobType?: string
@@ -243,18 +256,18 @@ export async function addActiveJobId(
   }
 ): Promise<void> {
   const taskIdStr = String(taskId)
-  
+
   try {
     // Проверяем, есть ли уже запись с таким taskId
     const existing = await ActiveJobs.findOneBy(ctx, {
       taskId: taskIdStr
     })
-    
+
     if (existing) {
       Debug.info(ctx, `[jobs:add] taskId ${taskIdStr} уже в списке активных`)
       return
     }
-    
+
     // Создаём новую запись - атомарная операция!
     await ActiveJobs.create(ctx, {
       taskId: taskIdStr,
@@ -262,10 +275,16 @@ export async function addActiveJobId(
       parentTaskId: normalizeParentTaskId(options?.parentTaskId),
       metadata: options?.metadata
     })
-    
-    Debug.info(ctx, `[jobs:add] добавлен taskId ${taskIdStr}${options?.jobType ? ` (тип: ${options.jobType})` : ''}`)
+
+    Debug.info(
+      ctx,
+      `[jobs:add] добавлен taskId ${taskIdStr}${options?.jobType ? ` (тип: ${options.jobType})` : ''}`
+    )
   } catch (error) {
-    Debug.error(ctx, `[jobs:add] ошибка добавления taskId ${taskIdStr}: ${error instanceof Error ? error.message : String(error)}`)
+    Debug.error(
+      ctx,
+      `[jobs:add] ошибка добавления taskId ${taskIdStr}: ${error instanceof Error ? error.message : String(error)}`
+    )
     // Не пробрасываем ошибку, чтобы не прерывать выполнение джоба
   }
 }
@@ -276,24 +295,27 @@ export async function addActiveJobId(
  */
 export async function removeActiveJobId(ctx: app.Ctx, taskId: string | number): Promise<void> {
   const taskIdStr = String(taskId)
-  
+
   try {
     const record = await ActiveJobs.findOneBy(ctx, {
       taskId: taskIdStr
     })
-    
+
     if (!record) {
       // Идемпотентность: taskId уже удалён
       Debug.info(ctx, `[jobs:remove] taskId ${taskIdStr} уже отсутствует в списке`)
       return
     }
-    
+
     // Атомарно удаляем запись
     await ActiveJobs.delete(ctx, record.id)
-    
+
     Debug.info(ctx, `[jobs:remove] удалён taskId ${taskIdStr}`)
   } catch (error) {
-    Debug.error(ctx, `[jobs:remove] ошибка удаления taskId ${taskIdStr}: ${error instanceof Error ? error.message : String(error)}`)
+    Debug.error(
+      ctx,
+      `[jobs:remove] ошибка удаления taskId ${taskIdStr}: ${error instanceof Error ? error.message : String(error)}`
+    )
     // Не пробрасываем ошибку, чтобы не прерывать выполнение джоба
   }
 }
@@ -302,13 +324,19 @@ export async function removeActiveJobId(ctx: app.Ctx, taskId: string | number): 
  * Остановить все активные джобы
  * Атомарно получает список джобов и очищает его
  */
-export async function stopAllJobs(ctx: app.Ctx): Promise<{ success: boolean; stopped: number; errors: number; errorsList: string[]; message?: string }> {
+export async function stopAllJobs(ctx: app.Ctx): Promise<{
+  success: boolean
+  stopped: number
+  errors: number
+  errorsList: string[]
+  message?: string
+}> {
   await applyDebugLevel(ctx, 'settings:stop-all-jobs')
-  
+
   let stopped = 0
   let errors = 0
   const errorsList: string[] = []
-  
+
   try {
     // 1. СНАЧАЛА устанавливаем флаг остановки (атомарно)
     // Это гарантирует, что новые джобы будут самоуничтожаться
@@ -317,12 +345,15 @@ export async function stopAllJobs(ctx: app.Ctx): Promise<{ success: boolean; sto
       value: 'true',
       description: 'Флаг остановки всех активных джобов'
     })
-    
-    Debug.info(ctx, '[settings:stop-all-jobs] флаг остановки установлен, новые джобы будут самоуничтожаться')
-    
+
+    Debug.info(
+      ctx,
+      '[settings:stop-all-jobs] флаг остановки установлен, новые джобы будут самоуничтожаться'
+    )
+
     // 2. Получаем список всех активных джобов
     const records = await ActiveJobs.findAll(ctx)
-    
+
     if (records.length === 0) {
       // Удаляем флаг, если нет активных джобов
       const flagSetting = await AnalyticsSettings.findOneBy(ctx, {
@@ -331,7 +362,7 @@ export async function stopAllJobs(ctx: app.Ctx): Promise<{ success: boolean; sto
       if (flagSetting) {
         await AnalyticsSettings.delete(ctx, flagSetting.id)
       }
-      
+
       Debug.info(ctx, '[settings:stop-all-jobs] нет активных джобов')
       return {
         success: true,
@@ -342,9 +373,9 @@ export async function stopAllJobs(ctx: app.Ctx): Promise<{ success: boolean; sto
         message: 'Активных задач не найдено'
       }
     }
-    
+
     Debug.info(ctx, `[settings:stop-all-jobs] найдено ${records.length} активных джобов`)
-    
+
     // 3. Отменяем каждый джоб
     const cancelPromises = records.map(async (record) => {
       try {
@@ -355,26 +386,32 @@ export async function stopAllJobs(ctx: app.Ctx): Promise<{ success: boolean; sto
           errorsList.push(`Некорректный taskId: ${record.taskId}`)
           return
         }
-        
+
         await cancelScheduledJob(ctx, taskId)
         stopped++
-        Debug.info(ctx, `[settings:stop-all-jobs] отменён джоб ${taskId}${record.jobType ? ` (${record.jobType})` : ''}`)
+        Debug.info(
+          ctx,
+          `[settings:stop-all-jobs] отменён джоб ${taskId}${record.jobType ? ` (${record.jobType})` : ''}`
+        )
       } catch (error) {
         errors++
         const errorMessage = error instanceof Error ? error.message : String(error)
         errorsList.push(`Ошибка отмены ${record.taskId}: ${errorMessage}`)
-        Debug.warn(ctx, `[settings:stop-all-jobs] не удалось отменить джоб ${record.taskId}: ${errorMessage}`)
+        Debug.warn(
+          ctx,
+          `[settings:stop-all-jobs] не удалось отменить джоб ${record.taskId}: ${errorMessage}`
+        )
       }
     })
-    
+
     // 4. Ждём завершения всех отмен
     await Promise.all(cancelPromises)
-    
+
     // 5. Очищаем все записи из таблицы
     await ActiveJobs.deleteAll(ctx, {
-      limit: null  // Удаляем все записи
+      limit: null // Удаляем все записи
     })
-    
+
     // 6. УДАЛЯЕМ флаг остановки после завершения
     const flagSetting = await AnalyticsSettings.findOneBy(ctx, {
       key: STOP_ALL_JOBS_KEY
@@ -383,9 +420,9 @@ export async function stopAllJobs(ctx: app.Ctx): Promise<{ success: boolean; sto
       await AnalyticsSettings.delete(ctx, flagSetting.id)
       Debug.info(ctx, '[settings:stop-all-jobs] флаг остановки удалён')
     }
-    
+
     Debug.info(ctx, `[settings:stop-all-jobs] завершено: отменено ${stopped}, ошибок ${errors}`)
-    
+
     // Формируем сообщение
     let message = ''
     if (stopped > 0 && errors === 0) {
@@ -397,7 +434,7 @@ export async function stopAllJobs(ctx: app.Ctx): Promise<{ success: boolean; sto
     } else {
       message = 'Не было задач для остановки'
     }
-    
+
     return {
       success: true,
       stopped,
@@ -417,9 +454,12 @@ export async function stopAllJobs(ctx: app.Ctx): Promise<{ success: boolean; sto
         Debug.info(ctx, '[settings:stop-all-jobs] флаг остановки удалён после ошибки')
       }
     } catch (cleanupError) {
-      Debug.error(ctx, `[settings:stop-all-jobs] не удалось удалить флаг остановки: ${cleanupError instanceof Error ? cleanupError.message : String(cleanupError)}`)
+      Debug.error(
+        ctx,
+        `[settings:stop-all-jobs] не удалось удалить флаг остановки: ${cleanupError instanceof Error ? cleanupError.message : String(cleanupError)}`
+      )
     }
-    
+
     Debug.error(ctx, `[settings:stop-all-jobs] критическая ошибка: ${error?.message || error}`)
     const errorMessage = error instanceof Error ? error.message : String(error)
     return {
@@ -440,9 +480,8 @@ export async function stopAllJobs(ctx: app.Ctx): Promise<{ success: boolean; sto
 export const apiStopAllJobsRoute = app.post('/stop-all-jobs', async (ctx, req) => {
   requireAccountRole(ctx, 'Admin')
   await applyDebugLevel(ctx, 'settings:stop-all-jobs:api')
-  
+
   const result = await stopAllJobs(ctx)
-  
+
   return result
 })
-

@@ -36,12 +36,29 @@ defineProps({ active: Boolean })
   pointer-events: none;
 }
 .ring-tr {
-  width: 320px; height: 320px;
-  top: 6%; right: 5%;
+  width: 320px;
+  height: 320px;
+  top: 6%;
+  right: 5%;
 }
-.ring-tr.inner { width: 220px; height: 220px; top: calc(6% + 50px); right: calc(5% + 50px); }
-.ring-bl { width: 180px; height: 180px; bottom: 8%; left: 4%; }
-.ring-bl.inner { width: 110px; height: 110px; bottom: calc(8% + 35px); left: calc(4% + 35px); }
+.ring-tr.inner {
+  width: 220px;
+  height: 220px;
+  top: calc(6% + 50px);
+  right: calc(5% + 50px);
+}
+.ring-bl {
+  width: 180px;
+  height: 180px;
+  bottom: 8%;
+  left: 4%;
+}
+.ring-bl.inner {
+  width: 110px;
+  height: 110px;
+  bottom: calc(8% + 35px);
+  left: calc(4% + 35px);
+}
 
 .content {
   position: relative;
@@ -92,10 +109,24 @@ defineProps({ active: Boolean })
 }
 
 @media (max-width: 768px) {
-  .ring-tr { width: 180px; height: 180px; }
-  .ring-tr.inner { width: 120px; height: 120px; }
-  .ring-bl { width: 110px; height: 110px; }
-  .ring-bl.inner { width: 70px; height: 70px; }
-  .subtitle { margin-bottom: 56px; }
+  .ring-tr {
+    width: 180px;
+    height: 180px;
+  }
+  .ring-tr.inner {
+    width: 120px;
+    height: 120px;
+  }
+  .ring-bl {
+    width: 110px;
+    height: 110px;
+  }
+  .ring-bl.inner {
+    width: 70px;
+    height: 70px;
+  }
+  .subtitle {
+    margin-bottom: 56px;
+  }
 }
 </style>

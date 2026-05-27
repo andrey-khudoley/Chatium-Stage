@@ -14,6 +14,8 @@ export const getUserLessonAnswersHandler: V1GcHandler = async (_ctx, a) => {
   return { kind: 'gc_result', gc }
 }
 
-export const getUserLessonAnswersRoute = app.get('/', async (ctx, req) => handleV1Op(ctx, req, 'getUserLessonAnswers', getUserLessonAnswersHandler))
+export const getUserLessonAnswersRoute = app.get('/', async (ctx, req) =>
+  handleV1Op(ctx, req, 'getUserLessonAnswers', getUserLessonAnswersHandler)
+)
 
 export default getUserLessonAnswersRoute

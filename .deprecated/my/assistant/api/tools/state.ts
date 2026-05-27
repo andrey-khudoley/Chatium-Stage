@@ -15,7 +15,7 @@ export const toolsStateRoute = app.get('/', async (ctx, req) => {
   } catch (error) {
     ctx.account.log('tools.state error', {
       level: 'error',
-      json: { userId: user.id, error: String(error) },
+      json: { userId: user.id, error: String(error) }
     })
     return { success: false, error: 'Не удалось получить состояние инструментов' }
   }

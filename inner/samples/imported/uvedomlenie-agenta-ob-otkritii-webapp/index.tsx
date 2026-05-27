@@ -10,8 +10,8 @@ export const indexPageRoute = app.get('/', async (ctx, req) => {
       <html>
         <head>
           <title>WebApp Opened Events - Демо</title>
-          <meta name='viewport' content='width=device-width, initial-scale=1' />
-          <script src='/s/static/lib/tailwind.3.4.16.min.js'></script>
+          <meta name="viewport" content="width=device-width, initial-scale=1" />
+          <script src="/s/static/lib/tailwind.3.4.16.min.js"></script>
         </head>
         <body>
           <GalleryPage />
@@ -27,11 +27,11 @@ export const indexPageRoute = app.get('/', async (ctx, req) => {
     <html>
       <head>
         <title>Настройки WebApp Opened</title>
-        <meta name='viewport' content='width=device-width, initial-scale=1' />
-        <script src='/s/metric/clarity.js'></script>
-        <script src='/s/static/lib/tailwind.3.4.16.min.js'></script>
-        <link href='/s/static/lib/fontawesome/6.7.2/css/all.min.css' rel='stylesheet' />
-        <style type='text/tailwindcss'>{`
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <script src="/s/metric/clarity.js"></script>
+        <script src="/s/static/lib/tailwind.3.4.16.min.js"></script>
+        <link href="/s/static/lib/fontawesome/6.7.2/css/all.min.css" rel="stylesheet" />
+        <style type="text/tailwindcss">{`
           body {
             --color-primary: #1E40AF;
             --color-secondary: #1E3A8A;

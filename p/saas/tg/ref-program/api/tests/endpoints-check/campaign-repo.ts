@@ -53,11 +53,9 @@ export const campaignRepoTestRoute = app.get('/', async (ctx, req) => {
         const hasSettings = campaign.settings != null
         const notDeleted = campaign.isDeleted !== true
         const access = await memberRepo.checkCampaignAccess(ctx, campaign.id, userId)
-        const ownerAdded =
-          access.hasAccess === true && access.role === 'campaign-owner'
+        const ownerAdded = access.hasAccess === true && access.role === 'campaign-owner'
 
-        const passed =
-          hasId && hasTitle && hasSecret && hasSettings && notDeleted && ownerAdded
+        const passed = hasId && hasTitle && hasSecret && hasSettings && notDeleted && ownerAdded
         results.push({
           id: 'createCampaign',
           title: 'createCampaign',
@@ -109,8 +107,7 @@ export const campaignRepoTestRoute = app.get('/', async (ctx, req) => {
       // --- getCampaignById (найдена) ---
       try {
         const found = await campaignRepo.getCampaignById(ctx, campaignId)
-        const passed =
-          found != null && found.id === campaignId && found.title?.includes(LOG_PATH)
+        const passed = found != null && found.id === campaignId && found.title?.includes(LOG_PATH)
         results.push({
           id: 'getCampaignById-found',
           title: 'getCampaignById (найдена)',
@@ -146,8 +143,7 @@ export const campaignRepoTestRoute = app.get('/', async (ctx, req) => {
       try {
         const list = await campaignRepo.getUserCampaigns(ctx, userId)
         const containsOur =
-          list.some((c) => c.id === campaignId) &&
-          list.every((c) => c.isDeleted !== true)
+          list.some((c) => c.id === campaignId) && list.every((c) => c.isDeleted !== true)
         const otherList = await campaignRepo.getUserCampaigns(ctx, 'fake-user-id-xyz-123')
         const otherDoesNotContain = !otherList.some((c) => c.id === campaignId)
         results.push({

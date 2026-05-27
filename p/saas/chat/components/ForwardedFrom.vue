@@ -6,7 +6,6 @@
       <span class="forwarded-chat">{{ forwardedFrom.title }}</span>
     </div>
     <div v-if="forwardedFrom.authorName" class="forwarded-author-line" @click="handleAuthorClick">
-      
       <span class="forwarded-author">@{{ forwardedFrom.authorName }}</span>
     </div>
   </div>
@@ -32,7 +31,7 @@ function handleAuthorClick(event) {
   if (props.forwardedFrom?.authorId) {
     emit('authorClick', {
       userId: props.forwardedFrom.authorId,
-      userName: props.forwardedFrom.authorName,
+      userName: props.forwardedFrom.authorName
     })
   }
 }

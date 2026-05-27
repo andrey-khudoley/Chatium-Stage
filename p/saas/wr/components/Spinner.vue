@@ -1,17 +1,17 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed } from 'vue'
 
 interface SpinnerProps {
-  size?: number;
-  style?: Record<string, string | number>;
-  class?: string;
+  size?: number
+  style?: Record<string, string | number>
+  class?: string
 }
 
-const props = defineProps<SpinnerProps>();
+const props = defineProps<SpinnerProps>()
 
 const spinnerClass = computed(() => {
-  return ['Spinner', props.class].filter(Boolean).join(' ');
-});
+  return ['Spinner', props.class].filter(Boolean).join(' ')
+})
 
 const spinnerStyle = computed(() => {
   return {
@@ -19,15 +19,12 @@ const spinnerStyle = computed(() => {
     height: props.size ? `${props.size}px` : undefined,
     borderWidth: props.size ? `${props.size * 0.16}px` : undefined,
     ...props.style
-  };
-});
-</script> 
+  }
+})
+</script>
 
 <template>
-  <span
-    :class="spinnerClass"
-    :style="spinnerStyle"
-  ></span>
+  <span :class="spinnerClass" :style="spinnerStyle"></span>
 </template>
 
 <style scoped>

@@ -17,7 +17,7 @@ export const loggingMetricsTestRoute = app.get('/', async (ctx) => {
   await loggerLib.writeServerLog(ctx, {
     severity: 7,
     message: `[${LOG_PATH}] Запрос проверки metrics`,
-    payload: {},
+    payload: {}
   })
 
   const results: TestResult[] = []
@@ -30,14 +30,14 @@ export const loggingMetricsTestRoute = app.get('/', async (ctx) => {
       id: 'get_metrics_shape',
       title: 'get-metrics returns object',
       passed: isObject,
-      error: isObject ? undefined : 'metrics is not an object',
+      error: isObject ? undefined : 'metrics is not an object'
     })
   } catch (e) {
     results.push({
       id: 'get_metrics_shape',
       title: 'get-metrics returns object',
       passed: false,
-      error: (e as Error)?.message ?? String(e),
+      error: (e as Error)?.message ?? String(e)
     })
   }
 
@@ -45,18 +45,21 @@ export const loggingMetricsTestRoute = app.get('/', async (ctx) => {
     await apiLoggingResetMetricsRoute.run(ctx)
     const afterReset = await apiLoggingGetMetricsRoute.run(ctx)
     const metrics = (afterReset?.metrics ?? {}) as Record<string, number>
-    const hasKeys = typeof metrics.processedMessages === 'number' || typeof metrics.errors === 'number' || Object.keys(metrics).length >= 0
+    const hasKeys =
+      typeof metrics.processedMessages === 'number' ||
+      typeof metrics.errors === 'number' ||
+      Object.keys(metrics).length >= 0
     results.push({
       id: 'reset_metrics',
       title: 'reset-metrics runs and get-metrics still returns object',
-      passed: hasKeys,
+      passed: hasKeys
     })
   } catch (e) {
     results.push({
       id: 'reset_metrics',
       title: 'reset-metrics',
       passed: false,
-      error: (e as Error)?.message ?? String(e),
+      error: (e as Error)?.message ?? String(e)
     })
   }
 

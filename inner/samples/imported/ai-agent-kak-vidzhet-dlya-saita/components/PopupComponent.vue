@@ -15,7 +15,9 @@
         </div>
         <div v-else-if="loadError && !hasLoaded" class="chat-state chat-state--error">
           <span class="chat-state__label">{{ loadError }}</span>
-          <button type="button" class="chat-state__retry" @click="loadMessages">Попробовать снова</button>
+          <button type="button" class="chat-state__retry" @click="loadMessages">
+            Попробовать снова
+          </button>
         </div>
         <div v-else-if="!messages.length" class="chat-state chat-state--empty">
           <span class="chat-state__label"> Спросите что-нибудь — мы ответим в этом чате. </span>
@@ -24,7 +26,11 @@
           <article
             v-for="message in messages"
             :key="message.id"
-            :class="['chat-message', `chat-message--${message.author}`, { 'chat-message--pending': message.pending }]"
+            :class="[
+              'chat-message',
+              `chat-message--${message.author}`,
+              { 'chat-message--pending': message.pending }
+            ]"
           >
             <span class="chat-message__time">
               {{ message.pending ? 'Отправка…' : message.time }}
@@ -116,7 +122,7 @@ const timeFormatter = new Intl.DateTimeFormat('ru-RU', {
   minute: '2-digit'
 })
 
-const formatTime = value => {
+const formatTime = (value) => {
   const date = value ? new Date(value) : new Date()
   if (Number.isNaN(date.getTime())) {
     return timeFormatter.format(new Date())
@@ -124,7 +130,7 @@ const formatTime = value => {
   return timeFormatter.format(date)
 }
 
-const isImageFile = file => {
+const isImageFile = (file) => {
   if (!file || typeof file.url !== 'string' || !file.url) {
     return false
   }
@@ -136,7 +142,7 @@ const isImageFile = file => {
   return file.mime.startsWith('image/')
 }
 
-const extractImageFiles = items => {
+const extractImageFiles = (items) => {
   if (!Array.isArray(items) || items.length === 0) {
     return []
   }
@@ -242,7 +248,7 @@ const loadMessages = async (withSpinner = true) => {
   }
 }
 
-const sendMessage = async payload => {
+const sendMessage = async (payload) => {
   if (isSending.value) {
     return
   }
@@ -280,7 +286,7 @@ const sendMessage = async payload => {
 
     if (response?.success === false) {
       sendError.value = response.reason ?? 'Не удалось отправить сообщение'
-      messages.value = messages.value.filter(msg => msg.id !== pending.id)
+      messages.value = messages.value.filter((msg) => msg.id !== pending.id)
       hideTypingIndicator()
     } else {
       await loadMessages(false)
@@ -289,7 +295,7 @@ const sendMessage = async payload => {
   } catch (error) {
     console.error('Failed to send message', error)
     sendError.value = 'Не удалось отправить сообщение'
-    messages.value = messages.value.filter(msg => msg.id !== pending.id)
+    messages.value = messages.value.filter((msg) => msg.id !== pending.id)
     hideTypingIndicator()
   } finally {
     isSending.value = false
@@ -309,7 +315,7 @@ onMounted(async () => {
 
   const socketClient = await getOrCreateBrowserSocketClient()
   const socketSubscription = socketClient.subscribeToData(props.socketId)
-  socketSubscription.listen(data => {
+  socketSubscription.listen((data) => {
     console.log('Socket message received:', data)
 
     if (data.action === 'chat.received') {
@@ -358,7 +364,10 @@ onMounted(async () => {
   line-height: 1;
   color: #e3e9ff;
   cursor: pointer;
-  transition: background 0.25s ease, color 0.25s ease, transform 0.25s ease;
+  transition:
+    background 0.25s ease,
+    color 0.25s ease,
+    transform 0.25s ease;
 }
 
 .close-btn:hover {
@@ -425,7 +434,9 @@ onMounted(async () => {
   color: #dce5ff;
   font-size: 13px;
   cursor: pointer;
-  transition: background 0.25s ease, border 0.25s ease;
+  transition:
+    background 0.25s ease,
+    border 0.25s ease;
 }
 
 .chat-state__retry:hover {
@@ -546,7 +557,9 @@ onMounted(async () => {
   padding: 12px 18px;
   border-radius: 16px;
   background: var(--chat-surface-alt);
-  box-shadow: inset 0 0 0 1px rgba(79, 140, 255, 0.12), 0 4px 12px rgba(6, 16, 46, 0.35);
+  box-shadow:
+    inset 0 0 0 1px rgba(79, 140, 255, 0.12),
+    0 4px 12px rgba(6, 16, 46, 0.35);
 }
 
 .chat-typing-bubble span {

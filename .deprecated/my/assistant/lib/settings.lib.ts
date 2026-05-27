@@ -66,7 +66,8 @@ export async function getSettingString(ctx: app.Ctx, key: string): Promise<strin
     payload: { key }
   })
   const value = await getSetting(ctx, key)
-  const result = typeof value === 'string' ? value : String((DEFAULTS as Record<string, unknown>)[key] ?? '')
+  const result =
+    typeof value === 'string' ? value : String((DEFAULTS as Record<string, unknown>)[key] ?? '')
   await loggerLib.writeServerLog(ctx, {
     severity: 7,
     message: `[${LOG_MODULE}] getSettingString exit`,
@@ -137,7 +138,9 @@ export async function getDashboardResetAt(ctx: app.Ctx): Promise<number> {
  */
 export async function getAiModel(ctx: app.Ctx): Promise<string> {
   const value = await getSetting(ctx, SETTING_KEYS.AI_MODEL)
-  return typeof value === 'string' && value.trim() ? value.trim() : String(DEFAULTS[SETTING_KEYS.AI_MODEL])
+  return typeof value === 'string' && value.trim()
+    ? value.trim()
+    : String(DEFAULTS[SETTING_KEYS.AI_MODEL])
 }
 
 /**
@@ -145,7 +148,9 @@ export async function getAiModel(ctx: app.Ctx): Promise<string> {
  */
 export async function getAiFormulateSystemPrompt(ctx: app.Ctx): Promise<string> {
   const value = await getSetting(ctx, SETTING_KEYS.AI_FORMULATE_SYSTEM_PROMPT)
-  return typeof value === 'string' && value.trim() ? value.trim() : String(DEFAULTS[SETTING_KEYS.AI_FORMULATE_SYSTEM_PROMPT])
+  return typeof value === 'string' && value.trim()
+    ? value.trim()
+    : String(DEFAULTS[SETTING_KEYS.AI_FORMULATE_SYSTEM_PROMPT])
 }
 
 /**
@@ -196,7 +201,9 @@ export async function setSetting(ctx: app.Ctx, key: string, value: unknown): Pro
       payload: { str, isLogLevel: isLogLevel(str) }
     })
     if (!isLogLevel(str)) {
-      throw new Error(`Недопустимый уровень логирования: ${str}. Допустимо: ${LOG_LEVELS.join(', ')}`)
+      throw new Error(
+        `Недопустимый уровень логирования: ${str}. Допустимо: ${LOG_LEVELS.join(', ')}`
+      )
     }
     normalized = str
   } else if (key === SETTING_KEYS.LOGS_LIMIT) {

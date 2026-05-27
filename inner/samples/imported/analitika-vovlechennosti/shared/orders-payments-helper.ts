@@ -25,21 +25,19 @@ export interface Payment {
 /**
  * Загружает заказы из внешнего воркспейса
  */
-export async function loadExternalOrders(
-  ctx: app.Ctx,
-  workspacePath: string
-): Promise<Order[]> {
+export async function loadExternalOrders(ctx: app.Ctx, workspacePath: string): Promise<Order[]> {
   try {
     // Получаем список всех таблиц в воркспейсе
     const tables = await ctx.heap.getWorkspaceTables(workspacePath)
-    
+
     // Ищем таблицу с заказами по названию
-    const orderTable = tables.find(t => 
-      t.title.toLowerCase().includes('заказ') ||
-      t.title.toLowerCase().includes('order') ||
-      t.name.toLowerCase().includes('order')
+    const orderTable = tables.find(
+      (t) =>
+        t.title.toLowerCase().includes('заказ') ||
+        t.title.toLowerCase().includes('order') ||
+        t.name.toLowerCase().includes('order')
     )
-    
+
     if (!orderTable) {
       ctx.account.log('Orders table not found', {
         level: 'warn',
@@ -47,30 +45,30 @@ export async function loadExternalOrders(
       })
       return []
     }
-    
+
     // Загружаем все данные из таблицы с пагинацией
     const allOrders: Order[] = []
     let offset = 0
     const batchSize = 1000
-    
+
     while (true) {
       const batch = await ctx.heap.loadExternalTableData(orderTable.path, {
         limit: batchSize,
         offset: offset
       })
-      
+
       if (batch.length === 0) break
       allOrders.push(...batch)
-      
+
       if (batch.length < batchSize) break
       offset += batchSize
     }
-    
+
     ctx.account.log('External orders loaded', {
       level: 'info',
       json: { workspacePath, tablePath: orderTable.path, count: allOrders.length }
     })
-    
+
     return allOrders
   } catch (error) {
     ctx.account.log('Error loading external orders', {
@@ -91,14 +89,15 @@ export async function loadExternalPayments(
   try {
     // Получаем список всех таблиц в воркспейсе
     const tables = await ctx.heap.getWorkspaceTables(workspacePath)
-    
+
     // Ищем таблицу с оплатами по названию
-    const paymentTable = tables.find(t => 
-      t.title.toLowerCase().includes('оплат') ||
-      t.title.toLowerCase().includes('pay') ||
-      t.name.toLowerCase().includes('payment')
+    const paymentTable = tables.find(
+      (t) =>
+        t.title.toLowerCase().includes('оплат') ||
+        t.title.toLowerCase().includes('pay') ||
+        t.name.toLowerCase().includes('payment')
     )
-    
+
     if (!paymentTable) {
       ctx.account.log('Payments table not found', {
         level: 'warn',
@@ -106,30 +105,30 @@ export async function loadExternalPayments(
       })
       return []
     }
-    
+
     // Загружаем все данные из таблицы с пагинацией
     const allPayments: Payment[] = []
     let offset = 0
     const batchSize = 1000
-    
+
     while (true) {
       const batch = await ctx.heap.loadExternalTableData(paymentTable.path, {
         limit: batchSize,
         offset: offset
       })
-      
+
       if (batch.length === 0) break
       allPayments.push(...batch)
-      
+
       if (batch.length < batchSize) break
       offset += batchSize
     }
-    
+
     ctx.account.log('External payments loaded', {
       level: 'info',
       json: { workspacePath, tablePath: paymentTable.path, count: allPayments.length }
     })
-    
+
     return allPayments
   } catch (error) {
     ctx.account.log('Error loading external payments', {
@@ -143,28 +142,22 @@ export async function loadExternalPayments(
 /**
  * Универсальная функция загрузки заказов
  */
-export async function loadOrders(
-  ctx: app.Ctx,
-  workspacePath: string
-): Promise<Order[]> {
+export async function loadOrders(ctx: app.Ctx, workspacePath: string): Promise<Order[]> {
   if (!workspacePath || workspacePath === ctx.workspacePath) {
     return []
   }
-  
+
   return await loadExternalOrders(ctx, workspacePath)
 }
 
 /**
  * Универсальная функция загрузки оплат
  */
-export async function loadPayments(
-  ctx: app.Ctx,
-  workspacePath: string
-): Promise<Payment[]> {
+export async function loadPayments(ctx: app.Ctx, workspacePath: string): Promise<Payment[]> {
   if (!workspacePath || workspacePath === ctx.workspacePath) {
     return []
   }
-  
+
   return await loadExternalPayments(ctx, workspacePath)
 }
 
@@ -173,7 +166,7 @@ export async function loadPayments(
  */
 export function parseDate(dateValue: any): Date | null {
   if (!dateValue) return null
-  
+
   // Если это строка
   if (typeof dateValue === 'string') {
     // Формат DD.MM.YYYY
@@ -188,29 +181,25 @@ export function parseDate(dateValue: any): Date | null {
     // Формат YYYY-MM-DD или ISO
     return new Date(dateValue)
   }
-  
+
   // Если это число (timestamp)
   if (typeof dateValue === 'number') {
     return new Date(dateValue)
   }
-  
+
   // Если это уже Date
   if (dateValue instanceof Date) {
     return dateValue
   }
-  
+
   return null
 }
 
 /**
  * Фильтрует заказы по диапазону дат
  */
-export function filterOrdersByPeriod(
-  orders: Order[],
-  periodStart: Date,
-  periodEnd: Date
-): Order[] {
-  return orders.filter(order => {
+export function filterOrdersByPeriod(orders: Order[], periodStart: Date, periodEnd: Date): Order[] {
+  return orders.filter((order) => {
     // Пробуем сначала createdAt, потом date для совместимости
     const orderDate = parseDate(order.createdAt || order.date)
     if (!orderDate) return false
@@ -226,7 +215,7 @@ export function filterPaymentsByPeriod(
   periodStart: Date,
   periodEnd: Date
 ): Payment[] {
-  return payments.filter(payment => {
+  return payments.filter((payment) => {
     // Пробуем paidAt, потом 'дата оплаты', потом date для совместимости
     const paymentDate = parseDate(payment.paidAt || payment['дата оплаты'] || payment.date)
     if (!paymentDate) return false

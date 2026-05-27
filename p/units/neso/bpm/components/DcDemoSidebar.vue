@@ -55,8 +55,7 @@ watch(
     const next: Record<string, boolean> = {}
     for (const item of items) {
       if (item.children?.length) {
-        next[item.id] =
-          expandedGroups.value[item.id] ?? item.id === props.activeId
+        next[item.id] = expandedGroups.value[item.id] ?? item.id === props.activeId
       }
     }
     expandedGroups.value = next
@@ -156,7 +155,10 @@ function onCollapseClick() {
         <div class="bpm-sb__brand-media">
           <img
             class="bpm-sb__brand-img"
-            :src="logoImageUrl ?? 'https://sel.cdn-chatium.io/thumbnail/image_msk_bxpKawmlab.512x512.png/s/128x?'"
+            :src="
+              logoImageUrl ??
+              'https://sel.cdn-chatium.io/thumbnail/image_msk_bxpKawmlab.512x512.png/s/128x?'
+            "
             :alt="(logoText ?? 'NeSo BPM') + ' logo'"
           />
         </div>
@@ -243,7 +245,11 @@ function onCollapseClick() {
           <span class="bpm-sb__link-icon">
             <i :class="['fas', item.icon]" aria-hidden="true"></i>
           </span>
-          <div class="bpm-sb__link-slot" :class="{ 'bpm-sb__link-slot--collapsed': isCollapsed }" :aria-hidden="isCollapsed">
+          <div
+            class="bpm-sb__link-slot"
+            :class="{ 'bpm-sb__link-slot--collapsed': isCollapsed }"
+            :aria-hidden="isCollapsed"
+          >
             <span class="bpm-sb__link-label">{{ item.label }}</span>
             <span v-if="item.badge" class="bpm-sb__badge">{{ item.badge }}</span>
             <span
@@ -272,7 +278,11 @@ function onCollapseClick() {
           <span class="bpm-sb__link-icon">
             <i :class="['fas', item.icon]" aria-hidden="true"></i>
           </span>
-          <div class="bpm-sb__link-slot" :class="{ 'bpm-sb__link-slot--collapsed': isCollapsed }" :aria-hidden="isCollapsed">
+          <div
+            class="bpm-sb__link-slot"
+            :class="{ 'bpm-sb__link-slot--collapsed': isCollapsed }"
+            :aria-hidden="isCollapsed"
+          >
             <span class="bpm-sb__link-label">{{ item.label }}</span>
             <span v-if="item.badge" class="bpm-sb__badge">{{ item.badge }}</span>
             <span
@@ -322,11 +332,7 @@ function onCollapseClick() {
     <footer class="bpm-sb__footer">
       <div
         class="bpm-sb__user"
-        :title="
-          isCollapsed
-            ? `${userName ?? 'Operator'} — ${userRole ?? 'Workflow Admin'}`
-            : ''
-        "
+        :title="isCollapsed ? `${userName ?? 'Operator'} — ${userRole ?? 'Workflow Admin'}` : ''"
       >
         <div class="bpm-sb__avatar">
           <i class="fas fa-user-gear" aria-hidden="true"></i>
@@ -340,12 +346,7 @@ function onCollapseClick() {
             <span class="bpm-sb__user-name">{{ userName ?? 'Operator' }}</span>
             <span class="bpm-sb__user-role">{{ userRole ?? 'Workflow Admin' }}</span>
           </div>
-          <a
-            class="bpm-sb__logout"
-            :href="logoutUrl ?? '#'"
-            aria-label="Выйти"
-            title="Выйти"
-          >
+          <a class="bpm-sb__logout" :href="logoutUrl ?? '#'" aria-label="Выйти" title="Выйти">
             <i class="fas fa-right-from-bracket" aria-hidden="true"></i>
             <span class="bpm-sb__logout-text">Выйти</span>
           </a>
@@ -377,10 +378,13 @@ function onCollapseClick() {
   flex-direction: column;
   padding: 12px 10px 10px;
   color: var(--text-primary);
-  background: var(--gradient-glass, linear-gradient(180deg, rgba(255,255,255,0.08) 0%, transparent 50%)),
+  background: var(
+      --gradient-glass,
+      linear-gradient(180deg, rgba(255, 255, 255, 0.08) 0%, transparent 50%)
+    ),
     var(--surface-glass, rgba(20, 30, 40, 0.6));
   backdrop-filter: blur(20px);
-  border-right: 1px solid var(--border-strong, rgba(255,255,255,0.1));
+  border-right: 1px solid var(--border-strong, rgba(255, 255, 255, 0.1));
   box-shadow: 4px 0 24px rgba(0, 0, 0, 0.15);
   overflow: hidden;
   transition:
@@ -393,14 +397,17 @@ function onCollapseClick() {
   --bpm-shift-delay: 0.2s;
   width: var(--sidebar-collapsed-width, var(--bpm-sb-width-collapsed));
   padding: 12px 8px 10px;
-  transition: width 0.4s var(--bpm-ease) var(--bpm-shift-delay), transform 0.4s var(--bpm-ease) var(--bpm-shift-delay), padding 0.4s var(--bpm-ease) var(--bpm-shift-delay);
+  transition:
+    width 0.4s var(--bpm-ease) var(--bpm-shift-delay),
+    transform 0.4s var(--bpm-ease) var(--bpm-shift-delay),
+    padding 0.4s var(--bpm-ease) var(--bpm-shift-delay);
 }
 
 /* Разделители секций */
 .bpm-sb__divider {
   height: 1px;
   flex-shrink: 0;
-  background: var(--border-strong, rgba(255,255,255,0.12));
+  background: var(--border-strong, rgba(255, 255, 255, 0.12));
   opacity: 0.8;
 }
 
@@ -413,7 +420,7 @@ function onCollapseClick() {
 }
 
 .bpm-sb--light .bpm-sb__divider {
-  background: var(--border-strong, rgba(0,0,0,0.12));
+  background: var(--border-strong, rgba(0, 0, 0, 0.12));
 }
 
 .bpm-sb--light {
@@ -458,7 +465,9 @@ function onCollapseClick() {
   min-width: 0;
   flex: 1;
   width: 100%;
-  transition: grid-template-rows 0.4s var(--bpm-ease) var(--bpm-shift-delay), gap 0.4s var(--bpm-ease) var(--bpm-shift-delay);
+  transition:
+    grid-template-rows 0.4s var(--bpm-ease) var(--bpm-shift-delay),
+    gap 0.4s var(--bpm-ease) var(--bpm-shift-delay);
 }
 
 .bpm-sb__brand--collapsed {
@@ -468,7 +477,9 @@ function onCollapseClick() {
   min-width: 0;
   gap: 0;
   /* Задержка: сжатие строки после исчезновения текста */
-  transition: grid-template-rows 0.4s var(--bpm-ease) var(--bpm-shift-delay), gap 0.4s var(--bpm-ease) var(--bpm-shift-delay);
+  transition:
+    grid-template-rows 0.4s var(--bpm-ease) var(--bpm-shift-delay),
+    gap 0.4s var(--bpm-ease) var(--bpm-shift-delay);
 }
 
 .bpm-sb__brand-media {
@@ -522,7 +533,7 @@ function onCollapseClick() {
 
 .bpm-sb__brand-sub {
   font-size: 0.65rem;
-  color: var(--text-tertiary, rgba(255,255,255,0.5));
+  color: var(--text-tertiary, rgba(255, 255, 255, 0.5));
   letter-spacing: 0.04em;
 }
 
@@ -530,10 +541,10 @@ function onCollapseClick() {
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid var(--border-soft, rgba(255,255,255,0.15));
+  border: 1px solid var(--border-soft, rgba(255, 255, 255, 0.15));
   border-radius: var(--radius-md, 10px);
-  background: color-mix(in srgb, var(--surface-2, rgba(255,255,255,0.08)) 80%, transparent);
-  color: var(--text-secondary, rgba(255,255,255,0.8));
+  background: color-mix(in srgb, var(--surface-2, rgba(255, 255, 255, 0.08)) 80%, transparent);
+  color: var(--text-secondary, rgba(255, 255, 255, 0.8));
   cursor: pointer;
   transition:
     border-color 0.25s var(--bpm-ease),
@@ -546,8 +557,8 @@ function onCollapseClick() {
 
 .bpm-sb__btn:hover {
   color: var(--text-primary, #fff);
-  border-color: var(--border-accent, rgba(255,255,255,0.3));
-  background: color-mix(in srgb, var(--surface-2, rgba(255,255,255,0.12)) 90%, transparent);
+  border-color: var(--border-accent, rgba(255, 255, 255, 0.3));
+  background: color-mix(in srgb, var(--surface-2, rgba(255, 255, 255, 0.12)) 90%, transparent);
 }
 
 .bpm-sb__btn:active {
@@ -556,7 +567,7 @@ function onCollapseClick() {
 
 .bpm-sb__btn:focus-visible {
   outline: none;
-  box-shadow: var(--focus-ring, 0 0 0 2px rgba(100,180,100,0.35));
+  box-shadow: var(--focus-ring, 0 0 0 2px rgba(100, 180, 100, 0.35));
 }
 
 /* Collapse bar: полная ширина (как status), высота 18px, стиль как status */
@@ -565,8 +576,8 @@ function onCollapseClick() {
   height: 18px;
   min-height: 18px;
   border-radius: var(--radius-md, 10px);
-  border: 1px solid var(--border-soft, rgba(255,255,255,0.12));
-  background: color-mix(in srgb, var(--surface-2, rgba(255,255,255,0.06)) 80%, transparent);
+  border: 1px solid var(--border-soft, rgba(255, 255, 255, 0.12));
+  background: color-mix(in srgb, var(--surface-2, rgba(255, 255, 255, 0.06)) 80%, transparent);
   transition:
     border-color 0.25s var(--bpm-ease),
     color 0.25s var(--bpm-ease),
@@ -577,8 +588,8 @@ function onCollapseClick() {
 }
 
 .bpm-sb__btn--collapse:hover {
-  border-color: var(--border-strong, rgba(255,255,255,0.18));
-  background: color-mix(in srgb, var(--surface-2, rgba(255,255,255,0.08)) 90%, transparent);
+  border-color: var(--border-strong, rgba(255, 255, 255, 0.18));
+  background: color-mix(in srgb, var(--surface-2, rgba(255, 255, 255, 0.08)) 90%, transparent);
 }
 
 .bpm-sb__btn--collapse i {
@@ -590,7 +601,9 @@ function onCollapseClick() {
 .bpm-sb--collapsed .bpm-sb__btn--collapse {
   height: 18px;
   min-height: 18px;
-  transition: width 0.4s var(--bpm-ease), height 0.4s var(--bpm-ease);
+  transition:
+    width 0.4s var(--bpm-ease),
+    height 0.4s var(--bpm-ease);
 }
 
 .bpm-sb__btn--close {
@@ -610,8 +623,8 @@ function onCollapseClick() {
   padding: 8px 10px;
   margin-bottom: 10px;
   border-radius: var(--radius-md, 10px);
-  border: 1px solid var(--border-soft, rgba(255,255,255,0.12));
-  background: color-mix(in srgb, var(--surface-2, rgba(255,255,255,0.06)) 80%, transparent);
+  border: 1px solid var(--border-soft, rgba(255, 255, 255, 0.12));
+  background: color-mix(in srgb, var(--surface-2, rgba(255, 255, 255, 0.06)) 80%, transparent);
   flex-shrink: 0;
   overflow: hidden;
   opacity: 1;
@@ -659,7 +672,9 @@ function onCollapseClick() {
   box-shadow: 0 0 10px color-mix(in srgb, var(--status-warning, #e8a030) 60%, transparent);
   flex-shrink: 0;
   animation: bpm-sb-pulse 2.5s ease-in-out infinite;
-  transition: width 0.28s var(--bpm-ease), height 0.28s var(--bpm-ease);
+  transition:
+    width 0.28s var(--bpm-ease),
+    height 0.28s var(--bpm-ease);
 }
 
 .bpm-sb__status--collapsed .bpm-sb__status-dot {
@@ -668,13 +683,18 @@ function onCollapseClick() {
 }
 
 @keyframes bpm-sb-pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.75; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.75;
+  }
 }
 
 .bpm-sb__status:hover {
-  border-color: var(--border-strong, rgba(255,255,255,0.18));
-  background: color-mix(in srgb, var(--surface-2, rgba(255,255,255,0.08)) 90%, transparent);
+  border-color: var(--border-strong, rgba(255, 255, 255, 0.18));
+  background: color-mix(in srgb, var(--surface-2, rgba(255, 255, 255, 0.08)) 90%, transparent);
 }
 
 .bpm-sb__status-text {
@@ -686,7 +706,7 @@ function onCollapseClick() {
   font-size: 0.62rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: var(--text-tertiary, rgba(255,255,255,0.5));
+  color: var(--text-tertiary, rgba(255, 255, 255, 0.5));
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -695,7 +715,7 @@ function onCollapseClick() {
 .bpm-sb__status-desc {
   margin: 2px 0 0;
   font-size: 0.7rem;
-  color: var(--text-secondary, rgba(255,255,255,0.8));
+  color: var(--text-secondary, rgba(255, 255, 255, 0.8));
   line-height: 1.3;
   white-space: nowrap;
   overflow: hidden;
@@ -722,11 +742,11 @@ function onCollapseClick() {
 
 .bpm-sb__nav::-webkit-scrollbar-thumb {
   border-radius: 3px;
-  background: color-mix(in srgb, var(--text-tertiary, rgba(255,255,255,0.4)) 60%, transparent);
+  background: color-mix(in srgb, var(--text-tertiary, rgba(255, 255, 255, 0.4)) 60%, transparent);
 }
 
 .bpm-sb__nav::-webkit-scrollbar-thumb:hover {
-  background: var(--text-tertiary, rgba(255,255,255,0.5));
+  background: var(--text-tertiary, rgba(255, 255, 255, 0.5));
 }
 
 .bpm-sb--collapsed .bpm-sb__nav {
@@ -761,7 +781,7 @@ function onCollapseClick() {
   font-size: 0.62rem;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--text-tertiary, rgba(255,255,255,0.5));
+  color: var(--text-tertiary, rgba(255, 255, 255, 0.5));
 }
 
 .bpm-sb__group {
@@ -780,7 +800,7 @@ a.bpm-sb__link {
   padding: 0 10px;
   border: 1px solid transparent;
   border-radius: 10px;
-  color: var(--text-secondary, rgba(255,255,255,0.8));
+  color: var(--text-secondary, rgba(255, 255, 255, 0.8));
   background: transparent;
   cursor: pointer;
   text-decoration: none;
@@ -833,7 +853,7 @@ a.bpm-sb__link:active {
 
 .bpm-sb__link:hover,
 a.bpm-sb__link:hover {
-  background: color-mix(in srgb, var(--accent-soft, rgba(100,180,100,0.2)) 50%, transparent);
+  background: color-mix(in srgb, var(--accent-soft, rgba(100, 180, 100, 0.2)) 50%, transparent);
   color: var(--text-primary, #fff);
 }
 
@@ -846,9 +866,9 @@ a.bpm-sb__link:focus-visible {
 .bpm-sb__link--active,
 a.bpm-sb__link--active {
   color: var(--text-primary, #fff);
-  border: 1px solid var(--border-accent, rgba(255,255,255,0.35));
+  border: 1px solid var(--border-accent, rgba(255, 255, 255, 0.35));
   border-left: 3px solid var(--accent, #6a9);
-  background: color-mix(in srgb, var(--accent-soft, rgba(100,180,100,0.25)) 75%, transparent);
+  background: color-mix(in srgb, var(--accent-soft, rgba(100, 180, 100, 0.25)) 75%, transparent);
 }
 
 /* В активном состоянии используем border-left вместо отдельного индикатора — без наезжания линий */
@@ -868,7 +888,9 @@ a.bpm-sb__link--active .bpm-sb__link-indicator {
   border-radius: 0 4px 4px 0;
   background: var(--accent, #6a9);
   opacity: 0;
-  transition: opacity 0.22s var(--bpm-ease), transform 0.22s var(--bpm-ease);
+  transition:
+    opacity 0.22s var(--bpm-ease),
+    transform 0.22s var(--bpm-ease);
   pointer-events: none;
 }
 
@@ -924,15 +946,15 @@ a.bpm-sb__link--active .bpm-sb__link-icon {
   font-weight: 600;
   line-height: 1;
   letter-spacing: 0.02em;
-  border: 1px solid var(--border-soft, rgba(255,255,255,0.15));
-  background: color-mix(in srgb, var(--surface-3, rgba(255,255,255,0.1)) 85%, transparent);
-  color: var(--text-secondary, rgba(255,255,255,0.9));
+  border: 1px solid var(--border-soft, rgba(255, 255, 255, 0.15));
+  background: color-mix(in srgb, var(--surface-3, rgba(255, 255, 255, 0.1)) 85%, transparent);
+  color: var(--text-secondary, rgba(255, 255, 255, 0.9));
 }
 
 .bpm-sb__caret {
   flex-shrink: 0;
   font-size: 0.56rem;
-  color: var(--text-tertiary, rgba(255,255,255,0.5));
+  color: var(--text-tertiary, rgba(255, 255, 255, 0.5));
   transition: transform 0.24s var(--bpm-ease);
 }
 
@@ -973,8 +995,8 @@ a.bpm-sb__link--active .bpm-sb__link-icon {
   width: 1px;
   background: linear-gradient(
     180deg,
-    var(--border-soft, rgba(255,255,255,0.15)) 0%,
-    var(--border-soft, rgba(255,255,255,0.15)) 100%
+    var(--border-soft, rgba(255, 255, 255, 0.15)) 0%,
+    var(--border-soft, rgba(255, 255, 255, 0.15)) 100%
   );
   opacity: 0.6;
   pointer-events: none;
@@ -1001,7 +1023,7 @@ button.bpm-sb__sub-link {
   padding: 0 8px 0 10px;
   border: 1px solid transparent;
   border-radius: var(--radius-sm, 6px);
-  color: var(--text-secondary, rgba(255,255,255,0.8));
+  color: var(--text-secondary, rgba(255, 255, 255, 0.8));
   background: transparent;
   cursor: pointer;
   text-decoration: none;
@@ -1022,7 +1044,7 @@ button.bpm-sb__sub-link:active {
 
 .bpm-sb__sub-link:hover,
 button.bpm-sb__sub-link:hover {
-  background: color-mix(in srgb, var(--accent-soft, rgba(100,180,100,0.2)) 50%, transparent);
+  background: color-mix(in srgb, var(--accent-soft, rgba(100, 180, 100, 0.2)) 50%, transparent);
   color: var(--text-primary, #fff);
 }
 
@@ -1035,9 +1057,9 @@ button.bpm-sb__sub-link:focus-visible {
 .bpm-sb__sub-link--active,
 button.bpm-sb__sub-link--active {
   color: var(--text-primary, #fff);
-  border: 1px solid var(--border-accent, rgba(255,255,255,0.3));
+  border: 1px solid var(--border-accent, rgba(255, 255, 255, 0.3));
   border-left: 3px solid var(--accent, #6a9);
-  background: color-mix(in srgb, var(--accent-soft, rgba(100,180,100,0.2)) 85%, transparent);
+  background: color-mix(in srgb, var(--accent-soft, rgba(100, 180, 100, 0.2)) 85%, transparent);
 }
 
 .bpm-sb__sub-icon {
@@ -1053,7 +1075,7 @@ button.bpm-sb__sub-link--active {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: var(--text-tertiary, rgba(255,255,255,0.5));
+  background: var(--text-tertiary, rgba(255, 255, 255, 0.5));
 }
 
 .bpm-sb__sub-label {
@@ -1080,8 +1102,8 @@ button.bpm-sb__sub-link--active {
   height: 44px;
   padding: 0 8px;
   border-radius: var(--radius-md, 10px);
-  border: 1px solid var(--border-soft, rgba(255,255,255,0.12));
-  background: color-mix(in srgb, var(--surface-2, rgba(255,255,255,0.06)) 75%, transparent);
+  border: 1px solid var(--border-soft, rgba(255, 255, 255, 0.12));
+  background: color-mix(in srgb, var(--surface-2, rgba(255, 255, 255, 0.06)) 75%, transparent);
   overflow: hidden;
   transition:
     grid-template-columns 0.4s var(--bpm-ease) var(--bpm-shift-delay),
@@ -1094,8 +1116,8 @@ button.bpm-sb__sub-link--active {
 }
 
 .bpm-sb__user:hover {
-  border-color: var(--border-strong, rgba(255,255,255,0.18));
-  background: color-mix(in srgb, var(--surface-2, rgba(255,255,255,0.1)) 85%, transparent);
+  border-color: var(--border-strong, rgba(255, 255, 255, 0.18));
+  background: color-mix(in srgb, var(--surface-2, rgba(255, 255, 255, 0.1)) 85%, transparent);
 }
 
 .bpm-sb--collapsed .bpm-sb__user {
@@ -1134,10 +1156,12 @@ button.bpm-sb__sub-link--active {
   align-items: center;
   justify-content: center;
   border-radius: var(--radius-sm, 8px);
-  background: color-mix(in srgb, var(--accent-soft, rgba(100,180,100,0.25)) 70%, transparent);
+  background: color-mix(in srgb, var(--accent-soft, rgba(100, 180, 100, 0.25)) 70%, transparent);
   color: var(--text-primary, #fff);
   font-size: 0.72rem;
-  transition: width 0.4s var(--bpm-ease) var(--bpm-shift-delay), height 0.4s var(--bpm-ease) var(--bpm-shift-delay);
+  transition:
+    width 0.4s var(--bpm-ease) var(--bpm-shift-delay),
+    height 0.4s var(--bpm-ease) var(--bpm-shift-delay);
 }
 
 .bpm-sb--collapsed .bpm-sb__avatar {
@@ -1163,7 +1187,7 @@ button.bpm-sb__sub-link--active {
 
 .bpm-sb__user-role {
   font-size: 0.65rem;
-  color: var(--text-tertiary, rgba(255,255,255,0.5));
+  color: var(--text-tertiary, rgba(255, 255, 255, 0.5));
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1179,15 +1203,17 @@ button.bpm-sb__sub-link--active {
   height: 24px;
   padding: 0 6px;
   border-radius: var(--radius-xs, 4px);
-  color: var(--text-secondary, rgba(255,255,255,0.8));
+  color: var(--text-secondary, rgba(255, 255, 255, 0.8));
   text-decoration: none;
   font-size: 0.7rem;
-  transition: color 0.2s ease, background 0.2s ease;
+  transition:
+    color 0.2s ease,
+    background 0.2s ease;
 }
 
 .bpm-sb__logout:hover {
   color: var(--accent, #6a9);
-  background: color-mix(in srgb, var(--accent-soft, rgba(100,180,100,0.15)) 60%, transparent);
+  background: color-mix(in srgb, var(--accent-soft, rgba(100, 180, 100, 0.15)) 60%, transparent);
 }
 
 .bpm-sb__logout:focus-visible {
@@ -1200,7 +1226,9 @@ button.bpm-sb__sub-link--active {
   overflow: hidden;
   opacity: 0;
   white-space: nowrap;
-  transition: max-width 0.28s var(--bpm-ease), opacity 0.22s var(--bpm-ease);
+  transition:
+    max-width 0.28s var(--bpm-ease),
+    opacity 0.22s var(--bpm-ease);
 }
 
 .bpm-sb__user:hover .bpm-sb__logout-text {
@@ -1246,8 +1274,8 @@ button.bpm-sb__sub-link--active {
     max-height: 80px;
     padding: 8px 10px;
     margin-bottom: 10px;
-    border: 1px solid var(--border-soft, rgba(255,255,255,0.12));
-    background: color-mix(in srgb, var(--surface-2, rgba(255,255,255,0.06)) 80%, transparent);
+    border: 1px solid var(--border-soft, rgba(255, 255, 255, 0.12));
+    background: color-mix(in srgb, var(--surface-2, rgba(255, 255, 255, 0.06)) 80%, transparent);
   }
 
   .bpm-sb__link,

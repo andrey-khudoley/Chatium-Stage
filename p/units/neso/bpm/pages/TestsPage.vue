@@ -1,10 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import {
-  DcScenarioChecklist,
-  DcScenarioWidgetGrid,
-  DcThemeGlobalStyles
-} from '../components'
+import { DcScenarioChecklist, DcScenarioWidgetGrid, DcThemeGlobalStyles } from '../components'
 import type { ScenarioChecklistItem, ScenarioWidget } from '../shared/bpmScenarios'
 
 interface TestCheck {
@@ -37,9 +33,27 @@ const widgets = computed<ScenarioWidget[]>(() => {
   const todo = allChecks.value.filter((check) => check.state === 'todo').length
 
   return [
-    { id: 'tests-total', label: 'Total checks', value: String(total), delta: 'snapshot', tone: 'info' },
-    { id: 'tests-done', label: 'Done', value: String(done), delta: `${Math.round((done / Math.max(total, 1)) * 100)}%`, tone: 'success' },
-    { id: 'tests-active', label: 'In progress', value: String(active), delta: 'follow-up', tone: 'warning' },
+    {
+      id: 'tests-total',
+      label: 'Total checks',
+      value: String(total),
+      delta: 'snapshot',
+      tone: 'info'
+    },
+    {
+      id: 'tests-done',
+      label: 'Done',
+      value: String(done),
+      delta: `${Math.round((done / Math.max(total, 1)) * 100)}%`,
+      tone: 'success'
+    },
+    {
+      id: 'tests-active',
+      label: 'In progress',
+      value: String(active),
+      delta: 'follow-up',
+      tone: 'warning'
+    },
     { id: 'tests-todo', label: 'Pending', value: String(todo), delta: 'next', tone: 'danger' }
   ]
 })
@@ -107,9 +121,7 @@ function toChecklist(checks: TestCheck[]): ScenarioChecklistItem[] {
   display: grid;
   grid-template-columns: 1fr auto;
   gap: 12px;
-  background:
-    var(--gradient-glass),
-    color-mix(in srgb, var(--surface-1) 84%, transparent);
+  background: var(--gradient-glass), color-mix(in srgb, var(--surface-1) 84%, transparent);
 }
 
 .bpm-tests-kicker {

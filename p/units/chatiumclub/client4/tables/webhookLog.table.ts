@@ -41,7 +41,10 @@ export const WebhookLog = Heap.Table('t__chatiumclub-client4__webhook_log__7Vx9P
     customMeta: { title: 'requestId gateway' }
   }),
   status: Heap.String({
-    customMeta: { title: 'Статус: queued | delivered | already_processed | invalid_token | error | user_not_found' }
+    customMeta: {
+      title:
+        'Статус: queued | delivered | already_processed | invalid_token | error | user_not_found'
+    }
   }),
   receivedAt: Heap.Number({
     customMeta: { title: 'Получено (Unix ms)' }

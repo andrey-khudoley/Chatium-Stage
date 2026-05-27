@@ -383,4 +383,3 @@ export const preloaderScript = `
     }
   }
 `
-

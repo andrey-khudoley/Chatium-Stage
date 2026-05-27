@@ -26,7 +26,7 @@ export const apiConnectTelegramRoute = app.post('/telegram', async (ctx, req) =>
     await setConnectedChannels(
       ctx,
       channels
-        .filter(c => c.id !== channel.id)
+        .filter((c) => c.id !== channel.id)
         .concat([
           {
             id: channel.id,

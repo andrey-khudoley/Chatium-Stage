@@ -41,7 +41,10 @@ const bootLoaderDone = ref(false)
 const testSuiteMode = ref<'unit' | 'integration' | 'legacy'>('legacy')
 
 const hasRunnableTestsInMode = computed(
-  () => testSuiteMode.value === 'legacy' || testSuiteMode.value === 'unit' || testSuiteMode.value === 'integration'
+  () =>
+    testSuiteMode.value === 'legacy' ||
+    testSuiteMode.value === 'unit' ||
+    testSuiteMode.value === 'integration'
 )
 
 const MAX_LOG_ENTRIES = 500
@@ -64,9 +67,9 @@ function formatLogTime(timestamp: number): string {
 }
 
 function formatLogMessage(e: LogEntry): string {
-  return e.args.map((a) =>
-    typeof a === 'object' && a !== null ? JSON.stringify(a) : String(a)
-  ).join(' ')
+  return e.args
+    .map((a) => (typeof a === 'object' && a !== null ? JSON.stringify(a) : String(a)))
+    .join(' ')
 }
 
 function formatDateDivider(timestamp: number): string {
@@ -127,7 +130,11 @@ const loadRecentLogs = async () => {
   logsError.value = ''
   try {
     const res = await getRecentLogsRoute.query({ limit: 50 }).run(ctx)
-    const data = res as { success?: boolean; entries?: Array<LogEntry & { id: string }>; error?: string }
+    const data = res as {
+      success?: boolean
+      entries?: Array<LogEntry & { id: string }>
+      error?: string
+    }
     if (data?.success && Array.isArray(data.entries)) {
       logEntries.value = [...logEntries.value, ...data.entries]
       if (data.entries.length > 0) {
@@ -291,12 +298,11 @@ function isGroupBlockedBySingle(group: SingleRunGroup): boolean {
 
 /** Базовый URL (origin + путь проекта без trailing slash) */
 function getApiBaseUrl(): string {
-  const path = props.indexUrl.startsWith('http')
-    ? new URL(props.indexUrl).pathname
-    : props.indexUrl
+  const path = props.indexUrl.startsWith('http') ? new URL(props.indexUrl).pathname : props.indexUrl
   const basePath = path.replace(/\/$/, '') || `/${PROJECT_ROOT}`
-  const origin =
-    props.indexUrl.startsWith('http') ? new URL(props.indexUrl).origin : window.location.origin
+  const origin = props.indexUrl.startsWith('http')
+    ? new URL(props.indexUrl).origin
+    : window.location.origin
   return `${origin}${basePath.startsWith('/') ? basePath : '/' + basePath}`
 }
 
@@ -355,7 +361,10 @@ async function runEndpointsTests() {
     }
     endpointsResults.value = results
     endpointsLastRunAt.value = new Date().toLocaleString('ru-RU')
-    log.info('Проверка эндпоинтов завершена', { passed: results.filter((r) => r.passed).length, failed: results.filter((r) => !r.passed).length })
+    log.info('Проверка эндпоинтов завершена', {
+      passed: results.filter((r) => r.passed).length,
+      failed: results.filter((r) => !r.passed).length
+    })
   } finally {
     endpointsLoading.value = false
   }
@@ -425,12 +434,23 @@ async function runSettingsTests() {
   const baseUrl = getApiBaseUrl().replace(/\/$/, '')
   log.info('Запуск проверки библиотеки настроек')
   try {
-    const res = await fetch(`${baseUrl}/api/tests/endpoints-check/settings-lib`, { method: 'GET', credentials: 'include' })
-    const data = (await res.json().catch(() => null)) as { success?: boolean; results?: TestResult[] }
+    const res = await fetch(`${baseUrl}/api/tests/endpoints-check/settings-lib`, {
+      method: 'GET',
+      credentials: 'include'
+    })
+    const data = (await res.json().catch(() => null)) as {
+      success?: boolean
+      results?: TestResult[]
+    }
     if (res.ok && data?.success && Array.isArray(data.results)) {
       settingsResults.value = data.results
     } else {
-      settingsResults.value = SETTINGS_LIB_TESTS.map((t) => ({ id: t.id, title: t.title, passed: false, error: 'Ошибка запроса' }))
+      settingsResults.value = SETTINGS_LIB_TESTS.map((t) => ({
+        id: t.id,
+        title: t.title,
+        passed: false,
+        error: 'Ошибка запроса'
+      }))
     }
     settingsLastRunAt.value = new Date().toLocaleString('ru-RU')
   } finally {
@@ -495,12 +515,23 @@ async function runSettingsRepoTests() {
   const baseUrl = getApiBaseUrl().replace(/\/$/, '')
   log.info('Запуск проверки репозитория настроек')
   try {
-    const res = await fetch(`${baseUrl}/api/tests/endpoints-check/settings-repo`, { method: 'GET', credentials: 'include' })
-    const data = (await res.json().catch(() => null)) as { success?: boolean; results?: TestResult[] }
+    const res = await fetch(`${baseUrl}/api/tests/endpoints-check/settings-repo`, {
+      method: 'GET',
+      credentials: 'include'
+    })
+    const data = (await res.json().catch(() => null)) as {
+      success?: boolean
+      results?: TestResult[]
+    }
     if (res.ok && data?.success && Array.isArray(data.results)) {
       settingsRepoResults.value = data.results
     } else {
-      settingsRepoResults.value = SETTINGS_REPO_TESTS.map((t) => ({ id: t.id, title: t.title, passed: false, error: 'Ошибка запроса' }))
+      settingsRepoResults.value = SETTINGS_REPO_TESTS.map((t) => ({
+        id: t.id,
+        title: t.title,
+        passed: false,
+        error: 'Ошибка запроса'
+      }))
     }
     settingsRepoLastRunAt.value = new Date().toLocaleString('ru-RU')
   } finally {
@@ -565,12 +596,23 @@ async function runLoggerLibTests() {
   const baseUrl = getApiBaseUrl().replace(/\/$/, '')
   log.info('Запуск проверки библиотеки логов')
   try {
-    const res = await fetch(`${baseUrl}/api/tests/endpoints-check/logger-lib`, { method: 'GET', credentials: 'include' })
-    const data = (await res.json().catch(() => null)) as { success?: boolean; results?: TestResult[] }
+    const res = await fetch(`${baseUrl}/api/tests/endpoints-check/logger-lib`, {
+      method: 'GET',
+      credentials: 'include'
+    })
+    const data = (await res.json().catch(() => null)) as {
+      success?: boolean
+      results?: TestResult[]
+    }
     if (res.ok && data?.success && Array.isArray(data.results)) {
       loggerLibResults.value = data.results
     } else {
-      loggerLibResults.value = LOGGER_LIB_TESTS.map((t) => ({ id: t.id, title: t.title, passed: false, error: 'Ошибка запроса' }))
+      loggerLibResults.value = LOGGER_LIB_TESTS.map((t) => ({
+        id: t.id,
+        title: t.title,
+        passed: false,
+        error: 'Ошибка запроса'
+      }))
     }
     loggerLibLastRunAt.value = new Date().toLocaleString('ru-RU')
   } finally {
@@ -636,12 +678,23 @@ async function runLogsRepoTests() {
   const baseUrl = getApiBaseUrl().replace(/\/$/, '')
   log.info('Запуск проверки репозитория логов')
   try {
-    const res = await fetch(`${baseUrl}/api/tests/endpoints-check/logs-repo`, { method: 'GET', credentials: 'include' })
-    const data = (await res.json().catch(() => null)) as { success?: boolean; results?: TestResult[] }
+    const res = await fetch(`${baseUrl}/api/tests/endpoints-check/logs-repo`, {
+      method: 'GET',
+      credentials: 'include'
+    })
+    const data = (await res.json().catch(() => null)) as {
+      success?: boolean
+      results?: TestResult[]
+    }
     if (res.ok && data?.success && Array.isArray(data.results)) {
       logsRepoResults.value = data.results
     } else {
-      logsRepoResults.value = LOGS_REPO_TESTS.map((t) => ({ id: t.id, title: t.title, passed: false, error: 'Ошибка запроса' }))
+      logsRepoResults.value = LOGS_REPO_TESTS.map((t) => ({
+        id: t.id,
+        title: t.title,
+        passed: false,
+        error: 'Ошибка запроса'
+      }))
     }
     logsRepoLastRunAt.value = new Date().toLocaleString('ru-RU')
   } finally {
@@ -704,12 +757,23 @@ async function runDashboardLibTests() {
   const baseUrl = getApiBaseUrl().replace(/\/$/, '')
   log.info('Запуск проверки библиотеки админки')
   try {
-    const res = await fetch(`${baseUrl}/api/tests/endpoints-check/dashboard-lib`, { method: 'GET', credentials: 'include' })
-    const data = (await res.json().catch(() => null)) as { success?: boolean; results?: TestResult[] }
+    const res = await fetch(`${baseUrl}/api/tests/endpoints-check/dashboard-lib`, {
+      method: 'GET',
+      credentials: 'include'
+    })
+    const data = (await res.json().catch(() => null)) as {
+      success?: boolean
+      results?: TestResult[]
+    }
     if (res.ok && data?.success && Array.isArray(data.results)) {
       dashboardLibResults.value = data.results
     } else {
-      dashboardLibResults.value = DASHBOARD_LIB_TESTS.map((t) => ({ id: t.id, title: t.title, passed: false, error: 'Ошибка запроса' }))
+      dashboardLibResults.value = DASHBOARD_LIB_TESTS.map((t) => ({
+        id: t.id,
+        title: t.title,
+        passed: false,
+        error: 'Ошибка запроса'
+      }))
     }
     dashboardLibLastRunAt.value = new Date().toLocaleString('ru-RU')
   } finally {
@@ -769,8 +833,10 @@ function lavaStepToTestResult(
       error: allPassed
         ? undefined
         : allSkipped
-          ? inner.map((r) => r.detail || r.error).filter(Boolean).join('; ') ||
-            'Все проверки пропущены (не заданы ключи в настройках)'
+          ? inner
+              .map((r) => r.detail || r.error)
+              .filter(Boolean)
+              .join('; ') || 'Все проверки пропущены (не заданы ключи в настройках)'
           : executed
               .filter((r) => !r.passed)
               .map((r) => r.error || r.id)
@@ -827,7 +893,10 @@ async function runUnitSaveCredsTests() {
       method: 'GET',
       credentials: 'include'
     })
-    const data = (await res.json().catch(() => null)) as { success?: boolean; results?: TestResult[] }
+    const data = (await res.json().catch(() => null)) as {
+      success?: boolean
+      results?: TestResult[]
+    }
     if (res.ok && data?.success !== undefined && Array.isArray(data.results)) {
       unitSaveCredsResults.value = data.results
     } else {
@@ -858,7 +927,12 @@ async function runSingleUnitSaveCredsTest(testId: string) {
       results?: TestResult[]
       error?: string
     }
-    if (res.ok && data?.success !== undefined && Array.isArray(data.results) && data.results.length > 0) {
+    if (
+      res.ok &&
+      data?.success !== undefined &&
+      Array.isArray(data.results) &&
+      data.results.length > 0
+    ) {
       unitSaveCredsResults.value = upsertTestResults(unitSaveCredsResults.value, data.results)
     } else {
       unitSaveCredsResults.value = upsertTestResults(unitSaveCredsResults.value, [
@@ -962,7 +1036,10 @@ const UNIT_WEBHOOK_ROUTE_TESTS: Array<{ id: string; title: string }> = [
   { id: 'post_wrong_api_key', title: 'POST: неверный X-Api-Key → отказ' },
   { id: 'post_missing_api_key', title: 'POST: без ключа при заданном секрете → отказ' },
   { id: 'post_invalid_body', title: 'POST: невалидный eventType → валидация' },
-  { id: 'post_success_contract_not_found', title: 'POST: верный ключ + тело → success (контракт не в Heap)' }
+  {
+    id: 'post_success_contract_not_found',
+    title: 'POST: верный ключ + тело → success (контракт не в Heap)'
+  }
 ]
 const unitWebhookRouteResults = ref<TestResult[]>([])
 const unitWebhookRouteLoading = ref(false)
@@ -1163,12 +1240,16 @@ type PaymentLinkTestVisualStatus = 'todo' | 'success' | 'skip' | 'fail'
 
 const paymentLinkDryRunUnitLoading = ref(false)
 const paymentLinkDryRunUnitLastAt = ref<string | null>(null)
-const paymentLinkDryRunRow = ref<{ status: PaymentLinkTestVisualStatus; detail?: string }>({ status: 'todo' })
+const paymentLinkDryRunRow = ref<{ status: PaymentLinkTestVisualStatus; detail?: string }>({
+  status: 'todo'
+})
 const paymentLinkDryRunRaw = ref<string | null>(null)
 
 const paymentLinkHttpIntegrationLoading = ref(false)
 const paymentLinkHttpIntegrationLastAt = ref<string | null>(null)
-const paymentLinkHttpRow = ref<{ status: PaymentLinkTestVisualStatus; detail?: string }>({ status: 'todo' })
+const paymentLinkHttpRow = ref<{ status: PaymentLinkTestVisualStatus; detail?: string }>({
+  status: 'todo'
+})
 const paymentLinkHttpRaw = ref<string | null>(null)
 
 const paymentLinkHeapSettingsLoading = ref(false)
@@ -1299,7 +1380,10 @@ async function armWebhookLiveTestFromSnapshot() {
   }
 }
 
-function extractLivePaymentLinkFromRouteData(data: unknown): { lavaContractId?: string; paymentUrl?: string } {
+function extractLivePaymentLinkFromRouteData(data: unknown): {
+  lavaContractId?: string
+  paymentUrl?: string
+} {
   if (!data || typeof data !== 'object') return {}
   const d = data as Record<string, unknown>
   const rr = d.routeResult as Record<string, unknown> | undefined
@@ -1312,7 +1396,10 @@ function extractLivePaymentLinkFromRouteData(data: unknown): { lavaContractId?: 
   return {}
 }
 
-function extractLivePaymentLinkFromHttpData(data: unknown): { lavaContractId?: string; paymentUrl?: string } {
+function extractLivePaymentLinkFromHttpData(data: unknown): {
+  lavaContractId?: string
+  paymentUrl?: string
+} {
   if (!data || typeof data !== 'object') return {}
   const d = data as Record<string, unknown>
   const body = d.responseBody as Record<string, unknown> | undefined
@@ -1332,7 +1419,9 @@ function maybeUpdatePaymentLinkLiveSnapshot(
 ) {
   if (rowStatus !== 'success') return
   const ex =
-    source === 'route' ? extractLivePaymentLinkFromRouteData(data) : extractLivePaymentLinkFromHttpData(data)
+    source === 'route'
+      ? extractLivePaymentLinkFromRouteData(data)
+      : extractLivePaymentLinkFromHttpData(data)
   if (ex.lavaContractId && ex.paymentUrl) {
     paymentLinkLiveSnapshot.value = {
       lavaContractId: ex.lavaContractId,
@@ -1358,10 +1447,13 @@ async function runIntegrationGcOrderPlApiTest() {
     const email = gcOrderPlProbeBuyerEmail.value.trim()
     const q = new URLSearchParams({ gcOrderId: id })
     if (email) q.set('buyerEmail', email)
-    const res = await fetch(`${baseUrl}/api/tests/endpoints-check/integration-gc-order-pl-api?${q.toString()}`, {
-      method: 'GET',
-      credentials: 'include'
-    })
+    const res = await fetch(
+      `${baseUrl}/api/tests/endpoints-check/integration-gc-order-pl-api?${q.toString()}`,
+      {
+        method: 'GET',
+        credentials: 'include'
+      }
+    )
     gcOrderPlApiRaw.value = await res.json().catch(() => ({ parseError: true }))
     gcOrderPlApiLastAt.value = new Date().toLocaleString('ru-RU')
   } catch (e) {
@@ -1458,7 +1550,10 @@ function parsePaymentLinkHeapSettingsRead(data: unknown): {
   const d = data as Record<string, unknown>
   const sr = d.settingsRead as Record<string, unknown> | undefined
   if (d.success === true && sr && sr.allRequiredPresent === true) {
-    return { status: 'success', detail: 'Heap: lava_api_key (маска), base_url, product_id, offer_id' }
+    return {
+      status: 'success',
+      detail: 'Heap: lava_api_key (маска), base_url, product_id, offer_id'
+    }
   }
   return {
     status: 'fail',
@@ -1613,10 +1708,13 @@ async function runPaymentLinkHeapSettingsRead() {
   const baseUrl = getApiBaseUrl().replace(/\/$/, '')
   log.info('Лайв: чтение Heap (Lava для payment-link)')
   try {
-    const res = await fetch(`${baseUrl}/api/tests/endpoints-check/payment-link-heap-settings-read`, {
-      method: 'GET',
-      credentials: 'include'
-    })
+    const res = await fetch(
+      `${baseUrl}/api/tests/endpoints-check/payment-link-heap-settings-read`,
+      {
+        method: 'GET',
+        credentials: 'include'
+      }
+    )
     const data = await res.json().catch(() => null)
     paymentLinkHeapSettingsRow.value = parsePaymentLinkHeapSettingsRead(data)
     paymentLinkHeapSettingsRaw.value = data ? JSON.stringify(data, null, 2) : null
@@ -1650,12 +1748,15 @@ async function runPaymentLinkFullHttpLive() {
   const baseUrl = getApiBaseUrl().replace(/\/$/, '')
   log.info('Лайв: HTTP POST payment-link без dry-run')
   try {
-    const res = await fetch(`${baseUrl}/api/tests/endpoints-check/payment-link-full-http-integration`, {
-      method: 'POST',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({})
-    })
+    const res = await fetch(
+      `${baseUrl}/api/tests/endpoints-check/payment-link-full-http-integration`,
+      {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({})
+      }
+    )
     const data = await res.json().catch(() => null)
     paymentLinkFullHttpRow.value = parsePaymentLinkFullHttpLiveResponse(data)
     paymentLinkFullHttpRaw.value = data ? JSON.stringify(data, null, 2) : null
@@ -1700,7 +1801,12 @@ async function runSingleIntegrationBothTest(testId: string) {
 }
 
 /* --- Блок 7: Ключи интеграции (отдельно GC и Lava, как в админке) --- */
-const SETTING_KEYS_VALIDATION_TESTS: Array<{ id: string; title: string; path: string; mode: 'results' | 'legacy' }> = [
+const SETTING_KEYS_VALIDATION_TESTS: Array<{
+  id: string
+  title: string
+  path: string
+  mode: 'results' | 'legacy'
+}> = [
   {
     id: 'integration-gc-credentials',
     title: 'GetCourse: API-ключ и домен (PL API)',
@@ -1768,7 +1874,9 @@ async function runSingleSettingKeysValidationTest(testId: string) {
     const res = await fetch(`${baseUrl}${step.path}`, { method: 'GET', credentials: 'include' })
     const data = (await res.json().catch(() => null)) as Record<string, unknown>
     const one = lavaStepToTestResult(step, res, data)
-    settingKeysValidationResults.value = upsertTestResults(settingKeysValidationResults.value, [one])
+    settingKeysValidationResults.value = upsertTestResults(settingKeysValidationResults.value, [
+      one
+    ])
     settingKeysValidationLastRunAt.value = new Date().toLocaleString('ru-RU')
   } catch (e) {
     settingKeysValidationResults.value = upsertTestResults(settingKeysValidationResults.value, [
@@ -1923,17 +2031,20 @@ const runAllTests = async () => {
                 </div>
                 <p class="tests-mode-hint">
                   <template v-if="testSuiteMode === 'unit'">
-                    Слияние ключей save (без сети), быстрый <code class="tests-inline-code">route.run</code> по
-                    страницам и юнит <code class="tests-inline-code">POST …/lava/webhook</code> (тот же
+                    Слияние ключей save (без сети), быстрый
+                    <code class="tests-inline-code">route.run</code> по страницам и юнит
+                    <code class="tests-inline-code">POST …/lava/webhook</code> (тот же
                     <code class="tests-inline-code">ctx</code>).
                   </template>
                   <template v-else-if="testSuiteMode === 'integration'">
-                    Страницы (fetch + разбор); ключи Heap (GetCourse и Lava); POST payment-link: юнит
+                    Страницы (fetch + разбор); ключи Heap (GetCourse и Lava); POST payment-link:
+                    юнит
                     <code class="tests-inline-code">route.run</code> с dry-run и HTTP
                     <code class="tests-inline-code">request()</code> на тот же эндпоинт.
                   </template>
                   <template v-else>
-                    Прежний набор: эндпоинты, слои settings/logger/dashboard/repos и проверки ключей GetCourse / Lava в Heap.
+                    Прежний набор: эндпоинты, слои settings/logger/dashboard/repos и проверки ключей
+                    GetCourse / Lava в Heap.
                   </template>
                 </p>
                 <div class="tests-dashboard-metrics">
@@ -1961,7 +2072,9 @@ const runAllTests = async () => {
                   <button
                     type="button"
                     class="tests-run-all-btn"
-                    :disabled="runAllTestsLoading || singleTestRun !== null || !hasRunnableTestsInMode"
+                    :disabled="
+                      runAllTestsLoading || singleTestRun !== null || !hasRunnableTestsInMode
+                    "
                     :title="
                       !hasRunnableTestsInMode
                         ? 'Нет сценариев'
@@ -1973,14 +2086,20 @@ const runAllTests = async () => {
                     "
                     @click="runAllTests"
                   >
-                    <i class="fas" :class="runAllTestsLoading ? 'fa-spinner fa-spin' : 'fa-play'"></i>
+                    <i
+                      class="fas"
+                      :class="runAllTestsLoading ? 'fa-spinner fa-spin' : 'fa-play'"
+                    ></i>
                     {{ runAllTestsLoading ? 'Запуск...' : 'Запустить все тесты' }}
                   </button>
                 </div>
               </div>
 
               <!-- Вкладка «Юнит»: страницы (route.run) -->
-              <div v-if="showContent && testSuiteMode === 'unit'" class="tests-card tests-endpoints-card tests-crt-card">
+              <div
+                v-if="showContent && testSuiteMode === 'unit'"
+                class="tests-card tests-endpoints-card tests-crt-card"
+              >
                 <div class="tests-endpoints-header">
                   <i class="fas fa-code tests-endpoints-icon"></i>
                   <h2 class="tests-endpoints-title">Юнит: страницы (route.run)</h2>
@@ -1988,10 +2107,11 @@ const runAllTests = async () => {
                 <p class="tests-endpoints-desc">
                   GET{' '}
                   <code class="tests-inline-code">/api/tests/endpoints-check/page-routes-unit</code>
-                  — тот же <code class="tests-inline-code">ctx</code>, что у запроса к API; для каждого
-                  <code class="tests-inline-code">app.html</code> вызывается
-                  <code class="tests-inline-code">route.run(ctx, req)</code>, проверяется отсутствие исключений и
-                  непустой результат (JSX / редирект). Без HTTP; интеграция по страницам — вкладка «Интеграция».
+                  — тот же <code class="tests-inline-code">ctx</code>, что у запроса к API; для
+                  каждого <code class="tests-inline-code">app.html</code> вызывается
+                  <code class="tests-inline-code">route.run(ctx, req)</code>, проверяется отсутствие
+                  исключений и непустой результат (JSX / редирект). Без HTTP; интеграция по
+                  страницам — вкладка «Интеграция».
                 </p>
                 <div v-if="unitPageRoutesLastRunAt" class="tests-endpoints-last-run">
                   Результаты от: {{ unitPageRoutesLastRunAt }}
@@ -2004,11 +2124,22 @@ const runAllTests = async () => {
                       class="tests-endpoints-list-item"
                       :class="`tests-endpoints-status-${item.status}`"
                     >
-                      <span class="tests-endpoints-badge" :class="`tests-endpoints-badge-${item.status}`">
-                        {{ item.status === 'todo' ? '[TODO]' : item.status === 'success' ? '[OK]' : '[FAIL]' }}
+                      <span
+                        class="tests-endpoints-badge"
+                        :class="`tests-endpoints-badge-${item.status}`"
+                      >
+                        {{
+                          item.status === 'todo'
+                            ? '[TODO]'
+                            : item.status === 'success'
+                              ? '[OK]'
+                              : '[FAIL]'
+                        }}
                       </span>
                       <span class="tests-endpoints-list-title-inline">{{ item.title }}</span>
-                      <span v-if="item.error" class="tests-endpoints-list-error">{{ item.error }}</span>
+                      <span v-if="item.error" class="tests-endpoints-list-error">{{
+                        item.error
+                      }}</span>
                       <button
                         type="button"
                         class="tests-run-one-btn"
@@ -2024,7 +2155,11 @@ const runAllTests = async () => {
                       >
                         <i
                           class="fas"
-                          :class="isSingleRunning('unitPageRoutes', item.id) ? 'fa-spinner fa-spin' : 'fa-play'"
+                          :class="
+                            isSingleRunning('unitPageRoutes', item.id)
+                              ? 'fa-spinner fa-spin'
+                              : 'fa-play'
+                          "
                         ></i>
                       </button>
                     </li>
@@ -2043,21 +2178,33 @@ const runAllTests = async () => {
                     "
                     @click="runUnitPageRoutesTests"
                   >
-                    <i class="fas" :class="unitPageRoutesLoading ? 'fa-spinner fa-spin' : 'fa-bolt'"></i>
-                    {{ unitPageRoutesLoading ? 'Проверяем...' : 'Запустить route.run по всем страницам' }}
+                    <i
+                      class="fas"
+                      :class="unitPageRoutesLoading ? 'fa-spinner fa-spin' : 'fa-bolt'"
+                    ></i>
+                    {{
+                      unitPageRoutesLoading
+                        ? 'Проверяем...'
+                        : 'Запустить route.run по всем страницам'
+                    }}
                   </button>
                 </div>
               </div>
 
               <!-- Вкладка «Юнит»: слияние ключей для POST /api/settings/save -->
-              <div v-if="showContent && testSuiteMode === 'unit'" class="tests-card tests-endpoints-card tests-crt-card">
+              <div
+                v-if="showContent && testSuiteMode === 'unit'"
+                class="tests-card tests-endpoints-card tests-crt-card"
+              >
                 <div class="tests-endpoints-header">
                   <i class="fas fa-flask tests-endpoints-icon"></i>
                   <h2 class="tests-endpoints-title">Юнит: слияние ключей (save)</h2>
                 </div>
                 <p class="tests-endpoints-desc">
                   GET
-                  <code class="tests-inline-code">/api/tests/endpoints-check/settings-save-credentials-unit</code>
+                  <code class="tests-inline-code"
+                    >/api/tests/endpoints-check/settings-save-credentials-unit</code
+                  >
                   — проверка функций
                   <code class="tests-inline-code">resolveGcCredentialsForSave</code> /
                   <code class="tests-inline-code">resolveLavaCredentialsForSave</code> без сети.
@@ -2073,11 +2220,22 @@ const runAllTests = async () => {
                       class="tests-endpoints-list-item"
                       :class="`tests-endpoints-status-${item.status}`"
                     >
-                      <span class="tests-endpoints-badge" :class="`tests-endpoints-badge-${item.status}`">
-                        {{ item.status === 'todo' ? '[TODO]' : item.status === 'success' ? '[OK]' : '[FAIL]' }}
+                      <span
+                        class="tests-endpoints-badge"
+                        :class="`tests-endpoints-badge-${item.status}`"
+                      >
+                        {{
+                          item.status === 'todo'
+                            ? '[TODO]'
+                            : item.status === 'success'
+                              ? '[OK]'
+                              : '[FAIL]'
+                        }}
                       </span>
                       <span class="tests-endpoints-list-title-inline">{{ item.title }}</span>
-                      <span v-if="item.error" class="tests-endpoints-list-error">{{ item.error }}</span>
+                      <span v-if="item.error" class="tests-endpoints-list-error">{{
+                        item.error
+                      }}</span>
                       <button
                         type="button"
                         class="tests-run-one-btn"
@@ -2093,7 +2251,11 @@ const runAllTests = async () => {
                       >
                         <i
                           class="fas"
-                          :class="isSingleRunning('unitSaveCreds', item.id) ? 'fa-spinner fa-spin' : 'fa-play'"
+                          :class="
+                            isSingleRunning('unitSaveCreds', item.id)
+                              ? 'fa-spinner fa-spin'
+                              : 'fa-play'
+                          "
                         ></i>
                       </button>
                     </li>
@@ -2112,26 +2274,38 @@ const runAllTests = async () => {
                     "
                     @click="runUnitSaveCredsTests"
                   >
-                    <i class="fas" :class="unitSaveCredsLoading ? 'fa-spinner fa-spin' : 'fa-bolt'"></i>
-                    {{ unitSaveCredsLoading ? 'Проверяем...' : 'Запустить юнит-тесты слияния ключей' }}
+                    <i
+                      class="fas"
+                      :class="unitSaveCredsLoading ? 'fa-spinner fa-spin' : 'fa-bolt'"
+                    ></i>
+                    {{
+                      unitSaveCredsLoading ? 'Проверяем...' : 'Запустить юнит-тесты слияния ключей'
+                    }}
                   </button>
                 </div>
               </div>
 
               <!-- Вкладка «Юнит»: роут Lava webhook (route.run) -->
-              <div v-if="showContent && testSuiteMode === 'unit'" class="tests-card tests-endpoints-card tests-crt-card">
+              <div
+                v-if="showContent && testSuiteMode === 'unit'"
+                class="tests-card tests-endpoints-card tests-crt-card"
+              >
                 <div class="tests-endpoints-header">
                   <i class="fas fa-plug tests-endpoints-icon"></i>
                   <h2 class="tests-endpoints-title">Юнит: Lava webhook (route.run)</h2>
                 </div>
                 <p class="tests-endpoints-desc">
                   GET{' '}
-                  <code class="tests-inline-code">/api/tests/endpoints-check/lava-webhook-route</code>
+                  <code class="tests-inline-code"
+                    >/api/tests/endpoints-check/lava-webhook-route</code
+                  >
                   — вызовы <code class="tests-inline-code">lavaWebhookInfoRoute</code> и
-                  <code class="tests-inline-code">lavaWebhookRoute.run(ctx, { …тело, headers })</code> в том же
-                  <code class="tests-inline-code">ctx</code>, что у запроса к API. Отдельно от сервисного
-                  <code class="tests-inline-code">lava-webhook-service</code> (там только
-                  <code class="tests-inline-code">processWebhook</code>).
+                  <code class="tests-inline-code"
+                    >lavaWebhookRoute.run(ctx, { …тело, headers })</code
+                  >
+                  в том же <code class="tests-inline-code">ctx</code>, что у запроса к API. Отдельно
+                  от сервисного <code class="tests-inline-code">lava-webhook-service</code> (там
+                  только <code class="tests-inline-code">processWebhook</code>).
                 </p>
                 <div v-if="unitWebhookRouteLastRunAt" class="tests-endpoints-last-run">
                   Результаты от: {{ unitWebhookRouteLastRunAt }}
@@ -2144,11 +2318,22 @@ const runAllTests = async () => {
                       class="tests-endpoints-list-item"
                       :class="`tests-endpoints-status-${item.status}`"
                     >
-                      <span class="tests-endpoints-badge" :class="`tests-endpoints-badge-${item.status}`">
-                        {{ item.status === 'todo' ? '[TODO]' : item.status === 'success' ? '[OK]' : '[FAIL]' }}
+                      <span
+                        class="tests-endpoints-badge"
+                        :class="`tests-endpoints-badge-${item.status}`"
+                      >
+                        {{
+                          item.status === 'todo'
+                            ? '[TODO]'
+                            : item.status === 'success'
+                              ? '[OK]'
+                              : '[FAIL]'
+                        }}
                       </span>
                       <span class="tests-endpoints-list-title-inline">{{ item.title }}</span>
-                      <span v-if="item.error" class="tests-endpoints-list-error">{{ item.error }}</span>
+                      <span v-if="item.error" class="tests-endpoints-list-error">{{
+                        item.error
+                      }}</span>
                       <button
                         type="button"
                         class="tests-run-one-btn"
@@ -2164,7 +2349,11 @@ const runAllTests = async () => {
                       >
                         <i
                           class="fas"
-                          :class="isSingleRunning('unitWebhookRoute', item.id) ? 'fa-spinner fa-spin' : 'fa-play'"
+                          :class="
+                            isSingleRunning('unitWebhookRoute', item.id)
+                              ? 'fa-spinner fa-spin'
+                              : 'fa-play'
+                          "
                         ></i>
                       </button>
                     </li>
@@ -2183,14 +2372,24 @@ const runAllTests = async () => {
                     "
                     @click="runUnitWebhookRouteTests"
                   >
-                    <i class="fas" :class="unitWebhookRouteLoading ? 'fa-spinner fa-spin' : 'fa-bolt'"></i>
-                    {{ unitWebhookRouteLoading ? 'Проверяем...' : 'Запустить все проверки webhook-роута' }}
+                    <i
+                      class="fas"
+                      :class="unitWebhookRouteLoading ? 'fa-spinner fa-spin' : 'fa-bolt'"
+                    ></i>
+                    {{
+                      unitWebhookRouteLoading
+                        ? 'Проверяем...'
+                        : 'Запустить все проверки webhook-роута'
+                    }}
                   </button>
                 </div>
               </div>
 
               <!-- Вкладка «Интеграция»: страницы (fetch из браузера — сессия админа) -->
-              <div v-if="showContent && testSuiteMode === 'integration'" class="tests-card tests-endpoints-card tests-crt-card">
+              <div
+                v-if="showContent && testSuiteMode === 'integration'"
+                class="tests-card tests-endpoints-card tests-crt-card"
+              >
                 <div class="tests-endpoints-header">
                   <i class="fas fa-globe tests-endpoints-icon"></i>
                   <h2 class="tests-endpoints-title">Страницы приложения (HTTP)</h2>
@@ -2198,8 +2397,8 @@ const runAllTests = async () => {
                 <p class="tests-endpoints-desc">
                   <code class="tests-inline-code">fetch</code> с{' '}
                   <code class="tests-inline-code">credentials: 'include'</code> и{' '}
-                  <code class="tests-inline-code">redirect: 'manual'</code> — запросы идут из браузера, передаются
-                  cookies сессии (в т.ч. админа); разбор ответа в{' '}
+                  <code class="tests-inline-code">redirect: 'manual'</code> — запросы идут из
+                  браузера, передаются cookies сессии (в т.ч. админа); разбор ответа в{' '}
                   <code class="tests-inline-code">shared/pageRouteProbe.ts</code> (не только{' '}
                   <code class="tests-inline-code">response.ok</code>). См.{' '}
                   <code class="tests-inline-code">048-chatium-http-response-probes.md</code>.
@@ -2215,11 +2414,22 @@ const runAllTests = async () => {
                       class="tests-endpoints-list-item"
                       :class="`tests-endpoints-status-${item.status}`"
                     >
-                      <span class="tests-endpoints-badge" :class="`tests-endpoints-badge-${item.status}`">
-                        {{ item.status === 'todo' ? '[TODO]' : item.status === 'success' ? '[OK]' : '[FAIL]' }}
+                      <span
+                        class="tests-endpoints-badge"
+                        :class="`tests-endpoints-badge-${item.status}`"
+                      >
+                        {{
+                          item.status === 'todo'
+                            ? '[TODO]'
+                            : item.status === 'success'
+                              ? '[OK]'
+                              : '[FAIL]'
+                        }}
                       </span>
                       <span class="tests-endpoints-list-title-inline">{{ item.title }}</span>
-                      <span v-if="item.error" class="tests-endpoints-list-error">{{ item.error }}</span>
+                      <span v-if="item.error" class="tests-endpoints-list-error">{{
+                        item.error
+                      }}</span>
                       <button
                         type="button"
                         class="tests-run-one-btn"
@@ -2235,7 +2445,11 @@ const runAllTests = async () => {
                       >
                         <i
                           class="fas"
-                          :class="isSingleRunning('integrationPages', item.id) ? 'fa-spinner fa-spin' : 'fa-play'"
+                          :class="
+                            isSingleRunning('integrationPages', item.id)
+                              ? 'fa-spinner fa-spin'
+                              : 'fa-play'
+                          "
                         ></i>
                       </button>
                     </li>
@@ -2254,14 +2468,20 @@ const runAllTests = async () => {
                     "
                     @click="runIntegrationPageRoutesTests"
                   >
-                    <i class="fas" :class="integrationPageLoading ? 'fa-spinner fa-spin' : 'fa-bolt'"></i>
+                    <i
+                      class="fas"
+                      :class="integrationPageLoading ? 'fa-spinner fa-spin' : 'fa-bolt'"
+                    ></i>
                     {{ integrationPageLoading ? 'Проверяем...' : 'Проверить все страницы' }}
                   </button>
                 </div>
               </div>
 
               <!-- Вкладка «Интеграция»: GetCourse и Lava отдельно -->
-              <div v-if="showContent && testSuiteMode === 'integration'" class="tests-card tests-endpoints-card tests-crt-card">
+              <div
+                v-if="showContent && testSuiteMode === 'integration'"
+                class="tests-card tests-endpoints-card tests-crt-card"
+              >
                 <div class="tests-endpoints-header">
                   <i class="fas fa-link tests-endpoints-icon"></i>
                   <h2 class="tests-endpoints-title">Интеграция: ключи из Heap</h2>
@@ -2270,7 +2490,8 @@ const runAllTests = async () => {
                   Два GET:{' '}
                   <code class="tests-inline-code">…/integration-gc-credentials</code> и{' '}
                   <code class="tests-inline-code">…/integration-lava-credentials</code>
-                  — те же живые проверки, что при сохранении настроек, по парам полей из Heap (как отдельные блоки в админке).
+                  — те же живые проверки, что при сохранении настроек, по парам полей из Heap (как
+                  отдельные блоки в админке).
                 </p>
                 <div v-if="integrationBothLastRunAt" class="tests-endpoints-last-run">
                   Результаты от: {{ integrationBothLastRunAt }}
@@ -2283,11 +2504,22 @@ const runAllTests = async () => {
                       class="tests-endpoints-list-item"
                       :class="`tests-endpoints-status-${item.status}`"
                     >
-                      <span class="tests-endpoints-badge" :class="`tests-endpoints-badge-${item.status}`">
-                        {{ item.status === 'todo' ? '[TODO]' : item.status === 'success' ? '[OK]' : '[FAIL]' }}
+                      <span
+                        class="tests-endpoints-badge"
+                        :class="`tests-endpoints-badge-${item.status}`"
+                      >
+                        {{
+                          item.status === 'todo'
+                            ? '[TODO]'
+                            : item.status === 'success'
+                              ? '[OK]'
+                              : '[FAIL]'
+                        }}
                       </span>
                       <span class="tests-endpoints-list-title-inline">{{ item.title }}</span>
-                      <span v-if="item.error" class="tests-endpoints-list-error">{{ item.error }}</span>
+                      <span v-if="item.error" class="tests-endpoints-list-error">{{
+                        item.error
+                      }}</span>
                       <button
                         type="button"
                         class="tests-run-one-btn"
@@ -2303,7 +2535,11 @@ const runAllTests = async () => {
                       >
                         <i
                           class="fas"
-                          :class="isSingleRunning('integrationBoth', item.id) ? 'fa-spinner fa-spin' : 'fa-play'"
+                          :class="
+                            isSingleRunning('integrationBoth', item.id)
+                              ? 'fa-spinner fa-spin'
+                              : 'fa-play'
+                          "
                         ></i>
                       </button>
                     </li>
@@ -2322,13 +2558,23 @@ const runAllTests = async () => {
                     "
                     @click="runIntegrationBothTests"
                   >
-                    <i class="fas" :class="integrationBothLoading ? 'fa-spinner fa-spin' : 'fa-bolt'"></i>
-                    {{ integrationBothLoading ? 'Проверяем...' : 'Запустить обе проверки (GetCourse и Lava)' }}
+                    <i
+                      class="fas"
+                      :class="integrationBothLoading ? 'fa-spinner fa-spin' : 'fa-bolt'"
+                    ></i>
+                    {{
+                      integrationBothLoading
+                        ? 'Проверяем...'
+                        : 'Запустить обе проверки (GetCourse и Lava)'
+                    }}
                   </button>
                 </div>
               </div>
 
-              <div v-if="showContent && testSuiteMode === 'integration'" class="tests-card tests-endpoints-card tests-crt-card">
+              <div
+                v-if="showContent && testSuiteMode === 'integration'"
+                class="tests-card tests-endpoints-card tests-crt-card"
+              >
                 <div class="tests-endpoints-header">
                   <i class="fas fa-shopping-cart tests-endpoints-icon"></i>
                   <h2 class="tests-endpoints-title">Интеграция: GetCourse по номеру заказа</h2>
@@ -2336,14 +2582,18 @@ const runAllTests = async () => {
                 <p class="tests-endpoints-desc">
                   Введите <code class="tests-inline-code">deal_number</code> заказа в GetCourse (не
                   <code class="tests-inline-code">test</code>). GET
-                  <code class="tests-inline-code">…/integration-gc-order-pl-api</code> — проба PL API
-                  (<code class="tests-inline-code">deal_status=in_work</code>; на боевом заказе это может
-                  изменить статус в GetCourse). Email покупателя: передайте в поле ниже или оставьте пустым, если для
-                  этого <code class="tests-inline-code">gc_order_id</code> уже есть контракт в Heap (payment-link).
+                  <code class="tests-inline-code">…/integration-gc-order-pl-api</code> — проба PL
+                  API (<code class="tests-inline-code">deal_status=in_work</code>; на боевом заказе
+                  это может изменить статус в GetCourse). Email покупателя: передайте в поле ниже
+                  или оставьте пустым, если для этого
+                  <code class="tests-inline-code">gc_order_id</code> уже есть контракт в Heap
+                  (payment-link).
                 </p>
                 <div class="tests-gc-order-probe-fields">
                   <div class="tests-webhook-live-url-row">
-                    <span class="tests-webhook-live-label">Номер заказа GetCourse (обязательно)</span>
+                    <span class="tests-webhook-live-label"
+                      >Номер заказа GetCourse (обязательно)</span
+                    >
                     <input
                       v-model="gcOrderPlProbeId"
                       class="tests-gc-order-probe-input"
@@ -2354,7 +2604,9 @@ const runAllTests = async () => {
                     />
                   </div>
                   <div class="tests-webhook-live-url-row">
-                    <span class="tests-webhook-live-label">Email покупателя (необязательно, иначе из Heap)</span>
+                    <span class="tests-webhook-live-label"
+                      >Email покупателя (необязательно, иначе из Heap)</span
+                    >
                     <input
                       v-model="gcOrderPlProbeBuyerEmail"
                       class="tests-gc-order-probe-input"
@@ -2381,35 +2633,47 @@ const runAllTests = async () => {
                     "
                     @click="runIntegrationGcOrderPlApiTest"
                   >
-                    <i class="fas" :class="gcOrderPlApiLoading ? 'fa-spinner fa-spin' : 'fa-plug'"></i>
+                    <i
+                      class="fas"
+                      :class="gcOrderPlApiLoading ? 'fa-spinner fa-spin' : 'fa-plug'"
+                    ></i>
                     {{ gcOrderPlApiLoading ? 'Запрос к GetCourse…' : 'Проверить PL API по заказу' }}
                   </button>
                 </div>
                 <details v-if="gcOrderPlApiRaw" class="tests-payment-link-raw">
                   <summary>Ответ API</summary>
-                  <pre class="tests-payment-link-raw-pre">{{ JSON.stringify(gcOrderPlApiRaw, null, 2) }}</pre>
+                  <pre class="tests-payment-link-raw-pre">{{
+                    JSON.stringify(gcOrderPlApiRaw, null, 2)
+                  }}</pre>
                 </details>
               </div>
 
-              <div v-if="showContent && testSuiteMode === 'integration'" class="tests-card tests-endpoints-card tests-crt-card">
+              <div
+                v-if="showContent && testSuiteMode === 'integration'"
+                class="tests-card tests-endpoints-card tests-crt-card"
+              >
                 <div class="tests-endpoints-header">
                   <i class="fas fa-credit-card tests-endpoints-icon"></i>
                   <h2 class="tests-endpoints-title">POST /api/integrations/lava/payment-link</h2>
                 </div>
                 <p class="tests-endpoints-desc">
-                  <strong>[OK]</strong> — проверка прошла, <strong>[SKIP]</strong> у HTTP-теста — не удалось собрать абсолютный URL
-                  (нет <code class="tests-inline-code">Host</code> / <code class="tests-inline-code">Origin</code>), не ошибка. Юнит:
-                  GET <code class="tests-inline-code">…/payment-link-dry-run-unit</code> —
-                  <code class="tests-inline-code">route.run</code> + <code class="tests-inline-code">integrationTestDryRun</code>.
-                  Интеграция: POST <code class="tests-inline-code">…/payment-link-http-integration</code> —
-                  <code class="tests-inline-code">request()</code> на тот же URL без заголовков авторизации.
+                  <strong>[OK]</strong> — проверка прошла, <strong>[SKIP]</strong> у HTTP-теста — не
+                  удалось собрать абсолютный URL (нет <code class="tests-inline-code">Host</code> /
+                  <code class="tests-inline-code">Origin</code>), не ошибка. Юнит: GET
+                  <code class="tests-inline-code">…/payment-link-dry-run-unit</code> —
+                  <code class="tests-inline-code">route.run</code> +
+                  <code class="tests-inline-code">integrationTestDryRun</code>. Интеграция: POST
+                  <code class="tests-inline-code">…/payment-link-http-integration</code> —
+                  <code class="tests-inline-code">request()</code> на тот же URL без заголовков
+                  авторизации.
                 </p>
                 <div
                   v-if="paymentLinkDryRunUnitLastAt || paymentLinkHttpIntegrationLastAt"
                   class="tests-endpoints-last-run"
                 >
                   Последний запуск: юнит
-                  {{ paymentLinkDryRunUnitLastAt ?? '—' }}, HTTP {{ paymentLinkHttpIntegrationLastAt ?? '—' }}
+                  {{ paymentLinkDryRunUnitLastAt ?? '—' }}, HTTP
+                  {{ paymentLinkHttpIntegrationLastAt ?? '—' }}
                 </div>
                 <div class="tests-endpoints-list-wrap">
                   <ul class="tests-endpoints-list" role="list">
@@ -2422,7 +2686,9 @@ const runAllTests = async () => {
                         :class="`tests-endpoints-badge-${paymentLinkDryRunRow.status}`"
                         >{{ paymentLinkRowBadgeLabel(paymentLinkDryRunRow.status) }}</span
                       >
-                      <span class="tests-endpoints-list-title-inline">Юнит: dry-run (<code>route.run</code>)</span>
+                      <span class="tests-endpoints-list-title-inline"
+                        >Юнит: dry-run (<code>route.run</code>)</span
+                      >
                       <span
                         v-if="paymentLinkDryRunRow.detail"
                         :class="
@@ -2460,7 +2726,9 @@ const runAllTests = async () => {
                         :class="`tests-endpoints-badge-${paymentLinkHttpRow.status}`"
                         >{{ paymentLinkRowBadgeLabel(paymentLinkHttpRow.status) }}</span
                       >
-                      <span class="tests-endpoints-list-title-inline">Интеграция: HTTP POST (<code>request</code>)</span>
+                      <span class="tests-endpoints-list-title-inline"
+                        >Интеграция: HTTP POST (<code>request</code>)</span
+                      >
                       <span
                         v-if="paymentLinkHttpRow.detail"
                         :class="
@@ -2485,7 +2753,9 @@ const runAllTests = async () => {
                       >
                         <i
                           class="fas"
-                          :class="paymentLinkHttpIntegrationLoading ? 'fa-spinner fa-spin' : 'fa-play'"
+                          :class="
+                            paymentLinkHttpIntegrationLoading ? 'fa-spinner fa-spin' : 'fa-play'
+                          "
                         ></i>
                       </button>
                     </li>
@@ -2529,7 +2799,10 @@ const runAllTests = async () => {
                 </details>
               </div>
 
-              <div v-if="showContent && testSuiteMode === 'integration'" class="tests-card tests-endpoints-card tests-crt-card">
+              <div
+                v-if="showContent && testSuiteMode === 'integration'"
+                class="tests-card tests-endpoints-card tests-crt-card"
+              >
                 <div class="tests-endpoints-header">
                   <i class="fas fa-bolt tests-endpoints-icon"></i>
                   <h2 class="tests-endpoints-title">Лайв: payment-link (Heap + Lava)</h2>
@@ -2537,10 +2810,10 @@ const runAllTests = async () => {
                 <p class="tests-endpoints-desc">
                   Реальные вызовы Lava и Heap: перед каждым полным сценарием активные контракты с
                   <code class="tests-inline-code">gc_order_id=test</code> переводятся в
-                  <code class="tests-inline-code">cancelled</code>, чтобы идемпотентность не обрывала цепочку.
-                  Тело:
-                  <code class="tests-inline-code">debug@khudoley.pro</code>, сумма 50 RUB. У HTTP-теста
-                  <strong>[SKIP]</strong> — нет абсолютного URL (откройте страницу из браузера).
+                  <code class="tests-inline-code">cancelled</code>, чтобы идемпотентность не
+                  обрывала цепочку. Тело: <code class="tests-inline-code">debug@khudoley.pro</code>,
+                  сумма 50 RUB. У HTTP-теста <strong>[SKIP]</strong> — нет абсолютного URL (откройте
+                  страницу из браузера).
                 </p>
                 <div
                   v-if="
@@ -2551,7 +2824,8 @@ const runAllTests = async () => {
                   class="tests-endpoints-last-run"
                 >
                   Последний запуск: Heap {{ paymentLinkHeapSettingsLastAt ?? '—' }}, route.run
-                  {{ paymentLinkFullRouteRunLastAt ?? '—' }}, HTTP {{ paymentLinkFullHttpLastAt ?? '—' }}
+                  {{ paymentLinkFullRouteRunLastAt ?? '—' }}, HTTP
+                  {{ paymentLinkFullHttpLastAt ?? '—' }}
                 </div>
                 <div class="tests-endpoints-list-wrap">
                   <ul class="tests-endpoints-list" role="list">
@@ -2564,7 +2838,9 @@ const runAllTests = async () => {
                         :class="`tests-endpoints-badge-${paymentLinkHeapSettingsRow.status}`"
                         >{{ paymentLinkRowBadgeLabel(paymentLinkHeapSettingsRow.status) }}</span
                       >
-                      <span class="tests-endpoints-list-title-inline">Чтение Heap (4 поля Lava)</span>
+                      <span class="tests-endpoints-list-title-inline"
+                        >Чтение Heap (4 поля Lava)</span
+                      >
                       <span
                         v-if="paymentLinkHeapSettingsRow.detail"
                         :class="
@@ -2725,7 +3001,10 @@ const runAllTests = async () => {
                 </details>
               </div>
 
-              <div v-if="showContent && testSuiteMode === 'integration'" class="tests-card tests-endpoints-card tests-crt-card">
+              <div
+                v-if="showContent && testSuiteMode === 'integration'"
+                class="tests-card tests-endpoints-card tests-crt-card"
+              >
                 <div class="tests-endpoints-header">
                   <i class="fas fa-link tests-endpoints-icon"></i>
                   <h2 class="tests-endpoints-title">Лайв: webhook после оплаты</h2>
@@ -2734,20 +3013,24 @@ const runAllTests = async () => {
                   Оплатите по ссылке из лайва payment-link выше. Lava отправит
                   <code class="tests-inline-code">POST</code> на эндпоинт ниже с заголовком
                   <code class="tests-inline-code">X-Api-Key</code> = секрет из Heap. Для заказа
-                  <code class="tests-inline-code">gc_order_id=test</code> вызов GetCourse из webhook не
-                  выполняется. Нажмите «Вооружить проверку» и укажите ожидаемый
-                  <code class="tests-inline-code">lava_contract_id</code> (подставляется из последнего
-                  успешного route.run или HTTP). Зелёный статус — первый успешный
+                  <code class="tests-inline-code">gc_order_id=test</code> вызов GetCourse из webhook
+                  не выполняется. Нажмите «Вооружить проверку» и укажите ожидаемый
+                  <code class="tests-inline-code">lava_contract_id</code> (подставляется из
+                  последнего успешного route.run или HTTP). Зелёный статус — первый успешный
                   <code class="tests-inline-code">payment.success</code> +
                   <code class="tests-inline-code">completed</code> по этому контракту.
                 </p>
                 <div class="tests-webhook-live-urls">
                   <p class="tests-webhook-live-url-row">
                     <span class="tests-webhook-live-label">Эндпоинт webhook (куда шлёт Lava):</span>
-                    <code class="tests-webhook-live-url-code">{{ webhookLiveApiResponse?.webhookUrl || '—' }}</code>
+                    <code class="tests-webhook-live-url-code">{{
+                      webhookLiveApiResponse?.webhookUrl || '—'
+                    }}</code>
                   </p>
                   <p class="tests-webhook-live-url-row">
-                    <span class="tests-webhook-live-label">Ссылка на оплату (ожидаем проверку по ней):</span>
+                    <span class="tests-webhook-live-label"
+                      >Ссылка на оплату (ожидаем проверку по ней):</span
+                    >
                     <template v-if="webhookLivePaymentUrlDisplay">
                       <a
                         class="tests-webhook-live-pay-link"
@@ -2758,11 +3041,16 @@ const runAllTests = async () => {
                       >
                     </template>
                     <template v-else>
-                      <span class="tests-endpoints-list-desc">Сначала успешно создайте ссылку в блоке выше.</span>
+                      <span class="tests-endpoints-list-desc"
+                        >Сначала успешно создайте ссылку в блоке выше.</span
+                      >
                     </template>
                   </p>
                   <p v-if="paymentLinkLiveSnapshot" class="tests-webhook-live-meta">
-                    Последний контракт из лайва: <code class="tests-inline-code">{{ paymentLinkLiveSnapshot.lavaContractId }}</code>
+                    Последний контракт из лайва:
+                    <code class="tests-inline-code">{{
+                      paymentLinkLiveSnapshot.lavaContractId
+                    }}</code>
                     ({{ paymentLinkLiveSnapshot.source === 'http' ? 'HTTP' : 'route.run' }})
                   </p>
                 </div>
@@ -2783,7 +3071,9 @@ const runAllTests = async () => {
                               : '[TODO]'
                         }}</span
                       >
-                      <span class="tests-endpoints-list-title-inline">Проверка webhook по контракту</span>
+                      <span class="tests-endpoints-list-title-inline"
+                        >Проверка webhook по контракту</span
+                      >
                       <span
                         v-if="webhookLiveApiResponse?.state?.expectedLavaContractId"
                         class="tests-endpoints-list-desc"
@@ -2808,10 +3098,15 @@ const runAllTests = async () => {
                   <button
                     type="button"
                     class="tests-run-group-btn"
-                    :disabled="integrationPaymentLinkBusy || !paymentLinkLiveSnapshot?.lavaContractId"
+                    :disabled="
+                      integrationPaymentLinkBusy || !paymentLinkLiveSnapshot?.lavaContractId
+                    "
                     @click="armWebhookLiveTestFromSnapshot"
                   >
-                    <i class="fas" :class="webhookLiveArmLoading ? 'fa-spinner fa-spin' : 'fa-crosshairs'"></i>
+                    <i
+                      class="fas"
+                      :class="webhookLiveArmLoading ? 'fa-spinner fa-spin' : 'fa-crosshairs'"
+                    ></i>
                     {{
                       webhookLiveArmLoading
                         ? 'Вооружаем…'
@@ -2835,392 +3130,560 @@ const runAllTests = async () => {
               </div>
 
               <!-- Блок 1: Проверка эндпоинтов -->
-              <div v-if="showContent && testSuiteMode === 'legacy'" class="tests-card tests-endpoints-card tests-crt-card">
-            <div class="tests-endpoints-header">
-              <i class="fas fa-plug tests-endpoints-icon"></i>
-              <h2 class="tests-endpoints-title">Проверка эндпоинтов</h2>
-            </div>
-            <p class="tests-endpoints-desc">
-              Проверка доступности маршрутов приложения (HTTP 200).
-            </p>
-            <div v-if="endpointsLastRunAt" class="tests-endpoints-last-run">
-              Результаты от: {{ endpointsLastRunAt }}
-            </div>
-            <div class="tests-endpoints-list-wrap">
-              <ul class="tests-endpoints-list" role="list">
-                <li
-                  v-for="item in endpointsDisplay"
-                :key="item.id"
-                class="tests-endpoints-list-item"
-                :class="`tests-endpoints-status-${item.status}`"
+              <div
+                v-if="showContent && testSuiteMode === 'legacy'"
+                class="tests-card tests-endpoints-card tests-crt-card"
               >
-                <span class="tests-endpoints-badge" :class="`tests-endpoints-badge-${item.status}`">
-                  {{ item.status === 'todo' ? '[TODO]' : item.status === 'success' ? '[OK]' : '[FAIL]' }}
-                </span>
-                <span class="tests-endpoints-list-title-inline">{{ item.title }}</span>
-                <span v-if="item.error" class="tests-endpoints-list-error">{{ item.error }}</span>
-                <button
-                  type="button"
-                  class="tests-run-one-btn"
-                  title="Запустить только этот тест"
-                  :disabled="runAllTestsLoading || endpointsLoading || isGroupBlockedBySingle('endpoints')"
-                  @click.stop="runSingleEndpointTest(item.id)"
-                >
-                  <i
-                    class="fas"
-                    :class="isSingleRunning('endpoints', item.id) ? 'fa-spinner fa-spin' : 'fa-play'"
-                  ></i>
-                </button>
-              </li>
-              </ul>
-            </div>
-            <div class="tests-endpoints-actions">
-              <button
-                type="button"
-                class="tests-run-group-btn"
-                :disabled="runAllTestsLoading || endpointsLoading || isGroupBlockedBySingle('endpoints')"
-                @click="runEndpointsTests"
-              >
-                <i class="fas" :class="endpointsLoading ? 'fa-spinner fa-spin' : 'fa-bolt'"></i>
-                {{ endpointsLoading ? 'Проверяем...' : 'Запустить проверку эндпоинтов' }}
-              </button>
-            </div>
-          </div>
+                <div class="tests-endpoints-header">
+                  <i class="fas fa-plug tests-endpoints-icon"></i>
+                  <h2 class="tests-endpoints-title">Проверка эндпоинтов</h2>
+                </div>
+                <p class="tests-endpoints-desc">
+                  Проверка доступности маршрутов приложения (HTTP 200).
+                </p>
+                <div v-if="endpointsLastRunAt" class="tests-endpoints-last-run">
+                  Результаты от: {{ endpointsLastRunAt }}
+                </div>
+                <div class="tests-endpoints-list-wrap">
+                  <ul class="tests-endpoints-list" role="list">
+                    <li
+                      v-for="item in endpointsDisplay"
+                      :key="item.id"
+                      class="tests-endpoints-list-item"
+                      :class="`tests-endpoints-status-${item.status}`"
+                    >
+                      <span
+                        class="tests-endpoints-badge"
+                        :class="`tests-endpoints-badge-${item.status}`"
+                      >
+                        {{
+                          item.status === 'todo'
+                            ? '[TODO]'
+                            : item.status === 'success'
+                              ? '[OK]'
+                              : '[FAIL]'
+                        }}
+                      </span>
+                      <span class="tests-endpoints-list-title-inline">{{ item.title }}</span>
+                      <span v-if="item.error" class="tests-endpoints-list-error">{{
+                        item.error
+                      }}</span>
+                      <button
+                        type="button"
+                        class="tests-run-one-btn"
+                        title="Запустить только этот тест"
+                        :disabled="
+                          runAllTestsLoading ||
+                          endpointsLoading ||
+                          isGroupBlockedBySingle('endpoints')
+                        "
+                        @click.stop="runSingleEndpointTest(item.id)"
+                      >
+                        <i
+                          class="fas"
+                          :class="
+                            isSingleRunning('endpoints', item.id) ? 'fa-spinner fa-spin' : 'fa-play'
+                          "
+                        ></i>
+                      </button>
+                    </li>
+                  </ul>
+                </div>
+                <div class="tests-endpoints-actions">
+                  <button
+                    type="button"
+                    class="tests-run-group-btn"
+                    :disabled="
+                      runAllTestsLoading || endpointsLoading || isGroupBlockedBySingle('endpoints')
+                    "
+                    @click="runEndpointsTests"
+                  >
+                    <i class="fas" :class="endpointsLoading ? 'fa-spinner fa-spin' : 'fa-bolt'"></i>
+                    {{ endpointsLoading ? 'Проверяем...' : 'Запустить проверку эндпоинтов' }}
+                  </button>
+                </div>
+              </div>
 
               <!-- Блок 2: Библиотека настроек -->
-              <div v-if="showContent && testSuiteMode === 'legacy'" class="tests-card tests-endpoints-card tests-crt-card">
-            <div class="tests-endpoints-header">
-              <i class="fas fa-cog tests-endpoints-icon"></i>
-              <h2 class="tests-endpoints-title">Библиотека настроек</h2>
-            </div>
-            <p class="tests-endpoints-desc">
-              Тесты библиотеки настроек (settings.lib).
-            </p>
-            <div v-if="settingsLastRunAt" class="tests-endpoints-last-run">
-              Результаты от: {{ settingsLastRunAt }}
-            </div>
-            <div class="tests-endpoints-list-wrap">
-              <ul class="tests-endpoints-list" role="list">
-                <li
-                  v-for="item in settingsDisplay"
-                  :key="item.id"
-                  class="tests-endpoints-list-item"
-                  :class="`tests-endpoints-status-${item.status}`"
-                >
-                  <span class="tests-endpoints-badge" :class="`tests-endpoints-badge-${item.status}`">
-                    {{ item.status === 'todo' ? '[TODO]' : item.status === 'success' ? '[OK]' : '[FAIL]' }}
-                  </span>
-                  <span class="tests-endpoints-list-title-inline">{{ item.title }}</span>
-                  <span v-if="item.error" class="tests-endpoints-list-error">{{ item.error }}</span>
+              <div
+                v-if="showContent && testSuiteMode === 'legacy'"
+                class="tests-card tests-endpoints-card tests-crt-card"
+              >
+                <div class="tests-endpoints-header">
+                  <i class="fas fa-cog tests-endpoints-icon"></i>
+                  <h2 class="tests-endpoints-title">Библиотека настроек</h2>
+                </div>
+                <p class="tests-endpoints-desc">Тесты библиотеки настроек (settings.lib).</p>
+                <div v-if="settingsLastRunAt" class="tests-endpoints-last-run">
+                  Результаты от: {{ settingsLastRunAt }}
+                </div>
+                <div class="tests-endpoints-list-wrap">
+                  <ul class="tests-endpoints-list" role="list">
+                    <li
+                      v-for="item in settingsDisplay"
+                      :key="item.id"
+                      class="tests-endpoints-list-item"
+                      :class="`tests-endpoints-status-${item.status}`"
+                    >
+                      <span
+                        class="tests-endpoints-badge"
+                        :class="`tests-endpoints-badge-${item.status}`"
+                      >
+                        {{
+                          item.status === 'todo'
+                            ? '[TODO]'
+                            : item.status === 'success'
+                              ? '[OK]'
+                              : '[FAIL]'
+                        }}
+                      </span>
+                      <span class="tests-endpoints-list-title-inline">{{ item.title }}</span>
+                      <span v-if="item.error" class="tests-endpoints-list-error">{{
+                        item.error
+                      }}</span>
+                      <button
+                        type="button"
+                        class="tests-run-one-btn"
+                        title="Запустить только этот тест"
+                        :disabled="
+                          runAllTestsLoading ||
+                          settingsLoading ||
+                          isGroupBlockedBySingle('settings')
+                        "
+                        @click.stop="runSingleSettingsTest(item.id)"
+                      >
+                        <i
+                          class="fas"
+                          :class="
+                            isSingleRunning('settings', item.id) ? 'fa-spinner fa-spin' : 'fa-play'
+                          "
+                        ></i>
+                      </button>
+                    </li>
+                  </ul>
+                </div>
+                <div class="tests-endpoints-actions">
                   <button
                     type="button"
-                    class="tests-run-one-btn"
-                    title="Запустить только этот тест"
-                    :disabled="runAllTestsLoading || settingsLoading || isGroupBlockedBySingle('settings')"
-                    @click.stop="runSingleSettingsTest(item.id)"
+                    class="tests-run-group-btn"
+                    :disabled="
+                      runAllTestsLoading || settingsLoading || isGroupBlockedBySingle('settings')
+                    "
+                    @click="runSettingsTests"
                   >
-                    <i
-                      class="fas"
-                      :class="isSingleRunning('settings', item.id) ? 'fa-spinner fa-spin' : 'fa-play'"
-                    ></i>
+                    <i class="fas" :class="settingsLoading ? 'fa-spinner fa-spin' : 'fa-bolt'"></i>
+                    {{
+                      settingsLoading ? 'Проверяем...' : 'Запустить проверку библиотеки настроек'
+                    }}
                   </button>
-                </li>
-              </ul>
-            </div>
-            <div class="tests-endpoints-actions">
-              <button
-                type="button"
-                class="tests-run-group-btn"
-                :disabled="runAllTestsLoading || settingsLoading || isGroupBlockedBySingle('settings')"
-                @click="runSettingsTests"
-              >
-                <i class="fas" :class="settingsLoading ? 'fa-spinner fa-spin' : 'fa-bolt'"></i>
-                {{ settingsLoading ? 'Проверяем...' : 'Запустить проверку библиотеки настроек' }}
-              </button>
-            </div>
-          </div>
+                </div>
+              </div>
 
               <!-- Блок 3: Репозиторий настроек -->
-              <div v-if="showContent && testSuiteMode === 'legacy'" class="tests-card tests-endpoints-card tests-crt-card">
-            <div class="tests-endpoints-header">
-              <i class="fas fa-table tests-endpoints-icon"></i>
-              <h2 class="tests-endpoints-title">Репозиторий настроек</h2>
-            </div>
-            <p class="tests-endpoints-desc">
-              Тесты репозитория настроек (settings.repo).
-            </p>
-            <div v-if="settingsRepoLastRunAt" class="tests-endpoints-last-run">
-              Результаты от: {{ settingsRepoLastRunAt }}
-            </div>
-            <div class="tests-endpoints-list-wrap">
-              <ul class="tests-endpoints-list" role="list">
-                <li
-                  v-for="item in settingsRepoDisplay"
-                  :key="item.id"
-                  class="tests-endpoints-list-item"
-                  :class="`tests-endpoints-status-${item.status}`"
-                >
-                  <span class="tests-endpoints-badge" :class="`tests-endpoints-badge-${item.status}`">
-                    {{ item.status === 'todo' ? '[TODO]' : item.status === 'success' ? '[OK]' : '[FAIL]' }}
-                  </span>
-                  <span class="tests-endpoints-list-title-inline">{{ item.title }}</span>
-                  <span v-if="item.error" class="tests-endpoints-list-error">{{ item.error }}</span>
+              <div
+                v-if="showContent && testSuiteMode === 'legacy'"
+                class="tests-card tests-endpoints-card tests-crt-card"
+              >
+                <div class="tests-endpoints-header">
+                  <i class="fas fa-table tests-endpoints-icon"></i>
+                  <h2 class="tests-endpoints-title">Репозиторий настроек</h2>
+                </div>
+                <p class="tests-endpoints-desc">Тесты репозитория настроек (settings.repo).</p>
+                <div v-if="settingsRepoLastRunAt" class="tests-endpoints-last-run">
+                  Результаты от: {{ settingsRepoLastRunAt }}
+                </div>
+                <div class="tests-endpoints-list-wrap">
+                  <ul class="tests-endpoints-list" role="list">
+                    <li
+                      v-for="item in settingsRepoDisplay"
+                      :key="item.id"
+                      class="tests-endpoints-list-item"
+                      :class="`tests-endpoints-status-${item.status}`"
+                    >
+                      <span
+                        class="tests-endpoints-badge"
+                        :class="`tests-endpoints-badge-${item.status}`"
+                      >
+                        {{
+                          item.status === 'todo'
+                            ? '[TODO]'
+                            : item.status === 'success'
+                              ? '[OK]'
+                              : '[FAIL]'
+                        }}
+                      </span>
+                      <span class="tests-endpoints-list-title-inline">{{ item.title }}</span>
+                      <span v-if="item.error" class="tests-endpoints-list-error">{{
+                        item.error
+                      }}</span>
+                      <button
+                        type="button"
+                        class="tests-run-one-btn"
+                        title="Запустить только этот тест"
+                        :disabled="
+                          runAllTestsLoading ||
+                          settingsRepoLoading ||
+                          isGroupBlockedBySingle('settingsRepo')
+                        "
+                        @click.stop="runSingleSettingsRepoTest(item.id)"
+                      >
+                        <i
+                          class="fas"
+                          :class="
+                            isSingleRunning('settingsRepo', item.id)
+                              ? 'fa-spinner fa-spin'
+                              : 'fa-play'
+                          "
+                        ></i>
+                      </button>
+                    </li>
+                  </ul>
+                </div>
+                <div class="tests-endpoints-actions">
                   <button
                     type="button"
-                    class="tests-run-one-btn"
-                    title="Запустить только этот тест"
-                    :disabled="runAllTestsLoading || settingsRepoLoading || isGroupBlockedBySingle('settingsRepo')"
-                    @click.stop="runSingleSettingsRepoTest(item.id)"
+                    class="tests-run-group-btn"
+                    :disabled="
+                      runAllTestsLoading ||
+                      settingsRepoLoading ||
+                      isGroupBlockedBySingle('settingsRepo')
+                    "
+                    @click="runSettingsRepoTests"
                   >
                     <i
                       class="fas"
-                      :class="isSingleRunning('settingsRepo', item.id) ? 'fa-spinner fa-spin' : 'fa-play'"
+                      :class="settingsRepoLoading ? 'fa-spinner fa-spin' : 'fa-bolt'"
                     ></i>
+                    {{
+                      settingsRepoLoading
+                        ? 'Проверяем...'
+                        : 'Запустить проверку репозитория настроек'
+                    }}
                   </button>
-                </li>
-              </ul>
-            </div>
-            <div class="tests-endpoints-actions">
-              <button
-                type="button"
-                class="tests-run-group-btn"
-                :disabled="runAllTestsLoading || settingsRepoLoading || isGroupBlockedBySingle('settingsRepo')"
-                @click="runSettingsRepoTests"
-              >
-                <i class="fas" :class="settingsRepoLoading ? 'fa-spinner fa-spin' : 'fa-bolt'"></i>
-                {{ settingsRepoLoading ? 'Проверяем...' : 'Запустить проверку репозитория настроек' }}
-              </button>
-            </div>
-          </div>
+                </div>
+              </div>
 
               <!-- Блок 4: Библиотека логов -->
-              <div v-if="showContent && testSuiteMode === 'legacy'" class="tests-card tests-endpoints-card tests-crt-card">
-            <div class="tests-endpoints-header">
-              <i class="fas fa-file-alt tests-endpoints-icon"></i>
-              <h2 class="tests-endpoints-title">Библиотека логов</h2>
-            </div>
-            <p class="tests-endpoints-desc">
-              Тесты библиотеки логов (logger.lib).
-            </p>
-            <div v-if="loggerLibLastRunAt" class="tests-endpoints-last-run">
-              Результаты от: {{ loggerLibLastRunAt }}
-            </div>
-            <div class="tests-endpoints-list-wrap">
-              <ul class="tests-endpoints-list" role="list">
-                <li
-                  v-for="item in loggerLibDisplay"
-                  :key="item.id"
-                  class="tests-endpoints-list-item"
-                  :class="`tests-endpoints-status-${item.status}`"
-                >
-                  <span class="tests-endpoints-badge" :class="`tests-endpoints-badge-${item.status}`">
-                    {{ item.status === 'todo' ? '[TODO]' : item.status === 'success' ? '[OK]' : '[FAIL]' }}
-                  </span>
-                  <span class="tests-endpoints-list-title-inline">{{ item.title }}</span>
-                  <span v-if="item.error" class="tests-endpoints-list-error">{{ item.error }}</span>
+              <div
+                v-if="showContent && testSuiteMode === 'legacy'"
+                class="tests-card tests-endpoints-card tests-crt-card"
+              >
+                <div class="tests-endpoints-header">
+                  <i class="fas fa-file-alt tests-endpoints-icon"></i>
+                  <h2 class="tests-endpoints-title">Библиотека логов</h2>
+                </div>
+                <p class="tests-endpoints-desc">Тесты библиотеки логов (logger.lib).</p>
+                <div v-if="loggerLibLastRunAt" class="tests-endpoints-last-run">
+                  Результаты от: {{ loggerLibLastRunAt }}
+                </div>
+                <div class="tests-endpoints-list-wrap">
+                  <ul class="tests-endpoints-list" role="list">
+                    <li
+                      v-for="item in loggerLibDisplay"
+                      :key="item.id"
+                      class="tests-endpoints-list-item"
+                      :class="`tests-endpoints-status-${item.status}`"
+                    >
+                      <span
+                        class="tests-endpoints-badge"
+                        :class="`tests-endpoints-badge-${item.status}`"
+                      >
+                        {{
+                          item.status === 'todo'
+                            ? '[TODO]'
+                            : item.status === 'success'
+                              ? '[OK]'
+                              : '[FAIL]'
+                        }}
+                      </span>
+                      <span class="tests-endpoints-list-title-inline">{{ item.title }}</span>
+                      <span v-if="item.error" class="tests-endpoints-list-error">{{
+                        item.error
+                      }}</span>
+                      <button
+                        type="button"
+                        class="tests-run-one-btn"
+                        title="Запустить только этот тест"
+                        :disabled="
+                          runAllTestsLoading ||
+                          loggerLibLoading ||
+                          isGroupBlockedBySingle('loggerLib')
+                        "
+                        @click.stop="runSingleLoggerLibTest(item.id)"
+                      >
+                        <i
+                          class="fas"
+                          :class="
+                            isSingleRunning('loggerLib', item.id) ? 'fa-spinner fa-spin' : 'fa-play'
+                          "
+                        ></i>
+                      </button>
+                    </li>
+                  </ul>
+                </div>
+                <div class="tests-endpoints-actions">
                   <button
                     type="button"
-                    class="tests-run-one-btn"
-                    title="Запустить только этот тест"
-                    :disabled="runAllTestsLoading || loggerLibLoading || isGroupBlockedBySingle('loggerLib')"
-                    @click.stop="runSingleLoggerLibTest(item.id)"
+                    class="tests-run-group-btn"
+                    :disabled="
+                      runAllTestsLoading || loggerLibLoading || isGroupBlockedBySingle('loggerLib')
+                    "
+                    @click="runLoggerLibTests"
                   >
-                    <i
-                      class="fas"
-                      :class="isSingleRunning('loggerLib', item.id) ? 'fa-spinner fa-spin' : 'fa-play'"
-                    ></i>
+                    <i class="fas" :class="loggerLibLoading ? 'fa-spinner fa-spin' : 'fa-bolt'"></i>
+                    {{ loggerLibLoading ? 'Проверяем...' : 'Запустить проверку библиотеки логов' }}
                   </button>
-                </li>
-              </ul>
-            </div>
-            <div class="tests-endpoints-actions">
-              <button
-                type="button"
-                class="tests-run-group-btn"
-                :disabled="runAllTestsLoading || loggerLibLoading || isGroupBlockedBySingle('loggerLib')"
-                @click="runLoggerLibTests"
-              >
-                <i class="fas" :class="loggerLibLoading ? 'fa-spinner fa-spin' : 'fa-bolt'"></i>
-                {{ loggerLibLoading ? 'Проверяем...' : 'Запустить проверку библиотеки логов' }}
-              </button>
-            </div>
-          </div>
+                </div>
+              </div>
 
               <!-- Блок 5: Репозиторий логов -->
-              <div v-if="showContent && testSuiteMode === 'legacy'" class="tests-card tests-endpoints-card tests-crt-card">
-            <div class="tests-endpoints-header">
-              <i class="fas fa-database tests-endpoints-icon"></i>
-              <h2 class="tests-endpoints-title">Репозиторий логов</h2>
-            </div>
-            <p class="tests-endpoints-desc">
-              Тесты репозитория логов (logs.repo).
-            </p>
-            <div v-if="logsRepoLastRunAt" class="tests-endpoints-last-run">
-              Результаты от: {{ logsRepoLastRunAt }}
-            </div>
-            <div class="tests-endpoints-list-wrap">
-              <ul class="tests-endpoints-list" role="list">
-                <li
-                  v-for="item in logsRepoDisplay"
-                  :key="item.id"
-                  class="tests-endpoints-list-item"
-                  :class="`tests-endpoints-status-${item.status}`"
-                >
-                  <span class="tests-endpoints-badge" :class="`tests-endpoints-badge-${item.status}`">
-                    {{ item.status === 'todo' ? '[TODO]' : item.status === 'success' ? '[OK]' : '[FAIL]' }}
-                  </span>
-                  <span class="tests-endpoints-list-title-inline">{{ item.title }}</span>
-                  <span v-if="item.error" class="tests-endpoints-list-error">{{ item.error }}</span>
+              <div
+                v-if="showContent && testSuiteMode === 'legacy'"
+                class="tests-card tests-endpoints-card tests-crt-card"
+              >
+                <div class="tests-endpoints-header">
+                  <i class="fas fa-database tests-endpoints-icon"></i>
+                  <h2 class="tests-endpoints-title">Репозиторий логов</h2>
+                </div>
+                <p class="tests-endpoints-desc">Тесты репозитория логов (logs.repo).</p>
+                <div v-if="logsRepoLastRunAt" class="tests-endpoints-last-run">
+                  Результаты от: {{ logsRepoLastRunAt }}
+                </div>
+                <div class="tests-endpoints-list-wrap">
+                  <ul class="tests-endpoints-list" role="list">
+                    <li
+                      v-for="item in logsRepoDisplay"
+                      :key="item.id"
+                      class="tests-endpoints-list-item"
+                      :class="`tests-endpoints-status-${item.status}`"
+                    >
+                      <span
+                        class="tests-endpoints-badge"
+                        :class="`tests-endpoints-badge-${item.status}`"
+                      >
+                        {{
+                          item.status === 'todo'
+                            ? '[TODO]'
+                            : item.status === 'success'
+                              ? '[OK]'
+                              : '[FAIL]'
+                        }}
+                      </span>
+                      <span class="tests-endpoints-list-title-inline">{{ item.title }}</span>
+                      <span v-if="item.error" class="tests-endpoints-list-error">{{
+                        item.error
+                      }}</span>
+                      <button
+                        type="button"
+                        class="tests-run-one-btn"
+                        title="Запустить только этот тест"
+                        :disabled="
+                          runAllTestsLoading ||
+                          logsRepoLoading ||
+                          isGroupBlockedBySingle('logsRepo')
+                        "
+                        @click.stop="runSingleLogsRepoTest(item.id)"
+                      >
+                        <i
+                          class="fas"
+                          :class="
+                            isSingleRunning('logsRepo', item.id) ? 'fa-spinner fa-spin' : 'fa-play'
+                          "
+                        ></i>
+                      </button>
+                    </li>
+                  </ul>
+                </div>
+                <div class="tests-endpoints-actions">
                   <button
                     type="button"
-                    class="tests-run-one-btn"
-                    title="Запустить только этот тест"
-                    :disabled="runAllTestsLoading || logsRepoLoading || isGroupBlockedBySingle('logsRepo')"
-                    @click.stop="runSingleLogsRepoTest(item.id)"
+                    class="tests-run-group-btn"
+                    :disabled="
+                      runAllTestsLoading || logsRepoLoading || isGroupBlockedBySingle('logsRepo')
+                    "
+                    @click="runLogsRepoTests"
                   >
-                    <i
-                      class="fas"
-                      :class="isSingleRunning('logsRepo', item.id) ? 'fa-spinner fa-spin' : 'fa-play'"
-                    ></i>
+                    <i class="fas" :class="logsRepoLoading ? 'fa-spinner fa-spin' : 'fa-bolt'"></i>
+                    {{ logsRepoLoading ? 'Проверяем...' : 'Запустить проверку репозитория логов' }}
                   </button>
-                </li>
-              </ul>
-            </div>
-            <div class="tests-endpoints-actions">
-              <button
-                type="button"
-                class="tests-run-group-btn"
-                :disabled="runAllTestsLoading || logsRepoLoading || isGroupBlockedBySingle('logsRepo')"
-                @click="runLogsRepoTests"
-              >
-                <i class="fas" :class="logsRepoLoading ? 'fa-spinner fa-spin' : 'fa-bolt'"></i>
-                {{ logsRepoLoading ? 'Проверяем...' : 'Запустить проверку репозитория логов' }}
-              </button>
-            </div>
-          </div>
+                </div>
+              </div>
 
               <!-- Блок 6: Библиотека админки -->
-              <div v-if="showContent && testSuiteMode === 'legacy'" class="tests-card tests-endpoints-card tests-crt-card">
-            <div class="tests-endpoints-header">
-              <i class="fas fa-chart-line tests-endpoints-icon"></i>
-              <h2 class="tests-endpoints-title">Библиотека админки</h2>
-            </div>
-            <p class="tests-endpoints-desc">
-              Тесты библиотеки админки (dashboard.lib).
-            </p>
-            <div v-if="dashboardLibLastRunAt" class="tests-endpoints-last-run">
-              Результаты от: {{ dashboardLibLastRunAt }}
-            </div>
-            <div class="tests-endpoints-list-wrap">
-              <ul class="tests-endpoints-list" role="list">
-                <li
-                  v-for="item in dashboardLibDisplay"
-                  :key="item.id"
-                  class="tests-endpoints-list-item"
-                  :class="`tests-endpoints-status-${item.status}`"
-                >
-                  <span class="tests-endpoints-badge" :class="`tests-endpoints-badge-${item.status}`">
-                    {{ item.status === 'todo' ? '[TODO]' : item.status === 'success' ? '[OK]' : '[FAIL]' }}
-                  </span>
-                  <span class="tests-endpoints-list-title-inline">{{ item.title }}</span>
-                  <span v-if="item.error" class="tests-endpoints-list-error">{{ item.error }}</span>
+              <div
+                v-if="showContent && testSuiteMode === 'legacy'"
+                class="tests-card tests-endpoints-card tests-crt-card"
+              >
+                <div class="tests-endpoints-header">
+                  <i class="fas fa-chart-line tests-endpoints-icon"></i>
+                  <h2 class="tests-endpoints-title">Библиотека админки</h2>
+                </div>
+                <p class="tests-endpoints-desc">Тесты библиотеки админки (dashboard.lib).</p>
+                <div v-if="dashboardLibLastRunAt" class="tests-endpoints-last-run">
+                  Результаты от: {{ dashboardLibLastRunAt }}
+                </div>
+                <div class="tests-endpoints-list-wrap">
+                  <ul class="tests-endpoints-list" role="list">
+                    <li
+                      v-for="item in dashboardLibDisplay"
+                      :key="item.id"
+                      class="tests-endpoints-list-item"
+                      :class="`tests-endpoints-status-${item.status}`"
+                    >
+                      <span
+                        class="tests-endpoints-badge"
+                        :class="`tests-endpoints-badge-${item.status}`"
+                      >
+                        {{
+                          item.status === 'todo'
+                            ? '[TODO]'
+                            : item.status === 'success'
+                              ? '[OK]'
+                              : '[FAIL]'
+                        }}
+                      </span>
+                      <span class="tests-endpoints-list-title-inline">{{ item.title }}</span>
+                      <span v-if="item.error" class="tests-endpoints-list-error">{{
+                        item.error
+                      }}</span>
+                      <button
+                        type="button"
+                        class="tests-run-one-btn"
+                        title="Запустить только этот тест"
+                        :disabled="
+                          runAllTestsLoading ||
+                          dashboardLibLoading ||
+                          isGroupBlockedBySingle('dashboardLib')
+                        "
+                        @click.stop="runSingleDashboardLibTest(item.id)"
+                      >
+                        <i
+                          class="fas"
+                          :class="
+                            isSingleRunning('dashboardLib', item.id)
+                              ? 'fa-spinner fa-spin'
+                              : 'fa-play'
+                          "
+                        ></i>
+                      </button>
+                    </li>
+                  </ul>
+                </div>
+                <div class="tests-endpoints-actions">
                   <button
                     type="button"
-                    class="tests-run-one-btn"
-                    title="Запустить только этот тест"
-                    :disabled="runAllTestsLoading || dashboardLibLoading || isGroupBlockedBySingle('dashboardLib')"
-                    @click.stop="runSingleDashboardLibTest(item.id)"
+                    class="tests-run-group-btn"
+                    :disabled="
+                      runAllTestsLoading ||
+                      dashboardLibLoading ||
+                      isGroupBlockedBySingle('dashboardLib')
+                    "
+                    @click="runDashboardLibTests"
                   >
                     <i
                       class="fas"
-                      :class="isSingleRunning('dashboardLib', item.id) ? 'fa-spinner fa-spin' : 'fa-play'"
+                      :class="dashboardLibLoading ? 'fa-spinner fa-spin' : 'fa-bolt'"
                     ></i>
+                    {{
+                      dashboardLibLoading ? 'Проверяем...' : 'Запустить проверку библиотеки админки'
+                    }}
                   </button>
-                </li>
-              </ul>
-            </div>
-            <div class="tests-endpoints-actions">
-              <button
-                type="button"
-                class="tests-run-group-btn"
-                :disabled="runAllTestsLoading || dashboardLibLoading || isGroupBlockedBySingle('dashboardLib')"
-                @click="runDashboardLibTests"
-              >
-                <i class="fas" :class="dashboardLibLoading ? 'fa-spinner fa-spin' : 'fa-bolt'"></i>
-                {{ dashboardLibLoading ? 'Проверяем...' : 'Запустить проверку библиотеки админки' }}
-              </button>
-            </div>
-          </div>
+                </div>
+              </div>
 
               <!-- Блок 7: Ключи интеграции (GC и Lava отдельными строками) -->
-              <div v-if="showContent && testSuiteMode === 'legacy'" class="tests-card tests-endpoints-card tests-crt-card">
-            <div class="tests-endpoints-header">
-              <i class="fas fa-key tests-endpoints-icon"></i>
-              <h2 class="tests-endpoints-title">Ключи настроек интеграции</h2>
-            </div>
-            <p class="tests-endpoints-desc">
-              Две независимые проверки, как отдельные поля в админке: <strong>GetCourse</strong> —
-              <code class="tests-inline-code">gc_api_key</code> + <code class="tests-inline-code">gc_account_domain</code>,
-              <code class="tests-inline-code">verifyGcPlApiAccess</code>; <strong>Lava</strong> —
-              <code class="tests-inline-code">lava_api_key</code> + <code class="tests-inline-code">lava_base_url</code>,
-              <code class="tests-inline-code">GET /api/v2/products</code>. Пока в Heap не задана полная пара — строка
-              пропускается (<code class="tests-inline-code">skipped</code>).
-            </p>
-            <div v-if="settingKeysValidationLastRunAt" class="tests-endpoints-last-run">
-              Результаты от: {{ settingKeysValidationLastRunAt }}
-            </div>
-            <div class="tests-endpoints-list-wrap">
-              <ul class="tests-endpoints-list" role="list">
-                <li
-                  v-for="item in settingKeysValidationDisplay"
-                  :key="item.id"
-                  class="tests-endpoints-list-item"
-                  :class="`tests-endpoints-status-${item.status}`"
-                >
-                  <span class="tests-endpoints-badge" :class="`tests-endpoints-badge-${item.status}`">
-                    {{ item.status === 'todo' ? '[TODO]' : item.status === 'success' ? '[OK]' : '[FAIL]' }}
-                  </span>
-                  <span class="tests-endpoints-list-title-inline">{{ item.title }}</span>
-                  <span v-if="item.error" class="tests-endpoints-list-error">{{ item.error }}</span>
+              <div
+                v-if="showContent && testSuiteMode === 'legacy'"
+                class="tests-card tests-endpoints-card tests-crt-card"
+              >
+                <div class="tests-endpoints-header">
+                  <i class="fas fa-key tests-endpoints-icon"></i>
+                  <h2 class="tests-endpoints-title">Ключи настроек интеграции</h2>
+                </div>
+                <p class="tests-endpoints-desc">
+                  Две независимые проверки, как отдельные поля в админке:
+                  <strong>GetCourse</strong> — <code class="tests-inline-code">gc_api_key</code> +
+                  <code class="tests-inline-code">gc_account_domain</code>,
+                  <code class="tests-inline-code">verifyGcPlApiAccess</code>;
+                  <strong>Lava</strong> — <code class="tests-inline-code">lava_api_key</code> +
+                  <code class="tests-inline-code">lava_base_url</code>,
+                  <code class="tests-inline-code">GET /api/v2/products</code>. Пока в Heap не задана
+                  полная пара — строка пропускается (<code class="tests-inline-code">skipped</code
+                  >).
+                </p>
+                <div v-if="settingKeysValidationLastRunAt" class="tests-endpoints-last-run">
+                  Результаты от: {{ settingKeysValidationLastRunAt }}
+                </div>
+                <div class="tests-endpoints-list-wrap">
+                  <ul class="tests-endpoints-list" role="list">
+                    <li
+                      v-for="item in settingKeysValidationDisplay"
+                      :key="item.id"
+                      class="tests-endpoints-list-item"
+                      :class="`tests-endpoints-status-${item.status}`"
+                    >
+                      <span
+                        class="tests-endpoints-badge"
+                        :class="`tests-endpoints-badge-${item.status}`"
+                      >
+                        {{
+                          item.status === 'todo'
+                            ? '[TODO]'
+                            : item.status === 'success'
+                              ? '[OK]'
+                              : '[FAIL]'
+                        }}
+                      </span>
+                      <span class="tests-endpoints-list-title-inline">{{ item.title }}</span>
+                      <span v-if="item.error" class="tests-endpoints-list-error">{{
+                        item.error
+                      }}</span>
+                      <button
+                        type="button"
+                        class="tests-run-one-btn"
+                        title="Запустить только этот тест"
+                        :disabled="
+                          runAllTestsLoading ||
+                          settingKeysValidationLoading ||
+                          isGroupBlockedBySingle('settingKeys')
+                        "
+                        @click.stop="runSingleSettingKeysValidationTest(item.id)"
+                      >
+                        <i
+                          class="fas"
+                          :class="
+                            isSingleRunning('settingKeys', item.id)
+                              ? 'fa-spinner fa-spin'
+                              : 'fa-play'
+                          "
+                        ></i>
+                      </button>
+                    </li>
+                  </ul>
+                </div>
+                <div class="tests-endpoints-actions">
                   <button
                     type="button"
-                    class="tests-run-one-btn"
-                    title="Запустить только этот тест"
+                    class="tests-run-group-btn"
                     :disabled="
                       runAllTestsLoading ||
                       settingKeysValidationLoading ||
                       isGroupBlockedBySingle('settingKeys')
                     "
-                    @click.stop="runSingleSettingKeysValidationTest(item.id)"
+                    @click="runSettingKeysValidationTests"
                   >
                     <i
                       class="fas"
-                      :class="isSingleRunning('settingKeys', item.id) ? 'fa-spinner fa-spin' : 'fa-play'"
+                      :class="settingKeysValidationLoading ? 'fa-spinner fa-spin' : 'fa-bolt'"
                     ></i>
+                    {{
+                      settingKeysValidationLoading
+                        ? 'Проверяем...'
+                        : 'Запустить проверку ключей интеграции'
+                    }}
                   </button>
-                </li>
-              </ul>
-            </div>
-            <div class="tests-endpoints-actions">
-              <button
-                type="button"
-                class="tests-run-group-btn"
-                :disabled="
-                  runAllTestsLoading ||
-                  settingKeysValidationLoading ||
-                  isGroupBlockedBySingle('settingKeys')
-                "
-                @click="runSettingKeysValidationTests"
-              >
-                <i class="fas" :class="settingKeysValidationLoading ? 'fa-spinner fa-spin' : 'fa-bolt'"></i>
-                {{
-                  settingKeysValidationLoading
-                    ? 'Проверяем...'
-                    : 'Запустить проверку ключей интеграции'
-                }}
-              </button>
-            </div>
-          </div>
+                </div>
+              </div>
             </div>
 
             <!-- Логи справа (CRT), тот же сокет что в админке -->
@@ -3293,7 +3756,9 @@ const runAllTests = async () => {
                       class="tests-load-more-btn"
                       :class="{ 'tests-load-more-btn-disabled': !logsHasMore }"
                       :disabled="!logsHasMore"
-                      :title="logsHasMore ? 'Загрузить более старые логи' : 'Нет более старых логов'"
+                      :title="
+                        logsHasMore ? 'Загрузить более старые логи' : 'Нет более старых логов'
+                      "
                       @click="loadMoreLogs"
                     >
                       <i class="fas fa-arrow-down"></i>
@@ -3352,7 +3817,9 @@ const runAllTests = async () => {
 .tests-section {
   opacity: 0;
   transform: translateY(20px);
-  transition: opacity 0.8s ease, transform 0.8s ease;
+  transition:
+    opacity 0.8s ease,
+    transform 0.8s ease;
 }
 
 .tests-section.content-visible {
@@ -3505,7 +3972,9 @@ const runAllTests = async () => {
   border: none;
   border-right: 2px solid var(--color-border);
   cursor: pointer;
-  transition: color 0.15s ease, background 0.15s ease;
+  transition:
+    color 0.15s ease,
+    background 0.15s ease;
 }
 
 .tests-mode-btn:last-child {
@@ -3663,9 +4132,15 @@ const runAllTests = async () => {
   text-transform: lowercase;
 }
 
-.tests-metric-passed .tests-metric-value { color: #2ecc71; }
-.tests-metric-failed .tests-metric-value { color: #e74c3c; }
-.tests-metric-skipped .tests-metric-value { color: #95a5a6; }
+.tests-metric-passed .tests-metric-value {
+  color: #2ecc71;
+}
+.tests-metric-failed .tests-metric-value {
+  color: #e74c3c;
+}
+.tests-metric-skipped .tests-metric-value {
+  color: #95a5a6;
+}
 
 .tests-dashboard-last-run {
   font-size: 0.85rem;
@@ -4047,7 +4522,10 @@ const runAllTests = async () => {
   border: 1px solid var(--color-border);
   border-radius: 0;
   cursor: pointer;
-  transition: color 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+  transition:
+    color 0.2s ease,
+    border-color 0.2s ease,
+    background 0.2s ease;
 }
 
 .tests-run-one-btn:hover:not(:disabled) {
@@ -4241,14 +4719,30 @@ const runAllTests = async () => {
   font-weight: 600;
 }
 
-.tests-log-level-debug { color: #9b59b6; }
-.tests-log-level-info { color: #3498db; }
-.tests-log-level-notice { color: #1abc9c; }
-.tests-log-level-warning { color: #f39c12; }
-.tests-log-level-error { color: #e74c3c; }
-.tests-log-level-critical { color: #c0392b; }
-.tests-log-level-alert { color: #e67e22; }
-.tests-log-level-emergency { color: #d35400; }
+.tests-log-level-debug {
+  color: #9b59b6;
+}
+.tests-log-level-info {
+  color: #3498db;
+}
+.tests-log-level-notice {
+  color: #1abc9c;
+}
+.tests-log-level-warning {
+  color: #f39c12;
+}
+.tests-log-level-error {
+  color: #e74c3c;
+}
+.tests-log-level-critical {
+  color: #c0392b;
+}
+.tests-log-level-alert {
+  color: #e67e22;
+}
+.tests-log-level-emergency {
+  color: #d35400;
+}
 
 .tests-log-message {
   color: var(--color-text-secondary);

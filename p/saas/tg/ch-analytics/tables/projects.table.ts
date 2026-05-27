@@ -2,13 +2,13 @@ import { Heap } from '@app/heap'
 
 /**
  * Таблица для хранения проектов
- * 
+ *
  * Каждая запись содержит:
  * - name: название проекта
  * - description: описание проекта (опционально)
  * - members: массив участников с ролями { userId: string, role: 'owner' | 'member' }
  * - settings: настройки проекта (опционально)
- * 
+ *
  * Системные поля createdAt и updatedAt добавляются автоматически
  */
 export const Projects = Heap.Table('t__tg_channel_analytics__projects__a1b2c3d4', {
@@ -27,10 +27,7 @@ export const Projects = Heap.Table('t__tg_channel_analytics__projects__a1b2c3d4'
       userId: Heap.String({
         customMeta: { title: 'ID пользователя' }
       }),
-      role: Heap.Union([
-        Heap.Literal('owner'),
-        Heap.Literal('member')
-      ], {
+      role: Heap.Union([Heap.Literal('owner'), Heap.Literal('member')], {
         customMeta: { title: 'Роль' }
       })
     }),
@@ -46,4 +43,3 @@ export const Projects = Heap.Table('t__tg_channel_analytics__projects__a1b2c3d4'
 })
 
 export default Projects
-

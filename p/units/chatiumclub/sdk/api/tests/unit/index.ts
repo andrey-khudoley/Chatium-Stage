@@ -1,7 +1,10 @@
 // @shared-route
 import { requireAnyUser } from '@app/auth'
 import * as loggerLib from '../../../lib/logger.lib'
-import { runTemplateUnitChecks, type TemplateUnitTestResult } from '../../../lib/tests/templateUnitSuite'
+import {
+  runTemplateUnitChecks,
+  type TemplateUnitTestResult
+} from '../../../lib/tests/templateUnitSuite'
 import { logTestRunFailures } from '../../../lib/tests/logTestRunFailures'
 
 const LOG_PATH = 'api/tests/unit'

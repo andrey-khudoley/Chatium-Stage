@@ -1,6 +1,6 @@
-import Appointments from "../tables/appointments.table"
-import { sendNotificationToAccountOwners } from "@user-notifier/sdk"
-import { writeWorkspaceEvent } from "@start/sdk"
+import Appointments from '../tables/appointments.table'
+import { sendNotificationToAccountOwners } from '@user-notifier/sdk'
+import { writeWorkspaceEvent } from '@start/sdk'
 
 export interface AppointmentDto {
   id: string
@@ -44,7 +44,7 @@ export const apiCreateAppointmentRoute = app.post('/create', async (ctx, req) =>
   })
 
   await sendNotificationToAccountOwners(ctx, {
-    title: "Новая запись на прием!",
+    title: 'Новая запись на прием!',
     html: `
       <h2>Новая запись</h2>
       <p><strong>Клиент:</strong> ${clientName}</p>

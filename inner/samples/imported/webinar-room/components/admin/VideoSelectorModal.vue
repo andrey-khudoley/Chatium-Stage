@@ -110,11 +110,7 @@
           <!-- Footer -->
           <div class="modal-footer">
             <button @click="close" class="btn-cancel">Отмена</button>
-            <button
-              @click="confirm"
-              :disabled="!selectedVideoId"
-              class="btn-confirm"
-            >
+            <button @click="confirm" :disabled="!selectedVideoId" class="btn-confirm">
               Выбрать
             </button>
           </div>
@@ -129,20 +125,23 @@ import { ref, computed, watch } from 'vue'
 import Icon from '../Icon/Icon.vue'
 import Spinner from '../Spinner.vue'
 import CustomSelect from '../CustomSelect.vue'
-import { apiKinescopeProjectsRoute, apiKinescopeVideosRoute } from '../../api/episodes-kinescope-routes'
+import {
+  apiKinescopeProjectsRoute,
+  apiKinescopeVideosRoute
+} from '../../api/episodes-kinescope-routes'
 
 const props = defineProps({
   modelValue: {
     type: Boolean,
-    default: false,
-  },
+    default: false
+  }
 })
 
 const emit = defineEmits(['update:modelValue', 'select'])
 
 const isOpen = computed({
   get: () => props.modelValue,
-  set: value => emit('update:modelValue', value),
+  set: (value) => emit('update:modelValue', value)
 })
 
 const videos = ref([])
@@ -158,11 +157,10 @@ const pagination = ref(null)
 
 const projectOptions = computed(() => [
   { value: '', label: 'Все проекты' },
-  ...projects.value.map(p => ({ value: p.id, label: p.name }))
+  ...projects.value.map((p) => ({ value: p.id, label: p.name }))
 ])
 
 let searchTimeout = null
-
 
 const loadVideos = async () => {
   loading.value = true
@@ -174,7 +172,7 @@ const loadVideos = async () => {
         page: currentPage.value,
         per_page: 20,
         project_id: selectedProjectId.value || undefined,
-        query: searchQuery.value || undefined,
+        query: searchQuery.value || undefined
       })
       .run(ctx)
 
@@ -208,12 +206,12 @@ const handleProjectChange = () => {
   loadVideos()
 }
 
-const goToPage = page => {
+const goToPage = (page) => {
   currentPage.value = page
   loadVideos()
 }
 
-const selectVideo = video => {
+const selectVideo = (video) => {
   selectedVideoId.value = video.id
   selectedVideo.value = video
 }
@@ -222,7 +220,7 @@ const confirm = () => {
   if (selectedVideoId.value) {
     emit('select', {
       id: selectedVideoId.value,
-      video: selectedVideo.value,
+      video: selectedVideo.value
     })
     close()
   }
@@ -244,7 +242,7 @@ const handleOverlayClick = () => {
   close()
 }
 
-const formatDuration = seconds => {
+const formatDuration = (seconds) => {
   if (!seconds) return '—'
   const totalSeconds = Math.floor(seconds) // Округляем до целого
   const hours = Math.floor(totalSeconds / 3600)
@@ -257,18 +255,18 @@ const formatDuration = seconds => {
   return `${minutes}:${String(secs).padStart(2, '0')}`
 }
 
-const formatDate = dateString => {
+const formatDate = (dateString) => {
   if (!dateString) return '—'
   const date = new Date(dateString)
   return date.toLocaleDateString('ru-RU', {
     year: 'numeric',
     month: 'long',
-    day: 'numeric',
+    day: 'numeric'
   })
 }
 
 // Load projects and videos when modal opens
-watch(isOpen, newValue => {
+watch(isOpen, (newValue) => {
   if (newValue) {
     loadProjects()
     loadVideos()
@@ -376,8 +374,6 @@ watch(isOpen, newValue => {
   border-color: var(--wr-accent);
   box-shadow: 0 0 0 3px rgba(var(--wr-accent-rgb, 59, 130, 246), 0.1);
 }
-
-
 
 .videos-container {
   flex: 1;

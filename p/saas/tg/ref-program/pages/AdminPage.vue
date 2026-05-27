@@ -111,7 +111,7 @@ const startAnimations = () => {
 
 const LOG_LEVEL_VALUES = ['debug', 'info', 'warn', 'error', 'disable'] as const
 
-type LogDisplayItem = 
+type LogDisplayItem =
   | { type: 'log'; entry: LogEntry; formattedTime: string; formattedMessage: string }
   | { type: 'divider'; date: string }
 
@@ -121,9 +121,9 @@ function formatLogTime(timestamp: number): string {
 }
 
 function formatLogMessage(e: LogEntry): string {
-  return e.args.map((a) =>
-    typeof a === 'object' && a !== null ? JSON.stringify(a) : String(a)
-  ).join(' ')
+  return e.args
+    .map((a) => (typeof a === 'object' && a !== null ? JSON.stringify(a) : String(a)))
+    .join(' ')
 }
 
 function formatDateDivider(timestamp: number): string {
@@ -143,9 +143,9 @@ function trimOldLogs() {
   if (logEntries.value.length > MAX_LOG_ENTRIES) {
     const sorted = [...logEntries.value].sort((a, b) => b.timestamp - a.timestamp)
     logEntries.value = sorted.slice(0, MAX_LOG_ENTRIES)
-    log.debug('Обрезаны старые логи', { 
-      было: sorted.length, 
-      осталось: logEntries.value.length 
+    log.debug('Обрезаны старые логи', {
+      было: sorted.length,
+      осталось: logEntries.value.length
     })
   }
 }
@@ -168,7 +168,7 @@ const displayedLogs = computed<LogDisplayItem[]>(() => {
   for (let i = 0; i < sorted.length; i++) {
     const entry = sorted[i]
     const dateKey = getDateKey(entry.timestamp)
-    
+
     // Показываем разделитель только если это не первый лог и дата изменилась
     if (i > 0 && dateKey !== lastDateKey) {
       items.push({
@@ -176,7 +176,7 @@ const displayedLogs = computed<LogDisplayItem[]>(() => {
         date: formatDateDivider(entry.timestamp)
       })
     }
-    
+
     lastDateKey = dateKey
     items.push({
       type: 'log',
@@ -408,12 +408,27 @@ const setLogLevel = async (level: 'debug' | 'info' | 'warn' | 'error' | 'disable
 const loadDashboardCounts = async () => {
   try {
     const res = await getDashboardCountsRoute.run(ctx)
-    const data = res as { success?: boolean; errorCount?: number; warnCount?: number; resetAt?: number; error?: string }
-    if (data?.success && typeof data.errorCount === 'number' && typeof data.warnCount === 'number' && typeof data.resetAt === 'number') {
+    const data = res as {
+      success?: boolean
+      errorCount?: number
+      warnCount?: number
+      resetAt?: number
+      error?: string
+    }
+    if (
+      data?.success &&
+      typeof data.errorCount === 'number' &&
+      typeof data.warnCount === 'number' &&
+      typeof data.resetAt === 'number'
+    ) {
       errorCount.value = data.errorCount
       warnCount.value = data.warnCount
       dashboardResetAt.value = data.resetAt
-      log.debug('Счётчики дашборда загружены', { errorCount: data.errorCount, warnCount: data.warnCount, resetAt: data.resetAt })
+      log.debug('Счётчики дашборда загружены', {
+        errorCount: data.errorCount,
+        warnCount: data.warnCount,
+        resetAt: data.resetAt
+      })
     }
   } catch (e) {
     log.warning('Не удалось загрузить счётчики дашборда', e)
@@ -423,7 +438,13 @@ const loadDashboardCounts = async () => {
 const resetDashboard = async () => {
   try {
     const res = await resetDashboardRoute.run(ctx)
-    const data = res as { success?: boolean; errorCount?: number; warnCount?: number; resetAt?: number; error?: string }
+    const data = res as {
+      success?: boolean
+      errorCount?: number
+      warnCount?: number
+      resetAt?: number
+      error?: string
+    }
     if (data?.success && typeof data.resetAt === 'number') {
       dashboardResetAt.value = data.resetAt
       errorCount.value = data.errorCount ?? 0
@@ -439,7 +460,11 @@ const resetDashboard = async () => {
 
 const loadAdminCampaigns = async () => {
   const res = await listAdminCampaignsRoute.run(ctx)
-  return res as { success: boolean; campaigns?: Array<{ id: string; title: string }>; error?: string }
+  return res as {
+    success: boolean
+    campaigns?: Array<{ id: string; title: string }>
+    error?: string
+  }
 }
 
 const recalcReferralAggregates = async () => {
@@ -450,11 +475,18 @@ const recalcReferralAggregates = async () => {
     const res = await recalcReferralAggregatesRoute.run(ctx, {
       campaignId: selectedCampaignId.value ?? undefined
     })
-    const data = res as { success?: boolean; jobScheduled?: boolean; campaignId?: string; error?: string }
+    const data = res as {
+      success?: boolean
+      jobScheduled?: boolean
+      campaignId?: string
+      error?: string
+    }
     if (data?.success && data?.jobScheduled) {
       recalcAggregatesResult.value = { jobScheduled: true, campaignId: data.campaignId }
       if (data.campaignId) {
-        log.notice('Точечный пересчёт агрегатов поставлен в очередь', { campaignId: data.campaignId })
+        log.notice('Точечный пересчёт агрегатов поставлен в очередь', {
+          campaignId: data.campaignId
+        })
       } else {
         log.notice('Глобальный пересчёт агрегатов поставлен в очередь')
       }
@@ -480,10 +512,14 @@ const loadRecentLogs = async () => {
   logsError.value = ''
   try {
     const res = await getRecentLogsRoute.query({ limit: 50 }).run(ctx)
-    const data = res as { success?: boolean; entries?: Array<LogEntry & { id: string }>; error?: string }
+    const data = res as {
+      success?: boolean
+      entries?: Array<LogEntry & { id: string }>
+      error?: string
+    }
     if (data?.success && Array.isArray(data.entries)) {
       logEntries.value = [...logEntries.value, ...data.entries]
-      
+
       if (data.entries.length > 0) {
         const sorted = [...data.entries].sort((a, b) => a.timestamp - b.timestamp)
         oldestLogTimestamp.value = sorted[0].timestamp
@@ -522,7 +558,7 @@ const loadMoreLogs = async () => {
     }
     if (data?.success && Array.isArray(data.entries)) {
       logEntries.value = [...logEntries.value, ...data.entries]
-      
+
       if (data.entries.length > 0) {
         const sorted = [...data.entries].sort((a, b) => a.timestamp - b.timestamp)
         oldestLogTimestamp.value = sorted[0].timestamp
@@ -625,12 +661,7 @@ const clearLogs = () => {
             <div class="settings-form">
               <div class="settings-field">
                 <label class="settings-label" for="project-name">Название проекта</label>
-                <input
-                  id="project-name"
-                  v-model="projectName"
-                  type="text"
-                  class="settings-input"
-                />
+                <input id="project-name" v-model="projectName" type="text" class="settings-input" />
               </div>
               <div class="settings-field">
                 <label class="settings-label">Кампания для пересчёта (опционально)</label>
@@ -649,20 +680,32 @@ const clearLogs = () => {
                   type="button"
                   class="dashboard-reset"
                   :disabled="recalcAggregatesLoading"
-                  :title="selectedCampaignId 
-                    ? 'Пересчитать агрегаты для выбранной кампании' 
-                    : 'Пересчитать агрегаты по всем кампаниям и рефералам (выполняется фоновыми джобами батчами по 1000 записей)'"
+                  :title="
+                    selectedCampaignId
+                      ? 'Пересчитать агрегаты для выбранной кампании'
+                      : 'Пересчитать агрегаты по всем кампаниям и рефералам (выполняется фоновыми джобами батчами по 1000 записей)'
+                  "
                   @click="recalcReferralAggregates"
                 >
-                  <i class="fas" :class="recalcAggregatesLoading ? 'fa-spinner fa-spin' : 'fa-calculator'"></i>
-                  {{ recalcAggregatesLoading ? 'Пересчёт…' : (selectedCampaignId ? 'Пересчитать для кампании' : 'Пересчитать все агрегаты') }}
+                  <i
+                    class="fas"
+                    :class="recalcAggregatesLoading ? 'fa-spinner fa-spin' : 'fa-calculator'"
+                  ></i>
+                  {{
+                    recalcAggregatesLoading
+                      ? 'Пересчёт…'
+                      : selectedCampaignId
+                        ? 'Пересчитать для кампании'
+                        : 'Пересчитать все агрегаты'
+                  }}
                 </button>
                 <p v-if="recalcAggregatesResult" class="admin-card-desc">
                   <template v-if="recalcAggregatesResult.campaignId">
                     Точечный пересчёт для кампании поставлен в очередь.
                   </template>
                   <template v-else>
-                    Глобальный пересчёт агрегатов поставлен в очередь и выполняется фоновыми джобами.
+                    Глобальный пересчёт агрегатов поставлен в очередь и выполняется фоновыми
+                    джобами.
                   </template>
                 </p>
               </div>
@@ -743,11 +786,14 @@ const clearLogs = () => {
               <h2 class="admin-card-title">Настройки тестов</h2>
             </div>
             <p class="admin-card-desc">
-              Токен используется в тестах на странице «Тесты» (проверка Telegram getMe). Создайте бота через @BotFather и вставьте токен.
+              Токен используется в тестах на странице «Тесты» (проверка Telegram getMe). Создайте
+              бота через @BotFather и вставьте токен.
             </p>
             <div class="settings-form">
               <div class="settings-field">
-                <label class="settings-label" for="telegram-test-bot-token">Токен тестового Telegram-бота</label>
+                <label class="settings-label" for="telegram-test-bot-token"
+                  >Токен тестового Telegram-бота</label
+                >
                 <input
                   id="telegram-test-bot-token"
                   v-model="telegramTestBotToken"
@@ -759,7 +805,9 @@ const clearLogs = () => {
                 />
               </div>
             </div>
-            <p v-if="telegramTestBotTokenError" class="admin-card-error">{{ telegramTestBotTokenError }}</p>
+            <p v-if="telegramTestBotTokenError" class="admin-card-error">
+              {{ telegramTestBotTokenError }}
+            </p>
           </div>
 
           <!-- Logs Output -->
@@ -798,9 +846,7 @@ const clearLogs = () => {
               </button>
             </div>
             <div class="logs-output custom-scrollbar" ref="logsOutputRef">
-              <div v-if="displayedLogs.length === 0" class="logs-empty">
-                Логи появятся здесь...
-              </div>
+              <div v-if="displayedLogs.length === 0" class="logs-empty">Логи появятся здесь...</div>
               <div v-for="(item, index) in displayedLogs" :key="index" class="log-item">
                 <div v-if="item.type === 'divider'" class="log-date-divider">
                   --- {{ item.date }} ---
@@ -872,7 +918,9 @@ const clearLogs = () => {
 .admin-section {
   opacity: 0;
   transform: translateY(20px);
-  transition: opacity 0.6s ease, transform 0.6s ease;
+  transition:
+    opacity 0.6s ease,
+    transform 0.6s ease;
 }
 
 .admin-section.admin-visible {
@@ -897,10 +945,18 @@ const clearLogs = () => {
     0 6px 20px rgba(211, 35, 75, 0.35),
     0 0 24px rgba(211, 35, 75, 0.15);
   clip-path: polygon(
-    0 4px, 4px 4px, 4px 0,
-    calc(100% - 4px) 0, calc(100% - 4px) 4px, 100% 4px,
-    100% calc(100% - 4px), calc(100% - 4px) calc(100% - 4px), calc(100% - 4px) 100%,
-    4px 100%, 4px calc(100% - 4px), 0 calc(100% - 4px)
+    0 4px,
+    4px 4px,
+    4px 0,
+    calc(100% - 4px) 0,
+    calc(100% - 4px) 4px,
+    100% 4px,
+    100% calc(100% - 4px),
+    calc(100% - 4px) calc(100% - 4px),
+    calc(100% - 4px) 100%,
+    4px 100%,
+    4px calc(100% - 4px),
+    0 calc(100% - 4px)
   );
   position: relative;
   overflow: hidden;
@@ -926,8 +982,13 @@ const clearLogs = () => {
 }
 
 @keyframes admin-scanline-flicker {
-  0%, 100% { opacity: 0.7; }
-  50% { opacity: 0.5; }
+  0%,
+  100% {
+    opacity: 0.7;
+  }
+  50% {
+    opacity: 0.5;
+  }
 }
 
 .admin-icon {
@@ -1128,7 +1189,10 @@ const clearLogs = () => {
   border: 1px solid var(--color-border-light);
   border-radius: 6px;
   cursor: pointer;
-  transition: color 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+  transition:
+    color 0.2s ease,
+    background 0.2s ease,
+    border-color 0.2s ease;
   letter-spacing: 0.04em;
 }
 

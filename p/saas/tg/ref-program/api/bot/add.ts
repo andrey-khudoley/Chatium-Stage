@@ -29,7 +29,12 @@ export const addBotRoute = app.post('/', async (ctx, req) => {
   await loggerLib.writeServerLog(ctx, {
     severity: SEV.debug,
     message: `[${LOG_PATH}] Параметры запроса`,
-    payload: { userId: user?.id, campaignId: campaignId || '(пусто)', tokenLength: token.length, tokenPrefix: token ? `${token.slice(0, 8)}…` : '(нет)' }
+    payload: {
+      userId: user?.id,
+      campaignId: campaignId || '(пусто)',
+      tokenLength: token.length,
+      tokenPrefix: token ? `${token.slice(0, 8)}…` : '(нет)'
+    }
   })
 
   if (!campaignId) {

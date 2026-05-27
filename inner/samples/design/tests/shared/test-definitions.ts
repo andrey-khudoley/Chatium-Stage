@@ -17,13 +17,15 @@ export const TEST_CATEGORIES: TestCategory[] = [
     name: 'basic',
     title: 'Базовые тесты',
     icon: 'fa-flask',
-    tests: [
-      { name: 'app_loads', description: 'Приложение загружается' },
-    ]
+    tests: [{ name: 'app_loads', description: 'Приложение загружается' }]
   }
 ]
 
-export async function runTest(ctx: any, category: string, testName: string): Promise<{ success: boolean; message: string }> {
+export async function runTest(
+  ctx: any,
+  category: string,
+  testName: string
+): Promise<{ success: boolean; message: string }> {
   try {
     if (category === 'basic') {
       if (testName === 'app_loads') {
@@ -36,4 +38,3 @@ export async function runTest(ctx: any, category: string, testName: string): Pro
     return { success: false, message: error.message || 'Неизвестная ошибка' }
   }
 }
-

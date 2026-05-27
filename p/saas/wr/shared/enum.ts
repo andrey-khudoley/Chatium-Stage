@@ -4,34 +4,34 @@ export enum EpisodeStatus {
   Scheduled = 'scheduled',
   WaitingRoom = 'waiting_room',
   Live = 'live',
-  Finished = 'finished',
+  Finished = 'finished'
 }
 
 export enum ChatAccessMode {
   Open = 'open',
   AuthOnly = 'auth-only',
-  Disabled = 'disabled',
+  Disabled = 'disabled'
 }
 
 export enum ChatBanType {
   Timeout = 'timeout',
-  Permanent = 'permanent',
+  Permanent = 'permanent'
 }
 
 export enum LatencyMode {
   Low = 'low',
-  Standard = 'standard',
+  Standard = 'standard'
 }
 
 export enum FinishAction {
   Page = 'page',
-  Redirect = 'redirect',
+  Redirect = 'redirect'
 }
 
 export enum FormSubmitAction {
   ThankYou = 'thank_you',
   Redirect = 'redirect',
-  Payment = 'payment',
+  Payment = 'payment'
 }
 
 export enum FormFieldType {
@@ -47,17 +47,17 @@ export enum FormFieldType {
   Checkbox = 'checkbox',
   Date = 'date',
   Number = 'number',
-  Url = 'url',
+  Url = 'url'
 }
 
 export enum AutowebinarMode {
-  Scheduled = 'scheduled',
+  Scheduled = 'scheduled'
 }
 
 export enum AutowebinarStatus {
   Draft = 'draft',
   Active = 'active',
-  Archived = 'archived',
+  Archived = 'archived'
 }
 
 export enum ScenarioEventType {
@@ -68,12 +68,12 @@ export enum ScenarioEventType {
   HideForm = 'hide_form',
   SaleBanner = 'sale_banner',
   ChatMessage = 'chat_message',
-  Reaction = 'reaction',
+  Reaction = 'reaction'
 }
 
 export enum ScheduleStatus {
   Scheduled = 'scheduled',
   WaitingRoom = 'waiting_room',
   Live = 'live',
-  Finished = 'finished',
+  Finished = 'finished'
 }

@@ -14,6 +14,8 @@ export const removeDealPositionsHandler: V1GcHandler = async (_ctx, a) => {
   return { kind: 'gc_result', gc }
 }
 
-export const removeDealPositionsRoute = app.post('/', async (ctx, req) => handleV1Op(ctx, req, 'removeDealPositions', removeDealPositionsHandler))
+export const removeDealPositionsRoute = app.post('/', async (ctx, req) =>
+  handleV1Op(ctx, req, 'removeDealPositions', removeDealPositionsHandler)
+)
 
 export default removeDealPositionsRoute

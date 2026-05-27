@@ -1,4 +1,5 @@
 @chatium
+
 # Модуль @app/users и граница с @app/auth
 
 Краткий справочник по модулю `@app/users` и разграничению с `@app/auth`. Оба модуля работают с пользователями; основная точка входа — **@app/auth**. Типизации: `node_modules/@app/users/index.d.ts`, `node_modules/@app/auth/index.d.ts`.
@@ -14,15 +15,15 @@
 
 ## Граница @app/auth и @app/users
 
-| Задача | Модуль | Функция / примечание |
-|--------|--------|----------------------|
-| Проверка прав, текущий пользователь | @app/auth | requireAnyUser, requireRealUser, requireAccountRole, ctx.user |
-| Поиск пользователя по id | @app/auth | findUserById, findUsersByIds, getUserById (возвращают UgcSmartUser) |
-| Создание пользователя | @app/auth | createRealUser, createOrUpdateBotUser |
-| Идентичности (email, phone, Telegram) | @app/auth | findIdentities, createUnconfirmedIdentity, makeIdentityPrimary, deleteIdentity, normalizeIdentityKey |
-| Middleware для роутов | @app/auth | provideUser, checkFilePermissions |
-| Обновление профиля (имя, фамилия, аватар) | @app/users | updateUser (пока не перенесён в auth) |
-| getOrCreate по email/phone, findUserById (UgcCtxUser1) | @app/users | **@deprecated** — использовать соответствующие API из @app/auth |
+| Задача                                                 | Модуль     | Функция / примечание                                                                                 |
+| ------------------------------------------------------ | ---------- | ---------------------------------------------------------------------------------------------------- |
+| Проверка прав, текущий пользователь                    | @app/auth  | requireAnyUser, requireRealUser, requireAccountRole, ctx.user                                        |
+| Поиск пользователя по id                               | @app/auth  | findUserById, findUsersByIds, getUserById (возвращают UgcSmartUser)                                  |
+| Создание пользователя                                  | @app/auth  | createRealUser, createOrUpdateBotUser                                                                |
+| Идентичности (email, phone, Telegram)                  | @app/auth  | findIdentities, createUnconfirmedIdentity, makeIdentityPrimary, deleteIdentity, normalizeIdentityKey |
+| Middleware для роутов                                  | @app/auth  | provideUser, checkFilePermissions                                                                    |
+| Обновление профиля (имя, фамилия, аватар)              | @app/users | updateUser (пока не перенесён в auth)                                                                |
+| getOrCreate по email/phone, findUserById (UgcCtxUser1) | @app/users | **@deprecated** — использовать соответствующие API из @app/auth                                      |
 
 **Итог:** для проверок, поиска и создания пользователей используйте **@app/auth**. В **@app/users** актуальна только **updateUser** для обновления `firstName`, `lastName`, `avatar`; остальные функции помечены как deprecated в пользу @app/auth.
 
@@ -53,7 +54,7 @@ import { updateUser } from '@app/users'
 await updateUser(ctx, ctx.user, {
   firstName: 'Имя',
   lastName: 'Фамилия',
-  avatar: 'hash-or-null',
+  avatar: 'hash-or-null'
 })
 ```
 
@@ -61,8 +62,8 @@ await updateUser(ctx, ctx.user, {
 
 ### Остальные функции (deprecated)
 
-- getOrCreateUserByEmail, getOrCreateUserByPhone, getOrCreateUserByAuthTypeAndKey  
-- findUserById, findUsersByIds  
+- getOrCreateUserByEmail, getOrCreateUserByPhone, getOrCreateUserByAuthTypeAndKey
+- findUserById, findUsersByIds
 
 В типизациях помечены как `@deprecated all @app/users module functions are deprecated, use @app/auth`. Для поиска и getOrCreate используйте API из @app/auth.
 

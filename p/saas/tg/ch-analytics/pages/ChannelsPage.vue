@@ -30,16 +30,18 @@ const cursorPosition = ref<'title' | 'description' | 'final'>('title')
 const bootLoaderDone = ref(false)
 
 // Данные каналов
-const channels = ref<Array<{
-  id: string
-  chatId: string
-  chatType: string | null
-  chatTitle: string | null
-  chatUsername: string | null
-  botStatus: string | null
-  firstSeenAt: Date
-  lastSeenAt: Date
-}>>([])
+const channels = ref<
+  Array<{
+    id: string
+    chatId: string
+    chatType: string | null
+    chatTitle: string | null
+    chatUsername: string | null
+    botStatus: string | null
+    firstSeenAt: Date
+    lastSeenAt: Date
+  }>
+>([])
 
 const loading = ref(false)
 const error = ref<string | null>(null)
@@ -50,7 +52,7 @@ let bootloaderCompleteHandler: (() => void) | null = null
 const loadChannels = async () => {
   loading.value = true
   error.value = null
-  
+
   try {
     // Более строгая проверка с нормализацией
     const projectId = props.projectId?.trim()
@@ -67,11 +69,11 @@ const loadChannels = async () => {
       }
       return
     }
-    
+
     console.log('[ChannelsPage] Начало загрузки списка каналов для проекта:', projectId)
     const result = await apiGetChannelsListRoute.query({ projectId: projectId }).run(ctx)
     console.log('[ChannelsPage] Результат запроса:', result)
-    
+
     if (result.success && result.channels) {
       console.log(`[ChannelsPage] Получено каналов: ${result.channels.length}`)
       channels.value = result.channels.map((channel: any) => ({
@@ -108,10 +110,10 @@ onMounted(() => {
 
   const startAnimations = () => {
     bootLoaderDone.value = true
-    
+
     showCursor.value = true
     cursorPosition.value = 'title'
-    
+
     setTimeout(() => {
       typeTextSequence()
     }, 500)
@@ -128,7 +130,7 @@ onMounted(() => {
   const typeTextSequence = () => {
     const titleText = 'Управление каналами'
     cursorPosition.value = 'title'
-    
+
     let titleIndex = 0
     const titleInterval = setInterval(() => {
       if (titleIndex < titleText.length) {
@@ -143,7 +145,8 @@ onMounted(() => {
   }
 
   const typeDescription = () => {
-    const descriptionText = 'Настройте отслеживание переходов для ваших Telegram-каналов и создавайте отслеживаемые ссылки'
+    const descriptionText =
+      'Настройте отслеживание переходов для ваших Telegram-каналов и создавайте отслеживаемые ссылки'
     cursorPosition.value = 'description'
     let descIndex = 0
     const descInterval = setInterval(() => {
@@ -173,12 +176,12 @@ onUnmounted(() => {
 <template>
   <div class="app-layout bg-[var(--color-bg)] text-[var(--color-text)] flex flex-col">
     <!-- Header -->
-    <Header 
-      :pageTitle="'A/Ley Services'" 
-      :indexUrl="props.indexUrl" 
-      :profileUrl="props.profileUrl" 
-      :loginUrl="props.loginUrl" 
-      :isAuthenticated="props.isAuthenticated" 
+    <Header
+      :pageTitle="'A/Ley Services'"
+      :indexUrl="props.indexUrl"
+      :profileUrl="props.profileUrl"
+      :loginUrl="props.loginUrl"
+      :isAuthenticated="props.isAuthenticated"
     />
 
     <!-- Content -->
@@ -190,14 +193,22 @@ onUnmounted(() => {
             <i class="fas fa-broadcast-tower"></i>
           </div>
           <h1 class="page-title" :class="{ 'show-underline': showTitleUnderline }">
-            {{ displayedTitle }}<span v-if="showCursor && (cursorPosition === 'title' || cursorPosition === 'final')" class="typing-cursor">▮</span>
+            {{ displayedTitle
+            }}<span
+              v-if="showCursor && (cursorPosition === 'title' || cursorPosition === 'final')"
+              class="typing-cursor"
+              >▮</span
+            >
           </h1>
           <div v-if="showContent" class="project-name-badge">
             <i class="fas fa-folder"></i>
             <span>{{ props.projectTitle }}</span>
           </div>
           <p class="page-description">
-            {{ displayedDescription }}<span v-if="showCursor && cursorPosition === 'description'" class="typing-cursor">▮</span>
+            {{ displayedDescription
+            }}<span v-if="showCursor && cursorPosition === 'description'" class="typing-cursor"
+              >▮</span
+            >
           </p>
         </section>
 
@@ -207,31 +218,37 @@ onUnmounted(() => {
             <i class="fas fa-spinner fa-spin empty-icon"></i>
             <p class="empty-text">Загрузка каналов...</p>
           </div>
-          
+
           <div v-else-if="error" class="empty-state" :class="{ 'content-visible': showContent }">
             <i class="fas fa-exclamation-triangle empty-icon"></i>
             <p class="empty-text">Ошибка загрузки</p>
             <p class="empty-subtext">{{ error }}</p>
-            <a 
-              v-if="props.projectsPageUrl && props.projectsPageUrl.trim()" 
-              :href="props.projectsPageUrl.trim()" 
+            <a
+              v-if="props.projectsPageUrl && props.projectsPageUrl.trim()"
+              :href="props.projectsPageUrl.trim()"
               class="btn btn-primary mt-4"
             >
               <i class="fas fa-folder-open"></i>
               Перейти к проектам
             </a>
           </div>
-          
-          <div v-else-if="channels.length === 0" class="empty-state" :class="{ 'content-visible': showContent }">
+
+          <div
+            v-else-if="channels.length === 0"
+            class="empty-state"
+            :class="{ 'content-visible': showContent }"
+          >
             <i class="fas fa-broadcast-tower empty-icon"></i>
             <p class="empty-text">Нет каналов</p>
-            <p class="empty-subtext">Каналы появятся здесь после того, как бот начнёт получать вебхуки от Telegram</p>
+            <p class="empty-subtext">
+              Каналы появятся здесь после того, как бот начнёт получать вебхуки от Telegram
+            </p>
           </div>
 
           <div v-else class="channels-list" :class="{ 'content-visible': showContent }">
-            <div 
-              v-for="(channel, index) in channels" 
-              :key="channel.id" 
+            <div
+              v-for="(channel, index) in channels"
+              :key="channel.id"
               class="channel-card"
               :style="{ '--delay': Number(index) * 0.1 + 's' }"
             >
@@ -241,7 +258,9 @@ onUnmounted(() => {
                     <i class="fas fa-broadcast-tower"></i>
                   </div>
                   <div class="channel-card-title-section">
-                    <h3 class="channel-card-title">{{ channel.chatTitle || 'Канал без названия' }}</h3>
+                    <h3 class="channel-card-title">
+                      {{ channel.chatTitle || 'Канал без названия' }}
+                    </h3>
                     <div v-if="channel.chatUsername" class="channel-card-username">
                       <span class="username-label">Username:</span>
                       <span class="username-value">@{{ channel.chatUsername }}</span>
@@ -368,7 +387,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 
+  box-shadow:
     0 8px 24px rgba(211, 35, 75, 0.4),
     0 4px 12px rgba(211, 35, 75, 0.3),
     0 0 30px rgba(211, 35, 75, 0.2),
@@ -377,10 +396,18 @@ body {
   position: relative;
   overflow: hidden;
   clip-path: polygon(
-    0 4px, 4px 4px, 4px 0,
-    calc(100% - 4px) 0, calc(100% - 4px) 4px, 100% 4px,
-    100% calc(100% - 4px), calc(100% - 4px) calc(100% - 4px), calc(100% - 4px) 100%,
-    4px 100%, 4px calc(100% - 4px), 0 calc(100% - 4px)
+    0 4px,
+    4px 4px,
+    4px 0,
+    calc(100% - 4px) 0,
+    calc(100% - 4px) 4px,
+    100% 4px,
+    100% calc(100% - 4px),
+    calc(100% - 4px) calc(100% - 4px),
+    calc(100% - 4px) 100%,
+    4px 100%,
+    4px calc(100% - 4px),
+    0 calc(100% - 4px)
   );
 }
 
@@ -404,8 +431,13 @@ body {
 }
 
 @keyframes scanline-flicker {
-  0%, 100% { opacity: 0.7; }
-  50% { opacity: 0.5; }
+  0%,
+  100% {
+    opacity: 0.7;
+  }
+  50% {
+    opacity: 0.5;
+  }
 }
 
 .page-header-icon i {
@@ -422,7 +454,7 @@ body {
   color: var(--color-text);
   margin: 0;
   letter-spacing: 0.05em;
-  text-shadow: 
+  text-shadow:
     0 0 10px rgba(232, 232, 232, 0.3),
     0 0 20px rgba(211, 35, 75, 0.2);
   position: relative;
@@ -454,8 +486,14 @@ body {
 }
 
 @keyframes cursor-blink {
-  0%, 50% { opacity: 1; }
-  51%, 100% { opacity: 0; }
+  0%,
+  50% {
+    opacity: 1;
+  }
+  51%,
+  100% {
+    opacity: 0;
+  }
 }
 
 .page-description {
@@ -479,10 +517,18 @@ body {
   font-size: 0.875rem;
   letter-spacing: 0.03em;
   clip-path: polygon(
-    0 2px, 2px 2px, 2px 0,
-    calc(100% - 2px) 0, calc(100% - 2px) 2px, 100% 2px,
-    100% calc(100% - 2px), calc(100% - 2px) calc(100% - 2px), calc(100% - 2px) 100%,
-    2px 100%, 2px calc(100% - 2px), 0 calc(100% - 2px)
+    0 2px,
+    2px 2px,
+    2px 0,
+    calc(100% - 2px) 0,
+    calc(100% - 2px) 2px,
+    100% 2px,
+    100% calc(100% - 2px),
+    calc(100% - 2px) calc(100% - 2px),
+    calc(100% - 2px) 100%,
+    2px 100%,
+    2px calc(100% - 2px),
+    0 calc(100% - 2px)
   );
 }
 
@@ -494,7 +540,9 @@ body {
 .content-section {
   opacity: 0;
   transform: translateY(20px);
-  transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+  transition:
+    opacity 0.6s ease-out,
+    transform 0.6s ease-out;
 }
 
 .content-section.content-visible {
@@ -547,16 +595,24 @@ body {
   text-decoration: none;
   transition: var(--transition);
   clip-path: polygon(
-    0 3px, 3px 3px, 3px 0,
-    calc(100% - 3px) 0, calc(100% - 3px) 3px, 100% 3px,
-    100% calc(100% - 3px), calc(100% - 3px) calc(100% - 3px), calc(100% - 3px) 100%,
-    3px 100%, 3px calc(100% - 3px), 0 calc(100% - 3px)
+    0 3px,
+    3px 3px,
+    3px 0,
+    calc(100% - 3px) 0,
+    calc(100% - 3px) 3px,
+    100% 3px,
+    100% calc(100% - 3px),
+    calc(100% - 3px) calc(100% - 3px),
+    calc(100% - 3px) 100%,
+    3px 100%,
+    3px calc(100% - 3px),
+    0 calc(100% - 3px)
   );
 }
 
 .btn:hover {
   transform: translateY(-2px);
-  box-shadow: 
+  box-shadow:
     0 4px 12px rgba(211, 35, 75, 0.3),
     0 2px 6px rgba(211, 35, 75, 0.2);
 }
@@ -599,17 +655,25 @@ body {
   flex-direction: column;
   transition: var(--transition);
   clip-path: polygon(
-    0 4px, 4px 4px, 4px 0,
-    calc(100% - 4px) 0, calc(100% - 4px) 4px, 100% 4px,
-    100% calc(100% - 4px), calc(100% - 4px) calc(100% - 4px), calc(100% - 4px) 100%,
-    4px 100%, 4px calc(100% - 4px), 0 calc(100% - 4px)
+    0 4px,
+    4px 4px,
+    4px 0,
+    calc(100% - 4px) 0,
+    calc(100% - 4px) 4px,
+    100% 4px,
+    100% calc(100% - 4px),
+    calc(100% - 4px) calc(100% - 4px),
+    calc(100% - 4px) 100%,
+    4px 100%,
+    4px calc(100% - 4px),
+    0 calc(100% - 4px)
   );
 }
 
 .channel-card:hover .channel-card-content {
   transform: translateY(-4px);
   border-color: var(--color-border-light);
-  box-shadow: 
+  box-shadow:
     0 8px 16px rgba(0, 0, 0, 0.4),
     0 4px 8px rgba(0, 0, 0, 0.3);
 }
@@ -627,16 +691,28 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, var(--color-accent-medium) 0%, var(--color-accent-light) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--color-accent-medium) 0%,
+    var(--color-accent-light) 100%
+  );
   border: 2px solid rgba(211, 35, 75, 0.3);
   color: var(--color-accent);
   font-size: 1.25rem;
   flex-shrink: 0;
   clip-path: polygon(
-    0 3px, 3px 3px, 3px 0,
-    calc(100% - 3px) 0, calc(100% - 3px) 3px, 100% 3px,
-    100% calc(100% - 3px), calc(100% - 3px) calc(100% - 3px), calc(100% - 3px) 100%,
-    3px 100%, 3px calc(100% - 3px), 0 calc(100% - 3px)
+    0 3px,
+    3px 3px,
+    3px 0,
+    calc(100% - 3px) 0,
+    calc(100% - 3px) 3px,
+    100% 3px,
+    100% calc(100% - 3px),
+    calc(100% - 3px) calc(100% - 3px),
+    calc(100% - 3px) 100%,
+    3px 100%,
+    3px calc(100% - 3px),
+    0 calc(100% - 3px)
   );
 }
 
@@ -745,8 +821,13 @@ body {
 }
 
 @keyframes heart-beat {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.1); }
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
 }
 
 @media (max-width: 768px) {

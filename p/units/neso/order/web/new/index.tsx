@@ -43,7 +43,10 @@ export const orderNewPageRoute = app.html('/', async (ctx, req) => {
           rel="stylesheet"
         />
         <link rel="stylesheet" href="/s/static/lib/fontawesome/6.7.2/css/all.min.css" />
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/intl-tel-input@23.0.12/build/css/intlTelInput.css" />
+        <link
+          rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/intl-tel-input@23.0.12/build/css/intlTelInput.css"
+        />
         <script src="https://cdn.jsdelivr.net/npm/intl-tel-input@23.0.12/build/js/intlTelInput.min.js"></script>
         <script src="/s/static/lib/tailwind.3.4.16.min.js"></script>
         <script>{orderFormTailwindScript}</script>

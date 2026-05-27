@@ -4,17 +4,17 @@
       <div class="header-top">
         <h1 class="title">Отчеты по трафику сайта</h1>
       </div>
-      
+
       <!-- Вкладки -->
       <div class="tabs-container">
         <div class="tabs">
-          <button 
+          <button
             :class="['tab', { active: activeTab === 'events' }]"
             @click="activeTab = 'events'"
           >
             События
           </button>
-          <button 
+          <button
             :class="['tab', { active: activeTab === 'statistics' }]"
             @click="activeTab = 'statistics'"
           >
@@ -22,50 +22,50 @@
           </button>
         </div>
       </div>
-      
+
       <!-- Фильтры -->
       <div class="filters-panel">
         <div class="filter-group">
           <label>Дата события:</label>
           <div class="date-inputs">
-            <input 
-              type="date" 
-              v-model="filters.dateFrom" 
+            <input
+              type="date"
+              v-model="filters.dateFrom"
               class="date-input"
               @change="onFiltersChange"
             />
             <span>до</span>
-            <input 
-              type="date" 
-              v-model="filters.dateTo" 
+            <input
+              type="date"
+              v-model="filters.dateTo"
               class="date-input"
               @change="onFiltersChange"
             />
           </div>
         </div>
-        
+
         <div class="filter-group">
           <label>URL события:</label>
-          <input 
-            type="text" 
-            v-model="filters.url" 
+          <input
+            type="text"
+            v-model="filters.url"
             class="url-input"
             placeholder="Введите начало URL..."
             @keyup.enter="applyFilters"
           />
         </div>
-        
+
         <div class="filter-group">
           <label>ID пользователя:</label>
-          <input 
-            type="text" 
-            v-model="filters.userId" 
+          <input
+            type="text"
+            v-model="filters.userId"
             class="url-input"
             placeholder="Введите ID, имя или email пользователя..."
             @keyup.enter="applyFilters"
           />
         </div>
-        
+
         <div class="filter-buttons">
           <button @click="applyFilters" class="apply-btn">Применить</button>
           <button @click="clearSearchFilters" class="clear-btn">Сбросить</button>
@@ -76,9 +76,9 @@
     <div v-if="errorMessage" class="error-banner">
       <div class="error-content">
         <svg class="error-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
-          <line x1="12" y1="8" x2="12" y2="12" stroke="currentColor" stroke-width="2"/>
-          <line x1="12" y1="16" x2="12.01" y2="16" stroke="currentColor" stroke-width="2"/>
+          <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" />
+          <line x1="12" y1="8" x2="12" y2="12" stroke="currentColor" stroke-width="2" />
+          <line x1="12" y1="16" x2="12.01" y2="16" stroke="currentColor" stroke-width="2" />
         </svg>
         <div class="error-text">
           <div class="error-title">Ошибка загрузки данных</div>
@@ -86,8 +86,8 @@
         </div>
         <button @click="clearError" class="error-close">
           <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <line x1="18" y1="6" x2="6" y2="18" stroke="currentColor" stroke-width="2"/>
-            <line x1="6" y1="6" x2="18" y2="18" stroke="currentColor" stroke-width="2"/>
+            <line x1="18" y1="6" x2="6" y2="18" stroke="currentColor" stroke-width="2" />
+            <line x1="6" y1="6" x2="18" y2="18" stroke="currentColor" stroke-width="2" />
           </svg>
         </button>
       </div>
@@ -100,11 +100,16 @@
 
     <div v-if="activeTab === 'events'" class="main-container">
       <div v-if="loading" class="loading">Загрузка...</div>
-      
+
       <div v-if="pagination.total > 0" class="pagination-wrapper">
-        <Pagination :total="pagination.total" :currentPage="pagination.currentPage" :pageSize="pagination.pageSize" @page-change="handlePageChange" />
+        <Pagination
+          :total="pagination.total"
+          :currentPage="pagination.currentPage"
+          :pageSize="pagination.pageSize"
+          @page-change="handlePageChange"
+        />
       </div>
-      
+
       <div v-if="!loading" class="report-section">
         <div class="table-wrapper">
           <table class="reports-table">
@@ -119,42 +124,71 @@
             <tbody>
               <template v-for="visit in recentVisits" :key="visit.id">
                 <!-- Parent row (https:// events) -->
-                <tr :class="['parent-row', { 'event-row': visit.url && visit.url.startsWith('event://') }]">
+                <tr
+                  :class="[
+                    'parent-row',
+                    { 'event-row': visit.url && visit.url.startsWith('event://') }
+                  ]"
+                >
                   <td>
                     <div class="time-cell">
                       <div class="date-line">{{ formatDate(visit.ts) }}</div>
                       <div class="time-line">
-                        <a :href="getEventDetailsUrl(visit.id)" class="event-link">{{ formatTime(visit.ts) }}</a>
+                        <a :href="getEventDetailsUrl(visit.id)" class="event-link">{{
+                          formatTime(visit.ts)
+                        }}</a>
                       </div>
                     </div>
                   </td>
                   <td class="url-cell parent-url-cell">
                     <div class="parent-url">
-                      <i v-if="visit.url && visit.url.startsWith('event://')" class="fas fa-bolt event-icon"></i>
+                      <i
+                        v-if="visit.url && visit.url.startsWith('event://')"
+                        class="fas fa-bolt event-icon"
+                      ></i>
                       <i v-else class="fas fa-globe parent-icon"></i>
                       {{ visit.url }}
                     </div>
                     <div v-if="visit.action || hasActionParams(visit)" class="action-info">
                       <div v-if="visit.action" class="action-name">{{ visit.action }}</div>
                       <div class="action-params">
-                        <div v-if="visit.action_param1" class="action-param">action_param1: {{ visit.action_param1 }}</div>
-                        <div v-if="visit.action_param2" class="action-param">action_param2: {{ visit.action_param2 }}</div>
-                        <div v-if="visit.action_param3" class="action-param">action_param3: {{ visit.action_param3 }}</div>
+                        <div v-if="visit.action_param1" class="action-param">
+                          action_param1: {{ visit.action_param1 }}
+                        </div>
+                        <div v-if="visit.action_param2" class="action-param">
+                          action_param2: {{ visit.action_param2 }}
+                        </div>
+                        <div v-if="visit.action_param3" class="action-param">
+                          action_param3: {{ visit.action_param3 }}
+                        </div>
                       </div>
                     </div>
                   </td>
                   <td class="user-cell">
                     <div class="user-name">{{ visit.user_name || 'Анонимный' }}</div>
-                    <div v-if="visit.user_account_role && visit.user_account_role !== 'None'" class="user-role">
+                    <div
+                      v-if="visit.user_account_role && visit.user_account_role !== 'None'"
+                      class="user-role"
+                    >
                       Роль: {{ visit.user_account_role }}
                     </div>
                     <div v-if="visit.resolved_user_id" class="user-id">
-                      ID: <a href="#" @click.prevent="filterByUserId(visit.resolved_user_id)" class="user-id-link">
+                      ID:
+                      <a
+                        href="#"
+                        @click.prevent="filterByUserId(visit.resolved_user_id)"
+                        class="user-id-link"
+                      >
                         {{ visit.resolved_user_id }}
                       </a>
                     </div>
                     <div v-if="visit.user_email" class="user-email">
-                      Email: <a href="#" @click.prevent="filterByUserId(visit.user_email)" class="user-email-link">
+                      Email:
+                      <a
+                        href="#"
+                        @click.prevent="filterByUserId(visit.user_email)"
+                        class="user-email-link"
+                      >
                         {{ visit.user_email }}
                       </a>
                     </div>
@@ -167,29 +201,40 @@
                     <div v-if="visit.location" class="location-info">{{ visit.location }}</div>
                   </td>
                 </tr>
-                
+
                 <!-- Child rows (event:// events) -->
                 <tr v-for="child in visit.children" :key="child.id" class="child-row event-row">
                   <td>
                     <div class="time-cell child-time-cell">
                       <div class="date-line">{{ formatDate(child.ts) }}</div>
                       <div class="time-line">
-                        <a :href="getEventDetailsUrl(child.id)" class="event-link">{{ formatTime(child.ts) }}</a>
+                        <a :href="getEventDetailsUrl(child.id)" class="event-link">{{
+                          formatTime(child.ts)
+                        }}</a>
                       </div>
                     </div>
                   </td>
                   <td class="url-cell child-url-cell">
                     <div class="child-url">
-                      <i v-if="child.url && child.url.startsWith('event://')" class="fas fa-bolt event-icon"></i>
+                      <i
+                        v-if="child.url && child.url.startsWith('event://')"
+                        class="fas fa-bolt event-icon"
+                      ></i>
                       <i v-else class="fas fa-globe child-icon"></i>
                       {{ child.url }}
                     </div>
                     <div v-if="child.action || hasActionParams(child)" class="action-info">
                       <div v-if="child.action" class="action-name">{{ child.action }}</div>
                       <div class="action-params">
-                        <div v-if="child.action_param1" class="action-param">action_param1: {{ child.action_param1 }}</div>
-                        <div v-if="child.action_param2" class="action-param">action_param2: {{ child.action_param2 }}</div>
-                        <div v-if="child.action_param3" class="action-param">action_param3: {{ child.action_param3 }}</div>
+                        <div v-if="child.action_param1" class="action-param">
+                          action_param1: {{ child.action_param1 }}
+                        </div>
+                        <div v-if="child.action_param2" class="action-param">
+                          action_param2: {{ child.action_param2 }}
+                        </div>
+                        <div v-if="child.action_param3" class="action-param">
+                          action_param3: {{ child.action_param3 }}
+                        </div>
                       </div>
                     </div>
                   </td>
@@ -204,9 +249,14 @@
             </tbody>
           </table>
         </div>
-        
+
         <div v-if="pagination.total > 0" class="pagination-wrapper">
-          <Pagination :total="pagination.total" :currentPage="pagination.currentPage" :pageSize="pagination.pageSize" @page-change="handlePageChange" />
+          <Pagination
+            :total="pagination.total"
+            :currentPage="pagination.currentPage"
+            :pageSize="pagination.pageSize"
+            @page-change="handlePageChange"
+          />
         </div>
       </div>
     </div>
@@ -278,14 +328,14 @@ async function loadRecentVisits() {
       limit: pagination.pageSize
     }
     const response = await apiRecentVisitsRoute.query(queryParams).run(ctx)
-    
+
     if (!response.rows) {
       throw new Error(response.error || 'Неизвестная ошибка')
     }
-    
+
     const data = response
     recentVisits.value = data?.rows || []
-    
+
     // Обновляем данные пагинации
     pagination.total = data?.data?.total || 0
     pagination.currentPage = data?.data?.page || 1
@@ -338,10 +388,10 @@ function formatDateTime(timestamp) {
 
 function formatDuration(seconds) {
   if (!seconds) return '0 сек'
-  
+
   const minutes = Math.floor(seconds / 60)
   const remainingSeconds = Math.floor(seconds % 60)
-  
+
   if (minutes > 0) {
     return `${minutes} мин ${remainingSeconds} сек`
   }
@@ -363,7 +413,7 @@ function filterByUserId(userId) {
 // Функция для получения иконки устройства
 function getDeviceIcon(deviceInfo) {
   if (!deviceInfo) return ''
-  
+
   const lowerDevice = deviceInfo.toLowerCase()
   if (lowerDevice.includes('desktop')) {
     return 'fas fa-desktop'
@@ -378,7 +428,7 @@ function getDeviceIcon(deviceInfo) {
 // Функция для получения информации об устройстве без типа
 function getDeviceInfoWithoutType(deviceInfo) {
   if (!deviceInfo) return ''
-  
+
   return deviceInfo.replace(/^(desktop|smartphone|tablet)\s*/i, '')
 }
 
@@ -480,7 +530,8 @@ onMounted(() => {
   gap: 10px;
 }
 
-.date-input, .url-input {
+.date-input,
+.url-input {
   padding: 8px 12px;
   border: 1px solid #cbd5e0;
   border-radius: 6px;
@@ -525,7 +576,7 @@ onMounted(() => {
 .main-container {
   background: white;
   border-radius: 12px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   border: 1px solid #e2e8f0;
 }
 
@@ -631,7 +682,8 @@ onMounted(() => {
   font-size: 14px;
 }
 
-.child-user-cell, .child-device-cell {
+.child-user-cell,
+.child-device-cell {
   background: transparent;
   border: none;
 }
@@ -851,24 +903,24 @@ onMounted(() => {
   .traffic-reports {
     padding: 15px;
   }
-  
+
   .filters-panel {
     flex-direction: column;
     align-items: stretch;
   }
-  
+
   .date-inputs {
     flex-wrap: wrap;
   }
-  
+
   .report-section {
     padding: 15px;
   }
-  
+
   .reports-table {
     font-size: 13px;
   }
-  
+
   .reports-table th,
   .reports-table td {
     padding: 8px 12px;

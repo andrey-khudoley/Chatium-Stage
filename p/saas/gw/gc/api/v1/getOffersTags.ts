@@ -14,6 +14,8 @@ export const getOffersTagsHandler: V1GcHandler = async (_ctx, a) => {
   return { kind: 'gc_result', gc }
 }
 
-export const getOffersTagsRoute = app.get('/', async (ctx, req) => handleV1Op(ctx, req, 'getOffersTags', getOffersTagsHandler))
+export const getOffersTagsRoute = app.get('/', async (ctx, req) =>
+  handleV1Op(ctx, req, 'getOffersTags', getOffersTagsHandler)
+)
 
 export default getOffersTagsRoute

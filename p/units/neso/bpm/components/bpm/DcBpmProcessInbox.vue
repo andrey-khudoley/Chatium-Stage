@@ -47,14 +47,22 @@ function onRowClick(id: string) {
 <template>
   <DcBpmPanel :title="title" :hint="hint" :link-label="linkLabel" :link-href="linkHref">
     <div class="dc-bpm-process-inbox__toolbar">
-      <button v-for="filter in filters" :key="filter" type="button" class="dc-pill" :class="{ active: filter === filters[0] }">
+      <button
+        v-for="filter in filters"
+        :key="filter"
+        type="button"
+        class="dc-pill"
+        :class="{ active: filter === filters[0] }"
+      >
         {{ filter }}
       </button>
     </div>
 
     <div class="dc-bpm-process-inbox__toolbar dc-bpm-process-inbox__toolbar--secondary">
       <span class="dc-bpm-process-inbox__toolbar-label">{{ savedViewLabel }}</span>
-      <button v-for="view in savedViews" :key="view" type="button" class="dc-pill">{{ view }}</button>
+      <button v-for="view in savedViews" :key="view" type="button" class="dc-pill">
+        {{ view }}
+      </button>
 
       <span class="dc-bpm-process-inbox__toolbar-label dc-bpm-process-inbox__toolbar-label--spaced">
         {{ tableModeLabel }}
@@ -90,13 +98,17 @@ function onRowClick(id: string) {
             :class="{ selected: selectedInstanceId === row.id }"
             @click="onRowClick(row.id)"
           >
-            <td><span class="mono">{{ row.id }}</span></td>
+            <td>
+              <span class="mono">{{ row.id }}</span>
+            </td>
             <td>{{ row.process }}</td>
             <td>{{ row.stage }}</td>
             <td>
               <span class="dc-status-chip" :class="`status-${row.risk}`">{{ row.status }}</span>
             </td>
-            <td><span class="mono">{{ row.sla }}</span></td>
+            <td>
+              <span class="mono">{{ row.sla }}</span>
+            </td>
             <td>{{ row.owner }}</td>
           </tr>
         </tbody>

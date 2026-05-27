@@ -7,9 +7,7 @@
         <span class="vstrip"></span>
         <h1 class="quote">Мы все сейчас вайб-кодим</h1>
       </div>
-      <p class="sub">
-        У этого есть граница, на которую вы уже наступили.
-      </p>
+      <p class="sub">У этого есть граница, на которую вы уже наступили.</p>
     </div>
   </div>
 </template>
@@ -91,8 +89,14 @@ defineProps({ active: Boolean })
 }
 
 @media (max-width: 768px) {
-  .slide { padding: 40px 20px; }
-  .quote-row { gap: 16px; }
-  .vstrip { width: 3px; }
+  .slide {
+    padding: 40px 20px;
+  }
+  .quote-row {
+    gap: 16px;
+  }
+  .vstrip {
+    width: 3px;
+  }
 }
 </style>

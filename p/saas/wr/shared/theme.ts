@@ -12,7 +12,12 @@ function isBrowser(): boolean {
 
 function getSystemTheme(): ThemeMode {
   try {
-    if (isBrowser() && window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) return 'light'
+    if (
+      isBrowser() &&
+      window.matchMedia &&
+      window.matchMedia('(prefers-color-scheme: light)').matches
+    )
+      return 'light'
   } catch {}
   return 'dark'
 }

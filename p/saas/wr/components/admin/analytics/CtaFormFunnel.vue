@@ -4,7 +4,11 @@
       <h3 class="font-semibold text-sm wr-text-primary truncate">
         <i class="fas fa-file-alt mr-2 text-primary"></i>{{ form.formTitle }}
       </h3>
-      <div v-if="hasPaidSteps" class="flex items-center gap-1.5 text-xs font-semibold" style="color: #4ade80">
+      <div
+        v-if="hasPaidSteps"
+        class="flex items-center gap-1.5 text-xs font-semibold"
+        style="color: #4ade80"
+      >
         <i class="fas fa-coins text-[10px]"></i>
         {{ form.paymentCompleted }} оплат
       </div>
@@ -21,7 +25,9 @@
       </div>
 
       <div class="funnel-arrow-cell">
-        <div class="arrow-percent" v-if="rates.seenToSubmit !== null">{{ rates.seenToSubmit }}%</div>
+        <div class="arrow-percent" v-if="rates.seenToSubmit !== null">
+          {{ rates.seenToSubmit }}%
+        </div>
         <div class="arrow-head">›</div>
       </div>
 
@@ -29,13 +35,18 @@
         <div class="step-value" :style="{ color: '#4ade80' }">{{ form.submitted }}</div>
         <div class="step-label">Отправлено</div>
         <div class="step-bar">
-          <div class="step-bar-fill" :style="{ width: barPct(form.submitted, form.seen), background: '#4ade80' }"></div>
+          <div
+            class="step-bar-fill"
+            :style="{ width: barPct(form.submitted, form.seen), background: '#4ade80' }"
+          ></div>
         </div>
       </div>
 
       <template v-if="hasPaidSteps">
         <div class="funnel-arrow-cell">
-          <div class="arrow-percent" v-if="rates.submitToPayment !== null">{{ rates.submitToPayment }}%</div>
+          <div class="arrow-percent" v-if="rates.submitToPayment !== null">
+            {{ rates.submitToPayment }}%
+          </div>
           <div class="arrow-head">›</div>
         </div>
 
@@ -43,12 +54,17 @@
           <div class="step-value" :style="{ color: '#facc15' }">{{ form.paymentPageOpened }}</div>
           <div class="step-label">К оплате</div>
           <div class="step-bar">
-            <div class="step-bar-fill" :style="{ width: barPct(form.paymentPageOpened, form.seen), background: '#facc15' }"></div>
+            <div
+              class="step-bar-fill"
+              :style="{ width: barPct(form.paymentPageOpened, form.seen), background: '#facc15' }"
+            ></div>
           </div>
         </div>
 
         <div class="funnel-arrow-cell">
-          <div class="arrow-percent" v-if="rates.paymentToPaid !== null">{{ rates.paymentToPaid }}%</div>
+          <div class="arrow-percent" v-if="rates.paymentToPaid !== null">
+            {{ rates.paymentToPaid }}%
+          </div>
           <div class="arrow-head">›</div>
         </div>
 
@@ -56,7 +72,10 @@
           <div class="step-value" :style="{ color: '#4ade80' }">{{ form.paymentCompleted }}</div>
           <div class="step-label">Оплачено</div>
           <div class="step-bar">
-            <div class="step-bar-fill" :style="{ width: barPct(form.paymentCompleted, form.seen), background: '#22c55e' }"></div>
+            <div
+              class="step-bar-fill"
+              :style="{ width: barPct(form.paymentCompleted, form.seen), background: '#22c55e' }"
+            ></div>
           </div>
         </div>
       </template>
@@ -87,24 +106,34 @@
           <span class="mobile-step-value" :style="{ color: '#4ade80' }">{{ form.submitted }}</span>
         </div>
         <div class="mobile-step-bar">
-          <div class="mobile-step-bar-fill" :style="{ width: barPct(form.submitted, form.seen), background: '#4ade80' }"></div>
+          <div
+            class="mobile-step-bar-fill"
+            :style="{ width: barPct(form.submitted, form.seen), background: '#4ade80' }"
+          ></div>
         </div>
       </div>
 
       <template v-if="hasPaidSteps">
         <div v-if="rates.submitToPayment !== null" class="mobile-arrow">
           <i class="fas fa-arrow-down text-[8px] wr-text-tertiary"></i>
-          <span class="text-[10px] wr-text-tertiary font-semibold">{{ rates.submitToPayment }}%</span>
+          <span class="text-[10px] wr-text-tertiary font-semibold"
+            >{{ rates.submitToPayment }}%</span
+          >
         </div>
 
         <div class="mobile-step">
           <div class="mobile-step-header">
             <span class="mobile-step-dot" style="background: #facc15"></span>
             <span class="mobile-step-label">К оплате</span>
-            <span class="mobile-step-value" :style="{ color: '#facc15' }">{{ form.paymentPageOpened }}</span>
+            <span class="mobile-step-value" :style="{ color: '#facc15' }">{{
+              form.paymentPageOpened
+            }}</span>
           </div>
           <div class="mobile-step-bar">
-            <div class="mobile-step-bar-fill" :style="{ width: barPct(form.paymentPageOpened, form.seen), background: '#facc15' }"></div>
+            <div
+              class="mobile-step-bar-fill"
+              :style="{ width: barPct(form.paymentPageOpened, form.seen), background: '#facc15' }"
+            ></div>
           </div>
         </div>
 
@@ -117,28 +146,42 @@
           <div class="mobile-step-header">
             <span class="mobile-step-dot" style="background: #22c55e"></span>
             <span class="mobile-step-label">Оплачено</span>
-            <span class="mobile-step-value" :style="{ color: '#22c55e' }">{{ form.paymentCompleted }}</span>
+            <span class="mobile-step-value" :style="{ color: '#22c55e' }">{{
+              form.paymentCompleted
+            }}</span>
           </div>
           <div class="mobile-step-bar">
-            <div class="mobile-step-bar-fill" :style="{ width: barPct(form.paymentCompleted, form.seen), background: '#22c55e' }"></div>
+            <div
+              class="mobile-step-bar-fill"
+              :style="{ width: barPct(form.paymentCompleted, form.seen), background: '#22c55e' }"
+            ></div>
           </div>
         </div>
       </template>
     </div>
 
     <!-- Bottom conversion summary -->
-    <div class="mt-4 pt-3 border-t flex flex-wrap gap-x-4 sm:gap-x-6 gap-y-2" style="border-color: var(--wr-border-light)">
+    <div
+      class="mt-4 pt-3 border-t flex flex-wrap gap-x-4 sm:gap-x-6 gap-y-2"
+      style="border-color: var(--wr-border-light)"
+    >
       <div class="text-xs">
         <span class="wr-text-tertiary">Конверсия:</span>
-        <span class="font-semibold ml-1" :style="{ color: rateColor(form.conversionRate) }">{{ form.conversionRate }}%</span>
+        <span class="font-semibold ml-1" :style="{ color: rateColor(form.conversionRate) }"
+          >{{ form.conversionRate }}%</span
+        >
       </div>
       <div v-if="hasPaidSteps" class="text-xs">
         <span class="wr-text-tertiary">Оплата:</span>
-        <span class="font-semibold ml-1" :style="{ color: rateColor(form.paymentRate) }">{{ form.paymentRate }}%</span>
+        <span class="font-semibold ml-1" :style="{ color: rateColor(form.paymentRate) }"
+          >{{ form.paymentRate }}%</span
+        >
       </div>
       <div v-if="hasPaidSteps" class="text-xs">
         <span class="wr-text-tertiary">Сквозная:</span>
-        <span class="font-semibold ml-1" :style="{ color: rateColor(throughRate) }">{{ throughRate }}%</span>
+        <span class="font-semibold ml-1" :style="{ color: rateColor(throughRate) }"
+          >{{ throughRate }}%</span
+        >
       </div>
       <div class="text-xs wr-text-tertiary text-[10px]">
         • Автопоказ: {{ form.shown }} • Открыли: {{ form.opened }}
@@ -151,7 +194,7 @@
 import { computed } from 'vue'
 
 const props = defineProps({
-  form: { type: Object, required: true },
+  form: { type: Object, required: true }
 })
 
 const hasPaidSteps = computed(() => {
@@ -170,7 +213,7 @@ const rates = computed(() => {
   return {
     seenToSubmit: rate(f.submitted, f.seen),
     submitToPayment: rate(f.paymentPageOpened, f.submitted),
-    paymentToPaid: rate(f.paymentCompleted, f.paymentPageOpened),
+    paymentToPaid: rate(f.paymentCompleted, f.paymentPageOpened)
   }
 })
 

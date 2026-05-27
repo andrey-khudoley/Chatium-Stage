@@ -1,6 +1,6 @@
-import { jsx } from "@app/html-jsx";
+import { jsx } from '@app/html-jsx'
 
-app.get("/", async (ctx) => {
+app.get('/', async (ctx) => {
   return (
     <html>
       <head>
@@ -17,5 +17,5 @@ app.get("/", async (ctx) => {
       </head>
       <body></body>
     </html>
-  );
-});
+  )
+})

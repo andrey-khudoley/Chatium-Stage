@@ -18,12 +18,12 @@ import Lock from './Lock.vue'
 import Funnel from './Funnel.vue'
 import Clone from './Clone.vue'
 import ClonePlus from './ClonePlus.vue'
-import Play from './Play.vue' 
+import Play from './Play.vue'
 import Stop from './Stop.vue'
 import Telegram from './Telegram.vue'
 import Whatsapp from './Whatsapp.vue'
 import Viber from './Viber.vue'
-import User from './User.vue' 
+import User from './User.vue'
 import UserLock from './UserLock.vue'
 import CartShopping from './CartShopping.vue'
 import Save from './Save.vue'
@@ -58,4 +58,4 @@ export {
   UserLock,
   CartShopping,
   Save
-} 
+}

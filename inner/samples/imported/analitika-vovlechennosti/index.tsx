@@ -1,25 +1,25 @@
-import { jsx } from "@app/html-jsx"
+import { jsx } from '@app/html-jsx'
 import AnalyticsPage from './pages/AnalyticsPage.vue'
- 
+
 export const indexPageRoute = app.get('/', async (ctx, req) => {
   // Проверка прав доступа (доступ для Staff и Admin)
   const hasAccess = ctx.user?.is('Staff')
-  
+
   // Если пользователь не имеет прав - показываем страницу с ограничением доступа
   if (!hasAccess) {
     const backUrl = encodeURIComponent(indexPageRoute.url())
     const loginUrl = `/s/auth/signin?back=${backUrl}`
-    
+
     // Различаем два случая: неавторизованный и не-админ
     const isAuthenticated = !!ctx.user
     const title = isAuthenticated ? 'Нет доступа' : 'Доступ ограничен'
     const iconClass = isAuthenticated ? 'fa-user-slash' : 'fa-lock'
-    const message = isAuthenticated 
+    const message = isAuthenticated
       ? 'У вас нет прав для доступа к этой странице. Доступ имеют администраторы и разработчики.'
       : 'Эта страница доступна только администраторам и разработчикам. Пожалуйста, войдите в систему.'
     const buttonText = isAuthenticated ? 'Выйти и войти снова' : 'Войти'
     const buttonUrl = isAuthenticated ? loginUrl : loginUrl
-    
+
     return (
       <html>
         <head>
@@ -34,11 +34,9 @@ export const indexPageRoute = app.get('/', async (ctx, req) => {
               <i class={`fas ${iconClass} text-6xl text-red-500`}></i>
             </div>
             <h1 class="text-2xl font-bold text-gray-900 mb-4">{title}</h1>
-            <p class="text-gray-600 mb-6">
-              {message}
-            </p>
+            <p class="text-gray-600 mb-6">{message}</p>
             {isAuthenticated ? (
-              <button 
+              <button
                 onclick={`
                   fetch('/s/auth/sign-out', { method: 'POST' })
                     .then(() => {
@@ -51,7 +49,7 @@ export const indexPageRoute = app.get('/', async (ctx, req) => {
                 {buttonText}
               </button>
             ) : (
-              <a 
+              <a
                 href={buttonUrl}
                 class="inline-block bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded-lg transition-colors duration-200"
               >
@@ -64,7 +62,7 @@ export const indexPageRoute = app.get('/', async (ctx, req) => {
       </html>
     )
   }
-  
+
   // Если есть доступ (Admin или Staff) - показываем аналитику
   return (
     <html>

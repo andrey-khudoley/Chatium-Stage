@@ -1,12 +1,12 @@
 ---
-title: "Бизнес-приёмочные критерии"
+title: 'Бизнес-приёмочные критерии'
 type: acceptance
 status: draft
 created: 2026-05-14
 updated: 2026-05-14
-project: "[Бриф проекта](../brief.md)"
-related_strategy: "[testing-strategy](../../../../saas/gw/lifepay/docs/gateway/testing-strategy.md)"
-related_scheme: "[payment-scheme](../../sbp-client/docs/architecture/payment-scheme.md)"
+project: '[Бриф проекта](../brief.md)'
+related_strategy: '[testing-strategy](../../../../saas/gw/lifepay/docs/gateway/testing-strategy.md)'
+related_scheme: '[payment-scheme](../../sbp-client/docs/architecture/payment-scheme.md)'
 tags:
   - note/acceptance
   - project/olga-getcourse-payments

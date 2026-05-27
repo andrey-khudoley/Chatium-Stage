@@ -10,21 +10,27 @@
             Производим болты, гайки и крепежные изделия высочайшего качества с 1995 года
           </p>
           <div class="flex flex-col sm:flex-row gap-4">
-            <a href="#products" class="btn-primary inline-block px-8 py-4 rounded-lg text-white font-semibold text-center">
+            <a
+              href="#products"
+              class="btn-primary inline-block px-8 py-4 rounded-lg text-white font-semibold text-center"
+            >
               <i class="fas fa-shopping-cart mr-2"></i>
               Наша продукция
             </a>
-            <a href="#contacts" class="bg-white text-primary inline-block px-8 py-4 rounded-lg font-semibold hover:bg-gray-100 transition text-center">
+            <a
+              href="#contacts"
+              class="bg-white text-primary inline-block px-8 py-4 rounded-lg font-semibold hover:bg-gray-100 transition text-center"
+            >
               <i class="fas fa-phone mr-2"></i>
               Связаться с нами
             </a>
           </div>
         </div>
-        
+
         <div class="hidden md:block">
-          <img 
-            src="https://msk.cdn-chatium.io/get/image_msk_6qfORupsDy.940x627.jpeg" 
-            alt="Производство болтов" 
+          <img
+            src="https://msk.cdn-chatium.io/get/image_msk_6qfORupsDy.940x627.jpeg"
+            alt="Производство болтов"
             class="rounded-lg shadow-2xl"
           />
         </div>

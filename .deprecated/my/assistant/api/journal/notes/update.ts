@@ -35,7 +35,8 @@ export const updateJournalNoteRoute = app
     if (req.body.folderId !== undefined) data.folderId = req.body.folderId || null
     if (req.body.categoryIds !== undefined) data.categoryIds = req.body.categoryIds
     if (req.body.linkedTaskId !== undefined) data.linkedTaskId = req.body.linkedTaskId || null
-    if (req.body.linkedProjectId !== undefined) data.linkedProjectId = req.body.linkedProjectId || null
+    if (req.body.linkedProjectId !== undefined)
+      data.linkedProjectId = req.body.linkedProjectId || null
     if (req.body.linkedClientId !== undefined) data.linkedClientId = req.body.linkedClientId || null
     if (req.body.noteDate !== undefined) data.noteDate = req.body.noteDate || null
     if (req.body.isArchived !== undefined) data.isArchived = req.body.isArchived

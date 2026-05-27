@@ -8,7 +8,7 @@
             <i class="fa-solid fa-times"></i>
           </button>
         </div>
-        
+
         <div class="modal-body">
           <!-- Нет доступа - нужна подписка -->
           <div v-if="!isPendingAccess && !subscription" class="subscription-required">
@@ -21,7 +21,7 @@
                 <p v-if="chatDescription" class="description">{{ chatDescription }}</p>
               </div>
             </div>
-            
+
             <div class="plans-section">
               <h4>Выберите тариф</h4>
               <div class="plans-list">
@@ -44,7 +44,7 @@
                 </div>
               </div>
             </div>
-            
+
             <!-- Выбор периода для календарных тарифов -->
             <div v-if="selectedPlan && periodOptions.length > 0" class="period-section">
               <h4>Выберите период</h4>
@@ -65,27 +65,23 @@
                 </label>
               </div>
             </div>
-            
+
             <!-- Автопродление -->
             <div v-if="selectedPlan?.allowAutoRenewal" class="auto-renewal-section">
               <label class="checkbox-label">
-                <input
-                  type="checkbox"
-                  v-model="autoRenewal"
-                  class="checkbox-input"
-                />
+                <input type="checkbox" v-model="autoRenewal" class="checkbox-input" />
                 <span class="checkbox-text">
                   Автоматическое продление подписки
                   <small>Можно отключить в любой момент в профиле</small>
                 </span>
               </label>
             </div>
-            
+
             <div v-if="error" class="error-message">
               <i class="fa-solid fa-circle-exclamation"></i>
               {{ error }}
             </div>
-            
+
             <button
               class="btn btn-primary btn-large btn-full"
               :disabled="!selectedPlan || !selectedPeriod || loading"
@@ -95,7 +91,7 @@
               <span v-else>Оформить подписку</span>
             </button>
           </div>
-          
+
           <!-- Pending доступ -->
           <div v-else-if="isPendingAccess" class="pending-access">
             <div class="pending-icon">
@@ -106,14 +102,10 @@
             <div class="pending-date">
               {{ formatDate(subscription.startDate) }}
             </div>
-            <p class="pending-note">
-              Мы отправим вам уведомление, когда доступ будет открыт.
-            </p>
-            <button class="btn btn-secondary btn-full" @click="close">
-              Понятно
-            </button>
+            <p class="pending-note">Мы отправим вам уведомление, когда доступ будет открыт.</p>
+            <button class="btn btn-secondary btn-full" @click="close">Понятно</button>
           </div>
-          
+
           <!-- Есть активная подписка -->
           <div v-else-if="subscription" class="active-subscription">
             <div class="subscription-status">
@@ -177,14 +169,14 @@
                 <i v-if="extending" class="fa-solid fa-spinner fa-spin"></i>
                 <span v-else>
                   Продлить
-                  <span v-if="selectedPlan?.price" class="price">за {{ formatPrice(selectedPlan.price) }}</span>
+                  <span v-if="selectedPlan?.price" class="price"
+                    >за {{ formatPrice(selectedPlan.price) }}</span
+                  >
                 </span>
               </button>
             </div>
 
-            <button class="btn btn-secondary btn-full" @click="close">
-              Закрыть
-            </button>
+            <button class="btn btn-secondary btn-full" @click="close">Закрыть</button>
           </div>
         </div>
       </div>
@@ -201,7 +193,7 @@ const props = defineProps({
   feedId: String,
   chatTitle: String,
   chatDescription: String,
-  chatAvatar: String,
+  chatAvatar: String
 })
 
 const emit = defineEmits(['close', 'subscribed'])
@@ -222,13 +214,20 @@ const selectedExtendPeriod = ref('')
 const extending = ref(false)
 
 const isPendingAccess = computed(() => {
-  return subscription.value?.status === 'pending' || 
+  return (
+    subscription.value?.status === 'pending' ||
     (subscription.value?.startDate && new Date(subscription.value.startDate) > new Date())
+  )
 })
 
 const chatInitials = computed(() => {
   if (!props.chatTitle) return '?'
-  return props.chatTitle.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
+  return props.chatTitle
+    .split(' ')
+    .map((w) => w[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2)
 })
 
 const chatAvatarStyle = computed(() => {
@@ -245,9 +244,10 @@ function generateGradient(id) {
     ['#4facfe', '#00f2fe'],
     ['#43e97b', '#38f9d7'],
     ['#fa709a', '#fee140'],
-    ['#a8edea', '#fed6e3'],
+    ['#a8edea', '#fed6e3']
   ]
-  const index = id?.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % colors.length || 0
+  const index =
+    id?.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % colors.length || 0
   return `linear-gradient(135deg, ${colors[index][0]}, ${colors[index][1]})`
 }
 
@@ -257,10 +257,10 @@ function formatDuration(plan) {
     months: 'месяц',
     years: 'год'
   }
-  
+
   const value = plan.durationValue
   const type = typeLabels[plan.durationType] || plan.durationType
-  
+
   if (plan.durationType === 'months' && plan.durationValue === 1) {
     return '1 месяц'
   }
@@ -279,7 +279,7 @@ function formatDuration(plan) {
     if (value === 1) return '1 год'
     return `${value} года`
   }
-  
+
   return `${value} ${type}`
 }
 
@@ -296,7 +296,9 @@ function formatDate(dateString) {
 async function loadPlans() {
   const { makeApiUrl } = useApiUrl()
   try {
-    const response = await fetch(makeApiUrl(`chat-subscription-plans~${props.feedId}/plans`)).then(r => r.json())
+    const response = await fetch(makeApiUrl(`chat-subscription-plans~${props.feedId}/plans`)).then(
+      (r) => r.json()
+    )
     plans.value = response || []
   } catch (e) {
     console.error('Failed to load plans:', e)
@@ -306,7 +308,9 @@ async function loadPlans() {
 async function loadSubscription() {
   const { makeApiUrl } = useApiUrl()
   try {
-    const response = await fetch(makeApiUrl(`chat-subscriptions~${props.feedId}/subscription`)).then(r => r.json())
+    const response = await fetch(
+      makeApiUrl(`chat-subscriptions~${props.feedId}/subscription`)
+    ).then((r) => r.json())
     subscription.value = response
   } catch (e) {
     console.error('Failed to load subscription:', e)
@@ -320,7 +324,7 @@ async function checkAccess() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({})
-    }).then(r => r.json())
+    }).then((r) => r.json())
 
     accessStatus.value = response
 
@@ -342,7 +346,9 @@ async function loadExtendPeriodOptions() {
 
   const { makeApiUrl } = useApiUrl()
   try {
-    const response = await fetch(makeApiUrl(`chat-subscription-plans~plans/${subscription.value.plan.id}/periods`)).then(r => r.json())
+    const response = await fetch(
+      makeApiUrl(`chat-subscription-plans~plans/${subscription.value.plan.id}/periods`)
+    ).then((r) => r.json())
     extendPeriodOptions.value = response || []
     if (extendPeriodOptions.value.length > 0) {
       selectedExtendPeriod.value = extendPeriodOptions.value[0].value
@@ -366,7 +372,7 @@ async function extendSubscription() {
       body: JSON.stringify({
         periodValue: selectedExtendPeriod.value
       })
-    }).then(r => r.json())
+    }).then((r) => r.json())
 
     if (response.paymentLink) {
       // Перенаправляем на оплату
@@ -385,11 +391,13 @@ async function selectPlan(plan) {
   selectedPlan.value = plan
   selectedPeriod.value = ''
   periodOptions.value = []
-  
+
   const { makeApiUrl } = useApiUrl()
   if (plan.durationType === 'months' || plan.durationType === 'years') {
     try {
-      const options = await fetch(makeApiUrl(`chat-subscription-plans~${props.feedId}/plans/${plan.id}/periods`)).then(r => r.json())
+      const options = await fetch(
+        makeApiUrl(`chat-subscription-plans~${props.feedId}/plans/${plan.id}/periods`)
+      ).then((r) => r.json())
       periodOptions.value = options || []
       if (periodOptions.value.length > 0) {
         selectedPeriod.value = periodOptions.value[0].value
@@ -405,10 +413,10 @@ async function selectPlan(plan) {
 
 async function subscribe() {
   if (!selectedPlan.value || !selectedPeriod.value) return
-  
+
   loading.value = true
   error.value = ''
-  
+
   const { makeApiUrl } = useApiUrl()
   try {
     const response = await fetch(makeApiUrl(`chat-subscriptions~${props.feedId}/subscribe`), {
@@ -419,8 +427,8 @@ async function subscribe() {
         periodValue: selectedPeriod.value,
         autoRenewal: autoRenewal.value
       })
-    }).then(r => r.json())
-    
+    }).then((r) => r.json())
+
     if (response.paymentLink) {
       // Перенаправляем на оплату
       window.location.href = response.paymentLink
@@ -453,11 +461,14 @@ function close() {
   emit('close')
 }
 
-watch(() => props.show, (show) => {
-  if (show) {
-    checkAccess()
+watch(
+  () => props.show,
+  (show) => {
+    if (show) {
+      checkAccess()
+    }
   }
-})
+)
 
 onMounted(() => {
   if (props.show) {

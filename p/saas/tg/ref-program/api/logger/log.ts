@@ -27,7 +27,8 @@ export const logRoute = app.post('/', async (ctx, req) => {
     typeof body?.severity === 'number' && Number.isFinite(body.severity)
       ? Math.max(0, Math.min(7, Math.floor(body.severity)))
       : 6
-  const message = typeof body?.message === 'string' ? body.message.trim() : String(body?.message ?? '')
+  const message =
+    typeof body?.message === 'string' ? body.message.trim() : String(body?.message ?? '')
   const payload = body?.payload
 
   if (!message) {

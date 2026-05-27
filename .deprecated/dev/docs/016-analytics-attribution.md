@@ -5,6 +5,7 @@
 Система атрибуции отслеживает путь пользователя от первого анонимного визита до регистрации в GetCourse, сохраняя параметры URL (utm-метки, промокоды) для анализа эффективности маркетинговых каналов.
 
 **Основная задача:** связать анонимные события (с `uid`) с реальными пользователями GetCourse (с `user_id`), чтобы определить:
+
 - Откуда пользователь пришел ВПЕРВЫЕ (first-touch attribution)
 - Что привело к конверсии НЕПОСРЕДСТВЕННО (last-touch attribution)
 
@@ -21,12 +22,13 @@
   "uid": "QbQ6CFgNg_qQAuV8LYHk13erjUVWYF5n",
   "session_id": "session_abc123",
   "url": "https://key.sobolevarent.ru/?p=test2123&utm_source=google",
-  "user_id": "",  // ← Пустой! Пользователь анонимный
+  "user_id": "", // ← Пустой! Пользователь анонимный
   "ts": "2025-11-10 18:00:00"
 }
 ```
 
 **Характеристики:**
+
 - ✅ Содержит параметры URL (utm-метки, промокоды)
 - ✅ Есть `uid` и `session_id`
 - ❌ НЕТ `user_id` - пользователь анонимный
@@ -39,13 +41,14 @@
   "session_id": "session_abc123",
   "url": "event://getcourse/form/sent",
   "referer": "https://sobolevavika.ru/...?p=test2123&...",
-  "user_id": "219894:476979133",  // ← ПОЯВИЛСЯ user_id!
+  "user_id": "219894:476979133", // ← ПОЯВИЛСЯ user_id!
   "account_type": "Getcourse",
   "ts": "2025-11-10 18:05:00"
 }
 ```
 
 **Характеристики:**
+
 - ✅ Есть `uid` - связь с анонимными событиями
 - ✅ Есть `user_id` - связь с реальным пользователем GetCourse
 - ✅ Есть `session_id` - можно найти первое HTTP-событие
@@ -54,6 +57,7 @@
 **Почему это событие - мост:**
 
 Это ЕДИНСТВЕННЫЙ момент, где система может связать:
+
 - Анонимный мир (`uid`, параметры URL)
 - Реальный мир (`user_id`, профиль GetCourse)
 
@@ -61,8 +65,8 @@
 
 ```json
 {
-  "uid": "",  // ← ПУСТОЙ!
-  "session_id": "",  // ← ПУСТОЙ!
+  "uid": "", // ← ПУСТОЙ!
+  "session_id": "", // ← ПУСТОЙ!
   "url": "event://getcourse/user/created?id=219894:476979133",
   "user_id": "219894:476979133",
   "user_email": "tester10@example.com",
@@ -71,11 +75,13 @@
 ```
 
 **Характеристики:**
+
 - ✅ Есть `user_id` и данные профиля
 - ❌ НЕТ `uid` - невозможно связать с анонимными событиями
 - ❌ НЕТ `session_id` - невозможно найти параметры URL
 
 **Почему НЕ обрабатывается:**
+
 - Нет информации для связки с анонимными событиями
 - Служит только для информации о создании профиля
 
@@ -89,6 +95,7 @@
 **Назначение:** легковесная связка `uid` → `user_id`
 
 **Структура:**
+
 ```typescript
 import { Heap } from '@app/heap'
 
@@ -111,6 +118,7 @@ export const AnalyticsUidMappings = Heap.Table('analytics_uid_mappings_e8b3f7c5'
 ```
 
 **Пример записи:**
+
 ```typescript
 {
   uid: "QbQ6CFgNg_qQAuV8LYHk13erjUVWYF5n",
@@ -121,6 +129,7 @@ export const AnalyticsUidMappings = Heap.Table('analytics_uid_mappings_e8b3f7c5'
 ```
 
 **Зачем нужна:**
+
 - Минимальный размер записи (только связка)
 - Быстрый lookup по `uid`
 - Отслеживание активности через `lastSeenAt`
@@ -133,6 +142,7 @@ export const AnalyticsUidMappings = Heap.Table('analytics_uid_mappings_e8b3f7c5'
 **Назначение:** хранение параметров каждой сессии отдельно
 
 **Структура:**
+
 ```typescript
 import { Heap } from '@app/heap'
 
@@ -162,6 +172,7 @@ export const AnalyticsSessionAttribution = Heap.Table('analytics_session_attribu
 ```
 
 **Пример записей:**
+
 ```typescript
 // Первая сессия
 {
@@ -187,6 +198,7 @@ export const AnalyticsSessionAttribution = Heap.Table('analytics_session_attribu
 ```
 
 **Зачем нужна:**
+
 - Каждая сессия = отдельная запись с параметрами
 - Флаги `isFirst`/`isLast` для быстрого поиска O(1)
 - Хранение полного URL с параметрами
@@ -226,11 +238,11 @@ const result = await gcQueryAi(ctx, query)
 for (const event of result.rows) {
   await updateUidMapping(
     ctx,
-    event.user_id,    // "219894:476979133"
-    event.uid,        // "QbQ6CFgNg_qQAuV8LYHk13erjUVWYF5n"
+    event.user_id, // "219894:476979133"
+    event.uid, // "QbQ6CFgNg_qQAuV8LYHk13erjUVWYF5n"
     event.session_id, // "session_abc123"
-    event.url,        // "event://getcourse/form/sent"
-    event.ts          // "2025-11-10 18:05:00"
+    event.url, // "event://getcourse/form/sent"
+    event.ts // "2025-11-10 18:05:00"
   )
 }
 ```
@@ -245,8 +257,8 @@ for (const event of result.rows) {
 
 ```typescript
 // Ищем существующий маппинг по uid
-let mapping = await AnalyticsUidMappings.findOneBy(ctx, { 
-  uid: "QbQ6CFgNg_qQAuV8LYHk13erjUVWYF5n" 
+let mapping = await AnalyticsUidMappings.findOneBy(ctx, {
+  uid: 'QbQ6CFgNg_qQAuV8LYHk13erjUVWYF5n'
 })
 
 if (mapping) {
@@ -268,8 +280,8 @@ if (mapping) {
 } else {
   // Маппинга нет - создаем новый
   mapping = await AnalyticsUidMappings.create(ctx, {
-    uid: "QbQ6CFgNg_qQAuV8LYHk13erjUVWYF5n",
-    userId: "219894:476979133",
+    uid: 'QbQ6CFgNg_qQAuV8LYHk13erjUVWYF5n',
+    userId: '219894:476979133',
     firstSeenAt: new Date(),
     lastSeenAt: new Date()
   })
@@ -281,8 +293,8 @@ if (mapping) {
 ```typescript
 // Проверяем, обрабатывали ли мы эту сессию ранее
 const existingSession = await AnalyticsSessionAttribution.findOneBy(ctx, {
-  sessionId: "session_abc123",
-  uid: "QbQ6CFgNg_qQAuV8LYHk13erjUVWYF5n"
+  sessionId: 'session_abc123',
+  uid: 'QbQ6CFgNg_qQAuV8LYHk13erjUVWYF5n'
 })
 
 if (existingSession) {
@@ -293,7 +305,7 @@ if (existingSession) {
       userId
     })
   }
-  return  // ← Выходим, дальнейшая обработка не нужна
+  return // ← Выходим, дальнейшая обработка не нужна
 }
 ```
 
@@ -315,8 +327,8 @@ const firstEventQuery = `
 
 const result = await gcQueryAi(ctx, firstEventQuery)
 
-let firstUrl = url  // fallback на url из form/sent
-let sessionTs = eventTs  // fallback на время form/sent
+let firstUrl = url // fallback на url из form/sent
+let sessionTs = eventTs // fallback на время form/sent
 
 if (result.rows && result.rows.length > 0) {
   firstUrl = result.rows[0].url
@@ -325,6 +337,7 @@ if (result.rows && result.rows.length > 0) {
 ```
 
 **Результат:**
+
 ```json
 {
   "url": "https://key.sobolevarent.ru/?p=test2123&utm_source=google",
@@ -335,6 +348,7 @@ if (result.rows && result.rows.length > 0) {
 **Почему поиск по `session_id`, а не по `uid`:**
 
 Пример с двумя устройствами:
+
 ```
 День 1, Chrome на ПК (uid = ABC123):
 ├─ HTTP: ...?p=promo1&utm_source=google
@@ -346,10 +360,12 @@ if (result.rows && result.rows.length > 0) {
 ```
 
 Если искать по `uid`:
+
 - Найдет HTTP-событие с `uid = ABC123`
 - Пропустит параметры второй сессии с `uid = XYZ789`
 
 Если искать по `session_id`:
+
 - Каждая сессия получает свои параметры
 - Обе сессии сохраняются отдельно
 - Можно отследить путь через разные устройства
@@ -358,12 +374,12 @@ if (result.rows && result.rows.length > 0) {
 
 ```typescript
 await AnalyticsSessionAttribution.create(ctx, {
-  uid: "QbQ6CFgNg_qQAuV8LYHk13erjUVWYF5n",
-  userId: "219894:476979133",
-  sessionId: "session_abc123",
-  firstUrl: "https://key.sobolevarent.ru/?p=test2123&utm_source=google",
-  sessionTs: new Date("2025-11-10 18:00:00"),  // ← Время ПЕРВОГО события
-  isFirst: false,  // ← Временно, будет пересчитано
+  uid: 'QbQ6CFgNg_qQAuV8LYHk13erjUVWYF5n',
+  userId: '219894:476979133',
+  sessionId: 'session_abc123',
+  firstUrl: 'https://key.sobolevarent.ru/?p=test2123&utm_source=google',
+  sessionTs: new Date('2025-11-10 18:00:00'), // ← Время ПЕРВОГО события
+  isFirst: false, // ← Временно, будет пересчитано
   isLast: false
 })
 ```
@@ -373,7 +389,7 @@ await AnalyticsSessionAttribution.create(ctx, {
 ```typescript
 // 1. Загружаем ВСЕ сессии пользователя через Heap API
 const updatedSessions = await AnalyticsSessionAttribution.findAll(ctx, {
-  where: { userId: "219894:476979133" }
+  where: { userId: '219894:476979133' }
 })
 
 // 2. Находим самую раннюю и самую позднюю сессии
@@ -393,7 +409,7 @@ for (const session of updatedSessions) {
 for (const session of updatedSessions) {
   const isFirst = session.id === firstSession.id
   const isLast = session.id === lastSession.id
-  
+
   if (session.isFirst !== isFirst || session.isLast !== isLast) {
     await AnalyticsSessionAttribution.update(ctx, {
       id: session.id,
@@ -427,6 +443,7 @@ API выполняет следующие шаги:
 #### Получение всех параметров
 
 **Запрос:**
+
 ```typescript
 POST /api/attribution
 Content-Type: application/json
@@ -438,6 +455,7 @@ Content-Type: application/json
 ```
 
 **Обработка:**
+
 ```typescript
 // Шаг 1: user_id → находим все uid через form/sent
 const uidsQuery = `
@@ -485,6 +503,7 @@ return {
 ```
 
 **Ответ:**
+
 ```json
 {
   "success": true,
@@ -502,6 +521,7 @@ return {
 #### Получение конкретного параметра
 
 **Запрос:**
+
 ```typescript
 POST /api/attribution
 Content-Type: application/json
@@ -514,18 +534,20 @@ Content-Type: application/json
 ```
 
 **Обработка:**
+
 ```typescript
 // Выполняются те же шаги 1-4, затем:
 const params = parseUrlParams(firstUrl)
 
 return {
   success: true,
-  param: "utm_source",
-  value: params["utm_source"] || null
+  param: 'utm_source',
+  value: params['utm_source'] || null
 }
 ```
 
 **Ответ:**
+
 ```json
 {
   "success": true,
@@ -555,23 +577,22 @@ return {
  */
 export function parseUrlParams(url: string): Record<string, string> {
   if (!url) return {}
-  
+
   try {
     // Извлекаем часть между ? и #
     const queryStart = url.indexOf('?')
     if (queryStart === -1) return {}
-    
+
     const hashStart = url.indexOf('#', queryStart)
-    const queryString = hashStart === -1 
-      ? url.substring(queryStart + 1)
-      : url.substring(queryStart + 1, hashStart)
-    
+    const queryString =
+      hashStart === -1 ? url.substring(queryStart + 1) : url.substring(queryStart + 1, hashStart)
+
     const params: Record<string, string> = {}
     const pairs = queryString.split('&')
-    
+
     for (const pair of pairs) {
-      if (!pair) continue  // Пропускаем пустые пары
-      
+      if (!pair) continue // Пропускаем пустые пары
+
       const equalIndex = pair.indexOf('=')
       if (equalIndex === -1) {
         // Параметр без значения (?debug)
@@ -584,7 +605,7 @@ export function parseUrlParams(url: string): Record<string, string> {
         if (key) params[key] = value || ''
       }
     }
-    
+
     return params
   } catch (error) {
     return {}
@@ -594,13 +615,13 @@ export function parseUrlParams(url: string): Record<string, string> {
 
 **Примеры работы:**
 
-| Входной URL | Результат |
-|-------------|-----------|
-| `https://site.com/?p=test123&ref=google` | `{p: "test123", ref: "google"}` |
-| `https://site.com/?p=test456#anchor` | `{p: "test456"}` |
+| Входной URL                                           | Результат                                    |
+| ----------------------------------------------------- | -------------------------------------------- |
+| `https://site.com/?p=test123&ref=google`              | `{p: "test123", ref: "google"}`              |
+| `https://site.com/?p=test456#anchor`                  | `{p: "test456"}`                             |
 | `https://site.com/?utm_source=fb&utm_campaign=summer` | `{utm_source: "fb", utm_campaign: "summer"}` |
-| `https://site.com/page` | `{}` |
-| `https://site.com/?debug` | `{debug: ""}` |
+| `https://site.com/page`                               | `{}`                                         |
+| `https://site.com/?debug`                             | `{debug: ""}`                                |
 
 ---
 
@@ -613,9 +634,9 @@ import { apiAttributionRoute } from './api/attribution'
 
 // В вашем коде
 const result = await apiAttributionRoute.run(ctx, {
-  userId: "219894:476979133",
-  attribution: "first",
-  param: "utm_source"
+  userId: '219894:476979133',
+  attribution: 'first',
+  param: 'utm_source'
 })
 
 if (result.success && result.value) {
@@ -625,6 +646,7 @@ if (result.success && result.value) {
 ```
 
 **Применение:**
+
 - Анализ эффективности каналов привлечения
 - Распределение бюджета на рекламу
 - Оценка ROI по каналам
@@ -633,9 +655,9 @@ if (result.success && result.value) {
 
 ```typescript
 const result = await apiAttributionRoute.run(ctx, {
-  userId: "219894:476979133",
-  attribution: "last",
-  param: "p"
+  userId: '219894:476979133',
+  attribution: 'last',
+  param: 'p'
 })
 
 if (result.success && result.value) {
@@ -645,6 +667,7 @@ if (result.success && result.value) {
 ```
 
 **Применение:**
+
 - Начисление комиссии партнерам
 - Анализ эффективности ретаргетинга
 - Оптимизация воронки продаж
@@ -653,8 +676,8 @@ if (result.success && result.value) {
 
 ```typescript
 const result = await apiAttributionRoute.run(ctx, {
-  userId: "219894:476979133",
-  attribution: "first"
+  userId: '219894:476979133',
+  attribution: 'first'
 })
 
 if (result.success) {
@@ -665,7 +688,7 @@ if (result.success) {
   //   utm_campaign: "summer",
   //   utm_medium: "cpc"
   // }
-  
+
   console.log('URL первого визита:', result.url)
   console.log('Время первого визита:', result.timestamp)
   console.log('ID сессии:', result.sessionId)
@@ -691,6 +714,7 @@ if (result.success) {
 **Результат в БД:**
 
 `AnalyticsSessionAttribution`:
+
 ```
 sessionId: session_001
 firstUrl: ...?p=promo-nov&utm_source=google
@@ -714,6 +738,7 @@ isLast: TRUE ✓
 **Результат в БД после обработки:**
 
 `AnalyticsSessionAttribution`:
+
 ```
 ┌──────────┬─────────────┬─────────────────────────────┬────────┬────────┐
 │ sessionId│ firstUrl                                 │isFirst │ isLast │
@@ -729,6 +754,7 @@ isLast: TRUE ✓
 ### Получение данных
 
 **First-touch:**
+
 ```typescript
 POST /api/attribution { userId: "219894:476979133", attribution: "first" }
 
@@ -736,6 +762,7 @@ POST /api/attribution { userId: "219894:476979133", attribution: "first" }
 ```
 
 **Last-touch:**
+
 ```typescript
 POST /api/attribution { userId: "219894:476979133", attribution: "last" }
 
@@ -751,12 +778,14 @@ POST /api/attribution { userId: "219894:476979133", attribution: "last" }
 ### Текущий подход: Прямые запросы к ClickHouse
 
 **Алгоритм:**
+
 1. Поиск uid по user_id: O(log n) - индексированный поиск в ClickHouse
 2. Поиск сессий по uid: O(log n) - группировка с индексами
 3. Поиск первого HTTP-события: O(log n) - сортировка с LIMIT 1
 4. Парсинг URL: O(m) - где m = длина URL (~200 символов)
 
 **Оценка производительности:**
+
 - Время выполнения: ~50-200 мс (зависит от количества uid и сессий)
 - Количество запросов к ClickHouse: 1 + N (uid) + M (сессии)
 - Оптимизация: ClickHouse эффективно обрабатывает GROUP BY и ORDER BY с индексами
@@ -781,10 +810,7 @@ POST /api/attribution { userId: "219894:476979133", attribution: "last" }
 ### Импорт API
 
 ```typescript
-import { 
-  apiAttributionRoute,
-  parseUrlParams 
-} from './api/attribution'
+import { apiAttributionRoute, parseUrlParams } from './api/attribution'
 ```
 
 ### Использование в коде
@@ -793,18 +819,18 @@ import {
 // В вашем обработчике
 export const myHandler = app.get('/my-route', async (ctx, req) => {
   const userId = ctx.user?.id
-  
+
   if (userId) {
     // Получаем параметры первого визита
     const attribution = await apiAttributionRoute.run(ctx, {
       userId: userId,
       attribution: 'first'
     })
-    
+
     if (attribution.success) {
       const utmSource = attribution.params.utm_source
       const promo = attribution.params.p
-      
+
       // Используем в логике
       console.log(`Пользователь пришел из: ${utmSource}`)
       console.log(`Промокод: ${promo}`)
@@ -820,11 +846,13 @@ export const myHandler = app.get('/my-route', async (ctx, req) => {
 ### 1. Обработка только events://getcourse/form/sent
 
 **SQL-запрос API содержит строгий фильтр:**
+
 ```sql
 WHERE urlPath = 'event://getcourse/form/sent'
 ```
 
 **Почему:**
+
 - Это единственное событие с `uid` + `user_id` + `session_id`
 - Предотвращает обработку мусорных данных
 - Гарантирует корректность связки
@@ -832,6 +860,7 @@ WHERE urlPath = 'event://getcourse/form/sent'
 ### 2. Поиск первого HTTP-события по session_id
 
 **Каждая сессия хранит свои параметры:**
+
 - Смена браузера → новая сессия → новые параметры
 - Смена устройства → новая сессия → новые параметры
 - Повторный визит → новая сессия → новые параметры
@@ -839,6 +868,7 @@ WHERE urlPath = 'event://getcourse/form/sent'
 ### 3. Работа напрямую с ClickHouse
 
 **API использует только ClickHouse:**
+
 - ✅ `gcQueryAi(ctx, "SELECT ...")` - для всех запросов
 - ✅ Нет использования Heap таблиц для атрибуции
 - ✅ Нет предварительной обработки через job'ы
@@ -855,6 +885,7 @@ WHERE urlPath = 'event://getcourse/form/sent'
 ### Тесты базы данных (3)
 
 **`uid_mappings_table_exists`**
+
 ```typescript
 if (!AnalyticsUidMappings) {
   throw new Error('Таблица AnalyticsUidMappings не найдена')
@@ -862,6 +893,7 @@ if (!AnalyticsUidMappings) {
 ```
 
 **`create_uid_mapping`**
+
 ```typescript
 const mapping = await AnalyticsUidMappings.create(ctx, {
   uid: 'test-uid-' + Date.now(),
@@ -878,6 +910,7 @@ await AnalyticsUidMappings.delete(ctx, mapping.id)
 ```
 
 **`find_uid_mappings`**
+
 ```typescript
 const foundMappings = await AnalyticsUidMappings.findAll(ctx, {
   where: { userId: testUserId }
@@ -891,6 +924,7 @@ if (!Array.isArray(foundMappings) || foundMappings.length === 0) {
 ### Тесты API (3)
 
 **`get_attribution_params`**
+
 ```typescript
 // Создать тестовые сессии с разными параметрами
 // Проверить получение параметров first и last
@@ -898,6 +932,7 @@ if (!Array.isArray(foundMappings) || foundMappings.length === 0) {
 ```
 
 **`get_attribution_single_param`**
+
 ```typescript
 // Создать сессию с параметрами
 // Запросить конкретный параметр
@@ -906,6 +941,7 @@ if (!Array.isArray(foundMappings) || foundMappings.length === 0) {
 ```
 
 **`process_attribution`**
+
 ```typescript
 // Вызвать apiProcessAttributionRoute
 // Проверить создание маппинга
@@ -916,6 +952,7 @@ if (!Array.isArray(foundMappings) || foundMappings.length === 0) {
 ### Функциональные тесты (2)
 
 **`attribution_flow`**
+
 ```typescript
 // Полный цикл:
 // 1. Обработать первое событие (первая сессия)
@@ -927,14 +964,12 @@ if (!Array.isArray(foundMappings) || foundMappings.length === 0) {
 ```
 
 **`parse_url_params`**
+
 ```typescript
 const testCases = [
-  { url: 'https://example.com/?p=test123&ref=google', 
-    expected: { p: 'test123', ref: 'google' } },
-  { url: 'https://example.com/?p=test456#anchor', 
-    expected: { p: 'test456' } },
-  { url: 'https://example.com/page', 
-    expected: {} }
+  { url: 'https://example.com/?p=test123&ref=google', expected: { p: 'test123', ref: 'google' } },
+  { url: 'https://example.com/?p=test456#anchor', expected: { p: 'test456' } },
+  { url: 'https://example.com/page', expected: {} }
 ]
 
 for (const testCase of testCases) {
@@ -954,7 +989,9 @@ for (const testCase of testCases) {
 **Причина 1:** Нет событий `form/sent` для этого `user_id`
 
 **Решение:**
+
 - Проверьте наличие событий в ClickHouse:
+
 ```sql
 SELECT user_id, uid, session_id, urlPath
 FROM chatium_ai.access_log
@@ -967,6 +1004,7 @@ LIMIT 10
 **Причина 2:** В первом HTTP-событии сессии нет параметров URL
 
 **Решение:**
+
 - Проверьте URL в ClickHouse: есть ли `?` в первом событии сессии?
 - Возможно, пользователь зашел напрямую без параметров
 - Для `attribution='last'` API пропускает сессии без параметров
@@ -974,7 +1012,9 @@ LIMIT 10
 **Причина 3:** Нет HTTP-событий для найденных сессий
 
 **Решение:**
+
 - Проверьте наличие HTTP-событий для сессий:
+
 ```sql
 SELECT url, ts
 FROM chatium_ai.access_log
@@ -990,6 +1030,7 @@ LIMIT 1
 **Причина:** У пользователя много `uid` или сессий
 
 **Решение:**
+
 - API обрабатывает все `uid` и сессии последовательно
 - Для пользователей с большим количеством сессий время выполнения может быть ~200-500 мс
 - Это нормальное поведение для упрощенного подхода
@@ -1045,6 +1086,7 @@ const uidsQuery = `
 **Применимо к:** partnership v2.12.0+
 
 **Изменения в версии 2.0:**
+
 - ✨ **Упрощенная логика API**: Работа напрямую с ClickHouse, без использования Heap таблиц
 - ✨ **Нет предварительной обработки**: Данные всегда актуальные, читаются напрямую из ClickHouse
 - ✨ **Обновлен алгоритм работы**: Описаны все шаги обработки запроса
@@ -1056,18 +1098,18 @@ const uidsQuery = `
 
 ### API Endpoints
 
-| Endpoint | Метод | Назначение |
-|----------|-------|-----------|
-| `/api/attribution` | POST | Получить параметры first/last сессии (работает напрямую с ClickHouse) |
-| `/api/attribution/process` | POST | Обработать событие (для обратной совместимости) |
+| Endpoint                   | Метод | Назначение                                                            |
+| -------------------------- | ----- | --------------------------------------------------------------------- |
+| `/api/attribution`         | POST  | Получить параметры first/last сессии (работает напрямую с ClickHouse) |
+| `/api/attribution/process` | POST  | Обработать событие (для обратной совместимости)                       |
 
 ### Функции
 
-| Функция | Файл | Назначение |
-|---------|------|-----------|
-| `parseUrlParams(url)` | `api/attribution.ts` | Парсинг параметров из URL |
+| Функция                 | Файл                 | Назначение                                                         |
+| ----------------------- | -------------------- | ------------------------------------------------------------------ |
+| `parseUrlParams(url)`   | `api/attribution.ts` | Парсинг параметров из URL                                          |
 | `updateUidMapping(...)` | `api/attribution.ts` | Обработка события и создание маппинга (для обратной совместимости) |
-| `processAttributionJob` | `api/attribution.ts` | Job для автоматической обработки (для обратной совместимости) |
+| `processAttributionJob` | `api/attribution.ts` | Job для автоматической обработки (для обратной совместимости)      |
 
 ### Запросы к ClickHouse
 
@@ -1103,4 +1145,3 @@ LIMIT 1
 ### Примечание о таблицах Heap
 
 Таблицы `AnalyticsUidMappings` и `AnalyticsSessionAttribution` остаются в проекте для обратной совместимости, но основной API `/api/attribution` их не использует. API работает напрямую с ClickHouse.
-

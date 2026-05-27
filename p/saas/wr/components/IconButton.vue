@@ -1,44 +1,44 @@
 <script setup lang="ts">
-import { computed } from "vue";
-import Icon from "./Icon/Icon.vue";
+import { computed } from 'vue'
+import Icon from './Icon/Icon.vue'
 
 interface IconButtonProps {
-  name?: string;
-  size?: number;
-  class?: string;
-  style?: Record<string, string>;
+  name?: string
+  size?: number
+  class?: string
+  style?: Record<string, string>
 }
- 
+
 const props = withDefaults(defineProps<IconButtonProps>(), {
-  size: 28,
-});
+  size: 28
+})
 
 const emit = defineEmits<{
-  (e: "click", event: MouseEvent): void;
-}>();
+  (e: 'click', event: MouseEvent): void
+}>()
 
 function clickHandler(event: MouseEvent) {
-  event.stopPropagation();
-  event.stopImmediatePropagation();
-  emit("click", event);
+  event.stopPropagation()
+  event.stopImmediatePropagation()
+  emit('click', event)
 }
 
 const buttonStyle = computed(() => {
   return {
     width: `${props.size}px`,
     height: `${props.size}px`,
-    borderRadius: `${props.size}px`, 
-    ...props.style,
-  };
-});
+    borderRadius: `${props.size}px`,
+    ...props.style
+  }
+})
 
 const buttonClass = computed(() => {
-  return ["IconButton", props.class].filter(Boolean).join(" ");
-});
+  return ['IconButton', props.class].filter(Boolean).join(' ')
+})
 
 const iconSize = computed(() => {
-  return Math.floor(props.size * 0.5);
-});
+  return Math.floor(props.size * 0.5)
+})
 </script>
 
 <template>

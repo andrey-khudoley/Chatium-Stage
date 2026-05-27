@@ -2,10 +2,7 @@
  * Семантика ответа нового API GetCourse при HTTP 2xx (manual §2.8.2 N1–N3).
  */
 
-export type NewGcSemanticRule =
-  | 'new_status_false'
-  | 'new_code_non_200'
-  | 'new_data_result_false'
+export type NewGcSemanticRule = 'new_status_false' | 'new_code_non_200' | 'new_data_result_false'
 
 export type NewSemanticDetection = {
   rule: NewGcSemanticRule

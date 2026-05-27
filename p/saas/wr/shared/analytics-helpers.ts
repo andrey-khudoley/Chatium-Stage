@@ -14,7 +14,7 @@ export const EVENT_LABELS: Record<string, string> = {
   volume_change: 'Громкость',
   fullscreen_change: 'Полный экран',
   error: 'Ошибка',
-  cta_click: 'CTA клик',
+  cta_click: 'CTA клик'
 }
 
 // Цвета событий плеера
@@ -30,7 +30,7 @@ export const EVENT_COLORS: Record<string, string> = {
   volume_change: '#8b5cf6',
   fullscreen_change: '#14b8a6',
   error: '#ef4444',
-  cta_click: '#ec4899',
+  cta_click: '#ec4899'
 }
 
 // Метки событий форм (CTA)
@@ -41,7 +41,7 @@ export const CTA_EVENT_LABELS: Record<string, string> = {
   field_focused: 'Фокус',
   submitted: 'Отправлено',
   payment_page_opened: 'Переход на оплату',
-  payment_completed: 'Оплачено',
+  payment_completed: 'Оплачено'
 }
 
 // Цвета событий форм (CTA)
@@ -52,7 +52,7 @@ export const CTA_EVENT_COLORS: Record<string, string> = {
   field_focused: '#a78bfa',
   submitted: '#4ade80',
   payment_page_opened: '#facc15',
-  payment_completed: '#f8005b',
+  payment_completed: '#f8005b'
 }
 
 // Функции для получения меток и цветов
@@ -90,8 +90,12 @@ export function formatDate(dateStr: string | Date): string {
   if (!dateStr) return '—'
   const d = new Date(dateStr)
   return d.toLocaleString('ru-RU', {
-    day: '2-digit', month: '2-digit', year: '2-digit',
-    hour: '2-digit', minute: '2-digit', second: '2-digit',
+    day: '2-digit',
+    month: '2-digit',
+    year: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit'
   })
 }
 
@@ -128,7 +132,8 @@ export function formatPeakTimecode(seconds: number | null): string {
 export function formatMoney(amount: number, currency: string = 'RUB'): string {
   if (!amount || amount === 0) return '—'
   const formatted = amount.toLocaleString('ru-RU', { maximumFractionDigits: 0 })
-  const currencySymbol = currency === 'RUB' ? '₽' : currency === 'USD' ? '$' : currency === 'EUR' ? '€' : currency
+  const currencySymbol =
+    currency === 'RUB' ? '₽' : currency === 'USD' ? '$' : currency === 'EUR' ? '€' : currency
   return `${formatted} ${currencySymbol}`
 }
 

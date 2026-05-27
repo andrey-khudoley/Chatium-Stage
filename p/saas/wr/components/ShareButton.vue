@@ -79,7 +79,7 @@ import { ref, computed } from 'vue'
 import { episodePageRoute } from '../episode'
 
 const props = defineProps({
-  episode: { type: Object, required: true },
+  episode: { type: Object, required: true }
 })
 
 const showModal = ref(false)
@@ -126,36 +126,36 @@ const channels = computed(() => [
     label: 'Telegram',
     icon: 'fab fa-telegram-plane',
     gradient: 'linear-gradient(135deg, #37AEE2, #1E96C8)',
-    url: telegramUrl.value,
+    url: telegramUrl.value
   },
   {
     id: 'whatsapp',
     label: 'WhatsApp',
     icon: 'fab fa-whatsapp',
     gradient: 'linear-gradient(135deg, #25D366, #128C7E)',
-    url: whatsappUrl.value,
+    url: whatsappUrl.value
   },
   {
     id: 'vk',
     label: 'ВКонтакте',
     icon: 'fab fa-vk',
     gradient: 'linear-gradient(135deg, #5181B8, #3F6DA5)',
-    url: vkUrl.value,
+    url: vkUrl.value
   },
   {
     id: 'email',
     label: 'Почта',
     icon: 'fas fa-envelope',
     gradient: 'linear-gradient(135deg, #EA4335, #C5221F)',
-    url: emailUrl.value,
+    url: emailUrl.value
   },
   {
     id: 'sms',
     label: 'SMS',
     icon: 'fas fa-comment-sms',
     gradient: 'linear-gradient(135deg, #34C759, #28A745)',
-    url: smsUrl.value,
-  },
+    url: smsUrl.value
+  }
 ])
 
 function copyLink() {

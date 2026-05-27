@@ -20,7 +20,9 @@ const emit = defineEmits<{
     class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60"
     @click.self="emit('cancel')"
   >
-    <div class="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-secondary)] p-6 w-full max-w-sm shadow-xl">
+    <div
+      class="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-secondary)] p-6 w-full max-w-sm shadow-xl"
+    >
       <h2 v-if="title" class="text-lg text-[var(--color-text)] mb-2">{{ title }}</h2>
       <p v-if="message" class="text-[var(--color-text-secondary)] text-sm mb-4">{{ message }}</p>
       <div class="flex gap-2 justify-end">
@@ -33,7 +35,11 @@ const emit = defineEmits<{
         </button>
         <button
           type="button"
-          :class="danger ? 'bg-red-600 hover:bg-red-700 text-white' : 'bg-[var(--color-accent)] text-white hover:opacity-90'"
+          :class="
+            danger
+              ? 'bg-red-600 hover:bg-red-700 text-white'
+              : 'bg-[var(--color-accent)] text-white hover:opacity-90'
+          "
           class="px-4 py-2 rounded transition"
           @click="emit('confirm')"
         >

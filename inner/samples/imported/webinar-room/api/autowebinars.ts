@@ -5,7 +5,10 @@ import { AutowebinarStatus, AutowebinarMode, ChatAccessMode, FinishAction } from
 import Autowebinars from '../tables/autowebinars.table'
 import ScenarioEvents from '../tables/scenario_events.table'
 import AutowebinarSchedules from '../tables/autowebinar_schedules.table'
-import { getOrCreateKinescopeWebinarPlayer, validateAndFixAutowebinarPlayer } from './kinescope-player'
+import {
+  getOrCreateKinescopeWebinarPlayer,
+  validateAndFixAutowebinarPlayer
+} from './kinescope-player'
 import { awRecurrenceBootstrap } from './autowebinar-recurrence'
 import { getVideoInfo } from '@app/storage'
 import { publishVideo, listVideos, requestSubtitles } from '@muuvee/sdk'
@@ -13,7 +16,12 @@ import { createKnowledgeBase, insertTextToKnowledgeBase } from '@knowledge-base/
 
 async function ensureAutowebinarKnowledgeBase(
   ctx: app.Ctx,
-  aw: { id: string; title?: string | null; description?: string | null; knowledgeBaseId?: string | null },
+  aw: {
+    id: string
+    title?: string | null
+    description?: string | null
+    knowledgeBaseId?: string | null
+  }
 ): Promise<string> {
   if (aw.knowledgeBaseId) return aw.knowledgeBaseId
 
@@ -33,7 +41,7 @@ async function ensureAutowebinarKnowledgeBase(
 
   await Autowebinars.update(ctx, {
     id: aw.id,
-    knowledgeBaseId,
+    knowledgeBaseId
   })
 
   return knowledgeBaseId
@@ -43,7 +51,10 @@ async function ensureAutowebinarKnowledgeBase(
  * Извлекает kinescopeVideoId из videoHash динамически
  * Формат hlsUrl: https://kinescope.io/.../VIDEO_ID/master.m3u8
  */
-export async function extractKinescopeVideoId(ctx: app.Ctx, videoHash: string): Promise<string | null> {
+export async function extractKinescopeVideoId(
+  ctx: app.Ctx,
+  videoHash: string
+): Promise<string | null> {
   try {
     const videoInfo = await getVideoInfo(ctx, videoHash)
     if (!videoInfo?.hlsUrl) return null
@@ -53,139 +64,152 @@ export async function extractKinescopeVideoId(ctx: app.Ctx, videoHash: string): 
   } catch (e) {
     ctx.account.log('extractKinescopeVideoId error', {
       level: 'warn',
-      json: { videoHash, error: e.message },
+      json: { videoHash, error: e.message }
     })
     return null
   }
 }
 
 // Callback для успешного получения субтитров от Muuvee
-const muuveeSubtitlesSuccessCallback = app.function('/muuvee-subtitles-success', async (ctx, params) => {
-  ctx.account.log('[Muuvee] Subtitles received', {
-    level: 'info',
-    json: { videoId: params.video_id, subtitleLength: params.subtitle_text?.length },
-  })
-
-  // Находим автовебинар по muuveeVideoId и сохраняем субтитры
-  try {
-    const autowebinars = await Autowebinars.findAll(ctx, {
-      where: { muuveeVideoId: params.video_id },
-      limit: 1,
+const muuveeSubtitlesSuccessCallback = app.function(
+  '/muuvee-subtitles-success',
+  async (ctx, params) => {
+    ctx.account.log('[Muuvee] Subtitles received', {
+      level: 'info',
+      json: { videoId: params.video_id, subtitleLength: params.subtitle_text?.length }
     })
 
-    const targetAw = autowebinars[0]
-    if (targetAw) {
-
-      await Autowebinars.update(ctx, {
-        id: targetAw.id, 
-        subtitles: params.subtitle_text,
-        subtitlesStatus: 'completed',
+    // Находим автовебинар по muuveeVideoId и сохраняем субтитры
+    try {
+      const autowebinars = await Autowebinars.findAll(ctx, {
+        where: { muuveeVideoId: params.video_id },
+        limit: 1
       })
 
-      const knowledgeBaseId = await ensureAutowebinarKnowledgeBase(ctx, targetAw as any)
-      const subtitlesText = String(params.subtitle_text || '').trim()
-
-      if (subtitlesText) {
-        const insertResult = await insertTextToKnowledgeBase(ctx, knowledgeBaseId, subtitlesText, {
-          title: `Текст видео: ${targetAw.title || targetAw.id}`,
-          metadata: {
-            source: 'muuvee_subtitles',
-            autowebinarId: targetAw.id,
-            muuveeVideoId: params.video_id,
-          },
+      const targetAw = autowebinars[0]
+      if (targetAw) {
+        await Autowebinars.update(ctx, {
+          id: targetAw.id,
+          subtitles: params.subtitle_text,
+          subtitlesStatus: 'completed'
         })
 
-        if (!insertResult?.ok) {
-          throw new Error(`Не удалось вставить текст в KB: ${insertResult?.error || 'unknown error'}`)
+        const knowledgeBaseId = await ensureAutowebinarKnowledgeBase(ctx, targetAw as any)
+        const subtitlesText = String(params.subtitle_text || '').trim()
+
+        if (subtitlesText) {
+          const insertResult = await insertTextToKnowledgeBase(
+            ctx,
+            knowledgeBaseId,
+            subtitlesText,
+            {
+              title: `Текст видео: ${targetAw.title || targetAw.id}`,
+              metadata: {
+                source: 'muuvee_subtitles',
+                autowebinarId: targetAw.id,
+                muuveeVideoId: params.video_id
+              }
+            }
+          )
+
+          if (!insertResult?.ok) {
+            throw new Error(
+              `Не удалось вставить текст в KB: ${insertResult?.error || 'unknown error'}`
+            )
+          }
+
+          ctx.account.log('[Muuvee] Subtitles inserted into KB', {
+            level: 'info',
+            json: {
+              autowebinarId: targetAw.id,
+              knowledgeBaseId,
+              documentId: insertResult.document?.id,
+              chunksCount: insertResult.document?.chunksCount
+            }
+          })
         }
 
-        ctx.account.log('[Muuvee] Subtitles inserted into KB', {
+        ctx.account.log('[Muuvee] Subtitles saved to autowebinar', {
           level: 'info',
-          json: {
-            autowebinarId: targetAw.id,
-            knowledgeBaseId,
-            documentId: insertResult.document?.id,
-            chunksCount: insertResult.document?.chunksCount,
-          },
+          json: { autowebinarId: targetAw.id, muuveeVideoId: params.video_id, knowledgeBaseId }
         })
       }
-
-      ctx.account.log('[Muuvee] Subtitles saved to autowebinar', {
-        level: 'info',
-        json: { autowebinarId: targetAw.id, muuveeVideoId: params.video_id, knowledgeBaseId },
+    } catch (e: any) {
+      ctx.account.log('[Muuvee] Failed to save subtitles', {
+        level: 'error',
+        json: { error: e.message, videoId: params.video_id }
       })
     }
-  } catch (e: any) {
-    ctx.account.log('[Muuvee] Failed to save subtitles', {
-      level: 'error',
-      json: { error: e.message, videoId: params.video_id },
-    })
-  }
 
-  return { success: true }
-})
+    return { success: true }
+  }
+)
 
 // Callback для ошибки получения субтитров от Muuvee
-const muuveeSubtitlesFailedCallback = reporterApp.function('/muuvee-subtitles-failed', async (ctx, params) => {
-  // Параметры уже приходят как объект: { video_id, error, error_code? }
-  const errorCode = params.error_code
-  const isLowBalance = errorCode === 'too_low_balance'
+const muuveeSubtitlesFailedCallback = reporterApp.function(
+  '/muuvee-subtitles-failed',
+  async (ctx, params) => {
+    // Параметры уже приходят как объект: { video_id, error, error_code? }
+    const errorCode = params.error_code
+    const isLowBalance = errorCode === 'too_low_balance'
 
-  ctx.account.log('[Muuvee] Subtitles failed', {
-    level: 'warn',
-    json: {
-      videoId: params.video_id,
-      error: params.error,
-      errorCode,
-      isLowBalance,
-    },
-  })
-
-  // Находим автовебинар и сохраняем ошибку
-  try {
-    const autowebinars = await Autowebinars.findAll(ctx, {
-      where: { muuveeVideoId: params.video_id },
-      limit: 1,
+    ctx.account.log('[Muuvee] Subtitles failed', {
+      level: 'warn',
+      json: {
+        videoId: params.video_id,
+        error: params.error,
+        errorCode,
+        isLowBalance
+      }
     })
 
-    if (autowebinars.length > 0) {
-      // Формируем понятное сообщение для ошибки баланса
-      let errorMessage = params.error
-      if (isLowBalance) {
-        errorMessage =
-          'Недостаточно средств на балансе Muuvee для обработки видео. Пожалуйста, пополните баланс: ' + ctx.account.url("/app/muuvee")
-      }
-
-      await Autowebinars.update(ctx, {
-        id: autowebinars[0].id,
-        muuveeError: errorMessage,
-        subtitlesStatus: 'failed',
+    // Находим автовебинар и сохраняем ошибку
+    try {
+      const autowebinars = await Autowebinars.findAll(ctx, {
+        where: { muuveeVideoId: params.video_id },
+        limit: 1
       })
 
-      ctx.account.log('[Muuvee] Error saved to autowebinar', {
-        level: 'info',
-        json: { autowebinarId: autowebinars[0].id, muuveeVideoId: params.video_id, isLowBalance },
+      if (autowebinars.length > 0) {
+        // Формируем понятное сообщение для ошибки баланса
+        let errorMessage = params.error
+        if (isLowBalance) {
+          errorMessage =
+            'Недостаточно средств на балансе Muuvee для обработки видео. Пожалуйста, пополните баланс: ' +
+            ctx.account.url('/app/muuvee')
+        }
+
+        await Autowebinars.update(ctx, {
+          id: autowebinars[0].id,
+          muuveeError: errorMessage,
+          subtitlesStatus: 'failed'
+        })
+
+        ctx.account.log('[Muuvee] Error saved to autowebinar', {
+          level: 'info',
+          json: { autowebinarId: autowebinars[0].id, muuveeVideoId: params.video_id, isLowBalance }
+        })
+      }
+    } catch (e: any) {
+      ctx.account.log('[Muuvee] Failed to save error', {
+        level: 'error',
+        json: { error: e.message, videoId: params.video_id }
       })
     }
-  } catch (e: any) {
-    ctx.account.log('[Muuvee] Failed to save error', {
-      level: 'error',
-      json: { error: e.message, videoId: params.video_id },
-    })
-  }
 
-  return { success: true }
-})
+    return { success: true }
+  }
+)
 
 // Получить список видео из Muuvee
 // @shared-route
 export const apiMuuveeVideosListRoute = reporterApp
-  .query(s => ({
+  .query((s) => ({
     search: s.string().optional(),
     limit: s.number().optional(),
     offset: s.number().optional(),
     onlyTranscribated: s.boolean().optional(),
-    addKinescopeId: s.boolean().optional(),
+    addKinescopeId: s.boolean().optional()
   }))
   .get('/muuvee-videos', async (ctx, req) => {
     requireAccountRole(ctx, 'Admin')
@@ -197,7 +221,7 @@ export const apiMuuveeVideosListRoute = reporterApp
       offset: req.query.offset || 0,
       onlyTranscribated: req.query.onlyTranscribated,
       addPlaylistsInfo: false,
-      addKinescopeId,
+      addKinescopeId
     })
 
     return result
@@ -213,7 +237,7 @@ export const apiAutowebinarsListRoute = reporterApp.get('/list', async (ctx, req
   const autowebinars = await Autowebinars.findAll(ctx, {
     where: Object.keys(where).length > 0 ? where : undefined,
     limit: 100,
-    order: [{ createdAt: 'desc' }],
+    order: [{ createdAt: 'desc' }]
   })
 
   return autowebinars
@@ -231,7 +255,7 @@ export const apiAutowebinarByIdRoute = reporterApp.get('/by-id/:id', async (ctx,
     aw = await Autowebinars.update(ctx, {
       id: aw.id,
       subtitlesStatus: 'completed',
-      muuveeError: null,
+      muuveeError: null
     })
   }
 
@@ -243,13 +267,13 @@ export const apiAutowebinarByIdRoute = reporterApp.get('/by-id/:id', async (ctx,
 
   return {
     ...aw,
-    kinescopeVideoId, // Добавляем в ответ, но не храним в базе
+    kinescopeVideoId // Добавляем в ответ, но не храним в базе
   }
 })
 
 // @shared-route
 export const apiAutowebinarCreateRoute = reporterApp
-  .body(s => ({
+  .body((s) => ({
     title: s.string(),
     description: s.string().optional(),
     videoHash: s.string().optional(),
@@ -263,7 +287,7 @@ export const apiAutowebinarCreateRoute = reporterApp
     resultButtonText: s.string().optional(),
     resultText: s.string().optional(),
     thumbnail: s.string().optional(),
-    fakeOnlineConfig: s.any().optional(),
+    fakeOnlineConfig: s.any().optional()
   }))
   .post('/create', async (ctx, req) => {
     requireAccountRole(ctx, 'Admin')
@@ -274,7 +298,7 @@ export const apiAutowebinarCreateRoute = reporterApp
     } catch (e: any) {
       ctx.account.log('@webinar-room Kinescope getOrCreatePlayer error', {
         level: 'error',
-        json: { error: e.message },
+        json: { error: e.message }
       })
     }
 
@@ -290,14 +314,14 @@ export const apiAutowebinarCreateRoute = reporterApp
           isPaid: true,
           requiresAuth: true,
           viewingAccess: 'bylink' as any,
-          sendToIndexing: true,
+          sendToIndexing: true
         })
 
         if (muuveeResult.success) {
           muuveeVideoId = muuveeResult.videoId
           ctx.account.log('[Muuvee] Video published', {
             level: 'info',
-            json: { videoId: muuveeVideoId, title: req.body.title },
+            json: { videoId: muuveeVideoId, title: req.body.title }
           })
         } else {
           // Проверяем ошибку баланса в тексте ошибки
@@ -305,18 +329,19 @@ export const apiAutowebinarCreateRoute = reporterApp
             muuveeResult.text?.includes('too_low_balance') ||
             muuveeResult.text?.includes('balance') ||
             Object.values(muuveeResult.errors || {}).some(
-              (err: any) => err?.includes('too_low_balance') || err?.includes('balance'),
+              (err: any) => err?.includes('too_low_balance') || err?.includes('balance')
             )
 
           ctx.account.log('[Muuvee] Video publish failed', {
             level: 'warn',
-            json: { error: muuveeResult.text, errors: muuveeResult.errors, isLowBalance },
+            json: { error: muuveeResult.text, errors: muuveeResult.errors, isLowBalance }
           })
 
           // Если ошибка баланса - выбрасываем понятное сообщение
           if (isLowBalance) {
             throw new Error(
-              'Недостаточно средств на балансе Muuvee для публикации видео. Пожалуйста, пополните баланс: ' + ctx.account.url("/app/muuvee"),
+              'Недостаточно средств на балансе Muuvee для публикации видео. Пожалуйста, пополните баланс: ' +
+                ctx.account.url('/app/muuvee')
             )
           }
 
@@ -326,7 +351,7 @@ export const apiAutowebinarCreateRoute = reporterApp
       } catch (e: any) {
         ctx.account.log('[Muuvee] Video publish error', {
           level: 'error',
-          json: { error: e.message },
+          json: { error: e.message }
         })
       }
     }
@@ -350,7 +375,7 @@ export const apiAutowebinarCreateRoute = reporterApp
       status: AutowebinarStatus.Draft,
       mode: AutowebinarMode.Scheduled, // Устанавливаем режим по умолчанию
       thumbnail: req.body.thumbnail,
-      fakeOnlineConfig: req.body.fakeOnlineConfig || [],
+      fakeOnlineConfig: req.body.fakeOnlineConfig || []
     })
 
     await ensureAutowebinarKnowledgeBase(ctx, aw as any)
@@ -365,20 +390,20 @@ export const apiAutowebinarCreateRoute = reporterApp
             get: true,
             recieveCallbacks: {
               success: muuveeSubtitlesSuccessCallback,
-              failed: muuveeSubtitlesFailedCallback,
-            },
-          },
+              failed: muuveeSubtitlesFailedCallback
+            }
+          }
         })
       } catch (e: any) {
         ctx.account.log('[Muuvee] requestSubtitles error on create', {
           level: 'warn',
-          json: { muuveeVideoId, autowebinarId: aw.id, error: e.message },
+          json: { muuveeVideoId, autowebinarId: aw.id, error: e.message }
         })
 
         await Autowebinars.update(ctx, {
           id: aw.id,
           subtitlesStatus: 'failed',
-          muuveeError: e.message || 'Не удалось запросить текст видео из Muuvee',
+          muuveeError: e.message || 'Не удалось запросить текст видео из Muuvee'
         })
       }
     }
@@ -388,7 +413,7 @@ export const apiAutowebinarCreateRoute = reporterApp
 
 // @shared-route
 export const apiAutowebinarUpdateRoute = reporterApp
-  .body(s => ({
+  .body((s) => ({
     title: s.string().optional(),
     description: s.string().optional(),
     videoHash: s.string().optional(),
@@ -403,14 +428,14 @@ export const apiAutowebinarUpdateRoute = reporterApp
     resultText: s.string().optional(),
     thumbnail: s.string().optional(),
     fakeOnlineConfig: s.any().optional(),
-    recurrence: s.any().optional(),
+    recurrence: s.any().optional()
   }))
   .post('/update/:id', async (ctx, req) => {
     requireAccountRole(ctx, 'Admin')
 
     const aw = await Autowebinars.update(ctx, {
       id: req.params.id as string,
-      ...req.body,
+      ...req.body
     })
 
     return aw
@@ -424,13 +449,13 @@ export const apiAutowebinarDeleteRoute = reporterApp.post('/delete/:id', async (
   await ScenarioEvents.deleteAll(ctx, {
     where: { autowebinar: awId },
     limit: null,
-    hard: true,
+    hard: true
   })
 
   await AutowebinarSchedules.deleteAll(ctx, {
     where: { autowebinar: awId },
     limit: null,
-    hard: true,
+    hard: true
   })
 
   await Autowebinars.delete(ctx, awId)
@@ -449,7 +474,7 @@ export const apiAutowebinarActivateRoute = reporterApp.post('/activate/:id', asy
 
   const updated = await Autowebinars.update(ctx, {
     id: aw.id,
-    status: AutowebinarStatus.Active,
+    status: AutowebinarStatus.Active
   })
 
   // Запускаем recurrence bootstrap если есть recurrence
@@ -467,11 +492,12 @@ export const apiAutowebinarArchiveRoute = reporterApp.post('/archive/:id', async
 
   const aw = await Autowebinars.findById(ctx, req.params.id as string)
   if (!aw) throw new Error('Автовебинар не найден')
-  if (aw.status !== AutowebinarStatus.Active) throw new Error('Архивировать можно только активный автовеб')
+  if (aw.status !== AutowebinarStatus.Active)
+    throw new Error('Архивировать можно только активный автовеб')
 
   const updated = await Autowebinars.update(ctx, {
     id: aw.id,
-    status: AutowebinarStatus.Archived,
+    status: AutowebinarStatus.Archived
   })
 
   return updated
@@ -484,11 +510,12 @@ export const apiAutowebinarRestoreRoute = reporterApp.post('/restore/:id', async
 
   const aw = await Autowebinars.findById(ctx, req.params.id as string)
   if (!aw) throw new Error('Автовебинар не найден')
-  if (aw.status !== AutowebinarStatus.Archived) throw new Error('Восстановить можно только архивный автовеб')
+  if (aw.status !== AutowebinarStatus.Archived)
+    throw new Error('Восстановить можно только архивный автовеб')
 
   const updated = await Autowebinars.update(ctx, {
     id: aw.id,
-    status: AutowebinarStatus.Draft,
+    status: AutowebinarStatus.Draft
   })
 
   return updated
@@ -496,29 +523,32 @@ export const apiAutowebinarRestoreRoute = reporterApp.post('/restore/:id', async
 
 // Повторный запрос субтитров при ошибке
 // @shared-route
-export const apiAutowebinarRetrySubtitlesRoute = reporterApp.post('/retry-subtitles/:id', async (ctx, req) => {
-  requireAccountRole(ctx, 'Admin')
+export const apiAutowebinarRetrySubtitlesRoute = reporterApp.post(
+  '/retry-subtitles/:id',
+  async (ctx, req) => {
+    requireAccountRole(ctx, 'Admin')
 
-  const aw = await Autowebinars.findById(ctx, req.params.id as string)
-  if (!aw) throw new Error('Автовебинар не найден')
-  if (!aw.muuveeVideoId) throw new Error('Видео Muuvee не найдено у этого автовебинара')
+    const aw = await Autowebinars.findById(ctx, req.params.id as string)
+    if (!aw) throw new Error('Автовебинар не найден')
+    if (!aw.muuveeVideoId) throw new Error('Видео Muuvee не найдено у этого автовебинара')
 
-  await requestSubtitles(ctx, {
-    videoId: aw.muuveeVideoId,
-    subtitles: {
-      get: true,
-      recieveCallbacks: {
-        success: muuveeSubtitlesSuccessCallback,
-        failed: muuveeSubtitlesFailedCallback,
-      },
-    },
-  })
+    await requestSubtitles(ctx, {
+      videoId: aw.muuveeVideoId,
+      subtitles: {
+        get: true,
+        recieveCallbacks: {
+          success: muuveeSubtitlesSuccessCallback,
+          failed: muuveeSubtitlesFailedCallback
+        }
+      }
+    })
 
-  await Autowebinars.update(ctx, {
-    id: aw.id,
-    subtitlesStatus: 'processing',
-    muuveeError: null,
-  })
+    await Autowebinars.update(ctx, {
+      id: aw.id,
+      subtitlesStatus: 'processing',
+      muuveeError: null
+    })
 
-  return { success: true }
-})
+    return { success: true }
+  }
+)

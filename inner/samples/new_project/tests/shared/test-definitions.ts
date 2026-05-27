@@ -17,9 +17,7 @@ export const TEST_CATEGORIES: TestCategory[] = [
     name: 'basic',
     title: 'Базовые тесты',
     icon: 'fa-flask',
-    tests: [
-      { name: 'app_loads', description: 'Приложение загружается' }
-    ]
+    tests: [{ name: 'app_loads', description: 'Приложение загружается' }]
   },
   {
     name: 'pages',
@@ -47,13 +45,25 @@ export const TEST_CATEGORIES: TestCategory[] = [
     tests: [
       // Настройки
       { name: 'api_admin_settings_get', description: 'Получение настроек админки' },
-      { name: 'api_admin_settings_update_project_name', description: 'Обновление названия проекта' },
-      { name: 'api_admin_settings_update_project_description', description: 'Обновление описания проекта' },
+      {
+        name: 'api_admin_settings_update_project_name',
+        description: 'Обновление названия проекта'
+      },
+      {
+        name: 'api_admin_settings_update_project_description',
+        description: 'Обновление описания проекта'
+      },
       { name: 'api_admin_settings_update_log_level', description: 'Обновление уровня логирования' },
-      { name: 'api_admin_settings_invalid_log_level', description: 'Обновление с недопустимым уровнем логирования' },
+      {
+        name: 'api_admin_settings_invalid_log_level',
+        description: 'Обновление с недопустимым уровнем логирования'
+      },
       // Логи
       { name: 'api_admin_logs_get_all', description: 'Получение всех логов' },
-      { name: 'api_admin_logs_get_filtered', description: 'Получение логов с фильтрацией по уровню' },
+      {
+        name: 'api_admin_logs_get_filtered',
+        description: 'Получение логов с фильтрацией по уровню'
+      },
       { name: 'api_admin_logs_get_paginated', description: 'Получение логов с пагинацией' },
       { name: 'api_admin_logs_counts', description: 'Получение счётчиков логов' },
       { name: 'api_admin_logs_counters_increment', description: 'Проверка инкремента счётчиков' },

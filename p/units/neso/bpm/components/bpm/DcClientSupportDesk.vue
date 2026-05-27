@@ -3,7 +3,11 @@ import { computed, ref, watch } from 'vue'
 import DcClientContactPanel from './DcClientContactPanel.vue'
 import DcClientConversationPanel from './DcClientConversationPanel.vue'
 import DcClientThreadList from './DcClientThreadList.vue'
-import type { ClientMessageEntry, ClientProfile, ClientThread } from '../../shared/clientSupportDemo'
+import type {
+  ClientMessageEntry,
+  ClientProfile,
+  ClientThread
+} from '../../shared/clientSupportDemo'
 
 const props = defineProps<{
   title: string
@@ -20,7 +24,10 @@ const selectedThreadId = ref('')
 watch(
   () => props.threads,
   () => {
-    if (!selectedThreadId.value || !props.threads.find((thread) => thread.id === selectedThreadId.value)) {
+    if (
+      !selectedThreadId.value ||
+      !props.threads.find((thread) => thread.id === selectedThreadId.value)
+    ) {
       selectedThreadId.value = props.threads[0]?.id || ''
     }
   },
@@ -58,23 +65,29 @@ const selectedProfile = computed(() => {
   const id = selectedThread.value?.id
   if (!id) return undefined
 
-  return props.profiles[id] || {
-    id,
-    name: selectedThread.value?.clientName || 'Клиент',
-    externalId: 'N/A',
-    phone: 'Не указан',
-    email: 'Не указан',
-    owner: selectedThread.value?.managerName || 'Не указан',
-    dealStatus: 'Нет данных',
-    tags: ['support'],
-    lists: ['general'],
-    variables: []
-  }
+  return (
+    props.profiles[id] || {
+      id,
+      name: selectedThread.value?.clientName || 'Клиент',
+      externalId: 'N/A',
+      phone: 'Не указан',
+      email: 'Не указан',
+      owner: selectedThread.value?.managerName || 'Не указан',
+      dealStatus: 'Нет данных',
+      tags: ['support'],
+      lists: ['general'],
+      variables: []
+    }
+  )
 })
 
 const filters = computed(() => [
   { id: 'all', label: 'Все', count: props.threads.length },
-  { id: 'unread', label: 'Непрочитанные', count: props.threads.filter((thread) => thread.unread > 0).length },
+  {
+    id: 'unread',
+    label: 'Непрочитанные',
+    count: props.threads.filter((thread) => thread.unread > 0).length
+  },
   { id: 'mine', label: 'Мои', count: props.threads.filter((thread) => thread.mine).length }
 ])
 </script>
@@ -107,10 +120,7 @@ const filters = computed(() => [
         @update-search="search = $event"
       />
 
-      <DcClientConversationPanel
-        :thread="selectedThread"
-        :entries="selectedMessages"
-      />
+      <DcClientConversationPanel :thread="selectedThread" :entries="selectedMessages" />
 
       <DcClientContactPanel :profile="selectedProfile" />
     </div>

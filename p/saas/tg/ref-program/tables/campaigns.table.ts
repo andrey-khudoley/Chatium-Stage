@@ -8,14 +8,14 @@ export const TSaasRefProgramCampaign8Hn4Lx = Heap.Table(
     ownerUserId: Heap.Optional(
       Heap.UserRefLink({
         customMeta: { title: 'Владелец' },
-        onDelete: 'none',
-      }),
+        onDelete: 'none'
+      })
     ),
     webhookSecret: Heap.Optional(Heap.String({ customMeta: { title: 'Секрет webhook' } })),
     settings: Heap.Optional(Heap.Any()),
-    isDeleted: Heap.Optional(Heap.Boolean({ customMeta: { title: 'Удалена' } })),
+    isDeleted: Heap.Optional(Heap.Boolean({ customMeta: { title: 'Удалена' } }))
   },
-  { customMeta: { title: 'Кампании', description: 'Кампании' } },
+  { customMeta: { title: 'Кампании', description: 'Кампании' } }
 )
 
 export default TSaasRefProgramCampaign8Hn4Lx

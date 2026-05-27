@@ -11,8 +11,8 @@
 
     <!-- Tabs -->
     <div class="settings-tabs">
-      <button 
-        v-for="tab in availableTabs" 
+      <button
+        v-for="tab in availableTabs"
         :key="tab.id"
         @click="activeTab = tab.id"
         :class="['tab-btn', { active: activeTab === tab.id }]"
@@ -30,24 +30,24 @@
           <h3>Мои подписки</h3>
           <p class="content-description">Управление вашими активными подписками на чаты</p>
         </div>
-        
+
         <div v-if="loading" class="loading-state">
           <i class="fas fa-spinner fa-spin"></i>
           <span>Загрузка...</span>
         </div>
-        
+
         <div v-else-if="mySubscriptions.length === 0" class="empty-state">
           <i class="fas fa-crown"></i>
           <p>У вас нет активных подписок</p>
           <span class="empty-hint">Подписки на платные чаты будут отображаться здесь</span>
         </div>
-        
+
         <div v-else class="subscriptions-list">
-          <div 
-            v-for="sub in mySubscriptions" 
-            :key="sub.id" 
+          <div
+            v-for="sub in mySubscriptions"
+            :key="sub.id"
             class="subscription-card"
-            :class="{ 'expired': isExpired(sub), 'expiring-soon': isExpiringSoon(sub) }"
+            :class="{ expired: isExpired(sub), 'expiring-soon': isExpiringSoon(sub) }"
           >
             <div class="sub-header">
               <div class="sub-info">
@@ -61,15 +61,15 @@
                 <span class="price-period">/{{ getPeriodLabel(sub.plan) }}</span>
               </div>
             </div>
-            
+
             <div class="sub-chats">
               <div class="chats-label">
                 <i class="fas fa-comments"></i>
                 Чаты в подписке ({{ sub.plan?.chats?.length || 0 }}):
               </div>
               <div class="chats-list-compact">
-                <span 
-                  v-for="chat in sub.plan?.chats?.slice(0, 3)" 
+                <span
+                  v-for="chat in sub.plan?.chats?.slice(0, 3)"
                   :key="chat.feedId"
                   class="chat-tag clickable"
                   @click="openChat(chat.feedId)"
@@ -81,7 +81,7 @@
                 </span>
               </div>
             </div>
-            
+
             <div class="sub-footer">
               <div class="sub-dates">
                 <div class="date-row">
@@ -97,9 +97,9 @@
                   Автопродление включено
                 </div>
               </div>
-              
+
               <div class="sub-actions">
-                <button 
+                <button
                   v-if="sub.status === 'active' && sub.autoRenew"
                   @click="cancelSubscription(sub)"
                   class="btn btn-outline-danger btn-sm"
@@ -108,7 +108,7 @@
                   <i v-if="cancellingId === sub.id" class="fas fa-spinner fa-spin"></i>
                   <span v-else>Отменить автопродление</span>
                 </button>
-                <button 
+                <button
                   v-else-if="sub.status === 'active' && !sub.autoRenew"
                   @click="renewSubscription(sub)"
                   class="btn btn-primary btn-sm"
@@ -117,7 +117,7 @@
                   <i v-if="renewingId === sub.id" class="fas fa-spinner fa-spin"></i>
                   <span v-else>Продлить</span>
                 </button>
-                <button 
+                <button
                   v-else-if="sub.status === 'cancelled' || sub.status === 'expired'"
                   @click="renewSubscription(sub)"
                   class="btn btn-primary btn-sm"
@@ -138,7 +138,7 @@
           <h3>Тарифы подписок</h3>
           <p class="content-description">Управление тарифами для платных чатов</p>
         </div>
-        
+
         <SubscriptionPlansSettings
           :feed-id="null"
           :is-paid="true"
@@ -155,22 +155,22 @@
           <h3>Доступные тарифы</h3>
           <p class="content-description">Все доступные тарифы подписок на чаты</p>
         </div>
-        
+
         <div v-if="loadingPlans" class="loading-state">
           <i class="fas fa-spinner fa-spin"></i>
           <span>Загрузка...</span>
         </div>
-        
+
         <div v-else-if="allPlans.length === 0" class="empty-state">
           <i class="fas fa-tag"></i>
           <p>Нет доступных тарифов</p>
           <span class="empty-hint">В данный момент нет доступных тарифов подписок</span>
         </div>
-        
+
         <div v-else class="available-plans-list">
-          <div 
-            v-for="plan in allPlans" 
-            :key="plan.id" 
+          <div
+            v-for="plan in allPlans"
+            :key="plan.id"
             class="plan-card"
             :class="{ 'has-subscription': hasSubscriptionToPlan(plan.id) }"
           >
@@ -181,19 +181,19 @@
                 <span class="price-period">/{{ getPeriodLabel(plan) }}</span>
               </div>
             </div>
-            
+
             <div v-if="plan.description" class="plan-description">
               {{ plan.description }}
             </div>
-            
+
             <div class="plan-chats">
               <div class="chats-label">
                 <i class="fas fa-comments"></i>
                 Включает чаты ({{ plan.chatIds?.length || 0 }}):
               </div>
               <div class="chats-list-compact">
-                <span 
-                  v-for="chatId in plan.chatIds?.slice(0, 5)" 
+                <span
+                  v-for="chatId in plan.chatIds?.slice(0, 5)"
                   :key="chatId"
                   class="chat-tag clickable"
                   @click="openChat(chatId)"
@@ -205,17 +205,13 @@
                 </span>
               </div>
             </div>
-            
+
             <div class="plan-actions">
-              <button 
-                v-if="hasSubscriptionToPlan(plan.id)"
-                class="btn btn-success btn-sm"
-                disabled
-              >
+              <button v-if="hasSubscriptionToPlan(plan.id)" class="btn btn-success btn-sm" disabled>
                 <i class="fas fa-check"></i>
                 Оформлено
               </button>
-              <button 
+              <button
                 v-else
                 @click="subscribeToPlan(plan)"
                 class="btn btn-primary btn-sm"
@@ -241,8 +237,15 @@
 import { ref, computed, onMounted } from 'vue'
 import SubscriptionPlansSettings from './SubscriptionPlansSettings.vue'
 import AgentsSettings from './AgentsSettings.vue'
-import { apiChatSubscriptionsMyRoute, apiChatSubscriptionCancelRoute, apiChatSubscriptionExtendRoute } from '../api/chat-subscriptions'
-import { apiSubscriptionPlansListRoute, apiSubscriptionPlansAllRoute } from '../api/chat-subscription-plans'
+import {
+  apiChatSubscriptionsMyRoute,
+  apiChatSubscriptionCancelRoute,
+  apiChatSubscriptionExtendRoute
+} from '../api/chat-subscriptions'
+import {
+  apiSubscriptionPlansListRoute,
+  apiSubscriptionPlansAllRoute
+} from '../api/chat-subscription-plans'
 
 const props = defineProps({
   user: Object,
@@ -271,11 +274,11 @@ const tabs = [
   { id: 'subscriptions', label: 'Мои подписки', icon: 'fas fa-crown' },
   { id: 'available', label: 'Доступные тарифы', icon: 'fas fa-tags' },
   { id: 'plans', label: 'Управление тарифами', icon: 'fas fa-cog' },
-  { id: 'agents', label: 'Агенты', icon: 'fas fa-robot' },
+  { id: 'agents', label: 'Агенты', icon: 'fas fa-robot' }
 ]
 
 const availableTabs = computed(() => {
-  return tabs.filter(tab => {
+  return tabs.filter((tab) => {
     if (tab.id === 'plans') return isAdmin.value
     if (tab.id === 'agents') return isAdmin.value
     return true
@@ -287,12 +290,14 @@ function formatPrice(price) {
   if (typeof price === 'object') {
     const amount = price.amount || 0
     const currency = price.currency || 'RUB'
-    const symbol = currency === 'RUB' ? '₽' : currency === 'USD' ? '$' : currency === 'EUR' ? '€' : currency
+    const symbol =
+      currency === 'RUB' ? '₽' : currency === 'USD' ? '$' : currency === 'EUR' ? '€' : currency
     return `${amount} ${symbol}`
   }
   if (Array.isArray(price)) {
     const [amount, currency] = price
-    const symbol = currency === 'RUB' ? '₽' : currency === 'USD' ? '$' : currency === 'EUR' ? '€' : currency
+    const symbol =
+      currency === 'RUB' ? '₽' : currency === 'USD' ? '$' : currency === 'EUR' ? '€' : currency
     return `${amount} ${symbol}`
   }
   return `${price} ₽`
@@ -301,21 +306,21 @@ function formatPrice(price) {
 function getPeriodLabel(plan) {
   if (!plan) return ''
   const labels = {
-    'day': 'день',
-    'week': 'неделю',
-    'month': 'мес.',
-    'quarter': 'квартал',
-    'year': 'год',
+    day: 'день',
+    week: 'неделю',
+    month: 'мес.',
+    quarter: 'квартал',
+    year: 'год'
   }
   return labels[plan.period] || plan.period
 }
 
 function getStatusLabel(sub) {
   const labels = {
-    'active': 'Активна',
-    'cancelled': 'Отменена',
-    'expired': 'Истекла',
-    'pending': 'Ожидает оплаты',
+    active: 'Активна',
+    cancelled: 'Отменена',
+    expired: 'Истекла',
+    pending: 'Ожидает оплаты'
   }
   return labels[sub.status] || sub.status
 }
@@ -336,17 +341,17 @@ function formatDate(date) {
   return new Date(date).toLocaleDateString('ru-RU', {
     day: 'numeric',
     month: 'long',
-    year: 'numeric',
+    year: 'numeric'
   })
 }
 
 function getChatName(chatId) {
-  const chat = props.chats.find(c => c.feedId === chatId || c.id === chatId)
+  const chat = props.chats.find((c) => c.feedId === chatId || c.id === chatId)
   return chat?.title || chat?.displayTitle || 'Чат'
 }
 
 function hasSubscriptionToPlan(planId) {
-  return mySubscriptions.value.some(s => {
+  return mySubscriptions.value.some((s) => {
     const subPlanId = typeof s.planId === 'object' ? s.planId.id : s.planId
     return subPlanId === planId && (s.status === 'active' || s.status === 'pending')
   })
@@ -374,7 +379,7 @@ async function loadPlans() {
   loadingPlans.value = true
   try {
     // Для админов загружаем все тарифы, для обычных пользователей - только активные
-    const response = isAdmin.value 
+    const response = isAdmin.value
       ? await apiSubscriptionPlansAllRoute.run(ctx)
       : await apiSubscriptionPlansListRoute.run(ctx)
     allPlans.value = response.plans || []
@@ -387,10 +392,12 @@ async function loadPlans() {
 }
 
 async function cancelSubscription(sub) {
-  if (!confirm('Отменить автопродление подписки? Доступ сохранится до окончания оплаченного периода.')) {
+  if (
+    !confirm('Отменить автопродление подписки? Доступ сохранится до окончания оплаченного периода.')
+  ) {
     return
   }
-  
+
   cancellingId.value = sub.id
   try {
     await apiChatSubscriptionCancelRoute({ subscriptionId: sub.id }).run(ctx, {})
@@ -408,13 +415,13 @@ async function renewSubscription(sub) {
   try {
     // Получаем тариф
     const planId = typeof sub.planId === 'object' ? sub.planId.id : sub.planId
-    const plan = allPlans.value.find(p => p.id === planId)
-    
+    const plan = allPlans.value.find((p) => p.id === planId)
+
     if (!plan) {
       alert('Тариф не найден')
       return
     }
-    
+
     // Генерируем доступные периоды
     const { generatePeriodOptions } = await import('../shared/subscription-periods')
     const periodOptions = generatePeriodOptions(
@@ -423,24 +430,24 @@ async function renewSubscription(sub) {
       plan.calendarPeriod,
       plan.specificPeriodStart || undefined
     )
-    
+
     if (periodOptions.length === 0) {
       alert('Нет доступных периодов для продления')
       return
     }
-    
+
     // Используем первый доступный период
     const selectedPeriod = periodOptions[0]
-    
+
     // Используем API продления существующей подписки
     const result = await apiChatSubscriptionExtendRoute({ subscriptionId: sub.id }).run(ctx, {
-      periodValue: selectedPeriod.value,
+      periodValue: selectedPeriod.value
     })
-    
+
     if (result.paymentLink) {
       window.open(result.paymentLink, '_blank')
     }
-    
+
     await loadSubscriptions()
   } catch (error) {
     console.error('Ошибка продления подписки:', error)
@@ -461,25 +468,25 @@ async function subscribeToPlan(plan) {
       plan.calendarPeriod,
       plan.specificPeriodStart || undefined
     )
-    
+
     if (periodOptions.length === 0) {
       alert('Нет доступных периодов для подписки')
       return
     }
-    
+
     // Используем первый доступный период
     const selectedPeriod = periodOptions[0]
-    
+
     const result = await apiChatSubscriptionCreateRoute.run(ctx, {
       planId: plan.id,
       periodValue: selectedPeriod.value,
-      autoRenewal: true,
+      autoRenewal: true
     })
-    
+
     if (result.paymentLink) {
       window.open(result.paymentLink, '_blank')
     }
-    
+
     await loadSubscriptions()
     // Switch to subscriptions tab to show new subscription
     activeTab.value = 'subscriptions'
@@ -946,38 +953,38 @@ onMounted(() => {
   .settings-header-bar {
     padding: 12px 16px;
   }
-  
+
   .settings-tabs {
     padding: 8px 12px;
   }
-  
+
   .tab-btn {
     padding: 8px 12px;
     font-size: 13px;
   }
-  
+
   .tab-btn span {
     display: none;
   }
-  
+
   .settings-content {
     padding: 16px;
   }
-  
+
   .sub-header {
     flex-direction: column;
     gap: 12px;
   }
-  
+
   .sub-price {
     text-align: left;
   }
-  
+
   .sub-footer {
     flex-direction: column;
     align-items: flex-start;
   }
-  
+
   .plan-header {
     flex-direction: column;
     gap: 8px;

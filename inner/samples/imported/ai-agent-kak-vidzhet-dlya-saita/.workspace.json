@@ -1,7 +1,5 @@
 {
   "features": {
-    "tools": [
-      "heap"
-    ]
+    "tools": ["heap"]
   }
 }

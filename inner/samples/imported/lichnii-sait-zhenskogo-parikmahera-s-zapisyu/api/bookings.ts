@@ -1,5 +1,5 @@
-import Bookings from "../tables/bookings.table"
-import { sendNotificationToAccountOwners } from "@user-notifier/sdk"
+import Bookings from '../tables/bookings.table'
+import { sendNotificationToAccountOwners } from '@user-notifier/sdk'
 import { writeWorkspaceEvent } from '@start/sdk'
 
 // @shared-route
@@ -26,7 +26,7 @@ export const apiCreateBookingRoute = app.post('/create', async (ctx, req) => {
 
     // Отправляем уведомление администратору
     await sendNotificationToAccountOwners(ctx, {
-      title: "Новая запись на сайте!",
+      title: 'Новая запись на сайте!',
       html: `
         <h2>Новая запись к парикмахеру</h2>
         <p><strong>Клиент:</strong> ${clientName}</p>
@@ -47,7 +47,7 @@ export const apiCreateBookingRoute = app.post('/create', async (ctx, req) => {
         phone: clientPhone,
         email: clientEmail,
         firstName: clientName.split(' ')[0],
-        lastName: clientName.split(' ').slice(1).join(' '),
+        lastName: clientName.split(' ').slice(1).join(' ')
       },
       action_params: {
         service,
@@ -88,15 +88,24 @@ export const apiGetAvailableTimesRoute = app.post('/available-times', async (ctx
 
     // Все возможные временные слоты (с 9:00 до 19:00)
     const allTimes = [
-      '09:00', '10:00', '11:00', '12:00', '13:00', 
-      '14:00', '15:00', '16:00', '17:00', '18:00', '19:00'
+      '09:00',
+      '10:00',
+      '11:00',
+      '12:00',
+      '13:00',
+      '14:00',
+      '15:00',
+      '16:00',
+      '17:00',
+      '18:00',
+      '19:00'
     ]
 
     // Занятые слоты
-    const bookedTimes = bookings.map(b => b.time)
+    const bookedTimes = bookings.map((b) => b.time)
 
     // Доступные слоты
-    const availableTimes = allTimes.filter(time => !bookedTimes.includes(time))
+    const availableTimes = allTimes.filter((time) => !bookedTimes.includes(time))
 
     return { success: true, availableTimes, bookedTimes }
   } catch (error) {

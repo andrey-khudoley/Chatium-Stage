@@ -4,20 +4,22 @@
     <div>
       <div class="flex items-center justify-between mb-3">
         <label class="block text-sm font-medium">Фильтр (опционально)</label>
-        <div class="relative" v-click-outside="() => showAddMenu = false">
+        <div class="relative" v-click-outside="() => (showAddMenu = false)">
           <button
             @click.prevent="showAddMenu = !showAddMenu"
             type="button"
             class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer relative"
-            :class="isDark 
-              ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-sm hover:shadow-md' 
-              : 'bg-blue-500 hover:bg-blue-600 text-white shadow-sm hover:shadow-md'"
+            :class="
+              isDark
+                ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-sm hover:shadow-md'
+                : 'bg-blue-500 hover:bg-blue-600 text-white shadow-sm hover:shadow-md'
+            "
           >
             <i class="fas fa-plus text-xs"></i>
             <span>Добавить</span>
             <i class="fas fa-chevron-down ml-1 text-xs"></i>
           </button>
-          
+
           <!-- Выпадающее меню -->
           <div
             v-if="showAddMenu"
@@ -25,28 +27,47 @@
             :class="isDark ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'"
           >
             <button
-              @click.prevent="addFilterRule(); showAddMenu = false"
+              @click.prevent="
+                addFilterRule()
+                showAddMenu = false
+              "
               type="button"
               class="w-full text-left px-4 py-2 text-sm rounded-t-lg transition-colors"
-              :class="isDark ? 'bg-gray-800 text-white hover:bg-gray-700' : 'bg-white text-gray-900 hover:bg-gray-50'"
+              :class="
+                isDark
+                  ? 'bg-gray-800 text-white hover:bg-gray-700'
+                  : 'bg-white text-gray-900 hover:bg-gray-50'
+              "
             >
               <i class="fas fa-filter mr-2"></i>
               Добавить правило
             </button>
             <button
-              @click.prevent="addFilterGroup(); showAddMenu = false"
+              @click.prevent="
+                addFilterGroup()
+                showAddMenu = false
+              "
               type="button"
               class="w-full text-left px-4 py-2 text-sm rounded-b-lg transition-colors"
-              :class="isDark ? 'bg-gray-800 text-white hover:bg-gray-700' : 'bg-white text-gray-900 hover:bg-gray-50'"
+              :class="
+                isDark
+                  ? 'bg-gray-800 text-white hover:bg-gray-700'
+                  : 'bg-white text-gray-900 hover:bg-gray-50'
+              "
             >
               <i class="fas fa-folder mr-2"></i>
               Добавить группу
-              <div class="text-xs opacity-70 mt-0.5" :class="isDark ? 'text-gray-300' : 'text-gray-600'">Группа для вложенных фильтров</div>
+              <div
+                class="text-xs opacity-70 mt-0.5"
+                :class="isDark ? 'text-gray-300' : 'text-gray-600'"
+              >
+                Группа для вложенных фильтров
+              </div>
             </button>
           </div>
         </div>
       </div>
-      
+
       <!-- Корневой уровень фильтров -->
       <div v-if="localFilter && localFilter.length > 0" class="space-y-2">
         <!-- Элементы фильтра -->
@@ -71,25 +92,31 @@
           />
         </div>
       </div>
-      
+
       <!-- Кнопка удаления всего фильтра -->
-      <div v-if="localFilter && localFilter.length > 0" class="mt-4 pt-4 border-t"
-        :class="isDark ? 'border-gray-700' : 'border-gray-300'">
+      <div
+        v-if="localFilter && localFilter.length > 0"
+        class="mt-4 pt-4 border-t"
+        :class="isDark ? 'border-gray-700' : 'border-gray-300'"
+      >
         <button
           @click.prevent="deleteAllFilters"
           type="button"
           class="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all"
-          :class="isDark 
-            ? 'bg-red-600 hover:bg-red-700 text-white' 
-            : 'bg-red-500 hover:bg-red-600 text-white'"
+          :class="
+            isDark
+              ? 'bg-red-600 hover:bg-red-700 text-white'
+              : 'bg-red-500 hover:bg-red-600 text-white'
+          "
         >
           <i class="fas fa-trash"></i>
           <span>Удалить фильтр</span>
         </button>
       </div>
-      
+
       <p class="text-xs mt-2 opacity-70">
-        Создайте иерархическую структуру фильтров с операторами AND/OR. Правила можно группировать для сложных условий.
+        Создайте иерархическую структуру фильтров с операторами AND/OR. Правила можно группировать
+        для сложных условий.
       </p>
     </div>
   </div>
@@ -134,7 +161,7 @@ function normalizeFilter(settings) {
     if (settings.filter.operator && Array.isArray(settings.filter.conditions)) {
       // Новый формат с оператором
       rootOperator.value = settings.filter.operator || 'OR'
-      return settings.filter.conditions.map(item => {
+      return settings.filter.conditions.map((item) => {
         if ('property' in item) {
           return {
             id: item.id || generateId(),
@@ -149,7 +176,7 @@ function normalizeFilter(settings) {
     } else if (Array.isArray(settings.filter) && settings.filter.length > 0) {
       // Старый формат - массив (для обратной совместимости)
       rootOperator.value = 'OR' // По умолчанию OR для старого формата
-      return settings.filter.map(item => {
+      return settings.filter.map((item) => {
         if ('property' in item) {
           return {
             id: item.id || generateId(),
@@ -163,7 +190,7 @@ function normalizeFilter(settings) {
       })
     }
   }
-  
+
   // Преобразуем старый формат urlGroups
   if (settings.urlGroups && Array.isArray(settings.urlGroups) && settings.urlGroups.length > 0) {
     const conditions = []
@@ -172,8 +199,10 @@ function normalizeFilter(settings) {
         for (const url of group.urls) {
           if (url && url.trim()) {
             const trimmedUrl = url.trim()
-            const utmMatch = trimmedUrl.match(/^(utm_source|utm_medium|utm_campaign|utm_term|utm_content)=(.+)$/)
-            
+            const utmMatch = trimmedUrl.match(
+              /^(utm_source|utm_medium|utm_campaign|utm_term|utm_content)=(.+)$/
+            )
+
             if (utmMatch) {
               conditions.push({
                 id: generateId(),
@@ -193,26 +222,30 @@ function normalizeFilter(settings) {
         }
       }
     }
-    
+
     if (conditions.length > 1) {
-      return [{
-        id: generateId(),
-        operator: 'OR',
-        conditions: conditions
-      }]
+      return [
+        {
+          id: generateId(),
+          operator: 'OR',
+          conditions: conditions
+        }
+      ]
     } else if (conditions.length === 1) {
       return [conditions[0]]
     }
   }
-  
+
   // Преобразуем старый формат urls
   if (settings.urls && Array.isArray(settings.urls) && settings.urls.length > 0) {
     const conditions = []
     for (const url of settings.urls) {
       if (url && url.trim()) {
         const trimmedUrl = url.trim()
-        const utmMatch = trimmedUrl.match(/^(utm_source|utm_medium|utm_campaign|utm_term|utm_content)=(.+)$/)
-        
+        const utmMatch = trimmedUrl.match(
+          /^(utm_source|utm_medium|utm_campaign|utm_term|utm_content)=(.+)$/
+        )
+
         if (utmMatch) {
           conditions.push({
             id: generateId(),
@@ -230,21 +263,23 @@ function normalizeFilter(settings) {
         }
       }
     }
-    
+
     if (conditions.length > 0) {
       const operator = settings.urlOperator || 'OR'
       if (conditions.length === 1) {
         return [conditions[0]]
       } else {
-        return [{
-          id: generateId(),
-          operator: operator,
-          conditions: conditions
-        }]
+        return [
+          {
+            id: generateId(),
+            operator: operator,
+            conditions: conditions
+          }
+        ]
       }
     }
   }
-  
+
   return []
 }
 
@@ -252,7 +287,7 @@ function normalizeGroup(group) {
   return {
     id: group.id || generateId(),
     operator: group.operator || 'AND',
-    conditions: (group.conditions || []).map(item => {
+    conditions: (group.conditions || []).map((item) => {
       if ('property' in item) {
         return {
           id: item.id || generateId(),
@@ -277,39 +312,43 @@ function getItemId(item) {
 }
 
 // Синхронизация с props
-watch(() => props.settings, (newSettings) => {
-  if (isUpdatingFromProps) {
-    return
-  }
-  
-  const normalizedFilter = normalizeFilter(newSettings || {})
-  const currentStr = JSON.stringify(localFilter.value)
-  const newStr = JSON.stringify(normalizedFilter)
-  
-  if (currentStr !== newStr) {
-    isUpdatingFromProps = true
-    localFilter.value = normalizedFilter
-    nextTick(() => {
-      isUpdatingFromProps = false
-    })
-  }
-}, { deep: true, immediate: false })
+watch(
+  () => props.settings,
+  (newSettings) => {
+    if (isUpdatingFromProps) {
+      return
+    }
+
+    const normalizedFilter = normalizeFilter(newSettings || {})
+    const currentStr = JSON.stringify(localFilter.value)
+    const newStr = JSON.stringify(normalizedFilter)
+
+    if (currentStr !== newStr) {
+      isUpdatingFromProps = true
+      localFilter.value = normalizedFilter
+      nextTick(() => {
+        isUpdatingFromProps = false
+      })
+    }
+  },
+  { deep: true, immediate: false }
+)
 
 // Обновить настройки
 function updateSettings() {
   if (isUpdatingFromProps) {
     return
   }
-  
+
   const newSettings = {
     ...props.settings
   }
-  
+
   // Удаляем старые форматы
   delete newSettings.urlGroups
   delete newSettings.urls
   delete newSettings.urlOperator
-  
+
   // Устанавливаем новый формат с оператором
   if (localFilter.value.length > 0) {
     newSettings.filter = {
@@ -319,18 +358,22 @@ function updateSettings() {
   } else {
     delete newSettings.filter
   }
-  
+
   emit('update:settings', newSettings)
 }
 
 // Отслеживаем изменения фильтра и оператора
-watch([localFilter, rootOperator], () => {
-  if (!isUpdatingFromProps) {
-    nextTick(() => {
-      updateSettings()
-    })
-  }
-}, { deep: true })
+watch(
+  [localFilter, rootOperator],
+  () => {
+    if (!isUpdatingFromProps) {
+      nextTick(() => {
+        updateSettings()
+      })
+    }
+  },
+  { deep: true }
+)
 
 // Переключить оператор на корневом уровне
 function toggleRootOperator(path) {
@@ -339,7 +382,7 @@ function toggleRootOperator(path) {
     rootOperator.value = rootOperator.value === 'AND' ? 'OR' : 'AND'
     return
   }
-  
+
   // Иначе переключаем оператор вложенной группы
   toggleGroupOperator(localFilter.value, path)
 }
@@ -347,10 +390,10 @@ function toggleRootOperator(path) {
 // Переключить оператор группы по пути
 function toggleGroupOperator(root, path) {
   if (path.length === 0) return
-  
+
   const [firstIndex, ...restPath] = path
   const currentItem = root[firstIndex]
-  
+
   if (restPath.length === 0) {
     // Достигли нужной группы
     if ('conditions' in currentItem) {
@@ -370,11 +413,11 @@ function addFilterRule() {
     operator: 'contains',
     value: ''
   }
-  
+
   if (!localFilter.value) {
     localFilter.value = []
   }
-  
+
   localFilter.value.push(newCondition)
 }
 
@@ -385,11 +428,11 @@ function addFilterGroup() {
     operator: 'AND',
     conditions: []
   }
-  
+
   if (!localFilter.value) {
     localFilter.value = []
   }
-  
+
   localFilter.value.push(newGroup)
 }
 
@@ -414,10 +457,10 @@ function updateFilterItem(path, item) {
 // Обновить вложенный элемент
 function updateNestedItem(root, path, item) {
   if (path.length === 0) return
-  
+
   const [firstIndex, ...restPath] = path
   const currentItem = root[firstIndex]
-  
+
   if (restPath.length === 0) {
     root[firstIndex] = item
   } else if ('conditions' in currentItem) {
@@ -446,10 +489,10 @@ function removeFilterItem(path) {
 // Удалить вложенный элемент
 function removeNestedItem(root, path) {
   if (path.length === 0) return
-  
+
   const [firstIndex, ...restPath] = path
   const currentItem = root[firstIndex]
-  
+
   if (restPath.length === 0) {
     root.splice(firstIndex, 1)
   } else if ('conditions' in currentItem) {
@@ -461,7 +504,7 @@ function removeNestedItem(root, path) {
 function duplicateItem(path) {
   let itemToDuplicate = null
   let insertIndex = 0
-  
+
   if (path.length === 0) {
     // Пустой path означает корневой уровень, но индекс не передан
     // Это не должно происходить, но на всякий случай обработаем
@@ -478,13 +521,13 @@ function duplicateItem(path) {
     itemToDuplicate = getNestedItem(localFilter.value, path)
     insertIndex = null // Для вложенных элементов используем addNestedItemAfter
   }
-  
+
   if (!itemToDuplicate) return
-  
+
   // Создаём глубокую копию с новым ID
   const duplicated = JSON.parse(JSON.stringify(itemToDuplicate))
   duplicated.id = generateId()
-  
+
   // Если это группа, рекурсивно обновляем ID всех вложенных элементов
   if ('conditions' in duplicated) {
     function updateIds(item) {
@@ -495,7 +538,7 @@ function duplicateItem(path) {
     }
     updateIds(duplicated)
   }
-  
+
   // Добавляем после оригинала
   if (path.length === 1 && insertIndex !== null) {
     // Корневой уровень: добавляем после элемента с индексом insertIndex
@@ -509,26 +552,26 @@ function duplicateItem(path) {
 // Получить вложенный элемент
 function getNestedItem(root, path) {
   if (path.length === 0) return null
-  
+
   const [firstIndex, ...restPath] = path
   const currentItem = root[firstIndex]
-  
+
   if (restPath.length === 0) {
     return currentItem
   } else if ('conditions' in currentItem) {
     return getNestedItem(currentItem.conditions, restPath)
   }
-  
+
   return null
 }
 
 // Добавить элемент после указанного пути
 function addNestedItemAfter(root, path, item) {
   if (path.length === 0) return
-  
+
   const [firstIndex, ...restPath] = path
   const currentItem = root[firstIndex]
-  
+
   if (restPath.length === 0) {
     // Добавляем после текущего элемента
     root.splice(firstIndex + 1, 0, item)
@@ -542,7 +585,7 @@ function turnIntoGroup(path) {
   let itemToConvert = null
   let parentArray = null
   let itemIndex = 0
-  
+
   if (path.length === 0) {
     // Пустой path означает корневой уровень, но индекс не передан
     // Это не должно происходить, но на всякий случай обработаем
@@ -563,32 +606,34 @@ function turnIntoGroup(path) {
       itemIndex = result.index
     }
   }
-  
+
   if (!itemToConvert || 'conditions' in itemToConvert) {
     // Уже группа или не найдено
     return
   }
-  
+
   // Превращаем правило в группу
   const newGroup = {
     id: generateId(),
     operator: 'AND',
-    conditions: [{
-      ...itemToConvert,
-      id: generateId() // Новый ID для правила внутри группы
-    }]
+    conditions: [
+      {
+        ...itemToConvert,
+        id: generateId() // Новый ID для правила внутри группы
+      }
+    ]
   }
-  
+
   parentArray[itemIndex] = newGroup
 }
 
 // Получить вложенный элемент с родительским массивом
 function getNestedItemWithParent(root, path) {
   if (path.length === 0) return null
-  
+
   const [firstIndex, ...restPath] = path
   const currentItem = root[firstIndex]
-  
+
   if (restPath.length === 0) {
     return {
       item: currentItem,
@@ -598,7 +643,7 @@ function getNestedItemWithParent(root, path) {
   } else if ('conditions' in currentItem) {
     return getNestedItemWithParent(currentItem.conditions, restPath)
   }
-  
+
   return null
 }
 
@@ -609,7 +654,7 @@ function addGroup(path) {
     operator: 'AND',
     conditions: []
   }
-  
+
   if (path.length === 0) {
     localFilter.value.push(newGroup)
   } else {
@@ -623,10 +668,10 @@ function addNestedItem(root, path, item) {
     root.push(item)
     return
   }
-  
+
   const [firstIndex, ...restPath] = path
   const currentItem = root[firstIndex]
-  
+
   if ('conditions' in currentItem) {
     addNestedItem(currentItem.conditions, restPath, item)
   }
@@ -640,7 +685,7 @@ function addRule(path) {
     operator: 'contains',
     value: ''
   }
-  
+
   if (path.length === 0) {
     localFilter.value.push(newCondition)
   } else {

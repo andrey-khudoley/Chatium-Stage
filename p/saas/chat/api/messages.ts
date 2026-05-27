@@ -6,7 +6,7 @@ import {
   deleteFeedMessage,
   findFeedParticipants,
   getFeedById,
-  findFeedMessageById,
+  findFeedMessageById
 } from '@app/feed'
 import { sendDataToSocket } from '@app/socket'
 import { pushMessageToChain } from '@ai-agents/sdk/process'
@@ -16,7 +16,7 @@ import {
   normalizeAuthorId,
   normalizeReactions,
   type CreatedBy,
-  type FeedMessageMinimal,
+  type FeedMessageMinimal
 } from '../lib/messages-helpers'
 import Chats from '../tables/chats.table'
 import BlockedUsers from '../tables/blocked-users.table'
@@ -40,25 +40,40 @@ interface EnrichedMessage extends FeedMessageMinimal {
   } | null
 }
 
-async function enrichMessagesWithAuthorData(ctx: app.Ctx, messages: FeedMessageMinimal[]): Promise<EnrichedMessage[]> {
-  const authorIds = [...new Set(messages.map(m => normalizeAuthorId(m.createdBy ?? (m as FeedMessageMinimal & { created_by?: CreatedBy }).created_by)).filter(Boolean))]
+async function enrichMessagesWithAuthorData(
+  ctx: app.Ctx,
+  messages: FeedMessageMinimal[]
+): Promise<EnrichedMessage[]> {
+  const authorIds = [
+    ...new Set(
+      messages
+        .map((m) =>
+          normalizeAuthorId(
+            m.createdBy ?? (m as FeedMessageMinimal & { created_by?: CreatedBy }).created_by
+          )
+        )
+        .filter(Boolean)
+    )
+  ]
 
   if (authorIds.length === 0) {
-    return messages.map(m => ({ ...m, author: null })) as EnrichedMessage[]
+    return messages.map((m) => ({ ...m, author: null })) as EnrichedMessage[]
   }
 
   const users = await findUsersByIds(ctx, authorIds)
   const allIdentities = await findIdentities(ctx, {
     where: { userId: authorIds },
-    limit: 1000,
+    limit: 1000
   })
-  
-  const usersMap = new Map(users.map(u => [u.id, u]))
-  
+
+  const usersMap = new Map(users.map((u) => [u.id, u]))
+
   return messages.map((m: FeedMessageMinimal) => {
-    const authorId = normalizeAuthorId(m.createdBy ?? (m as FeedMessageMinimal & { created_by?: CreatedBy }).created_by)
+    const authorId = normalizeAuthorId(
+      m.createdBy ?? (m as FeedMessageMinimal & { created_by?: CreatedBy }).created_by
+    )
     const user = usersMap.get(authorId)
-    const userIdentities = allIdentities.filter(i => i.userId === authorId)
+    const userIdentities = allIdentities.filter((i) => i.userId === authorId)
     const normalizedReactions = normalizeReactions(m)
     const forwardedFrom = (m.data as { forwardedFrom?: unknown } | undefined)?.forwardedFrom ?? null
 
@@ -68,18 +83,20 @@ async function enrichMessagesWithAuthorData(ctx: app.Ctx, messages: FeedMessageM
       data: {
         ...(m.data ?? {}),
         reactions: normalizedReactions,
-        forwardedFrom,
+        forwardedFrom
       },
-      author: user ? {
-        id: user.id,
-        displayName: user.displayName,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        username: user.username,
-        avatar: user.imageUrl,
-        email: userIdentities.find(i => i.type === 'Email')?.key || null,
-        phone: userIdentities.find(i => i.type === 'Phone')?.key || null,
-      } : null,
+      author: user
+        ? {
+            id: user.id,
+            displayName: user.displayName,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            username: user.username,
+            avatar: user.imageUrl,
+            email: userIdentities.find((i) => i.type === 'Email')?.key || null,
+            phone: userIdentities.find((i) => i.type === 'Phone')?.key || null
+          }
+        : null
     }
   })
 }
@@ -107,9 +124,9 @@ async function processMessageWithAgents(
 ) {
   ctx.account.log('[processMessageWithAgents] START', {
     level: 'info',
-    json: { 
-      chatId: chat?.id, 
-      feedId: chat?.feedId, 
+    json: {
+      chatId: chat?.id,
+      feedId: chat?.feedId,
       messageId: message?.id,
       messageText: message?.text?.substring(0, 100),
       senderRole: senderParticipant?.role
@@ -131,9 +148,9 @@ async function processMessageWithAgents(
 
   ctx.account.log('[processMessageWithAgents] Found agents', {
     level: 'info',
-    json: { 
+    json: {
       chatId: chatId,
-      agentsCount: chatAgents.length,
+      agentsCount: chatAgents.length
     }
   })
 
@@ -151,7 +168,7 @@ async function processMessageWithAgents(
       // Проверяем, должен ли агент отвечать
       let shouldProcess = false
       let skipReason = ''
-      
+
       switch (chatAgent.respondTo) {
         case 'all':
           shouldProcess = true
@@ -163,7 +180,7 @@ async function processMessageWithAgents(
         case 'mention':
           const mentionName = chatAgent.agentName
           const agentKey = chatAgent.agentKey
-          
+
           // Ищем упоминание в нескольких форматах:
           // 1. @agentName
           // 2. @agentKey
@@ -171,21 +188,21 @@ async function processMessageWithAgents(
           const patterns = [
             new RegExp(`@${mentionName}\\b`, 'i'),
             new RegExp(`@${agentKey}\\b`, 'i'),
-            new RegExp(`@\\[${mentionName}\\]\\([^)]+\\)`, 'i'),
+            new RegExp(`@\\[${mentionName}\\]\\([^)]+\\)`, 'i')
           ]
-          
-          shouldProcess = patterns.some(p => p.test(messageText))
-          
+
+          shouldProcess = patterns.some((p) => p.test(messageText))
+
           ctx.account.log('[processMessageWithAgents] Mention check', {
             level: 'info',
-            json: { 
+            json: {
               mentionName,
               agentKey,
               messageText: messageText.substring(0, 200),
               shouldProcess
             }
           })
-          
+
           if (shouldProcess && chatAgent.respondToMention === 'admins') {
             shouldProcess = senderRole === 'owner' || senderRole === 'admin'
             if (!shouldProcess) skipReason = 'mention matched but sender is not admin'
@@ -205,12 +222,12 @@ async function processMessageWithAgents(
 
       ctx.account.log('[processMessageWithAgents] Should process check', {
         level: 'info',
-        json: { 
+        json: {
           agentId: chatAgent.agentId,
           agentName: chatAgent.agentName,
           respondTo: chatAgent.respondTo,
           shouldProcess,
-          skipReason,
+          skipReason
         }
       })
 
@@ -218,24 +235,27 @@ async function processMessageWithAgents(
 
       // Формируем контекст для агента
       const chainKey = chatAgent.chainKey || `chat_${chat.feedId}_agent_${chatAgent.agentId}`
-      
+
       // Получаем историю сообщений для контекста
       let recentMessages: FeedMessageMinimal[] = []
       try {
         recentMessages = await findFeedMessages(ctx, chat.feedId, {
           mode: 'tail',
-          limit: 10,
+          limit: 10
         })
       } catch (e) {
-        ctx.account.log('[processMessageWithAgents] Failed to load recent messages: ' + e.message, { level: 'warn' })
+        ctx.account.log('[processMessageWithAgents] Failed to load recent messages: ' + e.message, {
+          level: 'warn'
+        })
       }
 
       const contextMessages = recentMessages
         .reverse()
-        .map(m => {
-          const author = m.createdBy?.id === chatAgent.botUserId 
-            ? chatAgent.agentName 
-            : (m.author?.displayName || 'Пользователь')
+        .map((m) => {
+          const author =
+            m.createdBy?.id === chatAgent.botUserId
+              ? chatAgent.agentName
+              : m.author?.displayName || 'Пользователь'
           return `${author}: ${m.text || ''}`
         })
         .join('\n')
@@ -249,15 +269,15 @@ async function processMessageWithAgents(
         agentName: chatAgent.agentName,
         contextMessages,
         messageId: message.id,
-        feedId: chat.feedId,
+        feedId: chat.feedId
       })
 
       ctx.account.log('[processMessageWithAgents] Sending to agent via pushMessageToChain', {
         level: 'info',
-        json: { 
+        json: {
           agentId: chatAgent.agentId,
           agentName: chatAgent.agentName,
-          chainKey,
+          chainKey
         }
       })
 
@@ -277,30 +297,32 @@ async function processMessageWithAgents(
               agentId: chatAgent.agentId,
               agentName: chatAgent.agentName,
               botUserId: chatAgent.botUserId,
-              messageId: message.id,
+              messageId: message.id
             },
             userProfile: {
               senderName,
               senderRole,
-              chatTitle: chat.title,
-            },
-          },
+              chatTitle: chat.title
+            }
+          }
         })
 
         ctx.account.log('[processMessageWithAgents] Message sent to agent chain', {
           level: 'info',
-          json: { 
+          json: {
             chainId: result.chainId,
-            chainKey: result.chainKey,
+            chainKey: result.chainKey
           }
         })
       } catch (pushError) {
-        ctx.account.log('[processMessageWithAgents] pushMessageToChain error: ' + pushError.message, {
-          level: 'error',
-          json: { stack: pushError.stack }
-        })
+        ctx.account.log(
+          '[processMessageWithAgents] pushMessageToChain error: ' + pushError.message,
+          {
+            level: 'error',
+            json: { stack: pushError.stack }
+          }
+        )
       }
-
     } catch (agentError) {
       ctx.account.log('[processMessageWithAgents] Error: ' + agentError.message, { level: 'error' })
     }
@@ -316,7 +338,7 @@ function buildAgentMessageText({
   agentName,
   contextMessages,
   messageId,
-  feedId,
+  feedId
 }: {
   senderName: string
   senderRole: string
@@ -376,7 +398,7 @@ async function broadcastMessageEvent(
         type: 'chat-event',
         event: eventType,
         feedId,
-        message,
+        message
       })
     }
   } catch (err) {
@@ -393,21 +415,22 @@ export const apiMessagesListRoute = app.get('/:feedId/list', async (ctx, req) =>
   const participants = await findFeedParticipants(ctx, req.params.feedId)
   const isParticipant = participants.some((p) => p.userId === ctx.user.id)
   const userParticipant = participants.find((p) => p.userId === ctx.user.id)
-  const isOwnerOrAdmin = chat.owner.id === ctx.user.id || 
-    userParticipant?.role === 'owner' || 
+  const isOwnerOrAdmin =
+    chat.owner.id === ctx.user.id ||
+    userParticipant?.role === 'owner' ||
     userParticipant?.role === 'admin'
 
   if (!isParticipant && chat.owner.id !== ctx.user.id && !chat.isPublic) {
     throw new Error('Нет доступа к этому чату')
   }
-  
+
   if (chat.isPaid && !isOwnerOrAdmin) {
     const now = new Date()
     let hasActiveSubscription = false
 
     const planChatLinks = await PlanChats.findAll(ctx, { where: { feedId: req.params.feedId } })
     if (planChatLinks.length > 0) {
-      const planIds = planChatLinks.map(link => link.planId.id)
+      const planIds = planChatLinks.map((link) => link.planId.id)
       const subscription = await Subscriptions.findOneBy(ctx, {
         planId: planIds,
         userId: ctx.user.id,
@@ -424,7 +447,11 @@ export const apiMessagesListRoute = app.get('/:feedId/list', async (ctx, req) =>
         userId: ctx.user.id,
         status: 'active'
       })
-      if (legacySubscription && legacySubscription.startDate <= now && legacySubscription.endDate >= now) {
+      if (
+        legacySubscription &&
+        legacySubscription.startDate <= now &&
+        legacySubscription.endDate >= now
+      ) {
         hasActiveSubscription = true
       }
     }
@@ -447,33 +474,33 @@ export const apiMessagesListRoute = app.get('/:feedId/list', async (ctx, req) =>
     messages = await findFeedMessages(ctx, req.params.feedId, {
       mode: beforeId ? 'head' : 'tail',
       limit: Math.min(limit, 100),
-      beforeId,
+      beforeId
     })
   } catch (feedError) {
     try {
       messages = await findFeedMessages(ctx, req.params.feedId, {
         mode: 'head',
-        limit: Math.min(limit, 100),
+        limit: Math.min(limit, 100)
       })
     } catch (headError) {
       try {
         messages = await findFeedMessages(ctx, req.params.feedId, {
           mode: 'around',
           limit: Math.min(limit, 100),
-          aroundId: feed.lastMessageId || 'none',
+          aroundId: feed.lastMessageId || 'none'
         })
       } catch {
         return { messages: [], hasMore: false }
       }
     }
   }
-  
+
   const orderedMessages = beforeId ? messages : messages.reverse()
   const enrichedMessages = await enrichMessagesWithAuthorData(ctx, orderedMessages)
 
   return {
     messages: enrichedMessages,
-    hasMore: messages.length === limit,
+    hasMore: messages.length === limit
   }
 })
 
@@ -481,137 +508,151 @@ export const apiMessagesSendRoute = app
   .body((s) => ({
     text: s.string(),
     replyTo: s.string().optional(),
-    forwardedFrom: s.object({
-      feedId: s.string(),
-      title: s.string(),
-      type: s.string(),
-      avatarHash: s.string().optional(),
-      isPublic: s.boolean().optional(),
-      authorName: s.string().optional(),
-      authorId: s.string().optional(),
-    }).optional(),
+    forwardedFrom: s
+      .object({
+        feedId: s.string(),
+        title: s.string(),
+        type: s.string(),
+        avatarHash: s.string().optional(),
+        isPublic: s.boolean().optional(),
+        authorName: s.string().optional(),
+        authorId: s.string().optional()
+      })
+      .optional()
   }))
   .post('/:feedId/send', async (ctx, req) => {
     try {
       requireRealUser(ctx)
 
       const chat = await Chats.findOneBy(ctx, { feedId: req.params.feedId })
-    if (!chat) throw new Error('Чат не найден')
+      if (!chat) throw new Error('Чат не найден')
 
-    const participants = await findFeedParticipants(ctx, req.params.feedId)
-    const participant = participants.find((p) => p.userId === ctx.user.id)
-    const isParticipant = !!participant
-    const isOwnerOrAdmin = chat.owner.id === ctx.user.id || 
-      participant?.role === 'owner' || 
-      participant?.role === 'admin'
+      const participants = await findFeedParticipants(ctx, req.params.feedId)
+      const participant = participants.find((p) => p.userId === ctx.user.id)
+      const isParticipant = !!participant
+      const isOwnerOrAdmin =
+        chat.owner.id === ctx.user.id ||
+        participant?.role === 'owner' ||
+        participant?.role === 'admin'
 
-    if (!isParticipant && chat.owner.id !== ctx.user.id) {
-      throw new Error('Нет доступа к этому чату')
-    }
-    
-    if (chat.isPaid && !isOwnerOrAdmin) {
-      const now = new Date()
-      let hasActiveSubscription = false
+      if (!isParticipant && chat.owner.id !== ctx.user.id) {
+        throw new Error('Нет доступа к этому чату')
+      }
 
-      const planChatLinks = await PlanChats.findAll(ctx, { where: { feedId: req.params.feedId } })
-      if (planChatLinks.length > 0) {
-        const planIds = planChatLinks.map(link => link.planId.id)
-        const subscription = await Subscriptions.findOneBy(ctx, {
-          planId: planIds,
-          userId: ctx.user.id,
-          status: ['active', 'pending']
-        })
-        if (subscription && subscription.startDate <= now && subscription.endDate >= now) {
-          hasActiveSubscription = true
+      if (chat.isPaid && !isOwnerOrAdmin) {
+        const now = new Date()
+        let hasActiveSubscription = false
+
+        const planChatLinks = await PlanChats.findAll(ctx, { where: { feedId: req.params.feedId } })
+        if (planChatLinks.length > 0) {
+          const planIds = planChatLinks.map((link) => link.planId.id)
+          const subscription = await Subscriptions.findOneBy(ctx, {
+            planId: planIds,
+            userId: ctx.user.id,
+            status: ['active', 'pending']
+          })
+          if (subscription && subscription.startDate <= now && subscription.endDate >= now) {
+            hasActiveSubscription = true
+          }
+        }
+
+        if (!hasActiveSubscription) {
+          const legacySubscription = await Subscriptions.findOneBy(ctx, {
+            chatId: req.params.feedId,
+            userId: ctx.user.id,
+            status: 'active'
+          })
+          if (
+            legacySubscription &&
+            legacySubscription.startDate <= now &&
+            legacySubscription.endDate >= now
+          ) {
+            hasActiveSubscription = true
+          }
+        }
+
+        if (!hasActiveSubscription) throw new Error('Требуется подписка для отправки сообщений')
+      }
+
+      if (chat.type === 'channel') {
+        const role = participant?.role || 'guest'
+        const isWorkspaceAdmin = ctx.user.is('Admin')
+        if (!isWorkspaceAdmin && role !== 'owner' && role !== 'admin') {
+          throw new Error('В канале публиковать сообщения могут только владелец и администраторы')
         }
       }
 
-      if (!hasActiveSubscription) {
-        const legacySubscription = await Subscriptions.findOneBy(ctx, {
-          chatId: req.params.feedId,
-          userId: ctx.user.id,
-          status: 'active'
-        })
-        if (legacySubscription && legacySubscription.startDate <= now && legacySubscription.endDate >= now) {
-          hasActiveSubscription = true
+      if (chat.type === 'direct') {
+        const otherParticipant = participants.find((p) => p.userId !== ctx.user.id)
+        if (otherParticipant) {
+          const isBlocked = await BlockedUsers.findOneBy(ctx, {
+            userId: ctx.user.id,
+            blockedUserId: otherParticipant.userId
+          })
+          if (isBlocked) throw new Error('Вы заблокировали этого пользователя')
+
+          const amBlocked = await BlockedUsers.findOneBy(ctx, {
+            userId: otherParticipant.userId,
+            blockedUserId: ctx.user.id
+          })
+          if (amBlocked) throw new Error('Пользователь заблокировал вас')
         }
       }
 
-      if (!hasActiveSubscription) throw new Error('Требуется подписка для отправки сообщений')
-    }
-
-    if (chat.type === 'channel') {
-      const role = participant?.role || 'guest'
-      const isWorkspaceAdmin = ctx.user.is('Admin')
-      if (!isWorkspaceAdmin && role !== 'owner' && role !== 'admin') {
-        throw new Error('В канале публиковать сообщения могут только владелец и администраторы')
-      }
-    }
-
-    if (chat.type === 'direct') {
-      const otherParticipant = participants.find(p => p.userId !== ctx.user.id)
-      if (otherParticipant) {
-        const isBlocked = await BlockedUsers.findOneBy(ctx, {
-          userId: ctx.user.id,
-          blockedUserId: otherParticipant.userId,
-        })
-        if (isBlocked) throw new Error('Вы заблокировали этого пользователя')
-        
-        const amBlocked = await BlockedUsers.findOneBy(ctx, {
-          userId: otherParticipant.userId,
-          blockedUserId: ctx.user.id,
-        })
-        if (amBlocked) throw new Error('Пользователь заблокировал вас')
-      }
-    }
-
-    const moderation = await Moderations.findOneBy(ctx, {
-      chatId: req.params.feedId,
-      userId: ctx.user.id,
-      isActive: true,
-    })
-
-    if (moderation) {
-      if (!moderation.isPermanent && moderation.expiresAt && new Date() > moderation.expiresAt) {
-        await Moderations.update(ctx, { id: moderation.id, isActive: false })
-      } else {
-        const moderationType = moderation.type === 'mute' ? 'Вам запрещено писать сообщения' : 'Вы забанены в этом чате'
-        const reason = moderation.reason ? ` Причина: ${moderation.reason}` : ''
-        const expires = moderation.isPermanent ? '' : ` до ${new Date(moderation.expiresAt).toLocaleString('ru-RU')}`
-        throw new Error(`${moderationType}.${reason}${expires}`)
-      }
-    }
-
-    const messageData: { forwardedFrom?: typeof req.body.forwardedFrom } = {}
-    if (req.body.forwardedFrom) messageData.forwardedFrom = req.body.forwardedFrom
-
-    const message = await createFeedMessage(ctx, req.params.feedId, ctx.user, {
-      text: req.body.text,
-      type: 'Message',
-      reply_to: req.body.replyTo || null,
-      data: Object.keys(messageData).length > 0 ? messageData : undefined,
-    })
-    
-    const enrichedMessages = await enrichMessagesWithAuthorData(ctx, [message])
-    const enrichedMessage = enrichedMessages[0]
-
-    await broadcastMessageEvent(ctx, req.params.feedId, 'new-message', enrichedMessage)
-    
-    // Уведомления отправляются через WebSocket (уже сделано в broadcastMessageEvent)
-    // Push-уведомления через FCM удалены из проекта
-    
-    if (chat.type === 'group') {
-      await processMessageWithAgents(ctx, chat, enrichedMessage, participant).catch(err => {
-        ctx.account.log('[apiMessagesSendRoute] Agent processing error: ' + err.message, { level: 'error' })
+      const moderation = await Moderations.findOneBy(ctx, {
+        chatId: req.params.feedId,
+        userId: ctx.user.id,
+        isActive: true
       })
-    }
 
-    await loggerLib.writeServerLog(ctx, {
-      severity: 6,
-      message: '[api/messages] message sent',
-      payload: { feedId: req.params.feedId, messageId: message.id }
-    })
-    await loggerSettings.incrementMetric(ctx, 'processedMessages')
+      if (moderation) {
+        if (!moderation.isPermanent && moderation.expiresAt && new Date() > moderation.expiresAt) {
+          await Moderations.update(ctx, { id: moderation.id, isActive: false })
+        } else {
+          const moderationType =
+            moderation.type === 'mute'
+              ? 'Вам запрещено писать сообщения'
+              : 'Вы забанены в этом чате'
+          const reason = moderation.reason ? ` Причина: ${moderation.reason}` : ''
+          const expires = moderation.isPermanent
+            ? ''
+            : ` до ${new Date(moderation.expiresAt).toLocaleString('ru-RU')}`
+          throw new Error(`${moderationType}.${reason}${expires}`)
+        }
+      }
+
+      const messageData: { forwardedFrom?: typeof req.body.forwardedFrom } = {}
+      if (req.body.forwardedFrom) messageData.forwardedFrom = req.body.forwardedFrom
+
+      const message = await createFeedMessage(ctx, req.params.feedId, ctx.user, {
+        text: req.body.text,
+        type: 'Message',
+        reply_to: req.body.replyTo || null,
+        data: Object.keys(messageData).length > 0 ? messageData : undefined
+      })
+
+      const enrichedMessages = await enrichMessagesWithAuthorData(ctx, [message])
+      const enrichedMessage = enrichedMessages[0]
+
+      await broadcastMessageEvent(ctx, req.params.feedId, 'new-message', enrichedMessage)
+
+      // Уведомления отправляются через WebSocket (уже сделано в broadcastMessageEvent)
+      // Push-уведомления через FCM удалены из проекта
+
+      if (chat.type === 'group') {
+        await processMessageWithAgents(ctx, chat, enrichedMessage, participant).catch((err) => {
+          ctx.account.log('[apiMessagesSendRoute] Agent processing error: ' + err.message, {
+            level: 'error'
+          })
+        })
+      }
+
+      await loggerLib.writeServerLog(ctx, {
+        severity: 6,
+        message: '[api/messages] message sent',
+        payload: { feedId: req.params.feedId, messageId: message.id }
+      })
+      await loggerSettings.incrementMetric(ctx, 'processedMessages')
 
       return { success: true, message: enrichedMessage }
     } catch (err) {
@@ -619,7 +660,10 @@ export const apiMessagesSendRoute = app
         await loggerLib.writeServerLog(ctx, {
           severity: 3,
           message: '[api/messages] send error',
-          payload: { error: err instanceof Error ? err.message : String(err), feedId: req.params.feedId }
+          payload: {
+            error: err instanceof Error ? err.message : String(err),
+            feedId: req.params.feedId
+          }
         })
         await loggerSettings.incrementMetric(ctx, 'errors')
       } catch (_) {
@@ -632,7 +676,7 @@ export const apiMessagesSendRoute = app
 export const apiMessagesEditRoute = app
   .body((s) => ({
     messageId: s.string(),
-    text: s.string(),
+    text: s.string()
   }))
   .post('/:feedId/edit', async (ctx, req) => {
     requireRealUser(ctx)
@@ -658,9 +702,9 @@ export const apiMessagesEditRoute = app
     if (!isAuthor) throw new Error('Вы можете редактировать только свои сообщения')
 
     const updatedMessage = await updateFeedMessage(ctx, req.params.feedId, req.body.messageId, {
-      text: req.body.text,
+      text: req.body.text
     })
-    
+
     const enrichedMessages = await enrichMessagesWithAuthorData(ctx, [updatedMessage])
     const enrichedMessage = enrichedMessages[0]
 
@@ -690,7 +734,7 @@ export const apiMessagesAfterRoute = app
     const messages = await findFeedMessages(ctx, req.params.feedId, {
       mode: 'head',
       limit: Math.min(limit, 100),
-      afterId: req.query.afterId,
+      afterId: req.query.afterId
     })
 
     const enrichedMessages = await enrichMessagesWithAuthorData(ctx, messages)
@@ -719,7 +763,7 @@ export const apiMessagesAroundRoute = app
     const messages = await findFeedMessages(ctx, req.params.feedId, {
       mode: 'around',
       limit: Math.min(limit, 100),
-      messageId: req.query.aroundId,
+      messageId: req.query.aroundId
     })
 
     const enrichedMessages = await enrichMessagesWithAuthorData(ctx, messages)
@@ -739,13 +783,21 @@ export const apiMessagesDeleteRoute = app
     if (!message) throw new Error('Сообщение не найдено')
 
     const authorId = normalizeAuthorId(message.created_by || message.createdBy)
-    const normalizedAuthorId = authorId?.toString().replace(/^user:/, '').replace(/^u:/, '')
-    const normalizedCurrentUserId = ctx.user.id?.toString().replace(/^user:/, '').replace(/^u:/, '')
+    const normalizedAuthorId = authorId
+      ?.toString()
+      .replace(/^user:/, '')
+      .replace(/^u:/, '')
+    const normalizedCurrentUserId = ctx.user.id
+      ?.toString()
+      .replace(/^user:/, '')
+      .replace(/^u:/, '')
     const isAuthor = normalizedAuthorId === normalizedCurrentUserId && !!normalizedAuthorId
 
     if (isAuthor) {
       await deleteFeedMessage(ctx, req.params.feedId, req.body.messageId)
-      await broadcastMessageEvent(ctx, req.params.feedId, 'delete-message', { id: req.body.messageId })
+      await broadcastMessageEvent(ctx, req.params.feedId, 'delete-message', {
+        id: req.body.messageId
+      })
       return { success: true }
     }
 
@@ -757,11 +809,16 @@ export const apiMessagesDeleteRoute = app
       throw new Error('Нет доступа к этому чату')
     }
 
-    const isAdminOrOwner = participant?.role === 'owner' || participant?.role === 'admin' || chat.owner.id === ctx.user.id
+    const isAdminOrOwner =
+      participant?.role === 'owner' ||
+      participant?.role === 'admin' ||
+      chat.owner.id === ctx.user.id
     if (!isAdminOrOwner) throw new Error('Вы можете удалять только свои сообщения')
 
     await deleteFeedMessage(ctx, req.params.feedId, req.body.messageId)
-    await broadcastMessageEvent(ctx, req.params.feedId, 'delete-message', { id: req.body.messageId })
+    await broadcastMessageEvent(ctx, req.params.feedId, 'delete-message', {
+      id: req.body.messageId
+    })
 
     return { success: true }
   })

@@ -2,21 +2,19 @@
   <div class="video-modal-overlay" @click.self="close">
     <div class="video-modal-content">
       <!-- Видео превью -->
-      <div v-if="!recordedBlob" class="video-preview-container" :class="{ 'is-recording': isRecording }">
-        <video
-          ref="videoPreview"
-          class="video-preview"
-          autoplay
-          playsinline
-          muted
-        />
+      <div
+        v-if="!recordedBlob"
+        class="video-preview-container"
+        :class="{ 'is-recording': isRecording }"
+      >
+        <video ref="videoPreview" class="video-preview" autoplay playsinline muted />
 
         <!-- Круглая маска для кружочка -->
         <div class="circle-mask" v-if="!recordedBlob">
           <svg viewBox="0 0 100 100">
             <defs>
               <clipPath id="circleClip">
-                <circle cx="50" cy="50" r="48"/>
+                <circle cx="50" cy="50" r="48" />
               </clipPath>
             </defs>
           </svg>
@@ -31,15 +29,8 @@
         <!-- Прогресс максимальной длительности -->
         <div v-if="isRecording" class="duration-progress">
           <svg viewBox="0 0 100 100">
-            <circle
-              class="progress-bg"
-              cx="50" cy="50" r="48"
-            />
-            <circle
-              class="progress-fill"
-              cx="50" cy="50" r="48"
-              :style="progressStyle"
-            />
+            <circle class="progress-bg" cx="50" cy="50" r="48" />
+            <circle class="progress-fill" cx="50" cy="50" r="48" :style="progressStyle" />
           </svg>
         </div>
       </div>
@@ -190,7 +181,6 @@ function startRecording() {
         stopRecording()
       }
     }, 1000)
-
   } catch (err) {
     console.error('Failed to start recording:', err)
     alert('Не удалось начать запись')
@@ -212,7 +202,7 @@ function stopRecording() {
 
 function handleRecordingComplete() {
   // console.log('[VideoRecorderModal] Recording complete, chunks:', chunks.value.length)
-  
+
   if (chunks.value.length === 0) {
     console.error('[VideoRecorderModal] No chunks recorded')
     return
@@ -220,16 +210,16 @@ function handleRecordingComplete() {
 
   const mimeType = mediaRecorder.value?.mimeType || 'video/webm'
   const totalSize = chunks.value.reduce((sum, chunk) => sum + chunk.size, 0)
-  
+
   // console.log('[VideoRecorderModal] Creating blob:', {
   //   chunks: chunks.value.length,
   //   totalSize: totalSize,
   //   mimeType: mimeType
   // })
-  
+
   recordedBlob.value = new Blob(chunks.value, { type: mimeType })
   recordedUrl.value = URL.createObjectURL(recordedBlob.value)
-  
+
   // console.log('[VideoRecorderModal] Blob created:', {
   //   blobSize: recordedBlob.value.size,
   //   blobType: recordedBlob.value.type
@@ -260,14 +250,14 @@ function sendVideo() {
 
   const extension = getExtensionFromMimeType(recordedBlob.value.type)
   const fileName = `video-note-${Date.now()}.${extension}`
-  
+
   // console.log('[VideoRecorderModal] Creating video file:', {
   //   blobSize: recordedBlob.value.size,
   //   blobType: recordedBlob.value.type,
   //   fileName: fileName,
   //   duration: recordingDuration.value
   // })
-  
+
   const file = new File([recordedBlob.value], fileName, {
     type: recordedBlob.value.type,
     lastModified: Date.now()
@@ -275,7 +265,7 @@ function sendVideo() {
 
   file.isVideoNote = true
   file.duration = recordingDuration.value
-  
+
   // console.log('[VideoRecorderModal] Video file created:', {
   //   name: file.name,
   //   size: file.size,
@@ -321,7 +311,7 @@ function cleanup() {
   }
 
   if (stream.value) {
-    stream.value.getTracks().forEach(track => track.stop())
+    stream.value.getTracks().forEach((track) => track.stop())
     stream.value = null
   }
 
@@ -428,8 +418,13 @@ onUnmounted(() => {
 }
 
 @keyframes blink {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.3; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
 }
 
 .record-timer {

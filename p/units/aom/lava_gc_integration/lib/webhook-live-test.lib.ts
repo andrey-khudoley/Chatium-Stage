@@ -98,7 +98,10 @@ async function appendOther(
   reason: string,
   payload: LavaWebhookPayload
 ): Promise<void> {
-  const otherEvents = [...state.otherEvents, { at: Date.now(), reason, payloadJson: payloadJson(payload) }]
+  const otherEvents = [
+    ...state.otherEvents,
+    { at: Date.now(), reason, payloadJson: payloadJson(payload) }
+  ]
   await saveState(ctx, {
     ...state,
     otherEvents: otherEvents.slice(-MAX_OTHER_EVENTS)

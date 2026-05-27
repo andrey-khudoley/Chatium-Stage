@@ -51,7 +51,12 @@ function onSearchInput(event: Event): void {
 
     <label class="dc-client-thread-list__search">
       <i class="fas fa-search"></i>
-      <input :value="searchValue" type="text" :placeholder="searchPlaceholder" @input="onSearchInput" />
+      <input
+        :value="searchValue"
+        type="text"
+        :placeholder="searchPlaceholder"
+        @input="onSearchInput"
+      />
     </label>
 
     <nav class="dc-client-thread-list__filters">
@@ -73,10 +78,7 @@ function onSearchInput(event: Event): void {
         :key="thread.id"
         type="button"
         class="dc-client-thread-list__item"
-        :class="[
-          statusClass(thread.status),
-          { selected: selectedThreadId === thread.id }
-        ]"
+        :class="[statusClass(thread.status), { selected: selectedThreadId === thread.id }]"
         @click="emit('selectThread', thread.id)"
       >
         <span class="dc-client-thread-list__avatar">{{ initials(thread.clientName) }}</span>

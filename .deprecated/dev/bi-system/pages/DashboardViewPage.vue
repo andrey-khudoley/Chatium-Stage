@@ -1,38 +1,37 @@
 <template>
-  <div class="min-h-screen" :class="isDark ? 'bg-gray-900 text-gray-100' : 'bg-gray-50 text-gray-900'">
+  <div
+    class="min-h-screen"
+    :class="isDark ? 'bg-gray-900 text-gray-100' : 'bg-gray-50 text-gray-900'"
+  >
     <div class="w-full px-4 sm:px-6 lg:px-8 py-8">
-
       <div class="p-6 rounded-lg mb-4" :class="isDark ? 'bg-gray-800' : 'bg-white'">
         <div class="flex items-center justify-between mb-2">
           <h2 class="text-lg font-bold flex items-center gap-2">
             <i class="fas fa-chart-line text-[var(--color-primary)]"></i>
             Дашборд
           </h2>
-          <span class="text-xs opacity-70">
-            Компоненты нельзя перемещать в режиме просмотра
-          </span>
+          <span class="text-xs opacity-70"> Компоненты нельзя перемещать в режиме просмотра </span>
         </div>
       </div>
 
       <div
         class="p-2 rounded-lg border"
         :class="isDark ? 'bg-gray-900 border-gray-700' : 'bg-gray-50 border-gray-200'"
-        style="height: calc(100vh - 220px);"
+        style="height: calc(100vh - 220px)"
       >
         <div class="relative w-full h-full overflow-auto">
           <div
             class="relative"
             :style="{ width: boardPixelSize + 'px', height: boardPixelSize + 'px' }"
           >
-            <div
-              class="absolute inset-0 pointer-events-none"
-              :style="gridBackgroundStyle"
-            ></div>
+            <div class="absolute inset-0 pointer-events-none" :style="gridBackgroundStyle"></div>
             <div
               v-for="component in components"
               :key="component.id"
               class="absolute rounded-lg shadow-md select-none flex flex-col overflow-hidden"
-              :class="isDark ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-200'"
+              :class="
+                isDark ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-200'
+              "
               :style="getComponentStyle(component)"
             >
               <div
@@ -49,7 +48,8 @@
               </div>
               <div class="px-3 py-3 text-xs flex-1 flex flex-col overflow-hidden min-h-0">
                 <div class="mb-1 opacity-80 flex-shrink-0">
-                  {{ getViewTypeLabel(component.viewType) }} • {{ getDatasetName(component.datasetId) }}
+                  {{ getViewTypeLabel(component.viewType) }} •
+                  {{ getDatasetName(component.datasetId) }}
                 </div>
                 <div class="opacity-60 mb-2 flex-shrink-0">
                   Метрика: {{ component.metric || 'UNIQ' }} (уникальные значения)
@@ -84,9 +84,7 @@
                 <!-- Отображение для простой таблицы -->
                 <template v-else-if="component.viewType === 'simple-table'">
                   <div class="mt-3 text-[11px] opacity-80 flex-shrink-0">
-                    <div class="mb-1 font-semibold">
-                      Конфигурация таблицы
-                    </div>
+                    <div class="mb-1 font-semibold">Конфигурация таблицы</div>
                     <div class="mb-2">
                       <span class="font-medium">Колонки:</span>
                       <span class="font-mono">
@@ -130,9 +128,7 @@
                               {{ getSimpleTableError(component.id) }}
                             </td>
                           </tr>
-                          <tr
-                            v-else-if="getSimpleTableRows(component.id).length === 0"
-                          >
+                          <tr v-else-if="getSimpleTableRows(component.id).length === 0">
                             <td
                               :colspan="getComponentColumns(component).length"
                               class="px-2 py-3 text-center opacity-60"
@@ -158,29 +154,45 @@
                       </table>
                     </div>
                   </div>
-                  <div class="mt-2 flex items-center justify-between text-[10px] opacity-70 flex-shrink-0">
-                    <div>
-                      Страница {{ getSimpleTablePage(component.id) }}
-                    </div>
+                  <div
+                    class="mt-2 flex items-center justify-between text-[10px] opacity-70 flex-shrink-0"
+                  >
+                    <div>Страница {{ getSimpleTablePage(component.id) }}</div>
                     <div class="space-x-1">
                       <button
                         v-if="getSimpleTablePage(component.id) > 1"
                         class="px-2 py-1 rounded"
-                        :class="getSimpleTableLoading(component.id)
-                          ? 'opacity-40 cursor-not-allowed'
-                          : (isDark ? 'hover:bg-gray-700' : 'hover:bg-gray-200')"
+                        :class="
+                          getSimpleTableLoading(component.id)
+                            ? 'opacity-40 cursor-not-allowed'
+                            : isDark
+                              ? 'hover:bg-gray-700'
+                              : 'hover:bg-gray-200'
+                        "
                         :disabled="getSimpleTableLoading(component.id)"
-                        @click.prevent="loadSimpleTablePage(component.id, getSimpleTablePage(component.id) - 1)"
+                        @click.prevent="
+                          loadSimpleTablePage(component.id, getSimpleTablePage(component.id) - 1)
+                        "
                       >
                         « Назад
                       </button>
                       <button
                         class="px-2 py-1 rounded"
-                        :class="getSimpleTableLoading(component.id) || !getSimpleTableHasMore(component.id)
-                          ? 'opacity-40 cursor-not-allowed'
-                          : (isDark ? 'hover:bg-gray-700' : 'hover:bg-gray-200')"
-                        :disabled="getSimpleTableLoading(component.id) || !getSimpleTableHasMore(component.id)"
-                        @click.prevent="loadSimpleTablePage(component.id, getSimpleTablePage(component.id) + 1)"
+                        :class="
+                          getSimpleTableLoading(component.id) ||
+                          !getSimpleTableHasMore(component.id)
+                            ? 'opacity-40 cursor-not-allowed'
+                            : isDark
+                              ? 'hover:bg-gray-700'
+                              : 'hover:bg-gray-200'
+                        "
+                        :disabled="
+                          getSimpleTableLoading(component.id) ||
+                          !getSimpleTableHasMore(component.id)
+                        "
+                        @click.prevent="
+                          loadSimpleTablePage(component.id, getSimpleTablePage(component.id) + 1)
+                        "
                       >
                         Вперёд »
                       </button>
@@ -191,11 +203,10 @@
                 <!-- Отображение для сводной таблицы -->
                 <template v-else-if="component.viewType === 'pivot-table'">
                   <div class="mt-3 text-[11px] opacity-80 flex-shrink-0">
-                    <div class="mb-1 font-semibold">
-                      Сводная таблица по атрибуциям
-                    </div>
+                    <div class="mb-1 font-semibold">Сводная таблица по атрибуциям</div>
                     <div class="mb-2 opacity-70">
-                      Первая колонка — первая атрибуция, при раскрытии строки подгружается следующая.
+                      Первая колонка — первая атрибуция, при раскрытии строки подгружается
+                      следующая.
                     </div>
                   </div>
 
@@ -204,12 +215,16 @@
                       <table class="w-full text-[11px] border-collapse">
                         <thead>
                           <tr>
-                            <th class="border-b px-2 py-1 text-left font-semibold"
-                                :class="isDark ? 'border-gray-700' : 'border-gray-200'">
+                            <th
+                              class="border-b px-2 py-1 text-left font-semibold"
+                              :class="isDark ? 'border-gray-700' : 'border-gray-200'"
+                            >
                               Атрибуция
                             </th>
-                            <th class="border-b px-2 py-1 text-right font-semibold"
-                                :class="isDark ? 'border-gray-700' : 'border-gray-200'">
+                            <th
+                              class="border-b px-2 py-1 text-right font-semibold"
+                              :class="isDark ? 'border-gray-700' : 'border-gray-200'"
+                            >
                               Уникальные посетители
                             </th>
                           </tr>
@@ -226,7 +241,10 @@
                             </td>
                           </tr>
                           <template v-else>
-                            <template v-for="(row, rowIndex) in getPivotRows(component.id, 0, [])" :key="`${component.id}-0-${row.value}`">
+                            <template
+                              v-for="(row, rowIndex) in getPivotRows(component.id, 0, [])"
+                              :key="`${component.id}-0-${row.value}`"
+                            >
                               <PivotTableRowRecursive
                                 :component-id="component.id"
                                 :row="row"
@@ -237,13 +255,21 @@
                               />
                             </template>
                             <tr v-if="getPivotTotal(component.id, 0, [])">
-                              <td class="px-2 py-2 font-semibold border-t"
-                                  :class="isDark ? 'border-gray-700' : 'border-gray-200'">
+                              <td
+                                class="px-2 py-2 font-semibold border-t"
+                                :class="isDark ? 'border-gray-700' : 'border-gray-200'"
+                              >
                                 {{ getPivotTotal(component.id, 0, []).label }}
                               </td>
-                              <td class="px-2 py-2 text-right font-semibold border-t"
-                                  :class="isDark ? 'border-gray-700' : 'border-gray-200'">
-                                {{ formatPivotMetricValue(getPivotTotal(component.id, 0, []).metricValue) }}
+                              <td
+                                class="px-2 py-2 text-right font-semibold border-t"
+                                :class="isDark ? 'border-gray-700' : 'border-gray-200'"
+                              >
+                                {{
+                                  formatPivotMetricValue(
+                                    getPivotTotal(component.id, 0, []).metricValue
+                                  )
+                                }}
                               </td>
                             </tr>
                           </template>
@@ -262,7 +288,17 @@
 </template>
 
 <script setup>
-import { computed, ref, onMounted, provide, defineComponent, inject, computed as computedVue, h, Fragment } from 'vue'
+import {
+  computed,
+  ref,
+  onMounted,
+  provide,
+  defineComponent,
+  inject,
+  computed as computedVue,
+  h,
+  Fragment
+} from 'vue'
 import { TIME_PERIODS } from '../shared/datasetTypes'
 import { PIVOT_ATTRIBUTION_FIELDS } from '../shared/dashboardTypes'
 
@@ -328,7 +364,7 @@ const timePeriodName = computed(() => {
   if (!props.initialDashboard?.config) return '—'
   try {
     const config = JSON.parse(props.initialDashboard.config)
-    const period = TIME_PERIODS.find(p => p.id === config.timePeriod)
+    const period = TIME_PERIODS.find((p) => p.id === config.timePeriod)
     return period ? period.name : config.timePeriod || '—'
   } catch {
     return '—'
@@ -416,9 +452,7 @@ function formatSimpleTableCell(row, columnId) {
     case 'user': {
       const parts = []
       if (row.user_first_name || row.user_last_name) {
-        parts.push(
-          [row.user_first_name, row.user_last_name].filter(Boolean).join(' ')
-        )
+        parts.push([row.user_first_name, row.user_last_name].filter(Boolean).join(' '))
       }
       if (row.user_email) {
         parts.push(row.user_email)
@@ -432,9 +466,7 @@ function formatSimpleTableCell(row, columnId) {
       const parts = []
       if (row.ip) parts.push(row.ip)
       if (row.location_country || row.location_city) {
-        parts.push(
-          [row.location_country, row.location_city].filter(Boolean).join(', ')
-        )
+        parts.push([row.location_country, row.location_city].filter(Boolean).join(', '))
       }
       if (row.ua_device_type || row.ua_os_name || row.ua_client_name) {
         const deviceParts = []
@@ -513,7 +545,7 @@ function getViewTypeLabel(viewType) {
 
 function getDatasetName(datasetId) {
   if (!datasetId) return 'Датасет не выбран'
-  const dataset = (props.datasets || []).find(d => d.id === datasetId)
+  const dataset = (props.datasets || []).find((d) => d.id === datasetId)
   return dataset ? dataset.name : 'Неизвестный датасет'
 }
 
@@ -584,7 +616,7 @@ function getPivotRowKey(componentId, level, path, rowIndex) {
 
 function isPivotRowExpanded(componentId, level, path, rowIndex) {
   const key = getPivotRowKey(componentId, level, path, rowIndex)
-  return !!(pivotExpandedRows.value[key])
+  return !!pivotExpandedRows.value[key]
 }
 
 function togglePivotRow(componentId, level, path, rowIndex, rowValue) {
@@ -617,84 +649,119 @@ const PivotTableRowRecursive = defineComponent({
   },
   setup(props) {
     const pivotFuncs = inject('pivotFunctions')
-    
+
     const currentPath = computedVue(() => [...props.path, props.row.value])
-    const isExpanded = computedVue(() => 
-      pivotFuncs?.isPivotRowExpanded?.(props.componentId, props.level, props.path, props.rowIndex) || false
+    const isExpanded = computedVue(
+      () =>
+        pivotFuncs?.isPivotRowExpanded?.(
+          props.componentId,
+          props.level,
+          props.path,
+          props.rowIndex
+        ) || false
     )
-    const childRows = computedVue(() => 
+    const childRows = computedVue(() =>
       props.row.hasChildren && isExpanded.value
-        ? (pivotFuncs?.getPivotRows?.(props.componentId, props.level + 1, currentPath.value) || [])
+        ? pivotFuncs?.getPivotRows?.(props.componentId, props.level + 1, currentPath.value) || []
         : []
     )
-    const isLoading = computedVue(() => 
-      pivotFuncs?.getPivotLoading?.(props.componentId, props.level + 1, currentPath.value) || false
+    const isLoading = computedVue(
+      () =>
+        pivotFuncs?.getPivotLoading?.(props.componentId, props.level + 1, currentPath.value) ||
+        false
     )
-    const error = computedVue(() => 
-      pivotFuncs?.getPivotError?.(props.componentId, props.level + 1, currentPath.value) || null
+    const error = computedVue(
+      () =>
+        pivotFuncs?.getPivotError?.(props.componentId, props.level + 1, currentPath.value) || null
     )
-    
+
     const handleToggle = () => {
       if (pivotFuncs?.togglePivotRow) {
-        pivotFuncs.togglePivotRow(props.componentId, props.level, props.path, props.rowIndex, props.row.value)
+        pivotFuncs.togglePivotRow(
+          props.componentId,
+          props.level,
+          props.path,
+          props.rowIndex,
+          props.row.value
+        )
       }
     }
-    
+
     const formatMetric = pivotFuncs?.formatPivotMetricValue || ((val) => String(val || '—'))
-    
+
     return () => {
       const borderClass = props.isDark ? 'border-gray-800' : 'border-gray-100'
       const paddingLeft = `${props.level * 32}px`
-      
+
       const children = []
-      
+
       // Основная строка
       children.push(
         h('tr', [
-          h('td', {
-            class: `px-2 py-1 border-b ${borderClass}`,
-            style: { paddingLeft }
-          }, [
-            h('div', { class: 'flex items-center gap-2' }, [
-              props.row.hasChildren
-                ? h('button', {
-                    onClick: handleToggle,
-                    class: `p-0.5 rounded hover:bg-gray-200 dark:hover:bg-gray-700 ${isExpanded.value ? 'text-blue-500' : 'text-gray-400'}`
-                  }, [
-                    h('i', {
-                      class: `fas ${isExpanded.value ? 'fa-chevron-down' : 'fa-chevron-right'} text-[10px]`
-                    })
-                  ])
-                : h('span', { class: 'w-4' }),
-              h('span', props.row.label)
-            ])
-          ]),
-          h('td', {
-            class: `px-2 py-1 text-right border-b ${borderClass}`
-          }, formatMetric(props.row.metricValue))
+          h(
+            'td',
+            {
+              class: `px-2 py-1 border-b ${borderClass}`,
+              style: { paddingLeft }
+            },
+            [
+              h('div', { class: 'flex items-center gap-2' }, [
+                props.row.hasChildren
+                  ? h(
+                      'button',
+                      {
+                        onClick: handleToggle,
+                        class: `p-0.5 rounded hover:bg-gray-200 dark:hover:bg-gray-700 ${isExpanded.value ? 'text-blue-500' : 'text-gray-400'}`
+                      },
+                      [
+                        h('i', {
+                          class: `fas ${isExpanded.value ? 'fa-chevron-down' : 'fa-chevron-right'} text-[10px]`
+                        })
+                      ]
+                    )
+                  : h('span', { class: 'w-4' }),
+                h('span', props.row.label)
+              ])
+            ]
+          ),
+          h(
+            'td',
+            {
+              class: `px-2 py-1 text-right border-b ${borderClass}`
+            },
+            formatMetric(props.row.metricValue)
+          )
         ])
       )
-      
+
       // Дочерние строки, если строка раскрыта
       if (props.row.hasChildren && isExpanded.value) {
         if (isLoading.value) {
           children.push(
             h('tr', [
-              h('td', {
-                colspan: 2,
-                class: 'px-2 py-1 text-[10px] opacity-60',
-                style: { paddingLeft: `${(props.level + 1) * 32}px` }
-              }, 'Загрузка...')
+              h(
+                'td',
+                {
+                  colspan: 2,
+                  class: 'px-2 py-1 text-[10px] opacity-60',
+                  style: { paddingLeft: `${(props.level + 1) * 32}px` }
+                },
+                'Загрузка...'
+              )
             ])
           )
         } else if (error.value) {
           children.push(
             h('tr', [
-              h('td', {
-                colspan: 2,
-                class: 'px-2 py-1 text-[10px] text-red-400',
-                style: { paddingLeft: `${(props.level + 1) * 32}px` }
-              }, error.value)
+              h(
+                'td',
+                {
+                  colspan: 2,
+                  class: 'px-2 py-1 text-[10px] text-red-400',
+                  style: { paddingLeft: `${(props.level + 1) * 32}px` }
+                },
+                error.value
+              )
             ])
           )
         } else {
@@ -713,7 +780,7 @@ const PivotTableRowRecursive = defineComponent({
           })
         }
       }
-      
+
       return h(Fragment, children)
     }
   }
@@ -725,5 +792,3 @@ onMounted(() => {
   // Логика загрузки данных удалена - будет переписана с нуля
 })
 </script>
-
-

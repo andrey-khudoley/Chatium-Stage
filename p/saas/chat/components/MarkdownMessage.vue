@@ -30,25 +30,25 @@ function escapeHtml(text) {
 // Обработка markdown для обычного текста (без ссылок и кода)
 function processMarkdown(text) {
   let result = text
-  
+
   // Жирный текст (**text**)
   result = result.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
-  
+
   // Курсив (*text* или _text_)
   result = result.replace(/\*([^*]+)\*/g, '<em>$1</em>')
   result = result.replace(/_([^_]+)_/g, '<em>$1</em>')
-  
+
   // Зачеркнутый (~~text~~)
   result = result.replace(/~~([^~]+)~~/g, '<del>$1</del>')
-  
+
   // Заголовки
   result = result.replace(/^### (.+)$/gm, '<h3>$1</h3>')
   result = result.replace(/^## (.+)$/gm, '<h2>$1</h2>')
   result = result.replace(/^# (.+)$/gm, '<h1>$1</h1>')
-  
+
   // Цитаты
   result = result.replace(/^&gt; (.+)$/gm, '<blockquote>$1</blockquote>')
-  
+
   return result
 }
 
@@ -58,7 +58,7 @@ function parseMentions(text) {
   const mentionRegex = /@\[([^\]]+)\]\(([^)]+)\)|@(\w+)/g
   const mentions = []
   let match
-  
+
   while ((match = mentionRegex.exec(text)) !== null) {
     if (match[1] && match[2]) {
       // Формат @[Имя](userId)
@@ -82,7 +82,7 @@ function parseMentions(text) {
       })
     }
   }
-  
+
   return mentions
 }
 
@@ -90,40 +90,40 @@ function parseMentions(text) {
 function renderMentions(text) {
   const mentions = parseMentions(text)
   if (mentions.length === 0) return text
-  
+
   let result = ''
   let lastIndex = 0
-  
+
   for (const mention of mentions) {
     // Добавляем текст до упоминания
     result += text.slice(lastIndex, mention.index)
-    
+
     // Создаём HTML для упоминания
     const displayName = mention.name || mention.username
     const userId = mention.userId || mention.username
     result += `<span class="mention-link" data-user-id="${escapeHtml(userId)}" data-username="${escapeHtml(mention.username || '')}">@${escapeHtml(displayName)}</span>`
-    
+
     lastIndex = mention.index + mention.length
   }
-  
+
   // Добавляем оставшийся текст
   result += text.slice(lastIndex)
-  
+
   return result
 }
 
 // Парсим markdown путем разбиения на токены
 const renderedMarkdown = computed(() => {
   if (!props.text) return ''
-  
+
   let text = props.text
   const tokens = []
-  
+
   // Сначала ищем упоминания @[Имя](userId) - они должны быть до markdown ссылок
   const mentionRegex = /@\[([^\]]+)\]\(([^)]+)\)/g
   let mentionMatch
   const mentions = []
-  
+
   while ((mentionMatch = mentionRegex.exec(text)) !== null) {
     mentions.push({
       fullMatch: mentionMatch[0],
@@ -133,40 +133,40 @@ const renderedMarkdown = computed(() => {
       length: mentionMatch[0].length
     })
   }
-  
+
   // Регулярка для поиска всех специальных элементов (кроме упоминаний, они уже найдены)
   const regex = /(```([\s\S]*?)```)|(`([^`]+)`)|(https?:\/\/[^\s]+)/g
-  
+
   let lastIndex = 0
   let match
-  
+
   // Обрабатываем текст с учётом найденных упоминаний
   let lastMentionIndex = 0
   let currentMention = 0
-  
+
   while ((match = regex.exec(text)) !== null) {
     // Проверяем, нет ли упоминания между lastIndex и текущим совпадением
     while (currentMention < mentions.length && mentions[currentMention].index < match.index) {
       const mention = mentions[currentMention]
-      
+
       // Добавляем текст до упоминания
       if (mention.index > lastIndex) {
         tokens.push({ type: 'text', content: text.slice(lastIndex, mention.index) })
       }
-      
+
       // Добавляем упоминание
       tokens.push({ type: 'mention', name: mention.name, userId: mention.userId })
-      
+
       lastIndex = mention.index + mention.length
-      currentMention++;
+      currentMention++
     }
-    
+
     // Добавляем обычный текст до совпадения
     if (match.index > lastIndex) {
       const plainText = text.slice(lastIndex, match.index)
       tokens.push({ type: 'text', content: plainText })
     }
-    
+
     if (match[1]) {
       // Блок кода ```code```
       tokens.push({ type: 'code-block', code: match[2] })
@@ -177,31 +177,31 @@ const renderedMarkdown = computed(() => {
       // Автоссылка
       tokens.push({ type: 'auto-link', url: match[0] })
     }
-    
+
     lastIndex = regex.lastIndex
   }
-  
+
   // Добавляем оставшиеся упоминания после последнего совпадения
   while (currentMention < mentions.length) {
     const mention = mentions[currentMention]
-    
+
     if (mention.index > lastIndex) {
       tokens.push({ type: 'text', content: text.slice(lastIndex, mention.index) })
     }
-    
+
     tokens.push({ type: 'mention', name: mention.name, userId: mention.userId })
-    
+
     lastIndex = mention.index + mention.length
-    currentMention++;
+    currentMention++
   }
-  
+
   // Добавляем оставшийся текст
   if (lastIndex < text.length) {
     tokens.push({ type: 'text', content: text.slice(lastIndex) })
   }
-  
+
   // Обрабатываем токены
-  const processed = tokens.map(token => {
+  const processed = tokens.map((token) => {
     switch (token.type) {
       case 'md-link':
         // Дополнительная проверка - если URL выглядит как userId, не делаем ссылку
@@ -210,19 +210,19 @@ const renderedMarkdown = computed(() => {
           return escapeHtml(token.text)
         }
         return `<a href="${escapeHtml(token.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(token.text)}</a>`
-      
+
       case 'mention':
         return `<span class="mention-link" data-user-id="${escapeHtml(token.userId)}" data-username="">@${escapeHtml(token.name)}</span>`
-      
+
       case 'auto-link':
         return `<a href="${escapeHtml(token.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(token.url)}</a>`
-      
+
       case 'code-block':
         return `<pre><code>${escapeHtml(token.code)}</code></pre>`
-      
+
       case 'inline-code':
         return `<code>${escapeHtml(token.code)}</code>`
-      
+
       case 'text':
       default:
         // Обрабатываем упоминания и применяем markdown
@@ -230,19 +230,19 @@ const renderedMarkdown = computed(() => {
         return processMarkdown(withMentions)
     }
   })
-  
+
   let result = processed.join('')
-  
+
   // Обрабатываем списки и переносы строк
   const lines = result.split('\n')
   let inList = false
   let listType = null
   const htmlLines = []
-  
+
   for (let line of lines) {
     const unorderedMatch = line.match(/^\s*[-*]\s+(.+)$/)
     const orderedMatch = line.match(/^\s*(\d+)\.\s+(.+)$/)
-    
+
     if (unorderedMatch) {
       if (!inList || listType !== 'ul') {
         if (inList) htmlLines.push(listType === 'ul' ? '</ul>' : '</ol>')
@@ -268,18 +268,18 @@ const renderedMarkdown = computed(() => {
       htmlLines.push(line)
     }
   }
-  
+
   if (inList) {
     htmlLines.push(listType === 'ul' ? '</ul>' : '</ol>')
   }
-  
+
   result = htmlLines.join('\n')
-  
+
   // Переносы строк (кроме случаев с блочными элементами)
   result = result.replace(/\n/g, '<br>')
   result = result.replace(/(<\/h[1-6]>|<\/blockquote>|<\/pre>|<\/ul>|<\/ol>)<br>/g, '$1')
   result = result.replace(/<br>(<h[1-6]>|<blockquote>|<pre>|<ul>|<ol>)/g, '$1')
-  
+
   return result
 })
 
@@ -410,7 +410,7 @@ function handleMentionClick(event) {
 
 .markdown-message :deep(br) {
   display: block;
-  content: "";
+  content: '';
   margin-top: 4px;
 }
 

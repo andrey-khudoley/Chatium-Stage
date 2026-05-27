@@ -4,15 +4,11 @@
       <div class="glow-orb orb-1"></div>
       <div class="glow-orb orb-2"></div>
     </div>
-    
-    <div class="container">
-      <div class="badge">
-        <i class="fas fa-gift"></i> Бонус 3 из 5
-      </div>
 
-      <h2 class="title">
-        Курс <span class="grad-purple">«Вайбкодинг на Chatium»</span>
-      </h2>
+    <div class="container">
+      <div class="badge"><i class="fas fa-gift"></i> Бонус 3 из 5</div>
+
+      <h2 class="title">Курс <span class="grad-purple">«Вайбкодинг на Chatium»</span></h2>
 
       <div class="author-block">
         <div class="author-icon"><i class="fas fa-graduation-cap"></i></div>
@@ -23,8 +19,8 @@
       </div>
 
       <p class="description">
-        Подсел на Ботана весной 2025 — стал <span class="hl">первым укушенным</span>. 
-        Записал полноценный курс по вайбкодингу. Я попросил его в подарок для участников хакатона.
+        Подсел на Ботана весной 2025 — стал <span class="hl">первым укушенным</span>. Записал
+        полноценный курс по вайбкодингу. Я попросил его в подарок для участников хакатона.
       </p>
 
       <div class="features">
@@ -32,7 +28,6 @@
         <span><i class="fas fa-code"></i> Вайбкодинг с нуля</span>
         <span><i class="fas fa-rocket"></i> Практика на Chatium</span>
       </div>
-
     </div>
   </div>
 </template>
@@ -85,8 +80,13 @@ defineProps({ active: Boolean })
 }
 
 @keyframes float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-20px); }
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-20px);
+  }
 }
 
 .container {
@@ -130,8 +130,13 @@ defineProps({ active: Boolean })
 }
 
 @keyframes gradient-shift {
-  0%, 100% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
 }
 
 .author-block {
@@ -204,7 +209,7 @@ defineProps({ active: Boolean })
   font-size: 16px;
   color: var(--text-secondary);
   padding: 8px 16px;
-  background: rgba(255,255,255,0.03);
+  background: rgba(255, 255, 255, 0.03);
   border: 1px solid var(--border-subtle);
   border-radius: 10px;
   transition: all 0.3s ease;
@@ -268,15 +273,45 @@ defineProps({ active: Boolean })
 }
 
 @media (max-width: 480px) {
-  .slide { padding: 24px 14px 14px; }
-  .badge { font-size: 11px; padding: 6px 14px; margin-bottom: 16px; }
-  .title { font-size: 26px; margin-bottom: 20px; }
-  .author-block { padding: 16px 18px; border-radius: 14px; }
-  .author-icon { width: 44px; height: 44px; font-size: 20px; border-radius: 12px; }
-  .author-info h3 { font-size: 18px; }
-  .author-sub { font-size: 13px; }
-  .description { font-size: 15px; line-height: 1.6; margin-bottom: 20px; }
-  .features span { font-size: 13px; padding: 6px 12px; }
-  .features i { font-size: 13px; }
+  .slide {
+    padding: 24px 14px 14px;
+  }
+  .badge {
+    font-size: 11px;
+    padding: 6px 14px;
+    margin-bottom: 16px;
+  }
+  .title {
+    font-size: 26px;
+    margin-bottom: 20px;
+  }
+  .author-block {
+    padding: 16px 18px;
+    border-radius: 14px;
+  }
+  .author-icon {
+    width: 44px;
+    height: 44px;
+    font-size: 20px;
+    border-radius: 12px;
+  }
+  .author-info h3 {
+    font-size: 18px;
+  }
+  .author-sub {
+    font-size: 13px;
+  }
+  .description {
+    font-size: 15px;
+    line-height: 1.6;
+    margin-bottom: 20px;
+  }
+  .features span {
+    font-size: 13px;
+    padding: 6px 12px;
+  }
+  .features i {
+    font-size: 13px;
+  }
 }
 </style>

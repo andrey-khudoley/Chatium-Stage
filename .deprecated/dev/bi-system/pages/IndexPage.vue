@@ -8,10 +8,10 @@
             <i class="fas fa-database mr-2 text-[var(--color-primary)]"></i>
             Мои датасеты
           </h2>
-          <a 
-            :href="apiUrls.datasetConfig" 
+          <a
+            :href="apiUrls.datasetConfig"
             class="px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2"
-            style="background: var(--color-primary); color: white;"
+            style="background: var(--color-primary); color: white"
           >
             <i class="fas fa-plus"></i>
             <span>Создать датасет</span>
@@ -31,10 +31,10 @@
         <div v-else-if="datasets.length === 0" class="card text-center py-12">
           <i class="fas fa-database text-5xl text-[var(--color-text-tertiary)] mb-4 opacity-30"></i>
           <p class="text-[var(--color-text-secondary)] mb-4">У вас пока нет датасетов</p>
-          <a 
-            :href="apiUrls.datasetConfig" 
+          <a
+            :href="apiUrls.datasetConfig"
             class="inline-block px-6 py-3 rounded-lg font-medium transition-all"
-            style="background: var(--color-primary); color: white;"
+            style="background: var(--color-primary); color: white"
           >
             Создать первый датасет
           </a>
@@ -45,29 +45,41 @@
             <table class="w-full">
               <thead class="bg-[var(--color-card-hover)]">
                 <tr>
-                  <th class="px-4 sm:px-6 py-3 text-left text-xs font-medium text-[var(--color-text-secondary)] uppercase tracking-wider">
+                  <th
+                    class="px-4 sm:px-6 py-3 text-left text-xs font-medium text-[var(--color-text-secondary)] uppercase tracking-wider"
+                  >
                     Название
                   </th>
-                  <th class="hidden sm:table-cell px-6 py-3 text-left text-xs font-medium text-[var(--color-text-secondary)] uppercase tracking-wider">
+                  <th
+                    class="hidden sm:table-cell px-6 py-3 text-left text-xs font-medium text-[var(--color-text-secondary)] uppercase tracking-wider"
+                  >
                     Описание
                   </th>
-                  <th class="px-4 sm:px-6 py-3 text-left text-xs font-medium text-[var(--color-text-secondary)] uppercase tracking-wider">
+                  <th
+                    class="px-4 sm:px-6 py-3 text-left text-xs font-medium text-[var(--color-text-secondary)] uppercase tracking-wider"
+                  >
                     Компонентов
                   </th>
-                  <th class="hidden md:table-cell px-6 py-3 text-left text-xs font-medium text-[var(--color-text-secondary)] uppercase tracking-wider">
+                  <th
+                    class="hidden md:table-cell px-6 py-3 text-left text-xs font-medium text-[var(--color-text-secondary)] uppercase tracking-wider"
+                  >
                     Период
                   </th>
-                  <th class="hidden lg:table-cell px-6 py-3 text-left text-xs font-medium text-[var(--color-text-secondary)] uppercase tracking-wider">
+                  <th
+                    class="hidden lg:table-cell px-6 py-3 text-left text-xs font-medium text-[var(--color-text-secondary)] uppercase tracking-wider"
+                  >
                     Создан
                   </th>
-                  <th class="px-4 sm:px-6 py-3 text-right text-xs font-medium text-[var(--color-text-secondary)] uppercase tracking-wider">
+                  <th
+                    class="px-4 sm:px-6 py-3 text-right text-xs font-medium text-[var(--color-text-secondary)] uppercase tracking-wider"
+                  >
                     Действия
                   </th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-[var(--color-border)]">
-                <tr 
-                  v-for="dataset in datasets" 
+                <tr
+                  v-for="dataset in datasets"
                   :key="dataset.id"
                   class="hover:bg-[var(--color-card-hover)] transition-colors"
                 >
@@ -94,7 +106,14 @@
                     </div>
                   </td>
                   <td class="px-4 sm:px-6 py-4 whitespace-nowrap">
-                    <span class="px-2 py-1 text-xs font-medium rounded-full" style="background: var(--color-primary-light); color: var(--color-primary); border: 1px solid var(--color-primary);">
+                    <span
+                      class="px-2 py-1 text-xs font-medium rounded-full"
+                      style="
+                        background: var(--color-primary-light);
+                        color: var(--color-primary);
+                        border: 1px solid var(--color-primary);
+                      "
+                    >
                       {{ getComponentsCount(dataset) }}
                     </span>
                   </td>
@@ -103,21 +122,23 @@
                       {{ getTimePeriodName(dataset) }}
                     </span>
                   </td>
-                  <td class="hidden lg:table-cell px-6 py-4 whitespace-nowrap text-sm text-[var(--color-text-secondary)]">
+                  <td
+                    class="hidden lg:table-cell px-6 py-4 whitespace-nowrap text-sm text-[var(--color-text-secondary)]"
+                  >
                     {{ formatDate(dataset.createdAt) }}
                   </td>
                   <td class="px-4 sm:px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <div class="flex items-center justify-end gap-2">
-                      <a 
+                      <a
                         v-if="!isDatasetDeleting(dataset.id)"
-                        :href="getEditUrl(dataset.id)" 
+                        :href="getEditUrl(dataset.id)"
                         class="px-3 py-1.5 rounded-lg transition-colors"
-                        style="background: var(--color-primary); color: white;"
+                        style="background: var(--color-primary); color: white"
                         title="Редактировать"
                       >
                         <i class="fas fa-edit"></i>
                       </a>
-                      <button 
+                      <button
                         v-if="!isDatasetDeleting(dataset.id)"
                         @click="deleteDataset(dataset.id)"
                         class="px-3 py-1.5 rounded-lg bg-red-500 text-white hover:bg-red-600 transition-colors"
@@ -125,7 +146,7 @@
                       >
                         <i class="fas fa-trash"></i>
                       </button>
-                      <div 
+                      <div
                         v-if="isDatasetDeleting(dataset.id)"
                         class="flex flex-col items-end gap-1 min-w-[200px]"
                       >
@@ -133,46 +154,52 @@
                           {{ getDeleteProgressText() }}
                         </div>
                         <!-- Прогресс-бар для удаления кэша (с количеством) -->
-                        <div 
-                          v-if="deleteProgress && deleteProgress.cacheTotal > 0 && deleteProgress.stage === 'cache'"
+                        <div
+                          v-if="
+                            deleteProgress &&
+                            deleteProgress.cacheTotal > 0 &&
+                            deleteProgress.stage === 'cache'
+                          "
                           class="w-full bg-[var(--color-border)] rounded-full h-2 overflow-hidden"
                         >
-                          <div 
+                          <div
                             class="h-full bg-[var(--color-primary)] transition-all duration-300"
-                            :style="{ width: `${Math.round((deleteProgress.cacheProgress / deleteProgress.cacheTotal) * 100)}%` }"
+                            :style="{
+                              width: `${Math.round((deleteProgress.cacheProgress / deleteProgress.cacheTotal) * 100)}%`
+                            }"
                           ></div>
                         </div>
                         <!-- Прогресс-бар для удаления кэша (без количества, индикатор загрузки) -->
-                        <div 
+                        <div
                           v-else-if="deleteProgress && deleteProgress.stage === 'cache'"
                           class="w-full bg-[var(--color-border)] rounded-full h-2 overflow-hidden"
                         >
-                          <div 
+                          <div
                             class="h-full bg-[var(--color-primary)] animate-pulse"
                             style="width: 100%"
                           ></div>
                         </div>
                         <!-- Прогресс-бар для удаления датасета -->
-                        <div 
+                        <div
                           v-else-if="deleteProgress && deleteProgress.stage === 'dataset'"
                           class="w-full bg-[var(--color-border)] rounded-full h-2 overflow-hidden"
                         >
-                          <div 
+                          <div
                             class="h-full bg-[var(--color-primary)] animate-pulse"
                             style="width: 100%"
                           ></div>
                         </div>
                         <!-- Общий индикатор загрузки, если stage не определен -->
-                        <div 
+                        <div
                           v-else-if="deleteProgress"
                           class="w-full bg-[var(--color-border)] rounded-full h-2 overflow-hidden"
                         >
-                          <div 
+                          <div
                             class="h-full bg-[var(--color-primary)] animate-pulse"
                             style="width: 100%"
                           ></div>
                         </div>
-                        <div 
+                        <div
                           v-if="deleteProgress && deleteProgress.error"
                           class="text-xs text-red-500"
                         >
@@ -198,7 +225,7 @@
           <a
             :href="apiUrls.dashboardConfig"
             class="px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2"
-            style="background: var(--color-primary); color: white;"
+            style="background: var(--color-primary); color: white"
           >
             <i class="fas fa-plus"></i>
             <span>Создать дашборд</span>
@@ -211,7 +238,7 @@
           <a
             :href="apiUrls.dashboardConfig"
             class="inline-block px-6 py-3 rounded-lg font-medium transition-all"
-            style="background: var(--color-primary); color: white;"
+            style="background: var(--color-primary); color: white"
           >
             Создать первый дашборд
           </a>
@@ -274,11 +301,20 @@
                     </div>
                   </td>
                   <td class="px-4 sm:px-6 py-4 whitespace-nowrap">
-                    <span class="px-2 py-1 text-xs font-medium rounded-full" style="background: var(--color-primary-light); color: var(--color-primary); border: 1px solid var(--color-primary);">
+                    <span
+                      class="px-2 py-1 text-xs font-medium rounded-full"
+                      style="
+                        background: var(--color-primary-light);
+                        color: var(--color-primary);
+                        border: 1px solid var(--color-primary);
+                      "
+                    >
                       {{ getDashboardComponentsCount(dashboard) }}
                     </span>
                   </td>
-                  <td class="hidden lg:table-cell px-6 py-4 whitespace-nowrap text-sm text-[var(--color-text-secondary)]">
+                  <td
+                    class="hidden lg:table-cell px-6 py-4 whitespace-nowrap text-sm text-[var(--color-text-secondary)]"
+                  >
                     {{ formatDate(dashboard.createdAt) }}
                   </td>
                   <td class="px-4 sm:px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
@@ -293,7 +329,7 @@
                       <a
                         :href="getDashboardEditUrl(dashboard.id)"
                         class="px-3 py-1.5 rounded-lg transition-colors"
-                        style="background: var(--color-primary); color: white;"
+                        style="background: var(--color-primary); color: white"
                         title="Редактировать"
                       >
                         <i class="fas fa-edit"></i>
@@ -334,7 +370,7 @@ const props = defineProps({
   },
   apiUrls: {
     type: Object,
-    required: true  // ОБЯЗАТЕЛЬНО! Без хардкода!
+    required: true // ОБЯЗАТЕЛЬНО! Без хардкода!
   }
 })
 
@@ -372,7 +408,7 @@ function getComponentsCount(dataset) {
 function getTimePeriodName(dataset) {
   try {
     const config = JSON.parse(dataset.config)
-    const period = TIME_PERIODS.find(p => p.id === config.timePeriod)
+    const period = TIME_PERIODS.find((p) => p.id === config.timePeriod)
     return period ? period.name : config.timePeriod || '—'
   } catch {
     return '—'
@@ -395,12 +431,12 @@ function formatDate(date) {
 // Удалить датасет (через WebSocket с прогрессом)
 async function deleteDataset(datasetId) {
   console.log('[IndexPage:deleteDataset] === НАЧАЛО УДАЛЕНИЯ === datasetId:', datasetId)
-  
+
   if (!confirm('Вы уверены, что хотите удалить этот датасет?')) {
     console.log('[IndexPage:deleteDataset] пользователь отменил удаление')
     return
   }
-  
+
   // Блокируем кнопки взаимодействия с этим датасетом
   deletingDatasetId.value = datasetId
   deleteProgress.value = {
@@ -413,10 +449,15 @@ async function deleteDataset(datasetId) {
     deletingDatasetId: deletingDatasetId.value,
     deleteProgress: deleteProgress.value
   })
-  
+
   try {
-    console.log('[IndexPage:deleteDataset] отправка POST запроса на:', props.apiUrls.deleteDataset, 'с данными:', { id: datasetId })
-    
+    console.log(
+      '[IndexPage:deleteDataset] отправка POST запроса на:',
+      props.apiUrls.deleteDataset,
+      'с данными:',
+      { id: datasetId }
+    )
+
     // Отправляем POST запрос на удаление (JSON вместо FormData для правильной обработки на сервере)
     const response = await fetch(props.apiUrls.deleteDataset, {
       method: 'POST',
@@ -428,9 +469,14 @@ async function deleteDataset(datasetId) {
         // НЕ добавляем _redirect, чтобы получить JSON ответ с socketId
       })
     })
-    
-    console.log('[IndexPage:deleteDataset] получен ответ от сервера, status:', response.status, 'content-type:', response.headers.get('content-type'))
-    
+
+    console.log(
+      '[IndexPage:deleteDataset] получен ответ от сервера, status:',
+      response.status,
+      'content-type:',
+      response.headers.get('content-type')
+    )
+
     // Проверяем, что ответ - JSON
     const contentType = response.headers.get('content-type')
     if (!contentType || !contentType.includes('application/json')) {
@@ -441,7 +487,7 @@ async function deleteDataset(datasetId) {
       deleteProgress.value = null
       return
     }
-    
+
     const result = await response.json()
     console.log('[IndexPage:deleteDataset] === ОТВЕТ ОТ СЕРВЕРА ===', {
       result,
@@ -450,12 +496,12 @@ async function deleteDataset(datasetId) {
       hasSocketId: !!result.socketId,
       resultDatasetId: result.datasetId
     })
-    
+
     if (!result.success) {
       console.error('[IndexPage:deleteDataset] сервер вернул ошибку:', result.error)
       throw new Error(result.error || 'Ошибка при удалении датасета')
     }
-    
+
     // Используем datasetId из ответа сервера (Heap ID), если он есть
     const serverDatasetId = result.datasetId || datasetId
     console.log('[IndexPage:deleteDataset] === ВЫБОР DATASET ID ===', {
@@ -463,11 +509,11 @@ async function deleteDataset(datasetId) {
       originalDatasetId: datasetId,
       match: serverDatasetId === datasetId
     })
-    
+
     // Обновляем deletingDatasetId на serverDatasetId для корректной обработки событий
     deletingDatasetId.value = serverDatasetId
     console.log('[IndexPage:deleteDataset] deletingDatasetId обновлён на:', deletingDatasetId.value)
-    
+
     // Если есть socketId, подписываемся на WebSocket для отслеживания прогресса
     if (result.socketId) {
       console.log('[IndexPage:deleteDataset] === ПОДПИСКА НА WEBSOCKET ===', {
@@ -508,7 +554,7 @@ async function subscribeToDeleteProgress(socketId, datasetId) {
     datasetId,
     timestamp: new Date().toISOString()
   })
-  
+
   try {
     // Отписываемся от предыдущей подписки, если есть
     if (socketSubscription.value) {
@@ -518,12 +564,14 @@ async function subscribeToDeleteProgress(socketId, datasetId) {
       }
       socketSubscription.value = null
     }
-    
+
     console.log('[IndexPage:subscribeToDeleteProgress] получение WebSocket клиента...')
     // Получаем WebSocket клиент и подписываемся
     const socketClient = await getOrCreateBrowserSocketClient()
-    console.log('[IndexPage:subscribeToDeleteProgress] WebSocket клиент получен, создание подписки...')
-    
+    console.log(
+      '[IndexPage:subscribeToDeleteProgress] WebSocket клиент получен, создание подписки...'
+    )
+
     socketSubscription.value = socketClient.subscribeToData(socketId)
     console.log('[IndexPage:subscribeToDeleteProgress] === ПОДПИСКА СОЗДАНА ===', {
       socketId,
@@ -531,15 +579,18 @@ async function subscribeToDeleteProgress(socketId, datasetId) {
       subscription: !!socketSubscription.value,
       timestamp: new Date().toISOString()
     })
-    
+
     // Отправляем подтверждение готовности на сервер
     try {
-      console.log('[IndexPage:subscribeToDeleteProgress] === ОТПРАВКА ПОДТВЕРЖДЕНИЯ ГОТОВНОСТИ ===', {
-        datasetId,
-        apiUrl: props.apiUrls.deleteDatasetReady,
-        timestamp: new Date().toISOString()
-      })
-      
+      console.log(
+        '[IndexPage:subscribeToDeleteProgress] === ОТПРАВКА ПОДТВЕРЖДЕНИЯ ГОТОВНОСТИ ===',
+        {
+          datasetId,
+          apiUrl: props.apiUrls.deleteDatasetReady,
+          timestamp: new Date().toISOString()
+        }
+      )
+
       const readyResponse = await fetch(props.apiUrls.deleteDatasetReady, {
         method: 'POST',
         headers: {
@@ -549,31 +600,40 @@ async function subscribeToDeleteProgress(socketId, datasetId) {
           datasetId: datasetId
         })
       })
-      
+
       if (readyResponse.ok) {
         const readyResult = await readyResponse.json()
-        console.log('[IndexPage:subscribeToDeleteProgress] === ПОДТВЕРЖДЕНИЕ ГОТОВНОСТИ ОТПРАВЛЕНО ===', {
-          success: readyResult.success,
-          datasetId,
-          timestamp: new Date().toISOString()
-        })
+        console.log(
+          '[IndexPage:subscribeToDeleteProgress] === ПОДТВЕРЖДЕНИЕ ГОТОВНОСТИ ОТПРАВЛЕНО ===',
+          {
+            success: readyResult.success,
+            datasetId,
+            timestamp: new Date().toISOString()
+          }
+        )
       } else {
         const errorText = await readyResponse.text()
-        console.error('[IndexPage:subscribeToDeleteProgress] === ОШИБКА ОТПРАВКИ ПОДТВЕРЖДЕНИЯ ===', {
-          status: readyResponse.status,
-          statusText: readyResponse.statusText,
-          errorText,
-          datasetId
-        })
+        console.error(
+          '[IndexPage:subscribeToDeleteProgress] === ОШИБКА ОТПРАВКИ ПОДТВЕРЖДЕНИЯ ===',
+          {
+            status: readyResponse.status,
+            statusText: readyResponse.statusText,
+            errorText,
+            datasetId
+          }
+        )
       }
     } catch (readyError) {
-      console.error('[IndexPage:subscribeToDeleteProgress] === ОШИБКА ОТПРАВКИ ПОДТВЕРЖДЕНИЯ (исключение) ===', {
-        error: readyError,
-        message: readyError?.message,
-        datasetId
-      })
+      console.error(
+        '[IndexPage:subscribeToDeleteProgress] === ОШИБКА ОТПРАВКИ ПОДТВЕРЖДЕНИЯ (исключение) ===',
+        {
+          error: readyError,
+          message: readyError?.message,
+          datasetId
+        }
+      )
     }
-    
+
     // Обрабатываем сообщения
     console.log('[IndexPage:subscribeToDeleteProgress] установка обработчика сообщений...')
     socketSubscription.value.listen((data) => {
@@ -586,18 +646,21 @@ async function subscribeToDeleteProgress(socketId, datasetId) {
         currentDeleteProgress: deleteProgress.value,
         timestamp: new Date().toISOString()
       })
-      
+
       // Проверяем, что состояние удаления все еще активно
       if (!deleteProgress.value || deletingDatasetId.value !== datasetId) {
-        console.warn('[IndexPage:subscribeToDeleteProgress] состояние удаления уже очищено, игнорируем сообщение', {
-          hasDeleteProgress: !!deleteProgress.value,
-          deletingDatasetId: deletingDatasetId.value,
-          expectedDatasetId: datasetId,
-          messageType: data.type
-        })
+        console.warn(
+          '[IndexPage:subscribeToDeleteProgress] состояние удаления уже очищено, игнорируем сообщение',
+          {
+            hasDeleteProgress: !!deleteProgress.value,
+            deletingDatasetId: deletingDatasetId.value,
+            expectedDatasetId: datasetId,
+            messageType: data.type
+          }
+        )
         return
       }
-      
+
       if (data.type === 'dataset-delete-start') {
         // Начало удаления
         if (!deleteProgress.value) return
@@ -609,19 +672,23 @@ async function subscribeToDeleteProgress(socketId, datasetId) {
         // Начало удаления кэша (может быть для компонента или для всего датасета)
         // Проверяем, есть ли datasetId в данных (это удаление всего кэша датасета)
         if (!deleteProgress.value) return
-        
+
         // Обрабатываем сообщение, если datasetId совпадает или не указан (для пустого кэша)
         const messageDatasetId = data.data?.datasetId
         if (!messageDatasetId || messageDatasetId === datasetId) {
           const total = data.data?.total || 0
-          
-          console.log('[IndexPage:subscribeToDeleteProgress] dataset-cache-delete-start обработано:', {
-            total,
-            messageDatasetId,
-            expectedDatasetId: datasetId,
-            action: total === 0 ? 'переход к удалению датасета (кэш пуст)' : 'начало удаления кэша'
-          })
-          
+
+          console.log(
+            '[IndexPage:subscribeToDeleteProgress] dataset-cache-delete-start обработано:',
+            {
+              total,
+              messageDatasetId,
+              expectedDatasetId: datasetId,
+              action:
+                total === 0 ? 'переход к удалению датасета (кэш пуст)' : 'начало удаления кэша'
+            }
+          )
+
           // Если total = 0, значит кэша нет, сразу переходим к удалению датасета
           if (total === 0) {
             deleteProgress.value.stage = 'dataset'
@@ -633,10 +700,13 @@ async function subscribeToDeleteProgress(socketId, datasetId) {
             deleteProgress.value.cacheTotal = total
           }
         } else {
-          console.warn('[IndexPage:subscribeToDeleteProgress] dataset-cache-delete-start проигнорировано (datasetId не совпадает):', {
-            messageDatasetId,
-            expectedDatasetId: datasetId
-          })
+          console.warn(
+            '[IndexPage:subscribeToDeleteProgress] dataset-cache-delete-start проигнорировано (datasetId не совпадает):',
+            {
+              messageDatasetId,
+              expectedDatasetId: datasetId
+            }
+          )
         }
       } else if (data.type === 'dataset-cache-delete-progress') {
         // Прогресс удаления кэша (может быть для компонента или для всего датасета)
@@ -645,7 +715,7 @@ async function subscribeToDeleteProgress(socketId, datasetId) {
         if (data.data.datasetId === datasetId) {
           const total = data.data.total || 0
           const deleted = data.data.deleted || 0
-          
+
           // Если total = 0, значит кэша нет, сразу переходим к удалению датасета
           if (total === 0) {
             deleteProgress.value.stage = 'dataset'
@@ -659,34 +729,42 @@ async function subscribeToDeleteProgress(socketId, datasetId) {
         }
       } else if (data.type === 'dataset-cache-delete-complete') {
         // Удаление кэша завершено
-        console.log('[IndexPage:subscribeToDeleteProgress] === ОБРАБОТКА dataset-cache-delete-complete ===', {
-          receivedData: data.data,
-          expectedDatasetId: datasetId,
-          receivedDatasetId: data.data?.datasetId,
-          match: data.data?.datasetId === datasetId,
-          deletingDatasetId: deletingDatasetId.value,
-          currentStage: deleteProgress.value?.stage
-        })
-        
+        console.log(
+          '[IndexPage:subscribeToDeleteProgress] === ОБРАБОТКА dataset-cache-delete-complete ===',
+          {
+            receivedData: data.data,
+            expectedDatasetId: datasetId,
+            receivedDatasetId: data.data?.datasetId,
+            match: data.data?.datasetId === datasetId,
+            deletingDatasetId: deletingDatasetId.value,
+            currentStage: deleteProgress.value?.stage
+          }
+        )
+
         // Обрабатываем событие независимо от datasetId (для пустого кэша datasetId может не совпадать)
         if (!deleteProgress.value) return
-        
+
         // Если total = 0, значит кэша не было, сразу переходим к удалению датасета
         const total = data.data?.total || 0
         const deleted = data.data?.deleted || 0
-        
-        console.log('[IndexPage:subscribeToDeleteProgress] dataset-cache-delete-complete обработано:', {
-          total,
-          deleted,
-          action: total === 0 ? 'переход к удалению датасета' : 'обновление прогресса'
-        })
-        
+
+        console.log(
+          '[IndexPage:subscribeToDeleteProgress] dataset-cache-delete-complete обработано:',
+          {
+            total,
+            deleted,
+            action: total === 0 ? 'переход к удалению датасета' : 'обновление прогресса'
+          }
+        )
+
         if (total === 0) {
           // Кэша не было - сразу переходим к удалению датасета
           deleteProgress.value.stage = 'dataset'
           deleteProgress.value.cacheProgress = 0
           deleteProgress.value.cacheTotal = 0
-          console.log('[IndexPage:subscribeToDeleteProgress] переход к стадии удаления датасета (кэш пуст)')
+          console.log(
+            '[IndexPage:subscribeToDeleteProgress] переход к стадии удаления датасета (кэш пуст)'
+          )
         } else {
           // Кэш был удален - обновляем прогресс
           deleteProgress.value.stage = 'dataset'
@@ -699,16 +777,19 @@ async function subscribeToDeleteProgress(socketId, datasetId) {
         }
       } else if (data.type === 'dataset-delete-complete') {
         // Удаление датасета завершено
-        console.log('[IndexPage:subscribeToDeleteProgress] === ОБРАБОТКА dataset-delete-complete ===', {
-          receivedData: data.data,
-          expectedDatasetId: datasetId,
-          receivedDatasetId: data.data?.datasetId || data.data?.id,
-          deletingDatasetId: deletingDatasetId.value,
-          currentStage: deleteProgress.value?.stage
-        })
-        
+        console.log(
+          '[IndexPage:subscribeToDeleteProgress] === ОБРАБОТКА dataset-delete-complete ===',
+          {
+            receivedData: data.data,
+            expectedDatasetId: datasetId,
+            receivedDatasetId: data.data?.datasetId || data.data?.id,
+            deletingDatasetId: deletingDatasetId.value,
+            currentStage: deleteProgress.value?.stage
+          }
+        )
+
         const eventDatasetId = data.data?.datasetId || data.data?.id
-        
+
         // Проверяем, что событие относится к нашему датасету
         if (eventDatasetId && eventDatasetId !== datasetId) {
           console.warn('[IndexPage:subscribeToDeleteProgress] datasetId НЕ СОВПАДАЕТ!', {
@@ -719,7 +800,7 @@ async function subscribeToDeleteProgress(socketId, datasetId) {
           })
           return
         }
-        
+
         // Проверяем, что мы действительно удаляем этот датасет
         if (deletingDatasetId.value && deletingDatasetId.value !== datasetId) {
           console.warn('[IndexPage:subscribeToDeleteProgress] deletingDatasetId НЕ СОВПАДАЕТ!', {
@@ -730,22 +811,22 @@ async function subscribeToDeleteProgress(socketId, datasetId) {
           })
           return
         }
-        
+
         console.log('[IndexPage:subscribeToDeleteProgress] === УДАЛЕНИЕ ЗАВЕРШЕНО ===', {
           datasetId,
           action: 'удаляем строку из таблицы'
         })
         if (!deleteProgress.value) return
         deleteProgress.value.stage = 'complete'
-        
+
         // Удаляем строку из таблицы
         removeDatasetFromList(datasetId)
-        
+
         // Очищаем состояние через небольшую задержку
         setTimeout(() => {
           deletingDatasetId.value = null
           deleteProgress.value = null
-          
+
           // Отписываемся от WebSocket
           if (socketSubscription.value) {
             if (typeof socketSubscription.value.unsubscribe === 'function') {
@@ -754,16 +835,19 @@ async function subscribeToDeleteProgress(socketId, datasetId) {
             socketSubscription.value = null
           }
         }, 1000)
-      } else if (data.type === 'dataset-delete-error' || data.type === 'dataset-cache-delete-error') {
+      } else if (
+        data.type === 'dataset-delete-error' ||
+        data.type === 'dataset-cache-delete-error'
+      ) {
         // Ошибка при удалении
         if (!deleteProgress.value) return
         deleteProgress.value.error = data.data.error || 'Ошибка при удалении'
-        
+
         // Разблокируем кнопки через 5 секунд
         setTimeout(() => {
           deletingDatasetId.value = null
           deleteProgress.value = null
-          
+
           // Отписываемся от WebSocket
           if (socketSubscription.value) {
             if (typeof socketSubscription.value.unsubscribe === 'function') {
@@ -779,7 +863,7 @@ async function subscribeToDeleteProgress(socketId, datasetId) {
     if (deleteProgress.value) {
       deleteProgress.value.error = 'Ошибка подключения к серверу'
     }
-    
+
     // Разблокируем кнопки через 3 секунды
     setTimeout(() => {
       deletingDatasetId.value = null
@@ -790,7 +874,7 @@ async function subscribeToDeleteProgress(socketId, datasetId) {
 
 // Удалить датасет из списка
 function removeDatasetFromList(datasetId) {
-  const index = datasets.value.findIndex(d => d.id === datasetId)
+  const index = datasets.value.findIndex((d) => d.id === datasetId)
   if (index !== -1) {
     datasets.value.splice(index, 1)
   }
@@ -804,11 +888,11 @@ function isDatasetDeleting(datasetId) {
 // Получить текст прогресса удаления
 function getDeleteProgressText() {
   if (!deleteProgress.value) return ''
-  
+
   if (deleteProgress.value.error) {
     return `Ошибка: ${deleteProgress.value.error}`
   }
-  
+
   if (deleteProgress.value.stage === 'cache') {
     const total = deleteProgress.value.cacheTotal
     const progress = deleteProgress.value.cacheProgress
@@ -822,7 +906,7 @@ function getDeleteProgressText() {
   } else if (deleteProgress.value.stage === 'complete') {
     return 'Удаление завершено'
   }
-  
+
   return 'Удаление...'
 }
 

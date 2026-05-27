@@ -7,6 +7,7 @@
 ## Переменные счётчика
 
 ### clrtUid (Clarity User ID)
+
 - **Назначение**: Уникальный идентификатор браузера/устройства пользователя
 - **Тип**: Строка (32 символа, например: `e7hnJ6Uj6FFixmxPvwuFGduj8lVZy1ht`)
 - **Область видимости**: Cохраняется между сессиями
@@ -15,6 +16,7 @@
 - **Реально**: Это поле `uid` в таблице `chatium_ai.access_log`
 
 **Примеры использования в запросах:**
+
 ```sql
 -- Подсчёт уникальных пользователей/браузеров за период
 SELECT COUNT(DISTINCT uid) as unique_users
@@ -29,6 +31,7 @@ WHERE uid = 'e7hnJ6Uj6FFixmxPvwuFGduj8lVZy1ht'
 ---
 
 ### clrtSid (Clarity Session ID)
+
 - **Назначение**: Уникальный идентификатор текущей сессии браузера
 - **Тип**: Строка (формат: `<hash>:<timestamp>`, например: `jGSZMTdVMu_sp2az6FExGIFR4ESAEmwt:1752674350663`)
 - **Область видимости**: Сбрасывается при закрытии браузера (или по тайм-ауту ~30 мин неактивности)
@@ -37,6 +40,7 @@ WHERE uid = 'e7hnJ6Uj6FFixmxPvwuFGduj8lVZy1ht'
 - **Реально**: Это поле `sid` в таблице `chatium_ai.access_log`
 
 **Примеры использования в запросах:**
+
 ```sql
 -- Подсчёт сессий (визитов) за период
 SELECT COUNT(DISTINCT sid) as sessions_count
@@ -54,52 +58,57 @@ ORDER BY ts
 
 ## Таблица сравнения идентификаторов
 
-| Переменная | Назначение | Диапазон | Когда сбрасывается | Идемпотентность |
-|------------|-----------|---------|------------------|-----------------|
-| **clrtUid** / `uid` | Уникальный браузер/устройство | Постоянный (месяцы-годы) | При очистке cookie/localStorage | Уникальные пользователи |
-| **clrtSid** / `sid` | Сессия браузера | Сессионный (часы) | При закрытии вкладки/браузера или тайм-ауте | Сессии/визиты |
-| `session_id` | Сессия веб-приложения | Сессионный | При выходе из аккаунта | Авторизованные сессии |
-| `user_id` | Пользователь системы | Постоянный | Не сбрасывается | Авторизованные пользователи |
-| `clrt_run_id` | ID события для группировки | Событийный | После записи события | Группировка связанных действий |
+| Переменная          | Назначение                    | Диапазон                 | Когда сбрасывается                          | Идемпотентность                |
+| ------------------- | ----------------------------- | ------------------------ | ------------------------------------------- | ------------------------------ |
+| **clrtUid** / `uid` | Уникальный браузер/устройство | Постоянный (месяцы-годы) | При очистке cookie/localStorage             | Уникальные пользователи        |
+| **clrtSid** / `sid` | Сессия браузера               | Сессионный (часы)        | При закрытии вкладки/браузера или тайм-ауте | Сессии/визиты                  |
+| `session_id`        | Сессия веб-приложения         | Сессионный               | При выходе из аккаунта                      | Авторизованные сессии          |
+| `user_id`           | Пользователь системы          | Постоянный               | Не сбрасывается                             | Авторизованные пользователи    |
+| `clrt_run_id`       | ID события для группировки    | Событийный               | После записи события                        | Группировка связанных действий |
 
 ---
 
 ## Как выбрать для идемпотентности
 
 ### Сценарий 1: Подсчёт уникальных посетителей сайта
+
 ```sql
 SELECT COUNT(DISTINCT uid) as visitors
 FROM chatium_ai.access_log
 WHERE dt = today()
 ```
+
 **Отвечает на**: "Сколько разных людей/браузеров заходило на сайт?"
 **Используй**: `uid` (clrtUid)
 
 ---
 
 ### Сценарий 2: Подсчёт визитов (сессий)
+
 ```sql
 SELECT COUNT(DISTINCT sid) as visits
 FROM chatium_ai.access_log
 WHERE dt = today()
 ```
+
 **Отвечает на**: "Сколько раз люди заходили на сайт сегодня?"
 **Используй**: `sid` (clrtSid)
 
 ---
 
 ### Сценарий 3: Избежать дублирования событий при отправке с фронтенда
+
 ```javascript
 // На фронтенде
 async function sendEvent(eventData) {
   const fingerprint = window.clrtUid + '|' + window.clrtSid + '|' + Date.now()
-  
+
   // Отправить на backend
   await fetch('/api/event', {
     method: 'POST',
     body: JSON.stringify({
       ...eventData,
-      idempotencyKey: fingerprint  // Сервер использует это для дедупликации
+      idempotencyKey: fingerprint // Сервер использует это для дедупликации
     })
   })
 }
@@ -110,17 +119,20 @@ async function sendEvent(eventData) {
 ## Другие важные поля в access_log
 
 ### Для уникальности пользователя
+
 - **resolved_user_id** — ID авторизованного пользователя системы (если логин)
 - **user_id** — ID авторизованного пользователя в момент визита
 - **session_email** / **session_phone** — Контакты, введённые в текущей сессии (неавторизованные)
 
 ### Для отслеживания событий
+
 - **clrt_run_id** (UInt32) — ID события, используется для группировки связанных действий одного пользователя
 - **action** — Название действия (if triggered via `writeWorkspaceEvent`)
 - **action_param1, action_param2, action_param3** — Параметры действия
 - **param_clrt** — Дополнительные параметры Clarity (JSON)
 
 ### Для диагностики
+
 - **inferred_uid** (Bool) — `true` если uid был выведен (не установлен явно)
 - **inferred_sid** (Bool) — `true` если sid была выведена (не установлена явно)
 
@@ -129,8 +141,9 @@ async function sendEvent(eventData) {
 ## Практические примеры аналитики
 
 ### Пример 1: Уникальные посетители по дням за месяц
+
 ```sql
-SELECT 
+SELECT
   dt,
   COUNT(DISTINCT uid) as unique_visitors,
   COUNT(DISTINCT sid) as total_sessions
@@ -141,8 +154,9 @@ ORDER BY dt
 ```
 
 ### Пример 2: Вернулись ли пользователи (repeat visitors)
+
 ```sql
-SELECT 
+SELECT
   uid,
   COUNT(DISTINCT DATE(ts)) as days_visited,
   COUNT(DISTINCT sid) as sessions_count,
@@ -156,12 +170,13 @@ ORDER BY sessions_count DESC
 ```
 
 ### Пример 3: Конверсия визит → регистрация (без дублей)
+
 ```sql
-SELECT 
+SELECT
   COUNT(DISTINCT sid) as total_sessions,
   COUNT(DISTINCT CASE WHEN action = 'registration' THEN sid END) as registrations,
   ROUND(
-    COUNT(DISTINCT CASE WHEN action = 'registration' THEN sid END) * 100 / 
+    COUNT(DISTINCT CASE WHEN action = 'registration' THEN sid END) * 100 /
     COUNT(DISTINCT sid), 2
   ) as conversion_rate_percent
 FROM chatium_ai.access_log
@@ -169,8 +184,9 @@ WHERE dt = today()
 ```
 
 ### Пример 4: Путь пользователя в сессии (последовательность действий)
+
 ```sql
-SELECT 
+SELECT
   ts,
   action,
   action_param1,
@@ -196,12 +212,14 @@ ORDER BY ts
 ## Рекомендации
 
 ### ✅ ДЕЛай
+
 - Используй `uid` для COUNT(DISTINCT uid) при подсчёте уникальных пользователей
 - Используй `sid` для COUNT(DISTINCT sid) при подсчёте сессий/визитов
 - Используй `resolved_user_id` для авторизованных пользователей системы
 - Сохраняй fingerprint (`uid + sid + timestamp`) для идемпотентности API вызовов
 
 ### ❌ НЕ ДЕЛай
+
 - Не полагайся на `session_id` для аналитики (это внутренний ID веб-приложения, не Clarity)
 - Не используй обычный COUNT() без DISTINCT при подсчёте уникальности
 - Не путай `uid` и `user_id` (первый — браузер, второй — авторизованный пользователь)
@@ -235,6 +253,7 @@ const getUserFingerprint = () => {
 ## Заключение
 
 Для обеспечения **идемпотентности визитов**:
+
 - **Выбирай `uid` (clrtUid)** если нужна идентификация на уровне браузера/устройства
 - **Выбирай `sid` (clrtSid)** если нужна идентификация на уровне сессии
 - **Комбинируй `uid + sid + timestamp`** для максимальной надёжности дедупликации API вызовов

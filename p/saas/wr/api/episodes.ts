@@ -8,13 +8,17 @@ import { reporterApp } from '../shared/error-handler-middleware'
 import { ChatAccessMode, EpisodeStatus, LatencyMode, FinishAction } from '../shared/enum'
 import { s } from '@app/schema'
 import { createFeed, getChat, getOrCreateParticipant } from '@app/feed'
-import { episodeChatMessagesAddRoute, episodeChatMessagesChangesRoute, episodeChatMessagesGetRoute } from './chat'
+import {
+  episodeChatMessagesAddRoute,
+  episodeChatMessagesChangesRoute,
+  episodeChatMessagesGetRoute
+} from './chat'
 import {
   createEvent,
   enableEvent,
   completeEvent,
   updateEvent,
-  type CreateEventBody,
+  type CreateEventBody
 } from '@kinescope/sdk'
 import { captureCustomerEvent, ContactType } from '@crm/sdk'
 import { writeWorkspaceEvent, getWorkspaceEventUrl } from '@start/sdk'
@@ -29,17 +33,17 @@ export const apiEpisodesListRoute = reporterApp.get('/list', async (ctx, req) =>
 
   const episodes = await Episodes.findAll(ctx, {
     limit: 100,
-    order: [{ scheduledDate: 'desc' }],
+    order: [{ scheduledDate: 'desc' }]
   })
 
-  return episodes.map(e => EpisodeDtoSchema.parse(e))
+  return episodes.map((e) => EpisodeDtoSchema.parse(e))
 })
 
 // @shared-route
 export const apiUserUpdateNameRoute = reporterApp
-  .body(s => ({
+  .body((s) => ({
     firstName: s.string(),
-    email: s.string().optional(),
+    email: s.string().optional()
   }))
   .post('/user/update-name', async (ctx, req) => {
     await requireAnyUser(ctx)
@@ -49,7 +53,7 @@ export const apiUserUpdateNameRoute = reporterApp
     }
 
     await ctx.user.updateExtendedInfo(ctx, {
-      firstName: req.body.firstName,
+      firstName: req.body.firstName
     })
 
     if (req.body.email) {
@@ -57,7 +61,7 @@ export const apiUserUpdateNameRoute = reporterApp
         await createUnconfirmedIdentity(ctx, {
           userId: ctx.user.id,
           type: 'Email',
-          key: normalizeIdentityKey('Email', req.body.email),
+          key: normalizeIdentityKey('Email', req.body.email)
         })
       } catch (e) {
         // Identity may already exist
@@ -75,22 +79,22 @@ export const apiUserUpdateNameRoute = reporterApp
     await captureCustomerEvent(ctx, {
       event: 'webinar_viewer_identified',
       customer: {
-        displayName: req.body.firstName,
+        displayName: req.body.firstName
       },
       contacts,
-      appendUserContacts: ctx.user.id,
+      appendUserContacts: ctx.user.id
     })
 
     await writeWorkspaceEvent(ctx, 'webinar_viewer_identified', {
       user: {
         id: ctx.user.id,
         firstName: req.body.firstName,
-        email: req.body.email,
+        email: req.body.email
       },
-      customer_contacts: contacts.map(c => ({ type: c.type, value: c.value })),
+      customer_contacts: contacts.map((c) => ({ type: c.type, value: c.value })),
       action_param1: req.body.firstName,
       action_param2: req.body.email,
-      uid: (ctx.req as any)?.cookies?.['x-chtm-uid'] || undefined,
+      uid: (ctx.req as any)?.cookies?.['x-chtm-uid'] || undefined
     })
 
     return { success: true }
@@ -120,7 +124,7 @@ export const EpisodeDtoSchema = s.object({
   kinescopeId: s.string().optional(),
   streamkey: s.string().optional(),
   rtmpLink: s.string().optional(),
-  playLink: s.string().optional(),
+  playLink: s.string().optional()
 })
 
 // @shared-route
@@ -128,15 +132,15 @@ export const apiEpisodeUpcomingRoute = reporterApp.get('/upcoming', async (ctx, 
   const episodes = await Episodes.findAll(ctx, {
     where: { status: [EpisodeStatus.Live, EpisodeStatus.WaitingRoom, EpisodeStatus.Scheduled] },
     order: [{ scheduledDate: 'asc' }],
-    limit: 1,
+    limit: 1
   })
 
-  const liveEpisode = episodes.find(e => e.status === EpisodeStatus.Live)
+  const liveEpisode = episodes.find((e) => e.status === EpisodeStatus.Live)
   if (liveEpisode) {
     return EpisodeDtoSchema.parse(liveEpisode)
   }
 
-  const waitingRoomEpisode = episodes.find(e => e.status === EpisodeStatus.WaitingRoom)
+  const waitingRoomEpisode = episodes.find((e) => e.status === EpisodeStatus.WaitingRoom)
   if (waitingRoomEpisode) {
     return EpisodeDtoSchema.parse(waitingRoomEpisode)
   }
@@ -174,13 +178,13 @@ export const getEpisodeChatRoute = reporterApp.get('/:id/chat', async (ctx, req)
   await getOrCreateParticipant(ctx, episode.chatFeedId, ctx.user?.id as string, {
     muted: true,
     silent: true,
-    inboxDisabled: true,
+    inboxDisabled: true
   })
 
   const chat = await getChat(ctx, episode.chatFeedId, {
     messagesGetUrl: episodeChatMessagesGetRoute({ feedId: episode.chatFeedId }).url(),
     messagesAddUrl: episodeChatMessagesAddRoute({ feedId: episode.chatFeedId }).url(),
-    messagesChangesUrl: episodeChatMessagesChangesRoute({ feedId: episode.chatFeedId }).url(),
+    messagesChangesUrl: episodeChatMessagesChangesRoute({ feedId: episode.chatFeedId }).url()
   })
 
   return { chat: { ...chat, episodeId: episode.id } }
@@ -188,7 +192,7 @@ export const getEpisodeChatRoute = reporterApp.get('/:id/chat', async (ctx, req)
 
 // @shared-route
 export const apiEpisodeCreateRoute = reporterApp
-  .body(s => ({
+  .body((s) => ({
     title: s.string(),
     description: s.string().optional(),
     scheduledDate: s.date(),
@@ -202,7 +206,7 @@ export const apiEpisodeCreateRoute = reporterApp
     finishAction: s.enum(FinishAction).optional(),
     resultUrl: s.string().optional(),
     resultButtonText: s.string().optional(),
-    resultText: s.string().optional(),
+    resultText: s.string().optional()
   }))
   .post('/create', async (ctx, req) => {
     requireAccountRole(ctx, 'Admin')
@@ -212,7 +216,7 @@ export const apiEpisodeCreateRoute = reporterApp
     // Создаём event (трансляцию) в Kinescope
     const createEventParams: CreateEventBody = {
       name: req.body.title,
-      type: 'one-time',
+      type: 'one-time'
     }
 
     // Добавляем subtitle только если description заполнен и не пустая строка
@@ -246,8 +250,8 @@ export const apiEpisodeCreateRoute = reporterApp
         time_shift: createEventParams.time_shift,
         record: createEventParams.record,
         kinescopeFolderId: req.body.kinescopeFolderId,
-        fullParams: createEventParams,
-      },
+        fullParams: createEventParams
+      }
     })
 
     const kinescopeEvent = await createEvent(ctx, createEventParams)
@@ -270,13 +274,13 @@ export const apiEpisodeCreateRoute = reporterApp
       finishAction: req.body.finishAction || FinishAction.Page,
       resultUrl: req.body.resultUrl,
       resultButtonText: req.body.resultButtonText,
-      resultText: req.body.resultText,
+      resultText: req.body.resultText
     })
 
     const chatFeed = await createFeed(ctx, {
       title: `Чат для эфира #${count + 1}`,
       inboxSubjectId: 'webinar_room:' + episode.id,
-      inboxExtraData: { episodeId: episode.id },
+      inboxExtraData: { episodeId: episode.id }
     })
 
     await Episodes.update(ctx, { id: episode.id, chatFeedId: chatFeed.id })
@@ -286,7 +290,7 @@ export const apiEpisodeCreateRoute = reporterApp
 
 // @shared-route
 export const apiEpisodeUpdateRoute = reporterApp
-  .body(s => ({
+  .body((s) => ({
     title: s.string().optional(),
     description: s.string().optional(),
     scheduledDate: s.date().optional(),
@@ -300,7 +304,7 @@ export const apiEpisodeUpdateRoute = reporterApp
     resultUrl: s.string().optional(),
     resultButtonText: s.string().optional(),
     resultText: s.string().optional(),
-    finishAction: s.enum(FinishAction).optional(),
+    finishAction: s.enum(FinishAction).optional()
   }))
   .post('/update/:id', async (ctx, req) => {
     requireAccountRole(ctx, 'Admin')
@@ -313,13 +317,14 @@ export const apiEpisodeUpdateRoute = reporterApp
 
     const episode = await Episodes.update(ctx, {
       id: req.params.id as string,
-      ...req.body,
+      ...req.body
     })
 
     // Обновляем параметры в Kinescope только если трансляция ещё не запущена
     if (
       oldEpisode.kinescopeId &&
-      (oldEpisode.status === EpisodeStatus.Scheduled || oldEpisode.status === EpisodeStatus.WaitingRoom)
+      (oldEpisode.status === EpisodeStatus.Scheduled ||
+        oldEpisode.status === EpisodeStatus.WaitingRoom)
     ) {
       const updateParams: any = {}
 
@@ -360,8 +365,8 @@ export const apiEpisodeUpdateRoute = reporterApp
           level: 'info',
           json: {
             kinescopeId: oldEpisode.kinescopeId,
-            updateParams,
-          },
+            updateParams
+          }
         })
 
         try {
@@ -369,7 +374,7 @@ export const apiEpisodeUpdateRoute = reporterApp
         } catch (error: any) {
           ctx.account.log('@webinar-room Kinescope updateEvent error', {
             level: 'error',
-            json: { error: error.message, kinescopeId: oldEpisode.kinescopeId },
+            json: { error: error.message, kinescopeId: oldEpisode.kinescopeId }
           })
           throw new Error('Ошибка обновления параметров трансляции в Kinescope: ' + error.message)
         }
@@ -377,11 +382,15 @@ export const apiEpisodeUpdateRoute = reporterApp
     }
 
     // Если изменился chatAccessMode, отправляем WebSocket событие
-    if (req.body.chatAccessMode && oldEpisode && oldEpisode.chatAccessMode !== req.body.chatAccessMode) {
+    if (
+      req.body.chatAccessMode &&
+      oldEpisode &&
+      oldEpisode.chatAccessMode !== req.body.chatAccessMode
+    ) {
       const episodeSocketId = `episode_${req.params.id}`
       await sendDataToSocket(ctx, episodeSocketId, {
         type: 'chat_access_changed',
-        chatAccessMode: req.body.chatAccessMode,
+        chatAccessMode: req.body.chatAccessMode
       })
     }
 
@@ -394,7 +403,7 @@ export const apiEpisodeOpenRoomRoute = reporterApp.post('/open-room/:id', async 
 
   const episode = await Episodes.update(ctx, {
     id: req.params.id as string,
-    status: EpisodeStatus.WaitingRoom,
+    status: EpisodeStatus.WaitingRoom
   })
 
   const episodeDto = EpisodeDtoSchema.parse(episode)
@@ -423,7 +432,7 @@ export const apiEpisodeStartRoute = reporterApp.post('/start/:id', async (ctx, r
   const updatedEpisode = await Episodes.update(ctx, {
     id: req.params.id as string,
     status: EpisodeStatus.Live,
-    startedAt: new Date(),
+    startedAt: new Date()
   })
 
   const episodeDto = EpisodeDtoSchema.parse(updatedEpisode)
@@ -451,7 +460,7 @@ export const apiEpisodeFinishRoute = reporterApp.post('/finish/:id', async (ctx,
       // это нормально — просто логируем и продолжаем обновление статуса в нашей базе
       ctx.account.log('Kinescope completeEvent error (probably already finished)', {
         level: 'info',
-        json: { error: error.message, kinescopeId: episode.kinescopeId },
+        json: { error: error.message, kinescopeId: episode.kinescopeId }
       })
     }
   }
@@ -459,7 +468,7 @@ export const apiEpisodeFinishRoute = reporterApp.post('/finish/:id', async (ctx,
   const updatedEpisode = await Episodes.update(ctx, {
     id: req.params.id as string,
     status: EpisodeStatus.Finished,
-    finishedAt: new Date(),
+    finishedAt: new Date()
   })
 
   const episodeDto = EpisodeDtoSchema.parse(updatedEpisode)
@@ -494,86 +503,104 @@ export const apiEpisodeDeleteRoute = reporterApp.post('/delete/:id', async (ctx,
 })
 
 // @shared-route
-export const apiEpisodesGlobalSocketIdRoute = reporterApp.get('/global-socket-id', async (ctx, req) => {
-  const globalSocketId = 'episodes_global'
+export const apiEpisodesGlobalSocketIdRoute = reporterApp.get(
+  '/global-socket-id',
+  async (ctx, req) => {
+    const globalSocketId = 'episodes_global'
 
-  const encodedSocketId = await genSocketId(ctx, globalSocketId)
+    const encodedSocketId = await genSocketId(ctx, globalSocketId)
 
-  return { encodedSocketId }
-})
+    return { encodedSocketId }
+  }
+)
 
 // @shared-route
-export const apiEpisodeGetOnlineCountRoute = reporterApp.get('/online-count/:episodeId', async (ctx, req) => {
-  const episode = await Episodes.findById(ctx, req.params.episodeId as string)
+export const apiEpisodeGetOnlineCountRoute = reporterApp.get(
+  '/online-count/:episodeId',
+  async (ctx, req) => {
+    const episode = await Episodes.findById(ctx, req.params.episodeId as string)
 
-  if (!episode) {
-    return { onlineCount: 0 }
-  }
+    if (!episode) {
+      return { onlineCount: 0 }
+    }
 
-  const socketId = `episode_${req.params.episodeId}`
-  const encodedSocketId = await genSocketId(ctx, socketId)
+    const socketId = `episode_${req.params.episodeId}`
+    const encodedSocketId = await genSocketId(ctx, socketId)
 
-  const redisKey = `socket:${encodedSocketId}:subscribers`
-  const cache = (await formStorage.getItem(redisKey, null)) as unknown as { count: number; expiresAt: number } | null
+    const redisKey = `socket:${encodedSocketId}:subscribers`
+    const cache = (await formStorage.getItem(redisKey, null)) as unknown as {
+      count: number
+      expiresAt: number
+    } | null
 
-  let onlineCount = 0
+    let onlineCount = 0
 
-  if (!cache || cache.expiresAt < Date.now()) {
-    const lockResult = await tryRunWithExclusiveLock(ctx, `lock:socket:${encodedSocketId}:count`, 15000, async ctx => {
-      let lockOnlineCount = 0
+    if (!cache || cache.expiresAt < Date.now()) {
+      const lockResult = await tryRunWithExclusiveLock(
+        ctx,
+        `lock:socket:${encodedSocketId}:count`,
+        15000,
+        async (ctx) => {
+          let lockOnlineCount = 0
 
-      const cache = (await formStorage.getItem(redisKey, null)) as unknown as {
-        count: number
-        expiresAt: number
-      } | null
+          const cache = (await formStorage.getItem(redisKey, null)) as unknown as {
+            count: number
+            expiresAt: number
+          } | null
 
-      if (cache && cache.expiresAt > Date.now()) {
-        lockOnlineCount = cache.count
+          if (cache && cache.expiresAt > Date.now()) {
+            lockOnlineCount = cache.count
 
-        return lockOnlineCount
-      }
+            return lockOnlineCount
+          }
 
-      const onlineCountResponse = await request.get<{ ok: true; count: number; socketId: string } | { ok: false }>(
-        `https://app.msk.chatium.io/socket.io/info/${encodedSocketId}/countSubscribers`,
-        { throwHttpErrors: false },
+          const onlineCountResponse = await request.get<
+            { ok: true; count: number; socketId: string } | { ok: false }
+          >(`https://app.msk.chatium.io/socket.io/info/${encodedSocketId}/countSubscribers`, {
+            throwHttpErrors: false
+          })
+
+          if (onlineCountResponse.statusCode === 200 && onlineCountResponse.body.ok) {
+            lockOnlineCount = onlineCountResponse.body.count
+          } else {
+            ctx.account.log('Error fetching online count from socket service', {
+              level: 'error',
+              json: { statusCode: onlineCountResponse.statusCode, body: onlineCountResponse.body }
+            })
+
+            // В случае ошибки возвращаем 0, чтобы не мешать работе эфира
+            lockOnlineCount = 0
+          }
+
+          // Кэшируем результат на 10 секунд
+          const cacheTtl = 10 * 1000
+
+          await formStorage.setItem(redisKey, {
+            count: lockOnlineCount,
+            expiresAt: Date.now() + cacheTtl
+          })
+
+          return lockOnlineCount
+        }
       )
 
-      if (onlineCountResponse.statusCode === 200 && onlineCountResponse.body.ok) {
-        lockOnlineCount = onlineCountResponse.body.count
+      if (lockResult.success) {
+        onlineCount = lockResult.result
       } else {
-        ctx.account.log('Error fetching online count from socket service', {
-          level: 'error',
-          json: { statusCode: onlineCountResponse.statusCode, body: onlineCountResponse.body },
-        })
-
-        // В случае ошибки возвращаем 0, чтобы не мешать работе эфира
-        lockOnlineCount = 0
+        onlineCount = 0
       }
-
-      // Кэшируем результат на 10 секунд
-      const cacheTtl = 10 * 1000
-
-      await formStorage.setItem(redisKey, { count: lockOnlineCount, expiresAt: Date.now() + cacheTtl })
-
-      return lockOnlineCount
-    })
-
-    if (lockResult.success) {
-      onlineCount = lockResult.result
     } else {
-      onlineCount = 0
+      onlineCount = cache.count
     }
-  } else {
-    onlineCount = cache.count
-  }
 
-  return { onlineCount }
-})
+    return { onlineCount }
+  }
+)
 
 // @shared-route
 export const apiEpisodeVisitRoute = reporterApp
-  .body(s => ({
-    episodeId: s.string(),
+  .body((s) => ({
+    episodeId: s.string()
   }))
   .post('/visit', async (ctx, req) => {
     await requireAnyUser(ctx)
@@ -602,26 +629,26 @@ export const apiEpisodeVisitRoute = reporterApp
     await captureCustomerEvent(ctx, {
       event: 'webinar_episode_visit',
       customer: {
-        displayName: ctx.user.displayName,
+        displayName: ctx.user.displayName
       },
       contacts,
       appendUserContacts: ctx.user.id,
       payload: {
         episodeId: episode.id,
         episodeTitle: episode.title,
-        episodeStatus: episode.status,
-      },
+        episodeStatus: episode.status
+      }
     })
 
     return { success: true }
   })
 
-
 app.accountHook('@start/account-events', async (ctx, params) => {
   return [
     {
       name: 'Зритель представился в вебинарной комнате',
-      description: 'Зритель заполнил форму с именем и (опционально) email при входе в вебинарную комнату',
+      description:
+        'Зритель заполнил форму с именем и (опционально) email при входе в вебинарную комнату',
       url: await getWorkspaceEventUrl(ctx, 'webinar_viewer_identified'),
       icon: '👤',
       category: 'users',
@@ -629,14 +656,14 @@ app.accountHook('@start/account-events', async (ctx, params) => {
         firstName: {
           title: 'Имя',
           fieldName: 'action_param1',
-          type: 'string',
+          type: 'string'
         },
         email: {
           title: 'Email',
           fieldName: 'action_param2',
-          type: 'string',
-        },
-      },
-    },
+          type: 'string'
+        }
+      }
+    }
   ]
 })

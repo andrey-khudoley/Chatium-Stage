@@ -108,6 +108,6 @@ export function useScale() {
     increaseScale,
     decreaseScale,
     resetScale,
-    setSidebarWidth,
+    setSidebarWidth
   }
 }

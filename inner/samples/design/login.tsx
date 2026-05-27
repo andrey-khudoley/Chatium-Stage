@@ -1,5 +1,5 @@
 // @shared
-import { jsx } from "@app/html-jsx"
+import { jsx } from '@app/html-jsx'
 import { getEnabledAuthProviders } from '@app/auth/provider'
 import LoginPage from './pages/LoginPage.vue'
 import { TgChannelAnalyticsSettings, ensureDefaultSettings } from './tables/settings.table'
@@ -9,16 +9,16 @@ import { getTelegramOauthUrlRoute } from './api/auth-telegram'
 export const loginPageRoute = app.html('/', async (ctx, req) => {
   await ensureDefaultSettings(ctx)
   const back = (req.query.back as string) || indexPageRoute.url()
-  
+
   const providers = await getEnabledAuthProviders(ctx)
   const titleSetting = await TgChannelAnalyticsSettings.findOneBy(ctx, { key: 'project_title' })
   const projectTitle = titleSetting?.value ?? 'Аналитика телеграм-каналов'
-  
+
   // ✅ API URLs для клиентской части
   const apiUrls = {
     getTelegramOauthUrl: getTelegramOauthUrlRoute.url()
   }
-  
+
   return (
     <html class="dark">
       <head>
@@ -467,12 +467,15 @@ export const loginPageRoute = app.html('/', async (ctx, req) => {
             }
             
           })();
-        `}</script> 
+        `}</script>
         <script src="/s/static/lib/tailwind.3.4.16.min.js"></script>
         <link rel="stylesheet" href="/s/static/lib/fontawesome/6.7.2/css/all.min.css" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
-        <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap"
+          rel="stylesheet"
+        />
         <style>{`
           :root {
             --color-bg: #0a0a0a;
@@ -523,7 +526,12 @@ export const loginPageRoute = app.html('/', async (ctx, req) => {
             <div id="boot-messages-container"></div>
           </div>
         </div>
-        <LoginPage providers={providers} back={back} projectTitle={projectTitle} apiUrls={apiUrls} />
+        <LoginPage
+          providers={providers}
+          back={back}
+          projectTitle={projectTitle}
+          apiUrls={apiUrls}
+        />
       </body>
     </html>
   )

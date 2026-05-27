@@ -3,7 +3,12 @@ import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import Header from '../shared/Header.vue'
 import AlertModal from '../shared/AlertModal.vue'
 import ConfirmModal from '../shared/ConfirmModal.vue'
-import { apiGetProjectsListRoute, apiJoinProjectRequestRoute, apiCreateProjectRoute, apiDeleteProjectRoute } from '../api/projects'
+import {
+  apiGetProjectsListRoute,
+  apiJoinProjectRequestRoute,
+  apiCreateProjectRoute,
+  apiDeleteProjectRoute
+} from '../api/projects'
 import { userIdsMatch } from '../shared/user-utils'
 import { projectDetailPageRoute } from '../index'
 
@@ -31,23 +36,25 @@ const getProjectDetailUrl = (projectId: string): string => {
   // Используем правильный синтаксис для роутов с параметрами: route({ param }).url()
   // Согласно документации 002-routing.md и примеру из api/bots.ts
   let url = projectDetailPageRoute({ id: projectId }).url()
-  
+
   // Если есть параметр target, добавляем его к URL
   if (props.target) {
     const separator = url.includes('?') ? '&' : '?'
     url = `${url}${separator}target=${props.target}`
   }
-  
+
   return url
 }
 
-const projects = ref<Array<{
-  id: string
-  name: string
-  description?: string
-  membersCount: number
-  members?: Array<{ userId: string; role: string }>
-}>>([])
+const projects = ref<
+  Array<{
+    id: string
+    name: string
+    description?: string
+    membersCount: number
+    members?: Array<{ userId: string; role: string }>
+  }>
+>([])
 const loading = ref(true)
 const error = ref<string | null>(null)
 const activeTab = ref<'my' | 'member'>('my')
@@ -55,10 +62,10 @@ const activeTab = ref<'my' | 'member'>('my')
 // Вычисляемые свойства для разделения проектов
 const myProjects = computed(() => {
   if (!ctx.user) return []
-  return projects.value.filter(project => {
+  return projects.value.filter((project) => {
     if (project.members && Array.isArray(project.members)) {
-      return project.members.some((member: any) => 
-        userIdsMatch(member.userId, ctx.user?.id) && member.role === 'owner'
+      return project.members.some(
+        (member: any) => userIdsMatch(member.userId, ctx.user?.id) && member.role === 'owner'
       )
     }
     return false
@@ -67,10 +74,10 @@ const myProjects = computed(() => {
 
 const memberProjects = computed(() => {
   if (!ctx.user) return []
-  return projects.value.filter(project => {
+  return projects.value.filter((project) => {
     if (project.members && Array.isArray(project.members)) {
-      return project.members.some((member: any) => 
-        userIdsMatch(member.userId, ctx.user?.id) && member.role === 'member'
+      return project.members.some(
+        (member: any) => userIdsMatch(member.userId, ctx.user?.id) && member.role === 'member'
       )
     }
     return false
@@ -119,10 +126,10 @@ let escHandler: ((e: KeyboardEvent) => void) | null = null
 const loadProjects = async () => {
   loading.value = true
   error.value = null
-  
+
   try {
     const result = await apiGetProjectsListRoute.run(ctx)
-    
+
     if (result.success && result.projects) {
       projects.value = result.projects.map((p: any) => ({
         id: p.id,
@@ -145,19 +152,19 @@ const loadProjects = async () => {
 // Проверка, является ли пользователь владельцем или админом проекта
 const canDeleteProject = (project: { members?: Array<{ userId: string; role: string }> }) => {
   if (!ctx.user) return false
-  
+
   // Проверяем, является ли пользователь админом
   if (ctx.user.is && ctx.user.is('Admin')) {
     return true
   }
-  
+
   // Проверяем, является ли пользователь владельцем проекта
   if (project.members && Array.isArray(project.members)) {
-    return project.members.some((member: any) => 
-      userIdsMatch(member.userId, ctx.user?.id) && member.role === 'owner'
+    return project.members.some(
+      (member: any) => userIdsMatch(member.userId, ctx.user?.id) && member.role === 'owner'
     )
   }
-  
+
   return false
 }
 
@@ -189,16 +196,16 @@ const submitJoinRequest = async () => {
     joinError.value = 'Введите ID проекта'
     return
   }
-  
+
   joiningProject.value = true
   joinError.value = null
   joinSuccessMessage.value = null
-  
+
   try {
     const result = await apiJoinProjectRequestRoute.run(ctx, {
       projectId: joinProjectId.value.trim()
     })
-    
+
     if (result.success) {
       joinSuccessMessage.value = 'Заявка подана'
       joinProjectId.value = ''
@@ -240,16 +247,16 @@ const submitCreateProject = async () => {
     createError.value = 'Введите название проекта'
     return
   }
-  
+
   creatingProject.value = true
   createError.value = null
-  
+
   try {
     const result = await apiCreateProjectRoute.run(ctx, {
       name: newProjectName.value.trim(),
       description: newProjectDescription.value.trim() || null
     })
-    
+
     if (result.success) {
       // Обновляем список проектов
       await loadProjects()
@@ -269,14 +276,23 @@ const submitCreateProject = async () => {
 }
 
 // Функции для показа модальных окон
-const showAlert = (message: string, title?: string, type: 'info' | 'error' | 'success' | 'warning' = 'info') => {
+const showAlert = (
+  message: string,
+  title?: string,
+  type: 'info' | 'error' | 'success' | 'warning' = 'info'
+) => {
   alertMessage.value = message
   alertTitle.value = title || ''
   alertType.value = type
   showAlertModal.value = true
 }
 
-const showConfirm = (message: string, onConfirm: () => void, title?: string, type: 'danger' | 'warning' | 'info' = 'info') => {
+const showConfirm = (
+  message: string,
+  onConfirm: () => void,
+  title?: string,
+  type: 'danger' | 'warning' | 'info' = 'info'
+) => {
   confirmMessage.value = message
   confirmTitle.value = title || ''
   confirmType.value = type
@@ -301,19 +317,19 @@ const handleCancel = () => {
 const deleteProject = async (projectId: string, event: Event) => {
   event.preventDefault()
   event.stopPropagation()
-  
+
   if (deletingProjectId.value) return
-  
+
   showConfirm(
     'Вы уверены, что хотите удалить этот проект? Это действие нельзя отменить.',
     async () => {
       deletingProjectId.value = projectId
-      
+
       try {
         const result = await apiDeleteProjectRoute.run(ctx, {
           projectId: projectId
         })
-        
+
         if (result.success) {
           // Обновляем список проектов
           await loadProjects()
@@ -334,11 +350,11 @@ const deleteProject = async (projectId: string, event: Event) => {
 
 onMounted(async () => {
   console.log('[ProjectsPage] Компонент монтируется')
-  
+
   if (window.hideAppLoader) {
     window.hideAppLoader()
   }
-  
+
   // Обработчик Esc для закрытия модальных окон
   escHandler = (e: KeyboardEvent) => {
     if (e.key === 'Escape') {
@@ -350,15 +366,15 @@ onMounted(async () => {
     }
   }
   document.addEventListener('keydown', escHandler)
-  
+
   // Ждём завершения bootloader
   const startAnimations = () => {
     bootLoaderDone.value = true
-    
+
     // 1. Сначала 1 секунда мигает курсор без текста
     showCursor.value = true
     cursorPosition.value = 'title'
-    
+
     setTimeout(() => {
       // 2. Начинаем последовательный набор текста
       typeTextSequence()
@@ -374,7 +390,7 @@ onMounted(async () => {
   const typeTextSequence = () => {
     const titleText = 'Проекты'
     cursorPosition.value = 'title'
-    
+
     // Набираем заголовок
     let titleIndex = 0
     const titleInterval = setInterval(() => {
@@ -408,7 +424,7 @@ onMounted(async () => {
       }
     }, 30)
   }
-  
+
   try {
     console.log('[ProjectsPage] Начинаем загрузку проектов')
     await loadProjects()
@@ -432,13 +448,13 @@ onBeforeUnmount(() => {
 <template>
   <div class="app-layout bg-[var(--color-bg)] text-[var(--color-text)] flex flex-col">
     <!-- Header -->
-    <Header 
+    <Header
       v-if="bootLoaderDone"
-      :pageTitle="'A/Ley Services'" 
-      :indexUrl="props.indexUrl" 
-      :profileUrl="props.profileUrl" 
-      :loginUrl="props.loginUrl" 
-      :isAuthenticated="props.isAuthenticated" 
+      :pageTitle="'A/Ley Services'"
+      :indexUrl="props.indexUrl"
+      :profileUrl="props.profileUrl"
+      :loginUrl="props.loginUrl"
+      :isAuthenticated="props.isAuthenticated"
     />
 
     <!-- Content -->
@@ -460,14 +476,11 @@ onBeforeUnmount(() => {
 
         <!-- Tabs -->
         <div class="tabs">
-          <button 
-            @click="activeTab = 'my'"
-            :class="['tab', { 'tab-active': activeTab === 'my' }]"
-          >
+          <button @click="activeTab = 'my'" :class="['tab', { 'tab-active': activeTab === 'my' }]">
             <i class="fas fa-folder"></i>
             Мои проекты
           </button>
-          <button 
+          <button
             @click="activeTab = 'member'"
             :class="['tab', { 'tab-active': activeTab === 'member' }]"
           >
@@ -525,7 +538,10 @@ onBeforeUnmount(() => {
                 <tr v-for="(project, index) in displayedProjects" :key="project.id">
                   <td>
                     <a :href="getProjectDetailUrl(project.id)" class="cell-content-link">
-                      <i class="fas fa-folder" style="margin-right: 0.5rem; color: var(--color-accent);"></i>
+                      <i
+                        class="fas fa-folder"
+                        style="margin-right: 0.5rem; color: var(--color-accent)"
+                      ></i>
                       {{ project.name }}
                     </a>
                   </td>
@@ -536,8 +552,18 @@ onBeforeUnmount(() => {
                   </td>
                   <td>
                     <div class="cell-content">
-                      <i class="fas fa-users" style="margin-right: 0.5rem; color: var(--color-accent);"></i>
-                      {{ project.membersCount }} {{ project.membersCount === 1 ? 'участник' : project.membersCount < 5 ? 'участника' : 'участников' }}
+                      <i
+                        class="fas fa-users"
+                        style="margin-right: 0.5rem; color: var(--color-accent)"
+                      ></i>
+                      {{ project.membersCount }}
+                      {{
+                        project.membersCount === 1
+                          ? 'участник'
+                          : project.membersCount < 5
+                            ? 'участника'
+                            : 'участников'
+                      }}
                     </div>
                   </td>
                 </tr>
@@ -566,7 +592,7 @@ onBeforeUnmount(() => {
       <div v-if="showCreateModal" class="modal-overlay" @click="closeCreateModal">
         <div class="modal-content" @click.stop>
           <div class="modal-scanlines"></div>
-          
+
           <div class="modal-header">
             <h2 class="modal-title">Создать проект</h2>
             <button @click="closeCreateModal" class="modal-close-btn" :disabled="creatingProject">
@@ -580,27 +606,27 @@ onBeforeUnmount(() => {
                 <i class="fas fa-folder"></i>
                 Название проекта
               </label>
-              <input 
+              <input
                 v-model="newProjectName"
-                type="text" 
+                type="text"
                 class="form-input"
                 placeholder="Введите название проекта"
                 :disabled="creatingProject"
                 @keyup.enter="submitCreateProject"
               />
-              
+
               <div v-if="createError" class="form-error">
                 <i class="fas fa-exclamation-circle"></i>
                 <span>{{ createError }}</span>
               </div>
             </div>
-            
+
             <div class="form-group">
               <label class="form-label">
                 <i class="fas fa-align-left"></i>
                 Описание (необязательно)
               </label>
-              <textarea 
+              <textarea
                 v-model="newProjectDescription"
                 class="form-input form-textarea"
                 placeholder="Введите описание проекта"
@@ -611,9 +637,9 @@ onBeforeUnmount(() => {
           </div>
 
           <div class="modal-footer">
-            <button 
-              @click="submitCreateProject" 
-              class="modal-btn modal-btn-submit" 
+            <button
+              @click="submitCreateProject"
+              class="modal-btn modal-btn-submit"
               :disabled="creatingProject || !newProjectName.trim()"
             >
               <span v-if="creatingProject">
@@ -622,7 +648,11 @@ onBeforeUnmount(() => {
               </span>
               <span v-else>Создать</span>
             </button>
-            <button @click="closeCreateModal" class="modal-btn modal-btn-cancel" :disabled="creatingProject">
+            <button
+              @click="closeCreateModal"
+              class="modal-btn modal-btn-cancel"
+              :disabled="creatingProject"
+            >
               Отмена
             </button>
           </div>
@@ -635,7 +665,7 @@ onBeforeUnmount(() => {
       <div v-if="showJoinModal" class="modal-overlay" @click="closeJoinModal">
         <div class="modal-content" @click.stop>
           <div class="modal-scanlines"></div>
-          
+
           <div class="modal-header">
             <h2 class="modal-title">Присоединиться к проекту</h2>
             <button @click="closeJoinModal" class="modal-close-btn" :disabled="joiningProject">
@@ -649,23 +679,21 @@ onBeforeUnmount(() => {
                 <i class="fas fa-key"></i>
                 ID проекта
               </label>
-              <input 
+              <input
                 v-model="joinProjectId"
-                type="text" 
+                type="text"
                 class="form-input"
                 placeholder="Введите ID проекта"
                 :disabled="joiningProject"
                 @keyup.enter="submitJoinRequest"
               />
-              <p class="form-hint">
-                Введите ID проекта, к которому вы хотите присоединиться
-              </p>
-              
+              <p class="form-hint">Введите ID проекта, к которому вы хотите присоединиться</p>
+
               <div v-if="joinError" class="form-error">
                 <i class="fas fa-exclamation-circle"></i>
                 <span>{{ joinError }}</span>
               </div>
-              
+
               <div v-if="joinSuccessMessage" class="form-success">
                 <i class="fas fa-check-circle"></i>
                 <span>{{ joinSuccessMessage }}</span>
@@ -674,9 +702,9 @@ onBeforeUnmount(() => {
           </div>
 
           <div class="modal-footer">
-            <button 
-              @click="submitJoinRequest" 
-              class="modal-btn modal-btn-submit" 
+            <button
+              @click="submitJoinRequest"
+              class="modal-btn modal-btn-submit"
               :disabled="joiningProject || !joinProjectId.trim()"
             >
               <span v-if="joiningProject">
@@ -685,7 +713,11 @@ onBeforeUnmount(() => {
               </span>
               <span v-else>Отправить заявку</span>
             </button>
-            <button @click="closeJoinModal" class="modal-btn modal-btn-cancel" :disabled="joiningProject">
+            <button
+              @click="closeJoinModal"
+              class="modal-btn modal-btn-cancel"
+              :disabled="joiningProject"
+            >
               Отмена
             </button>
           </div>
@@ -813,7 +845,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 
+  box-shadow:
     0 8px 24px rgba(211, 35, 75, 0.4),
     0 4px 12px rgba(211, 35, 75, 0.3),
     0 0 30px rgba(211, 35, 75, 0.2),
@@ -823,10 +855,18 @@ body {
   cursor: pointer;
   overflow: hidden;
   clip-path: polygon(
-    0 4px, 4px 4px, 4px 0,
-    calc(100% - 4px) 0, calc(100% - 4px) 4px, 100% 4px,
-    100% calc(100% - 4px), calc(100% - 4px) calc(100% - 4px), calc(100% - 4px) 100%,
-    4px 100%, 4px calc(100% - 4px), 0 calc(100% - 4px)
+    0 4px,
+    4px 4px,
+    4px 0,
+    calc(100% - 4px) 0,
+    calc(100% - 4px) 4px,
+    100% 4px,
+    100% calc(100% - 4px),
+    calc(100% - 4px) calc(100% - 4px),
+    calc(100% - 4px) 100%,
+    4px 100%,
+    4px calc(100% - 4px),
+    0 calc(100% - 4px)
   );
 }
 
@@ -850,8 +890,13 @@ body {
 }
 
 @keyframes scanline-flicker {
-  0%, 100% { opacity: 0.7; }
-  50% { opacity: 0.5; }
+  0%,
+  100% {
+    opacity: 0.7;
+  }
+  50% {
+    opacity: 0.5;
+  }
 }
 
 .hero-icon-wrapper.hero-icon-visible:hover {
@@ -859,10 +904,11 @@ body {
 }
 
 @keyframes glitch-icon {
-  0%, 100% {
+  0%,
+  100% {
     transform: scale(1) translate(0);
     filter: none;
-    box-shadow: 
+    box-shadow:
       0 8px 24px rgba(211, 35, 75, 0.4),
       0 4px 12px rgba(211, 35, 75, 0.3);
   }
@@ -964,10 +1010,12 @@ body {
 }
 
 @keyframes terminal-cursor-blink {
-  0%, 50% {
+  0%,
+  50% {
     opacity: 1;
   }
-  51%, 100% {
+  51%,
+  100% {
     opacity: 0;
   }
 }
@@ -991,7 +1039,9 @@ body {
   align-items: center;
   opacity: 0;
   transform: translateY(10px);
-  transition: opacity 0.5s ease, transform 0.5s ease;
+  transition:
+    opacity 0.5s ease,
+    transform 0.5s ease;
 }
 
 .hero-actions.hero-actions-visible {
@@ -1011,10 +1061,18 @@ body {
   align-items: center;
   gap: 0.5rem;
   clip-path: polygon(
-    0 3px, 3px 3px, 3px 0,
-    calc(100% - 3px) 0, calc(100% - 3px) 3px, 100% 3px,
-    100% calc(100% - 3px), calc(100% - 3px) calc(100% - 3px), calc(100% - 3px) 100%,
-    3px 100%, 3px calc(100% - 3px), 0 calc(100% - 3px)
+    0 3px,
+    3px 3px,
+    3px 0,
+    calc(100% - 3px) 0,
+    calc(100% - 3px) 3px,
+    100% 3px,
+    100% calc(100% - 3px),
+    calc(100% - 3px) calc(100% - 3px),
+    calc(100% - 3px) 100%,
+    3px 100%,
+    3px calc(100% - 3px),
+    0 calc(100% - 3px)
   );
   text-decoration: none;
 }
@@ -1060,7 +1118,9 @@ body {
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .error-message {
@@ -1098,7 +1158,8 @@ body {
   }
   0.5% {
     transform: scaleY(0.03) perspective(590px) rotateX(0.5deg);
-    filter: brightness(1.45) contrast(1.32) drop-shadow(0.5px 0 0 rgba(255, 0, 0, 0.15)) drop-shadow(-0.5px 0 0 rgba(0, 0, 255, 0.15));
+    filter: brightness(1.45) contrast(1.32) drop-shadow(0.5px 0 0 rgba(255, 0, 0, 0.15))
+      drop-shadow(-0.5px 0 0 rgba(0, 0, 255, 0.15));
     clip-path: polygon(0 49%, 100% 49.5%, 100% 50.5%, 0 51%);
     opacity: 1;
   }
@@ -1129,10 +1190,18 @@ body {
   border: 2px solid var(--color-border);
   padding: 1.5rem;
   clip-path: polygon(
-    0 4px, 4px 4px, 4px 0,
-    calc(100% - 4px) 0, calc(100% - 4px) 4px, 100% 4px,
-    100% calc(100% - 4px), calc(100% - 4px) calc(100% - 4px), calc(100% - 4px) 100%,
-    4px 100%, 4px calc(100% - 4px), 0 calc(100% - 4px)
+    0 4px,
+    4px 4px,
+    4px 0,
+    calc(100% - 4px) 0,
+    calc(100% - 4px) 4px,
+    100% 4px,
+    100% calc(100% - 4px),
+    calc(100% - 4px) calc(100% - 4px),
+    calc(100% - 4px) 100%,
+    4px 100%,
+    4px calc(100% - 4px),
+    0 calc(100% - 4px)
   );
   overflow-x: auto;
   overflow-y: visible;
@@ -1360,10 +1429,14 @@ body {
   height: calc(100% - 4px);
   display: flex;
   flex-direction: column;
-  transition: transform 0.6s cubic-bezier(0.34, 1.3, 0.64, 1), border-color 0.25s ease, box-shadow 0.25s ease, filter 0.3s ease;
+  transition:
+    transform 0.6s cubic-bezier(0.34, 1.3, 0.64, 1),
+    border-color 0.25s ease,
+    box-shadow 0.25s ease,
+    filter 0.3s ease;
   position: relative;
   z-index: 11;
-  box-shadow: 
+  box-shadow:
     0 0 0 0 rgba(0, 0, 0, 0),
     0 0 0 0 rgba(0, 0, 0, 0),
     inset 0 0 0 0 rgba(255, 255, 255, 0);
@@ -1371,10 +1444,18 @@ body {
   transform-style: preserve-3d;
   cursor: pointer;
   clip-path: polygon(
-    0 4px, 4px 4px, 4px 0,
-    calc(100% - 4px) 0, calc(100% - 4px) 4px, 100% 4px,
-    100% calc(100% - 4px), calc(100% - 4px) calc(100% - 4px), calc(100% - 4px) 100%,
-    4px 100%, 4px calc(100% - 4px), 0 calc(100% - 4px)
+    0 4px,
+    4px 4px,
+    4px 0,
+    calc(100% - 4px) 0,
+    calc(100% - 4px) 4px,
+    100% 4px,
+    100% calc(100% - 4px),
+    calc(100% - 4px) calc(100% - 4px),
+    calc(100% - 4px) 100%,
+    4px 100%,
+    4px calc(100% - 4px),
+    0 calc(100% - 4px)
   );
 }
 
@@ -1429,7 +1510,8 @@ body {
 }
 
 @keyframes crt-flicker {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 0;
   }
   50% {
@@ -1438,11 +1520,14 @@ body {
 }
 
 .nav-card:hover .nav-card-content::after {
-  animation: crt-flicker-intense 0.15s ease-in-out infinite, crt-flicker 3s ease-in-out infinite;
+  animation:
+    crt-flicker-intense 0.15s ease-in-out infinite,
+    crt-flicker 3s ease-in-out infinite;
 }
 
 @keyframes crt-flicker-intense {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 0.2;
   }
   50% {
@@ -1457,7 +1542,7 @@ body {
 .nav-card:hover .nav-card-content {
   transform: translateY(-4px) rotateX(0.8deg) rotateY(-0.4deg);
   border-color: var(--color-border-light);
-  box-shadow: 
+  box-shadow:
     0 8px 16px rgba(0, 0, 0, 0.4),
     0 4px 8px rgba(0, 0, 0, 0.3),
     0 2px 4px rgba(0, 0, 0, 0.2),
@@ -1467,7 +1552,7 @@ body {
 
 .nav-card-project:hover .nav-card-content {
   border-color: rgba(211, 35, 75, 0.5);
-  box-shadow: 
+  box-shadow:
     0 8px 20px rgba(211, 35, 75, 0.15),
     0 4px 10px rgba(0, 0, 0, 0.3),
     0 2px 4px rgba(0, 0, 0, 0.2),
@@ -1477,7 +1562,9 @@ body {
 
 /* RGB-разделение и искривление для карточек при hover */
 @keyframes card-glitch {
-  0%, 90%, 100% {
+  0%,
+  90%,
+  100% {
     filter: none;
   }
   91% {
@@ -1489,7 +1576,9 @@ body {
   93% {
     filter: drop-shadow(2px 0 0 rgba(255, 0, 255, 0.5)) drop-shadow(-2px 0 0 rgba(0, 255, 255, 0.5));
   }
-  94%, 96%, 98% {
+  94%,
+  96%,
+  98% {
     filter: none;
   }
   95% {
@@ -1512,18 +1601,29 @@ body {
   font-size: 1.25rem;
   background: var(--color-bg-tertiary);
   border: 2px solid var(--color-border);
-  transition: transform 0.5s ease-out, border-color 0.25s ease, box-shadow 0.25s ease;
+  transition:
+    transform 0.5s ease-out,
+    border-color 0.25s ease,
+    box-shadow 0.25s ease;
   position: relative;
-  box-shadow: 
+  box-shadow:
     0 2px 4px rgba(0, 0, 0, 0.3),
     inset 0 1px 0 rgba(255, 255, 255, 0.03),
     inset 0 0 0 1px rgba(0, 0, 0, 0.2);
   overflow: hidden;
   clip-path: polygon(
-    0 3px, 3px 3px, 3px 0,
-    calc(100% - 3px) 0, calc(100% - 3px) 3px, 100% 3px,
-    100% calc(100% - 3px), calc(100% - 3px) calc(100% - 3px), calc(100% - 3px) 100%,
-    3px 100%, 3px calc(100% - 3px), 0 calc(100% - 3px)
+    0 3px,
+    3px 3px,
+    3px 0,
+    calc(100% - 3px) 0,
+    calc(100% - 3px) 3px,
+    100% 3px,
+    100% calc(100% - 3px),
+    calc(100% - 3px) calc(100% - 3px),
+    calc(100% - 3px) 100%,
+    3px 100%,
+    3px calc(100% - 3px),
+    0 calc(100% - 3px)
   );
 }
 
@@ -1569,14 +1669,18 @@ body {
 }
 
 .nav-card-icon-project {
-  background: linear-gradient(135deg, var(--color-accent-medium) 0%, var(--color-accent-light) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--color-accent-medium) 0%,
+    var(--color-accent-light) 100%
+  );
   border-color: rgba(211, 35, 75, 0.4);
   color: var(--color-accent);
 }
 
 .nav-card:hover .nav-card-icon {
   border-color: var(--color-border-light);
-  box-shadow: 
+  box-shadow:
     0 4px 8px rgba(0, 0, 0, 0.4),
     0 2px 4px rgba(0, 0, 0, 0.3),
     inset 0 1px 0 rgba(255, 255, 255, 0.05);
@@ -1586,7 +1690,7 @@ body {
 .nav-card-project:hover .nav-card-icon-project {
   background: linear-gradient(135deg, rgba(211, 35, 75, 0.3) 0%, rgba(211, 35, 75, 0.2) 100%);
   border-color: var(--color-accent);
-  box-shadow: 
+  box-shadow:
     0 4px 12px rgba(211, 35, 75, 0.3),
     0 2px 6px rgba(211, 35, 75, 0.2),
     inset 0 1px 0 rgba(255, 255, 255, 0.1);
@@ -1656,7 +1760,9 @@ body {
   justify-content: flex-end;
   color: var(--color-text-tertiary);
   font-size: 1rem;
-  transition: transform 0.5s ease-out, color 0.25s ease;
+  transition:
+    transform 0.5s ease-out,
+    color 0.25s ease;
   margin-top: auto;
   position: relative;
   z-index: 3;
@@ -1723,45 +1829,64 @@ body {
 }
 
 @keyframes glitch-footer {
-  0%, 100% {
+  0%,
+  100% {
     transform: translate(0);
     text-shadow: none;
   }
   10% {
     transform: translate(-1.5px, 0);
-    text-shadow: 1px 0 #ff00ff, -1px 0 #00ffff;
+    text-shadow:
+      1px 0 #ff00ff,
+      -1px 0 #00ffff;
   }
   20% {
     transform: translate(1.5px, 0);
-    text-shadow: -1px 0 #ff00ff, 1px 0 #00ffff;
+    text-shadow:
+      -1px 0 #ff00ff,
+      1px 0 #00ffff;
   }
   30% {
     transform: translate(-1px, 0);
-    text-shadow: 1.5px 0 #ff00ff, -1.5px 0 #00ffff;
+    text-shadow:
+      1.5px 0 #ff00ff,
+      -1.5px 0 #00ffff;
   }
   40% {
     transform: translate(1px, 0);
-    text-shadow: -1.5px 0 #ff00ff, 1.5px 0 #00ffff;
+    text-shadow:
+      -1.5px 0 #ff00ff,
+      1.5px 0 #00ffff;
   }
   50% {
     transform: translate(-1.5px, 0);
-    text-shadow: 1px 0 #ff00ff, -1px 0 #00ffff;
+    text-shadow:
+      1px 0 #ff00ff,
+      -1px 0 #00ffff;
   }
   60% {
     transform: translate(1.5px, 0);
-    text-shadow: -1px 0 #ff00ff, 1px 0 #00ffff;
+    text-shadow:
+      -1px 0 #ff00ff,
+      1px 0 #00ffff;
   }
   70% {
     transform: translate(-1px, 0);
-    text-shadow: 1px 0 #ff00ff, -1px 0 #00ffff;
+    text-shadow:
+      1px 0 #ff00ff,
+      -1px 0 #00ffff;
   }
   80% {
     transform: translate(1px, 0);
-    text-shadow: -1px 0 #ff00ff, 1px 0 #00ffff;
+    text-shadow:
+      -1px 0 #ff00ff,
+      1px 0 #00ffff;
   }
   90% {
     transform: translate(-0.5px, 0);
-    text-shadow: 0.5px 0 #ff00ff, -0.5px 0 #00ffff;
+    text-shadow:
+      0.5px 0 #ff00ff,
+      -0.5px 0 #00ffff;
   }
 }
 
@@ -1831,15 +1956,23 @@ body {
   max-width: 600px;
   width: 100%;
   position: relative;
-  box-shadow: 
+  box-shadow:
     0 0 40px rgba(211, 35, 75, 0.4),
     0 0 80px rgba(211, 35, 75, 0.2),
     inset 0 1px 0 rgba(255, 255, 255, 0.05);
   clip-path: polygon(
-    0 4px, 4px 4px, 4px 0,
-    calc(100% - 4px) 0, calc(100% - 4px) 4px, 100% 4px,
-    100% calc(100% - 4px), calc(100% - 4px) calc(100% - 4px), calc(100% - 4px) 100%,
-    4px 100%, 4px calc(100% - 4px), 0 calc(100% - 4px)
+    0 4px,
+    4px 4px,
+    4px 0,
+    calc(100% - 4px) 0,
+    calc(100% - 4px) 4px,
+    100% 4px,
+    100% calc(100% - 4px),
+    calc(100% - 4px) calc(100% - 4px),
+    calc(100% - 4px) 100%,
+    4px 100%,
+    4px calc(100% - 4px),
+    0 calc(100% - 4px)
   );
 }
 
@@ -1891,10 +2024,18 @@ body {
   cursor: pointer;
   transition: var(--transition);
   clip-path: polygon(
-    0 3px, 3px 3px, 3px 0,
-    calc(100% - 3px) 0, calc(100% - 3px) 3px, 100% 3px,
-    100% calc(100% - 3px), calc(100% - 3px) calc(100% - 3px), calc(100% - 3px) 100%,
-    3px 100%, 3px calc(100% - 4px), 0 calc(100% - 4px)
+    0 3px,
+    3px 3px,
+    3px 0,
+    calc(100% - 3px) 0,
+    calc(100% - 3px) 3px,
+    100% 3px,
+    100% calc(100% - 3px),
+    calc(100% - 3px) calc(100% - 3px),
+    calc(100% - 3px) 100%,
+    3px 100%,
+    3px calc(100% - 4px),
+    0 calc(100% - 4px)
   );
 }
 
@@ -1944,10 +2085,18 @@ body {
   letter-spacing: 0.05em;
   transition: var(--transition);
   clip-path: polygon(
-    0 3px, 3px 3px, 3px 0,
-    calc(100% - 3px) 0, calc(100% - 3px) 3px, 100% 3px,
-    100% calc(100% - 3px), calc(100% - 3px) calc(100% - 3px), calc(100% - 3px) 100%,
-    3px 100%, 3px calc(100% - 3px), 0 calc(100% - 3px)
+    0 3px,
+    3px 3px,
+    3px 0,
+    calc(100% - 3px) 0,
+    calc(100% - 3px) 3px,
+    100% 3px,
+    100% calc(100% - 3px),
+    calc(100% - 3px) calc(100% - 3px),
+    calc(100% - 3px) 100%,
+    3px 100%,
+    3px calc(100% - 3px),
+    0 calc(100% - 3px)
   );
 }
 
@@ -2024,10 +2173,18 @@ body {
   align-items: center;
   gap: 0.5rem;
   clip-path: polygon(
-    0 3px, 3px 3px, 3px 0,
-    calc(100% - 3px) 0, calc(100% - 3px) 3px, 100% 3px,
-    100% calc(100% - 3px), calc(100% - 3px) calc(100% - 3px), calc(100% - 3px) 100%,
-    3px 100%, 3px calc(100% - 3px), 0 calc(100% - 3px)
+    0 3px,
+    3px 3px,
+    3px 0,
+    calc(100% - 3px) 0,
+    calc(100% - 3px) 3px,
+    100% 3px,
+    100% calc(100% - 3px),
+    calc(100% - 3px) calc(100% - 3px),
+    calc(100% - 3px) 100%,
+    3px 100%,
+    3px calc(100% - 3px),
+    0 calc(100% - 3px)
   );
 }
 
@@ -2195,4 +2352,3 @@ body {
   }
 }
 </style>
-

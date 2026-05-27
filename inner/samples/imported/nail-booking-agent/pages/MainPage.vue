@@ -9,9 +9,15 @@
             <span class="text-xl font-display font-bold text-dark">Маникюр & Стиль</span>
           </div>
           <div class="hidden md:flex items-center space-x-8">
-            <a href="#services" class="text-gray-700 hover:text-primary transition-colors">Услуги</a>
-            <a href="#portfolio" class="text-gray-700 hover:text-primary transition-colors">Портфолио</a>
-            <a href="#about" class="text-gray-700 hover:text-primary transition-colors">О мастере</a>
+            <a href="#services" class="text-gray-700 hover:text-primary transition-colors"
+              >Услуги</a
+            >
+            <a href="#portfolio" class="text-gray-700 hover:text-primary transition-colors"
+              >Портфолио</a
+            >
+            <a href="#about" class="text-gray-700 hover:text-primary transition-colors"
+              >О мастере</a
+            >
             <a href="#reviews" class="text-gray-700 hover:text-primary transition-colors">Отзывы</a>
             <a
               href="#booking"
@@ -19,10 +25,24 @@
             >
               Записаться
             </a>
-            <button @click="handleChatClick" class="text-gray-700 hover:text-primary transition-colors" :disabled="isCheckingTransport">
-              <i :class="[isCheckingTransport ? 'fas fa-spinner fa-spin mr-1' : 'fas fa-comment-dots mr-1']"></i> Чат
+            <button
+              @click="handleChatClick"
+              class="text-gray-700 hover:text-primary transition-colors"
+              :disabled="isCheckingTransport"
+            >
+              <i
+                :class="[
+                  isCheckingTransport ? 'fas fa-spinner fa-spin mr-1' : 'fas fa-comment-dots mr-1'
+                ]"
+              ></i>
+              Чат
             </button>
-            <a v-if="ctx.user?.is('Admin')" :href="adminPageRoute.url()" class="text-gray-700 hover:text-primary transition-colors" title="Админка">
+            <a
+              v-if="ctx.user?.is('Admin')"
+              :href="adminPageRoute.url()"
+              class="text-gray-700 hover:text-primary transition-colors"
+              title="Админка"
+            >
               <i class="fas fa-user-shield"></i>
             </a>
           </div>
@@ -63,10 +83,23 @@
           >
             Отзывы
           </a>
-          <button @click="handleChatClick" class="block py-2 text-gray-700 hover:text-primary transition-colors text-left w-full" :disabled="isCheckingTransport">
-            <i :class="[isCheckingTransport ? 'fas fa-spinner fa-spin mr-1' : 'fas fa-comment-dots mr-1']"></i> Чат с помощником
+          <button
+            @click="handleChatClick"
+            class="block py-2 text-gray-700 hover:text-primary transition-colors text-left w-full"
+            :disabled="isCheckingTransport"
+          >
+            <i
+              :class="[
+                isCheckingTransport ? 'fas fa-spinner fa-spin mr-1' : 'fas fa-comment-dots mr-1'
+              ]"
+            ></i>
+            Чат с помощником
           </button>
-          <a v-if="ctx.user?.is('Admin')" :href="adminPageRoute.url()" class="block py-2 text-gray-700 hover:text-primary transition-colors">
+          <a
+            v-if="ctx.user?.is('Admin')"
+            :href="adminPageRoute.url()"
+            class="block py-2 text-gray-700 hover:text-primary transition-colors"
+          >
             <i class="fas fa-user-shield mr-1"></i> Админка
           </a>
           <a
@@ -89,8 +122,8 @@
               Красивые ногти — это искусство
             </h1>
             <p class="text-xl text-gray-600 mb-8">
-              Профессиональный маникюр и педикюр от опытного мастера. Качественные материалы, индивидуальный подход к
-              каждому клиенту.
+              Профессиональный маникюр и педикюр от опытного мастера. Качественные материалы,
+              индивидуальный подход к каждому клиенту.
             </p>
             <div class="flex flex-wrap gap-4">
               <a
@@ -99,8 +132,17 @@
               >
                 Записаться на прием
               </a>
-              <button @click="handleChatClick" class="bg-white text-primary border-2 border-primary px-8 py-4 rounded-full hover:bg-secondary transition-all text-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed" :disabled="isCheckingTransport">
-                <i :class="[isCheckingTransport ? 'fas fa-spinner fa-spin mr-2' : 'fas fa-comment-dots mr-2']"></i>{{ isCheckingTransport ? 'Подготовка...' : 'Спросить AI-помощника' }}
+              <button
+                @click="handleChatClick"
+                class="bg-white text-primary border-2 border-primary px-8 py-4 rounded-full hover:bg-secondary transition-all text-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                :disabled="isCheckingTransport"
+              >
+                <i
+                  :class="[
+                    isCheckingTransport ? 'fas fa-spinner fa-spin mr-2' : 'fas fa-comment-dots mr-2'
+                  ]"
+                ></i
+                >{{ isCheckingTransport ? 'Подготовка...' : 'Спросить AI-помощника' }}
               </button>
             </div>
           </div>
@@ -147,7 +189,9 @@
             :key="service.id"
             class="bg-secondary rounded-2xl p-8 hover:shadow-xl transition-all transform hover:-translate-y-2"
           >
-            <div class="bg-primary text-white w-16 h-16 rounded-full flex items-center justify-center mb-6 text-2xl">
+            <div
+              class="bg-primary text-white w-16 h-16 rounded-full flex items-center justify-center mb-6 text-2xl"
+            >
               <i :class="service.icon"></i>
             </div>
             <h3 class="text-2xl font-display font-bold text-dark mb-3">{{ service.title }}</h3>
@@ -166,7 +210,9 @@
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="text-center mb-16">
           <h2 class="text-4xl md:text-5xl font-display font-bold text-dark mb-4">Наши работы</h2>
-          <p class="text-xl text-gray-600 max-w-2xl mx-auto">Вдохновитесь нашими работами и выберите свой стиль</p>
+          <p class="text-xl text-gray-600 max-w-2xl mx-auto">
+            Вдохновитесь нашими работами и выберите свой стиль
+          </p>
         </div>
 
         <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -200,15 +246,18 @@
           <div>
             <h2 class="text-4xl md:text-5xl font-display font-bold text-dark mb-6">О мастере</h2>
             <p class="text-lg text-gray-600 mb-6">
-              Здравствуйте! Меня зовут Анна, и я профессиональный мастер маникюра с более чем 7-летним опытом работы.
+              Здравствуйте! Меня зовут Анна, и я профессиональный мастер маникюра с более чем
+              7-летним опытом работы.
             </p>
             <p class="text-lg text-gray-600 mb-6">
-              Я постоянно совершенствую свои навыки, посещая мастер-классы и курсы повышения квалификации. Использую
-              только качественные и безопасные материалы.
+              Я постоянно совершенствую свои навыки, посещая мастер-классы и курсы повышения
+              квалификации. Использую только качественные и безопасные материалы.
             </p>
             <div class="space-y-4">
               <div class="flex items-start gap-4">
-                <div class="bg-primary text-white w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0">
+                <div
+                  class="bg-primary text-white w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0"
+                >
                   <i class="fas fa-certificate"></i>
                 </div>
                 <div>
@@ -217,7 +266,9 @@
                 </div>
               </div>
               <div class="flex items-start gap-4">
-                <div class="bg-primary text-white w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0">
+                <div
+                  class="bg-primary text-white w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0"
+                >
                   <i class="fas fa-heart"></i>
                 </div>
                 <div>
@@ -226,7 +277,9 @@
                 </div>
               </div>
               <div class="flex items-start gap-4">
-                <div class="bg-primary text-white w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0">
+                <div
+                  class="bg-primary text-white w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0"
+                >
                   <i class="fas fa-clock"></i>
                 </div>
                 <div>
@@ -244,18 +297,28 @@
     <section id="reviews" class="py-20 bg-gradient-to-br from-white to-secondary">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="text-center mb-16">
-          <h2 class="text-4xl md:text-5xl font-display font-bold text-dark mb-4">Отзывы клиентов</h2>
-          <p class="text-xl text-gray-600 max-w-2xl mx-auto">Что говорят о нас наши постоянные клиенты</p>
+          <h2 class="text-4xl md:text-5xl font-display font-bold text-dark mb-4">
+            Отзывы клиентов
+          </h2>
+          <p class="text-xl text-gray-600 max-w-2xl mx-auto">
+            Что говорят о нас наши постоянные клиенты
+          </p>
         </div>
 
         <div class="grid md:grid-cols-3 gap-8">
-          <div v-for="review in reviews" :key="review.name" class="bg-white rounded-2xl p-8 shadow-lg">
+          <div
+            v-for="review in reviews"
+            :key="review.name"
+            class="bg-white rounded-2xl p-8 shadow-lg"
+          >
             <div class="flex items-center gap-1 mb-4">
               <i v-for="i in 5" :key="i" class="fas fa-star text-yellow-400"></i>
             </div>
             <p class="text-gray-700 mb-6 italic">"{{ review.text }}"</p>
             <div class="flex items-center gap-3">
-              <div class="w-12 h-12 rounded-full bg-primary text-white flex items-center justify-center font-bold">
+              <div
+                class="w-12 h-12 rounded-full bg-primary text-white flex items-center justify-center font-bold"
+              >
                 {{ review.name[0] }}
               </div>
               <div>
@@ -272,11 +335,16 @@
     <section id="booking" class="py-20 bg-white">
       <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="text-center mb-12">
-          <h2 class="text-4xl md:text-5xl font-display font-bold text-dark mb-4">Записаться на прием</h2>
+          <h2 class="text-4xl md:text-5xl font-display font-bold text-dark mb-4">
+            Записаться на прием
+          </h2>
           <p class="text-xl text-gray-600">Заполните форму, и я свяжусь с вами в ближайшее время</p>
         </div>
 
-        <form @submit.prevent="submitBooking" class="bg-secondary rounded-3xl p-8 md:p-12 shadow-xl">
+        <form
+          @submit.prevent="submitBooking"
+          class="bg-secondary rounded-3xl p-8 md:p-12 shadow-xl"
+        >
           <div class="grid md:grid-cols-2 gap-6 mb-6">
             <div>
               <label class="block text-sm font-semibold text-dark mb-2">Ваше имя *</label>
@@ -344,7 +412,15 @@
                 :disabled="!form.date || isLoadingTimeSlots"
                 class="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-primary focus:outline-none transition-colors disabled:bg-gray-100 disabled:cursor-not-allowed"
               >
-                <option value="">{{ isLoadingTimeSlots ? 'Загрузка...' : (form.date ? 'Выберите время' : 'Сначала выберите дату') }}</option>
+                <option value="">
+                  {{
+                    isLoadingTimeSlots
+                      ? 'Загрузка...'
+                      : form.date
+                        ? 'Выберите время'
+                        : 'Сначала выберите дату'
+                  }}
+                </option>
                 <option v-for="time in timeSlots" :key="time" :value="time">{{ time }}</option>
               </select>
             </div>
@@ -368,7 +444,13 @@
             {{ isSubmitting ? 'Отправка...' : 'Записаться' }}
           </button>
 
-          <div v-if="submitMessage" :class="['mt-4 p-4 rounded-xl', submitSuccess ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800']">
+          <div
+            v-if="submitMessage"
+            :class="[
+              'mt-4 p-4 rounded-xl',
+              submitSuccess ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+            ]"
+          >
             {{ submitMessage }}
           </div>
         </form>
@@ -445,8 +527,8 @@ const isLoadingTimeSlots = ref(false)
 const isCheckingTransport = ref(false)
 
 const serviceIconMap = {
-  'manicure': 'fas fa-hand-sparkles',
-  'pedicure': 'fas fa-shoe-prints',
+  manicure: 'fas fa-hand-sparkles',
+  pedicure: 'fas fa-shoe-prints',
   'manicure-design': 'fas fa-palette',
   'nail-extension': 'fas fa-magic',
   'nail-correction': 'fas fa-cog',
@@ -457,7 +539,7 @@ const loadServices = async () => {
   try {
     isLoadingServices.value = true
     const servicesData = await apiGetServicesRoute.run(ctx)
-    services.value = servicesData.map(service => ({
+    services.value = servicesData.map((service) => ({
       id: service.id,
       title: service.name,
       description: service.description,
@@ -477,7 +559,7 @@ const loadTimeSlots = async (date) => {
     timeSlots.value = []
     return
   }
-  
+
   try {
     isLoadingTimeSlots.value = true
     const slots = await apiGetTimeSlotsRoute({ date }).run(ctx)
@@ -495,14 +577,38 @@ onMounted(() => {
 })
 
 const portfolio = [
-  { url: 'https://msk.cdn-chatium.io/get/image_msk_OtNere8158.433x650.jpeg', description: 'Яркий дизайн' },
-  { url: 'https://msk.cdn-chatium.io/get/image_msk_bl6l7talKx.940x629.jpeg', description: 'Нежные медузы' },
-  { url: 'https://msk.cdn-chatium.io/get/image_msk_Dy9YPcu3Yi.433x650.jpeg', description: 'Классический красный' },
-  { url: 'https://msk.cdn-chatium.io/get/image_msk_zZ98Yitz8V.433x650.jpeg', description: 'Горошек' },
-  { url: 'https://msk.cdn-chatium.io/get/image_msk_6U0IaZ1A78.488x650.jpeg', description: 'Стильный дизайн' },
-  { url: 'https://msk.cdn-chatium.io/get/image_msk_LqmACsFu1Y.433x650.jpeg', description: 'Пастельные тона' },
-  { url: 'https://msk.cdn-chatium.io/get/image_msk_GaGoaCKivH.433x650.jpeg', description: 'Минимализм' },
-  { url: 'https://msk.cdn-chatium.io/get/image_msk_BI49qv3JH2.520x650.jpeg', description: 'Яркие цвета' }
+  {
+    url: 'https://msk.cdn-chatium.io/get/image_msk_OtNere8158.433x650.jpeg',
+    description: 'Яркий дизайн'
+  },
+  {
+    url: 'https://msk.cdn-chatium.io/get/image_msk_bl6l7talKx.940x629.jpeg',
+    description: 'Нежные медузы'
+  },
+  {
+    url: 'https://msk.cdn-chatium.io/get/image_msk_Dy9YPcu3Yi.433x650.jpeg',
+    description: 'Классический красный'
+  },
+  {
+    url: 'https://msk.cdn-chatium.io/get/image_msk_zZ98Yitz8V.433x650.jpeg',
+    description: 'Горошек'
+  },
+  {
+    url: 'https://msk.cdn-chatium.io/get/image_msk_6U0IaZ1A78.488x650.jpeg',
+    description: 'Стильный дизайн'
+  },
+  {
+    url: 'https://msk.cdn-chatium.io/get/image_msk_LqmACsFu1Y.433x650.jpeg',
+    description: 'Пастельные тона'
+  },
+  {
+    url: 'https://msk.cdn-chatium.io/get/image_msk_GaGoaCKivH.433x650.jpeg',
+    description: 'Минимализм'
+  },
+  {
+    url: 'https://msk.cdn-chatium.io/get/image_msk_BI49qv3JH2.520x650.jpeg',
+    description: 'Яркие цвета'
+  }
 ]
 
 const reviews = [
@@ -530,24 +636,24 @@ const toggleMenu = () => {
 const handleChatClick = async () => {
   try {
     isCheckingTransport.value = true
-    
+
     // Проверяем наличие транспорта
     const checkResult = await apiCheckTransportRoute.run(ctx)
-    
+
     if (!checkResult.exists) {
       // Транспорта нет - создаем
       console.log('Транспорт не найден, создаю...')
       const createResult = await apiCreateTransportRoute.run(ctx)
-      
+
       if (!createResult.success) {
         console.error('Ошибка создания транспорта:', createResult)
         alert('Ошибка при создании транспорта')
         return
       }
-      
+
       console.log('Транспорт создан успешно')
     }
-    
+
     // Переходим на страницу чата
     window.location.href = chatPageRoute.url()
   } catch (error) {
@@ -568,7 +674,8 @@ const submitBooking = async () => {
 
     if (response.success) {
       submitSuccess.value = true
-      submitMessage.value = 'Спасибо за запись! Я свяжусь с вами в ближайшее время для подтверждения.'
+      submitMessage.value =
+        'Спасибо за запись! Я свяжусь с вами в ближайшее время для подтверждения.'
       form.value = {
         clientName: '',
         clientPhone: '',

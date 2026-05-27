@@ -3,14 +3,22 @@ import { sendDataToSocket } from '@app/socket'
 const ADMIN_LOGS_SOCKET_ID = 'admin-logs'
 
 // Callback для сохранения логов в БД (устанавливается извне, чтобы избежать циклической зависимости)
-let persistLogCallback: ((ctx: RichUgcCtx, payload: { level: DebugLevel; message: string; code?: string }) => Promise<void>) | null = null
+let persistLogCallback:
+  | ((
+      ctx: RichUgcCtx,
+      payload: { level: DebugLevel; message: string; code?: string }
+    ) => Promise<void>)
+  | null = null
 
 /**
  * Установить callback для сохранения логов в БД.
  * Вызывается из logs-operations.ts при инициализации.
  */
 export function setPersistLogCallback(
-  callback: (ctx: RichUgcCtx, payload: { level: DebugLevel; message: string; code?: string }) => Promise<void>
+  callback: (
+    ctx: RichUgcCtx,
+    payload: { level: DebugLevel; message: string; code?: string }
+  ) => Promise<void>
 ): void {
   persistLogCallback = callback
 }
@@ -56,7 +64,7 @@ export class Debug extends Error {
   static info(ctx: RichUgcCtx, message: string): void {
     // eslint-disable-next-line no-new
     new Debug(ctx, message, 'info')
-    
+
     // Если есть socketId для тестов, отправляем через WebSocket
     const socketId = (ctx as any)._testSocketId
     const category = (ctx as any)._testCategory
@@ -120,8 +128,12 @@ export class Debug extends Error {
     const head = `[${level.toUpperCase()}][${ts}]${code ? `[${code}]` : ''}`
     const line = `${head}: ${message}`
 
-    try { ctx.log?.(line) } catch {}
-    try { ctx.account?.log?.(`${Debug.logPrefix}${line}`) } catch {}
+    try {
+      ctx.log?.(line)
+    } catch {}
+    try {
+      ctx.account?.log?.(`${Debug.logPrefix}${line}`)
+    } catch {}
 
     // Асинхронно сохраняем лог и отправляем обновление в WebSocket
     void Debug.persistLog(ctx, { level, message, code, createdAt: ts })
@@ -138,7 +150,12 @@ export class Debug extends Error {
         const module = await import('../lib/logs-operations')
         if (typeof module.persistLog === 'function') {
           persistLogCallback = async (innerCtx, innerPayload) => {
-            await module.persistLog(innerCtx, innerPayload.level, innerPayload.message, innerPayload.code)
+            await module.persistLog(
+              innerCtx,
+              innerPayload.level,
+              innerPayload.message,
+              innerPayload.code
+            )
           }
         }
       } catch {

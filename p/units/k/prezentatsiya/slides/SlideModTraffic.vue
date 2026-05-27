@@ -25,7 +25,9 @@
       </div>
 
       <div class="bottom-pills">
-        <span class="pill" v-for="(p, i) in pills" :key="i"><i :class="p.icon"></i> {{ p.text }}</span>
+        <span class="pill" v-for="(p, i) in pills" :key="i"
+          ><i :class="p.icon"></i> {{ p.text }}</span
+        >
       </div>
     </div>
   </div>
@@ -35,17 +37,41 @@
 defineProps({ active: Boolean })
 
 const steps = [
-  { icon: 'fas fa-ad', label: 'Реклама', value: '12 400', width: '100%', bg: 'linear-gradient(90deg, rgba(245,158,11,0.15), rgba(245,158,11,0.25))' },
-  { icon: 'fas fa-eye', label: 'Посещения', value: '8 200', width: '75%', bg: 'linear-gradient(90deg, rgba(251,191,36,0.15), rgba(251,191,36,0.25))' },
-  { icon: 'fas fa-hand-pointer', label: 'Заявки', value: '1 340', width: '45%', bg: 'linear-gradient(90deg, rgba(245,158,11,0.2), rgba(245,158,11,0.35))' },
-  { icon: 'fas fa-credit-card', label: 'Оплаты', value: '420', width: '22%', bg: 'linear-gradient(90deg, rgba(245,158,11,0.3), rgba(245,158,11,0.5))' },
+  {
+    icon: 'fas fa-ad',
+    label: 'Реклама',
+    value: '12 400',
+    width: '100%',
+    bg: 'linear-gradient(90deg, rgba(245,158,11,0.15), rgba(245,158,11,0.25))'
+  },
+  {
+    icon: 'fas fa-eye',
+    label: 'Посещения',
+    value: '8 200',
+    width: '75%',
+    bg: 'linear-gradient(90deg, rgba(251,191,36,0.15), rgba(251,191,36,0.25))'
+  },
+  {
+    icon: 'fas fa-hand-pointer',
+    label: 'Заявки',
+    value: '1 340',
+    width: '45%',
+    bg: 'linear-gradient(90deg, rgba(245,158,11,0.2), rgba(245,158,11,0.35))'
+  },
+  {
+    icon: 'fas fa-credit-card',
+    label: 'Оплаты',
+    value: '420',
+    width: '22%',
+    bg: 'linear-gradient(90deg, rgba(245,158,11,0.3), rgba(245,158,11,0.5))'
+  }
 ]
 
 const pills = [
   { icon: 'fas fa-chart-line', text: 'Источники трафика' },
   { icon: 'fas fa-filter', text: 'Воронки продаж' },
   { icon: 'fas fa-users', text: 'Когорты' },
-  { icon: 'fas fa-bolt', text: 'События' },
+  { icon: 'fas fa-bolt', text: 'События' }
 ]
 </script>
 
@@ -62,14 +88,43 @@ const pills = [
   overflow-x: hidden;
 }
 
-.bg-effects { position: fixed; inset: 0; pointer-events: none; overflow: hidden; }
-.glow-orb { position: absolute; border-radius: 50%; filter: blur(140px); opacity: 0.12; animation: float 20s ease-in-out infinite; }
-.orb-1 { width: 500px; height: 500px; background: #f59e0b; top: -15%; left: -10%; }
-.orb-2 { width: 400px; height: 400px; background: #f97316; bottom: -15%; right: -5%; animation-delay: -7s; }
+.bg-effects {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+.glow-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(140px);
+  opacity: 0.12;
+  animation: float 20s ease-in-out infinite;
+}
+.orb-1 {
+  width: 500px;
+  height: 500px;
+  background: #f59e0b;
+  top: -15%;
+  left: -10%;
+}
+.orb-2 {
+  width: 400px;
+  height: 400px;
+  background: #f97316;
+  bottom: -15%;
+  right: -5%;
+  animation-delay: -7s;
+}
 
 @keyframes float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-30px); }
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-30px);
+  }
 }
 
 .content {
@@ -83,7 +138,9 @@ const pills = [
   gap: 32px;
 }
 
-.header { text-align: center; }
+.header {
+  text-align: center;
+}
 
 .title {
   font-family: var(--font-display);
@@ -217,12 +274,31 @@ const pills = [
 }
 
 @media (max-width: 768px) {
-  .slide { padding: 30px 16px 16px; align-items: flex-start; }
-  .content { gap: 20px; }
-  .step-bar { padding: 8px 14px; gap: 10px; }
-  .step-icon { width: 32px; height: 32px; }
-  .step-arrow { padding: 2px 0; font-size: 12px; }
-  .pill { padding: 6px 14px; font-size: 13px; }
-  .bottom-pills { gap: 8px; }
+  .slide {
+    padding: 30px 16px 16px;
+    align-items: flex-start;
+  }
+  .content {
+    gap: 20px;
+  }
+  .step-bar {
+    padding: 8px 14px;
+    gap: 10px;
+  }
+  .step-icon {
+    width: 32px;
+    height: 32px;
+  }
+  .step-arrow {
+    padding: 2px 0;
+    font-size: 12px;
+  }
+  .pill {
+    padding: 6px 14px;
+    font-size: 13px;
+  }
+  .bottom-pills {
+    gap: 8px;
+  }
 }
 </style>

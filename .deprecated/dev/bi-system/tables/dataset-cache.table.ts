@@ -4,7 +4,7 @@ import { AnalyticsDatasets } from './datasets.table'
 /**
  * Таблица для кэширования событий датасетов
  * Хранит все события, относящиеся к компонентам датасетов, для быстрого доступа
- * 
+ *
  * Поля событий соответствуют структуре таблицы chatium_ai.access_log в ClickHouse
  */
 export const AnalyticsDatasetCache = Heap.Table('analytics_dataset_cache_a7b3c9d2', {
@@ -15,12 +15,12 @@ export const AnalyticsDatasetCache = Heap.Table('analytics_dataset_cache_a7b3c9d
   component_id: Heap.String({
     customMeta: { title: 'ID компонента датасета' }
   }),
-  
+
   // Сегмент для батчевого удаления (каждые 1000 записей = один сегмент)
   segment: Heap.String({
     customMeta: { title: 'Сегмент записи (для батчевого удаления)' }
   }),
-  
+
   // Основные поля события
   ts: Heap.Optional(
     Heap.String({
@@ -47,7 +47,7 @@ export const AnalyticsDatasetCache = Heap.Table('analytics_dataset_cache_a7b3c9d
       customMeta: { title: 'Действие события' }
     })
   ),
-  
+
   // Параметры действия
   action_param1: Heap.Optional(
     Heap.String({
@@ -74,7 +74,7 @@ export const AnalyticsDatasetCache = Heap.Table('analytics_dataset_cache_a7b3c9d
       customMeta: { title: 'Параметр действия 1 (int)' }
     })
   ),
-  
+
   // Идентификаторы пользователя
   uid: Heap.Optional(
     Heap.String({
@@ -91,7 +91,7 @@ export const AnalyticsDatasetCache = Heap.Table('analytics_dataset_cache_a7b3c9d
       customMeta: { title: 'Session ID' }
     })
   ),
-  
+
   // Информация о пользователе
   user_first_name: Heap.Optional(
     Heap.String({
@@ -118,7 +118,7 @@ export const AnalyticsDatasetCache = Heap.Table('analytics_dataset_cache_a7b3c9d
       customMeta: { title: 'Роль аккаунта пользователя' }
     })
   ),
-  
+
   // Метаданные события
   title: Heap.Optional(
     Heap.String({
@@ -135,7 +135,7 @@ export const AnalyticsDatasetCache = Heap.Table('analytics_dataset_cache_a7b3c9d
       customMeta: { title: 'User Agent' }
     })
   ),
-  
+
   // Локация
   ip: Heap.Optional(
     Heap.String({
@@ -152,14 +152,14 @@ export const AnalyticsDatasetCache = Heap.Table('analytics_dataset_cache_a7b3c9d
       customMeta: { title: 'Город' }
     })
   ),
-  
+
   // GetCourse идентификаторы
   gc_visitor_id: Heap.Optional(
     Heap.String({
       customMeta: { title: 'GetCourse Visitor ID' }
     })
   ),
-  
+
   // User Agent детали
   ua_os_name: Heap.Optional(
     Heap.String({
@@ -181,7 +181,7 @@ export const AnalyticsDatasetCache = Heap.Table('analytics_dataset_cache_a7b3c9d
       customMeta: { title: 'Версия клиента' }
     })
   ),
-  
+
   // Параметры URL (включая UTM-метки и другие параметры)
   params: Heap.Optional(
     Heap.Any({
@@ -189,4 +189,3 @@ export const AnalyticsDatasetCache = Heap.Table('analytics_dataset_cache_a7b3c9d
     })
   )
 })
-

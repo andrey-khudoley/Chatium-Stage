@@ -37,12 +37,27 @@ export interface UrlFilterGroup {
 /**
  * Операторы для фильтров
  */
-export type FilterOperator = 'is' | 'isNot' | 'contains' | 'doesNotContain' | 'startsWith' | 'endsWith' | 'isEmpty' | 'isNotEmpty'
+export type FilterOperator =
+  | 'is'
+  | 'isNot'
+  | 'contains'
+  | 'doesNotContain'
+  | 'startsWith'
+  | 'endsWith'
+  | 'isEmpty'
+  | 'isNotEmpty'
 
 /**
  * Свойства для фильтрации (для pageview событий)
  */
-export type FilterProperty = 'urlPath' | 'url' | 'utm_source' | 'utm_medium' | 'utm_campaign' | 'utm_term' | 'utm_content'
+export type FilterProperty =
+  | 'urlPath'
+  | 'url'
+  | 'utm_source'
+  | 'utm_medium'
+  | 'utm_campaign'
+  | 'utm_term'
+  | 'utm_content'
 
 /**
  * Условие фильтра (правило)
@@ -66,10 +81,12 @@ export interface FilterGroup {
 /**
  * Корневой фильтр (может быть массивом для обратной совместимости или объектом с оператором)
  */
-export type FilterRoot = Array<FilterCondition | FilterGroup> | {
-  operator: 'AND' | 'OR' // Оператор между элементами на корневом уровне
-  conditions: Array<FilterCondition | FilterGroup> // Массив условий и групп
-}
+export type FilterRoot =
+  | Array<FilterCondition | FilterGroup>
+  | {
+      operator: 'AND' | 'OR' // Оператор между элементами на корневом уровне
+      conditions: Array<FilterCondition | FilterGroup> // Массив условий и групп
+    }
 
 /**
  * Настройки компонента датасета
@@ -103,5 +120,3 @@ export interface Dataset {
   createdAt: Date
   updatedAt: Date
 }
-
-

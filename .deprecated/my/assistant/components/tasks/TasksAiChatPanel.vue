@@ -110,11 +110,20 @@ async function fetchChanges() {
   const base = screen.value?.messages_changes_url
   if (!base) return
   const url =
-    base + (lastChangeId.value ? (base.includes('?') ? '&' : '?') + 'lastKnownChangeId=' + lastChangeId.value : '')
+    base +
+    (lastChangeId.value
+      ? (base.includes('?') ? '&' : '?') + 'lastKnownChangeId=' + lastChangeId.value
+      : '')
   const r = await fetch(url, { credentials: 'include' })
   const body = (await r.json()) as {
     success?: boolean
-    changes?: { id: string; prevId?: string | null; operation: string; messageId?: string; message?: ChatMessage }[]
+    changes?: {
+      id: string
+      prevId?: string | null
+      operation: string
+      messageId?: string
+      message?: ChatMessage
+    }[]
   }
   if (body.success !== true || !body.changes?.length) return
 
@@ -194,9 +203,12 @@ async function ensureChat() {
   booting.value = true
   loadError.value = ''
   try {
-    const j = await postJson<{ success?: boolean; chat?: ChatScreenJson; error?: string }>(props.ensureUrl, {
-      projectId: props.projectId
-    })
+    const j = await postJson<{ success?: boolean; chat?: ChatScreenJson; error?: string }>(
+      props.ensureUrl,
+      {
+        projectId: props.projectId
+      }
+    )
     if (!j.success || !j.chat) {
       loadError.value = j.error ?? 'Не удалось открыть чат'
       screen.value = null
@@ -235,7 +247,9 @@ async function onReset() {
   if (!confirm('Очистить историю чата с AI для этого проекта?')) return
   loadError.value = ''
   try {
-    const j = await postJson<{ success?: boolean; error?: string }>(props.resetUrl, { projectId: props.projectId })
+    const j = await postJson<{ success?: boolean; error?: string }>(props.resetUrl, {
+      projectId: props.projectId
+    })
     if (!j.success) {
       loadError.value = j.error ?? 'Не удалось сбросить чат'
       return

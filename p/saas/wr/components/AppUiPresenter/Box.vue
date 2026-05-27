@@ -1,15 +1,15 @@
 <script setup lang="ts">
-import { appUiStyleToCss } from "./styles/styles";
-import { AppUiBox } from "./types";
-import Button from "./Button.vue";
+import { appUiStyleToCss } from './styles/styles'
+import { AppUiBox } from './types'
+import Button from './Button.vue'
 
 interface BoxProps {
-  block: AppUiBox;
+  block: AppUiBox
 }
- 
-const props = defineProps<BoxProps>();
+
+const props = defineProps<BoxProps>()
 </script>
- 
+
 <template>
   <div class="AppUiBoxContainer" :style="appUiStyleToCss(block.style)">
     <template v-for="(block, index) in props.block.blocks || []" :key="index">
@@ -18,9 +18,9 @@ const props = defineProps<BoxProps>();
       <Button v-else-if="block.type === 'button'" :block="block" />
     </template>
   </div>
-</template> 
+</template>
 
-<style scoped> 
+<style scoped>
 .AppUiBoxContainer {
   /* paddingLeft: '10px', */
   /* paddingRight: '10px', */

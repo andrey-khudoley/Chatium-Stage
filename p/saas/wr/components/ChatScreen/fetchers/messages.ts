@@ -8,16 +8,16 @@ export async function fetchMessages(url: string) {
 
   return {
     messages,
-    lastChangeId: response.data.lastChangeId,
+    lastChangeId: response.data.lastChangeId
   }
 }
- 
+
 export async function postMessage(
   url: string,
   message: {
     text: string
     files: any[]
-  },
+  }
 ) {
   const response = await post(url, message)
 }
@@ -37,7 +37,7 @@ export function processMessages(messages: Message[]) {
       result.messages.push(
         message.isSameAuthor === isSameAuthor && message.isSameDay === isSameDay
           ? message
-          : { ...message, isSameAuthor, isSameDay },
+          : { ...message, isSameAuthor, isSameDay }
       )
 
       result.prevAuthor = message.author.id
@@ -45,7 +45,7 @@ export function processMessages(messages: Message[]) {
 
       return result
     },
-    { messages: [], prevAuthor: null, prevDay: null },
+    { messages: [], prevAuthor: null, prevDay: null }
   ).messages
 }
 
@@ -54,9 +54,9 @@ export const post = async (url: string, data: unknown) =>
     await fetch(url, {
       method: 'post',
       headers: {
-        'content-type': 'application/json',
+        'content-type': 'application/json'
       },
-      body: JSON.stringify(data),
+      body: JSON.stringify(data)
     })
   ).json()
 

@@ -3,6 +3,7 @@
 BPM проект после миграции из `p/neso/crm` в `p/units/neso/bpm`.
 
 ## Что сделано
+
 - Из legacy CRM удалён старый web-интерфейс.
 - Сохранены data-слои: `tables/`, `repos/`, `lib/`.
 - Проект перенесён в `p/units/neso/bpm`.
@@ -12,6 +13,7 @@ BPM проект после миграции из `p/neso/crm` в `p/units/neso/
 - В `design` добавлены отдельные layout-режимы (`war-room`, `approval-lab`, `operations-hub`, `risk-console`, `delivery-studio`, `executive-deck`) и новые reusable-компоненты для них.
 
 ## Структура
+
 - `tables/` — heap таблицы
 - `repos/` — репозитории
 - `lib/` — библиотечный и service слой
@@ -22,6 +24,7 @@ BPM проект после миграции из `p/neso/crm` в `p/units/neso/
 - `shared/` — тема, preloader, scenario dataset, demo factory; `bpmVueExportedTypes.ts` — типы пропсов BPM Vue-компонентов (для `tsc` с `vue-shim`, без реэкспорта из `.vue`)
 
 ## Маршруты
+
 - `/` — главная
 - `/web/login` — вход
 - `/web/admin` — админка

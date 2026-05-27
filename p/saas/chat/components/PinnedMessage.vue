@@ -5,20 +5,13 @@
         <i class="fas fa-thumbtack"></i>
       </div>
       <div class="pinned-content">
-        <div class="pinned-label">
-          Закрепленное сообщение
-        </div>
+        <div class="pinned-label">Закрепленное сообщение</div>
         <div class="pinned-text">{{ pinnedMessage.text || 'Нет текста' }}</div>
         <div v-if="pinnedMessage.author" class="pinned-author">
           {{ getAuthorName(pinnedMessage.author) }}
         </div>
       </div>
-      <button 
-        v-if="canManage" 
-        class="pinned-unpin" 
-        @click.stop="unpinMessage"
-        title="Открепить"
-      >
+      <button v-if="canManage" class="pinned-unpin" @click.stop="unpinMessage" title="Открепить">
         <i class="fas fa-times"></i>
       </button>
     </div>
@@ -34,14 +27,14 @@ const props = defineProps({
     default: null
   },
   feedId: String,
-  canManage: Boolean,
+  canManage: Boolean
 })
 
 const emit = defineEmits(['unpin', 'scroll-to'])
 
 async function unpinMessage() {
   if (!confirm('Открепить это сообщение?')) return
-  
+
   try {
     await apiPinnedRemoveRoute({ feedId: props.feedId }).run(ctx, {})
     emit('unpin')
@@ -58,8 +51,10 @@ function scrollToMessage() {
 
 function getAuthorName(author) {
   if (!author) return 'Неизвестно'
-  return author.firstName 
-    ? (author.lastName ? `${author.firstName} ${author.lastName}` : author.firstName)
+  return author.firstName
+    ? author.lastName
+      ? `${author.firstName} ${author.lastName}`
+      : author.firstName
     : author.displayName || 'Пользователь'
 }
 </script>

@@ -2,7 +2,7 @@ import { Heap } from '@app/heap'
 
 /**
  * Таблица для хранения отслеживаемых ссылок
- * 
+ *
  * Каждая запись содержит:
  * - name: название ссылки
  * - placementUrl: место размещения (опционально)
@@ -12,7 +12,7 @@ import { Heap } from '@app/heap'
  * - inviteLink: сгенерированный инвайт-линк (опционально)
  * - inviteLinkCreatedAt: время создания инвайт-линка
  * - revokedAt: время отзыва ссылки (опционально)
- * 
+ *
  * Системные поля createdAt и updatedAt добавляются автоматически
  */
 export const TrackingLinks = Heap.Table('t__tg_channel_analytics__tracking_links__c1d2e3f4', {
@@ -53,4 +53,3 @@ export const TrackingLinks = Heap.Table('t__tg_channel_analytics__tracking_links
 })
 
 export default TrackingLinks
-

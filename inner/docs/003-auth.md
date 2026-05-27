@@ -1,4 +1,5 @@
 @chatium
+
 # Авторизация и пользователи в Chatium
 
 Исчерпывающее руководство по работе с авторизацией, проверкой прав и управлению пользователями в Chatium. Документ структурирован для удобства полнотекстового поиска и работы с эмбеддингами.
@@ -38,16 +39,12 @@
 - **ctx.user** — объект текущего пользователя, доступен глобально
 - **Роли аккаунта** — Admin, Staff, User (иерархические)
 - **Типы пользователей** — Real (реальный), Bot (бот), Anonymous (анонимный)
-- **Методы require* ** — функции проверки авторизации, выбрасывают ошибку при неудаче
+- **Методы require\* ** — функции проверки авторизации, выбрасывают ошибку при неудаче
 
 ### Импорт методов
 
 ```typescript
-import {
-  requireAccountRole,
-  requireRealUser,
-  requireAnyUser
-} from '@app/auth'
+import { requireAccountRole, requireRealUser, requireAnyUser } from '@app/auth'
 ```
 
 ---
@@ -59,6 +56,7 @@ import {
 Требует определённую роль аккаунта. Выбрасывает ошибку если роль не соответствует.
 
 **Сигнатура**:
+
 ```typescript
 requireAccountRole(ctx: app.Ctx, atLeastAccountRole: 'Admin' | 'Staff' | 'User'): void
 ```
@@ -71,7 +69,7 @@ import { requireAccountRole } from '@app/auth'
 export const adminPageRoute = app.get('/', async (ctx) => {
   requireAccountRole(ctx, 'Admin')
   // Выбросит ошибку если у пользователя нет роли Admin
-  
+
   return <html>...</html>
 })
 ```
@@ -87,13 +85,13 @@ export const adminOnlyRoute = app.get('/', async (ctx) => {
 
 // Сотрудники и администраторы
 export const staffAreaRoute = app.get('/', async (ctx) => {
-  requireAccountRole(ctx, 'Staff')  // Admin тоже пройдёт
+  requireAccountRole(ctx, 'Staff') // Admin тоже пройдёт
   return { message: 'Staff area' }
 })
 
 // Все авторизованные пользователи
 export const userAreaRoute = app.get('/', async (ctx) => {
-  requireAccountRole(ctx, 'User')  // Staff и Admin тоже пройдут
+  requireAccountRole(ctx, 'User') // Staff и Admin тоже пройдут
   return { message: 'User area' }
 })
 ```
@@ -103,6 +101,7 @@ export const userAreaRoute = app.get('/', async (ctx) => {
 Требует реального (не анонимного) пользователя. Выбрасывает ошибку если пользователь анонимный или не авторизован.
 
 **Сигнатура**:
+
 ```typescript
 requireRealUser(ctx: app.Ctx, requirements?: AuthRequirements): UgcSmartUser
 ```
@@ -115,7 +114,7 @@ import { requireRealUser } from '@app/auth'
 export const profilePageRoute = app.get('/', async (ctx) => {
   requireRealUser(ctx)
   // Выбросит ошибку если пользователь анонимный или не авторизован
-  
+
   return (
     <html>
       <head>
@@ -130,6 +129,7 @@ export const profilePageRoute = app.get('/', async (ctx) => {
 ```
 
 **Когда использовать**:
+
 - Страницы профиля пользователя
 - Личный кабинет
 - Действия от имени пользователя (создание контента, заказы)
@@ -139,6 +139,7 @@ export const profilePageRoute = app.get('/', async (ctx) => {
 Требует пользователя любого типа. Если пользователя нет — создаёт анонимного. Возвращает Promise.
 
 **Сигнатура**:
+
 ```typescript
 requireAnyUser(ctx: app.Ctx): Promise<UgcSmartUser>
 ```
@@ -151,12 +152,13 @@ import { requireAnyUser } from '@app/auth'
 export const publicPageRoute = app.get('/', async (ctx) => {
   await requireAnyUser(ctx)
   // Гарантирует наличие ctx.user (создаст анонимного если нужно)
-  
+
   return <html>...</html>
 })
 ```
 
 **Когда использовать**:
+
 - Публичные страницы где нужна сессия
 - Отслеживание действий анонимных пользователей
 - Сохранение временных данных
@@ -168,37 +170,37 @@ export const publicPageRoute = app.get('/', async (ctx) => {
 ### Основные свойства
 
 ```typescript
-ctx.user.id              // ID пользователя
-ctx.user.displayName     // Отображаемое имя (auto-generated)
-ctx.user.fullName        // firstName + middleName + lastName
-ctx.user.username        // Username
-ctx.user.firstName       // Имя
-ctx.user.lastName        // Фамилия
-ctx.user.middleName      // Отчество
-ctx.user.gender          // 'male' | 'female' | 'other'
-ctx.user.birthday        // Строка дата
-ctx.user.birthdayDate    // Date объект
-ctx.user.confirmedPhone  // Подтвержденный телефон
-ctx.user.confirmedEmail  // Подтвержденный email
-ctx.user.hasPassword     // Есть ли пароль
-ctx.user.imageUrl        // URL аватара
-ctx.user.hasImage        // Есть ли аватар
-ctx.user.imageThumbnailUrl  // URL thumbnail аватара
-ctx.user.accountRole     // 'Admin' | 'Staff' | 'User'
-ctx.user.type            // 'Real' | 'Bot' | 'Anonymous'
-ctx.user.lang            // Язык пользователя ('ru', 'en', etc.)
+ctx.user.id // ID пользователя
+ctx.user.displayName // Отображаемое имя (auto-generated)
+ctx.user.fullName // firstName + middleName + lastName
+ctx.user.username // Username
+ctx.user.firstName // Имя
+ctx.user.lastName // Фамилия
+ctx.user.middleName // Отчество
+ctx.user.gender // 'male' | 'female' | 'other'
+ctx.user.birthday // Строка дата
+ctx.user.birthdayDate // Date объект
+ctx.user.confirmedPhone // Подтвержденный телефон
+ctx.user.confirmedEmail // Подтвержденный email
+ctx.user.hasPassword // Есть ли пароль
+ctx.user.imageUrl // URL аватара
+ctx.user.hasImage // Есть ли аватар
+ctx.user.imageThumbnailUrl // URL thumbnail аватара
+ctx.user.accountRole // 'Admin' | 'Staff' | 'User'
+ctx.user.type // 'Real' | 'Bot' | 'Anonymous'
+ctx.user.lang // Язык пользователя ('ru', 'en', etc.)
 ```
 
 ### Методы
 
 ```typescript
 // Проверка роли
-ctx.user.is('Admin')     // true если админ
-ctx.user.is('Staff')     // true если Staff или Admin
-ctx.user.is('User')      // true если User, Staff или Admin
+ctx.user.is('Admin') // true если админ
+ctx.user.is('Staff') // true если Staff или Admin
+ctx.user.is('User') // true если User, Staff или Admin
 
 // Получение thumbnail с кастомным размером
-ctx.user.getImageThumbnailUrl(200)  // 200x200
+ctx.user.getImageThumbnailUrl(200) // 200x200
 
 // JSON представление
 ctx.user.toJSON()
@@ -209,11 +211,11 @@ ctx.user.toJSON()
 ```typescript
 export const dashboardRoute = app.get('/', async (ctx) => {
   requireRealUser(ctx)
-  
+
   const isAdmin = ctx.user.is('Admin')
   const userName = ctx.user.displayName
   const userEmail = ctx.user.confirmedEmail
-  
+
   return (
     <html>
       <body>
@@ -232,21 +234,25 @@ export const dashboardRoute = app.get('/', async (ctx) => {
 Система имеет 3 иерархические роли:
 
 ### Admin (Администратор)
+
 - Полный доступ ко всему
 - Включает права Staff и User
 - `requireAccountRole(ctx, 'Admin')`
 
 ### Staff (Сотрудник)
+
 - Расширенные права
 - Включает права User
 - `requireAccountRole(ctx, 'Staff')`
 
 ### User (Пользователь)
+
 - Базовые права
 - Доступны всем авторизованным
 - `requireAccountRole(ctx, 'User')`
 
 **Иерархия ролей**:
+
 ```
 Admin
   └─ Staff
@@ -282,7 +288,7 @@ import { requireAccountRole } from '@app/auth'
 
 export const adminDashboardRoute = app.get('/', async (ctx) => {
   requireAccountRole(ctx, 'Admin')
-  
+
   return (
     <html>
       <head>
@@ -303,7 +309,7 @@ import { requireRealUser } from '@app/auth'
 
 export const profileRoute = app.get('/', async (ctx) => {
   requireRealUser(ctx)
-  
+
   return (
     <html>
       <head>
@@ -325,7 +331,7 @@ import { requireAnyUser } from '@app/auth'
 export const landingRoute = app.get('/', async (ctx) => {
   await requireAnyUser(ctx)
   // Теперь ctx.user гарантированно существует
-  
+
   return (
     <html>
       <body>
@@ -346,11 +352,11 @@ import { requireAccountRole } from '@app/auth'
 // @shared-route
 export const deleteUserRoute = app.post('/delete', async (ctx, req) => {
   requireAccountRole(ctx, 'Admin')
-  
+
   const { userId } = req.body
-  
+
   await UsersTable.delete(ctx, userId)
-  
+
   return { success: true }
 })
 ```
@@ -363,15 +369,15 @@ import { requireRealUser } from '@app/auth'
 // @shared-route
 export const updateProfileRoute = app.post('/update', async (ctx, req) => {
   requireRealUser(ctx)
-  
+
   const { name, bio } = req.body
-  
+
   await ProfilesTable.update(ctx, {
     id: ctx.user.id,
     name,
     bio
   })
-  
+
   return { success: true }
 })
 ```
@@ -384,10 +390,10 @@ import { requireRealUser, requireAccountRole } from '@app/auth'
 export const editorRoute = app.get('/', async (ctx) => {
   // Сначала проверяем что пользователь реальный
   requireRealUser(ctx)
-  
+
   // Затем проверяем роль
   requireAccountRole(ctx, 'Staff')
-  
+
   return (
     <html>
       <body>
@@ -405,13 +411,15 @@ export const editorRoute = app.get('/', async (ctx) => {
 ### Базовый middleware
 
 ```typescript
-import { provideUser } from "@app/auth"
+import { provideUser } from '@app/auth'
 
 // Middleware с проверкой авторизации
-const authMiddleware = app.use(provideUser({
-  anonymous: false,  // Запретить анонимных
-  minRole: 'Staff'   // Минимальная роль
-}))
+const authMiddleware = app.use(
+  provideUser({
+    anonymous: false, // Запретить анонимных
+    minRole: 'Staff' // Минимальная роль
+  })
+)
 
 // Использование
 export const protectedRoute = authMiddleware.get('/protected', async (ctx, req) => {
@@ -423,7 +431,7 @@ export const protectedRoute = authMiddleware.get('/protected', async (ctx, req) 
 ### Проверка доступа к workspace
 
 ```typescript
-import { checkFilePermissions } from "@app/auth"
+import { checkFilePermissions } from '@app/auth'
 
 const workspaceMiddleware = app.use(checkFilePermissions())
 
@@ -436,13 +444,15 @@ export const workspaceRoute = workspaceMiddleware.get('/', async (ctx, req) => {
 ### Цепочка middleware
 
 ```typescript
-import { provideUser } from "@app/auth"
+import { provideUser } from '@app/auth'
 
 // Первый уровень — базовая авторизация
-const authMiddleware = app.use(provideUser({
-  anonymous: false,
-  minRole: 'User'
-}))
+const authMiddleware = app.use(
+  provideUser({
+    anonymous: false,
+    minRole: 'User'
+  })
+)
 
 // Второй уровень — кастомная проверка
 const filePermissionMiddleware = authMiddleware.use(async (ctx, req, next) => {
@@ -465,16 +475,11 @@ export const filesRoute = filePermissionMiddleware.get('/', async (ctx) => {
 ### Поиск пользователей
 
 ```typescript
-import { 
-  findUsers,
-  findUserById,
-  getUserById,
-  findUsersByIds
-} from '@app/auth'
+import { findUsers, findUserById, getUserById, findUsersByIds } from '@app/auth'
 
 // Все пользователи с фильтрами
 const users = await findUsers(ctx, {
-  where: { 
+  where: {
     type: 'Real',
     accountRole: ['Admin', 'Staff']
   },
@@ -484,15 +489,15 @@ const users = await findUsers(ctx, {
 
 // По имени
 const usersByName = await findUsers(ctx, {
-  where: { 
-    fuzzyText: 'john',      // Поиск по имени
-    username: 'john_doe'    // Точный поиск по username
+  where: {
+    fuzzyText: 'john', // Поиск по имени
+    username: 'john_doe' // Точный поиск по username
   }
 })
 
 // По ID
-const user = await findUserById(ctx, 'user_id')  // null если не найден
-const user2 = await getUserById(ctx, 'user_id')  // выбросит ошибку если не найден
+const user = await findUserById(ctx, 'user_id') // null если не найден
+const user2 = await getUserById(ctx, 'user_id') // выбросит ошибку если не найден
 
 // Множество пользователей
 const users = await findUsersByIds(ctx, ['id1', 'id2', 'id3'])
@@ -501,10 +506,7 @@ const users = await findUsersByIds(ctx, ['id1', 'id2', 'id3'])
 ### Поиск по identity (email, phone)
 
 ```typescript
-import { 
-  findIdentities,
-  normalizeIdentityKey
-} from '@app/auth'
+import { findIdentities, normalizeIdentityKey } from '@app/auth'
 
 // Найти identity по email
 const identities = await findIdentities(ctx, {
@@ -515,9 +517,7 @@ const identities = await findIdentities(ctx, {
 })
 
 // Получить пользователя по identity
-const user = identities[0] 
-  ? await findUserById(ctx, identities[0].userId) 
-  : null
+const user = identities[0] ? await findUserById(ctx, identities[0].userId) : null
 ```
 
 ### Создание пользователей
@@ -532,7 +532,7 @@ const user = await createRealUser(ctx, {
   lastName: 'Doe',
   middleName: 'Smith',
   gender: 'male',
-  birthday: '1990-01-15',  // YYYY-MM-DD или Date
+  birthday: '1990-01-15', // YYYY-MM-DD или Date
   imageUrl: 'https://example.com/avatar.jpg',
   unconfirmedIdentities: {
     Email: normalizeIdentityKey('Email', 'john@example.com'),
@@ -580,6 +580,7 @@ await ctx.user.updatePassword(ctx, 'newpassword123')
 ```
 
 **Важно**:
+
 - Методы обновления — серверные, вызывайте только в backend
 - phone и email обновлять нельзя — это системные поля
 
@@ -640,9 +641,7 @@ import { computed } from 'vue'
 
 const currentPath = window.location.pathname
 
-const loginUrl = computed(() => 
-  `/s/auth/signin?back=${encodeURIComponent(currentPath)}`
-)
+const loginUrl = computed(() => `/s/auth/signin?back=${encodeURIComponent(currentPath)}`)
 
 async function logout() {
   await fetch('/s/auth/sign-out', { method: 'POST' })
@@ -666,27 +665,32 @@ async function logout() {
 ### Выбор метода авторизации
 
 ✅ **requireAccountRole** — когда:
+
 - Нужна проверка конкретной роли (Admin, Staff)
 - Админские панели и управление
 - Действия требующие повышенных прав
 
 ✅ **requireRealUser** — когда:
+
 - Создание/изменение данных от имени пользователя
 - Личный кабинет, профиль
 - Действия требующие идентификации
 
 ✅ **requireAnyUser** — когда:
+
 - Публичные страницы с трекингом
 - Сохранение временных данных
 - Нужна гарантия наличия пользователя
 
-❌ **Не используйте** require* методы:
+❌ **Не используйте** require\* методы:
+
 - Просто для чтения данных (используйте `ctx.user` напрямую)
 - Когда авторизация не требуется
 
 ### Логирование
 
 ✅ **Правильно**:
+
 ```typescript
 ctx.account.log('User action', {
   level: 'info',
@@ -695,6 +699,7 @@ ctx.account.log('User action', {
 ```
 
 ❌ **Неправильно**:
+
 ```typescript
 console.log('User logged in')
 ```
@@ -702,6 +707,7 @@ console.log('User logged in')
 ### Проверки в коде
 
 ✅ **Правильно**:
+
 ```typescript
 export const adminRoute = app.get('/', async (ctx) => {
   requireAccountRole(ctx, 'Admin')
@@ -710,10 +716,11 @@ export const adminRoute = app.get('/', async (ctx) => {
 ```
 
 ✅ **Условная проверка** (когда нужна мягкая логика):
+
 ```typescript
 export const pageRoute = app.get('/', async (ctx) => {
   const isAdmin = ctx.user?.is('Admin') || false
-  
+
   return (
     <html>
       <body>
@@ -725,7 +732,8 @@ export const pageRoute = app.get('/', async (ctx) => {
 })
 ```
 
-❌ **Неправильно** (ручная проверка вместо require*):
+❌ **Неправильно** (ручная проверка вместо require\*):
+
 ```typescript
 export const adminRoute = app.get('/', async (ctx) => {
   if (!ctx.user || !ctx.user.is('Admin')) {
@@ -738,9 +746,10 @@ export const adminRoute = app.get('/', async (ctx) => {
 ### Комбинирование
 
 ✅ **Сначала requireRealUser, затем requireAccountRole**:
+
 ```typescript
-requireRealUser(ctx)           // Проверка что пользователь реальный
-requireAccountRole(ctx, 'Staff')  // Проверка роли
+requireRealUser(ctx) // Проверка что пользователь реальный
+requireAccountRole(ctx, 'Staff') // Проверка роли
 ```
 
 ---
@@ -790,21 +799,21 @@ import LoginPage from './pages/LoginPage.vue'
 
 export const loginPageRoute = app.html('/', async (ctx, req) => {
   const back = (req.query.back as string) || '/app/home'
-  
+
   // Получение доступных провайдеров авторизации
   const providers = await getEnabledAuthProviders(ctx)
-  
+
   return (
     <html>
       <head>
         <title>Вход в систему</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta charset="UTF-8" />
-        
+
         <script src="/s/static/lib/tailwind.3.4.16.min.js"></script>
         <script dangerouslySetInnerHTML={{ __html: tailwindScript }} />
         <link href="/s/static/lib/fontawesome/6.7.2/css/all.min.css" rel="stylesheet" />
-        
+
         <style type="text/tailwindcss">{cssVariables}</style>
         <style>{commonStyles}</style>
       </head>
@@ -819,6 +828,7 @@ export default loginPageRoute
 ```
 
 **Ключевые моменты:**
+
 - ✅ Используйте `getEnabledAuthProviders(ctx)` для получения активных провайдеров
 - ✅ Передайте `providers` и `back` в Vue компонент
 - ✅ Параметр `back` - URL для возврата после успешной авторизации
@@ -849,7 +859,7 @@ export const protectedPageRoute = app.html('/', async (ctx, req) => {
       </html>
     )
   }
-  
+
   // Защищённый контент
   return (
     <html>
@@ -862,6 +872,7 @@ export const protectedPageRoute = app.html('/', async (ctx, req) => {
 ```
 
 **Важно:**
+
 - ❌ `ctx.redirect()` не существует - используйте HTML редирект
 - ✅ Используйте `<meta http-equiv="refresh">` + JavaScript fallback
 - ✅ Обязательно передавайте параметр `back` для возврата на исходную страницу
@@ -881,7 +892,7 @@ export const protectedPageRoute = app.html('/', async (ctx, req) => {
 'Password'
 
 // Telegram OAuth
-'telegram-auth'  // Telegram OAuth
+'telegram-auth' // Telegram OAuth
 
 // SSO авторизация
 'sso-auth'
@@ -892,11 +903,13 @@ export const protectedPageRoute = app.html('/', async (ctx, req) => {
 Чтобы провайдер `telegram-auth` стал доступен, необходимо выполнить настройку в админ-панели:
 
 **Шаг 1: Установка дополнения**
+
 1. Перейдите по адресу `/app/store/~telegram-auth` в вашем Chatium workspace
 2. Установите дополнение "Telegram Auth"
 3. Нажмите на появившуюся кнопку **"Включить Telegram OAuth"**
 
 **Шаг 2: Активация провайдера**
+
 1. Нажмите кнопку **"Добавить нового провайдера"**
 2. Выберите **"Telegram OAuth"** из списка
 3. Справа от появившегося сверху пункта "Telegram OAuth" поставьте **галочку** для активации
@@ -926,21 +939,13 @@ const props = defineProps({
   }
 })
 
-const isPhoneEnabled = computed(() => 
-  Object.keys(props.providers).includes('Sms')
-)
+const isPhoneEnabled = computed(() => Object.keys(props.providers).includes('Sms'))
 
-const isEmailEnabled = computed(() => 
-  Object.keys(props.providers).includes('Email')
-)
+const isEmailEnabled = computed(() => Object.keys(props.providers).includes('Email'))
 
-const isPasswordEnabled = computed(() => 
-  Object.keys(props.providers).includes('Password')
-)
+const isPasswordEnabled = computed(() => Object.keys(props.providers).includes('Password'))
 
-const isTelegramEnabled = computed(() => 
-  Object.keys(props.providers).includes('telegram-auth')
-)
+const isTelegramEnabled = computed(() => Object.keys(props.providers).includes('telegram-auth'))
 </script>
 ```
 
@@ -954,26 +959,26 @@ const isTelegramEnabled = computed(() =>
 // Отправка SMS кода
 export async function sendSmsCode(phone: string) {
   const normalizedPhone = phone.replace(/[^0-9]/g, '')
-  
+
   const response = await fetch('/s/auth/sms/send', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ phone: normalizedPhone }),
+    body: JSON.stringify({ phone: normalizedPhone })
   })
-  
+
   return await response.json()
 }
 
 // Подтверждение SMS кода
 export async function confirmSmsCode(phone: string, verificationCode: string) {
   const normalizedPhone = phone.replace(/[^0-9]/g, '')
-  
+
   const response = await fetch('/s/auth/sms/confirm', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ phone: normalizedPhone, verificationCode }),
+    body: JSON.stringify({ phone: normalizedPhone, verificationCode })
   })
-  
+
   return await response.json()
 }
 ```
@@ -986,9 +991,9 @@ export async function sendEmailCode(email: string) {
   const response = await fetch('/s/auth/email/send', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email }),
+    body: JSON.stringify({ email })
   })
-  
+
   return await response.json()
 }
 
@@ -997,9 +1002,9 @@ export async function confirmEmailCode(email: string, code: string) {
   const response = await fetch('/s/auth/email/confirm', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, code }),
+    body: JSON.stringify({ email, code })
   })
-  
+
   return await response.json()
 }
 ```
@@ -1012,7 +1017,7 @@ export async function loginWithPassword(
   type: 'Phone' | 'Email',
   identifier: string,
   checkHashUrl: string,
-  password: string,
+  password: string
 ) {
   try {
     // Шаг 1: Получение хеша пароля через API
@@ -1020,29 +1025,29 @@ export async function loginWithPassword(
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        it: type,        // Identity Type
-        ik: identifier,  // Identity Key
-        pwd: password,   // Password
-      }),
+        it: type, // Identity Type
+        ik: identifier, // Identity Key
+        pwd: password // Password
+      })
     })
-    
+
     if (!response.ok) {
       return { success: false, error: 'Ошибка при получении хеша пароля' }
     }
-    
+
     const passwordHash = await response.text()
-    
+
     // Шаг 2: Авторизация с хешем пароля
     const authResponse = await fetch('/s/auth/password', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
-        it: type, 
-        ik: identifier, 
-        s: { hash: passwordHash } 
-      }),
+      body: JSON.stringify({
+        it: type,
+        ik: identifier,
+        s: { hash: passwordHash }
+      })
     })
-    
+
     return await authResponse.json()
   } catch (error) {
     return { success: false, error: 'Произошла ошибка при авторизации' }
@@ -1062,7 +1067,7 @@ export function handleAuthError(error: any): string {
     if (error.includes('blocked')) return 'Аккаунт заблокирован'
     return error
   }
-  
+
   return 'Произошла ошибка при авторизации'
 }
 
@@ -1099,11 +1104,11 @@ import { getPasswordHashWithSalt } from '@app/auth/provider'
 export const apiGetPasswordHashRoute = app.post('/password-hash', async (ctx, req) => {
   try {
     const { it, ik, pwd } = req.body
-    
+
     if (!it || !ik || !pwd) {
       return ctx.text('Missing parameters', 400)
     }
-    
+
     const hash = await getPasswordHashWithSalt(ctx, it, ik, pwd)
     return ctx.text(hash)
   } catch (error: any) {
@@ -1117,6 +1122,7 @@ export const apiGetPasswordHashRoute = app.post('/password-hash', async (ctx, re
 ```
 
 **Важно:**
+
 - Хеш пароля получается через `getPasswordHashWithSalt(ctx, type, identifier, password)`
 - Параметры: `it` (Identity Type), `ik` (Identity Key), `pwd` (Password)
 - Возвращает текстовый хеш, который передаётся в `/s/auth/password`
@@ -1134,7 +1140,7 @@ import { getTelegramOauthUrl } from '@users/sdk/auth'
 export const getTelegramOauthUrlRoute = app
   .post('/get-telegram-oauth-url')
   .body((s) => ({
-    back: s.string().optional(),
+    back: s.string().optional()
   }))
   .handle(async (ctx, req) => {
     const { back } = req.body
@@ -1146,6 +1152,7 @@ export const getTelegramOauthUrlRoute = app
 ```
 
 **Ключевые моменты:**
+
 - ✅ Импорт из `@users/sdk/auth` (не из `@app/auth`)
 - ✅ Функция `getTelegramOauthUrl(ctx, { back })` возвращает URL для OAuth
 - ✅ Параметр `back` - URL для редиректа после успешной авторизации
@@ -1159,7 +1166,7 @@ import { getTelegramOauthUrlRoute } from '../api/telegram'
 const handleTelegramLogin = async () => {
   try {
     const oauthUrl = await getTelegramOauthUrlRoute.run(ctx, { back: props.back })
-    window.location.href = oauthUrl  // Редирект на Telegram OAuth
+    window.location.href = oauthUrl // Редирект на Telegram OAuth
   } catch (error) {
     console.error('Ошибка получения ссылки для авторизации через Telegram:', error)
   }
@@ -1223,9 +1230,11 @@ const handleTelegramLogin = async () => {
         @click="handlePasswordLogin()"
         :disabled="loading || !isValidPhone(phone) || !password"
         class="btn w-full mb-4"
-        :style="(loading || !isValidPhone(phone) || !password)
-          ? 'background: var(--color-bg-secondary); color: var(--color-text-tertiary); border: 1.5px solid var(--color-border); cursor: not-allowed;'
-          : 'background: var(--color-primary); color: white; border: 1.5px solid var(--color-primary); cursor: pointer;'"
+        :style="
+          loading || !isValidPhone(phone) || !password
+            ? 'background: var(--color-bg-secondary); color: var(--color-text-tertiary); border: 1.5px solid var(--color-border); cursor: not-allowed;'
+            : 'background: var(--color-primary); color: white; border: 1.5px solid var(--color-primary); cursor: pointer;'
+        "
       >
         <i v-if="loading" class="fas fa-spinner fa-spin mr-2"></i>
         <i v-else class="fas fa-sign-in-alt mr-2"></i>
@@ -1238,7 +1247,9 @@ const handleTelegramLogin = async () => {
           <div class="w-full border-t border-[var(--color-border)]"></div>
         </div>
         <div class="relative flex justify-center text-sm">
-          <span class="px-2 bg-[var(--color-bg-secondary)] text-[var(--color-text-secondary)]">или</span>
+          <span class="px-2 bg-[var(--color-bg-secondary)] text-[var(--color-text-secondary)]"
+            >или</span
+          >
         </div>
       </div>
 
@@ -1257,13 +1268,15 @@ const handleTelegramLogin = async () => {
     <!-- Шаг 2: Ввод кода подтверждения -->
     <div v-if="step === 'code'">
       <div class="text-center mb-6">
-        <div class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4" 
-             style="background: var(--color-primary-light)">
+        <div
+          class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4"
+          style="background: var(--color-primary-light)"
+        >
           <i class="fas fa-sms text-2xl" style="color: var(--color-primary)"></i>
         </div>
         <h3 class="text-lg font-semibold text-[var(--color-text)] mb-2">Введите код</h3>
         <p class="text-[var(--color-text-secondary)] text-sm">
-          Код отправлен на номер<br/>
+          Код отправлен на номер<br />
           <span class="font-medium">{{ formatPhoneNumber(phone) }}</span>
         </p>
       </div>
@@ -1293,8 +1306,11 @@ const handleTelegramLogin = async () => {
     </div>
 
     <!-- Ошибки -->
-    <div v-if="error" class="mt-4 p-3 rounded-lg" 
-         style="background: var(--color-danger-light); color: var(--color-danger)">
+    <div
+      v-if="error"
+      class="mt-4 p-3 rounded-lg"
+      style="background: var(--color-danger-light); color: var(--color-danger)"
+    >
       <i class="fas fa-exclamation-circle mr-2"></i>
       <span class="text-sm">{{ error }}</span>
     </div>
@@ -1303,8 +1319,14 @@ const handleTelegramLogin = async () => {
 
 <script setup>
 import { ref, defineProps, defineEmits } from 'vue'
-import { sendSmsCode, confirmSmsCode, loginWithPassword, 
-         handleAuthError, formatPhoneNumber, isValidPhone } from '../sdk/auth'
+import {
+  sendSmsCode,
+  confirmSmsCode,
+  loginWithPassword,
+  handleAuthError,
+  formatPhoneNumber,
+  isValidPhone
+} from '../sdk/auth'
 import { apiGetPasswordHashRoute } from '../api/password'
 
 const props = defineProps({
@@ -1333,7 +1355,7 @@ const sendCode = async () => {
 
   try {
     const result = await sendSmsCode(phone.value)
-    
+
     if (result.success) {
       step.value = 'code'
     } else {
@@ -1357,9 +1379,9 @@ const confirmCode = async () => {
 
   try {
     const result = await confirmSmsCode(phone.value, verificationCode.value)
-    
-    if (JSON.stringify(result).includes("authSuccess")) {
-      emit('success')  // Вызываем callback успеха
+
+    if (JSON.stringify(result).includes('authSuccess')) {
+      emit('success') // Вызываем callback успеха
     } else {
       error.value = handleAuthError(result.error)
     }
@@ -1381,13 +1403,13 @@ const handlePasswordLogin = async () => {
 
   try {
     const result = await loginWithPassword(
-      'Phone', 
-      phone.value, 
-      apiGetPasswordHashRoute.url(), 
+      'Phone',
+      phone.value,
+      apiGetPasswordHashRoute.url(),
       password.value
     )
-    
-    if (JSON.stringify(result).includes("authSuccess")) {
+
+    if (JSON.stringify(result).includes('authSuccess')) {
       emit('success')
     } else {
       error.value = handleAuthError(result.error)
@@ -1410,6 +1432,7 @@ const goBack = () => {
 **EmailAuthForm.vue** - форма авторизации по email с паролем:
 
 Структура формы идентична PhoneAuthForm, с отличиями:
+
 - Использует `sendEmailCode()`, `confirmEmailCode()` вместо SMS версий
 - Код подтверждения из 6 цифр вместо 4
 - Валидация email вместо телефона
@@ -1436,18 +1459,20 @@ const goBack = () => {
     <!-- ... другие методы авторизации ... -->
 
     <!-- Кнопка Telegram -->
-    <div v-if="isTelegramEnabled" :class="{'mt-4': isPhoneEnabled || isEmailEnabled}">
+    <div v-if="isTelegramEnabled" :class="{ 'mt-4': isPhoneEnabled || isEmailEnabled }">
       <!-- Разделитель "или" если есть другие методы -->
       <div v-if="isPhoneEnabled || isEmailEnabled" class="relative mb-4">
         <div class="absolute inset-0 flex items-center">
           <div class="w-full border-t border-[var(--color-border)]"></div>
         </div>
         <div class="relative flex justify-center text-sm">
-          <span class="px-2 bg-[var(--color-bg-secondary)] text-[var(--color-text-secondary)]">или</span>
+          <span class="px-2 bg-[var(--color-bg-secondary)] text-[var(--color-text-secondary)]"
+            >или</span
+          >
         </div>
       </div>
-      
-      <button 
+
+      <button
         @click="handleTelegramLogin"
         class="w-full font-medium py-3 px-4 rounded-lg transition-all 
                flex items-center justify-center"
@@ -1465,9 +1490,7 @@ const goBack = () => {
 import { ref, computed } from 'vue'
 import { getTelegramOauthUrlRoute } from '../api/telegram'
 
-const isTelegramEnabled = computed(() => 
-  Object.keys(props.providers).includes('telegram-auth')
-)
+const isTelegramEnabled = computed(() => Object.keys(props.providers).includes('telegram-auth'))
 
 const handleTelegramLogin = async () => {
   try {
@@ -1482,6 +1505,7 @@ const handleTelegramLogin = async () => {
 ```
 
 **Важные детали:**
+
 - ✅ Проверка провайдера: `Object.keys(props.providers).includes('telegram-auth')`
 - ✅ Используйте `window.location.href` для редиректа (не `window.open`)
 - ✅ Разделитель "или" показывается только если есть другие методы авторизации
@@ -1489,6 +1513,7 @@ const handleTelegramLogin = async () => {
 - ✅ Разделитель идёт **перед** кнопкой Telegram, а не после (используйте `class="relative mb-4"`)
 
 **Полная структура элементов формы:**
+
 1. Поле email/телефона
 2. Поле пароля (если Password провайдер включен)
 3. Кнопка "Войти" (если Password провайдер включен)
@@ -1505,55 +1530,62 @@ const handleTelegramLogin = async () => {
     <div class="login-logo">
       <i class="fas fa-handshake text-3xl text-white"></i>
     </div>
-    
-    <h1 class="text-2xl font-bold text-[var(--color-text)] text-center mb-2">
-      Вход в систему
-    </h1>
-    <p class="text-[var(--color-text-secondary)] text-center mb-8">
-      Описание вашего приложения
-    </p>
+
+    <h1 class="text-2xl font-bold text-[var(--color-text)] text-center mb-2">Вход в систему</h1>
+    <p class="text-[var(--color-text-secondary)] text-center mb-8">Описание вашего приложения</p>
 
     <!-- Переключатель Телефон/Email -->
-    <div v-if="isPhoneEnabled && isEmailEnabled" 
-         class="flex mb-6 bg-[var(--color-border)] rounded-lg p-1">
-      <button @click="authMethod = 'phone'"
-              :class="authMethod === 'phone' ? 'bg-[var(--color-bg-secondary)] shadow-sm' : ''"
-              class="flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all">
+    <div
+      v-if="isPhoneEnabled && isEmailEnabled"
+      class="flex mb-6 bg-[var(--color-border)] rounded-lg p-1"
+    >
+      <button
+        @click="authMethod = 'phone'"
+        :class="authMethod === 'phone' ? 'bg-[var(--color-bg-secondary)] shadow-sm' : ''"
+        class="flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all"
+      >
         <i class="fas fa-phone mr-2"></i> Телефон
       </button>
-      <button @click="authMethod = 'email'"
-              :class="authMethod === 'email' ? 'bg-[var(--color-bg-secondary)] shadow-sm' : ''"
-              class="flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all">
+      <button
+        @click="authMethod = 'email'"
+        :class="authMethod === 'email' ? 'bg-[var(--color-bg-secondary)] shadow-sm' : ''"
+        class="flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all"
+      >
         <i class="fas fa-envelope mr-2"></i> Email
       </button>
     </div>
 
     <!-- Форма по телефону -->
-    <PhoneAuthForm 
+    <PhoneAuthForm
       v-if="authMethod === 'phone' && isPhoneEnabled"
       :showPasswordOption="isPasswordEnabled"
       @success="handleLoginSuccess"
     />
 
     <!-- Форма по email -->
-    <EmailAuthForm 
+    <EmailAuthForm
       v-if="authMethod === 'email' && isEmailEnabled"
       :showPasswordOption="isPasswordEnabled"
       @success="handleLoginSuccess"
     />
 
     <!-- Кнопка Telegram -->
-    <div v-if="isTelegramEnabled" :class="{'mt-4': isPhoneEnabled || isEmailEnabled}">
+    <div v-if="isTelegramEnabled" :class="{ 'mt-4': isPhoneEnabled || isEmailEnabled }">
       <div v-if="isPhoneEnabled || isEmailEnabled" class="relative mb-4">
         <div class="absolute inset-0 flex items-center">
           <div class="w-full border-t border-[var(--color-border)]"></div>
         </div>
         <div class="relative flex justify-center text-sm">
-          <span class="px-2 bg-[var(--color-bg-secondary)] text-[var(--color-text-secondary)]">или</span>
+          <span class="px-2 bg-[var(--color-bg-secondary)] text-[var(--color-text-secondary)]"
+            >или</span
+          >
         </div>
       </div>
-      <button @click="handleTelegramLogin" class="btn w-full"
-              style="background: linear-gradient(135deg, #229ED9 0%, #0088cc 100%); color: white;">
+      <button
+        @click="handleTelegramLogin"
+        class="btn w-full"
+        style="background: linear-gradient(135deg, #229ED9 0%, #0088cc 100%); color: white;"
+      >
         <i class="fab fa-telegram-plane mr-2"></i>
         Войти через Telegram
       </button>
@@ -1579,7 +1611,7 @@ const isEmailEnabled = computed(() => Object.keys(props.providers).includes('Ema
 const isPasswordEnabled = computed(() => Object.keys(props.providers).includes('Password'))
 const isTelegramEnabled = computed(() => Object.keys(props.providers).includes('telegram-auth'))
 
-const handleLoginSuccess = () => { 
+const handleLoginSuccess = () => {
   window.location.href = props.back
 }
 
@@ -1596,24 +1628,25 @@ const handleTelegramLogin = async () => {
 
 ```typescript
 // SMS авторизация
-POST /s/auth/sms/send          // Отправка SMS кода
-POST /s/auth/sms/confirm       // Подтверждение SMS кода
+POST / s / auth / sms / send // Отправка SMS кода
+POST / s / auth / sms / confirm // Подтверждение SMS кода
 
 // Email авторизация
-POST /s/auth/email/send        // Отправка Email кода
-POST /s/auth/email/confirm     // Подтверждение Email кода
+POST / s / auth / email / send // Отправка Email кода
+POST / s / auth / email / confirm // Подтверждение Email кода
 
 // Password авторизация
-POST /s/auth/password          // Авторизация с хешем пароля
+POST / s / auth / password // Авторизация с хешем пароля
 
 // Telegram OAuth
 // Получается через getTelegramOauthUrl(ctx, { back })
 
 // Выход
-POST /s/auth/sign-out          // Выход из системы
+POST / s / auth / sign - out // Выход из системы
 ```
 
 **Важно:**
+
 - ✅ Все endpoints возвращают JSON
 - ✅ При успехе содержат `{ success: true }` или специальное поле `authSuccess`
 - ✅ При ошибке содержат `{ success: false, error: 'message' }`
@@ -1623,7 +1656,7 @@ POST /s/auth/sign-out          // Выход из системы
 
 ```typescript
 // Проверка ответа от API авторизации
-if (JSON.stringify(result).includes("authSuccess")) {
+if (JSON.stringify(result).includes('authSuccess')) {
   // Авторизация успешна
   window.location.href = backUrl
 } else {
@@ -1633,6 +1666,7 @@ if (JSON.stringify(result).includes("authSuccess")) {
 ```
 
 **Почему `JSON.stringify(result).includes("authSuccess")`?**
+
 - Ответ может содержать вложенные объекты
 - `authSuccess` может быть где угодно в структуре
 - Это самый надёжный способ проверки
@@ -1642,18 +1676,19 @@ if (JSON.stringify(result).includes("authSuccess")) {
 ✅ **DO (Делайте):**
 
 1. **Используйте getEnabledAuthProviders:**
+
 ```typescript
 const providers = await getEnabledAuthProviders(ctx)
 ```
 
 2. **Автоматически определяйте доступные методы:**
+
 ```typescript
-const isPhoneEnabled = computed(() => 
-  Object.keys(props.providers).includes('Sms')
-)
+const isPhoneEnabled = computed(() => Object.keys(props.providers).includes('Sms'))
 ```
 
 3. **Валидируйте данные перед отправкой:**
+
 ```typescript
 if (!isValidEmail(email.value)) {
   error.value = 'Введите корректный email'
@@ -1662,6 +1697,7 @@ if (!isValidEmail(email.value)) {
 ```
 
 4. **Показывайте состояния загрузки:**
+
 ```vue
 <button :disabled="loading">
   <i v-if="loading" class="fas fa-spinner fa-spin"></i>
@@ -1670,11 +1706,13 @@ if (!isValidEmail(email.value)) {
 ```
 
 5. **Обрабатывайте ошибки понятно:**
+
 ```typescript
 error.value = handleAuthError(result.error)
 ```
 
 6. **Используйте гибкую авторизацию:**
+
 - Показывайте поле пароля сразу, если провайдер Password включен
 - Предоставьте пользователю выбор: войти по паролю или получить код
 - Для входа по коду: Шаг 1 (ввод телефона/email) → Шаг 2 (ввод кода подтверждения)
@@ -1682,18 +1720,21 @@ error.value = handleAuthError(result.error)
 ❌ **DON'T (Не делайте):**
 
 1. **Не используйте стандартный редирект:**
+
 ```typescript
 ❌ return ctx.redirect('/login')  // Не работает!
 ✅ return <html><meta http-equiv="refresh" content="0; url=/login" /></html>
 ```
 
 2. **Не забывайте нормализовать телефон:**
+
 ```typescript
 ❌ fetch('/s/auth/sms/send', { body: JSON.stringify({ phone: '+7 999 123-45-67' }) })
 ✅ const normalized = phone.replace(/[^0-9]/g, '')
 ```
 
 3. **Не храните пароли в открытом виде:**
+
 ```typescript
 ✅ const hash = await getPasswordHashWithSalt(ctx, type, identifier, password)
 ```
@@ -1713,8 +1754,9 @@ console.log('Все провайдеры:', props.providers)
 **Проверьте в консоли браузера (F12)** какие провайдеры доступны.
 
 **Типичные ключи:**
+
 - `Sms` - SMS авторизация
-- `Email` - Email авторизация  
+- `Email` - Email авторизация
 - `Password` - Авторизация по паролю
 - `telegram-auth` - Telegram через Sender
 - `sso-auth` - SSO авторизация

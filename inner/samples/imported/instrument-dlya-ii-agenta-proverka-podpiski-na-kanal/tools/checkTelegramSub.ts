@@ -1,4 +1,4 @@
-import { getConfig } from "../api/config"
+import { getConfig } from '../api/config'
 import { findIdentities } from '@app/auth'
 import { checkTelegramSubscription } from '../shared/checkSubscription'
 import { getChannels, getTelegramGroups } from '@sender/sdk'
@@ -13,7 +13,7 @@ export const checkTelegramSubTool = app
     name: 'checkTelegramSub',
     description: `Функция проверяет, подписан ли пользователь на указанный Telegram-канал`
   })
-  .body(s =>
+  .body((s) =>
     s.object(
       {
         context: s.object(
@@ -23,10 +23,7 @@ export const checkTelegramSubTool = app
           },
           { additionalProperties: true }
         ),
-        input: s.object(
-          {},
-          { additionalProperties: true }
-        )
+        input: s.object({}, { additionalProperties: true })
       },
       { additionalProperties: true }
     )
@@ -68,7 +65,7 @@ export const checkTelegramSubTool = app
     try {
       // Получаем конфигурацию
       const config = await getConfig(ctx)
-      
+
       if (!config.botId || !config.senderChannelId) {
         return {
           ok: false,
@@ -78,7 +75,7 @@ export const checkTelegramSubTool = app
 
       // Получаем информацию о канале из сендера
       const channels = await getTelegramGroups(ctx)
-      const channel = channels.find(ch => ch.id === config.senderChannelId)
+      const channel = channels.find((ch) => ch.id === config.senderChannelId)
 
       if (!channel || !channel.externalId) {
         return {
@@ -113,7 +110,6 @@ export const checkTelegramSubTool = app
           result: `User is NOT subscribed to the channel`
         }
       }
-
     } catch (error) {
       ctx.account.log('checkTelegramSubTool error', {
         level: 'error',

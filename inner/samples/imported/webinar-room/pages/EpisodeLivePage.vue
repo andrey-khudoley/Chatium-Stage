@@ -2,7 +2,9 @@
   <div class="min-h-screen" style="background: var(--wr-bg)">
     <!-- Loading -->
     <div v-if="loading" class="min-h-screen flex items-center justify-center">
-      <div class="w-10 h-10 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+      <div
+        class="w-10 h-10 border-2 border-primary border-t-transparent rounded-full animate-spin"
+      ></div>
     </div>
 
     <!-- Error -->
@@ -17,7 +19,10 @@
     </div>
 
     <!-- ===================== STATE: SCHEDULED (waiting) ===================== -->
-    <WaitingState v-else-if="currentEpisode && currentEpisode.status === 'scheduled'" :episode="currentEpisode" />
+    <WaitingState
+      v-else-if="currentEpisode && currentEpisode.status === 'scheduled'"
+      :episode="currentEpisode"
+    />
 
     <!-- ===================== STATE: WAITING ROOM (chat + countdown) ===================== -->
     <WaitingRoomState
@@ -44,11 +49,17 @@
     />
 
     <!-- ===================== STATE: FINISHED ===================== -->
-    <FinishedState v-else-if="currentEpisode && currentEpisode.status === 'finished'" :episode="currentEpisode" />
+    <FinishedState
+      v-else-if="currentEpisode && currentEpisode.status === 'finished'"
+      :episode="currentEpisode"
+    />
 
     <!-- Floating Reactions -->
     <FloatingReactions
-      v-if="currentEpisode && (currentEpisode.status === 'live' || currentEpisode.status === 'waiting_room')"
+      v-if="
+        currentEpisode &&
+        (currentEpisode.status === 'live' || currentEpisode.status === 'waiting_room')
+      "
       ref="reactionsRef"
       :episode-id="currentEpisode.id"
     />
@@ -71,7 +82,7 @@ import { getOrCreateBrowserSocketClient } from '@app/socket'
 import {
   apiEpisodeByIdRoute,
   apiEpisodeGetSocketIdRoute,
-  apiEpisodeVisitRoute,
+  apiEpisodeVisitRoute
 } from '../api/episodes'
 import { apiChatUserSocketRoute } from '../api/chat-admin-routes'
 import { apiFormGetShownRoute, apiFormByIdRoute } from '../api/forms'
@@ -87,7 +98,7 @@ import { initThemeWatcher } from '../shared/theme'
 import { trackFormShown, trackFormOpened } from '../shared/use-form-analytics'
 
 const props = defineProps({
-  episode: { type: Object, required: true },
+  episode: { type: Object, required: true }
 })
 
 initThemeWatcher()
@@ -114,12 +125,12 @@ async function loadShownForms() {
   try {
     const forms = await apiFormGetShownRoute({ episodeId: currentEpisode.value.id }).run(ctx)
     // Фильтруем оплаченные формы с типом payment
-    shownFormsList.value = forms.filter(f =>
-      !(f.submitAction === 'payment' && paidFormIds.value.includes(f.id))
+    shownFormsList.value = forms.filter(
+      (f) => !(f.submitAction === 'payment' && paidFormIds.value.includes(f.id))
     )
 
     // Записываем события показа для форм, которые пользователь видит впервые
-    shownFormsList.value.forEach(form => {
+    shownFormsList.value.forEach((form) => {
       const storageKey = `form_shown_${currentEpisode.value.id}_${form.id}`
       if (!localStorage.getItem(storageKey)) {
         trackFormShown(currentEpisode.value.id, form.id, form.title, form.submitAction)
@@ -180,7 +191,7 @@ onMounted(async () => {
     if (socketData.encodedSocketId) {
       const socketClient = await getOrCreateBrowserSocketClient()
       subscription = socketClient.subscribeToData(socketData.encodedSocketId)
-      subscription.listen(msg => {
+      subscription.listen((msg) => {
         if (msg.type === 'episode_updated' && msg.episode) {
           currentEpisode.value = { ...currentEpisode.value, ...msg.episode }
         }
@@ -189,19 +200,25 @@ onMounted(async () => {
         }
         if (msg.type === 'show_custom_form' && msg.formId) {
           if (!hideCta.value) {
-            apiFormByIdRoute({ id: msg.formId }).run(ctx).then(async formData => {
-              if (formData.submitAction === 'payment' && paidFormIds.value.includes(formData.id)) {
-                return
-              }
-              const storageKey = `form_shown_${id}_${formData.id}`
-              if (!localStorage.getItem(storageKey)) {
-                trackFormShown(id, formData.id, formData.title, formData.submitAction)
-                localStorage.setItem(storageKey, 'true')
-              }
-              await stateRef.value?.exitFullscreen?.()
-              activeFormData.value = formData
-              showFormOverlay.value = true
-            }).catch(e => console.error('Failed to load form:', e))
+            apiFormByIdRoute({ id: msg.formId })
+              .run(ctx)
+              .then(async (formData) => {
+                if (
+                  formData.submitAction === 'payment' &&
+                  paidFormIds.value.includes(formData.id)
+                ) {
+                  return
+                }
+                const storageKey = `form_shown_${id}_${formData.id}`
+                if (!localStorage.getItem(storageKey)) {
+                  trackFormShown(id, formData.id, formData.title, formData.submitAction)
+                  localStorage.setItem(storageKey, 'true')
+                }
+                await stateRef.value?.exitFullscreen?.()
+                activeFormData.value = formData
+                showFormOverlay.value = true
+              })
+              .catch((e) => console.error('Failed to load form:', e))
           }
           loadShownForms()
         }
@@ -230,7 +247,7 @@ async function handleNameUpdated() {
 async function handleOpenForm(formId) {
   if (!formId) return
 
-  let form = shownFormsList.value.find(f => f.id === formId)
+  let form = shownFormsList.value.find((f) => f.id === formId)
 
   if (!form) {
     try {
@@ -253,11 +270,15 @@ async function handleOpenForm(formId) {
 watch(
   () => currentEpisode.value,
   (newEpisode, oldEpisode) => {
-    if (newEpisode?.status === 'finished' && newEpisode?.finishAction === 'redirect' && newEpisode?.resultUrl) {
+    if (
+      newEpisode?.status === 'finished' &&
+      newEpisode?.finishAction === 'redirect' &&
+      newEpisode?.resultUrl
+    ) {
       window.location.href = newEpisode.resultUrl
     }
   },
-  { deep: true },
+  { deep: true }
 )
 
 onUnmounted(() => {

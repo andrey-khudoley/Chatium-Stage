@@ -6,7 +6,7 @@
       </div>
       <h2>Добро пожаловать в Чаты</h2>
       <p>Выберите чат слева или создайте новый, чтобы начать общение</p>
-      
+
       <button @click="$emit('create-chat')" class="btn-welcome">
         <i class="fas fa-plus"></i>
         Создать новый чат

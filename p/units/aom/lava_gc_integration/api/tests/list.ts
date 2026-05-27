@@ -204,7 +204,8 @@ export const listTestsRoute = app.get('/', async (ctx, req) => {
         },
         {
           id: 'webhook-live-test-arm',
-          title: 'POST webhook-live-test-arm — вооружить проверку webhook (ожидаемый lava_contract_id)'
+          title:
+            'POST webhook-live-test-arm — вооружить проверку webhook (ожидаемый lava_contract_id)'
         },
         {
           id: 'webhook-live-test-status',

@@ -19,9 +19,10 @@ export function formatDate(date: Date): string {
 ```
 
 **Использование:**
+
 ```typescript
 // На фронтенде (Vue) и бэкенде одинаково
-import { calculateTotal } from "../shared/calculate"
+import { calculateTotal } from '../shared/calculate'
 ```
 
 ---
@@ -41,8 +42,9 @@ export const apiGetProductsRoute = app.get('/list', async (ctx, req) => {
 ```
 
 **Использование на фронтенде:**
+
 ```typescript
-import { apiGetProductsRoute } from "../api/products"
+import { apiGetProductsRoute } from '../api/products'
 
 // В Vue компоненте
 const products = await apiGetProductsRoute.run(ctx)
@@ -52,19 +54,21 @@ const products = await apiGetProductsRoute.run(ctx)
 
 ## Ключевое отличие
 
-| Директива | Назначение | Где используется | Как вызывается |
-|-----------|------------|------------------|----------------|
-| `// @shared` | Утилиты, хелперы, форматтеры | `/shared/*.ts` | Обычный импорт и вызов функции |
-| `// @shared-route` | API эндпоинты | `/api/*.ts` | `.run(ctx)` на фронте, прямой вызов на бэке |
+| Директива          | Назначение                   | Где используется | Как вызывается                              |
+| ------------------ | ---------------------------- | ---------------- | ------------------------------------------- |
+| `// @shared`       | Утилиты, хелперы, форматтеры | `/shared/*.ts`   | Обычный импорт и вызов функции              |
+| `// @shared-route` | API эндпоинты                | `/api/*.ts`      | `.run(ctx)` на фронте, прямой вызов на бэке |
 
 ## Правила
 
 **@shared:**
+
 - Функции не имеют доступа к `ctx` (если не передан явно)
 - Не могут использовать таблицы напрямую
 - Чистая логика, преобразования, валидации
 
 **@shared-route:**
+
 - Маршрут имеет доступ к `ctx` и таблицам
 - Доступен на фронте через `.run()`
 - Всегда экспортируется как константа

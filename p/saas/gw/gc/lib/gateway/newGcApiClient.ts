@@ -39,7 +39,9 @@ export async function invokeNewGcApi(input: {
   /** Для POST — тело JSON (объект args без path params). Для GET — query из args. */
   args: Record<string, unknown>
 }): Promise<NewGcApiResult> {
-  const gcRelPath = input.resolvedPath.startsWith('/') ? input.resolvedPath : `/${input.resolvedPath}`
+  const gcRelPath = input.resolvedPath.startsWith('/')
+    ? input.resolvedPath
+    : `/${input.resolvedPath}`
   const url = `https://${input.schoolHostTrimmed}/pl/api/v1${gcRelPath}`
   const bearer = `${input.developerKey}_${input.schoolApiKey}`
 

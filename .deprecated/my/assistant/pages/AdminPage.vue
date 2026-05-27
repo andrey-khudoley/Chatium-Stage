@@ -41,7 +41,7 @@ const props = withDefaults(
     encodedLogsSocketId?: string
     timezoneOffsetHours?: number
   }>(),
-  { timezoneOffsetHours: DEFAULT_USER_TIMEZONE_OFFSET_HOURS },
+  { timezoneOffsetHours: DEFAULT_USER_TIMEZONE_OFFSET_HOURS }
 )
 
 const bootLoaderDone = ref(false)
@@ -105,7 +105,7 @@ const startAnimations = () => {
 
 const LOG_LEVEL_VALUES = ['debug', 'info', 'warn', 'error', 'disable'] as const
 
-type LogDisplayItem = 
+type LogDisplayItem =
   | { type: 'log'; entry: LogEntry; formattedTime: string; formattedMessage: string }
   | { type: 'divider'; date: string }
 
@@ -115,9 +115,9 @@ function formatLogTime(timestamp: number): string {
 }
 
 function formatLogMessage(e: LogEntry): string {
-  return e.args.map((a) =>
-    typeof a === 'object' && a !== null ? JSON.stringify(a) : String(a)
-  ).join(' ')
+  return e.args
+    .map((a) => (typeof a === 'object' && a !== null ? JSON.stringify(a) : String(a)))
+    .join(' ')
 }
 
 function formatDateDivider(timestamp: number): string {
@@ -137,9 +137,9 @@ function trimOldLogs() {
   if (logEntries.value.length > MAX_LOG_ENTRIES) {
     const sorted = [...logEntries.value].sort((a, b) => b.timestamp - a.timestamp)
     logEntries.value = sorted.slice(0, MAX_LOG_ENTRIES)
-    log.debug('Обрезаны старые логи', { 
-      было: sorted.length, 
-      осталось: logEntries.value.length 
+    log.debug('Обрезаны старые логи', {
+      было: sorted.length,
+      осталось: logEntries.value.length
     })
   }
 }
@@ -162,7 +162,7 @@ const displayedLogs = computed<LogDisplayItem[]>(() => {
   for (let i = 0; i < sorted.length; i++) {
     const entry = sorted[i]
     const dateKey = getDateKey(entry.timestamp)
-    
+
     // Показываем разделитель только если это не первый лог и дата изменилась
     if (i > 0 && dateKey !== lastDateKey) {
       items.push({
@@ -170,7 +170,7 @@ const displayedLogs = computed<LogDisplayItem[]>(() => {
         date: formatDateDivider(entry.timestamp)
       })
     }
-    
+
     lastDateKey = dateKey
     items.push({
       type: 'log',
@@ -334,12 +334,27 @@ const setLogLevel = async (level: 'debug' | 'info' | 'warn' | 'error' | 'disable
 const loadDashboardCounts = async () => {
   try {
     const res = await getDashboardCountsRoute.run(ctx)
-    const data = res as { success?: boolean; errorCount?: number; warnCount?: number; resetAt?: number; error?: string }
-    if (data?.success && typeof data.errorCount === 'number' && typeof data.warnCount === 'number' && typeof data.resetAt === 'number') {
+    const data = res as {
+      success?: boolean
+      errorCount?: number
+      warnCount?: number
+      resetAt?: number
+      error?: string
+    }
+    if (
+      data?.success &&
+      typeof data.errorCount === 'number' &&
+      typeof data.warnCount === 'number' &&
+      typeof data.resetAt === 'number'
+    ) {
       errorCount.value = data.errorCount
       warnCount.value = data.warnCount
       dashboardResetAt.value = data.resetAt
-      log.debug('Счётчики дашборда загружены', { errorCount: data.errorCount, warnCount: data.warnCount, resetAt: data.resetAt })
+      log.debug('Счётчики дашборда загружены', {
+        errorCount: data.errorCount,
+        warnCount: data.warnCount,
+        resetAt: data.resetAt
+      })
     }
   } catch (e) {
     log.warning('Не удалось загрузить счётчики дашборда', e)
@@ -349,7 +364,13 @@ const loadDashboardCounts = async () => {
 const resetDashboard = async () => {
   try {
     const res = await resetDashboardRoute.run(ctx)
-    const data = res as { success?: boolean; errorCount?: number; warnCount?: number; resetAt?: number; error?: string }
+    const data = res as {
+      success?: boolean
+      errorCount?: number
+      warnCount?: number
+      resetAt?: number
+      error?: string
+    }
     if (data?.success && typeof data.resetAt === 'number') {
       dashboardResetAt.value = data.resetAt
       errorCount.value = data.errorCount ?? 0
@@ -373,10 +394,14 @@ const loadRecentLogs = async () => {
   logsError.value = ''
   try {
     const res = await getRecentLogsRoute.query({ limit: 50 }).run(ctx)
-    const data = res as { success?: boolean; entries?: Array<LogEntry & { id: string }>; error?: string }
+    const data = res as {
+      success?: boolean
+      entries?: Array<LogEntry & { id: string }>
+      error?: string
+    }
     if (data?.success && Array.isArray(data.entries)) {
       logEntries.value = [...logEntries.value, ...data.entries]
-      
+
       if (data.entries.length > 0) {
         const sorted = [...data.entries].sort((a, b) => a.timestamp - b.timestamp)
         oldestLogTimestamp.value = sorted[0].timestamp
@@ -415,7 +440,7 @@ const loadMoreLogs = async () => {
     }
     if (data?.success && Array.isArray(data.entries)) {
       logEntries.value = [...logEntries.value, ...data.entries]
-      
+
       if (data.entries.length > 0) {
         const sorted = [...data.entries].sort((a, b) => a.timestamp - b.timestamp)
         oldestLogTimestamp.value = sorted[0].timestamp
@@ -523,12 +548,7 @@ const clearLogs = () => {
             <div class="settings-form">
               <div class="settings-field">
                 <label class="settings-label" for="project-name">Название проекта</label>
-                <input
-                  id="project-name"
-                  v-model="projectName"
-                  type="text"
-                  class="settings-input"
-                />
+                <input id="project-name" v-model="projectName" type="text" class="settings-input" />
               </div>
             </div>
             <p v-if="projectNameError" class="admin-card-error">{{ projectNameError }}</p>
@@ -631,9 +651,7 @@ const clearLogs = () => {
               </button>
             </div>
             <div class="logs-output custom-scrollbar" ref="logsOutputRef">
-              <div v-if="displayedLogs.length === 0" class="logs-empty">
-                Логи появятся здесь...
-              </div>
+              <div v-if="displayedLogs.length === 0" class="logs-empty">Логи появятся здесь...</div>
               <div v-for="(item, index) in displayedLogs" :key="index" class="log-item">
                 <div v-if="item.type === 'divider'" class="log-date-divider">
                   --- {{ item.date }} ---
@@ -705,7 +723,9 @@ const clearLogs = () => {
 .admin-section {
   opacity: 0;
   transform: translateY(20px);
-  transition: opacity 0.6s ease, transform 0.6s ease;
+  transition:
+    opacity 0.6s ease,
+    transform 0.6s ease;
 }
 
 .admin-section.admin-visible {
@@ -730,10 +750,18 @@ const clearLogs = () => {
     0 6px 20px rgba(211, 35, 75, 0.35),
     0 0 24px rgba(211, 35, 75, 0.15);
   clip-path: polygon(
-    0 4px, 4px 4px, 4px 0,
-    calc(100% - 4px) 0, calc(100% - 4px) 4px, 100% 4px,
-    100% calc(100% - 4px), calc(100% - 4px) calc(100% - 4px), calc(100% - 4px) 100%,
-    4px 100%, 4px calc(100% - 4px), 0 calc(100% - 4px)
+    0 4px,
+    4px 4px,
+    4px 0,
+    calc(100% - 4px) 0,
+    calc(100% - 4px) 4px,
+    100% 4px,
+    100% calc(100% - 4px),
+    calc(100% - 4px) calc(100% - 4px),
+    calc(100% - 4px) 100%,
+    4px 100%,
+    4px calc(100% - 4px),
+    0 calc(100% - 4px)
   );
   position: relative;
   overflow: hidden;
@@ -759,8 +787,13 @@ const clearLogs = () => {
 }
 
 @keyframes admin-scanline-flicker {
-  0%, 100% { opacity: 0.7; }
-  50% { opacity: 0.5; }
+  0%,
+  100% {
+    opacity: 0.7;
+  }
+  50% {
+    opacity: 0.5;
+  }
 }
 
 .admin-icon {
@@ -917,7 +950,9 @@ const clearLogs = () => {
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid var(--color-border);
   border-radius: 4px;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .settings-input:disabled {
@@ -942,7 +977,10 @@ const clearLogs = () => {
   border: 1px solid var(--color-border-light);
   border-radius: 6px;
   cursor: pointer;
-  transition: color 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+  transition:
+    color 0.2s ease,
+    background 0.2s ease,
+    border-color 0.2s ease;
   letter-spacing: 0.04em;
 }
 

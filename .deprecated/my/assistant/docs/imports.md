@@ -3,12 +3,15 @@
 ## 1) Страницы‑роуты (TSX entrypoints)
 
 ### `./config/routes.tsx`
+
 - нет внутренних импортов (только экспорт PROJECT_ROOT, ROUTES, ROUTE_PATHS, getFullUrl, getApiUrlForRoute, withProjectRoot, withProjectRootAndSubroute)
 
 ### `./config/project.tsx`
+
 - нет внутренних импортов (только экспорт DEFAULT_PROJECT_TITLE, INDEX_PAGE_NAME, PROFILE_PAGE_NAME, ADMIN_PAGE_NAME, TESTS_PAGE_NAME, JOURNAL_PAGE_NAME, TASKS_PAGE_NAME, TOOLS_PAGE_NAME, POMODORO_PAGE_NAME, getPageTitle, getHeaderText, BODY_TEXT, BODY_SUBTEXT)
 
 ### `./index.tsx`
+
 - `@app/html-jsx` → `jsx`
 - `./pages/HomePage.vue`
 - `./shared/preloader` → `getPreloaderStyles`, `getPreloaderScript`
@@ -26,6 +29,7 @@
 - передаёт в `HomePage`: `tasksUrl`, `journalUrl`, `toolsUrl`, `timezoneOffsetHours`, `toolsStateUrl`, `toolsControlUrl`, `encodedFocusToolsSocketId`, др.
 
 ### `./web/admin/index.tsx`
+
 - `@app/html-jsx` → `jsx`
 - `@app/auth` → `requireAccountRole`
 - `@app/socket` → `genSocketId`
@@ -41,6 +45,7 @@
 - `../../lib/user-settings.lib` → `getTimezoneOffsetForCtxUser`
 
 ### `./web/profile/index.tsx`
+
 - `@app/html-jsx` → `jsx`
 - `@app/auth` → `requireRealUser`
 - `@app/socket` → `genSocketId`
@@ -58,6 +63,7 @@
 - `../../shared/focus-tools-types` → `focusToolsSocketId`
 
 ### `./web/tasks/index.tsx`
+
 - `@app/html-jsx` → `jsx`
 - `@app/auth` → `requireRealUser`
 - `../../pages/TasksPage.vue`
@@ -88,6 +94,7 @@
 - `../../config/project` → `TASKS_PAGE_NAME`, `getPageTitle`, `getHeaderText`
 
 ### `./web/journal/index.tsx`
+
 - `@app/html-jsx` → `jsx`
 - `@app/auth` → `requireRealUser`
 - `../../pages/JournalPage.vue`
@@ -136,6 +143,7 @@
 - `../../lib/journal-week-key` → `computeJournalWeekMondayKeyLocal`
 
 ### `./web/tools/index.tsx`
+
 - `@app/html-jsx` → `jsx`
 - `../../pages/ToolsPage.vue`
 - `../../config/routes` → `getFullUrl`, `ROUTES`
@@ -144,6 +152,7 @@
 - `../../lib/user-settings.lib` → `getTimezoneOffsetForCtxUser`
 
 ### `./web/timers/index.tsx`
+
 - `@app/html-jsx` → `jsx`
 - `@app/auth` → `requireRealUser`
 - `@app/socket` → `genSocketId`
@@ -160,6 +169,7 @@
 - `../../styles` → `customScrollbarStyles`, `formControlStyles`, `mobileSafeAreaStyles`, `VIEWPORT_META_CONTENT`
 
 ### `./web/tests/index.tsx`
+
 - `@app/html-jsx` → `jsx`
 - `@app/auth` → `requireRealUser`
 - `@app/socket` → `genSocketId`
@@ -174,6 +184,7 @@
 - `../../lib/user-settings.lib` → `getTimezoneOffsetForCtxUser`
 
 ### `./web/login/index.tsx`
+
 - `@app/html-jsx` → `jsx`
 - `../../pages/LoginPage.vue`
 - `../../styles` → `baseHtmlStyles`, `customScrollbarStyles`, `mobileSafeAreaStyles`, `formControlStyles`, `VIEWPORT_META_CONTENT`
@@ -183,6 +194,7 @@
 ## 2) Страницы‑компоненты (Vue)
 
 ### `./pages/HomePage.vue`
+
 - `vue` → `onMounted`, `onUnmounted`, `ref`, `withDefaults`
 - `../components/Header.vue`
 - `../components/GlobalGlitch.vue`
@@ -192,6 +204,7 @@
 - `../shared/user-settings-defaults` → `DEFAULT_USER_TIMEZONE_OFFSET_HOURS`
 
 ### `./components/admin/AiSettings.vue`
+
 - `vue` → `ref`, `watch`, `onMounted`, `onBeforeUnmount`
 - `../api/settings/get` → `getSettingRoute`
 - `../api/settings/save` → `saveSettingRoute`
@@ -199,6 +212,7 @@
 - `../config/prompts` → `AVAILABLE_AI_MODELS`, `DEFAULT_AI_MODEL`
 
 ### `./pages/AdminPage.vue`
+
 - `vue` → `onMounted`, `onBeforeUnmount`, `onUnmounted`, `ref`, `computed`, `watch`, `withDefaults`
 - `@app/socket` → `getOrCreateBrowserSocketClient`
 - `../components/Header.vue`
@@ -215,6 +229,7 @@
 - `../shared/logger` → `createComponentLogger`, `setLogSink`, `LogEntry`
 
 ### `./pages/ProfilePage.vue`
+
 - `vue` → `onMounted`, `onUnmounted`, `ref`, `withDefaults`
 - `../components/Header.vue`
 - `../components/GlobalGlitch.vue`
@@ -226,6 +241,7 @@
 - глобально: `declare const ctx: app.Ctx` (сохранение пояса через `saveUserSettingsRoute.run`)
 
 ### `./pages/JournalPage.vue`
+
 - `vue` → `computed`, `markRaw`, `onMounted`, `onUnmounted`, `ref`, `watch`
 - `../shared/user-settings-defaults` → `DEFAULT_USER_TIMEZONE_OFFSET_HOURS`
 - `../components/Header.vue`
@@ -245,6 +261,7 @@
 - пропсы: `journalTabInitial?` — вкладка из `?tab=` при SSR; блокнот — `notebookPaneProps` (`journalNotes*`, папки/категории); инбокс — `inboxPaneProps` (`inboxNotes*`, отдельная Heap-таблица), компонент `JournalInboxPane`; вкладка «Задачи» (`tasks`) — `tasksTreeInitial?`, …; активная вкладка синхронизируется с адресной строкой (`replaceState`, `popstate`; для инбокса по умолчанию `?tab=` не добавляется, для блокнота — `?tab=notebook`)
 
 ### `./pages/TestsPage.vue`
+
 - `vue` → `onMounted`, `onBeforeUnmount`, `onUnmounted`, `ref`, `computed`, `withDefaults`
 - `@app/socket` → `getOrCreateBrowserSocketClient`
 - `../components/Header.vue`
@@ -258,6 +275,7 @@
 - `../api/admin/logs/before` → `getLogsBeforeRoute`
 
 ### `./pages/TasksPage.vue`
+
 - `vue` → `computed`, `nextTick`, `onMounted`, `onUnmounted`, `ref`, `watch`, `withDefaults`
 - `../components/Header.vue`
 - `../components/GlobalGlitch.vue`
@@ -272,6 +290,7 @@
 - событие `tasks-maybe-changed` от чата — отложенный `refreshTree` после ответа ассистента
 
 ### `./pages/ToolsPage.vue`
+
 - `vue` → `withDefaults`
 - `../components/Header.vue`
 - `../components/GlobalGlitch.vue`
@@ -279,6 +298,7 @@
 - `../shared/user-settings-defaults` → `DEFAULT_USER_TIMEZONE_OFFSET_HOURS`
 
 ### `./pages/PomodoroPage.vue`
+
 - `vue` → `computed`, `onMounted`, `onUnmounted`, `ref`, `watch`, `nextTick`, `withDefaults`
 - `@app/socket` → `getOrCreateBrowserSocketClient`
 - `../shared/user-settings-defaults` → `DEFAULT_USER_TIMEZONE_OFFSET_HOURS`
@@ -295,6 +315,7 @@
 - второй блок `<style>` без `scoped` в этом же файле — глобальные CRT-стили (`.pomodoro-phase-bar`, `.pomodoro-actions`, `.pomo-btn`, …) для `/web/timers`; отдельные `.css` из `import` в `<script>` в этой среде не подключаются в бандл
 
 ### `./components/tasks/TasksAiChatPanel.vue`
+
 - `vue` → `computed`, `onMounted`, `onUnmounted`, `ref`, `watch`, `nextTick`
 - `@app/socket` → `getOrCreateBrowserSocketClient`
 - `../../shared/logger` → `createComponentLogger`
@@ -303,12 +324,14 @@
 - `emit('tasks-maybe-changed')` при появлении нового сообщения ассистента в фиде (после JSON-действий на сервере список задач мог обновиться)
 
 ### `./pages/LoginPage.vue`
+
 - `vue` → `computed`, `onMounted`
 - `../shared/logger` → `createComponentLogger`
 
 ## 3) Компоненты (components/)
 
 ### `./components/Header.vue`
+
 - `vue` → `computed`, `ref`, `onMounted`, `onUnmounted`, `watch`, `withDefaults`
 - `@app/socket` → `getOrCreateBrowserSocketClient`
 - `./LogoutModal.vue`
@@ -321,27 +344,33 @@
 - опциональные пропсы виджета: `enableToolClockWidget`, `timezoneOffsetHours`, `toolsStateUrl`, `toolsControlUrl`, `encodedFocusToolsSocketId`
 
 ### `./components/LogoutModal.vue`
+
 - `vue` → `watch`, `onMounted`
 - `../shared/logger` → `createComponentLogger`
 
 ### `./components/AppFooter.vue`
+
 - `vue` → `onMounted`
 - `../shared/logger` → `createComponentLogger`
 
 ### `./components/GlobalGlitch.vue`
+
 - `vue` → `onMounted`
 - `../shared/logger` → `createComponentLogger`
 
 ### `./components/JnCrtSelect.vue`
+
 - `vue` → `computed`, `onMounted`, `onUnmounted`, `ref`
 - `defineProps`: `modelValue`, `options`, `disabled?`, `id?`
 - `defineEmits`: `update:modelValue`
 
 ### `./components/pomodoro/PomodoroTimerDial.vue`
+
 - `vue` → `computed`
 - `defineProps`: `phase`, `remainingSec`, `overtimeSec`, `phaseDurationSec`, `status`, `phaseLabel`, `statusLabel`, `timeLabel`
 
 ### `./components/pomodoro/PomodoroSettingsModal.vue`
+
 - `vue` → `reactive`, `watch`
 - `../../lib/pomodoro-types` → `PomodoroAfterLongRest`, `normalizePhaseChangeSoundId`
 - `../../lib/pomodoro-phase-sounds` → `POMODORO_PHASE_CHANGE_SOUND_OPTIONS`, `playPomodoroPhaseChangeSound`
@@ -349,14 +378,17 @@
 - `defineEmits`: `close`, `save`
 
 ### `./components/pomodoro/PomodoroTaskSelector.vue`
+
 - `vue` → `computed`, `onMounted`, `ref`
 - `./PomodoroTaskSelectDropdown.vue`
 - `defineProps`: `toolsControlUrl`, `getTasksUrl`, `currentTaskId`, `statsDayKey` (POST `/api/tools/control`, `command: { kind: 'assign-task', taskId }`)
 
 ### `./components/pomodoro/PomodoroToolStatsRow.vue`
+
 - `defineProps`: `firstText`, `secondText`, `thirdText`, `firstLabel`, `secondLabel`, `thirdLabel`, `firstIcon`, `secondIcon`, `thirdIcon` (три ячейки `.stat-cell` в одной сетке; общая вёрстка для вкладок Pomodoro и таймера/секундомера)
 
 ### `./components/pomodoro/PomodoroToolsWorkspace.vue`
+
 - `vue` → `computed`
 - `../../shared/focus-tools-types` → `TimerToolSnapshot`, `StopwatchToolSnapshot`, `FocusToolsFullStateDto`
 - `../../lib/pomodoro-types` → `formatPomodoroSecondsDisplay`, типы `PomodoroPhaseCompleteAction`, `PomodoroAfterLongRest`
@@ -365,6 +397,7 @@
 - `defineEmits`: `update:activeTool`, `update:settingsOpen`, `control`, `save-settings`, `pomodoro-task-assigned`, `shared-task-selected`, `focus-tools-sync`
 
 ### `./components/pomodoro/FocusClockPane.vue`
+
 - стили панели фазы и кнопок — глобальный блок в `PomodoroPage.vue` (см. выше); в scoped `FocusClockPane` остаются оболочка, модалка настроек (`clock-settings-*`), оформление секундомерного dial
 - `vue` → `computed`, `ref`, `watch`
 - `../../lib/pomodoro-types` → `formatPomodoroSecondsDisplay` (как `fmt`)
@@ -374,14 +407,17 @@
 - `defineEmits`: `taskSelected`, `focus-tools-sync`
 
 ### `./components/journal/JournalStubPanel.vue`
+
 - (только разметка заглушки «В разработке»)
 
 ### `./components/journal/JournalNav.vue`
+
 - `defineProps`: `tabs`, `activeTab`, `showNotebookToolbar`, `showTasksToolbar`, `isAuthenticated`, `notebookCreateTitle`, `notebookCreateError`
 - `defineEmits`: `select-tab`, `create-note`, `open-all-tasks`
 - отвечает за левое меню журнала: список вкладок, разделитель, динамические кнопки (`Новая заметка` / `Все задачи` на вкладке «Задачи») и их стили/focus
 
 ### `./components/journal/JournalNotebookPane.vue`
+
 - `vue` → `computed`, `ref`, `watch`
 - `../../shared/logger` → `createComponentLogger`
 - `./NotebookFolderSidebar.vue`, `./NotebookFilterBar.vue`, `./NotebookNoteCard.vue`, `./NotebookBulkBar.vue`, `./NotebookNoteEditor.vue`
@@ -389,6 +425,7 @@
 - `defineEmits`: `noteCreated`, `noteUpdated`, `noteDeleted`, `foldersChanged`, `categoriesChanged`
 
 ### `./components/journal/JournalInboxPane.vue`
+
 - `vue` → `computed`, `ref`
 - `../../shared/logger` → `createComponentLogger`
 - `./NotebookBulkBar.vue` — массовые действия при выборе заметок (`showFolderMove: false`)
@@ -396,20 +433,25 @@
 - `defineEmits`: `noteCreated`, `noteUpdated`, `noteDeleted`, `foldersChanged`, `categoriesChanged` (последние два не используются, для совместимости с `JournalPage`)
 
 ### `./components/journal/NotebookBulkBar.vue`
+
 - проп `showFolderMove` (по умолчанию `true`): при `false` скрыт блок «В корень» и папки (инбокс)
 
 ### `./components/journal/JournalMonthPane.vue`
+
 - `./JournalStubPanel.vue`
 
 ### `./components/journal/JournalWeekPane.vue`
+
 - `vue` → `computed`, `onMounted`, `ref`, `watch`
 - `../../lib/journal-week-key` → `computeJournalWeekMondayKeyLocal`, `getWeekDayKeysFromMonday`, `getWeekNumberFromMondayKey`, `shiftWeekMondayKey`
 
 ### `./components/journal/JournalDayInDevelopmentPane.vue`
+
 - `vue` → `computed`, `onMounted`, `ref`, `watch`
 - `../../lib/journal-day-key` → `computeJournalDayKeyLocal`
 
 ### `./components/journal/JournalDayPane.vue`
+
 - `vue` → `computed`, `onUnmounted`, `ref`, `watch`
 - `../JnCrtSelect.vue`
 - `../../lib/tasks-types` → `TasksTreeDto`, `TaskItemDto`, `TaskProjectDto`
@@ -418,6 +460,7 @@
 - пропсы: `isAuthenticated`, `tasksTreeInitial`, `tasksTreeGetUrl`, `taskItemReorderDayUrl`, `taskReleaseDayUrl`, `taskItemUpdateUrl`, `tasksPageUrl` — список задач «В работе», сортировка (кнопки и drag-and-drop), клик по названию — модалка редактирования (POST `taskItemUpdateUrl`), ссылки на страницу задач с `?client=&project=`
 
 ### `./components/journal/JournalHabitsPane.vue`
+
 - `vue` → `computed`, `onMounted`, `onUnmounted`, `ref`, `watch`
 - `../../lib/journal-week-key` → `shiftWeekMondayKey`
 - `../../lib/journal-habits-time` → типы `JournalHabitsWeekDto`, `JournalHabitRowDto`
@@ -426,121 +469,153 @@
 ## 4) Shared (общий код)
 
 ### `./styles.tsx`
+
 - нет внутренних импортов (только экспорт `baseHtmlStyles`, `customScrollbarStyles`, `mobileSafeAreaStyles`, `formControlStyles`, `VIEWPORT_META_CONTENT`)
 
 ### `./shared/preloader.ts`
+
 - нет импортов
 
 ### `./shared/bootUi.ts`
+
 - первая строка: `// @shared` (обязательная пометка для загрузки в клиентском бандле Chatium)
 - `vue` → `nextTick` (подписка на `boot-static-ready`; ожидание `document.fonts` с таймаутом 10 с; затем `hideBootLoader`)
 
 ### `./shared/logLevel.ts`
+
 - `../lib/settings.lib` → `getLogLevel`, `LogLevel`
 - `../lib/logger.lib` → `*`
 
 ### `./shared/testCatalog.ts`
+
 - первая строка: `// @shared`
 - нет импортов — каталог блоков/тестов для `/api/tests/list` и страницы тестов (`UNIT_TEST_BLOCKS`, `INTEGRATION_SERVER_TEST_BLOCKS`, `INTEGRATION_HTTP_TEST_BLOCK`, `flattenCatalogBlocks`)
 
 ### `./shared/logger.ts`
-- нет импортов (клиентский логгер по syslog RFC 5424: severity -1…7, LOG_LEVEL_OFF=-1, читает window.__BOOT__.logLevel; createComponentLogger, setLogSink, LogEntry)
+
+- нет импортов (клиентский логгер по syslog RFC 5424: severity -1…7, LOG_LEVEL_OFF=-1, читает window.**BOOT**.logLevel; createComponentLogger, setLogSink, LogEntry)
 
 ### `./shared/tasks-ai-chat-message-order.ts`
+
 - первая строка: `// @shared`
 - нет импортов — `taskAiChatMsgTime`, `sortTaskAiChatMessagesForDisplay` (хронологический порядок сообщений чата с AI для UI и сервера)
 
 ## 5) Таблицы (tables/)
 
 ### `./tables/settings.table.ts`
+
 - `@app/heap` → `Heap`
 
 ### `./tables/logs.table.ts`
+
 - `@app/heap` → `Heap`
 
 ### `./tables/journal-notes.table.ts`
+
 - `@app/heap` → `Heap`
 
 ### `./tables/task-clients.table.ts`
+
 - `@app/heap` → `Heap`
 
 ### `./tables/task-projects.table.ts`
+
 - `@app/heap` → `Heap`
 
 ### `./tables/task-items.table.ts`
+
 - `@app/heap` → `Heap`
 
 ### `./tables/pomodoro-state.table.ts`
+
 - `@app/heap` → `Heap` (legacy, миграция в `user-tool-state`)
 
 ### `./tables/user-tool-state.table.ts`
+
 - `@app/heap` → `Heap`
 
 ### `./tables/journal-day-entries.table.ts`
+
 - `@app/heap` → `Heap`
 
 ### `./tables/journal-week-entries.table.ts`
+
 - `@app/heap` → `Heap`
 
 ### `./tables/journal-week-summary.table.ts`
+
 - `@app/heap` → `Heap`
 
 ### `./tables/journal-habits-week.table.ts`
+
 - `@app/heap` → `Heap`
 
 ## 6) Репозитории (repos/)
 
 ### `./repos/settings.repo.ts`
+
 - `../tables/settings.table` → `Settings`, `SettingsRow`
 - (не импортирует logger.lib — иначе рекурсия: writeServerLog → getLogLevel → getSetting → findByKey → writeServerLog)
 
 ### `./repos/logs.repo.ts`
+
 - `../tables/logs.table` → `Logs`, `LogsRow`
 - `../lib/logger.lib` → `*`
 - экспортирует: `create`, `findAll`, `findById`, `findBeforeTimestamp`, `countBySeverityAfter`, `countErrorsAfter`, `countWarningsAfter`
 
 ### `./repos/journal-notes.repo.ts`
+
 - `../tables/journal-notes.table` → `JournalNotes`, `JournalNotesRow`
 - экспортирует: `JournalNoteSummary` (type), `findSummariesByUserId`, `createForUser`, `findByIdForUser`, `updateForUser`, `deleteByIdForUser`
 
 ### `./repos/journal-day-entries.repo.ts`
+
 - `../tables/journal-day-entries.table` → `JournalDayEntries`, `JournalDayEntriesRow`
 
 ### `./repos/journal-week-entries.repo.ts`
+
 - `../tables/journal-week-entries.table` → `JournalWeekEntries`
 - `../tables/journal-week-summary.table` → `JournalWeekSummary`
 - `../lib/journal-week-key` → `getWeekDayKeysFromMonday`, `getWeekNumberFromMondayKey`
 
 ### `./repos/journal-habits.repo.ts`
+
 - `../tables/journal-habits-week.table` → `JournalHabitsWeek`
 - `../lib/journal-day-key` → `computeJournalDayKeyLocal`
 - `../lib/journal-habits-time` → DTO, `computeHabitsMondayKeyFromNow`, `parseRowsJson`, `serializeRowsJson`, `mergeRowsPreserveLockedDays`, `getHabitsInteractionMode`, `getTodayColumnIndexForWeek`
 - `../lib/journal-week-key` → `getWeekDayKeysFromMonday`, `getWeekNumberFromMondayKey`, `shiftWeekMondayKey`
 
 ### `./repos/tasks.repo.ts`
+
 - `../tables/task-clients.table`, `task-projects.table`, `task-items.table`
 - `../lib/tasks-types` → DTO и `TaskStatus`
 - реэкспорт типов из `lib/tasks-types`
 
 ### `./repos/user-tool-state.repo.ts`
+
 - `../tables/user-tool-state.table`, `../tables/pomodoro-state.table`, `../shared/focus-tools-types`, `../lib/pomodoro-types` — JSON-снимок `timer_state`, миграция из legacy
 
 ### `./repos/tool-segments.repo.ts`
+
 - `../tables/pomodoro-launches.table` — сегменты помидор/таймер/секундомер
 
 ### `./lib/tasks-types.ts`
+
 - нет импортов (чистые типы DTO для задач)
 
 ### `./lib/pomodoro-phase-sounds.ts`
+
 - первая строка: `// @shared` (импорт из Vue)
 - `./pomodoro-types` → `PomodoroPhaseChangeSoundId`, `normalizePhaseChangeSoundId`
 - экспорт `POMODORO_PHASE_CHANGE_SOUND_OPTIONS`, `playPomodoroPhaseChangeSound` (Web Audio API)
 
 ### `./lib/pomodoro-types.ts`
+
 - первая строка: `// @shared` (импорт из Vue)
 - нет импортов (типы статуса/фаз Pomodoro, DTO, `PomodoroPhaseChangeSoundId`, `normalizePhaseChangeSoundId`, `formatPomodoroSecondsDisplay`, `getPhaseCompletionActionForPhase`)
 
 ### `./lib/focus-deadline-alarms.ts`
+
 - первая строка: `// @shared` (импорт из `Header.vue`)
 - `../shared/focus-tools-types` → `FocusToolsStateData`
 - `./pomodoro-types` → `getPhaseCompletionActionForPhase`, `normalizePhaseChangeSoundId`
@@ -550,39 +625,48 @@
 ## 7) Библиотеки (lib/)
 
 ### `./lib/settings.lib.ts`
+
 - `../repos/settings.repo` → `*` (findByKey, findAll, upsert, deleteByKey)
 - `./logger.lib` → `*` (только для функций, не вызываемых из logger.lib: getSettingString, getLogsLimit, getDashboardResetAt, getAllSettings, setSetting)
 
 ### `./lib/user-settings.lib.ts`
+
 - `@app/auth` → `requireRealUser`
 - `../repos/user-settings.repo` → `findByUserId`, `upsertTimezone`
 - `../shared/user-settings-defaults` → `DEFAULT_USER_TIMEZONE_OFFSET_HOURS`, границы клампа
 - экспорт: `getEffectiveTimezoneOffsetHours`, `saveTimezoneOffsetHours`, `getTimezoneOffsetForCtxUser`
 
 ### `./lib/admin/dashboard.lib.ts`
+
 - `../settings.lib` → `*` (getDashboardResetAt, setSetting, SETTING_KEYS)
 - `../../repos/logs.repo` → `*` (countErrorsAfter, countWarningsAfter)
 - `../logger.lib` → `*`
 
 ### `./lib/logger.lib.ts`
+
 - `./settings.lib` → `*` (getLogLevel, getLogWebhook, LogLevel)
 - `../repos/logs.repo` → `*` (create)
 - `@app/socket` → `sendDataToSocket`
 - `@app/request` → `request`
 
 ### `./lib/pomodoro-stats-day.ts`
+
 - `@shared` — ключ периода дневной статистики focus-tools (полночь по UTC+N из профиля): `computePomodoroStatsDayKeyForUtcOffsetHours`, вспомогательно `computePomodoroStatsDayKeyLocal` (календарная дата в локальном браузере), `computePomodoroStatsDayKeyInTimeZone` (IANA), `normalizeClientStatsDayKey`
 
 ### `./lib/journal-day-key.ts`
+
 - `@shared` — ключ дневного периода (граница 05:00): `computeJournalDayKeyLocal`, `computeJournalDayKeyInTimeZone`, `normalizeClientJournalDayKey`
 
 ### `./lib/journal-week-key.ts`
+
 - `@shared` — ключ понедельника недели и диапазон дат: `computeJournalWeekMondayKeyLocal`, `computeJournalWeekMondayKeyInTimeZone`, `normalizeWeekMondayKey`, `shiftWeekMondayKey`, `getWeekDayKeysFromMonday`, `getWeekMondayKeyForDateKey`, `getWeekNumberFromMondayKey`; импорт `journal-day-key` для `InTimeZone`
 
 ### `./lib/journal-habits-time.ts`
+
 - `@shared` — привычки: `computeHabitsMondayKeyFromNow`, `normalizeHabitsMondayKey`, `getHabitsInteractionMode`, `getTodayColumnIndexForWeek`, DTO, `parseRowsJson`, `serializeRowsJson`, `mergeRowsPreserveLockedDays`; импорт `journal-day-key` (`computeJournalDayKeyInTimeZone`), `journal-week-key` (`computeJournalWeekMondayKeyInTimeZone` и др.); серверный fallback границы 05:00 — `Europe/Moscow`
 
 ### `./lib/focus-tools.lib.ts`
+
 - `@app/sync` → `runWithExclusiveLock`
 - `@app/socket` → `sendDataToSocket`
 - `@app/nanoid` → `nanoid`
@@ -592,98 +676,117 @@
 ## 8) API (api/)
 
 ### `./api/settings/list.ts`
+
 - `@app/auth` → `requireAccountRole`
 - `../../lib/settings.lib` → `*`
 - `../../lib/logger.lib` → `*`
 
 ### `./api/settings/get.ts`
+
 - `@app/auth` → `requireAccountRole`
 - `../../lib/settings.lib` → `*`
 - `../../lib/logger.lib` → `*`
 
 ### `./api/settings/save.ts`
+
 - `@app/auth` → `requireAccountRole`
 - `../../lib/settings.lib` → `*`
 - `../../lib/logger.lib` → `*`
 
 ### `./api/user-settings/get.ts`
+
 - `@app/auth` → `requireRealUser`
 - `../../lib/user-settings.lib` → `getEffectiveTimezoneOffsetHours`
 
 ### `./api/user-settings/save.ts`
+
 - `@app/auth` → `requireRealUser`
 - `../../lib/user-settings.lib` → `saveTimezoneOffsetHours`
 
 ### `./api/logger/log.ts`
+
 - `@app/auth` → `requireAnyUser`
 - `../../lib/logger.lib` → `*`
 
 ### `./api/journal/notes/list.ts`
+
 - `@app/auth` → `requireRealUser`
 - `../../../lib/logger.lib` → `*`
 - `../../../repos/journal-notes.repo` → `*`
 
 ### `./api/journal/notes/create.ts`
+
 - `@app/auth` → `requireRealUser`
 - `../../../lib/logger.lib` → `*`
 - `../../../repos/journal-notes.repo` → `*`
 
 ### `./api/journal/notes/get.ts`
+
 - `@app/auth` → `requireRealUser`
 - `../../../lib/logger.lib` → `*`
 - `../../../repos/journal-notes.repo` → `*`
 
 ### `./api/journal/notes/update.ts`
+
 - `@app/auth` → `requireRealUser`
 - `../../../lib/logger.lib` → `*`
 - `../../../repos/journal-notes.repo` → `*`
 
 ### `./api/journal/notes/delete.ts`
+
 - `@app/auth` → `requireRealUser`
 - `../../../lib/logger.lib` → `*`
 - `../../../repos/journal-notes.repo` → `*`
 
 ### `./api/journal/inbox/list.ts`, `get.ts`, `create.ts`, `update.ts`, `archive.ts`, `delete.ts`
+
 - `@app/auth` → `requireRealUser`
 - `../../../lib/logger.lib` → `*`
 - `../../../repos/inbox-notes.repo` → `*`
 
 ### `./api/tasks/tree/get.ts` и CRUD `api/tasks/{clients,projects,items}/`
+
 - `@app/auth` → `requireRealUser`
 - `../../../lib/logger.lib` → `*`
 - `../../../repos/tasks.repo` → `*`
 
 ### `./api/journal/day/get.ts`
+
 - `@app/auth` → `requireRealUser`
 - `../../../lib/logger.lib` → `*`
 - `../../../repos/journal-day-entries.repo` → `*`
 - `../../../lib/journal-day-key` → `computeJournalDayKeyInTimeZone`, `normalizeClientJournalDayKey`
 
 ### `./api/journal/day/save.ts`
+
 - `@app/auth` → `requireRealUser`
 - `../../../lib/logger.lib` → `*`
 - `../../../repos/journal-day-entries.repo` → `*`
 - `../../../lib/journal-day-key` → `computeJournalDayKeyInTimeZone`, `normalizeClientJournalDayKey`
 
 ### `./api/journal/week/get.ts`
+
 - `@app/auth` → `requireRealUser`
 - `../../../lib/logger.lib` → `*`
 - `../../../repos/journal-week-entries.repo` → `*`
 - `../../../lib/journal-week-key` → `computeJournalWeekMondayKeyLocal`, `normalizeWeekMondayKey`
 
 ### `./api/journal/week/save.ts`
+
 - `@app/auth` → `requireRealUser`
 - `../../../lib/logger.lib` → `*`
 - `../../../repos/journal-week-entries.repo` → `*`
 - `../../../lib/journal-week-key` → `getWeekMondayKeyForDateKey`, `normalizeClientJournalDateKey`
 
 ### `./api/journal/week/save-summary.ts`
+
 - `@app/auth` → `requireRealUser`
 - `../../../lib/logger.lib` → `*`
 - `../../../repos/journal-week-entries.repo` → `*`
 - `../../../lib/journal-week-key` → `normalizeWeekMondayKey`
 
 ### `./api/journal/habits/get.ts`
+
 - `@app/auth` → `requireRealUser`
 - `../../../lib/logger.lib` → `*`
 - `../../../repos/journal-habits.repo` → `*`
@@ -691,6 +794,7 @@
 - `../../../lib/journal-week-key` → `getWeekMondayKeyForDateKey`
 
 ### `./api/journal/habits/save.ts`
+
 - `@app/auth` → `requireRealUser`
 - `../../../lib/logger.lib` → `*`
 - `../../../repos/journal-habits.repo` → `*`
@@ -698,6 +802,7 @@
 - `../../../lib/journal-week-key` → `getWeekMondayKeyForDateKey`
 
 ### `./api/tasks/tasks-ai-chat-lib.ts`
+
 - `@app/auth` → `findUsersByIds`, `SmartUser`
 - `@app/feed` → `createFeedMessage`
 - `../../shared/tasks-ai-chat-message-order` → `taskAiChatMsgTime` (реэкспорт)
@@ -705,17 +810,20 @@
 - типы и хелперы чата с AI (маппинг авторов, контекст проекта для completion, `appendTaskAiChatAssistantMessage`)
 
 ### `./api/tasks/tasks-ai-chat-messages-get.ts`
+
 - `@app/auth` → `requireRealUser`, `findUsersByIds`
 - `@app/feed` → `feedMessagesGetHandler`, `getFeedById`
 - `./tasks-ai-chat-lib` → `assertTaskAiChatFeedAccess`, `mapTaskAiChatMessage`, `TaskAiChatFeedMsg`
 - `../../shared/tasks-ai-chat-message-order` → `sortTaskAiChatMessagesForDisplay` (после маппинга — порядок старые→новые для UI)
 
 ### `./api/tasks/tasks-ai-chat-messages-changes.ts`
+
 - `@app/auth` → `requireRealUser`, `findUsersByIds`
 - `@app/feed` → `feedMessagesChangesHandler`, `getFeedById`
 - `./tasks-ai-chat-lib` → `assertTaskAiChatFeedAccess`, `mapTaskAiChatMessage`, `TaskAiChatFeedMsg`
 
 ### `./api/tasks/tasks-ai-chat-messages-add.ts`
+
 - `@app/auth` → `requireRealUser`, `findUsersByIds`
 - `@app/feed` → `feedMessagesAddHandler`, `getFeedById`
 - `./tasks-ai-chat-lib` → `mapAuthorForTaskAiChat`, `assertTaskAiChatFeedAccess`, `TaskAiChatFeedMsg`
@@ -723,6 +831,7 @@
 - `../../repos/task-ai-chat.repo`
 
 ### `./api/tasks/tasks-ai-chat-reply.ts`
+
 - `@app/feed` → `findFeedMessages`
 - `@app/sync` → `runWithExclusiveLock`
 - `@start/sdk` → `startCompletion`
@@ -732,15 +841,18 @@
 - вызывается из `tasks-ai-chat-messages-add` (HTTP) — `startCompletion` требует proxy app context (`ctx.app`)
 
 ### `./api/tasks/tasks-ai-formulate-apply.ts`
+
 - `../../lib/logger.lib`, `../../repos/tasks.repo`
 - `parseAiFormulateJsonFromText`, `stripJsonFences`, `applyAiFormulateJsonResponse` (логика бывшего `ai-formulate` по `actions`)
 
 ### `./api/tasks/tasks-ai-chat-completion-completed.ts` / `tasks-ai-chat-completion-failed.ts`
+
 - `@start/sdk` → `CompletionCompletedBody` / `CompletionFailedBody`
 - `../../lib/logger.lib`, `./tasks-ai-chat-lib` → `appendTaskAiChatAssistantMessage`
 - completed: `./tasks-ai-formulate-apply` (JSON → Heap)
 
 ### `./api/tasks/tasks-ai-chat-ensure.ts`
+
 - `@app/auth` → `requireRealUser`
 - `@app/feed` → `getChat`, `getOrCreateParticipant`
 - `./tasks-ai-chat-messages-add` → `taskAiChatMessagesAddRoute`
@@ -749,46 +861,55 @@
 - `../../lib/logger.lib`, `../../repos/task-ai-chat.repo`
 
 ### `./api/tasks/tasks-ai-chat-reset.ts`
+
 - `@app/auth` → `requireRealUser`
 - `@app/feed` → `getOrCreateParticipant`
 - `../../lib/logger.lib`, `../../repos/task-ai-chat.repo`
 
 ### `./repos/task-ai-chat.repo.ts`
+
 - `@app/feed` → `createFeed`, `deleteFeed`
 - `@app/sync` → `runWithExclusiveLock`
 - `../tables/task-ai-chat-feeds.table`, `../tables/task-projects.table`
 
 ### `./tables/task-ai-chat-feeds.table.ts`
+
 - `@app/heap` → `Heap`
 
 ### `./api/admin/logs/recent.ts`
+
 - `@app/auth` → `requireAccountRole`
 - `../../../repos/logs.repo` → `*`
 - `../../../lib/logger.lib` → `*`
 - `../../../tables/logs.table` → `LogsRow` (type)
 
 ### `./api/admin/logs/before.ts`
+
 - `@app/auth` → `requireAccountRole`
 - `../../../repos/logs.repo` → `*`
 - `../../../lib/logger.lib` → `*`
 - `../../../tables/logs.table` → `LogsRow` (type)
 
 ### `./api/admin/dashboard/counts.ts`
+
 - `@app/auth` → `requireAccountRole`
 - `../../../lib/admin/dashboard.lib` → `*`
 - `../../../lib/logger.lib` → `*`
 
 ### `./api/admin/dashboard/reset.ts`
+
 - `@app/auth` → `requireAccountRole`
 - `../../../lib/admin/dashboard.lib` → `*`
 - `../../../lib/logger.lib` → `*`
 
 ### `./api/tests/list.ts`
+
 - `@app/auth` → `requireAnyUser`
 - `../../lib/logger.lib` → `*`
 - `../../shared/testCatalog` → `UNIT_TEST_BLOCKS`, `INTEGRATION_SERVER_TEST_BLOCKS`, `INTEGRATION_HTTP_TEST_BLOCK`, `flattenCatalogBlocks`
 
 ### `./api/tests/unit/index.ts`
+
 - `@app/auth` → `requireAnyUser`
 - `../../../config/routes` → `getFullUrl`, `PROJECT_ROOT`
 - `../../../config/project` → `getPageTitle`, `INDEX_PAGE_NAME`
@@ -796,6 +917,7 @@
 - `../../../lib/logger.lib` → `*`
 
 ### `./api/tests/integration/index.ts`
+
 - `@app/auth` → `requireAnyUser`
 - `../../../lib/settings.lib` → `*`
 - `../../../repos/settings.repo` → `*`
@@ -804,11 +926,13 @@
 - `../../../lib/logger.lib` → `*`
 
 ### `./api/tools/state.ts`
+
 - `@app/auth` → `requireRealUser`
 - `@app/socket` → `genSocketId`
 - `../../lib/focus-tools.lib` → `getFullState`
 - `../../shared/focus-tools-types` → `focusToolsSocketId`
 
 ### `./api/tools/control.ts`
+
 - `@app/auth` → `requireRealUser`
 - `../../lib/focus-tools.lib` → `executeCommand`

@@ -18,7 +18,7 @@ export function useApiUrl(): { makeApiUrl: (endpoint: string) => string } {
     // Используем относительный путь от корня приложения
     return `./api/${cleanEndpoint}`
   }
-  
+
   return { makeApiUrl }
 }
 

@@ -6,7 +6,7 @@ import { formatPomodoroSecondsDisplay as fmt } from '../../lib/pomodoro-types'
 import type {
   FocusToolsFullStateDto,
   StopwatchToolSnapshot,
-  TimerToolSnapshot,
+  TimerToolSnapshot
 } from '../../shared/focus-tools-types'
 
 type TaskItem = {
@@ -63,15 +63,24 @@ const displaySec = computed(() => {
   return Math.max(0, s.elapsedSec)
 })
 
-const dialStatus = computed<'stopped' | 'running' | 'paused' | 'awaiting_continue'>(() => slice.value.status)
+const dialStatus = computed<'stopped' | 'running' | 'paused' | 'awaiting_continue'>(
+  () => slice.value.status
+)
 const timerPhaseDurationSec = computed(() => {
   if (!isTimer.value) return 3600
-  return Math.max(1, props.timerSnapshot.durationSettingMin * 60 + props.timerSnapshot.durationSettingSec)
+  return Math.max(
+    1,
+    props.timerSnapshot.durationSettingMin * 60 + props.timerSnapshot.durationSettingSec
+  )
 })
 const stopwatchDialRemainingSec = computed(() => 3600)
 const stopwatchDialPhaseDurationSec = computed(() => 3600)
 const statusLabel = computed(() =>
-  slice.value.status === 'running' ? 'Идёт' : slice.value.status === 'paused' ? 'Пауза' : 'Остановлен',
+  slice.value.status === 'running'
+    ? 'Идёт'
+    : slice.value.status === 'paused'
+      ? 'Пауза'
+      : 'Остановлен'
 )
 
 const controlsDisabled = computed(() => !props.focusToolsWsConnected || clockActionPending.value)
@@ -82,7 +91,7 @@ watch(
     timerMin.value = m
     timerSec.value = s
   },
-  { immediate: true },
+  { immediate: true }
 )
 
 const selectedTaskId = ref('')
@@ -92,7 +101,7 @@ watch(
   (id) => {
     if (typeof id === 'string') selectedTaskId.value = id
   },
-  { immediate: true },
+  { immediate: true }
 )
 
 watch(
@@ -100,13 +109,14 @@ watch(
   (id) => {
     if (typeof id === 'string') selectedTaskId.value = id
   },
-  { immediate: true },
+  { immediate: true }
 )
 
 async function readApiJson<T>(response: Response): Promise<T> {
   if (!response.ok) throw new Error(`HTTP ${response.status}`)
   const contentType = response.headers.get('content-type') ?? ''
-  if (!contentType.toLowerCase().includes('application/json')) throw new Error('Сервер вернул не-JSON ответ')
+  if (!contentType.toLowerCase().includes('application/json'))
+    throw new Error('Сервер вернул не-JSON ответ')
   return response.json() as Promise<T>
 }
 
@@ -133,7 +143,7 @@ function onTaskSelected(taskId: string): void {
 async function postControl(
   command:
     | { kind: 'timer'; action: 'start' | 'resume' | 'pause' | 'reset' }
-    | { kind: 'stopwatch'; action: 'start' | 'resume' | 'pause' | 'reset' },
+    | { kind: 'stopwatch'; action: 'start' | 'resume' | 'pause' | 'reset' }
 ): Promise<void> {
   if (!props.focusToolsWsConnected) return
   clockActionPending.value = true
@@ -145,12 +155,15 @@ async function postControl(
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         statsDayKey: props.statsDayKey,
-        command,
-      }),
+        command
+      })
     })
-    const j = await readApiJson<{ success?: boolean; state?: FocusToolsFullStateDto['state']; serverNowMs?: number; error?: string }>(
-      r,
-    )
+    const j = await readApiJson<{
+      success?: boolean
+      state?: FocusToolsFullStateDto['state']
+      serverNowMs?: number
+      error?: string
+    }>(r)
     if (j.success && j.state != null && typeof j.serverNowMs === 'number') {
       emit('focus-tools-sync', { state: j.state, serverNowMs: j.serverNowMs })
       if (command.kind === 'timer' && command.action === 'reset') {
@@ -184,12 +197,15 @@ async function saveTimerSettings(): Promise<void> {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         statsDayKey: props.statsDayKey,
-        command: { kind: 'timer-settings', minutes: m, seconds: s },
-      }),
+        command: { kind: 'timer-settings', minutes: m, seconds: s }
+      })
     })
-    const j = await readApiJson<{ success?: boolean; state?: FocusToolsFullStateDto['state']; serverNowMs?: number; error?: string }>(
-      r,
-    )
+    const j = await readApiJson<{
+      success?: boolean
+      state?: FocusToolsFullStateDto['state']
+      serverNowMs?: number
+      error?: string
+    }>(r)
     if (j.success && j.state != null && typeof j.serverNowMs === 'number') {
       emit('focus-tools-sync', { state: j.state, serverNowMs: j.serverNowMs })
       settingsOpen.value = false
@@ -204,19 +220,27 @@ async function saveTimerSettings(): Promise<void> {
 }
 
 function startClock(): void {
-  void postControl(isTimer.value ? { kind: 'timer', action: 'start' } : { kind: 'stopwatch', action: 'start' })
+  void postControl(
+    isTimer.value ? { kind: 'timer', action: 'start' } : { kind: 'stopwatch', action: 'start' }
+  )
 }
 
 function pauseClock(): void {
-  void postControl(isTimer.value ? { kind: 'timer', action: 'pause' } : { kind: 'stopwatch', action: 'pause' })
+  void postControl(
+    isTimer.value ? { kind: 'timer', action: 'pause' } : { kind: 'stopwatch', action: 'pause' }
+  )
 }
 
 function resumeClock(): void {
-  void postControl(isTimer.value ? { kind: 'timer', action: 'resume' } : { kind: 'stopwatch', action: 'resume' })
+  void postControl(
+    isTimer.value ? { kind: 'timer', action: 'resume' } : { kind: 'stopwatch', action: 'resume' }
+  )
 }
 
 function resetClock(): void {
-  void postControl(isTimer.value ? { kind: 'timer', action: 'reset' } : { kind: 'stopwatch', action: 'reset' })
+  void postControl(
+    isTimer.value ? { kind: 'timer', action: 'reset' } : { kind: 'stopwatch', action: 'reset' }
+  )
 }
 
 watch(
@@ -224,15 +248,18 @@ watch(
   () => {
     pageError.value = ''
     void loadTasks()
-  },
+  }
 )
 </script>
 
 <template>
   <div class="focus-clock-shell">
-    <p v-if="pageError" class="pomodoro-tool-error"><i class="fa-solid fa-triangle-exclamation" /> {{ pageError }}</p>
+    <p v-if="pageError" class="pomodoro-tool-error">
+      <i class="fa-solid fa-triangle-exclamation" /> {{ pageError }}
+    </p>
     <p v-if="!focusToolsWsConnected" class="pomodoro-tool-error pomodoro-tool-error--muted">
-      <i class="fa-solid fa-plug-circle-xmark" /> Нет WebSocket — управление недоступно. Ожидаем подключение…
+      <i class="fa-solid fa-plug-circle-xmark" /> Нет WebSocket — управление недоступно. Ожидаем
+      подключение…
     </p>
 
     <div class="pomodoro-phase-bar">
@@ -240,7 +267,13 @@ watch(
       <span class="cycle-dots" aria-hidden="true">
         <span v-for="i in 4" :key="i" class="cycle-dot"></span>
       </span>
-      <button v-if="isTimer" type="button" class="settings-trigger" :disabled="controlsDisabled" @click="settingsOpen = true">
+      <button
+        v-if="isTimer"
+        type="button"
+        class="settings-trigger"
+        :disabled="controlsDisabled"
+        @click="settingsOpen = true"
+      >
         <i class="fa-solid fa-sliders" />
       </button>
       <span v-else class="settings-trigger settings-trigger--placeholder" aria-hidden="true"></span>
@@ -278,7 +311,12 @@ watch(
     />
 
     <div class="pomodoro-actions">
-      <div class="pomodoro-actions__panel" :class="slice.status === 'stopped' ? 'pomodoro-actions__panel--n1' : 'pomodoro-actions__panel--n2'">
+      <div
+        class="pomodoro-actions__panel"
+        :class="
+          slice.status === 'stopped' ? 'pomodoro-actions__panel--n1' : 'pomodoro-actions__panel--n2'
+        "
+      >
         <button
           v-if="slice.status === 'stopped'"
           type="button"
@@ -290,21 +328,41 @@ watch(
           <span class="pomo-btn__label">Старт</span>
         </button>
         <template v-else-if="slice.status === 'running'">
-          <button type="button" class="pomo-btn pomo-btn--secondary" :disabled="controlsDisabled" @click="pauseClock">
+          <button
+            type="button"
+            class="pomo-btn pomo-btn--secondary"
+            :disabled="controlsDisabled"
+            @click="pauseClock"
+          >
             <i class="fa-solid fa-pause pomo-btn__icon" aria-hidden="true" />
             <span class="pomo-btn__label">Пауза</span>
           </button>
-          <button type="button" class="pomo-btn pomo-btn--danger" :disabled="controlsDisabled" @click="resetClock">
+          <button
+            type="button"
+            class="pomo-btn pomo-btn--danger"
+            :disabled="controlsDisabled"
+            @click="resetClock"
+          >
             <i class="fa-solid fa-rotate-left pomo-btn__icon" aria-hidden="true" />
             <span class="pomo-btn__label">Сброс</span>
           </button>
         </template>
         <template v-else>
-          <button type="button" class="pomo-btn pomo-btn--primary" :disabled="controlsDisabled" @click="resumeClock">
+          <button
+            type="button"
+            class="pomo-btn pomo-btn--primary"
+            :disabled="controlsDisabled"
+            @click="resumeClock"
+          >
             <i class="fa-solid fa-play pomo-btn__icon" aria-hidden="true" />
             <span class="pomo-btn__label">Продолжить</span>
           </button>
-          <button type="button" class="pomo-btn pomo-btn--danger" :disabled="controlsDisabled" @click="resetClock">
+          <button
+            type="button"
+            class="pomo-btn pomo-btn--danger"
+            :disabled="controlsDisabled"
+            @click="resetClock"
+          >
             <i class="fa-solid fa-rotate-left pomo-btn__icon" aria-hidden="true" />
             <span class="pomo-btn__label">Сброс</span>
           </button>
@@ -313,21 +371,43 @@ watch(
     </div>
   </div>
 
-  <div v-if="settingsOpen && isTimer" class="clock-settings-backdrop" @click.self="settingsOpen = false">
+  <div
+    v-if="settingsOpen && isTimer"
+    class="clock-settings-backdrop"
+    @click.self="settingsOpen = false"
+  >
     <div class="clock-settings-modal">
       <h3 class="clock-settings-title">Настройки / {{ modeTitle }}</h3>
       <div class="clock-settings-row clock-settings-grid">
         <label
-          >Минуты<input v-model.number="timerMin" type="number" min="0" max="999" :disabled="slice.status !== 'stopped' || controlsDisabled"
+          >Минуты<input
+            v-model.number="timerMin"
+            type="number"
+            min="0"
+            max="999"
+            :disabled="slice.status !== 'stopped' || controlsDisabled"
         /></label>
         <label
-          >Секунды<input v-model.number="timerSec" type="number" min="0" max="59" :disabled="slice.status !== 'stopped' || controlsDisabled"
+          >Секунды<input
+            v-model.number="timerSec"
+            type="number"
+            min="0"
+            max="59"
+            :disabled="slice.status !== 'stopped' || controlsDisabled"
         /></label>
       </div>
-      <p class="clock-settings-hint">Длительность и сессии хранятся на сервере; сегменты пишутся в журнал при старте/паузе/сбросе.</p>
+      <p class="clock-settings-hint">
+        Длительность и сессии хранятся на сервере; сегменты пишутся в журнал при
+        старте/паузе/сбросе.
+      </p>
       <div class="clock-settings-actions">
         <button type="button" class="pomo-btn" @click="settingsOpen = false">Закрыть</button>
-        <button type="button" class="pomo-btn pomo-btn--primary" :disabled="controlsDisabled || slice.status !== 'stopped'" @click="saveTimerSettings">
+        <button
+          type="button"
+          class="pomo-btn pomo-btn--primary"
+          :disabled="controlsDisabled || slice.status !== 'stopped'"
+          @click="saveTimerSettings"
+        >
           Сохранить
         </button>
       </div>

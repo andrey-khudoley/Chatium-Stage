@@ -51,7 +51,11 @@ function onMarkdownInput(event: Event) {
         @input="onMarkdownInput"
       ></textarea>
 
-      <div v-if="activeMode !== 'markdown'" class="dc-bpm-knowledge-editor__wysiwyg" contenteditable="true">
+      <div
+        v-if="activeMode !== 'markdown'"
+        class="dc-bpm-knowledge-editor__wysiwyg"
+        contenteditable="true"
+      >
         <h3>Workflow playbook</h3>
         <p>Owner confirms SLA impact and acknowledges escalation path.</p>
         <ul>

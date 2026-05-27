@@ -10,8 +10,8 @@
     <div class="agents-info">
       <p class="info-text">
         <i class="fas fa-info-circle"></i>
-        Здесь отображаются системные AI-агенты, доступные в вашем аккаунте Chatium.
-        Для управления агентами (создание, редактирование, настройка инструментов) используйте
+        Здесь отображаются системные AI-агенты, доступные в вашем аккаунте Chatium. Для управления
+        агентами (создание, редактирование, настройка инструментов) используйте
         <a href="/app/ai-agents" target="_blank">панель управления агентами</a>.
       </p>
     </div>
@@ -33,12 +33,12 @@
     <div v-else class="agents-list">
       <div v-for="agent in agents" :key="agent.id" class="agent-card">
         <div class="agent-avatar">
-          <img v-if="agent.avatarUrl" :src="agent.avatarUrl" :alt="agent.name">
+          <img v-if="agent.avatarUrl" :src="agent.avatarUrl" :alt="agent.name" />
           <div v-else class="avatar-placeholder">
             <i class="fas fa-robot"></i>
           </div>
         </div>
-        
+
         <div class="agent-info">
           <h3 class="agent-name">{{ agent.name }}</h3>
           <p v-if="agent.key" class="agent-key">{{ agent.key }}</p>
@@ -55,8 +55,8 @@
 
     <div class="agents-footer">
       <p class="footer-text">
-        Агенты могут быть добавлены в групповые чаты через настройки чата.
-        В личных чатах с агентами они отвечают автоматически.
+        Агенты могут быть добавлены в групповые чаты через настройки чата. В личных чатах с агентами
+        они отвечают автоматически.
       </p>
     </div>
   </div>

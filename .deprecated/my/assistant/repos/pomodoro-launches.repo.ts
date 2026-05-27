@@ -1,6 +1,9 @@
 import PomodoroLaunches from '../tables/pomodoro-launches.table'
 import type { PomodoroStateDto } from '../lib/pomodoro-types'
-import type { PomodoroLaunchEndReason, PomodoroLaunchSource } from '../tables/pomodoro-launches.table'
+import type {
+  PomodoroLaunchEndReason,
+  PomodoroLaunchSource
+} from '../tables/pomodoro-launches.table'
 
 type StartLaunchInput = {
   userId: string
@@ -9,7 +12,10 @@ type StartLaunchInput = {
   startedAtMs: number
 }
 
-export async function findOpenLaunchByUser(ctx: app.Ctx, userId: string): Promise<typeof PomodoroLaunches.T | null> {
+export async function findOpenLaunchByUser(
+  ctx: app.Ctx,
+  userId: string
+): Promise<typeof PomodoroLaunches.T | null> {
   const rows = await PomodoroLaunches.findAll(ctx, {
     where: { userId, endedAtMs: null },
     order: [{ startedAtMs: 'desc' }],
@@ -18,7 +24,10 @@ export async function findOpenLaunchByUser(ctx: app.Ctx, userId: string): Promis
   return rows[0] ?? null
 }
 
-export async function startLaunch(ctx: app.Ctx, input: StartLaunchInput): Promise<typeof PomodoroLaunches.T> {
+export async function startLaunch(
+  ctx: app.Ctx,
+  input: StartLaunchInput
+): Promise<typeof PomodoroLaunches.T> {
   return PomodoroLaunches.create(ctx, {
     userId: input.userId,
     startedAtMs: input.startedAtMs,
@@ -67,7 +76,10 @@ type AppendFocusLaunchInput = {
   taskId?: string | null
 }
 
-export async function appendFocusLaunchSegment(ctx: app.Ctx, input: AppendFocusLaunchInput): Promise<typeof PomodoroLaunches.T> {
+export async function appendFocusLaunchSegment(
+  ctx: app.Ctx,
+  input: AppendFocusLaunchInput
+): Promise<typeof PomodoroLaunches.T> {
   const startedAtMs = Math.max(0, Math.floor(input.startedAtMs))
   const endedAtMs = Math.max(startedAtMs, Math.floor(input.endedAtMs))
   const durationSec = Math.max(0, Math.floor((endedAtMs - startedAtMs) / 1000))

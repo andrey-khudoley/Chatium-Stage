@@ -5,10 +5,10 @@ import { reportError } from './error-reporter'
 /**
  * Middleware для автоматической обработки ошибок
  * Оборачивает все запросы в try-catch, репортит ошибки и пробрасывает дальше
- * 
+ *
  * @example
  * import { reporterApp } from "../shared/error-handler-middleware"
- * 
+ *
  * reporterApp.post('/some-route', async (ctx, req) => {
  *   // Любая ошибка здесь будет автоматически зарепорчена
  *   throw new Error('Something went wrong')
@@ -27,7 +27,7 @@ export const reporterApp = app.use(async (ctx: app.Ctx, req: any, next: any) => 
         params: req.params,
         query: req.query,
         // Не логируем весь body (могут быть чувствительные данные)
-        bodyKeys: req.body ? Object.keys(req.body) : undefined,
+        bodyKeys: req.body ? Object.keys(req.body) : undefined
       }
     })
 

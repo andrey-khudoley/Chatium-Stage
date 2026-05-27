@@ -14,6 +14,8 @@ export const createDiplomaHandler: V1GcHandler = async (_ctx, a) => {
   return { kind: 'gc_result', gc }
 }
 
-export const createDiplomaRoute = app.post('/', async (ctx, req) => handleV1Op(ctx, req, 'createDiploma', createDiplomaHandler))
+export const createDiplomaRoute = app.post('/', async (ctx, req) =>
+  handleV1Op(ctx, req, 'createDiploma', createDiplomaHandler)
+)
 
 export default createDiplomaRoute

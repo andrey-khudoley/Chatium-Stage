@@ -47,7 +47,7 @@ POST /integrations/lava/payment-link
   "gcOrderId": "order_12345",
   "gcUserId": "user_987",
   "buyerEmail": "client@example.com",
-  "amount": 4990.00,
+  "amount": 4990.0,
   "currency": "RUB",
   "offer": "Предложение",
   "product": "Название пакета для виджета Lava",
@@ -91,14 +91,14 @@ POST /integrations/lava/payment-link
 
 ### Возможные `errorCode`
 
-| Код | Значение |
-| --- | --- |
-| `VALIDATION_ERROR` | Входные данные некорректны |
-| `PAYMENT_TEMPLATE_BUSY` | Шаблонный оффер занят другим запросом |
-| `LAVA_UPDATE_ERROR` | Не удалось обновить цену в Lava |
-| `LAVA_CONTRACT_ERROR` | Не удалось создать контракт в Lava |
-| `CONFIG_ERROR` | Не настроены `productId` или `offerId` |
-| `INTERNAL_ERROR` | Внутренняя ошибка Chatium |
+| Код                     | Значение                               |
+| ----------------------- | -------------------------------------- |
+| `VALIDATION_ERROR`      | Входные данные некорректны             |
+| `PAYMENT_TEMPLATE_BUSY` | Шаблонный оффер занят другим запросом  |
+| `LAVA_UPDATE_ERROR`     | Не удалось обновить цену в Lava        |
+| `LAVA_CONTRACT_ERROR`   | Не удалось создать контракт в Lava     |
+| `CONFIG_ERROR`          | Не настроены `productId` или `offerId` |
+| `INTERNAL_ERROR`        | Внутренняя ошибка Chatium              |
 
 ## 11.2. Callback статуса в GetCourse
 
@@ -118,7 +118,7 @@ POST /integrations/lava/payment-status
   "lavaContractId": "7ea82675-4ded-4133-95a7-a6efbaf165cc",
   "eventType": "payment.success",
   "status": "completed",
-  "amount": 4990.00,
+  "amount": 4990.0,
   "currency": "RUB",
   "buyerEmail": "client@example.com",
   "paidAt": "2026-03-27T12:25:30Z"
@@ -133,7 +133,7 @@ POST /integrations/lava/payment-status
   "lavaContractId": "7ea82675-4ded-4133-95a7-a6efbaf165cc",
   "eventType": "payment.failed",
   "status": "failed",
-  "amount": 4990.00,
+  "amount": 4990.0,
   "currency": "RUB",
   "buyerEmail": "client@example.com",
   "failedAt": "2026-03-27T12:25:30Z",

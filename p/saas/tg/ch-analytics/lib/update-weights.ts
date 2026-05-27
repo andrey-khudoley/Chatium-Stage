@@ -26,9 +26,9 @@ const MIN_SAMPLES_FOR_UPDATE = 5
 
 /**
  * Инициализирует веса для проекта/канала с дефолтными значениями
- * 
+ *
  * Создаёт записи в AttributionWeights с дефолтными значениями, если их ещё нет.
- * 
+ *
  * @param ctx - контекст
  * @param projectId - ID проекта
  * @param channelId - ID канала (опционально)
@@ -38,9 +38,15 @@ export async function initializeWeights(
   projectId: string,
   channelId?: string
 ): Promise<void> {
-  Debug.info(ctx, `[update-weights] Инициализация весов для проекта ${projectId}${channelId ? `, канал ${channelId}` : ''}`)
+  Debug.info(
+    ctx,
+    `[update-weights] Инициализация весов для проекта ${projectId}${channelId ? `, канал ${channelId}` : ''}`
+  )
 
-  const parameters: Array<{ name: 'lambda' | 'tau_fast' | 'tau_slow' | 'alpha' | 'beta' | 'avg_conversion_time'; value: number }> = [
+  const parameters: Array<{
+    name: 'lambda' | 'tau_fast' | 'tau_slow' | 'alpha' | 'beta' | 'avg_conversion_time'
+    value: number
+  }> = [
     { name: 'lambda', value: DEFAULT_LAMBDA },
     { name: 'tau_fast', value: DEFAULT_TAU_FAST },
     { name: 'tau_slow', value: DEFAULT_TAU_SLOW },
@@ -59,7 +65,7 @@ export async function initializeWeights(
     })
 
     // Ищем запись с нужным channelId (или без channelId для проектных весов)
-    const existing = existingWeights.find(w => {
+    const existing = existingWeights.find((w) => {
       if (channelId) {
         return w.channelId === channelId
       } else {
@@ -79,14 +85,17 @@ export async function initializeWeights(
       })
       Debug.info(ctx, `[update-weights] ✅ Создан вес для параметра ${param.name}: ${param.value}`)
     } else {
-      Debug.info(ctx, `[update-weights] ℹ️ Вес для параметра ${param.name} уже существует, пропускаем`)
+      Debug.info(
+        ctx,
+        `[update-weights] ℹ️ Вес для параметра ${param.name} уже существует, пропускаем`
+      )
     }
   }
 }
 
 /**
  * Вычисляет среднее время конверсии для набора данных
- * 
+ *
  * @param conversionTimes - массив времён конверсии в секундах
  * @returns среднее время конверсии в секундах
  */
@@ -100,12 +109,12 @@ function calculateAverageConversionTime(conversionTimes: number[]): number {
 
 /**
  * Оценивает параметры likelihood (lambda, tau_fast, tau_slow) на основе времени конверсии
- * 
+ *
  * Использует метод моментов для оценки параметров смеси двух экспонент:
  * - tau_fast оценивается как медиана быстрых конверсий (< 2 минуты)
  * - tau_slow оценивается как медиана медленных конверсий (>= 2 минуты)
  * - lambda - доля быстрых конверсий
- * 
+ *
  * @param conversionTimes - массив времён конверсии в секундах
  * @returns объект с оценками параметров
  */
@@ -124,8 +133,8 @@ function estimateLikelihoodParameters(conversionTimes: number[]): {
 
   // Разделяем на быстрые (< 2 минуты) и медленные (>= 2 минуты) конверсии
   const fastThreshold = 120 // 2 минуты в секундах
-  const fastConversions = conversionTimes.filter(t => t < fastThreshold)
-  const slowConversions = conversionTimes.filter(t => t >= fastThreshold)
+  const fastConversions = conversionTimes.filter((t) => t < fastThreshold)
+  const slowConversions = conversionTimes.filter((t) => t >= fastThreshold)
 
   // Оцениваем lambda как долю быстрых конверсий
   const lambda = fastConversions.length / conversionTimes.length
@@ -136,9 +145,7 @@ function estimateLikelihoodParameters(conversionTimes: number[]): {
   if (fastConversions.length > 0) {
     const sorted = [...fastConversions].sort((a, b) => a - b)
     const mid = Math.floor(sorted.length / 2)
-    tauFast = sorted.length % 2 === 0
-      ? (sorted[mid - 1] + sorted[mid]) / 2
-      : sorted[mid]
+    tauFast = sorted.length % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid]
     // Ограничиваем минимальное значение
     tauFast = Math.max(10, tauFast)
   }
@@ -149,9 +156,7 @@ function estimateLikelihoodParameters(conversionTimes: number[]): {
   if (slowConversions.length > 0) {
     const sorted = [...slowConversions].sort((a, b) => a - b)
     const mid = Math.floor(sorted.length / 2)
-    tauSlow = sorted.length % 2 === 0
-      ? (sorted[mid - 1] + sorted[mid]) / 2
-      : sorted[mid]
+    tauSlow = sorted.length % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid]
     // Ограничиваем минимальное значение
     tauSlow = Math.max(60, tauSlow)
   }
@@ -165,10 +170,10 @@ function estimateLikelihoodParameters(conversionTimes: number[]): {
 
 /**
  * Оценивает параметры prior (alpha, beta) на основе реальной конверсии
- * 
+ *
  * Использует бэйесовское обновление: если реальная конверсия выше ожидаемой,
  * увеличиваем alpha, если ниже - увеличиваем beta.
- * 
+ *
  * @param totalClicks - общее количество кликов
  * @param totalJoins - общее количество подписок
  * @param currentAlpha - текущее значение alpha
@@ -232,12 +237,12 @@ function estimatePriorParameters(
 
 /**
  * Обновляет веса для проекта/канала на основе обратной связи
- * 
+ *
  * Анализирует все атрибутированные JoinEvents за последний период и обновляет:
  * - avg_conversion_time - среднее время конверсии
  * - lambda, tau_fast, tau_slow - параметры likelihood
  * - alpha, beta - параметры prior
- * 
+ *
  * @param ctx - контекст
  * @param projectId - ID проекта
  * @param channelId - ID канала (опционально, для канало-специфичных весов)
@@ -247,7 +252,10 @@ export async function updateWeightsForProject(
   projectId: string,
   channelId?: string
 ): Promise<void> {
-  Debug.info(ctx, `[update-weights] Начало обновления весов для проекта ${projectId}${channelId ? `, канал ${channelId}` : ''}`)
+  Debug.info(
+    ctx,
+    `[update-weights] Начало обновления весов для проекта ${projectId}${channelId ? `, канал ${channelId}` : ''}`
+  )
 
   // Вычисляем дату начала периода анализа
   const analysisStartDate = new Date(Date.now() - ANALYSIS_PERIOD_HOURS * 60 * 60 * 1000)
@@ -267,17 +275,23 @@ export async function updateWeightsForProject(
     limit: 10000 // Практический лимит для анализа
   })
 
-  Debug.info(ctx, `[update-weights] Найдено атрибутированных подписок за период: ${attributedJoins.length}`)
+  Debug.info(
+    ctx,
+    `[update-weights] Найдено атрибутированных подписок за период: ${attributedJoins.length}`
+  )
 
   if (attributedJoins.length < MIN_SAMPLES_FOR_UPDATE) {
-    Debug.info(ctx, `[update-weights] Недостаточно данных для обновления весов (${attributedJoins.length} < ${MIN_SAMPLES_FOR_UPDATE}), пропускаем`)
+    Debug.info(
+      ctx,
+      `[update-weights] Недостаточно данных для обновления весов (${attributedJoins.length} < ${MIN_SAMPLES_FOR_UPDATE}), пропускаем`
+    )
     return
   }
 
   // Собираем данные для анализа
   const conversionTimes: number[] = [] // Времена конверсии в секундах
   const trackingLinkStats = new Map<string, { clicks: number; joins: number }>() // Статистика по TrackingLink
-  
+
   // Собираем уникальные ID LinkClicks для оптимизации запросов
   const linkClickIds = new Set<string>()
   for (const joinEvent of attributedJoins) {
@@ -286,7 +300,10 @@ export async function updateWeightsForProject(
     }
     // Собираем статистику по TrackingLink
     if (joinEvent.attributedToTrackingLinkId) {
-      const stats = trackingLinkStats.get(joinEvent.attributedToTrackingLinkId) || { clicks: 0, joins: 0 }
+      const stats = trackingLinkStats.get(joinEvent.attributedToTrackingLinkId) || {
+        clicks: 0,
+        joins: 0
+      }
       stats.joins++
       trackingLinkStats.set(joinEvent.attributedToTrackingLinkId, stats)
     }
@@ -318,7 +335,8 @@ export async function updateWeightsForProject(
       if (linkClick && linkClick.clickedAt && joinEvent.joinedAt) {
         const deltaTMs = joinEvent.joinedAt.getTime() - linkClick.clickedAt.getTime()
         const deltaTSeconds = deltaTMs / 1000
-        if (deltaTSeconds >= 0) { // Только неотрицательные значения
+        if (deltaTSeconds >= 0) {
+          // Только неотрицательные значения
           conversionTimes.push(deltaTSeconds)
         }
       }
@@ -328,7 +346,7 @@ export async function updateWeightsForProject(
   // Получаем статистику по кликам для каждого TrackingLink
   // Загружаем клики для каждого TrackingLink отдельно
   const trackingLinkIds = Array.from(trackingLinkStats.keys())
-  
+
   for (const trackingLinkId of trackingLinkIds) {
     // Получаем все клики для этого TrackingLink за период анализа
     const clicks = await LinkClicks.findAll(ctx, {
@@ -337,30 +355,67 @@ export async function updateWeightsForProject(
         clickedAt: { $gte: analysisStartDate }
       }
     })
-    
+
     const stats = trackingLinkStats.get(trackingLinkId)!
     stats.clicks = clicks.length
     trackingLinkStats.set(trackingLinkId, stats)
   }
 
-  Debug.info(ctx, `[update-weights] Собрано данных: conversionTimes=${conversionTimes.length}, trackingLinks=${trackingLinkStats.size}`)
+  Debug.info(
+    ctx,
+    `[update-weights] Собрано данных: conversionTimes=${conversionTimes.length}, trackingLinks=${trackingLinkStats.size}`
+  )
 
   // Обновляем avg_conversion_time
   if (conversionTimes.length > 0) {
     const avgConversionTime = calculateAverageConversionTime(conversionTimes)
-    await updateWeightParameter(ctx, projectId, channelId, 'avg_conversion_time', avgConversionTime, conversionTimes.length)
-    Debug.info(ctx, `[update-weights] ✅ Обновлён avg_conversion_time: ${avgConversionTime.toFixed(2)} сек (образцов: ${conversionTimes.length})`)
+    await updateWeightParameter(
+      ctx,
+      projectId,
+      channelId,
+      'avg_conversion_time',
+      avgConversionTime,
+      conversionTimes.length
+    )
+    Debug.info(
+      ctx,
+      `[update-weights] ✅ Обновлён avg_conversion_time: ${avgConversionTime.toFixed(2)} сек (образцов: ${conversionTimes.length})`
+    )
   }
 
   // Обновляем параметры likelihood (lambda, tau_fast, tau_slow)
   if (conversionTimes.length >= MIN_SAMPLES_FOR_UPDATE) {
     const likelihoodParams = estimateLikelihoodParameters(conversionTimes)
-    
-    await updateWeightParameter(ctx, projectId, channelId, 'lambda', likelihoodParams.lambda, conversionTimes.length)
-    await updateWeightParameter(ctx, projectId, channelId, 'tau_fast', likelihoodParams.tauFast, conversionTimes.length)
-    await updateWeightParameter(ctx, projectId, channelId, 'tau_slow', likelihoodParams.tauSlow, conversionTimes.length)
-    
-    Debug.info(ctx, `[update-weights] ✅ Обновлены параметры likelihood: lambda=${likelihoodParams.lambda.toFixed(3)}, tau_fast=${likelihoodParams.tauFast.toFixed(2)}, tau_slow=${likelihoodParams.tauSlow.toFixed(2)}`)
+
+    await updateWeightParameter(
+      ctx,
+      projectId,
+      channelId,
+      'lambda',
+      likelihoodParams.lambda,
+      conversionTimes.length
+    )
+    await updateWeightParameter(
+      ctx,
+      projectId,
+      channelId,
+      'tau_fast',
+      likelihoodParams.tauFast,
+      conversionTimes.length
+    )
+    await updateWeightParameter(
+      ctx,
+      projectId,
+      channelId,
+      'tau_slow',
+      likelihoodParams.tauSlow,
+      conversionTimes.length
+    )
+
+    Debug.info(
+      ctx,
+      `[update-weights] ✅ Обновлены параметры likelihood: lambda=${likelihoodParams.lambda.toFixed(3)}, tau_fast=${likelihoodParams.tauFast.toFixed(2)}, tau_slow=${likelihoodParams.tauSlow.toFixed(2)}`
+    )
   }
 
   // Обновляем параметры prior (alpha, beta)
@@ -378,21 +433,39 @@ export async function updateWeightsForProject(
       const currentAlpha = await getWeightParameter(ctx, projectId, 'alpha', channelId)
       const currentBeta = await getWeightParameter(ctx, projectId, 'beta', channelId)
 
-      const priorParams = estimatePriorParameters(totalClicks, totalJoins, currentAlpha, currentBeta)
-      
-      await updateWeightParameter(ctx, projectId, channelId, 'alpha', priorParams.alpha, totalClicks)
+      const priorParams = estimatePriorParameters(
+        totalClicks,
+        totalJoins,
+        currentAlpha,
+        currentBeta
+      )
+
+      await updateWeightParameter(
+        ctx,
+        projectId,
+        channelId,
+        'alpha',
+        priorParams.alpha,
+        totalClicks
+      )
       await updateWeightParameter(ctx, projectId, channelId, 'beta', priorParams.beta, totalClicks)
-      
-      Debug.info(ctx, `[update-weights] ✅ Обновлены параметры prior: alpha=${priorParams.alpha.toFixed(3)}, beta=${priorParams.beta.toFixed(3)} (клики: ${totalClicks}, подписки: ${totalJoins})`)
+
+      Debug.info(
+        ctx,
+        `[update-weights] ✅ Обновлены параметры prior: alpha=${priorParams.alpha.toFixed(3)}, beta=${priorParams.beta.toFixed(3)} (клики: ${totalClicks}, подписки: ${totalJoins})`
+      )
     }
   }
 
-  Debug.info(ctx, `[update-weights] ✅ Обновление весов завершено для проекта ${projectId}${channelId ? `, канал ${channelId}` : ''}`)
+  Debug.info(
+    ctx,
+    `[update-weights] ✅ Обновление весов завершено для проекта ${projectId}${channelId ? `, канал ${channelId}` : ''}`
+  )
 }
 
 /**
  * Получает значение параметра из таблицы AttributionWeights с дефолтным значением
- * 
+ *
  * @param ctx - контекст
  * @param projectId - ID проекта
  * @param parameter - название параметра
@@ -424,7 +497,9 @@ async function getWeightParameter(
       parameter
     }
   })
-  const projectWeight = projectWeights.find(w => w.channelId === null || w.channelId === undefined)
+  const projectWeight = projectWeights.find(
+    (w) => w.channelId === null || w.channelId === undefined
+  )
 
   if (projectWeight) {
     return projectWeight.value
@@ -451,9 +526,9 @@ async function getWeightParameter(
 
 /**
  * Обновляет или создаёт параметр веса в таблице AttributionWeights
- * 
+ *
  * Использует взвешенное среднее для сглаживания обновлений и инкремент samplesCount.
- * 
+ *
  * @param ctx - контекст
  * @param projectId - ID проекта
  * @param channelId - ID канала (опционально)
@@ -480,7 +555,7 @@ async function updateWeightParameter(
   // Ищем запись с нужным channelId
   // Для проектных весов (без channelId) ищем запись где channelId === null или undefined
   // Для канало-специфичных весов ищем точное совпадение
-  const existing = existingWeights.find(w => {
+  const existing = existingWeights.find((w) => {
     if (channelId) {
       return w.channelId === channelId
     } else {
@@ -494,7 +569,7 @@ async function updateWeightParameter(
     // Для сглаживания используем взвешенное среднее с учётом текущего количества образцов
     const currentSamples = existing.samplesCount || 0
     const totalSamples = currentSamples + newSamplesCount
-    
+
     // Используем экспоненциальное скользящее среднее для сглаживания
     // Вес для текущего значения зависит от соотношения новых и старых образцов
     const weight = currentSamples > 0 ? currentSamples / totalSamples : 0.5
@@ -506,8 +581,11 @@ async function updateWeightParameter(
       samplesCount: totalSamples,
       lastUpdatedAt: new Date()
     })
-    
-    Debug.info(ctx, `[update-weights] Обновлён параметр ${parameter}${channelId ? ` для канала ${channelId}` : ''}: ${existing.value.toFixed(3)} → ${smoothedValue.toFixed(3)} (образцов: ${currentSamples} → ${totalSamples})`)
+
+    Debug.info(
+      ctx,
+      `[update-weights] Обновлён параметр ${parameter}${channelId ? ` для канала ${channelId}` : ''}: ${existing.value.toFixed(3)} → ${smoothedValue.toFixed(3)} (образцов: ${currentSamples} → ${totalSamples})`
+    )
   } else {
     // Создаём новую запись
     await AttributionWeights.create(ctx, {
@@ -518,7 +596,10 @@ async function updateWeightParameter(
       samplesCount: newSamplesCount,
       lastUpdatedAt: new Date()
     })
-    
-    Debug.info(ctx, `[update-weights] Создан новый параметр ${parameter}${channelId ? ` для канала ${channelId}` : ''}: ${value.toFixed(3)} (образцов: ${newSamplesCount})`)
+
+    Debug.info(
+      ctx,
+      `[update-weights] Создан новый параметр ${parameter}${channelId ? ` для канала ${channelId}` : ''}: ${value.toFixed(3)} (образцов: ${newSamplesCount})`
+    )
   }
 }

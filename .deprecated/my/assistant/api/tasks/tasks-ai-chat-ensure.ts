@@ -26,7 +26,11 @@ export const taskAiChatEnsureRoute = app
     })
 
     try {
-      const { feedId } = await taskAiChatRepo.getOrCreateAiChatFeed(ctx, user.id, req.body.projectId)
+      const { feedId } = await taskAiChatRepo.getOrCreateAiChatFeed(
+        ctx,
+        user.id,
+        req.body.projectId
+      )
 
       await getOrCreateParticipant(ctx, feedId, user.id, {
         role: 'member',

@@ -5,20 +5,31 @@
         <i class="fas fa-clipboard-list text-primary"></i>
         Формы для зрителей
       </h3>
-      <button type="button" @click="openCreateForm" class="bg-primary hover:bg-primary/80 text-white font-semibold px-3 py-1.5 rounded-lg text-xs flex items-center gap-1.5 transition">
+      <button
+        type="button"
+        @click="openCreateForm"
+        class="bg-primary hover:bg-primary/80 text-white font-semibold px-3 py-1.5 rounded-lg text-xs flex items-center gap-1.5 transition"
+      >
         <i class="fas fa-plus"></i>
         Создать форму
       </button>
     </div>
 
-    <p class="wr-text-tertiary text-xs">Создайте формы и показывайте их зрителям во время эфира. Форма откроется попапом поверх видео.</p>
+    <p class="wr-text-tertiary text-xs">
+      Создайте формы и показывайте их зрителям во время эфира. Форма откроется попапом поверх видео.
+    </p>
 
     <div v-if="loading" class="flex justify-center py-4">
-      <div class="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+      <div
+        class="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"
+      ></div>
     </div>
 
     <div v-else-if="forms.length === 0" class="text-center py-6">
-      <div class="w-12 h-12 rounded-xl mx-auto mb-3 flex items-center justify-center" style="background: var(--wr-btn-subtle-bg)">
+      <div
+        class="w-12 h-12 rounded-xl mx-auto mb-3 flex items-center justify-center"
+        style="background: var(--wr-btn-subtle-bg)"
+      >
         <i class="fas fa-clipboard-list text-primary text-lg"></i>
       </div>
       <p class="wr-text-tertiary text-sm">Нет созданных форм</p>
@@ -32,7 +43,8 @@
               <span class="wr-text-primary font-medium text-sm truncate">{{ f.title }}</span>
             </div>
             <div class="wr-text-tertiary text-xs mt-0.5">
-              {{ submitActionLabel(f.submitAction) }} · {{ (f.fields || []).length }} {{ pluralFields((f.fields || []).length) }}
+              {{ submitActionLabel(f.submitAction) }} · {{ (f.fields || []).length }}
+              {{ pluralFields((f.fields || []).length) }}
             </div>
           </div>
           <div class="flex items-center gap-1.5 flex-shrink-0">
@@ -49,10 +61,21 @@
                 Показать
               </template>
             </button>
-            <button type="button" @click="openEditForm(f)" class="admin-icon-btn" title="Редактировать">
+            <button
+              type="button"
+              @click="openEditForm(f)"
+              class="admin-icon-btn"
+              title="Редактировать"
+            >
               <i class="fas fa-pen"></i>
             </button>
-            <button type="button" @click="deleteForm(f.id)" :disabled="formActionLoading === f.id" class="admin-icon-btn admin-icon-btn--danger" title="Удалить">
+            <button
+              type="button"
+              @click="deleteForm(f.id)"
+              :disabled="formActionLoading === f.id"
+              class="admin-icon-btn admin-icon-btn--danger"
+              title="Удалить"
+            >
               <i class="fas fa-trash"></i>
             </button>
           </div>
@@ -79,7 +102,7 @@ import FormEditorModal from './FormEditorModal.vue'
 
 const props = defineProps({
   episodeId: { type: String, required: true },
-  episodeStatus: { type: String, default: '' },
+  episodeStatus: { type: String, default: '' }
 })
 
 const isLiveOrWaiting = ['live', 'waiting_room'].includes(props.episodeStatus)

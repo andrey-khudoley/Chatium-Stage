@@ -1,8 +1,14 @@
 <template>
   <div class="modal-overlay" @click="$emit('close')">
     <div class="modal-content" @click.stop>
-      <h2 class="modal-title">{{ isMultiple ? `Переслать ${messages.length} ${messages.length === 1 ? 'сообщение' : messages.length < 5 ? 'сообщения' : 'сообщений'}` : 'Переслать сообщение' }}</h2>
-      
+      <h2 class="modal-title">
+        {{
+          isMultiple
+            ? `Переслать ${messages.length} ${messages.length === 1 ? 'сообщение' : messages.length < 5 ? 'сообщения' : 'сообщений'}`
+            : 'Переслать сообщение'
+        }}
+      </h2>
+
       <!-- Превью одиночного сообщения -->
       <div v-if="!isMultiple" class="forward-preview">
         <div class="forward-label">Сообщение:</div>
@@ -10,7 +16,10 @@
           <template v-if="message.files && message.files.length > 0">
             <div class="forward-files">
               <i class="fas fa-paperclip"></i>
-              {{ message.files.length }} {{ message.files.length === 1 ? 'файл' : message.files.length < 5 ? 'файла' : 'файлов' }}
+              {{ message.files.length }}
+              {{
+                message.files.length === 1 ? 'файл' : message.files.length < 5 ? 'файла' : 'файлов'
+              }}
             </div>
           </template>
           {{ message.text }}
@@ -21,11 +30,7 @@
       <div v-else class="forward-preview multiple">
         <div class="forward-label">Выбрано сообщений: {{ messages.length }}</div>
         <div class="forward-messages-list">
-          <div 
-            v-for="(msg, index) in displayedMessages" 
-            :key="msg.id"
-            class="forward-message-item"
-          >
+          <div v-for="(msg, index) in displayedMessages" :key="msg.id" class="forward-message-item">
             <span class="message-number">{{ index + 1 }}.</span>
             <span class="message-preview-text">
               <template v-if="msg.files && msg.files.length > 0">
@@ -39,7 +44,7 @@
           </div>
         </div>
       </div>
-      
+
       <!-- Поиск по чатам -->
       <div class="search-box">
         <i class="fas fa-search search-icon"></i>
@@ -53,20 +58,21 @@
           <i class="fas fa-times"></i>
         </button>
       </div>
-      
+
       <div class="chats-list">
         <div class="chats-label">
-          {{ filteredChats.length }} {{ filteredChats.length === 1 ? 'чат' : filteredChats.length < 5 ? 'чата' : 'чатов' }}
+          {{ filteredChats.length }}
+          {{ filteredChats.length === 1 ? 'чат' : filteredChats.length < 5 ? 'чата' : 'чатов' }}
           <span v-if="excludedChannelsCount > 0" class="excluded-hint">
             ({{ excludedChannelsCount }} каналов скрыто — нет прав на публикацию)
           </span>
         </div>
-        
+
         <div v-if="filteredChats.length === 0" class="no-results">
           <i class="fas fa-search"></i>
           <span>Ничего не найдено</span>
         </div>
-        
+
         <div
           v-for="chat in filteredChats"
           :key="chat.id"
@@ -87,21 +93,17 @@
                 <span v-if="chat.myRole === 'owner'" class="role-badge owner">владелец</span>
                 <span v-else-if="chat.myRole === 'admin'" class="role-badge admin">админ</span>
               </template>
-              <template v-else>
-                <i class="fas fa-users"></i> Групповой чат
-              </template>
+              <template v-else> <i class="fas fa-users"></i> Групповой чат </template>
             </div>
           </div>
           <i v-if="selectedChatId === chat.feedId" class="fas fa-check check-icon"></i>
         </div>
       </div>
-      
+
       <div class="modal-actions">
-        <button @click="$emit('close')" class="btn-secondary">
-          Отмена
-        </button>
-        <button 
-          @click="forward" 
+        <button @click="$emit('close')" class="btn-secondary">Отмена</button>
+        <button
+          @click="forward"
           :disabled="!selectedChatId"
           :class="['btn-primary', { disabled: !selectedChatId }]"
         >
@@ -126,7 +128,7 @@ const props = defineProps({
   sourceChat: {
     type: Object,
     default: null
-  },
+  }
 })
 
 const isMultiple = computed(() => props.messages && props.messages.length > 0)
@@ -143,104 +145,116 @@ const searchQuery = ref('')
 // Фильтруем чаты для пересылки
 const filteredChats = computed(() => {
   const query = searchQuery.value.toLowerCase().trim()
-  
-  return (props.chats || []).filter(chat => {
+
+  return (props.chats || []).filter((chat) => {
     // Исключаем каналы, где пользователь не owner/admin (не может публиковать)
     if (chat.type === 'channel' && chat.myRole !== 'owner' && chat.myRole !== 'admin') {
       return false
     }
-    
+
     // Фильтр по поисковому запросу
     if (query) {
       const title = (chat.title || '').toLowerCase()
       return title.includes(query)
     }
-    
+
     return true
   })
 })
 
 // Счётчик скрытых каналов (где нет прав на публикацию)
 const excludedChannelsCount = computed(() => {
-  return (props.chats || []).filter(chat => 
-    chat.type === 'channel' && chat.myRole !== 'owner' && chat.myRole !== 'admin'
+  return (props.chats || []).filter(
+    (chat) => chat.type === 'channel' && chat.myRole !== 'owner' && chat.myRole !== 'admin'
   ).length
 })
 
 function getChatInitials(title) {
   if (!title) return '?'
-  return title.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase()
+  return title
+    .split(' ')
+    .map((w) => w[0])
+    .join('')
+    .substring(0, 2)
+    .toUpperCase()
 }
 
 function getChatAvatarStyle(chat) {
   // Если у чата есть аватарка
   if (chat.avatarHash) {
     return {
-      background: `url(https://fs.chatium.ru/thumbnail/${chat.avatarHash}/s/200x) center/cover no-repeat`,
+      background: `url(https://fs.chatium.ru/thumbnail/${chat.avatarHash}/s/200x) center/cover no-repeat`
     }
   }
-  
+
   // Для личного чата показываем аватарку собеседника
   if (chat.type === 'direct' && chat.otherUser?.avatar) {
     return {
-      background: `url(${chat.otherUser.avatar}) center/cover no-repeat`,
+      background: `url(${chat.otherUser.avatar}) center/cover no-repeat`
     }
   }
-  
+
   // Градиент по умолчанию
   const colors = [
     ['#667eea', '#764ba2'],
     ['#f093fb', '#f5576c'],
     ['#4facfe', '#00f2fe'],
     ['#43e97b', '#38f9d7'],
-    ['#fa709a', '#fee140'],
+    ['#fa709a', '#fee140']
   ]
   const index = (chat.id?.charCodeAt(0) || 0) % colors.length
   const [from, to] = colors[index]
   return {
-    background: `linear-gradient(135deg, ${from} 0%, ${to} 100%)`,
+    background: `linear-gradient(135deg, ${from} 0%, ${to} 100%)`
   }
 }
 
 function forward() {
   if (!selectedChatId.value) return
-  
+
   // Формируем данные об источнике
-  const forwardedFrom = props.sourceChat ? {
-    feedId: props.sourceChat.feedId || props.sourceChat.id,
-    title: props.sourceChat.displayTitle || props.sourceChat.title,
-    type: props.sourceChat.type,
-    avatarHash: props.sourceChat.avatarHash,
-    isPublic: props.sourceChat.isPublic,
-  } : null
-  
+  const forwardedFrom = props.sourceChat
+    ? {
+        feedId: props.sourceChat.feedId || props.sourceChat.id,
+        title: props.sourceChat.displayTitle || props.sourceChat.title,
+        type: props.sourceChat.type,
+        avatarHash: props.sourceChat.avatarHash,
+        isPublic: props.sourceChat.isPublic
+      }
+    : null
+
   if (isMultiple.value) {
     // Пересылка нескольких сообщений - добавляем автора к каждому сообщению
-    const messagesWithAuthor = props.messages.map(msg => ({
+    const messagesWithAuthor = props.messages.map((msg) => ({
       ...msg,
-      forwardedFrom: forwardedFrom ? {
-        ...forwardedFrom,
-        authorName: msg.author?.displayName || msg.author?.firstName || 'Неизвестно',
-        authorId: msg.author?.id || msg.createdBy,
-      } : null
+      forwardedFrom: forwardedFrom
+        ? {
+            ...forwardedFrom,
+            authorName: msg.author?.displayName || msg.author?.firstName || 'Неизвестно',
+            authorId: msg.author?.id || msg.createdBy
+          }
+        : null
     }))
     emit('forward', {
       chatId: selectedChatId.value,
       messages: messagesWithAuthor,
-      forwardedFrom,
+      forwardedFrom
     })
   } else {
     // Пересылка одиночного сообщения
-    const forwardedFromWithAuthor = forwardedFrom ? {
-      ...forwardedFrom,
-      authorName: props.message.author?.displayName || props.message.author?.firstName || 'Неизвестно',
-      authorId: props.message.author?.id || props.message.createdBy,
-    } : null
+    const forwardedFromWithAuthor = forwardedFrom
+      ? {
+          ...forwardedFrom,
+          authorName:
+            props.message.author?.displayName || props.message.author?.firstName || 'Неизвестно',
+          authorId: props.message.author?.id || props.message.createdBy
+        }
+      : null
     emit('forward', {
       chatId: selectedChatId.value,
       text: props.message.text,
       files: props.message.files,
-      forwardedFrom: forwardedFromWithAuthor,
+      forwardedFrom: forwardedFromWithAuthor
     })
   }
 }
@@ -384,7 +398,9 @@ function forward() {
   font-size: 14px;
   background: var(--bg-primary, #fff);
   color: var(--text-primary, #111b21);
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
 }
 
 .search-input:focus {
@@ -567,7 +583,9 @@ function forward() {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  transition: background 0.2s, opacity 0.2s;
+  transition:
+    background 0.2s,
+    opacity 0.2s;
 }
 
 .btn-primary {

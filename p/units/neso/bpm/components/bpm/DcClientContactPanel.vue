@@ -9,7 +9,9 @@ const props = defineProps<{
 <template>
   <aside class="dc-client-contact-panel">
     <header class="dc-client-contact-panel__header">
-      <div class="dc-client-contact-panel__avatar">{{ props.profile.name.slice(0, 2).toUpperCase() }}</div>
+      <div class="dc-client-contact-panel__avatar">
+        {{ props.profile.name.slice(0, 2).toUpperCase() }}
+      </div>
       <div>
         <h3>{{ props.profile.name }}</h3>
         <p>{{ props.profile.externalId }}</p>
@@ -129,7 +131,11 @@ const props = defineProps<{
 }
 
 .dc-client-contact-panel__actions button.primary {
-  background: linear-gradient(145deg, color-mix(in srgb, var(--status-success) 72%, #2ac089), color-mix(in srgb, var(--status-success) 84%, #169968));
+  background: linear-gradient(
+    145deg,
+    color-mix(in srgb, var(--status-success) 72%, #2ac089),
+    color-mix(in srgb, var(--status-success) 84%, #169968)
+  );
   color: #ffffff;
   border-color: color-mix(in srgb, var(--status-success) 56%, var(--border-soft));
 }

@@ -46,54 +46,78 @@ export function runQuizUnitChecks(): QuizUnitTestResult[] {
     return r.errors.length > 0 && r.errors.some((e) => e.questionId === 'platform')
   })
 
-  tryPush(results, 'quiz_validate_optional_skipped', 'validateAnswers optional поле пропускается', () => {
-    const r = validateAnswers({
-      email: TEST_EMAIL,
-      answers: {
-        platform: 'GetCourse',
-        goal: ['Оплаты'],
-        experience: 5
-      }
-    })
-    return (
-      r.errors.length === 0 &&
-      r.normalized.length === 3 &&
-      !r.normalized.some((n) => n.questionId === 'use_case')
-    )
-  })
+  tryPush(
+    results,
+    'quiz_validate_optional_skipped',
+    'validateAnswers optional поле пропускается',
+    () => {
+      const r = validateAnswers({
+        email: TEST_EMAIL,
+        answers: {
+          platform: 'GetCourse',
+          goal: ['Оплаты'],
+          experience: 5
+        }
+      })
+      return (
+        r.errors.length === 0 &&
+        r.normalized.length === 3 &&
+        !r.normalized.some((n) => n.questionId === 'use_case')
+      )
+    }
+  )
 
-  tryPush(results, 'quiz_validate_single_choice_invalid', 'validateAnswers недопустимый single-choice', () => {
-    const r = validateAnswers({
-      email: TEST_EMAIL,
-      answers: {
-        platform: 'НетТакого',
-        goal: ['Оплаты'],
-        experience: 5
-      }
-    })
-    return r.errors.some((e) => e.questionId === 'platform')
-  })
+  tryPush(
+    results,
+    'quiz_validate_single_choice_invalid',
+    'validateAnswers недопустимый single-choice',
+    () => {
+      const r = validateAnswers({
+        email: TEST_EMAIL,
+        answers: {
+          platform: 'НетТакого',
+          goal: ['Оплаты'],
+          experience: 5
+        }
+      })
+      return r.errors.some((e) => e.questionId === 'platform')
+    }
+  )
 
-  tryPush(results, 'quiz_validate_multiple_choice_filtered', 'validateAnswers multiple-choice фильтрует мусор', () => {
-    const r = validateAnswers({
-      email: TEST_EMAIL,
-      answers: {
-        platform: 'GetCourse',
-        goal: ['Оплаты', 'Несуществующее'],
-        experience: 5
-      }
-    })
-    const goal = r.normalized.find((n) => n.questionId === 'goal')
-    return r.errors.length === 0 && Array.isArray(goal?.value) && (goal!.value as string[]).length === 1
-  })
+  tryPush(
+    results,
+    'quiz_validate_multiple_choice_filtered',
+    'validateAnswers multiple-choice фильтрует мусор',
+    () => {
+      const r = validateAnswers({
+        email: TEST_EMAIL,
+        answers: {
+          platform: 'GetCourse',
+          goal: ['Оплаты', 'Несуществующее'],
+          experience: 5
+        }
+      })
+      const goal = r.normalized.find((n) => n.questionId === 'goal')
+      return (
+        r.errors.length === 0 &&
+        Array.isArray(goal?.value) &&
+        (goal!.value as string[]).length === 1
+      )
+    }
+  )
 
-  tryPush(results, 'quiz_validate_scale_out_of_range', 'validateAnswers scale вне диапазона', () => {
-    const r = validateAnswers({
-      email: TEST_EMAIL,
-      answers: { platform: 'GetCourse', goal: ['Оплаты'], experience: 99 }
-    })
-    return r.errors.some((e) => e.questionId === 'experience')
-  })
+  tryPush(
+    results,
+    'quiz_validate_scale_out_of_range',
+    'validateAnswers scale вне диапазона',
+    () => {
+      const r = validateAnswers({
+        email: TEST_EMAIL,
+        answers: { platform: 'GetCourse', goal: ['Оплаты'], experience: 99 }
+      })
+      return r.errors.some((e) => e.questionId === 'experience')
+    }
+  )
 
   tryPush(results, 'quiz_validate_text_too_long', 'validateAnswers text > maxLength', () => {
     const r = validateAnswers({

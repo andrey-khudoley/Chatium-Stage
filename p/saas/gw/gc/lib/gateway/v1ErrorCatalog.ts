@@ -14,17 +14,16 @@ export const V1_ERROR_MESSAGES: Record<string, string> = {
     'Заголовок X-Gc-School-Host не является допустимым именем хоста школы для подстановки в URL GetCourse.',
   INVOKE_CONTENT_TYPE_UNSUPPORTED:
     'Для POST ожидается заголовок Content-Type: application/json с кодировкой UTF-8.',
-  INVOKE_BODY_INVALID_JSON: 'Тело запроса не является корректным JSON-объектом аргументов операции.',
+  INVOKE_BODY_INVALID_JSON:
+    'Тело запроса не является корректным JSON-объектом аргументов операции.',
   INVOKE_BODY_TOO_LARGE:
     'Размер тела запроса превышает допустимый лимит gateway. Сократите объём аргументов или используйте отдельный сценарий для крупных импортов.',
   INVOKE_HTTP_METHOD_NOT_ALLOWED:
     'HTTP-метод запроса не соответствует данной операции. Сверьтесь с каталогом GET /v1/operations и с документацией SDK.',
   INVOKE_OP_UNKNOWN:
     'Операция не найдена или не опубликована по указанному пути. Сверьтесь с каталогом GET /v1/operations.',
-  INVOKE_OP_DISABLED:
-    'Этот метод временно отключён и в данный момент не поддерживается gateway.',
-  INVOKE_OP_UNSUPPORTED_BY_GC:
-    'Этот метод не поддерживается GetCourse в конфигурации gateway.',
+  INVOKE_OP_DISABLED: 'Этот метод временно отключён и в данный момент не поддерживается gateway.',
+  INVOKE_OP_UNSUPPORTED_BY_GC: 'Этот метод не поддерживается GetCourse в конфигурации gateway.',
   INVOKE_ARGS_SCHEMA_VIOLATION:
     'Аргументы операции не соответствуют схеме в каталоге (query для GET или тело для POST).',
   INVOKE_GC_UPSTREAM_ERROR:

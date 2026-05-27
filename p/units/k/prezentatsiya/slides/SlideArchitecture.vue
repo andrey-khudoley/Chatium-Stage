@@ -14,7 +14,7 @@
           <article
             class="box"
             :class="{ accent: box.accent }"
-            :style="{ animationDelay: (0.1 + i * 0.1) + 's' }"
+            :style="{ animationDelay: 0.1 + i * 0.1 + 's' }"
           >
             <span v-if="box.accent" class="star"><i class="fas fa-star"></i></span>
             <div class="b-title">{{ box.title }}</div>
@@ -29,8 +29,8 @@
       </div>
 
       <p class="note">
-        Ключ разработчика хранится здесь. Ключ школы — в SDK на стороне клиента.
-        В коде сценариев — только имя школы.
+        Ключ разработчика хранится здесь. Ключ школы — в SDK на стороне клиента. В коде сценариев —
+        только имя школы.
       </p>
     </div>
   </div>
@@ -43,14 +43,10 @@ const boxes = [
   { title: 'Chatium', caption: 'ваше приложение' },
   { title: 'Тонкий SDK', caption: 'стабильный вызов: <code>op + args</code>' },
   { title: 'Gateway', caption: 'здесь живёт ключ разработчика', accent: true },
-  { title: 'GetCourse', caption: 'старый API + новый API' },
+  { title: 'GetCourse', caption: 'старый API + новый API' }
 ]
 
-const connectors = [
-  'приложение зовёт SDK',
-  '<code>op + args</code>',
-  'HTTPS к API',
-]
+const connectors = ['приложение зовёт SDK', '<code>op + args</code>', 'HTTPS к API']
 </script>
 
 <style scoped>
@@ -93,7 +89,14 @@ const connectors = [
   font-size: clamp(28px, 3.6vw, 56px);
   color: var(--text-primary);
 }
-.strip { display: block; width: 80px; height: 4px; background: var(--accent-cyan); border-radius: 2px; margin: 16px 0; }
+.strip {
+  display: block;
+  width: 80px;
+  height: 4px;
+  background: var(--accent-cyan);
+  border-radius: 2px;
+  margin: 16px 0;
+}
 .subtitle {
   font-family: var(--font-body-new);
   font-size: clamp(15px, 1.5vw, 28px);
@@ -132,7 +135,8 @@ const connectors = [
 }
 .star {
   position: absolute;
-  top: 12px; right: 16px;
+  top: 12px;
+  right: 16px;
   color: var(--accent-cyan);
   font-size: 18px;
 }
@@ -142,7 +146,9 @@ const connectors = [
   font-size: clamp(18px, 1.9vw, 30px);
   color: var(--text-primary);
 }
-.box.accent .b-title { color: var(--accent-cyan); }
+.box.accent .b-title {
+  color: var(--accent-cyan);
+}
 .b-caption {
   font-family: var(--font-body-new);
   font-size: clamp(13px, 1.2vw, 22px);
@@ -198,9 +204,20 @@ const connectors = [
 }
 
 @media (max-width: 1024px) {
-  .slide { padding: 32px 16px; }
-  .flow { flex-direction: column; align-items: stretch; }
-  .conn { flex-direction: row; min-width: 0; }
-  .box { max-width: 100%; min-height: auto; }
+  .slide {
+    padding: 32px 16px;
+  }
+  .flow {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .conn {
+    flex-direction: row;
+    min-width: 0;
+  }
+  .box {
+    max-width: 100%;
+    min-height: auto;
+  }
 }
 </style>

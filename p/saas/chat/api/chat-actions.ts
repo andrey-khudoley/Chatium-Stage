@@ -7,7 +7,7 @@ import { createSystemMessage } from './system-messages'
 // Выход из группового чата
 export const apiChatLeaveRoute = app
   .body((s) => ({
-    feedId: s.string(),
+    feedId: s.string()
   }))
   .post('/leave', async (ctx, req) => {
     requireRealUser(ctx)
@@ -26,7 +26,7 @@ export const apiChatLeaveRoute = app
 
     // Проверяем, является ли пользователь участником
     const participants = await findFeedParticipants(ctx, feedId)
-    const myParticipant = participants.find(p => p.userId === ctx.user.id)
+    const myParticipant = participants.find((p) => p.userId === ctx.user.id)
 
     if (!myParticipant) {
       throw new Error('Вы не являетесь участником этого чата')
@@ -34,7 +34,9 @@ export const apiChatLeaveRoute = app
 
     // Владелец не может просто выйти — только удалить чат или передать владение
     if (myParticipant.role === 'owner') {
-      throw new Error('Владелец не может выйти из чата. Удалите чат или передайте права другому участнику.')
+      throw new Error(
+        'Владелец не может выйти из чата. Удалите чат или передайте права другому участнику.'
+      )
     }
 
     // Удаляем участника из чата (нужен ID участника, а не пользователя)
@@ -43,7 +45,7 @@ export const apiChatLeaveRoute = app
     // Создаем системное сообщение и отправляем событие
     try {
       await createSystemMessage(ctx, feedId, 'user_left', {
-        userName: ctx.user.displayName,
+        userName: ctx.user.displayName
       })
     } catch (e) {
       // Если не удалось создать системное сообщение, просто отправляем событие
@@ -61,7 +63,7 @@ export const apiChatLeaveRoute = app
           event: 'participant-left',
           feedId,
           userId: ctx.user.id,
-          userName: ctx.user.displayName,
+          userName: ctx.user.displayName
         })
         // console.log(`[leave] Successfully sent to ${targetSocketId}`)
       } catch (sendErr) {
@@ -71,14 +73,14 @@ export const apiChatLeaveRoute = app
 
     return {
       success: true,
-      message: chat.type === 'channel' ? 'Вы отписались от канала' : 'Вы вышли из чата',
+      message: chat.type === 'channel' ? 'Вы отписались от канала' : 'Вы вышли из чата'
     }
   })
 
 // Отписка от канала (алиас для leave, но специфично для каналов)
 export const apiChannelUnsubscribeRoute = app
   .body((s) => ({
-    feedId: s.string(),
+    feedId: s.string()
   }))
   .post('/unsubscribe', async (ctx, req) => {
     requireRealUser(ctx)
@@ -96,7 +98,7 @@ export const apiChannelUnsubscribeRoute = app
 
     // Проверяем, является ли пользователь участником
     const participants = await findFeedParticipants(ctx, feedId)
-    const myParticipant = participants.find(p => p.userId === ctx.user.id)
+    const myParticipant = participants.find((p) => p.userId === ctx.user.id)
 
     if (!myParticipant) {
       throw new Error('Вы не подписаны на этот канал')
@@ -104,7 +106,9 @@ export const apiChannelUnsubscribeRoute = app
 
     // Владелец не может просто отписаться
     if (myParticipant.role === 'owner') {
-      throw new Error('Владелец не может отписаться от канала. Удалите канал или передайте права другому участнику.')
+      throw new Error(
+        'Владелец не может отписаться от канала. Удалите канал или передайте права другому участнику.'
+      )
     }
 
     // Удаляем участника из канала (нужен ID участника, а не пользователя)
@@ -113,7 +117,7 @@ export const apiChannelUnsubscribeRoute = app
     // Создаем системное сообщение и отправляем событие
     try {
       await createSystemMessage(ctx, feedId, 'user_left', {
-        userName: ctx.user.displayName,
+        userName: ctx.user.displayName
       })
     } catch (e) {
       // Если не удалось создать системное сообщение, просто отправляем событие
@@ -131,7 +135,7 @@ export const apiChannelUnsubscribeRoute = app
           event: 'participant-left',
           feedId,
           userId: ctx.user.id,
-          userName: ctx.user.displayName,
+          userName: ctx.user.displayName
         })
         // console.log(`[unsubscribe] Successfully sent to ${targetSocketId}`)
       } catch (sendErr) {
@@ -141,6 +145,6 @@ export const apiChannelUnsubscribeRoute = app
 
     return {
       success: true,
-      message: 'Вы отписались от канала',
+      message: 'Вы отписались от канала'
     }
   })

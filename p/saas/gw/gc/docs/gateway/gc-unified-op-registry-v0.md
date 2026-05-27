@@ -1,5 +1,5 @@
 ---
-title: "GetCourse: единый реестр op (v0)"
+title: 'GetCourse: единый реестр op (v0)'
 project_hash: 3fa7c2
 type: specification
 status: draft
@@ -20,13 +20,13 @@ tags:
 
 ## 1. Источники и их роль
 
-| Источник | Где | Роль в спецификации |
-|----------|-----|---------------------|
-| Локальный OpenAPI нового API | [new_api_schema.json](./new_api_schema.json) | Эндпоинты `pl/api/v1`, схемы тел, описание Bearer-токена. |
-| Локальный OpenAPI Legacy | [legacy_api_schema.json](./legacy_api_schema.json) | Пути импорта/экспорта, форма `key` / `action` / `params`. |
-| Маппинг `op` → HTTP | [gc-op-http-mapping.json](./gc-op-http-mapping.json) | Метод, `pathTemplate`, контур `new` / `legacy`, связь с operationId в OpenAPI. |
-| Официальный новый API (ReDoc) | https://getcourse.ru/pl/postback/redoc | Человекочитаемая сверка и обновления схемы для выгрузки в `new_api_schema.json`. |
-| Официальный Legacy (help) | https://getcourse.ru/help/api | Человекочитаемые поля импорта/экспорта и лимиты. |
+| Источник                      | Где                                                  | Роль в спецификации                                                              |
+| ----------------------------- | ---------------------------------------------------- | -------------------------------------------------------------------------------- |
+| Локальный OpenAPI нового API  | [new_api_schema.json](./new_api_schema.json)         | Эндпоинты `pl/api/v1`, схемы тел, описание Bearer-токена.                        |
+| Локальный OpenAPI Legacy      | [legacy_api_schema.json](./legacy_api_schema.json)   | Пути импорта/экспорта, форма `key` / `action` / `params`.                        |
+| Маппинг `op` → HTTP           | [gc-op-http-mapping.json](./gc-op-http-mapping.json) | Метод, `pathTemplate`, контур `new` / `legacy`, связь с operationId в OpenAPI.   |
+| Официальный новый API (ReDoc) | https://getcourse.ru/pl/postback/redoc               | Человекочитаемая сверка и обновления схемы для выгрузки в `new_api_schema.json`. |
+| Официальный Legacy (help)     | https://getcourse.ru/help/api                        | Человекочитаемые поля импорта/экспорта и лимиты.                                 |
 
 При расхождении между локальным OpenAPI и ответом продакшена GC при реализации gateway приоритет у **фактического поведения GC**; затем обновляют JSON в `docs/gateway/` (этот каталог) и при необходимости таблицы в этом файле. **Имена `op`** меняются только явным решением (новое имя или версия).
 
@@ -43,9 +43,9 @@ tags:
 
 ## 3. Метка контура по операциям
 
-| Метка | Значение |
-|-------|----------|
-| `new` | Операции Tech API под `pl/api/v1`. Реализация — по локальному [new_api_schema.json](./new_api_schema.json) и [gc-op-http-mapping.json](./gc-op-http-mapping.json). |
+| Метка    | Значение                                                                                                                                                                                                       |
+| -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `new`    | Операции Tech API под `pl/api/v1`. Реализация — по локальному [new_api_schema.json](./new_api_schema.json) и [gc-op-http-mapping.json](./gc-op-http-mapping.json).                                             |
 | `legacy` | Импорт/экспорт и связанные GET под `pl/api`. Реализация — по [legacy_api_schema.json](./legacy_api_schema.json), [gc-op-http-mapping.json](./gc-op-http-mapping.json) и [help](https://getcourse.ru/help/api). |
 
 ---
@@ -56,114 +56,114 @@ tags:
 
 ### 4.1 Вебхуки
 
-| `op` | Контур | Кратко (RU) |
-|------|--------|-------------|
-| `setUri` | new | Установить URI для приёма событий (вебхуки). |
+| `op`     | Контур | Кратко (RU)                                  |
+| -------- | ------ | -------------------------------------------- |
+| `setUri` | new    | Установить URI для приёма событий (вебхуки). |
 
 ### 4.2 Общее
 
-| `op` | Контур | Кратко (RU) |
-|------|--------|-------------|
-| `getAllGroups` | new | Все группы пользователей. |
-| `getAllPersonalManagers` | new | Все персональные менеджеры. |
-| `getTrainings` | new | Все тренинги. |
+| `op`                     | Контур | Кратко (RU)                 |
+| ------------------------ | ------ | --------------------------- |
+| `getAllGroups`           | new    | Все группы пользователей.   |
+| `getAllPersonalManagers` | new    | Все персональные менеджеры. |
+| `getTrainings`           | new    | Все тренинги.               |
 
 ### 4.3 Заказы (deals)
 
-| `op` | Контур | Кратко (RU) |
-|------|--------|-------------|
-| `getDealFields` | new | Поля заказа по ID. |
-| `getDealCustomFields` | new | Кастомные поля заказа. |
-| `getDealComments` | new | Комментарии к заказу. |
-| `getDealCalls` | new | Звонки по заказу. |
-| `getDealCancelReasons` | new | Причины отмены. |
-| `getDealsTags` | new | Заказы с тегами (фильтры в args). |
-| `addCommentToDeal` | new | Комментарий к заказу. |
-| `addDealPositions` | new | Добавить позиции в заказ. |
-| `removeDealPositions` | new | Удалить позиции из заказа. |
-| `updateDealFields` | new | Обновить поля заказа. |
+| `op`                   | Контур | Кратко (RU)                       |
+| ---------------------- | ------ | --------------------------------- |
+| `getDealFields`        | new    | Поля заказа по ID.                |
+| `getDealCustomFields`  | new    | Кастомные поля заказа.            |
+| `getDealComments`      | new    | Комментарии к заказу.             |
+| `getDealCalls`         | new    | Звонки по заказу.                 |
+| `getDealCancelReasons` | new    | Причины отмены.                   |
+| `getDealsTags`         | new    | Заказы с тегами (фильтры в args). |
+| `addCommentToDeal`     | new    | Комментарий к заказу.             |
+| `addDealPositions`     | new    | Добавить позиции в заказ.         |
+| `removeDealPositions`  | new    | Удалить позиции из заказа.        |
+| `updateDealFields`     | new    | Обновить поля заказа.             |
 
 ### 4.4 Диалоги
 
-| `op` | Контур | Кратко (RU) |
-|------|--------|-------------|
-| `getDialogHistory` | new | История диалога. |
-| `addCommentToDialog` | new | Комментарий в диалог. |
-| `changeDepartment` | new | Сменить отдел диалога. |
-| `closeDialog` | new | Закрыть диалог. |
+| `op`                 | Контур | Кратко (RU)            |
+| -------------------- | ------ | ---------------------- |
+| `getDialogHistory`   | new    | История диалога.       |
+| `addCommentToDialog` | new    | Комментарий в диалог.  |
+| `changeDepartment`   | new    | Сменить отдел диалога. |
+| `closeDialog`        | new    | Закрыть диалог.        |
 
 ### 4.5 Уроки
 
-| `op` | Контур | Кратко (RU) |
-|------|--------|-------------|
-| `getLessonAnswers` | new | Ответы на урок (опционально lessonId). |
-| `addCommentToLessonAnswer` | new | Комментарий к ответу на урок. |
-| `changeStatusAnswers` | new | Изменить статус ответа. |
+| `op`                       | Контур | Кратко (RU)                            |
+| -------------------------- | ------ | -------------------------------------- |
+| `getLessonAnswers`         | new    | Ответы на урок (опционально lessonId). |
+| `addCommentToLessonAnswer` | new    | Комментарий к ответу на урок.          |
+| `changeStatusAnswers`      | new    | Изменить статус ответа.                |
 
 ### 4.6 Заметки
 
-| `op` | Контур | Кратко (RU) |
-|------|--------|-------------|
-| `addNote` | new | Заметка к диалогу. |
+| `op`      | Контур | Кратко (RU)        |
+| --------- | ------ | ------------------ |
+| `addNote` | new    | Заметка к диалогу. |
 
 ### 4.7 Предложения (offers)
 
-| `op` | Контур | Кратко (RU) |
-|------|--------|-------------|
-| `getOffers` | new | Все предложения. |
-| `getOfferById` | new | Предложение по ID. |
-| `getOffersTags` | new | Предложения с тегами. |
+| `op`            | Контур | Кратко (RU)           |
+| --------------- | ------ | --------------------- |
+| `getOffers`     | new    | Все предложения.      |
+| `getOfferById`  | new    | Предложение по ID.    |
+| `getOffersTags` | new    | Предложения с тегами. |
 
 ### 4.8 Пользователи
 
-| `op` | Контур | Кратко (RU) |
-|------|--------|-------------|
-| `getUserFields` | new | Поля пользователя (userId / email и т.д.). |
-| `getUserCustomFields` | new | Кастомные поля пользователя. |
-| `getUserDeals` | new | Заказы пользователя. |
-| `getUserDiplomas` | new | Дипломы. |
-| `getUserGroups` | new | Группы пользователя. |
-| `getUserBalance` | new | Баланс. |
-| `getUserPurchases` | new | Покупки. |
-| `getUserTrainings` | new | Тренинги пользователя. |
-| `getUserSchedule` | new | Расписание. |
-| `getUserGoalRecords` | new | Записи целей. |
-| `getUserAnswers` | new | Ответы. |
-| `getUserLessonAnswers` | new | Ответы на уроки. |
-| `getUserByTelegramChatId` | new | Поиск пользователя по Telegram chat id. |
-| `addUserBalance` | new | Начислить баланс. |
-| `addUserGroups` | new | Добавить в группы. |
-| `removeUserGroups` | new | Удалить из групп. |
-| `setUserGroups` | new | Установить состав групп. |
-| `setPersonalManager` | new | Назначить персонального менеджера. |
-| `updateUserFields` | new | Обновить поля пользователя. |
-| `updateUserCustomFields` | new | Обновить кастомные поля. |
-| `createDiploma` | new | Создать диплом. |
+| `op`                      | Контур | Кратко (RU)                                |
+| ------------------------- | ------ | ------------------------------------------ |
+| `getUserFields`           | new    | Поля пользователя (userId / email и т.д.). |
+| `getUserCustomFields`     | new    | Кастомные поля пользователя.               |
+| `getUserDeals`            | new    | Заказы пользователя.                       |
+| `getUserDiplomas`         | new    | Дипломы.                                   |
+| `getUserGroups`           | new    | Группы пользователя.                       |
+| `getUserBalance`          | new    | Баланс.                                    |
+| `getUserPurchases`        | new    | Покупки.                                   |
+| `getUserTrainings`        | new    | Тренинги пользователя.                     |
+| `getUserSchedule`         | new    | Расписание.                                |
+| `getUserGoalRecords`      | new    | Записи целей.                              |
+| `getUserAnswers`          | new    | Ответы.                                    |
+| `getUserLessonAnswers`    | new    | Ответы на уроки.                           |
+| `getUserByTelegramChatId` | new    | Поиск пользователя по Telegram chat id.    |
+| `addUserBalance`          | new    | Начислить баланс.                          |
+| `addUserGroups`           | new    | Добавить в группы.                         |
+| `removeUserGroups`        | new    | Удалить из групп.                          |
+| `setUserGroups`           | new    | Установить состав групп.                   |
+| `setPersonalManager`      | new    | Назначить персонального менеджера.         |
+| `updateUserFields`        | new    | Обновить поля пользователя.                |
+| `updateUserCustomFields`  | new    | Обновить кастомные поля.                   |
+| `createDiploma`           | new    | Создать диплом.                            |
 
 ### 4.9 Вебинары
 
-| `op` | Контур | Кратко (RU) |
-|------|--------|-------------|
-| `getAllWebinars` | new | Все вебинары. |
-| `getWebinarsByIds` | new | Вебинары по списку ID. |
-| `addCommentToWebinar` | new | Комментарий в чат вебинара. |
-| `moderateWebinarComment` | new | Модерация сообщения в чате. |
-| `moderateWebinarUser` | new | Модерация пользователя вебинара. |
+| `op`                     | Контур | Кратко (RU)                      |
+| ------------------------ | ------ | -------------------------------- |
+| `getAllWebinars`         | new    | Все вебинары.                    |
+| `getWebinarsByIds`       | new    | Вебинары по списку ID.           |
+| `addCommentToWebinar`    | new    | Комментарий в чат вебинара.      |
+| `moderateWebinarComment` | new    | Модерация сообщения в чате.      |
+| `moderateWebinarUser`    | new    | Модерация пользователя вебинара. |
 
 ### 4.10 Legacy (импорт / экспорт)
 
 Использовать, когда задачи **нет** в новом контуре (создание пользователей/сделок через импорт, массовый экспорт). Лимиты Export API — см. [help](https://getcourse.ru/help/api) (часто оговаривается **100 запросов за 2 часа**).
 
-| `op` | Контур | Кратко (RU) |
-|------|--------|-------------|
-| `addUser` | legacy | Создать/обновить пользователя (импорт). |
-| `createDeal` | legacy | Создать сделку (импорт). |
-| `exportUsers` | legacy | Экспорт пользователей (асинхронно; опрос результата по идентификатору экспорта). |
-| `exportGroupUsers` | legacy | Экспорт пользователей группы. |
-| `exportDeals` | legacy | Экспорт сделок. |
-| `exportPayments` | legacy | Экспорт платежей. |
-| `getCustomFields` | legacy | Доп. поля аккаунта (справочник; см. Legacy OpenAPI). |
-| `getExportResult` | legacy | Результат экспорта по ID (ручной режим). |
+| `op`               | Контур | Кратко (RU)                                                                      |
+| ------------------ | ------ | -------------------------------------------------------------------------------- |
+| `addUser`          | legacy | Создать/обновить пользователя (импорт).                                          |
+| `createDeal`       | legacy | Создать сделку (импорт).                                                         |
+| `exportUsers`      | legacy | Экспорт пользователей (асинхронно; опрос результата по идентификатору экспорта). |
+| `exportGroupUsers` | legacy | Экспорт пользователей группы.                                                    |
+| `exportDeals`      | legacy | Экспорт сделок.                                                                  |
+| `exportPayments`   | legacy | Экспорт платежей.                                                                |
+| `getCustomFields`  | legacy | Доп. поля аккаунта (справочник; см. Legacy OpenAPI).                             |
+| `getExportResult`  | legacy | Результат экспорта по ID (ручной режим).                                         |
 
 ---
 

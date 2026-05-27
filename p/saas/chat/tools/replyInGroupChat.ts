@@ -6,7 +6,7 @@ import ChatAgents from '../tables/chat-agents.table'
 
 /**
  * Тул для агента: отправка текстового сообщения в групповой чат
- * 
+ *
  * ВАЖНО: Используй ТОЛЬКО этот инструмент ИЛИ sendImageToGroupChat, но НЕ ОБА сразу!
  * Если нужно отправить текст - используй replyInGroupChat.
  * Если нужно отправить изображение - используй sendImageToGroupChat.
@@ -46,13 +46,13 @@ export const replyInGroupChat = app
 - Это единственный способ отправить текстовое сообщение в чат
 - ИСПОЛЬЗУЙ ТОЛЬКО ЭТОТ ИНСТРУМЕНТ ИЛИ sendImageToGroupChat, но не оба!`
   })
-  .body(s =>
+  .body((s) =>
     s.object({
       context: s.object({}),
       input: s.object({
         chatId: s.string().describe('ID чата (feedId, из контекста)'),
         text: s.string().describe('Текст сообщения'),
-        replyToMessageId: s.string().optional().describe('ID сообщения для ответа'),
+        replyToMessageId: s.string().optional().describe('ID сообщения для ответа')
       })
     })
   )
@@ -68,10 +68,10 @@ export const replyInGroupChat = app
 
     ctx.account.log('[replyInGroupChat] Tool called', {
       level: 'info',
-      json: { 
-        chatId, 
-        textLength: text?.length, 
-        replyToMessageId,
+      json: {
+        chatId,
+        textLength: text?.length,
+        replyToMessageId
       }
     })
 
@@ -93,16 +93,16 @@ export const replyInGroupChat = app
 
       // Находим конфигурацию агента для этого чата
       const chatTableId = typeof chat.id === 'object' ? chat.id.id : chat.id
-      
+
       const agentConfig = await ChatAgents.findOneBy(ctx, {
         chat: chatTableId,
         isActive: true
       })
-      
+
       ctx.account.log('[replyInGroupChat] Agent config lookup', {
         level: 'info',
-        json: { 
-          chatTableId, 
+        json: {
+          chatTableId,
           found: !!agentConfig,
           agentConfigId: agentConfig?.id,
           botUserId: agentConfig?.botUserId
@@ -124,9 +124,12 @@ export const replyInGroupChat = app
       if (chat.type === 'channel') {
         const participants = await findFeedParticipants(ctx, chatId)
         const botUserId = agentConfig.botUserId
-        const agentParticipant = participants.find(p => p.userId === botUserId)
-        
-        if (!agentParticipant || (agentParticipant.role !== 'owner' && agentParticipant.role !== 'admin')) {
+        const agentParticipant = participants.find((p) => p.userId === botUserId)
+
+        if (
+          !agentParticipant ||
+          (agentParticipant.role !== 'owner' && agentParticipant.role !== 'admin')
+        ) {
           ctx.account.log('[replyInGroupChat] Agent has no permission in channel', {
             level: 'error',
             json: { botUserId, role: agentParticipant?.role }
@@ -140,17 +143,17 @@ export const replyInGroupChat = app
 
       // Отправляем сообщение от имени бот-пользователя агента
       const botUserId = agentConfig.botUserId
-      
+
       ctx.account.log('[replyInGroupChat] Creating message', {
         level: 'info',
-        json: { 
-          chatId, 
-          botUserId, 
+        json: {
+          chatId,
+          botUserId,
           textLength: text?.length,
-          replyToMessageId 
+          replyToMessageId
         }
       })
-      
+
       const message = await createFeedMessage(ctx, chatId, { id: botUserId } as any, {
         text: text,
         type: 'Message',
@@ -161,7 +164,7 @@ export const replyInGroupChat = app
           agentId: agentConfig.agentId
         }
       })
-      
+
       ctx.account.log('[replyInGroupChat] Message created', {
         level: 'info',
         json: { messageId: message.id, chatId }
@@ -169,7 +172,7 @@ export const replyInGroupChat = app
 
       // Получаем данные бот-пользователя для обогащения сообщения
       const botUser = await findUserById(ctx, botUserId)
-      
+
       // Обогащаем сообщение данными автора
       const enrichedMessage = {
         ...message,
@@ -177,14 +180,16 @@ export const replyInGroupChat = app
         createdAt: message.createdAt || message.created_at,
         updatedAt: message.updatedAt || message.updated_at,
         replyTo: message.replyTo || message.reply_to,
-        author: botUser ? {
-          id: botUser.id,
-          displayName: botUser.displayName,
-          firstName: botUser.firstName,
-          lastName: botUser.lastName,
-          username: botUser.username,
-          avatar: botUser.imageUrl,
-        } : null,
+        author: botUser
+          ? {
+              id: botUser.id,
+              displayName: botUser.displayName,
+              firstName: botUser.firstName,
+              lastName: botUser.lastName,
+              username: botUser.username,
+              avatar: botUser.imageUrl
+            }
+          : null
       }
 
       // Отправляем WebSocket событие всем участникам чата
@@ -199,7 +204,6 @@ export const replyInGroupChat = app
         ok: true,
         result: `Сообщение успешно отправлено. ID сообщения: ${message.id}`
       }
-
     } catch (error) {
       ctx.account.log('[replyInGroupChat] Error', {
         level: 'error',
@@ -217,20 +221,20 @@ export const replyInGroupChat = app
 async function broadcastMessageEvent(ctx, feedId, eventType, message) {
   try {
     const participants = await findFeedParticipants(ctx, feedId)
-    
+
     for (const participant of participants) {
       // Отправляем событие каждому участнику в их персональный канал
       await sendDataToSocket(ctx, `user-${participant.userId}`, {
         type: 'chat-event',
         event: eventType,
         feedId,
-        message,
+        message
       })
     }
   } catch (err) {
-    ctx.account.log('[replyInGroupChat] Failed to broadcast message event: ' + err.message, { 
-      level: 'error', 
-      json: { error: err.message } 
+    ctx.account.log('[replyInGroupChat] Failed to broadcast message event: ' + err.message, {
+      level: 'error',
+      json: { error: err.message }
     })
   }
 }

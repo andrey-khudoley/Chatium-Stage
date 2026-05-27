@@ -14,6 +14,8 @@ export const getAllPersonalManagersHandler: V1GcHandler = async (_ctx, a) => {
   return { kind: 'gc_result', gc }
 }
 
-export const getAllPersonalManagersRoute = app.get('/', async (ctx, req) => handleV1Op(ctx, req, 'getAllPersonalManagers', getAllPersonalManagersHandler))
+export const getAllPersonalManagersRoute = app.get('/', async (ctx, req) =>
+  handleV1Op(ctx, req, 'getAllPersonalManagers', getAllPersonalManagersHandler)
+)
 
 export default getAllPersonalManagersRoute

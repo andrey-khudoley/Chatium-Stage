@@ -1,5 +1,5 @@
 // @shared
-import { runTelegramApi } from "@sender/sdk"
+import { runTelegramApi } from '@sender/sdk'
 
 export async function checkTelegramSubscription(
   ctx: app.Ctx,
@@ -51,7 +51,6 @@ export async function checkTelegramSubscription(
     const isSubscribed = ['creator', 'administrator', 'member', 'restricted'].includes(status)
 
     return { subscribed: isSubscribed }
-
   } catch (error) {
     ctx.account.log('checkTelegramSubscription error', {
       level: 'error',

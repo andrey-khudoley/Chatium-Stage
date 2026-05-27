@@ -6,7 +6,7 @@ import ChatAgents from '../tables/chat-agents.table'
 
 /**
  * Тул для агента: отправка изображения в групповой чат
- * 
+ *
  * ВАЖНО: Используй ТОЛЬКО этот инструмент ИЛИ replyInGroupChat, но НЕ ОБА сразу!
  * Если нужно отправить изображение - используй ТОЛЬКО этот инструмент.
  * НЕЛЬЗЯ использовать оба инструмента для одного ответа!
@@ -53,14 +53,14 @@ export const sendImageToGroupChat = app
 - Подпись к изображению передавай через параметр caption
 - ИСПОЛЬЗУЙ ТОЛЬКО ЭТОТ ИНСТРУМЕНТ ИЛИ replyInGroupChat, но не оба!`
   })
-  .body(s =>
+  .body((s) =>
     s.object({
       context: s.object({}),
       input: s.object({
         chatId: s.string().describe('ID чата (feedId, из контекста)'),
         imageUrl: s.string().describe('URL изображения для отправки'),
         caption: s.string().optional().describe('Подпись к изображению'),
-        replyToMessageId: s.string().optional().describe('ID сообщения для ответа'),
+        replyToMessageId: s.string().optional().describe('ID сообщения для ответа')
       })
     })
   )
@@ -76,11 +76,11 @@ export const sendImageToGroupChat = app
 
     ctx.account.log('[sendImageToGroupChat] Tool called', {
       level: 'info',
-      json: { 
-        chatId, 
+      json: {
+        chatId,
         imageUrl: imageUrl?.substring(0, 100),
         hasCaption: !!caption,
-        replyToMessageId,
+        replyToMessageId
       }
     })
 
@@ -88,7 +88,10 @@ export const sendImageToGroupChat = app
       // Проверяем, что чат существует
       const chat = await Chats.findOneBy(ctx, { feedId: chatId })
       if (!chat) {
-        ctx.account.log('[sendImageToGroupChat] Chat not found', { level: 'error', json: { chatId } })
+        ctx.account.log('[sendImageToGroupChat] Chat not found', {
+          level: 'error',
+          json: { chatId }
+        })
         return {
           ok: false,
           result: 'Чат не найден'
@@ -97,12 +100,12 @@ export const sendImageToGroupChat = app
 
       // Находим конфигурацию агента для этого чата
       const chatTableId = typeof chat.id === 'object' ? chat.id.id : chat.id
-      
+
       const agentConfig = await ChatAgents.findOneBy(ctx, {
         chat: chatTableId,
         isActive: true
       })
-      
+
       if (!agentConfig) {
         ctx.account.log('[sendImageToGroupChat] No active agent found in chat', {
           level: 'error',
@@ -118,9 +121,12 @@ export const sendImageToGroupChat = app
       if (chat.type === 'channel') {
         const participants = await findFeedParticipants(ctx, chatId)
         const botUserId = agentConfig.botUserId
-        const agentParticipant = participants.find(p => p.userId === botUserId)
-        
-        if (!agentParticipant || (agentParticipant.role !== 'owner' && agentParticipant.role !== 'admin')) {
+        const agentParticipant = participants.find((p) => p.userId === botUserId)
+
+        if (
+          !agentParticipant ||
+          (agentParticipant.role !== 'owner' && agentParticipant.role !== 'admin')
+        ) {
           ctx.account.log('[sendImageToGroupChat] Agent has no permission in channel', {
             level: 'error',
             json: { botUserId, role: agentParticipant?.role }
@@ -136,21 +142,27 @@ export const sendImageToGroupChat = app
       const urlParts = imageUrl.split('/')
       const fileName = urlParts[urlParts.length - 1] || 'image.webp'
       const extension = fileName.split('.').pop()?.toLowerCase() || 'webp'
-      const mimeType = extension === 'jpg' || extension === 'jpeg' ? 'image/jpeg' :
-                       extension === 'png' ? 'image/png' :
-                       extension === 'gif' ? 'image/gif' :
-                       extension === 'webp' ? 'image/webp' : 'image/webp'
+      const mimeType =
+        extension === 'jpg' || extension === 'jpeg'
+          ? 'image/jpeg'
+          : extension === 'png'
+            ? 'image/png'
+            : extension === 'gif'
+              ? 'image/gif'
+              : extension === 'webp'
+                ? 'image/webp'
+                : 'image/webp'
 
       // Отправляем сообщение с файлом по URL
       const botUserId = agentConfig.botUserId
 
       ctx.account.log('[sendImageToGroupChat] Creating message with image', {
         level: 'info',
-        json: { 
-          chatId, 
-          botUserId, 
+        json: {
+          chatId,
+          botUserId,
           imageUrl: imageUrl?.substring(0, 100),
-          replyToMessageId 
+          replyToMessageId
         }
       })
 
@@ -158,11 +170,13 @@ export const sendImageToGroupChat = app
         text: caption || '',
         type: 'Message',
         reply_to: replyToMessageId,
-        files: [{
-          url: imageUrl,
-          name: fileName,
-          mimeType: mimeType
-        }],
+        files: [
+          {
+            url: imageUrl,
+            name: fileName,
+            mimeType: mimeType
+          }
+        ],
         data: {
           isAgentMessage: true,
           agentName: agentConfig.agentName,
@@ -185,14 +199,16 @@ export const sendImageToGroupChat = app
         createdAt: message.createdAt || message.created_at,
         updatedAt: message.updatedAt || message.updated_at,
         replyTo: message.replyTo || message.reply_to,
-        author: botUser ? {
-          id: botUser.id,
-          displayName: botUser.displayName,
-          firstName: botUser.firstName,
-          lastName: botUser.lastName,
-          username: botUser.username,
-          avatar: botUser.imageUrl,
-        } : null,
+        author: botUser
+          ? {
+              id: botUser.id,
+              displayName: botUser.displayName,
+              firstName: botUser.firstName,
+              lastName: botUser.lastName,
+              username: botUser.username,
+              avatar: botUser.imageUrl
+            }
+          : null
       }
 
       // Отправляем WebSocket событие всем участникам чата
@@ -207,7 +223,6 @@ export const sendImageToGroupChat = app
         ok: true,
         result: `Изображение успешно отправлено. ID сообщения: ${message.id}`
       }
-
     } catch (error) {
       ctx.account.log('[sendImageToGroupChat] Error', {
         level: 'error',
@@ -231,7 +246,7 @@ async function broadcastMessageEvent(ctx, feedId, eventType, message) {
         type: 'chat-event',
         event: eventType,
         feedId,
-        message,
+        message
       })
     }
   } catch (err) {

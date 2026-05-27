@@ -73,7 +73,11 @@ export const telegramBotTestRoute = app.get('/', async (ctx, req) => {
   }
 
   try {
-    const welcome = buildWelcomeMessage(MOCK_PARTNER, 'Тестовая кампания', 'https://example.com/ref?linkId=abc')
+    const welcome = buildWelcomeMessage(
+      MOCK_PARTNER,
+      'Тестовая кампания',
+      'https://example.com/ref?linkId=abc'
+    )
     const welcomeOk =
       typeof welcome === 'string' &&
       welcome.length > 0 &&
@@ -88,7 +92,9 @@ export const telegramBotTestRoute = app.get('/', async (ctx, req) => {
       passed: welcomeOk
     })
     if (!welcomeOk) {
-      results[results.length - 1].error = welcome ? `нет ожидаемых подстрок в сообщении` : 'пустая строка'
+      results[results.length - 1].error = welcome
+        ? `нет ожидаемых подстрок в сообщении`
+        : 'пустая строка'
     }
   } catch (e) {
     results.push({
@@ -124,7 +130,10 @@ export const telegramBotTestRoute = app.get('/', async (ctx, req) => {
     })
   }
 
-  const token = await settingsLib.getSettingString(ctx, settingsLib.SETTING_KEYS.TELEGRAM_TEST_BOT_TOKEN)
+  const token = await settingsLib.getSettingString(
+    ctx,
+    settingsLib.SETTING_KEYS.TELEGRAM_TEST_BOT_TOKEN
+  )
   const tokenTrimmed = typeof token === 'string' ? token.trim() : ''
   const isPlaceholder = !tokenTrimmed || tokenTrimmed === '123456:TEST:TOKEN'
   if (isPlaceholder) {
@@ -144,16 +153,18 @@ export const telegramBotTestRoute = app.get('/', async (ctx, req) => {
         throwHttpErrors: false
       })
       const body = res.body as { ok?: boolean; result?: { username?: string; id?: number } }
-      const getMeOk = body?.ok === true && body?.result != null && typeof body.result.username === 'string'
+      const getMeOk =
+        body?.ok === true && body?.result != null && typeof body.result.username === 'string'
       results.push({
         id: 'telegram-getMe',
         title: 'Telegram getMe (официальный тестовый токен)',
         passed: getMeOk
       })
       if (!getMeOk) {
-        results[results.length - 1].error = body?.ok === false
-          ? (body as { description?: string }).description ?? 'getMe вернул ok: false'
-          : 'ожидались ok: true и result.username'
+        results[results.length - 1].error =
+          body?.ok === false
+            ? ((body as { description?: string }).description ?? 'getMe вернул ok: false')
+            : 'ожидались ok: true и result.username'
       }
     } catch (e) {
       results.push({

@@ -1,19 +1,22 @@
 <template>
   <div v-if="files && files.length > 0" class="message-files">
-    <div 
-      v-for="(file, index) in files" 
+    <div
+      v-for="(file, index) in files"
       :key="file.hash"
-      :class="['file-item', { 
-        image: isImage(file), 
-        video: isVideo(file) && !isVideoNote(file),
-        'voice-message': isVoiceMessage(file),
-        'video-note': isVideoNote(file)
-      }]"
+      :class="[
+        'file-item',
+        {
+          image: isImage(file),
+          video: isVideo(file) && !isVideoNote(file),
+          'voice-message': isVoiceMessage(file),
+          'video-note': isVideoNote(file)
+        }
+      ]"
     >
       <!-- Голосовое сообщение -->
       <template v-if="isVoiceMessage(file)">
-        <VoiceMessage 
-          :file="file" 
+        <VoiceMessage
+          :file="file"
           :is-own="isOwn"
           :message-id="messageId"
           :feed-id="feedId"
@@ -24,41 +27,34 @@
           :sender-name="senderName"
         />
       </template>
-      
+
       <!-- Видео-кружочек -->
       <template v-else-if="isVideoNote(file)">
-        <VideoNote 
-          :file="file" 
-          :duration="file.duration"
-        />
+        <VideoNote :file="file" :duration="file.duration" />
       </template>
-      
+
       <!-- Изображение -->
       <template v-else-if="isImage(file)">
         <div class="image-wrapper" @click.stop="openViewer(index)">
-          <img 
-            :src="file.url || file.previewUrl || getThumbnailUrl(file.hash)" 
+          <img
+            :src="file.url || file.previewUrl || getThumbnailUrl(file.hash)"
             :alt="file.name"
             class="file-image"
             loading="lazy"
           />
         </div>
       </template>
-      
+
       <!-- Видео обычное -->
       <template v-else-if="isVideo(file)">
         <div class="image-wrapper" @click.stop="openViewer(index)">
-          <video 
-            :src="getFileUrl(file.hash)"
-            class="file-image"
-            preload="metadata"
-          />
+          <video :src="getFileUrl(file.hash)" class="file-image" preload="metadata" />
           <div class="video-play-overlay">
             <i class="fas fa-play-circle"></i>
           </div>
         </div>
       </template>
-      
+
       <!-- Аудио файл (не голосовое) -->
       <template v-else-if="isAudio(file)">
         <div class="audio-file">
@@ -67,15 +63,11 @@
           </div>
           <div class="audio-info">
             <div class="audio-name">{{ file.name }}</div>
-            <audio 
-              :src="getFileUrl(file.hash)" 
-              controls
-              preload="metadata"
-            />
+            <audio :src="getFileUrl(file.hash)" controls preload="metadata" />
           </div>
         </div>
       </template>
-      
+
       <!-- Другие файлы -->
       <template v-else>
         <div class="file-icon">
@@ -85,23 +77,14 @@
           <div class="file-name">{{ file.name }}</div>
           <div class="file-size">{{ formatFileSize(file.size) }}</div>
         </div>
-        <a 
-          :href="getFileUrl(file.hash)" 
-          target="_blank"
-          download
-          class="file-download"
-        >
+        <a :href="getFileUrl(file.hash)" target="_blank" download class="file-download">
           <i class="fas fa-download"></i>
         </a>
       </template>
     </div>
-    
+
     <!-- Media Viewer Modal -->
-    <MediaViewer
-      v-model="viewerOpen"
-      :files="mediaFiles"
-      :initial-index="viewerIndex"
-    />
+    <MediaViewer v-model="viewerOpen" :files="mediaFiles" :initial-index="viewerIndex" />
   </div>
 </template>
 
@@ -114,7 +97,7 @@ import VideoNote from './VideoNote.vue'
 const props = defineProps({
   files: {
     type: Array,
-    default: () => [],
+    default: () => []
   },
   isOwn: {
     type: Boolean,
@@ -156,57 +139,63 @@ const viewerOpen = ref(false)
 const viewerIndex = ref(0)
 
 const mediaFiles = computed(() => {
-  return props.files.filter(file => isImage(file) || (isVideo(file) && !isVideoNote(file)))
+  return props.files.filter((file) => isImage(file) || (isVideo(file) && !isVideoNote(file)))
 })
 
 // Проверка на голосовое сообщение
 function isVoiceMessage(file) {
   // Проверяем флаг isVoiceMessage или по MIME типу и имени
   if (file.isVoiceMessage) return true
-  
+
   const mimeType = file.mimeType || file.mime_type || ''
   const name = file.name || ''
-  
+
   // Голосовые сообщения имеют специфичные паттерны в имени
   if (name.startsWith('voice-message-')) return true
-  
+
   // Или по MIME типу аудио
   if (mimeType.startsWith('audio/') && !name.match(/\.(mp3|m4a|ogg|wav)$/)) {
     return true
   }
-  
+
   return false
 }
 
 // Проверка на видео-кружочек
 function isVideoNote(file) {
   if (file.isVideoNote) return true
-  
+
   const name = file.name || ''
   if (name.startsWith('video-note-')) return true
-  
+
   return false
 }
 
 function isImage(file) {
   if (isVoiceMessage(file) || isVideoNote(file)) return false
-  return file.mimeType?.startsWith('image/') || 
+  return (
+    file.mimeType?.startsWith('image/') ||
     file.mime_type?.startsWith('image/') ||
     /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(file.name)
+  )
 }
 
 function isVideo(file) {
   if (isVideoNote(file)) return true
-  return file.mimeType?.startsWith('video/') || 
+  return (
+    file.mimeType?.startsWith('video/') ||
     file.mime_type?.startsWith('video/') ||
     /\.(mp4|webm|ogg|mov|avi)$/i.test(file.name)
+  )
 }
 
 function isAudio(file) {
   if (isVoiceMessage(file)) return false
-  return file.mimeType?.startsWith('audio/') || 
+  return (
+    file.mimeType?.startsWith('audio/') ||
     file.mime_type?.startsWith('audio/') ||
     /\.(mp3|m4a|ogg|wav|flac)$/i.test(file.name)
+  )
 }
 
 function getFileUrl(hash) {
@@ -222,38 +211,42 @@ function getThumbnailUrl(hash) {
 function getFileIcon(file) {
   const mimeType = file.mimeType || file.mime_type || ''
   const name = file.name || ''
-  
+
   if (mimeType.includes('pdf') || name.endsWith('.pdf')) return 'fas fa-file-pdf'
-  if (mimeType.includes('word') || name.endsWith('.doc') || name.endsWith('.docx')) return 'fas fa-file-word'
-  if (mimeType.includes('excel') || name.endsWith('.xls') || name.endsWith('.xlsx')) return 'fas fa-file-excel'
-  if (mimeType.includes('powerpoint') || name.endsWith('.ppt') || name.endsWith('.pptx')) return 'fas fa-file-powerpoint'
-  if (mimeType.includes('zip') || name.endsWith('.zip') || name.endsWith('.rar')) return 'fas fa-file-archive'
+  if (mimeType.includes('word') || name.endsWith('.doc') || name.endsWith('.docx'))
+    return 'fas fa-file-word'
+  if (mimeType.includes('excel') || name.endsWith('.xls') || name.endsWith('.xlsx'))
+    return 'fas fa-file-excel'
+  if (mimeType.includes('powerpoint') || name.endsWith('.ppt') || name.endsWith('.pptx'))
+    return 'fas fa-file-powerpoint'
+  if (mimeType.includes('zip') || name.endsWith('.zip') || name.endsWith('.rar'))
+    return 'fas fa-file-archive'
   if (mimeType.includes('audio')) return 'fas fa-file-audio'
   if (mimeType.includes('video')) return 'fas fa-file-video'
   if (mimeType.includes('text') || name.endsWith('.txt')) return 'fas fa-file-alt'
-  
+
   return 'fas fa-file'
 }
 
 function formatFileSize(bytes) {
   if (!bytes) return '0 B'
-  
+
   const units = ['B', 'KB', 'MB', 'GB']
   let size = bytes
   let unitIndex = 0
-  
+
   while (size >= 1024 && unitIndex < units.length - 1) {
     size /= 1024
     unitIndex++
   }
-  
+
   return `${size.toFixed(1)} ${units[unitIndex]}`
 }
 
 function openViewer(index) {
   const targetFile = props.files[index]
   const targetId = targetFile.hash || targetFile.uid
-  const mediaIndex = mediaFiles.value.findIndex(f => {
+  const mediaIndex = mediaFiles.value.findIndex((f) => {
     const fId = f.hash || f.uid
     return fId === targetId
   })

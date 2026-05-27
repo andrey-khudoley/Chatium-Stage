@@ -20,7 +20,7 @@ import { apiDirectChatCanMessageRoute, apiDirectChatCreateRoute } from '../api/d
 
 const props = defineProps({
   userId: String,
-  userName: String,
+  userName: String
 })
 
 const emit = defineEmits(['chat-created'])
@@ -37,7 +37,7 @@ const canMessageUser = computed(() => {
 async function checkCanMessage() {
   try {
     const result = await apiDirectChatCanMessageRoute.run(ctx, {
-      userId: props.userId,
+      userId: props.userId
     })
     canMessage.value = result.allowed
     privacyReason.value = result.reason || ''
@@ -50,18 +50,18 @@ async function checkCanMessage() {
 // Создаем или открываем личный чат
 async function startDirectChat() {
   if (loading.value) return
-  
+
   loading.value = true
   try {
     const result = await apiDirectChatCreateRoute.run(ctx, {
-      userId: props.userId,
+      userId: props.userId
     })
-    
+
     if (result.success) {
       emit('chat-created', {
         feedId: result.feedId,
         isNew: result.isNew,
-        chat: result.chat,
+        chat: result.chat
       })
     }
   } catch (error) {

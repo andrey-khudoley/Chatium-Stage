@@ -1,5 +1,5 @@
 // @shared
-import { jsx } from "@app/html-jsx"
+import { jsx } from '@app/html-jsx'
 import { requireAnyUser } from '@app/auth'
 import { apiGetTestsListRoute, apiRunSingleTestRoute } from './api/run-tests'
 
@@ -63,7 +63,7 @@ export const testsAiPageRoute = app.html('/', async (ctx, req) => {
             <p>Выполнение тестов... Это может занять до минуты.</p>
           </div>
         </div>
-        
+
         <script>{`
           async function runTests() {
             try {
@@ -169,4 +169,3 @@ export const testsAiPageRoute = app.html('/', async (ctx, req) => {
 })
 
 export default testsAiPageRoute
-

@@ -1,4 +1,4 @@
-import ReadMentions from "../tables/read-mentions.table"
+import ReadMentions from '../tables/read-mentions.table'
 
 // Получить список прочитанных упоминаний для чата
 export const apiReadMentionsGetRoute = app.get('/:feedId', async (ctx, req) => {
@@ -12,16 +12,16 @@ export const apiReadMentionsGetRoute = app.get('/:feedId', async (ctx, req) => {
   const mentions = await ReadMentions.findAll(ctx, {
     where: {
       userId,
-      feedId,
+      feedId
     },
-    limit: 1000,
+    limit: 1000
   })
 
   return {
-    mentions: mentions.map(m => ({
+    mentions: mentions.map((m) => ({
       messageId: m.messageId,
-      readAt: m.readAt,
-    })),
+      readAt: m.readAt
+    }))
   }
 })
 
@@ -42,14 +42,14 @@ export const apiReadMentionsMarkRoute = app.post('/:feedId/mark', async (ctx, re
     const existing = await ReadMentions.findOneBy(ctx, {
       userId,
       feedId,
-      messageId,
+      messageId
     })
 
     if (existing) {
       // Обновляем дату прочтения
       await ReadMentions.update(ctx, {
         id: existing.id,
-        readAt: new Date(),
+        readAt: new Date()
       })
       results.push({ messageId, status: 'updated' })
     } else {
@@ -58,7 +58,7 @@ export const apiReadMentionsMarkRoute = app.post('/:feedId/mark', async (ctx, re
         userId,
         feedId,
         messageId,
-        readAt: new Date(),
+        readAt: new Date()
       })
       results.push({ messageId, status: 'created' })
     }

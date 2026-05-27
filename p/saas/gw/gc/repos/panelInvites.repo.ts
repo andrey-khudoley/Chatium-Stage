@@ -13,17 +13,11 @@ import * as loggerLib from '../lib/logger.lib'
 
 const LOG_MODULE = 'repos/panelInvites.repo'
 
-export async function findByToken(
-  ctx: app.Ctx,
-  token: string
-): Promise<PanelInvitesRow | null> {
+export async function findByToken(ctx: app.Ctx, token: string): Promise<PanelInvitesRow | null> {
   return PanelInvites.findOneBy(ctx, { token })
 }
 
-export async function findById(
-  ctx: app.Ctx,
-  id: string
-): Promise<PanelInvitesRow | null> {
+export async function findById(ctx: app.Ctx, id: string): Promise<PanelInvitesRow | null> {
   return PanelInvites.findById(ctx, id)
 }
 
@@ -35,10 +29,7 @@ export type CreateInvitePayload = {
   note?: string
 }
 
-export async function create(
-  ctx: app.Ctx,
-  payload: CreateInvitePayload
-): Promise<PanelInvitesRow> {
+export async function create(ctx: app.Ctx, payload: CreateInvitePayload): Promise<PanelInvitesRow> {
   await loggerLib.writeServerLog(ctx, {
     severity: 6,
     message: `[${LOG_MODULE}] create entry`,
@@ -83,11 +74,7 @@ export async function markUsed(
 }
 
 /** Отозвать инвайт Admin'ом. */
-export async function revokeById(
-  ctx: app.Ctx,
-  inviteId: string,
-  revokedAt: number
-): Promise<void> {
+export async function revokeById(ctx: app.Ctx, inviteId: string, revokedAt: number): Promise<void> {
   await PanelInvites.update(ctx, {
     id: inviteId,
     revokedAt

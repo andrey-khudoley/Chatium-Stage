@@ -35,7 +35,12 @@ const phaseClass = computed(() => {
   <section class="dial-card" :class="[phaseClass, `status-${props.status}`]">
     <div class="dial-scanlines"></div>
     <div class="dial-shell">
-      <svg class="dial-svg" viewBox="0 0 220 220" role="img" :aria-label="`${props.phaseLabel}: ${props.timeLabel}`">
+      <svg
+        class="dial-svg"
+        viewBox="0 0 220 220"
+        role="img"
+        :aria-label="`${props.phaseLabel}: ${props.timeLabel}`"
+      >
         <defs>
           <linearGradient id="gradient-work" x1="0%" y1="0%" x2="100%" y2="100%">
             <stop offset="0%" stop-color="#d3234b" />
@@ -50,17 +55,17 @@ const phaseClass = computed(() => {
             <stop offset="100%" stop-color="#a78bff" />
           </linearGradient>
           <filter id="glow">
-            <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+            <feGaussianBlur stdDeviation="3" result="coloredBlur" />
             <feMerge>
-              <feMergeNode in="coloredBlur"/>
-              <feMergeNode in="SourceGraphic"/>
+              <feMergeNode in="coloredBlur" />
+              <feMergeNode in="SourceGraphic" />
             </feMerge>
           </filter>
           <filter id="glow-strong">
-            <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
+            <feGaussianBlur stdDeviation="4" result="coloredBlur" />
             <feMerge>
-              <feMergeNode in="coloredBlur"/>
-              <feMergeNode in="SourceGraphic"/>
+              <feMergeNode in="coloredBlur" />
+              <feMergeNode in="SourceGraphic" />
             </feMerge>
           </filter>
         </defs>
@@ -70,10 +75,10 @@ const phaseClass = computed(() => {
           <line
             v-for="i in 60"
             :key="i"
-            :x1="110 + 82 * Math.cos((i * 6 - 90) * Math.PI / 180)"
-            :y1="110 + 82 * Math.sin((i * 6 - 90) * Math.PI / 180)"
-            :x2="110 + (i % 5 === 0 ? 75 : 79) * Math.cos((i * 6 - 90) * Math.PI / 180)"
-            :y2="110 + (i % 5 === 0 ? 75 : 79) * Math.sin((i * 6 - 90) * Math.PI / 180)"
+            :x1="110 + 82 * Math.cos(((i * 6 - 90) * Math.PI) / 180)"
+            :y1="110 + 82 * Math.sin(((i * 6 - 90) * Math.PI) / 180)"
+            :x2="110 + (i % 5 === 0 ? 75 : 79) * Math.cos(((i * 6 - 90) * Math.PI) / 180)"
+            :y2="110 + (i % 5 === 0 ? 75 : 79) * Math.sin(((i * 6 - 90) * Math.PI) / 180)"
             :stroke-width="i % 5 === 0 ? 1.5 : 0.5"
             stroke="rgba(255,255,255,0.12)"
           />
@@ -102,20 +107,31 @@ const phaseClass = computed(() => {
   border: 1px solid var(--color-border);
   background: var(--color-bg-secondary);
   padding: 1.25rem 1rem;
-  transition: all .4s ease;
+  transition: all 0.4s ease;
   position: relative;
   overflow: hidden;
   clip-path: polygon(
-    0 6px, 6px 6px, 6px 0,
-    calc(100% - 6px) 0, calc(100% - 6px) 6px, 100% 6px,
-    100% calc(100% - 6px), calc(100% - 6px) calc(100% - 6px), calc(100% - 6px) 100%,
-    6px 100%, 6px calc(100% - 6px), 0 calc(100% - 6px)
+    0 6px,
+    6px 6px,
+    6px 0,
+    calc(100% - 6px) 0,
+    calc(100% - 6px) 6px,
+    100% 6px,
+    100% calc(100% - 6px),
+    calc(100% - 6px) calc(100% - 6px),
+    calc(100% - 6px) 100%,
+    6px 100%,
+    6px calc(100% - 6px),
+    0 calc(100% - 6px)
   );
 }
 
 .dial-scanlines {
   position: absolute;
-  top: 0; left: 0; right: 0; bottom: 0;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   background: repeating-linear-gradient(
     0deg,
     rgba(0, 0, 0, 0.06) 0px,
@@ -129,8 +145,13 @@ const phaseClass = computed(() => {
 }
 
 @keyframes dial-scanline-flicker {
-  0%, 100% { opacity: .42; }
-  50% { opacity: .36; }
+  0%,
+  100% {
+    opacity: 0.42;
+  }
+  50% {
+    opacity: 0.36;
+  }
 }
 
 .dial-shell {
@@ -148,12 +169,12 @@ const phaseClass = computed(() => {
 }
 
 .dial-ticks line {
-  transition: stroke .4s ease;
+  transition: stroke 0.4s ease;
 }
 
 .dial-track {
   fill: none;
-  stroke: rgba(255, 255, 255, .06);
+  stroke: rgba(255, 255, 255, 0.06);
   stroke-width: 12;
 }
 
@@ -161,7 +182,10 @@ const phaseClass = computed(() => {
   fill: none;
   stroke-width: 12;
   stroke-linecap: round;
-  transition: stroke-dashoffset .55s linear, stroke .4s ease, filter .4s ease;
+  transition:
+    stroke-dashoffset 0.55s linear,
+    stroke 0.4s ease,
+    filter 0.4s ease;
   filter: url(#glow);
 }
 
@@ -181,17 +205,22 @@ const phaseClass = computed(() => {
 }
 
 .status-paused .dial-progress {
-  opacity: .6;
+  opacity: 0.6;
   animation: paused-blink 2.6s ease-in-out infinite;
 }
 
 @keyframes paused-blink {
-  0%, 100% { opacity: .62; }
-  50% { opacity: .5; }
+  0%,
+  100% {
+    opacity: 0.62;
+  }
+  50% {
+    opacity: 0.5;
+  }
 }
 
 .status-stopped .dial-progress {
-  opacity: .3;
+  opacity: 0.3;
   animation: none;
 }
 
@@ -201,8 +230,15 @@ const phaseClass = computed(() => {
 }
 
 @keyframes overtime-pulse {
-  0%, 100% { opacity: 1; filter: url(#glow); }
-  50% { opacity: 0.88; filter: url(#glow-strong); }
+  0%,
+  100% {
+    opacity: 1;
+    filter: url(#glow);
+  }
+  50% {
+    opacity: 0.88;
+    filter: url(#glow-strong);
+  }
 }
 
 .dial-center {
@@ -221,29 +257,29 @@ const phaseClass = computed(() => {
   margin: 0;
   line-height: 1;
   font-size: clamp(2.2rem, 8vw, 3rem);
-  letter-spacing: .1em;
+  letter-spacing: 0.1em;
   color: var(--color-text);
   font-family: 'Share Tech Mono', 'Courier New', monospace;
   font-variant-numeric: tabular-nums;
   text-shadow:
-    0 0 12px rgba(232, 232, 232, .3),
+    0 0 12px rgba(232, 232, 232, 0.3),
     0.5px 0 0 rgba(255, 0, 255, 0.06),
     -0.5px 0 0 rgba(0, 255, 255, 0.06);
 }
 
 .status-running .dial-time {
   text-shadow:
-    0 0 16px rgba(232, 232, 232, .4),
+    0 0 16px rgba(232, 232, 232, 0.4),
     0.5px 0 0 rgba(255, 0, 255, 0.08),
     -0.5px 0 0 rgba(0, 255, 255, 0.08);
 }
 
 .dial-status {
-  margin: .35rem 0 0;
+  margin: 0.35rem 0 0;
   color: var(--color-text-secondary);
-  font-size: .72rem;
+  font-size: 0.72rem;
   text-transform: uppercase;
-  letter-spacing: .12em;
+  letter-spacing: 0.12em;
 }
 
 .status-paused .dial-time {
@@ -251,7 +287,12 @@ const phaseClass = computed(() => {
 }
 
 @keyframes time-paused-blink {
-  0%, 100% { opacity: 1; }
-  50% { opacity: .88; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.88;
+  }
 }
 </style>

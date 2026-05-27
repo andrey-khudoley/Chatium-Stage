@@ -1,11 +1,17 @@
 // @shared
-import { jsx } from "@app/html-jsx"
+import { jsx } from '@app/html-jsx'
 import { requireAccountRole } from '@app/auth'
 import { genSocketId } from '@app/socket'
 import EventsPage from './pages/EventsPage.vue'
 import Header from './components/Header.vue'
 import Footer from './components/Footer.vue'
-import { tailwindScript, cssVariables, commonStyles, preloaderStyles, preloaderScript } from './styles'
+import {
+  tailwindScript,
+  cssVariables,
+  commonStyles,
+  preloaderStyles,
+  preloaderScript
+} from './styles'
 import { loginPageRoute } from './login'
 import { indexPageRoute } from './index'
 import { settingsPageRoute } from './settings'
@@ -16,7 +22,7 @@ import { applyDebugLevel } from './lib/logging'
 
 export const eventsPageRoute = app.html('/', async (ctx, req) => {
   await applyDebugLevel(ctx, 'events-page')
-  
+
   // Проверяем авторизацию и редиректим на кастомную форму входа если нужно
   try {
     requireAccountRole(ctx, 'Admin')
@@ -35,15 +41,15 @@ export const eventsPageRoute = app.html('/', async (ctx, req) => {
       </html>
     )
   }
-  
+
   // Получаем название проекта из настроек
   const projectName = await getProjectName(ctx)
-  
+
   // Генерируем закодированный socketId для WebSocket подключения
   const userId = ctx.user?.id || 'anonymous'
   const socketId = `events-monitor-${userId}`
   const encodedSocketId = await genSocketId(ctx, socketId)
-  
+
   return (
     <html>
       <head>
@@ -51,17 +57,20 @@ export const eventsPageRoute = app.html('/', async (ctx, req) => {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta charset="UTF-8" />
         <meta name="description" content="Шаблон со списком событий" />
-        
+
         <script src="/s/static/lib/tailwind.3.4.16.min.js"></script>
         <script dangerouslySetInnerHTML={{ __html: tailwindScript }} />
-        
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+        <link
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+          rel="stylesheet"
+        />
         <link href="/s/static/lib/fontawesome/6.7.2/css/all.min.css" rel="stylesheet" />
-        
+
         <style type="text/tailwindcss">{cssVariables}</style>
         <style>{commonStyles}</style>
         <style>{preloaderStyles}</style>
-        
+
         <script>{`
           // Инициализация темы при загрузке страницы (до монтирования Vue)
           (function() {
@@ -112,16 +121,16 @@ export const eventsPageRoute = app.html('/', async (ctx, req) => {
         </div>
 
         <div id="app-content" style="opacity: 0;" class="flex flex-col min-h-screen">
-          <Header 
-            projectName={projectName} 
-            indexPageUrl={indexPageRoute.url()} 
+          <Header
+            projectName={projectName}
+            indexPageUrl={indexPageRoute.url()}
             isAdmin={true}
             settingsPageUrl={settingsPageRoute.url()}
             eventsPageUrl={eventsPageRoute.url()}
             pageTitle="События"
           />
           <div class="flex-1">
-            <EventsPage 
+            <EventsPage
               encodedSocketId={encodedSocketId}
               apiUrls={{
                 indexPage: indexPageRoute.url(),
@@ -131,11 +140,13 @@ export const eventsPageRoute = app.html('/', async (ctx, req) => {
           </div>
           <Footer licenseUrl={licensePageRoute.url()} />
         </div>
-        <div style="display: none;">Шаблон со списком событий showDetailsModal closeDetailsModal handleEscapeKey watch openEventDetails fa-ellipsis-v</div>
+        <div style="display: none;">
+          Шаблон со списком событий showDetailsModal closeDetailsModal handleEscapeKey watch
+          openEventDetails fa-ellipsis-v
+        </div>
       </body>
     </html>
   )
 })
 
 export default eventsPageRoute
-

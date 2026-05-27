@@ -52,7 +52,11 @@ export async function updateOfferPrice(
     await loggerLib.writeServerLog(ctx, {
       severity: 7,
       message: `[${LOG_MODULE}] updateOfferPrice: ветка ошибки конфигурации`,
-      payload: { hasApiKey: Boolean(apiKey), hasProductId: Boolean(productId), hasOfferId: Boolean(offerId) }
+      payload: {
+        hasApiKey: Boolean(apiKey),
+        hasProductId: Boolean(productId),
+        hasOfferId: Boolean(offerId)
+      }
     })
     await loggerLib.writeServerLog(ctx, {
       severity: 3,
@@ -316,7 +320,11 @@ export async function verifyLavaCredentials(
       message: `[${LOG_MODULE}] verifyLavaCredentials: успех (HTTP 200)`,
       payload: {}
     })
-    return { ok: true, message: 'Ключ Lava принят, GET /api/v2/products вернул HTTP 200.', httpStatus: 200 }
+    return {
+      ok: true,
+      message: 'Ключ Lava принят, GET /api/v2/products вернул HTTP 200.',
+      httpStatus: 200
+    }
   }
   const snippet = httpErrorSnippet(body)
   await loggerLib.writeServerLog(ctx, {
@@ -459,9 +467,7 @@ export async function fetchLavaProductsCatalog(
 
     if (response.statusCode !== 200) {
       const snippet =
-        typeof response.body === 'string'
-          ? response.body
-          : JSON.stringify(response.body ?? '')
+        typeof response.body === 'string' ? response.body : JSON.stringify(response.body ?? '')
       await loggerLib.writeServerLog(ctx, {
         severity: 7,
         message: `[${LOG_MODULE}] Lava GET /api/v2/products non-200 (debug raw)`,

@@ -4,7 +4,7 @@ import { getAppUrl } from './shared/app-paths'
 export const manifestRoute = app.get('/', async (ctx, req) => {
   // Динамически определяем базовый путь приложения
   const basePath = getAppUrl(ctx, '/')
-  
+
   const manifest = {
     name: 'Chatium Chat',
     short_name: 'Chat',
@@ -18,8 +18,18 @@ export const manifestRoute = app.get('/', async (ctx, req) => {
     lang: 'ru',
     dir: 'ltr',
     icons: [
-      { src: 'https://fs.chatium.ru/get/image_msk_AaplkedAT7', sizes: '192x192', type: 'image/png', purpose: 'any' },
-      { src: 'https://fs.chatium.ru/get/image_msk_AaplkedAT7', sizes: '512x512', type: 'image/png', purpose: 'any' }
+      {
+        src: 'https://fs.chatium.ru/get/image_msk_AaplkedAT7',
+        sizes: '192x192',
+        type: 'image/png',
+        purpose: 'any'
+      },
+      {
+        src: 'https://fs.chatium.ru/get/image_msk_AaplkedAT7',
+        sizes: '512x512',
+        type: 'image/png',
+        purpose: 'any'
+      }
     ],
     categories: ['social', 'communication']
   }

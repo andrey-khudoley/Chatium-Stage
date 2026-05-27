@@ -17,9 +17,7 @@ const emit = defineEmits<{
 const totalPages = computed(() =>
   props.pageSize > 0 ? Math.max(1, Math.ceil(props.total / props.pageSize)) : 1
 )
-const from = computed(() =>
-  props.total === 0 ? 0 : (props.page - 1) * props.pageSize + 1
-)
+const from = computed(() => (props.total === 0 ? 0 : (props.page - 1) * props.pageSize + 1))
 const to = computed(() => Math.min(props.page * props.pageSize, props.total))
 
 function go(p: number) {
@@ -33,9 +31,7 @@ function go(p: number) {
     v-if="totalPages > 1 || total > pageSize"
     class="flex items-center justify-between gap-4 py-3 text-sm text-[var(--color-text-secondary)]"
   >
-    <span>
-      Показано {{ from }}–{{ to }} из {{ total }}
-    </span>
+    <span> Показано {{ from }}–{{ to }} из {{ total }} </span>
     <div class="flex items-center gap-1">
       <button
         type="button"
@@ -45,9 +41,7 @@ function go(p: number) {
       >
         <i class="fas fa-chevron-left"></i>
       </button>
-      <span class="px-2">
-        {{ page }} / {{ totalPages }}
-      </span>
+      <span class="px-2"> {{ page }} / {{ totalPages }} </span>
       <button
         type="button"
         :disabled="page >= totalPages"

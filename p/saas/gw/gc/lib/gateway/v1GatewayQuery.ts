@@ -25,7 +25,9 @@ function coerceQueryString(v: string): unknown {
 }
 
 /** Преобразует `req.query` платформы в объект args для валидации и прокси к GC. */
-export function parseFlatQueryArgs(query: Record<string, unknown> | undefined): Record<string, unknown> {
+export function parseFlatQueryArgs(
+  query: Record<string, unknown> | undefined
+): Record<string, unknown> {
   if (!query || typeof query !== 'object') return {}
   const out: Record<string, unknown> = {}
   for (const [k, raw] of Object.entries(query)) {

@@ -1,7 +1,7 @@
 // @shared
 /**
  * Form Analytics Events Tracker
- * 
+ *
  * События форм для аналитики:
  * - form_shown: автоматический показ формы через WebSocket
  * - form_opened: клик на кнопку формы (ручное открытие)
@@ -30,9 +30,10 @@ export function trackFormEvent(eventType: string, data: FormEventData) {
     return
   }
 
-  const workspacePath = typeof window !== 'undefined'
-    ? window.location.pathname.split('/')[1] || 'webinar-room'
-    : 'webinar-room'
+  const workspacePath =
+    typeof window !== 'undefined'
+      ? window.location.pathname.split('/')[1] || 'webinar-room'
+      : 'webinar-room'
 
   const trackData: Record<string, any> = {
     url: `event://custom/${workspacePath}/form_${eventType}`,
@@ -43,7 +44,7 @@ export function trackFormEvent(eventType: string, data: FormEventData) {
     action_param1_mapstrstr: {
       formType: data.formType || 'lead',
       ...(data.fieldId && { fieldId: data.fieldId }),
-      ...(data.fieldLabel && { fieldLabel: data.fieldLabel }),
+      ...(data.fieldLabel && { fieldLabel: data.fieldLabel })
     }
   }
 
@@ -55,30 +56,45 @@ export function trackFormEvent(eventType: string, data: FormEventData) {
   window.clrtTrack(trackData)
 }
 
-export function trackFormShown(episodeId: string, formId: string, formTitle: string, formType?: string) {
+export function trackFormShown(
+  episodeId: string,
+  formId: string,
+  formTitle: string,
+  formType?: string
+) {
   trackFormEvent('shown', {
     episodeId,
     formId,
     formTitle,
-    formType: formType as any,
+    formType: formType as any
   })
 }
 
-export function trackFormOpened(episodeId: string, formId: string, formTitle: string, formType?: string) {
+export function trackFormOpened(
+  episodeId: string,
+  formId: string,
+  formTitle: string,
+  formType?: string
+) {
   trackFormEvent('opened', {
     episodeId,
     formId,
     formTitle,
-    formType: formType as any,
+    formType: formType as any
   })
 }
 
-export function trackFormClosed(episodeId: string, formId: string, formTitle: string, formType?: string) {
+export function trackFormClosed(
+  episodeId: string,
+  formId: string,
+  formTitle: string,
+  formType?: string
+) {
   trackFormEvent('closed', {
     episodeId,
     formId,
     formTitle,
-    formType: formType as any,
+    formType: formType as any
   })
 }
 
@@ -94,7 +110,7 @@ export function trackFormFieldFocused(
     formId,
     formTitle,
     fieldId,
-    fieldLabel,
+    fieldLabel
   })
 }
 
@@ -112,7 +128,7 @@ export function trackFormSubmitted(
     formTitle,
     formType: formType as any,
     amount,
-    currency,
+    currency
   })
 }
 
@@ -128,7 +144,7 @@ export function trackFormPaymentPageOpened(
     formId,
     formTitle,
     amount,
-    currency,
+    currency
   })
 }
 
@@ -144,6 +160,6 @@ export function trackFormPaymentCompleted(
     formId,
     formTitle,
     amount,
-    currency,
+    currency
   })
 }

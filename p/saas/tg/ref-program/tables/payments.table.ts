@@ -7,19 +7,19 @@ export const TSaasRefProgramPayment7Hi8Jk = Heap.Table(
     campaignId: Heap.Optional(
       Heap.RefLink('t__tg-ref-program__campaign__8Hn4Lx', {
         customMeta: { title: 'Кампания' },
-        onDelete: 'none',
-      }),
+        onDelete: 'none'
+      })
     ),
     ref: Heap.Optional(Heap.String({ customMeta: { title: 'Реферальный ID' } })),
     orderId: Heap.Optional(Heap.String({ customMeta: { title: 'ID заказа' } })),
     paymentSum: Heap.Optional(
       Heap.Number({
-        customMeta: { title: 'Сумма оплаты в копейках' },
-      }),
+        customMeta: { title: 'Сумма оплаты в копейках' }
+      })
     ),
-    rawPayload: Heap.Optional(Heap.Any({ customMeta: { title: 'Исходные данные' } })),
+    rawPayload: Heap.Optional(Heap.Any({ customMeta: { title: 'Исходные данные' } }))
   },
-  { customMeta: { title: 'Оплаты', description: 'События оплат' } },
+  { customMeta: { title: 'Оплаты', description: 'События оплат' } }
 )
 
 export default TSaasRefProgramPayment7Hi8Jk

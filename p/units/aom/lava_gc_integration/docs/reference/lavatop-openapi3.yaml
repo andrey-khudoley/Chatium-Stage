@@ -3,7 +3,7 @@ info:
   title: lava.top Public API
   version: 1.17.0
 security:
-  - ApiKeyAuth: [ ]
+  - ApiKeyAuth: []
 
 paths:
   /api/v1/feed:
@@ -13,7 +13,7 @@ paths:
       summary: Лента продуктов и постов
       deprecated: true
       security:
-        - ApiKeyAuth: [ ]
+        - ApiKeyAuth: []
       parameters:
         - in: query
           required: false
@@ -54,9 +54,9 @@ paths:
                     items:
                       properties:
                         type:
-                          $ref: "#/components/schemas/FeedItemType"
+                          $ref: '#/components/schemas/FeedItemType'
                         data:
-                          $ref: "#/components/schemas/ProductItemDto"
+                          $ref: '#/components/schemas/ProductItemDto'
                   total:
                     type: number
                   page:
@@ -68,7 +68,7 @@ paths:
     post:
       deprecated: true
       security:
-        - ApiKeyAuth: [ ]
+        - ApiKeyAuth: []
       tags:
         - Invoices
       summary: Создание контракта на покупку контента. Устарел. Новый метод - /api/v2/invoice
@@ -93,8 +93,8 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
               example:
                 error: "Product with offer id = '3fa85f64-5717-4562-b3fc-2c963f66afa6' not found"
-                details: { }
-                timestamp: "2025-01-01T10:00:00.0000000+00:00"
+                details: {}
+                timestamp: '2025-01-01T10:00:00.0000000+00:00'
     get:
       summary: Получение продажи партнёра. Устарел, используйте новый рут - GET /api/v1/invoices/{id}
       deprecated: true
@@ -122,8 +122,8 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
               example:
                 error: "Invoice with such id = '3fa85f64-5717-4562-b3fc-2c963f66afa6' not found"
-                details: { }
-                timestamp: "2025-01-01T10:00:00.0000000+00:00"
+                details: {}
+                timestamp: '2025-01-01T10:00:00.0000000+00:00'
         401:
           description: Пользователь неавторизован
 
@@ -131,7 +131,7 @@ paths:
     post:
       deprecated: true
       security:
-        - ApiKeyAuth: [ ]
+        - ApiKeyAuth: []
       tags:
         - Invoices
       summary: Создание контракта на покупку контента (аналогичен /api/v1/invoice).Устарел, используйте новый рут - POST /api/v3/invoice
@@ -144,33 +144,33 @@ paths:
             examples:
               product_rub_purchase_min_fields:
                 summary: Пример покупки продукта (не подписки) через RUB c минимальным набором полей
-                description: > 
+                description: >
                   paymentMethod не передан, значит по умолчанию будет использован SMART_GLOCAL в качестве платежного метода. 
                   Поле periodicity также не передано и т.к. продукт является не подпиской - по умолчанию будет использован ONE_TIME значение
                 value:
-                  email: "client@gmail.com"
-                  offerId: "836b9fc5-7ae9-4a27-9642-592bc44072b7"
-                  currency: "RUB"
+                  email: 'client@gmail.com'
+                  offerId: '836b9fc5-7ae9-4a27-9642-592bc44072b7'
+                  currency: 'RUB'
               product_rub_smart_glocal_purchase_min_fields:
                 summary: Пример покупки продукта (не подписки) через RUB и провайдер SMART_GLOCAL
                 description: >
                   paymentMethod не передан, значит по умолчанию будет использован SMART_GLOCAL в качестве платежного метода. 
                   Поле periodicity также не передано и т.к. продукт является не подпиской - по умолчанию будет использован ONE_TIME значение
                 value:
-                  email: "client@gmail.com"
-                  offerId: "836b9fc5-7ae9-4a27-9642-592bc44072b7"
-                  currency: "RUB"
-                  paymentMethod: "SMART_GLOCAL"
+                  email: 'client@gmail.com'
+                  offerId: '836b9fc5-7ae9-4a27-9642-592bc44072b7'
+                  currency: 'RUB'
+                  paymentMethod: 'SMART_GLOCAL'
 
               product_usd_purchase:
                 summary: Пример покупки продукта (не подписки) через USD c явной передачей периодичности
                 description: >
                   paymentMethod не передан, значит по умолчанию будет использован UNLIMINT в качестве платежного метода
                 value:
-                  email: "client@gmail.com"
-                  offerId: "836b9fc5-7ae9-4a27-9642-592bc44072b7"
-                  currency: "USD"
-                  periodicity: "ONE_TIME"
+                  email: 'client@gmail.com'
+                  offerId: '836b9fc5-7ae9-4a27-9642-592bc44072b7'
+                  currency: 'USD'
+                  periodicity: 'ONE_TIME'
 
               product_eur_purchase:
                 summary: Пример покупки продукта (не подписки) через EUR c явной передачей языка пользователя
@@ -179,75 +179,75 @@ paths:
                   Язык пользователя выставлен на английский. Он будет учитываться при отправки нотификаций и писем на почту.
                   Если язык не передан, то по умолчанию используется английский
                 value:
-                  email: "client@gmail.com"
-                  offerId: "836b9fc5-7ae9-4a27-9642-592bc44072b7"
-                  currency: "EUR"
-                  buyerLanguage: "EN"
+                  email: 'client@gmail.com'
+                  offerId: '836b9fc5-7ae9-4a27-9642-592bc44072b7'
+                  currency: 'EUR'
+                  buyerLanguage: 'EN'
 
               product_eur_purchase_paypal:
                 summary: Пример покупки продукта (не подписки) через EUR (PAYPAL)
                 description: >
                   Т.к. покупка осуществляется в валюте, то возможен вариант покупки продукта через PAYPAL
                 value:
-                  email: "client@gmail.com"
-                  offerId: "836b9fc5-7ae9-4a27-9642-592bc44072b7"
-                  currency: "EUR"
-                  paymentMethod: "PAYPAL"
+                  email: 'client@gmail.com'
+                  offerId: '836b9fc5-7ae9-4a27-9642-592bc44072b7'
+                  currency: 'EUR'
+                  paymentMethod: 'PAYPAL'
 
               product_usd_purchase_stripe:
                 summary: Пример покупки продукта (не подписки) через USD (STRIPE)
                 description: >
                   Т.к. покупка осуществляется в валюте, то возможен вариант покупки продукта через STRIPE
                 value:
-                  email: "client@gmail.com"
-                  offerId: "836b9fc5-7ae9-4a27-9642-592bc44072b7"
-                  currency: "USD"
-                  paymentMethod: "STRIPE"
+                  email: 'client@gmail.com'
+                  offerId: '836b9fc5-7ae9-4a27-9642-592bc44072b7'
+                  currency: 'USD'
+                  paymentMethod: 'STRIPE'
 
               product_purchase_with_utm:
                 summary: Пример покупки продукта с передачей UTM-меток
                 description: >
                   При совершении покупки пользователем, есть возможность передать UTM-метки
                 value:
-                  email: "client@gmail.com"
-                  offerId: "836b9fc5-7ae9-4a27-9642-592bc44072b7"
-                  currency: "EUR"
+                  email: 'client@gmail.com'
+                  offerId: '836b9fc5-7ae9-4a27-9642-592bc44072b7'
+                  currency: 'EUR'
                   clientUtm:
-                    utm_source: "google"
-                    utm_medium: "cpc"
-                    utm_campaign: "summer_sale"
-                    utm_term: "running_shoes"
-                    utm_content: "homepage_banner"
+                    utm_source: 'google'
+                    utm_medium: 'cpc'
+                    utm_campaign: 'summer_sale'
+                    utm_term: 'running_shoes'
+                    utm_content: 'homepage_banner'
 
               subscription_usd_purchase:
                 summary: Пример покупки подписки через USD (PAYPAL)
                 description: Оформление подписки осуществляется с ежемесячным списанием (см. параметр periodicity) через PayPal
                 value:
-                  email: "client@gmail.com"
-                  offerId: "836b9fc5-7ae9-4a27-9642-592bc44072b7"
-                  periodicity: "MONTHLY"
-                  currency: "USD"
-                  paymentMethod: "PAYPAL"
-                  buyerLanguage: "EN"
+                  email: 'client@gmail.com'
+                  offerId: '836b9fc5-7ae9-4a27-9642-592bc44072b7'
+                  periodicity: 'MONTHLY'
+                  currency: 'USD'
+                  paymentMethod: 'PAYPAL'
+                  buyerLanguage: 'EN'
               subscription_usd_purchase_stripe:
                 summary: Пример покупки подписки через USD (STRIPE)
                 description: Оформление подписки осуществляется с ежемесячным списанием (см. параметр periodicity) через Stripe
                 value:
-                  email: "client@gmail.com"
-                  offerId: "836b9fc5-7ae9-4a27-9642-592bc44072b7"
-                  periodicity: "MONTHLY"
-                  currency: "USD"
-                  paymentMethod: "STRIPE"
-                  buyerLanguage: "EN"
+                  email: 'client@gmail.com'
+                  offerId: '836b9fc5-7ae9-4a27-9642-592bc44072b7'
+                  periodicity: 'MONTHLY'
+                  currency: 'USD'
+                  paymentMethod: 'STRIPE'
+                  buyerLanguage: 'EN'
               subscription_eur:
                 summary: Пример покупки подписки через EUR (UNLIMINT)
                 value:
-                  email: "client@gmail.com"
-                  offerId: "836b9fc5-7ae9-4a27-9642-592bc44072b7"
-                  periodicity: "PERIOD_90_DAYS"
-                  currency: "EUR"
-                  buyerLanguage: "EN"
-                  paymentMethod: "UNLIMINT"
+                  email: 'client@gmail.com'
+                  offerId: '836b9fc5-7ae9-4a27-9642-592bc44072b7'
+                  periodicity: 'PERIOD_90_DAYS'
+                  currency: 'EUR'
+                  buyerLanguage: 'EN'
+                  paymentMethod: 'UNLIMINT'
 
               subscription_usd_purchase_with_utm:
                 summary: Пример покупки подписки c передачей UTM-меток
@@ -255,29 +255,29 @@ paths:
                   Оформление подписки осуществляется со списанием каждые 180 дней (см. параметр periodicity) через PayPal.
                   В примере показано, как можно передавать UTM-метки
                 value:
-                  email: "client@gmail.com"
-                  offerId: "836b9fc5-7ae9-4a27-9642-592bc44072b7"
-                  periodicity: "PERIOD_180_DAYS"
-                  currency: "USD"
-                  buyerLanguage: "EN"
-                  paymentMethod: "PAYPAL"
+                  email: 'client@gmail.com'
+                  offerId: '836b9fc5-7ae9-4a27-9642-592bc44072b7'
+                  periodicity: 'PERIOD_180_DAYS'
+                  currency: 'USD'
+                  buyerLanguage: 'EN'
+                  paymentMethod: 'PAYPAL'
                   clientUtm:
-                    utm_source: "google"
-                    utm_medium: "cpc"
-                    utm_campaign: "summer_sale"
-                    utm_term: "running_shoes"
-                    utm_content: "homepage_banner"
+                    utm_source: 'google'
+                    utm_medium: 'cpc'
+                    utm_campaign: 'summer_sale'
+                    utm_term: 'running_shoes'
+                    utm_content: 'homepage_banner'
               product_rub_зpay2me_sbp:
                 summary: Пример покупки продукта (не подписки) через Систему Быстрых Платежей и провайдер PAY2ME
                 description: >
                   paymentMethod не передан, значит по умолчанию будет использован SMART_GLOCAL в качестве платежного метода. 
                   Поле periodicity также не передано и т.к. продукт является не подпиской - по умолчанию будет использован ONE_TIME значение
                 value:
-                  email: "client@gmail.com"
-                  offerId: "836b9fc5-7ae9-4a27-9642-592bc44072b7"
-                  currency: "RUB"
-                  paymentMethod: "PAY2ME"
-                  type: "SBP"
+                  email: 'client@gmail.com'
+                  offerId: '836b9fc5-7ae9-4a27-9642-592bc44072b7'
+                  currency: 'RUB'
+                  paymentMethod: 'PAY2ME'
+                  type: 'SBP'
 
       responses:
         201:
@@ -294,12 +294,12 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
               example:
                 error: "Product with offer id = '3fa85f64-5717-4562-b3fc-2c963f66afa6' not found"
-                details: { }
-                timestamp: "2025-01-01T10:00:00.0000000+00:00"
+                details: {}
+                timestamp: '2025-01-01T10:00:00.0000000+00:00'
   /api/v3/invoice:
     post:
       security:
-        - ApiKeyAuth: [ ]
+        - ApiKeyAuth: []
       tags:
         - Invoices
       summary: Создание контракта на покупку контента
@@ -313,174 +313,174 @@ paths:
               product_RUB:
                 summary: Пример покупки продукта (не подписка) за RUB с минимальным набором полей
                 value:
-                  email: "client@gmail.com"
-                  offerId: "836b9fc5-7ae9-4a27-9642-592bc44072b7"
-                  currency: "RUB"
+                  email: 'client@gmail.com'
+                  offerId: '836b9fc5-7ae9-4a27-9642-592bc44072b7'
+                  currency: 'RUB'
               product_USD:
                 summary: Пример покупки продукта (не подписка) за USD с минимальным набором полей
                 value:
-                  email: "client@gmail.com"
-                  offerId: "836b9fc5-7ae9-4a27-9642-592bc44072b7"
-                  currency: "USD"
+                  email: 'client@gmail.com'
+                  offerId: '836b9fc5-7ae9-4a27-9642-592bc44072b7'
+                  currency: 'USD'
               product_EUR:
                 summary: Пример покупки продукта (не подписка) за EUR с минимальным набором полей
                 value:
-                  email: "client@gmail.com"
-                  offerId: "836b9fc5-7ae9-4a27-9642-592bc44072b7"
-                  currency: "EUR"
+                  email: 'client@gmail.com'
+                  offerId: '836b9fc5-7ae9-4a27-9642-592bc44072b7'
+                  currency: 'EUR'
               product_RUB_SMART_GLOCAL:
                 summary: Пример покупки продукта (не подписка) за RUB, через провайдер SMART_GLOCAL и способ оплаты карта
                 value:
-                  email: "client@gmail.com"
-                  offerId: "836b9fc5-7ae9-4a27-9642-592bc44072b7"
-                  paymentProvider: "SMART_GLOCAL"
-                  currency: "RUB"
-                  paymentMethod: "CARD"
+                  email: 'client@gmail.com'
+                  offerId: '836b9fc5-7ae9-4a27-9642-592bc44072b7'
+                  paymentProvider: 'SMART_GLOCAL'
+                  currency: 'RUB'
+                  paymentMethod: 'CARD'
               product_RUB_PAY2ME:
                 summary: Пример покупки продукта (не подписка) за RUB, через провайдер PAY2ME и способ оплаты СБП
                 value:
-                  email: "client@gmail.com"
-                  offerId: "836b9fc5-7ae9-4a27-9642-592bc44072b7"
-                  paymentProvider: "PAY2ME"
-                  currency: "RUB"
-                  paymentMethod: "SBP"
+                  email: 'client@gmail.com'
+                  offerId: '836b9fc5-7ae9-4a27-9642-592bc44072b7'
+                  paymentProvider: 'PAY2ME'
+                  currency: 'RUB'
+                  paymentMethod: 'SBP'
               product_USD_UNLIMIT_CARD:
                 summary: Пример покупки продукта (не подписка) за USD, через провайдер UNLIMIT и способ оплаты карта
                 value:
-                  email: "client@gmail.com"
-                  offerId: "836b9fc5-7ae9-4a27-9642-592bc44072b7"
-                  currency: "USD"
-                  paymentProvider: "UNLIMIT"
-                  paymentMethod: "CARD"
+                  email: 'client@gmail.com'
+                  offerId: '836b9fc5-7ae9-4a27-9642-592bc44072b7'
+                  currency: 'USD'
+                  paymentProvider: 'UNLIMIT'
+                  paymentMethod: 'CARD'
               product_USD_UNLIMIT_PIX:
                 summary: Пример покупки продукта (не подписка) за USD, через провайдер UNLIMIT и способ оплаты PIX
                 value:
-                  email: "client@gmail.com"
-                  offerId: "836b9fc5-7ae9-4a27-9642-592bc44072b7"
-                  currency: "USD"
-                  paymentProvider: "UNLIMIT"
-                  paymentMethod: "PIX"
+                  email: 'client@gmail.com'
+                  offerId: '836b9fc5-7ae9-4a27-9642-592bc44072b7'
+                  currency: 'USD'
+                  paymentProvider: 'UNLIMIT'
+                  paymentMethod: 'PIX'
               product_USD_STRIPE:
                 summary: Пример покупки продукта (не подписка) за USD, через провайдер STRIPE
                 value:
-                  email: "client@gmail.com"
-                  offerId: "836b9fc5-7ae9-4a27-9642-592bc44072b7"
-                  currency: "USD"
-                  paymentProvider: "STRIPE"
+                  email: 'client@gmail.com'
+                  offerId: '836b9fc5-7ae9-4a27-9642-592bc44072b7'
+                  currency: 'USD'
+                  paymentProvider: 'STRIPE'
               product_USD_PAYPAL:
                 summary: Пример покупки продукта (не подписка) за USD, через провайдер PAYPAL
                 value:
-                  email: "client@gmail.com"
-                  offerId: "836b9fc5-7ae9-4a27-9642-592bc44072b7"
-                  currency: "USD"
-                  paymentProvider: "PAYPAL"
+                  email: 'client@gmail.com'
+                  offerId: '836b9fc5-7ae9-4a27-9642-592bc44072b7'
+                  currency: 'USD'
+                  paymentProvider: 'PAYPAL'
               product_EUR_UNLIMIT_CARD:
                 summary: Пример покупки продукта (не подписка) за EUR, через провайдер UNLIMIT и способ оплаты карта
                 value:
-                  email: "client@gmail.com"
-                  offerId: "836b9fc5-7ae9-4a27-9642-592bc44072b7"
-                  currency: "EUR"
-                  paymentProvider: "UNLIMIT"
-                  paymentMethod: "CARD"
+                  email: 'client@gmail.com'
+                  offerId: '836b9fc5-7ae9-4a27-9642-592bc44072b7'
+                  currency: 'EUR'
+                  paymentProvider: 'UNLIMIT'
+                  paymentMethod: 'CARD'
               product_EUR_UNLIMIT_PIX:
                 summary: Пример покупки продукта (не подписка) за EUR, через провайдер UNLIMIT и способ оплаты PIX
                 value:
-                  email: "client@gmail.com"
-                  offerId: "836b9fc5-7ae9-4a27-9642-592bc44072b7"
-                  currency: "EUR"
-                  paymentProvider: "UNLIMIT"
-                  paymentMethod: "PIX"
+                  email: 'client@gmail.com'
+                  offerId: '836b9fc5-7ae9-4a27-9642-592bc44072b7'
+                  currency: 'EUR'
+                  paymentProvider: 'UNLIMIT'
+                  paymentMethod: 'PIX'
               product_EUR_STRIPE:
                 summary: Пример покупки продукта (не подписка) за EUR, через провайдер STRIPE
                 value:
-                  email: "client@gmail.com"
-                  offerId: "836b9fc5-7ae9-4a27-9642-592bc44072b7"
-                  currency: "EUR"
-                  paymentProvider: "STRIPE"
+                  email: 'client@gmail.com'
+                  offerId: '836b9fc5-7ae9-4a27-9642-592bc44072b7'
+                  currency: 'EUR'
+                  paymentProvider: 'STRIPE'
               product_EUR_PAYPAL:
                 summary: Пример покупки продукта (не подписка) за EUR, через провайдер PAYPAL
                 value:
-                  email: "client@gmail.com"
-                  offerId: "836b9fc5-7ae9-4a27-9642-592bc44072b7"
-                  currency: "EUR"
-                  paymentProvider: "PAYPAL"
+                  email: 'client@gmail.com'
+                  offerId: '836b9fc5-7ae9-4a27-9642-592bc44072b7'
+                  currency: 'EUR'
+                  paymentProvider: 'PAYPAL'
               product_EUR_buyer_language:
                 summary: Пример покупки продукта, с явной передачей языка пользователя
                 value:
-                  email: "client@gmail.com"
-                  offerId: "836b9fc5-7ae9-4a27-9642-592bc44072b7"
-                  currency: "EUR"
-                  buyerLanguage: "EN"
+                  email: 'client@gmail.com'
+                  offerId: '836b9fc5-7ae9-4a27-9642-592bc44072b7'
+                  currency: 'EUR'
+                  buyerLanguage: 'EN'
               product_utm:
                 summary: Пример покупки продукта с передачей UTM-меток
                 value:
-                  email: "client@gmail.com"
-                  offerId: "836b9fc5-7ae9-4a27-9642-592bc44072b7"
-                  currency: "EUR"
+                  email: 'client@gmail.com'
+                  offerId: '836b9fc5-7ae9-4a27-9642-592bc44072b7'
+                  currency: 'EUR'
                   clientUtm:
-                    utm_source: "google"
-                    utm_medium: "cpc"
-                    utm_campaign: "summer_sale"
-                    utm_term: "running_shoes"
-                    utm_content: "homepage_banner"
+                    utm_source: 'google'
+                    utm_medium: 'cpc'
+                    utm_campaign: 'summer_sale'
+                    utm_term: 'running_shoes'
+                    utm_content: 'homepage_banner'
               subscription_USD_UNLIMIT_CARD:
                 summary: Пример покупки подписки за USD, через провайдер UNLIMIT и способ оплаты карта
                 value:
-                  email: "client@gmail.com"
-                  offerId: "836b9fc5-7ae9-4a27-9642-592bc44072b7"
-                  currency: "USD"
-                  paymentProvider: "UNLIMIT"
-                  paymentMethod: "CARD"
-                  periodicity: "MONTHLY"
+                  email: 'client@gmail.com'
+                  offerId: '836b9fc5-7ae9-4a27-9642-592bc44072b7'
+                  currency: 'USD'
+                  paymentProvider: 'UNLIMIT'
+                  paymentMethod: 'CARD'
+                  periodicity: 'MONTHLY'
               subscription_USD_STRIPE:
                 summary: Пример покупки подписки за USD, через провайдер STRIPE
                 value:
-                  email: "client@gmail.com"
-                  offerId: "836b9fc5-7ae9-4a27-9642-592bc44072b7"
-                  currency: "USD"
-                  paymentProvider: "STRIPE"
-                  periodicity: "MONTHLY"
+                  email: 'client@gmail.com'
+                  offerId: '836b9fc5-7ae9-4a27-9642-592bc44072b7'
+                  currency: 'USD'
+                  paymentProvider: 'STRIPE'
+                  periodicity: 'MONTHLY'
               subscription_USD_PAYPAL:
                 summary: Пример покупки подписки за USD, через провайдер PAYPAL
                 value:
-                  email: "client@gmail.com"
-                  offerId: "836b9fc5-7ae9-4a27-9642-592bc44072b7"
-                  currency: "USD"
-                  paymentProvider: "PAYPAL"
-                  periodicity: "MONTHLY"
+                  email: 'client@gmail.com'
+                  offerId: '836b9fc5-7ae9-4a27-9642-592bc44072b7'
+                  currency: 'USD'
+                  paymentProvider: 'PAYPAL'
+                  periodicity: 'MONTHLY'
               subscription_EUR_UNLIMINT_CARD:
                 summary: Пример покупки подписки за EUR, через провайдер UNLIMIT и способ оплаты карта
                 value:
-                  email: "client@gmail.com"
-                  offerId: "836b9fc5-7ae9-4a27-9642-592bc44072b7"
-                  currency: "EUR"
-                  paymentProvider: "UNLIMIT"
-                  paymentMethod: "CARD"
-                  periodicity: "MONTHLY"
+                  email: 'client@gmail.com'
+                  offerId: '836b9fc5-7ae9-4a27-9642-592bc44072b7'
+                  currency: 'EUR'
+                  paymentProvider: 'UNLIMIT'
+                  paymentMethod: 'CARD'
+                  periodicity: 'MONTHLY'
               subscription_EUR_STRIPE:
                 summary: Пример покупки подписки за EUR, через провайдер STRIPE
                 value:
-                  email: "client@gmail.com"
-                  offerId: "836b9fc5-7ae9-4a27-9642-592bc44072b7"
-                  currency: "EUR"
-                  paymentProvider: "STRIPE"
-                  periodicity: "MONTHLY"
+                  email: 'client@gmail.com'
+                  offerId: '836b9fc5-7ae9-4a27-9642-592bc44072b7'
+                  currency: 'EUR'
+                  paymentProvider: 'STRIPE'
+                  periodicity: 'MONTHLY'
               subscription_EUR_PAYPAL:
                 summary: Пример покупки подписки за EUR, через провайдер PAYPAL
                 value:
-                  email: "client@gmail.com"
-                  offerId: "836b9fc5-7ae9-4a27-9642-592bc44072b7"
-                  currency: "EUR"
-                  paymentProvider: "PAYPAL"
-                  periodicity: "MONTHLY"
+                  email: 'client@gmail.com'
+                  offerId: '836b9fc5-7ae9-4a27-9642-592bc44072b7'
+                  currency: 'EUR'
+                  paymentProvider: 'PAYPAL'
+                  periodicity: 'MONTHLY'
               subscription_RUB_SMART_GLOCAL:
                 summary: Пример покупки подписки за RUB, через провайдер SMART_GLOCAL
                 value:
-                  email: "client@gmail.com"
-                  offerId: "836b9fc5-7ae9-4a27-9642-592bc44072b7"
-                  currency: "RUB"
-                  paymentProvider: "SMART_GLOCAL"
-                  periodicity: "MONTHLY"
+                  email: 'client@gmail.com'
+                  offerId: '836b9fc5-7ae9-4a27-9642-592bc44072b7'
+                  currency: 'RUB'
+                  paymentProvider: 'SMART_GLOCAL'
+                  periodicity: 'MONTHLY'
 
       responses:
         201:
@@ -497,13 +497,13 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
               example:
                 error: "Product with offer id = '3fa85f64-5717-4562-b3fc-2c963f66afa6' not found"
-                details: { }
-                timestamp: "2025-01-01T10:00:00.0000000+00:00"
+                details: {}
+                timestamp: '2025-01-01T10:00:00.0000000+00:00'
 
   /api/v1/invoices:
     get:
       security:
-        - ApiKeyAuth: [ ]
+        - ApiKeyAuth: []
       tags:
         - Invoices
       summary: Получение страницы контрактов API-ключа, использованного в запросе
@@ -602,7 +602,7 @@ paths:
                     type: array
                     description: Элементы страницы
                     items:
-                      $ref: "#/components/schemas/InvoiceResponseV2"
+                      $ref: '#/components/schemas/InvoiceResponseV2'
                   page:
                     type: integer
                     description: Номер страницы
@@ -634,7 +634,7 @@ paths:
   /api/v1/invoices/{id}:
     get:
       security:
-        - ApiKeyAuth: [ ]
+        - ApiKeyAuth: []
       tags:
         - Invoices
       summary: Получение контракта по идентификатору
@@ -652,7 +652,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/InvoiceResponseV2"
+                $ref: '#/components/schemas/InvoiceResponseV2'
         '400':
           description: Ошибка запроса
           content:
@@ -679,8 +679,8 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
               example:
                 error: "Invoice with such id  = '3fa85f64-5717-4562-b3fc-2c963f66afa6' not found"
-                details: { }
-                timestamp: "2025-01-01T10:00:00.0000000+00:00"
+                details: {}
+                timestamp: '2025-01-01T10:00:00.0000000+00:00'
 
   /api/v1/sales/:
     get:
@@ -713,7 +713,7 @@ paths:
                     type: array
                     description: Элементы страницы
                     items:
-                      $ref: "#/components/schemas/PartnerProductDto"
+                      $ref: '#/components/schemas/PartnerProductDto'
                   total:
                     type: integer
                     description: Общее количество элементов
@@ -811,7 +811,7 @@ paths:
                     type: array
                     description: Элементы страницы
                     items:
-                      $ref: "#/components/schemas/PartnerSaleDetailsDto"
+                      $ref: '#/components/schemas/PartnerSaleDetailsDto'
                   total:
                     type: integer
                     description: Общее количество элементов
@@ -836,7 +836,7 @@ paths:
   /api/v1/subscriptions:
     delete:
       security:
-        - ApiKeyAuth: [ ]
+        - ApiKeyAuth: []
       tags:
         - Subscriptions
       summary: Отмена подписки на продукт
@@ -872,11 +872,11 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
               example:
                 error: "Subscription with invoice id = '3fa85f64-5717-4562-b3fc-2c963f66afa6' not found"
-                details: { }
-                timestamp: "2025-01-01T10:00:00.0000000+00:00"
+                details: {}
+                timestamp: '2025-01-01T10:00:00.0000000+00:00'
     get:
       security:
-        - ApiKeyAuth: [ ]
+        - ApiKeyAuth: []
       tags:
         - Subscriptions
       summary: Получение страницы подписок API-ключа, использованного в запросе
@@ -975,7 +975,7 @@ paths:
                     type: array
                     description: Элементы страницы
                     items:
-                      $ref: "#/components/schemas/SubscriptionResponse"
+                      $ref: '#/components/schemas/SubscriptionResponse'
                   page:
                     type: integer
                     description: Номер страницы
@@ -1010,7 +1010,7 @@ paths:
   /api/v1/subscriptions/{id}:
     get:
       security:
-        - ApiKeyAuth: [ ]
+        - ApiKeyAuth: []
       tags:
         - Subscriptions
       summary: Получение подписки по идентификатору контракта
@@ -1028,7 +1028,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/DetailedSubscriptionResponse"
+                $ref: '#/components/schemas/DetailedSubscriptionResponse'
         '400':
           description: Ошибка запроса
           content:
@@ -1057,7 +1057,7 @@ paths:
   /api/v2/products:
     get:
       security:
-        - ApiKeyAuth: [ ]
+        - ApiKeyAuth: []
       tags:
         - Products
       summary: Получение списка продуктов. Обновленная версия /api/v1/feed
@@ -1109,7 +1109,7 @@ paths:
                     items:
                       properties:
                         type:
-                          $ref: "#/components/schemas/FeedItemType"
+                          $ref: '#/components/schemas/FeedItemType'
                         data:
                           oneOf:
                             - $ref: '#/components/schemas/ProductItemResponse'
@@ -1123,7 +1123,7 @@ paths:
   /api/v2/products/{productId}:
     patch:
       security:
-        - ApiKeyAuth: [ ]
+        - ApiKeyAuth: []
       tags:
         - Products
       summary: Обновление продукта
@@ -1156,13 +1156,13 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
               example:
                 error: "Product with id = '3fa85f64-5717-4562-b3fc-2c963f66afa6' not found"
-                details: { }
-                timestamp: "2025-01-01T10:00:00.0000000+00:00"
+                details: {}
+                timestamp: '2025-01-01T10:00:00.0000000+00:00'
 
   /api/v1/donate:
     get:
       security:
-        - ApiKeyAuth: [ ]
+        - ApiKeyAuth: []
       tags:
         - Donate
       summary: Получение ссылки на донат аккаунта
@@ -1179,8 +1179,8 @@ paths:
       tags:
         - Webhooks
       security:
-        - BasicWebhookAuth: [ ]
-        - ApiKeyWebhookAuth: [ ]
+        - BasicWebhookAuth: []
+        - ApiKeyWebhookAuth: []
       summary: Пример API-метода, которому должен следовать сервис автора для приёма вебхуков от lava.top
       requestBody:
         content:
@@ -1191,113 +1191,113 @@ paths:
               successful_purchase_webhook_payload:
                 summary: Успешно оплаченный продукт (не подписка)
                 value:
-                  eventType: "payment.success"
+                  eventType: 'payment.success'
                   product:
-                    id: "d31384b8-e412-4be5-a2ec-297ae6666c8f"
-                    title: "Тестовый продукт"
+                    id: 'd31384b8-e412-4be5-a2ec-297ae6666c8f'
+                    title: 'Тестовый продукт'
                   buyer:
-                    email: "test@lava.top"
-                  contractId: "7ea82675-4ded-4133-95a7-a6efbaf165cc"
+                    email: 'test@lava.top'
+                  contractId: '7ea82675-4ded-4133-95a7-a6efbaf165cc'
                   amount: 40254.19
-                  currency: "RUB"
-                  timestamp: "2024-02-05T09:38:27.33277Z"
-                  status: "completed"
-                  errorMessage: ""
+                  currency: 'RUB'
+                  timestamp: '2024-02-05T09:38:27.33277Z'
+                  status: 'completed'
+                  errorMessage: ''
 
               failed_purchase_webhook_payload:
                 summary: Неуспешно оплаченный продукт (не подписка)
                 value:
-                  eventType: "payment.failed"
+                  eventType: 'payment.failed'
                   product:
-                    id: "d31384b8-e412-4be5-a2ec-297ae6666c8f"
-                    title: "Тестовый продукт"
+                    id: 'd31384b8-e412-4be5-a2ec-297ae6666c8f'
+                    title: 'Тестовый продукт'
                   buyer:
-                    email: "emwbwj@lava.top"
-                  contractId: "7ea82675-4ded-4133-95a7-a6efbaf165cc"
+                    email: 'emwbwj@lava.top'
+                  contractId: '7ea82675-4ded-4133-95a7-a6efbaf165cc'
                   amount: 40254.19
-                  currency: "RUB"
-                  timestamp: "2024-02-05T09:38:27.33277Z"
-                  status: "failed"
-                  errorMessage: "Payment window is opened but not completed"
+                  currency: 'RUB'
+                  timestamp: '2024-02-05T09:38:27.33277Z'
+                  status: 'failed'
+                  errorMessage: 'Payment window is opened but not completed'
 
               successful_subscription_webhook_payload:
                 summary: Успешная оплата подписки (первый платёж)
                 value:
-                  eventType: "payment.success"
+                  eventType: 'payment.success'
                   product:
-                    id: "72d53efb-3696-469f-b856-f0d815748dd6"
-                    title: "Тестовая подписка"
+                    id: '72d53efb-3696-469f-b856-f0d815748dd6'
+                    title: 'Тестовая подписка'
                   buyer:
-                    email: "emwbwj@lava.top"
-                  contractId: "c5a0cacc-3453-44b0-9532-aa492f1ba191"
+                    email: 'emwbwj@lava.top'
+                  contractId: 'c5a0cacc-3453-44b0-9532-aa492f1ba191'
                   amount: 2049.85
-                  currency: "RUB"
-                  timestamp: "2024-02-05T08:44:32.42176Z"
-                  status: "subscription-active"
-                  errorMessage: ""
+                  currency: 'RUB'
+                  timestamp: '2024-02-05T08:44:32.42176Z'
+                  status: 'subscription-active'
+                  errorMessage: ''
 
               failed_subscription_webhook_payload:
                 summary: Ошибка при оформлении подписки (первый платёж)
                 value:
-                  eventType: "payment.failed"
+                  eventType: 'payment.failed'
                   product:
-                    id: "836b9fc5-7ae9-4a27-9642-592bc44072b7"
-                    title: "Тестовая подписка"
-                  contractId: "f4b84df8-98f6-4bac-9341-5dea5a1c3692"
+                    id: '836b9fc5-7ae9-4a27-9642-592bc44072b7'
+                    title: 'Тестовая подписка'
+                  contractId: 'f4b84df8-98f6-4bac-9341-5dea5a1c3692'
                   buyer:
-                    email: "zkvgsd@lava.top"
+                    email: 'zkvgsd@lava.top'
                   amount: 1340
-                  currency: "RUB"
-                  timestamp: "2024-10-31T13:33:32.871233Z"
-                  status: "subscription-failed"
-                  errorMessage: "Not sufficient funds"
+                  currency: 'RUB'
+                  timestamp: '2024-10-31T13:33:32.871233Z'
+                  status: 'subscription-failed'
+                  errorMessage: 'Not sufficient funds'
 
               successful_subscription_recurring_webhook_payload:
                 summary: Успешное продление подписки (второй, третий и т.д. платежи по подписке)
                 value:
-                  eventType: "subscription.recurring.payment.success"
+                  eventType: 'subscription.recurring.payment.success'
                   product:
-                    id: "72d53efb-3696-469f-b856-f0d815748dd6"
-                    title: "Тестовая подписка"
+                    id: '72d53efb-3696-469f-b856-f0d815748dd6'
+                    title: 'Тестовая подписка'
                   buyer:
-                    email: "emwbwj@lava.top"
-                  contractId: "d41db415-ad71-4f2a-8d8c-27eefee91e66"
-                  parentContractId: "c5a0cacc-3453-44b0-9532-aa492f1ba191"
+                    email: 'emwbwj@lava.top'
+                  contractId: 'd41db415-ad71-4f2a-8d8c-27eefee91e66'
+                  parentContractId: 'c5a0cacc-3453-44b0-9532-aa492f1ba191'
                   amount: 2049.85
-                  currency: "RUB"
-                  timestamp: "2024-02-05T08:44:49.123932Z"
-                  status: "subscription-active"
-                  errorMessage: ""
+                  currency: 'RUB'
+                  timestamp: '2024-02-05T08:44:49.123932Z'
+                  status: 'subscription-active'
+                  errorMessage: ''
 
               failed_subscription_recurring_webhook_payload:
                 summary: Ошибка при продлении подписки (второй, третий и т.д. платежи)
                 value:
-                  eventType: "subscription.recurring.payment.failed"
+                  eventType: 'subscription.recurring.payment.failed'
                   product:
-                    id: "72d53efb-3696-469f-b856-f0d815748dd6"
-                    title: "Тестовая подписка"
+                    id: '72d53efb-3696-469f-b856-f0d815748dd6'
+                    title: 'Тестовая подписка'
                   buyer:
-                    email: "emwbwj@lava.top"
-                  contractId: "04f152b7-63ec-46ff-958e-8a6f5869acd6"
-                  parentContractId: "c5a0cacc-3453-44b0-9532-aa492f1ba191"
+                    email: 'emwbwj@lava.top'
+                  contractId: '04f152b7-63ec-46ff-958e-8a6f5869acd6'
+                  parentContractId: 'c5a0cacc-3453-44b0-9532-aa492f1ba191'
                   amount: 2049.85
-                  currency: "RUB"
-                  timestamp: "2024-02-05T08:44:49.123932Z"
-                  status: "subscription-failed"
-                  errorMessage: "Payment window is opened but not completed"
+                  currency: 'RUB'
+                  timestamp: '2024-02-05T08:44:49.123932Z'
+                  status: 'subscription-failed'
+                  errorMessage: 'Payment window is opened but not completed'
 
               subscription_cancelled_webhook_payload:
                 summary: Событие отмены подписки
                 value:
-                  eventType: "subscription.cancelled"
-                  contractId: "04f152b7-63ec-46ff-958e-8a6f5869acd6"
+                  eventType: 'subscription.cancelled'
+                  contractId: '04f152b7-63ec-46ff-958e-8a6f5869acd6'
                   product:
-                    id: "72d53efb-3696-469f-b856-f0d815748dd6"
-                    title: "Тестовая подписка"
+                    id: '72d53efb-3696-469f-b856-f0d815748dd6'
+                    title: 'Тестовая подписка'
                   buyer:
-                    email: "emwbwj@lava.top"
-                  cancelledAt: "2024-02-05T08:44:49.123932Z"
-                  willExpireAt: "2024-03-06T08:44:49.123932Z"
+                    email: 'emwbwj@lava.top'
+                  cancelledAt: '2024-02-05T08:44:49.123932Z'
+                  willExpireAt: '2024-03-06T08:44:49.123932Z'
 
       responses:
         2XX:
@@ -1354,7 +1354,7 @@ paths:
   /api/v2/invoices:
     get:
       security:
-        - ApiKeyAuth: [ ]
+        - ApiKeyAuth: []
       tags:
         - Invoices
       summary: Получение страницы контрактов API-ключа, использованного в запросе
@@ -1453,7 +1453,7 @@ paths:
                     type: array
                     description: Элементы страницы
                     items:
-                      $ref: "#/components/schemas/InvoiceResponseV3"
+                      $ref: '#/components/schemas/InvoiceResponseV3'
                   page:
                     type: integer
                     description: Номер страницы
@@ -1485,7 +1485,7 @@ paths:
   /api/v2/invoices/{id}:
     get:
       security:
-        - ApiKeyAuth: [ ]
+        - ApiKeyAuth: []
       tags:
         - Invoices
       summary: Получение контракта по идентификатору
@@ -1503,7 +1503,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/InvoiceResponseV3"
+                $ref: '#/components/schemas/InvoiceResponseV3'
         '400':
           description: Ошибка запроса
           content:
@@ -2027,13 +2027,13 @@ components:
           type: string
           nullable: true
           description: Различает варианты одного и того же объявления или кампании (например, "banner_ad_A"). Может быть пустым.
-      required: [ ]
+      required: []
       example:
-        utm_source: "google"
-        utm_medium: "cpc"
-        utm_campaign: "summer_sale"
-        utm_term: "running_shoes"
-        utm_content: "homepage_banner"
+        utm_source: 'google'
+        utm_medium: 'cpc'
+        utm_campaign: 'summer_sale'
+        utm_term: 'running_shoes'
+        utm_content: 'homepage_banner'
 
     ErrorResponse:
       type: object
@@ -2124,17 +2124,17 @@ components:
           type: string
           format: date-time
           nullable: true
-          description: "Дата, когда истекает действие подписки"
+          description: 'Дата, когда истекает действие подписки'
         terminatedAt:
           type: string
           format: date-time
           nullable: true
-          description: "Дата, когда доступ к подписке был закрыт"
+          description: 'Дата, когда доступ к подписке был закрыт'
         cancelledAt:
           type: string
           format: date-time
           nullable: true
-          description: "Дата, когда была отменена подписка"
+          description: 'Дата, когда была отменена подписка'
 
     InvoiceResponseV2.ReceiptResponse:
       type: object
@@ -2161,7 +2161,7 @@ components:
         cardMask:
           type: string
           description: Последние 4 цифры карты покупателя
-          example: "**** **** **** 1234"
+          example: '**** **** **** 1234'
 
     InvoiceResponseV2.ProductResponse:
       type: object
@@ -2262,11 +2262,11 @@ components:
     PaymentMethod:
       type: string
 
-      description: > 
+      description: >
         Провайдер для платежа.
-        
+
         Для платежей в российских рублях (RUB) доступен BANK131, SMART_GLOCAL и PAY2ME, для платежей в Евро (EUR) или Долларах (USD) - UNLIMINT и PAYPAL, STRIPE. 
-        
+
         Если провайдер не указан при создании платежа, то для RUB будет по умолчанию использован SMART_GLOCAL, а для EUR и USD - UNLIMINT
       enum:
         - BANK131
@@ -2296,7 +2296,7 @@ components:
 
       description: >
         Метод оплаты (для платежей через провайдер PAY2ME). Карта (CARD) или Система Быстрых Платежей (SBP)
-        
+
         Если не указано - используется Карта.
       enum:
         - CARD

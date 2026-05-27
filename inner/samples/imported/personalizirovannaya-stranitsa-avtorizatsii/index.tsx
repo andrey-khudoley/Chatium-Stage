@@ -1,4 +1,4 @@
-import { jsx } from "@app/html-jsx"
+import { jsx } from '@app/html-jsx'
 import { getEnabledAuthProviders } from '@app/auth/provider'
 import Index from './Index.vue'
 
@@ -7,9 +7,9 @@ export const indexPageRoute = app.html('/', async (ctx, req) => {
 
   // Получение доступных провайдеров авторизации
   const providers = await getEnabledAuthProviders(ctx)
-  
+
   return (
-    <html> 
+    <html>
       <head>
         <title>{ctx.t('Authorization')}</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />

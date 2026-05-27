@@ -4,26 +4,29 @@ declare module '*.vue' {
 }
 
 declare module 'vue' {
-         function ref<T>(value: T): { value: T }
-         function reactive<T extends object>(obj: T): T
-         function computed<T>(getter: () => T): { value: T }
-         function watch<T>(source: any, callback: (newVal: T, oldVal: T) => void): void
-         function watch<T>(
+  function ref<T>(value: T): { value: T }
+  function reactive<T extends object>(obj: T): T
+  function computed<T>(getter: () => T): { value: T }
+  function watch<T>(source: any, callback: (newVal: T, oldVal: T) => void): void
+  function watch<T>(
     source: any,
     callback: (newVal: T, oldVal: T) => void,
     options: { immediate?: boolean; deep?: boolean }
   ): void
-         function watchEffect(effect: () => void): void
-         function onMounted(callback: () => void): void
-         function onBeforeMount(callback: () => void): void
-         function onBeforeUpdate(callback: () => void): void
-         function onUpdated(callback: () => void): void
-         function onBeforeUnmount(callback: () => void): void
-         function onUnmounted(callback: () => void): void
-         function defineProps<T>(): T
-         function defineEmits<T extends Record<string, unknown[]>>(): (event: keyof T, ...args: any[]) => void
-         function withDefaults<T, D>(props: T, defaults: D): T & D
-  
+  function watchEffect(effect: () => void): void
+  function onMounted(callback: () => void): void
+  function onBeforeMount(callback: () => void): void
+  function onBeforeUpdate(callback: () => void): void
+  function onUpdated(callback: () => void): void
+  function onBeforeUnmount(callback: () => void): void
+  function onUnmounted(callback: () => void): void
+  function defineProps<T>(): T
+  function defineEmits<T extends Record<string, unknown[]>>(): (
+    event: keyof T,
+    ...args: any[]
+  ) => void
+  function withDefaults<T, D>(props: T, defaults: D): T & D
+
   export type Ref<T> = { value: T }
   export type ComputedRef<T> = { value: T }
   export type DefineComponent = any
@@ -35,7 +38,7 @@ declare namespace app {
     query?: any
     params?: any
   }
-  
+
   interface Ctx {
     user?: any
     account?: any

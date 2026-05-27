@@ -1,7 +1,7 @@
 <template>
   <div class="h-full w-80 bg-white flex flex-col">
     <!-- Tree Navigation -->
-    <div 
+    <div
       class="flex-1 overflow-y-auto pt-8"
       @dragover.prevent="handleRootDragOver"
       @dragleave="handleRootDragLeave"
@@ -10,8 +10,7 @@
       <div v-if="loading" class="p-4 text-center">
         <i class="fas fa-spinner fa-spin text-gray-400"></i>
       </div>
-      
-      
+
       <div v-else>
         <TreeNode
           v-for="(node, index) in filteredTree"
@@ -39,7 +38,7 @@
           @icon-change="$emit('icon-change', $event)"
         />
       </div>
-      
+
       <!-- Root Drop Zone (visible when dragging) -->
       <div
         v-if="draggingNodeId"
@@ -51,7 +50,10 @@
           isRootDropZone ? 'bg-blue-50 border-2 border-dashed border-blue-400 py-1' : 'py-1'
         ]"
       >
-        <div v-if="isRootDropZone && draggingNodeData" class="flex items-center justify-center text-xs text-blue-600 space-x-2">
+        <div
+          v-if="isRootDropZone && draggingNodeData"
+          class="flex items-center justify-center text-xs text-blue-600 space-x-2"
+        >
           <i class="fas fa-file-alt text-blue-500"></i>
           <span class="font-medium">{{ draggingNodeData.title }}</span>
           <i class="fas fa-arrow-up text-blue-400"></i>
@@ -62,7 +64,6 @@
         </div>
       </div>
     </div>
-
   </div>
 </template>
 
@@ -81,7 +82,14 @@ const props = defineProps({
   isViewMode: Boolean
 })
 
-const emit = defineEmits(['navigate', 'delete-document', 'create-child', 'edit', 'icon-change', 'reload-tree'])
+const emit = defineEmits([
+  'navigate',
+  'delete-document',
+  'create-child',
+  'edit',
+  'icon-change',
+  'reload-tree'
+])
 
 const loading = ref(false)
 const draggingNodeId = ref(null)
@@ -92,12 +100,12 @@ const isRootDropZone = ref(false)
 // Filter tree based on activeSectionId
 const filteredTree = computed(() => {
   if (!props.tree || props.tree.length === 0) return []
-  
+
   if (props.activeSectionId) {
     // Find the section and return its children
     return findSectionChildren(props.tree, props.activeSectionId)
   }
-  
+
   return props.tree
 })
 
@@ -150,15 +158,15 @@ async function handleNodeMove(event) {
   } else if (event.type === 'move-to-parent') {
     try {
       const parentNode = event.parentNode
-      
+
       let newParentId = null
-      
+
       if (parentNode.type === 'section') {
         newParentId = null
       } else if (parentNode.type === 'page') {
         newParentId = parentNode.parentId || null
       }
-      
+
       await apiDocumentMoveRoute({ id: event.draggedId }).run(ctx, {
         targetParentId: newParentId,
         targetOrder: null
@@ -186,8 +194,7 @@ function handleRootDragOver(e) {
   e.preventDefault()
 }
 
-function handleRootDragLeave(e) {
-}
+function handleRootDragLeave(e) {}
 
 function handleRootDrop(e) {
   e.preventDefault()
@@ -208,13 +215,13 @@ async function handleRootDropZoneDrop(e) {
   e.preventDefault()
   e.stopPropagation()
   isRootDropZone.value = false
-  
+
   const dragData = e.dataTransfer.getData('application/json')
   if (!dragData) return
-  
+
   try {
     const dragged = JSON.parse(dragData)
-    
+
     await apiDocumentMoveRoute({ id: dragged.id }).run(ctx, {
       targetParentId: null,
       targetOrder: null
@@ -229,13 +236,13 @@ async function handleRootDropZoneDrop(e) {
 async function handleMoveUp(event) {
   try {
     const { nodeId, nodeType } = event
-    
+
     const context = findNodeContext(props.tree, nodeId)
     if (!context || context.index === 0) return
-    
+
     const currentNode = context.siblings[context.index]
     const prevNode = context.siblings[context.index - 1]
-    
+
     await apiDocumentMoveRoute({ id: nodeId }).run(ctx, {
       targetParentId: currentNode.parentId || null,
       targetOrder: prevNode.order - 0.5
@@ -250,13 +257,13 @@ async function handleMoveUp(event) {
 async function handleMoveDown(event) {
   try {
     const { nodeId, nodeType } = event
-    
+
     const context = findNodeContext(props.tree, nodeId)
     if (!context || context.index === context.siblings.length - 1) return
-    
+
     const currentNode = context.siblings[context.index]
     const nextNode = context.siblings[context.index + 1]
-    
+
     await apiDocumentMoveRoute({ id: nodeId }).run(ctx, {
       targetParentId: currentNode.parentId || null,
       targetOrder: nextNode.order + 0.5
@@ -270,7 +277,7 @@ async function handleMoveDown(event) {
 
 function findNodeContext(nodes, nodeId, parentId = null) {
   if (!nodes) return null
-  
+
   for (let i = 0; i < nodes.length; i++) {
     if (nodes[i].id === nodeId) {
       return {
@@ -280,7 +287,7 @@ function findNodeContext(nodes, nodeId, parentId = null) {
       }
     }
   }
-  
+
   for (const node of nodes) {
     if (node.children && node.children.length > 0) {
       const newParentId = node.id
@@ -288,7 +295,7 @@ function findNodeContext(nodes, nodeId, parentId = null) {
       if (result) return result
     }
   }
-  
+
   return null
 }
 </script>

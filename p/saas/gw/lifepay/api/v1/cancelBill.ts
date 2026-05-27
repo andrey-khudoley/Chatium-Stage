@@ -42,7 +42,12 @@ export const cancelBillRoute = app.post('/', async (ctx, req) => {
 
     // LifePay при `code === 0` возвращает `data: {}` — отдельных полей нет;
     // `extractCancelBillSuccess` отдаёт синтетический `{ status: 'cancelled' }`.
-    return { kind: 'lp_result', lp, semantic: null, successData: extractCancelBillSuccess(lp.lpJson) }
+    return {
+      kind: 'lp_result',
+      lp,
+      semantic: null,
+      successData: extractCancelBillSuccess(lp.lpJson)
+    }
   })
 })
 

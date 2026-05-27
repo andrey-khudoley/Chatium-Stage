@@ -3,9 +3,7 @@
     <form @submit.prevent="submitBooking" class="space-y-6">
       <!-- Имя -->
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-2">
-          Ваше имя *
-        </label>
+        <label class="block text-sm font-medium text-gray-700 mb-2"> Ваше имя * </label>
         <input
           v-model="form.clientName"
           type="text"
@@ -17,9 +15,7 @@
 
       <!-- Телефон -->
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-2">
-          Телефон *
-        </label>
+        <label class="block text-sm font-medium text-gray-700 mb-2"> Телефон * </label>
         <input
           v-model="form.clientPhone"
           type="tel"
@@ -31,9 +27,7 @@
 
       <!-- Email -->
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-2">
-          Email
-        </label>
+        <label class="block text-sm font-medium text-gray-700 mb-2"> Email </label>
         <input
           v-model="form.clientEmail"
           type="email"
@@ -44,9 +38,7 @@
 
       <!-- Услуга -->
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-2">
-          Выберите услугу *
-        </label>
+        <label class="block text-sm font-medium text-gray-700 mb-2"> Выберите услугу * </label>
         <select
           v-model="form.service"
           required
@@ -64,9 +56,7 @@
 
       <!-- Дата -->
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-2">
-          Дата *
-        </label>
+        <label class="block text-sm font-medium text-gray-700 mb-2"> Дата * </label>
         <input
           v-model="form.date"
           type="date"
@@ -79,9 +69,7 @@
 
       <!-- Время -->
       <div v-if="form.date">
-        <label class="block text-sm font-medium text-gray-700 mb-2">
-          Время *
-        </label>
+        <label class="block text-sm font-medium text-gray-700 mb-2"> Время * </label>
         <div v-if="loadingTimes" class="text-center py-4">
           <i class="fas fa-spinner fa-spin text-primary text-2xl"></i>
         </div>
@@ -108,9 +96,7 @@
 
       <!-- Примечания -->
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-2">
-          Примечания
-        </label>
+        <label class="block text-sm font-medium text-gray-700 mb-2"> Примечания </label>
         <textarea
           v-model="form.notes"
           rows="3"
@@ -120,7 +106,10 @@
       </div>
 
       <!-- Сообщения -->
-      <div v-if="successMessage" class="p-4 bg-green-50 border border-green-200 rounded-lg text-green-700">
+      <div
+        v-if="successMessage"
+        class="p-4 bg-green-50 border border-green-200 rounded-lg text-green-700"
+      >
         <i class="fas fa-check-circle mr-2"></i>
         {{ successMessage }}
       </div>
@@ -139,9 +128,7 @@
           <i class="fas fa-spinner fa-spin mr-2"></i>
           Отправка...
         </span>
-        <span v-else>
-          Записаться
-        </span>
+        <span v-else> Записаться </span>
       </button>
     </form>
   </div>
@@ -174,15 +161,15 @@ const minDate = computed(() => {
 
 async function loadAvailableTimes() {
   if (!form.value.date) return
-  
+
   loadingTimes.value = true
   form.value.time = ''
-  
+
   try {
     const response = await apiGetAvailableTimesRoute.run(ctx, {
       date: form.value.date
     })
-    
+
     if (response.success) {
       availableTimes.value = response.availableTimes
     } else {
@@ -199,13 +186,13 @@ async function submitBooking() {
   loading.value = true
   successMessage.value = ''
   errorMessage.value = ''
-  
+
   try {
     const response = await apiCreateBookingRoute.run(ctx, form.value)
-    
+
     if (response.success) {
       successMessage.value = 'Спасибо за запись! Мы свяжемся с вами для подтверждения.'
-      
+
       // Очищаем форму
       form.value = {
         clientName: '',
@@ -217,7 +204,7 @@ async function submitBooking() {
         notes: ''
       }
       availableTimes.value = []
-      
+
       // Прокручиваем к сообщению об успехе
       setTimeout(() => {
         window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' })

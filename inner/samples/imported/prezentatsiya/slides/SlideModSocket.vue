@@ -14,8 +14,18 @@
 
       <div class="timeline">
         <div class="timeline-line">
-          <div class="pulse-dot" v-for="n in 6" :key="n" :style="{ left: (n - 1) * 20 + '%', animationDelay: (n * 0.3) + 's' }"></div>
-          <div class="signal-wave" v-for="n in 3" :key="'w'+n" :style="{ left: ((n - 1) * 40 + 10) + '%', animationDelay: (n * 0.8) + 's' }"></div>
+          <div
+            class="pulse-dot"
+            v-for="n in 6"
+            :key="n"
+            :style="{ left: (n - 1) * 20 + '%', animationDelay: n * 0.3 + 's' }"
+          ></div>
+          <div
+            class="signal-wave"
+            v-for="n in 3"
+            :key="'w' + n"
+            :style="{ left: (n - 1) * 40 + 10 + '%', animationDelay: n * 0.8 + 's' }"
+          ></div>
         </div>
 
         <div class="timeline-items">
@@ -33,7 +43,6 @@
                 <h3>{{ f.title }}</h3>
                 <p>{{ f.desc }}</p>
               </div>
-
             </div>
           </div>
         </div>
@@ -46,9 +55,21 @@
 defineProps({ active: Boolean })
 
 const features = [
-  { icon: 'fas fa-comments', title: 'Живые чаты', desc: 'Сообщения появляются мгновенно — как в Telegram. Никаких задержек и кнопок «обновить».' },
-  { icon: 'fas fa-bell', title: 'Пуш-уведомления', desc: 'Оплата прошла, заказ создан, клиент написал — менеджер видит сразу, без обновления страницы.' },
-  { icon: 'fas fa-arrows-rotate', title: 'Синхронизация данных', desc: 'Таблицы, дашборды, статусы — всё обновляется у всех одновременно. Один источник правды.' },
+  {
+    icon: 'fas fa-comments',
+    title: 'Живые чаты',
+    desc: 'Сообщения появляются мгновенно — как в Telegram. Никаких задержек и кнопок «обновить».'
+  },
+  {
+    icon: 'fas fa-bell',
+    title: 'Пуш-уведомления',
+    desc: 'Оплата прошла, заказ создан, клиент написал — менеджер видит сразу, без обновления страницы.'
+  },
+  {
+    icon: 'fas fa-arrows-rotate',
+    title: 'Синхронизация данных',
+    desc: 'Таблицы, дашборды, статусы — всё обновляется у всех одновременно. Один источник правды.'
+  }
 ]
 </script>
 
@@ -65,10 +86,34 @@ const features = [
   overflow-x: hidden;
 }
 
-.bg-effects { position: fixed; inset: 0; pointer-events: none; overflow: hidden; }
-.glow-orb { position: absolute; border-radius: 50%; filter: blur(140px); opacity: 0.12; animation: float 20s ease-in-out infinite; }
-.orb-1 { width: 550px; height: 550px; background: #f43f5e; top: -20%; right: -10%; }
-.orb-2 { width: 400px; height: 400px; background: #fb7185; bottom: -15%; left: -5%; animation-delay: -8s; }
+.bg-effects {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+.glow-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(140px);
+  opacity: 0.12;
+  animation: float 20s ease-in-out infinite;
+}
+.orb-1 {
+  width: 550px;
+  height: 550px;
+  background: #f43f5e;
+  top: -20%;
+  right: -10%;
+}
+.orb-2 {
+  width: 400px;
+  height: 400px;
+  background: #fb7185;
+  bottom: -15%;
+  left: -5%;
+  animation-delay: -8s;
+}
 
 .grid-noise {
   position: absolute;
@@ -78,8 +123,13 @@ const features = [
 }
 
 @keyframes float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-35px); }
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-35px);
+  }
 }
 
 .content {
@@ -92,7 +142,9 @@ const features = [
   gap: 48px;
 }
 
-.header { text-align: center; }
+.header {
+  text-align: center;
+}
 
 .title {
   font-family: var(--font-display);
@@ -133,7 +185,14 @@ const features = [
   left: 40px;
   right: 40px;
   height: 3px;
-  background: linear-gradient(90deg, transparent, rgba(244,63,94,0.3), rgba(251,113,133,0.5), rgba(244,63,94,0.3), transparent);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(244, 63, 94, 0.3),
+    rgba(251, 113, 133, 0.5),
+    rgba(244, 63, 94, 0.3),
+    transparent
+  );
   border-radius: 2px;
 }
 
@@ -149,8 +208,17 @@ const features = [
 }
 
 @keyframes pulse-travel {
-  0%, 100% { opacity: 0.2; box-shadow: 0 0 4px rgba(244,63,94,0.3); }
-  50% { opacity: 1; box-shadow: 0 0 20px rgba(244,63,94,0.8), 0 0 40px rgba(244,63,94,0.3); }
+  0%,
+  100% {
+    opacity: 0.2;
+    box-shadow: 0 0 4px rgba(244, 63, 94, 0.3);
+  }
+  50% {
+    opacity: 1;
+    box-shadow:
+      0 0 20px rgba(244, 63, 94, 0.8),
+      0 0 40px rgba(244, 63, 94, 0.3);
+  }
 }
 
 .signal-wave {
@@ -159,14 +227,20 @@ const features = [
   width: 20px;
   height: 20px;
   border-radius: 50%;
-  border: 2px solid rgba(244,63,94,0.4);
+  border: 2px solid rgba(244, 63, 94, 0.4);
   transform: translate(-50%, -50%) scale(0);
   animation: wave-expand 3s ease-out infinite;
 }
 
 @keyframes wave-expand {
-  0% { transform: translate(-50%, -50%) scale(0); opacity: 1; }
-  100% { transform: translate(-50%, -50%) scale(4); opacity: 0; }
+  0% {
+    transform: translate(-50%, -50%) scale(0);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(4);
+    opacity: 0;
+  }
 }
 
 .timeline-items {
@@ -194,7 +268,9 @@ const features = [
   height: 16px;
   border-radius: 50%;
   background: #f43f5e;
-  box-shadow: 0 0 12px rgba(244,63,94,0.6), 0 0 30px rgba(244,63,94,0.2);
+  box-shadow:
+    0 0 12px rgba(244, 63, 94, 0.6),
+    0 0 30px rgba(244, 63, 94, 0.2);
   position: relative;
 }
 
@@ -203,13 +279,20 @@ const features = [
   position: absolute;
   inset: -4px;
   border-radius: 50%;
-  border: 2px solid rgba(244,63,94,0.3);
+  border: 2px solid rgba(244, 63, 94, 0.3);
   animation: ring-pulse 2s ease-in-out infinite;
 }
 
 @keyframes ring-pulse {
-  0%, 100% { transform: scale(1); opacity: 0.5; }
-  50% { transform: scale(1.4); opacity: 0; }
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.5;
+  }
+  50% {
+    transform: scale(1.4);
+    opacity: 0;
+  }
 }
 
 .connector-line {
@@ -222,8 +305,8 @@ const features = [
   position: relative;
   padding: 28px 24px;
   border-radius: 20px;
-  background: rgba(244,63,94,0.03);
-  border: 1px solid rgba(244,63,94,0.1);
+  background: rgba(244, 63, 94, 0.03);
+  border: 1px solid rgba(244, 63, 94, 0.1);
   transition: all 0.4s ease;
   text-align: center;
   width: 100%;
@@ -242,13 +325,15 @@ const features = [
   transition: opacity 0.4s;
 }
 
-.item-card:hover::before { opacity: 1; }
+.item-card:hover::before {
+  opacity: 1;
+}
 
 .item-card:hover {
-  border-color: rgba(244,63,94,0.25);
-  background: rgba(244,63,94,0.06);
+  border-color: rgba(244, 63, 94, 0.25);
+  background: rgba(244, 63, 94, 0.06);
   transform: translateY(-4px);
-  box-shadow: 0 16px 48px rgba(244,63,94,0.12);
+  box-shadow: 0 16px 48px rgba(244, 63, 94, 0.12);
 }
 
 .item-number {
@@ -257,7 +342,7 @@ const features = [
   right: 16px;
   font-family: var(--font-mono, 'JetBrains Mono', monospace);
   font-size: 13px;
-  color: rgba(244,63,94,0.25);
+  color: rgba(244, 63, 94, 0.25);
   font-weight: 600;
 }
 
@@ -265,12 +350,12 @@ const features = [
   width: 52px;
   height: 52px;
   border-radius: 50%;
-  background: rgba(244,63,94,0.1);
+  background: rgba(244, 63, 94, 0.1);
   display: flex;
   align-items: center;
   justify-content: center;
   margin: 0 auto 16px;
-  border: 1px solid rgba(244,63,94,0.15);
+  border: 1px solid rgba(244, 63, 94, 0.15);
 }
 
 .item-icon i {
@@ -288,30 +373,67 @@ const features = [
 
 .item-body p {
   font-size: 15px;
-  color: var(--text-tertiary, rgba(255,255,255,0.5));
+  color: var(--text-tertiary, rgba(255, 255, 255, 0.5));
   margin: 0;
   line-height: 1.6;
 }
 
-
-
 @media (max-width: 768px) {
-  .slide { padding: 30px 16px 16px; align-items: flex-start; }
-  .timeline-line { display: none; }
-  .timeline-items { flex-direction: column; gap: 12px; padding-top: 0; }
-  .item-connector { display: none; }
-  .item-card { padding: 16px; display: flex; flex-direction: row; gap: 14px; text-align: left; }
-  .item-icon { margin: 0; width: 40px; height: 40px; flex-shrink: 0; }
-  .item-icon i { font-size: 18px; }
-  .item-body h3 { font-size: 16px; }
-  .item-body p { font-size: 13px; }
-  .content { gap: 24px; }
-  .item-number { display: none; }
+  .slide {
+    padding: 30px 16px 16px;
+    align-items: flex-start;
+  }
+  .timeline-line {
+    display: none;
+  }
+  .timeline-items {
+    flex-direction: column;
+    gap: 12px;
+    padding-top: 0;
+  }
+  .item-connector {
+    display: none;
+  }
+  .item-card {
+    padding: 16px;
+    display: flex;
+    flex-direction: row;
+    gap: 14px;
+    text-align: left;
+  }
+  .item-icon {
+    margin: 0;
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+  }
+  .item-icon i {
+    font-size: 18px;
+  }
+  .item-body h3 {
+    font-size: 16px;
+  }
+  .item-body p {
+    font-size: 13px;
+  }
+  .content {
+    gap: 24px;
+  }
+  .item-number {
+    display: none;
+  }
 }
 
 @media (max-width: 480px) {
-  .content { gap: 28px; }
-  .item-icon { width: 44px; height: 44px; }
-  .item-icon i { font-size: 18px; }
+  .content {
+    gap: 28px;
+  }
+  .item-icon {
+    width: 44px;
+    height: 44px;
+  }
+  .item-icon i {
+    font-size: 18px;
+  }
 }
 </style>

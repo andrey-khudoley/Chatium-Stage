@@ -11,90 +11,90 @@ export interface AppSettingDto {
 
 export const apiAppSettingsListRoute = app.get('/list', async (ctx, req) => {
   requireAccountRole(ctx, 'Admin')
-  
+
   const settings = await AppSettings.findAll(ctx, {
     order: [{ category: 'asc' }, { key: 'asc' }]
   })
-  
-  return settings.map(s => ({
+
+  return settings.map((s) => ({
     id: s.id,
     key: s.key,
     value: s.value,
     category: s.category,
-    description: s.description,
+    description: s.description
   }))
 })
 
 export const apiAppSettingsGetRoute = app.get('/get/:key', async (ctx, req) => {
   requireAccountRole(ctx, 'Admin')
-  
+
   const setting = await AppSettings.findOneBy(ctx, { key: req.params.key })
-  
+
   if (!setting) {
     return null
   }
-  
+
   return {
     id: setting.id,
     key: setting.key,
     value: setting.value,
     category: setting.category,
-    description: setting.description,
+    description: setting.description
   }
 })
 
 export const apiAppSettingsUpdateRoute = app.post('/update', async (ctx, req) => {
   requireAccountRole(ctx, 'Admin')
-  
+
   const { key, value, category, description } = req.body
-  
+
   if (!key) {
     throw new Error('Key is required')
   }
-  
+
   const existing = await AppSettings.findOneBy(ctx, { key })
-  
+
   let setting
   if (existing) {
     setting = await AppSettings.update(ctx, {
       id: existing.id,
       value: value ?? existing.value,
       category: category ?? existing.category,
-      description: description ?? existing.description,
+      description: description ?? existing.description
     })
   } else {
     setting = await AppSettings.create(ctx, {
       key,
       value: value ?? '',
       category: category ?? 'general',
-      description: description ?? '',
+      description: description ?? ''
     })
   }
-  
+
   return {
     id: setting.id,
     key: setting.key,
     value: setting.value,
     category: setting.category,
-    description: setting.description,
+    description: setting.description
   }
 })
 
 export const apiAppSettingsDeleteRoute = app.post('/delete', async (ctx, req) => {
   requireAccountRole(ctx, 'Admin')
-  
+
   const { key } = req.body
-  
+
   if (!key) {
     throw new Error('Key is required')
   }
-  
+
   const existing = await AppSettings.findOneBy(ctx, { key })
-  
+
   if (existing) {
     await AppSettings.delete(ctx, existing.id)
   }
-  
+
   return { success: true }
 })
 

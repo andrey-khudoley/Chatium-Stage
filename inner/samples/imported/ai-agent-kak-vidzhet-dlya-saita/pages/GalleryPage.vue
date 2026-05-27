@@ -10,8 +10,8 @@
         <div class="gallery__section">
           <h2 class="gallery__section-title">🎯 Что это?</h2>
           <p class="gallery__text">
-            Интеллектуальный виджет чата, который можно встроить на любой сайт. 
-            Работает через AI-агента для автоматических ответов на вопросы посетителей.
+            Интеллектуальный виджет чата, который можно встроить на любой сайт. Работает через
+            AI-агента для автоматических ответов на вопросы посетителей.
           </p>
         </div>
 
@@ -30,9 +30,9 @@
         <div class="gallery__section">
           <h2 class="gallery__section-title">🚀 Как работает?</h2>
           <p class="gallery__text">
-            Виджет встраивается на сайт через iframe и состоит из двух частей:
-            плавающей кнопки (80×80px) и всплывающего окна чата (370×620px).
-            AI-агент обрабатывает сообщения через систему Chatium Sender.
+            Виджет встраивается на сайт через iframe и состоит из двух частей: плавающей кнопки
+            (80×80px) и всплывающего окна чата (370×620px). AI-агент обрабатывает сообщения через
+            систему Chatium Sender.
           </p>
         </div>
 
@@ -56,9 +56,9 @@
 
 .gallery {
   min-height: 100vh;
-  background: linear-gradient(135deg, #FFE5EC 0%, #FFC4D6 50%, #FFB3C6 100%);
+  background: linear-gradient(135deg, #ffe5ec 0%, #ffc4d6 50%, #ffb3c6 100%);
   padding: 60px 24px;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif;
 }
 
 .gallery__container {
@@ -81,7 +81,7 @@
 .gallery__title {
   font-size: 42px;
   font-weight: 800;
-  color: #C41E3A;
+  color: #c41e3a;
   margin-bottom: 16px;
   letter-spacing: -0.02em;
   line-height: 1.2;
@@ -89,7 +89,7 @@
 
 .gallery__subtitle {
   font-size: 20px;
-  color: #8B3A62;
+  color: #8b3a62;
   font-weight: 500;
 }
 
@@ -115,14 +115,14 @@
 .gallery__section-title {
   font-size: 24px;
   font-weight: 700;
-  color: #C41E3A;
+  color: #c41e3a;
   margin-bottom: 16px;
 }
 
 .gallery__text {
   font-size: 17px;
   line-height: 1.6;
-  color: #4A4A4A;
+  color: #4a4a4a;
 }
 
 .gallery__list {
@@ -135,7 +135,7 @@
 .gallery__list li {
   font-size: 17px;
   line-height: 1.6;
-  color: #4A4A4A;
+  color: #4a4a4a;
   padding-left: 0;
 }
 

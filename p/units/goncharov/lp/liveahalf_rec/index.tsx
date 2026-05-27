@@ -1,4 +1,4 @@
-import { jsx } from "@app/html-jsx"
+import { jsx } from '@app/html-jsx'
 import { HeadStyles } from './styles'
 import MainPage from './pages/MainPage.vue'
 
@@ -15,7 +15,10 @@ export const indexPageRoute = app.get('/', async (ctx, req) => {
 
         <title>{TITLE}</title>
         <meta name="description" content={DESCRIPTION} />
-        <meta name="keywords" content="вебинар энергия, усталость, восстановление ресурса, китайская медицина, Алексей Волков, уровень энергии" />
+        <meta
+          name="keywords"
+          content="вебинар энергия, усталость, восстановление ресурса, китайская медицина, Алексей Волков, уровень энергии"
+        />
         <meta name="author" content="Алексей Волков" />
 
         <meta property="og:type" content="website" />

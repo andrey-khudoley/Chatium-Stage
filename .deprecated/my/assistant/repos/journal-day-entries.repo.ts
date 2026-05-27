@@ -30,7 +30,11 @@ function toDto(row: JournalDayEntriesRow): JournalDayEntryDto {
   }
 }
 
-export async function getByUserAndDay(ctx: app.Ctx, userId: string, dayKey: string): Promise<JournalDayEntryDto> {
+export async function getByUserAndDay(
+  ctx: app.Ctx,
+  userId: string,
+  dayKey: string
+): Promise<JournalDayEntryDto> {
   const row = await JournalDayEntries.findOneBy(ctx, { userId, dayKey })
   if (!row) return emptyEntry(dayKey)
   return toDto(row)

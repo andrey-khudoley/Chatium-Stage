@@ -1,4 +1,5 @@
 @chatium
+
 # AI-агенты в Chatium
 
 Исчерпывающее руководство по работе с AI-агентами, ботами и автоматизированными помощниками в Chatium. Документ структурирован для удобства полнотекстового поиска и работы с эмбеддингами.
@@ -53,17 +54,13 @@
 ### Импорты
 
 ```typescript
-import { 
+import {
   getOrCreateAgentForWorkspace,
   findAgents,
   pushMessageToChain
 } from '@ai-agents/sdk/process'
 
-import {
-  startCompletion,
-  CompletionCompletedBody,
-  CompletionFailedBody
-} from '@start/sdk'
+import { startCompletion, CompletionCompletedBody, CompletionFailedBody } from '@start/sdk'
 ```
 
 ---
@@ -100,23 +97,20 @@ export const createAgentRoute = app.post('/create-agent', async (ctx, req) => {
       instructions: `Ты агент-продажник, помогаешь пользователю с выбором товаров
 Ты умеешь оформлять заказы и искать по товарам
 Помогай пользователю решать его задачи`,
-      enabledTools: [
-        createOrderTool,
-        searchProductsTool
-      ]
+      enabledTools: [createOrderTool, searchProductsTool]
     })
-    
+
     const agentUrl = ctx.account.url(`/app/agent-process/~agent/${agent.id}`)
-    
+
     ctx.account.log('Agent created', {
       level: 'info',
-      json: { 
+      json: {
         agentId: agent.id,
         key: 'salesman',
         url: agentUrl
       }
     })
-    
+
     return {
       success: true,
       agent: {
@@ -137,20 +131,24 @@ export const createAgentRoute = app.post('/create-agent', async (ctx, req) => {
 ### Параметры агента
 
 **key** (string):
+
 - Уникальный ключ агента в workspace
 - Используется для идемпотентности (повторный вызов обновит агента)
 - Примеры: `'salesman'`, `'support'`, `'consultant'`
 
 **title** (string):
+
 - Отображаемое название агента
 - Примеры: `'Агент-продавец'`, `'Агент поддержки'`
 
 **instructions** (string):
+
 - Инструкции для агента (2-3 строки)
 - Описывают роль и задачи агента
 - Влияют на поведение AI
 
 **enabledTools** (array):
+
 - Массив инструментов, доступных агенту
 - Каждый инструмент — это `app.function()` с метаданными
 - Можно передать пустой массив `[]`
@@ -165,11 +163,7 @@ import { getUserInfoTool } from './tools/getUserInfo'
 const agent = await getOrCreateAgentForWorkspace(ctx, 'assistant', {
   title: 'Универсальный помощник',
   instructions: 'Помогаю пользователям с заказами, поиском товаров и информацией',
-  enabledTools: [
-    createOrderTool,
-    searchProductsTool,
-    getUserInfoTool
-  ]
+  enabledTools: [createOrderTool, searchProductsTool, getUserInfoTool]
 })
 ```
 
@@ -183,30 +177,30 @@ import { findAgents } from '@ai-agents/sdk/process'
 export const selectAgentRoute = app.get('/select-agent', async (ctx, req) => {
   // Получаем список всех агентов в workspace
   const agents = await findAgents(ctx)
-  
+
   ctx.account.log('Available agents', {
     level: 'info',
     json: { count: agents.length }
   })
-  
+
   // Алгоритм выбора агента:
   // 1. Ищем по ключу (key) — самый надёжный способ
-  const agentByKey = agents.find(a => a.key === 'salesman')
-  
+  const agentByKey = agents.find((a) => a.key === 'salesman')
+
   // 2. Или ищем по названию (title)
-  const agentByTitle = agents.find(a => a.title === 'Агент-продавец')
-  
+  const agentByTitle = agents.find((a) => a.title === 'Агент-продавец')
+
   // 3. Или берём первого активного
   const firstActive = agents[0]
-  
+
   if (!agentByKey) {
-    return { 
-      success: false, 
+    return {
+      success: false,
       error: 'Agent not found',
-      availableAgents: agents.map(a => ({ id: a.id, key: a.key, title: a.title }))
+      availableAgents: agents.map((a) => ({ id: a.id, key: a.key, title: a.title }))
     }
   }
-  
+
   return {
     success: true,
     agent: {
@@ -219,6 +213,7 @@ export const selectAgentRoute = app.get('/select-agent', async (ctx, req) => {
 ```
 
 **Когда использовать `findAgents` vs `getOrCreateAgentForWorkspace`**:
+
 - `getOrCreateAgentForWorkspace` — когда нужно гарантированно получить агента (создаст, если нет)
 - `findAgents` — когда нужно выбрать из существующих или проверить наличие перед созданием
 
@@ -282,11 +277,13 @@ chainKey: chatId
 ### Параметры wakeAgent
 
 **wakeAgent: true** — агент начнёт обработку немедленно:
+
 - ✅ Срочные/важные сообщения
 - ✅ Требуется немедленный ответ
 - ✅ Инициирование диалога
 
 **wakeAgent: false** — сообщение в очередь:
+
 - ✅ Обогащение контекста
 - ✅ Отложенная обработка
 - ✅ Фоновая информация
@@ -294,6 +291,7 @@ chainKey: chatId
 ### chainParams структура
 
 **title** — название цепочки:
+
 ```typescript
 chainParams: {
   title: user?.displayName || person?.title || 'Неизвестный'
@@ -301,15 +299,17 @@ chainParams: {
 ```
 
 **userId** — ID пользователя SmartUser:
+
 ```typescript
 chainParams: {
-  userId: user?.id  // ТОЛЬКО SmartUser id!
+  userId: user?.id // ТОЛЬКО SmartUser id!
 }
 ```
 
 ⚠️ **ВНИМАНИЕ!** Передавай `userId` только если точно знаешь ID от SmartUser (ctx.user). Часто это **НЕ** ID текущего пользователя системы, а пользователя, для которого создаётся цепочка! Например, в Telegram-боте это может быть ID пользователя из базы, а не ID оператора.
 
 **uid** — clarity_uid сессии:
+
 ```typescript
 chainParams: {
   uid: clrtUid || sessionUid
@@ -317,6 +317,7 @@ chainParams: {
 ```
 
 **userProfile** — данные для агента:
+
 ```typescript
 chainParams: {
   userProfile: {
@@ -331,6 +332,7 @@ chainParams: {
 ```
 
 **chainMeta** — технические данные (НЕ видны агенту):
+
 ```typescript
 chainParams: {
   chainMeta: {
@@ -343,6 +345,7 @@ chainParams: {
 ```
 
 **Важно**:
+
 - `userProfile` — видит агент (для контекста общения)
 - `chainMeta` — НЕ видит агент (для аналитики/отладки)
 
@@ -355,11 +358,7 @@ chainParams: {
 Выполняет AI-генерацию с использованием LLM:
 
 ```typescript
-import {
-  startCompletion,
-  CompletionCompletedBody,
-  CompletionFailedBody
-} from '@start/sdk'
+import { startCompletion, CompletionCompletedBody, CompletionFailedBody } from '@start/sdk'
 
 async function performGeneration(ctx: app.Ctx, prompt: string, generationId: string) {
   await startCompletion(ctx, {
@@ -481,30 +480,30 @@ const onCompletionCompleted = app
     if (!(caller.type === 'plugin' && caller.appSlug === 'start')) {
       throw new Error('Invalid caller')
     }
-    
+
     const { generationId } = body.context ?? {}
-    
+
     // Извлечение текста из ответа
     const messageTexts: string[] = []
     const latestMessage = body.messages[body.messages.length - 1]!
-    
+
     for (const block of latestMessage.content) {
       if (block.type === 'text') {
         messageTexts.push(block.text)
       }
     }
-    
+
     // Сохранение результата
     await Generations.update(ctx, {
       id: generationId,
       response: messageTexts.join('\n')
     })
-    
+
     ctx.account.log('Generation completed', {
       level: 'info',
       json: { generationId }
     })
-    
+
     return null
   })
 ```
@@ -520,27 +519,28 @@ const onCompletionFailed = app
     if (!(caller.type === 'plugin' && caller.appSlug === 'start')) {
       throw new Error('Invalid caller')
     }
-    
+
     const { generationId } = body.context ?? {}
-    
+
     await Generations.update(ctx, {
       id: generationId,
       error: body.error
     })
-    
+
     ctx.account.log('Generation failed', {
       level: 'error',
-      json: { 
+      json: {
         generationId,
         error: body.error
       }
     })
-    
+
     return null
   })
 ```
 
 **Важно**: Callback функции должны:
+
 - ✅ Быть определены как `app.function()`
 - ✅ Использовать схему body (`CompletionCompletedBody`)
 - ✅ **Обязательно проверять caller** — это защита от несанкционированных вызовов!
@@ -553,26 +553,27 @@ const onCompletionFailed = app
 ```typescript
 await startCompletion(ctx, {
   // ...
-  nativeTools: ['crawl', 'search'],
+  nativeTools: ['crawl', 'search']
   // ...
 })
 ```
 
 **Доступные nativeTools**:
 
-| Инструмент | Описание |
-|------------|----------|
-| `'crawl'` | Веб-скрапинг — извлекает контент со страницы по URL |
-| `'search'` | Поиск в интернете — выполняет поисковый запрос |
+| Инструмент | Описание                                            |
+| ---------- | --------------------------------------------------- |
+| `'crawl'`  | Веб-скрапинг — извлекает контент со страницы по URL |
+| `'search'` | Поиск в интернете — выполняет поисковый запрос      |
 
 **Отличие от `tools`**:
+
 - `nativeTools` — системные инструменты, указываются строками
 - `tools` — кастомные инструменты, созданные через `app.function()`
 
 ```typescript
 await startCompletion(ctx, {
   // ...
-  nativeTools: ['crawl'],           // Системный инструмент
+  nativeTools: ['crawl'], // Системный инструмент
   tools: [myCustomTool, anotherTool] // Кастомные инструменты
   // ...
 })
@@ -588,20 +589,18 @@ await startCompletion(ctx, {
 
 ```typescript
 // tools/createOrder.ts
-import { findUserById } from "@app/auth"
+import { findUserById } from '@app/auth'
 
 // Регистрация для агента
 // ВАЖНО: Добавляем проверку для избежания множественной регистрации
 app.accountHook('@start/agent/tools', async (ctx, params) => {
-  const hasToolAlready = params?.tools?.some(
-    t => t.meta?.name === 'create-order'
-  )
-  
+  const hasToolAlready = params?.tools?.some((t) => t.meta?.name === 'create-order')
+
   if (!hasToolAlready) {
     return createOrderTool
   }
-  
-  return null  // Инструмент уже добавлен
+
+  return null // Инструмент уже добавлен
 })
 
 export const createOrderTool = app
@@ -611,7 +610,7 @@ export const createOrderTool = app
     description: `Use this tool to create a new order for the user. 
 Provide product IDs and quantities.`
   })
-  .body(s =>
+  .body((s) =>
     s.object(
       {
         context: s.object(
@@ -635,10 +634,10 @@ Provide product IDs and quantities.`
   )
   .handle(async (ctx, body) => {
     ctx.account.log('🛠️ createOrder', { json: body })
-    
+
     const { userId } = body.context
     const { productIds, quantities, deliveryAddress } = body.input
-    
+
     // Валидация
     if (!productIds || productIds.length === 0) {
       return {
@@ -646,7 +645,7 @@ Provide product IDs and quantities.`
         result: 'Product IDs are required'
       }
     }
-    
+
     if (userId) {
       const user = await findUserById(ctx, userId)
       if (!user) {
@@ -656,7 +655,7 @@ Provide product IDs and quantities.`
         }
       }
     }
-    
+
     // Создание заказа
     const order = await OrdersTable.create(ctx, {
       userId,
@@ -665,12 +664,12 @@ Provide product IDs and quantities.`
       deliveryAddress: deliveryAddress || 'Самовывоз',
       status: 'new'
     })
-    
+
     ctx.account.log('Order created by tool', {
       level: 'info',
       json: { orderId: order.id }
     })
-    
+
     return {
       ok: true,
       result: `Order #${order.id} created successfully. Total items: ${productIds.length}`
@@ -700,12 +699,13 @@ The tool will create order and return order number.`  // Для AI (prompt)
   .handle(...)
 ```
 
-| Параметр | Для кого | Когда использовать |
-|----------|----------|-------------------|
-| `description` | Человек | Краткое описание для UI, интерфейса управления |
-| `llmDescription` | AI | Детальные инструкции когда и как использовать инструмент |
+| Параметр         | Для кого | Когда использовать                                       |
+| ---------------- | -------- | -------------------------------------------------------- |
+| `description`    | Человек  | Краткое описание для UI, интерфейса управления           |
+| `llmDescription` | AI       | Детальные инструкции когда и как использовать инструмент |
 
 **Рекомендации**:
+
 - `description` — короткое, понятное человеку описание
 - `llmDescription` — подробные инструкции для AI:
   - Когда использовать инструмент
@@ -729,20 +729,18 @@ The tool will create order and return order number.`  // Для AI (prompt)
 // tools/createOrder.ts
 app.accountHook('@start/agent/tools', async (ctx, params) => {
   // ✅ Проверяем, был ли инструмент уже добавлен
-  const hasToolAlready = params?.tools?.some(
-    t => t.meta?.name === 'create-order'
-  )
-  
+  const hasToolAlready = params?.tools?.some((t) => t.meta?.name === 'create-order')
+
   if (!hasToolAlready) {
     return createOrderTool
   }
-  
-  return null  // Не добавляем повторно
+
+  return null // Не добавляем повторно
 })
 
 // api/agent.ts
 const agent = await getOrCreateAgentForWorkspace(ctx, 'assistant', {
-  enabledTools: []  // ✅ Пустой массив (инструмент добавится через хук)
+  enabledTools: [] // ✅ Пустой массив (инструмент добавится через хук)
 })
 ```
 
@@ -756,7 +754,7 @@ const agent = await getOrCreateAgentForWorkspace(ctx, 'assistant', {
 import { createOrderTool } from '../tools/createOrder'
 
 const agent = await getOrCreateAgentForWorkspace(ctx, 'assistant', {
-  enabledTools: [createOrderTool]  // ✅ Только явное добавление
+  enabledTools: [createOrderTool] // ✅ Только явное добавление
 })
 ```
 
@@ -765,14 +763,14 @@ const agent = await getOrCreateAgentForWorkspace(ctx, 'assistant', {
 ```typescript
 app.accountHook('@start/agent/tools', async (ctx, params) => {
   const toolsToAdd = []
-  
-  if (!params?.tools?.some(t => t.meta?.name === 'tool1')) {
+
+  if (!params?.tools?.some((t) => t.meta?.name === 'tool1')) {
     toolsToAdd.push(tool1)
   }
-  if (!params?.tools?.some(t => t.meta?.name === 'tool2')) {
+  if (!params?.tools?.some((t) => t.meta?.name === 'tool2')) {
     toolsToAdd.push(tool2)
   }
-  
+
   return toolsToAdd.length > 0 ? toolsToAdd : null
 })
 ```
@@ -784,6 +782,7 @@ app.accountHook('@start/agent/tools', async (ctx, params) => {
 **❌ НИКОГДА не используйте глобальный хук для веб-инструментов!**
 
 **Причины**:
+
 1. Глобальный хук добавит инструмент КО ВСЕМ агентам в workspace
 2. Если у вас несколько веб-агентов - каждый будет пытаться отправить ответ
 3. Инструмент должен быть привязан к конкретному агенту
@@ -794,7 +793,7 @@ app.accountHook('@start/agent/tools', async (ctx, params) => {
 export const sendChatResponseProjectNameTool = app
   .function('/send-chat-response-project-name')
   .meta({ name: 'sendChatResponseProjectName', ... })
-  .handle(async (ctx, body) => { 
+  .handle(async (ctx, body) => {
     // ... реализация
     return ''  // ✅ Возвращаем пустую строку
   })
@@ -811,24 +810,24 @@ const agent = await getOrCreateAgentForWorkspace(ctx, 'web-assistant', {
 
 #### ⚖️ Сравнение способов регистрации
 
-| Тип инструмента | Глобальный хук | Явное добавление | Рекомендация |
-|-----------------|----------------|------------------|--------------|
-| **Обычные инструменты** (createOrder, search) | ✅ Можно (с проверкой) | ✅ Можно | Любой способ |
-| **Веб-инструменты** (sendChatResponse) | ❌ НЕЛЬЗЯ | ✅ Только так | ТОЛЬКО явное |
-| **startCompletion** | ❌ Не применимо | ✅ Через параметр tools | ТОЛЬКО явное |
+| Тип инструмента                               | Глобальный хук         | Явное добавление        | Рекомендация |
+| --------------------------------------------- | ---------------------- | ----------------------- | ------------ |
+| **Обычные инструменты** (createOrder, search) | ✅ Можно (с проверкой) | ✅ Можно                | Любой способ |
+| **Веб-инструменты** (sendChatResponse)        | ❌ НЕЛЬЗЯ              | ✅ Только так           | ТОЛЬКО явное |
+| **startCompletion**                           | ❌ Не применимо        | ✅ Через параметр tools | ТОЛЬКО явное |
 
 #### 🎯 Паттерны и антипаттерны при создании инструмента
 
 Используйте этот чек-лист, чтобы инструмент корректно регистрировался и работал. Частые ошибки приводят к тому, что тул «не виден» агенту или возвращает неверный формат.
 
-| Аспект | ❌ Антипаттерн | ✅ Паттерн |
-|--------|----------------|------------|
-| **Регистрация** | Тул лежит в файле без регистрации; ожидание «автообнаружения» по папке `tools/` | Обязательная регистрация через `app.accountHook('@start/agent/tools', async (ctx, params) => { ... return tool })`. Без хука агент не узнает о туле. |
-| **Структура тула** | Экспорт констант: `export const key = '...'`, `export const name`, `export const description`, отдельная функция `run(ctx, args)` | Цепочка методов: `app.function('/path').meta({ name, description }).body(s => s.object({...})).handle(async (ctx, body) => {...})` |
-| **Параметры** | Ручное описание параметров как JSON Schema объект (`export const parameters = { type: 'object', properties: {...} }`) | Валидация через `.body(s => s.object({ context: s.object({ userId: s.string().optional(), chainId: s.string().optional() }, { additionalProperties: true }), input: s.object({...}) }))` |
-| **Пустые параметры** | Не указывать `input` или `context` если они не нужны | **Обязательно** указывать пустые объекты: `input: s.object({}, { additionalProperties: true })` |
-| **Формат ответа** | Возврат `{ success: true, taskId }` или `{ success: false, error: '...' }` | Стандарт платформы: успех — `return { ok: true, result: 'текст результата' }`, ошибка — `return { ok: false, result: 'текст ошибки' }` |
-| **Определение пользователя** | Только поиск по `chainId` (например, telegramUID), без учёта `userId` из контекста | Поддержка обоих: сначала `userId` из `body.context`, затем при отсутствии — поиск по `chainId` (например, `findByTelegramUID(ctx, chainId)`) |
+| Аспект                       | ❌ Антипаттерн                                                                                                                    | ✅ Паттерн                                                                                                                                                                               |
+| ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Регистрация**              | Тул лежит в файле без регистрации; ожидание «автообнаружения» по папке `tools/`                                                   | Обязательная регистрация через `app.accountHook('@start/agent/tools', async (ctx, params) => { ... return tool })`. Без хука агент не узнает о туле.                                     |
+| **Структура тула**           | Экспорт констант: `export const key = '...'`, `export const name`, `export const description`, отдельная функция `run(ctx, args)` | Цепочка методов: `app.function('/path').meta({ name, description }).body(s => s.object({...})).handle(async (ctx, body) => {...})`                                                       |
+| **Параметры**                | Ручное описание параметров как JSON Schema объект (`export const parameters = { type: 'object', properties: {...} }`)             | Валидация через `.body(s => s.object({ context: s.object({ userId: s.string().optional(), chainId: s.string().optional() }, { additionalProperties: true }), input: s.object({...}) }))` |
+| **Пустые параметры**         | Не указывать `input` или `context` если они не нужны                                                                              | **Обязательно** указывать пустые объекты: `input: s.object({}, { additionalProperties: true })`                                                                                          |
+| **Формат ответа**            | Возврат `{ success: true, taskId }` или `{ success: false, error: '...' }`                                                        | Стандарт платформы: успех — `return { ok: true, result: 'текст результата' }`, ошибка — `return { ok: false, result: 'текст ошибки' }`                                                   |
+| **Определение пользователя** | Только поиск по `chainId` (например, telegramUID), без учёта `userId` из контекста                                                | Поддержка обоих: сначала `userId` из `body.context`, затем при отсутствии — поиск по `chainId` (например, `findByTelegramUID(ctx, chainId)`)                                             |
 
 **Кратко:** тул должен быть зарегистрирован хуком, описан через `app.function().meta().body().handle()`, принимать вход через `.body()`-схему (где `input` и `context` могут быть пустыми объектами), возвращать `{ ok, result }` и учитывать и `userId`, и `chainId` для определения пользователя.
 
@@ -838,7 +837,7 @@ const agent = await getOrCreateAgentForWorkspace(ctx, 'web-assistant', {
 
 ```typescript
 app.accountHook('@start/agent/tools', async (ctx, params) => {
-  return myTool  // ❌ Будет добавляться каждый раз!
+  return myTool // ❌ Будет добавляться каждый раз!
 })
 ```
 
@@ -846,11 +845,11 @@ app.accountHook('@start/agent/tools', async (ctx, params) => {
 
 ```typescript
 // tools/createOrder.ts
-app.accountHook('@start/agent/tools', async () => createOrderTool)  // ❌
+app.accountHook('@start/agent/tools', async () => createOrderTool) // ❌
 
 // api/agent.ts
 const agent = await getOrCreateAgentForWorkspace(ctx, 'assistant', {
-  enabledTools: [createOrderTool]  // ❌ Дубликат!
+  enabledTools: [createOrderTool] // ❌ Дубликат!
 })
 ```
 
@@ -858,7 +857,7 @@ const agent = await getOrCreateAgentForWorkspace(ctx, 'assistant', {
 
 ```typescript
 // tools/sendChatResponse.ts
-app.accountHook('@start/agent/tools', async () => sendChatResponseTool)  // ❌ НИКОГДА для веб-инструментов!
+app.accountHook('@start/agent/tools', async () => sendChatResponseTool) // ❌ НИКОГДА для веб-инструментов!
 ```
 
 **Для startCompletion** — передайте в параметре tools:
@@ -866,7 +865,7 @@ app.accountHook('@start/agent/tools', async () => sendChatResponseTool)  // ❌ 
 ```typescript
 await startCompletion(ctx, {
   // ...
-  tools: [myTool1, myTool2],
+  tools: [myTool1, myTool2]
   // ...
 })
 ```
@@ -885,11 +884,14 @@ export const getCurrentTimeTool = app
     llmDescription: `Use this tool to get current Moscow time.
 Useful when user asks "what time is it" or "current date".`
   })
-  .body(s =>
-    s.object({
-      context: s.object({}, { additionalProperties: true }),  // ✅ Пустой context
-      input: s.object({}, { additionalProperties: true })     // ✅ Пустой input
-    }, { additionalProperties: true })
+  .body((s) =>
+    s.object(
+      {
+        context: s.object({}, { additionalProperties: true }), // ✅ Пустой context
+        input: s.object({}, { additionalProperties: true }) // ✅ Пустой input
+      },
+      { additionalProperties: true }
+    )
   )
   .handle(async (ctx, body) => {
     const moscowTime = new Date().toLocaleString('ru-RU', {
@@ -897,7 +899,7 @@ Useful when user asks "what time is it" or "current date".`
       dateStyle: 'full',
       timeStyle: 'long'
     })
-    
+
     return {
       ok: true,
       result: `Current time in Moscow: ${moscowTime}`
@@ -919,28 +921,34 @@ Supports filtering by name, category, price range.
 Returns up to 10 most relevant products.
 Use this when user asks about specific products or categories.`
   })
-  .body(s =>
-    s.object({
-      context: s.object({}, { additionalProperties: true }),
-      input: s.object({
-        query: s.string().describe('Search query'),
-        category: s.string().optional().describe('Product category')
-      }, { additionalProperties: true })
-    }, { additionalProperties: true })
+  .body((s) =>
+    s.object(
+      {
+        context: s.object({}, { additionalProperties: true }),
+        input: s.object(
+          {
+            query: s.string().describe('Search query'),
+            category: s.string().optional().describe('Product category')
+          },
+          { additionalProperties: true }
+        )
+      },
+      { additionalProperties: true }
+    )
   )
   .handle(async (ctx, body) => {
     const { query, category } = body.input
-    
+
     const products = await ProductsTable.findAll(ctx, {
       where: category ? { category } : {},
       limit: 10
     })
-    
+
     const results = products
-      .filter(p => p.name.toLowerCase().includes(query.toLowerCase()))
-      .map(p => `- ${p.name} (${p.price} ₽)`)
+      .filter((p) => p.name.toLowerCase().includes(query.toLowerCase()))
+      .map((p) => `- ${p.name} (${p.price} ₽)`)
       .join('\n')
-    
+
     return {
       ok: true,
       result: results || 'No products found'
@@ -960,33 +968,39 @@ export const getUserInfoTool = app
     llmDescription: `Get user profile information including name, email, phone.
 Use this when user asks about their account or profile details.`
   })
-  .body(s =>
-    s.object({
-      context: s.object({
-        userId: s.string().optional()
-      }, { additionalProperties: true }),
-      input: s.object({}, { additionalProperties: true })  // ✅ Пустой input
-    }, { additionalProperties: true })
+  .body((s) =>
+    s.object(
+      {
+        context: s.object(
+          {
+            userId: s.string().optional()
+          },
+          { additionalProperties: true }
+        ),
+        input: s.object({}, { additionalProperties: true }) // ✅ Пустой input
+      },
+      { additionalProperties: true }
+    )
   )
   .handle(async (ctx, body) => {
     const { userId } = body.context
-    
+
     if (!userId) {
       return {
         ok: false,
         result: 'User ID not provided in context'
       }
     }
-    
+
     const user = await findUserById(ctx, userId)
-    
+
     if (!user) {
       return {
         ok: false,
         result: 'User not found'
       }
     }
-    
+
     return {
       ok: true,
       result: `User: ${user.displayName}
@@ -1009,6 +1023,7 @@ Role: ${user.accountRole}`
 4. ✅ **Возврат пустой строки** `''` вместо JSON объекта
 
 **Почему нельзя глобальный хук для веб-инструмента?**
+
 - Хук добавит инструмент КО ВСЕМ агентам в workspace
 - Если агентов несколько - каждый будет пытаться отправить ответ
 - Результат: дубликаты сообщений, конфликты, хаос
@@ -1018,7 +1033,7 @@ Role: ${user.accountRole}`
 ```typescript
 // ✅ Явное добавление к конкретному агенту
 const agent = await getOrCreateAgentForWorkspace(ctx, 'web-chat', {
-  enabledTools: [sendChatResponseProjectNameTool]  // ← Только так!
+  enabledTools: [sendChatResponseProjectNameTool] // ← Только так!
 })
 ```
 
@@ -1032,16 +1047,16 @@ import ChatMessagesTable from '../tables/chat_messages.table'
 /**
  * ⚠️ КРИТИЧЕСКИ ВАЖНО ДЛЯ ВЕБА:
  * Этот инструмент предназначен для отправки ответов агента в веб-чат через WebSocket.
- * 
+ *
  * ПРАВИЛЬНАЯ АРХИТЕКТУРА:
  * 1. Инструмент ДОБАВЛЯЕТСЯ ЯВНО в enabledTools при создании агента
  * 2. Инструмент возвращает ПУСТУЮ СТРОКУ (не JSON объект!)
  * 3. Вызывается РОВНО ОДИН РАЗ на один запрос пользователя
- * 
+ *
  * ❌ НЕПРАВИЛЬНО:
  * - Регистрация через глобальный хук @start/agent/tools (провоцирует множественные вызовы)
  * - Возврат JSON объекта {ok: true, ...} (система интерпретирует как новое сообщение)
- * 
+ *
  * ✅ ПРАВИЛЬНО:
  * - Явное добавление в enabledTools (гарантия одного раза)
  * - Возврат пустой строки '' (сигнал остановки генерации)
@@ -1058,7 +1073,7 @@ export const sendChatResponseProjectNameTool = app
 - ИСПОЛЬЗУЙ инструмент один раз на один ответ, не вызывай его несколько раз
 - Передай текст ответа в параметр message`
   })
-  .body(s =>
+  .body((s) =>
     s.object(
       {
         context: s.object(
@@ -1093,8 +1108,16 @@ export const sendChatResponseProjectNameTool = app
       }
 
       const userId = context.userId
-      const chainKey = input.chainKey || (context as any).chainKey || (context as any).userProfile?.chainKey || 'unknown'
-      const agentId = input.agentId || (context as any).agentId || (context as any).userProfile?.agentId || 'unknown'
+      const chainKey =
+        input.chainKey ||
+        (context as any).chainKey ||
+        (context as any).userProfile?.chainKey ||
+        'unknown'
+      const agentId =
+        input.agentId ||
+        (context as any).agentId ||
+        (context as any).userProfile?.agentId ||
+        'unknown'
 
       const socketId = `chat-${userId}-${chainKey}-${agentId}`
 
@@ -1137,28 +1160,34 @@ export const sendChatResponseProjectNameTool = app
 1. **Регистрация**: ТОЛЬКО явное добавление в `enabledTools` (см. раздел "Регистрация инструмента" выше)
 
 2. **Уникальное имя**: Каждый проект должен иметь уникальное имя инструмента
+
    - ✅ `sendChatResponsePodolyak`
    - ✅ `sendChatResponseAnalytics`
    - ❌ `sendResponse` (слишком общее)
 
 3. **Возврат пустой строки**: Инструмент ДОЛЖЕН возвращать `''` (пустую строку):
+
    ```typescript
-   return ''  // ✅ Сигнал остановки генерации
+   return '' // ✅ Сигнал остановки генерации
    ```
-   
+
    НЕ возвращайте JSON объект:
+
    ```typescript
-   return { ok: true, stop: true }  // ❌ Провоцирует вторую генерацию
+   return { ok: true, stop: true } // ❌ Провоцирует вторую генерацию
    ```
 
 4. **Контекст агента**: Инструмент получает `userId` и `chainId` через `context`
+
    - Передается автоматически через `chainParams.userProfile` и `chainParams.chainMeta`
    - Используйте множественные fallback для надёжности (см. пример инструмента выше)
 
 5. **WebSocket ID**: Формируется по паттерну `chat-${userId}-${chainKey}-${agentId}`
+
    - Должен совпадать с тем, что используется в `api/chat.ts`
 
 6. **Обязательное использование**: Добавьте в инструкции агента:
+
    ```typescript
    instructions: `${baseInstructions}
    
@@ -1170,13 +1199,14 @@ export const sendChatResponseProjectNameTool = app
    ```
 
 7. **Подключение к агенту** (полный пример см. в разделе "🌐 Полная реализация агента в веб-интерфейсе"):
+
    ```typescript
    import { sendChatResponseProjectNameTool } from '../tools/sendChatResponseProjectName'
-   
+
    const agent = await getOrCreateAgentForWorkspace(ctx, key, {
      title: 'Агент',
      instructions: instructions,
-     enabledTools: [sendChatResponseProjectNameTool]  // ✅ Явное добавление
+     enabledTools: [sendChatResponseProjectNameTool] // ✅ Явное добавление
    })
    ```
 
@@ -1420,10 +1450,10 @@ import { sendDataToSocket } from '@app/socket'
 
 /**
  * ⚠️ КРИТИЧЕСКИ ВАЖНО:
- * 
+ *
  * Этот инструмент используется ТОЛЬКО для веб-чата!
  * Он отправляет ответ агента пользователю в реальном времени через WebSocket.
- * 
+ *
  * ПРАВИЛА:
  * 1. Инструмент должен быть ЯВНО добавлен в enabledTools при создании агента
  * 2. НЕ использовать глобальный хук @start/agent/tools для этого инструмента!
@@ -1436,15 +1466,21 @@ export const sendChatResponseProjectNameTool = app
     name: 'sendChatResponseProjectName',
     description: 'Send a response message to the user in the web chat'
   })
-  .body(s =>
-    s.object({
-      context: s.object({}, { additionalProperties: true }),
-      input: s.object({
-        message: s.string().describe('Message text for the user'),
-        chainKey: s.string().optional(),
-        agentId: s.string().optional()
-      }, { additionalProperties: true })
-    }, { additionalProperties: true })
+  .body((s) =>
+    s.object(
+      {
+        context: s.object({}, { additionalProperties: true }),
+        input: s.object(
+          {
+            message: s.string().describe('Message text for the user'),
+            chainKey: s.string().optional(),
+            agentId: s.string().optional()
+          },
+          { additionalProperties: true }
+        )
+      },
+      { additionalProperties: true }
+    )
   )
   .handle(async (ctx, body) => {
     const { input, context } = body
@@ -1452,8 +1488,16 @@ export const sendChatResponseProjectNameTool = app
     try {
       // Извлекаем параметры из контекста (множественные fallback для надёжности)
       const userId = context.userId || (context as any).systemUserId || 'unknown'
-      const chainKey = input.chainKey || (context as any).chainKey || (context as any).userProfile?.chainKey || 'unknown'
-      const agentId = input.agentId || (context as any).agentId || (context as any).userProfile?.agentId || 'unknown'
+      const chainKey =
+        input.chainKey ||
+        (context as any).chainKey ||
+        (context as any).userProfile?.chainKey ||
+        'unknown'
+      const agentId =
+        input.agentId ||
+        (context as any).agentId ||
+        (context as any).userProfile?.agentId ||
+        'unknown'
 
       if (!input.message || !input.message.trim()) {
         // ✅ Возвращаем пустую строку (не ошибку)
@@ -1527,11 +1571,7 @@ export const sendChatResponseProjectNameTool = app
   <div class="chat-container">
     <!-- История сообщений -->
     <div class="messages-list">
-      <div
-        v-for="msg in messages"
-        :key="msg.id"
-        :class="['message', msg.role]"
-      >
+      <div v-for="msg in messages" :key="msg.id" :class="['message', msg.role]">
         {{ msg.content }}
       </div>
 
@@ -1677,8 +1717,13 @@ onBeforeUnmount(() => {
 }
 
 @keyframes pulse {
-  0%, 100% { opacity: 0.3; }
-  50% { opacity: 1; }
+  0%,
+  100% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 1;
+  }
 }
 
 .message-form {
@@ -1750,14 +1795,14 @@ AI-АГЕНТ (@ai-agents/sdk):
 
 ### Ключевые отличия от неправильных подходов
 
-| Аспект | ❌ НЕПРАВИЛЬНО (v3.0) | ✅ ПРАВИЛЬНО (v3.1-v3.2) |
-|--------|----------------------|--------------------------|
-| Инструмент в enabledTools | Нет | ДА |
-| Регистрация через хук | Да (множественная) | Нет (только явное) |
-| Вызовов инструмента | 0 (агент не может отправить) | РОВНО 1 |
-| Возвращаемое значение | N/A | Пустая строка '' |
-| Второе сообщение | Нет ответа вообще | Нет дубликатов |
-| Результат | Тайм-аут, пустой чат | ✅ Один ответ за 2-5 сек |
+| Аспект                    | ❌ НЕПРАВИЛЬНО (v3.0)        | ✅ ПРАВИЛЬНО (v3.1-v3.2) |
+| ------------------------- | ---------------------------- | ------------------------ |
+| Инструмент в enabledTools | Нет                          | ДА                       |
+| Регистрация через хук     | Да (множественная)           | Нет (только явное)       |
+| Вызовов инструмента       | 0 (агент не может отправить) | РОВНО 1                  |
+| Возвращаемое значение     | N/A                          | Пустая строка ''         |
+| Второе сообщение          | Нет ответа вообще            | Нет дубликатов           |
+| Результат                 | Тайм-аут, пустой чат         | ✅ Один ответ за 2-5 сек |
 
 ---
 
@@ -1767,18 +1812,20 @@ AI-АГЕНТ (@ai-agents/sdk):
 
 **Симптом**: Агент отправляет одно и то же сообщение несколько раз подряд (2-3 или более копий).
 
-**Причины**: 
+**Причины**:
+
 1. Инструмент регистрируется **ДВАЖДЫ** — через глобальный хук И через явное добавление в `enabledTools`
 2. **Хук вызывается МНОЖЕСТВО РАЗ** без проверки уже добавленных инструментов
 
 **Механизм проблемы**:
+
 - Хук `@start/agent/tools` может вызываться несколько раз:
   - При создании агента
   - При пробуждении агента
   - При обработке каждого сообщения
   - При выполнении любой операции с агентом
 - Каждый вызов хука возвращает инструмент → инструмент накапливается в списке
-- Результат: 
+- Результат:
   ```
   Запрос 1: enabledTools = [tool] → 1 вызов
   Запрос 2: enabledTools = [tool, tool] → 2 вызова
@@ -1808,12 +1855,13 @@ const agent = await getOrCreateAgentForWorkspace(ctx, 'assistant', {
 ```
 
 **Что происходит**:
+
 1. Глобальный хук добавляет инструмент ко ВСЕМ агентам workspace
 2. Явное добавление в `enabledTools` добавляет инструмент ещё раз
 3. Результат: При вызове инструмента система выполняет его **дважды**
 
 ```
-Сообщение → Агент → Инструмент #1 ✓ (отправляет) 
+Сообщение → Агент → Инструмент #1 ✓ (отправляет)
                   ↓
                   Инструмент #2 ✓ (отправляет снова)
 ```
@@ -1874,10 +1922,8 @@ const agent = await getOrCreateAgentForWorkspace(ctx, 'assistant', {
 app.accountHook('@start/agent/tools', async (ctx, params) => {
   // ✅ Проверяем, был ли инструмент уже добавлен
   // Хук может вызываться несколько раз - БЕЗ проверки будет множественная регистрация!
-  const hasToolAlready = params?.tools?.some(
-    t => t.meta?.name === 'sendChatResponse'
-  )
-  
+  const hasToolAlready = params?.tools?.some((t) => t.meta?.name === 'sendChatResponse')
+
   if (!hasToolAlready) {
     ctx.account.log('✅ Добавляем инструмент sendChatResponse', {
       level: 'info',
@@ -1885,17 +1931,18 @@ app.accountHook('@start/agent/tools', async (ctx, params) => {
     })
     return sendChatResponseTool
   }
-  
+
   ctx.account.log('⏭️ Инструмент sendChatResponse уже добавлен, пропускаем', {
     level: 'info',
     json: { toolsCount: params?.tools?.length || 0 }
   })
-  
-  return null  // Не добавляем повторно
+
+  return null // Не добавляем повторно
 })
 ```
 
 **Почему это важно**:
+
 - Хук вызывается при каждой операции с агентом
 - Без проверки инструмент будет добавляться в список каждый раз
 - С проверкой инструмент добавится только один раз при первом вызове
@@ -1967,13 +2014,13 @@ const agent = await getOrCreateAgentForWorkspace(ctx, 'assistant', {
 .handle(async (ctx, body) => {
   ctx.account.log('🛠️ Tool invoked', {
     level: 'info',
-    json: { 
+    json: {
       toolName: 'sendChatResponse',
       timestamp: Date.now(),
       context: body.context
     }
   })
-  
+
   // ... логика инструмента
 })
 ```
@@ -1991,16 +2038,16 @@ import { pushMessageToChain, findAgents } from '@ai-agents/sdk/process'
 
 app.accountHook('@sender/message-received', async (ctx, params) => {
   const { channel, chatId, message, user, person } = params
-  
+
   // Только для Telegram
   if (channel.source !== 'Telegram') {
     return
   }
-  
+
   // Получить список агентов
   const agents = await findAgents(ctx)
-  const agent = agents.find(a => a.key === 'telegram_assistant')
-  
+  const agent = agents.find((a) => a.key === 'telegram_assistant')
+
   if (!agent) {
     ctx.account.log('Agent not found', {
       level: 'warn',
@@ -2008,16 +2055,26 @@ app.accountHook('@sender/message-received', async (ctx, params) => {
     })
     return
   }
-  
+
   const uid = person.uid
   const messageText = message.text || ''
-  
+
   try {
     // Проверка на команду /start
     if (messageText.startsWith('/start')) {
       await handleStartCommand(ctx, agent.id, uid, messageText, user, person, chatId, channel)
     } else {
-      await handleRegularMessage(ctx, agent.id, uid, messageText, user, person, chatId, channel, message)
+      await handleRegularMessage(
+        ctx,
+        agent.id,
+        uid,
+        messageText,
+        user,
+        person,
+        chatId,
+        channel,
+        message
+      )
     }
   } catch (error) {
     ctx.account.log('Error processing Telegram message', {
@@ -2032,17 +2089,17 @@ app.accountHook('@sender/message-received', async (ctx, params) => {
 
 ```typescript
 async function handleStartCommand(
-  ctx, 
-  agentId: string, 
-  uid: string, 
+  ctx,
+  agentId: string,
+  uid: string,
   command: string,
-  user, 
-  person, 
+  user,
+  person,
   chatId: string,
   channel
 ) {
   const startParam = command.length > 7 ? command.substring(7) : null
-  
+
   const result = await pushMessageToChain(ctx, {
     agentId,
     chainKey: uid,
@@ -2086,7 +2143,7 @@ async function handleStartCommand(
 Поприветствуй пользователя и начни выполнять свою ключевую задачу`,
     wakeAgent: true
   })
-  
+
   ctx.account.log('Start command processed', {
     level: 'info',
     json: { chainId: result.chainId, startParam }
@@ -2109,7 +2166,7 @@ async function handleRegularMessage(
   message
 ) {
   const messageFiles = message.files || []
-  
+
   const result = await pushMessageToChain(ctx, {
     agentId,
     chainKey: uid,
@@ -2135,16 +2192,16 @@ async function handleRegularMessage(
 ## Собеседник:${user?.displayName || person?.title ? `\n- **Имя:** ${user?.displayName || person?.title}` : ''}${person?.username ? `\n- **Username:** @${person.username}` : ''}
 
 ## Сообщение:
-> ${messageText}${messageFiles.length ? `\n\n## Прикрепленные файлы:\n${messageFiles.map(f => `- **${f.name}** (${f.mimeType})`).join('\n')}` : ''}`,
+> ${messageText}${messageFiles.length ? `\n\n## Прикрепленные файлы:\n${messageFiles.map((f) => `- **${f.name}** (${f.mimeType})`).join('\n')}` : ''}`,
     wakeAgent: true,
     files: messageFiles
-      .filter(f => f.mimeType?.startsWith('image/'))
-      .map(f => ({
+      .filter((f) => f.mimeType?.startsWith('image/'))
+      .map((f) => ({
         type: 'image',
         url: f.url
       }))
   })
-  
+
   ctx.account.log('Message sent to agent', {
     level: 'info',
     json: { chainId: result.chainId }
@@ -2159,6 +2216,7 @@ async function handleRegularMessage(
 ### Создание агентов
 
 ✅ **Используйте понятные key**:
+
 ```typescript
 // Хорошо
 key: 'salesman', 'support', 'assistant'
@@ -2168,6 +2226,7 @@ key: 'agent1', 'bot', 'ai'
 ```
 
 ✅ **Пишите чёткие инструкции**:
+
 ```typescript
 // Хорошо
 instructions: `Ты агент поддержки
@@ -2181,12 +2240,14 @@ instructions: 'Агент'
 ### Отправка сообщений
 
 ✅ **Выбирайте правильный chainKey**:
+
 ```typescript
 // Приоритет: uid > userId > chatId > modelId
 const chainKey = person.uid || ctx.user?.id || chatId
 ```
 
 ✅ **Используйте wakeAgent правильно**:
+
 ```typescript
 // Для немедленного ответа
 wakeAgent: true
@@ -2196,6 +2257,7 @@ wakeAgent: false
 ```
 
 ✅ **Разделяйте userProfile и chainMeta**:
+
 ```typescript
 // userProfile — видит агент
 userProfile: {
@@ -2213,6 +2275,7 @@ chainMeta: {
 ### Инструменты
 
 ✅ **Один файл = один инструмент**:
+
 ```
 tools/
 ├── createOrder.ts
@@ -2224,11 +2287,12 @@ tools/
 ⚠️ **КРИТИЧЕСКИ ВАЖНО: Правильная регистрация инструментов**:
 
 **Для ОБЫЧНЫХ инструментов** (createOrder, searchProducts):
+
 ```typescript
 // ✅ ВАРИАНТ 1: Глобальный хук (для всех агентов)
 app.accountHook('@start/agent/tools', async (ctx, params) => {
   // Обязательно с проверкой!
-  if (!params?.tools?.some(t => t.meta?.name === 'create-order')) {
+  if (!params?.tools?.some((t) => t.meta?.name === 'create-order')) {
     return createOrderTool
   }
   return null
@@ -2241,6 +2305,7 @@ enabledTools: [createOrderTool, searchProductsTool]
 ```
 
 **Для ВЕБ-ИНСТРУМЕНТОВ** (sendChatResponse):
+
 ```typescript
 // ✅ ТОЛЬКО явное добавление
 enabledTools: [sendChatResponseProjectNameTool]
@@ -2248,11 +2313,13 @@ enabledTools: [sendChatResponseProjectNameTool]
 ```
 
 ❌ **НИКОГДА**:
+
 - Не регистрируйте один инструмент двумя способами одновременно
 - Не используйте глобальный хук БЕЗ проверки `params?.tools?.some()`
 - Не используйте глобальный хук для веб-инструментов отправки ответов
 
 ✅ **Используйте llmDescription для AI**:
+
 ```typescript
 .meta({
   name: 'search-products',
@@ -2265,6 +2332,7 @@ Use this when user asks about specific products.`  // Для AI
 ```
 
 ✅ **Валидируйте input**:
+
 ```typescript
 .handle(async (ctx, body) => {
   if (!body.input.query) {
@@ -2273,7 +2341,7 @@ Use this when user asks about specific products.`  // Для AI
       result: 'Search query is required'
     }
   }
-  
+
   // Обработка
 })
 ```
@@ -2281,22 +2349,25 @@ Use this when user asks about specific products.`  // Для AI
 ✅ **Возвращайте правильный результат**:
 
 Для обычных инструментов:
+
 ```typescript
 return {
   ok: true,
   result: `Found ${products.length} products:
-${products.map(p => `- ${p.name}: ${p.price} ₽`).join('\n')}`
+${products.map((p) => `- ${p.name}: ${p.price} ₽`).join('\n')}`
 }
 ```
 
 Для веб-инструментов:
+
 ```typescript
-return ''  // ✅ Пустая строка = сигнал остановки
+return '' // ✅ Пустая строка = сигнал остановки
 ```
 
 ### AI Generation
 
 ✅ **Всегда проверяйте caller**:
+
 ```typescript
 if (!(caller.type === 'plugin' && caller.appSlug === 'start')) {
   throw new Error('Invalid caller')
@@ -2304,6 +2375,7 @@ if (!(caller.type === 'plugin' && caller.appSlug === 'start')) {
 ```
 
 ✅ **Храните context для идентификации**:
+
 ```typescript
 context: {
   generationId,
@@ -2313,6 +2385,7 @@ context: {
 ```
 
 ✅ **Логируйте генерации**:
+
 ```typescript
 ctx.account.log('Generation started', {
   level: 'info',
@@ -2323,6 +2396,7 @@ ctx.account.log('Generation started', {
 ### Логирование
 
 ✅ **Используйте ctx.account.log**:
+
 ```typescript
 ctx.account.log('Agent message sent', {
   level: 'info',
@@ -2331,6 +2405,7 @@ ctx.account.log('Agent message sent', {
 ```
 
 ❌ **Не используйте console.log**:
+
 ```typescript
 // Неправильно
 console.log('Message sent')
@@ -2348,12 +2423,12 @@ const agents = await findAgents(ctx)
 
 ctx.account.log('Available agents', {
   level: 'info',
-  json: { 
+  json: {
     count: agents.length,
-    agents: agents.map(a => ({ 
-      id: a.id, 
-      key: a.key, 
-      title: a.title 
+    agents: agents.map((a) => ({
+      id: a.id,
+      key: a.key,
+      title: a.title
     }))
   }
 })
@@ -2387,14 +2462,14 @@ ctx.account.log('Message to agent', {
       context: body.context
     }
   })
-  
+
   // Обработка
-  
+
   ctx.account.log('🛠️ Tool result', {
     level: 'info',
     json: { ok: true, resultLength: result.length }
   })
-  
+
   return { ok: true, result }
 })
 ```
@@ -2412,12 +2487,12 @@ ctx.account.log('Message to agent', {
 
 ## 🎓 Шпаргалка: Когда использовать какой способ регистрации
 
-| Ситуация | Решение | Пример |
-|----------|---------|--------|
-| Инструмент нужен ВСЕМ агентам | Глобальный хук (с проверкой) | `createOrder`, `searchProducts` |
-| Инструмент нужен одному агенту | Явное добавление в enabledTools | Специализированный инструмент |
-| Веб-инструмент отправки ответов | ✅ ТОЛЬКО явное добавление | `sendChatResponse` |
-| AI generation (startCompletion) | Параметр tools | `tools: [tool1, tool2]` |
+| Ситуация                        | Решение                         | Пример                          |
+| ------------------------------- | ------------------------------- | ------------------------------- |
+| Инструмент нужен ВСЕМ агентам   | Глобальный хук (с проверкой)    | `createOrder`, `searchProducts` |
+| Инструмент нужен одному агенту  | Явное добавление в enabledTools | Специализированный инструмент   |
+| Веб-инструмент отправки ответов | ✅ ТОЛЬКО явное добавление      | `sendChatResponse`              |
+| AI generation (startCompletion) | Параметр tools                  | `tools: [tool1, tool2]`         |
 
 **Золотое правило**: Один инструмент = ОДИН способ регистрации!
 
@@ -2425,9 +2500,10 @@ ctx.account.log('Message to agent', {
 
 **Версия**: 1.6  
 **Дата**: 2025-11-02  
-**Последнее обновление**: 2025-11-05  
+**Последнее обновление**: 2025-11-05
 
 **История изменений**:
+
 - **v1.6** (2025-11-05): Добавлены критически важные аспекты: `llmDescription` для разделения описаний человеку и AI; раздел "Выбор существующего агента" с `findAgents`; предупреждение о правильном использовании `userId` в `chainParams`; объяснение `nativeTools`; явное указание на пустые `input`/`context`; усилена важность проверки `caller` в callback-функциях.
 - **v1.5** (2025-11-05): Устранены противоречия в документации. ПОЛНОСТЬЮ ПЕРЕПИСАН раздел "Регистрация инструмента" с разделением на обычные (createOrder, search) и веб-инструменты (sendChatResponse). Добавлены чёткие правила: веб-инструменты ТОЛЬКО через явное добавление в enabledTools, НИКОГДА через глобальный хук. Усилены предупреждения в разделе "Инструмент для отправки ответа в веб-интерфейс". Упрощён раздел "Важные моменты". Обновлён раздел "Лучшие практики - Инструменты" с явным разделением. Добавлена шпаргалка "Когда использовать какой способ регистрации".
 - **v1.4** (2025-11-05): КРИТИЧЕСКОЕ ОБНОВЛЕНИЕ для веб-агентов. Добавлен раздел "🌐 Полная реализация агента в веб-интерфейсе (WebSocket)" с правильной архитектурой v3. Обновлен инструмент sendChatResponse: теперь возвращает ПУСТУЮ СТРОКУ вместо JSON объекта, что решает проблему множественных ответов. Удалены устаревшие разделы о глобальной регистрации для веб-инструментов. Добавлены полные примеры: таблицы, API, Job, инструмент, Vue компонент.
@@ -2435,4 +2511,3 @@ ctx.account.log('Message to agent', {
 - **v1.2** (2025-11-05): Добавлен раздел "Распространённые ошибки и их решения" с детальным описанием проблемы множественной регистрации инструментов
 - **v1.1** (2025-11-04): Добавлен детальный раздел про инструмент отправки ответов в веб-чат
 - **v1.0** (2025-11-02): Первая версия документа
-

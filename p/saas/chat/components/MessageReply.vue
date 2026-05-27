@@ -14,35 +14,39 @@ import { cleanMentionsForPreview } from '../shared/mentions'
 
 const props = defineProps({
   replyTo: Object, // Сообщение, на которое отвечаем
-  currentUserId: String,
+  currentUserId: String
 })
 
 const emit = defineEmits(['scroll-to'])
 
 const replyAuthorName = computed(() => {
   if (!props.replyTo) return ''
-  
+
   // Если есть автор с данными
   if (props.replyTo.author) {
     const author = props.replyTo.author
     if (author.id === props.currentUserId) return 'Вы'
-    return author.firstName 
-      ? (author.lastName ? `${author.firstName} ${author.lastName}` : author.firstName)
+    return author.firstName
+      ? author.lastName
+        ? `${author.firstName} ${author.lastName}`
+        : author.firstName
       : author.displayName || author.username || 'Неизвестно'
   }
-  
+
   // Если только createdBy
-  if (props.replyTo.createdBy === props.currentUserId || 
-      props.replyTo.created_by === props.currentUserId) {
+  if (
+    props.replyTo.createdBy === props.currentUserId ||
+    props.replyTo.created_by === props.currentUserId
+  ) {
     return 'Вы'
   }
-  
+
   return 'Пользователь'
 })
 
 const replyText = computed(() => {
   if (!props.replyTo) return ''
-  
+
   const text = cleanMentionsForPreview(props.replyTo.text || '')
   // Обрезаем длинный текст
   if (text.length > 60) {

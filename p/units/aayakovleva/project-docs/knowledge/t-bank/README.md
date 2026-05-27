@@ -1,5 +1,5 @@
 ---
-title: "Т-Банк Интернет-Эквайринг — Индекс"
+title: 'Т-Банк Интернет-Эквайринг — Индекс'
 type: reference
 tags:
   - topic/t-bank
@@ -15,13 +15,13 @@ created: 2026-05-08
 
 ## Содержание раздела
 
-| Файл | Что внутри |
-|---|---|
-| [api-contracts](api-contracts.md) | Контракты методов: Init, GetState, Cancel, Confirm. Запросы/ответы, поля, токен |
-| [webhooks](webhooks.md) | Формат webhook-уведомлений, статусы, жизненный цикл, верификация |
-| [js-integration](js-integration.md) | JS-скрипт интеграции: paymentStartCallback, виджет, iframe, тестовые данные |
-| [receipt-fz54](receipt-fz54.md) | Структура объекта Receipt для ФЗ-54: Items, Tax, PaymentMethod, PaymentObject |
-| [error-codes](error-codes.md) | Коды ошибок API |
+| Файл                                | Что внутри                                                                      |
+| ----------------------------------- | ------------------------------------------------------------------------------- |
+| [api-contracts](api-contracts.md)   | Контракты методов: Init, GetState, Cancel, Confirm. Запросы/ответы, поля, токен |
+| [webhooks](webhooks.md)             | Формат webhook-уведомлений, статусы, жизненный цикл, верификация                |
+| [js-integration](js-integration.md) | JS-скрипт интеграции: paymentStartCallback, виджет, iframe, тестовые данные     |
+| [receipt-fz54](receipt-fz54.md)     | Структура объекта Receipt для ФЗ-54: Items, Tax, PaymentMethod, PaymentObject   |
+| [error-codes](error-codes.md)       | Коды ошибок API                                                                 |
 
 ## Ключевые ссылки на документацию
 
@@ -41,10 +41,10 @@ created: 2026-05-08
 
 ## Среды
 
-| Среда | Base URL |
-|---|---|
-| Тест | `https://rest-api-test.tinkoff.ru/v2/` |
-| Продакшн | `https://securepay.tinkoff.ru/v2/` |
+| Среда    | Base URL                               |
+| -------- | -------------------------------------- |
+| Тест     | `https://rest-api-test.tinkoff.ru/v2/` |
+| Продакшн | `https://securepay.tinkoff.ru/v2/`     |
 
 Тестовый TerminalKey начинается с `TinkoffBankTest`.
 

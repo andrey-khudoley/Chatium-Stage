@@ -7,9 +7,9 @@ export const TProjektChatReadMentionsODc = Heap.Table(
     userId: Heap.Optional(Heap.String({ customMeta: { title: 'ID пользователя' } })),
     feedId: Heap.Optional(Heap.String({ customMeta: { title: 'ID чата (feedId)' } })),
     messageId: Heap.Optional(Heap.String({ customMeta: { title: 'ID сообщения с упоминанием' } })),
-    readAt: Heap.Optional(Heap.DateTime({ customMeta: { title: 'Дата прочтения' } })),
+    readAt: Heap.Optional(Heap.DateTime({ customMeta: { title: 'Дата прочтения' } }))
   },
-  { customMeta: { title: 'Прочитанные упоминания', description: '' } },
+  { customMeta: { title: 'Прочитанные упоминания', description: '' } }
 )
 
 export default TProjektChatReadMentionsODc

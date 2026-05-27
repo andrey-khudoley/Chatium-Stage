@@ -14,17 +14,28 @@ export const EpisodeForms = Heap.Table(
     thankYouText: Heap.Optional(Heap.String({ customMeta: { title: 'Текст стр. спасибо' } })),
     redirectUrl: Heap.Optional(Heap.String({ customMeta: { title: 'URL редиректа' } })),
     paymentAmount: Heap.Optional(Heap.Number({ customMeta: { title: 'Сумма оплаты' } })),
-    paymentCurrency: Heap.Optional(Heap.String({ customMeta: { title: 'Валюта оплаты' } })), 
+    paymentCurrency: Heap.Optional(Heap.String({ customMeta: { title: 'Валюта оплаты' } })),
     paymentDescription: Heap.Optional(Heap.String({ customMeta: { title: 'Описание оплаты' } })),
-    paymentOldPrice: Heap.Optional(Heap.Number({ customMeta: { title: 'Старая цена (зачёркнутая)' } })),
-    paymentOptions: Heap.Optional(Heap.Any({ customMeta: { title: 'Варианты оплаты (массив тарифов)' } })),
+    paymentOldPrice: Heap.Optional(
+      Heap.Number({ customMeta: { title: 'Старая цена (зачёркнутая)' } })
+    ),
+    paymentOptions: Heap.Optional(
+      Heap.Any({ customMeta: { title: 'Варианты оплаты (массив тарифов)' } })
+    ),
     bonuses: Heap.Optional(Heap.Any({ customMeta: { title: 'Бонусы при оплате (массив)' } })),
     legalText: Heap.Optional(Heap.String({ customMeta: { title: 'Юридический текст' } })),
     hintText: Heap.Optional(Heap.String({ customMeta: { title: 'Подсказка под кнопкой' } })),
-    paymentProviders: Heap.Optional(Heap.Any({ customMeta: { title: 'Доступные платёжные провайдеры (массив slug)' } })),
-    sortOrder: Heap.NonRequired(Heap.Number({ customMeta: { title: 'Порядок сортировки' } }), 0),
+    paymentProviders: Heap.Optional(
+      Heap.Any({ customMeta: { title: 'Доступные платёжные провайдеры (массив slug)' } })
+    ),
+    sortOrder: Heap.NonRequired(Heap.Number({ customMeta: { title: 'Порядок сортировки' } }), 0)
   },
-  { customMeta: { title: 'Формы эфиров', description: 'Переиспользуемые формы, показываемые зрителям во время эфиров' } },
+  {
+    customMeta: {
+      title: 'Формы эфиров',
+      description: 'Переиспользуемые формы, показываемые зрителям во время эфиров'
+    }
+  }
 )
 
 export default EpisodeForms

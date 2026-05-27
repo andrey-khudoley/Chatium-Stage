@@ -1,5 +1,5 @@
 ---
-title: "Первый боевой webhook LifePay — живой пример (20.05.2026)"
+title: 'Первый боевой webhook LifePay — живой пример (20.05.2026)'
 project_hash: c7d5a1
 type: note
 date: 2026-05-20
@@ -8,8 +8,8 @@ tags:
   - topic/lifepay
   - topic/webhook
   - note/evidence
-related_plan: "[implementation-plan §1.9](../../../../saas/gw/lifepay/docs/gateway/implementation-plan.md)"
-related_reference: "[knowledge: lifepay/webhooks](../knowledge/lifepay/webhooks.md)"
+related_plan: '[implementation-plan §1.9](../../../../saas/gw/lifepay/docs/gateway/implementation-plan.md)'
+related_reference: '[knowledge: lifepay/webhooks](../knowledge/lifepay/webhooks.md)'
 ---
 
 # Первый боевой webhook LifePay — живой пример (20.05.2026)

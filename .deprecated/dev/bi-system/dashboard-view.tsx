@@ -33,14 +33,17 @@ export const dashboardViewRoute = app.html('/', async (ctx, req) => {
           <meta charset="UTF-8" />
           <meta name="viewport" content="width=device-width, initial-scale=1.0" />
           <title>{projectName} - Дашборд не найден</title>
-          
+
           <script src="/s/static/lib/tailwind.3.4.16.min.js"></script>
           {/* @ts-expect-error - dangerouslySetInnerHTML is supported in Chatium JSX for script tags */}
           <script dangerouslySetInnerHTML={{ __html: tailwindScript }} />
-          
-          <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+
+          <link
+            href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+            rel="stylesheet"
+          />
           <link href="/s/static/lib/fontawesome/6.7.2/css/all.min.css" rel="stylesheet" />
-          
+
           <style type="text/tailwindcss">{cssVariables}</style>
           <style>{commonStyles}</style>
         </head>
@@ -106,17 +109,20 @@ export const dashboardViewRoute = app.html('/', async (ctx, req) => {
         <title>
           {projectName} - {dashboard ? `Дашборд: ${dashboard.name}` : 'Дашборд не найден'}
         </title>
-        
+
         <script src="/s/static/lib/tailwind.3.4.16.min.js"></script>
         {/* @ts-expect-error - dangerouslySetInnerHTML is supported in Chatium JSX for script tags */}
         <script dangerouslySetInnerHTML={{ __html: tailwindScript }} />
-        
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+
+        <link
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+          rel="stylesheet"
+        />
         <link href="/s/static/lib/fontawesome/6.7.2/css/all.min.css" rel="stylesheet" />
-        
+
         <style type="text/tailwindcss">{cssVariables}</style>
         <style>{commonStyles}</style>
-        
+
         <script>{`
           // Инициализация темы при загрузке страницы (до монтирования Vue)
           (function() {
@@ -138,9 +144,9 @@ export const dashboardViewRoute = app.html('/', async (ctx, req) => {
       </head>
       <body>
         <div id="app" class="flex flex-col min-h-screen">
-          <Header 
-            projectName={projectName} 
-            indexPageUrl={indexPageRoute.url()} 
+          <Header
+            projectName={projectName}
+            indexPageUrl={indexPageRoute.url()}
             isAdmin={true}
             settingsPageUrl={settingsPageRoute.url()}
             pageTitle={dashboard ? `Дашборд: ${dashboard.name}` : 'Дашборд не найден'}
@@ -161,5 +167,3 @@ export const dashboardViewRoute = app.html('/', async (ctx, req) => {
 })
 
 export default dashboardViewRoute
-
-

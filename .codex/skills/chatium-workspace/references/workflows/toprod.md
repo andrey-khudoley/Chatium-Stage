@@ -5,6 +5,7 @@
 Описание: Копирует ассистента (k/assistant) из dev-workspace s.chtm.khudoley.pro в prod-workspace p.chtm.khudoley.pro.
 
 Codex-адаптация:
+
 - Slash-команды здесь не являются встроенными командами CLI; если пользователь пишет `/toprod ` или явно называет workflow, воспринимай это как обычный запрос и следуй этому reference-файлу.
 - Claude `Agent/subagent_type` заменяй на Codex `spawn_agent` только при явном разрешении на делегирование по правилам сессии.
 - Shell-команды запускай через `exec_command`; правки файлов делай через `apply_patch`.

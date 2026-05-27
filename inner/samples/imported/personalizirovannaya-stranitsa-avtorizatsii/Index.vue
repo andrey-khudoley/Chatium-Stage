@@ -12,24 +12,24 @@
 
       <!-- Выбор метода авторизации -->
       <div v-if="isPhoneEnabled && isEmailEnabled" class="flex mb-6 bg-gray-100 rounded-lg p-1">
-        <button 
+        <button
           @click="authMethod = 'phone'"
           :class="[
             'flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all',
-            authMethod === 'phone' 
-              ? 'bg-white text-blue-600 shadow-sm' 
+            authMethod === 'phone'
+              ? 'bg-white text-blue-600 shadow-sm'
               : 'text-gray-600 hover:text-blue-600'
           ]"
         >
           <i class="fas fa-phone mr-2"></i>
           {{ ctx.t('Phone') }}
         </button>
-        <button 
+        <button
           @click="authMethod = 'email'"
           :class="[
             'flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all',
-            authMethod === 'email' 
-              ? 'bg-white text-blue-600 shadow-sm' 
+            authMethod === 'email'
+              ? 'bg-white text-blue-600 shadow-sm'
               : 'text-gray-600 hover:text-blue-600'
           ]"
         >
@@ -39,14 +39,14 @@
       </div>
 
       <!-- Форма авторизации по телефону -->
-      <PhoneAuthForm 
+      <PhoneAuthForm
         v-if="authMethod === 'phone' && isPhoneEnabled"
         :showPasswordOption="isPasswordEnabled"
         @success="handleLoginSuccess"
       />
 
       <!-- Форма авторизации по email -->
-      <EmailAuthForm 
+      <EmailAuthForm
         v-if="authMethod === 'email' && isEmailEnabled"
         :showPasswordOption="isPasswordEnabled"
         @success="handleLoginSuccess"
@@ -68,7 +68,7 @@
             <span class="px-2 bg-white text-gray-500">{{ ctx.t('or') }}</span>
           </div>
         </div>
-        <button 
+        <button
           @click="handleTelegramLogin"
           class="w-full mt-4 bg-blue-500 hover:bg-blue-600 text-white font-medium py-3 px-4 rounded-lg transition-colors flex items-center justify-center"
         >
@@ -100,28 +100,20 @@ const props = defineProps({
 const authMethod = ref('phone')
 
 // Проверка доступности провайдеров
-const isPhoneEnabled = computed(() => 
-  Object.keys(props.providers).includes('Sms')
-)
+const isPhoneEnabled = computed(() => Object.keys(props.providers).includes('Sms'))
 
-const isEmailEnabled = computed(() => 
-  Object.keys(props.providers).includes('Email')
-)
+const isEmailEnabled = computed(() => Object.keys(props.providers).includes('Email'))
 
-const isPasswordEnabled = computed(() => 
-  Object.keys(props.providers).includes('Password')
-)
+const isPasswordEnabled = computed(() => Object.keys(props.providers).includes('Password'))
 
-const isTelegramEnabled = computed(() => 
-  Object.keys(props.providers).includes('telegram-auth')
-)
+const isTelegramEnabled = computed(() => Object.keys(props.providers).includes('telegram-auth'))
 
 // Установка метода по умолчанию
 if (isEmailEnabled.value && !isPhoneEnabled.value) {
   authMethod.value = 'email'
 }
 
-const handleLoginSuccess = () => { 
+const handleLoginSuccess = () => {
   window.location.href = props.back
 }
 

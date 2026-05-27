@@ -16,18 +16,35 @@ const LOGS_WEBHOOK_ENABLED_KEY = 'logs_webhook_enabled'
 const LOGS_WEBHOOK_URL_KEY = 'logs_webhook_url'
 
 // Таблица логов (инжектируется из logs-init при загрузке)
-let projectLogsTable: { create: Function; findAll: Function; countBy: Function; delete: Function } | null = null
+let projectLogsTable: {
+  create: Function
+  findAll: Function
+  countBy: Function
+  delete: Function
+} | null = null
 
 /**
  * Установить таблицу логов. Вызывается из logs-init при инициализации.
  */
-export function setProjectLogsTable(table: { create: Function; findAll: Function; countBy: Function; delete: Function }): void {
+export function setProjectLogsTable(table: {
+  create: Function
+  findAll: Function
+  countBy: Function
+  delete: Function
+}): void {
   projectLogsTable = table
 }
 
-function getProjectLogs(): { create: Function; findAll: Function; countBy: Function; delete: Function } {
+function getProjectLogs(): {
+  create: Function
+  findAll: Function
+  countBy: Function
+  delete: Function
+} {
   if (!projectLogsTable) {
-    throw new Error('[logs-operations] Таблица ProjectLogs не инициализирована. Убедитесь, что logs-init загружен до вызова API логов.')
+    throw new Error(
+      '[logs-operations] Таблица ProjectLogs не инициализирована. Убедитесь, что logs-init загружен до вызова API логов.'
+    )
   }
   return projectLogsTable
 }
@@ -36,7 +53,12 @@ function getProjectLogs(): { create: Function; findAll: Function; countBy: Funct
  * Вернуть инжектированную таблицу логов или null (без выброса).
  * Используется в API admin-logs как fallback, когда статический импорт недоступен.
  */
-export function getProjectLogsOrNull(): { create: Function; findAll: Function; countBy: Function; delete: Function } | null {
+export function getProjectLogsOrNull(): {
+  create: Function
+  findAll: Function
+  countBy: Function
+  delete: Function
+} | null {
   return projectLogsTable
 }
 
@@ -124,7 +146,10 @@ export async function persistLog(
 /**
  * Очистка старых логов при превышении лимита (вызывается только при доступной таблице)
  */
-async function trimLogsIfNeeded(ctx: RichUgcCtx, table?: { findAll: Function; countBy: Function; delete: Function }): Promise<void> {
+async function trimLogsIfNeeded(
+  ctx: RichUgcCtx,
+  table?: { findAll: Function; countBy: Function; delete: Function }
+): Promise<void> {
   const ProjectLogs = table ?? getProjectLogsOrNull()
   if (!ProjectLogs) return
   try {
@@ -152,7 +177,12 @@ async function trimLogsIfNeeded(ctx: RichUgcCtx, table?: { findAll: Function; co
 }
 
 /** Тип таблицы логов (create, findAll, countBy, delete) */
-export type ProjectLogsTable = { create: Function; findAll: Function; countBy: Function; delete: Function }
+export type ProjectLogsTable = {
+  create: Function
+  findAll: Function
+  countBy: Function
+  delete: Function
+}
 
 /**
  * Получение логов с фильтрацией и пагинацией.
@@ -169,7 +199,7 @@ export async function getLogs(
   table?: ProjectLogsTable
 ) {
   const { level, limit = 50, offset = 0, before } = options
-  
+
   const where: Record<string, any> = {}
   if (level) {
     where.level = level
@@ -192,7 +222,7 @@ export async function getLogs(
     limit,
     ...(before ? {} : { offset })
   })
-  
+
   return logs.map((log: any) => ({
     id: log.id,
     level: log.level,
@@ -216,7 +246,7 @@ export async function getLogCounts(ctx: RichUgcCtx, table?: ProjectLogsTable) {
     ProjectLogs.countBy(ctx, { level: 'warn' }),
     ProjectLogs.countBy(ctx, { level: 'error' })
   ])
-  
+
   return {
     info: infoCount,
     warn: warnCount,

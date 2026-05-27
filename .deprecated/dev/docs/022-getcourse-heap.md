@@ -42,12 +42,14 @@
 ### Когда использовать Heap.Table()
 
 **✅ Используйте Heap.Table() когда:**
+
 - Нужна полная типизация TypeScript
 - Таблица создаётся программно или динамически
 - Требуется экспорт типов для использования в коде
 - Работаете в проектах GetCourse с автоматической генерацией таблиц
 
 **❌ Используйте JSON-таблицы (008-heap.md) когда:**
+
 - Таблица статична и не требует типизации
 - Нужна простота определения через JSON
 - Работаете с простыми структурами данных
@@ -62,7 +64,7 @@
 import { Heap } from '@app/heap'
 
 export const TableName = Heap.Table(
-  'table_name',  // Имя таблицы в базе данных
+  'table_name', // Имя таблицы в базе данных
   {
     // Определение полей
     fieldName: Heap.FieldType(options)
@@ -77,11 +79,13 @@ export const TableName = Heap.Table(
 **Ключевые параметры**:
 
 1. **Первый параметр** (`'table_name'`) — имя таблицы в базе данных
+
    - Должно быть уникальным в рамках workspace
    - Рекомендуется использовать префикс проекта (например: `templates_eventhookmanager_...`)
    - Используйте snake_case для имён
 
 2. **Второй параметр** (объект полей) — определение структуры таблицы
+
    - Каждое поле определяется через соответствующий тип Heap
    - Поля могут быть обязательными или опциональными
 
@@ -120,14 +124,14 @@ export const MyTable = Heap.Table('my_table', {
   name: Heap.String({
     customMeta: { title: 'Название' }
   }),
-  
+
   // Опциональное числовое поле
   count: Heap.Optional(
     Heap.Number({
       customMeta: { title: 'Количество' }
     })
   ),
-  
+
   // Булево поле со значением по умолчанию
   isActive: Heap.Boolean({
     customMeta: { title: 'Активен' },
@@ -160,22 +164,22 @@ export const UsersTable = Heap.Table('users', {
   email: Heap.String({
     customMeta: { title: 'Email' }
   }),
-  
+
   // С поиском (embeddings выключены по умолчанию)
   description: Heap.String({
     customMeta: { title: 'Описание' },
-    searchable: { 
-      langs: ['ru', 'en'], 
-      embeddings: false  // ✅ По умолчанию ВЫКЛЮЧЕНО
+    searchable: {
+      langs: ['ru', 'en'],
+      embeddings: false // ✅ По умолчанию ВЫКЛЮЧЕНО
     }
   }),
-  
+
   // С значением по умолчанию
   status: Heap.String({
     customMeta: { title: 'Статус' },
     defaultValue: 'pending'
   }),
-  
+
   // Опциональное поле
   phone: Heap.Optional(
     Heap.String({
@@ -187,12 +191,12 @@ export const UsersTable = Heap.Table('users', {
 
 **Опции Heap.String()**:
 
-| Опция | Тип | Описание |
-|-------|-----|----------|
-| `customMeta.title` | `string` | Отображаемое название поля |
-| `searchable.langs` | `string[]` | Языки для полнотекстового поиска |
-| `searchable.embeddings` | `boolean` | Включить эмбеддинги (по умолчанию `false`) |
-| `defaultValue` | `string` | Значение по умолчанию |
+| Опция                   | Тип        | Описание                                   |
+| ----------------------- | ---------- | ------------------------------------------ |
+| `customMeta.title`      | `string`   | Отображаемое название поля                 |
+| `searchable.langs`      | `string[]` | Языки для полнотекстового поиска           |
+| `searchable.embeddings` | `boolean`  | Включить эмбеддинги (по умолчанию `false`) |
+| `defaultValue`          | `string`   | Значение по умолчанию                      |
 
 **⚠️ ВАЖНО**: Всегда отключайте `embeddings: false` по умолчанию. Включайте только при необходимости семантического поиска.
 
@@ -215,19 +219,19 @@ export const ProductsTable = Heap.Table('products', {
   price: Heap.Number({
     customMeta: { title: 'Цена' }
   }),
-  
+
   // С значением по умолчанию
   quantity: Heap.Number({
     customMeta: { title: 'Количество' },
     defaultValue: 0
   }),
-  
+
   // С поиском (для числовых полей редко используется)
   rating: Heap.Number({
     customMeta: { title: 'Рейтинг' },
     searchable: { langs: ['ru', 'en'], embeddings: false }
   }),
-  
+
   // Опциональное поле
   discount: Heap.Optional(
     Heap.Number({
@@ -239,12 +243,12 @@ export const ProductsTable = Heap.Table('products', {
 
 **Опции Heap.Number()**:
 
-| Опция | Тип | Описание |
-|-------|-----|----------|
-| `customMeta.title` | `string` | Отображаемое название поля |
-| `searchable.langs` | `string[]` | Языки для поиска (редко используется) |
-| `searchable.embeddings` | `boolean` | Эмбеддинги (по умолчанию `false`) |
-| `defaultValue` | `number` | Значение по умолчанию |
+| Опция                   | Тип        | Описание                              |
+| ----------------------- | ---------- | ------------------------------------- |
+| `customMeta.title`      | `string`   | Отображаемое название поля            |
+| `searchable.langs`      | `string[]` | Языки для поиска (редко используется) |
+| `searchable.embeddings` | `boolean`  | Эмбеддинги (по умолчанию `false`)     |
+| `defaultValue`          | `number`   | Значение по умолчанию                 |
 
 ### Heap.Boolean() - булевы поля
 
@@ -266,19 +270,19 @@ export const SettingsTable = Heap.Table('settings', {
   isActive: Heap.Boolean({
     customMeta: { title: 'Активен' }
   }),
-  
+
   // Со значением по умолчанию
   notificationsEnabled: Heap.Boolean({
     customMeta: { title: 'Уведомления включены' },
     defaultValue: true
   }),
-  
+
   // С поиском
   isPublic: Heap.Boolean({
     customMeta: { title: 'Публичный' },
     searchable: { langs: ['ru', 'en'], embeddings: false }
   }),
-  
+
   // Опциональное поле
   isVerified: Heap.Optional(
     Heap.Boolean({
@@ -290,12 +294,12 @@ export const SettingsTable = Heap.Table('settings', {
 
 **Опции Heap.Boolean()**:
 
-| Опция | Тип | Описание |
-|-------|-----|----------|
-| `customMeta.title` | `string` | Отображаемое название поля |
-| `searchable.langs` | `string[]` | Языки для поиска |
-| `searchable.embeddings` | `boolean` | Эмбеддинги (по умолчанию `false`) |
-| `defaultValue` | `boolean` | Значение по умолчанию |
+| Опция                   | Тип        | Описание                          |
+| ----------------------- | ---------- | --------------------------------- |
+| `customMeta.title`      | `string`   | Отображаемое название поля        |
+| `searchable.langs`      | `string[]` | Языки для поиска                  |
+| `searchable.embeddings` | `boolean`  | Эмбеддинги (по умолчанию `false`) |
+| `defaultValue`          | `boolean`  | Значение по умолчанию             |
 
 ### Heap.DateTime() - дата и время
 
@@ -316,13 +320,13 @@ export const EventsTable = Heap.Table('events', {
   createdAt: Heap.DateTime({
     customMeta: { title: 'Дата создания' }
   }),
-  
+
   // С поиском
   eventDate: Heap.DateTime({
     customMeta: { title: 'Дата события' },
     searchable: { langs: ['ru', 'en'], embeddings: false }
   }),
-  
+
   // Опциональное поле
   deletedAt: Heap.Optional(
     Heap.DateTime({
@@ -351,11 +355,11 @@ const upcomingEvents = await EventsTable.findAll(ctx, {
 
 **Опции Heap.DateTime()**:
 
-| Опция | Тип | Описание |
-|-------|-----|----------|
-| `customMeta.title` | `string` | Отображаемое название поля |
-| `searchable.langs` | `string[]` | Языки для поиска |
-| `searchable.embeddings` | `boolean` | Эмбеддинги (по умолчанию `false`) |
+| Опция                   | Тип        | Описание                          |
+| ----------------------- | ---------- | --------------------------------- |
+| `customMeta.title`      | `string`   | Отображаемое название поля        |
+| `searchable.langs`      | `string[]` | Языки для поиска                  |
+| `searchable.embeddings` | `boolean`  | Эмбеддинги (по умолчанию `false`) |
 
 ### Heap.Any() - произвольные данные
 
@@ -373,7 +377,7 @@ fieldName: Heap.Optional(Heap.Any())
 export const EventLogsTable = Heap.Table('event_logs', {
   // Произвольные данные (JSON объект)
   payload: Heap.Optional(Heap.Any()),
-  
+
   // Метаданные события
   metadata: Heap.Optional(Heap.Any())
 })
@@ -387,7 +391,9 @@ await EventLogsTable.create(ctx, {
   payload: {
     eventType: 'user.created',
     userId: '123',
-    data: { /* любые данные */ }
+    data: {
+      /* любые данные */
+    }
   }
 })
 ```
@@ -410,28 +416,28 @@ export const UsersTable = Heap.Table('users', {
   email: Heap.String({
     customMeta: { title: 'Email' }
   }),
-  
+
   // Опциональное строковое поле
   phone: Heap.Optional(
     Heap.String({
       customMeta: { title: 'Телефон' }
     })
   ),
-  
+
   // Опциональное числовое поле
   age: Heap.Optional(
     Heap.Number({
       customMeta: { title: 'Возраст' }
     })
   ),
-  
+
   // Опциональное поле даты
   lastLoginAt: Heap.Optional(
     Heap.DateTime({
       customMeta: { title: 'Последний вход' }
     })
   ),
-  
+
   // Опциональное произвольное поле
   metadata: Heap.Optional(Heap.Any())
 })
@@ -468,7 +474,7 @@ await UsersTable.create(ctx, {
 
 ```typescript
 customMeta: {
-  title: string  // Отображаемое название поля
+  title: string // Отображаемое название поля
 }
 ```
 
@@ -479,11 +485,11 @@ export const ProductsTable = Heap.Table('products', {
   name: Heap.String({
     customMeta: { title: 'Название продукта' }
   }),
-  
+
   price: Heap.Number({
     customMeta: { title: 'Цена (руб.)' }
   }),
-  
+
   description: Heap.String({
     customMeta: { title: 'Описание товара' }
   })
@@ -514,34 +520,35 @@ export const ArticlesTable = Heap.Table('articles', {
     customMeta: { title: 'Заголовок' }
     // searchable не указан = поиск выключен
   }),
-  
+
   // Поиск включен, embeddings выключены (рекомендуется)
   content: Heap.String({
     customMeta: { title: 'Содержание' },
-    searchable: { 
-      langs: ['ru', 'en'], 
-      embeddings: false  // ✅ По умолчанию
+    searchable: {
+      langs: ['ru', 'en'],
+      embeddings: false // ✅ По умолчанию
     }
   }),
-  
+
   // Поиск с embeddings (только при необходимости)
   semanticContent: Heap.String({
     customMeta: { title: 'Семантический контент' },
-    searchable: { 
-      langs: ['ru'], 
-      embeddings: true  // ⚠️ Только для семантического поиска
+    searchable: {
+      langs: ['ru'],
+      embeddings: true // ⚠️ Только для семантического поиска
     }
   })
 })
 ```
 
-**⚠️ КРИТИЧЕСКИ ВАЖНО**: 
+**⚠️ КРИТИЧЕСКИ ВАЖНО**:
 
 - **По умолчанию `embeddings: false`** — всегда отключайте, если нет явной необходимости
 - **Включайте `embeddings: true`** только для семантического поиска (поиск по смыслу, а не по словам)
 - **Embeddings увеличивают нагрузку** и стоимость операций
 
 **Когда включать embeddings**:
+
 - ✅ Семантический поиск (поиск синонимов, близких по смыслу)
 - ✅ Многоязычный поиск с автоматическим переводом смысла
 - ❌ Обычный поиск по названиям, артикулам, именам
@@ -554,7 +561,7 @@ export const ArticlesTable = Heap.Table('articles', {
 **Синтаксис**:
 
 ```typescript
-defaultValue: value  // Значение должно соответствовать типу поля
+defaultValue: value // Значение должно соответствовать типу поля
 ```
 
 **Примеры**:
@@ -566,13 +573,13 @@ export const SettingsTable = Heap.Table('settings', {
     customMeta: { title: 'Статус' },
     defaultValue: 'pending'
   }),
-  
+
   // Числовое значение по умолчанию
   count: Heap.Number({
     customMeta: { title: 'Счётчик' },
     defaultValue: 0
   }),
-  
+
   // Булево значение по умолчанию
   isActive: Heap.Boolean({
     customMeta: { title: 'Активен' },
@@ -593,7 +600,7 @@ await SettingsTable.create(ctx, {
 
 // Можно переопределить
 await SettingsTable.create(ctx, {
-  status: 'active',  // Переопределяет defaultValue
+  status: 'active', // Переопределяет defaultValue
   count: 10,
   isActive: false
 })
@@ -612,38 +619,38 @@ export const ConversationMessagesTable = Heap.Table(
   'templates_eventhookmanager_conversation_messages',
   {
     conversationId: Heap.Optional(
-      Heap.String({ 
-        customMeta: { title: 'ID обращения' }, 
-        searchable: { langs: ['ru', 'en'], embeddings: false } 
-      }),
+      Heap.String({
+        customMeta: { title: 'ID обращения' },
+        searchable: { langs: ['ru', 'en'], embeddings: false }
+      })
     ),
     messageId: Heap.Optional(
-      Heap.String({ 
-        customMeta: { title: 'ID сообщения' }, 
-        searchable: { langs: ['ru', 'en'], embeddings: false } 
-      }),
+      Heap.String({
+        customMeta: { title: 'ID сообщения' },
+        searchable: { langs: ['ru', 'en'], embeddings: false }
+      })
     ),
     messageText: Heap.Optional(
-      Heap.String({ 
-        customMeta: { title: 'Текст сообщения' }, 
-        searchable: { langs: ['ru', 'en'], embeddings: false } 
-      }),
+      Heap.String({
+        customMeta: { title: 'Текст сообщения' },
+        searchable: { langs: ['ru', 'en'], embeddings: false }
+      })
     ),
     authorType: Heap.Optional(
-      Heap.String({ 
-        customMeta: { title: 'Тип автора' }, 
-        searchable: { langs: ['ru', 'en'], embeddings: false } 
-      }),
+      Heap.String({
+        customMeta: { title: 'Тип автора' },
+        searchable: { langs: ['ru', 'en'], embeddings: false }
+      })
     ),
     timestamp: Heap.Optional(
       Heap.DateTime({
         customMeta: { title: 'Время события' },
-        searchable: { langs: ['ru', 'en'], embeddings: false },
-      }),
+        searchable: { langs: ['ru', 'en'], embeddings: false }
+      })
     ),
-    payload: Heap.Optional(Heap.Any()),
+    payload: Heap.Optional(Heap.Any())
   },
-  { customMeta: { title: 'Conversation Messages', description: 'Сообщения в обращениях' } },
+  { customMeta: { title: 'Conversation Messages', description: 'Сообщения в обращениях' } }
 )
 
 export default ConversationMessagesTable
@@ -655,18 +662,21 @@ export type ConversationMessagesTableRowJson = typeof ConversationMessagesTable.
 **Разбор примера**:
 
 1. **Имя таблицы**: `'templates_eventhookmanager_conversation_messages'`
+
    - Префикс `templates_eventhookmanager_` указывает на проект
    - Используется snake_case
 
 2. **Поля**:
+
    - Все поля опциональны через `Heap.Optional()`
    - Строковые поля имеют поиск с `embeddings: false`
    - Поле `payload` использует `Heap.Any()` для произвольных данных
 
-3. **Метаданные таблицы**: 
+3. **Метаданные таблицы**:
+
    - `title` и `description` для UI
 
-4. **Экспорт типов**: 
+4. **Экспорт типов**:
    - `ConversationMessagesTableRow` — тип строки таблицы
    - `ConversationMessagesTableRowJson` — JSON-тип строки
 
@@ -753,7 +763,9 @@ const message = await ConversationMessagesTable.create(ctx, {
   messageText: 'Привет!',
   authorType: 'user',
   timestamp: new Date(),
-  payload: { /* данные */ }
+  payload: {
+    /* данные */
+  }
 })
 
 // Чтение
@@ -802,7 +814,7 @@ const results = await ConversationMessagesTable.searchBy(ctx, {
 // ❌ app.table() НЕ существует в Chatium!
 const conversationMessagesTable = app.table('conversation_messages', {
   fields: [
-    { name: 'conversationId', kind: 'StringKind', title: 'ID обращения' },
+    { name: 'conversationId', kind: 'StringKind', title: 'ID обращения' }
     // ...
   ]
 })
@@ -816,14 +828,11 @@ const conversationMessagesTable = app.table('conversation_messages', {
 // ✅ Используйте Heap.Table()
 import { Heap } from '@app/heap'
 
-export const ConversationMessagesTable = Heap.Table(
-  'conversation_messages',
-  {
-    conversationId: Heap.String({
-      customMeta: { title: 'ID обращения' }
-    })
-  }
-)
+export const ConversationMessagesTable = Heap.Table('conversation_messages', {
+  conversationId: Heap.String({
+    customMeta: { title: 'ID обращения' }
+  })
+})
 ```
 
 ### ❌ Ошибка #2: Включение embeddings без необходимости
@@ -834,9 +843,9 @@ export const ConversationMessagesTable = Heap.Table(
 // ❌ Embeddings включены без явной необходимости
 export const MessagesTable = Heap.Table('messages', {
   text: Heap.String({
-    searchable: { 
-      langs: ['ru', 'en'], 
-      embeddings: true  // ← Увеличивает нагрузку!
+    searchable: {
+      langs: ['ru', 'en'],
+      embeddings: true // ← Увеличивает нагрузку!
     }
   })
 })
@@ -848,9 +857,9 @@ export const MessagesTable = Heap.Table('messages', {
 // ✅ По умолчанию embeddings ВЫКЛЮЧЕНЫ
 export const MessagesTable = Heap.Table('messages', {
   text: Heap.String({
-    searchable: { 
-      langs: ['ru', 'en'], 
-      embeddings: false  // ✅ По умолчанию
+    searchable: {
+      langs: ['ru', 'en'],
+      embeddings: false // ✅ По умолчанию
     }
   })
 })
@@ -863,7 +872,8 @@ export const MessagesTable = Heap.Table('messages', {
 ```typescript
 // ❌ Поле обязательно, но может отсутствовать
 export const UsersTable = Heap.Table('users', {
-  phone: Heap.String({  // ← Обязательное поле!
+  phone: Heap.String({
+    // ← Обязательное поле!
     customMeta: { title: 'Телефон' }
   })
 })
@@ -880,7 +890,8 @@ await UsersTable.create(ctx, {
 ```typescript
 // ✅ Поле опционально
 export const UsersTable = Heap.Table('users', {
-  phone: Heap.Optional(  // ← Опциональное поле
+  phone: Heap.Optional(
+    // ← Опциональное поле
     Heap.String({
       customMeta: { title: 'Телефон' }
     })
@@ -923,6 +934,7 @@ export const EventLogsTable = Heap.Table('t_event_logs', { ... })
 ### Heap.Table() (TypeScript)
 
 **Преимущества**:
+
 - ✅ Полная типизация TypeScript
 - ✅ Автодополнение в IDE
 - ✅ Рефакторинг и переименование
@@ -930,10 +942,12 @@ export const EventLogsTable = Heap.Table('t_event_logs', { ... })
 - ✅ Валидация на этапе компиляции
 
 **Недостатки**:
+
 - ❌ Требует TypeScript
 - ❌ Более сложный синтаксис
 
 **Когда использовать**:
+
 - Проекты GetCourse с автоматической генерацией
 - Когда нужна типизация
 - Динамическое создание таблиц
@@ -941,16 +955,19 @@ export const EventLogsTable = Heap.Table('t_event_logs', { ... })
 ### JSON-таблицы (008-heap.md)
 
 **Преимущества**:
+
 - ✅ Простой JSON-синтаксис
 - ✅ Не требует TypeScript
 - ✅ Легко редактировать
 
 **Недостатки**:
+
 - ❌ Нет типизации
 - ❌ Нет автодополнения
 - ❌ Нет рефакторинга
 
 **Когда использовать**:
+
 - Простые статические таблицы
 - Когда типизация не критична
 
@@ -998,11 +1015,9 @@ export type MyTableRowJson = typeof MyTable.JsonT
 export const MyTable = Heap.Table('my_table', {
   // Обязательное поле
   email: Heap.String({ customMeta: { title: 'Email' } }),
-  
+
   // Опциональное поле
-  phone: Heap.Optional(
-    Heap.String({ customMeta: { title: 'Телефон' } })
-  )
+  phone: Heap.Optional(Heap.String({ customMeta: { title: 'Телефон' } }))
 })
 ```
 
@@ -1012,9 +1027,9 @@ export const MyTable = Heap.Table('my_table', {
 // ✅ По умолчанию embeddings ВЫКЛЮЧЕНЫ
 export const MyTable = Heap.Table('my_table', {
   name: Heap.String({
-    searchable: { 
-      langs: ['ru', 'en'], 
-      embeddings: false  // ✅ По умолчанию
+    searchable: {
+      langs: ['ru', 'en'],
+      embeddings: false // ✅ По умолчанию
     }
   })
 })
@@ -1022,9 +1037,9 @@ export const MyTable = Heap.Table('my_table', {
 // ✅ Включайте embeddings только при необходимости
 export const ArticlesTable = Heap.Table('articles', {
   content: Heap.String({
-    searchable: { 
-      langs: ['ru'], 
-      embeddings: true  // ⚠️ Только для семантического поиска
+    searchable: {
+      langs: ['ru'],
+      embeddings: true // ⚠️ Только для семантического поиска
     }
   })
 })
@@ -1036,19 +1051,21 @@ export const ArticlesTable = Heap.Table('articles', {
 // ✅ Всегда добавляйте customMeta.title
 export const MyTable = Heap.Table('my_table', {
   name: Heap.String({
-    customMeta: { title: 'Название' }  // ✅ Для UI
+    customMeta: { title: 'Название' } // ✅ Для UI
   })
 })
 
 // ✅ Добавляйте метаданные таблицы
 export const MyTable = Heap.Table(
   'my_table',
-  { /* поля */ },
-  { 
-    customMeta: { 
-      title: 'Моя таблица', 
-      description: 'Описание таблицы' 
-    } 
+  {
+    /* поля */
+  },
+  {
+    customMeta: {
+      title: 'Моя таблица',
+      description: 'Описание таблицы'
+    }
   }
 )
 ```

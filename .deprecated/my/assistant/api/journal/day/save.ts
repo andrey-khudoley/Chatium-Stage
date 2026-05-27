@@ -37,7 +37,14 @@ export const saveJournalDayEntryRoute = app
     const locked = req.body.locked
 
     try {
-      const entry = await journalDayRepo.saveSegmentForUserDay(ctx, user.id, dayKey, segment, value, locked)
+      const entry = await journalDayRepo.saveSegmentForUserDay(
+        ctx,
+        user.id,
+        dayKey,
+        segment,
+        value,
+        locked
+      )
       return { success: true, entry }
     } catch (error) {
       await loggerLib.writeServerLog(ctx, {

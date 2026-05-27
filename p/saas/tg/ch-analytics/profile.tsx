@@ -1,5 +1,5 @@
 // @shared
-import { jsx } from "@app/html-jsx"
+import { jsx } from '@app/html-jsx'
 import { requireRealUser } from '@app/auth'
 import ProfilePage from './pages/ProfilePage.vue'
 import { TgChannelAnalyticsSettings, ensureDefaultSettings } from './tables/settings.table'
@@ -13,7 +13,7 @@ export const profilePageRoute = app.html('/', async (ctx, req) => {
   // Применяем уровень логирования из настроек
   await applyDebugLevel(ctx, 'profile')
   Debug.info(ctx, '[profile] Начало обработки страницы профиля')
-  
+
   try {
     requireRealUser(ctx)
     Debug.info(ctx, `[profile] Пользователь авторизован: userId=${ctx.user.id}`)
@@ -32,14 +32,14 @@ export const profilePageRoute = app.html('/', async (ctx, req) => {
       </html>
     )
   }
-  
+
   await ensureDefaultSettings(ctx)
   Debug.info(ctx, '[profile] Настройки по умолчанию проверены')
-  
+
   const titleSetting = await TgChannelAnalyticsSettings.findOneBy(ctx, { key: 'project_title' })
   const projectTitle = titleSetting?.value ?? 'Аналитика телеграм-каналов'
   Debug.info(ctx, `[profile] Название проекта: ${projectTitle}`)
-  
+
   Debug.info(ctx, '[profile] Рендеринг страницы профиля')
   return (
     <html>
@@ -390,12 +390,15 @@ export const profilePageRoute = app.html('/', async (ctx, req) => {
               setTimeout(startBoot, 50);
             }
           })();
-        `}</script> 
+        `}</script>
         <script src="/s/static/lib/tailwind.3.4.16.min.js"></script>
         <link rel="stylesheet" href="/s/static/lib/fontawesome/6.7.2/css/all.min.css" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
-        <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap"
+          rel="stylesheet"
+        />
         <style>{`
           :root {
             --color-bg: #0a0a0a;
@@ -431,7 +434,7 @@ export const profilePageRoute = app.html('/', async (ctx, req) => {
             <div id="boot-messages-container"></div>
           </div>
         </div>
-        <ProfilePage 
+        <ProfilePage
           projectTitle={projectTitle}
           indexUrl={indexPageRoute.url()}
           profileUrl={profilePageRoute.url()}

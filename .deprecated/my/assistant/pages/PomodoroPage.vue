@@ -13,7 +13,7 @@ import type {
   FocusToolsStateData,
   PomodoroSliceInFocusTools,
   StopwatchToolSnapshot,
-  TimerToolSnapshot,
+  TimerToolSnapshot
 } from '../shared/focus-tools-types'
 import { getOrCreateBrowserSocketClient } from '@app/socket'
 
@@ -64,15 +64,17 @@ const props = withDefaults(
     encodedFocusToolsSocketId: string
     getTasksUrl: string
   }>(),
-  { timezoneOffsetHours: DEFAULT_USER_TIMEZONE_OFFSET_HOURS },
+  { timezoneOffsetHours: DEFAULT_USER_TIMEZONE_OFFSET_HOURS }
 )
 
 const state = ref<PomodoroState | null>(
   props.initialFocusToolsState?.state?.pomodoro
     ? pomodoroSliceToPageState(props.initialFocusToolsState.state.pomodoro)
-    : null,
+    : null
 )
-const focusToolsSnapshot = ref<FocusToolsStateData | null>(props.initialFocusToolsState?.state ?? null)
+const focusToolsSnapshot = ref<FocusToolsStateData | null>(
+  props.initialFocusToolsState?.state ?? null
+)
 const focusToolsWsConnected = ref(false)
 const localTick = ref(Date.now())
 const saving = ref(false)
@@ -113,14 +115,17 @@ async function readApiJson<T>(response: Response): Promise<T> {
 
 function formatFetchError(error: unknown): string {
   const msg = error instanceof Error ? error.message : String(error)
-  if (msg.includes('Failed to fetch') || (error instanceof TypeError && msg === 'Failed to fetch')) {
+  if (
+    msg.includes('Failed to fetch') ||
+    (error instanceof TypeError && msg === 'Failed to fetch')
+  ) {
     return 'Нет соединения с сервером. Проверьте сеть, VPN и блокировщики расширений.'
   }
   return msg
 }
 
 const pomodoroStatsDayKey = computed(() =>
-  computePomodoroStatsDayKeyForUtcOffsetHours(localTick.value, props.timezoneOffsetHours),
+  computePomodoroStatsDayKeyForUtcOffsetHours(localTick.value, props.timezoneOffsetHours)
 )
 
 function defaultTimerSnapshot(): TimerToolSnapshot {
@@ -136,7 +141,7 @@ function defaultTimerSnapshot(): TimerToolSnapshot {
     sessionsCount: 0,
     totalFocusSec: 0,
     totalSec: 0,
-    statsPeriodDayKey: dk,
+    statsPeriodDayKey: dk
   }
 }
 
@@ -151,12 +156,14 @@ function defaultStopwatchSnapshot(): StopwatchToolSnapshot {
     sessionsCount: 0,
     totalFocusSec: 0,
     totalSec: 0,
-    statsPeriodDayKey: dk,
+    statsPeriodDayKey: dk
   }
 }
 
 const timerSlice = computed(() => focusToolsSnapshot.value?.timer ?? defaultTimerSnapshot())
-const stopwatchSlice = computed(() => focusToolsSnapshot.value?.stopwatch ?? defaultStopwatchSnapshot())
+const stopwatchSlice = computed(
+  () => focusToolsSnapshot.value?.stopwatch ?? defaultStopwatchSnapshot()
+)
 
 function toolsStateUrlWithDay(): string {
   const key = encodeURIComponent(pomodoroStatsDayKey.value)
@@ -181,7 +188,13 @@ async function refresh(opts?: { maxAttempts?: number }): Promise<void> {
         error?: string
       }>(r)
       if (j.success && j.state?.pomodoro) {
-        applyIncomingState(pomodoroSliceToPageState(j.state.pomodoro), j.serverNowMs ?? 0, 'poll', 0, j.state)
+        applyIncomingState(
+          pomodoroSliceToPageState(j.state.pomodoro),
+          j.serverNowMs ?? 0,
+          'poll',
+          0,
+          j.state
+        )
         pageError.value = ''
         return
       }
@@ -211,8 +224,8 @@ async function assignTaskToPomodoro(taskId: string): Promise<void> {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       statsDayKey: pomodoroStatsDayKey.value,
-      command: { kind: 'assign-task', taskId },
-    }),
+      command: { kind: 'assign-task', taskId }
+    })
   })
   const j = await readApiJson<{
     success?: boolean
@@ -227,7 +240,7 @@ async function assignTaskToPomodoro(taskId: string): Promise<void> {
       j.serverNowMs ?? Date.now(),
       'action',
       actionSeq.value + 1,
-      j.state,
+      j.state
     )
   }
 }
@@ -253,10 +266,15 @@ function applyIncomingState(
   serverNowMs: number,
   source: 'poll' | 'action',
   incomingActionSeq: number,
-  fullSnapshot?: FocusToolsStateData | null,
+  fullSnapshot?: FocusToolsStateData | null
 ): void {
   if (serverNowMs < latestAppliedServerNowMs.value) return
-  if (serverNowMs === latestAppliedServerNowMs.value && source === 'poll' && incomingActionSeq <= actionSeq.value) return
+  if (
+    serverNowMs === latestAppliedServerNowMs.value &&
+    source === 'poll' &&
+    incomingActionSeq <= actionSeq.value
+  )
+    return
 
   const oldPhase = state.value?.phase
   const wasAwaitingContinue = state.value?.status === 'awaiting_continue'
@@ -280,7 +298,7 @@ function onFocusToolsSync(payload: FocusToolsFullStateDto): void {
     payload.serverNowMs,
     'action',
     nextSeq,
-    payload.state,
+    payload.state
   )
   pageError.value = ''
 }
@@ -297,8 +315,8 @@ async function control(action: 'start' | 'resume' | 'pause' | 'stop' | 'skip' | 
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         statsDayKey: pomodoroStatsDayKey.value,
-        command: { kind: 'pomodoro', action },
-      }),
+        command: { kind: 'pomodoro', action }
+      })
     })
     const j = await readApiJson<{
       success?: boolean
@@ -312,7 +330,7 @@ async function control(action: 'start' | 'resume' | 'pause' | 'stop' | 'skip' | 
         j.serverNowMs ?? 0,
         'action',
         localActionSeq,
-        j.state,
+        j.state
       )
       pageError.value = ''
       ok = true
@@ -365,10 +383,10 @@ async function saveSettings(draft: PomodoroSettingsDraft) {
             afterLongRest: draft.afterLongRest,
             autoStartRest: draft.autoStartRest,
             autoStartNextCycle: draft.autoStartNextCycle,
-            phaseChangeSound: draft.phaseChangeSound,
-          },
-        },
-      }),
+            phaseChangeSound: draft.phaseChangeSound
+          }
+        }
+      })
     })
     const j = await readApiJson<{
       success?: boolean
@@ -382,7 +400,7 @@ async function saveSettings(draft: PomodoroSettingsDraft) {
         j.serverNowMs ?? 0,
         'action',
         actionSeq.value + 1,
-        j.state,
+        j.state
       )
       pageError.value = ''
       settingsOpen.value = false
@@ -427,12 +445,12 @@ function updateDocumentTitle() {
     document.title = originalTitle.value
     return
   }
-  
+
   if (state.value.status === 'stopped') {
     document.title = originalTitle.value
     return
   }
-  
+
   const phaseLabel = phaseLabels[state.value.phase]
   const emoji = phaseEmoji[state.value.phase]
   if (state.value.status === 'awaiting_continue') {
@@ -440,7 +458,8 @@ function updateDocumentTitle() {
     return
   }
   const time = fmt(remainSec.value)
-  document.title = state.value.status === 'paused' ? `(Пауза) ${phaseLabel}` : `(${time}) ${emoji} ${phaseLabel}`
+  document.title =
+    state.value.status === 'paused' ? `(Пауза) ${phaseLabel}` : `(${time}) ${emoji} ${phaseLabel}`
 }
 
 async function requestNotificationPermission() {
@@ -498,7 +517,7 @@ async function connectFocusToolsWebSocket(): Promise<void> {
           msg.data.serverNowMs ?? Date.now(),
           'poll',
           0,
-          msg.data.state,
+          msg.data.state
         )
       }
     })
@@ -529,7 +548,7 @@ onMounted(() => {
       props.initialFocusToolsState.serverNowMs,
       'poll',
       0,
-      props.initialFocusToolsState.state,
+      props.initialFocusToolsState.state
     )
     pageError.value = ''
   }
@@ -567,8 +586,10 @@ onUnmounted(() => {
   focusToolsSocketUnsub?.()
   clearFocusToolsWsRetry()
   if (onlineHandler) window.removeEventListener('online', onlineHandler)
-  if (focusTaskClearedHandler) window.removeEventListener('assistant:focus-task-cleared', focusTaskClearedHandler)
-  if (focusToolsDeadlineHandler) window.removeEventListener('assistant:focus-tools-deadline', focusToolsDeadlineHandler)
+  if (focusTaskClearedHandler)
+    window.removeEventListener('assistant:focus-task-cleared', focusTaskClearedHandler)
+  if (focusToolsDeadlineHandler)
+    window.removeEventListener('assistant:focus-tools-deadline', focusToolsDeadlineHandler)
   if (focusHandler) window.removeEventListener('focus', focusHandler)
   document.removeEventListener('visibilitychange', onVisibilityBack)
 })
@@ -604,7 +625,6 @@ watch(
   },
   { immediate: true }
 )
-
 
 const settingsModel = computed(() => {
   const fallback: PomodoroState = {
@@ -643,7 +663,11 @@ const settingsModel = computed(() => {
     autoStartNextCycle: current.autoStartNextCycle,
     phaseChangeSound: current.phaseChangeSound,
     afterWorkAction: current.autoStartRest ? 'auto' : current.pauseAfterWork ? 'pause' : 'overtime',
-    afterRestAction: current.autoStartNextCycle ? 'auto' : current.pauseAfterRest ? 'pause' : 'overtime'
+    afterRestAction: current.autoStartNextCycle
+      ? 'auto'
+      : current.pauseAfterRest
+        ? 'pause'
+        : 'overtime'
   }
 })
 
@@ -651,11 +675,13 @@ const phaseTheme = computed(() => {
   if (!state.value) return 'default'
   return state.value.phase
 })
-
 </script>
 
 <template>
-  <div class="app-layout bg-[var(--color-bg)] text-[var(--color-text)] flex flex-col" :class="`theme-${phaseTheme}`">
+  <div
+    class="app-layout bg-[var(--color-bg)] text-[var(--color-text)] flex flex-col"
+    :class="`theme-${phaseTheme}`"
+  >
     <GlobalGlitch />
     <Header
       :projectTitle="props.projectTitle"
@@ -716,7 +742,9 @@ const phaseTheme = computed(() => {
 <style scoped>
 .app-layout {
   min-height: 100vh;
-  transition: background-color 0.6s ease, color 0.6s ease;
+  transition:
+    background-color 0.6s ease,
+    color 0.6s ease;
   background: transparent;
 }
 
@@ -763,24 +791,32 @@ const phaseTheme = computed(() => {
 
 .pomodoro-error {
   margin: 0;
-  padding: .5rem .75rem;
+  padding: 0.5rem 0.75rem;
   color: #ff6b6b;
-  font-size: .78rem;
+  font-size: 0.78rem;
   background: rgba(255, 107, 107, 0.06);
   border: 1px solid rgba(255, 107, 107, 0.15);
   clip-path: polygon(
-    0 3px, 3px 3px, 3px 0,
-    calc(100% - 3px) 0, calc(100% - 3px) 3px, 100% 3px,
-    100% calc(100% - 3px), calc(100% - 3px) calc(100% - 3px), calc(100% - 3px) 100%,
-    3px 100%, 3px calc(100% - 3px), 0 calc(100% - 3px)
+    0 3px,
+    3px 3px,
+    3px 0,
+    calc(100% - 3px) 0,
+    calc(100% - 3px) 3px,
+    100% 3px,
+    100% calc(100% - 3px),
+    calc(100% - 3px) calc(100% - 3px),
+    calc(100% - 3px) 100%,
+    3px 100%,
+    3px calc(100% - 3px),
+    0 calc(100% - 3px)
   );
 }
 
 .pomodoro-loading {
   color: var(--color-text-secondary);
-  font-size: .85rem;
+  font-size: 0.85rem;
   text-transform: uppercase;
-  letter-spacing: .1em;
+  letter-spacing: 0.1em;
   text-align: center;
   padding: 4rem 0;
 }
@@ -791,17 +827,23 @@ const phaseTheme = computed(() => {
 }
 
 @keyframes cursor-blink {
-  0%, 50% { opacity: 1; }
-  51%, 100% { opacity: 0; }
+  0%,
+  50% {
+    opacity: 1;
+  }
+  51%,
+  100% {
+    opacity: 0;
+  }
 }
 
 /* ── Responsive ── */
 @media (max-width: 640px) {
   .pomodoro-shell {
-    padding: 1rem max(1rem, var(--app-safe-left, 0)) max(1rem, var(--app-safe-bottom, 0)) max(1rem, var(--app-safe-right, 0));
+    padding: 1rem max(1rem, var(--app-safe-left, 0)) max(1rem, var(--app-safe-bottom, 0))
+      max(1rem, var(--app-safe-right, 0));
   }
 }
-
 </style>
 
 <style>

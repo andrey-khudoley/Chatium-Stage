@@ -8,7 +8,9 @@
     <div class="content">
       <div class="header">
         <h2 class="title">Отложенные задачи</h2>
-        <p class="subtitle">Напомнить, списать, отправить — <span class="accent">в нужное время</span></p>
+        <p class="subtitle">
+          Напомнить, списать, отправить — <span class="accent">в нужное время</span>
+        </p>
       </div>
 
       <div class="timeline">
@@ -35,7 +37,7 @@ defineProps({ active: Boolean })
 const items = [
   { icon: 'fas fa-bell', when: 'через 2 ч', text: 'Напоминание о вебинаре' },
   { icon: 'fas fa-credit-card', when: 'каждый месяц', text: 'Списание подписки — 2 990 ₽' },
-  { icon: 'fas fa-envelope', when: 'каждый пн', text: 'Отчёт руководителю' },
+  { icon: 'fas fa-envelope', when: 'каждый пн', text: 'Отчёт руководителю' }
 ]
 
 const pills = ['Через N минут', 'По дате', 'По расписанию', 'Отмена и перенос']
@@ -54,14 +56,43 @@ const pills = ['Через N минут', 'По дате', 'По расписа�
   overflow-x: hidden;
 }
 
-.bg-effects { position: fixed; inset: 0; pointer-events: none; overflow: hidden; }
-.glow-orb { position: absolute; border-radius: 50%; filter: blur(140px); opacity: 0.12; animation: float 20s ease-in-out infinite; }
-.orb-1 { width: 500px; height: 500px; background: #10b981; top: -15%; left: -10%; }
-.orb-2 { width: 400px; height: 400px; background: #059669; bottom: -15%; right: -5%; animation-delay: -7s; }
+.bg-effects {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+.glow-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(140px);
+  opacity: 0.12;
+  animation: float 20s ease-in-out infinite;
+}
+.orb-1 {
+  width: 500px;
+  height: 500px;
+  background: #10b981;
+  top: -15%;
+  left: -10%;
+}
+.orb-2 {
+  width: 400px;
+  height: 400px;
+  background: #059669;
+  bottom: -15%;
+  right: -5%;
+  animation-delay: -7s;
+}
 
 @keyframes float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-30px); }
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-30px);
+  }
 }
 
 .content {
@@ -75,7 +106,9 @@ const pills = ['Через N минут', 'По дате', 'По расписа�
   gap: 44px;
 }
 
-.header { text-align: center; }
+.header {
+  text-align: center;
+}
 
 .title {
   font-family: var(--font-display);
@@ -193,11 +226,26 @@ const pills = ['Через N минут', 'По дате', 'По расписа�
 }
 
 @media (max-width: 768px) {
-  .slide { padding: 30px 16px 16px; }
-  .content { gap: 30px; }
-  .timeline-row { flex-direction: column; gap: 8px; padding: 16px 18px; align-items: flex-start; }
-  .time-badge { min-width: unset; }
-  .divider-dot { display: none; }
-  .bottom-pill { padding: 8px 16px; }
+  .slide {
+    padding: 30px 16px 16px;
+  }
+  .content {
+    gap: 30px;
+  }
+  .timeline-row {
+    flex-direction: column;
+    gap: 8px;
+    padding: 16px 18px;
+    align-items: flex-start;
+  }
+  .time-badge {
+    min-width: unset;
+  }
+  .divider-dot {
+    display: none;
+  }
+  .bottom-pill {
+    padding: 8px 16px;
+  }
 }
 </style>

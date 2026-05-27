@@ -18,7 +18,9 @@ export const updateTaskClientRoute = app
       payload: { id: req.body.id }
     })
     try {
-      const client = await tasksRepo.updateClient(ctx, user.id, req.body.id, { name: req.body.name })
+      const client = await tasksRepo.updateClient(ctx, user.id, req.body.id, {
+        name: req.body.name
+      })
       if (!client) {
         return { success: false, error: 'Клиент не найден' }
       }

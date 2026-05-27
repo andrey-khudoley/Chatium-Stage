@@ -5,9 +5,8 @@
       <div class="glow-orb orb-2"></div>
       <div class="glow-orb orb-3"></div>
     </div>
-    
-    <div class="container">
 
+    <div class="container">
       <h2 class="mega-title">Итого вы получаете</h2>
 
       <div class="pillars">
@@ -15,21 +14,18 @@
           <div class="pillar-icon"><i class="fas fa-cubes"></i></div>
           <div class="pillar-label">Платформа</div>
           <div class="pillar-sub">16+ модулей</div>
-
         </div>
 
         <div class="pillar pillar-botan">
           <div class="pillar-icon"><i class="fas fa-wand-magic-sparkles"></i></div>
           <div class="pillar-label">Ботан</div>
           <div class="pillar-sub">Вайбкодер</div>
-
         </div>
 
         <div class="pillar pillar-lena">
           <div class="pillar-icon"><i class="fas fa-user-tie"></i></div>
           <div class="pillar-label">Леночка</div>
           <div class="pillar-sub">AI‑агент</div>
-
         </div>
       </div>
 
@@ -50,7 +46,9 @@
           </div>
           <div class="price-explainer">
             <i class="fas fa-arrow-turn-down"></i>
-            <span>И эти деньги <strong>попадают на ваш баланс</strong> — на корм Ботана и Леночки</span>
+            <span
+              >И эти деньги <strong>попадают на ваш баланс</strong> — на корм Ботана и Леночки</span
+            >
           </div>
         </div>
       </div>
@@ -60,7 +58,6 @@
         <span class="cta-arrow"><i class="fas fa-arrow-right"></i></span>
         <div class="cta-shine"></div>
       </button>
-
     </div>
 
     <!-- Modal -->
@@ -69,8 +66,8 @@
         <button class="modal-close" @click="closeModal">
           <i class="fas fa-xmark"></i>
         </button>
-        <iframe 
-          src="https://chatium.ru/t-biznes/order-form-embed?utm_source=presentation&utm_medium=webinar&utm_campaign=pro-chatium&utm_content=feed-botan" 
+        <iframe
+          src="https://chatium.ru/t-biznes/order-form-embed?utm_source=presentation&utm_medium=webinar&utm_campaign=pro-chatium&utm_content=feed-botan"
           class="modal-iframe"
           frameborder="0"
         ></iframe>
@@ -97,10 +94,22 @@ const closeModal = () => {
 }
 
 const modules = [
-  '@contacts', '@sender', '@automations', '@pay',
-  'HeapTables', '@auth', '@agents', '@start',
-  '@kinescope', '@storage', '@socket', '@jobs',
-  '@traffic', '@app', '@i18n', '@plugins',
+  '@contacts',
+  '@sender',
+  '@automations',
+  '@pay',
+  'HeapTables',
+  '@auth',
+  '@agents',
+  '@start',
+  '@kinescope',
+  '@storage',
+  '@socket',
+  '@jobs',
+  '@traffic',
+  '@app',
+  '@i18n',
+  '@plugins'
 ]
 
 const bonuses = [
@@ -108,7 +117,7 @@ const bonuses = [
   { icon: 'fas fa-lock', text: 'Чат по Авито' },
   { icon: 'fas fa-graduation-cap', text: 'Курс Радонца' },
   { icon: 'fas fa-star', text: 'Фан-клуб Ботана' },
-  { icon: 'fas fa-video', text: 'Вебинарная платформа' },
+  { icon: 'fas fa-video', text: 'Вебинарная платформа' }
 ]
 </script>
 
@@ -138,29 +147,40 @@ const bonuses = [
 }
 
 .orb-1 {
-  width: 600px; height: 600px;
+  width: 600px;
+  height: 600px;
   background: #6366f1;
   opacity: 0.12;
-  top: -25%; left: -10%;
+  top: -25%;
+  left: -10%;
 }
 .orb-2 {
-  width: 500px; height: 500px;
+  width: 500px;
+  height: 500px;
   background: #10b981;
   opacity: 0.1;
-  bottom: -20%; right: -5%;
+  bottom: -20%;
+  right: -5%;
   animation-delay: -4s;
 }
 .orb-3 {
-  width: 400px; height: 400px;
+  width: 400px;
+  height: 400px;
   background: #f59e0b;
   opacity: 0.07;
-  top: 40%; right: 20%;
+  top: 40%;
+  right: 20%;
   animation-delay: -8s;
 }
 
 @keyframes float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-20px); }
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-20px);
+  }
 }
 
 .container {
@@ -202,26 +222,41 @@ const bonuses = [
 .pillar::before {
   content: '';
   position: absolute;
-  top: 0; left: 0; right: 0;
+  top: 0;
+  left: 0;
+  right: 0;
   height: 3px;
   border-radius: 18px 18px 0 0;
 }
 
-.pillar-platform::before { background: linear-gradient(90deg, #6366f1, #06b6d4); }
-.pillar-botan::before { background: linear-gradient(90deg, #f59e0b, #f97316); }
-.pillar-lena::before { background: linear-gradient(90deg, #ec4899, #a855f7); }
+.pillar-platform::before {
+  background: linear-gradient(90deg, #6366f1, #06b6d4);
+}
+.pillar-botan::before {
+  background: linear-gradient(90deg, #f59e0b, #f97316);
+}
+.pillar-lena::before {
+  background: linear-gradient(90deg, #ec4899, #a855f7);
+}
 
 .pillar:hover {
   transform: translateY(-4px);
-  box-shadow: 0 16px 40px rgba(0,0,0,0.25);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.25);
 }
 
-.pillar-platform:hover { border-color: rgba(99,102,241,0.4); }
-.pillar-botan:hover { border-color: rgba(245,158,11,0.4); }
-.pillar-lena:hover { border-color: rgba(236,72,153,0.4); }
+.pillar-platform:hover {
+  border-color: rgba(99, 102, 241, 0.4);
+}
+.pillar-botan:hover {
+  border-color: rgba(245, 158, 11, 0.4);
+}
+.pillar-lena:hover {
+  border-color: rgba(236, 72, 153, 0.4);
+}
 
 .pillar-icon {
-  width: 48px; height: 48px;
+  width: 48px;
+  height: 48px;
   margin: 0 auto 10px;
   display: flex;
   align-items: center;
@@ -231,9 +266,15 @@ const bonuses = [
   color: white;
 }
 
-.pillar-platform .pillar-icon { background: linear-gradient(135deg, #6366f1, #4f46e5); }
-.pillar-botan .pillar-icon { background: linear-gradient(135deg, #f59e0b, #d97706); }
-.pillar-lena .pillar-icon { background: linear-gradient(135deg, #ec4899, #db2777); }
+.pillar-platform .pillar-icon {
+  background: linear-gradient(135deg, #6366f1, #4f46e5);
+}
+.pillar-botan .pillar-icon {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+}
+.pillar-lena .pillar-icon {
+  background: linear-gradient(135deg, #ec4899, #db2777);
+}
 
 .pillar-label {
   font-family: var(--font-display);
@@ -269,17 +310,17 @@ const bonuses = [
   font-weight: 600;
   padding: 3px 7px;
   border-radius: 6px;
-  background: rgba(99,102,241,0.1);
-  color: rgba(165,160,255,0.8);
-  border: 1px solid rgba(99,102,241,0.15);
+  background: rgba(99, 102, 241, 0.1);
+  color: rgba(165, 160, 255, 0.8);
+  border: 1px solid rgba(99, 102, 241, 0.15);
   transition: all 0.3s ease;
   line-height: 1.2;
 }
 
 .mod-chip:hover {
-  background: rgba(99,102,241,0.2);
+  background: rgba(99, 102, 241, 0.2);
   color: #a5b4fc;
-  border-color: rgba(99,102,241,0.35);
+  border-color: rgba(99, 102, 241, 0.35);
 }
 
 /* Bonuses strip */
@@ -299,16 +340,16 @@ const bonuses = [
   font-weight: 600;
   color: #10b981;
   padding: 7px 14px;
-  background: rgba(16,185,129,0.08);
-  border: 1px solid rgba(16,185,129,0.2);
+  background: rgba(16, 185, 129, 0.08);
+  border: 1px solid rgba(16, 185, 129, 0.2);
   border-radius: 100px;
   transition: all 0.3s ease;
   white-space: nowrap;
 }
 
 .bonus-tag:hover {
-  background: rgba(16,185,129,0.14);
-  border-color: rgba(16,185,129,0.4);
+  background: rgba(16, 185, 129, 0.14);
+  border-color: rgba(16, 185, 129, 0.4);
   transform: translateY(-2px);
 }
 
@@ -321,7 +362,7 @@ const bonuses = [
   position: relative;
   padding: 32px 28px 24px;
   background: var(--bg-card);
-  border: 2px solid rgba(99,102,241,0.25);
+  border: 2px solid rgba(99, 102, 241, 0.25);
   border-radius: 24px;
   margin-bottom: 24px;
   overflow: hidden;
@@ -329,21 +370,31 @@ const bonuses = [
 
 .price-glow-ring {
   position: absolute;
-  top: 50%; left: 50%;
+  top: 50%;
+  left: 50%;
   transform: translate(-50%, -50%);
-  width: 600px; height: 400px;
-  background: radial-gradient(ellipse, rgba(99,102,241,0.1) 0%, transparent 60%);
+  width: 600px;
+  height: 400px;
+  background: radial-gradient(ellipse, rgba(99, 102, 241, 0.1) 0%, transparent 60%);
   animation: ring-pulse 5s ease-in-out infinite;
   pointer-events: none;
 }
 
 @keyframes ring-pulse {
-  0%, 100% { opacity: 0.4; transform: translate(-50%, -50%) scale(1); }
-  50% { opacity: 0.8; transform: translate(-50%, -50%) scale(1.05); }
+  0%,
+  100% {
+    opacity: 0.4;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: translate(-50%, -50%) scale(1.05);
+  }
 }
 
 .price-content {
-  position: relative; z-index: 2;
+  position: relative;
+  z-index: 2;
 }
 
 .price-top {
@@ -387,8 +438,13 @@ const bonuses = [
 }
 
 @keyframes gradient-shift {
-  0%, 100% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
 }
 
 .price-explainer {
@@ -396,8 +452,8 @@ const bonuses = [
   align-items: center;
   gap: 10px;
   padding: 10px 22px;
-  background: rgba(245,158,11,0.08);
-  border: 1px solid rgba(245,158,11,0.2);
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.2);
   border-radius: 12px;
   font-size: clamp(13px, 2vw, 16px);
   color: var(--text-secondary);
@@ -434,40 +490,48 @@ const bonuses = [
   position: relative;
   overflow: hidden;
   margin-bottom: 16px;
-  box-shadow: 0 8px 32px rgba(99,102,241,0.35);
+  box-shadow: 0 8px 32px rgba(99, 102, 241, 0.35);
 }
 
 .cta-btn:hover {
   transform: translateY(-4px) scale(1.02);
-  box-shadow: 0 20px 50px rgba(99,102,241,0.5);
+  box-shadow: 0 20px 50px rgba(99, 102, 241, 0.5);
 }
 
 .cta-arrow {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 36px; height: 36px;
-  background: rgba(255,255,255,0.2);
+  width: 36px;
+  height: 36px;
+  background: rgba(255, 255, 255, 0.2);
   border-radius: 10px;
   transition: all 0.3s ease;
 }
 
 .cta-btn:hover .cta-arrow {
   transform: translateX(4px);
-  background: rgba(255,255,255,0.3);
+  background: rgba(255, 255, 255, 0.3);
 }
 
 .cta-shine {
   position: absolute;
-  top: 0; left: -100%;
-  width: 50%; height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+  top: 0;
+  left: -100%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
   animation: shine 3s ease-in-out infinite;
 }
 
 @keyframes shine {
-  0% { left: -100%; }
-  50%, 100% { left: 150%; }
+  0% {
+    left: -100%;
+  }
+  50%,
+  100% {
+    left: 150%;
+  }
 }
 
 /* Modal */
@@ -485,8 +549,12 @@ const bonuses = [
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 .modal-content {
@@ -503,11 +571,11 @@ const bonuses = [
 }
 
 @keyframes slideUp {
-  from { 
+  from {
     opacity: 0;
     transform: translateY(20px) scale(0.95);
   }
-  to { 
+  to {
     opacity: 1;
     transform: translateY(0) scale(1);
   }
@@ -545,7 +613,9 @@ const bonuses = [
 
 /* Mobile */
 @media (max-width: 768px) {
-  .slide { align-items: flex-start; }
+  .slide {
+    align-items: flex-start;
+  }
   .pillars {
     grid-template-columns: repeat(3, 1fr);
     gap: 8px;
@@ -553,9 +623,19 @@ const bonuses = [
   .pillar {
     padding: 14px 10px;
   }
-  .pillar-icon { width: 40px; height: 40px; font-size: 18px; margin-bottom: 6px; }
-  .pillar-label { font-size: 16px; }
-  .pillar-sub { font-size: 11px; margin-bottom: 4px; }
+  .pillar-icon {
+    width: 40px;
+    height: 40px;
+    font-size: 18px;
+    margin-bottom: 6px;
+  }
+  .pillar-label {
+    font-size: 16px;
+  }
+  .pillar-sub {
+    font-size: 11px;
+    margin-bottom: 4px;
+  }
   .bonuses-strip {
     gap: 6px;
   }
@@ -570,7 +650,10 @@ const bonuses = [
   .price-hero-block {
     padding: 20px 16px 16px;
   }
-  .mega-title { font-size: 24px; margin-bottom: 16px; }
+  .mega-title {
+    font-size: 24px;
+    margin-bottom: 16px;
+  }
 
   /* Mobile modal */
   .modal-overlay {
@@ -585,11 +668,11 @@ const bonuses = [
     animation: slideUpMobile 0.3s ease;
   }
   @keyframes slideUpMobile {
-    from { 
+    from {
       opacity: 0;
       transform: translateY(100%);
     }
-    to { 
+    to {
       opacity: 1;
       transform: translateY(0);
     }
@@ -597,23 +680,74 @@ const bonuses = [
 }
 
 @media (max-width: 480px) {
-  .slide { padding: 16px 14px 14px; }
-  .mega-title { font-size: 22px; margin-bottom: 16px; }
-  .pillar { padding: 14px 12px; border-radius: 14px; }
-  .pillar-icon { width: 40px; height: 40px; font-size: 18px; margin-bottom: 8px; border-radius: 12px; }
-  .pillar-label { font-size: 18px; }
-  .pillar-sub { font-size: 12px; margin-bottom: 6px; }
-  .bonuses-strip { margin-bottom: 16px; }
-  .bonus-tag { font-size: 11px; padding: 5px 10px; gap: 5px; }
-  .bonus-tag i { font-size: 10px; }
-  .price-hero-block { padding: 20px 14px 16px; border-radius: 18px; margin-bottom: 16px; }
-  .price-val { font-size: 48px; }
-  .price-cur { font-size: 20px; }
-  .price-top { font-size: 14px; }
-  .price-explainer { font-size: 12px; padding: 8px 14px; gap: 8px; }
-  .price-explainer i { font-size: 14px; }
-  .cta-btn { padding: 14px 28px; font-size: 16px; border-radius: 14px; }
-  .cta-arrow { width: 30px; height: 30px; border-radius: 8px; }
+  .slide {
+    padding: 16px 14px 14px;
+  }
+  .mega-title {
+    font-size: 22px;
+    margin-bottom: 16px;
+  }
+  .pillar {
+    padding: 14px 12px;
+    border-radius: 14px;
+  }
+  .pillar-icon {
+    width: 40px;
+    height: 40px;
+    font-size: 18px;
+    margin-bottom: 8px;
+    border-radius: 12px;
+  }
+  .pillar-label {
+    font-size: 18px;
+  }
+  .pillar-sub {
+    font-size: 12px;
+    margin-bottom: 6px;
+  }
+  .bonuses-strip {
+    margin-bottom: 16px;
+  }
+  .bonus-tag {
+    font-size: 11px;
+    padding: 5px 10px;
+    gap: 5px;
+  }
+  .bonus-tag i {
+    font-size: 10px;
+  }
+  .price-hero-block {
+    padding: 20px 14px 16px;
+    border-radius: 18px;
+    margin-bottom: 16px;
+  }
+  .price-val {
+    font-size: 48px;
+  }
+  .price-cur {
+    font-size: 20px;
+  }
+  .price-top {
+    font-size: 14px;
+  }
+  .price-explainer {
+    font-size: 12px;
+    padding: 8px 14px;
+    gap: 8px;
+  }
+  .price-explainer i {
+    font-size: 14px;
+  }
+  .cta-btn {
+    padding: 14px 28px;
+    font-size: 16px;
+    border-radius: 14px;
+  }
+  .cta-arrow {
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+  }
 
   /* Mobile modal */
   .modal-close {

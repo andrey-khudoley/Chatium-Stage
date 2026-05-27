@@ -13,8 +13,8 @@
 const props = defineProps({
   status: {
     type: String,
-    default: 'sent', // 'sent', 'delivered', 'read'
-  },
+    default: 'sent' // 'sent', 'delivered', 'read'
+  }
 })
 </script>
 

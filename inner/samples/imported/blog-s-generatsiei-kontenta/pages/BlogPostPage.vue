@@ -4,7 +4,10 @@
     <nav class="bg-white shadow-sm border-b border-gray-200">
       <div class="max-w-4xl mx-auto px-6 py-4">
         <div class="flex items-center justify-between">
-          <a :href="indexPageRoute.url()" class="flex items-center text-blue-600 hover:text-blue-700">
+          <a
+            :href="indexPageRoute.url()"
+            class="flex items-center text-blue-600 hover:text-blue-700"
+          >
             <i class="fas fa-arrow-left mr-2"></i>
             <span class="hidden md:inline">Назад к блогу</span>
             <span class="md:hidden">Блог</span>
@@ -13,7 +16,11 @@
             <button @click="sharePost" class="text-gray-600 hover:text-blue-600">
               <i class="fas fa-share mr-2 hidden md:inline"></i>Поделиться
             </button>
-            <a v-if="ctx.user?.is('Admin')" :href="editPostPageRoute({ id: props.post.id }).url()" class="text-blue-600 hover:text-blue-700">
+            <a
+              v-if="ctx.user?.is('Admin')"
+              :href="editPostPageRoute({ id: props.post.id }).url()"
+              class="text-blue-600 hover:text-blue-700"
+            >
               <i class="fas fa-edit mr-2 hidden md:inline"></i>
               Редактировать
             </a>
@@ -23,11 +30,16 @@
     </nav>
 
     <!-- Unpublished Warning for Admins -->
-    <div v-if="!props.post.published && ctx.user?.is('Admin')" class="bg-yellow-50 border-l-4 border-yellow-400 p-4">
+    <div
+      v-if="!props.post.published && ctx.user?.is('Admin')"
+      class="bg-yellow-50 border-l-4 border-yellow-400 p-4"
+    >
       <div class="max-w-4xl mx-auto px-6">
         <div class="flex items-center">
           <i class="fas fa-exclamation-triangle text-yellow-400 mr-3"></i>
-          <p class="text-yellow-800 font-medium">Этот пост не опубликован и виден только администраторам</p>
+          <p class="text-yellow-800 font-medium">
+            Этот пост не опубликован и виден только администраторам
+          </p>
         </div>
       </div>
     </div>
@@ -43,7 +55,10 @@
       <i class="fas fa-exclamation-triangle text-6xl text-red-400 mb-6"></i>
       <h2 class="text-2xl font-semibold text-gray-800 mb-2">Пост не найден</h2>
       <p class="text-gray-600 mb-8">Возможно, пост был удален или переименован</p>
-      <a :href="indexPageRoute.url()" class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700">
+      <a
+        :href="indexPageRoute.url()"
+        class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700"
+      >
         Вернуться к блогу
       </a>
     </div>
@@ -54,7 +69,7 @@
       <header class="mb-12">
         <!-- Cover Image -->
         <div v-if="props.post.coverImage" class="mb-8">
-          <img 
+          <img
             :src="getThumbnailUrl(props.post.coverImage, 800, 400)"
             :alt="props.post.title"
             class="w-full h-80 object-cover rounded-xl shadow-lg"
@@ -79,8 +94,8 @@
 
         <!-- Tags -->
         <div v-if="props.post.tags" class="flex flex-wrap gap-2 mb-8">
-          <span 
-            v-for="tag in props.post.tags.split(',')" 
+          <span
+            v-for="tag in props.post.tags.split(',')"
             :key="tag.trim()"
             class="px-3 py-1 text-sm bg-blue-100 text-blue-800 rounded-full"
           >
@@ -121,9 +136,7 @@
     <!-- Comments Section -->
     <section v-if="props.post" class="bg-white border-t border-gray-200">
       <div class="max-w-4xl mx-auto px-6 py-16">
-        <h2 class="text-2xl font-bold text-gray-900 mb-8">
-          Комментарии ({{ comments.length }})
-        </h2>
+        <h2 class="text-2xl font-bold text-gray-900 mb-8">Комментарии ({{ comments.length }})</h2>
 
         <!-- Comment Form -->
         <div v-if="ctx.user" class="mb-12 bg-gray-50 rounded-lg p-6">
@@ -165,12 +178,12 @@
           <i class="fas fa-spinner fa-spin text-2xl text-blue-600"></i>
           <p class="text-gray-600 mt-2">Загрузка комментариев...</p>
         </div>
-        
+
         <div v-else-if="comments.length === 0" class="text-center py-8 text-gray-600">
           <i class="fas fa-comment text-4xl text-gray-300 mb-4"></i>
           <p>Пока нет комментариев. Будьте первым!</p>
         </div>
-        
+
         <div v-else class="space-y-6">
           <article
             v-for="comment in comments"
@@ -180,7 +193,15 @@
             <div class="flex items-center justify-between mb-4">
               <div class="flex items-center space-x-3 mb-3">
                 <div>
-                  <p class="font-semibold text-gray-900">{{ comment.author ? (comment.author.firstName && comment.author.lastName ? `${comment.author.firstName} ${comment.author.lastName}` : comment.author.displayName || 'Пользователь') : 'Пользователь' }}</p>
+                  <p class="font-semibold text-gray-900">
+                    {{
+                      comment.author
+                        ? comment.author.firstName && comment.author.lastName
+                          ? `${comment.author.firstName} ${comment.author.lastName}`
+                          : comment.author.displayName || 'Пользователь'
+                        : 'Пользователь'
+                    }}
+                  </p>
                   <p class="text-sm text-gray-500">{{ formatDate(comment.createdAt) }}</p>
                 </div>
               </div>
@@ -207,14 +228,14 @@
       <div class="max-w-4xl mx-auto px-6 py-16">
         <h2 class="text-2xl font-bold text-gray-900 mb-8">Похожие посты</h2>
         <div class="grid md:grid-cols-2 gap-8">
-          <article 
-            v-for="relatedPost in relatedPosts" 
+          <article
+            v-for="relatedPost in relatedPosts"
             :key="relatedPost.id"
             class="blog-card cursor-pointer"
             @click="goToPost(relatedPost.slug)"
           >
             <div v-if="relatedPost.coverImage" class="mb-4">
-              <img 
+              <img
                 :src="getThumbnailUrl(relatedPost.coverImage, 300, 200)"
                 :alt="relatedPost.title"
                 class="w-full h-40 object-cover rounded-lg"
@@ -237,7 +258,11 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { apiBlogPostsListRoute } from '../api/blog'
-import { apiCommentsListRoute, apiCommentsCreateRoute, apiCommentsDeleteRoute } from '../api/comments'
+import {
+  apiCommentsListRoute,
+  apiCommentsCreateRoute,
+  apiCommentsDeleteRoute
+} from '../api/comments'
 import { indexPageRoute } from '../index'
 import { blogPostRoute } from '../post'
 import { profilePageRoute } from '../profile'
@@ -276,21 +301,20 @@ async function loadComments() {
 
 async function submitComment() {
   if (!newComment.value.trim() || submittingComment.value) return
-  
+
   try {
     submittingComment.value = true
-    
+
     const comment = await apiCommentsCreateRoute.run(ctx, {
       postId: props.post.id,
       content: newComment.value.trim()
     })
-    
+
     // Add new comment to the top of the list
     comments.value.unshift(comment)
-    
+
     // Clear the form
     newComment.value = ''
-    
   } catch (err) {
     console.error('Error submitting comment:', err)
     alert('Ошибка при отправке комментария. Попробуйте еще раз.')
@@ -303,11 +327,11 @@ async function deleteComment(commentId) {
   if (!confirm('Вы уверены, что хотите удалить этот комментарий?')) {
     return
   }
-  
+
   try {
     await apiCommentsDeleteRoute({ id: commentId }).run(ctx, {})
     // Remove comment from list
-    comments.value = comments.value.filter(c => c.id !== commentId)
+    comments.value = comments.value.filter((c) => c.id !== commentId)
   } catch (err) {
     console.error('Error deleting comment:', err)
     alert('Ошибка при удалении комментария')

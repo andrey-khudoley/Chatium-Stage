@@ -14,7 +14,7 @@
             Надежный партнер в производстве качественных крепежных изделий с 1995 года
           </p>
         </div>
-        
+
         <div>
           <h4 class="text-lg font-semibold mb-4">Компания</h4>
           <ul class="space-y-2 text-gray-400 text-sm">
@@ -24,7 +24,7 @@
             <li><a href="#contacts" class="hover:text-white transition">Контакты</a></li>
           </ul>
         </div>
-        
+
         <div>
           <h4 class="text-lg font-semibold mb-4">Контакты</h4>
           <ul class="space-y-2 text-gray-400 text-sm">
@@ -42,7 +42,7 @@
             </li>
           </ul>
         </div>
-        
+
         <div>
           <h4 class="text-lg font-semibold mb-4">Режим работы</h4>
           <ul class="space-y-2 text-gray-400 text-sm">
@@ -53,7 +53,7 @@
           </ul>
         </div>
       </div>
-      
+
       <div class="border-t border-gray-800 pt-8 text-center text-gray-400 text-sm">
         <p>&copy; {{ currentYear }} БолтПром. Все права защищены.</p>
       </div>

@@ -1,26 +1,23 @@
 <script setup lang="ts">
-import { appUiStyleToCss } from './styles/styles';
-import { AppUiButton } from './types';
-import { processActions } from './actions/processActions';
-import { useNavigatorContext } from './NavigatorContext';
+import { appUiStyleToCss } from './styles/styles'
+import { AppUiButton } from './types'
+import { processActions } from './actions/processActions'
+import { useNavigatorContext } from './NavigatorContext'
 
 interface ButtonProps {
-  block: AppUiButton;
-} 
- 
-const props = defineProps<ButtonProps>();
-const navigator = useNavigatorContext();
+  block: AppUiButton
+}
+
+const props = defineProps<ButtonProps>()
+const navigator = useNavigatorContext()
 
 async function clickHandler() {
-  await processActions(props.block.onClick, navigator);
+  await processActions(props.block.onClick, navigator)
 }
 </script>
 
 <template>
-  <div 
-    class="AppUiButtonContainer" 
-    :style="appUiStyleToCss(block.containerStyle)"
-  >
+  <div class="AppUiButtonContainer" :style="appUiStyleToCss(block.containerStyle)">
     <button
       type="button"
       class="AppUiButton"

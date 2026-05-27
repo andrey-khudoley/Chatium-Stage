@@ -7,34 +7,36 @@ export const apiBlockedUsersListRoute = app.get('/list', async (ctx, req) => {
 
   const blocked = await BlockedUsers.findAll(ctx, {
     where: {
-      userId: ctx.user.id,
+      userId: ctx.user.id
     },
-    order: [{ createdAt: 'desc' }],
+    order: [{ createdAt: 'desc' }]
   })
 
   // Получаем данные о заблокированных пользователях
-  const blockedUserIds = blocked.map(b => b.blockedUserId)
+  const blockedUserIds = blocked.map((b) => b.blockedUserId)
   const users = await findUsersByIds(ctx, blockedUserIds)
-  const usersMap = new Map(users.map(u => [u.id, u]))
+  const usersMap = new Map(users.map((u) => [u.id, u]))
 
   return {
-    blockedUsers: blocked.map(b => {
+    blockedUsers: blocked.map((b) => {
       const user = usersMap.get(b.blockedUserId)
       return {
         id: b.id,
         blockedUserId: b.blockedUserId,
         reason: b.reason,
         createdAt: b.createdAt,
-        user: user ? {
-          id: user.id,
-          displayName: user.displayName,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          username: user.username,
-          avatar: user.imageUrl,
-        } : null,
+        user: user
+          ? {
+              id: user.id,
+              displayName: user.displayName,
+              firstName: user.firstName,
+              lastName: user.lastName,
+              username: user.username,
+              avatar: user.imageUrl
+            }
+          : null
       }
-    }),
+    })
   }
 })
 
@@ -42,7 +44,7 @@ export const apiBlockedUsersListRoute = app.get('/list', async (ctx, req) => {
 export const apiBlockedUsersBlockRoute = app
   .body((s) => ({
     userId: s.string(),
-    reason: s.string().optional(),
+    reason: s.string().optional()
   }))
   .post('/block', async (ctx, req) => {
     requireRealUser(ctx)
@@ -57,7 +59,7 @@ export const apiBlockedUsersBlockRoute = app
     // Проверяем, не заблокирован ли уже
     const existing = await BlockedUsers.findOneBy(ctx, {
       userId: ctx.user.id,
-      blockedUserId: userId,
+      blockedUserId: userId
     })
 
     if (existing) {
@@ -67,19 +69,19 @@ export const apiBlockedUsersBlockRoute = app
     const blocked = await BlockedUsers.create(ctx, {
       userId: ctx.user.id,
       blockedUserId: userId,
-      reason: reason || '',
+      reason: reason || ''
     })
 
     return {
       success: true,
-      blockedUser: blocked,
+      blockedUser: blocked
     }
   })
 
 // Разблокировать пользователя
 export const apiBlockedUsersUnblockRoute = app
   .body((s) => ({
-    userId: s.string(),
+    userId: s.string()
   }))
   .post('/unblock', async (ctx, req) => {
     requireRealUser(ctx)
@@ -88,7 +90,7 @@ export const apiBlockedUsersUnblockRoute = app
 
     const existing = await BlockedUsers.findOneBy(ctx, {
       userId: ctx.user.id,
-      blockedUserId: userId,
+      blockedUserId: userId
     })
 
     if (!existing) {
@@ -98,14 +100,14 @@ export const apiBlockedUsersUnblockRoute = app
     await BlockedUsers.delete(ctx, existing.id)
 
     return {
-      success: true,
+      success: true
     }
   })
 
 // Проверить, заблокирован ли пользователь
 export const apiBlockedUsersCheckRoute = app
   .body((s) => ({
-    userId: s.string(),
+    userId: s.string()
   }))
   .post('/check', async (ctx, req) => {
     requireRealUser(ctx)
@@ -114,10 +116,10 @@ export const apiBlockedUsersCheckRoute = app
 
     const existing = await BlockedUsers.findOneBy(ctx, {
       userId: ctx.user.id,
-      blockedUserId: userId,
+      blockedUserId: userId
     })
 
     return {
-      isBlocked: !!existing,
+      isBlocked: !!existing
     }
   })

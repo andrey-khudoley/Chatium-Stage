@@ -8,7 +8,7 @@
             <i class="fas fa-chart-line mr-3 text-blue-600"></i>
             Аналитика вовлеченности
           </h1>
-          <button 
+          <button
             @click="showManagementModal = true"
             class="bg-gray-800 text-white px-4 py-2 rounded-lg hover:bg-gray-900 transition-colors flex items-center gap-2"
           >
@@ -25,8 +25,8 @@
           <div class="flex flex-col gap-2 flex-1">
             <div class="flex items-center gap-4">
               <label class="text-sm font-medium text-gray-700">Тип периода:</label>
-              <select 
-                v-model="periodType" 
+              <select
+                v-model="periodType"
                 @change="onPeriodTypeChange"
                 class="border border-gray-300 rounded-lg px-4 py-2"
               >
@@ -34,11 +34,15 @@
                 <option value="custom">Произвольный период</option>
               </select>
             </div>
-            
+
             <!-- Быстрый выбор -->
             <div v-if="periodType === 'preset'" class="flex items-center gap-4">
               <label class="text-sm font-medium text-gray-700">Период:</label>
-              <select v-model="selectedPeriod" @change="loadEngagementStats" class="border border-gray-300 rounded-lg px-4 py-2">
+              <select
+                v-model="selectedPeriod"
+                @change="loadEngagementStats"
+                class="border border-gray-300 rounded-lg px-4 py-2"
+              >
                 <option value="today">Сегодня</option>
                 <option value="yesterday">Вчера</option>
                 <option value="7">Последние 7 дней</option>
@@ -48,26 +52,26 @@
                 <option value="90">Последние 90 дней</option>
               </select>
             </div>
-            
+
             <!-- Произвольный период -->
             <div v-if="periodType === 'custom'" class="flex items-center gap-4">
               <label class="text-sm font-medium text-gray-700">От:</label>
-              <input 
-                type="date" 
+              <input
+                type="date"
                 v-model="customStartDate"
                 class="border border-gray-300 rounded-lg px-4 py-2"
               />
               <label class="text-sm font-medium text-gray-700">До:</label>
-              <input 
-                type="date" 
+              <input
+                type="date"
                 v-model="customEndDate"
                 class="border border-gray-300 rounded-lg px-4 py-2"
               />
             </div>
           </div>
-          
-          <button 
-            @click="loadEngagementStats" 
+
+          <button
+            @click="loadEngagementStats"
             class="ml-auto bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
             :disabled="loadingEngagement"
           >
@@ -103,7 +107,9 @@
             <div class="flex items-center justify-between">
               <div>
                 <p class="text-sm text-gray-600 mb-1">Всего визитов</p>
-                <p class="text-3xl font-bold text-gray-900">{{ (getTotalVisits() || 0).toLocaleString() }}</p>
+                <p class="text-3xl font-bold text-gray-900">
+                  {{ (getTotalVisits() || 0).toLocaleString() }}
+                </p>
               </div>
               <div class="bg-green-100 rounded-full p-4">
                 <i class="fas fa-eye text-2xl text-green-600"></i>
@@ -115,7 +121,9 @@
             <div class="flex items-center justify-between">
               <div>
                 <p class="text-sm text-gray-600 mb-1">Уникальные сессии</p>
-                <p class="text-3xl font-bold text-gray-900">{{ (getTotalSessions() || 0).toLocaleString() }}</p>
+                <p class="text-3xl font-bold text-gray-900">
+                  {{ (getTotalSessions() || 0).toLocaleString() }}
+                </p>
               </div>
               <div class="bg-gray-100 rounded-full p-4">
                 <i class="fas fa-user text-2xl text-gray-600"></i>
@@ -149,25 +157,39 @@
             <table class="min-w-full divide-y divide-gray-200">
               <thead class="bg-gray-50">
                 <tr>
-                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th
+                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  >
                     Лендинг
                   </th>
-                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th
+                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  >
                     Кол-во визитов
                   </th>
-                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th
+                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  >
                     Уникальные сессии
                   </th>
-                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th
+                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  >
                     Среднее время
                   </th>
-                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th
+                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  >
                     Мин. время
                   </th>
-                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th
+                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  >
                     Макс. время
                   </th>
-                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th
+                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  >
                     Действия
                   </th>
                 </tr>
@@ -176,8 +198,8 @@
                 <template v-for="landing in engagementStats" :key="landing.path">
                   <tr class="hover:bg-gray-50 cursor-pointer" @click="toggleHeatmap(landing.path)">
                     <td class="px-6 py-4 whitespace-nowrap">
-                      <a 
-                        :href="landing.path" 
+                      <a
+                        :href="landing.path"
                         target="_blank"
                         @click.stop
                         class="font-medium text-gray-900 hover:text-blue-600 hover:underline transition-colors inline-flex items-center gap-1"
@@ -193,7 +215,9 @@
                       {{ (landing.sessions_count || 0).toLocaleString() }}
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap">
-                      <span class="px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                      <span
+                        class="px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800"
+                      >
                         {{ landing.avg_duration_formatted || '0 сек' }}
                       </span>
                     </td>
@@ -201,19 +225,26 @@
                       {{ landing.min_duration_formatted || '0 сек' }}
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                      {{ landing.max_duration_formatted || formatSeconds(landing.max_duration_seconds) }}
+                      {{
+                        landing.max_duration_formatted ||
+                        formatSeconds(landing.max_duration_seconds)
+                      }}
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm">
-                      <button 
+                      <button
                         @click.stop="toggleHeatmap(landing.path)"
                         class="text-purple-600 hover:text-purple-800 font-medium"
                       >
                         <i class="fas fa-fire mr-1"></i>
-                        {{ expandedHeatmapLanding === landing.path ? 'Скрыть карту' : 'Тепловая карта' }}
+                        {{
+                          expandedHeatmapLanding === landing.path
+                            ? 'Скрыть карту'
+                            : 'Тепловая карта'
+                        }}
                       </button>
                     </td>
                   </tr>
-                  
+
                   <!-- Heatmap Details -->
                   <tr v-if="expandedHeatmapLanding === landing.path">
                     <td colspan="7" class="px-6 py-4 bg-gray-50">
@@ -227,7 +258,7 @@
                             <i class="fas fa-fire mr-2 text-purple-600"></i>
                             Тепловая карта скроллинга
                           </h4>
-                          <button 
+                          <button
                             @click="reloadHeatmap(landing.path)"
                             class="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1"
                             :disabled="loadingHeatmap"
@@ -236,46 +267,55 @@
                             Обновить
                           </button>
                         </div>
-                        
+
                         <!-- Цветовая легенда с count -->
                         <div class="mb-6">
                           <div class="flex items-center gap-2 mb-3">
-                            <div class="flex-1 h-6 bg-gradient-to-r from-sky-400 via-yellow-400 to-red-500 rounded"></div>
+                            <div
+                              class="flex-1 h-6 bg-gradient-to-r from-sky-400 via-yellow-400 to-red-500 rounded"
+                            ></div>
                           </div>
 
                           <div class="grid grid-cols-4 gap-3">
-                            <div v-for="item in scrollHeatmapData[landing.path].data" :key="item.depth_range" class="text-center">
-                              <div 
+                            <div
+                              v-for="item in scrollHeatmapData[landing.path].data"
+                              :key="item.depth_range"
+                              class="text-center"
+                            >
+                              <div
                                 class="h-16 rounded flex items-center justify-center text-white font-bold mb-2 transition-transform hover:scale-105"
                                 :style="{ backgroundColor: getColorForRange(item.depth_range) }"
                               >
                                 {{ item.users_count }}
                               </div>
-                              <div class="text-xs text-gray-700 font-medium">{{ item.depth_range }}%</div>
+                              <div class="text-xs text-gray-700 font-medium">
+                                {{ item.depth_range }}%
+                              </div>
                               <div class="text-xs text-gray-500">{{ item.percentage }}%</div>
                             </div>
                           </div>
                         </div>
-                        
+
                         <!-- Визуализация данных -->
                         <div class="space-y-3 mt-6">
-                          <div 
-                            v-for="item in scrollHeatmapData[landing.path].data" 
+                          <div
+                            v-for="item in scrollHeatmapData[landing.path].data"
                             :key="item.depth_range"
                             class="flex items-center gap-4"
                           >
                             <div class="w-24 text-sm font-medium text-gray-700">
                               {{ item.depth_range }}%
                             </div>
-                            <div class="flex-1 relative h-12 bg-gray-100 rounded-lg overflow-hidden">
-                              <div 
+                            <div
+                              class="flex-1 relative h-12 bg-gray-100 rounded-lg overflow-hidden"
+                            >
+                              <div
                                 class="absolute inset-y-0 left-0 transition-all duration-300"
                                 :style="{
                                   width: item.percentage + '%',
                                   backgroundColor: getHeatmapColor(item.percentage)
                                 }"
-                              >
-                              </div>
+                              ></div>
                               <div class="absolute inset-0 flex items-center justify-between px-4">
                                 <span class="text-sm font-semibold text-gray-900">
                                   {{ item.users_count }} пользователей
@@ -287,7 +327,7 @@
                             </div>
                           </div>
                         </div>
-                        
+
                         <!-- Insights -->
                         <div class="mt-4 p-4 bg-blue-50 rounded-lg">
                           <div class="flex items-start gap-2">
@@ -328,8 +368,8 @@
             <i class="fas fa-tags mr-2 text-gray-600"></i>
             Аналитика по UTM меткам
           </h2>
-          <button 
-            @click="loadUtmStats" 
+          <button
+            @click="loadUtmStats"
             class="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1"
             :disabled="loadingUtm"
           >
@@ -347,22 +387,34 @@
           <table class="min-w-full">
             <thead class="bg-gray-50">
               <tr>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th
+                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
                   Иерархия меток
                 </th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th
+                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
                   Визиты
                 </th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th
+                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
                   Сессии
                 </th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th
+                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
                   Среднее
                 </th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th
+                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
                   Мин
                 </th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th
+                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
                   Макс
                 </th>
               </tr>
@@ -370,13 +422,21 @@
             <tbody class="bg-white">
               <template v-for="landing in utmStats" :key="landing.path">
                 <!-- Landing row -->
-                <tr class="border-b border-gray-200 hover:bg-blue-50 cursor-pointer" @click="toggleUtmNode(landing.path)">
+                <tr
+                  class="border-b border-gray-200 hover:bg-blue-50 cursor-pointer"
+                  @click="toggleUtmNode(landing.path)"
+                >
                   <td class="px-6 py-3">
                     <div class="flex items-center gap-2">
-                      <i class="fas text-gray-400" :class="expandedUtmNodes[landing.path] ? 'fa-chevron-down' : 'fa-chevron-right'"></i>
+                      <i
+                        class="fas text-gray-400"
+                        :class="
+                          expandedUtmNodes[landing.path] ? 'fa-chevron-down' : 'fa-chevron-right'
+                        "
+                      ></i>
                       <i class="fas fa-file-alt text-blue-600"></i>
-                      <a 
-                        :href="landing.path" 
+                      <a
+                        :href="landing.path"
                         target="_blank"
                         @click.stop
                         class="font-semibold text-blue-900 hover:text-blue-600 hover:underline"
@@ -385,139 +445,353 @@
                       </a>
                     </div>
                   </td>
-                  <td class="px-6 py-3 text-sm font-semibold text-gray-900">{{ getLandingTotalVisits(landing) }}</td>
-                  <td class="px-6 py-3 text-sm font-semibold text-gray-900">{{ getLandingTotalSessions(landing) }}</td>
+                  <td class="px-6 py-3 text-sm font-semibold text-gray-900">
+                    {{ getLandingTotalVisits(landing) }}
+                  </td>
+                  <td class="px-6 py-3 text-sm font-semibold text-gray-900">
+                    {{ getLandingTotalSessions(landing) }}
+                  </td>
                   <td class="px-6 py-3">
                     <span class="px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-800">
                       {{ getLandingAvgDuration(landing) }}
                     </span>
                   </td>
-                  <td class="px-6 py-3 text-sm text-gray-600">{{ getLandingMinDuration(landing) }}</td>
-                  <td class="px-6 py-3 text-sm text-gray-600">{{ getLandingMaxDuration(landing) }}</td>
+                  <td class="px-6 py-3 text-sm text-gray-600">
+                    {{ getLandingMinDuration(landing) }}
+                  </td>
+                  <td class="px-6 py-3 text-sm text-gray-600">
+                    {{ getLandingMaxDuration(landing) }}
+                  </td>
                 </tr>
-                
+
                 <!-- Source level -->
                 <template v-if="expandedUtmNodes[landing.path]">
-                  <template v-for="(sourceData, sourceName) in landing.hierarchy" :key="landing.path + '_' + sourceName">
+                  <template
+                    v-for="(sourceData, sourceName) in landing.hierarchy"
+                    :key="landing.path + '_' + sourceName"
+                  >
                     <!-- Source row -->
-                    <tr 
+                    <tr
                       class="border-b border-gray-100 hover:bg-gray-50 cursor-pointer"
                       @click="toggleUtmNode(landing.path + '_' + sourceName)"
                     >
                       <td class="px-6 py-2">
                         <div class="flex items-center gap-2" style="padding-left: 2rem">
-                          <i class="fas text-gray-400" :class="expandedUtmNodes[landing.path + '_' + sourceName] ? 'fa-chevron-down' : 'fa-chevron-right'"></i>
-                          <span class="font-medium text-gray-900">source: {{ sourceData.label }}</span>
+                          <i
+                            class="fas text-gray-400"
+                            :class="
+                              expandedUtmNodes[landing.path + '_' + sourceName]
+                                ? 'fa-chevron-down'
+                                : 'fa-chevron-right'
+                            "
+                          ></i>
+                          <span class="font-medium text-gray-900"
+                            >source: {{ sourceData.label }}</span
+                          >
                         </div>
                       </td>
                       <td class="px-6 py-2 text-sm text-gray-900">{{ sourceData.visits_count }}</td>
-                      <td class="px-6 py-2 text-sm text-gray-900">{{ sourceData.sessions_count }}</td>
+                      <td class="px-6 py-2 text-sm text-gray-900">
+                        {{ sourceData.sessions_count }}
+                      </td>
                       <td class="px-6 py-2">
-                        <span class="px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-800">
+                        <span
+                          class="px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-800"
+                        >
                           {{ sourceData.avg_duration_formatted || '0 сек' }}
                         </span>
                       </td>
-                      <td class="px-6 py-2 text-sm text-gray-600">{{ sourceData.min_duration_formatted || '0 сек' }}</td>
-                      <td class="px-6 py-2 text-sm text-gray-600">{{ sourceData.max_duration_formatted || '0 сек' }}</td>
+                      <td class="px-6 py-2 text-sm text-gray-600">
+                        {{ sourceData.min_duration_formatted || '0 сек' }}
+                      </td>
+                      <td class="px-6 py-2 text-sm text-gray-600">
+                        {{ sourceData.max_duration_formatted || '0 сек' }}
+                      </td>
                     </tr>
-                    
+
                     <!-- Medium level -->
                     <template v-if="expandedUtmNodes[landing.path + '_' + sourceName]">
-                      <template v-for="(mediumData, mediumName) in sourceData.children" :key="landing.path + '_' + sourceName + '_' + mediumName">
+                      <template
+                        v-for="(mediumData, mediumName) in sourceData.children"
+                        :key="landing.path + '_' + sourceName + '_' + mediumName"
+                      >
                         <!-- Medium row -->
-                        <tr 
+                        <tr
                           class="border-b border-gray-100 hover:bg-gray-50 cursor-pointer"
                           @click="toggleUtmNode(landing.path + '_' + sourceName + '_' + mediumName)"
                         >
                           <td class="px-6 py-2">
                             <div class="flex items-center gap-2" style="padding-left: 4rem">
-                              <i class="fas text-gray-400" :class="expandedUtmNodes[landing.path + '_' + sourceName + '_' + mediumName] ? 'fa-chevron-down' : 'fa-chevron-right'"></i>
-                              <span class="font-medium text-gray-700">medium: {{ mediumData.label }}</span>
+                              <i
+                                class="fas text-gray-400"
+                                :class="
+                                  expandedUtmNodes[
+                                    landing.path + '_' + sourceName + '_' + mediumName
+                                  ]
+                                    ? 'fa-chevron-down'
+                                    : 'fa-chevron-right'
+                                "
+                              ></i>
+                              <span class="font-medium text-gray-700"
+                                >medium: {{ mediumData.label }}</span
+                              >
                             </div>
                           </td>
-                          <td class="px-6 py-2 text-sm text-gray-900">{{ mediumData.visits_count }}</td>
-                          <td class="px-6 py-2 text-sm text-gray-900">{{ mediumData.sessions_count }}</td>
+                          <td class="px-6 py-2 text-sm text-gray-900">
+                            {{ mediumData.visits_count }}
+                          </td>
+                          <td class="px-6 py-2 text-sm text-gray-900">
+                            {{ mediumData.sessions_count }}
+                          </td>
                           <td class="px-6 py-2">
-                            <span class="px-2 py-1 rounded text-xs font-medium bg-yellow-100 text-yellow-800">
+                            <span
+                              class="px-2 py-1 rounded text-xs font-medium bg-yellow-100 text-yellow-800"
+                            >
                               {{ mediumData.avg_duration_formatted || '0 сек' }}
                             </span>
                           </td>
-                          <td class="px-6 py-2 text-sm text-gray-600">{{ mediumData.min_duration_formatted || '0 сек' }}</td>
-                          <td class="px-6 py-2 text-sm text-gray-600">{{ mediumData.max_duration_formatted || '0 сек' }}</td>
+                          <td class="px-6 py-2 text-sm text-gray-600">
+                            {{ mediumData.min_duration_formatted || '0 сек' }}
+                          </td>
+                          <td class="px-6 py-2 text-sm text-gray-600">
+                            {{ mediumData.max_duration_formatted || '0 сек' }}
+                          </td>
                         </tr>
-                        
+
                         <!-- Campaign level -->
-                        <template v-if="expandedUtmNodes[landing.path + '_' + sourceName + '_' + mediumName]">
-                          <template v-for="(campaignData, campaignName) in mediumData.children" :key="landing.path + '_' + sourceName + '_' + mediumName + '_' + campaignName">
+                        <template
+                          v-if="
+                            expandedUtmNodes[landing.path + '_' + sourceName + '_' + mediumName]
+                          "
+                        >
+                          <template
+                            v-for="(campaignData, campaignName) in mediumData.children"
+                            :key="
+                              landing.path +
+                              '_' +
+                              sourceName +
+                              '_' +
+                              mediumName +
+                              '_' +
+                              campaignName
+                            "
+                          >
                             <!-- Campaign row -->
-                            <tr 
+                            <tr
                               class="border-b border-gray-100 hover:bg-gray-50 cursor-pointer"
-                              @click="toggleUtmNode(landing.path + '_' + sourceName + '_' + mediumName + '_' + campaignName)"
+                              @click="
+                                toggleUtmNode(
+                                  landing.path +
+                                    '_' +
+                                    sourceName +
+                                    '_' +
+                                    mediumName +
+                                    '_' +
+                                    campaignName
+                                )
+                              "
                             >
                               <td class="px-6 py-2">
                                 <div class="flex items-center gap-2" style="padding-left: 6rem">
-                                  <i class="fas text-gray-400" :class="expandedUtmNodes[landing.path + '_' + sourceName + '_' + mediumName + '_' + campaignName] ? 'fa-chevron-down' : 'fa-chevron-right'"></i>
-                                  <span class="font-medium text-gray-600">campaign: {{ campaignData.label }}</span>
+                                  <i
+                                    class="fas text-gray-400"
+                                    :class="
+                                      expandedUtmNodes[
+                                        landing.path +
+                                          '_' +
+                                          sourceName +
+                                          '_' +
+                                          mediumName +
+                                          '_' +
+                                          campaignName
+                                      ]
+                                        ? 'fa-chevron-down'
+                                        : 'fa-chevron-right'
+                                    "
+                                  ></i>
+                                  <span class="font-medium text-gray-600"
+                                    >campaign: {{ campaignData.label }}</span
+                                  >
                                 </div>
                               </td>
-                              <td class="px-6 py-2 text-sm text-gray-900">{{ campaignData.visits_count }}</td>
-                              <td class="px-6 py-2 text-sm text-gray-900">{{ campaignData.sessions_count }}</td>
+                              <td class="px-6 py-2 text-sm text-gray-900">
+                                {{ campaignData.visits_count }}
+                              </td>
+                              <td class="px-6 py-2 text-sm text-gray-900">
+                                {{ campaignData.sessions_count }}
+                              </td>
                               <td class="px-6 py-2">
-                                <span class="px-2 py-1 rounded text-xs font-medium bg-orange-100 text-orange-800">
+                                <span
+                                  class="px-2 py-1 rounded text-xs font-medium bg-orange-100 text-orange-800"
+                                >
                                   {{ campaignData.avg_duration_formatted || '0 сек' }}
                                 </span>
                               </td>
-                              <td class="px-6 py-2 text-sm text-gray-600">{{ campaignData.min_duration_formatted || '0 сек' }}</td>
-                              <td class="px-6 py-2 text-sm text-gray-600">{{ campaignData.max_duration_formatted || '0 сек' }}</td>
+                              <td class="px-6 py-2 text-sm text-gray-600">
+                                {{ campaignData.min_duration_formatted || '0 сек' }}
+                              </td>
+                              <td class="px-6 py-2 text-sm text-gray-600">
+                                {{ campaignData.max_duration_formatted || '0 сек' }}
+                              </td>
                             </tr>
-                            
+
                             <!-- Term level -->
-                            <template v-if="expandedUtmNodes[landing.path + '_' + sourceName + '_' + mediumName + '_' + campaignName]">
-                              <template v-for="(termData, termName) in campaignData.children" :key="landing.path + '_' + sourceName + '_' + mediumName + '_' + campaignName + '_' + termName">
+                            <template
+                              v-if="
+                                expandedUtmNodes[
+                                  landing.path +
+                                    '_' +
+                                    sourceName +
+                                    '_' +
+                                    mediumName +
+                                    '_' +
+                                    campaignName
+                                ]
+                              "
+                            >
+                              <template
+                                v-for="(termData, termName) in campaignData.children"
+                                :key="
+                                  landing.path +
+                                  '_' +
+                                  sourceName +
+                                  '_' +
+                                  mediumName +
+                                  '_' +
+                                  campaignName +
+                                  '_' +
+                                  termName
+                                "
+                              >
                                 <!-- Term row -->
-                                <tr 
+                                <tr
                                   class="border-b border-gray-100 hover:bg-gray-50 cursor-pointer"
-                                  @click="toggleUtmNode(landing.path + '_' + sourceName + '_' + mediumName + '_' + campaignName + '_' + termName)"
+                                  @click="
+                                    toggleUtmNode(
+                                      landing.path +
+                                        '_' +
+                                        sourceName +
+                                        '_' +
+                                        mediumName +
+                                        '_' +
+                                        campaignName +
+                                        '_' +
+                                        termName
+                                    )
+                                  "
                                 >
                                   <td class="px-6 py-2">
                                     <div class="flex items-center gap-2" style="padding-left: 8rem">
-                                      <i class="fas text-gray-400" :class="expandedUtmNodes[landing.path + '_' + sourceName + '_' + mediumName + '_' + campaignName + '_' + termName] ? 'fa-chevron-down' : 'fa-chevron-right'"></i>
-                                      <span class="font-medium text-gray-500">term: {{ termData.label }}</span>
+                                      <i
+                                        class="fas text-gray-400"
+                                        :class="
+                                          expandedUtmNodes[
+                                            landing.path +
+                                              '_' +
+                                              sourceName +
+                                              '_' +
+                                              mediumName +
+                                              '_' +
+                                              campaignName +
+                                              '_' +
+                                              termName
+                                          ]
+                                            ? 'fa-chevron-down'
+                                            : 'fa-chevron-right'
+                                        "
+                                      ></i>
+                                      <span class="font-medium text-gray-500"
+                                        >term: {{ termData.label }}</span
+                                      >
                                     </div>
                                   </td>
-                                  <td class="px-6 py-2 text-sm text-gray-900">{{ termData.visits_count }}</td>
-                                  <td class="px-6 py-2 text-sm text-gray-900">{{ termData.sessions_count }}</td>
+                                  <td class="px-6 py-2 text-sm text-gray-900">
+                                    {{ termData.visits_count }}
+                                  </td>
+                                  <td class="px-6 py-2 text-sm text-gray-900">
+                                    {{ termData.sessions_count }}
+                                  </td>
                                   <td class="px-6 py-2">
-                                    <span class="px-2 py-1 rounded text-xs font-medium bg-red-100 text-red-800">
+                                    <span
+                                      class="px-2 py-1 rounded text-xs font-medium bg-red-100 text-red-800"
+                                    >
                                       {{ termData.avg_duration_formatted || '0 сек' }}
                                     </span>
                                   </td>
-                                  <td class="px-6 py-2 text-sm text-gray-600">{{ termData.min_duration_formatted || '0 сек' }}</td>
-                                  <td class="px-6 py-2 text-sm text-gray-600">{{ termData.max_duration_formatted || '0 сек' }}</td>
+                                  <td class="px-6 py-2 text-sm text-gray-600">
+                                    {{ termData.min_duration_formatted || '0 сек' }}
+                                  </td>
+                                  <td class="px-6 py-2 text-sm text-gray-600">
+                                    {{ termData.max_duration_formatted || '0 сек' }}
+                                  </td>
                                 </tr>
-                                
+
                                 <!-- Content level (leaf) -->
-                                <template v-if="expandedUtmNodes[landing.path + '_' + sourceName + '_' + mediumName + '_' + campaignName + '_' + termName]">
-                                  <tr 
-                                    v-for="(contentData, contentName) in termData.children" 
-                                    :key="landing.path + '_' + sourceName + '_' + mediumName + '_' + campaignName + '_' + termName + '_' + contentName"
+                                <template
+                                  v-if="
+                                    expandedUtmNodes[
+                                      landing.path +
+                                        '_' +
+                                        sourceName +
+                                        '_' +
+                                        mediumName +
+                                        '_' +
+                                        campaignName +
+                                        '_' +
+                                        termName
+                                    ]
+                                  "
+                                >
+                                  <tr
+                                    v-for="(contentData, contentName) in termData.children"
+                                    :key="
+                                      landing.path +
+                                      '_' +
+                                      sourceName +
+                                      '_' +
+                                      mediumName +
+                                      '_' +
+                                      campaignName +
+                                      '_' +
+                                      termName +
+                                      '_' +
+                                      contentName
+                                    "
                                     class="border-b border-gray-50 hover:bg-gray-50"
                                   >
                                     <td class="px-6 py-2">
-                                      <div class="flex items-center gap-2" style="padding-left: 10rem">
-                                        <i class="fas fa-circle text-gray-300" style="font-size: 6px"></i>
-                                        <span class="text-gray-500">content: {{ contentData.label }}</span>
+                                      <div
+                                        class="flex items-center gap-2"
+                                        style="padding-left: 10rem"
+                                      >
+                                        <i
+                                          class="fas fa-circle text-gray-300"
+                                          style="font-size: 6px"
+                                        ></i>
+                                        <span class="text-gray-500"
+                                          >content: {{ contentData.label }}</span
+                                        >
                                       </div>
                                     </td>
-                                    <td class="px-6 py-2 text-sm text-gray-900">{{ contentData.visits_count }}</td>
-                                    <td class="px-6 py-2 text-sm text-gray-900">{{ contentData.sessions_count }}</td>
+                                    <td class="px-6 py-2 text-sm text-gray-900">
+                                      {{ contentData.visits_count }}
+                                    </td>
+                                    <td class="px-6 py-2 text-sm text-gray-900">
+                                      {{ contentData.sessions_count }}
+                                    </td>
                                     <td class="px-6 py-2">
-                                      <span class="px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                                      <span
+                                        class="px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-800"
+                                      >
                                         {{ contentData.avg_duration_formatted }}
                                       </span>
                                     </td>
-                                    <td class="px-6 py-2 text-sm text-gray-600">{{ contentData.min_duration_formatted }}</td>
-                                    <td class="px-6 py-2 text-sm text-gray-600">{{ contentData.max_duration_formatted }}</td>
+                                    <td class="px-6 py-2 text-sm text-gray-600">
+                                      {{ contentData.min_duration_formatted }}
+                                    </td>
+                                    <td class="px-6 py-2 text-sm text-gray-600">
+                                      {{ contentData.max_duration_formatted }}
+                                    </td>
                                   </tr>
                                 </template>
                               </template>
@@ -541,21 +815,23 @@
     </div>
 
     <!-- Management Modal -->
-    <div 
-      v-if="showManagementModal" 
+    <div
+      v-if="showManagementModal"
       class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 px-4"
       @click="showManagementModal = false"
     >
-      <div 
+      <div
         class="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
         @click.stop
       >
-        <div class="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+        <div
+          class="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between"
+        >
           <h2 class="text-xl font-semibold text-gray-900">
             <i class="fas fa-cog mr-2"></i>
             Управление лендингами
           </h2>
-          <button 
+          <button
             @click="showManagementModal = false"
             class="text-gray-400 hover:text-gray-600 transition-colors"
           >
@@ -570,13 +846,13 @@
               <i class="fas fa-plus-circle text-blue-600"></i>
               Добавить новый лендинг
             </h3>
-            
+
             <div class="space-y-3">
               <div class="flex gap-3">
                 <div class="flex-1">
                   <label class="text-sm text-gray-700 mb-1 block">Путь (path)</label>
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     v-model="newLanding.path"
                     placeholder="/landing-1"
                     class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -584,21 +860,21 @@
                 </div>
                 <div class="flex-1">
                   <label class="text-sm text-gray-700 mb-1 block">Название (title)</label>
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     v-model="newLanding.title"
                     placeholder="Лендинг 1"
                     class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
               </div>
-              
+
               <div class="flex items-start gap-2 text-sm text-gray-600">
                 <i class="fas fa-info-circle mt-0.5"></i>
                 <p>Путь должен начинаться с "/" и совпадать с путём к лендингу в системе</p>
               </div>
-              
-              <button 
+
+              <button
                 @click="createLanding"
                 :disabled="!newLanding.path || !newLanding.title || creatingLanding"
                 class="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center gap-2"
@@ -606,7 +882,7 @@
                 <i class="fas fa-plus" :class="{ 'fa-spin fa-spinner': creatingLanding }"></i>
                 {{ creatingLanding ? 'Создание...' : 'Создать' }}
               </button>
-              
+
               <div v-if="createError" class="text-sm text-red-600 flex items-center gap-2">
                 <i class="fas fa-exclamation-circle"></i>
                 {{ createError }}
@@ -616,7 +892,8 @@
 
           <!-- Info message -->
           <p class="text-sm text-gray-600 mb-4">
-            Включайте/выключайте лендинги для отслеживания в аналитике. Изменения применяются мгновенно.
+            Включайте/выключайте лендинги для отслеживания в аналитике. Изменения применяются
+            мгновенно.
           </p>
 
           <!-- Landings list -->
@@ -631,8 +908,8 @@
           </div>
 
           <div v-else class="space-y-3">
-            <div 
-              v-for="landing in allLandings" 
+            <div
+              v-for="landing in allLandings"
               :key="landing.id"
               class="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
             >
@@ -640,22 +917,27 @@
                 <p class="font-semibold text-gray-900">{{ landing.title }}</p>
                 <p class="text-sm text-gray-500">{{ landing.path }}</p>
               </div>
-              
+
               <div class="flex items-center gap-3">
                 <label class="relative inline-flex items-center cursor-pointer">
-                  <input 
-                    type="checkbox" 
+                  <input
+                    type="checkbox"
                     :checked="landing.isActive"
                     @change="toggleLanding(landing)"
                     class="sr-only peer"
                   />
-                  <div class="w-14 h-7 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-green-500"></div>
-                  <span class="ml-3 text-sm font-medium" :class="landing.isActive ? 'text-green-600' : 'text-gray-400'">
+                  <div
+                    class="w-14 h-7 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-green-500"
+                  ></div>
+                  <span
+                    class="ml-3 text-sm font-medium"
+                    :class="landing.isActive ? 'text-green-600' : 'text-gray-400'"
+                  >
                     {{ landing.isActive ? 'Активен' : 'Неактивен' }}
                   </span>
                 </label>
-                
-                <button 
+
+                <button
                   @click="deleteLanding(landing)"
                   class="text-red-600 hover:text-red-800 px-3 py-1 rounded hover:bg-red-50 transition-colors flex items-center gap-1"
                   title="Удалить лендинг"
@@ -673,8 +955,17 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { apiGetEngagementStatsRoute, apiGetScrollHeatmapRoute, apiGetUtmStatsRoute } from '../api/analytics'
-import { apiGetLandingsRoute, apiCreateLandingRoute, apiToggleLandingRoute, apiDeleteLandingRoute } from '../api/landings'
+import {
+  apiGetEngagementStatsRoute,
+  apiGetScrollHeatmapRoute,
+  apiGetUtmStatsRoute
+} from '../api/analytics'
+import {
+  apiGetLandingsRoute,
+  apiCreateLandingRoute,
+  apiToggleLandingRoute,
+  apiDeleteLandingRoute
+} from '../api/landings'
 
 const loadingEngagement = ref(false)
 const selectedPeriod = ref('90')
@@ -708,9 +999,10 @@ function getTotalVisits() {
 function getAverageTime() {
   const totalVisits = getTotalVisits()
   if (totalVisits === 0) return '0 сек'
-  
-  const totalSeconds = engagementStats.value.reduce((sum, item) => 
-    sum + (item.avg_duration_seconds || 0) * (item.visits_count || 0), 0
+
+  const totalSeconds = engagementStats.value.reduce(
+    (sum, item) => sum + (item.avg_duration_seconds || 0) * (item.visits_count || 0),
+    0
   )
   const avgSeconds = totalSeconds / totalVisits
   return formatAvgTime(avgSeconds)
@@ -721,7 +1013,7 @@ function onPeriodTypeChange() {
     const endDate = new Date()
     const startDate = new Date()
     startDate.setDate(startDate.getDate() - 30)
-    
+
     customEndDate.value = endDate.toISOString().split('T')[0]
     customStartDate.value = startDate.toISOString().split('T')[0]
   }
@@ -730,21 +1022,22 @@ function onPeriodTypeChange() {
 
 async function loadEngagementStats() {
   loadingEngagement.value = true
-  
+
   try {
-    const queryParams = periodType.value === 'custom' 
-      ? { 
-          startDate: customStartDate.value, 
-          endDate: customEndDate.value 
-        }
-      : { period: selectedPeriod.value }
-    
+    const queryParams =
+      periodType.value === 'custom'
+        ? {
+            startDate: customStartDate.value,
+            endDate: customEndDate.value
+          }
+        : { period: selectedPeriod.value }
+
     const result = await apiGetEngagementStatsRoute.query(queryParams).run(ctx)
-    
+
     if (result.success) {
-      engagementStats.value = (result.data || [])
+      engagementStats.value = result.data || []
     }
-    
+
     // Загружаем UTM статистику параллельно
     loadUtmStats()
   } catch (e) {
@@ -756,19 +1049,20 @@ async function loadEngagementStats() {
 
 async function loadUtmStats() {
   loadingUtm.value = true
-  
+
   try {
-    const queryParams = periodType.value === 'custom' 
-      ? { 
-          startDate: customStartDate.value, 
-          endDate: customEndDate.value 
-        }
-      : { period: selectedPeriod.value }
-    
+    const queryParams =
+      periodType.value === 'custom'
+        ? {
+            startDate: customStartDate.value,
+            endDate: customEndDate.value
+          }
+        : { period: selectedPeriod.value }
+
     const result = await apiGetUtmStatsRoute.query(queryParams).run(ctx)
-    
+
     if (result.success) {
-      utmStats.value = (result.data || [])
+      utmStats.value = result.data || []
     }
   } catch (e) {
     console.error('Ошибка загрузки UTM данных:', e)
@@ -782,9 +1076,9 @@ async function toggleHeatmap(path) {
     expandedHeatmapLanding.value = null
     return
   }
-  
+
   expandedHeatmapLanding.value = path
-  
+
   if (!scrollHeatmapData.value[path]) {
     await loadHeatmapData(path)
   }
@@ -792,22 +1086,23 @@ async function toggleHeatmap(path) {
 
 async function loadHeatmapData(path) {
   loadingHeatmap.value = true
-  
+
   try {
     // Передаем те же параметры периода, что и в основной аналитике
-    const queryParams = periodType.value === 'custom' 
-      ? { 
-          path,
-          startDate: customStartDate.value, 
-          endDate: customEndDate.value 
-        }
-      : { 
-          path,
-          period: selectedPeriod.value 
-        }
-    
+    const queryParams =
+      periodType.value === 'custom'
+        ? {
+            path,
+            startDate: customStartDate.value,
+            endDate: customEndDate.value
+          }
+        : {
+            path,
+            period: selectedPeriod.value
+          }
+
     const result = await apiGetScrollHeatmapRoute.query(queryParams).run(ctx)
-    
+
     if (result.success) {
       scrollHeatmapData.value[path] = {
         data: result.data || [],
@@ -823,7 +1118,7 @@ async function loadHeatmapData(path) {
 
 function formatSeconds(seconds) {
   if (!seconds) return '0 сек'
-  
+
   if (seconds >= 3600) {
     const hours = Math.floor(seconds / 3600)
     const minutes = Math.floor((seconds % 3600) / 60)
@@ -839,17 +1134,17 @@ function formatSeconds(seconds) {
 
 function formatAvgTime(avgSeconds) {
   if (!avgSeconds || isNaN(avgSeconds)) return '0 сек'
-  
+
   const rounded = Math.round(avgSeconds)
   return formatSeconds(rounded)
 }
 
 function getColorForRange(depthRange) {
   const colorMap = {
-    '0-25%': 'rgb(56, 189, 248)',      // Холодный голубой
-    '25-50%': 'rgb(250, 204, 21)',     // Теплый желтый
-    '50-75%': 'rgb(249, 115, 22)',     // Оранжевый теплее
-    '75-100%': 'rgb(239, 68, 68)'      // Красный
+    '0-25%': 'rgb(56, 189, 248)', // Холодный голубой
+    '25-50%': 'rgb(250, 204, 21)', // Теплый желтый
+    '50-75%': 'rgb(249, 115, 22)', // Оранжевый теплее
+    '75-100%': 'rgb(239, 68, 68)' // Красный
   }
   return colorMap[depthRange] || 'rgb(156, 163, 175)'
 }
@@ -898,16 +1193,16 @@ async function loadLandings() {
 
 async function createLanding() {
   if (!newLanding.value.path || !newLanding.value.title) return
-  
+
   creatingLanding.value = true
   createError.value = ''
-  
+
   try {
     const result = await apiCreateLandingRoute.run(ctx, {
       path: newLanding.value.path,
       title: newLanding.value.title
     })
-    
+
     if (result.success) {
       newLanding.value = { path: '', title: '' }
       await loadLandings()
@@ -929,7 +1224,7 @@ async function toggleLanding(landing) {
       id: landing.id,
       isActive: !landing.isActive
     })
-    
+
     if (result.success) {
       await loadLandings()
       await loadEngagementStats()
@@ -943,12 +1238,12 @@ async function deleteLanding(landing) {
   if (!confirm(`Вы уверены, что хотите удалить лендинг "${landing.title}"?`)) {
     return
   }
-  
+
   try {
     const result = await apiDeleteLandingRoute.run(ctx, {
       id: landing.id
     })
-    
+
     if (result.success) {
       await loadLandings()
       await loadEngagementStats()
@@ -1023,26 +1318,27 @@ function getLandingMaxDuration(landing) {
 
 function getHeatmapInsight(data) {
   if (!data || data.length === 0) return 'Нет данных для анализа'
-  
+
   // Проверяем общее количество пользователей
   const totalUsersWithData = data.reduce((sum, item) => sum + (item.users_count || 0), 0)
-  
+
   if (totalUsersWithData === 0) {
     return 'Нет данных о скроллинге. Пользователи посещали страницу, но данные о глубине просмотра не были собраны.'
   }
-  
+
   if (totalUsersWithData < 3) {
     return `Недостаточно данных для полноценного анализа (всего ${totalUsersWithData} ${totalUsersWithData === 1 ? 'пользователь' : 'пользователя'}). Рекомендуем подождать больше визитов.`
   }
-  
-  const maxItem = data.reduce((max, item) => 
-    item.percentage > max.percentage ? item : max
-  , data[0])
-  
-  const depth75Plus = data.find(item => item.depth_range === '75-100')
-  const depth50_75 = data.find(item => item.depth_range === '50-75')
-  const depth25_50 = data.find(item => item.depth_range === '25-50')
-  const depth0_25 = data.find(item => item.depth_range === '0-25')
+
+  const maxItem = data.reduce(
+    (max, item) => (item.percentage > max.percentage ? item : max),
+    data[0]
+  )
+
+  const depth75Plus = data.find((item) => item.depth_range === '75-100')
+  const depth50_75 = data.find((item) => item.depth_range === '50-75')
+  const depth25_50 = data.find((item) => item.depth_range === '25-50')
+  const depth0_25 = data.find((item) => item.depth_range === '0-25')
 
   if (depth75Plus && depth75Plus.percentage >= 30) {
     return `Отличная вовлеченность! ${depth75Plus.percentage}% пользователей прокручивают страницу до конца (75-100%). Контент удерживает внимание.`
@@ -1053,7 +1349,7 @@ function getHeatmapInsight(data) {
   } else if (depth0_25 && depth0_25.percentage >= 50) {
     return `Низкая вовлеченность. ${depth0_25.percentage}% пользователей не скроллят дальше первого экрана (0-25%). Необходимо пересмотреть начало страницы и добавить мотивацию к просмотру.`
   }
-  
+
   return `Наибольшая активность в диапазоне ${maxItem.depth_range}% (${maxItem.percentage}% пользователей)`
 }
 
@@ -1063,5 +1359,4 @@ onMounted(() => {
 })
 </script>
 
-<style scoped>
-</style>
+<style scoped></style>

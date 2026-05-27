@@ -4,7 +4,9 @@
     <i v-else class="app-notification-icon" :class="defaultIcon"></i>
     <div class="app-notification-content">
       <p v-if="title" class="app-notification-title">{{ title }}</p>
-      <p class="app-notification-message"><slot>{{ message }}</slot></p>
+      <p class="app-notification-message">
+        <slot>{{ message }}</slot>
+      </p>
     </div>
   </div>
 </template>
@@ -16,15 +18,20 @@ const props = defineProps({
   type: {
     type: String,
     default: 'info',
-    validator: (v) => ['info', 'success', 'error', 'warn'].includes(v),
+    validator: (v) => ['info', 'success', 'error', 'warn'].includes(v)
   },
   title: String,
   message: String,
-  icon: String,
+  icon: String
 })
 
 const defaultIcon = computed(() => {
-  const map = { info: 'fas fa-info-circle', success: 'fas fa-check-circle', error: 'fas fa-exclamation-circle', warn: 'fas fa-exclamation-triangle' }
+  const map = {
+    info: 'fas fa-info-circle',
+    success: 'fas fa-check-circle',
+    error: 'fas fa-exclamation-circle',
+    warn: 'fas fa-exclamation-triangle'
+  }
   return map[props.type] || map.info
 })
 </script>

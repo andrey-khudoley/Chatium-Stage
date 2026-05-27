@@ -104,8 +104,13 @@ async function submit() {
 </script>
 
 <template>
-  <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60" @click.self="emit('cancel')">
-    <div class="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-secondary)] p-6 w-full max-w-lg shadow-xl">
+  <div
+    class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60"
+    @click.self="emit('cancel')"
+  >
+    <div
+      class="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-secondary)] p-6 w-full max-w-lg shadow-xl"
+    >
       <h2 class="text-lg text-[var(--color-text)] mb-4">
         {{ isEdit() ? 'Редактировать страницу' : 'Новая страница' }}
       </h2>
@@ -117,7 +122,9 @@ async function submit() {
           class="w-full px-3 py-2 rounded border border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text)] mb-3"
           placeholder="Название страницы"
         />
-        <label class="block text-[var(--color-text-secondary)] text-sm mb-1">URL-шаблон (обязателен плейсхолдер {ref})</label>
+        <label class="block text-[var(--color-text-secondary)] text-sm mb-1"
+          >URL-шаблон (обязателен плейсхолдер {ref})</label
+        >
         <input
           v-model="urlTemplate"
           type="text"

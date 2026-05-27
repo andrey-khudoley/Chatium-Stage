@@ -57,7 +57,9 @@ export async function getSetting(ctx: app.Ctx, key: string): Promise<unknown> {
  */
 export async function getSettingString(ctx: app.Ctx, key: string): Promise<string> {
   const value = await getSetting(ctx, key)
-  return typeof value === 'string' ? value : String((DEFAULTS as Record<string, unknown>)[key] ?? '')
+  return typeof value === 'string'
+    ? value
+    : String((DEFAULTS as Record<string, unknown>)[key] ?? '')
 }
 
 /**
@@ -124,7 +126,9 @@ export async function setSetting(ctx: app.Ctx, key: string, value: unknown): Pro
   if (key === SETTING_KEYS.LOG_LEVEL) {
     const str = typeof value === 'string' ? value : String(value)
     if (!isLogLevel(str)) {
-      throw new Error(`Недопустимый уровень логирования: ${str}. Допустимо: ${LOG_LEVELS.join(', ')}`)
+      throw new Error(
+        `Недопустимый уровень логирования: ${str}. Допустимо: ${LOG_LEVELS.join(', ')}`
+      )
     }
     normalized = str
   } else if (key === SETTING_KEYS.LOGS_LIMIT) {
@@ -151,7 +155,12 @@ export async function setSetting(ctx: app.Ctx, key: string, value: unknown): Pro
     }
     normalized = Math.floor(n)
   } else if (key === SETTING_KEYS.TELEGRAM_TEST_BOT_TOKEN) {
-    normalized = typeof value === 'string' ? value.trim() : value === null || value === undefined ? '' : String(value)
+    normalized =
+      typeof value === 'string'
+        ? value.trim()
+        : value === null || value === undefined
+          ? ''
+          : String(value)
   }
 
   await repo.upsert(ctx, key, normalized)

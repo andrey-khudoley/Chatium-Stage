@@ -8,7 +8,10 @@
             <p class="wr-text-tertiary text-sm mt-0.5">Воспроизведение записанных эфиров</p>
           </div>
           <div class="flex items-center gap-2">
-            <button @click="navigateToCreate" class="btn-primary text-white font-semibold px-5 py-2.5 rounded-xl inline-flex items-center gap-2">
+            <button
+              @click="navigateToCreate"
+              class="btn-primary text-white font-semibold px-5 py-2.5 rounded-xl inline-flex items-center gap-2"
+            >
               <i class="fas fa-plus"></i>
               <span>Создать</span>
             </button>
@@ -36,7 +39,9 @@
       </div>
 
       <div v-if="loading" class="text-center py-20">
-        <div class="inline-block w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mb-4"></div>
+        <div
+          class="inline-block w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mb-4"
+        ></div>
         <p class="wr-text-secondary">Загрузка...</p>
       </div>
 
@@ -46,7 +51,10 @@
         </div>
         <p class="wr-text-secondary text-lg mb-2">Автовебинаров пока нет</p>
         <p class="wr-text-muted text-sm mb-6">Создайте первый автовебинар</p>
-        <button @click="navigateToCreate" class="btn-primary text-white font-semibold px-6 py-3 rounded-xl inline-flex items-center gap-2">
+        <button
+          @click="navigateToCreate"
+          class="btn-primary text-white font-semibold px-6 py-3 rounded-xl inline-flex items-center gap-2"
+        >
           <i class="fas fa-plus"></i> Создать
         </button>
       </div>
@@ -60,37 +68,78 @@
           <div class="flex flex-col gap-3 sm:gap-4">
             <div class="flex-1 min-w-0">
               <div class="flex items-center gap-2 sm:gap-3 mb-2 flex-wrap">
-                <span :class="statusBadgeClass(aw.status)" class="px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-semibold uppercase tracking-wider">
+                <span
+                  :class="statusBadgeClass(aw.status)"
+                  class="px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-semibold uppercase tracking-wider"
+                >
                   {{ statusLabel(aw.status) }}
                 </span>
-                <span v-if="aw.subtitlesStatus === 'processing'" class="px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-semibold uppercase tracking-wider bg-primary/20 text-primary border border-primary/50" title="Обработка видео">
+                <span
+                  v-if="aw.subtitlesStatus === 'processing'"
+                  class="px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-semibold uppercase tracking-wider bg-primary/20 text-primary border border-primary/50"
+                  title="Обработка видео"
+                >
                   <i class="fas fa-spinner fa-spin mr-1"></i> Обработка
                 </span>
-                <span v-if="aw.muuveeError" class="px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-semibold uppercase tracking-wider bg-danger/20 text-danger border border-danger/50" title="Ошибка обработки видео">
+                <span
+                  v-if="aw.muuveeError"
+                  class="px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-semibold uppercase tracking-wider bg-danger/20 text-danger border border-danger/50"
+                  title="Ошибка обработки видео"
+                >
                   <i class="fas fa-exclamation-triangle mr-1"></i> Ошибка
                 </span>
               </div>
-              <h3 class="wr-text-primary font-semibold text-base sm:text-lg line-clamp-1">{{ aw.title }}</h3>
+              <h3 class="wr-text-primary font-semibold text-base sm:text-lg line-clamp-1">
+                {{ aw.title }}
+              </h3>
               <p class="wr-text-tertiary text-xs sm:text-sm mt-1">
                 <i class="fas fa-clock mr-1"></i> {{ formatDuration(aw.duration) }}
               </p>
-              <p v-if="aw.description" class="wr-text-tertiary text-xs sm:text-sm mt-1 line-clamp-2">{{ aw.description }}</p>
+              <p
+                v-if="aw.description"
+                class="wr-text-tertiary text-xs sm:text-sm mt-1 line-clamp-2"
+              >
+                {{ aw.description }}
+              </p>
             </div>
 
             <div class="flex items-center gap-2 flex-wrap">
-              <button v-if="aw.status === 'draft'" @click="activateAw(aw)" :disabled="actionLoading === aw.id" class="wr-btn-green px-3 py-2 rounded-lg text-xs font-medium transition flex items-center gap-1.5 min-h-[40px]">
+              <button
+                v-if="aw.status === 'draft'"
+                @click="activateAw(aw)"
+                :disabled="actionLoading === aw.id"
+                class="wr-btn-green px-3 py-2 rounded-lg text-xs font-medium transition flex items-center gap-1.5 min-h-[40px]"
+              >
                 <i class="fas fa-play text-[10px]"></i> Активировать
               </button>
-              <button v-if="aw.status === 'active'" @click="archiveAw(aw)" :disabled="actionLoading === aw.id" class="wr-btn-yellow px-3 py-2 rounded-lg text-xs font-medium transition flex items-center gap-1.5 min-h-[40px]">
+              <button
+                v-if="aw.status === 'active'"
+                @click="archiveAw(aw)"
+                :disabled="actionLoading === aw.id"
+                class="wr-btn-yellow px-3 py-2 rounded-lg text-xs font-medium transition flex items-center gap-1.5 min-h-[40px]"
+              >
                 <i class="fas fa-archive text-[10px]"></i> Архивировать
               </button>
-              <button v-if="aw.status === 'archived'" @click="restoreAw(aw)" :disabled="actionLoading === aw.id" class="admin-btn-subtle px-3 py-2 rounded-lg text-xs font-medium transition flex items-center gap-1.5 min-h-[40px]">
+              <button
+                v-if="aw.status === 'archived'"
+                @click="restoreAw(aw)"
+                :disabled="actionLoading === aw.id"
+                class="admin-btn-subtle px-3 py-2 rounded-lg text-xs font-medium transition flex items-center gap-1.5 min-h-[40px]"
+              >
                 <i class="fas fa-undo text-[10px]"></i> Восстановить
               </button>
-              <button @click="navigateToEdit(aw.id)" class="admin-btn-subtle px-3 py-2 rounded-lg text-xs font-medium transition flex items-center gap-1.5 min-h-[40px]">
-                <i class="fas fa-pen text-[10px]"></i> <span class="hidden xs:inline">Изменить</span>
+              <button
+                @click="navigateToEdit(aw.id)"
+                class="admin-btn-subtle px-3 py-2 rounded-lg text-xs font-medium transition flex items-center gap-1.5 min-h-[40px]"
+              >
+                <i class="fas fa-pen text-[10px]"></i>
+                <span class="hidden xs:inline">Изменить</span>
               </button>
-              <button @click="deleteAw(aw)" :disabled="actionLoading === aw.id" class="admin-btn-subtle hover:!bg-red-600/20 hover:!text-red-400 px-3 py-2 rounded-lg text-xs transition min-h-[40px]">
+              <button
+                @click="deleteAw(aw)"
+                :disabled="actionLoading === aw.id"
+                class="admin-btn-subtle hover:!bg-red-600/20 hover:!text-red-400 px-3 py-2 rounded-lg text-xs transition min-h-[40px]"
+              >
                 <i class="fas fa-trash text-[10px]"></i>
               </button>
             </div>
@@ -108,7 +157,7 @@ import {
   apiAutowebinarDeleteRoute,
   apiAutowebinarActivateRoute,
   apiAutowebinarArchiveRoute,
-  apiAutowebinarRestoreRoute,
+  apiAutowebinarRestoreRoute
 } from '../../api/autowebinars'
 
 const list = ref([])
@@ -120,12 +169,12 @@ const statusFilters = [
   { label: 'Все', value: '' },
   { label: 'Черновики', value: 'draft' },
   { label: 'Активные', value: 'active' },
-  { label: 'Архив', value: 'archived' },
+  { label: 'Архив', value: 'archived' }
 ]
 
 const filteredList = computed(() => {
   if (!statusFilter.value) return list.value
-  return list.value.filter(aw => aw.status === statusFilter.value)
+  return list.value.filter((aw) => aw.status === statusFilter.value)
 })
 
 function statusLabel(status) {
@@ -137,7 +186,7 @@ function statusBadgeClass(status) {
   const map = {
     draft: 'wr-badge-gray wr-status-gray',
     active: 'wr-badge-green wr-status-green',
-    archived: 'wr-badge-yellow wr-status-yellow',
+    archived: 'wr-badge-yellow wr-status-yellow'
   }
   return map[status] || 'wr-badge-gray wr-status-gray'
 }
@@ -152,11 +201,17 @@ function formatDuration(seconds) {
 }
 
 function navigateToCreate() {
-  window.dispatchEvent(new CustomEvent('admin-navigate', { detail: { section: 'aw-create', mainTab: 'autowebinars' } }))
+  window.dispatchEvent(
+    new CustomEvent('admin-navigate', { detail: { section: 'aw-create', mainTab: 'autowebinars' } })
+  )
 }
 
 function navigateToEdit(awId) {
-  window.dispatchEvent(new CustomEvent('admin-navigate', { detail: { section: 'autowebinars', autowebinarId: awId, mainTab: 'autowebinars' } }))
+  window.dispatchEvent(
+    new CustomEvent('admin-navigate', {
+      detail: { section: 'autowebinars', autowebinarId: awId, mainTab: 'autowebinars' }
+    })
+  )
 }
 
 async function activateAw(aw) {
@@ -164,9 +219,11 @@ async function activateAw(aw) {
   actionLoading.value = aw.id
   try {
     const updated = await apiAutowebinarActivateRoute({ id: aw.id }).run(ctx)
-    const idx = list.value.findIndex(a => a.id === aw.id)
+    const idx = list.value.findIndex((a) => a.id === aw.id)
     if (idx >= 0) list.value[idx] = { ...list.value[idx], ...updated }
-  } catch (e) { alert(e.message) }
+  } catch (e) {
+    alert(e.message)
+  }
   actionLoading.value = null
 }
 
@@ -175,9 +232,11 @@ async function archiveAw(aw) {
   actionLoading.value = aw.id
   try {
     const updated = await apiAutowebinarArchiveRoute({ id: aw.id }).run(ctx)
-    const idx = list.value.findIndex(a => a.id === aw.id)
+    const idx = list.value.findIndex((a) => a.id === aw.id)
     if (idx >= 0) list.value[idx] = { ...list.value[idx], ...updated }
-  } catch (e) { alert(e.message) }
+  } catch (e) {
+    alert(e.message)
+  }
   actionLoading.value = null
 }
 
@@ -186,9 +245,11 @@ async function restoreAw(aw) {
   actionLoading.value = aw.id
   try {
     const updated = await apiAutowebinarRestoreRoute({ id: aw.id }).run(ctx)
-    const idx = list.value.findIndex(a => a.id === aw.id)
+    const idx = list.value.findIndex((a) => a.id === aw.id)
     if (idx >= 0) list.value[idx] = { ...list.value[idx], ...updated }
-  } catch (e) { alert(e.message) }
+  } catch (e) {
+    alert(e.message)
+  }
   actionLoading.value = null
 }
 
@@ -197,11 +258,12 @@ async function deleteAw(aw) {
   actionLoading.value = aw.id
   try {
     await apiAutowebinarDeleteRoute({ id: aw.id }).run(ctx)
-    list.value = list.value.filter(a => a.id !== aw.id)
-  } catch (e) { alert(e.message) }
+    list.value = list.value.filter((a) => a.id !== aw.id)
+  } catch (e) {
+    alert(e.message)
+  }
   actionLoading.value = null
 }
-
 
 async function loadList() {
   loading.value = true

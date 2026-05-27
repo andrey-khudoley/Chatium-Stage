@@ -505,9 +505,7 @@
       "contour": "legacy",
       "httpMethod": "GET",
       "pathTemplate": "/account/groups/{groupId}/users",
-      "pathParameters": [
-        "groupId"
-      ],
+      "pathParameters": ["groupId"],
       "legacyImportAction": null,
       "openApiArtifact": "legacy_api_schema.json",
       "openApiOperationId": "legacy-export-group-users",
@@ -551,9 +549,7 @@
       "contour": "legacy",
       "httpMethod": "GET",
       "pathTemplate": "/account/exports/{exportId}",
-      "pathParameters": [
-        "exportId"
-      ],
+      "pathParameters": ["exportId"],
       "legacyImportAction": null,
       "openApiArtifact": "legacy_api_schema.json",
       "openApiOperationId": "legacy-export-result",

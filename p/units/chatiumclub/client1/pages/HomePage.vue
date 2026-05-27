@@ -43,11 +43,14 @@ const cursorPosition = ref<'title' | 'description' | 'final'>('title')
 const showTitleUnderline = ref(false)
 const isGlitching = ref(false)
 
-const intervalIds = { title: null as ReturnType<typeof setInterval> | null, desc: null as ReturnType<typeof setInterval> | null }
+const intervalIds = {
+  title: null as ReturnType<typeof setInterval> | null,
+  desc: null as ReturnType<typeof setInterval> | null
+}
 
 const onAppLayoutAnimationEnd = (e: AnimationEvent) => {
   if (e.animationName === 'crt-power-on') {
-    (e.target as HTMLElement).classList.add('app-layout-appeared')
+    ;(e.target as HTMLElement).classList.add('app-layout-appeared')
     log.debug('App layout animation completed')
   }
 }
@@ -196,18 +199,34 @@ const openChatiumLink = () => {
       <div class="content-inner">
         <!-- Hero Section -->
         <section class="hero-section" :class="{ 'hero-ready': bootLoaderDone }">
-          <div class="hero-icon-wrapper" :class="{ 'hero-icon-visible': bootLoaderDone }" @click="triggerGlitch">
+          <div
+            class="hero-icon-wrapper"
+            :class="{ 'hero-icon-visible': bootLoaderDone }"
+            @click="triggerGlitch"
+          >
             <i class="fas fa-tasks hero-icon"></i>
           </div>
           <h1 class="hero-heading" :class="{ 'show-underline': showTitleUnderline }">
-            {{ displayedTitle }}<span v-if="showCursor && (cursorPosition === 'title' || cursorPosition === 'final')" class="typing-cursor">▮</span>
+            {{ displayedTitle
+            }}<span
+              v-if="showCursor && (cursorPosition === 'title' || cursorPosition === 'final')"
+              class="typing-cursor"
+              >▮</span
+            >
           </h1>
           <p class="hero-description">
-            {{ displayedDescription }}<span v-if="showCursor && cursorPosition === 'description'" class="typing-cursor">▮</span>
+            {{ displayedDescription
+            }}<span v-if="showCursor && cursorPosition === 'description'" class="typing-cursor"
+              >▮</span
+            >
           </p>
         </section>
 
-        <section v-if="bootLoaderDone" class="lead-form-wrapper" :class="{ 'lead-form-wrapper--ready': cursorPosition === 'final' }">
+        <section
+          v-if="bootLoaderDone"
+          class="lead-form-wrapper"
+          :class="{ 'lead-form-wrapper--ready': cursorPosition === 'final' }"
+        >
           <LeadForm />
         </section>
       </div>
@@ -332,10 +351,18 @@ body {
   cursor: pointer;
   overflow: hidden;
   clip-path: polygon(
-    0 4px, 4px 4px, 4px 0,
-    calc(100% - 4px) 0, calc(100% - 4px) 4px, 100% 4px,
-    100% calc(100% - 4px), calc(100% - 4px) calc(100% - 4px), calc(100% - 4px) 100%,
-    4px 100%, 4px calc(100% - 4px), 0 calc(100% - 4px)
+    0 4px,
+    4px 4px,
+    4px 0,
+    calc(100% - 4px) 0,
+    calc(100% - 4px) 4px,
+    100% 4px,
+    100% calc(100% - 4px),
+    calc(100% - 4px) calc(100% - 4px),
+    calc(100% - 4px) 100%,
+    4px 100%,
+    4px calc(100% - 4px),
+    0 calc(100% - 4px)
   );
 }
 
@@ -359,8 +386,13 @@ body {
 }
 
 @keyframes scanline-flicker {
-  0%, 100% { opacity: 0.7; }
-  50% { opacity: 0.5; }
+  0%,
+  100% {
+    opacity: 0.7;
+  }
+  50% {
+    opacity: 0.5;
+  }
 }
 
 @media (min-width: 769px) {
@@ -377,7 +409,8 @@ body {
 }
 
 @keyframes glitch-icon {
-  0%, 100% {
+  0%,
+  100% {
     transform: scale(1) translate(0);
     filter: none;
     box-shadow:
@@ -482,8 +515,14 @@ body {
 }
 
 @keyframes terminal-cursor-blink {
-  0%, 50% { opacity: 1; }
-  51%, 100% { opacity: 0; }
+  0%,
+  50% {
+    opacity: 1;
+  }
+  51%,
+  100% {
+    opacity: 0;
+  }
 }
 
 .hero-description {
@@ -500,26 +539,60 @@ body {
 }
 
 @media (min-width: 1201px) {
-  .content-wrapper { padding: 1rem 0; }
-  .content-inner { gap: 1.5rem; }
-  .hero-section { gap: 0.75rem; padding: 0.5rem 0; }
-  .hero-description { margin-bottom: 0.25rem; }
+  .content-wrapper {
+    padding: 1rem 0;
+  }
+  .content-inner {
+    gap: 1.5rem;
+  }
+  .hero-section {
+    gap: 0.75rem;
+    padding: 0.5rem 0;
+  }
+  .hero-description {
+    margin-bottom: 0.25rem;
+  }
 }
 
 @media (max-width: 768px) {
-  .content-inner { padding: 0 1rem; gap: 3rem; }
-  .content-wrapper { padding: 2rem 0; }
-  .hero-section { gap: 1.25rem; padding: 1rem 0; }
-  .hero-heading { font-size: 2rem; }
-  .hero-description { font-size: 0.9375rem; }
+  .content-inner {
+    padding: 0 1rem;
+    gap: 3rem;
+  }
+  .content-wrapper {
+    padding: 2rem 0;
+  }
+  .hero-section {
+    gap: 1.25rem;
+    padding: 1rem 0;
+  }
+  .hero-heading {
+    font-size: 2rem;
+  }
+  .hero-description {
+    font-size: 0.9375rem;
+  }
 }
 
 @media (max-width: 480px) {
-  .content-inner { padding: 0 0.75rem; gap: 2.5rem; }
-  .content-wrapper { padding: 1.5rem 0; }
-  .hero-section { gap: 1rem; }
-  .hero-heading { font-size: 1.75rem; letter-spacing: 0.08em; }
-  .hero-description { font-size: 0.875rem; line-height: 1.5; }
+  .content-inner {
+    padding: 0 0.75rem;
+    gap: 2.5rem;
+  }
+  .content-wrapper {
+    padding: 1.5rem 0;
+  }
+  .hero-section {
+    gap: 1rem;
+  }
+  .hero-heading {
+    font-size: 1.75rem;
+    letter-spacing: 0.08em;
+  }
+  .hero-description {
+    font-size: 0.875rem;
+    line-height: 1.5;
+  }
 }
 
 .lead-form-wrapper {
@@ -528,7 +601,9 @@ body {
   width: 100%;
   opacity: 0;
   transform: translateY(8px);
-  transition: opacity 0.6s ease, transform 0.6s ease;
+  transition:
+    opacity 0.6s ease,
+    transform 0.6s ease;
 }
 
 .lead-form-wrapper--ready {
@@ -537,6 +612,8 @@ body {
 }
 
 @media (min-width: 1201px) {
-  .content-inner:has(.lead-form-wrapper) { gap: 2rem; }
+  .content-inner:has(.lead-form-wrapper) {
+    gap: 2rem;
+  }
 }
 </style>

@@ -76,7 +76,10 @@ function formatLogMessage(entry: FormattedEntry): string {
  * Проверяет, нужно ли логировать сообщение с данным severity при текущей настройке уровня.
  * Логируем, когда severity сообщения <= порога (сообщение не строже порога).
  */
-export function shouldLogByLevel(configuredLevel: settingsLib.LogLevel, messageSeverity: number): boolean {
+export function shouldLogByLevel(
+  configuredLevel: settingsLib.LogLevel,
+  messageSeverity: number
+): boolean {
   const maxSeverity = CONFIG_TO_MAX_SEVERITY[configuredLevel]
   if (maxSeverity < 0) return false
   return messageSeverity >= 0 && messageSeverity <= maxSeverity

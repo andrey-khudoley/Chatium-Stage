@@ -7,7 +7,13 @@ import '../lib/logs-init'
 export const testsAiRoute = app.get('/', async (ctx) => {
   requireAnyUser(ctx)
 
-  const results: Array<{ category: string; test: string; description: string; success: boolean; message: string }> = []
+  const results: Array<{
+    category: string
+    test: string
+    description: string
+    success: boolean
+    message: string
+  }> = []
 
   for (const category of TEST_CATEGORIES) {
     for (const test of category.tests) {

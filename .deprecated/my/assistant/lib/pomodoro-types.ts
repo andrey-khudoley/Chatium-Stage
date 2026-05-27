@@ -76,7 +76,7 @@ export function getPhaseCompletionActionForPhase(
     PomodoroStateDto,
     'autoStartRest' | 'pauseAfterWork' | 'autoStartNextCycle' | 'pauseAfterRest' | 'afterLongRest'
   >,
-  phase: PomodoroPhase,
+  phase: PomodoroPhase
 ): PomodoroPhaseCompleteAction {
   if (phase === 'work') {
     if (state.autoStartRest) return 'auto'

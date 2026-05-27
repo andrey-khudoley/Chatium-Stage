@@ -21,9 +21,9 @@ export function useChatSocket(userSocketId: string | null | undefined) {
     isReconnecting: false,
     reconnectAttempts: 0,
     lastError: null,
-    lastMessageAt: null,
+    lastMessageAt: null
   })
-  
+
   let subscription: any = null
   let unsubscribe: (() => void) | null = null
   let reconnectTimer: any = null
@@ -34,29 +34,28 @@ export function useChatSocket(userSocketId: string | null | undefined) {
   // Подключение к WebSocket
   async function connect() {
     if (!userSocketId || isDestroyed) return
-    
+
     try {
       // console.log('[Socket] Connecting...', { userSocketId, attempt: state.value.reconnectAttempts })
-      
+
       socketClient = await getOrCreateBrowserSocketClient()
       subscription = socketClient.subscribeToData(userSocketId)
-      
+
       state.value.isConnected = true
       state.value.isReconnecting = false
       state.value.reconnectAttempts = 0
       state.value.lastError = null
-      
+
       // console.log('[Socket] Connected successfully')
-      
+
       // Начинаем слушать события
       unsubscribe = subscription.listen((data: any) => {
         state.value.lastMessageAt = new Date()
         socketData.value = data
       })
-      
+
       // Запускаем heartbeat
       startHeartbeat()
-      
     } catch (error: any) {
       console.error('[Socket] Connection error:', error)
       state.value.isConnected = false
@@ -68,17 +67,17 @@ export function useChatSocket(userSocketId: string | null | undefined) {
   // Отключение
   function disconnect() {
     // console.log('[Socket] Disconnecting...')
-    
+
     if (heartbeatTimer) {
       clearInterval(heartbeatTimer)
       heartbeatTimer = null
     }
-    
+
     if (reconnectTimer) {
       clearTimeout(reconnectTimer)
       reconnectTimer = null
     }
-    
+
     if (unsubscribe) {
       try {
         unsubscribe()
@@ -87,7 +86,7 @@ export function useChatSocket(userSocketId: string | null | undefined) {
       }
       unsubscribe = null
     }
-    
+
     subscription = null
     state.value.isConnected = false
   }
@@ -100,13 +99,13 @@ export function useChatSocket(userSocketId: string | null | undefined) {
       state.value.lastError = 'Превышено количество попыток переподключения'
       return
     }
-    
+
     state.value.isReconnecting = true
     state.value.reconnectAttempts++
-    
+
     const delay = Math.min(RECONNECT_DELAY * state.value.reconnectAttempts, 30000)
     // console.log(`[Socket] Reconnecting in ${delay}ms (attempt ${state.value.reconnectAttempts})`)
-    
+
     reconnectTimer = setTimeout(() => {
       if (!isDestroyed) {
         connect()
@@ -119,14 +118,14 @@ export function useChatSocket(userSocketId: string | null | undefined) {
     if (heartbeatTimer) {
       clearInterval(heartbeatTimer)
     }
-    
+
     heartbeatTimer = setInterval(() => {
       if (!state.value.isConnected || isDestroyed) return
-      
+
       // Проверяем, когда последний раз получали сообщение
       const now = new Date()
       const lastMessage = state.value.lastMessageAt
-      
+
       // Если давно не было сообщений — проверяем соединение
       if (lastMessage && now.getTime() - lastMessage.getTime() > HEARTBEAT_INTERVAL * 2) {
         // console.log('[Socket] No messages for a while, checking connection...')
@@ -140,16 +139,16 @@ export function useChatSocket(userSocketId: string | null | undefined) {
   // Обработка изменения видимости страницы
   function handleVisibilityChange() {
     if (isDestroyed) return
-    
+
     if (document.visibilityState === 'visible') {
       // console.log('[Socket] Page became visible, checking connection...')
-      
+
       // Если не подключены или давно не было сообщений — переподключаемся
       const now = new Date()
       const lastMessage = state.value.lastMessageAt
-      const needsReconnect = !state.value.isConnected || 
-        (lastMessage && now.getTime() - lastMessage.getTime() > 60000) // > 1 минуты
-      
+      const needsReconnect =
+        !state.value.isConnected || (lastMessage && now.getTime() - lastMessage.getTime() > 60000) // > 1 минуты
+
       if (needsReconnect) {
         // console.log('[Socket] Reconnecting after visibility change')
         disconnect()
@@ -178,10 +177,10 @@ export function useChatSocket(userSocketId: string | null | undefined) {
 
   onMounted(() => {
     // console.log('[Socket] Component mounted, initializing...')
-    
+
     // Начинаем подключение
     connect()
-    
+
     // Слушаем события видимости и сети
     document.addEventListener('visibilitychange', handleVisibilityChange)
     window.addEventListener('online', handleOnline)
@@ -191,11 +190,11 @@ export function useChatSocket(userSocketId: string | null | undefined) {
   onUnmounted(() => {
     // console.log('[Socket] Component unmounting, cleaning up...')
     isDestroyed = true
-    
+
     document.removeEventListener('visibilitychange', handleVisibilityChange)
     window.removeEventListener('online', handleOnline)
     window.removeEventListener('offline', handleOffline)
-    
+
     disconnect()
   })
 
@@ -213,6 +212,6 @@ export function useChatSocket(userSocketId: string | null | undefined) {
     isReconnecting: computed(() => state.value.isReconnecting),
     reconnectAttempts: computed(() => state.value.reconnectAttempts),
     lastError: computed(() => state.value.lastError),
-    reconnect,
+    reconnect
   }
 }

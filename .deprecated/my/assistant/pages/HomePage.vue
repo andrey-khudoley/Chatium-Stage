@@ -36,7 +36,7 @@ const props = withDefaults(
     encodedFocusToolsSocketId: string
     timezoneOffsetHours?: number
   }>(),
-  { timezoneOffsetHours: DEFAULT_USER_TIMEZONE_OFFSET_HOURS },
+  { timezoneOffsetHours: DEFAULT_USER_TIMEZONE_OFFSET_HOURS }
 )
 
 const displayedTitle = ref('')
@@ -47,11 +47,14 @@ const cursorPosition = ref<'title' | 'description' | 'final'>('title')
 const showTitleUnderline = ref(false)
 const isGlitching = ref(false)
 
-const intervalIds = { title: null as ReturnType<typeof setInterval> | null, desc: null as ReturnType<typeof setInterval> | null }
+const intervalIds = {
+  title: null as ReturnType<typeof setInterval> | null,
+  desc: null as ReturnType<typeof setInterval> | null
+}
 
 const onAppLayoutAnimationEnd = (e: AnimationEvent) => {
   if (e.animationName === 'crt-power-on') {
-    (e.target as HTMLElement).classList.add('app-layout-appeared')
+    ;(e.target as HTMLElement).classList.add('app-layout-appeared')
     log.debug('App layout animation completed')
   }
 }
@@ -167,14 +170,26 @@ const openChatiumLink = () => {
     <main class="content-wrapper flex-1 relative z-10 min-h-0 overflow-y-auto">
       <div class="content-inner">
         <section class="hero-section" :class="{ 'hero-ready': bootLoaderDone }">
-          <div class="hero-icon-wrapper" :class="{ 'hero-icon-visible': bootLoaderDone }" @click="triggerGlitch">
+          <div
+            class="hero-icon-wrapper"
+            :class="{ 'hero-icon-visible': bootLoaderDone }"
+            @click="triggerGlitch"
+          >
             <i class="fas fa-tasks hero-icon"></i>
           </div>
           <h1 class="hero-heading" :class="{ 'show-underline': showTitleUnderline }">
-            {{ displayedTitle }}<span v-if="showCursor && (cursorPosition === 'title' || cursorPosition === 'final')" class="typing-cursor">▮</span>
+            {{ displayedTitle
+            }}<span
+              v-if="showCursor && (cursorPosition === 'title' || cursorPosition === 'final')"
+              class="typing-cursor"
+              >▮</span
+            >
           </h1>
           <p class="hero-description">
-            {{ displayedDescription }}<span v-if="showCursor && cursorPosition === 'description'" class="typing-cursor">▮</span>
+            {{ displayedDescription
+            }}<span v-if="showCursor && cursorPosition === 'description'" class="typing-cursor"
+              >▮</span
+            >
           </p>
         </section>
 
@@ -334,10 +349,18 @@ body {
   cursor: pointer;
   overflow: hidden;
   clip-path: polygon(
-    0 4px, 4px 4px, 4px 0,
-    calc(100% - 4px) 0, calc(100% - 4px) 4px, 100% 4px,
-    100% calc(100% - 4px), calc(100% - 4px) calc(100% - 4px), calc(100% - 4px) 100%,
-    4px 100%, 4px calc(100% - 4px), 0 calc(100% - 4px)
+    0 4px,
+    4px 4px,
+    4px 0,
+    calc(100% - 4px) 0,
+    calc(100% - 4px) 4px,
+    100% 4px,
+    100% calc(100% - 4px),
+    calc(100% - 4px) calc(100% - 4px),
+    calc(100% - 4px) 100%,
+    4px 100%,
+    4px calc(100% - 4px),
+    0 calc(100% - 4px)
   );
 }
 
@@ -361,8 +384,13 @@ body {
 }
 
 @keyframes scanline-flicker {
-  0%, 100% { opacity: 0.7; }
-  50% { opacity: 0.5; }
+  0%,
+  100% {
+    opacity: 0.7;
+  }
+  50% {
+    opacity: 0.5;
+  }
 }
 
 @media (min-width: 769px) {
@@ -379,7 +407,8 @@ body {
 }
 
 @keyframes glitch-icon {
-  0%, 100% {
+  0%,
+  100% {
     transform: scale(1) translate(0);
     filter: none;
     box-shadow:
@@ -484,8 +513,14 @@ body {
 }
 
 @keyframes terminal-cursor-blink {
-  0%, 50% { opacity: 1; }
-  51%, 100% { opacity: 0; }
+  0%,
+  50% {
+    opacity: 1;
+  }
+  51%,
+  100% {
+    opacity: 0;
+  }
 }
 
 .hero-description {
@@ -526,10 +561,18 @@ body {
   cursor: pointer;
   text-align: center;
   clip-path: polygon(
-    0 4px, 4px 4px, 4px 0,
-    calc(100% - 4px) 0, calc(100% - 4px) 4px, 100% 4px,
-    100% calc(100% - 4px), calc(100% - 4px) calc(100% - 4px), calc(100% - 4px) 100%,
-    4px 100%, 4px calc(100% - 4px), 0 calc(100% - 4px)
+    0 4px,
+    4px 4px,
+    4px 0,
+    calc(100% - 4px) 0,
+    calc(100% - 4px) 4px,
+    100% 4px,
+    100% calc(100% - 4px),
+    calc(100% - 4px) calc(100% - 4px),
+    calc(100% - 4px) 100%,
+    4px 100%,
+    4px calc(100% - 4px),
+    0 calc(100% - 4px)
   );
   transition: var(--transition);
 }
@@ -552,18 +595,39 @@ body {
 }
 
 @media (min-width: 1201px) {
-  .content-wrapper { padding: 1rem 0; }
-  .content-inner { gap: 1.5rem; }
-  .hero-section { gap: 0.75rem; padding: 0.5rem 0; }
-  .hero-description { margin-bottom: 0.25rem; }
+  .content-wrapper {
+    padding: 1rem 0;
+  }
+  .content-inner {
+    gap: 1.5rem;
+  }
+  .hero-section {
+    gap: 0.75rem;
+    padding: 0.5rem 0;
+  }
+  .hero-description {
+    margin-bottom: 0.25rem;
+  }
 }
 
 @media (max-width: 768px) {
-  .content-inner { padding: 0 1rem; gap: 3rem; }
-  .content-wrapper { padding: 2rem 0; }
-  .hero-section { gap: 1.25rem; padding: 1rem 0; }
-  .hero-heading { font-size: 2rem; }
-  .hero-description { font-size: 0.9375rem; }
+  .content-inner {
+    padding: 0 1rem;
+    gap: 3rem;
+  }
+  .content-wrapper {
+    padding: 2rem 0;
+  }
+  .hero-section {
+    gap: 1.25rem;
+    padding: 1rem 0;
+  }
+  .hero-heading {
+    font-size: 2rem;
+  }
+  .hero-description {
+    font-size: 0.9375rem;
+  }
   .home-cards-section {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     max-width: 32rem;
@@ -571,13 +635,32 @@ body {
 }
 
 @media (max-width: 480px) {
-  .content-inner { padding: 0 0.75rem; gap: 2.5rem; }
-  .content-wrapper { padding: 1.5rem 0; }
-  .hero-section { gap: 1rem; }
-  .hero-heading { font-size: 1.75rem; letter-spacing: 0.08em; min-height: 2.5rem; }
-  .hero-description { font-size: 1rem; line-height: 1.5; }
-  .hero-icon-wrapper { width: 4.25rem; height: 4.25rem; }
-  .hero-icon { font-size: 1.65rem; }
+  .content-inner {
+    padding: 0 0.75rem;
+    gap: 2.5rem;
+  }
+  .content-wrapper {
+    padding: 1.5rem 0;
+  }
+  .hero-section {
+    gap: 1rem;
+  }
+  .hero-heading {
+    font-size: 1.75rem;
+    letter-spacing: 0.08em;
+    min-height: 2.5rem;
+  }
+  .hero-description {
+    font-size: 1rem;
+    line-height: 1.5;
+  }
+  .hero-icon-wrapper {
+    width: 4.25rem;
+    height: 4.25rem;
+  }
+  .hero-icon {
+    font-size: 1.65rem;
+  }
   .home-card {
     min-height: 3.5rem;
     padding: 1.25rem 0.85rem;

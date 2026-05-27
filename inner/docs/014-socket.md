@@ -1,4 +1,5 @@
 @chatium
+
 # WebSocket для real-time обновлений в Chatium
 
 Исчерпывающее руководство по использованию WebSocket для обновлений в реальном времени в Chatium. Документ структурирован для удобства полнотекстового поиска и работы с эмбеддингами.
@@ -121,10 +122,10 @@ await sendDataToSocket(ctx, socketId, {
 export const processDataRoute = app.post('/process', async (ctx, req) => {
   const { threadId } = req.body
   const socketId = `thread-${threadId}`
-  
+
   // Запускаем обработку
   processDataJob.scheduleJobAsap(ctx, { threadId, socketId })
-  
+
   return {
     success: true,
     message: 'Обработка начата'
@@ -133,11 +134,11 @@ export const processDataRoute = app.post('/process', async (ctx, req) => {
 
 const processDataJob = app.job('/process-data', async (ctx, params) => {
   const { threadId, socketId } = params
-  
+
   for (let i = 0; i < 10; i++) {
     // Долгая обработка
     await processChunk(ctx, threadId, i)
-    
+
     // Отправляем прогресс
     await sendDataToSocket(ctx, socketId, {
       type: 'progress',
@@ -147,7 +148,7 @@ const processDataJob = app.job('/process-data', async (ctx, params) => {
       }
     })
   }
-  
+
   // Финальное уведомление
   await sendDataToSocket(ctx, socketId, {
     type: 'completed',
@@ -176,11 +177,11 @@ export default app.html('/thread/:id', async (ctx, req) => {
   const threadId = req.params.id
   const socketId = `thread-${threadId}`
   const encodedSocketId = await genSocketId(ctx, socketId)
-  
+
   return (
     <html>
       <body>
-        <VuePage 
+        <VuePage
           threadId={threadId}
           encodedSocketId={encodedSocketId}
         />
@@ -196,14 +197,12 @@ export default app.html('/thread/:id', async (ctx, req) => {
 <template>
   <div>
     <h1>Thread {{ props.threadId }}</h1>
-    
+
     <div v-for="message in messages" :key="message.timestamp">
       {{ message.message }}
     </div>
-    
-    <div v-if="progress > 0">
-      Прогресс: {{ progress }}%
-    </div>
+
+    <div v-if="progress > 0">Прогресс: {{ progress }}%</div>
   </div>
 </template>
 
@@ -222,14 +221,14 @@ const progress = ref(0)
 onMounted(async () => {
   // Получаем socket клиент
   const socketClient = await getOrCreateBrowserSocketClient()
-  
+
   // Подписываемся на обновления (используем ЗАКОДИРОВАННЫЙ ID!)
   const subscription = socketClient.subscribeToData(props.encodedSocketId)
-  
+
   // Слушаем данные
   subscription.listen(data => {
     console.log('Socket data received', data)
-    
+
     if (data.type === 'progress') {
       progress.value = data.data.progress
       messages.value.push(data.data)
@@ -257,22 +256,22 @@ import { genSocketId } from '@app/socket'
 export const apiGetSocketIdRoute = app.get('/socket-id', async (ctx, req) => {
   try {
     const { chainKey, agentId } = req.query
-    
+
     if (!chainKey || !agentId) {
       return {
         success: false,
         error: 'chainKey и agentId обязательны'
       }
     }
-    
+
     const socketId = `chat-${ctx.user.id}-${chainKey}-${agentId}`
     const encodedSocketId = await genSocketId(ctx, socketId)
-    
+
     ctx.account.log('🔌 Generated socket ID for client', {
       level: 'info',
       json: { userId: ctx.user.id, chainKey, agentId, socketId }
     })
-    
+
     return {
       success: true,
       encodedSocketId
@@ -305,27 +304,29 @@ onMounted(async () => {
 
 async function subscribeToSocket() {
   if (!selectedAgentId.value || !currentChainKey.value) return
-  
+
   try {
     // ✅ ПРАВИЛЬНО: для GET запросов используем .query()
-    const result = await apiGetSocketIdRoute.query({
-      chainKey: currentChainKey.value,
-      agentId: selectedAgentId.value
-    }).run(ctx)
-    
+    const result = await apiGetSocketIdRoute
+      .query({
+        chainKey: currentChainKey.value,
+        agentId: selectedAgentId.value
+      })
+      .run(ctx)
+
     if (!result.success) {
       console.error('Failed to get socket ID:', result.error)
       return
     }
-    
+
     console.log('Got encodedSocketId:', result.encodedSocketId)
-    
+
     // Создаём подписку
     const socketClient = await getOrCreateBrowserSocketClient()
     socketSubscription.value = socketClient.subscribeToData(result.encodedSocketId)
-    
+
     // Слушаем обновления
-    socketSubscription.value.listen(data => {
+    socketSubscription.value.listen((data) => {
       if (data.type === 'assistant-message') {
         messages.value.push({
           role: 'assistant',
@@ -354,6 +355,7 @@ const result = await apiGetSocketIdRoute.run(ctx, {
 ```
 
 **Правило**:
+
 - ✅ **POST/PUT**: `.run(ctx, { params })` - параметры в body
 - ✅ **GET**: `.query({ params }).run(ctx)` - параметры в query string
 - ❌ **GET**: `.run(ctx, { params })` - НЕ РАБОТАЕТ!
@@ -378,14 +380,14 @@ const status = ref('idle')
 onMounted(async () => {
   const socketClient = await getOrCreateBrowserSocketClient()
   const subscription = socketClient.subscribeToData(props.encodedSocketId)
-  
+
   subscription.listen(data => {
     switch (data.type) {
       case 'progress':
         progress.value = data.data.progress
         status.value = 'processing'
         break
-        
+
       case 'completed':
         status.value = 'completed'
         notifications.value.push({
@@ -393,7 +395,7 @@ onMounted(async () => {
           message: data.data.message
         })
         break
-        
+
       case 'error':
         status.value = 'error'
         notifications.value.push({
@@ -401,14 +403,14 @@ onMounted(async () => {
           message: data.data.error
         })
         break
-        
+
       case 'notification':
         notifications.value.push({
           type: 'info',
           message: data.data.message
         })
         break
-        
+
       default:
         ctx.account.log('Unknown socket message', { json: data })
     }
@@ -439,7 +441,7 @@ export async function sendNotification(
   }
 ) {
   const socketId = `user-${userId}-notifications`
-  
+
   await sendDataToSocket(ctx, socketId, {
     type: 'notification',
     data: {
@@ -452,14 +454,14 @@ export async function sendNotification(
 // Использование
 export const createOrderRoute = app.post('/order/create', async (ctx, req) => {
   const order = await Orders.create(ctx, req.body)
-  
+
   // Отправляем уведомление
   await sendNotification(ctx, ctx.user.id, {
     title: 'Заказ создан',
     message: `Заказ #${order.id} успешно создан`,
     type: 'success'
   })
-  
+
   return { success: true, order }
 })
 ```
@@ -469,8 +471,8 @@ export const createOrderRoute = app.post('/order/create', async (ctx, req) => {
 ```vue
 <template>
   <div class="notifications">
-    <div 
-      v-for="notif in notifications" 
+    <div
+      v-for="notif in notifications"
       :key="notif.timestamp"
       :class="['notification', notif.type]"
     >
@@ -491,19 +493,17 @@ onMounted(async () => {
   // Генерируем socketId для текущего пользователя
   const socketId = `user-${ctx.user.id}-notifications`
   const encodedSocketId = await genSocketId(ctx, socketId)
-  
+
   const socketClient = await getOrCreateBrowserSocketClient()
   const subscription = socketClient.subscribeToData(encodedSocketId)
-  
-  subscription.listen(data => {
+
+  subscription.listen((data) => {
     if (data.type === 'notification') {
       notifications.value.unshift(data.data)
-      
+
       // Удаляем через 5 секунд
       setTimeout(() => {
-        const index = notifications.value.findIndex(n => 
-          n.timestamp === data.data.timestamp
-        )
+        const index = notifications.value.findIndex((n) => n.timestamp === data.data.timestamp)
         if (index !== -1) {
           notifications.value.splice(index, 1)
         }
@@ -554,7 +554,7 @@ import { sendDataToSocket } from '@app/socket'
 
 const processFileJob = app.job('/process-file', async (ctx, params) => {
   const { fileHash, socketId } = params
-  
+
   try {
     const steps = [
       { name: 'Загрузка', duration: 1000 },
@@ -562,11 +562,11 @@ const processFileJob = app.job('/process-file', async (ctx, params) => {
       { name: 'Обработка', duration: 2000 },
       { name: 'Сохранение', duration: 500 }
     ]
-    
+
     for (let i = 0; i < steps.length; i++) {
       const step = steps[i]
       const progress = ((i + 1) / steps.length) * 100
-      
+
       await sendDataToSocket(ctx, socketId, {
         type: 'progress',
         data: {
@@ -575,11 +575,11 @@ const processFileJob = app.job('/process-file', async (ctx, params) => {
           message: `${step.name}...`
         }
       })
-      
+
       // Имитация обработки
-      await new Promise(resolve => setTimeout(resolve, step.duration))
+      await new Promise((resolve) => setTimeout(resolve, step.duration))
     }
-    
+
     await sendDataToSocket(ctx, socketId, {
       type: 'completed',
       data: {
@@ -600,12 +600,12 @@ const processFileJob = app.job('/process-file', async (ctx, params) => {
 export const uploadFileRoute = app.post('/file/upload', async (ctx, req) => {
   const { fileHash } = req.body
   const socketId = `file-${fileHash}`
-  
+
   processFileJob.scheduleJobAsap(ctx, { fileHash, socketId })
-  
+
   // Возвращаем encodedSocketId
   const encodedSocketId = await genSocketId(ctx, socketId)
-  
+
   return {
     success: true,
     encodedSocketId
@@ -620,18 +620,15 @@ export const uploadFileRoute = app.post('/file/upload', async (ctx, req) => {
   <div class="upload-progress">
     <div v-if="status === 'uploading'">
       <div class="progress-bar">
-        <div 
-          class="progress-fill" 
-          :style="{ width: `${progress}%` }"
-        />
+        <div class="progress-fill" :style="{ width: `${progress}%` }" />
       </div>
       <p>{{ currentStep }} - {{ progress }}%</p>
     </div>
-    
+
     <div v-else-if="status === 'completed'">
       <p class="success">✓ Загрузка завершена!</p>
     </div>
-    
+
     <div v-else-if="status === 'error'">
       <p class="error">✗ Ошибка: {{ errorMessage }}</p>
     </div>
@@ -650,20 +647,20 @@ const errorMessage = ref('')
 
 async function uploadFile(fileHash: string) {
   status.value = 'uploading'
-  
+
   // Запускаем обработку на сервере
   const result = await apiUploadFileRoute.run(ctx, { fileHash })
-  
+
   if (!result.success) {
     status.value = 'error'
     errorMessage.value = 'Ошибка запуска обработки'
     return
   }
-  
+
   // Подписываемся на обновления
   const socketClient = await getOrCreateBrowserSocketClient()
   const subscription = socketClient.subscribeToData(result.encodedSocketId)
-  
+
   subscription.listen(data => {
     if (data.type === 'progress') {
       progress.value = data.data.progress
@@ -718,7 +715,7 @@ import { sendDataToSocket } from '@app/socket'
 
 export const sendChatMessageRoute = app.post('/chat/send', async (ctx, req) => {
   const { chatId, message } = req.body
-  
+
   // Сохраняем сообщение
   const chatMessage = await ChatMessages.create(ctx, {
     chatId,
@@ -726,10 +723,10 @@ export const sendChatMessageRoute = app.post('/chat/send', async (ctx, req) => {
     message,
     timestamp: new Date()
   })
-  
+
   // Отправляем через WebSocket всем участникам
   const socketId = `chat-${chatId}`
-  
+
   await sendDataToSocket(ctx, socketId, {
     type: 'new-message',
     data: {
@@ -740,7 +737,7 @@ export const sendChatMessageRoute = app.post('/chat/send', async (ctx, req) => {
       timestamp: chatMessage.timestamp
     }
   })
-  
+
   return { success: true, message: chatMessage }
 })
 ```
@@ -751,8 +748,8 @@ export const sendChatMessageRoute = app.post('/chat/send', async (ctx, req) => {
 <template>
   <div class="chat">
     <div class="messages" ref="messagesContainer">
-      <div 
-        v-for="msg in messages" 
+      <div
+        v-for="msg in messages"
         :key="msg.id"
         :class="['message', { own: msg.userId === ctx.user.id }]"
       >
@@ -761,13 +758,9 @@ export const sendChatMessageRoute = app.post('/chat/send', async (ctx, req) => {
         <span class="time">{{ formatTime(msg.timestamp) }}</span>
       </div>
     </div>
-    
+
     <div class="input-area">
-      <input 
-        v-model="newMessage"
-        @keyup.enter="sendMessage"
-        placeholder="Введите сообщение..."
-      />
+      <input v-model="newMessage" @keyup.enter="sendMessage" placeholder="Введите сообщение..." />
       <button @click="sendMessage">Отправить</button>
     </div>
   </div>
@@ -791,11 +784,11 @@ onMounted(async () => {
   // Подписываемся на новые сообщения
   const socketClient = await getOrCreateBrowserSocketClient()
   const subscription = socketClient.subscribeToData(props.encodedSocketId)
-  
+
   subscription.listen(data => {
     if (data.type === 'new-message') {
       messages.value.push(data.data)
-      
+
       // Прокручиваем к последнему сообщению
       nextTick(() => {
         if (messagesContainer.value) {
@@ -808,12 +801,12 @@ onMounted(async () => {
 
 async function sendMessage() {
   if (!newMessage.value.trim()) return
-  
+
   await apiSendChatMessageRoute.run(ctx, {
     chatId: props.chatId,
     message: newMessage.value
   })
-  
+
   newMessage.value = ''
 }
 
@@ -868,6 +861,7 @@ function formatTime(timestamp: string) {
 ### Выбор socketId
 
 ✅ **Используйте стабильные ID**:
+
 ```typescript
 // Хорошо
 const socketId = `order-${orderId}`
@@ -882,6 +876,7 @@ const socketId = Date.now().toString()
 ### Обработка ошибок
 
 ✅ **Всегда оборачивайте в try/catch**:
+
 ```typescript
 try {
   await sendDataToSocket(ctx, socketId, data)
@@ -896,11 +891,12 @@ try {
 ### Типизация данных
 
 ✅ **Типизируйте socket сообщения**:
+
 ```typescript
-type SocketMessage = 
-  | { type: 'progress', data: { progress: number, message: string } }
-  | { type: 'completed', data: { message: string } }
-  | { type: 'error', data: { error: string } }
+type SocketMessage =
+  | { type: 'progress'; data: { progress: number; message: string } }
+  | { type: 'completed'; data: { message: string } }
+  | { type: 'error'; data: { error: string } }
 
 subscription.listen((data: SocketMessage) => {
   // TypeScript проверит типы
@@ -910,6 +906,7 @@ subscription.listen((data: SocketMessage) => {
 ### Очистка подписок
 
 ✅ **Отписывайтесь при размонтировании**:
+
 ```vue
 <script setup>
 import { onMounted, onBeforeUnmount } from 'vue'
@@ -919,8 +916,8 @@ let subscription = null
 onMounted(async () => {
   const socketClient = await getOrCreateBrowserSocketClient()
   subscription = socketClient.subscribeToData(props.encodedSocketId)
-  
-  subscription.listen(data => {
+
+  subscription.listen((data) => {
     // Обработка
   })
 })
@@ -936,6 +933,7 @@ onBeforeUnmount(() => {
 ### Ограничения
 
 ⚠️ **Не используйте для больших объёмов**:
+
 - WebSocket в Chatium не предназначен для видео
 - Для видео-стриминга используйте WebRTC
 - Ограничьте размер сообщений
@@ -954,4 +952,3 @@ onBeforeUnmount(() => {
 **Версия**: 1.1  
 **Дата**: 2025-11-03  
 **Последнее обновление**: 2025-11-05 (Добавлен раздел о получении encodedSocketId через API с критически важным замечанием про использование .query() для GET запросов)
-

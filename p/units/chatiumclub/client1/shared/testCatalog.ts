@@ -131,8 +131,14 @@ export const INTEGRATION_SERVER_TEST_BLOCKS: TestCatalogBlock[] = [
       { id: 'settings_setSetting_webhook', title: 'setSetting LOG_WEBHOOK' },
       { id: 'settings_setSetting_dashboard_reset', title: 'setSetting DASHBOARD_RESET_AT' },
       { id: 'settings_setSetting_unknown_key', title: 'setSetting неизвестный ключ' },
-      { id: 'regression_getLogLevel_no_recursion', title: 'регрессия: getLogLevel без stack overflow' },
-      { id: 'regression_getSetting_no_recursion', title: 'регрессия: getSetting без stack overflow' }
+      {
+        id: 'regression_getLogLevel_no_recursion',
+        title: 'регрессия: getLogLevel без stack overflow'
+      },
+      {
+        id: 'regression_getSetting_no_recursion',
+        title: 'регрессия: getSetting без stack overflow'
+      }
     ]
   },
   {

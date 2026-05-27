@@ -10,10 +10,10 @@ import { ScenarioEventType } from '../shared/enum'
 // API: Debug seek — shift startedAt for scheduled mode
 // @shared-route
 export const apiDebugSeekRoute = reporterApp
-  .body(s => ({
+  .body((s) => ({
     autowebinarId: s.string(),
     shiftSeconds: s.number(),
-    scheduleId: s.string().optional(),
+    scheduleId: s.string().optional()
   }))
   .post('/seek', async (ctx, req) => {
     requireAccountRole(ctx, 'Staff')
@@ -29,7 +29,7 @@ export const apiDebugSeekRoute = reporterApp
     // Find stream_start offset for normalization
     const streamStartEvent = await ScenarioEvents.findOneBy(ctx, {
       autowebinar: req.body.autowebinarId,
-      eventType: ScenarioEventType.StreamStart,
+      eventType: ScenarioEventType.StreamStart
     })
     const streamStartOffset = streamStartEvent?.offsetSeconds || 0
 
@@ -41,7 +41,7 @@ export const apiDebugSeekRoute = reporterApp
       const newStartedAt = new Date(schedule.startedAt.getTime() - req.body.shiftSeconds * 1000)
       await AutowebinarSchedules.update(ctx, {
         id: req.body.scheduleId,
-        startedAt: newStartedAt,
+        startedAt: newStartedAt
       })
 
       newOffset = Math.max(0, Math.round((Date.now() - newStartedAt.getTime()) / 1000))
@@ -55,32 +55,32 @@ export const apiDebugSeekRoute = reporterApp
         autowebinar: req.body.autowebinarId,
         offsetSeconds: {
           $gte: Math.max(0, newOffset + streamStartOffset - 120),
-          $lte: newOffset + streamStartOffset + 300,
-        },
+          $lte: newOffset + streamStartOffset + 300
+        }
       },
       order: [{ offsetSeconds: 'asc' }],
-      limit: 50,
+      limit: 50
     })
 
     return {
       newOffset,
-      nearbyEvents: events.map(e => ({
+      nearbyEvents: events.map((e) => ({
         id: e.id,
         offsetSeconds: Math.max(0, e.offsetSeconds - streamStartOffset),
         eventType: e.eventType,
         formId: e.formId?.id,
         chatMessage: e.chatMessage,
-        reactionData: e.reactionData,
-      })),
+        reactionData: e.reactionData
+      }))
     }
   })
 
 // API: Debug pause/resume
 // @shared-route
 export const apiDebugPauseRoute = reporterApp
-  .body(s => ({
+  .body((s) => ({
     autowebinarId: s.string(),
-    paused: s.boolean(),
+    paused: s.boolean()
   }))
   .post('/pause', async (ctx, req) => {
     requireAccountRole(ctx, 'Staff')
@@ -95,8 +95,8 @@ export const apiDebugPauseRoute = reporterApp
 // API: Debug status — for scheduled mode
 // @shared-route
 export const apiDebugStatusRoute = reporterApp
-  .query(s => ({
-    scheduleId: s.string().optional(),
+  .query((s) => ({
+    scheduleId: s.string().optional()
   }))
   .get('/status/:autowebinarId', async (ctx, req) => {
     requireAccountRole(ctx, 'Staff')
@@ -111,7 +111,7 @@ export const apiDebugStatusRoute = reporterApp
     // Find stream_start offset for normalization
     const streamStartEvent = await ScenarioEvents.findOneBy(ctx, {
       autowebinar: req.params.autowebinarId as string,
-      eventType: ScenarioEventType.StreamStart,
+      eventType: ScenarioEventType.StreamStart
     })
     const streamStartOffset = streamStartEvent?.offsetSeconds || 0
 
@@ -132,11 +132,11 @@ export const apiDebugStatusRoute = reporterApp
         autowebinar: req.params.autowebinarId as string,
         offsetSeconds: {
           $gte: Math.max(0, currentOffset + streamStartOffset - 120),
-          $lte: currentOffset + streamStartOffset + 300,
-        },
+          $lte: currentOffset + streamStartOffset + 300
+        }
       },
       order: [{ offsetSeconds: 'asc' }],
-      limit: 50,
+      limit: 50
     })
 
     return {
@@ -144,12 +144,12 @@ export const apiDebugStatusRoute = reporterApp
       currentOffset,
       duration: aw.duration,
       status,
-      nearbyEvents: events.map(e => ({
+      nearbyEvents: events.map((e) => ({
         id: e.id,
         offsetSeconds: Math.max(0, e.offsetSeconds - streamStartOffset),
         eventType: e.eventType,
         chatMessage: e.chatMessage,
-        reactionData: e.reactionData,
-      })),
+        reactionData: e.reactionData
+      }))
     }
   })

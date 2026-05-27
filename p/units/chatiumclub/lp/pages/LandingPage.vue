@@ -92,8 +92,8 @@ const onSubmit = async (e: Event) => {
         </div>
         <h1 class="lp-title">{{ props.pageTitle }}</h1>
         <p class="lp-subtitle">
-          Тонкий клиент над <b>Chatium</b> и <b>GetCourse</b> — берите готовый SDK,
-          подключайте свой workspace и стройте интеграции без серверной рутины.
+          Тонкий клиент над <b>Chatium</b> и <b>GetCourse</b> — берите готовый SDK, подключайте свой
+          workspace и стройте интеграции без серверной рутины.
         </p>
 
         <ul class="lp-features">
@@ -101,7 +101,9 @@ const onSubmit = async (e: Event) => {
             <span class="lp-feat-icon">⚡</span>
             <div>
               <div class="lp-feat-title">Готовый каркас приложения</div>
-              <div class="lp-feat-text">Heap-таблицы, роуты, авторизация и логирование «из коробки».</div>
+              <div class="lp-feat-text">
+                Heap-таблицы, роуты, авторизация и логирование «из коробки».
+              </div>
             </div>
           </li>
           <li>
@@ -156,7 +158,9 @@ const onSubmit = async (e: Event) => {
                 :class="{ 'lp-input-error': fieldErrors.telegramUsername }"
                 :disabled="isSubmitting"
               />
-              <span v-if="fieldErrors.telegramUsername" class="lp-error">{{ fieldErrors.telegramUsername }}</span>
+              <span v-if="fieldErrors.telegramUsername" class="lp-error">{{
+                fieldErrors.telegramUsername
+              }}</span>
             </label>
 
             <label class="lp-field">
@@ -169,7 +173,9 @@ const onSubmit = async (e: Event) => {
                 :class="{ 'lp-input-error': fieldErrors.integrationNotes }"
                 :disabled="isSubmitting"
               ></textarea>
-              <span v-if="fieldErrors.integrationNotes" class="lp-error">{{ fieldErrors.integrationNotes }}</span>
+              <span v-if="fieldErrors.integrationNotes" class="lp-error">{{
+                fieldErrors.integrationNotes
+              }}</span>
             </label>
 
             <button type="submit" class="lp-button" :disabled="!canSubmit">
@@ -179,7 +185,8 @@ const onSubmit = async (e: Event) => {
 
             <p v-if="errorMessage" class="lp-form-error">{{ errorMessage }}</p>
             <p class="lp-form-note">
-              Нажимая кнопку, вы соглашаетесь, что мы&nbsp;свяжемся с&nbsp;вами по&nbsp;указанным контактам.
+              Нажимая кнопку, вы соглашаетесь, что мы&nbsp;свяжемся с&nbsp;вами по&nbsp;указанным
+              контактам.
             </p>
           </div>
 
@@ -187,7 +194,8 @@ const onSubmit = async (e: Event) => {
             <div class="lp-success-icon">✓</div>
             <h3 class="lp-success-title">Заявка отправлена</h3>
             <p class="lp-success-text">
-              Спасибо! Мы получили заявку и свяжемся с&nbsp;вами в&nbsp;Telegram в&nbsp;ближайшее время.
+              Спасибо! Мы получили заявку и свяжемся с&nbsp;вами в&nbsp;Telegram в&nbsp;ближайшее
+              время.
             </p>
             <button type="button" class="lp-button lp-button-secondary" @click="resetForm">
               Отправить ещё одну заявку
@@ -231,7 +239,13 @@ body {
   padding: 0;
   background: var(--lp-bg);
   color: #e2e8f0;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family:
+    'Inter',
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    sans-serif;
   min-height: 100vh;
 }
 
@@ -247,8 +261,7 @@ body {
   position: absolute;
   inset: 0;
   z-index: 0;
-  background:
-    radial-gradient(80% 60% at 15% 10%, rgba(99, 102, 241, 0.35) 0%, transparent 60%),
+  background: radial-gradient(80% 60% at 15% 10%, rgba(99, 102, 241, 0.35) 0%, transparent 60%),
     radial-gradient(60% 50% at 90% 90%, rgba(236, 72, 153, 0.25) 0%, transparent 60%),
     linear-gradient(180deg, #0b1020 0%, #0e152b 100%);
   pointer-events: none;
@@ -258,8 +271,7 @@ body {
   content: '';
   position: absolute;
   inset: 0;
-  background-image:
-    linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+  background-image: linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
     linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
   background-size: 64px 64px;
   mask-image: radial-gradient(70% 60% at 50% 40%, #000 0%, transparent 80%);
@@ -437,7 +449,10 @@ body {
   border-radius: 12px;
   padding: 0.75rem 0.9rem;
   outline: none;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    background 0.15s ease;
   width: 100%;
 }
 
@@ -494,7 +509,10 @@ body {
   border-radius: 12px;
   padding: 0.85rem 1rem;
   cursor: pointer;
-  transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease,
+    opacity 0.15s ease;
   box-shadow: 0 10px 22px rgba(79, 70, 229, 0.35);
 }
 

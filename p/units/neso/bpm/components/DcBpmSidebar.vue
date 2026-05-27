@@ -55,13 +55,15 @@ const menuItems = computed<NavItem[]>(() => {
   const count = props.scenarioCount ?? 0
   const urlMap = childIdToUrl.value
   return items.map((item) => {
-    const withParentHref = !item.children && item.id === 'home' ? { ...item, href: props.homeUrl } : item
+    const withParentHref =
+      !item.children && item.id === 'home' ? { ...item, href: props.homeUrl } : item
     if (!item.children) {
       return withParentHref
     }
     const children = item.children.map((child) => {
       const url = urlMap[child.id]
-      const withBadge = item.id === 'admin' && child.id === 'admin-design' ? { ...child, badge: count } : child
+      const withBadge =
+        item.id === 'admin' && child.id === 'admin-design' ? { ...child, badge: count } : child
       return url ? { ...withBadge, href: url } : withBadge
     })
     return { ...item, children }
@@ -83,7 +85,7 @@ function onSelect(id: string) {
           : id === 'admin-design'
             ? props.designUrl
             : id === 'client-dialogs'
-              ? props.clientsDialogsUrl ?? ''
+              ? (props.clientsDialogsUrl ?? '')
               : ''
   if (url) {
     window.location.href = url

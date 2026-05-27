@@ -29,7 +29,11 @@ export const lavaPaymentLinkRoute = app
     await loggerLib.writeServerLog(ctx, {
       severity: 7,
       message: `[${LOG_PATH}] Вход`,
-      payload: { gcOrderId, currency: req.body.currency, integrationTestDryRun: !!req.body.integrationTestDryRun }
+      payload: {
+        gcOrderId,
+        currency: req.body.currency,
+        integrationTestDryRun: !!req.body.integrationTestDryRun
+      }
     })
 
     if (!gcOrderId) {
@@ -48,7 +52,11 @@ export const lavaPaymentLinkRoute = app
         message: `[${LOG_PATH}] VALIDATION_ERROR: неподдерживаемая валюта`,
         payload: { raw: req.body.currency }
       })
-      return { success: false, errorCode: 'VALIDATION_ERROR', message: 'currency must be RUB, USD or EUR (Lava)' }
+      return {
+        success: false,
+        errorCode: 'VALIDATION_ERROR',
+        message: 'currency must be RUB, USD or EUR (Lava)'
+      }
     }
 
     // --- Запрос данных заказа из GetCourse REST API v1 ---
@@ -71,7 +79,13 @@ export const lavaPaymentLinkRoute = app
     await loggerLib.writeServerLog(ctx, {
       severity: 7,
       message: `[${LOG_PATH}] Данные заказа получены из GC`,
-      payload: { gcOrderId, amount, dealCurrency: deal.currency, title: gcOfferTitle, userId: gcUserId }
+      payload: {
+        gcOrderId,
+        amount,
+        dealCurrency: deal.currency,
+        title: gcOfferTitle,
+        userId: gcUserId
+      }
     })
 
     if (!Number.isFinite(amount) || amount <= 0) {
@@ -80,7 +94,12 @@ export const lavaPaymentLinkRoute = app
         message: `[${LOG_PATH}] VALIDATION_ERROR: некорректный amount из заказа GC`,
         payload: { gcOrderId, amount }
       })
-      return { success: false, errorCode: 'VALIDATION_ERROR', gcOrderId, message: `Сумма заказа в GetCourse некорректна: ${amount}` }
+      return {
+        success: false,
+        errorCode: 'VALIDATION_ERROR',
+        gcOrderId,
+        message: `Сумма заказа в GetCourse некорректна: ${amount}`
+      }
     }
 
     // --- Запрос данных пользователя из GetCourse REST API v1 ---
@@ -103,7 +122,12 @@ export const lavaPaymentLinkRoute = app
         message: `[${LOG_PATH}] VALIDATION_ERROR: у пользователя GC нет email`,
         payload: { gcOrderId, userId: gcUserId }
       })
-      return { success: false, errorCode: 'VALIDATION_ERROR', gcOrderId, message: 'У пользователя в GetCourse не заполнен email' }
+      return {
+        success: false,
+        errorCode: 'VALIDATION_ERROR',
+        gcOrderId,
+        message: 'У пользователя в GetCourse не заполнен email'
+      }
     }
 
     await loggerLib.writeServerLog(ctx, {

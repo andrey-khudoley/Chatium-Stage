@@ -1,4 +1,5 @@
 @chatium
+
 # Модуль @app/form-storage: Хранилище форм
 
 Краткий справочник по модулю `@app/form-storage` — ключ-значение и множества (set) для данных форм в UGC. Типизация: `node_modules/@app/form-storage/index.d.ts`.

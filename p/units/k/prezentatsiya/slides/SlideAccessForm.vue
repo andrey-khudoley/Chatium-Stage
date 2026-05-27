@@ -13,7 +13,7 @@
             v-for="(s, i) in steps"
             :key="s.title"
             class="step"
-            :style="{ animationDelay: (0.05 + i * 0.1) + 's' }"
+            :style="{ animationDelay: 0.05 + i * 0.1 + 's' }"
           >
             <span class="badge">{{ s.num }}</span>
             <div class="text">
@@ -27,7 +27,12 @@
           <div class="qr">
             <div class="qr-inner">
               <span class="qr-label">QR</span>
-              <span class="qr-pattern" v-for="n in 49" :key="n" :class="{ on: pattern[n-1] }"></span>
+              <span
+                class="qr-pattern"
+                v-for="n in 49"
+                :key="n"
+                :class="{ on: pattern[n - 1] }"
+              ></span>
             </div>
           </div>
           <div class="qr-link">форма доступа · ссылка появится в чате</div>
@@ -43,17 +48,59 @@ defineProps({ active: Boolean })
 const steps = [
   { num: '01', title: 'Оставьте контакт', caption: '' },
   { num: '02', title: 'Опишите кейс', caption: 'какую интеграцию хотите собрать' },
-  { num: '03', title: 'Получите доступ', caption: 'по мере готовности нужных вам методов' },
+  { num: '03', title: 'Получите доступ', caption: 'по мере готовности нужных вам методов' }
 ]
 
 const pattern = [
-  true, true, false, true, false, true, true,
-  true, false, true, true, true, false, true,
-  false, true, true, false, true, true, false,
-  true, true, true, false, false, true, true,
-  false, true, false, true, true, false, true,
-  true, false, true, true, false, true, true,
-  true, true, false, true, false, true, true,
+  true,
+  true,
+  false,
+  true,
+  false,
+  true,
+  true,
+  true,
+  false,
+  true,
+  true,
+  true,
+  false,
+  true,
+  false,
+  true,
+  true,
+  false,
+  true,
+  true,
+  false,
+  true,
+  true,
+  true,
+  false,
+  false,
+  true,
+  true,
+  false,
+  true,
+  false,
+  true,
+  true,
+  false,
+  true,
+  true,
+  false,
+  true,
+  true,
+  false,
+  true,
+  true,
+  true,
+  true,
+  false,
+  true,
+  false,
+  true,
+  true
 ]
 </script>
 
@@ -83,7 +130,14 @@ const pattern = [
   font-size: clamp(28px, 3.6vw, 56px);
   color: var(--text-primary);
 }
-.strip { display: block; width: 80px; height: 4px; background: var(--accent-cyan); border-radius: 2px; margin: 16px 0; }
+.strip {
+  display: block;
+  width: 80px;
+  height: 4px;
+  background: var(--accent-cyan);
+  border-radius: 2px;
+  margin: 16px 0;
+}
 .subtitle {
   font-family: var(--font-body-new);
   font-size: clamp(15px, 1.5vw, 26px);
@@ -99,7 +153,8 @@ const pattern = [
 
 .steps {
   list-style: none;
-  margin: 0; padding: 0;
+  margin: 0;
+  padding: 0;
   display: flex;
   flex-direction: column;
   gap: 28px;
@@ -113,10 +168,13 @@ const pattern = [
   opacity: 0;
   animation: fadeInUp 480ms ease-out forwards;
 }
-.step:last-child { border-bottom: none; }
+.step:last-child {
+  border-bottom: none;
+}
 .badge {
   flex-shrink: 0;
-  width: 56px; height: 56px;
+  width: 56px;
+  height: 56px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -148,7 +206,8 @@ const pattern = [
   align-items: center;
 }
 .qr {
-  width: 240px; height: 240px;
+  width: 240px;
+  height: 240px;
   background: var(--bg-surface);
   border: 1px solid var(--border-subtle);
   border-radius: 12px;
@@ -160,7 +219,8 @@ const pattern = [
   grid-template-columns: repeat(7, 1fr);
   grid-template-rows: repeat(7, 1fr);
   gap: 4px;
-  width: 100%; height: 100%;
+  width: 100%;
+  height: 100%;
 }
 .qr-label {
   position: absolute;
@@ -192,9 +252,19 @@ const pattern = [
 }
 
 @media (max-width: 1024px) {
-  .slide { padding: 32px 16px; }
-  .layout { grid-template-columns: 1fr; gap: 32px; }
-  .qr-box { order: -1; }
-  .qr { width: 180px; height: 180px; }
+  .slide {
+    padding: 32px 16px;
+  }
+  .layout {
+    grid-template-columns: 1fr;
+    gap: 32px;
+  }
+  .qr-box {
+    order: -1;
+  }
+  .qr {
+    width: 180px;
+    height: 180px;
+  }
 }
 </style>

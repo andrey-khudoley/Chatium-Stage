@@ -13,9 +13,9 @@ export const adminListRoute = app.html('/', async (ctx, req) => {
   const pluginsStatus = await apiCheckPluginsRoute.run(ctx)
 
   // Проверяем, все ли плагины установлены и настроены
-  const allPluginsReady = 
-    pluginsStatus.kinescope.installed && 
-    pluginsStatus.kinescope.configured && 
+  const allPluginsReady =
+    pluginsStatus.kinescope.installed &&
+    pluginsStatus.kinescope.configured &&
     pluginsStatus.muuvee.installed &&
     pluginsStatus.knowledge.installed
 
@@ -25,8 +25,15 @@ export const adminListRoute = app.html('/', async (ctx, req) => {
       <html lang="ru">
         <head>
           <title>Требуется установка плагинов — Вебинарная комната</title>
-          <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5, user-scalable=yes" />
-          <link rel="icon" type="image/x-icon" href="https://fs.chatium.ru/get/image_msk_Rr1014qTrN.256x239.ico" />
+          <meta
+            name="viewport"
+            content="width=device-width, initial-scale=1, maximum-scale=5, user-scalable=yes"
+          />
+          <link
+            rel="icon"
+            type="image/x-icon"
+            href="https://fs.chatium.ru/get/image_msk_Rr1014qTrN.256x239.ico"
+          />
           {headContent}
         </head>
 
@@ -45,13 +52,24 @@ export const adminListRoute = app.html('/', async (ctx, req) => {
     <html lang="ru">
       <head>
         <title>Админка — Вебинарная комната</title>
-        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5, user-scalable=yes" />
-        <link rel="icon" type="image/x-icon" href="https://fs.chatium.ru/get/image_msk_Rr1014qTrN.256x239.ico" />
+        <meta
+          name="viewport"
+          content="width=device-width, initial-scale=1, maximum-scale=5, user-scalable=yes"
+        />
+        <link
+          rel="icon"
+          type="image/x-icon"
+          href="https://fs.chatium.ru/get/image_msk_Rr1014qTrN.256x239.ico"
+        />
         {headContent}
       </head>
 
       <body class="antialiased">
-        <AdminLayout initialSection={section} episodeId={episodeId} indexUrl={indexPageRoute.url()} />
+        <AdminLayout
+          initialSection={section}
+          episodeId={episodeId}
+          indexUrl={indexPageRoute.url()}
+        />
       </body>
     </html>
   )
@@ -60,6 +78,12 @@ export const adminListRoute = app.html('/', async (ctx, req) => {
 // Экспорты для обратной совместимости (редиректы на главный маршрут)
 export const adminCreateRoute = { url: () => adminListRoute.query({ section: 'create' }).url() }
 export const adminFormsRoute = { url: () => adminListRoute.query({ section: 'forms' }).url() }
-export const adminSubmissionsRoute = { url: () => adminListRoute.query({ section: 'submissions' }).url() }
-export const adminAnalyticsRoute = { url: () => adminListRoute.query({ section: 'analytics' }).url() }
-export const adminEditRoute = (params: { id: string }) => ({ url: () => adminListRoute.query({ section: 'episodes', episode: params.id }).url() })
+export const adminSubmissionsRoute = {
+  url: () => adminListRoute.query({ section: 'submissions' }).url()
+}
+export const adminAnalyticsRoute = {
+  url: () => adminListRoute.query({ section: 'analytics' }).url()
+}
+export const adminEditRoute = (params: { id: string }) => ({
+  url: () => adminListRoute.query({ section: 'episodes', episode: params.id }).url()
+})

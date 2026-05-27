@@ -115,7 +115,9 @@ export const lavaWebhookRouteTestRoute = app.get('/', async (ctx, req) => {
   })
 
   const testId =
-    typeof req.query?.testId === 'string' && req.query.testId.trim() ? req.query.testId.trim() : null
+    typeof req.query?.testId === 'string' && req.query.testId.trim()
+      ? req.query.testId.trim()
+      : null
 
   const results: TestResult[] = []
   const secret = (await settingsLib.getLavaWebhookSecret(ctx)).trim()
@@ -164,7 +166,11 @@ export const lavaWebhookRouteTestRoute = app.get('/', async (ctx, req) => {
           })
           return httpIndicatesUnauthorized(http.statusCode, http.body)
         }
-        const r = await webhookService.processWebhook(ctx, samplePayload(), 'definitely-not-the-webhook-secret')
+        const r = await webhookService.processWebhook(
+          ctx,
+          samplePayload(),
+          'definitely-not-the-webhook-secret'
+        )
         return r.success === false && 'statusCode' in r && r.statusCode === 401
       }
     },

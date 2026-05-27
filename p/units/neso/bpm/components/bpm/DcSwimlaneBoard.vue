@@ -16,7 +16,12 @@ defineProps<{
     </header>
 
     <div class="dc-swimlane-board__grid">
-      <article v-for="lane in lanes" :key="lane.id" class="dc-swimlane-board__lane" :class="`tone-${lane.tone}`">
+      <article
+        v-for="lane in lanes"
+        :key="lane.id"
+        class="dc-swimlane-board__lane"
+        :class="`tone-${lane.tone}`"
+      >
         <div class="dc-swimlane-board__lane-head">
           <h4>{{ lane.title }}</h4>
           <span>{{ lane.items.length }}</span>
@@ -43,9 +48,7 @@ defineProps<{
   border-radius: var(--radius-lg);
   border: 1px solid var(--border-soft);
   padding: 12px;
-  background:
-    var(--gradient-glass),
-    color-mix(in srgb, var(--surface-1) 82%, transparent);
+  background: var(--gradient-glass), color-mix(in srgb, var(--surface-1) 82%, transparent);
   display: grid;
   gap: 10px;
 }

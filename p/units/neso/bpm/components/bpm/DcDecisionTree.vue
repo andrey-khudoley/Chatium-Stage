@@ -33,9 +33,7 @@ defineProps<{
   border-radius: var(--radius-lg);
   border: 1px solid var(--border-soft);
   padding: 12px;
-  background:
-    var(--gradient-glass),
-    color-mix(in srgb, var(--surface-2) 84%, transparent);
+  background: var(--gradient-glass), color-mix(in srgb, var(--surface-2) 84%, transparent);
 }
 
 .dc-decision-tree header h3 {

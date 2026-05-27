@@ -1,8 +1,5 @@
 import { requireRealUser } from '@app/auth'
-import {
-  createFeedMessage,
-  findFeedParticipants,
-} from '@app/feed'
+import { createFeedMessage, findFeedParticipants } from '@app/feed'
 import { sendDataToSocket } from '@app/socket'
 import { getThumbnailUrl, obtainStorageFilePutUrl } from '@app/storage'
 import Chats from '../tables/chats.table'
@@ -21,33 +18,37 @@ interface FileUpload {
 // Загрузить файл и создать сообщение с файлом
 export const apiFilesUploadRoute = app
   .body((s) => ({
-    files: s.array(s.object({
-      hash: s.string().optional(),
-      uid: s.string().optional(),
-      name: s.string(),
-      size: s.number(),
-      mimeType: s.string(),
-      isVoiceMessage: s.boolean().optional(),
-      isVideoNote: s.boolean().optional(),
-      duration: s.number().optional(),
-    })),
+    files: s.array(
+      s.object({
+        hash: s.string().optional(),
+        uid: s.string().optional(),
+        name: s.string(),
+        size: s.number(),
+        mimeType: s.string(),
+        isVoiceMessage: s.boolean().optional(),
+        isVideoNote: s.boolean().optional(),
+        duration: s.number().optional()
+      })
+    ),
     text: s.string().optional(),
     replyTo: s.string().optional(),
-    forwardedFrom: s.object({
-      feedId: s.string(),
-      title: s.string(),
-      type: s.string(),
-      avatarHash: s.string().optional(),
-      isPublic: s.boolean().optional(),
-      authorName: s.string().optional(),
-      authorId: s.string().optional(),
-    }).optional(),
+    forwardedFrom: s
+      .object({
+        feedId: s.string(),
+        title: s.string(),
+        type: s.string(),
+        avatarHash: s.string().optional(),
+        isPublic: s.boolean().optional(),
+        authorName: s.string().optional(),
+        authorId: s.string().optional()
+      })
+      .optional()
   }))
   .post('/:feedId/upload', async (ctx, req) => {
     requireRealUser(ctx)
 
     const chat = await Chats.findOneBy(ctx, {
-      feedId: req.params.feedId,
+      feedId: req.params.feedId
     })
 
     if (!chat) {
@@ -73,13 +74,13 @@ export const apiFilesUploadRoute = app
         size: file.size,
         mimeType: file.mimeType,
         // Для изображений добавляем превью
-        previewUrl: file.mimeType.startsWith('image/') 
+        previewUrl: file.mimeType.startsWith('image/')
           ? getThumbnailUrl(fileUid, 400, 400)
           : undefined,
         // Сохраняем метаданные голосовых и видео сообщений
         isVoiceMessage: file.isVoiceMessage,
         isVideoNote: file.isVideoNote,
-        duration: file.duration,
+        duration: file.duration
       }
     })
 
@@ -94,7 +95,7 @@ export const apiFilesUploadRoute = app
       type: 'Message',
       files: messageFiles,
       reply_to: replyTo || null,
-      data: Object.keys(messageData).length > 0 ? messageData : undefined,
+      data: Object.keys(messageData).length > 0 ? messageData : undefined
     })
 
     // Отправляем событие всем участникам
@@ -106,36 +107,34 @@ export const apiFilesUploadRoute = app
         message: {
           ...message,
           files: messageFiles,
-          data: Object.keys(messageData).length > 0 ? messageData : undefined,
-        },
+          data: Object.keys(messageData).length > 0 ? messageData : undefined
+        }
       })
     }
 
     return {
       success: true,
-      message,
+      message
     }
   })
 
 // Получить URL для загрузки файла
-export const apiFilesGetUploadUrlRoute = app
-  .get('/upload-url', async (ctx, req) => {
-    requireRealUser(ctx)
+export const apiFilesGetUploadUrlRoute = app.get('/upload-url', async (ctx, req) => {
+  requireRealUser(ctx)
 
-    const uploadUrl = await obtainStorageFilePutUrl(ctx)
+  const uploadUrl = await obtainStorageFilePutUrl(ctx)
 
-    return { uploadUrl }
-  })
+  return { uploadUrl }
+})
 
 // Получить информацию о файле
-export const apiFilesGetRoute = app
-  .get('/:hash', async (ctx, req) => {
-    requireRealUser(ctx)
+export const apiFilesGetRoute = app.get('/:hash', async (ctx, req) => {
+  requireRealUser(ctx)
 
-    const { hash } = req.params
+  const { hash } = req.params
 
-    return {
-      url: getThumbnailUrl(hash, undefined, undefined),
-      thumbnailUrl: getThumbnailUrl(hash, 400, 400),
-    }
-  })
+  return {
+    url: getThumbnailUrl(hash, undefined, undefined),
+    thumbnailUrl: getThumbnailUrl(hash, 400, 400)
+  }
+})

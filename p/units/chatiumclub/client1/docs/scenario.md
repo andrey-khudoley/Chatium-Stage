@@ -20,11 +20,11 @@
 
 В админке (POST `/api/settings/save`) задаются три gateway-настройки (см. `lib/settings.lib`, ключи `GATEWAY_URL`, `GC_SCHOOL_HOST`, `GC_SCHOOL_API_KEY`):
 
-| Ключ | Описание |
-| --- | --- |
-| `gateway_url` | Базовый URL gateway без хвостового `/`. Пример: `https://s.chtm.khudoley.pro/p/saas/gw/gc`. |
-| `gc_school_host` | Хост школы GC без схемы. Пример: `myschool.getcourse.ru`. |
-| `gc_school_api_key` | API-ключ школы (не логируется в открытом виде). |
+| Ключ                | Описание                                                                                    |
+| ------------------- | ------------------------------------------------------------------------------------------- |
+| `gateway_url`       | Базовый URL gateway без хвостового `/`. Пример: `https://s.chtm.khudoley.pro/p/saas/gw/gc`. |
+| `gc_school_host`    | Хост школы GC без схемы. Пример: `myschool.getcourse.ru`.                                   |
+| `gc_school_api_key` | API-ключ школы (не логируется в открытом виде).                                             |
 
 `getGatewayClientSettings(ctx)` возвращает все три значения; `gatewayClient.invoke` использует их для заголовков `X-Gc-School-Host`, `X-Gc-School-Api-Key`.
 

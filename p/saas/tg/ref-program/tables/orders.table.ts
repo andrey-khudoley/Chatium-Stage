@@ -7,24 +7,24 @@ export const TSaasRefOrderTg5De6Fg = Heap.Table(
     campaignId: Heap.Optional(
       Heap.RefLink('t__tg-ref-program__campaign__8Hn4Lx', {
         customMeta: { title: 'Кампания' },
-        onDelete: 'none',
-      }),
+        onDelete: 'none'
+      })
     ),
     ref: Heap.Optional(Heap.String({ customMeta: { title: 'Реферальный ID' } })),
     orderId: Heap.Optional(
       Heap.String({
-        customMeta: { title: 'ID заказа во внешней системе' },
-      }),
+        customMeta: { title: 'ID заказа во внешней системе' }
+      })
     ),
     productName: Heap.Optional(Heap.String({ customMeta: { title: 'Название продукта' } })),
     orderSum: Heap.Optional(
       Heap.Number({
-        customMeta: { title: 'Сумма в копейках' },
-      }),
+        customMeta: { title: 'Сумма в копейках' }
+      })
     ),
-    rawPayload: Heap.Optional(Heap.Any({ customMeta: { title: 'Исходные данные' } })),
+    rawPayload: Heap.Optional(Heap.Any({ customMeta: { title: 'Исходные данные' } }))
   },
-  { customMeta: { title: 'Заказы', description: 'События заказов' } },
+  { customMeta: { title: 'Заказы', description: 'События заказов' } }
 )
 
 export default TSaasRefOrderTg5De6Fg

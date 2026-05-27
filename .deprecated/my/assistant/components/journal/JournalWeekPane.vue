@@ -10,7 +10,12 @@ import {
 type DayId = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun'
 type WeekDayDto = { dayId: DayId; dayKey: string; value: string; locked: boolean }
 type WeekSummaryDto = { value: string; locked: boolean }
-type WeekEntryDto = { mondayKey: string; weekNumber: number; summary: WeekSummaryDto; days: WeekDayDto[] }
+type WeekEntryDto = {
+  mondayKey: string
+  weekNumber: number
+  summary: WeekSummaryDto
+  days: WeekDayDto[]
+}
 
 const props = defineProps<{
   isAuthenticated: boolean
@@ -31,7 +36,20 @@ const dayLabels: Record<DayId, string> = {
   sun: 'Воскресенье'
 }
 
-const monthNames = ['янв', 'фев', 'мар', 'апр', 'мая', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек']
+const monthNames = [
+  'янв',
+  'фев',
+  'мар',
+  'апр',
+  'мая',
+  'июн',
+  'июл',
+  'авг',
+  'сен',
+  'окт',
+  'ноя',
+  'дек'
+]
 
 const mondayKey = ref(computeJournalWeekMondayKeyLocal(Date.now()))
 const weekNumber = ref(getWeekNumberFromMondayKey(mondayKey.value))
@@ -84,7 +102,7 @@ async function fetchWeek(targetMondayKey: string, isSwitch: boolean) {
     const url = new URL(props.journalWeekGetUrl, window.location.origin)
     url.searchParams.set('mondayKey', targetMondayKey)
     const r = await fetch(url.pathname + url.search, { credentials: 'include' })
-    const j = await r.json() as { success?: boolean; week?: WeekEntryDto; error?: string }
+    const j = (await r.json()) as { success?: boolean; week?: WeekEntryDto; error?: string }
     if (!j.success || !j.week) {
       globalError.value = j.error ?? 'Не удалось загрузить неделю'
       return
@@ -110,7 +128,7 @@ async function saveDay(dayKey: string, value: string, locked: boolean) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     })
-    const j = await r.json() as { success?: boolean; week?: WeekEntryDto; error?: string }
+    const j = (await r.json()) as { success?: boolean; week?: WeekEntryDto; error?: string }
     if (!j.success || !j.week) {
       globalError.value = j.error ?? 'Не удалось сохранить день'
       return
@@ -135,7 +153,7 @@ async function saveSummary(value: string, locked: boolean) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     })
-    const j = await r.json() as { success?: boolean; week?: WeekEntryDto; error?: string }
+    const j = (await r.json()) as { success?: boolean; week?: WeekEntryDto; error?: string }
     if (!j.success || !j.week) {
       globalError.value = j.error ?? 'Не удалось сохранить план недели'
       return
@@ -184,7 +202,9 @@ function onToggleSummaryLock() {
 }
 
 const canEdit = computed(() => props.isAuthenticated && !loading.value && !loadingSwitch.value)
-const isCurrentWeek = computed(() => mondayKey.value === computeJournalWeekMondayKeyLocal(Date.now()))
+const isCurrentWeek = computed(
+  () => mondayKey.value === computeJournalWeekMondayKeyLocal(Date.now())
+)
 
 onMounted(() => {
   void fetchWeek(mondayKey.value, false)
@@ -195,9 +215,23 @@ onMounted(() => {
   <div class="journal-week">
     <header class="journal-week-head">
       <div class="journal-week-controls">
-        <button type="button" class="journal-week-switch" :disabled="loadingSwitch" @click="goWeek(-1)">← Пред.</button>
+        <button
+          type="button"
+          class="journal-week-switch"
+          :disabled="loadingSwitch"
+          @click="goWeek(-1)"
+        >
+          ← Пред.
+        </button>
         <p class="journal-week-title">Неделя #{{ weekNumber }}</p>
-        <button type="button" class="journal-week-switch" :disabled="loadingSwitch" @click="goWeek(1)">След. →</button>
+        <button
+          type="button"
+          class="journal-week-switch"
+          :disabled="loadingSwitch"
+          @click="goWeek(1)"
+        >
+          След. →
+        </button>
       </div>
       <div class="journal-week-sub-row">
         <p class="journal-week-sub">Начало недели: {{ mondayKey }}</p>
@@ -212,11 +246,16 @@ onMounted(() => {
       </div>
     </header>
 
-    <p v-if="!props.isAuthenticated" class="journal-week-hint">Войдите в аккаунт, чтобы вести недельный план.</p>
+    <p v-if="!props.isAuthenticated" class="journal-week-hint">
+      Войдите в аккаунт, чтобы вести недельный план.
+    </p>
     <p v-else-if="loading" class="journal-week-hint">Загрузка недельного плана…</p>
     <p v-if="globalError" class="journal-week-error" role="alert">{{ globalError }}</p>
 
-    <div class="journal-week-list" :aria-busy="loadingSwitch || Boolean(savingDayKey) || savingSummary">
+    <div
+      class="journal-week-list"
+      :aria-busy="loadingSwitch || Boolean(savingDayKey) || savingSummary"
+    >
       <article v-for="day in days" :key="day.dayKey" class="journal-week-day">
         <div class="journal-week-day-head">
           <div class="journal-week-day-caption">
@@ -247,7 +286,9 @@ onMounted(() => {
         <div class="journal-week-summary-head">
           <div class="journal-week-summary-caption">
             <h3 class="journal-week-summary-title">Неделя #{{ weekNumber }}</h3>
-            <p class="journal-week-day-date journal-week-summary-date-spacer" aria-hidden="true">&nbsp;</p>
+            <p class="journal-week-day-date journal-week-summary-date-spacer" aria-hidden="true">
+              &nbsp;
+            </p>
           </div>
           <button
             type="button"

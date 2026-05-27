@@ -41,7 +41,10 @@ const showCursor = ref(false)
 const cursorPosition = ref<'title' | 'description' | 'final'>('title')
 const showTitleUnderline = ref(false)
 
-const intervalIds = { title: null as ReturnType<typeof setInterval> | null, desc: null as ReturnType<typeof setInterval> | null }
+const intervalIds = {
+  title: null as ReturnType<typeof setInterval> | null,
+  desc: null as ReturnType<typeof setInterval> | null
+}
 
 const MAX_LOG_ENTRIES = 500
 const logEntries = ref<LogEntry[]>([])
@@ -63,9 +66,9 @@ function formatLogTime(timestamp: number): string {
 }
 
 function formatLogMessage(e: LogEntry): string {
-  return e.args.map((a) =>
-    typeof a === 'object' && a !== null ? JSON.stringify(a) : String(a)
-  ).join(' ')
+  return e.args
+    .map((a) => (typeof a === 'object' && a !== null ? JSON.stringify(a) : String(a)))
+    .join(' ')
 }
 
 function formatDateDivider(timestamp: number): string {
@@ -126,7 +129,11 @@ const loadRecentLogs = async () => {
   logsError.value = ''
   try {
     const res = await getRecentLogsRoute.query({ limit: 50 }).run(ctx)
-    const data = res as { success?: boolean; entries?: Array<LogEntry & { id: string }>; error?: string }
+    const data = res as {
+      success?: boolean
+      entries?: Array<LogEntry & { id: string }>
+      error?: string
+    }
     if (data?.success && Array.isArray(data.entries)) {
       logEntries.value = [...logEntries.value, ...data.entries]
       if (data.entries.length > 0) {
@@ -301,12 +308,11 @@ type TestResult = { id: string; title: string; passed: boolean; error?: string }
 
 /** Базовый URL (origin + путь проекта без trailing slash) */
 function getApiBaseUrl(): string {
-  const path = props.indexUrl.startsWith('http')
-    ? new URL(props.indexUrl).pathname
-    : props.indexUrl
+  const path = props.indexUrl.startsWith('http') ? new URL(props.indexUrl).pathname : props.indexUrl
   const basePath = path.replace(/\/$/, '') || '/p/template_project'
-  const origin =
-    props.indexUrl.startsWith('http') ? new URL(props.indexUrl).origin : window.location.origin
+  const origin = props.indexUrl.startsWith('http')
+    ? new URL(props.indexUrl).origin
+    : window.location.origin
   return `${origin}${basePath.startsWith('/') ? basePath : '/' + basePath}`
 }
 
@@ -364,7 +370,10 @@ async function runEndpointsTests() {
     }
     endpointsResults.value = results
     endpointsLastRunAt.value = new Date().toLocaleString('ru-RU')
-    log.info('Проверка эндпоинтов завершена', { passed: results.filter((r) => r.passed).length, failed: results.filter((r) => !r.passed).length })
+    log.info('Проверка эндпоинтов завершена', {
+      passed: results.filter((r) => r.passed).length,
+      failed: results.filter((r) => !r.passed).length
+    })
   } finally {
     endpointsLoading.value = false
   }
@@ -402,12 +411,23 @@ async function runSettingsTests() {
   const baseUrl = getApiBaseUrl().replace(/\/$/, '')
   log.info('Запуск проверки библиотеки настроек')
   try {
-    const res = await fetch(`${baseUrl}/api/tests/endpoints-check/settings-lib`, { method: 'GET', credentials: 'include' })
-    const data = (await res.json().catch(() => null)) as { success?: boolean; results?: TestResult[] }
+    const res = await fetch(`${baseUrl}/api/tests/endpoints-check/settings-lib`, {
+      method: 'GET',
+      credentials: 'include'
+    })
+    const data = (await res.json().catch(() => null)) as {
+      success?: boolean
+      results?: TestResult[]
+    }
     if (res.ok && data?.success && Array.isArray(data.results)) {
       settingsResults.value = data.results
     } else {
-      settingsResults.value = SETTINGS_LIB_TESTS.map((t) => ({ id: t.id, title: t.title, passed: false, error: 'Ошибка запроса' }))
+      settingsResults.value = SETTINGS_LIB_TESTS.map((t) => ({
+        id: t.id,
+        title: t.title,
+        passed: false,
+        error: 'Ошибка запроса'
+      }))
     }
     settingsLastRunAt.value = new Date().toLocaleString('ru-RU')
   } finally {
@@ -445,12 +465,23 @@ async function runSettingsRepoTests() {
   const baseUrl = getApiBaseUrl().replace(/\/$/, '')
   log.info('Запуск проверки репозитория настроек')
   try {
-    const res = await fetch(`${baseUrl}/api/tests/endpoints-check/settings-repo`, { method: 'GET', credentials: 'include' })
-    const data = (await res.json().catch(() => null)) as { success?: boolean; results?: TestResult[] }
+    const res = await fetch(`${baseUrl}/api/tests/endpoints-check/settings-repo`, {
+      method: 'GET',
+      credentials: 'include'
+    })
+    const data = (await res.json().catch(() => null)) as {
+      success?: boolean
+      results?: TestResult[]
+    }
     if (res.ok && data?.success && Array.isArray(data.results)) {
       settingsRepoResults.value = data.results
     } else {
-      settingsRepoResults.value = SETTINGS_REPO_TESTS.map((t) => ({ id: t.id, title: t.title, passed: false, error: 'Ошибка запроса' }))
+      settingsRepoResults.value = SETTINGS_REPO_TESTS.map((t) => ({
+        id: t.id,
+        title: t.title,
+        passed: false,
+        error: 'Ошибка запроса'
+      }))
     }
     settingsRepoLastRunAt.value = new Date().toLocaleString('ru-RU')
   } finally {
@@ -488,12 +519,23 @@ async function runLoggerLibTests() {
   const baseUrl = getApiBaseUrl().replace(/\/$/, '')
   log.info('Запуск проверки библиотеки логов')
   try {
-    const res = await fetch(`${baseUrl}/api/tests/endpoints-check/logger-lib`, { method: 'GET', credentials: 'include' })
-    const data = (await res.json().catch(() => null)) as { success?: boolean; results?: TestResult[] }
+    const res = await fetch(`${baseUrl}/api/tests/endpoints-check/logger-lib`, {
+      method: 'GET',
+      credentials: 'include'
+    })
+    const data = (await res.json().catch(() => null)) as {
+      success?: boolean
+      results?: TestResult[]
+    }
     if (res.ok && data?.success && Array.isArray(data.results)) {
       loggerLibResults.value = data.results
     } else {
-      loggerLibResults.value = LOGGER_LIB_TESTS.map((t) => ({ id: t.id, title: t.title, passed: false, error: 'Ошибка запроса' }))
+      loggerLibResults.value = LOGGER_LIB_TESTS.map((t) => ({
+        id: t.id,
+        title: t.title,
+        passed: false,
+        error: 'Ошибка запроса'
+      }))
     }
     loggerLibLastRunAt.value = new Date().toLocaleString('ru-RU')
   } finally {
@@ -532,12 +574,23 @@ async function runLogsRepoTests() {
   const baseUrl = getApiBaseUrl().replace(/\/$/, '')
   log.info('Запуск проверки репозитория логов')
   try {
-    const res = await fetch(`${baseUrl}/api/tests/endpoints-check/logs-repo`, { method: 'GET', credentials: 'include' })
-    const data = (await res.json().catch(() => null)) as { success?: boolean; results?: TestResult[] }
+    const res = await fetch(`${baseUrl}/api/tests/endpoints-check/logs-repo`, {
+      method: 'GET',
+      credentials: 'include'
+    })
+    const data = (await res.json().catch(() => null)) as {
+      success?: boolean
+      results?: TestResult[]
+    }
     if (res.ok && data?.success && Array.isArray(data.results)) {
       logsRepoResults.value = data.results
     } else {
-      logsRepoResults.value = LOGS_REPO_TESTS.map((t) => ({ id: t.id, title: t.title, passed: false, error: 'Ошибка запроса' }))
+      logsRepoResults.value = LOGS_REPO_TESTS.map((t) => ({
+        id: t.id,
+        title: t.title,
+        passed: false,
+        error: 'Ошибка запроса'
+      }))
     }
     logsRepoLastRunAt.value = new Date().toLocaleString('ru-RU')
   } finally {
@@ -573,12 +626,23 @@ async function runDashboardLibTests() {
   const baseUrl = getApiBaseUrl().replace(/\/$/, '')
   log.info('Запуск проверки библиотеки админки')
   try {
-    const res = await fetch(`${baseUrl}/api/tests/endpoints-check/dashboard-lib`, { method: 'GET', credentials: 'include' })
-    const data = (await res.json().catch(() => null)) as { success?: boolean; results?: TestResult[] }
+    const res = await fetch(`${baseUrl}/api/tests/endpoints-check/dashboard-lib`, {
+      method: 'GET',
+      credentials: 'include'
+    })
+    const data = (await res.json().catch(() => null)) as {
+      success?: boolean
+      results?: TestResult[]
+    }
     if (res.ok && data?.success && Array.isArray(data.results)) {
       dashboardLibResults.value = data.results
     } else {
-      dashboardLibResults.value = DASHBOARD_LIB_TESTS.map((t) => ({ id: t.id, title: t.title, passed: false, error: 'Ошибка запроса' }))
+      dashboardLibResults.value = DASHBOARD_LIB_TESTS.map((t) => ({
+        id: t.id,
+        title: t.title,
+        passed: false,
+        error: 'Ошибка запроса'
+      }))
     }
     dashboardLibLastRunAt.value = new Date().toLocaleString('ru-RU')
   } finally {
@@ -613,7 +677,10 @@ const refGeneratorDisplay = computed(() => {
 /* --- Блок 7b: Fingerprint (lib/core/fingerprint) --- */
 const FINGERPRINT_TESTS: Array<{ id: string; title: string }> = [
   { id: 'computeFingerprint-basic', title: 'computeFingerprint — hash и parts по заголовкам' },
-  { id: 'computeFingerprint-x-forwarded-for-first', title: 'IP из X-Forwarded-For — берётся первый адрес' },
+  {
+    id: 'computeFingerprint-x-forwarded-for-first',
+    title: 'IP из X-Forwarded-For — берётся первый адрес'
+  },
   { id: 'computeFingerprint-x-real-ip', title: 'IP из X-Real-IP при отсутствии X-Forwarded-For' },
   { id: 'computeFingerprint-empty-headers', title: 'Пустые заголовки — ip unknown, строки пустые' },
   { id: 'computeFingerprint-deterministic', title: 'Один и тот же запрос — один и тот же hash' },
@@ -642,12 +709,23 @@ async function runRefGeneratorTests() {
   const baseUrl = getApiBaseUrl().replace(/\/$/, '')
   log.info('Запуск проверки генератора идентификаторов')
   try {
-    const res = await fetch(`${baseUrl}/api/tests/endpoints-check/ref-generator`, { method: 'GET', credentials: 'include' })
-    const data = (await res.json().catch(() => null)) as { success?: boolean; results?: TestResult[] }
+    const res = await fetch(`${baseUrl}/api/tests/endpoints-check/ref-generator`, {
+      method: 'GET',
+      credentials: 'include'
+    })
+    const data = (await res.json().catch(() => null)) as {
+      success?: boolean
+      results?: TestResult[]
+    }
     if (res.ok && data?.success && Array.isArray(data.results)) {
       refGeneratorResults.value = data.results
     } else {
-      refGeneratorResults.value = REF_GENERATOR_TESTS.map((t) => ({ id: t.id, title: t.title, passed: false, error: 'Ошибка запроса' }))
+      refGeneratorResults.value = REF_GENERATOR_TESTS.map((t) => ({
+        id: t.id,
+        title: t.title,
+        passed: false,
+        error: 'Ошибка запроса'
+      }))
     }
     refGeneratorLastRunAt.value = new Date().toLocaleString('ru-RU')
   } finally {
@@ -661,12 +739,23 @@ async function runFingerprintTests() {
   const baseUrl = getApiBaseUrl().replace(/\/$/, '')
   log.info('Запуск проверки fingerprint')
   try {
-    const res = await fetch(`${baseUrl}/api/tests/endpoints-check/fingerprint`, { method: 'GET', credentials: 'include' })
-    const data = (await res.json().catch(() => null)) as { success?: boolean; results?: TestResult[] }
+    const res = await fetch(`${baseUrl}/api/tests/endpoints-check/fingerprint`, {
+      method: 'GET',
+      credentials: 'include'
+    })
+    const data = (await res.json().catch(() => null)) as {
+      success?: boolean
+      results?: TestResult[]
+    }
     if (res.ok && data?.success && Array.isArray(data.results)) {
       fingerprintResults.value = data.results
     } else {
-      fingerprintResults.value = FINGERPRINT_TESTS.map((t) => ({ id: t.id, title: t.title, passed: false, error: 'Ошибка запроса' }))
+      fingerprintResults.value = FINGERPRINT_TESTS.map((t) => ({
+        id: t.id,
+        title: t.title,
+        passed: false,
+        error: 'Ошибка запроса'
+      }))
     }
     fingerprintLastRunAt.value = new Date().toLocaleString('ru-RU')
   } finally {
@@ -703,12 +792,23 @@ async function runMemberRepoTests() {
   const baseUrl = getApiBaseUrl().replace(/\/$/, '')
   log.info('Запуск проверки репозитория участников кампании')
   try {
-    const res = await fetch(`${baseUrl}/api/tests/endpoints-check/member-repo`, { method: 'GET', credentials: 'include' })
-    const data = (await res.json().catch(() => null)) as { success?: boolean; results?: TestResult[] }
+    const res = await fetch(`${baseUrl}/api/tests/endpoints-check/member-repo`, {
+      method: 'GET',
+      credentials: 'include'
+    })
+    const data = (await res.json().catch(() => null)) as {
+      success?: boolean
+      results?: TestResult[]
+    }
     if (res.ok && data?.success && Array.isArray(data.results)) {
       memberRepoResults.value = data.results
     } else {
-      memberRepoResults.value = MEMBER_REPO_TESTS.map((t) => ({ id: t.id, title: t.title, passed: false, error: 'Ошибка запроса' }))
+      memberRepoResults.value = MEMBER_REPO_TESTS.map((t) => ({
+        id: t.id,
+        title: t.title,
+        passed: false,
+        error: 'Ошибка запроса'
+      }))
     }
     memberRepoLastRunAt.value = new Date().toLocaleString('ru-RU')
   } finally {
@@ -746,12 +846,23 @@ async function runCampaignRepoTests() {
   const baseUrl = getApiBaseUrl().replace(/\/$/, '')
   log.info('Запуск проверки репозитория кампаний')
   try {
-    const res = await fetch(`${baseUrl}/api/tests/endpoints-check/campaign-repo`, { method: 'GET', credentials: 'include' })
-    const data = (await res.json().catch(() => null)) as { success?: boolean; results?: TestResult[] }
+    const res = await fetch(`${baseUrl}/api/tests/endpoints-check/campaign-repo`, {
+      method: 'GET',
+      credentials: 'include'
+    })
+    const data = (await res.json().catch(() => null)) as {
+      success?: boolean
+      results?: TestResult[]
+    }
     if (res.ok && data?.success && Array.isArray(data.results)) {
       campaignRepoResults.value = data.results
     } else {
-      campaignRepoResults.value = CAMPAIGN_REPO_TESTS.map((t) => ({ id: t.id, title: t.title, passed: false, error: 'Ошибка запроса' }))
+      campaignRepoResults.value = CAMPAIGN_REPO_TESTS.map((t) => ({
+        id: t.id,
+        title: t.title,
+        passed: false,
+        error: 'Ошибка запроса'
+      }))
     }
     campaignRepoLastRunAt.value = new Date().toLocaleString('ru-RU')
   } finally {
@@ -811,12 +922,23 @@ async function runUrlBuilderTests() {
   const baseUrl = getApiBaseUrl().replace(/\/$/, '')
   log.info('Запуск проверки urlBuilder')
   try {
-    const res = await fetch(`${baseUrl}/api/tests/endpoints-check/url-builder`, { method: 'GET', credentials: 'include' })
-    const data = (await res.json().catch(() => null)) as { success?: boolean; results?: TestResult[] }
+    const res = await fetch(`${baseUrl}/api/tests/endpoints-check/url-builder`, {
+      method: 'GET',
+      credentials: 'include'
+    })
+    const data = (await res.json().catch(() => null)) as {
+      success?: boolean
+      results?: TestResult[]
+    }
     if (res.ok && data?.success && Array.isArray(data.results)) {
       urlBuilderResults.value = data.results
     } else {
-      urlBuilderResults.value = URL_BUILDER_TESTS.map((t) => ({ id: t.id, title: t.title, passed: false, error: 'Ошибка запроса' }))
+      urlBuilderResults.value = URL_BUILDER_TESTS.map((t) => ({
+        id: t.id,
+        title: t.title,
+        passed: false,
+        error: 'Ошибка запроса'
+      }))
     }
     urlBuilderLastRunAt.value = new Date().toLocaleString('ru-RU')
   } finally {
@@ -854,12 +976,23 @@ async function runPageRepoTests() {
   const baseUrl = getApiBaseUrl().replace(/\/$/, '')
   log.info('Запуск проверки pageRepo')
   try {
-    const res = await fetch(`${baseUrl}/api/tests/endpoints-check/page-repo`, { method: 'GET', credentials: 'include' })
-    const data = (await res.json().catch(() => null)) as { success?: boolean; results?: TestResult[] }
+    const res = await fetch(`${baseUrl}/api/tests/endpoints-check/page-repo`, {
+      method: 'GET',
+      credentials: 'include'
+    })
+    const data = (await res.json().catch(() => null)) as {
+      success?: boolean
+      results?: TestResult[]
+    }
     if (res.ok && data?.success && Array.isArray(data.results)) {
       pageRepoResults.value = data.results
     } else {
-      pageRepoResults.value = PAGE_REPO_TESTS.map((t) => ({ id: t.id, title: t.title, passed: false, error: 'Ошибка запроса' }))
+      pageRepoResults.value = PAGE_REPO_TESTS.map((t) => ({
+        id: t.id,
+        title: t.title,
+        passed: false,
+        error: 'Ошибка запроса'
+      }))
     }
     pageRepoLastRunAt.value = new Date().toLocaleString('ru-RU')
   } finally {
@@ -870,7 +1003,10 @@ async function runPageRepoTests() {
 /* --- Блок 13: Репозиторий партнёрских ссылок (linkRepo) --- */
 const LINK_REPO_TESTS: Array<{ id: string; title: string }> = [
   { id: 'getOrCreatePartnerLink', title: 'getOrCreatePartnerLink' },
-  { id: 'getOrCreatePartnerLink-idempotent', title: 'getOrCreatePartnerLink (повтор — та же ссылка)' },
+  {
+    id: 'getOrCreatePartnerLink-idempotent',
+    title: 'getOrCreatePartnerLink (повтор — та же ссылка)'
+  },
   { id: 'getPartnerLinks', title: 'getPartnerLinks' },
   { id: 'findLinkByPublicSlug', title: 'findLinkByPublicSlug' }
 ]
@@ -922,12 +1058,23 @@ async function runLinkRepoTests() {
   const baseUrl = getApiBaseUrl().replace(/\/$/, '')
   log.info('Запуск проверки linkRepo')
   try {
-    const res = await fetch(`${baseUrl}/api/tests/endpoints-check/link-repo`, { method: 'GET', credentials: 'include' })
-    const data = (await res.json().catch(() => null)) as { success?: boolean; results?: TestResult[] }
+    const res = await fetch(`${baseUrl}/api/tests/endpoints-check/link-repo`, {
+      method: 'GET',
+      credentials: 'include'
+    })
+    const data = (await res.json().catch(() => null)) as {
+      success?: boolean
+      results?: TestResult[]
+    }
     if (res.ok && data?.success && Array.isArray(data.results)) {
       linkRepoResults.value = data.results
     } else {
-      linkRepoResults.value = LINK_REPO_TESTS.map((t) => ({ id: t.id, title: t.title, passed: false, error: 'Ошибка запроса' }))
+      linkRepoResults.value = LINK_REPO_TESTS.map((t) => ({
+        id: t.id,
+        title: t.title,
+        passed: false,
+        error: 'Ошибка запроса'
+      }))
     }
     linkRepoLastRunAt.value = new Date().toLocaleString('ru-RU')
   } finally {
@@ -941,12 +1088,23 @@ async function runVisitRepoTests() {
   const baseUrl = getApiBaseUrl().replace(/\/$/, '')
   log.info('Запуск проверки visitRepo')
   try {
-    const res = await fetch(`${baseUrl}/api/tests/endpoints-check/visit-repo`, { method: 'GET', credentials: 'include' })
-    const data = (await res.json().catch(() => null)) as { success?: boolean; results?: TestResult[] }
+    const res = await fetch(`${baseUrl}/api/tests/endpoints-check/visit-repo`, {
+      method: 'GET',
+      credentials: 'include'
+    })
+    const data = (await res.json().catch(() => null)) as {
+      success?: boolean
+      results?: TestResult[]
+    }
     if (res.ok && data?.success && Array.isArray(data.results)) {
       visitRepoResults.value = data.results
     } else {
-      visitRepoResults.value = VISIT_REPO_TESTS.map((t) => ({ id: t.id, title: t.title, passed: false, error: 'Ошибка запроса' }))
+      visitRepoResults.value = VISIT_REPO_TESTS.map((t) => ({
+        id: t.id,
+        title: t.title,
+        passed: false,
+        error: 'Ошибка запроса'
+      }))
     }
     visitRepoLastRunAt.value = new Date().toLocaleString('ru-RU')
   } finally {
@@ -983,21 +1141,50 @@ async function runRedirectRouteTests() {
   const baseUrl = getApiBaseUrl().replace(/\/$/, '')
   log.info('Запуск проверки роута редиректа')
   try {
-    const res = await fetch(`${baseUrl}/api/tests/endpoints-check/redirect-route`, { method: 'GET', credentials: 'include' })
+    const res = await fetch(`${baseUrl}/api/tests/endpoints-check/redirect-route`, {
+      method: 'GET',
+      credentials: 'include'
+    })
     log.info('Ответ от redirect-route:', { status: res.status, ok: res.ok })
-    const data = (await res.json().catch(() => null)) as { success?: boolean; results?: TestResult[] }
-    log.info('Данные от redirect-route:', { success: data?.success, resultsCount: data?.results?.length })
+    const data = (await res.json().catch(() => null)) as {
+      success?: boolean
+      results?: TestResult[]
+    }
+    log.info('Данные от redirect-route:', {
+      success: data?.success,
+      resultsCount: data?.results?.length
+    })
     if (res.ok && data?.success && Array.isArray(data.results)) {
-      redirectRouteResults.value = data.results.map((r) => ({ id: r.id, title: r.title, passed: !!r.passed, error: r.error }))
+      redirectRouteResults.value = data.results.map((r) => ({
+        id: r.id,
+        title: r.title,
+        passed: !!r.passed,
+        error: r.error
+      }))
     } else if (!res.ok) {
-      redirectRouteResults.value = REDIRECT_ROUTE_TESTS.map((t) => ({ id: t.id, title: t.title, passed: false, error: `HTTP ${res.status}` }))
+      redirectRouteResults.value = REDIRECT_ROUTE_TESTS.map((t) => ({
+        id: t.id,
+        title: t.title,
+        passed: false,
+        error: `HTTP ${res.status}`
+      }))
     } else {
-      redirectRouteResults.value = REDIRECT_ROUTE_TESTS.map((t) => ({ id: t.id, title: t.title, passed: false, error: data?.success === false ? 'Ошибка сервера' : 'Неверный формат ответа' }))
+      redirectRouteResults.value = REDIRECT_ROUTE_TESTS.map((t) => ({
+        id: t.id,
+        title: t.title,
+        passed: false,
+        error: data?.success === false ? 'Ошибка сервера' : 'Неверный формат ответа'
+      }))
     }
     redirectRouteLastRunAt.value = new Date().toLocaleString('ru-RU')
   } catch (e) {
     log.error('Ошибка запроса проверки роута редиректа', e)
-    redirectRouteResults.value = REDIRECT_ROUTE_TESTS.map((t) => ({ id: t.id, title: t.title, passed: false, error: (e as Error)?.message ?? 'Ошибка сети' }))
+    redirectRouteResults.value = REDIRECT_ROUTE_TESTS.map((t) => ({
+      id: t.id,
+      title: t.title,
+      passed: false,
+      error: (e as Error)?.message ?? 'Ошибка сети'
+    }))
     redirectRouteLastRunAt.value = new Date().toLocaleString('ru-RU')
   } finally {
     redirectRouteLoading.value = false
@@ -1030,16 +1217,34 @@ async function runReferralRepoTests() {
   referralRepoResults.value = []
   const baseUrl = getApiBaseUrl().replace(/\/$/, '')
   try {
-    const res = await fetch(`${baseUrl}/api/tests/endpoints-check/referral-repo`, { method: 'GET', credentials: 'include' })
+    const res = await fetch(`${baseUrl}/api/tests/endpoints-check/referral-repo`, {
+      method: 'GET',
+      credentials: 'include'
+    })
     const data = (await res.json()) as { success?: boolean; results?: TestResult[] }
     if (res.ok && data?.success && Array.isArray(data.results)) {
-      referralRepoResults.value = data.results.map((r) => ({ id: r.id, title: r.title, passed: !!r.passed, error: r.error }))
+      referralRepoResults.value = data.results.map((r) => ({
+        id: r.id,
+        title: r.title,
+        passed: !!r.passed,
+        error: r.error
+      }))
     } else {
-      referralRepoResults.value = REFERRAL_REPO_TESTS.map((t) => ({ id: t.id, title: t.title, passed: false, error: 'Ошибка запроса' }))
+      referralRepoResults.value = REFERRAL_REPO_TESTS.map((t) => ({
+        id: t.id,
+        title: t.title,
+        passed: false,
+        error: 'Ошибка запроса'
+      }))
     }
     referralRepoLastRunAt.value = new Date().toLocaleString('ru-RU')
   } catch (e) {
-    referralRepoResults.value = REFERRAL_REPO_TESTS.map((t) => ({ id: t.id, title: t.title, passed: false, error: (e as Error)?.message ?? 'Ошибка сети' }))
+    referralRepoResults.value = REFERRAL_REPO_TESTS.map((t) => ({
+      id: t.id,
+      title: t.title,
+      passed: false,
+      error: (e as Error)?.message ?? 'Ошибка сети'
+    }))
     referralRepoLastRunAt.value = new Date().toLocaleString('ru-RU')
   } finally {
     referralRepoLoading.value = false
@@ -1074,16 +1279,34 @@ async function runEventRepoTests() {
   eventRepoResults.value = []
   const baseUrl = getApiBaseUrl().replace(/\/$/, '')
   try {
-    const res = await fetch(`${baseUrl}/api/tests/endpoints-check/event-repo`, { method: 'GET', credentials: 'include' })
+    const res = await fetch(`${baseUrl}/api/tests/endpoints-check/event-repo`, {
+      method: 'GET',
+      credentials: 'include'
+    })
     const data = (await res.json()) as { success?: boolean; results?: TestResult[] }
     if (res.ok && data?.success && Array.isArray(data.results)) {
-      eventRepoResults.value = data.results.map((r) => ({ id: r.id, title: r.title, passed: !!r.passed, error: r.error }))
+      eventRepoResults.value = data.results.map((r) => ({
+        id: r.id,
+        title: r.title,
+        passed: !!r.passed,
+        error: r.error
+      }))
     } else {
-      eventRepoResults.value = EVENT_REPO_TESTS.map((t) => ({ id: t.id, title: t.title, passed: false, error: 'Ошибка запроса' }))
+      eventRepoResults.value = EVENT_REPO_TESTS.map((t) => ({
+        id: t.id,
+        title: t.title,
+        passed: false,
+        error: 'Ошибка запроса'
+      }))
     }
     eventRepoLastRunAt.value = new Date().toLocaleString('ru-RU')
   } catch (e) {
-    eventRepoResults.value = EVENT_REPO_TESTS.map((t) => ({ id: t.id, title: t.title, passed: false, error: (e as Error)?.message ?? 'Ошибка сети' }))
+    eventRepoResults.value = EVENT_REPO_TESTS.map((t) => ({
+      id: t.id,
+      title: t.title,
+      passed: false,
+      error: (e as Error)?.message ?? 'Ошибка сети'
+    }))
     eventRepoLastRunAt.value = new Date().toLocaleString('ru-RU')
   } finally {
     eventRepoLoading.value = false
@@ -1116,16 +1339,34 @@ async function runWebhooksFeature5Tests() {
   webhooksFeature5Results.value = []
   const baseUrl = getApiBaseUrl().replace(/\/$/, '')
   try {
-    const res = await fetch(`${baseUrl}/api/tests/endpoints-check/webhooks-feature5`, { method: 'GET', credentials: 'include' })
+    const res = await fetch(`${baseUrl}/api/tests/endpoints-check/webhooks-feature5`, {
+      method: 'GET',
+      credentials: 'include'
+    })
     const data = (await res.json()) as { success?: boolean; results?: TestResult[] }
     if (res.ok && data?.success && Array.isArray(data.results)) {
-      webhooksFeature5Results.value = data.results.map((r) => ({ id: r.id, title: r.title, passed: !!r.passed, error: r.error }))
+      webhooksFeature5Results.value = data.results.map((r) => ({
+        id: r.id,
+        title: r.title,
+        passed: !!r.passed,
+        error: r.error
+      }))
     } else {
-      webhooksFeature5Results.value = WEBHOOKS_FEATURE5_TESTS.map((t) => ({ id: t.id, title: t.title, passed: false, error: 'Ошибка запроса' }))
+      webhooksFeature5Results.value = WEBHOOKS_FEATURE5_TESTS.map((t) => ({
+        id: t.id,
+        title: t.title,
+        passed: false,
+        error: 'Ошибка запроса'
+      }))
     }
     webhooksFeature5LastRunAt.value = new Date().toLocaleString('ru-RU')
   } catch (e) {
-    webhooksFeature5Results.value = WEBHOOKS_FEATURE5_TESTS.map((t) => ({ id: t.id, title: t.title, passed: false, error: (e as Error)?.message ?? 'Ошибка сети' }))
+    webhooksFeature5Results.value = WEBHOOKS_FEATURE5_TESTS.map((t) => ({
+      id: t.id,
+      title: t.title,
+      passed: false,
+      error: (e as Error)?.message ?? 'Ошибка сети'
+    }))
     webhooksFeature5LastRunAt.value = new Date().toLocaleString('ru-RU')
   } finally {
     webhooksFeature5Loading.value = false
@@ -1161,12 +1402,28 @@ async function runPartnerRepoTests() {
   partnerRepoResults.value = []
   const baseUrl = getApiBaseUrl().replace(/\/$/, '')
   try {
-    const res = await fetch(`${baseUrl}/api/tests/endpoints-check/partner-repo`, { method: 'GET', credentials: 'include' })
-    const data = (await res.json().catch(() => null)) as { success?: boolean; results?: TestResult[] }
+    const res = await fetch(`${baseUrl}/api/tests/endpoints-check/partner-repo`, {
+      method: 'GET',
+      credentials: 'include'
+    })
+    const data = (await res.json().catch(() => null)) as {
+      success?: boolean
+      results?: TestResult[]
+    }
     if (res.ok && data?.success && Array.isArray(data.results)) {
-      partnerRepoResults.value = data.results.map((r) => ({ id: r.id, title: r.title, passed: !!r.passed, error: r.error }))
+      partnerRepoResults.value = data.results.map((r) => ({
+        id: r.id,
+        title: r.title,
+        passed: !!r.passed,
+        error: r.error
+      }))
     } else {
-      partnerRepoResults.value = PARTNER_REPO_TESTS.map((t) => ({ id: t.id, title: t.title, passed: false, error: 'Ошибка запроса' }))
+      partnerRepoResults.value = PARTNER_REPO_TESTS.map((t) => ({
+        id: t.id,
+        title: t.title,
+        passed: false,
+        error: 'Ошибка запроса'
+      }))
     }
     partnerRepoLastRunAt.value = new Date().toLocaleString('ru-RU')
   } finally {
@@ -1202,12 +1459,28 @@ async function runBotRepoTests() {
   botRepoResults.value = []
   const baseUrl = getApiBaseUrl().replace(/\/$/, '')
   try {
-    const res = await fetch(`${baseUrl}/api/tests/endpoints-check/bot-repo`, { method: 'GET', credentials: 'include' })
-    const data = (await res.json().catch(() => null)) as { success?: boolean; results?: TestResult[] }
+    const res = await fetch(`${baseUrl}/api/tests/endpoints-check/bot-repo`, {
+      method: 'GET',
+      credentials: 'include'
+    })
+    const data = (await res.json().catch(() => null)) as {
+      success?: boolean
+      results?: TestResult[]
+    }
     if (res.ok && data?.success && Array.isArray(data.results)) {
-      botRepoResults.value = data.results.map((r) => ({ id: r.id, title: r.title, passed: !!r.passed, error: r.error }))
+      botRepoResults.value = data.results.map((r) => ({
+        id: r.id,
+        title: r.title,
+        passed: !!r.passed,
+        error: r.error
+      }))
     } else {
-      botRepoResults.value = BOT_REPO_TESTS.map((t) => ({ id: t.id, title: t.title, passed: false, error: 'Ошибка запроса' }))
+      botRepoResults.value = BOT_REPO_TESTS.map((t) => ({
+        id: t.id,
+        title: t.title,
+        passed: false,
+        error: 'Ошибка запроса'
+      }))
     }
     botRepoLastRunAt.value = new Date().toLocaleString('ru-RU')
   } finally {
@@ -1244,12 +1517,28 @@ async function runTelegramBotTests() {
   telegramBotResults.value = []
   const baseUrl = getApiBaseUrl().replace(/\/$/, '')
   try {
-    const res = await fetch(`${baseUrl}/api/tests/endpoints-check/telegram-bot`, { method: 'GET', credentials: 'include' })
-    const data = (await res.json().catch(() => null)) as { success?: boolean; results?: TestResult[] }
+    const res = await fetch(`${baseUrl}/api/tests/endpoints-check/telegram-bot`, {
+      method: 'GET',
+      credentials: 'include'
+    })
+    const data = (await res.json().catch(() => null)) as {
+      success?: boolean
+      results?: TestResult[]
+    }
     if (res.ok && data?.success && Array.isArray(data.results)) {
-      telegramBotResults.value = data.results.map((r) => ({ id: r.id, title: r.title, passed: !!r.passed, error: r.error }))
+      telegramBotResults.value = data.results.map((r) => ({
+        id: r.id,
+        title: r.title,
+        passed: !!r.passed,
+        error: r.error
+      }))
     } else {
-      telegramBotResults.value = TELEGRAM_BOT_TESTS.map((t) => ({ id: t.id, title: t.title, passed: false, error: 'Ошибка запроса' }))
+      telegramBotResults.value = TELEGRAM_BOT_TESTS.map((t) => ({
+        id: t.id,
+        title: t.title,
+        passed: false,
+        error: 'Ошибка запроса'
+      }))
     }
     telegramBotLastRunAt.value = new Date().toLocaleString('ru-RU')
   } finally {
@@ -1283,12 +1572,28 @@ async function runTelegramHookTests() {
   telegramHookResults.value = []
   const baseUrl = getApiBaseUrl().replace(/\/$/, '')
   try {
-    const res = await fetch(`${baseUrl}/api/tests/endpoints-check/telegram-hook`, { method: 'GET', credentials: 'include' })
-    const data = (await res.json().catch(() => null)) as { success?: boolean; results?: TestResult[] }
+    const res = await fetch(`${baseUrl}/api/tests/endpoints-check/telegram-hook`, {
+      method: 'GET',
+      credentials: 'include'
+    })
+    const data = (await res.json().catch(() => null)) as {
+      success?: boolean
+      results?: TestResult[]
+    }
     if (res.ok && data?.success && Array.isArray(data.results)) {
-      telegramHookResults.value = data.results.map((r) => ({ id: r.id, title: r.title, passed: !!r.passed, error: r.error }))
+      telegramHookResults.value = data.results.map((r) => ({
+        id: r.id,
+        title: r.title,
+        passed: !!r.passed,
+        error: r.error
+      }))
     } else {
-      telegramHookResults.value = TELEGRAM_HOOK_TESTS.map((t) => ({ id: t.id, title: t.title, passed: false, error: 'Ошибка запроса' }))
+      telegramHookResults.value = TELEGRAM_HOOK_TESTS.map((t) => ({
+        id: t.id,
+        title: t.title,
+        passed: false,
+        error: 'Ошибка запроса'
+      }))
     }
     telegramHookLastRunAt.value = new Date().toLocaleString('ru-RU')
   } finally {
@@ -1305,14 +1610,24 @@ async function runCampaignsApiTests() {
   try {
     const results: TestResult[] = []
 
-    const listRes = await fetch(`${baseUrl}/api/campaigns/list`, { method: 'GET', credentials: 'include' })
-    const listData = (await listRes.json().catch(() => null)) as { success?: boolean; campaigns?: unknown[] }
+    const listRes = await fetch(`${baseUrl}/api/campaigns/list`, {
+      method: 'GET',
+      credentials: 'include'
+    })
+    const listData = (await listRes.json().catch(() => null)) as {
+      success?: boolean
+      campaigns?: unknown[]
+    }
     const listPassed = listRes.ok && listData?.success === true && Array.isArray(listData.campaigns)
     results.push({
       id: 'campaigns-list',
       title: 'GET /api/campaigns/list',
       passed: listPassed,
-      error: listPassed ? undefined : listRes.ok ? 'Неверный формат ответа' : `HTTP ${listRes.status}`
+      error: listPassed
+        ? undefined
+        : listRes.ok
+          ? 'Неверный формат ответа'
+          : `HTTP ${listRes.status}`
     })
 
     const createRes = await fetch(`${baseUrl}/api/campaigns/create`, {
@@ -1321,14 +1636,21 @@ async function runCampaignsApiTests() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ title: 'Тест API ' + Date.now() })
     })
-    const createData = (await createRes.json().catch(() => null)) as { success?: boolean; campaign?: { id?: string } }
+    const createData = (await createRes.json().catch(() => null)) as {
+      success?: boolean
+      campaign?: { id?: string }
+    }
     createdCampaignId = createData?.campaign?.id ?? null
     const createPassed = createRes.ok && createData?.success === true && createdCampaignId
     results.push({
       id: 'campaigns-create',
       title: 'POST /api/campaigns/create (успех)',
       passed: createPassed,
-      error: createPassed ? undefined : createRes.ok ? 'Нет campaign в ответе' : `HTTP ${createRes.status}`
+      error: createPassed
+        ? undefined
+        : createRes.ok
+          ? 'Нет campaign в ответе'
+          : `HTTP ${createRes.status}`
     })
 
     const validationRes = await fetch(`${baseUrl}/api/campaigns/create`, {
@@ -1337,14 +1659,23 @@ async function runCampaignsApiTests() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ title: 'x' })
     })
-    const validationData = (await validationRes.json().catch(() => null)) as { success?: boolean; error?: string }
+    const validationData = (await validationRes.json().catch(() => null)) as {
+      success?: boolean
+      error?: string
+    }
     const validationPassed =
-      validationRes.ok && validationData?.success === false && typeof validationData?.error === 'string'
+      validationRes.ok &&
+      validationData?.success === false &&
+      typeof validationData?.error === 'string'
     results.push({
       id: 'campaigns-create-validation',
       title: 'POST /api/campaigns/create (валидация)',
       passed: validationPassed,
-      error: validationPassed ? undefined : validationRes.ok ? 'Ожидался success: false и error' : `HTTP ${validationRes.status}`
+      error: validationPassed
+        ? undefined
+        : validationRes.ok
+          ? 'Ожидался success: false и error'
+          : `HTTP ${validationRes.status}`
     })
 
     campaignsApiResults.value = results
@@ -1460,10 +1791,18 @@ const runAllTests = async () => {
               <i class="fas fa-flask tests-icon"></i>
             </div>
             <h1 class="tests-heading" :class="{ 'show-underline': showTitleUnderline }">
-              {{ displayedTitle }}<span v-if="showCursor && (cursorPosition === 'title' || cursorPosition === 'final')" class="typing-cursor">▮</span>
+              {{ displayedTitle
+              }}<span
+                v-if="showCursor && (cursorPosition === 'title' || cursorPosition === 'final')"
+                class="typing-cursor"
+                >▮</span
+              >
             </h1>
             <p class="tests-description">
-              {{ displayedDescription }}<span v-if="showCursor && cursorPosition === 'description'" class="typing-cursor">▮</span>
+              {{ displayedDescription
+              }}<span v-if="showCursor && cursorPosition === 'description'" class="typing-cursor"
+                >▮</span
+              >
             </p>
           </div>
 
@@ -1606,16 +1945,25 @@ const runAllTests = async () => {
               <ul class="tests-endpoints-list" role="list">
                 <li
                   v-for="item in endpointsDisplay"
-                :key="item.id"
-                class="tests-endpoints-list-item"
-                :class="`tests-endpoints-status-${item.status}`"
-              >
-                <span class="tests-endpoints-badge" :class="`tests-endpoints-badge-${item.status}`">
-                  {{ item.status === 'todo' ? '[TODO]' : item.status === 'success' ? '[OK]' : '[FAIL]' }}
-                </span>
-                <span class="tests-endpoints-list-title-inline">{{ item.title }}</span>
-                <span v-if="item.error" class="tests-endpoints-list-error">{{ item.error }}</span>
-              </li>
+                  :key="item.id"
+                  class="tests-endpoints-list-item"
+                  :class="`tests-endpoints-status-${item.status}`"
+                >
+                  <span
+                    class="tests-endpoints-badge"
+                    :class="`tests-endpoints-badge-${item.status}`"
+                  >
+                    {{
+                      item.status === 'todo'
+                        ? '[TODO]'
+                        : item.status === 'success'
+                          ? '[OK]'
+                          : '[FAIL]'
+                    }}
+                  </span>
+                  <span class="tests-endpoints-list-title-inline">{{ item.title }}</span>
+                  <span v-if="item.error" class="tests-endpoints-list-error">{{ item.error }}</span>
+                </li>
               </ul>
             </div>
             <div class="tests-endpoints-actions">
@@ -1637,9 +1985,7 @@ const runAllTests = async () => {
               <i class="fas fa-cog tests-endpoints-icon"></i>
               <h2 class="tests-endpoints-title">Библиотека настроек</h2>
             </div>
-            <p class="tests-endpoints-desc">
-              Тесты библиотеки настроек (settings.lib).
-            </p>
+            <p class="tests-endpoints-desc">Тесты библиотеки настроек (settings.lib).</p>
             <div v-if="settingsLastRunAt" class="tests-endpoints-last-run">
               Результаты от: {{ settingsLastRunAt }}
             </div>
@@ -1651,8 +1997,17 @@ const runAllTests = async () => {
                   class="tests-endpoints-list-item"
                   :class="`tests-endpoints-status-${item.status}`"
                 >
-                  <span class="tests-endpoints-badge" :class="`tests-endpoints-badge-${item.status}`">
-                    {{ item.status === 'todo' ? '[TODO]' : item.status === 'success' ? '[OK]' : '[FAIL]' }}
+                  <span
+                    class="tests-endpoints-badge"
+                    :class="`tests-endpoints-badge-${item.status}`"
+                  >
+                    {{
+                      item.status === 'todo'
+                        ? '[TODO]'
+                        : item.status === 'success'
+                          ? '[OK]'
+                          : '[FAIL]'
+                    }}
                   </span>
                   <span class="tests-endpoints-list-title-inline">{{ item.title }}</span>
                   <span v-if="item.error" class="tests-endpoints-list-error">{{ item.error }}</span>
@@ -1678,9 +2033,7 @@ const runAllTests = async () => {
               <i class="fas fa-table tests-endpoints-icon"></i>
               <h2 class="tests-endpoints-title">Репозиторий настроек</h2>
             </div>
-            <p class="tests-endpoints-desc">
-              Тесты репозитория настроек (settings.repo).
-            </p>
+            <p class="tests-endpoints-desc">Тесты репозитория настроек (settings.repo).</p>
             <div v-if="settingsRepoLastRunAt" class="tests-endpoints-last-run">
               Результаты от: {{ settingsRepoLastRunAt }}
             </div>
@@ -1692,8 +2045,17 @@ const runAllTests = async () => {
                   class="tests-endpoints-list-item"
                   :class="`tests-endpoints-status-${item.status}`"
                 >
-                  <span class="tests-endpoints-badge" :class="`tests-endpoints-badge-${item.status}`">
-                    {{ item.status === 'todo' ? '[TODO]' : item.status === 'success' ? '[OK]' : '[FAIL]' }}
+                  <span
+                    class="tests-endpoints-badge"
+                    :class="`tests-endpoints-badge-${item.status}`"
+                  >
+                    {{
+                      item.status === 'todo'
+                        ? '[TODO]'
+                        : item.status === 'success'
+                          ? '[OK]'
+                          : '[FAIL]'
+                    }}
                   </span>
                   <span class="tests-endpoints-list-title-inline">{{ item.title }}</span>
                   <span v-if="item.error" class="tests-endpoints-list-error">{{ item.error }}</span>
@@ -1708,7 +2070,9 @@ const runAllTests = async () => {
                 @click="runSettingsRepoTests"
               >
                 <i class="fas" :class="settingsRepoLoading ? 'fa-spinner fa-spin' : 'fa-bolt'"></i>
-                {{ settingsRepoLoading ? 'Проверяем...' : 'Запустить проверку репозитория настроек' }}
+                {{
+                  settingsRepoLoading ? 'Проверяем...' : 'Запустить проверку репозитория настроек'
+                }}
               </button>
             </div>
           </div>
@@ -1719,9 +2083,7 @@ const runAllTests = async () => {
               <i class="fas fa-file-alt tests-endpoints-icon"></i>
               <h2 class="tests-endpoints-title">Библиотека логов</h2>
             </div>
-            <p class="tests-endpoints-desc">
-              Тесты библиотеки логов (logger.lib).
-            </p>
+            <p class="tests-endpoints-desc">Тесты библиотеки логов (logger.lib).</p>
             <div v-if="loggerLibLastRunAt" class="tests-endpoints-last-run">
               Результаты от: {{ loggerLibLastRunAt }}
             </div>
@@ -1733,8 +2095,17 @@ const runAllTests = async () => {
                   class="tests-endpoints-list-item"
                   :class="`tests-endpoints-status-${item.status}`"
                 >
-                  <span class="tests-endpoints-badge" :class="`tests-endpoints-badge-${item.status}`">
-                    {{ item.status === 'todo' ? '[TODO]' : item.status === 'success' ? '[OK]' : '[FAIL]' }}
+                  <span
+                    class="tests-endpoints-badge"
+                    :class="`tests-endpoints-badge-${item.status}`"
+                  >
+                    {{
+                      item.status === 'todo'
+                        ? '[TODO]'
+                        : item.status === 'success'
+                          ? '[OK]'
+                          : '[FAIL]'
+                    }}
                   </span>
                   <span class="tests-endpoints-list-title-inline">{{ item.title }}</span>
                   <span v-if="item.error" class="tests-endpoints-list-error">{{ item.error }}</span>
@@ -1760,9 +2131,7 @@ const runAllTests = async () => {
               <i class="fas fa-database tests-endpoints-icon"></i>
               <h2 class="tests-endpoints-title">Репозиторий логов</h2>
             </div>
-            <p class="tests-endpoints-desc">
-              Тесты репозитория логов (logs.repo).
-            </p>
+            <p class="tests-endpoints-desc">Тесты репозитория логов (logs.repo).</p>
             <div v-if="logsRepoLastRunAt" class="tests-endpoints-last-run">
               Результаты от: {{ logsRepoLastRunAt }}
             </div>
@@ -1774,8 +2143,17 @@ const runAllTests = async () => {
                   class="tests-endpoints-list-item"
                   :class="`tests-endpoints-status-${item.status}`"
                 >
-                  <span class="tests-endpoints-badge" :class="`tests-endpoints-badge-${item.status}`">
-                    {{ item.status === 'todo' ? '[TODO]' : item.status === 'success' ? '[OK]' : '[FAIL]' }}
+                  <span
+                    class="tests-endpoints-badge"
+                    :class="`tests-endpoints-badge-${item.status}`"
+                  >
+                    {{
+                      item.status === 'todo'
+                        ? '[TODO]'
+                        : item.status === 'success'
+                          ? '[OK]'
+                          : '[FAIL]'
+                    }}
                   </span>
                   <span class="tests-endpoints-list-title-inline">{{ item.title }}</span>
                   <span v-if="item.error" class="tests-endpoints-list-error">{{ item.error }}</span>
@@ -1801,9 +2179,7 @@ const runAllTests = async () => {
               <i class="fas fa-chart-line tests-endpoints-icon"></i>
               <h2 class="tests-endpoints-title">Библиотека админки</h2>
             </div>
-            <p class="tests-endpoints-desc">
-              Тесты библиотеки админки (dashboard.lib).
-            </p>
+            <p class="tests-endpoints-desc">Тесты библиотеки админки (dashboard.lib).</p>
             <div v-if="dashboardLibLastRunAt" class="tests-endpoints-last-run">
               Результаты от: {{ dashboardLibLastRunAt }}
             </div>
@@ -1815,8 +2191,17 @@ const runAllTests = async () => {
                   class="tests-endpoints-list-item"
                   :class="`tests-endpoints-status-${item.status}`"
                 >
-                  <span class="tests-endpoints-badge" :class="`tests-endpoints-badge-${item.status}`">
-                    {{ item.status === 'todo' ? '[TODO]' : item.status === 'success' ? '[OK]' : '[FAIL]' }}
+                  <span
+                    class="tests-endpoints-badge"
+                    :class="`tests-endpoints-badge-${item.status}`"
+                  >
+                    {{
+                      item.status === 'todo'
+                        ? '[TODO]'
+                        : item.status === 'success'
+                          ? '[OK]'
+                          : '[FAIL]'
+                    }}
                   </span>
                   <span class="tests-endpoints-list-title-inline">{{ item.title }}</span>
                   <span v-if="item.error" class="tests-endpoints-list-error">{{ item.error }}</span>
@@ -1856,8 +2241,17 @@ const runAllTests = async () => {
                   class="tests-endpoints-list-item"
                   :class="`tests-endpoints-status-${item.status}`"
                 >
-                  <span class="tests-endpoints-badge" :class="`tests-endpoints-badge-${item.status}`">
-                    {{ item.status === 'todo' ? '[TODO]' : item.status === 'success' ? '[OK]' : '[FAIL]' }}
+                  <span
+                    class="tests-endpoints-badge"
+                    :class="`tests-endpoints-badge-${item.status}`"
+                  >
+                    {{
+                      item.status === 'todo'
+                        ? '[TODO]'
+                        : item.status === 'success'
+                          ? '[OK]'
+                          : '[FAIL]'
+                    }}
                   </span>
                   <span class="tests-endpoints-list-title-inline">{{ item.title }}</span>
                   <span v-if="item.error" class="tests-endpoints-list-error">{{ item.error }}</span>
@@ -1884,7 +2278,8 @@ const runAllTests = async () => {
               <h2 class="tests-endpoints-title">Fingerprint (дедупликация визитов)</h2>
             </div>
             <p class="tests-endpoints-desc">
-              Тесты lib/core/fingerprint (computeFingerprint: hash, parts, IP из заголовков, детерминированность).
+              Тесты lib/core/fingerprint (computeFingerprint: hash, parts, IP из заголовков,
+              детерминированность).
             </p>
             <div v-if="fingerprintLastRunAt" class="tests-endpoints-last-run">
               Результаты от: {{ fingerprintLastRunAt }}
@@ -1897,8 +2292,17 @@ const runAllTests = async () => {
                   class="tests-endpoints-list-item"
                   :class="`tests-endpoints-status-${item.status}`"
                 >
-                  <span class="tests-endpoints-badge" :class="`tests-endpoints-badge-${item.status}`">
-                    {{ item.status === 'todo' ? '[TODO]' : item.status === 'success' ? '[OK]' : '[FAIL]' }}
+                  <span
+                    class="tests-endpoints-badge"
+                    :class="`tests-endpoints-badge-${item.status}`"
+                  >
+                    {{
+                      item.status === 'todo'
+                        ? '[TODO]'
+                        : item.status === 'success'
+                          ? '[OK]'
+                          : '[FAIL]'
+                    }}
                   </span>
                   <span class="tests-endpoints-list-title-inline">{{ item.title }}</span>
                   <span v-if="item.error" class="tests-endpoints-list-error">{{ item.error }}</span>
@@ -1938,8 +2342,17 @@ const runAllTests = async () => {
                   class="tests-endpoints-list-item"
                   :class="`tests-endpoints-status-${item.status}`"
                 >
-                  <span class="tests-endpoints-badge" :class="`tests-endpoints-badge-${item.status}`">
-                    {{ item.status === 'todo' ? '[TODO]' : item.status === 'success' ? '[OK]' : '[FAIL]' }}
+                  <span
+                    class="tests-endpoints-badge"
+                    :class="`tests-endpoints-badge-${item.status}`"
+                  >
+                    {{
+                      item.status === 'todo'
+                        ? '[TODO]'
+                        : item.status === 'success'
+                          ? '[OK]'
+                          : '[FAIL]'
+                    }}
                   </span>
                   <span class="tests-endpoints-list-title-inline">{{ item.title }}</span>
                   <span v-if="item.error" class="tests-endpoints-list-error">{{ item.error }}</span>
@@ -1979,8 +2392,17 @@ const runAllTests = async () => {
                   class="tests-endpoints-list-item"
                   :class="`tests-endpoints-status-${item.status}`"
                 >
-                  <span class="tests-endpoints-badge" :class="`tests-endpoints-badge-${item.status}`">
-                    {{ item.status === 'todo' ? '[TODO]' : item.status === 'success' ? '[OK]' : '[FAIL]' }}
+                  <span
+                    class="tests-endpoints-badge"
+                    :class="`tests-endpoints-badge-${item.status}`"
+                  >
+                    {{
+                      item.status === 'todo'
+                        ? '[TODO]'
+                        : item.status === 'success'
+                          ? '[OK]'
+                          : '[FAIL]'
+                    }}
                   </span>
                   <span class="tests-endpoints-list-title-inline">{{ item.title }}</span>
                   <span v-if="item.error" class="tests-endpoints-list-error">{{ item.error }}</span>
@@ -2007,7 +2429,8 @@ const runAllTests = async () => {
               <h2 class="tests-endpoints-title">API кампаний</h2>
             </div>
             <p class="tests-endpoints-desc">
-              Тесты API кампаний: GET /api/campaigns/list, POST /api/campaigns/create (успех и валидация).
+              Тесты API кампаний: GET /api/campaigns/list, POST /api/campaigns/create (успех и
+              валидация).
             </p>
             <div v-if="campaignsApiLastRunAt" class="tests-endpoints-last-run">
               Результаты от: {{ campaignsApiLastRunAt }}
@@ -2020,8 +2443,17 @@ const runAllTests = async () => {
                   class="tests-endpoints-list-item"
                   :class="`tests-endpoints-status-${item.status}`"
                 >
-                  <span class="tests-endpoints-badge" :class="`tests-endpoints-badge-${item.status}`">
-                    {{ item.status === 'todo' ? '[TODO]' : item.status === 'success' ? '[OK]' : '[FAIL]' }}
+                  <span
+                    class="tests-endpoints-badge"
+                    :class="`tests-endpoints-badge-${item.status}`"
+                  >
+                    {{
+                      item.status === 'todo'
+                        ? '[TODO]'
+                        : item.status === 'success'
+                          ? '[OK]'
+                          : '[FAIL]'
+                    }}
                   </span>
                   <span class="tests-endpoints-list-title-inline">{{ item.title }}</span>
                   <span v-if="item.error" class="tests-endpoints-list-error">{{ item.error }}</span>
@@ -2061,8 +2493,17 @@ const runAllTests = async () => {
                   class="tests-endpoints-list-item"
                   :class="`tests-endpoints-status-${item.status}`"
                 >
-                  <span class="tests-endpoints-badge" :class="`tests-endpoints-badge-${item.status}`">
-                    {{ item.status === 'todo' ? '[TODO]' : item.status === 'success' ? '[OK]' : '[FAIL]' }}
+                  <span
+                    class="tests-endpoints-badge"
+                    :class="`tests-endpoints-badge-${item.status}`"
+                  >
+                    {{
+                      item.status === 'todo'
+                        ? '[TODO]'
+                        : item.status === 'success'
+                          ? '[OK]'
+                          : '[FAIL]'
+                    }}
                   </span>
                   <span class="tests-endpoints-list-title-inline">{{ item.title }}</span>
                   <span v-if="item.error" class="tests-endpoints-list-error">{{ item.error }}</span>
@@ -2102,8 +2543,17 @@ const runAllTests = async () => {
                   class="tests-endpoints-list-item"
                   :class="`tests-endpoints-status-${item.status}`"
                 >
-                  <span class="tests-endpoints-badge" :class="`tests-endpoints-badge-${item.status}`">
-                    {{ item.status === 'todo' ? '[TODO]' : item.status === 'success' ? '[OK]' : '[FAIL]' }}
+                  <span
+                    class="tests-endpoints-badge"
+                    :class="`tests-endpoints-badge-${item.status}`"
+                  >
+                    {{
+                      item.status === 'todo'
+                        ? '[TODO]'
+                        : item.status === 'success'
+                          ? '[OK]'
+                          : '[FAIL]'
+                    }}
                   </span>
                   <span class="tests-endpoints-list-title-inline">{{ item.title }}</span>
                   <span v-if="item.error" class="tests-endpoints-list-error">{{ item.error }}</span>
@@ -2130,7 +2580,8 @@ const runAllTests = async () => {
               <h2 class="tests-endpoints-title">Репозиторий партнёрских ссылок</h2>
             </div>
             <p class="tests-endpoints-desc">
-              Тесты lib/repo/linkRepo (getOrCreatePartnerLink, getPartnerLinks, findLinkByPublicSlug).
+              Тесты lib/repo/linkRepo (getOrCreatePartnerLink, getPartnerLinks,
+              findLinkByPublicSlug).
             </p>
             <div v-if="linkRepoLastRunAt" class="tests-endpoints-last-run">
               Результаты от: {{ linkRepoLastRunAt }}
@@ -2143,8 +2594,17 @@ const runAllTests = async () => {
                   class="tests-endpoints-list-item"
                   :class="`tests-endpoints-status-${item.status}`"
                 >
-                  <span class="tests-endpoints-badge" :class="`tests-endpoints-badge-${item.status}`">
-                    {{ item.status === 'todo' ? '[TODO]' : item.status === 'success' ? '[OK]' : '[FAIL]' }}
+                  <span
+                    class="tests-endpoints-badge"
+                    :class="`tests-endpoints-badge-${item.status}`"
+                  >
+                    {{
+                      item.status === 'todo'
+                        ? '[TODO]'
+                        : item.status === 'success'
+                          ? '[OK]'
+                          : '[FAIL]'
+                    }}
                   </span>
                   <span class="tests-endpoints-list-title-inline">{{ item.title }}</span>
                   <span v-if="item.error" class="tests-endpoints-list-error">{{ item.error }}</span>
@@ -2184,8 +2644,17 @@ const runAllTests = async () => {
                   class="tests-endpoints-list-item"
                   :class="`tests-endpoints-status-${item.status}`"
                 >
-                  <span class="tests-endpoints-badge" :class="`tests-endpoints-badge-${item.status}`">
-                    {{ item.status === 'todo' ? '[TODO]' : item.status === 'success' ? '[OK]' : '[FAIL]' }}
+                  <span
+                    class="tests-endpoints-badge"
+                    :class="`tests-endpoints-badge-${item.status}`"
+                  >
+                    {{
+                      item.status === 'todo'
+                        ? '[TODO]'
+                        : item.status === 'success'
+                          ? '[OK]'
+                          : '[FAIL]'
+                    }}
                   </span>
                   <span class="tests-endpoints-list-title-inline">{{ item.title }}</span>
                   <span v-if="item.error" class="tests-endpoints-list-error">{{ item.error }}</span>
@@ -2212,7 +2681,8 @@ const runAllTests = async () => {
               <h2 class="tests-endpoints-title">Роут редиректа /r?linkId=</h2>
             </div>
             <p class="tests-endpoints-desc">
-              Тесты GET /r?linkId=: 404 для неизвестного slug, редирект с созданием визита, идемпотентность.
+              Тесты GET /r?linkId=: 404 для неизвестного slug, редирект с созданием визита,
+              идемпотентность.
             </p>
             <div v-if="redirectRouteLastRunAt" class="tests-endpoints-last-run">
               Результаты от: {{ redirectRouteLastRunAt }}
@@ -2225,8 +2695,17 @@ const runAllTests = async () => {
                   class="tests-endpoints-list-item"
                   :class="`tests-endpoints-status-${item.status}`"
                 >
-                  <span class="tests-endpoints-badge" :class="`tests-endpoints-badge-${item.status}`">
-                    {{ item.status === 'todo' ? '[TODO]' : item.status === 'success' ? '[OK]' : '[FAIL]' }}
+                  <span
+                    class="tests-endpoints-badge"
+                    :class="`tests-endpoints-badge-${item.status}`"
+                  >
+                    {{
+                      item.status === 'todo'
+                        ? '[TODO]'
+                        : item.status === 'success'
+                          ? '[OK]'
+                          : '[FAIL]'
+                    }}
                   </span>
                   <span class="tests-endpoints-list-title-inline">{{ item.title }}</span>
                   <span v-if="item.error" class="tests-endpoints-list-error">{{ item.error }}</span>
@@ -2266,8 +2745,17 @@ const runAllTests = async () => {
                   class="tests-endpoints-list-item"
                   :class="`tests-endpoints-status-${item.status}`"
                 >
-                  <span class="tests-endpoints-badge" :class="`tests-endpoints-badge-${item.status}`">
-                    {{ item.status === 'todo' ? '[TODO]' : item.status === 'success' ? '[OK]' : '[FAIL]' }}
+                  <span
+                    class="tests-endpoints-badge"
+                    :class="`tests-endpoints-badge-${item.status}`"
+                  >
+                    {{
+                      item.status === 'todo'
+                        ? '[TODO]'
+                        : item.status === 'success'
+                          ? '[OK]'
+                          : '[FAIL]'
+                    }}
                   </span>
                   <span class="tests-endpoints-list-title-inline">{{ item.title }}</span>
                   <span v-if="item.error" class="tests-endpoints-list-error">{{ item.error }}</span>
@@ -2307,8 +2795,17 @@ const runAllTests = async () => {
                   class="tests-endpoints-list-item"
                   :class="`tests-endpoints-status-${item.status}`"
                 >
-                  <span class="tests-endpoints-badge" :class="`tests-endpoints-badge-${item.status}`">
-                    {{ item.status === 'todo' ? '[TODO]' : item.status === 'success' ? '[OK]' : '[FAIL]' }}
+                  <span
+                    class="tests-endpoints-badge"
+                    :class="`tests-endpoints-badge-${item.status}`"
+                  >
+                    {{
+                      item.status === 'todo'
+                        ? '[TODO]'
+                        : item.status === 'success'
+                          ? '[OK]'
+                          : '[FAIL]'
+                    }}
                   </span>
                   <span class="tests-endpoints-list-title-inline">{{ item.title }}</span>
                   <span v-if="item.error" class="tests-endpoints-list-error">{{ item.error }}</span>
@@ -2348,8 +2845,17 @@ const runAllTests = async () => {
                   class="tests-endpoints-list-item"
                   :class="`tests-endpoints-status-${item.status}`"
                 >
-                  <span class="tests-endpoints-badge" :class="`tests-endpoints-badge-${item.status}`">
-                    {{ item.status === 'todo' ? '[TODO]' : item.status === 'success' ? '[OK]' : '[FAIL]' }}
+                  <span
+                    class="tests-endpoints-badge"
+                    :class="`tests-endpoints-badge-${item.status}`"
+                  >
+                    {{
+                      item.status === 'todo'
+                        ? '[TODO]'
+                        : item.status === 'success'
+                          ? '[OK]'
+                          : '[FAIL]'
+                    }}
                   </span>
                   <span class="tests-endpoints-list-title-inline">{{ item.title }}</span>
                   <span v-if="item.error" class="tests-endpoints-list-error">{{ item.error }}</span>
@@ -2363,8 +2869,13 @@ const runAllTests = async () => {
                 :disabled="webhooksFeature5Loading"
                 @click="runWebhooksFeature5Tests"
               >
-                <i class="fas" :class="webhooksFeature5Loading ? 'fa-spinner fa-spin' : 'fa-bolt'"></i>
-                {{ webhooksFeature5Loading ? 'Проверяем...' : 'Запустить проверку webhooks-feature5' }}
+                <i
+                  class="fas"
+                  :class="webhooksFeature5Loading ? 'fa-spinner fa-spin' : 'fa-bolt'"
+                ></i>
+                {{
+                  webhooksFeature5Loading ? 'Проверяем...' : 'Запустить проверку webhooks-feature5'
+                }}
               </button>
             </div>
           </div>
@@ -2375,9 +2886,7 @@ const runAllTests = async () => {
               <i class="fas fa-user-friends tests-endpoints-icon"></i>
               <h2 class="tests-endpoints-title">Репозиторий партнёров</h2>
             </div>
-            <p class="tests-endpoints-desc">
-              getOrCreatePartner, getPartnerById.
-            </p>
+            <p class="tests-endpoints-desc">getOrCreatePartner, getPartnerById.</p>
             <div v-if="partnerRepoLastRunAt" class="tests-endpoints-last-run">
               Результаты от: {{ partnerRepoLastRunAt }}
             </div>
@@ -2389,8 +2898,17 @@ const runAllTests = async () => {
                   class="tests-endpoints-list-item"
                   :class="`tests-endpoints-status-${item.status}`"
                 >
-                  <span class="tests-endpoints-badge" :class="`tests-endpoints-badge-${item.status}`">
-                    {{ item.status === 'todo' ? '[TODO]' : item.status === 'success' ? '[OK]' : '[FAIL]' }}
+                  <span
+                    class="tests-endpoints-badge"
+                    :class="`tests-endpoints-badge-${item.status}`"
+                  >
+                    {{
+                      item.status === 'todo'
+                        ? '[TODO]'
+                        : item.status === 'success'
+                          ? '[OK]'
+                          : '[FAIL]'
+                    }}
                   </span>
                   <span class="tests-endpoints-list-title-inline">{{ item.title }}</span>
                   <span v-if="item.error" class="tests-endpoints-list-error">{{ item.error }}</span>
@@ -2416,9 +2934,7 @@ const runAllTests = async () => {
               <i class="fas fa-robot tests-endpoints-icon"></i>
               <h2 class="tests-endpoints-title">Репозиторий ботов</h2>
             </div>
-            <p class="tests-endpoints-desc">
-              getBotById, saveUpdate.
-            </p>
+            <p class="tests-endpoints-desc">getBotById, saveUpdate.</p>
             <div v-if="botRepoLastRunAt" class="tests-endpoints-last-run">
               Результаты от: {{ botRepoLastRunAt }}
             </div>
@@ -2430,8 +2946,17 @@ const runAllTests = async () => {
                   class="tests-endpoints-list-item"
                   :class="`tests-endpoints-status-${item.status}`"
                 >
-                  <span class="tests-endpoints-badge" :class="`tests-endpoints-badge-${item.status}`">
-                    {{ item.status === 'todo' ? '[TODO]' : item.status === 'success' ? '[OK]' : '[FAIL]' }}
+                  <span
+                    class="tests-endpoints-badge"
+                    :class="`tests-endpoints-badge-${item.status}`"
+                  >
+                    {{
+                      item.status === 'todo'
+                        ? '[TODO]'
+                        : item.status === 'success'
+                          ? '[OK]'
+                          : '[FAIL]'
+                    }}
                   </span>
                   <span class="tests-endpoints-list-title-inline">{{ item.title }}</span>
                   <span v-if="item.error" class="tests-endpoints-list-error">{{ item.error }}</span>
@@ -2458,7 +2983,8 @@ const runAllTests = async () => {
               <h2 class="tests-endpoints-title">Telegram-бот (URL, сообщения, токен)</h2>
             </div>
             <p class="tests-endpoints-desc">
-              getTelegramWebhookUrl, buildWelcomeMessage, buildStatsMessage, Telegram getMe. Токен — настройка telegram_test_bot_token (от @BotFather).
+              getTelegramWebhookUrl, buildWelcomeMessage, buildStatsMessage, Telegram getMe. Токен —
+              настройка telegram_test_bot_token (от @BotFather).
             </p>
             <div v-if="telegramBotLastRunAt" class="tests-endpoints-last-run">
               Результаты от: {{ telegramBotLastRunAt }}
@@ -2471,8 +2997,17 @@ const runAllTests = async () => {
                   class="tests-endpoints-list-item"
                   :class="`tests-endpoints-status-${item.status}`"
                 >
-                  <span class="tests-endpoints-badge" :class="`tests-endpoints-badge-${item.status}`">
-                    {{ item.status === 'todo' ? '[TODO]' : item.status === 'success' ? '[OK]' : '[FAIL]' }}
+                  <span
+                    class="tests-endpoints-badge"
+                    :class="`tests-endpoints-badge-${item.status}`"
+                  >
+                    {{
+                      item.status === 'todo'
+                        ? '[TODO]'
+                        : item.status === 'success'
+                          ? '[OK]'
+                          : '[FAIL]'
+                    }}
                   </span>
                   <span class="tests-endpoints-list-title-inline">{{ item.title }}</span>
                   <span v-if="item.error" class="tests-endpoints-list-error">{{ item.error }}</span>
@@ -2512,8 +3047,17 @@ const runAllTests = async () => {
                   class="tests-endpoints-list-item"
                   :class="`tests-endpoints-status-${item.status}`"
                 >
-                  <span class="tests-endpoints-badge" :class="`tests-endpoints-badge-${item.status}`">
-                    {{ item.status === 'todo' ? '[TODO]' : item.status === 'success' ? '[OK]' : '[FAIL]' }}
+                  <span
+                    class="tests-endpoints-badge"
+                    :class="`tests-endpoints-badge-${item.status}`"
+                  >
+                    {{
+                      item.status === 'todo'
+                        ? '[TODO]'
+                        : item.status === 'success'
+                          ? '[OK]'
+                          : '[FAIL]'
+                    }}
                   </span>
                   <span class="tests-endpoints-list-title-inline">{{ item.title }}</span>
                   <span v-if="item.error" class="tests-endpoints-list-error">{{ item.error }}</span>
@@ -2572,7 +3116,9 @@ const runAllTests = async () => {
 .tests-section {
   opacity: 0;
   transform: translateY(20px);
-  transition: opacity 0.8s ease, transform 0.8s ease;
+  transition:
+    opacity 0.8s ease,
+    transform 0.8s ease;
 }
 
 .tests-section.content-visible {
@@ -2602,10 +3148,18 @@ const runAllTests = async () => {
   position: relative;
   overflow: hidden;
   clip-path: polygon(
-    0 4px, 4px 4px, 4px 0,
-    calc(100% - 4px) 0, calc(100% - 4px) 4px, 100% 4px,
-    100% calc(100% - 4px), calc(100% - 4px) calc(100% - 4px), calc(100% - 4px) 100%,
-    4px 100%, 4px calc(100% - 4px), 0 calc(100% - 4px)
+    0 4px,
+    4px 4px,
+    4px 0,
+    calc(100% - 4px) 0,
+    calc(100% - 4px) 4px,
+    100% 4px,
+    100% calc(100% - 4px),
+    calc(100% - 4px) calc(100% - 4px),
+    calc(100% - 4px) 100%,
+    4px 100%,
+    4px calc(100% - 4px),
+    0 calc(100% - 4px)
   );
 }
 
@@ -2653,8 +3207,14 @@ const runAllTests = async () => {
 }
 
 @keyframes cursor-blink {
-  0%, 50% { opacity: 1; }
-  51%, 100% { opacity: 0; }
+  0%,
+  50% {
+    opacity: 1;
+  }
+  51%,
+  100% {
+    opacity: 0;
+  }
 }
 
 .tests-card {
@@ -2748,9 +3308,15 @@ const runAllTests = async () => {
   text-transform: lowercase;
 }
 
-.tests-metric-passed .tests-metric-value { color: #2ecc71; }
-.tests-metric-failed .tests-metric-value { color: #e74c3c; }
-.tests-metric-skipped .tests-metric-value { color: #95a5a6; }
+.tests-metric-passed .tests-metric-value {
+  color: #2ecc71;
+}
+.tests-metric-failed .tests-metric-value {
+  color: #e74c3c;
+}
+.tests-metric-skipped .tests-metric-value {
+  color: #95a5a6;
+}
 
 .tests-dashboard-last-run {
   font-size: 0.85rem;
@@ -3158,14 +3724,30 @@ const runAllTests = async () => {
   font-weight: 600;
 }
 
-.tests-log-level-debug { color: #9b59b6; }
-.tests-log-level-info { color: #3498db; }
-.tests-log-level-notice { color: #1abc9c; }
-.tests-log-level-warning { color: #f39c12; }
-.tests-log-level-error { color: #e74c3c; }
-.tests-log-level-critical { color: #c0392b; }
-.tests-log-level-alert { color: #e67e22; }
-.tests-log-level-emergency { color: #d35400; }
+.tests-log-level-debug {
+  color: #9b59b6;
+}
+.tests-log-level-info {
+  color: #3498db;
+}
+.tests-log-level-notice {
+  color: #1abc9c;
+}
+.tests-log-level-warning {
+  color: #f39c12;
+}
+.tests-log-level-error {
+  color: #e74c3c;
+}
+.tests-log-level-critical {
+  color: #c0392b;
+}
+.tests-log-level-alert {
+  color: #e67e22;
+}
+.tests-log-level-emergency {
+  color: #d35400;
+}
 
 .tests-log-message {
   color: var(--color-text-secondary);

@@ -80,7 +80,9 @@ let sharedAudioContext: AudioContext | null = null
 
 function getSharedAudioContext(): AudioContext | null {
   try {
-    const AC = window.AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
+    const AC =
+      window.AudioContext ||
+      (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
     if (!AC) return null
     if (sharedAudioContext && sharedAudioContext.state !== 'closed') {
       return sharedAudioContext

@@ -14,6 +14,8 @@ export const getAllGroupsHandler: V1GcHandler = async (_ctx, a) => {
   return { kind: 'gc_result', gc }
 }
 
-export const getAllGroupsRoute = app.get('/', async (ctx, req) => handleV1Op(ctx, req, 'getAllGroups', getAllGroupsHandler))
+export const getAllGroupsRoute = app.get('/', async (ctx, req) =>
+  handleV1Op(ctx, req, 'getAllGroups', getAllGroupsHandler)
+)
 
 export default getAllGroupsRoute

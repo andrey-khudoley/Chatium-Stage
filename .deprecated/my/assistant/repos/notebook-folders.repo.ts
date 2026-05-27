@@ -57,7 +57,11 @@ export async function createForUser(
   return rowToDto(row)
 }
 
-async function assertOwner(ctx: app.Ctx, userId: string, id: string): Promise<NotebookFoldersRow | null> {
+async function assertOwner(
+  ctx: app.Ctx,
+  userId: string,
+  id: string
+): Promise<NotebookFoldersRow | null> {
   const row = await NotebookFolders.findById(ctx, id)
   if (!row || row.userId !== userId) return null
   return row

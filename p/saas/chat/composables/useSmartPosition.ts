@@ -20,7 +20,7 @@ const defaultOptions: PositionOptions = {
   placement: 'auto',
   alignment: 'start',
   offset: 8,
-  fallbackPlacements: ['top', 'bottom', 'left', 'right'],
+  fallbackPlacements: ['top', 'bottom', 'left', 'right']
 }
 
 export function useSmartPosition() {
@@ -34,21 +34,28 @@ export function useSmartPosition() {
     const opts = { ...defaultOptions, ...options }
     const viewport = {
       width: window.innerWidth,
-      height: window.innerHeight,
+      height: window.innerHeight
     }
 
-    const placements = opts.placement === 'auto' 
-      ? opts.fallbackPlacements! 
-      : [opts.placement!, ...opts.fallbackPlacements!.filter(p => p !== opts.placement)]
+    const placements =
+      opts.placement === 'auto'
+        ? opts.fallbackPlacements!
+        : [opts.placement!, ...opts.fallbackPlacements!.filter((p) => p !== opts.placement)]
 
     for (const placement of placements) {
-      const pos = getPositionForPlacement(triggerRect, popupRect, placement, opts.alignment!, opts.offset!)
-      
+      const pos = getPositionForPlacement(
+        triggerRect,
+        popupRect,
+        placement,
+        opts.alignment!,
+        opts.offset!
+      )
+
       // Проверяем, помещается ли popup в viewport
-      const fits = 
-        pos.x >= 0 && 
-        pos.y >= 0 && 
-        pos.x + popupRect.width <= viewport.width && 
+      const fits =
+        pos.x >= 0 &&
+        pos.y >= 0 &&
+        pos.x + popupRect.width <= viewport.width &&
         pos.y + popupRect.height <= viewport.height
 
       if (fits) {
@@ -127,10 +134,16 @@ export function useSmartPosition() {
   ): { x: number; y: number } {
     const viewport = {
       width: window.innerWidth,
-      height: window.innerHeight,
+      height: window.innerHeight
     }
 
-    let pos = getPositionForPlacement(triggerRect, popupRect, placement, options.alignment!, options.offset!)
+    let pos = getPositionForPlacement(
+      triggerRect,
+      popupRect,
+      placement,
+      options.alignment!,
+      options.offset!
+    )
 
     // Корректируем позицию чтобы не выходить за границы viewport
     pos.x = Math.max(10, Math.min(pos.x, viewport.width - popupRect.width - 10))
@@ -148,7 +161,7 @@ export function useSmartPosition() {
   ): Position {
     const viewport = {
       width: window.innerWidth,
-      height: window.innerHeight,
+      height: window.innerHeight
     }
 
     let x = clickX + offset
@@ -183,13 +196,17 @@ export function useSmartPosition() {
     const triggerRect = triggerElement.getBoundingClientRect()
     const popupRect = popupElement.getBoundingClientRect()
 
-    position.value = calculatePosition(triggerRect, { width: popupRect.width, height: popupRect.height }, options)
+    position.value = calculatePosition(
+      triggerRect,
+      { width: popupRect.width, height: popupRect.height },
+      options
+    )
   }
 
   return {
     position,
     calculatePosition,
     calculatePositionFromPoint,
-    updatePosition,
+    updatePosition
   }
 }

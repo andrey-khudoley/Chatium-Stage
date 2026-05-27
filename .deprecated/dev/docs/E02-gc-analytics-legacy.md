@@ -43,13 +43,13 @@
 
 ### Ключевые компоненты
 
-| Компонент | Описание |
-|-----------|----------|
-| `@gc-mcp-server/sdk` | SDK для работы с GetCourse |
-| `gcQueryAi(ctx, query)` | Выполнение SQL запросов |
-| `chatium_ai.access_log` | Таблица событий |
-| `chatium_ai.behaviour2_log` | Таблица поведения |
-| ClickHouse | База данных |
+| Компонент                   | Описание                   |
+| --------------------------- | -------------------------- |
+| `@gc-mcp-server/sdk`        | SDK для работы с GetCourse |
+| `gcQueryAi(ctx, query)`     | Выполнение SQL запросов    |
+| `chatium_ai.access_log`     | Таблица событий            |
+| `chatium_ai.behaviour2_log` | Таблица поведения          |
+| ClickHouse                  | База данных                |
 
 ---
 
@@ -167,7 +167,7 @@ const result = await gcQueryAi(ctx, sqlQuery)
 ```typescript
 export const apiStatsRoute = app.get('/stats', async (ctx, req) => {
   const { dateFrom, dateTo } = req.query
-  
+
   const query = `
     SELECT 
       COUNT(DISTINCT action_param1) as total_orders
@@ -175,9 +175,9 @@ export const apiStatsRoute = app.get('/stats', async (ctx, req) => {
     WHERE urlPath = 'event://getcourse/dealCreated'
       AND dt BETWEEN '${dateFrom}' AND '${dateTo}'
   `
-  
+
   const result = await gcQueryAi(ctx, query)
-  
+
   return {
     success: true,
     totalOrders: result.rows?.[0]?.total_orders || 0
@@ -189,7 +189,7 @@ export const apiStatsRoute = app.get('/stats', async (ctx, req) => {
 
 ```typescript
 interface QueryResult {
-  rows: Array<Record<string, any>>  // Массив строк результата
+  rows: Array<Record<string, any>> // Массив строк результата
 }
 
 // Пример
@@ -210,6 +210,7 @@ const result = await gcQueryAi(ctx, query)
 **URL**: `event://getcourse/dealCreated`
 
 **Поля**:
+
 ```
 action_param1       → deal_id (String)           # ID заказа
 action_param1_float → order_amount (Float)       # Сумма заказа
@@ -226,7 +227,7 @@ dt                  → creation_date (Date)       # Дата создания
 **SQL пример**:
 
 ```sql
-SELECT 
+SELECT
   action_param1 as deal_id,
   action_param3_int as order_number,
   action_param1_float as amount,
@@ -246,6 +247,7 @@ LIMIT 100
 **URL**: `event://getcourse/dealStatusChanged`
 
 **Поля**:
+
 ```
 action_param1 → deal_id (String)      # ID заказа
 action_param3 → status (String)       # Новый статус
@@ -257,7 +259,7 @@ ts            → change_time (DateTime) # Время изменения
 
 ```sql
 WITH latest_statuses AS (
-  SELECT 
+  SELECT
     action_param1 as deal_id,
     action_param3 as status,
     dt,
@@ -265,7 +267,7 @@ WITH latest_statuses AS (
   FROM chatium_ai.access_log
   WHERE urlPath = 'event://getcourse/dealStatusChanged'
 )
-SELECT 
+SELECT
   deal_id,
   status,
   dt
@@ -279,6 +281,7 @@ ORDER BY dt DESC
 **URL**: `event://getcourse/dealPaid`
 
 **Поля**:
+
 ```
 action_param1       → deal_id (String)           # ID заказа
 action_param2_float → payment_amount (Float)     # Сумма оплаты
@@ -290,7 +293,7 @@ dt                  → payment_date (Date)        # Дата оплаты
 **SQL пример - доход за период**:
 
 ```sql
-SELECT 
+SELECT
   toDate(dt) as payment_date,
   COUNT(DISTINCT action_param1) as orders_paid,
   SUM(action_param2_float) as total_revenue,
@@ -307,6 +310,7 @@ ORDER BY payment_date DESC
 **URL**: `event://getcourse/dealMoneyValuesChanged`
 
 **Поля**:
+
 ```
 action_param1       → deal_id (String)      # ID заказа
 action_param1_float → new_amount (Float)    # Новая сумма
@@ -320,6 +324,7 @@ action_param2_float → price_change (Float)  # Изменение
 **URL**: `event://getcourse/user/created`
 
 **Поля**:
+
 ```
 user_id         → user_id (String)       # ID пользователя
 user_email      → email (String)         # Email
@@ -332,7 +337,7 @@ dt              → registration_date (Date) # Дата регистрации
 **SQL пример - регистрации по дням**:
 
 ```sql
-SELECT 
+SELECT
   dt as registration_date,
   COUNT(DISTINCT user_id) as new_users
 FROM chatium_ai.access_log
@@ -347,6 +352,7 @@ ORDER BY dt DESC
 **URL**: `event://getcourse/user/chatbot/telegram_enabled`
 
 **Поля**:
+
 ```
 user_id → user_id (String)          # ID пользователя
 dt      → connection_date (Date)    # Дата подключения
@@ -371,6 +377,7 @@ dt      → connection_date (Date)    # Дата подключения
 **URL**: `event://getcourse/user/group_added`
 
 **Поля**:
+
 ```
 user_id       → user_id (String)    # ID пользователя
 action_param1 → group_id (String)   # ID группы
@@ -380,7 +387,7 @@ dt            → added_date (Date)   # Дата добавления
 **SQL пример - топ групп**:
 
 ```sql
-SELECT 
+SELECT
   action_param1 as group_id,
   COUNT(DISTINCT user_id) as members_count
 FROM chatium_ai.access_log
@@ -402,6 +409,7 @@ LIMIT 20
 **URL**: `event://getcourse/payment/initiated`
 
 **Поля**:
+
 ```
 action_param1       → deal_id (String)           # ID заказа
 action_param1_float → amount (Float)             # Сумма
@@ -423,6 +431,7 @@ action_param2       → payment_method (String)    # Способ оплаты
 **URL**: `event://getcourse/message/incoming`
 
 **Поля**:
+
 ```
 user_id       → user_id (String)        # ID пользователя
 action_param1 → message_id (String)     # ID сообщения
@@ -456,7 +465,7 @@ dt            → message_date (Date)     # Дата
 #### Количество заказов за период
 
 ```sql
-SELECT 
+SELECT
   COUNT(DISTINCT action_param1) as total_orders,
   SUM(action_param1_float) as total_amount
 FROM chatium_ai.access_log
@@ -467,7 +476,7 @@ WHERE urlPath = 'event://getcourse/dealCreated'
 #### Доход за период
 
 ```sql
-SELECT 
+SELECT
   COUNT(DISTINCT action_param1) as paid_orders,
   SUM(action_param2_float) as total_revenue,
   AVG(action_param2_float) as average_payment
@@ -479,7 +488,7 @@ WHERE urlPath = 'event://getcourse/dealPaid'
 #### Регистрации по дням
 
 ```sql
-SELECT 
+SELECT
   dt as registration_date,
   COUNT(DISTINCT user_id) as new_users
 FROM chatium_ai.access_log
@@ -495,20 +504,20 @@ ORDER BY dt ASC
 
 ```sql
 WITH created_deals AS (
-  SELECT 
+  SELECT
     COUNT(DISTINCT action_param1) as count
   FROM chatium_ai.access_log
   WHERE urlPath = 'event://getcourse/dealCreated'
     AND dt BETWEEN '2025-01-01' AND '2025-01-31'
 ),
 paid_deals AS (
-  SELECT 
+  SELECT
     COUNT(DISTINCT action_param1) as count
   FROM chatium_ai.access_log
   WHERE urlPath = 'event://getcourse/dealPaid'
     AND dt BETWEEN '2025-01-01' AND '2025-01-31'
 )
-SELECT 
+SELECT
   c.count as created,
   p.count as paid,
   ROUND((p.count * 100.0 / c.count), 2) as conversion_percent
@@ -519,16 +528,16 @@ FROM created_deals c, paid_deals p
 
 ```sql
 WITH latest_order_statuses AS (
-  SELECT 
+  SELECT
     action_param1 as deal_id,
     action_param3 as status,
     dt,
     ROW_NUMBER() OVER (PARTITION BY action_param1 ORDER BY ts DESC) as rn
-  FROM chatium_ai.access_log 
+  FROM chatium_ai.access_log
   WHERE urlPath = 'event://getcourse/dealStatusChanged'
 ),
 order_creations AS (
-  SELECT 
+  SELECT
     action_param1 as deal_id,
     action_param3 as initial_status,
     dt as creation_date
@@ -536,16 +545,16 @@ order_creations AS (
   WHERE urlPath = 'event://getcourse/dealCreated'
 ),
 paid_orders AS (
-  SELECT 
+  SELECT
     DISTINCT action_param1 as deal_id,
     'payed' as paid_status
   FROM chatium_ai.access_log
   WHERE urlPath = 'event://getcourse/dealPaid'
 )
-SELECT 
+SELECT
   COALESCE(c.deal_id, s.deal_id, p.deal_id) as deal_id,
   COALESCE(c.creation_date, s.dt) as date,
-  CASE 
+  CASE
     WHEN p.paid_status IS NOT NULL THEN 'payed'
     WHEN s.status IS NOT NULL THEN s.status
     ELSE COALESCE(c.initial_status, 'new')
@@ -561,7 +570,7 @@ ORDER BY date DESC
 #### LTV пользователей (Lifetime Value)
 
 ```sql
-SELECT 
+SELECT
   user_id,
   user_email,
   user_first_name,
@@ -586,16 +595,16 @@ LIMIT 100
 #### Динамика продаж по дням
 
 ```sql
-SELECT 
+SELECT
   toDate(dt) as sale_date,
   COUNT(DISTINCT action_param1) as orders_count,
   SUM(action_param1_float) as orders_amount,
-  COUNT(DISTINCT 
-    CASE WHEN urlPath = 'event://getcourse/dealPaid' 
+  COUNT(DISTINCT
+    CASE WHEN urlPath = 'event://getcourse/dealPaid'
     THEN action_param1 END
   ) as paid_count,
   SUM(
-    CASE WHEN urlPath = 'event://getcourse/dealPaid' 
+    CASE WHEN urlPath = 'event://getcourse/dealPaid'
     THEN action_param2_float ELSE 0 END
   ) as paid_amount
 FROM chatium_ai.access_log
@@ -609,7 +618,7 @@ ORDER BY sale_date ASC
 
 ```sql
 WITH user_cohorts AS (
-  SELECT 
+  SELECT
     user_id,
     toStartOfMonth(MIN(dt)) as cohort_month
   FROM chatium_ai.access_log
@@ -617,7 +626,7 @@ WITH user_cohorts AS (
   GROUP BY user_id
 ),
 monthly_revenue AS (
-  SELECT 
+  SELECT
     user_id,
     toStartOfMonth(dt) as revenue_month,
     SUM(action_param2_float) as revenue
@@ -625,7 +634,7 @@ monthly_revenue AS (
   WHERE urlPath = 'event://getcourse/dealPaid'
   GROUP BY user_id, revenue_month
 )
-SELECT 
+SELECT
   uc.cohort_month,
   mr.revenue_month,
   dateDiff('month', uc.cohort_month, mr.revenue_month) as months_since_registration,
@@ -659,7 +668,7 @@ interface OrderStats {
 
 export const apiOrderStatsRoute = app.get('/order-stats', async (ctx, req) => {
   const { dateFrom = '2025-01-01', dateTo = '2025-01-31' } = req.query
-  
+
   const query = `
     WITH created AS (
       SELECT 
@@ -685,11 +694,11 @@ export const apiOrderStatsRoute = app.get('/order-stats', async (ctx, req) => {
       ROUND((p.count * 100.0 / GREATEST(c.count, 1)), 2) as conversion
     FROM created c, paid p
   `
-  
+
   try {
     const result = await gcQueryAi(ctx, query)
     const stats = result.rows?.[0] as OrderStats
-    
+
     return {
       success: true,
       stats: {
@@ -715,7 +724,7 @@ export const apiOrderStatsRoute = app.get('/order-stats', async (ctx, req) => {
 ```typescript
 export const apiTelegramUsersRoute = app.get('/telegram-users', async (ctx, req) => {
   const { dateFrom, dateTo } = req.query
-  
+
   const query = `
     WITH all_users AS (
       SELECT DISTINCT user_id
@@ -742,7 +751,7 @@ export const apiTelegramUsersRoute = app.get('/telegram-users', async (ctx, req)
     LEFT JOIN telegram_enabled te ON au.user_id = te.user_id
     LEFT JOIN telegram_disabled td ON au.user_id = td.user_id
   `
-  
+
   const result = await gcQueryAi(ctx, query)
   return { success: true, stats: result.rows?.[0] }
 })
@@ -753,7 +762,7 @@ export const apiTelegramUsersRoute = app.get('/telegram-users', async (ctx, req)
 ```typescript
 export const apiTopProductsRoute = app.get('/top-products', async (ctx, req) => {
   const { limit = 10 } = req.query
-  
+
   const query = `
     SELECT 
       title as product_name,
@@ -769,9 +778,9 @@ export const apiTopProductsRoute = app.get('/top-products', async (ctx, req) => 
     ORDER BY total_revenue DESC
     LIMIT ${limit}
   `
-  
+
   const result = await gcQueryAi(ctx, query)
-  
+
   return {
     success: true,
     products: result.rows || []
@@ -786,12 +795,14 @@ export const apiTopProductsRoute = app.get('/top-products', async (ctx, req) => 
 ### Используйте фильтры по дате
 
 ✅ **Правильно**:
+
 ```sql
 WHERE urlPath = 'event://getcourse/dealCreated'
   AND dt BETWEEN '2025-01-01' AND '2025-01-31'
 ```
 
 ❌ **Неправильно** (медленно):
+
 ```sql
 WHERE urlPath = 'event://getcourse/dealCreated'
 -- Нет фильтра по дате!
@@ -800,6 +811,7 @@ WHERE urlPath = 'event://getcourse/dealCreated'
 ### Используйте CTE для сложной логики
 
 ✅ **Правильно**:
+
 ```sql
 WITH created_deals AS (
   SELECT action_param1 as deal_id
@@ -814,17 +826,19 @@ paid_deals AS (
 SELECT * FROM created_deals JOIN paid_deals USING (deal_id)
 ```
 
-### Избегайте SELECT *
+### Избегайте SELECT \*
 
 ✅ **Правильно**:
+
 ```sql
-SELECT 
+SELECT
   action_param1 as deal_id,
   action_param1_float as amount
 FROM chatium_ai.access_log
 ```
 
 ❌ **Неправильно**:
+
 ```sql
 SELECT * FROM chatium_ai.access_log
 ```
@@ -832,6 +846,7 @@ SELECT * FROM chatium_ai.access_log
 ### Используйте LIMIT
 
 ✅ **Всегда добавляйте LIMIT**:
+
 ```sql
 SELECT ... FROM chatium_ai.access_log
 WHERE ...
@@ -854,9 +869,9 @@ export const apiRoute = app.get('/analytics', async (ctx, req) => {
   } catch (error) {
     ctx.account.log('Analytics query failed', {
       level: 'error',
-      json: { 
+      json: {
         query: query.substring(0, 200),
-        error: error.message 
+        error: error.message
       }
     })
     return { success: false, error: error.message }
@@ -887,22 +902,21 @@ const deals: DealRow[] = result.rows || []
 ```typescript
 export const apiRoute = app.get('/stats', async (ctx, req) => {
   let { dateFrom, dateTo } = req.query
-  
+
   // Значения по умолчанию
   if (!dateFrom) {
-    dateFrom = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
-      .toISOString().split('T')[0]
+    dateFrom = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
   }
-  
+
   if (!dateTo) {
     dateTo = new Date().toISOString().split('T')[0]
   }
-  
+
   const query = `
     SELECT ... 
     WHERE dt BETWEEN '${dateFrom}' AND '${dateTo}'
   `
-  
+
   const result = await gcQueryAi(ctx, query)
   return { success: true, data: result.rows }
 })
@@ -915,28 +929,28 @@ export const apiRoute = app.get('/stats', async (ctx, req) => {
 ```typescript
 export const apiRoute = app.get('/analytics', async (ctx, req) => {
   const startTime = Date.now()
-  
+
   try {
     const result = await gcQueryAi(ctx, query)
     const duration = Date.now() - startTime
-    
+
     if (duration > 5000) {
       ctx.account.log('Slow query detected', {
         level: 'warn',
-        json: { 
+        json: {
           duration,
           query: query.substring(0, 200)
         }
       })
     }
-    
+
     return { success: true, data: result.rows }
   } catch (error) {
     ctx.account.log('Query error', {
       level: 'error',
-      json: { 
+      json: {
         duration: Date.now() - startTime,
-        error: error.message 
+        error: error.message
       }
     })
     return { success: false, error: error.message }
@@ -981,4 +995,3 @@ if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
 **Версия**: 1.0  
 **Дата**: 2025-11-02  
 **Последнее обновление**: Создание документации по GetCourse аналитике
-

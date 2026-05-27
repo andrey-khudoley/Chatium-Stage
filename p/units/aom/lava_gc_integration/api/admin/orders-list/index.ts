@@ -48,12 +48,16 @@ export const getOrdersListRoute = app.get('/', async (ctx, req) => {
   const page = parsePage(q.page)
 
   try {
-    const result = await ordersListLib.getOrdersListPage(ctx, {
-      fromMs,
-      toMs,
-      lavaProductId: lavaProductId.trim() || undefined,
-      lavaOfferId: lavaOfferId.trim() || undefined
-    }, page)
+    const result = await ordersListLib.getOrdersListPage(
+      ctx,
+      {
+        fromMs,
+        toMs,
+        lavaProductId: lavaProductId.trim() || undefined,
+        lavaOfferId: lavaOfferId.trim() || undefined
+      },
+      page
+    )
     return { success: true, ...result }
   } catch (error) {
     await loggerLib.writeServerLog(ctx, {

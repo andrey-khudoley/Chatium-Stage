@@ -1,5 +1,5 @@
 ---
-title: "LIFE PAY — deep research для интегратора (2026-05-10)"
+title: 'LIFE PAY — deep research для интегратора (2026-05-10)'
 type: reference
 maturity: evergreen
 tags:
@@ -23,6 +23,7 @@ project_refs:
 > ⚠️ **Снапшот от 10.05.2026.** Это исторический research-отчёт по экосистеме LIFE PAY до диалога с поддержкой 12.05.2026. Не учитывает разделение кабинетов (`my.life-pay.ru` vs `home.life-pay.ru`), уточнения по `POST /v1/bill` с `method: "sbp"` и развилку сценариев A/B для проекта Ольги.
 >
 > **Актуальные источники (приоритет на них):**
+>
 > - [cabinets](cabinets.md) — карта кабинетов и развилка сценариев (главное)
 > - [README](README.md) — индекс раздела
 > - [api-contracts](api-contracts.md) — оба API с актуальными полями
@@ -50,15 +51,15 @@ project_refs:
 
 Сервис публикует несколько официальных поверхностей интеграции, и для проекта важно не смешивать их роли. Ниже — карта, собранная из основного каталога документации, quick-start материалов и Swagger/OpenAPI-страниц. citeturn17view11turn20view0turn11view1turn11view0
 
-| Поверхность | Что покрывает | Что реально можно реализовать | Комментарий для интегратора |
-|---|---|---|---|
-| `LIFE PAY Online API v1` | Интернет-эквайринг | Авторизация, настройки магазина, выставление счёта, обновление/деактивация счёта, токенизация, списание, 3DS, статус, возврат, QR СБП, hold/capture/void, рекурренты | Это основной платёжный API для сайта/приложения. |
-| `ECOM Checkout (SDK)` | Клиентский JS SDK | Токенизация карты, валидация карты, обёртки над `ChargeApi`, `InvoiceApi`, `QRApi`, `ServiceApi`, `TokenApi` | Это предпочтительный способ не пропускать PAN через ваш сервер. |
-| `API кассовых ссылок СБП v2` | QR/NFC/кассовые ссылки СБП | Активация/деактивация ссылки, проверка оплаты, отмена сессии, возврат, статус возврата, callback-и | Отдельный API и отдельная модель ошибок. |
-| `API NFC меток СБП v1` | Legacy-контур СБП | Активация, динамическая ссылка, возврат, статус продажи, статус возврата, список банков/тенантов | Для нового проекта — только если нужен legacy-функционал вроде `list_merchants`. |
-| `LIFE POS API v6` | Кассовый/операционный бэкенд | Продажи, сессии, товары, сотрудники, юрлица, терминалы, транзакции, отчёты, экспорт/импорт, роли, организации, выручка | Это уже не только платёжный API, а полноценный POS/back-office API. |
-| Облачная фискализация | Печать и обработка чеков | Отправка чеков, callback-и, тестовый и продовый API | Нужна, если вы хотите закрыть 54‑ФЗ в одном контуре. |
-| Legacy `apidoc` | Старые, но полезные страницы | Вебхуки по транзакциям, повторы уведомлений, legacy `/transactions` | Нужен как вспомогательный источник, когда в новой документации чего-то нет. |
+| Поверхность                  | Что покрывает                | Что реально можно реализовать                                                                                                                                        | Комментарий для интегратора                                                      |
+| ---------------------------- | ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| `LIFE PAY Online API v1`     | Интернет-эквайринг           | Авторизация, настройки магазина, выставление счёта, обновление/деактивация счёта, токенизация, списание, 3DS, статус, возврат, QR СБП, hold/capture/void, рекурренты | Это основной платёжный API для сайта/приложения.                                 |
+| `ECOM Checkout (SDK)`        | Клиентский JS SDK            | Токенизация карты, валидация карты, обёртки над `ChargeApi`, `InvoiceApi`, `QRApi`, `ServiceApi`, `TokenApi`                                                         | Это предпочтительный способ не пропускать PAN через ваш сервер.                  |
+| `API кассовых ссылок СБП v2` | QR/NFC/кассовые ссылки СБП   | Активация/деактивация ссылки, проверка оплаты, отмена сессии, возврат, статус возврата, callback-и                                                                   | Отдельный API и отдельная модель ошибок.                                         |
+| `API NFC меток СБП v1`       | Legacy-контур СБП            | Активация, динамическая ссылка, возврат, статус продажи, статус возврата, список банков/тенантов                                                                     | Для нового проекта — только если нужен legacy-функционал вроде `list_merchants`. |
+| `LIFE POS API v6`            | Кассовый/операционный бэкенд | Продажи, сессии, товары, сотрудники, юрлица, терминалы, транзакции, отчёты, экспорт/импорт, роли, организации, выручка                                               | Это уже не только платёжный API, а полноценный POS/back-office API.              |
+| Облачная фискализация        | Печать и обработка чеков     | Отправка чеков, callback-и, тестовый и продовый API                                                                                                                  | Нужна, если вы хотите закрыть 54‑ФЗ в одном контуре.                             |
+| Legacy `apidoc`              | Старые, но полезные страницы | Вебхуки по транзакциям, повторы уведомлений, legacy `/transactions`                                                                                                  | Нужен как вспомогательный источник, когда в новой документации чего-то нет.      |
 
 Перечень публичных resource-групп в `LIFE POS API v6` очень широкий: `AsyncTasks`, `Auth`, `Brands`, `DirectCorrectionSaleSessions`, `DirectSaleSessions`, `Employees`, `Export`, `FiscalDocuments`, `FiscalRegistrars`, `Goods`, `GoodsCategories`, `Import`, `Invoices`, `LegalEntities`, `Me`, `NomenclatureExport`, `NomenclatureImport`, `NomenclatureImportTaskPreview`, `OperationsReport`, `OperationsReportExport`, `OrganizationOptions`, `Organizations`, `Outlets`, `RevenueReports`, `RevenueReportsExport`, `RevenueReportsWidgets`, `ReversalCorrectionSaleSessions`, `ReversalSaleSessions`, `Roles`, `Sales`, `SaleSessions`, `Subscriptions`, `Terminals`, `Transactions`, `Uoms`, `Workplaces`. Это уже API уровня POS/ERP-интеграции, а не только «приём денег». citeturn20view0
 
@@ -128,45 +129,45 @@ sequenceDiagram
 
 Ниже — две таблицы, которых обычно не хватает в официальной документации: сопоставление функций и endpoint-ов, а затем перечень обязательных параметров. Таблицы агрегируют данные всех карточек `Online API v1`. citeturn41view1turn35view0turn28view0turn39view2turn36view0turn33view1turn28view2turn36view2turn37view0turn37view1turn36view4turn34view3turn38view3turn26view0turn26view1
 
-| Функция | Endpoint(ы) |
-|---|---|
-| Получить технический доступ | `POST /auth` |
-| Получить настройки магазина и доступные способы оплаты | `GET /services/{service_id}` |
-| Выставить счёт | `POST /invoices` |
-| Прочитать/изменить/закрыть счёт | `GET/PATCH/DELETE /invoices/{invoice_id}` |
-| Создать платёжный токен | `POST /invoices/{invoice_id}/payment_tokens` |
-| Проверить готовность токена / пройти 3DS Method | `GET /invoices/{invoice_id}/payment_tokens/{token_id}` |
-| Инициировать списание | `POST /invoices/{invoice_id}/charges` |
-| Завершить платёж после 3DS | `PATCH /invoices/{invoice_id}/charges/{charge_id}` |
-| Проверить статус списания | `GET /invoices/{invoice_id}/charges/{charge_id}` |
-| Сделать возврат | `POST /invoices/{invoice_id}/refunds` |
-| Получить список возвратов | `GET /invoices/{invoice_id}/refunds` |
-| Получить статус конкретного возврата | `GET /invoices/{invoice_id}/refunds/{refund_id}` |
-| Сгенерировать QR-код СБП | `POST /invoices/{invoice_id}/qr_codes` |
-| Досписать hold | `PATCH /services/{service_id}/charges/{charge_id}/blocked` |
-| Разблокировать hold | `DELETE /services/{service_id}/charges/{charge_id}/blocked` |
-| Повторное рекуррентное списание | `POST /services/{service_id}/recurrents/{recurrent_order_id}/charges` |
-| Остановить рекуррентную связку | `DELETE /services/{service_id}/recurrents/{recurrent_order_id}` |
+| Функция                                                | Endpoint(ы)                                                           |
+| ------------------------------------------------------ | --------------------------------------------------------------------- |
+| Получить технический доступ                            | `POST /auth`                                                          |
+| Получить настройки магазина и доступные способы оплаты | `GET /services/{service_id}`                                          |
+| Выставить счёт                                         | `POST /invoices`                                                      |
+| Прочитать/изменить/закрыть счёт                        | `GET/PATCH/DELETE /invoices/{invoice_id}`                             |
+| Создать платёжный токен                                | `POST /invoices/{invoice_id}/payment_tokens`                          |
+| Проверить готовность токена / пройти 3DS Method        | `GET /invoices/{invoice_id}/payment_tokens/{token_id}`                |
+| Инициировать списание                                  | `POST /invoices/{invoice_id}/charges`                                 |
+| Завершить платёж после 3DS                             | `PATCH /invoices/{invoice_id}/charges/{charge_id}`                    |
+| Проверить статус списания                              | `GET /invoices/{invoice_id}/charges/{charge_id}`                      |
+| Сделать возврат                                        | `POST /invoices/{invoice_id}/refunds`                                 |
+| Получить список возвратов                              | `GET /invoices/{invoice_id}/refunds`                                  |
+| Получить статус конкретного возврата                   | `GET /invoices/{invoice_id}/refunds/{refund_id}`                      |
+| Сгенерировать QR-код СБП                               | `POST /invoices/{invoice_id}/qr_codes`                                |
+| Досписать hold                                         | `PATCH /services/{service_id}/charges/{charge_id}/blocked`            |
+| Разблокировать hold                                    | `DELETE /services/{service_id}/charges/{charge_id}/blocked`           |
+| Повторное рекуррентное списание                        | `POST /services/{service_id}/recurrents/{recurrent_order_id}/charges` |
+| Остановить рекуррентную связку                         | `DELETE /services/{service_id}/recurrents/{recurrent_order_id}`       |
 
-| Endpoint | Обязательные параметры |
-|---|---|
-| `POST /auth` | `service_id`, `api_key` |
-| `GET /services/{service_id}` | `service_id` |
-| `POST /invoices` | `order_id`, `amount`, `currency_code`, `name` |
-| `GET/PATCH/DELETE /invoices/{invoice_id}` | `invoice_id` |
-| `POST /invoices/{invoice_id}/payment_tokens` | `invoice_id`, `payment_type`, `raw` |
-| `GET /invoices/{invoice_id}/payment_tokens/{token_id}` | `invoice_id`, `token_id` |
-| `POST /invoices/{invoice_id}/charges` | `invoice_id`, `payment_token_id`, `device.*`, `notification_url` |
-| `PATCH /invoices/{invoice_id}/charges/{charge_id}` | `invoice_id`, `charge_id`, `acs_response` (`cres`/`PaRes`/`MD`) |
-| `GET /invoices/{invoice_id}/charges/{charge_id}` | `invoice_id`, `charge_id` |
-| `POST /invoices/{invoice_id}/refunds` | `invoice_id`, `amount` |
-| `GET /invoices/{invoice_id}/refunds` | `invoice_id` |
-| `GET /invoices/{invoice_id}/refunds/{refund_id}` | `invoice_id`, `refund_id` |
-| `POST /invoices/{invoice_id}/qr_codes` | `invoice_id` |
-| `PATCH /services/{service_id}/charges/{charge_id}/blocked` | `service_id`, `charge_id` |
-| `DELETE /services/{service_id}/charges/{charge_id}/blocked` | `service_id`, `charge_id` |
+| Endpoint                                                              | Обязательные параметры                                               |
+| --------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| `POST /auth`                                                          | `service_id`, `api_key`                                              |
+| `GET /services/{service_id}`                                          | `service_id`                                                         |
+| `POST /invoices`                                                      | `order_id`, `amount`, `currency_code`, `name`                        |
+| `GET/PATCH/DELETE /invoices/{invoice_id}`                             | `invoice_id`                                                         |
+| `POST /invoices/{invoice_id}/payment_tokens`                          | `invoice_id`, `payment_type`, `raw`                                  |
+| `GET /invoices/{invoice_id}/payment_tokens/{token_id}`                | `invoice_id`, `token_id`                                             |
+| `POST /invoices/{invoice_id}/charges`                                 | `invoice_id`, `payment_token_id`, `device.*`, `notification_url`     |
+| `PATCH /invoices/{invoice_id}/charges/{charge_id}`                    | `invoice_id`, `charge_id`, `acs_response` (`cres`/`PaRes`/`MD`)      |
+| `GET /invoices/{invoice_id}/charges/{charge_id}`                      | `invoice_id`, `charge_id`                                            |
+| `POST /invoices/{invoice_id}/refunds`                                 | `invoice_id`, `amount`                                               |
+| `GET /invoices/{invoice_id}/refunds`                                  | `invoice_id`                                                         |
+| `GET /invoices/{invoice_id}/refunds/{refund_id}`                      | `invoice_id`, `refund_id`                                            |
+| `POST /invoices/{invoice_id}/qr_codes`                                | `invoice_id`                                                         |
+| `PATCH /services/{service_id}/charges/{charge_id}/blocked`            | `service_id`, `charge_id`                                            |
+| `DELETE /services/{service_id}/charges/{charge_id}/blocked`           | `service_id`, `charge_id`                                            |
 | `POST /services/{service_id}/recurrents/{recurrent_order_id}/charges` | `service_id`, `recurrent_order_id`, тело по шаблону `create invoice` |
-| `DELETE /services/{service_id}/recurrents/{recurrent_order_id}` | `service_id`, `recurrent_order_id` |
+| `DELETE /services/{service_id}/recurrents/{recurrent_order_id}`       | `service_id`, `recurrent_order_id`                                   |
 
 ### Endpoint-by-endpoint
 
@@ -345,16 +346,16 @@ BASE = "https://api-ecom.life-pay.ru/v1"
 def api(method: str, path: str, jwt: str | None = None, json: dict[str, Any] | None = None) -> Any:
     """
     Выполняет запрос к LIFE PAY Online API.
-    
+
     Args:
         method: HTTP-метод.
         path: Относительный путь, например /auth или /invoices/{id}.
         jwt: Bearer JWT, если endpoint требует авторизации.
         json: JSON-тело запроса.
-    
+
     Returns:
         Распарсенный JSON-ответ или None, если тела нет.
-    
+
     Raises:
         requests.HTTPError: Если HTTP-статус не 2xx.
     """
@@ -387,14 +388,14 @@ def api(method: str, path: str, jwt: str | None = None, json: dict[str, Any] | N
 
 Ниже — сжатая карта v2. Везде transport — `application/json`; для бизнес-ошибок основная развилка идёт через поле `code`, а не через HTTP. citeturn44view0turn52view0turn52view1turn52view2turn52view3turn52view4
 
-| Endpoint | Что делает | Обязательные поля |
-|---|---|---|
-| `POST /activate_rpl` | Активирует статическую платёжную ссылку | `apikey`, `uuid`, `description`, `amount`, `order_id` |
-| `POST /deactivate_rpl` | Деактивирует ссылку | `apikey`, `uuid` |
-| `POST /update_payment_status` | Проверяет статус продажи | `apikey`, `order_id` |
-| `POST /cancel_payment` | Отменяет кассовую сессию и пытается сделать возврат, если возможно | `apikey`, `order_id` |
-| `POST /refund` | Инициирует возврат | `apikey`, `description`, `amount`, `order_id` |
-| `POST /update_refund_status` | Проверяет статус возврата | `apikey`, `order_id`, `refund_id` |
+| Endpoint                      | Что делает                                                         | Обязательные поля                                     |
+| ----------------------------- | ------------------------------------------------------------------ | ----------------------------------------------------- |
+| `POST /activate_rpl`          | Активирует статическую платёжную ссылку                            | `apikey`, `uuid`, `description`, `amount`, `order_id` |
+| `POST /deactivate_rpl`        | Деактивирует ссылку                                                | `apikey`, `uuid`                                      |
+| `POST /update_payment_status` | Проверяет статус продажи                                           | `apikey`, `order_id`                                  |
+| `POST /cancel_payment`        | Отменяет кассовую сессию и пытается сделать возврат, если возможно | `apikey`, `order_id`                                  |
+| `POST /refund`                | Инициирует возврат                                                 | `apikey`, `description`, `amount`, `order_id`         |
+| `POST /update_refund_status`  | Проверяет статус возврата                                          | `apikey`, `order_id`, `refund_id`                     |
 
 ### Endpoint-by-endpoint по v2
 
@@ -494,84 +495,84 @@ def sbp(method: str, path: str, payload: dict[str, Any]) -> dict[str, Any]:
 
 ### Чек-лист интеграции
 
-1. Подтвердить у менеджера/поддержки боевые хосты, способ выдачи ключей и точную процедуру включения каналов оплаты.  
-2. Создать магазин, настроить `success_url`, `fail_url`, URL/email уведомлений, режим списания (`capture now` vs hold), обязательность email. citeturn11view2  
-3. Реализовать `/auth` и серверное хранение JWT/API key. citeturn41view1  
-4. На фронте подключить `ECOM Checkout`, реализовать `LPCard.tokenize` и обработку `waiting_iframe`. citeturn40view3turn33view1  
-5. Реализовать lifecycle `invoice -> payment_token -> charge -> charge status -> confirmCharge`. citeturn40view0turn28view2turn36view2  
-6. Реализовать возвраты (`POST /refunds` и polling статуса) и, если нужен двухстадийный сценарий, `blocked` capture/void. citeturn28view3turn34view3turn38view3  
-7. Для СБП решить, что использовать: `Online API` QR-код или отдельный `SBP links v2`. Если нужны кассовые ссылки/NFC-контур — идти в v2. citeturn36view4turn15view0  
-8. Если нужны подписки — согласовать подключение рекуррентов и реализовать их как отдельный бизнес-поток. citeturn11view3turn26view0turn26view1  
-9. Подключить webhook endpoint-ы, idempotency и журнал повторов/ошибок. citeturn50view0turn42view0  
+1. Подтвердить у менеджера/поддержки боевые хосты, способ выдачи ключей и точную процедуру включения каналов оплаты.
+2. Создать магазин, настроить `success_url`, `fail_url`, URL/email уведомлений, режим списания (`capture now` vs hold), обязательность email. citeturn11view2
+3. Реализовать `/auth` и серверное хранение JWT/API key. citeturn41view1
+4. На фронте подключить `ECOM Checkout`, реализовать `LPCard.tokenize` и обработку `waiting_iframe`. citeturn40view3turn33view1
+5. Реализовать lifecycle `invoice -> payment_token -> charge -> charge status -> confirmCharge`. citeturn40view0turn28view2turn36view2
+6. Реализовать возвраты (`POST /refunds` и polling статуса) и, если нужен двухстадийный сценарий, `blocked` capture/void. citeturn28view3turn34view3turn38view3
+7. Для СБП решить, что использовать: `Online API` QR-код или отдельный `SBP links v2`. Если нужны кассовые ссылки/NFC-контур — идти в v2. citeturn36view4turn15view0
+8. Если нужны подписки — согласовать подключение рекуррентов и реализовать их как отдельный бизнес-поток. citeturn11view3turn26view0turn26view1
+9. Подключить webhook endpoint-ы, idempotency и журнал повторов/ошибок. citeturn50view0turn42view0
 10. Подготовить продовый cutover: новый магазин, рабочий сервис банка, smoke-сделка, smoke-refund, smoke-callback, smoke-чек. citeturn11view1turn11view0
 
 ### План тестирования
 
-| Блок | Что проверять | Ожидаемый результат |
-|---|---|---|
-| Auth/config | `/auth`, `GET /services`, корректность `payment_types` | Получаете `jwt`, `lp_public`, корректный набор каналов |
-| Invoice | Создание, чтение, update, delete | Счёт создаётся/обновляется/закрывается, статусы консистентны |
-| Tokenization/3DS Method | `waiting_iframe` → скрытый iframe → `waiting_pay` | Токен доходит до состояния, пригодного к оплате |
-| Charge | `progress`, `waiting_3ds`, `charged`, `error`, `blocked` | Все ветки корректно маппятся на UI/бэкенд |
-| Refund | Создание возврата, polling, terminal states | `progress` → `refunded`/`error`, причина ошибки видна |
-| Hold | Частичный/полный capture, void | Корректные статусы `charged` / `voided` |
-| Recurrent | Первый consent-платёж, повторное списание, отмена | Повторные списания работают, отмена делает `204` |
-| SBP links v2 | activate/deactivate/status/refund/callback | HTTP 200 + правильный `code`, callback идемпотентен |
-| Webhooks | 200 ACK, повторы, дедупликация | Повторы не ломают учёт, duplicate-safe |
-| Fiscalization | Тестовый чек, callback, связка с интернет-эквайрингом | Чек уходит и возвращается callback-ом |
+| Блок                    | Что проверять                                            | Ожидаемый результат                                          |
+| ----------------------- | -------------------------------------------------------- | ------------------------------------------------------------ |
+| Auth/config             | `/auth`, `GET /services`, корректность `payment_types`   | Получаете `jwt`, `lp_public`, корректный набор каналов       |
+| Invoice                 | Создание, чтение, update, delete                         | Счёт создаётся/обновляется/закрывается, статусы консистентны |
+| Tokenization/3DS Method | `waiting_iframe` → скрытый iframe → `waiting_pay`        | Токен доходит до состояния, пригодного к оплате              |
+| Charge                  | `progress`, `waiting_3ds`, `charged`, `error`, `blocked` | Все ветки корректно маппятся на UI/бэкенд                    |
+| Refund                  | Создание возврата, polling, terminal states              | `progress` → `refunded`/`error`, причина ошибки видна        |
+| Hold                    | Частичный/полный capture, void                           | Корректные статусы `charged` / `voided`                      |
+| Recurrent               | Первый consent-платёж, повторное списание, отмена        | Повторные списания работают, отмена делает `204`             |
+| SBP links v2            | activate/deactivate/status/refund/callback               | HTTP 200 + правильный `code`, callback идемпотентен          |
+| Webhooks                | 200 ACK, повторы, дедупликация                           | Повторы не ломают учёт, duplicate-safe                       |
+| Fiscalization           | Тестовый чек, callback, связка с интернет-эквайрингом    | Чек уходит и возвращается callback-ом                        |
 
 ### Что в документации не указано
 
-- **Числовой rate limit** `Online API`: **не указано**; опубликован только факт наличия 429 `too_many_requests`. citeturn33view3  
-- **Числовой rate limit** `SBP links v2`: **не указано**. citeturn15view0turn44view0  
-- **SLA / гарантии доступности**: **не указано** в просмотренных официальных разделах.  
-- **Подпись/HMAC webhook-ов**: **не указано** в просмотренных официальных разделах; опубликованы payload-ы, схема повторов и/или IP источника. citeturn50view0turn42view0turn42view3  
-- **Точный боевой host для `SBP links v2` прямо в карточках endpoint-ов**: **не указан**; карточки печатают только относительные пути, host виден в поисковом сниппете документации. citeturn0search9turn44view0  
-- **Полная схема success-body для `PATCH /invoices/{invoice_id}`**: **не указана**. citeturn28view1  
-- **Query-параметры пагинации для `GET /invoices/{invoice_id}/refunds`**: в карточке **не показаны**, хотя ответ пагинирован. citeturn37view0  
+- **Числовой rate limit** `Online API`: **не указано**; опубликован только факт наличия 429 `too_many_requests`. citeturn33view3
+- **Числовой rate limit** `SBP links v2`: **не указано**. citeturn15view0turn44view0
+- **SLA / гарантии доступности**: **не указано** в просмотренных официальных разделах.
+- **Подпись/HMAC webhook-ов**: **не указано** в просмотренных официальных разделах; опубликованы payload-ы, схема повторов и/или IP источника. citeturn50view0turn42view0turn42view3
+- **Точный боевой host для `SBP links v2` прямо в карточках endpoint-ов**: **не указан**; карточки печатают только относительные пути, host виден в поисковом сниппете документации. citeturn0search9turn44view0
+- **Полная схема success-body для `PATCH /invoices/{invoice_id}`**: **не указана**. citeturn28view1
+- **Query-параметры пагинации для `GET /invoices/{invoice_id}/refunds`**: в карточке **не показаны**, хотя ответ пагинирован. citeturn37view0
 
 ### Официальные страницы и спецификации, использованные в обзоре
 
-- urlГлавный каталог документацииturn17view11  
-- urlLIFE PAY Online API overviewturn41view0  
-- urlАвторизация в APIturn41view1  
-- urlНастройки магазина APIturn35view0  
-- urlСоздать счёт на оплатуturn25view0  
-- urlПараметры счёта на оплатуturn25view1  
-- urlОбновить параметры счётаturn28view1  
-- urlДеактивация платёжной ссылкиturn39view2  
-- urlСоздать платёжный токенturn36view0  
-- urlПолучить статус платёжного токенаturn33view1  
-- urlОплатить счётturn36view1  
-- urlЗавершение оплаты после 3DSturn36view2  
-- urlПолучить статус оплатыturn34view0  
-- urlВернуть оплату по счётуturn36view3  
-- urlПолучить список возвратов оплаты по счётуturn37view0  
-- urlПолучить статус возврата оплатыturn37view1  
-- urlСгенерировать QR-код для СБПturn36view4  
-- urlСписать захолдированные средстваturn34view3  
-- urlРазблокировать денежные средстваturn38view3  
-- urlПовтор рекуррентного платежаturn26view0  
-- urlОстановка рекуррентного платежаturn26view1  
-- urlQuick start по интернет-эквайрингуturn11view1  
-- urlСоздание и настройка магазинаturn11view2  
-- urlТестовые платежиturn13view0  
-- urlПлатёжная формаturn13view1  
-- urlРекуррентные платежи в продуктовой документацииturn41view2  
-- urlECOM Checkout SDKturn40view3  
-- urlAPI кассовых ссылок СБП v2 overviewturn15view0  
-- urlАктивировать платёжную ссылку v2turn44view0  
-- urlДеактивация кассовой ссылки v2turn51view0  
-- urlПроверить статус продажи v2turn51view1  
-- urlОтмена сессии кассовой ссылки v2turn51view2  
-- urlВозврат по платежу v2turn51view3  
-- urlСтатус возврата v2turn51view4  
-- urlAPI NFC меток СБП v1 overviewturn15view1  
-- urlСписок доступных тенантов (банков) v1turn19view0  
-- urlLIFE POS API v6 overviewturn20view0  
-- urlБыстрый старт по облачной фискализацииturn11view0  
-- urlLegacy webhook по транзакциямturn50view0  
-- urlLegacy callback по фискализацииturn50view1  
+- urlГлавный каталог документацииturn17view11
+- urlLIFE PAY Online API overviewturn41view0
+- urlАвторизация в APIturn41view1
+- urlНастройки магазина APIturn35view0
+- urlСоздать счёт на оплатуturn25view0
+- urlПараметры счёта на оплатуturn25view1
+- urlОбновить параметры счётаturn28view1
+- urlДеактивация платёжной ссылкиturn39view2
+- urlСоздать платёжный токенturn36view0
+- urlПолучить статус платёжного токенаturn33view1
+- urlОплатить счётturn36view1
+- urlЗавершение оплаты после 3DSturn36view2
+- urlПолучить статус оплатыturn34view0
+- urlВернуть оплату по счётуturn36view3
+- urlПолучить список возвратов оплаты по счётуturn37view0
+- urlПолучить статус возврата оплатыturn37view1
+- urlСгенерировать QR-код для СБПturn36view4
+- urlСписать захолдированные средстваturn34view3
+- urlРазблокировать денежные средстваturn38view3
+- urlПовтор рекуррентного платежаturn26view0
+- urlОстановка рекуррентного платежаturn26view1
+- urlQuick start по интернет-эквайрингуturn11view1
+- urlСоздание и настройка магазинаturn11view2
+- urlТестовые платежиturn13view0
+- urlПлатёжная формаturn13view1
+- urlРекуррентные платежи в продуктовой документацииturn41view2
+- urlECOM Checkout SDKturn40view3
+- urlAPI кассовых ссылок СБП v2 overviewturn15view0
+- urlАктивировать платёжную ссылку v2turn44view0
+- urlДеактивация кассовой ссылки v2turn51view0
+- urlПроверить статус продажи v2turn51view1
+- urlОтмена сессии кассовой ссылки v2turn51view2
+- urlВозврат по платежу v2turn51view3
+- urlСтатус возврата v2turn51view4
+- urlAPI NFC меток СБП v1 overviewturn15view1
+- urlСписок доступных тенантов (банков) v1turn19view0
+- urlLIFE POS API v6 overviewturn20view0
+- urlБыстрый старт по облачной фискализацииturn11view0
+- urlLegacy webhook по транзакциямturn50view0
+- urlLegacy callback по фискализацииturn50view1
 - urlСертификаты и лицензииturn49search0
 
 ## Связанные заметки в vault

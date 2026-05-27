@@ -40,11 +40,10 @@
         </div>
 
         <div class="lang-hint">
-          Компьютер на английском → интерфейс <span class="accent-text">автоматически</span> на английском
+          Компьютер на английском → интерфейс <span class="accent-text">автоматически</span> на
+          английском
         </div>
       </div>
-
-
     </div>
   </div>
 </template>
@@ -66,14 +65,43 @@ defineProps({ active: Boolean })
   overflow-x: hidden;
 }
 
-.bg-effects { position: fixed; inset: 0; pointer-events: none; overflow: hidden; }
-.glow-orb { position: absolute; border-radius: 50%; filter: blur(140px); opacity: 0.12; animation: float 20s ease-in-out infinite; }
-.orb-1 { width: 450px; height: 450px; background: #06b6d4; top: -20%; left: -10%; }
-.orb-2 { width: 350px; height: 350px; background: #0891b2; bottom: -15%; right: -5%; animation-delay: -6s; }
+.bg-effects {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+.glow-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(140px);
+  opacity: 0.12;
+  animation: float 20s ease-in-out infinite;
+}
+.orb-1 {
+  width: 450px;
+  height: 450px;
+  background: #06b6d4;
+  top: -20%;
+  left: -10%;
+}
+.orb-2 {
+  width: 350px;
+  height: 350px;
+  background: #0891b2;
+  bottom: -15%;
+  right: -5%;
+  animation-delay: -6s;
+}
 
 @keyframes float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-30px); }
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-30px);
+  }
 }
 
 .content {
@@ -87,7 +115,9 @@ defineProps({ active: Boolean })
   gap: 40px;
 }
 
-.header { text-align: center; }
+.header {
+  text-align: center;
+}
 
 .title {
   font-family: var(--font-display);
@@ -206,22 +236,55 @@ defineProps({ active: Boolean })
   font-weight: 700;
 }
 
-
-
 @media (max-width: 768px) {
-  .slide { padding: 20px 16px 12px; align-items: center; }
-  .content { gap: 16px; }
-  .title { font-size: clamp(32px, 8vw, 48px); }
-  .subtitle { font-size: 16px; margin-top: 6px; }
-  .switch-row { flex-direction: column; gap: 8px; }
-  .switch-arrow { flex-direction: row; }
-  .arrow-circle { width: 36px; height: 36px; font-size: 14px; }
-  .arrow-circle i { transform: rotate(90deg); }
-  .lang-block { padding: 14px 12px; border-radius: 14px; }
-  .lang-flag { font-size: 24px; margin-bottom: 8px; }
-  .line-item { font-size: 16px; }
-  .line-item.dim { font-size: 13px; }
-  .lang-hint { font-size: 13px; }
-  .lang-switch { gap: 12px; }
+  .slide {
+    padding: 20px 16px 12px;
+    align-items: center;
+  }
+  .content {
+    gap: 16px;
+  }
+  .title {
+    font-size: clamp(32px, 8vw, 48px);
+  }
+  .subtitle {
+    font-size: 16px;
+    margin-top: 6px;
+  }
+  .switch-row {
+    flex-direction: column;
+    gap: 8px;
+  }
+  .switch-arrow {
+    flex-direction: row;
+  }
+  .arrow-circle {
+    width: 36px;
+    height: 36px;
+    font-size: 14px;
+  }
+  .arrow-circle i {
+    transform: rotate(90deg);
+  }
+  .lang-block {
+    padding: 14px 12px;
+    border-radius: 14px;
+  }
+  .lang-flag {
+    font-size: 24px;
+    margin-bottom: 8px;
+  }
+  .line-item {
+    font-size: 16px;
+  }
+  .line-item.dim {
+    font-size: 13px;
+  }
+  .lang-hint {
+    font-size: 13px;
+  }
+  .lang-switch {
+    gap: 12px;
+  }
 }
 </style>

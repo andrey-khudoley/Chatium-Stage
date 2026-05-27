@@ -14,7 +14,9 @@ function isDebugLevel(value: unknown): value is DebugLevel {
 }
 
 function normalizeLevel(value?: string | null): DebugLevel {
-  return isDebugLevel(value?.toLowerCase()) ? (value!.toLowerCase() as DebugLevel) : DEFAULT_LOG_LEVEL
+  return isDebugLevel(value?.toLowerCase())
+    ? (value!.toLowerCase() as DebugLevel)
+    : DEFAULT_LOG_LEVEL
 }
 
 export function getCachedLogLevel(): DebugLevel {
@@ -50,7 +52,10 @@ async function ensureLogLevelRecord(ctx: RichUgcCtx): Promise<DebugLevel> {
   return normalized
 }
 
-export async function applyDebugLevel(ctx: RichUgcCtx, reason: string = 'auto'): Promise<DebugLevel> {
+export async function applyDebugLevel(
+  ctx: RichUgcCtx,
+  reason: string = 'auto'
+): Promise<DebugLevel> {
   const now = Date.now()
 
   if (now - cacheUpdatedAt < CACHE_TTL_MS) {
@@ -64,7 +69,10 @@ export async function applyDebugLevel(ctx: RichUgcCtx, reason: string = 'auto'):
     Debug.info(ctx, `[debug] уровень логов обновлён (${reason}): ${level}`)
     return level
   } catch (error: any) {
-    Debug.warn(ctx, `[debug] не удалось обновить уровень логов (${reason}): ${error?.message || error}`)
+    Debug.warn(
+      ctx,
+      `[debug] не удалось обновить уровень логов (${reason}): ${error?.message || error}`
+    )
     Debug.setLevel(cachedLevel)
     return cachedLevel
   }
@@ -88,6 +96,3 @@ export async function persistLogLevel(ctx: RichUgcCtx, level: DebugLevel): Promi
 export function parseDebugLevel(value: unknown): DebugLevel {
   return normalizeLevel(typeof value === 'string' ? value : undefined)
 }
-
-
-

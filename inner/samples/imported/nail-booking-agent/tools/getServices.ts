@@ -10,7 +10,7 @@ export const getServicesTool = app
     name: 'get-services',
     description: `Use this tool to get the list of available nail services with their descriptions, prices, and duration. Use this when user asks about services, prices, or what is available.`
   })
-  .body(s =>
+  .body((s) =>
     s.object(
       {
         context: s.object(
@@ -28,7 +28,7 @@ export const getServicesTool = app
   .handle(async (ctx, body) => {
     ctx.account.log('🛠️ getServicesTool', { json: body })
 
-    const services = servicesConfig.services.map(service => ({
+    const services = servicesConfig.services.map((service) => ({
       id: service.id,
       name: service.name,
       description: service.description,

@@ -19,7 +19,7 @@ export async function ensureDefaultSettings(ctx: RichUgcCtx): Promise<void> {
     const existingSetting = await TgChannelAnalyticsSettings.findOneBy(ctx, {
       key: 'project_title'
     })
-    
+
     if (!existingSetting) {
       await TgChannelAnalyticsSettings.createOrUpdateBy(ctx, 'key', {
         key: 'project_title',
@@ -32,4 +32,3 @@ export async function ensureDefaultSettings(ctx: RichUgcCtx): Promise<void> {
 }
 
 export default TgChannelAnalyticsSettings
-

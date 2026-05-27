@@ -17,7 +17,7 @@ export const loggingGetLevelTestRoute = app.get('/', async (ctx) => {
   await loggerLib.writeServerLog(ctx, {
     severity: 7,
     message: `[${LOG_PATH}] Запрос проверки get-level`,
-    payload: {},
+    payload: {}
   })
 
   const results: TestResult[] = []
@@ -30,14 +30,14 @@ export const loggingGetLevelTestRoute = app.get('/', async (ctx) => {
       id: 'get_level_valid',
       title: 'get-level returns valid level',
       passed: valid,
-      error: valid ? undefined : `level="${level}" not in LOG_LEVELS`,
+      error: valid ? undefined : `level="${level}" not in LOG_LEVELS`
     })
   } catch (e) {
     results.push({
       id: 'get_level_valid',
       title: 'get-level returns valid level',
       passed: false,
-      error: (e as Error)?.message ?? String(e),
+      error: (e as Error)?.message ?? String(e)
     })
   }
 

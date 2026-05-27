@@ -4,20 +4,16 @@
       <div class="glow-orb orb-1"></div>
       <div class="glow-orb orb-2"></div>
     </div>
-    
+
     <div class="container">
-      <div class="badge">
-        <i class="fas fa-gift"></i> Бонус 2 из 5
-      </div>
+      <div class="badge"><i class="fas fa-gift"></i> Бонус 2 из 5</div>
 
       <h2 class="title">
-        Закрытый чат<br>
+        Закрытый чат<br />
         <span class="grad-text">по Авито</span>
       </h2>
 
-      <p class="subtitle">
-        Для тех, кто на вебинаре и берёт подписку сейчас
-      </p>
+      <p class="subtitle">Для тех, кто на вебинаре и берёт подписку сейчас</p>
 
       <div class="content-row">
         <div class="features-list">
@@ -104,8 +100,13 @@ defineProps({ active: Boolean })
 }
 
 @keyframes float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-20px); }
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-20px);
+  }
 }
 
 .container {
@@ -149,8 +150,13 @@ defineProps({ active: Boolean })
 }
 
 @keyframes gradient-shift {
-  0%, 100% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
 }
 
 .subtitle {
@@ -187,7 +193,7 @@ defineProps({ active: Boolean })
 .feature-item:hover {
   border-color: rgba(245, 158, 11, 0.3);
   transform: translateX(6px);
-  box-shadow: 0 12px 30px rgba(0,0,0,0.2);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2);
 }
 
 .feature-icon {
@@ -283,7 +289,9 @@ defineProps({ active: Boolean })
 }
 
 @media (max-width: 768px) {
-  .slide { align-items: flex-start; }
+  .slide {
+    align-items: flex-start;
+  }
   .content-row {
     grid-template-columns: 1fr;
     gap: 20px;
@@ -300,25 +308,74 @@ defineProps({ active: Boolean })
   }
   .feature-icon {
     margin: 0;
-    width: 38px; height: 38px; font-size: 16px;
+    width: 38px;
+    height: 38px;
+    font-size: 16px;
   }
-  .feature-item h3 { font-size: 15px; }
-  .feature-item p { font-size: 12px; }
-  .lock-icon { width: 48px; height: 48px; font-size: 20px; margin-bottom: 14px; }
+  .feature-item h3 {
+    font-size: 15px;
+  }
+  .feature-item p {
+    font-size: 12px;
+  }
+  .lock-icon {
+    width: 48px;
+    height: 48px;
+    font-size: 20px;
+    margin-bottom: 14px;
+  }
 }
 
 @media (max-width: 480px) {
-  .slide { padding: 24px 14px 14px; }
-  .badge { font-size: 11px; padding: 6px 14px; margin-bottom: 16px; }
-  .title { font-size: 24px; margin-bottom: 8px; }
-  .subtitle { font-size: 14px; margin-bottom: 24px; }
-  .feature-item { padding: 14px 16px; border-radius: 14px; gap: 12px; }
-  .feature-icon { width: 38px; height: 38px; font-size: 16px; border-radius: 10px; }
-  .feature-item h3 { font-size: 14px; }
-  .feature-item p { font-size: 12px; }
-  .cta-block { padding: 24px 20px; border-radius: 16px; }
-  .lock-icon { width: 48px; height: 48px; font-size: 20px; margin-bottom: 14px; border-radius: 14px; }
-  .cta-label { font-size: 14px; }
-  .cta-hint { font-size: 12px; }
+  .slide {
+    padding: 24px 14px 14px;
+  }
+  .badge {
+    font-size: 11px;
+    padding: 6px 14px;
+    margin-bottom: 16px;
+  }
+  .title {
+    font-size: 24px;
+    margin-bottom: 8px;
+  }
+  .subtitle {
+    font-size: 14px;
+    margin-bottom: 24px;
+  }
+  .feature-item {
+    padding: 14px 16px;
+    border-radius: 14px;
+    gap: 12px;
+  }
+  .feature-icon {
+    width: 38px;
+    height: 38px;
+    font-size: 16px;
+    border-radius: 10px;
+  }
+  .feature-item h3 {
+    font-size: 14px;
+  }
+  .feature-item p {
+    font-size: 12px;
+  }
+  .cta-block {
+    padding: 24px 20px;
+    border-radius: 16px;
+  }
+  .lock-icon {
+    width: 48px;
+    height: 48px;
+    font-size: 20px;
+    margin-bottom: 14px;
+    border-radius: 14px;
+  }
+  .cta-label {
+    font-size: 14px;
+  }
+  .cta-hint {
+    font-size: 12px;
+  }
 }
 </style>

@@ -1,5 +1,5 @@
 ---
-title: "LifePay поддержка — диалог 12.05.2026"
+title: 'LifePay поддержка — диалог 12.05.2026'
 type: note
 tags:
   - note/conversation
@@ -7,7 +7,7 @@ tags:
   - topic/support
 created: 2026-05-13
 updated: 2026-05-13
-project: "[Бриф проекта](../brief.md)"
+project: '[Бриф проекта](../brief.md)'
 ---
 
 # LifePay поддержка. Диалог 12.05.2026

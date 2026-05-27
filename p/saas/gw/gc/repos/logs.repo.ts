@@ -33,7 +33,12 @@ export async function findAll(
   // (например scanLimit аналитики) листаем страницами, иначе выборка тихо усекается.
   const rows = await collectLimitedPaged(
     (pageLimit, pageOffset) =>
-      Logs.findAll(ctx, { where, order: [{ timestamp: 'desc' }], limit: pageLimit, offset: pageOffset }),
+      Logs.findAll(ctx, {
+        where,
+        order: [{ timestamp: 'desc' }],
+        limit: pageLimit,
+        offset: pageOffset
+      }),
     limit,
     offset
   )

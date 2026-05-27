@@ -14,6 +14,8 @@ export const getUserDiplomasHandler: V1GcHandler = async (_ctx, a) => {
   return { kind: 'gc_result', gc }
 }
 
-export const getUserDiplomasRoute = app.get('/', async (ctx, req) => handleV1Op(ctx, req, 'getUserDiplomas', getUserDiplomasHandler))
+export const getUserDiplomasRoute = app.get('/', async (ctx, req) =>
+  handleV1Op(ctx, req, 'getUserDiplomas', getUserDiplomasHandler)
+)
 
 export default getUserDiplomasRoute

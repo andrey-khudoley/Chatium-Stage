@@ -1,13 +1,13 @@
 /**
  * Венгерский алгоритм для решения задачи назначения
- * 
+ *
  * Находит оптимальное назначение элементов из множества A в множество B,
  * минимизируя сумму стоимостей назначений.
- * 
+ *
  * Алгоритм работает с прямоугольными матрицами (N != M):
  * - Если N < M: добавляем фиктивные строки с высокой стоимостью (алгоритм их не выберет)
  * - Если N > M: добавляем фиктивные столбцы со стоимостью 0 (некоторые элементы A не будут назначены)
- * 
+ *
  * Для максимизации (когда веса - это вероятности):
  * - Используются отрицательные веса: cost[i][j] = -log(probability)
  * - Минимизация отрицательных весов эквивалентна максимизации вероятностей
@@ -18,7 +18,7 @@ const EPSILON = 1e-9
 
 /**
  * Решает задачу назначения методом венгерского алгоритма
- * 
+ *
  * @param costMatrix - матрица стоимостей размера N×M, где costMatrix[i][j] = стоимость назначения i→j
  * @returns массив назначений размера N: assignment[i] = j (индекс в множестве B) или -1 если не назначено
  */
@@ -46,7 +46,7 @@ export function solveAssignment(costMatrix: number[][]): number[] {
       rowMin[i] = Math.min(rowMin[i], matrix[i][j])
     }
   }
-  
+
   for (let i = 0; i < squareSize; i++) {
     for (let j = 0; j < squareSize; j++) {
       matrix[i][j] -= rowMin[i]
@@ -60,7 +60,7 @@ export function solveAssignment(costMatrix: number[][]): number[] {
       colMin[j] = Math.min(colMin[j], matrix[i][j])
     }
   }
-  
+
   for (let j = 0; j < squareSize; j++) {
     for (let i = 0; i < squareSize; i++) {
       matrix[i][j] -= colMin[j]
@@ -75,10 +75,10 @@ export function solveAssignment(costMatrix: number[][]): number[] {
   while (iterations < maxIterations) {
     // Пытаемся найти совершенное паросочетание
     const matching = findMaximumMatching(matrix, squareSize)
-    
+
     // Bug 1 Fix: Проверяем, что все строки имеют назначение (нет -1), а не просто длину массива
-    const isPerfectMatching = matching.every(value => value !== -1)
-    
+    const isPerfectMatching = matching.every((value) => value !== -1)
+
     if (isPerfectMatching) {
       // Нашли совершенное паросочетание
       assignment = matching
@@ -172,7 +172,10 @@ function dfsMatching(
       visited[j] = true
 
       // Если j свободен или можно переназначить текущее назначение j
-      if (matching[j] === -1 || dfsMatching(matrix, matching[j], visited, matching, reverseMatching, size)) {
+      if (
+        matching[j] === -1 ||
+        dfsMatching(matrix, matching[j], visited, matching, reverseMatching, size)
+      ) {
         matching[j] = i
         reverseMatching[i] = j
         return true
@@ -185,7 +188,7 @@ function dfsMatching(
 /**
  * Обновляет матрицу для следующей итерации венгерского алгоритма
  * Bug 3 Fix: Правильно использует markedRows и markedCols для нахождения минимального покрытия
- * 
+ *
  * matching[i] = j означает, что строка i назначена на столбец j
  */
 function updateMatrix(matrix: number[][], matching: number[], size: number): void {
@@ -204,7 +207,7 @@ function updateMatrix(matrix: number[][], matching: number[], size: number): voi
   let changed = true
   while (changed) {
     changed = false
-    
+
     // Для каждой помеченной строки, помечаем все непомеченные столбцы с нулевыми элементами
     for (let i = 0; i < size; i++) {
       if (markedRows[i]) {
@@ -212,7 +215,7 @@ function updateMatrix(matrix: number[][], matching: number[], size: number): voi
           if (!markedCols[j] && Math.abs(matrix[i][j]) < EPSILON) {
             markedCols[j] = true
             changed = true
-            
+
             // Если столбец j имеет назначение, помечаем соответствующую строку
             // Ищем строку k, для которой matching[k] === j
             for (let k = 0; k < size; k++) {

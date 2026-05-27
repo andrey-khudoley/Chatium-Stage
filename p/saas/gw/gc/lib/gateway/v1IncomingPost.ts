@@ -1,14 +1,8 @@
 import { GW_MAX_REQUEST_BODY_BYTES } from './constants'
-import {
-  GW_HEADER_SCHOOL_API_KEY,
-  GW_HEADER_SCHOOL_HOST
-} from '../../shared/gatewayHttpHeaders'
+import { GW_HEADER_SCHOOL_API_KEY, GW_HEADER_SCHOOL_HOST } from '../../shared/gatewayHttpHeaders'
 import { validateGcSchoolHostTrimmed } from '../../shared/gcSchoolHostValidation'
 
-export function readHeaderInsensitive(
-  headers: unknown,
-  canonical: string
-): string | undefined {
+export function readHeaderInsensitive(headers: unknown, canonical: string): string | undefined {
   if (!headers || typeof headers !== 'object') return undefined
   const h = headers as Record<string, string | string[] | undefined>
   const want = canonical.toLowerCase()
@@ -92,7 +86,9 @@ export function parseSchoolHeaders(headers: unknown): SchoolHeadersParsed {
   return { ok: true, schoolHost: hostRaw.trim(), schoolApiKey: keyTrim }
 }
 
-export function extractJsonObjectArgs(body: unknown): { ok: true; args: Record<string, unknown> } | { ok: false } {
+export function extractJsonObjectArgs(
+  body: unknown
+): { ok: true; args: Record<string, unknown> } | { ok: false } {
   if (body === undefined || body === null) {
     return { ok: false }
   }

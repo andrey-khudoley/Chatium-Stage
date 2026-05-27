@@ -19,9 +19,7 @@ export const apiPlayerAnalyticsListRoute = reporterApp.get('/list', async (ctx, 
   const workspacePath = await getWorkspacePath(ctx)
   const EVENT_PREFIX = `event://custom/${workspacePath}/player_`
 
-  const episodeFilter = episodeId
-    ? `AND action_param1 = '${escapeSql(episodeId)}'`
-    : ''
+  const episodeFilter = episodeId ? `AND action_param1 = '${escapeSql(episodeId)}'` : ''
 
   let episodeStartedAt: Date | null = null
   if (episodeId) {
@@ -60,7 +58,7 @@ export const apiPlayerAnalyticsListRoute = reporterApp.get('/list', async (ctx, 
 
   const [countResult, eventsResult] = await Promise.all([
     queryAi<CountResult>(ctx, countQuery),
-    queryAi<EventRow>(ctx, eventsQuery),
+    queryAi<EventRow>(ctx, eventsQuery)
   ])
 
   const totalCount = countResult.rows?.[0]?.cnt || 0
@@ -87,7 +85,7 @@ export const apiPlayerAnalyticsListRoute = reporterApp.get('/list', async (ctx, 
       duration: row.duration,
       streamTimecode,
       userName: [row.firstName, row.lastName].filter(Boolean).join(' ') || 'Аноним',
-      userId: row.user_id,
+      userId: row.user_id
     }
   })
 
@@ -96,7 +94,7 @@ export const apiPlayerAnalyticsListRoute = reporterApp.get('/list', async (ctx, 
     totalCount,
     totalPages,
     page,
-    limit,
+    limit
   }
 })
 
@@ -110,9 +108,7 @@ export const apiPlayerAnalyticsExportRoute = reporterApp.get('/export', async (c
   const workspacePath = await getWorkspacePath(ctx)
   const EVENT_PREFIX = `event://custom/${workspacePath}/player_`
 
-  const episodeFilter = episodeId
-    ? `AND action_param1 = '${escapeSql(episodeId)}'`
-    : ''
+  const episodeFilter = episodeId ? `AND action_param1 = '${escapeSql(episodeId)}'` : ''
 
   let episodeStartedAt: Date | null = null
   if (episodeId) {
@@ -151,10 +147,10 @@ export const apiPlayerAnalyticsExportRoute = reporterApp.get('/export', async (c
     streamTimecode: 'Таймкод эфира',
     duration: 'Длительность (сек)',
     device: 'Устройство',
-    sessionId: 'Сессия',
+    sessionId: 'Сессия'
   })
 
-  for (const e of (result.rows || [])) {
+  for (const e of result.rows || []) {
     let timecodeStr = ''
     if (episodeStartedAt && e.ts64) {
       // Для эфиров: вычисляем по разнице времени
@@ -163,7 +159,7 @@ export const apiPlayerAnalyticsExportRoute = reporterApp.get('/export', async (c
         const h = Math.floor(diff / 3600)
         const m = Math.floor((diff % 3600) / 60)
         const s = diff % 60
-        timecodeStr = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`
+        timecodeStr = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
       }
     } else if (!episodeStartedAt && e.currentTime != null) {
       // Для автовебинаров: используем таймкод из плеера
@@ -171,7 +167,7 @@ export const apiPlayerAnalyticsExportRoute = reporterApp.get('/export', async (c
       const h = Math.floor(diff / 3600)
       const m = Math.floor((diff % 3600) / 60)
       const s = diff % 60
-      timecodeStr = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`
+      timecodeStr = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
     }
     rows.push({
       date: e.ts64 ? new Date(e.ts64).toISOString() : '',
@@ -180,14 +176,17 @@ export const apiPlayerAnalyticsExportRoute = reporterApp.get('/export', async (c
       streamTimecode: timecodeStr,
       duration: e.duration != null ? String(Math.round(e.duration)) : '',
       device: e.device || '',
-      sessionId: e.sessionId || '',
+      sessionId: e.sessionId || ''
     })
   }
 
   const escCsv = (v: string) => `"${(v ?? '').replace(/"/g, '""')}"`
 
   const csvString = rows
-    .map(r => `${escCsv(r.date)},${escCsv(r.user)},${escCsv(r.eventType)},${escCsv(r.streamTimecode)},${escCsv(r.duration)},${escCsv(r.device)},${escCsv(r.sessionId)}`)
+    .map(
+      (r) =>
+        `${escCsv(r.date)},${escCsv(r.user)},${escCsv(r.eventType)},${escCsv(r.streamTimecode)},${escCsv(r.duration)},${escCsv(r.device)},${escCsv(r.sessionId)}`
+    )
     .join('\r\n')
 
   return {
@@ -195,7 +194,7 @@ export const apiPlayerAnalyticsExportRoute = reporterApp.get('/export', async (c
     rawHttpBody: csvString,
     headers: {
       'Content-Type': 'text/csv;charset=utf-8',
-      'Content-disposition': `attachment;filename=player-analytics-${episodeId || 'all'}.csv`,
-    },
+      'Content-disposition': `attachment;filename=player-analytics-${episodeId || 'all'}.csv`
+    }
   }
 })

@@ -11,24 +11,26 @@ export const TZoomAgentToolZoomSettingsLDx = Heap.Table(
     default_topic: Heap.Optional(
       Heap.String({
         customMeta: { title: 'Тема встречи по умолчанию' },
-        searchable: { langs: ['ru', 'en'], embeddings: true },
-      }),
+        searchable: { langs: ['ru', 'en'], embeddings: true }
+      })
     ),
     default_agenda: Heap.Optional(
       Heap.String({
         customMeta: { title: 'Повестка по умолчанию' },
-        searchable: { langs: ['ru', 'en'], embeddings: true },
-      }),
+        searchable: { langs: ['ru', 'en'], embeddings: true }
+      })
     ),
     default_auto_recording: Heap.Optional(
       Heap.Enum(
         { enumKey1: 'none', enumKey2: 'local', enumKey3: 'cloud' },
-        { customMeta: { title: 'Запись по умолчанию' } },
-      ),
+        { customMeta: { title: 'Запись по умолчанию' } }
+      )
     ),
-    default_timezone: Heap.Optional(Heap.String({ customMeta: { title: 'Часовой пояс по умолчанию' } })),
+    default_timezone: Heap.Optional(
+      Heap.String({ customMeta: { title: 'Часовой пояс по умолчанию' } })
+    )
   },
-  { customMeta: { title: 'Настройки Zoom', description: 'Настройки интеграции с Zoom API' } },
+  { customMeta: { title: 'Настройки Zoom', description: 'Настройки интеграции с Zoom API' } }
 )
 
 // declaration merging: allows using table-related types via default import

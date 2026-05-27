@@ -9,7 +9,7 @@ import { saveUserSettingsRoute } from '../api/user-settings/save'
 import {
   DEFAULT_USER_TIMEZONE_OFFSET_HOURS,
   USER_TIMEZONE_OFFSET_MAX,
-  USER_TIMEZONE_OFFSET_MIN,
+  USER_TIMEZONE_OFFSET_MIN
 } from '../shared/user-settings-defaults'
 
 const log = createComponentLogger('ProfilePage')
@@ -26,7 +26,7 @@ const timezoneOptions = Array.from(
   (_, i) => {
     const h = USER_TIMEZONE_OFFSET_MIN + i
     return { value: h, label: formatUtcOffsetLabel(h) }
-  },
+  }
 )
 
 declare global {
@@ -58,8 +58,8 @@ const props = withDefaults(
     timezoneOffsetHours?: number
   }>(),
   {
-    timezoneOffsetHours: DEFAULT_USER_TIMEZONE_OFFSET_HOURS,
-  },
+    timezoneOffsetHours: DEFAULT_USER_TIMEZONE_OFFSET_HOURS
+  }
 )
 
 const selectedTimezoneOffset = ref(props.timezoneOffsetHours)
@@ -68,7 +68,9 @@ const timezoneSaveStatus = ref<'idle' | 'saving' | 'saved' | 'error'>('idle')
 async function onTimezoneChange(): Promise<void> {
   timezoneSaveStatus.value = 'saving'
   try {
-    const res = await saveUserSettingsRoute.run(ctx, { timezoneOffsetHours: selectedTimezoneOffset.value })
+    const res = await saveUserSettingsRoute.run(ctx, {
+      timezoneOffsetHours: selectedTimezoneOffset.value
+    })
     if (res.success && typeof res.timezoneOffsetHours === 'number') {
       selectedTimezoneOffset.value = res.timezoneOffsetHours
       timezoneSaveStatus.value = 'saved'
@@ -94,7 +96,10 @@ const showCursor = ref(false)
 const cursorPosition = ref<'title' | 'description' | 'final'>('title')
 const showTitleUnderline = ref(false)
 
-const intervalIds = { title: null as ReturnType<typeof setInterval> | null, desc: null as ReturnType<typeof setInterval> | null }
+const intervalIds = {
+  title: null as ReturnType<typeof setInterval> | null,
+  desc: null as ReturnType<typeof setInterval> | null
+}
 
 const typeTextSequence = () => {
   log.debug('Profile title animation started')
@@ -196,10 +201,18 @@ const openChatiumLink = () => {
               <i class="fas fa-fingerprint profile-icon"></i>
             </div>
             <h1 class="profile-heading" :class="{ 'show-underline': showTitleUnderline }">
-              {{ displayedTitle }}<span v-if="showCursor && (cursorPosition === 'title' || cursorPosition === 'final')" class="typing-cursor">▮</span>
+              {{ displayedTitle
+              }}<span
+                v-if="showCursor && (cursorPosition === 'title' || cursorPosition === 'final')"
+                class="typing-cursor"
+                >▮</span
+              >
             </h1>
             <p class="profile-description">
-              {{ displayedDescription }}<span v-if="showCursor && cursorPosition === 'description'" class="typing-cursor">▮</span>
+              {{ displayedDescription
+              }}<span v-if="showCursor && cursorPosition === 'description'" class="typing-cursor"
+                >▮</span
+              >
             </p>
           </div>
 
@@ -256,7 +269,9 @@ const openChatiumLink = () => {
                   <div class="profile-field-icon">
                     <i class="fas fa-earth-europe"></i>
                   </div>
-                  <label class="profile-field-label" for="profile-timezone-select">Часовой пояс</label>
+                  <label class="profile-field-label" for="profile-timezone-select"
+                    >Часовой пояс</label
+                  >
                 </div>
                 <div class="profile-field-control">
                   <select
@@ -270,17 +285,24 @@ const openChatiumLink = () => {
                       {{ opt.label }}
                     </option>
                   </select>
-                  <span v-if="timezoneSaveStatus === 'saving'" class="profile-settings-hint">Сохранение…</span>
-                  <span v-else-if="timezoneSaveStatus === 'saved'" class="profile-settings-hint profile-settings-hint--ok"
+                  <span v-if="timezoneSaveStatus === 'saving'" class="profile-settings-hint"
+                    >Сохранение…</span
+                  >
+                  <span
+                    v-else-if="timezoneSaveStatus === 'saved'"
+                    class="profile-settings-hint profile-settings-hint--ok"
                     >Сохранено</span
                   >
-                  <span v-else-if="timezoneSaveStatus === 'error'" class="profile-settings-hint profile-settings-hint--err"
+                  <span
+                    v-else-if="timezoneSaveStatus === 'error'"
+                    class="profile-settings-hint profile-settings-hint--err"
                     >Ошибка сохранения</span
                   >
                 </div>
                 <p class="profile-settings-note">
-                  По умолчанию {{ formatUtcOffsetLabel(DEFAULT_USER_TIMEZONE_OFFSET_HOURS) }} (Москва). Используется для
-                  отображения времени в приложении.
+                  По умолчанию
+                  {{ formatUtcOffsetLabel(DEFAULT_USER_TIMEZONE_OFFSET_HOURS) }} (Москва).
+                  Используется для отображения времени в приложении.
                 </p>
               </div>
             </div>
@@ -363,7 +385,9 @@ body {
 .profile-section {
   opacity: 0;
   transform: translateY(20px);
-  transition: opacity 0.8s ease, transform 0.8s ease;
+  transition:
+    opacity 0.8s ease,
+    transform 0.8s ease;
 }
 
 .profile-section.content-visible {
@@ -393,10 +417,18 @@ body {
   position: relative;
   overflow: hidden;
   clip-path: polygon(
-    0 4px, 4px 4px, 4px 0,
-    calc(100% - 4px) 0, calc(100% - 4px) 4px, 100% 4px,
-    100% calc(100% - 4px), calc(100% - 4px) calc(100% - 4px), calc(100% - 4px) 100%,
-    4px 100%, 4px calc(100% - 4px), 0 calc(100% - 4px)
+    0 4px,
+    4px 4px,
+    4px 0,
+    calc(100% - 4px) 0,
+    calc(100% - 4px) 4px,
+    100% 4px,
+    100% calc(100% - 4px),
+    calc(100% - 4px) calc(100% - 4px),
+    calc(100% - 4px) 100%,
+    4px 100%,
+    4px calc(100% - 4px),
+    0 calc(100% - 4px)
   );
 }
 
@@ -439,8 +471,13 @@ body {
 }
 
 @keyframes scanline-flicker {
-  0%, 100% { opacity: 0.7; }
-  50% { opacity: 0.5; }
+  0%,
+  100% {
+    opacity: 0.7;
+  }
+  50% {
+    opacity: 0.5;
+  }
 }
 
 @keyframes fingerprint-scan {
@@ -516,8 +553,14 @@ body {
 }
 
 @keyframes cursor-blink {
-  0%, 50% { opacity: 1; }
-  51%, 100% { opacity: 0; }
+  0%,
+  50% {
+    opacity: 1;
+  }
+  51%,
+  100% {
+    opacity: 0;
+  }
 }
 
 /* Profile Card */
@@ -705,5 +748,4 @@ body {
     padding: 0.85rem;
   }
 }
-
 </style>

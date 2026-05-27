@@ -4,21 +4,25 @@
 
 ## Heap таблицы
 
-| Table | File | Назначение | Основные поля |
-| --- | --- | --- | --- |
-| t__chatiumclub-client3__setting__6Nt5Yw | tables/settings.table.ts | Настройки проекта (key-value) | key (string), value (any) |
-| t__chatiumclub-client3__log__7Ns0Wy | tables/logs.table.ts | Серверные логи (долгосрочное хранение) | message (string), payload (any), severity, level, timestamp |
+| Table                                     | File                     | Назначение                             | Основные поля                                               |
+| ----------------------------------------- | ------------------------ | -------------------------------------- | ----------------------------------------------------------- |
+| t**chatiumclub-client3**setting\_\_6Nt5Yw | tables/settings.table.ts | Настройки проекта (key-value)          | key (string), value (any)                                   |
+| t**chatiumclub-client3**log\_\_7Ns0Wy     | tables/logs.table.ts     | Серверные логи (долгосрочное хранение) | message (string), payload (any), severity, level, timestamp |
 
 ## Репозитории (repos/)
+
 - `repos/settings.repo.ts` — findByKey, findAll, upsert, deleteByKey (слой работы с БД; без вызовов logger.lib, т.к. getSetting/getLogLevel вызываются из writeServerLog и используют findByKey — иначе рекурсия).
 - `repos/logs.repo.ts` — create, findAll, findById, findBeforeTimestamp (слой работы с БД логов; findBeforeTimestamp использует нативную фильтрацию Heap API через `where: { timestamp: { $lt } }` для эффективной пагинации).
 
 ## Библиотеки (lib/)
+
 - `lib/settings.lib.ts` — getSetting, getAllSettings, setSetting, getLogLevel, getLogsLimit, getLogWebhook (бизнес-логика, дефолты, валидация).
 - `lib/logger.lib.ts` — getAdminLogsSocketId, shouldLogByLevel, writeServerLog (проверка уровня, запись в ctx.log/ctx.account.log, Heap, WebSocket, вебхук).
 
 ## Файлы и хранилище
+
 - Не используется.
 
 ## Индексы/поиск
+
 - Не используется.

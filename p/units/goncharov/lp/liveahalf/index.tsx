@@ -1,4 +1,4 @@
-import { jsx } from "@app/html-jsx"
+import { jsx } from '@app/html-jsx'
 import { HeadStyles } from './styles'
 import MainPage from './pages/MainPage.vue'
 import ThankYouPage from './pages/ThankYouPage.vue'
@@ -6,7 +6,8 @@ import { requireAccountRole } from '@app/auth'
 
 const OG_IMAGE = 'https://fs.chatium.ru/thumbnail/image_msk_2bq1JwLtNx.1280x853.jpeg/s/1200x'
 const TITLE = 'Жизнь вполсилы — онлайн-встреча с врачом Алексеем Волковым'
-const DESCRIPTION = 'На каком уровне энергии вы сейчас? Практическая встреча для тех, кто чувствует, что сил стало меньше. 28 марта, онлайн, 1 час.'
+const DESCRIPTION =
+  'На каком уровне энергии вы сейчас? Практическая встреча для тех, кто чувствует, что сил стало меньше. 28 марта, онлайн, 1 час.'
 
 const isAdmin = (ctx: app.Ctx) => ctx.user?.is?.('Admin') ?? false
 
@@ -19,7 +20,10 @@ export const indexPageRoute = app.get('/', async (ctx, req) => {
 
         <title>{TITLE}</title>
         <meta name="description" content={DESCRIPTION} />
-        <meta name="keywords" content="вебинар энергия, усталость, восстановление ресурса, китайская медицина, Алексей Волков, уровень энергии" />
+        <meta
+          name="keywords"
+          content="вебинар энергия, усталость, восстановление ресурса, китайская медицина, Алексей Волков, уровень энергии"
+        />
         <meta name="author" content="Алексей Волков" />
 
         <meta property="og:type" content="website" />
@@ -41,16 +45,18 @@ export const indexPageRoute = app.get('/', async (ctx, req) => {
       <body>
         <MainPage />
         {isAdmin(ctx) && (
-          <div style={{
-            position: 'fixed',
-            bottom: '16px',
-            right: '16px',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '8px',
-            zIndex: 10000,
-            alignItems: 'flex-end',
-          }}>
+          <div
+            style={{
+              position: 'fixed',
+              bottom: '16px',
+              right: '16px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '8px',
+              zIndex: 10000,
+              alignItems: 'flex-end'
+            }}
+          >
             <a
               href="/p/units/goncharov/lp/liveahalf/web/admin/getcourse"
               style={{
@@ -65,7 +71,7 @@ export const indexPageRoute = app.get('/', async (ctx, req) => {
                 fontSize: '13px',
                 fontWeight: 500,
                 boxShadow: '0 4px 12px rgba(201, 168, 108, 0.4)',
-                transition: 'all 0.3s ease',
+                transition: 'all 0.3s ease'
               }}
             >
               <i class="fas fa-cog"></i>
@@ -85,7 +91,7 @@ export const indexPageRoute = app.get('/', async (ctx, req) => {
                 fontSize: '13px',
                 fontWeight: 500,
                 boxShadow: '0 4px 12px rgba(94, 80, 63, 0.3)',
-                transition: 'all 0.3s ease',
+                transition: 'all 0.3s ease'
               }}
             >
               <i class="fas fa-chart-line"></i>
@@ -106,7 +112,10 @@ export const thankYouPageRoute = app.get('/thanks', async (ctx, req) => {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
 
         <title>Спасибо за регистрацию на вебинар</title>
-        <meta name="description" content="Спасибо за регистрацию на вебинар «Жизнь вполсилы». Встреча начнётся 28 марта 2026 в 19:00 по московскому времени." />
+        <meta
+          name="description"
+          content="Спасибо за регистрацию на вебинар «Жизнь вполсилы». Встреча начнётся 28 марта 2026 в 19:00 по московскому времени."
+        />
         <meta name="robots" content="noindex, nofollow" />
         <link rel="canonical" href={`https://${ctx.hostname}${req.url}`} />
 

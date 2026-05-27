@@ -30,9 +30,7 @@ defineProps<{
   padding: 14px;
   border-radius: var(--radius-lg);
   border: 1px solid var(--border-soft);
-  background:
-    var(--gradient-glass),
-    color-mix(in srgb, var(--surface-1) 84%, transparent);
+  background: var(--gradient-glass), color-mix(in srgb, var(--surface-1) 84%, transparent);
   box-shadow: var(--shadow-sm);
 }
 

@@ -14,18 +14,20 @@ const props = defineProps<{
 
 const pageSize = 20
 const page = ref(1)
-const referrals = ref<Array<{
-  id: string
-  ref: string
-  name?: string
-  email?: string
-  phone?: string
-  registeredAt?: string
-  ordersCount: number
-  ordersSum: number
-  paymentsCount: number
-  paymentsSum: number
-}>>([])
+const referrals = ref<
+  Array<{
+    id: string
+    ref: string
+    name?: string
+    email?: string
+    phone?: string
+    registeredAt?: string
+    ordersCount: number
+    ordersSum: number
+    paymentsCount: number
+    paymentsSum: number
+  }>
+>([])
 const total = ref(0)
 const loading = ref(true)
 const error = ref('')
@@ -145,7 +147,9 @@ watch(
       Фильтр: только рефералы выбранного партнёра.
     </p>
     <p v-if="error" class="text-red-400 text-sm mb-3">{{ error }}</p>
-    <div class="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-secondary)] overflow-hidden">
+    <div
+      class="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-secondary)] overflow-hidden"
+    >
       <div v-if="loading" class="p-8 text-center text-[var(--color-text-secondary)]">
         <i class="fas fa-spinner fa-spin text-xl"></i>
       </div>
@@ -193,12 +197,11 @@ watch(
           </tbody>
         </table>
       </template>
-      <div v-if="!loading && referrals.length > 0" class="border-t border-[var(--color-border)] px-4">
-        <Pagination
-          v-model:page="page"
-          :total="total"
-          :page-size="pageSize"
-        />
+      <div
+        v-if="!loading && referrals.length > 0"
+        class="border-t border-[var(--color-border)] px-4"
+      >
+        <Pagination v-model:page="page" :total="total" :page-size="pageSize" />
       </div>
     </div>
     <EventLogModal

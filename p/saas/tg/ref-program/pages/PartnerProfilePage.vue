@@ -23,7 +23,9 @@ const partner = ref<{
     pendingEarnings: number
   }
 } | null>(null)
-const links = ref<Array<{ id: string; pageId: string; pageTitle: string; publicSlug: string; fullUrl: string }>>([])
+const links = ref<
+  Array<{ id: string; pageId: string; pageTitle: string; publicSlug: string; fullUrl: string }>
+>([])
 const loading = ref(true)
 const error = ref('')
 
@@ -118,13 +120,17 @@ watch(
       <i class="fas fa-spinner fa-spin text-xl"></i>
     </div>
     <template v-else-if="partner">
-      <section class="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-secondary)] p-4 mb-6">
+      <section
+        class="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-secondary)] p-4 mb-6"
+      >
         <h2 class="text-lg text-[var(--color-text)] mb-3">Данные</h2>
         <dl class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
           <dt class="text-[var(--color-text-secondary)]">Имя</dt>
           <dd class="text-[var(--color-text)]">{{ partner.fullName || '—' }}</dd>
           <dt class="text-[var(--color-text-secondary)]">Username</dt>
-          <dd class="text-[var(--color-text)]">{{ partner.username ? `@${partner.username}` : '—' }}</dd>
+          <dd class="text-[var(--color-text)]">
+            {{ partner.username ? `@${partner.username}` : '—' }}
+          </dd>
           <dt class="text-[var(--color-text-secondary)]">Регистрации</dt>
           <dd class="text-[var(--color-text)]">{{ partner.stats.registrations }}</dd>
           <dt class="text-[var(--color-text-secondary)]">Заказы</dt>
@@ -143,7 +149,9 @@ watch(
         </a>
       </section>
 
-      <section class="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-secondary)] p-4">
+      <section
+        class="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-secondary)] p-4"
+      >
         <h2 class="text-lg text-[var(--color-text)] mb-3">Партнёрские ссылки</h2>
         <p v-if="links.length === 0" class="text-[var(--color-text-secondary)] text-sm">
           Нет ссылок. Ссылки создаются при переходе партнёра по целевым страницам.

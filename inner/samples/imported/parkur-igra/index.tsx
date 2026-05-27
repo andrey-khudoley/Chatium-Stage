@@ -1,4 +1,4 @@
-import { jsx } from "@app/html-jsx"
+import { jsx } from '@app/html-jsx'
 import ParkourGame from './pages/ParkourGame.vue'
 
 export const indexPageRoute = app.get('/', async (ctx, req) => {

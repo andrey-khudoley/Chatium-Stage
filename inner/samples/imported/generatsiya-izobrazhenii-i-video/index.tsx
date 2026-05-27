@@ -1,18 +1,17 @@
-import { jsx } from "@app/html-jsx";
-import { requireAccountRole } from '@app/auth';
+import { jsx } from '@app/html-jsx'
+import { requireAccountRole } from '@app/auth'
 import GeneratorPage from './pages/GeneratorPage.vue'
 import GalleryPage from './pages/GalleryPage.vue'
 
 export const indexPageRoute = app.get('/', async (ctx, req) => {
-
-      if (req.query.gallery !== undefined) {
+  if (req.query.gallery !== undefined) {
     return (
       <html>
         <head>
           <title>Генератор медиа </title>
-          <meta name='viewport' content='width=device-width, initial-scale=1' />
-          <script src='/s/metric/clarity.js'></script>
-          <script src='/s/static/lib/tailwind.3.4.16.min.js'></script>
+          <meta name="viewport" content="width=device-width, initial-scale=1" />
+          <script src="/s/metric/clarity.js"></script>
+          <script src="/s/static/lib/tailwind.3.4.16.min.js"></script>
         </head>
         <body>
           <GalleryPage />
@@ -21,8 +20,8 @@ export const indexPageRoute = app.get('/', async (ctx, req) => {
     )
   }
 
-  requireAccountRole(ctx, 'Admin');
-  
+  requireAccountRole(ctx, 'Admin')
+
   return (
     <html>
       <head>
@@ -30,7 +29,10 @@ export const indexPageRoute = app.get('/', async (ctx, req) => {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+          rel="stylesheet"
+        />
         <script src="/s/static/lib/tailwind.3.4.16.min.js"></script>
         <script>{`
           tailwind.config = {
@@ -100,5 +102,5 @@ export const indexPageRoute = app.get('/', async (ctx, req) => {
         <GeneratorPage />
       </body>
     </html>
-  );
-});
+  )
+})

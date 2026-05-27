@@ -12,7 +12,9 @@ export const clientDialogsPageRoute = app.html('/', async (ctx) => {
   const navUrls = await getBpmNavUrlsAsync(ctx)
   return (
     <html>
-      <head>{getDemoPageHead('light', PAGE_TITLE, DEFAULT_PROJECT_TITLE, 'Info', 'misty-daybreak')}</head>
+      <head>
+        {getDemoPageHead('light', PAGE_TITLE, DEFAULT_PROJECT_TITLE, 'Info', 'misty-daybreak')}
+      </head>
       <body>
         {getBootLoaderDiv('light', DEFAULT_PROJECT_TITLE, 'misty-daybreak')}
         <ClientDialogsPage

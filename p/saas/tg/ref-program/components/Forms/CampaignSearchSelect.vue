@@ -31,15 +31,14 @@ const highlightedIndex = ref(-1)
 
 const selectedCampaign = computed(() => {
   if (!props.modelValue) return null
-  return campaigns.value.find(c => c.id === props.modelValue) || null
+  return campaigns.value.find((c) => c.id === props.modelValue) || null
 })
 
 const filteredCampaigns = computed(() => {
   const query = searchQuery.value.toLowerCase().trim()
   if (!query) return campaigns.value
-  return campaigns.value.filter(c => 
-    c.title.toLowerCase().includes(query) || 
-    c.id.toLowerCase().includes(query)
+  return campaigns.value.filter(
+    (c) => c.title.toLowerCase().includes(query) || c.id.toLowerCase().includes(query)
   )
 })
 
@@ -153,21 +152,21 @@ onMounted(() => {
   }
 })
 
-watch(() => props.modelValue, (newValue) => {
-  if (!newValue) {
-    searchQuery.value = ''
-  } else if (selectedCampaign.value) {
-    searchQuery.value = selectedCampaign.value.title
+watch(
+  () => props.modelValue,
+  (newValue) => {
+    if (!newValue) {
+      searchQuery.value = ''
+    } else if (selectedCampaign.value) {
+      searchQuery.value = selectedCampaign.value.title
+    }
   }
-})
+)
 </script>
 
 <template>
   <div class="campaign-search-select">
-    <div 
-      class="select-input-wrapper"
-      :class="{ 'is-open': isOpen, 'is-disabled': disabled }"
-    >
+    <div class="select-input-wrapper" :class="{ 'is-open': isOpen, 'is-disabled': disabled }">
       <input
         v-model="searchQuery"
         type="text"
@@ -218,7 +217,7 @@ watch(() => props.modelValue, (newValue) => {
           :key="campaign.id"
           type="button"
           class="dropdown-item"
-          :class="{ 
+          :class="{
             'is-selected': modelValue === campaign.id,
             'is-highlighted': highlightedIndex === index
           }"

@@ -35,18 +35,24 @@ declare global {
 
 export function usePlayerAnalytics(episodeId: string) {
   const sessionId = `${Date.now()}_${Math.random().toString(36).slice(2, 9)}`
-  const device = typeof navigator !== 'undefined'
-    ? (/Mobile|Android|iPhone|iPad/.test(navigator.userAgent) ? 'mobile' : 'desktop')
-    : 'unknown'
+  const device =
+    typeof navigator !== 'undefined'
+      ? /Mobile|Android|iPhone|iPad/.test(navigator.userAgent)
+        ? 'mobile'
+        : 'desktop'
+      : 'unknown'
   let lastProgressTime = 0
   const PROGRESS_INTERVAL = 60
   let isDestroyed = false
 
-  function trackEvent(eventType: string, data?: {
-    currentTime?: number
-    duration?: number
-    extra?: Record<string, string>
-  }) {
+  function trackEvent(
+    eventType: string,
+    data?: {
+      currentTime?: number
+      duration?: number
+      extra?: Record<string, string>
+    }
+  ) {
     if (isDestroyed) return
     if (typeof window === 'undefined' || !window.clrtTrack) return
 
@@ -58,7 +64,7 @@ export function usePlayerAnalytics(episodeId: string) {
       action_param3: device,
       action_param1_float: data?.currentTime ?? 0,
       action_param2_float: data?.duration ?? 0,
-      action_param1_mapstrstr: data?.extra ?? {},
+      action_param1_mapstrstr: data?.extra ?? {}
     })
   }
 
@@ -92,11 +98,11 @@ export function usePlayerAnalytics(episodeId: string) {
           trackEvent('progress', {
             currentTime,
             duration,
-            extra: { minute: String(currentMinute) },
+            extra: { minute: String(currentMinute) }
           })
         } catch (e) {
           trackEvent('progress', {
-            currentTime,
+            currentTime
           })
         }
       }
@@ -124,8 +130,8 @@ export function usePlayerAnalytics(episodeId: string) {
             extra: {
               from: String(Math.round(lastSeekTime)),
               to: String(Math.round(currentTime)),
-              direction: currentTime > lastSeekTime ? 'forward' : 'backward',
-            },
+              direction: currentTime > lastSeekTime ? 'forward' : 'backward'
+            }
           })
         }
         lastSeekTime = currentTime
@@ -136,7 +142,7 @@ export function usePlayerAnalytics(episodeId: string) {
 
     player.on(player.Events.QualityChanged, (event: any) => {
       trackEvent('quality_changed', {
-        extra: { quality: String(event?.data?.quality || '') },
+        extra: { quality: String(event?.data?.quality || '') }
       })
     })
 
@@ -144,20 +150,20 @@ export function usePlayerAnalytics(episodeId: string) {
       trackEvent('volume_change', {
         extra: {
           volume: String(event?.data?.volume ?? ''),
-          muted: String(event?.data?.muted ?? ''),
-        },
+          muted: String(event?.data?.muted ?? '')
+        }
       })
     })
 
     player.on(player.Events.FullscreenChange, (event: any) => {
       trackEvent('fullscreen_change', {
-        extra: { fullscreen: String(event?.data?.fullscreen ?? '') },
+        extra: { fullscreen: String(event?.data?.fullscreen ?? '') }
       })
     })
 
     player.on(player.Events.Error, (event: any) => {
       trackEvent('error', {
-        extra: { error: String(event?.data?.error || 'unknown') },
+        extra: { error: String(event?.data?.error || 'unknown') }
       })
     })
 
@@ -172,7 +178,7 @@ export function usePlayerAnalytics(episodeId: string) {
         const duration = await player.getDuration()
         trackEvent('loaded', {
           duration,
-          extra: { quality: String(event?.data?.quality || '') },
+          extra: { quality: String(event?.data?.quality || '') }
         })
       } catch (e) {
         trackEvent('loaded')
@@ -188,6 +194,6 @@ export function usePlayerAnalytics(episodeId: string) {
     trackEvent,
     setupPlayer,
     destroy,
-    sessionId,
+    sessionId
   }
 }

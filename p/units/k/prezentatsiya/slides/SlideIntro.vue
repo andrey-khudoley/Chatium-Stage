@@ -22,8 +22,6 @@
           <span class="title-big gradient-text">Chatium</span>
         </div>
       </div>
-
-
     </div>
 
     <!-- Decorative elements -->
@@ -39,10 +37,8 @@ const props = defineProps({ active: Boolean })
 const features = [
   { icon: 'fas fa-server', text: 'Инфраструктура' },
   { icon: 'fas fa-code', text: 'Вайбкодинг' },
-  { icon: 'fas fa-robot', text: 'AI-Агенты' },
+  { icon: 'fas fa-robot', text: 'AI-Агенты' }
 ]
-
-
 </script>
 
 <style scoped>
@@ -72,30 +68,30 @@ const features = [
   animation: float 12s ease-in-out infinite;
 }
 
-.orb-1 { 
-  width: 600px; 
-  height: 600px; 
+.orb-1 {
+  width: 600px;
+  height: 600px;
   background: radial-gradient(circle, #6366f1 0%, transparent 70%);
-  top: -20%; 
+  top: -20%;
   left: -15%;
   animation-duration: 15s;
 }
 
-.orb-2 { 
-  width: 500px; 
-  height: 500px; 
+.orb-2 {
+  width: 500px;
+  height: 500px;
   background: radial-gradient(circle, #8b5cf6 0%, transparent 70%);
-  bottom: -15%; 
+  bottom: -15%;
   right: -10%;
   animation-duration: 18s;
   animation-delay: -5s;
 }
 
-.orb-3 { 
-  width: 350px; 
-  height: 350px; 
+.orb-3 {
+  width: 350px;
+  height: 350px;
   background: radial-gradient(circle, #06b6d4 0%, transparent 70%);
-  top: 50%; 
+  top: 50%;
   right: 15%;
   animation-duration: 10s;
   animation-delay: -3s;
@@ -106,14 +102,13 @@ const features = [
 .stars {
   position: absolute;
   inset: 0;
-  background-image: 
-    radial-gradient(2px 2px at 20px 30px, rgba(255,255,255,0.3), transparent),
-    radial-gradient(2px 2px at 40px 70px, rgba(255,255,255,0.2), transparent),
-    radial-gradient(1px 1px at 90px 40px, rgba(255,255,255,0.3), transparent),
-    radial-gradient(2px 2px at 160px 120px, rgba(255,255,255,0.2), transparent),
-    radial-gradient(1px 1px at 230px 80px, rgba(255,255,255,0.3), transparent),
-    radial-gradient(2px 2px at 300px 150px, rgba(255,255,255,0.2), transparent),
-    radial-gradient(1px 1px at 350px 50px, rgba(255,255,255,0.3), transparent);
+  background-image: radial-gradient(2px 2px at 20px 30px, rgba(255, 255, 255, 0.3), transparent),
+    radial-gradient(2px 2px at 40px 70px, rgba(255, 255, 255, 0.2), transparent),
+    radial-gradient(1px 1px at 90px 40px, rgba(255, 255, 255, 0.3), transparent),
+    radial-gradient(2px 2px at 160px 120px, rgba(255, 255, 255, 0.2), transparent),
+    radial-gradient(1px 1px at 230px 80px, rgba(255, 255, 255, 0.3), transparent),
+    radial-gradient(2px 2px at 300px 150px, rgba(255, 255, 255, 0.2), transparent),
+    radial-gradient(1px 1px at 350px 50px, rgba(255, 255, 255, 0.3), transparent);
   background-repeat: repeat;
   background-size: 400px 200px;
   animation: twinkle 8s ease-in-out infinite;
@@ -121,8 +116,13 @@ const features = [
 }
 
 @keyframes twinkle {
-  0%, 100% { opacity: 0.4; }
-  50% { opacity: 0.8; }
+  0%,
+  100% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 0.8;
+  }
 }
 
 /* Particles */
@@ -140,35 +140,120 @@ const features = [
   animation: particle-float 15s infinite;
 }
 
-.p1 { left: 10%; top: 20%; animation-delay: 0s; }
-.p2 { left: 20%; top: 80%; animation-delay: 1s; }
-.p3 { left: 30%; top: 40%; animation-delay: 2s; }
-.p4 { left: 40%; top: 60%; animation-delay: 3s; }
-.p5 { left: 50%; top: 30%; animation-delay: 4s; }
-.p6 { left: 60%; top: 70%; animation-delay: 5s; }
-.p7 { left: 70%; top: 20%; animation-delay: 6s; }
-.p8 { left: 80%; top: 50%; animation-delay: 7s; }
-.p9 { left: 90%; top: 80%; animation-delay: 8s; }
-.p10 { left: 15%; top: 50%; animation-delay: 9s; }
-.p11 { left: 25%; top: 10%; animation-delay: 10s; }
-.p12 { left: 35%; top: 90%; animation-delay: 11s; }
-.p13 { left: 45%; top: 25%; animation-delay: 12s; }
-.p14 { left: 55%; top: 75%; animation-delay: 13s; }
-.p15 { left: 65%; top: 45%; animation-delay: 14s; }
-.p16 { left: 75%; top: 85%; animation-delay: 0.5s; }
-.p17 { left: 85%; top: 15%; animation-delay: 1.5s; }
-.p18 { left: 5%; top: 65%; animation-delay: 2.5s; }
-.p19 { left: 95%; top: 35%; animation-delay: 3.5s; }
-.p20 { left: 50%; top: 95%; animation-delay: 4.5s; }
+.p1 {
+  left: 10%;
+  top: 20%;
+  animation-delay: 0s;
+}
+.p2 {
+  left: 20%;
+  top: 80%;
+  animation-delay: 1s;
+}
+.p3 {
+  left: 30%;
+  top: 40%;
+  animation-delay: 2s;
+}
+.p4 {
+  left: 40%;
+  top: 60%;
+  animation-delay: 3s;
+}
+.p5 {
+  left: 50%;
+  top: 30%;
+  animation-delay: 4s;
+}
+.p6 {
+  left: 60%;
+  top: 70%;
+  animation-delay: 5s;
+}
+.p7 {
+  left: 70%;
+  top: 20%;
+  animation-delay: 6s;
+}
+.p8 {
+  left: 80%;
+  top: 50%;
+  animation-delay: 7s;
+}
+.p9 {
+  left: 90%;
+  top: 80%;
+  animation-delay: 8s;
+}
+.p10 {
+  left: 15%;
+  top: 50%;
+  animation-delay: 9s;
+}
+.p11 {
+  left: 25%;
+  top: 10%;
+  animation-delay: 10s;
+}
+.p12 {
+  left: 35%;
+  top: 90%;
+  animation-delay: 11s;
+}
+.p13 {
+  left: 45%;
+  top: 25%;
+  animation-delay: 12s;
+}
+.p14 {
+  left: 55%;
+  top: 75%;
+  animation-delay: 13s;
+}
+.p15 {
+  left: 65%;
+  top: 45%;
+  animation-delay: 14s;
+}
+.p16 {
+  left: 75%;
+  top: 85%;
+  animation-delay: 0.5s;
+}
+.p17 {
+  left: 85%;
+  top: 15%;
+  animation-delay: 1.5s;
+}
+.p18 {
+  left: 5%;
+  top: 65%;
+  animation-delay: 2.5s;
+}
+.p19 {
+  left: 95%;
+  top: 35%;
+  animation-delay: 3.5s;
+}
+.p20 {
+  left: 50%;
+  top: 95%;
+  animation-delay: 4.5s;
+}
 
 @keyframes particle-float {
-  0%, 100% { 
+  0%,
+  100% {
     transform: translateY(0) scale(1);
     opacity: 0;
   }
-  10% { opacity: 1; }
-  90% { opacity: 1; }
-  50% { 
+  10% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  50% {
     transform: translateY(-100px) scale(1.5);
   }
 }
@@ -221,8 +306,15 @@ const features = [
 }
 
 @keyframes pulse-glow {
-  0%, 100% { opacity: 0.6; transform: scale(1); }
-  50% { opacity: 1; transform: scale(1.2); }
+  0%,
+  100% {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.2);
+  }
 }
 
 /* Title */
@@ -264,8 +356,13 @@ const features = [
 }
 
 @keyframes gradient-shift {
-  0%, 100% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
 }
 
 /* Subtitle */
@@ -363,8 +460,13 @@ const features = [
 }
 
 @keyframes bounce-x {
-  0%, 100% { transform: translateX(0); }
-  50% { transform: translateX(4px); }
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(4px);
+  }
 }
 
 /* Glow rings */
@@ -395,11 +497,12 @@ const features = [
 }
 
 @keyframes ring-pulse {
-  0%, 100% { 
+  0%,
+  100% {
     transform: translate(-50%, -50%) scale(1);
     opacity: 0.3;
   }
-  50% { 
+  50% {
     transform: translate(-50%, -50%) scale(1.05);
     opacity: 0.6;
   }
@@ -410,37 +513,37 @@ const features = [
   .content {
     padding: 20px 16px;
   }
-  
+
   .badge {
     padding: 8px 20px;
     font-size: 11px;
   }
-  
+
   .title-wrapper {
     margin: 32px 0 24px;
   }
-  
+
   .title-line {
     gap: 8px 12px;
   }
-  
+
   .features {
     flex-direction: column;
     align-items: center;
     gap: 12px;
   }
-  
+
   .feature {
     width: 100%;
     max-width: 280px;
     justify-content: center;
     padding: 14px 24px;
   }
-  
+
   .subtitle {
     margin-bottom: 32px;
   }
-  
+
   .hint {
     font-size: 12px;
     padding: 10px 18px;
@@ -451,24 +554,24 @@ const features = [
   .title-small {
     font-size: 18px;
   }
-  
+
   .title-big {
     font-size: 42px;
   }
-  
+
   .subtitle {
     font-size: 15px;
   }
-  
+
   .feature {
     font-size: 14px;
   }
-  
+
   .feature-icon {
     width: 32px;
     height: 32px;
   }
-  
+
   .feature-icon i {
     font-size: 14px;
   }

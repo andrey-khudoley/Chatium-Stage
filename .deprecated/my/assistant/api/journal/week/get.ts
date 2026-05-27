@@ -14,7 +14,8 @@ const SERVER_FALLBACK_TIME_ZONE = 'Europe/Moscow'
 export const getJournalWeekEntryRoute = app.get('/', async (ctx, req) => {
   const user = requireRealUser(ctx)
   const mondayKeyRaw =
-    normalizeWeekMondayKey(req.query.mondayKey) ?? computeJournalWeekMondayKeyInTimeZone(Date.now(), SERVER_FALLBACK_TIME_ZONE)
+    normalizeWeekMondayKey(req.query.mondayKey) ??
+    computeJournalWeekMondayKeyInTimeZone(Date.now(), SERVER_FALLBACK_TIME_ZONE)
   const mondayKey =
     getWeekMondayKeyForDateKey(mondayKeyRaw) ??
     computeJournalWeekMondayKeyInTimeZone(Date.now(), SERVER_FALLBACK_TIME_ZONE)

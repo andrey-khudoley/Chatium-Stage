@@ -1,4 +1,4 @@
 interface:
-  display_name: "Chatium Workspace"
-  short_description: "Workflows for the s.chtm.khudoley.pro Chatium workspace"
-  default_prompt: "Use this skill for Chatium workspace development, review, verification, documentation, and deployment workflows."
+  display_name: 'Chatium Workspace'
+  short_description: 'Workflows for the s.chtm.khudoley.pro Chatium workspace'
+  default_prompt: 'Use this skill for Chatium workspace development, review, verification, documentation, and deployment workflows.'

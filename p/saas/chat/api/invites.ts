@@ -17,7 +17,7 @@ async function findUserByIdentity(ctx, type: string, value: string) {
   if (type === 'username') {
     const users = await findUsers(ctx, {
       where: { username: value },
-      limit: 1,
+      limit: 1
     })
     return users[0] || null
   }
@@ -26,30 +26,30 @@ async function findUserByIdentity(ctx, type: string, value: string) {
     const normalizedEmail = normalizeIdentityKey('Email', value)
     let identities = await findIdentities(ctx, {
       where: { type: 'Email', key: normalizedEmail },
-      limit: 1,
+      limit: 1
     })
-    
+
     // Fallback: ищем по точному совпадению без нормализации
     if (identities.length === 0) {
       const allEmailIdentities = await findIdentities(ctx, {
         where: { type: 'Email' },
-        limit: 100,
+        limit: 100
       })
-      
+
       const emailLower = value.toLowerCase().trim()
       const matchedIdentity = allEmailIdentities.find(
-        identity => identity.key.toLowerCase().trim() === emailLower
+        (identity) => identity.key.toLowerCase().trim() === emailLower
       )
-      
+
       if (matchedIdentity) {
         identities = [matchedIdentity]
       }
     }
-    
+
     if (identities.length > 0) {
       const users = await findUsers(ctx, {
         where: { id: identities[0].userId },
-        limit: 1,
+        limit: 1
       })
       return users[0] || null
     }
@@ -59,30 +59,30 @@ async function findUserByIdentity(ctx, type: string, value: string) {
     const normalizedPhone = normalizeIdentityKey('Phone', value)
     let identities = await findIdentities(ctx, {
       where: { type: 'Phone', key: normalizedPhone },
-      limit: 1,
+      limit: 1
     })
-    
+
     // Fallback: ищем по точному совпадению без нормализации
     if (identities.length === 0) {
       const allPhoneIdentities = await findIdentities(ctx, {
         where: { type: 'Phone' },
-        limit: 100,
+        limit: 100
       })
-      
+
       const phoneDigits = value.replace(/\D/g, '')
       const matchedIdentity = allPhoneIdentities.find(
-        identity => identity.key.replace(/\D/g, '') === phoneDigits
+        (identity) => identity.key.replace(/\D/g, '') === phoneDigits
       )
-      
+
       if (matchedIdentity) {
         identities = [matchedIdentity]
       }
     }
-    
+
     if (identities.length > 0) {
       const users = await findUsers(ctx, {
         where: { id: identities[0].userId },
-        limit: 1,
+        limit: 1
       })
       return users[0] || null
     }
@@ -97,7 +97,7 @@ export const apiInvitesCreateRoute = app
     invitedUserId: s.string().optional(),
     inviteType: s.string().optional(),
     inviteValue: s.string().optional(),
-    isLinkInvite: s.boolean().optional(),
+    isLinkInvite: s.boolean().optional()
   }))
   .post('/create', async (ctx, req) => {
     requireRealUser(ctx)
@@ -119,7 +119,7 @@ export const apiInvitesCreateRoute = app
       const existingLink = await ChatInvites.findOneBy(ctx, {
         chat: req.body.chatId,
         isLinkInvite: true,
-        status: 'pending',
+        status: 'pending'
       })
 
       // Если ссылка существует и не истекла — возвращаем её
@@ -130,13 +130,13 @@ export const apiInvitesCreateRoute = app
             success: true,
             invite: existingLink,
             inviteLink: generateInviteLink(ctx, existingLink.token),
-            message: 'Инвайт-ссылка уже существует',
+            message: 'Инвайт-ссылка уже существует'
           }
         }
         // Если ссылка истекла — отмечаем её как просроченную
         await ChatInvites.update(ctx, {
           id: existingLink.id,
-          status: 'expired',
+          status: 'expired'
         })
       }
 
@@ -152,13 +152,13 @@ export const apiInvitesCreateRoute = app
         inviteType: 'link',
         inviteValue: null,
         isLinkInvite: true,
-        expiresAt,
+        expiresAt
       })
 
       return {
         success: true,
         invite,
-        inviteLink: generateInviteLink(ctx, token),
+        inviteLink: generateInviteLink(ctx, token)
       }
     }
 
@@ -168,28 +168,28 @@ export const apiInvitesCreateRoute = app
       if (!targetUser) {
         return {
           success: false,
-          error: 'Пользователь не найден',
+          error: 'Пользователь не найден'
         }
       }
 
       if (targetUser.id === ctx.user.id) {
         return {
           success: false,
-          error: 'Нельзя пригласить самого себя',
+          error: 'Нельзя пригласить самого себя'
         }
       }
 
       const existingInvite = await ChatInvites.findOneBy(ctx, {
         chat: req.body.chatId,
         invitedUser: targetUser.id,
-        status: 'pending',
+        status: 'pending'
       })
 
       if (existingInvite) {
         return {
           success: true,
           invite: existingInvite,
-          message: 'Приглашение уже существует',
+          message: 'Приглашение уже существует'
         }
       }
 
@@ -202,7 +202,7 @@ export const apiInvitesCreateRoute = app
         inviteType,
         inviteValue,
         isLinkInvite: false,
-        expiresAt: null,
+        expiresAt: null
       })
 
       // Отправляем уведомление приглашенному пользователю
@@ -214,15 +214,15 @@ export const apiInvitesCreateRoute = app
           chat: {
             id: chat.id,
             title: chat.title,
-            description: chat.description,
+            description: chat.description
           },
           invitedBy: {
             id: ctx.user.id,
             displayName: ctx.user.displayName,
-            avatar: ctx.user.imageUrl,
+            avatar: ctx.user.imageUrl
           },
-          createdAt: invite.createdAt,
-        },
+          createdAt: invite.createdAt
+        }
       })
 
       return {
@@ -231,8 +231,8 @@ export const apiInvitesCreateRoute = app
         user: {
           id: targetUser.id,
           displayName: targetUser.displayName,
-          avatar: targetUser.imageUrl,
-        },
+          avatar: targetUser.imageUrl
+        }
       }
     }
 
@@ -240,21 +240,21 @@ export const apiInvitesCreateRoute = app
       if (invitedUserId === ctx.user.id) {
         return {
           success: false,
-          error: 'Нельзя пригласить самого себя',
+          error: 'Нельзя пригласить самого себя'
         }
       }
 
       const existingInvite = await ChatInvites.findOneBy(ctx, {
         chat: req.body.chatId,
         invitedUser: invitedUserId,
-        status: 'pending',
+        status: 'pending'
       })
 
       if (existingInvite) {
         return {
           success: true,
           invite: existingInvite,
-          message: 'Приглашение уже существует',
+          message: 'Приглашение уже существует'
         }
       }
 
@@ -267,7 +267,7 @@ export const apiInvitesCreateRoute = app
         inviteType: 'userId',
         inviteValue: invitedUserId,
         isLinkInvite: false,
-        expiresAt: null,
+        expiresAt: null
       })
 
       // Отправляем уведомление приглашенному пользователю
@@ -279,33 +279,33 @@ export const apiInvitesCreateRoute = app
           chat: {
             id: chat.id,
             title: chat.title,
-            description: chat.description,
+            description: chat.description
           },
           invitedBy: {
             id: ctx.user.id,
             displayName: ctx.user.displayName,
-            avatar: ctx.user.imageUrl,
+            avatar: ctx.user.imageUrl
           },
-          createdAt: invite.createdAt,
-        },
+          createdAt: invite.createdAt
+        }
       })
 
       return {
         success: true,
-        invite,
+        invite
       }
     }
 
     return {
       success: false,
-      error: 'Не указаны данные для приглашения',
+      error: 'Не указаны данные для приглашения'
     }
   })
 
 export const apiInvitesGetLinkRoute = app
   .body((s) => ({
     chatId: s.string(),
-    regenerate: s.boolean().optional(),
+    regenerate: s.boolean().optional()
   }))
   .post('/get-link', async (ctx, req) => {
     requireRealUser(ctx)
@@ -324,7 +324,7 @@ export const apiInvitesGetLinkRoute = app
     const existingLink = await ChatInvites.findOneBy(ctx, {
       chat: req.body.chatId,
       isLinkInvite: true,
-      status: 'pending',
+      status: 'pending'
     })
 
     // Если ссылка существует и не истекла, и не требуется регенерация — возвращаем её
@@ -335,13 +335,13 @@ export const apiInvitesGetLinkRoute = app
           success: true,
           inviteLink: generateInviteLink(ctx, existingLink.token),
           expiresAt: existingLink.expiresAt,
-          isNew: false,
+          isNew: false
         }
       }
       // Если ссылка истекла — отмечаем её как просроченную
       await ChatInvites.update(ctx, {
         id: existingLink.id,
-        status: 'expired',
+        status: 'expired'
       })
     }
 
@@ -349,7 +349,7 @@ export const apiInvitesGetLinkRoute = app
     if (req.body.regenerate && existingLink) {
       await ChatInvites.update(ctx, {
         id: existingLink.id,
-        status: 'revoked',
+        status: 'revoked'
       })
     }
 
@@ -365,27 +365,27 @@ export const apiInvitesGetLinkRoute = app
       inviteType: 'link',
       inviteValue: null,
       isLinkInvite: true,
-      expiresAt,
+      expiresAt
     })
 
     return {
       success: true,
       inviteLink: generateInviteLink(ctx, token),
       expiresAt,
-      isNew: true,
+      isNew: true
     }
   })
 
 export const apiInvitesByTokenRoute = app.get('/by-token/:token', async (ctx, req) => {
   const invite = await ChatInvites.findOneBy(ctx, {
     token: req.params.token,
-    status: 'pending',
+    status: 'pending'
   })
 
   if (!invite) {
     return {
       success: false,
-      error: 'Приглашение не найдено или уже использовано',
+      error: 'Приглашение не найдено или уже использовано'
     }
   }
 
@@ -393,21 +393,21 @@ export const apiInvitesByTokenRoute = app.get('/by-token/:token', async (ctx, re
     // Отмечаем истёкшую ссылку как просроченную
     await ChatInvites.update(ctx, {
       id: invite.id,
-      status: 'expired',
+      status: 'expired'
     })
     return {
       success: false,
-      error: 'Срок действия приглашения истёк',
+      error: 'Срок действия приглашения истёк'
     }
   }
 
   const chat = await invite.chat.get(ctx)
   const invitedBy = await invite.invitedBy.get(ctx)
-  
+
   // Получаем количество участников
   const { findFeedParticipants } = await import('@app/feed')
   const participants = await findFeedParticipants(ctx, chat.feedId, {})
-  
+
   // Проверяем, является ли текущий пользователь уже участником
   let isAlreadyMember = false
   if (ctx.user) {
@@ -426,30 +426,32 @@ export const apiInvitesByTokenRoute = app.get('/by-token/:token', async (ctx, re
       id: invite.id,
       token: invite.token,
       isLinkInvite: invite.isLinkInvite,
-      expiresAt: invite.expiresAt,
+      expiresAt: invite.expiresAt
     },
     chat: {
       id: chat.id,
       feedId: chat.feedId,
       title: chat.title,
       description: chat.description,
-      type: chat.type,
+      type: chat.type
     },
-    invitedBy: invitedBy ? {
-      id: invitedBy.id,
-      displayName: invitedBy.displayName,
-      avatar: invitedBy.imageUrl,
-      gender: invitedBy.gender,
-    } : null,
+    invitedBy: invitedBy
+      ? {
+          id: invitedBy.id,
+          displayName: invitedBy.displayName,
+          avatar: invitedBy.imageUrl,
+          gender: invitedBy.gender
+        }
+      : null,
     participantsCount: participants.length,
-    isAlreadyMember,
+    isAlreadyMember
   }
 })
 
 export const apiInvitesAcceptRoute = app
   .body((s) => ({
     inviteId: s.string().optional(),
-    token: s.string().optional(),
+    token: s.string().optional()
   }))
   .post('/accept', async (ctx, req) => {
     requireRealUser(ctx)
@@ -459,7 +461,7 @@ export const apiInvitesAcceptRoute = app
     if (req.body.token) {
       invite = await ChatInvites.findOneBy(ctx, {
         token: req.body.token,
-        status: 'pending',
+        status: 'pending'
       })
     } else if (req.body.inviteId) {
       invite = await ChatInvites.findById(ctx, req.body.inviteId)
@@ -488,7 +490,7 @@ export const apiInvitesAcceptRoute = app
     await ChatInvites.update(ctx, {
       id: invite.id,
       status: 'accepted',
-      invitedUser: ctx.user.id,
+      invitedUser: ctx.user.id
     })
 
     // Отправляем событие о новом участнике всем в чате
@@ -501,8 +503,8 @@ export const apiInvitesAcceptRoute = app
         displayName: ctx.user.displayName,
         firstName: ctx.user.firstName,
         lastName: ctx.user.lastName,
-        avatar: ctx.user.imageUrl,
-      },
+        avatar: ctx.user.imageUrl
+      }
     })
 
     // Уведомляем пользователя о добавлении в чат
@@ -513,10 +515,10 @@ export const apiInvitesAcceptRoute = app
         id: chat.id,
         feedId: chat.feedId,
         title: chat.title,
-        description: chat.description,
-      },
+        description: chat.description
+      }
     })
-    
+
     // Если есть back параметр - редиректим
     const backUrl = req.query.back
     if (backUrl) {
@@ -526,14 +528,14 @@ export const apiInvitesAcceptRoute = app
     return {
       success: true,
       chatId: chat.id,
-      feedId: chat.feedId,
+      feedId: chat.feedId
     }
   })
 
 export const apiInvitesDeclineRoute = app
   .body((s) => ({
     inviteId: s.string().optional(),
-    token: s.string().optional(),
+    token: s.string().optional()
   }))
   .post('/decline', async (ctx, req) => {
     requireRealUser(ctx)
@@ -543,7 +545,7 @@ export const apiInvitesDeclineRoute = app
     if (req.body.token) {
       invite = await ChatInvites.findOneBy(ctx, {
         token: req.body.token,
-        status: 'pending',
+        status: 'pending'
       })
     } else if (req.body.inviteId) {
       invite = await ChatInvites.findById(ctx, req.body.inviteId)
@@ -565,18 +567,18 @@ export const apiInvitesDeclineRoute = app
 
     await ChatInvites.update(ctx, {
       id: invite.id,
-      status: 'declined',
+      status: 'declined'
     })
 
     // Уведомляем пользователя об отклонении
     await sendDataToSocket(ctx, `user-${ctx.user.id}`, {
       type: 'invite-event',
       event: 'invite-declined',
-      chatId: chat.id,
+      chatId: chat.id
     })
 
     return {
-      success: true,
+      success: true
     }
   })
 
@@ -586,40 +588,42 @@ export const apiInvitesMyRoute = app.get('/my', async (ctx, req) => {
   const invites = await ChatInvites.findAll(ctx, {
     where: {
       invitedUser: ctx.user.id,
-      status: 'pending',
+      status: 'pending'
     },
-    order: [{ createdAt: 'desc' }],
+    order: [{ createdAt: 'desc' }]
   })
 
   const enrichedInvites = []
   for (const invite of invites) {
     const chat = await invite.chat.get(ctx)
     const invitedBy = await invite.invitedBy.get(ctx)
-    
+
     enrichedInvites.push({
       id: invite.id,
       chat: {
         id: chat.id,
         title: chat.title,
-        description: chat.description,
+        description: chat.description
       },
-      invitedBy: invitedBy ? {
-        id: invitedBy.id,
-        displayName: invitedBy.displayName,
-        avatar: invitedBy.imageUrl,
-      } : null,
-      createdAt: invite.createdAt,
+      invitedBy: invitedBy
+        ? {
+            id: invitedBy.id,
+            displayName: invitedBy.displayName,
+            avatar: invitedBy.imageUrl
+          }
+        : null,
+      createdAt: invite.createdAt
     })
   }
 
   return {
-    invites: enrichedInvites,
+    invites: enrichedInvites
   }
 })
 
 export const apiInvitesRevokeRoute = app
   .body((s) => ({
-    inviteId: s.string(),
+    inviteId: s.string()
   }))
   .post('/revoke', async (ctx, req) => {
     requireRealUser(ctx)
@@ -638,7 +642,7 @@ export const apiInvitesRevokeRoute = app
 
     await ChatInvites.update(ctx, {
       id: invite.id,
-      status: 'revoked',
+      status: 'revoked'
     })
 
     // Уведомляем приглашенного пользователя если он был конкретным
@@ -649,12 +653,12 @@ export const apiInvitesRevokeRoute = app
           type: 'invite-event',
           event: 'invite-revoked',
           inviteId: invite.id,
-          chatId: chat.id,
+          chatId: chat.id
         })
       }
     }
 
     return {
-      success: true,
+      success: true
     }
   })

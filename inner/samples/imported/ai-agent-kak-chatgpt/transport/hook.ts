@@ -27,7 +27,7 @@ app.accountHook('@sender/get-external-transports', async (ctx: app.Ctx, params: 
 
 const sendMessageFunction = app
   .function('/send-message')
-  .body(s => s.any<{ chat: { id: string } }>())
+  .body((s) => s.any<{ chat: { id: string } }>())
   .handle(async (ctx, body) => {
     const chatId = body.chat.id
 
@@ -68,7 +68,7 @@ export async function findWorkspaceTransport(ctx: app.Ctx) {
   const channels = await getChannels(ctx)
 
   return channels.find(
-    channel =>
+    (channel) =>
       channel.externalId === 'account:' + transportIdentity.id &&
       channel.externalKey === 'account:' + transportIdentity.key
   )

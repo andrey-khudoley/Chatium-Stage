@@ -9,7 +9,7 @@ export const LIMITS = {
   CHAT_MESSAGES_PER_MINUTE: 10,
   APPLICATIONS_PER_HOUR: 3,
   NAME_MAX_LENGTH: 100,
-  ACTIVITY_MAX_LENGTH: 500,
+  ACTIVITY_MAX_LENGTH: 500
 }
 
 /**
@@ -19,31 +19,40 @@ export const LIMITS = {
  * @param maxAttempts - максимальное количество попыток
  * @param windowMs - окно времени в миллисекундах
  */
-export async function checkRateLimit(ctx: any, key: string, maxAttempts: number, windowMs: number): Promise<boolean> {
+export async function checkRateLimit(
+  ctx: any,
+  key: string,
+  maxAttempts: number,
+  windowMs: number
+): Promise<boolean> {
   const lockResult = await tryRunWithExclusiveLock(ctx, `ratelimit:${key}`, 5000, async () => {
     const now = Date.now()
     const userAttempts = (await formStorage.getItem(key, [] as any)) as unknown as number[]
-    
+
     // Удаляем старые попытки
-    const recentAttempts = userAttempts.filter(timestamp => now - timestamp < windowMs)
-    
+    const recentAttempts = userAttempts.filter((timestamp) => now - timestamp < windowMs)
+
     if (recentAttempts.length >= maxAttempts) {
       return false // Превышен лимит
     }
-    
+
     recentAttempts.push(now)
     await formStorage.setItem(key, recentAttempts as any)
-    
+
     return true
   })
-  
+
   return lockResult.success ? lockResult.result : false
 }
 
 /**
  * Возвращает сколько осталось времени до следующей попытки
  */
-export async function getTimeUntilNextAttempt(ctx: any, key: string, windowMs: number): Promise<number> {
+export async function getTimeUntilNextAttempt(
+  ctx: any,
+  key: string,
+  windowMs: number
+): Promise<number> {
   const now = Date.now()
   const userAttempts = await (formStorage.getItem(key, [] as any) as unknown as number[]) // Получаем попытки из formStorage, если их там нет, используем пустой массив
 
@@ -58,10 +67,15 @@ export async function getTimeUntilNextAttempt(ctx: any, key: string, windowMs: n
 /**
  * Проверяет текущий статус rate-limit
  */
-export async function getRateLimitStatus(ctx: any, key: string, maxAttempts: number, windowMs: number): Promise<{ limited: boolean; blockedUntil?: number; secondsLeft?: number }> {
+export async function getRateLimitStatus(
+  ctx: any,
+  key: string,
+  maxAttempts: number,
+  windowMs: number
+): Promise<{ limited: boolean; blockedUntil?: number; secondsLeft?: number }> {
   const now = Date.now()
   const userAttempts = (await formStorage.getItem(key, [] as any)) as unknown as number[]
-  const recentAttempts = userAttempts.filter(timestamp => now - timestamp < windowMs)
+  const recentAttempts = userAttempts.filter((timestamp) => now - timestamp < windowMs)
 
   if (recentAttempts.length >= maxAttempts) {
     const oldestAttempt = recentAttempts[0]
@@ -70,7 +84,7 @@ export async function getRateLimitStatus(ctx: any, key: string, maxAttempts: num
     return {
       limited: true,
       blockedUntil: now + secondsLeft * 1000,
-      secondsLeft,
+      secondsLeft
     }
   }
 
@@ -80,7 +94,12 @@ export async function getRateLimitStatus(ctx: any, key: string, maxAttempts: num
 /**
  * Валидация текстового поля
  */
-export function validateText(text: string, fieldName: string, maxLength: number, required: boolean = true): void {
+export function validateText(
+  text: string,
+  fieldName: string,
+  maxLength: number,
+  required: boolean = true
+): void {
   if (required && !text?.trim()) {
     throw new Error(`Поле "${fieldName}" обязательно для заполнения`)
   }

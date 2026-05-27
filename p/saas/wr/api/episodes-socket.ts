@@ -6,11 +6,11 @@ export async function emitEpisodeUpdated(ctx: app.Ctx, episodeId: string, episod
 
   await sendDataToSocket(ctx, globalSocketId, {
     type: 'episode_updated',
-    episode,
+    episode
   })
 
   await sendDataToSocket(ctx, episodeSocketId, {
     type: 'episode_updated',
-    episode,
+    episode
   })
 }

@@ -4,22 +4,21 @@
       <div class="glow-orb orb-1"></div>
       <div class="glow-orb orb-2"></div>
     </div>
-    
-    <div class="container">
-      <div class="badge">
-        <i class="fas fa-gift"></i> Бонус 4 из 5
-      </div>
 
-      <h2 class="title">
-        <span class="grad-gold">Фан-клуб</span> Ботана
-      </h2>
+    <div class="container">
+      <div class="badge"><i class="fas fa-gift"></i> Бонус 4 из 5</div>
+
+      <h2 class="title"><span class="grad-gold">Фан-клуб</span> Ботана</h2>
       <p class="subtitle">Основатель — Алексей Радонец</p>
 
       <div class="hero-block">
         <div class="hero-icon"><i class="fas fa-star"></i></div>
         <div class="hero-info">
           <h3>30 дней бесплатного доступа</h3>
-          <p>Мастермайнды, куча шаблонов, помощь от опытных участников. Чтобы быстрее войти в курс дела и разобраться.</p>
+          <p>
+            Мастермайнды, куча шаблонов, помощь от опытных участников. Чтобы быстрее войти в курс
+            дела и разобраться.
+          </p>
         </div>
       </div>
 
@@ -40,7 +39,6 @@
           <p>Помощь от опытных участников — войдёшь в курс дела за дни</p>
         </div>
       </div>
-
     </div>
   </div>
 </template>
@@ -93,8 +91,13 @@ defineProps({ active: Boolean })
 }
 
 @keyframes float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-20px); }
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-20px);
+  }
 }
 
 .container {
@@ -146,8 +149,13 @@ defineProps({ active: Boolean })
 }
 
 @keyframes gradient-shift {
-  0%, 100% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
 }
 
 .hero-block {
@@ -215,7 +223,7 @@ defineProps({ active: Boolean })
 .feature-card:hover {
   border-color: rgba(245, 158, 11, 0.3);
   transform: translateY(-4px);
-  box-shadow: 0 12px 28px rgba(0,0,0,0.2);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.2);
 }
 
 .feature-icon {
@@ -270,24 +278,51 @@ defineProps({ active: Boolean })
 }
 
 @media (max-width: 640px) {
-  .slide { align-items: flex-start; }
+  .slide {
+    align-items: flex-start;
+  }
   .hero-block {
     flex-direction: row;
     text-align: left;
     padding: 16px 14px;
     gap: 14px;
   }
-  .hero-icon { width: 44px; height: 44px; font-size: 20px; }
-  .hero-info h3 { font-size: 16px; }
-  .hero-info p { font-size: 13px; }
+  .hero-icon {
+    width: 44px;
+    height: 44px;
+    font-size: 20px;
+  }
+  .hero-info h3 {
+    font-size: 16px;
+  }
+  .hero-info p {
+    font-size: 13px;
+  }
   .features-grid {
     grid-template-columns: 1fr;
     gap: 10px;
   }
-  .feature-card { padding: 14px; text-align: left; display: flex; flex-direction: row; gap: 12px; align-items: center; }
-  .feature-icon { margin: 0; width: 38px; height: 38px; flex-shrink: 0; }
-  .feature-card h4 { font-size: 14px; margin-bottom: 2px; }
-  .feature-card p { font-size: 12px; }
+  .feature-card {
+    padding: 14px;
+    text-align: left;
+    display: flex;
+    flex-direction: row;
+    gap: 12px;
+    align-items: center;
+  }
+  .feature-icon {
+    margin: 0;
+    width: 38px;
+    height: 38px;
+    flex-shrink: 0;
+  }
+  .feature-card h4 {
+    font-size: 14px;
+    margin-bottom: 2px;
+  }
+  .feature-card p {
+    font-size: 12px;
+  }
   .value-block {
     justify-content: center;
     text-align: center;
@@ -295,17 +330,55 @@ defineProps({ active: Boolean })
 }
 
 @media (max-width: 480px) {
-  .slide { padding: 24px 14px 14px; }
-  .badge { font-size: 11px; padding: 6px 14px; margin-bottom: 16px; }
-  .title { font-size: 24px; margin-bottom: 6px; }
-  .subtitle { font-size: 14px; margin-bottom: 20px; }
-  .hero-block { padding: 16px 18px; border-radius: 14px; margin-bottom: 20px; }
-  .hero-icon { width: 44px; height: 44px; font-size: 20px; border-radius: 12px; }
-  .hero-info h3 { font-size: 16px; }
-  .hero-info p { font-size: 13px; }
-  .feature-card { padding: 16px; border-radius: 12px; }
-  .feature-icon { width: 38px; height: 38px; font-size: 16px; border-radius: 10px; margin-bottom: 8px; }
-  .feature-card h4 { font-size: 14px; }
-  .feature-card p { font-size: 12px; }
+  .slide {
+    padding: 24px 14px 14px;
+  }
+  .badge {
+    font-size: 11px;
+    padding: 6px 14px;
+    margin-bottom: 16px;
+  }
+  .title {
+    font-size: 24px;
+    margin-bottom: 6px;
+  }
+  .subtitle {
+    font-size: 14px;
+    margin-bottom: 20px;
+  }
+  .hero-block {
+    padding: 16px 18px;
+    border-radius: 14px;
+    margin-bottom: 20px;
+  }
+  .hero-icon {
+    width: 44px;
+    height: 44px;
+    font-size: 20px;
+    border-radius: 12px;
+  }
+  .hero-info h3 {
+    font-size: 16px;
+  }
+  .hero-info p {
+    font-size: 13px;
+  }
+  .feature-card {
+    padding: 16px;
+    border-radius: 12px;
+  }
+  .feature-icon {
+    width: 38px;
+    height: 38px;
+    font-size: 16px;
+    border-radius: 10px;
+    margin-bottom: 8px;
+  }
+  .feature-card h4 {
+    font-size: 14px;
+  }
+  .feature-card p {
+    font-size: 12px;
+  }
 }
 </style>

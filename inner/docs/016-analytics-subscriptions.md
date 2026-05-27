@@ -1,4 +1,5 @@
 @chatium
+
 # Система подписок на события
 
 Руководство по реализации подписок на события через `subscribeToMetricEvents` и обработке через хук `metric-event`.
@@ -23,6 +24,7 @@
 ### Два подхода к подпискам
 
 #### 1. Встроенный Chatium (subscribeToMetricEvents)
+
 ```typescript
 import { subscribeToMetricEvents } from '@app/metric'
 
@@ -39,6 +41,7 @@ app.accountHook('metric-event', async (ctx, { event }) => {
 **Статус**: ⚠️ **Не работает стабильно** - хук не срабатывает для GetCourse событий
 
 #### 2. Через Heap таблицу (Events Subscribe проект)
+
 ```typescript
 // Сохранение подписок в Heap
 await SubscriptionsTable.create(ctx, {
@@ -121,7 +124,7 @@ const supportedEvents = [
 app.accountHook('metric-event', async (ctx, { event }) => {
   // Событие приходит в параметре event
   ctx.console.log('Received metric event', event)
-  
+
   // Обработка события
   if (event.urlPath === 'event://getcourse/user/created') {
     await handleUserCreated(ctx, event)
@@ -130,7 +133,7 @@ app.accountHook('metric-event', async (ctx, { event }) => {
 
 async function handleUserCreated(ctx, event) {
   if (!event.user_email) return
-  
+
   await UsersTable.create(ctx, {
     email: event.user_email,
     firstName: event.user_first_name,
@@ -144,13 +147,13 @@ async function handleUserCreated(ctx, event) {
 
 ```typescript
 interface MetricEvent {
-  urlPath: string           // 'event://getcourse/user/created'
-  user_id?: string          // ID пользователя
-  user_email?: string       // Email
-  user_first_name?: string  // Имя
-  user_last_name?: string   // Фамилия
-  user_phone?: string       // Телефон
-  uid?: string              // UID сессии
+  urlPath: string // 'event://getcourse/user/created'
+  user_id?: string // ID пользователя
+  user_email?: string // Email
+  user_first_name?: string // Имя
+  user_last_name?: string // Фамилия
+  user_phone?: string // Телефон
+  uid?: string // UID сессии
   // ... другие поля события
 }
 ```
@@ -160,6 +163,7 @@ interface MetricEvent {
 **Проблема**: Хук `metric-event` не срабатывает после `subscribeToMetricEvents`
 
 **Симптомы**:
+
 - ✅ Подписка выполняется успешно
 - ✅ События есть в ClickHouse
 - ❌ Хук не логирует события
@@ -275,19 +279,18 @@ await apiUnsubscribeRoute.run(ctx, {
 Получение списка подписок:
 
 ```typescript
-const subscriptions = await apiSubscriptionsListRoute.run(ctx)
-
-// Возвращает массив:
-[
-  {
-    id: 'sub_123',
-    userId: 'user_456',
-    eventType: 'getcourse',
-    eventName: 'user/created',
-    isActive: true,
-    createdAt: '2025-11-07T10:00:00Z'
-  }
-]
+const subscriptions =
+  await apiSubscriptionsListRoute.run(ctx)[
+    // Возвращает массив:
+    {
+      id: 'sub_123',
+      userId: 'user_456',
+      eventType: 'getcourse',
+      eventName: 'user/created',
+      isActive: true,
+      createdAt: '2025-11-07T10:00:00Z'
+    }
+  ]
 ```
 
 #### GET /api/subscriptions~available-events
@@ -392,26 +395,31 @@ Job монитор (каждые 10 сек)
 import { sendDataToSocket, genSocketId } from '@app/socket'
 import { gcQueryAi } from '@gc-mcp-server/sdk'
 
-export const monitorEventsJob = app.job('/monitor-events', async (ctx, params: { 
-  userId: string, 
-  socketId: string,
-  lastCheckTime?: string
-}) => {
-  // Получаем активные подписки
-  const subscriptions = await Subscriptions.findAll(ctx, {
-    where: {
-      userId: params.userId,
-      isActive: true
+export const monitorEventsJob = app.job(
+  '/monitor-events',
+  async (
+    ctx,
+    params: {
+      userId: string
+      socketId: string
+      lastCheckTime?: string
     }
-  })
-  
-  const events = []
-  const lastCheckTime = params.lastCheckTime || new Date(Date.now() - 60000).toISOString()
-  
-  // Для каждой подписки получаем последние события
-  for (const sub of subscriptions) {
-    if (sub.eventType === 'getcourse') {
-      const query = `
+  ) => {
+    // Получаем активные подписки
+    const subscriptions = await Subscriptions.findAll(ctx, {
+      where: {
+        userId: params.userId,
+        isActive: true
+      }
+    })
+
+    const events = []
+    const lastCheckTime = params.lastCheckTime || new Date(Date.now() - 60000).toISOString()
+
+    // Для каждой подписки получаем последние события
+    for (const sub of subscriptions) {
+      if (sub.eventType === 'getcourse') {
+        const query = `
         SELECT * 
         FROM chatium_ai.access_log
         WHERE urlPath = 'event://getcourse/${sub.eventName}'
@@ -420,11 +428,11 @@ export const monitorEventsJob = app.job('/monitor-events', async (ctx, params: {
         ORDER BY ts DESC
         LIMIT 10
       `
-      
-      const result = await gcQueryAi(ctx, query)
-      events.push(...(result.rows || []))
-    } else if (sub.eventType === 'traffic') {
-      const query = `
+
+        const result = await gcQueryAi(ctx, query)
+        events.push(...(result.rows || []))
+      } else if (sub.eventType === 'traffic') {
+        const query = `
         SELECT * 
         FROM chatium_ai.access_log
         WHERE action = '${sub.eventName}'
@@ -434,27 +442,28 @@ export const monitorEventsJob = app.job('/monitor-events', async (ctx, params: {
         ORDER BY ts DESC
         LIMIT 10
       `
-      
-      const result = await gcQueryAi(ctx, query)
-      events.push(...(result.rows || []))
+
+        const result = await gcQueryAi(ctx, query)
+        events.push(...(result.rows || []))
+      }
     }
-  }
-  
-  // Отправляем события через WebSocket
-  if (events.length > 0) {
-    await sendDataToSocket(ctx, params.socketId, {
-      type: 'events-update',
-      data: events,
-      timestamp: new Date().toISOString()
+
+    // Отправляем события через WebSocket
+    if (events.length > 0) {
+      await sendDataToSocket(ctx, params.socketId, {
+        type: 'events-update',
+        data: events,
+        timestamp: new Date().toISOString()
+      })
+    }
+
+    // Планируем следующую проверку через 15 секунд
+    await monitorEventsJob.scheduleJobAfter(ctx, 15, 'seconds', {
+      ...params,
+      lastCheckTime: new Date().toISOString()
     })
   }
-  
-  // Планируем следующую проверку через 15 секунд
-  await monitorEventsJob.scheduleJobAfter(ctx, 15, 'seconds', {
-    ...params,
-    lastCheckTime: new Date().toISOString()
-  })
-})
+)
 ```
 
 ### Job для мониторинга (с queryAi)
@@ -465,42 +474,50 @@ export const monitorEventsJob = app.job('/monitor-events', async (ctx, params: {
 import { sendDataToSocket } from '@app/socket'
 import { queryAi } from '@traffic/sdk'
 
-export const monitorEventsJob = app.job('/monitor-events', async (ctx, params: { 
-  userId: string, 
-  socketId: string 
-}) => {
-  const subscriptions = await Subscriptions.findAll(ctx, {
-    where: { userId: params.userId, isActive: true }
-  })
-  
-  const events = []
-  
-  for (const sub of subscriptions) {
-    const query = `
+export const monitorEventsJob = app.job(
+  '/monitor-events',
+  async (
+    ctx,
+    params: {
+      userId: string
+      socketId: string
+    }
+  ) => {
+    const subscriptions = await Subscriptions.findAll(ctx, {
+      where: { userId: params.userId, isActive: true }
+    })
+
+    const events = []
+
+    for (const sub of subscriptions) {
+      const query = `
       SELECT * 
       FROM chatium_ai.access_log
-      WHERE ${sub.eventType === 'getcourse' 
-        ? `urlPath = 'event://getcourse/${sub.eventName}'`
-        : `action = '${sub.eventName}'`}
+      WHERE ${
+        sub.eventType === 'getcourse'
+          ? `urlPath = 'event://getcourse/${sub.eventName}'`
+          : `action = '${sub.eventName}'`
+      }
         AND dt >= today() - 1
       ORDER BY ts DESC
       LIMIT 10
     `
-    
-    // Данные из аккаунта разработчика
-    const result = await queryAi(ctx, query)
-    events.push(...(result.rows || []))
+
+      // Данные из аккаунта разработчика
+      const result = await queryAi(ctx, query)
+      events.push(...(result.rows || []))
+    }
+
+    if (events.length > 0) {
+      await sendDataToSocket(ctx, params.socketId, {
+        type: 'events-update',
+        data: events
+      })
+    }
+
+    await monitorEventsJob.scheduleJobAfter(ctx, 10, 'seconds', params)
   }
-  
-  if (events.length > 0) {
-    await sendDataToSocket(ctx, params.socketId, {
-      type: 'events-update',
-      data: events
-    })
-  }
-  
-  await monitorEventsJob.scheduleJobAfter(ctx, 10, 'seconds', params)
-})
+)
 ```
 
 ### Запуск мониторинга
@@ -508,19 +525,19 @@ export const monitorEventsJob = app.job('/monitor-events', async (ctx, params: {
 ```typescript
 export const apiStartMonitoringRoute = app.post('/start-monitoring', async (ctx) => {
   requireRealUser(ctx)
-  
+
   const socketId = `events-monitor-${ctx.user.id}`
   const encodedSocketId = await genSocketId(ctx, socketId)
-  
+
   // Запускаем job
-  await monitorEventsJob.scheduleJobAsap(ctx, { 
-    userId: ctx.user.id, 
-    socketId 
+  await monitorEventsJob.scheduleJobAsap(ctx, {
+    userId: ctx.user.id,
+    socketId
   })
-  
-  return { 
-    success: true, 
-    socketId: encodedSocketId 
+
+  return {
+    success: true,
+    socketId: encodedSocketId
   }
 })
 ```
@@ -530,9 +547,7 @@ export const apiStartMonitoringRoute = app.post('/start-monitoring', async (ctx)
 ```vue
 <template>
   <div>
-    <div v-for="event in events" :key="event.id">
-      {{ event.urlPath }} - {{ event.ts }}
-    </div>
+    <div v-for="event in events" :key="event.id">{{ event.urlPath }} - {{ event.ts }}</div>
   </div>
 </template>
 
@@ -548,14 +563,14 @@ onMounted(async () => {
   // Запускаем мониторинг
   const result = await apiStartMonitoringRoute.run(ctx)
   socketId.value = result.socketId
-  
+
   // Подключаемся к WebSocket
   const socketClient = await getOrCreateBrowserSocketClient()
-  
+
   socketClient.on('data', (message) => {
     if (message.type === 'events-update') {
       events.value.unshift(...message.data)
-      
+
       // Ограничиваем количество событий
       if (events.value.length > 100) {
         events.value = events.value.slice(0, 100)
@@ -578,15 +593,15 @@ import { subscribeToMetricEvents } from '@app/metric'
 
 export const apiEnableUserSync = app.post('/enable-user-sync', async (ctx) => {
   requireAccountRole(ctx, 'Admin')
-  
+
   // Подписываемся
   await subscribeToMetricEvents(ctx, ['event://getcourse/user/created'])
-  
+
   ctx.account.log('Subscribed to user/created events', {
     level: 'info',
     json: { subscribedAt: new Date() }
   })
-  
+
   return { success: true }
 })
 
@@ -607,16 +622,16 @@ import Subscriptions from '../tables/subscriptions.table'
 
 export const apiSubscribeRoute = app.post('/subscribe', async (ctx, req) => {
   requireRealUser(ctx)
-  
+
   const { eventType, eventName } = req.body
-  
+
   // Проверяем существующую подписку
   const existing = await Subscriptions.findOneBy(ctx, {
     userId: ctx.user.id,
     eventType,
     eventName
   })
-  
+
   if (existing) {
     await Subscriptions.update(ctx, {
       id: existing.id,
@@ -630,7 +645,7 @@ export const apiSubscribeRoute = app.post('/subscribe', async (ctx, req) => {
       isActive: true
     })
   }
-  
+
   return { success: true }
 })
 ```
@@ -644,23 +659,28 @@ export const apiSubscribeRoute = app.post('/subscribe', async (ctx, req) => {
 import { sendDataToSocket } from '@app/socket'
 import { gcQueryAi } from '@gc-mcp-server/sdk'
 
-export const monitorEventsJob = app.job('/monitor', async (ctx, params: {
-  userId: string
-  socketId: string
-  lastCheckTime?: string
-}) => {
-  // Получаем подписки пользователя
-  const subs = await Subscriptions.findAll(ctx, {
-    where: { userId: params.userId, isActive: true }
-  })
-  
-  const allEvents = []
-  const lastCheckTime = params.lastCheckTime || new Date(Date.now() - 60000).toISOString()
-  
-  // Для каждой подписки получаем события
-  for (const sub of subs) {
-    if (sub.eventType === 'getcourse') {
-      const query = `
+export const monitorEventsJob = app.job(
+  '/monitor',
+  async (
+    ctx,
+    params: {
+      userId: string
+      socketId: string
+      lastCheckTime?: string
+    }
+  ) => {
+    // Получаем подписки пользователя
+    const subs = await Subscriptions.findAll(ctx, {
+      where: { userId: params.userId, isActive: true }
+    })
+
+    const allEvents = []
+    const lastCheckTime = params.lastCheckTime || new Date(Date.now() - 60000).toISOString()
+
+    // Для каждой подписки получаем события
+    for (const sub of subs) {
+      if (sub.eventType === 'getcourse') {
+        const query = `
         SELECT *
         FROM chatium_ai.access_log
         WHERE urlPath = 'event://getcourse/${sub.eventName}'
@@ -669,12 +689,12 @@ export const monitorEventsJob = app.job('/monitor', async (ctx, params: {
         ORDER BY ts DESC
         LIMIT 10
       `
-      
-      // Запросы к настроенному аккаунту пользователя
-      const result = await gcQueryAi(ctx, query)
-      allEvents.push(...(result.rows || []))
-    } else if (sub.eventType === 'traffic') {
-      const query = `
+
+        // Запросы к настроенному аккаунту пользователя
+        const result = await gcQueryAi(ctx, query)
+        allEvents.push(...(result.rows || []))
+      } else if (sub.eventType === 'traffic') {
+        const query = `
         SELECT *
         FROM chatium_ai.access_log
         WHERE action = '${sub.eventName}'
@@ -684,26 +704,27 @@ export const monitorEventsJob = app.job('/monitor', async (ctx, params: {
         ORDER BY ts DESC
         LIMIT 10
       `
-      
-      const result = await gcQueryAi(ctx, query)
-      allEvents.push(...(result.rows || []))
+
+        const result = await gcQueryAi(ctx, query)
+        allEvents.push(...(result.rows || []))
+      }
     }
-  }
-  
-  // Отправляем через WebSocket
-  if (allEvents.length > 0) {
-    await sendDataToSocket(ctx, params.socketId, {
-      type: 'events',
-      data: allEvents
+
+    // Отправляем через WebSocket
+    if (allEvents.length > 0) {
+      await sendDataToSocket(ctx, params.socketId, {
+        type: 'events',
+        data: allEvents
+      })
+    }
+
+    // Повторяем через 15 секунд с обновленным lastCheckTime
+    await monitorEventsJob.scheduleJobAfter(ctx, 15, 'seconds', {
+      ...params,
+      lastCheckTime: new Date().toISOString()
     })
   }
-  
-  // Повторяем через 15 секунд с обновленным lastCheckTime
-  await monitorEventsJob.scheduleJobAfter(ctx, 15, 'seconds', {
-    ...params,
-    lastCheckTime: new Date().toISOString()
-  })
-})
+)
 ```
 
 #### Альтернатива: Job для мониторинга (с queryAi)
@@ -714,42 +735,50 @@ export const monitorEventsJob = app.job('/monitor', async (ctx, params: {
 import { sendDataToSocket } from '@app/socket'
 import { queryAi } from '@traffic/sdk'
 
-export const monitorEventsJob = app.job('/monitor', async (ctx, params: {
-  userId: string
-  socketId: string
-}) => {
-  const subs = await Subscriptions.findAll(ctx, {
-    where: { userId: params.userId, isActive: true }
-  })
-  
-  const allEvents = []
-  
-  for (const sub of subs) {
-    const query = `
+export const monitorEventsJob = app.job(
+  '/monitor',
+  async (
+    ctx,
+    params: {
+      userId: string
+      socketId: string
+    }
+  ) => {
+    const subs = await Subscriptions.findAll(ctx, {
+      where: { userId: params.userId, isActive: true }
+    })
+
+    const allEvents = []
+
+    for (const sub of subs) {
+      const query = `
       SELECT *
       FROM chatium_ai.access_log
-      WHERE ${sub.eventType === 'getcourse' 
-        ? `urlPath = 'event://getcourse/${sub.eventName}'`
-        : `action = '${sub.eventName}'`}
+      WHERE ${
+        sub.eventType === 'getcourse'
+          ? `urlPath = 'event://getcourse/${sub.eventName}'`
+          : `action = '${sub.eventName}'`
+      }
         AND dt >= today() - 1
       ORDER BY ts DESC
       LIMIT 10
     `
-    
-    // Данные из аккаунта разработчика
-    const result = await queryAi(ctx, query)
-    allEvents.push(...(result.rows || []))
+
+      // Данные из аккаунта разработчика
+      const result = await queryAi(ctx, query)
+      allEvents.push(...(result.rows || []))
+    }
+
+    if (allEvents.length > 0) {
+      await sendDataToSocket(ctx, params.socketId, {
+        type: 'events',
+        data: allEvents
+      })
+    }
+
+    await monitorEventsJob.scheduleJobAfter(ctx, 10, 'seconds', params)
   }
-  
-  if (allEvents.length > 0) {
-    await sendDataToSocket(ctx, params.socketId, {
-      type: 'events',
-      data: allEvents
-    })
-  }
-  
-  await monitorEventsJob.scheduleJobAfter(ctx, 10, 'seconds', params)
-})
+)
 ```
 
 #### Шаг 3: API для запуска
@@ -757,15 +786,15 @@ export const monitorEventsJob = app.job('/monitor', async (ctx, params: {
 ```typescript
 export const apiStartMonitoring = app.post('/start', async (ctx) => {
   requireRealUser(ctx)
-  
+
   const socketId = `monitor-${ctx.user.id}`
   const encoded = await genSocketId(ctx, socketId)
-  
+
   await monitorEventsJob.scheduleJobAsap(ctx, {
     userId: ctx.user.id,
     socketId
   })
-  
+
   return { success: true, socketId: encoded }
 })
 ```
@@ -781,7 +810,7 @@ const events = ref([])
 
 onMounted(async () => {
   const result = await apiStartMonitoring.run(ctx)
-  
+
   const socket = await getOrCreateBrowserSocketClient()
   socket.on('data', (msg) => {
     if (msg.type === 'events') {
@@ -801,11 +830,13 @@ onMounted(async () => {
 **Проверьте**:
 
 1. ✅ Файл с хуком импортирован в `index.tsx`:
+
 ```typescript
-import './api/analytics.ts'  // Для регистрации хука
+import './api/analytics.ts' // Для регистрации хука
 ```
 
 2. ✅ Подписка активирована:
+
 ```typescript
 await subscribeToMetricEvents(ctx, ['event://getcourse/user/created'])
 ```
@@ -833,7 +864,7 @@ await subscribeToMetricEvents(ctx, ['event://getcourse/user/created'])
 - **E01-gc-sdk.md** — GetCourse SDK (настройка MCP Client)
 - **014-socket.md** — WebSocket в Chatium
 - **008-heap.md** — Heap таблицы
-- **Проекты**: 
+- **Проекты**:
   - `dev/partnership` - партнёрская система с подписками и мониторингом
   - `dev/events-subscribe` - рабочая реализация подписок
 
@@ -843,5 +874,3 @@ await subscribeToMetricEvents(ctx, ['event://getcourse/user/created'])
 **Дата создания**: 2025-11-07  
 **Последнее обновление**: 2025-11-09  
 **Статус**: Добавлена информация о работе с gcQueryAi (настраиваемый аккаунт) и queryAi (аккаунт разработчика)
-
-

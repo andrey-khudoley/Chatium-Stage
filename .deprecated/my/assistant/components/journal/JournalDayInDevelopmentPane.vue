@@ -127,10 +127,14 @@ onMounted(() => {
   <div class="journal-day-dev">
     <header class="journal-day-dev-head">
       <h2 class="journal-day-dev-title">Дневной фокус</h2>
-      <p class="journal-day-dev-sub">Ключ дня: {{ dayKey }} (обновление периода в 05:00 по локальному времени)</p>
+      <p class="journal-day-dev-sub">
+        Ключ дня: {{ dayKey }} (обновление периода в 05:00 по локальному времени)
+      </p>
     </header>
 
-    <p v-if="!props.isAuthenticated" class="journal-day-dev-hint">Войдите в аккаунт, чтобы вести дневные заметки.</p>
+    <p v-if="!props.isAuthenticated" class="journal-day-dev-hint">
+      Войдите в аккаунт, чтобы вести дневные заметки.
+    </p>
     <p v-else-if="loading" class="journal-day-dev-hint">Загрузка данных дня…</p>
     <p v-if="globalError" class="journal-day-dev-error" role="alert">{{ globalError }}</p>
 

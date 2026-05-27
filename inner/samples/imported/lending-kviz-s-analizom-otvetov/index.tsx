@@ -1,5 +1,5 @@
 // @shared
-import { jsx } from "@app/html-jsx"
+import { jsx } from '@app/html-jsx'
 import TestPage from './pages/TestPage.vue'
 
 export const indexPageRoute = app.get('/', async (ctx, req) => {
@@ -8,10 +8,16 @@ export const indexPageRoute = app.get('/', async (ctx, req) => {
       <head>
         <title>Определите ваш стиль макияжа | Тест от EMI Online</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <meta name="description" content="Узнайте свой стиль в макияже. Получите персональные рекомендации и доступ к бесплатному мастер-классу по макияжу для себя" />
+        <meta
+          name="description"
+          content="Узнайте свой стиль в макияже. Получите персональные рекомендации и доступ к бесплатному мастер-классу по макияжу для себя"
+        />
         <script src="/s/metric/clarity.js"></script>
         <script src="/s/static/lib/tailwind.3.4.16.min.js"></script>
-        <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Playfair+Display:wght@700&display=swap" rel="stylesheet" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Playfair+Display:wght@700&display=swap"
+          rel="stylesheet"
+        />
         <link href="/s/static/lib/fontawesome/6.7.2/css/all.min.css" rel="stylesheet" />
         <script>{`
           tailwind.config = {

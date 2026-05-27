@@ -23,7 +23,7 @@ const saveError = ref<string | null>(null)
 const saveSuccess = ref(false)
 
 const logLevelSetting = computed(() => {
-  return props.settings.find(s => s.key === LOG_LEVEL_SETTING_KEY)
+  return props.settings.find((s) => s.key === LOG_LEVEL_SETTING_KEY)
 })
 
 const logLevels: { value: DebugLevel; label: string; description: string }[] = [
@@ -33,36 +33,43 @@ const logLevels: { value: DebugLevel; label: string; description: string }[] = [
 ]
 
 // Отслеживаем изменения настроек для корректной инициализации уровня логирования
-watch(logLevelSetting, (newSetting) => {
-  if (newSetting) {
-    const value = String(newSetting.value).toLowerCase()
-    console.log('[SettingsPage] Найден уровень логирования в настройках:', value)
-    if (value === 'info' || value === 'warn' || value === 'error') {
-      logLevel.value = value as DebugLevel
-      console.log('[SettingsPage] Уровень логирования установлен из настроек:', logLevel.value)
+watch(
+  logLevelSetting,
+  (newSetting) => {
+    if (newSetting) {
+      const value = String(newSetting.value).toLowerCase()
+      console.log('[SettingsPage] Найден уровень логирования в настройках:', value)
+      if (value === 'info' || value === 'warn' || value === 'error') {
+        logLevel.value = value as DebugLevel
+        console.log('[SettingsPage] Уровень логирования установлен из настроек:', logLevel.value)
+      } else {
+        console.warn('[SettingsPage] Некорректный уровень логирования в настройках:', value)
+        console.log('[SettingsPage] Используется уровень по умолчанию:', DEFAULT_LOG_LEVEL)
+      }
     } else {
-      console.warn('[SettingsPage] Некорректный уровень логирования в настройках:', value)
-      console.log('[SettingsPage] Используется уровень по умолчанию:', DEFAULT_LOG_LEVEL)
+      console.log(
+        '[SettingsPage] Настройка уровня логирования не найдена, используется по умолчанию:',
+        DEFAULT_LOG_LEVEL
+      )
     }
-  } else {
-    console.log('[SettingsPage] Настройка уровня логирования не найдена, используется по умолчанию:', DEFAULT_LOG_LEVEL)
-  }
-}, { immediate: true }) // immediate: true для выполнения при монтировании
+  },
+  { immediate: true }
+) // immediate: true для выполнения при монтировании
 
 const saveLogLevel = async () => {
   saving.value = true
   saveError.value = null
   saveSuccess.value = false
-  
+
   console.log('[SettingsPage] Начало сохранения уровня логирования:', logLevel.value)
-  
+
   try {
     const result = await apiSaveLogLevelRoute.run(ctx, {
       level: logLevel.value
     })
-    
+
     console.log('[SettingsPage] Результат сохранения:', result)
-    
+
     if (result.success) {
       console.log('[SettingsPage] Уровень логирования успешно сохранён:', result.level)
       saveSuccess.value = true
@@ -93,7 +100,9 @@ const saveLogLevel = async () => {
     <header class="bg-[var(--color-bg-secondary)] border-b border-[var(--color-border)] py-4">
       <div class="container mx-auto px-4 max-w-4xl">
         <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-sky-400 to-sky-600 flex items-center justify-center shadow">
+          <div
+            class="w-10 h-10 rounded-lg bg-gradient-to-br from-sky-400 to-sky-600 flex items-center justify-center shadow"
+          >
             <i class="fas fa-chart-line text-white"></i>
           </div>
           <h1 class="text-xl font-bold text-[var(--color-text)]">{{ projectTitle }}</h1>
@@ -109,7 +118,7 @@ const saveLogLevel = async () => {
             <i class="fas fa-cog text-xl" style="color: var(--color-primary)"></i>
             <h2 class="text-2xl font-bold">Настройки</h2>
           </div>
-          
+
           <!-- Настройка уровня логирования -->
           <div class="setting-section mb-8">
             <div class="setting-header mb-4">
@@ -121,19 +130,19 @@ const saveLogLevel = async () => {
                 Выберите уровень детализации логов для модуля
               </p>
             </div>
-            
+
             <div class="setting-content">
               <div class="log-level-selector">
-                <div 
-                  v-for="level in logLevels" 
+                <div
+                  v-for="level in logLevels"
                   :key="level.value"
                   class="log-level-option"
-                  :class="{ 'active': logLevel === level.value }"
+                  :class="{ active: logLevel === level.value }"
                   @click="logLevel = level.value"
                 >
                   <div class="log-level-header">
-                    <input 
-                      type="radio" 
+                    <input
+                      type="radio"
                       :id="`log-level-${level.value}`"
                       :value="level.value"
                       v-model="logLevel"
@@ -149,24 +158,24 @@ const saveLogLevel = async () => {
                   <p class="log-level-description">{{ level.description }}</p>
                 </div>
               </div>
-              
+
               <div class="setting-actions mt-4">
-                <button 
-                  @click="saveLogLevel" 
+                <button
+                  @click="saveLogLevel"
                   :disabled="saving"
                   class="save-btn"
-                  :class="{ 'saving': saving }"
+                  :class="{ saving: saving }"
                 >
                   <i v-if="!saving" class="fas fa-save"></i>
                   <i v-else class="fas fa-spinner fa-spin"></i>
                   <span>{{ saving ? 'Сохранение...' : 'Сохранить' }}</span>
                 </button>
-                
+
                 <div v-if="saveError" class="error-message mt-2">
                   <i class="fas fa-exclamation-circle"></i>
                   <span>{{ saveError }}</span>
                 </div>
-                
+
                 <div v-if="saveSuccess" class="success-message mt-2">
                   <i class="fas fa-check-circle"></i>
                   <span>Уровень логирования успешно сохранён</span>
@@ -174,7 +183,7 @@ const saveLogLevel = async () => {
               </div>
             </div>
           </div>
-          
+
           <!-- Остальные настройки -->
           <div class="settings-list">
             <div class="setting-header mb-4">
@@ -183,12 +192,12 @@ const saveLogLevel = async () => {
                 <h3 class="text-lg font-semibold">Все настройки</h3>
               </div>
             </div>
-            
+
             <div v-if="settings.length === 0" class="text-center py-12">
               <i class="fas fa-inbox text-4xl mb-4 text-[var(--color-text-tertiary)]"></i>
               <p class="text-[var(--color-text-secondary)]">Нет настроек</p>
             </div>
-            
+
             <div v-else class="overflow-x-auto">
               <table class="table">
                 <thead>
@@ -213,7 +222,9 @@ const saveLogLevel = async () => {
     <!-- Footer -->
     <footer class="bg-[var(--color-bg-secondary)] border-t border-[var(--color-border)] py-4">
       <div class="container mx-auto px-4 max-w-4xl">
-        <div class="flex items-center justify-center gap-2 text-[var(--color-text-secondary)] text-sm">
+        <div
+          class="flex items-center justify-center gap-2 text-[var(--color-text-secondary)] text-sm"
+        >
           <i class="fas fa-chart-line"></i>
           <span>{{ projectTitle }}</span>
         </div>
@@ -457,63 +468,55 @@ body {
 }
 
 @keyframes global-page-glitch {
-  0%, 100% {
+  0%,
+  100% {
     transform: translate(0) skew(0deg);
     filter: none;
   }
   10% {
     transform: translate(-3px, 0) skew(-0.5deg);
-    filter: drop-shadow(2px 0 0 rgba(255, 0, 255, 0.7)) 
-            drop-shadow(-2px 0 0 rgba(0, 255, 255, 0.7))
-            hue-rotate(90deg);
+    filter: drop-shadow(2px 0 0 rgba(255, 0, 255, 0.7)) drop-shadow(-2px 0 0 rgba(0, 255, 255, 0.7))
+      hue-rotate(90deg);
   }
   20% {
     transform: translate(3px, 0) skew(0.5deg);
-    filter: drop-shadow(-2px 0 0 rgba(255, 0, 255, 0.7)) 
-            drop-shadow(2px 0 0 rgba(0, 255, 255, 0.7))
-            hue-rotate(-90deg);
+    filter: drop-shadow(-2px 0 0 rgba(255, 0, 255, 0.7)) drop-shadow(2px 0 0 rgba(0, 255, 255, 0.7))
+      hue-rotate(-90deg);
   }
   30% {
     transform: translate(-2px, 0) skew(-0.3deg);
-    filter: drop-shadow(2px 0 0 rgba(255, 0, 255, 0.8)) 
-            drop-shadow(-2px 0 0 rgba(0, 255, 255, 0.8))
-            brightness(1.2);
+    filter: drop-shadow(2px 0 0 rgba(255, 0, 255, 0.8)) drop-shadow(-2px 0 0 rgba(0, 255, 255, 0.8))
+      brightness(1.2);
   }
   40% {
     transform: translate(2px, 0) skew(0.3deg);
-    filter: drop-shadow(-2px 0 0 rgba(255, 0, 255, 0.8)) 
-            drop-shadow(2px 0 0 rgba(0, 255, 255, 0.8))
-            contrast(1.3);
+    filter: drop-shadow(-2px 0 0 rgba(255, 0, 255, 0.8)) drop-shadow(2px 0 0 rgba(0, 255, 255, 0.8))
+      contrast(1.3);
   }
   50% {
     transform: translate(-3px, 0) skew(-0.5deg);
-    filter: drop-shadow(2px 0 0 rgba(255, 0, 255, 0.7)) 
-            drop-shadow(-2px 0 0 rgba(0, 255, 255, 0.7))
-            saturate(2);
+    filter: drop-shadow(2px 0 0 rgba(255, 0, 255, 0.7)) drop-shadow(-2px 0 0 rgba(0, 255, 255, 0.7))
+      saturate(2);
   }
   60% {
     transform: translate(3px, 0) skew(0.5deg);
-    filter: drop-shadow(-2px 0 0 rgba(255, 0, 255, 0.7)) 
-            drop-shadow(2px 0 0 rgba(0, 255, 255, 0.7))
-            invert(0.1);
+    filter: drop-shadow(-2px 0 0 rgba(255, 0, 255, 0.7)) drop-shadow(2px 0 0 rgba(0, 255, 255, 0.7))
+      invert(0.1);
   }
   70% {
     transform: translate(-2px, 0) skew(-0.2deg);
-    filter: drop-shadow(1px 0 0 rgba(255, 0, 255, 0.6)) 
-            drop-shadow(-1px 0 0 rgba(0, 255, 255, 0.6))
-            brightness(1.1);
+    filter: drop-shadow(1px 0 0 rgba(255, 0, 255, 0.6)) drop-shadow(-1px 0 0 rgba(0, 255, 255, 0.6))
+      brightness(1.1);
   }
   80% {
     transform: translate(2px, 0) skew(0.2deg);
-    filter: drop-shadow(-1px 0 0 rgba(255, 0, 255, 0.6)) 
-            drop-shadow(1px 0 0 rgba(0, 255, 255, 0.6))
-            contrast(1.2);
+    filter: drop-shadow(-1px 0 0 rgba(255, 0, 255, 0.6)) drop-shadow(1px 0 0 rgba(0, 255, 255, 0.6))
+      contrast(1.2);
   }
   90% {
     transform: translate(-1px, 0) skew(0deg);
-    filter: drop-shadow(1px 0 0 rgba(255, 0, 255, 0.5)) 
-            drop-shadow(-1px 0 0 rgba(0, 255, 255, 0.5))
-            brightness(1.05);
+    filter: drop-shadow(1px 0 0 rgba(255, 0, 255, 0.5)) drop-shadow(-1px 0 0 rgba(0, 255, 255, 0.5))
+      brightness(1.05);
   }
 }
 

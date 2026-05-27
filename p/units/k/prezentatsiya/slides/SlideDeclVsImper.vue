@@ -9,8 +9,10 @@
         <section class="col">
           <span class="tag tag-cyan">ДЕКЛАРАТИВНО</span>
           <h3 class="col-title">Описываем результат</h3>
-          <pre class="code">«Сделай форму, которая собирает заявки
-и кладёт их в GetCourse»</pre>
+          <pre class="code">
+«Сделай форму, которая собирает заявки
+и кладёт их в GetCourse»</pre
+          >
           <ul class="bullets">
             <li><i class="fas fa-check"></i> Быстро</li>
             <li><i class="fas fa-check"></i> Удобно</li>
@@ -23,10 +25,12 @@
         <section class="col">
           <span class="tag tag-amber">ИМПЕРАТИВНО</span>
           <h3 class="col-title">Описываем шаги</h3>
-          <pre class="code">«Возьми email из формы.
+          <pre class="code">
+«Возьми email из формы.
 Сделай POST на /api/users.
 Передай Authorization: Bearer &lt;ключ&gt;.
-Если 401 — обнови токен и повтори»</pre>
+Если 401 — обнови токен и повтори»</pre
+          >
           <ul class="bullets bullets-amber">
             <li><i class="fas fa-check"></i> Скучнее</li>
             <li><i class="fas fa-check"></i> Длиннее</li>
@@ -62,7 +66,9 @@ defineProps({ active: Boolean })
   gap: 40px;
 }
 
-.head { display: flex; }
+.head {
+  display: flex;
+}
 .page-title {
   font-family: var(--font-display-new);
   font-weight: 600;
@@ -83,7 +89,9 @@ defineProps({ active: Boolean })
   gap: 20px;
   animation: fadeInUp 480ms ease-out both;
 }
-.col:last-child { animation-delay: 120ms; }
+.col:last-child {
+  animation-delay: 120ms;
+}
 
 .divider {
   width: 1px;
@@ -99,8 +107,12 @@ defineProps({ active: Boolean })
   letter-spacing: 0.16em;
   text-transform: uppercase;
 }
-.tag-cyan { color: var(--accent-cyan); }
-.tag-amber { color: var(--accent-amber); }
+.tag-cyan {
+  color: var(--accent-cyan);
+}
+.tag-amber {
+  color: var(--accent-amber);
+}
 
 .col-title {
   font-family: var(--font-display-new);
@@ -124,7 +136,8 @@ defineProps({ active: Boolean })
 
 .bullets {
   list-style: none;
-  margin: 0; padding: 0;
+  margin: 0;
+  padding: 0;
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -141,11 +154,20 @@ defineProps({ active: Boolean })
   font-size: 14px;
   color: var(--accent-cyan);
 }
-.bullets-amber li i { color: var(--accent-amber); }
+.bullets-amber li i {
+  color: var(--accent-amber);
+}
 
 @media (max-width: 1024px) {
-  .slide { padding: 40px 24px; }
-  .cols { grid-template-columns: 1fr; gap: 32px; }
-  .divider { display: none; }
+  .slide {
+    padding: 40px 24px;
+  }
+  .cols {
+    grid-template-columns: 1fr;
+    gap: 32px;
+  }
+  .divider {
+    display: none;
+  }
 }
 </style>

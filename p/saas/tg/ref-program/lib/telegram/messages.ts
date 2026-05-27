@@ -86,7 +86,12 @@ export function buildStatsMessage(partner: PartnerRow): string {
 /**
  * Текст уведомления партнёру о первой регистрации по его реферальной ссылке.
  */
-export function buildRegistrationNotification(ref: string, name?: string, email?: string, phone?: string): string {
+export function buildRegistrationNotification(
+  ref: string,
+  name?: string,
+  email?: string,
+  phone?: string
+): string {
   const parts = [`Реферал: ${ref}`]
   if (name?.trim()) parts.push(`Имя: ${name.trim()}`)
   return `👤 Новая регистрация\n\n${parts.join('\n')}`.trim()
@@ -95,7 +100,11 @@ export function buildRegistrationNotification(ref: string, name?: string, email?
 /**
  * Текст уведомления партнёру о новом заказе по его реферальной ссылке.
  */
-export function buildOrderNotification(orderId: string, productName: string, orderSumKopecks: number): string {
+export function buildOrderNotification(
+  orderId: string,
+  productName: string,
+  orderSumKopecks: number
+): string {
   const product = productName?.trim() || '—'
   return `🛒 Новый заказ
 

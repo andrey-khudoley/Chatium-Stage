@@ -17,7 +17,10 @@ export const dashboardLibTestRoute = app.get('/', async (ctx, req) => {
   requireAnyUser(ctx)
 
   const testId = typeof req.query?.testId === 'string' ? req.query.testId : undefined
-  if (testId && !DASHBOARD_LIB_TEST_IDS.includes(testId as (typeof DASHBOARD_LIB_TEST_IDS)[number])) {
+  if (
+    testId &&
+    !DASHBOARD_LIB_TEST_IDS.includes(testId as (typeof DASHBOARD_LIB_TEST_IDS)[number])
+  ) {
     return {
       success: false,
       test: 'dashboard-lib',
@@ -64,9 +67,7 @@ export const dashboardLibTestRoute = app.get('/', async (ctx, req) => {
         id: 'resetDashboard',
         title: 'resetDashboard',
         passed:
-          counts.errorCount === 0 &&
-          counts.warnCount === 0 &&
-          typeof counts.resetAt === 'number'
+          counts.errorCount === 0 && counts.warnCount === 0 && typeof counts.resetAt === 'number'
       })
     } catch (e) {
       results.push({

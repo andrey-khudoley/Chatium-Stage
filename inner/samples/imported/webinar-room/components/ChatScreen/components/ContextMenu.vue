@@ -59,9 +59,10 @@ function onItemEnter(item: ContextMenuItem, idx: number, event: MouseEvent) {
 function onClickOutside(e: MouseEvent | TouchEvent) {
   const root = menuEl.value
   if (!root) return
-  const target = e instanceof TouchEvent && e.touches.length > 0
-    ? document.elementFromPoint(e.touches[0].clientX, e.touches[0].clientY)
-    : e.target as Node
+  const target =
+    e instanceof TouchEvent && e.touches.length > 0
+      ? document.elementFromPoint(e.touches[0].clientX, e.touches[0].clientY)
+      : (e.target as Node)
   if (target && !root.contains(target as Node)) {
     emit('close')
   }
@@ -94,7 +95,10 @@ onBeforeUnmount(() => {
       v-for="(item, idx) in items"
       :key="idx"
       class="ctx-menu-item"
-      :class="{ 'ctx-menu-item--danger': item.danger, 'ctx-menu-item--active': activeIndex === idx }"
+      :class="{
+        'ctx-menu-item--danger': item.danger,
+        'ctx-menu-item--active': activeIndex === idx
+      }"
       @click="onItemClick(item)"
       @mouseenter="onItemEnter(item, idx, $event)"
     >
@@ -104,13 +108,22 @@ onBeforeUnmount(() => {
     </div>
 
     <!-- Submenu -->
-    <div v-if="submenuItems" class="ctx-submenu" :style="{ top: submenuPos.top + 'px', left: submenuPos.left + 'px' }">
+    <div
+      v-if="submenuItems"
+      class="ctx-submenu"
+      :style="{ top: submenuPos.top + 'px', left: submenuPos.left + 'px' }"
+    >
       <div
         v-for="(child, cidx) in submenuItems"
         :key="cidx"
         class="ctx-menu-item"
         :class="{ 'ctx-menu-item--danger': child.danger }"
-        @click="() => { child.action?.(); emit('close') }"
+        @click="
+          () => {
+            child.action?.()
+            emit('close')
+          }
+        "
       >
         <i v-if="child.icon" :class="child.icon" class="ctx-menu-icon"></i>
         <span class="ctx-menu-label">{{ child.label }}</span>

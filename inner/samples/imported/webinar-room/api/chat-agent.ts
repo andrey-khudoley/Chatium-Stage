@@ -35,7 +35,7 @@ async function resolveElenaAgentId(ctx: app.Ctx): Promise<string | null> {
   } catch (error) {
     ctx.account.log('Failed to resolve Elena agent dynamically', {
       level: 'warn',
-      err: error as any,
+      err: error as any
     })
   }
 
@@ -44,9 +44,10 @@ async function resolveElenaAgentId(ctx: app.Ctx): Promise<string | null> {
 
 export async function processAutowebinarChatMessage(
   ctx: app.Ctx,
-  params: ProcessAutowebinarChatMessageParams,
+  params: ProcessAutowebinarChatMessageParams
 ) {
-  const { feedId, autowebinarId, schedule, messageText, userId, userName, viewerElapsedSeconds } = params
+  const { feedId, autowebinarId, schedule, messageText, userId, userName, viewerElapsedSeconds } =
+    params
 
   const autowebinar = await Autowebinars.findById(ctx, autowebinarId)
   if (!autowebinar) return
@@ -63,27 +64,30 @@ export async function processAutowebinarChatMessage(
         ? Math.max(0, Math.floor((Date.now() - timelineBaseMs) / 1000))
         : undefined
 
-  const hasCutoff = Number.isFinite(timelineBaseMs) && typeof resolvedViewerElapsedSeconds === 'number'
+  const hasCutoff =
+    Number.isFinite(timelineBaseMs) && typeof resolvedViewerElapsedSeconds === 'number'
   const cutoffTimestampMs = hasCutoff
     ? timelineBaseMs + resolvedViewerElapsedSeconds * 1000
     : Number.POSITIVE_INFINITY
 
   const liveMessages = await findFeedMessages(ctx, feedId, {
     mode: 'tail',
-    limit: 300,
+    limit: 300
   })
 
-  const liveAuthorIds = [...new Set(liveMessages.map(msg => msg.createdBy).filter(Boolean))] as string[]
+  const liveAuthorIds = [
+    ...new Set(liveMessages.map((msg) => msg.createdBy).filter(Boolean))
+  ] as string[]
   const liveAuthors = liveAuthorIds.length ? await findUsersByIds(ctx, liveAuthorIds) : []
-  const liveAuthorsMap = new Map(liveAuthors.map(user => [user.id, user]))
+  const liveAuthorsMap = new Map(liveAuthors.map((user) => [user.id, user]))
 
   const scenarioMessages = await ScenarioEvents.findAll(ctx, {
     where: {
       autowebinar: autowebinarId,
-      eventType: ScenarioEventType.ChatMessage,
+      eventType: ScenarioEventType.ChatMessage
     },
     limit: 1000,
-    order: [{ offsetSeconds: 'asc' }],
+    order: [{ offsetSeconds: 'asc' }]
   })
 
   interface CombinedMessage {
@@ -103,7 +107,7 @@ export async function processAutowebinarChatMessage(
       authorName: liveAuthorsMap.get(msg.createdBy)?.fullName || 'Участник',
       text: msg.text || '',
       timestamp: messageTimestamp,
-      isScenario: false,
+      isScenario: false
     })
   }
 
@@ -117,7 +121,7 @@ export async function processAutowebinarChatMessage(
           authorName: event.chatMessage.authorName,
           text: event.chatMessage.text,
           timestamp: effectiveTimeMs,
-          isScenario: true,
+          isScenario: true
         })
       }
     }
@@ -139,11 +143,11 @@ export async function processAutowebinarChatMessage(
       timelineBaseMs: Number.isFinite(timelineBaseMs) ? timelineBaseMs : null,
       cutoffTimestampMs: Number.isFinite(cutoffTimestampMs) ? cutoffTimestampMs : null,
       combinedBeforeSlice: combined.length,
-      combinedAfterSlice: sortedMessages.length,
-    },
+      combinedAfterSlice: sortedMessages.length
+    }
   })
 
-  const chatHistory = sortedMessages.map(msg => `${msg.authorName}: ${msg.text}`).join('\n')
+  const chatHistory = sortedMessages.map((msg) => `${msg.authorName}: ${msg.text}`).join('\n')
 
   const contextMessage = `# НОВОЕ СООБЩЕНИЕ В ЧАТЕ АВТОВЕБИНАРА
 
@@ -172,7 +176,7 @@ ${chatHistory || 'Нет предыдущих сообщений'}
     if (!agentId) {
       ctx.account.log('Skipping pushMessageToChain: aw-moderator agent not found', {
         level: 'warn',
-        json: { autowebinarId, feedId, userId },
+        json: { autowebinarId, feedId, userId }
       })
       return
     }
@@ -185,8 +189,8 @@ ${chatHistory || 'Нет предыдущих сообщений'}
         scheduleId: schedule?.id,
         userId,
         messageText,
-        agentId,
-      },
+        agentId
+      }
     })
 
     const result = await pushMessageToChain(ctx, {
@@ -199,9 +203,9 @@ ${chatHistory || 'Нет предыдущих сообщений'}
         title: `Чат автовебинара: ${autowebinar.title}`,
         chainMeta: {
           autowebinarId,
-          chatFeedId: feedId,
-        },
-      },
+          chatFeedId: feedId
+        }
+      }
     })
 
     const chainId = result.chainId
@@ -209,13 +213,13 @@ ${chatHistory || 'Нет предыдущих сообщений'}
 
     ctx.account.log('Agent Elena called for autowebinar chat', {
       level: 'info',
-      json: { chainId: result.chainId, autowebinarId, messageText },
+      json: { chainId: result.chainId, autowebinarId, messageText }
     })
   } catch (error) {
     ctx.account.log('Error calling agent Elena', {
       level: 'error',
       err: error as any,
-      json: { autowebinarId, messageText },
+      json: { autowebinarId, messageText }
     })
   }
 }

@@ -1,13 +1,13 @@
-import { jsx } from "@app/html-jsx";
-import { requireAccountRole } from "@app/auth";
+import { jsx } from '@app/html-jsx'
+import { requireAccountRole } from '@app/auth'
 // @ts-ignore
-import SetupPage from "./pages/SetupPage.vue";
-import { findWorkspaceTransport } from "./transport/hook";
+import SetupPage from './pages/SetupPage.vue'
+import { findWorkspaceTransport } from './transport/hook'
 
-export const setupPageRoute = app.get("/setup", async (ctx, req) => {
-  await requireAccountRole(ctx, "Admin");
+export const setupPageRoute = app.get('/setup', async (ctx, req) => {
+  await requireAccountRole(ctx, 'Admin')
 
-  const transport = await findWorkspaceTransport(ctx);
+  const transport = await findWorkspaceTransport(ctx)
 
   return (
     <html>
@@ -16,19 +16,12 @@ export const setupPageRoute = app.get("/setup", async (ctx, req) => {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <script src="/s/metric/clarity.js"></script>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link
-          rel="preconnect"
-          href="https://fonts.gstatic.com"
-          crossorigin="anonymous"
-        />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
         <link
           href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
           rel="stylesheet"
         />
-        <link
-          href="/s/static/lib/fontawesome/6.7.2/css/all.min.css"
-          rel="stylesheet"
-        />
+        <link href="/s/static/lib/fontawesome/6.7.2/css/all.min.css" rel="stylesheet" />
         <script src="/s/static/lib/tailwind.3.4.16.min.js"></script>
         <style type="text/tailwindcss">{`
           @layer base {
@@ -50,5 +43,5 @@ export const setupPageRoute = app.get("/setup", async (ctx, req) => {
         <SetupPage transport={transport} />
       </body>
     </html>
-  );
-});
+  )
+})

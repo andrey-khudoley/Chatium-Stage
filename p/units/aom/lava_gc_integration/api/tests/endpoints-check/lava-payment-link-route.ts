@@ -37,15 +37,19 @@ export const lavaPaymentLinkRouteTestRoute = app.get('/', async (ctx, req) => {
     }
   }
 
-  await check('validation_empty_order', 'payment-link: пустой gcOrderId → VALIDATION_ERROR', async () => {
-    const res = (await lavaPaymentLinkRoute.run(ctx, {
-      gcOrderId: '   ',
-      buyerEmail: 'a@b.c',
-      amount: 50,
-      currency: 'RUB'
-    })) as { success?: boolean; errorCode?: string }
-    return res.success === false && res.errorCode === 'VALIDATION_ERROR'
-  })
+  await check(
+    'validation_empty_order',
+    'payment-link: пустой gcOrderId → VALIDATION_ERROR',
+    async () => {
+      const res = (await lavaPaymentLinkRoute.run(ctx, {
+        gcOrderId: '   ',
+        buyerEmail: 'a@b.c',
+        amount: 50,
+        currency: 'RUB'
+      })) as { success?: boolean; errorCode?: string }
+      return res.success === false && res.errorCode === 'VALIDATION_ERROR'
+    }
+  )
 
   await check('dry_run_ok', 'payment-link: integrationTestDryRun → успех без Lava', async () => {
     const gcOrderId = `route-dry-${Date.now()}`
@@ -59,19 +63,23 @@ export const lavaPaymentLinkRouteTestRoute = app.get('/', async (ctx, req) => {
     return res.success === true && res.integrationTestDryRun === true && res.gcOrderId === gcOrderId
   })
 
-  await check('gc_payload_aliases', 'payment-link: orderNumber+email+offer+product, валюта rub', async () => {
-    const orderNumber = `gc-alias-${Date.now()}`
-    const res = (await lavaPaymentLinkRoute.run(ctx, {
-      orderNumber,
-      email: 'gc@example.com',
-      amount: 50,
-      currency: 'rub',
-      offer: 'Предложение',
-      product: 'Пакет',
-      integrationTestDryRun: true
-    })) as { success?: boolean; gcOrderId?: string }
-    return res.success === true && res.gcOrderId === orderNumber
-  })
+  await check(
+    'gc_payload_aliases',
+    'payment-link: orderNumber+email+offer+product, валюта rub',
+    async () => {
+      const orderNumber = `gc-alias-${Date.now()}`
+      const res = (await lavaPaymentLinkRoute.run(ctx, {
+        orderNumber,
+        email: 'gc@example.com',
+        amount: 50,
+        currency: 'rub',
+        offer: 'Предложение',
+        product: 'Пакет',
+        integrationTestDryRun: true
+      })) as { success?: boolean; gcOrderId?: string }
+      return res.success === true && res.gcOrderId === orderNumber
+    }
+  )
 
   await check(
     'service_amount_rub_below_lava_min',

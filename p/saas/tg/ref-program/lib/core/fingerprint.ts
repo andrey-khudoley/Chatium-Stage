@@ -35,12 +35,17 @@ const ACCEPT_LANGUAGE_MAX_LENGTH = 50
 
 /** Проверка формата IPv4 (xxx.xxx.xxx.xxx, каждое 0–255) */
 function isValidIpv4(ip: string): boolean {
-  return /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/.test(ip)
+  return /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/.test(
+    ip
+  )
 }
 
 /** Упрощённая проверка IPv6 */
 function isValidIpv6(ip: string): boolean {
-  return /^(?:[0-9a-fA-F]{1,4}:){2,7}[0-9a-fA-F]{1,4}$/.test(ip) || /^::(?:[0-9a-fA-F]{1,4}:)*[0-9a-fA-F]{1,4}$/.test(ip)
+  return (
+    /^(?:[0-9a-fA-F]{1,4}:){2,7}[0-9a-fA-F]{1,4}$/.test(ip) ||
+    /^::(?:[0-9a-fA-F]{1,4}:)*[0-9a-fA-F]{1,4}$/.test(ip)
+  )
 }
 
 function isValidIp(ip: string): boolean {
@@ -70,7 +75,10 @@ function getClientIp(req: ReqWithHeaders): string {
   const headers = req.headers ?? {}
   const forwarded = headers['x-forwarded-for']
   if (forwarded) {
-    const raw = typeof forwarded === 'string' ? forwarded.slice(0, MAX_FORWARDED_LENGTH) : String(forwarded).slice(0, MAX_FORWARDED_LENGTH)
+    const raw =
+      typeof forwarded === 'string'
+        ? forwarded.slice(0, MAX_FORWARDED_LENGTH)
+        : String(forwarded).slice(0, MAX_FORWARDED_LENGTH)
     const ips = raw.split(',').map((s) => s.trim())
     let firstValid: string | null = null
     let firstNonPrivate: string | null = null
@@ -92,7 +100,7 @@ function getClientIp(req: ReqWithHeaders): string {
   }
 
   const remoteAddr =
-    (req.socket?.remoteAddress ?? (req as ReqWithHeaders).connection?.remoteAddress) ?? ''
+    req.socket?.remoteAddress ?? (req as ReqWithHeaders).connection?.remoteAddress ?? ''
   if (remoteAddr && typeof remoteAddr === 'string') {
     const ip = remoteAddr.replace(/^::ffff:/, '').trim()
     if (isValidIp(ip)) return ip
@@ -150,7 +158,7 @@ export function computeFingerprint(req: app.Req): FingerprintResult {
         : undefined,
     timezone: headers['sec-ch-timezone'] ?? undefined,
     browser: parseBrowserFromCH(headers['sec-ch-ua']),
-    isMobile: headers['sec-ch-ua-mobile'] === '?1',
+    isMobile: headers['sec-ch-ua-mobile'] === '?1'
   }
   const hash = hashFingerprintParts(parts)
   return { hash, parts }

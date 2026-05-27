@@ -1,10 +1,13 @@
-import { jsx } from "@app/html-jsx"
+import { jsx } from '@app/html-jsx'
 
 export const HeadStyles = () => (
   <>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
-    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400&family=Source+Sans+3:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400&family=Source+Sans+3:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
     <link href="/s/static/lib/fontawesome/6.7.2/css/all.min.css" rel="stylesheet" />
     <script src="/s/static/lib/tailwind.3.4.16.min.js"></script>
     <script>{`

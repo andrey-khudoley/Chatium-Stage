@@ -1,7 +1,13 @@
 // @shared
 import { jsx } from '@app/html-jsx'
 import LoginPage from '../../pages/LoginPage.vue'
-import { baseHtmlStyles, customScrollbarStyles, formControlStyles, mobileSafeAreaStyles, VIEWPORT_META_CONTENT } from '../../styles'
+import {
+  baseHtmlStyles,
+  customScrollbarStyles,
+  formControlStyles,
+  mobileSafeAreaStyles,
+  VIEWPORT_META_CONTENT
+} from '../../styles'
 import { PROJECT_ROOT } from '../../config/routes'
 import * as loggerLib from '../../lib/logger.lib'
 

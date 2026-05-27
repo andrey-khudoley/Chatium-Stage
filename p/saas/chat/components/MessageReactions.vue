@@ -24,8 +24,8 @@ const props = defineProps({
   feedId: String,
   reactions: {
     type: Object,
-    default: () => ({}),
-  },
+    default: () => ({})
+  }
 })
 
 const emit = defineEmits(['update'])
@@ -49,17 +49,17 @@ const safeReactions = computed(() => {
 
 function hasUserReacted(emoji) {
   const users = safeReactions.value[emoji] || []
-  return users.some(u => u?.user_id === ctx.user?.id)
+  return users.some((u) => u?.user_id === ctx.user?.id)
 }
 
 function getReactionTooltip(emoji, users) {
   if (!Array.isArray(users)) return emoji
-  
+
   const count = users.length
   if (count === 0) return emoji
-  
-  const hasMine = users.some(u => u?.user_id === ctx.user?.id)
-  
+
+  const hasMine = users.some((u) => u?.user_id === ctx.user?.id)
+
   if (count === 1 && hasMine) return 'Вы'
   if (hasMine) return `Вы и ещё ${count - 1}`
   return `${count}`
@@ -69,9 +69,9 @@ async function toggleReaction(emoji) {
   try {
     const result = await apiReactionsToggleRoute({ feedId: props.feedId }).run(ctx, {
       messageId: props.messageId,
-      emoji,
+      emoji
     })
-    
+
     // Извлекаем реакции из ответа API
     let reactions = result.message?.reactions || result.message?.data?.reactions || {}
     if (typeof reactions === 'string') {
@@ -81,10 +81,10 @@ async function toggleReaction(emoji) {
         reactions = {}
       }
     }
-    
+
     emit('update', {
       messageId: props.messageId,
-      reactions: JSON.parse(JSON.stringify(reactions)),
+      reactions: JSON.parse(JSON.stringify(reactions))
     })
   } catch (err) {
     console.error('[MessageReactions] Failed to toggle reaction:', err)

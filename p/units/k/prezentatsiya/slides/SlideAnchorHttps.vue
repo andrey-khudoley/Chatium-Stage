@@ -44,7 +44,9 @@ defineProps({ active: Boolean })
   line-height: 1.05;
   text-shadow: 0 0 60px rgba(0, 217, 255, 0.25);
 }
-.hl { color: var(--accent-cyan); }
+.hl {
+  color: var(--accent-cyan);
+}
 
 .strip {
   display: block;
@@ -57,6 +59,8 @@ defineProps({ active: Boolean })
 }
 
 @media (max-width: 768px) {
-  .strip { width: 180px; }
+  .strip {
+    width: 180px;
+  }
 }
 </style>

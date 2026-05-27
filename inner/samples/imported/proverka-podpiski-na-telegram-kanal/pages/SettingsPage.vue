@@ -3,12 +3,12 @@
     <div class="container mx-auto px-4 py-8">
       <!-- Header -->
       <div class="text-center mb-8">
-        <div class="inline-flex items-center justify-center w-16 h-16 bg-telegram text-white rounded-full mb-4">
+        <div
+          class="inline-flex items-center justify-center w-16 h-16 bg-telegram text-white rounded-full mb-4"
+        >
           <i class="fab fa-telegram-plane text-2xl"></i>
         </div>
-        <h1 class="text-3xl font-bold text-gray-900 mb-2">
-          Настройки Телеграм-бота
-        </h1>
+        <h1 class="text-3xl font-bold text-gray-900 mb-2">Настройки Телеграм-бота</h1>
         <p class="text-gray-600 max-w-2xl mx-auto">
           Настройте проверку подписки на Телеграм-канал перед доступом к боту
         </p>
@@ -32,7 +32,9 @@
                 <span class="flex items-center">
                   Telegram Bot для отправки сообщений
                   <div class="tooltip-container ml-1 relative">
-                    <i class="fas fa-question-circle text-gray-400 text-xs hover:text-gray-600 cursor-help"></i>
+                    <i
+                      class="fas fa-question-circle text-gray-400 text-xs hover:text-gray-600 cursor-help"
+                    ></i>
                     <div class="tooltip">Бот, который будет отправлять сообщения пользователям</div>
                   </div>
                 </span>
@@ -43,21 +45,23 @@
                 required
               >
                 <option value="">Выберите бота</option>
-                <option
-                  v-for="bot in bots"
-                  :key="bot.id"
-                  :value="bot.id"
-                >
+                <option v-for="bot in bots" :key="bot.id" :value="bot.id">
                   {{ bot.title }}{{ bot.username ? ' (@' + bot.username + ')' : '' }}
                 </option>
               </select>
 
-              <div v-if="bots.length === 0" class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <div
+                v-if="bots.length === 0"
+                class="bg-blue-50 border border-blue-200 rounded-lg p-4"
+              >
                 <div class="flex items-start">
                   <i class="fas fa-info-circle text-blue-500 mt-1 mr-3"></i>
                   <div class="text-sm text-blue-700">
                     <p class="font-medium mb-1">Нет подключенных ботов</p>
-                    <p>Подключите Telegram бота через кнопку ниже. Этот бот будет использоваться для отправки сообщений и проверки подписки.</p>
+                    <p>
+                      Подключите Telegram бота через кнопку ниже. Этот бот будет использоваться для
+                      отправки сообщений и проверки подписки.
+                    </p>
                   </div>
                 </div>
               </div>
@@ -81,7 +85,9 @@
                 <span class="flex items-center">
                   Telegram-канал для проверки
                   <div class="tooltip-container ml-1 relative">
-                    <i class="fas fa-question-circle text-gray-400 text-xs hover:text-gray-600 cursor-help"></i>
+                    <i
+                      class="fas fa-question-circle text-gray-400 text-xs hover:text-gray-600 cursor-help"
+                    ></i>
                     <div class="tooltip">{{ channelTooltipText }}</div>
                   </div>
                 </span>
@@ -92,16 +98,15 @@
                 required
               >
                 <option value="">Выберите канал</option>
-                <option
-                  v-for="channel in channels"
-                  :key="channel.id"
-                  :value="channel.id"
-                >
+                <option v-for="channel in channels" :key="channel.id" :value="channel.id">
                   {{ channel.title }}{{ channel.externalId ? ' (' + channel.externalId + ')' : '' }}
                 </option>
               </select>
 
-              <div v-if="channels.length === 0" class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <div
+                v-if="channels.length === 0"
+                class="bg-blue-50 border border-blue-200 rounded-lg p-4"
+              >
                 <div class="flex items-start">
                   <i class="fas fa-info-circle text-blue-500 mt-1 mr-3"></i>
                   <div class="text-sm text-blue-700">
@@ -132,9 +137,7 @@
 
               <!-- Стартовое сообщение -->
               <div class="space-y-2">
-                <label class="text-sm font-medium text-gray-700">
-                  Стартовое сообщение
-                </label>
+                <label class="text-sm font-medium text-gray-700"> Стартовое сообщение </label>
                 <textarea
                   v-model="config.messages.start"
                   rows="3"
@@ -145,9 +148,7 @@
 
               <!-- Текст кнопки -->
               <div class="space-y-2">
-                <label class="text-sm font-medium text-gray-700">
-                  Текст кнопки
-                </label>
+                <label class="text-sm font-medium text-gray-700"> Текст кнопки </label>
                 <input
                   v-model="config.messages.buttonText"
                   type="text"
@@ -206,10 +207,13 @@
               class="p-4 rounded-lg border"
             >
               <div class="flex">
-                <i :class="{
-                  'fas fa-check-circle text-green-400': result.success,
-                  'fas fa-exclamation-circle text-red-400': !result.success
-                }" class="mr-3 mt-0.5"></i>
+                <i
+                  :class="{
+                    'fas fa-check-circle text-green-400': result.success,
+                    'fas fa-exclamation-circle text-red-400': !result.success
+                  }"
+                  class="mr-3 mt-0.5"
+                ></i>
                 <div>
                   <h3 class="text-sm font-medium">
                     {{ result.success ? 'Успешно!' : 'Ошибка' }}
@@ -249,7 +253,9 @@
               <ol class="text-xs text-blue-800 space-y-1 list-decimal list-inside">
                 <li>
                   Откройте Telegram и найдите бота
-                  <a href="https://t.me/BotFather" target="_blank" class="underline font-medium">@BotFather</a>
+                  <a href="https://t.me/BotFather" target="_blank" class="underline font-medium"
+                    >@BotFather</a
+                  >
                 </li>
                 <li>Отправьте команду /newbot</li>
                 <li>Придумайте название для вашего бота</li>
@@ -305,10 +311,21 @@
             <div class="mt-3 p-3 bg-blue-50 rounded-md">
               <p class="text-sm font-medium text-blue-900 mb-2">Как добавить канал:</p>
               <ol class="text-xs text-blue-800 space-y-1 list-decimal list-inside">
-                <li>Добавьте бота <span class="font-mono">@chnlAdminBot</span> в канал как администратора</li>
-                <li>Добавьте выбранного выше бота в канал как администратора (для проверки подписки)</li>
-                <li>Перешлите сообщение из канала боту <span class="font-mono">@chnlAdminBot</span> для получения ID</li>
-                <li>Введите полученный ID (например: -1001234567890) или username (например: @channel_name)</li>
+                <li>
+                  Добавьте бота <span class="font-mono">@chnlAdminBot</span> в канал как
+                  администратора
+                </li>
+                <li>
+                  Добавьте выбранного выше бота в канал как администратора (для проверки подписки)
+                </li>
+                <li>
+                  Перешлите сообщение из канала боту
+                  <span class="font-mono">@chnlAdminBot</span> для получения ID
+                </li>
+                <li>
+                  Введите полученный ID (например: -1001234567890) или username (например:
+                  @channel_name)
+                </li>
               </ol>
             </div>
           </div>
@@ -338,9 +355,9 @@
 
 <script setup>
 import { ref, onMounted, computed } from 'vue'
-import { 
-  apiGetConfigRoute, 
-  apiSaveConfigRoute, 
+import {
+  apiGetConfigRoute,
+  apiSaveConfigRoute,
   apiGetBotsRoute,
   apiAddBotRoute,
   apiGetChannelsRoute,
@@ -351,10 +368,12 @@ const config = ref({
   botId: '',
   senderChannelId: '',
   messages: {
-    start: '👋 Добро пожаловать!\n\nДля продолжения подпишитесь на наш канал и нажмите кнопку ниже.',
+    start:
+      '👋 Добро пожаловать!\n\nДля продолжения подпишитесь на наш канал и нажмите кнопку ниже.',
     buttonText: '✅ Я подписался',
     subscribed: '🎉 Отлично! Вы подписаны на канал. Добро пожаловать!',
-    notSubscribed: '❌ Вы еще не подписались на канал. Пожалуйста, подпишитесь и нажмите кнопку снова.'
+    notSubscribed:
+      '❌ Вы еще не подписались на канал. Пожалуйста, подпишитесь и нажмите кнопку снова.'
   }
 })
 
@@ -370,14 +389,16 @@ const newChannelId = ref('')
 const addingChannel = ref(false)
 
 const selectedBot = computed(() => {
-  return bots.value.find(bot => bot.id === config.value.botId)
+  return bots.value.find((bot) => bot.id === config.value.botId)
 })
 
 const channelTooltipText = computed(() => {
   if (!selectedBot.value) {
     return 'Выберите Telegram Bot для отправки сообщений и добавьте его админом в канал для проверки подписки'
   }
-  const botName = selectedBot.value.username ? `@${selectedBot.value.username}` : selectedBot.value.title
+  const botName = selectedBot.value.username
+    ? `@${selectedBot.value.username}`
+    : selectedBot.value.title
   return `Добавьте бота ${botName} админом в канал для проверки подписки пользователей`
 })
 
@@ -419,7 +440,7 @@ async function loadConfig() {
 async function saveSettings() {
   loading.value = true
   result.value = null
-  
+
   try {
     const response = await apiSaveConfigRoute.run(ctx, config.value)
     result.value = {
@@ -450,13 +471,13 @@ async function addBot() {
   if (!newBotToken.value.trim()) {
     return
   }
-  
+
   addingBot.value = true
   try {
     const response = await apiAddBotRoute.run(ctx, {
       token: newBotToken.value
     })
-    
+
     if (response.success) {
       closeAddBotModal()
       result.value = {
@@ -494,13 +515,13 @@ async function addChannel() {
   if (!newChannelId.value.trim()) {
     return
   }
-  
+
   addingChannel.value = true
   try {
     const response = await apiAddChannelRoute.run(ctx, {
       externalId: newChannelId.value
     })
-    
+
     if (response.success) {
       closeAddChannelModal()
       result.value = {
@@ -553,7 +574,7 @@ async function addChannel() {
 }
 
 .tooltip::after {
-  content: "";
+  content: '';
   position: absolute;
   top: 100%;
   left: 50%;

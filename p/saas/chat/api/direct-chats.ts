@@ -1,9 +1,15 @@
-import { requireRealUser, requireAccountRole, findUserById, findUsersByIds, createOrUpdateBotUser } from '@app/auth'
+import {
+  requireRealUser,
+  requireAccountRole,
+  findUserById,
+  findUsersByIds,
+  createOrUpdateBotUser
+} from '@app/auth'
 import {
   createFeed,
   getFeedById,
   findFeedParticipants,
-  createOrUpdateFeedParticipant,
+  createOrUpdateFeedParticipant
 } from '@app/feed'
 import Chats from '../tables/chats.table'
 import ChatAgents from '../tables/chat-agents.table'
@@ -13,7 +19,7 @@ import { findAgents } from '@ai-agents/sdk/process'
 // Создать или получить существующий личный чат с пользователем
 export const apiDirectChatCreateRoute = app
   .body((s) => ({
-    userId: s.string(),
+    userId: s.string()
   }))
   .post('/create', async (ctx, req) => {
     requireRealUser(ctx)
@@ -38,7 +44,7 @@ export const apiDirectChatCreateRoute = app
         success: true,
         chat: existingChat,
         feedId: existingChat.feedId,
-        isNew: false,
+        isNew: false
       }
     }
 
@@ -50,8 +56,11 @@ export const apiDirectChatCreateRoute = app
 
     // Создаем имя чата на основе имени собеседника
     // Для каждого пользователя чат будет иметь разное название
-    const chatTitle = targetUser.displayName || 
-      (targetUser.firstName ? `${targetUser.firstName} ${targetUser.lastName || ''}`.trim() : null) ||
+    const chatTitle =
+      targetUser.displayName ||
+      (targetUser.firstName
+        ? `${targetUser.firstName} ${targetUser.lastName || ''}`.trim()
+        : null) ||
       targetUser.username ||
       'Пользователь'
 
@@ -60,7 +69,7 @@ export const apiDirectChatCreateRoute = app
     const feed = await createFeed(ctx, {
       title: chatTitle,
       inboxSubjectId,
-      inboxUrl: `/projekt-chat/chat~${inboxSubjectId}`,
+      inboxUrl: `/projekt-chat/chat~${inboxSubjectId}`
     })
 
     // Создаем запись в таблице чатов
@@ -70,25 +79,25 @@ export const apiDirectChatCreateRoute = app
       type: 'direct',
       owner: ctx.user.id,
       isPublic: false,
-      description: '',
+      description: ''
     })
 
     // Добавляем обоих пользователей как участников
     await createOrUpdateFeedParticipant(ctx, feed, ctx.user, {
       role: 'owner',
-      silent: true,
+      silent: true
     })
 
     await createOrUpdateFeedParticipant(ctx, feed, targetUser, {
       role: 'guest',
-      silent: true,
+      silent: true
     })
 
     return {
       success: true,
       chat,
       feedId: feed.id,
-      isNew: true,
+      isNew: true
     }
   })
 
@@ -97,7 +106,7 @@ export const apiDirectChatGetRoute = app.get('/:feedId', async (ctx, req) => {
   requireRealUser(ctx)
 
   const chat = await Chats.findOneBy(ctx, {
-    feedId: req.params.feedId,
+    feedId: req.params.feedId
   })
 
   if (!chat) {
@@ -117,7 +126,7 @@ export const apiDirectChatGetRoute = app.get('/:feedId', async (ctx, req) => {
   }
 
   // Находим собеседника
-  const otherParticipant = participants.find(p => p.userId !== ctx.user.id)
+  const otherParticipant = participants.find((p) => p.userId !== ctx.user.id)
   let otherUser = null
 
   if (otherParticipant) {
@@ -129,7 +138,7 @@ export const apiDirectChatGetRoute = app.get('/:feedId', async (ctx, req) => {
         firstName: user.firstName,
         lastName: user.lastName,
         username: user.username,
-        avatar: user.imageUrl,
+        avatar: user.imageUrl
       }
     }
   }
@@ -137,7 +146,7 @@ export const apiDirectChatGetRoute = app.get('/:feedId', async (ctx, req) => {
   return {
     chat,
     otherUser,
-    participants,
+    participants
   }
 })
 
@@ -146,21 +155,23 @@ async function findExistingDirectChat(ctx, userId1: string, userId2: string) {
   // Получаем все личные чаты
   const directChats = await Chats.findAll(ctx, {
     where: {
-      type: 'direct',
+      type: 'direct'
     },
-    limit: 1000,
+    limit: 1000
   })
 
   // Проверяем каждый чат - является ли он чатом между этими двумя пользователями
   for (const chat of directChats) {
     try {
       const participants = await findFeedParticipants(ctx, chat.feedId)
-      const participantIds = participants.map(p => p.userId)
+      const participantIds = participants.map((p) => p.userId)
 
       // Проверяем, что в чате ровно 2 участника и оба нужных пользователя
-      if (participantIds.length === 2 &&
-          participantIds.includes(userId1) &&
-          participantIds.includes(userId2)) {
+      if (
+        participantIds.length === 2 &&
+        participantIds.includes(userId1) &&
+        participantIds.includes(userId2)
+      ) {
         return chat
       }
     } catch (e) {
@@ -175,7 +186,7 @@ async function findExistingDirectChat(ctx, userId1: string, userId2: string) {
 // Проверить, может ли текущий пользователь написать другому пользователю
 export const apiDirectChatCanMessageRoute = app
   .body((s) => ({
-    userId: s.string(),
+    userId: s.string()
   }))
   .post('/can-message', async (ctx, req) => {
     requireRealUser(ctx)
@@ -190,7 +201,7 @@ export const apiDirectChatWithAgentRoute = app
   .body((s) => ({
     agentId: s.string(),
     agentKey: s.string().optional(),
-    agentName: s.string().optional(),
+    agentName: s.string().optional()
   }))
   .post('/create-with-agent', async (ctx, req) => {
     requireAccountRole(ctx, 'Admin')
@@ -204,7 +215,7 @@ export const apiDirectChatWithAgentRoute = app
         success: true,
         chat: existingChat,
         feedId: existingChat.feedId,
-        isNew: false,
+        isNew: false
       }
     }
 
@@ -225,7 +236,7 @@ export const apiDirectChatWithAgentRoute = app
     const feed = await createFeed(ctx, {
       title: chatTitle,
       inboxSubjectId,
-      inboxUrl: `/projekt-chat/chat~${inboxSubjectId}`,
+      inboxUrl: `/projekt-chat/chat~${inboxSubjectId}`
     })
 
     // Создаем запись в таблице чатов
@@ -235,14 +246,14 @@ export const apiDirectChatWithAgentRoute = app
       type: 'direct',
       owner: ctx.user.id,
       isPublic: false,
-      description: '',
+      description: ''
     })
 
     // Создаем бот-пользователя для агента
     const botUsername = `agent_${agentId.toLowerCase().replace(/[^a-z0-9_]/g, '_')}_${Date.now()}`
     const botUser = await createOrUpdateBotUser(ctx, botUsername, {
       firstName: chatTitle,
-      lastName: '',
+      lastName: ''
     })
 
     // Добавляем агента в таблицу chat_agents
@@ -255,26 +266,26 @@ export const apiDirectChatWithAgentRoute = app
       botUserId: botUser.id,
       respondTo: 'all', // В личном чате агент отвечает на всё
       respondToMention: 'all',
-      isActive: true,
+      isActive: true
     })
 
     // Добавляем текущего пользователя как участника (owner)
     await createOrUpdateFeedParticipant(ctx, feed, ctx.user, {
       role: 'owner',
-      silent: true,
+      silent: true
     })
 
     // Добавляем бот-пользователя агента как участника
     await createOrUpdateFeedParticipant(ctx, feed, botUser, {
       role: 'guest',
-      silent: true,
+      silent: true
     })
 
     return {
       success: true,
       chat,
       feedId: feed.id,
-      isNew: true,
+      isNew: true
     }
   })
 
@@ -285,9 +296,9 @@ export const apiDirectChatsWithAgentsRoute = app.get('/my-agents', async (ctx, r
   // Получаем все личные чаты пользователя
   const directChats = await Chats.findAll(ctx, {
     where: {
-      type: 'direct',
+      type: 'direct'
     },
-    limit: 1000,
+    limit: 1000
   })
 
   // Фильтруем чаты, где есть агенты
@@ -304,8 +315,8 @@ export const apiDirectChatsWithAgentsRoute = app.get('/my-agents', async (ctx, r
       const agents = await ChatAgents.findAll(ctx, {
         where: {
           chat: chat.id,
-          isActive: true,
-        },
+          isActive: true
+        }
       })
 
       if (agents.length > 0) {
@@ -315,7 +326,7 @@ export const apiDirectChatsWithAgentsRoute = app.get('/my-agents', async (ctx, r
           title: chat.title,
           agentName: agents[0].agentName,
           agentId: agents[0].agentId,
-          createdAt: chat.createdAt,
+          createdAt: chat.createdAt
         })
       }
     } catch (e) {
@@ -325,7 +336,7 @@ export const apiDirectChatsWithAgentsRoute = app.get('/my-agents', async (ctx, r
 
   return {
     success: true,
-    chats: agentChats,
+    chats: agentChats
   }
 })
 
@@ -334,9 +345,9 @@ async function findExistingDirectChatWithAgent(ctx, userId: string, agentId: str
   // Получаем все личные чаты пользователя
   const directChats = await Chats.findAll(ctx, {
     where: {
-      type: 'direct',
+      type: 'direct'
     },
-    limit: 1000,
+    limit: 1000
   })
 
   // Проверяем каждый чат
@@ -347,8 +358,8 @@ async function findExistingDirectChatWithAgent(ctx, userId: string, agentId: str
         where: {
           chat: chat.id,
           agentId: agentId,
-          isActive: true,
-        },
+          isActive: true
+        }
       })
 
       if (agents.length > 0) {

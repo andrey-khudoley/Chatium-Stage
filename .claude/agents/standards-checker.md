@@ -23,6 +23,7 @@ model: haiku
 1. **Прочитай эталон:** `inner/docs/001-standards.md` (или `docs/001-standards.md`, если есть локальный). Если документа нет — отметь это и работай по чеклисту ниже.
 
 2. **Определи затронутые файлы:**
+
    - Если в запросе указан явный список — используй только его.
    - Иначе: `git diff --name-only` + `git ls-files --others --exclude-standard`.
    - Фильтр: `.ts`, `.tsx`, `.vue`, `styles.tsx` в `api/`, `pages/`, `components/`, `shared/`, `tables/`, `lib/`, `repos/`, `config/`.
@@ -40,18 +41,20 @@ model: haiku
 </formatting>
 
 <file_organization>
+
 - Файлы ≤ 300–400 строк; крупные секции разнесены по файлам.
 - Только `.ts` / `.tsx` / `.vue` — без `.js`.
 - Heap-таблицы: суффикс `.table.ts`, импорт **без** расширения (`'../tables/leads.table'`, не `'../tables/leads.table.ts'`).
 - Shared-файлы: первая строка `// @shared`. API-маршруты shared: `// @shared-route`.
 - Роуты: один файл = один роут с путём `'/'` (см. file-based-routing-checker для детальной проверки).
-</file_organization>
+  </file_organization>
 
 <jsx_html>
+
 - Все теги закрыты; самозакрывающиеся с `/>`.
 - Комментарии в JSX: `{/* ... */}`, не `<!-- ... -->`.
 - Inline-скрипты: backticks с экранированием.
-</jsx_html>
+  </jsx_html>
 
 <typescript>
 - Интерфейсы / типы для структур данных.
@@ -75,6 +78,7 @@ model: haiku
 
 <chatium_pitfalls>
 Типичные ошибки (раздел «Частые ошибки» в 001-standards.md):
+
 - ❌ Хардкод URL → ✅ `route.url()`, `withProjectRoot(route.url())`.
 - ❌ Heap на клиенте (Vue) → ✅ данные через SSR / fetch.
 - ❌ `findAll(...).length` → ✅ `countBy(ctx, { where })`.
@@ -85,7 +89,7 @@ model: haiku
 - ❌ `UserRefLinkKind.X` как строка → ✅ `.id` или `.get(ctx)`.
 - ❌ `order: [{ field, direction }]` → ✅ `order: [{ title: 'asc' }]`.
 - ❌ Изображения с `via.placeholder.com` → ✅ `getThumbnailUrl()` или проверенные источники.
-</chatium_pitfalls>
+  </chatium_pitfalls>
 
 ## Output
 

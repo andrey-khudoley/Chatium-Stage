@@ -36,7 +36,7 @@ export const createOrderRoute = app.post('/', async (ctx, req) => {
   await loggerLib.writeServerLog(ctx, {
     severity: 7,
     message: `[${LOG_PATH}] Запрос на создание заказа`,
-    payload: { email, hasPhone: Boolean(phone) },
+    payload: { email, hasPhone: Boolean(phone) }
   })
 
   const [firstName, ...lastNameParts] = name.split(' ')
@@ -54,14 +54,14 @@ export const createOrderRoute = app.post('/', async (ctx, req) => {
     utmMedium,
     utmCampaign,
     utmContent,
-    utmTerm,
+    utmTerm
   })
 
   if (!result.ok) {
     await loggerLib.writeServerLog(ctx, {
       severity: 3,
       message: `[${LOG_PATH}] Ошибка создания заказа`,
-      payload: { email, error: result.errorMessage },
+      payload: { email, error: result.errorMessage }
     })
     return { success: false, error: result.errorMessage || 'Ошибка создания заказа в GetCourse.' }
   }
@@ -69,12 +69,12 @@ export const createOrderRoute = app.post('/', async (ctx, req) => {
   await loggerLib.writeServerLog(ctx, {
     severity: 6,
     message: `[${LOG_PATH}] Заказ создан`,
-    payload: { email, dealNumber: result.dealNumber, hasPaymentLink: Boolean(result.paymentLink) },
+    payload: { email, dealNumber: result.dealNumber, hasPaymentLink: Boolean(result.paymentLink) }
   })
 
   return {
     success: true,
     paymentUrl: result.paymentLink,
-    dealNumber: result.dealNumber,
+    dealNumber: result.dealNumber
   }
 })

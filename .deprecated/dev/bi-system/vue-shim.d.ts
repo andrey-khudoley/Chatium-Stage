@@ -10,7 +10,7 @@ declare namespace app {
     query?: any
     params?: any
   }
-  
+
   interface Ctx {
     user?: any
     account?: any

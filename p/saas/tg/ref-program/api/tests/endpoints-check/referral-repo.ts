@@ -65,10 +65,7 @@ export const referralRepoTestRoute = app.get('/', async (ctx, req) => {
             name: 'Test User',
             email: 'test@example.com'
           })
-          const createOk =
-            r1 != null &&
-            r1.id != null &&
-            r1.ref === testRef
+          const createOk = r1 != null && r1.id != null && r1.ref === testRef
           results.push({
             id: 'createOrUpdateReferral-new',
             title: 'createOrUpdateReferral (новый реферал)',
@@ -132,7 +129,8 @@ export const referralRepoTestRoute = app.get('/', async (ctx, req) => {
             passed: incrementOk
           })
           if (!incrementOk) {
-            results[results.length - 1].error = `ordersCount=${aggAfter?.ordersCount}, ordersSum=${aggAfter?.ordersSum}`
+            results[results.length - 1].error =
+              `ordersCount=${aggAfter?.ordersCount}, ordersSum=${aggAfter?.ordersSum}`
           }
         } catch (e) {
           results.push({

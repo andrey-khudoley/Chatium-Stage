@@ -22,63 +22,63 @@ export const scheduleConfig: ScheduleConfig = {
   workingHours: {
     monday: {
       isOpen: true,
-      start: "10:00",
-      end: "20:00",
+      start: '10:00',
+      end: '20:00',
       breaks: [
         {
-          start: "14:00",
-          end: "15:00"
+          start: '14:00',
+          end: '15:00'
         }
       ]
     },
     tuesday: {
       isOpen: true,
-      start: "10:00",
-      end: "20:00",
+      start: '10:00',
+      end: '20:00',
       breaks: [
         {
-          start: "14:00",
-          end: "15:00"
+          start: '14:00',
+          end: '15:00'
         }
       ]
     },
     wednesday: {
       isOpen: true,
-      start: "10:00",
-      end: "20:00",
+      start: '10:00',
+      end: '20:00',
       breaks: [
         {
-          start: "14:00",
-          end: "15:00"
+          start: '14:00',
+          end: '15:00'
         }
       ]
     },
     thursday: {
       isOpen: true,
-      start: "10:00",
-      end: "20:00",
+      start: '10:00',
+      end: '20:00',
       breaks: [
         {
-          start: "14:00",
-          end: "15:00"
+          start: '14:00',
+          end: '15:00'
         }
       ]
     },
     friday: {
       isOpen: true,
-      start: "10:00",
-      end: "20:00",
+      start: '10:00',
+      end: '20:00',
       breaks: [
         {
-          start: "14:00",
-          end: "15:00"
+          start: '14:00',
+          end: '15:00'
         }
       ]
     },
     saturday: {
       isOpen: true,
-      start: "11:00",
-      end: "18:00",
+      start: '11:00',
+      end: '18:00',
       breaks: []
     },
     sunday: {

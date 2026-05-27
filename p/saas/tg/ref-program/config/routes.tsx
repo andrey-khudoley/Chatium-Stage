@@ -70,7 +70,9 @@ export const TELEGRAM_WEBHOOK_SUBROUTE = 'hook/telegram'
 
 /** Полный URL webhook Telegram для бота (для установки в Telegram Bot API). */
 export function getTelegramWebhookUrl(botId: string): string {
-  return getBaseUrl() + getFullUrl(TELEGRAM_WEBHOOK_SUBROUTE) + '?botId=' + encodeURIComponent(botId)
+  return (
+    getBaseUrl() + getFullUrl(TELEGRAM_WEBHOOK_SUBROUTE) + '?botId=' + encodeURIComponent(botId)
+  )
 }
 
 /** URL страницы приглашения по токену (path с тильдой: /web/invite~token). */

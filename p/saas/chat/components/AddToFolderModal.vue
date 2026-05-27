@@ -7,7 +7,7 @@
           <i class="fas fa-times"></i>
         </button>
       </div>
-      
+
       <div class="modal-body">
         <div v-if="folders.length === 0" class="empty-folders">
           <i class="fas fa-folder-open"></i>
@@ -17,7 +17,7 @@
             Создать папку
           </button>
         </div>
-        
+
         <div v-else class="folders-list">
           <div
             v-for="folder in folders"
@@ -25,13 +25,15 @@
             :class="['folder-item', { active: isInFolder(folder.id) }]"
             @click="toggleFolder(folder.id)"
           >
-            <span class="folder-icon" :style="{ color: folder.color }">{{ folder.icon || '📁' }}</span>
+            <span class="folder-icon" :style="{ color: folder.color }">{{
+              folder.icon || '📁'
+            }}</span>
             <span class="folder-name">{{ folder.name }}</span>
             <i v-if="isInFolder(folder.id)" class="fas fa-check check-icon"></i>
           </div>
         </div>
       </div>
-      
+
       <div class="modal-footer">
         <button @click="close" class="btn-secondary">Готово</button>
       </div>

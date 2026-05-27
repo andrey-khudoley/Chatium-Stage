@@ -25,14 +25,14 @@ export const apiPaymentProvidersRoute = reporterApp.get('/payment-providers', as
       title: p.title,
       description: p.description,
       iconUrl: p.icon || null,
-      isDefault: p.isDefault || false,
+      isDefault: p.isDefault || false
     })),
     notConfigured: (result.notConfigured || []).map((p: any) => ({
       slug: p.slug,
       title: p.title,
       description: p.description,
-      iconUrl: p.icon || null,
-    })),
+      iconUrl: p.icon || null
+    }))
   }
 })
 
@@ -59,7 +59,9 @@ export const apiFormSubmissionByIdRoute = reporterApp.get('/submission/:id', asy
   // Если пользователь выбрал конкретный тариф — подменяем цену на актуальную
   let actualForm = { ...form }
   if (submission.data?.selected_tariff && form.paymentOptions) {
-    const selectedOption = form.paymentOptions.find((opt: any) => opt.id === submission.data.selected_tariff)
+    const selectedOption = form.paymentOptions.find(
+      (opt: any) => opt.id === submission.data.selected_tariff
+    )
     if (selectedOption) {
       actualForm.paymentAmount = selectedOption.price
       actualForm.paymentOldPrice = selectedOption.oldPrice || null
@@ -74,7 +76,7 @@ export const apiFormSubmissionByIdRoute = reporterApp.get('/submission/:id', asy
       episodeId: submission.episode?.id,
       autowebinarId: submission.autowebinar?.id,
       data: submission.data,
-      paymentId: submission.paymentId,
+      paymentId: submission.paymentId
     },
     form: actualForm,
     configured: (providers.configured || []).map((p: any) => ({
@@ -82,17 +84,17 @@ export const apiFormSubmissionByIdRoute = reporterApp.get('/submission/:id', asy
       slug: p.slug,
       title: p.title,
       description: p.description,
-      iconUrl: p.icon || null,
-    })),
+      iconUrl: p.icon || null
+    }))
   }
 })
 
 // Показать форму на конкретном эфире — добавляем formId в shownFormIds эпизода
 // @shared-route
 export const apiFormShowRoute = reporterApp
-  .body(s => ({
+  .body((s) => ({
     formId: s.string(),
-    episodeId: s.string(),
+    episodeId: s.string()
   }))
   .post('/show', async (ctx, req) => {
     requireAccountRole(ctx, 'Admin')
@@ -112,14 +114,14 @@ export const apiFormShowRoute = reporterApp
     if (!currentIds.includes(form.id)) {
       await Episodes.update(ctx, {
         id: episode.id,
-        shownFormIds: [...currentIds, form.id],
+        shownFormIds: [...currentIds, form.id]
       })
     }
 
     const episodeSocketId = `episode_${req.body.episodeId}`
     await sendDataToSocket(ctx, episodeSocketId, {
       type: 'show_custom_form',
-      formId: form.id,
+      formId: form.id
     })
 
     return { success: true }
@@ -128,9 +130,9 @@ export const apiFormShowRoute = reporterApp
 // Скрыть форму на конкретном эфире — убираем formId из shownFormIds эпизода
 // @shared-route
 export const apiFormHideRoute = reporterApp
-  .body(s => ({
+  .body((s) => ({
     formId: s.string(),
-    episodeId: s.string(),
+    episodeId: s.string()
   }))
   .post('/hide', async (ctx, req) => {
     requireAccountRole(ctx, 'Admin')
@@ -146,7 +148,7 @@ export const apiFormHideRoute = reporterApp
     const currentIds: string[] = Array.isArray(episode.shownFormIds) ? episode.shownFormIds : []
     await Episodes.update(ctx, {
       id: episode.id,
-      shownFormIds: currentIds.filter(id => id !== req.body.formId),
+      shownFormIds: currentIds.filter((id) => id !== req.body.formId)
     })
 
     return { success: true }
@@ -164,7 +166,7 @@ export const apiFormGetShownRoute = reporterApp.get('/shown/:episodeId', async (
   const forms = await EpisodeForms.findAll(ctx, {
     where: { id: shownIds },
     order: [{ sortOrder: 'asc' }],
-    limit: 50,
+    limit: 50
   })
 
   return forms
@@ -172,13 +174,13 @@ export const apiFormGetShownRoute = reporterApp.get('/shown/:episodeId', async (
 
 // @shared-route
 export const apiFormSubmitRoute = reporterApp
-  .body(s => ({
+  .body((s) => ({
     formId: s.string(),
     episodeId: s.string().optional(),
     autowebinarId: s.string().optional(),
     data: s.any(),
     selectedTariff: s.string().optional(),
-    selectedPrice: s.number().optional(),
+    selectedPrice: s.number().optional()
   }))
   .post('/submit', async (ctx, req) => {
     await requireAnyUser(ctx)
@@ -187,7 +189,7 @@ export const apiFormSubmitRoute = reporterApp
     if (!form) throw new Error('Форма не найдена')
 
     const submissionData = {
-      ...req.body.data,
+      ...req.body.data
     }
 
     // Добавляем информацию о выбранном тарифе если есть
@@ -203,7 +205,7 @@ export const apiFormSubmitRoute = reporterApp
       episode: req.body.episodeId || undefined,
       autowebinar: req.body.autowebinarId || undefined,
       user: ctx.user?.id,
-      data: submissionData,
+      data: submissionData
     })
 
     const formData = req.body.data || {}
@@ -218,10 +220,16 @@ export const apiFormSubmitRoute = reporterApp
       contactsMap.set(`phone:${formData.phone}`, { type: ContactType.Phone, value: formData.phone })
     }
     if (ctx.user?.confirmedEmail) {
-      contactsMap.set(`email:${ctx.user.confirmedEmail}`, { type: ContactType.Email, value: ctx.user.confirmedEmail })
+      contactsMap.set(`email:${ctx.user.confirmedEmail}`, {
+        type: ContactType.Email,
+        value: ctx.user.confirmedEmail
+      })
     }
     if (ctx.user?.confirmedPhone) {
-      contactsMap.set(`phone:${ctx.user.confirmedPhone}`, { type: ContactType.Phone, value: ctx.user.confirmedPhone })
+      contactsMap.set(`phone:${ctx.user.confirmedPhone}`, {
+        type: ContactType.Phone,
+        value: ctx.user.confirmedPhone
+      })
     }
 
     const contacts = Array.from(contactsMap.values())
@@ -230,7 +238,7 @@ export const apiFormSubmitRoute = reporterApp
     await captureCustomerEvent(ctx, {
       event: 'webinar_form_submitted',
       customer: {
-        displayName: formData.name || formData.firstName || ctx.user?.displayName,
+        displayName: formData.name || formData.firstName || ctx.user?.displayName
       },
       contacts: contacts.length > 0 ? contacts : undefined,
       appendUserContacts: ctx.user?.id,
@@ -239,8 +247,8 @@ export const apiFormSubmitRoute = reporterApp
         formId: form.id,
         formTitle: form.title,
         episodeId: req.body.episodeId,
-        formData,
-      },
+        formData
+      }
     })
 
     const fieldsSummary = Object.entries(formData)
@@ -253,7 +261,7 @@ export const apiFormSubmitRoute = reporterApp
       plain: `Форма «${form.title}» заполнена: ${JSON.stringify(formData)}`,
       md: `📝 Форма **${form.title}** заполнена\n${Object.entries(formData)
         .map(([k, v]) => `**${k}:** ${v}`)
-        .join('\n')}`,
+        .join('\n')}`
     })
 
     if (form.submitAction === FormSubmitAction.Payment) {
@@ -262,7 +270,9 @@ export const apiFormSubmitRoute = reporterApp
       // Определяем описание для выбранного тарифа
       let selectedDescription = form.paymentDescription || `Оплата: ${form.title}`
       if (submissionData.selected_tariff && form.paymentOptions) {
-        const selectedOpt = form.paymentOptions.find((opt: any) => opt.id === submissionData.selected_tariff)
+        const selectedOpt = form.paymentOptions.find(
+          (opt: any) => opt.id === submissionData.selected_tariff
+        )
         if (selectedOpt?.title) {
           selectedDescription = selectedOpt.title
         }
@@ -277,7 +287,8 @@ export const apiFormSubmitRoute = reporterApp
         let availableProviders = configured
         if (form.paymentProviders && form.paymentProviders.length > 0) {
           availableProviders = configured.filter(
-            (p: any) => form.paymentProviders.includes(p.id) || form.paymentProviders.includes(p.slug),
+            (p: any) =>
+              form.paymentProviders.includes(p.id) || form.paymentProviders.includes(p.slug)
           )
         }
 
@@ -296,15 +307,15 @@ export const apiFormSubmitRoute = reporterApp
             customer: {
               firstName: formData.name || formData.firstName || ctx.user?.firstName,
               email: formData.email || ctx.user?.confirmedEmail,
-              phone: formData.phone || ctx.user?.confirmedPhone,
+              phone: formData.phone || ctx.user?.confirmedPhone
             },
             items: [
               {
                 id: form.id,
                 name: selectedDescription,
                 quantity: 1,
-                price: finalAmount,
-              },
+                price: finalAmount
+              }
             ],
             payload: {
               submissionId: submission.id,
@@ -312,10 +323,10 @@ export const apiFormSubmitRoute = reporterApp
               formTitle: form.title,
               episodeId: req.body.episodeId,
               formData,
-              uid: req.cookies?.['x-chtm-uid'],
+              uid: req.cookies?.['x-chtm-uid']
             },
             successUrl: paymentSuccessRoute({ submissionId: submission.id }).url(),
-            successCallbackRoute: formPaymentSuccessRoute,
+            successCallbackRoute: formPaymentSuccessRoute
           })
 
           if (paymentResult.success && paymentResult.result.paymentLink) {
@@ -323,7 +334,7 @@ export const apiFormSubmitRoute = reporterApp
               success: true,
               submissionId: submission.id,
               action: 'direct_payment',
-              paymentLink: paymentResult.result.paymentLink,
+              paymentLink: paymentResult.result.paymentLink
             }
           }
           // Если не удалось — fallback на страницу выбора
@@ -334,7 +345,7 @@ export const apiFormSubmitRoute = reporterApp
           success: true,
           submissionId: submission.id,
           action: 'payment',
-          paymentMethodUrl: paymentMethodRoute({ submissionId: submission.id }).url(),
+          paymentMethodUrl: paymentMethodRoute({ submissionId: submission.id }).url()
         }
       }
     }
@@ -344,7 +355,7 @@ export const apiFormSubmitRoute = reporterApp
         success: true,
         submissionId: submission.id,
         action: 'redirect',
-        redirectUrl: form.redirectUrl,
+        redirectUrl: form.redirectUrl
       }
     }
 
@@ -353,6 +364,6 @@ export const apiFormSubmitRoute = reporterApp
       submissionId: submission.id,
       action: 'thank_you',
       thankYouTitle: form.thankYouTitle || 'Спасибо!',
-      thankYouText: form.thankYouText || 'Ваша заявка принята',
+      thankYouText: form.thankYouText || 'Ваша заявка принята'
     }
   })

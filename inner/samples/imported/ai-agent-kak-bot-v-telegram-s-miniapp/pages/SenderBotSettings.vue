@@ -3,17 +3,22 @@
     <!-- Приветственное окно (онбординг) -->
     <div v-if="!agent && !hasChannels" class="bg-white rounded-lg shadow-md p-8 w-full max-w-2xl">
       <!-- Градиентная линия сверху -->
-      <div class="h-1.5 bg-gradient-to-r from-blue-900 via-blue-700 to-blue-800 rounded-t-lg -mx-8 -mt-8 mb-8"></div>
+      <div
+        class="h-1.5 bg-gradient-to-r from-blue-900 via-blue-700 to-blue-800 rounded-t-lg -mx-8 -mt-8 mb-8"
+      ></div>
 
       <div>
         <!-- Заголовок -->
-        <h1 class="text-3xl font-bold text-gray-900 mb-6">Умный помощник для общения <br />с клиентами</h1>
+        <h1 class="text-3xl font-bold text-gray-900 mb-6">
+          Умный помощник для общения <br />с клиентами
+        </h1>
 
         <!-- Основной текст -->
         <div class="text-gray-600 text-lg leading-relaxed mb-8 space-y-4">
           <p>
-            Представьте, что у вас есть сотрудник, который всегда на связи: отвечает в чате, принимает заказы,
-            записывает на услуги и напоминает о встречах. Такой сотрудник работает круглосуточно и не устает.
+            Представьте, что у вас есть сотрудник, который всегда на связи: отвечает в чате,
+            принимает заказы, записывает на услуги и напоминает о встречах. Такой сотрудник работает
+            круглосуточно и не устает.
           </p>
           <p>
             Наш сервис помогает создать такого помощника —
@@ -21,11 +26,12 @@
               @click="openAgentInfoModal"
               class="border-b border-dashed border-blue-600 text-blue-600 cursor-pointer hover:bg-blue-50 px-1 py-0.5 rounded transition-colors"
               >Агента</span
-            >. Он общается с клиентами по заданному сценарию, понимает запросы и выполняет нужные действия.
+            >. Он общается с клиентами по заданному сценарию, понимает запросы и выполняет нужные
+            действия.
           </p>
           <p>
-            Чтобы Агент мог разговаривать с вашими клиентами, ему нужен канал связи — например, Телеграм. Подключите
-            его, и ваш Агент начнёт работать.
+            Чтобы Агент мог разговаривать с вашими клиентами, ему нужен канал связи — например,
+            Телеграм. Подключите его, и ваш Агент начнёт работать.
           </p>
         </div>
 
@@ -66,15 +72,21 @@
     <!-- Основная форма настроек -->
     <div v-else class="bg-white rounded-lg shadow-md p-8 w-full max-w-xl">
       <!-- Градиентная линия сверху -->
-      <div class="h-1.5 bg-gradient-to-r from-blue-900 via-blue-700 to-blue-800 rounded-t-lg -mx-8 -mt-8 mb-6"></div>
+      <div
+        class="h-1.5 bg-gradient-to-r from-blue-900 via-blue-700 to-blue-800 rounded-t-lg -mx-8 -mt-8 mb-6"
+      ></div>
 
-      <h1 class="text-2xl font-bold text-gray-900 mb-8 text-center">ИИ<span style="font-size: 1.5rem">-агент</span></h1>
+      <h1 class="text-2xl font-bold text-gray-900 mb-8 text-center">
+        ИИ<span style="font-size: 1.5rem">-агент</span>
+      </h1>
 
       <!-- Статус настройки -->
       <div class="mb-6 bg-gray-50 p-4 rounded-lg">
         <div class="flex items-center justify-between">
           <div class="flex items-center">
-            <div v-if="agent && hasChannels" class="text-green-600 font-semibold text-sm">Полностью настроен</div>
+            <div v-if="agent && hasChannels" class="text-green-600 font-semibold text-sm">
+              Полностью настроен
+            </div>
             <div
               v-else-if="agent || hasChannels"
               class="bg-orange-500 text-white px-2 py-1 rounded text-xs font-semibold"
@@ -106,14 +118,30 @@
       <div class="mb-8 bg-gray-50 p-4 rounded-lg">
         <div class="flex items-center justify-between mb-3">
           <h2 class="text-lg font-semibold text-gray-900 flex items-center">
-            <div v-if="agent" class="mr-3 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
+            <div
+              v-if="agent"
+              class="mr-3 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center"
+            >
               <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M5 13l4 4L19 7"
+                ></path>
               </svg>
             </div>
-            <div v-else class="mr-3 w-6 h-6 bg-gray-400 rounded-full flex items-center justify-center">
+            <div
+              v-else
+              class="mr-3 w-6 h-6 bg-gray-400 rounded-full flex items-center justify-center"
+            >
               <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M6 18L18 6M6 6l12 12"
+                ></path>
               </svg>
             </div>
             Подключенный агент
@@ -121,8 +149,9 @@
         </div>
 
         <p class="text-sm text-gray-600 mb-4">
-          Он общается с клиентами по вашим правилам и умеет действовать (вести запись на услуги, напоминать о встречах,
-          принимать заказы, отвечать на частые вопросы, уведомлять об акциях и новостях).
+          Он общается с клиентами по вашим правилам и умеет действовать (вести запись на услуги,
+          напоминать о встречах, принимать заказы, отвечать на частые вопросы, уведомлять об акциях
+          и новостях).
         </p>
 
         <div v-if="!agent">
@@ -166,7 +195,9 @@
 
         <!-- Инструменты агента -->
         <div v-if="agent && workspaceTools.length > 0" class="mt-4 pt-4 border-t border-gray-200">
-          <h3 class="text-sm font-medium text-gray-900 mb-2">Инструменты агента в этом воркспейсе</h3>
+          <h3 class="text-sm font-medium text-gray-900 mb-2">
+            Инструменты агента в этом воркспейсе
+          </h3>
           <div class="space-y-2">
             <div v-for="tool in workspaceTools" :key="tool.name" class="flex items-start py-1.5">
               <div class="flex-shrink-0 mr-3 mt-0.5">
@@ -175,7 +206,10 @@
                   <!-- Синий квадрат -->
                   <path d="M3 3h18v18H3V3z" fill="#2563eb" />
                   <!-- Белая галочка -->
-                  <path d="M9 15.17L6.83 13l-1.41 1.41L9 18 18 9l-1.41-1.41L9 15.17z" fill="white" />
+                  <path
+                    d="M9 15.17L6.83 13l-1.41 1.41L9 18 18 9l-1.41-1.41L9 15.17z"
+                    fill="white"
+                  />
                 </svg>
                 <!-- Неподключенный инструмент -->
                 <svg v-else class="w-5 h-5 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
@@ -205,14 +239,30 @@
       <div class="mb-8 bg-gray-50 p-4 rounded-lg">
         <div class="flex items-center justify-between mb-3">
           <h2 class="text-lg font-semibold text-gray-900 flex items-center">
-            <div v-if="hasChannels" class="mr-3 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
+            <div
+              v-if="hasChannels"
+              class="mr-3 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center"
+            >
               <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M5 13l4 4L19 7"
+                ></path>
               </svg>
             </div>
-            <div v-else class="mr-3 w-6 h-6 bg-gray-400 rounded-full flex items-center justify-center">
+            <div
+              v-else
+              class="mr-3 w-6 h-6 bg-gray-400 rounded-full flex items-center justify-center"
+            >
               <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M6 18L18 6M6 6l12 12"
+                ></path>
               </svg>
             </div>
             Настройка транспортов
@@ -283,12 +333,20 @@
             </div>
 
             <!-- Кнопка тестирования -->
-            <div v-if="channel.username && selectedChannelIds.includes(channel.id)" class="flex-shrink-0 ml-3">
+            <div
+              v-if="channel.username && selectedChannelIds.includes(channel.id)"
+              class="flex-shrink-0 ml-3"
+            >
               <button
                 @click="testChannel(channel)"
                 class="px-3 py-1.5 text-xs font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-md hover:bg-blue-100 hover:border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
               >
-                <svg class="w-3 h-3 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg
+                  class="w-3 h-3 inline mr-1"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
                   <path
                     stroke-linecap="round"
                     stroke-linejoin="round"
@@ -322,7 +380,10 @@
         </div>
 
         <!-- Нет каналов -->
-        <div v-else-if="props.availableChannels && props.availableChannels.length === 0" class="text-center py-6">
+        <div
+          v-else-if="props.availableChannels && props.availableChannels.length === 0"
+          class="text-center py-6"
+        >
           <p class="text-gray-500 mb-4">Нет ни одного канала</p>
           <a
             href="/app/sender/v2#/settings/channel/add"
@@ -346,7 +407,9 @@
 
         <!-- Отображение текущих подключенных каналов (если есть, но нет availableChannels) -->
         <div
-          v-else-if="hasChannels && (!props.availableChannels || props.availableChannels.length === 0)"
+          v-else-if="
+            hasChannels && (!props.availableChannels || props.availableChannels.length === 0)
+          "
           class="space-y-3"
         >
           <div v-for="channel in props.channels" :key="channel.id" class="flex items-center py-3">
@@ -376,7 +439,12 @@
                 @click="testChannel(channel)"
                 class="px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-md hover:bg-blue-100 hover:border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
               >
-                <svg class="w-3 h-3 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg
+                  class="w-3 h-3 inline mr-1"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
                   <path
                     stroke-linecap="round"
                     stroke-linejoin="round"
@@ -418,20 +486,24 @@
           </div>
 
           <div class="text-gray-600 text-base leading-relaxed space-y-4 mb-6">
-            <p>У него есть промт (инструкция), по которой он понимает, как вести себя с клиентами.</p>
             <p>
-              Он может вести диалоги и пользоваться инструментами (например, календарём для записи или CRM для
-              сохранения клиентов).
+              У него есть промт (инструкция), по которой он понимает, как вести себя с клиентами.
             </p>
             <p>
-              Вы сами решаете, что именно он будет делать: записывать на услуги, принимать заказы, напоминать о встречах
-              или рассказывать про акции.
+              Он может вести диалоги и пользоваться инструментами (например, календарём для записи
+              или CRM для сохранения клиентов).
+            </p>
+            <p>
+              Вы сами решаете, что именно он будет делать: записывать на услуги, принимать заказы,
+              напоминать о встречах или рассказывать про акции.
             </p>
 
             <div class="bg-blue-50 p-4 rounded-lg">
               <p class="font-medium text-blue-900 mb-2">Примеры:</p>
               <ul class="text-blue-800 space-y-1 list-disc list-inside text-sm">
-                <li><strong>Школа рисования:</strong> Агент записывает новых учеников на диагностику.</li>
+                <li>
+                  <strong>Школа рисования:</strong> Агент записывает новых учеников на диагностику.
+                </li>
                 <li><strong>Парикмахерская:</strong> Агент ведёт запись на стрижки.</li>
                 <li><strong>Кафе:</strong> Агент принимает заказы и сообщает о скидках.</li>
               </ul>
@@ -451,14 +523,19 @@
     </div>
 
     <!-- Модальное окно создания агента -->
-    <div v-if="isAgentModalOpen" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+    <div
+      v-if="isAgentModalOpen"
+      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+    >
       <div class="bg-white rounded-lg shadow-xl w-full max-w-lg">
         <div class="p-6">
           <h2 class="text-xl font-bold text-gray-900 mb-4">Создать агента</h2>
 
           <form @submit.prevent="connectAgent">
             <div class="mb-4">
-              <label for="agentTitle" class="block text-sm font-medium text-gray-700 mb-2"> Название агента </label>
+              <label for="agentTitle" class="block text-sm font-medium text-gray-700 mb-2">
+                Название агента
+              </label>
               <input
                 id="agentTitle"
                 v-model="agentTitle"
@@ -514,7 +591,9 @@
           <h2 class="text-xl font-bold text-gray-900 mb-4">Подключить телеграм бота</h2>
 
           <div class="mb-4">
-            <label for="telegramToken" class="block text-sm font-medium text-gray-700 mb-2"> Токен бота </label>
+            <label for="telegramToken" class="block text-sm font-medium text-gray-700 mb-2">
+              Токен бота
+            </label>
             <input
               id="telegramToken"
               v-model="telegramToken"
@@ -527,18 +606,22 @@
               <ol class="text-xs text-blue-800 space-y-1 list-decimal list-inside">
                 <li>
                   Откройте Telegram и найдите бота
-                  <a href="https://t.me/BotFather" target="_blank" class="underline font-medium">@BotFather</a>
+                  <a href="https://t.me/BotFather" target="_blank" class="underline font-medium"
+                    >@BotFather</a
+                  >
                 </li>
                 <li>Отправьте команду /newbot</li>
                 <li>Придумайте название для вашего бота</li>
                 <li>Придумайте username (должен заканчиваться на _bot)</li>
-                <li>BotFather пришлет вам токен вида: 123456789:ABCdef1234567890ABCdef1234567890ABC</li>
+                <li>
+                  BotFather пришлет вам токен вида: 123456789:ABCdef1234567890ABCdef1234567890ABC
+                </li>
                 <li>Скопируйте этот токен и вставьте в поле выше</li>
               </ol>
               <div class="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded">
                 <p class="text-xs text-yellow-800">
-                  <strong>Важно:</strong> Не передавайте токен третьим лицам. Токен дает полный доступ к управлению
-                  ботом.
+                  <strong>Важно:</strong> Не передавайте токен третьим лицам. Токен дает полный
+                  доступ к управлению ботом.
                 </p>
               </div>
             </div>
@@ -584,7 +667,7 @@ const workspaceTools = ref([])
 const selectedTools = ref([])
 
 // Состояние выбранных каналов - инициализируем сразу из пропсов
-const selectedChannelIds = ref(props.channels ? props.channels.map(channel => channel.id) : [])
+const selectedChannelIds = ref(props.channels ? props.channels.map((channel) => channel.id) : [])
 const isSavingChannels = ref(false)
 
 // Вычисляемое свойство для наличия каналов
@@ -626,7 +709,7 @@ const closeAgentInfoModal = () => {
 }
 
 // Получение инициалов для аватара канала
-const getChannelInitials = name => {
+const getChannelInitials = (name) => {
   if (!name) return 'C'
   const words = name.split(' ')
   if (words.length >= 2) {
@@ -636,7 +719,7 @@ const getChannelInitials = name => {
 }
 
 // Получение названия источника канала
-const getChannelSourceName = source => {
+const getChannelSourceName = (source) => {
   const sourceNames = {
     Telegram: 'Телеграм',
     WhatsApp: 'WhatsApp',
@@ -648,7 +731,7 @@ const getChannelSourceName = source => {
 }
 
 // Тестирование канала
-const testChannel = channel => {
+const testChannel = (channel) => {
   window.open(`https://t.me/${channel.username}`, '_blank')
 }
 

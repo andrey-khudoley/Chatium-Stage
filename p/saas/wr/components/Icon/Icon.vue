@@ -34,32 +34,32 @@ const icons = {
   'dots-vertical': DotsVertical,
   'dots-horizontal': DotsHorizontal,
   'lines-horizontal': LinesHorizontal,
-  'cross': Cross,
-  'edit': Edit,
-  'plus': Plus,
-  'minus': Minus,
-  'search': Search,
-  'trash': Trash,
+  cross: Cross,
+  edit: Edit,
+  plus: Plus,
+  minus: Minus,
+  search: Search,
+  trash: Trash,
   'angel-right': AngelRight,
   'angel-left': AngelLeft,
   'angel-up': AngelUp,
   'angel-down': AngelDown,
-  'check': Check,
-  'gear': Gear,
+  check: Check,
+  gear: Gear,
   'arrows-rotate': ArrowsRotate,
-  'lock': Lock,
-  'funnel': Funnel,
-  'clone': Clone,
+  lock: Lock,
+  funnel: Funnel,
+  clone: Clone,
   'clone-plus': ClonePlus,
-  'play': Play,
-  'stop': Stop,
-  'telegram': Telegram,
-  'whatsapp': Whatsapp,
-  'viber': Viber,
-  'user': User,
+  play: Play,
+  stop: Stop,
+  telegram: Telegram,
+  whatsapp: Whatsapp,
+  viber: Viber,
+  user: User,
   'user-lock': UserLock,
   'cart-shopping': CartShopping,
-  'save': Save
+  save: Save
 }
 
 export interface IconProps {
@@ -113,8 +113,5 @@ const resultProps = computed(() => ({
 </script>
 
 <template>
-  <component
-    :is="icons[name]"
-    v-bind="resultProps"
-  />
+  <component :is="icons[name]" v-bind="resultProps" />
 </template>

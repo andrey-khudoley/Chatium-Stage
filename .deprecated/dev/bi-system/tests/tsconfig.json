@@ -5,9 +5,7 @@
     "jsxFactory": "jsx",
     "jsxFragmentFactory": "jsx.Fragment"
   },
-  "include": [
-    "**/*"
-  ],
+  "include": ["**/*"],
   "files": [
     "../../../node_modules/@app/types/globals.d.ts",
     "../../../node_modules/@app/types/modules.d.ts",
@@ -15,4 +13,3 @@
     "../vue-shim.d.ts"
   ]
 }
-

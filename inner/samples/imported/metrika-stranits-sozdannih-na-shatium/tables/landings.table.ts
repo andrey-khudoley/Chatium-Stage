@@ -5,19 +5,25 @@ export const TLendMetrikaLandingsW2F = Heap.Table(
   't_lend-metrika_landings_LAW',
   {
     path: Heap.Optional(
-      Heap.String({ customMeta: { title: 'Путь лендинга' }, searchable: { langs: ['ru', 'en'], embeddings: true } }),
+      Heap.String({
+        customMeta: { title: 'Путь лендинга' },
+        searchable: { langs: ['ru', 'en'], embeddings: true }
+      })
     ),
     title: Heap.Optional(
       Heap.String({
         customMeta: { title: 'Название лендинга' },
-        searchable: { langs: ['ru', 'en'], embeddings: true },
-      }),
+        searchable: { langs: ['ru', 'en'], embeddings: true }
+      })
     ),
     isActive: Heap.Optional(
-      Heap.Boolean({ customMeta: { title: 'Активен' }, searchable: { langs: ['ru', 'en'], embeddings: true } }),
-    ),
+      Heap.Boolean({
+        customMeta: { title: 'Активен' },
+        searchable: { langs: ['ru', 'en'], embeddings: true }
+      })
+    )
   },
-  { customMeta: { title: 'Лендинги', description: 'Лендинги' } },
+  { customMeta: { title: 'Лендинги', description: 'Лендинги' } }
 )
 
 export default TLendMetrikaLandingsW2F

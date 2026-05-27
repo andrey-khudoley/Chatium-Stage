@@ -18,10 +18,17 @@
           <div class="info-content">
             <p><strong>Как работают агенты:</strong></p>
             <ul>
-              <li>Агенты создаются в <a :href="agentProcessUrl" target="_blank">панели управления агентами</a></li>
+              <li>
+                Агенты создаются в
+                <a :href="agentProcessUrl" target="_blank">панели управления агентами</a>
+              </li>
               <li>Добавьте агента в групповой чат — он будет отвечать по настроенным правилам</li>
-              <li>Для личного чата с агентом используйте кнопку «Создать чат с агентом» в профиле</li>
-              <li>Агенты используют все возможности Chatium: цепочки, базы знаний, автоматизации</li>
+              <li>
+                Для личного чата с агентом используйте кнопку «Создать чат с агентом» в профиле
+              </li>
+              <li>
+                Агенты используют все возможности Chatium: цепочки, базы знаний, автоматизации
+              </li>
             </ul>
           </div>
         </div>
@@ -44,8 +51,8 @@
         </div>
 
         <div v-else-if="!showAddForm" class="agents-list">
-          <div 
-            v-for="agent in chatAgents" 
+          <div
+            v-for="agent in chatAgents"
             :key="agent.id"
             class="agent-item"
             :class="{ editing: editingAgent?.id === agent.id }"
@@ -69,18 +76,10 @@
             </div>
 
             <div class="agent-actions">
-              <button 
-                @click="startEdit(agent)" 
-                class="btn-icon"
-                title="Настройки"
-              >
+              <button @click="startEdit(agent)" class="btn-icon" title="Настройки">
                 <i class="fas fa-cog"></i>
               </button>
-              <button 
-                @click="confirmRemove(agent)" 
-                class="btn-icon danger"
-                title="Удалить"
-              >
+              <button @click="confirmRemove(agent)" class="btn-icon danger" title="Удалить">
                 <i class="fas fa-trash"></i>
               </button>
             </div>
@@ -90,7 +89,7 @@
         <!-- Форма добавления агента -->
         <div v-if="showAddForm" class="add-agent-form">
           <h3>Добавить агента</h3>
-          
+
           <div class="form-group">
             <label>Выберите агента</label>
             <div v-if="availableAgents.length === 0" class="no-agents-hint">
@@ -138,25 +137,17 @@
           </div>
 
           <div class="form-group checkbox">
-            <input 
-              type="checkbox" 
-              id="canScheduleInChat" 
+            <input
+              type="checkbox"
+              id="canScheduleInChat"
               v-model="newAgentSettings.canScheduleInChat"
             />
-            <label for="canScheduleInChat">
-              Может создавать напоминания в чате
-            </label>
+            <label for="canScheduleInChat"> Может создавать напоминания в чате </label>
           </div>
 
           <div class="form-actions">
-            <button @click="cancelAdd" class="btn-secondary">
-              Отмена
-            </button>
-            <button 
-              @click="addAgent" 
-              class="btn-primary"
-              :disabled="!selectedAgentId || adding"
-            >
+            <button @click="cancelAdd" class="btn-secondary">Отмена</button>
+            <button @click="addAgent" class="btn-primary" :disabled="!selectedAgentId || adding">
               <i v-if="adding" class="fas fa-spinner fa-spin"></i>
               <span v-else>Добавить</span>
             </button>
@@ -166,7 +157,7 @@
         <!-- Форма редактирования -->
         <div v-if="editingAgent" class="edit-agent-form">
           <h3>Настройки агента</h3>
-          
+
           <div class="form-group">
             <label>Режим ответов</label>
             <select v-model="editSettings.respondTo" class="form-select">
@@ -185,25 +176,17 @@
           </div>
 
           <div class="form-group checkbox">
-            <input 
-              type="checkbox" 
-              id="editCanScheduleInChat" 
+            <input
+              type="checkbox"
+              id="editCanScheduleInChat"
               v-model="editSettings.canScheduleInChat"
             />
-            <label for="editCanScheduleInChat">
-              Может создавать напоминания в чате
-            </label>
+            <label for="editCanScheduleInChat"> Может создавать напоминания в чате </label>
           </div>
 
           <div class="form-actions">
-            <button @click="cancelEdit" class="btn-secondary">
-              Отмена
-            </button>
-            <button 
-              @click="saveEdit" 
-              class="btn-primary"
-              :disabled="saving"
-            >
+            <button @click="cancelEdit" class="btn-secondary">Отмена</button>
+            <button @click="saveEdit" class="btn-primary" :disabled="saving">
               <i v-if="saving" class="fas fa-spinner fa-spin"></i>
               <span v-else>Сохранить</span>
             </button>
@@ -223,12 +206,12 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { 
-  apiAgentsByFeedRoute, 
-  apiAgentsListRoute, 
-  apiAgentsAddRoute, 
-  apiAgentsUpdateRoute, 
-  apiAgentsRemoveRoute 
+import {
+  apiAgentsByFeedRoute,
+  apiAgentsListRoute,
+  apiAgentsAddRoute,
+  apiAgentsUpdateRoute,
+  apiAgentsRemoveRoute
 } from '../api/agents'
 
 const props = defineProps({
@@ -275,7 +258,7 @@ onMounted(async () => {
 async function loadChatAgents() {
   loading.value = true
   error.value = null
-  
+
   try {
     const result = await apiAgentsByFeedRoute({ feedId: props.feedId }).run(ctx)
     chatAgents.value = result.agents || []
@@ -290,8 +273,8 @@ async function loadAvailableAgents() {
   try {
     const result = await apiAgentsListRoute.run(ctx)
     // Фильтруем агентов, которые уже добавлены в чат
-    const existingIds = new Set(chatAgents.value.map(a => a.agentId))
-    availableAgents.value = (result.agents || []).filter(a => !existingIds.has(a.id))
+    const existingIds = new Set(chatAgents.value.map((a) => a.agentId))
+    availableAgents.value = (result.agents || []).filter((a) => !existingIds.has(a.id))
   } catch (err) {
     console.error('Failed to load available agents:', err)
   }
@@ -315,12 +298,12 @@ function cancelAdd() {
 
 async function addAgent() {
   if (!selectedAgentId.value) return
-  
-  const selectedAgent = availableAgents.value.find(a => a.id === selectedAgentId.value)
+
+  const selectedAgent = availableAgents.value.find((a) => a.id === selectedAgentId.value)
   if (!selectedAgent) return
-  
+
   adding.value = true
-  
+
   try {
     await apiAgentsAddRoute.run(ctx, {
       chatId: props.chatId,
@@ -331,7 +314,7 @@ async function addAgent() {
       respondToMention: newAgentSettings.value.respondToMention,
       canScheduleInChat: newAgentSettings.value.canScheduleInChat
     })
-    
+
     await loadChatAgents()
     showAddForm.value = false
     selectedAgentId.value = null
@@ -358,16 +341,16 @@ function cancelEdit() {
 
 async function saveEdit() {
   if (!editingAgent.value) return
-  
+
   saving.value = true
-  
+
   try {
     await apiAgentsUpdateRoute({ agentId: editingAgent.value.id }).run(ctx, {
       respondTo: editSettings.value.respondTo,
       respondToMention: editSettings.value.respondToMention,
       canScheduleInChat: editSettings.value.canScheduleInChat
     })
-    
+
     await loadChatAgents()
     editingAgent.value = null
   } catch (err) {
@@ -379,7 +362,7 @@ async function saveEdit() {
 
 async function confirmRemove(agent) {
   if (!confirm(`Удалить агента "${agent.agentName}" из чата?`)) return
-  
+
   try {
     await apiAgentsRemoveRoute.run(ctx, { agentId: agent.id })
     await loadChatAgents()
@@ -400,12 +383,22 @@ function getRespondToLabel(value) {
 
 function getAgentInitials(agent) {
   if (!agent.agentName) return '?'
-  return agent.agentName.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase()
+  return agent.agentName
+    .split(' ')
+    .map((w) => w[0])
+    .join('')
+    .substring(0, 2)
+    .toUpperCase()
 }
 
 function getInitials(name) {
   if (!name) return '?'
-  return name.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase()
+  return name
+    .split(' ')
+    .map((w) => w[0])
+    .join('')
+    .substring(0, 2)
+    .toUpperCase()
 }
 
 function getAgentAvatarStyle(agent) {
@@ -414,7 +407,7 @@ function getAgentAvatarStyle(agent) {
       background: `url(${agent.avatarUrl}) center/cover no-repeat`
     }
   }
-  
+
   const colors = [
     ['#667eea', '#764ba2'],
     ['#f093fb', '#f5576c'],
@@ -435,7 +428,7 @@ function getSystemAgentAvatarStyle(agent) {
       background: `url(${agent.avatarUrl}) center/cover no-repeat`
     }
   }
-  
+
   const colors = [
     ['#667eea', '#764ba2'],
     ['#f093fb', '#f5576c'],
@@ -509,7 +502,9 @@ function getSystemAgentAvatarStyle(agent) {
   justify-content: center;
   cursor: pointer;
   color: var(--text-secondary, #667781);
-  transition: background 0.2s, color 0.2s;
+  transition:
+    background 0.2s,
+    color 0.2s;
 }
 
 .close-btn:hover {

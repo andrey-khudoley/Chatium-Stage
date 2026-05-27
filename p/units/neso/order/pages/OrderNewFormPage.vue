@@ -33,7 +33,10 @@
         <form class="form-content" @submit.prevent="handleSubmit">
           <div class="form-fields">
             <div class="form-field">
-              <label class="field-label block text-sm font-semibold mb-2 flex items-center" style="color: var(--color-text)">
+              <label
+                class="field-label block text-sm font-semibold mb-2 flex items-center"
+                style="color: var(--color-text)"
+              >
                 <i class="fas fa-user mr-2" style="color: var(--color-text-secondary)"></i>
                 Ваше имя
               </label>
@@ -48,7 +51,10 @@
             </div>
 
             <div class="form-field">
-              <label class="field-label block text-sm font-semibold mb-2 flex items-center" style="color: var(--color-text)">
+              <label
+                class="field-label block text-sm font-semibold mb-2 flex items-center"
+                style="color: var(--color-text)"
+              >
                 <i class="fas fa-envelope mr-2" style="color: var(--color-text-secondary)"></i>
                 Email
               </label>
@@ -63,7 +69,10 @@
             </div>
 
             <div class="form-field">
-              <label class="field-label block text-sm font-semibold mb-2 flex items-center" style="color: var(--color-text)">
+              <label
+                class="field-label block text-sm font-semibold mb-2 flex items-center"
+                style="color: var(--color-text)"
+              >
                 <i class="fas fa-phone mr-2" style="color: var(--color-text-secondary)"></i>
                 Телефон
               </label>
@@ -78,7 +87,9 @@
                 @keypress="handlePhoneKeypress"
                 @paste="handlePhonePaste"
               />
-              <p class="text-xs mt-1.5 ml-1" style="color: #999999">Выберите страну и введите номер телефона</p>
+              <p class="text-xs mt-1.5 ml-1" style="color: #999999">
+                Выберите страну и введите номер телефона
+              </p>
             </div>
           </div>
 
@@ -94,7 +105,10 @@
 
           <div v-if="error" class="message-box error-message">
             <div class="flex items-center gap-3">
-              <i class="fas fa-exclamation-triangle text-2xl" style="color: var(--color-danger)"></i>
+              <i
+                class="fas fa-exclamation-triangle text-2xl"
+                style="color: var(--color-danger)"
+              ></i>
               <div>
                 <p class="font-semibold" style="color: var(--color-text)">Ошибка</p>
                 <p class="text-sm" style="color: var(--color-text-secondary)">{{ error }}</p>
@@ -188,9 +202,9 @@ function handlePhoneKeypress(event: KeyboardEvent) {
 
 function handlePhonePaste(event: ClipboardEvent) {
   event.preventDefault()
-  const pastedText = (event.clipboardData || (window as unknown as { clipboardData: DataTransfer }).clipboardData).getData(
-    'text'
-  )
+  const pastedText = (
+    event.clipboardData || (window as unknown as { clipboardData: DataTransfer }).clipboardData
+  ).getData('text')
   const digitsOnly = pastedText.replace(/\D/g, '')
   const input = phoneInput.value
   if (digitsOnly && input) {
@@ -486,7 +500,13 @@ async function handleSubmit() {
   border-radius: 0.75rem !important;
   background: var(--color-bg-card) !important;
   color: var(--color-text) !important;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+  font-family:
+    'Inter',
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    sans-serif !important;
   font-size: 1rem !important;
   transition: var(--transition) !important;
   box-shadow: var(--shadow-sm) !important;
@@ -535,7 +555,13 @@ async function handleSubmit() {
   border-radius: 0.75rem !important;
   box-shadow: var(--shadow-lg) !important;
   max-height: 300px !important;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+  font-family:
+    'Inter',
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    sans-serif !important;
   z-index: 9999 !important;
 }
 
@@ -568,7 +594,13 @@ async function handleSubmit() {
   border-radius: 0.5rem !important;
   background: var(--color-bg-card) !important;
   color: var(--color-text) !important;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+  font-family:
+    'Inter',
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    sans-serif !important;
   margin: 0.5rem !important;
   width: calc(100% - 1rem) !important;
 }

@@ -1,4 +1,4 @@
-import { jsx } from "@app/html-jsx"
+import { jsx } from '@app/html-jsx'
 import AnalyticsPage from './pages/AnalyticsPage.vue'
 
 export const indexPageRoute = app.get('/', async (ctx, req) => {

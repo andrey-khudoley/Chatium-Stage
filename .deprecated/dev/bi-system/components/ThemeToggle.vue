@@ -1,9 +1,5 @@
 <template>
-  <button
-    @click="toggleTheme"
-    class="theme-toggle"
-    :class="{ 'dark': isDark }"
-  >
+  <button @click="toggleTheme" class="theme-toggle" :class="{ dark: isDark }">
     <i v-if="isDark" class="fas fa-sun"></i>
     <i v-else class="fas fa-moon"></i>
   </button>
@@ -16,7 +12,7 @@ const isDark = ref(false)
 
 onMounted(() => {
   const savedTheme = localStorage.getItem('theme')
-  
+
   if (savedTheme === 'dark') {
     isDark.value = true
     document.documentElement.classList.add('dark')
@@ -33,7 +29,7 @@ onMounted(() => {
 
 function toggleTheme() {
   isDark.value = !isDark.value
-  
+
   if (isDark.value) {
     document.documentElement.classList.add('dark')
     localStorage.setItem('theme', 'dark')
@@ -71,4 +67,3 @@ function toggleTheme() {
   transform: translateY(0);
 }
 </style>
-

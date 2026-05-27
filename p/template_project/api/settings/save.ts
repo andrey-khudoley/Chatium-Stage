@@ -18,7 +18,7 @@ const LOG_LEVEL_BY_NUMBER: Record<number, string> = {
 /** Нормализация значения уровня логирования для lib (Debug | Info | Warn | Error | Disable). Числа -1–4 и строки. */
 function normalizeLogLevelValue(value: unknown): string {
   if (typeof value === 'number' && Number.isFinite(value) && value in LOG_LEVEL_BY_NUMBER) {
-    return LOG_LEVEL_BY_NUMBER[value]
+    return LOG_LEVEL_BY_NUMBER[value] ?? 'Info'
   }
   const s = typeof value === 'string' ? value.trim().toLowerCase() : String(value).toLowerCase()
   if (!s) return 'Info'

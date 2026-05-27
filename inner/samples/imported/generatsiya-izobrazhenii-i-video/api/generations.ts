@@ -4,11 +4,11 @@ import { startCompletion, CompletionCompletedBody, CompletionFailedBody } from '
 
 // @shared-route
 export const apiGenerateImageRoute = app
-  .body(s => ({
+  .body((s) => ({
     prompt: s.string(),
     model: s.string(),
     mode: s.string(),
-    uploadedImageHash: s.string().optional(),
+    uploadedImageHash: s.string().optional()
   }))
   .post('/generate-image', async (ctx, req) => {
     const user = await requireRealUser(ctx)
@@ -20,7 +20,7 @@ export const apiGenerateImageRoute = app
       model: req.body.model,
       prompt: req.body.prompt,
       uploadedImageHash: req.body.uploadedImageHash || '',
-      status: 'processing',
+      status: 'processing'
     })
 
     const messages: any[] = [
@@ -29,10 +29,10 @@ export const apiGenerateImageRoute = app
         content: [
           {
             type: 'text',
-            text: req.body.prompt + '\nВ ответе пришли только ссылку на изображение',
-          },
-        ],
-      },
+            text: req.body.prompt + '\nВ ответе пришли только ссылку на изображение'
+          }
+        ]
+      }
     ]
 
     if (req.body.mode === 'image-to-image' && req.body.uploadedImageHash) {
@@ -40,8 +40,8 @@ export const apiGenerateImageRoute = app
         type: 'image',
         source: {
           type: 'url',
-          url: `https://fs.cdn-chatium.io/get/${req.body.uploadedImageHash}`,
-        },
+          url: `https://fs.cdn-chatium.io/get/${req.body.uploadedImageHash}`
+        }
       })
     }
 
@@ -49,10 +49,10 @@ export const apiGenerateImageRoute = app
       model: req.body.model,
       messages,
       context: {
-        generationId: generation.id,
+        generationId: generation.id
       },
       onCompletionCompleted: onImageGenerationCompleted,
-      onCompletionFailed: onGenerationFailed,
+      onCompletionFailed: onGenerationFailed
     })
 
     return { success: true, generationId: generation.id }
@@ -60,11 +60,11 @@ export const apiGenerateImageRoute = app
 
 // @shared-route
 export const apiGenerateVideoRoute = app
-  .body(s => ({
+  .body((s) => ({
     prompt: s.string(),
     model: s.string(),
     mode: s.string(),
-    uploadedImageHash: s.string().optional(),
+    uploadedImageHash: s.string().optional()
   }))
   .post('/generate-video', async (ctx, req) => {
     const user = await requireRealUser(ctx)
@@ -76,7 +76,7 @@ export const apiGenerateVideoRoute = app
       model: req.body.model,
       prompt: req.body.prompt,
       uploadedImageHash: req.body.uploadedImageHash || '',
-      status: 'processing',
+      status: 'processing'
     })
 
     const messages: any[] = [
@@ -85,10 +85,15 @@ export const apiGenerateVideoRoute = app
         content: [
           {
             type: 'text',
-            text: (req.body.mode === 'image-to-video') ? 'Анимируй приложенное изображение по промту:\n' + req.body.prompt + '\nВ ответе пришли только ссылку на сгенерированное видео.' : req.body.prompt + '\nВ ответе пришли только ссылку на сгенерированное видео.',
-          },
-        ],
-      },
+            text:
+              req.body.mode === 'image-to-video'
+                ? 'Анимируй приложенное изображение по промту:\n' +
+                  req.body.prompt +
+                  '\nВ ответе пришли только ссылку на сгенерированное видео.'
+                : req.body.prompt + '\nВ ответе пришли только ссылку на сгенерированное видео.'
+          }
+        ]
+      }
     ]
 
     if (req.body.mode === 'image-to-video' && req.body.uploadedImageHash) {
@@ -96,8 +101,8 @@ export const apiGenerateVideoRoute = app
         type: 'image',
         source: {
           type: 'url',
-          url: `https://fs.cdn-chatium.io/get/${req.body.uploadedImageHash}`,
-        },
+          url: `https://fs.cdn-chatium.io/get/${req.body.uploadedImageHash}`
+        }
       })
     }
 
@@ -107,10 +112,10 @@ export const apiGenerateVideoRoute = app
       messages,
       nativeTools: [{ name: 'generate-video', model: req.body.model }],
       context: {
-        generationId: generation.id,
+        generationId: generation.id
       },
       onCompletionCompleted: onVideoGenerationCompleted,
-      onCompletionFailed: onGenerationFailed,
+      onCompletionFailed: onGenerationFailed
     })
 
     return { success: true, generationId: generation.id }
@@ -123,7 +128,7 @@ export const apiGetGenerationsRoute = app.get('/generations', async (ctx) => {
   const generations = await Generations.findAll(ctx, {
     where: { userId: user.id },
     order: [{ createdAt: 'desc' }],
-    limit: 100,
+    limit: 100
   })
 
   return generations
@@ -131,8 +136,8 @@ export const apiGetGenerationsRoute = app.get('/generations', async (ctx) => {
 
 // @shared-route
 export const apiUploadImageRoute = app
-  .body(s => ({
-    imageHash: s.string(),
+  .body((s) => ({
+    imageHash: s.string()
   }))
   .post('/upload-image', async (ctx, req) => {
     const user = await requireRealUser(ctx)
@@ -141,7 +146,7 @@ export const apiUploadImageRoute = app
       userId: user.id,
       type: 'upload',
       uploadedImageHash: req.body.imageHash,
-      status: 'completed',
+      status: 'completed'
     })
 
     return { success: true, generationId: generation.id }
@@ -172,7 +177,11 @@ const onImageGenerationCompleted = app
 
       if (Array.isArray(message.content)) {
         for (const block of message.content) {
-          if (block.type === 'text' && typeof block.text === 'string' && block.text.includes('cdn-chatium.io/get/')) {
+          if (
+            block.type === 'text' &&
+            typeof block.text === 'string' &&
+            block.text.includes('cdn-chatium.io/get/')
+          ) {
             const match = block.text.match(/\/get\/([^\/\s?]+)/)
             if (match) {
               imageHash = match[1]
@@ -194,7 +203,7 @@ const onImageGenerationCompleted = app
     await Generations.update(ctx, {
       id: generationId,
       generatedImageHash: imageHash || '',
-      status: 'completed',
+      status: 'completed'
     })
 
     return null
@@ -215,14 +224,23 @@ const onVideoGenerationCompleted = app
       const message = body.messages[i]
       if (message.role !== 'assistant') continue
 
-      if (typeof message.content === 'string' && message.content.includes('cdn-chatium.io/get/') && message.content.includes('.mp4')) {
+      if (
+        typeof message.content === 'string' &&
+        message.content.includes('cdn-chatium.io/get/') &&
+        message.content.includes('.mp4')
+      ) {
         videoHash = message.content
         break
       }
 
       if (Array.isArray(message.content)) {
         for (const block of message.content) {
-          if (block.type === 'text' && typeof block.text === 'string' && block.text.includes('cdn-chatium.io/get/') && block.text.includes('.mp4')) {
+          if (
+            block.type === 'text' &&
+            typeof block.text === 'string' &&
+            block.text.includes('cdn-chatium.io/get/') &&
+            block.text.includes('.mp4')
+          ) {
             videoHash = block.text
             break
           }
@@ -241,7 +259,7 @@ const onVideoGenerationCompleted = app
     await Generations.update(ctx, {
       id: generationId,
       generatedVideoHash: videoHash || '',
-      status: 'completed',
+      status: 'completed'
     })
 
     return null
@@ -260,7 +278,7 @@ const onGenerationFailed = app
     await Generations.update(ctx, {
       id: generationId,
       status: 'failed',
-      error: body.error || 'Unknown error',
+      error: body.error || 'Unknown error'
     })
 
     return null

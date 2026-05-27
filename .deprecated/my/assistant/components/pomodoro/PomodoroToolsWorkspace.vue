@@ -124,11 +124,14 @@ const unifiedSessionsCount = computed(
   () =>
     props.state.tasksCompletedToday +
     props.timerSnapshot.sessionsCount +
-    props.stopwatchSnapshot.sessionsCount,
+    props.stopwatchSnapshot.sessionsCount
 )
 
 const unifiedWorkFocusSec = computed(
-  () => props.state.totalWorkSec + props.timerSnapshot.totalFocusSec + props.stopwatchSnapshot.totalFocusSec,
+  () =>
+    props.state.totalWorkSec +
+    props.timerSnapshot.totalFocusSec +
+    props.stopwatchSnapshot.totalFocusSec
 )
 
 const unifiedTotalAllSec = computed(
@@ -136,7 +139,7 @@ const unifiedTotalAllSec = computed(
     props.state.totalWorkSec +
     props.state.totalRestSec +
     props.timerSnapshot.totalSec +
-    props.stopwatchSnapshot.totalSec,
+    props.stopwatchSnapshot.totalSec
 )
 </script>
 
@@ -183,7 +186,11 @@ const unifiedTotalAllSec = computed(
             :class="{ 'cycle-dot--filled': i <= cycleDotsCompleted }"
           ></span>
         </span>
-        <button class="settings-trigger" :disabled="saving" @click="emit('update:settingsOpen', true)">
+        <button
+          class="settings-trigger"
+          :disabled="saving"
+          @click="emit('update:settingsOpen', true)"
+        >
           <i class="fa-solid fa-sliders" />
         </button>
       </div>
@@ -224,22 +231,42 @@ const unifiedTotalAllSec = computed(
           </button>
 
           <template v-if="state.status === 'running'">
-            <button type="button" class="pomo-btn pomo-btn--secondary" :disabled="actionPending" @click="emit('control', 'pause')">
+            <button
+              type="button"
+              class="pomo-btn pomo-btn--secondary"
+              :disabled="actionPending"
+              @click="emit('control', 'pause')"
+            >
               <i class="fa-solid fa-pause pomo-btn__icon" aria-hidden="true" />
               <span class="pomo-btn__label">Пауза</span>
             </button>
-            <button type="button" class="pomo-btn pomo-btn--ghost" :disabled="actionPending" @click="emit('control', 'skip')">
+            <button
+              type="button"
+              class="pomo-btn pomo-btn--ghost"
+              :disabled="actionPending"
+              @click="emit('control', 'skip')"
+            >
               <i class="fa-solid fa-forward pomo-btn__icon" aria-hidden="true" />
               <span class="pomo-btn__label">Пропустить</span>
             </button>
           </template>
 
           <template v-if="state.status === 'paused' || state.status === 'awaiting_continue'">
-            <button type="button" class="pomo-btn pomo-btn--primary" :disabled="actionPending" @click="emit('control', 'resume')">
+            <button
+              type="button"
+              class="pomo-btn pomo-btn--primary"
+              :disabled="actionPending"
+              @click="emit('control', 'resume')"
+            >
               <i class="fa-solid fa-play pomo-btn__icon" aria-hidden="true" />
               <span class="pomo-btn__label">Продолжить</span>
             </button>
-            <button type="button" class="pomo-btn pomo-btn--danger" :disabled="actionPending" @click="emit('control', 'reset')">
+            <button
+              type="button"
+              class="pomo-btn pomo-btn--danger"
+              :disabled="actionPending"
+              @click="emit('control', 'reset')"
+            >
               <i class="fa-solid fa-rotate-left pomo-btn__icon" aria-hidden="true" />
               <span class="pomo-btn__label">Сбросить</span>
             </button>
@@ -318,7 +345,11 @@ const unifiedTotalAllSec = computed(
 .tool-tab-btn--active {
   border-color: var(--color-accent);
   color: #fff;
-  background: linear-gradient(165deg, color-mix(in srgb, var(--color-accent) 92%, #000), var(--color-accent));
+  background: linear-gradient(
+    165deg,
+    color-mix(in srgb, var(--color-accent) 92%, #000),
+    var(--color-accent)
+  );
 }
 
 .fade-enter-active,

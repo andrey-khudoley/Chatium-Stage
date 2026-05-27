@@ -47,7 +47,11 @@ function severityToLevelName(severity: number): 'error' | 'warn' | 'info' | 'deb
 }
 
 /** Внутренняя запись с timestamp и level, вычисленными в lib. */
-type FormattedEntry = { timestamp: number; level: 'error' | 'warn' | 'info' | 'debug'; message: string }
+type FormattedEntry = {
+  timestamp: number
+  level: 'error' | 'warn' | 'info' | 'debug'
+  message: string
+}
 
 /**
  * Форматирует строку вывода лога: [DD.MM.YYYY HH:mm:ss.SSS] [LEVEL] message
@@ -71,7 +75,10 @@ function formatLogMessage(entry: FormattedEntry): string {
  * Проверяет, нужно ли логировать сообщение с данным severity при текущей настройке уровня.
  * Логируем, когда severity сообщения <= порога (сообщение не строже порога).
  */
-export function shouldLogByLevel(configuredLevel: settingsLib.LogLevel, messageSeverity: number): boolean {
+export function shouldLogByLevel(
+  configuredLevel: settingsLib.LogLevel,
+  messageSeverity: number
+): boolean {
   const maxSeverity = CONFIG_TO_MAX_SEVERITY[configuredLevel]
   if (maxSeverity < 0) return false
   return messageSeverity >= 0 && messageSeverity <= maxSeverity
@@ -99,9 +106,7 @@ export async function writeServerLog(ctx: app.Ctx, entry: ServerLogEntry): Promi
   const level = severityToLevelName(entry.severity)
   const formattedEntry: FormattedEntry = { timestamp, level, message: entry.message }
   if (configuredLevel === 'Debug') {
-    ;(ctx.log as (msg: string) => void)(
-      '[DEBUG] [lib/logger.lib] writeServerLog formatted'
-    )
+    ;(ctx.log as (msg: string) => void)('[DEBUG] [lib/logger.lib] writeServerLog formatted')
   }
 
   const payloadObj =
@@ -114,9 +119,7 @@ export async function writeServerLog(ctx: app.Ctx, entry: ServerLogEntry): Promi
   ;(ctx.log as (msg: string) => void)(formattedMessage)
   ctx.account.log(formattedMessage, logPayload)
   if (configuredLevel === 'Debug') {
-    ;(ctx.log as (msg: string) => void)(
-      '[DEBUG] [lib/logger.lib] writeServerLog ctx.log done'
-    )
+    ;(ctx.log as (msg: string) => void)('[DEBUG] [lib/logger.lib] writeServerLog ctx.log done')
   }
 
   const payloadForHeap =
@@ -134,9 +137,7 @@ export async function writeServerLog(ctx: app.Ctx, entry: ServerLogEntry): Promi
     timestamp
   })
   if (configuredLevel === 'Debug') {
-    ;(ctx.log as (msg: string) => void)(
-      '[DEBUG] [lib/logger.lib] writeServerLog Heap create done'
-    )
+    ;(ctx.log as (msg: string) => void)('[DEBUG] [lib/logger.lib] writeServerLog Heap create done')
   }
 
   const socketId = getAdminLogsSocketId(ctx)
@@ -150,9 +151,7 @@ export async function writeServerLog(ctx: app.Ctx, entry: ServerLogEntry): Promi
     }
   } as any)
   if (configuredLevel === 'Debug') {
-    ;(ctx.log as (msg: string) => void)(
-      '[DEBUG] [lib/logger.lib] writeServerLog WebSocket sent'
-    )
+    ;(ctx.log as (msg: string) => void)('[DEBUG] [lib/logger.lib] writeServerLog WebSocket sent')
   }
 
   const webhook = await settingsLib.getLogWebhook(ctx)
@@ -179,8 +178,6 @@ export async function writeServerLog(ctx: app.Ctx, entry: ServerLogEntry): Promi
     )
   }
   if (configuredLevel === 'Debug') {
-    ;(ctx.log as (msg: string) => void)(
-      '[DEBUG] [lib/logger.lib] writeServerLog exit'
-    )
+    ;(ctx.log as (msg: string) => void)('[DEBUG] [lib/logger.lib] writeServerLog exit')
   }
 }

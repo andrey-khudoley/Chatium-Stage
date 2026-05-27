@@ -21,7 +21,7 @@ export async function ensureDefaultSettings(ctx: app.Ctx): Promise<void> {
     const existingSetting = await AnalyticsSettings.findOneBy(ctx, {
       key: 'project_name'
     })
-    
+
     if (!existingSetting) {
       await AnalyticsSettings.createOrUpdateBy(ctx, 'key', {
         key: 'project_name',

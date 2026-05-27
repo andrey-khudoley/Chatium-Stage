@@ -57,7 +57,11 @@ export const apiRunAllTestsRoute = app.get('/run-all', async (ctx, req) => {
       results
     }
   } catch (error: any) {
-    Debug.error(ctx, `[tests/api/run-all] Ошибка запуска тестов: ${error.message}`, 'E_RUN_ALL_TESTS_ERROR')
+    Debug.error(
+      ctx,
+      `[tests/api/run-all] Ошибка запуска тестов: ${error.message}`,
+      'E_RUN_ALL_TESTS_ERROR'
+    )
     return {
       success: false,
       error: error.message || 'Ошибка при запуске тестов'
@@ -82,10 +86,16 @@ export const apiRunSingleTestRoute = app.post('/run-single', async (ctx, req) =>
     Debug.info(ctx, `[tests/api/run-single] Получено тело запроса: ${JSON.stringify(req.body)}`)
     const { category, test } = req.body as { category: string; test: string }
 
-    Debug.info(ctx, `[tests/api/run-single] Парсинг параметров: category="${category}", test="${test}"`)
+    Debug.info(
+      ctx,
+      `[tests/api/run-single] Парсинг параметров: category="${category}", test="${test}"`
+    )
 
     if (!category || !test) {
-      Debug.warn(ctx, `[tests/api/run-single] ОШИБКА: Отсутствуют обязательные параметры: category=${category}, test=${test}`)
+      Debug.warn(
+        ctx,
+        `[tests/api/run-single] ОШИБКА: Отсутствуют обязательные параметры: category=${category}, test=${test}`
+      )
       return {
         success: false,
         error: 'Отсутствуют обязательные параметры: category и test'
@@ -105,7 +115,11 @@ export const apiRunSingleTestRoute = app.post('/run-single', async (ctx, req) =>
   } catch (error: any) {
     Debug.error(ctx, '[tests/api/run-single] === КРИТИЧЕСКАЯ ОШИБКА ===', 'E_RUN_SINGLE_TEST_ERROR')
     Debug.error(ctx, `[tests/api/run-single] Ошибка: ${error.message}`, 'E_RUN_SINGLE_TEST_ERROR')
-    Debug.error(ctx, `[tests/api/run-single] Stack: ${error.stack || 'N/A'}`, 'E_RUN_SINGLE_TEST_ERROR')
+    Debug.error(
+      ctx,
+      `[tests/api/run-single] Stack: ${error.stack || 'N/A'}`,
+      'E_RUN_SINGLE_TEST_ERROR'
+    )
     return {
       success: false,
       error: error.message || 'Ошибка при запуске теста'
@@ -130,11 +144,14 @@ export const apiGetManualSocketIdRoute = app.get('/get-manual-socket-id', async 
       socketId
     }
   } catch (error: any) {
-    Debug.error(ctx, `[tests/api/get-manual-socket-id] Ошибка: ${error.message}`, 'E_GET_SOCKET_ID_ERROR')
+    Debug.error(
+      ctx,
+      `[tests/api/get-manual-socket-id] Ошибка: ${error.message}`,
+      'E_GET_SOCKET_ID_ERROR'
+    )
     return {
       success: false,
       error: error.message || 'Ошибка при получении socketId'
     }
   }
 })
-

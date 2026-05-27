@@ -39,7 +39,9 @@ export async function createVisit(
     where: { campaignId: data.campaignId, fingerprintHash },
     limit: 10
   })
-  const existing = candidates.find((v) => v.ref && (v.registeredAt == null || v.registeredAt === undefined))
+  const existing = candidates.find(
+    (v) => v.ref && (v.registeredAt == null || v.registeredAt === undefined)
+  )
   if (existing && existing.ref) {
     return { visit: existing, ref: existing.ref, isNew: false }
   }
@@ -74,10 +76,7 @@ export async function createVisit(
 /**
  * Находит визит по полю ref.
  */
-export async function findVisitByRef(
-  ctx: app.Ctx,
-  ref: string
-): Promise<(typeof Visits.T) | null> {
+export async function findVisitByRef(ctx: app.Ctx, ref: string): Promise<typeof Visits.T | null> {
   return Visits.findOneBy(ctx, { ref })
 }
 

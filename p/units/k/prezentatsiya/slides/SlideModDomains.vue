@@ -38,8 +38,6 @@
           </div>
         </div>
       </div>
-
-
     </div>
   </div>
 </template>
@@ -50,7 +48,7 @@ defineProps({ active: Boolean })
 const domains = [
   { url: 'shop.company.ru', label: 'Интернет-магазин', color: '#3b82f6' },
   { url: 'school.company.ru', label: 'Онлайн-курсы', color: '#10b981' },
-  { url: 'blog.company.ru', label: 'Блог', color: '#f59e0b' },
+  { url: 'blog.company.ru', label: 'Блог', color: '#f59e0b' }
 ]
 </script>
 
@@ -67,14 +65,43 @@ const domains = [
   overflow-x: hidden;
 }
 
-.bg-effects { position: fixed; inset: 0; pointer-events: none; overflow: hidden; }
-.glow-orb { position: absolute; border-radius: 50%; filter: blur(140px); opacity: 0.12; animation: float 20s ease-in-out infinite; }
-.orb-1 { width: 500px; height: 500px; background: #3b82f6; top: -15%; left: -10%; }
-.orb-2 { width: 400px; height: 400px; background: #2563eb; bottom: -15%; right: -5%; animation-delay: -7s; }
+.bg-effects {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+.glow-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(140px);
+  opacity: 0.12;
+  animation: float 20s ease-in-out infinite;
+}
+.orb-1 {
+  width: 500px;
+  height: 500px;
+  background: #3b82f6;
+  top: -15%;
+  left: -10%;
+}
+.orb-2 {
+  width: 400px;
+  height: 400px;
+  background: #2563eb;
+  bottom: -15%;
+  right: -5%;
+  animation-delay: -7s;
+}
 
 @keyframes float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-30px); }
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-30px);
+  }
 }
 
 .content {
@@ -88,7 +115,9 @@ const domains = [
   gap: 40px;
 }
 
-.header { text-align: center; }
+.header {
+  text-align: center;
+}
 
 .title {
   font-family: var(--font-display);
@@ -245,24 +274,68 @@ const domains = [
   line-height: 1.5;
 }
 
-
-
 @media (max-width: 768px) {
-  .slide { padding: 20px 16px 12px; align-items: center; }
-  .content { gap: 16px; }
-  .title { font-size: clamp(28px, 6vw, 44px); }
-  .subtitle { font-size: clamp(16px, 2.5vw, 22px); margin-top: 8px; }
-  .schema { flex-direction: column; gap: 10px; }
-  .arrow-col { flex-direction: row; }
-  .connector-line { width: 30px; height: 2px; background: linear-gradient(to right, transparent, rgba(59, 130, 246, 0.3), transparent); }
-  .connector-node { width: 36px; height: 36px; font-size: 14px; }
-  .domain-card { padding: 8px 12px; gap: 8px; border-radius: 10px; }
-  .domain-url { font-size: 13px; }
-  .domain-label { font-size: 11px; }
-  .center-block { padding: 16px 14px; border-radius: 16px; }
-  .center-icon { width: 40px; height: 40px; margin-bottom: 8px; border-radius: 12px; }
-  .center-icon i { font-size: 18px; }
-  .center-title { font-size: 18px; margin-bottom: 4px; }
-  .center-desc { font-size: 13px; }
+  .slide {
+    padding: 20px 16px 12px;
+    align-items: center;
+  }
+  .content {
+    gap: 16px;
+  }
+  .title {
+    font-size: clamp(28px, 6vw, 44px);
+  }
+  .subtitle {
+    font-size: clamp(16px, 2.5vw, 22px);
+    margin-top: 8px;
+  }
+  .schema {
+    flex-direction: column;
+    gap: 10px;
+  }
+  .arrow-col {
+    flex-direction: row;
+  }
+  .connector-line {
+    width: 30px;
+    height: 2px;
+    background: linear-gradient(to right, transparent, rgba(59, 130, 246, 0.3), transparent);
+  }
+  .connector-node {
+    width: 36px;
+    height: 36px;
+    font-size: 14px;
+  }
+  .domain-card {
+    padding: 8px 12px;
+    gap: 8px;
+    border-radius: 10px;
+  }
+  .domain-url {
+    font-size: 13px;
+  }
+  .domain-label {
+    font-size: 11px;
+  }
+  .center-block {
+    padding: 16px 14px;
+    border-radius: 16px;
+  }
+  .center-icon {
+    width: 40px;
+    height: 40px;
+    margin-bottom: 8px;
+    border-radius: 12px;
+  }
+  .center-icon i {
+    font-size: 18px;
+  }
+  .center-title {
+    font-size: 18px;
+    margin-bottom: 4px;
+  }
+  .center-desc {
+    font-size: 13px;
+  }
 }
 </style>

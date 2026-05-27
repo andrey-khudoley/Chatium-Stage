@@ -4,21 +4,20 @@
       <div class="glow-orb orb-1"></div>
       <div class="glow-orb orb-2"></div>
     </div>
-    
-    <div class="container">
-      <div class="badge">
-        <i class="fas fa-gift"></i> Бонус 5 из 5
-      </div>
 
-      <h2 class="title">
-        <span class="grad-cyan">Вебинарная платформа</span> Chatium
-      </h2>
+    <div class="container">
+      <div class="badge"><i class="fas fa-gift"></i> Бонус 5 из 5</div>
+
+      <h2 class="title"><span class="grad-cyan">Вебинарная платформа</span> Chatium</h2>
 
       <div class="hero-block">
         <div class="hero-icon"><i class="fas fa-video"></i></div>
         <div class="hero-info">
           <h3>Замена Бизон</h3>
-          <p>Мы её сделали. Стилизуйте под себя и используйте вместо Геткурс или Бизон. Покажу отдельно как.</p>
+          <p>
+            Мы её сделали. Стилизуйте под себя и используйте вместо Геткурс или Бизон. Покажу
+            отдельно как.
+          </p>
         </div>
       </div>
 
@@ -96,8 +95,13 @@ defineProps({ active: Boolean })
 }
 
 @keyframes float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-20px); }
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-20px);
+  }
 }
 
 .container {
@@ -141,8 +145,13 @@ defineProps({ active: Boolean })
 }
 
 @keyframes gradient-shift {
-  0%, 100% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
 }
 
 .hero-block {
@@ -210,7 +219,7 @@ defineProps({ active: Boolean })
 .feature-card:hover {
   border-color: rgba(6, 182, 212, 0.3);
   transform: translateY(-4px);
-  box-shadow: 0 12px 28px rgba(0,0,0,0.2);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.2);
 }
 
 .feature-icon {
@@ -265,24 +274,51 @@ defineProps({ active: Boolean })
 }
 
 @media (max-width: 640px) {
-  .slide { align-items: flex-start; }
+  .slide {
+    align-items: flex-start;
+  }
   .hero-block {
     flex-direction: row;
     text-align: left;
     padding: 16px 14px;
     gap: 14px;
   }
-  .hero-icon { width: 44px; height: 44px; font-size: 20px; }
-  .hero-info h3 { font-size: 16px; }
-  .hero-info p { font-size: 13px; }
+  .hero-icon {
+    width: 44px;
+    height: 44px;
+    font-size: 20px;
+  }
+  .hero-info h3 {
+    font-size: 16px;
+  }
+  .hero-info p {
+    font-size: 13px;
+  }
   .features-grid {
     grid-template-columns: 1fr;
     gap: 10px;
   }
-  .feature-card { padding: 14px; text-align: left; display: flex; flex-direction: row; gap: 12px; align-items: center; }
-  .feature-icon { margin: 0; width: 38px; height: 38px; flex-shrink: 0; }
-  .feature-card h4 { font-size: 14px; margin-bottom: 2px; }
-  .feature-card p { font-size: 12px; }
+  .feature-card {
+    padding: 14px;
+    text-align: left;
+    display: flex;
+    flex-direction: row;
+    gap: 12px;
+    align-items: center;
+  }
+  .feature-icon {
+    margin: 0;
+    width: 38px;
+    height: 38px;
+    flex-shrink: 0;
+  }
+  .feature-card h4 {
+    font-size: 14px;
+    margin-bottom: 2px;
+  }
+  .feature-card p {
+    font-size: 12px;
+  }
   .value-block {
     justify-content: center;
     text-align: center;
@@ -290,19 +326,60 @@ defineProps({ active: Boolean })
 }
 
 @media (max-width: 480px) {
-  .slide { padding: 24px 14px 14px; }
-  .badge { font-size: 11px; padding: 6px 14px; margin-bottom: 16px; }
-  .title { font-size: 24px; margin-bottom: 24px; }
-  .hero-block { padding: 16px 18px; border-radius: 14px; margin-bottom: 20px; }
-  .hero-icon { width: 44px; height: 44px; font-size: 20px; border-radius: 12px; }
-  .hero-info h3 { font-size: 16px; }
-  .hero-info p { font-size: 13px; }
-  .feature-card { padding: 16px; border-radius: 12px; }
-  .feature-icon { width: 38px; height: 38px; font-size: 16px; border-radius: 10px; margin-bottom: 8px; }
-  .feature-card h4 { font-size: 14px; }
-  .feature-card p { font-size: 12px; }
-  .value-block { padding: 12px 16px; }
-  .value-label { font-size: 13px; }
-  .value-new { font-size: 16px; }
+  .slide {
+    padding: 24px 14px 14px;
+  }
+  .badge {
+    font-size: 11px;
+    padding: 6px 14px;
+    margin-bottom: 16px;
+  }
+  .title {
+    font-size: 24px;
+    margin-bottom: 24px;
+  }
+  .hero-block {
+    padding: 16px 18px;
+    border-radius: 14px;
+    margin-bottom: 20px;
+  }
+  .hero-icon {
+    width: 44px;
+    height: 44px;
+    font-size: 20px;
+    border-radius: 12px;
+  }
+  .hero-info h3 {
+    font-size: 16px;
+  }
+  .hero-info p {
+    font-size: 13px;
+  }
+  .feature-card {
+    padding: 16px;
+    border-radius: 12px;
+  }
+  .feature-icon {
+    width: 38px;
+    height: 38px;
+    font-size: 16px;
+    border-radius: 10px;
+    margin-bottom: 8px;
+  }
+  .feature-card h4 {
+    font-size: 14px;
+  }
+  .feature-card p {
+    font-size: 12px;
+  }
+  .value-block {
+    padding: 12px 16px;
+  }
+  .value-label {
+    font-size: 13px;
+  }
+  .value-new {
+    font-size: 16px;
+  }
 }
 </style>

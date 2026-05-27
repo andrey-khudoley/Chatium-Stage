@@ -17,7 +17,7 @@ export const LavaPaymentContract = Heap.Table('t__lava-gc-integration__payment-c
   status: Heap.String({ customMeta: { title: 'Статус контракта' } }),
   request_id: Heap.String({ customMeta: { title: 'Корреляционный ID' } }),
   created_at: Heap.Number({ customMeta: { title: 'Создание (Unix ms)' } }),
-  updated_at: Heap.Number({ customMeta: { title: 'Обновление (Unix ms)' } }),
+  updated_at: Heap.Number({ customMeta: { title: 'Обновление (Unix ms)' } })
 })
 
 export default LavaPaymentContract

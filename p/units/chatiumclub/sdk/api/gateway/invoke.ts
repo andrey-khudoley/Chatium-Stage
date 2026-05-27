@@ -49,7 +49,10 @@ export const invokeGatewayRoute = app.post('/', async (ctx, req) => {
   if (!op) {
     return {
       ok: false,
-      error: { code: 'SDK_BAD_REQUEST', message: 'Поле op обязательно: укажите имя операции gateway.' },
+      error: {
+        code: 'SDK_BAD_REQUEST',
+        message: 'Поле op обязательно: укажите имя операции gateway.'
+      },
       requestId: null,
       warnings: [],
       gatewayHttpStatus: 0
@@ -81,7 +84,11 @@ export const invokeGatewayRoute = app.post('/', async (ctx, req) => {
     })
     return {
       ok: false,
-      error: { code: 'SDK_INTERNAL_ERROR', message: 'Внутренняя ошибка тонкого клиента.', details: { error: msg } },
+      error: {
+        code: 'SDK_INTERNAL_ERROR',
+        message: 'Внутренняя ошибка тонкого клиента.',
+        details: { error: msg }
+      },
       requestId: null,
       warnings: [],
       gatewayHttpStatus: 0

@@ -16,22 +16,22 @@
                 <label class="block text-sm font-semibold mb-2 text-gray-700">
                   <i class="fas fa-user text-primary mr-2"></i>Ваше имя *
                 </label>
-                <input 
+                <input
                   v-model="form.clientName"
-                  type="text" 
+                  type="text"
                   required
                   class="w-full px-4 py-3 rounded-xl border border-gray-300 bg-white"
                   placeholder="Анна"
                 />
               </div>
-              
+
               <div>
                 <label class="block text-sm font-semibold mb-2 text-gray-700">
                   <i class="fas fa-phone text-primary mr-2"></i>Телефон *
                 </label>
-                <input 
+                <input
                   v-model="form.clientPhone"
-                  type="tel" 
+                  type="tel"
                   required
                   class="w-full px-4 py-3 rounded-xl border border-gray-300 bg-white"
                   placeholder="+7 (999) 123-45-67"
@@ -43,7 +43,7 @@
               <label class="block text-sm font-semibold mb-2 text-gray-700">
                 <i class="fas fa-palette text-primary mr-2"></i>Выберите услугу *
               </label>
-              <select 
+              <select
                 v-model="form.service"
                 required
                 class="w-full px-4 py-3 rounded-xl border border-gray-300 bg-white"
@@ -60,20 +60,20 @@
                 <label class="block text-sm font-semibold mb-2 text-gray-700">
                   <i class="fas fa-calendar text-primary mr-2"></i>Дата *
                 </label>
-                <input 
+                <input
                   v-model="form.date"
-                  type="date" 
+                  type="date"
                   required
                   :min="minDate"
                   class="w-full px-4 py-3 rounded-xl border border-gray-300 bg-white"
                 />
               </div>
-              
+
               <div>
                 <label class="block text-sm font-semibold mb-2 text-gray-700">
                   <i class="fas fa-clock text-primary mr-2"></i>Время *
                 </label>
-                <select 
+                <select
                   v-model="form.time"
                   required
                   class="w-full px-4 py-3 rounded-xl border border-gray-300 bg-white"
@@ -92,7 +92,7 @@
               <label class="block text-sm font-semibold mb-2 text-gray-700">
                 <i class="fas fa-comment text-primary mr-2"></i>Комментарий
               </label>
-              <textarea 
+              <textarea
                 v-model="form.comment"
                 rows="4"
                 class="w-full px-4 py-3 rounded-xl border border-gray-300 bg-white resize-none"
@@ -100,7 +100,7 @@
               ></textarea>
             </div>
 
-            <button 
+            <button
               type="submit"
               :disabled="isSubmitting"
               class="w-full btn-primary text-white px-8 py-4 rounded-xl font-semibold inline-flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -115,7 +115,9 @@
               <i class="fas fa-check-circle text-2xl"></i>
               <div>
                 <div class="font-semibold">Заявка успешно отправлена!</div>
-                <div class="text-sm">Я свяжусь с вами в ближайшее время для подтверждения записи.</div>
+                <div class="text-sm">
+                  Я свяжусь с вами в ближайшее время для подтверждения записи.
+                </div>
               </div>
             </div>
           </div>
@@ -165,7 +167,7 @@ const submitForm = async () => {
 
   try {
     await apiCreateAppointmentRoute.run(ctx, form.value)
-    
+
     showSuccess.value = true
     form.value = {
       clientName: '',

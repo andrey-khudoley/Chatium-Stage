@@ -4,8 +4,24 @@
     <div v-if="loading" class="success-center">
       <div class="success-spinner">
         <svg viewBox="0 0 50 50">
-          <circle cx="25" cy="25" r="20" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-dasharray="90 150" stroke-dashoffset="0">
-            <animateTransform attributeName="transform" type="rotate" dur="1s" values="0 25 25;360 25 25" repeatCount="indefinite" />
+          <circle
+            cx="25"
+            cy="25"
+            r="20"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="3"
+            stroke-linecap="round"
+            stroke-dasharray="90 150"
+            stroke-dashoffset="0"
+          >
+            <animateTransform
+              attributeName="transform"
+              type="rotate"
+              dur="1s"
+              values="0 25 25;360 25 25"
+              repeatCount="indefinite"
+            />
           </circle>
         </svg>
       </div>
@@ -24,7 +40,7 @@
     <!-- Success -->
     <div v-else class="success-container">
       <div class="success-glow"></div>
-      
+
       <div class="success-icon">
         <i class="fas fa-check"></i>
       </div>
@@ -53,7 +69,7 @@ import { episodePageRoute } from '../episode'
 import { initThemeWatcher, currentTheme } from '../shared/theme'
 
 const props = defineProps({
-  submissionId: { type: String, required: true },
+  submissionId: { type: String, required: true }
 })
 
 const loading = ref(true)
@@ -115,8 +131,14 @@ onMounted(async () => {
 }
 
 @keyframes successFadeIn {
-  from { opacity: 0; transform: translateY(12px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .success-spinner {
@@ -191,8 +213,14 @@ onMounted(async () => {
 }
 
 @keyframes successPop {
-  from { opacity: 0; transform: scale(0.4); }
-  to { opacity: 1; transform: scale(1); }
+  from {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 .success-title {

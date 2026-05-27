@@ -46,7 +46,10 @@ export const settingsLibTestRoute = app.get('/', async (ctx, req) => {
 
   if (shouldRun('getSettingString')) {
     try {
-      const projectName = await settingsLib.getSettingString(ctx, settingsLib.SETTING_KEYS.PROJECT_NAME)
+      const projectName = await settingsLib.getSettingString(
+        ctx,
+        settingsLib.SETTING_KEYS.PROJECT_NAME
+      )
       results.push({
         id: 'getSettingString',
         title: 'getSettingString (project_name)',

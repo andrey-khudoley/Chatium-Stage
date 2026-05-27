@@ -1,14 +1,17 @@
 # Architecture
 
 ## Назначение
+
 Базовый шаблон проекта Chatium с минимальным набором страниц и документации.
 
 ## Ограничения платформы
+
 - Серверная инфраструктура предоставляется Chatium.
 - Нельзя менять стек и зависимости.
 - Деплой — автоматически при пуше.
 
 ## Основные сценарии
+
 - Открыть главную страницу.
 - Авторизоваться и попасть в профиль.
 - Открыть админку (только роль Admin).
@@ -29,7 +32,7 @@
 - В WYSIWYG-редакторе заметки поддерживается smart-paste: при вставке Markdown из `text/plain` выполняется базовое форматирование в HTML; при наличии `text/html` в буфере используется готовая разметка источника.
 - В Markdown-ветке smart-paste пустые строки также сохраняются, чтобы между блоками не терялись визуальные разделители абзацев.
 - Вставка HTML при paste выполняется через прямую DOM-вставку (Range API, `insertHtmlAtCursor`) вместо `execCommand('insertHTML')`, чтобы браузер не удалял пустые абзацы. Пустые строки помечены классом `wy-blank-line` c визуальной высотой через `padding` (`height: 0; overflow: hidden; font-size: 0; line-height: 0`).
-- Если курсор внутри блока кода (`pre[data-language]` / вложенный `<code>`), paste обрабатывается отдельно: в буфер берётся только plain text (при отсутствии `text/plain` — текст из `text/html` через временный `div`), вставка через Range внутрь `<code>` (`insertPlainTextIntoCodeBlockAtSelection`), без `insertHtmlAtCursor` — иначе та функция поднимала бы точку вставки до корня `contenteditable` и создавала узлы *после* `<pre>`.
+- Если курсор внутри блока кода (`pre[data-language]` / вложенный `<code>`), paste обрабатывается отдельно: в буфер берётся только plain text (при отсутствии `text/plain` — текст из `text/html` через временный `div`), вставка через Range внутрь `<code>` (`insertPlainTextIntoCodeBlockAtSelection`), без `insertHtmlAtCursor` — иначе та функция поднимала бы точку вставки до корня `contenteditable` и создавала узлы _после_ `<pre>`.
 - Для диагностики проблем форматирования в `WysiwygEditor` добавлен переключатель режимов `WYSIWYG / HTML`: можно открыть исходник текущей заметки, сверить и вручную поправить HTML, затем вернуться в визуальный режим.
 - В режиме `HTML` исходник заметки не должен начинаться с пустой строки: при переходе из `WYSIWYG` редактор отбрасывает технические ведущие переводы строки (`\r/\n`) в source-представлении.
 - Переключение `WYSIWYG / HTML` в `WysiwygEditor` работает с устойчивой синхронизацией буфера (`sourceHtml`/`modelValue`/последнее известное HTML): при быстром переключении режимов контент заметки не должен пропадать из-за перезаписи пустым значением.
@@ -39,6 +42,7 @@
 - **Блок кода с подсветкой синтаксиса** реализован в `WysiwygEditor.vue` через highlight.js v11.11.1, загружаемый с CDN `cdnjs.cloudflare.com` (тема `atom-one-dark`). HTML-структура: `<pre data-language="..."><code class="hljs">...</code></pre>`. Язык хранится в атрибуте `data-language` на `<pre>` — сохраняется в HTML-строке заметки и восстанавливается при загрузке. Подсветка загружается лениво (JS + CSS при первом использовании). Floating-пикер языка (`Teleport` в `body`) при фокусе внутри блока кода: позиция `fixed` по `rect.left`/`rect.top` активного `pre`, смещение вверх на высоту пикера + зазор (`translateY(calc(-100% - 0.3rem))`) — левый верх над блоком; 25 языков. Последний выбранный в пикере язык пишется в `localStorage` (`assistant-journal-preferred-code-lang`, только значения из списка) и подставляется как язык по умолчанию при вставке нового блока кода с панели и для fenced-блоков Markdown без указания языка при smart-paste. Подсветка обновляется при: смене языка, уходе фокуса из блока, вводе текста (дебаунс 700ms с сохранением позиции курсора через character-offset). При вставке Markdown с fenced code blocks язык парсится и подсвечивается автоматически. Экспорт в Markdown включает язык после ` ``` `. CSS: акцентная левая рамка на `<pre data-language>`, свечение при фокусе, `.hljs` background overridden на transparent.
 
 ## Роутинг
+
 - `index.tsx` — главная (SSR + Vue), единственный роут в корне.
 - `web/admin/index.tsx` — админка, `requireAccountRole('Admin')`.
 - `web/profile/index.tsx` — профиль, `requireRealUser()`; SSR передаёт `timezoneOffsetHours` из `lib/user-settings.lib` (Heap `user-settings`).
@@ -54,6 +58,7 @@
 - `web/login/index.tsx` — вход (редирект на системный `/s/auth/signin`).
 
 ## Стили UI
+
 - На `/web/timers` общие CRT-стили трёх вкладок (`Помидор`, `Таймер`, `Секундомер`) — верхняя панель фазы, панель действий, кнопки `.pomo-btn`, блок ошибки — заданы **вторым блоком `<style>` без `scoped` в `pages/PomodoroPage.vue`** (отдельный `.css` и `import '*.css'` из `<script>` в бандлере Chatium не подключаются; стили в SFC — тот же механизм, что у остальных экранов); `PomodoroTaskSelector` и `FocusClockPane` используют один набор классов.
 - Глобальная читабельность UI централизована в `styles.tsx`: `baseHtmlStyles` задаёт базовый `font-size` (desktop `17px`, mobile `16px`) и единый `line-height`; это используется как общий масштаб типографики для всех страниц без точечного ручного тюнинга каждого экрана.
 - Для консистентности между модулями (`Home`, `Tasks`, `Journal`, `Pomodoro`, `Admin`, `Profile`, `Tests`) локальные `font-size` в Vue-компонентах дополнительно нормализуются при UX-итерациях: приоритет — читаемые значения и единая визуальная иерархия заголовков/подписей/вспомогательных меток.
@@ -65,27 +70,29 @@
 
 Принцип разделения ответственности при работе с данными (см. [ADR-0002](ADR/0002-settings-heap-and-layered-api.md)):
 
-| Слой | Каталог | Ответственность |
-| --- | --- | --- |
-| **Таблицы** | `tables/` | Схемы Heap (поля, типы). Только определение структуры данных. |
-| **Репозитории** | `repos/` | Работа с БД: CRUD, запросы. Никакой бизнес‑логики, только вызовы Heap API. |
-| **Бизнес‑логика** | `lib/` | Правила, дефолты, валидация значений, вычисления. Вызывает репозитории. |
-| **API** | `api/` | HTTP‑эндпоинты, парсинг и первичная валидация запросов, проверка прав. Вызывает lib. |
+| Слой              | Каталог   | Ответственность                                                                      |
+| ----------------- | --------- | ------------------------------------------------------------------------------------ |
+| **Таблицы**       | `tables/` | Схемы Heap (поля, типы). Только определение структуры данных.                        |
+| **Репозитории**   | `repos/`  | Работа с БД: CRUD, запросы. Никакой бизнес‑логики, только вызовы Heap API.           |
+| **Бизнес‑логика** | `lib/`    | Правила, дефолты, валидация значений, вычисления. Вызывает репозитории.              |
+| **API**           | `api/`    | HTTP‑эндпоинты, парсинг и первичная валидация запросов, проверка прав. Вызывает lib. |
 
 Поток данных: `HTTP → API → lib → repos → Heap`.
 
 ## Структура каталогов
+
 - `config/` — маршруты и `PROJECT_ROOT`.
 - `web/` — браузерные роуты модулей (admin, profile, journal, tasks, tools, pomodoro, tests, login).
 - `pages/` — Vue‑страницы (минимальные, в т.ч. JournalPage, TasksPage, ToolsPage, PomodoroPage).
 - `components/` — переиспользуемые Vue‑компоненты (Header, AppFooter, GlobalGlitch, LogoutModal); подкаталог `components/journal/` — панели разделов журнала (`JournalNotebookPane` — полный блокнот: папки, категории, `NotebookNoteEditor`; `JournalInboxPane` — упрощённый инбокс: список + textarea, архив, мультиселект и `NotebookBulkBar` без папок; `JournalHabitsPane` — таблица привычек, порядок строк на текущей неделе меняется HTML5 drag-and-drop за ручку в ячейке названия); остальные — заглушки и панели дня/недели/месяца/задач, где ещё не выделены отдельно.
 - `api/` — API‑эндпоинты (получение и валидация входных данных). File-based: один файл — один эндпоинт с `/`. Примеры: `api/settings/list.ts`, `api/journal/notes/`, `api/tasks/tree/get.ts`, `api/tools/state.ts`, `api/tools/control.ts`, `api/logger/log.ts`, `api/tests/list.ts`.
-- `tables/` — Heap‑таблицы (settings, logs, journal-notes, inbox-notes, notebook-*, task-*, **user-tool-state**, legacy **pomodoro-state** (только миграция), pomodoro-launches).
-- `repos/` — репозитории (settings, logs, journal-*, tasks, **user-tool-state**, **tool-segments** (pomodoro-launches), logs.repo — findBeforeTimestamp для пагинации).
+- `tables/` — Heap‑таблицы (settings, logs, journal-notes, inbox-notes, notebook-_, task-_, **user-tool-state**, legacy **pomodoro-state** (только миграция), pomodoro-launches).
+- `repos/` — репозитории (settings, logs, journal-\*, tasks, **user-tool-state**, **tool-segments** (pomodoro-launches), logs.repo — findBeforeTimestamp для пагинации).
 - `lib/` — бизнес‑логика (settings.lib, logger.lib, tasks-types, **focus-tools.lib** — помидор/таймер/секундомер, lock, сегменты, push в сокет; pomodoro-types / pomodoro-stats-day / pomodoro-phase-sounds для UI и типов).
 - `shared/` — общий код (preloader: `completeSequence` после `load` (и таймаут 3 с); безопасное добавление строк в терминал; затем `document.fonts.ready` и `boot-static-ready`; резерв через 12 с / принудительное скрытие через 15 с при зависании; `bootUi.ts` — шрифты (таймаут 10 с), nextTick, rAF, `hideBootLoader`; фон оверлея `#0a0a0a`; logLevel для клиента, logger syslog RFC 5424, createComponentLogger, setLogSink/LogEntry, logEmergency…logDebug с порогом).
 - `docs/` — документация проекта.
 
 ## Интеграции
+
 - Внешние сервисы: нет.
 - Внутренние SDK: стандартные модули Chatium.

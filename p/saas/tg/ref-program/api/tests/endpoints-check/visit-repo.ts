@@ -101,7 +101,8 @@ export const visitRepoTestRoute = app.get('/', async (ctx, req) => {
               passed: createOk
             })
             if (!createOk) {
-              results[results.length - 1].error = `isNew=${r1.isNew}, ref=${r1.ref}, visit.id=${r1.visit?.id}`
+              results[results.length - 1].error =
+                `isNew=${r1.isNew}, ref=${r1.ref}, visit.id=${r1.visit?.id}`
             }
           } catch (e) {
             results.push({
@@ -120,14 +121,16 @@ export const visitRepoTestRoute = app.get('/', async (ctx, req) => {
               pageId,
               fingerprint: TEST_FINGERPRINT
             })
-            const idempotentOk = r2.isNew === false && typeof r2.ref === 'string' && r2.ref.length > 0
+            const idempotentOk =
+              r2.isNew === false && typeof r2.ref === 'string' && r2.ref.length > 0
             results.push({
               id: 'createVisit-idempotent',
               title: 'createVisit (повтор — тот же ref)',
               passed: idempotentOk
             })
             if (!idempotentOk) {
-              results[results.length - 1].error = `ожидался isNew=false, получено isNew=${r2.isNew}, ref=${r2.ref}`
+              results[results.length - 1].error =
+                `ожидался isNew=false, получено isNew=${r2.isNew}, ref=${r2.ref}`
             }
           } catch (e) {
             results.push({
@@ -197,7 +200,9 @@ export const visitRepoTestRoute = app.get('/', async (ctx, req) => {
                 passed: markOk
               })
               if (!markOk) {
-                results[results.length - 1].error = after ? 'registeredAt не установлен' : 'визит не найден'
+                results[results.length - 1].error = after
+                  ? 'registeredAt не установлен'
+                  : 'визит не найден'
               }
             } catch (e) {
               results.push({

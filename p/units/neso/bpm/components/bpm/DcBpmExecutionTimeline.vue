@@ -12,7 +12,11 @@ defineProps<{
 <template>
   <DcBpmPanel :title="title" :hint="hint">
     <ul class="dc-bpm-execution-timeline">
-      <li v-for="event in events" :key="`${event.time}-${event.text}`" :class="`type-${event.type}`">
+      <li
+        v-for="event in events"
+        :key="`${event.time}-${event.text}`"
+        :class="`type-${event.type}`"
+      >
         <span class="dc-bpm-execution-timeline__time mono">{{ event.time }}</span>
         <span class="dc-bpm-execution-timeline__text">{{ event.text }}</span>
       </li>

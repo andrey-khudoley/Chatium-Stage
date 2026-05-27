@@ -5,29 +5,29 @@
         <button @click="$emit('close')" class="close-btn">
           <i class="fas fa-times"></i>
         </button>
-        
+
         <div class="chat-avatar-wrapper">
           <div class="chat-avatar" :style="avatarStyle">
             <span v-if="!hasAvatar">{{ initials }}</span>
           </div>
         </div>
-        
+
         <h2 class="chat-name">
           <i v-if="chatType === 'channel'" class="fas fa-bullhorn" title="Канал"></i>
           <i v-else-if="chatType === 'group'" class="fas fa-users" title="Групповой чат"></i>
           <i v-else-if="chatType === 'direct'" class="fas fa-user" title="Личный чат"></i>
           <span>{{ chatTitle }}</span>
         </h2>
-        
+
         <p class="chat-type">{{ typeLabel }}</p>
       </div>
-      
+
       <div class="chat-profile-body">
         <div v-if="chatDescription" class="info-section">
           <h3>Описание</h3>
           <p class="description">{{ chatDescription }}</p>
         </div>
-        
+
         <div class="info-section">
           <h3>Информация</h3>
           <div class="info-item">
@@ -44,15 +44,13 @@
           </div>
         </div>
       </div>
-      
+
       <div class="chat-profile-footer">
         <button @click="goToChat" class="btn-primary btn-full">
           <i class="fas fa-arrow-right"></i>
           Перейти в {{ typeLabel.toLowerCase() }}
         </button>
-        <button @click="$emit('close')" class="btn-secondary btn-full">
-          Закрыть
-        </button>
+        <button @click="$emit('close')" class="btn-secondary btn-full">Закрыть</button>
       </div>
     </div>
   </div>
@@ -98,28 +96,33 @@ const hasAvatar = computed(() => !!props.avatarHash)
 
 const initials = computed(() => {
   if (!props.chatTitle) return '?'
-  return props.chatTitle.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase()
+  return props.chatTitle
+    .split(' ')
+    .map((w) => w[0])
+    .join('')
+    .substring(0, 2)
+    .toUpperCase()
 })
 
 const avatarStyle = computed(() => {
   if (props.avatarHash) {
     return {
-      background: `url(https://fs.chatium.ru/thumbnail/${props.avatarHash}/s/300x) center/cover no-repeat`,
+      background: `url(https://fs.chatium.ru/thumbnail/${props.avatarHash}/s/300x) center/cover no-repeat`
     }
   }
-  
+
   // Градиент по умолчанию
   const colors = [
     ['#667eea', '#764ba2'],
     ['#f093fb', '#f5576c'],
     ['#4facfe', '#00f2fe'],
     ['#43e97b', '#38f9d7'],
-    ['#fa709a', '#fee140'],
+    ['#fa709a', '#fee140']
   ]
   const index = (props.chatId?.charCodeAt(0) || 0) % colors.length
   const [from, to] = colors[index]
   return {
-    background: `linear-gradient(135deg, ${from} 0%, ${to} 100%)`,
+    background: `linear-gradient(135deg, ${from} 0%, ${to} 100%)`
   }
 })
 
@@ -184,7 +187,9 @@ function goToChat() {
   justify-content: center;
   cursor: pointer;
   color: var(--text-secondary, #667781);
-  transition: background 0.2s, color 0.2s;
+  transition:
+    background 0.2s,
+    color 0.2s;
 }
 
 .close-btn:hover {
@@ -305,7 +310,9 @@ function goToChat() {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  transition: background 0.2s, opacity 0.2s;
+  transition:
+    background 0.2s,
+    opacity 0.2s;
 }
 
 .btn-full {

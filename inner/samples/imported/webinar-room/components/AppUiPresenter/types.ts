@@ -8,7 +8,7 @@ export interface AppUiBox {
   style?: AppUiStyle
   containerStyle?: AppUiStyle
   blocks?: AppUiBlocks
-}  
+}
 
 export interface AppUiButton {
   type: 'button'

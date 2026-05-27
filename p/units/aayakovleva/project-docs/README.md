@@ -1,5 +1,5 @@
 ---
-title: "Документация проекта: GetCourse платежи (Яковлева / olga-getcourse-payments-c7d5a1)"
+title: 'Документация проекта: GetCourse платежи (Яковлева / olga-getcourse-payments-c7d5a1)'
 type: index
 project_hash: c7d5a1
 created: 2026-05-24
@@ -24,48 +24,49 @@ tags:
 
 Проект распределён по **трём** местам воркспэйса. Документация каждого модуля лежит рядом с его кодом; кросс-проектные материалы — в этом хабе.
 
-| Что | Где в воркспэйсе | Роль |
-|---|---|---|
-| **Проектный хаб** (этот каталог) | `p/units/aayakovleva/project-docs/` | Бриф, решения, приёмка, references, коммерция, legal, заметки, отменённый webhook-proxy, база знаний сервисов |
-| **Gateway (LifePay)** | `p/saas/gw/lifepay/` | Серверный шлюз к LifePay: контур `bills_v1`, операции `createBill`/`getBillStatus`/`cancelBill`. SSOT в `docs/gateway/` |
-| **Клиентская панель** | `p/units/aayakovleva/sbp-client/` | Хранилище секретов магазина, прокладка `POST /api/lp/invoke`, приёмник webhook, виджет-бандл для GC, дашборд. Документы в `docs/` |
+| Что                              | Где в воркспэйсе                    | Роль                                                                                                                              |
+| -------------------------------- | ----------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| **Проектный хаб** (этот каталог) | `p/units/aayakovleva/project-docs/` | Бриф, решения, приёмка, references, коммерция, legal, заметки, отменённый webhook-proxy, база знаний сервисов                     |
+| **Gateway (LifePay)**            | `p/saas/gw/lifepay/`                | Серверный шлюз к LifePay: контур `bills_v1`, операции `createBill`/`getBillStatus`/`cancelBill`. SSOT в `docs/gateway/`           |
+| **Клиентская панель**            | `p/units/aayakovleva/sbp-client/`   | Хранилище секретов магазина, прокладка `POST /api/lp/invoke`, приёмник webhook, виджет-бандл для GC, дашборд. Документы в `docs/` |
 
 > `p/saas/gateways/gc_api` — **отдельный** проект (GetCourse-API gateway), к этой задаче не относится.
 
 ## Точки входа по задаче
 
-| Если нужно | Открывать |
-|---|---|
-| Понять проект целиком, статус, журнал | [brief.md](brief.md) |
-| Понять, как устроен LifePay-gateway (контракты, ошибки, секреты) | [gateway/operation-manual.md](../../../saas/gw/lifepay/docs/gateway/operation-manual.md) (SSOT) |
-| Запустить/продолжить разработку gateway | [gateway/implementation-plan.md](../../../saas/gw/lifepay/docs/gateway/implementation-plan.md) |
-| Спроектировать тестовый прогон gateway | [gateway/testing-strategy.md](../../../saas/gw/lifepay/docs/gateway/testing-strategy.md) |
-| Понять раскладку способов оплаты на странице школы (правило 50 000 ₽) | [payment-scheme.md](../sbp-client/docs/architecture/payment-scheme.md) |
-| Увидеть всю систему на одной диаграмме | [architecture/data-flow.md](architecture/data-flow.md) |
-| Понять модель доступа к клиентской панели | [ADR 0003 — internal-access-control](../sbp-client/docs/ADR/0003-internal-access-control.md) |
-| Найти обоснование «почему bills_v1, а не ECOM» | [ADR 0001 — lifepay-api-choice](../../../saas/gw/lifepay/docs/ADR/0003-lifepay-api-choice.md) |
-| Свериться с приёмкой клиента | [testing/acceptance-criteria.md](testing/acceptance-criteria.md) |
-| Узнать роль каждого внешнего сервиса | [references/external-services-overview.md](references/external-services-overview.md) |
-| Разобраться в API LifePay/ОТП/Т-Банк | [knowledge/](knowledge/) |
+| Если нужно                                                            | Открывать                                                                                       |
+| --------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| Понять проект целиком, статус, журнал                                 | [brief.md](brief.md)                                                                            |
+| Понять, как устроен LifePay-gateway (контракты, ошибки, секреты)      | [gateway/operation-manual.md](../../../saas/gw/lifepay/docs/gateway/operation-manual.md) (SSOT) |
+| Запустить/продолжить разработку gateway                               | [gateway/implementation-plan.md](../../../saas/gw/lifepay/docs/gateway/implementation-plan.md)  |
+| Спроектировать тестовый прогон gateway                                | [gateway/testing-strategy.md](../../../saas/gw/lifepay/docs/gateway/testing-strategy.md)        |
+| Понять раскладку способов оплаты на странице школы (правило 50 000 ₽) | [payment-scheme.md](../sbp-client/docs/architecture/payment-scheme.md)                          |
+| Увидеть всю систему на одной диаграмме                                | [architecture/data-flow.md](architecture/data-flow.md)                                          |
+| Понять модель доступа к клиентской панели                             | [ADR 0003 — internal-access-control](../sbp-client/docs/ADR/0003-internal-access-control.md)    |
+| Найти обоснование «почему bills_v1, а не ECOM»                        | [ADR 0001 — lifepay-api-choice](../../../saas/gw/lifepay/docs/ADR/0003-lifepay-api-choice.md)   |
+| Свериться с приёмкой клиента                                          | [testing/acceptance-criteria.md](testing/acceptance-criteria.md)                                |
+| Узнать роль каждого внешнего сервиса                                  | [references/external-services-overview.md](references/external-services-overview.md)            |
+| Разобраться в API LifePay/ОТП/Т-Банк                                  | [knowledge/](knowledge/)                                                                        |
 
 ## Структура хаба
 
-| Папка/файл | Что внутри |
-|---|---|
-| [brief.md](brief.md) | Проектный бриф: статус, реквизиты, скоуп, коммерческая рамка, журнал. |
-| [decisions/](decisions/README.md) | Реестр ADR проекта (тела решений — в модулях). |
-| [architecture/data-flow.md](architecture/data-flow.md) | Sequence-диаграмма всей системы, каналы данных, карта секретов. |
-| [testing/acceptance-criteria.md](testing/acceptance-criteria.md) | Бизнес-приёмочные критерии заказчика. |
-| [references/external-services-overview.md](references/external-services-overview.md) | Обзор внешних сервисов (LifePay, GetCourse, ОТП, Lava Top, Т-Банк, GetCourse Pay). |
-| [commercial/](commercial/) | Коммерческое предложение (черновики + `.docx` + извлечённый текст). |
-| [legal/](legal/) | Договор №1, ТЗ №1, NDA (`.docx` + извлечённый текст). |
-| [notes/](notes/) | Переписки, диалог с поддержкой LifePay, первый живой webhook. |
-| [webhook-proxy/](webhook-proxy/) | Спецификация и план VDS-прокси — **отменено** (Chatium поддержал multipart нативно 18.05). Хранится как историческая справка. |
-| [knowledge/](knowledge/) | База знаний по платёжным сервисам: `lifepay/`, `otp-bank/`, `t-bank/`, `chatium/multipart-form-data.md`. |
+| Папка/файл                                                                           | Что внутри                                                                                                                    |
+| ------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------- |
+| [brief.md](brief.md)                                                                 | Проектный бриф: статус, реквизиты, скоуп, коммерческая рамка, журнал.                                                         |
+| [decisions/](decisions/README.md)                                                    | Реестр ADR проекта (тела решений — в модулях).                                                                                |
+| [architecture/data-flow.md](architecture/data-flow.md)                               | Sequence-диаграмма всей системы, каналы данных, карта секретов.                                                               |
+| [testing/acceptance-criteria.md](testing/acceptance-criteria.md)                     | Бизнес-приёмочные критерии заказчика.                                                                                         |
+| [references/external-services-overview.md](references/external-services-overview.md) | Обзор внешних сервисов (LifePay, GetCourse, ОТП, Lava Top, Т-Банк, GetCourse Pay).                                            |
+| [commercial/](commercial/)                                                           | Коммерческое предложение (черновики + `.docx` + извлечённый текст).                                                           |
+| [legal/](legal/)                                                                     | Договор №1, ТЗ №1, NDA (`.docx` + извлечённый текст).                                                                         |
+| [notes/](notes/)                                                                     | Переписки, диалог с поддержкой LifePay, первый живой webhook.                                                                 |
+| [webhook-proxy/](webhook-proxy/)                                                     | Спецификация и план VDS-прокси — **отменено** (Chatium поддержал multipart нативно 18.05). Хранится как историческая справка. |
+| [knowledge/](knowledge/)                                                             | База знаний по платёжным сервисам: `lifepay/`, `otp-bank/`, `t-bank/`, `chatium/multipart-form-data.md`.                      |
 
 ## Документация модулей (рядом с кодом)
 
 **Gateway `p/saas/gw/lifepay/docs/`:**
+
 - [docs/README.md](../../../saas/gw/lifepay/docs/README.md) — **индекс документации модуля** (карта `architecture.md`/`api.md`/`data.md`/`imports.md`, ADR, gateway, LLM).
 - [gateway/operation-manual.md](../../../saas/gw/lifepay/docs/gateway/operation-manual.md) — SSOT разработки (контракты `/v1/{op}`, секреты, коды ошибок, наблюдаемость).
 - [gateway/implementation-plan.md](../../../saas/gw/lifepay/docs/gateway/implementation-plan.md) — план Прототип → MVP → Прод (вкл. §1.11 внутренние права доступа).
@@ -74,6 +75,7 @@ tags:
 - Сопутствующие реестры операций: `gateway/lp-unified-op-registry-v0.md`, `gateway/lp-op-http-mapping.json`, `gateway/lp-required-fields-by-op.json` (стабы-указатели на код-каталог).
 
 **Клиентская панель `p/units/aayakovleva/sbp-client/docs/`:**
+
 - [docs/README.md](../sbp-client/docs/README.md) — **индекс документации модуля** (карта `architecture.md`/`api.md`/`data.md`/`imports.md`, ADR, payment-scheme, LLM).
 - [architecture/payment-scheme.md](../sbp-client/docs/architecture/payment-scheme.md) — бизнес-логика виджета (раскладка способов, правило 50 000 ₽).
 - [ADR 0003 — internal-access-control](../sbp-client/docs/ADR/0003-internal-access-control.md) — проектный ADR 0003.

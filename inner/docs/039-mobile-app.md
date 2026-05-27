@@ -1,4 +1,5 @@
 @chatium
+
 # Модуль @app/mobile-app: Ссылки и действия мобильного приложения
 
 Краткий справочник по модулю `@app/mobile-app` — генерация ссылок на мобильное приложение и URL для run action. Типизация: `node_modules/@app/mobile-app/index.d.ts`.

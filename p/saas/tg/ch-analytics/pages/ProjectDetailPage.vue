@@ -3,17 +3,22 @@ import { ref, onMounted, onUnmounted, computed } from 'vue'
 import Header from '../shared/Header.vue'
 import AlertModal from '../shared/AlertModal.vue'
 import ConfirmModal from '../shared/ConfirmModal.vue'
-import { 
-  apiGetProjectRoute, 
-  apiGetProjectRequestsRoute, 
-  apiApproveProjectRequestRoute, 
+import {
+  apiGetProjectRoute,
+  apiGetProjectRequestsRoute,
+  apiApproveProjectRequestRoute,
   apiRejectProjectRequestRoute,
   apiRemoveProjectMemberRoute,
   apiUpdateProjectRoute,
   apiTransferOwnershipRoute,
   apiDeleteProjectRoute
 } from '../api/projects'
-import { apiGetBotsListRoute, apiValidateTokenRoute, apiAddBotRoute, apiReregisterWebhookRoute } from '../api/bots'
+import {
+  apiGetBotsListRoute,
+  apiValidateTokenRoute,
+  apiAddBotRoute,
+  apiReregisterWebhookRoute
+} from '../api/bots'
 import { apiGetChannelsListRoute } from '../api/channels'
 import { apiCreateLinkRoute, apiGetLinksListRoute, apiDeleteLinkRoute } from '../api/links'
 import { apiCheckWebhookRoute, apiWebhookRoute } from '../api/webhook'
@@ -50,11 +55,13 @@ const project = ref<{
   members?: Array<{ userId: string; role: string }>
 } | null>(null)
 
-const requests = ref<Array<{
-  id: string
-  userId: string
-  requestedAt: Date | string
-}>>([])
+const requests = ref<
+  Array<{
+    id: string
+    userId: string
+    requestedAt: Date | string
+  }>
+>([])
 
 const loading = ref(true)
 const error = ref<string | null>(null)
@@ -64,29 +71,33 @@ const processingRequestId = ref<string | null>(null)
 const removingMemberId = ref<string | null>(null)
 
 // Данные ботов
-const bots = ref<Array<{
-  id: string
-  token: string
-  botName: string | null
-  botUsername: string | null
-  projectId: string
-  channelsCount?: number
-}>>([])
+const bots = ref<
+  Array<{
+    id: string
+    token: string
+    botName: string | null
+    botUsername: string | null
+    projectId: string
+    channelsCount?: number
+  }>
+>([])
 const loadingBots = ref(false)
 const botsError = ref<string | null>(null)
 
 // Данные каналов
-const channels = ref<Array<{
-  id: string
-  chatId: string
-  chatType: string | null
-  chatTitle: string | null
-  chatUsername: string | null
-  firstSeenAt: Date | string
-  lastSeenAt: Date | string
-  botId: string
-  botStatus: string | null
-}>>([])
+const channels = ref<
+  Array<{
+    id: string
+    chatId: string
+    chatType: string | null
+    chatTitle: string | null
+    chatUsername: string | null
+    firstSeenAt: Date | string
+    lastSeenAt: Date | string
+    botId: string
+    botStatus: string | null
+  }>
+>([])
 const loadingChannels = ref(false)
 const channelsError = ref<string | null>(null)
 
@@ -102,21 +113,23 @@ const modalChannelDropdownRef = ref<HTMLElement | null>(null)
 const modalChannelSearch = ref('')
 
 // Данные ссылок
-const links = ref<Array<{
-  id: string
-  name: string
-  placementUrl?: string | null
-  channelId: string
-  botId: string
-  projectId: string
-  inviteLink?: string | null
-  inviteLinkCreatedAt?: Date | string | null
-  revokedAt?: Date | string | null
-  createdAt: Date | string
-  updatedAt: Date | string
-  clicksCount?: number
-  subscribesCount?: number
-}>>([])
+const links = ref<
+  Array<{
+    id: string
+    name: string
+    placementUrl?: string | null
+    channelId: string
+    botId: string
+    projectId: string
+    inviteLink?: string | null
+    inviteLinkCreatedAt?: Date | string | null
+    revokedAt?: Date | string | null
+    createdAt: Date | string
+    updatedAt: Date | string
+    clicksCount?: number
+    subscribesCount?: number
+  }>
+>([])
 const loadingLinks = ref(false)
 const linksError = ref<string | null>(null)
 const deletingLinkId = ref<string | null>(null)
@@ -180,16 +193,18 @@ const editError = ref<string | null>(null)
 // Проверка прав доступа
 const isOwner = computed(() => {
   if (!project.value || !ctx.user) return false
-  return project.value.members?.some((m: any) => 
-    m.userId === ctx.user.id && m.role === 'owner'
-  ) || false
+  return (
+    project.value.members?.some((m: any) => m.userId === ctx.user.id && m.role === 'owner') || false
+  )
 })
 
 const isMember = computed(() => {
   if (!project.value || !ctx.user) return false
-  return project.value.members?.some((m: any) => 
-    m.userId === ctx.user.id && (m.role === 'owner' || m.role === 'member')
-  ) || false
+  return (
+    project.value.members?.some(
+      (m: any) => m.userId === ctx.user.id && (m.role === 'owner' || m.role === 'member')
+    ) || false
+  )
 })
 
 const isAdmin = computed(() => {
@@ -212,14 +227,15 @@ const tooltip = ref<{
 const showTooltip = (event: MouseEvent, text: string) => {
   if (!text) return
   const target = (event.currentTarget || event.target) as HTMLElement
-  
+
   // Проверяем, обрезан ли текст
   // Ищем span внутри ячейки, так как именно он содержит текст
   const spanElement = target.querySelector('span') || target
-  const isTextTruncated = spanElement.scrollWidth > spanElement.clientWidth || target.scrollWidth > target.clientWidth
-  
+  const isTextTruncated =
+    spanElement.scrollWidth > spanElement.clientWidth || target.scrollWidth > target.clientWidth
+
   if (!isTextTruncated) return
-  
+
   const rect = target.getBoundingClientRect()
   tooltip.value = {
     show: true,
@@ -245,10 +261,10 @@ const canManageMembers = computed(() => {
 const loadProject = async () => {
   loading.value = true
   error.value = null
-  
+
   try {
     const result = await apiGetProjectRoute({ id: props.projectId }).run(ctx)
-    
+
     if (result.success && result.project) {
       project.value = result.project
     } else {
@@ -265,12 +281,12 @@ const loadProject = async () => {
 // Загрузка заявок
 const loadRequests = async () => {
   if (!canViewRequests.value) return
-  
+
   loadingRequests.value = true
-  
+
   try {
     const result = await apiGetProjectRequestsRoute({ id: props.projectId }).run(ctx)
-    
+
     if (result.success && result.requests) {
       requests.value = result.requests
     }
@@ -282,14 +298,23 @@ const loadRequests = async () => {
 }
 
 // Функции для показа модальных окон
-const showAlert = (message: string, title?: string, type: 'info' | 'error' | 'success' | 'warning' = 'info') => {
+const showAlert = (
+  message: string,
+  title?: string,
+  type: 'info' | 'error' | 'success' | 'warning' = 'info'
+) => {
   alertMessage.value = message
   alertTitle.value = title || ''
   alertType.value = type
   showAlertModal.value = true
 }
 
-const showConfirm = (message: string, onConfirm: () => void, title?: string, type: 'danger' | 'warning' | 'info' = 'info') => {
+const showConfirm = (
+  message: string,
+  onConfirm: () => void,
+  title?: string,
+  type: 'danger' | 'warning' | 'info' = 'info'
+) => {
   confirmMessage.value = message
   confirmTitle.value = title || ''
   confirmType.value = type
@@ -313,12 +338,12 @@ const handleCancel = () => {
 // Одобрение заявки
 const approveRequest = async (requestId: string) => {
   if (processingRequestId.value) return
-  
+
   processingRequestId.value = requestId
-  
+
   try {
     const result = await apiApproveProjectRequestRoute({ id: props.projectId, requestId }).run(ctx)
-    
+
     if (result.success) {
       // Обновляем данные
       await loadProject()
@@ -337,12 +362,12 @@ const approveRequest = async (requestId: string) => {
 // Отклонение заявки
 const rejectRequest = async (requestId: string) => {
   if (processingRequestId.value) return
-  
+
   processingRequestId.value = requestId
-  
+
   try {
     const result = await apiRejectProjectRequestRoute({ id: props.projectId, requestId }).run(ctx)
-    
+
     if (result.success) {
       // Обновляем заявки
       await loadRequests()
@@ -360,17 +385,17 @@ const rejectRequest = async (requestId: string) => {
 // Удаление участника
 const removeMember = async (userId: string) => {
   if (removingMemberId.value) return
-  
+
   showConfirm(
     'Вы уверены, что хотите удалить этого участника из проекта?',
     async () => {
       removingMemberId.value = userId
-      
+
       try {
         const result = await apiRemoveProjectMemberRoute({ id: props.projectId }).run(ctx, {
           userId
         })
-        
+
         if (result.success) {
           // Обновляем данные проекта
           await loadProject()
@@ -392,13 +417,13 @@ const removeMember = async (userId: string) => {
 // Загрузка ботов
 const loadBots = async () => {
   if (!props.projectId) return
-  
+
   loadingBots.value = true
   botsError.value = null
-  
+
   try {
     const result = await apiGetBotsListRoute.query({ projectId: props.projectId }).run(ctx)
-    
+
     if (result.success && result.bots) {
       bots.value = result.bots.map((bot: any) => ({
         id: bot.id,
@@ -422,13 +447,13 @@ const loadBots = async () => {
 // Загрузка каналов
 const loadChannels = async () => {
   if (!props.projectId) return
-  
+
   loadingChannels.value = true
   channelsError.value = null
-  
+
   try {
     const result = await apiGetChannelsListRoute.query({ projectId: props.projectId }).run(ctx)
-    
+
     if (result.success && result.channels) {
       // Проверяем изменение статуса перед обновлением
       const newChannels = result.channels.map((channel: any) => ({
@@ -442,12 +467,12 @@ const loadChannels = async () => {
         lastSeenAt: channel.lastSeenAt,
         botId: channel.botId
       }))
-      
+
       // Проверяем изменение статуса для каждого канала
       for (const newChannel of newChannels) {
         const oldStatus = channelStatusHistory.value.get(newChannel.id)
         const newStatus = newChannel.botStatus
-        
+
         // Если статус изменился и мы на вкладке "Ссылки"
         // oldStatus !== undefined означает, что это не первая загрузка
         if (oldStatus !== undefined && oldStatus !== newStatus && activeTab.value === 'links') {
@@ -459,11 +484,11 @@ const loadChannels = async () => {
             newStatus: newStatus
           }
         }
-        
+
         // Обновляем историю статусов (инициализируем при первой загрузке)
         channelStatusHistory.value.set(newChannel.id, newStatus)
       }
-      
+
       channels.value = newChannels
     } else {
       channelsError.value = result.error || 'Ошибка при получении списка каналов'
@@ -479,18 +504,18 @@ const loadChannels = async () => {
 // Загрузка ссылок
 const loadLinks = async () => {
   if (!props.projectId) return
-  
+
   loadingLinks.value = true
   linksError.value = null
-  
+
   try {
     const queryParams: any = { projectId: props.projectId }
     if (selectedChannelId.value) {
       queryParams.channelId = selectedChannelId.value
     }
-    
+
     const result = await apiGetLinksListRoute.query(queryParams).run(ctx)
-    
+
     if (result.success && result.links) {
       links.value = result.links.map((link: any) => ({
         id: link.id,
@@ -520,18 +545,18 @@ const loadLinks = async () => {
 
 // Получение ботов для канала
 const getBotsForChannel = (channelId: string) => {
-  const channel = channels.value.find(c => c.id === channelId)
+  const channel = channels.value.find((c) => c.id === channelId)
   if (!channel) return []
-  
+
   // Находим все каналы с таким же chatId и получаем уникальные botId
   const channelChatIds = channels.value
-    .filter(c => c.chatId === channel.chatId)
-    .map(c => c.botId)
-  
+    .filter((c) => c.chatId === channel.chatId)
+    .map((c) => c.botId)
+
   const uniqueBotIds = Array.from(new Set(channelChatIds))
-  
+
   // Возвращаем ботов, которые есть в списке bots
-  return bots.value.filter(bot => uniqueBotIds.includes(bot.id))
+  return bots.value.filter((bot) => uniqueBotIds.includes(bot.id))
 }
 
 // Проверка, нужен ли выбор бота для канала
@@ -565,10 +590,10 @@ const closeCreateLinkModal = () => {
 // Обработка изменения канала в модальном окне
 const onChannelChange = () => {
   newLinkBotId.value = null
-  
+
   if (!newLinkChannelId.value) return
-  
-  const selectedChannel = channels.value.find(c => c.id === newLinkChannelId.value)
+
+  const selectedChannel = channels.value.find((c) => c.id === newLinkChannelId.value)
   if (selectedChannel) {
     // Если у канала только один бот (для этого chatId), используем его botId
     const botsForChannel = getBotsForChannel(newLinkChannelId.value)
@@ -584,25 +609,25 @@ const onChannelChange = () => {
 // Создание ссылки
 const createLink = async () => {
   console.log('[ProjectDetailPage] createLink: Начало создания ссылки')
-  
+
   if (!newLinkName.value || !newLinkName.value.trim()) {
     console.warn('[ProjectDetailPage] createLink: Название ссылки не заполнено')
     linkError.value = 'Название ссылки обязательно'
     return
   }
-  
+
   if (!newLinkChannelId.value) {
     console.warn('[ProjectDetailPage] createLink: Канал не выбран')
     linkError.value = 'Выберите канал'
     return
   }
-  
+
   if (!props.projectId) {
     console.warn('[ProjectDetailPage] createLink: projectId не установлен')
     linkError.value = 'Для создания ссылки необходимо выбрать проект.'
     return
   }
-  
+
   const botsForChannel = getBotsForChannel(newLinkChannelId.value)
   if (botsForChannel.length === 0) {
     console.warn('[ProjectDetailPage] createLink: У канала нет доступных ботов')
@@ -617,7 +642,7 @@ const createLink = async () => {
   // Если botsForChannel.length === 1, botId должен быть установлен автоматически в onChannelChange
   // Но на случай, если что-то пошло не так, используем botId из канала или из списка ботов
   if (botsForChannel.length === 1 && !newLinkBotId.value) {
-    const selectedChannel = channels.value.find(c => c.id === newLinkChannelId.value)
+    const selectedChannel = channels.value.find((c) => c.id === newLinkChannelId.value)
     if (selectedChannel && selectedChannel.botId) {
       newLinkBotId.value = selectedChannel.botId
     } else if (botsForChannel[0] && botsForChannel[0].id) {
@@ -625,12 +650,14 @@ const createLink = async () => {
       newLinkBotId.value = botsForChannel[0].id
     } else {
       // Это не должно произойти, но на всякий случай возвращаем ошибку
-      console.error('[ProjectDetailPage] createLink: Не удалось определить botId для канала с одним ботом')
+      console.error(
+        '[ProjectDetailPage] createLink: Не удалось определить botId для канала с одним ботом'
+      )
       linkError.value = 'Не удалось определить бота для канала. Попробуйте перезагрузить страницу.'
       return
     }
   }
-  
+
   const linkData = {
     name: newLinkName.value.trim(),
     placementUrl: newLinkPlacementUrl.value ? newLinkPlacementUrl.value.trim() : null,
@@ -638,7 +665,7 @@ const createLink = async () => {
     botId: newLinkBotId.value || null,
     projectId: props.projectId
   }
-  
+
   console.log('[ProjectDetailPage] createLink: Данные для создания ссылки:', {
     name: linkData.name,
     placementUrl: linkData.placementUrl || 'не указано',
@@ -646,38 +673,44 @@ const createLink = async () => {
     botId: linkData.botId || 'не указано (будет использован botId из канала)',
     projectId: linkData.projectId
   })
-  
+
   creatingLink.value = true
   linkError.value = null
-  
+
   try {
-    console.log('[ProjectDetailPage] createLink: Проверка наличия apiCreateLinkRoute:', typeof apiCreateLinkRoute)
+    console.log(
+      '[ProjectDetailPage] createLink: Проверка наличия apiCreateLinkRoute:',
+      typeof apiCreateLinkRoute
+    )
     console.log('[ProjectDetailPage] createLink: Проверка наличия ctx:', typeof ctx)
-    
+
     if (typeof apiCreateLinkRoute === 'undefined') {
       const errorMsg = 'apiCreateLinkRoute не определен. Проверьте импорт.'
       console.error('[ProjectDetailPage] createLink: КРИТИЧЕСКАЯ ОШИБКА:', errorMsg)
       throw new Error(errorMsg)
     }
-    
+
     if (typeof ctx === 'undefined') {
       const errorMsg = 'ctx не определен. Невозможно создать ссылку.'
       console.error('[ProjectDetailPage] createLink: КРИТИЧЕСКАЯ ОШИБКА:', errorMsg)
       throw new Error(errorMsg)
     }
-    
+
     console.log('[ProjectDetailPage] createLink: Вызов apiCreateLinkRoute.run() с данными')
-    console.log('[ProjectDetailPage] createLink: typeof apiCreateLinkRoute.run:', typeof apiCreateLinkRoute.run)
-    
+    console.log(
+      '[ProjectDetailPage] createLink: typeof apiCreateLinkRoute.run:',
+      typeof apiCreateLinkRoute.run
+    )
+
     // Используем правильный синтаксис согласно документации: .run(ctx, bodyData)
     const result = await apiCreateLinkRoute.run(ctx, linkData)
-    
+
     console.log('[ProjectDetailPage] createLink: Получен ответ от сервера:', {
       success: result.success,
       error: result.error || 'нет ошибки',
       linkId: result.link?.id || 'не создана'
     })
-    
+
     if (result.success) {
       console.log('[ProjectDetailPage] createLink: Ссылка успешно создана, обновляем список')
       await loadLinks()
@@ -690,14 +723,17 @@ const createLink = async () => {
   } catch (e: any) {
     const errorMessage = e instanceof Error ? e.message : String(e)
     const errorStack = e instanceof Error ? e.stack : 'нет стека'
-    
+
     console.error('[ProjectDetailPage] createLink: ОШИБКА при создании ссылки:', errorMessage)
     console.error('[ProjectDetailPage] createLink: Стек ошибки:', errorStack)
     console.error('[ProjectDetailPage] createLink: Полный объект ошибки:', e)
     console.error('[ProjectDetailPage] createLink: Тип ошибки:', typeof e)
     console.error('[ProjectDetailPage] createLink: ctx доступен:', typeof ctx !== 'undefined')
-    console.error('[ProjectDetailPage] createLink: apiCreateLinkRoute доступен:', typeof apiCreateLinkRoute !== 'undefined')
-    
+    console.error(
+      '[ProjectDetailPage] createLink: apiCreateLinkRoute доступен:',
+      typeof apiCreateLinkRoute !== 'undefined'
+    )
+
     linkError.value = errorMessage || 'Ошибка при создании ссылки'
   } finally {
     creatingLink.value = false
@@ -710,39 +746,53 @@ const getPublicLinkUrl = (linkId: string) => {
   // Используем роут-объект для генерации правильного URL
   // Согласно file-based роутингу Chatium, это создаст URL вида:
   // https://s.chtm.aley.pro/saas/analytics/telegram/channel~{linkId}
-  
+
   // Проверяем, что linkId передан и не пустой
   if (!linkId || typeof linkId !== 'string' || !linkId.trim()) {
     console.error('[ProjectDetailPage] getPublicLinkUrl: linkId не передан или невалиден:', linkId)
     throw new Error('linkId обязателен для генерации URL')
   }
-  
+
   const trimmedLinkId = linkId.trim()
   console.log('[ProjectDetailPage] getPublicLinkUrl: генерация URL для linkId:', trimmedLinkId)
   console.log('[ProjectDetailPage] getPublicLinkUrl: publicLinkRoute:', publicLinkRoute)
-  console.log('[ProjectDetailPage] getPublicLinkUrl: typeof publicLinkRoute:', typeof publicLinkRoute)
-  
+  console.log(
+    '[ProjectDetailPage] getPublicLinkUrl: typeof publicLinkRoute:',
+    typeof publicLinkRoute
+  )
+
   // Проверяем, что роут доступен
   if (!publicLinkRoute) {
     console.error('[ProjectDetailPage] getPublicLinkUrl: publicLinkRoute не определен')
     throw new Error('Роут publicLinkRoute не найден')
   }
-  
+
   // Проверяем, что метод url доступен
   if (typeof publicLinkRoute.url !== 'function') {
     console.error('[ProjectDetailPage] getPublicLinkUrl: publicLinkRoute.url не является функцией')
-    console.error('[ProjectDetailPage] getPublicLinkUrl: publicLinkRoute:', JSON.stringify(publicLinkRoute, null, 2))
+    console.error(
+      '[ProjectDetailPage] getPublicLinkUrl: publicLinkRoute:',
+      JSON.stringify(publicLinkRoute, null, 2)
+    )
     throw new Error('Метод url() не доступен в роуте publicLinkRoute')
   }
-  
-  console.log('[ProjectDetailPage] getPublicLinkUrl: publicLinkRoute.url:', typeof publicLinkRoute.url)
+
+  console.log(
+    '[ProjectDetailPage] getPublicLinkUrl: publicLinkRoute.url:',
+    typeof publicLinkRoute.url
+  )
   console.log('[ProjectDetailPage] getPublicLinkUrl: параметры для url():', { id: trimmedLinkId })
-  
+
   try {
     // ✅ ПРАВИЛЬНО: вызываем .url() напрямую с параметрами на объекте роута
     // Согласно документации 002-routing.md, для роутов с параметрами пути используется паттерн: route.url({ id: ... })
     const url = publicLinkRoute.url({ id: trimmedLinkId })
-    console.log('[ProjectDetailPage] getPublicLinkUrl: сгенерирован URL:', url, 'для linkId:', trimmedLinkId)
+    console.log(
+      '[ProjectDetailPage] getPublicLinkUrl: сгенерирован URL:',
+      url,
+      'для linkId:',
+      trimmedLinkId
+    )
     return url
   } catch (error: any) {
     console.error('[ProjectDetailPage] getPublicLinkUrl: ошибка генерации URL:', error)
@@ -758,13 +808,13 @@ const copyLinkToClipboard = async (linkId: string) => {
     console.log('[ProjectDetailPage] copyLinkToClipboard: получен linkId:', linkId)
     console.log('[ProjectDetailPage] copyLinkToClipboard: typeof linkId:', typeof linkId)
     console.log('[ProjectDetailPage] copyLinkToClipboard: linkId значение:', JSON.stringify(linkId))
-    
+
     if (!linkId) {
       console.error('[ProjectDetailPage] copyLinkToClipboard: linkId не передан')
       showAlert('Ошибка: ID ссылки не найден', 'Ошибка', 'error')
       return
     }
-    
+
     const url = getPublicLinkUrl(linkId)
     console.log('[ProjectDetailPage] copyLinkToClipboard: копирование URL:', url)
     await navigator.clipboard.writeText(url)
@@ -773,20 +823,24 @@ const copyLinkToClipboard = async (linkId: string) => {
     console.error('[ProjectDetailPage] Ошибка копирования ссылки:', e)
     console.error('[ProjectDetailPage] Ошибка копирования ссылки - message:', e?.message)
     console.error('[ProjectDetailPage] Ошибка копирования ссылки - stack:', e?.stack)
-    showAlert('Не удалось скопировать ссылку: ' + (e?.message || 'Неизвестная ошибка'), 'Ошибка', 'error')
+    showAlert(
+      'Не удалось скопировать ссылку: ' + (e?.message || 'Неизвестная ошибка'),
+      'Ошибка',
+      'error'
+    )
   }
 }
 
 // Получение названия канала по ID
 const getChannelName = (channelId: string) => {
-  const channel = channels.value.find(c => c.id === channelId)
+  const channel = channels.value.find((c) => c.id === channelId)
   if (!channel) return null
   return channel.chatTitle || channel.chatUsername || channel.chatId
 }
 
 // Получение статуса канала по ID
 const getChannelStatus = (channelId: string): string | null => {
-  const channel = channels.value.find(c => c.id === channelId)
+  const channel = channels.value.find((c) => c.id === channelId)
   return channel?.botStatus || null
 }
 
@@ -803,7 +857,7 @@ const formatBotStatus = (status: string | null): { text: string; color: string; 
   if (!status) {
     return { text: 'Неизвестно', color: 'var(--color-text-secondary)', icon: 'fa-question-circle' }
   }
-  
+
   switch (status) {
     case 'member':
       return { text: 'Участник', color: '#4ade80', icon: 'fa-check-circle' }
@@ -823,7 +877,9 @@ const formatBotStatus = (status: string | null): { text: string; color: string; 
 }
 
 // Форматирование статуса канала (публичный/приватный)
-const formatChannelStatus = (chatUsername: string | null | undefined): { text: string; color: string; icon: string } => {
+const formatChannelStatus = (
+  chatUsername: string | null | undefined
+): { text: string; color: string; icon: string } => {
   if (chatUsername) {
     return { text: 'Публичный', color: '#4ade80', icon: 'fa-globe' }
   } else {
@@ -843,21 +899,20 @@ const maskTokenFull = (token: string) => {
 // Отображение токена в таблице в формате "8133629083:***123"
 const maskToken = (token: string) => {
   if (!token) return ''
-  
+
   const colonIndex = token.indexOf(':')
   if (colonIndex === -1) {
     // Если нет двоеточия, показываем первые 13 символов
     return token.length > 13 ? token.substring(0, 13) : token
   }
-  
+
   // Часть до двоеточия
   const beforeColon = token.substring(0, colonIndex)
   // Последние 3 символа после двоеточия
   const afterColon = token.substring(colonIndex + 1)
-  const lastThree = afterColon.length >= 3 
-    ? afterColon.substring(afterColon.length - 3) 
-    : afterColon
-  
+  const lastThree =
+    afterColon.length >= 3 ? afterColon.substring(afterColon.length - 3) : afterColon
+
   return `${beforeColon}:***${lastThree}`
 }
 
@@ -882,39 +937,43 @@ const addToken = async () => {
     tokenError.value = 'Введите токен бота'
     return
   }
-  
+
   if (!props.projectId) {
     tokenError.value = 'Для добавления бота необходимо выбрать проект.'
     return
   }
-  
+
   addingToken.value = true
   tokenError.value = null
-  
+
   try {
     // 1. Валидация токена через API
-    const validationResult = await apiValidateTokenRoute.body({
-      token: newToken.value.trim()
-    }).run(ctx)
-    
+    const validationResult = await apiValidateTokenRoute
+      .body({
+        token: newToken.value.trim()
+      })
+      .run(ctx)
+
     if (!validationResult.success) {
       tokenError.value = validationResult.error || 'Ошибка при проверке токена'
       return
     }
-    
+
     // 2. Сохранение токена в таблицу
-    const saveResult = await apiAddBotRoute.body({
-      token: newToken.value.trim(),
-      botName: validationResult.botInfo.name,
-      botUsername: validationResult.botInfo.username,
-      projectId: props.projectId
-    }).run(ctx)
-    
+    const saveResult = await apiAddBotRoute
+      .body({
+        token: newToken.value.trim(),
+        botName: validationResult.botInfo.name,
+        botUsername: validationResult.botInfo.username,
+        projectId: props.projectId
+      })
+      .run(ctx)
+
     if (!saveResult.success) {
       tokenError.value = saveResult.error || 'Ошибка при сохранении токена'
       return
     }
-    
+
     // 3. Обновление списка и закрытие модального окна
     await loadBots()
     closeAddTokenModal()
@@ -931,15 +990,15 @@ const formatDate = (date: Date | string | null | undefined) => {
   if (!date) {
     return 'Дата не указана'
   }
-  
+
   try {
     const d = typeof date === 'string' ? new Date(date) : date
-    
+
     // Проверка на валидность даты
     if (isNaN(d.getTime())) {
       return 'Неверная дата'
     }
-    
+
     return d.toLocaleString('ru-RU', {
       year: 'numeric',
       month: 'long',
@@ -980,29 +1039,32 @@ onMounted(async () => {
     }
   }
   window.addEventListener('keydown', escHandler)
-  
+
   await loadProject()
-  
+
   // Загружаем заявки, если есть права
   if (canViewRequests.value) {
     await loadRequests()
   }
-  
+
   // Автоматически переключаем на нужную вкладку, если передан параметр target
   if (props.target) {
     // Маппинг значений target на вкладки
-    const targetToTab: Record<string, 'info' | 'bots' | 'channels' | 'links' | 'members' | 'requests'> = {
-      'links': 'links',     // Для "Управлять ссылками" открываем вкладку "Ссылки"
-      'channels': 'channels',
-      'bots': 'bots'
+    const targetToTab: Record<
+      string,
+      'info' | 'bots' | 'channels' | 'links' | 'members' | 'requests'
+    > = {
+      links: 'links', // Для "Управлять ссылками" открываем вкладку "Ссылки"
+      channels: 'channels',
+      bots: 'bots'
     }
-    
+
     const targetTab = targetToTab[props.target]
     if (targetTab) {
       activeTab.value = targetTab
     }
   }
-  
+
   // Загружаем данные при переключении на соответствующие вкладки
   if (activeTab.value === 'bots') {
     await loadBots()
@@ -1026,9 +1088,11 @@ onUnmounted(() => {
 })
 
 // Загрузка данных при переключении вкладок
-const handleTabChange = async (tab: 'info' | 'bots' | 'channels' | 'links' | 'members' | 'requests') => {
+const handleTabChange = async (
+  tab: 'info' | 'bots' | 'channels' | 'links' | 'members' | 'requests'
+) => {
   activeTab.value = tab
-  
+
   if (tab === 'bots' && bots.value.length === 0 && !loadingBots.value) {
     await loadBots()
   } else if (tab === 'channels' && channels.value.length === 0 && !loadingChannels.value) {
@@ -1063,7 +1127,10 @@ const handleClickOutside = (event: MouseEvent) => {
     channelFilterOpen.value = false
     channelFilterSearch.value = ''
   }
-  if (modalChannelDropdownRef.value && !modalChannelDropdownRef.value.contains(event.target as Node)) {
+  if (
+    modalChannelDropdownRef.value &&
+    !modalChannelDropdownRef.value.contains(event.target as Node)
+  ) {
     modalChannelDropdownOpen.value = false
     modalChannelSearch.value = ''
   }
@@ -1072,22 +1139,22 @@ const handleClickOutside = (event: MouseEvent) => {
 // Получение названия выбранного канала
 const selectedChannelName = computed(() => {
   if (!selectedChannelId.value) return 'Все каналы'
-  const channel = channels.value.find(c => c.id === selectedChannelId.value)
-  return channel ? (channel.chatTitle || channel.chatUsername || channel.chatId) : 'Все каналы'
+  const channel = channels.value.find((c) => c.id === selectedChannelId.value)
+  return channel ? channel.chatTitle || channel.chatUsername || channel.chatId : 'Все каналы'
 })
 
 // Получение названия выбранного канала в модальном окне
 const selectedModalChannelName = computed(() => {
   if (!newLinkChannelId.value) return 'Выберите канал'
-  const channel = channels.value.find(c => c.id === newLinkChannelId.value)
-  return channel ? (channel.chatTitle || channel.chatUsername || channel.chatId) : 'Выберите канал'
+  const channel = channels.value.find((c) => c.id === newLinkChannelId.value)
+  return channel ? channel.chatTitle || channel.chatUsername || channel.chatId : 'Выберите канал'
 })
 
 // Фильтрация каналов для фильтра
 const filteredChannelsForFilter = computed(() => {
   if (!channelFilterSearch.value.trim()) return channels.value
   const search = channelFilterSearch.value.toLowerCase().trim()
-  return channels.value.filter(channel => {
+  return channels.value.filter((channel) => {
     const title = (channel.chatTitle || '').toLowerCase()
     const username = (channel.chatUsername || '').toLowerCase()
     const id = String(channel.chatId || '').toLowerCase()
@@ -1099,7 +1166,7 @@ const filteredChannelsForFilter = computed(() => {
 const filteredChannelsForModal = computed(() => {
   if (!modalChannelSearch.value.trim()) return channels.value
   const search = modalChannelSearch.value.toLowerCase().trim()
-  return channels.value.filter(channel => {
+  return channels.value.filter((channel) => {
     const title = (channel.chatTitle || '').toLowerCase()
     const username = (channel.chatUsername || '').toLowerCase()
     const id = String(channel.chatId || '').toLowerCase()
@@ -1115,33 +1182,43 @@ const selectModalChannel = (channelId: string | null) => {
   onChannelChange()
 }
 
-
 // Проверка webhook для бота
 const checkWebhook = async (botId: string) => {
   try {
     console.log('[ProjectDetailPage] checkWebhook: Проверка webhook для бота:', botId)
-    
+
     const result = await apiCheckWebhookRoute({ id: botId }).run(ctx)
-    
+
     console.log('[ProjectDetailPage] checkWebhook: Результат проверки:', result)
-    
+
     if (result.success && result.webhookInfo) {
       const info = result.webhookInfo
-      const message = `Текущий URL: ${info.url || 'не установлен'}\n` +
+      const message =
+        `Текущий URL: ${info.url || 'не установлен'}\n` +
         `URL приложения: ${result.expectedUrl}\n` +
         `Результат совпадения: ${result.isCorrect ? 'Да' : 'Нет'}\n` +
         `Событий в ожидании: ${info.pending_update_count || 0}\n` +
         `Есть ошибки доставки: ${info.last_error_date ? 'Да' : 'Нет'}\n` +
-        (info.last_error_date ? `Последняя ошибка: ${new Date(info.last_error_date * 1000).toLocaleString()}\n` : '') +
+        (info.last_error_date
+          ? `Последняя ошибка: ${new Date(info.last_error_date * 1000).toLocaleString()}\n`
+          : '') +
         (info.last_error_message ? `Сообщение: ${info.last_error_message}` : '')
-      
+
       showAlert(message, 'Статус webhook', 'info')
     } else {
-      showAlert(`Ошибка проверки webhook: ${result.error || 'Неизвестная ошибка'}`, 'Ошибка', 'error')
+      showAlert(
+        `Ошибка проверки webhook: ${result.error || 'Неизвестная ошибка'}`,
+        'Ошибка',
+        'error'
+      )
     }
   } catch (e: any) {
     console.error('[ProjectDetailPage] checkWebhook: Ошибка:', e)
-    showAlert(`Ошибка при проверке webhook: ${e.message || 'Неизвестная ошибка'}`, 'Ошибка', 'error')
+    showAlert(
+      `Ошибка при проверке webhook: ${e.message || 'Неизвестная ошибка'}`,
+      'Ошибка',
+      'error'
+    )
   }
 }
 
@@ -1149,19 +1226,23 @@ const checkWebhook = async (botId: string) => {
 const reregisterWebhook = async (botId: string) => {
   try {
     console.log('[ProjectDetailPage] reregisterWebhook: Перерегистрация webhook для бота:', botId)
-    
+
     showConfirm(
       'Вы уверены, что хотите перерегистрировать webhook? Это обновит настройки webhook с новыми типами обновлений (подписки, лайки и др.).',
       async () => {
         const result = await apiReregisterWebhookRoute.run(ctx, { botId: botId })
-        
+
         console.log('[ProjectDetailPage] reregisterWebhook: Результат перерегистрации:', result)
-        
+
         if (result.success) {
           const webhookUrl = apiWebhookRoute({ id: botId }).url()
           showAlert(`Вебхук установлен на значение: ${webhookUrl}`, 'Успешно', 'success')
         } else {
-          showAlert(`Ошибка перерегистрации webhook: ${result.error || 'Неизвестная ошибка'}`, 'Ошибка', 'error')
+          showAlert(
+            `Ошибка перерегистрации webhook: ${result.error || 'Неизвестная ошибка'}`,
+            'Ошибка',
+            'error'
+          )
         }
       },
       'Подтверждение перерегистрации',
@@ -1169,7 +1250,11 @@ const reregisterWebhook = async (botId: string) => {
     )
   } catch (e: any) {
     console.error('[ProjectDetailPage] reregisterWebhook: Ошибка:', e)
-    showAlert(`Ошибка при перерегистрации webhook: ${e.message || 'Неизвестная ошибка'}`, 'Ошибка', 'error')
+    showAlert(
+      `Ошибка при перерегистрации webhook: ${e.message || 'Неизвестная ошибка'}`,
+      'Ошибка',
+      'error'
+    )
   }
 }
 
@@ -1187,17 +1272,17 @@ const viewWebhooks = (botId: string, chatId?: string) => {
 // Удаление ссылки
 const deleteLink = async (linkId: string) => {
   if (deletingLinkId.value) return
-  
+
   showConfirm(
     'Вы уверены, что хотите удалить эту ссылку? Это отзовёт работу публичной ссылки для аналитики, отзовёт все инвайт-линки в телеграм и удалит все связанные данные по аналитике из таблиц.',
     async () => {
       deletingLinkId.value = linkId
-      
+
       try {
         const result = await apiDeleteLinkRoute.run(ctx, {
           linkId: linkId
         })
-        
+
         if (result.success) {
           showAlert('Ссылка успешно удалена', 'Успешно', 'success')
           // Обновляем список ссылок
@@ -1239,20 +1324,20 @@ const saveProjectName = async () => {
     editError.value = 'Название проекта обязательно'
     return
   }
-  
+
   if (!props.projectId) {
     editError.value = 'ID проекта не установлен'
     return
   }
-  
+
   editingName.value = true
   editError.value = null
-  
+
   try {
     const result = await apiUpdateProjectRoute({ id: props.projectId }).run(ctx, {
       name: editName.value.trim()
     })
-    
+
     if (result.success) {
       await loadProject()
       closeEditNameModal()
@@ -1290,15 +1375,15 @@ const saveProjectDescription = async () => {
     editError.value = 'ID проекта не установлен'
     return
   }
-  
+
   editingDescription.value = true
   editError.value = null
-  
+
   try {
     const result = await apiUpdateProjectRoute({ id: props.projectId }).run(ctx, {
       description: editDescription.value.trim() || null
     })
-    
+
     if (result.success) {
       await loadProject()
       closeEditDescriptionModal()
@@ -1317,7 +1402,7 @@ const saveProjectDescription = async () => {
 // Получение списка участников для передачи прав (кроме текущего пользователя, если он овнер)
 const availableMembersForTransfer = computed(() => {
   if (!project.value || !project.value.members) return []
-  
+
   return project.value.members.filter((member: any) => {
     // Исключаем текущего пользователя, если он овнер
     if (userIdsMatch(member.userId, ctx.user?.id) && member.role === 'owner') {
@@ -1350,20 +1435,20 @@ const transferOwnership = async () => {
     editError.value = 'Выберите участника для передачи прав'
     return
   }
-  
+
   if (!props.projectId) {
     editError.value = 'ID проекта не установлен'
     return
   }
-  
+
   transferringOwnership.value = true
   editError.value = null
-  
+
   try {
     const result = await apiTransferOwnershipRoute({ id: props.projectId }).run(ctx, {
       newOwnerUserId: transferOwnershipUserId.value
     })
-    
+
     if (result.success) {
       await loadProject()
       closeTransferOwnershipModal()
@@ -1385,17 +1470,17 @@ const deleteProject = async () => {
     showAlert('ID проекта не установлен', 'Ошибка', 'error')
     return
   }
-  
+
   showConfirm(
     'Вы уверены, что хотите удалить этот проект? Это действие нельзя отменить. Все данные проекта (боты, каналы, ссылки, аналитика) будут удалены.',
     async () => {
       deletingProject.value = true
-      
+
       try {
         const result = await apiDeleteProjectRoute.run(ctx, {
           projectId: props.projectId
         })
-        
+
         if (result.success) {
           showAlert('Проект успешно удалён', 'Успешно', 'success')
           // Перенаправляем на страницу проектов
@@ -1421,12 +1506,12 @@ const deleteProject = async () => {
 <template>
   <div class="app-layout bg-transparent text-[var(--color-text)] flex flex-col">
     <!-- Header -->
-    <Header 
-      :pageTitle="'A/Ley Services'" 
-      :indexUrl="props.indexUrl" 
-      :profileUrl="props.profileUrl" 
-      :loginUrl="props.loginUrl" 
-      :isAuthenticated="props.isAuthenticated" 
+    <Header
+      :pageTitle="'A/Ley Services'"
+      :indexUrl="props.indexUrl"
+      :profileUrl="props.profileUrl"
+      :loginUrl="props.loginUrl"
+      :isAuthenticated="props.isAuthenticated"
     />
 
     <!-- Content -->
@@ -1444,7 +1529,11 @@ const deleteProject = async () => {
             <i class="fas fa-exclamation-circle"></i>
             <span>{{ error }}</span>
           </div>
-          <a v-if="props.projectsPageUrl" :href="props.projectsPageUrl" class="btn btn-primary mt-4">
+          <a
+            v-if="props.projectsPageUrl"
+            :href="props.projectsPageUrl"
+            class="btn btn-primary mt-4"
+          >
             <i class="fas fa-arrow-left"></i>
             Вернуться к проектам
           </a>
@@ -1474,35 +1563,35 @@ const deleteProject = async () => {
 
           <!-- Tabs -->
           <div class="tabs">
-            <button 
+            <button
               @click="activeTab = 'info'"
               :class="['tab', { 'tab-active': activeTab === 'info' }]"
             >
               <i class="fas fa-info-circle"></i>
               Информация
             </button>
-            <button 
+            <button
               @click="handleTabChange('bots')"
               :class="['tab', { 'tab-active': activeTab === 'bots' }]"
             >
               <i class="fas fa-robot"></i>
               Боты
             </button>
-            <button 
+            <button
               @click="handleTabChange('channels')"
               :class="['tab', { 'tab-active': activeTab === 'channels' }]"
             >
               <i class="fas fa-broadcast-tower"></i>
               Каналы
             </button>
-            <button 
+            <button
               @click="handleTabChange('links')"
               :class="['tab', { 'tab-active': activeTab === 'links' }]"
             >
               <i class="fas fa-link"></i>
               Ссылки
             </button>
-            <button 
+            <button
               v-if="canManageMembers"
               @click="activeTab = 'members'"
               :class="['tab', { 'tab-active': activeTab === 'members' }]"
@@ -1510,7 +1599,7 @@ const deleteProject = async () => {
               <i class="fas fa-users"></i>
               Участники
             </button>
-            <button 
+            <button
               v-if="canViewRequests"
               @click="activeTab = 'requests'"
               :class="['tab', { 'tab-active': activeTab === 'requests' }]"
@@ -1529,19 +1618,37 @@ const deleteProject = async () => {
                 <div class="section-header">
                   <h2 class="section-title">Информация о проекте</h2>
                   <div v-if="isOwner || isAdmin" class="section-actions">
-                    <button @click="openEditNameModal" class="btn btn-secondary btn-sm" title="Редактировать название">
+                    <button
+                      @click="openEditNameModal"
+                      class="btn btn-secondary btn-sm"
+                      title="Редактировать название"
+                    >
                       <i class="fas fa-edit"></i>
                       Редактировать название
                     </button>
-                    <button @click="openEditDescriptionModal" class="btn btn-secondary btn-sm" title="Редактировать описание">
+                    <button
+                      @click="openEditDescriptionModal"
+                      class="btn btn-secondary btn-sm"
+                      title="Редактировать описание"
+                    >
                       <i class="fas fa-edit"></i>
                       Редактировать описание
                     </button>
-                    <button v-if="isOwner && availableMembersForTransfer.length > 0" @click="openTransferOwnershipModal" class="btn btn-secondary btn-sm" title="Передать права владельца">
+                    <button
+                      v-if="isOwner && availableMembersForTransfer.length > 0"
+                      @click="openTransferOwnershipModal"
+                      class="btn btn-secondary btn-sm"
+                      title="Передать права владельца"
+                    >
                       <i class="fas fa-user-crown"></i>
                       Передать права
                     </button>
-                    <button @click="deleteProject" class="btn btn-danger btn-sm" title="Удалить проект" :disabled="deletingProject">
+                    <button
+                      @click="deleteProject"
+                      class="btn btn-danger btn-sm"
+                      title="Удалить проект"
+                      :disabled="deletingProject"
+                    >
                       <i v-if="deletingProject" class="fas fa-spinner fa-spin"></i>
                       <i v-else class="fas fa-trash"></i>
                       Удалить проект
@@ -1578,32 +1685,36 @@ const deleteProject = async () => {
                     <i class="fas fa-plus"></i>
                     Добавить бота
                   </button>
-                  <button @click="loadBots" class="btn btn-secondary btn-sm" :disabled="loadingBots">
+                  <button
+                    @click="loadBots"
+                    class="btn btn-secondary btn-sm"
+                    :disabled="loadingBots"
+                  >
                     <i v-if="loadingBots" class="fas fa-spinner fa-spin"></i>
                     <i v-else class="fas fa-sync-alt"></i>
                     Обновить
                   </button>
                 </div>
               </div>
-              
+
               <div v-if="loadingBots" class="loading-container-small">
                 <div class="loading-spinner"></div>
                 <p>Загрузка ботов...</p>
               </div>
-              
+
               <div v-else-if="botsError" class="error-container">
                 <div class="error-message">
                   <i class="fas fa-exclamation-circle"></i>
                   <span>{{ botsError }}</span>
                 </div>
               </div>
-              
+
               <div v-else-if="bots.length === 0" class="empty-state">
                 <i class="fas fa-robot"></i>
                 <p>Нет добавленных ботов</p>
                 <p class="empty-subtext">Добавьте первого бота, чтобы начать работу</p>
               </div>
-              
+
               <div v-else class="table-container">
                 <div class="table-wrapper">
                   <table class="data-table">
@@ -1615,63 +1726,62 @@ const deleteProject = async () => {
                         <th>Действия</th>
                       </tr>
                     </thead>
-                  <tbody>
-                    <tr v-for="bot in bots" :key="bot.id">
-                      <td 
-                        class="cell-with-tooltip"
-                        @mouseenter="showTooltip($event, bot.botName || 'Telegram Bot')"
-                        @mouseleave="hideTooltip"
-                      >
-                        <span>{{ bot.botName || 'Telegram Bot' }}</span>
-                      </td>
-                      <td 
-                        class="cell-with-tooltip"
-                        @mouseenter="bot.botUsername && showTooltip($event, '@' + bot.botUsername)"
-                        @mouseleave="hideTooltip"
-                      >
-                        <span 
-                          v-if="bot.botUsername" 
-                          class="username-value"
+                    <tbody>
+                      <tr v-for="bot in bots" :key="bot.id">
+                        <td
+                          class="cell-with-tooltip"
+                          @mouseenter="showTooltip($event, bot.botName || 'Telegram Bot')"
+                          @mouseleave="hideTooltip"
                         >
-                          @{{ bot.botUsername }}
-                        </span>
-                        <span v-else class="text-secondary">—</span>
-                      </td>
-                      <td 
-                        class="cell-with-tooltip token-cell"
-                        @mouseenter="showTooltip($event, maskTokenFull(bot.token))"
-                        @mouseleave="hideTooltip"
-                      >
-                        <span class="code-value">{{ maskToken(bot.token) }}</span>
-                      </td>
-                      <td>
-                        <div class="table-actions">
-                          <button 
-                            @click="checkWebhook(bot.id)" 
-                            class="btn btn-secondary btn-sm"
-                            title="Проверить webhook"
-                          >
-                            <i class="fas fa-link"></i>
-                          </button>
-                          <button 
-                            @click="reregisterWebhook(bot.id)" 
-                            class="btn btn-secondary btn-sm"
-                            title="Перерегистрировать webhook"
-                          >
-                            <i class="fas fa-sync-alt"></i>
-                          </button>
-                          <button 
-                            @click="viewWebhooks(bot.id)" 
-                            class="btn btn-secondary btn-sm"
-                            title="Просмотр вебхуков"
-                          >
-                            <i class="fas fa-list"></i>
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
+                          <span>{{ bot.botName || 'Telegram Bot' }}</span>
+                        </td>
+                        <td
+                          class="cell-with-tooltip"
+                          @mouseenter="
+                            bot.botUsername && showTooltip($event, '@' + bot.botUsername)
+                          "
+                          @mouseleave="hideTooltip"
+                        >
+                          <span v-if="bot.botUsername" class="username-value">
+                            @{{ bot.botUsername }}
+                          </span>
+                          <span v-else class="text-secondary">—</span>
+                        </td>
+                        <td
+                          class="cell-with-tooltip token-cell"
+                          @mouseenter="showTooltip($event, maskTokenFull(bot.token))"
+                          @mouseleave="hideTooltip"
+                        >
+                          <span class="code-value">{{ maskToken(bot.token) }}</span>
+                        </td>
+                        <td>
+                          <div class="table-actions">
+                            <button
+                              @click="checkWebhook(bot.id)"
+                              class="btn btn-secondary btn-sm"
+                              title="Проверить webhook"
+                            >
+                              <i class="fas fa-link"></i>
+                            </button>
+                            <button
+                              @click="reregisterWebhook(bot.id)"
+                              class="btn btn-secondary btn-sm"
+                              title="Перерегистрировать webhook"
+                            >
+                              <i class="fas fa-sync-alt"></i>
+                            </button>
+                            <button
+                              @click="viewWebhooks(bot.id)"
+                              class="btn btn-secondary btn-sm"
+                              title="Просмотр вебхуков"
+                            >
+                              <i class="fas fa-list"></i>
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
                 </div>
               </div>
             </div>
@@ -1680,31 +1790,37 @@ const deleteProject = async () => {
             <div v-if="activeTab === 'channels'" class="tab-panel">
               <div class="section-header">
                 <h2 class="section-title">Каналы проекта</h2>
-                <button @click="loadChannels" class="btn btn-secondary btn-sm" :disabled="loadingChannels">
+                <button
+                  @click="loadChannels"
+                  class="btn btn-secondary btn-sm"
+                  :disabled="loadingChannels"
+                >
                   <i v-if="loadingChannels" class="fas fa-spinner fa-spin"></i>
                   <i v-else class="fas fa-sync-alt"></i>
                   Обновить
                 </button>
               </div>
-              
+
               <div v-if="loadingChannels" class="loading-container-small">
                 <div class="loading-spinner"></div>
                 <p>Загрузка каналов...</p>
               </div>
-              
+
               <div v-else-if="channelsError" class="error-container">
                 <div class="error-message">
                   <i class="fas fa-exclamation-circle"></i>
                   <span>{{ channelsError }}</span>
                 </div>
               </div>
-              
+
               <div v-else-if="channels.length === 0" class="empty-state">
                 <i class="fas fa-broadcast-tower"></i>
                 <p>Нет каналов</p>
-                <p class="empty-subtext">Каналы появятся здесь после того, как бот начнёт получать вебхуки от Telegram</p>
+                <p class="empty-subtext">
+                  Каналы появятся здесь после того, как бот начнёт получать вебхуки от Telegram
+                </p>
               </div>
-              
+
               <div v-else class="table-container">
                 <table class="data-table">
                   <thead>
@@ -1724,10 +1840,14 @@ const deleteProject = async () => {
                         @mouseenter="showTooltip($event, channel.chatTitle || 'Канал без названия')"
                         @mouseleave="hideTooltip"
                       >
-                        <span class="cell-content">{{ channel.chatTitle || 'Канал без названия' }}</span>
+                        <span class="cell-content">{{
+                          channel.chatTitle || 'Канал без названия'
+                        }}</span>
                       </td>
                       <td>
-                        <span v-if="channel.chatUsername" class="username-value">@{{ channel.chatUsername }}</span>
+                        <span v-if="channel.chatUsername" class="username-value"
+                          >@{{ channel.chatUsername }}</span
+                        >
                         <span v-else class="text-secondary">—</span>
                       </td>
                       <td
@@ -1738,7 +1858,7 @@ const deleteProject = async () => {
                         <span class="code-value">{{ channel.chatId }}</span>
                       </td>
                       <td>
-                        <span 
+                        <span
                           class="status-badge"
                           :style="{ color: formatChannelStatus(channel.chatUsername).color }"
                         >
@@ -1748,7 +1868,7 @@ const deleteProject = async () => {
                       </td>
                       <td>{{ formatDate(channel.lastSeenAt) }}</td>
                       <td>
-                        <button 
+                        <button
                           v-if="channel.botId"
                           @click="viewWebhooks(channel.botId, channel.chatId)"
                           class="btn btn-secondary btn-sm"
@@ -1775,10 +1895,14 @@ const deleteProject = async () => {
                     <div class="warning-text">
                       <strong>Статус канала изменился</strong>
                       <span v-if="statusChangeWarning.channelId">
-                        Канал "{{ getChannelName(statusChangeWarning.channelId) }}" изменил статус с 
-                        <span class="status-text">{{ formatBotStatus(statusChangeWarning.oldStatus).text }}</span> 
-                        на 
-                        <span class="status-text">{{ formatBotStatus(statusChangeWarning.newStatus).text }}</span>
+                        Канал "{{ getChannelName(statusChangeWarning.channelId) }}" изменил статус с
+                        <span class="status-text">{{
+                          formatBotStatus(statusChangeWarning.oldStatus).text
+                        }}</span>
+                        на
+                        <span class="status-text">{{
+                          formatBotStatus(statusChangeWarning.newStatus).text
+                        }}</span>
                       </span>
                     </div>
                   </div>
@@ -1787,35 +1911,46 @@ const deleteProject = async () => {
                   </button>
                 </div>
               </Transition>
-              
+
               <div class="section-header">
                 <h2 class="section-title">Ссылки проекта</h2>
                 <div class="section-actions">
-                  <button @click="openCreateLinkModal" class="btn btn-primary btn-sm" :disabled="channels.length === 0">
+                  <button
+                    @click="openCreateLinkModal"
+                    class="btn btn-primary btn-sm"
+                    :disabled="channels.length === 0"
+                  >
                     <i class="fas fa-plus"></i>
                     Создать ссылку
                   </button>
-                  <button @click="loadLinks" class="btn btn-secondary btn-sm" :disabled="loadingLinks">
+                  <button
+                    @click="loadLinks"
+                    class="btn btn-secondary btn-sm"
+                    :disabled="loadingLinks"
+                  >
                     <i v-if="loadingLinks" class="fas fa-spinner fa-spin"></i>
                     <i v-else class="fas fa-sync-alt"></i>
                     Обновить
                   </button>
                 </div>
               </div>
-              
+
               <div class="links-filter">
                 <label class="filter-label">
                   <i class="fas fa-filter"></i>
                   Фильтр по каналу
                 </label>
                 <div class="custom-select-wrapper" ref="channelFilterRef">
-                  <div 
+                  <div
                     class="custom-select"
                     :class="{ 'custom-select-open': channelFilterOpen }"
                     @click="channelFilterOpen = !channelFilterOpen"
                   >
                     <span class="custom-select-value">{{ selectedChannelName }}</span>
-                    <i class="fas fa-chevron-down custom-select-arrow" :class="{ 'custom-select-arrow-open': channelFilterOpen }"></i>
+                    <i
+                      class="fas fa-chevron-down custom-select-arrow"
+                      :class="{ 'custom-select-arrow-open': channelFilterOpen }"
+                    ></i>
                   </div>
                   <div v-if="channelFilterOpen" class="custom-select-dropdown">
                     <div class="custom-select-search">
@@ -1830,54 +1965,59 @@ const deleteProject = async () => {
                       />
                     </div>
                     <div class="custom-select-options">
-                      <div 
+                      <div
                         class="custom-select-option"
                         :class="{ 'custom-select-option-selected': selectedChannelId === null }"
                         @click="selectChannel(null)"
                       >
                         Все каналы
                       </div>
-                      <div 
-                        v-for="channel in filteredChannelsForFilter" 
+                      <div
+                        v-for="channel in filteredChannelsForFilter"
                         :key="channel.id"
                         class="custom-select-option"
-                        :class="{ 'custom-select-option-selected': selectedChannelId === channel.id }"
+                        :class="{
+                          'custom-select-option-selected': selectedChannelId === channel.id
+                        }"
                         @click="selectChannel(channel.id)"
                       >
                         {{ channel.chatTitle || channel.chatUsername || channel.chatId }}
                       </div>
-                      <div v-if="filteredChannelsForFilter.length === 0" class="custom-select-no-results">
+                      <div
+                        v-if="filteredChannelsForFilter.length === 0"
+                        class="custom-select-no-results"
+                      >
                         Каналы не найдены
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
-              
+
               <div v-if="loadingChannels || loadingLinks" class="loading-container-small">
                 <div class="loading-spinner"></div>
                 <p>{{ loadingChannels ? 'Загрузка каналов...' : 'Загрузка ссылок...' }}</p>
               </div>
-              
+
               <div v-else-if="channels.length === 0" class="empty-state">
                 <i class="fas fa-link"></i>
                 <p>Нет каналов</p>
                 <p class="empty-subtext">Сначала добавьте бота и дождитесь появления каналов</p>
               </div>
-              
+
               <div v-else-if="linksError" class="error-container">
                 <div class="error-message">
                   <i class="fas fa-exclamation-circle"></i>
                   <span>{{ linksError }}</span>
                 </div>
               </div>
-              
+
               <div v-else-if="links.length === 0" class="empty-state">
                 <i class="fas fa-link"></i>
                 <p>Нет ссылок</p>
                 <p class="empty-subtext">Создайте первую ссылку для отслеживания переходов</p>
               </div>
-              
+
               <div v-else class="table-container">
                 <table class="data-table">
                   <thead>
@@ -1893,7 +2033,7 @@ const deleteProject = async () => {
                   </thead>
                   <tbody>
                     <tr v-for="link in links" :key="link.id">
-                      <td 
+                      <td
                         class="cell-with-tooltip"
                         @mouseenter="showTooltip($event, link.name)"
                         @mouseleave="hideTooltip"
@@ -1905,21 +2045,28 @@ const deleteProject = async () => {
                           <span class="cell-content">
                             {{ getChannelName(link.channelId) }}
                           </span>
-                          <span 
+                          <span
                             v-if="getChannelStatus(link.channelId)"
                             class="status-badge status-badge-small"
-                            :style="{ color: formatBotStatus(getChannelStatus(link.channelId)).color }"
+                            :style="{
+                              color: formatBotStatus(getChannelStatus(link.channelId)).color
+                            }"
                           >
-                            <i :class="['fas', formatBotStatus(getChannelStatus(link.channelId)).icon]"></i>
+                            <i
+                              :class="[
+                                'fas',
+                                formatBotStatus(getChannelStatus(link.channelId)).icon
+                              ]"
+                            ></i>
                             {{ formatBotStatus(getChannelStatus(link.channelId)).text }}
                           </span>
                         </div>
                         <span v-else class="text-secondary">—</span>
                       </td>
                       <td>
-                        <a 
-                          v-if="link.placementUrl" 
-                          :href="link.placementUrl" 
+                        <a
+                          v-if="link.placementUrl"
+                          :href="link.placementUrl"
                           target="_blank"
                           class="text-[var(--color-primary)] hover:underline text-sm cell-content-link"
                           :title="link.placementUrl"
@@ -1932,7 +2079,7 @@ const deleteProject = async () => {
                       <td>{{ link.clicksCount || 0 }}</td>
                       <td>{{ link.subscribesCount || 0 }}</td>
                       <td>
-                        <button 
+                        <button
                           @click="copyLinkToClipboard(link.id)"
                           class="btn btn-secondary btn-sm"
                           title="Копировать ссылку"
@@ -1942,7 +2089,7 @@ const deleteProject = async () => {
                         </button>
                       </td>
                       <td>
-                        <button 
+                        <button
                           @click="deleteLink(link.id)"
                           class="btn btn-danger btn-sm"
                           :disabled="deletingLinkId === link.id"
@@ -1963,17 +2110,13 @@ const deleteProject = async () => {
             <div v-if="activeTab === 'members' && canManageMembers" class="tab-panel">
               <h2 class="section-title">Участники проекта</h2>
               <div v-if="project.members && project.members.length > 0" class="members-list">
-                <div 
-                  v-for="member in project.members" 
-                  :key="member.userId"
-                  class="member-item"
-                >
+                <div v-for="member in project.members" :key="member.userId" class="member-item">
                   <div class="member-info">
                     <div class="member-role">
-                      <i 
-                        :class="['fas', member.role === 'owner' ? 'fa-crown' : 'fa-user']"
-                      ></i>
-                      <span class="role-label">{{ member.role === 'owner' ? 'Владелец' : 'Участник' }}</span>
+                      <i :class="['fas', member.role === 'owner' ? 'fa-crown' : 'fa-user']"></i>
+                      <span class="role-label">{{
+                        member.role === 'owner' ? 'Владелец' : 'Участник'
+                      }}</span>
                     </div>
                     <div class="member-id">ID: {{ member.userId }}</div>
                   </div>
@@ -1999,29 +2142,29 @@ const deleteProject = async () => {
             <div v-if="activeTab === 'requests' && canViewRequests" class="tab-panel">
               <div class="section-header">
                 <h2 class="section-title">Входящие запросы</h2>
-                <button @click="loadRequests" class="btn btn-secondary btn-sm" :disabled="loadingRequests">
+                <button
+                  @click="loadRequests"
+                  class="btn btn-secondary btn-sm"
+                  :disabled="loadingRequests"
+                >
                   <i v-if="loadingRequests" class="fas fa-spinner fa-spin"></i>
                   <i v-else class="fas fa-sync-alt"></i>
                   Обновить
                 </button>
               </div>
-              
+
               <div v-if="loadingRequests" class="loading-container-small">
                 <div class="loading-spinner"></div>
                 <p>Загрузка заявок...</p>
               </div>
-              
+
               <div v-else-if="requests.length === 0" class="empty-state">
                 <i class="fas fa-inbox"></i>
                 <p>Нет входящих заявок</p>
               </div>
-              
+
               <div v-else class="requests-list">
-                <div 
-                  v-for="request in requests" 
-                  :key="request.id"
-                  class="request-item"
-                >
+                <div v-for="request in requests" :key="request.id" class="request-item">
                   <div class="request-info">
                     <div class="request-user">
                       <i class="fas fa-user"></i>
@@ -2038,7 +2181,10 @@ const deleteProject = async () => {
                       class="btn btn-success btn-sm"
                       :disabled="processingRequestId === request.id"
                     >
-                      <i v-if="processingRequestId === request.id" class="fas fa-spinner fa-spin"></i>
+                      <i
+                        v-if="processingRequestId === request.id"
+                        class="fas fa-spinner fa-spin"
+                      ></i>
                       <i v-else class="fas fa-check"></i>
                       Принять
                     </button>
@@ -2047,7 +2193,10 @@ const deleteProject = async () => {
                       class="btn btn-danger btn-sm"
                       :disabled="processingRequestId === request.id"
                     >
-                      <i v-if="processingRequestId === request.id" class="fas fa-spinner fa-spin"></i>
+                      <i
+                        v-if="processingRequestId === request.id"
+                        class="fas fa-spinner fa-spin"
+                      ></i>
                       <i v-else class="fas fa-times"></i>
                       Отклонить
                     </button>
@@ -2094,10 +2243,14 @@ const deleteProject = async () => {
 
     <!-- Add Token Modal -->
     <Transition name="modal">
-      <div v-if="showAddTokenModal" class="modal-overlay" @click="addingToken ? null : closeAddTokenModal">
+      <div
+        v-if="showAddTokenModal"
+        class="modal-overlay"
+        @click="addingToken ? null : closeAddTokenModal"
+      >
         <div class="modal-content" @click.stop>
           <div class="modal-scanlines"></div>
-          
+
           <div class="modal-header">
             <h2 class="modal-title">Ввести новый токен</h2>
             <button @click="closeAddTokenModal" class="modal-close-btn" :disabled="addingToken">
@@ -2111,15 +2264,16 @@ const deleteProject = async () => {
                 <i class="fas fa-key"></i>
                 Токен бота
               </label>
-              <input 
+              <input
                 v-model="newToken"
-                type="text" 
+                type="text"
                 class="form-input"
                 placeholder="1234567890:ABCdefGHIjklMNOpqrsTUVwxyz"
                 :disabled="addingToken"
               />
               <p class="form-hint">
-                Токен можно получить у <a href="https://t.me/BotFather" target="_blank" class="form-link">@BotFather</a>
+                Токен можно получить у
+                <a href="https://t.me/BotFather" target="_blank" class="form-link">@BotFather</a>
               </p>
               <div v-if="tokenError" class="form-error">
                 <i class="fas fa-exclamation-circle"></i>
@@ -2136,7 +2290,11 @@ const deleteProject = async () => {
               </span>
               <span v-else>Добавить</span>
             </button>
-            <button @click="closeAddTokenModal" class="modal-btn modal-btn-cancel" :disabled="addingToken">
+            <button
+              @click="closeAddTokenModal"
+              class="modal-btn modal-btn-cancel"
+              :disabled="addingToken"
+            >
               Отмена
             </button>
           </div>
@@ -2146,10 +2304,14 @@ const deleteProject = async () => {
 
     <!-- Create Link Modal -->
     <Transition name="modal">
-      <div v-if="showCreateLinkModal" class="modal-overlay" @click="creatingLink ? null : closeCreateLinkModal">
+      <div
+        v-if="showCreateLinkModal"
+        class="modal-overlay"
+        @click="creatingLink ? null : closeCreateLinkModal"
+      >
         <div class="modal-content" @click.stop>
           <div class="modal-scanlines"></div>
-          
+
           <div class="modal-header">
             <h2 class="modal-title">Создать ссылку</h2>
             <button @click="closeCreateLinkModal" class="modal-close-btn" :disabled="creatingLink">
@@ -2163,9 +2325,9 @@ const deleteProject = async () => {
                 <i class="fas fa-tag"></i>
                 Название ссылки <span style="color: var(--color-accent)">*</span>
               </label>
-              <input 
+              <input
                 v-model="newLinkName"
-                type="text" 
+                type="text"
                 class="form-input"
                 placeholder="Например: Реклама в Instagram"
                 :disabled="creatingLink"
@@ -2181,16 +2343,14 @@ const deleteProject = async () => {
                 <i class="fas fa-link"></i>
                 Место размещения (URL)
               </label>
-              <input 
+              <input
                 v-model="newLinkPlacementUrl"
-                type="text" 
+                type="text"
                 class="form-input"
                 placeholder="https://example.com/page"
                 :disabled="creatingLink"
               />
-              <p class="form-hint">
-                Опционально: укажите URL, где будет размещена эта ссылка
-              </p>
+              <p class="form-hint">Опционально: укажите URL, где будет размещена эта ссылка</p>
             </div>
 
             <div class="form-group">
@@ -2199,16 +2359,28 @@ const deleteProject = async () => {
                 Канал <span style="color: var(--color-accent)">*</span>
               </label>
               <div class="custom-select-wrapper custom-select-form" ref="modalChannelDropdownRef">
-                <div 
+                <div
                   class="custom-select form-input"
-                  :class="{ 'custom-select-open': modalChannelDropdownOpen, 'form-input-disabled': creatingLink }"
+                  :class="{
+                    'custom-select-open': modalChannelDropdownOpen,
+                    'form-input-disabled': creatingLink
+                  }"
                   @click="!creatingLink && (modalChannelDropdownOpen = !modalChannelDropdownOpen)"
-                  :style="{ cursor: creatingLink ? 'not-allowed' : 'pointer', opacity: creatingLink ? 0.6 : 1 }"
+                  :style="{
+                    cursor: creatingLink ? 'not-allowed' : 'pointer',
+                    opacity: creatingLink ? 0.6 : 1
+                  }"
                 >
                   <span class="custom-select-value">{{ selectedModalChannelName }}</span>
-                  <i class="fas fa-chevron-down custom-select-arrow" :class="{ 'custom-select-arrow-open': modalChannelDropdownOpen }"></i>
+                  <i
+                    class="fas fa-chevron-down custom-select-arrow"
+                    :class="{ 'custom-select-arrow-open': modalChannelDropdownOpen }"
+                  ></i>
                 </div>
-                <div v-if="modalChannelDropdownOpen && !creatingLink" class="custom-select-dropdown">
+                <div
+                  v-if="modalChannelDropdownOpen && !creatingLink"
+                  class="custom-select-dropdown"
+                >
                   <div class="custom-select-search">
                     <i class="fas fa-search"></i>
                     <input
@@ -2221,8 +2393,8 @@ const deleteProject = async () => {
                     />
                   </div>
                   <div class="custom-select-options">
-                    <div 
-                      v-for="channel in filteredChannelsForModal" 
+                    <div
+                      v-for="channel in filteredChannelsForModal"
                       :key="channel.id"
                       class="custom-select-option"
                       :class="{ 'custom-select-option-selected': newLinkChannelId === channel.id }"
@@ -2230,7 +2402,10 @@ const deleteProject = async () => {
                     >
                       {{ channel.chatTitle || channel.chatUsername || channel.chatId }}
                     </div>
-                    <div v-if="filteredChannelsForModal.length === 0" class="custom-select-no-results">
+                    <div
+                      v-if="filteredChannelsForModal.length === 0"
+                      class="custom-select-no-results"
+                    >
                       Каналы не найдены
                     </div>
                   </div>
@@ -2247,15 +2422,11 @@ const deleteProject = async () => {
                 <i class="fas fa-robot"></i>
                 Бот <span style="color: var(--color-accent)">*</span>
               </label>
-              <select 
-                v-model="newLinkBotId" 
-                class="form-input"
-                :disabled="creatingLink"
-              >
+              <select v-model="newLinkBotId" class="form-input" :disabled="creatingLink">
                 <option :value="null">Выберите бота</option>
-                <option 
-                  v-for="bot in getBotsForChannel(newLinkChannelId)" 
-                  :key="bot.id" 
+                <option
+                  v-for="bot in getBotsForChannel(newLinkChannelId)"
+                  :key="bot.id"
                   :value="bot.id"
                 >
                   {{ bot.botName || bot.botUsername || bot.id }}
@@ -2267,7 +2438,15 @@ const deleteProject = async () => {
               </div>
             </div>
 
-            <div v-if="linkError && !linkError.includes('Название') && !linkError.includes('канал') && !linkError.includes('бот')" class="form-error">
+            <div
+              v-if="
+                linkError &&
+                !linkError.includes('Название') &&
+                !linkError.includes('канал') &&
+                !linkError.includes('бот')
+              "
+              class="form-error"
+            >
               <i class="fas fa-exclamation-circle"></i>
               <span>{{ linkError }}</span>
             </div>
@@ -2281,7 +2460,11 @@ const deleteProject = async () => {
               </span>
               <span v-else>Создать</span>
             </button>
-            <button @click="closeCreateLinkModal" class="modal-btn modal-btn-cancel" :disabled="creatingLink">
+            <button
+              @click="closeCreateLinkModal"
+              class="modal-btn modal-btn-cancel"
+              :disabled="creatingLink"
+            >
               Отмена
             </button>
           </div>
@@ -2291,10 +2474,14 @@ const deleteProject = async () => {
 
     <!-- Edit Name Modal -->
     <Transition name="modal">
-      <div v-if="showEditNameModal" class="modal-overlay" @click="editingName ? null : closeEditNameModal">
+      <div
+        v-if="showEditNameModal"
+        class="modal-overlay"
+        @click="editingName ? null : closeEditNameModal"
+      >
         <div class="modal-content" @click.stop>
           <div class="modal-scanlines"></div>
-          
+
           <div class="modal-header">
             <h2 class="modal-title">Редактировать название проекта</h2>
             <button @click="closeEditNameModal" class="modal-close-btn" :disabled="editingName">
@@ -2308,9 +2495,9 @@ const deleteProject = async () => {
                 <i class="fas fa-tag"></i>
                 Название <span style="color: var(--color-accent)">*</span>
               </label>
-              <input 
+              <input
                 v-model="editName"
-                type="text" 
+                type="text"
                 class="form-input"
                 placeholder="Введите название проекта"
                 :disabled="editingName"
@@ -2324,14 +2511,22 @@ const deleteProject = async () => {
           </div>
 
           <div class="modal-footer">
-            <button @click="saveProjectName" class="modal-btn modal-btn-submit" :disabled="editingName">
+            <button
+              @click="saveProjectName"
+              class="modal-btn modal-btn-submit"
+              :disabled="editingName"
+            >
               <span v-if="editingName">
                 <i class="fas fa-spinner fa-spin"></i>
                 Сохранение...
               </span>
               <span v-else>Сохранить</span>
             </button>
-            <button @click="closeEditNameModal" class="modal-btn modal-btn-cancel" :disabled="editingName">
+            <button
+              @click="closeEditNameModal"
+              class="modal-btn modal-btn-cancel"
+              :disabled="editingName"
+            >
               Отмена
             </button>
           </div>
@@ -2341,13 +2536,21 @@ const deleteProject = async () => {
 
     <!-- Edit Description Modal -->
     <Transition name="modal">
-      <div v-if="showEditDescriptionModal" class="modal-overlay" @click="editingDescription ? null : closeEditDescriptionModal">
+      <div
+        v-if="showEditDescriptionModal"
+        class="modal-overlay"
+        @click="editingDescription ? null : closeEditDescriptionModal"
+      >
         <div class="modal-content" @click.stop>
           <div class="modal-scanlines"></div>
-          
+
           <div class="modal-header">
             <h2 class="modal-title">Редактировать описание проекта</h2>
-            <button @click="closeEditDescriptionModal" class="modal-close-btn" :disabled="editingDescription">
+            <button
+              @click="closeEditDescriptionModal"
+              class="modal-close-btn"
+              :disabled="editingDescription"
+            >
               <i class="fas fa-times"></i>
             </button>
           </div>
@@ -2358,7 +2561,7 @@ const deleteProject = async () => {
                 <i class="fas fa-align-left"></i>
                 Описание
               </label>
-              <textarea 
+              <textarea
                 v-model="editDescription"
                 class="form-input"
                 placeholder="Введите описание проекта (необязательно)"
@@ -2373,14 +2576,22 @@ const deleteProject = async () => {
           </div>
 
           <div class="modal-footer">
-            <button @click="saveProjectDescription" class="modal-btn modal-btn-submit" :disabled="editingDescription">
+            <button
+              @click="saveProjectDescription"
+              class="modal-btn modal-btn-submit"
+              :disabled="editingDescription"
+            >
               <span v-if="editingDescription">
                 <i class="fas fa-spinner fa-spin"></i>
                 Сохранение...
               </span>
               <span v-else>Сохранить</span>
             </button>
-            <button @click="closeEditDescriptionModal" class="modal-btn modal-btn-cancel" :disabled="editingDescription">
+            <button
+              @click="closeEditDescriptionModal"
+              class="modal-btn modal-btn-cancel"
+              :disabled="editingDescription"
+            >
               Отмена
             </button>
           </div>
@@ -2390,13 +2601,21 @@ const deleteProject = async () => {
 
     <!-- Transfer Ownership Modal -->
     <Transition name="modal">
-      <div v-if="showTransferOwnershipModal" class="modal-overlay" @click="transferringOwnership ? null : closeTransferOwnershipModal">
+      <div
+        v-if="showTransferOwnershipModal"
+        class="modal-overlay"
+        @click="transferringOwnership ? null : closeTransferOwnershipModal"
+      >
         <div class="modal-content" @click.stop>
           <div class="modal-scanlines"></div>
-          
+
           <div class="modal-header">
             <h2 class="modal-title">Передать права владельца</h2>
-            <button @click="closeTransferOwnershipModal" class="modal-close-btn" :disabled="transferringOwnership">
+            <button
+              @click="closeTransferOwnershipModal"
+              class="modal-close-btn"
+              :disabled="transferringOwnership"
+            >
               <i class="fas fa-times"></i>
             </button>
           </div>
@@ -2407,23 +2626,21 @@ const deleteProject = async () => {
                 <i class="fas fa-user-crown"></i>
                 Новый владелец <span style="color: var(--color-accent)">*</span>
               </label>
-              <select 
-                v-model="transferOwnershipUserId" 
+              <select
+                v-model="transferOwnershipUserId"
                 class="form-input"
                 :disabled="transferringOwnership"
               >
                 <option :value="null">Выберите участника</option>
-                <option 
-                  v-for="member in availableMembersForTransfer" 
-                  :key="member.userId" 
+                <option
+                  v-for="member in availableMembersForTransfer"
+                  :key="member.userId"
                   :value="member.userId"
                 >
                   ID: {{ member.userId }} ({{ member.role === 'owner' ? 'Владелец' : 'Участник' }})
                 </option>
               </select>
-              <p class="form-hint">
-                После передачи прав вы станете обычным участником проекта
-              </p>
+              <p class="form-hint">После передачи прав вы станете обычным участником проекта</p>
               <div v-if="editError" class="form-error">
                 <i class="fas fa-exclamation-circle"></i>
                 <span>{{ editError }}</span>
@@ -2432,14 +2649,22 @@ const deleteProject = async () => {
           </div>
 
           <div class="modal-footer">
-            <button @click="transferOwnership" class="modal-btn modal-btn-submit" :disabled="transferringOwnership || !transferOwnershipUserId">
+            <button
+              @click="transferOwnership"
+              class="modal-btn modal-btn-submit"
+              :disabled="transferringOwnership || !transferOwnershipUserId"
+            >
               <span v-if="transferringOwnership">
                 <i class="fas fa-spinner fa-spin"></i>
                 Передача...
               </span>
               <span v-else>Передать права</span>
             </button>
-            <button @click="closeTransferOwnershipModal" class="modal-btn modal-btn-cancel" :disabled="transferringOwnership">
+            <button
+              @click="closeTransferOwnershipModal"
+              class="modal-btn modal-btn-cancel"
+              :disabled="transferringOwnership"
+            >
               Отмена
             </button>
           </div>
@@ -2449,10 +2674,10 @@ const deleteProject = async () => {
 
     <!-- Tooltip -->
     <Transition name="tooltip">
-      <div 
-        v-if="tooltip.show" 
+      <div
+        v-if="tooltip.show"
         class="custom-tooltip"
-        :style="{ left: tooltip.x + 'px', top: (tooltip.y - 10) + 'px' }"
+        :style="{ left: tooltip.x + 'px', top: tooltip.y - 10 + 'px' }"
       >
         {{ tooltip.text }}
       </div>
@@ -2531,7 +2756,9 @@ const deleteProject = async () => {
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .error-message {
@@ -2606,10 +2833,18 @@ const deleteProject = async () => {
   gap: 0.5rem;
   text-decoration: none;
   clip-path: polygon(
-    0 3px, 3px 3px, 3px 0,
-    calc(100% - 3px) 0, calc(100% - 3px) 3px, 100% 3px,
-    100% calc(100% - 3px), calc(100% - 3px) calc(100% - 3px), calc(100% - 3px) 100%,
-    3px 100%, 3px calc(100% - 3px), 0 calc(100% - 3px)
+    0 3px,
+    3px 3px,
+    3px 0,
+    calc(100% - 3px) 0,
+    calc(100% - 3px) 3px,
+    100% 3px,
+    100% calc(100% - 3px),
+    calc(100% - 3px) calc(100% - 3px),
+    calc(100% - 3px) 100%,
+    3px 100%,
+    3px calc(100% - 3px),
+    0 calc(100% - 3px)
   );
 }
 
@@ -2763,10 +2998,18 @@ const deleteProject = async () => {
   border: 2px solid var(--color-border);
   padding: 2rem;
   clip-path: polygon(
-    0 4px, 4px 4px, 4px 0,
-    calc(100% - 4px) 0, calc(100% - 4px) 4px, 100% 4px,
-    100% calc(100% - 4px), calc(100% - 4px) calc(100% - 4px), calc(100% - 4px) 100%,
-    4px 100%, 4px calc(100% - 4px), 0 calc(100% - 4px)
+    0 4px,
+    4px 4px,
+    4px 0,
+    calc(100% - 4px) 0,
+    calc(100% - 4px) 4px,
+    100% 4px,
+    100% calc(100% - 4px),
+    calc(100% - 4px) calc(100% - 4px),
+    calc(100% - 4px) 100%,
+    4px 100%,
+    4px calc(100% - 4px),
+    0 calc(100% - 4px)
   );
 }
 
@@ -2816,10 +3059,18 @@ const deleteProject = async () => {
   background: var(--color-bg-secondary);
   border: 2px solid var(--color-border);
   clip-path: polygon(
-    0 4px, 4px 4px, 4px 0,
-    calc(100% - 4px) 0, calc(100% - 4px) 4px, 100% 4px,
-    100% calc(100% - 4px), calc(100% - 4px) calc(100% - 4px), calc(100% - 4px) 100%,
-    4px 100%, 4px calc(100% - 4px), 0 calc(100% - 4px)
+    0 4px,
+    4px 4px,
+    4px 0,
+    calc(100% - 4px) 0,
+    calc(100% - 4px) 4px,
+    100% 4px,
+    100% calc(100% - 4px),
+    calc(100% - 4px) calc(100% - 4px),
+    calc(100% - 4px) 100%,
+    4px 100%,
+    4px calc(100% - 4px),
+    0 calc(100% - 4px)
   );
 }
 
@@ -2909,10 +3160,18 @@ const deleteProject = async () => {
   border: 2px solid var(--color-border);
   padding: 1.5rem;
   clip-path: polygon(
-    0 4px, 4px 4px, 4px 0,
-    calc(100% - 4px) 0, calc(100% - 4px) 4px, 100% 4px,
-    100% calc(100% - 4px), calc(100% - 4px) calc(100% - 4px), calc(100% - 4px) 100%,
-    4px 100%, 4px calc(100% - 4px), 0 calc(100% - 4px)
+    0 4px,
+    4px 4px,
+    4px 0,
+    calc(100% - 4px) 0,
+    calc(100% - 4px) 4px,
+    100% 4px,
+    100% calc(100% - 4px),
+    calc(100% - 4px) calc(100% - 4px),
+    calc(100% - 4px) 100%,
+    4px 100%,
+    4px calc(100% - 4px),
+    0 calc(100% - 4px)
   );
   position: relative;
   width: 100%;
@@ -3114,15 +3373,23 @@ const deleteProject = async () => {
   white-space: nowrap;
   z-index: 10000;
   pointer-events: none;
-  box-shadow: 
+  box-shadow:
     0 0 20px rgba(211, 35, 75, 0.4),
     0 0 40px rgba(211, 35, 75, 0.2),
     inset 0 1px 0 rgba(255, 255, 255, 0.05);
   clip-path: polygon(
-    0 3px, 3px 3px, 3px 0,
-    calc(100% - 3px) 0, calc(100% - 3px) 3px, 100% 3px,
-    100% calc(100% - 3px), calc(100% - 3px) calc(100% - 3px), calc(100% - 3px) 100%,
-    3px 100%, 3px calc(100% - 3px), 0 calc(100% - 3px)
+    0 3px,
+    3px 3px,
+    3px 0,
+    calc(100% - 3px) 0,
+    calc(100% - 3px) 3px,
+    100% 3px,
+    100% calc(100% - 3px),
+    calc(100% - 3px) calc(100% - 3px),
+    calc(100% - 3px) 100%,
+    3px 100%,
+    3px calc(100% - 3px),
+    0 calc(100% - 3px)
   );
 }
 
@@ -3236,11 +3503,15 @@ const deleteProject = async () => {
 }
 
 .tooltip-enter-active {
-  transition: opacity 0.2s ease-out, transform 0.2s ease-out;
+  transition:
+    opacity 0.2s ease-out,
+    transform 0.2s ease-out;
 }
 
 .tooltip-leave-active {
-  transition: opacity 0.15s ease-in, transform 0.15s ease-in;
+  transition:
+    opacity 0.15s ease-in,
+    transform 0.15s ease-in;
 }
 
 .tooltip-enter-from {
@@ -3276,10 +3547,18 @@ const deleteProject = async () => {
   background: var(--color-bg-secondary);
   border: 2px solid var(--color-border);
   clip-path: polygon(
-    0 4px, 4px 4px, 4px 0,
-    calc(100% - 4px) 0, calc(100% - 4px) 4px, 100% 4px,
-    100% calc(100% - 4px), calc(100% - 4px) calc(100% - 4px), calc(100% - 4px) 100%,
-    4px 100%, 4px calc(100% - 4px), 0 calc(100% - 4px)
+    0 4px,
+    4px 4px,
+    4px 0,
+    calc(100% - 4px) 0,
+    calc(100% - 4px) 4px,
+    100% 4px,
+    100% calc(100% - 4px),
+    calc(100% - 4px) calc(100% - 4px),
+    calc(100% - 4px) 100%,
+    4px 100%,
+    4px calc(100% - 4px),
+    0 calc(100% - 4px)
   );
   z-index: 0;
   pointer-events: none;
@@ -3340,10 +3619,18 @@ const deleteProject = async () => {
   align-items: center;
   justify-content: space-between;
   clip-path: polygon(
-    0 3px, 3px 3px, 3px 0,
-    calc(100% - 3px) 0, calc(100% - 3px) 3px, 100% 3px,
-    100% calc(100% - 3px), calc(100% - 3px) calc(100% - 3px), calc(100% - 3px) 100%,
-    3px 100%, 3px calc(100% - 3px), 0 calc(100% - 3px)
+    0 3px,
+    3px 3px,
+    3px 0,
+    calc(100% - 3px) 0,
+    calc(100% - 3px) 3px,
+    100% 3px,
+    100% calc(100% - 3px),
+    calc(100% - 3px) calc(100% - 3px),
+    calc(100% - 3px) 100%,
+    3px 100%,
+    3px calc(100% - 3px),
+    0 calc(100% - 3px)
   );
 }
 
@@ -3386,10 +3673,18 @@ const deleteProject = async () => {
   display: flex;
   flex-direction: column;
   clip-path: polygon(
-    0 3px, 3px 3px, 3px 0,
-    calc(100% - 3px) 0, calc(100% - 3px) 3px, 100% 3px,
-    100% calc(100% - 3px), calc(100% - 3px) calc(100% - 3px), calc(100% - 3px) 100%,
-    3px 100%, 3px calc(100% - 3px), 0 calc(100% - 3px)
+    0 3px,
+    3px 3px,
+    3px 0,
+    calc(100% - 3px) 0,
+    calc(100% - 3px) 3px,
+    100% 3px,
+    100% calc(100% - 3px),
+    calc(100% - 3px) calc(100% - 3px),
+    calc(100% - 3px) 100%,
+    3px 100%,
+    3px calc(100% - 3px),
+    0 calc(100% - 3px)
   );
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
 }
@@ -3524,15 +3819,23 @@ const deleteProject = async () => {
   bottom: 0;
   background: linear-gradient(135deg, var(--color-bg-secondary) 0%, var(--color-bg-tertiary) 100%);
   border: 2px solid var(--color-accent);
-  box-shadow: 
+  box-shadow:
     0 0 40px rgba(211, 35, 75, 0.4),
     0 0 80px rgba(211, 35, 75, 0.2),
     inset 0 1px 0 rgba(255, 255, 255, 0.05);
   clip-path: polygon(
-    0 4px, 4px 4px, 4px 0,
-    calc(100% - 4px) 0, calc(100% - 4px) 4px, 100% 4px,
-    100% calc(100% - 4px), calc(100% - 4px) calc(100% - 4px), calc(100% - 4px) 100%,
-    4px 100%, 4px calc(100% - 4px), 0 calc(100% - 4px)
+    0 4px,
+    4px 4px,
+    4px 0,
+    calc(100% - 4px) 0,
+    calc(100% - 4px) 4px,
+    100% 4px,
+    100% calc(100% - 4px),
+    calc(100% - 4px) calc(100% - 4px),
+    calc(100% - 4px) 100%,
+    4px 100%,
+    4px calc(100% - 4px),
+    0 calc(100% - 4px)
   );
   z-index: 0;
   pointer-events: none;
@@ -3615,7 +3918,7 @@ const deleteProject = async () => {
   color: var(--color-text);
   margin: 0;
   letter-spacing: 0.08em;
-  text-shadow: 
+  text-shadow:
     0 0 10px rgba(232, 232, 232, 0.4),
     0 0 20px rgba(211, 35, 75, 0.2);
 }
@@ -3635,10 +3938,18 @@ const deleteProject = async () => {
   position: relative;
   overflow: hidden;
   clip-path: polygon(
-    0 3px, 3px 3px, 3px 0,
-    calc(100% - 3px) 0, calc(100% - 3px) 3px, 100% 3px,
-    100% calc(100% - 3px), calc(100% - 3px) calc(100% - 3px), calc(100% - 3px) 100%,
-    3px 100%, 3px calc(100% - 3px), 0 calc(100% - 3px)
+    0 3px,
+    3px 3px,
+    3px 0,
+    calc(100% - 3px) 0,
+    calc(100% - 3px) 3px,
+    100% 3px,
+    100% calc(100% - 3px),
+    calc(100% - 3px) calc(100% - 3px),
+    calc(100% - 3px) 100%,
+    3px 100%,
+    3px calc(100% - 3px),
+    0 calc(100% - 3px)
   );
 }
 
@@ -3709,10 +4020,18 @@ const deleteProject = async () => {
   letter-spacing: 0.05em;
   transition: var(--transition);
   clip-path: polygon(
-    0 3px, 3px 3px, 3px 0,
-    calc(100% - 3px) 0, calc(100% - 3px) 3px, 100% 3px,
-    100% calc(100% - 3px), calc(100% - 3px) calc(100% - 3px), calc(100% - 3px) 100%,
-    3px 100%, 3px calc(100% - 3px), 0 calc(100% - 3px)
+    0 3px,
+    3px 3px,
+    3px 0,
+    calc(100% - 3px) 0,
+    calc(100% - 3px) 3px,
+    100% 3px,
+    100% calc(100% - 3px),
+    calc(100% - 3px) calc(100% - 3px),
+    calc(100% - 3px) 100%,
+    3px 100%,
+    3px calc(100% - 3px),
+    0 calc(100% - 3px)
   );
 }
 
@@ -3768,10 +4087,18 @@ textarea.form-input {
   font-size: 0.875rem;
   margin-top: 0.5rem;
   clip-path: polygon(
-    0 2px, 2px 2px, 2px 0,
-    calc(100% - 2px) 0, calc(100% - 2px) 2px, 100% 2px,
-    100% calc(100% - 2px), calc(100% - 2px) calc(100% - 2px), calc(100% - 2px) 100%,
-    2px 100%, 2px calc(100% - 2px), 0 calc(100% - 2px)
+    0 2px,
+    2px 2px,
+    2px 0,
+    calc(100% - 2px) 0,
+    calc(100% - 2px) 2px,
+    100% 2px,
+    100% calc(100% - 2px),
+    calc(100% - 2px) calc(100% - 2px),
+    calc(100% - 2px) 100%,
+    2px 100%,
+    2px calc(100% - 2px),
+    0 calc(100% - 2px)
   );
 }
 
@@ -3808,10 +4135,18 @@ textarea.form-input {
   font-family: 'Courier New', monospace;
   text-transform: uppercase;
   clip-path: polygon(
-    0 3px, 3px 3px, 3px 0,
-    calc(100% - 3px) 0, calc(100% - 3px) 3px, 100% 3px,
-    100% calc(100% - 3px), calc(100% - 3px) calc(100% - 3px), calc(100% - 3px) 100%,
-    3px 100%, 3px calc(100% - 3px), 0 calc(100% - 3px)
+    0 3px,
+    3px 3px,
+    3px 0,
+    calc(100% - 3px) 0,
+    calc(100% - 3px) 3px,
+    100% 3px,
+    100% calc(100% - 3px),
+    calc(100% - 3px) calc(100% - 3px),
+    calc(100% - 3px) 100%,
+    3px 100%,
+    3px calc(100% - 3px),
+    0 calc(100% - 3px)
   );
 }
 
@@ -3859,7 +4194,7 @@ textarea.form-input {
 .modal-btn-submit:hover:not(:disabled) {
   background: var(--color-accent);
   color: white;
-  box-shadow: 
+  box-shadow:
     0 0 20px rgba(211, 35, 75, 0.6),
     0 0 40px rgba(211, 35, 75, 0.4),
     inset 0 1px 0 rgba(255, 255, 255, 0.2);
@@ -3930,45 +4265,64 @@ textarea.form-input {
 }
 
 @keyframes glitch-footer {
-  0%, 100% {
+  0%,
+  100% {
     transform: translate(0);
     text-shadow: none;
   }
   10% {
     transform: translate(-1.5px, 0);
-    text-shadow: 1px 0 #ff00ff, -1px 0 #00ffff;
+    text-shadow:
+      1px 0 #ff00ff,
+      -1px 0 #00ffff;
   }
   20% {
     transform: translate(1.5px, 0);
-    text-shadow: -1px 0 #ff00ff, 1px 0 #00ffff;
+    text-shadow:
+      -1px 0 #ff00ff,
+      1px 0 #00ffff;
   }
   30% {
     transform: translate(-1px, 0);
-    text-shadow: 1.5px 0 #ff00ff, -1.5px 0 #00ffff;
+    text-shadow:
+      1.5px 0 #ff00ff,
+      -1.5px 0 #00ffff;
   }
   40% {
     transform: translate(1px, 0);
-    text-shadow: -1.5px 0 #ff00ff, 1.5px 0 #00ffff;
+    text-shadow:
+      -1.5px 0 #ff00ff,
+      1.5px 0 #00ffff;
   }
   50% {
     transform: translate(-1.5px, 0);
-    text-shadow: 1px 0 #ff00ff, -1px 0 #00ffff;
+    text-shadow:
+      1px 0 #ff00ff,
+      -1px 0 #00ffff;
   }
   60% {
     transform: translate(1.5px, 0);
-    text-shadow: -1px 0 #ff00ff, 1px 0 #00ffff;
+    text-shadow:
+      -1px 0 #ff00ff,
+      1px 0 #00ffff;
   }
   70% {
     transform: translate(-1px, 0);
-    text-shadow: 1px 0 #ff00ff, -1px 0 #00ffff;
+    text-shadow:
+      1px 0 #ff00ff,
+      -1px 0 #00ffff;
   }
   80% {
     transform: translate(1px, 0);
-    text-shadow: -1px 0 #ff00ff, 1px 0 #00ffff;
+    text-shadow:
+      -1px 0 #ff00ff,
+      1px 0 #00ffff;
   }
   90% {
     transform: translate(-0.5px, 0);
-    text-shadow: 0.5px 0 #ff00ff, -0.5px 0 #00ffff;
+    text-shadow:
+      0.5px 0 #ff00ff,
+      -0.5px 0 #00ffff;
   }
 }
 
@@ -4020,24 +4374,24 @@ textarea.form-input {
   .project-header {
     flex-direction: column;
   }
-  
+
   .tabs {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
   }
-  
+
   .member-item,
   .request-item {
     flex-direction: column;
     align-items: flex-start;
     gap: 1rem;
   }
-  
+
   .request-actions {
     width: 100%;
     justify-content: flex-end;
   }
-  
+
   .info-grid {
     grid-template-columns: 1fr;
   }

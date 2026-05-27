@@ -51,7 +51,11 @@ const resetForm = () => {
 
 const submit = async () => {
   if (isLoading.value) return
-  log.notice('Lead form submit clicked', { hasName: !!name.value, hasEmail: !!email.value, hasPhone: !!phone.value })
+  log.notice('Lead form submit clicked', {
+    hasName: !!name.value,
+    hasEmail: !!email.value,
+    hasPhone: !!phone.value
+  })
 
   const trimmed = {
     name: name.value.trim(),
@@ -63,8 +67,10 @@ const submit = async () => {
   if (!trimmed.name) localErrors.name = 'Имя обязательно'
   else if (trimmed.name.length < 2) localErrors.name = 'Имя слишком короткое'
   if (!trimmed.email) localErrors.email = 'Email обязателен'
-  else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed.email)) localErrors.email = 'Некорректный формат email'
-  if (trimmed.phone && !/[+\d]/.test(trimmed.phone)) localErrors.phone = 'Телефон содержит недопустимые символы'
+  else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed.email))
+    localErrors.email = 'Некорректный формат email'
+  if (trimmed.phone && !/[+\d]/.test(trimmed.phone))
+    localErrors.phone = 'Телефон содержит недопустимые символы'
 
   if (Object.keys(localErrors).length > 0) {
     fieldErrors.value = localErrors
@@ -227,7 +233,8 @@ const submit = async () => {
           </div>
           <p class="lead-form-success-title">Заявка принята</p>
           <p class="lead-form-success-text">
-            Мы получили ваши контакты<span v-if="leadId"> (ID&nbsp;{{ leadId }})</span> и скоро свяжемся.
+            Мы получили ваши контакты<span v-if="leadId"> (ID&nbsp;{{ leadId }})</span> и скоро
+            свяжемся.
           </p>
           <button type="button" class="lead-form-reset" @click="resetForm">
             <i class="fas fa-rotate-left"></i>
@@ -260,10 +267,18 @@ const submit = async () => {
     0 14px 40px rgba(0, 0, 0, 0.55),
     inset 0 0 0 1px rgba(255, 255, 255, 0.02);
   clip-path: polygon(
-    0 6px, 6px 6px, 6px 0,
-    calc(100% - 6px) 0, calc(100% - 6px) 6px, 100% 6px,
-    100% calc(100% - 6px), calc(100% - 6px) calc(100% - 6px), calc(100% - 6px) 100%,
-    6px 100%, 6px calc(100% - 6px), 0 calc(100% - 6px)
+    0 6px,
+    6px 6px,
+    6px 0,
+    calc(100% - 6px) 0,
+    calc(100% - 6px) 6px,
+    100% 6px,
+    100% calc(100% - 6px),
+    calc(100% - 6px) calc(100% - 6px),
+    calc(100% - 6px) 100%,
+    6px 100%,
+    6px calc(100% - 6px),
+    0 calc(100% - 6px)
   );
 }
 
@@ -291,22 +306,26 @@ const submit = async () => {
 }
 
 .lead-form-corner--tl {
-  top: 6px; left: 6px;
+  top: 6px;
+  left: 6px;
   border-top: 2px solid var(--color-accent);
   border-left: 2px solid var(--color-accent);
 }
 .lead-form-corner--tr {
-  top: 6px; right: 6px;
+  top: 6px;
+  right: 6px;
   border-top: 2px solid var(--color-accent);
   border-right: 2px solid var(--color-accent);
 }
 .lead-form-corner--bl {
-  bottom: 6px; left: 6px;
+  bottom: 6px;
+  left: 6px;
   border-bottom: 2px solid var(--color-accent);
   border-left: 2px solid var(--color-accent);
 }
 .lead-form-corner--br {
-  bottom: 6px; right: 6px;
+  bottom: 6px;
+  right: 6px;
   border-bottom: 2px solid var(--color-accent);
   border-right: 2px solid var(--color-accent);
 }
@@ -390,7 +409,10 @@ const submit = async () => {
   font-family: inherit;
   font-size: 0.92rem;
   letter-spacing: 0.03em;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    background 0.2s ease;
   box-sizing: border-box;
 }
 
@@ -398,7 +420,9 @@ const submit = async () => {
   outline: none;
   border-color: var(--color-accent);
   background: rgba(15, 15, 15, 0.95);
-  box-shadow: 0 0 0 1px rgba(211, 35, 75, 0.25), 0 0 18px rgba(211, 35, 75, 0.12);
+  box-shadow:
+    0 0 0 1px rgba(211, 35, 75, 0.25),
+    0 0 18px rgba(211, 35, 75, 0.12);
 }
 
 .lead-form-input::placeholder {
@@ -464,10 +488,18 @@ const submit = async () => {
   position: relative;
   overflow: hidden;
   clip-path: polygon(
-    0 3px, 3px 3px, 3px 0,
-    calc(100% - 3px) 0, calc(100% - 3px) 3px, 100% 3px,
-    100% calc(100% - 3px), calc(100% - 3px) calc(100% - 3px), calc(100% - 3px) 100%,
-    3px 100%, 3px calc(100% - 3px), 0 calc(100% - 3px)
+    0 3px,
+    3px 3px,
+    3px 0,
+    calc(100% - 3px) 0,
+    calc(100% - 3px) 3px,
+    100% 3px,
+    100% calc(100% - 3px),
+    calc(100% - 3px) calc(100% - 3px),
+    calc(100% - 3px) 100%,
+    3px 100%,
+    3px calc(100% - 3px),
+    0 calc(100% - 3px)
   );
 }
 
@@ -487,7 +519,9 @@ const submit = async () => {
 
 .lead-form-submit:hover:not(:disabled) {
   background: linear-gradient(135deg, rgba(211, 35, 75, 0.32) 0%, rgba(230, 57, 95, 0.5) 100%);
-  box-shadow: 0 0 18px rgba(211, 35, 75, 0.35), 0 6px 14px rgba(0, 0, 0, 0.4);
+  box-shadow:
+    0 0 18px rgba(211, 35, 75, 0.35),
+    0 6px 14px rgba(0, 0, 0, 0.4);
   transform: translateY(-1px);
 }
 
@@ -537,10 +571,18 @@ const submit = async () => {
   font-size: 1.2rem;
   margin-bottom: 0.35rem;
   clip-path: polygon(
-    0 4px, 4px 4px, 4px 0,
-    calc(100% - 4px) 0, calc(100% - 4px) 4px, 100% 4px,
-    100% calc(100% - 4px), calc(100% - 4px) calc(100% - 4px), calc(100% - 4px) 100%,
-    4px 100%, 4px calc(100% - 4px), 0 calc(100% - 4px)
+    0 4px,
+    4px 4px,
+    4px 0,
+    calc(100% - 4px) 0,
+    calc(100% - 4px) 4px,
+    100% 4px,
+    100% calc(100% - 4px),
+    calc(100% - 4px) calc(100% - 4px),
+    calc(100% - 4px) 100%,
+    4px 100%,
+    4px calc(100% - 4px),
+    0 calc(100% - 4px)
   );
 }
 
@@ -584,9 +626,18 @@ const submit = async () => {
 }
 
 @media (max-width: 480px) {
-  .lead-form-card { padding: 1.3rem 1.1rem 1.4rem; }
-  .lead-form-title { font-size: 0.95rem; letter-spacing: 0.14em; }
-  .lead-form-subtitle { font-size: 0.78rem; }
-  .lead-form-input { font-size: 0.88rem; }
+  .lead-form-card {
+    padding: 1.3rem 1.1rem 1.4rem;
+  }
+  .lead-form-title {
+    font-size: 0.95rem;
+    letter-spacing: 0.14em;
+  }
+  .lead-form-subtitle {
+    font-size: 0.78rem;
+  }
+  .lead-form-input {
+    font-size: 0.88rem;
+  }
 }
 </style>

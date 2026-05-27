@@ -60,12 +60,7 @@ export const gatewayCountsRoute = app.get('/', async (ctx, _req) => {
 
   // Производные метрики (avg/p95 latency, top errorCode) — по срезу последних
   // записей диапазона. findRecentFiltered идёт по requestedAt desc с кэпом.
-  const recent = await gatewayRequestLogRepo.findRecentFiltered(
-    ctx,
-    DASHBOARD_SCAN_LIMIT,
-    from,
-    to
-  )
+  const recent = await gatewayRequestLogRepo.findRecentFiltered(ctx, DASHBOARD_SCAN_LIMIT, from, to)
   const durations: number[] = []
   const errorCodeCount: Record<string, number> = {}
   for (const row of recent) {
@@ -78,9 +73,7 @@ export const gatewayCountsRoute = app.get('/', async (ctx, _req) => {
   }
   durations.sort((a, b) => a - b)
   const avgDurationMs =
-    durations.length > 0
-      ? Math.round(durations.reduce((s, x) => s + x, 0) / durations.length)
-      : 0
+    durations.length > 0 ? Math.round(durations.reduce((s, x) => s + x, 0) / durations.length) : 0
   const p95DurationMs = Math.round(computeP95(durations))
 
   let topErrorCode = ''

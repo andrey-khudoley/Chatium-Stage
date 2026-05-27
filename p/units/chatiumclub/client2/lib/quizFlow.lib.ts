@@ -216,7 +216,7 @@ export async function processQuizSubmit(
     name,
     answers: normalized,
     gcSyncOk: gcSync.ok,
-    gcSyncErrorCode: gcSync.ok ? '' : gcSync.errorCode ?? '',
+    gcSyncErrorCode: gcSync.ok ? '' : (gcSync.errorCode ?? ''),
     ...(gcSync.requestId ? { gatewayRequestId: gcSync.requestId } : {})
   })
 
@@ -247,7 +247,13 @@ export async function processQuizSubmit(
  */
 export function describeQuizForUi(): {
   quizId: string
-  questions: Array<{ id: string; type: string; text: string; options?: string[]; required: boolean }>
+  questions: Array<{
+    id: string
+    type: string
+    text: string
+    options?: string[]
+    required: boolean
+  }>
 } {
   return {
     quizId: QUIZ_ID,

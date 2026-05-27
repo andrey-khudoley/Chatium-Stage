@@ -43,7 +43,10 @@ function onModeClick(mode: BpmChartMode['id']) {
       <div class="dc-bpm-analytics-panel__chart-grid">
         <article v-for="bar in bars" :key="bar.label" class="dc-bpm-analytics-panel__chart-item">
           <div class="dc-bpm-analytics-panel__chart-track">
-            <span class="dc-bpm-analytics-panel__chart-fill" :style="{ height: `${bar.value}%` }"></span>
+            <span
+              class="dc-bpm-analytics-panel__chart-fill"
+              :style="{ height: `${bar.value}%` }"
+            ></span>
           </div>
           <p class="dc-bpm-analytics-panel__chart-label">{{ bar.label }}</p>
         </article>
@@ -52,7 +55,11 @@ function onModeClick(mode: BpmChartMode['id']) {
 
     <DcBpmPanel :title="bottleneckTitle" :hint="bottleneckHint">
       <div class="dc-bpm-analytics-panel__bottleneck-list">
-        <div v-for="row in bottlenecks" :key="`${row.title}-${row.value}`" class="dc-bpm-analytics-panel__bottleneck-row">
+        <div
+          v-for="row in bottlenecks"
+          :key="`${row.title}-${row.value}`"
+          class="dc-bpm-analytics-panel__bottleneck-row"
+        >
           <span>{{ row.title }}</span>
           <span class="mono">{{ row.value }}</span>
           <span class="dc-status-chip" :class="`status-${row.tone}`">{{ row.status }}</span>

@@ -3,27 +3,16 @@
     <!-- Hero Section -->
     <section class="relative h-screen flex items-center justify-center overflow-hidden">
       <div class="absolute inset-0">
-        <img 
-          :src="heroImage" 
-          alt="Салон красоты" 
-          class="w-full h-full object-cover"
-        />
+        <img :src="heroImage" alt="Салон красоты" class="w-full h-full object-cover" />
         <div class="absolute inset-0 bg-gradient-to-r from-black/70 to-black/40"></div>
       </div>
-      
+
       <div class="relative z-10 text-center text-white container-custom px-6">
         <h1 class="text-5xl lg:text-7xl font-display font-bold mb-6 animate-fade-in">
-          Создаём образы,<br/>которые вдохновляют
+          Создаём образы,<br />которые вдохновляют
         </h1>
-        <p class="text-xl lg:text-2xl mb-8 font-light">
-          Профессиональная забота о ваших волосах
-        </p>
-        <button 
-          @click="scrollToBooking"
-          class="btn-primary text-lg"
-        >
-          Записаться онлайн
-        </button>
+        <p class="text-xl lg:text-2xl mb-8 font-light">Профессиональная забота о ваших волосах</p>
+        <button @click="scrollToBooking" class="btn-primary text-lg">Записаться онлайн</button>
       </div>
     </section>
 
@@ -32,22 +21,17 @@
       <div class="container-custom">
         <div class="grid md:grid-cols-2 gap-12 items-center">
           <div>
-            <img 
-              :src="aboutImage" 
-              alt="О мастере" 
-              class="rounded-2xl shadow-2xl"
-            />
+            <img :src="aboutImage" alt="О мастере" class="rounded-2xl shadow-2xl" />
           </div>
           <div>
-            <h2 class="text-4xl font-display font-bold mb-6 text-secondary">
-              О мастере
-            </h2>
+            <h2 class="text-4xl font-display font-bold mb-6 text-secondary">О мастере</h2>
             <p class="text-lg text-gray-700 mb-4 leading-relaxed">
               Добро пожаловать! Я профессиональный парикмахер с более чем 10-летним опытом работы.
             </p>
             <p class="text-lg text-gray-700 mb-6 leading-relaxed">
-              Моя страсть — создавать уникальные образы, которые подчёркивают индивидуальность каждого клиента. 
-              Использую только профессиональную косметику и современные техники окрашивания и стрижки.
+              Моя страсть — создавать уникальные образы, которые подчёркивают индивидуальность
+              каждого клиента. Использую только профессиональную косметику и современные техники
+              окрашивания и стрижки.
             </p>
             <div class="grid grid-cols-2 gap-4">
               <div class="text-center p-4 bg-light rounded-lg">
@@ -73,13 +57,9 @@
         <p class="text-center text-gray-600 mb-12 text-lg">
           Полный спектр парикмахерских услуг для вашей красоты
         </p>
-        
+
         <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-          <div 
-            v-for="service in services" 
-            :key="service.name"
-            class="service-card"
-          >
+          <div v-for="service in services" :key="service.name" class="service-card">
             <div class="text-4xl mb-4 text-primary">
               <i :class="service.icon"></i>
             </div>
@@ -108,19 +88,21 @@
         <h2 class="text-4xl lg:text-5xl font-display font-bold text-center mb-12 text-secondary">
           Портфолио
         </h2>
-        
+
         <div class="grid md:grid-cols-3 gap-6">
-          <div 
-            v-for="(image, index) in galleryImages" 
+          <div
+            v-for="(image, index) in galleryImages"
             :key="index"
             class="relative overflow-hidden rounded-xl shadow-lg group cursor-pointer"
           >
-            <img 
-              :src="image" 
-              alt="Работа мастера" 
+            <img
+              :src="image"
+              alt="Работа мастера"
               class="w-full h-80 object-cover transition-transform duration-500 group-hover:scale-110"
             />
-            <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            <div
+              class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+            ></div>
           </div>
         </div>
       </div>
@@ -145,13 +127,13 @@
       <div class="container-custom">
         <div class="grid md:grid-cols-2 gap-12">
           <div>
-            <h2 class="text-4xl font-display font-bold mb-6 text-secondary">
-              Контакты
-            </h2>
-            
+            <h2 class="text-4xl font-display font-bold mb-6 text-secondary">Контакты</h2>
+
             <div class="space-y-6">
               <div class="flex items-start gap-4">
-                <div class="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0">
+                <div
+                  class="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0"
+                >
                   <i class="fas fa-map-marker-alt text-primary text-xl"></i>
                 </div>
                 <div>
@@ -161,7 +143,9 @@
               </div>
 
               <div class="flex items-start gap-4">
-                <div class="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0">
+                <div
+                  class="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0"
+                >
                   <i class="fas fa-phone text-primary text-xl"></i>
                 </div>
                 <div>
@@ -171,7 +155,9 @@
               </div>
 
               <div class="flex items-start gap-4">
-                <div class="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0">
+                <div
+                  class="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0"
+                >
                   <i class="fas fa-clock text-primary text-xl"></i>
                 </div>
                 <div>
@@ -181,7 +167,9 @@
               </div>
 
               <div class="flex items-start gap-4">
-                <div class="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0">
+                <div
+                  class="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0"
+                >
                   <i class="fas fa-envelope text-primary text-xl"></i>
                 </div>
                 <div>
@@ -192,22 +180,31 @@
             </div>
 
             <div class="mt-8 flex gap-4">
-              <a href="#" class="w-12 h-12 bg-primary rounded-full flex items-center justify-center text-white hover:bg-opacity-90 transition-all">
+              <a
+                href="#"
+                class="w-12 h-12 bg-primary rounded-full flex items-center justify-center text-white hover:bg-opacity-90 transition-all"
+              >
                 <i class="fab fa-instagram text-xl"></i>
               </a>
-              <a href="#" class="w-12 h-12 bg-primary rounded-full flex items-center justify-center text-white hover:bg-opacity-90 transition-all">
+              <a
+                href="#"
+                class="w-12 h-12 bg-primary rounded-full flex items-center justify-center text-white hover:bg-opacity-90 transition-all"
+              >
                 <i class="fab fa-telegram text-xl"></i>
               </a>
-              <a href="#" class="w-12 h-12 bg-primary rounded-full flex items-center justify-center text-white hover:bg-opacity-90 transition-all">
+              <a
+                href="#"
+                class="w-12 h-12 bg-primary rounded-full flex items-center justify-center text-white hover:bg-opacity-90 transition-all"
+              >
                 <i class="fab fa-whatsapp text-xl"></i>
               </a>
             </div>
           </div>
 
           <div class="relative h-96 md:h-full min-h-[400px]">
-            <img 
-              :src="salonImage" 
-              alt="Салон" 
+            <img
+              :src="salonImage"
+              alt="Салон"
               class="w-full h-full object-cover rounded-2xl shadow-2xl"
             />
           </div>

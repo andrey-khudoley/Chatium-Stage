@@ -17,12 +17,26 @@
             <span class="sale-banner-label-text">Спецпредложение</span>
           </div>
           <div class="sale-banner-title">{{ title || 'Подключить Чатиум AI' }}</div>
-          <div class="sale-banner-subtitle">{{ subtitle || 'Создавайте сайты, автоматизируйте бизнес, подключайте ИИ-агентов' }}</div>
+          <div class="sale-banner-subtitle">
+            {{ subtitle || 'Создавайте сайты, автоматизируйте бизнес, подключайте ИИ-агентов' }}
+          </div>
 
           <div class="sale-banner-cta">
             <span class="sale-banner-cta-text">{{ buttonText || 'Подключить' }}</span>
-            <svg class="sale-banner-cta-arrow" width="14" height="14" viewBox="0 0 14 14" fill="none">
-              <path d="M1 7h11M8 3l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            <svg
+              class="sale-banner-cta-arrow"
+              width="14"
+              height="14"
+              viewBox="0 0 14 14"
+              fill="none"
+            >
+              <path
+                d="M1 7h11M8 3l4 4-4 4"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
             </svg>
           </div>
         </div>
@@ -36,7 +50,7 @@ defineProps({
   title: { type: String, default: '' },
   subtitle: { type: String, default: '' },
   buttonText: { type: String, default: '' },
-  formId: { type: String, default: '' },
+  formId: { type: String, default: '' }
 })
 defineEmits(['click'])
 </script>
@@ -66,7 +80,10 @@ defineEmits(['click'])
   background: linear-gradient(135deg, #1a0a14 0%, #1c0820 40%, #130a1e 100%);
   border: 1px solid rgba(248, 0, 91, 0.25);
   padding: 0;
-  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+  transition:
+    transform 0.25s ease,
+    box-shadow 0.25s ease,
+    border-color 0.25s ease;
   box-shadow:
     0 2px 12px rgba(248, 0, 91, 0.15),
     0 0 0 0 rgba(248, 0, 91, 0),
@@ -123,16 +140,31 @@ defineEmits(['click'])
 }
 
 @keyframes orbFloat1 {
-  0%, 100% { transform: translate(0, 0); }
-  50% { transform: translate(-8px, 6px); }
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+  50% {
+    transform: translate(-8px, 6px);
+  }
 }
 @keyframes orbFloat2 {
-  0%, 100% { transform: translate(0, 0); }
-  50% { transform: translate(6px, -8px); }
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+  50% {
+    transform: translate(6px, -8px);
+  }
 }
 @keyframes orbFloat3 {
-  0%, 100% { transform: translateY(-50%) translate(0, 0); }
-  50% { transform: translateY(-50%) translate(-5px, 4px); }
+  0%,
+  100% {
+    transform: translateY(-50%) translate(0, 0);
+  }
+  50% {
+    transform: translateY(-50%) translate(-5px, 4px);
+  }
 }
 
 /* Shimmer sweep */
@@ -155,8 +187,13 @@ defineEmits(['click'])
 }
 
 @keyframes shimmerSweep {
-  0% { left: -100%; }
-  40%, 100% { left: 200%; }
+  0% {
+    left: -100%;
+  }
+  40%,
+  100% {
+    left: 200%;
+  }
 }
 
 /* Body layout */
@@ -203,8 +240,15 @@ defineEmits(['click'])
 }
 
 @keyframes dotPulse {
-  0%, 100% { opacity: 1; box-shadow: 0 0 4px rgba(248, 0, 91, 0.6); }
-  50% { opacity: 0.5; box-shadow: 0 0 8px rgba(248, 0, 91, 0.3); }
+  0%,
+  100% {
+    opacity: 1;
+    box-shadow: 0 0 4px rgba(248, 0, 91, 0.6);
+  }
+  50% {
+    opacity: 0.5;
+    box-shadow: 0 0 8px rgba(248, 0, 91, 0.3);
+  }
 }
 
 .sale-banner-label-text {

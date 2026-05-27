@@ -1,4 +1,5 @@
 @chatium
+
 # Модуль @app/html-jsx и @app/html: JSX и рендер
 
 Справочник по модулям `@app/html-jsx` и `@app/html` — построение JSX-дерева для роутов и тестов, рендер HTML. Типизация: `node_modules/@app/html-jsx/index.d.ts`, `node_modules/@app/html/index.d.ts`. В документации (001, 003, 006, 007, 020) часто встречается импорт `import { jsx } from '@app/html-jsx'`.

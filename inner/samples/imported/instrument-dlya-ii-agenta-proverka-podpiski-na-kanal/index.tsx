@@ -1,8 +1,8 @@
-import { jsx } from "@app/html-jsx";
+import { jsx } from '@app/html-jsx'
 import SettingsPage from './pages/SettingsPage.vue'
 
 // @shared-route
-export const indexPageRoute = app.get("/", async (ctx) => {
+export const indexPageRoute = app.get('/', async (ctx) => {
   return (
     <html>
       <head>
@@ -28,5 +28,5 @@ export const indexPageRoute = app.get("/", async (ctx) => {
         <SettingsPage />
       </body>
     </html>
-  );
-});
+  )
+})

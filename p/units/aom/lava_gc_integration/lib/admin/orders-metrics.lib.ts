@@ -41,7 +41,11 @@ export function buildPaymentContractWhere(f: OrdersMetricsFilter): Record<string
   return where
 }
 
-function accumulateCurrency(target: Record<string, number>, currency: string, amount: number): void {
+function accumulateCurrency(
+  target: Record<string, number>,
+  currency: string,
+  amount: number
+): void {
   const c = currency?.trim() || '—'
   target[c] = (target[c] ?? 0) + amount
 }
@@ -49,7 +53,10 @@ function accumulateCurrency(target: Record<string, number>, currency: string, am
 /**
  * Метрики по контрактам оплаты: счётчики через `countBy`, суммы — по батчам `findAll` + where (не filter в JS по всей таблице).
  */
-export async function getOrdersMetrics(ctx: app.Ctx, filter: OrdersMetricsFilter): Promise<OrdersMetricsResult> {
+export async function getOrdersMetrics(
+  ctx: app.Ctx,
+  filter: OrdersMetricsFilter
+): Promise<OrdersMetricsResult> {
   const where = buildPaymentContractWhere(filter)
 
   // countBy: условия на верхнем уровне второго аргумента (как в repos/logs.repo countBySeverityAfter), не { where: … }
@@ -133,7 +140,8 @@ export async function getContractFilterOptions(ctx: app.Ctx): Promise<{
     if (rows.length < HEAP_FIND_ALL_MAX) break
     offset += HEAP_FIND_ALL_MAX
   }
-  const sort = (a: ContractFilterOption, b: ContractFilterOption) => a.label.localeCompare(b.label, 'ru')
+  const sort = (a: ContractFilterOption, b: ContractFilterOption) =>
+    a.label.localeCompare(b.label, 'ru')
   return {
     products: [...pMap.entries()].map(([id, label]) => ({ id, label })).sort(sort),
     offers: [...oMap.entries()].map(([id, label]) => ({ id, label })).sort(sort)

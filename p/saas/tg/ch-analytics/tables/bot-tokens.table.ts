@@ -2,7 +2,7 @@ import { Heap } from '@app/heap'
 
 /**
  * Таблица для хранения токенов Telegram ботов
- * 
+ *
  * Каждая запись содержит:
  * - token: токен бота, введённый пользователем
  * - botName: название бота, полученное через API Telegram
@@ -46,4 +46,3 @@ export const BotTokens = Heap.Table('t__tg_channel_analytics__bot_tokens__f8e9d2
 })
 
 export default BotTokens
- 

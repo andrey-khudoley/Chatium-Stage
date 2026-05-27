@@ -1,35 +1,37 @@
-import { searchInKnowledgeBaseNative } from "@knowledge-base/sdk"
-import { loadAutowebinarKnowledgeBaseId } from "./shared"
+import { searchInKnowledgeBaseNative } from '@knowledge-base/sdk'
+import { loadAutowebinarKnowledgeBaseId } from './shared'
 
 export const searchAutowebinarTextTool = app
   .function('/search-autowebinar-text')
   .meta({
     name: 'search_autowebinar_text',
-    description:
-      'Поиск по базе знаний автовебинара (заполняется транскрибированным текстом видео).',
+    description: 'Поиск по базе знаний автовебинара (заполняется транскрибированным текстом видео).'
   })
-  .body(s =>
+  .body((s) =>
     s.object(
       {
         context: s.object(
           {
             userId: s.string().optional(),
             chainId: s.string().optional(),
-            autowebinarId: s.string().optional(),
+            autowebinarId: s.string().optional()
           },
-          { additionalProperties: true },
+          { additionalProperties: true }
         ),
         input: s.object(
           {
             autowebinarId: s.string().optional(),
             queryText: s.string().describe('Текст запроса для поиска по базе знаний автовебинара.'),
-            limit: s.number().optional().describe('Максимум совпадений (по умолчанию 20, максимум 50).'),
+            limit: s
+              .number()
+              .optional()
+              .describe('Максимум совпадений (по умолчанию 20, максимум 50).')
           },
-          { additionalProperties: true },
-        ),
+          { additionalProperties: true }
+        )
       },
-      { additionalProperties: true },
-    ),
+      { additionalProperties: true }
+    )
   )
   .handle(async (ctx, body) => {
     try {
@@ -43,7 +45,7 @@ export const searchAutowebinarTextTool = app
       const knowledgeBaseId = await loadAutowebinarKnowledgeBaseId(ctx, autowebinarId)
       const searchResult = await searchInKnowledgeBaseNative(ctx, rawQuery, {
         knowledgeBasesIds: [knowledgeBaseId],
-        limit,
+        limit
       })
 
       if (!searchResult?.ok) {
@@ -55,19 +57,19 @@ export const searchAutowebinarTextTool = app
         documentId: item?.document?.id || null,
         documentTitle: item?.document?.title || null,
         chunkIndex: item?.chunk?.chunkIndex,
-        text: item?.chunk?.content || '',
+        text: item?.chunk?.content || ''
       }))
 
       return {
         ok: true,
         result: {
-          matches,
-        },
+          matches
+        }
       }
     } catch (error) {
       return {
         ok: false,
-        result: `Ошибка: ${(error as Error).message}`,
+        result: `Ошибка: ${(error as Error).message}`
       }
     }
   })

@@ -15,15 +15,8 @@
 import * as loggerLib from '../../logger.lib'
 import * as settingsLib from '../../settings.lib'
 import { handleV1OpRouteWithGcDiagnostic, type V1IncomingLike } from '../../gateway/handleV1OpRoute'
-import {
-  GW_HEADER_SCHOOL_API_KEY,
-  GW_HEADER_SCHOOL_HOST
-} from '../../../shared/gatewayHttpHeaders'
-import {
-  V1_OPS_HEAP_KEYS,
-  V1_OPS_TESTER_EMAIL,
-  type V1OpsRunContext
-} from './v1OpsRunContext'
+import { GW_HEADER_SCHOOL_API_KEY, GW_HEADER_SCHOOL_HOST } from '../../../shared/gatewayHttpHeaders'
+import { V1_OPS_HEAP_KEYS, V1_OPS_TESTER_EMAIL, type V1OpsRunContext } from './v1OpsRunContext'
 import {
   V1_OPS_EXECUTION_ORDER,
   V1_OPS_SCENARIOS,
@@ -93,16 +86,24 @@ export type V1OpsRunSummary = {
 }
 
 /** Чтение всех настроек прогона: секреты школы и опциональные `gc_itest_*` ключи. */
-async function readRunSettings(ctx: app.Ctx): Promise<{ settings: V1OpsRunSettings | null; heap: V1OpsHeapBag; fatalError?: string }> {
+async function readRunSettings(
+  ctx: app.Ctx
+): Promise<{ settings: V1OpsRunSettings | null; heap: V1OpsHeapBag; fatalError?: string }> {
   await loggerLib.writeServerLog(ctx, {
     severity: 7,
     message: `[${LOG_MODULE}] readRunSettings entry`,
     payload: {}
   })
 
-  const schoolHost = (await settingsLib.getSettingString(ctx, settingsLib.SETTING_KEYS.GC_TEST_SCHOOL_HOST)).trim()
-  const schoolApiKey = (await settingsLib.getSettingString(ctx, settingsLib.SETTING_KEYS.GC_TEST_SCHOOL_API_KEY)).trim()
-  const devKey = (await settingsLib.getSettingString(ctx, settingsLib.SETTING_KEYS.GC_DEVELOPER_API_KEY)).trim()
+  const schoolHost = (
+    await settingsLib.getSettingString(ctx, settingsLib.SETTING_KEYS.GC_TEST_SCHOOL_HOST)
+  ).trim()
+  const schoolApiKey = (
+    await settingsLib.getSettingString(ctx, settingsLib.SETTING_KEYS.GC_TEST_SCHOOL_API_KEY)
+  ).trim()
+  const devKey = (
+    await settingsLib.getSettingString(ctx, settingsLib.SETTING_KEYS.GC_DEVELOPER_API_KEY)
+  ).trim()
 
   if (!schoolHost) {
     return {
@@ -187,7 +188,11 @@ function parseGatewayBody(rawBody: string): unknown {
   }
 }
 
-function pickGatewayMeta(parsed: unknown): { ok?: boolean; errorCode?: string; requestId?: string } {
+function pickGatewayMeta(parsed: unknown): {
+  ok?: boolean
+  errorCode?: string
+  requestId?: string
+} {
   if (!parsed || typeof parsed !== 'object') return {}
   const o = parsed as Record<string, unknown>
   const meta: { ok?: boolean; errorCode?: string; requestId?: string } = {}

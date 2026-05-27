@@ -18,7 +18,7 @@ app.accountHook('@sender/message-received', async (ctx, params) => {
   // channel - транспорт связи
   if (channel && chatId && message) {
     const connectedChannels = await getConnectedChannels(ctx)
-    if (!connectedChannels.some(connectedChannel => connectedChannel.id === channel.id)) {
+    if (!connectedChannels.some((connectedChannel) => connectedChannel.id === channel.id)) {
       return false
     }
 

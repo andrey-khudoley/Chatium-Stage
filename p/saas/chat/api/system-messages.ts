@@ -1,13 +1,10 @@
 import { requireRealUser } from '@app/auth'
-import {
-  createFeedMessage,
-  findFeedParticipants,
-} from '@app/feed'
+import { createFeedMessage, findFeedParticipants } from '@app/feed'
 import { sendDataToSocket } from '@app/socket'
 import Chats from '../tables/chats.table'
 
 // Типы системных сообщений
-export type SystemMessageType = 
+export type SystemMessageType =
   | 'user_joined'
   | 'user_left'
   | 'user_removed'
@@ -30,18 +27,18 @@ export async function createSystemMessage(
     chat_created: `✨ Чат создан`,
     chat_renamed: `📝 Название чата изменено на "${data.newTitle}"`,
     message_pinned: `📌 Сообщение закреплено`,
-    message_unpinned: `📍 Сообщение откреплено`,
+    message_unpinned: `📍 Сообщение откреплено`
   }
 
   const message = await createFeedMessage(ctx, feedId, ctx.user, {
     text: messages[type] || data.text || 'Системное сообщение',
     type: 'System',
-    data: { systemType: type, ...data },
+    data: { systemType: type, ...data }
   })
 
   // Отправляем событие всем участникам
   const participants = await findFeedParticipants(ctx, feedId)
-  
+
   for (const participant of participants) {
     await sendDataToSocket(ctx, `user-${participant.userId}`, {
       type: 'chat-event',
@@ -49,8 +46,8 @@ export async function createSystemMessage(
       feedId,
       message: {
         ...message,
-        type: 'System',
-      },
+        type: 'System'
+      }
     })
   }
 
@@ -61,13 +58,13 @@ export async function createSystemMessage(
 export const apiSystemMessageCreateRoute = app
   .body((s) => ({
     type: s.string(),
-    data: s.record(s.unknown()).optional(),
+    data: s.record(s.unknown()).optional()
   }))
   .post('/:feedId/create', async (ctx, req) => {
     requireRealUser(ctx)
 
     const chat = await Chats.findOneBy(ctx, {
-      feedId: req.params.feedId,
+      feedId: req.params.feedId
     })
 
     if (!chat) {
@@ -88,6 +85,6 @@ export const apiSystemMessageCreateRoute = app
 
     return {
       success: true,
-      message,
+      message
     }
   })

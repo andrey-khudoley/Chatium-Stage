@@ -29,7 +29,12 @@
     </transition>
 
     <!-- Collapse/expand toggle (desktop only) -->
-    <button class="reactions-toggle" :class="{ 'reactions-toggle--collapsed': collapsed }" @click.stop="collapsed = !collapsed" :title="collapsed ? 'Показать реакции' : 'Скрыть реакции'">
+    <button
+      class="reactions-toggle"
+      :class="{ 'reactions-toggle--collapsed': collapsed }"
+      @click.stop="collapsed = !collapsed"
+      :title="collapsed ? 'Показать реакции' : 'Скрыть реакции'"
+    >
       <span v-if="collapsed" class="reactions-toggle-emoji">❤️</span>
       <i v-else class="fas fa-chevron-right"></i>
     </button>
@@ -41,7 +46,7 @@ import { ref, onUnmounted } from 'vue'
 import { apiReactionSendRoute } from '../../api/reactions'
 
 const props = defineProps({
-  episodeId: { type: String, required: true },
+  episodeId: { type: String, required: true }
 })
 
 const emojis = ['❤️', '🔥', '😂']
@@ -57,7 +62,7 @@ function spawnEmoji(emoji) {
   floatingReactions.value.push({ id, emoji, x, duration })
 
   setTimeout(() => {
-    floatingReactions.value = floatingReactions.value.filter(r => r.id !== id)
+    floatingReactions.value = floatingReactions.value.filter((r) => r.id !== id)
   }, duration * 1000)
 }
 
@@ -67,7 +72,7 @@ async function sendReaction(emoji) {
   try {
     await apiReactionSendRoute.run(ctx, {
       episodeId: props.episodeId,
-      emoji,
+      emoji
     })
   } catch (e) {}
 }
@@ -160,10 +165,14 @@ defineExpose({ handleSocketReaction, sendReaction, emojis })
 
 /* Slide animation for reaction buttons */
 .reactions-slide-enter-active {
-  transition: opacity 0.25s ease, transform 0.25s ease;
+  transition:
+    opacity 0.25s ease,
+    transform 0.25s ease;
 }
 .reactions-slide-leave-active {
-  transition: opacity 0.2s ease, transform 0.2s ease;
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease;
 }
 .reactions-slide-enter-from {
   opacity: 0;

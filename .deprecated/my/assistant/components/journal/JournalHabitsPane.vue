@@ -11,7 +11,20 @@ const props = defineProps<{
 }>()
 
 const dayShort = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс']
-const monthNames = ['янв', 'фев', 'мар', 'апр', 'мая', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек']
+const monthNames = [
+  'янв',
+  'фев',
+  'мар',
+  'апр',
+  'мая',
+  'июн',
+  'июл',
+  'авг',
+  'сен',
+  'окт',
+  'ноя',
+  'дек'
+]
 
 const mondayKey = ref('')
 const weekNumber = ref(0)
@@ -70,7 +83,9 @@ watch(
   { immediate: true }
 )
 
-const canEditStructure = computed(() => props.isAuthenticated && interactionMode.value === 'current')
+const canEditStructure = computed(
+  () => props.isAuthenticated && interactionMode.value === 'current'
+)
 const isCurrentWeek = computed(() => interactionMode.value === 'current')
 
 /** Следующая неделя относительно просмотра — не позже текущей календарной недели (по 05:00). */
@@ -111,7 +126,11 @@ async function fetchWeek(targetMonday: string | undefined, isSwitch: boolean) {
     const url = new URL(props.journalHabitsGetUrl, window.location.origin)
     if (targetMonday) url.searchParams.set('mondayKey', targetMonday)
     const r = await fetch(url.pathname + url.search, { credentials: 'include' })
-    const j = await r.json() as { success?: boolean; habits?: JournalHabitsWeekDto; error?: string }
+    const j = (await r.json()) as {
+      success?: boolean
+      habits?: JournalHabitsWeekDto
+      error?: string
+    }
     if (!j.success || !j.habits) {
       globalError.value = j.error ?? 'Не удалось загрузить привычки'
       return
@@ -145,7 +164,11 @@ async function saveNow() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     })
-    const j = await r.json() as { success?: boolean; habits?: JournalHabitsWeekDto; error?: string }
+    const j = (await r.json()) as {
+      success?: boolean
+      habits?: JournalHabitsWeekDto
+      error?: string
+    }
     if (!j.success || !j.habits) {
       globalError.value = j.error ?? 'Не удалось сохранить'
       return
@@ -291,19 +314,37 @@ onUnmounted(() => {
       <div class="habits-header-main">
         <h2 class="habits-title">Привычки</h2>
         <p class="habits-sub">
-          Неделя {{ weekNumber }}<span v-if="weekRangeLabel" class="habits-sub-dim"> · {{ weekRangeLabel }}</span>
+          Неделя {{ weekNumber
+          }}<span v-if="weekRangeLabel" class="habits-sub-dim"> · {{ weekRangeLabel }}</span>
         </p>
         <p class="habits-hint">
-          Сутки для «сегодня» и смены недели — с 05:00. В прошлых днях текущей недели отметки недоступны; хранятся только
-          прошлые недели и текущая. Порядок строк можно менять перетаскиванием за ручку слева от названия.
+          Сутки для «сегодня» и смены недели — с 05:00. В прошлых днях текущей недели отметки
+          недоступны; хранятся только прошлые недели и текущая. Порядок строк можно менять
+          перетаскиванием за ручку слева от названия.
         </p>
       </div>
 
-      <div v-if="isAuthenticated" class="habits-toolbar" role="toolbar" aria-label="Навигация по неделям">
-        <button type="button" class="habits-nav-btn" :disabled="loadingSwitch" @click="goPrevWeek" aria-label="Предыдущая неделя">
+      <div
+        v-if="isAuthenticated"
+        class="habits-toolbar"
+        role="toolbar"
+        aria-label="Навигация по неделям"
+      >
+        <button
+          type="button"
+          class="habits-nav-btn"
+          :disabled="loadingSwitch"
+          @click="goPrevWeek"
+          aria-label="Предыдущая неделя"
+        >
           <i class="fa-solid fa-chevron-left" aria-hidden="true" />
         </button>
-        <button type="button" class="habits-nav-btn habits-nav-btn--text" :disabled="loadingSwitch" @click="goCurrentWeek">
+        <button
+          type="button"
+          class="habits-nav-btn habits-nav-btn--text"
+          :disabled="loadingSwitch"
+          @click="goCurrentWeek"
+        >
           Текущая
         </button>
         <button
@@ -319,7 +360,9 @@ onUnmounted(() => {
     </header>
 
     <div v-if="!isAuthenticated" class="habits-guest">
-      <p class="habits-guest-text">Войдите, чтобы вести привычки — данные сохраняются в вашем аккаунте.</p>
+      <p class="habits-guest-text">
+        Войдите, чтобы вести привычки — данные сохраняются в вашем аккаунте.
+      </p>
     </div>
 
     <div v-else class="habits-body">
@@ -429,8 +472,13 @@ onUnmounted(() => {
         Просмотр архива: отметки недоступны для редактирования.
       </p>
 
-      <p v-if="isAuthenticated && isCurrentWeek && todayColumnIndex !== null" class="habits-today-hint">
-        Сегодня: <strong>{{ formatDayKeyShort(effectiveDayKey) }}</strong> (колонка «{{ dayShort[todayColumnIndex] }}»).
+      <p
+        v-if="isAuthenticated && isCurrentWeek && todayColumnIndex !== null"
+        class="habits-today-hint"
+      >
+        Сегодня: <strong>{{ formatDayKeyShort(effectiveDayKey) }}</strong> (колонка «{{
+          dayShort[todayColumnIndex]
+        }}»).
       </p>
     </div>
   </div>
@@ -714,7 +762,9 @@ onUnmounted(() => {
   background: transparent;
   color: var(--color-text-tertiary);
   cursor: pointer;
-  transition: color 0.2s, background 0.2s;
+  transition:
+    color 0.2s,
+    background 0.2s;
 }
 
 .habits-row-del:hover {

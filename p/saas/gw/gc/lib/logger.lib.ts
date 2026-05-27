@@ -90,7 +90,10 @@ function formatLogMessage(entry: FormattedEntry): string {
  * Проверяет, нужно ли логировать сообщение с данным severity при текущей настройке уровня.
  * Логируем, когда severity сообщения <= порога (сообщение не строже порога).
  */
-export function shouldLogByLevel(configuredLevel: settingsLib.LogLevel, messageSeverity: number): boolean {
+export function shouldLogByLevel(
+  configuredLevel: settingsLib.LogLevel,
+  messageSeverity: number
+): boolean {
   const maxSeverity = CONFIG_TO_MAX_SEVERITY[configuredLevel]
   if (maxSeverity < 0) return false
   return messageSeverity >= 0 && messageSeverity <= maxSeverity
@@ -139,7 +142,10 @@ export async function writeServerLog(ctx: app.Ctx, entry: ServerLogEntry): Promi
   const effectivePayload = includePayload ? entry.payload : undefined
 
   const payloadObj =
-    includePayload && typeof effectivePayload === 'object' && effectivePayload !== null && !Array.isArray(effectivePayload)
+    includePayload &&
+    typeof effectivePayload === 'object' &&
+    effectivePayload !== null &&
+    !Array.isArray(effectivePayload)
       ? (effectivePayload as Record<string, unknown>)
       : {}
   const logPayload = {
@@ -173,9 +179,7 @@ export async function writeServerLog(ctx: app.Ctx, entry: ServerLogEntry): Promi
   })
 
   if (isDebug) {
-    ;(ctx.log as (msg: string) => void)(
-      '[DEBUG] [lib/logger.lib] writeServerLog Heap create done'
-    )
+    ;(ctx.log as (msg: string) => void)('[DEBUG] [lib/logger.lib] writeServerLog Heap create done')
   }
 
   const socketId = getAdminLogsSocketId(ctx)
@@ -190,16 +194,16 @@ export async function writeServerLog(ctx: app.Ctx, entry: ServerLogEntry): Promi
   } as any)
 
   if (isDebug) {
-    ;(ctx.log as (msg: string) => void)(
-      '[DEBUG] [lib/logger.lib] writeServerLog WebSocket sent'
-    )
+    ;(ctx.log as (msg: string) => void)('[DEBUG] [lib/logger.lib] writeServerLog WebSocket sent')
   }
 
   const webhook = await settingsLib.getLogWebhook(ctx)
   if (webhook.enable && webhook.url && webhook.url.trim() !== '') {
     const url = webhook.url.trim()
     const fullUrl = url.startsWith('http://') || url.startsWith('https://') ? url : `https://${url}`
-    const webhookPayload = includePayload ? entry : { severity: entry.severity, message: entry.message }
+    const webhookPayload = includePayload
+      ? entry
+      : { severity: entry.severity, message: entry.message }
     request({
       url: fullUrl,
       method: 'post',
@@ -221,9 +225,7 @@ export async function writeServerLog(ctx: app.Ctx, entry: ServerLogEntry): Promi
   }
 
   if (isDebug) {
-    ;(ctx.log as (msg: string) => void)(
-      '[DEBUG] [lib/logger.lib] writeServerLog exit'
-    )
+    ;(ctx.log as (msg: string) => void)('[DEBUG] [lib/logger.lib] writeServerLog exit')
   }
 }
 
@@ -233,7 +235,9 @@ const THROW_LOG_MODULE = 'lib/logger.lib'
 export const SERVER_ERROR_ALREADY_LOGGED = '__gwGc_throwLoggedServerError'
 
 export function isServerErrorAlreadyLogged(error: unknown): boolean {
-  return typeof error === 'object' && error !== null && SERVER_ERROR_ALREADY_LOGGED in (error as object)
+  return (
+    typeof error === 'object' && error !== null && SERVER_ERROR_ALREADY_LOGGED in (error as object)
+  )
 }
 
 /** Опции для {@link throwLoggedServerError}. */
@@ -262,8 +266,7 @@ export async function throwLoggedServerError(
   options?: ThrowLoggedServerErrorOptions
 ): Promise<never> {
   const severity = options?.severity ?? 3
-  const message =
-    options?.logMessage ?? `[${THROW_LOG_MODULE}] ${errorMessage}`
+  const message = options?.logMessage ?? `[${THROW_LOG_MODULE}] ${errorMessage}`
   await writeServerLog(ctx, {
     severity,
     message,

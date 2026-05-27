@@ -4,18 +4,24 @@
       <div class="glow-orb orb-1"></div>
       <div class="glow-orb orb-2"></div>
       <div class="sparkles">
-        <span v-for="n in 10" :key="n" class="sparkle" :style="{ left: (n * 9 + 2) + '%', top: (20 + Math.sin(n) * 30) + '%', animationDelay: (n * 0.4) + 's' }">✦</span>
+        <span
+          v-for="n in 10"
+          :key="n"
+          class="sparkle"
+          :style="{
+            left: n * 9 + 2 + '%',
+            top: 20 + Math.sin(n) * 30 + '%',
+            animationDelay: n * 0.4 + 's'
+          }"
+          >✦</span
+        >
       </div>
     </div>
-    
-    <div class="container">
-      <div class="badge">
-        <i class="fas fa-gift"></i> Бонус 1 из 5
-      </div>
 
-      <h2 class="title">
-        Дарим <span class="hl-green">500 ₽</span> на баланс
-      </h2>
+    <div class="container">
+      <div class="badge"><i class="fas fa-gift"></i> Бонус 1 из 5</div>
+
+      <h2 class="title">Дарим <span class="hl-green">500 ₽</span> на баланс</h2>
 
       <div class="flow">
         <div class="flow-step">
@@ -50,7 +56,10 @@
         </div>
         <div class="guarantee-content">
           <h3>Гарантия возврата</h3>
-          <p>Не понравилось? <span class="hl-green">Вернём ваши 3 000 ₽</span>, если вы их не потратили.</p>
+          <p>
+            Не понравилось? <span class="hl-green">Вернём ваши 3 000 ₽</span>, если вы их не
+            потратили.
+          </p>
           <p class="guarantee-small">А если потратили — значит вам понравилось 😏</p>
         </div>
       </div>
@@ -115,8 +124,13 @@ defineProps({ active: Boolean })
 }
 
 @keyframes float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-20px); }
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-20px);
+  }
 }
 
 .sparkles {
@@ -133,8 +147,15 @@ defineProps({ active: Boolean })
 }
 
 @keyframes twinkle {
-  0%, 100% { opacity: 0; transform: scale(0.5) rotate(0deg); }
-  50% { opacity: 0.4; transform: scale(1.2) rotate(180deg); }
+  0%,
+  100% {
+    opacity: 0;
+    transform: scale(0.5) rotate(0deg);
+  }
+  50% {
+    opacity: 0.4;
+    transform: scale(1.2) rotate(180deg);
+  }
 }
 
 .container {
@@ -275,8 +296,13 @@ defineProps({ active: Boolean })
 }
 
 @keyframes arrow-pulse {
-  0%, 100% { transform: translateX(0); }
-  50% { transform: translateX(4px); }
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(4px);
+  }
 }
 
 .guarantee-block {
@@ -365,7 +391,9 @@ defineProps({ active: Boolean })
 }
 
 @media (max-width: 640px) {
-  .slide { align-items: flex-start; }
+  .slide {
+    align-items: flex-start;
+  }
   .flow {
     flex-direction: column;
     gap: 0;
@@ -375,11 +403,24 @@ defineProps({ active: Boolean })
     padding: 4px 0;
     transform: rotate(90deg);
   }
-  .flow-step { padding: 16px 14px; }
-  .flow-num { width: 36px; height: 36px; font-size: 16px; margin-bottom: 8px; }
-  .flow-content h3 { font-size: 13px; }
-  .flow-amount { font-size: 18px; }
-  .flow-amount.big { font-size: 22px; }
+  .flow-step {
+    padding: 16px 14px;
+  }
+  .flow-num {
+    width: 36px;
+    height: 36px;
+    font-size: 16px;
+    margin-bottom: 8px;
+  }
+  .flow-content h3 {
+    font-size: 13px;
+  }
+  .flow-amount {
+    font-size: 18px;
+  }
+  .flow-amount.big {
+    font-size: 22px;
+  }
   .guarantee-block {
     flex-direction: row;
     text-align: left;
@@ -387,38 +428,97 @@ defineProps({ active: Boolean })
     gap: 14px;
   }
   .guarantee-icon {
-    width: 44px; height: 44px; font-size: 20px; border-radius: 12px;
+    width: 44px;
+    height: 44px;
+    font-size: 20px;
+    border-radius: 12px;
   }
-  .guarantee-content h3 { font-size: 15px; }
-  .guarantee-content p { font-size: 13px; }
+  .guarantee-content h3 {
+    font-size: 15px;
+  }
+  .guarantee-content p {
+    font-size: 13px;
+  }
   .warning-block {
     flex-direction: row;
     text-align: left;
     padding: 14px 14px;
     gap: 10px;
   }
-  .warning-icon { font-size: 22px; }
-  .warning-content h3 { font-size: 14px; }
-  .warning-content p { font-size: 12px; }
+  .warning-icon {
+    font-size: 22px;
+  }
+  .warning-content h3 {
+    font-size: 14px;
+  }
+  .warning-content p {
+    font-size: 12px;
+  }
 }
 
 @media (max-width: 480px) {
-  .slide { padding: 24px 14px 14px; }
-  .badge { font-size: 11px; padding: 6px 14px; margin-bottom: 16px; }
-  .title { font-size: 24px; margin-bottom: 24px; }
-  .flow-step { padding: 16px 14px; border-radius: 14px; }
-  .flow-num { width: 36px; height: 36px; font-size: 16px; margin-bottom: 8px; }
-  .flow-content h3 { font-size: 13px; }
-  .flow-amount { font-size: 18px; }
-  .flow-amount.big { font-size: 22px; }
-  .flow-bonus { font-size: 12px; }
-  .guarantee-block { padding: 18px 16px; border-radius: 14px; }
-  .guarantee-icon { width: 44px; height: 44px; font-size: 20px; border-radius: 12px; }
-  .guarantee-content h3 { font-size: 16px; }
-  .guarantee-content p { font-size: 13px; }
-  .warning-block { padding: 14px 16px; border-radius: 12px; }
-  .warning-icon { font-size: 22px; }
-  .warning-content h3 { font-size: 14px; }
-  .warning-content p { font-size: 12px; }
+  .slide {
+    padding: 24px 14px 14px;
+  }
+  .badge {
+    font-size: 11px;
+    padding: 6px 14px;
+    margin-bottom: 16px;
+  }
+  .title {
+    font-size: 24px;
+    margin-bottom: 24px;
+  }
+  .flow-step {
+    padding: 16px 14px;
+    border-radius: 14px;
+  }
+  .flow-num {
+    width: 36px;
+    height: 36px;
+    font-size: 16px;
+    margin-bottom: 8px;
+  }
+  .flow-content h3 {
+    font-size: 13px;
+  }
+  .flow-amount {
+    font-size: 18px;
+  }
+  .flow-amount.big {
+    font-size: 22px;
+  }
+  .flow-bonus {
+    font-size: 12px;
+  }
+  .guarantee-block {
+    padding: 18px 16px;
+    border-radius: 14px;
+  }
+  .guarantee-icon {
+    width: 44px;
+    height: 44px;
+    font-size: 20px;
+    border-radius: 12px;
+  }
+  .guarantee-content h3 {
+    font-size: 16px;
+  }
+  .guarantee-content p {
+    font-size: 13px;
+  }
+  .warning-block {
+    padding: 14px 16px;
+    border-radius: 12px;
+  }
+  .warning-icon {
+    font-size: 22px;
+  }
+  .warning-content h3 {
+    font-size: 14px;
+  }
+  .warning-content p {
+    font-size: 12px;
+  }
 }
 </style>

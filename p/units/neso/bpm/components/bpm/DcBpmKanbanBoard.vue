@@ -12,7 +12,12 @@ defineProps<{
 <template>
   <DcBpmPanel :title="title" :hint="hint">
     <div class="dc-bpm-kanban-board">
-      <article v-for="column in columns" :key="column.id" class="dc-bpm-kanban-column" :class="`tone-${column.tone}`">
+      <article
+        v-for="column in columns"
+        :key="column.id"
+        class="dc-bpm-kanban-column"
+        :class="`tone-${column.tone}`"
+      >
         <header class="dc-bpm-kanban-column__head">
           <h3>{{ column.title }}</h3>
           <span>{{ column.cards.length }}</span>
@@ -46,19 +51,35 @@ defineProps<{
 }
 
 .dc-bpm-kanban-column.tone-backlog {
-  background: linear-gradient(180deg, var(--kanban-backlog), color-mix(in srgb, var(--surface-2) 88%, transparent));
+  background: linear-gradient(
+    180deg,
+    var(--kanban-backlog),
+    color-mix(in srgb, var(--surface-2) 88%, transparent)
+  );
 }
 
 .dc-bpm-kanban-column.tone-active {
-  background: linear-gradient(180deg, var(--kanban-active), color-mix(in srgb, var(--surface-2) 88%, transparent));
+  background: linear-gradient(
+    180deg,
+    var(--kanban-active),
+    color-mix(in srgb, var(--surface-2) 88%, transparent)
+  );
 }
 
 .dc-bpm-kanban-column.tone-review {
-  background: linear-gradient(180deg, var(--kanban-review), color-mix(in srgb, var(--surface-2) 88%, transparent));
+  background: linear-gradient(
+    180deg,
+    var(--kanban-review),
+    color-mix(in srgb, var(--surface-2) 88%, transparent)
+  );
 }
 
 .dc-bpm-kanban-column.tone-done {
-  background: linear-gradient(180deg, var(--kanban-done), color-mix(in srgb, var(--surface-2) 88%, transparent));
+  background: linear-gradient(
+    180deg,
+    var(--kanban-done),
+    color-mix(in srgb, var(--surface-2) 88%, transparent)
+  );
 }
 
 .dc-bpm-kanban-column__head {

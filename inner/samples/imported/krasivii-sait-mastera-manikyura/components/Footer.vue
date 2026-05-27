@@ -11,7 +11,7 @@
             Профессиональный маникюр и nail-дизайн. Создаём красоту ваших ногтей с 2020 года.
           </p>
         </div>
-        
+
         <div>
           <h4 class="font-bold text-xl mb-4">Контакты</h4>
           <div class="space-y-2 text-gray-400">
@@ -29,7 +29,7 @@
             </p>
           </div>
         </div>
-        
+
         <div>
           <h4 class="font-bold text-xl mb-4">Режим работы</h4>
           <div class="space-y-2 text-gray-400">
@@ -37,22 +37,34 @@
             <p>Сб-Вс: 10:00 - 18:00</p>
           </div>
           <div class="flex gap-4 mt-6">
-            <a href="#" class="w-10 h-10 bg-primary rounded-full flex items-center justify-center hover:bg-accent transition-colors">
+            <a
+              href="#"
+              class="w-10 h-10 bg-primary rounded-full flex items-center justify-center hover:bg-accent transition-colors"
+            >
               <i class="fab fa-instagram"></i>
             </a>
-            <a href="#" class="w-10 h-10 bg-primary rounded-full flex items-center justify-center hover:bg-accent transition-colors">
+            <a
+              href="#"
+              class="w-10 h-10 bg-primary rounded-full flex items-center justify-center hover:bg-accent transition-colors"
+            >
               <i class="fab fa-vk"></i>
             </a>
-            <a href="#" class="w-10 h-10 bg-primary rounded-full flex items-center justify-center hover:bg-accent transition-colors">
+            <a
+              href="#"
+              class="w-10 h-10 bg-primary rounded-full flex items-center justify-center hover:bg-accent transition-colors"
+            >
               <i class="fab fa-telegram"></i>
             </a>
-            <a href="#" class="w-10 h-10 bg-primary rounded-full flex items-center justify-center hover:bg-accent transition-colors">
+            <a
+              href="#"
+              class="w-10 h-10 bg-primary rounded-full flex items-center justify-center hover:bg-accent transition-colors"
+            >
               <i class="fab fa-whatsapp"></i>
             </a>
           </div>
         </div>
       </div>
-      
+
       <div class="border-t border-gray-700 pt-8 text-center text-gray-400">
         <p>&copy; 2025 Nail Master. Все права защищены.</p>
       </div>
@@ -60,5 +72,4 @@
   </footer>
 </template>
 
-<script setup>
-</script>
+<script setup></script>

@@ -14,6 +14,8 @@ export const addUserBalanceHandler: V1GcHandler = async (_ctx, a) => {
   return { kind: 'gc_result', gc }
 }
 
-export const addUserBalanceRoute = app.post('/', async (ctx, req) => handleV1Op(ctx, req, 'addUserBalance', addUserBalanceHandler))
+export const addUserBalanceRoute = app.post('/', async (ctx, req) =>
+  handleV1Op(ctx, req, 'addUserBalance', addUserBalanceHandler)
+)
 
 export default addUserBalanceRoute

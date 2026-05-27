@@ -66,11 +66,7 @@ function onDragStart(e: DragEvent) {
 
     <div class="nb-card-body" @click="emit('toggle-select', props.note.id)">
       <div class="nb-card-title-row">
-        <button
-          type="button"
-          class="nb-card-title"
-          @click.stop="emit('open', props.note.id)"
-        >
+        <button type="button" class="nb-card-title" @click.stop="emit('open', props.note.id)">
           {{ props.note.title }}
         </button>
         <span v-if="props.note.isArchived" class="nb-card-badge nb-card-badge--archive">
@@ -91,7 +87,10 @@ function onDragStart(e: DragEvent) {
           <i class="fa-regular fa-calendar" aria-hidden="true" />
           {{ formatDate(props.note.noteDate) }}
         </span>
-        <span v-if="props.note.linkedTaskId || props.note.linkedProjectId || props.note.linkedClientId" class="nb-card-link-indicator">
+        <span
+          v-if="props.note.linkedTaskId || props.note.linkedProjectId || props.note.linkedClientId"
+          class="nb-card-link-indicator"
+        >
           <i class="fa-solid fa-link" aria-hidden="true" />
         </span>
       </div>
@@ -135,7 +134,10 @@ function onDragStart(e: DragEvent) {
   border: 1px solid var(--color-border);
   border-radius: 2px;
   background: rgba(0, 0, 0, 0.2);
-  transition: border-color 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    opacity 0.2s ease;
   cursor: default;
 }
 
@@ -221,7 +223,9 @@ function onDragStart(e: DragEvent) {
 
 .nb-card-title:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 2px var(--color-bg), 0 0 0 4px var(--color-accent-medium);
+  box-shadow:
+    0 0 0 2px var(--color-bg),
+    0 0 0 4px var(--color-accent-medium);
   border-radius: 2px;
 }
 
@@ -310,7 +314,9 @@ function onDragStart(e: DragEvent) {
 
 .nb-card-btn:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 2px var(--color-bg), 0 0 0 4px var(--color-accent-medium);
+  box-shadow:
+    0 0 0 2px var(--color-bg),
+    0 0 0 4px var(--color-accent-medium);
 }
 
 .nb-card-btn--small {

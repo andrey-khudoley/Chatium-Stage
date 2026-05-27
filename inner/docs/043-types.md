@@ -1,4 +1,5 @@
 @chatium
+
 # Модуль @app/types: Общие типы платформы
 
 Краткий справочник по модулю `@app/types` — общие типы UGC: роуты, контекст, запросы, JSX. Типизация: `node_modules/@app/types/index.d.ts`.

@@ -44,7 +44,10 @@ function compareMondayKeys(a: string, b: string): number {
   return a.localeCompare(b)
 }
 
-export function getHabitsInteractionMode(viewMondayKey: string, nowMs: number): JournalHabitInteractionMode {
+export function getHabitsInteractionMode(
+  viewMondayKey: string,
+  nowMs: number
+): JournalHabitInteractionMode {
   const cur = computeHabitsMondayKeyFromNow(nowMs)
   const c = compareMondayKeys(viewMondayKey, cur)
   if (c < 0) return 'past'
@@ -72,9 +75,12 @@ export function parseRowsJson(raw: string | null | undefined): JournalHabitRowDt
     const out: JournalHabitRowDto[] = []
     for (const item of parsed) {
       if (!item || typeof item !== 'object') continue
-      const id = typeof (item as { id?: unknown }).id === 'string' ? (item as { id: string }).id : ''
+      const id =
+        typeof (item as { id?: unknown }).id === 'string' ? (item as { id: string }).id : ''
       const title =
-        typeof (item as { title?: unknown }).title === 'string' ? (item as { title: string }).title : ''
+        typeof (item as { title?: unknown }).title === 'string'
+          ? (item as { title: string }).title
+          : ''
       const daysRaw = (item as { days?: unknown }).days
       const days: boolean[] = []
       if (Array.isArray(daysRaw)) {

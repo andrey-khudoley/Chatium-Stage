@@ -75,7 +75,7 @@ export const apiChatsCreateRoute = app
             avatarUrl: user.imageUrl
           },
           text,
-          files: files.map(file => ({
+          files: files.map((file) => ({
             url: file.hash?.startsWith('image')
               ? getThumbnailUrl(ctx, file.hash, 2048, 2048)
               : getDownloadUrl(ctx, file.hash),
@@ -142,15 +142,15 @@ export const apiChatMessagesRoute = app
     ).reverse()
 
     const messages = availableMessages
-      .filter(message => message.text || message.files?.length)
+      .filter((message) => message.text || message.files?.length)
       .reverse()
-      .map(message =>
+      .map((message) =>
         message.text || message.files?.length
           ? {
               role: message.data === undefined ? ('user' as const) : ('assistant' as const),
               content: message.text,
               files:
-                message.files?.map(file => ({
+                message.files?.map((file) => ({
                   ...file.meta,
                   url: file.hash?.startsWith('image')
                     ? getThumbnailUrl(ctx, file.hash, 2048, 2048)
@@ -159,7 +159,7 @@ export const apiChatMessagesRoute = app
             }
           : null
       )
-      .filter(msg => Boolean(msg))
+      .filter((msg) => Boolean(msg))
 
     return {
       success: true,
@@ -215,7 +215,7 @@ export const apiChatSendMessageRoute = app
             avatarUrl: user.imageUrl
           },
           text,
-          files: files.map(file => ({
+          files: files.map((file) => ({
             url: file.hash?.startsWith('image')
               ? getThumbnailUrl(ctx, file.hash, 2048, 2048)
               : getDownloadUrl(ctx, file.hash),

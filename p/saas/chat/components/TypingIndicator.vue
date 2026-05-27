@@ -15,23 +15,23 @@ import { computed } from 'vue'
 const props = defineProps({
   typingUsers: {
     type: Array,
-    default: () => [],
-  },
+    default: () => []
+  }
 })
 
 const typingText = computed(() => {
   const count = props.typingUsers.length
-  
+
   if (count === 0) return ''
-  
+
   if (count === 1) {
     return `${props.typingUsers[0].name} печатает...`
   }
-  
+
   if (count === 2) {
     return `${props.typingUsers[0].name} и ${props.typingUsers[1].name} печатают...`
   }
-  
+
   return `${count} человек печатают...`
 })
 </script>
@@ -72,7 +72,9 @@ const typingText = computed(() => {
 }
 
 @keyframes typing {
-  0%, 80%, 100% {
+  0%,
+  80%,
+  100% {
     transform: scale(0);
     opacity: 0.5;
   }

@@ -9,21 +9,23 @@
           Почему нас выбирают более 500 компаний
         </p>
       </div>
-      
+
       <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-        <div 
-          v-for="advantage in advantages" 
+        <div
+          v-for="advantage in advantages"
           :key="advantage.id"
           class="text-center p-6 rounded-xl hover:bg-gray-50 transition"
         >
-          <div class="bg-gradient-to-br from-primary to-accent text-white rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6 text-3xl">
+          <div
+            class="bg-gradient-to-br from-primary to-accent text-white rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6 text-3xl"
+          >
             <i :class="advantage.icon"></i>
           </div>
           <h3 class="text-xl font-bold text-gray-900 mb-3">{{ advantage.title }}</h3>
           <p class="text-gray-600">{{ advantage.description }}</p>
         </div>
       </div>
-      
+
       <div class="mt-16 bg-gradient-to-r from-primary to-accent rounded-2xl p-8 md:p-12 text-white">
         <div class="grid md:grid-cols-3 gap-8 text-center">
           <div>

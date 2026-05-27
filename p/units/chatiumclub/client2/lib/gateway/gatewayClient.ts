@@ -155,7 +155,8 @@ function extractRequestId(
     const rid = (body as Record<string, unknown>).requestId
     if (typeof rid === 'string' && rid.length > 0) return rid
   }
-  const hv = headers[GW_HEADER_GATEWAY_REQUEST_ID] ?? headers[GW_HEADER_GATEWAY_REQUEST_ID.toLowerCase()]
+  const hv =
+    headers[GW_HEADER_GATEWAY_REQUEST_ID] ?? headers[GW_HEADER_GATEWAY_REQUEST_ID.toLowerCase()]
   if (typeof hv === 'string' && hv.length > 0) return hv
   if (Array.isArray(hv) && hv.length > 0 && typeof hv[0] === 'string') return hv[0]
   return null
@@ -204,7 +205,10 @@ function parseGatewayErrorBody(body: unknown): GatewayInvokeError | null {
  * - HTTP-метод выбирается из локального снимка `V1_OPS_LIST` или из аргумента `httpMethod`.
  * - В лог не попадают сами значения школьного ключа и тела ответа GC (manual §5.7).
  */
-export async function invoke(ctx: app.Ctx, input: GatewayInvokeInput): Promise<GatewayInvokeResult> {
+export async function invoke(
+  ctx: app.Ctx,
+  input: GatewayInvokeInput
+): Promise<GatewayInvokeResult> {
   const op = String(input?.op ?? '').trim()
   const args: Record<string, unknown> = input?.args ?? {}
 
@@ -233,8 +237,7 @@ export async function invoke(ctx: app.Ctx, input: GatewayInvokeInput): Promise<G
   }
 
   const localEntry = findV1OpsListEntry(op)
-  const httpMethod: GatewayHttpMethod | null =
-    input?.httpMethod ?? localEntry?.httpMethod ?? null
+  const httpMethod: GatewayHttpMethod | null = input?.httpMethod ?? localEntry?.httpMethod ?? null
   if (httpMethod !== 'GET' && httpMethod !== 'POST') {
     return sdkFail(ctx, 'SDK_OP_HTTP_METHOD_UNKNOWN', { op })
   }
@@ -259,7 +262,11 @@ export async function invoke(ctx: app.Ctx, input: GatewayInvokeInput): Promise<G
     }
   })
 
-  let response: { statusCode: number; body: unknown; headers: Record<string, string | string[] | undefined> }
+  let response: {
+    statusCode: number
+    body: unknown
+    headers: Record<string, string | string[] | undefined>
+  }
   try {
     if (httpMethod === 'GET') {
       const sp = argsToSearchParams(args)
@@ -292,7 +299,11 @@ export async function invoke(ctx: app.Ctx, input: GatewayInvokeInput): Promise<G
     })
     return {
       ok: false,
-      error: { code: 'SDK_GATEWAY_NETWORK_ERROR', message: sdkErrorMessage('SDK_GATEWAY_NETWORK_ERROR'), details: { error: msg } },
+      error: {
+        code: 'SDK_GATEWAY_NETWORK_ERROR',
+        message: sdkErrorMessage('SDK_GATEWAY_NETWORK_ERROR'),
+        details: { error: msg }
+      },
       requestId: null,
       warnings: [],
       gatewayHttpStatus: 0
@@ -302,8 +313,7 @@ export async function invoke(ctx: app.Ctx, input: GatewayInvokeInput): Promise<G
   const respHeaders = response.headers ?? {}
   const requestId = extractRequestId(response.body, respHeaders)
   const warnings = extractWarnings(response.body)
-  const gatewayHttpStatus =
-    typeof response.statusCode === 'number' ? response.statusCode : 0
+  const gatewayHttpStatus = typeof response.statusCode === 'number' ? response.statusCode : 0
 
   if (!response.body || typeof response.body !== 'object') {
     await loggerLib.writeServerLog(ctx, {
@@ -319,7 +329,10 @@ export async function invoke(ctx: app.Ctx, input: GatewayInvokeInput): Promise<G
     })
     return {
       ok: false,
-      error: { code: 'SDK_GATEWAY_INVALID_RESPONSE', message: sdkErrorMessage('SDK_GATEWAY_INVALID_RESPONSE') },
+      error: {
+        code: 'SDK_GATEWAY_INVALID_RESPONSE',
+        message: sdkErrorMessage('SDK_GATEWAY_INVALID_RESPONSE')
+      },
       requestId,
       warnings,
       gatewayHttpStatus
@@ -359,7 +372,10 @@ export async function invoke(ctx: app.Ctx, input: GatewayInvokeInput): Promise<G
     })
     return {
       ok: false,
-      error: { code: 'SDK_GATEWAY_INVALID_RESPONSE', message: sdkErrorMessage('SDK_GATEWAY_INVALID_RESPONSE') },
+      error: {
+        code: 'SDK_GATEWAY_INVALID_RESPONSE',
+        message: sdkErrorMessage('SDK_GATEWAY_INVALID_RESPONSE')
+      },
       requestId,
       warnings,
       gatewayHttpStatus
@@ -402,7 +418,11 @@ export async function getOperationsCatalog(ctx: app.Ctx): Promise<GatewayOperati
   }
 
   const url = buildGatewayOperationsUrl(settings.gatewayUrl)
-  let response: { statusCode: number; body: unknown; headers: Record<string, string | string[] | undefined> }
+  let response: {
+    statusCode: number
+    body: unknown
+    headers: Record<string, string | string[] | undefined>
+  }
   try {
     response = (await request({
       url,
@@ -421,7 +441,11 @@ export async function getOperationsCatalog(ctx: app.Ctx): Promise<GatewayOperati
     })
     return {
       ok: false,
-      error: { code: 'SDK_GATEWAY_NETWORK_ERROR', message: sdkErrorMessage('SDK_GATEWAY_NETWORK_ERROR'), details: { error: msg } },
+      error: {
+        code: 'SDK_GATEWAY_NETWORK_ERROR',
+        message: sdkErrorMessage('SDK_GATEWAY_NETWORK_ERROR'),
+        details: { error: msg }
+      },
       requestId: null,
       gatewayHttpStatus: 0
     }
@@ -433,7 +457,10 @@ export async function getOperationsCatalog(ctx: app.Ctx): Promise<GatewayOperati
   if (!response.body || typeof response.body !== 'object') {
     return {
       ok: false,
-      error: { code: 'SDK_GATEWAY_INVALID_RESPONSE', message: sdkErrorMessage('SDK_GATEWAY_INVALID_RESPONSE') },
+      error: {
+        code: 'SDK_GATEWAY_INVALID_RESPONSE',
+        message: sdkErrorMessage('SDK_GATEWAY_INVALID_RESPONSE')
+      },
       requestId,
       gatewayHttpStatus
     }
@@ -445,7 +472,10 @@ export async function getOperationsCatalog(ctx: app.Ctx): Promise<GatewayOperati
     if (!data || typeof data !== 'object') {
       return {
         ok: false,
-        error: { code: 'SDK_GATEWAY_INVALID_RESPONSE', message: sdkErrorMessage('SDK_GATEWAY_INVALID_RESPONSE') },
+        error: {
+          code: 'SDK_GATEWAY_INVALID_RESPONSE',
+          message: sdkErrorMessage('SDK_GATEWAY_INVALID_RESPONSE')
+        },
         requestId,
         gatewayHttpStatus
       }
@@ -456,7 +486,10 @@ export async function getOperationsCatalog(ctx: app.Ctx): Promise<GatewayOperati
     if (typeof csv !== 'number' || !Array.isArray(ops)) {
       return {
         ok: false,
-        error: { code: 'SDK_GATEWAY_INVALID_RESPONSE', message: sdkErrorMessage('SDK_GATEWAY_INVALID_RESPONSE') },
+        error: {
+          code: 'SDK_GATEWAY_INVALID_RESPONSE',
+          message: sdkErrorMessage('SDK_GATEWAY_INVALID_RESPONSE')
+        },
         requestId,
         gatewayHttpStatus
       }
@@ -506,7 +539,10 @@ export async function getOperationsCatalog(ctx: app.Ctx): Promise<GatewayOperati
   if (!parsedError) {
     return {
       ok: false,
-      error: { code: 'SDK_GATEWAY_INVALID_RESPONSE', message: sdkErrorMessage('SDK_GATEWAY_INVALID_RESPONSE') },
+      error: {
+        code: 'SDK_GATEWAY_INVALID_RESPONSE',
+        message: sdkErrorMessage('SDK_GATEWAY_INVALID_RESPONSE')
+      },
       requestId,
       gatewayHttpStatus
     }

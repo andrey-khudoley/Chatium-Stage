@@ -18,7 +18,7 @@ app.accountHook('@sender/message-received', async (ctx, params) => {
   } = params as SenderMessageReceivedHookParams
 
   if (sourcePayload?.message) {
-    const chatIdMessage = String(sourcePayload.message.reply_to_message?.chat.id || '0');
+    const chatIdMessage = String(sourcePayload.message.reply_to_message?.chat.id || '0')
     // Сохраняем все входящие сообщения в таблицу логов
     try {
       ctx.account.log('Saving message log', {
@@ -42,12 +42,15 @@ app.accountHook('@sender/message-received', async (ctx, params) => {
 
     // Загружаем настройки из config.json
     const settings = await getConfig(ctx)
-  
-    
+
     if (!settings || !settings.tgChannelId || !settings.agentId) {
       ctx.account.log('Settings not configured for webhook', {
         level: 'warn',
-        json: { hasSettings: !!settings, hasChannel: !!settings?.tgChannelId, hasAgent: !!settings?.agentId }
+        json: {
+          hasSettings: !!settings,
+          hasChannel: !!settings?.tgChannelId,
+          hasAgent: !!settings?.agentId
+        }
       })
       return false
     }
@@ -64,17 +67,19 @@ app.accountHook('@sender/message-received', async (ctx, params) => {
     // Проверяем, что это ответ (reply) на сообщение бота
     if (sourcePayload?.message?.reply_to_message) {
       const replyToMessage = sourcePayload.message.reply_to_message
-      
+
       // Проверяем, что это ответ на сообщение бота
       if (replyToMessage.from?.is_bot) {
         const messageId = replyToMessage.message_id
-        const supportRequest = await SupportRequests.findOneBy(ctx, { telegramMessageId: messageId })
-        
+        const supportRequest = await SupportRequests.findOneBy(ctx, {
+          telegramMessageId: messageId
+        })
+
         if (supportRequest) {
           // Сохраняем ответ
           await SupportRequests.update(ctx, {
             id: supportRequest.id,
-            response: message.text || '',
+            response: message.text || ''
           })
 
           try {
@@ -83,8 +88,8 @@ app.accountHook('@sender/message-received', async (ctx, params) => {
                 agentId: settings.agentId,
                 chainKey: supportRequest.chainKey,
                 messageText: message.text,
-                wakeAgent: true,
-              },
+                wakeAgent: true
+              }
             })
 
             // Отправляем ответ в диалог агента
@@ -97,17 +102,17 @@ app.accountHook('@sender/message-received', async (ctx, params) => {
   ---
 
   Если пользователь пришлет уточнения на этот ответ, то пришли их в техподдержку.`,
-              wakeAgent: true,
+              wakeAgent: true
             })
-            
+
             ctx.account.log('Message successfully pushed to chain', {
               level: 'info',
               json: { chainId: supportRequest.chainKey, agentId: settings.agentId }
             })
           } catch (error: any) {
-            ctx.account.log('Error pushing message to chain', { 
+            ctx.account.log('Error pushing message to chain', {
               level: 'error',
-              err: error 
+              err: error
             })
           }
         } else {
@@ -119,7 +124,6 @@ app.accountHook('@sender/message-received', async (ctx, params) => {
       }
     }
   }
-
 
   return true
 })

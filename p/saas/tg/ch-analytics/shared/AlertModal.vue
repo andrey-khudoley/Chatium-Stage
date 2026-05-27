@@ -21,30 +21,32 @@ const close = () => {
 // Функция для форматирования текста с выделением части до ":"
 const formatMessage = (text: string): string => {
   if (!text) return ''
-  
+
   // Разбиваем на строки
   const lines = text.split('\n')
-  
-  return lines.map(line => {
-    // Пропускаем пустые строки
-    if (!line.trim()) return ''
-    
-    // Ищем первое вхождение ":"
-    const colonIndex = line.indexOf(':')
-    
-    if (colonIndex > 0 && colonIndex < line.length - 1) {
-      // Есть ":" - выделяем часть до ":"
-      const label = line.substring(0, colonIndex).trim()
-      const value = line.substring(colonIndex + 1).trim()
-      
-      if (label && value) {
-        return `<span class="message-label">${escapeHtml(label)}:</span> <span class="message-value">${escapeHtml(value)}</span>`
+
+  return lines
+    .map((line) => {
+      // Пропускаем пустые строки
+      if (!line.trim()) return ''
+
+      // Ищем первое вхождение ":"
+      const colonIndex = line.indexOf(':')
+
+      if (colonIndex > 0 && colonIndex < line.length - 1) {
+        // Есть ":" - выделяем часть до ":"
+        const label = line.substring(0, colonIndex).trim()
+        const value = line.substring(colonIndex + 1).trim()
+
+        if (label && value) {
+          return `<span class="message-label">${escapeHtml(label)}:</span> <span class="message-value">${escapeHtml(value)}</span>`
+        }
       }
-    }
-    
-    // Нет ":" или пустые значения - возвращаем как есть
-    return escapeHtml(line)
-  }).join('\n')
+
+      // Нет ":" или пустые значения - возвращаем как есть
+      return escapeHtml(line)
+    })
+    .join('\n')
 }
 
 // Экранирование HTML для безопасности
@@ -78,14 +80,17 @@ onUnmounted(() => {
   }
 })
 
-watch(() => props.show, (newVal) => {
-  if (newVal) {
-    // Блокируем скролл фона при открытии модального окна
-    document.body.style.overflow = 'hidden'
-  } else {
-    document.body.style.overflow = ''
+watch(
+  () => props.show,
+  (newVal) => {
+    if (newVal) {
+      // Блокируем скролл фона при открытии модального окна
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = ''
+    }
   }
-})
+)
 </script>
 
 <template>
@@ -93,20 +98,41 @@ watch(() => props.show, (newVal) => {
     <div v-if="show" class="modal-overlay" @click="close">
       <div class="modal-content" @click.stop>
         <div class="modal-scanlines"></div>
-        
+
         <div class="modal-header">
           <h2 class="modal-title">
-            <i 
+            <i
               :class="[
                 'fas',
-                type === 'error' ? 'fa-exclamation-circle' :
-                type === 'success' ? 'fa-check-circle' :
-                type === 'warning' ? 'fa-exclamation-triangle' :
-                'fa-info-circle'
+                type === 'error'
+                  ? 'fa-exclamation-circle'
+                  : type === 'success'
+                    ? 'fa-check-circle'
+                    : type === 'warning'
+                      ? 'fa-exclamation-triangle'
+                      : 'fa-info-circle'
               ]"
-              :style="{ color: type === 'error' ? 'var(--color-accent)' : type === 'success' ? '#4ade80' : type === 'warning' ? '#fbbf24' : 'var(--color-accent)' }"
+              :style="{
+                color:
+                  type === 'error'
+                    ? 'var(--color-accent)'
+                    : type === 'success'
+                      ? '#4ade80'
+                      : type === 'warning'
+                        ? '#fbbf24'
+                        : 'var(--color-accent)'
+              }"
             ></i>
-            {{ title || (type === 'error' ? 'Ошибка' : type === 'success' ? 'Успешно' : type === 'warning' ? 'Предупреждение' : 'Информация') }}
+            {{
+              title ||
+              (type === 'error'
+                ? 'Ошибка'
+                : type === 'success'
+                  ? 'Успешно'
+                  : type === 'warning'
+                    ? 'Предупреждение'
+                    : 'Информация')
+            }}
           </h2>
           <button @click="close" class="modal-close-btn">
             <i class="fas fa-times"></i>
@@ -121,9 +147,7 @@ watch(() => props.show, (newVal) => {
         </div>
 
         <div class="modal-footer">
-          <button @click="close" class="modal-btn modal-btn-primary">
-            ОК
-          </button>
+          <button @click="close" class="modal-btn modal-btn-primary">ОК</button>
         </div>
       </div>
     </div>
@@ -152,15 +176,23 @@ watch(() => props.show, (newVal) => {
   max-width: 500px;
   width: 100%;
   position: relative;
-  box-shadow: 
+  box-shadow:
     0 0 40px rgba(211, 35, 75, 0.4),
     0 0 80px rgba(211, 35, 75, 0.2),
     inset 0 1px 0 rgba(255, 255, 255, 0.05);
   clip-path: polygon(
-    0 4px, 4px 4px, 4px 0,
-    calc(100% - 4px) 0, calc(100% - 4px) 4px, 100% 4px,
-    100% calc(100% - 4px), calc(100% - 4px) calc(100% - 4px), calc(100% - 4px) 100%,
-    4px 100%, 4px calc(100% - 4px), 0 calc(100% - 4px)
+    0 4px,
+    4px 4px,
+    4px 0,
+    calc(100% - 4px) 0,
+    calc(100% - 4px) 4px,
+    100% 4px,
+    100% calc(100% - 4px),
+    calc(100% - 4px) calc(100% - 4px),
+    calc(100% - 4px) 100%,
+    4px 100%,
+    4px calc(100% - 4px),
+    0 calc(100% - 4px)
   );
 }
 
@@ -197,7 +229,7 @@ watch(() => props.show, (newVal) => {
   color: var(--color-text);
   margin: 0;
   letter-spacing: 0.08em;
-  text-shadow: 
+  text-shadow:
     0 0 10px rgba(232, 232, 232, 0.4),
     0 0 20px rgba(211, 35, 75, 0.2);
   display: flex;
@@ -224,10 +256,18 @@ watch(() => props.show, (newVal) => {
   position: relative;
   overflow: hidden;
   clip-path: polygon(
-    0 3px, 3px 3px, 3px 0,
-    calc(100% - 3px) 0, calc(100% - 3px) 3px, 100% 3px,
-    100% calc(100% - 3px), calc(100% - 3px) calc(100% - 3px), calc(100% - 3px) 100%,
-    3px 100%, 3px calc(100% - 3px), 0 calc(100% - 3px)
+    0 3px,
+    3px 3px,
+    3px 0,
+    calc(100% - 3px) 0,
+    calc(100% - 3px) 3px,
+    100% 3px,
+    100% calc(100% - 3px),
+    calc(100% - 3px) calc(100% - 3px),
+    calc(100% - 3px) 100%,
+    3px 100%,
+    3px calc(100% - 3px),
+    0 calc(100% - 3px)
   );
 }
 
@@ -290,10 +330,18 @@ watch(() => props.show, (newVal) => {
   padding: 1rem;
   border: 1px solid var(--color-border);
   clip-path: polygon(
-    0 2px, 2px 2px, 2px 0,
-    calc(100% - 2px) 0, calc(100% - 2px) 2px, 100% 2px,
-    100% calc(100% - 2px), calc(100% - 2px) calc(100% - 2px), calc(100% - 2px) 100%,
-    2px 100%, 2px calc(100% - 2px), 0 calc(100% - 2px)
+    0 2px,
+    2px 2px,
+    2px 0,
+    calc(100% - 2px) 0,
+    calc(100% - 2px) 2px,
+    100% 2px,
+    100% calc(100% - 2px),
+    calc(100% - 2px) calc(100% - 2px),
+    calc(100% - 2px) 100%,
+    2px 100%,
+    2px calc(100% - 2px),
+    0 calc(100% - 2px)
   );
   line-height: 1.8;
 }
@@ -304,7 +352,7 @@ watch(() => props.show, (newVal) => {
 .message-pre :deep(.message-label) {
   font-weight: 700 !important;
   color: var(--color-text) !important;
-  text-shadow: 
+  text-shadow:
     0 0 10px rgba(232, 232, 232, 0.6),
     0 0 15px rgba(211, 35, 75, 0.4),
     0 0 20px rgba(211, 35, 75, 0.2) !important;
@@ -346,10 +394,18 @@ watch(() => props.show, (newVal) => {
   font-family: 'Share Tech Mono', 'Courier New', monospace;
   text-transform: uppercase;
   clip-path: polygon(
-    0 3px, 3px 3px, 3px 0,
-    calc(100% - 3px) 0, calc(100% - 3px) 3px, 100% 3px,
-    100% calc(100% - 3px), calc(100% - 3px) calc(100% - 3px), calc(100% - 3px) 100%,
-    3px 100%, 3px calc(100% - 3px), 0 calc(100% - 3px)
+    0 3px,
+    3px 3px,
+    3px 0,
+    calc(100% - 3px) 0,
+    calc(100% - 3px) 3px,
+    100% 3px,
+    100% calc(100% - 3px),
+    calc(100% - 3px) calc(100% - 3px),
+    calc(100% - 3px) 100%,
+    3px 100%,
+    3px calc(100% - 3px),
+    0 calc(100% - 3px)
   );
 }
 
@@ -377,7 +433,7 @@ watch(() => props.show, (newVal) => {
 .modal-btn-primary:hover {
   background: var(--color-accent);
   color: white;
-  box-shadow: 
+  box-shadow:
     0 0 20px rgba(211, 35, 75, 0.6),
     0 0 40px rgba(211, 35, 75, 0.4),
     inset 0 1px 0 rgba(255, 255, 255, 0.2);

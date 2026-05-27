@@ -13,7 +13,7 @@
             v-for="(item, i) in items"
             :key="item.title"
             class="row"
-            :style="{ animationDelay: (0.05 + i * 0.08) + 's' }"
+            :style="{ animationDelay: 0.05 + i * 0.08 + 's' }"
           >
             <span class="badge">{{ String(i + 1).padStart(2, '0') }}</span>
             <div class="text">
@@ -30,7 +30,7 @@
               v-for="(item, i) in items"
               :key="i"
               class="dot"
-              :style="{ top: ((i / (items.length - 1)) * 100) + '%' }"
+              :style="{ top: (i / (items.length - 1)) * 100 + '%' }"
             ></span>
           </div>
           <div class="time-cap mid">60 минут</div>
@@ -49,7 +49,7 @@ const items = [
   { title: 'Как устроен HTTPS', caption: 'четыре вещи в каждом запросе' },
   { title: 'Как читать API-спеку', caption: 'пять минут на проверку' },
   { title: 'Что я для вас собрал', caption: 'gateway + тонкий SDK' },
-  { title: 'Демо', caption: 'несколько готовых методов' },
+  { title: 'Демо', caption: 'несколько готовых методов' }
 ]
 </script>
 
@@ -73,7 +73,10 @@ const items = [
   gap: 48px;
 }
 
-.head { display: flex; flex-direction: column; }
+.head {
+  display: flex;
+  flex-direction: column;
+}
 .title {
   font-family: var(--font-display-new);
   font-weight: 700;
@@ -83,7 +86,8 @@ const items = [
 }
 .strip {
   display: block;
-  width: 80px; height: 4px;
+  width: 80px;
+  height: 4px;
   background: var(--accent-cyan);
   border-radius: 2px;
   margin: 24px 0 16px;
@@ -103,7 +107,8 @@ const items = [
 
 .list {
   list-style: none;
-  margin: 0; padding: 0;
+  margin: 0;
+  padding: 0;
   display: flex;
   flex-direction: column;
   gap: 28px;
@@ -118,11 +123,14 @@ const items = [
   opacity: 0;
   animation: fadeInUp 480ms ease-out forwards;
 }
-.row:last-child { border-bottom: none; }
+.row:last-child {
+  border-bottom: none;
+}
 
 .badge {
   flex-shrink: 0;
-  width: 56px; height: 56px;
+  width: 56px;
+  height: 56px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -134,7 +142,11 @@ const items = [
   color: var(--accent-cyan);
   background: rgba(0, 217, 255, 0.04);
 }
-.text { display: flex; flex-direction: column; gap: 6px; }
+.text {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
 .row-title {
   font-family: var(--font-display-new);
   font-weight: 600;
@@ -165,7 +177,8 @@ const items = [
 .dot {
   position: absolute;
   left: 50%;
-  width: 12px; height: 12px;
+  width: 12px;
+  height: 12px;
   background: var(--accent-cyan);
   border-radius: 50%;
   transform: translate(-50%, -50%);
@@ -186,14 +199,29 @@ const items = [
 }
 
 @media (max-width: 1024px) {
-  .slide { padding: 48px 32px; }
-  .layout { grid-template-columns: 1fr; gap: 32px; }
-  .timeline { display: none; }
+  .slide {
+    padding: 48px 32px;
+  }
+  .layout {
+    grid-template-columns: 1fr;
+    gap: 32px;
+  }
+  .timeline {
+    display: none;
+  }
 }
 
 @media (max-width: 480px) {
-  .slide { padding: 32px 16px; }
-  .badge { width: 44px; height: 44px; font-size: 16px; }
-  .row { gap: 16px; }
+  .slide {
+    padding: 32px 16px;
+  }
+  .badge {
+    width: 44px;
+    height: 44px;
+    font-size: 16px;
+  }
+  .row {
+    gap: 16px;
+  }
 }
 </style>

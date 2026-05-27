@@ -27,24 +27,22 @@ const props = defineProps<{
 }>()
 
 function campaignUrlBuilder(id: string): string {
-  const path = props.indexUrl.startsWith('http')
-    ? new URL(props.indexUrl).pathname
-    : props.indexUrl
+  const path = props.indexUrl.startsWith('http') ? new URL(props.indexUrl).pathname : props.indexUrl
   const basePath = path.replace(/\/$/, '') || ''
   const origin = typeof window !== 'undefined' ? window.location.origin : ''
   return `${origin}${basePath}/web/campaign?campaignId=${encodeURIComponent(id)}`
 }
 
 function getApiBaseUrl(): string {
-  const path = props.indexUrl.startsWith('http')
-    ? new URL(props.indexUrl).pathname
-    : props.indexUrl
+  const path = props.indexUrl.startsWith('http') ? new URL(props.indexUrl).pathname : props.indexUrl
   const basePath = path.replace(/\/$/, '') || ''
   const origin = typeof window !== 'undefined' ? window.location.origin : ''
   return basePath ? `${origin}${basePath}` : origin
 }
 
-const campaigns = ref<Array<{ id: string; title: string; createdAt?: string; updatedAt?: string }>>([])
+const campaigns = ref<Array<{ id: string; title: string; createdAt?: string; updatedAt?: string }>>(
+  []
+)
 const loading = ref(true)
 const error = ref('')
 const showCreateForm = ref(false)
@@ -123,7 +121,10 @@ onMounted(() => {
           <i class="fas fa-spinner fa-spin text-2xl"></i>
         </div>
         <p v-else-if="error" class="text-red-400">{{ error }}</p>
-        <ul v-else-if="campaigns.length === 0" class="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-secondary)] p-6 text-center text-[var(--color-text-secondary)]">
+        <ul
+          v-else-if="campaigns.length === 0"
+          class="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-secondary)] p-6 text-center text-[var(--color-text-secondary)]"
+        >
           Нет кампаний. Создайте первую.
         </ul>
         <ul v-else class="space-y-2">

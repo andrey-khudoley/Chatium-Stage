@@ -11,6 +11,7 @@
 ### 1.1 Определение
 
 `RefLink` — это:
+
 - **Поле для хранения ID** записи из другой таблицы
 - **Runtime объект** с методами для работы со связанной записью
 - **Типизированное** — содержит информацию о целевой таблице
@@ -18,11 +19,13 @@
 ### 1.2 Когда использовать
 
 ✅ **Используйте RefLink когда:**
+
 - Нужна связь между двумя таблицами (например, заказ → клиент)
 - Хотите получить полные данные связанной записи
 - Нужна типизация целевой таблицы
 
 ❌ **Не используйте RefLink когда:**
+
 - Просто нужно хранить строку (используйте `Heap.String()`)
 - Нужна связь многие-ко-многим (используйте отдельную таблицу с двумя RefLink)
 
@@ -37,15 +40,23 @@
 ```typescript
 import { Heap } from '@app/heap'
 
-export const Products = Heap.Table('t__project__products__Ab1Cd2', {
-  title: Heap.Optional(Heap.String({
-    customMeta: { title: 'Название' }
-  })),
-  category: Heap.Optional(Heap.RefLink('t__project__categories__Xy1Zw2', {
-    customMeta: { title: 'Категория' },
-    onDelete: 'none',
-  }))
-}, { customMeta: { title: 'Товары' } })
+export const Products = Heap.Table(
+  't__project__products__Ab1Cd2',
+  {
+    title: Heap.Optional(
+      Heap.String({
+        customMeta: { title: 'Название' }
+      })
+    ),
+    category: Heap.Optional(
+      Heap.RefLink('t__project__categories__Xy1Zw2', {
+        customMeta: { title: 'Категория' },
+        onDelete: 'none'
+      })
+    )
+  },
+  { customMeta: { title: 'Товары' } }
+)
 
 export default Products
 export type ProductRow = typeof Products.T
@@ -56,10 +67,12 @@ export type ProductRowJson = typeof Products.JsonT
 
 ```typescript
 // RefLink опциональный — оборачиваем в Heap.Optional()
-author: Heap.Optional(Heap.RefLink('t__project__authors__Mn3Op4', {
-  customMeta: { title: 'Автор' },
-  onDelete: 'none',
-}))
+author: Heap.Optional(
+  Heap.RefLink('t__project__authors__Mn3Op4', {
+    customMeta: { title: 'Автор' },
+    onDelete: 'none'
+  })
+)
 
 // При проверке используйте:
 if (product.author?.id) {
@@ -78,8 +91,12 @@ type ProductType = typeof Products.T
 type CategoryType = typeof Categories.T
 
 // В компоненте или API
-const product: ProductType = { /* ... */ }
-const category: CategoryType = { /* ... */ }
+const product: ProductType = {
+  /* ... */
+}
+const category: CategoryType = {
+  /* ... */
+}
 ```
 
 ### 2.4 Поведение при удалении целевой записи (onDelete)
@@ -88,9 +105,9 @@ const category: CategoryType = { /* ... */ }
 
 #### 2.4.1 Значение в рабочем коде
 
-| Значение | Описание |
-|----------|----------|
-| `'none'` | Не проверять ссылки при удалении (используется в рабочем коде) |
+| Значение     | Описание                                                                        |
+| ------------ | ------------------------------------------------------------------------------- |
+| `'none'`     | Не проверять ссылки при удалении (используется в рабочем коде)                  |
 | `'restrict'` | Не разрешать удаление целевой записи, если на неё есть ссылки (для UserRefLink) |
 
 #### 2.4.2 Синтаксис (соответствие рабочему коду)
@@ -99,33 +116,55 @@ const category: CategoryType = { /* ... */ }
 import { Heap } from '@app/heap'
 
 // RefLink — первый аргумент идентификатор таблицы Heap целевой таблицы
-export const Products = Heap.Table('t__project__products__Ab1Cd2', {
-  title: Heap.Optional(Heap.String({
-    customMeta: { title: 'Название' }
-  })),
-  category: Heap.Optional(Heap.RefLink('t__project__categories__Xy1Zw2', {
-    customMeta: { title: 'Категория' },
-    onDelete: 'none',
-  }))
-}, { customMeta: { title: 'Товары' } })
+export const Products = Heap.Table(
+  't__project__products__Ab1Cd2',
+  {
+    title: Heap.Optional(
+      Heap.String({
+        customMeta: { title: 'Название' }
+      })
+    ),
+    category: Heap.Optional(
+      Heap.RefLink('t__project__categories__Xy1Zw2', {
+        customMeta: { title: 'Категория' },
+        onDelete: 'none'
+      })
+    )
+  },
+  { customMeta: { title: 'Товары' } }
+)
 
 // UserRefLink — один аргумент-объект с обязательным onDelete
-export const Articles = Heap.Table('t__project__articles__Xy1Zw2', {
-  title: Heap.Optional(Heap.String({
-    customMeta: { title: 'Заголовок' }
-  })),
-  author: Heap.Optional(Heap.UserRefLink({
-    customMeta: { title: 'Автор' },
-    onDelete: 'none',
-  }))
-}, { customMeta: { title: 'Статьи' } })
+export const Articles = Heap.Table(
+  't__project__articles__Xy1Zw2',
+  {
+    title: Heap.Optional(
+      Heap.String({
+        customMeta: { title: 'Заголовок' }
+      })
+    ),
+    author: Heap.Optional(
+      Heap.UserRefLink({
+        customMeta: { title: 'Автор' },
+        onDelete: 'none'
+      })
+    )
+  },
+  { customMeta: { title: 'Статьи' } }
+)
 
-export const Orders = Heap.Table('t__project__orders__Mn3Op4', {
-  customer: Heap.Optional(Heap.RefLink('t__project__customers__Qr5St6', {
-    customMeta: { title: 'Клиент' },
-    onDelete: 'none',
-  }))
-}, { customMeta: { title: 'Заказы' } })
+export const Orders = Heap.Table(
+  't__project__orders__Mn3Op4',
+  {
+    customer: Heap.Optional(
+      Heap.RefLink('t__project__customers__Qr5St6', {
+        customMeta: { title: 'Клиент' },
+        onDelete: 'none'
+      })
+    )
+  },
+  { customMeta: { title: 'Заказы' } }
+)
 ```
 
 #### 2.4.3 Практические примеры
@@ -134,33 +173,49 @@ export const Orders = Heap.Table('t__project__orders__Mn3Op4', {
 
 ```typescript
 // Таблица комментариев к посту (рабочий синтаксис)
-export const Comments = Heap.Table('t__comments__Qr5St6', {
-  post: Heap.Optional(Heap.RefLink('t__project__posts__Ab1Cd2', {
-    customMeta: { title: 'Пост' },
-    onDelete: 'none',
-  })),
-  text: Heap.Optional(Heap.String({
-    customMeta: { title: 'Текст комментария' }
-  }))
-}, { customMeta: { title: 'Комментарии' } })
+export const Comments = Heap.Table(
+  't__comments__Qr5St6',
+  {
+    post: Heap.Optional(
+      Heap.RefLink('t__project__posts__Ab1Cd2', {
+        customMeta: { title: 'Пост' },
+        onDelete: 'none'
+      })
+    ),
+    text: Heap.Optional(
+      Heap.String({
+        customMeta: { title: 'Текст комментария' }
+      })
+    )
+  },
+  { customMeta: { title: 'Комментарии' } }
+)
 
 // При удалении поста:
-await Posts.delete(ctx, postId)  // Автоматически удалятся все Comments где post.id == postId
+await Posts.delete(ctx, postId) // Автоматически удалятся все Comments где post.id == postId
 ```
 
 **Пример 2: SET_NULL — Обнуление ссылки**
 
 ```typescript
 // Таблица задач с опциональной ссылкой на ответственного (рабочий синтаксис)
-export const Tasks = Heap.Table('t__tasks__Uv7Wx8', {
-  title: Heap.Optional(Heap.String({
-    customMeta: { title: 'Название задачи' }
-  })),
-  assignedTo: Heap.Optional(Heap.UserRefLink({
-    customMeta: { title: 'Назначена' },
-    onDelete: 'none',
-  }))
-}, { customMeta: { title: 'Задачи' } })
+export const Tasks = Heap.Table(
+  't__tasks__Uv7Wx8',
+  {
+    title: Heap.Optional(
+      Heap.String({
+        customMeta: { title: 'Название задачи' }
+      })
+    ),
+    assignedTo: Heap.Optional(
+      Heap.UserRefLink({
+        customMeta: { title: 'Назначена' },
+        onDelete: 'none'
+      })
+    )
+  },
+  { customMeta: { title: 'Задачи' } }
+)
 
 // При удалении пользователя:
 await Users.delete(ctx, userId)
@@ -171,15 +226,23 @@ await Users.delete(ctx, userId)
 
 ```typescript
 // Таблица счётов, привязанных к клиентам (рабочий синтаксис)
-export const Invoices = Heap.Table('t__invoices__Yz9Aa0', {
-  customer: Heap.Optional(Heap.RefLink('t__project__customers__Qr5St6', {
-    customMeta: { title: 'Клиент' },
-    onDelete: 'none',
-  })),
-  amount: Heap.Optional(Heap.Money({
-    customMeta: { title: 'Сумма' }
-  }))
-}, { customMeta: { title: 'Счета' } })
+export const Invoices = Heap.Table(
+  't__invoices__Yz9Aa0',
+  {
+    customer: Heap.Optional(
+      Heap.RefLink('t__project__customers__Qr5St6', {
+        customMeta: { title: 'Клиент' },
+        onDelete: 'none'
+      })
+    ),
+    amount: Heap.Optional(
+      Heap.Money({
+        customMeta: { title: 'Сумма' }
+      })
+    )
+  },
+  { customMeta: { title: 'Счета' } }
+)
 
 // При попытке удалить клиента:
 try {
@@ -191,7 +254,7 @@ try {
 
 // ✅ Решение: сначала удалить счёта
 await Invoices.deleteMany(ctx, { where: { customer: customerId } })
-await Customers.delete(ctx, customerId)  // Теперь сработает
+await Customers.delete(ctx, customerId) // Теперь сработает
 ```
 
 #### 2.4.4 Важные замечания (рабочий код)
@@ -218,7 +281,7 @@ const category = await Categories.findById(ctx, categoryId)
 
 const product = await Products.create(ctx, {
   title: 'Платье красное',
-  category: category.id  // Передаём ID, не объект!
+  category: category.id // Передаём ID, не объект!
 })
 ```
 
@@ -228,7 +291,7 @@ const product = await Products.create(ctx, {
 // Обновление связи
 const updated = await Products.update(ctx, {
   id: product.id,
-  category: newCategoryId  // Новый ID
+  category: newCategoryId // Новый ID
 })
 ```
 
@@ -252,8 +315,8 @@ const updated = await Products.update(ctx, {
 const product = await Products.findById(ctx, productId)
 
 // Синхронный доступ к ID
-const categoryId = product.category.id  // Быстро, не требует await
-console.log(categoryId)  // Строка "cat_123"
+const categoryId = product.category.id // Быстро, не требует await
+console.log(categoryId) // Строка "cat_123"
 ```
 
 ### 4.2 Получение полных данных связанной записи
@@ -263,8 +326,8 @@ const product = await Products.findById(ctx, productId)
 
 // Асинхронный доступ к полной записи
 const category = await product.category.get(ctx)
-console.log(category.title)  // "Электроника"
-console.log(category.description)  // "Электронные товары"
+console.log(category.title) // "Электроника"
+console.log(category.description) // "Электронные товары"
 ```
 
 ### 4.3 Получение отображаемого названия
@@ -274,7 +337,7 @@ const product = await Products.findById(ctx, productId)
 
 // Получить display title (обычно название категории)
 const categoryTitle = await product.category.getTitle(ctx)
-console.log(categoryTitle)  // "Электроника"
+console.log(categoryTitle) // "Электроника"
 ```
 
 ### 4.4 Доступ к таблице целевой записи
@@ -297,13 +360,13 @@ const otherCategories = await categoriesTable.findAll(ctx, {
 
 ### 5.1 Доступные методы
 
-| Метод | Возвращает | Описание |
-|-------|-----------|---------|
-| `.id` | `string` | ID связанной записи (синхронно) |
-| `.get(ctx)` | `Promise<T \| null>` | Получить полную запись |
-| `.getTitle(ctx)` | `Promise<string \| null>` | Получить отображаемое имя |
-| `.getTargetTableRepo(ctx)` | `Promise<HeapTable<T>>` | Получить таблицу целевой записи |
-| `.toJSON()` | `string` | Сериализация (возвращает ID) |
+| Метод                      | Возвращает                | Описание                        |
+| -------------------------- | ------------------------- | ------------------------------- |
+| `.id`                      | `string`                  | ID связанной записи (синхронно) |
+| `.get(ctx)`                | `Promise<T \| null>`      | Получить полную запись          |
+| `.getTitle(ctx)`           | `Promise<string \| null>` | Получить отображаемое имя       |
+| `.getTargetTableRepo(ctx)` | `Promise<HeapTable<T>>`   | Получить таблицу целевой записи |
+| `.toJSON()`                | `string`                  | Сериализация (возвращает ID)    |
 
 ### 5.2 Примеры использования методов
 
@@ -341,7 +404,7 @@ const similarCustomers = await customersRepo.findAll(ctx, {
 const products = await Products.findAll(ctx, { limit: 100 })
 
 for (const product of products) {
-  const category = await product.category.get(ctx)  // 100 запросов!
+  const category = await product.category.get(ctx) // 100 запросов!
   console.log(product.title, category.title)
 }
 ```
@@ -354,11 +417,11 @@ for (const product of products) {
 const products = await Products.findAll(ctx, { limit: 100 })
 
 // Собрать все уникальные ID категорий
-const categoryIds = [...new Set(
-  products
-    .map(p => p.category.id)
-    .filter(Boolean)  // Исключить null/undefined
-)]
+const categoryIds = [
+  ...new Set(
+    products.map((p) => p.category.id).filter(Boolean) // Исключить null/undefined
+  )
+]
 
 // Загрузить все категории одним запросом
 const categories = await Categories.findAll(ctx, {
@@ -366,10 +429,10 @@ const categories = await Categories.findAll(ctx, {
 })
 
 // Создать map для быстрого доступа
-const categoriesMap = new Map(categories.map(c => [c.id, c]))
+const categoriesMap = new Map(categories.map((c) => [c.id, c]))
 
 // Обогатить продукты данными категорий
-const productsWithCategories = products.map(product => ({
+const productsWithCategories = products.map((product) => ({
   ...product,
   categoryData: categoriesMap.get(product.category.id)
 }))
@@ -378,30 +441,31 @@ const productsWithCategories = products.map(product => ({
 ### 6.3 Batch Loading в API
 
 ```typescript
-export const apiProductsWithCategoriesRoute = app.get('/products-with-categories', async (ctx, req) => {
-  const products = await Products.findAll(ctx, { limit: 100 })
+export const apiProductsWithCategoriesRoute = app.get(
+  '/products-with-categories',
+  async (ctx, req) => {
+    const products = await Products.findAll(ctx, { limit: 100 })
 
-  // Batch loading категорий
-  const categoryIds = [...new Set(
-    products.map(p => p.category.id).filter(Boolean)
-  )]
+    // Batch loading категорий
+    const categoryIds = [...new Set(products.map((p) => p.category.id).filter(Boolean))]
 
-  const categories = await Categories.findAll(ctx, {
-    where: { id: categoryIds }
-  })
+    const categories = await Categories.findAll(ctx, {
+      where: { id: categoryIds }
+    })
 
-  const categoriesMap = new Map(categories.map(c => [c.id, c]))
+    const categoriesMap = new Map(categories.map((c) => [c.id, c]))
 
-  // Возвращаем обогащённые данные
-  return products.map(product => ({
-    id: product.id,
-    title: product.title,
-    category: {
-      id: product.category.id,
-      title: categoriesMap.get(product.category.id)?.title
-    }
-  }))
-})
+    // Возвращаем обогащённые данные
+    return products.map((product) => ({
+      id: product.id,
+      title: product.title,
+      category: {
+        id: product.category.id,
+        title: categoriesMap.get(product.category.id)?.title
+      }
+    }))
+  }
+)
 ```
 
 ---
@@ -455,13 +519,13 @@ const products = await Products.findAll(ctx, {
 // ❌ НЕПРАВИЛЬНО
 const product = await Products.create(ctx, {
   title: 'Товар',
-  category: categoryObject  // Объект!
+  category: categoryObject // Объект!
 })
 
 // ✅ ПРАВИЛЬНО
 const product = await Products.create(ctx, {
   title: 'Товар',
-  category: categoryObject.id  // ID!
+  category: categoryObject.id // ID!
 })
 ```
 
@@ -470,18 +534,20 @@ const product = await Products.create(ctx, {
 ```typescript
 // ❌ НЕПРАВИЛЬНО
 const product = await Products.findById(ctx, productId)
-const category = product.category.get(ctx)  // Promise, не данные!
+const category = product.category.get(ctx) // Promise, не данные!
 
 // ✅ ПРАВИЛЬНО
 const product = await Products.findById(ctx, productId)
-const category = await product.category.get(ctx)  // Данные
+const category = await product.category.get(ctx) // Данные
 ```
 
 ### Ошибка 3: Использование .id в фильтрации с null
 
 ```typescript
 // ❌ НЕПРАВИЛЬНО: если RefLink пустой, это вернёт undefined
-where: { category: product.category.id }  // Может быть undefined!
+where: {
+  category: product.category.id
+} // Может быть undefined!
 
 // ✅ ПРАВИЛЬНО: проверить перед использованием
 if (product.category?.id) {
@@ -512,19 +578,31 @@ export const Products = Heap.Table('...', {
 
 ```typescript
 // ✅ ПРАВИЛЬНО: идентификатор таблицы Heap, импорт не нужен
-export const Categories = Heap.Table('t__project__categories__Xy1Zw2', {
-  defaultProduct: Heap.Optional(Heap.RefLink('t__project__products__Ab1Cd2', {
-    customMeta: { title: 'Товар по умолчанию' },
-    onDelete: 'none',
-  }))
-}, { customMeta: { title: 'Категории' } })
+export const Categories = Heap.Table(
+  't__project__categories__Xy1Zw2',
+  {
+    defaultProduct: Heap.Optional(
+      Heap.RefLink('t__project__products__Ab1Cd2', {
+        customMeta: { title: 'Товар по умолчанию' },
+        onDelete: 'none'
+      })
+    )
+  },
+  { customMeta: { title: 'Категории' } }
+)
 
-export const Products = Heap.Table('t__project__products__Ab1Cd2', {
-  category: Heap.Optional(Heap.RefLink('t__project__categories__Xy1Zw2', {
-    customMeta: { title: 'Категория' },
-    onDelete: 'none',
-  }))
-}, { customMeta: { title: 'Товары' } })
+export const Products = Heap.Table(
+  't__project__products__Ab1Cd2',
+  {
+    category: Heap.Optional(
+      Heap.RefLink('t__project__categories__Xy1Zw2', {
+        customMeta: { title: 'Категория' },
+        onDelete: 'none'
+      })
+    )
+  },
+  { customMeta: { title: 'Товары' } }
+)
 ```
 
 ### Ошибка 5: N+1 запросы при обработке коллекций
@@ -546,17 +624,15 @@ export const apiOrdersWithCustomersRoute = app.get('/orders', async (ctx, req) =
   const orders = await Orders.findAll(ctx, { limit: 50 })
 
   // Batch loading клиентов
-  const customerIds = [...new Set(
-    orders.map(o => o.customer.id).filter(Boolean)
-  )]
+  const customerIds = [...new Set(orders.map((o) => o.customer.id).filter(Boolean))]
 
   const customers = await Customers.findAll(ctx, {
     where: { id: customerIds }
   })
 
-  const customersMap = new Map(customers.map(c => [c.id, c]))
+  const customersMap = new Map(customers.map((c) => [c.id, c]))
 
-  return orders.map(order => ({
+  return orders.map((order) => ({
     id: order.id,
     number: order.number,
     totalAmount: order.totalAmount,
@@ -571,48 +647,52 @@ export const apiOrdersWithCustomersRoute = app.get('/orders', async (ctx, req) =
 ### Пример 2: Создание связанной записи
 
 ```typescript
-export const apiCreateOrderRoute = app.body(s => ({
-  customerId: s.string(),
-  amount: s.number()
-})).post('/create-order', async (ctx, req) => {
-  // Проверить что клиент существует
-  const customer = await Customers.findById(ctx, req.body.customerId)
-  if (!customer) {
-    throw new Error('Клиент не найден')
-  }
+export const apiCreateOrderRoute = app
+  .body((s) => ({
+    customerId: s.string(),
+    amount: s.number()
+  }))
+  .post('/create-order', async (ctx, req) => {
+    // Проверить что клиент существует
+    const customer = await Customers.findById(ctx, req.body.customerId)
+    if (!customer) {
+      throw new Error('Клиент не найден')
+    }
 
-  // Создать заказ со связью
-  const order = await Orders.create(ctx, {
-    customer: customer.id,  // Передаём ID
-    amount: new Money(req.body.amount, 'RUB'),
-    status: 'pending'
+    // Создать заказ со связью
+    const order = await Orders.create(ctx, {
+      customer: customer.id, // Передаём ID
+      amount: new Money(req.body.amount, 'RUB'),
+      status: 'pending'
+    })
+
+    return order
   })
-
-  return order
-})
 ```
 
 ### Пример 3: Обновление связи
 
 ```typescript
-export const apiChangeCustomerRoute = app.body(s => ({
-  orderId: s.string(),
-  newCustomerId: s.string()
-})).post('/change-customer', async (ctx, req) => {
-  // Проверить что новый клиент существует
-  const newCustomer = await Customers.findById(ctx, req.body.newCustomerId)
-  if (!newCustomer) {
-    throw new Error('Новый клиент не найден')
-  }
+export const apiChangeCustomerRoute = app
+  .body((s) => ({
+    orderId: s.string(),
+    newCustomerId: s.string()
+  }))
+  .post('/change-customer', async (ctx, req) => {
+    // Проверить что новый клиент существует
+    const newCustomer = await Customers.findById(ctx, req.body.newCustomerId)
+    if (!newCustomer) {
+      throw new Error('Новый клиент не найден')
+    }
 
-  // Обновить связь
-  const updated = await Orders.update(ctx, {
-    id: req.body.orderId,
-    customer: newCustomer.id
+    // Обновить связь
+    const updated = await Orders.update(ctx, {
+      id: req.body.orderId,
+      customer: newCustomer.id
+    })
+
+    return updated
   })
-
-  return updated
-})
 ```
 
 ### Пример 4: Вложенные RefLink
@@ -634,16 +714,16 @@ export const apiOrderDetailsRoute = app.get('/order/:id', async (ctx, req) => {
   })
 
   // Batch loading товаров
-  const productIds = [...new Set(items.map(i => i.product.id).filter(Boolean))]
+  const productIds = [...new Set(items.map((i) => i.product.id).filter(Boolean))]
   const products = await Products.findAll(ctx, {
     where: { id: productIds }
   })
-  const productsMap = new Map(products.map(p => [p.id, p]))
+  const productsMap = new Map(products.map((p) => [p.id, p]))
 
   return {
     id: order.id,
     customer: customer,
-    items: items.map(item => ({
+    items: items.map((item) => ({
       product: productsMap.get(item.product.id),
       quantity: item.quantity
     }))

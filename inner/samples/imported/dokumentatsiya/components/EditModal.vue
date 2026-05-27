@@ -6,7 +6,7 @@
   >
     <div class="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
       <h2 class="text-xl font-bold mb-4">{{ title }}</h2>
-       
+
       <!-- Title Input -->
       <div class="mb-4">
         <label class="block text-sm font-medium text-gray-700 mb-2">{{ ctx.t('Title') }}</label>
@@ -17,10 +17,12 @@
           :placeholder="ctx.t('Enter title')"
         />
       </div>
-      
+
       <!-- Slug Input -->
       <div class="mb-4">
-        <label class="block text-sm font-medium text-gray-700 mb-2">{{ ctx.t('Slug (URL)') }}</label>
+        <label class="block text-sm font-medium text-gray-700 mb-2">{{
+          ctx.t('Slug (URL)')
+        }}</label>
         <input
           v-model="localData.slug"
           @input="handleSlugInput"
@@ -30,7 +32,7 @@
         />
         <p class="text-xs text-gray-500 mt-1">{{ ctx.t('Leave empty for auto-generation') }}</p>
       </div>
-      
+
       <!-- Type Selector -->
       <div class="mb-4">
         <label class="block text-sm font-medium text-gray-700 mb-2">{{ ctx.t('Type') }}</label>
@@ -42,7 +44,7 @@
           <option value="section">{{ ctx.t('Section') }}</option>
         </select>
       </div>
-      
+
       <!-- Order Input (only when editing) -->
       <div v-if="!isCreating" class="mb-4">
         <label class="block text-sm font-medium text-gray-700 mb-2">{{ ctx.t('Order') }}</label>
@@ -53,7 +55,7 @@
           :placeholder="ctx.t('Sort order')"
         />
       </div>
-      
+
       <!-- Published Checkbox -->
       <div class="mb-4">
         <label class="flex items-center">
@@ -64,9 +66,11 @@
           />
           <span class="text-sm font-medium text-gray-700">{{ ctx.t('Published') }}</span>
         </label>
-        <p class="text-xs text-gray-500 mt-1">{{ ctx.t('Unpublished pages are visible only to administrators') }}</p>
+        <p class="text-xs text-gray-500 mt-1">
+          {{ ctx.t('Unpublished pages are visible only to administrators') }}
+        </p>
       </div>
-      
+
       <!-- Parent Selector -->
       <div class="mb-4">
         <ParentSelector
@@ -78,7 +82,7 @@
           @select="handleParentSelect"
         />
       </div>
-      
+
       <!-- Buttons -->
       <div class="flex items-center justify-between pt-4 border-t border-gray-200">
         <button
@@ -89,7 +93,7 @@
           <i class="fas fa-trash mr-1"></i>{{ ctx.t('Delete') }}
         </button>
         <div v-else></div>
-        
+
         <div class="flex space-x-2">
           <button
             @click="$emit('close')"
@@ -139,21 +143,77 @@ const slugManuallyEdited = ref(false) // Track if user manually edited slug
 // Транслитерация для автогенерации slug
 function transliterate(text) {
   const ru = {
-    'а': 'a', 'б': 'b', 'в': 'v', 'г': 'g', 'д': 'd', 'е': 'e', 'ё': 'yo', 
-    'ж': 'zh', 'з': 'z', 'и': 'i', 'й': 'y', 'к': 'k', 'л': 'l', 'м': 'm',
-    'н': 'n', 'о': 'o', 'п': 'p', 'р': 'r', 'с': 's', 'т': 't', 'у': 'u',
-    'ф': 'f', 'х': 'h', 'ц': 'ts', 'ч': 'ch', 'ш': 'sh', 'щ': 'sch', 'ъ': '',
-    'ы': 'y', 'ь': '', 'э': 'e', 'ю': 'yu', 'я': 'ya',
-    'А': 'A', 'Б': 'B', 'В': 'V', 'Г': 'G', 'Д': 'D', 'Е': 'E', 'Ё': 'Yo',
-    'Ж': 'Zh', 'З': 'Z', 'И': 'I', 'Й': 'Y', 'К': 'K', 'Л': 'L', 'М': 'M',
-    'Н': 'N', 'О': 'O', 'П': 'P', 'Р': 'R', 'С': 'S', 'Т': 'T', 'У': 'U',
-    'Ф': 'F', 'Х': 'H', 'Ц': 'Ts', 'Ч': 'Ch', 'Ш': 'Sh', 'Щ': 'Sch', 'Ъ': '',
-    'Ы': 'Y', 'Ь': '', 'Э': 'E', 'Ю': 'Yu', 'Я': 'Ya'
+    а: 'a',
+    б: 'b',
+    в: 'v',
+    г: 'g',
+    д: 'd',
+    е: 'e',
+    ё: 'yo',
+    ж: 'zh',
+    з: 'z',
+    и: 'i',
+    й: 'y',
+    к: 'k',
+    л: 'l',
+    м: 'm',
+    н: 'n',
+    о: 'o',
+    п: 'p',
+    р: 'r',
+    с: 's',
+    т: 't',
+    у: 'u',
+    ф: 'f',
+    х: 'h',
+    ц: 'ts',
+    ч: 'ch',
+    ш: 'sh',
+    щ: 'sch',
+    ъ: '',
+    ы: 'y',
+    ь: '',
+    э: 'e',
+    ю: 'yu',
+    я: 'ya',
+    А: 'A',
+    Б: 'B',
+    В: 'V',
+    Г: 'G',
+    Д: 'D',
+    Е: 'E',
+    Ё: 'Yo',
+    Ж: 'Zh',
+    З: 'Z',
+    И: 'I',
+    Й: 'Y',
+    К: 'K',
+    Л: 'L',
+    М: 'M',
+    Н: 'N',
+    О: 'O',
+    П: 'P',
+    Р: 'R',
+    С: 'S',
+    Т: 'T',
+    У: 'U',
+    Ф: 'F',
+    Х: 'H',
+    Ц: 'Ts',
+    Ч: 'Ch',
+    Ш: 'Sh',
+    Щ: 'Sch',
+    Ъ: '',
+    Ы: 'Y',
+    Ь: '',
+    Э: 'E',
+    Ю: 'Yu',
+    Я: 'Ya'
   }
-  
+
   return text
     .split('')
-    .map(char => ru[char] || char)
+    .map((char) => ru[char] || char)
     .join('')
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
@@ -170,41 +230,54 @@ const title = computed(() => {
 
 const isCreating = computed(() => !props.nodeId)
 
-watch(() => props.data, (newData) => {
-  if (newData) {
-    const isCreating = !props.nodeId
-    const isSection = (newData.type || props.nodeType) === 'section'
-    
-    localData.value = {
-      title: newData.title || '',
-      slug: newData.slug || '',
-      type: newData.type || 'page',
-      parentId: newData.parentId || null,
-      order: newData.order || 0,
-      // If isPublished is explicitly provided, use it; otherwise use default based on type
-      isPublished: newData.isPublished !== undefined ? newData.isPublished : (isCreating && isSection ? true : false)
+watch(
+  () => props.data,
+  (newData) => {
+    if (newData) {
+      const isCreating = !props.nodeId
+      const isSection = (newData.type || props.nodeType) === 'section'
+
+      localData.value = {
+        title: newData.title || '',
+        slug: newData.slug || '',
+        type: newData.type || 'page',
+        parentId: newData.parentId || null,
+        order: newData.order || 0,
+        // If isPublished is explicitly provided, use it; otherwise use default based on type
+        isPublished:
+          newData.isPublished !== undefined
+            ? newData.isPublished
+            : isCreating && isSection
+              ? true
+              : false
+      }
+
+      // Set selected parent based on current data
+      if (newData.parentId) {
+        const parentId =
+          typeof newData.parentId === 'string' ? newData.parentId : newData.parentId.id
+        selectedParent.value = `doc:${parentId}`
+        parentSelected.value = true // Mark as selected if parentId exists in data
+      } else {
+        selectedParent.value = 'none'
+        parentSelected.value = false
+      }
+      // Reset slug manually edited flag when data changes
+      slugManuallyEdited.value = false
     }
-    
-    // Set selected parent based on current data
-    if (newData.parentId) {
-      const parentId = typeof newData.parentId === 'string' ? newData.parentId : newData.parentId.id
-      selectedParent.value = `doc:${parentId}`
-      parentSelected.value = true // Mark as selected if parentId exists in data
-    } else {
-      selectedParent.value = 'none'
-      parentSelected.value = false
-    }
-    // Reset slug manually edited flag when data changes
-    slugManuallyEdited.value = false
-  }
-}, { immediate: true })
+  },
+  { immediate: true }
+)
 
 // Автогенерация slug при изменении title (только при создании и если пользователь не редактировал вручную)
-watch(() => localData.value.title, (newTitle) => {
-  if (newTitle && !slugManuallyEdited.value && isCreating.value) {
-    localData.value.slug = transliterate(newTitle)
+watch(
+  () => localData.value.title,
+  (newTitle) => {
+    if (newTitle && !slugManuallyEdited.value && isCreating.value) {
+      localData.value.slug = transliterate(newTitle)
+    }
   }
-})
+)
 
 // Обработчик ручного редактирования slug
 function handleSlugInput() {
@@ -223,26 +296,26 @@ function handleSave() {
     type: localData.value.type,
     isPublished: localData.value.isPublished
   }
-  
+
   // Only include order when editing (not creating)
   if (!isCreating.value) {
     saveData.order = localData.value.order
   }
-  
+
   // Only include parentId if parent was explicitly selected
   if (parentSelected.value) {
     let parentId = null
-    
+
     if (selectedParent.value !== 'none') {
       const [type, id] = selectedParent.value.split(':')
       if (type === 'doc') {
         parentId = id
       }
     }
-    
+
     saveData.parentId = parentId
   }
-  
+
   emit('save', saveData)
 }
 </script>

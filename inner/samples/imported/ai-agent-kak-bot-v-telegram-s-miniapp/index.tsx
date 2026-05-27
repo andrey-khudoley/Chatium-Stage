@@ -12,9 +12,9 @@ export const indexPageRoute = app.get('/', async (ctx, req) => {
       <html>
         <head>
           <title>Telegram Web App Bot - Галерея</title>
-          <meta name='viewport' content='width=device-width, initial-scale=1' />
-          <script src='/s/metric/clarity.js'></script>
-          <script src='/s/static/lib/tailwind.3.4.16.min.js'></script>
+          <meta name="viewport" content="width=device-width, initial-scale=1" />
+          <script src="/s/metric/clarity.js"></script>
+          <script src="/s/static/lib/tailwind.3.4.16.min.js"></script>
         </head>
         <body>
           <GalleryPage />
@@ -26,7 +26,7 @@ export const indexPageRoute = app.get('/', async (ctx, req) => {
   await requireAccountRole(ctx, 'Admin')
 
   const availableChannels = (await getChannels(ctx))
-    .map(channel => ({
+    .map((channel) => ({
       id: channel.id,
       title: channel.title,
       source: channel.source,
@@ -35,16 +35,16 @@ export const indexPageRoute = app.get('/', async (ctx, req) => {
       photo: channel.photo,
       active: channel.active
     }))
-    .filter(channel => channel.active)
+    .filter((channel) => channel.active)
 
   return (
     <html>
       <head>
         <title>Настройки Telegram Бота</title>
-        <meta name='viewport' content='width=device-width, initial-scale=1' />
-        <script src='/s/metric/clarity.js'></script>
-        <script src='/s/static/lib/tailwind.3.4.16.min.js'></script>
-        <style type='text/tailwindcss'>{`
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <script src="/s/metric/clarity.js"></script>
+        <script src="/s/static/lib/tailwind.3.4.16.min.js"></script>
+        <style type="text/tailwindcss">{`
           body {
             --color-primary: #1E40AF;
             --color-secondary: #1E3A8A;

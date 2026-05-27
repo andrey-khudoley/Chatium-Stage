@@ -20,9 +20,18 @@ function runTemplateUnitChecks(): TemplateUnitTestResult[] {
   }
 
   try {
-    push('shouldLogByLevel_Info_6', 'logger: shouldLogByLevel(Info, 6) === true', loggerLib.shouldLogByLevel('Info', 6) === true)
+    push(
+      'shouldLogByLevel_Info_6',
+      'logger: shouldLogByLevel(Info, 6) === true',
+      loggerLib.shouldLogByLevel('Info', 6) === true
+    )
   } catch (e) {
-    push('shouldLogByLevel_Info_6', 'logger: shouldLogByLevel(Info, 6)', false, (e as Error)?.message ?? String(e))
+    push(
+      'shouldLogByLevel_Info_6',
+      'logger: shouldLogByLevel(Info, 6)',
+      false,
+      (e as Error)?.message ?? String(e)
+    )
   }
 
   try {
@@ -32,26 +41,48 @@ function runTemplateUnitChecks(): TemplateUnitTestResult[] {
       loggerLib.shouldLogByLevel('Disable', 7) === false
     )
   } catch (e) {
-    push('shouldLogByLevel_Disable_7', 'logger: shouldLogByLevel(Disable, 7)', false, (e as Error)?.message ?? String(e))
+    push(
+      'shouldLogByLevel_Disable_7',
+      'logger: shouldLogByLevel(Disable, 7)',
+      false,
+      (e as Error)?.message ?? String(e)
+    )
   }
 
   try {
     const url = getFullUrl('./')
-    push('getFullUrl_root', 'routes: getFullUrl("./") содержит PROJECT_ROOT', url.includes(PROJECT_ROOT))
+    push(
+      'getFullUrl_root',
+      'routes: getFullUrl("./") содержит PROJECT_ROOT',
+      url.includes(PROJECT_ROOT)
+    )
   } catch (e) {
     push('getFullUrl_root', 'routes: getFullUrl("./")', false, (e as Error)?.message ?? String(e))
   }
 
   try {
     const url = getFullUrl('./web/admin')
-    push('getFullUrl_admin', 'routes: getFullUrl("./web/admin") содержит /web/admin', url.includes('/web/admin'))
+    push(
+      'getFullUrl_admin',
+      'routes: getFullUrl("./web/admin") содержит /web/admin',
+      url.includes('/web/admin')
+    )
   } catch (e) {
-    push('getFullUrl_admin', 'routes: getFullUrl("./web/admin")', false, (e as Error)?.message ?? String(e))
+    push(
+      'getFullUrl_admin',
+      'routes: getFullUrl("./web/admin")',
+      false,
+      (e as Error)?.message ?? String(e)
+    )
   }
 
   try {
     const title = getPageTitle(INDEX_PAGE_NAME, 'TestProject')
-    push('getPageTitle', 'project: getPageTitle не пустой', typeof title === 'string' && title.length > 0)
+    push(
+      'getPageTitle',
+      'project: getPageTitle не пустой',
+      typeof title === 'string' && title.length > 0
+    )
   } catch (e) {
     push('getPageTitle', 'project: getPageTitle', false, (e as Error)?.message ?? String(e))
   }
@@ -60,7 +91,12 @@ function runTemplateUnitChecks(): TemplateUnitTestResult[] {
     const script = getLogLevelScript('Debug')
     push('getLogLevelScript', 'shared/logLevel: скрипт содержит Debug', script.includes('Debug'))
   } catch (e) {
-    push('getLogLevelScript', 'shared/logLevel: getLogLevelScript', false, (e as Error)?.message ?? String(e))
+    push(
+      'getLogLevelScript',
+      'shared/logLevel: getLogLevelScript',
+      false,
+      (e as Error)?.message ?? String(e)
+    )
   }
 
   try {
@@ -71,7 +107,12 @@ function runTemplateUnitChecks(): TemplateUnitTestResult[] {
       typeof id === 'string' && id.startsWith('admin-logs-')
     )
   } catch (e) {
-    push('getAdminLogsSocketId_shape', 'logger: getAdminLogsSocketId', false, (e as Error)?.message ?? String(e))
+    push(
+      'getAdminLogsSocketId_shape',
+      'logger: getAdminLogsSocketId',
+      false,
+      (e as Error)?.message ?? String(e)
+    )
   }
 
   return results

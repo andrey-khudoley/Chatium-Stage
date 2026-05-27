@@ -20,8 +20,8 @@ export const popupRoute = app
       <html>
         <head>
           <title>Popup Widget</title>
-          <meta name='viewport' content='width=device-width, initial-scale=1' />
-          <script src='/s/metric/clarity.js'></script>
+          <meta name="viewport" content="width=device-width, initial-scale=1" />
+          <script src="/s/metric/clarity.js"></script>
           <style>{`
           * {
             margin: 0;

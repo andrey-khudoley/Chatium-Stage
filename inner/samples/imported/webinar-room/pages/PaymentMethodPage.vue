@@ -4,8 +4,24 @@
     <div v-if="loading" class="pay-center">
       <div class="pay-spinner">
         <svg viewBox="0 0 50 50">
-          <circle cx="25" cy="25" r="20" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-dasharray="90 150" stroke-dashoffset="0">
-            <animateTransform attributeName="transform" type="rotate" dur="1s" values="0 25 25;360 25 25" repeatCount="indefinite" />
+          <circle
+            cx="25"
+            cy="25"
+            r="20"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="3"
+            stroke-linecap="round"
+            stroke-dasharray="90 150"
+            stroke-dashoffset="0"
+          >
+            <animateTransform
+              attributeName="transform"
+              type="rotate"
+              dur="1s"
+              values="0 25 25;360 25 25"
+              repeatCount="indefinite"
+            />
           </circle>
         </svg>
       </div>
@@ -45,14 +61,18 @@
           <p class="pay-price-label">К оплате</p>
           <div class="pay-price-row">
             <span class="pay-price-amount">{{ formatPrice(formData?.paymentAmount) }}</span>
-            <span v-if="formData?.paymentOldPrice" class="pay-price-old">{{ formatPrice(formData.paymentOldPrice) }}</span>
+            <span v-if="formData?.paymentOldPrice" class="pay-price-old">{{
+              formatPrice(formData.paymentOldPrice)
+            }}</span>
           </div>
           <span v-if="formData?.paymentOldPrice && discountPercent > 0" class="pay-discount">
             Скидка {{ discountPercent }}%
           </span>
         </div>
         <p v-if="formData?.title" class="pay-desc">{{ formData.title }}</p>
-        <p v-if="formData?.paymentDescription" class="pay-subdesc">{{ formData.paymentDescription }}</p>
+        <p v-if="formData?.paymentDescription" class="pay-subdesc">
+          {{ formData.paymentDescription }}
+        </p>
       </div>
 
       <!-- Divider -->
@@ -92,7 +112,11 @@
             </div>
           </div>
           <div class="pay-provider-right">
-            <Spinner v-if="processingProviderId === provider.id" :size="18" style="color: var(--wr-primary)" />
+            <Spinner
+              v-if="processingProviderId === provider.id"
+              :size="18"
+              style="color: var(--wr-primary)"
+            />
             <span v-else class="pay-provider-arrow">
               <i class="fas fa-arrow-right"></i>
             </span>
@@ -118,7 +142,7 @@ import { initThemeWatcher, currentTheme } from '../shared/theme'
 import { trackFormPaymentPageOpened } from '../shared/use-form-analytics'
 
 const props = defineProps({
-  submissionId: { type: String, required: true },
+  submissionId: { type: String, required: true }
 })
 
 const loading = ref(true)
@@ -152,7 +176,11 @@ const filteredProviders = computed(() => {
   if (!formData.value?.paymentProviders || formData.value.paymentProviders.length === 0) {
     return allProviders.value
   }
-  return allProviders.value.filter(p => formData.value.paymentProviders.includes(p.id) || formData.value.paymentProviders.includes(p.slug))
+  return allProviders.value.filter(
+    (p) =>
+      formData.value.paymentProviders.includes(p.id) ||
+      formData.value.paymentProviders.includes(p.slug)
+  )
 })
 
 onMounted(async () => {
@@ -161,7 +189,7 @@ onMounted(async () => {
     const result = await apiFormSubmissionByIdRoute({ id: props.submissionId }).run(ctx)
     submissionData.value = result.submission
     formData.value = result.form
-    allProviders.value = (result.configured || []).map(p => ({ ...p }))
+    allProviders.value = (result.configured || []).map((p) => ({ ...p }))
     loadingProviders.value = false
     loading.value = false
 
@@ -192,7 +220,7 @@ async function selectProvider(providerId) {
   try {
     const result = await apiFormCreatePaymentRoute.run(ctx, {
       submissionId: props.submissionId,
-      providerId,
+      providerId
     })
 
     if (result.paymentLink) {
@@ -229,8 +257,14 @@ async function selectProvider(providerId) {
 }
 
 @keyframes payFadeIn {
-  from { opacity: 0; transform: translateY(12px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .pay-spinner {
@@ -268,8 +302,14 @@ async function selectProvider(providerId) {
 }
 
 @keyframes payPop {
-  from { transform: scale(0.5); opacity: 0; }
-  to { transform: scale(1); opacity: 1; }
+  from {
+    transform: scale(0.5);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 
 .pay-center-title {
@@ -322,9 +362,18 @@ async function selectProvider(providerId) {
 }
 
 @keyframes payProgressAnim {
-  0% { width: 0%; margin-left: 0; }
-  50% { width: 60%; margin-left: 20%; }
-  100% { width: 0%; margin-left: 100%; }
+  0% {
+    width: 0%;
+    margin-left: 0;
+  }
+  50% {
+    width: 60%;
+    margin-left: 20%;
+  }
+  100% {
+    width: 0%;
+    margin-left: 100%;
+  }
 }
 
 /* ===== Container ===== */
@@ -493,7 +542,7 @@ async function selectProvider(providerId) {
 .pay-provider:hover:not(:disabled) {
   border-color: var(--wr-border-hover);
   background: var(--wr-hover-bg);
-  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
 }
 
 .pay-provider:active:not(:disabled) {

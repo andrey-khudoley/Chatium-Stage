@@ -1,5 +1,5 @@
-import Registrations from "../tables/registrations.table"
-import { sendNotificationToAccountOwners } from "@user-notifier/sdk"
+import Registrations from '../tables/registrations.table'
+import { sendNotificationToAccountOwners } from '@user-notifier/sdk'
 
 // @shared-route
 export const apiRegisterRoute = app.post('/register', async (ctx, req) => {
@@ -23,7 +23,7 @@ export const apiRegisterRoute = app.post('/register', async (ctx, req) => {
 
   // Отправляем уведомление администратору
   await sendNotificationToAccountOwners(ctx, {
-    title: "Новая регистрация на марафон!",
+    title: 'Новая регистрация на марафон!',
     html: `
       <h2>Новая регистрация на марафон по скоростному наращиванию</h2>
       <p><strong>Имя:</strong> ${firstName}</p>

@@ -9,7 +9,7 @@ import {
   LOG_LEVEL_SETTING_KEY,
   parseDebugLevel,
   persistLogLevel
-} from '../lib/logging' 
+} from '../lib/logging'
 import '../lib/logs-init'
 
 const PROJECT_NAME_SETTING_KEY = 'project_name'
@@ -66,17 +66,27 @@ export const apiGetAdminSettingsRoute = app.get('/', async (ctx, req) => {
     Debug.info(ctx, '[api/admin-settings] Начало обработки запроса на получение настроек')
 
     requireAccountRole(ctx, 'Admin')
-    Debug.info(ctx, `[api/admin-settings] Пользователь авторизован как Admin: userId=${ctx.user?.id}`)
+    Debug.info(
+      ctx,
+      `[api/admin-settings] Пользователь авторизован как Admin: userId=${ctx.user?.id}`
+    )
 
     const settings = await loadSettings(ctx)
-    Debug.info(ctx, `[api/admin-settings] Настройки загружены, ключей: ${Object.keys(settings).length}`)
+    Debug.info(
+      ctx,
+      `[api/admin-settings] Настройки загружены, ключей: ${Object.keys(settings).length}`
+    )
 
     return {
       success: true,
       settings
     }
   } catch (error: any) {
-    Debug.error(ctx, `[api/admin-settings] Ошибка при получении настроек: ${error.message}`, 'E_GET_ADMIN_SETTINGS')
+    Debug.error(
+      ctx,
+      `[api/admin-settings] Ошибка при получении настроек: ${error.message}`,
+      'E_GET_ADMIN_SETTINGS'
+    )
     Debug.error(ctx, `[api/admin-settings] Stack trace: ${error.stack || 'N/A'}`)
     return {
       success: false,
@@ -95,7 +105,10 @@ export const apiUpdateAdminSettingsRoute = app.post('/', async (ctx, req) => {
     Debug.info(ctx, '[api/admin-settings] Начало обработки запроса на обновление настроек')
 
     requireAccountRole(ctx, 'Admin')
-    Debug.info(ctx, `[api/admin-settings] Пользователь авторизован как Admin: userId=${ctx.user?.id}`)
+    Debug.info(
+      ctx,
+      `[api/admin-settings] Пользователь авторизован как Admin: userId=${ctx.user?.id}`
+    )
 
     if (!req.body || typeof req.body !== 'object') {
       Debug.warn(ctx, '[api/admin-settings] Тело запроса отсутствует или имеет неверный тип')
@@ -109,7 +122,10 @@ export const apiUpdateAdminSettingsRoute = app.post('/', async (ctx, req) => {
 
     if ('project_name' in body) {
       if (body.project_name !== null && typeof body.project_name !== 'string') {
-        Debug.warn(ctx, `[api/admin-settings] project_name должен быть строкой, получен: ${typeof body.project_name}`)
+        Debug.warn(
+          ctx,
+          `[api/admin-settings] project_name должен быть строкой, получен: ${typeof body.project_name}`
+        )
         return {
           success: false,
           error: 'project_name должен быть строкой'
@@ -126,7 +142,10 @@ export const apiUpdateAdminSettingsRoute = app.post('/', async (ctx, req) => {
 
     if ('project_title' in body) {
       if (body.project_title !== null && typeof body.project_title !== 'string') {
-        Debug.warn(ctx, `[api/admin-settings] project_title должен быть строкой, получен: ${typeof body.project_title}`)
+        Debug.warn(
+          ctx,
+          `[api/admin-settings] project_title должен быть строкой, получен: ${typeof body.project_title}`
+        )
         return {
           success: false,
           error: 'project_title должен быть строкой'
@@ -143,7 +162,10 @@ export const apiUpdateAdminSettingsRoute = app.post('/', async (ctx, req) => {
 
     if ('project_description' in body) {
       if (body.project_description !== null && typeof body.project_description !== 'string') {
-        Debug.warn(ctx, `[api/admin-settings] project_description должен быть строкой, получен: ${typeof body.project_description}`)
+        Debug.warn(
+          ctx,
+          `[api/admin-settings] project_description должен быть строкой, получен: ${typeof body.project_description}`
+        )
         return {
           success: false,
           error: 'project_description должен быть строкой'
@@ -155,12 +177,18 @@ export const apiUpdateAdminSettingsRoute = app.post('/', async (ctx, req) => {
         key: PROJECT_DESCRIPTION_SETTING_KEY,
         value: normalized
       })
-      Debug.info(ctx, `[api/admin-settings] project_description обновлён: ${normalized ? 'updated' : '(empty)'}`)
+      Debug.info(
+        ctx,
+        `[api/admin-settings] project_description обновлён: ${normalized ? 'updated' : '(empty)'}`
+      )
     }
 
     if ('log_level' in body) {
       if (typeof body.log_level !== 'string') {
-        Debug.warn(ctx, `[api/admin-settings] log_level должен быть строкой, получен: ${typeof body.log_level}`)
+        Debug.warn(
+          ctx,
+          `[api/admin-settings] log_level должен быть строкой, получен: ${typeof body.log_level}`
+        )
         return {
           success: false,
           error: 'log_level должен быть строкой'
@@ -189,7 +217,10 @@ export const apiUpdateAdminSettingsRoute = app.post('/', async (ctx, req) => {
     if ('logs_webhook_enabled' in body) {
       const v = body.logs_webhook_enabled
       const enabled = v === true || v === 'true'
-      await ProjectSettings.createOrUpdateBy(ctx, 'key', { key: LOGS_WEBHOOK_ENABLED_KEY, value: enabled })
+      await ProjectSettings.createOrUpdateBy(ctx, 'key', {
+        key: LOGS_WEBHOOK_ENABLED_KEY,
+        value: enabled
+      })
     }
 
     const settings = await loadSettings(ctx)
@@ -200,7 +231,11 @@ export const apiUpdateAdminSettingsRoute = app.post('/', async (ctx, req) => {
       settings
     }
   } catch (error: any) {
-    Debug.error(ctx, `[api/admin-settings] Ошибка при обновлении настроек: ${error.message}`, 'E_UPDATE_ADMIN_SETTINGS')
+    Debug.error(
+      ctx,
+      `[api/admin-settings] Ошибка при обновлении настроек: ${error.message}`,
+      'E_UPDATE_ADMIN_SETTINGS'
+    )
     Debug.error(ctx, `[api/admin-settings] Stack trace: ${error.stack || 'N/A'}`)
     return {
       success: false,

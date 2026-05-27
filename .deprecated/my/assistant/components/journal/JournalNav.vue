@@ -60,7 +60,11 @@ const emit = defineEmits<{
 
     <Transition name="journal-nav-toolbar">
       <div v-if="props.showTasksToolbar" class="journal-nav-toolbar">
-        <button type="button" class="journal-nav-action journal-nav-action--tasks" @click="emit('open-all-tasks')">
+        <button
+          type="button"
+          class="journal-nav-action journal-nav-action--tasks"
+          @click="emit('open-all-tasks')"
+        >
           Все задачи
         </button>
       </div>

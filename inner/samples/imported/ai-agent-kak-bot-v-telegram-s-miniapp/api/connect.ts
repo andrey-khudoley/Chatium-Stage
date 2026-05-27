@@ -28,7 +28,7 @@ export const apiConnectTelegramRoute = app.post('/telegram', async (ctx, req) =>
     await setConnectedChannels(
       ctx,
       channels
-        .filter(c => c.id !== channel.id)
+        .filter((c) => c.id !== channel.id)
         .concat([
           {
             id: channel.id,
@@ -132,8 +132,8 @@ export const apiSaveChannelsRoute = app.post('/save-channels', async (ctx, req) 
   const { getChannels } = await import('@sender/sdk')
   const allChannels = await getChannels(ctx)
   const selectedChannels = allChannels
-    .filter(channel => channelIds.includes(channel.id) && channel.active)
-    .map(channel => ({
+    .filter((channel) => channelIds.includes(channel.id) && channel.active)
+    .map((channel) => ({
       id: channel.id,
       title: channel.title,
       photo: channel.photo as string,

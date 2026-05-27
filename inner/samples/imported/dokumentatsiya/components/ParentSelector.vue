@@ -3,7 +3,7 @@
     <label class="block text-sm font-medium text-gray-700 mb-2">
       {{ label }}
     </label>
-    
+
     <div class="border border-gray-300 rounded-lg bg-white">
       <!-- No parent option (only for sections) -->
       <div
@@ -58,14 +58,14 @@ const label = computed(() => {
 // Build top-level items
 const topLevelItems = computed(() => {
   const items = []
-  
+
   if (props.nodeDocType === 'section') {
     // For sections: show only other top-level sections
     const topSections = (props.documents || [])
-      .filter(d => d.type === 'section' && !d.parentId && d.id !== props.nodeId)
+      .filter((d) => d.type === 'section' && !d.parentId && d.id !== props.nodeId)
       .sort((a, b) => (a.order || 0) - (b.order || 0))
-    
-    topSections.forEach(section => {
+
+    topSections.forEach((section) => {
       items.push({
         type: 'section',
         id: section.id,
@@ -75,23 +75,23 @@ const topLevelItems = computed(() => {
   } else {
     // For pages: show all top-level sections and orphan pages
     const topSections = (props.documents || [])
-      .filter(d => d.type === 'section' && !d.parentId)
+      .filter((d) => d.type === 'section' && !d.parentId)
       .sort((a, b) => (a.order || 0) - (b.order || 0))
-    
-    topSections.forEach(section => {
+
+    topSections.forEach((section) => {
       items.push({
         type: 'section',
         id: section.id,
         title: section.title
       })
     })
-    
+
     // Add orphan top-level pages
     const orphanPages = (props.documents || [])
-      .filter(d => d.type === 'page' && !d.parentId && d.id !== props.nodeId)
+      .filter((d) => d.type === 'page' && !d.parentId && d.id !== props.nodeId)
       .sort((a, b) => (a.order || 0) - (b.order || 0))
-    
-    orphanPages.forEach(page => {
+
+    orphanPages.forEach((page) => {
       items.push({
         type: 'page',
         id: page.id,
@@ -99,7 +99,7 @@ const topLevelItems = computed(() => {
       })
     })
   }
-  
+
   return items
 })
 

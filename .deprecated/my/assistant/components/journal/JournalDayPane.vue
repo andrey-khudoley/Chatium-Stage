@@ -4,8 +4,8 @@
       <div class="journal-day-head-text">
         <h2 class="journal-day-title">Задачи на день</h2>
         <p class="journal-day-sub">
-          Отмечайте задачи на странице «Управление задачами» — здесь видны все со статусом «В работе». Порядок можно менять
-          кнопками или перетаскиванием.
+          Отмечайте задачи на странице «Управление задачами» — здесь видны все со статусом «В
+          работе». Порядок можно менять кнопками или перетаскиванием.
         </p>
       </div>
       <button
@@ -21,7 +21,9 @@
       </button>
     </header>
 
-    <p v-if="!props.isAuthenticated" class="journal-day-hint">Войдите в аккаунт, чтобы видеть задачи на день.</p>
+    <p v-if="!props.isAuthenticated" class="journal-day-hint">
+      Войдите в аккаунт, чтобы видеть задачи на день.
+    </p>
 
     <template v-else>
       <p v-if="globalError" class="journal-day-err" role="alert">{{ globalError }}</p>
@@ -74,12 +76,16 @@
                 class="journal-day-link"
                 :href="hrefToTasks(clientIdForTask(t), null)"
                 @click.stop
-              >{{ clientNameForTask(t) }}</a>
+                >{{ clientNameForTask(t) }}</a
+              >
               <span class="journal-day-meta-sep" aria-hidden="true">·</span>
               <span class="journal-day-meta-label">Проект</span>
-              <a class="journal-day-link" :href="hrefToTasks(clientIdForTask(t), t.projectId)" @click.stop>{{
-                projectNameForTask(t)
-              }}</a>
+              <a
+                class="journal-day-link"
+                :href="hrefToTasks(clientIdForTask(t), t.projectId)"
+                @click.stop
+                >{{ projectNameForTask(t) }}</a
+              >
             </div>
           </div>
 
@@ -102,7 +108,12 @@
             >
               <i class="fas fa-chevron-down" aria-hidden="true" />
             </button>
-            <button type="button" class="journal-day-sort-btn" title="В помидор" @click="addToPomodoro(t.id)">
+            <button
+              type="button"
+              class="journal-day-sort-btn"
+              title="В помидор"
+              @click="addToPomodoro(t.id)"
+            >
               <i class="fas fa-clock" aria-hidden="true" />
             </button>
           </div>
@@ -123,11 +134,21 @@
           <div class="jn-modal jn-modal--wide crt-form-panel" @click.stop>
             <h2 id="jd-task-edit-title" class="jn-modal-heading">Задача</h2>
             <label class="jn-label" for="jd-tt-title">Заголовок</label>
-            <input id="jd-tt-title" v-model="taskForm.title" type="text" class="jn-input" maxlength="500" />
+            <input
+              id="jd-tt-title"
+              v-model="taskForm.title"
+              type="text"
+              class="jn-input"
+              maxlength="500"
+            />
             <label class="jn-label" for="jd-tt-desc">Детали</label>
             <textarea id="jd-tt-desc" v-model="taskForm.details" class="jn-textarea" rows="5" />
             <label class="jn-label" for="jd-tt-p">Приоритет</label>
-            <JnCrtSelect id="jd-tt-p" v-model="taskForm.priority" :options="prioritySelectOptions" />
+            <JnCrtSelect
+              id="jd-tt-p"
+              v-model="taskForm.priority"
+              :options="prioritySelectOptions"
+            />
             <label class="jn-label" for="jd-tt-s">Статус</label>
             <JnCrtSelect id="jd-tt-s" v-model="taskForm.status" :options="statusSelectOptions" />
             <label class="jn-label" for="jd-tt-pr">Проект</label>
@@ -140,7 +161,12 @@
             <p v-if="taskError" class="jn-modal-error" role="alert">{{ taskError }}</p>
             <div class="jn-modal-actions">
               <button type="button" class="journal-nav-btn" @click="closeTaskModal">Отмена</button>
-              <button type="button" class="journal-nav-action" :disabled="taskSaving" @click="submitTaskModal">
+              <button
+                type="button"
+                class="journal-nav-action"
+                :disabled="taskSaving"
+                @click="submitTaskModal"
+              >
                 {{ taskSaving ? '…' : 'Сохранить' }}
               </button>
             </div>
@@ -173,7 +199,7 @@ const props = withDefaults(
     toolsControlUrl: string
     timezoneOffsetHours?: number
   }>(),
-  { timezoneOffsetHours: DEFAULT_USER_TIMEZONE_OFFSET_HOURS },
+  { timezoneOffsetHours: DEFAULT_USER_TIMEZONE_OFFSET_HOURS }
 )
 
 const tree = ref<TasksTreeDto>({
@@ -337,14 +363,17 @@ async function submitTaskModal() {
   taskSaving.value = true
   taskError.value = ''
   try {
-    const j = await postJson<{ success: boolean; task?: TaskItemDto; error?: string }>(props.taskItemUpdateUrl, {
-      id: taskEditId.value,
-      title: taskForm.value.title,
-      details: taskForm.value.details,
-      priority: taskForm.value.priority,
-      status: taskForm.value.status,
-      projectId: taskForm.value.projectId
-    })
+    const j = await postJson<{ success: boolean; task?: TaskItemDto; error?: string }>(
+      props.taskItemUpdateUrl,
+      {
+        id: taskEditId.value,
+        title: taskForm.value.title,
+        details: taskForm.value.details,
+        priority: taskForm.value.priority,
+        status: taskForm.value.status,
+        projectId: taskForm.value.projectId
+      }
+    )
     if (!j.success || !j.task) {
       taskError.value = j.error ?? 'Ошибка'
       return
@@ -379,7 +408,9 @@ async function refreshTree() {
 
 async function persistOrder(ordered: TaskItemDto[]) {
   const orderedIds = ordered.map((t) => t.id)
-  const r = await postJson<{ success: boolean; error?: string }>(props.taskItemReorderDayUrl, { orderedIds })
+  const r = await postJson<{ success: boolean; error?: string }>(props.taskItemReorderDayUrl, {
+    orderedIds
+  })
   if (!r.success) {
     globalError.value = r.error ?? 'Не удалось сохранить порядок'
     await refreshTree()
@@ -430,7 +461,10 @@ async function releaseAll() {
   loading.value = true
   globalError.value = ''
   try {
-    const r = await postJson<{ success: boolean; count?: number; error?: string }>(props.taskReleaseDayUrl, {})
+    const r = await postJson<{ success: boolean; count?: number; error?: string }>(
+      props.taskReleaseDayUrl,
+      {}
+    )
     if (!r.success) {
       globalError.value = r.error ?? 'Не удалось обновить задачи'
       return
@@ -448,8 +482,11 @@ async function addToPomodoro(taskId: string) {
   globalError.value = ''
   try {
     const j = await postJson<{ success: boolean; error?: string }>(props.toolsControlUrl, {
-      statsDayKey: computePomodoroStatsDayKeyForUtcOffsetHours(Date.now(), props.timezoneOffsetHours),
-      command: { kind: 'assign-task', taskId },
+      statsDayKey: computePomodoroStatsDayKeyForUtcOffsetHours(
+        Date.now(),
+        props.timezoneOffsetHours
+      ),
+      command: { kind: 'assign-task', taskId }
     })
     if (!j.success) {
       globalError.value = j.error ?? 'Не удалось добавить задачу в pomodoro'

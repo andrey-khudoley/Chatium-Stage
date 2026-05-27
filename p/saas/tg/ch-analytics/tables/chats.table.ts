@@ -2,7 +2,7 @@ import { Heap } from '@app/heap'
 
 /**
  * Таблица для хранения уникальных телеграм-чатов и каналов
- * 
+ *
  * Каждая запись содержит:
  * - chatId: уникальный ID чата/канала из Telegram (используется как ключ для createOrUpdateBy)
  * - botId: ID бота, от которого пришёл вебхук с этим чатом
@@ -54,6 +54,3 @@ export const TelegramChats = Heap.Table('t__tg_channel_analytics__chats__b4c5d6e
 })
 
 export default TelegramChats
-
-
-

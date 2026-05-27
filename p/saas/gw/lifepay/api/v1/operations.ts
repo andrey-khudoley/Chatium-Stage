@@ -8,10 +8,7 @@
 import * as loggerLib from '../../lib/logger.lib'
 import { generateRequestId } from '../../lib/gateway/requestId'
 import { buildOkResponse, buildErrorResponse } from '../../lib/gateway/gatewayResponse'
-import {
-  CATALOG_SCHEMA_VERSION,
-  toOperationSummaries
-} from '../../lib/gateway/operationsCatalog'
+import { CATALOG_SCHEMA_VERSION, toOperationSummaries } from '../../lib/gateway/operationsCatalog'
 
 const LOG_PATH = 'api/v1/operations'
 

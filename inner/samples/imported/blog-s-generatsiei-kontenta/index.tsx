@@ -1,4 +1,4 @@
-import { jsx } from "@app/html-jsx"
+import { jsx } from '@app/html-jsx'
 import BlogHomePage from './pages/BlogHomePage.vue'
 
 // Use export to access index route in components and other modules
@@ -11,7 +11,10 @@ export const indexPageRoute = app.get('/', async (ctx, req) => {
         <meta name="description" content="Персональный блог о разработке" />
         <script src="/s/static/lib/tailwind.3.4.16.min.js"></script>
         <script src={ctx.account.url('/s/metric/clarity.js')}></script>
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+          rel="stylesheet"
+        />
         <link href="/s/static/lib/fontawesome/6.7.2/css/all.min.css" rel="stylesheet" />
         <style type="text/tailwindcss">{`
           body {

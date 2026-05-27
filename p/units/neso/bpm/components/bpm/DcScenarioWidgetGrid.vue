@@ -8,7 +8,12 @@ defineProps<{
 
 <template>
   <section class="dc-scenario-widget-grid">
-    <article v-for="widget in widgets" :key="widget.id" class="dc-scenario-widget" :class="`tone-${widget.tone}`">
+    <article
+      v-for="widget in widgets"
+      :key="widget.id"
+      class="dc-scenario-widget"
+      :class="`tone-${widget.tone}`"
+    >
       <p>{{ widget.label }}</p>
       <strong>{{ widget.value }}</strong>
       <span>{{ widget.delta }}</span>
@@ -27,9 +32,7 @@ defineProps<{
   border-radius: var(--radius-md);
   border: 1px solid var(--border-soft);
   padding: 10px;
-  background:
-    var(--gradient-glass),
-    color-mix(in srgb, var(--surface-2) 80%, transparent);
+  background: var(--gradient-glass), color-mix(in srgb, var(--surface-2) 80%, transparent);
 }
 
 .dc-scenario-widget p {

@@ -6,9 +6,16 @@ import * as toolSegmentsRepo from '../repos/tool-segments.repo'
 import * as tasksRepo from '../repos/tasks.repo'
 import type { PomodoroSettingsInput, PomodoroStateDto } from './pomodoro-types'
 import { getPhaseCompletionActionForPhase, normalizePhaseChangeSoundId } from './pomodoro-types'
-import type { PomodoroLaunchEndReason, PomodoroLaunchSource } from '../tables/pomodoro-launches.table'
+import type {
+  PomodoroLaunchEndReason,
+  PomodoroLaunchSource
+} from '../tables/pomodoro-launches.table'
 import UserToolState from '../tables/user-tool-state.table'
-import type { FocusToolsFullStateDto, FocusToolsStateData, TimerStateEnvelope } from '../shared/focus-tools-types'
+import type {
+  FocusToolsFullStateDto,
+  FocusToolsStateData,
+  TimerStateEnvelope
+} from '../shared/focus-tools-types'
 import { focusToolsSocketId } from '../shared/focus-tools-types'
 import type { PomodoroSliceInFocusTools } from '../shared/focus-tools-types'
 import { computePomodoroStatsDayKeyForUtcOffsetHours } from './pomodoro-stats-day'
@@ -39,7 +46,10 @@ function normalizeEnvelope(envelope: TimerStateEnvelope): TimerStateEnvelope {
   return envelope
 }
 
-function patchPomodoro(data: FocusToolsStateData, patch: Partial<PomodoroSliceInFocusTools>): FocusToolsStateData {
+function patchPomodoro(
+  data: FocusToolsStateData,
+  patch: Partial<PomodoroSliceInFocusTools>
+): FocusToolsStateData {
   const p = { ...data.pomodoro, ...patch }
   p.totalSec = p.totalWorkSec + p.totalRestSec
   p.updatedAtMs = Date.now()
@@ -53,7 +63,7 @@ function applyDayRollover(data: FocusToolsStateData, expectedKey: string): Focus
       statsPeriodDayKey: expectedKey,
       totalWorkSec: 0,
       totalRestSec: 0,
-      tasksCompletedToday: 0,
+      tasksCompletedToday: 0
     })
   }
   if (next.timer.statsPeriodDayKey !== expectedKey) {
@@ -64,8 +74,8 @@ function applyDayRollover(data: FocusToolsStateData, expectedKey: string): Focus
         statsPeriodDayKey: expectedKey,
         sessionsCount: 0,
         totalFocusSec: 0,
-        totalSec: 0,
-      },
+        totalSec: 0
+      }
     }
   }
   if (next.stopwatch.statsPeriodDayKey !== expectedKey) {
@@ -76,18 +86,22 @@ function applyDayRollover(data: FocusToolsStateData, expectedKey: string): Focus
         statsPeriodDayKey: expectedKey,
         sessionsCount: 0,
         totalFocusSec: 0,
-        totalSec: 0,
-      },
+        totalSec: 0
+      }
     }
   }
   return next
 }
 
-async function pushSocket(ctx: app.Ctx, userId: string, payload: FocusToolsFullStateDto): Promise<void> {
+async function pushSocket(
+  ctx: app.Ctx,
+  userId: string,
+  payload: FocusToolsFullStateDto
+): Promise<void> {
   try {
     await sendDataToSocket(ctx, focusToolsSocketId(userId), {
       type: 'state-update',
-      data: payload,
+      data: payload
     })
   } catch (error) {
     ctx.account.log('focus-tools pushSocket failed', { json: { userId, error: String(error) } })
@@ -100,7 +114,7 @@ async function persist(
   envelope: TimerStateEnvelope,
   userId: string,
   serverNowMs: number,
-  doPush: boolean,
+  doPush: boolean
 ): Promise<FocusToolsFullStateDto> {
   normalizeEnvelope(envelope)
   await userToolStateRepo.saveTimerStateEnvelope(ctx, rowId, envelope)
@@ -114,7 +128,7 @@ async function startPomodoroSegment(
   userId: string,
   p: PomodoroSliceInFocusTools,
   source: PomodoroLaunchSource,
-  nowMs: number,
+  nowMs: number
 ): Promise<void> {
   if (p.status !== 'running') return
   const runId = p.currentRunId || newRunId()
@@ -127,7 +141,7 @@ async function startPomodoroSegment(
     startedAtMs: nowMs,
     state: p,
     tool: 'pomodoro',
-    runId: p.currentRunId,
+    runId: p.currentRunId
   })
 }
 
@@ -135,16 +149,27 @@ async function closePomodoroSegment(
   ctx: app.Ctx,
   userId: string,
   nowMs: number,
-  endReason: PomodoroLaunchEndReason,
+  endReason: PomodoroLaunchEndReason
 ): Promise<void> {
   await toolSegmentsRepo.closeOpenSegmentByUserAndTool(ctx, userId, 'pomodoro', nowMs, endReason)
 }
 
-async function pauseTimerAndStopwatch(ctx: app.Ctx, userId: string, nowMs: number, data: FocusToolsStateData): Promise<FocusToolsStateData> {
+async function pauseTimerAndStopwatch(
+  ctx: app.Ctx,
+  userId: string,
+  nowMs: number,
+  data: FocusToolsStateData
+): Promise<FocusToolsStateData> {
   let d = { ...data }
   if (d.timer.status === 'running') {
     const rem = Math.max(0, Math.floor((d.timer.endsAtMs - nowMs) / 1000))
-    const closed = await toolSegmentsRepo.closeOpenSegmentByUserAndTool(ctx, userId, 'timer', nowMs, 'pause')
+    const closed = await toolSegmentsRepo.closeOpenSegmentByUserAndTool(
+      ctx,
+      userId,
+      'timer',
+      nowMs,
+      'pause'
+    )
     const add = closed?.durationSec ?? 0
     d = {
       ...d,
@@ -154,13 +179,19 @@ async function pauseTimerAndStopwatch(ctx: app.Ctx, userId: string, nowMs: numbe
         remainingSec: rem,
         endsAtMs: 0,
         totalFocusSec: d.timer.totalFocusSec + add,
-        totalSec: d.timer.totalSec + add,
-      },
+        totalSec: d.timer.totalSec + add
+      }
     }
   }
   if (d.stopwatch.status === 'running') {
     const elapsed = d.stopwatch.elapsedSec + Math.floor((nowMs - d.stopwatch.startedAtMs) / 1000)
-    const closed = await toolSegmentsRepo.closeOpenSegmentByUserAndTool(ctx, userId, 'stopwatch', nowMs, 'pause')
+    const closed = await toolSegmentsRepo.closeOpenSegmentByUserAndTool(
+      ctx,
+      userId,
+      'stopwatch',
+      nowMs,
+      'pause'
+    )
     const add = closed?.durationSec ?? 0
     d = {
       ...d,
@@ -170,8 +201,8 @@ async function pauseTimerAndStopwatch(ctx: app.Ctx, userId: string, nowMs: numbe
         elapsedSec: elapsed,
         startedAtMs: 0,
         totalFocusSec: d.stopwatch.totalFocusSec + add,
-        totalSec: d.stopwatch.totalSec + add,
-      },
+        totalSec: d.stopwatch.totalSec + add
+      }
     }
   }
   return d
@@ -181,7 +212,7 @@ async function pausePomodoroIfRunning(
   ctx: app.Ctx,
   userId: string,
   nowMs: number,
-  data: FocusToolsStateData,
+  data: FocusToolsStateData
 ): Promise<FocusToolsStateData> {
   let d = { ...data }
   const p = d.pomodoro
@@ -198,7 +229,7 @@ async function moveToNextPhase(
   state: PomodoroSliceInFocusTools,
   nowMs: number,
   source: PomodoroLaunchSource,
-  data: FocusToolsStateData,
+  data: FocusToolsStateData
 ): Promise<FocusToolsStateData> {
   let d = data
   if (state.phase === 'work') {
@@ -206,7 +237,15 @@ async function moveToNextPhase(
     const longBreak = nextCycles % state.cyclesUntilLongRest === 0
     const nextPhase = longBreak ? 'long_rest' : 'rest'
     const nextRemainingSec = longBreak ? state.longRestMinutes * 60 : state.restMinutes * 60
-    let p = { ...state, cyclesCompleted: nextCycles, tasksCompletedToday: state.tasksCompletedToday + 1, phase: nextPhase as PomodoroSliceInFocusTools['phase'], status: 'running' as const, phaseRemainingSec: nextRemainingSec, phaseEndsAtMs: nowMs + nextRemainingSec * 1000 }
+    let p = {
+      ...state,
+      cyclesCompleted: nextCycles,
+      tasksCompletedToday: state.tasksCompletedToday + 1,
+      phase: nextPhase as PomodoroSliceInFocusTools['phase'],
+      status: 'running' as const,
+      phaseRemainingSec: nextRemainingSec,
+      phaseEndsAtMs: nowMs + nextRemainingSec * 1000
+    }
     p.totalSec = p.totalWorkSec + p.totalRestSec
     p.updatedAtMs = Date.now()
     d = { ...d, pomodoro: p }
@@ -219,7 +258,7 @@ async function moveToNextPhase(
     phase: 'work' as PomodoroSliceInFocusTools['phase'],
     status: 'running' as const,
     phaseRemainingSec: nextRemainingSec,
-    phaseEndsAtMs: nowMs + nextRemainingSec * 1000,
+    phaseEndsAtMs: nowMs + nextRemainingSec * 1000
   }
   p.totalSec = p.totalWorkSec + p.totalRestSec
   p.updatedAtMs = Date.now()
@@ -234,7 +273,7 @@ async function advanceToNextPhaseAfterOvertime(
   state: PomodoroSliceInFocusTools,
   nowMs: number,
   source: PomodoroLaunchSource,
-  data: FocusToolsStateData,
+  data: FocusToolsStateData
 ): Promise<FocusToolsStateData> {
   if (state.phase === 'long_rest' && state.afterLongRest === 'stop') {
     return patchPomodoro(data, {
@@ -243,7 +282,7 @@ async function advanceToNextPhaseAfterOvertime(
       phaseRemainingSec: state.workMinutes * 60,
       phaseEndsAtMs: 0,
       currentTaskId: '',
-      currentRunId: '',
+      currentRunId: ''
     })
   }
   return moveToNextPhase(ctx, userId, state, nowMs, source, data)
@@ -254,7 +293,7 @@ async function skipFromRunningPhase(
   userId: string,
   nowMs: number,
   state: PomodoroSliceInFocusTools,
-  data: FocusToolsStateData,
+  data: FocusToolsStateData
 ): Promise<FocusToolsStateData> {
   let d = patchPomodoro(data, { phaseRemainingSec: 0 })
   await closePomodoroSegment(ctx, userId, d.pomodoro.updatedAtMs, 'phase_skip')
@@ -271,7 +310,7 @@ async function skipFromRunningPhase(
       phase: nextPhase as PomodoroSliceInFocusTools['phase'],
       status: 'running' as const,
       phaseRemainingSec: nextRemainingSec,
-      phaseEndsAtMs: nowMs + nextRemainingSec * 1000,
+      phaseEndsAtMs: nowMs + nextRemainingSec * 1000
     }
     p.totalSec = p.totalWorkSec + p.totalRestSec
     p.updatedAtMs = Date.now()
@@ -287,7 +326,7 @@ async function skipFromRunningPhase(
       phaseRemainingSec: state.workMinutes * 60,
       phaseEndsAtMs: 0,
       currentTaskId: '',
-      currentRunId: '',
+      currentRunId: ''
     })
   }
 
@@ -297,7 +336,7 @@ async function skipFromRunningPhase(
     phase: 'work' as const,
     status: 'running' as const,
     phaseRemainingSec: nextRemainingSec,
-    phaseEndsAtMs: nowMs + nextRemainingSec * 1000,
+    phaseEndsAtMs: nowMs + nextRemainingSec * 1000
   }
   p.totalSec = p.totalWorkSec + p.totalRestSec
   p.updatedAtMs = Date.now()
@@ -310,7 +349,7 @@ async function tickPomodoro(
   ctx: app.Ctx,
   userId: string,
   nowMs: number,
-  data: FocusToolsStateData,
+  data: FocusToolsStateData
 ): Promise<FocusToolsStateData> {
   let state = data.pomodoro
   let d = data
@@ -324,7 +363,10 @@ async function tickPomodoro(
   let elapsedSec = Math.max(0, Math.floor((nowMs - state.updatedAtMs) / 1000))
   if (elapsedSec <= 0) return d
   while (elapsedSec > 0 && state.status === 'running') {
-    const currentRemaining = Math.max(0, Math.floor((state.phaseEndsAtMs - state.updatedAtMs) / 1000))
+    const currentRemaining = Math.max(
+      0,
+      Math.floor((state.phaseEndsAtMs - state.updatedAtMs) / 1000)
+    )
     const spent = Math.min(elapsedSec, currentRemaining)
     const addWork = state.phase === 'work' ? spent : 0
     const addRest = state.phase === 'work' ? 0 : spent
@@ -337,7 +379,7 @@ async function tickPomodoro(
       totalRestSec: state.totalRestSec + addRest,
       phaseRemainingSec: Math.max(0, currentRemaining - spent),
       totalSec: state.totalWorkSec + addWork + state.totalRestSec + addRest,
-      updatedAtMs: Date.now(),
+      updatedAtMs: Date.now()
     }
     d = { ...d, pomodoro: state }
     elapsedSec -= spent
@@ -358,7 +400,7 @@ async function tickPomodoro(
           status: 'awaiting_continue',
           phaseRemainingSec: 0,
           phaseEndsAtMs: overtimeAnchorMs,
-          updatedAtMs: Date.now(),
+          updatedAtMs: Date.now()
         }
       } else {
         state = {
@@ -366,7 +408,7 @@ async function tickPomodoro(
           status: 'awaiting_continue',
           phaseRemainingSec: 0,
           phaseEndsAtMs: overtimeAnchorMs,
-          updatedAtMs: Date.now(),
+          updatedAtMs: Date.now()
         }
       }
       d = { ...d, pomodoro: state }
@@ -383,7 +425,7 @@ async function tickPomodoro(
           phaseEndsAtMs: 0,
           currentTaskId: '',
           currentRunId: '',
-          updatedAtMs: Date.now(),
+          updatedAtMs: Date.now()
         }
         d = { ...d, pomodoro: state }
       } else {
@@ -392,7 +434,7 @@ async function tickPomodoro(
         d = patchPomodoro(d, {
           status: 'paused',
           phaseRemainingSec: state.phaseRemainingSec,
-          phaseEndsAtMs: 0,
+          phaseEndsAtMs: 0
         })
         state = d.pomodoro
         await closePomodoroSegment(ctx, userId, state.updatedAtMs, 'pause')
@@ -406,7 +448,12 @@ async function tickPomodoro(
   return d
 }
 
-async function tickTimerComplete(ctx: app.Ctx, userId: string, nowMs: number, data: FocusToolsStateData): Promise<FocusToolsStateData> {
+async function tickTimerComplete(
+  ctx: app.Ctx,
+  userId: string,
+  nowMs: number,
+  data: FocusToolsStateData
+): Promise<FocusToolsStateData> {
   if (data.timer.status !== 'running') return data
   if (nowMs < data.timer.endsAtMs) return data
   const closed = await toolSegmentsRepo.closeOpenSegmentByUserAndTool(
@@ -414,7 +461,7 @@ async function tickTimerComplete(ctx: app.Ctx, userId: string, nowMs: number, da
     userId,
     'timer',
     data.timer.endsAtMs,
-    'phase_completed',
+    'phase_completed'
   )
   const add = closed?.durationSec ?? 0
   return {
@@ -426,17 +473,21 @@ async function tickTimerComplete(ctx: app.Ctx, userId: string, nowMs: number, da
       endsAtMs: 0,
       currentRunId: '',
       totalFocusSec: data.timer.totalFocusSec + add,
-      totalSec: data.timer.totalSec + add,
-    },
+      totalSec: data.timer.totalSec + add
+    }
   }
 }
 
 async function loadAndNormalize(
   ctx: app.Ctx,
   userId: string,
-  statsDayKey: string,
+  statsDayKey: string
 ): Promise<{ row: typeof UserToolState.T; envelope: TimerStateEnvelope }> {
-  const { row, envelope } = await userToolStateRepo.getOrCreateTimerStateEnvelope(ctx, userId, statsDayKey)
+  const { row, envelope } = await userToolStateRepo.getOrCreateTimerStateEnvelope(
+    ctx,
+    userId,
+    statsDayKey
+  )
   normalizeEnvelope(envelope)
   return { row, envelope }
 }
@@ -460,7 +511,7 @@ export async function executeCommand(
   ctx: app.Ctx,
   userId: string,
   body: { statsDayKey?: string; command?: unknown },
-  options?: { push?: boolean },
+  options?: { push?: boolean }
 ): Promise<FocusToolsFullStateDto> {
   const doPush = options?.push !== false
   return runWithExclusiveLock(ctx, lockKey(userId), async () => {
@@ -473,7 +524,10 @@ export async function executeCommand(
     data = await tickTimerComplete(ctx, userId, nowMs, data)
 
     const cmd = body as Record<string, unknown>
-    const kind = cmd?.command && typeof cmd.command === 'object' ? (cmd.command as Record<string, unknown>).kind : null
+    const kind =
+      cmd?.command && typeof cmd.command === 'object'
+        ? (cmd.command as Record<string, unknown>).kind
+        : null
 
     if (kind === 'widget-mode') {
       const mode = (cmd.command as { mode?: string }).mode
@@ -486,7 +540,10 @@ export async function executeCommand(
         const workMinutes = Math.max(1, Math.min(180, Math.floor(settings.workMinutes)))
         const restMinutes = Math.max(1, Math.min(180, Math.floor(settings.restMinutes)))
         const longRestMinutes = Math.max(1, Math.min(180, Math.floor(settings.longRestMinutes)))
-        const cyclesUntilLongRest = Math.max(1, Math.min(12, Math.floor(settings.cyclesUntilLongRest)))
+        const cyclesUntilLongRest = Math.max(
+          1,
+          Math.min(12, Math.floor(settings.cyclesUntilLongRest))
+        )
         const phaseChangeSound = normalizePhaseChangeSoundId(settings.phaseChangeSound)
         data = patchPomodoro(data, {
           workMinutes,
@@ -499,7 +556,8 @@ export async function executeCommand(
           autoStartRest: settings.autoStartRest,
           autoStartNextCycle: settings.autoStartNextCycle,
           phaseChangeSound,
-          phaseRemainingSec: data.pomodoro.status === 'stopped' ? workMinutes * 60 : data.pomodoro.phaseRemainingSec,
+          phaseRemainingSec:
+            data.pomodoro.status === 'stopped' ? workMinutes * 60 : data.pomodoro.phaseRemainingSec
         })
       }
     } else if (kind === 'assign-task') {
@@ -518,11 +576,17 @@ export async function executeCommand(
         data = patchPomodoro(data, { currentTaskId: nextTaskId })
       }
       if (data.timer.status === 'running' && (data.timer.currentTaskId || '') !== nextTaskId) {
-        await toolSegmentsRepo.closeOpenSegmentByUserAndTool(ctx, userId, 'timer', nowMs, 'task_changed')
+        await toolSegmentsRepo.closeOpenSegmentByUserAndTool(
+          ctx,
+          userId,
+          'timer',
+          nowMs,
+          'task_changed'
+        )
         const rid = data.timer.currentRunId || newRunId()
         data = {
           ...data,
-          timer: { ...data.timer, currentTaskId: nextTaskId, currentRunId: rid || newRunId() },
+          timer: { ...data.timer, currentTaskId: nextTaskId, currentRunId: rid || newRunId() }
         }
         await toolSegmentsRepo.startSegment(ctx, {
           userId,
@@ -530,17 +594,30 @@ export async function executeCommand(
           startedAtMs: nowMs,
           state: { phase: 'work', currentTaskId: nextTaskId, cyclesCompleted: 0 },
           tool: 'timer',
-          runId: data.timer.currentRunId,
+          runId: data.timer.currentRunId
         })
       } else if (data.timer.status !== 'running') {
         data = { ...data, timer: { ...data.timer, currentTaskId: nextTaskId } }
       }
-      if (data.stopwatch.status === 'running' && (data.stopwatch.currentTaskId || '') !== nextTaskId) {
-        await toolSegmentsRepo.closeOpenSegmentByUserAndTool(ctx, userId, 'stopwatch', nowMs, 'task_changed')
+      if (
+        data.stopwatch.status === 'running' &&
+        (data.stopwatch.currentTaskId || '') !== nextTaskId
+      ) {
+        await toolSegmentsRepo.closeOpenSegmentByUserAndTool(
+          ctx,
+          userId,
+          'stopwatch',
+          nowMs,
+          'task_changed'
+        )
         const rid = data.stopwatch.currentRunId || newRunId()
         data = {
           ...data,
-          stopwatch: { ...data.stopwatch, currentTaskId: nextTaskId, currentRunId: rid || newRunId() },
+          stopwatch: {
+            ...data.stopwatch,
+            currentTaskId: nextTaskId,
+            currentRunId: rid || newRunId()
+          }
         }
         await toolSegmentsRepo.startSegment(ctx, {
           userId,
@@ -548,14 +625,20 @@ export async function executeCommand(
           startedAtMs: nowMs,
           state: { phase: 'work', currentTaskId: nextTaskId, cyclesCompleted: 0 },
           tool: 'stopwatch',
-          runId: data.stopwatch.currentRunId,
+          runId: data.stopwatch.currentRunId
         })
       } else if (data.stopwatch.status !== 'running') {
         data = { ...data, stopwatch: { ...data.stopwatch, currentTaskId: nextTaskId } }
       }
     } else if (kind === 'timer-settings') {
-      const minutes = Math.max(0, Math.min(999, Math.floor(Number((cmd.command as { minutes?: number }).minutes))))
-      const seconds = Math.max(0, Math.min(59, Math.floor(Number((cmd.command as { seconds?: number }).seconds))))
+      const minutes = Math.max(
+        0,
+        Math.min(999, Math.floor(Number((cmd.command as { minutes?: number }).minutes)))
+      )
+      const seconds = Math.max(
+        0,
+        Math.min(59, Math.floor(Number((cmd.command as { seconds?: number }).seconds)))
+      )
       const dur = Math.max(1, minutes * 60 + seconds)
       data = {
         ...data,
@@ -563,8 +646,8 @@ export async function executeCommand(
           ...data.timer,
           durationSettingMin: minutes,
           durationSettingSec: seconds,
-          remainingSec: data.timer.status === 'stopped' ? dur : data.timer.remainingSec,
-        },
+          remainingSec: data.timer.status === 'stopped' ? dur : data.timer.remainingSec
+        }
       }
     } else if (kind === 'pomodoro') {
       const action = (cmd.command as { action?: string }).action
@@ -587,7 +670,7 @@ async function handlePomodoroAction(
   userId: string,
   nowMs: number,
   data: FocusToolsStateData,
-  action: string | undefined,
+  action: string | undefined
 ): Promise<FocusToolsStateData> {
   let d = data
   if (action === 'start') {
@@ -601,7 +684,7 @@ async function handlePomodoroAction(
       phaseRemainingSec: remaining,
       phaseEndsAtMs: nowMs + remaining * 1000,
       cyclesCompleted: 0,
-      currentRunId: runId,
+      currentRunId: runId
     })
     await startPomodoroSegment(ctx, userId, d.pomodoro, 'start', nowMs)
     return d
@@ -619,7 +702,7 @@ async function handlePomodoroAction(
       status: 'running',
       phaseRemainingSec: remaining,
       phaseEndsAtMs: nowMs + remaining * 1000,
-      currentRunId: runId,
+      currentRunId: runId
     })
     await startPomodoroSegment(ctx, userId, d.pomodoro, 'resume', nowMs)
     return d
@@ -647,7 +730,7 @@ async function handlePomodoroAction(
       phaseRemainingSec: d.pomodoro.workMinutes * 60,
       phaseEndsAtMs: 0,
       currentTaskId: '',
-      currentRunId: '',
+      currentRunId: ''
     })
   }
   if (action === 'reset') {
@@ -661,7 +744,7 @@ async function handlePomodoroAction(
       phaseEndsAtMs: 0,
       currentTaskId: '',
       currentRunId: '',
-      cyclesCompleted: 0,
+      cyclesCompleted: 0
     })
   }
   return d
@@ -672,7 +755,7 @@ async function handleTimerAction(
   userId: string,
   nowMs: number,
   data: FocusToolsStateData,
-  action: string | undefined,
+  action: string | undefined
 ): Promise<FocusToolsStateData> {
   let d = data
   if (action === 'start') {
@@ -688,8 +771,8 @@ async function handleTimerAction(
         remainingSec: duration,
         endsAtMs: nowMs + duration * 1000,
         currentRunId: runId,
-        sessionsCount: d.timer.sessionsCount + 1,
-      },
+        sessionsCount: d.timer.sessionsCount + 1
+      }
     }
     await toolSegmentsRepo.startSegment(ctx, {
       userId,
@@ -697,14 +780,20 @@ async function handleTimerAction(
       startedAtMs: nowMs,
       state: { phase: 'work', currentTaskId: d.timer.currentTaskId, cyclesCompleted: 0 },
       tool: 'timer',
-      runId,
+      runId
     })
     return d
   }
   if (action === 'pause') {
     if (d.timer.status !== 'running') return d
     const rem = Math.max(0, Math.floor((d.timer.endsAtMs - nowMs) / 1000))
-    const closed = await toolSegmentsRepo.closeOpenSegmentByUserAndTool(ctx, userId, 'timer', nowMs, 'pause')
+    const closed = await toolSegmentsRepo.closeOpenSegmentByUserAndTool(
+      ctx,
+      userId,
+      'timer',
+      nowMs,
+      'pause'
+    )
     const add = closed?.durationSec ?? 0
     return {
       ...d,
@@ -714,8 +803,8 @@ async function handleTimerAction(
         remainingSec: rem,
         endsAtMs: 0,
         totalFocusSec: d.timer.totalFocusSec + add,
-        totalSec: d.timer.totalSec + add,
-      },
+        totalSec: d.timer.totalSec + add
+      }
     }
   }
   if (action === 'resume') {
@@ -731,8 +820,8 @@ async function handleTimerAction(
         status: 'running',
         remainingSec: rem,
         endsAtMs: nowMs + rem * 1000,
-        currentRunId: runId,
-      },
+        currentRunId: runId
+      }
     }
     await toolSegmentsRepo.startSegment(ctx, {
       userId,
@@ -740,21 +829,27 @@ async function handleTimerAction(
       startedAtMs: nowMs,
       state: { phase: 'work', currentTaskId: d.timer.currentTaskId, cyclesCompleted: 0 },
       tool: 'timer',
-      runId,
+      runId
     })
     return d
   }
   if (action === 'reset') {
     if (d.timer.status === 'running') {
-      const closed = await toolSegmentsRepo.closeOpenSegmentByUserAndTool(ctx, userId, 'timer', nowMs, 'stop')
+      const closed = await toolSegmentsRepo.closeOpenSegmentByUserAndTool(
+        ctx,
+        userId,
+        'timer',
+        nowMs,
+        'stop'
+      )
       const add = closed?.durationSec ?? 0
       d = {
         ...d,
         timer: {
           ...d.timer,
           totalFocusSec: d.timer.totalFocusSec + add,
-          totalSec: d.timer.totalSec + add,
-        },
+          totalSec: d.timer.totalSec + add
+        }
       }
     }
     const dur = Math.max(1, d.timer.durationSettingMin * 60 + d.timer.durationSettingSec)
@@ -766,17 +861,29 @@ async function handleTimerAction(
         remainingSec: dur,
         endsAtMs: 0,
         currentTaskId: '',
-        currentRunId: '',
-      },
+        currentRunId: ''
+      }
     }
   }
   return d
 }
 
-async function pauseStopwatchOnly(ctx: app.Ctx, userId: string, nowMs: number, data: FocusToolsStateData): Promise<FocusToolsStateData> {
+async function pauseStopwatchOnly(
+  ctx: app.Ctx,
+  userId: string,
+  nowMs: number,
+  data: FocusToolsStateData
+): Promise<FocusToolsStateData> {
   if (data.stopwatch.status !== 'running') return data
-  const elapsed = data.stopwatch.elapsedSec + Math.floor((nowMs - data.stopwatch.startedAtMs) / 1000)
-  const closed = await toolSegmentsRepo.closeOpenSegmentByUserAndTool(ctx, userId, 'stopwatch', nowMs, 'pause')
+  const elapsed =
+    data.stopwatch.elapsedSec + Math.floor((nowMs - data.stopwatch.startedAtMs) / 1000)
+  const closed = await toolSegmentsRepo.closeOpenSegmentByUserAndTool(
+    ctx,
+    userId,
+    'stopwatch',
+    nowMs,
+    'pause'
+  )
   const add = closed?.durationSec ?? 0
   return {
     ...data,
@@ -786,8 +893,8 @@ async function pauseStopwatchOnly(ctx: app.Ctx, userId: string, nowMs: number, d
       elapsedSec: elapsed,
       startedAtMs: 0,
       totalFocusSec: data.stopwatch.totalFocusSec + add,
-      totalSec: data.stopwatch.totalSec + add,
-    },
+      totalSec: data.stopwatch.totalSec + add
+    }
   }
 }
 
@@ -796,7 +903,7 @@ async function handleStopwatchAction(
   userId: string,
   nowMs: number,
   data: FocusToolsStateData,
-  action: string | undefined,
+  action: string | undefined
 ): Promise<FocusToolsStateData> {
   let d = data
   if (action === 'start') {
@@ -813,8 +920,8 @@ async function handleStopwatchAction(
         elapsedSec: 0,
         startedAtMs: nowMs,
         currentRunId: runId,
-        sessionsCount: d.stopwatch.sessionsCount + 1,
-      },
+        sessionsCount: d.stopwatch.sessionsCount + 1
+      }
     }
     await toolSegmentsRepo.startSegment(ctx, {
       userId,
@@ -822,14 +929,20 @@ async function handleStopwatchAction(
       startedAtMs: nowMs,
       state: { phase: 'work', currentTaskId: d.stopwatch.currentTaskId, cyclesCompleted: 0 },
       tool: 'stopwatch',
-      runId,
+      runId
     })
     return d
   }
   if (action === 'pause') {
     if (d.stopwatch.status !== 'running') return d
     const elapsed = d.stopwatch.elapsedSec + Math.floor((nowMs - d.stopwatch.startedAtMs) / 1000)
-    const closed = await toolSegmentsRepo.closeOpenSegmentByUserAndTool(ctx, userId, 'stopwatch', nowMs, 'pause')
+    const closed = await toolSegmentsRepo.closeOpenSegmentByUserAndTool(
+      ctx,
+      userId,
+      'stopwatch',
+      nowMs,
+      'pause'
+    )
     const add = closed?.durationSec ?? 0
     return {
       ...d,
@@ -839,8 +952,8 @@ async function handleStopwatchAction(
         elapsedSec: elapsed,
         startedAtMs: 0,
         totalFocusSec: d.stopwatch.totalFocusSec + add,
-        totalSec: d.stopwatch.totalSec + add,
-      },
+        totalSec: d.stopwatch.totalSec + add
+      }
     }
   }
   if (action === 'resume') {
@@ -856,8 +969,8 @@ async function handleStopwatchAction(
         ...d.stopwatch,
         status: 'running',
         startedAtMs: nowMs,
-        currentRunId: runId,
-      },
+        currentRunId: runId
+      }
     }
     await toolSegmentsRepo.startSegment(ctx, {
       userId,
@@ -865,21 +978,27 @@ async function handleStopwatchAction(
       startedAtMs: nowMs,
       state: { phase: 'work', currentTaskId: d.stopwatch.currentTaskId, cyclesCompleted: 0 },
       tool: 'stopwatch',
-      runId,
+      runId
     })
     return d
   }
   if (action === 'reset') {
     if (d.stopwatch.status === 'running') {
-      const closed = await toolSegmentsRepo.closeOpenSegmentByUserAndTool(ctx, userId, 'stopwatch', nowMs, 'stop')
+      const closed = await toolSegmentsRepo.closeOpenSegmentByUserAndTool(
+        ctx,
+        userId,
+        'stopwatch',
+        nowMs,
+        'stop'
+      )
       const add = closed?.durationSec ?? 0
       d = {
         ...d,
         stopwatch: {
           ...d.stopwatch,
           totalFocusSec: d.stopwatch.totalFocusSec + add,
-          totalSec: d.stopwatch.totalSec + add,
-        },
+          totalSec: d.stopwatch.totalSec + add
+        }
       }
     }
     return {
@@ -890,8 +1009,8 @@ async function handleStopwatchAction(
         elapsedSec: 0,
         startedAtMs: 0,
         currentTaskId: '',
-        currentRunId: '',
-      },
+        currentRunId: ''
+      }
     }
   }
   return d

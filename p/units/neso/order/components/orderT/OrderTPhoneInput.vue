@@ -18,7 +18,9 @@
       @keypress="handlePhoneKeypress"
       @paste="handlePhonePaste"
     />
-    <p class="text-xs mt-1.5 ml-1" style="color: #999999">Выберите страну и введите номер телефона</p>
+    <p class="text-xs mt-1.5 ml-1" style="color: #999999">
+      Выберите страну и введите номер телефона
+    </p>
   </div>
 </template>
 
@@ -92,9 +94,9 @@ function handlePhoneKeypress(event: KeyboardEvent) {
 
 function handlePhonePaste(event: ClipboardEvent) {
   event.preventDefault()
-  const pastedText = (event.clipboardData || (window as unknown as { clipboardData: DataTransfer }).clipboardData).getData(
-    'text'
-  )
+  const pastedText = (
+    event.clipboardData || (window as unknown as { clipboardData: DataTransfer }).clipboardData
+  ).getData('text')
   const digitsOnly = pastedText.replace(/\D/g, '')
   const input = phoneInput.value
   if (digitsOnly && input) {
@@ -179,7 +181,13 @@ defineExpose({
   border-radius: 0.75rem !important;
   background: var(--color-bg-card) !important;
   color: var(--color-text) !important;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+  font-family:
+    'Inter',
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    sans-serif !important;
   font-size: 1rem !important;
   transition: var(--transition) !important;
   box-shadow: var(--shadow-sm) !important;
@@ -228,7 +236,13 @@ defineExpose({
   border-radius: 0.75rem !important;
   box-shadow: var(--shadow-lg) !important;
   max-height: 300px !important;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+  font-family:
+    'Inter',
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    sans-serif !important;
   z-index: 9999 !important;
 }
 
@@ -261,7 +275,13 @@ defineExpose({
   border-radius: 0.5rem !important;
   background: var(--color-bg-card) !important;
   color: var(--color-text) !important;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+  font-family:
+    'Inter',
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    sans-serif !important;
   margin: 0.5rem !important;
   width: calc(100% - 1rem) !important;
 }

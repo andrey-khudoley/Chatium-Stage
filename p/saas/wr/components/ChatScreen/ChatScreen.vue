@@ -1,5 +1,14 @@
 <script setup lang="ts">
-import { ref, reactive, computed, watch, onMounted, onBeforeMount, onBeforeUnmount, nextTick } from 'vue'
+import {
+  ref,
+  reactive,
+  computed,
+  watch,
+  onMounted,
+  onBeforeMount,
+  onBeforeUnmount,
+  nextTick
+} from 'vue'
 import { nanoid } from '@app/nanoid'
 import { getOrCreateBrowserSocketClient } from '@app/socket'
 import { post } from './fetchers/messages'
@@ -11,7 +20,18 @@ import Messages, { Message } from './components/Messages.vue'
 const messagesRef = ref<InstanceType<typeof Messages> | null>(null)
 import type { ContextMenuItem } from './components/ContextMenu.vue'
 import { ChatiumJsonChatScreen, ChatScreenStore } from './contexts/ChatScreenContext'
-import { apiChatBanUserRoute, apiChatUnbanUserRoute, apiChatDeleteAllUserMessagesRoute, apiChatDeleteMessageRoute, apiChatDeleteOwnMessageRoute, apiChatUserSocketRoute, apiChatRateLimitStatusRoute, apiChatCheckMyBanRoute, apiChatGetBansRoute, apiChatGetAdminIdsRoute } from '../../api/chat-admin-routes'
+import {
+  apiChatBanUserRoute,
+  apiChatUnbanUserRoute,
+  apiChatDeleteAllUserMessagesRoute,
+  apiChatDeleteMessageRoute,
+  apiChatDeleteOwnMessageRoute,
+  apiChatUserSocketRoute,
+  apiChatRateLimitStatusRoute,
+  apiChatCheckMyBanRoute,
+  apiChatGetBansRoute,
+  apiChatGetAdminIdsRoute
+} from '../../api/chat-admin-routes'
 
 interface ChatScreenProps {
   screen: ChatiumJsonChatScreen
@@ -47,20 +67,25 @@ const store = reactive<ChatScreenStore>({
   hideCta: props.hideCta ?? false,
   paidFormIds: props.paidFormIds ?? [],
   enableReplies: props.enableReplies ?? true,
-  enableReactions: props.enableReactions ?? true,
+  enableReactions: props.enableReactions ?? true
 })
 
 provideExistingChatScreen(store)
 
-getOrCreateBrowserSocketClient().then(socketStore => {
+getOrCreateBrowserSocketClient().then((socketStore) => {
   store.socketStore = socketStore
-}) 
+})
 
 const text = ref('')
 const replyMessage = ref<Message | null>(null)
 const footerFocusTrigger = ref(false)
 const rateLimitBlockedUntil = ref<number | null>(null)
-const banState = ref<{ banned: boolean; type?: string; expiresAt?: number | null; reason?: string }>({ banned: false })
+const banState = ref<{
+  banned: boolean
+  type?: string
+  expiresAt?: number | null
+  reason?: string
+}>({ banned: false })
 
 const ctxMenuMessageId = ref<string | null>(null)
 const ctxMenuMessage = ref<Message | null>(null)
@@ -76,7 +101,7 @@ async function banUser(duration?: number) {
   try {
     await apiChatBanUserRoute({ userId: authorId }).run(ctx, {
       episodeId: props.episodeId,
-      duration: duration ?? undefined,
+      duration: duration ?? undefined
     })
   } catch (e) {
     console.error('Ban failed:', e)
@@ -88,7 +113,7 @@ async function unbanUser() {
   if (!authorId || !props.episodeId) return
   try {
     await apiChatUnbanUserRoute({ userId: authorId }).run(ctx, {
-      episodeId: props.episodeId,
+      episodeId: props.episodeId
     })
   } catch (e) {
     console.error('Unban failed:', e)
@@ -100,7 +125,7 @@ async function deleteAllUserMessages() {
   if (!authorId || !props.episodeId) return
   try {
     await apiChatDeleteAllUserMessagesRoute({ userId: authorId }).run(ctx, {
-      episodeId: props.episodeId,
+      episodeId: props.episodeId
     })
   } catch (e) {
     console.error('Delete all messages failed:', e)
@@ -112,9 +137,9 @@ async function deleteMessage() {
   if (!messageId || !props.episodeId) return
   try {
     await apiChatDeleteMessageRoute({ messageId }).run(ctx, {
-      episodeId: props.episodeId,
+      episodeId: props.episodeId
     })
-    store.messages = store.messages.filter(m => m.id !== messageId)
+    store.messages = store.messages.filter((m) => m.id !== messageId)
   } catch (e) {
     console.error('Delete message failed:', e)
   }
@@ -125,9 +150,9 @@ async function deleteOwnMessage() {
   if (!messageId || !props.episodeId) return
   try {
     await apiChatDeleteOwnMessageRoute({ messageId }).run(ctx, {
-      episodeId: props.episodeId,
+      episodeId: props.episodeId
     })
-    store.messages = store.messages.filter(m => m.id !== messageId)
+    store.messages = store.messages.filter((m) => m.id !== messageId)
   } catch (e) {
     console.error('Delete own message failed:', e)
   }
@@ -143,21 +168,24 @@ async function onOpenContextMenu(data: { message: Message }) {
   if (data.message?.author?.id && props.episodeId) {
     try {
       const bans = await apiChatGetBansRoute({ episodeId: props.episodeId }).run(ctx)
-      ctxMenuUserBanned.value = bans.some((b: any) => b.user === data.message.author?.id || b.user?.id === data.message.author?.id)
+      ctxMenuUserBanned.value = bans.some(
+        (b: any) => b.user === data.message.author?.id || b.user?.id === data.message.author?.id
+      )
     } catch (e) {}
   }
 }
 
 const ctxMenuItems = computed<ContextMenuItem[]>(() => {
   const items: ContextMenuItem[] = []
-  const isMyMessage = ctxMenuMessage.value?.isOutgoing || ctxMenuMessage.value?.author?.id === ctx.user?.id
+  const isMyMessage =
+    ctxMenuMessage.value?.isOutgoing || ctxMenuMessage.value?.author?.id === ctx.user?.id
 
   if (isMyMessage && !store.isAdmin) {
     items.push({
       label: 'Удалить сообщение',
       icon: 'fas fa-xmark',
       danger: true,
-      action: deleteOwnMessage,
+      action: deleteOwnMessage
     })
     return items
   }
@@ -168,7 +196,7 @@ const ctxMenuItems = computed<ContextMenuItem[]>(() => {
         label: 'Удалить сообщение',
         icon: 'fas fa-xmark',
         danger: true,
-        action: deleteMessage,
+        action: deleteMessage
       })
       return items
     }
@@ -177,7 +205,7 @@ const ctxMenuItems = computed<ContextMenuItem[]>(() => {
       items.push({
         label: 'Разблокировать',
         icon: 'fas fa-unlock',
-        action: unbanUser,
+        action: unbanUser
       })
     }
 
@@ -189,22 +217,22 @@ const ctxMenuItems = computed<ContextMenuItem[]>(() => {
         { label: 'На 5 минут', icon: 'fas fa-clock', action: () => banUser(5) },
         { label: 'На 30 минут', icon: 'fas fa-clock', action: () => banUser(30) },
         { label: 'На 1 час', icon: 'fas fa-clock', action: () => banUser(60) },
-        { label: 'Навсегда', icon: 'fas fa-infinity', danger: true, action: () => banUser() },
-      ],
+        { label: 'Навсегда', icon: 'fas fa-infinity', danger: true, action: () => banUser() }
+      ]
     })
 
     items.push({
       label: 'Удалить все сообщения',
       icon: 'fas fa-trash-can',
       danger: true,
-      action: deleteAllUserMessages,
+      action: deleteAllUserMessages
     })
 
     items.push({
       label: 'Удалить сообщение',
       icon: 'fas fa-xmark',
       danger: true,
-      action: deleteMessage,
+      action: deleteMessage
     })
   }
 
@@ -219,7 +247,7 @@ function isInjectedScenarioMessage(message: any) {
   return Boolean(
     message?.data?.__isScenarioMessage ||
       message?.id?.startsWith?.('fake_') ||
-      message?.id?.startsWith?.('fake_banner_'),
+      message?.id?.startsWith?.('fake_banner_')
   )
 }
 
@@ -234,17 +262,20 @@ async function fetchMessages() {
     }
 
     const response = await fetch(props.screen?.messages_get_url)
-    const body = await response.json() as MessagesGetResponse
+    const body = (await response.json()) as MessagesGetResponse
 
     // Сохраняем фейковые сообщения (из HybridChatScreen)
-    const fakeMessages = store.messages.filter(m => isInjectedScenarioMessage(m))
-    
+    const fakeMessages = store.messages.filter((m) => isInjectedScenarioMessage(m))
+
     // Объединяем фейковые + реальные из API
     store.messages = [...fakeMessages, ...body.data.messages]
-    
+
     // Сортируем по времени создания
-    store.messages.sort((a, b) => (a.createdAtTimestamp || a.createdAt || 0) - (b.createdAtTimestamp || b.createdAt || 0))
-    
+    store.messages.sort(
+      (a, b) =>
+        (a.createdAtTimestamp || a.createdAt || 0) - (b.createdAtTimestamp || b.createdAt || 0)
+    )
+
     store.lastChangeId = body.data.lastChangeId
   }
 }
@@ -262,17 +293,17 @@ async function fetchChanges() {
           ? (props.screen?.messages_changes_url.includes('?') ? '&' : '?') +
             'lastKnownChangeId=' +
             store.lastChangeId
-          : ''),
+          : '')
     )
-    const body = await response.json() as MessagesChangesResponse
+    const body = (await response.json()) as MessagesChangesResponse
 
     if (body.success === true) {
       const { changes } = body
 
       if (changes.length > 0 && changes[0].prevId === store.lastChangeId) {
-        changes.forEach(change => {
+        changes.forEach((change) => {
           if (change.operation === 'create') {
-            const existsMessage = store.messages.find(message => message.id === change.messageId)
+            const existsMessage = store.messages.find((message) => message.id === change.messageId)
 
             if (!existsMessage) {
               store.messages.push(change.message)
@@ -282,17 +313,19 @@ async function fetchChanges() {
               }
             }
           } else if (change.operation === 'update') {
-            const messageIndex = store.messages.findIndex(message => message.id === change.messageId)
+            const messageIndex = store.messages.findIndex(
+              (message) => message.id === change.messageId
+            )
 
             if (messageIndex !== -1) {
               store.messages[messageIndex] = {
                 ...store.messages[messageIndex],
                 text: change.message.text,
-                updatedAt: change.message.updatedAt,
+                updatedAt: change.message.updatedAt
               }
             }
           } else if (change.operation === 'delete') {
-            store.messages = store.messages.filter(message => message.id !== change.messageId)
+            store.messages = store.messages.filter((message) => message.id !== change.messageId)
           }
         })
 
@@ -313,7 +346,9 @@ async function subscribeToUserSocket() {
   if (!props.episodeId || !ctx.user?.id) return
 
   try {
-    const { encodedSocketId } = await apiChatUserSocketRoute({ episodeId: props.episodeId }).run(ctx)
+    const { encodedSocketId } = await apiChatUserSocketRoute({ episodeId: props.episodeId }).run(
+      ctx
+    )
     if (!encodedSocketId) return
 
     const socketClient = await getOrCreateBrowserSocketClient()
@@ -328,7 +363,7 @@ async function subscribeToUserSocket() {
           banned: true,
           type: msg.banType,
           expiresAt: msg.expiresAt || null,
-          reason: msg.reason,
+          reason: msg.reason
         }
       }
       if (msg.type === 'unban') {
@@ -364,7 +399,7 @@ async function checkBanStatus() {
         banned: true,
         type: result.type,
         expiresAt: result.expiresAt ? new Date(result.expiresAt).getTime() : null,
-        reason: result.reason,
+        reason: result.reason
       }
     }
   } catch (e) {
@@ -391,22 +426,26 @@ watch(
     }
     scrollToBottom()
   },
-  { immediate: true },
+  { immediate: true }
 )
 
 watch(
   () => props.hideCta,
-  (val) => { store.hideCta = val },
+  (val) => {
+    store.hideCta = val
+  }
 )
 
 watch(
   () => props.paidFormIds,
-  (val) => { store.paidFormIds = val ?? [] },
+  (val) => {
+    store.paidFormIds = val ?? []
+  }
 )
 
 watch(
   () => store.socketStore,
-  socketStore => {
+  (socketStore) => {
     if (socketStore) {
       if (typeof messagesSocketDisposer === 'function') messagesSocketDisposer()
       if (typeof reactionsSocketDisposer === 'function') reactionsSocketDisposer()
@@ -417,23 +456,32 @@ watch(
       const messagesSocketId = props.screen?.messages_socket_id
 
       if (messagesSocketId) {
-        messagesSocketDisposer = socketStore.subscribeToSocket(messagesSocketId, messagesSocketHandler)
+        messagesSocketDisposer = socketStore.subscribeToSocket(
+          messagesSocketId,
+          messagesSocketHandler
+        )
       }
 
       const reactionsSocketId = props.screen?.reactions_socket_id
       if (reactionsSocketId) {
-        reactionsSocketDisposer = socketStore.subscribeToData(reactionsSocketId).listen((data: any) => {
-          const idx = store.messages.findIndex(m => m.id === data.messageId)
-          if (idx !== -1) {
-            store.messages[idx] = { ...store.messages[idx], reactions: data.reactions }
-          }
-        })
+        reactionsSocketDisposer = socketStore
+          .subscribeToData(reactionsSocketId)
+          .listen((data: any) => {
+            const idx = store.messages.findIndex((m) => m.id === data.messageId)
+            if (idx !== -1) {
+              store.messages[idx] = { ...store.messages[idx], reactions: data.reactions }
+            }
+          })
       }
     }
-  },
+  }
 )
 
-async function createMessage(id: string, text: string | undefined, replyTo: Message | null | undefined) {
+async function createMessage(
+  id: string,
+  text: string | undefined,
+  replyTo: Message | null | undefined
+) {
   store.messages.push({
     id,
     text,
@@ -442,7 +490,7 @@ async function createMessage(id: string, text: string | undefined, replyTo: Mess
     textTokens: text ? [text] : [],
     replyTo,
     isOutgoing: true,
-    sending: true,
+    sending: true
   } as unknown as Message)
 
   if (props.screen?.messages_add_url) {
@@ -455,23 +503,27 @@ async function createMessage(id: string, text: string | undefined, replyTo: Mess
         episodeId: props.screen?.episodeId,
         ...(typeof props.currentTimeSeconds === 'number'
           ? { elapsedSeconds: Math.max(0, Math.floor(props.currentTimeSeconds)) }
-          : {}),
+          : {})
       })
 
       if (response.success === true) {
-        const messageIndex = store.messages.findIndex(message => message.id === id)
+        const messageIndex = store.messages.findIndex((message) => message.id === id)
 
         if (messageIndex !== -1) {
           store.messages[messageIndex].sending = false
         }
       } else {
-        store.messages = store.messages.filter(m => m.id !== id)
+        store.messages = store.messages.filter((m) => m.id !== id)
         console.error('Failed to send message:', response.error || 'Unknown error')
       }
     } catch (error: any) {
-      store.messages = store.messages.filter(m => m.id !== id)
+      store.messages = store.messages.filter((m) => m.id !== id)
 
-      if (error?.message?.includes('Слишком частые сообщения') || error?.message?.includes('rate') || error?.message?.includes('Подождите')) {
+      if (
+        error?.message?.includes('Слишком частые сообщения') ||
+        error?.message?.includes('rate') ||
+        error?.message?.includes('Подождите')
+      ) {
         const match = error.message.match(/(\d+)\s*сек/)
         if (match) {
           rateLimitBlockedUntil.value = Date.now() + parseInt(match[1], 10) * 1000
@@ -530,7 +582,7 @@ const navigator = {
     } else {
       console.log('navigate', action)
     }
-  },
+  }
 }
 
 provideNavigator(navigator)

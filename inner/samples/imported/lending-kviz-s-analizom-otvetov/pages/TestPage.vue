@@ -3,18 +3,18 @@
     <!-- Header -->
     <div class="max-w-4xl mx-auto text-center mb-8">
       <div class="w-full">
-        <img 
-          src="https://fs.cdn-chatium.io/download/image_3ERROdsTyc.1080x244.jpeg" 
-          srcset="https://fs.cdn-chatium.io/thumbnail/image_3ERROdsTyc.1080x244.jpeg/s/480x 480w, 
-                  https://fs.cdn-chatium.io/thumbnail/image_3ERROdsTyc.1080x244.jpeg/s/800x 800w,
-                  https://fs.cdn-chatium.io/download/image_3ERROdsTyc.1080x244.jpeg 1080w"
+        <img
+          src="https://fs.cdn-chatium.io/download/image_3ERROdsTyc.1080x244.jpeg"
+          srcset="
+            https://fs.cdn-chatium.io/thumbnail/image_3ERROdsTyc.1080x244.jpeg/s/480x  480w,
+            https://fs.cdn-chatium.io/thumbnail/image_3ERROdsTyc.1080x244.jpeg/s/800x  800w,
+            https://fs.cdn-chatium.io/download/image_3ERROdsTyc.1080x244.jpeg         1080w
+          "
           sizes="(max-width: 480px) 480px, (max-width: 800px) 800px, 1080px"
           alt="Получи подарок прямо сейчас - Косметичка любителя"
           class="w-full max-w-4xl mx-auto rounded-2xl shadow-lg mb-4"
         />
-        <p class="text-lg md:text-xl text-gray-700">
-          Персональный тест от школы EMI Online
-        </p>
+        <p class="text-lg md:text-xl text-gray-700">Персональный тест от школы EMI Online</p>
       </div>
     </div>
 
@@ -27,10 +27,12 @@
             Узнай, какой стиль макияжа подходит именно тебе
           </h2>
           <p class="text-lg text-gray-700 leading-relaxed mb-6">
-            Пройдите тест и получите персонализированные рекомендации по макияжу, 
-            а также <strong class="text-elegant-primary">PDF-гайд «Косметичка любителя»</strong>.
+            Пройдите тест и получите персонализированные рекомендации по макияжу, а также
+            <strong class="text-elegant-primary">PDF-гайд «Косметичка любителя»</strong>.
           </p>
-          <div class="bg-gradient-to-r from-elegant-primary/10 to-elegant-accent/10 rounded-2xl p-6 mb-8">
+          <div
+            class="bg-gradient-to-r from-elegant-primary/10 to-elegant-accent/10 rounded-2xl p-6 mb-8"
+          >
             <p class="text-gray-700 mb-3">
               <i class="fas fa-clock text-elegant-primary mr-2"></i>
               Время прохождения: 2-3 минуты
@@ -41,8 +43,8 @@
             </p>
           </div>
         </div>
-        
-        <button 
+
+        <button
           @click="startTest"
           class="w-full elegant-gradient text-white font-bold text-xl py-4 px-8 rounded-full shadow-lg hover:shadow-xl transform hover:scale-105 transition-all"
         >
@@ -56,13 +58,17 @@
       <!-- Progress Bar -->
       <div class="mb-8">
         <div class="flex justify-between items-center mb-2">
-          <span class="text-sm font-medium text-gray-700">Вопрос {{ currentQuestion + 1 }} из {{ questions.length }}</span>
-          <span class="text-sm font-medium text-elegant-primary">{{ Math.round((currentQuestion / questions.length) * 100) }}%</span>
+          <span class="text-sm font-medium text-gray-700"
+            >Вопрос {{ currentQuestion + 1 }} из {{ questions.length }}</span
+          >
+          <span class="text-sm font-medium text-elegant-primary"
+            >{{ Math.round((currentQuestion / questions.length) * 100) }}%</span
+          >
         </div>
         <div class="w-full bg-gray-200 rounded-full h-3">
-          <div 
+          <div
             class="elegant-gradient h-3 rounded-full transition-all duration-500"
-            :style="{ width: ((currentQuestion / questions.length) * 100) + '%' }"
+            :style="{ width: (currentQuestion / questions.length) * 100 + '%' }"
           ></div>
         </div>
       </div>
@@ -84,14 +90,22 @@
             :class="selectedAnswer === option.type ? 'selected' : 'border-gray-200 bg-white'"
           >
             <div class="flex items-start gap-4">
-              <div class="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center mt-1"
-                   :class="selectedAnswer === option.type ? 'bg-white/20' : 'bg-elegant-primary/10'">
-                <span class="text-sm font-bold" :class="selectedAnswer === option.type ? 'text-white' : 'text-elegant-primary'">
+              <div
+                class="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center mt-1"
+                :class="selectedAnswer === option.type ? 'bg-white/20' : 'bg-elegant-primary/10'"
+              >
+                <span
+                  class="text-sm font-bold"
+                  :class="selectedAnswer === option.type ? 'text-white' : 'text-elegant-primary'"
+                >
                   {{ String.fromCharCode(65 + index) }}
                 </span>
               </div>
               <div class="flex-1">
-                <p class="font-medium text-lg" :class="selectedAnswer === option.type ? 'text-white' : 'text-gray-800'">
+                <p
+                  class="font-medium text-lg"
+                  :class="selectedAnswer === option.type ? 'text-white' : 'text-gray-800'"
+                >
                   {{ option.text }}
                 </p>
               </div>
@@ -111,7 +125,11 @@
           <button
             @click="nextQuestion"
             :disabled="!selectedAnswer"
-            :class="selectedAnswer ? 'elegant-gradient text-white hover:shadow-xl' : 'bg-gray-300 text-gray-500 cursor-not-allowed'"
+            :class="
+              selectedAnswer
+                ? 'elegant-gradient text-white hover:shadow-xl'
+                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+            "
             class="flex-1 py-3 px-6 rounded-full font-bold text-lg transition-all"
           >
             {{ currentQuestion === questions.length - 1 ? 'Узнать результат' : 'Далее' }}
@@ -126,17 +144,23 @@
       <div class="glass-effect rounded-3xl p-8 md:p-12 shadow-2xl">
         <!-- Result Header -->
         <div class="text-center mb-8">
-          <div class="w-20 h-20 mx-auto mb-6 rounded-full elegant-gradient flex items-center justify-center text-white text-4xl">
+          <div
+            class="w-20 h-20 mx-auto mb-6 rounded-full elegant-gradient flex items-center justify-center text-white text-4xl"
+          >
             {{ result.emoji }}
           </div>
-          <h2 class="font-display text-3xl md:text-5xl font-bold text-transparent bg-clip-text elegant-gradient mb-4">
+          <h2
+            class="font-display text-3xl md:text-5xl font-bold text-transparent bg-clip-text elegant-gradient mb-4"
+          >
             {{ result.title }}
           </h2>
           <p class="text-xl text-gray-700 italic">{{ result.subtitle }}</p>
         </div>
 
         <!-- Result Description -->
-        <div class="bg-gradient-to-r from-elegant-primary/10 to-elegant-accent/10 rounded-2xl p-6 md:p-8 mb-8">
+        <div
+          class="bg-gradient-to-r from-elegant-primary/10 to-elegant-accent/10 rounded-2xl p-6 md:p-8 mb-8"
+        >
           <h3 class="text-2xl font-bold text-gray-800 mb-4 flex items-center gap-2">
             <i class="fas fa-user text-elegant-primary"></i>
             Твой типаж
@@ -181,19 +205,19 @@
         <div class="mt-8 text-center">
           <p class="text-gray-600 mb-4">Поделитесь результатом:</p>
           <div class="flex justify-center gap-4">
-            <button 
+            <button
               @click="shareResult('telegram')"
               class="w-12 h-12 rounded-full bg-elegant-primary text-white flex items-center justify-center hover:scale-110 transition-transform"
             >
               <i class="fab fa-telegram"></i>
             </button>
-            <button 
+            <button
               @click="shareResult('whatsapp')"
               class="w-12 h-12 rounded-full bg-elegant-secondary text-white flex items-center justify-center hover:scale-110 transition-transform"
             >
               <i class="fab fa-whatsapp"></i>
             </button>
-            <button 
+            <button
               @click="shareResult('vk')"
               class="w-12 h-12 rounded-full bg-elegant-accent text-white flex items-center justify-center hover:scale-110 transition-transform"
             >
@@ -230,7 +254,10 @@ const questions = [
       { text: 'Увлажняющий тональный крем или BB-крем', type: 'minimalist' },
       { text: 'Палетка теней и контурирующие средства', type: 'glam' },
       { text: 'Нюдовая помада и румяна естественных оттенков', type: 'romantic' },
-      { text: 'Яркий акцентный продукт — цветная подводка или необычная помада', type: 'experimental' }
+      {
+        text: 'Яркий акцентный продукт — цветная подводка или необычная помада',
+        type: 'experimental'
+      }
     ]
   },
   {
@@ -285,7 +312,8 @@ const resultTypes = {
     title: 'Минималистка',
     subtitle: 'Элегантная простота в каждой детали',
     emoji: '✨',
-    description: 'Ты ценишь естественность и не любишь перегруженность в образе. Твой подход к макияжу основан на заботе о коже и подчёркивании природной красоты. Ты знаешь, что настоящая уверенность идёт изнутри, и косметика — лишь деликатное дополнение. Твой стиль универсален и подходит для любой ситуации.',
+    description:
+      'Ты ценишь естественность и не любишь перегруженность в образе. Твой подход к макияжу основан на заботе о коже и подчёркивании природной красоты. Ты знаешь, что настоящая уверенность идёт изнутри, и косметика — лишь деликатное дополнение. Твой стиль универсален и подходит для любой ситуации.',
     tips: [
       'Используй лёгкие тонирующие средства — BB-кремы, кушоны, тинты для естественного покрытия',
       'Инвестируй в качественный уход за кожей — это твоя лучшая база под макияж',
@@ -298,7 +326,8 @@ const resultTypes = {
     title: 'Глэм-леди',
     subtitle: 'Профессиональный подход и безупречное исполнение',
     emoji: '💎',
-    description: 'Ты не представляешь свой образ без качественного макияжа и знаешь толк в профессиональных техниках. Контуринг, smoky eyes, стойкие текстуры — всё это про тебя. Ты следишь за новинками индустрии и умеешь создавать безупречные образы. Твой макияж всегда выглядит как работа визажиста.',
+    description:
+      'Ты не представляешь свой образ без качественного макияжа и знаешь толк в профессиональных техниках. Контуринг, smoky eyes, стойкие текстуры — всё это про тебя. Ты следишь за новинками индустрии и умеешь создавать безупречные образы. Твой макияж всегда выглядит как работа визажиста.',
     tips: [
       'Освой профессиональную технику контуринга для идеальной скульптуры лица',
       'Инвестируй в качественные кисти — они решают половину успеха макияжа',
@@ -311,7 +340,8 @@ const resultTypes = {
     title: 'Романтичная натура',
     subtitle: 'Женственность и элегантность в каждом штрихе',
     emoji: '🌸',
-    description: 'Ты воплощение нежности и элегантности. Твой макияж всегда гармоничен и изыскан. Ты предпочитаешь мягкие оттенки, деликатные переходы и классические приёмы. Твоя красота утончённа, и ты умеешь подчёркивать свою женственность с помощью правильно подобранной косметики.',
+    description:
+      'Ты воплощение нежности и элегантности. Твой макияж всегда гармоничен и изыскан. Ты предпочитаешь мягкие оттенки, деликатные переходы и классические приёмы. Твоя красота утончённа, и ты умеешь подчёркивать свою женственность с помощью правильно подобранной косметики.',
     tips: [
       'Используй персиковые и розовые румяна для свежего, здорового цвета лица',
       'Освой технику мягких переходов в макияже глаз — градиент нюдовых оттенков',
@@ -324,7 +354,8 @@ const resultTypes = {
     title: 'Творческая личность',
     subtitle: 'Смелость, индивидуальность и свобода самовыражения',
     emoji: '🎨',
-    description: 'Ты не боишься экспериментировать и любишь выделяться. Необычные оттенки, креативные техники, смелые сочетания — всё это про твой подход к макияжу. Ты следишь за трендами, но не боишься создавать что-то своё. Макияж для тебя — это способ выразить свою индивидуальность.',
+    description:
+      'Ты не боишься экспериментировать и любишь выделяться. Необычные оттенки, креативные техники, смелые сочетания — всё это про твой подход к макияжу. Ты следишь за трендами, но не боишься создавать что-то своё. Макияж для тебя — это способ выразить свою индивидуальность.',
     tips: [
       'Пробуй цветные подводки и тени — синие, зелёные, фиолетовые оттенки',
       'Экспериментируй с текстурами — глиттеры, металлики, необычные финиши',
@@ -342,15 +373,13 @@ const result = computed(() => {
     romantic: 0,
     experimental: 0
   }
-  
-  answers.value.forEach(answer => {
+
+  answers.value.forEach((answer) => {
     counts[answer]++
   })
-  
-  const maxType = Object.keys(counts).reduce((a, b) => 
-    counts[a] > counts[b] ? a : b
-  )
-  
+
+  const maxType = Object.keys(counts).reduce((a, b) => (counts[a] > counts[b] ? a : b))
+
   return resultTypes[maxType]
 })
 
@@ -360,7 +389,7 @@ function startTest() {
 
 function selectAnswer(type) {
   selectedAnswer.value = type
-  
+
   // Автоматический переход к следующему вопросу через 500ms
   setTimeout(() => {
     nextQuestion()
@@ -369,21 +398,21 @@ function selectAnswer(type) {
 
 function nextQuestion() {
   if (!selectedAnswer.value) return
-  
+
   answers.value[currentQuestion.value] = selectedAnswer.value
-  
+
   if (currentQuestion.value < questions.length - 1) {
     currentQuestion.value++
     selectedAnswer.value = answers.value[currentQuestion.value] || null
   } else {
     currentStep.value = 'result'
-    
+
     // Track event
     if (window.clrtTrack) {
       window.clrtTrack({
         url: 'event://custom/cosmoMakeupTest',
         action: 'test-completed',
-        action_param1: result.value.title,
+        action_param1: result.value.title
       })
     }
   }
@@ -406,13 +435,13 @@ function restartTest() {
 function shareResult(platform) {
   const text = `Мой типаж макияжа — ${result.value.title}! ${result.value.subtitle}`
   const url = window.location.href
-  
+
   const shareUrls = {
     telegram: `https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`,
     whatsapp: `https://wa.me/?text=${encodeURIComponent(text + ' ' + url)}`,
     vk: `https://vk.com/share.php?url=${encodeURIComponent(url)}&title=${encodeURIComponent(text)}`
   }
-  
+
   if (shareUrls[platform]) {
     window.open(shareUrls[platform], '_blank')
   }
@@ -422,7 +451,7 @@ function shareResult(platform) {
 if (window.clrtTrack) {
   window.clrtTrack({
     url: 'event://custom/cosmoMakeupTest',
-    action: 'page-view',
+    action: 'page-view'
   })
 }
 </script>

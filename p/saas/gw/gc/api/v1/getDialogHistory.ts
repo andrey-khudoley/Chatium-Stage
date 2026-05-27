@@ -14,6 +14,8 @@ export const getDialogHistoryHandler: V1GcHandler = async (_ctx, a) => {
   return { kind: 'gc_result', gc }
 }
 
-export const getDialogHistoryRoute = app.get('/', async (ctx, req) => handleV1Op(ctx, req, 'getDialogHistory', getDialogHistoryHandler))
+export const getDialogHistoryRoute = app.get('/', async (ctx, req) =>
+  handleV1Op(ctx, req, 'getDialogHistory', getDialogHistoryHandler)
+)
 
 export default getDialogHistoryRoute

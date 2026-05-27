@@ -14,6 +14,8 @@ export const getDealCallsHandler: V1GcHandler = async (_ctx, a) => {
   return { kind: 'gc_result', gc }
 }
 
-export const getDealCallsRoute = app.get('/', async (ctx, req) => handleV1Op(ctx, req, 'getDealCalls', getDealCallsHandler))
+export const getDealCallsRoute = app.get('/', async (ctx, req) =>
+  handleV1Op(ctx, req, 'getDealCalls', getDealCallsHandler)
+)
 
 export default getDealCallsRoute

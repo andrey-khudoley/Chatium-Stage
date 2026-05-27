@@ -8,10 +8,13 @@
       <div
         v-for="(chat, index) in pinnedChatsWithData"
         :key="chat.feedId"
-        :class="['pinned-item', { 
-          active: chat.feedId === selectedChat,
-          dragging: draggedIndex === index 
-        }]"
+        :class="[
+          'pinned-item',
+          {
+            active: chat.feedId === selectedChat,
+            dragging: draggedIndex === index
+          }
+        ]"
         :draggable="true"
         @dragstart="onDragStart($event, index)"
         @dragover.prevent="onDragOver($event, index)"
@@ -23,7 +26,9 @@
           <i class="fas fa-grip-lines"></i>
         </div>
         <div class="chat-avatar" :style="getAvatarStyle(chat)">
-          <span v-if="!hasChatAvatar(chat)">{{ getChatInitials(chat.displayTitle || chat.title) }}</span>
+          <span v-if="!hasChatAvatar(chat)">{{
+            getChatInitials(chat.displayTitle || chat.title)
+          }}</span>
         </div>
         <div class="chat-info">
           <div class="chat-name">{{ chat.displayTitle || chat.title }}</div>
@@ -34,11 +39,7 @@
             {{ getChatTypeLabel(chat.type) }}
           </div>
         </div>
-        <button 
-          class="unpin-btn" 
-          @click.stop="unpinChat(chat.feedId)"
-          title="Открепить"
-        >
+        <button class="unpin-btn" @click.stop="unpinChat(chat.feedId)" title="Открепить">
           <i class="fas fa-times"></i>
         </button>
       </div>
@@ -59,7 +60,7 @@ const props = defineProps({
     type: Array,
     default: () => []
   },
-  selectedChat: String,
+  selectedChat: String
 })
 
 const emit = defineEmits(['select-chat', 'unpin', 'reorder'])
@@ -69,8 +70,8 @@ const draggedIndex = ref(-1)
 // Сопоставляем закрепленные чаты с полными данными из списка чатов
 const pinnedChatsWithData = computed(() => {
   return props.pinnedChats
-    .map(pinned => {
-      const fullChat = props.allChats.find(c => c.feedId === pinned.feedId)
+    .map((pinned) => {
+      const fullChat = props.allChats.find((c) => c.feedId === pinned.feedId)
       return fullChat ? { ...fullChat, sortOrder: pinned.sortOrder } : null
     })
     .filter(Boolean)
@@ -99,16 +100,16 @@ function onDragOver(event, index) {
 function onDrop(event, dropIndex) {
   event.preventDefault()
   const dragIndex = draggedIndex.value
-  
+
   if (dragIndex === -1 || dragIndex === dropIndex) return
-  
+
   const newOrder = [...pinnedChatsWithData.value]
   const [removed] = newOrder.splice(dragIndex, 1)
   newOrder.splice(dropIndex, 0, removed)
-  
-  const feedIds = newOrder.map(c => c.feedId)
+
+  const feedIds = newOrder.map((c) => c.feedId)
   emit('reorder', feedIds)
-  
+
   event.target.closest('.pinned-item').style.opacity = '1'
 }
 
@@ -121,14 +122,19 @@ function onDragEnd(event) {
 
 function getChatInitials(title) {
   if (!title) return '?'
-  return title.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase()
+  return title
+    .split(' ')
+    .map((w) => w[0])
+    .join('')
+    .substring(0, 2)
+    .toUpperCase()
 }
 
 function getChatTypeLabel(type) {
   const labels = {
     group: 'Группа',
     direct: 'Личный',
-    channel: 'Канал',
+    channel: 'Канал'
   }
   return labels[type] || 'Чат'
 }
@@ -136,19 +142,19 @@ function getChatTypeLabel(type) {
 function getAvatarStyle(chat) {
   if (chat.avatarHash) {
     return {
-      background: `url(https://fs.chatium.ru/thumbnail/${chat.avatarHash}/s/200x) center/cover no-repeat`,
+      background: `url(https://fs.chatium.ru/thumbnail/${chat.avatarHash}/s/200x) center/cover no-repeat`
     }
   }
-  
+
   if (chat.type === 'direct' && chat.participants) {
-    const otherParticipant = chat.participants.find(p => p.userId !== ctx.user?.id)
+    const otherParticipant = chat.participants.find((p) => p.userId !== ctx.user?.id)
     if (otherParticipant?.user?.avatar) {
       return {
-        background: `url(${otherParticipant.user.avatar}) center/cover no-repeat`,
+        background: `url(${otherParticipant.user.avatar}) center/cover no-repeat`
       }
     }
   }
-  
+
   const colors = [
     ['#667eea', '#764ba2'],
     ['#f093fb', '#f5576c'],
@@ -157,19 +163,19 @@ function getAvatarStyle(chat) {
     ['#fa709a', '#fee140'],
     ['#a8edea', '#fed6e3'],
     ['#d299c2', '#fef9d7'],
-    ['#89f7fe', '#66a6ff'],
+    ['#89f7fe', '#66a6ff']
   ]
   const index = (chat.id?.charCodeAt(0) || 0) % colors.length
   const [from, to] = colors[index]
   return {
-    background: `linear-gradient(135deg, ${from} 0%, ${to} 100%)`,
+    background: `linear-gradient(135deg, ${from} 0%, ${to} 100%)`
   }
 }
 
 function hasChatAvatar(chat) {
   if (chat.avatarHash) return true
   if (chat.type === 'direct' && chat.participants) {
-    const otherParticipant = chat.participants.find(p => p.userId !== ctx.user?.id)
+    const otherParticipant = chat.participants.find((p) => p.userId !== ctx.user?.id)
     if (otherParticipant?.user?.avatar) return true
   }
   return false
@@ -321,7 +327,7 @@ function hasChatAvatar(chat) {
   .drag-handle {
     opacity: 1;
   }
-  
+
   .unpin-btn {
     opacity: 1;
   }

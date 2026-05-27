@@ -27,11 +27,11 @@
 defineProps({
   size: {
     type: [Number, String],
-    default: 24,
+    default: 24
   },
   fill: {
     type: String,
-    default: "currentColor",
-  },
-});
+    default: 'currentColor'
+  }
+})
 </script>

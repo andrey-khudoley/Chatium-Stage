@@ -21,8 +21,8 @@
             isRecording
               ? 'bg-rose-500 text-white shadow-sm shadow-rose-200 cursor-not-allowed'
               : canStartVoiceRecording
-              ? 'text-gray-400 hover:text-gray-800'
-              : 'cursor-not-allowed opacity-60 text-gray-300'
+                ? 'text-gray-400 hover:text-gray-800'
+                : 'cursor-not-allowed opacity-60 text-gray-300'
           ]"
           aria-label="Записать голосовое сообщение"
         >
@@ -30,7 +30,14 @@
         </button>
       </div>
 
-      <input ref="fileInput" type="file" class="hidden" multiple @change="handleFileSelect" :disabled="isSending" />
+      <input
+        ref="fileInput"
+        type="file"
+        class="hidden"
+        multiple
+        @change="handleFileSelect"
+        :disabled="isSending"
+      />
 
       <!-- Text Input -->
       <div class="flex-1 py-1.5 flex flex-col overflow-hidden">
@@ -45,8 +52,8 @@
               fileItem.status === 'done'
                 ? 'border border-emerald-200/50 shadow-sm shadow-emerald-100/40'
                 : fileItem.status === 'error'
-                ? 'border border-rose-200/60 shadow-sm shadow-rose-100/30'
-                : 'border border-slate-200/60 shadow-sm shadow-black/5'
+                  ? 'border border-rose-200/60 shadow-sm shadow-rose-100/30'
+                  : 'border border-slate-200/60 shadow-sm shadow-black/5'
             ]"
           >
             <div
@@ -71,11 +78,17 @@
                     <span v-if="fileItem.status === 'uploading'" class="text-slate-500">
                       {{ fileItem.progress }}%
                     </span>
-                    <span v-else-if="fileItem.status === 'done'" class="flex items-center gap-1 text-emerald-400">
+                    <span
+                      v-else-if="fileItem.status === 'done'"
+                      class="flex items-center gap-1 text-emerald-400"
+                    >
                       <i class="fas fa-check"></i>
                       готово
                     </span>
-                    <span v-else-if="fileItem.status === 'error'" class="flex items-center gap-1 text-rose-400">
+                    <span
+                      v-else-if="fileItem.status === 'error'"
+                      class="flex items-center gap-1 text-rose-400"
+                    >
                       <i class="fas fa-exclamation-triangle"></i>
                       ошибка
                     </span>
@@ -133,7 +146,10 @@
             </span>
             <span v-if="isRecording">{{ formattedRecordingDuration }}</span>
           </div>
-          <div v-if="isRecording" class="levels flex-1 flex items-center justify-center gap-1 h-6 overflow-hidden">
+          <div
+            v-if="isRecording"
+            class="levels flex-1 flex items-center justify-center gap-1 h-6 overflow-hidden"
+          >
             <span
               v-for="(level, index) in audioLevels"
               :key="index"
@@ -141,7 +157,10 @@
               :style="{ height: getLevelHeight(level) }"
             ></span>
           </div>
-          <div v-else class="levels flex-1 flex items-center justify-center gap-1 h-6 overflow-hidden">
+          <div
+            v-else
+            class="levels flex-1 flex items-center justify-center gap-1 h-6 overflow-hidden"
+          >
             <span class="text-blue-400/90">Отправляем голосовое...</span>
           </div>
           <button
@@ -158,7 +177,12 @@
             class="flex h-8 w-8 items-center justify-center rounded-full bg-blue-500 text-white shadow-sm transition-colors hover:bg-blue-600 disabled:cursor-not-allowed"
             aria-label="Завершить запись"
           >
-            <i :class="['text-base', isProcessingRecording ? 'fas fa-circle-notch fa-spin' : 'fas fa-check']"></i>
+            <i
+              :class="[
+                'text-base',
+                isProcessingRecording ? 'fas fa-circle-notch fa-spin' : 'fas fa-check'
+              ]"
+            ></i>
           </button>
         </div>
 
@@ -190,7 +214,9 @@
         <i :class="['text-sm', isSending ? 'fas fa-circle-notch fa-spin' : 'fas fa-arrow-up']"></i>
       </button>
     </div>
-    <div class="mt-3 text-center text-xs text-gray-500">GPT может делать ошибки. Проверяйте важную информацию.</div>
+    <div class="mt-3 text-center text-xs text-gray-500">
+      GPT может делать ошибки. Проверяйте важную информацию.
+    </div>
   </div>
 </template>
 
@@ -261,11 +287,13 @@ let recordingStartedAt = 0
 let voiceSendFallbackTimeoutId = null
 let recorderDataRequestId = null
 
-const isUploading = computed(() => selectedFiles.value.some(item => ['pending', 'uploading'].includes(item.status)))
+const isUploading = computed(() =>
+  selectedFiles.value.some((item) => ['pending', 'uploading'].includes(item.status))
+)
 
-const hasUploadError = computed(() => selectedFiles.value.some(item => item.status === 'error'))
+const hasUploadError = computed(() => selectedFiles.value.some((item) => item.status === 'error'))
 
-const hasUploadedFiles = computed(() => selectedFiles.value.some(item => item.status === 'done'))
+const hasUploadedFiles = computed(() => selectedFiles.value.some((item) => item.status === 'done'))
 
 const formattedRecordingDuration = computed(() => {
   const totalSeconds = Math.floor(recordingDuration.value / 1000)
@@ -274,7 +302,7 @@ const formattedRecordingDuration = computed(() => {
   return `${minutes}:${seconds}`
 })
 
-const getLevelHeight = level => {
+const getLevelHeight = (level) => {
   const clamped = Math.max(0, Math.min(1, Number(level) || 0))
   return `${Math.max(8, Math.round(clamped * 100))}%`
 }
@@ -303,12 +331,20 @@ const getSupportedMimeType = () => {
     return null
   }
 
-  const candidates = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4;codecs=mp4a.40.2', 'audio/mp4', 'audio/mpeg']
+  const candidates = [
+    'audio/webm;codecs=opus',
+    'audio/webm',
+    'audio/mp4;codecs=mp4a.40.2',
+    'audio/mp4',
+    'audio/mpeg'
+  ]
 
   const isTypeSupported =
-    typeof MediaRecorder.isTypeSupported === 'function' ? MediaRecorder.isTypeSupported.bind(MediaRecorder) : () => true
+    typeof MediaRecorder.isTypeSupported === 'function'
+      ? MediaRecorder.isTypeSupported.bind(MediaRecorder)
+      : () => true
 
-  return candidates.find(type => isTypeSupported(type)) || null
+  return candidates.find((type) => isTypeSupported(type)) || null
 }
 
 const isSubmitDisabled = computed(() => {
@@ -324,7 +360,7 @@ const isSubmitDisabled = computed(() => {
   )
 })
 
-const formatFileSize = bytes => {
+const formatFileSize = (bytes) => {
   if (!Number.isFinite(bytes) || bytes <= 0) {
     return '0 B'
   }
@@ -430,7 +466,7 @@ const cleanupAudioResources = () => {
   }
 
   if (mediaStream.value) {
-    mediaStream.value.getTracks().forEach(track => track.stop())
+    mediaStream.value.getTracks().forEach((track) => track.stop())
     mediaStream.value = null
   }
 
@@ -457,7 +493,7 @@ const stopMediaRecorder = () => {
   }
 }
 
-const handleRecorderStop = async mimeType => {
+const handleRecorderStop = async (mimeType) => {
   cleanupAudioResources()
 
   const chunks = [...audioChunks.value]
@@ -479,7 +515,7 @@ const handleRecorderStop = async mimeType => {
   isProcessingRecording.value = true
 
   try {
-    const chunkType = chunks.find(chunk => chunk?.type)?.type
+    const chunkType = chunks.find((chunk) => chunk?.type)?.type
     const type = mimeType || chunkType || 'audio/webm'
     const blob = new Blob(chunks, { type })
 
@@ -494,7 +530,7 @@ const handleRecorderStop = async mimeType => {
 
     const fileName = `voice-${new Date().toISOString().replace(/[.:]/g, '-')}.${extension}`
     const file = new File([blob], fileName, { type })
-    const uploaded = await uploadFile(file, progress => {
+    const uploaded = await uploadFile(file, (progress) => {
       recordingUploadProgress.value = progress
     })
 
@@ -563,7 +599,7 @@ const startVoiceRecording = async () => {
     audioChunks.value = []
     discardRecording.value = false
 
-    recorder.addEventListener('dataavailable', event => {
+    recorder.addEventListener('dataavailable', (event) => {
       if (event.data && event.data.size > 0) {
         audioChunks.value.push(event.data)
       }
@@ -657,12 +693,12 @@ onBeforeUnmount(() => {
   finalizeVoiceProcessing()
 })
 
-const queueFilesForUpload = files => {
+const queueFilesForUpload = (files) => {
   if (props.isSending || !files?.length) {
     return
   }
 
-  const normalizedFiles = files.map(file => ({
+  const normalizedFiles = files.map((file) => ({
     file,
     progress: 0,
     status: 'pending',
@@ -674,18 +710,18 @@ const queueFilesForUpload = files => {
   selectedFiles.value.push(...normalizedFiles)
   refreshSelectedFiles()
 
-  normalizedFiles.forEach(fileItem => {
+  normalizedFiles.forEach((fileItem) => {
     startUpload(fileItem)
   })
 }
 
-const handleFileSelect = event => {
+const handleFileSelect = (event) => {
   const files = Array.from(event.target.files || [])
   queueFilesForUpload(files)
   event.target.value = '' // Reset input
 }
 
-const handlePaste = event => {
+const handlePaste = (event) => {
   if (props.isSending) {
     return
   }
@@ -706,12 +742,12 @@ const handlePaste = event => {
   queueFilesForUpload(files)
 }
 
-const removeFile = index => {
+const removeFile = (index) => {
   selectedFiles.value.splice(index, 1)
   refreshSelectedFiles()
 }
 
-const startUpload = async fileItem => {
+const startUpload = async (fileItem) => {
   if (!fileItem?.file) {
     return
   }
@@ -721,7 +757,7 @@ const startUpload = async fileItem => {
   refreshSelectedFiles()
 
   try {
-    const uploaded = await uploadFile(fileItem.file, progress => {
+    const uploaded = await uploadFile(fileItem.file, (progress) => {
       fileItem.progress = progress
       refreshSelectedFiles()
     })
@@ -743,7 +779,7 @@ const startUpload = async fileItem => {
   }
 }
 
-const retryUpload = fileItem => {
+const retryUpload = (fileItem) => {
   if (!fileItem || fileItem.status === 'uploading') {
     return
   }
@@ -780,7 +816,7 @@ const uploadFile = async (file, onProgress) => {
     return await new Promise((resolve, reject) => {
       const xhr = new XMLHttpRequest()
 
-      xhr.upload.addEventListener('progress', e => {
+      xhr.upload.addEventListener('progress', (e) => {
         if (e.lengthComputable) {
           onProgress?.(Math.round((e.loaded / e.total) * 100))
         }
@@ -830,8 +866,8 @@ const handleSubmit = async () => {
   }
 
   const uploadedFiles = selectedFiles.value
-    .filter(item => item.status === 'done' && item.uploaded)
-    .map(item => item.uploaded)
+    .filter((item) => item.status === 'done' && item.uploaded)
+    .map((item) => item.uploaded)
 
   emit('submit', {
     text: currentText,
@@ -844,7 +880,7 @@ const handleSubmit = async () => {
 
 watch(
   () => props.isSending,
-  sending => {
+  (sending) => {
     if (!awaitingVoiceSendCompletion.value) {
       return
     }

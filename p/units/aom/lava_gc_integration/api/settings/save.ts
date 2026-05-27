@@ -105,7 +105,12 @@ export const saveSettingRoute = app.post('/', async (ctx, req) => {
       await settingsLib.getLavaApiKey(ctx),
       await settingsLib.getLavaBaseUrl(ctx)
     )!
-    if (saveCredsLib.shouldVerifyCredentialPair(lavaResolved.nextApiKey, lavaResolved.nextBaseNormalized)) {
+    if (
+      saveCredsLib.shouldVerifyCredentialPair(
+        lavaResolved.nextApiKey,
+        lavaResolved.nextBaseNormalized
+      )
+    ) {
       const { nextApiKey, nextBaseNormalized: nextBase } = lavaResolved
       const v = await lavaApi.verifyLavaCredentials(ctx, { apiKey: nextApiKey, baseUrl: nextBase })
       if (!v.ok) {

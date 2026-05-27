@@ -1,13 +1,13 @@
 // @shared
- 
+
 import { request } from '@app/request'
 
 export interface AppUiActionApiCall {
   type: 'apiCall'
   url: string
-  apiParams: Record<string, unknown> 
+  apiParams: Record<string, unknown>
 }
- 
+
 export interface AppUiActionNavigate {
   type: 'navigate'
   url: string
@@ -21,7 +21,11 @@ export interface AppUiActionSendMessage {
   type: 'sendMessage'
 }
 
-export type AppUiAction = AppUiActionRefresh | AppUiActionNavigate | AppUiActionApiCall | AppUiActionSendMessage
+export type AppUiAction =
+  | AppUiActionRefresh
+  | AppUiActionNavigate
+  | AppUiActionApiCall
+  | AppUiActionSendMessage
 export type AppUiActions = AppUiAction | AppUiAction[]
 
 export async function processActions(actionOrActions: AppUiActions | undefined, navigator: any) {
@@ -32,7 +36,10 @@ export async function processActions(actionOrActions: AppUiActions | undefined, 
   for (const action of actions) {
     if (action.type === 'apiCall') {
       try {
-        const response = await request.post<{ success: boolean; appAction?: any }>(action.url, action.apiParams ?? {})
+        const response = await request.post<{ success: boolean; appAction?: any }>(
+          action.url,
+          action.apiParams ?? {}
+        )
         if (response.body.success) {
           if (response.body.appAction) {
             return await processActions(response.body.appAction, navigator)

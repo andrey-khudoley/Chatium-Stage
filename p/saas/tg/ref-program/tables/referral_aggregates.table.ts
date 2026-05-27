@@ -15,18 +15,10 @@ export const ReferralAggregates = Heap.Table(
       customMeta: { title: 'Кампания' },
       onDelete: 'none'
     }),
-    ordersCount: Heap.Optional(
-      Heap.Number({ customMeta: { title: 'Количество заказов' } })
-    ),
-    ordersSum: Heap.Optional(
-      Heap.Number({ customMeta: { title: 'Сумма заказов (коп.)' } })
-    ),
-    paymentsCount: Heap.Optional(
-      Heap.Number({ customMeta: { title: 'Количество оплат' } })
-    ),
-    paymentsSum: Heap.Optional(
-      Heap.Number({ customMeta: { title: 'Сумма оплат (коп.)' } })
-    )
+    ordersCount: Heap.Optional(Heap.Number({ customMeta: { title: 'Количество заказов' } })),
+    ordersSum: Heap.Optional(Heap.Number({ customMeta: { title: 'Сумма заказов (коп.)' } })),
+    paymentsCount: Heap.Optional(Heap.Number({ customMeta: { title: 'Количество оплат' } })),
+    paymentsSum: Heap.Optional(Heap.Number({ customMeta: { title: 'Сумма оплат (коп.)' } }))
   },
   {
     customMeta: {

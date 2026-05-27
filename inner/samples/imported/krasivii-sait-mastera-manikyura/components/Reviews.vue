@@ -3,16 +3,19 @@
     <div class="container mx-auto px-4">
       <div class="text-center mb-16">
         <h2 class="section-title">Отзывы клиентов</h2>
-        <p class="text-gray-600 text-lg max-w-2xl mx-auto mt-4">
-          Что говорят о нас наши клиенты
-        </p>
+        <p class="text-gray-600 text-lg max-w-2xl mx-auto mt-4">Что говорят о нас наши клиенты</p>
       </div>
-      
+
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
-        <div v-for="review in reviews" :key="review.name" 
-             class="bg-gradient-to-br from-secondary to-white p-8 rounded-2xl shadow-lg hover-lift">
+        <div
+          v-for="review in reviews"
+          :key="review.name"
+          class="bg-gradient-to-br from-secondary to-white p-8 rounded-2xl shadow-lg hover-lift"
+        >
           <div class="flex items-center mb-4">
-            <div class="w-12 h-12 bg-primary rounded-full flex items-center justify-center text-white text-xl font-bold mr-4">
+            <div
+              class="w-12 h-12 bg-primary rounded-full flex items-center justify-center text-white text-xl font-bold mr-4"
+            >
               {{ review.name[0] }}
             </div>
             <div>
@@ -26,7 +29,7 @@
           <p class="text-sm text-gray-500 mt-4">{{ review.date }}</p>
         </div>
       </div>
-      
+
       <div class="text-center mt-12">
         <p class="text-gray-600 mb-4">Оставьте свой отзыв после посещения!</p>
       </div>

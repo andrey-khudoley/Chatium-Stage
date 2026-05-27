@@ -28,25 +28,27 @@ const cancel = () => {
 // Функция для форматирования текста с выделением части до ":"
 const formatMessage = (text: string): string => {
   if (!text) return ''
-  
+
   // Разбиваем на строки
   const lines = text.split('\n')
-  
-  return lines.map(line => {
-    // Ищем первое вхождение ":"
-    const colonIndex = line.indexOf(':')
-    
-    if (colonIndex > 0 && colonIndex < line.length - 1) {
-      // Есть ":" - выделяем часть до ":"
-      const label = line.substring(0, colonIndex).trim()
-      const value = line.substring(colonIndex + 1).trim()
-      
-      return `<span class="message-label">${escapeHtml(label)}:</span> <span class="message-value">${escapeHtml(value)}</span>`
-    }
-    
-    // Нет ":" - возвращаем как есть
-    return escapeHtml(line)
-  }).join('\n')
+
+  return lines
+    .map((line) => {
+      // Ищем первое вхождение ":"
+      const colonIndex = line.indexOf(':')
+
+      if (colonIndex > 0 && colonIndex < line.length - 1) {
+        // Есть ":" - выделяем часть до ":"
+        const label = line.substring(0, colonIndex).trim()
+        const value = line.substring(colonIndex + 1).trim()
+
+        return `<span class="message-label">${escapeHtml(label)}:</span> <span class="message-value">${escapeHtml(value)}</span>`
+      }
+
+      // Нет ":" - возвращаем как есть
+      return escapeHtml(line)
+    })
+    .join('\n')
 }
 
 // Экранирование HTML для безопасности
@@ -79,14 +81,17 @@ onUnmounted(() => {
   }
 })
 
-watch(() => props.show, (newVal) => {
-  if (newVal) {
-    // Блокируем скролл фона при открытии модального окна
-    document.body.style.overflow = 'hidden'
-  } else {
-    document.body.style.overflow = ''
+watch(
+  () => props.show,
+  (newVal) => {
+    if (newVal) {
+      // Блокируем скролл фона при открытии модального окна
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = ''
+    }
   }
-})
+)
 </script>
 
 <template>
@@ -94,17 +99,26 @@ watch(() => props.show, (newVal) => {
     <div v-if="show" class="modal-overlay" @click="cancel">
       <div class="modal-content" @click.stop>
         <div class="modal-scanlines"></div>
-        
+
         <div class="modal-header">
           <h2 class="modal-title">
-            <i 
+            <i
               :class="[
                 'fas',
-                type === 'danger' ? 'fa-exclamation-triangle' :
-                type === 'warning' ? 'fa-exclamation-circle' :
-                'fa-question-circle'
+                type === 'danger'
+                  ? 'fa-exclamation-triangle'
+                  : type === 'warning'
+                    ? 'fa-exclamation-circle'
+                    : 'fa-question-circle'
               ]"
-              :style="{ color: type === 'danger' ? 'var(--color-accent)' : type === 'warning' ? '#fbbf24' : 'var(--color-accent)' }"
+              :style="{
+                color:
+                  type === 'danger'
+                    ? 'var(--color-accent)'
+                    : type === 'warning'
+                      ? '#fbbf24'
+                      : 'var(--color-accent)'
+              }"
             ></i>
             {{ title || 'Подтверждение' }}
           </h2>
@@ -123,7 +137,11 @@ watch(() => props.show, (newVal) => {
           <button @click="cancel" class="modal-btn modal-btn-cancel">
             {{ cancelText || 'Отмена' }}
           </button>
-          <button @click="confirm" class="modal-btn modal-btn-confirm" :class="{ 'modal-btn-danger': type === 'danger' }">
+          <button
+            @click="confirm"
+            class="modal-btn modal-btn-confirm"
+            :class="{ 'modal-btn-danger': type === 'danger' }"
+          >
             {{ confirmText || 'Подтвердить' }}
           </button>
         </div>
@@ -154,15 +172,23 @@ watch(() => props.show, (newVal) => {
   max-width: 500px;
   width: 100%;
   position: relative;
-  box-shadow: 
+  box-shadow:
     0 0 40px rgba(211, 35, 75, 0.4),
     0 0 80px rgba(211, 35, 75, 0.2),
     inset 0 1px 0 rgba(255, 255, 255, 0.05);
   clip-path: polygon(
-    0 4px, 4px 4px, 4px 0,
-    calc(100% - 4px) 0, calc(100% - 4px) 4px, 100% 4px,
-    100% calc(100% - 4px), calc(100% - 4px) calc(100% - 4px), calc(100% - 4px) 100%,
-    4px 100%, 4px calc(100% - 4px), 0 calc(100% - 4px)
+    0 4px,
+    4px 4px,
+    4px 0,
+    calc(100% - 4px) 0,
+    calc(100% - 4px) 4px,
+    100% 4px,
+    100% calc(100% - 4px),
+    calc(100% - 4px) calc(100% - 4px),
+    calc(100% - 4px) 100%,
+    4px 100%,
+    4px calc(100% - 4px),
+    0 calc(100% - 4px)
   );
 }
 
@@ -199,7 +225,7 @@ watch(() => props.show, (newVal) => {
   color: var(--color-text);
   margin: 0;
   letter-spacing: 0.08em;
-  text-shadow: 
+  text-shadow:
     0 0 10px rgba(232, 232, 232, 0.4),
     0 0 20px rgba(211, 35, 75, 0.2);
   display: flex;
@@ -226,10 +252,18 @@ watch(() => props.show, (newVal) => {
   position: relative;
   overflow: hidden;
   clip-path: polygon(
-    0 3px, 3px 3px, 3px 0,
-    calc(100% - 3px) 0, calc(100% - 3px) 3px, 100% 3px,
-    100% calc(100% - 3px), calc(100% - 3px) calc(100% - 3px), calc(100% - 3px) 100%,
-    3px 100%, 3px calc(100% - 3px), 0 calc(100% - 3px)
+    0 3px,
+    3px 3px,
+    3px 0,
+    calc(100% - 3px) 0,
+    calc(100% - 3px) 3px,
+    100% 3px,
+    100% calc(100% - 3px),
+    calc(100% - 3px) calc(100% - 3px),
+    calc(100% - 3px) 100%,
+    3px 100%,
+    3px calc(100% - 3px),
+    0 calc(100% - 3px)
   );
 }
 
@@ -286,7 +320,7 @@ watch(() => props.show, (newVal) => {
 .message-text :deep(.message-label) {
   font-weight: 700 !important;
   color: var(--color-text) !important;
-  text-shadow: 
+  text-shadow:
     0 0 10px rgba(232, 232, 232, 0.6),
     0 0 15px rgba(211, 35, 75, 0.4),
     0 0 20px rgba(211, 35, 75, 0.2) !important;
@@ -327,10 +361,18 @@ watch(() => props.show, (newVal) => {
   font-family: 'Share Tech Mono', 'Courier New', monospace;
   text-transform: uppercase;
   clip-path: polygon(
-    0 3px, 3px 3px, 3px 0,
-    calc(100% - 3px) 0, calc(100% - 3px) 3px, 100% 3px,
-    100% calc(100% - 3px), calc(100% - 3px) calc(100% - 3px), calc(100% - 3px) 100%,
-    3px 100%, 3px calc(100% - 3px), 0 calc(100% - 3px)
+    0 3px,
+    3px 3px,
+    3px 0,
+    calc(100% - 3px) 0,
+    calc(100% - 3px) 3px,
+    100% 3px,
+    100% calc(100% - 3px),
+    calc(100% - 3px) calc(100% - 3px),
+    calc(100% - 3px) 100%,
+    3px 100%,
+    3px calc(100% - 3px),
+    0 calc(100% - 3px)
   );
 }
 
@@ -359,7 +401,7 @@ watch(() => props.show, (newVal) => {
   color: var(--color-text);
   border-color: var(--color-text-secondary);
   background: rgba(255, 255, 255, 0.05);
-  box-shadow: 
+  box-shadow:
     0 0 15px rgba(255, 255, 255, 0.1),
     inset 0 1px 0 rgba(255, 255, 255, 0.1);
   transform: translateY(-2px);
@@ -379,7 +421,7 @@ watch(() => props.show, (newVal) => {
 .modal-btn-confirm:hover {
   background: var(--color-accent);
   color: white;
-  box-shadow: 
+  box-shadow:
     0 0 20px rgba(211, 35, 75, 0.6),
     0 0 40px rgba(211, 35, 75, 0.4),
     inset 0 1px 0 rgba(255, 255, 255, 0.2);

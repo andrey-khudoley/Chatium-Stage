@@ -60,10 +60,15 @@ export function runPaymentReactionUnitChecks(): PaymentReactionUnitTestResult[] 
     return e.email === 'a@b.c' && e.dealId === '777' && e.amount === 1000
   })
 
-  tryPush(results, 'normalize_event_id_synthetic', 'normalizePaymentEvent синтетический event_id', () => {
-    const e = normalizePaymentEvent({ user: { email: 'a@b.c' }, deal: { id: '777' } })
-    return e.gcEventId === 'pay_777_a@b.c'
-  })
+  tryPush(
+    results,
+    'normalize_event_id_synthetic',
+    'normalizePaymentEvent синтетический event_id',
+    () => {
+      const e = normalizePaymentEvent({ user: { email: 'a@b.c' }, deal: { id: '777' } })
+      return e.gcEventId === 'pay_777_a@b.c'
+    }
+  )
 
   tryPush(results, 'normalize_event_id_explicit', 'normalizePaymentEvent явный id', () => {
     const e = normalizePaymentEvent({ id: 'gc-evt-1', user: { email: 'a@b.c' } })
@@ -89,18 +94,23 @@ export function runPaymentReactionUnitChecks(): PaymentReactionUnitTestResult[] 
     return text.includes('Иван') && text.includes('777') && text.includes('1000')
   })
 
-  tryPush(results, 'render_no_name_fallback', 'renderReactionMessage без имени → "участник"', () => {
-    const text = renderReactionMessage('{{name}}-{{dealId}}-{{amount}}', {
-      gcEventId: '',
-      email: '',
-      name: '',
-      dealId: '',
-      amount: 0,
-      dialogId: '',
-      userId: ''
-    })
-    return text === 'участник-—-—'
-  })
+  tryPush(
+    results,
+    'render_no_name_fallback',
+    'renderReactionMessage без имени → "участник"',
+    () => {
+      const text = renderReactionMessage('{{name}}-{{dealId}}-{{amount}}', {
+        gcEventId: '',
+        email: '',
+        name: '',
+        dealId: '',
+        amount: 0,
+        dialogId: '',
+        userId: ''
+      })
+      return text === 'участник-—-—'
+    }
+  )
 
   tryPush(results, 'render_replace_all', 'renderReactionMessage заменяет все вхождения', () => {
     const text = renderReactionMessage('{{name}} {{name}}', {

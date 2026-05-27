@@ -16,9 +16,9 @@
           <h3>Кто может писать в личные сообщения</h3>
           <div class="radio-group">
             <label class="radio-item">
-              <input 
-                type="radio" 
-                v-model="settings.allowDirectMessages" 
+              <input
+                type="radio"
+                v-model="settings.allowDirectMessages"
                 value="everyone"
                 @change="saveSettings"
               />
@@ -32,9 +32,9 @@
             </label>
 
             <label class="radio-item">
-              <input 
-                type="radio" 
-                v-model="settings.allowDirectMessages" 
+              <input
+                type="radio"
+                v-model="settings.allowDirectMessages"
                 value="contacts"
                 @change="saveSettings"
               />
@@ -43,14 +43,16 @@
                   <i class="fas fa-user-check"></i>
                   Только избранные
                 </span>
-                <span class="radio-description">Только выбранные вами пользователи могут писать</span>
+                <span class="radio-description"
+                  >Только выбранные вами пользователи могут писать</span
+                >
               </div>
             </label>
 
             <label class="radio-item">
-              <input 
-                type="radio" 
-                v-model="settings.allowDirectMessages" 
+              <input
+                type="radio"
+                v-model="settings.allowDirectMessages"
                 value="none"
                 @change="saveSettings"
               />
@@ -83,17 +85,16 @@
                 placeholder="Поиск по username, email или телефону..."
               />
               <i v-if="searching" class="fas fa-spinner fa-spin search-spinner"></i>
-              <button
-                v-else-if="searchQuery"
-                @click="clearSearch"
-                class="btn-clear-search"
-              >
+              <button v-else-if="searchQuery" @click="clearSearch" class="btn-clear-search">
                 <i class="fas fa-times"></i>
               </button>
             </div>
 
             <!-- Результаты поиска -->
-            <div v-if="showSearchResults && (searchResults.length > 0 || (searchQuery && !searching))" class="search-results">
+            <div
+              v-if="showSearchResults && (searchResults.length > 0 || (searchQuery && !searching))"
+              class="search-results"
+            >
               <div v-if="searchResults.length === 0" class="search-empty">
                 <i class="fas fa-user-slash"></i>
                 <span>Пользователи не найдены</span>
@@ -146,8 +147,8 @@
                 <div class="allowed-name">{{ getUserDisplayName(user) }}</div>
                 <div v-if="user.username" class="allowed-username">@{{ user.username }}</div>
               </div>
-              <button 
-                @click="removeAllowedUser(user.id)" 
+              <button
+                @click="removeAllowedUser(user.id)"
                 class="btn-remove"
                 :disabled="removingId === user.id"
               >
@@ -161,7 +162,10 @@
     </template>
 
     <!-- Уведомление -->
-    <div v-if="notification.show" :class="['notification', notification.type, { show: notification.show }]">
+    <div
+      v-if="notification.show"
+      :class="['notification', notification.type, { show: notification.show }]"
+    >
       <i :class="notification.icon"></i>
       <span>{{ notification.message }}</span>
     </div>
@@ -170,7 +174,12 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { apiPrivacySettingsGetRoute, apiPrivacySettingsUpdateRoute, apiPrivacySettingsRemoveAllowedRoute, apiPrivacySettingsAllowUserRoute } from '../api/privacy-settings'
+import {
+  apiPrivacySettingsGetRoute,
+  apiPrivacySettingsUpdateRoute,
+  apiPrivacySettingsRemoveAllowedRoute,
+  apiPrivacySettingsAllowUserRoute
+} from '../api/privacy-settings'
 import { apiUsersGetByIdsRoute, apiUsersSearchRoute } from '../api/users'
 
 const loading = ref(true)
@@ -186,14 +195,14 @@ const showSearchResults = ref(false)
 const settings = ref({
   allowDirectMessages: 'everyone',
   allowedUsers: [],
-  blockedUsers: [],
+  blockedUsers: []
 })
 
 const notification = ref({
   show: false,
   type: 'success',
   message: '',
-  icon: 'fas fa-check-circle',
+  icon: 'fas fa-check-circle'
 })
 
 function showNotification(message, type = 'success') {
@@ -201,7 +210,7 @@ function showNotification(message, type = 'success') {
     show: true,
     type,
     message,
-    icon: type === 'success' ? 'fas fa-check-circle' : 'fas fa-exclamation-circle',
+    icon: type === 'success' ? 'fas fa-check-circle' : 'fas fa-exclamation-circle'
   }
   setTimeout(() => {
     notification.value.show = false
@@ -215,9 +224,9 @@ async function loadSettings() {
     settings.value = {
       allowDirectMessages: response.allowDirectMessages || 'everyone',
       allowedUsers: response.allowedUsers || [],
-      blockedUsers: response.blockedUsers || [],
+      blockedUsers: response.blockedUsers || []
     }
-    
+
     // Загружаем информацию о разрешенных пользователях
     if (settings.value.allowedUsers.length > 0) {
       await loadAllowedUsersInfo(settings.value.allowedUsers)
@@ -242,11 +251,11 @@ async function loadAllowedUsersInfo(userIds) {
 
 async function saveSettings() {
   if (saving.value) return
-  
+
   saving.value = true
   try {
     await apiPrivacySettingsUpdateRoute.run(ctx, {
-      allowDirectMessages: settings.value.allowDirectMessages,
+      allowDirectMessages: settings.value.allowDirectMessages
     })
     showNotification('Настройки сохранены')
   } catch (error) {
@@ -263,8 +272,8 @@ async function removeAllowedUser(userId) {
   removingId.value = userId
   try {
     await apiPrivacySettingsRemoveAllowedRoute.run(ctx, { userId })
-    settings.value.allowedUsers = settings.value.allowedUsers.filter(id => id !== userId)
-    allowedUsersList.value = allowedUsersList.value.filter(u => u.id !== userId)
+    settings.value.allowedUsers = settings.value.allowedUsers.filter((id) => id !== userId)
+    allowedUsersList.value = allowedUsersList.value.filter((u) => u.id !== userId)
     showNotification('Пользователь удалён из списка')
   } catch (error) {
     console.error('Ошибка удаления пользователя:', error)
@@ -303,10 +312,10 @@ async function performSearch() {
   try {
     const results = await apiUsersSearchRoute.run(ctx, {
       query: searchQuery.value.trim(),
-      limit: 10,
+      limit: 10
     })
     // Фильтруем текущего пользователя из результатов
-    searchResults.value = (results.users || []).filter(u => u.id !== ctx.user?.id)
+    searchResults.value = (results.users || []).filter((u) => u.id !== ctx.user?.id)
   } catch (error) {
     console.error('Ошибка поиска:', error)
     searchResults.value = []
@@ -378,12 +387,12 @@ function getUserAvatarStyle(user) {
     ['#f093fb', '#f5576c'],
     ['#4facfe', '#00f2fe'],
     ['#43e97b', '#38f9d7'],
-    ['#fa709a', '#fee140'],
+    ['#fa709a', '#fee140']
   ]
   const index = (user.id?.charCodeAt(0) || 0) % colors.length
   const [from, to] = colors[index]
   return {
-    background: `linear-gradient(135deg, ${from} 0%, ${to} 100%)`,
+    background: `linear-gradient(135deg, ${from} 0%, ${to} 100%)`
   }
 }
 
@@ -441,7 +450,7 @@ onMounted(() => {
   border-color: var(--accent-primary);
 }
 
-.radio-item input[type="radio"] {
+.radio-item input[type='radio'] {
   margin-top: 2px;
   width: 18px;
   height: 18px;

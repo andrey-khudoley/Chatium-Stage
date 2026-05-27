@@ -12,8 +12,8 @@
     </div>
 
     <div v-else-if="agentChats.length > 0" class="agent-chats-list">
-      <div 
-        v-for="chat in agentChats" 
+      <div
+        v-for="chat in agentChats"
         :key="chat.id"
         class="agent-chat-item"
         @click="openChat(chat.feedId)"
@@ -40,7 +40,7 @@
     <!-- Создание нового чата с агентом -->
     <div class="create-section">
       <h3>Создать чат с агентом</h3>
-      
+
       <div v-if="loadingAgents" class="loading-state small">
         <i class="fas fa-spinner fa-spin"></i>
         <span>Загрузка агентов...</span>
@@ -74,7 +74,7 @@
         </div>
       </div>
 
-      <button 
+      <button
         v-if="availableAgents.length > 0"
         @click="createChatWithAgent"
         class="btn-create"
@@ -92,7 +92,10 @@
       <div>
         <strong>Как это работает:</strong>
         <ul>
-          <li>Агенты создаются в <a :href="agentProcessUrl" target="_blank">панели управления агентами</a></li>
+          <li>
+            Агенты создаются в
+            <a :href="agentProcessUrl" target="_blank">панели управления агентами</a>
+          </li>
           <li>В личном чате агент отвечает на все ваши сообщения</li>
           <li>Агент использует цепочки, базы знаний и автоматизации из Chatium</li>
           <li>Вы можете создать несколько чатов с разными агентами</li>
@@ -119,10 +122,7 @@ const selectedAgentId = ref(null)
 const creating = ref(false)
 
 onMounted(async () => {
-  await Promise.all([
-    loadAgentChats(),
-    loadAvailableAgents(),
-  ])
+  await Promise.all([loadAgentChats(), loadAvailableAgents()])
 })
 
 async function loadAgentChats() {
@@ -140,8 +140,8 @@ async function loadAvailableAgents() {
   try {
     const result = await apiAgentsListRoute.run(ctx)
     // Фильтруем агентов, с которыми уже есть чат
-    const existingAgentIds = new Set(agentChats.value.map(c => c.agentId))
-    availableAgents.value = (result.agents || []).filter(a => !existingAgentIds.has(a.id))
+    const existingAgentIds = new Set(agentChats.value.map((c) => c.agentId))
+    availableAgents.value = (result.agents || []).filter((a) => !existingAgentIds.has(a.id))
   } catch (err) {
     console.error('Failed to load agents:', err)
   } finally {
@@ -152,7 +152,7 @@ async function loadAvailableAgents() {
 async function createChatWithAgent() {
   if (!selectedAgentId.value || creating.value) return
 
-  const agent = availableAgents.value.find(a => a.id === selectedAgentId.value)
+  const agent = availableAgents.value.find((a) => a.id === selectedAgentId.value)
   if (!agent) return
 
   creating.value = true
@@ -160,7 +160,7 @@ async function createChatWithAgent() {
     const result = await apiDirectChatWithAgentRoute.run(ctx, {
       agentId: agent.id,
       agentKey: agent.key,
-      agentName: agent.name,
+      agentName: agent.name
     })
 
     if (result.success) {
@@ -188,19 +188,19 @@ function getAvatarStyle(chat) {
     ['#f093fb', '#f5576c'],
     ['#4facfe', '#00f2fe'],
     ['#43e97b', '#38f9d7'],
-    ['#fa709a', '#fee140'],
+    ['#fa709a', '#fee140']
   ]
   const index = (chat.id?.charCodeAt(0) || 0) % colors.length
   const [from, to] = colors[index]
   return {
-    background: `linear-gradient(135deg, ${from} 0%, ${to} 100%)`,
+    background: `linear-gradient(135deg, ${from} 0%, ${to} 100%)`
   }
 }
 
 function getAgentAvatarStyle(agent) {
   if (agent.avatarUrl) {
     return {
-      background: `url(${agent.avatarUrl}) center/cover no-repeat`,
+      background: `url(${agent.avatarUrl}) center/cover no-repeat`
     }
   }
 
@@ -209,18 +209,23 @@ function getAgentAvatarStyle(agent) {
     ['#f093fb', '#f5576c'],
     ['#4facfe', '#00f2fe'],
     ['#43e97b', '#38f9d7'],
-    ['#fa709a', '#fee140'],
+    ['#fa709a', '#fee140']
   ]
   const index = (agent.id?.charCodeAt(0) || 0) % colors.length
   const [from, to] = colors[index]
   return {
-    background: `linear-gradient(135deg, ${from} 0%, ${to} 100%)`,
+    background: `linear-gradient(135deg, ${from} 0%, ${to} 100%)`
   }
 }
 
 function getInitials(name) {
   if (!name) return '?'
-  return name.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase()
+  return name
+    .split(' ')
+    .map((w) => w[0])
+    .join('')
+    .substring(0, 2)
+    .toUpperCase()
 }
 </script>
 
@@ -318,7 +323,7 @@ function getInitials(name) {
   border-radius: 12px;
   cursor: pointer;
   transition: all 0.2s;
-  box-shadow: var(--shadow-sm, 0 1px 2px rgba(0,0,0,0.05));
+  box-shadow: var(--shadow-sm, 0 1px 2px rgba(0, 0, 0, 0.05));
 }
 
 .agent-chat-item:hover {
@@ -377,7 +382,7 @@ function getInitials(name) {
   border-radius: 16px;
   padding: 24px;
   margin-bottom: 24px;
-  box-shadow: var(--shadow-sm, 0 1px 2px rgba(0,0,0,0.05));
+  box-shadow: var(--shadow-sm, 0 1px 2px rgba(0, 0, 0, 0.05));
 }
 
 .create-section h3 {

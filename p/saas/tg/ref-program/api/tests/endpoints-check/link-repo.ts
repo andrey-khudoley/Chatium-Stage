@@ -114,8 +114,7 @@ export const linkRepoTestRoute = app.get('/', async (ctx, req) => {
         try {
           const link1 = await linkRepo.getOrCreatePartnerLink(ctx, campaignId, partnerId, pageId)
           const hasId = typeof link1.id === 'string'
-          const hasSlug =
-            typeof link1.publicSlug === 'string' && link1.publicSlug.length > 0
+          const hasSlug = typeof link1.publicSlug === 'string' && link1.publicSlug.length > 0
           const sameIds =
             link1.campaignId?.id === campaignId &&
             link1.partnerId?.id === partnerId &&
@@ -145,7 +144,8 @@ export const linkRepoTestRoute = app.get('/', async (ctx, req) => {
             passed: idempotent
           })
           if (!idempotent && link1.publicSlug) {
-            results[results.length - 1].error = `Ожидалась та же запись, slug: ${link1.publicSlug} vs ${link2.publicSlug}`
+            results[results.length - 1].error =
+              `Ожидалась та же запись, slug: ${link1.publicSlug} vs ${link2.publicSlug}`
           }
         } catch (e) {
           results.push({
@@ -164,7 +164,8 @@ export const linkRepoTestRoute = app.get('/', async (ctx, req) => {
 
         try {
           const links = await linkRepo.getPartnerLinks(ctx, partnerId)
-          const hasAtLeastOne = links.length >= 1 && links.some((l) => l.partnerId?.id === partnerId)
+          const hasAtLeastOne =
+            links.length >= 1 && links.some((l) => l.partnerId?.id === partnerId)
           results.push({
             id: 'getPartnerLinks',
             title: 'getPartnerLinks',

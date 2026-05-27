@@ -18,7 +18,7 @@ export const loggingSetLevelTestRoute = app.get('/', async (ctx) => {
   await loggerLib.writeServerLog(ctx, {
     severity: 7,
     message: `[${LOG_PATH}] Запрос проверки set-level`,
-    payload: {},
+    payload: {}
   })
 
   const results: TestResult[] = []
@@ -30,14 +30,14 @@ export const loggingSetLevelTestRoute = app.get('/', async (ctx) => {
       id: 'set_level_valid',
       title: 'set-level(Warn) success',
       passed: resValid?.success === true && resValid?.level === 'Warn',
-      error: resValid?.success === false ? resValid?.error : undefined,
+      error: resValid?.success === false ? resValid?.error : undefined
     })
   } catch (e) {
     results.push({
       id: 'set_level_valid',
       title: 'set-level(Warn) success',
       passed: false,
-      error: (e as Error)?.message ?? String(e),
+      error: (e as Error)?.message ?? String(e)
     })
   }
 
@@ -47,31 +47,33 @@ export const loggingSetLevelTestRoute = app.get('/', async (ctx) => {
       id: 'set_level_invalid',
       title: 'set-level(invalid) returns error',
       passed: resInvalid?.success === false && typeof resInvalid?.error === 'string',
-      error: resInvalid?.success === true ? 'Expected success: false' : undefined,
+      error: resInvalid?.success === true ? 'Expected success: false' : undefined
     })
   } catch (e) {
     results.push({
       id: 'set_level_invalid',
       title: 'set-level(invalid) returns error',
       passed: false,
-      error: (e as Error)?.message ?? String(e),
+      error: (e as Error)?.message ?? String(e)
     })
   }
 
   try {
     const resWrongType = await apiLoggingSetLevelRoute.run(ctx, { level: 123 as unknown as string })
-    const failed = resWrongType?.success === false || (LOG_LEVELS as readonly string[]).includes(String(123)) === false
+    const failed =
+      resWrongType?.success === false ||
+      (LOG_LEVELS as readonly string[]).includes(String(123)) === false
     results.push({
       id: 'set_level_wrong_type',
       title: 'set-level(non-string) rejected or not in LOG_LEVELS',
-      passed: failed,
+      passed: failed
     })
   } catch (e) {
     results.push({
       id: 'set_level_wrong_type',
       title: 'set-level(non-string)',
       passed: true,
-      error: (e as Error)?.message ?? String(e),
+      error: (e as Error)?.message ?? String(e)
     })
   }
 

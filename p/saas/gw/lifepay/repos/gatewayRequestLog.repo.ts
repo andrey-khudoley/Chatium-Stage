@@ -3,9 +3,7 @@
  * Слой работы с БД: только Heap-операции, без бизнес-логики.
  */
 
-import GatewayRequestLog, {
-  type GatewayRequestLogRow
-} from '../tables/gatewayRequestLog.table'
+import GatewayRequestLog, { type GatewayRequestLogRow } from '../tables/gatewayRequestLog.table'
 import * as loggerLib from '../lib/logger.lib'
 
 const LOG_MODULE = 'repos/gatewayRequestLog.repo'
@@ -41,10 +39,7 @@ export async function create(
   return row
 }
 
-export async function findRecent(
-  ctx: app.Ctx,
-  limit: number
-): Promise<GatewayRequestLogRow[]> {
+export async function findRecent(ctx: app.Ctx, limit: number): Promise<GatewayRequestLogRow[]> {
   return GatewayRequestLog.findAll(ctx, {
     order: [{ requestedAt: 'desc' }],
     limit
@@ -77,10 +72,7 @@ export async function findRecentFiltered(
   })
 }
 
-export async function findById(
-  ctx: app.Ctx,
-  id: string
-): Promise<GatewayRequestLogRow | null> {
+export async function findById(ctx: app.Ctx, id: string): Promise<GatewayRequestLogRow | null> {
   return GatewayRequestLog.findById(ctx, id)
 }
 
@@ -95,19 +87,13 @@ export async function findByRequestId(
   return rows[0] ?? null
 }
 
-export async function countSince(
-  ctx: app.Ctx,
-  sinceTimestamp: number
-): Promise<number> {
+export async function countSince(ctx: app.Ctx, sinceTimestamp: number): Promise<number> {
   return GatewayRequestLog.countBy(ctx, {
     requestedAt: { $gte: sinceTimestamp }
   })
 }
 
-export async function countErrorsSince(
-  ctx: app.Ctx,
-  sinceTimestamp: number
-): Promise<number> {
+export async function countErrorsSince(ctx: app.Ctx, sinceTimestamp: number): Promise<number> {
   return GatewayRequestLog.countBy(ctx, {
     requestedAt: { $gte: sinceTimestamp },
     clientHttpStatus: { $gte: 400 }

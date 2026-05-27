@@ -10,13 +10,13 @@
 
 Помимо специфики ниже, типично присутствовали:
 
-| Заголовок | Пример / смысл |
-|-----------|----------------|
-| `x-trace-id` | Уникальный id трассировки запроса |
-| `set-cookie` | `x-chatium-unique-id=web-…` |
-| `strict-transport-security` | `max-age=31536000; includeSubDomains` |
-| CORS | `access-control-allow-origin: *`, `…-credentials: true`, список методов |
-| Протокол | Ответы шли по **HTTP/2** |
+| Заголовок                   | Пример / смысл                                                          |
+| --------------------------- | ----------------------------------------------------------------------- |
+| `x-trace-id`                | Уникальный id трассировки запроса                                       |
+| `set-cookie`                | `x-chatium-unique-id=web-…`                                             |
+| `strict-transport-security` | `max-age=31536000; includeSubDomains`                                   |
+| CORS                        | `access-control-allow-origin: *`, `…-credentials: true`, список методов |
+| Протокол                    | Ответы шли по **HTTP/2**                                                |
 
 Для страниц **`app.html`** тело начиналось с обёртки платформы (скрипты `__ugc_workspace`, importmap и т.д.) — ниже для краткости приведены только выводы по статусу и типу контента.
 
@@ -24,18 +24,18 @@
 
 ## Сводная таблица: код в роуте → фактический HTTP-статус (первая строка)
 
-| Сценарий (файл пробы) | Как задано в коде | Статус в ответе | Тело (кратко) |
-|----------------------|-------------------|-----------------|---------------|
-| `temp/index`, `temp/http-200` | `app.html`, обычный JSX | **200** | HTML (+ обвязка платформы) |
-| `temp/http-200-json-error` | `return { ok: false, … }` из `app.get` | **200** | JSON приложения |
-| `temp/http-301` | `return { statusCode: 301, rawHttpBody: '', headers: { Location: '…' } }` | **301** | Пустое тело; **`Location: ../http-200`** (относительный путь) |
-| `temp/http-302` | `return ctx.resp.redirect('../http-200')` | **302** | JSON: `{"simplifiedContentType":"unknown","statusCode":302}` + заголовок **`Location: ../http-200`** |
-| `temp/http-400` | `ctx.resp.json({…}, 400)` — код **вторым аргументом**, не `status(400).json` | **200** ⚠️ | JSON приложения: `{"probe":"http-400","error":"Bad Request"}` — **без** поля `statusCode` в теле |
-| `temp/http-401` | `ctx.resp.json({…}, 401)` | **200** ⚠️ | JSON: `Unauthorized` |
-| `temp/http-403` | `ctx.resp.json({…}, 403)` | **200** ⚠️ | JSON: `Forbidden` |
-| `temp/http-404` | `rawHttpBody` + `statusCode: 404` | **404** | HTML пробы (короткая страница) |
-| `temp/http-500` | `rawHttpBody` + `statusCode: 500` | **500** | HTML пробы |
-| `temp/throws-error` | `throw new Error('…')` в обработчике | **500** | JSON платформы (см. ниже) |
+| Сценарий (файл пробы)         | Как задано в коде                                                            | Статус в ответе | Тело (кратко)                                                                                        |
+| ----------------------------- | ---------------------------------------------------------------------------- | --------------- | ---------------------------------------------------------------------------------------------------- |
+| `temp/index`, `temp/http-200` | `app.html`, обычный JSX                                                      | **200**         | HTML (+ обвязка платформы)                                                                           |
+| `temp/http-200-json-error`    | `return { ok: false, … }` из `app.get`                                       | **200**         | JSON приложения                                                                                      |
+| `temp/http-301`               | `return { statusCode: 301, rawHttpBody: '', headers: { Location: '…' } }`    | **301**         | Пустое тело; **`Location: ../http-200`** (относительный путь)                                        |
+| `temp/http-302`               | `return ctx.resp.redirect('../http-200')`                                    | **302**         | JSON: `{"simplifiedContentType":"unknown","statusCode":302}` + заголовок **`Location: ../http-200`** |
+| `temp/http-400`               | `ctx.resp.json({…}, 400)` — код **вторым аргументом**, не `status(400).json` | **200** ⚠️      | JSON приложения: `{"probe":"http-400","error":"Bad Request"}` — **без** поля `statusCode` в теле     |
+| `temp/http-401`               | `ctx.resp.json({…}, 401)`                                                    | **200** ⚠️      | JSON: `Unauthorized`                                                                                 |
+| `temp/http-403`               | `ctx.resp.json({…}, 403)`                                                    | **200** ⚠️      | JSON: `Forbidden`                                                                                    |
+| `temp/http-404`               | `rawHttpBody` + `statusCode: 404`                                            | **404**         | HTML пробы (короткая страница)                                                                       |
+| `temp/http-500`               | `rawHttpBody` + `statusCode: 500`                                            | **500**         | HTML пробы                                                                                           |
+| `temp/throws-error`           | `throw new Error('…')` в обработчике                                         | **500**         | JSON платформы (см. ниже)                                                                            |
 
 ---
 
@@ -99,4 +99,4 @@ curl -sS -D - -o /tmp/body.txt --max-redirs 0 \
 
 ---
 
-*При смене версии платформы поведение может измениться — при расхождениях переснять пробы тем же способом (curl + таблица выше).*
+_При смене версии платформы поведение может измениться — при расхождениях переснять пробы тем же способом (curl + таблица выше)._

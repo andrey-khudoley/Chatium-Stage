@@ -63,7 +63,8 @@ export const botRepoTestRoute = app.get('/', async (ctx, req) => {
       } else {
         try {
           const found = await botRepo.getBotById(ctx, botId)
-          const getByIdOk = found != null && found.id === botId && found.campaignId?.id === campaignId
+          const getByIdOk =
+            found != null && found.id === botId && found.campaignId?.id === campaignId
           results.push({
             id: 'getBotById-found',
             title: 'getBotById (найден)',
@@ -72,11 +73,17 @@ export const botRepoTestRoute = app.get('/', async (ctx, req) => {
           if (!getByIdOk) {
             const err = found ? 'id или campaignId не совпадают' : 'бот не найден'
             results[results.length - 1].error = err
-            ctx.account.log(`[${LOG_PATH}] getBotById-found: ${err}`, { level: 'warn', json: { testId: 'getBotById-found', error: err } })
+            ctx.account.log(`[${LOG_PATH}] getBotById-found: ${err}`, {
+              level: 'warn',
+              json: { testId: 'getBotById-found', error: err }
+            })
           }
         } catch (e) {
           const errMsg = (e as Error)?.message ?? String(e)
-          ctx.account.log(`[${LOG_PATH}] getBotById-found exception: ${errMsg}`, { level: 'error', json: { testId: 'getBotById-found', error: errMsg, stack: (e as Error)?.stack } })
+          ctx.account.log(`[${LOG_PATH}] getBotById-found exception: ${errMsg}`, {
+            level: 'error',
+            json: { testId: 'getBotById-found', error: errMsg, stack: (e as Error)?.stack }
+          })
           results.push({
             id: 'getBotById-found',
             title: 'getBotById (найден)',
@@ -94,11 +101,17 @@ export const botRepoTestRoute = app.get('/', async (ctx, req) => {
           })
           if (notFound !== null) {
             results[results.length - 1].error = 'ожидался null'
-            ctx.account.log(`[${LOG_PATH}] getBotById-notFound: ожидался null`, { level: 'warn', json: { testId: 'getBotById-notFound' } })
+            ctx.account.log(`[${LOG_PATH}] getBotById-notFound: ожидался null`, {
+              level: 'warn',
+              json: { testId: 'getBotById-notFound' }
+            })
           }
         } catch (e) {
           const errMsg = (e as Error)?.message ?? String(e)
-          ctx.account.log(`[${LOG_PATH}] getBotById-notFound exception: ${errMsg}`, { level: 'error', json: { testId: 'getBotById-notFound', error: errMsg } })
+          ctx.account.log(`[${LOG_PATH}] getBotById-notFound exception: ${errMsg}`, {
+            level: 'error',
+            json: { testId: 'getBotById-notFound', error: errMsg }
+          })
           results.push({
             id: 'getBotById-notFound',
             title: 'getBotById (не найден)',
@@ -148,11 +161,17 @@ export const botRepoTestRoute = app.get('/', async (ctx, req) => {
                 ? 'запись в bot_updates не создана'
                 : 'updateId/updateType/tgUserId не совпадают'
             results[results.length - 1].error = err
-            ctx.account.log(`[${LOG_PATH}] saveUpdate: ${err}`, { level: 'warn', json: { testId: 'saveUpdate', error: err } })
+            ctx.account.log(`[${LOG_PATH}] saveUpdate: ${err}`, {
+              level: 'warn',
+              json: { testId: 'saveUpdate', error: err }
+            })
           }
         } catch (e) {
           const errMsg = (e as Error)?.message ?? String(e)
-          ctx.account.log(`[${LOG_PATH}] saveUpdate exception: ${errMsg}`, { level: 'error', json: { testId: 'saveUpdate', error: errMsg } })
+          ctx.account.log(`[${LOG_PATH}] saveUpdate exception: ${errMsg}`, {
+            level: 'error',
+            json: { testId: 'saveUpdate', error: errMsg }
+          })
           results.push({
             id: 'saveUpdate',
             title: 'saveUpdate (запись апдейта в bot_updates)',
@@ -192,10 +211,13 @@ export const botRepoTestRoute = app.get('/', async (ctx, req) => {
 
   const failed = results.filter((r) => !r.passed)
   if (failed.length > 0) {
-    ctx.account.log(`[${LOG_PATH}] Пройдено ${results.filter((r) => r.passed).length}/${results.length}, упало: ${failed.map((r) => r.id).join(', ')}`, {
-      level: 'warn',
-      json: { failed: failed.map((r) => ({ id: r.id, error: r.error })) }
-    })
+    ctx.account.log(
+      `[${LOG_PATH}] Пройдено ${results.filter((r) => r.passed).length}/${results.length}, упало: ${failed.map((r) => r.id).join(', ')}`,
+      {
+        level: 'warn',
+        json: { failed: failed.map((r) => ({ id: r.id, error: r.error })) }
+      }
+    )
   }
   await loggerLib.writeServerLog(ctx, {
     severity: failed.length > 0 ? 4 : 7,

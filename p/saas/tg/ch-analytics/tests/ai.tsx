@@ -6,7 +6,7 @@ import { runTest } from './api/run-tests'
 export const testsAiRoute = app.get('/', async (ctx) => {
   // Защищаем AI страницу тестов авторизацией
   requireAnyUser(ctx)
-  
+
   const results: any[] = []
 
   for (const category of TEST_CATEGORIES) {
@@ -22,12 +22,11 @@ export const testsAiRoute = app.get('/', async (ctx) => {
     }
   }
 
-  const passed = results.filter(r => r.success).length
-  const failed = results.filter(r => !r.success).length
+  const passed = results.filter((r) => r.success).length
+  const failed = results.filter((r) => !r.success).length
 
   return {
     summary: { total: results.length, passed, failed },
     results
   }
 })
-

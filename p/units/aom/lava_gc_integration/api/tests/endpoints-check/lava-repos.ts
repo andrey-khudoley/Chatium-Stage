@@ -43,83 +43,103 @@ export const lavaReposTestRoute = app.get('/', async (ctx, req) => {
   const dedupeKey = `payment.success:${lavaContractId}:completed`
   const lockKey = `test-repo-lock-${suffix}`
 
-  await check('contract_create_find', 'lava_payment_contract: create, findByGcOrderId, findByLavaContractId', async () => {
-    const now = Date.now()
-    const row = await contractRepo.create(ctx, {
-      gc_order_id: gcOrderId,
-      gc_user_id: '',
-      lava_contract_id: lavaContractId,
-      lava_product_id: 'p-test',
-      lava_offer_id: 'o-test',
-      amount: 100,
-      currency: 'RUB',
-      buyer_email: 'repo-test@example.com',
-      gc_offer_title: '',
-      gc_product_title: '',
-      payment_url: 'https://example.com/pay',
-      status: 'created',
-      request_id: `req-${suffix}`,
-      created_at: now,
-      updated_at: now
-    })
-    const byOrder = await contractRepo.findByGcOrderId(ctx, gcOrderId)
-    const byLava = await contractRepo.findByLavaContractId(ctx, lavaContractId)
-    return Boolean(row.id && byOrder?.id === row.id && byLava?.id === row.id)
-  })
+  await check(
+    'contract_create_find',
+    'lava_payment_contract: create, findByGcOrderId, findByLavaContractId',
+    async () => {
+      const now = Date.now()
+      const row = await contractRepo.create(ctx, {
+        gc_order_id: gcOrderId,
+        gc_user_id: '',
+        lava_contract_id: lavaContractId,
+        lava_product_id: 'p-test',
+        lava_offer_id: 'o-test',
+        amount: 100,
+        currency: 'RUB',
+        buyer_email: 'repo-test@example.com',
+        gc_offer_title: '',
+        gc_product_title: '',
+        payment_url: 'https://example.com/pay',
+        status: 'created',
+        request_id: `req-${suffix}`,
+        created_at: now,
+        updated_at: now
+      })
+      const byOrder = await contractRepo.findByGcOrderId(ctx, gcOrderId)
+      const byLava = await contractRepo.findByLavaContractId(ctx, lavaContractId)
+      return Boolean(row.id && byOrder?.id === row.id && byLava?.id === row.id)
+    }
+  )
 
-  await check('contract_findActive_update', 'lava_payment_contract: findActiveByGcOrderAmountAndCurrency, updateStatus', async () => {
-    const active = await contractRepo.findActiveByGcOrderAmountAndCurrency(ctx, {
-      gcOrderId,
-      amount: 100,
-      currency: 'RUB'
-    })
-    if (!active) return false
-    await contractRepo.updateStatus(ctx, active.id, 'paid')
-    const after = await contractRepo.findActiveByGcOrderAmountAndCurrency(ctx, {
-      gcOrderId,
-      amount: 100,
-      currency: 'RUB'
-    })
-    return after === null
-  })
+  await check(
+    'contract_findActive_update',
+    'lava_payment_contract: findActiveByGcOrderAmountAndCurrency, updateStatus',
+    async () => {
+      const active = await contractRepo.findActiveByGcOrderAmountAndCurrency(ctx, {
+        gcOrderId,
+        amount: 100,
+        currency: 'RUB'
+      })
+      if (!active) return false
+      await contractRepo.updateStatus(ctx, active.id, 'paid')
+      const after = await contractRepo.findActiveByGcOrderAmountAndCurrency(ctx, {
+        gcOrderId,
+        amount: 100,
+        currency: 'RUB'
+      })
+      return after === null
+    }
+  )
 
-  await check('webhook_create_find_mark', 'lava_webhook_event: create, findByDedupeKey, markProcessed', async () => {
-    const row = await webhookRepo.create(ctx, {
-      event_type: 'payment.success',
-      lava_contract_id: lavaContractId,
-      payload_json: '{}',
-      dedupe_key: dedupeKey,
-      processed: false,
-      processed_at: 0,
-      processing_error: '',
-      created_at: Date.now()
-    })
-    const found = await webhookRepo.findByDedupeKey(ctx, dedupeKey)
-    if (!found || found.id !== row.id) return false
-    await webhookRepo.markProcessed(ctx, row.id)
-    const after = await webhookRepo.findByDedupeKey(ctx, dedupeKey)
-    return after?.processed === true
-  })
+  await check(
+    'webhook_create_find_mark',
+    'lava_webhook_event: create, findByDedupeKey, markProcessed',
+    async () => {
+      const row = await webhookRepo.create(ctx, {
+        event_type: 'payment.success',
+        lava_contract_id: lavaContractId,
+        payload_json: '{}',
+        dedupe_key: dedupeKey,
+        processed: false,
+        processed_at: 0,
+        processing_error: '',
+        created_at: Date.now()
+      })
+      const found = await webhookRepo.findByDedupeKey(ctx, dedupeKey)
+      if (!found || found.id !== row.id) return false
+      await webhookRepo.markProcessed(ctx, row.id)
+      const after = await webhookRepo.findByDedupeKey(ctx, dedupeKey)
+      return after?.processed === true
+    }
+  )
 
-  await check('webhook_findUnprocessed', 'lava_webhook_event: findUnprocessed (массив)', async () => {
-    const rows = await webhookRepo.findUnprocessed(ctx)
-    return Array.isArray(rows)
-  })
+  await check(
+    'webhook_findUnprocessed',
+    'lava_webhook_event: findUnprocessed (массив)',
+    async () => {
+      const rows = await webhookRepo.findUnprocessed(ctx)
+      return Array.isArray(rows)
+    }
+  )
 
-  await check('lock_create_update', 'lava_lock_log: create, updateAcquiredAt, updateReleased', async () => {
-    const row = await lockLogRepo.create(ctx, {
-      lock_key: lockKey,
-      request_id: `r-${suffix}`,
-      gc_order_id: gcOrderId,
-      acquired_at: 0,
-      released_at: 0,
-      result: 'pending',
-      error_message: ''
-    })
-    await lockLogRepo.updateAcquiredAt(ctx, row.id, Date.now())
-    await lockLogRepo.updateReleased(ctx, row.id, 'success')
-    return Boolean(row.id)
-  })
+  await check(
+    'lock_create_update',
+    'lava_lock_log: create, updateAcquiredAt, updateReleased',
+    async () => {
+      const row = await lockLogRepo.create(ctx, {
+        lock_key: lockKey,
+        request_id: `r-${suffix}`,
+        gc_order_id: gcOrderId,
+        acquired_at: 0,
+        released_at: 0,
+        result: 'pending',
+        error_message: ''
+      })
+      await lockLogRepo.updateAcquiredAt(ctx, row.id, Date.now())
+      await lockLogRepo.updateReleased(ctx, row.id, 'success')
+      return Boolean(row.id)
+    }
+  )
 
   return { success: true, test: 'lava-repos', results, at: Date.now() }
 })

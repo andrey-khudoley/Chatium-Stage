@@ -13,13 +13,12 @@
           :key="i"
           class="op"
           :class="{ ghost: op === '' }"
-          :style="{ animationDelay: (0.02 + i * 0.025) + 's' }"
-        >{{ op || '·' }}</span>
+          :style="{ animationDelay: 0.02 + i * 0.025 + 's' }"
+          >{{ op || '·' }}</span
+        >
       </div>
 
-      <p class="footer-note">
-        … и ещё ~30 операций под четыре сценария. Полный реестр на портале.
-      </p>
+      <p class="footer-note">… и ещё ~30 операций под четыре сценария. Полный реестр на портале.</p>
     </div>
   </div>
 </template>
@@ -28,11 +27,21 @@
 defineProps({ active: Boolean })
 
 const operations = [
-  'findUserByEmail', 'upsertUser', 'setUserField',
-  'getUser', 'getUserOrders', 'getDealById',
-  'addUserToGroup', 'removeUserFromGroup', 'trackPayment',
-  'createDeal', 'updateDealStatus', 'handleWebhook',
-  'getGroups', '', 'subscribeWebhook',
+  'findUserByEmail',
+  'upsertUser',
+  'setUserField',
+  'getUser',
+  'getUserOrders',
+  'getDealById',
+  'addUserToGroup',
+  'removeUserFromGroup',
+  'trackPayment',
+  'createDeal',
+  'updateDealStatus',
+  'handleWebhook',
+  'getGroups',
+  '',
+  'subscribeWebhook'
 ]
 </script>
 
@@ -62,7 +71,14 @@ const operations = [
   font-size: clamp(28px, 3.6vw, 56px);
   color: var(--text-primary);
 }
-.strip { display: block; width: 80px; height: 4px; background: var(--accent-cyan); border-radius: 2px; margin: 16px 0; }
+.strip {
+  display: block;
+  width: 80px;
+  height: 4px;
+  background: var(--accent-cyan);
+  border-radius: 2px;
+  margin: 16px 0;
+}
 .subtitle {
   font-family: var(--font-body-new);
   font-size: clamp(15px, 1.5vw, 26px);
@@ -101,11 +117,20 @@ const operations = [
 }
 
 @media (max-width: 1024px) {
-  .slide { padding: 32px 16px; }
-  .grid { grid-template-columns: 1fr 1fr; gap: 12px 24px; }
+  .slide {
+    padding: 32px 16px;
+  }
+  .grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 12px 24px;
+  }
 }
 @media (max-width: 480px) {
-  .grid { grid-template-columns: 1fr; }
-  .footer-note { text-align: left; }
+  .grid {
+    grid-template-columns: 1fr;
+  }
+  .footer-note {
+    text-align: left;
+  }
 }
 </style>

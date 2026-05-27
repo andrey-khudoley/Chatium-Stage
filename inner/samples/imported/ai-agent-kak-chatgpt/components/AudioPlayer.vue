@@ -68,8 +68,8 @@ const formattedCurrentTime = computed(() => formatTime(currentTime.value))
 const formattedDuration = computed(() => (duration.value ? formatTime(duration.value) : '00:00'))
 
 const waveformBars = Object.freeze([
-  32, 58, 44, 72, 64, 52, 38, 68, 46, 60, 54, 76, 48, 40, 70, 56, 62, 50, 74, 58, 36, 66, 42, 68, 52, 60, 46, 72, 58,
-  44, 64, 50
+  32, 58, 44, 72, 64, 52, 38, 68, 46, 60, 54, 76, 48, 40, 70, 56, 62, 50, 74, 58, 36, 66, 42, 68,
+  52, 60, 46, 72, 58, 44, 64, 50
 ])
 
 const activeBarCount = computed(() => {
@@ -116,7 +116,7 @@ const togglePlayback = async () => {
   }
 }
 
-const seek = event => {
+const seek = (event) => {
   const audio = audioRef.value
   if (!audio || hasError.value) {
     return
@@ -195,19 +195,19 @@ const stopPlayback = () => {
   progressRatio.value = 0
 }
 
-const pauseOtherMedia = current => {
+const pauseOtherMedia = (current) => {
   if (typeof document === 'undefined') {
     return
   }
 
-  document.querySelectorAll('audio, video').forEach(element => {
+  document.querySelectorAll('audio, video').forEach((element) => {
     if (element !== current) {
       element.pause?.()
     }
   })
 }
 
-const formatTime = value => {
+const formatTime = (value) => {
   if (!Number.isFinite(value) || value < 0) {
     return '00:00'
   }
@@ -218,7 +218,7 @@ const formatTime = value => {
   return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
 }
 
-const formatFileSize = bytes => {
+const formatFileSize = (bytes) => {
   if (!Number.isFinite(Number(bytes)) || Number(bytes) <= 0) {
     return ''
   }
@@ -233,7 +233,7 @@ const formatFileSize = bytes => {
   return `${formatted} ${units[exponent]}`
 }
 
-const getEffectiveDuration = audio => {
+const getEffectiveDuration = (audio) => {
   if (!audio) {
     return 0
   }
@@ -256,7 +256,7 @@ const getEffectiveDuration = audio => {
   return 0
 }
 
-const getTimeRangeEnd = ranges => {
+const getTimeRangeEnd = (ranges) => {
   if (!ranges || typeof ranges.length !== 'number' || ranges.length === 0) {
     return 0
   }
@@ -287,7 +287,10 @@ const getTimeRangeEnd = ranges => {
   width: 100%;
   border-radius: 999px;
   background: rgba(148, 163, 184, 0.35);
-  transition: background-color 0.2s ease, transform 0.2s ease, opacity 0.2s ease;
+  transition:
+    background-color 0.2s ease,
+    transform 0.2s ease,
+    opacity 0.2s ease;
   opacity: 0.65;
 }
 

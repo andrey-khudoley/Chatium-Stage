@@ -2,10 +2,10 @@ import { getTelegramOauthUrl } from '@users/sdk/auth'
 
 // @shared-route
 export const getTelegramOauthUrlRoute = app
-  .body(s => ({
+  .body((s) => ({
     back: s.string().optional()
   }))
-  .result(s => s.string())
+  .result((s) => s.string())
   .post('/get-telegram-oauth-url', async (ctx, req) => {
     const { back } = req.body
 
@@ -13,4 +13,3 @@ export const getTelegramOauthUrlRoute = app
 
     return oauthUrl
   })
-

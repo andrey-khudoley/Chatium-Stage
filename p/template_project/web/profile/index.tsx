@@ -5,6 +5,7 @@ import ProfilePage from '../../pages/ProfilePage.vue'
 import { getPreloaderStyles, getPreloaderScript } from '../../shared/preloader'
 import { getLogLevelForPage, getLogLevelScript } from '../../shared/logLevel'
 import * as loggerLib from '../../lib/logger.lib'
+import { htmlRedirect } from '../../lib/htmlRedirect'
 import { getFullUrl, ROUTES } from '../../config/routes'
 import { PROFILE_PAGE_NAME, getPageTitle, getHeaderText } from '../../config/project'
 import * as settingsLib from '../../lib/settings.lib'
@@ -38,7 +39,7 @@ export const profilePageRoute = app.html('/', async (ctx, req) => {
       message: `[${LOG_PATH}] Редирект на логин: требуется авторизация`,
       payload: { error: String(error), backUrl: req.url }
     })
-    return ctx.resp.redirect('../login?back=' + encodeURIComponent(req.url))
+    return htmlRedirect(ctx, '../login?back=' + encodeURIComponent(req.url))
   }
 
   const isAdmin = user.is('Admin')
@@ -246,7 +247,10 @@ export const profilePageRoute = app.html('/', async (ctx, req) => {
         <link rel="stylesheet" href="/s/static/lib/fontawesome/6.7.2/css/all.min.css" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
-        <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap"
+          rel="stylesheet"
+        />
         <style>{`
           :root {
             --color-bg: #0a0a0a;

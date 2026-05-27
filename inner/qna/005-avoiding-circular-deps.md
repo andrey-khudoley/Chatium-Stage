@@ -3,16 +3,17 @@
 ## Проблема
 
 Циклическая зависимость возникает, когда:
+
 - Vue-компонент импортирует API-роут
 - Этот же роут (или его зависимости) импортирует компонент
 
 ```typescript
 // ❌ Плохо: компонент импортирует роут
 // pages/Product.vue
-import { productApiRoute } from "../api/product"
+import { productApiRoute } from '../api/product'
 
 // api/product.ts — роут импортирует компонент для рендера
-import ProductPage from "../pages/Product.vue"
+import ProductPage from '../pages/Product.vue'
 ```
 
 ## Решение: однонаправленные зависимости
@@ -61,15 +62,13 @@ async function addToCart(productId: string) {
 
 ```typescript
 // api/order.ts
-import { productDetailRoute } from "./products"
+import { productDetailRoute } from './products'
 
 export const createOrderRoute = app.post('/create', async (ctx, req) => {
   const order = await Orders.create(ctx, req.body)
-  
+
   // ✅ Правильно: используем .url() для редиректа
-  return ctx.resp.redirect(
-    productDetailRoute({ id: order.productId }).url()
-  )
+  return ctx.resp.redirect(productDetailRoute({ id: order.productId }).url())
 })
 ```
 
@@ -99,14 +98,12 @@ async function saveProfile(data: ProfileData) {
 
 ```typescript
 // api/checkout.ts
-import { calculateShippingRoute } from "./shipping"
+import { calculateShippingRoute } from './shipping'
 
 export const checkoutRoute = app.post('/checkout', async (ctx, req) => {
   // ✅ Правильно: вызываем другой роут через .run()
-  const shipping = await calculateShippingRoute
-    .query({ zip: req.body.zipCode })
-    .run(ctx)
-  
+  const shipping = await calculateShippingRoute.query({ zip: req.body.zipCode }).run(ctx)
+
   return { shippingCost: shipping.cost }
 })
 ```
@@ -117,11 +114,11 @@ export const checkoutRoute = app.post('/checkout', async (ctx, req) => {
 /api/
   products.ts      ←── экспортирует productRoute
   cart.ts          ←── экспортирует cartRoute
-  
+
 /shared/
   types.ts         ←── общие типы
   utils.ts         ←── общие функции
-  
+
 /pages/
   Product.vue      ←── импортирует productRoute, cartRoute
   Cart.vue         ←── импортирует cartRoute
@@ -133,7 +130,7 @@ export const checkoutRoute = app.post('/checkout', async (ctx, req) => {
 
 ```typescript
 // api/page.ts — ❌ Плохо
-import HomePage from "../pages/Home.vue"
+import HomePage from '../pages/Home.vue'
 
 export const pageRoute = app.get('/', async (ctx, req) => {
   return { component: HomePage } // Не делай так
@@ -144,7 +141,7 @@ export const pageRoute = app.get('/', async (ctx, req) => {
 
 ```typescript
 // api/product.ts — ❌ Плохо
-import type { ProductProps } from "../pages/Product.vue" // Не делай так
+import type { ProductProps } from '../pages/Product.vue' // Не делай так
 
 export const apiRoute = app.get('/', async (ctx, req) => {
   // ...
@@ -162,15 +159,15 @@ export interface ProductProps {
 }
 
 // api/product.ts
-import type { ProductProps } from "../shared/types"
+import type { ProductProps } from '../shared/types'
 
 // pages/Product.vue
-import type { ProductProps } from "../shared/types"
+import type { ProductProps } from '../shared/types'
 ```
 
 ## Итог
 
-| Метод | Где использовать | Что делать | Чего избегать |
-|-------|------------------|------------|---------------|
-| `.url()` | Vue компоненты, редиректы | Импортировать из `/api/*.ts` | Hardcode URL |
-| `.run()` | Vue компоненты, другие роуты | Вызывать с `ctx` | Импортировать компоненты в роуты |
+| Метод    | Где использовать             | Что делать                   | Чего избегать                    |
+| -------- | ---------------------------- | ---------------------------- | -------------------------------- |
+| `.url()` | Vue компоненты, редиректы    | Импортировать из `/api/*.ts` | Hardcode URL                     |
+| `.run()` | Vue компоненты, другие роуты | Вызывать с `ctx`             | Импортировать компоненты в роуты |

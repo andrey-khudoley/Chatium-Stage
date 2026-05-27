@@ -9,9 +9,14 @@
       </div>
 
       <div class="grid md:grid-cols-3 gap-8">
-        <div v-for="service in services" :key="service.title" 
-             class="bg-gradient-to-br from-accent to-white p-8 rounded-3xl hover-lift border border-primary/20">
-          <div class="w-16 h-16 bg-gradient-to-br from-primary to-secondary rounded-2xl flex items-center justify-center mb-6">
+        <div
+          v-for="service in services"
+          :key="service.title"
+          class="bg-gradient-to-br from-accent to-white p-8 rounded-3xl hover-lift border border-primary/20"
+        >
+          <div
+            class="w-16 h-16 bg-gradient-to-br from-primary to-secondary rounded-2xl flex items-center justify-center mb-6"
+          >
             <i :class="service.icon" class="text-2xl text-white"></i>
           </div>
           <h3 class="text-2xl font-bold font-heading mb-3">{{ service.title }}</h3>
@@ -21,7 +26,11 @@
             <span class="text-gray-500">₽</span>
           </div>
           <ul class="space-y-2">
-            <li v-for="feature in service.features" :key="feature" class="flex items-center gap-2 text-sm text-gray-600">
+            <li
+              v-for="feature in service.features"
+              :key="feature"
+              class="flex items-center gap-2 text-sm text-gray-600"
+            >
               <i class="fas fa-check text-primary"></i>
               {{ feature }}
             </li>

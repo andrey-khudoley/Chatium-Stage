@@ -70,7 +70,10 @@ export type AiAction = AiUpdateProject | AiUpdateTask | AiCreateTask | AiDeleteT
 
 const NEW_TASK_PLACEHOLDER = /^\$new:(\d+)$/
 
-function resolveReorderOrderedIds(orderedTaskIds: string[], newTaskIdsInCreateOrder: string[]): string[] | null {
+function resolveReorderOrderedIds(
+  orderedTaskIds: string[],
+  newTaskIdsInCreateOrder: string[]
+): string[] | null {
   const out: string[] = []
   for (const token of orderedTaskIds) {
     const m = NEW_TASK_PLACEHOLDER.exec(token.trim())
@@ -262,7 +265,10 @@ export async function applyAiFormulateJsonResponse(
       await loggerLib.writeServerLog(ctx, {
         severity: 4,
         message: `[${LOG_PATH}] reorder_tasks: не удалось разрешить $new:N`,
-        payload: { orderedTaskIds: reorderSpec.orderedTaskIds, newTasksCount: newTaskIdsInCreateOrder.length }
+        payload: {
+          orderedTaskIds: reorderSpec.orderedTaskIds,
+          newTasksCount: newTaskIdsInCreateOrder.length
+        }
       })
     } else {
       const ok = await tasksRepo.reorderTasks(ctx, userId, project.id, resolved)

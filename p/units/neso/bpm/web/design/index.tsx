@@ -22,7 +22,9 @@ export const designIndexPageRoute = app.html('/', async (ctx) => {
 
   return (
     <html>
-      <head>{getDemoPageHead('light', DESIGN_PAGE_NAME, DEFAULT_PROJECT_TITLE, 'Info', 'sunrise-leaf')}</head>
+      <head>
+        {getDemoPageHead('light', DESIGN_PAGE_NAME, DEFAULT_PROJECT_TITLE, 'Info', 'sunrise-leaf')}
+      </head>
       <body>
         {getBootLoaderDiv('light', DEFAULT_PROJECT_TITLE, 'sunrise-leaf')}
         <DesignIndexPage

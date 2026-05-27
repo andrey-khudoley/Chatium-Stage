@@ -14,6 +14,8 @@ export const removeUserGroupsHandler: V1GcHandler = async (_ctx, a) => {
   return { kind: 'gc_result', gc }
 }
 
-export const removeUserGroupsRoute = app.post('/', async (ctx, req) => handleV1Op(ctx, req, 'removeUserGroups', removeUserGroupsHandler))
+export const removeUserGroupsRoute = app.post('/', async (ctx, req) =>
+  handleV1Op(ctx, req, 'removeUserGroups', removeUserGroupsHandler)
+)
 
 export default removeUserGroupsRoute

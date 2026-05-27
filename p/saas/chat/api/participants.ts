@@ -2,48 +2,50 @@ import { requireRealUser, findUsersByIds, findIdentities } from '@app/auth'
 import {
   createOrUpdateFeedParticipant,
   deleteFeedParticipant,
-  findFeedParticipants,
+  findFeedParticipants
 } from '@app/feed'
 import Chats from '../tables/chats.table'
 import { canManageChat, isChatOwner } from '../shared/permissions'
 
 // Вспомогательная функция для обогащения участников данными пользователей
 async function enrichParticipantsWithUserData(ctx, participants) {
-  const userIds = [...new Set(participants.map(p => p.userId))]
-  
+  const userIds = [...new Set(participants.map((p) => p.userId))]
+
   if (userIds.length === 0) {
-    return participants.map(p => ({
+    return participants.map((p) => ({
       ...p,
-      user: null,
+      user: null
     }))
   }
 
   const users = await findUsersByIds(ctx, userIds)
-  
+
   // Получаем identity для всех пользователей
   const allIdentities = await findIdentities(ctx, {
     where: { userId: userIds },
-    limit: 1000,
+    limit: 1000
   })
-  
-  const usersMap = new Map(users.map(u => [u.id, u]))
-  
-  return participants.map(p => {
+
+  const usersMap = new Map(users.map((u) => [u.id, u]))
+
+  return participants.map((p) => {
     const user = usersMap.get(p.userId)
-    const userIdentities = allIdentities.filter(i => i.userId === p.userId)
-    
+    const userIdentities = allIdentities.filter((i) => i.userId === p.userId)
+
     return {
       ...p,
-      user: user ? {
-        id: user.id,
-        displayName: user.displayName,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        username: user.username,
-        avatar: user.imageUrl,
-        email: userIdentities.find(i => i.type === 'Email')?.key || null,
-        phone: userIdentities.find(i => i.type === 'Phone')?.key || null,
-      } : null,
+      user: user
+        ? {
+            id: user.id,
+            displayName: user.displayName,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            username: user.username,
+            avatar: user.imageUrl,
+            email: userIdentities.find((i) => i.type === 'Email')?.key || null,
+            phone: userIdentities.find((i) => i.type === 'Phone')?.key || null
+          }
+        : null
     }
   })
 }
@@ -52,7 +54,7 @@ export const apiParticipantsListRoute = app.get('/:feedId/list', async (ctx, req
   requireRealUser(ctx)
 
   const chat = await Chats.findOneBy(ctx, {
-    feedId: req.params.feedId,
+    feedId: req.params.feedId
   })
 
   if (!chat) {
@@ -70,34 +72,38 @@ export const apiParticipantsListRoute = app.get('/:feedId/list', async (ctx, req
 
   // В канале только owner и admin видят список подписчиков
   // Для обычных подписчиков возвращаем только количество
-  if (chat.type === 'channel' && myParticipant?.role !== 'owner' && myParticipant?.role !== 'admin') {
+  if (
+    chat.type === 'channel' &&
+    myParticipant?.role !== 'owner' &&
+    myParticipant?.role !== 'admin'
+  ) {
     // Возвращаем только владельца и админов для подписчиков
-    const visibleParticipants = participants.filter(p => p.role === 'owner' || p.role === 'admin')
+    const visibleParticipants = participants.filter((p) => p.role === 'owner' || p.role === 'admin')
     const enrichedVisible = await enrichParticipantsWithUserData(ctx, visibleParticipants)
     return {
       participants: enrichedVisible,
       totalCount: participants.length,
-      isChannel: true,
+      isChannel: true
     }
   }
 
   const enrichedParticipants = await enrichParticipantsWithUserData(ctx, participants)
 
   return {
-    participants: enrichedParticipants,
+    participants: enrichedParticipants
   }
 })
 
 export const apiParticipantsAddRoute = app
   .body((s) => ({
     userId: s.string(),
-    role: s.string().optional(),
+    role: s.string().optional()
   }))
   .post('/:feedId/add', async (ctx, req) => {
     requireRealUser(ctx)
 
     const chat = await Chats.findOneBy(ctx, {
-      feedId: req.params.feedId,
+      feedId: req.params.feedId
     })
 
     if (!chat) {
@@ -114,7 +120,7 @@ export const apiParticipantsAddRoute = app
     if (!canManage) {
       throw new Error('Только администратор или владелец могут добавлять участников')
     }
-    
+
     // Только владелец может назначать админов
     if (req.body.role === 'admin' || req.body.role === 'owner') {
       const isOwner = await isChatOwner(ctx, req.params.feedId, ctx.user.id)
@@ -129,25 +135,25 @@ export const apiParticipantsAddRoute = app
       req.body.userId,
       {
         role: req.body.role || 'guest',
-        silent: false,
-      },
+        silent: false
+      }
     )
 
     return {
       success: true,
-      participant,
+      participant
     }
   })
 
 export const apiParticipantsRemoveRoute = app
   .body((s) => ({
-    userId: s.string(),
+    userId: s.string()
   }))
   .post('/:feedId/remove', async (ctx, req) => {
     requireRealUser(ctx)
 
     const chat = await Chats.findOneBy(ctx, {
-      feedId: req.params.feedId,
+      feedId: req.params.feedId
     })
 
     if (!chat) {
@@ -155,17 +161,17 @@ export const apiParticipantsRemoveRoute = app
     }
 
     const isSelfRemoval = req.body.userId === ctx.user.id
-    
+
     // Получаем участников и находим целевого
     const participants = await findFeedParticipants(ctx, req.params.feedId)
-    const targetParticipant = participants.find(p => p.userId === req.body.userId)
+    const targetParticipant = participants.find((p) => p.userId === req.body.userId)
     const isRemovingOwner = targetParticipant?.role === 'owner'
-    
+
     // Нельзя удалить владельца
     if (isRemovingOwner && !isSelfRemoval) {
       throw new Error('Нельзя удалить владельца чата')
     }
-    
+
     // Сам себя может удалить любой участник
     // Для удаления других нужны права админа
     if (!isSelfRemoval) {
@@ -174,28 +180,28 @@ export const apiParticipantsRemoveRoute = app
         throw new Error('Только администратор или владелец могут удалять участников')
       }
     }
-    
+
     if (!targetParticipant) {
       throw new Error('Участник не найден в чате')
     }
-    
+
     await deleteFeedParticipant(ctx, req.params.feedId, targetParticipant)
 
     return {
-      success: true,
+      success: true
     }
   })
 
 export const apiParticipantsUpdateRoleRoute = app
   .body((s) => ({
     userId: s.string(),
-    role: s.string(), // 'admin' | 'guest'
+    role: s.string() // 'admin' | 'guest'
   }))
   .post('/:feedId/update-role', async (ctx, req) => {
     requireRealUser(ctx)
 
     const chat = await Chats.findOneBy(ctx, {
-      feedId: req.params.feedId,
+      feedId: req.params.feedId
     })
 
     if (!chat) {
@@ -226,8 +232,8 @@ export const apiParticipantsUpdateRoleRoute = app
 
     // Получаем текущего участника
     const participants = await findFeedParticipants(ctx, req.params.feedId)
-    const targetParticipant = participants.find(p => p.userId === req.body.userId)
-    
+    const targetParticipant = participants.find((p) => p.userId === req.body.userId)
+
     if (!targetParticipant) {
       throw new Error('Участник не найден')
     }
@@ -243,12 +249,12 @@ export const apiParticipantsUpdateRoleRoute = app
       req.params.feedId,
       req.body.userId,
       {
-        role: req.body.role,
-      },
+        role: req.body.role
+      }
     )
 
     return {
       success: true,
-      participant: updatedParticipant,
+      participant: updatedParticipant
     }
   })

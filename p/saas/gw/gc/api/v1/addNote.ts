@@ -14,6 +14,8 @@ export const addNoteHandler: V1GcHandler = async (_ctx, a) => {
   return { kind: 'gc_result', gc }
 }
 
-export const addNoteRoute = app.post('/', async (ctx, req) => handleV1Op(ctx, req, 'addNote', addNoteHandler))
+export const addNoteRoute = app.post('/', async (ctx, req) =>
+  handleV1Op(ctx, req, 'addNote', addNoteHandler)
+)
 
 export default addNoteRoute

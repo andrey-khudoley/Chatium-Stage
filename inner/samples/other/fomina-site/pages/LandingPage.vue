@@ -4,11 +4,27 @@
 
     <nav class="navbar fixed top-0 left-0 right-0 z-50" :class="{ 'is-scrolled': scrolled }">
       <div class="max-w-7xl mx-auto px-6 md:px-12 lg:px-20 h-16 flex items-center justify-between">
-        <a href="#" class="font-display text-lg text-warm-100/80 hover:text-warm-100 transition-colors" style="line-height:1.15">НФ</a>
+        <a
+          href="#"
+          class="font-display text-lg text-warm-100/80 hover:text-warm-100 transition-colors"
+          style="line-height: 1.15"
+          >НФ</a
+        >
         <div class="hidden md:flex items-center gap-8">
-          <a v-for="link in navLinks" :key="link.href" :href="link.href" class="font-body text-xs text-warm-300/50 hover:text-warm-100 transition-colors tracking-wide uppercase">{{ link.label }}</a>
+          <a
+            v-for="link in navLinks"
+            :key="link.href"
+            :href="link.href"
+            class="font-body text-xs text-warm-300/50 hover:text-warm-100 transition-colors tracking-wide uppercase"
+            >{{ link.label }}</a
+          >
         </div>
-        <a href="https://t.me/Fomina_Nadine" target="_blank" rel="noopener" class="font-body text-xs text-amber/70 hover:text-amber transition-colors tracking-wide">
+        <a
+          href="https://t.me/Fomina_Nadine"
+          target="_blank"
+          rel="noopener"
+          class="font-body text-xs text-amber/70 hover:text-amber transition-colors tracking-wide"
+        >
           <i class="fab fa-telegram mr-1"></i>Написать
         </a>
       </div>
@@ -42,7 +58,7 @@ const navLinks = [
   { href: '#results', label: 'Результаты' },
   { href: '#services', label: 'Услуги' },
   { href: '#about', label: 'Обо мне' },
-  { href: '#contact', label: 'Контакт' },
+  { href: '#contact', label: 'Контакт' }
 ]
 
 function onScroll() {
@@ -53,16 +69,19 @@ function initRevealObserver() {
   const els = document.querySelectorAll('.reveal')
   if (!els.length) return
 
-  observer = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        entry.target.classList.add('is-visible')
-        observer.unobserve(entry.target)
-      }
-    })
-  }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' })
+  observer = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('is-visible')
+          observer.unobserve(entry.target)
+        }
+      })
+    },
+    { threshold: 0.12, rootMargin: '0px 0px -40px 0px' }
+  )
 
-  els.forEach(el => observer.observe(el))
+  els.forEach((el) => observer.observe(el))
 }
 
 function hidePreloader() {

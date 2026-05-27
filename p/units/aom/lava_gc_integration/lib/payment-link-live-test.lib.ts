@@ -34,7 +34,9 @@ export type LavaPaymentHeapSettingsRead = {
   allRequiredPresent: boolean
 }
 
-export async function readLavaPaymentHeapSettings(ctx: app.Ctx): Promise<LavaPaymentHeapSettingsRead> {
+export async function readLavaPaymentHeapSettings(
+  ctx: app.Ctx
+): Promise<LavaPaymentHeapSettingsRead> {
   const rawKey = await settingsLib.getLavaApiKey(ctx)
   const lava_base_url = (await settingsLib.getLavaBaseUrl(ctx)).trim()
   const lava_product_id = (await settingsLib.getLavaProductId(ctx)).trim()

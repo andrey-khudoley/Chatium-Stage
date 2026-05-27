@@ -89,13 +89,10 @@ app.accountHook('metric-event', async (ctx, { event }) => {
 Можно вешать хендлеры напрямую на конкретные GetCourse-события вида `metric-event-event://getcourse/...`:
 
 ```ts
-app.pluginHook(
-  'metric-event-event://getcourse/teach/lesson/answerCreated',
-  async (ctx, params) => {
-    const event = transformGcEventParams(ctx, params.event)
-    // твоя логика
-  },
-)
+app.pluginHook('metric-event-event://getcourse/teach/lesson/answerCreated', async (ctx, params) => {
+  const event = transformGcEventParams(ctx, params.event)
+  // твоя логика
+})
 ```
 
 Аналогично, чтобы ловить те же события в коде аккаунта (без плагина), используется:
@@ -120,13 +117,10 @@ import { transformGcEventParams } from '@getcourse/sdk'
 /**
  * Обработчик создания ответа на урок внутри плагина.
  */
-app.pluginHook(
-  'metric-event-event://getcourse/teach/lesson/answerCreated',
-  async (ctx, params) => {
-    const event = transformGcEventParams(ctx, params.event)
-    // твоя логика
-  },
-)
+app.pluginHook('metric-event-event://getcourse/teach/lesson/answerCreated', async (ctx, params) => {
+  const event = transformGcEventParams(ctx, params.event)
+  // твоя логика
+})
 ```
 
 Это хук уровня «инстанс плагина в конкретном аккаунте GetCourse».
@@ -145,7 +139,7 @@ app.accountHook(
   async (ctx, params) => {
     const event = transformGcEventParams(ctx, params.event)
     // логика аккаунта
-  },
+  }
 )
 ```
 
@@ -161,16 +155,14 @@ import { subscribeToMetricEvents, unsubscribeFromMetricEvents } from '@app/metri
 /**
  * Разовая инициализация подписки.
  */
-app.post('enable-subscription', async ctx => {
-  await subscribeToMetricEvents(ctx, [
-    'event://getcourse/user/chatbot/vk_enabled',
-  ])
+app.post('enable-subscription', async (ctx) => {
+  await subscribeToMetricEvents(ctx, ['event://getcourse/user/chatbot/vk_enabled'])
 })
 
 /**
  * Отписка.
  */
-app.post('disable-subscription', async ctx => {
+app.post('disable-subscription', async (ctx) => {
   await unsubscribeFromMetricEvents(ctx, 'event://getcourse/user/chatbot/vk_enabled')
 })
 
@@ -206,7 +198,7 @@ class GcMetricSubscriptionService {
   public static async enable(ctx: Ctx): Promise<void> {
     await subscribeToMetricEvents(ctx, [
       'event://getcourse/form/sent',
-      'event://getcourse/survey/answerCreated',
+      'event://getcourse/survey/answerCreated'
     ])
   }
 
@@ -219,7 +211,7 @@ class GcMetricSubscriptionService {
 }
 
 // Пример обвязки:
-app.post('gc-metrics/enable', async ctx => {
+app.post('gc-metrics/enable', async (ctx) => {
   await GcMetricSubscriptionService.enable(ctx)
   return { ok: true }
 })
@@ -232,6 +224,7 @@ app.post('gc-metrics/enable', async ctx => {
 - И отдельно: «По умолчанию на этот ивент подписки нет, инициируйте»
 
 **Поэтому если:**
+
 - видишь событие в «Трафике»,
 - но твой `app.accountHook('metric-event', ...)` молчит — почти наверняка ты **не вызвал `subscribeToMetricEvents`** для этого eventType.
 
@@ -240,7 +233,7 @@ app.post('gc-metrics/enable', async ctx => {
 ```ts
 import { unsubscribeFromMetricEvents } from '@app/metric'
 
-app.post('gc-metrics/disable', async ctx => {
+app.post('gc-metrics/disable', async (ctx) => {
   await unsubscribeFromMetricEvents(ctx, 'event://getcourse/form/sent')
   return { ok: true }
 })
@@ -270,13 +263,10 @@ app.post('gc-metrics/disable', async ctx => {
 ```ts
 import { transformGcEventParams } from '@getcourse/sdk'
 
-app.pluginHook(
-  'metric-event-event://getcourse/teach/lesson/answerCreated',
-  async (ctx, params) => {
-    const event = transformGcEventParams(ctx, params.event)
-    // ...
-  },
-)
+app.pluginHook('metric-event-event://getcourse/teach/lesson/answerCreated', async (ctx, params) => {
+  const event = transformGcEventParams(ctx, params.event)
+  // ...
+})
 ```
 
 `transformGcEventParams` приводит событие к типу:
@@ -316,13 +306,7 @@ interface LessonAnswerEvent {
     need_teacher_reaction: number
     response_teacher_id: number
     mark: number
-    status:
-      | 'new'
-      | 'accepted'
-      | 'declined'
-      | 'viewed'
-      | 'need_review'
-      | 'draft'
+    status: 'new' | 'accepted' | 'declined' | 'viewed' | 'need_review' | 'draft'
     type: number
     answer_text: string
     files_list: string
@@ -384,13 +368,10 @@ interface ConversationAddedMessageEvent {
 Хук:
 
 ```ts
-app.accountHook(
-  'metric-event-event://getcourse/conversation/addedMessage',
-  async (ctx, params) => {
-    const event = transformGcEventParams(ctx, params.event)
-    // перекачиваешь в свою внешнюю систему, логируешь, триггеришь бота и т.д.
-  },
-)
+app.accountHook('metric-event-event://getcourse/conversation/addedMessage', async (ctx, params) => {
+  const event = transformGcEventParams(ctx, params.event)
+  // перекачиваешь в свою внешнюю систему, логируешь, триггеришь бота и т.д.
+})
 ```
 
 ### Контакты, сделки и оплаты
@@ -426,7 +407,7 @@ event://getcourse/user/chatbot/telegram_enabled
 ```ts
 await subscribeToMetricEvents(ctx, [
   'event://getcourse/user/chatbot/vk_enabled',
-  'event://getcourse/user/chatbot/telegram_enabled',
+  'event://getcourse/user/chatbot/telegram_enabled'
 ])
 ```
 
@@ -442,19 +423,16 @@ app.accountHook('event://getcourse/survey/answerCreated', async (ctx, params) =>
   ctx.account.log('Анкета отправлена', { json: { event } })
 })
 
-app.pluginHook(
-  'metric-event-event://getcourse/survey/answerCreated',
-  async (ctx, params) => {
-    const event =
-      'user_id' in params.event ? transformGcEventParams(ctx, params.event) : params.event
-    ctx.account.log('Анкета отправлена metric', { json: { event } })
-  },
-)
+app.pluginHook('metric-event-event://getcourse/survey/answerCreated', async (ctx, params) => {
+  const event = 'user_id' in params.event ? transformGcEventParams(ctx, params.event) : params.event
+  ctx.account.log('Анкета отправлена metric', { json: { event } })
+})
 ```
 
 **Важно:** Пока не сделаешь `subscribeToMetricEvents` для `'event://getcourse/form/sent'`, в `metric-event` и логах ничего не будет. После подписки «в логи стало падать событие», но собственный accountHook всё ещё нужно поправить.
 
 **Короче:**
+
 - События для анкет/форм существуют.
 - Чтобы реально их ловить, нужно **и** корректный хук, **и** подписку через `subscribeToMetricEvents`.
 
@@ -471,6 +449,7 @@ event://getcourse/webinar/commentCreated
 > «UPD: ответили в личке, на event://getcourse/webinar/commentCreated пока что нельзя подписаться»
 
 То есть:
+
 - событие видно в трафике/логах;
 - официального API-хука для него пока нет.
 
@@ -494,10 +473,13 @@ import { transformGcEventParams } from '@getcourse/sdk'
 /**
  * Унифицированная обработка GetCourse-событий.
  */
-app.accountHook('metric-event-event://getcourse/teach/lesson/answerCreated', async (ctx, params) => {
-  const event = transformGcEventParams(ctx, params.event)
-  // event уже нормализован под LessonAnswerEvent
-})
+app.accountHook(
+  'metric-event-event://getcourse/teach/lesson/answerCreated',
+  async (ctx, params) => {
+    const event = transformGcEventParams(ctx, params.event)
+    // event уже нормализован под LessonAnswerEvent
+  }
+)
 ```
 
 Или в metric-стриме:
@@ -510,6 +492,7 @@ app.accountHook('metric-event', async (ctx, { event }) => {
 ```
 
 **Идея простая:**
+
 - на входе `params.event` / `event` — «сырая» структура;
 - `transformGcEventParams` делает тебе типизированный объект (`LessonAnswerEvent`, `ConversationAddedMessageEvent`, и т.п.), где уже есть `user`, `ts`, `action`, доменные поля.
 
@@ -527,7 +510,7 @@ class GcEventRouter {
 
   public static handleConversationMessage(
     ctx: Ctx,
-    event: ConversationAddedMessageEvent,
+    event: ConversationAddedMessageEvent
   ): Promise<void> {
     // логика по чатам поддержки
     return Promise.resolve()
@@ -553,9 +536,7 @@ class GcEventRouter {
 1. В `subscribeToMetricEvents`:
 
 ```ts
-await subscribeToMetricEvents(ctx, [
-  'event://getcourse/conversation/addedMessage',
-])
+await subscribeToMetricEvents(ctx, ['event://getcourse/conversation/addedMessage'])
 ```
 
 2. В коде, который работает через общий хук `metric-event`:
@@ -630,6 +611,7 @@ app.accountHook('metric-event', async (ctx, { event }) => {
 - Для некоторых event-типов нет поддерживаемых хуков, даже если они мелькают в общем лог-стриме.
 
 **Вывод:** Ориентируешься на:
+
 - список явно опубликованных event-типов (см. раздел "Прямые событийные хуки"),
 - примеры от команды GC (lesson answers, inbox, контакты, сделки и т.д.).
 
@@ -662,6 +644,7 @@ app.accountHook('metric-event', async (ctx, { event }) => {
 Если обобщить всё, что люди в чате уже делали, получается такой конвейер:
 
 1. **Выбрать события**, которые реально нужны:
+
    - inbox (`conversation/addedMessage`);
    - ответы на уроки (`teach/lesson/answer*`);
    - контакты (`contact/created/updated`);
@@ -670,10 +653,12 @@ app.accountHook('metric-event', async (ctx, { event }) => {
    - техподключения (чат-боты).
 
 2. **Инициировать подписку** (где требуется):
+
    - либо явно через `subscribeToMetricEvents` и ловить всё в `metric-event`;
    - либо положиться на автоматическую подписку для некоторых событий плагина (как с lesson answers, судя по тексту Ратмира).
 
 3. **В хуках (`accountHook` / `pluginHook`)**:
+
    - прогонять `params.event` через `transformGcEventParams`;
    - маршрутизовать по типу (`event.eventType`) в методы сервиса;
    - выносить тяжёлую работу в джобы (`scheduleJobAfter`, `scheduleJobAsap`) — в чате это активно используют с lesson-ответами.
@@ -705,9 +690,9 @@ app.accountHook(
       type: 'processLessonAnswer',
       answerId: event.answer.id,
       userId: event.user.id,
-      trainingId: event.answer.training_id,
+      trainingId: event.answer.training_id
     })
-  },
+  }
 )
 
 app.job('processLessonAnswer', async (ctx, { answerId, userId, trainingId }) => {
@@ -722,21 +707,18 @@ app.job('processLessonAnswer', async (ctx, { answerId, userId, trainingId }) => 
 import { transformGcEventParams } from '@getcourse/sdk'
 import { sendMessageToChat } from '@sender/sdk'
 
-app.accountHook(
-  'metric-event-event://getcourse/conversation/addedMessage',
-  async (ctx, params) => {
-    const event = transformGcEventParams(ctx, params.event)
+app.accountHook('metric-event-event://getcourse/conversation/addedMessage', async (ctx, params) => {
+  const event = transformGcEventParams(ctx, params.event)
 
-    // Отправляем уведомление в Telegram админу
-    if (event.conversation.comment_type === 'income') {
-      await sendMessageToChat(ctx, {
-        channel: 'telegram',
-        chatId: 'admin_chat_id',
-        text: `Новое входящее сообщение от пользователя ${event.user.email}`,
-      })
-    }
-  },
-)
+  // Отправляем уведомление в Telegram админу
+  if (event.conversation.comment_type === 'income') {
+    await sendMessageToChat(ctx, {
+      channel: 'telegram',
+      chatId: 'admin_chat_id',
+      text: `Новое входящее сообщение от пользователя ${event.user.email}`
+    })
+  }
+})
 ```
 
 ### Пример 3: Подписка на несколько событий через metric-event
@@ -746,11 +728,11 @@ import { subscribeToMetricEvents } from '@app/metric'
 import { transformGcEventParams } from '@getcourse/sdk'
 
 // Инициализация подписки
-app.post('events/subscribe', async ctx => {
+app.post('events/subscribe', async (ctx) => {
   await subscribeToMetricEvents(ctx, [
     'event://getcourse/form/sent',
     'event://getcourse/survey/answerCreated',
-    'event://getcourse/user/chatbot/vk_enabled',
+    'event://getcourse/user/chatbot/vk_enabled'
   ])
   return { ok: true }
 })
@@ -783,26 +765,26 @@ class GcEventRouter {
     ctx.account.log('Ответ на урок', {
       answerId: event.answer.id,
       userId: event.user.id,
-      action: event.action,
+      action: event.action
     })
     // Дополнительная логика: синхронизация с внешней системой, аналитика и т.д.
   }
 
   public static async handleConversationMessage(
     ctx: Ctx,
-    event: ConversationAddedMessageEvent,
+    event: ConversationAddedMessageEvent
   ): Promise<void> {
     ctx.account.log('Сообщение в диалоге', {
       conversationId: event.conversation.id,
       userId: event.user.id,
-      text: event.comment.comment_text,
+      text: event.comment.comment_text
     })
   }
 
   public static async handleDealCreated(ctx: Ctx, event: any): Promise<void> {
     ctx.account.log('Создана сделка', {
       dealId: event.deal?.id,
-      userId: event.user.id,
+      userId: event.user.id
     })
   }
 }

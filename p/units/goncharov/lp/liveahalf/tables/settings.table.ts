@@ -4,10 +4,12 @@ import { Heap } from '@app/heap'
 export const TPUnitsGoncharovLpLiveahalfTPUnitsGoncharovLpLiveahalfSettingsDpR = Heap.Table(
   't_p_units_goncharov_lp_liveahalf_t_p_units_goncharov_lp_liveahalf_settings_DpR',
   {
-    key: Heap.Optional(Heap.String({ customMeta: { title: 'Ключ' }, searchable: { langs: ['ru', 'en'] } })),
-    value: Heap.Optional(Heap.String({ customMeta: { title: 'Значение' } })),
+    key: Heap.Optional(
+      Heap.String({ customMeta: { title: 'Ключ' }, searchable: { langs: ['ru', 'en'] } })
+    ),
+    value: Heap.Optional(Heap.String({ customMeta: { title: 'Значение' } }))
   },
-  { customMeta: { title: 'Настройки', description: '' } },
+  { customMeta: { title: 'Настройки', description: '' } }
 )
 
 export default TPUnitsGoncharovLpLiveahalfTPUnitsGoncharovLpLiveahalfSettingsDpR

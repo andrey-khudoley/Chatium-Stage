@@ -1,14 +1,15 @@
-import { jsx } from "@app/html-jsx"
-import { requireAccountRole } from "@app/auth"
-import { settingsRoute } from "./settings"
-import ZoomSettings from "./tables/zoom_settings.table"
+import { jsx } from '@app/html-jsx'
+import { requireAccountRole } from '@app/auth'
+import { settingsRoute } from './settings'
+import ZoomSettings from './tables/zoom_settings.table'
 
 export const indexRoute = app.get('/', async (ctx, req) => {
   const isAdmin = ctx.user?.is('Admin') ?? false
-  
+
   const settings = await ZoomSettings.findOneBy(ctx, { id: { $not: null } })
-  const isConfigured = settings && settings.account_id && settings.client_id && settings.client_secret
-  
+  const isConfigured =
+    settings && settings.account_id && settings.client_id && settings.client_secret
+
   return (
     <html>
       <head>
@@ -37,10 +38,13 @@ export const indexRoute = app.get('/', async (ctx, req) => {
               </div>
               <h3 class="text-lg font-semibold text-gray-900 mb-2">Создание встреч</h3>
               <p class="text-gray-600 text-sm mb-4">
-                AI-агент может создавать Zoom-встречи с заданными параметрами: тема, повестка, длительность и настройки записи.
+                AI-агент может создавать Zoom-встречи с заданными параметрами: тема, повестка,
+                длительность и настройки записи.
               </p>
               <div class="flex flex-wrap gap-2">
-                <span class="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded">zoomAgentCreateMeeting</span>
+                <span class="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded">
+                  zoomAgentCreateMeeting
+                </span>
               </div>
             </div>
 
@@ -51,10 +55,13 @@ export const indexRoute = app.get('/', async (ctx, req) => {
               </div>
               <h3 class="text-lg font-semibold text-gray-900 mb-2">Записи встреч</h3>
               <p class="text-gray-600 text-sm mb-4">
-                Просмотр облачных записей Zoom-встреч за последние 30 дней с ссылками для скачивания.
+                Просмотр облачных записей Zoom-встреч за последние 30 дней с ссылками для
+                скачивания.
               </p>
               <div class="flex flex-wrap gap-2">
-                <span class="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded">zoomAgentListRecordings</span>
+                <span class="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded">
+                  zoomAgentListRecordings
+                </span>
               </div>
             </div>
           </div>
@@ -69,10 +76,12 @@ export const indexRoute = app.get('/', async (ctx, req) => {
                   </div>
                   <div>
                     <h3 class="text-lg font-semibold text-gray-900">Настройки интеграции</h3>
-                    <p class="text-gray-500 text-sm">Настройка API-ключей и параметров по умолчанию</p>
+                    <p class="text-gray-500 text-sm">
+                      Настройка API-ключей и параметров по умолчанию
+                    </p>
                   </div>
                 </div>
-                <a 
+                <a
                   href={settingsRoute.url()}
                   class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"
                 >
@@ -80,7 +89,7 @@ export const indexRoute = app.get('/', async (ctx, req) => {
                   Настроить
                 </a>
               </div>
-              
+
               {isConfigured ? (
                 <div class="bg-green-50 border border-green-200 rounded-lg p-4">
                   <div class="flex items-start gap-3">
@@ -100,11 +109,11 @@ export const indexRoute = app.get('/', async (ctx, req) => {
                     <div>
                       <p class="text-amber-800 font-medium">Требуется настройка</p>
                       <p class="text-amber-700 text-sm">
-                        Для работы интеграции необходимо настроить API-ключи Zoom. 
-                        Получите credentials в 
-                        <a 
-                          href="https://marketplace.zoom.us/user/build" 
-                          target="_blank" 
+                        Для работы интеграции необходимо настроить API-ключи Zoom. Получите
+                        credentials в
+                        <a
+                          href="https://marketplace.zoom.us/user/build"
+                          target="_blank"
                           class="underline"
                         >
                           Zoom Marketplace
@@ -121,9 +130,7 @@ export const indexRoute = app.get('/', async (ctx, req) => {
           {!isAdmin && (
             <div class="bg-gray-100 rounded-xl p-6 text-center">
               <i class="fas fa-lock text-gray-400 text-2xl mb-3"></i>
-              <p class="text-gray-600">
-                Настройки доступны только администраторам.
-              </p>
+              <p class="text-gray-600">Настройки доступны только администраторам.</p>
             </div>
           )}
 

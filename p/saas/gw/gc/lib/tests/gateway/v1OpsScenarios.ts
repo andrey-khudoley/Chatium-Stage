@@ -9,7 +9,12 @@
  * каждого роута `api/v1/*`. Если для op нет производителя или нет Heap-ключа,
  * соответствующий запуск помечается `skip` с человеческим объяснением.
  */
-import { V1_OPS_HEAP_KEYS, V1_OPS_TESTER_EMAIL, V1_OPS_ARTIFACT_PREFIX, type V1OpsRunContext } from './v1OpsRunContext'
+import {
+  V1_OPS_HEAP_KEYS,
+  V1_OPS_TESTER_EMAIL,
+  V1_OPS_ARTIFACT_PREFIX,
+  type V1OpsRunContext
+} from './v1OpsRunContext'
 
 /** Поля настроек Heap, прочитанные перед прогоном (`gc_itest_*`). */
 export type V1OpsHeapBag = {
@@ -26,9 +31,7 @@ export type V1OpsHeapBag = {
   webhookUri?: string
 }
 
-export type ScenarioBuildResult =
-  | { skip: string }
-  | { args: Record<string, unknown> }
+export type ScenarioBuildResult = { skip: string } | { args: Record<string, unknown> }
 
 export type ScenarioBuildCtx = {
   runCtx: V1OpsRunContext
@@ -483,7 +486,8 @@ const SCENARIOS_RAW: V1OpScenario[] = [
     heapKeys: [V1_OPS_HEAP_KEYS.DIALOG_ID],
     hint: 'Комментарий в диалоге; dialogId — Heap, userId — addUser.',
     build: ({ runCtx, heap }) => {
-      if (heap.dialogId === undefined) return { skip: `Не задан Heap-ключ ${V1_OPS_HEAP_KEYS.DIALOG_ID}` }
+      if (heap.dialogId === undefined)
+        return { skip: `Не задан Heap-ключ ${V1_OPS_HEAP_KEYS.DIALOG_ID}` }
       if (runCtx.userId === undefined) return { skip: 'Нет userId — addUser не отработал' }
       return {
         args: {
@@ -501,8 +505,10 @@ const SCENARIOS_RAW: V1OpScenario[] = [
     heapKeys: [V1_OPS_HEAP_KEYS.DIALOG_ID, V1_OPS_HEAP_KEYS.DEPARTMENT_ID],
     hint: 'Смена отдела диалога; dialogId и newDepartmentId из Heap.',
     build: ({ heap }) => {
-      if (heap.dialogId === undefined) return { skip: `Не задан Heap-ключ ${V1_OPS_HEAP_KEYS.DIALOG_ID}` }
-      if (heap.departmentId === undefined) return { skip: `Не задан Heap-ключ ${V1_OPS_HEAP_KEYS.DEPARTMENT_ID}` }
+      if (heap.dialogId === undefined)
+        return { skip: `Не задан Heap-ключ ${V1_OPS_HEAP_KEYS.DIALOG_ID}` }
+      if (heap.departmentId === undefined)
+        return { skip: `Не задан Heap-ключ ${V1_OPS_HEAP_KEYS.DEPARTMENT_ID}` }
       return {
         args: { dialogId: Number(heap.dialogId), newDepartmentId: Number(heap.departmentId) }
       }
@@ -514,7 +520,8 @@ const SCENARIOS_RAW: V1OpScenario[] = [
     heapKeys: [V1_OPS_HEAP_KEYS.DIALOG_ID],
     hint: 'Закрытие диалога; dialogId из Heap.',
     build: ({ heap }) => {
-      if (heap.dialogId === undefined) return { skip: `Не задан Heap-ключ ${V1_OPS_HEAP_KEYS.DIALOG_ID}` }
+      if (heap.dialogId === undefined)
+        return { skip: `Не задан Heap-ключ ${V1_OPS_HEAP_KEYS.DIALOG_ID}` }
       return { args: { dialogId: Number(heap.dialogId) } }
     }
   },
@@ -524,7 +531,8 @@ const SCENARIOS_RAW: V1OpScenario[] = [
     heapKeys: [V1_OPS_HEAP_KEYS.DIALOG_ID],
     hint: 'Заметка в диалоге; артефакт помечается префиксом.',
     build: ({ heap }) => {
-      if (heap.dialogId === undefined) return { skip: `Не задан Heap-ключ ${V1_OPS_HEAP_KEYS.DIALOG_ID}` }
+      if (heap.dialogId === undefined)
+        return { skip: `Не задан Heap-ключ ${V1_OPS_HEAP_KEYS.DIALOG_ID}` }
       return { args: { dialogId: Number(heap.dialogId), text: `${V1_OPS_ARTIFACT_PREFIX} note` } }
     }
   },
@@ -761,7 +769,9 @@ const SCENARIOS_RAW: V1OpScenario[] = [
       }
       const moderator = heap.moderatorId ?? runCtx.moderatorId
       if (moderator === undefined) {
-        return { skip: `Нет moderatorId (${V1_OPS_HEAP_KEYS.MODERATOR_ID} или getAllPersonalManagers)` }
+        return {
+          skip: `Нет moderatorId (${V1_OPS_HEAP_KEYS.MODERATOR_ID} или getAllPersonalManagers)`
+        }
       }
       return {
         args: {

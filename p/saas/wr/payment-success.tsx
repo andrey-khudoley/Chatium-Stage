@@ -1,4 +1,4 @@
-import { jsx } from "@app/html-jsx"
+import { jsx } from '@app/html-jsx'
 import PaymentSuccessPage from './pages/PaymentSuccessPage.vue'
 import { headContent } from './styles'
 

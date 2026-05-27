@@ -4,11 +4,9 @@
       <div class="glow-orb orb-1"></div>
       <div class="glow-orb orb-2"></div>
     </div>
-    
+
     <div class="container">
-      <div class="badge">
-        <i class="fas fa-chart-line"></i> Реальный кейс · emi online × Авито
-      </div>
+      <div class="badge"><i class="fas fa-chart-line"></i> Реальный кейс · emi online × Авито</div>
 
       <h2 class="title">
         <span class="num-big">40 000 ₽</span>
@@ -105,8 +103,13 @@ defineProps({ active: Boolean })
 }
 
 @keyframes float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-20px); }
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-20px);
+  }
 }
 
 .container {
@@ -159,8 +162,13 @@ defineProps({ active: Boolean })
 }
 
 @keyframes gradient-shift {
-  0%, 100% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
 }
 
 .vs-block {
@@ -214,8 +222,12 @@ defineProps({ active: Boolean })
   font-weight: 900;
 }
 
-.vs-amount.bad { color: #f43f5e; }
-.vs-amount.good { color: #10b981; }
+.vs-amount.bad {
+  color: #f43f5e;
+}
+.vs-amount.good {
+  color: #10b981;
+}
 
 .vs-side ul {
   list-style: none;
@@ -232,8 +244,18 @@ defineProps({ active: Boolean })
   color: var(--text-secondary);
 }
 
-.bad-side li i { color: #f43f5e; font-size: 11px; width: 14px; text-align: center; }
-.good-side li i { color: #10b981; font-size: 11px; width: 14px; text-align: center; }
+.bad-side li i {
+  color: #f43f5e;
+  font-size: 11px;
+  width: 14px;
+  text-align: center;
+}
+.good-side li i {
+  color: #10b981;
+  font-size: 11px;
+  width: 14px;
+  text-align: center;
+}
 
 .vs-divider {
   display: flex;
@@ -257,8 +279,15 @@ defineProps({ active: Boolean })
 }
 
 @keyframes pulse-circle {
-  0%, 100% { box-shadow: 0 0 16px rgba(16, 185, 129, 0.2); transform: scale(1); }
-  50% { box-shadow: 0 0 32px rgba(16, 185, 129, 0.4); transform: scale(1.05); }
+  0%,
+  100% {
+    box-shadow: 0 0 16px rgba(16, 185, 129, 0.2);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 32px rgba(16, 185, 129, 0.4);
+    transform: scale(1.05);
+  }
 }
 
 .multiply {
@@ -271,7 +300,7 @@ defineProps({ active: Boolean })
 
 .multiply-label {
   font-size: 8px;
-  color: rgba(255,255,255,0.8);
+  color: rgba(255, 255, 255, 0.8);
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -298,8 +327,13 @@ defineProps({ active: Boolean })
 }
 
 @keyframes fire-pulse {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.2); }
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.2);
+  }
 }
 
 @media (max-width: 640px) {
@@ -315,16 +349,43 @@ defineProps({ active: Boolean })
     width: 52px;
     height: 52px;
   }
-  .multiply { font-size: 15px; }
-  .vs-head { flex-direction: column; align-items: flex-start; gap: 4px; }
-  .slide { padding: 24px 14px 14px; }
-  .badge { font-size: 11px; padding: 5px 12px; }
-  .title { margin-bottom: 20px; }
-  .num-big { font-size: 28px; }
-  .title-sub { font-size: 14px; }
-  .vs-side { padding: 16px; border-radius: 14px; }
-  .vs-amount { font-size: 18px; }
-  .vs-side li { font-size: 12px; }
-  .bottom-line { font-size: 13px; padding: 12px 16px; }
+  .multiply {
+    font-size: 15px;
+  }
+  .vs-head {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+  .slide {
+    padding: 24px 14px 14px;
+  }
+  .badge {
+    font-size: 11px;
+    padding: 5px 12px;
+  }
+  .title {
+    margin-bottom: 20px;
+  }
+  .num-big {
+    font-size: 28px;
+  }
+  .title-sub {
+    font-size: 14px;
+  }
+  .vs-side {
+    padding: 16px;
+    border-radius: 14px;
+  }
+  .vs-amount {
+    font-size: 18px;
+  }
+  .vs-side li {
+    font-size: 12px;
+  }
+  .bottom-line {
+    font-size: 13px;
+    padding: 12px 16px;
+  }
 }
 </style>

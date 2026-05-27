@@ -9,14 +9,18 @@ export const TelegramBotSubscriptionCheckerVera5TV = Heap.Table(
     synonyms_semicolon: Heap.Optional(Heap.String({ customMeta: { title: 'synonyms_semicolon' } })),
     value: Heap.Optional(Heap.String({ customMeta: { title: 'value' } })),
     units: Heap.Optional(Heap.String({ customMeta: { title: 'units' } })),
-    reference_or_cutoff: Heap.Optional(Heap.String({ customMeta: { title: 'reference_or_cutoff' } })),
+    reference_or_cutoff: Heap.Optional(
+      Heap.String({ customMeta: { title: 'reference_or_cutoff' } })
+    ),
     comment: Heap.Optional(Heap.String({ customMeta: { title: 'comment' } })),
-    availability: Heap.Optional(Heap.String({ customMeta: { title: 'availability' } })),
+    availability: Heap.Optional(Heap.String({ customMeta: { title: 'availability' } }))
   },
-  { customMeta: { title: 'Вера', description: 'Вера' } },
+  { customMeta: { title: 'Вера', description: 'Вера' } }
 )
 
 export default TelegramBotSubscriptionCheckerVera5TV
 
-export type TelegramBotSubscriptionCheckerVera5TVRow = typeof TelegramBotSubscriptionCheckerVera5TV.T
-export type TelegramBotSubscriptionCheckerVera5TVRowJson = typeof TelegramBotSubscriptionCheckerVera5TV.JsonT
+export type TelegramBotSubscriptionCheckerVera5TVRow =
+  typeof TelegramBotSubscriptionCheckerVera5TV.T
+export type TelegramBotSubscriptionCheckerVera5TVRowJson =
+  typeof TelegramBotSubscriptionCheckerVera5TV.JsonT

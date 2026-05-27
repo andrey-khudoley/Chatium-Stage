@@ -10,10 +10,7 @@
 import * as loggerLib from '../../lib/logger.lib'
 import { newGatewayRequestId } from '../../lib/gateway/requestId'
 import { v1ErrorResponse, v1SuccessResponse } from '../../lib/gateway/v1TuneResponse'
-import {
-  CATALOG_SCHEMA_VERSION,
-  toOperationSummaries
-} from '../../lib/gateway/operationsCatalog'
+import { CATALOG_SCHEMA_VERSION, toOperationSummaries } from '../../lib/gateway/operationsCatalog'
 
 const LOG_PATH = 'api/v1/operations'
 

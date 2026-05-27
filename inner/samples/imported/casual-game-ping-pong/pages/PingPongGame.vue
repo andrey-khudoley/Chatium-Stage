@@ -16,15 +16,15 @@
         <span class="player-label">AI</span>
       </div>
     </div>
-    
-    <canvas 
-      ref="canvas" 
+
+    <canvas
+      ref="canvas"
       @mousemove="handleMouseMove"
       @touchmove="handleTouchMove"
       class="game-canvas"
       :class="{ 'game-active': gameStarted && !paused }"
     ></canvas>
-    
+
     <div v-if="gameOver" class="game-over">
       <h2>{{ playerScore > aiScore ? '🎉 You Win!' : '😢 AI Wins!' }}</h2>
       <p>Final Score: {{ playerScore }} - {{ aiScore }}</p>
@@ -83,28 +83,28 @@ const aiPaddle = {
 
 function initGame() {
   if (!canvas.value) return
-  
+
   ctx = canvas.value.getContext('2d')
-  
+
   // Set canvas size
   const container = canvas.value.parentElement
   canvasWidth = Math.min(800, container.clientWidth - 40)
   canvasHeight = Math.min(600, window.innerHeight - 200)
-  
+
   canvas.value.width = canvasWidth
   canvas.value.height = canvasHeight
-  
+
   // Initialize positions
   aiPaddle.x = canvasWidth - 30 - paddleWidth
   resetBall()
-  
+
   draw()
 }
 
 function resetBall() {
   ball.x = canvasWidth / 2
   ball.y = canvasHeight / 2
-  const angle = (Math.random() * Math.PI / 2 - Math.PI / 4) * (Math.random() > 0.5 ? 1 : -1)
+  const angle = ((Math.random() * Math.PI) / 2 - Math.PI / 4) * (Math.random() > 0.5 ? 1 : -1)
   ball.speedX = Math.cos(angle) * 5 * (Math.random() > 0.5 ? 1 : -1)
   ball.speedY = Math.sin(angle) * 5
 }
@@ -147,34 +147,38 @@ function handleTouchMove(e) {
 function updateBall() {
   ball.x += ball.speedX
   ball.y += ball.speedY
-  
+
   // Top and bottom collision
   if (ball.y - ball.radius <= 0 || ball.y + ball.radius >= canvasHeight) {
     ball.speedY = -ball.speedY
   }
-  
+
   // Player paddle collision
-  if (ball.x - ball.radius <= playerPaddle.x + playerPaddle.width &&
-      ball.y >= playerPaddle.y &&
-      ball.y <= playerPaddle.y + playerPaddle.height &&
-      ball.speedX < 0) {
+  if (
+    ball.x - ball.radius <= playerPaddle.x + playerPaddle.width &&
+    ball.y >= playerPaddle.y &&
+    ball.y <= playerPaddle.y + playerPaddle.height &&
+    ball.speedX < 0
+  ) {
     const hitPos = (ball.y - (playerPaddle.y + playerPaddle.height / 2)) / (playerPaddle.height / 2)
     ball.speedY = hitPos * 5
     ball.speedX = Math.abs(ball.speedX) * 1.05
     ball.speedX = Math.min(ball.speedX, ball.maxSpeed)
   }
-  
+
   // AI paddle collision
-  if (ball.x + ball.radius >= aiPaddle.x &&
-      ball.y >= aiPaddle.y &&
-      ball.y <= aiPaddle.y + aiPaddle.height &&
-      ball.speedX > 0) {
+  if (
+    ball.x + ball.radius >= aiPaddle.x &&
+    ball.y >= aiPaddle.y &&
+    ball.y <= aiPaddle.y + aiPaddle.height &&
+    ball.speedX > 0
+  ) {
     const hitPos = (ball.y - (aiPaddle.y + aiPaddle.height / 2)) / (aiPaddle.height / 2)
     ball.speedY = hitPos * 5
     ball.speedX = -Math.abs(ball.speedX) * 1.05
     ball.speedX = Math.max(ball.speedX, -ball.maxSpeed)
   }
-  
+
   // Score
   if (ball.x - ball.radius <= 0) {
     aiScore.value++
@@ -198,26 +202,27 @@ function checkGameOver() {
 function updateAI() {
   const paddleCenter = aiPaddle.y + aiPaddle.height / 2
   const difficulty = 0.7 // AI reaction speed (0-1)
-  
-  if (ball.speedX > 0) { // Ball moving towards AI
+
+  if (ball.speedX > 0) {
+    // Ball moving towards AI
     if (paddleCenter < ball.y - 10) {
       aiPaddle.y += aiPaddle.speed * difficulty
     } else if (paddleCenter > ball.y + 10) {
       aiPaddle.y -= aiPaddle.speed * difficulty
     }
   }
-  
+
   // Keep AI paddle in bounds
   aiPaddle.y = Math.max(0, Math.min(canvasHeight - aiPaddle.height, aiPaddle.y))
 }
 
 function draw() {
   if (!ctx) return
-  
+
   // Clear canvas
   ctx.fillStyle = '#1a1a2e'
   ctx.fillRect(0, 0, canvasWidth, canvasHeight)
-  
+
   // Draw center line
   ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)'
   ctx.lineWidth = 2
@@ -227,14 +232,14 @@ function draw() {
   ctx.lineTo(canvasWidth / 2, canvasHeight)
   ctx.stroke()
   ctx.setLineDash([])
-  
+
   // Draw paddles
   ctx.fillStyle = '#00d9ff'
   ctx.fillRect(playerPaddle.x, playerPaddle.y, playerPaddle.width, playerPaddle.height)
-  
+
   ctx.fillStyle = '#ff3366'
   ctx.fillRect(aiPaddle.x, aiPaddle.y, aiPaddle.width, aiPaddle.height)
-  
+
   // Draw ball
   ctx.fillStyle = '#ffffff'
   ctx.beginPath()
@@ -250,11 +255,11 @@ function gameLoop() {
     }
     return
   }
-  
+
   updateBall()
   updateAI()
   draw()
-  
+
   animationId = requestAnimationFrame(gameLoop)
 }
 
@@ -394,21 +399,21 @@ onUnmounted(() => {
   .game-header {
     flex-wrap: wrap;
   }
-  
+
   .score-value {
     font-size: 36px;
   }
-  
+
   .start-btn,
   .pause-btn {
     padding: 12px 24px;
     font-size: 16px;
   }
-  
+
   .game-over h2 {
     font-size: 28px;
   }
-  
+
   .game-over p {
     font-size: 18px;
   }

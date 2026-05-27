@@ -1,5 +1,5 @@
 // @shared
-import { jsx } from "@app/html-jsx"
+import { jsx } from '@app/html-jsx'
 import CardOfDayPage from './pages/CardOfDayPage.vue'
 
 export const indexPageRoute = app.get('/', async (ctx, req) => {
@@ -8,8 +8,11 @@ export const indexPageRoute = app.get('/', async (ctx, req) => {
       <head>
         <title>Карта Дня Мастера | Узнай свой путь к успеху</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <meta name="description" content="Вытяни карту дня и узнай, что звезды приготовили для твоего маникюрного бизнеса. Получи персональное послание и открой путь к успеху." />
-        
+        <meta
+          name="description"
+          content="Вытяни карту дня и узнай, что звезды приготовили для твоего маникюрного бизнеса. Получи персональное послание и открой путь к успеху."
+        />
+
         {/* Tailwind CSS */}
         <script src="/s/static/lib/tailwind.3.4.16.min.js"></script>
         <script>{`
@@ -26,8 +29,11 @@ export const indexPageRoute = app.get('/', async (ctx, req) => {
         `}</script>
 
         {/* Google Fonts */}
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet" />
-        
+        <link
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap"
+          rel="stylesheet"
+        />
+
         {/* Font Awesome */}
         <link href="/s/static/lib/fontawesome/6.7.2/css/all.min.css" rel="stylesheet" />
 

@@ -40,7 +40,7 @@ let titleInterval: ReturnType<typeof setInterval> | null = null
 
 const onAppLayoutAnimationEnd = (e: AnimationEvent) => {
   if (e.animationName === 'crt-power-on') {
-    (e.target as HTMLElement).classList.add('app-layout-appeared')
+    ;(e.target as HTMLElement).classList.add('app-layout-appeared')
     log.debug('App layout animation completed')
   }
 }
@@ -106,7 +106,6 @@ const triggerGlitch = () => {
     isGlitching.value = false
   }
 }
-
 </script>
 
 <template>
@@ -131,13 +130,22 @@ const triggerGlitch = () => {
       <div class="content-inner">
         <!-- Hero Section -->
         <section class="hero-section" :class="{ 'hero-ready': bootLoaderDone }">
-          <div class="hero-icon-wrapper" :class="{ 'hero-icon-visible': bootLoaderDone }" @click="triggerGlitch">
+          <div
+            class="hero-icon-wrapper"
+            :class="{ 'hero-icon-visible': bootLoaderDone }"
+            @click="triggerGlitch"
+          >
             <i class="fas fa-tasks hero-icon"></i>
           </div>
           <h1 class="hero-heading" :class="{ 'show-underline': showTitleUnderline }">
-            {{ displayedTitle }}<span v-if="showCursor && cursorPosition === 'title'" class="typing-cursor">▮</span>
+            {{ displayedTitle
+            }}<span v-if="showCursor && cursorPosition === 'title'" class="typing-cursor">▮</span>
           </h1>
-          <div v-if="showCursor && cursorPosition === 'final'" class="hero-final-cursor" aria-hidden="true">
+          <div
+            v-if="showCursor && cursorPosition === 'final'"
+            class="hero-final-cursor"
+            aria-hidden="true"
+          >
             <span class="typing-cursor">▮</span>
           </div>
           <a
@@ -273,10 +281,18 @@ body {
   cursor: pointer;
   overflow: hidden;
   clip-path: polygon(
-    0 4px, 4px 4px, 4px 0,
-    calc(100% - 4px) 0, calc(100% - 4px) 4px, 100% 4px,
-    100% calc(100% - 4px), calc(100% - 4px) calc(100% - 4px), calc(100% - 4px) 100%,
-    4px 100%, 4px calc(100% - 4px), 0 calc(100% - 4px)
+    0 4px,
+    4px 4px,
+    4px 0,
+    calc(100% - 4px) 0,
+    calc(100% - 4px) 4px,
+    100% 4px,
+    100% calc(100% - 4px),
+    calc(100% - 4px) calc(100% - 4px),
+    calc(100% - 4px) 100%,
+    4px 100%,
+    4px calc(100% - 4px),
+    0 calc(100% - 4px)
   );
 }
 
@@ -300,8 +316,13 @@ body {
 }
 
 @keyframes scanline-flicker {
-  0%, 100% { opacity: 0.7; }
-  50% { opacity: 0.5; }
+  0%,
+  100% {
+    opacity: 0.7;
+  }
+  50% {
+    opacity: 0.5;
+  }
 }
 
 @media (min-width: 769px) {
@@ -318,7 +339,8 @@ body {
 }
 
 @keyframes glitch-icon {
-  0%, 100% {
+  0%,
+  100% {
     transform: scale(1) translate(0);
     filter: none;
     box-shadow:
@@ -428,8 +450,14 @@ body {
 }
 
 @keyframes terminal-cursor-blink {
-  0%, 50% { opacity: 1; }
-  51%, 100% { opacity: 0; }
+  0%,
+  50% {
+    opacity: 1;
+  }
+  51%,
+  100% {
+    opacity: 0;
+  }
 }
 
 .hero-orders-btn {
@@ -446,16 +474,27 @@ body {
   background: linear-gradient(180deg, rgba(20, 20, 20, 0.95) 0%, rgba(10, 10, 10, 0.98) 100%);
   border: 2px solid var(--color-border);
   clip-path: polygon(
-    0 6px, 6px 6px, 6px 0,
-    calc(100% - 6px) 0, calc(100% - 6px) 6px, 100% 6px,
-    100% calc(100% - 6px), calc(100% - 6px) calc(100% - 6px), calc(100% - 6px) 100%,
-    6px 100%, 6px calc(100% - 6px), 0 calc(100% - 6px)
+    0 6px,
+    6px 6px,
+    6px 0,
+    calc(100% - 6px) 0,
+    calc(100% - 6px) 6px,
+    100% 6px,
+    100% calc(100% - 6px),
+    calc(100% - 6px) calc(100% - 6px),
+    calc(100% - 6px) 100%,
+    6px 100%,
+    6px calc(100% - 6px),
+    0 calc(100% - 6px)
   );
   box-shadow:
     0 0 0 1px rgba(211, 35, 75, 0.15),
     inset 0 0 40px rgba(0, 0, 0, 0.5),
     0 8px 24px rgba(0, 0, 0, 0.45);
-  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
   z-index: 10;
 }
 
@@ -507,23 +546,54 @@ body {
 }
 
 @media (min-width: 1201px) {
-  .content-wrapper { padding: 1rem 0; }
-  .content-inner { gap: 1.5rem; }
-  .hero-section { gap: 0.75rem; padding: 0.5rem 0; }
+  .content-wrapper {
+    padding: 1rem 0;
+  }
+  .content-inner {
+    gap: 1.5rem;
+  }
+  .hero-section {
+    gap: 0.75rem;
+    padding: 0.5rem 0;
+  }
 }
 
 @media (max-width: 768px) {
-  .content-inner { padding: 0 1rem; gap: 3rem; }
-  .content-wrapper { padding: 2rem 0; }
-  .hero-section { gap: 1.25rem; padding: 1rem 0; }
-  .hero-heading { font-size: 2rem; }
+  .content-inner {
+    padding: 0 1rem;
+    gap: 3rem;
+  }
+  .content-wrapper {
+    padding: 2rem 0;
+  }
+  .hero-section {
+    gap: 1.25rem;
+    padding: 1rem 0;
+  }
+  .hero-heading {
+    font-size: 2rem;
+  }
 }
 
 @media (max-width: 480px) {
-  .content-inner { padding: 0 0.75rem; gap: 2.5rem; }
-  .content-wrapper { padding: 1.5rem 0; }
-  .hero-section { gap: 1rem; }
-  .hero-heading { font-size: 1.75rem; letter-spacing: 0.08em; }
-  .hero-orders-btn { min-width: 100%; padding-left: 1rem; padding-right: 1rem; }
+  .content-inner {
+    padding: 0 0.75rem;
+    gap: 2.5rem;
+  }
+  .content-wrapper {
+    padding: 1.5rem 0;
+  }
+  .hero-section {
+    gap: 1rem;
+  }
+  .hero-heading {
+    font-size: 1.75rem;
+    letter-spacing: 0.08em;
+  }
+  .hero-orders-btn {
+    min-width: 100%;
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
 }
 </style>

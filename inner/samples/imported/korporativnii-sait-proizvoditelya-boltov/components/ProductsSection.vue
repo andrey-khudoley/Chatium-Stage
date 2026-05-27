@@ -9,19 +9,15 @@
           Широкий ассортимент крепежных изделий для любых задач
         </p>
       </div>
-      
+
       <div class="grid md:grid-cols-3 gap-8">
-        <div 
-          v-for="product in products" 
+        <div
+          v-for="product in products"
           :key="product.id"
           class="bg-white rounded-xl shadow-lg overflow-hidden card-hover"
         >
           <div class="h-64 overflow-hidden">
-            <img 
-              :src="product.image" 
-              :alt="product.title" 
-              class="w-full h-full object-cover"
-            />
+            <img :src="product.image" :alt="product.title" class="w-full h-full object-cover" />
           </div>
           <div class="p-6">
             <div class="text-primary text-3xl mb-4">
@@ -52,11 +48,7 @@ const products = ref([
     icon: 'fas fa-bolt',
     image: 'https://msk.cdn-chatium.io/get/image_msk_SytpgWYlNH.940x625.jpeg',
     description: 'Болты различных размеров и классов прочности',
-    specs: [
-      'Диаметр: М6 - М48',
-      'Класс прочности: 4.8 - 12.9',
-      'Покрытие: оцинковка, без покрытия'
-    ]
+    specs: ['Диаметр: М6 - М48', 'Класс прочности: 4.8 - 12.9', 'Покрытие: оцинковка, без покрытия']
   },
   {
     id: 2,
@@ -64,11 +56,7 @@ const products = ref([
     icon: 'fas fa-nut',
     image: 'https://msk.cdn-chatium.io/get/image_msk_LaoWLCeG35.940x627.jpeg',
     description: 'Гайки шестигранные, квадратные, корончатые',
-    specs: [
-      'Размеры: М6 - М48',
-      'Различные типы резьбы',
-      'Стандарты: DIN, ГОСТ'
-    ]
+    specs: ['Размеры: М6 - М48', 'Различные типы резьбы', 'Стандарты: DIN, ГОСТ']
   },
   {
     id: 3,

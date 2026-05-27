@@ -6,7 +6,7 @@
 // Парсит дату из различных форматов
 function parseDate(dateValue: any): Date | null {
   if (!dateValue) return null
-  
+
   if (typeof dateValue === 'string') {
     if (dateValue.includes('.')) {
       const parts = dateValue.split('.')
@@ -18,21 +18,27 @@ function parseDate(dateValue: any): Date | null {
     }
     return new Date(dateValue)
   }
-  
+
   if (typeof dateValue === 'number') {
     return new Date(dateValue)
   }
-  
+
   if (dateValue instanceof Date) {
     return dateValue
   }
-  
+
   return null
 }
 
 // Фильтрует данные по периоду
-function filterByPeriod(items: any[], periodStart: Date, periodEnd: Date, dateField: string, altDateField?: string): any[] {
-  return items.filter(item => {
+function filterByPeriod(
+  items: any[],
+  periodStart: Date,
+  periodEnd: Date,
+  dateField: string,
+  altDateField?: string
+): any[] {
+  return items.filter((item) => {
     const itemDate = parseDate(item[dateField] || (altDateField ? item[altDateField] : null))
     if (!itemDate) return false
     return itemDate >= periodStart && itemDate <= periodEnd
@@ -42,10 +48,7 @@ function filterByPeriod(items: any[], periodStart: Date, periodEnd: Date, dateFi
 /**
  * Проверяет доступность воркспейса
  */
-async function isWorkspaceAccessible(
-  ctx: app.Ctx,
-  workspacePath: string
-): Promise<boolean> {
+async function isWorkspaceAccessible(ctx: app.Ctx, workspacePath: string): Promise<boolean> {
   try {
     await ctx.heap.getWorkspaceTables(workspacePath)
     return true
@@ -68,18 +71,21 @@ async function findTableByKeywords(
 ): Promise<any | null> {
   try {
     const tables = await ctx.heap.getWorkspaceTables(workspacePath)
-    
+
     for (const table of tables) {
       const titleLower = (table.title || '').toLowerCase()
       const nameLower = (table.name || '').toLowerCase()
-      
+
       for (const keyword of keywords) {
-        if (titleLower.includes(keyword.toLowerCase()) || nameLower.includes(keyword.toLowerCase())) {
+        if (
+          titleLower.includes(keyword.toLowerCase()) ||
+          nameLower.includes(keyword.toLowerCase())
+        ) {
           return table
         }
       }
     }
-    
+
     return null
   } catch (error) {
     ctx.account.log(`Error finding table in ${workspacePath}`, {
@@ -93,11 +99,7 @@ async function findTableByKeywords(
 /**
  * Загружает данные из таблицы (локальной или внешней)
  */
-async function loadTableData(
-  ctx: app.Ctx,
-  table: any,
-  isLocal: boolean
-): Promise<any[]> {
+async function loadTableData(ctx: app.Ctx, table: any, isLocal: boolean): Promise<any[]> {
   try {
     if (isLocal) {
       // Локальная таблица - прямой вызов
@@ -132,7 +134,7 @@ export async function loadWorkspaceData(
   try {
     // Проверяем доступность воркспейса
     let isLocal = !workspacePath || workspacePath === '' || workspacePath === ctx.workspacePath
-    
+
     // Если указан внешний воркспейс, проверяем его доступность
     if (!isLocal) {
       const isAccessible = await isWorkspaceAccessible(ctx, workspacePath)
@@ -145,22 +147,25 @@ export async function loadWorkspaceData(
         workspacePath = '' // Сбрасываем путь
       }
     }
-    
+
     const finalIsLocal = isLocal
-    
+
     let registrationsTable
     let ordersTable
     let paymentsTable
-    
+
     if (finalIsLocal) {
       // Текущий воркспейс - используем локальные таблицы
       registrationsTable = (await import('../tables/registrations.table')).default
       ordersTable = (await import('../tables/orders.table')).default
       paymentsTable = (await import('../tables/payments.table')).default
-      
+
       ctx.account.log('Using local tables', {
         level: 'info',
-        json: { workspacePath: ctx.workspacePath, reason: isLocal ? 'local workspace' : 'external workspace not accessible' }
+        json: {
+          workspacePath: ctx.workspacePath,
+          reason: isLocal ? 'local workspace' : 'external workspace not accessible'
+        }
       })
     } else {
       // Внешний воркспейс - ищем таблицы динамически
@@ -168,11 +173,11 @@ export async function loadWorkspaceData(
         level: 'info',
         json: { workspacePath }
       })
-      
+
       registrationsTable = await findTableByKeywords(ctx, workspacePath, ['регистр', 'registr'])
       ordersTable = await findTableByKeywords(ctx, workspacePath, ['заказ', 'order'])
       paymentsTable = await findTableByKeywords(ctx, workspacePath, ['оплат', 'payment', 'pay'])
-      
+
       ctx.account.log('Found tables', {
         level: 'info',
         json: {
@@ -183,17 +188,25 @@ export async function loadWorkspaceData(
         }
       })
     }
-    
+
     // Загружаем все данные
-    const allRegistrations = registrationsTable ? await loadTableData(ctx, registrationsTable, finalIsLocal) : []
+    const allRegistrations = registrationsTable
+      ? await loadTableData(ctx, registrationsTable, finalIsLocal)
+      : []
     const allOrders = ordersTable ? await loadTableData(ctx, ordersTable, finalIsLocal) : []
     const allPayments = paymentsTable ? await loadTableData(ctx, paymentsTable, finalIsLocal) : []
-    
+
     // Фильтруем по периоду
-    const registrations = filterByPeriod(allRegistrations, periodStart, periodEnd, 'createdAt', 'date_reg')
+    const registrations = filterByPeriod(
+      allRegistrations,
+      periodStart,
+      periodEnd,
+      'createdAt',
+      'date_reg'
+    )
     const orders = filterByPeriod(allOrders, periodStart, periodEnd, 'createdAt', 'date')
     const payments = filterByPeriod(allPayments, periodStart, periodEnd, 'paidAt', 'date')
-    
+
     // Считаем сумму оплат (amount может быть Money объектом, массивом или числом)
     const totalPaymentsAmount = payments.reduce((sum, p) => {
       let amount = 0
@@ -205,7 +218,7 @@ export async function loadWorkspaceData(
       }
       return sum + amount
     }, 0)
-    
+
     ctx.account.log(`Data loaded and filtered`, {
       level: 'info',
       json: {
@@ -216,7 +229,7 @@ export async function loadWorkspaceData(
         totalAmount: totalPaymentsAmount
       }
     })
-    
+
     return {
       registrations,
       orders,
@@ -228,7 +241,7 @@ export async function loadWorkspaceData(
       level: 'error',
       json: { error: error.message, workspacePath }
     })
-    
+
     return {
       registrations: [],
       orders: [],

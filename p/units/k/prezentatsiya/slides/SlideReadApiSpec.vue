@@ -13,7 +13,7 @@
           :key="it.title"
           class="item"
           :class="{ accent: it.accent }"
-          :style="{ animationDelay: (0.05 + i * 0.08) + 's' }"
+          :style="{ animationDelay: 0.05 + i * 0.08 + 's' }"
         >
           <span class="badge">{{ it.num }}</span>
           <div class="text">
@@ -38,7 +38,7 @@ const items = [
   { num: '01', title: 'Метод и URL', caption: 'Что делаем и куда стучимся' },
   { num: '02', title: 'Обязательные параметры', caption: 'Без чего вообще не сработает' },
   { num: '03', title: 'Тело запроса', caption: 'Формат и поля' },
-  { num: '04', title: 'Примеры', caption: 'Главное. С них и начинайте.', accent: true },
+  { num: '04', title: 'Примеры', caption: 'Главное. С них и начинайте.', accent: true }
 ]
 </script>
 
@@ -68,7 +68,14 @@ const items = [
   font-size: clamp(26px, 3.2vw, 52px);
   color: var(--text-primary);
 }
-.strip { display: block; width: 80px; height: 4px; background: var(--accent-cyan); border-radius: 2px; margin: 16px 0; }
+.strip {
+  display: block;
+  width: 80px;
+  height: 4px;
+  background: var(--accent-cyan);
+  border-radius: 2px;
+  margin: 16px 0;
+}
 .subtitle {
   font-family: var(--font-body-new);
   font-size: clamp(15px, 1.5vw, 26px);
@@ -77,7 +84,8 @@ const items = [
 
 .items {
   list-style: none;
-  margin: 0; padding: 0;
+  margin: 0;
+  padding: 0;
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -91,7 +99,9 @@ const items = [
   opacity: 0;
   animation: fadeInUp 480ms ease-out forwards;
 }
-.item:last-child { border-bottom: none; }
+.item:last-child {
+  border-bottom: none;
+}
 .item.accent {
   background: rgba(0, 217, 255, 0.06);
   border-left: 4px solid var(--accent-cyan);
@@ -102,7 +112,8 @@ const items = [
 
 .badge {
   flex-shrink: 0;
-  width: 56px; height: 56px;
+  width: 56px;
+  height: 56px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -118,7 +129,11 @@ const items = [
   background: var(--accent-cyan);
   color: var(--bg-base);
 }
-.text { display: flex; flex-direction: column; gap: 6px; }
+.text {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
 .i-title {
   font-family: var(--font-display-new);
   font-weight: 600;
@@ -130,7 +145,10 @@ const items = [
   font-size: clamp(13px, 1.2vw, 22px);
   color: var(--text-secondary);
 }
-.item.accent .i-caption { color: var(--text-primary); font-weight: 600; }
+.item.accent .i-caption {
+  color: var(--text-primary);
+  font-weight: 600;
+}
 
 .footer-anchor {
   display: flex;
@@ -142,7 +160,8 @@ const items = [
   border-radius: 12px;
 }
 .footer-anchor .vstrip {
-  width: 60px; height: 4px;
+  width: 60px;
+  height: 4px;
   background: var(--accent-cyan);
   border-radius: 2px;
   flex-shrink: 0;
@@ -155,8 +174,15 @@ const items = [
 }
 
 @media (max-width: 1024px) {
-  .slide { padding: 32px 16px; }
-  .badge { width: 44px; height: 44px; }
-  .item { gap: 16px; }
+  .slide {
+    padding: 32px 16px;
+  }
+  .badge {
+    width: 44px;
+    height: 44px;
+  }
+  .item {
+    gap: 16px;
+  }
 }
 </style>

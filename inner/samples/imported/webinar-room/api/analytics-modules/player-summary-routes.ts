@@ -9,23 +9,23 @@ import { actionToEventType, getWorkspacePath, resolveAnalyticsEntity } from './u
 // Прогресс считается последовательным, если разница между минутами < 2
 function calculateSequentialMinutes(minutes: number[]): number {
   if (minutes.length === 0) return 0
-  
+
   let total = 0
   let segmentStart = minutes[0]
   let segmentEnd = minutes[0]
-  
+
   for (let i = 1; i < minutes.length; i++) {
     if (minutes[i] - minutes[i - 1] < 2) {
       segmentEnd = minutes[i]
     } else {
-      total += (segmentEnd - segmentStart + 1)
+      total += segmentEnd - segmentStart + 1
       segmentStart = minutes[i]
       segmentEnd = minutes[i]
     }
   }
-  
-  total += (segmentEnd - segmentStart + 1)
-  
+
+  total += segmentEnd - segmentStart + 1
+
   return total
 }
 
@@ -50,11 +50,23 @@ export const apiPlayerAnalyticsSummaryRoute = reporterApp.get('/summary', async 
 
   if (!hasStartedAt && entity.type === 'episode') {
     return {
-      uniqueViewers: 0, totalPlays: 0, totalCompleted: 0, totalPauses: 0, totalSeeks: 0,
-      deviceStats: [], eventTypeStats: [], countryStats: [],
-      avgEngagement: 0, completionRate: 0, peakViewers: 0, peakViewersTimeFromStart: null,
-      retentionCurve: [], sessionsStats: { singleSession: 0, multiSession: 0 },
-      newViewers: 0, returningViewers: 0, avgWatchTimeSeconds: 0,
+      uniqueViewers: 0,
+      totalPlays: 0,
+      totalCompleted: 0,
+      totalPauses: 0,
+      totalSeeks: 0,
+      deviceStats: [],
+      eventTypeStats: [],
+      countryStats: [],
+      avgEngagement: 0,
+      completionRate: 0,
+      peakViewers: 0,
+      peakViewersTimeFromStart: null,
+      retentionCurve: [],
+      sessionsStats: { singleSession: 0, multiSession: 0 },
+      newViewers: 0,
+      returningViewers: 0,
+      avgWatchTimeSeconds: 0
     }
   }
 
@@ -65,7 +77,10 @@ export const apiPlayerAnalyticsSummaryRoute = reporterApp.get('/summary', async 
   // Для автовебинаров: startedAt берём из первого события в Clickhouse
   // Для эфиров: из таблицы
   const startedAtStr = hasStartedAt
-    ? `toDateTime('${new Date(entity.startedAt!).toISOString().replace('T', ' ').replace(/\.\d+Z$/, '')}', 'UTC')`
+    ? `toDateTime('${new Date(entity.startedAt!)
+        .toISOString()
+        .replace('T', ' ')
+        .replace(/\.\d+Z$/, '')}', 'UTC')`
     : `(SELECT min(ts64) FROM chatium_ai.access_log WHERE startsWith(urlPath, '${EVENT_PREFIX}') AND action_param1 = '${safeId}')`
 
   const summaryQuery = `
@@ -79,7 +94,6 @@ export const apiPlayerAnalyticsSummaryRoute = reporterApp.get('/summary', async 
     WHERE startsWith(urlPath, '${EVENT_PREFIX}')
       AND action_param1 = '${safeId}'
   `
-
 
   const deviceQuery = `
     SELECT
@@ -243,7 +257,18 @@ export const apiPlayerAnalyticsSummaryRoute = reporterApp.get('/summary', async 
     FROM viewer_session_duration
   `
 
-  const [summaryResult, deviceResult, eventTypeResult, engagementResult, countryResult, peakViewersResult, retentionCurveResult, viewerSessionsResult, newVsReturningResult, avgWatchTimeResult] = await Promise.all([
+  const [
+    summaryResult,
+    deviceResult,
+    eventTypeResult,
+    engagementResult,
+    countryResult,
+    peakViewersResult,
+    retentionCurveResult,
+    viewerSessionsResult,
+    newVsReturningResult,
+    avgWatchTimeResult
+  ] = await Promise.all([
     queryAi(ctx, summaryQuery),
     queryAi(ctx, deviceQuery),
     queryAi(ctx, eventTypeQuery),
@@ -253,39 +278,40 @@ export const apiPlayerAnalyticsSummaryRoute = reporterApp.get('/summary', async 
     queryAi(ctx, retentionCurveQuery),
     queryAi(ctx, viewerSessionsQuery),
     queryAi(ctx, newVsReturningQuery),
-    queryAi(ctx, avgWatchTimeQuery),
+    queryAi(ctx, avgWatchTimeQuery)
   ])
 
   const summary = summaryResult.rows?.[0] || {}
 
   const deviceStats = (deviceResult.rows || []).map((row: any) => ({
     deviceType: row.device || 'unknown',
-    count: row.cnt,
+    count: row.cnt
   }))
 
   const eventTypeStats = (eventTypeResult.rows || []).map((row: any) => ({
     type: actionToEventType(row.action || ''),
-    count: row.cnt,
+    count: row.cnt
   }))
 
   const countryStats = (countryResult.rows || []).map((row: any) => ({
     country: row.country || 'Unknown',
-    count: row.cnt,
+    count: row.cnt
   }))
 
   const engagementSessions = engagementResult.rows || []
   const effectiveDuration = streamDurationSeconds > 0 ? streamDurationSeconds : 1
-  const avgEngagement = engagementSessions.length > 0
-    ? Math.round(
-        engagementSessions.reduce((sum: number, s: any) => {
-          const minutesArray = s.minutes_array || []
-          const sequentialMinutes = calculateSequentialMinutes(minutesArray)
-          const watchedSeconds = sequentialMinutes * 60
-          const engagementPercent = Math.min((watchedSeconds / effectiveDuration) * 100, 100)
-          return sum + engagementPercent
-        }, 0) / engagementSessions.length
-      )
-    : 0
+  const avgEngagement =
+    engagementSessions.length > 0
+      ? Math.round(
+          engagementSessions.reduce((sum: number, s: any) => {
+            const minutesArray = s.minutes_array || []
+            const sequentialMinutes = calculateSequentialMinutes(minutesArray)
+            const watchedSeconds = sequentialMinutes * 60
+            const engagementPercent = Math.min((watchedSeconds / effectiveDuration) * 100, 100)
+            return sum + engagementPercent
+          }, 0) / engagementSessions.length
+        )
+      : 0
 
   const totalPlays = summary.totalPlays || 0
   const totalCompleted = summary.totalCompleted || 0
@@ -296,7 +322,7 @@ export const apiPlayerAnalyticsSummaryRoute = reporterApp.get('/summary', async 
   const retentionCurveRaw = (retentionCurveResult.rows || []).map((row: any) => ({
     minute: row.minute,
     retainedViewers: row.retainedViewers || 0,
-    retentionPercent: row.retentionPercent || 0,
+    retentionPercent: row.retentionPercent || 0
   }))
 
   // Определяем максимальную минуту
@@ -310,7 +336,10 @@ export const apiPlayerAnalyticsSummaryRoute = reporterApp.get('/summary', async 
   }
 
   // Создаём полный массив минут с нулями
-  const retentionCurveMap = new Map<number, { minute: number, retainedViewers: number, retentionPercent: number }>()
+  const retentionCurveMap = new Map<
+    number,
+    { minute: number; retainedViewers: number; retentionPercent: number }
+  >()
   for (let i = 0; i <= maxMinute; i++) {
     retentionCurveMap.set(i, { minute: i, retainedViewers: 0, retentionPercent: 0 })
   }
@@ -320,19 +349,21 @@ export const apiPlayerAnalyticsSummaryRoute = reporterApp.get('/summary', async 
     retentionCurveMap.set(row.minute, row)
   }
 
-  const retentionCurve = Array.from(retentionCurveMap.values())
-    .sort((a, b) => a.minute - b.minute)
+  const retentionCurve = Array.from(retentionCurveMap.values()).sort((a, b) => a.minute - b.minute)
 
-  const sessionsStats = (viewerSessionsResult.rows || []).reduce((acc: any, row: any) => {
-    const sessions = row.sessions
-    const count = row.viewersCount
-    if (sessions === 1) acc.singleSession += count
-    else if (sessions >= 2) acc.multiSession += count
-    return acc
-  }, { singleSession: 0, multiSession: 0 })
+  const sessionsStats = (viewerSessionsResult.rows || []).reduce(
+    (acc: any, row: any) => {
+      const sessions = row.sessions
+      const count = row.viewersCount
+      if (sessions === 1) acc.singleSession += count
+      else if (sessions >= 2) acc.multiSession += count
+      return acc
+    },
+    { singleSession: 0, multiSession: 0 }
+  )
 
   const newVsReturning = newVsReturningResult.rows?.[0] || { newViewers: 0, returningViewers: 0 }
-  
+
   const avgWatchTime = avgWatchTimeResult.rows?.[0]?.avgWatchTimeSeconds || 0
 
   return {
@@ -352,7 +383,7 @@ export const apiPlayerAnalyticsSummaryRoute = reporterApp.get('/summary', async 
     sessionsStats,
     newViewers: newVsReturning.newViewers || 0,
     returningViewers: newVsReturning.returningViewers || 0,
-    avgWatchTimeSeconds: avgWatchTime,
+    avgWatchTimeSeconds: avgWatchTime
   }
 })
 
@@ -388,7 +419,10 @@ export const apiPlayerAnalyticsTimelineRoute = reporterApp.get('/timeline', asyn
     startTime = entity.startedAt!
     const endTime = entity.finishedAt || new Date()
     totalMinutes = Math.floor((endTime.getTime() - startTime.getTime()) / (60 * 1000))
-    startedAtClickhouse = startTime.toISOString().replace('T', ' ').replace(/\.\d+Z$/, '')
+    startedAtClickhouse = startTime
+      .toISOString()
+      .replace('T', ' ')
+      .replace(/\.\d+Z$/, '')
   } else {
     // Для автовебинаров: используем длительность видео, а начало берём из первого события
     totalMinutes = Math.ceil(entity.durationSeconds / 60)
@@ -417,16 +451,16 @@ export const apiPlayerAnalyticsTimelineRoute = reporterApp.get('/timeline', asyn
   const result = await queryAi(ctx, query)
 
   // Строим Map по минутам эфира из Clickhouse
-  const minuteData = new Map<number, { viewers: number, events: number }>()
+  const minuteData = new Map<number, { viewers: number; events: number }>()
   for (const row of result.rows || []) {
     minuteData.set(Number(row.stream_minute), {
       viewers: row.viewers,
-      events: row.events,
+      events: row.events
     })
   }
 
   // Строим полный временной ряд от 0 до totalMinutes
-  const timeline: { minute: number, period: string, viewers: number, events: number }[] = []
+  const timeline: { minute: number; period: string; viewers: number; events: number }[] = []
   for (let m = 0; m <= totalMinutes; m++) {
     const periodDate = useDbStartTime
       ? new Date(startTime.getTime() + m * 60 * 1000)
@@ -436,7 +470,7 @@ export const apiPlayerAnalyticsTimelineRoute = reporterApp.get('/timeline', asyn
       minute: m,
       period: periodDate.toISOString(),
       viewers: data?.viewers || 0,
-      events: data?.events || 0,
+      events: data?.events || 0
     })
   }
 

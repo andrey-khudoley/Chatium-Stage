@@ -18,7 +18,9 @@ const error = ref('')
 
 watch(
   () => props.hasExistingBot,
-  () => { error.value = '' }
+  () => {
+    error.value = ''
+  }
 )
 
 async function submit() {
@@ -52,7 +54,6 @@ async function submit() {
     saving.value = false
   }
 }
-
 </script>
 
 <template>
@@ -62,10 +63,13 @@ async function submit() {
     </h3>
     <p v-if="hasExistingBot" class="text-amber-500 text-sm mb-3">
       <i class="fas fa-exclamation-triangle mr-1"></i>
-      У кампании уже подключён бот. Ввод нового токена заменит его. Старый бот перестанет получать апдейты.
+      У кампании уже подключён бот. Ввод нового токена заменит его. Старый бот перестанет получать
+      апдейты.
     </p>
     <form @submit.prevent="submit">
-      <label class="block text-[var(--color-text-secondary)] text-sm mb-1">Токен бота (от @BotFather)</label>
+      <label class="block text-[var(--color-text-secondary)] text-sm mb-1"
+        >Токен бота (от @BotFather)</label
+      >
       <input
         v-model="token"
         type="password"

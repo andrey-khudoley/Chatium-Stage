@@ -14,6 +14,8 @@ export const addCommentToDialogHandler: V1GcHandler = async (_ctx, a) => {
   return { kind: 'gc_result', gc }
 }
 
-export const addCommentToDialogRoute = app.post('/', async (ctx, req) => handleV1Op(ctx, req, 'addCommentToDialog', addCommentToDialogHandler))
+export const addCommentToDialogRoute = app.post('/', async (ctx, req) =>
+  handleV1Op(ctx, req, 'addCommentToDialog', addCommentToDialogHandler)
+)
 
 export default addCommentToDialogRoute

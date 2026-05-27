@@ -6,14 +6,14 @@ import { getAppUrl } from './shared/app-paths'
 
 export const invitePageRoute = app.get('/:token', async (ctx, req) => {
   const { token } = req.params
-  
+
   // Динамически определяем базовый путь для ссылок
   const invitePath = getAppUrl(ctx, `/invite~${token}`)
-  
+
   try {
     // Получаем информацию о приглашении
     const inviteInfo = await apiInvitesByTokenRoute({ token }).run(ctx)
-    
+
     if (!inviteInfo.success) {
       return (
         <html>
@@ -30,7 +30,7 @@ export const invitePageRoute = app.get('/:token', async (ctx, req) => {
               </div>
               <h1 class="text-2xl font-bold text-gray-800 mb-2">Приглашение не найдено</h1>
               <p class="text-gray-600 mb-6">Ссылка недействительна или срок её действия истёк.</p>
-              <a 
+              <a
                 href={indexPageRoute.url()}
                 class="inline-block bg-primary text-white px-6 py-3 rounded-lg font-medium hover:bg-secondary transition-colors"
                 style="background-color: #008069;"
@@ -42,9 +42,9 @@ export const invitePageRoute = app.get('/:token', async (ctx, req) => {
         </html>
       )
     }
-    
+
     const { invite, chat } = inviteInfo
-    
+
     // Проверяем, не истёк ли срок действия
     if (invite.expiresAt && new Date(invite.expiresAt) < new Date()) {
       return (
@@ -62,7 +62,7 @@ export const invitePageRoute = app.get('/:token', async (ctx, req) => {
               </div>
               <h1 class="text-2xl font-bold text-gray-800 mb-2">Срок действия истёк</h1>
               <p class="text-gray-600 mb-6">Это приглашение больше не действительно.</p>
-              <a 
+              <a
                 href={indexPageRoute.url()}
                 class="inline-block bg-primary text-white px-6 py-3 rounded-lg font-medium hover:bg-secondary transition-colors"
                 style="background-color: #008069;"
@@ -74,17 +74,17 @@ export const invitePageRoute = app.get('/:token', async (ctx, req) => {
         </html>
       )
     }
-    
+
     // Если пользователь авторизован
     if (ctx.user) {
       // Проверяем, не является ли пользователь уже участником
       const isAlreadyMember = inviteInfo.isAlreadyMember
-      
+
       if (isAlreadyMember) {
         // Перенаправляем в чат
         return ctx.resp.redirect(`${indexPageRoute.url()}#/chat/${chat.feedId}`)
       }
-      
+
       // Показываем страницу с информацией о чате и кнопкой присоединиться
       return (
         <html>
@@ -107,33 +107,43 @@ export const invitePageRoute = app.get('/:token', async (ctx, req) => {
                 </div>
                 <h1 class="text-2xl font-bold text-gray-800 mb-2">Вас пригласили в чат</h1>
               </div>
-              
+
               <div class="bg-gray-50 rounded-lg p-4 mb-6">
                 <h2 class="text-xl font-semibold text-gray-800 mb-1">{chat.title}</h2>
                 {chat.description && <p class="text-gray-600 text-sm">{chat.description}</p>}
                 <div class="mt-3 flex items-center justify-center gap-4 text-sm text-gray-500">
-                  <span><i class="fas fa-users mr-1"></i> {inviteInfo.participantsCount} участников</span>
-                  {chat.type === 'public' && <span><i class="fas fa-globe mr-1"></i> Публичный</span>}
+                  <span>
+                    <i class="fas fa-users mr-1"></i> {inviteInfo.participantsCount} участников
+                  </span>
+                  {chat.type === 'public' && (
+                    <span>
+                      <i class="fas fa-globe mr-1"></i> Публичный
+                    </span>
+                  )}
                 </div>
               </div>
-              
+
               {invite.invitedBy && (
                 <p class="text-gray-600 mb-6">
-                  Пригласил{invite.invitedBy.gender === 'female' ? 'а' : ''}: <span class="font-medium">{invite.invitedBy.displayName}</span>
+                  Пригласил{invite.invitedBy.gender === 'female' ? 'а' : ''}:{' '}
+                  <span class="font-medium">{invite.invitedBy.displayName}</span>
                 </p>
               )}
-              
-              <form method="POST" action={`${apiInvitesAcceptRoute.url()}?back=${encodeURIComponent(indexPageRoute.url() + '#/chat/' + chat.feedId)}`}>
+
+              <form
+                method="POST"
+                action={`${apiInvitesAcceptRoute.url()}?back=${encodeURIComponent(indexPageRoute.url() + '#/chat/' + chat.feedId)}`}
+              >
                 <input type="hidden" name="token" value={token} />
-                <button 
+                <button
                   type="submit"
                   class="w-full bg-primary text-white px-6 py-3 rounded-lg font-medium hover:bg-secondary transition-colors mb-3"
                 >
                   {chat.type === 'channel' ? 'Перейти к каналу' : 'Перейти к группе'}
                 </button>
               </form>
-              
-              <a 
+
+              <a
                 href={indexPageRoute.url()}
                 class="inline-block text-gray-500 hover:text-gray-700 transition-colors"
               >
@@ -144,7 +154,7 @@ export const invitePageRoute = app.get('/:token', async (ctx, req) => {
         </html>
       )
     }
-    
+
     // Пользователь не авторизован - показываем страницу с предложением войти
     return (
       <html>
@@ -167,24 +177,24 @@ export const invitePageRoute = app.get('/:token', async (ctx, req) => {
               </div>
               <h1 class="text-2xl font-bold text-gray-800 mb-2">Вас пригласили в чат</h1>
             </div>
-            
+
             <div class="bg-gray-50 rounded-lg p-4 mb-6">
               <h2 class="text-xl font-semibold text-gray-800 mb-1">{chat.title}</h2>
               {chat.description && <p class="text-gray-600 text-sm">{chat.description}</p>}
             </div>
-            
+
             <p class="text-gray-600 mb-6">
               Чтобы присоединиться к чату, войдите в свой аккаунт или зарегистрируйтесь.
             </p>
-            
-            <a 
+
+            <a
               href={`/s/auth/signin?back=${encodeURIComponent(invitePath)}`}
               class="inline-block w-full bg-primary text-white px-6 py-3 rounded-lg font-medium hover:bg-secondary transition-colors mb-3"
             >
               Войти
             </a>
-            
-            <a 
+
+            <a
               href={indexPageRoute.url()}
               class="inline-block text-gray-500 hover:text-gray-700 transition-colors"
             >
@@ -194,10 +204,9 @@ export const invitePageRoute = app.get('/:token', async (ctx, req) => {
         </body>
       </html>
     )
-    
   } catch (error) {
     console.error('Error loading invite:', error)
-    
+
     return (
       <html>
         <head>
@@ -212,7 +221,7 @@ export const invitePageRoute = app.get('/:token', async (ctx, req) => {
             </div>
             <h1 class="text-2xl font-bold text-gray-800 mb-2">Произошла ошибка</h1>
             <p class="text-gray-600 mb-6">Не удалось загрузить информацию о приглашении.</p>
-            <a 
+            <a
               href={indexPageRoute.url()}
               class="inline-block bg-primary text-white px-6 py-3 rounded-lg font-medium hover:bg-secondary transition-colors"
               style="background-color: #008069;"

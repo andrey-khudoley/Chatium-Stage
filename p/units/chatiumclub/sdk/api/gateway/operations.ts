@@ -53,7 +53,11 @@ export const gatewayOperationsRoute = app.get('/', async (ctx) => {
     })
     return {
       ok: false,
-      error: { code: 'SDK_INTERNAL_ERROR', message: 'Внутренняя ошибка тонкого клиента.', details: { error: msg } },
+      error: {
+        code: 'SDK_INTERNAL_ERROR',
+        message: 'Внутренняя ошибка тонкого клиента.',
+        details: { error: msg }
+      },
       requestId: null,
       gatewayHttpStatus: 0
     }

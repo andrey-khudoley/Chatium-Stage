@@ -4,7 +4,11 @@
       <div class="timeline-ruler" ref="ruler">
         <div class="ruler-track" :style="{ width: rulerWidth + 'px' }">
           <template v-for="mark in timeMarks" :key="mark.sec">
-            <div class="ruler-mark" :class="{ 'ruler-mark--major': mark.major }" :style="{ left: secToX(mark.sec) + 'px' }">
+            <div
+              class="ruler-mark"
+              :class="{ 'ruler-mark--major': mark.major }"
+              :style="{ left: secToX(mark.sec) + 'px' }"
+            >
               <span v-if="mark.major" class="ruler-label">{{ mark.label }}</span>
             </div>
           </template>
@@ -26,7 +30,11 @@
               :key="evt.id"
               class="lane-event"
               :class="{ 'lane-event--selected': selectedEventId === evt.id }"
-              :style="{ left: secToX(evt.offsetSeconds) + 'px', background: lane.color + '33', borderColor: lane.color }"
+              :style="{
+                left: secToX(evt.offsetSeconds) + 'px',
+                background: lane.color + '33',
+                borderColor: lane.color
+              }"
               :title="eventTooltip(evt)"
               @click.stop="$emit('select', evt)"
               @dblclick.stop="$emit('edit', evt)"
@@ -36,7 +44,11 @@
           </div>
         </div>
 
-        <div class="timeline-playhead" v-if="duration > 0" :style="{ left: secToX(duration) + 'px' }">
+        <div
+          class="timeline-playhead"
+          v-if="duration > 0"
+          :style="{ left: secToX(duration) + 'px' }"
+        >
           <div class="playhead-line"></div>
           <span class="playhead-label">{{ formatOffset(duration) }}</span>
         </div>
@@ -53,7 +65,7 @@ const props = defineProps({
   autowebinarId: { type: String, required: true },
   duration: { type: Number, default: 3600 },
   selectedEventId: { type: String, default: '' },
-  refreshToken: { type: Number, default: 0 },
+  refreshToken: { type: Number, default: 0 }
 })
 
 defineEmits(['select', 'edit'])
@@ -75,7 +87,7 @@ const rulerWidth = computed(() => {
 function secToX(sec) {
   const totalMin = props.duration / 60
   if (totalMin <= 0) return 30
-  return 30 + ((sec / 60) / totalMin) * (rulerWidth.value - 60)
+  return 30 + (sec / 60 / totalMin) * (rulerWidth.value - 60)
 }
 
 const timeMarks = computed(() => {
@@ -90,25 +102,45 @@ const timeMarks = computed(() => {
     marks.push({
       sec: m * 60,
       label: formatOffset(m * 60),
-      major: m % (interval * 5 === 0 ? interval * 5 : interval) === 0 || m === 0,
+      major: m % (interval * 5 === 0 ? interval * 5 : interval) === 0 || m === 0
     })
   }
   return marks
 })
 
 const laneConfig = [
-  { id: 'system', label: 'Система', icon: 'fas fa-cog', color: '#6b7280', types: ['waiting_room_start', 'stream_start', 'finish'] },
-  { id: 'forms', label: 'Формы', icon: 'fas fa-file-alt', color: '#10b981', types: ['show_form', 'hide_form'] },
-  { id: 'banners', label: 'Баннеры', icon: 'fas fa-bullhorn', color: '#8b5cf6', types: ['sale_banner'] },
+  {
+    id: 'system',
+    label: 'Система',
+    icon: 'fas fa-cog',
+    color: '#6b7280',
+    types: ['waiting_room_start', 'stream_start', 'finish']
+  },
+  {
+    id: 'forms',
+    label: 'Формы',
+    icon: 'fas fa-file-alt',
+    color: '#10b981',
+    types: ['show_form', 'hide_form']
+  },
+  {
+    id: 'banners',
+    label: 'Баннеры',
+    icon: 'fas fa-bullhorn',
+    color: '#8b5cf6',
+    types: ['sale_banner']
+  },
   { id: 'chat', label: 'Чат', icon: 'fas fa-comments', color: '#3b82f6', types: ['chat_message'] },
-  { id: 'reactions', label: 'Реакции', icon: 'fas fa-heart', color: '#ec4899', types: ['reaction'] },
+  { id: 'reactions', label: 'Реакции', icon: 'fas fa-heart', color: '#ec4899', types: ['reaction'] }
 ]
 
 const lanes = computed(() => {
-  return laneConfig.map(cfg => ({
-    ...cfg,
-    events: events.value.filter(e => cfg.types.includes(e.eventType)),
-  })).filter(lane => lane.events.length > 0)
+  return laneConfig
+    .map((cfg) => ({
+      ...cfg,
+      events: events.value.filter((e) => cfg.types.includes(e.eventType))
+    }))
+    .filter((lane) => lane.events.length > 0)
 })
 
 function formatOffset(sec) {
@@ -137,7 +169,9 @@ function syncScroll() {
 async function loadTimelineData() {
   loading.value = true
   try {
-    const res = await apiScenarioTimelineDataRoute.query({ autowebinarId: props.autowebinarId }).run(ctx)
+    const res = await apiScenarioTimelineDataRoute
+      .query({ autowebinarId: props.autowebinarId })
+      .run(ctx)
     events.value = res.events || []
   } catch (e) {
     console.error(e)
@@ -149,13 +183,19 @@ onMounted(() => {
   loadTimelineData()
 })
 
-watch(() => props.autowebinarId, () => {
-  loadTimelineData()
-})
+watch(
+  () => props.autowebinarId,
+  () => {
+    loadTimelineData()
+  }
+)
 
-watch(() => props.refreshToken, () => {
-  loadTimelineData()
-})
+watch(
+  () => props.refreshToken,
+  () => {
+    loadTimelineData()
+  }
+)
 </script>
 
 <style scoped>

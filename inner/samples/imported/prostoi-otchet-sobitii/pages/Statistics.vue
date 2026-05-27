@@ -1,7 +1,7 @@
 <template>
   <div class="statistics-page">
     <div v-if="loading" class="loading">Загрузка статистики...</div>
-    
+
     <div v-if="!loading" class="stats-grid">
       <div class="stat-card">
         <div class="stat-icon">
@@ -12,7 +12,7 @@
           <div class="stat-label">Уникальные пользователи</div>
         </div>
       </div>
-      
+
       <div class="stat-card">
         <div class="stat-icon visits-icon">
           <i class="fas fa-eye"></i>
@@ -23,7 +23,7 @@
         </div>
       </div>
     </div>
-    
+
     <div v-if="!loading && stats.total_visits > 0" class="stats-details">
       <div class="detail-card">
         <h3>Подробности</h3>
@@ -74,9 +74,9 @@ async function loadStatistics() {
       url: props.filters.url,
       userId: props.filters.userId
     }
-    
+
     const response = await apiStatisticsRoute.query(queryParams).run(ctx)
-    
+
     if (response.rows && response.rows.length > 0) {
       stats.value = response.rows[0]
     }
@@ -130,7 +130,9 @@ onMounted(() => {
   display: flex;
   align-items: center;
   gap: 20px;
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s;
 }
 
 .stat-card:hover {
@@ -214,15 +216,15 @@ onMounted(() => {
   .stats-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .stat-card {
     padding: 20px;
   }
-  
+
   .stat-number {
     font-size: 28px;
   }
-  
+
   .detail-row {
     flex-direction: column;
     align-items: flex-start;

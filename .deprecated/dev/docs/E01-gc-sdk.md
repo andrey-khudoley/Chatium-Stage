@@ -62,11 +62,13 @@
 ### Отличие от публичного API
 
 **GetCourse SDK**:
+
 - Вызывается из кода внутри GetCourse аккаунта
 - Автоматический контекст текущего пользователя
 - Расширенные возможности (внутренние методы)
 
 **Публичное API GetCourse**:
+
 - Вызывается снаружи через HTTP
 - Требует API ключи
 - Ограниченный функционал
@@ -105,7 +107,7 @@ const trainings = getAvailableTrainings(ctx)
 ## Импорт SDK
 
 ```typescript
-import { 
+import {
   // Тренинги и уроки
   getAvailableTrainings,
   getRootAvailableTrainings,
@@ -116,7 +118,7 @@ import {
   getWebinars,
   getWebinarsByIds,
   getScheduleByEmail,
-  
+
   // Пользователи
   getGcUserData,
   getUserFields,
@@ -126,7 +128,7 @@ import {
   getUserCustomFields,
   setUserCustomFields,
   addUserComment,
-  
+
   // Заказы
   getDealInfo,
   getDealInfoWithParams,
@@ -141,38 +143,38 @@ import {
   getDealCallsList,
   getDealCustomFieldsList,
   getDealCancelReasons,
-  
+
   // Группы
   getAllGroups,
   getGroupsByIds,
   getUserGroups,
   addUserToGroup,
   removeUserFromGroup,
-  
+
   // Баланс
   getBalance,
   addBalance,
   dischargeBalance,
-  
+
   // Сегменты
   getSegmentsForUsers,
   getSegmentsForDeals,
   isUserInSegment,
   isDealInSegment,
-  
+
   // Предложения
   getOffers,
   getOffersByIds,
-  
+
   // Дипломы
   getDiplomasByEmail,
   issueDiploma,
-  
+
   // Цели
   getGoalInfo,
   getGoalRecords,
   createGoalRecord,
-  
+
   // Прочее
   getUserPurchases,
   getUserPurchasesByProduct,
@@ -197,10 +199,10 @@ import { getAvailableTrainings } from '@gc-mcp-server/sdk'
 export const apiGetTrainingsRoute = app.get('/trainings', async (ctx) => {
   try {
     const trainings = await getAvailableTrainings(ctx)
-    
+
     return {
       success: true,
-      trainings: trainings.map(t => ({
+      trainings: trainings.map((t) => ({
         id: t.id,
         title: t.title,
         description: t.description,
@@ -236,9 +238,9 @@ import { getUserTrainings } from '@gc-mcp-server/sdk'
 
 export const apiUserTrainingsRoute = app.get('/user-trainings', async (ctx, req) => {
   const { userId } = req.query
-  
+
   const trainings = await getUserTrainings(ctx, { userId })
-  
+
   return { success: true, trainings }
 })
 ```
@@ -252,12 +254,12 @@ import { getLessonsByTraining } from '@gc-mcp-server/sdk'
 
 export const apiLessonsRoute = app.get('/lessons/:trainingId', async (ctx, req) => {
   const { trainingId } = req.params
-  
+
   const lessons = await getLessonsByTraining(ctx, { trainingId })
-  
+
   return {
     success: true,
-    lessons: lessons.map(l => ({
+    lessons: lessons.map((l) => ({
       id: l.id,
       title: l.title,
       order: l.order,
@@ -288,12 +290,12 @@ import { addLessonAnswerComment } from '@gc-mcp-server/sdk'
 
 export const apiAddCommentRoute = app.post('/add-comment', async (ctx, req) => {
   const { lessonId, comment } = req.body
-  
+
   await addLessonAnswerComment(ctx, {
     lessonId,
     comment
   })
-  
+
   return { success: true }
 })
 ```
@@ -319,12 +321,12 @@ import { getScheduleByEmail } from '@gc-mcp-server/sdk'
 
 export const apiScheduleRoute = app.get('/schedule', async (ctx, req) => {
   const { email } = req.query
-  
+
   const schedule = await getScheduleByEmail(ctx, { email })
-  
+
   return {
     success: true,
-    events: schedule.map(event => ({
+    events: schedule.map((event) => ({
       id: event.id,
       title: event.title,
       startDate: event.startDate,
@@ -377,9 +379,9 @@ import { getUserFields } from '@gc-mcp-server/sdk'
 
 export const apiUserFieldsRoute = app.get('/user-fields', async (ctx, req) => {
   const { userId } = req.query
-  
+
   const fields = await getUserFields(ctx, { userId })
-  
+
   return {
     success: true,
     fields: {
@@ -400,7 +402,7 @@ import { updateUserFields } from '@gc-mcp-server/sdk'
 
 export const apiUpdateUserRoute = app.post('/update-user', async (ctx, req) => {
   const { userId, fields } = req.body
-  
+
   await updateUserFields(ctx, {
     userId,
     fields: {
@@ -411,12 +413,12 @@ export const apiUpdateUserRoute = app.post('/update-user', async (ctx, req) => {
       customField1: fields.customField1
     }
   })
-  
+
   ctx.account.log('User updated', {
     level: 'info',
     json: { userId }
   })
-  
+
   return { success: true }
 })
 ```
@@ -430,12 +432,12 @@ import { getUsersList } from '@gc-mcp-server/sdk'
 
 export const apiUsersListRoute = app.get('/users-list', async (ctx, req) => {
   const { limit = 100, offset = 0 } = req.query
-  
+
   const users = await getUsersList(ctx, {
     limit: parseInt(limit as string),
     offset: parseInt(offset as string)
   })
-  
+
   return {
     success: true,
     users,
@@ -453,10 +455,10 @@ import { getOrCreateCtxUserByEmail } from '@gc-mcp-server/sdk'
 
 export const apiGetUserRoute = app.get('/get-user', async (ctx, req) => {
   const { email } = req.query
-  
+
   // Получит существующего или создаст нового
   const user = await getOrCreateCtxUserByEmail(ctx, { email })
-  
+
   return {
     success: true,
     user: {
@@ -479,9 +481,9 @@ import { getDealInfo } from '@gc-mcp-server/sdk'
 
 export const apiDealRoute = app.get('/deal/:dealId', async (ctx, req) => {
   const { dealId } = req.params
-  
+
   const deal = await getDealInfo(ctx, { dealId })
-  
+
   return {
     success: true,
     deal: {
@@ -504,12 +506,12 @@ import { getDealsByUserId } from '@gc-mcp-server/sdk'
 
 export const apiUserDealsRoute = app.get('/user-deals', async (ctx, req) => {
   const { userId } = req.query
-  
+
   const deals = await getDealsByUserId(ctx, { userId })
-  
+
   return {
     success: true,
-    deals: deals.map(d => ({
+    deals: deals.map((d) => ({
       id: d.id,
       number: d.number,
       status: d.status,
@@ -527,7 +529,7 @@ import { createDeal } from '@gc-mcp-server/sdk'
 
 export const apiCreateDealRoute = app.post('/create-deal', async (ctx, req) => {
   const { userId, offerId, amount } = req.body
-  
+
   const deal = await createDeal(ctx, {
     userId,
     offerId,
@@ -535,12 +537,12 @@ export const apiCreateDealRoute = app.post('/create-deal', async (ctx, req) => {
     currency: 'RUB',
     status: 'new'
   })
-  
+
   ctx.account.log('Deal created', {
     level: 'info',
     json: { dealId: deal.id, userId }
   })
-  
+
   return {
     success: true,
     deal: {
@@ -558,13 +560,13 @@ import { updateDealInfo } from '@gc-mcp-server/sdk'
 
 export const apiUpdateDealRoute = app.post('/update-deal', async (ctx, req) => {
   const { dealId, status, amount } = req.body
-  
+
   await updateDealInfo(ctx, {
     dealId,
     status,
     amount
   })
-  
+
   return { success: true }
 })
 ```
@@ -576,12 +578,12 @@ import { addDealComment } from '@gc-mcp-server/sdk'
 
 export const apiAddDealCommentRoute = app.post('/add-deal-comment', async (ctx, req) => {
   const { dealId, comment } = req.body
-  
+
   await addDealComment(ctx, {
     dealId,
     text: comment
   })
-  
+
   return { success: true }
 })
 ```
@@ -593,7 +595,7 @@ import { addDealPayment } from '@gc-mcp-server/sdk'
 
 export const apiAddPaymentRoute = app.post('/add-payment', async (ctx, req) => {
   const { dealId, amount, paymentMethod } = req.body
-  
+
   await addDealPayment(ctx, {
     dealId,
     amount,
@@ -601,12 +603,12 @@ export const apiAddPaymentRoute = app.post('/add-payment', async (ctx, req) => {
     paymentMethod,
     paymentDate: new Date()
   })
-  
+
   ctx.account.log('Payment added to deal', {
     level: 'info',
     json: { dealId, amount }
   })
-  
+
   return { success: true }
 })
 ```
@@ -622,10 +624,10 @@ import { getAllGroups } from '@gc-mcp-server/sdk'
 
 export const apiGroupsRoute = app.get('/groups', async (ctx) => {
   const groups = await getAllGroups(ctx)
-  
+
   return {
     success: true,
-    groups: groups.map(g => ({
+    groups: groups.map((g) => ({
       id: g.id,
       title: g.title,
       memberCount: g.memberCount
@@ -641,9 +643,9 @@ import { getUserGroups } from '@gc-mcp-server/sdk'
 
 export const apiUserGroupsRoute = app.get('/user-groups', async (ctx, req) => {
   const { userId } = req.query
-  
+
   const groups = await getUserGroups(ctx, { userId })
-  
+
   return { success: true, groups }
 })
 ```
@@ -655,17 +657,17 @@ import { addUserToGroup } from '@gc-mcp-server/sdk'
 
 export const apiAddToGroupRoute = app.post('/add-to-group', async (ctx, req) => {
   const { userId, groupId } = req.body
-  
+
   await addUserToGroup(ctx, {
     userId,
     groupId
   })
-  
+
   ctx.account.log('User added to group', {
     level: 'info',
     json: { userId, groupId }
   })
-  
+
   return { success: true }
 })
 ```
@@ -677,12 +679,12 @@ import { removeUserFromGroup } from '@gc-mcp-server/sdk'
 
 export const apiRemoveFromGroupRoute = app.post('/remove-from-group', async (ctx, req) => {
   const { userId, groupId } = req.body
-  
+
   await removeUserFromGroup(ctx, {
     userId,
     groupId
   })
-  
+
   return { success: true }
 })
 ```
@@ -698,9 +700,9 @@ import { getBalance } from '@gc-mcp-server/sdk'
 
 export const apiGetBalanceRoute = app.get('/balance', async (ctx, req) => {
   const { userId } = req.query
-  
+
   const balance = await getBalance(ctx, { userId })
-  
+
   return {
     success: true,
     balance: {
@@ -718,18 +720,18 @@ import { addBalance } from '@gc-mcp-server/sdk'
 
 export const apiAddBalanceRoute = app.post('/add-balance', async (ctx, req) => {
   const { userId, amount, reason } = req.body
-  
+
   await addBalance(ctx, {
     userId,
     amount,
     reason
   })
-  
+
   ctx.account.log('Balance added', {
     level: 'info',
     json: { userId, amount, reason }
   })
-  
+
   return { success: true }
 })
 ```
@@ -741,13 +743,13 @@ import { dischargeBalance } from '@gc-mcp-server/sdk'
 
 export const apiDischargeBalanceRoute = app.post('/discharge-balance', async (ctx, req) => {
   const { userId, amount, reason } = req.body
-  
+
   await dischargeBalance(ctx, {
     userId,
     amount,
     reason
   })
-  
+
   return { success: true }
 })
 ```
@@ -763,10 +765,10 @@ import { getSegmentsForUsers } from '@gc-mcp-server/sdk'
 
 export const apiUserSegmentsRoute = app.get('/user-segments', async (ctx) => {
   const segments = await getSegmentsForUsers(ctx)
-  
+
   return {
     success: true,
-    segments: segments.map(s => ({
+    segments: segments.map((s) => ({
       id: s.id,
       title: s.title,
       userCount: s.userCount
@@ -782,12 +784,12 @@ import { isUserInSegment } from '@gc-mcp-server/sdk'
 
 export const apiCheckSegmentRoute = app.get('/check-segment', async (ctx, req) => {
   const { userId, segmentId } = req.query
-  
+
   const isInSegment = await isUserInSegment(ctx, {
     userId,
     segmentId
   })
-  
+
   return {
     success: true,
     isInSegment
@@ -806,10 +808,10 @@ import { getOffers } from '@gc-mcp-server/sdk'
 
 export const apiOffersRoute = app.get('/offers', async (ctx) => {
   const offers = await getOffers(ctx)
-  
+
   return {
     success: true,
-    offers: offers.map(o => ({
+    offers: offers.map((o) => ({
       id: o.id,
       title: o.title,
       price: o.price,
@@ -841,12 +843,12 @@ import { getDiplomasByEmail } from '@gc-mcp-server/sdk'
 
 export const apiDiplomasRoute = app.get('/diplomas', async (ctx, req) => {
   const { email } = req.query
-  
+
   const diplomas = await getDiplomasByEmail(ctx, { email })
-  
+
   return {
     success: true,
-    diplomas: diplomas.map(d => ({
+    diplomas: diplomas.map((d) => ({
       id: d.id,
       title: d.title,
       issuedAt: d.issuedAt,
@@ -863,17 +865,17 @@ import { issueDiploma } from '@gc-mcp-server/sdk'
 
 export const apiIssueDiplomaRoute = app.post('/issue-diploma', async (ctx, req) => {
   const { userId, templateId } = req.body
-  
+
   const diploma = await issueDiploma(ctx, {
     userId,
     templateId
   })
-  
+
   ctx.account.log('Diploma issued', {
     level: 'info',
     json: { userId, templateId, diplomaId: diploma.id }
   })
-  
+
   return {
     success: true,
     diploma: {
@@ -902,9 +904,9 @@ export const apiRoute = app.get('/trainings', async (ctx) => {
   } catch (error) {
     ctx.account.log('SDK call failed', {
       level: 'error',
-      json: { 
+      json: {
         method: 'getAvailableTrainings',
-        error: error.message 
+        error: error.message
       }
     })
     return { success: false, error: error.message }
@@ -918,23 +920,23 @@ export const apiRoute = app.get('/trainings', async (ctx) => {
 
 ```typescript
 const cache = new Map()
-const CACHE_TTL = 5 * 60 * 1000  // 5 минут
+const CACHE_TTL = 5 * 60 * 1000 // 5 минут
 
 export const apiCachedRoute = app.get('/cached-data', async (ctx) => {
   const cacheKey = 'trainings'
   const cached = cache.get(cacheKey)
-  
+
   if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
     return { success: true, trainings: cached.data }
   }
-  
+
   const trainings = await getAvailableTrainings(ctx)
-  
+
   cache.set(cacheKey, {
     data: trainings,
     timestamp: Date.now()
   })
-  
+
   return { success: true, trainings }
 })
 ```
@@ -946,17 +948,17 @@ export const apiCachedRoute = app.get('/cached-data', async (ctx) => {
 ```typescript
 export const apiRoute = app.post('/action', async (ctx, req) => {
   const { userId, groupId } = req.body
-  
+
   if (!userId) {
     return { success: false, error: 'userId is required' }
   }
-  
+
   if (!groupId) {
     return { success: false, error: 'groupId is required' }
   }
-  
+
   await addUserToGroup(ctx, { userId, groupId })
-  
+
   return { success: true }
 })
 ```
@@ -970,19 +972,19 @@ import { createDeal } from '@gc-mcp-server/sdk'
 
 export const apiRoute = app.post('/create-deal', async (ctx, req) => {
   const { userId, offerId, amount } = req.body
-  
+
   ctx.account.log('Creating deal', {
     level: 'info',
     json: { userId, offerId, amount }
   })
-  
+
   const deal = await createDeal(ctx, { userId, offerId, amount })
-  
+
   ctx.account.log('Deal created successfully', {
     level: 'info',
     json: { dealId: deal.id, number: deal.number }
   })
-  
+
   return { success: true, deal }
 })
 ```
@@ -1000,11 +1002,11 @@ interface Training {
 }
 
 export const apiRoute = app.get('/trainings', async (ctx) => {
-  const trainings = await getAvailableTrainings(ctx) as Training[]
-  
+  const trainings = (await getAvailableTrainings(ctx)) as Training[]
+
   return {
     success: true,
-    trainings: trainings.filter(t => t.isAvailable)
+    trainings: trainings.filter((t) => t.isAvailable)
   }
 })
 ```
@@ -1023,4 +1025,3 @@ export const apiRoute = app.get('/trainings', async (ctx) => {
 **Версия**: 1.0  
 **Дата**: 2025-11-02  
 **Последнее обновление**: Создание документации по GetCourse SDK
-

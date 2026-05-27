@@ -7,19 +7,19 @@ export const TSaasRefReferral9Xy2Zk = Heap.Table(
     campaignId: Heap.Optional(
       Heap.RefLink('t__tg-ref-program__campaign__8Hn4Lx', {
         customMeta: { title: 'Кампания' },
-        onDelete: 'none',
-      }),
+        onDelete: 'none'
+      })
     ),
     partnerId: Heap.Optional(
       Heap.RefLink('t__tg-ref-program__partner__3Ab7Cd', {
         customMeta: { title: 'Партнёр' },
-        onDelete: 'none',
-      }),
+        onDelete: 'none'
+      })
     ),
     ref: Heap.Optional(
       Heap.String({
-        customMeta: { title: 'Реферальный ID' },
-      }),
+        customMeta: { title: 'Реферальный ID' }
+      })
     ),
     tgId: Heap.Optional(Heap.String({ customMeta: { title: 'Telegram ID' } })),
     gcId: Heap.Optional(Heap.String({ customMeta: { title: 'GetCourse ID' } })),
@@ -28,11 +28,11 @@ export const TSaasRefReferral9Xy2Zk = Heap.Table(
     phone: Heap.Optional(Heap.String({ customMeta: { title: 'Телефон' } })),
     registeredAt: Heap.Optional(
       Heap.DateTime({
-        customMeta: { title: 'Дата регистрации' },
-      }),
-    ),
+        customMeta: { title: 'Дата регистрации' }
+      })
+    )
   },
-  { customMeta: { title: 'Рефералы', description: 'Клиенты (рефералы партнёров)' } },
+  { customMeta: { title: 'Рефералы', description: 'Клиенты (рефералы партнёров)' } }
 )
 
 export default TSaasRefReferral9Xy2Zk

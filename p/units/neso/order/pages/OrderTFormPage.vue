@@ -100,7 +100,7 @@ async function handleSubmit() {
       email: form.value.email.trim(),
       phone: phoneNumber,
       offerId,
-      currency,
+      currency
     })
 
     if (!result.success) {

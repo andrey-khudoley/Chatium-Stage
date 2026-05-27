@@ -1,6 +1,6 @@
-import QuizLeads from "../tables/quiz_leads.table"
-import { sendNotificationToAccountOwners } from "@user-notifier/sdk"
-import { writeWorkspaceEvent } from "@start/sdk"
+import QuizLeads from '../tables/quiz_leads.table'
+import { sendNotificationToAccountOwners } from '@user-notifier/sdk'
+import { writeWorkspaceEvent } from '@start/sdk'
 
 // @shared-route
 export const apiSubmitQuizRoute = app.post('/submit-quiz', async (ctx, req) => {
@@ -19,7 +19,7 @@ export const apiSubmitQuizRoute = app.post('/submit-quiz', async (ctx, req) => {
 
   // Отправляем уведомление администратору
   await sendNotificationToAccountOwners(ctx, {
-    title: "Новая заявка с теста для мастеров!",
+    title: 'Новая заявка с теста для мастеров!',
     html: `
       <h2>Новая заявка с теста</h2>
       <p><strong>Имя:</strong> ${name}</p>

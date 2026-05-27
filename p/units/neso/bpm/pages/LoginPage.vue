@@ -18,8 +18,8 @@ const signinUrl = computed(() => `/s/auth/signin?back=${encodeURIComponent(props
       <p class="bpm-login-kicker">BPM Access</p>
       <h1>Вход в NeSo BPM</h1>
       <p>
-        Страница входа вынесена в новый BPM-проект.
-        Для доступа используется стандартный auth flow Chatium.
+        Страница входа вынесена в новый BPM-проект. Для доступа используется стандартный auth flow
+        Chatium.
       </p>
 
       <div class="bpm-login-actions">
@@ -43,9 +43,7 @@ const signinUrl = computed(() => `/s/auth/signin?back=${encodeURIComponent(props
   border-radius: var(--radius-xl);
   border: 1px solid var(--border-soft);
   padding: 18px;
-  background:
-    var(--gradient-glass),
-    color-mix(in srgb, var(--surface-1) 84%, transparent);
+  background: var(--gradient-glass), color-mix(in srgb, var(--surface-1) 84%, transparent);
   box-shadow: var(--shadow-md);
 }
 

@@ -1,5 +1,5 @@
 // @shared
-import { jsx } from "@app/html-jsx"
+import { jsx } from '@app/html-jsx'
 import QuizPage from './pages/QuizPage.vue'
 import ThankYouPage from './pages/ThankYouPage.vue'
 
@@ -9,8 +9,14 @@ export const indexPageRoute = app.get('/', async (ctx, req) => {
       <head>
         <title>Тест | Получи профессиональное руководство по педикюру</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <meta name="description" content="Пройди тест и получи бесплатное руководство по профессии мастер-педикюра на 147 страниц" />
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+        <meta
+          name="description"
+          content="Пройди тест и получи бесплатное руководство по профессии мастер-педикюра на 147 страниц"
+        />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+          rel="stylesheet"
+        />
         <script src="/s/static/lib/tailwind.3.4.16.min.js"></script>
         <link href="/s/static/lib/fontawesome/6.7.2/css/all.min.css" rel="stylesheet" />
         <script>{`
@@ -123,8 +129,14 @@ export const thankYouPageRoute = app.get('/thank-you', async (ctx, req) => {
       <head>
         <title>Ваш подарок готов! | Руководство мастера-педикюра</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <meta name="description" content="Скачайте бесплатное руководство по профессии мастер-педикюра на 147 страниц" />
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+        <meta
+          name="description"
+          content="Скачайте бесплатное руководство по профессии мастер-педикюра на 147 страниц"
+        />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+          rel="stylesheet"
+        />
         <script src="/s/static/lib/tailwind.3.4.16.min.js"></script>
         <link href="/s/static/lib/fontawesome/6.7.2/css/all.min.css" rel="stylesheet" />
         <script>{`

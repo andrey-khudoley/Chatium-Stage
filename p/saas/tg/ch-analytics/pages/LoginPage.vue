@@ -1,6 +1,16 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { sendSmsCode, confirmSmsCode, sendEmailCode, confirmEmailCode, loginWithPassword, handleAuthError, formatPhoneNumber, isValidPhone, isValidEmail } from '../sdk/auth'
+import {
+  sendSmsCode,
+  confirmSmsCode,
+  sendEmailCode,
+  confirmEmailCode,
+  loginWithPassword,
+  handleAuthError,
+  formatPhoneNumber,
+  isValidPhone,
+  isValidEmail
+} from '../sdk/auth'
 import { apiGetPasswordHashRoute } from '../api/auth-password'
 import Header from '../shared/Header.vue'
 
@@ -45,7 +55,6 @@ let resendTimer: ReturnType<typeof setTimeout> | null = null
 const showWelcomeCursor = ref(true)
 const anyFieldFocused = ref(false)
 
-
 const isPhoneEnabled = computed(() => Object.keys(props.providers).includes('Sms'))
 const isEmailEnabled = computed(() => Object.keys(props.providers).includes('Email'))
 const isPasswordEnabled = computed(() => Object.keys(props.providers).includes('Password'))
@@ -55,7 +64,7 @@ onMounted(() => {
   if (!isPhoneEnabled.value && isEmailEnabled.value) {
     authMethod.value = 'email'
   }
-  
+
   // Ждём завершения bootloader
   const handleBootloaderComplete = () => {
     bootLoaderDone.value = true
@@ -67,8 +76,6 @@ onMounted(() => {
     window.addEventListener('bootloader-complete', handleBootloaderComplete)
   }
 })
-
-
 
 onUnmounted(() => {
   clearResendTimer()
@@ -135,7 +142,7 @@ async function confirmPhoneCode() {
   error.value = ''
   try {
     const result = await confirmSmsCode(phone.value, phoneCode.value)
-    if (JSON.stringify(result).includes("authSuccess")) {
+    if (JSON.stringify(result).includes('authSuccess')) {
       handleLoginSuccess()
     } else {
       error.value = handleAuthError(result.error)
@@ -159,8 +166,13 @@ async function handlePhonePasswordLogin() {
   loading.value = true
   error.value = ''
   try {
-    const result = await loginWithPassword('Phone', phone.value, apiGetPasswordHashRoute.url(), phonePassword.value)
-    if (JSON.stringify(result).includes("authSuccess")) {
+    const result = await loginWithPassword(
+      'Phone',
+      phone.value,
+      apiGetPasswordHashRoute.url(),
+      phonePassword.value
+    )
+    if (JSON.stringify(result).includes('authSuccess')) {
       handleLoginSuccess()
     } else {
       error.value = handleAuthError(result.error)
@@ -204,7 +216,7 @@ async function confirmEmailCodeHandler() {
   error.value = ''
   try {
     const result = await confirmEmailCode(email.value, emailCode.value)
-    if (JSON.stringify(result).includes("authSuccess")) {
+    if (JSON.stringify(result).includes('authSuccess')) {
       handleLoginSuccess()
     } else {
       error.value = handleAuthError(result.error)
@@ -228,8 +240,13 @@ async function handleEmailPasswordLogin() {
   loading.value = true
   error.value = ''
   try {
-    const result = await loginWithPassword('Email', email.value, apiGetPasswordHashRoute.url(), emailPassword.value)
-    if (JSON.stringify(result).includes("authSuccess")) {
+    const result = await loginWithPassword(
+      'Email',
+      email.value,
+      apiGetPasswordHashRoute.url(),
+      emailPassword.value
+    )
+    if (JSON.stringify(result).includes('authSuccess')) {
       handleLoginSuccess()
     } else {
       error.value = handleAuthError(result.error)
@@ -249,7 +266,7 @@ async function handleTelegramLogin() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ back: props.back })
     })
-    
+
     const oauthUrl = await response.text()
     window.location.href = oauthUrl
   } catch (err) {
@@ -294,366 +311,462 @@ function handlePhoneInput(event: Event) {
 const openChatiumLink = () => {
   window.open('https://t.me/ChatiumRuBot?start=pl-LGBT1Oge7c61RkKTU4t0start', '_blank')
 }
-
 </script>
 
 <template>
   <div class="app-layout bg-[var(--color-bg)] text-[var(--color-text)] flex flex-col min-h-screen">
     <!-- Header -->
-    <Header v-if="bootLoaderDone" :pageTitle="'A/Ley Services'" :indexUrl="props.indexUrl" :profileUrl="props.profileUrl" :loginUrl="props.loginUrl" :isAuthenticated="props.isAuthenticated" />
+    <Header
+      v-if="bootLoaderDone"
+      :pageTitle="'A/Ley Services'"
+      :indexUrl="props.indexUrl"
+      :profileUrl="props.profileUrl"
+      :loginUrl="props.loginUrl"
+      :isAuthenticated="props.isAuthenticated"
+    />
 
     <!-- Content -->
-    <main class="content-wrapper flex-1 relative z-10 min-h-0 overflow-y-auto flex items-center justify-center">
+    <main
+      class="content-wrapper flex-1 relative z-10 min-h-0 overflow-y-auto flex items-center justify-center"
+    >
       <div v-if="bootLoaderDone" class="login-card relative z-10">
-      <div class="flex justify-center mb-6">
-        <div class="w-20 h-20 bg-gradient-to-br from-[var(--color-accent)] to-[var(--color-accent-hover)] flex items-center justify-center login-icon">
-          <i class="fab fa-telegram text-3xl text-white"></i>
-        </div>
-      </div>
-
-      <h1 class="text-2xl font-bold text-center mb-2 text-[var(--color-text)] login-title">
-        Вход в систему
-      </h1>
-      <p class="text-[var(--color-text-secondary)] text-center mb-8 login-subtitle">
-        {{ projectTitle }}
-      </p>
-
-      <!-- Auth Method Tabs -->
-      <div v-if="isPhoneEnabled && isEmailEnabled && step === 'input'" 
-           class="flex mb-6 bg-[var(--color-border)] p-1">
-        <button @click="authMethod = 'phone'; error = ''; showWelcomeCursor = true"
-                :class="[
-                  'flex-1 py-2 px-4 text-sm font-medium transition-all auth-method-btn',
-                  authMethod === 'phone' 
-                    ? 'bg-[var(--color-bg-secondary)] shadow-sm'
-                    : 'hover:opacity-70'
-                ]"
-                :style="authMethod === 'phone' ? 'color: var(--color-accent)' : 'color: var(--color-text-secondary)'">
-          <i class="fas fa-phone mr-2"></i> Телефон
-        </button>
-        <button @click="authMethod = 'email'; error = ''; showWelcomeCursor = true"
-                :class="[
-                  'flex-1 py-2 px-4 text-sm font-medium transition-all auth-method-btn',
-                  authMethod === 'email' 
-                    ? 'bg-[var(--color-bg-secondary)] shadow-sm'
-                    : 'hover:opacity-70'
-                ]"
-                :style="authMethod === 'email' ? 'color: var(--color-accent)' : 'color: var(--color-text-secondary)'">
-          <i class="fas fa-envelope mr-2"></i> Email
-        </button>
-      </div>
-
-      <!-- Phone Auth -->
-      <div v-if="authMethod === 'phone' && isPhoneEnabled">
-        <div v-if="step === 'input'">
-          <div class="mb-4">
-            <label class="block text-sm font-medium text-[var(--color-text)] mb-2">
-              <i class="fas fa-phone mr-2" style="color: var(--color-accent)"></i>
-              Номер телефона
-            </label>
-            <div class="relative">
-              <input
-                v-model="phone"
-                type="tel"
-                class="input w-full terminal-input"
-                :disabled="loading"
-                @input="handlePhoneInput"
-                @focus="handleAnyFocus"
-                @blur="handleAnyBlur"
-                @keyup.enter="isPasswordEnabled && phonePassword ? handlePhonePasswordLogin() : sendPhoneCode()"
-              />
-              <span v-if="showWelcomeCursor && authMethod === 'phone' && !phone" class="welcome-cursor"></span>
-            </div>
-          </div>
-
-          <!-- Password field -->
-          <div v-if="isPasswordEnabled" class="mb-4">
-            <label class="block text-sm font-medium text-[var(--color-text)] mb-2">
-              <i class="fas fa-key mr-2" style="color: var(--color-accent)"></i>
-              Пароль
-            </label>
-            <div class="relative">
-              <input
-                v-model="phonePassword"
-                :type="showPassword ? 'text' : 'password'"
-                placeholder="Введите пароль"
-                class="input w-full pr-12 terminal-input"
-                :disabled="loading"
-                @focus="handleAnyFocus"
-                @blur="handleAnyBlur"
-                @keyup.enter="handlePhonePasswordLogin"
-              />
-              <button
-                type="button"
-                @click="showPassword = !showPassword"
-                class="absolute inset-y-0 right-0 flex items-center px-3 transition-colors"
-                style="color: var(--color-text-tertiary); z-index: 20;"
-              >
-                <i :class="showPassword ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
-              </button>
-            </div>
-          </div>
-
-          <!-- Login with password button -->
-          <transition name="retro-fade">
-            <button
-              v-if="isPasswordEnabled && phonePassword"
-              @click="handlePhonePasswordLogin"
-              :disabled="loading || !isValidPhone(phone)"
-              class="btn w-full mb-4"
-              :style="(loading || !isValidPhone(phone))
-                ? 'background: var(--color-bg-secondary); color: var(--color-text-tertiary); border: 1.5px solid var(--color-border); cursor: not-allowed;'
-                : 'background: var(--color-accent); color: white; border: 1.5px solid var(--color-accent); cursor: pointer;'"
-            >
-              <i v-if="loading" class="fas fa-spinner fa-spin mr-2"></i>
-              <i v-else class="fas fa-sign-in-alt mr-2"></i>
-              {{ loading ? 'Вход...' : 'Войти' }}
-            </button>
-          </transition>
-
-          <!-- Divider -->
-          <transition name="retro-fade">
-            <div v-if="isPasswordEnabled && phonePassword" class="relative my-4">
-              <div class="absolute inset-0 flex items-center">
-                <div class="w-full border-t border-[var(--color-border)]"></div>
-              </div>
-              <div class="relative flex justify-center text-sm">
-                <span class="px-2 bg-[var(--color-bg-secondary)] text-[var(--color-text-secondary)]">или</span>
-              </div>
-            </div>
-          </transition>
-
-          <button
-            @click="sendPhoneCode"
-            :disabled="loading || !isValidPhone(phone)"
-            class="btn btn-primary w-full"
+        <div class="flex justify-center mb-6">
+          <div
+            class="w-20 h-20 bg-gradient-to-br from-[var(--color-accent)] to-[var(--color-accent-hover)] flex items-center justify-center login-icon"
           >
-            <i v-if="loading" class="fas fa-spinner fa-spin mr-2"></i>
-            <i v-else class="fas fa-paper-plane mr-2"></i>
-            {{ loading ? 'Обработка...' : 'Отправить код' }}
+            <i class="fab fa-telegram text-3xl text-white"></i>
+          </div>
+        </div>
+
+        <h1 class="text-2xl font-bold text-center mb-2 text-[var(--color-text)] login-title">
+          Вход в систему
+        </h1>
+        <p class="text-[var(--color-text-secondary)] text-center mb-8 login-subtitle">
+          {{ projectTitle }}
+        </p>
+
+        <!-- Auth Method Tabs -->
+        <div
+          v-if="isPhoneEnabled && isEmailEnabled && step === 'input'"
+          class="flex mb-6 bg-[var(--color-border)] p-1"
+        >
+          <button
+            @click="
+              authMethod = 'phone'
+              error = ''
+              showWelcomeCursor = true
+            "
+            :class="[
+              'flex-1 py-2 px-4 text-sm font-medium transition-all auth-method-btn',
+              authMethod === 'phone'
+                ? 'bg-[var(--color-bg-secondary)] shadow-sm'
+                : 'hover:opacity-70'
+            ]"
+            :style="
+              authMethod === 'phone'
+                ? 'color: var(--color-accent)'
+                : 'color: var(--color-text-secondary)'
+            "
+          >
+            <i class="fas fa-phone mr-2"></i> Телефон
+          </button>
+          <button
+            @click="
+              authMethod = 'email'
+              error = ''
+              showWelcomeCursor = true
+            "
+            :class="[
+              'flex-1 py-2 px-4 text-sm font-medium transition-all auth-method-btn',
+              authMethod === 'email'
+                ? 'bg-[var(--color-bg-secondary)] shadow-sm'
+                : 'hover:opacity-70'
+            ]"
+            :style="
+              authMethod === 'email'
+                ? 'color: var(--color-accent)'
+                : 'color: var(--color-text-secondary)'
+            "
+          >
+            <i class="fas fa-envelope mr-2"></i> Email
           </button>
         </div>
 
-        <div v-if="step === 'code'">
-          <div class="text-center mb-6">
-            <div class="w-16 h-16 flex items-center justify-center mx-auto mb-4 code-icon" 
-                 style="background: var(--color-accent-light)">
-              <i class="fas fa-sms text-2xl" style="color: var(--color-accent)"></i>
+        <!-- Phone Auth -->
+        <div v-if="authMethod === 'phone' && isPhoneEnabled">
+          <div v-if="step === 'input'">
+            <div class="mb-4">
+              <label class="block text-sm font-medium text-[var(--color-text)] mb-2">
+                <i class="fas fa-phone mr-2" style="color: var(--color-accent)"></i>
+                Номер телефона
+              </label>
+              <div class="relative">
+                <input
+                  v-model="phone"
+                  type="tel"
+                  class="input w-full terminal-input"
+                  :disabled="loading"
+                  @input="handlePhoneInput"
+                  @focus="handleAnyFocus"
+                  @blur="handleAnyBlur"
+                  @keyup.enter="
+                    isPasswordEnabled && phonePassword
+                      ? handlePhonePasswordLogin()
+                      : sendPhoneCode()
+                  "
+                />
+                <span
+                  v-if="showWelcomeCursor && authMethod === 'phone' && !phone"
+                  class="welcome-cursor"
+                ></span>
+              </div>
             </div>
-            <h3 class="text-lg font-semibold text-[var(--color-text)] mb-2">Введите код</h3>
-            <p class="text-[var(--color-text-secondary)] text-sm">
-              Код отправлен на номер<br/>
-              <span class="font-medium">{{ formatPhoneNumber(phone) }}</span>
-            </p>
-          </div>
 
-          <div class="mb-4">
-            <input
-              v-model="phoneCode"
-              type="text"
-              placeholder="0000"
-              maxlength="4"
-              class="input w-full text-center text-2xl font-mono"
-              :disabled="loading"
-              @keyup.enter="confirmPhoneCode"
-              @input="onPhoneCodeInput"
-            />
-          </div>
+            <!-- Password field -->
+            <div v-if="isPasswordEnabled" class="mb-4">
+              <label class="block text-sm font-medium text-[var(--color-text)] mb-2">
+                <i class="fas fa-key mr-2" style="color: var(--color-accent)"></i>
+                Пароль
+              </label>
+              <div class="relative">
+                <input
+                  v-model="phonePassword"
+                  :type="showPassword ? 'text' : 'password'"
+                  placeholder="Введите пароль"
+                  class="input w-full pr-12 terminal-input"
+                  :disabled="loading"
+                  @focus="handleAnyFocus"
+                  @blur="handleAnyBlur"
+                  @keyup.enter="handlePhonePasswordLogin"
+                />
+                <button
+                  type="button"
+                  @click="showPassword = !showPassword"
+                  class="absolute inset-y-0 right-0 flex items-center px-3 transition-colors"
+                  style="color: var(--color-text-tertiary); z-index: 20"
+                >
+                  <i :class="showPassword ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
+                </button>
+              </div>
+            </div>
 
-          <button @click="confirmPhoneCode" class="btn btn-primary w-full mb-4" :disabled="loading || phoneCode.length < 4">
-            <i v-if="loading" class="fas fa-spinner fa-spin mr-2"></i>
-            <i v-else class="fas fa-check mr-2"></i>
-            {{ loading ? 'Проверка...' : 'Подтвердить' }}
-          </button>
+            <!-- Login with password button -->
+            <transition name="retro-fade">
+              <button
+                v-if="isPasswordEnabled && phonePassword"
+                @click="handlePhonePasswordLogin"
+                :disabled="loading || !isValidPhone(phone)"
+                class="btn w-full mb-4"
+                :style="
+                  loading || !isValidPhone(phone)
+                    ? 'background: var(--color-bg-secondary); color: var(--color-text-tertiary); border: 1.5px solid var(--color-border); cursor: not-allowed;'
+                    : 'background: var(--color-accent); color: white; border: 1.5px solid var(--color-accent); cursor: pointer;'
+                "
+              >
+                <i v-if="loading" class="fas fa-spinner fa-spin mr-2"></i>
+                <i v-else class="fas fa-sign-in-alt mr-2"></i>
+                {{ loading ? 'Вход...' : 'Войти' }}
+              </button>
+            </transition>
 
-          <button @click="goBack" class="btn w-full mb-4" style="background: var(--color-border);" :disabled="loading">
-            <i class="fas fa-arrow-left mr-2"></i>
-            Изменить номер
-          </button>
+            <!-- Divider -->
+            <transition name="retro-fade">
+              <div v-if="isPasswordEnabled && phonePassword" class="relative my-4">
+                <div class="absolute inset-0 flex items-center">
+                  <div class="w-full border-t border-[var(--color-border)]"></div>
+                </div>
+                <div class="relative flex justify-center text-sm">
+                  <span
+                    class="px-2 bg-[var(--color-bg-secondary)] text-[var(--color-text-secondary)]"
+                    >или</span
+                  >
+                </div>
+              </div>
+            </transition>
 
-          <div v-if="canResend" class="text-center">
             <button
               @click="sendPhoneCode"
-              class="text-sm transition-colors hover:opacity-70"
-              style="color: var(--color-accent)"
-              :disabled="loading"
+              :disabled="loading || !isValidPhone(phone)"
+              class="btn btn-primary w-full"
             >
-              Отправить код повторно
+              <i v-if="loading" class="fas fa-spinner fa-spin mr-2"></i>
+              <i v-else class="fas fa-paper-plane mr-2"></i>
+              {{ loading ? 'Обработка...' : 'Отправить код' }}
             </button>
           </div>
-        </div>
-      </div>
 
-      <!-- Email Auth -->
-      <div v-if="authMethod === 'email' && isEmailEnabled">
-        <div v-if="step === 'input'">
-          <div class="mb-4">
-            <label class="block text-sm font-medium text-[var(--color-text)] mb-2">
-              <i class="fas fa-envelope mr-2" style="color: var(--color-accent)"></i>
-              Email адрес
-            </label>
-            <div class="relative">
-              <input
-                v-model="email"
-                type="email"
-                class="input w-full terminal-input"
-                :disabled="loading"
-                @focus="handleAnyFocus"
-                @blur="handleAnyBlur"
-                @keyup.enter="isPasswordEnabled && emailPassword ? handleEmailPasswordLogin() : sendEmailCodeHandler()"
-              />
-              <span v-if="showWelcomeCursor && authMethod === 'email' && !email" class="welcome-cursor"></span>
-            </div>
-          </div>
-
-          <!-- Password field -->
-          <div v-if="isPasswordEnabled" class="mb-4">
-            <label class="block text-sm font-medium text-[var(--color-text)] mb-2">
-              <i class="fas fa-key mr-2" style="color: var(--color-accent)"></i>
-              Пароль
-            </label>
-            <div class="relative">
-              <input
-                v-model="emailPassword"
-                :type="showPassword ? 'text' : 'password'"
-                placeholder="Введите пароль"
-                class="input w-full pr-12 terminal-input"
-                :disabled="loading"
-                @focus="handleAnyFocus"
-                @blur="handleAnyBlur"
-                @keyup.enter="handleEmailPasswordLogin"
-              />
-              <button
-                type="button"
-                @click="showPassword = !showPassword"
-                class="absolute inset-y-0 right-0 flex items-center px-3 transition-colors"
-                style="color: var(--color-text-tertiary); z-index: 20;"
+          <div v-if="step === 'code'">
+            <div class="text-center mb-6">
+              <div
+                class="w-16 h-16 flex items-center justify-center mx-auto mb-4 code-icon"
+                style="background: var(--color-accent-light)"
               >
-                <i :class="showPassword ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
+                <i class="fas fa-sms text-2xl" style="color: var(--color-accent)"></i>
+              </div>
+              <h3 class="text-lg font-semibold text-[var(--color-text)] mb-2">Введите код</h3>
+              <p class="text-[var(--color-text-secondary)] text-sm">
+                Код отправлен на номер<br />
+                <span class="font-medium">{{ formatPhoneNumber(phone) }}</span>
+              </p>
+            </div>
+
+            <div class="mb-4">
+              <input
+                v-model="phoneCode"
+                type="text"
+                placeholder="0000"
+                maxlength="4"
+                class="input w-full text-center text-2xl font-mono"
+                :disabled="loading"
+                @keyup.enter="confirmPhoneCode"
+                @input="onPhoneCodeInput"
+              />
+            </div>
+
+            <button
+              @click="confirmPhoneCode"
+              class="btn btn-primary w-full mb-4"
+              :disabled="loading || phoneCode.length < 4"
+            >
+              <i v-if="loading" class="fas fa-spinner fa-spin mr-2"></i>
+              <i v-else class="fas fa-check mr-2"></i>
+              {{ loading ? 'Проверка...' : 'Подтвердить' }}
+            </button>
+
+            <button
+              @click="goBack"
+              class="btn w-full mb-4"
+              style="background: var(--color-border)"
+              :disabled="loading"
+            >
+              <i class="fas fa-arrow-left mr-2"></i>
+              Изменить номер
+            </button>
+
+            <div v-if="canResend" class="text-center">
+              <button
+                @click="sendPhoneCode"
+                class="text-sm transition-colors hover:opacity-70"
+                style="color: var(--color-accent)"
+                :disabled="loading"
+              >
+                Отправить код повторно
               </button>
             </div>
           </div>
-
-          <!-- Login with password button -->
-          <transition name="retro-fade">
-            <button
-              v-if="isPasswordEnabled && emailPassword"
-              @click="handleEmailPasswordLogin"
-              :disabled="loading || !isValidEmail(email)"
-              class="btn w-full mb-4"
-              :style="(loading || !isValidEmail(email))
-                ? 'background: var(--color-bg-secondary); color: var(--color-text-tertiary); border: 1.5px solid var(--color-border); cursor: not-allowed;'
-                : 'background: var(--color-accent); color: white; border: 1.5px solid var(--color-accent); cursor: pointer;'"
-            >
-              <i v-if="loading" class="fas fa-spinner fa-spin mr-2"></i>
-              <i v-else class="fas fa-sign-in-alt mr-2"></i>
-              {{ loading ? 'Вход...' : 'Войти' }}
-            </button>
-          </transition>
-
-          <!-- Divider -->
-          <transition name="retro-fade">
-            <div v-if="isPasswordEnabled && emailPassword" class="relative my-4">
-              <div class="absolute inset-0 flex items-center">
-                <div class="w-full border-t border-[var(--color-border)]"></div>
-              </div>
-              <div class="relative flex justify-center text-sm">
-                <span class="px-2 bg-[var(--color-bg-secondary)] text-[var(--color-text-secondary)]">или</span>
-              </div>
-            </div>
-          </transition>
-
-          <button
-            @click="sendEmailCodeHandler"
-            :disabled="loading || !isValidEmail(email)"
-            class="btn btn-primary w-full"
-          >
-            <i v-if="loading" class="fas fa-spinner fa-spin mr-2"></i>
-            <i v-else class="fas fa-paper-plane mr-2"></i>
-            {{ loading ? 'Обработка...' : 'Отправить код' }}
-          </button>
         </div>
 
-        <div v-if="step === 'code'">
-          <div class="text-center mb-6">
-            <div class="w-16 h-16 flex items-center justify-center mx-auto mb-4 code-icon" 
-                 style="background: var(--color-accent-light)">
-              <i class="fas fa-envelope-open text-2xl" style="color: var(--color-accent)"></i>
+        <!-- Email Auth -->
+        <div v-if="authMethod === 'email' && isEmailEnabled">
+          <div v-if="step === 'input'">
+            <div class="mb-4">
+              <label class="block text-sm font-medium text-[var(--color-text)] mb-2">
+                <i class="fas fa-envelope mr-2" style="color: var(--color-accent)"></i>
+                Email адрес
+              </label>
+              <div class="relative">
+                <input
+                  v-model="email"
+                  type="email"
+                  class="input w-full terminal-input"
+                  :disabled="loading"
+                  @focus="handleAnyFocus"
+                  @blur="handleAnyBlur"
+                  @keyup.enter="
+                    isPasswordEnabled && emailPassword
+                      ? handleEmailPasswordLogin()
+                      : sendEmailCodeHandler()
+                  "
+                />
+                <span
+                  v-if="showWelcomeCursor && authMethod === 'email' && !email"
+                  class="welcome-cursor"
+                ></span>
+              </div>
             </div>
-            <h3 class="text-lg font-semibold text-[var(--color-text)] mb-2">Проверьте почту</h3>
-            <p class="text-[var(--color-text-secondary)] text-sm">
-              Код отправлен на адрес<br/>
-              <span class="font-medium">{{ email }}</span>
-            </p>
-          </div>
 
-          <div class="mb-4">
-            <input
-              v-model="emailCode"
-              type="text"
-              placeholder="000000"
-              maxlength="6"
-              class="input w-full text-center text-2xl font-mono"
-              :disabled="loading"
-              @keyup.enter="confirmEmailCodeHandler"
-              @input="onEmailCodeInput"
-            />
-          </div>
+            <!-- Password field -->
+            <div v-if="isPasswordEnabled" class="mb-4">
+              <label class="block text-sm font-medium text-[var(--color-text)] mb-2">
+                <i class="fas fa-key mr-2" style="color: var(--color-accent)"></i>
+                Пароль
+              </label>
+              <div class="relative">
+                <input
+                  v-model="emailPassword"
+                  :type="showPassword ? 'text' : 'password'"
+                  placeholder="Введите пароль"
+                  class="input w-full pr-12 terminal-input"
+                  :disabled="loading"
+                  @focus="handleAnyFocus"
+                  @blur="handleAnyBlur"
+                  @keyup.enter="handleEmailPasswordLogin"
+                />
+                <button
+                  type="button"
+                  @click="showPassword = !showPassword"
+                  class="absolute inset-y-0 right-0 flex items-center px-3 transition-colors"
+                  style="color: var(--color-text-tertiary); z-index: 20"
+                >
+                  <i :class="showPassword ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
+                </button>
+              </div>
+            </div>
 
-          <button @click="confirmEmailCodeHandler" class="btn btn-primary w-full mb-4" :disabled="loading || emailCode.length < 6">
-            <i v-if="loading" class="fas fa-spinner fa-spin mr-2"></i>
-            <i v-else class="fas fa-check mr-2"></i>
-            {{ loading ? 'Проверка...' : 'Подтвердить' }}
-          </button>
+            <!-- Login with password button -->
+            <transition name="retro-fade">
+              <button
+                v-if="isPasswordEnabled && emailPassword"
+                @click="handleEmailPasswordLogin"
+                :disabled="loading || !isValidEmail(email)"
+                class="btn w-full mb-4"
+                :style="
+                  loading || !isValidEmail(email)
+                    ? 'background: var(--color-bg-secondary); color: var(--color-text-tertiary); border: 1.5px solid var(--color-border); cursor: not-allowed;'
+                    : 'background: var(--color-accent); color: white; border: 1.5px solid var(--color-accent); cursor: pointer;'
+                "
+              >
+                <i v-if="loading" class="fas fa-spinner fa-spin mr-2"></i>
+                <i v-else class="fas fa-sign-in-alt mr-2"></i>
+                {{ loading ? 'Вход...' : 'Войти' }}
+              </button>
+            </transition>
 
-          <button @click="goBack" class="btn w-full mb-4" style="background: var(--color-border);" :disabled="loading">
-            <i class="fas fa-arrow-left mr-2"></i>
-            Изменить email
-          </button>
+            <!-- Divider -->
+            <transition name="retro-fade">
+              <div v-if="isPasswordEnabled && emailPassword" class="relative my-4">
+                <div class="absolute inset-0 flex items-center">
+                  <div class="w-full border-t border-[var(--color-border)]"></div>
+                </div>
+                <div class="relative flex justify-center text-sm">
+                  <span
+                    class="px-2 bg-[var(--color-bg-secondary)] text-[var(--color-text-secondary)]"
+                    >или</span
+                  >
+                </div>
+              </div>
+            </transition>
 
-          <div v-if="canResend" class="text-center">
             <button
               @click="sendEmailCodeHandler"
-              class="text-sm transition-colors hover:opacity-70"
-              style="color: var(--color-accent)"
-              :disabled="loading"
+              :disabled="loading || !isValidEmail(email)"
+              class="btn btn-primary w-full"
             >
-              Отправить код повторно
+              <i v-if="loading" class="fas fa-spinner fa-spin mr-2"></i>
+              <i v-else class="fas fa-paper-plane mr-2"></i>
+              {{ loading ? 'Обработка...' : 'Отправить код' }}
             </button>
           </div>
-        </div>
-      </div>
 
-      <!-- No methods available -->
-      <div v-if="!isPhoneEnabled && !isEmailEnabled && !isTelegramEnabled" class="text-center text-[var(--color-text-secondary)]">
-        <i class="fas fa-exclamation-triangle text-4xl mb-4" style="color: var(--color-warning)"></i>
-        <p>Методы авторизации не настроены</p>
-      </div>
+          <div v-if="step === 'code'">
+            <div class="text-center mb-6">
+              <div
+                class="w-16 h-16 flex items-center justify-center mx-auto mb-4 code-icon"
+                style="background: var(--color-accent-light)"
+              >
+                <i class="fas fa-envelope-open text-2xl" style="color: var(--color-accent)"></i>
+              </div>
+              <h3 class="text-lg font-semibold text-[var(--color-text)] mb-2">Проверьте почту</h3>
+              <p class="text-[var(--color-text-secondary)] text-sm">
+                Код отправлен на адрес<br />
+                <span class="font-medium">{{ email }}</span>
+              </p>
+            </div>
 
-      <!-- Telegram -->
-      <div v-if="isTelegramEnabled && step === 'input'" :class="{'mt-4': isPhoneEnabled || isEmailEnabled}">
-        <div v-if="isPhoneEnabled || isEmailEnabled" class="relative mb-4">
-          <div class="absolute inset-0 flex items-center">
-            <div class="w-full border-t border-[var(--color-border)]"></div>
+            <div class="mb-4">
+              <input
+                v-model="emailCode"
+                type="text"
+                placeholder="000000"
+                maxlength="6"
+                class="input w-full text-center text-2xl font-mono"
+                :disabled="loading"
+                @keyup.enter="confirmEmailCodeHandler"
+                @input="onEmailCodeInput"
+              />
+            </div>
+
+            <button
+              @click="confirmEmailCodeHandler"
+              class="btn btn-primary w-full mb-4"
+              :disabled="loading || emailCode.length < 6"
+            >
+              <i v-if="loading" class="fas fa-spinner fa-spin mr-2"></i>
+              <i v-else class="fas fa-check mr-2"></i>
+              {{ loading ? 'Проверка...' : 'Подтвердить' }}
+            </button>
+
+            <button
+              @click="goBack"
+              class="btn w-full mb-4"
+              style="background: var(--color-border)"
+              :disabled="loading"
+            >
+              <i class="fas fa-arrow-left mr-2"></i>
+              Изменить email
+            </button>
+
+            <div v-if="canResend" class="text-center">
+              <button
+                @click="sendEmailCodeHandler"
+                class="text-sm transition-colors hover:opacity-70"
+                style="color: var(--color-accent)"
+                :disabled="loading"
+              >
+                Отправить код повторно
+              </button>
+            </div>
           </div>
-          <div class="relative flex justify-center text-sm">
-            <span class="px-2 bg-[var(--color-bg-secondary)] text-[var(--color-text-secondary)]">или</span>
+        </div>
+
+        <!-- No methods available -->
+        <div
+          v-if="!isPhoneEnabled && !isEmailEnabled && !isTelegramEnabled"
+          class="text-center text-[var(--color-text-secondary)]"
+        >
+          <i
+            class="fas fa-exclamation-triangle text-4xl mb-4"
+            style="color: var(--color-warning)"
+          ></i>
+          <p>Методы авторизации не настроены</p>
+        </div>
+
+        <!-- Telegram -->
+        <div
+          v-if="isTelegramEnabled && step === 'input'"
+          :class="{ 'mt-4': isPhoneEnabled || isEmailEnabled }"
+        >
+          <div v-if="isPhoneEnabled || isEmailEnabled" class="relative mb-4">
+            <div class="absolute inset-0 flex items-center">
+              <div class="w-full border-t border-[var(--color-border)]"></div>
+            </div>
+            <div class="relative flex justify-center text-sm">
+              <span class="px-2 bg-[var(--color-bg-secondary)] text-[var(--color-text-secondary)]"
+                >или</span
+              >
+            </div>
+          </div>
+          <button @click="handleTelegramLogin" class="btn btn-telegram w-full">
+            <i class="fab fa-telegram-plane mr-2 text-lg"></i>
+            Войти через Telegram
+          </button>
+        </div>
+
+        <!-- Error -->
+        <div
+          v-if="error"
+          class="mt-4 p-3 border error-box"
+          style="
+            background: var(--color-danger-light);
+            border-color: var(--color-danger);
+            color: var(--color-danger);
+          "
+        >
+          <div class="flex items-center">
+            <i class="fas fa-exclamation-circle mr-2"></i>
+            <span class="text-sm">{{ error }}</span>
           </div>
         </div>
-        <button @click="handleTelegramLogin" class="btn btn-telegram w-full">
-          <i class="fab fa-telegram-plane mr-2 text-lg"></i>
-          Войти через Telegram
-        </button>
-      </div>
-
-      <!-- Error -->
-      <div v-if="error" class="mt-4 p-3 border error-box" 
-           style="background: var(--color-danger-light); border-color: var(--color-danger); color: var(--color-danger)">
-        <div class="flex items-center">
-          <i class="fas fa-exclamation-circle mr-2"></i>
-          <span class="text-sm">{{ error }}</span>
-        </div>
-      </div>
       </div>
     </main>
 
@@ -663,10 +776,7 @@ const openChatiumLink = () => {
         <div class="footer-left">ИП Худолей Андрей Германович</div>
         <div class="footer-center">Все права сохранены © 2025</div>
         <div class="footer-right">
-          <button 
-            class="footer-link"
-            @click="openChatiumLink"
-          >
+          <button class="footer-link" @click="openChatiumLink">
             Сделано с <i class="fas fa-heart footer-heart"></i> на Chatium
           </button>
         </div>
@@ -723,17 +833,25 @@ body {
   width: 100%;
   max-width: 420px;
   margin: 1rem;
-  box-shadow: 
+  box-shadow:
     0 8px 20px rgba(0, 0, 0, 0.4),
     0 4px 10px rgba(0, 0, 0, 0.3),
     inset 0 1px 0 rgba(255, 255, 255, 0.03);
   position: relative;
   overflow: hidden;
   clip-path: polygon(
-    0 4px, 4px 4px, 4px 0,
-    calc(100% - 4px) 0, calc(100% - 4px) 4px, 100% 4px,
-    100% calc(100% - 4px), calc(100% - 4px) calc(100% - 4px), calc(100% - 4px) 100%,
-    4px 100%, 4px calc(100% - 4px), 0 calc(100% - 4px)
+    0 4px,
+    4px 4px,
+    4px 0,
+    calc(100% - 4px) 0,
+    calc(100% - 4px) 4px,
+    100% 4px,
+    100% calc(100% - 4px),
+    calc(100% - 4px) calc(100% - 4px),
+    calc(100% - 4px) 100%,
+    4px 100%,
+    4px calc(100% - 4px),
+    0 calc(100% - 4px)
   );
 }
 
@@ -788,7 +906,8 @@ body {
 }
 
 @keyframes crt-flicker {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 0;
   }
   50% {
@@ -797,7 +916,7 @@ body {
 }
 
 .login-icon {
-  box-shadow: 
+  box-shadow:
     0 8px 24px rgba(211, 35, 75, 0.4),
     0 4px 12px rgba(211, 35, 75, 0.3),
     0 0 30px rgba(211, 35, 75, 0.2),
@@ -806,10 +925,18 @@ body {
   position: relative;
   overflow: hidden;
   clip-path: polygon(
-    0 4px, 4px 4px, 4px 0,
-    calc(100% - 4px) 0, calc(100% - 4px) 4px, 100% 4px,
-    100% calc(100% - 4px), calc(100% - 4px) calc(100% - 4px), calc(100% - 4px) 100%,
-    4px 100%, 4px calc(100% - 4px), 0 calc(100% - 4px)
+    0 4px,
+    4px 4px,
+    4px 0,
+    calc(100% - 4px) 0,
+    calc(100% - 4px) 4px,
+    100% 4px,
+    100% calc(100% - 4px),
+    calc(100% - 4px) calc(100% - 4px),
+    calc(100% - 4px) 100%,
+    4px 100%,
+    4px calc(100% - 4px),
+    0 calc(100% - 4px)
   );
 }
 
@@ -834,8 +961,13 @@ body {
 }
 
 @keyframes scanline-flicker {
-  0%, 100% { opacity: 0.7; }
-  50% { opacity: 0.5; }
+  0%,
+  100% {
+    opacity: 0.7;
+  }
+  50% {
+    opacity: 0.5;
+  }
 }
 
 .login-icon i {
@@ -845,7 +977,7 @@ body {
 
 .login-icon:hover {
   transform: scale(1.05);
-  box-shadow: 
+  box-shadow:
     0 12px 32px rgba(211, 35, 75, 0.5),
     0 6px 16px rgba(211, 35, 75, 0.4),
     0 0 40px rgba(211, 35, 75, 0.25);
@@ -868,7 +1000,7 @@ body {
 .input:focus {
   outline: none;
   border-color: var(--color-accent);
-  box-shadow: 
+  box-shadow:
     0 0 0 3px var(--color-accent-light),
     inset 0 1px 2px rgba(0, 0, 0, 0.1);
 }
@@ -901,7 +1033,7 @@ body {
 }
 
 .terminal-input:focus {
-  box-shadow: 
+  box-shadow:
     0 0 0 3px var(--color-accent-light),
     inset 0 1px 2px rgba(0, 0, 0, 0.1);
 }
@@ -926,10 +1058,12 @@ body {
 }
 
 @keyframes terminal-cursor-blink {
-  0%, 50% {
+  0%,
+  50% {
     opacity: 1;
   }
-  51%, 100% {
+  51%,
+  100% {
     opacity: 0;
   }
 }
@@ -954,16 +1088,24 @@ body {
   letter-spacing: 0.05em;
   text-shadow: 0 0 6px rgba(232, 232, 232, 0.2);
   color: var(--color-text);
-  box-shadow: 
+  box-shadow:
     0 2px 4px rgba(0, 0, 0, 0.2),
     inset 0 1px 0 rgba(255, 255, 255, 0.05);
   position: relative;
   overflow: hidden;
   clip-path: polygon(
-    0 3px, 3px 3px, 3px 0,
-    calc(100% - 3px) 0, calc(100% - 3px) 3px, 100% 3px,
-    100% calc(100% - 3px), calc(100% - 3px) calc(100% - 3px), calc(100% - 3px) 100%,
-    3px 100%, 3px calc(100% - 3px), 0 calc(100% - 3px)
+    0 3px,
+    3px 3px,
+    3px 0,
+    calc(100% - 3px) 0,
+    calc(100% - 3px) 3px,
+    100% 3px,
+    100% calc(100% - 3px),
+    calc(100% - 3px) calc(100% - 3px),
+    calc(100% - 3px) 100%,
+    3px 100%,
+    3px calc(100% - 3px),
+    0 calc(100% - 3px)
   );
 }
 
@@ -1000,7 +1142,7 @@ body {
   background: var(--color-accent);
   color: white;
   border-color: var(--color-accent);
-  box-shadow: 
+  box-shadow:
     0 4px 12px rgba(211, 35, 75, 0.3),
     0 2px 6px rgba(211, 35, 75, 0.2),
     inset 0 1px 0 rgba(255, 255, 255, 0.1);
@@ -1009,7 +1151,7 @@ body {
 .btn-primary:hover:not(:disabled) {
   background: var(--color-accent-hover);
   border-color: var(--color-accent-hover);
-  box-shadow: 
+  box-shadow:
     0 6px 16px rgba(211, 35, 75, 0.4),
     0 3px 8px rgba(211, 35, 75, 0.3),
     inset 0 1px 0 rgba(255, 255, 255, 0.15);
@@ -1017,17 +1159,17 @@ body {
 }
 
 .btn-telegram {
-  background: linear-gradient(135deg, #229ED9 0%, #0088cc 100%);
+  background: linear-gradient(135deg, #229ed9 0%, #0088cc 100%);
   color: white;
-  border-color: #229ED9;
-  box-shadow: 
+  border-color: #229ed9;
+  box-shadow:
     0 4px 14px rgba(34, 158, 217, 0.4),
     0 2px 7px rgba(34, 158, 217, 0.3),
     inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 
 .btn-telegram:hover:not(:disabled) {
-  box-shadow: 
+  box-shadow:
     0 6px 20px rgba(34, 158, 217, 0.5),
     0 3px 10px rgba(34, 158, 217, 0.4),
     inset 0 1px 0 rgba(255, 255, 255, 0.25);
@@ -1040,10 +1182,18 @@ body {
   position: relative;
   overflow: hidden;
   clip-path: polygon(
-    0 3px, 3px 3px, 3px 0,
-    calc(100% - 3px) 0, calc(100% - 3px) 3px, 100% 3px,
-    100% calc(100% - 3px), calc(100% - 3px) calc(100% - 3px), calc(100% - 3px) 100%,
-    3px 100%, 3px calc(100% - 3px), 0 calc(100% - 3px)
+    0 3px,
+    3px 3px,
+    3px 0,
+    calc(100% - 3px) 0,
+    calc(100% - 3px) 3px,
+    100% 3px,
+    100% calc(100% - 3px),
+    calc(100% - 3px) calc(100% - 3px),
+    calc(100% - 3px) 100%,
+    3px 100%,
+    3px calc(100% - 3px),
+    0 calc(100% - 3px)
   );
 }
 
@@ -1076,10 +1226,18 @@ body {
   position: relative;
   overflow: hidden;
   clip-path: polygon(
-    0 3px, 3px 3px, 3px 0,
-    calc(100% - 3px) 0, calc(100% - 3px) 3px, 100% 3px,
-    100% calc(100% - 3px), calc(100% - 3px) calc(100% - 3px), calc(100% - 3px) 100%,
-    3px 100%, 3px calc(100% - 3px), 0 calc(100% - 3px)
+    0 3px,
+    3px 3px,
+    3px 0,
+    calc(100% - 3px) 0,
+    calc(100% - 3px) 3px,
+    100% 3px,
+    100% calc(100% - 3px),
+    calc(100% - 3px) calc(100% - 3px),
+    calc(100% - 3px) 100%,
+    3px 100%,
+    3px calc(100% - 3px),
+    0 calc(100% - 3px)
   );
 }
 
@@ -1256,45 +1414,64 @@ body::after {
 }
 
 @keyframes glitch-footer {
-  0%, 100% {
+  0%,
+  100% {
     transform: translate(0);
     text-shadow: none;
   }
   10% {
     transform: translate(-1.5px, 0);
-    text-shadow: 1px 0 #ff00ff, -1px 0 #00ffff;
+    text-shadow:
+      1px 0 #ff00ff,
+      -1px 0 #00ffff;
   }
   20% {
     transform: translate(1.5px, 0);
-    text-shadow: -1px 0 #ff00ff, 1px 0 #00ffff;
+    text-shadow:
+      -1px 0 #ff00ff,
+      1px 0 #00ffff;
   }
   30% {
     transform: translate(-1px, 0);
-    text-shadow: 1.5px 0 #ff00ff, -1.5px 0 #00ffff;
+    text-shadow:
+      1.5px 0 #ff00ff,
+      -1.5px 0 #00ffff;
   }
   40% {
     transform: translate(1px, 0);
-    text-shadow: -1.5px 0 #ff00ff, 1.5px 0 #00ffff;
+    text-shadow:
+      -1.5px 0 #ff00ff,
+      1.5px 0 #00ffff;
   }
   50% {
     transform: translate(-1.5px, 0);
-    text-shadow: 1px 0 #ff00ff, -1px 0 #00ffff;
+    text-shadow:
+      1px 0 #ff00ff,
+      -1px 0 #00ffff;
   }
   60% {
     transform: translate(1.5px, 0);
-    text-shadow: -1px 0 #ff00ff, 1px 0 #00ffff;
+    text-shadow:
+      -1px 0 #ff00ff,
+      1px 0 #00ffff;
   }
   70% {
     transform: translate(-1px, 0);
-    text-shadow: 1px 0 #ff00ff, -1px 0 #00ffff;
+    text-shadow:
+      1px 0 #ff00ff,
+      -1px 0 #00ffff;
   }
   80% {
     transform: translate(1px, 0);
-    text-shadow: -1px 0 #ff00ff, 1px 0 #00ffff;
+    text-shadow:
+      -1px 0 #ff00ff,
+      1px 0 #00ffff;
   }
   90% {
     transform: translate(-0.5px, 0);
-    text-shadow: 0.5px 0 #ff00ff, -0.5px 0 #00ffff;
+    text-shadow:
+      0.5px 0 #ff00ff,
+      -0.5px 0 #00ffff;
   }
 }
 

@@ -21,14 +21,14 @@ export function useChatAccess() {
     reason: null,
     plans: [],
     subscription: null,
-    chat: null,
+    chat: null
   })
 
   async function checkAccess(feedId: string) {
     accessCheck.value.loading = true
     try {
       const result = await apiChatSubscriptionCheckAccessRoute({ feedId }).run(ctx, {})
-      
+
       accessCheck.value = {
         loading: false,
         hasAccess: result.hasAccess,
@@ -36,7 +36,7 @@ export function useChatAccess() {
         reason: result.reason || null,
         plans: result.plans || [],
         subscription: result.subscription || null,
-        chat: result.chat || null,
+        chat: result.chat || null
       }
 
       // Если нет доступа к платному чату, загружаем публичную инфу
@@ -48,7 +48,7 @@ export function useChatAccess() {
           console.error('Failed to load public chat info:', err)
         }
       }
-      
+
       return result.hasAccess
     } catch (err) {
       console.error('Failed to check access:', err)
@@ -59,7 +59,7 @@ export function useChatAccess() {
         reason: 'error',
         plans: [],
         subscription: null,
-        chat: null,
+        chat: null
       }
       return false
     }
@@ -73,13 +73,13 @@ export function useChatAccess() {
       reason: null,
       plans: [],
       subscription: null,
-      chat: null,
+      chat: null
     }
   }
 
   return {
     accessCheck,
     checkAccess,
-    reset,
+    reset
   }
 }

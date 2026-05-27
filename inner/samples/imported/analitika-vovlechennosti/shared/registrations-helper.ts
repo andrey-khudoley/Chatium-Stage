@@ -22,20 +22,20 @@ export async function loadLocalRegistrations(ctx: app.Ctx): Promise<Registration
   const allRegistrations: Registration[] = []
   let offset = 0
   const batchSize = 1000
-  
+
   while (true) {
     const batch = await RegistrationsTable.findAll(ctx, {
       limit: batchSize,
       offset: offset
     })
-    
+
     if (batch.length === 0) break
     allRegistrations.push(...batch)
-    
+
     if (batch.length < batchSize) break
     offset += batchSize
   }
-  
+
   return allRegistrations
 }
 
@@ -49,14 +49,15 @@ export async function loadExternalRegistrations(
   try {
     // Получаем список всех таблиц в воркспейсе
     const tables = await ctx.heap.getWorkspaceTables(workspacePath)
-    
+
     // Ищем таблицу с регистрациями по названию
-    const regTable = tables.find(t => 
-      t.title.toLowerCase().includes('регистр') ||
-      t.title.toLowerCase().includes('registr') ||
-      t.name.toLowerCase().includes('registr')
+    const regTable = tables.find(
+      (t) =>
+        t.title.toLowerCase().includes('регистр') ||
+        t.title.toLowerCase().includes('registr') ||
+        t.name.toLowerCase().includes('registr')
     )
-    
+
     if (!regTable) {
       ctx.account.log('Registrations table not found', {
         level: 'warn',
@@ -64,30 +65,30 @@ export async function loadExternalRegistrations(
       })
       return []
     }
-    
+
     // Загружаем все данные из таблицы с пагинацией
     const allRegistrations: Registration[] = []
     let offset = 0
     const batchSize = 1000
-    
+
     while (true) {
       const batch = await ctx.heap.loadExternalTableData(regTable.path, {
         limit: batchSize,
         offset: offset
       })
-      
+
       if (batch.length === 0) break
       allRegistrations.push(...batch)
-      
+
       if (batch.length < batchSize) break
       offset += batchSize
     }
-    
+
     ctx.account.log('External registrations loaded', {
       level: 'info',
       json: { workspacePath, tablePath: regTable.path, count: allRegistrations.length }
     })
-    
+
     return allRegistrations
   } catch (error) {
     ctx.account.log('Error loading external registrations', {
@@ -109,7 +110,7 @@ export async function loadRegistrations(
   if (!workspacePath || workspacePath === ctx.workspacePath) {
     return await loadLocalRegistrations(ctx)
   }
-  
+
   // Иначе загружаем из внешнего воркспейса
   return await loadExternalRegistrations(ctx, workspacePath)
 }
@@ -119,7 +120,7 @@ export async function loadRegistrations(
  */
 export function parseRegistrationDate(dateValue: any): Date | null {
   if (!dateValue) return null
-  
+
   // Если это строка
   if (typeof dateValue === 'string') {
     // Формат DD.MM.YYYY
@@ -134,17 +135,17 @@ export function parseRegistrationDate(dateValue: any): Date | null {
     // Формат YYYY-MM-DD или ISO
     return new Date(dateValue)
   }
-  
+
   // Если это число (timestamp)
   if (typeof dateValue === 'number') {
     return new Date(dateValue)
   }
-  
+
   // Если это уже Date
   if (dateValue instanceof Date) {
     return dateValue
   }
-  
+
   return null
 }
 
@@ -156,7 +157,7 @@ export function filterRegistrationsByPeriod(
   periodStart: Date,
   periodEnd: Date
 ): Registration[] {
-  return registrations.filter(reg => {
+  return registrations.filter((reg) => {
     // Пробуем сначала createdAt, потом date_reg для совместимости
     const regDate = parseRegistrationDate(reg.createdAt || reg.date_reg)
     if (!regDate) return false

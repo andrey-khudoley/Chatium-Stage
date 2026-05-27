@@ -53,7 +53,11 @@ export async function findSummariesByUserId(
   return mapped.filter((n) => !n.isArchived)
 }
 
-async function nextSortOrder(ctx: app.Ctx, userId: string, folderId?: string | null): Promise<number> {
+async function nextSortOrder(
+  ctx: app.Ctx,
+  userId: string,
+  folderId?: string | null
+): Promise<number> {
   const where: Record<string, unknown> = { userId }
   if (folderId) {
     where.folderId = folderId
@@ -138,9 +142,10 @@ export async function updateForUser(
     patch.folderId = data.folderId ?? (null as JournalNotesRow['folderId'])
   }
   if (data.categoryIds !== undefined) {
-    patch.categoryIds = data.categoryIds.length > 0
-      ? JSON.stringify(data.categoryIds)
-      : (null as JournalNotesRow['categoryIds'])
+    patch.categoryIds =
+      data.categoryIds.length > 0
+        ? JSON.stringify(data.categoryIds)
+        : (null as JournalNotesRow['categoryIds'])
   }
   if (data.linkedTaskId !== undefined) {
     patch.linkedTaskId = data.linkedTaskId ?? (null as JournalNotesRow['linkedTaskId'])
@@ -161,7 +166,11 @@ export async function updateForUser(
   return JournalNotes.update(ctx, patch as Parameters<typeof JournalNotes.update>[1])
 }
 
-export async function deleteByIdForUser(ctx: app.Ctx, userId: string, id: string): Promise<boolean> {
+export async function deleteByIdForUser(
+  ctx: app.Ctx,
+  userId: string,
+  id: string
+): Promise<boolean> {
   const existing = await findByIdForUser(ctx, userId, id)
   if (!existing) return false
   await JournalNotes.delete(ctx, id)
@@ -257,7 +266,8 @@ export async function bulkSetCategoryForUser(
   categoryIds: string[]
 ): Promise<number> {
   let count = 0
-  const serialized = categoryIds.length > 0 ? JSON.stringify(categoryIds) : (null as JournalNotesRow['categoryIds'])
+  const serialized =
+    categoryIds.length > 0 ? JSON.stringify(categoryIds) : (null as JournalNotesRow['categoryIds'])
   for (const id of ids) {
     const row = await findByIdForUser(ctx, userId, id)
     if (row) {
@@ -306,7 +316,8 @@ export async function removeCategoryFromAllNotes(
       const next = cats.filter((c) => c !== categoryId)
       await JournalNotes.update(ctx, {
         id: n.id,
-        categoryIds: next.length > 0 ? JSON.stringify(next) : (null as JournalNotesRow['categoryIds'])
+        categoryIds:
+          next.length > 0 ? JSON.stringify(next) : (null as JournalNotesRow['categoryIds'])
       })
       count++
     }

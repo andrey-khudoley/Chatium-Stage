@@ -15,10 +15,7 @@ export interface ResolveByRefResult {
  * По ref находит визит и возвращает partnerId и campaignId.
  * Используется в eventRepo для привязки событий к партнёру.
  */
-export async function resolveByRef(
-  ctx: app.Ctx,
-  ref: string
-): Promise<ResolveByRefResult | null> {
+export async function resolveByRef(ctx: app.Ctx, ref: string): Promise<ResolveByRefResult | null> {
   const visit = await visitRepo.findVisitByRef(ctx, ref)
   if (!visit) return null
   const partnerId = visit.partnerId?.id

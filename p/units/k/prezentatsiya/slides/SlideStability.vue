@@ -11,7 +11,12 @@
           <span class="tag tag-warn">БЕЗ GATEWAY</span>
           <h3 class="col-title">Каждое изменение GC = ваша работа</h3>
           <div class="domino">
-            <span v-for="n in 4" :key="n" class="brick" :style="{ animationDelay: ((n - 1) * 0.15) + 's' }"></span>
+            <span
+              v-for="n in 4"
+              :key="n"
+              class="brick"
+              :style="{ animationDelay: (n - 1) * 0.15 + 's' }"
+            ></span>
           </div>
           <p class="text">
             GC сменил название поля → ваш сценарий A сломался → сценарий B сломался → C → D
@@ -30,9 +35,7 @@
             <span class="sat s3"></span>
             <span class="sat s4"></span>
           </div>
-          <p class="text">
-            GC сменил название поля → я обновляю gateway → ваши сценарии работают
-          </p>
+          <p class="text">GC сменил название поля → я обновляю gateway → ваши сценарии работают</p>
         </section>
       </div>
     </div>
@@ -69,7 +72,14 @@ defineProps({ active: Boolean })
   font-size: clamp(26px, 3.4vw, 56px);
   color: var(--text-primary);
 }
-.strip { display: block; width: 80px; height: 4px; background: var(--accent-cyan); border-radius: 2px; margin-top: 16px; }
+.strip {
+  display: block;
+  width: 80px;
+  height: 4px;
+  background: var(--accent-cyan);
+  border-radius: 2px;
+  margin-top: 16px;
+}
 
 .cols {
   display: grid;
@@ -96,8 +106,12 @@ defineProps({ active: Boolean })
   letter-spacing: 0.16em;
   text-transform: uppercase;
 }
-.tag-warn { color: var(--status-warning); }
-.tag-cyan { color: var(--accent-cyan); }
+.tag-warn {
+  color: var(--status-warning);
+}
+.tag-cyan {
+  color: var(--accent-cyan);
+}
 
 .col-title {
   font-family: var(--font-display-new);
@@ -114,7 +128,8 @@ defineProps({ active: Boolean })
   padding: 0 8px;
 }
 .brick {
-  width: 48px; height: 80px;
+  width: 48px;
+  height: 80px;
   background: var(--bg-surface);
   border: 1px solid var(--status-warning);
   border-radius: 6px;
@@ -130,7 +145,8 @@ defineProps({ active: Boolean })
   justify-content: center;
 }
 .hub {
-  width: 100px; height: 100px;
+  width: 100px;
+  height: 100px;
   background: var(--bg-elevated);
   border: 2px solid var(--border-accent);
   border-radius: 16px;
@@ -143,15 +159,28 @@ defineProps({ active: Boolean })
 }
 .sat {
   position: absolute;
-  width: 28px; height: 28px;
+  width: 28px;
+  height: 28px;
   background: var(--bg-surface);
   border: 1px solid var(--border-subtle);
   border-radius: 6px;
 }
-.sat.s1 { left: 8%; top: 10%; }
-.sat.s2 { right: 8%; top: 10%; }
-.sat.s3 { left: 8%; bottom: 10%; }
-.sat.s4 { right: 8%; bottom: 10%; }
+.sat.s1 {
+  left: 8%;
+  top: 10%;
+}
+.sat.s2 {
+  right: 8%;
+  top: 10%;
+}
+.sat.s3 {
+  left: 8%;
+  bottom: 10%;
+}
+.sat.s4 {
+  right: 8%;
+  bottom: 10%;
+}
 
 .text {
   font-family: var(--font-body-new);
@@ -169,9 +198,19 @@ defineProps({ active: Boolean })
 }
 
 @media (max-width: 1024px) {
-  .slide { padding: 32px 16px; }
-  .cols { grid-template-columns: 1fr; gap: 16px; }
-  .vs { display: none; }
-  .col { min-height: auto; padding: 22px; }
+  .slide {
+    padding: 32px 16px;
+  }
+  .cols {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .vs {
+    display: none;
+  }
+  .col {
+    min-height: auto;
+    padding: 22px;
+  }
 }
 </style>

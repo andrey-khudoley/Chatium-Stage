@@ -19,7 +19,7 @@ export const apiKinescopePlayersRoute = reporterApp.get('/kinescope-players', as
   return players.data.map((player: any) => ({
     id: player.id,
     name: player.name,
-    settings: player.settings,
+    settings: player.settings
   }))
 })
 
@@ -36,7 +36,7 @@ export const apiKinescopeFoldersRoute = reporterApp.get('/kinescope-folders', as
       folders.push({
         id: folder.id,
         name: folder.name,
-        projectName: project.name,
+        projectName: project.name
       })
     }
   }
@@ -45,33 +45,39 @@ export const apiKinescopeFoldersRoute = reporterApp.get('/kinescope-folders', as
 })
 
 // @shared-route
-export const apiKinescopeProjectsRoute = reporterApp.get('/kinescope-projects', async (ctx, req) => {
-  requireAccountRole(ctx, 'Admin')
+export const apiKinescopeProjectsRoute = reporterApp.get(
+  '/kinescope-projects',
+  async (ctx, req) => {
+    requireAccountRole(ctx, 'Admin')
 
-  try {
-    const projects = await listProjects(ctx, { per_page: 100, page: 1 })
+    try {
+      const projects = await listProjects(ctx, { per_page: 100, page: 1 })
 
-    return projects.data.map((project: any) => ({
-      id: project.id,
-      name: project.name,
-    }))
-  } catch (error: any) {
-    ctx.account.log('@webinar-room Kinescope listProjects error', {
-      level: 'error',
-      json: { error: error.message },
-    })
-    return []
+      return projects.data.map((project: any) => ({
+        id: project.id,
+        name: project.name
+      }))
+    } catch (error: any) {
+      ctx.account.log('@webinar-room Kinescope listProjects error', {
+        level: 'error',
+        json: { error: error.message }
+      })
+      return []
+    }
   }
-})
+)
 
 // @shared-route
 export const apiKinescopeVideosRoute = unsafeReporterApp
-  .query(((s: any) => ({
+  .query(
+    ((s: any) => ({
       page: s.number().optional(),
       per_page: s.number().optional(),
       project_id: s.string().optional(),
-      query: s.string().optional(),
-    })) as any, { strict: false } as any)
+      query: s.string().optional()
+    })) as any,
+    { strict: false } as any
+  )
   .get('/kinescope-videos', async (ctx: app.Ctx, req: any) => {
     requireAccountRole(ctx, 'Admin')
 
@@ -84,7 +90,7 @@ export const apiKinescopeVideosRoute = unsafeReporterApp
       const params: any = {
         per_page: perPage,
         page: page,
-        order: 'created_at.desc',
+        order: 'created_at.desc'
       }
 
       if (projectId) {
@@ -113,17 +119,17 @@ export const apiKinescopeVideosRoute = unsafeReporterApp
             project: video.project
               ? {
                   id: video.project.id,
-                  name: video.project.name,
+                  name: video.project.name
                 }
-              : null,
+              : null
           }
         }),
-        pagination: videos.pagination,
+        pagination: videos.pagination
       }
     } catch (error: any) {
       ctx.account.log('@webinar-room Kinescope listVideos error', {
         level: 'error',
-        json: { error: error.message },
+        json: { error: error.message }
       })
       throw new Error('Не удалось загрузить видео из Kinescope: ' + error.message)
     }

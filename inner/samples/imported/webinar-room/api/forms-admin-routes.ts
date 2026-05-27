@@ -11,7 +11,7 @@ export const apiFormsAllRoute = reporterApp.get('/all', async (ctx, req) => {
   requireAccountRole(ctx, 'Admin')
   const forms = await EpisodeForms.findAll(ctx, {
     order: [{ createdAt: 'desc' }],
-    limit: 200,
+    limit: 200
   })
   return forms
 })
@@ -26,17 +26,17 @@ export const apiFormsSearchRoute = reporterApp.get('/search', async (ctx, req) =
     // Если пустой поиск - возвращаем все
     return await EpisodeForms.findAll(ctx, {
       order: [{ createdAt: 'desc' }],
-      limit: 200,
+      limit: 200
     })
   }
 
   // Ищем через $ilike по title
   const forms = await EpisodeForms.findAll(ctx, {
     where: {
-      title: { $ilike: `%${query}%` },
+      title: { $ilike: `%${query}%` }
     },
     order: [{ createdAt: 'desc' }],
-    limit: 200,
+    limit: 200
   })
 
   return forms
@@ -44,7 +44,7 @@ export const apiFormsSearchRoute = reporterApp.get('/search', async (ctx, req) =
 
 // @shared-route
 export const apiFormCreateRoute = reporterApp
-  .body(s => ({
+  .body((s) => ({
     title: s.string(),
     buttonText: s.string(),
     buttonColor: s.string().optional(),
@@ -57,7 +57,7 @@ export const apiFormCreateRoute = reporterApp
     paymentCurrency: s.string().optional(),
     paymentDescription: s.string().optional(),
     paymentOldPrice: s.number().optional(),
-    paymentProviders: s.any().optional(),
+    paymentProviders: s.any().optional()
   }))
   .post('/create', async (ctx, req) => {
     requireAccountRole(ctx, 'Admin')
@@ -78,7 +78,7 @@ export const apiFormCreateRoute = reporterApp
       paymentDescription: req.body.paymentDescription,
       paymentOldPrice: req.body.paymentOldPrice,
       paymentProviders: req.body.paymentProviders,
-      sortOrder: count,
+      sortOrder: count
     })
 
     return form
@@ -86,7 +86,7 @@ export const apiFormCreateRoute = reporterApp
 
 // @shared-route
 export const apiFormUpdateRoute = reporterApp
-  .body(s => ({
+  .body((s) => ({
     title: s.string().optional(),
     buttonText: s.string().optional(),
     buttonColor: s.string().optional(),
@@ -99,14 +99,14 @@ export const apiFormUpdateRoute = reporterApp
     paymentCurrency: s.string().optional(),
     paymentDescription: s.string().optional(),
     paymentOldPrice: s.number().optional(),
-    paymentProviders: s.any().optional(),
+    paymentProviders: s.any().optional()
   }))
   .post('/update/:id', async (ctx, req) => {
     requireAccountRole(ctx, 'Admin')
 
     const form = await EpisodeForms.update(ctx, {
       id: req.params.id as string,
-      ...req.body,
+      ...req.body
     })
 
     return form

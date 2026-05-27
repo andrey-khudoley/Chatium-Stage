@@ -5,8 +5,14 @@
         <i class="fas fa-bug"></i>
         Проверка
       </span>
-      <span class="debug-panel-time">{{ formatTime(props.currentOffset) }} / {{ formatTime(duration) }}</span>
-      <i class="fas" :class="collapsed ? 'fa-chevron-up' : 'fa-chevron-down'" style="font-size: 10px;"></i>
+      <span class="debug-panel-time"
+        >{{ formatTime(props.currentOffset) }} / {{ formatTime(duration) }}</span
+      >
+      <i
+        class="fas"
+        :class="collapsed ? 'fa-chevron-up' : 'fa-chevron-down'"
+        style="font-size: 10px"
+      ></i>
     </div>
 
     <div v-if="!collapsed" class="debug-panel-body">
@@ -23,12 +29,16 @@
 
       <!-- Status -->
       <div class="debug-status">
-        <span>Статус: <strong>{{ props.status }}</strong></span>
+        <span
+          >Статус: <strong>{{ props.status }}</strong></span
+        >
       </div>
 
       <!-- Schedule info -->
       <div v-if="props.schedule" class="debug-status">
-        <div>Начало запуска: <strong>{{ formatScheduleDate(props.schedule.scheduledDate) }}</strong></div>
+        <div>
+          Начало запуска: <strong>{{ formatScheduleDate(props.schedule.scheduledDate) }}</strong>
+        </div>
       </div>
 
       <!-- Reset session button -->
@@ -40,10 +50,17 @@
       <div class="debug-events">
         <div class="debug-events-title">Ближайшие события:</div>
         <div class="debug-events-list">
-          <div v-for="evt in nearbyEvents" :key="evt.id" class="debug-event" :class="{ 'debug-event--past': evt.offsetSeconds <= props.currentOffset }">
+          <div
+            v-for="evt in nearbyEvents"
+            :key="evt.id"
+            class="debug-event"
+            :class="{ 'debug-event--past': evt.offsetSeconds <= props.currentOffset }"
+          >
             <span class="debug-event-time">{{ formatTime(evt.offsetSeconds) }}</span>
             <span class="debug-event-type">{{ evt.eventType }}</span>
-            <span v-if="evt.chatMessage" class="debug-event-detail">{{ evt.chatMessage.authorName }}</span>
+            <span v-if="evt.chatMessage" class="debug-event-detail">{{
+              evt.chatMessage.authorName
+            }}</span>
           </div>
           <div v-if="nearbyEvents.length === 0" class="debug-event-empty">Нет событий рядом</div>
         </div>
@@ -62,7 +79,7 @@ const props = defineProps({
   scheduleId: { type: String, default: '' },
   currentOffset: { type: Number, default: 0 },
   status: { type: String, default: '' },
-  schedule: { type: Object, default: null },
+  schedule: { type: Object, default: null }
 })
 
 const emit = defineEmits(['seek'])
@@ -113,7 +130,7 @@ async function seek(seconds) {
   try {
     const payload = {
       autowebinarId: props.autowebinarId,
-      shiftSeconds: seconds,
+      shiftSeconds: seconds
     }
     if (props.scheduleId) {
       payload.scheduleId = props.scheduleId
@@ -126,7 +143,6 @@ async function seek(seconds) {
     console.error('Debug seek failed:', e)
   }
 }
-
 
 function resetSession() {
   try {
@@ -223,7 +239,6 @@ onUnmounted(() => {
   gap: 6px;
   margin-bottom: 8px;
 }
-
 
 .debug-btn {
   flex: 1;

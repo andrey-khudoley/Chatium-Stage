@@ -55,36 +55,63 @@ export interface BpmScenarioDemoState {
 const WIDGET_TONES: Array<ScenarioWidget['tone']> = ['info', 'success', 'warning', 'danger']
 
 function getScenarioIndex(scenario: BpmDesignScenario): number {
-  return Math.max(0, scenario.slug.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0))
+  return Math.max(
+    0,
+    scenario.slug.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0)
+  )
 }
 
 function buildMetrics(base: BpmMetric[], scenarioIndex: number): BpmMetric[] {
   return base.map((metric, index) => {
     if (metric.id === 'active') {
-      return { ...metric, value: String(90 + ((scenarioIndex + index) % 60)), delta: `+${3 + ((scenarioIndex + index) % 8)}` }
+      return {
+        ...metric,
+        value: String(90 + ((scenarioIndex + index) % 60)),
+        delta: `+${3 + ((scenarioIndex + index) % 8)}`
+      }
     }
 
     if (metric.id === 'sla') {
-      return { ...metric, value: String(4 + ((scenarioIndex + index) % 9)), delta: `-${1 + ((scenarioIndex + index) % 4)}` }
+      return {
+        ...metric,
+        value: String(4 + ((scenarioIndex + index) % 9)),
+        delta: `-${1 + ((scenarioIndex + index) % 4)}`
+      }
     }
 
     if (metric.id === 'automation') {
-      return { ...metric, value: `${54 + ((scenarioIndex + index) % 32)}%`, delta: `+${2 + ((scenarioIndex + index) % 7)}%` }
+      return {
+        ...metric,
+        value: `${54 + ((scenarioIndex + index) % 32)}%`,
+        delta: `+${2 + ((scenarioIndex + index) % 7)}%`
+      }
     }
 
     if (metric.id === 'bottlenecks') {
-      return { ...metric, value: String(2 + ((scenarioIndex + index) % 6)), delta: `-${(scenarioIndex + index) % 3}` }
+      return {
+        ...metric,
+        value: String(2 + ((scenarioIndex + index) % 6)),
+        delta: `-${(scenarioIndex + index) % 3}`
+      }
     }
 
     if (metric.id === 'cycle') {
-      return { ...metric, value: `${1 + ((scenarioIndex + index) % 4)}h ${10 + ((scenarioIndex + index) % 50)}m`, delta: `-${5 + ((scenarioIndex + index) % 20)}m` }
+      return {
+        ...metric,
+        value: `${1 + ((scenarioIndex + index) % 4)}h ${10 + ((scenarioIndex + index) % 50)}m`,
+        delta: `-${5 + ((scenarioIndex + index) % 20)}m`
+      }
     }
 
     return metric
   })
 }
 
-function buildRows(base: BpmInstanceRow[], scenario: BpmDesignScenario, locale: BpmLocale): BpmInstanceRow[] {
+function buildRows(
+  base: BpmInstanceRow[],
+  scenario: BpmDesignScenario,
+  locale: BpmLocale
+): BpmInstanceRow[] {
   if (!base.length) return base
 
   const first = {
@@ -123,7 +150,7 @@ function buildWidgets(scenario: BpmDesignScenario, scenarioIndex: number): Scena
       id: 'w-4',
       label: 'Critical blockers',
       value: String(1 + (scenarioIndex % 5)),
-      delta: `${(scenarioIndex % 2 === 0 ? '-' : '+')}${1 + (scenarioIndex % 3)}`,
+      delta: `${scenarioIndex % 2 === 0 ? '-' : '+'}${1 + (scenarioIndex % 3)}`,
       tone: WIDGET_TONES[(scenarioIndex + 3) % WIDGET_TONES.length]
     }
   ]
@@ -139,7 +166,11 @@ function buildChecklist(scenario: BpmDesignScenario, locale: BpmLocale): Scenari
   }
 
   return [
-    { id: 'c-1', label: `Синхронизировать этапы и owner для сценария «${scenario.title}»`, state: 'done' },
+    {
+      id: 'c-1',
+      label: `Синхронизировать этапы и owner для сценария «${scenario.title}»`,
+      state: 'done'
+    },
     { id: 'c-2', label: 'Проверить SLA-ограничения и правила эскалации', state: 'active' },
     { id: 'c-3', label: 'Подготовить план запуска и операционный чек-лист', state: 'todo' }
   ]

@@ -1,5 +1,5 @@
 // @shared
-import { jsx } from "@app/html-jsx"
+import { jsx } from '@app/html-jsx'
 import { getEnabledAuthProviders } from '@app/auth/provider'
 import { tailwindScript, cssVariables, commonStyles } from './styles'
 import LoginPage from './pages/LoginPage.vue'
@@ -9,26 +9,29 @@ import { applyDebugLevel } from './lib/logging'
 
 export const loginPageRoute = app.html('/', async (ctx, req) => {
   await applyDebugLevel(ctx, 'login-page')
-  
+
   const back = (req.query.back as string) || indexPageRoute.url()
-  
+
   // Получение доступных провайдеров авторизации
   const providers = await getEnabledAuthProviders(ctx)
   const projectName = await getProjectName(ctx)
-  
+
   return (
     <html>
       <head>
         <title>{projectName} - Вход</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta charset="UTF-8" />
-        
+
         <script src="/s/static/lib/tailwind.3.4.16.min.js"></script>
         <script dangerouslySetInnerHTML={{ __html: tailwindScript }} />
-        
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+        <link
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+          rel="stylesheet"
+        />
         <link href="/s/static/lib/fontawesome/6.7.2/css/all.min.css" rel="stylesheet" />
-        
+
         <style type="text/tailwindcss">{cssVariables}</style>
         <style>{commonStyles}</style>
         <style>{`
@@ -87,7 +90,7 @@ export const loginPageRoute = app.html('/', async (ctx, req) => {
             border-color: rgba(255, 255, 255, 0.5);
           }
         `}</style>
-        
+
         <script>{`
           // Инициализация темы
           function initTheme() {
@@ -123,7 +126,7 @@ export const loginPageRoute = app.html('/', async (ctx, req) => {
         <button class="theme-toggle-login" onclick="toggleTheme()">
           <i class="fas fa-moon"></i>
         </button>
-        
+
         <div class="login-container">
           <LoginPage providers={providers} back={back} />
         </div>
@@ -133,4 +136,3 @@ export const loginPageRoute = app.html('/', async (ctx, req) => {
 })
 
 export default loginPageRoute
-

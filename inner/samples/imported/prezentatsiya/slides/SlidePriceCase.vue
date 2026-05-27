@@ -13,7 +13,7 @@
       </div>
 
       <h2 class="title">
-        2 630 диалогов. 800 городов.<br>
+        2 630 диалогов. 800 городов.<br />
         <span class="gradient-text">0 сотрудников.</span>
       </h2>
 
@@ -73,8 +73,6 @@
           </div>
         </div>
       </div>
-
-
     </div>
   </div>
 </template>
@@ -131,16 +129,20 @@ defineProps({ active: Boolean })
 .grid-pattern {
   position: absolute;
   inset: 0;
-  background-image:
-    linear-gradient(rgba(245,158,11,0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(245,158,11,0.03) 1px, transparent 1px);
+  background-image: linear-gradient(rgba(245, 158, 11, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(245, 158, 11, 0.03) 1px, transparent 1px);
   background-size: 50px 50px;
   mask-image: radial-gradient(ellipse at center, black 40%, transparent 80%);
 }
 
 @keyframes float {
-  0%, 100% { transform: translateY(0) scale(1); }
-  50% { transform: translateY(-25px) scale(1.04); }
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+  }
+  50% {
+    transform: translateY(-25px) scale(1.04);
+  }
 }
 
 .container {
@@ -162,8 +164,8 @@ defineProps({ active: Boolean })
   font-size: 13px;
   font-weight: 600;
   color: #fbbf24;
-  background: rgba(245,158,11,0.1);
-  border: 1px solid rgba(245,158,11,0.25);
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(245, 158, 11, 0.25);
   margin-bottom: 24px;
   letter-spacing: 0.5px;
 }
@@ -208,13 +210,13 @@ defineProps({ active: Boolean })
 }
 
 .card-ai {
-  background: rgba(16,185,129,0.06);
-  border: 1px solid rgba(16,185,129,0.2);
+  background: rgba(16, 185, 129, 0.06);
+  border: 1px solid rgba(16, 185, 129, 0.2);
 }
 
 .card-human {
-  background: rgba(239,68,68,0.04);
-  border: 1px solid rgba(239,68,68,0.15);
+  background: rgba(239, 68, 68, 0.04);
+  border: 1px solid rgba(239, 68, 68, 0.15);
 }
 
 .card-badge {
@@ -231,15 +233,15 @@ defineProps({ active: Boolean })
 }
 
 .badge-ai {
-  background: rgba(16,185,129,0.15);
+  background: rgba(16, 185, 129, 0.15);
   color: #34d399;
-  border: 1px solid rgba(16,185,129,0.3);
+  border: 1px solid rgba(16, 185, 129, 0.3);
 }
 
 .badge-human {
-  background: rgba(239,68,68,0.1);
+  background: rgba(239, 68, 68, 0.1);
   color: #f87171;
-  border: 1px solid rgba(239,68,68,0.25);
+  border: 1px solid rgba(239, 68, 68, 0.25);
 }
 
 .card-price {
@@ -259,9 +261,9 @@ defineProps({ active: Boolean })
 }
 
 .card-human .card-price {
-  color: rgba(255,255,255,0.4);
+  color: rgba(255, 255, 255, 0.4);
   text-decoration: line-through;
-  text-decoration-color: rgba(239,68,68,0.5);
+  text-decoration-color: rgba(239, 68, 68, 0.5);
 }
 
 .card-period {
@@ -276,7 +278,7 @@ defineProps({ active: Boolean })
   gap: 0;
   width: 100%;
   padding-top: 16px;
-  border-top: 1px solid rgba(255,255,255,0.06);
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .stat {
@@ -308,7 +310,7 @@ defineProps({ active: Boolean })
 .stat-divider {
   width: 1px;
   height: 28px;
-  background: rgba(255,255,255,0.06);
+  background: rgba(255, 255, 255, 0.06);
   flex-shrink: 0;
 }
 
@@ -334,8 +336,13 @@ defineProps({ active: Boolean })
 }
 
 @keyframes pulse-scale {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.05); }
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
 }
 
 .multiplier-label {
@@ -385,16 +392,43 @@ defineProps({ active: Boolean })
 }
 
 @media (max-width: 480px) {
-  .slide { padding: 24px 14px 14px; }
-  .badge { font-size: 11px; padding: 5px 12px; margin-bottom: 16px; }
-  .title { font-size: 22px; margin-bottom: 20px; }
-  .card { padding: 18px 16px 16px; border-radius: 16px; }
-  .card-badge { font-size: 10px; padding: 4px 10px; }
-  .card-price { font-size: 26px; }
-  .card-period { font-size: 12px; }
-  .stat-value { font-size: 14px; }
-  .stat-label { font-size: 10px; }
-  .multiplier-value { font-size: 28px; }
-  .multiplier-label { font-size: 12px; }
+  .slide {
+    padding: 24px 14px 14px;
+  }
+  .badge {
+    font-size: 11px;
+    padding: 5px 12px;
+    margin-bottom: 16px;
+  }
+  .title {
+    font-size: 22px;
+    margin-bottom: 20px;
+  }
+  .card {
+    padding: 18px 16px 16px;
+    border-radius: 16px;
+  }
+  .card-badge {
+    font-size: 10px;
+    padding: 4px 10px;
+  }
+  .card-price {
+    font-size: 26px;
+  }
+  .card-period {
+    font-size: 12px;
+  }
+  .stat-value {
+    font-size: 14px;
+  }
+  .stat-label {
+    font-size: 10px;
+  }
+  .multiplier-value {
+    font-size: 28px;
+  }
+  .multiplier-label {
+    font-size: 12px;
+  }
 }
 </style>

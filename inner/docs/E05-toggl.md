@@ -1,4 +1,5 @@
 @chatium
+
 # Toggl Track API: Полное руководство для Chatium
 
 Исчерпывающее руководство по интеграции Toggl Track API v9 в Chatium с примерами на `@app/request`, Heap и планировщике `app.job`.
@@ -40,19 +41,24 @@
 ### Хранение токена в Heap
 
 ```typescript
-import { Heap } from "@app/heap"
+import { Heap } from '@app/heap'
 
-export const TogglCredentials = Heap.Table("toggl_credentials", {
-  accountName: Heap.String({ customMeta: { title: "Название аккаунта" } }),
-  apiToken: Heap.String({ customMeta: { title: "API токен" } }),
-  defaultWorkspaceId: Heap.Number({ customMeta: { title: "Workspace по умолчанию" } }),
+export const TogglCredentials = Heap.Table('toggl_credentials', {
+  accountName: Heap.String({ customMeta: { title: 'Название аккаунта' } }),
+  apiToken: Heap.String({ customMeta: { title: 'API токен' } }),
+  defaultWorkspaceId: Heap.Number({ customMeta: { title: 'Workspace по умолчанию' } })
 })
 
-export async function saveTogglToken(ctx, accountName: string, apiToken: string, workspaceId?: number) {
-  await TogglCredentials.createOrUpdateBy(ctx, "accountName", {
+export async function saveTogglToken(
+  ctx,
+  accountName: string,
+  apiToken: string,
+  workspaceId?: number
+) {
+  await TogglCredentials.createOrUpdateBy(ctx, 'accountName', {
     accountName,
     apiToken,
-    defaultWorkspaceId: workspaceId,
+    defaultWorkspaceId: workspaceId
   })
 }
 ```
@@ -64,27 +70,27 @@ export async function saveTogglToken(ctx, accountName: string, apiToken: string,
 Перед сохранением токена вызовите `/me`, чтобы убедиться в валидности и получить список workspace.
 
 ```typescript
-import { requireAccountRole } from "@app/auth"
+import { requireAccountRole } from '@app/auth'
 
 // Файл в дереве api/ (file-based URL); путь к файлу задаёт реальный URL роута.
 export const togglSetupRoute = app
-  .post("/")
+  .post('/')
   .body((s) => ({
     accountName: s.string(),
-    apiToken: s.string(),
+    apiToken: s.string()
   }))
   .handle(async (ctx, req) => {
-    await requireAccountRole(ctx, "Admin")
+    await requireAccountRole(ctx, 'Admin')
     const { accountName, apiToken } = req.body
 
-    const profile = await togglRequest({ ctx, apiToken, endpoint: "/me" })
+    const profile = await togglRequest({ ctx, apiToken, endpoint: '/me' })
 
     await saveTogglToken(ctx, accountName, apiToken, profile.default_workspace_id)
 
     return {
       success: true,
       fullname: profile.fullname,
-      workspaces: profile.workspaces.map((w) => ({ id: w.id, name: w.name })),
+      workspaces: profile.workspaces.map((w) => ({ id: w.id, name: w.name }))
     }
   })
 ```
@@ -94,8 +100,8 @@ export const togglSetupRoute = app
 ## Базовая настройка клиента
 
 ```typescript
-import { request } from "@app/request"
-import { utf8StringToBase64 } from "./utf8Base64" // реализацию скопируйте из **047-base64.md** (в UGC нельзя полагаться на base64Encode)
+import { request } from '@app/request'
+import { utf8StringToBase64 } from './utf8Base64' // реализацию скопируйте из **047-base64.md** (в UGC нельзя полагаться на base64Encode)
 
 function buildAuthHeader(apiToken: string) {
   return `Basic ${utf8StringToBase64(`${apiToken}:api_token`)}`
@@ -104,39 +110,42 @@ function buildAuthHeader(apiToken: string) {
 interface TogglRequestOptions {
   ctx
   endpoint: string
-  method?: "get" | "post" | "put" | "patch" | "delete"
+  method?: 'get' | 'post' | 'put' | 'patch' | 'delete'
   query?: Record<string, string | number | boolean>
   json?: any
   apiToken: string
 }
 
 export async function togglRequest(options: TogglRequestOptions) {
-  const { ctx, endpoint, method = "get", json, query, apiToken } = options
+  const { ctx, endpoint, method = 'get', json, query, apiToken } = options
   const search = query
     ? `?${new URLSearchParams(
-        Object.entries(query).reduce((acc, [key, value]) => {
-          acc[key] = String(value)
-          return acc
-        }, {} as Record<string, string>)
+        Object.entries(query).reduce(
+          (acc, [key, value]) => {
+            acc[key] = String(value)
+            return acc
+          },
+          {} as Record<string, string>
+        )
       ).toString()}`
-    : ""
+    : ''
 
   const response = await request({
     url: `https://api.track.toggl.com/api/v9${endpoint}${search}`,
     method,
     headers: {
       Authorization: buildAuthHeader(apiToken),
-      "Content-Type": "application/json",
+      'Content-Type': 'application/json'
     },
     json,
-    responseType: "json",
-    throwHttpErrors: false,
+    responseType: 'json',
+    throwHttpErrors: false
   })
 
   if (response.statusCode >= 400) {
-    ctx.account.log("Toggl API error", {
-      level: "error",
-      json: { endpoint, status: response.statusCode, body: response.body },
+    ctx.account.log('Toggl API error', {
+      level: 'error',
+      json: { endpoint, status: response.statusCode, body: response.body }
     })
     throw new Error(`Toggl error ${response.statusCode}`)
   }
@@ -159,42 +168,42 @@ export async function togglRequest(options: TogglRequestOptions) {
 
 ```typescript
 function delay(ms: number) {
-  return new Promise(resolve => setTimeout(resolve, ms))
+  return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
-await togglRequest({ ctx, apiToken, endpoint: "/organizations", method: "post", json: payload })
+await togglRequest({ ctx, apiToken, endpoint: '/organizations', method: 'post', json: payload })
 await delay(3000)
-const profile = await togglRequest({ ctx, apiToken, endpoint: "/me" })
+const profile = await togglRequest({ ctx, apiToken, endpoint: '/me' })
 ```
 
 ---
 
 ## Основные сущности
 
-| Сущность | Эндпоинт | Комментарии |
-|----------|---------|-------------|
-| Пользователь | `GET /me` | Профиль, список организаций/воркспейсов, данные о квоте |
-| Организации | `GET /organizations` | Контейнер для workspace |
-| Workspace | `GET /workspaces`, `PUT /workspaces/{id}` | Настройки тарифа, валюты, задач |
-| Клиенты | `/workspaces/{wid}/clients` | CRUD по клиентам |
-| Проекты | `/workspaces/{wid}/projects` | Привязаны к клиентам, могут быть приватными |
-| Задачи | `/workspaces/{wid}/tasks` | Доступны в Premium workspace |
-| Теги | `/workspaces/{wid}/tags` | Свободные строки |
-| Time entries | `/time_entries`, `/workspaces/{wid}/time_entries` | Записи времени, фильтры по датам/проектам |
+| Сущность     | Эндпоинт                                          | Комментарии                                             |
+| ------------ | ------------------------------------------------- | ------------------------------------------------------- |
+| Пользователь | `GET /me`                                         | Профиль, список организаций/воркспейсов, данные о квоте |
+| Организации  | `GET /organizations`                              | Контейнер для workspace                                 |
+| Workspace    | `GET /workspaces`, `PUT /workspaces/{id}`         | Настройки тарифа, валюты, задач                         |
+| Клиенты      | `/workspaces/{wid}/clients`                       | CRUD по клиентам                                        |
+| Проекты      | `/workspaces/{wid}/projects`                      | Привязаны к клиентам, могут быть приватными             |
+| Задачи       | `/workspaces/{wid}/tasks`                         | Доступны в Premium workspace                            |
+| Теги         | `/workspaces/{wid}/tags`                          | Свободные строки                                        |
+| Time entries | `/time_entries`, `/workspaces/{wid}/time_entries` | Записи времени, фильтры по датам/проектам               |
 
 ### Пользователь (`/me`)
 
 ```typescript
-const profile = await togglRequest({ ctx, apiToken, endpoint: "/me" })
+const profile = await togglRequest({ ctx, apiToken, endpoint: '/me' })
 
 return {
   fullname: profile.fullname,
   defaultWorkspaceId: profile.default_workspace_id,
-  organizations: profile.organizations.map(org => ({
+  organizations: profile.organizations.map((org) => ({
     id: org.id,
     name: org.name,
-    workspaces: org.workspaces.map(w => ({ id: w.id, name: w.name })),
-  })),
+    workspaces: org.workspaces.map((w) => ({ id: w.id, name: w.name }))
+  }))
 }
 ```
 
@@ -203,7 +212,7 @@ return {
 ### Организации
 
 ```typescript
-const organizations = await togglRequest({ ctx, apiToken, endpoint: "/organizations" })
+const organizations = await togglRequest({ ctx, apiToken, endpoint: '/organizations' })
 await TogglOrganizations.upsertMany(ctx, organizations)
 ```
 
@@ -211,11 +220,11 @@ await TogglOrganizations.upsertMany(ctx, organizations)
 
 ```typescript
 const workspace = await togglRequest({ ctx, apiToken, endpoint: `/workspaces/${workspaceId}` })
-await TogglWorkspaces.createOrUpdateBy(ctx, "workspaceId", {
+await TogglWorkspaces.createOrUpdateBy(ctx, 'workspaceId', {
   workspaceId: workspace.id,
   name: workspace.name,
   isPremium: workspace.premium,
-  admin: workspace.admin,
+  admin: workspace.admin
 })
 ```
 
@@ -226,11 +235,11 @@ await togglRequest({
   ctx,
   apiToken,
   endpoint: `/workspaces/${workspaceId}/clients`,
-  method: "post",
+  method: 'post',
   json: {
-    name: "ACME LLC",
-    notes: "�������� �� Chatium",
-  },
+    name: 'ACME LLC',
+    notes: '�������� �� Chatium'
+  }
 })
 ```
 
@@ -241,14 +250,14 @@ await togglRequest({
   ctx,
   apiToken,
   endpoint: `/workspaces/${workspaceId}/projects`,
-  method: "post",
+  method: 'post',
   json: {
-    name: "���������",
+    name: '���������',
     client_id: clientId,
     is_private: true,
     billable: true,
-    color: "#06AFEB",
-  },
+    color: '#06AFEB'
+  }
 })
 ```
 
@@ -259,12 +268,12 @@ await togglRequest({
   ctx,
   apiToken,
   endpoint: `/workspaces/${workspaceId}/tasks`,
-  method: "post",
+  method: 'post',
   json: {
     project_id: projectId,
-    name: "������ � ��������",
-    estimated_seconds: 1800,
-  },
+    name: '������ � ��������',
+    estimated_seconds: 1800
+  }
 })
 ```
 
@@ -287,8 +296,8 @@ const entries = await togglRequest({
     start_date: startIso,
     end_date: endIso,
     updated_since: cursorIso,
-    project_ids: projectIds.join(","),
-  },
+    project_ids: projectIds.join(',')
+  }
 })
 ```
 
@@ -298,18 +307,18 @@ const entries = await togglRequest({
 await togglRequest({
   ctx,
   apiToken,
-  endpoint: "/time_entries",
-  method: "post",
+  endpoint: '/time_entries',
+  method: 'post',
   json: {
     workspace_id: workspaceId,
     project_id: projectId,
     task_id: taskId,
     start: new Date().toISOString(),
     duration: 3600,
-    description: "���� ����������",
-    created_with: "chatium-app",
-    tags: ["billed", "retainer"],
-  },
+    description: '���� ����������',
+    created_with: 'chatium-app',
+    tags: ['billed', 'retainer']
+  }
 })
 ```
 
@@ -321,44 +330,44 @@ await togglRequest({
 
 ### Конфигурация
 
-| Поле | Где хранить |
-|------|-------------|
-| `toggl.apiToken` | `config.json` или `toggl_credentials` |
-| `toggl.defaultWorkspaceId` | `config.json`/Heap |
-| `toggl.syncSchedule` | `config.json` (например, каждые 5 минут) |
+| Поле                       | Где хранить                              |
+| -------------------------- | ---------------------------------------- |
+| `toggl.apiToken`           | `config.json` или `toggl_credentials`    |
+| `toggl.defaultWorkspaceId` | `config.json`/Heap                       |
+| `toggl.syncSchedule`       | `config.json` (например, каждые 5 минут) |
 
 ```typescript
-import { readWorkspaceFile, updateWorkspaceFile } from "@app/config"
+import { readWorkspaceFile, updateWorkspaceFile } from '@app/config'
 
 async function setTogglConfig(ctx, data) {
-  const config = await readWorkspaceFile(ctx, "config.json")
+  const config = await readWorkspaceFile(ctx, 'config.json')
   config.toggl = { ...config.toggl, ...data }
-  await updateWorkspaceFile(ctx, "config.json", config)
+  await updateWorkspaceFile(ctx, 'config.json', config)
 }
 ```
 
 ### Таблицы Heap
 
 ```typescript
-export const TogglWorkspaces = Heap.Table("toggl_workspaces", {
+export const TogglWorkspaces = Heap.Table('toggl_workspaces', {
   workspaceId: Heap.Number({ indexed: true }),
   name: Heap.String(),
   isPremium: Heap.Boolean(),
   quotaRemaining: Heap.Number(),
-  syncedAt: Heap.DateTime(),
+  syncedAt: Heap.DateTime()
 })
 
-export const TogglProjects = Heap.Table("toggl_projects", {
+export const TogglProjects = Heap.Table('toggl_projects', {
   projectId: Heap.Number({ indexed: true }),
   workspaceId: Heap.Number(),
   clientId: Heap.Number(),
   name: Heap.String(),
   color: Heap.String(),
   billable: Heap.Boolean(),
-  active: Heap.Boolean(),
+  active: Heap.Boolean()
 })
 
-export const TogglTimeEntries = Heap.Table("toggl_time_entries", {
+export const TogglTimeEntries = Heap.Table('toggl_time_entries', {
   entryId: Heap.String({ indexed: true }),
   workspaceId: Heap.Number(),
   projectId: Heap.Number(),
@@ -367,7 +376,7 @@ export const TogglTimeEntries = Heap.Table("toggl_time_entries", {
   duration: Heap.Number(),
   start: Heap.DateTime(),
   stop: Heap.DateTime(),
-  tags: Heap.StringArray(),
+  tags: Heap.StringArray()
 })
 ```
 
@@ -378,9 +387,9 @@ export const TogglTimeEntries = Heap.Table("toggl_time_entries", {
 ### Базовый job
 
 ```typescript
-import { scheduleJobAfter, scheduleJobAsap } from "@app/jobs"
+import { scheduleJobAfter, scheduleJobAsap } from '@app/jobs'
 
-app.job("syncTogglTimeEntries").handler(async (ctx, { workspaceId }) => {
+app.job('syncTogglTimeEntries').handler(async (ctx, { workspaceId }) => {
   const since = await getSyncCursor(ctx, workspaceId)
 
   const entries = await togglRequest({
@@ -389,15 +398,15 @@ app.job("syncTogglTimeEntries").handler(async (ctx, { workspaceId }) => {
     endpoint: `/workspaces/${workspaceId}/time_entries`,
     query: {
       start_date: since.toISOString(),
-      end_date: new Date().toISOString(),
-    },
+      end_date: new Date().toISOString()
+    }
   })
 
   await upsertEntriesToHeap(ctx, workspaceId, entries)
   await saveSyncCursor(ctx, workspaceId, entries)
 })
 
-scheduleJobAfter(ctx, 5, "minutes", "syncTogglTimeEntries", { workspaceId })
+scheduleJobAfter(ctx, 5, 'minutes', 'syncTogglTimeEntries', { workspaceId })
 ```
 
 ### Инкрементальный импорт
@@ -409,8 +418,8 @@ const entries = await togglRequest({
   endpoint: `/workspaces/${workspaceId}/time_entries`,
   query: {
     updated_since: cursorIso,
-    user_ids: userIds.join(","),
-  },
+    user_ids: userIds.join(',')
+  }
 })
 ```
 
@@ -420,25 +429,25 @@ const entries = await togglRequest({
 2. Для каждого проекта запускается `syncTogglProjectEntries`.
 
 ```typescript
-app.job("scanTogglProjects").handler(async (ctx, { workspaceId }) => {
+app.job('scanTogglProjects').handler(async (ctx, { workspaceId }) => {
   const projects = await togglRequest({
     ctx,
     apiToken: await getApiToken(ctx),
     endpoint: `/workspaces/${workspaceId}/projects`,
-    query: { updated_since: getProjectCursor(ctx, workspaceId) },
+    query: { updated_since: getProjectCursor(ctx, workspaceId) }
   })
 
   for (const project of projects) {
-    await scheduleJobAsap(ctx, "syncTogglProjectEntries", { workspaceId, projectId: project.id })
+    await scheduleJobAsap(ctx, 'syncTogglProjectEntries', { workspaceId, projectId: project.id })
   }
 })
 
-app.job("syncTogglProjectEntries").handler(async (ctx, { workspaceId, projectId }) => {
+app.job('syncTogglProjectEntries').handler(async (ctx, { workspaceId, projectId }) => {
   const entries = await safeTogglRequest({
     ctx,
     apiToken: await getApiToken(ctx),
     endpoint: `/workspaces/${workspaceId}/time_entries`,
-    query: { project_ids: projectId, start_date: getWeekStartISO() },
+    query: { project_ids: projectId, start_date: getWeekStartISO() }
   })
   await upsertEntriesToHeap(ctx, workspaceId, entries)
 })
@@ -453,8 +462,8 @@ app.job("syncTogglProjectEntries").handler(async (ctx, { workspaceId, projectId 
 ### Подписка
 
 ```typescript
-import { withProjectRoot } from "../config/routes"
-import { apiTogglWebhookRoute } from "../api/toggl/webhook"
+import { withProjectRoot } from '../config/routes'
+import { apiTogglWebhookRoute } from '../api/toggl/webhook'
 
 const webhookUrl = ctx.account.url(withProjectRoot(apiTogglWebhookRoute.url()))
 
@@ -462,16 +471,16 @@ await togglRequest({
   ctx,
   apiToken,
   endpoint: `/workspaces/${workspaceId}/webhooks`,
-  method: "post",
+  method: 'post',
   json: {
-    name: "chatium-sync",
+    name: 'chatium-sync',
     url: webhookUrl,
     event_filters: [
-      { entity: "time_entry", action: "created" },
-      { entity: "time_entry", action: "updated" },
-      { entity: "time_entry", action: "deleted" },
-    ],
-  },
+      { entity: 'time_entry', action: 'created' },
+      { entity: 'time_entry', action: 'updated' },
+      { entity: 'time_entry', action: 'deleted' }
+    ]
+  }
 })
 ```
 
@@ -482,30 +491,30 @@ await togglRequest({
 ```typescript
 // api/toggl/webhook.ts — см. 005-jobs.md: объявление job через app.job(...) и вызов job.scheduleJobAsap(ctx, params)
 
-const processTogglEventJob = app.job("/toggl/process-event", async (ctx, event: any) => {
+const processTogglEventJob = app.job('/toggl/process-event', async (ctx, event: any) => {
   const { workspace_id, event_name, data } = event
 
   switch (event_name) {
-    case "time_entry.created":
-    case "time_entry.updated":
+    case 'time_entry.created':
+    case 'time_entry.updated':
       await upsertTimeEntry(ctx, workspace_id, data.time_entry_id)
       break
-    case "time_entry.deleted":
+    case 'time_entry.deleted':
       await deleteTimeEntry(ctx, data.time_entry_id)
       break
     default:
-      ctx.account.log("Toggl webhook skipped", { level: "info", json: { event_name } })
+      ctx.account.log('Toggl webhook skipped', { level: 'info', json: { event_name } })
   }
 })
 
-export const apiTogglWebhookRoute = app.post("/", async (ctx, req) => {
-  const requestId = req.headers["toggl-webhook-request-id"]
+export const apiTogglWebhookRoute = app.post('/', async (ctx, req) => {
+  const requestId = req.headers['toggl-webhook-request-id']
 
-  if (req.method === "HEAD") {
+  if (req.method === 'HEAD') {
     return ctx.resp
       .status(200)
-      .header("Toggl-Webhook-Response-Id", String(requestId ?? ""))
-      .body("")
+      .header('Toggl-Webhook-Response-Id', String(requestId ?? ''))
+      .body('')
   }
 
   const payload = req.body
@@ -513,7 +522,7 @@ export const apiTogglWebhookRoute = app.post("/", async (ctx, req) => {
 
   return ctx.resp
     .status(200)
-    .header("Toggl-Webhook-Response-Id", String(requestId ?? ""))
+    .header('Toggl-Webhook-Response-Id', String(requestId ?? ''))
     .json({ ok: true })
 })
 ```
@@ -524,10 +533,10 @@ export const apiTogglWebhookRoute = app.post("/", async (ctx, req) => {
 
 ## Квоты и rate limits
 
-| Тип запроса | Free | Starter | Premium |
-|-------------|------|---------|---------|
+| Тип запроса                                           | Free   | Starter | Premium |
+| ----------------------------------------------------- | ------ | ------- | ------- |
 | Organization-specific (проекты, time entries, отчёты) | 30/час | 240/час | 600/час |
-| User-specific (`/me`, личные данные) | 30/час | 30/час | 30/час |
+| User-specific (`/me`, личные данные)                  | 30/час | 30/час  | 30/час  |
 
 Дополнительно действует leaky bucket (≈1 запрос/секунда). При превышении:
 
@@ -562,21 +571,24 @@ async function safeTogglRequest(options: TogglRequestOptions, retry = 0) {
 - для сложных отчётов выгружайте данные в ClickHouse (см. `016-analytics-*`).
 
 ```typescript
-app.get("api/toggl/report").handler(async (ctx) => {
-  await requireAccountRole(ctx, "Admin")
+app.get('api/toggl/report').handler(async (ctx) => {
+  await requireAccountRole(ctx, 'Admin')
   const { workspaceId, from, to } = ctx.req.query
   const rows = await TogglTimeEntries.findAll(ctx, {
     where: {
       workspaceId: Number(workspaceId),
-      start: Heap.between(new Date(from), new Date(to)),
-    },
+      start: Heap.between(new Date(from), new Date(to))
+    }
   })
 
-  const grouped = rows.reduce((acc, entry) => {
-    const key = `${entry.projectId}:${entry.tags.sort().join(",")}`
-    acc[key] = (acc[key] || 0) + entry.duration
-    return acc
-  }, {} as Record<string, number>)
+  const grouped = rows.reduce(
+    (acc, entry) => {
+      const key = `${entry.projectId}:${entry.tags.sort().join(',')}`
+      acc[key] = (acc[key] || 0) + entry.duration
+      return acc
+    },
+    {} as Record<string, number>
+  )
 
   return ctx.res.csv(
     Object.entries(grouped).map(([key, seconds]) => ({ bucket: key, hours: seconds / 3600 }))
@@ -588,15 +600,15 @@ app.get("api/toggl/report").handler(async (ctx) => {
 
 ## Обработка ошибок и тестирование
 
-| Код | Значение | Действие |
-|-----|----------|----------|
-| 400 | Некорректный payload | Проверить поля, тариф |
-| 401 | Неверный токен | Попросить пользователя обновить токен |
-| 402 | Функция недоступна | Сообщить о необходимости апгрейда |
-| 404 | Сущность удалена | Удалить запись из Heap, не ретраить |
-| 410 | Эндпоинт устарел | Обновить интеграцию до v9 |
-| 429 | Rate limit | `safeTogglRequest` или `scheduleJobAfter` |
-| 5xx | Ошибка сервера | Повторить через 1–5 секунд (до 3 раз) |
+| Код | Значение             | Действие                                  |
+| --- | -------------------- | ----------------------------------------- |
+| 400 | Некорректный payload | Проверить поля, тариф                     |
+| 401 | Неверный токен       | Попросить пользователя обновить токен     |
+| 402 | Функция недоступна   | Сообщить о необходимости апгрейда         |
+| 404 | Сущность удалена     | Удалить запись из Heap, не ретраить       |
+| 410 | Эндпоинт устарел     | Обновить интеграцию до v9                 |
+| 429 | Rate limit           | `safeTogglRequest` или `scheduleJobAfter` |
+| 5xx | Ошибка сервера       | Повторить через 1–5 секунд (до 3 раз)     |
 
 **Тесты (см. `020-testing.md`):**
 

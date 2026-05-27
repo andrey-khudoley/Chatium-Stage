@@ -1,5 +1,5 @@
 ---
-title: "LifePay — API Контракты"
+title: 'LifePay — API Контракты'
 type: reference
 tags:
   - topic/lifepay
@@ -13,12 +13,12 @@ updated: 2026-05-08
 
 Два поколения API. Для новых интеграций рекомендован **ECOM API**.
 
-| | Старый API | Новый ECOM API |
-|---|---|---|
-| Base URL | `https://api.life-pay.ru/v1/` | `https://api-ecom.life-pay.ru/v1/` |
-| Авторизация | `apikey` + `login` в теле каждого запроса | JWT Bearer (один раз получить, TTL 3 ч.) |
-| Создание счёта | `POST /v1/bill` | `POST /v1/invoices/` |
-| Поле с URL оплаты в ответе | `url` (short link) | `form_link` |
+|                            | Старый API                                | Новый ECOM API                           |
+| -------------------------- | ----------------------------------------- | ---------------------------------------- |
+| Base URL                   | `https://api.life-pay.ru/v1/`             | `https://api-ecom.life-pay.ru/v1/`       |
+| Авторизация                | `apikey` + `login` в теле каждого запроса | JWT Bearer (один раз получить, TTL 3 ч.) |
+| Создание счёта             | `POST /v1/bill`                           | `POST /v1/invoices/`                     |
+| Поле с URL оплаты в ответе | `url` (short link)                        | `form_link`                              |
 
 ---
 
@@ -29,6 +29,7 @@ updated: 2026-05-08
 **Endpoint:** `POST https://api-ecom.life-pay.ru/v1/auth`
 
 **Тело запроса:**
+
 ```json
 {
   "service_id": "{your_service_id}",
@@ -39,6 +40,7 @@ updated: 2026-05-08
 > `service_id` и `api_key` берутся в кабинете эквайринга `home.life-pay.ru` (Интеграция → Сервисы → иконка 🔑), доступном после подключения интернет-эквайринга отдельной заявкой. Подробно про кабинеты в [cabinets](cabinets.md).
 
 **Ответ:**
+
 ```json
 {
   "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
@@ -48,6 +50,7 @@ updated: 2026-05-08
 **TTL токена: 3 часа.** Рекомендация: кешировать токен и обновлять по истечении (или по ответу 401).
 
 **Использование токена в запросах:**
+
 ```
 Authorization: Bearer {token}
 Content-Type: application/json
@@ -63,29 +66,30 @@ Content-Type: application/json
 
 ### Запрос
 
-| Поле | Тип | Обяз. | Описание |
-|---|---|---|---|
-| `order_id` | string | ✅ | ID заказа в вашей системе (используется для матчинга в webhook) |
-| `amount` | float | ✅ | Сумма в рублях |
-| `currency_code` | string | ✅ | Валюта: `RUB` |
-| `service_id` | string | ✅ | ID сервиса из ЛК |
-| `name` | string | ✅ | Имя покупателя |
-| `email` | string | рек. | Email покупателя |
-| `phone` | string | рек. | Телефон покупателя |
-| `url_success` | string | ❌ | Редирект после успешной оплаты |
-| `url_error` | string | ❌ | Редирект после ошибки |
-| `expire_date` | string | ❌ | Срок действия: `"2026-05-15 23:59:59"` |
-| `comment` | string | ❌ | Внутренний комментарий (не виден покупателю) |
-| `is_recurrent` | bool | ❌ | Флаг рекуррентного платежа |
-| `recurrent_schedule` | object | ❌ | Расписание рекуррентных платежей |
-| `send_receipt_through` | string | ❌ | Канал отправки чека: `"email"` / `"phone"` |
-| `split_data` | object | ❌ | Сплитование платежа |
+| Поле                   | Тип    | Обяз. | Описание                                                        |
+| ---------------------- | ------ | ----- | --------------------------------------------------------------- |
+| `order_id`             | string | ✅    | ID заказа в вашей системе (используется для матчинга в webhook) |
+| `amount`               | float  | ✅    | Сумма в рублях                                                  |
+| `currency_code`        | string | ✅    | Валюта: `RUB`                                                   |
+| `service_id`           | string | ✅    | ID сервиса из ЛК                                                |
+| `name`                 | string | ✅    | Имя покупателя                                                  |
+| `email`                | string | рек.  | Email покупателя                                                |
+| `phone`                | string | рек.  | Телефон покупателя                                              |
+| `url_success`          | string | ❌    | Редирект после успешной оплаты                                  |
+| `url_error`            | string | ❌    | Редирект после ошибки                                           |
+| `expire_date`          | string | ❌    | Срок действия: `"2026-05-15 23:59:59"`                          |
+| `comment`              | string | ❌    | Внутренний комментарий (не виден покупателю)                    |
+| `is_recurrent`         | bool   | ❌    | Флаг рекуррентного платежа                                      |
+| `recurrent_schedule`   | object | ❌    | Расписание рекуррентных платежей                                |
+| `send_receipt_through` | string | ❌    | Канал отправки чека: `"email"` / `"phone"`                      |
+| `split_data`           | object | ❌    | Сплитование платежа                                             |
 
 **Пример запроса:**
+
 ```json
 {
   "order_id": "order_12345",
-  "amount": 5000.00,
+  "amount": 5000.0,
   "currency_code": "RUB",
   "service_id": "87875",
   "name": "Иван Иванов",
@@ -107,7 +111,7 @@ Content-Type: application/json
   "id": "...",
   "short_id": "...",
   "order_id": "order_12345",
-  "amount": 5000.00,
+  "amount": 5000.0,
   "currency_code": "RUB",
   "service_id": "87875",
   "status": "...",
@@ -126,13 +130,13 @@ Content-Type: application/json
 
 ## ECOM API — Дополнительные методы
 
-| Метод | Endpoint | Описание |
-|---|---|---|
-| Статус оплаты | `GET /v1/charges/{charge_id}` | Получить текущий статус платежа |
-| Создание платёжного токена (карта) | `POST /v1/payment-tokens/` | Для встроенной формы (SDK) |
-| Статус платёжного токена | `GET /v1/payment-tokens/{token_id}` | Проверить статус 3DS |
-| Возврат | `POST /v1/refunds/` | Создать возврат по invoice |
-| QR-код (СБП) | `POST /v1/qr-codes/` | Сгенерировать QR для СБП |
+| Метод                              | Endpoint                            | Описание                        |
+| ---------------------------------- | ----------------------------------- | ------------------------------- |
+| Статус оплаты                      | `GET /v1/charges/{charge_id}`       | Получить текущий статус платежа |
+| Создание платёжного токена (карта) | `POST /v1/payment-tokens/`          | Для встроенной формы (SDK)      |
+| Статус платёжного токена           | `GET /v1/payment-tokens/{token_id}` | Проверить статус 3DS            |
+| Возврат                            | `POST /v1/refunds/`                 | Создать возврат по invoice      |
+| QR-код (СБП)                       | `POST /v1/qr-codes/`                | Сгенерировать QR для СБП        |
 
 ---
 
@@ -146,24 +150,25 @@ Content-Type: application/json
 
 ### Запрос
 
-| Поле | Тип | Описание |
-|---|---|---|
-| `apikey` | string | API-ключ из ЛК (`my.life-pay.ru` → Настройки → Разработчикам) |
-| `login` | string | Логин (номер телефона в формате `7XXXXXXXXXX`) |
-| `amount` | float | Сумма в рублях |
-| `customer_phone` | string\|null | Телефон покупателя |
-| `customer_email` | string | Email покупателя |
-| `method` | string | `"sbp"` (по умолчанию), `"internetAcquiring"`, `"mobileCommerce"` |
-| `description` | string | Описание товара/услуги |
-| `callback_url` | string | URL для webhook-уведомления по этому счёту (можно задать глобально в ЛК) |
-| `order` | object | Данные заказа (number, items) |
+| Поле             | Тип          | Описание                                                                 |
+| ---------------- | ------------ | ------------------------------------------------------------------------ |
+| `apikey`         | string       | API-ключ из ЛК (`my.life-pay.ru` → Настройки → Разработчикам)            |
+| `login`          | string       | Логин (номер телефона в формате `7XXXXXXXXXX`)                           |
+| `amount`         | float        | Сумма в рублях                                                           |
+| `customer_phone` | string\|null | Телефон покупателя                                                       |
+| `customer_email` | string       | Email покупателя                                                         |
+| `method`         | string       | `"sbp"` (по умолчанию), `"internetAcquiring"`, `"mobileCommerce"`        |
+| `description`    | string       | Описание товара/услуги                                                   |
+| `callback_url`   | string       | URL для webhook-уведомления по этому счёту (можно задать глобально в ЛК) |
+| `order`          | object       | Данные заказа (number, items)                                            |
 
 **Пример запроса (СБП):**
+
 ```json
 {
   "apikey": "{your_apikey}",
   "login": "{your_login}",
-  "amount": 5000.00,
+  "amount": 5000.0,
   "customer_phone": null,
   "customer_email": "client@example.com",
   "method": "sbp",
@@ -174,11 +179,11 @@ Content-Type: application/json
 
 **Ответ при `method: "sbp"`** содержит две ссылки:
 
-| Поле | Описание |
-|---|---|
-| `paymentUrl` | Ссылка на `qr.nspk.ru` — для генерации QR или редиректа в банковское приложение |
-| `paymentUrlWeb` | Ссылка на `web.qr.nspk.ru` — веб-страница СБП с выбором банка |
-| `number` | ID счёта в LifePay (используется для матчинга в webhook) |
+| Поле            | Описание                                                                        |
+| --------------- | ------------------------------------------------------------------------------- |
+| `paymentUrl`    | Ссылка на `qr.nspk.ru` — для генерации QR или редиректа в банковское приложение |
+| `paymentUrlWeb` | Ссылка на `web.qr.nspk.ru` — веб-страница СБП с выбором банка                   |
+| `number`        | ID счёта в LifePay (используется для матчинга в webhook)                        |
 
 **Ответ при `method: "internetAcquiring"`** содержит поле `url` с короткой ссылкой на платёжную форму.
 
@@ -189,6 +194,7 @@ Content-Type: application/json
 **Webhook:** общий механизм нотификаций транзакций. URL берётся из `callback_url` запроса или из глобальной настройки ЛК. Формат, статусы, retry-схема — в разделе [`/notification/`](https://apidoc.life-pay.ru/notification/index). Сопоставление с заказом по полю `number`.
 
 **Пример (PHP):**
+
 ```php
 $data = [
     'apikey'          => '{your_apikey}',
@@ -222,6 +228,7 @@ curl_close($ch);
 **Endpoint:** `POST https://partner.life-pay.ru/alba/build_link/input_short/`
 
 Передать параметры платежа. Ответ при успехе:
+
 ```json
 { "status": "ok", "url": "https://url.life-pay.ru/{short_code}" }
 ```

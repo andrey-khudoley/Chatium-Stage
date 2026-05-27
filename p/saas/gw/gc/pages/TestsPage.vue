@@ -56,7 +56,10 @@ const showCursor = ref(false)
 const cursorPosition = ref<'title' | 'description' | 'final'>('title')
 const showTitleUnderline = ref(false)
 
-const intervalIds = { title: null as ReturnType<typeof setInterval> | null, desc: null as ReturnType<typeof setInterval> | null }
+const intervalIds = {
+  title: null as ReturnType<typeof setInterval> | null,
+  desc: null as ReturnType<typeof setInterval> | null
+}
 
 const MAX_LOG_ENTRIES = 500
 const LOG_FETCH_LIMIT = 50
@@ -96,7 +99,9 @@ type LogDisplayItem =
   | { type: 'log'; entry: LogEntry; formattedTime: string; formattedMessage: string }
   | { type: 'divider'; date: string }
 
-function getSeveritiesQueryForStream(stream: 'all' | 'info' | 'warn' | 'error'): string | undefined {
+function getSeveritiesQueryForStream(
+  stream: 'all' | 'info' | 'warn' | 'error'
+): string | undefined {
   if (stream === 'all') return undefined
   return LOG_STREAM_TO_SEVERITIES[stream].join(',')
 }
@@ -111,9 +116,9 @@ function formatLogTime(timestamp: number): string {
 }
 
 function formatLogMessage(e: LogEntry): string {
-  return e.args.map((a) =>
-    typeof a === 'object' && a !== null ? JSON.stringify(a) : String(a)
-  ).join(' ')
+  return e.args
+    .map((a) => (typeof a === 'object' && a !== null ? JSON.stringify(a) : String(a)))
+    .join(' ')
 }
 
 function formatDateDivider(timestamp: number): string {
@@ -139,7 +144,10 @@ function trimOldLogs() {
 function updateOldestTimestamp(entries: Array<LogEntry & { id?: string }>) {
   const first = entries[0]
   if (!first) return
-  const oldest = entries.reduce((min, item) => (item.timestamp < min ? item.timestamp : min), first.timestamp)
+  const oldest = entries.reduce(
+    (min, item) => (item.timestamp < min ? item.timestamp : min),
+    first.timestamp
+  )
   oldestLogTimestamp.value = oldest
 }
 
@@ -229,7 +237,11 @@ const loadRecentLogs = async () => {
   try {
     const res = await getRecentLogsRoute.query(query).run(ctx)
     if (requestId !== logsRequestId.value) return
-    const data = res as { success?: boolean; entries?: Array<LogEntry & { id: string }>; error?: string }
+    const data = res as {
+      success?: boolean
+      entries?: Array<LogEntry & { id: string }>
+      error?: string
+    }
     if (data?.success && Array.isArray(data.entries)) {
       logEntries.value = [...data.entries]
       updateOldestTimestamp(data.entries)
@@ -390,13 +402,15 @@ onMounted(() => {
     getOrCreateBrowserSocketClient()
       .then((socketClient) => {
         const logsSocketSubscription = socketClient.subscribeToData(props.encodedLogsSocketId!)
-        logsSocketUnsubscribe = logsSocketSubscription.listen((data: { type?: string; data?: LogEntry }) => {
-          if (data?.type === 'new-log' && data.data) {
-            const entry = data.data as LogEntry
-            if (isBrowserSinkEchoFromSocket(entry)) return
-            pushVisibleLogEntry(entry)
+        logsSocketUnsubscribe = logsSocketSubscription.listen(
+          (data: { type?: string; data?: LogEntry }) => {
+            if (data?.type === 'new-log' && data.data) {
+              const entry = data.data as LogEntry
+              if (isBrowserSinkEchoFromSocket(entry)) return
+              pushVisibleLogEntry(entry)
+            }
           }
-        })
+        )
       })
       .catch((err) => log.error('Не удалось подписаться на логи по WebSocket', err))
     loadRecentLogs()
@@ -453,18 +467,16 @@ type SingleRunGroup = 'unit' | 'integration' | 'http'
 const singleTestRun = ref<{ group: SingleRunGroup; id: string } | null>(null)
 
 function getApiBaseUrl(): string {
-  const indexPath = (props.indexUrl.startsWith('http')
-    ? new URL(props.indexUrl).pathname
-    : props.indexUrl
+  const indexPath = (
+    props.indexUrl.startsWith('http') ? new URL(props.indexUrl).pathname : props.indexUrl
   ).replace(/\/$/, '')
-  const testsPath = (props.testsUrl.startsWith('http')
-    ? new URL(props.testsUrl).pathname
-    : props.testsUrl
+  const testsPath = (
+    props.testsUrl.startsWith('http') ? new URL(props.testsUrl).pathname : props.testsUrl
   ).replace(/\/$/, '')
-  const basePath =
-    indexPath || testsPath.replace(/\/web\/tests$/i, '') || '/'
-  const origin =
-    props.indexUrl.startsWith('http') ? new URL(props.indexUrl).origin : window.location.origin
+  const basePath = indexPath || testsPath.replace(/\/web\/tests$/i, '') || '/'
+  const origin = props.indexUrl.startsWith('http')
+    ? new URL(props.indexUrl).origin
+    : window.location.origin
   const normalized = basePath.startsWith('/') ? basePath : `/${basePath}`
   return `${origin}${normalized}`
 }
@@ -487,7 +499,11 @@ const HTTP_HTML_SNIPPETS: Record<string, string[]> = {
   'web-tests': ['window.__BOOT__', 'template-project-page']
 }
 
-function httpPagePassed(testId: string, res: Response, html: string): { ok: boolean; error?: string } {
+function httpPagePassed(
+  testId: string,
+  res: Response,
+  html: string
+): { ok: boolean; error?: string } {
   if (!res.ok) return { ok: false, error: `HTTP ${res.status}` }
   const finalUrl = res.url || ''
   if (testId === 'web-admin') {
@@ -642,7 +658,11 @@ function suiteSectionStateKey(tab: SuiteSectionTab, blockId: string): string {
   return `${tab}:${blockId}`
 }
 
-function isSuiteSectionExpanded(tab: SuiteSectionTab, blockId: string, blockIndex: number): boolean {
+function isSuiteSectionExpanded(
+  tab: SuiteSectionTab,
+  blockId: string,
+  blockIndex: number
+): boolean {
   const key = suiteSectionStateKey(tab, blockId)
   const v = suiteSectionOpen.value[key]
   if (v !== undefined) return v
@@ -666,7 +686,12 @@ async function runUnitSuite() {
     log.info('Юнит-набор', summarizeRows(unitResults.value))
   } catch (e) {
     unitResults.value = [
-      { id: 'fetch', title: 'GET /api/tests/unit', passed: false, error: (e as Error)?.message ?? String(e) }
+      {
+        id: 'fetch',
+        title: 'GET /api/tests/unit',
+        passed: false,
+        error: (e as Error)?.message ?? String(e)
+      }
     ]
   } finally {
     unitLoading.value = false
@@ -674,7 +699,8 @@ async function runUnitSuite() {
 }
 
 async function runSingleUnitTest(testId: string) {
-  const fallbackTitle = flattenCatalogBlocks(UNIT_TEST_BLOCKS).find((t) => t.id === testId)?.title ?? testId
+  const fallbackTitle =
+    flattenCatalogBlocks(UNIT_TEST_BLOCKS).find((t) => t.id === testId)?.title ?? testId
   singleTestRun.value = { group: 'unit', id: testId }
   try {
     const base = getApiBaseUrl().replace(/\/$/, '')
@@ -724,7 +750,8 @@ async function runIntegrationSuite() {
 
 async function runSingleIntegrationTest(testId: string) {
   const fallbackTitle =
-    flattenCatalogBlocks(INTEGRATION_SERVER_TEST_BLOCKS).find((t) => t.id === testId)?.title ?? testId
+    flattenCatalogBlocks(INTEGRATION_SERVER_TEST_BLOCKS).find((t) => t.id === testId)?.title ??
+    testId
   singleTestRun.value = { group: 'integration', id: testId }
   try {
     const base = getApiBaseUrl().replace(/\/$/, '')
@@ -841,12 +868,23 @@ type V1OpPreflight = {
   hint?: string
 }
 type V1OpsPreflightSnapshot = {
-  levelA: { schoolHostSet: boolean; schoolApiKeySet: boolean; developerKeySet: boolean; ready: boolean }
+  levelA: {
+    schoolHostSet: boolean
+    schoolApiKeySet: boolean
+    developerKeySet: boolean
+    ready: boolean
+  }
   setHeapKeys: readonly string[]
   knownHeapKeys: readonly string[]
   testerEmail: string
   ops: V1OpPreflight[]
-  summary: { total: number; ready: number; blockedAvailability: number; warnHeap: number; warnDeps: number }
+  summary: {
+    total: number
+    ready: number
+    blockedAvailability: number
+    warnHeap: number
+    warnDeps: number
+  }
 }
 const v1OpsPreflight = ref<V1OpsPreflightSnapshot | null>(null)
 const v1OpsPreflightLoading = ref(false)
@@ -859,7 +897,10 @@ const PHASE_LABELS: Record<number, string> = {
   4: 'Ф4 деструктор'
 }
 
-function v1OpStatusBadge(result: V1OpRunResult | undefined): { text: string; status: 'pending' | 'success' | 'fail' | 'skip' } {
+function v1OpStatusBadge(result: V1OpRunResult | undefined): {
+  text: string
+  status: 'pending' | 'success' | 'fail' | 'skip'
+} {
   if (!result) return { text: 'ОЖИД', status: 'pending' }
   if (result.status === 'passed') return { text: 'OK', status: 'success' }
   if (result.status === 'failed') return { text: 'FAIL', status: 'fail' }
@@ -881,7 +922,11 @@ function formatJsonForDisplay(value: unknown): string {
 }
 
 /** Сырое тело ответа школы: заголовки + JSON с отступами, если парсится. */
-function formatGcUpstreamForDisplay(up: { httpStatus: number; contentType: string; bodyText: string }): string {
+function formatGcUpstreamForDisplay(up: {
+  httpStatus: number
+  contentType: string
+  bodyText: string
+}): string {
   const head = `HTTP ${String(up.httpStatus)}\nContent-Type: ${up.contentType}\n\n`
   const t = up.bodyText.trim()
   if ((t.startsWith('{') && t.endsWith('}')) || (t.startsWith('[') && t.endsWith(']'))) {
@@ -911,9 +956,11 @@ async function loadV1OpsPreflight() {
       method: 'GET',
       credentials: 'include'
     })
-    const data = (await res.json().catch(() => null)) as
-      | { success?: boolean; snapshot?: V1OpsPreflightSnapshot; error?: string }
-      | null
+    const data = (await res.json().catch(() => null)) as {
+      success?: boolean
+      snapshot?: V1OpsPreflightSnapshot
+      error?: string
+    } | null
     if (data?.snapshot) {
       v1OpsPreflight.value = data.snapshot
     } else if (data?.error) {
@@ -939,9 +986,11 @@ async function runV1OpsSuite() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ mode: 'all' })
     })
-    const data = (await res.json().catch(() => null)) as
-      | { success?: boolean; summary?: V1OpsRunSummary; error?: string }
-      | null
+    const data = (await res.json().catch(() => null)) as {
+      success?: boolean
+      summary?: V1OpsRunSummary
+      error?: string
+    } | null
     if (data?.summary) {
       applyV1OpsSummary(data.summary)
     } else if (data?.error) {
@@ -975,9 +1024,11 @@ async function runSingleV1Op(op: string) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ mode: 'single', opId: op })
     })
-    const data = (await res.json().catch(() => null)) as
-      | { success?: boolean; summary?: V1OpsRunSummary; error?: string }
-      | null
+    const data = (await res.json().catch(() => null)) as {
+      success?: boolean
+      summary?: V1OpsRunSummary
+      error?: string
+    } | null
     if (data?.summary) {
       applyV1OpsSummary(data.summary)
     } else if (data?.error) {
@@ -1020,10 +1071,21 @@ type V1OpRow = {
    * Эффективный визуальный статус строки: после прогона приоритетен результат
    * (success/fail), до прогона — статус префлайта (ready/blocked/warn).
    */
-  visualStatus: 'success' | 'fail' | 'skip' | 'ready' | 'blocked-availability' | 'warn-heap' | 'warn-deps' | 'pending'
+  visualStatus:
+    | 'success'
+    | 'fail'
+    | 'skip'
+    | 'ready'
+    | 'blocked-availability'
+    | 'warn-heap'
+    | 'warn-deps'
+    | 'pending'
 }
 
-function deriveVisualStatus(result: V1OpRunResult | undefined, preflight: V1OpPreflight | undefined): V1OpRow['visualStatus'] {
+function deriveVisualStatus(
+  result: V1OpRunResult | undefined,
+  preflight: V1OpPreflight | undefined
+): V1OpRow['visualStatus'] {
   if (result?.status === 'passed') return 'success'
   if (result?.status === 'failed') return 'fail'
   if (result?.status === 'skipped') return 'skip'
@@ -1044,16 +1106,18 @@ const v1OpsViewRows = computed<V1OpRow[]>(() => {
 })
 
 /** Группировка строк по фазам сценариев (стратегия §3.1) — для понятного порядка в UI. */
-const v1OpsRowsByPhase = computed<Array<{ phase: 1 | 2 | 3 | 4; label: string; rows: V1OpRow[] }>>(() => {
-  const buckets: Record<1 | 2 | 3 | 4, V1OpRow[]> = { 1: [], 2: [], 3: [], 4: [] }
-  for (const row of v1OpsViewRows.value) {
-    const phase = (row.preflight?.phase ?? row.result?.phase ?? 1) as 1 | 2 | 3 | 4
-    buckets[phase].push(row)
+const v1OpsRowsByPhase = computed<Array<{ phase: 1 | 2 | 3 | 4; label: string; rows: V1OpRow[] }>>(
+  () => {
+    const buckets: Record<1 | 2 | 3 | 4, V1OpRow[]> = { 1: [], 2: [], 3: [], 4: [] }
+    for (const row of v1OpsViewRows.value) {
+      const phase = (row.preflight?.phase ?? row.result?.phase ?? 1) as 1 | 2 | 3 | 4
+      buckets[phase].push(row)
+    }
+    return ([1, 2, 3, 4] as const)
+      .map((p) => ({ phase: p, label: PHASE_LABELS[p] ?? '', rows: buckets[p] ?? [] }))
+      .filter((g) => g.rows.length > 0)
   }
-  return ([1, 2, 3, 4] as const)
-    .map((p) => ({ phase: p, label: PHASE_LABELS[p] ?? '', rows: buckets[p] ?? [] }))
-    .filter((g) => g.rows.length > 0)
-})
+)
 
 function isV1OpRowRunnable(row: V1OpRow): boolean {
   if (!row.preflight) return true // до загрузки префлайта не блокируем — ответственность за SKIP несёт раннер
@@ -1078,13 +1142,19 @@ const v1OpsAnyRunnable = computed(() => v1OpsViewRows.value.some(isV1OpRowRunnab
 const v1OpsAdminUrl = computed(() => props.adminUrl ?? '')
 
 async function runSingleHttpPageCheck(testId: string) {
-  const fallbackTitle = INTEGRATION_HTTP_TEST_BLOCK.tests.find((t) => t.id === testId)?.title ?? testId
+  const fallbackTitle =
+    INTEGRATION_HTTP_TEST_BLOCK.tests.find((t) => t.id === testId)?.title ?? testId
   const path = HTTP_PATH_BY_TEST_ID[testId]
   singleTestRun.value = { group: 'http', id: testId }
   try {
     if (!path) {
       httpPageResults.value = upsertTestResults(httpPageResults.value, [
-        { id: testId, title: fallbackTitle, passed: false, error: 'Маршрут не найден в HTTP_PATH_BY_TEST_ID' }
+        {
+          id: testId,
+          title: fallbackTitle,
+          passed: false,
+          error: 'Маршрут не найден в HTTP_PATH_BY_TEST_ID'
+        }
       ])
       return
     }
@@ -1158,7 +1228,6 @@ const runAllTests = async () => {
 
     <main class="tp-wrap flex flex-col flex-1 relative z-10 min-h-0 w-full min-w-0 overflow-hidden">
       <div class="tp" :class="{ ready: bootLoaderDone }">
-
         <div class="tp-toolbar">
           <div class="tp-toolbar-left">
             <i class="fas fa-flask tp-icon-muted"></i>
@@ -1191,7 +1260,9 @@ const runAllTests = async () => {
             </div>
           </div>
           <div class="tp-toolbar-right">
-            <span v-if="lastSuiteRunAt" class="tp-last-run"><i class="fas fa-clock tp-icon-muted"></i> {{ lastSuiteRunAt }}</span>
+            <span v-if="lastSuiteRunAt" class="tp-last-run"
+              ><i class="fas fa-clock tp-icon-muted"></i> {{ lastSuiteRunAt }}</span
+            >
             <button
               type="button"
               class="tp-btn tp-btn--primary"
@@ -1224,7 +1295,6 @@ const runAllTests = async () => {
 
         <div class="tp-grid" :class="{ 'tp-grid--logs': props.encodedLogsSocketId }">
           <div class="tp-main content-wrapper">
-
             <div class="tp-metrics">
               <div class="tp-metric">
                 <i class="fas fa-list-ol tp-metric-icon"></i>
@@ -1252,359 +1322,588 @@ const runAllTests = async () => {
             </div>
 
             <div v-show="testsSuiteTab === 'unit'" class="tp-tab-panel">
-            <div class="tp-suite">
-              <div class="tp-suite-hd">
-                <h2><i class="fas fa-vial tp-icon-hd"></i> Юнит-тесты</h2>
-                <code class="tp-code">GET /api/tests/unit</code>
-              </div>
-              <div v-for="(section, sIdx) in unitBlocksView" :key="section.block.id" class="tp-block">
+              <div class="tp-suite">
+                <div class="tp-suite-hd">
+                  <h2><i class="fas fa-vial tp-icon-hd"></i> Юнит-тесты</h2>
+                  <code class="tp-code">GET /api/tests/unit</code>
+                </div>
+                <div
+                  v-for="(section, sIdx) in unitBlocksView"
+                  :key="section.block.id"
+                  class="tp-block"
+                >
+                  <button
+                    type="button"
+                    class="tp-block-hd tp-block-hd--toggle"
+                    :aria-expanded="isSuiteSectionExpanded('unit', section.block.id, sIdx)"
+                    @click="toggleSuiteSection('unit', section.block.id, sIdx)"
+                  >
+                    <span class="tp-block-hd-title">
+                      <i
+                        class="tp-icon-block"
+                        :class="
+                          isSuiteSectionExpanded('unit', section.block.id, sIdx)
+                            ? 'fas fa-folder-open'
+                            : 'fas fa-folder'
+                        "
+                      ></i>
+                      {{ section.block.title }}
+                    </span>
+                    <span class="tp-block-info">{{ section.rollupLabel }}</span>
+                  </button>
+                  <div
+                    v-show="isSuiteSectionExpanded('unit', section.block.id, sIdx)"
+                    class="tp-block-body"
+                  >
+                    <p v-if="section.block.description" class="tp-block-desc">
+                      {{ section.block.description }}
+                    </p>
+                    <ul class="tp-tests" role="list">
+                      <li
+                        v-for="row in section.rows"
+                        :key="row.test.id"
+                        class="tp-test"
+                        :class="`tp-test--${row.visual.status}`"
+                      >
+                        <div
+                          class="tp-test-accent"
+                          :class="`tp-test-accent--${row.visual.status}`"
+                        ></div>
+                        <div class="tp-test-content">
+                          <div class="tp-test-main">
+                            <span class="tp-badge" :class="`tp-badge--${row.visual.status}`">{{
+                              row.visual.badgeText
+                            }}</span>
+                            <span class="tp-test-name">{{ row.test.title }}</span>
+                            <button
+                              type="button"
+                              class="tp-test-run"
+                              :disabled="unitLoading || isGroupBlockedBySingle('unit')"
+                              @click="runSingleUnitTest(row.test.id)"
+                            >
+                              <i
+                                v-if="isSingleRunning('unit', row.test.id)"
+                                class="fas fa-circle-notch fa-spin"
+                              ></i>
+                              <i v-else class="fas fa-play"></i>
+                            </button>
+                          </div>
+                          <code class="tp-test-id">{{ row.test.id }}</code>
+                          <p v-if="row.visual.error" class="tp-test-err">
+                            <i class="fas fa-exclamation-circle"></i> {{ row.visual.error }}
+                          </p>
+                        </div>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
                 <button
                   type="button"
-                  class="tp-block-hd tp-block-hd--toggle"
-                  :aria-expanded="isSuiteSectionExpanded('unit', section.block.id, sIdx)"
-                  @click="toggleSuiteSection('unit', section.block.id, sIdx)"
+                  class="tp-btn tp-suite-run"
+                  :disabled="unitLoading || isGroupBlockedBySingle('unit')"
+                  @click="runUnitSuite"
                 >
-                  <span class="tp-block-hd-title">
-                    <i
-                      class="tp-icon-block"
-                      :class="isSuiteSectionExpanded('unit', section.block.id, sIdx) ? 'fas fa-folder-open' : 'fas fa-folder'"
-                    ></i>
-                    {{ section.block.title }}
-                  </span>
-                  <span class="tp-block-info">{{ section.rollupLabel }}</span>
+                  <i v-if="unitLoading" class="fas fa-circle-notch fa-spin"></i>
+                  <i v-else class="fas fa-play"></i>
+                  {{ unitLoading ? 'Запуск...' : 'Запустить юнит-набор' }}
                 </button>
-                <div v-show="isSuiteSectionExpanded('unit', section.block.id, sIdx)" class="tp-block-body">
-                  <p v-if="section.block.description" class="tp-block-desc">{{ section.block.description }}</p>
-                  <ul class="tp-tests" role="list">
-                    <li v-for="row in section.rows" :key="row.test.id" class="tp-test" :class="`tp-test--${row.visual.status}`">
-                      <div class="tp-test-accent" :class="`tp-test-accent--${row.visual.status}`"></div>
-                      <div class="tp-test-content">
-                        <div class="tp-test-main">
-                          <span class="tp-badge" :class="`tp-badge--${row.visual.status}`">{{ row.visual.badgeText }}</span>
-                          <span class="tp-test-name">{{ row.test.title }}</span>
-                          <button type="button" class="tp-test-run" :disabled="unitLoading || isGroupBlockedBySingle('unit')" @click="runSingleUnitTest(row.test.id)">
-                            <i v-if="isSingleRunning('unit', row.test.id)" class="fas fa-circle-notch fa-spin"></i>
-                            <i v-else class="fas fa-play"></i>
-                          </button>
-                        </div>
-                        <code class="tp-test-id">{{ row.test.id }}</code>
-                        <p v-if="row.visual.error" class="tp-test-err"><i class="fas fa-exclamation-circle"></i> {{ row.visual.error }}</p>
-                      </div>
-                    </li>
-                  </ul>
-                </div>
               </div>
-              <button type="button" class="tp-btn tp-suite-run" :disabled="unitLoading || isGroupBlockedBySingle('unit')" @click="runUnitSuite">
-                <i v-if="unitLoading" class="fas fa-circle-notch fa-spin"></i>
-                <i v-else class="fas fa-play"></i>
-                {{ unitLoading ? 'Запуск...' : 'Запустить юнит-набор' }}
-              </button>
-            </div>
             </div>
 
             <div v-show="testsSuiteTab === 'integration'" class="tp-tab-panel">
-            <div class="tp-suite">
-              <div class="tp-suite-hd">
-                <h2><i class="fas fa-server tp-icon-hd"></i> Серверная интеграция</h2>
-                <code class="tp-code">GET /api/tests/integration</code>
-              </div>
-              <div v-for="(section, sIdx) in integrationServerBlocksView" :key="section.block.id" class="tp-block">
+              <div class="tp-suite">
+                <div class="tp-suite-hd">
+                  <h2><i class="fas fa-server tp-icon-hd"></i> Серверная интеграция</h2>
+                  <code class="tp-code">GET /api/tests/integration</code>
+                </div>
+                <div
+                  v-for="(section, sIdx) in integrationServerBlocksView"
+                  :key="section.block.id"
+                  class="tp-block"
+                >
+                  <button
+                    type="button"
+                    class="tp-block-hd tp-block-hd--toggle"
+                    :aria-expanded="isSuiteSectionExpanded('integration', section.block.id, sIdx)"
+                    @click="toggleSuiteSection('integration', section.block.id, sIdx)"
+                  >
+                    <span class="tp-block-hd-title">
+                      <i
+                        class="tp-icon-block"
+                        :class="
+                          isSuiteSectionExpanded('integration', section.block.id, sIdx)
+                            ? 'fas fa-folder-open'
+                            : 'fas fa-folder'
+                        "
+                      ></i>
+                      {{ section.block.title }}
+                    </span>
+                    <span class="tp-block-info">{{ section.rollupLabel }}</span>
+                  </button>
+                  <div
+                    v-show="isSuiteSectionExpanded('integration', section.block.id, sIdx)"
+                    class="tp-block-body"
+                  >
+                    <p v-if="section.block.description" class="tp-block-desc">
+                      {{ section.block.description }}
+                    </p>
+                    <ul class="tp-tests" role="list">
+                      <li
+                        v-for="row in section.rows"
+                        :key="row.test.id"
+                        class="tp-test"
+                        :class="`tp-test--${row.visual.status}`"
+                      >
+                        <div
+                          class="tp-test-accent"
+                          :class="`tp-test-accent--${row.visual.status}`"
+                        ></div>
+                        <div class="tp-test-content">
+                          <div class="tp-test-main">
+                            <span class="tp-badge" :class="`tp-badge--${row.visual.status}`">{{
+                              row.visual.badgeText
+                            }}</span>
+                            <span class="tp-test-name">{{ row.test.title }}</span>
+                            <button
+                              type="button"
+                              class="tp-test-run"
+                              :disabled="
+                                integrationLoading || isGroupBlockedBySingle('integration')
+                              "
+                              @click="runSingleIntegrationTest(row.test.id)"
+                            >
+                              <i
+                                v-if="isSingleRunning('integration', row.test.id)"
+                                class="fas fa-circle-notch fa-spin"
+                              ></i>
+                              <i v-else class="fas fa-play"></i>
+                            </button>
+                          </div>
+                          <code class="tp-test-id">{{ row.test.id }}</code>
+                          <p v-if="row.visual.error" class="tp-test-err">
+                            <i class="fas fa-exclamation-circle"></i> {{ row.visual.error }}
+                          </p>
+                        </div>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
                 <button
                   type="button"
-                  class="tp-block-hd tp-block-hd--toggle"
-                  :aria-expanded="isSuiteSectionExpanded('integration', section.block.id, sIdx)"
-                  @click="toggleSuiteSection('integration', section.block.id, sIdx)"
+                  class="tp-btn tp-suite-run"
+                  :disabled="integrationLoading || isGroupBlockedBySingle('integration')"
+                  @click="runIntegrationSuite"
                 >
-                  <span class="tp-block-hd-title">
-                    <i
-                      class="tp-icon-block"
-                      :class="isSuiteSectionExpanded('integration', section.block.id, sIdx) ? 'fas fa-folder-open' : 'fas fa-folder'"
-                    ></i>
-                    {{ section.block.title }}
-                  </span>
-                  <span class="tp-block-info">{{ section.rollupLabel }}</span>
+                  <i v-if="integrationLoading" class="fas fa-circle-notch fa-spin"></i>
+                  <i v-else class="fas fa-play"></i>
+                  {{ integrationLoading ? 'Запуск...' : 'Запустить серверную интеграцию' }}
                 </button>
-                <div v-show="isSuiteSectionExpanded('integration', section.block.id, sIdx)" class="tp-block-body">
-                  <p v-if="section.block.description" class="tp-block-desc">{{ section.block.description }}</p>
-                  <ul class="tp-tests" role="list">
-                    <li v-for="row in section.rows" :key="row.test.id" class="tp-test" :class="`tp-test--${row.visual.status}`">
-                      <div class="tp-test-accent" :class="`tp-test-accent--${row.visual.status}`"></div>
-                      <div class="tp-test-content">
-                        <div class="tp-test-main">
-                          <span class="tp-badge" :class="`tp-badge--${row.visual.status}`">{{ row.visual.badgeText }}</span>
-                          <span class="tp-test-name">{{ row.test.title }}</span>
-                          <button type="button" class="tp-test-run" :disabled="integrationLoading || isGroupBlockedBySingle('integration')" @click="runSingleIntegrationTest(row.test.id)">
-                            <i v-if="isSingleRunning('integration', row.test.id)" class="fas fa-circle-notch fa-spin"></i>
-                            <i v-else class="fas fa-play"></i>
-                          </button>
-                        </div>
-                        <code class="tp-test-id">{{ row.test.id }}</code>
-                        <p v-if="row.visual.error" class="tp-test-err"><i class="fas fa-exclamation-circle"></i> {{ row.visual.error }}</p>
-                      </div>
-                    </li>
-                  </ul>
-                </div>
               </div>
-              <button type="button" class="tp-btn tp-suite-run" :disabled="integrationLoading || isGroupBlockedBySingle('integration')" @click="runIntegrationSuite">
-                <i v-if="integrationLoading" class="fas fa-circle-notch fa-spin"></i>
-                <i v-else class="fas fa-play"></i>
-                {{ integrationLoading ? 'Запуск...' : 'Запустить серверную интеграцию' }}
-              </button>
-            </div>
             </div>
 
             <div v-show="testsSuiteTab === 'http'" class="tp-tab-panel">
-            <div class="tp-suite">
-              <div class="tp-suite-hd">
-                <h2><i class="fas fa-globe tp-icon-hd"></i> HTTP-проверки страниц</h2>
-                <code class="tp-code">GET /, /web/*</code>
-              </div>
-              <div v-for="(section, sIdx) in integrationHttpBlocksView" :key="section.block.id" class="tp-block">
+              <div class="tp-suite">
+                <div class="tp-suite-hd">
+                  <h2><i class="fas fa-globe tp-icon-hd"></i> HTTP-проверки страниц</h2>
+                  <code class="tp-code">GET /, /web/*</code>
+                </div>
+                <div
+                  v-for="(section, sIdx) in integrationHttpBlocksView"
+                  :key="section.block.id"
+                  class="tp-block"
+                >
+                  <button
+                    type="button"
+                    class="tp-block-hd tp-block-hd--toggle"
+                    :aria-expanded="isSuiteSectionExpanded('http', section.block.id, sIdx)"
+                    @click="toggleSuiteSection('http', section.block.id, sIdx)"
+                  >
+                    <span class="tp-block-hd-title">
+                      <i
+                        class="tp-icon-block"
+                        :class="
+                          isSuiteSectionExpanded('http', section.block.id, sIdx)
+                            ? 'fas fa-folder-open'
+                            : 'fas fa-folder'
+                        "
+                      ></i>
+                      {{ section.block.title }}
+                    </span>
+                    <span class="tp-block-info">{{ section.rollupLabel }}</span>
+                  </button>
+                  <div
+                    v-show="isSuiteSectionExpanded('http', section.block.id, sIdx)"
+                    class="tp-block-body"
+                  >
+                    <p v-if="section.block.description" class="tp-block-desc">
+                      {{ section.block.description }}
+                    </p>
+                    <ul class="tp-tests" role="list">
+                      <li
+                        v-for="row in section.rows"
+                        :key="row.test.id"
+                        class="tp-test"
+                        :class="`tp-test--${row.visual.status}`"
+                      >
+                        <div
+                          class="tp-test-accent"
+                          :class="`tp-test-accent--${row.visual.status}`"
+                        ></div>
+                        <div class="tp-test-content">
+                          <div class="tp-test-main">
+                            <span class="tp-badge" :class="`tp-badge--${row.visual.status}`">{{
+                              row.visual.badgeText
+                            }}</span>
+                            <span class="tp-test-name">{{ row.test.title }}</span>
+                            <button
+                              type="button"
+                              class="tp-test-run"
+                              :disabled="httpPagesLoading || isGroupBlockedBySingle('http')"
+                              @click="runSingleHttpPageCheck(row.test.id)"
+                            >
+                              <i
+                                v-if="isSingleRunning('http', row.test.id)"
+                                class="fas fa-circle-notch fa-spin"
+                              ></i>
+                              <i v-else class="fas fa-play"></i>
+                            </button>
+                          </div>
+                          <code class="tp-test-id">{{ row.test.id }}</code>
+                          <p v-if="row.visual.error" class="tp-test-err">
+                            <i class="fas fa-exclamation-circle"></i> {{ row.visual.error }}
+                          </p>
+                        </div>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
                 <button
                   type="button"
-                  class="tp-block-hd tp-block-hd--toggle"
-                  :aria-expanded="isSuiteSectionExpanded('http', section.block.id, sIdx)"
-                  @click="toggleSuiteSection('http', section.block.id, sIdx)"
+                  class="tp-btn tp-suite-run"
+                  :disabled="httpPagesLoading || isGroupBlockedBySingle('http')"
+                  @click="runHttpPageChecks"
                 >
-                  <span class="tp-block-hd-title">
-                    <i
-                      class="tp-icon-block"
-                      :class="isSuiteSectionExpanded('http', section.block.id, sIdx) ? 'fas fa-folder-open' : 'fas fa-folder'"
-                    ></i>
-                    {{ section.block.title }}
-                  </span>
-                  <span class="tp-block-info">{{ section.rollupLabel }}</span>
+                  <i v-if="httpPagesLoading" class="fas fa-circle-notch fa-spin"></i>
+                  <i v-else class="fas fa-play"></i>
+                  {{ httpPagesLoading ? 'Запуск...' : 'Проверить HTTP-страницы' }}
                 </button>
-                <div v-show="isSuiteSectionExpanded('http', section.block.id, sIdx)" class="tp-block-body">
-                  <p v-if="section.block.description" class="tp-block-desc">{{ section.block.description }}</p>
+              </div>
+
+              <div class="tp-suite tp-v1ops">
+                <div class="tp-suite-hd">
+                  <h2><i class="fas fa-bolt tp-icon-hd"></i> Gateway /v1/{op}</h2>
+                  <code class="tp-code">POST /api/tests/v1-ops/run</code>
+                </div>
+                <p class="tp-block-desc">
+                  Один запуск на каждый из {{ operationsList.length }} роутов <code>/v1/{op}</code>.
+                  Заголовки школы — из Heap (<code>gc_test_school_host</code>,
+                  <code>gc_test_school_api_key</code>). Порядок и фазы — по
+                  <code>docs/gateway/gateway-testing-strategy.md</code>. Между исходящими вызовами —
+                  пауза ≥ 1 с (1 rps).
+                </p>
+
+                <div v-if="v1OpsFatalError" class="tp-err">
+                  <i class="fas fa-exclamation-triangle"></i> {{ v1OpsFatalError }}
+                </div>
+
+                <div v-if="v1OpsPreflight" class="tp-v1ops-readiness">
+                  <div class="tp-v1ops-readiness-row">
+                    <span class="tp-v1ops-readiness-h">Уровень A (Heap, manual §5.8):</span>
+                    <span
+                      class="tp-v1ops-readiness-tag"
+                      :class="
+                        v1OpsPreflight.levelA.schoolHostSet
+                          ? 'tp-v1ops-readiness-tag--ok'
+                          : 'tp-v1ops-readiness-tag--warn'
+                      "
+                      >gc_test_school_host
+                      {{ v1OpsPreflight.levelA.schoolHostSet ? '✓' : '—' }}</span
+                    >
+                    <span
+                      class="tp-v1ops-readiness-tag"
+                      :class="
+                        v1OpsPreflight.levelA.schoolApiKeySet
+                          ? 'tp-v1ops-readiness-tag--ok'
+                          : 'tp-v1ops-readiness-tag--warn'
+                      "
+                      >gc_test_school_api_key
+                      {{ v1OpsPreflight.levelA.schoolApiKeySet ? '✓' : '—' }}</span
+                    >
+                    <span
+                      class="tp-v1ops-readiness-tag"
+                      :class="
+                        v1OpsPreflight.levelA.developerKeySet
+                          ? 'tp-v1ops-readiness-tag--ok'
+                          : 'tp-v1ops-readiness-tag--warn'
+                      "
+                      >gc_developer_api_key
+                      {{ v1OpsPreflight.levelA.developerKeySet ? '✓' : '—' }}</span
+                    >
+                  </div>
+                  <div class="tp-v1ops-readiness-row">
+                    <span class="tp-v1ops-readiness-h">Готовность сценариев:</span>
+                    <span class="tp-v1ops-readiness-tag tp-v1ops-readiness-tag--ok">
+                      готовы {{ v1OpsPreflight.summary.ready }}
+                    </span>
+                    <span class="tp-v1ops-readiness-tag tp-v1ops-readiness-tag--warn">
+                      нужны Heap {{ v1OpsPreflight.summary.warnHeap }}
+                    </span>
+                    <span class="tp-v1ops-readiness-tag tp-v1ops-readiness-tag--warn">
+                      ждут предшественника {{ v1OpsPreflight.summary.warnDeps }}
+                    </span>
+                    <span class="tp-v1ops-readiness-tag tp-v1ops-readiness-tag--blocked">
+                      запрещены availability {{ v1OpsPreflight.summary.blockedAvailability }}
+                    </span>
+                    <a v-if="v1OpsAdminUrl" :href="v1OpsAdminUrl" class="tp-v1ops-readiness-link">
+                      <i class="fas fa-cog"></i> Открыть админку (manual §5.9)
+                    </a>
+                  </div>
+                </div>
+                <div
+                  v-else-if="v1OpsPreflightLoading"
+                  class="tp-v1ops-readiness tp-v1ops-readiness--loading"
+                >
+                  <i class="fas fa-circle-notch fa-spin"></i> Подготовка статуса сьюита…
+                </div>
+                <div v-else-if="v1OpsPreflightError" class="tp-err">
+                  <i class="fas fa-exclamation-triangle"></i> Ошибка префлайта:
+                  {{ v1OpsPreflightError }}
+                </div>
+
+                <div class="tp-v1ops-metrics">
+                  <span class="tp-v1ops-metric"
+                    ><i class="fas fa-list-ol"></i> {{ v1OpsMetrics.total }} всего</span
+                  >
+                  <span class="tp-v1ops-metric tp-v1ops-metric--ok"
+                    ><i class="fas fa-check-circle"></i> {{ v1OpsMetrics.passed }} прошли</span
+                  >
+                  <span class="tp-v1ops-metric tp-v1ops-metric--fail"
+                    ><i class="fas fa-times-circle"></i> {{ v1OpsMetrics.failed }} упали</span
+                  >
+                  <span class="tp-v1ops-metric tp-v1ops-metric--skip"
+                    ><i class="fas fa-minus-circle"></i> {{ v1OpsMetrics.skipped }} пропущено</span
+                  >
+                  <span class="tp-v1ops-metric"
+                    ><i class="fas fa-clock"></i> {{ v1OpsMetrics.pending }} без прогона</span
+                  >
+                  <span v-if="v1OpsLastRunAt" class="tp-v1ops-metric tp-v1ops-time">
+                    <i class="fas fa-stopwatch"></i> {{ v1OpsLastRunAt }}
+                  </span>
+                </div>
+
+                <div v-for="phase in v1OpsRowsByPhase" :key="phase.phase" class="tp-v1ops-phase">
+                  <div class="tp-v1ops-phase-hd">
+                    <span class="tp-v1ops-phase-num">Фаза {{ phase.phase }}</span>
+                    <span class="tp-v1ops-phase-label">{{ phase.label }}</span>
+                    <span class="tp-v1ops-phase-count">{{ phase.rows.length }} сценариев</span>
+                  </div>
                   <ul class="tp-tests" role="list">
-                    <li v-for="row in section.rows" :key="row.test.id" class="tp-test" :class="`tp-test--${row.visual.status}`">
-                      <div class="tp-test-accent" :class="`tp-test-accent--${row.visual.status}`"></div>
+                    <li
+                      v-for="row in phase.rows"
+                      :key="row.entry.op"
+                      class="tp-test tp-v1ops-row"
+                      :class="`tp-v1ops-row--${row.visualStatus}`"
+                    >
+                      <div
+                        class="tp-test-accent"
+                        :class="`tp-v1ops-accent--${row.visualStatus}`"
+                      ></div>
                       <div class="tp-test-content">
                         <div class="tp-test-main">
-                          <span class="tp-badge" :class="`tp-badge--${row.visual.status}`">{{ row.visual.badgeText }}</span>
-                          <span class="tp-test-name">{{ row.test.title }}</span>
-                          <button type="button" class="tp-test-run" :disabled="httpPagesLoading || isGroupBlockedBySingle('http')" @click="runSingleHttpPageCheck(row.test.id)">
-                            <i v-if="isSingleRunning('http', row.test.id)" class="fas fa-circle-notch fa-spin"></i>
+                          <span
+                            class="tp-badge"
+                            :class="`tp-badge--${v1OpStatusBadge(row.result).status}`"
+                          >
+                            {{ v1OpStatusBadge(row.result).text }}
+                          </span>
+                          <span class="tp-test-name">
+                            <span class="tp-v1ops-method">{{ row.entry.httpMethod }}</span>
+                            <code class="tp-v1ops-op">/v1/{{ row.entry.op }}</code>
+                            <span class="tp-v1ops-tag tp-v1ops-tag--contour">{{
+                              row.entry.contour
+                            }}</span>
+                            <span
+                              class="tp-v1ops-tag"
+                              :class="`tp-v1ops-tag--av-${row.entry.availability}`"
+                              >{{ row.entry.availability }}</span
+                            >
+                            <span
+                              v-if="row.preflight && row.preflight.runStatus !== 'ready'"
+                              class="tp-v1ops-tag"
+                              :class="`tp-v1ops-tag--st-${row.preflight.runStatus}`"
+                              >{{
+                                v1OpsPreflightRunStatusShortLabel(row.preflight.runStatus)
+                              }}</span
+                            >
+                          </span>
+                          <button
+                            type="button"
+                            class="tp-test-run"
+                            :title="
+                              row.preflight && row.preflight.runStatus !== 'ready'
+                                ? row.preflight.blockReason
+                                : 'Запустить сценарий'
+                            "
+                            :disabled="
+                              v1OpsRunningAll ||
+                              v1OpsSingleRunning !== null ||
+                              !isV1OpRowRunnable(row)
+                            "
+                            @click="runSingleV1Op(row.entry.op)"
+                          >
+                            <i
+                              v-if="v1OpsSingleRunning === row.entry.op"
+                              class="fas fa-circle-notch fa-spin"
+                            ></i>
+                            <i
+                              v-else-if="
+                                row.preflight && row.preflight.runStatus === 'blocked-availability'
+                              "
+                              class="fas fa-ban"
+                            ></i>
+                            <i
+                              v-else-if="row.preflight && row.preflight.runStatus !== 'ready'"
+                              class="fas fa-pause"
+                            ></i>
                             <i v-else class="fas fa-play"></i>
                           </button>
                         </div>
-                        <code class="tp-test-id">{{ row.test.id }}</code>
-                        <p v-if="row.visual.error" class="tp-test-err"><i class="fas fa-exclamation-circle"></i> {{ row.visual.error }}</p>
+                        <div class="tp-v1ops-meta">
+                          <!-- UGC: в шаблоне не использовать ?. — старый компилятор даёт пустой ReferenceError при ре-рендере после fetch -->
+                          <span
+                            v-if="row.result && row.result.clientHttpStatus"
+                            class="tp-v1ops-meta-item"
+                            >HTTP {{ row.result.clientHttpStatus }}</span
+                          >
+                          <span v-if="row.result" class="tp-v1ops-meta-item">{{
+                            formatMs(row.result.durationMs)
+                          }}</span>
+                          <span
+                            v-if="row.result && row.result.errorCode"
+                            class="tp-v1ops-meta-item tp-v1ops-meta-err"
+                            >{{ row.result.errorCode }}</span
+                          >
+                          <span
+                            v-if="row.result && row.result.gatewayRequestId"
+                            class="tp-v1ops-meta-item tp-v1ops-meta-req"
+                            >req: {{ row.result.gatewayRequestId }}</span
+                          >
+                        </div>
+                        <p
+                          v-if="row.preflight && row.preflight.runStatus === 'blocked-availability'"
+                          class="tp-v1ops-block tp-v1ops-block--blocked"
+                        >
+                          <i class="fas fa-ban"></i>
+                          {{ row.preflight.blockReason }}
+                        </p>
+                        <p
+                          v-else-if="row.preflight && row.preflight.runStatus === 'warn-heap'"
+                          class="tp-v1ops-block tp-v1ops-block--warn"
+                        >
+                          <i class="fas fa-key"></i>
+                          {{ row.preflight.blockReason }}
+                          <a v-if="v1OpsAdminUrl" :href="v1OpsAdminUrl" class="tp-v1ops-block-link">
+                            <i class="fas fa-cog"></i> Задать в админке
+                          </a>
+                        </p>
+                        <p
+                          v-else-if="row.preflight && row.preflight.runStatus === 'warn-deps'"
+                          class="tp-v1ops-block tp-v1ops-block--warn"
+                        >
+                          <i class="fas fa-link"></i>
+                          {{ row.preflight.blockReason }}
+                        </p>
+                        <p v-if="row.result && row.result.skipReason" class="tp-test-err">
+                          <i class="fas fa-info-circle"></i> {{ row.result.skipReason }}
+                        </p>
+                        <p
+                          v-if="row.entry.op && row.result && row.result.hint"
+                          class="tp-v1ops-hint"
+                        >
+                          {{ row.result.hint }}
+                        </p>
+                        <p
+                          v-else-if="row.preflight && row.preflight.hint && !row.result"
+                          class="tp-v1ops-hint"
+                        >
+                          {{ row.preflight.hint }}
+                        </p>
+                        <p
+                          v-else-if="!row.result && !row.preflight"
+                          class="tp-v1ops-hint tp-v1ops-hint--idle"
+                        >
+                          {{ row.entry.op }} — ожидает запуска
+                        </p>
+                        <button
+                          v-if="
+                            (row.result && row.result.sentArgs) ||
+                            (row.result && row.result.parsedResponse !== undefined) ||
+                            (row.result && row.result.gcUpstream)
+                          "
+                          type="button"
+                          class="tp-v1ops-toggle"
+                          @click="toggleV1OpRow(row.entry.op)"
+                        >
+                          <i
+                            :class="
+                              v1OpsExpanded[row.entry.op]
+                                ? 'fas fa-chevron-up'
+                                : 'fas fa-chevron-down'
+                            "
+                          ></i>
+                          {{
+                            v1OpsExpanded[row.entry.op]
+                              ? 'Скрыть детали'
+                              : 'Показать детали (args, gateway, GetCourse)'
+                          }}
+                        </button>
+                        <div
+                          v-if="v1OpsExpanded[row.entry.op] && row.result"
+                          class="tp-v1ops-payload"
+                        >
+                          <div v-if="row.result.sentArgs" class="tp-v1ops-payload-block">
+                            <div class="tp-v1ops-payload-h">Отправленные args</div>
+                            <pre>{{ formatJsonForDisplay(row.result.sentArgs) }}</pre>
+                          </div>
+                          <div
+                            v-if="row.result.parsedResponse !== undefined"
+                            class="tp-v1ops-payload-block"
+                          >
+                            <div class="tp-v1ops-payload-h">
+                              Ответ gateway /v1/{{ row.entry.op }} (обёртка)
+                            </div>
+                            <pre>{{ formatJsonForDisplay(row.result.parsedResponse) }}</pre>
+                          </div>
+                          <div v-if="row.result.gcUpstream" class="tp-v1ops-payload-block">
+                            <div class="tp-v1ops-payload-h">Сырой ответ GetCourse (школа)</div>
+                            <pre>{{ formatGcUpstreamForDisplay(row.result.gcUpstream) }}</pre>
+                          </div>
+                        </div>
                       </div>
                     </li>
                   </ul>
                 </div>
-              </div>
-              <button type="button" class="tp-btn tp-suite-run" :disabled="httpPagesLoading || isGroupBlockedBySingle('http')" @click="runHttpPageChecks">
-                <i v-if="httpPagesLoading" class="fas fa-circle-notch fa-spin"></i>
-                <i v-else class="fas fa-play"></i>
-                {{ httpPagesLoading ? 'Запуск...' : 'Проверить HTTP-страницы' }}
-              </button>
-            </div>
 
-            <div class="tp-suite tp-v1ops">
-              <div class="tp-suite-hd">
-                <h2><i class="fas fa-bolt tp-icon-hd"></i> Gateway /v1/{op}</h2>
-                <code class="tp-code">POST /api/tests/v1-ops/run</code>
+                <button
+                  type="button"
+                  class="tp-btn tp-suite-run"
+                  :title="
+                    !v1OpsAnyRunnable
+                      ? 'Нет ни одного готового сценария: задайте уровень A в Heap (manual §5.8) и недостающие gc_itest_* (§5.9).'
+                      : 'Запустить сьюит'
+                  "
+                  :disabled="v1OpsRunningAll || v1OpsSingleRunning !== null || !v1OpsAnyRunnable"
+                  @click="runV1OpsSuite"
+                >
+                  <i v-if="v1OpsRunningAll" class="fas fa-circle-notch fa-spin"></i>
+                  <i v-else class="fas fa-play"></i>
+                  {{
+                    v1OpsRunningAll
+                      ? 'Прогон сьюита /v1/{op}...'
+                      : `Запустить сьюит /v1/{op} (${operationsList.length} роутов)`
+                  }}
+                </button>
               </div>
-              <p class="tp-block-desc">
-                Один запуск на каждый из {{ operationsList.length }} роутов <code>/v1/{op}</code>.
-                Заголовки школы — из Heap (<code>gc_test_school_host</code>, <code>gc_test_school_api_key</code>).
-                Порядок и фазы — по <code>docs/gateway/gateway-testing-strategy.md</code>.
-                Между исходящими вызовами — пауза ≥ 1 с (1 rps).
-              </p>
-
-              <div v-if="v1OpsFatalError" class="tp-err">
-                <i class="fas fa-exclamation-triangle"></i> {{ v1OpsFatalError }}
-              </div>
-
-              <div v-if="v1OpsPreflight" class="tp-v1ops-readiness">
-                <div class="tp-v1ops-readiness-row">
-                  <span class="tp-v1ops-readiness-h">Уровень A (Heap, manual §5.8):</span>
-                  <span
-                    class="tp-v1ops-readiness-tag"
-                    :class="v1OpsPreflight.levelA.schoolHostSet ? 'tp-v1ops-readiness-tag--ok' : 'tp-v1ops-readiness-tag--warn'"
-                  >gc_test_school_host {{ v1OpsPreflight.levelA.schoolHostSet ? '✓' : '—' }}</span>
-                  <span
-                    class="tp-v1ops-readiness-tag"
-                    :class="v1OpsPreflight.levelA.schoolApiKeySet ? 'tp-v1ops-readiness-tag--ok' : 'tp-v1ops-readiness-tag--warn'"
-                  >gc_test_school_api_key {{ v1OpsPreflight.levelA.schoolApiKeySet ? '✓' : '—' }}</span>
-                  <span
-                    class="tp-v1ops-readiness-tag"
-                    :class="v1OpsPreflight.levelA.developerKeySet ? 'tp-v1ops-readiness-tag--ok' : 'tp-v1ops-readiness-tag--warn'"
-                  >gc_developer_api_key {{ v1OpsPreflight.levelA.developerKeySet ? '✓' : '—' }}</span>
-                </div>
-                <div class="tp-v1ops-readiness-row">
-                  <span class="tp-v1ops-readiness-h">Готовность сценариев:</span>
-                  <span class="tp-v1ops-readiness-tag tp-v1ops-readiness-tag--ok">
-                    готовы {{ v1OpsPreflight.summary.ready }}
-                  </span>
-                  <span class="tp-v1ops-readiness-tag tp-v1ops-readiness-tag--warn">
-                    нужны Heap {{ v1OpsPreflight.summary.warnHeap }}
-                  </span>
-                  <span class="tp-v1ops-readiness-tag tp-v1ops-readiness-tag--warn">
-                    ждут предшественника {{ v1OpsPreflight.summary.warnDeps }}
-                  </span>
-                  <span class="tp-v1ops-readiness-tag tp-v1ops-readiness-tag--blocked">
-                    запрещены availability {{ v1OpsPreflight.summary.blockedAvailability }}
-                  </span>
-                  <a
-                    v-if="v1OpsAdminUrl"
-                    :href="v1OpsAdminUrl"
-                    class="tp-v1ops-readiness-link"
-                  >
-                    <i class="fas fa-cog"></i> Открыть админку (manual §5.9)
-                  </a>
-                </div>
-              </div>
-              <div v-else-if="v1OpsPreflightLoading" class="tp-v1ops-readiness tp-v1ops-readiness--loading">
-                <i class="fas fa-circle-notch fa-spin"></i> Подготовка статуса сьюита…
-              </div>
-              <div v-else-if="v1OpsPreflightError" class="tp-err">
-                <i class="fas fa-exclamation-triangle"></i> Ошибка префлайта: {{ v1OpsPreflightError }}
-              </div>
-
-              <div class="tp-v1ops-metrics">
-                <span class="tp-v1ops-metric"><i class="fas fa-list-ol"></i> {{ v1OpsMetrics.total }} всего</span>
-                <span class="tp-v1ops-metric tp-v1ops-metric--ok"><i class="fas fa-check-circle"></i> {{ v1OpsMetrics.passed }} прошли</span>
-                <span class="tp-v1ops-metric tp-v1ops-metric--fail"><i class="fas fa-times-circle"></i> {{ v1OpsMetrics.failed }} упали</span>
-                <span class="tp-v1ops-metric tp-v1ops-metric--skip"><i class="fas fa-minus-circle"></i> {{ v1OpsMetrics.skipped }} пропущено</span>
-                <span class="tp-v1ops-metric"><i class="fas fa-clock"></i> {{ v1OpsMetrics.pending }} без прогона</span>
-                <span v-if="v1OpsLastRunAt" class="tp-v1ops-metric tp-v1ops-time">
-                  <i class="fas fa-stopwatch"></i> {{ v1OpsLastRunAt }}
-                </span>
-              </div>
-
-              <div
-                v-for="phase in v1OpsRowsByPhase"
-                :key="phase.phase"
-                class="tp-v1ops-phase"
-              >
-                <div class="tp-v1ops-phase-hd">
-                  <span class="tp-v1ops-phase-num">Фаза {{ phase.phase }}</span>
-                  <span class="tp-v1ops-phase-label">{{ phase.label }}</span>
-                  <span class="tp-v1ops-phase-count">{{ phase.rows.length }} сценариев</span>
-                </div>
-                <ul class="tp-tests" role="list">
-                  <li
-                    v-for="row in phase.rows"
-                    :key="row.entry.op"
-                    class="tp-test tp-v1ops-row"
-                    :class="`tp-v1ops-row--${row.visualStatus}`"
-                  >
-                    <div class="tp-test-accent" :class="`tp-v1ops-accent--${row.visualStatus}`"></div>
-                    <div class="tp-test-content">
-                      <div class="tp-test-main">
-                        <span class="tp-badge" :class="`tp-badge--${v1OpStatusBadge(row.result).status}`">
-                          {{ v1OpStatusBadge(row.result).text }}
-                        </span>
-                        <span class="tp-test-name">
-                          <span class="tp-v1ops-method">{{ row.entry.httpMethod }}</span>
-                          <code class="tp-v1ops-op">/v1/{{ row.entry.op }}</code>
-                          <span class="tp-v1ops-tag tp-v1ops-tag--contour">{{ row.entry.contour }}</span>
-                          <span
-                            class="tp-v1ops-tag"
-                            :class="`tp-v1ops-tag--av-${row.entry.availability}`"
-                          >{{ row.entry.availability }}</span>
-                          <span
-                            v-if="row.preflight && row.preflight.runStatus !== 'ready'"
-                            class="tp-v1ops-tag"
-                            :class="`tp-v1ops-tag--st-${row.preflight.runStatus}`"
-                          >{{ v1OpsPreflightRunStatusShortLabel(row.preflight.runStatus) }}</span>
-                        </span>
-                        <button
-                          type="button"
-                          class="tp-test-run"
-                          :title="row.preflight && row.preflight.runStatus !== 'ready' ? row.preflight.blockReason : 'Запустить сценарий'"
-                          :disabled="v1OpsRunningAll || v1OpsSingleRunning !== null || !isV1OpRowRunnable(row)"
-                          @click="runSingleV1Op(row.entry.op)"
-                        >
-                          <i v-if="v1OpsSingleRunning === row.entry.op" class="fas fa-circle-notch fa-spin"></i>
-                          <i v-else-if="row.preflight && row.preflight.runStatus === 'blocked-availability'" class="fas fa-ban"></i>
-                          <i v-else-if="row.preflight && row.preflight.runStatus !== 'ready'" class="fas fa-pause"></i>
-                          <i v-else class="fas fa-play"></i>
-                        </button>
-                      </div>
-                      <div class="tp-v1ops-meta">
-                        <!-- UGC: в шаблоне не использовать ?. — старый компилятор даёт пустой ReferenceError при ре-рендере после fetch -->
-                        <span v-if="row.result && row.result.clientHttpStatus" class="tp-v1ops-meta-item">HTTP {{ row.result.clientHttpStatus }}</span>
-                        <span v-if="row.result" class="tp-v1ops-meta-item">{{ formatMs(row.result.durationMs) }}</span>
-                        <span v-if="row.result && row.result.errorCode" class="tp-v1ops-meta-item tp-v1ops-meta-err">{{ row.result.errorCode }}</span>
-                        <span v-if="row.result && row.result.gatewayRequestId" class="tp-v1ops-meta-item tp-v1ops-meta-req">req: {{ row.result.gatewayRequestId }}</span>
-                      </div>
-                      <p
-                        v-if="row.preflight && row.preflight.runStatus === 'blocked-availability'"
-                        class="tp-v1ops-block tp-v1ops-block--blocked"
-                      >
-                        <i class="fas fa-ban"></i>
-                        {{ row.preflight.blockReason }}
-                      </p>
-                      <p
-                        v-else-if="row.preflight && row.preflight.runStatus === 'warn-heap'"
-                        class="tp-v1ops-block tp-v1ops-block--warn"
-                      >
-                        <i class="fas fa-key"></i>
-                        {{ row.preflight.blockReason }}
-                        <a v-if="v1OpsAdminUrl" :href="v1OpsAdminUrl" class="tp-v1ops-block-link">
-                          <i class="fas fa-cog"></i> Задать в админке
-                        </a>
-                      </p>
-                      <p
-                        v-else-if="row.preflight && row.preflight.runStatus === 'warn-deps'"
-                        class="tp-v1ops-block tp-v1ops-block--warn"
-                      >
-                        <i class="fas fa-link"></i>
-                        {{ row.preflight.blockReason }}
-                      </p>
-                      <p v-if="row.result && row.result.skipReason" class="tp-test-err"><i class="fas fa-info-circle"></i> {{ row.result.skipReason }}</p>
-                      <p v-if="row.entry.op && row.result && row.result.hint" class="tp-v1ops-hint">{{ row.result.hint }}</p>
-                      <p v-else-if="row.preflight && row.preflight.hint && !row.result" class="tp-v1ops-hint">{{ row.preflight.hint }}</p>
-                      <p v-else-if="!row.result && !row.preflight" class="tp-v1ops-hint tp-v1ops-hint--idle">{{ row.entry.op }} — ожидает запуска</p>
-                      <button
-                        v-if="
-                          (row.result && row.result.sentArgs) ||
-                          (row.result && row.result.parsedResponse !== undefined) ||
-                          (row.result && row.result.gcUpstream)
-                        "
-                        type="button"
-                        class="tp-v1ops-toggle"
-                        @click="toggleV1OpRow(row.entry.op)"
-                      >
-                        <i :class="v1OpsExpanded[row.entry.op] ? 'fas fa-chevron-up' : 'fas fa-chevron-down'"></i>
-                        {{ v1OpsExpanded[row.entry.op] ? 'Скрыть детали' : 'Показать детали (args, gateway, GetCourse)' }}
-                      </button>
-                      <div v-if="v1OpsExpanded[row.entry.op] && row.result" class="tp-v1ops-payload">
-                        <div v-if="row.result.sentArgs" class="tp-v1ops-payload-block">
-                          <div class="tp-v1ops-payload-h">Отправленные args</div>
-                          <pre>{{ formatJsonForDisplay(row.result.sentArgs) }}</pre>
-                        </div>
-                        <div v-if="row.result.parsedResponse !== undefined" class="tp-v1ops-payload-block">
-                          <div class="tp-v1ops-payload-h">Ответ gateway /v1/{{ row.entry.op }} (обёртка)</div>
-                          <pre>{{ formatJsonForDisplay(row.result.parsedResponse) }}</pre>
-                        </div>
-                        <div v-if="row.result.gcUpstream" class="tp-v1ops-payload-block">
-                          <div class="tp-v1ops-payload-h">Сырой ответ GetCourse (школа)</div>
-                          <pre>{{ formatGcUpstreamForDisplay(row.result.gcUpstream) }}</pre>
-                        </div>
-                      </div>
-                    </div>
-                  </li>
-                </ul>
-              </div>
-
-              <button
-                type="button"
-                class="tp-btn tp-suite-run"
-                :title="!v1OpsAnyRunnable ? 'Нет ни одного готового сценария: задайте уровень A в Heap (manual §5.8) и недостающие gc_itest_* (§5.9).' : 'Запустить сьюит'"
-                :disabled="v1OpsRunningAll || v1OpsSingleRunning !== null || !v1OpsAnyRunnable"
-                @click="runV1OpsSuite"
-              >
-                <i v-if="v1OpsRunningAll" class="fas fa-circle-notch fa-spin"></i>
-                <i v-else class="fas fa-play"></i>
-                {{ v1OpsRunningAll ? 'Прогон сьюита /v1/{op}...' : `Запустить сьюит /v1/{op} (${operationsList.length} роутов)` }}
-              </button>
-            </div>
             </div>
           </div>
 
@@ -1627,21 +1926,39 @@ const runAllTests = async () => {
                 </button>
               </div>
               <div v-if="displayedLogRowIndices.length" class="tp-log-toggle-row">
-                <button type="button" class="tp-btn tp-btn--toggle-all" @click="toggleExpandCollapseAllLogs">
-                  <i :class="hasAnyExpandedLogRow ? 'fas fa-compress-alt' : 'fas fa-expand-alt'"></i>
+                <button
+                  type="button"
+                  class="tp-btn tp-btn--toggle-all"
+                  @click="toggleExpandCollapseAllLogs"
+                >
+                  <i
+                    :class="hasAnyExpandedLogRow ? 'fas fa-compress-alt' : 'fas fa-expand-alt'"
+                  ></i>
                   {{ hasAnyExpandedLogRow ? 'Свернуть все' : 'Развернуть все' }}
                 </button>
               </div>
               <div class="tp-log-out custom-scrollbar" ref="logsOutputRef">
                 <div v-if="!displayedLogs.length" class="tp-log-empty">
-                  <i class="fas fa-inbox" style="font-size:1.2rem;display:block;margin-bottom:0.5rem;opacity:0.4"></i>
+                  <i
+                    class="fas fa-inbox"
+                    style="font-size: 1.2rem; display: block; margin-bottom: 0.5rem; opacity: 0.4"
+                  ></i>
                   Поток «{{ selectedLogStreamLabel }}» пуст
                 </div>
                 <template v-for="(item, index) in displayedLogs" :key="index">
-                  <div v-if="item.type === 'divider'" class="tp-log-div"><span>{{ item.date }}</span></div>
-                  <div v-else class="tp-log-row" :class="{ expanded: expandedLogRows[index] }" @click="toggleLogRow(index)">
+                  <div v-if="item.type === 'divider'" class="tp-log-div">
+                    <span>{{ item.date }}</span>
+                  </div>
+                  <div
+                    v-else
+                    class="tp-log-row"
+                    :class="{ expanded: expandedLogRows[index] }"
+                    @click="toggleLogRow(index)"
+                  >
                     <span class="tp-log-t">{{ item.formattedTime }}</span>
-                    <span class="tp-log-l" :class="`lvl-${item.entry.level}`">[{{ item.entry.level.toUpperCase() }}]</span>
+                    <span class="tp-log-l" :class="`lvl-${item.entry.level}`"
+                      >[{{ item.entry.level.toUpperCase() }}]</span
+                    >
                     <span class="tp-log-m">{{ item.formattedMessage }}</span>
                   </div>
                 </template>
@@ -1650,9 +1967,16 @@ const runAllTests = async () => {
                 <span v-if="logsLoading" class="tp-log-sync">
                   <i class="fas fa-circle-notch fa-spin"></i> Загрузка...
                 </span>
-                <p v-if="logsError" class="tp-err"><i class="fas fa-exclamation-circle"></i> {{ logsError }}</p>
+                <p v-if="logsError" class="tp-err">
+                  <i class="fas fa-exclamation-circle"></i> {{ logsError }}
+                </p>
                 <div class="tp-log-btns">
-                  <button v-if="logsHasMore && !logsLoading" type="button" class="tp-btn" @click="loadMoreLogs">
+                  <button
+                    v-if="logsHasMore && !logsLoading"
+                    type="button"
+                    class="tp-btn"
+                    @click="loadMoreLogs"
+                  >
                     <i class="fas fa-chevron-down"></i> Ещё 50
                   </button>
                   <button type="button" class="tp-btn tp-btn--danger" @click="clearLogs">
@@ -1714,59 +2038,162 @@ const runAllTests = async () => {
   flex-direction: column;
   overflow: hidden;
   width: 100%;
-  max-width: 1440px; margin: 0 auto; padding: 0.75rem 1rem 1.5rem;
-  opacity: 0; transform: translateY(8px);
-  transition: opacity 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94), transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 0.75rem 1rem 1.5rem;
+  opacity: 0;
+  transform: translateY(8px);
+  transition:
+    opacity 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+    transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
   font-family: 'Share Tech Mono', 'Courier New', monospace;
 }
-.tp.ready { opacity: 1; transform: none; }
-.tp, .tp :deep(*) { box-sizing: border-box; border-radius: 0 !important; line-height: 1.45; }
+.tp.ready {
+  opacity: 1;
+  transform: none;
+}
+.tp,
+.tp :deep(*) {
+  box-sizing: border-box;
+  border-radius: 0 !important;
+  line-height: 1.45;
+}
 
-.tp-icon-muted { font-size: 0.65rem; opacity: 0.55; }
-.tp-icon-hd { font-size: 0.68rem; opacity: 0.6; margin-right: 0.15rem; }
-.tp-icon-tab { font-size: 0.6rem; opacity: 0.6; margin-right: 0.1rem; }
-.tp-icon-block { font-size: 0.62rem; opacity: 0.55; margin-right: 0.15rem; }
+.tp-icon-muted {
+  font-size: 0.65rem;
+  opacity: 0.55;
+}
+.tp-icon-hd {
+  font-size: 0.68rem;
+  opacity: 0.6;
+  margin-right: 0.15rem;
+}
+.tp-icon-tab {
+  font-size: 0.6rem;
+  opacity: 0.6;
+  margin-right: 0.1rem;
+}
+.tp-icon-block {
+  font-size: 0.62rem;
+  opacity: 0.55;
+  margin-right: 0.15rem;
+}
 
 /* ── TOOLBAR ── */
 .tp-toolbar {
   flex-shrink: 0;
-  display: flex; align-items: center; justify-content: space-between; gap: 0.75rem;
-  padding: 0.5rem 0.85rem; margin-bottom: 0.85rem; border: 1px solid var(--c-bdr);
-  background: var(--c-bg-deep); font-size: 0.78rem; flex-wrap: wrap;
-  position: relative; overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.5rem 0.85rem;
+  margin-bottom: 0.85rem;
+  border: 1px solid var(--c-bdr);
+  background: var(--c-bg-deep);
+  font-size: 0.78rem;
+  flex-wrap: wrap;
+  position: relative;
+  overflow: hidden;
 }
 .tp-toolbar::after {
-  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
-  background: linear-gradient(90deg, transparent, var(--c-red), transparent); opacity: 0.3;
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--c-red), transparent);
+  opacity: 0.3;
 }
 .tp-toolbar-sweep {
-  position: absolute; top: 0; left: -50%; width: 50%; height: 100%;
+  position: absolute;
+  top: 0;
+  left: -50%;
+  width: 50%;
+  height: 100%;
   background: linear-gradient(90deg, transparent, rgba(217, 86, 114, 0.03), transparent);
-  animation: tp-sweep 8s linear infinite; pointer-events: none;
+  animation: tp-sweep 8s linear infinite;
+  pointer-events: none;
 }
-@keyframes tp-sweep { 0% { left: -50%; } 100% { left: 150%; } }
-.tp-toolbar-left, .tp-toolbar-right { display: flex; align-items: center; gap: 0.55rem; position: relative; z-index: 1; }
-.tp-path { color: var(--c-red-s); letter-spacing: 0.04em; font-weight: 600; }
-.tp-last-run { font-size: 0.68rem; color: var(--c-tx3); white-space: nowrap; font-variant-numeric: tabular-nums; }
+@keyframes tp-sweep {
+  0% {
+    left: -50%;
+  }
+  100% {
+    left: 150%;
+  }
+}
+.tp-toolbar-left,
+.tp-toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  position: relative;
+  z-index: 1;
+}
+.tp-path {
+  color: var(--c-red-s);
+  letter-spacing: 0.04em;
+  font-weight: 600;
+}
+.tp-last-run {
+  font-size: 0.68rem;
+  color: var(--c-tx3);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
 
 /* ── TABS ── */
-.tp-tabs { display: inline-flex; }
+.tp-tabs {
+  display: inline-flex;
+}
 .tp-tab {
-  padding: 0.35rem 0.8rem; border: 1px solid var(--c-bdr); background: var(--c-bg-deep);
-  color: var(--c-tx2); font-family: inherit; font-size: 0.76rem; cursor: pointer;
-  transition: all 0.15s ease; font-weight: 600; letter-spacing: 0.04em;
-  position: relative; overflow: hidden;
+  padding: 0.35rem 0.8rem;
+  border: 1px solid var(--c-bdr);
+  background: var(--c-bg-deep);
+  color: var(--c-tx2);
+  font-family: inherit;
+  font-size: 0.76rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  position: relative;
+  overflow: hidden;
 }
-.tp-tab + .tp-tab { border-left: none; }
+.tp-tab + .tp-tab {
+  border-left: none;
+}
 .tp-tab::after {
-  content: ''; position: absolute; bottom: 0; left: 0; width: 100%; height: 2px;
-  background: var(--c-red); transform: scaleX(0); transition: transform 0.2s ease;
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: var(--c-red);
+  transform: scaleX(0);
+  transition: transform 0.2s ease;
 }
-.tp-tab:hover { border-color: var(--c-bdr-hi); background: rgba(22, 20, 26, 0.98); color: var(--c-tx); }
-.tp-tab:hover::after { transform: scaleX(1); }
-.tp-tab.active { border-color: var(--c-red-s); background: rgba(196, 33, 63, 0.14); color: #fff; }
-.tp-tab.active::after { transform: scaleX(1); }
-.tp-tab.active .tp-icon-tab { opacity: 0.8; }
+.tp-tab:hover {
+  border-color: var(--c-bdr-hi);
+  background: rgba(22, 20, 26, 0.98);
+  color: var(--c-tx);
+}
+.tp-tab:hover::after {
+  transform: scaleX(1);
+}
+.tp-tab.active {
+  border-color: var(--c-red-s);
+  background: rgba(196, 33, 63, 0.14);
+  color: #fff;
+}
+.tp-tab.active::after {
+  transform: scaleX(1);
+}
+.tp-tab.active .tp-icon-tab {
+  opacity: 0.8;
+}
 
 /* ── GRID ── */
 .tp-grid {
@@ -1778,7 +2205,9 @@ const runAllTests = async () => {
   gap: 0.85rem;
   align-items: stretch;
 }
-.tp-grid--logs { grid-template-columns: minmax(240px, 1fr) minmax(360px, 440px); }
+.tp-grid--logs {
+  grid-template-columns: minmax(240px, 1fr) minmax(360px, 440px);
+}
 .tp-main {
   display: flex;
   flex-direction: column;
@@ -1789,235 +2218,679 @@ const runAllTests = async () => {
   overflow-y: auto;
 }
 
-.tp-tab-panel { display: flex; flex-direction: column; gap: 0.85rem; }
+.tp-tab-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
 
 /* ── METRICS ── */
-.tp-metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.55rem; animation: tp-enter 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.1s both; }
-@keyframes tp-enter { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.tp-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.55rem;
+  animation: tp-enter 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.1s both;
+}
+@keyframes tp-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
 .tp-metric {
-  border: 1px solid var(--c-bdr); background: linear-gradient(175deg, var(--c-bg), var(--c-bg2));
-  padding: 0.55rem 0.7rem; display: flex; flex-direction: column; gap: 0.1rem;
-  position: relative; overflow: hidden; transition: border-color 0.25s ease;
+  border: 1px solid var(--c-bdr);
+  background: linear-gradient(175deg, var(--c-bg), var(--c-bg2));
+  padding: 0.55rem 0.7rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.25s ease;
 }
 .tp-metric::after {
-  content: ''; position: absolute; inset: 0;
-  background: repeating-linear-gradient(0deg, rgba(0,0,0,0.012) 0px, rgba(0,0,0,0.012) 1px, transparent 1px, transparent 3px);
-  pointer-events: none; opacity: 0.4;
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.012) 0px,
+    rgba(0, 0, 0, 0.012) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+  pointer-events: none;
+  opacity: 0.4;
 }
-.tp-metric-accent { position: absolute; top: 0; left: 0; width: 3px; height: 100%; }
-.tp-metric-icon { font-size: 0.6rem; color: var(--c-tx3); opacity: 0.7; position: relative; z-index: 1; margin-bottom: 0.15rem; }
-.tp-metric-icon--pass { color: var(--c-ok); opacity: 0.75; }
-.tp-metric-icon--fail { color: var(--c-alert); opacity: 0.75; }
-.tp-metric-icon--skip { color: var(--c-warn); opacity: 0.75; }
+.tp-metric-accent {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 3px;
+  height: 100%;
+}
+.tp-metric-icon {
+  font-size: 0.6rem;
+  color: var(--c-tx3);
+  opacity: 0.7;
+  position: relative;
+  z-index: 1;
+  margin-bottom: 0.15rem;
+}
+.tp-metric-icon--pass {
+  color: var(--c-ok);
+  opacity: 0.75;
+}
+.tp-metric-icon--fail {
+  color: var(--c-alert);
+  opacity: 0.75;
+}
+.tp-metric-icon--skip {
+  color: var(--c-warn);
+  opacity: 0.75;
+}
 .tp-metric strong {
-  font-size: 1.35rem; font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1.15;
-  color: var(--c-tx); position: relative; z-index: 1;
+  font-size: 1.35rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.15;
+  color: var(--c-tx);
+  position: relative;
+  z-index: 1;
 }
-.tp-metric span { font-size: 0.66rem; color: var(--c-tx3); letter-spacing: 0.04em; text-transform: uppercase; position: relative; z-index: 1; }
+.tp-metric span {
+  font-size: 0.66rem;
+  color: var(--c-tx3);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  position: relative;
+  z-index: 1;
+}
 
-.tp-metric--pass .tp-metric-accent { background: var(--c-ok); }
-.tp-metric--pass strong { color: var(--c-ok); }
-.tp-metric--pass { border-color: rgba(106, 175, 126, 0.2); }
-.tp-metric--pass:hover { border-color: rgba(106, 175, 126, 0.4); }
+.tp-metric--pass .tp-metric-accent {
+  background: var(--c-ok);
+}
+.tp-metric--pass strong {
+  color: var(--c-ok);
+}
+.tp-metric--pass {
+  border-color: rgba(106, 175, 126, 0.2);
+}
+.tp-metric--pass:hover {
+  border-color: rgba(106, 175, 126, 0.4);
+}
 
-.tp-metric--fail .tp-metric-accent { background: var(--c-alert); }
-.tp-metric--fail strong { color: var(--c-alert); }
-.tp-metric--fail { border-color: rgba(217, 122, 138, 0.2); }
-.tp-metric--fail:hover { border-color: rgba(217, 122, 138, 0.4); }
+.tp-metric--fail .tp-metric-accent {
+  background: var(--c-alert);
+}
+.tp-metric--fail strong {
+  color: var(--c-alert);
+}
+.tp-metric--fail {
+  border-color: rgba(217, 122, 138, 0.2);
+}
+.tp-metric--fail:hover {
+  border-color: rgba(217, 122, 138, 0.4);
+}
 
-.tp-metric--skip .tp-metric-accent { background: var(--c-warn); }
-.tp-metric--skip strong { color: var(--c-warn); }
-.tp-metric--skip { border-color: rgba(201, 166, 96, 0.2); }
-.tp-metric--skip:hover { border-color: rgba(201, 166, 96, 0.4); }
+.tp-metric--skip .tp-metric-accent {
+  background: var(--c-warn);
+}
+.tp-metric--skip strong {
+  color: var(--c-warn);
+}
+.tp-metric--skip {
+  border-color: rgba(201, 166, 96, 0.2);
+}
+.tp-metric--skip:hover {
+  border-color: rgba(201, 166, 96, 0.4);
+}
 
 /* ── SUITES ── */
 .tp-suite {
-  border: 1px solid var(--c-bdr); background: linear-gradient(175deg, var(--c-bg), var(--c-bg2));
-  padding: 0.85rem 1rem; position: relative; animation: tp-enter 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.2s both;
+  border: 1px solid var(--c-bdr);
+  background: linear-gradient(175deg, var(--c-bg), var(--c-bg2));
+  padding: 0.85rem 1rem;
+  position: relative;
+  animation: tp-enter 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.2s both;
 }
 .tp-suite::before {
-  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
-  background: linear-gradient(90deg, transparent 10%, var(--c-red) 50%, transparent 90%); opacity: 0.2;
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent 10%, var(--c-red) 50%, transparent 90%);
+  opacity: 0.2;
 }
 .tp-suite::after {
-  content: ''; position: absolute; inset: 0;
-  background: repeating-linear-gradient(0deg, rgba(0,0,0,0.012) 0px, rgba(0,0,0,0.012) 1px, transparent 1px, transparent 3px);
-  pointer-events: none; opacity: 0.4;
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.012) 0px,
+    rgba(0, 0, 0, 0.012) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+  pointer-events: none;
+  opacity: 0.4;
 }
 .tp-suite-hd {
-  display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;
-  margin-bottom: 0.7rem; flex-wrap: wrap; position: relative; z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.7rem;
+  flex-wrap: wrap;
+  position: relative;
+  z-index: 1;
 }
 .tp-suite-hd h2 {
-  margin: 0; font-size: 0.8rem; font-weight: 600; color: var(--c-tx2);
-  letter-spacing: 0.04em; text-transform: uppercase;
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--c-tx2);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 .tp-code {
-  border: 1px solid rgba(50, 44, 54, 0.4); background: var(--c-bg-deep);
-  color: var(--c-tx3); padding: 0.18rem 0.45rem; font-size: 0.7rem; letter-spacing: 0.03em; font-family: inherit;
+  border: 1px solid rgba(50, 44, 54, 0.4);
+  background: var(--c-bg-deep);
+  color: var(--c-tx3);
+  padding: 0.18rem 0.45rem;
+  font-size: 0.7rem;
+  letter-spacing: 0.03em;
+  font-family: inherit;
 }
 
 /* ── TEST BLOCKS ── */
-.tp-block + .tp-block { margin-top: 0.7rem; }
+.tp-block + .tp-block {
+  margin-top: 0.7rem;
+}
 .tp-block-hd {
-  display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;
-  padding: 0.45rem 0.6rem; border: 1px solid var(--c-bdr); background: var(--c-bg-deep);
-  flex-wrap: wrap; position: relative; z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.45rem 0.6rem;
+  border: 1px solid var(--c-bdr);
+  background: var(--c-bg-deep);
+  flex-wrap: wrap;
+  position: relative;
+  z-index: 1;
 }
 .tp-block-hd--toggle {
-  width: 100%; box-sizing: border-box; cursor: pointer;
-  font: inherit; color: inherit; text-align: left;
+  width: 100%;
+  box-sizing: border-box;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+  text-align: left;
 }
-.tp-block-hd--toggle:hover { border-color: var(--c-bdr-hi); }
+.tp-block-hd--toggle:hover {
+  border-color: var(--c-bdr-hi);
+}
 .tp-block-hd-title,
-.tp-block-hd h3 { margin: 0; font-size: 0.78rem; font-weight: 600; color: var(--c-tx); letter-spacing: 0.03em; }
-.tp-block-info { font-size: 0.68rem; color: var(--c-tx3); letter-spacing: 0.03em; }
-.tp-block-desc { margin: 0.4rem 0; font-size: 0.76rem; color: var(--c-tx2); position: relative; z-index: 1; }
+.tp-block-hd h3 {
+  margin: 0;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--c-tx);
+  letter-spacing: 0.03em;
+}
+.tp-block-info {
+  font-size: 0.68rem;
+  color: var(--c-tx3);
+  letter-spacing: 0.03em;
+}
+.tp-block-desc {
+  margin: 0.4rem 0;
+  font-size: 0.76rem;
+  color: var(--c-tx2);
+  position: relative;
+  z-index: 1;
+}
 
 /* ── TEST ROWS ── */
-.tp-tests { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.35rem; margin-top: 0.45rem; position: relative; z-index: 1; }
+.tp-tests {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-top: 0.45rem;
+  position: relative;
+  z-index: 1;
+}
 .tp-test {
-  display: flex; overflow: hidden; border: 1px solid var(--c-bdr);
-  background: var(--c-bg-deep); transition: border-color 0.2s ease;
+  display: flex;
+  overflow: hidden;
+  border: 1px solid var(--c-bdr);
+  background: var(--c-bg-deep);
+  transition: border-color 0.2s ease;
 }
-.tp-test:hover { border-color: var(--c-bdr-hi); }
-.tp-test--success { border-color: rgba(106, 175, 126, 0.2); }
-.tp-test--success:hover { border-color: rgba(106, 175, 126, 0.4); }
-.tp-test--fail { border-color: rgba(217, 122, 138, 0.25); }
-.tp-test--fail:hover { border-color: rgba(217, 122, 138, 0.45); }
-.tp-test-accent { width: 3px; flex-shrink: 0; }
-.tp-test-accent--success { background: var(--c-ok); }
-.tp-test-accent--fail { background: var(--c-alert); }
-.tp-test-accent--pending { background: var(--c-tx3); opacity: 0.3; }
-.tp-test-content { flex: 1; min-width: 0; padding: 0.4rem 0.55rem; }
-.tp-test-main { display: grid; grid-template-columns: auto minmax(0, 1fr) 1.8rem; gap: 0.45rem; align-items: center; }
+.tp-test:hover {
+  border-color: var(--c-bdr-hi);
+}
+.tp-test--success {
+  border-color: rgba(106, 175, 126, 0.2);
+}
+.tp-test--success:hover {
+  border-color: rgba(106, 175, 126, 0.4);
+}
+.tp-test--fail {
+  border-color: rgba(217, 122, 138, 0.25);
+}
+.tp-test--fail:hover {
+  border-color: rgba(217, 122, 138, 0.45);
+}
+.tp-test-accent {
+  width: 3px;
+  flex-shrink: 0;
+}
+.tp-test-accent--success {
+  background: var(--c-ok);
+}
+.tp-test-accent--fail {
+  background: var(--c-alert);
+}
+.tp-test-accent--pending {
+  background: var(--c-tx3);
+  opacity: 0.3;
+}
+.tp-test-content {
+  flex: 1;
+  min-width: 0;
+  padding: 0.4rem 0.55rem;
+}
+.tp-test-main {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) 1.8rem;
+  gap: 0.45rem;
+  align-items: center;
+}
 
-.tp-badge { font-size: 0.6rem; padding: 0.1rem 0.3rem; border: 1px solid; font-weight: 700; letter-spacing: 0.06em; line-height: 1.3; }
-.tp-badge--success { color: var(--c-ok); border-color: rgba(106, 175, 126, 0.4); }
-.tp-badge--fail { color: var(--c-alert); border-color: rgba(217, 122, 138, 0.4); }
-.tp-badge--pending { color: var(--c-tx3); border-color: rgba(92, 86, 89, 0.3); }
+.tp-badge {
+  font-size: 0.6rem;
+  padding: 0.1rem 0.3rem;
+  border: 1px solid;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  line-height: 1.3;
+}
+.tp-badge--success {
+  color: var(--c-ok);
+  border-color: rgba(106, 175, 126, 0.4);
+}
+.tp-badge--fail {
+  color: var(--c-alert);
+  border-color: rgba(217, 122, 138, 0.4);
+}
+.tp-badge--pending {
+  color: var(--c-tx3);
+  border-color: rgba(92, 86, 89, 0.3);
+}
 
-.tp-test-name { color: var(--c-tx); font-size: 0.8rem; min-width: 0; }
+.tp-test-name {
+  color: var(--c-tx);
+  font-size: 0.8rem;
+  min-width: 0;
+}
 .tp-test-run {
-  width: 1.8rem; height: 1.8rem; border: 1px solid var(--c-bdr); background: var(--c-bg-deep);
-  color: var(--c-tx2); cursor: pointer; display: flex; align-items: center; justify-content: center;
-  transition: all 0.15s ease; position: relative; overflow: hidden;
-  clip-path: polygon(0 2px, 2px 2px, 2px 0, calc(100% - 2px) 0, calc(100% - 2px) 2px, 100% 2px, 100% calc(100% - 2px), calc(100% - 2px) calc(100% - 2px), calc(100% - 2px) 100%, 2px 100%, 2px calc(100% - 2px), 0 calc(100% - 2px));
+  width: 1.8rem;
+  height: 1.8rem;
+  border: 1px solid var(--c-bdr);
+  background: var(--c-bg-deep);
+  color: var(--c-tx2);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+  position: relative;
+  overflow: hidden;
+  clip-path: polygon(
+    0 2px,
+    2px 2px,
+    2px 0,
+    calc(100% - 2px) 0,
+    calc(100% - 2px) 2px,
+    100% 2px,
+    100% calc(100% - 2px),
+    calc(100% - 2px) calc(100% - 2px),
+    calc(100% - 2px) 100%,
+    2px 100%,
+    2px calc(100% - 2px),
+    0 calc(100% - 2px)
+  );
 }
-.tp-test-run i { font-size: 0.55rem; }
-.tp-test-run:hover:not(:disabled) { border-color: var(--c-red-s); color: #fff; background: rgba(196, 33, 63, 0.15); }
-.tp-test-run:disabled { opacity: 0.3; cursor: not-allowed; }
-.tp-test-id { display: block; margin-top: 0.2rem; font-size: 0.64rem; color: var(--c-tx3); letter-spacing: 0.03em; font-family: inherit; }
-.tp-test-err { margin: 0.25rem 0 0; font-size: 0.74rem; color: var(--c-alert); }
-.tp-test-err i { font-size: 0.62rem; margin-right: 0.15rem; }
+.tp-test-run i {
+  font-size: 0.55rem;
+}
+.tp-test-run:hover:not(:disabled) {
+  border-color: var(--c-red-s);
+  color: #fff;
+  background: rgba(196, 33, 63, 0.15);
+}
+.tp-test-run:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+.tp-test-id {
+  display: block;
+  margin-top: 0.2rem;
+  font-size: 0.64rem;
+  color: var(--c-tx3);
+  letter-spacing: 0.03em;
+  font-family: inherit;
+}
+.tp-test-err {
+  margin: 0.25rem 0 0;
+  font-size: 0.74rem;
+  color: var(--c-alert);
+}
+.tp-test-err i {
+  font-size: 0.62rem;
+  margin-right: 0.15rem;
+}
 
 /* ── BUTTONS ── */
 .tp-btn {
-  padding: 0.42rem 0.8rem; border: 1px solid var(--c-bdr); background: var(--c-bg-deep);
-  color: var(--c-tx); font-family: inherit; font-size: 0.76rem; cursor: pointer;
-  transition: all 0.15s ease; display: inline-flex; align-items: center; gap: 0.35rem;
-  white-space: nowrap; letter-spacing: 0.03em; position: relative; overflow: hidden;
-  clip-path: polygon(0 2px, 2px 2px, 2px 0, calc(100% - 2px) 0, calc(100% - 2px) 2px, 100% 2px, 100% calc(100% - 2px), calc(100% - 2px) calc(100% - 2px), calc(100% - 2px) 100%, 2px 100%, 2px calc(100% - 2px), 0 calc(100% - 2px));
+  padding: 0.42rem 0.8rem;
+  border: 1px solid var(--c-bdr);
+  background: var(--c-bg-deep);
+  color: var(--c-tx);
+  font-family: inherit;
+  font-size: 0.76rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  white-space: nowrap;
+  letter-spacing: 0.03em;
+  position: relative;
+  overflow: hidden;
+  clip-path: polygon(
+    0 2px,
+    2px 2px,
+    2px 0,
+    calc(100% - 2px) 0,
+    calc(100% - 2px) 2px,
+    100% 2px,
+    100% calc(100% - 2px),
+    calc(100% - 2px) calc(100% - 2px),
+    calc(100% - 2px) 100%,
+    2px 100%,
+    2px calc(100% - 2px),
+    0 calc(100% - 2px)
+  );
 }
 .tp-btn::before {
-  content: ''; position: absolute; inset: 0;
-  background: repeating-linear-gradient(0deg, rgba(0,0,0,0.04) 0px, rgba(0,0,0,0.04) 1px, transparent 1px, transparent 2px);
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.04) 0px,
+    rgba(0, 0, 0, 0.04) 1px,
+    transparent 1px,
+    transparent 2px
+  );
   pointer-events: none;
 }
 .tp-btn::after {
-  content: ''; position: absolute; bottom: 0; left: 0; width: 100%; height: 2px;
-  background: var(--c-red); transform: scaleX(0); transform-origin: left; transition: transform 0.2s ease;
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: var(--c-red);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.2s ease;
 }
-.tp-btn i { font-size: 0.62rem; }
-.tp-btn:hover:not(:disabled) { border-color: var(--c-bdr-hi); background: rgba(24, 22, 28, 0.98); transform: translateY(-1px); box-shadow: 0 3px 8px rgba(0,0,0,0.35); }
-.tp-btn:hover:not(:disabled)::after { transform: scaleX(1); }
-.tp-btn:active:not(:disabled) { transform: translateY(0); box-shadow: none; }
-.tp-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.tp-btn i {
+  font-size: 0.62rem;
+}
+.tp-btn:hover:not(:disabled) {
+  border-color: var(--c-bdr-hi);
+  background: rgba(24, 22, 28, 0.98);
+  transform: translateY(-1px);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.35);
+}
+.tp-btn:hover:not(:disabled)::after {
+  transform: scaleX(1);
+}
+.tp-btn:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: none;
+}
+.tp-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
 
-.tp-btn--primary { border-color: rgba(217, 86, 114, 0.35); background: rgba(196, 33, 63, 0.14); color: #fff; }
-.tp-btn--primary::after { background: var(--c-red-s); }
-.tp-btn--primary:hover:not(:disabled) { background: rgba(196, 33, 63, 0.24); border-color: var(--c-red-s); }
+.tp-btn--primary {
+  border-color: rgba(217, 86, 114, 0.35);
+  background: rgba(196, 33, 63, 0.14);
+  color: #fff;
+}
+.tp-btn--primary::after {
+  background: var(--c-red-s);
+}
+.tp-btn--primary:hover:not(:disabled) {
+  background: rgba(196, 33, 63, 0.24);
+  border-color: var(--c-red-s);
+}
 
-.tp-btn--danger { border-color: rgba(217, 122, 138, 0.3); color: #ecc8cf; background: rgba(45, 14, 22, 0.9); }
-.tp-btn--danger::after { background: var(--c-alert); }
-.tp-btn--danger:hover:not(:disabled) { border-color: rgba(217, 122, 138, 0.5); background: rgba(60, 20, 30, 0.95); }
+.tp-btn--danger {
+  border-color: rgba(217, 122, 138, 0.3);
+  color: #ecc8cf;
+  background: rgba(45, 14, 22, 0.9);
+}
+.tp-btn--danger::after {
+  background: var(--c-alert);
+}
+.tp-btn--danger:hover:not(:disabled) {
+  border-color: rgba(217, 122, 138, 0.5);
+  background: rgba(60, 20, 30, 0.95);
+}
 
-.tp-suite-run { margin-top: 0.7rem; width: 100%; justify-content: center; position: relative; z-index: 1; }
+.tp-suite-run {
+  margin-top: 0.7rem;
+  width: 100%;
+  justify-content: center;
+  position: relative;
+  z-index: 1;
+}
 
 /* ── V1 OPS SECTION ── */
-.tp-v1ops { margin-top: 0.85rem; }
+.tp-v1ops {
+  margin-top: 0.85rem;
+}
 .tp-v1ops-metrics {
-  display: flex; flex-wrap: wrap; gap: 0.4rem 0.85rem;
-  margin: 0.5rem 0 0.6rem; font-size: 0.72rem; color: var(--c-tx2);
-  position: relative; z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.85rem;
+  margin: 0.5rem 0 0.6rem;
+  font-size: 0.72rem;
+  color: var(--c-tx2);
+  position: relative;
+  z-index: 1;
 }
-.tp-v1ops-metric { display: inline-flex; align-items: center; gap: 0.3rem; }
-.tp-v1ops-metric i { font-size: 0.62rem; opacity: 0.65; }
-.tp-v1ops-metric--ok { color: var(--c-ok); }
-.tp-v1ops-metric--fail { color: var(--c-alert); }
-.tp-v1ops-metric--skip { color: var(--c-warn); }
-.tp-v1ops-time { margin-left: auto; font-variant-numeric: tabular-nums; }
-
-.tp-v1ops-method {
-  font-weight: 700; color: var(--c-tx); margin-right: 0.35rem;
-  letter-spacing: 0.04em; font-size: 0.72rem;
+.tp-v1ops-metric {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
 }
-.tp-v1ops-op {
-  font-family: inherit; font-size: 0.78rem; color: var(--c-tx);
-  background: rgba(196, 33, 63, 0.08); border: 1px solid rgba(196, 33, 63, 0.2);
-  padding: 0.05rem 0.35rem; margin-right: 0.4rem;
+.tp-v1ops-metric i {
+  font-size: 0.62rem;
+  opacity: 0.65;
 }
-.tp-v1ops-tag {
-  font-size: 0.62rem; padding: 0.05rem 0.3rem; border: 1px solid var(--c-bdr);
-  margin-right: 0.25rem; letter-spacing: 0.04em; color: var(--c-tx2);
-  text-transform: uppercase;
+.tp-v1ops-metric--ok {
+  color: var(--c-ok);
 }
-.tp-v1ops-tag--contour { color: var(--c-cyan); border-color: rgba(125, 191, 204, 0.3); }
-.tp-v1ops-tag--av-enabled { color: var(--c-ok); border-color: rgba(106, 175, 126, 0.3); }
-.tp-v1ops-tag--av-beta { color: var(--c-warn); border-color: rgba(201, 166, 96, 0.4); }
-.tp-v1ops-tag--av-disabled { color: var(--c-tx3); border-color: rgba(126, 119, 123, 0.3); opacity: 0.7; }
-.tp-v1ops-tag--av-unsupported { color: var(--c-alert); border-color: rgba(217, 122, 138, 0.3); opacity: 0.7; }
-
-.tp-v1ops-meta {
-  display: flex; flex-wrap: wrap; gap: 0.3rem 0.7rem;
-  margin-top: 0.25rem; font-size: 0.7rem; color: var(--c-tx3);
+.tp-v1ops-metric--fail {
+  color: var(--c-alert);
+}
+.tp-v1ops-metric--skip {
+  color: var(--c-warn);
+}
+.tp-v1ops-time {
+  margin-left: auto;
   font-variant-numeric: tabular-nums;
 }
-.tp-v1ops-meta-item { display: inline-flex; align-items: center; gap: 0.2rem; }
-.tp-v1ops-meta-err { color: var(--c-alert); }
-.tp-v1ops-meta-req { font-family: inherit; opacity: 0.85; }
+
+.tp-v1ops-method {
+  font-weight: 700;
+  color: var(--c-tx);
+  margin-right: 0.35rem;
+  letter-spacing: 0.04em;
+  font-size: 0.72rem;
+}
+.tp-v1ops-op {
+  font-family: inherit;
+  font-size: 0.78rem;
+  color: var(--c-tx);
+  background: rgba(196, 33, 63, 0.08);
+  border: 1px solid rgba(196, 33, 63, 0.2);
+  padding: 0.05rem 0.35rem;
+  margin-right: 0.4rem;
+}
+.tp-v1ops-tag {
+  font-size: 0.62rem;
+  padding: 0.05rem 0.3rem;
+  border: 1px solid var(--c-bdr);
+  margin-right: 0.25rem;
+  letter-spacing: 0.04em;
+  color: var(--c-tx2);
+  text-transform: uppercase;
+}
+.tp-v1ops-tag--contour {
+  color: var(--c-cyan);
+  border-color: rgba(125, 191, 204, 0.3);
+}
+.tp-v1ops-tag--av-enabled {
+  color: var(--c-ok);
+  border-color: rgba(106, 175, 126, 0.3);
+}
+.tp-v1ops-tag--av-beta {
+  color: var(--c-warn);
+  border-color: rgba(201, 166, 96, 0.4);
+}
+.tp-v1ops-tag--av-disabled {
+  color: var(--c-tx3);
+  border-color: rgba(126, 119, 123, 0.3);
+  opacity: 0.7;
+}
+.tp-v1ops-tag--av-unsupported {
+  color: var(--c-alert);
+  border-color: rgba(217, 122, 138, 0.3);
+  opacity: 0.7;
+}
+
+.tp-v1ops-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem 0.7rem;
+  margin-top: 0.25rem;
+  font-size: 0.7rem;
+  color: var(--c-tx3);
+  font-variant-numeric: tabular-nums;
+}
+.tp-v1ops-meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+}
+.tp-v1ops-meta-err {
+  color: var(--c-alert);
+}
+.tp-v1ops-meta-req {
+  font-family: inherit;
+  opacity: 0.85;
+}
 
 .tp-v1ops-hint {
-  margin: 0.25rem 0 0; font-size: 0.72rem; color: var(--c-tx3); font-style: italic;
+  margin: 0.25rem 0 0;
+  font-size: 0.72rem;
+  color: var(--c-tx3);
+  font-style: italic;
 }
-.tp-v1ops-hint--idle { opacity: 0.6; }
+.tp-v1ops-hint--idle {
+  opacity: 0.6;
+}
 
 .tp-v1ops-toggle {
-  margin-top: 0.3rem; padding: 0.2rem 0.45rem; border: 1px solid var(--c-bdr);
-  background: var(--c-bg-deep); color: var(--c-tx2); font-family: inherit;
-  font-size: 0.7rem; cursor: pointer; letter-spacing: 0.03em;
+  margin-top: 0.3rem;
+  padding: 0.2rem 0.45rem;
+  border: 1px solid var(--c-bdr);
+  background: var(--c-bg-deep);
+  color: var(--c-tx2);
+  font-family: inherit;
+  font-size: 0.7rem;
+  cursor: pointer;
+  letter-spacing: 0.03em;
 }
-.tp-v1ops-toggle:hover { border-color: var(--c-bdr-hi); color: var(--c-tx); }
-.tp-v1ops-toggle i { font-size: 0.6rem; margin-right: 0.25rem; }
+.tp-v1ops-toggle:hover {
+  border-color: var(--c-bdr-hi);
+  color: var(--c-tx);
+}
+.tp-v1ops-toggle i {
+  font-size: 0.6rem;
+  margin-right: 0.25rem;
+}
 
 .tp-v1ops-payload {
-  margin-top: 0.4rem; display: flex; flex-direction: column; gap: 0.45rem;
+  margin-top: 0.4rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
 }
-.tp-v1ops-payload-block { border: 1px solid var(--c-bdr); background: rgba(5, 4, 7, 0.95); }
+.tp-v1ops-payload-block {
+  border: 1px solid var(--c-bdr);
+  background: rgba(5, 4, 7, 0.95);
+}
 .tp-v1ops-payload-h {
-  padding: 0.25rem 0.5rem; border-bottom: 1px solid var(--c-bdr);
-  font-size: 0.66rem; color: var(--c-tx3); letter-spacing: 0.06em; text-transform: uppercase;
+  padding: 0.25rem 0.5rem;
+  border-bottom: 1px solid var(--c-bdr);
+  font-size: 0.66rem;
+  color: var(--c-tx3);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
   background: var(--c-bg-deep);
 }
 .tp-v1ops-payload pre {
-  margin: 0; padding: 0.5rem 0.65rem; max-height: 22rem; overflow: auto;
-  font-family: inherit; font-size: 0.72rem; color: var(--c-tx);
-  white-space: pre-wrap; word-break: break-word;
+  margin: 0;
+  padding: 0.5rem 0.65rem;
+  max-height: 22rem;
+  overflow: auto;
+  font-family: inherit;
+  font-size: 0.72rem;
+  color: var(--c-tx);
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
-.tp-test--skip { border-color: rgba(201, 166, 96, 0.25); }
-.tp-test--skip:hover { border-color: rgba(201, 166, 96, 0.45); }
-.tp-test-accent--skip { background: var(--c-warn); }
+.tp-test--skip {
+  border-color: rgba(201, 166, 96, 0.25);
+}
+.tp-test--skip:hover {
+  border-color: rgba(201, 166, 96, 0.45);
+}
+.tp-test-accent--skip {
+  background: var(--c-warn);
+}
 
 /*
  * Визуальные состояния строк сценариев /v1/{op} (gateway-testing-strategy.md §9):
@@ -2026,77 +2899,136 @@ const runAllTests = async () => {
  *   - warn-deps — тот же оттенок (зависимости нет), чуть слабее;
  *   - ready — обычный фон, нормальная активная кнопка.
  */
-.tp-v1ops-row { transition: background-color 0.18s ease, border-color 0.18s ease; }
+.tp-v1ops-row {
+  transition:
+    background-color 0.18s ease,
+    border-color 0.18s ease;
+}
 .tp-v1ops-row--blocked-availability {
   background: rgba(70, 70, 78, 0.28);
   border-color: rgba(126, 119, 123, 0.3);
 }
-.tp-v1ops-row--blocked-availability:hover { border-color: rgba(126, 119, 123, 0.5); }
+.tp-v1ops-row--blocked-availability:hover {
+  border-color: rgba(126, 119, 123, 0.5);
+}
 .tp-v1ops-row--blocked-availability .tp-v1ops-method,
 .tp-v1ops-row--blocked-availability .tp-v1ops-op,
-.tp-v1ops-row--blocked-availability .tp-test-name { opacity: 0.7; }
+.tp-v1ops-row--blocked-availability .tp-test-name {
+  opacity: 0.7;
+}
 .tp-v1ops-row--warn-heap,
 .tp-v1ops-row--warn-deps {
   background: rgba(201, 166, 96, 0.12);
   border-color: rgba(201, 166, 96, 0.3);
 }
 .tp-v1ops-row--warn-heap:hover,
-.tp-v1ops-row--warn-deps:hover { border-color: rgba(201, 166, 96, 0.55); }
-.tp-v1ops-row--ready { /* обычный фон */ }
-.tp-v1ops-row--success { border-color: rgba(106, 175, 126, 0.3); }
-.tp-v1ops-row--fail { border-color: rgba(217, 122, 138, 0.4); }
+.tp-v1ops-row--warn-deps:hover {
+  border-color: rgba(201, 166, 96, 0.55);
+}
+.tp-v1ops-row--ready {
+  /* обычный фон */
+}
+.tp-v1ops-row--success {
+  border-color: rgba(106, 175, 126, 0.3);
+}
+.tp-v1ops-row--fail {
+  border-color: rgba(217, 122, 138, 0.4);
+}
 
-.tp-v1ops-accent--success { background: var(--c-ok); }
-.tp-v1ops-accent--fail { background: var(--c-alert); }
-.tp-v1ops-accent--skip { background: var(--c-warn); }
-.tp-v1ops-accent--ready { background: rgba(106, 175, 126, 0.55); }
-.tp-v1ops-accent--blocked-availability { background: rgba(126, 119, 123, 0.55); }
+.tp-v1ops-accent--success {
+  background: var(--c-ok);
+}
+.tp-v1ops-accent--fail {
+  background: var(--c-alert);
+}
+.tp-v1ops-accent--skip {
+  background: var(--c-warn);
+}
+.tp-v1ops-accent--ready {
+  background: rgba(106, 175, 126, 0.55);
+}
+.tp-v1ops-accent--blocked-availability {
+  background: rgba(126, 119, 123, 0.55);
+}
 .tp-v1ops-accent--warn-heap,
-.tp-v1ops-accent--warn-deps { background: rgba(201, 166, 96, 0.7); }
-.tp-v1ops-accent--pending { background: var(--c-tx3); opacity: 0.3; }
+.tp-v1ops-accent--warn-deps {
+  background: rgba(201, 166, 96, 0.7);
+}
+.tp-v1ops-accent--pending {
+  background: var(--c-tx3);
+  opacity: 0.3;
+}
 
 /* Дополнительные тэги статуса сценария рядом с availability. */
 .tp-v1ops-tag--st-blocked-availability {
-  color: var(--c-tx3); border-color: rgba(126, 119, 123, 0.4);
+  color: var(--c-tx3);
+  border-color: rgba(126, 119, 123, 0.4);
 }
 .tp-v1ops-tag--st-warn-heap,
 .tp-v1ops-tag--st-warn-deps {
-  color: var(--c-warn); border-color: rgba(201, 166, 96, 0.5);
+  color: var(--c-warn);
+  border-color: rgba(201, 166, 96, 0.5);
 }
 
 /* Подсказки-блокировки внутри строки. */
 .tp-v1ops-block {
-  margin: 0.3rem 0 0; font-size: 0.74rem;
-  padding: 0.35rem 0.5rem; border-left: 2px solid;
+  margin: 0.3rem 0 0;
+  font-size: 0.74rem;
+  padding: 0.35rem 0.5rem;
+  border-left: 2px solid;
 }
-.tp-v1ops-block i { margin-right: 0.3rem; }
+.tp-v1ops-block i {
+  margin-right: 0.3rem;
+}
 .tp-v1ops-block--blocked {
-  color: var(--c-tx2); border-color: rgba(126, 119, 123, 0.6);
+  color: var(--c-tx2);
+  border-color: rgba(126, 119, 123, 0.6);
   background: rgba(70, 70, 78, 0.18);
 }
 .tp-v1ops-block--warn {
-  color: var(--c-warn); border-color: rgba(201, 166, 96, 0.7);
+  color: var(--c-warn);
+  border-color: rgba(201, 166, 96, 0.7);
   background: rgba(201, 166, 96, 0.07);
 }
 .tp-v1ops-block-link {
-  margin-left: 0.5rem; color: var(--c-tx); border-bottom: 1px dotted var(--c-tx3);
-  text-decoration: none; font-size: 0.7rem;
+  margin-left: 0.5rem;
+  color: var(--c-tx);
+  border-bottom: 1px dotted var(--c-tx3);
+  text-decoration: none;
+  font-size: 0.7rem;
 }
-.tp-v1ops-block-link:hover { border-bottom-color: var(--c-tx); }
+.tp-v1ops-block-link:hover {
+  border-bottom-color: var(--c-tx);
+}
 
 /* Заголовки фаз. */
-.tp-v1ops-phase { margin-top: 0.7rem; }
+.tp-v1ops-phase {
+  margin-top: 0.7rem;
+}
 .tp-v1ops-phase-hd {
-  display: flex; align-items: baseline; gap: 0.6rem;
-  padding: 0.25rem 0.5rem; margin-bottom: 0.25rem;
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  padding: 0.25rem 0.5rem;
+  margin-bottom: 0.25rem;
   border-bottom: 1px dashed var(--c-bdr);
 }
 .tp-v1ops-phase-num {
-  font-size: 0.7rem; font-weight: 700; letter-spacing: 0.06em;
-  color: var(--c-tx); text-transform: uppercase;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--c-tx);
+  text-transform: uppercase;
 }
-.tp-v1ops-phase-label { font-size: 0.74rem; color: var(--c-tx2); }
-.tp-v1ops-phase-count { margin-left: auto; font-size: 0.68rem; color: var(--c-tx3); }
+.tp-v1ops-phase-label {
+  font-size: 0.74rem;
+  color: var(--c-tx2);
+}
+.tp-v1ops-phase-count {
+  margin-left: auto;
+  font-size: 0.68rem;
+  color: var(--c-tx3);
+}
 
 /* Верхняя панель готовности. */
 .tp-v1ops-readiness {
@@ -2104,33 +3036,73 @@ const runAllTests = async () => {
   padding: 0.45rem 0.55rem;
   border: 1px solid var(--c-bdr);
   background: var(--c-bg-deep);
-  display: flex; flex-direction: column; gap: 0.3rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
 }
-.tp-v1ops-readiness--loading { color: var(--c-tx3); font-size: 0.74rem; }
+.tp-v1ops-readiness--loading {
+  color: var(--c-tx3);
+  font-size: 0.74rem;
+}
 .tp-v1ops-readiness-row {
-  display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  align-items: center;
 }
 .tp-v1ops-readiness-h {
-  font-size: 0.7rem; color: var(--c-tx2); letter-spacing: 0.04em;
-  text-transform: uppercase; margin-right: 0.2rem;
+  font-size: 0.7rem;
+  color: var(--c-tx2);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin-right: 0.2rem;
 }
 .tp-v1ops-readiness-tag {
-  font-size: 0.68rem; padding: 0.12rem 0.4rem; border: 1px solid;
+  font-size: 0.68rem;
+  padding: 0.12rem 0.4rem;
+  border: 1px solid;
   letter-spacing: 0.03em;
 }
-.tp-v1ops-readiness-tag--ok { color: var(--c-ok); border-color: rgba(106, 175, 126, 0.4); }
-.tp-v1ops-readiness-tag--warn { color: var(--c-warn); border-color: rgba(201, 166, 96, 0.5); }
-.tp-v1ops-readiness-tag--blocked { color: var(--c-tx3); border-color: rgba(126, 119, 123, 0.4); }
-.tp-v1ops-readiness-link {
-  margin-left: auto; font-size: 0.72rem; color: var(--c-tx);
-  text-decoration: none; border: 1px solid var(--c-bdr); padding: 0.18rem 0.45rem;
+.tp-v1ops-readiness-tag--ok {
+  color: var(--c-ok);
+  border-color: rgba(106, 175, 126, 0.4);
 }
-.tp-v1ops-readiness-link:hover { border-color: var(--c-bdr-hi); }
-.tp-v1ops-readiness-link i { margin-right: 0.25rem; }
-.tp-badge--skip { color: var(--c-warn); border-color: rgba(201, 166, 96, 0.4); }
+.tp-v1ops-readiness-tag--warn {
+  color: var(--c-warn);
+  border-color: rgba(201, 166, 96, 0.5);
+}
+.tp-v1ops-readiness-tag--blocked {
+  color: var(--c-tx3);
+  border-color: rgba(126, 119, 123, 0.4);
+}
+.tp-v1ops-readiness-link {
+  margin-left: auto;
+  font-size: 0.72rem;
+  color: var(--c-tx);
+  text-decoration: none;
+  border: 1px solid var(--c-bdr);
+  padding: 0.18rem 0.45rem;
+}
+.tp-v1ops-readiness-link:hover {
+  border-color: var(--c-bdr-hi);
+}
+.tp-v1ops-readiness-link i {
+  margin-right: 0.25rem;
+}
+.tp-badge--skip {
+  color: var(--c-warn);
+  border-color: rgba(201, 166, 96, 0.4);
+}
 
-.tp-err { margin: 0.4rem 0 0; color: var(--c-alert); font-size: 0.76rem; }
-.tp-err i { font-size: 0.62rem; margin-right: 0.15rem; }
+.tp-err {
+  margin: 0.4rem 0 0;
+  color: var(--c-alert);
+  font-size: 0.76rem;
+}
+.tp-err i {
+  font-size: 0.62rem;
+  margin-right: 0.15rem;
+}
 
 /* ── LOG SIDEBAR: высота по ячейке сетки; скролл только внутри .tp-log-out ── */
 .tp-side {
@@ -2143,17 +3115,34 @@ const runAllTests = async () => {
   overflow: hidden;
 }
 .tp-card {
-  border: 1px solid var(--c-bdr); background: linear-gradient(175deg, var(--c-bg), var(--c-bg2));
-  padding: 0.85rem 1rem; position: relative;
+  border: 1px solid var(--c-bdr);
+  background: linear-gradient(175deg, var(--c-bg), var(--c-bg2));
+  padding: 0.85rem 1rem;
+  position: relative;
 }
 .tp-card::before {
-  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
-  background: linear-gradient(90deg, transparent 10%, var(--c-red) 50%, transparent 90%); opacity: 0.2;
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent 10%, var(--c-red) 50%, transparent 90%);
+  opacity: 0.2;
 }
 .tp-card::after {
-  content: ''; position: absolute; inset: 0;
-  background: repeating-linear-gradient(0deg, rgba(0,0,0,0.012) 0px, rgba(0,0,0,0.012) 1px, transparent 1px, transparent 3px);
-  pointer-events: none; opacity: 0.4;
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.012) 0px,
+    rgba(0, 0, 0, 0.012) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+  pointer-events: none;
+  opacity: 0.4;
 }
 .tp-log-card {
   position: relative;
@@ -2164,80 +3153,221 @@ const runAllTests = async () => {
   animation: tp-enter 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.15s both;
 }
 .tp-card-hd {
-  display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;
-  margin-bottom: 0.55rem; position: relative; z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.55rem;
+  position: relative;
+  z-index: 1;
 }
 .tp-card-hd h2 {
-  margin: 0; font-size: 0.8rem; font-weight: 600; color: var(--c-tx2);
-  letter-spacing: 0.04em; text-transform: uppercase;
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--c-tx2);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
-.tp-log-ct { font-size: 0.7rem; color: var(--c-tx3); font-variant-numeric: tabular-nums; letter-spacing: 0.04em; }
+.tp-log-ct {
+  font-size: 0.7rem;
+  color: var(--c-tx3);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
+}
 .tp-log-filters {
-  display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.4rem; margin-bottom: 0.45rem; position: relative; z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.4rem;
+  margin-bottom: 0.45rem;
+  position: relative;
+  z-index: 1;
   flex-shrink: 0;
 }
-.tp-log-card > .tp-card-hd { flex-shrink: 0; }
-.tp-log-toggle-row { margin-bottom: 0.55rem; position: relative; z-index: 1; flex-shrink: 0; }
-.tp-btn--toggle-all { width: 100%; font-size: 0.72rem; padding: 0.32rem 0.55rem; }
+.tp-log-card > .tp-card-hd {
+  flex-shrink: 0;
+}
+.tp-log-toggle-row {
+  margin-bottom: 0.55rem;
+  position: relative;
+  z-index: 1;
+  flex-shrink: 0;
+}
+.tp-btn--toggle-all {
+  width: 100%;
+  font-size: 0.72rem;
+  padding: 0.32rem 0.55rem;
+}
 .tp-flt {
-  padding: 0.35rem; border: 1px solid var(--c-bdr); background: var(--c-bg-deep);
-  color: var(--c-tx2); font-family: inherit; font-size: 0.7rem; cursor: pointer;
-  transition: all 0.15s ease; text-align: center; letter-spacing: 0.03em;
-  position: relative; overflow: hidden;
+  padding: 0.35rem;
+  border: 1px solid var(--c-bdr);
+  background: var(--c-bg-deep);
+  color: var(--c-tx2);
+  font-family: inherit;
+  font-size: 0.7rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: center;
+  letter-spacing: 0.03em;
+  position: relative;
+  overflow: hidden;
 }
 .tp-flt::after {
-  content: ''; position: absolute; bottom: 0; left: 0; width: 100%; height: 2px;
-  background: var(--c-red); transform: scaleX(0); transition: transform 0.2s ease;
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: var(--c-red);
+  transform: scaleX(0);
+  transition: transform 0.2s ease;
 }
-.tp-flt:hover { border-color: var(--c-bdr-hi); }
-.tp-flt:hover::after { transform: scaleX(1); }
-.tp-flt.active { border-color: var(--c-red-s); background: rgba(196, 33, 63, 0.12); color: #fff; }
-.tp-flt.active::after { transform: scaleX(1); }
+.tp-flt:hover {
+  border-color: var(--c-bdr-hi);
+}
+.tp-flt:hover::after {
+  transform: scaleX(1);
+}
+.tp-flt.active {
+  border-color: var(--c-red-s);
+  background: rgba(196, 33, 63, 0.12);
+  color: #fff;
+}
+.tp-flt.active::after {
+  transform: scaleX(1);
+}
 
 .tp-log-out {
   flex: 1 1 auto;
   min-height: 7rem;
   overflow-y: auto;
-  border: 1px solid rgba(50, 44, 54, 0.35); background: rgba(5, 4, 7, 0.98);
-  padding: 0.55rem; margin-bottom: 0.55rem; font-size: 0.74rem; line-height: 1.6;
-  position: relative; z-index: 1; box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(50, 44, 54, 0.35);
+  background: rgba(5, 4, 7, 0.98);
+  padding: 0.55rem;
+  margin-bottom: 0.55rem;
+  font-size: 0.74rem;
+  line-height: 1.6;
+  position: relative;
+  z-index: 1;
+  box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.25);
 }
-.tp-log-empty { color: var(--c-tx3); padding: 2rem; text-align: center; font-size: 0.8rem; letter-spacing: 0.03em; }
-.tp-log-div { text-align: center; padding: 0.35rem 0; margin: 0.3rem 0; }
+.tp-log-empty {
+  color: var(--c-tx3);
+  padding: 2rem;
+  text-align: center;
+  font-size: 0.8rem;
+  letter-spacing: 0.03em;
+}
+.tp-log-div {
+  text-align: center;
+  padding: 0.35rem 0;
+  margin: 0.3rem 0;
+}
 .tp-log-div span {
-  font-size: 0.64rem; color: var(--c-warn); letter-spacing: 0.08em; text-transform: uppercase; opacity: 0.5;
-  padding: 0.1rem 0.6rem; border-top: 1px solid rgba(201, 166, 96, 0.12); border-bottom: 1px solid rgba(201, 166, 96, 0.12);
+  font-size: 0.64rem;
+  color: var(--c-warn);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.5;
+  padding: 0.1rem 0.6rem;
+  border-top: 1px solid rgba(201, 166, 96, 0.12);
+  border-bottom: 1px solid rgba(201, 166, 96, 0.12);
 }
 .tp-log-row {
-  display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 0.4rem;
-  padding: 0.2rem 0; border-bottom: 1px solid rgba(50, 44, 54, 0.1);
-  cursor: pointer; transition: background 0.1s ease; user-select: none;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 0.4rem;
+  padding: 0.2rem 0;
+  border-bottom: 1px solid rgba(50, 44, 54, 0.1);
+  cursor: pointer;
+  transition: background 0.1s ease;
+  user-select: none;
 }
-.tp-log-row:hover { background: rgba(255, 255, 255, 0.02); }
-.tp-log-t { flex-shrink: 0; color: var(--c-tx3); white-space: nowrap; font-variant-numeric: tabular-nums; }
-.tp-log-l { flex-shrink: 0; font-weight: 700; white-space: nowrap; }
-.tp-log-m { flex: 1 1 0; min-width: 0; color: var(--c-tx); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tp-log-row:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+.tp-log-t {
+  flex-shrink: 0;
+  color: var(--c-tx3);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.tp-log-l {
+  flex-shrink: 0;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.tp-log-m {
+  flex: 1 1 0;
+  min-width: 0;
+  color: var(--c-tx);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .tp-log-row.expanded .tp-log-m {
-  flex-basis: 100%; white-space: pre-wrap; word-break: break-word;
-  overflow: visible; text-overflow: unset; margin-top: 0.15rem;
-  padding: 0.2rem 0 0.1rem 0.5rem; border-left: 2px solid rgba(50, 44, 54, 0.3);
+  flex-basis: 100%;
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow: visible;
+  text-overflow: unset;
+  margin-top: 0.15rem;
+  padding: 0.2rem 0 0.1rem 0.5rem;
+  border-left: 2px solid rgba(50, 44, 54, 0.3);
   user-select: text;
 }
 
-.lvl-debug { color: #7e767a; }
-.lvl-info { color: var(--c-tx2); }
-.lvl-notice { color: #8bb89c; }
-.lvl-warning { color: var(--c-warn); }
-.lvl-error, .lvl-critical, .lvl-alert, .lvl-emergency { color: var(--c-alert); }
+.lvl-debug {
+  color: #7e767a;
+}
+.lvl-info {
+  color: var(--c-tx2);
+}
+.lvl-notice {
+  color: #8bb89c;
+}
+.lvl-warning {
+  color: var(--c-warn);
+}
+.lvl-error,
+.lvl-critical,
+.lvl-alert,
+.lvl-emergency {
+  color: var(--c-alert);
+}
 
-.tp-log-ft { display: flex; flex-direction: column; gap: 0.4rem; position: relative; z-index: 1; flex-shrink: 0; }
-.tp-log-sync { font-size: 0.74rem; color: var(--c-tx2); display: flex; align-items: center; gap: 0.35rem; }
-.tp-log-sync i { font-size: 0.62rem; }
-.tp-log-btns { display: flex; gap: 0.4rem; }
-.tp-log-btns .tp-btn:first-child { flex: 1; }
+.tp-log-ft {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  position: relative;
+  z-index: 1;
+  flex-shrink: 0;
+}
+.tp-log-sync {
+  font-size: 0.74rem;
+  color: var(--c-tx2);
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+.tp-log-sync i {
+  font-size: 0.62rem;
+}
+.tp-log-btns {
+  display: flex;
+  gap: 0.4rem;
+}
+.tp-log-btns .tp-btn:first-child {
+  flex: 1;
+}
 
 @media (max-width: 1180px) {
-  .tp-wrap { overflow-y: auto; }
+  .tp-wrap {
+    overflow-y: auto;
+  }
   .tp {
     flex: none;
     min-height: auto;
@@ -2251,18 +3381,46 @@ const runAllTests = async () => {
     min-height: auto;
     align-items: start;
   }
-  .tp-main { overflow: visible; }
-  .tp-side { overflow: visible; }
-  .tp-log-card { flex: none; }
-  .tp-log-out { flex: none; min-height: 240px; max-height: 420px; }
+  .tp-main {
+    overflow: visible;
+  }
+  .tp-side {
+    overflow: visible;
+  }
+  .tp-log-card {
+    flex: none;
+  }
+  .tp-log-out {
+    flex: none;
+    min-height: 240px;
+    max-height: 420px;
+  }
 }
 @media (max-width: 720px) {
-  .tp { padding: 0.5rem 0.625rem 1rem; }
-  .tp-toolbar { flex-direction: column; align-items: stretch; gap: 0.5rem; }
-  .tp-toolbar-left, .tp-toolbar-right { justify-content: space-between; }
-  .tp-metrics { grid-template-columns: repeat(2, 1fr); }
-  .tp-log-filters { grid-template-columns: repeat(2, 1fr); }
-  .tp-log-row { grid-template-columns: 1fr; gap: 0.1rem; }
-  .tp-test-main { grid-template-columns: auto minmax(0, 1fr) 1.6rem; }
+  .tp {
+    padding: 0.5rem 0.625rem 1rem;
+  }
+  .tp-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+  }
+  .tp-toolbar-left,
+  .tp-toolbar-right {
+    justify-content: space-between;
+  }
+  .tp-metrics {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .tp-log-filters {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .tp-log-row {
+    grid-template-columns: 1fr;
+    gap: 0.1rem;
+  }
+  .tp-test-main {
+    grid-template-columns: auto minmax(0, 1fr) 1.6rem;
+  }
 }
 </style>

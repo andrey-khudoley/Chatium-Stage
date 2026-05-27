@@ -1,5 +1,5 @@
 // @shared
-import { jsx } from "@app/html-jsx"
+import { jsx } from '@app/html-jsx'
 import HomePage from './pages/HomePage.vue'
 import { loadProjectSettings } from './lib/settings'
 import { getPreloaderStyles, getPreloaderScript } from './shared/preloader'
@@ -9,13 +9,13 @@ import './lib/logs-init'
 export const indexPageRoute = app.html('/', async (ctx, req) => {
   // Загружаем настройки проекта из БД
   const { projectName, projectTitle, projectDescription } = await loadProjectSettings(ctx)
-  
+
   // Проверяем авторизацию пользователя
   const isAuthenticated = !!ctx.user
   const isAdmin = ctx.user?.is('Admin') ?? false
   const loginUrl = getFullUrl(ROUTES.login)
   const adminUrl = isAdmin ? getFullUrl(ROUTES.admin) : ''
-  
+
   return (
     <html>
       <head>
@@ -402,12 +402,15 @@ export const indexPageRoute = app.html('/', async (ctx, req) => {
             }
           }
         `}</style>
-        <script>{getPreloaderScript()}</script> 
+        <script>{getPreloaderScript()}</script>
         <script src="/s/static/lib/tailwind.3.4.16.min.js"></script>
         <link rel="stylesheet" href="/s/static/lib/fontawesome/6.7.2/css/all.min.css" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
-        <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap"
+          rel="stylesheet"
+        />
         <style>{`
           :root {
             --color-bg: #0a0a0a;
@@ -444,7 +447,7 @@ export const indexPageRoute = app.html('/', async (ctx, req) => {
             <div id="boot-messages-container"></div>
           </div>
         </div>
-        <HomePage 
+        <HomePage
           projectName={projectName}
           projectTitle={projectTitle}
           projectDescription={projectDescription}

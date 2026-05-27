@@ -233,7 +233,8 @@ export const BPM_DESIGN_SCENARIOS: BpmDesignScenario[] = [
   {
     slug: 'client-dialogs',
     title: 'Client dialogs workspace',
-    description: 'Операционная переписка с клиентами: список диалогов, лента сообщений, CRM-профиль.',
+    description:
+      'Операционная переписка с клиентами: список диалогов, лента сообщений, CRM-профиль.',
     objective: 'Сократить time-to-first-response и ускорить handoff между линиями поддержки.',
     tags: ['support', 'dialogs', 'crm'],
     theme: 'light',

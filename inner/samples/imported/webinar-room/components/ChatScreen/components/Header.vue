@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useChatScreenContext } from '../contexts/ChatScreenContext';
+import { useChatScreenContext } from '../contexts/ChatScreenContext'
 
 const props = defineProps<{
   onlineCount?: number
 }>()
 
-const store = useChatScreenContext();
+const store = useChatScreenContext()
 
 const formattedCount = computed(() => {
   const count = props.onlineCount ?? 0
@@ -18,8 +18,8 @@ const isMobile = computed(() => window.innerWidth < 768)
 const defaultTitle = computed(() => {
   return isMobile.value ? 'Чат' : 'Чат эфира'
 })
-</script> 
- 
+</script>
+
 <template>
   <div class="Header">
     <div class="HeaderTop">
@@ -27,13 +27,17 @@ const defaultTitle = computed(() => {
         <div class="HeaderTitle">
           {{ store.chat.title || defaultTitle }}
         </div>
-        
+
         <div v-if="store.chat.description" class="HeaderDescription">
           {{ store.chat.description }}
         </div>
       </div>
-      
-      <div v-if="props.onlineCount !== undefined" class="HeaderOnline" :title="`Сейчас смотрят: ${props.onlineCount}`">
+
+      <div
+        v-if="props.onlineCount !== undefined"
+        class="HeaderOnline"
+        :title="`Сейчас смотрят: ${props.onlineCount}`"
+      >
         <i class="fas fa-eye"></i>
         <span>{{ formattedCount }}</span>
       </div>

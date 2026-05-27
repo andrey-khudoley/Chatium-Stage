@@ -14,6 +14,8 @@ export const getUserTrainingsHandler: V1GcHandler = async (_ctx, a) => {
   return { kind: 'gc_result', gc }
 }
 
-export const getUserTrainingsRoute = app.get('/', async (ctx, req) => handleV1Op(ctx, req, 'getUserTrainings', getUserTrainingsHandler))
+export const getUserTrainingsRoute = app.get('/', async (ctx, req) =>
+  handleV1Op(ctx, req, 'getUserTrainings', getUserTrainingsHandler)
+)
 
 export default getUserTrainingsRoute

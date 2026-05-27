@@ -37,6 +37,3 @@ export const AnalyticsDashboards = Heap.Table('analytics_dashboards_c9d3e4f5', {
     customMeta: { title: 'JSON конфигурация компонентов дашборда' }
   })
 })
-
-
-

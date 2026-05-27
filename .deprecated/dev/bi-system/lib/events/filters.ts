@@ -10,21 +10,21 @@ export function buildEventFilterConditions(eventTypesFilter: string[]): string {
   if (eventTypesFilter.length === 0) {
     return '1 = 1'
   }
-  
+
   // Получаем все определения событий для построения условий
   const allEventDefinitions = getAllEvents()
-  
+
   // Строим условие для фильтрации событий
   const actionConditions: string[] = []
-  
+
   for (const eventTypeName of eventTypesFilter) {
-    const eventDef = allEventDefinitions.find(e => e.name === eventTypeName)
-    
+    const eventDef = allEventDefinitions.find((e) => e.name === eventTypeName)
+
     if (!eventDef) {
       // Если определение не найдено - пропускаем
       continue
     }
-    
+
     if (eventDef.urlPattern) {
       // Для паттернов используем LIKE
       const likePattern = eventDef.urlPattern.replace(/'/g, "''").replace(/%/g, '%')
@@ -45,13 +45,12 @@ export function buildEventFilterConditions(eventTypesFilter: string[]): string {
       }
     }
   }
-  
+
   // Если нет ни одного условия - возвращаем условие, которое ничего не найдет
   if (actionConditions.length === 0) {
     return '1 = 0'
   }
-  
+
   // Объединяем условия через OR
   return actionConditions.join(' OR ')
 }
-

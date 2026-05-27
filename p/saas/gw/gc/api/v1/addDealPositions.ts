@@ -14,6 +14,8 @@ export const addDealPositionsHandler: V1GcHandler = async (_ctx, a) => {
   return { kind: 'gc_result', gc }
 }
 
-export const addDealPositionsRoute = app.post('/', async (ctx, req) => handleV1Op(ctx, req, 'addDealPositions', addDealPositionsHandler))
+export const addDealPositionsRoute = app.post('/', async (ctx, req) =>
+  handleV1Op(ctx, req, 'addDealPositions', addDealPositionsHandler)
+)
 
 export default addDealPositionsRoute

@@ -67,7 +67,7 @@ import { ref, onMounted, nextTick } from 'vue'
 import { apiChatSearchRoute } from '../api/chat-search'
 
 const props = defineProps({
-  feedId: String,
+  feedId: String
 })
 
 const emit = defineEmits(['close', 'go-to-message'])
@@ -88,12 +88,12 @@ function onSearchInput() {
   if (searchTimeout) {
     clearTimeout(searchTimeout)
   }
-  
+
   if (!searchQuery.value || searchQuery.value.length < 2) {
     searchResults.value = []
     return
   }
-  
+
   searchTimeout = setTimeout(() => {
     performSearch()
   }, 300)
@@ -101,14 +101,14 @@ function onSearchInput() {
 
 async function performSearch() {
   if (!searchQuery.value || searchQuery.value.length < 2) return
-  
+
   isSearching.value = true
-  
+
   try {
     const result = await apiChatSearchRoute({ feedId: props.feedId }).run(ctx, {
-      query: searchQuery.value,
+      query: searchQuery.value
     })
-    
+
     searchResults.value = result.messages || []
   } catch (error) {
     console.error('Ошибка поиска:', error)
@@ -132,8 +132,10 @@ function goToMessage(messageId) {
 function getAuthorName(message) {
   if (!message.author) return 'Неизвестно'
   if (message.author.id === ctx.user?.id) return 'Вы'
-  return message.author.firstName 
-    ? (message.author.lastName ? `${message.author.firstName} ${message.author.lastName}` : message.author.firstName)
+  return message.author.firstName
+    ? message.author.lastName
+      ? `${message.author.firstName} ${message.author.lastName}`
+      : message.author.firstName
     : message.author.displayName || 'Пользователь'
 }
 
@@ -142,23 +144,28 @@ function formatTime(date) {
   const d = new Date(date)
   const now = new Date()
   const isToday = d.toDateString() === now.toDateString()
-  
+
   if (isToday) {
     return d.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })
   }
-  
+
   const yesterday = new Date(now)
   yesterday.setDate(yesterday.getDate() - 1)
   if (d.toDateString() === yesterday.toDateString()) {
     return 'Вчера ' + d.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })
   }
-  
-  return d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+
+  return d.toLocaleDateString('ru-RU', {
+    day: 'numeric',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit'
+  })
 }
 
 function highlightMatch(text) {
   if (!text || !searchQuery.value) return text
-  
+
   const query = searchQuery.value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
   const regex = new RegExp(`(${query})`, 'gi')
   return text.replace(regex, '<mark>$1</mark>')
@@ -167,7 +174,7 @@ function highlightMatch(text) {
 function formatMessageWord(count) {
   const lastDigit = count % 10
   const lastTwoDigits = count % 100
-  
+
   if (lastTwoDigits >= 11 && lastTwoDigits <= 19) return 'сообщений'
   if (lastDigit === 1) return 'сообщение'
   if (lastDigit >= 2 && lastDigit <= 4) return 'сообщения'

@@ -4,20 +4,20 @@
 
 Рекомендуемые метрики (реализация — `writeMetricEvent`, события workspace по `016-analytics-workspace.md`, либо внешняя система по вебхуку логов проекта):
 
-| Метрика | Назначение |
-| --- | --- |
-| `lava_payment_link_requests_total` | Запросы ссылки на оплату |
-| `lava_payment_link_success_total` | Успешные ссылки |
-| `lava_payment_link_error_total` | Ошибки создания ссылки |
-| `lava_template_lock_wait_total` | Ожидания lock |
-| `lava_template_lock_timeout_total` | Таймауты lock |
-| `lava_update_offer_total` | Обновления цены |
-| `lava_update_offer_error_total` | Ошибки обновления цены |
-| `lava_contract_create_total` | Созданные контракты |
-| `lava_contract_create_error_total` | Ошибки создания контракта |
-| `lava_webhook_received_total` | Принятые webhook |
-| `lava_webhook_duplicate_total` | Дубликаты webhook |
-| `lava_webhook_processing_error_total` | Ошибки обработки webhook |
+| Метрика                               | Назначение                |
+| ------------------------------------- | ------------------------- |
+| `lava_payment_link_requests_total`    | Запросы ссылки на оплату  |
+| `lava_payment_link_success_total`     | Успешные ссылки           |
+| `lava_payment_link_error_total`       | Ошибки создания ссылки    |
+| `lava_template_lock_wait_total`       | Ожидания lock             |
+| `lava_template_lock_timeout_total`    | Таймауты lock             |
+| `lava_update_offer_total`             | Обновления цены           |
+| `lava_update_offer_error_total`       | Ошибки обновления цены    |
+| `lava_contract_create_total`          | Созданные контракты       |
+| `lava_contract_create_error_total`    | Ошибки создания контракта |
+| `lava_webhook_received_total`         | Принятые webhook          |
+| `lava_webhook_duplicate_total`        | Дубликаты webhook         |
+| `lava_webhook_processing_error_total` | Ошибки обработки webhook  |
 
 **Алерты минимум на:**
 

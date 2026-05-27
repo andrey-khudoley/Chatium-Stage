@@ -23,7 +23,11 @@ export const getDashboardCountsRoute = app.get('/', async (ctx, req) => {
     await loggerLib.writeServerLog(ctx, {
       severity: 6,
       message: `[${LOG_PATH}] Счётчики получены`,
-      payload: { errorCount: counts.errorCount, warnCount: counts.warnCount, resetAt: counts.resetAt }
+      payload: {
+        errorCount: counts.errorCount,
+        warnCount: counts.warnCount,
+        resetAt: counts.resetAt
+      }
     })
     return { success: true, ...counts }
   } catch (error) {

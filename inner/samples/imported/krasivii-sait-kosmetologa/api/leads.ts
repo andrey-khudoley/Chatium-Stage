@@ -1,5 +1,5 @@
-import LeadsTable from "../tables/leads.table"
-import { sendNotificationToAccountOwners } from "@user-notifier/sdk"
+import LeadsTable from '../tables/leads.table'
+import { sendNotificationToAccountOwners } from '@user-notifier/sdk'
 
 // @shared-route
 export const apiCreateLeadRoute = app.post('/', async (ctx, req) => {
@@ -20,7 +20,7 @@ export const apiCreateLeadRoute = app.post('/', async (ctx, req) => {
 
     // Отправляем уведомление администратору
     await sendNotificationToAccountOwners(ctx, {
-      title: "Новая заявка с сайта",
+      title: 'Новая заявка с сайта',
       html: `
         <h2>Новая заявка от клиента</h2>
         <p><strong>Имя:</strong> ${name}</p>

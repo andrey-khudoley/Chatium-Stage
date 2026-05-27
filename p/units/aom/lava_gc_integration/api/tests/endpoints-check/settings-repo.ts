@@ -19,7 +19,10 @@ export const settingsRepoTestRoute = app.get('/', async (ctx, req) => {
   requireAnyUser(ctx)
 
   const testId = typeof req.query?.testId === 'string' ? req.query.testId : undefined
-  if (testId && !SETTINGS_REPO_TEST_IDS.includes(testId as (typeof SETTINGS_REPO_TEST_IDS)[number])) {
+  if (
+    testId &&
+    !SETTINGS_REPO_TEST_IDS.includes(testId as (typeof SETTINGS_REPO_TEST_IDS)[number])
+  ) {
     return {
       success: false,
       test: 'settings-repo',

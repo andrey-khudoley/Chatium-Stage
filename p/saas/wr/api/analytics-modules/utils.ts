@@ -8,14 +8,14 @@ export function actionToEventType(action: string): string {
 }
 
 export async function getWorkspacePath(ctx: any): Promise<string> {
-  const workspace = await findCurrentWorkspace(ctx) 
+  const workspace = await findCurrentWorkspace(ctx)
   return workspace?.path ?? '/'
-} 
+}
 
 export function formActionToEventType(action: string | null, urlPath: string): string {
   if (urlPath.includes('webinar_form_payment_completed')) return 'payment_completed'
   if (urlPath.includes('webinar_form_submitted')) return 'submitted'
-  
+
   if (!action) return 'unknown'
   return action.replace('form_', '')
 }
@@ -29,7 +29,10 @@ export interface AnalyticsEntity {
   type: 'episode' | 'autowebinar'
 }
 
-export async function resolveAnalyticsEntity(ctx: any, entityId: string): Promise<AnalyticsEntity | null> {
+export async function resolveAnalyticsEntity(
+  ctx: any,
+  entityId: string
+): Promise<AnalyticsEntity | null> {
   const episode = await Episodes.findById(ctx, entityId)
   if (episode) {
     const startedAt = episode.startedAt ? new Date(episode.startedAt) : null
@@ -43,7 +46,7 @@ export async function resolveAnalyticsEntity(ctx: any, entityId: string): Promis
       startedAt,
       finishedAt,
       durationSeconds,
-      type: 'episode',
+      type: 'episode'
     }
   }
 
@@ -55,7 +58,7 @@ export async function resolveAnalyticsEntity(ctx: any, entityId: string): Promis
       startedAt: null,
       finishedAt: null,
       durationSeconds: autowebinar.duration || 0,
-      type: 'autowebinar',
+      type: 'autowebinar'
     }
   }
 

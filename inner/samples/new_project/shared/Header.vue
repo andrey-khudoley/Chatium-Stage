@@ -3,12 +3,12 @@
   <Transition name="modal">
     <div v-if="showLogoutModal" class="logout-modal-overlay" @click="cancelLogout">
       <div class="logout-modal" @click.stop>
-      <div class="logout-message">Выйти из аккаунта?</div>
-      <div class="logout-buttons">
-        <button @click="cancelLogout" class="logout-btn logout-btn-no">Нет</button>
-        <button @click="confirmLogout" class="logout-btn logout-btn-yes">Да</button>
+        <div class="logout-message">Выйти из аккаунта?</div>
+        <div class="logout-buttons">
+          <button @click="cancelLogout" class="logout-btn logout-btn-no">Нет</button>
+          <button @click="confirmLogout" class="logout-btn logout-btn-yes">Да</button>
+        </div>
       </div>
-    </div>
     </div>
   </Transition>
 
@@ -17,9 +17,9 @@
       <div class="header-title-section">
         <a :href="props.indexUrl" class="header-logo-and-title">
           <div class="header-logo-link">
-            <img 
-              src="https://fs-thb03.getcourse.ru/fileservice/file/thumbnail/h/246c9167ba22ef571b50a2a795ee1186.png/s/300x/a/565681/sc/95" 
-              alt="Логотип" 
+            <img
+              src="https://fs-thb03.getcourse.ru/fileservice/file/thumbnail/h/246c9167ba22ef571b50a2a795ee1186.png/s/300x/a/565681/sc/95"
+              alt="Логотип"
               class="header-logo"
             />
           </div>
@@ -33,44 +33,32 @@
           <span class="clock-time">{{ currentTime }}</span>
         </span>
         <div class="header-actions">
-        <a 
-          v-if="props.isAdmin && props.adminUrl"
-          :href="props.adminUrl" 
-          class="header-action-btn"
-          title="Настройки админа"
-        >
-          <i class="fas fa-cog"></i>
-        </a>
-        <button 
-          @click="triggerGlitch"
-          class="header-action-btn"
-        >
-          <i class="fas fa-window-minimize"></i>
-        </button>
-        <a 
-          v-if="props.isAuthenticated"
-          :href="props.profileUrl" 
-          class="header-action-btn"
-          title="Профиль пользователя"
-        >
-          <i class="fas fa-window-maximize"></i>
-        </a>
-        <a 
-          v-else
-          :href="props.loginUrl" 
-          class="header-action-btn"
-          title="Войти в систему"
-        >
-          <i class="fas fa-window-maximize"></i>
-        </a>
-        <button 
-          @click="handleCloseClick"
-          class="header-action-btn"
-          title="Закрыть"
-        >
-          <i class="fas fa-times"></i>
-        </button>
-      </div>
+          <a
+            v-if="props.isAdmin && props.adminUrl"
+            :href="props.adminUrl"
+            class="header-action-btn"
+            title="Настройки админа"
+          >
+            <i class="fas fa-cog"></i>
+          </a>
+          <button @click="triggerGlitch" class="header-action-btn">
+            <i class="fas fa-window-minimize"></i>
+          </button>
+          <a
+            v-if="props.isAuthenticated"
+            :href="props.profileUrl"
+            class="header-action-btn"
+            title="Профиль пользователя"
+          >
+            <i class="fas fa-window-maximize"></i>
+          </a>
+          <a v-else :href="props.loginUrl" class="header-action-btn" title="Войти в систему">
+            <i class="fas fa-window-maximize"></i>
+          </a>
+          <button @click="handleCloseClick" class="header-action-btn" title="Закрыть">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
       </div>
     </div>
   </header>
@@ -124,7 +112,7 @@ onUnmounted(() => {
   if (timeInterval) {
     clearInterval(timeInterval)
   }
-  
+
   // Удаляем обработчик Esc при размонтировании
   if (escHandler) {
     window.removeEventListener('keydown', escHandler)
@@ -133,14 +121,14 @@ onUnmounted(() => {
 
 const triggerGlitch = () => {
   if (isGlitching.value) return
-  
+
   isGlitching.value = true
-  
+
   // Добавляем глитч эффект ко всей странице
   const appLayout = document.querySelector('.app-layout')
   if (appLayout) {
     appLayout.classList.add('global-glitch-active')
-    
+
     setTimeout(() => {
       appLayout.classList.remove('global-glitch-active')
       isGlitching.value = false
@@ -156,7 +144,7 @@ const handleCloseClick = () => {
     const appLayout = document.querySelector('.app-layout')
     const contentWrapper = document.querySelector('.content-wrapper')
     const footer = document.querySelector('.app-footer')
-    
+
     if (appLayout) appLayout.classList.add('content-hidden')
     if (contentWrapper) contentWrapper.classList.add('hidden-for-modal')
     if (footer) footer.classList.add('hidden-for-modal')
@@ -177,7 +165,7 @@ const cancelLogout = () => {
   const appLayout = document.querySelector('.app-layout')
   const contentWrapper = document.querySelector('.content-wrapper')
   const footer = document.querySelector('.app-footer')
-  
+
   if (appLayout) appLayout.classList.remove('content-hidden')
   if (contentWrapper) contentWrapper.classList.remove('hidden-for-modal')
   if (footer) footer.classList.remove('hidden-for-modal')
@@ -206,7 +194,7 @@ const cancelLogout = () => {
   max-width: 500px;
   width: calc(100% - 2rem);
   position: relative;
-  box-shadow: 
+  box-shadow:
     0 0 40px rgba(211, 35, 75, 0.4),
     0 0 80px rgba(211, 35, 75, 0.2),
     inset 0 1px 0 rgba(255, 255, 255, 0.05);
@@ -282,7 +270,7 @@ const cancelLogout = () => {
   text-align: center;
   margin-bottom: 2rem;
   letter-spacing: 0.08em;
-  text-shadow: 
+  text-shadow:
     0 0 10px rgba(232, 232, 232, 0.4),
     0 0 20px rgba(211, 35, 75, 0.2);
   position: relative;
@@ -291,7 +279,8 @@ const cancelLogout = () => {
 }
 
 @keyframes text-flicker {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 1;
   }
   50% {
@@ -347,7 +336,7 @@ const cancelLogout = () => {
 .logout-btn-no:hover {
   background: var(--color-accent);
   color: white;
-  box-shadow: 
+  box-shadow:
     0 0 20px rgba(211, 35, 75, 0.6),
     0 0 40px rgba(211, 35, 75, 0.4),
     inset 0 1px 0 rgba(255, 255, 255, 0.2);
@@ -369,7 +358,7 @@ const cancelLogout = () => {
   color: var(--color-text);
   border-color: var(--color-text-secondary);
   background: rgba(255, 255, 255, 0.05);
-  box-shadow: 
+  box-shadow:
     0 0 15px rgba(255, 255, 255, 0.1),
     inset 0 1px 0 rgba(255, 255, 255, 0.1);
   transform: translateY(-2px);
@@ -469,7 +458,8 @@ const cancelLogout = () => {
 
 /* Основная анимация глитча с RGB-разделением */
 @keyframes glitch-text {
-  0%, 100% {
+  0%,
+  100% {
     transform: translate(0);
     filter: none;
   }
@@ -513,15 +503,23 @@ const cancelLogout = () => {
 
 /* Анимация для первого канала */
 @keyframes glitch-text-1 {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 0;
     transform: translate(0);
   }
-  10%, 30%, 50%, 70%, 90% {
+  10%,
+  30%,
+  50%,
+  70%,
+  90% {
     opacity: 0.9;
     transform: translate(-2px, 0);
   }
-  20%, 40%, 60%, 80% {
+  20%,
+  40%,
+  60%,
+  80% {
     opacity: 0;
     transform: translate(2px, 0);
   }
@@ -529,15 +527,23 @@ const cancelLogout = () => {
 
 /* Анимация для второго канала */
 @keyframes glitch-text-2 {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 0;
     transform: translate(0);
   }
-  10%, 30%, 50%, 70%, 90% {
+  10%,
+  30%,
+  50%,
+  70%,
+  90% {
     opacity: 0.9;
     transform: translate(2px, 0);
   }
-  20%, 40%, 60%, 80% {
+  20%,
+  40%,
+  60%,
+  80% {
     opacity: 0;
     transform: translate(-2px, 0);
   }
@@ -577,8 +583,13 @@ const cancelLogout = () => {
 }
 
 @keyframes scanline-flicker-subtle {
-  0%, 100% { opacity: 0.6; }
-  50% { opacity: 0.4; }
+  0%,
+  100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 0.4;
+  }
 }
 
 .header-logo {
@@ -599,20 +610,25 @@ const cancelLogout = () => {
 
 /* Периодический тонкий RGB-глитч для логотипа */
 @keyframes logo-rgb-glitch {
-  0%, 85%, 100% {
+  0%,
+  85%,
+  100% {
     filter: brightness(1.05) contrast(1.1);
   }
   86% {
-    filter: brightness(1.05) contrast(1.1) drop-shadow(1px 0 0 rgba(255, 0, 255, 0.4)) drop-shadow(-1px 0 0 rgba(0, 255, 255, 0.4));
+    filter: brightness(1.05) contrast(1.1) drop-shadow(1px 0 0 rgba(255, 0, 255, 0.4))
+      drop-shadow(-1px 0 0 rgba(0, 255, 255, 0.4));
   }
   87% {
-    filter: brightness(1.05) contrast(1.1) drop-shadow(-1px 0 0 rgba(255, 0, 255, 0.4)) drop-shadow(1px 0 0 rgba(0, 255, 255, 0.4));
+    filter: brightness(1.05) contrast(1.1) drop-shadow(-1px 0 0 rgba(255, 0, 255, 0.4))
+      drop-shadow(1px 0 0 rgba(0, 255, 255, 0.4));
   }
   88% {
     filter: brightness(1.05) contrast(1.1);
   }
   91% {
-    filter: brightness(1.05) contrast(1.1) drop-shadow(1px 0 0 rgba(255, 0, 255, 0.3)) drop-shadow(-1px 0 0 rgba(0, 255, 255, 0.3));
+    filter: brightness(1.05) contrast(1.1) drop-shadow(1px 0 0 rgba(255, 0, 255, 0.3))
+      drop-shadow(-1px 0 0 rgba(0, 255, 255, 0.3));
   }
   92% {
     filter: brightness(1.05) contrast(1.1);
@@ -628,7 +644,7 @@ const cancelLogout = () => {
   text-overflow: ellipsis;
   white-space: nowrap;
   letter-spacing: 0.08em;
-  text-shadow: 
+  text-shadow:
     0 0 8px rgba(232, 232, 232, 0.25),
     0.5px 0 0 rgba(255, 0, 255, 0.08),
     -0.5px 0 0 rgba(0, 255, 255, 0.08);
@@ -653,13 +669,19 @@ const cancelLogout = () => {
 }
 
 @keyframes terminal-cursor-blink {
-  0%, 50% { opacity: 1; }
-  51%, 100% { opacity: 0; }
+  0%,
+  50% {
+    opacity: 1;
+  }
+  51%,
+  100% {
+    opacity: 0;
+  }
 }
 
 .header-logo-and-title:hover .header-title {
   letter-spacing: 0.1em;
-  text-shadow: 
+  text-shadow:
     0 0 10px rgba(232, 232, 232, 0.4),
     0 0 20px rgba(211, 35, 75, 0.2),
     1px 0 0 rgba(255, 0, 255, 0.15),
@@ -669,7 +691,9 @@ const cancelLogout = () => {
 
 /* Тонкий периодический глитч для текста */
 @keyframes title-subtle-glitch {
-  0%, 90%, 100% {
+  0%,
+  90%,
+  100% {
     transform: translate(0);
   }
   91% {
@@ -719,14 +743,22 @@ const cancelLogout = () => {
   image-rendering: pixelated;
   -webkit-font-smoothing: none;
   -moz-osx-font-smoothing: grayscale;
-  box-shadow: 
+  box-shadow:
     inset 0 1px 2px rgba(0, 0, 0, 0.4),
     0 0 6px rgba(160, 160, 160, 0.08);
   clip-path: polygon(
-    0 2px, 2px 2px, 2px 0,
-    calc(100% - 2px) 0, calc(100% - 2px) 2px, 100% 2px,
-    100% calc(100% - 2px), calc(100% - 2px) calc(100% - 2px), calc(100% - 2px) 100%,
-    2px 100%, 2px calc(100% - 2px), 0 calc(100% - 2px)
+    0 2px,
+    2px 2px,
+    2px 0,
+    calc(100% - 2px) 0,
+    calc(100% - 2px) 2px,
+    100% 2px,
+    100% calc(100% - 2px),
+    calc(100% - 2px) calc(100% - 2px),
+    calc(100% - 2px) 100%,
+    2px 100%,
+    2px calc(100% - 2px),
+    0 calc(100% - 2px)
   );
 }
 
@@ -752,14 +784,14 @@ const cancelLogout = () => {
 }
 
 @keyframes clock-icon-pulse {
-  0%, 100% {
+  0%,
+  100% {
     transform: scale(1);
   }
   50% {
     transform: scale(1.1);
   }
 }
-
 
 .header-right {
   display: flex;
@@ -790,16 +822,24 @@ const cancelLogout = () => {
   text-decoration: none;
   cursor: pointer;
   position: relative;
-  box-shadow: 
+  box-shadow:
     0 2px 4px rgba(0, 0, 0, 0.3),
     inset 0 1px 0 rgba(255, 255, 255, 0.03),
     inset 0 0 0 1px rgba(0, 0, 0, 0.2);
   overflow: hidden;
   clip-path: polygon(
-    0 3px, 3px 3px, 3px 0,
-    calc(100% - 3px) 0, calc(100% - 3px) 3px, 100% 3px,
-    100% calc(100% - 3px), calc(100% - 3px) calc(100% - 3px), calc(100% - 3px) 100%,
-    3px 100%, 3px calc(100% - 3px), 0 calc(100% - 3px)
+    0 3px,
+    3px 3px,
+    3px 0,
+    calc(100% - 3px) 0,
+    calc(100% - 3px) 3px,
+    100% 3px,
+    100% calc(100% - 3px),
+    calc(100% - 3px) calc(100% - 3px),
+    calc(100% - 3px) 100%,
+    3px 100%,
+    3px calc(100% - 3px),
+    0 calc(100% - 3px)
   );
 }
 
@@ -845,7 +885,7 @@ const cancelLogout = () => {
 .header-action-btn:hover {
   border-color: var(--color-border-light);
   transform: translateY(-2px);
-  box-shadow: 
+  box-shadow:
     0 4px 8px rgba(0, 0, 0, 0.4),
     0 2px 4px rgba(0, 0, 0, 0.3),
     inset 0 1px 0 rgba(255, 255, 255, 0.05);
@@ -873,7 +913,7 @@ const cancelLogout = () => {
 
 .header-action-btn:active {
   transform: translateY(0);
-  box-shadow: 
+  box-shadow:
     0 1px 2px rgba(0, 0, 0, 0.3),
     inset 0 1px 0 rgba(255, 255, 255, 0.03);
 }
@@ -937,5 +977,3 @@ const cancelLogout = () => {
   }
 }
 </style>
-
-

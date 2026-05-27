@@ -10,7 +10,7 @@ export const apiLoggingSetLevelRoute = app
     if (!loggerSettings.isLogLevel(level)) {
       return {
         success: false,
-        error: `level должен быть одним из: ${loggerSettings.LOG_LEVELS.join(', ')}`,
+        error: `level должен быть одним из: ${loggerSettings.LOG_LEVELS.join(', ')}`
       }
     }
     try {

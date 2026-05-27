@@ -1,7 +1,12 @@
 import { s } from '@app/schema'
 import { nanoid } from '@app/nanoid'
 import { getThumbnailUrl } from '@app/storage'
-import { findMessagesByChatId, findPersons, getOrCreateTransport, privateMessageRecieved } from '@sender/sdk'
+import {
+  findMessagesByChatId,
+  findPersons,
+  getOrCreateTransport,
+  privateMessageRecieved
+} from '@sender/sdk'
 import { getWorkspaceTransportIdentity } from '../transport/hook'
 import { requireAnyUser } from '@app/auth'
 
@@ -40,7 +45,7 @@ export const apiChatSendMessageRoute = app
             firstName: user.type === 'Real' ? user.displayName : `Client (${uid})`
           },
           text,
-          files: files.map(file => ({
+          files: files.map((file) => ({
             url: getThumbnailUrl(ctx, file.hash, 2048, 2048),
             hash: file.hash,
             meta: {
@@ -111,25 +116,32 @@ export const apiChatMessagesRoute = app
     ).reverse()
 
     const messages = availableMessages
-      .filter(message => message.text || message.files?.length)
+      .filter((message) => message.text || message.files?.length)
       .reverse()
-      .map(message => {
+      .map((message) => {
         if (!(message.text || message.files?.length)) {
           return null
         }
 
-        const createdAt = (message as any).createdAt ?? (message as any).created_at ?? (message as any).sentAt ?? null
+        const createdAt =
+          (message as any).createdAt ??
+          (message as any).created_at ??
+          (message as any).sentAt ??
+          null
 
         return {
           id: message.id,
-          role: message.createdBy === (person.user as unknown as string) ? ('user' as const) : ('assistant' as const),
+          role:
+            message.createdBy === (person.user as unknown as string)
+              ? ('user' as const)
+              : ('assistant' as const),
           // message.data === undefined
           //   ? ("user" as const)
           //   : ("assistant" as const),
           content: message.text ?? '',
           createdAt,
           files:
-            message.files?.map(file => ({
+            message.files?.map((file) => ({
               ...file.meta,
               url: getThumbnailUrl(ctx, file.hash, 2048, 2048)
             })) ?? []

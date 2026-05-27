@@ -8,9 +8,9 @@ export const TProjektChatChatFoldersL3E = Heap.Table(
     userId: Heap.Optional(Heap.String({ customMeta: { title: 'ID пользователя-владельца' } })),
     sortOrder: Heap.Optional(Heap.Number({ customMeta: { title: 'Порядок сортировки' } })),
     icon: Heap.Optional(Heap.String({ customMeta: { title: 'Иконка (emoji или класс)' } })),
-    color: Heap.Optional(Heap.String({ customMeta: { title: 'Цвет папки' } })),
+    color: Heap.Optional(Heap.String({ customMeta: { title: 'Цвет папки' } }))
   },
-  { customMeta: { title: 'Папки чатов', description: '' } },
+  { customMeta: { title: 'Папки чатов', description: '' } }
 )
 
 export default TProjektChatChatFoldersL3E

@@ -6,9 +6,9 @@ export const TProjektChatUserPinnedChats232 = Heap.Table(
   {
     userId: Heap.Optional(Heap.String({ customMeta: { title: 'ID пользователя' } })),
     feedId: Heap.Optional(Heap.String({ customMeta: { title: 'ID чата (feedId)' } })),
-    sortOrder: Heap.Optional(Heap.Number({ customMeta: { title: 'Порядок сортировки' } })),
+    sortOrder: Heap.Optional(Heap.Number({ customMeta: { title: 'Порядок сортировки' } }))
   },
-  { customMeta: { title: 'Закрепленные чаты пользователя', description: '' } },
+  { customMeta: { title: 'Закрепленные чаты пользователя', description: '' } }
 )
 
 export default TProjektChatUserPinnedChats232

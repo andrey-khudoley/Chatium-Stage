@@ -6,9 +6,9 @@ export const TDocConfigY55 = Heap.Table(
   {
     key: Heap.Optional(Heap.String({ customMeta: { title: 'Config Key' } })),
     value: Heap.Optional(Heap.String({ customMeta: { title: 'Config Value' } })),
-    description: Heap.Optional(Heap.String({ customMeta: { title: 'Description' } })),
+    description: Heap.Optional(Heap.String({ customMeta: { title: 'Description' } }))
   },
-  { customMeta: { title: 'Configuration', description: 'Configuration' } },
+  { customMeta: { title: 'Configuration', description: 'Configuration' } }
 )
 
 export default TDocConfigY55

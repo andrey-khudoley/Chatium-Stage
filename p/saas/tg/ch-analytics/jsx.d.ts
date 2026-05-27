@@ -10,7 +10,7 @@ declare namespace JSX {
     link: any
     script: any
     style: any
-    
+
     // Content sectioning
     header: any
     nav: any
@@ -21,7 +21,7 @@ declare namespace JSX {
     footer: any
     div: any
     span: any
-    
+
     // Text content
     h1: any
     h2: any
@@ -38,7 +38,7 @@ declare namespace JSX {
     dl: any
     dt: any
     dd: any
-    
+
     // Inline text
     a: any
     strong: any
@@ -49,7 +49,7 @@ declare namespace JSX {
     small: any
     mark: any
     code: any
-    
+
     // Forms
     form: any
     input: any
@@ -60,7 +60,7 @@ declare namespace JSX {
     label: any
     fieldset: any
     legend: any
-    
+
     // Tables
     table: any
     thead: any
@@ -69,7 +69,7 @@ declare namespace JSX {
     tr: any
     th: any
     td: any
-    
+
     // Media
     img: any
     video: any
@@ -77,7 +77,7 @@ declare namespace JSX {
     source: any
     iframe: any
     canvas: any
-    
+
     // SVG
     svg: any
     path: any
@@ -89,13 +89,13 @@ declare namespace JSX {
     g: any
     defs: any
     use: any
-    
+
     // Other
     br: any
     hr: any
     [elemName: string]: any
   }
-  
+
   interface ElementChildrenAttribute {
     children: {}
   }
@@ -107,7 +107,7 @@ declare module '*.vue' {
 }
 
 declare module '@users/sdk/auth' {
-         function getTelegramOauthUrl(ctx: any, options: { back?: string }): Promise<string>
+  function getTelegramOauthUrl(ctx: any, options: { back?: string }): Promise<string>
 }
 
 // Chatium app global

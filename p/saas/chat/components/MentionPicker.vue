@@ -1,25 +1,20 @@
 <template>
-  <div 
-    v-if="show" 
-    class="mention-picker"
-    :style="pickerStyle"
-    @click.stop
-  >
+  <div v-if="show" class="mention-picker" :style="pickerStyle" @click.stop>
     <div class="mention-picker-header">
       <i class="fas fa-at"></i>
       <span>Упомянуть</span>
     </div>
-    
+
     <div v-if="loading" class="mention-picker-loading">
       <i class="fas fa-spinner fa-spin"></i>
       <span>Загрузка...</span>
     </div>
-    
+
     <div v-else-if="filteredUsers.length === 0" class="mention-picker-empty">
       <i class="fas fa-search"></i>
       <span>Пользователи не найдены</span>
     </div>
-    
+
     <div v-else class="mention-picker-list">
       <div
         v-for="(participant, index) in filteredUsers"
@@ -34,7 +29,9 @@
         </div>
         <div class="mention-user-info">
           <div class="mention-user-name">{{ getDisplayName(participant) }}</div>
-          <div v-if="getUserUsername(participant)" class="mention-user-username">@{{ getUserUsername(participant) }}</div>
+          <div v-if="getUserUsername(participant)" class="mention-user-username">
+            @{{ getUserUsername(participant) }}
+          </div>
         </div>
         <div v-if="index === selectedIndex" class="mention-user-check">
           <i class="fas fa-check"></i>
@@ -97,9 +94,9 @@ function getUserId(participant) {
 // Фильтруем пользователей по поисковому запросу
 const filteredUsers = computed(() => {
   if (!props.searchQuery) return props.participants
-  
+
   const query = props.searchQuery.toLowerCase()
-  return props.participants.filter(participant => {
+  return props.participants.filter((participant) => {
     const name = getDisplayName(participant).toLowerCase()
     const username = (getUserUsername(participant) || '').toLowerCase()
     return name.includes(query) || username.includes(query)
@@ -111,46 +108,49 @@ const pickerStyle = computed(() => {
   if (!props.textareaRect) {
     return {
       left: `${props.position.x}px`,
-      top: `${props.position.y}px`,
+      top: `${props.position.y}px`
     }
   }
-  
+
   const pickerHeight = Math.min(filteredUsers.value.length * 56 + 50, 300)
   const pickerWidth = 280
-  
+
   let left = props.textareaRect.left + 20
   let top = props.textareaRect.top - pickerHeight - 10
-  
+
   // Проверяем границы экрана
   const viewportWidth = window.innerWidth
   const viewportHeight = window.innerHeight
-  
+
   if (left + pickerWidth > viewportWidth - 10) {
     left = viewportWidth - pickerWidth - 10
   }
-  
+
   if (top < 10) {
     // Если не помещается сверху — показываем снизу от textarea
     top = props.textareaRect.bottom + 10
   }
-  
+
   return {
     left: `${left}px`,
     top: `${top}px`,
     width: `${pickerWidth}px`,
-    maxHeight: '300px',
+    maxHeight: '300px'
   }
 })
 
 // Сбрасываем выбор при изменении фильтра
-watch(() => props.searchQuery, () => {
-  selectedIndex.value = 0
-})
+watch(
+  () => props.searchQuery,
+  () => {
+    selectedIndex.value = 0
+  }
+)
 
 // Обработка клавиатуры
 function handleKeydown(event) {
   if (!props.show) return
-  
+
   switch (event.key) {
     case 'ArrowDown':
       event.preventDefault()
@@ -158,7 +158,8 @@ function handleKeydown(event) {
       break
     case 'ArrowUp':
       event.preventDefault()
-      selectedIndex.value = (selectedIndex.value - 1 + filteredUsers.value.length) % filteredUsers.value.length
+      selectedIndex.value =
+        (selectedIndex.value - 1 + filteredUsers.value.length) % filteredUsers.value.length
       break
     case 'Enter':
       event.preventDefault()
@@ -183,13 +184,13 @@ function selectUser(participant) {
   emit('select', {
     id: getUserId(participant),
     displayName: getDisplayName(participant),
-    username: getUserUsername(participant),
+    username: getUserUsername(participant)
   })
 }
 
 function getDisplayName(participant) {
   const user = getUser(participant)
-  
+
   if (user?.firstName && user?.lastName) {
     return `${user.firstName} ${user.lastName}`
   }
@@ -205,7 +206,7 @@ function getInitials(participant) {
   const user = getUser(participant)
   const firstName = user?.firstName || ''
   const lastName = user?.lastName || ''
-  
+
   if (firstName && lastName) {
     return (firstName[0] + lastName[0]).toUpperCase()
   }
@@ -229,13 +230,13 @@ function getInitials(participant) {
 
 function getAvatarStyle(participant) {
   const avatar = getUserAvatar(participant)
-  
+
   if (avatar) {
     return {
-      background: `url(${avatar}) center/cover no-repeat`,
+      background: `url(${avatar}) center/cover no-repeat`
     }
   }
-  
+
   const colors = [
     ['#667eea', '#764ba2'],
     ['#f093fb', '#f5576c'],
@@ -244,13 +245,13 @@ function getAvatarStyle(participant) {
     ['#fa709a', '#fee140'],
     ['#a8edea', '#fed6e3'],
     ['#d299c2', '#fef9d7'],
-    ['#89f7fe', '#66a6ff'],
+    ['#89f7fe', '#66a6ff']
   ]
   const userId = getUserId(participant) || ''
   const index = userId.charCodeAt(0) % colors.length
   const [from, to] = colors[index]
   return {
-    background: `linear-gradient(135deg, ${from} 0%, ${to} 100%)`,
+    background: `linear-gradient(135deg, ${from} 0%, ${to} 100%)`
   }
 }
 

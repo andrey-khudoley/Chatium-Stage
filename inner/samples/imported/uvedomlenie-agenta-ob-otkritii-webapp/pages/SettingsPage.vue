@@ -1,9 +1,13 @@
 <template>
   <div class="min-h-screen bg-gray-50 flex items-center justify-center p-4">
     <div class="bg-white rounded-lg shadow-md p-8 w-full max-w-6xl">
-      <div class="h-1.5 bg-gradient-to-r from-blue-900 via-blue-700 to-blue-800 rounded-t-lg -mx-8 -mt-8 mb-6"></div>
+      <div
+        class="h-1.5 bg-gradient-to-r from-blue-900 via-blue-700 to-blue-800 rounded-t-lg -mx-8 -mt-8 mb-6"
+      ></div>
 
-      <h1 class="text-2xl font-bold text-gray-900 mb-6 text-center">Уведомление агента об открытии WebApp</h1>
+      <h1 class="text-2xl font-bold text-gray-900 mb-6 text-center">
+        Уведомление агента об открытии WebApp
+      </h1>
 
       <div v-if="isLoading" class="text-center py-8">
         <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
@@ -17,84 +21,94 @@
           <div class="space-y-6">
             <!-- Выбор канала сендера -->
             <div class="bg-gray-50 p-4 rounded-lg">
-          <h2 class="text-lg font-semibold text-gray-900 mb-3">Телеграмм бот</h2>
-          <p class="text-sm text-gray-600 mb-4">
-            Выберите канал (Telegram бот) для отслеживания событий открытия WebApp
-          </p>
+              <h2 class="text-lg font-semibold text-gray-900 mb-3">Телеграмм бот</h2>
+              <p class="text-sm text-gray-600 mb-4">
+                Выберите канал (Telegram бот) для отслеживания событий открытия WebApp
+              </p>
 
-          <div v-if="channels.length > 0" class="space-y-2">
-            <label
-              v-for="channel in displayedChannels"
-              :key="channel.id"
-              class="flex items-center p-3 bg-white border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
-              :class="{ 'border-blue-500 bg-blue-50': selectedChannelId === channel.id }"
-            >
-              <input
-                type="radio"
-                :value="channel.id"
-                v-model="selectedChannelId"
-                class="w-4 h-4 text-blue-600"
-              />
-              <div class="ml-3">
-                <span class="text-sm font-medium text-gray-900">{{ channel.title }}</span>
-                <span v-if="channel.username" class="text-xs text-gray-500 ml-2">@{{ channel.username }}</span>
+              <div v-if="channels.length > 0" class="space-y-2">
+                <label
+                  v-for="channel in displayedChannels"
+                  :key="channel.id"
+                  class="flex items-center p-3 bg-white border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
+                  :class="{ 'border-blue-500 bg-blue-50': selectedChannelId === channel.id }"
+                >
+                  <input
+                    type="radio"
+                    :value="channel.id"
+                    v-model="selectedChannelId"
+                    class="w-4 h-4 text-blue-600"
+                  />
+                  <div class="ml-3">
+                    <span class="text-sm font-medium text-gray-900">{{ channel.title }}</span>
+                    <span v-if="channel.username" class="text-xs text-gray-500 ml-2"
+                      >@{{ channel.username }}</span
+                    >
+                  </div>
+                </label>
+
+                <button
+                  v-if="selectedChannelId && channels.length > 1"
+                  @click="isChannelListExpanded = !isChannelListExpanded"
+                  class="w-full flex items-center justify-center gap-2 p-2 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-md hover:bg-gray-50 transition-colors"
+                >
+                  <span>{{ isChannelListExpanded ? 'Свернуть' : 'Развернуть' }}</span>
+                  <i
+                    class="fas"
+                    :class="isChannelListExpanded ? 'fa-chevron-up' : 'fa-chevron-down'"
+                  ></i>
+                </button>
               </div>
-            </label>
 
-            <button
-              v-if="selectedChannelId && channels.length > 1"
-              @click="isChannelListExpanded = !isChannelListExpanded"
-              class="w-full flex items-center justify-center gap-2 p-2 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-md hover:bg-gray-50 transition-colors"
-            >
-              <span>{{ isChannelListExpanded ? 'Свернуть' : 'Развернуть' }}</span>
-              <i class="fas" :class="isChannelListExpanded ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
-            </button>
-          </div>
-
-          <div v-else class="text-gray-500 text-sm">Нет доступных каналов. Добавьте Telegram бота в настройках сендера.</div>
+              <div v-else class="text-gray-500 text-sm">
+                Нет доступных каналов. Добавьте Telegram бота в настройках сендера.
+              </div>
             </div>
 
             <!-- Выбор агента -->
             <div class="bg-gray-50 p-4 rounded-lg">
-          <h2 class="text-lg font-semibold text-gray-900 mb-3">Агент</h2>
-          <p class="text-sm text-gray-600 mb-4">
-            Выберите агента, которому будут отправляться события открытия WebApp
-          </p>
+              <h2 class="text-lg font-semibold text-gray-900 mb-3">Агент</h2>
+              <p class="text-sm text-gray-600 mb-4">
+                Выберите агента, которому будут отправляться события открытия WebApp
+              </p>
 
-          <div v-if="agents.length > 0" class="space-y-2 mb-4">
-            <label
-              v-for="agent in displayedAgents"
-              :key="agent.id"
-              class="flex items-center p-3 bg-white border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
-              :class="{ 'border-blue-500 bg-blue-50': selectedAgentId === agent.id }"
-            >
-              <input
-                type="radio"
-                :value="agent.id"
-                v-model="selectedAgentId"
-                class="w-4 h-4 text-blue-600"
-              />
-              <span class="ml-3 text-sm font-medium text-gray-900">{{ agent.title }}</span>
-            </label>
+              <div v-if="agents.length > 0" class="space-y-2 mb-4">
+                <label
+                  v-for="agent in displayedAgents"
+                  :key="agent.id"
+                  class="flex items-center p-3 bg-white border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
+                  :class="{ 'border-blue-500 bg-blue-50': selectedAgentId === agent.id }"
+                >
+                  <input
+                    type="radio"
+                    :value="agent.id"
+                    v-model="selectedAgentId"
+                    class="w-4 h-4 text-blue-600"
+                  />
+                  <span class="ml-3 text-sm font-medium text-gray-900">{{ agent.title }}</span>
+                </label>
 
-            <button
-              v-if="selectedAgentId && agents.length > 1"
-              @click="isAgentListExpanded = !isAgentListExpanded"
-              class="w-full flex items-center justify-center gap-2 p-2 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-md hover:bg-gray-50 transition-colors"
-            >
-              <span>{{ isAgentListExpanded ? 'Свернуть' : 'Развернуть' }}</span>
-              <i class="fas" :class="isAgentListExpanded ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
-            </button>
-          </div>
+                <button
+                  v-if="selectedAgentId && agents.length > 1"
+                  @click="isAgentListExpanded = !isAgentListExpanded"
+                  class="w-full flex items-center justify-center gap-2 p-2 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-md hover:bg-gray-50 transition-colors"
+                >
+                  <span>{{ isAgentListExpanded ? 'Свернуть' : 'Развернуть' }}</span>
+                  <i
+                    class="fas"
+                    :class="isAgentListExpanded ? 'fa-chevron-up' : 'fa-chevron-down'"
+                  ></i>
+                </button>
+              </div>
 
-          <div v-else class="text-gray-500 text-sm mb-4">Нет доступных агентов</div>
+              <div v-else class="text-gray-500 text-sm mb-4">Нет доступных агентов</div>
 
-          <button
-            @click="showCreateAgentModal = true"
-            class="px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-md hover:bg-blue-100 transition-colors"
-          >
-            + Создать агента
-          </button>
+              <button
+                @click="showCreateAgentModal = true"
+                class="px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-md hover:bg-blue-100 transition-colors"
+              >
+                + Создать агента
+              </button>
             </div>
           </div>
 
@@ -102,37 +116,48 @@
           <div class="space-y-6">
             <!-- Настройка режима -->
             <div class="bg-gray-50 p-4 rounded-lg">
-          <h2 class="text-lg font-semibold text-gray-900 mb-3">Настройки уведомлений</h2>
+              <h2 class="text-lg font-semibold text-gray-900 mb-3">Настройки уведомлений</h2>
 
-          <div class="space-y-3">
-            <label class="flex items-center cursor-pointer">
-              <input type="checkbox" v-model="onlyFirstVisit" class="w-4 h-4 text-blue-600 rounded" />
-              <span class="ml-3 text-sm text-gray-700">Оповещать агента только о новых пользователях</span>
-            </label>
+              <div class="space-y-3">
+                <label class="flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    v-model="onlyFirstVisit"
+                    class="w-4 h-4 text-blue-600 rounded"
+                  />
+                  <span class="ml-3 text-sm text-gray-700"
+                    >Оповещать агента только о новых пользователях</span
+                  >
+                </label>
 
-            <label class="flex items-center cursor-pointer">
-              <input type="checkbox" v-model="wakeAgent" class="w-4 h-4 text-blue-600 rounded" />
-              <span class="ml-3 text-sm text-gray-700">Разбудить агента</span>
-            </label>
-          </div>
+                <label class="flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    v-model="wakeAgent"
+                    class="w-4 h-4 text-blue-600 rounded"
+                  />
+                  <span class="ml-3 text-sm text-gray-700">Разбудить агента</span>
+                </label>
+              </div>
             </div>
 
             <!-- Шаблон сообщения -->
             <div class="bg-gray-50 p-4 rounded-lg">
-          <h2 class="text-lg font-semibold text-gray-900 mb-3">Шаблон сообщения</h2>
-          <p class="text-sm text-gray-600 mb-2">
-            Используйте <code class="bg-gray-200 px-1 rounded">[userData]</code> для вставки данных пользователя
-          </p>
+              <h2 class="text-lg font-semibold text-gray-900 mb-3">Шаблон сообщения</h2>
+              <p class="text-sm text-gray-600 mb-2">
+                Используйте <code class="bg-gray-200 px-1 rounded">[userData]</code> для вставки
+                данных пользователя
+              </p>
 
-          <textarea
-            v-model="messageTemplate"
-            rows="5"
-            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm font-mono"
-            placeholder="Пользователь открыл WebApp.
+              <textarea
+                v-model="messageTemplate"
+                rows="5"
+                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm font-mono"
+                placeholder="Пользователь открыл WebApp.
 
 Данные пользователя:
 [userData]"
-          ></textarea>
+              ></textarea>
             </div>
           </div>
         </div>
@@ -149,7 +174,11 @@
         </div>
 
         <!-- Статус -->
-        <div v-if="saveMessage" class="text-center text-sm" :class="saveError ? 'text-red-600' : 'text-green-600'">
+        <div
+          v-if="saveMessage"
+          class="text-center text-sm"
+          :class="saveError ? 'text-red-600' : 'text-green-600'"
+        >
           {{ saveMessage }}
         </div>
       </div>
@@ -175,7 +204,9 @@
           </div>
 
           <div class="mb-6">
-            <label class="block text-sm font-medium text-gray-700 mb-2">Инструкции для агента</label>
+            <label class="block text-sm font-medium text-gray-700 mb-2"
+              >Инструкции для агента</label
+            >
             <textarea
               v-model="newAgentInstructions"
               rows="4"
@@ -207,7 +238,13 @@
 
 <script setup>
 import { ref, onMounted, computed } from 'vue'
-import { apiGetAgentsRoute, apiGetChannelsRoute, apiGetSettingsRoute, apiSaveSettingsRoute, apiCreateAgentRoute } from '../api/settings'
+import {
+  apiGetAgentsRoute,
+  apiGetChannelsRoute,
+  apiGetSettingsRoute,
+  apiSaveSettingsRoute,
+  apiCreateAgentRoute
+} from '../api/settings'
 
 const isLoading = ref(true)
 const isSaving = ref(false)
@@ -233,14 +270,14 @@ const displayedAgents = computed(() => {
   if (!selectedAgentId.value || isAgentListExpanded.value) {
     return agents.value
   }
-  return agents.value.filter(a => a.id === selectedAgentId.value)
+  return agents.value.filter((a) => a.id === selectedAgentId.value)
 })
 
 const displayedChannels = computed(() => {
   if (!selectedChannelId.value || isChannelListExpanded.value) {
     return channels.value
   }
-  return channels.value.filter(c => c.id === selectedChannelId.value)
+  return channels.value.filter((c) => c.id === selectedChannelId.value)
 })
 
 onMounted(async () => {
@@ -259,8 +296,10 @@ onMounted(async () => {
       selectedChannelId.value = settingsData.channelId || ''
       onlyFirstVisit.value = settingsData.onlyFirstVisit || false
       wakeAgent.value = settingsData.wakeAgent ?? true
-      messageTemplate.value = settingsData.messageTemplate || 'Пользователь открыл WebApp.\n\nДанные пользователя:\n[userData]'
-      
+      messageTemplate.value =
+        settingsData.messageTemplate ||
+        'Пользователь открыл WebApp.\n\nДанные пользователя:\n[userData]'
+
       // Свернуть списки, если уже выбраны
       if (settingsData.agentId) {
         isAgentListExpanded.value = false
@@ -282,8 +321,8 @@ const saveSettings = async () => {
   saveError.value = false
 
   try {
-    const selectedAgent = agents.value.find(a => a.id === selectedAgentId.value)
-    const selectedChannel = channels.value.find(c => c.id === selectedChannelId.value)
+    const selectedAgent = agents.value.find((a) => a.id === selectedAgentId.value)
+    const selectedChannel = channels.value.find((c) => c.id === selectedChannelId.value)
 
     await apiSaveSettingsRoute.run(ctx, {
       agentId: selectedAgentId.value,

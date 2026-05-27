@@ -17,7 +17,10 @@ export function extractPathParamNames(pathTemplate: string): string[] {
 /**
  * Заменяет `{name}` на значение из args[name]; удаляет использованные ключи из копии args.
  */
-export function applyPathTemplate(pathTemplate: string, args: Record<string, unknown>): {
+export function applyPathTemplate(
+  pathTemplate: string,
+  args: Record<string, unknown>
+): {
   path: string
   restArgs: Record<string, unknown>
 } {

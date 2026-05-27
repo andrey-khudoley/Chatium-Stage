@@ -7,9 +7,9 @@ export const TProjektChatAppSettings9JI = Heap.Table(
     key: Heap.Optional(Heap.String({ customMeta: { title: 'Ключ настройки' } })),
     value: Heap.Optional(Heap.String({ customMeta: { title: 'Значение' } })),
     category: Heap.Optional(Heap.String({ customMeta: { title: 'Категория' } })),
-    description: Heap.Optional(Heap.String({ customMeta: { title: 'Описание' } })),
+    description: Heap.Optional(Heap.String({ customMeta: { title: 'Описание' } }))
   },
-  { customMeta: { title: 'Настройки приложения', description: '' } },
+  { customMeta: { title: 'Настройки приложения', description: '' } }
 )
 
 export default TProjektChatAppSettings9JI

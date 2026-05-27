@@ -8,7 +8,7 @@ export const apiAgentsMigrationRoute = app.post('/migrate', async (ctx, req) => 
   requireAccountRole(ctx, 'Admin')
 
   const agents = await ChatAgents.findAll(ctx, {
-    limit: 1000,
+    limit: 1000
   })
 
   const results = []
@@ -34,13 +34,13 @@ export const apiAgentsMigrationRoute = app.post('/migrate', async (ctx, req) => 
       // Создаем бот-пользователя для агента
       const botUser = await createOrUpdateBotUser(ctx, `agent-${agent.agentId}`, {
         firstName: agent.agentName || 'Агент',
-        lastName: '',
+        lastName: ''
       })
 
       // Обновляем запись агента
       await ChatAgents.update(ctx, {
         id: agent.id,
-        botUserId: botUser.id,
+        botUserId: botUser.id
       })
 
       // Добавляем бот-пользователя как участника чата
@@ -48,18 +48,17 @@ export const apiAgentsMigrationRoute = app.post('/migrate', async (ctx, req) => 
       if (feed) {
         await createOrUpdateFeedParticipant(ctx, feed, botUser, {
           role: 'guest',
-          silent: true,
+          silent: true
         })
       }
 
-      results.push({ 
-        agentId: agent.id, 
-        status: 'migrated', 
+      results.push({
+        agentId: agent.id,
+        status: 'migrated',
         botUserId: botUser.id,
-        chatId: chat.id 
+        chatId: chat.id
       })
       migrated++
-
     } catch (error) {
       results.push({ agentId: agent.id, status: 'error', reason: error.message })
       errors++
@@ -72,8 +71,8 @@ export const apiAgentsMigrationRoute = app.post('/migrate', async (ctx, req) => 
       total: agents.length,
       migrated,
       errors,
-      skipped: agents.length - migrated - errors,
+      skipped: agents.length - migrated - errors
     },
-    results,
+    results
   }
 })

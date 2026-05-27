@@ -7,17 +7,17 @@ export const TSaasRefProgramPartner3Ab7Cd = Heap.Table(
     campaignId: Heap.Optional(
       Heap.RefLink('t__tg-ref-program__campaign__8Hn4Lx', {
         customMeta: { title: 'Кампания' },
-        onDelete: 'none',
-      }),
+        onDelete: 'none'
+      })
     ),
     tgId: Heap.Optional(Heap.String({ customMeta: { title: 'Telegram ID' } })),
     username: Heap.Optional(Heap.String({ customMeta: { title: 'Username' } })),
     fullName: Heap.Optional(Heap.String({ customMeta: { title: 'Полное имя' } })),
     stats: Heap.Optional(
-      Heap.Any({ customMeta: { title: 'Статистика', description: 'Агрегированные показатели' } }),
-    ),
+      Heap.Any({ customMeta: { title: 'Статистика', description: 'Агрегированные показатели' } })
+    )
   },
-  { customMeta: { title: 'Партнёры', description: 'Партнёры кампании (Telegram)' } },
+  { customMeta: { title: 'Партнёры', description: 'Партнёры кампании (Telegram)' } }
 )
 
 export default TSaasRefProgramPartner3Ab7Cd

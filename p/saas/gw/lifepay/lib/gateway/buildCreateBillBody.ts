@@ -70,7 +70,9 @@ export function buildCreateBillBody(
 /**
  * Возвращает копию тела без секретов (`apikey`, `login`) - для безопасного логирования.
  */
-export function redactCreateBillBodyForLog(body: CreateBillLpBody): Omit<CreateBillLpBody, 'apikey' | 'login'> {
+export function redactCreateBillBodyForLog(
+  body: CreateBillLpBody
+): Omit<CreateBillLpBody, 'apikey' | 'login'> {
   const { apikey: _a, login: _l, ...rest } = body
   return rest
 }

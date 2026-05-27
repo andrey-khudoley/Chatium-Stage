@@ -3,9 +3,7 @@
  * (gatewayUpstreamLog.table).
  */
 
-import GatewayUpstreamLog, {
-  type GatewayUpstreamLogRow
-} from '../tables/gatewayUpstreamLog.table'
+import GatewayUpstreamLog, { type GatewayUpstreamLogRow } from '../tables/gatewayUpstreamLog.table'
 import * as loggerLib from '../lib/logger.lib'
 
 const LOG_MODULE = 'repos/gatewayUpstreamLog.repo'
@@ -44,10 +42,7 @@ export async function create(
   return row
 }
 
-export async function findRecent(
-  ctx: app.Ctx,
-  limit: number
-): Promise<GatewayUpstreamLogRow[]> {
+export async function findRecent(ctx: app.Ctx, limit: number): Promise<GatewayUpstreamLogRow[]> {
   return GatewayUpstreamLog.findAll(ctx, {
     order: [{ sentAt: 'desc' }],
     limit
@@ -80,10 +75,7 @@ export async function findRecentFiltered(
   })
 }
 
-export async function findById(
-  ctx: app.Ctx,
-  id: string
-): Promise<GatewayUpstreamLogRow | null> {
+export async function findById(ctx: app.Ctx, id: string): Promise<GatewayUpstreamLogRow | null> {
   return GatewayUpstreamLog.findById(ctx, id)
 }
 
@@ -98,19 +90,13 @@ export async function findByRequestId(
   return rows[0] ?? null
 }
 
-export async function countSince(
-  ctx: app.Ctx,
-  sinceTimestamp: number
-): Promise<number> {
+export async function countSince(ctx: app.Ctx, sinceTimestamp: number): Promise<number> {
   return GatewayUpstreamLog.countBy(ctx, {
     sentAt: { $gte: sinceTimestamp }
   })
 }
 
-export async function countOkSince(
-  ctx: app.Ctx,
-  sinceTimestamp: number
-): Promise<number> {
+export async function countOkSince(ctx: app.Ctx, sinceTimestamp: number): Promise<number> {
   return GatewayUpstreamLog.countBy(ctx, {
     sentAt: { $gte: sinceTimestamp },
     upstreamKind: 'json_ok',

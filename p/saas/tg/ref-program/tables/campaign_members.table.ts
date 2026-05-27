@@ -7,18 +7,18 @@ export const TSaasRefCampaignMemberPg7T2x = Heap.Table(
     campaignId: Heap.Optional(
       Heap.RefLink('t__tg-ref-program__campaign__8Hn4Lx', {
         customMeta: { title: 'Кампания' },
-        onDelete: 'none',
-      }),
+        onDelete: 'none'
+      })
     ),
     userId: Heap.Optional(
       Heap.UserRefLink({
         customMeta: { title: 'Пользователь' },
-        onDelete: 'none',
-      }),
+        onDelete: 'none'
+      })
     ),
-    role: Heap.Optional(Heap.String({ customMeta: { title: 'Роль' } })),
+    role: Heap.Optional(Heap.String({ customMeta: { title: 'Роль' } }))
   },
-  { customMeta: { title: 'Участники кампании', description: 'Участники кампании' } },
+  { customMeta: { title: 'Участники кампании', description: 'Участники кампании' } }
 )
 
 export default TSaasRefCampaignMemberPg7T2x

@@ -1,4 +1,10 @@
-import { requireRealUser, requireAccountRole, findUsersByIds, findIdentities, createOrUpdateBotUser } from '@app/auth'
+import {
+  requireRealUser,
+  requireAccountRole,
+  findUsersByIds,
+  findIdentities,
+  createOrUpdateBotUser
+} from '@app/auth'
 import {
   createFeed,
   getFeedById,
@@ -8,7 +14,7 @@ import {
   deleteFeedParticipant,
   findFeedParticipants,
   findFeedMessages,
-  getChat,
+  getChat
 } from '@app/feed'
 import { sendDataToSocket } from '@app/socket'
 import Chats from '../tables/chats.table'
@@ -23,41 +29,43 @@ import { Money } from '@app/heap'
 
 // Вспомогательная функция для обогащения участников данными пользователей
 async function enrichParticipantsWithUserData(ctx, participants) {
-  const userIds = [...new Set(participants.map(p => p.userId))]
-  
+  const userIds = [...new Set(participants.map((p) => p.userId))]
+
   if (userIds.length === 0) {
-    return participants.map(p => ({
+    return participants.map((p) => ({
       ...p,
-      user: null,
+      user: null
     }))
   }
 
   const users = await findUsersByIds(ctx, userIds)
-  
+
   // Получаем identity для всех пользователей
   const allIdentities = await findIdentities(ctx, {
     where: { userId: userIds },
-    limit: 1000,
+    limit: 1000
   })
-  
-  const usersMap = new Map(users.map(u => [u.id, u]))
-  
-  return participants.map(p => {
+
+  const usersMap = new Map(users.map((u) => [u.id, u]))
+
+  return participants.map((p) => {
     const user = usersMap.get(p.userId)
-    const userIdentities = allIdentities.filter(i => i.userId === p.userId)
-    
+    const userIdentities = allIdentities.filter((i) => i.userId === p.userId)
+
     return {
       ...p,
-      user: user ? {
-        id: user.id,
-        displayName: user.displayName,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        username: user.username,
-        avatar: user.imageUrl,
-        email: userIdentities.find(i => i.type === 'Email')?.key || null,
-        phone: userIdentities.find(i => i.type === 'Phone')?.key || null,
-      } : null,
+      user: user
+        ? {
+            id: user.id,
+            displayName: user.displayName,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            username: user.username,
+            avatar: user.imageUrl,
+            email: userIdentities.find((i) => i.type === 'Email')?.key || null,
+            phone: userIdentities.find((i) => i.type === 'Phone')?.key || null
+          }
+        : null
     }
   })
 }
@@ -68,51 +76,54 @@ function generateId() {
 // Вспомогательная функция для определения отображаемого имени личного чата
 function getDirectChatDisplayTitle(participants, currentUserId) {
   // Находим собеседника (не текущего пользователя)
-  const otherParticipant = participants.find(p => p.userId !== currentUserId)
-  
+  const otherParticipant = participants.find((p) => p.userId !== currentUserId)
+
   if (!otherParticipant || !otherParticipant.user) {
     return 'Пользователь'
   }
-  
+
   const user = otherParticipant.user
-  return user.displayName || 
+  return (
+    user.displayName ||
     (user.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : null) ||
     user.username ||
     'Пользователь'
+  )
 }
 
 // Функция для обогащения последних сообщений данными авторов
 async function enrichLastMessagesWithAuthors(ctx, messages) {
   const authorIds = messages
-    .filter(m => m && m.createdBy)
-    .map(m => {
+    .filter((m) => m && m.createdBy)
+    .map((m) => {
       if (typeof m.createdBy === 'object') return m.createdBy.id
       return m.createdBy
     })
-  
+
   const uniqueAuthorIds = [...new Set(authorIds)]
-  
+
   if (uniqueAuthorIds.length === 0) {
-    return messages.map(m => ({ ...m, author: null }))
+    return messages.map((m) => ({ ...m, author: null }))
   }
 
   const users = await findUsersByIds(ctx, uniqueAuthorIds)
-  const usersMap = new Map(users.map(u => [u.id, u]))
+  const usersMap = new Map(users.map((u) => [u.id, u]))
 
-  return messages.map(message => {
-    const authorId = typeof message.createdBy === 'object' 
-      ? message.createdBy?.id 
-      : message.createdBy
+  return messages.map((message) => {
+    const authorId =
+      typeof message.createdBy === 'object' ? message.createdBy?.id : message.createdBy
     const user = usersMap.get(authorId)
-    
+
     return {
       ...message,
-      author: user ? {
-        id: user.id,
-        displayName: user.displayName,
-        firstName: user.firstName,
-        lastName: user.lastName,
-      } : null,
+      author: user
+        ? {
+            id: user.id,
+            displayName: user.displayName,
+            firstName: user.firstName,
+            lastName: user.lastName
+          }
+        : null
     }
   })
 }
@@ -123,7 +134,7 @@ export const apiChatsListRoute = app.get('/list', async (ctx, req) => {
   // Получаем все чаты из таблицы
   const allChats = await Chats.findAll(ctx, {
     order: [{ updatedAt: 'desc' }],
-    limit: 1000,
+    limit: 1000
   })
 
   // Проверяем баны для всех чатов асинхронно
@@ -147,7 +158,10 @@ export const apiChatsListRoute = app.get('/list', async (ctx, req) => {
 
   // Собираем все чаты из подписок
   const subscriptionChatIds = new Set<string>()
-  const chatSubscriptionMap = new Map<string, { subscriptionId: string, planId: string, endDate: Date }>()
+  const chatSubscriptionMap = new Map<
+    string,
+    { subscriptionId: string; planId: string; endDate: Date }
+  >()
 
   for (const sub of userSubscriptions) {
     const planChats = await PlanChats.findAll(ctx, {
@@ -173,15 +187,25 @@ export const apiChatsListRoute = app.get('/list', async (ctx, req) => {
         const myParticipant = participants.find((p) => p.userId === ctx.user.id)
         const isParticipant = !!myParticipant
         const myRole = myParticipant?.role || null
-        
+
         if (participants.length === 0) {
           // console.log(`[apiChatsList] Чат ${chat.feedId} (${chat.title}) - нет участников!`)
         }
-        
-        return { chat, isParticipant, myRole, participantsCount: participants.length, isPublic: chat.isPublic }
+
+        return {
+          chat,
+          isParticipant,
+          myRole,
+          participantsCount: participants.length,
+          isPublic: chat.isPublic
+        }
       } catch (e) {
         // Если feed не найден — удаляем "мертвую" запись из таблицы
-        if (e.message?.includes('not found') || e.message?.includes('не найден') || e.message?.includes('null')) {
+        if (
+          e.message?.includes('not found') ||
+          e.message?.includes('не найден') ||
+          e.message?.includes('null')
+        ) {
           // console.log(`[apiChatsList] Feed ${chat.feedId} не найден, удаляем "мертвую" запись ${chat.id}`)
           try {
             // Удаляем связанных агентов
@@ -201,15 +225,26 @@ export const apiChatsListRoute = app.get('/list', async (ctx, req) => {
             // console.log(`[apiChatsList] Ошибка удаления "мертвой" записи:`, deleteErr.message)
           }
         }
-        return { chat: null, isParticipant: false, myRole: null, participantsCount: 0, isPublic: false }
+        return {
+          chat: null,
+          isParticipant: false,
+          myRole: null,
+          participantsCount: 0,
+          isPublic: false
+        }
       }
-    }),
+    })
   )
 
   // Фильтруем чаты: где пользователь участник ИЛИ публичные чаты ИЛИ доступны по подписке
   // Исключаем чаты, где пользователь забанен
   let accessibleChats = chatsWithParticipants
-    .filter((c) => c.chat && !bannedChatIds.has(c.chat.feedId) && (c.isParticipant || c.isPublic || subscriptionChatIds.has(c.chat.feedId)))
+    .filter(
+      (c) =>
+        c.chat &&
+        !bannedChatIds.has(c.chat.feedId) &&
+        (c.isParticipant || c.isPublic || subscriptionChatIds.has(c.chat.feedId))
+    )
     .map((c) => {
       const subInfo = chatSubscriptionMap.get(c.chat.feedId)
       return {
@@ -218,16 +253,18 @@ export const apiChatsListRoute = app.get('/list', async (ctx, req) => {
         myRole: c.myRole,
         participantsCount: c.participantsCount,
         isAccessibleBySubscription: subscriptionChatIds.has(c.chat.feedId) && !c.isParticipant,
-        subscriptionInfo: subInfo ? {
-          subscriptionId: subInfo.subscriptionId,
-          planId: subInfo.planId,
-          endDate: subInfo.endDate
-        } : null
+        subscriptionInfo: subInfo
+          ? {
+              subscriptionId: subInfo.subscriptionId,
+              planId: subInfo.planId,
+              endDate: subInfo.endDate
+            }
+          : null
       }
     })
 
   // Для личных чатов обогащаем данными участников (для отображения имени собеседника)
-  const directChats = accessibleChats.filter(c => c.type === 'direct')
+  const directChats = accessibleChats.filter((c) => c.type === 'direct')
   if (directChats.length > 0) {
     const directChatsWithParticipants = await Promise.all(
       directChats.map(async (chat) => {
@@ -237,15 +274,15 @@ export const apiChatsListRoute = app.get('/list', async (ctx, req) => {
           ...chat,
           participants: enrichedParticipants,
           // Для личного чата определяем имя собеседника
-          displayTitle: getDirectChatDisplayTitle(enrichedParticipants, ctx.user.id),
+          displayTitle: getDirectChatDisplayTitle(enrichedParticipants, ctx.user.id)
         }
       })
     )
-    
+
     // Заменяем личные чаты на обогащенные версии
-    accessibleChats = accessibleChats.map(chat => {
+    accessibleChats = accessibleChats.map((chat) => {
       if (chat.type === 'direct') {
-        const enriched = directChatsWithParticipants.find(c => c.feedId === chat.feedId)
+        const enriched = directChatsWithParticipants.find((c) => c.feedId === chat.feedId)
         return enriched || chat
       }
       return chat
@@ -267,29 +304,29 @@ export const apiChatsListRoute = app.get('/list', async (ctx, req) => {
         try {
           messages = await findFeedMessages(ctx, chat.feedId, {
             mode: 'tail',
-            limit: 1,
+            limit: 1
           })
         } catch (feedError) {
           // Если tail mode падает, пробуем head
           try {
             messages = await findFeedMessages(ctx, chat.feedId, {
               mode: 'head',
-              limit: 1,
+              limit: 1
             })
           } catch (headError) {
             // console.log(`[apiChatsList] Failed to load messages for ${chat.feedId}:`, headError.message)
             messages = []
           }
         }
-        
+
         const lastMessage = messages.length > 0 ? messages[0] : null
-        
+
         if (lastMessage) {
           // Обогащаем последнее сообщение данными автора
           const enrichedMessages = await enrichLastMessagesWithAuthors(ctx, [lastMessage])
           return { ...chat, lastMessage: enrichedMessages[0] }
         }
-        
+
         return { ...chat, lastMessage: null }
       } catch (e) {
         // console.log(`[apiChatsList] Ошибка получения последнего сообщения для ${chat.feedId}:`, e.message)
@@ -305,7 +342,7 @@ export const apiChatsListRoute = app.get('/list', async (ctx, req) => {
         const feed = await getFeedById(ctx, chat.feedId)
         return {
           ...chat,
-          inboxSubjectId: feed.inboxSubjectId,
+          inboxSubjectId: feed.inboxSubjectId
         }
       } catch (e) {
         return chat
@@ -314,7 +351,7 @@ export const apiChatsListRoute = app.get('/list', async (ctx, req) => {
   )
 
   return {
-    chats: chatsWithInbox,
+    chats: chatsWithInbox
   }
 })
 
@@ -327,22 +364,26 @@ export const apiChatsCreateRoute = app
     avatarHash: s.string().nullable(),
     // Настройки платного чата
     isPaid: s.boolean().optional(),
-    plans: s.array(s.object({
-      name: s.string(),
-      priceAmount: s.number(),
-      priceCurrency: s.string(),
-      durationType: s.string(),
-      durationValue: s.number(),
-      allowAutoRenewal: s.boolean().optional(),
-      isActive: s.boolean().optional(),
-    })).optional(),
+    plans: s
+      .array(
+        s.object({
+          name: s.string(),
+          priceAmount: s.number(),
+          priceCurrency: s.string(),
+          durationType: s.string(),
+          durationValue: s.number(),
+          allowAutoRenewal: s.boolean().optional(),
+          isActive: s.boolean().optional()
+        })
+      )
+      .optional(),
     // Настройки агента
     withAgent: s.boolean().optional(),
     agentId: s.string().optional(),
     agentKey: s.string().optional(),
     agentName: s.string().optional(),
     agentRespondTo: s.string().optional(), // 'all' | 'admins' | 'mention'
-    agentRespondToMention: s.string().optional(), // 'all' | 'admins'
+    agentRespondToMention: s.string().optional() // 'all' | 'admins'
   }))
   .post('/create', async (ctx, req) => {
     requireRealUser(ctx)
@@ -357,14 +398,17 @@ export const apiChatsCreateRoute = app
       requireAccountRole(ctx, 'Admin')
     }
 
-    ctx.account.log(`[apiChatsCreate] Создание чата "${req.body.title}" пользователем ${ctx.user.id}`, { level: 'info' })
+    ctx.account.log(
+      `[apiChatsCreate] Создание чата "${req.body.title}" пользователем ${ctx.user.id}`,
+      { level: 'info' }
+    )
 
     const inboxSubjectId = `chat-${generateId()}`
 
     const feed = await createFeed(ctx, {
       title: req.body.title,
       inboxSubjectId,
-      inboxUrl: `/projekt-chat/chat~${inboxSubjectId}`,
+      inboxUrl: `/projekt-chat/chat~${inboxSubjectId}`
     })
 
     ctx.account.log(`[apiChatsCreate] Feed создан: ${feed.id}`, { level: 'info' })
@@ -377,9 +421,9 @@ export const apiChatsCreateRoute = app
       isPublic: req.body.isPublic || false,
       isPaid: req.body.isPaid || false,
       description: req.body.description || '',
-      avatarHash: req.body.avatarHash || null,
+      avatarHash: req.body.avatarHash || null
     })
-    
+
     // Создаем тарифы если чат платный
     if (req.body.isPaid && req.body.plans && req.body.plans.length > 0) {
       for (let i = 0; i < req.body.plans.length; i++) {
@@ -405,31 +449,45 @@ export const apiChatsCreateRoute = app
 
     const participant = await createOrUpdateFeedParticipant(ctx, feed, ctx.user, {
       role: 'owner',
-      silent: true,
+      silent: true
     })
 
-    ctx.account.log(`[apiChatsCreate] Участник создан: ${participant ? 'OK' : 'FAIL'}, userId: ${ctx.user.id}`, { level: 'info' })
+    ctx.account.log(
+      `[apiChatsCreate] Участник создан: ${participant ? 'OK' : 'FAIL'}, userId: ${ctx.user.id}`,
+      { level: 'info' }
+    )
 
     // Добавляем агента в чат если указано
-    ctx.account.log('[apiChatsCreate] Agent check', { 
+    ctx.account.log('[apiChatsCreate] Agent check', {
       level: 'info',
-      json: { withAgent: req.body.withAgent, agentId: req.body.agentId, type: req.body.type, isGroup: req.body.type === 'group', chatId: chat.id }
+      json: {
+        withAgent: req.body.withAgent,
+        agentId: req.body.agentId,
+        type: req.body.type,
+        isGroup: req.body.type === 'group',
+        chatId: chat.id
+      }
     })
-    
+
     if (req.body.withAgent && req.body.agentId && req.body.type === 'group') {
       ctx.account.log('[apiChatsCreate] Starting agent creation...', { level: 'info' })
       try {
         // Создаем бот-пользователя для агента (или получаем существующего)
         // Username должен содержать только a-z, 0-9, _ и минимум 5 символов
         const botUsername = `agent_${req.body.agentId.toLowerCase().replace(/[^a-z0-9_]/g, '_')}`
-        ctx.account.log('[apiChatsCreate] Creating bot user...', { level: 'info', json: { botUsername } })
+        ctx.account.log('[apiChatsCreate] Creating bot user...', {
+          level: 'info',
+          json: { botUsername }
+        })
         const botUser = await createOrUpdateBotUser(ctx, botUsername, {
           firstName: req.body.agentName || 'Агент',
-          lastName: '',
+          lastName: ''
         })
-        
-        ctx.account.log(`[apiChatsCreate] Бот-пользователь для агента создан: ${botUser.id}`, { level: 'info' })
-        
+
+        ctx.account.log(`[apiChatsCreate] Бот-пользователь для агента создан: ${botUser.id}`, {
+          level: 'info'
+        })
+
         // Подготавливаем данные для создания агента
         const agentData = {
           chat: chat.id,
@@ -439,28 +497,36 @@ export const apiChatsCreateRoute = app
           botUserId: botUser.id,
           respondTo: req.body.agentRespondTo || 'all',
           respondToMention: req.body.agentRespondToMention || 'all',
-          isActive: true,
+          isActive: true
         }
         ctx.account.log('[apiChatsCreate] Agent data prepared', { level: 'info', json: agentData })
-        
+
         ctx.account.log('[apiChatsCreate] Creating ChatAgents record...', { level: 'info' })
         const createdAgent = await ChatAgents.create(ctx, agentData)
-        ctx.account.log(`[apiChatsCreate] ChatAgents record created: ${createdAgent.id}`, { level: 'info' })
-        
+        ctx.account.log(`[apiChatsCreate] ChatAgents record created: ${createdAgent.id}`, {
+          level: 'info'
+        })
+
         // Добавляем бот-пользователя агента как участника чата
         ctx.account.log('[apiChatsCreate] Adding bot user as participant...', { level: 'info' })
         await createOrUpdateFeedParticipant(ctx, feed, botUser, {
           role: 'guest',
-          silent: true,
+          silent: true
         })
-        
-        ctx.account.log(`[apiChatsCreate] Агент ${req.body.agentId} добавлен в чат с botUserId: ${botUser.id}`, { level: 'info' })
+
+        ctx.account.log(
+          `[apiChatsCreate] Агент ${req.body.agentId} добавлен в чат с botUserId: ${botUser.id}`,
+          { level: 'info' }
+        )
       } catch (agentError) {
-        ctx.account.log('[apiChatsCreate] Ошибка добавления агента', { level: 'error', json: { error: agentError.message, stack: agentError.stack } })
+        ctx.account.log('[apiChatsCreate] Ошибка добавления агента', {
+          level: 'error',
+          json: { error: agentError.message, stack: agentError.stack }
+        })
         // Не прерываем создание чата если агент не добавился
       }
     } else {
-      ctx.account.log('[apiChatsCreate] Agent NOT added', { 
+      ctx.account.log('[apiChatsCreate] Agent NOT added', {
         level: 'warn',
         json: {
           withAgent: req.body.withAgent,
@@ -473,13 +539,15 @@ export const apiChatsCreateRoute = app
 
     // Проверяем, создался ли агент
     const agentsAfterCreate = await ChatAgents.findAll(ctx, { where: { chat: chat.id } })
-    ctx.account.log(`[apiChatsCreate] Agents after create: ${agentsAfterCreate.length}`, { level: 'info' })
-    
+    ctx.account.log(`[apiChatsCreate] Agents after create: ${agentsAfterCreate.length}`, {
+      level: 'info'
+    })
+
     return {
       success: true,
       chat,
       feedId: feed.id,
-      agentAdded: agentsAfterCreate.length > 0,
+      agentAdded: agentsAfterCreate.length > 0
     }
   })
 
@@ -487,7 +555,7 @@ export const apiChatGetRoute = app.get('/:feedId', async (ctx, req) => {
   requireRealUser(ctx)
 
   const chat = await Chats.findOneBy(ctx, {
-    feedId: req.params.feedId,
+    feedId: req.params.feedId
   })
 
   if (!chat) {
@@ -499,7 +567,11 @@ export const apiChatGetRoute = app.get('/:feedId', async (ctx, req) => {
     participants = await findFeedParticipants(ctx, req.params.feedId)
   } catch (e) {
     // Если feed не найден — удаляем "мертвую" запись и возвращаем ошибку
-    if (e.message?.includes('not found') || e.message?.includes('не найден') || e.message?.includes('null')) {
+    if (
+      e.message?.includes('not found') ||
+      e.message?.includes('не найден') ||
+      e.message?.includes('null')
+    ) {
       // console.log(`[apiChatGet] Feed ${req.params.feedId} не найден, удаляем "мертвую" запись ${chat.id}`)
       try {
         // Удаляем связанных агентов
@@ -521,7 +593,7 @@ export const apiChatGetRoute = app.get('/:feedId', async (ctx, req) => {
     }
     throw new Error('Чат не найден')
   }
-  
+
   const isParticipant = participants.some((p) => p.userId === ctx.user.id)
 
   // Проверяем, не забанен ли пользователь
@@ -534,28 +606,28 @@ export const apiChatGetRoute = app.get('/:feedId', async (ctx, req) => {
   const ownerId = typeof chat.owner === 'object' ? chat.owner?.id : chat.owner
   const isOwner = ownerId === ctx.user.id
   const isWorkspaceAdmin = ctx.user.is('Admin') || ctx.user.is('Owner')
-  
+
   // Проверяем, есть ли принятое приглашение (пользователь может вступить)
   let hasAcceptedInvite = false
   if (!isParticipant && !isOwner && !chat.isPublic && !isWorkspaceAdmin) {
     const acceptedInvite = await ChatInvites.findOneBy(ctx, {
       chat: chat.id,
       invitedUser: ctx.user.id,
-      status: 'accepted',
+      status: 'accepted'
     })
     hasAcceptedInvite = !!acceptedInvite
   }
-  
+
   if (!isParticipant && !isOwner && !chat.isPublic && !isWorkspaceAdmin && !hasAcceptedInvite) {
     throw new Error('Нет доступа к этому чату')
   }
 
   const feed = await getFeedById(ctx, req.params.feedId)
-  
+
   if (!feed) {
     throw new Error('Чат не найден')
   }
-  
+
   // Собираем chatProps вручную вместо использования getChat (избегаем ошибки endsWith)
   const chatProps = {
     feedId: feed.id,
@@ -563,18 +635,18 @@ export const apiChatGetRoute = app.get('/:feedId', async (ctx, req) => {
     pinnedMessageId: feed.pinnedMessageId,
     lastMessageId: feed.lastMessageId,
     inboxSubjectId: feed.inboxSubjectId,
-    inboxUrl: feed.inboxUrl,
+    inboxUrl: feed.inboxUrl
   }
-  
+
   const enrichedParticipants = await enrichParticipantsWithUserData(ctx, participants)
 
   // Для личных чатов определяем отображаемое имя и информацию о собеседнике
   let otherUser = null
   let displayTitle = chat.title
-  
+
   if (chat.type === 'direct') {
     displayTitle = getDirectChatDisplayTitle(enrichedParticipants, ctx.user.id)
-    const otherParticipant = enrichedParticipants.find(p => p.userId !== ctx.user.id)
+    const otherParticipant = enrichedParticipants.find((p) => p.userId !== ctx.user.id)
     if (otherParticipant?.user) {
       otherUser = otherParticipant.user
     }
@@ -585,13 +657,13 @@ export const apiChatGetRoute = app.get('/:feedId', async (ctx, req) => {
       ...chat,
       displayTitle,
       inboxSubjectId: feed.inboxSubjectId,
-      inboxUrl: feed.inboxUrl,
+      inboxUrl: feed.inboxUrl
     },
     feed,
     participants: enrichedParticipants,
     chatProps,
     isMember: isParticipant,
-    otherUser,
+    otherUser
   }
 })
 
@@ -600,13 +672,13 @@ export const apiChatUpdateRoute = app
     title: s.string().optional(),
     description: s.string().optional(),
     isPublic: s.boolean().optional(),
-    avatarHash: s.string().nullable(),
+    avatarHash: s.string().nullable()
   }))
   .post('/:feedId/update', async (ctx, req) => {
     requireRealUser(ctx)
 
     const chat = await Chats.findOneBy(ctx, {
-      feedId: req.params.feedId,
+      feedId: req.params.feedId
     })
 
     if (!chat) {
@@ -623,16 +695,16 @@ export const apiChatUpdateRoute = app
     // Только админ или владелец могут редактировать чат
     // Для публичных чатов также администраторы воркспейса
     const canManage = await canManageChat(ctx, req.params.feedId, ctx.user.id, chat.isPublic)
-    
+
     // Дополнительная проверка — владелец чата всегда может редактировать
     const isOwner = ownerId === ctx.user.id
-    
+
     // console.log('[DEBUG apiChatUpdate] canManage result:', canManage, 'isOwner:', isOwner)
-    
+
     if (!canManage && !isOwner) {
       throw new Error('Только администратор или владелец могут редактировать чат')
     }
-    
+
     // Только администраторы воркспейса могут делать чат публичным
     // (изменение с false на true или создание публичного чата)
     if (req.body.isPublic === true && !chat.isPublic) {
@@ -647,36 +719,35 @@ export const apiChatUpdateRoute = app
 
     const updateData: any = {}
     if (req.body.title) updateData.title = req.body.title
-    if (req.body.description !== undefined)
-      updateData.description = req.body.description
+    if (req.body.description !== undefined) updateData.description = req.body.description
     if (req.body.isPublic !== undefined) updateData.isPublic = req.body.isPublic
     if (req.body.avatarHash !== undefined) updateData.avatarHash = req.body.avatarHash
 
     const updatedChat = await Chats.update(ctx, {
       id: chat.id,
-      ...updateData,
+      ...updateData
     })
 
     if (req.body.title) {
       await updateFeed(ctx, {
         id: req.params.feedId,
-        title: req.body.title,
+        title: req.body.title
       })
     }
 
     return {
       success: true,
-      chat: updatedChat,
+      chat: updatedChat
     }
   })
 
 export const apiChatDeleteRoute = app.post('/:feedId/delete', async (ctx, req) => {
   requireRealUser(ctx)
-  
+
   // console.log(`[apiChatDelete] User ${ctx.user.id} attempting to delete feed ${req.params.feedId}`)
 
   const chat = await Chats.findOneBy(ctx, {
-    feedId: req.params.feedId,
+    feedId: req.params.feedId
   })
 
   if (!chat) {
@@ -690,9 +761,9 @@ export const apiChatDeleteRoute = app.post('/:feedId/delete', async (ctx, req) =
   const ownerId = typeof chat.owner === 'object' ? chat.owner?.id : chat.owner
   const isOwner = ownerId === ctx.user.id
   const isWorkspaceAdmin = ctx.user.is('Admin') || ctx.user.is('Owner')
-  
+
   // console.log(`[apiChatDelete] isOwner: ${isOwner}, isWorkspaceAdmin: ${isWorkspaceAdmin}, ownerId: ${ownerId}, userId: ${ctx.user.id}`)
-  
+
   if (!isOwner && !isWorkspaceAdmin) {
     throw new Error('Только владелец или администратор воркспейса может удалить чат')
   }
@@ -705,7 +776,11 @@ export const apiChatDeleteRoute = app.post('/:feedId/delete', async (ctx, req) =
   } catch (err) {
     // Если фид не найден — игнорируем ошибку, продолжаем удаление из таблицы
     // console.log(`[apiChatDelete] Error deleting feed:`, err.message)
-    if (err.message?.includes('not found') || err.message?.includes('не найден') || err.message?.includes('null')) {
+    if (
+      err.message?.includes('not found') ||
+      err.message?.includes('не найден') ||
+      err.message?.includes('null')
+    ) {
       // console.log(`[apiChatDelete] Feed ${req.params.feedId} already deleted or not found, continuing...`)
     } else {
       throw err
@@ -739,7 +814,7 @@ export const apiChatDeleteRoute = app.post('/:feedId/delete', async (ctx, req) =
   // console.log(`[apiChatDelete] Chat ${chat.id} deleted successfully`)
 
   return {
-    success: true,
+    success: true
   }
 })
 
@@ -748,7 +823,7 @@ export const apiChatPublicInfoRoute = app.get('/:feedId/public', async (ctx, req
   requireRealUser(ctx)
 
   const chat = await Chats.findOneBy(ctx, {
-    feedId: req.params.feedId,
+    feedId: req.params.feedId
   })
 
   if (!chat) {
@@ -765,12 +840,12 @@ export const apiChatPublicInfoRoute = app.get('/:feedId/public', async (ctx, req
     } catch (e) {
       throw new Error('Чат не найден')
     }
-    
+
     const isParticipant = participants.some((p) => p.userId === ctx.user.id)
     const ownerId = typeof chat.owner === 'object' ? chat.owner?.id : chat.owner
     const isOwner = ownerId === ctx.user.id
     const isWorkspaceAdmin = ctx.user.is('Admin') || ctx.user.is('Owner')
-    
+
     if (!isParticipant && !isOwner && !chat.isPublic && !isWorkspaceAdmin) {
       throw new Error('Нет доступа к этому чату')
     }
@@ -794,7 +869,7 @@ export const apiChatPublicInfoRoute = app.get('/:feedId/public', async (ctx, req
       isPaid: chat.isPaid,
       isPublic: chat.isPublic,
       avatarHash: chat.avatarHash,
-      participantsCount,
+      participantsCount
     }
   }
 })
@@ -805,7 +880,7 @@ export const apiChatSetPaidRoute = app.post('/:feedId/set-paid', async (ctx, req
   requireAccountRole(ctx, 'Admin')
 
   const chat = await Chats.findOneBy(ctx, {
-    feedId: req.params.feedId,
+    feedId: req.params.feedId
   })
 
   if (!chat) {
@@ -813,15 +888,15 @@ export const apiChatSetPaidRoute = app.post('/:feedId/set-paid', async (ctx, req
   }
 
   const body = req.body as { isPaid: boolean }
-  
+
   const updatedChat = await Chats.update(ctx, {
     id: chat.id,
-    isPaid: body.isPaid,
+    isPaid: body.isPaid
   })
 
   return {
     success: true,
-    chat: updatedChat,
+    chat: updatedChat
   }
 })
 
@@ -830,7 +905,7 @@ export const apiChatJoinRoute = app.post('/:feedId/join', async (ctx, req) => {
   requireRealUser(ctx)
 
   const chat = await Chats.findOneBy(ctx, {
-    feedId: req.params.feedId,
+    feedId: req.params.feedId
   })
 
   if (!chat) {
@@ -853,13 +928,13 @@ export const apiChatJoinRoute = app.post('/:feedId/join', async (ctx, req) => {
 
   // Проверяем доступ: публичный чат ИЛИ есть принятое приглашение
   let hasAccess = chat.isPublic
-  
+
   if (!hasAccess) {
     // Проверяем, есть ли принятое приглашение
     const acceptedInvite = await ChatInvites.findOneBy(ctx, {
       chat: chat.id,
       invitedUser: ctx.user.id,
-      status: 'accepted',
+      status: 'accepted'
     })
     hasAccess = !!acceptedInvite
   }
@@ -872,7 +947,7 @@ export const apiChatJoinRoute = app.post('/:feedId/join', async (ctx, req) => {
   const feed = await getFeedById(ctx, req.params.feedId)
   await createOrUpdateFeedParticipant(ctx, feed, ctx.user, {
     role: 'guest',
-    silent: false,
+    silent: false
   })
 
   // Отправляем событие о новом участнике всем в чате
@@ -885,16 +960,16 @@ export const apiChatJoinRoute = app.post('/:feedId/join', async (ctx, req) => {
       displayName: ctx.user.displayName,
       firstName: ctx.user.firstName,
       lastName: ctx.user.lastName,
-      avatar: ctx.user.imageUrl,
-    },
+      avatar: ctx.user.imageUrl
+    }
   })
 
   return {
     success: true,
     chat: {
       ...chat,
-      isMember: true,
-    },
+      isMember: true
+    }
   }
 })
 
@@ -903,7 +978,7 @@ export const apiChatCheckJoinRoute = app.get('/:feedId/can-join', async (ctx, re
   requireRealUser(ctx)
 
   const chat = await Chats.findOneBy(ctx, {
-    feedId: req.params.feedId,
+    feedId: req.params.feedId
   })
 
   if (!chat) {
@@ -927,7 +1002,7 @@ export const apiChatCheckJoinRoute = app.get('/:feedId/can-join', async (ctx, re
   const acceptedInvite = await ChatInvites.findOneBy(ctx, {
     chat: chat.id,
     invitedUser: ctx.user.id,
-    status: 'accepted',
+    status: 'accepted'
   })
 
   if (acceptedInvite) {

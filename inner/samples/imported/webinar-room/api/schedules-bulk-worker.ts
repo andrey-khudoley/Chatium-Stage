@@ -1,4 +1,8 @@
-import { deleteFromCustomJobQueue, pickFromCustomJobQueue, scheduleNextCustomJobQueueRunAfter } from '@app/jobs'
+import {
+  deleteFromCustomJobQueue,
+  pickFromCustomJobQueue,
+  scheduleNextCustomJobQueueRunAfter
+} from '@app/jobs'
 import AutowebinarSchedules from '../tables/autowebinar_schedules.table'
 import BulkScheduleTasks from '../tables/bulk_schedule_tasks.table'
 import { ScheduleStatus } from '../shared/enum'
@@ -32,13 +36,13 @@ async function markProgress(ctx: app.Ctx, bulkTaskId: string, ok: boolean, error
     failed,
     status,
     error: errorText || task.error || undefined,
-    finishedAt: done ? new Date() : task.finishedAt,
+    finishedAt: done ? new Date() : task.finishedAt
   })
 }
 
 export const schedulesBulkWorker = app.job('/', async (ctx, params: { queueName: string }) => {
   const queueName = params.queueName
-  const task = await pickFromCustomJobQueue(ctx, queueName, 1).then(r => r[0])
+  const task = await pickFromCustomJobQueue(ctx, queueName, 1).then((r) => r[0])
   if (!task) return
 
   const queueTaskId = task[0]
@@ -50,13 +54,18 @@ export const schedulesBulkWorker = app.job('/', async (ctx, params: { queueName:
     const schedule = await AutowebinarSchedules.create(ctx, {
       autowebinar: payload.autowebinarId,
       scheduledDate,
-      status: ScheduleStatus.Scheduled,
+      status: ScheduleStatus.Scheduled
     })
 
     await awPreStartJob.scheduleJobAt(ctx, scheduledDate, { scheduleId: schedule.id })
     await markProgress(ctx, payload.bulkTaskId, true)
   } catch (error) {
-    await markProgress(ctx, payload.bulkTaskId, false, error instanceof Error ? error.message : 'Unknown error')
+    await markProgress(
+      ctx,
+      payload.bulkTaskId,
+      false,
+      error instanceof Error ? error.message : 'Unknown error'
+    )
   } finally {
     await deleteFromCustomJobQueue(ctx, queueName, queueTaskId)
     await scheduleNextCustomJobQueueRunAfter(ctx, queueName, 0, 'seconds')

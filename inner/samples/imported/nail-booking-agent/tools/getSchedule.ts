@@ -10,7 +10,7 @@ export const getScheduleTool = app
     name: 'get-schedule',
     description: `Use this tool to get the working schedule and hours. Use this when user asks about working hours, when the master is available, or what days the salon is open.`
   })
-  .body(s =>
+  .body((s) =>
     s.object(
       {
         context: s.object(
@@ -44,14 +44,14 @@ export const getScheduleTool = app
       if (!hours.isOpen) {
         return `${dayName}: Выходной`
       }
-      
+
       let scheduleText = `${dayName}: ${hours.start} - ${hours.end}`
-      
+
       if (hours.breaks && hours.breaks.length > 0) {
-        const breaksText = hours.breaks.map(b => `${b.start}-${b.end}`).join(', ')
+        const breaksText = hours.breaks.map((b) => `${b.start}-${b.end}`).join(', ')
         scheduleText += ` (Перерыв: ${breaksText})`
       }
-      
+
       return scheduleText
     })
 

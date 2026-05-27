@@ -1,5 +1,5 @@
 // @shared
-import { jsx } from "@app/html-jsx"
+import { jsx } from '@app/html-jsx'
 import { requireAnyUser } from '@app/auth'
 import UnitTestsPage from './pages/UnitTestsPage.vue'
 import '../lib/logs-init'
@@ -13,13 +13,16 @@ export const testsPageRoute = app.get('/', async (ctx) => {
         <title>Unit Tests - Шаблон проекта</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta charset="UTF-8" />
-        
+
         <script src="/s/static/lib/tailwind.3.4.16.min.js"></script>
         <link href="/s/static/lib/fontawesome/6.7.2/css/all.min.css" rel="stylesheet" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
-        <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet" />
-        
+        <link
+          href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap"
+          rel="stylesheet"
+        />
+
         <style>{`
           :root {
             --color-bg: #0a0a0a;

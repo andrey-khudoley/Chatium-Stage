@@ -109,7 +109,12 @@ function emitLog(
 }
 
 export function logEmergency(...args: unknown[]): void {
-  emitLog(SYSLOG_SEVERITY.Emergency, 'emergency', (...a) => nativeConsole.error('[Emergency]', ...a), ...args)
+  emitLog(
+    SYSLOG_SEVERITY.Emergency,
+    'emergency',
+    (...a) => nativeConsole.error('[Emergency]', ...a),
+    ...args
+  )
 }
 
 export function logAlert(...args: unknown[]): void {
@@ -117,7 +122,12 @@ export function logAlert(...args: unknown[]): void {
 }
 
 export function logCritical(...args: unknown[]): void {
-  emitLog(SYSLOG_SEVERITY.Critical, 'critical', (...a) => nativeConsole.error('[Critical]', ...a), ...args)
+  emitLog(
+    SYSLOG_SEVERITY.Critical,
+    'critical',
+    (...a) => nativeConsole.error('[Critical]', ...a),
+    ...args
+  )
 }
 
 export function logError(...args: unknown[]): void {

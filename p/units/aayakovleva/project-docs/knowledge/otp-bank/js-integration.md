@@ -1,5 +1,5 @@
 ---
-title: "ОТП Банк — JS-интеграция (b2otp.ru)"
+title: 'ОТП Банк — JS-интеграция (b2otp.ru)'
 type: reference
 tags:
   - topic/otp-bank
@@ -41,28 +41,28 @@ function poscreditCheckStatus(result) {
   // Вызывается автоматически после завершения заявки
   // result.status — строка с результатом
   // result.orderId — ID заказа, переданный в params
-  console.log('Статус заявки:', result.status, 'Заказ:', result.orderId);
+  console.log('Статус заявки:', result.status, 'Заказ:', result.orderId)
 }
 
 // Шаг 2: Сформировать данные заказа
 var products = [
   {
-    name: "Название курса / товара",
-    price: 50000,     // уточнить единицы у банка: рубли или копейки
+    name: 'Название курса / товара',
+    price: 50000, // уточнить единицы у банка: рубли или копейки
     quantity: 1,
-    article: "COURSE-001"
+    article: 'COURSE-001'
   }
-];
+]
 
 var params = {
-  orderId: "order_12345",    // ваш внутренний ID заказа (строка)
-  totalAmount: 50000,        // полная сумма заказа
-  products: products,
+  orderId: 'order_12345', // ваш внутренний ID заказа (строка)
+  totalAmount: 50000, // полная сумма заказа
+  products: products
   // Возможно дополнительные поля — уточнить в документации
-};
+}
 
 // Шаг 3: Запустить процесс кредитования
-poscreditServices.creditProcess(params);
+poscreditServices.creditProcess(params)
 // → открывается виджет ОТП Банка
 // → покупатель заполняет данные
 // → при завершении вызывается poscreditCheckStatus(result)
@@ -84,10 +84,10 @@ function poscreditCheckStatus(result) {
         status: 'paid',
         source: 'otp-bank'
       })
-    });
+    })
   } else if (result.status === 'rejected') {
     // Отказ → показать сообщение покупателю
-    alert('К сожалению, банк не одобрил заявку.');
+    alert('К сожалению, банк не одобрил заявку.')
   }
   // Полный список статусов — уточнить у банка
 }
@@ -104,9 +104,9 @@ function poscreditCheckStatus(result) {
 ```javascript
 // Отрисовывает таблицу ежемесячных платежей
 poscreditServices.showCalculator({
-  amount: 50000,           // сумма покупки
-  containerId: "otp-calc"  // id div-контейнера
-});
+  amount: 50000, // сумма покупки
+  containerId: 'otp-calc' // id div-контейнера
+})
 ```
 
 ```html

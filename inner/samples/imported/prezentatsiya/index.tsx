@@ -1,4 +1,4 @@
-import { jsx } from "@app/html-jsx"
+import { jsx } from '@app/html-jsx'
 import { PresentationHead } from './styles'
 import Presentation from './pages/Presentation.vue'
 

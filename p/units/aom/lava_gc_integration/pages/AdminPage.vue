@@ -214,7 +214,7 @@ const startAnimations = () => {
 
 const LOG_LEVEL_VALUES = ['debug', 'info', 'warn', 'error', 'disable'] as const
 
-type LogDisplayItem = 
+type LogDisplayItem =
   | { type: 'log'; entry: LogEntry; formattedTime: string; formattedMessage: string }
   | { type: 'divider'; date: string }
 
@@ -224,9 +224,9 @@ function formatLogTime(timestamp: number): string {
 }
 
 function formatLogMessage(e: LogEntry): string {
-  return e.args.map((a) =>
-    typeof a === 'object' && a !== null ? JSON.stringify(a) : String(a)
-  ).join(' ')
+  return e.args
+    .map((a) => (typeof a === 'object' && a !== null ? JSON.stringify(a) : String(a)))
+    .join(' ')
 }
 
 function formatDateDivider(timestamp: number): string {
@@ -251,13 +251,18 @@ function trimOldLogs() {
 
 function updateOldestLogTimestampFromEntries(entries: Array<LogEntry & { id?: string }>) {
   if (!entries.length) return
-  const oldest = entries.reduce((min, entry) => (entry.timestamp < min ? entry.timestamp : min), entries[0].timestamp)
+  const oldest = entries.reduce(
+    (min, entry) => (entry.timestamp < min ? entry.timestamp : min),
+    entries[0].timestamp
+  )
   oldestLogTimestamp.value = oldest
 }
 
 function mergeLogEntriesUnique(nextEntries: Array<LogEntry & { id: string }>) {
   if (!nextEntries.length) return
-  const existingIds = new Set(logEntries.value.map((entry) => (entry as LogEntry & { id?: string }).id).filter(Boolean))
+  const existingIds = new Set(
+    logEntries.value.map((entry) => (entry as LogEntry & { id?: string }).id).filter(Boolean)
+  )
   const uniqueToAdd = nextEntries.filter((entry) => !existingIds.has(entry.id))
   if (!uniqueToAdd.length) return
   logEntries.value = [...logEntries.value, ...uniqueToAdd]
@@ -286,15 +291,18 @@ async function reloadAllLogsByCurrentFilters() {
     while (hasMore && iteration < MAX_LOG_FETCH_ITERATIONS) {
       if (requestId !== logsReloadRequestId) return
 
-      const response = beforeTimestamp == null
-        ? await getRecentLogsRoute.query({ limit: SERVER_LOG_BATCH_LIMIT, severities: severitiesQuery }).run(ctx)
-        : await getLogsBeforeRoute
-            .query({
-              beforeTimestamp: String(beforeTimestamp),
-              limit: SERVER_LOG_BATCH_LIMIT,
-              severities: severitiesQuery
-            })
-            .run(ctx)
+      const response =
+        beforeTimestamp == null
+          ? await getRecentLogsRoute
+              .query({ limit: SERVER_LOG_BATCH_LIMIT, severities: severitiesQuery })
+              .run(ctx)
+          : await getLogsBeforeRoute
+              .query({
+                beforeTimestamp: String(beforeTimestamp),
+                limit: SERVER_LOG_BATCH_LIMIT,
+                severities: severitiesQuery
+              })
+              .run(ctx)
 
       const data = response as {
         success?: boolean
@@ -318,7 +326,9 @@ async function reloadAllLogsByCurrentFilters() {
           data.entries[0].timestamp
         )
         beforeTimestamp = oldestBatchTimestamp
-        hasMore = beforeTimestamp != null && (data.hasMore ?? data.entries.length === SERVER_LOG_BATCH_LIMIT)
+        hasMore =
+          beforeTimestamp != null &&
+          (data.hasMore ?? data.entries.length === SERVER_LOG_BATCH_LIMIT)
       }
 
       iteration += 1
@@ -330,7 +340,8 @@ async function reloadAllLogsByCurrentFilters() {
     trimOldLogs()
     logsHasMore.value = false
     if (iteration >= MAX_LOG_FETCH_ITERATIONS && hasMore) {
-      logsError.value = 'Достигнут лимит подгрузки истории. Уточните фильтр для более точного поиска.'
+      logsError.value =
+        'Достигнут лимит подгрузки истории. Уточните фильтр для более точного поиска.'
     } else {
       logsError.value = ''
     }
@@ -363,7 +374,7 @@ const displayedLogs = computed<LogDisplayItem[]>(() => {
   for (let i = 0; i < sorted.length; i++) {
     const entry = sorted[i]
     const dateKey = getDateKey(entry.timestamp)
-    
+
     // Показываем разделитель только если это не первый лог и дата изменилась
     if (i > 0 && dateKey !== lastDateKey) {
       items.push({
@@ -371,7 +382,7 @@ const displayedLogs = computed<LogDisplayItem[]>(() => {
         date: formatDateDivider(entry.timestamp)
       })
     }
-    
+
     lastDateKey = dateKey
     items.push({
       type: 'log',
@@ -402,7 +413,9 @@ const loadLavaSettings = async () => {
     } else {
       lavaBaseUrl.value = normalizeLavaBaseUrlInput(lavaBaseUrl.value)
     }
-    const whRes = await getSettingRoute.query({ key: LAVA_SETTING_KEYS.LAVA_WEBHOOK_SECRET }).run(ctx)
+    const whRes = await getSettingRoute
+      .query({ key: LAVA_SETTING_KEYS.LAVA_WEBHOOK_SECRET })
+      .run(ctx)
     const whData = whRes as { success?: boolean; value?: unknown }
     if (whData?.success && typeof whData.value === 'string' && whData.value.length > 0) {
       lavaWebhookSecret.value = whData.value
@@ -445,7 +458,9 @@ const loadGcSettings = async () => {
     if (domData?.success && typeof domData.value === 'string') {
       gcAccountDomain.value = domData.value
     }
-    const addfieldRes = await getSettingRoute.query({ key: GC_SETTING_KEYS.GC_ORDER_FLAG_ADDFIELD_ID }).run(ctx)
+    const addfieldRes = await getSettingRoute
+      .query({ key: GC_SETTING_KEYS.GC_ORDER_FLAG_ADDFIELD_ID })
+      .run(ctx)
     const addfieldData = addfieldRes as { success?: boolean; value?: unknown }
     if (addfieldData?.success && typeof addfieldData.value === 'string') {
       gcOrderFlagAddfieldId.value = addfieldData.value
@@ -578,7 +593,9 @@ const saveLavaIntegration = async () => {
       }
     }
 
-    const pidVerify = await getSettingRoute.query({ key: LAVA_SETTING_KEYS.LAVA_PRODUCT_ID }).run(ctx)
+    const pidVerify = await getSettingRoute
+      .query({ key: LAVA_SETTING_KEYS.LAVA_PRODUCT_ID })
+      .run(ctx)
     const oidVerify = await getSettingRoute.query({ key: LAVA_SETTING_KEYS.LAVA_OFFER_ID }).run(ctx)
     const pidV = (pidVerify as { success?: boolean; value?: unknown })?.value
     const oidV = (oidVerify as { success?: boolean; value?: unknown })?.value
@@ -598,7 +615,10 @@ const saveLavaIntegration = async () => {
     lavaProductOfferSaved.value = true
     lavaSelectedKey.value = ''
     showSaveStatus(lavaSaveStatus, lavaSaveStatusTimeout, 'saved')
-    log.info('Настройки Lava сохранены и проверены', { productId: row.productId, offerId: row.offerId })
+    log.info('Настройки Lava сохранены и проверены', {
+      productId: row.productId,
+      offerId: row.offerId
+    })
   } catch (e) {
     lavaSaveError.value = (e as Error)?.message || 'Ошибка сохранения'
     showSaveStatus(lavaSaveStatus, lavaSaveStatusTimeout, 'error')
@@ -768,12 +788,27 @@ const setLogLevel = async (level: 'debug' | 'info' | 'warn' | 'error' | 'disable
 const loadDashboardCounts = async () => {
   try {
     const res = await getDashboardCountsRoute.run(ctx)
-    const data = res as { success?: boolean; errorCount?: number; warnCount?: number; resetAt?: number; error?: string }
-    if (data?.success && typeof data.errorCount === 'number' && typeof data.warnCount === 'number' && typeof data.resetAt === 'number') {
+    const data = res as {
+      success?: boolean
+      errorCount?: number
+      warnCount?: number
+      resetAt?: number
+      error?: string
+    }
+    if (
+      data?.success &&
+      typeof data.errorCount === 'number' &&
+      typeof data.warnCount === 'number' &&
+      typeof data.resetAt === 'number'
+    ) {
       errorCount.value = data.errorCount
       warnCount.value = data.warnCount
       dashboardResetAt.value = data.resetAt
-      log.debug('Счётчики дашборда загружены', { errorCount: data.errorCount, warnCount: data.warnCount, resetAt: data.resetAt })
+      log.debug('Счётчики дашборда загружены', {
+        errorCount: data.errorCount,
+        warnCount: data.warnCount,
+        resetAt: data.resetAt
+      })
     }
   } catch (e) {
     log.warning('Не удалось загрузить счётчики дашборда', e)
@@ -783,7 +818,13 @@ const loadDashboardCounts = async () => {
 const resetDashboard = async () => {
   try {
     const res = await resetDashboardRoute.run(ctx)
-    const data = res as { success?: boolean; errorCount?: number; warnCount?: number; resetAt?: number; error?: string }
+    const data = res as {
+      success?: boolean
+      errorCount?: number
+      warnCount?: number
+      resetAt?: number
+      error?: string
+    }
     if (data?.success && typeof data.resetAt === 'number') {
       dashboardResetAt.value = data.resetAt
       errorCount.value = data.errorCount ?? 0
@@ -802,7 +843,11 @@ const loadRecentLogs = async () => {
   logsError.value = ''
   try {
     const res = await getRecentLogsRoute.query({ limit: 50 }).run(ctx)
-    const data = res as { success?: boolean; entries?: Array<LogEntry & { id: string }>; error?: string }
+    const data = res as {
+      success?: boolean
+      entries?: Array<LogEntry & { id: string }>
+      error?: string
+    }
     if (data?.success && Array.isArray(data.entries)) {
       mergeLogEntriesUnique(data.entries)
       updateOldestLogTimestampFromEntries(logEntries.value as Array<LogEntry & { id?: string }>)
@@ -832,7 +877,11 @@ const loadMoreLogs = async () => {
   const severitiesQuery = severitiesQueryValue(severities)
   try {
     const res = await getLogsBeforeRoute
-      .query({ beforeTimestamp: String(oldestLogTimestamp.value), limit: 50, severities: severitiesQuery })
+      .query({
+        beforeTimestamp: String(oldestLogTimestamp.value),
+        limit: 50,
+        severities: severitiesQuery
+      })
       .run(ctx)
     const data = res as {
       success?: boolean
@@ -941,12 +990,7 @@ const clearLogs = () => {
             <div class="settings-form">
               <div class="settings-field">
                 <label class="settings-label" for="project-name">Название проекта</label>
-                <input
-                  id="project-name"
-                  v-model="projectName"
-                  type="text"
-                  class="settings-input"
-                />
+                <input id="project-name" v-model="projectName" type="text" class="settings-input" />
               </div>
             </div>
             <p v-if="projectNameError" class="admin-card-error">{{ projectNameError }}</p>
@@ -966,9 +1010,9 @@ const clearLogs = () => {
               <h2 class="admin-card-title">Интеграция Lava.top</h2>
             </div>
             <p class="lava-settings-hint">
-              Шаг 1: укажите API-ключ и базовый URL (по умолчанию gate.lava.top). Затем обновите каталог,
-              выберите продукт и оффер и сохраните. После сохранения список скрывается — для смены выбора
-              снова нажмите «Обновить продукты и офферы».
+              Шаг 1: укажите API-ключ и базовый URL (по умолчанию gate.lava.top). Затем обновите
+              каталог, выберите продукт и оффер и сохраните. После сохранения список скрывается —
+              для смены выбора снова нажмите «Обновить продукты и офферы».
             </p>
             <div class="settings-form">
               <div class="settings-field">
@@ -993,10 +1037,13 @@ const clearLogs = () => {
                 />
               </div>
               <div class="settings-field lava-webhook-secret-field">
-                <label class="settings-label" for="lava-webhook-secret">{{ LAVA_SETTING_KEYS.LAVA_WEBHOOK_SECRET }}</label>
+                <label class="settings-label" for="lava-webhook-secret">{{
+                  LAVA_SETTING_KEYS.LAVA_WEBHOOK_SECRET
+                }}</label>
                 <p class="lava-webhook-secret-hint">
-                  Заголовок <code class="lava-inline-code">X-Api-Key</code> при POST на URL webhook в Chatium. Укажите тот же
-                  секрет в кабинете Lava. Генерация — 64 hex-символа (256 бит энтропии).
+                  Заголовок <code class="lava-inline-code">X-Api-Key</code> при POST на URL webhook
+                  в Chatium. Укажите тот же секрет в кабинете Lava. Генерация — 64 hex-символа (256
+                  бит энтропии).
                 </p>
                 <div class="lava-webhook-secret-controls">
                   <input
@@ -1041,7 +1088,9 @@ const clearLogs = () => {
                   class="lava-webhook-secret-status lava-webhook-secret-status--err"
                   >Ошибка</span
                 >
-                <p v-if="lavaWebhookSecretError" class="admin-card-error">{{ lavaWebhookSecretError }}</p>
+                <p v-if="lavaWebhookSecretError" class="admin-card-error">
+                  {{ lavaWebhookSecretError }}
+                </p>
               </div>
               <div class="lava-step-actions">
                 <button
@@ -1065,7 +1114,9 @@ const clearLogs = () => {
                 <span v-if="savedLavaProductTitle || savedLavaOfferTitle" class="lava-saved-titles">
                   {{ savedLavaProductTitle || '—' }} — {{ savedLavaOfferTitle || '—' }}
                 </span>
-                <code class="lava-saved-code">{{ savedLavaProductId }} / {{ savedLavaOfferId }}</code>
+                <code class="lava-saved-code"
+                  >{{ savedLavaProductId }} / {{ savedLavaOfferId }}</code
+                >
               </div>
             </div>
 
@@ -1087,7 +1138,9 @@ const clearLogs = () => {
                   <span class="lava-catalog-indicator" aria-hidden="true" />
                   <span class="lava-catalog-text">
                     <span class="lava-catalog-line">
-                      <span class="lava-catalog-product">{{ row.productTitle || row.productId }}</span>
+                      <span class="lava-catalog-product">{{
+                        row.productTitle || row.productId
+                      }}</span>
                       <span class="lava-catalog-sep"> — </span>
                       <span class="lava-catalog-offer">{{ row.offerName || row.offerId }}</span>
                     </span>
@@ -1130,14 +1183,18 @@ const clearLogs = () => {
               <h2 class="admin-card-title">Интеграция GetCourse (PL API)</h2>
             </div>
             <p class="lava-settings-hint">
-              Ключ школы (Import API) и ключ разработчика (REST API v1) из настроек GetCourse, а также домен
-              аккаунта (формат: <code class="lava-saved-code">school.getcourse.ru</code> или кастомный хост без
-              <code class="lava-saved-code">https://</code>). Ключ разработчика нужен для получения данных заказа
-              и пользователя через API v1. Перед сохранением выполняется проверка подключения.
+              Ключ школы (Import API) и ключ разработчика (REST API v1) из настроек GetCourse, а
+              также домен аккаунта (формат:
+              <code class="lava-saved-code">school.getcourse.ru</code> или кастомный хост без
+              <code class="lava-saved-code">https://</code>). Ключ разработчика нужен для получения
+              данных заказа и пользователя через API v1. Перед сохранением выполняется проверка
+              подключения.
             </p>
             <div class="settings-form">
               <div class="settings-field">
-                <label class="settings-label" for="gc-api-key">{{ GC_SETTING_KEYS.GC_API_KEY }}</label>
+                <label class="settings-label" for="gc-api-key">{{
+                  GC_SETTING_KEYS.GC_API_KEY
+                }}</label>
                 <input
                   id="gc-api-key"
                   v-model="gcApiKey"
@@ -1148,7 +1205,9 @@ const clearLogs = () => {
                 />
               </div>
               <div class="settings-field">
-                <label class="settings-label" for="gc-dev-key">{{ GC_SETTING_KEYS.GC_DEV_KEY }}</label>
+                <label class="settings-label" for="gc-dev-key">{{
+                  GC_SETTING_KEYS.GC_DEV_KEY
+                }}</label>
                 <input
                   id="gc-dev-key"
                   v-model="gcDevKey"
@@ -1159,7 +1218,9 @@ const clearLogs = () => {
                 />
               </div>
               <div class="settings-field">
-                <label class="settings-label" for="gc-account-domain">{{ GC_SETTING_KEYS.GC_ACCOUNT_DOMAIN }}</label>
+                <label class="settings-label" for="gc-account-domain">{{
+                  GC_SETTING_KEYS.GC_ACCOUNT_DOMAIN
+                }}</label>
                 <input
                   id="gc-account-domain"
                   v-model="gcAccountDomain"
@@ -1195,7 +1256,10 @@ const clearLogs = () => {
                   type="button"
                   class="lava-primary-btn"
                   :disabled="
-                    gcSaveLoading || !gcApiKey.trim() || !gcAccountDomain.trim() || !gcOrderFlagAddfieldId.trim()
+                    gcSaveLoading ||
+                    !gcApiKey.trim() ||
+                    !gcAccountDomain.trim() ||
+                    !gcOrderFlagAddfieldId.trim()
                   "
                   @click="saveGcIntegration"
                 >
@@ -1303,9 +1367,7 @@ const clearLogs = () => {
               </button>
             </div>
             <div class="logs-output custom-scrollbar" ref="logsOutputRef">
-              <div v-if="displayedLogs.length === 0" class="logs-empty">
-                Логи появятся здесь...
-              </div>
+              <div v-if="displayedLogs.length === 0" class="logs-empty">Логи появятся здесь...</div>
               <div v-for="(item, index) in displayedLogs" :key="index" class="log-item">
                 <div v-if="item.type === 'divider'" class="log-date-divider">
                   --- {{ item.date }} ---
@@ -1377,7 +1439,9 @@ const clearLogs = () => {
 .admin-section {
   opacity: 0;
   transform: translateY(20px);
-  transition: opacity 0.6s ease, transform 0.6s ease;
+  transition:
+    opacity 0.6s ease,
+    transform 0.6s ease;
 }
 
 .admin-section.admin-visible {
@@ -1402,10 +1466,18 @@ const clearLogs = () => {
     0 6px 20px rgba(211, 35, 75, 0.35),
     0 0 24px rgba(211, 35, 75, 0.15);
   clip-path: polygon(
-    0 4px, 4px 4px, 4px 0,
-    calc(100% - 4px) 0, calc(100% - 4px) 4px, 100% 4px,
-    100% calc(100% - 4px), calc(100% - 4px) calc(100% - 4px), calc(100% - 4px) 100%,
-    4px 100%, 4px calc(100% - 4px), 0 calc(100% - 4px)
+    0 4px,
+    4px 4px,
+    4px 0,
+    calc(100% - 4px) 0,
+    calc(100% - 4px) 4px,
+    100% 4px,
+    100% calc(100% - 4px),
+    calc(100% - 4px) calc(100% - 4px),
+    calc(100% - 4px) 100%,
+    4px 100%,
+    4px calc(100% - 4px),
+    0 calc(100% - 4px)
   );
   position: relative;
   overflow: hidden;
@@ -1431,8 +1503,13 @@ const clearLogs = () => {
 }
 
 @keyframes admin-scanline-flicker {
-  0%, 100% { opacity: 0.7; }
-  50% { opacity: 0.5; }
+  0%,
+  100% {
+    opacity: 0.7;
+  }
+  50% {
+    opacity: 0.5;
+  }
 }
 
 .admin-icon {
@@ -1619,7 +1696,10 @@ const clearLogs = () => {
   border: 1px solid var(--color-border-light);
   border-radius: 6px;
   cursor: pointer;
-  transition: color 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+  transition:
+    color 0.2s ease,
+    background 0.2s ease,
+    border-color 0.2s ease;
   letter-spacing: 0.04em;
 }
 
@@ -2053,7 +2133,9 @@ const clearLogs = () => {
   border-radius: 4px;
   cursor: pointer;
   letter-spacing: 0.04em;
-  transition: opacity 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    opacity 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .lava-primary-btn:hover:not(:disabled) {

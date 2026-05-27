@@ -11,12 +11,15 @@ export const TProjektChatVoiceTranscriptionsArQ = Heap.Table(
     language: Heap.Optional(Heap.String({ customMeta: { title: 'Язык распознавания' } })),
     status: Heap.Optional(Heap.String({ customMeta: { title: 'Статус' } })),
     errorMessage: Heap.Optional(Heap.String({ customMeta: { title: 'Сообщение об ошибке' } })),
-    requestedBy: Heap.Optional(Heap.UserRefLink({ customMeta: { title: 'Кто запросил транскрибацию' } })),
+    requestedBy: Heap.Optional(
+      Heap.UserRefLink({ customMeta: { title: 'Кто запросил транскрибацию' } })
+    )
   },
-  { customMeta: { title: 'Транскрибации голосовых сообщений', description: '' } },
+  { customMeta: { title: 'Транскрибации голосовых сообщений', description: '' } }
 )
 
 export default TProjektChatVoiceTranscriptionsArQ
 
 export type TProjektChatVoiceTranscriptionsArQRow = typeof TProjektChatVoiceTranscriptionsArQ.T
-export type TProjektChatVoiceTranscriptionsArQRowJson = typeof TProjektChatVoiceTranscriptionsArQ.JsonT
+export type TProjektChatVoiceTranscriptionsArQRowJson =
+  typeof TProjektChatVoiceTranscriptionsArQ.JsonT

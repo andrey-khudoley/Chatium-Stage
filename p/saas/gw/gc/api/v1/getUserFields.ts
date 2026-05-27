@@ -14,6 +14,8 @@ export const getUserFieldsHandler: V1GcHandler = async (_ctx, a) => {
   return { kind: 'gc_result', gc }
 }
 
-export const getUserFieldsRoute = app.get('/', async (ctx, req) => handleV1Op(ctx, req, 'getUserFields', getUserFieldsHandler))
+export const getUserFieldsRoute = app.get('/', async (ctx, req) =>
+  handleV1Op(ctx, req, 'getUserFields', getUserFieldsHandler)
+)
 
 export default getUserFieldsRoute

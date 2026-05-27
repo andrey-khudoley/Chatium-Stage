@@ -14,6 +14,8 @@ export const closeDialogHandler: V1GcHandler = async (_ctx, a) => {
   return { kind: 'gc_result', gc }
 }
 
-export const closeDialogRoute = app.post('/', async (ctx, req) => handleV1Op(ctx, req, 'closeDialog', closeDialogHandler))
+export const closeDialogRoute = app.post('/', async (ctx, req) =>
+  handleV1Op(ctx, req, 'closeDialog', closeDialogHandler)
+)
 
 export default closeDialogRoute

@@ -70,12 +70,18 @@ export const partnerRepoTestRoute = app.get('/', async (ctx, req) => {
         if (!createOk) {
           const err = `isNew=${r1.isNew}, partner.id=${r1.partner?.id}, tgId=${r1.partner?.tgId}`
           results[results.length - 1].error = err
-          ctx.account.log(`[${LOG_PATH}] getOrCreatePartner-new: ${err}`, { level: 'warn', json: { testId: 'getOrCreatePartner-new', error: err } })
+          ctx.account.log(`[${LOG_PATH}] getOrCreatePartner-new: ${err}`, {
+            level: 'warn',
+            json: { testId: 'getOrCreatePartner-new', error: err }
+          })
         }
         partnerId = r1.partner?.id ?? null
       } catch (e) {
         const errMsg = (e as Error)?.message ?? String(e)
-        ctx.account.log(`[${LOG_PATH}] getOrCreatePartner-new exception: ${errMsg}`, { level: 'error', json: { testId: 'getOrCreatePartner-new', error: errMsg, stack: (e as Error)?.stack } })
+        ctx.account.log(`[${LOG_PATH}] getOrCreatePartner-new exception: ${errMsg}`, {
+          level: 'error',
+          json: { testId: 'getOrCreatePartner-new', error: errMsg, stack: (e as Error)?.stack }
+        })
         results.push({
           id: 'getOrCreatePartner-new',
           title: 'getOrCreatePartner (новый партнёр)',
@@ -95,11 +101,17 @@ export const partnerRepoTestRoute = app.get('/', async (ctx, req) => {
         if (!idempotentOk) {
           const err = `ожидался isNew=false, id=${r2.partner?.id}, partnerId=${partnerId}`
           results[results.length - 1].error = err
-          ctx.account.log(`[${LOG_PATH}] getOrCreatePartner-existing: ${err}`, { level: 'warn', json: { testId: 'getOrCreatePartner-existing', error: err } })
+          ctx.account.log(`[${LOG_PATH}] getOrCreatePartner-existing: ${err}`, {
+            level: 'warn',
+            json: { testId: 'getOrCreatePartner-existing', error: err }
+          })
         }
       } catch (e) {
         const errMsg = (e as Error)?.message ?? String(e)
-        ctx.account.log(`[${LOG_PATH}] getOrCreatePartner-existing exception: ${errMsg}`, { level: 'error', json: { testId: 'getOrCreatePartner-existing', error: errMsg } })
+        ctx.account.log(`[${LOG_PATH}] getOrCreatePartner-existing exception: ${errMsg}`, {
+          level: 'error',
+          json: { testId: 'getOrCreatePartner-existing', error: errMsg }
+        })
         results.push({
           id: 'getOrCreatePartner-existing',
           title: 'getOrCreatePartner (существующий — тот же партнёр)',
@@ -109,9 +121,7 @@ export const partnerRepoTestRoute = app.get('/', async (ctx, req) => {
       }
 
       try {
-        const found = partnerId
-          ? await partnerRepo.getPartnerById(ctx, partnerId)
-          : null
+        const found = partnerId ? await partnerRepo.getPartnerById(ctx, partnerId) : null
         const getByIdOk = found != null && found.id === partnerId
         results.push({
           id: 'getPartnerById-found',
@@ -119,13 +129,21 @@ export const partnerRepoTestRoute = app.get('/', async (ctx, req) => {
           passed: getByIdOk
         })
         if (!getByIdOk) {
-          const err = partnerId ? 'партнёр не найден или id не совпадает' : 'partnerId не был создан'
+          const err = partnerId
+            ? 'партнёр не найден или id не совпадает'
+            : 'partnerId не был создан'
           results[results.length - 1].error = err
-          ctx.account.log(`[${LOG_PATH}] getPartnerById-found: ${err}`, { level: 'warn', json: { testId: 'getPartnerById-found', error: err } })
+          ctx.account.log(`[${LOG_PATH}] getPartnerById-found: ${err}`, {
+            level: 'warn',
+            json: { testId: 'getPartnerById-found', error: err }
+          })
         }
       } catch (e) {
         const errMsg = (e as Error)?.message ?? String(e)
-        ctx.account.log(`[${LOG_PATH}] getPartnerById-found exception: ${errMsg}`, { level: 'error', json: { testId: 'getPartnerById-found', error: errMsg } })
+        ctx.account.log(`[${LOG_PATH}] getPartnerById-found exception: ${errMsg}`, {
+          level: 'error',
+          json: { testId: 'getPartnerById-found', error: errMsg }
+        })
         results.push({
           id: 'getPartnerById-found',
           title: 'getPartnerById (найден)',
@@ -135,7 +153,10 @@ export const partnerRepoTestRoute = app.get('/', async (ctx, req) => {
       }
 
       try {
-        const notFound = await partnerRepo.getPartnerById(ctx, 'nonexistent-partner-id-xyz-' + Date.now())
+        const notFound = await partnerRepo.getPartnerById(
+          ctx,
+          'nonexistent-partner-id-xyz-' + Date.now()
+        )
         results.push({
           id: 'getPartnerById-notFound',
           title: 'getPartnerById (не найден)',
@@ -143,11 +164,17 @@ export const partnerRepoTestRoute = app.get('/', async (ctx, req) => {
         })
         if (notFound !== null) {
           results[results.length - 1].error = 'ожидался null'
-          ctx.account.log(`[${LOG_PATH}] getPartnerById-notFound: ожидался null`, { level: 'warn', json: { testId: 'getPartnerById-notFound' } })
+          ctx.account.log(`[${LOG_PATH}] getPartnerById-notFound: ожидался null`, {
+            level: 'warn',
+            json: { testId: 'getPartnerById-notFound' }
+          })
         }
       } catch (e) {
         const errMsg = (e as Error)?.message ?? String(e)
-        ctx.account.log(`[${LOG_PATH}] getPartnerById-notFound exception: ${errMsg}`, { level: 'error', json: { testId: 'getPartnerById-notFound', error: errMsg } })
+        ctx.account.log(`[${LOG_PATH}] getPartnerById-notFound exception: ${errMsg}`, {
+          level: 'error',
+          json: { testId: 'getPartnerById-notFound', error: errMsg }
+        })
         results.push({
           id: 'getPartnerById-notFound',
           title: 'getPartnerById (не найден)',
@@ -180,10 +207,13 @@ export const partnerRepoTestRoute = app.get('/', async (ctx, req) => {
 
   const failed = results.filter((r) => !r.passed)
   if (failed.length > 0) {
-    ctx.account.log(`[${LOG_PATH}] Пройдено ${results.filter((r) => r.passed).length}/${results.length}, упало: ${failed.map((r) => r.id).join(', ')}`, {
-      level: 'warn',
-      json: { failed: failed.map((r) => ({ id: r.id, error: r.error })) }
-    })
+    ctx.account.log(
+      `[${LOG_PATH}] Пройдено ${results.filter((r) => r.passed).length}/${results.length}, упало: ${failed.map((r) => r.id).join(', ')}`,
+      {
+        level: 'warn',
+        json: { failed: failed.map((r) => ({ id: r.id, error: r.error })) }
+      }
+    )
   }
   await loggerLib.writeServerLog(ctx, {
     severity: failed.length > 0 ? 4 : 7,

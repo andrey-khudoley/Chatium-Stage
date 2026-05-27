@@ -1,8 +1,8 @@
 // @shared
-import { jsx } from "@app/html-jsx";
-import PingPongGame from './pages/PingPongGame.vue';
+import { jsx } from '@app/html-jsx'
+import PingPongGame from './pages/PingPongGame.vue'
 
-export const indexPageRoute = app.get("/", async (ctx) => {
+export const indexPageRoute = app.get('/', async (ctx) => {
   return (
     <html>
       <head>
@@ -25,5 +25,5 @@ export const indexPageRoute = app.get("/", async (ctx) => {
         <PingPongGame />
       </body>
     </html>
-  );
-});
+  )
+})

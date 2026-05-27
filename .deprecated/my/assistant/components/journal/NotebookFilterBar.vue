@@ -45,11 +45,7 @@ function hasActiveFilters() {
         </button>
 
         <div v-if="catDropdownOpen" class="nb-filter-dropdown" @click.stop>
-          <label
-            v-for="cat in props.categories"
-            :key="cat.id"
-            class="nb-filter-cat-item"
-          >
+          <label v-for="cat in props.categories" :key="cat.id" class="nb-filter-cat-item">
             <input
               type="checkbox"
               :checked="props.selectedCategoryIds.includes(cat.id)"

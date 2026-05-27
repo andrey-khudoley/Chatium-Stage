@@ -19,17 +19,17 @@ const formattedDate = computed(() => {
   const now = new Date()
   const yesterday = new Date(now)
   yesterday.setDate(yesterday.getDate() - 1)
-  
+
   // Сегодня
   if (date.toDateString() === now.toDateString()) {
     return 'Сегодня'
   }
-  
+
   // Вчера
   if (date.toDateString() === yesterday.toDateString()) {
     return 'Вчера'
   }
-  
+
   // Этот год — показываем день и месяц
   if (date.getFullYear() === now.getFullYear()) {
     return date.toLocaleDateString('ru-RU', {
@@ -37,7 +37,7 @@ const formattedDate = computed(() => {
       month: 'long'
     })
   }
-  
+
   // Другой год — показываем полную дату
   return date.toLocaleDateString('ru-RU', {
     day: 'numeric',
@@ -67,7 +67,7 @@ const formattedDate = computed(() => {
 }
 
 /* Тёмная тема */
-:root[data-theme="dark"] .date-divider-label,
+:root[data-theme='dark'] .date-divider-label,
 .dark .date-divider-label {
   background: var(--date-divider-bg, rgba(255, 255, 255, 0.1));
 }

@@ -18,7 +18,13 @@ export type LavaWebhookEventType =
   | 'subscription.recurring.payment.failed'
   | 'subscription.cancelled'
 
-export type LocalContractStatus = 'created' | 'in_progress' | 'paid' | 'failed' | 'cancelled' | 'unknown'
+export type LocalContractStatus =
+  | 'created'
+  | 'in_progress'
+  | 'paid'
+  | 'failed'
+  | 'cancelled'
+  | 'unknown'
 
 export interface PaymentLinkRequest {
   gcOrderId: string

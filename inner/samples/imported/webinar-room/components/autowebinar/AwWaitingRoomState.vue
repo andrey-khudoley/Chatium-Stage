@@ -3,11 +3,17 @@
     <header class="glass sticky top-0 z-50">
       <div class="max-w-7xl mx-auto px-3 sm:px-6 py-3 flex items-center justify-between">
         <div class="flex items-center gap-2 sm:gap-3 min-w-0">
-          <div class="hidden sm:flex items-center gap-2 px-3 h-7 rounded-full wr-badge-yellow flex-shrink-0">
+          <div
+            class="hidden sm:flex items-center gap-2 px-3 h-7 rounded-full wr-badge-yellow flex-shrink-0"
+          >
             <span class="w-2 h-2 rounded-full wr-dot-yellow animate-pulse"></span>
-            <span class="wr-status-yellow text-xs font-semibold uppercase tracking-wider">Скоро начнётся</span>
+            <span class="wr-status-yellow text-xs font-semibold uppercase tracking-wider"
+              >Скоро начнётся</span
+            >
           </div>
-          <h1 class="font-semibold text-sm sm:text-base truncate wr-text-primary leading-7">{{ autowebinar.title }}</h1>
+          <h1 class="font-semibold text-sm sm:text-base truncate wr-text-primary leading-7">
+            {{ autowebinar.title }}
+          </h1>
         </div>
         <HeaderActions />
       </div>
@@ -18,22 +24,37 @@
         <div class="wr-player-wrapper">
           <div class="wr-countdown-box glass flex items-center justify-center overflow-hidden">
             <div class="absolute inset-0 pointer-events-none">
-              <div class="absolute top-1/4 left-1/4 w-64 h-64 bg-primary/10 rounded-full blur-3xl"></div>
-              <div class="absolute bottom-1/4 right-1/4 w-48 h-48 bg-secondary/10 rounded-full blur-3xl"></div>
+              <div
+                class="absolute top-1/4 left-1/4 w-64 h-64 bg-primary/10 rounded-full blur-3xl"
+              ></div>
+              <div
+                class="absolute bottom-1/4 right-1/4 w-48 h-48 bg-secondary/10 rounded-full blur-3xl"
+              ></div>
             </div>
             <div class="relative z-10 text-center px-4">
-              <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full mb-5" style="background: var(--wr-btn-subtle-bg);">
+              <div
+                class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full mb-5"
+                style="background: var(--wr-btn-subtle-bg)"
+              >
                 <span class="w-1.5 h-1.5 rounded-full wr-dot-yellow animate-pulse"></span>
                 <span class="wr-status-yellow text-xs font-medium">Эфир скоро начнётся</span>
               </div>
               <div class="flex items-center justify-center gap-2 sm:gap-4 mb-4">
-                <div class="countdown-num-box rounded-xl px-3 sm:px-5 py-3 min-w-[60px] sm:min-w-[80px] text-center">
-                  <div class="text-2xl sm:text-3xl font-bold tabular-nums wr-text-primary">{{ countdown.minutes }}</div>
+                <div
+                  class="countdown-num-box rounded-xl px-3 sm:px-5 py-3 min-w-[60px] sm:min-w-[80px] text-center"
+                >
+                  <div class="text-2xl sm:text-3xl font-bold tabular-nums wr-text-primary">
+                    {{ countdown.minutes }}
+                  </div>
                   <div class="text-[10px] sm:text-xs mt-0.5 wr-text-tertiary">мин</div>
                 </div>
                 <span class="text-xl font-bold wr-text-muted">:</span>
-                <div class="countdown-num-box rounded-xl px-3 sm:px-5 py-3 min-w-[60px] sm:min-w-[80px] text-center">
-                  <div class="text-2xl sm:text-3xl font-bold tabular-nums wr-text-primary">{{ countdown.seconds }}</div>
+                <div
+                  class="countdown-num-box rounded-xl px-3 sm:px-5 py-3 min-w-[60px] sm:min-w-[80px] text-center"
+                >
+                  <div class="text-2xl sm:text-3xl font-bold tabular-nums wr-text-primary">
+                    {{ countdown.seconds }}
+                  </div>
                   <div class="text-[10px] sm:text-xs mt-0.5 wr-text-tertiary">сек</div>
                 </div>
               </div>
@@ -41,11 +62,22 @@
           </div>
         </div>
 
-        <FormButtons :forms="shownForms" :episode-id="autowebinar.id" @open-form="(id) => emit('open-form', id)" />
+        <FormButtons
+          :forms="shownForms"
+          :episode-id="autowebinar.id"
+          @open-form="(id) => emit('open-form', id)"
+        />
 
         <div class="py-3 px-3 sm:py-4 lg:block">
-          <h2 class="font-bold text-base sm:text-lg lg:text-xl mb-1 lg:mb-2 wr-text-primary">{{ autowebinar.title }}</h2>
-          <p v-if="autowebinar.description" class="text-xs sm:text-sm leading-relaxed line-clamp-2 lg:line-clamp-none wr-text-tertiary">{{ autowebinar.description }}</p>
+          <h2 class="font-bold text-base sm:text-lg lg:text-xl mb-1 lg:mb-2 wr-text-primary">
+            {{ autowebinar.title }}
+          </h2>
+          <p
+            v-if="autowebinar.description"
+            class="text-xs sm:text-sm leading-relaxed line-clamp-2 lg:line-clamp-none wr-text-tertiary"
+          >
+            {{ autowebinar.description }}
+          </p>
         </div>
       </div>
 
@@ -59,7 +91,9 @@
           </div>
         </div>
         <div v-if="chatLoading" class="flex-1 flex items-center justify-center p-6">
-          <div class="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+          <div
+            class="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin"
+          ></div>
         </div>
         <HybridChatScreen
           v-else-if="chatScreen"
@@ -85,7 +119,9 @@
     >
       <span class="mobile-chat-fab-ring"></span>
       <i class="fas fa-comments"></i>
-      <span v-if="unreadCount > 0" class="mobile-chat-fab-badge">{{ unreadCount > 99 ? '99+' : unreadCount }}</span>
+      <span v-if="unreadCount > 0" class="mobile-chat-fab-badge">{{
+        unreadCount > 99 ? '99+' : unreadCount
+      }}</span>
     </button>
 
     <Teleport to="body">
@@ -110,7 +146,9 @@
 
           <div class="mobile-chat-overlay-body">
             <div v-if="chatLoading" class="flex-1 flex items-center justify-center p-6">
-              <div class="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+              <div
+                class="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin"
+              ></div>
             </div>
 
             <HybridChatScreen
@@ -150,7 +188,7 @@ const props = defineProps({
   scenarioEvents: { type: Array, default: () => [] },
   shownForms: { type: Array, default: () => [] },
   hideCta: { type: Boolean, default: false },
-  nameConfirmed: { type: Boolean, default: false },
+  nameConfirmed: { type: Boolean, default: false }
 })
 
 const emit = defineEmits(['open-form'])
@@ -170,8 +208,8 @@ let timer = null
 // Current elapsed seconds since waiting room started (for scenario WR events)
 const currentWrSeconds = computed(() => {
   if (!props.schedule?.scheduledDate) return 0
-  const scheduledMs = scheduledDateOverride.value 
-    ? scheduledDateOverride.value.getTime() 
+  const scheduledMs = scheduledDateOverride.value
+    ? scheduledDateOverride.value.getTime()
     : new Date(props.schedule.scheduledDate).getTime()
   return Math.max(0, Math.round((now.value - scheduledMs) / 1000))
 })
@@ -185,7 +223,7 @@ const countdown = computed(() => {
   const totalSeconds = Math.floor(diff / 1000)
   return {
     minutes: String(Math.floor(totalSeconds / 60)).padStart(2, '0'),
-    seconds: String(totalSeconds % 60).padStart(2, '0'),
+    seconds: String(totalSeconds % 60).padStart(2, '0')
   }
 })
 
@@ -268,7 +306,7 @@ function debugSeek(newOffset) {
     const targetScheduledMs = now.value - newOffset * 1000
     scheduledDateOverride.value = new Date(targetScheduledMs)
   }
-  
+
   // Reset fake messages for waiting room
   hybridChatRef.value?.resetFakeMessages()
 }
@@ -280,22 +318,94 @@ defineExpose({ reloadChat, debugSeek, currentElapsedSeconds })
 </script>
 
 <style scoped>
-.wr-page { min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column; background: var(--wr-bg); }
-.wr-content { flex: 1; display: flex; flex-direction: column; max-width: 80rem; margin: 0 auto; width: 100%; }
-@media (min-width: 1024px) { .wr-content { flex-direction: row; } }
-.wr-player-area { flex: 1; display: flex; flex-direction: column; min-width: 0; overflow: hidden; }
-.wr-player-wrapper { position: relative; width: 100%; aspect-ratio: 16 / 9; flex-shrink: 0; }
-.wr-countdown-box { position: absolute; inset: 0; }
-@media (min-width: 640px) { .wr-countdown-box { border-radius: 1rem; margin: 0.75rem; } }
-.countdown-num-box { background: var(--wr-countdown-bg); }
-.wr-chat-desktop { display: none; }
-@media (min-width: 1024px) { .wr-chat-desktop { display: flex; } }
-.wr-chat-area { flex-direction: column; border-left: 1px solid var(--wr-border-light); }
-@media (min-width: 1024px) { .wr-chat-area { width: 380px; flex-shrink: 0; max-height: 80vh; } }
-.wr-chat-header-bar { background: var(--wr-chat-header-bg); backdrop-filter: blur(10px); border-bottom: 1px solid var(--wr-border-light); }
-.wr-online-count { display: flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 6px; background: var(--wr-btn-subtle-bg); }
-.wr-online-count i { font-size: 11px; color: var(--wr-text-tertiary); }
-.wr-online-count span { font-size: 12px; font-weight: 500; color: var(--wr-text-secondary); font-feature-settings: 'tnum'; }
+.wr-page {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background: var(--wr-bg);
+}
+.wr-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  max-width: 80rem;
+  margin: 0 auto;
+  width: 100%;
+}
+@media (min-width: 1024px) {
+  .wr-content {
+    flex-direction: row;
+  }
+}
+.wr-player-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+}
+.wr-player-wrapper {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  flex-shrink: 0;
+}
+.wr-countdown-box {
+  position: absolute;
+  inset: 0;
+}
+@media (min-width: 640px) {
+  .wr-countdown-box {
+    border-radius: 1rem;
+    margin: 0.75rem;
+  }
+}
+.countdown-num-box {
+  background: var(--wr-countdown-bg);
+}
+.wr-chat-desktop {
+  display: none;
+}
+@media (min-width: 1024px) {
+  .wr-chat-desktop {
+    display: flex;
+  }
+}
+.wr-chat-area {
+  flex-direction: column;
+  border-left: 1px solid var(--wr-border-light);
+}
+@media (min-width: 1024px) {
+  .wr-chat-area {
+    width: 380px;
+    flex-shrink: 0;
+    max-height: 80vh;
+  }
+}
+.wr-chat-header-bar {
+  background: var(--wr-chat-header-bg);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--wr-border-light);
+}
+.wr-online-count {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: var(--wr-btn-subtle-bg);
+}
+.wr-online-count i {
+  font-size: 11px;
+  color: var(--wr-text-tertiary);
+}
+.wr-online-count span {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--wr-text-secondary);
+  font-feature-settings: 'tnum';
+}
 
 .mobile-chat-fab {
   position: fixed;
@@ -314,9 +424,14 @@ defineExpose({ reloadChat, debugSeek, currentElapsedSeconds })
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
 }
 @media (min-width: 1024px) {
-  .mobile-chat-fab { display: none; }
+  .mobile-chat-fab {
+    display: none;
+  }
 }
-.mobile-chat-fab--hidden { opacity: 0; pointer-events: none; }
+.mobile-chat-fab--hidden {
+  opacity: 0;
+  pointer-events: none;
+}
 .mobile-chat-fab-ring {
   position: absolute;
   inset: -4px;
@@ -349,7 +464,9 @@ defineExpose({ reloadChat, debugSeek, currentElapsedSeconds })
   flex-direction: column;
 }
 @media (min-width: 1024px) {
-  .mobile-chat-overlay { display: none; }
+  .mobile-chat-overlay {
+    display: none;
+  }
 }
 .mobile-chat-overlay-header {
   display: flex;
@@ -384,7 +501,9 @@ defineExpose({ reloadChat, debugSeek, currentElapsedSeconds })
 }
 .mobile-chat-overlay-enter-active,
 .mobile-chat-overlay-leave-active {
-  transition: transform 0.22s ease, opacity 0.22s ease;
+  transition:
+    transform 0.22s ease,
+    opacity 0.22s ease;
 }
 .mobile-chat-overlay-enter-from,
 .mobile-chat-overlay-leave-to {

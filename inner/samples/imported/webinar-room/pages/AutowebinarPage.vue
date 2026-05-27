@@ -2,7 +2,9 @@
   <div class="min-h-screen" style="background: var(--wr-bg)">
     <!-- Loading -->
     <div v-if="loading" class="min-h-screen flex items-center justify-center">
-      <div class="w-10 h-10 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+      <div
+        class="w-10 h-10 border-2 border-primary border-t-transparent rounded-full animate-spin"
+      ></div>
     </div>
 
     <!-- Error -->
@@ -20,7 +22,9 @@
     <template v-else-if="awData">
       <!-- Waiting for schedule (no active or upcoming) -->
       <AwWaitingState
-        v-if="!awData.schedule || (awData.schedule.status === 'scheduled' && !isWaitingRoom && !isLive)"
+        v-if="
+          !awData.schedule || (awData.schedule.status === 'scheduled' && !isWaitingRoom && !isLive)
+        "
         :autowebinar="awData.autowebinar"
         :schedule="awData.schedule"
       />
@@ -59,7 +63,6 @@
       />
     </template>
 
-
     <!-- Debug Panel -->
     <DebugPanel
       :autowebinar-id="props.autowebinarId"
@@ -87,7 +90,12 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { getOrCreateBrowserSocketClient } from '@app/socket'
-import { apiAutowebinarViewerDataRoute, apiAutowebinarSocketRoute, apiAutowebinarUserSocketRoute, apiAutowebinarScenarioRoute } from '../api/autowebinar-engine'
+import {
+  apiAutowebinarViewerDataRoute,
+  apiAutowebinarSocketRoute,
+  apiAutowebinarUserSocketRoute,
+  apiAutowebinarScenarioRoute
+} from '../api/autowebinar-engine'
 import { apiFormByIdRoute } from '../api/forms'
 import NamePromptModal from '../components/NamePromptModal.vue'
 import EpisodeFormPopup from '../components/episode/EpisodeFormPopup.vue'
@@ -100,7 +108,7 @@ import { initThemeWatcher } from '../shared/theme'
 import { trackFormShown, trackFormOpened } from '../shared/use-form-analytics'
 
 const props = defineProps({
-  autowebinarId: { type: String, required: true },
+  autowebinarId: { type: String, required: true }
 })
 
 initThemeWatcher()
@@ -145,10 +153,14 @@ const wrScenarioEvents = computed(() => {
   if (!scenarioData.value) return []
   // During WR, use wrOffsetSeconds for timing
   return scenarioData.value.events
-    .filter(evt => evt.eventType === 'chat_message' && evt.rawOffsetSeconds < scenarioData.value.streamStartOffset)
-    .map(evt => ({
+    .filter(
+      (evt) =>
+        evt.eventType === 'chat_message' &&
+        evt.rawOffsetSeconds < scenarioData.value.streamStartOffset
+    )
+    .map((evt) => ({
       ...evt,
-      offsetSeconds: evt.wrOffsetSeconds,
+      offsetSeconds: evt.wrOffsetSeconds
     }))
 })
 
@@ -157,14 +169,18 @@ async function loadViewerData() {
     // Check localStorage for preferred scheduleId (24h session)
     const storageKey = `aw_schedule_${props.autowebinarId}`
     let preferredScheduleId = null
-    
+
     if (typeof localStorage !== 'undefined') {
       const stored = localStorage.getItem(storageKey)
       if (stored) {
         try {
           const parsed = JSON.parse(stored)
           // Check if stored session is still valid (< 24h)
-          if (parsed.scheduleId && parsed.timestamp && (Date.now() - parsed.timestamp < 24 * 60 * 60 * 1000)) {
+          if (
+            parsed.scheduleId &&
+            parsed.timestamp &&
+            Date.now() - parsed.timestamp < 24 * 60 * 60 * 1000
+          ) {
             preferredScheduleId = parsed.scheduleId
           } else {
             // Clean up expired session
@@ -178,15 +194,20 @@ async function loadViewerData() {
 
     // Pass preferredScheduleId to API
     const query = preferredScheduleId ? { scheduleId: preferredScheduleId } : {}
-    const data = await apiAutowebinarViewerDataRoute({ id: props.autowebinarId }).query(query).run(ctx)
+    const data = await apiAutowebinarViewerDataRoute({ id: props.autowebinarId })
+      .query(query)
+      .run(ctx)
     awData.value = data
 
     // Save scheduleId to localStorage
     if (data.schedule?.id && typeof localStorage !== 'undefined') {
-      localStorage.setItem(storageKey, JSON.stringify({
-        scheduleId: data.schedule.id,
-        timestamp: Date.now(),
-      }))
+      localStorage.setItem(
+        storageKey,
+        JSON.stringify({
+          scheduleId: data.schedule.id,
+          timestamp: Date.now()
+        })
+      )
     }
   } catch (e) {
     error.value = e.message || 'Не удалось загрузить автовебинар'
@@ -196,7 +217,7 @@ async function loadViewerData() {
 onMounted(async () => {
   try {
     await loadViewerData()
-    
+
     // Start timer for debug panel offset calculation
     debugTimer = setInterval(() => {
       now.value = Date.now()
@@ -204,18 +225,22 @@ onMounted(async () => {
 
     // Load scenario events (both WR and live states need it)
     try {
-      const data = await apiAutowebinarScenarioRoute({ autowebinarId: props.autowebinarId }).run(ctx)
+      const data = await apiAutowebinarScenarioRoute({ autowebinarId: props.autowebinarId }).run(
+        ctx
+      )
       scenarioData.value = data
     } catch (e) {
       console.error('Failed to load scenario:', e)
     }
 
     // Subscribe to autowebinar socket for schedule updates
-    const socketData = await apiAutowebinarSocketRoute({ autowebinarId: props.autowebinarId }).run(ctx)
+    const socketData = await apiAutowebinarSocketRoute({ autowebinarId: props.autowebinarId }).run(
+      ctx
+    )
     if (socketData.encodedSocketId) {
       const socketClient = await getOrCreateBrowserSocketClient()
       awSubscription = socketClient.subscribeToData(socketData.encodedSocketId)
-      awSubscription.listen(msg => {
+      awSubscription.listen((msg) => {
         if (msg.type === 'schedule_updated') {
           if (awData.value?.schedule && msg.scheduleId === awData.value.schedule.id) {
             awData.value = {
@@ -223,8 +248,8 @@ onMounted(async () => {
               schedule: {
                 ...awData.value.schedule,
                 status: msg.status,
-                startedAt: msg.startedAt || awData.value.schedule.startedAt,
-              },
+                startedAt: msg.startedAt || awData.value.schedule.startedAt
+              }
             }
           } else {
             loadViewerData()
@@ -237,7 +262,6 @@ onMounted(async () => {
         }
       })
     }
-
   } catch (e) {
     error.value = e.message || 'Не удалось загрузить автовебинар'
   }
@@ -252,13 +276,13 @@ function handleNameUpdated() {
 }
 
 function handleAddShownForm(formData) {
-  if (!shownFormsList.value.find(f => f.id === formData.id)) {
+  if (!shownFormsList.value.find((f) => f.id === formData.id)) {
     shownFormsList.value = [...shownFormsList.value, formData]
   }
 }
 
 function handleHideForm(formId) {
-  shownFormsList.value = shownFormsList.value.filter(f => f.id !== formId)
+  shownFormsList.value = shownFormsList.value.filter((f) => f.id !== formId)
   if (activeFormData.value?.id === formId) {
     showFormOverlay.value = false
   }
@@ -266,7 +290,7 @@ function handleHideForm(formId) {
 
 async function handleOpenForm(formId) {
   if (!formId) return
-  let form = shownFormsList.value.find(f => f.id === formId)
+  let form = shownFormsList.value.find((f) => f.id === formId)
   if (!form) {
     try {
       form = await apiFormByIdRoute({ id: formId }).run(ctx)
@@ -287,19 +311,19 @@ function handleDebugSeek(newOffset) {
   const currentNow = Date.now()
   if (awData.value?.schedule) {
     // Recalculate schedule.startedAt
-    const newStartedAt = new Date(currentNow - (newOffset * 1000))
+    const newStartedAt = new Date(currentNow - newOffset * 1000)
     awData.value = {
       ...awData.value,
       schedule: {
         ...awData.value.schedule,
-        startedAt: newStartedAt,
-      },
+        startedAt: newStartedAt
+      }
     }
   }
-  
+
   // Force update now.value to trigger computed recalculation
   now.value = Date.now()
-  
+
   // Notify child component
   stateRef.value?.debugSeek?.(newOffset)
 }

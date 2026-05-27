@@ -68,29 +68,27 @@ function pickNumber(o: unknown, ...keys: string[]): number {
  * Учитывает разные форматы (Legacy/new, разные поля) — поэтому смотрит на синонимы.
  */
 export function normalizePaymentEvent(raw: unknown): NormalizedPaymentEvent {
-  const root = (raw && typeof raw === 'object') ? (raw as Record<string, unknown>) : {}
-  const user = (root.user && typeof root.user === 'object') ? (root.user as Record<string, unknown>) : {}
-  const deal = (root.deal && typeof root.deal === 'object') ? (root.deal as Record<string, unknown>) : {}
+  const root = raw && typeof raw === 'object' ? (raw as Record<string, unknown>) : {}
+  const user =
+    root.user && typeof root.user === 'object' ? (root.user as Record<string, unknown>) : {}
+  const deal =
+    root.deal && typeof root.deal === 'object' ? (root.deal as Record<string, unknown>) : {}
 
   const email =
     pickString(user, 'email', 'Email') ||
     pickString(deal, 'email') ||
     pickString(root, 'email', 'user_email')
   const name =
-    pickString(user, 'name', 'first_name', 'fullName') ||
-    pickString(root, 'name', 'user_name')
+    pickString(user, 'name', 'first_name', 'fullName') || pickString(root, 'name', 'user_name')
   const dealId =
     pickString(deal, 'id', 'deal_id', 'dealId') ||
     pickString(root, 'deal_id', 'order_id', 'dealId', 'orderId')
   const amount =
-    pickNumber(deal, 'price', 'amount', 'total') ||
-    pickNumber(root, 'price', 'amount', 'total')
+    pickNumber(deal, 'price', 'amount', 'total') || pickNumber(root, 'price', 'amount', 'total')
   const dialogId =
-    pickString(root, 'dialog_id', 'dialogId') ||
-    pickString(user, 'dialog_id', 'dialogId')
+    pickString(root, 'dialog_id', 'dialogId') || pickString(user, 'dialog_id', 'dialogId')
   const userId =
-    pickString(user, 'id', 'user_id', 'userId') ||
-    pickString(root, 'user_id', 'userId')
+    pickString(user, 'id', 'user_id', 'userId') || pickString(root, 'user_id', 'userId')
   const gcEventId =
     pickString(root, 'event_id', 'eventId', 'id') ||
     (dealId && email ? `pay_${dealId}_${email}` : '')
@@ -168,11 +166,9 @@ export async function processPaymentEvent(
   }
 
   const dialogId =
-    event.dialogId ||
-    (await settingsLib.getSettingString(ctx, REACTION_DEFAULT_DIALOG_KEY)).trim()
+    event.dialogId || (await settingsLib.getSettingString(ctx, REACTION_DEFAULT_DIALOG_KEY)).trim()
   const userId =
-    event.userId ||
-    (await settingsLib.getSettingString(ctx, REACTION_DEFAULT_USER_KEY)).trim()
+    event.userId || (await settingsLib.getSettingString(ctx, REACTION_DEFAULT_USER_KEY)).trim()
 
   if (!dialogId || !userId) {
     await loggerLib.writeServerLog(ctx, {

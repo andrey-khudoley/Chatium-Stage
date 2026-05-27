@@ -24,7 +24,9 @@ async function copySecret() {
   try {
     await navigator.clipboard.writeText(props.webhookSecret)
     copied.value = true
-    setTimeout(() => { copied.value = false }, 2000)
+    setTimeout(() => {
+      copied.value = false
+    }, 2000)
   } catch {
     copied.value = false
   }
@@ -52,11 +54,17 @@ const exampleHeaders = {
     class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60"
     @click.self="emit('close')"
   >
-    <div class="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-secondary)] w-full max-w-xl max-h-[90vh] flex flex-col shadow-xl overflow-hidden">
-      <div class="p-4 border-b border-[var(--color-border)] flex items-center justify-between shrink-0">
+    <div
+      class="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-secondary)] w-full max-w-xl max-h-[90vh] flex flex-col shadow-xl overflow-hidden"
+    >
+      <div
+        class="p-4 border-b border-[var(--color-border)] flex items-center justify-between shrink-0"
+      >
         <h2 class="text-lg text-[var(--color-text)]">
           Webhook
-          <span v-if="pageTitle" class="text-[var(--color-text-secondary)] font-normal"> — {{ pageTitle }}</span>
+          <span v-if="pageTitle" class="text-[var(--color-text-secondary)] font-normal">
+            — {{ pageTitle }}</span
+          >
         </h2>
         <button
           type="button"
@@ -70,7 +78,9 @@ const exampleHeaders = {
       <div class="overflow-y-auto p-4 flex-1 min-h-0 space-y-4">
         <div>
           <p class="text-sm font-medium text-[var(--color-text)] mb-1">URL вебхука (регистрация)</p>
-          <code class="block rounded border border-[var(--color-border)] bg-[var(--color-bg-tertiary)] px-3 py-2 text-sm text-[var(--color-text)] break-all">
+          <code
+            class="block rounded border border-[var(--color-border)] bg-[var(--color-bg-tertiary)] px-3 py-2 text-sm text-[var(--color-text)] break-all"
+          >
             {{ registerUrl }}
           </code>
         </div>
@@ -78,7 +88,9 @@ const exampleHeaders = {
         <div>
           <p class="text-sm font-medium text-[var(--color-text)] mb-1">Webhook Secret</p>
           <div class="flex gap-2 items-center">
-            <code class="flex-1 rounded border border-[var(--color-border)] bg-[var(--color-bg-tertiary)] px-3 py-2 text-sm text-[var(--color-text)] break-all min-w-0">
+            <code
+              class="flex-1 rounded border border-[var(--color-border)] bg-[var(--color-bg-tertiary)] px-3 py-2 text-sm text-[var(--color-text)] break-all min-w-0"
+            >
               {{ webhookSecret || '—' }}
             </code>
             <button
@@ -94,8 +106,13 @@ const exampleHeaders = {
         </div>
 
         <div>
-          <p class="text-sm font-medium text-[var(--color-text)] mb-1">Пример POST-запроса (JSON)</p>
-          <pre class="rounded border border-[var(--color-border)] bg-[var(--color-bg-tertiary)] p-3 text-xs text-[var(--color-text)] overflow-x-auto">{{ JSON.stringify(examplePayload, null, 2) }}</pre>
+          <p class="text-sm font-medium text-[var(--color-text)] mb-1">
+            Пример POST-запроса (JSON)
+          </p>
+          <pre
+            class="rounded border border-[var(--color-border)] bg-[var(--color-bg-tertiary)] p-3 text-xs text-[var(--color-text)] overflow-x-auto"
+            >{{ JSON.stringify(examplePayload, null, 2) }}</pre
+          >
         </div>
 
         <div>
@@ -105,12 +122,20 @@ const exampleHeaders = {
             @click="paramsOpen = !paramsOpen"
           >
             <span>Параметры</span>
-            <i class="fas transition-transform" :class="paramsOpen ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+            <i
+              class="fas transition-transform"
+              :class="paramsOpen ? 'fa-chevron-up' : 'fa-chevron-down'"
+            ></i>
           </button>
           <div v-show="paramsOpen" class="pt-2">
             <ul class="text-sm text-[var(--color-text-secondary)] space-y-1">
-              <li><code class="text-[var(--color-text)]">key</code> — Webhook Secret (обязательно)</li>
-              <li><code class="text-[var(--color-text)]">ref</code> — идентификатор реферала (обязательно)</li>
+              <li>
+                <code class="text-[var(--color-text)]">key</code> — Webhook Secret (обязательно)
+              </li>
+              <li>
+                <code class="text-[var(--color-text)]">ref</code> — идентификатор реферала
+                (обязательно)
+              </li>
               <li><code class="text-[var(--color-text)]">name</code> — имя</li>
               <li><code class="text-[var(--color-text)]">email</code> — email</li>
               <li><code class="text-[var(--color-text)]">phone</code> — телефон</li>
@@ -122,7 +147,10 @@ const exampleHeaders = {
 
         <div>
           <p class="text-sm font-medium text-[var(--color-text)] mb-1">Заголовки (JSON)</p>
-          <pre class="rounded border border-[var(--color-border)] bg-[var(--color-bg-tertiary)] p-3 text-xs text-[var(--color-text)] overflow-x-auto">{{ JSON.stringify(exampleHeaders, null, 2) }}</pre>
+          <pre
+            class="rounded border border-[var(--color-border)] bg-[var(--color-bg-tertiary)] p-3 text-xs text-[var(--color-text)] overflow-x-auto"
+            >{{ JSON.stringify(exampleHeaders, null, 2) }}</pre
+          >
         </div>
 
         <div>

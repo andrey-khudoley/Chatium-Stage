@@ -8,7 +8,7 @@ import { canManageChat } from '../shared/permissions'
 export const apiModerationCheckRoute = app
   .body((s) => ({
     feedId: s.string(),
-    userId: s.string(),
+    userId: s.string()
   }))
   .post('/check', async (ctx, req) => {
     requireRealUser(ctx)
@@ -16,7 +16,7 @@ export const apiModerationCheckRoute = app
     const moderation = await Moderations.findOneBy(ctx, {
       chatId: req.body.feedId,
       userId: req.body.userId,
-      isActive: true,
+      isActive: true
     })
 
     if (!moderation) {
@@ -28,7 +28,7 @@ export const apiModerationCheckRoute = app
       // Деактивируем истекшую модерацию
       await Moderations.update(ctx, {
         id: moderation.id,
-        isActive: false,
+        isActive: false
       })
       return { moderation: null }
     }
@@ -43,13 +43,13 @@ export const apiModerationSetRoute = app
     userId: s.string(),
     type: s.string(), // 'mute' | 'ban'
     reason: s.string().optional(),
-    duration: s.number().optional(), // в минутах, если не указано - навсегда
+    duration: s.number().optional() // в минутах, если не указано - навсегда
   }))
   .post('/set', async (ctx, req) => {
     requireRealUser(ctx)
 
     const chat = await Chats.findOneBy(ctx, {
-      feedId: req.body.feedId,
+      feedId: req.body.feedId
     })
 
     if (!chat) {
@@ -85,14 +85,14 @@ export const apiModerationSetRoute = app
         chatId: req.body.feedId,
         userId: req.body.userId,
         type: req.body.type,
-        isActive: true,
-      },
+        isActive: true
+      }
     })
 
     for (const mod of existingModerations) {
       await Moderations.update(ctx, {
         id: mod.id,
-        isActive: false,
+        isActive: false
       })
     }
 
@@ -111,7 +111,7 @@ export const apiModerationSetRoute = app
       duration: req.body.duration || null,
       expiresAt,
       isPermanent,
-      isActive: true,
+      isActive: true
     })
 
     // При бане удаляем пользователя из участников чата
@@ -127,13 +127,13 @@ export const apiModerationSetRoute = app
     // Если модерация временная - планируем job на снятие
     if (!isPermanent && expiresAt) {
       await apiModerationExpireJob.scheduleJobAt(ctx, expiresAt, {
-        moderationId: moderation.id,
+        moderationId: moderation.id
       })
     }
 
     return {
       success: true,
-      moderation,
+      moderation
     }
   })
 
@@ -142,13 +142,13 @@ export const apiModerationRemoveRoute = app
   .body((s) => ({
     feedId: s.string(),
     userId: s.string(),
-    type: s.string(), // 'mute' | 'ban'
+    type: s.string() // 'mute' | 'ban'
   }))
   .post('/remove', async (ctx, req) => {
     requireRealUser(ctx)
 
     const chat = await Chats.findOneBy(ctx, {
-      feedId: req.body.feedId,
+      feedId: req.body.feedId
     })
 
     if (!chat) {
@@ -167,19 +167,19 @@ export const apiModerationRemoveRoute = app
         chatId: req.body.feedId,
         userId: req.body.userId,
         type: req.body.type,
-        isActive: true,
-      },
+        isActive: true
+      }
     })
 
     for (const mod of moderations) {
       await Moderations.update(ctx, {
         id: mod.id,
-        isActive: false,
+        isActive: false
       })
     }
 
     return {
-      success: true,
+      success: true
     }
   })
 
@@ -189,7 +189,7 @@ export async function isUserBanned(ctx, feedId: string, userId: string): Promise
     chatId: feedId,
     userId: userId,
     type: 'ban',
-    isActive: true,
+    isActive: true
   })
 
   if (!moderation) return false
@@ -198,7 +198,7 @@ export async function isUserBanned(ctx, feedId: string, userId: string): Promise
   if (!moderation.isPermanent && moderation.expiresAt && new Date() > moderation.expiresAt) {
     await Moderations.update(ctx, {
       id: moderation.id,
-      isActive: false,
+      isActive: false
     })
     return false
   }
@@ -210,13 +210,13 @@ export async function isUserBanned(ctx, feedId: string, userId: string): Promise
 export const apiModerationListRoute = app
   .query((s) => ({
     feedId: s.string(),
-    onlyActive: s.boolean().optional(),
+    onlyActive: s.boolean().optional()
   }))
   .get('/list', async (ctx, req) => {
     requireRealUser(ctx)
 
     const chat = await Chats.findOneBy(ctx, {
-      feedId: req.query.feedId,
+      feedId: req.query.feedId
     })
 
     if (!chat) {
@@ -230,7 +230,7 @@ export const apiModerationListRoute = app
     }
 
     const where: any = {
-      chatId: req.query.feedId,
+      chatId: req.query.feedId
     }
 
     if (req.query.onlyActive !== false) {
@@ -240,18 +240,18 @@ export const apiModerationListRoute = app
     const moderations = await Moderations.findAll(ctx, {
       where,
       order: [{ createdAt: 'desc' }],
-      limit: 100,
+      limit: 100
     })
 
     return {
-      moderations,
+      moderations
     }
   })
 
 // Job для автоматического снятия модерации по истечении времени
 export const apiModerationExpireJob = app
   .body((s) => ({
-    moderationId: s.string(),
+    moderationId: s.string()
   }))
   .job('/expire', async (ctx, params) => {
     const moderation = await Moderations.findById(ctx, params.moderationId)
@@ -264,7 +264,7 @@ export const apiModerationExpireJob = app
     if (moderation.expiresAt && new Date() >= moderation.expiresAt) {
       await Moderations.update(ctx, {
         id: moderation.id,
-        isActive: false,
+        isActive: false
       })
 
       ctx.account.log('Moderation expired', {
@@ -273,8 +273,8 @@ export const apiModerationExpireJob = app
           moderationId: moderation.id,
           userId: moderation.userId.id,
           chatId: moderation.chatId,
-          type: moderation.type,
-        },
+          type: moderation.type
+        }
       })
     }
 

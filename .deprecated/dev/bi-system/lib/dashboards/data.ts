@@ -21,6 +21,3 @@ export interface DashboardMetricResult {
   value: number | null
   error?: string
 }
-
-
-

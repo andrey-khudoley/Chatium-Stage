@@ -5,11 +5,16 @@ export const TProjektChatMetricsM3t = Heap.Table(
   't_projekt_chat_metrics_M3t',
   {
     metricKey: Heap.Optional(
-      Heap.String({ customMeta: { title: 'Ключ метрики' }, searchable: { langs: ['ru', 'en'] } }),
+      Heap.String({ customMeta: { title: 'Ключ метрики' }, searchable: { langs: ['ru', 'en'] } })
     ),
-    value: Heap.Optional(Heap.Number({ customMeta: { title: 'Значение' } })),
+    value: Heap.Optional(Heap.Number({ customMeta: { title: 'Значение' } }))
   },
-  { customMeta: { title: 'Метрики чатов', description: 'Счётчики событий для мониторинга и аналитики' } },
+  {
+    customMeta: {
+      title: 'Метрики чатов',
+      description: 'Счётчики событий для мониторинга и аналитики'
+    }
+  }
 )
 
 export default TProjektChatMetricsM3t

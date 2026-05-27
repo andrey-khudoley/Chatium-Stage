@@ -1,9 +1,9 @@
 ---
-title: "КП — платежная страница GetCourse для Ольги"
+title: 'КП — платежная страница GetCourse для Ольги'
 status: draft
 created: 2026-05-07
 updated: 2026-05-07
-project: "[Бриф проекта](../brief.md)"
+project: '[Бриф проекта](../brief.md)'
 tags:
   - note/commercial
   - workflow/proposal

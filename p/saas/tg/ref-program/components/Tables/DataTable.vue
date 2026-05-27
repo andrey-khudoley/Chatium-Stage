@@ -35,15 +35,14 @@ function formatMoney(kopecks: unknown): string {
 </script>
 
 <template>
-  <div class="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-secondary)] overflow-hidden">
+  <div
+    class="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-secondary)] overflow-hidden"
+  >
     <div v-if="loading" class="p-8 text-center text-[var(--color-text-secondary)]">
       <i class="fas fa-spinner fa-spin text-xl"></i>
     </div>
     <template v-else>
-      <div
-        v-if="rows.length === 0"
-        class="p-8 text-center text-[var(--color-text-secondary)]"
-      >
+      <div v-if="rows.length === 0" class="p-8 text-center text-[var(--color-text-secondary)]">
         {{ emptyMessage ?? 'Нет данных' }}
       </div>
       <table v-else class="w-full text-sm">
@@ -64,11 +63,7 @@ function formatMoney(kopecks: unknown): string {
             :key="i"
             class="border-t border-[var(--color-border)] hover:bg-[var(--color-bg-tertiary)]"
           >
-            <td
-              v-for="col in columns"
-              :key="col.key"
-              :class="[col['class'], 'px-4 py-2']"
-            >
+            <td v-for="col in columns" :key="col.key" :class="[col['class'], 'px-4 py-2']">
               <template v-if="col.format === 'datetime'">
                 {{ formatDatetime(row[col.key]) }}
               </template>

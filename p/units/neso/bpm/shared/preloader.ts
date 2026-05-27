@@ -360,9 +360,7 @@ export function getPreloaderStyles() {
  */
 export function getPreloaderScript(themeHint: PreloaderTheme = 'auto') {
   const safeThemeHint = normalizeTheme(themeHint)
-  const fallbackInnerHTML = getPreloaderInnerHTML(DEFAULT_PROJECT_NAME)
-    .trim()
-    .replace(/\s+/g, ' ')
+  const fallbackInnerHTML = getPreloaderInnerHTML(DEFAULT_PROJECT_NAME).trim().replace(/\s+/g, ' ')
 
   return `
     (function() {
@@ -739,7 +737,10 @@ export function getPreloaderScript(themeHint: PreloaderTheme = 'auto') {
 /**
  * HTML разметка прелоадера.
  */
-export function getPreloaderHTML(projectName = DEFAULT_PROJECT_NAME, themeHint: PreloaderTheme = 'auto') {
+export function getPreloaderHTML(
+  projectName = DEFAULT_PROJECT_NAME,
+  themeHint: PreloaderTheme = 'auto'
+) {
   const safeThemeHint = normalizeTheme(themeHint)
   const initialThemeAttr = safeThemeHint === 'auto' ? '' : ` data-theme="${safeThemeHint}"`
   return `

@@ -309,11 +309,12 @@ onMounted(() => {
 onUnmounted(() => {
   window.removeEventListener('bootloader-complete', onBootloaderComplete)
 })
-
 </script>
 
 <template>
-  <div class="orders-app app-layout bg-[var(--color-bg)] text-[var(--color-text)] flex flex-col min-h-screen">
+  <div
+    class="orders-app app-layout bg-[var(--color-bg)] text-[var(--color-text)] flex flex-col min-h-screen"
+  >
     <GlobalGlitch />
     <Header
       v-if="bootLoaderDone"
@@ -336,8 +337,10 @@ onUnmounted(() => {
           </div>
           <h1 class="orders-title">Текущие заказы</h1>
           <p class="orders-lead">
-            Метрики по таблице контрактов оплаты: фильтр по <code class="orders-code">created_at</code> (от / до) и по
-            техническим <code class="orders-code">lava_product_id</code> / <code class="orders-code">lava_offer_id</code> через Heap
+            Метрики по таблице контрактов оплаты: фильтр по
+            <code class="orders-code">created_at</code> (от / до) и по техническим
+            <code class="orders-code">lava_product_id</code> /
+            <code class="orders-code">lava_offer_id</code> через Heap
             <code class="orders-code">where</code>.
           </p>
         </header>
@@ -360,17 +363,26 @@ onUnmounted(() => {
               <span class="orders-field__label">Product (lava_product_id)</span>
               <select v-model="filterProductId" class="orders-input orders-select">
                 <option value="">Все продукты</option>
-                <option v-for="p in productOptions" :key="p.id" :value="p.id">{{ p.label }} — {{ p.id }}</option>
+                <option v-for="p in productOptions" :key="p.id" :value="p.id">
+                  {{ p.label }} — {{ p.id }}
+                </option>
               </select>
             </label>
             <label class="orders-field orders-field--grow">
               <span class="orders-field__label">Offer (lava_offer_id)</span>
               <select v-model="filterOfferId" class="orders-input orders-select">
                 <option value="">Все офферы</option>
-                <option v-for="o in offerOptions" :key="o.id" :value="o.id">{{ o.label }} — {{ o.id }}</option>
+                <option v-for="o in offerOptions" :key="o.id" :value="o.id">
+                  {{ o.label }} — {{ o.id }}
+                </option>
               </select>
             </label>
-            <button type="button" class="orders-apply crt-btn" :disabled="loading" @click="applyFilters">
+            <button
+              type="button"
+              class="orders-apply crt-btn"
+              :disabled="loading"
+              @click="applyFilters"
+            >
               <span class="crt-btn__shine" aria-hidden="true" />
               <i class="fas fa-bolt" aria-hidden="true" />
               {{ loading ? 'Запрос…' : 'Применить' }}
@@ -379,7 +391,10 @@ onUnmounted(() => {
           <p v-if="errorMsg" class="orders-error" role="alert">{{ errorMsg }}</p>
         </section>
 
-        <section v-if="bootLoaderDone" class="orders-kpi mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <section
+          v-if="bootLoaderDone"
+          class="orders-kpi mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"
+        >
           <div class="kpi-card crt-panel">
             <div class="kpi-card__label">Сформировано</div>
             <div class="kpi-card__value">{{ formedCount }}</div>
@@ -392,11 +407,15 @@ onUnmounted(() => {
           </div>
           <div class="kpi-card crt-panel">
             <div class="kpi-card__label">Сумма сформ.</div>
-            <div class="kpi-card__value kpi-card__value--sm">{{ formatMultiCurrency(formedByCurrency) }}</div>
+            <div class="kpi-card__value kpi-card__value--sm">
+              {{ formatMultiCurrency(formedByCurrency) }}
+            </div>
           </div>
           <div class="kpi-card crt-panel">
             <div class="kpi-card__label">Сумма оплач.</div>
-            <div class="kpi-card__value kpi-card__value--sm">{{ formatMultiCurrency(paidByCurrency) }}</div>
+            <div class="kpi-card__value kpi-card__value--sm">
+              {{ formatMultiCurrency(paidByCurrency) }}
+            </div>
           </div>
         </section>
 
@@ -423,7 +442,10 @@ onUnmounted(() => {
           </div>
         </section>
 
-        <section v-if="bootLoaderDone && currencyBreakdown.length" class="mt-8 crt-panel crt-panel--table">
+        <section
+          v-if="bootLoaderDone && currencyBreakdown.length"
+          class="mt-8 crt-panel crt-panel--table"
+        >
           <div class="crt-panel__head">
             <i class="fas fa-coins crt-panel__head-icon" aria-hidden="true" />
             <span>По валютам</span>
@@ -453,10 +475,13 @@ onUnmounted(() => {
             <i class="fas fa-list-ul crt-panel__head-icon" aria-hidden="true" />
             <span>Список заказов</span>
           </div>
-          <p v-if="ordersListError" class="orders-error orders-error--inner" role="alert">{{ ordersListError }}</p>
+          <p v-if="ordersListError" class="orders-error orders-error--inner" role="alert">
+            {{ ordersListError }}
+          </p>
           <div class="orders-pagination">
             <span class="orders-pagination__info">
-              Всего записей: {{ ordersTotal }} · страница {{ ordersPage }} из {{ ordersTotalPages }} (по {{ ORDERS_PAGE_SIZE }} шт.)
+              Всего записей: {{ ordersTotal }} · страница {{ ordersPage }} из
+              {{ ordersTotalPages }} (по {{ ORDERS_PAGE_SIZE }} шт.)
               <span v-if="ordersListLoading" class="orders-pagination__loading">загрузка…</span>
             </span>
             <div class="orders-pagination__btns">
@@ -498,14 +523,22 @@ onUnmounted(() => {
                 </tr>
                 <tr v-for="row in ordersRows" :key="row.id">
                   <td class="orders-table__mono">{{ row.gc_order_id || '—' }}</td>
-                  <td><span class="orders-status">{{ row.status }}</span></td>
+                  <td>
+                    <span class="orders-status">{{ row.status }}</span>
+                  </td>
                   <td class="orders-table__mono">{{ formatMoney(row.amount, row.currency) }}</td>
-                  <td class="orders-table__clip" :title="row.gc_product_title">{{ clip(row.gc_product_title, 36) }}</td>
-                  <td class="orders-table__clip" :title="row.gc_offer_title">{{ clip(row.gc_offer_title, 36) }}</td>
-                  <td class="orders-table__clip orders-table__email" :title="row.buyer_email">{{
-                    clip(row.buyer_email, 28)
-                  }}</td>
-                  <td class="orders-table__mono orders-table__nowrap">{{ formatDateTime(row.created_at) }}</td>
+                  <td class="orders-table__clip" :title="row.gc_product_title">
+                    {{ clip(row.gc_product_title, 36) }}
+                  </td>
+                  <td class="orders-table__clip" :title="row.gc_offer_title">
+                    {{ clip(row.gc_offer_title, 36) }}
+                  </td>
+                  <td class="orders-table__clip orders-table__email" :title="row.buyer_email">
+                    {{ clip(row.buyer_email, 28) }}
+                  </td>
+                  <td class="orders-table__mono orders-table__nowrap">
+                    {{ formatDateTime(row.created_at) }}
+                  </td>
                   <td>
                     <a
                       v-if="row.payment_url"
@@ -513,7 +546,8 @@ onUnmounted(() => {
                       class="orders-link-pay"
                       target="_blank"
                       rel="noopener noreferrer"
-                      >перейти</a>
+                      >перейти</a
+                    >
                     <span v-else class="orders-table__muted">—</span>
                   </td>
                 </tr>
@@ -605,7 +639,9 @@ onUnmounted(() => {
     8px calc(100% - 8px),
     0 calc(100% - 8px)
   );
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.03), 0 12px 40px rgba(0, 0, 0, 0.35);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.03),
+    0 12px 40px rgba(0, 0, 0, 0.35);
 }
 
 .crt-panel::before {
@@ -720,7 +756,9 @@ onUnmounted(() => {
     4px calc(100% - 4px),
     0 calc(100% - 4px)
   );
-  transition: filter 0.2s ease, transform 0.15s ease;
+  transition:
+    filter 0.2s ease,
+    transform 0.15s ease;
 }
 
 .crt-btn:disabled {
@@ -737,7 +775,12 @@ onUnmounted(() => {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background: linear-gradient(105deg, transparent 40%, rgba(255, 255, 255, 0.08) 50%, transparent 60%);
+  background: linear-gradient(
+    105deg,
+    transparent 40%,
+    rgba(255, 255, 255, 0.08) 50%,
+    transparent 60%
+  );
   opacity: 0.7;
 }
 
@@ -758,7 +801,9 @@ onUnmounted(() => {
 
 .kpi-card--accent {
   border-color: rgba(211, 35, 75, 0.45);
-  box-shadow: inset 0 0 30px rgba(211, 35, 75, 0.06), 0 12px 40px rgba(0, 0, 0, 0.35);
+  box-shadow:
+    inset 0 0 30px rgba(211, 35, 75, 0.06),
+    0 12px 40px rgba(0, 0, 0, 0.35);
 }
 
 .kpi-card__label {
@@ -866,7 +911,9 @@ onUnmounted(() => {
   color: var(--color-text, #e8e8e8);
   background: rgba(0, 0, 0, 0.45);
   border: 1px solid var(--color-border, #2a2a2a);
-  transition: border-color 0.15s ease, color 0.15s ease;
+  transition:
+    border-color 0.15s ease,
+    color 0.15s ease;
 }
 
 .orders-page-btn:hover:not(:disabled) {

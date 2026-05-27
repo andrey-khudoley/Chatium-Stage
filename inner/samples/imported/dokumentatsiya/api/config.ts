@@ -15,31 +15,33 @@ export const apiConfigListRoute = app.get('/api/config', async (ctx, req) => {
 })
 
 // @shared-route
-export const apiConfigSetRoute = app.body(s => ({
-  key: s.string(),
-  value: s.string(),
-  description: s.string().optional()
-})).post('/api/config/set', async (ctx, req) => {
-  requireAccountRole(ctx, 'Admin')
-  
-  const existing = await Config.findOneBy(ctx, { key: req.body.key })
-  
-  if (existing) {
-    const updated = await Config.update(ctx, {
-      id: existing.id,
-      value: req.body.value,
-      description: req.body.description || existing.description
-    })
-    return updated
-  } else {
-    const created = await Config.create(ctx, {
-      key: req.body.key,
-      value: req.body.value,
-      description: req.body.description || ''
-    })
-    return created
-  }
-})
+export const apiConfigSetRoute = app
+  .body((s) => ({
+    key: s.string(),
+    value: s.string(),
+    description: s.string().optional()
+  }))
+  .post('/api/config/set', async (ctx, req) => {
+    requireAccountRole(ctx, 'Admin')
+
+    const existing = await Config.findOneBy(ctx, { key: req.body.key })
+
+    if (existing) {
+      const updated = await Config.update(ctx, {
+        id: existing.id,
+        value: req.body.value,
+        description: req.body.description || existing.description
+      })
+      return updated
+    } else {
+      const created = await Config.create(ctx, {
+        key: req.body.key,
+        value: req.body.value,
+        description: req.body.description || ''
+      })
+      return created
+    }
+  })
 
 // @shared-route
 export const apiConfigDeleteRoute = app.post('/api/config/:id/delete', async (ctx, req) => {
@@ -52,7 +54,11 @@ export const apiConfigDeleteRoute = app.post('/api/config/:id/delete', async (ct
  * Helper function to get config value with default
  */
 // @shared
-export async function getConfigValue(ctx: app.Ctx, key: string, defaultValue: string): Promise<string> {
+export async function getConfigValue(
+  ctx: app.Ctx,
+  key: string,
+  defaultValue: string
+): Promise<string> {
   const config = await Config.findOneBy(ctx, { key })
   return config?.value || defaultValue
 }

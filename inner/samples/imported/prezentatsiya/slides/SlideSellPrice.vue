@@ -4,12 +4,11 @@
       <div class="glow-orb orb-1"></div>
       <div class="glow-orb orb-2"></div>
       <div class="glow-orb orb-3"></div>
-
     </div>
-    
+
     <div class="container">
       <h2 class="title">
-        И стоит это<br>
+        И стоит это<br />
         <span class="price-hero">
           <span class="price-amount">3 000 ₽</span>
           <span class="price-period">/мес</span>
@@ -25,26 +24,33 @@
           <div class="hw-icon"><i class="fas fa-wallet"></i></div>
           <div class="hw-content">
             <h3>Как рекламный кабинет</h3>
-            <p>Оплачиваете подписку — деньги <span class="hl-green">падают на баланс</span>. На эти деньги питаются Ботан и Леночка.</p>
+            <p>
+              Оплачиваете подписку — деньги <span class="hl-green">падают на баланс</span>. На эти
+              деньги питаются Ботан и Леночка.
+            </p>
           </div>
         </div>
         <div class="hw-card">
           <div class="hw-icon"><i class="fas fa-bolt"></i></div>
           <div class="hw-content">
             <h3>Платите за использование</h3>
-            <p>Не используете — деньги лежат. Используете — <span class="hl-green">сотрудники работают</span>. Всё прозрачно.</p>
+            <p>
+              Не используете — деньги лежат. Используете —
+              <span class="hl-green">сотрудники работают</span>. Всё прозрачно.
+            </p>
           </div>
         </div>
         <div class="hw-card">
           <div class="hw-icon"><i class="fas fa-rocket"></i></div>
           <div class="hw-content">
             <h3>В разы быстрее, в разы дешевле</h3>
-            <p>Один агент заменяет отдел. <span class="hl-green">Работает 24/7</span>. Не болеет. Не увольняется.</p>
+            <p>
+              Один агент заменяет отдел. <span class="hl-green">Работает 24/7</span>. Не болеет. Не
+              увольняется.
+            </p>
           </div>
         </div>
       </div>
-
-
     </div>
   </div>
 </template>
@@ -109,11 +115,14 @@ defineProps({ active: Boolean })
 }
 
 @keyframes float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-25px); }
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-25px);
+  }
 }
-
-
 
 .container {
   max-width: 800px;
@@ -156,8 +165,13 @@ defineProps({ active: Boolean })
 }
 
 @keyframes gradient-shift {
-  0%, 100% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
 }
 
 .subtitle-line {
@@ -179,8 +193,13 @@ defineProps({ active: Boolean })
 }
 
 @keyframes kopecks-glow {
-  0%, 100% { box-shadow: 0 0 0 rgba(245, 158, 11, 0); }
-  50% { box-shadow: 0 0 30px rgba(245, 158, 11, 0.2); }
+  0%,
+  100% {
+    box-shadow: 0 0 0 rgba(245, 158, 11, 0);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(245, 158, 11, 0.2);
+  }
 }
 
 .how-it-works {
@@ -203,7 +222,7 @@ defineProps({ active: Boolean })
 .hw-card:hover {
   border-color: rgba(16, 185, 129, 0.3);
   transform: translateX(6px);
-  box-shadow: 0 12px 30px rgba(0,0,0,0.2);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2);
 }
 
 .hw-icon {
@@ -258,16 +277,45 @@ defineProps({ active: Boolean })
 }
 
 @media (max-width: 480px) {
-  .slide { padding: 16px; }
-  .container { max-width: 100%; }
-  .title { font-size: 22px; }
-  .price-amount { font-size: 48px; }
-  .price-period { font-size: 16px; }
-  .kopecks { font-size: 14px; padding: 5px 18px; }
-  .subtitle-line { margin-bottom: 24px; }
-  .hw-card { padding: 16px; border-radius: 14px; gap: 12px; }
-  .hw-icon { width: 40px; height: 40px; font-size: 18px; border-radius: 12px; }
-  .hw-content h3 { font-size: 14px; margin-bottom: 4px; }
-  .hw-content p { font-size: 13px; }
+  .slide {
+    padding: 16px;
+  }
+  .container {
+    max-width: 100%;
+  }
+  .title {
+    font-size: 22px;
+  }
+  .price-amount {
+    font-size: 48px;
+  }
+  .price-period {
+    font-size: 16px;
+  }
+  .kopecks {
+    font-size: 14px;
+    padding: 5px 18px;
+  }
+  .subtitle-line {
+    margin-bottom: 24px;
+  }
+  .hw-card {
+    padding: 16px;
+    border-radius: 14px;
+    gap: 12px;
+  }
+  .hw-icon {
+    width: 40px;
+    height: 40px;
+    font-size: 18px;
+    border-radius: 12px;
+  }
+  .hw-content h3 {
+    font-size: 14px;
+    margin-bottom: 4px;
+  }
+  .hw-content p {
+    font-size: 13px;
+  }
 }
 </style>

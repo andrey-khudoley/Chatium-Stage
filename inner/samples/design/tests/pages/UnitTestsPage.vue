@@ -65,9 +65,16 @@ onMounted(() => {
             <div class="flex items-center gap-3">
               <span
                 v-if="testResults[category.name]?.[test.name]"
-                :class="testResults[category.name][test.name].success ? 'text-green-500' : 'text-red-500'"
+                :class="
+                  testResults[category.name][test.name].success ? 'text-green-500' : 'text-red-500'
+                "
               >
-                <i :class="['fa-solid', testResults[category.name][test.name].success ? 'fa-check' : 'fa-xmark']"></i>
+                <i
+                  :class="[
+                    'fa-solid',
+                    testResults[category.name][test.name].success ? 'fa-check' : 'fa-xmark'
+                  ]"
+                ></i>
               </span>
               <span v-else class="text-gray-500">
                 <i class="fa-solid fa-minus"></i>
@@ -87,4 +94,3 @@ onMounted(() => {
     </div>
   </div>
 </template>
-

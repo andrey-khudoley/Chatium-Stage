@@ -57,9 +57,7 @@ const stateClass = computed(() => {
   border-radius: var(--radius-lg);
   border: 1px solid var(--border-soft);
   padding: 12px;
-  background:
-    var(--gradient-glass),
-    color-mix(in srgb, var(--surface-2) 84%, transparent);
+  background: var(--gradient-glass), color-mix(in srgb, var(--surface-2) 84%, transparent);
   display: grid;
   gap: 10px;
 }
@@ -88,8 +86,10 @@ const stateClass = computed(() => {
   border-radius: 50%;
   display: grid;
   place-items: center;
-  background:
-    conic-gradient(var(--accent) var(--gauge-angle), color-mix(in srgb, var(--border-soft) 72%, transparent) 0deg);
+  background: conic-gradient(
+    var(--accent) var(--gauge-angle),
+    color-mix(in srgb, var(--border-soft) 72%, transparent) 0deg
+  );
   box-shadow:
     inset 0 0 0 1px color-mix(in srgb, var(--border-soft) 76%, transparent),
     var(--shadow-sm);
@@ -101,8 +101,11 @@ const stateClass = computed(() => {
   position: absolute;
   inset: 8px;
   border-radius: 50%;
-  background:
-    radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--accent-soft) 62%, transparent), transparent 60%),
+  background: radial-gradient(
+      circle at 35% 30%,
+      color-mix(in srgb, var(--accent-soft) 62%, transparent),
+      transparent 60%
+    ),
     color-mix(in srgb, var(--surface-1) 88%, transparent);
   border: 1px solid color-mix(in srgb, var(--border-soft) 68%, transparent);
 }
@@ -160,15 +163,24 @@ const stateClass = computed(() => {
 }
 
 .dc-sla-gauge.state-danger .dc-sla-gauge__dial {
-  background: conic-gradient(var(--status-danger) var(--gauge-angle), color-mix(in srgb, var(--border-soft) 72%, transparent) 0deg);
+  background: conic-gradient(
+    var(--status-danger) var(--gauge-angle),
+    color-mix(in srgb, var(--border-soft) 72%, transparent) 0deg
+  );
 }
 
 .dc-sla-gauge.state-warning .dc-sla-gauge__dial {
-  background: conic-gradient(var(--status-warning) var(--gauge-angle), color-mix(in srgb, var(--border-soft) 72%, transparent) 0deg);
+  background: conic-gradient(
+    var(--status-warning) var(--gauge-angle),
+    color-mix(in srgb, var(--border-soft) 72%, transparent) 0deg
+  );
 }
 
 .dc-sla-gauge.state-good .dc-sla-gauge__dial {
-  background: conic-gradient(var(--status-success) var(--gauge-angle), color-mix(in srgb, var(--border-soft) 72%, transparent) 0deg);
+  background: conic-gradient(
+    var(--status-success) var(--gauge-angle),
+    color-mix(in srgb, var(--border-soft) 72%, transparent) 0deg
+  );
 }
 
 @media (max-width: 700px) {

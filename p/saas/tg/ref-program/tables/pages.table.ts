@@ -7,21 +7,21 @@ export const TSaasRefProgramPage4Bc8De = Heap.Table(
     campaignId: Heap.Optional(
       Heap.RefLink('t__tg-ref-program__campaign__8Hn4Lx', {
         customMeta: { title: 'Кампания' },
-        onDelete: 'none',
-      }),
+        onDelete: 'none'
+      })
     ),
     title: Heap.Optional(Heap.String({ customMeta: { title: 'Название' } })),
     urlTemplate: Heap.Optional(
       Heap.String({
         customMeta: {
           title: 'URL-шаблон',
-          description: 'Целевой URL с плейсхолдером {ref}',
-        },
-      }),
+          description: 'Целевой URL с плейсхолдером {ref}'
+        }
+      })
     ),
-    webhookSecret: Heap.Optional(Heap.String({ customMeta: { title: 'Секрет webhook' } })),
+    webhookSecret: Heap.Optional(Heap.String({ customMeta: { title: 'Секрет webhook' } }))
   },
-  { customMeta: { title: 'Страницы', description: 'Целевые страницы для трафика' } },
+  { customMeta: { title: 'Страницы', description: 'Целевые страницы для трафика' } }
 )
 
 export default TSaasRefProgramPage4Bc8De

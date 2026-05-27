@@ -88,11 +88,16 @@ export function runLeadUnitChecks(): LeadUnitTestResult[] {
     return user.phone === '+79991234567'
   })
 
-  tryPush(results, 'lead_buildAddUserArgs_no_phone_skipped', 'buildAddUserArgs без телефона ключ не добавляется', () => {
-    const args = buildAddUserArgs({ email: DEMO_LEAD_EMAIL, name: 'Тестер' })
-    const user = ((args.params as Record<string, unknown>).user) as Record<string, unknown>
-    return !('phone' in user)
-  })
+  tryPush(
+    results,
+    'lead_buildAddUserArgs_no_phone_skipped',
+    'buildAddUserArgs без телефона ключ не добавляется',
+    () => {
+      const args = buildAddUserArgs({ email: DEMO_LEAD_EMAIL, name: 'Тестер' })
+      const user = (args.params as Record<string, unknown>).user as Record<string, unknown>
+      return !('phone' in user)
+    }
+  )
 
   tryPush(results, 'lead_buildAddUserArgs_customFields', 'buildAddUserArgs c customFields', () => {
     const args = buildAddUserArgs({
@@ -107,29 +112,46 @@ export function runLeadUnitChecks(): LeadUnitTestResult[] {
     )
   })
 
-  tryPush(results, 'lead_buildCreateDealArgs_no_offer', 'buildCreateDealArgs без offer_code → null', () => {
-    return buildCreateDealArgs({ email: DEMO_LEAD_EMAIL, name: 'Тестер' } as LeadFormInput) === null
-  })
+  tryPush(
+    results,
+    'lead_buildCreateDealArgs_no_offer',
+    'buildCreateDealArgs без offer_code → null',
+    () => {
+      return (
+        buildCreateDealArgs({ email: DEMO_LEAD_EMAIL, name: 'Тестер' } as LeadFormInput) === null
+      )
+    }
+  )
 
-  tryPush(results, 'lead_buildCreateDealArgs_with_offer', 'buildCreateDealArgs с offer_code', () => {
-    const args = buildCreateDealArgs({
-      email: DEMO_LEAD_EMAIL,
-      name: 'Тестер',
-      offerCode: 'webinar-lead'
-    } as LeadFormInput)
-    if (!args || !isObject(args.params)) return false
-    const params = args.params as Record<string, unknown>
-    return (
-      isObject(params.user) &&
-      (params.user as Record<string, unknown>).email === DEMO_LEAD_EMAIL &&
-      isObject(params.deal) &&
-      (params.deal as Record<string, unknown>).offer_code === 'webinar-lead'
-    )
-  })
+  tryPush(
+    results,
+    'lead_buildCreateDealArgs_with_offer',
+    'buildCreateDealArgs с offer_code',
+    () => {
+      const args = buildCreateDealArgs({
+        email: DEMO_LEAD_EMAIL,
+        name: 'Тестер',
+        offerCode: 'webinar-lead'
+      } as LeadFormInput)
+      if (!args || !isObject(args.params)) return false
+      const params = args.params as Record<string, unknown>
+      return (
+        isObject(params.user) &&
+        (params.user as Record<string, unknown>).email === DEMO_LEAD_EMAIL &&
+        isObject(params.deal) &&
+        (params.deal as Record<string, unknown>).offer_code === 'webinar-lead'
+      )
+    }
+  )
 
-  tryPush(results, 'lead_demo_email_const', 'DEMO_LEAD_EMAIL фиксирован как tester@khudoley.pro', () => {
-    return DEMO_LEAD_EMAIL === 'tester@khudoley.pro'
-  })
+  tryPush(
+    results,
+    'lead_demo_email_const',
+    'DEMO_LEAD_EMAIL фиксирован как tester@khudoley.pro',
+    () => {
+      return DEMO_LEAD_EMAIL === 'tester@khudoley.pro'
+    }
+  )
 
   return results
 }

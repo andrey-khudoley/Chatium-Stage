@@ -3,20 +3,25 @@
 Путь в воркспейсе: `p/units/aom/lava_gc_integration`.
 
 ## Назначение
+
 Проект Chatium для интеграции Lava.top и GetCourse. Базируется на шаблоне: главная, админка, профиль и логин, настройки и логи в Heap.
 
 ## Сквозная логика (с чего начать)
+
 Единый рассказ по потоку от запроса ссылки на оплату до обновления заказа в GetCourse, с отсылками к деталям — **`docs/integration-full-flow.md`**. Полное оглавление спецификации по темам — **`docs/README.md`**.
 
 ## Целевой продукт (спецификация)
+
 Полная техническая документация интеграции GetCourse + Lava и ограничений Chatium разнесена по файлам в **`docs/`** — оглавление: **`docs/README.md`**; нарратив целиком — **`docs/integration-full-flow.md`**.
 
 ## Важно
+
 - Платформа: Chatium. Серверная часть управляется платформой.
 - Стек фиксирован платформой, новые зависимости не добавляем.
 - Деплой происходит автоматически после пуша.
 
 ## Текущее состояние
+
 - Главная, админка, профиль и логин — базовые страницы; **«Текущие заказы»** (`/web/orders`, только Admin): метрики по Heap `lava_payment_contract` (сформировано / оплачено, суммы по валютам), таблица «По валютам», постраничный список заказов (50 на страницу), фильтры по интервалу `created_at` и по `lava_product_id` / `lava_offer_id`; API `GET /api/admin/orders-metrics`, `GET /api/admin/orders-filter-options`, `GET /api/admin/orders-list`; логика `lib/admin/orders-metrics.lib.ts`, `lib/admin/orders-list.lib.ts`. На главной — кнопка перехода для админа.
 - Реализованы: API настроек (list, get, save), Heap-таблицы settings, logs и три таблицы интеграции (`lava_payment_contract`, `lava_webhook_event`, `lava_lock_log` в `tables/`), репозитории settings/logs и три репозитория интеграции (`lava_payment_contract`, `lava_webhook_event`, `lava_lock_log` в `repos/`), lib (бизнес-логика). В `settings.lib` добавлены ключи и строковые геттеры для интеграции Lava/GetCourse (API-ключи, базовый URL Lava, product/offer id, секрет webhook, домен и ключи GetCourse); дефолт для `lava_base_url` — `https://gate.lava.top`. На админке — мастер Lava: поля API-ключа и базового URL → кнопка загрузки каталога (`POST /api/admin/lava/catalog`, lib `lava-api.client` — `fetchLavaProductsCatalog`) → выбор пары продукт/оффер → сохранение в `lava_product_id` и `lava_offer_id`; нормализация URL — `shared/lavaBaseUrl.ts`. В `lava-api.client` также: `updateOfferPrice` (PATCH цены перед оплатой), `createContract` (POST `/api/v3/invoice`), `getProducts` (диагностический GET). В `getcourse-api.client`: `updateDealStatus` — обновление заказа в GetCourse через PL API (`https://{домен}/pl/api/deals`, form + Base64 params); ошибки только в лог, без throw. В `lava-payment.service`: `createPaymentLink` — идемпотентность по активному контракту (заказ GC + сумма + валюта); при смене суммы отменяются прочие активные контракты по тому же заказу; `runWithExclusiveLock` по ключу шаблонного оффера, журнал `lava_lock_log`, затем PATCH цены → POST invoice → запись контракта в Heap (коды ошибок `CONFIG_ERROR`, `LAVA_*`, `PAYMENT_TEMPLATE_BUSY`, `INTERNAL_ERROR`). В `lava-webhook.service`: `processWebhook` — проверка `lava_webhook_secret`, дедупликация в `lava_webhook_event`, обработка только успешной оплаты (`payment.success` + `completed`), обновление статуса контракта и перевод заказа GetCourse в `in_work`; повтор webhook после `contract_not_found`, когда контракт уже в Heap. Для GetCourse: `POST /api/integrations/lava/payment-link` — `lavaPaymentLinkRoute`, без обязательных заголовков авторизации (в т.ч. вызов из браузера), валидация тела через `@app/schema` (`.body`), вызов `createPaymentLink`. Для Lava (webhook): `POST /api/integrations/lava/webhook` — `lavaWebhookRoute`, заголовок `X-Api-Key` (= `lava_webhook_secret`), тело через `.body`, вызов `processWebhook`.
 - Серверные логи: Heap-таблица logs (message, payload, severity, level, timestamp), repos/logs.repo (create, findAll, findById, findBeforeTimestamp, countBySeverityAfter, countErrorsAfter, countWarningsAfter), lib/logger.lib (проверка уровня по настройке log_level, запись в ctx.log — только сообщение, в ctx.account.log — сообщение и payload, Heap, WebSocket с хэшем для уникальности канала, вебхук log_webhook { enable, url } по умолчанию url: ""). API POST /api/logger/log (AnyUser), body: { severity, level, message, payload?, timestamp? }; GET /api/admin/logs/recent (Admin) — последние N логов; GET /api/admin/logs/before (Admin) — N логов старше указанного timestamp для пагинации. Админка получает encodedLogsSocketId, подписывается на new-log для отображения в дашборде, загружает историю логов через recent при монтировании, может догружать старые логи через before (кнопка «Загрузить ещё 50»); кнопка «Очистить логи» очищает вывод и сдвигает таймштамп на текущий — повторное нажатие «Загрузить ещё 50» восстанавливает последние логи.
@@ -27,9 +32,11 @@
 - GetCourse: в настройках добавлен `gc_order_flag_addfield_id`; при вызовах `updateDealStatus` и `probeGcOrderPlApi` в заказ передаётся `deal.addfields = { [id]: true }` (если ID задан).
 
 ## Диагностика HTTP (временно)
+
 В каталоге **`temp/`** лежат страницы-пробы с заранее заданными ответами (200, редиректы, 4xx/5xx, «ошибка» в JSON при статусе 200, необработанное исключение). Оглавление: маршрут **`./temp`** (относительно корня приложения). Подробнее: `docs/testing.md`.
 
 ## Навигация по документации
+
 - Сквозная логика интеграции (участники, этапы, ссылки на детали): `docs/integration-full-flow.md`
 - Оглавление спецификации интеграции и ссылка на остальные разделы: `docs/README.md`
 - Архитектура: `docs/architecture.md`
@@ -44,11 +51,13 @@
 - GetCourse API: `docs/reference/getcourse-pl-api-spec.md`, навигатор: `docs/integration-getcourse-api-reference.md`
 
 ## TODO
+
 - Заполнить UI для главной/админки/профиля.
 - Добавить реальные сценарии авторизации.
 - Бизнес‑логика интеграции и модель данных описаны в `docs/` (`data.md`, `integration-*.md`); при изменении кода — синхронизировать документацию.
 
 ## Changelog
+
 - 2026-05-06: `lavaWebhookRoute` — ветка 401: явная проверка `result.success === false` перед `result.statusCode` (сужение `ProcessWebhookResult` для `tsc`); в тесте `lava-webhook-route` — приведение `ctx` под `getAbsoluteUrlForAppPath` (см. `docs/LLM/0078_…`). Повторный прогон `npm run ts-lint`: замена `!result.success` на `result.success === false` — см. `docs/LLM/0079_…`.
 - 2026-04-01: фильтры логов в админке (`Info/Warn/Error`) теперь не только скрывают/показывают уже загруженные записи, а перезагружают историю целиком по выбранным уровням: клиент передаёт в API `severities=0..7` (CSV), загружает страницы до конца истории и позволяет просматривать старые ошибки/предупреждения по выбранному фильтру.
 - 2026-04-01: фикс загрузки старых логов в админке (`pages/AdminPage.vue`): устранена рекурсивная петля при обрезке массива логов (в `trimOldLogs` убран `log.debug`, который сам же снова попадал в `setLogSink`), увеличен клиентский лимит хранения с 500 до 5000, добавлено слияние без дублей по `id` и пересчёт `oldestLogTimestamp` по фактическому списку логов для корректной пагинации кнопкой «Загрузить ещё 50».
@@ -140,9 +149,9 @@
 - 2026-02-02: серверные логи: таблица logs, repos/logs.repo, lib/logger.lib, api/logger/log (POST), админка — encodedLogsSocketId и подписка на new-log; сокет без accountId. Body API: только message (обяз.), severity? (0–7), payload?; timestamp и level вычисляются в lib; имя модуля в тексте message. Формат вывода: `[DD.MM.YYYY HH:mm:ss.SSS] [LEVEL] message` (пробелы между группами в скобках).
 - 2026-02-01: клиентская часть покрыта логами (createComponentLogger, setLogSink, sink в AdminPage дашборде; HomePage, AdminPage, ProfilePage, LoginPage, Header, AppFooter, GlobalGlitch, LogoutModal).
 - 2026-02-01: добавлен уровень логирования Debug (кнопка в админке перед Info, lib LOG_LEVELS, logger CONFIG_LEVELS и порог, API save -1–4), порядок: Debug, Info, Warn, Error, Disable.
-- 2026-02-01: уровень логирования -1 (логи выключены): LOG_LEVEL_OFF в shared/logger, приём -1 в window.__BOOT__.logLevel, API save принимает -1 → Disable.
-- 2026-02-01: shared/logger — логгер для браузера (logInfo, logWarn, logError с проверкой уровня по window.__BOOT__.logLevel), импорт в HomePage, AdminPage, ProfilePage.
-- 2026-02-01: чтение уровня логирования при загрузке страницы — shared/logLevel.ts, вызов getLogLevel в lib, скрипт window.__BOOT__.logLevel на главной, админке и профиле (без логина).
+- 2026-02-01: уровень логирования -1 (логи выключены): LOG_LEVEL_OFF в shared/logger, приём -1 в window.**BOOT**.logLevel, API save принимает -1 → Disable.
+- 2026-02-01: shared/logger — логгер для браузера (logInfo, logWarn, logError с проверкой уровня по window.**BOOT**.logLevel), импорт в HomePage, AdminPage, ProfilePage.
+- 2026-02-01: чтение уровня логирования при загрузке страницы — shared/logLevel.ts, вызов getLogLevel в lib, скрипт window.**BOOT**.logLevel на главной, админке и профиле (без логина).
 - 2026-02-01: мгновенное сохранение уровня логирования в админке (кнопки → .run() → POST /api/settings/save), нормализация чисел 0–3 и строк в API.
 - 2026-02-01: добавлен ADR-0002 — настройки в Heap и слоистая архитектура API (решения коммита aaf4a0a).
 - 2026-02-01: обновлено «Текущее состояние» — отражены API настроек, таблица, репозиторий, lib.

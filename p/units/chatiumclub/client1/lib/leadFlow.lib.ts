@@ -105,7 +105,10 @@ export type LeadFlowResult = {
  *
  * Логирует входные параметры (без чувствительных данных), длительность, исходы вызовов SDK.
  */
-export async function processLead(ctx: app.Ctx, raw: Partial<LeadFormInput>): Promise<LeadFlowResult> {
+export async function processLead(
+  ctx: app.Ctx,
+  raw: Partial<LeadFormInput>
+): Promise<LeadFlowResult> {
   const startedAt = Date.now()
   await loggerLib.writeServerLog(ctx, {
     severity: 6,
@@ -169,7 +172,12 @@ export async function processLead(ctx: app.Ctx, raw: Partial<LeadFormInput>): Pr
     }
   })
 
-  let createDealResult: { ok: boolean; errorCode?: string; requestId: string | null; skipped: boolean } = {
+  let createDealResult: {
+    ok: boolean
+    errorCode?: string
+    requestId: string | null
+    skipped: boolean
+  } = {
     ok: false,
     requestId: null,
     skipped: true
@@ -211,8 +219,7 @@ export async function processLead(ctx: app.Ctx, raw: Partial<LeadFormInput>): Pr
     })
   }
 
-  const lastRequestId =
-    createDealResult.requestId ?? addUserResult.requestId ?? undefined
+  const lastRequestId = createDealResult.requestId ?? addUserResult.requestId ?? undefined
 
   const lead = await leadsRepo.create(ctx, {
     email: input.email,
@@ -224,7 +231,7 @@ export async function processLead(ctx: app.Ctx, raw: Partial<LeadFormInput>): Pr
     addUserOk: addUserResult.ok,
     addUserErrorCode,
     createDealOk: createDealResult.ok,
-    createDealErrorCode: createDealResult.ok ? '' : createDealResult.errorCode ?? '',
+    createDealErrorCode: createDealResult.ok ? '' : (createDealResult.errorCode ?? ''),
     ...(lastRequestId ? { gatewayRequestId: lastRequestId } : {})
   })
 

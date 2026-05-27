@@ -14,12 +14,14 @@
           :key="layer.badge"
           class="layer"
           :class="{ top: layer.top }"
-          :style="{ opacity: layer.opacity, animationDelay: (0.05 + i * 0.06) + 's' }"
+          :style="{ opacity: layer.opacity, animationDelay: 0.05 + i * 0.06 + 's' }"
         >
           <span class="badge">{{ layer.badge }}</span>
           <span class="lname">{{ layer.name }}</span>
           <span class="lcaption">{{ layer.caption }}</span>
-          <span v-if="layer.top" class="hint">эфир про то, что внутри запроса <i class="fas fa-arrow-right"></i></span>
+          <span v-if="layer.top" class="hint"
+            >эфир про то, что внутри запроса <i class="fas fa-arrow-right"></i
+          ></span>
         </div>
       </div>
 
@@ -34,12 +36,23 @@
 defineProps({ active: Boolean })
 
 const layers = [
-  { badge: 'app', name: 'HTTPS', caption: 'запросы к API, интеграции — здесь', opacity: 1, top: true },
+  {
+    badge: 'app',
+    name: 'HTTPS',
+    caption: 'запросы к API, интеграции — здесь',
+    opacity: 1,
+    top: true
+  },
   { badge: 'L6', name: 'Представление', caption: 'сжатие, кодирование', opacity: 0.75 },
   { badge: 'L5', name: 'Сеанс', caption: 'долгий обмен, провайдер', opacity: 0.65 },
   { badge: 'L4', name: 'Доставка', caption: 'договорённости «дошло / не дошло»', opacity: 0.55 },
   { badge: 'L3', name: 'Между сетями', caption: 'маршрутизаторы, адреса, маршруты', opacity: 0.45 },
-  { badge: 'L2', name: 'Локальный сегмент', caption: 'после коммутатора: одна «комната»', opacity: 0.35 },
+  {
+    badge: 'L2',
+    name: 'Локальный сегмент',
+    caption: 'после коммутатора: одна «комната»',
+    opacity: 0.35
+  }
 ]
 </script>
 
@@ -83,7 +96,14 @@ const layers = [
   font-size: clamp(26px, 3.2vw, 52px);
   color: var(--text-primary);
 }
-.strip { display: block; width: 80px; height: 4px; background: var(--accent-cyan); border-radius: 2px; margin-top: 16px; }
+.strip {
+  display: block;
+  width: 80px;
+  height: 4px;
+  background: var(--accent-cyan);
+  border-radius: 2px;
+  margin-top: 16px;
+}
 
 .stack {
   display: flex;
@@ -173,8 +193,15 @@ const layers = [
 }
 
 @media (max-width: 1024px) {
-  .slide { padding: 32px 16px; }
-  .layer { grid-template-columns: 60px 1fr; }
-  .lcaption, .hint { display: none; }
+  .slide {
+    padding: 32px 16px;
+  }
+  .layer {
+    grid-template-columns: 60px 1fr;
+  }
+  .lcaption,
+  .hint {
+    display: none;
+  }
 }
 </style>

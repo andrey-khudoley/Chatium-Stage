@@ -1,4 +1,6 @@
-import LavaPaymentContract, { type LavaPaymentContractRow } from '../tables/lava_payment_contract.table'
+import LavaPaymentContract, {
+  type LavaPaymentContractRow
+} from '../tables/lava_payment_contract.table'
 import type { HeapCreateInput } from '../lib/heap-create-input.lib'
 import * as loggerLib from '../lib/logger.lib'
 
@@ -35,7 +37,10 @@ export async function create(
   return row
 }
 
-export async function findByGcOrderId(ctx: app.Ctx, gcOrderId: string): Promise<LavaPaymentContractRow | null> {
+export async function findByGcOrderId(
+  ctx: app.Ctx,
+  gcOrderId: string
+): Promise<LavaPaymentContractRow | null> {
   await loggerLib.writeServerLog(ctx, {
     severity: 7,
     message: `[${LOG}] findByGcOrderId`,

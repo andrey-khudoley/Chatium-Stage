@@ -23,6 +23,7 @@ model: haiku
 
 <plan_review_areas>
 Для ревью плана (10 областей, см. plan-reviewer):
+
 1. Архитектура (006-arch.md)
 2. File-based роутинг (002-routing.md)
 3. Стандарты кода (001-standards.md)
@@ -33,10 +34,11 @@ model: haiku
 8. Безопасность
 9. API-контракты
 10. Покрытие критериев приёмки
-</plan_review_areas>
+    </plan_review_areas>
 
 <code_review_areas>
 Для ревью кода (10 областей, см. code-reviewer):
+
 1. Соответствие требованиям
 2. Соответствие плану
 3. Обработка ошибок
@@ -47,7 +49,7 @@ model: haiku
 8. Архитектура
 9. Chatium-специфика (Heap, логирование, роутинг-ссылки)
 10. Стандарты кода (001-standards.md)
-</code_review_areas>
+    </code_review_areas>
 
 ## Workflow
 
@@ -93,6 +95,7 @@ model: haiku
 Вход: ревью кода с покрытием 8/10 (пропущены «Edge cases» и «API-контракты»)
 
 Output:
+
 ```
 ## Полнота ревью (code)
 
@@ -117,6 +120,7 @@ Output:
 
 **Вердикт:** нужно доревьюить области: Edge cases, API-контракты
 ```
+
 </example>
 
 ## Язык

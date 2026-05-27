@@ -67,7 +67,7 @@ const CODE_LANGUAGES = [
   { value: 'scss', label: 'SCSS' },
   { value: 'less', label: 'Less' },
   { value: 'dockerfile', label: 'Dockerfile' },
-  { value: 'nginx', label: 'Nginx' },
+  { value: 'nginx', label: 'Nginx' }
 ]
 
 const CODE_LANG_VALUES = new Set(CODE_LANGUAGES.map((l) => l.value))
@@ -99,15 +99,19 @@ function writeStoredPreferredCodeLang(lang: string) {
 const MEDIA_SELECTOR = '.wy-media-img, .wy-media-video, .wy-media-pdf, .wy-media-file'
 
 const showBubbleMenu = computed(() => !!selectedMedia.value && !isResizing.value)
-const isImageSelected = computed(() => selectedMedia.value?.classList.contains('wy-media-img') ?? false)
-const isFileSelected = computed(() => selectedMedia.value?.classList.contains('wy-media-file') ?? false)
+const isImageSelected = computed(
+  () => selectedMedia.value?.classList.contains('wy-media-img') ?? false
+)
+const isFileSelected = computed(
+  () => selectedMedia.value?.classList.contains('wy-media-file') ?? false
+)
 
 function ensureHtml(raw: string): string {
   if (!raw) return '<p><br></p>'
   if (/<[a-z][\s\S]*>/i.test(raw)) return raw
   return raw
     .split('\n')
-    .map(line => line ? `<p>${escapeHtml(line)}</p>` : EMPTY_LINE_HTML)
+    .map((line) => (line ? `<p>${escapeHtml(line)}</p>` : EMPTY_LINE_HTML))
     .join('')
 }
 
@@ -123,7 +127,7 @@ function escapeHtml(s: string): string {
 function hasMeaningfulContent(el: HTMLElement): boolean {
   const normalizedText = (el.textContent || '').replace(/\u00A0/g, ' ').trim()
   if (normalizedText.length > 0) return true
-  return Array.from(el.children).some(child => child.tagName !== 'BR')
+  return Array.from(el.children).some((child) => child.tagName !== 'BR')
 }
 
 function normalizeBlankLineParagraphs(root: HTMLElement): boolean {
@@ -169,26 +173,30 @@ onUnmounted(() => {
   if (highlightTimeout) clearTimeout(highlightTimeout)
 })
 
-watch(() => props.modelValue, (val) => {
-  const normalized = ensureHtml(val)
-  lastKnownHtml.value = normalized
-  if (editorMode.value === 'source') {
-    sourceHtml.value = normalized
+watch(
+  () => props.modelValue,
+  (val) => {
+    const normalized = ensureHtml(val)
+    lastKnownHtml.value = normalized
+    if (editorMode.value === 'source') {
+      sourceHtml.value = normalized
+    }
+    if (!editorRef.value || editorMode.value !== 'wysiwyg') return
+    if (editorRef.value.innerHTML !== normalized) {
+      ignoreInput = true
+      editorRef.value.innerHTML = normalized
+      normalizeBlankLineParagraphs(editorRef.value)
+      nextTick(() => highlightAllCodeBlocks())
+    }
   }
-  if (!editorRef.value || editorMode.value !== 'wysiwyg') return
-  if (editorRef.value.innerHTML !== normalized) {
-    ignoreInput = true
-    editorRef.value.innerHTML = normalized
-    normalizeBlankLineParagraphs(editorRef.value)
-    nextTick(() => highlightAllCodeBlocks())
-  }
-})
+)
 
 function setEditorMode(mode: 'wysiwyg' | 'source') {
   if (editorMode.value === mode) return
 
   if (mode === 'source') {
-    const currentHtml = editorRef.value?.innerHTML || sourceHtml.value || props.modelValue || lastKnownHtml.value
+    const currentHtml =
+      editorRef.value?.innerHTML || sourceHtml.value || props.modelValue || lastKnownHtml.value
     const normalizedCurrentHtml = ensureHtml(currentHtml)
     sourceHtml.value = normalizeSourceHtml(normalizedCurrentHtml)
     lastKnownHtml.value = normalizedCurrentHtml
@@ -265,7 +273,7 @@ function looksLikeMarkdown(text: string): boolean {
     /\*\*[^*]+\*\*/,
     /(^|\s)_[^_]+_(\s|$)/,
     /(^|\s)\*[^*]+\*(\s|$)/,
-    /^---+$/m,
+    /^---+$/m
   ]
 
   return signals.some((rx) => rx.test(sample))
@@ -285,7 +293,7 @@ function formatInlineMarkdown(raw: string): string {
 function plainTextToParagraphHtml(text: string): string {
   return normalizeClipboardText(text)
     .split('\n')
-    .map(line => line ? `<p>${escapeHtml(line)}</p>` : EMPTY_LINE_HTML)
+    .map((line) => (line ? `<p>${escapeHtml(line)}</p>` : EMPTY_LINE_HTML))
     .join('')
 }
 
@@ -315,7 +323,9 @@ function markdownToHtml(markdown: string): string {
         i += 1
       }
       if (i < lines.length) i += 1
-      out.push(`<pre data-language="${escapeHtml(lang)}"><code class="hljs">${escapeHtml(block.join('\n'))}</code></pre>`)
+      out.push(
+        `<pre data-language="${escapeHtml(lang)}"><code class="hljs">${escapeHtml(block.join('\n'))}</code></pre>`
+      )
       continue
     }
 
@@ -339,7 +349,9 @@ function markdownToHtml(markdown: string): string {
         quoteLines.push(lines[i].trim().replace(/^>\s?/, ''))
         i += 1
       }
-      out.push(`<blockquote><p>${formatInlineMarkdown(quoteLines.join('<br>')) || '<br>'}</p></blockquote>`)
+      out.push(
+        `<blockquote><p>${formatInlineMarkdown(quoteLines.join('<br>')) || '<br>'}</p></blockquote>`
+      )
       continue
     }
 
@@ -349,9 +361,7 @@ function markdownToHtml(markdown: string): string {
       const items: string[] = []
       while (i < lines.length) {
         const t = lines[i].trim()
-        const itemMatch = ordered
-          ? t.match(/^\d+\.\s+(.*)$/)
-          : t.match(/^(\*|-|\+)\s+(.*)$/)
+        const itemMatch = ordered ? t.match(/^\d+\.\s+(.*)$/) : t.match(/^(\*|-|\+)\s+(.*)$/)
         if (!itemMatch) break
         items.push(`<li>${formatInlineMarkdown(itemMatch[ordered ? 1 : 2]) || '<br>'}</li>`)
         i += 1
@@ -364,7 +374,14 @@ function markdownToHtml(markdown: string): string {
     while (i < lines.length) {
       const t = lines[i].trim()
       if (!t) break
-      if (/^(#{1,6})\s+/.test(t) || /^>\s?/.test(t) || /^(\*|-|\+)\s+/.test(t) || /^\d+\.\s+/.test(t) || /^```/.test(t) || /^---+$/.test(t)) {
+      if (
+        /^(#{1,6})\s+/.test(t) ||
+        /^>\s?/.test(t) ||
+        /^(\*|-|\+)\s+/.test(t) ||
+        /^\d+\.\s+/.test(t) ||
+        /^```/.test(t) ||
+        /^---+$/.test(t)
+      ) {
         break
       }
       paragraphLines.push(lines[i])
@@ -482,7 +499,8 @@ function insertHtmlAtCursor(html: string) {
   }
 
   if (insertionPoint !== editorRef.value) {
-    insertionOffset = Array.from(editorRef.value.childNodes).indexOf(insertionPoint as ChildNode) + 1
+    insertionOffset =
+      Array.from(editorRef.value.childNodes).indexOf(insertionPoint as ChildNode) + 1
     insertionPoint = editorRef.value
   }
 
@@ -533,7 +551,8 @@ function onPaste(e: ClipboardEvent) {
   const plainText = clipboard.getData('text/plain')
   const normalizedPlain = plainText ? normalizeClipboardText(plainText) : ''
   const hasExplicitBlankLines = /\n\s*\n/.test(normalizedPlain)
-  const shouldPreferPlainText = !!plainText && (looksLikeMarkdown(plainText) || hasExplicitBlankLines)
+  const shouldPreferPlainText =
+    !!plainText && (looksLikeMarkdown(plainText) || hasExplicitBlankLines)
 
   let html = ''
   if (shouldPreferPlainText && plainText) {
@@ -585,7 +604,7 @@ function updateState() {
     justifyLeft: document.queryCommandState('justifyLeft'),
     justifyCenter: document.queryCommandState('justifyCenter'),
     justifyRight: document.queryCommandState('justifyRight'),
-    justifyFull: document.queryCommandState('justifyFull'),
+    justifyFull: document.queryCommandState('justifyFull')
   }
 
   const block = document.queryCommandValue('formatBlock')
@@ -616,7 +635,7 @@ function updateState() {
 function insertMedia(type: 'image' | 'video' | 'pdf' | 'file', url: string, filename?: string) {
   // Clear any existing selection
   clearMediaSelection()
-  
+
   editorRef.value?.focus()
   restoreSelection()
 
@@ -626,21 +645,23 @@ function insertMedia(type: 'image' | 'video' | 'pdf' | 'file', url: string, file
   nextTick(() => {
     onInput()
     saveSelection()
-    
+
     // Auto-select the newly inserted media
-    const media = editorRef.value?.querySelector(`${MEDIA_SELECTOR}:last-of-type`) as HTMLElement | null
+    const media = editorRef.value?.querySelector(
+      `${MEDIA_SELECTOR}:last-of-type`
+    ) as HTMLElement | null
     if (!media) return
-    
+
     // For images, wait for load to get correct dimensions
     if (type === 'image' && media instanceof HTMLImageElement) {
       const img = media as HTMLImageElement
-      
+
       // If already loaded (cached), select immediately
       if (img.complete && img.naturalWidth > 0) {
         selectMedia(media)
         return
       }
-      
+
       // Otherwise wait for load event
       const onLoad = () => {
         selectMedia(media)
@@ -653,10 +674,10 @@ function insertMedia(type: 'image' | 'video' | 'pdf' | 'file', url: string, file
         img.removeEventListener('load', onLoad)
         img.removeEventListener('error', onError)
       }
-      
+
       img.addEventListener('load', onLoad)
       img.addEventListener('error', onError)
-      
+
       // Fallback: select after timeout even if not loaded
       setTimeout(() => {
         if (!selectedMedia.value) {
@@ -674,7 +695,11 @@ function insertMedia(type: 'image' | 'video' | 'pdf' | 'file', url: string, file
   })
 }
 
-function buildMediaHtml(type: 'image' | 'video' | 'pdf' | 'file', url: string, filename?: string): string {
+function buildMediaHtml(
+  type: 'image' | 'video' | 'pdf' | 'file',
+  url: string,
+  filename?: string
+): string {
   switch (type) {
     case 'image':
       return `<img src="${escapeHtml(url)}" class="wy-media-img" alt="${escapeHtml(filename || 'Изображение')}" />`
@@ -776,7 +801,10 @@ function tableOp(op: string) {
   let td: HTMLTableCellElement | null = null
   let node: Node | null = sel.anchorNode
   while (node && node !== editorRef.value) {
-    if (node instanceof HTMLTableCellElement) { td = node; break }
+    if (node instanceof HTMLTableCellElement) {
+      td = node
+      break
+    }
     node = node.parentNode
   }
   if (!td) return
@@ -787,7 +815,9 @@ function tableOp(op: string) {
 
   if (op === 'addRowAbove' || op === 'addRowBelow') {
     const nr = tr.cloneNode(true) as HTMLTableRowElement
-    Array.from(nr.cells).forEach(c => { c.innerHTML = '<br>' })
+    Array.from(nr.cells).forEach((c) => {
+      c.innerHTML = '<br>'
+    })
     tr.parentNode?.insertBefore(nr, op === 'addRowAbove' ? tr : tr.nextSibling)
   } else if (op === 'addColLeft' || op === 'addColRight') {
     for (let i = 0; i < table.rows.length; i++) {
@@ -937,7 +967,7 @@ async function highlightAllCodeBlocks() {
   const pres = editorRef.value.querySelectorAll('pre[data-language]')
   if (!pres.length) return
   await loadHighlightJs()
-  pres.forEach(p => highlightCodeElement(p as HTMLPreElement))
+  pres.forEach((p) => highlightCodeElement(p as HTMLPreElement))
 }
 
 function updateCodePickerPosition() {
@@ -970,7 +1000,7 @@ function insertCodeBlockHtml() {
   document.execCommand(
     'insertHTML',
     false,
-    `<pre data-language="${langAttr}"><code class="hljs">\n</code></pre><p><br></p>`,
+    `<pre data-language="${langAttr}"><code class="hljs">\n</code></pre><p><br></p>`
   )
   nextTick(() => {
     if (!editorRef.value) return
@@ -1001,7 +1031,10 @@ function onKeydown(e: KeyboardEvent) {
   let inPre = false
   let node: Node | null = sel.anchorNode
   while (node && node !== editorRef.value) {
-    if (node instanceof HTMLElement && node.tagName === 'PRE') { inPre = true; break }
+    if (node instanceof HTMLElement && node.tagName === 'PRE') {
+      inPre = true
+      break
+    }
     node = node.parentNode
   }
 
@@ -1015,20 +1048,26 @@ function onKeydown(e: KeyboardEvent) {
   }
 }
 
-function onEditorFocus() { saveSelection() }
-function onEditorMouseup() { saveSelection() }
-function onEditorKeyup() { saveSelection() }
+function onEditorFocus() {
+  saveSelection()
+}
+function onEditorMouseup() {
+  saveSelection()
+}
+function onEditorKeyup() {
+  saveSelection()
+}
 
 function onEditorClick(e: MouseEvent) {
   const target = e.target as HTMLElement
   const mediaEl = target.closest(MEDIA_SELECTOR) as HTMLElement | null
-  
+
   // If clicked outside media, deselect
   if (!mediaEl) {
     clearMediaSelection()
     return
   }
-  
+
   // Select the media element
   e.preventDefault()
   e.stopPropagation()
@@ -1055,9 +1094,9 @@ function clearMediaSelection() {
 
 function updateBubbleMenuPosition() {
   if (!selectedMedia.value) return
-  
+
   const rect = selectedMedia.value.getBoundingClientRect()
-  
+
   // Position bubble menu above the media (using viewport coordinates for fixed positioning)
   bubbleMenuPos.value = {
     x: rect.left + rect.width / 2,
@@ -1074,27 +1113,27 @@ function deleteSelectedMedia() {
 
 function alignImage(align: 'left' | 'center' | 'right') {
   if (!selectedMedia.value || !isImageSelected.value) return
-  
+
   const img = selectedMedia.value as HTMLImageElement
   img.style.float = align === 'center' ? 'none' : align
   img.style.marginLeft = align === 'right' || align === 'center' ? 'auto' : '0'
   img.style.marginRight = align === 'left' || align === 'center' ? 'auto' : '0'
   img.style.display = align === 'center' ? 'block' : 'block'
-  
+
   if (align === 'center') {
     img.style.marginLeft = 'auto'
     img.style.marginRight = 'auto'
   }
-  
+
   onInput()
 }
 
 function downloadFile() {
   if (!selectedMedia.value) return
-  
+
   let url: string | null = null
   let filename = 'download'
-  
+
   if (selectedMedia.value.classList.contains('wy-media-file')) {
     const link = selectedMedia.value.querySelector('.wy-file-link') as HTMLAnchorElement | null
     if (link) {
@@ -1104,13 +1143,15 @@ function downloadFile() {
   } else if (selectedMedia.value.classList.contains('wy-media-pdf')) {
     const link = selectedMedia.value.querySelector('.wy-media-link') as HTMLAnchorElement | null
     if (link) url = link.href
-  } else if (selectedMedia.value.classList.contains('wy-media-img') || 
-             selectedMedia.value.classList.contains('wy-media-video')) {
+  } else if (
+    selectedMedia.value.classList.contains('wy-media-img') ||
+    selectedMedia.value.classList.contains('wy-media-video')
+  ) {
     const media = selectedMedia.value as HTMLImageElement | HTMLVideoElement
     url = media.src
-    filename = media instanceof HTMLImageElement ? (media.alt || 'image') : 'video'
+    filename = media instanceof HTMLImageElement ? media.alt || 'image' : 'video'
   }
-  
+
   if (url) {
     const a = document.createElement('a')
     a.href = url
@@ -1122,14 +1163,14 @@ function downloadFile() {
 
 function startResize(e: MouseEvent, mediaEl: HTMLElement | null) {
   if (!mediaEl || !mediaEl.classList.contains('wy-media-img')) return
-  
+
   isResizing.value = true
   const img = mediaEl as HTMLImageElement
   const startX = e.clientX
   const startWidth = img.offsetWidth
   const startHeight = img.offsetHeight
   const aspectRatio = startWidth / startHeight
-  
+
   function onMouseMove(e: MouseEvent) {
     const deltaX = e.clientX - startX
     const newWidth = Math.max(100, Math.min(startWidth + deltaX, 800))
@@ -1137,14 +1178,14 @@ function startResize(e: MouseEvent, mediaEl: HTMLElement | null) {
     img.style.height = 'auto'
     updateBubbleMenuPosition()
   }
-  
+
   function onMouseUp() {
     document.removeEventListener('mousemove', onMouseMove)
     document.removeEventListener('mouseup', onMouseUp)
     isResizing.value = false
     onInput()
   }
-  
+
   document.addEventListener('mousemove', onMouseMove)
   document.addEventListener('mouseup', onMouseUp)
 }
@@ -1154,7 +1195,7 @@ function onEditorBlur(e: FocusEvent) {
   setTimeout(() => {
     const activeEl = document.activeElement
     const bubbleMenu = document.querySelector('.wy-media-bubble-menu')
-    
+
     if (!bubbleMenu?.contains(activeEl) && !editorRef.value?.contains(activeEl)) {
       clearMediaSelection()
     }
@@ -1163,11 +1204,13 @@ function onEditorBlur(e: FocusEvent) {
 
 function onDocumentClick(e: MouseEvent) {
   const target = e.target as HTMLElement
-  
+
   // Check if click is outside media, bubble menu and resize handle
-  if (!target.closest(MEDIA_SELECTOR) && 
-      !target.closest('.wy-media-bubble-menu') && 
-      !target.closest('.wy-resize-handle')) {
+  if (
+    !target.closest(MEDIA_SELECTOR) &&
+    !target.closest('.wy-media-bubble-menu') &&
+    !target.closest('.wy-resize-handle')
+  ) {
     clearMediaSelection()
   }
 }
@@ -1231,7 +1274,7 @@ function onWindowScroll() {
         spellcheck="false"
         @input="onSourceInput"
       />
-      
+
       <!-- Bubble Menu for Media -->
       <Teleport to="body">
         <Transition name="wy-bubble-fade">
@@ -1271,10 +1314,15 @@ function onWindowScroll() {
                 </button>
                 <div class="wy-bubble-sep" />
               </template>
-              
+
               <!-- Download button for files -->
               <button
-                v-if="isFileSelected || selectedMedia?.classList.contains('wy-media-pdf') || selectedMedia?.classList.contains('wy-media-img') || selectedMedia?.classList.contains('wy-media-video')"
+                v-if="
+                  isFileSelected ||
+                  selectedMedia?.classList.contains('wy-media-pdf') ||
+                  selectedMedia?.classList.contains('wy-media-img') ||
+                  selectedMedia?.classList.contains('wy-media-video')
+                "
                 type="button"
                 class="wy-bubble-btn"
                 title="Скачать"
@@ -1282,9 +1330,17 @@ function onWindowScroll() {
               >
                 <i class="fa-solid fa-download" />
               </button>
-              
-              <div v-if="isFileSelected || selectedMedia?.classList.contains('wy-media-pdf') || selectedMedia?.classList.contains('wy-media-img') || selectedMedia?.classList.contains('wy-media-video')" class="wy-bubble-sep" />
-              
+
+              <div
+                v-if="
+                  isFileSelected ||
+                  selectedMedia?.classList.contains('wy-media-pdf') ||
+                  selectedMedia?.classList.contains('wy-media-img') ||
+                  selectedMedia?.classList.contains('wy-media-video')
+                "
+                class="wy-bubble-sep"
+              />
+
               <!-- Delete button -->
               <button
                 type="button"
@@ -1298,7 +1354,7 @@ function onWindowScroll() {
           </div>
         </Transition>
       </Teleport>
-      
+
       <!-- Resize handle for selected image -->
       <Teleport to="body">
         <div
@@ -1306,8 +1362,8 @@ function onWindowScroll() {
           class="wy-resize-handle"
           :style="{
             position: 'fixed',
-            left: (selectedMedia.getBoundingClientRect().right - 6) + 'px',
-            top: (selectedMedia.getBoundingClientRect().bottom - 6) + 'px'
+            left: selectedMedia.getBoundingClientRect().right - 6 + 'px',
+            top: selectedMedia.getBoundingClientRect().bottom - 6 + 'px'
           }"
           title="Изменить размер"
           @mousedown="startResize($event, selectedMedia)"
@@ -1469,10 +1525,18 @@ function onWindowScroll() {
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
   position: relative;
   clip-path: polygon(
-    0 2px, 2px 2px, 2px 0,
-    calc(100% - 2px) 0, calc(100% - 2px) 2px, 100% 2px,
-    100% calc(100% - 2px), calc(100% - 2px) calc(100% - 2px), calc(100% - 2px) 100%,
-    2px 100%, 2px calc(100% - 2px), 0 calc(100% - 2px)
+    0 2px,
+    2px 2px,
+    2px 0,
+    calc(100% - 2px) 0,
+    calc(100% - 2px) 2px,
+    100% 2px,
+    100% calc(100% - 2px),
+    calc(100% - 2px) calc(100% - 2px),
+    calc(100% - 2px) 100%,
+    2px 100%,
+    2px calc(100% - 2px),
+    0 calc(100% - 2px)
   );
 }
 
@@ -1546,7 +1610,9 @@ function onWindowScroll() {
   cursor: nwse-resize;
   z-index: 1001;
   box-shadow: 0 0 4px rgba(0, 0, 0, 0.5);
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
   pointer-events: auto;
 }
 
@@ -1558,7 +1624,9 @@ function onWindowScroll() {
 /* Transitions */
 .wy-bubble-fade-enter-active,
 .wy-bubble-fade-leave-active {
-  transition: opacity 0.2s ease, transform 0.2s ease;
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease;
 }
 
 .wy-bubble-fade-enter-from,
@@ -1577,7 +1645,9 @@ function onWindowScroll() {
 
 .wy-code-picker-fade-enter-active,
 .wy-code-picker-fade-leave-active {
-  transition: opacity 0.2s ease, transform 0.2s ease;
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease;
 }
 
 .wy-code-picker-fade-enter-from,
@@ -1656,9 +1726,15 @@ function onWindowScroll() {
   margin: 0.3rem 0;
   padding-left: 1.5rem;
 }
-.wy-content ul { list-style-type: disc; }
-.wy-content ol { list-style-type: decimal; }
-.wy-content li { margin: 0.1rem 0; }
+.wy-content ul {
+  list-style-type: disc;
+}
+.wy-content ol {
+  list-style-type: decimal;
+}
+.wy-content li {
+  margin: 0.1rem 0;
+}
 .wy-content ul ul,
 .wy-content ol ol,
 .wy-content ul ol,
@@ -1890,7 +1966,9 @@ function onWindowScroll() {
 .wy-content .wy-media-video.wy-media-selected,
 .wy-content .wy-media-pdf.wy-media-selected,
 .wy-content .wy-media-file.wy-media-selected {
-  box-shadow: 0 0 0 2px var(--color-accent), 0 0 12px rgba(211, 35, 75, 0.4);
+  box-shadow:
+    0 0 0 2px var(--color-accent),
+    0 0 12px rgba(211, 35, 75, 0.4);
 }
 
 /* Focus outline for media elements */

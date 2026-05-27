@@ -1,10 +1,6 @@
 <template>
   <div class="filters-container">
-    <div 
-      ref="filtersList"
-      class="filters-list"
-      @wheel="onWheel"
-    >
+    <div ref="filtersList" class="filters-list" @wheel="onWheel">
       <div
         v-for="(filter, index) in allFilters"
         :key="filter.id"
@@ -28,9 +24,9 @@
         <span class="filter-name">{{ filter.name }}</span>
         <span v-if="filter.count !== undefined" class="filter-count">{{ filter.count }}</span>
       </div>
-      
+
       <!-- Кнопка добавления папки -->
-      <button 
+      <button
         class="filter-item add-folder-btn"
         @click="$emit('create-folder')"
         title="Создать папку"
@@ -38,31 +34,19 @@
         <i class="fas fa-plus"></i>
       </button>
     </div>
-    
+
     <!-- Кнопки прокрутки (для мобильных/планшетов) -->
-    <button 
-      v-if="canScrollLeft"
-      class="scroll-btn scroll-left"
-      @click="scroll('left')"
-    >
+    <button v-if="canScrollLeft" class="scroll-btn scroll-left" @click="scroll('left')">
       <i class="fas fa-chevron-left"></i>
     </button>
-    <button 
-      v-if="canScrollRight"
-      class="scroll-btn scroll-right"
-      @click="scroll('right')"
-    >
+    <button v-if="canScrollRight" class="scroll-btn scroll-right" @click="scroll('right')">
       <i class="fas fa-chevron-right"></i>
     </button>
   </div>
-  
+
   <!-- Контекстное меню для кастомных папок -->
-  <div 
-    v-if="showContextMenu" 
-    class="context-menu-overlay"
-    @click="showContextMenu = false"
-  >
-    <div 
+  <div v-if="showContextMenu" class="context-menu-overlay" @click="showContextMenu = false">
+    <div
       class="context-menu"
       :style="{ top: contextMenuPos.y + 'px', left: contextMenuPos.x + 'px' }"
       @click.stop
@@ -110,10 +94,10 @@ const props = defineProps({
 })
 
 const emit = defineEmits([
-  'select-filter', 
-  'reorder-filters', 
-  'create-folder', 
-  'edit-folder', 
+  'select-filter',
+  'reorder-filters',
+  'create-folder',
+  'edit-folder',
   'delete-folder'
 ])
 
@@ -136,23 +120,23 @@ const baseFilters = computed(() => [
   { id: 'all', name: 'Все', iconClass: 'fas fa-layer-group' },
   { id: 'groups', name: 'Группы', iconClass: 'fas fa-users' },
   { id: 'personal', name: 'Личные', iconClass: 'fas fa-user' },
-  { id: 'channels', name: 'Каналы', iconClass: 'fas fa-bullhorn' },
+  { id: 'channels', name: 'Каналы', iconClass: 'fas fa-bullhorn' }
 ])
 
 // Подсчёт непрочитанных сообщений для каждого фильтра
 const filtersWithCounts = computed(() => {
-  return baseFilters.value.map(filter => {
+  return baseFilters.value.map((filter) => {
     let unreadCount = 0
     let targetChats = []
 
     if (filter.id === 'all') {
       targetChats = props.chats
     } else if (filter.id === 'groups') {
-      targetChats = props.chats.filter(c => c.type === 'group')
+      targetChats = props.chats.filter((c) => c.type === 'group')
     } else if (filter.id === 'personal') {
-      targetChats = props.chats.filter(c => c.type === 'direct')
+      targetChats = props.chats.filter((c) => c.type === 'direct')
     } else if (filter.id === 'channels') {
-      targetChats = props.chats.filter(c => c.type === 'channel')
+      targetChats = props.chats.filter((c) => c.type === 'channel')
     }
 
     // Суммируем непрочитанные сообщения
@@ -166,10 +150,10 @@ const filtersWithCounts = computed(() => {
 
 // Кастомные папки с суммой непрочитанных
 const customFoldersWithFlag = computed(() => {
-  return props.customFolders.map(folder => {
+  return props.customFolders.map((folder) => {
     // Суммируем непрочитанные сообщения для чатов в папке
     const unreadCount = (folder.chatIds || []).reduce((sum, feedId) => {
-      const chat = props.chats.find(c => c.feedId === feedId)
+      const chat = props.chats.find((c) => c.feedId === feedId)
       if (chat) {
         return sum + (props.inboxBadges.get(chat.inboxSubjectId) || 0)
       }
@@ -189,12 +173,12 @@ const customFoldersWithFlag = computed(() => {
 const allFilters = computed(() => {
   const base = filtersWithCounts.value
   const custom = customFoldersWithFlag.value
-  
+
   // Если есть сохранённый порядок - используем его
   if (props.filterOrders && props.filterOrders.length > 0) {
     const all = [...base, ...custom]
-    const orderMap = new Map(props.filterOrders.map(o => [o.filterId, o.position]))
-    
+    const orderMap = new Map(props.filterOrders.map((o) => [o.filterId, o.position]))
+
     // Сортируем по сохранённой позиции
     return all.sort((a, b) => {
       const posA = orderMap.get(a.id) ?? 999999
@@ -202,7 +186,7 @@ const allFilters = computed(() => {
       return posA - posB
     })
   }
-  
+
   // По умолчанию - базовые фильтры первыми, потом кастомные
   return [...base, ...custom]
 })
@@ -256,22 +240,22 @@ function onDragOver(event, index) {
 function onDrop(event, index) {
   event.preventDefault()
   dragOverIndex.value = null
-  
+
   if (draggedIndex.value === null || draggedIndex.value === index) return
-  
+
   // Создаём новый порядок фильтров
   const newFilters = [...allFilters.value]
   const [removed] = newFilters.splice(draggedIndex.value, 1)
   newFilters.splice(index, 0, removed)
-  
+
   // Отделяем базовые и кастомные фильтры
   const baseIds = ['all', 'groups', 'personal', 'channels']
-  const newOrder = newFilters.map(f => ({
+  const newOrder = newFilters.map((f) => ({
     id: f.id,
     isCustom: f.isCustom,
     originalId: f.isCustom ? f.id.replace('folder-', '') : f.id
   }))
-  
+
   emit('reorder-filters', newOrder)
 }
 
@@ -284,7 +268,7 @@ function onDragEnd() {
 // Context menu
 function onContextMenu(event, filter) {
   if (!filter.isCustom) return
-  
+
   contextMenuFilter.value = filter
   contextMenuPos.value = { x: event.clientX, y: event.clientY }
   showContextMenu.value = true
@@ -292,14 +276,20 @@ function onContextMenu(event, filter) {
 
 function editFolder() {
   if (contextMenuFilter.value) {
-    emit('edit-folder', contextMenuFilter.value.originalId || contextMenuFilter.value.id.replace('folder-', ''))
+    emit(
+      'edit-folder',
+      contextMenuFilter.value.originalId || contextMenuFilter.value.id.replace('folder-', '')
+    )
   }
   showContextMenu.value = false
 }
 
 function deleteFolder() {
   if (contextMenuFilter.value) {
-    emit('delete-folder', contextMenuFilter.value.originalId || contextMenuFilter.value.id.replace('folder-', ''))
+    emit(
+      'delete-folder',
+      contextMenuFilter.value.originalId || contextMenuFilter.value.id.replace('folder-', '')
+    )
   }
   showContextMenu.value = false
 }

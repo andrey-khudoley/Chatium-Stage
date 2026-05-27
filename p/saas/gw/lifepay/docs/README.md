@@ -9,20 +9,20 @@
 
 ## Карта документации
 
-| Файл | О чём |
-|---|---|
-| [architecture.md](architecture.md) | Роутинг, gateway-слой `lib/gateway/` (общий `handleV1Op.ts`, каталог `operationsCatalog.ts`, клиент LifePay `lifePayClient.ts`, классификация ответов `billsV1Semantic.ts`), панель оператора, наблюдаемость, ограничения платформы. |
-| [api.md](api.md) | Публичный gateway-API (`api/v1/*`: формат ответа `TuneHttpHeadersResponse`, заголовки `X-Lp-*`, `X-Gateway-Request-Id`), настройки, raw-журналы (`api/admin/raw/*`), дашборд (`api/admin/dashboard/*`), доступы (`api/access/*`), тесты. |
-| [data.md](data.md) | Heap-таблицы: `settings`, `logs`, `gatewayRequestLog`, `gatewayUpstreamLog`, `panelAccess`, `panelInvites`. |
-| [imports.md](imports.md) | Карта импортов страниц-роутов (TSX entrypoints) и схема зависимостей слоёв. |
+| Файл                               | О чём                                                                                                                                                                                                                                    |
+| ---------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [architecture.md](architecture.md) | Роутинг, gateway-слой `lib/gateway/` (общий `handleV1Op.ts`, каталог `operationsCatalog.ts`, клиент LifePay `lifePayClient.ts`, классификация ответов `billsV1Semantic.ts`), панель оператора, наблюдаемость, ограничения платформы.     |
+| [api.md](api.md)                   | Публичный gateway-API (`api/v1/*`: формат ответа `TuneHttpHeadersResponse`, заголовки `X-Lp-*`, `X-Gateway-Request-Id`), настройки, raw-журналы (`api/admin/raw/*`), дашборд (`api/admin/dashboard/*`), доступы (`api/access/*`), тесты. |
+| [data.md](data.md)                 | Heap-таблицы: `settings`, `logs`, `gatewayRequestLog`, `gatewayUpstreamLog`, `panelAccess`, `panelInvites`.                                                                                                                              |
+| [imports.md](imports.md)           | Карта импортов страниц-роутов (TSX entrypoints) и схема зависимостей слоёв.                                                                                                                                                              |
 
 ## Каталоги
 
-| Каталог | Что внутри |
-|---|---|
-| [ADR/](ADR/) | Журнал архитектурных решений: `0001` базовая структура, `0002` settings в Heap + слоистый API, `0003` выбор API LifePay (контур `bills_v1` основной, `ecom_v1` fallback — проектный ADR 0001). |
+| Каталог              | Что внутри                                                                                                                                                                                                                                                                                                                                                                                        |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [ADR/](ADR/)         | Журнал архитектурных решений: `0001` базовая структура, `0002` settings в Heap + слоистый API, `0003` выбор API LifePay (контур `bills_v1` основной, `ecom_v1` fallback — проектный ADR 0001).                                                                                                                                                                                                    |
 | [gateway/](gateway/) | **SSOT норматива gateway.** `operation-manual.md` (контракты `/v1/{op}`, контур `bills_v1`, секреты, коды ошибок, наблюдаемость; перенесён в модуль 2026-05-24); `implementation-plan.md` (план Прототип → MVP → Прод, вкл. §1.11 внутренние права доступа); `testing-strategy.md`; реестры-указатели `lp-unified-op-registry-v0.md`, `lp-op-http-mapping.json`, `lp-required-fields-by-op.json`. |
-| [LLM/](LLM/) | Хронология рабочих сессий (диалоги, прогоны проверок) по правилам нумерации `NNNN_DD-MM-YYYY_HH-MM.md`. |
+| [LLM/](LLM/)         | Хронология рабочих сессий (диалоги, прогоны проверок) по правилам нумерации `NNNN_DD-MM-YYYY_HH-MM.md`.                                                                                                                                                                                                                                                                                           |
 
 ## Соглашения
 

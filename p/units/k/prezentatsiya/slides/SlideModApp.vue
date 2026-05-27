@@ -13,13 +13,17 @@
       </div>
 
       <div class="platforms">
-        <div class="platform-card" v-for="(p, i) in platforms" :key="i" :style="{ '--card-color': p.color, '--card-glow': p.glow }">
+        <div
+          class="platform-card"
+          v-for="(p, i) in platforms"
+          :key="i"
+          :style="{ '--card-color': p.color, '--card-glow': p.glow }"
+        >
           <div class="card-icon">
             <i :class="p.icon"></i>
           </div>
           <div class="card-name">{{ p.name }}</div>
           <div class="card-desc">{{ p.desc }}</div>
-
         </div>
       </div>
 
@@ -41,7 +45,7 @@ const platforms = [
     desc: 'MiniApp',
     badge: 'TWA / WebApp',
     color: '#2AABEE',
-    glow: 'rgba(42, 171, 238, 0.15)',
+    glow: 'rgba(42, 171, 238, 0.15)'
   },
   {
     icon: 'fab fa-vk',
@@ -49,7 +53,7 @@ const platforms = [
     desc: 'MiniApp',
     badge: 'VK Mini Apps',
     color: '#0077FF',
-    glow: 'rgba(0, 119, 255, 0.15)',
+    glow: 'rgba(0, 119, 255, 0.15)'
   },
   {
     icon: 'fab fa-apple',
@@ -57,7 +61,7 @@ const platforms = [
     desc: 'iOS',
     badge: 'PWA & Native',
     color: '#FFFFFF',
-    glow: 'rgba(255, 255, 255, 0.08)',
+    glow: 'rgba(255, 255, 255, 0.08)'
   },
   {
     icon: 'fab fa-google-play',
@@ -65,8 +69,8 @@ const platforms = [
     desc: 'Android',
     badge: 'TWA & PWA',
     color: '#34A853',
-    glow: 'rgba(52, 168, 83, 0.15)',
-  },
+    glow: 'rgba(52, 168, 83, 0.15)'
+  }
 ]
 </script>
 
@@ -83,15 +87,52 @@ const platforms = [
   overflow-x: hidden;
 }
 
-.bg-effects { position: fixed; inset: 0; pointer-events: none; overflow: hidden; }
-.glow-orb { position: absolute; border-radius: 50%; filter: blur(160px); opacity: 0.1; animation: float 20s ease-in-out infinite; }
-.orb-1 { width: 500px; height: 500px; background: #2AABEE; top: -20%; left: -10%; }
-.orb-2 { width: 400px; height: 400px; background: #0077FF; bottom: -15%; right: -5%; animation-delay: -6s; }
-.orb-3 { width: 350px; height: 350px; background: #34A853; top: 50%; left: 50%; transform: translate(-50%, -50%); animation-delay: -12s; }
+.bg-effects {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+.glow-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(160px);
+  opacity: 0.1;
+  animation: float 20s ease-in-out infinite;
+}
+.orb-1 {
+  width: 500px;
+  height: 500px;
+  background: #2aabee;
+  top: -20%;
+  left: -10%;
+}
+.orb-2 {
+  width: 400px;
+  height: 400px;
+  background: #0077ff;
+  bottom: -15%;
+  right: -5%;
+  animation-delay: -6s;
+}
+.orb-3 {
+  width: 350px;
+  height: 350px;
+  background: #34a853;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  animation-delay: -12s;
+}
 
 @keyframes float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-30px); }
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-30px);
+  }
 }
 
 .content {
@@ -105,13 +146,15 @@ const platforms = [
   gap: 44px;
 }
 
-.header { text-align: center; }
+.header {
+  text-align: center;
+}
 
 .title {
   font-family: var(--font-display);
   font-size: clamp(56px, 8vw, 100px);
   font-weight: 900;
-  background: linear-gradient(135deg, #2AABEE, #0077FF, #34A853);
+  background: linear-gradient(135deg, #2aabee, #0077ff, #34a853);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -129,7 +172,7 @@ const platforms = [
 }
 
 .accent {
-  background: linear-gradient(135deg, #2AABEE, #34A853);
+  background: linear-gradient(135deg, #2aabee, #34a853);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -245,8 +288,13 @@ const platforms = [
 }
 
 @keyframes pulse-badge {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.4; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
 }
 
 /* Bottom */
@@ -277,14 +325,14 @@ const platforms = [
 
 .line-icon i {
   font-size: 18px;
-  background: linear-gradient(135deg, #2AABEE, #34A853);
+  background: linear-gradient(135deg, #2aabee, #34a853);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
 .accent-text {
-  background: linear-gradient(135deg, #2AABEE, #34A853);
+  background: linear-gradient(135deg, #2aabee, #34a853);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -292,15 +340,32 @@ const platforms = [
 }
 
 @media (max-width: 768px) {
-  .slide { padding: 30px 16px 16px; }
-  .content { gap: 32px; }
+  .slide {
+    padding: 30px 16px 16px;
+  }
+  .content {
+    gap: 32px;
+  }
   .platforms {
     grid-template-columns: repeat(2, 1fr);
     gap: 12px;
   }
-  .platform-card { padding: 20px 16px; gap: 10px; }
-  .card-icon { width: 56px; height: 56px; font-size: 26px; border-radius: 16px; }
-  .bottom-line { padding: 12px 20px; }
-  .line-icon { width: 34px; height: 34px; }
+  .platform-card {
+    padding: 20px 16px;
+    gap: 10px;
+  }
+  .card-icon {
+    width: 56px;
+    height: 56px;
+    font-size: 26px;
+    border-radius: 16px;
+  }
+  .bottom-line {
+    padding: 12px 20px;
+  }
+  .line-icon {
+    width: 34px;
+    height: 34px;
+  }
 }
 </style>

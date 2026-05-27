@@ -68,11 +68,7 @@
           </div>
 
           <div v-if="plan.chats && plan.chats.length > 0" class="plan-chats-list">
-            <div
-              v-for="chat in plan.chats"
-              :key="chat.feedId"
-              class="plan-chat-item"
-            >
+            <div v-for="chat in plan.chats" :key="chat.feedId" class="plan-chat-item">
               <div class="chat-info">
                 <div class="chat-avatar">
                   <img v-if="chat.avatarHash" :src="getAvatarUrl(chat.avatarHash)" />
@@ -184,7 +180,10 @@
               </select>
             </div>
 
-            <div v-if="planForm.durationType === 'months' && planForm.calendarPeriod === 'specific'" class="form-group">
+            <div
+              v-if="planForm.durationType === 'months' && planForm.calendarPeriod === 'specific'"
+              class="form-group"
+            >
               <label>Месяц начала периода</label>
               <select v-model.number="planForm.specificPeriodStart">
                 <option :value="1">Январь (I квартал: янв-мар)</option>
@@ -195,7 +194,10 @@
                 <option :value="10">Октябрь (IV квартал: окт-дек)</option>
                 <option :value="11">Ноябрь (ноя-янв)</option>
               </select>
-              <small class="hint">Периоды будут формироваться от указанного месяца на {{ planForm.durationValue }} месяцев</small>
+              <small class="hint"
+                >Периоды будут формироваться от указанного месяца на
+                {{ planForm.durationValue }} месяцев</small
+              >
             </div>
 
             <div class="form-group checkbox-group">
@@ -255,7 +257,10 @@
                 @click="toggleChatSelection(chat.feedId)"
               >
                 <div class="chat-select-checkbox">
-                  <i v-if="selectedChats.includes(chat.feedId)" class="fa-solid fa-check-square"></i>
+                  <i
+                    v-if="selectedChats.includes(chat.feedId)"
+                    class="fa-solid fa-check-square"
+                  ></i>
                   <i v-else class="fa-regular fa-square"></i>
                 </div>
                 <div class="chat-select-avatar">
@@ -338,8 +343,8 @@ const sortedPlans = computed(() => {
 const availableChats = computed(() => {
   if (!selectedPlanForChats.value) return []
 
-  const planChatIds = new Set(selectedPlanForChats.value.chats?.map(c => c.feedId) || [])
-  return allChats.value.filter(chat => !planChatIds.has(chat.feedId))
+  const planChatIds = new Set(selectedPlanForChats.value.chats?.map((c) => c.feedId) || [])
+  return allChats.value.filter((chat) => !planChatIds.has(chat.feedId))
 })
 
 onMounted(() => {
@@ -352,7 +357,9 @@ onMounted(() => {
 async function loadPlans() {
   const { makeApiUrl } = useApiUrl()
   try {
-    const response = await fetch(makeApiUrl('chat-subscription-plans~plans/all')).then(r => r.json())
+    const response = await fetch(makeApiUrl('chat-subscription-plans~plans/all')).then((r) =>
+      r.json()
+    )
     plans.value = response.plans || []
   } catch (e) {
     console.error('Failed to load plans:', e)
@@ -363,7 +370,7 @@ async function loadPlans() {
 async function loadAllChats() {
   const { makeApiUrl } = useApiUrl()
   try {
-    const response = await fetch(makeApiUrl('chats~list')).then(r => r.json())
+    const response = await fetch(makeApiUrl('chats~list')).then((r) => r.json())
     allChats.value = response?.chats || []
   } catch (e) {
     console.error('Failed to load chats:', e)
@@ -396,7 +403,7 @@ function editPlan(plan) {
     specificPeriodStart: plan.specificPeriodStart || 1,
     allowAutoRenewal: plan.allowAutoRenewal !== false,
     isActive: plan.isActive !== false,
-    chatIds: plan.chats?.map(c => c.feedId) || []
+    chatIds: plan.chats?.map((c) => c.feedId) || []
   }
   showModal.value = true
 }
@@ -431,12 +438,14 @@ async function savePlan() {
   try {
     // Если создаем новый тариф с чатами или добавляем чаты в существующий,
     // нужно сделать эти чаты платными
-    const chatIdsToMakePaid = editingPlan.value 
-      ? planForm.value.chatIds.filter(id => !editingPlan.value.chats?.some(c => c.feedId === id))
+    const chatIdsToMakePaid = editingPlan.value
+      ? planForm.value.chatIds.filter(
+          (id) => !editingPlan.value.chats?.some((c) => c.feedId === id)
+        )
       : planForm.value.chatIds
 
     const { makeApiUrl } = useApiUrl()
-    
+
     // Делаем чаты платными
     for (const feedId of chatIdsToMakePaid) {
       try {
@@ -449,7 +458,6 @@ async function savePlan() {
         console.error(`Failed to set paid status for chat ${feedId}:`, e)
       }
     }
-
 
     const body = {
       name: planForm.value.name,
@@ -563,11 +571,14 @@ async function addSelectedChats() {
     }
 
     for (const feedId of selectedChats.value) {
-      await fetch(makeApiUrl(`chat-subscription-plans~plans/${selectedPlanForChats.value.id}/add-chat`), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ feedId })
-      })
+      await fetch(
+        makeApiUrl(`chat-subscription-plans~plans/${selectedPlanForChats.value.id}/add-chat`),
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ feedId })
+        }
+      )
     }
     await loadPlans()
     emit('plans-updated')
@@ -614,9 +625,11 @@ function formatPrice(price) {
   if (!price) return ''
 
   const amount = price.amount !== undefined ? price.amount : price[0] !== undefined ? price[0] : 0
-  const currency = price.currency !== undefined ? price.currency : price[1] !== undefined ? price[1] : 'RUB'
+  const currency =
+    price.currency !== undefined ? price.currency : price[1] !== undefined ? price[1] : 'RUB'
 
-  const symbol = currency === 'RUB' ? '₽' : currency === 'USD' ? '$' : currency === 'EUR' ? '€' : currency
+  const symbol =
+    currency === 'RUB' ? '₽' : currency === 'USD' ? '$' : currency === 'EUR' ? '€' : currency
   return `${amount} ${symbol}`
 }
 
@@ -638,7 +651,20 @@ function formatDuration(plan) {
   let result = `${value} ${label}`
 
   if (plan.durationType === 'months' && plan.calendarPeriod === 'specific') {
-    const months = ['янв', 'фев', 'мар', 'апр', 'май', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек']
+    const months = [
+      'янв',
+      'фев',
+      'мар',
+      'апр',
+      'май',
+      'июн',
+      'июл',
+      'авг',
+      'сен',
+      'окт',
+      'ноя',
+      'дек'
+    ]
     const startMonth = months[(plan.specificPeriodStart || 1) - 1]
     result += ` (с ${startMonth})`
   }

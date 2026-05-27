@@ -3,10 +3,12 @@
     <!-- 1. ПЕРВЫЙ ЭКРАН (HERO) -->
     <section class="relative min-h-screen flex items-center justify-center gradient-bg">
       <div class="absolute inset-0 bg-gradient-to-b from-transparent via-dark/50 to-dark"></div>
-      
+
       <div class="container mx-auto px-4 py-20 relative z-10">
         <div class="max-w-5xl mx-auto text-center">
-          <div class="inline-block mb-6 bg-burgundy/80 backdrop-blur-sm text-white px-6 py-3 rounded-full text-sm font-bold shine-effect">
+          <div
+            class="inline-block mb-6 bg-burgundy/80 backdrop-blur-sm text-white px-6 py-3 rounded-full text-sm font-bold shine-effect"
+          >
             <i class="fas fa-calendar-alt mr-2"></i>
             11, 12, 13 ноября в 18:00 МСК
           </div>
@@ -16,7 +18,8 @@
           </h1>
 
           <p class="text-xl md:text-2xl text-gray-300 mb-8 font-light">
-            Это не просто марафон — это 3 дня интенсивной практики с мастерами, которые сами выросли до ТОП-уровня
+            Это не просто марафон — это 3 дня интенсивной практики с мастерами, которые сами выросли
+            до ТОП-уровня
           </p>
 
           <div class="flex flex-wrap gap-4 justify-center items-center mb-10">
@@ -68,9 +71,13 @@
         <p class="text-center text-xl text-gray-300 mb-10">по самым дорогим техникам</p>
 
         <div class="grid md:grid-cols-2 gap-8 max-w-6xl mx-auto">
-          <div class="group overflow-hidden rounded-3xl transform hover:scale-105 transition-all duration-500 bg-dark border-2 border-gold/30">
+          <div
+            class="group overflow-hidden rounded-3xl transform hover:scale-105 transition-all duration-500 bg-dark border-2 border-gold/30"
+          >
             <div class="p-6 relative">
-              <div class="absolute top-4 right-4 bg-burgundy text-white px-4 py-2 rounded-full font-bold text-sm z-10">
+              <div
+                class="absolute top-4 right-4 bg-burgundy text-white px-4 py-2 rounded-full font-bold text-sm z-10"
+              >
                 МК #1
               </div>
               <h3 class="text-2xl font-display font-bold text-gold mb-2">
@@ -78,16 +85,20 @@
               </h3>
               <p class="text-gray-300 mb-4">За 1 час на нижние формы</p>
             </div>
-            <img 
-              :src="getThumbnail('image_gc_6z4F8crNUH.1260x1280.jpeg', 800, 800)" 
-              alt="Скоростное наращивание" 
+            <img
+              :src="getThumbnail('image_gc_6z4F8crNUH.1260x1280.jpeg', 800, 800)"
+              alt="Скоростное наращивание"
               class="w-full h-80 object-cover"
             />
           </div>
 
-          <div class="group overflow-hidden rounded-3xl transform hover:scale-105 transition-all duration-500 bg-dark border-2 border-gold/30">
+          <div
+            class="group overflow-hidden rounded-3xl transform hover:scale-105 transition-all duration-500 bg-dark border-2 border-gold/30"
+          >
             <div class="p-6 relative">
-              <div class="absolute top-4 right-4 bg-burgundy text-white px-4 py-2 rounded-full font-bold text-sm z-10">
+              <div
+                class="absolute top-4 right-4 bg-burgundy text-white px-4 py-2 rounded-full font-bold text-sm z-10"
+              >
                 МК #2
               </div>
               <h3 class="text-2xl font-display font-bold text-gold mb-2">
@@ -95,43 +106,47 @@
               </h3>
               <p class="text-gray-300 mb-4">Когти - тренд 2026</p>
             </div>
-            <img 
-              :src="getThumbnail('image_gc_vpfw9Y2ctf.960x1280.jpeg', 800, 800)" 
-              alt="Креативное моделирование" 
+            <img
+              :src="getThumbnail('image_gc_vpfw9Y2ctf.960x1280.jpeg', 800, 800)"
+              alt="Креативное моделирование"
               class="w-full h-80 object-cover object-top"
             />
           </div>
 
-          <div class="group overflow-hidden rounded-3xl transform hover:scale-105 transition-all duration-500 bg-dark border-2 border-gold/30">
+          <div
+            class="group overflow-hidden rounded-3xl transform hover:scale-105 transition-all duration-500 bg-dark border-2 border-gold/30"
+          >
             <div class="p-6 relative">
-              <div class="absolute top-4 right-4 bg-burgundy text-white px-4 py-2 rounded-full font-bold text-sm z-10">
+              <div
+                class="absolute top-4 right-4 bg-burgundy text-white px-4 py-2 rounded-full font-bold text-sm z-10"
+              >
                 МК #3
               </div>
-              <h3 class="text-2xl font-display font-bold text-gold mb-2">
-                Услуга класса люкс
-              </h3>
+              <h3 class="text-2xl font-display font-bold text-gold mb-2">Услуга класса люкс</h3>
               <p class="text-gray-300 mb-4">Выкладной френч</p>
             </div>
-            <img 
-              :src="getThumbnail('image_gc_Emk36S3WKs.1280x720.jpeg', 800, 800)" 
-              alt="Выкладной френч" 
+            <img
+              :src="getThumbnail('image_gc_Emk36S3WKs.1280x720.jpeg', 800, 800)"
+              alt="Выкладной френч"
               class="w-full h-80 object-cover object-center"
             />
           </div>
 
-          <div class="group overflow-hidden rounded-3xl transform hover:scale-105 transition-all duration-500 bg-dark border-2 border-gold/30">
+          <div
+            class="group overflow-hidden rounded-3xl transform hover:scale-105 transition-all duration-500 bg-dark border-2 border-gold/30"
+          >
             <div class="p-6 relative">
-              <div class="absolute top-4 right-4 bg-burgundy text-white px-4 py-2 rounded-full font-bold text-sm z-10">
+              <div
+                class="absolute top-4 right-4 bg-burgundy text-white px-4 py-2 rounded-full font-bold text-sm z-10"
+              >
                 МК #4
               </div>
-              <h3 class="text-2xl font-display font-bold text-gold mb-2">
-                Тренд года
-              </h3>
+              <h3 class="text-2xl font-display font-bold text-gold mb-2">Тренд года</h3>
               <p class="text-gray-300 mb-4">Пилочный маникюр</p>
             </div>
-            <img 
-              src="https://fs.chatium.io/get/image_gc_6yfqjfgIDc.1260x1280.jpeg" 
-              alt="Пилочный маникюр" 
+            <img
+              src="https://fs.chatium.io/get/image_gc_6yfqjfgIDc.1260x1280.jpeg"
+              alt="Пилочный маникюр"
               class="w-full h-80 object-cover"
             />
           </div>
@@ -143,22 +158,24 @@
     <section class="py-12 bg-dark-light relative overflow-hidden">
       <div class="absolute inset-0 opacity-10">
         <div class="absolute top-0 left-0 w-96 h-96 bg-gold rounded-full filter blur-3xl"></div>
-        <div class="absolute bottom-0 right-0 w-96 h-96 bg-burgundy rounded-full filter blur-3xl"></div>
+        <div
+          class="absolute bottom-0 right-0 w-96 h-96 bg-burgundy rounded-full filter blur-3xl"
+        ></div>
       </div>
-      
+
       <div class="container mx-auto px-4 relative z-10">
         <div class="max-w-5xl mx-auto">
           <div class="text-center mb-10">
-            <img 
-              :src="getThumbnail('image_gc_ecxcnMasev.1080x1080.jpeg', 1000)" 
-              alt="Розыгрыш призов" 
+            <img
+              :src="getThumbnail('image_gc_ecxcnMasev.1080x1080.jpeg', 1000)"
+              alt="Розыгрыш призов"
               class="rounded-3xl shadow-2xl mx-auto mb-8 transform hover:scale-105 transition-transform duration-500"
             />
-            
+
             <h2 class="text-4xl md:text-5xl font-display font-bold mb-6">
               <span class="gradient-gold">Розыгрыш призов!</span>
             </h2>
-            
+
             <p class="text-2xl text-gray-300 mb-8">
               В 3-й день практикума разыграем призы среди всех участников
             </p>
@@ -186,7 +203,8 @@
             <div class="mt-10 bg-burgundy/20 border-2 border-burgundy rounded-xl p-6 inline-block">
               <p class="text-xl font-semibold">
                 <i class="fas fa-info-circle text-burgundy mr-2"></i>
-                Для участия в розыгрыше необходимо зарегистрироваться и посетить все 3 дня практикума
+                Для участия в розыгрыше необходимо зарегистрироваться и посетить все 3 дня
+                практикума
               </p>
             </div>
           </div>
@@ -201,27 +219,40 @@
           <h2 class="text-4xl md:text-5xl font-display font-bold text-center mb-6 gradient-gold">
             Обязательно приходи, если:
           </h2>
-          
+
           <div class="grid md:grid-cols-3 gap-6 mt-8">
-            <div class="bg-dark border-2 border-gold/30 hover:border-gold rounded-2xl p-6 transition-all duration-300 transform hover:scale-105">
+            <div
+              class="bg-dark border-2 border-gold/30 hover:border-gold rounded-2xl p-6 transition-all duration-300 transform hover:scale-105"
+            >
               <div class="text-4xl mb-4 text-gold">
                 <i class="fas fa-chart-line"></i>
               </div>
-              <p class="text-lg">Чувствуешь <span class="text-gold font-bold">застой в деньгах</span> и клиентах</p>
+              <p class="text-lg">
+                Чувствуешь <span class="text-gold font-bold">застой в деньгах</span> и клиентах
+              </p>
             </div>
 
-            <div class="bg-dark border-2 border-gold/30 hover:border-gold rounded-2xl p-6 transition-all duration-300 transform hover:scale-105">
+            <div
+              class="bg-dark border-2 border-gold/30 hover:border-gold rounded-2xl p-6 transition-all duration-300 transform hover:scale-105"
+            >
               <div class="text-4xl mb-4 text-gold">
                 <i class="fas fa-lightbulb"></i>
               </div>
-              <p class="text-lg">Хочешь узнать, на чем будут <span class="text-gold font-bold">зарабатывать топы в 2026</span> году</p>
+              <p class="text-lg">
+                Хочешь узнать, на чем будут
+                <span class="text-gold font-bold">зарабатывать топы в 2026</span> году
+              </p>
             </div>
 
-            <div class="bg-dark border-2 border-gold/30 hover:border-gold rounded-2xl p-6 transition-all duration-300 transform hover:scale-105">
+            <div
+              class="bg-dark border-2 border-gold/30 hover:border-gold rounded-2xl p-6 transition-all duration-300 transform hover:scale-105"
+            >
               <div class="text-4xl mb-4 text-gold">
                 <i class="fas fa-gem"></i>
               </div>
-              <p class="text-lg">Мечтаешь сделать свой <span class="text-gold font-bold">1 000 000+ ₽</span></p>
+              <p class="text-lg">
+                Мечтаешь сделать свой <span class="text-gold font-bold">1 000 000+ ₽</span>
+              </p>
             </div>
           </div>
         </div>
@@ -234,22 +265,34 @@
         <h2 class="text-4xl md:text-5xl font-display font-bold text-center mb-6">
           Ещё на практикуме будет
         </h2>
-        <p class="text-center text-xl text-gray-300 mb-10">3 живых эфира с ТОП-мастерами бьюти-индустрии</p>
+        <p class="text-center text-xl text-gray-300 mb-10">
+          3 живых эфира с ТОП-мастерами бьюти-индустрии
+        </p>
 
         <div class="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto mb-12">
-          <div class="bg-dark-light border-2 border-gold/30 hover:border-gold rounded-2xl p-6 transition-all duration-300">
+          <div
+            class="bg-dark-light border-2 border-gold/30 hover:border-gold rounded-2xl p-6 transition-all duration-300"
+          >
             <div class="text-4xl mb-4 text-center">⭐</div>
             <p class="text-center text-lg">Какой бьюти-мастер будет ТОПом</p>
           </div>
 
-          <div class="bg-dark-light border-2 border-gold/30 hover:border-gold rounded-2xl p-6 transition-all duration-300">
+          <div
+            class="bg-dark-light border-2 border-gold/30 hover:border-gold rounded-2xl p-6 transition-all duration-300"
+          >
             <div class="text-4xl mb-4 text-center">✨</div>
-            <p class="text-center text-lg">Креатив и эксклюзив: источники творческого и финансового роста</p>
+            <p class="text-center text-lg">
+              Креатив и эксклюзив: источники творческого и финансового роста
+            </p>
           </div>
 
-          <div class="bg-dark-light border-2 border-gold/30 hover:border-gold rounded-2xl p-6 transition-all duration-300">
+          <div
+            class="bg-dark-light border-2 border-gold/30 hover:border-gold rounded-2xl p-6 transition-all duration-300"
+          >
             <div class="text-4xl mb-4 text-center">💰</div>
-            <p class="text-center text-lg">Что нужно мастеру, чтобы клиенты сами искали его и много платили</p>
+            <p class="text-center text-lg">
+              Что нужно мастеру, чтобы клиенты сами искали его и много платили
+            </p>
           </div>
         </div>
       </div>
@@ -262,11 +305,13 @@
         </h2>
 
         <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-7xl mx-auto">
-          <div class="bg-dark border-2 border-gold/30 hover:border-gold rounded-2xl p-6 text-center transition-all duration-300 transform hover:scale-105">
+          <div
+            class="bg-dark border-2 border-gold/30 hover:border-gold rounded-2xl p-6 text-center transition-all duration-300 transform hover:scale-105"
+          >
             <div class="w-24 h-24 rounded-full mx-auto mb-4 overflow-hidden border-4 border-gold">
-              <img 
-                :src="getThumbnail('image_gc_XfPXr41PsX.854x1280.jpeg', 200, 200)" 
-                alt="Анна Околот" 
+              <img
+                :src="getThumbnail('image_gc_XfPXr41PsX.854x1280.jpeg', 200, 200)"
+                alt="Анна Околот"
                 class="w-full h-full object-cover object-center"
               />
             </div>
@@ -274,11 +319,15 @@
             <p class="text-sm text-gray-400">Nail Fashion-креатор, блогер</p>
           </div>
 
-          <div class="bg-dark border-2 border-gold/30 hover:border-gold rounded-2xl p-6 text-center transition-all duration-300 transform hover:scale-105">
-            <div class="w-24 h-24 rounded-full mx-auto mb-4 overflow-hidden border-2 border-gold/50">
-              <img 
-                :src="getThumbnail('image_gc_I2buwp23Et.809x1280.jpeg', 200, 200)" 
-                alt="Татьяна Шинкарева" 
+          <div
+            class="bg-dark border-2 border-gold/30 hover:border-gold rounded-2xl p-6 text-center transition-all duration-300 transform hover:scale-105"
+          >
+            <div
+              class="w-24 h-24 rounded-full mx-auto mb-4 overflow-hidden border-2 border-gold/50"
+            >
+              <img
+                :src="getThumbnail('image_gc_I2buwp23Et.809x1280.jpeg', 200, 200)"
+                alt="Татьяна Шинкарева"
                 class="w-full h-full object-cover object-center"
               />
             </div>
@@ -286,11 +335,13 @@
             <p class="text-sm text-gray-400">Чемпион бьюти-конкурсов, технолог компании Emi</p>
           </div>
 
-          <div class="bg-dark border-2 border-gold/30 hover:border-gold rounded-2xl p-6 text-center transition-all duration-300 transform hover:scale-105">
+          <div
+            class="bg-dark border-2 border-gold/30 hover:border-gold rounded-2xl p-6 text-center transition-all duration-300 transform hover:scale-105"
+          >
             <div class="w-24 h-24 rounded-full mx-auto mb-4 overflow-hidden border-4 border-gold">
-              <img 
-                :src="getThumbnail('image_gc_JE0BAkJkha.853x1280.jpeg', 200, 200)" 
-                alt="Наталья Калядина" 
+              <img
+                :src="getThumbnail('image_gc_JE0BAkJkha.853x1280.jpeg', 200, 200)"
+                alt="Наталья Калядина"
                 class="w-full h-full object-cover object-center"
               />
             </div>
@@ -298,11 +349,13 @@
             <p class="text-sm text-gray-400">Nail-стилист, Руководитель команды "Неглянец"</p>
           </div>
 
-          <div class="bg-dark border-2 border-gold/30 hover:border-gold rounded-2xl p-6 text-center transition-all duration-300 transform hover:scale-105">
+          <div
+            class="bg-dark border-2 border-gold/30 hover:border-gold rounded-2xl p-6 text-center transition-all duration-300 transform hover:scale-105"
+          >
             <div class="w-24 h-24 rounded-full mx-auto mb-4 overflow-hidden border-4 border-gold">
-              <img 
-                :src="getThumbnail('image_gc_rtwdRgctbf.853x1280.jpeg', 200, 200)" 
-                alt="Ирина Дровникова" 
+              <img
+                :src="getThumbnail('image_gc_rtwdRgctbf.853x1280.jpeg', 200, 200)"
+                alt="Ирина Дровникова"
                 class="w-full h-full object-cover object-center"
               />
             </div>
@@ -320,7 +373,9 @@
         </h2>
 
         <div class="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto mt-10">
-          <div class="bg-dark-light border-2 border-gold/50 rounded-2xl p-8 flex items-start gap-4 hover:border-gold transition-colors">
+          <div
+            class="bg-dark-light border-2 border-gold/50 rounded-2xl p-8 flex items-start gap-4 hover:border-gold transition-colors"
+          >
             <div class="text-3xl text-gold flex-shrink-0">
               <i class="fab fa-telegram"></i>
             </div>
@@ -330,7 +385,9 @@
             </div>
           </div>
 
-          <div class="bg-dark-light border-2 border-gold/50 rounded-2xl p-8 flex items-start gap-4 hover:border-gold transition-colors relative">
+          <div
+            class="bg-dark-light border-2 border-gold/50 rounded-2xl p-8 flex items-start gap-4 hover:border-gold transition-colors relative"
+          >
             <div class="text-3xl text-gold flex-shrink-0">
               <i class="fas fa-hands"></i>
             </div>
@@ -340,7 +397,9 @@
             </div>
           </div>
 
-          <div class="bg-dark-light border-2 border-gold/50 rounded-2xl p-8 flex items-start gap-4 hover:border-gold transition-colors">
+          <div
+            class="bg-dark-light border-2 border-gold/50 rounded-2xl p-8 flex items-start gap-4 hover:border-gold transition-colors"
+          >
             <div class="text-3xl text-gold flex-shrink-0">
               <i class="fas fa-gift"></i>
             </div>
@@ -350,7 +409,9 @@
             </div>
           </div>
 
-          <div class="bg-dark-light border-2 border-gold/50 rounded-2xl p-8 flex items-start gap-4 hover:border-gold transition-colors">
+          <div
+            class="bg-dark-light border-2 border-gold/50 rounded-2xl p-8 flex items-start gap-4 hover:border-gold transition-colors"
+          >
             <div class="text-3xl text-gold flex-shrink-0">
               <i class="fas fa-fire"></i>
             </div>
@@ -362,9 +423,9 @@
         </div>
 
         <div class="max-w-2xl mx-auto mt-12 text-center">
-          <img 
-            :src="getThumbnail('image_gc_kOLW0WGBwY.1920x1357.jpeg', 600)" 
-            alt="Сертификат участника" 
+          <img
+            :src="getThumbnail('image_gc_kOLW0WGBwY.1920x1357.jpeg', 600)"
+            alt="Сертификат участника"
             class="rounded-2xl shadow-2xl mx-auto border-4 border-gold/50 transform hover:scale-105 transition-transform"
           />
           <p class="mt-6 text-gray-400 text-sm">*Пример сертификата участника практикума</p>
@@ -374,7 +435,9 @@
 
     <section class="py-16 bg-dark-light relative overflow-hidden">
       <div class="absolute inset-0">
-        <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full h-full bg-gradient-to-r from-gold/10 via-transparent to-burgundy/10 blur-3xl"></div>
+        <div
+          class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full h-full bg-gradient-to-r from-gold/10 via-transparent to-burgundy/10 blur-3xl"
+        ></div>
       </div>
 
       <div class="container mx-auto px-4 relative z-10">
@@ -385,17 +448,19 @@
             начинается здесь!
           </h2>
 
-          <p class="text-2xl text-gray-300 mb-6">
-            11, 12 и 13 ноября в 18:00 МСК
-          </p>
+          <p class="text-2xl text-gray-300 mb-6">11, 12 и 13 ноября в 18:00 МСК</p>
 
-          <div class="bg-burgundy/20 border-2 border-burgundy rounded-xl px-6 py-4 inline-block mb-8">
+          <div
+            class="bg-burgundy/20 border-2 border-burgundy rounded-xl px-6 py-4 inline-block mb-8"
+          >
             <p class="text-lg font-semibold text-white">
               ⚡ Это премьера! Обычно такие практикумы платные
             </p>
           </div>
 
-          <div class="bg-dark border-2 border-blue-500 rounded-2xl px-8 py-6 mb-10 max-w-3xl mx-auto">
+          <div
+            class="bg-dark border-2 border-blue-500 rounded-2xl px-8 py-6 mb-10 max-w-3xl mx-auto"
+          >
             <p class="text-xl font-bold text-white mb-4 text-center">
               <i class="fas fa-exclamation-triangle text-blue-500 mr-2"></i>
               Почему мест действительно ограничено:
@@ -403,19 +468,30 @@
             <div class="grid md:grid-cols-2 gap-4 text-left">
               <div class="flex items-start gap-3">
                 <i class="fas fa-users text-blue-500 mt-1 flex-shrink-0"></i>
-                <p class="text-sm text-gray-300">Вебинарная платформа вмещает максимум <span class="text-white font-bold">1000 участников</span></p>
+                <p class="text-sm text-gray-300">
+                  Вебинарная платформа вмещает максимум
+                  <span class="text-white font-bold">1000 участников</span>
+                </p>
               </div>
               <div class="flex items-start gap-3">
                 <i class="fas fa-certificate text-blue-500 mt-1 flex-shrink-0"></i>
-                <p class="text-sm text-gray-300">На каждого готовится <span class="text-white font-bold">именной сертификат</span></p>
+                <p class="text-sm text-gray-300">
+                  На каждого готовится <span class="text-white font-bold">именной сертификат</span>
+                </p>
               </div>
               <div class="flex items-start gap-3">
                 <i class="fas fa-gift text-blue-500 mt-1 flex-shrink-0"></i>
-                <p class="text-sm text-gray-300">Призов всего <span class="text-white font-bold">10 штук</span> — нужно успеть попасть в розыгрыш</p>
+                <p class="text-sm text-gray-300">
+                  Призов всего <span class="text-white font-bold">10 штук</span> — нужно успеть
+                  попасть в розыгрыш
+                </p>
               </div>
               <div class="flex items-start gap-3">
                 <i class="fas fa-comments text-blue-500 mt-1 flex-shrink-0"></i>
-                <p class="text-sm text-gray-300">Эксперты смогут ответить на вопросы только <span class="text-white font-bold">при небольшой группе</span></p>
+                <p class="text-sm text-gray-300">
+                  Эксперты смогут ответить на вопросы только
+                  <span class="text-white font-bold">при небольшой группе</span>
+                </p>
               </div>
             </div>
           </div>
@@ -428,7 +504,9 @@
             Зайти на практикум пока еще есть бесплатные места
           </button>
 
-          <div class="mt-8 flex flex-col sm:flex-row items-center justify-center gap-6 text-sm text-gray-400">
+          <div
+            class="mt-8 flex flex-col sm:flex-row items-center justify-center gap-6 text-sm text-gray-400"
+          >
             <div class="flex items-center gap-2">
               <i class="fas fa-check-circle text-gold"></i>
               <span>Бесплатное участие</span>
@@ -454,20 +532,24 @@
 
     <FloatingButton @open-popup="openPopup" />
     <RegistrationPopup :is-open="isPopupOpen" @close="closePopup" />
-    
+
     <!-- Уведомления о регистрациях -->
     <Transition name="slide-fade">
-      <div 
-        v-if="showNotification" 
+      <div
+        v-if="showNotification"
         class="fixed top-6 right-6 bg-dark-light border-2 border-gold/50 rounded-xl px-5 py-4 shadow-2xl z-50 max-w-sm backdrop-blur-md"
       >
         <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-full bg-gold/20 flex items-center justify-center flex-shrink-0">
+          <div
+            class="w-10 h-10 rounded-full bg-gold/20 flex items-center justify-center flex-shrink-0"
+          >
             <i class="fas fa-user-check text-gold"></i>
           </div>
           <div class="flex-1">
             <p class="text-white font-semibold text-sm">{{ currentNotification.name }}</p>
-            <p class="text-gray-400 text-xs">{{ currentNotification.city }} · Только что зарегистрировался</p>
+            <p class="text-gray-400 text-xs">
+              {{ currentNotification.city }} · Только что зарегистрировался
+            </p>
           </div>
         </div>
       </div>
@@ -508,7 +590,7 @@ const showRandomNotification = () => {
   const randomIndex = Math.floor(Math.random() * notifications.length)
   currentNotification.value = notifications[randomIndex]
   showNotification.value = true
-  
+
   // Скрываем уведомление через 5 секунд
   setTimeout(() => {
     showNotification.value = false

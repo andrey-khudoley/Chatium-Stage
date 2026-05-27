@@ -10,7 +10,13 @@
       <div v-if="showExtendModal" class="modal-overlay" @click.self="closeExtendModal">
         <div class="modal-content extend-modal">
           <div class="modal-header">
-            <h3>{{ extendingSubscription?.status === 'expired' ? 'Возобновить подписку' : 'Продлить подписку' }}</h3>
+            <h3>
+              {{
+                extendingSubscription?.status === 'expired'
+                  ? 'Возобновить подписку'
+                  : 'Продлить подписку'
+              }}
+            </h3>
             <button class="btn-close" @click="closeExtendModal">
               <i class="fa-solid fa-times"></i>
             </button>
@@ -19,8 +25,12 @@
             <div v-if="extendingSubscription" class="extend-info">
               <div class="current-plan">
                 <span class="plan-name">{{ extendingSubscription.plan?.name }}</span>
-                <span v-if="extendingSubscription.status === 'expired'" class="expired-badge">Истекла</span>
-                <span v-else class="active-badge">Действует до {{ formatDate(extendingSubscription.endDate) }}</span>
+                <span v-if="extendingSubscription.status === 'expired'" class="expired-badge"
+                  >Истекла</span
+                >
+                <span v-else class="active-badge"
+                  >Действует до {{ formatDate(extendingSubscription.endDate) }}</span
+                >
               </div>
 
               <!-- Выбор периода -->
@@ -86,8 +96,8 @@
         class="subscription-card"
         :class="{
           'expiring-soon': sub.isExpiringSoon,
-          'pending': sub.status === 'pending',
-          'expired': sub.status === 'expired'
+          pending: sub.status === 'pending',
+          expired: sub.status === 'expired'
         }"
       >
         <div class="subscription-header">
@@ -134,7 +144,7 @@
           </div>
           <div class="date-row">
             <span class="date-label">Окончание:</span>
-            <span class="date-value" :class="{ 'expiring': sub.isExpiringSoon }">
+            <span class="date-value" :class="{ expiring: sub.isExpiringSoon }">
               {{ formatDate(sub.endDate) }}
             </span>
           </div>
@@ -185,8 +195,8 @@
     <div class="legal-info">
       <i class="fa-solid fa-scale-balanced"></i>
       <p>
-        Согласно законодательству, вы можете отменить автопродление подписки в любой момент.
-        Доступ к чатам сохранится до окончания оплаченного периода.
+        Согласно законодательству, вы можете отменить автопродление подписки в любой момент. Доступ
+        к чатам сохранится до окончания оплаченного периода.
       </p>
     </div>
   </div>
@@ -221,7 +231,9 @@ async function openExtendModal(subscription) {
   // Загружаем опции периодов
   if (subscription.plan?.id) {
     try {
-      const response = await fetch(`/projekt-chat/api/chat-subscription-plans~plans/${subscription.plan.id}/periods`).then(r => r.json())
+      const response = await fetch(
+        `/projekt-chat/api/chat-subscription-plans~plans/${subscription.plan.id}/periods`
+      ).then((r) => r.json())
       periodOptions.value = response || []
       if (periodOptions.value.length > 0) {
         selectedPeriod.value = periodOptions.value[0].value
@@ -248,13 +260,16 @@ async function confirmExtend() {
   extendError.value = ''
 
   try {
-    const response = await fetch(`/projekt-chat/api/chat-subscriptions~${extendingSubscription.value.id}/extend`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        periodValue: selectedPeriod.value
-      })
-    }).then(r => r.json())
+    const response = await fetch(
+      `/projekt-chat/api/chat-subscriptions~${extendingSubscription.value.id}/extend`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          periodValue: selectedPeriod.value
+        })
+      }
+    ).then((r) => r.json())
 
     if (response.paymentLink) {
       // Перенаправляем на оплату
@@ -275,16 +290,17 @@ function formatPrice(price) {
   if (!price) return ''
   const amount = price.amount || price
   const currency = price.currency || 'RUB'
-  const symbol = currency === 'RUB' ? '₽' : currency === 'USD' ? '$' : currency === 'EUR' ? '€' : currency
+  const symbol =
+    currency === 'RUB' ? '₽' : currency === 'USD' ? '$' : currency === 'EUR' ? '€' : currency
   return `${amount} ${symbol}`
 }
 
 async function loadSubscriptions() {
   loading.value = true
   try {
-    const response = await fetch('/projekt-chat/api/chat-subscriptions~my').then(r => r.json())
+    const response = await fetch('/projekt-chat/api/chat-subscriptions~my').then((r) => r.json())
     // Преобразуем строки дат в объекты Date
-    subscriptions.value = (response || []).map(sub => ({
+    subscriptions.value = (response || []).map((sub) => ({
       ...sub,
       startDate: sub.startDate ? new Date(sub.startDate) : null,
       endDate: sub.endDate ? new Date(sub.endDate) : null,
@@ -331,7 +347,12 @@ function formatDate(dateString) {
 
 function getChatInitials(chat) {
   if (!chat?.title) return '?'
-  return chat.title.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
+  return chat.title
+    .split(' ')
+    .map((w) => w[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2)
 }
 
 function getPlanAvatarStyle(plan) {
@@ -340,12 +361,12 @@ function getPlanAvatarStyle(plan) {
     ['#f093fb', '#f5576c'],
     ['#4facfe', '#00f2fe'],
     ['#43e97b', '#38f9d7'],
-    ['#fa709a', '#fee140'],
+    ['#fa709a', '#fee140']
   ]
   const index = plan?.id?.charCodeAt(0) % colors.length || 0
   const [from, to] = colors[index]
   return {
-    background: `linear-gradient(135deg, ${from} 0%, ${to} 100%)`,
+    background: `linear-gradient(135deg, ${from} 0%, ${to} 100%)`
   }
 }
 
@@ -362,9 +383,10 @@ function generateGradient(id) {
     ['#f093fb', '#f5576c'],
     ['#4facfe', '#00f2fe'],
     ['#43e97b', '#38f9d7'],
-    ['#fa709a', '#fee140'],
+    ['#fa709a', '#fee140']
   ]
-  const index = id?.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % colors.length || 0
+  const index =
+    id?.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % colors.length || 0
   return `linear-gradient(135deg, ${colors[index][0]}, ${colors[index][1]})`
 }
 </script>

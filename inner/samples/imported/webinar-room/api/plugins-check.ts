@@ -38,22 +38,22 @@ export const apiCheckPluginsRoute = app.get('/check', async (ctx, req) => {
   const status: PluginsStatus = {
     kinescope: {
       installed: false,
-      configured: false,
+      configured: false
     },
     muuvee: {
-      installed: false,
+      installed: false
     },
     knowledge: {
-      installed: false,
-    },
+      installed: false
+    }
   }
 
   // Проверка Kinescope
   try {
     const kinescopeRes = await request({
       method: 'get',
-      url: ctx.account.url("/app/kinescope/installed"),
-      throwHttpErrors: false,
+      url: ctx.account.url('/app/kinescope/installed'),
+      throwHttpErrors: false
     })
 
     if (kinescopeRes.statusCode === 200 && typeof kinescopeRes.body === 'object') {
@@ -71,8 +71,8 @@ export const apiCheckPluginsRoute = app.get('/check', async (ctx, req) => {
   try {
     const muuveeRes = await request({
       method: 'get',
-      url: ctx.account.url("/app/muuvee/installed"),
-      throwHttpErrors: false,
+      url: ctx.account.url('/app/muuvee/installed'),
+      throwHttpErrors: false
     })
 
     if (muuveeRes.statusCode === 200 && typeof muuveeRes.body === 'object') {
@@ -90,7 +90,7 @@ export const apiCheckPluginsRoute = app.get('/check', async (ctx, req) => {
     const knowledgeRes = await request({
       method: 'get',
       url: ctx.account.url('/app/knowledge/installed'),
-      throwHttpErrors: false,
+      throwHttpErrors: false
     })
 
     if (knowledgeRes.statusCode === 200 && typeof knowledgeRes.body === 'object') {

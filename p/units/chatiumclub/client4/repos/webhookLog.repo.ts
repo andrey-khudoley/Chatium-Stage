@@ -57,7 +57,10 @@ export async function create(ctx: app.Ctx, data: WebhookLogCreateData): Promise<
   return row
 }
 
-export async function findByGcEventId(ctx: app.Ctx, gcEventId: string): Promise<WebhookLogRow | null> {
+export async function findByGcEventId(
+  ctx: app.Ctx,
+  gcEventId: string
+): Promise<WebhookLogRow | null> {
   if (!gcEventId) return null
   await loggerLib.writeServerLog(ctx, {
     severity: 6,

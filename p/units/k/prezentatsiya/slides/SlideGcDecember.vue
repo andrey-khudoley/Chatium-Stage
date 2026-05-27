@@ -13,7 +13,7 @@
             v-for="(ev, i) in events"
             :key="ev.label"
             class="event"
-            :style="{ animationDelay: (0.05 + i * 0.1) + 's' }"
+            :style="{ animationDelay: 0.05 + i * 0.1 + 's' }"
           >
             <span class="dot"></span>
             <div class="when">{{ ev.when }}</div>
@@ -24,7 +24,10 @@
 
       <div class="callout">
         <i class="fas fa-triangle-exclamation"></i>
-        <span>Хочешь интегрироваться сейчас → упрёшься либо в умерший плагин, либо в нестабильный новый API.</span>
+        <span
+          >Хочешь интегрироваться сейчас → упрёшься либо в умерший плагин, либо в нестабильный новый
+          API.</span
+        >
       </div>
     </div>
   </div>
@@ -36,7 +39,7 @@ defineProps({ active: Boolean })
 const events = [
   { when: 'Декабрь 2025', text: 'SDK и плагины из Chatium закрыли' },
   { when: 'После', text: 'Появился новый API — рядом со старым' },
-  { when: 'Сейчас', text: 'Новый API нестабилен, требует ключа разработчика (не школьного)' },
+  { when: 'Сейчас', text: 'Новый API нестабилен, требует ключа разработчика (не школьного)' }
 ]
 </script>
 
@@ -66,7 +69,14 @@ const events = [
   font-size: clamp(26px, 3.2vw, 52px);
   color: var(--text-primary);
 }
-.strip { display: block; width: 80px; height: 4px; background: var(--accent-cyan); border-radius: 2px; margin-top: 16px; }
+.strip {
+  display: block;
+  width: 80px;
+  height: 4px;
+  background: var(--accent-cyan);
+  border-radius: 2px;
+  margin-top: 16px;
+}
 
 .timeline {
   position: relative;
@@ -96,7 +106,8 @@ const events = [
   position: absolute;
   left: -32px;
   top: 12px;
-  width: 16px; height: 16px;
+  width: 16px;
+  height: 16px;
   border-radius: 50%;
   background: var(--accent-amber);
   box-shadow: 0 0 14px rgba(255, 179, 71, 0.5);
@@ -139,7 +150,12 @@ const events = [
 }
 
 @media (max-width: 1024px) {
-  .slide { padding: 32px 16px; }
-  .event { grid-template-columns: 1fr; gap: 4px; }
+  .slide {
+    padding: 32px 16px;
+  }
+  .event {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
 }
 </style>

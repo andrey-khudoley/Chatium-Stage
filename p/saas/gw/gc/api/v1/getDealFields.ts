@@ -14,6 +14,8 @@ export const getDealFieldsHandler: V1GcHandler = async (_ctx, a) => {
   return { kind: 'gc_result', gc }
 }
 
-export const getDealFieldsRoute = app.get('/', async (ctx, req) => handleV1Op(ctx, req, 'getDealFields', getDealFieldsHandler))
+export const getDealFieldsRoute = app.get('/', async (ctx, req) =>
+  handleV1Op(ctx, req, 'getDealFields', getDealFieldsHandler)
+)
 
 export default getDealFieldsRoute

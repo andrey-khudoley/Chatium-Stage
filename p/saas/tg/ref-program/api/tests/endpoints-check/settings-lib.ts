@@ -23,7 +23,10 @@ export const settingsLibTestRoute = app.get('/', async (ctx, req) => {
   const results: TestResult[] = []
 
   try {
-    const projectName = await settingsLib.getSettingString(ctx, settingsLib.SETTING_KEYS.PROJECT_NAME)
+    const projectName = await settingsLib.getSettingString(
+      ctx,
+      settingsLib.SETTING_KEYS.PROJECT_NAME
+    )
     results.push({
       id: 'getSettingString',
       title: 'getSettingString (project_name)',
@@ -76,7 +79,11 @@ export const settingsLibTestRoute = app.get('/', async (ctx, req) => {
     results.push({
       id: 'getLogWebhook',
       title: 'getLogWebhook',
-      passed: typeof webhook === 'object' && webhook !== null && typeof (webhook as any).enable === 'boolean' && typeof (webhook as any).url === 'string'
+      passed:
+        typeof webhook === 'object' &&
+        webhook !== null &&
+        typeof (webhook as any).enable === 'boolean' &&
+        typeof (webhook as any).url === 'string'
     })
   } catch (e) {
     results.push({

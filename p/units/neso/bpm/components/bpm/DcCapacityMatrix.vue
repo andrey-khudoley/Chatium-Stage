@@ -32,7 +32,12 @@ function tone(ratio: number): string {
     </header>
 
     <div class="dc-capacity-matrix__rows">
-      <article v-for="row in normalizedRows" :key="row.team" class="dc-capacity-matrix__row" :class="`tone-${tone(row.ratio)}`">
+      <article
+        v-for="row in normalizedRows"
+        :key="row.team"
+        class="dc-capacity-matrix__row"
+        :class="`tone-${tone(row.ratio)}`"
+      >
         <div class="dc-capacity-matrix__head">
           <strong>{{ row.team }}</strong>
           <span>{{ row.load }} / {{ row.capacity }}</span>
@@ -56,9 +61,7 @@ function tone(ratio: number): string {
   border-radius: var(--radius-lg);
   border: 1px solid var(--border-soft);
   padding: 12px;
-  background:
-    var(--gradient-glass),
-    color-mix(in srgb, var(--surface-2) 84%, transparent);
+  background: var(--gradient-glass), color-mix(in srgb, var(--surface-2) 84%, transparent);
   display: grid;
   gap: 10px;
 }
@@ -131,14 +134,26 @@ function tone(ratio: number): string {
 }
 
 .dc-capacity-matrix__row.tone-warning .dc-capacity-matrix__bar span {
-  background: linear-gradient(90deg, var(--status-warning), color-mix(in srgb, var(--status-warning) 64%, var(--status-danger)));
+  background: linear-gradient(
+    90deg,
+    var(--status-warning),
+    color-mix(in srgb, var(--status-warning) 64%, var(--status-danger))
+  );
 }
 
 .dc-capacity-matrix__row.tone-critical .dc-capacity-matrix__bar span {
-  background: linear-gradient(90deg, var(--status-danger), color-mix(in srgb, var(--status-danger) 70%, #ffffff));
+  background: linear-gradient(
+    90deg,
+    var(--status-danger),
+    color-mix(in srgb, var(--status-danger) 70%, #ffffff)
+  );
 }
 
 .dc-capacity-matrix__row.tone-low .dc-capacity-matrix__bar span {
-  background: linear-gradient(90deg, var(--status-info), color-mix(in srgb, var(--status-info) 60%, var(--status-success)));
+  background: linear-gradient(
+    90deg,
+    var(--status-info),
+    color-mix(in srgb, var(--status-info) 60%, var(--status-success))
+  );
 }
 </style>

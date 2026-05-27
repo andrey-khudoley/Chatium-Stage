@@ -1,5 +1,5 @@
 // @shared
-import { jsx } from "@app/html-jsx"
+import { jsx } from '@app/html-jsx'
 import { requireRealUser } from '@app/auth'
 import SettingsPage from './pages/SettingsPage.vue'
 import { TgChannelAnalyticsSettings, ensureDefaultSettings } from './tables/settings.table'
@@ -11,7 +11,7 @@ export const settingsPageRoute = app.html('/', async (ctx, req) => {
   // Применяем уровень логирования из настроек
   await applyDebugLevel(ctx, 'settings')
   Debug.info(ctx, '[settings] Начало обработки страницы настроек')
-  
+
   try {
     requireRealUser(ctx)
     Debug.info(ctx, `[settings] Пользователь авторизован: userId=${ctx.user.id}`)
@@ -30,17 +30,17 @@ export const settingsPageRoute = app.html('/', async (ctx, req) => {
       </html>
     )
   }
-  
+
   await ensureDefaultSettings(ctx)
   Debug.info(ctx, '[settings] Настройки по умолчанию проверены')
   Debug.info(ctx, '[settings] Загрузка всех настроек из базы данных')
   const settings = await TgChannelAnalyticsSettings.findAll(ctx, {})
   Debug.info(ctx, `[settings] Загружено настроек: ${settings.length}`)
-  
-  const titleSetting = settings.find(s => s.key === 'project_title')
+
+  const titleSetting = settings.find((s) => s.key === 'project_title')
   const projectTitle = titleSetting?.value || 'Аналитика телеграм-каналов'
   Debug.info(ctx, `[settings] Название проекта: ${projectTitle}`)
-  
+
   Debug.info(ctx, '[settings] Рендеринг страницы настроек')
   return (
     <html>
@@ -52,7 +52,10 @@ export const settingsPageRoute = app.html('/', async (ctx, req) => {
         <link rel="stylesheet" href="/s/static/lib/fontawesome/6.7.2/css/all.min.css" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
-        <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap"
+          rel="stylesheet"
+        />
         <style>{`
           /* Стилизация выделения текста */
           ::selection {
@@ -72,4 +75,3 @@ export const settingsPageRoute = app.html('/', async (ctx, req) => {
     </html>
   )
 })
-

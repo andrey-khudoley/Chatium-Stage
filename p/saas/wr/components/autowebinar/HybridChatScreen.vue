@@ -40,7 +40,7 @@ const props = defineProps({
     default: 'open'
   },
   episodeId: String,
-  hideCta: Boolean,
+  hideCta: Boolean
 })
 
 const emit = defineEmits(['openForm', 'newIncomingMessage'])
@@ -55,7 +55,7 @@ function isInjectedScenarioMessage(message) {
   return Boolean(
     message?.data?.__isScenarioMessage ||
       message?.id?.startsWith?.('fake_') ||
-      message?.id?.startsWith?.('fake_banner_'),
+      message?.id?.startsWith?.('fake_banner_')
   )
 }
 
@@ -87,7 +87,7 @@ function buildFakeMessage(event) {
       updatedAtTimestamp: 0,
       author: {
         id: 'fake_banner_bot',
-        name: 'Чатиум',
+        name: 'Чатиум'
       },
       replyTo: null,
       isSameAuthor: false,
@@ -100,8 +100,8 @@ function buildFakeMessage(event) {
         title: event.bannerData?.title,
         subtitle: event.bannerData?.subtitle,
         buttonText: event.bannerData?.buttonText,
-        formId: event.bannerData?.formId,
-      },
+        formId: event.bannerData?.formId
+      }
     }
   }
 
@@ -123,7 +123,7 @@ function buildFakeMessage(event) {
     updatedAtTimestamp: 0,
     author: {
       id: authorId,
-      name: authorName,
+      name: authorName
     },
     replyTo: null,
     isSameAuthor: false,
@@ -132,8 +132,8 @@ function buildFakeMessage(event) {
       ...(event.chatMessage?.data || {}),
       __isScenarioMessage: true,
       __scenarioEventId: event.scenarioEventId || event.id,
-      __scenarioOffsetSeconds: event.offsetSeconds,
-    },
+      __scenarioOffsetSeconds: event.offsetSeconds
+    }
   }
 }
 
@@ -181,16 +181,18 @@ function hasDuplicateRealMessage(event, realMessages) {
     const eventAuthor = String(event.chatMessage?.authorName || '').trim()
     if (!eventText) return false
 
-    return realMessages.some(message => {
+    return realMessages.some((message) => {
       const msgText = String(message?.text || '').trim()
       const msgAuthor = String(message?.author?.name || '').trim()
       const offsetDelta = Math.abs(getMessageTimelineOffsetSeconds(message) - event.offsetSeconds)
-      return msgText === eventText && msgAuthor === eventAuthor && offsetDelta <= duplicateWindowSeconds
+      return (
+        msgText === eventText && msgAuthor === eventAuthor && offsetDelta <= duplicateWindowSeconds
+      )
     })
   }
 
   if (event.eventType === 'sale_banner') {
-    return realMessages.some(message => {
+    return realMessages.some((message) => {
       const data = message?.data || {}
       const offsetDelta = Math.abs(getMessageTimelineOffsetSeconds(message) - event.offsetSeconds)
       return (
@@ -209,13 +211,13 @@ function syncFakeMessages() {
   const store = chatScreenRef.value?.store
   if (!store) return
 
-  const visibleEvents = props.scenarioEvents.filter(event => {
+  const visibleEvents = props.scenarioEvents.filter((event) => {
     if (event.eventType !== 'chat_message' && event.eventType !== 'sale_banner') return false
     return event.offsetSeconds <= props.currentTimeSeconds
   })
 
-  const realMessages = store.messages.filter(m => !isInjectedScenarioMessage(m))
-  const realMessageIds = new Set(realMessages.map(message => message?.id).filter(Boolean))
+  const realMessages = store.messages.filter((m) => !isInjectedScenarioMessage(m))
+  const realMessageIds = new Set(realMessages.map((message) => message?.id).filter(Boolean))
   for (const messageId of stableRealOffsets.keys()) {
     if (!realMessageIds.has(messageId)) {
       stableRealOffsets.delete(messageId)
@@ -228,7 +230,8 @@ function syncFakeMessages() {
   for (const event of visibleEvents) {
     if (hasDuplicateRealMessage(event, realMessages)) continue
 
-    const fakeId = event.eventType === 'sale_banner' ? `fake_banner_${event.id}` : `fake_${event.id}`
+    const fakeId =
+      event.eventType === 'sale_banner' ? `fake_banner_${event.id}` : `fake_${event.id}`
     newInjectedIds.add(fakeId)
     visibleFakeMessages.push(buildFakeMessage(event))
   }
@@ -251,21 +254,25 @@ function syncFakeMessages() {
   })
 }
 
-watch(() => props.currentTimeSeconds, () => {
-  const store = chatScreenRef.value?.store
-  if (!store) return
+watch(
+  () => props.currentTimeSeconds,
+  () => {
+    const store = chatScreenRef.value?.store
+    if (!store) return
 
-  const hasNewVisible = props.scenarioEvents.some(event => {
-    if (event.eventType !== 'chat_message' && event.eventType !== 'sale_banner') return false
-    if (event.offsetSeconds > props.currentTimeSeconds) return false
-    const fakeId = event.eventType === 'sale_banner' ? `fake_banner_${event.id}` : `fake_${event.id}`
-    return !injectedFakeIds.has(fakeId)
-  })
+    const hasNewVisible = props.scenarioEvents.some((event) => {
+      if (event.eventType !== 'chat_message' && event.eventType !== 'sale_banner') return false
+      if (event.offsetSeconds > props.currentTimeSeconds) return false
+      const fakeId =
+        event.eventType === 'sale_banner' ? `fake_banner_${event.id}` : `fake_${event.id}`
+      return !injectedFakeIds.has(fakeId)
+    })
 
-  if (hasNewVisible) {
-    syncFakeMessages()
+    if (hasNewVisible) {
+      syncFakeMessages()
+    }
   }
-})
+)
 
 watch(
   () => chatScreenRef.value?.store,
@@ -291,10 +298,9 @@ function resetFakeMessages() {
   const store = chatScreenRef.value?.store
   if (!store) return
 
-  store.messages = store.messages.filter(m => !isInjectedScenarioMessage(m))
+  store.messages = store.messages.filter((m) => !isInjectedScenarioMessage(m))
   injectedFakeIds.clear()
 }
-
 
 function scrollToBottom() {
   chatScreenRef.value?.scrollToBottom()

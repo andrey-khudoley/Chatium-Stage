@@ -26,7 +26,9 @@ const whole = targets.length === 0
 const paths = whole ? ['.'] : targets
 const mode = fix ? '--write' : '--check'
 
-console.log(`Режим стиля: ${fix ? 'автоформат (--write)' : 'проверка (--check)'} | ${whole ? 'весь workspace' : `фрагменты: ${targets.join(', ')}`}`)
+console.log(
+  `Режим стиля: ${fix ? 'автоформат (--write)' : 'проверка (--check)'} | ${whole ? 'весь workspace' : `фрагменты: ${targets.join(', ')}`}`
+)
 
 const args = ['--yes', `prettier@${PRETTIER}`, mode, ...paths]
 const res = spawnSync('npx', args, { cwd: ROOT, encoding: 'utf8', shell: true })
@@ -38,7 +40,9 @@ console.log('\n================ ИТОГ (стиль) ================')
 if (res.status === 0) {
   console.log(fix ? 'Файлы отформатированы.' : 'Стиль в порядке.')
 } else {
-  console.log(fix ? 'Prettier завершился с ошибкой.' : 'Есть файлы с нарушением стиля (см. список выше).')
+  console.log(
+    fix ? 'Prettier завершился с ошибкой.' : 'Есть файлы с нарушением стиля (см. список выше).'
+  )
 }
 
 process.exit(res.status ?? 1)

@@ -1,54 +1,58 @@
 <template>
   <div class="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-pink-100 py-12 px-4">
     <div class="container mx-auto max-w-4xl">
-      
       <!-- Блок с видео подарком -->
       <div class="bg-white rounded-3xl shadow-2xl p-8 md:p-12 mb-8">
         <div class="flex items-center justify-center mb-6">
-          <div class="bg-gradient-to-r from-pink-500 to-purple-600 text-white px-6 py-2 rounded-full text-sm font-semibold">
+          <div
+            class="bg-gradient-to-r from-pink-500 to-purple-600 text-white px-6 py-2 rounded-full text-sm font-semibold"
+          >
             🎁 Твой урок готов
           </div>
         </div>
-        
+
         <!-- Видео -->
         <div class="relative rounded-2xl overflow-hidden shadow-2xl mb-6 bg-black aspect-[16/9]">
-          <video 
-            controls 
+          <video
+            controls
             playsinline
             webkit-playsinline
             preload="metadata"
             poster="https://fs.chatium.io/get/image_gc_jLroEYIJZB.1650x650.png"
             class="w-full h-full object-cover"
           >
-            <source src="https://fs.getcourse.ru/fileservice/file/download/a/22751/sc/71/h/1d60472dc4c83676c5c9ce5d51487876.mp4" type="video/mp4" />
+            <source
+              src="https://fs.getcourse.ru/fileservice/file/download/a/22751/sc/71/h/1d60472dc4c83676c5c9ce5d51487876.mp4"
+              type="video/mp4"
+            />
             Ваш браузер не поддерживает видео.
           </video>
         </div>
       </div>
 
       <!-- Блок с предложением на мастер-классы -->
-      <div class="bg-gradient-to-br from-gray-900 to-gray-800 rounded-3xl shadow-2xl p-8 md:p-12 text-white">
+      <div
+        class="bg-gradient-to-br from-gray-900 to-gray-800 rounded-3xl shadow-2xl p-8 md:p-12 text-white"
+      >
         <div class="text-center mb-8">
-          <div class="inline-block bg-gradient-to-r from-yellow-400 to-orange-500 text-gray-900 px-6 py-2 rounded-full text-sm font-bold mb-4 animate-pulse">
+          <div
+            class="inline-block bg-gradient-to-r from-yellow-400 to-orange-500 text-gray-900 px-6 py-2 rounded-full text-sm font-bold mb-4 animate-pulse"
+          >
             ⚡ Бонус для тебя
           </div>
-          <h2 class="text-3xl md:text-4xl font-bold mb-4">
-            Хочешь узнать ещё больше?
-          </h2>
-          <p class="text-xl text-gray-300 mb-2">
-            Получи доступ к 4 премиальным техникам
-          </p>
-          <p class="text-gray-400">
-            которые окупятся уже на первом клиенте
-          </p>
+          <h2 class="text-3xl md:text-4xl font-bold mb-4">Хочешь узнать ещё больше?</h2>
+          <p class="text-xl text-gray-300 mb-2">Получи доступ к 4 премиальным техникам</p>
+          <p class="text-gray-400">которые окупятся уже на первом клиенте</p>
         </div>
 
         <!-- Блок розыгрыша -->
-        <div class="bg-gradient-to-r from-yellow-500/20 to-orange-500/20 rounded-2xl p-6 mb-8 border-2 border-yellow-400/50">
+        <div
+          class="bg-gradient-to-r from-yellow-500/20 to-orange-500/20 rounded-2xl p-6 mb-8 border-2 border-yellow-400/50"
+        >
           <div class="flex flex-col md:flex-row items-center gap-6">
-            <img 
-              src="https://fs.cdn-chatium.io/thumbnail/image_gc_1DlQECIbuA.1080x607.jpeg/s/800x" 
-              alt="Розыгрыш косметики EMi" 
+            <img
+              src="https://fs.cdn-chatium.io/thumbnail/image_gc_1DlQECIbuA.1080x607.jpeg/s/800x"
+              alt="Розыгрыш косметики EMi"
               class="w-full md:w-1/2 rounded-xl shadow-lg"
             />
             <div class="flex-1">
@@ -75,9 +79,9 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
           <div class="bg-white/10 backdrop-blur rounded-xl overflow-hidden">
             <div class="aspect-square overflow-hidden">
-              <img 
-                src="https://fs.cdn-chatium.io/thumbnail/image_gc_l2T0vSjCDQ.1320x2254.jpeg/s/400x" 
-                alt="Скоростное наращивание" 
+              <img
+                src="https://fs.cdn-chatium.io/thumbnail/image_gc_l2T0vSjCDQ.1320x2254.jpeg/s/400x"
+                alt="Скоростное наращивание"
                 class="w-full h-full object-cover"
               />
             </div>
@@ -91,9 +95,9 @@
 
           <div class="bg-white/10 backdrop-blur rounded-xl overflow-hidden">
             <div class="aspect-square overflow-hidden">
-              <img 
-                src="https://fs.cdn-chatium.io/thumbnail/image_gc_kqKS8wyhnX.563x986.jpeg/s/400x" 
-                alt="Креативное моделирование" 
+              <img
+                src="https://fs.cdn-chatium.io/thumbnail/image_gc_kqKS8wyhnX.563x986.jpeg/s/400x"
+                alt="Креативное моделирование"
                 class="w-full h-full object-cover"
               />
             </div>
@@ -107,9 +111,9 @@
 
           <div class="bg-white/10 backdrop-blur rounded-xl overflow-hidden">
             <div class="aspect-square overflow-hidden">
-              <img 
-                src="https://fs.cdn-chatium.io/thumbnail/image_gc_ZhRK0yU95g.heic/s/400x" 
-                alt="Выкладной френч" 
+              <img
+                src="https://fs.cdn-chatium.io/thumbnail/image_gc_ZhRK0yU95g.heic/s/400x"
+                alt="Выкладной френч"
                 class="w-full h-full object-cover"
               />
             </div>
@@ -123,9 +127,9 @@
 
           <div class="bg-white/10 backdrop-blur rounded-xl overflow-hidden">
             <div class="aspect-square overflow-hidden">
-              <img 
-                src="https://fs.cdn-chatium.io/thumbnail/image_gc_AxNx58ZskE.2000x2000.png/s/400x" 
-                alt="Пилочный маникюр" 
+              <img
+                src="https://fs.cdn-chatium.io/thumbnail/image_gc_AxNx58ZskE.2000x2000.png/s/400x"
+                alt="Пилочный маникюр"
                 class="w-full h-full object-cover"
               />
             </div>
@@ -167,15 +171,14 @@
 
       <!-- Дополнительная информация -->
       <div class="text-center mt-8 text-gray-600">
-        <p class="text-sm">
-          Есть вопросы? Напиши нам в поддержку
-        </p>
+        <p class="text-sm">Есть вопросы? Напиши нам в поддержку</p>
       </div>
-
     </div>
 
     <!-- Прилипающая кнопка внизу -->
-    <div class="fixed bottom-0 left-0 right-0 bg-gradient-to-t from-gray-900 via-gray-900/95 to-transparent p-4 z-40">
+    <div
+      class="fixed bottom-0 left-0 right-0 bg-gradient-to-t from-gray-900 via-gray-900/95 to-transparent p-4 z-40"
+    >
       <div class="container mx-auto max-w-4xl">
         <button
           @click="openModal"
@@ -202,7 +205,9 @@
         </button>
 
         <!-- Таймер -->
-        <div class="bg-gradient-to-r from-red-500 to-orange-500 text-white px-4 py-3 rounded-xl text-center mb-6">
+        <div
+          class="bg-gradient-to-r from-red-500 to-orange-500 text-white px-4 py-3 rounded-xl text-center mb-6"
+        >
           <div class="flex items-center justify-center gap-2">
             <i class="fas fa-clock animate-pulse"></i>
             <span class="font-bold">Места заканчиваются!</span>
@@ -211,10 +216,10 @@
         </div>
 
         <!-- Виджет GetCourse -->
-        <iframe 
-          src="https://emi-courses.ru/pl/lite/widget/widget?id=1512135" 
-          allowfullscreen="allowfullscreen" 
-          style="width: 100%; height: 560px; border: none; overflow: hidden;"
+        <iframe
+          src="https://emi-courses.ru/pl/lite/widget/widget?id=1512135"
+          allowfullscreen="allowfullscreen"
+          style="width: 100%; height: 560px; border: none; overflow: hidden"
         ></iframe>
       </div>
     </div>
@@ -272,20 +277,20 @@ const stopTimer = () => {
 
 const submitForm = async () => {
   isSubmitting.value = true
-  
+
   try {
     // Здесь можно добавить отправку данных на сервер
     // await apiSubmitPractikumRoute.run(ctx, form.value)
-    
+
     // Симуляция отправки
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    
+    await new Promise((resolve) => setTimeout(resolve, 1000))
+
     // Перенаправление на страницу практикума
     window.open('https://pro.emionline.ru/utm-pro-mk', '_blank')
-    
+
     // Закрыть модальное окно
     closeModal()
-    
+
     // Очистить форму
     form.value = {
       name: '',

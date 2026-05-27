@@ -1,7 +1,7 @@
-import { findUserById } from "@app/auth"
-import { createZoomMeeting, listCloudRecordings } from "../api/zoom-api"
-import ZoomMeetingsTable from "../tables/zoom_meetings.table"
-import { parseDateTimeToTimestamp } from "../api/datetime"
+import { findUserById } from '@app/auth'
+import { createZoomMeeting, listCloudRecordings } from '../api/zoom-api'
+import ZoomMeetingsTable from '../tables/zoom_meetings.table'
+import { parseDateTimeToTimestamp } from '../api/datetime'
 
 interface ZoomMeetingResponse {
   id: string | number
@@ -15,17 +15,13 @@ interface ZoomMeetingResponse {
 
 // Регистрация тулов для AI-агента
 app.accountHook('@start/agent/tools', async (ctx, params) => {
-  ctx.account.log('🔧 Zoom tools hook called', { 
+  ctx.account.log('🔧 Zoom tools hook called', {
     level: 'info',
-    json: { params, toolsCount: 3 } 
+    json: { params, toolsCount: 3 }
   })
-  
+
   // Возвращаем массив с зарегистрированными тулхуками
-  return [
-    zoomAgentCreateMeetingTool,
-    zoomAgentListRecordingsTool,
-    zoomAgentParseDateTimeTool
-  ]
+  return [zoomAgentCreateMeetingTool, zoomAgentListRecordingsTool, zoomAgentParseDateTimeTool]
 })
 
 export const zoomAgentCreateMeetingTool = app
@@ -50,7 +46,7 @@ export const zoomAgentCreateMeetingTool = app
 
 Если время не указано — создаётся мгновенная встреча (прямо сейчас).`
   })
-  .body(s =>
+  .body((s) =>
     s.object(
       {
         context: s.object(
@@ -65,9 +61,22 @@ export const zoomAgentCreateMeetingTool = app
             topic: s.string().describe('Тема встречи, обязательно укажи понятное название'),
             agenda: s.string().optional().describe('Повестка/описание встречи'),
             duration: s.number().optional().describe('Длительность в минутах, по умолчанию 60'),
-            auto_recording: s.enum(['none', 'local', 'cloud']).optional().describe('Тип автоматической записи: none - без записи, local - локальная запись, cloud - облачная запись'),
-            start_timestamp: s.number().optional().describe('Unix timestamp в секундах для времени начала встречи. Получи через zoomAgentParseDateTime!'),
-            timezone: s.string().optional().describe('IANA часовой пояс: Europe/Moscow, Europe/London, America/New_York')
+            auto_recording: s
+              .enum(['none', 'local', 'cloud'])
+              .optional()
+              .describe(
+                'Тип автоматической записи: none - без записи, local - локальная запись, cloud - облачная запись'
+              ),
+            start_timestamp: s
+              .number()
+              .optional()
+              .describe(
+                'Unix timestamp в секундах для времени начала встречи. Получи через zoomAgentParseDateTime!'
+              ),
+            timezone: s
+              .string()
+              .optional()
+              .describe('IANA часовой пояс: Europe/Moscow, Europe/London, America/New_York')
           },
           { additionalProperties: true }
         )
@@ -87,16 +96,16 @@ export const zoomAgentCreateMeetingTool = app
         start_timestamp: body.input.start_timestamp,
         timezone: body.input.timezone
       })
-      
+
       if (!result.ok || !result.meeting) {
         return {
           ok: false,
           result: `❌ Ошибка при создании встречи: ${result.message || 'Неизвестная ошибка'}`
         }
       }
-      
+
       const meeting = result.meeting as unknown as ZoomMeetingResponse
-      
+
       // Сохраняем встречу в таблицу для последующего использования
       await ZoomMeetingsTable.create(ctx, {
         meeting_id: meeting.id.toString(),
@@ -107,7 +116,7 @@ export const zoomAgentCreateMeetingTool = app
         password: meeting.password || '',
         created_at: new Date()
       })
-      
+
       return {
         ok: true,
         result: `Zoom-встреча создана! 🎥
@@ -132,7 +141,7 @@ export const zoomAgentCreateMeetingTool = app
         level: 'error',
         json: { error: error.message }
       })
-      
+
       return {
         ok: false,
         result: `❌ Ошибка при создании встречи: ${error.message}`
@@ -159,7 +168,7 @@ export const zoomAgentListRecordingsTool = app
 - размером файлов
 - ссылками для скачивания (действуют 24 часа)`
   })
-  .body(s =>
+  .body((s) =>
     s.object(
       {
         context: s.object(
@@ -179,16 +188,16 @@ export const zoomAgentListRecordingsTool = app
 
     try {
       const result = await listCloudRecordings(ctx)
-      
+
       if (!result.ok) {
         return {
           ok: false,
           result: `❌ Ошибка при получении записей: ${result.message}`
         }
       }
-      
+
       const recordings = result.meetings as any[]
-      
+
       if (!recordings || recordings.length === 0) {
         return {
           ok: true,
@@ -203,27 +212,31 @@ export const zoomAgentListRecordingsTool = app
 
       // Форматируем записи для красивого отображения
       let formattedRecordings = `📹 **Записи ваших Zoom-встреч** (найдено: ${recordings.length})\n\n`
-      
+
       recordings.forEach((meeting, index) => {
         // Преобразуем дату начала в московское время
         const startDate = new Date(meeting.start_time)
-        const moscowTime = startDate.toLocaleString('ru-RU', { 
+        const moscowTime = startDate.toLocaleString('ru-RU', {
           timeZone: 'Europe/Moscow',
-          day: '2-digit', month: '2-digit', year: 'numeric',
-          hour: '2-digit', minute: '2-digit'
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
         })
-        
+
         formattedRecordings += `**${index + 1}. ${meeting.topic}** (${moscowTime})\n`
-        
+
         if (meeting.recording_files && meeting.recording_files.length > 0) {
           meeting.recording_files.forEach((file: any) => {
             const sizeInMB = (file.file_size / 1024 / 1024).toFixed(1)
-            const recordingType = file.recording_type === 'audio_only' ? 'Аудиозапись' : 'Видеозапись'
+            const recordingType =
+              file.recording_type === 'audio_only' ? 'Аудиозапись' : 'Видеозапись'
             const format = file.file_type || 'неизвестный'
-            
+
             formattedRecordings += `   • ${recordingType} (${format}) — ${sizeInMB} МБ\n`
           })
-          
+
           // Добавляем общую ссылку для скачивания всех записей встречи
           if (meeting.share_url && meeting.recording_play_passcode) {
             const downloadLink = `${meeting.share_url}?pwd=${meeting.recording_play_passcode}`
@@ -232,24 +245,23 @@ export const zoomAgentListRecordingsTool = app
         } else {
           formattedRecordings += `   • Файлы записи отсутствуют\n`
         }
-        
+
         formattedRecordings += `\n`
       })
-      
+
       formattedRecordings += `⚠️ **Важно:** Ссылки для скачивания действуют только 24 часа!\n`
       formattedRecordings += `Если нужна запись позже — сохраните файлы на устройство.`
-      
+
       return {
         ok: true,
         result: formattedRecordings
       }
-      
     } catch (error: any) {
       ctx.account.log('zoomAgentListRecordingsTool error', {
         level: 'error',
         json: { error: error.message }
       })
-      
+
       return {
         ok: false,
         result: `❌ Ошибка при получении записей: ${error.message}`
@@ -283,7 +295,7 @@ export const zoomAgentParseDateTimeTool = app
 
 Возвращает объект с timestamp для использования в zoomAgentCreateMeeting.`
   })
-  .body(s =>
+  .body((s) =>
     s.object(
       {
         context: s.object(
@@ -295,8 +307,17 @@ export const zoomAgentParseDateTimeTool = app
         ),
         input: s.object(
           {
-            date_time: s.string().describe('Удобочитаемая дата и время. Примеры: "завтра 20:00", "2026-05-03 20:00", "понедельник 10:00", "через 2 часа"'),
-            timezone: s.string().optional().describe('IANA часовой пояс (например: Europe/Moscow, America/New_York). Если не указано - используется Europe/Moscow')
+            date_time: s
+              .string()
+              .describe(
+                'Удобочитаемая дата и время. Примеры: "завтра 20:00", "2026-05-03 20:00", "понедельник 10:00", "через 2 часа"'
+              ),
+            timezone: s
+              .string()
+              .optional()
+              .describe(
+                'IANA часовой пояс (например: Europe/Moscow, America/New_York). Если не указано - используется Europe/Moscow'
+              )
           },
           { additionalProperties: true }
         )
@@ -310,16 +331,16 @@ export const zoomAgentParseDateTimeTool = app
     try {
       const timezone = body.input.timezone || 'Europe/Moscow'
       const dateTime = body.input.date_time
-      
+
       const result = await parseDateTimeToTimestamp(ctx, dateTime, timezone)
-      
+
       if (!result.ok) {
         return {
           ok: false,
           result: `❌ Ошибка при обработке даты/времени: ${result.error}`
         }
       }
-      
+
       return {
         ok: true,
         result: `✅ Дата/время успешно обработаны!
@@ -339,7 +360,7 @@ export const zoomAgentParseDateTimeTool = app
         level: 'error',
         json: { error: error.message }
       })
-      
+
       return {
         ok: false,
         result: `❌ Ошибка при обработке даты/времени: ${error.message}`

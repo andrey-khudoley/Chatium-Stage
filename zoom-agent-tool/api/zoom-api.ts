@@ -16,11 +16,11 @@ export interface ZoomSettings {
 
 export async function getZoomSettings(ctx: app.Ctx): Promise<ZoomSettings | null> {
   const settings = await ZoomSettingsTable.findAll(ctx, { limit: 1 })
-  
+
   if (settings.length === 0) {
     return null
   }
-  
+
   const s = settings[0]!
   return {
     account_id: s.account_id || '',
@@ -34,13 +34,19 @@ export async function getZoomSettings(ctx: app.Ctx): Promise<ZoomSettings | null
   }
 }
 
-export async function getZoomAuthToken(ctx: app.Ctx): Promise<string | { ok: false; message: string }> {
+export async function getZoomAuthToken(
+  ctx: app.Ctx
+): Promise<string | { ok: false; message: string }> {
   const settings = await getZoomSettings(ctx)
-  
+
   if (!settings || !settings.account_id || !settings.client_id || !settings.client_secret) {
-    return { ok: false, message: 'Zoom настройки не configured. Пожалуйста, настройте интеграцию в панели администратора.' }
+    return {
+      ok: false,
+      message:
+        'Zoom настройки не configured. Пожалуйста, настройте интеграцию в панели администратора.'
+    }
   }
-  
+
   const authPayload = `${settings.client_id}:${settings.client_secret}`
   const authBytes = new TextEncoder().encode(authPayload)
   let authBinary = ''
@@ -48,23 +54,23 @@ export async function getZoomAuthToken(ctx: app.Ctx): Promise<string | { ok: fal
     authBinary += String.fromCharCode(b)
   }
   const authString = btoa(authBinary)
-  
+
   const result = await request({
     url: `https://zoom.us/oauth/token?grant_type=account_credentials&account_id=${settings.account_id}`,
     method: 'POST',
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',
-      Authorization: `Basic ${authString}`,
-    },
+      Authorization: `Basic ${authString}`
+    }
   })
-  
+
   if (result.statusCode !== 200) {
     return {
       ok: false,
-      message: `Response status ${result.statusCode}, body ${JSON.stringify(result.body)}`,
+      message: `Response status ${result.statusCode}, body ${JSON.stringify(result.body)}`
     }
   }
-  
+
   const body = result.body as unknown as { access_token: string }
   return body.access_token
 }
@@ -80,44 +86,48 @@ export interface CreateMeetingOptions {
 
 export async function createZoomMeeting(ctx: app.Ctx, options: CreateMeetingOptions = {}) {
   const settings = await getZoomSettings(ctx)
-  
+
   if (!settings || !settings.account_id || !settings.client_id || !settings.client_secret) {
-    return { ok: false, message: 'Zoom настройки не configured. Пожалуйста, настройте интеграцию в панели администратора.' }
+    return {
+      ok: false,
+      message:
+        'Zoom настройки не configured. Пожалуйста, настройте интеграцию в панели администратора.'
+    }
   }
-  
+
   const tokenResult = await getZoomAuthToken(ctx)
-  
+
   if (typeof tokenResult !== 'string') {
     return tokenResult
   }
-  
+
   const token = tokenResult
-  
+
   // Get current user
   const userResult = await request({
     url: 'https://api.zoom.us/v2/users/me',
     method: 'GET',
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',
-      Authorization: `Bearer ${token}`,
-    },
+      Authorization: `Bearer ${token}`
+    }
   })
-  
+
   if (userResult.statusCode !== 200) {
     return { ok: false, message: `Failed to get user: ${JSON.stringify(userResult.body)}` }
   }
-  
+
   const user = userResult.body as unknown as { id: string; email: string; display_name: string }
-  
+
   const topic = options.topic || settings.default_topic
   const agenda = options.agenda || settings.default_agenda
   const autoRecording = options.auto_recording || settings.default_auto_recording
   const duration = options.duration || 60
-  
+
   // Обработка времени начала
   const timezone = options.timezone || settings.default_timezone || 'Europe/Moscow'
   let startTime: string
-  
+
   if (options.start_timestamp) {
     // Если передан timestamp (в секундах), конвертируем в дату UTC
     const utcDate = new Date(options.start_timestamp * 1000)
@@ -131,14 +141,14 @@ export async function createZoomMeeting(ctx: app.Ctx, options: CreateMeetingOpti
     const zonedDate = utcToZonedTime(nowUtc, timezone)
     startTime = format(zonedDate, "yyyy-MM-dd'T'HH:mm:ss", { timeZone: timezone })
   }
-  
+
   // Create meeting
   const meetingResult = await request({
     url: `https://api.zoom.us/v2/users/${user.id}/meetings`,
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
+      Authorization: `Bearer ${token}`
     },
     json: {
       agenda: agenda,
@@ -169,22 +179,20 @@ export async function createZoomMeeting(ctx: app.Ctx, options: CreateMeetingOpti
           allow_anonymous_questions: true,
           question_visibility: 'all',
           attendees_can_comment: true,
-          attendees_can_upvote: true,
+          attendees_can_upvote: true
         },
         language_interpretation: {
           enable: true,
           interpreters: [
             {
               email: 'interpreter@example.com',
-              interpreter_languages: 'English,French',
-            },
-          ],
+              interpreter_languages: 'English,French'
+            }
+          ]
         },
         sign_language_interpretation: {
           enable: true,
-          interpreters: [
-            { email: 'interpreter@example.com', sign_language: 'American' },
-          ],
+          interpreters: [{ email: 'interpreter@example.com', sign_language: 'American' }]
         },
         meeting_authentication: false,
         mute_upon_entry: false,
@@ -209,69 +217,76 @@ export async function createZoomMeeting(ctx: app.Ctx, options: CreateMeetingOpti
         device_testing: false,
         allow_host_control_participant_mute_state: true,
         disable_participant_video: false,
-        email_in_attendee_report: true,
+        email_in_attendee_report: true
       },
       start_time: startTime,
       timezone: timezone,
       topic: topic,
-      type: 2,
-    },
+      type: 2
+    }
   })
-  
+
   if (meetingResult.statusCode !== 201 && meetingResult.statusCode !== 200) {
     return { ok: false, message: `Failed to create meeting: ${JSON.stringify(meetingResult.body)}` }
   }
-  
+
   return { ok: true, meeting: meetingResult.body }
 }
 
 export async function listCloudRecordings(ctx: app.Ctx) {
   const settings = await getZoomSettings(ctx)
-  
+
   if (!settings || !settings.account_id || !settings.client_id || !settings.client_secret) {
-    return { ok: false, message: 'Zoom настройки не configured. Пожалуйста, настройте интеграцию в панели администратора.' }
+    return {
+      ok: false,
+      message:
+        'Zoom настройки не configured. Пожалуйста, настройте интеграцию в панели администратора.'
+    }
   }
-  
+
   const tokenResult = await getZoomAuthToken(ctx)
-  
+
   if (typeof tokenResult !== 'string') {
     return tokenResult
   }
-  
+
   const token = tokenResult
-  
+
   // Get user
   const userResult = await request({
     url: 'https://api.zoom.us/v2/users/me',
     method: 'GET',
     headers: {
-      Authorization: `Bearer ${token}`,
-    },
+      Authorization: `Bearer ${token}`
+    }
   })
-  
+
   if (userResult.statusCode !== 200) {
     return { ok: false, message: `Failed to get user: ${JSON.stringify(userResult.body)}` }
   }
-  
+
   const user = userResult.body as unknown as { id: string }
-  
+
   // Get recordings from last 30 days
   const dateStart = new Date()
   dateStart.setDate(dateStart.getDate() - 30)
   const ds = format(dateStart, 'yyyy-MM-dd', { timeZone: 'Europe/Moscow' })
-  
+
   const recordListResult = await request({
     url: `https://api.zoom.us/v2/users/${user.id}/recordings?page_size=30&from=${ds}`,
     method: 'GET',
     headers: {
-      Authorization: `Bearer ${token}`,
-    },
+      Authorization: `Bearer ${token}`
+    }
   })
-  
+
   if (recordListResult.statusCode !== 200) {
-    return { ok: false, message: `Failed to get recordings: ${JSON.stringify(recordListResult.body)}` }
+    return {
+      ok: false,
+      message: `Failed to get recordings: ${JSON.stringify(recordListResult.body)}`
+    }
   }
-  
+
   const body = recordListResult.body as unknown as { meetings: unknown[] }
   return { ok: true, meetings: body.meetings || [] }
 }

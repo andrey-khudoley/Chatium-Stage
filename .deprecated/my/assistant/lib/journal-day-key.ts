@@ -2,7 +2,11 @@
 
 const JOURNAL_DAY_KEY_RE = /^\d{4}-\d{2}-\d{2}$/
 
-function prevGregorianDay(y: number, month1to12: number, day: number): { y: number; m: number; d: number } {
+function prevGregorianDay(
+  y: number,
+  month1to12: number,
+  day: number
+): { y: number; m: number; d: number } {
   const u = Date.UTC(y, month1to12 - 1, day - 1)
   const dt = new Date(u)
   return { y: dt.getUTCFullYear(), m: dt.getUTCMonth() + 1, d: dt.getUTCDate() }

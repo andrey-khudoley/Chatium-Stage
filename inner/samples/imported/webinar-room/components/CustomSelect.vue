@@ -4,7 +4,11 @@
     class="custom-select"
     :class="[
       sizeClass,
-      { 'custom-select--open': isOpen, 'custom-select--disabled': disabled, 'custom-select--focus': isOpen }
+      {
+        'custom-select--open': isOpen,
+        'custom-select--disabled': disabled,
+        'custom-select--focus': isOpen
+      }
     ]"
   >
     <button
@@ -20,7 +24,13 @@
       </span>
       <span class="custom-select__arrow">
         <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-          <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <path
+            d="M3 4.5L6 7.5L9 4.5"
+            stroke="currentColor"
+            stroke-width="1.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
         </svg>
       </span>
     </button>
@@ -34,10 +44,7 @@
           :style="dropdownStyle"
           @mousedown.prevent
         >
-          <div
-            v-if="parsedOptions.length > 6"
-            class="custom-select__search-wrap"
-          >
+          <div v-if="parsedOptions.length > 6" class="custom-select__search-wrap">
             <input
               ref="searchInput"
               v-model="searchQuery"
@@ -60,8 +67,21 @@
               @mouseenter="focusedIndex = idx"
             >
               <span class="custom-select__option-label">{{ opt.label }}</span>
-              <svg v-if="opt.value === modelValue" class="custom-select__check" width="14" height="14" viewBox="0 0 14 14" fill="none">
-                <path d="M3 7L6 10L11 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <svg
+                v-if="opt.value === modelValue"
+                class="custom-select__check"
+                width="14"
+                height="14"
+                viewBox="0 0 14 14"
+                fill="none"
+              >
+                <path
+                  d="M3 7L6 10L11 4"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
               </svg>
             </div>
             <div v-if="filteredOptions.length === 0" class="custom-select__no-results">
@@ -82,7 +102,7 @@ const props = defineProps({
   options: { type: Array, required: true },
   placeholder: { type: String, default: 'Выберите...' },
   disabled: { type: Boolean, default: false },
-  size: { type: String, default: 'md' },
+  size: { type: String, default: 'md' }
 })
 
 const emit = defineEmits(['update:modelValue'])
@@ -100,7 +120,7 @@ const dropdownStyle = ref({})
 const sizeClass = computed(() => `custom-select--${props.size}`)
 
 const parsedOptions = computed(() => {
-  return props.options.map(opt => {
+  return props.options.map((opt) => {
     if (typeof opt === 'object' && opt !== null) {
       return { value: opt.value ?? '', label: opt.label ?? String(opt.value ?? '') }
     }
@@ -111,7 +131,7 @@ const parsedOptions = computed(() => {
 const filteredOptions = computed(() => {
   if (!searchQuery.value.trim()) return parsedOptions.value
   const q = searchQuery.value.toLowerCase().trim()
-  return parsedOptions.value.filter(opt => opt.label.toLowerCase().includes(q))
+  return parsedOptions.value.filter((opt) => opt.label.toLowerCase().includes(q))
 })
 
 const hasValue = computed(() => {
@@ -120,7 +140,7 @@ const hasValue = computed(() => {
 
 const displayLabel = computed(() => {
   if (!hasValue.value) return props.placeholder
-  const found = parsedOptions.value.find(o => o.value === props.modelValue)
+  const found = parsedOptions.value.find((o) => o.value === props.modelValue)
   return found ? found.label : String(props.modelValue)
 })
 
@@ -130,7 +150,10 @@ function positionDropdown() {
   const viewportH = window.innerHeight
   const spaceBelow = viewportH - rect.bottom
   const spaceAbove = rect.top
-  const dropHeight = Math.min(320, filteredOptions.value.length * 40 + (parsedOptions.value.length > 6 ? 48 : 0) + 12)
+  const dropHeight = Math.min(
+    320,
+    filteredOptions.value.length * 40 + (parsedOptions.value.length > 6 ? 48 : 0) + 12
+  )
   const openBelow = spaceBelow >= dropHeight || spaceBelow >= spaceAbove
 
   dropdownStyle.value = {
@@ -138,10 +161,7 @@ function positionDropdown() {
     left: rect.left + 'px',
     width: rect.width + 'px',
     zIndex: '99999',
-    ...(openBelow
-      ? { top: rect.bottom + 4 + 'px' }
-      : { bottom: (viewportH - rect.top + 4) + 'px' }
-    ),
+    ...(openBelow ? { top: rect.bottom + 4 + 'px' } : { bottom: viewportH - rect.top + 4 + 'px' })
   }
 }
 
@@ -163,7 +183,7 @@ function open() {
     if (parsedOptions.value.length > 6 && searchInput.value) {
       searchInput.value.focus()
     }
-    const selectedIdx = filteredOptions.value.findIndex(o => o.value === props.modelValue)
+    const selectedIdx = filteredOptions.value.findIndex((o) => o.value === props.modelValue)
     if (selectedIdx >= 0) {
       focusedIndex.value = selectedIdx
       scrollToFocused()
@@ -256,11 +276,14 @@ onBeforeUnmount(() => {
   window.removeEventListener('resize', handleScroll)
 })
 
-watch(() => props.options, () => {
-  if (isOpen.value) {
-    nextTick(positionDropdown)
+watch(
+  () => props.options,
+  () => {
+    if (isOpen.value) {
+      nextTick(positionDropdown)
+    }
   }
-})
+)
 </script>
 
 <style scoped>
@@ -364,13 +387,17 @@ watch(() => props.options, () => {
   background: var(--wr-bg-card);
   border: 1px solid var(--wr-border);
   border-radius: 14px;
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35), 0 0 0 1px var(--wr-border-light);
+  box-shadow:
+    0 12px 40px rgba(0, 0, 0, 0.35),
+    0 0 0 1px var(--wr-border-light);
   overflow: hidden;
   backdrop-filter: blur(16px);
 }
 
 :root.theme-light .custom-select__dropdown {
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12), 0 0 0 1px var(--wr-border-light);
+  box-shadow:
+    0 12px 40px rgba(0, 0, 0, 0.12),
+    0 0 0 1px var(--wr-border-light);
 }
 
 .custom-select__search-wrap {
@@ -478,11 +505,15 @@ watch(() => props.options, () => {
 
 /* Transitions */
 .cs-dropdown-enter-active {
-  transition: opacity 0.18s ease, transform 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+  transition:
+    opacity 0.18s ease,
+    transform 0.18s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .cs-dropdown-leave-active {
-  transition: opacity 0.12s ease, transform 0.12s ease;
+  transition:
+    opacity 0.12s ease,
+    transform 0.12s ease;
 }
 
 .cs-dropdown-enter-from {

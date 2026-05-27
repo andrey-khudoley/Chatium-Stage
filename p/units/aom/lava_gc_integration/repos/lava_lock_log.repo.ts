@@ -10,10 +10,7 @@ export type LavaLockLogCreateInput = HeapCreateInput<LavaLockLogRow>
  * Репозиторий журнала блокировок шаблона оплаты — слой работы с Heap.
  * Только CRUD-операции, без бизнес-логики.
  */
-export async function create(
-  ctx: app.Ctx,
-  data: LavaLockLogCreateInput
-): Promise<LavaLockLogRow> {
+export async function create(ctx: app.Ctx, data: LavaLockLogCreateInput): Promise<LavaLockLogRow> {
   await loggerLib.writeServerLog(ctx, {
     severity: 7,
     message: `[${LOG}] create`,
@@ -53,7 +50,11 @@ export async function updateReleased(
 }
 
 /** Время получения эксклюзивной блокировки (Unix ms) — после проверки идемпотентности под lock. */
-export async function updateAcquiredAt(ctx: app.Ctx, id: string, acquiredAt: number): Promise<void> {
+export async function updateAcquiredAt(
+  ctx: app.Ctx,
+  id: string,
+  acquiredAt: number
+): Promise<void> {
   await loggerLib.writeServerLog(ctx, {
     severity: 7,
     message: `[${LOG}] updateAcquiredAt`,

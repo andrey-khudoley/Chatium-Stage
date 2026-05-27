@@ -14,6 +14,8 @@ export const getUserGoalRecordsHandler: V1GcHandler = async (_ctx, a) => {
   return { kind: 'gc_result', gc }
 }
 
-export const getUserGoalRecordsRoute = app.get('/', async (ctx, req) => handleV1Op(ctx, req, 'getUserGoalRecords', getUserGoalRecordsHandler))
+export const getUserGoalRecordsRoute = app.get('/', async (ctx, req) =>
+  handleV1Op(ctx, req, 'getUserGoalRecords', getUserGoalRecordsHandler)
+)
 
 export default getUserGoalRecordsRoute

@@ -1,4 +1,4 @@
-import { queryAi } from "@app/datascience"
+import { queryAi } from '@app/datascience'
 
 async function main() {
   // Получим список зарегистрированных пользователей с их ID
@@ -12,21 +12,20 @@ async function main() {
     WHERE event_type = 'registration'
     LIMIT 20
   `)
-  
+
   return result
 }
 
-
-app.function('/').handle(async ctx => {
+app.function('/').handle(async (ctx) => {
   try {
     return {
       success: true,
-      result: await main(ctx),
+      result: await main(ctx)
     }
   } catch (err: any) {
     return {
       success: false,
-      error: err.message,
+      error: err.message
     }
   }
 })

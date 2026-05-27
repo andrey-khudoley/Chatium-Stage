@@ -92,7 +92,8 @@ const groups = [
         id: 'scenario-kit',
         label: 'Scenario-specific components added',
         state: 'done' as const,
-        details: 'Добавлены новые блоки: `DcSlaGauge`, `DcSwimlaneBoard`, `DcDecisionTree`, `DcRiskHeatmap`, `DcCapacityMatrix`, `DcMilestoneRail`, `DcRoleStack`, `DcCommandDeck`.'
+        details:
+          'Добавлены новые блоки: `DcSlaGauge`, `DcSwimlaneBoard`, `DcDecisionTree`, `DcRiskHeatmap`, `DcCapacityMatrix`, `DcMilestoneRail`, `DcRoleStack`, `DcCommandDeck`.'
       },
       {
         id: 'visual-review',
@@ -108,7 +109,9 @@ export const testsPageRoute = app.html('/', async (ctx) => {
   const navUrls = await getBpmNavUrlsAsync(ctx)
   return (
     <html>
-      <head>{getDemoPageHead('light', TESTS_PAGE_NAME, DEFAULT_PROJECT_TITLE, 'Info', 'misty-daybreak')}</head>
+      <head>
+        {getDemoPageHead('light', TESTS_PAGE_NAME, DEFAULT_PROJECT_TITLE, 'Info', 'misty-daybreak')}
+      </head>
       <body>
         {getBootLoaderDiv('light', DEFAULT_PROJECT_TITLE, 'misty-daybreak')}
         <TestsPage

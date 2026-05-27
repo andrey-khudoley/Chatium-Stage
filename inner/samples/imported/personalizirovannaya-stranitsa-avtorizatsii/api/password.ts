@@ -10,7 +10,7 @@ export const getPasswordHashRoute = app
     // Само значение (почта или телефон пользователя)
     ik: s.string(),
     // Введённый пользователем пароль
-    pwd: s.string(),
+    pwd: s.string()
   }))
   .handle(async (ctx, req) => {
     const { it, ik, pwd } = req.body
@@ -20,9 +20,9 @@ export const getPasswordHashRoute = app
       where: {
         type: it,
         key: normalizedKey,
-        isBlocked: false,
+        isBlocked: false
       },
-      limit: 1,
+      limit: 1
     })
 
     let userIdSalt: string

@@ -51,7 +51,10 @@ function htmlToPlainText(html: string): string {
   const raw = html.trim()
   if (!raw) return ''
   if (typeof document === 'undefined') {
-    return raw.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
+    return raw
+      .replace(/<[^>]+>/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
   }
   const d = document.createElement('div')
   d.innerHTML = raw
@@ -147,7 +150,7 @@ async function openEdit(noteId: string) {
       method: 'GET',
       credentials: 'include'
     })
-    const data = await res.json() as {
+    const data = (await res.json()) as {
       success?: boolean
       note?: { content: string; isArchived: boolean }
       error?: string
@@ -183,7 +186,7 @@ async function saveNote() {
   errorMsg.value = ''
   try {
     if (isCreatingNote.value) {
-      const data = await postJson(props.inboxNotesCreateUrl, { title, content }) as {
+      const data = (await postJson(props.inboxNotesCreateUrl, { title, content })) as {
         success?: boolean
         note?: { id: string; title: string }
         error?: string
@@ -196,11 +199,11 @@ async function saveNote() {
         errorMsg.value = data.error || 'Не удалось создать заметку'
       }
     } else if (editingNoteId.value) {
-      const data = await postJson(props.inboxNotesUpdateUrl, {
+      const data = (await postJson(props.inboxNotesUpdateUrl, {
         id: editingNoteId.value,
         title,
         content
-      }) as { success?: boolean; note?: { id: string; title: string }; error?: string }
+      })) as { success?: boolean; note?: { id: string; title: string }; error?: string }
       if (data.success && data.note) {
         emit('noteUpdated', data.note)
       } else {
@@ -218,7 +221,9 @@ async function saveNote() {
 async function setArchivedForNote(id: string, isArchived: boolean) {
   if (!props.inboxNotesArchiveUrl) return
   try {
-    const data = await postJson(props.inboxNotesArchiveUrl, { id, isArchived }) as { success?: boolean }
+    const data = (await postJson(props.inboxNotesArchiveUrl, { id, isArchived })) as {
+      success?: boolean
+    }
     if (data.success) {
       emit('noteUpdated', { id, title: '' })
       if (editingNoteId.value === id) {
@@ -254,7 +259,9 @@ async function onBulkArchive() {
   const ids = [...selectedNoteIds.value]
   let anyOk = false
   for (const id of ids) {
-    const data = (await postJson(props.inboxNotesArchiveUrl, { id, isArchived: true })) as { success?: boolean }
+    const data = (await postJson(props.inboxNotesArchiveUrl, { id, isArchived: true })) as {
+      success?: boolean
+    }
     if (data.success) anyOk = true
   }
   clearSelection()
@@ -266,7 +273,9 @@ async function onBulkUnarchive() {
   const ids = [...selectedNoteIds.value]
   let anyOk = false
   for (const id of ids) {
-    const data = (await postJson(props.inboxNotesArchiveUrl, { id, isArchived: false })) as { success?: boolean }
+    const data = (await postJson(props.inboxNotesArchiveUrl, { id, isArchived: false })) as {
+      success?: boolean
+    }
     if (data.success) anyOk = true
   }
   clearSelection()
@@ -314,13 +323,20 @@ async function deleteFromList(id: string) {
       <div class="nb-inbox-editor">
         <header class="nb-inbox-editor-head">
           <div class="nb-inbox-editor-head-main">
-            <span class="nb-inbox-editor-kicker">{{ isCreatingNote ? 'Создание' : 'Редактирование' }}</span>
+            <span class="nb-inbox-editor-kicker">{{
+              isCreatingNote ? 'Создание' : 'Редактирование'
+            }}</span>
             <h2 class="nb-inbox-editor-title">
               {{ isCreatingNote ? 'Новая заметка' : 'Заметка' }}
             </h2>
           </div>
           <p v-if="loadingNote" class="nb-inbox-editor-status" aria-live="polite">Загрузка…</p>
-          <p v-else-if="editIsArchived" class="nb-inbox-editor-status nb-inbox-editor-status--muted">В архиве (только чтение)</p>
+          <p
+            v-else-if="editIsArchived"
+            class="nb-inbox-editor-status nb-inbox-editor-status--muted"
+          >
+            В архиве (только чтение)
+          </p>
         </header>
         <p v-if="errorMsg" class="nb-inbox-err" role="alert">{{ errorMsg }}</p>
         <textarea
@@ -332,7 +348,9 @@ async function deleteFromList(id: string) {
           aria-label="Текст заметки"
         />
         <div class="nb-inbox-actions">
-          <button type="button" class="nb-inbox-btn nb-inbox-btn--ghost" @click="backToList">К списку</button>
+          <button type="button" class="nb-inbox-btn nb-inbox-btn--ghost" @click="backToList">
+            К списку
+          </button>
           <div class="nb-inbox-actions-spacer" />
           <button
             type="button"
@@ -417,7 +435,9 @@ async function deleteFromList(id: string) {
                   class="nb-inbox-card-meta"
                   :class="{ 'nb-inbox-card-meta--empty': !inboxShowSnippet(n) }"
                 >
-                  <span v-if="inboxShowSnippet(n)" class="nb-inbox-card-snippet">{{ previewLine(n) }}</span>
+                  <span v-if="inboxShowSnippet(n)" class="nb-inbox-card-snippet">{{
+                    previewLine(n)
+                  }}</span>
                 </div>
               </div>
               <div class="nb-inbox-card-actions" @click.stop>
@@ -545,7 +565,9 @@ async function deleteFromList(id: string) {
 
 .nb-inbox-new-btn:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 2px var(--color-bg), 0 0 0 4px var(--color-accent-medium);
+  box-shadow:
+    0 0 0 2px var(--color-bg),
+    0 0 0 4px var(--color-accent-medium);
 }
 
 /* Как .nb-filter-btn / .nb-filter-btn--active */
@@ -580,7 +602,9 @@ async function deleteFromList(id: string) {
 
 .nb-inbox-filter-btn:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 2px var(--color-bg), 0 0 0 4px var(--color-accent-medium);
+  box-shadow:
+    0 0 0 2px var(--color-bg),
+    0 0 0 4px var(--color-accent-medium);
 }
 
 .nb-inbox-body {
@@ -631,7 +655,10 @@ async function deleteFromList(id: string) {
   border: 1px solid var(--color-border);
   border-radius: 2px;
   background: rgba(0, 0, 0, 0.2);
-  transition: border-color 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    opacity 0.2s ease;
 }
 
 .nb-inbox-card[data-archived='1'] {
@@ -694,7 +721,9 @@ async function deleteFromList(id: string) {
 
 .nb-inbox-card-title:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 2px var(--color-bg), 0 0 0 4px var(--color-accent-medium);
+  box-shadow:
+    0 0 0 2px var(--color-bg),
+    0 0 0 4px var(--color-accent-medium);
   border-radius: 2px;
 }
 
@@ -887,7 +916,9 @@ async function deleteFromList(id: string) {
 
 .nb-inbox-btn:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 2px var(--color-bg), 0 0 0 4px var(--color-accent-medium);
+  box-shadow:
+    0 0 0 2px var(--color-bg),
+    0 0 0 4px var(--color-accent-medium);
 }
 
 .nb-inbox-btn:disabled {

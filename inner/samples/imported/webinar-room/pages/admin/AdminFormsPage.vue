@@ -6,7 +6,9 @@
       </div>
     </header>
 
-    <main class="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 py-4 sm:py-6 lg:py-8 space-y-4 sm:space-y-6">
+    <main
+      class="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 py-4 sm:py-6 lg:py-8 space-y-4 sm:space-y-6"
+    >
       <div class="glass rounded-2xl p-5 space-y-4">
         <div class="flex items-center justify-between">
           <button
@@ -20,9 +22,9 @@
               :class="{ 'rotate-180': defaultProvidersExpanded }"
             ></i>
           </button>
-          <button 
-            v-if="defaultProvidersEditing" 
-            @click="saveDefaultProviders" 
+          <button
+            v-if="defaultProvidersEditing"
+            @click="saveDefaultProviders"
             class="bg-primary hover:bg-primary/80 text-white font-semibold px-3 py-1.5 rounded-lg text-xs flex items-center gap-1.5 transition"
           >
             <i class="fas fa-check"></i>
@@ -37,13 +39,22 @@
         >
           <div v-if="defaultProvidersExpanded" class="space-y-4">
             <p class="wr-text-tertiary text-xs">
-              Выберите провайдеры, которые будут автоматически выбраны при создании новой формы с оплатой
+              Выберите провайдеры, которые будут автоматически выбраны при создании новой формы с
+              оплатой
             </p>
             <div v-if="loadingDefaultProviders" class="flex justify-center py-4">
-              <div class="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
-            </div> 
+              <div
+                class="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"
+              ></div>
+            </div>
             <div v-else-if="allProviders.length === 0" class="wr-text-tertiary text-xs">
-              Нет доступных провайдеров. <a href="/app/pay?tab=providers&action=add" target="_blank" class="text-primary hover:underline">Настройте платёжную систему</a>.
+              Нет доступных провайдеров.
+              <a
+                href="/app/pay?tab=providers&action=add"
+                target="_blank"
+                class="text-primary hover:underline"
+                >Настройте платёжную систему</a
+              >.
             </div>
             <div v-else>
               <PaymentProvidersSelector
@@ -54,7 +65,8 @@
                 :columns="2"
               >
                 <template #hint>
-                  Эти провайдеры будут выбраны при создании новой формы с оплатой. В существующих формах настройки не изменятся.
+                  Эти провайдеры будут выбраны при создании новой формы с оплатой. В существующих
+                  формах настройки не изменятся.
                 </template>
               </PaymentProvidersSelector>
             </div>
@@ -68,11 +80,19 @@
             Все формы
           </h3>
           <div class="flex items-center gap-2">
-            <button type="button" @click="goToSubmissions" class="admin-btn-subtle px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition">
+            <button
+              type="button"
+              @click="goToSubmissions"
+              class="admin-btn-subtle px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition"
+            >
               <i class="fas fa-inbox"></i>
               Ответы
             </button>
-            <button type="button" @click="openCreateForm" class="bg-primary hover:bg-primary/80 text-white font-semibold px-3 py-1.5 rounded-lg text-xs flex items-center gap-1.5 transition">
+            <button
+              type="button"
+              @click="openCreateForm"
+              class="bg-primary hover:bg-primary/80 text-white font-semibold px-3 py-1.5 rounded-lg text-xs flex items-center gap-1.5 transition"
+            >
               <i class="fas fa-plus"></i>
               Создать форму
             </button>
@@ -80,29 +100,43 @@
         </div>
 
         <div class="relative">
-          <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 wr-text-tertiary text-xs"></i>
+          <i
+            class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 wr-text-tertiary text-xs"
+          ></i>
           <input
             v-model="searchQuery"
             type="text"
             placeholder="Поиск форм..."
             class="w-full pl-9 pr-3 py-2 rounded-lg text-sm transition"
-            style="background: var(--wr-input-bg); color: var(--wr-text-primary); border: 1px solid var(--wr-input-border);"
+            style="
+              background: var(--wr-input-bg);
+              color: var(--wr-text-primary);
+              border: 1px solid var(--wr-input-border);
+            "
           />
         </div>
 
         <div v-if="loading" class="flex justify-center py-4">
-          <div class="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+          <div
+            class="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"
+          ></div>
         </div>
 
         <div v-else-if="forms.length === 0" class="text-center py-6">
-          <div class="w-12 h-12 rounded-xl mx-auto mb-3 flex items-center justify-center" style="background: var(--wr-btn-subtle-bg)">
+          <div
+            class="w-12 h-12 rounded-xl mx-auto mb-3 flex items-center justify-center"
+            style="background: var(--wr-btn-subtle-bg)"
+          >
             <i class="fas fa-clipboard-list text-primary text-lg"></i>
           </div>
           <p class="wr-text-tertiary text-sm">Нет созданных форм</p>
         </div>
 
         <div v-else-if="forms.length === 0 && searchQuery.trim()" class="text-center py-6">
-          <div class="w-12 h-12 rounded-xl mx-auto mb-3 flex items-center justify-center" style="background: var(--wr-btn-subtle-bg)">
+          <div
+            class="w-12 h-12 rounded-xl mx-auto mb-3 flex items-center justify-center"
+            style="background: var(--wr-btn-subtle-bg)"
+          >
             <i class="fas fa-search text-primary text-lg"></i>
           </div>
           <p class="wr-text-tertiary text-sm">Ничего не найдено</p>
@@ -116,17 +150,36 @@
                   <span class="wr-text-primary font-medium text-sm truncate">{{ f.title }}</span>
                 </div>
                 <div class="wr-text-tertiary text-xs mt-0.5">
-                  {{ submitActionLabel(f.submitAction) }} · {{ (f.fields || []).length }} {{ pluralFields((f.fields || []).length) }}
+                  {{ submitActionLabel(f.submitAction) }} · {{ (f.fields || []).length }}
+                  {{ pluralFields((f.fields || []).length) }}
                   <span v-if="submissionCounts[f.id]" class="ml-1">
-                    · <a href="#" @click.prevent="goToSubmissions(f.id)" class="text-primary hover:underline">{{ submissionCounts[f.id] }} {{ pluralSubmissions(submissionCounts[f.id]) }}</a>
+                    ·
+                    <a
+                      href="#"
+                      @click.prevent="goToSubmissions(f.id)"
+                      class="text-primary hover:underline"
+                      >{{ submissionCounts[f.id] }}
+                      {{ pluralSubmissions(submissionCounts[f.id]) }}</a
+                    >
                   </span>
                 </div>
               </div>
               <div class="flex items-center gap-1.5 flex-shrink-0">
-                <button type="button" @click="openEditForm(f)" class="admin-icon-btn" title="Редактировать">
+                <button
+                  type="button"
+                  @click="openEditForm(f)"
+                  class="admin-icon-btn"
+                  title="Редактировать"
+                >
                   <i class="fas fa-pen"></i>
                 </button>
-                <button type="button" @click="deleteForm(f.id)" :disabled="formActionLoading === f.id" class="admin-icon-btn admin-icon-btn--danger" title="Удалить">
+                <button
+                  type="button"
+                  @click="deleteForm(f.id)"
+                  :disabled="formActionLoading === f.id"
+                  class="admin-icon-btn admin-icon-btn--danger"
+                  title="Удалить"
+                >
                   <i class="fas fa-trash"></i>
                 </button>
               </div>
@@ -156,7 +209,7 @@ import FormEditorModal from '../../components/admin/FormEditorModal.vue'
 import PaymentProvidersSelector from '../../components/admin/PaymentProvidersSelector.vue'
 
 const props = defineProps({
-  adminListUrl: String,
+  adminListUrl: String
 })
 
 const forms = ref([])
@@ -175,8 +228,6 @@ const defaultProviders = ref([])
 const defaultProvidersEditing = ref(false)
 const defaultProvidersExpanded = ref(false)
 
-
-
 let searchDebounceTimer = null
 
 watch(searchQuery, () => {
@@ -189,8 +240,11 @@ watch(searchQuery, () => {
 function formatDate(d) {
   if (!d) return ''
   return new Date(d).toLocaleString('ru-RU', {
-    day: 'numeric', month: 'short', year: 'numeric',
-    hour: '2-digit', minute: '2-digit',
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
   })
 }
 
@@ -278,8 +332,8 @@ async function loadDefaultProviders() {
   loadingDefaultProviders.value = true
   try {
     const result = await apiPaymentProvidersRoute.run(ctx)
-    const configured = (result.configured || []).map(p => ({ ...p, _configured: true }))
-    const notConfigured = (result.notConfigured || []).map(p => ({ ...p, _configured: false }))
+    const configured = (result.configured || []).map((p) => ({ ...p, _configured: true }))
+    const notConfigured = (result.notConfigured || []).map((p) => ({ ...p, _configured: false }))
     allProviders.value = [...configured, ...notConfigured]
     const saved = localStorage.getItem('webinar-default-payment-providers')
     if (saved) {
@@ -359,8 +413,6 @@ onMounted(async () => {
   background: var(--wr-btn-subtle-hover-bg);
   color: var(--wr-text-primary);
 }
-
-
 
 .accordion-enter-active,
 .accordion-leave-active {

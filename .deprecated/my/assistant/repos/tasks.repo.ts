@@ -1,11 +1,23 @@
 import { TaskClients } from '../tables/task-clients.table'
 import { TaskProjects } from '../tables/task-projects.table'
 import { TaskItems, TASK_STATUSES } from '../tables/task-items.table'
-import type { TaskClientDto, TaskItemDto, TaskProjectDto, TasksTreeDto, TaskStatus } from '../lib/tasks-types'
+import type {
+  TaskClientDto,
+  TaskItemDto,
+  TaskProjectDto,
+  TasksTreeDto,
+  TaskStatus
+} from '../lib/tasks-types'
 import type { TaskProjectsRow } from '../tables/task-projects.table'
 import type { TaskItemsRow } from '../tables/task-items.table'
 
-export type { TaskClientDto, TaskItemDto, TaskProjectDto, TasksTreeDto, TaskStatus } from '../lib/tasks-types'
+export type {
+  TaskClientDto,
+  TaskItemDto,
+  TaskProjectDto,
+  TasksTreeDto,
+  TaskStatus
+} from '../lib/tasks-types'
 
 function normalizePriority(n: number): number {
   if (!Number.isFinite(n)) return 2
@@ -133,7 +145,11 @@ async function nextClientSortOrder(ctx: app.Ctx, userId: string): Promise<number
   return max + 1
 }
 
-async function nextProjectSortOrder(ctx: app.Ctx, userId: string, clientId: string): Promise<number> {
+async function nextProjectSortOrder(
+  ctx: app.Ctx,
+  userId: string,
+  clientId: string
+): Promise<number> {
   const rows = await TaskProjects.findAll(ctx, {
     where: { userId, clientId },
     order: [{ sortOrder: 'desc' }],
@@ -181,12 +197,20 @@ async function assertTaskOwner(ctx: app.Ctx, userId: string, id: string) {
   return row
 }
 
-export async function findTaskByIdForUser(ctx: app.Ctx, userId: string, id: string): Promise<TaskItemDto | null> {
+export async function findTaskByIdForUser(
+  ctx: app.Ctx,
+  userId: string,
+  id: string
+): Promise<TaskItemDto | null> {
   const row = await assertTaskOwner(ctx, userId, id)
   return row ? rowToTask(row) : null
 }
 
-export async function createClient(ctx: app.Ctx, userId: string, name: string): Promise<TaskClientDto> {
+export async function createClient(
+  ctx: app.Ctx,
+  userId: string,
+  name: string
+): Promise<TaskClientDto> {
   const sortOrder = await nextClientSortOrder(ctx, userId)
   const row = await TaskClients.create(ctx, {
     userId,
@@ -270,13 +294,15 @@ export async function updateProject(
     data.details !== undefined
       ? {
           /** `null` сбрасывает Heap.Optional (см. inner/docs/008-heap.md, опциональные поля). */
-          details: normalizeHeapOptionalDetailsText(data.details) ?? (null as TaskProjectsRow['details'])
+          details:
+            normalizeHeapOptionalDetailsText(data.details) ?? (null as TaskProjectsRow['details'])
         }
       : {}
   const contextPatch =
     data.context !== undefined
       ? {
-          context: normalizeHeapOptionalDetailsText(data.context) ?? (null as TaskProjectsRow['context'])
+          context:
+            normalizeHeapOptionalDetailsText(data.context) ?? (null as TaskProjectsRow['context'])
         }
       : {}
   const row = await TaskProjects.update(ctx, {
@@ -511,7 +537,11 @@ export async function reorderTasks(
   return true
 }
 
-export async function reorderClients(ctx: app.Ctx, userId: string, orderedIds: string[]): Promise<boolean> {
+export async function reorderClients(
+  ctx: app.Ctx,
+  userId: string,
+  orderedIds: string[]
+): Promise<boolean> {
   const clients = await TaskClients.findAll(ctx, { where: { userId } })
   const idSet = new Set(clients.map((c) => c.id))
   if (orderedIds.length !== idSet.size || orderedIds.some((id) => !idSet.has(id))) {

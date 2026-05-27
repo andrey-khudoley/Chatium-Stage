@@ -10,9 +10,9 @@ const AVAILABLE_EMOJIS = ['❤️', '🔥', '😂']
 
 // @shared-route
 export const apiReactionSendRoute = reporterApp
-  .body(s => ({
+  .body((s) => ({
     episodeId: s.string(),
-    emoji: s.string(),
+    emoji: s.string()
   }))
   .post('/send', async (ctx, req) => {
     const ctxUser = await requireAnyUser(ctx)
@@ -51,7 +51,7 @@ export const apiReactionSendRoute = reporterApp
     await sendDataToSocket(ctx, episodeSocketId, {
       type: 'reaction',
       emoji,
-      fromUser: ctxUser?.id,
+      fromUser: ctxUser?.id
     })
 
     return { success: true }

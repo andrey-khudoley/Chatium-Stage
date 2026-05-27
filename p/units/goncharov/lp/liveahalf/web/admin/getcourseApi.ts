@@ -1,19 +1,19 @@
 import { requireAccountRole } from '@app/auth'
-import Settings from "../../tables/settings.table"
+import Settings from '../../tables/settings.table'
 
 export const adminGetcourseSaveRoute = app.post('/api/save', async (ctx, req) => {
   requireAccountRole(ctx, 'Admin')
 
-  const { 
-    accountName, 
-    apiKey, 
-    offerCode, 
+  const {
+    accountName,
+    apiKey,
+    offerCode,
     price,
     utmSourceField,
     utmMediumField,
     utmCampaignField,
     utmContentField,
-    utmTermField,
+    utmTermField
   } = req.body
 
   if (!accountName || accountName.trim().length < 2) {
@@ -38,7 +38,7 @@ export const adminGetcourseSaveRoute = app.post('/api/save', async (ctx, req) =>
       { key: 'getcourse_utm_medium_field', value: utmMediumField?.trim() || '' },
       { key: 'getcourse_utm_campaign_field', value: utmCampaignField?.trim() || '' },
       { key: 'getcourse_utm_content_field', value: utmContentField?.trim() || '' },
-      { key: 'getcourse_utm_term_field', value: utmTermField?.trim() || '' },
+      { key: 'getcourse_utm_term_field', value: utmTermField?.trim() || '' }
     ]
 
     for (const setting of settings) {
@@ -73,7 +73,7 @@ export const adminGetcourseResetRoute = app.post('/api/reset', async (ctx, req) 
       'getcourse_utm_medium_field',
       'getcourse_utm_campaign_field',
       'getcourse_utm_content_field',
-      'getcourse_utm_term_field',
+      'getcourse_utm_term_field'
     ]
 
     for (const key of keys) {

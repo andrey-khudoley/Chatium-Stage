@@ -4,10 +4,10 @@
     <button
       type="button"
       class="btn-record-voice"
-      :class="{ 
-        recording: isRecording, 
+      :class="{
+        recording: isRecording,
         'is-locked': isLocked,
-        'can-send': recordingDuration >= 1 
+        'can-send': recordingDuration >= 1
       }"
       @mousedown="startRecording"
       @mouseup="stopRecording"
@@ -22,42 +22,32 @@
 
     <!-- Панель записи (показывается при записи) -->
     <div v-if="isRecording" class="recording-panel" @click.stop>
-
-      
       <!-- Waveform и таймер -->
       <div class="recording-waveform">
         <canvas ref="waveformCanvas" width="300" height="60"></canvas>
       </div>
-      
+
       <div class="recording-timer" :class="{ 'is-recording': isRecording }">
         <span class="record-dot"></span>
         {{ formatDuration(recordingDuration) }}
       </div>
 
       <!-- Кнопка остановки -->
-      <button 
-        class="btn-stop-record"
-        @click.stop="finishRecording"
-        title="Остановить и отправить"
-      >
+      <button class="btn-stop-record" @click.stop="finishRecording" title="Остановить и отправить">
         <i class="fas fa-check"></i>
       </button>
 
       <!-- Кнопка отмены -->
-      <button 
-        class="btn-cancel-record"
-        @click.stop="cancelRecording"
-        title="Отменить"
-      >
+      <button class="btn-cancel-record" @click.stop="cancelRecording" title="Отменить">
         <i class="fas fa-times"></i>
       </button>
     </div>
 
     <!-- Скрытый input для fallback (если нужно) -->
-    <input 
+    <input
       ref="audioInput"
-      type="file" 
-      accept="audio/*" 
+      type="file"
+      accept="audio/*"
       style="display: none"
       @change="handleAudioSelect"
     />
@@ -100,35 +90,35 @@ function getWaveformColor() {
 // Рисование waveform
 function drawWaveform() {
   if (!analyser.value || !waveformCanvas.value) return
-  
+
   const canvas = waveformCanvas.value
   const ctx = canvas.getContext('2d')
   const width = canvas.width
   const height = canvas.height
-  
+
   analyser.value.getByteFrequencyData(dataArray.value)
-  
+
   ctx.clearRect(0, 0, width, height)
-  
+
   const barWidth = 3
   const gap = 2
   const bars = Math.floor(width / (barWidth + gap))
   const step = Math.floor(dataArray.value.length / bars)
-  
+
   const color = getWaveformColor()
-  
+
   for (let i = 0; i < bars; i++) {
     const value = dataArray.value[i * step]
     const percent = value / 255
     const barHeight = Math.max(4, percent * height * 0.8)
     const x = i * (barWidth + gap)
     const y = (height - barHeight) / 2
-    
+
     ctx.fillStyle = color
     ctx.roundRect(x, y, barWidth, barHeight, 2)
     ctx.fill()
   }
-  
+
   animationId.value = requestAnimationFrame(drawWaveform)
 }
 
@@ -137,62 +127,61 @@ async function startRecording(event) {
   if (event.type === 'touchstart') {
     event.preventDefault()
   }
-  
+
   if (isRecording.value) return
-  
+
   try {
     // Запрашиваем доступ к микрофону
-    stream.value = await navigator.mediaDevices.getUserMedia({ 
+    stream.value = await navigator.mediaDevices.getUserMedia({
       audio: {
         echoCancellation: true,
         noiseSuppression: true,
         sampleRate: 44100
       }
     })
-    
+
     // Создаем AudioContext для анализа
     audioContext.value = new (window.AudioContext || window.webkitAudioContext)()
     analyser.value = audioContext.value.createAnalyser()
     analyser.value.fftSize = 256
-    
+
     source.value = audioContext.value.createMediaStreamSource(stream.value)
     source.value.connect(analyser.value)
-    
+
     const bufferLength = analyser.value.frequencyBinCount
     dataArray.value = new Uint8Array(bufferLength)
-    
+
     // Создаем MediaRecorder
     const mimeType = getSupportedMimeType()
     mediaRecorder.value = new MediaRecorder(stream.value, { mimeType })
     audioChunks.value = []
-    
+
     mediaRecorder.value.ondataavailable = (event) => {
       if (event.data.size > 0) {
         audioChunks.value.push(event.data)
       }
     }
-    
+
     mediaRecorder.value.onstop = () => {
       handleRecordingStop()
     }
-    
+
     // Начинаем запись
     mediaRecorder.value.start(100) // Собираем данные каждые 100ms
     isRecording.value = true
     recordingDuration.value = 0
-    
+
     // Запрашиваем Wake Lock чтобы экран не затухал
     await requestWakeLock()
-    
+
     // Запускаем таймер
     timerInterval.value = setInterval(() => {
       recordingDuration.value++
     }, 1000)
-    
+
     // Запускаем анимацию waveform
     await nextTick()
     drawWaveform()
-    
   } catch (err) {
     console.error('Failed to start recording:', err)
     alert('Не удалось получить доступ к микрофону')
@@ -206,11 +195,11 @@ function getSupportedMimeType() {
   // Opus в WebM — единственный формат, поддерживаемый всеми современными браузерами
   // Firefox предпочитает Ogg, но он не работает в Chrome/Safari
   const preferredType = 'audio/webm;codecs=opus'
-  
+
   if (MediaRecorder.isTypeSupported(preferredType)) {
     return preferredType
   }
-  
+
   // Fallback для старых браузеров
   const fallbackTypes = [
     'audio/webm',
@@ -219,26 +208,26 @@ function getSupportedMimeType() {
     'audio/ogg',
     'audio/wav'
   ]
-  
+
   for (const type of fallbackTypes) {
     if (MediaRecorder.isTypeSupported(type)) {
       return type
     }
   }
-  
+
   return 'audio/webm'
 }
 
 // Остановка записи (отправка)
 function stopRecording() {
   if (!isRecording.value) return
-  
+
   // Минимальная длительность 1 секунда
   if (recordingDuration.value < 1) {
     cancelRecording()
     return
   }
-  
+
   finishRecording()
 }
 
@@ -289,14 +278,14 @@ function handleRecordingStop() {
     isCancelled.value = false
     return
   }
-  
+
   // Определяем MIME тип из записи
   const mimeType = mediaRecorder.value?.mimeType || 'audio/webm'
   const extension = getExtensionFromMimeType(mimeType)
-  
+
   try {
     const audioBlob = new Blob(audioChunks.value, { type: mimeType })
-    
+
     // Проверяем, что Blob валидный
     if (audioBlob.size === 0) {
       console.error('Recorded blob is empty')
@@ -305,29 +294,29 @@ function handleRecordingStop() {
       isCancelled.value = false
       return
     }
-    
-    const file = new File([audioBlob], `voice-message-${Date.now()}.${extension}`, { 
+
+    const file = new File([audioBlob], `voice-message-${Date.now()}.${extension}`, {
       type: mimeType,
       lastModified: Date.now()
     })
-    
+
     // Добавляем метаданные (не передаются на сервер, но полезны локально)
     file.duration = recordingDuration.value
     file.isVoiceMessage = true
-    
+
     // console.log('Voice file created:', {
     //   name: file.name,
     //   size: file.size,
     //   type: file.type,
     //   duration: recordingDuration.value
     // })
-    
+
     emit('recorded', { file, duration: recordingDuration.value })
   } catch (err) {
     console.error('Failed to create voice file:', err)
     alert('Ошибка создания аудиофайла')
   }
-  
+
   cleanup()
   isCancelled.value = false // Сбрасываем флаг в конце
 }
@@ -361,30 +350,30 @@ async function cleanup() {
   // Сбрасываем состояние
   isRecording.value = false
   // Не сбрасываем isCancelled здесь - пусть handleRecordingStop() разберётся
-  
+
   // Освобождаем Wake Lock
   await releaseWakeLock()
-  
+
   if (timerInterval.value) {
     clearInterval(timerInterval.value)
     timerInterval.value = null
   }
-  
+
   if (animationId.value) {
     cancelAnimationFrame(animationId.value)
     animationId.value = null
   }
-  
+
   if (stream.value) {
-    stream.value.getTracks().forEach(track => track.stop())
+    stream.value.getTracks().forEach((track) => track.stop())
     stream.value = null
   }
-  
+
   if (audioContext.value && audioContext.value.state !== 'closed') {
     audioContext.value.close().catch(console.error)
     audioContext.value = null
   }
-  
+
   analyser.value = null
   source.value = null
   dataArray.value = null
@@ -443,8 +432,13 @@ onUnmounted(() => {
 }
 
 @keyframes pulse {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.1); }
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
 }
 
 /* Панель записи */
@@ -508,8 +502,13 @@ onUnmounted(() => {
 }
 
 @keyframes blink {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.3; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
 }
 
 /* Кнопки управления */
@@ -544,6 +543,4 @@ onUnmounted(() => {
 .btn-cancel-record:hover {
   background: #fecaca;
 }
-
-
 </style>

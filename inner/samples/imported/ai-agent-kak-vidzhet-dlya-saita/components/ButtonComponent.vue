@@ -9,8 +9,8 @@
 
 <script setup>
 const handleClick = () => {
-  window.parent.postMessage({ type: "chatiumSenderWidget:open" }, "*");
-};
+  window.parent.postMessage({ type: 'chatiumSenderWidget:open' }, '*')
+}
 </script>
 
 <style scoped>

@@ -34,15 +34,15 @@ ADR-0004 «токен в URL»:
 
 В админке (POST `/api/settings/save`) задаются:
 
-| Ключ | Описание |
-| --- | --- |
-| `gateway_url` | Базовый URL gateway без хвостового `/`. |
-| `gc_school_host` | Хост школы GC без схемы. |
-| `gc_school_api_key` | API-ключ школы (не логируется). |
-| `webhook_token` | Текущий webhook-токен (генерируется автоматически при первом обращении к `/api/webhook` или `/api/admin/webhook/info`). |
-| `lenochka_message_template` | Шаблон сообщения; placeholders: `{{name}}`, `{{dealId}}`, `{{amount}}`. |
-| `lenochka_default_dialog_id` | Идентификатор диалога Леночки в GC (если событие не содержит `dialog_id`). |
-| `lenochka_default_user_id` | Идентификатор пользователя GC, от чьего имени отправляется сообщение. |
+| Ключ                         | Описание                                                                                                                |
+| ---------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `gateway_url`                | Базовый URL gateway без хвостового `/`.                                                                                 |
+| `gc_school_host`             | Хост школы GC без схемы.                                                                                                |
+| `gc_school_api_key`          | API-ключ школы (не логируется).                                                                                         |
+| `webhook_token`              | Текущий webhook-токен (генерируется автоматически при первом обращении к `/api/webhook` или `/api/admin/webhook/info`). |
+| `lenochka_message_template`  | Шаблон сообщения; placeholders: `{{name}}`, `{{dealId}}`, `{{amount}}`.                                                 |
+| `lenochka_default_dialog_id` | Идентификатор диалога Леночки в GC (если событие не содержит `dialog_id`).                                              |
+| `lenochka_default_user_id`   | Идентификатор пользователя GC, от чьего имени отправляется сообщение.                                                   |
 
 ## SDK-клиент
 
@@ -50,12 +50,12 @@ ADR-0004 «токен в URL»:
 
 ## Эндпоинты
 
-| Method | Path | Auth | Назначение |
-| --- | --- | --- | --- |
-| POST | `/api/webhook?token=<...>` | анонимно (token в URL) | Приём webhook GC оплаты. 401 при invalid token. |
-| GET | `/api/admin/webhook/info` | Admin | Текущий токен и `webhookUrlSuffix`. |
-| POST | `/api/admin/webhook/rotate` | Admin | Сгенерировать новый токен (старый перестаёт работать). |
-| GET | `/api/tests/scenario` | AnyUser | Сценарные юнит-тесты (нормализация события, токены, шаблон). |
+| Method | Path                        | Auth                   | Назначение                                                   |
+| ------ | --------------------------- | ---------------------- | ------------------------------------------------------------ |
+| POST   | `/api/webhook?token=<...>`  | анонимно (token в URL) | Приём webhook GC оплаты. 401 при invalid token.              |
+| GET    | `/api/admin/webhook/info`   | Admin                  | Текущий токен и `webhookUrlSuffix`.                          |
+| POST   | `/api/admin/webhook/rotate` | Admin                  | Сгенерировать новый токен (старый перестаёт работать).       |
+| GET    | `/api/tests/scenario`       | AnyUser                | Сценарные юнит-тесты (нормализация события, токены, шаблон). |
 
 ## Тесты
 

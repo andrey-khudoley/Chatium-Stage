@@ -20,7 +20,7 @@ export const verifyGcRoute = app.post('/', async (ctx, req) => {
   await loggerLib.writeServerLog(ctx, {
     severity: 7,
     message: `[${LOG_PATH}] Запрос проверки подключения`,
-    payload: { hasDomain: Boolean(domain), hasKey: Boolean(apiKey) },
+    payload: { hasDomain: Boolean(domain), hasKey: Boolean(apiKey) }
   })
 
   const result = await gcLib.verifyGcAccess(ctx, { apiKey, domain })
@@ -28,7 +28,7 @@ export const verifyGcRoute = app.post('/', async (ctx, req) => {
   await loggerLib.writeServerLog(ctx, {
     severity: result.ok ? 6 : 4,
     message: `[${LOG_PATH}] Результат проверки`,
-    payload: { ok: result.ok, message: result.message },
+    payload: { ok: result.ok, message: result.message }
   })
 
   return { success: result.ok, message: result.message }

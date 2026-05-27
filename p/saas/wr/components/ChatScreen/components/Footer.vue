@@ -37,7 +37,7 @@ const props = withDefaults(defineProps<FooterProps>(), {
   banState: () => ({ banned: false }),
   chatAccessMode: 'open',
   userType: 'Real',
-  isAdmin: false,
+  isAdmin: false
 })
 
 const emit = defineEmits<{
@@ -57,7 +57,8 @@ const isTextTooLong = computed(() => (props.text?.length || 0) > props.maxMessag
 
 const containsUrl = computed(() => {
   if (props.isAdmin || !props.text) return false
-  const urlPattern = /(https?:\/\/[^\s]+)|(www\.[^\s]+)|([a-zA-Z0-9-]+\.(com|ru|net|org|info|io|app|site|online|tech|pro|dev|club|store|shop|me|xyz|by|kz|ua|uk|de|fr|us)[^\s]*)/gi
+  const urlPattern =
+    /(https?:\/\/[^\s]+)|(www\.[^\s]+)|([a-zA-Z0-9-]+\.(com|ru|net|org|info|io|app|site|online|tech|pro|dev|club|store|shop|me|xyz|by|kz|ua|uk|de|fr|us)[^\s]*)/gi
   return urlPattern.test(props.text)
 })
 
@@ -98,8 +99,12 @@ const banTimeLeft = computed(() => {
 })
 
 const isChatDisabled = computed(() => props.chatAccessMode === 'disabled')
-const needsAuth = computed(() => props.chatAccessMode === 'auth-only' && (!props.userType || props.userType === 'Anonymous'))
-const isBlocked = computed(() => isRateLimited.value || isBanned.value || isChatDisabled.value || needsAuth.value)
+const needsAuth = computed(
+  () => props.chatAccessMode === 'auth-only' && (!props.userType || props.userType === 'Anonymous')
+)
+const isBlocked = computed(
+  () => isRateLimited.value || isBanned.value || isChatDisabled.value || needsAuth.value
+)
 
 function startTimer() {
   if (timerInterval) return
@@ -112,21 +117,29 @@ function startTimer() {
   }, 200)
 }
 
-watch(() => props.rateLimitBlockedUntil, (val) => {
-  if (val && val > Date.now()) {
-    now.value = Date.now()
-    startTimer()
-  }
-}, { immediate: true })
-
-watch(() => props.banState, (val) => {
-  if (val?.banned) {
-    now.value = Date.now()
-    if (val.type === 'timeout' && val.expiresAt && val.expiresAt > Date.now()) {
+watch(
+  () => props.rateLimitBlockedUntil,
+  (val) => {
+    if (val && val > Date.now()) {
+      now.value = Date.now()
       startTimer()
     }
-  }
-}, { immediate: true, deep: true })
+  },
+  { immediate: true }
+)
+
+watch(
+  () => props.banState,
+  (val) => {
+    if (val?.banned) {
+      now.value = Date.now()
+      if (val.type === 'timeout' && val.expiresAt && val.expiresAt > Date.now()) {
+        startTimer()
+      }
+    }
+  },
+  { immediate: true, deep: true }
+)
 
 function inputHandler(event: Event) {
   const target = event.target as HTMLTextAreaElement
@@ -143,7 +156,7 @@ watch(
         inputElement.value.style.height = inputElement.value.scrollHeight + offset + 'px'
       }
     })
-  },
+  }
 )
 
 function keyDownHandler(event: KeyboardEvent) {
@@ -167,7 +180,7 @@ watch(
     if (newVal !== oldVal) {
       inputElement.value?.focus()
     }
-  },
+  }
 )
 
 function removeReplyMessageHandler() {
@@ -196,9 +209,19 @@ onBeforeUnmount(() => {
     <div v-if="replyMessage && !isBlocked" class="FooterReplyWrapper">
       <ReplyMessage :message="replyMessage" />
       <button class="FooterReplyClose" @click="removeReplyMessageHandler">
-        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-          <line x1="18" y1="6" x2="6" y2="18"/>
-          <line x1="6" y1="6" x2="18" y2="18"/>
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="14"
+          height="14"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <line x1="18" y1="6" x2="6" y2="18" />
+          <line x1="6" y1="6" x2="18" y2="18" />
         </svg>
       </button>
     </div>
@@ -206,9 +229,20 @@ onBeforeUnmount(() => {
     <!-- Ban permanent -->
     <div v-if="isBanned && isPermanentBan" class="FooterRateLimited">
       <div class="FooterRateLimitedInner FooterBanned">
-        <svg class="FooterRateLimitedIcon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="12" r="10"/>
-          <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
+        <svg
+          class="FooterRateLimitedIcon"
+          xmlns="http://www.w3.org/2000/svg"
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <circle cx="12" cy="12" r="10" />
+          <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
         </svg>
         <span class="FooterRateLimitedText">Вы заблокированы в чате</span>
       </div>
@@ -217,9 +251,20 @@ onBeforeUnmount(() => {
     <!-- Ban timeout -->
     <div v-else-if="isBanned" class="FooterRateLimited">
       <div class="FooterRateLimitedInner FooterBanned">
-        <svg class="FooterRateLimitedIcon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="12" r="10"/>
-          <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
+        <svg
+          class="FooterRateLimitedIcon"
+          xmlns="http://www.w3.org/2000/svg"
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <circle cx="12" cy="12" r="10" />
+          <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
         </svg>
         <span class="FooterRateLimitedText">Заблокированы: {{ banTimeLeft }}</span>
       </div>
@@ -228,9 +273,20 @@ onBeforeUnmount(() => {
     <!-- Rate-limit timer -->
     <div v-else-if="isRateLimited" class="FooterRateLimited">
       <div class="FooterRateLimitedInner">
-        <svg class="FooterRateLimitedIcon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="12" r="10"/>
-          <polyline points="12 6 12 12 16 14"/>
+        <svg
+          class="FooterRateLimitedIcon"
+          xmlns="http://www.w3.org/2000/svg"
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <circle cx="12" cy="12" r="10" />
+          <polyline points="12 6 12 12 16 14" />
         </svg>
         <span class="FooterRateLimitedText">Подождите {{ rateLimitSecondsLeft }} сек</span>
       </div>
@@ -239,9 +295,20 @@ onBeforeUnmount(() => {
     <!-- Chat disabled -->
     <div v-else-if="isChatDisabled" class="FooterRateLimited">
       <div class="FooterRateLimitedInner FooterChatClosed">
-        <svg class="FooterRateLimitedIcon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-          <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+        <svg
+          class="FooterRateLimitedIcon"
+          xmlns="http://www.w3.org/2000/svg"
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+          <path d="M7 11V7a5 5 0 0 1 10 0v4" />
         </svg>
         <span class="FooterRateLimitedText">Чат закрыт</span>
       </div>
@@ -250,10 +317,20 @@ onBeforeUnmount(() => {
     <!-- Need auth -->
     <div v-else-if="needsAuth" class="FooterRateLimited">
       <button class="FooterLoginBtn" @click="$emit('loginClick')">
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
-          <polyline points="10 17 15 12 10 7"/>
-          <line x1="15" y1="12" x2="3" y2="12"/>
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
+          <polyline points="10 17 15 12 10 7" />
+          <line x1="15" y1="12" x2="3" y2="12" />
         </svg>
         <span>Войти</span>
       </button>
@@ -278,9 +355,7 @@ onBeforeUnmount(() => {
           {{ props.text?.length }} / {{ maxMessageLength }}
         </div>
 
-        <div v-if="containsUrl" class="FooterInputUrlWarning">
-          Ссылки запрещены
-        </div>
+        <div v-if="containsUrl" class="FooterInputUrlWarning">Ссылки запрещены</div>
       </div>
 
       <div class="FooterActions">
@@ -289,11 +364,17 @@ onBeforeUnmount(() => {
             class="FooterSendBtn"
             :class="{
               // FooterSendBtnHidden: !text?.length,
-              FooterSendBtnDisabled: isTextTooLong || containsUrl,
+              FooterSendBtnDisabled: isTextTooLong || containsUrl
             }"
             @click="!isTextTooLong && !containsUrl && $emit('submit')"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 22 20" fill="currentColor">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="18"
+              height="18"
+              viewBox="0 0 22 20"
+              fill="currentColor"
+            >
               <path d="m0 0 22 10L0 20l2-8 5-2-5-2-2-8Z" />
             </svg>
           </button>
@@ -380,7 +461,9 @@ onBeforeUnmount(() => {
   border: 1px solid var(--wr-chat-input-border);
   border-radius: 12px;
   padding: 0 10px;
-  transition: border-color 0.2s ease, background-color 0.2s ease;
+  transition:
+    border-color 0.2s ease,
+    background-color 0.2s ease;
 }
 
 @media (min-width: 640px) {

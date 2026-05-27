@@ -1,6 +1,16 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { sendSmsCode, confirmSmsCode, sendEmailCode, confirmEmailCode, loginWithPassword, handleAuthError, formatPhoneNumber, isValidPhone, isValidEmail } from '../sdk/auth'
+import {
+  sendSmsCode,
+  confirmSmsCode,
+  sendEmailCode,
+  confirmEmailCode,
+  loginWithPassword,
+  handleAuthError,
+  formatPhoneNumber,
+  isValidPhone,
+  isValidEmail
+} from '../sdk/auth'
 import { apiGetPasswordHashRoute } from '../api/auth-password'
 
 declare global {
@@ -40,7 +50,6 @@ let resendTimer: ReturnType<typeof setTimeout> | null = null
 const showWelcomeCursor = ref(true)
 const anyFieldFocused = ref(false)
 
-
 const isPhoneEnabled = computed(() => Object.keys(props.providers).includes('Sms'))
 const isEmailEnabled = computed(() => Object.keys(props.providers).includes('Email'))
 const isPasswordEnabled = computed(() => Object.keys(props.providers).includes('Password'))
@@ -50,11 +59,11 @@ onMounted(() => {
   // Принудительно устанавливаем тёмную тему
   document.documentElement.classList.add('dark')
   localStorage.setItem('theme', 'dark')
-  
+
   if (!isPhoneEnabled.value && isEmailEnabled.value) {
     authMethod.value = 'email'
   }
-  
+
   // Ждём завершения bootloader
   const handleBootloaderComplete = () => {
     bootLoaderDone.value = true
@@ -66,8 +75,6 @@ onMounted(() => {
     window.addEventListener('bootloader-complete', handleBootloaderComplete)
   }
 })
-
-
 
 onUnmounted(() => {
   clearResendTimer()
@@ -134,7 +141,7 @@ async function confirmPhoneCode() {
   error.value = ''
   try {
     const result = await confirmSmsCode(phone.value, phoneCode.value)
-    if (JSON.stringify(result).includes("authSuccess")) {
+    if (JSON.stringify(result).includes('authSuccess')) {
       handleLoginSuccess()
     } else {
       error.value = handleAuthError(result.error)
@@ -158,8 +165,13 @@ async function handlePhonePasswordLogin() {
   loading.value = true
   error.value = ''
   try {
-    const result = await loginWithPassword('Phone', phone.value, apiGetPasswordHashRoute.url(), phonePassword.value)
-    if (JSON.stringify(result).includes("authSuccess")) {
+    const result = await loginWithPassword(
+      'Phone',
+      phone.value,
+      apiGetPasswordHashRoute.url(),
+      phonePassword.value
+    )
+    if (JSON.stringify(result).includes('authSuccess')) {
       handleLoginSuccess()
     } else {
       error.value = handleAuthError(result.error)
@@ -203,7 +215,7 @@ async function confirmEmailCodeHandler() {
   error.value = ''
   try {
     const result = await confirmEmailCode(email.value, emailCode.value)
-    if (JSON.stringify(result).includes("authSuccess")) {
+    if (JSON.stringify(result).includes('authSuccess')) {
       handleLoginSuccess()
     } else {
       error.value = handleAuthError(result.error)
@@ -227,8 +239,13 @@ async function handleEmailPasswordLogin() {
   loading.value = true
   error.value = ''
   try {
-    const result = await loginWithPassword('Email', email.value, apiGetPasswordHashRoute.url(), emailPassword.value)
-    if (JSON.stringify(result).includes("authSuccess")) {
+    const result = await loginWithPassword(
+      'Email',
+      email.value,
+      apiGetPasswordHashRoute.url(),
+      emailPassword.value
+    )
+    if (JSON.stringify(result).includes('authSuccess')) {
       handleLoginSuccess()
     } else {
       error.value = handleAuthError(result.error)
@@ -248,7 +265,7 @@ async function handleTelegramLogin() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ back: props.back })
     })
-    
+
     const oauthUrl = await response.text()
     window.location.href = oauthUrl
   } catch (err) {
@@ -289,15 +306,17 @@ function handlePhoneInput(event: Event) {
     phone.value = filtered
   }
 }
-
-
 </script>
 
 <template>
-  <div class="min-h-screen bg-[var(--color-bg)] text-[var(--color-text)] flex items-center justify-center relative">
+  <div
+    class="min-h-screen bg-[var(--color-bg)] text-[var(--color-text)] flex items-center justify-center relative"
+  >
     <div v-if="bootLoaderDone" class="login-card relative z-10">
       <div class="flex justify-center mb-6">
-        <div class="w-20 h-20 bg-gradient-to-br from-[var(--color-accent)] to-[var(--color-accent-hover)] flex items-center justify-center login-icon">
+        <div
+          class="w-20 h-20 bg-gradient-to-br from-[var(--color-accent)] to-[var(--color-accent-hover)] flex items-center justify-center login-icon"
+        >
           <i class="fab fa-telegram text-3xl text-white"></i>
         </div>
       </div>
@@ -310,26 +329,44 @@ function handlePhoneInput(event: Event) {
       </p>
 
       <!-- Auth Method Tabs -->
-      <div v-if="isPhoneEnabled && isEmailEnabled && step === 'input'" 
-           class="flex mb-6 bg-[var(--color-border)] p-1">
-        <button @click="authMethod = 'phone'; error = ''; showWelcomeCursor = true"
-                :class="[
-                  'flex-1 py-2 px-4 text-sm font-medium transition-all',
-                  authMethod === 'phone' 
-                    ? 'bg-[var(--color-bg-secondary)] shadow-sm'
-                    : 'hover:opacity-70'
-                ]"
-                :style="authMethod === 'phone' ? 'color: var(--color-accent)' : 'color: var(--color-text-secondary)'">
+      <div
+        v-if="isPhoneEnabled && isEmailEnabled && step === 'input'"
+        class="flex mb-6 bg-[var(--color-border)] p-1"
+      >
+        <button
+          @click="
+            authMethod = 'phone'
+            error = ''
+            showWelcomeCursor = true
+          "
+          :class="[
+            'flex-1 py-2 px-4 text-sm font-medium transition-all',
+            authMethod === 'phone' ? 'bg-[var(--color-bg-secondary)] shadow-sm' : 'hover:opacity-70'
+          ]"
+          :style="
+            authMethod === 'phone'
+              ? 'color: var(--color-accent)'
+              : 'color: var(--color-text-secondary)'
+          "
+        >
           <i class="fas fa-phone mr-2"></i> Телефон
         </button>
-        <button @click="authMethod = 'email'; error = ''; showWelcomeCursor = true"
-                :class="[
-                  'flex-1 py-2 px-4 text-sm font-medium transition-all',
-                  authMethod === 'email' 
-                    ? 'bg-[var(--color-bg-secondary)] shadow-sm'
-                    : 'hover:opacity-70'
-                ]"
-                :style="authMethod === 'email' ? 'color: var(--color-accent)' : 'color: var(--color-text-secondary)'">
+        <button
+          @click="
+            authMethod = 'email'
+            error = ''
+            showWelcomeCursor = true
+          "
+          :class="[
+            'flex-1 py-2 px-4 text-sm font-medium transition-all',
+            authMethod === 'email' ? 'bg-[var(--color-bg-secondary)] shadow-sm' : 'hover:opacity-70'
+          ]"
+          :style="
+            authMethod === 'email'
+              ? 'color: var(--color-accent)'
+              : 'color: var(--color-text-secondary)'
+          "
+        >
           <i class="fas fa-envelope mr-2"></i> Email
         </button>
       </div>
@@ -351,9 +388,14 @@ function handlePhoneInput(event: Event) {
                 @input="handlePhoneInput"
                 @focus="handleAnyFocus"
                 @blur="handleAnyBlur"
-                @keyup.enter="isPasswordEnabled && phonePassword ? handlePhonePasswordLogin() : sendPhoneCode()"
+                @keyup.enter="
+                  isPasswordEnabled && phonePassword ? handlePhonePasswordLogin() : sendPhoneCode()
+                "
               />
-              <span v-if="showWelcomeCursor && authMethod === 'phone' && !phone" class="welcome-cursor"></span>
+              <span
+                v-if="showWelcomeCursor && authMethod === 'phone' && !phone"
+                class="welcome-cursor"
+              ></span>
             </div>
           </div>
 
@@ -378,7 +420,7 @@ function handlePhoneInput(event: Event) {
                 type="button"
                 @click="showPassword = !showPassword"
                 class="absolute inset-y-0 right-0 flex items-center px-3 transition-colors"
-                style="color: var(--color-text-tertiary); z-index: 20;"
+                style="color: var(--color-text-tertiary); z-index: 20"
               >
                 <i :class="showPassword ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
               </button>
@@ -392,9 +434,11 @@ function handlePhoneInput(event: Event) {
               @click="handlePhonePasswordLogin"
               :disabled="loading || !isValidPhone(phone)"
               class="btn w-full mb-4"
-              :style="(loading || !isValidPhone(phone))
-                ? 'background: var(--color-bg-secondary); color: var(--color-text-tertiary); border: 1.5px solid var(--color-border); cursor: not-allowed;'
-                : 'background: var(--color-accent); color: white; border: 1.5px solid var(--color-accent); cursor: pointer;'"
+              :style="
+                loading || !isValidPhone(phone)
+                  ? 'background: var(--color-bg-secondary); color: var(--color-text-tertiary); border: 1.5px solid var(--color-border); cursor: not-allowed;'
+                  : 'background: var(--color-accent); color: white; border: 1.5px solid var(--color-accent); cursor: pointer;'
+              "
             >
               <i v-if="loading" class="fas fa-spinner fa-spin mr-2"></i>
               <i v-else class="fas fa-sign-in-alt mr-2"></i>
@@ -409,7 +453,9 @@ function handlePhoneInput(event: Event) {
                 <div class="w-full border-t border-[var(--color-border)]"></div>
               </div>
               <div class="relative flex justify-center text-sm">
-                <span class="px-2 bg-[var(--color-bg-secondary)] text-[var(--color-text-secondary)]">или</span>
+                <span class="px-2 bg-[var(--color-bg-secondary)] text-[var(--color-text-secondary)]"
+                  >или</span
+                >
               </div>
             </div>
           </transition>
@@ -427,13 +473,15 @@ function handlePhoneInput(event: Event) {
 
         <div v-if="step === 'code'">
           <div class="text-center mb-6">
-            <div class="w-16 h-16 flex items-center justify-center mx-auto mb-4 code-icon" 
-                 style="background: var(--color-accent-light)">
+            <div
+              class="w-16 h-16 flex items-center justify-center mx-auto mb-4 code-icon"
+              style="background: var(--color-accent-light)"
+            >
               <i class="fas fa-sms text-2xl" style="color: var(--color-accent)"></i>
             </div>
             <h3 class="text-lg font-semibold text-[var(--color-text)] mb-2">Введите код</h3>
             <p class="text-[var(--color-text-secondary)] text-sm">
-              Код отправлен на номер<br/>
+              Код отправлен на номер<br />
               <span class="font-medium">{{ formatPhoneNumber(phone) }}</span>
             </p>
           </div>
@@ -451,13 +499,22 @@ function handlePhoneInput(event: Event) {
             />
           </div>
 
-          <button @click="confirmPhoneCode" class="btn btn-primary w-full mb-4" :disabled="loading || phoneCode.length < 4">
+          <button
+            @click="confirmPhoneCode"
+            class="btn btn-primary w-full mb-4"
+            :disabled="loading || phoneCode.length < 4"
+          >
             <i v-if="loading" class="fas fa-spinner fa-spin mr-2"></i>
             <i v-else class="fas fa-check mr-2"></i>
             {{ loading ? 'Проверка...' : 'Подтвердить' }}
           </button>
 
-          <button @click="goBack" class="btn w-full mb-4" style="background: var(--color-border);" :disabled="loading">
+          <button
+            @click="goBack"
+            class="btn w-full mb-4"
+            style="background: var(--color-border)"
+            :disabled="loading"
+          >
             <i class="fas fa-arrow-left mr-2"></i>
             Изменить номер
           </button>
@@ -491,9 +548,16 @@ function handlePhoneInput(event: Event) {
                 :disabled="loading"
                 @focus="handleAnyFocus"
                 @blur="handleAnyBlur"
-                @keyup.enter="isPasswordEnabled && emailPassword ? handleEmailPasswordLogin() : sendEmailCodeHandler()"
+                @keyup.enter="
+                  isPasswordEnabled && emailPassword
+                    ? handleEmailPasswordLogin()
+                    : sendEmailCodeHandler()
+                "
               />
-              <span v-if="showWelcomeCursor && authMethod === 'email' && !email" class="welcome-cursor"></span>
+              <span
+                v-if="showWelcomeCursor && authMethod === 'email' && !email"
+                class="welcome-cursor"
+              ></span>
             </div>
           </div>
 
@@ -518,7 +582,7 @@ function handlePhoneInput(event: Event) {
                 type="button"
                 @click="showPassword = !showPassword"
                 class="absolute inset-y-0 right-0 flex items-center px-3 transition-colors"
-                style="color: var(--color-text-tertiary); z-index: 20;"
+                style="color: var(--color-text-tertiary); z-index: 20"
               >
                 <i :class="showPassword ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
               </button>
@@ -532,9 +596,11 @@ function handlePhoneInput(event: Event) {
               @click="handleEmailPasswordLogin"
               :disabled="loading || !isValidEmail(email)"
               class="btn w-full mb-4"
-              :style="(loading || !isValidEmail(email))
-                ? 'background: var(--color-bg-secondary); color: var(--color-text-tertiary); border: 1.5px solid var(--color-border); cursor: not-allowed;'
-                : 'background: var(--color-accent); color: white; border: 1.5px solid var(--color-accent); cursor: pointer;'"
+              :style="
+                loading || !isValidEmail(email)
+                  ? 'background: var(--color-bg-secondary); color: var(--color-text-tertiary); border: 1.5px solid var(--color-border); cursor: not-allowed;'
+                  : 'background: var(--color-accent); color: white; border: 1.5px solid var(--color-accent); cursor: pointer;'
+              "
             >
               <i v-if="loading" class="fas fa-spinner fa-spin mr-2"></i>
               <i v-else class="fas fa-sign-in-alt mr-2"></i>
@@ -549,7 +615,9 @@ function handlePhoneInput(event: Event) {
                 <div class="w-full border-t border-[var(--color-border)]"></div>
               </div>
               <div class="relative flex justify-center text-sm">
-                <span class="px-2 bg-[var(--color-bg-secondary)] text-[var(--color-text-secondary)]">или</span>
+                <span class="px-2 bg-[var(--color-bg-secondary)] text-[var(--color-text-secondary)]"
+                  >или</span
+                >
               </div>
             </div>
           </transition>
@@ -567,13 +635,15 @@ function handlePhoneInput(event: Event) {
 
         <div v-if="step === 'code'">
           <div class="text-center mb-6">
-            <div class="w-16 h-16 flex items-center justify-center mx-auto mb-4 code-icon" 
-                 style="background: var(--color-accent-light)">
+            <div
+              class="w-16 h-16 flex items-center justify-center mx-auto mb-4 code-icon"
+              style="background: var(--color-accent-light)"
+            >
               <i class="fas fa-envelope-open text-2xl" style="color: var(--color-accent)"></i>
             </div>
             <h3 class="text-lg font-semibold text-[var(--color-text)] mb-2">Проверьте почту</h3>
             <p class="text-[var(--color-text-secondary)] text-sm">
-              Код отправлен на адрес<br/>
+              Код отправлен на адрес<br />
               <span class="font-medium">{{ email }}</span>
             </p>
           </div>
@@ -591,13 +661,22 @@ function handlePhoneInput(event: Event) {
             />
           </div>
 
-          <button @click="confirmEmailCodeHandler" class="btn btn-primary w-full mb-4" :disabled="loading || emailCode.length < 6">
+          <button
+            @click="confirmEmailCodeHandler"
+            class="btn btn-primary w-full mb-4"
+            :disabled="loading || emailCode.length < 6"
+          >
             <i v-if="loading" class="fas fa-spinner fa-spin mr-2"></i>
             <i v-else class="fas fa-check mr-2"></i>
             {{ loading ? 'Проверка...' : 'Подтвердить' }}
           </button>
 
-          <button @click="goBack" class="btn w-full mb-4" style="background: var(--color-border);" :disabled="loading">
+          <button
+            @click="goBack"
+            class="btn w-full mb-4"
+            style="background: var(--color-border)"
+            :disabled="loading"
+          >
             <i class="fas fa-arrow-left mr-2"></i>
             Изменить email
           </button>
@@ -616,19 +695,30 @@ function handlePhoneInput(event: Event) {
       </div>
 
       <!-- No methods available -->
-      <div v-if="!isPhoneEnabled && !isEmailEnabled && !isTelegramEnabled" class="text-center text-[var(--color-text-secondary)]">
-        <i class="fas fa-exclamation-triangle text-4xl mb-4" style="color: var(--color-warning)"></i>
+      <div
+        v-if="!isPhoneEnabled && !isEmailEnabled && !isTelegramEnabled"
+        class="text-center text-[var(--color-text-secondary)]"
+      >
+        <i
+          class="fas fa-exclamation-triangle text-4xl mb-4"
+          style="color: var(--color-warning)"
+        ></i>
         <p>Методы авторизации не настроены</p>
       </div>
 
       <!-- Telegram -->
-      <div v-if="isTelegramEnabled && step === 'input'" :class="{'mt-4': isPhoneEnabled || isEmailEnabled}">
+      <div
+        v-if="isTelegramEnabled && step === 'input'"
+        :class="{ 'mt-4': isPhoneEnabled || isEmailEnabled }"
+      >
         <div v-if="isPhoneEnabled || isEmailEnabled" class="relative mb-4">
           <div class="absolute inset-0 flex items-center">
             <div class="w-full border-t border-[var(--color-border)]"></div>
           </div>
           <div class="relative flex justify-center text-sm">
-            <span class="px-2 bg-[var(--color-bg-secondary)] text-[var(--color-text-secondary)]">или</span>
+            <span class="px-2 bg-[var(--color-bg-secondary)] text-[var(--color-text-secondary)]"
+              >или</span
+            >
           </div>
         </div>
         <button @click="handleTelegramLogin" class="btn btn-telegram w-full">
@@ -638,8 +728,15 @@ function handlePhoneInput(event: Event) {
       </div>
 
       <!-- Error -->
-      <div v-if="error" class="mt-4 p-3 border error-box" 
-           style="background: var(--color-danger-light); border-color: var(--color-danger); color: var(--color-danger)">
+      <div
+        v-if="error"
+        class="mt-4 p-3 border error-box"
+        style="
+          background: var(--color-danger-light);
+          border-color: var(--color-danger);
+          color: var(--color-danger);
+        "
+      >
         <div class="flex items-center">
           <i class="fas fa-exclamation-circle mr-2"></i>
           <span class="text-sm">{{ error }}</span>
@@ -715,17 +812,25 @@ body {
   width: 100%;
   max-width: 420px;
   margin: 1rem;
-  box-shadow: 
+  box-shadow:
     0 8px 20px rgba(0, 0, 0, 0.4),
     0 4px 10px rgba(0, 0, 0, 0.3),
     inset 0 1px 0 rgba(255, 255, 255, 0.03);
   position: relative;
   overflow: hidden;
   clip-path: polygon(
-    0 4px, 4px 4px, 4px 0,
-    calc(100% - 4px) 0, calc(100% - 4px) 4px, 100% 4px,
-    100% calc(100% - 4px), calc(100% - 4px) calc(100% - 4px), calc(100% - 4px) 100%,
-    4px 100%, 4px calc(100% - 4px), 0 calc(100% - 4px)
+    0 4px,
+    4px 4px,
+    4px 0,
+    calc(100% - 4px) 0,
+    calc(100% - 4px) 4px,
+    100% 4px,
+    100% calc(100% - 4px),
+    calc(100% - 4px) calc(100% - 4px),
+    calc(100% - 4px) 100%,
+    4px 100%,
+    4px calc(100% - 4px),
+    0 calc(100% - 4px)
   );
 }
 
@@ -780,7 +885,8 @@ body {
 }
 
 @keyframes crt-flicker {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 0;
   }
   50% {
@@ -789,7 +895,7 @@ body {
 }
 
 .login-icon {
-  box-shadow: 
+  box-shadow:
     0 8px 24px rgba(211, 35, 75, 0.4),
     0 4px 12px rgba(211, 35, 75, 0.3),
     0 0 30px rgba(211, 35, 75, 0.2),
@@ -798,10 +904,18 @@ body {
   position: relative;
   overflow: hidden;
   clip-path: polygon(
-    0 4px, 4px 4px, 4px 0,
-    calc(100% - 4px) 0, calc(100% - 4px) 4px, 100% 4px,
-    100% calc(100% - 4px), calc(100% - 4px) calc(100% - 4px), calc(100% - 4px) 100%,
-    4px 100%, 4px calc(100% - 4px), 0 calc(100% - 4px)
+    0 4px,
+    4px 4px,
+    4px 0,
+    calc(100% - 4px) 0,
+    calc(100% - 4px) 4px,
+    100% 4px,
+    100% calc(100% - 4px),
+    calc(100% - 4px) calc(100% - 4px),
+    calc(100% - 4px) 100%,
+    4px 100%,
+    4px calc(100% - 4px),
+    0 calc(100% - 4px)
   );
 }
 
@@ -826,8 +940,13 @@ body {
 }
 
 @keyframes scanline-flicker {
-  0%, 100% { opacity: 0.7; }
-  50% { opacity: 0.5; }
+  0%,
+  100% {
+    opacity: 0.7;
+  }
+  50% {
+    opacity: 0.5;
+  }
 }
 
 .login-icon i {
@@ -837,7 +956,7 @@ body {
 
 .login-icon:hover {
   transform: scale(1.05);
-  box-shadow: 
+  box-shadow:
     0 12px 32px rgba(211, 35, 75, 0.5),
     0 6px 16px rgba(211, 35, 75, 0.4),
     0 0 40px rgba(211, 35, 75, 0.25);
@@ -860,7 +979,7 @@ body {
 .input:focus {
   outline: none;
   border-color: var(--color-accent);
-  box-shadow: 
+  box-shadow:
     0 0 0 3px var(--color-accent-light),
     inset 0 1px 2px rgba(0, 0, 0, 0.1);
 }
@@ -893,7 +1012,7 @@ body {
 }
 
 .terminal-input:focus {
-  box-shadow: 
+  box-shadow:
     0 0 0 3px var(--color-accent-light),
     inset 0 1px 2px rgba(0, 0, 0, 0.1);
 }
@@ -913,10 +1032,12 @@ body {
 }
 
 @keyframes cursor-blink {
-  0%, 50% {
+  0%,
+  50% {
     opacity: 1;
   }
-  51%, 100% {
+  51%,
+  100% {
     opacity: 0;
   }
 }
@@ -941,16 +1062,24 @@ body {
   letter-spacing: 0.05em;
   text-shadow: 0 0 6px rgba(232, 232, 232, 0.2);
   color: var(--color-text);
-  box-shadow: 
+  box-shadow:
     0 2px 4px rgba(0, 0, 0, 0.2),
     inset 0 1px 0 rgba(255, 255, 255, 0.05);
   position: relative;
   overflow: hidden;
   clip-path: polygon(
-    0 3px, 3px 3px, 3px 0,
-    calc(100% - 3px) 0, calc(100% - 3px) 3px, 100% 3px,
-    100% calc(100% - 3px), calc(100% - 3px) calc(100% - 3px), calc(100% - 3px) 100%,
-    3px 100%, 3px calc(100% - 3px), 0 calc(100% - 3px)
+    0 3px,
+    3px 3px,
+    3px 0,
+    calc(100% - 3px) 0,
+    calc(100% - 3px) 3px,
+    100% 3px,
+    100% calc(100% - 3px),
+    calc(100% - 3px) calc(100% - 3px),
+    calc(100% - 3px) 100%,
+    3px 100%,
+    3px calc(100% - 3px),
+    0 calc(100% - 3px)
   );
 }
 
@@ -987,7 +1116,7 @@ body {
   background: var(--color-accent);
   color: white;
   border-color: var(--color-accent);
-  box-shadow: 
+  box-shadow:
     0 4px 12px rgba(211, 35, 75, 0.3),
     0 2px 6px rgba(211, 35, 75, 0.2),
     inset 0 1px 0 rgba(255, 255, 255, 0.1);
@@ -996,7 +1125,7 @@ body {
 .btn-primary:hover:not(:disabled) {
   background: var(--color-accent-hover);
   border-color: var(--color-accent-hover);
-  box-shadow: 
+  box-shadow:
     0 6px 16px rgba(211, 35, 75, 0.4),
     0 3px 8px rgba(211, 35, 75, 0.3),
     inset 0 1px 0 rgba(255, 255, 255, 0.15);
@@ -1004,17 +1133,17 @@ body {
 }
 
 .btn-telegram {
-  background: linear-gradient(135deg, #229ED9 0%, #0088cc 100%);
+  background: linear-gradient(135deg, #229ed9 0%, #0088cc 100%);
   color: white;
-  border-color: #229ED9;
-  box-shadow: 
+  border-color: #229ed9;
+  box-shadow:
     0 4px 14px rgba(34, 158, 217, 0.4),
     0 2px 7px rgba(34, 158, 217, 0.3),
     inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 
 .btn-telegram:hover:not(:disabled) {
-  box-shadow: 
+  box-shadow:
     0 6px 20px rgba(34, 158, 217, 0.5),
     0 3px 10px rgba(34, 158, 217, 0.4),
     inset 0 1px 0 rgba(255, 255, 255, 0.25);
@@ -1027,10 +1156,18 @@ body {
   position: relative;
   overflow: hidden;
   clip-path: polygon(
-    0 3px, 3px 3px, 3px 0,
-    calc(100% - 3px) 0, calc(100% - 3px) 3px, 100% 3px,
-    100% calc(100% - 3px), calc(100% - 3px) calc(100% - 3px), calc(100% - 3px) 100%,
-    3px 100%, 3px calc(100% - 3px), 0 calc(100% - 3px)
+    0 3px,
+    3px 3px,
+    3px 0,
+    calc(100% - 3px) 0,
+    calc(100% - 3px) 3px,
+    100% 3px,
+    100% calc(100% - 3px),
+    calc(100% - 3px) calc(100% - 3px),
+    calc(100% - 3px) 100%,
+    3px 100%,
+    3px calc(100% - 3px),
+    0 calc(100% - 3px)
   );
 }
 
@@ -1063,10 +1200,18 @@ body {
   position: relative;
   overflow: hidden;
   clip-path: polygon(
-    0 3px, 3px 3px, 3px 0,
-    calc(100% - 3px) 0, calc(100% - 3px) 3px, 100% 3px,
-    100% calc(100% - 3px), calc(100% - 3px) calc(100% - 3px), calc(100% - 3px) 100%,
-    3px 100%, 3px calc(100% - 3px), 0 calc(100% - 3px)
+    0 3px,
+    3px 3px,
+    3px 0,
+    calc(100% - 3px) 0,
+    calc(100% - 3px) 3px,
+    100% 3px,
+    100% calc(100% - 3px),
+    calc(100% - 3px) calc(100% - 3px),
+    calc(100% - 3px) 100%,
+    3px 100%,
+    3px calc(100% - 3px),
+    0 calc(100% - 3px)
   );
 }
 

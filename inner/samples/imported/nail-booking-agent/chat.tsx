@@ -18,17 +18,17 @@ export const chatPageRoute = app.get('/chat', async (ctx, req) => {
     <html>
       <head>
         <title>Чат с AI-помощником</title>
-        <meta name='viewport' content='width=device-width, initial-scale=1' />
-        <script src='/s/metric/clarity.js'></script>
-        <link rel='preconnect' href='https://fonts.googleapis.com' />
-        <link rel='preconnect' href='https://fonts.gstatic.com' crossorigin='anonymous' />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <script src="/s/metric/clarity.js"></script>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
         <link
-          href='https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap'
-          rel='stylesheet'
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+          rel="stylesheet"
         />
-        <link href='/s/static/lib/fontawesome/6.7.2/css/all.min.css' rel='stylesheet' />
-        <script src='/s/static/lib/tailwind.3.4.16.min.js'></script>
-        <style type='text/tailwindcss'>{`
+        <link href="/s/static/lib/fontawesome/6.7.2/css/all.min.css" rel="stylesheet" />
+        <script src="/s/static/lib/tailwind.3.4.16.min.js"></script>
+        <style type="text/tailwindcss">{`
           @layer base {
             * {
               margin: 0;
@@ -44,8 +44,11 @@ export const chatPageRoute = app.get('/chat', async (ctx, req) => {
           }
         `}</style>
       </head>
-      <body class='overflow-hidden'>
-        <ChatPage isAdmin={user.is('Admin')} socketId={await genSocketId(ctx, 'GPT_SOCKET_ID_' + user.id)} />
+      <body class="overflow-hidden">
+        <ChatPage
+          isAdmin={user.is('Admin')}
+          socketId={await genSocketId(ctx, 'GPT_SOCKET_ID_' + user.id)}
+        />
       </body>
     </html>
   )

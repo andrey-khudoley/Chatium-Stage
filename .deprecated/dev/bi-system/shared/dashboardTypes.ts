@@ -46,4 +46,3 @@ export const PIVOT_ATTRIBUTION_FIELDS: PivotAttributionField[] = [
     clickhouseColumn: 'utm_content'
   }
 ]
-

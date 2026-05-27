@@ -14,6 +14,8 @@ export const addCommentToDealHandler: V1GcHandler = async (_ctx, a) => {
   return { kind: 'gc_result', gc }
 }
 
-export const addCommentToDealRoute = app.post('/', async (ctx, req) => handleV1Op(ctx, req, 'addCommentToDeal', addCommentToDealHandler))
+export const addCommentToDealRoute = app.post('/', async (ctx, req) =>
+  handleV1Op(ctx, req, 'addCommentToDeal', addCommentToDealHandler)
+)
 
 export default addCommentToDealRoute

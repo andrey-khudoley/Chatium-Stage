@@ -5,7 +5,10 @@
       <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between items-center h-16">
           <div class="flex items-center">
-            <a :href="indexPageRoute.url()" class="text-xl font-bold text-gray-900 hover:text-blue-600 transition-colors">
+            <a
+              :href="indexPageRoute.url()"
+              class="text-xl font-bold text-gray-900 hover:text-blue-600 transition-colors"
+            >
               <i class="fas fa-arrow-left mr-2"></i>
               Назад к блогу
             </a>
@@ -29,12 +32,18 @@
         </h1>
 
         <!-- Success/Error Messages -->
-        <div v-if="successMessage" class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-6">
+        <div
+          v-if="successMessage"
+          class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-6"
+        >
           <i class="fas fa-check-circle mr-2"></i>
           {{ successMessage }}
         </div>
-        
-        <div v-if="errorMessage" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">
+
+        <div
+          v-if="errorMessage"
+          class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6"
+        >
           <i class="fas fa-exclamation-circle mr-2"></i>
           {{ errorMessage }}
         </div>
@@ -46,23 +55,19 @@
             <h2 class="text-lg font-semibold text-gray-900 mb-4">Личная информация</h2>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                  Имя
-                </label>
-                <input 
-                  type="text" 
+                <label class="block text-sm font-medium text-gray-700 mb-2"> Имя </label>
+                <input
+                  type="text"
                   v-model="form.firstName"
                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="Введите имя"
                 />
               </div>
-              
+
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                  Фамилия
-                </label>
-                <input 
-                  type="text" 
+                <label class="block text-sm font-medium text-gray-700 mb-2"> Фамилия </label>
+                <input
+                  type="text"
                   v-model="form.lastName"
                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="Введите фамилию"
@@ -76,10 +81,8 @@
             <h2 class="text-lg font-semibold text-gray-900 mb-4">Дополнительная информация</h2>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                  Пол
-                </label>
-                <select 
+                <label class="block text-sm font-medium text-gray-700 mb-2"> Пол </label>
+                <select
                   v-model="form.gender"
                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
@@ -89,13 +92,11 @@
                   <option value="other">Другое</option>
                 </select>
               </div>
-              
+
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                  Дата рождения
-                </label>
-                <input 
-                  type="date" 
+                <label class="block text-sm font-medium text-gray-700 mb-2"> Дата рождения </label>
+                <input
+                  type="date"
                   v-model="form.birthday"
                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
@@ -111,32 +112,30 @@
                 <label class="block text-sm font-medium text-gray-700 mb-2">
                   Email (подтвержден)
                 </label>
-                <input 
-                  type="email" 
+                <input
+                  type="email"
                   :value="ctx.user.confirmedEmail"
                   readonly
                   class="w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-md text-gray-600"
                 />
               </div>
-              
+
               <div v-if="ctx.user.confirmedPhone">
                 <label class="block text-sm font-medium text-gray-700 mb-2">
                   Телефон (подтвержден)
                 </label>
-                <input 
-                  type="tel" 
+                <input
+                  type="tel"
                   :value="ctx.user.confirmedPhone"
                   readonly
                   class="w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-md text-gray-600"
                 />
               </div>
-              
+
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                  Роль
-                </label>
-                <input 
-                  type="text" 
+                <label class="block text-sm font-medium text-gray-700 mb-2"> Роль </label>
+                <input
+                  type="text"
                   :value="ctx.user.accountRole"
                   readonly
                   class="w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-md text-gray-600"
@@ -147,8 +146,8 @@
 
           <!-- Submit Button -->
           <div class="flex justify-end">
-            <button 
-              type="submit" 
+            <button
+              type="submit"
               :disabled="isLoading"
               class="bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
@@ -193,10 +192,10 @@ async function updateProfile() {
   isLoading.value = true
   successMessage.value = ''
   errorMessage.value = ''
-  
+
   try {
     const result = await updateProfileRoute.run(ctx, form.value)
-    
+
     if (result.success) {
       successMessage.value = 'Профиль успешно обновлен!'
       // Обновляем контекст пользователя
@@ -217,7 +216,7 @@ async function signOut() {
     const response = await fetch('/s/auth/sign-out', {
       method: 'POST'
     })
-    
+
     if (response.ok) {
       window.location.href = indexPageRoute.url()
     }

@@ -85,7 +85,12 @@ function onFolderDrop(e: DragEvent, folderId: string | null) {
     <div class="nb-sidebar-section">
       <div class="nb-sidebar-header">
         <span class="nb-sidebar-header-text">Папки</span>
-        <button type="button" class="nb-sidebar-add" title="Создать папку" @click="emit('create-folder')">
+        <button
+          type="button"
+          class="nb-sidebar-add"
+          title="Создать папку"
+          @click="emit('create-folder')"
+        >
           <i class="fa-solid fa-plus" aria-hidden="true" />
         </button>
       </div>
@@ -103,7 +108,11 @@ function onFolderDrop(e: DragEvent, folderId: string | null) {
         @dragleave="onFolderDragLeave"
         @drop="onFolderDrop($event, f.id)"
       >
-        <i class="fa-solid fa-folder nb-sidebar-icon" :style="{ color: f.color }" aria-hidden="true" />
+        <i
+          class="fa-solid fa-folder nb-sidebar-icon"
+          :style="{ color: f.color }"
+          aria-hidden="true"
+        />
         <template v-if="editingFolderId === f.id">
           <input
             v-model="editingName"
@@ -118,7 +127,12 @@ function onFolderDrop(e: DragEvent, folderId: string | null) {
         </template>
         <span v-else class="nb-sidebar-item-name">{{ f.name }}</span>
         <div class="nb-sidebar-item-actions" @click.stop>
-          <button type="button" class="nb-sidebar-item-btn" title="Переименовать" @click="startRename(f)">
+          <button
+            type="button"
+            class="nb-sidebar-item-btn"
+            title="Переименовать"
+            @click="startRename(f)"
+          >
             <i class="fa-solid fa-pen" aria-hidden="true" />
           </button>
           <button
@@ -129,7 +143,12 @@ function onFolderDrop(e: DragEvent, folderId: string | null) {
           >
             <i class="fa-solid fa-box-archive" aria-hidden="true" />
           </button>
-          <button type="button" class="nb-sidebar-item-btn nb-sidebar-item-btn--danger" title="Удалить" @click="emit('delete-folder', f.id)">
+          <button
+            type="button"
+            class="nb-sidebar-item-btn nb-sidebar-item-btn--danger"
+            title="Удалить"
+            @click="emit('delete-folder', f.id)"
+          >
             <i class="fa-solid fa-trash-can" aria-hidden="true" />
           </button>
         </div>
@@ -155,7 +174,11 @@ function onFolderDrop(e: DragEvent, folderId: string | null) {
           class="nb-sidebar-item nb-sidebar-item--archived"
           @click="emit('select-folder', f.id)"
         >
-          <i class="fa-solid fa-folder nb-sidebar-icon" :style="{ color: f.color, opacity: 0.5 }" aria-hidden="true" />
+          <i
+            class="fa-solid fa-folder nb-sidebar-icon"
+            :style="{ color: f.color, opacity: 0.5 }"
+            aria-hidden="true"
+          />
           <span class="nb-sidebar-item-name">{{ f.name }}</span>
           <div class="nb-sidebar-item-actions" @click.stop>
             <button

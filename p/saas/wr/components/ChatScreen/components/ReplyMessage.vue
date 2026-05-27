@@ -15,14 +15,23 @@ const filePreview = computed(() => file.value?.thumbnail_url_400)
 </script>
 
 <template>
-  <div class="ReplyMessage" :class="{ ReplyMessageClickable: !!onClick }" @click="onClick && onClick($event)">
+  <div
+    class="ReplyMessage"
+    :class="{ ReplyMessageClickable: !!onClick }"
+    @click="onClick && onClick($event)"
+  >
     <div v-if="file" class="ReplyMessageLeft">
-      <div class="ReplyMessagePhoto" :style="filePreview ? `background-image: url(${filePreview})` : ''"></div>
+      <div
+        class="ReplyMessagePhoto"
+        :style="filePreview ? `background-image: url(${filePreview})` : ''"
+      ></div>
     </div>
 
     <div class="ReplyMessageRight">
       <div class="ReplyMessageAuthor">{{ message.author?.name || 'Гость' }}</div>
-      <div class="ReplyMessageText">{{ message.text.length > 60 ? message.text.slice(0, 60) + '...' : message.text }}</div>
+      <div class="ReplyMessageText">
+        {{ message.text.length > 60 ? message.text.slice(0, 60) + '...' : message.text }}
+      </div>
     </div>
   </div>
 </template>

@@ -8,7 +8,12 @@ defineProps<{
 
 <template>
   <section class="dc-bpm-metric-grid">
-    <article v-for="item in metrics" :key="item.id" class="dc-bpm-metric-card" :class="`tone-${item.tone}`">
+    <article
+      v-for="item in metrics"
+      :key="item.id"
+      class="dc-bpm-metric-card"
+      :class="`tone-${item.tone}`"
+    >
       <p class="dc-bpm-metric-card__label">{{ item.label }}</p>
       <div class="dc-bpm-metric-card__row">
         <strong class="dc-bpm-metric-card__value">{{ item.value }}</strong>
@@ -29,9 +34,7 @@ defineProps<{
   padding: 10px;
   border-radius: var(--radius-md);
   border: 1px solid var(--border-soft);
-  background:
-    var(--gradient-glass),
-    color-mix(in srgb, var(--surface-2) 72%, transparent);
+  background: var(--gradient-glass), color-mix(in srgb, var(--surface-2) 72%, transparent);
   box-shadow: var(--shadow-xs);
 }
 

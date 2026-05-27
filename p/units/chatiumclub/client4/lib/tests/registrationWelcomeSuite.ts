@@ -60,23 +60,39 @@ export function runRegistrationWelcomeUnitChecks(): RegistrationWelcomeUnitTestR
       user: { email: 'a@b.c', name: 'Иван' },
       training: { id: '777', name: 'Демо-вебинар', start_date: '2026-06-01' }
     })
-    return e.email === 'a@b.c' && e.name === 'Иван' && e.activityId === '777' && e.activityName === 'Демо-вебинар' && e.activityDate === '2026-06-01'
+    return (
+      e.email === 'a@b.c' &&
+      e.name === 'Иван' &&
+      e.activityId === '777' &&
+      e.activityName === 'Демо-вебинар' &&
+      e.activityDate === '2026-06-01'
+    )
   })
 
-  tryPush(results, 'normalize_event_id_synthetic', 'normalizeRegistrationEvent синтетический event_id', () => {
-    const e = normalizeRegistrationEvent({ user: { email: 'a@b.c' }, training: { id: '777' } })
-    return e.gcEventId === 'reg_a@b.c_777'
-  })
+  tryPush(
+    results,
+    'normalize_event_id_synthetic',
+    'normalizeRegistrationEvent синтетический event_id',
+    () => {
+      const e = normalizeRegistrationEvent({ user: { email: 'a@b.c' }, training: { id: '777' } })
+      return e.gcEventId === 'reg_a@b.c_777'
+    }
+  )
 
   tryPush(results, 'normalize_event_id_explicit', 'normalizeRegistrationEvent явный id', () => {
     const e = normalizeRegistrationEvent({ id: 'gc-evt-1', user: { email: 'a@b.c' } })
     return e.gcEventId === 'gc-evt-1'
   })
 
-  tryPush(results, 'normalize_webinar_synonym', 'normalizeRegistrationEvent синоним webinar', () => {
-    const e = normalizeRegistrationEvent({ webinar: { id: '999', title: 'Вебинар X' } })
-    return e.activityId === '999' && e.activityName === 'Вебинар X'
-  })
+  tryPush(
+    results,
+    'normalize_webinar_synonym',
+    'normalizeRegistrationEvent синоним webinar',
+    () => {
+      const e = normalizeRegistrationEvent({ webinar: { id: '999', title: 'Вебинар X' } })
+      return e.activityId === '999' && e.activityName === 'Вебинар X'
+    }
+  )
 
   tryPush(results, 'normalize_root_synonyms', 'normalizeRegistrationEvent синонимы корня', () => {
     const e = normalizeRegistrationEvent({

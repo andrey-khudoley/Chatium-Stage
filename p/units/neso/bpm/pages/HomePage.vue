@@ -1,11 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import {
-  DcBpmHeaderControls,
-  DcBpmSidebar,
-  DcPageHeader,
-  DcThemeGlobalStyles
-} from '../components'
+import { DcBpmHeaderControls, DcBpmSidebar, DcPageHeader, DcThemeGlobalStyles } from '../components'
 import { DcAppShell } from '../layout'
 import { bpmCopy, type BpmLocale } from '../shared/bpmI18n'
 import { getStoredSidebarCollapsed } from '../shared/sidebarStorage'
@@ -114,13 +109,13 @@ function onThemeChange(id: string) {
       </DcPageHeader>
     </template>
 
-  <div class="bpm-home-page">
-    <header class="bpm-home-hero">
-      <p class="bpm-home-hero__kicker">{{ ui.workspace }}</p>
-      <h1>{{ projectTitle }}</h1>
-      <p>{{ ui.heroDescription }}</p>
-    </header>
-  </div>
+    <div class="bpm-home-page">
+      <header class="bpm-home-hero">
+        <p class="bpm-home-hero__kicker">{{ ui.workspace }}</p>
+        <h1>{{ projectTitle }}</h1>
+        <p>{{ ui.heroDescription }}</p>
+      </header>
+    </div>
   </DcAppShell>
 </template>
 
@@ -143,9 +138,7 @@ function onThemeChange(id: string) {
   border-radius: var(--radius-lg);
   border: 1px solid var(--border-soft);
   padding: 14px;
-  background:
-    var(--gradient-glass),
-    color-mix(in srgb, var(--surface-1) 86%, transparent);
+  background: var(--gradient-glass), color-mix(in srgb, var(--surface-1) 86%, transparent);
 }
 
 .bpm-home-hero__kicker {

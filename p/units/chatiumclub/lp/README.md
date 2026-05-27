@@ -47,4 +47,3 @@
 
 - 2026-05-06: создан проект `lp` (одноэкранный лендинг + Heap-таблица `Leads` + API `POST /api/submit`).
 - 2026-05-06: переименовано поле `createdAt` → `submittedAt` (имя `createdAt` зарезервировано Heap).
-

@@ -10,9 +10,7 @@ const props = defineProps<{
 }>()
 
 function getApiBaseUrl(): string {
-  const path = props.indexUrl.startsWith('http')
-    ? new URL(props.indexUrl).pathname
-    : props.indexUrl
+  const path = props.indexUrl.startsWith('http') ? new URL(props.indexUrl).pathname : props.indexUrl
   const basePath = path.replace(/\/$/, '') || ''
   const origin = typeof window !== 'undefined' ? window.location.origin : ''
   return basePath ? `${origin}${basePath}` : origin
@@ -30,31 +28,29 @@ const aggregates = ref({
   totalPaymentsCount: 0,
   totalPaymentsSum: 0
 })
-const latestReferrals = ref<Array<{
-  id: string
-  ref: string
-  name?: string
-  email?: string
-  registeredAt?: string
-  ordersCount: number
-  ordersSum: number
-  paymentsCount: number
-  paymentsSum: number
-}>>([])
+const latestReferrals = ref<
+  Array<{
+    id: string
+    ref: string
+    name?: string
+    email?: string
+    registeredAt?: string
+    ordersCount: number
+    ordersSum: number
+    paymentsCount: number
+    paymentsSum: number
+  }>
+>([])
 
 const inviteLinkFull = computed(() => {
   if (!inviteLink.value) return ''
-  const path = props.indexUrl.startsWith('http')
-    ? new URL(props.indexUrl).pathname
-    : props.indexUrl
+  const path = props.indexUrl.startsWith('http') ? new URL(props.indexUrl).pathname : props.indexUrl
   const basePath = path.replace(/\/$/, '') || ''
   const origin = typeof window !== 'undefined' ? window.location.origin : ''
   return `${origin}${basePath}/web/invite~${encodeURIComponent(inviteLink.value)}`
 })
 
-const referralsUrl = computed(() =>
-  props.campaignUrl ? `${props.campaignUrl}#referrals` : ''
-)
+const referralsUrl = computed(() => (props.campaignUrl ? `${props.campaignUrl}#referrals` : ''))
 
 function formatMoney(kopecks: number): string {
   if (kopecks === 0) return '0 ₽'
@@ -145,12 +141,16 @@ onMounted(() => {
       <StatsCard
         title="Оплаты"
         :value="dashboardLoading ? '—' : aggregates.totalPaymentsCount"
-        :subtitle="aggregates.totalPaymentsSum ? formatMoney(aggregates.totalPaymentsSum) : undefined"
+        :subtitle="
+          aggregates.totalPaymentsSum ? formatMoney(aggregates.totalPaymentsSum) : undefined
+        "
         icon="fas fa-ruble-sign"
       />
     </section>
 
-    <section class="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-secondary)] p-4 mb-6">
+    <section
+      class="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-secondary)] p-4 mb-6"
+    >
       <div class="flex items-center justify-between mb-3">
         <h2 class="text-lg text-[var(--color-text)]">Последние рефералы</h2>
         <a
@@ -187,10 +187,13 @@ onMounted(() => {
       </ul>
     </section>
 
-    <section class="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-secondary)] p-4 mb-6">
+    <section
+      class="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-secondary)] p-4 mb-6"
+    >
       <h2 class="text-lg text-[var(--color-text)] mb-3">Приглашение в кампанию</h2>
       <p class="text-[var(--color-text-secondary)] text-sm mb-3">
-        Создайте ссылку и отправьте участнику. После перехода по ссылке он сможет принять приглашение.
+        Создайте ссылку и отправьте участнику. После перехода по ссылке он сможет принять
+        приглашение.
       </p>
       <button
         v-if="!inviteLink"

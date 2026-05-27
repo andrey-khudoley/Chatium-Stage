@@ -142,10 +142,15 @@ export async function processWebhook(
   await loggerLib.writeServerLog(ctx, {
     severity: 7,
     message: `[${LOG_MODULE}] processWebhook: контракт найден`,
-    payload: { heapContractId: contract.id, lava_contract_id: payload.contractId, gc_order_id: contract.gc_order_id }
+    payload: {
+      heapContractId: contract.id,
+      lava_contract_id: payload.contractId,
+      gc_order_id: contract.gc_order_id
+    }
   })
 
-  const isSuccessfulPayment = payload.eventType === 'payment.success' && payload.status === 'completed'
+  const isSuccessfulPayment =
+    payload.eventType === 'payment.success' && payload.status === 'completed'
   if (!isSuccessfulPayment) {
     await loggerLib.writeServerLog(ctx, {
       severity: 6,

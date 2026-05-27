@@ -104,22 +104,20 @@
         <!-- Автопродление -->
         <div v-if="selectedPlan?.allowAutoRenewal" class="auto-renewal">
           <label class="checkbox-label">
-            <input v-model="autoRenewal" type="checkbox">
+            <input v-model="autoRenewal" type="checkbox" />
             <span class="checkmark"></span>
             <span class="label-text">Автопродление подписки</span>
           </label>
         </div>
 
         <!-- Кнопка оплаты -->
-        <button
-          class="btn-subscribe"
-          :disabled="!selectedPlan || subscribing"
-          @click="subscribe"
-        >
+        <button class="btn-subscribe" :disabled="!selectedPlan || subscribing" @click="subscribe">
           <i v-if="subscribing" class="fas fa-spinner fa-spin"></i>
           <span v-else>
             Возобновить подписку
-            <span v-if="selectedPlan" class="total-price">{{ formatPrice(selectedPlan.price) }}</span>
+            <span v-if="selectedPlan" class="total-price">{{
+              formatPrice(selectedPlan.price)
+            }}</span>
           </span>
         </button>
       </template>
@@ -195,22 +193,20 @@
         <!-- Автопродление -->
         <div v-if="selectedPlan?.allowAutoRenewal" class="auto-renewal">
           <label class="checkbox-label">
-            <input v-model="autoRenewal" type="checkbox">
+            <input v-model="autoRenewal" type="checkbox" />
             <span class="checkmark"></span>
             <span class="label-text">Автопродление подписки</span>
           </label>
         </div>
 
         <!-- Кнопка оплаты -->
-        <button
-          class="btn-subscribe"
-          :disabled="!selectedPlan || subscribing"
-          @click="subscribe"
-        >
+        <button class="btn-subscribe" :disabled="!selectedPlan || subscribing" @click="subscribe">
           <i v-if="subscribing" class="fas fa-spinner fa-spin"></i>
           <span v-else>
             Оформить подписку
-            <span v-if="selectedPlan" class="total-price">{{ formatPrice(selectedPlan.price) }}</span>
+            <span v-if="selectedPlan" class="total-price">{{
+              formatPrice(selectedPlan.price)
+            }}</span>
           </span>
         </button>
 
@@ -250,7 +246,7 @@ const props = defineProps({
     type: String,
     default: 'no_subscription'
   },
-  subscription: Object,
+  subscription: Object
 })
 
 const emit = defineEmits(['subscribed', 'cancel'])
@@ -283,16 +279,16 @@ const avatarStyle = computed(() => {
       ['#f093fb', '#f5576c'],
       ['#4facfe', '#00f2fe'],
       ['#43e97b', '#38f9d7'],
-      ['#fa709a', '#fee140'],
+      ['#fa709a', '#fee140']
     ]
     const index = (chat.value?.feedId?.charCodeAt(0) || 0) % colors.length
     const [from, to] = colors[index]
     return {
-      background: `linear-gradient(135deg, ${from} 0%, ${to} 100%)`,
+      background: `linear-gradient(135deg, ${from} 0%, ${to} 100%)`
     }
   }
   return {
-    background: `url(https://fs.chatium.ru/thumbnail/${chat.value.avatarHash}/s/200x) center/cover no-repeat`,
+    background: `url(https://fs.chatium.ru/thumbnail/${chat.value.avatarHash}/s/200x) center/cover no-repeat`
   }
 })
 
@@ -317,7 +313,7 @@ async function loadChatInfo() {
   const { makeApiUrl } = useApiUrl()
   try {
     // Сначала пробуем получить публичную инфу, если не получится - используем данные из чек-апа
-    const response = await fetch(makeApiUrl(`chats~${props.feedId}/public`)).then(r => r.json())
+    const response = await fetch(makeApiUrl(`chats~${props.feedId}/public`)).then((r) => r.json())
     chat.value = response.chat
   } catch (err) {
     console.error('Failed to load chat info:', err)
@@ -331,7 +327,9 @@ async function loadPlans() {
   const { makeApiUrl } = useApiUrl()
   try {
     // Используем новый endpoint для получения тарифов по чату
-    const response = await fetch(makeApiUrl(`chat-subscription-plans~by-chat/${props.feedId}/plans`)).then(r => r.json())
+    const response = await fetch(
+      makeApiUrl(`chat-subscription-plans~by-chat/${props.feedId}/plans`)
+    ).then((r) => r.json())
     plans.value = response || []
 
     // Выбираем первый активный план по умолчанию
@@ -351,7 +349,9 @@ async function loadPeriodOptions(plan) {
 
   const { makeApiUrl } = useApiUrl()
   try {
-    const response = await fetch(makeApiUrl(`chat-subscription-plans~plans/${plan.id}/periods`)).then(r => r.json())
+    const response = await fetch(
+      makeApiUrl(`chat-subscription-plans~plans/${plan.id}/periods`)
+    ).then((r) => r.json())
     periodOptions.value = response || []
     if (periodOptions.value.length > 0 && !selectedPeriod.value) {
       selectedPeriod.value = periodOptions.value[0].value
@@ -365,7 +365,7 @@ async function loadPeriodOptions(plan) {
 async function loadSavedCards() {
   const { makeApiUrl } = useApiUrl()
   try {
-    const response = await fetch(makeApiUrl('chat-subscriptions~cards')).then(r => r.json())
+    const response = await fetch(makeApiUrl('chat-subscriptions~cards')).then((r) => r.json())
     savedCards.value = response.cards || []
   } catch (err) {
     console.error('Failed to load saved cards:', err)
@@ -385,9 +385,9 @@ async function subscribe() {
       body: JSON.stringify({
         planId: selectedPlan.value.id,
         periodValue: selectedPeriod.value,
-        autoRenewal: autoRenewal.value,
+        autoRenewal: autoRenewal.value
       })
-    }).then(r => r.json())
+    }).then((r) => r.json())
 
     if (response.paymentLink) {
       // Перенаправляем на страницу оплаты
@@ -406,7 +406,12 @@ async function subscribe() {
 
 function getInitials(title) {
   if (!title) return '?'
-  return title.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase()
+  return title
+    .split(' ')
+    .map((w) => w[0])
+    .join('')
+    .substring(0, 2)
+    .toUpperCase()
 }
 
 function formatParticipants(count) {
@@ -435,9 +440,9 @@ function formatPrice(price) {
   }
 
   const currencySymbols = {
-    'RUB': '₽',
-    'USD': '$',
-    'EUR': '€',
+    RUB: '₽',
+    USD: '$',
+    EUR: '€'
   }
 
   const symbol = currencySymbols[currency] || currency
@@ -446,9 +451,9 @@ function formatPrice(price) {
 
 function formatDuration(plan) {
   const typeLabels = {
-    'days': { one: 'день', few: 'дня', many: 'дней' },
-    'months': { one: 'месяц', few: 'месяца', many: 'месяцев' },
-    'years': { one: 'год', few: 'года', many: 'лет' },
+    days: { one: 'день', few: 'дня', many: 'дней' },
+    months: { one: 'месяц', few: 'месяца', many: 'месяцев' },
+    years: { one: 'год', few: 'года', many: 'лет' }
   }
 
   const labels = typeLabels[plan.durationType] || typeLabels.days

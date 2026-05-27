@@ -1,5 +1,5 @@
 ---
-title: "LifePay — Карта личных кабинетов"
+title: 'LifePay — Карта личных кабинетов'
 type: reference
 tags:
   - topic/lifepay
@@ -17,29 +17,29 @@ project_refs:
 
 ## Сводная таблица
 
-| Домен | Что это | Кому доступно | API | Документация |
-|---|---|---|---|---|
-| `my.life-pay.ru` | Облачная фискализация и выставление ссылок СБП | Подключено по умолчанию при онлайн-кассе LifePay | Старый API `api.life-pay.ru/v1/` (bill, cloud-print, notification, transactions, lifehub и др.) | [apidoc.life-pay.ru](https://apidoc.life-pay.ru/) |
-| `home.life-pay.ru` | Интернет-эквайринг (карты + СБП через эквайринг) | Только при подключённом эквайринге, отдельная заявка | Новый ECOM API `api-ecom.life-pay.ru/v1/` | [docs.life-pos.ru](https://docs.life-pos.ru/docs/category/api-интернет-эквайринг) |
-| `lk.life-pay.ru` | Старый интерфейс ЛК фискализации | Альтернативный URL `my.life-pay.ru` | То же, что `my.life-pay.ru` | [apidoc.life-pay.ru](https://apidoc.life-pay.ru/) |
-| `my.life-pos.ru` | Кабинет LIFE POS (физические терминалы, NFC, POS-устройства) | Отдельная схема работы | LIFE POS API v6 | [docs.life-pos.ru](https://docs.life-pos.ru/) |
-| `support.life-pay.ru` | База знаний поддержки | Публичная | n/a | n/a |
+| Домен                 | Что это                                                      | Кому доступно                                        | API                                                                                             | Документация                                                                      |
+| --------------------- | ------------------------------------------------------------ | ---------------------------------------------------- | ----------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| `my.life-pay.ru`      | Облачная фискализация и выставление ссылок СБП               | Подключено по умолчанию при онлайн-кассе LifePay     | Старый API `api.life-pay.ru/v1/` (bill, cloud-print, notification, transactions, lifehub и др.) | [apidoc.life-pay.ru](https://apidoc.life-pay.ru/)                                 |
+| `home.life-pay.ru`    | Интернет-эквайринг (карты + СБП через эквайринг)             | Только при подключённом эквайринге, отдельная заявка | Новый ECOM API `api-ecom.life-pay.ru/v1/`                                                       | [docs.life-pos.ru](https://docs.life-pos.ru/docs/category/api-интернет-эквайринг) |
+| `lk.life-pay.ru`      | Старый интерфейс ЛК фискализации                             | Альтернативный URL `my.life-pay.ru`                  | То же, что `my.life-pay.ru`                                                                     | [apidoc.life-pay.ru](https://apidoc.life-pay.ru/)                                 |
+| `my.life-pos.ru`      | Кабинет LIFE POS (физические терминалы, NFC, POS-устройства) | Отдельная схема работы                               | LIFE POS API v6                                                                                 | [docs.life-pos.ru](https://docs.life-pos.ru/)                                     |
+| `support.life-pay.ru` | База знаний поддержки                                        | Публичная                                            | n/a                                                                                             | n/a                                                                               |
 
 ## Карта документации `apidoc.life-pay.ru` (для кабинета `my.life-pay.ru`)
 
 Проверено 13.05.2026. Действующая публичная документация старого API. Base URL всех эндпоинтов: `https://api.life-pay.ru/v1/`. Авторизация: `apikey` + `login` (телефон в формате `7XXXXXXXXXX`) в теле или query запроса.
 
-| Раздел | Что покрывает | Релевантность для проекта Ольги |
-|---|---|---|
-| [`/bill/`](https://apidoc.life-pay.ru/bill/index/) | `POST /v1/bill` (создать счёт), `GET /v1/bill/status`, `POST /v1/bill/cancellation`. Методы: `sbp` (по умолчанию), `internetAcquiring`, `mobileCommerce`. Поддерживает `callback_url` в теле запроса | Высокая. Основной fallback для программного выставления СБП-ссылок |
-| [`/notification/`](https://apidoc.life-pay.ru/notification/index) | Webhook-уведомления о транзакциях (v2.0). URL задаётся в ЛК (Настройки → Разработчикам) или прямо в `bill.callback_url`. Retry до 10 попыток (1/3/5/10 мин → раз в час), ожидается HTTP 200 | Высокая |
-| [`/transactions/`](https://apidoc.life-pay.ru/transactions/) | Список транзакций, возврат `/refund` | Средняя (для отчётов и возвратов) |
-| [`/cloud-print/`](https://apidoc.life-pay.ru/cloud-print/) | Фискальный чек, чек ФФД 1.2, нефискальный, коррекции, открытие смены, X/Z-отчёт | Высокая (фискализация при использовании fallback bill) |
-| [`/orders/`](https://apidoc.life-pay.ru/orders/index) | Импорт заказов | Низкая |
-| [`/catalogue/`](https://apidoc.life-pay.ru/catalogue/index) | Импорт каталога товаров | Низкая |
-| [`/app-integration/`](https://apidoc.life-pay.ru/app-integration/) | Запуск приложения LifePay из стороннего | Не релевантно |
-| [`/lifehub/`](https://apidoc.life-pay.ru/lifehub/) | Локальный шлюз LIFE Hub: команды принтера, POS, сверка | Не релевантно |
-| [`/life-pos-checkout/`](https://apidoc.life-pay.ru/life-pos-checkout/) | Операции платёжного терминала, авторизация, периферия | Не релевантно |
+| Раздел                                                                 | Что покрывает                                                                                                                                                                                        | Релевантность для проекта Ольги                                    |
+| ---------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| [`/bill/`](https://apidoc.life-pay.ru/bill/index/)                     | `POST /v1/bill` (создать счёт), `GET /v1/bill/status`, `POST /v1/bill/cancellation`. Методы: `sbp` (по умолчанию), `internetAcquiring`, `mobileCommerce`. Поддерживает `callback_url` в теле запроса | Высокая. Основной fallback для программного выставления СБП-ссылок |
+| [`/notification/`](https://apidoc.life-pay.ru/notification/index)      | Webhook-уведомления о транзакциях (v2.0). URL задаётся в ЛК (Настройки → Разработчикам) или прямо в `bill.callback_url`. Retry до 10 попыток (1/3/5/10 мин → раз в час), ожидается HTTP 200          | Высокая                                                            |
+| [`/transactions/`](https://apidoc.life-pay.ru/transactions/)           | Список транзакций, возврат `/refund`                                                                                                                                                                 | Средняя (для отчётов и возвратов)                                  |
+| [`/cloud-print/`](https://apidoc.life-pay.ru/cloud-print/)             | Фискальный чек, чек ФФД 1.2, нефискальный, коррекции, открытие смены, X/Z-отчёт                                                                                                                      | Высокая (фискализация при использовании fallback bill)             |
+| [`/orders/`](https://apidoc.life-pay.ru/orders/index)                  | Импорт заказов                                                                                                                                                                                       | Низкая                                                             |
+| [`/catalogue/`](https://apidoc.life-pay.ru/catalogue/index)            | Импорт каталога товаров                                                                                                                                                                              | Низкая                                                             |
+| [`/app-integration/`](https://apidoc.life-pay.ru/app-integration/)     | Запуск приложения LifePay из стороннего                                                                                                                                                              | Не релевантно                                                      |
+| [`/lifehub/`](https://apidoc.life-pay.ru/lifehub/)                     | Локальный шлюз LIFE Hub: команды принтера, POS, сверка                                                                                                                                               | Не релевантно                                                      |
+| [`/life-pos-checkout/`](https://apidoc.life-pay.ru/life-pos-checkout/) | Операции платёжного терминала, авторизация, периферия                                                                                                                                                | Не релевантно                                                      |
 
 ## Что подключено у ИП Яковлева сейчас
 
@@ -84,14 +84,14 @@ LifePay даёт два разных способа выставлять СБП-
 
 Эту таблицу нужно держать рядом с `api-contracts.md`. До подключения эквайринга часть полей пустая.
 
-| Credential | Где взять | Для какого API |
-|---|---|---|
-| `apikey` (старый) | `my.life-pay.ru` → Настройки → Разработчикам | `POST /v1/bill`, `POST /v1/cloud-print` |
-| `login` | Номер телефона владельца компании в формате 7XXXXXXXXXX | старый API |
-| `service_id` | `home.life-pay.ru` → Интеграция → Сервисы (слева от имени) | ECOM API |
-| `api_key` (ECOM) | `home.life-pay.ru` → Интеграция → Сервисы → иконка ключа 🔑 | ECOM API |
-| Секретный ключ webhook | `home.life-pay.ru` → Настройки магазина | ECOM webhook |
-| URL уведомлений | `home.life-pay.ru` → Настройки → Разработчикам | ECOM webhook |
+| Credential             | Где взять                                                   | Для какого API                          |
+| ---------------------- | ----------------------------------------------------------- | --------------------------------------- |
+| `apikey` (старый)      | `my.life-pay.ru` → Настройки → Разработчикам                | `POST /v1/bill`, `POST /v1/cloud-print` |
+| `login`                | Номер телефона владельца компании в формате 7XXXXXXXXXX     | старый API                              |
+| `service_id`           | `home.life-pay.ru` → Интеграция → Сервисы (слева от имени)  | ECOM API                                |
+| `api_key` (ECOM)       | `home.life-pay.ru` → Интеграция → Сервисы → иконка ключа 🔑 | ECOM API                                |
+| Секретный ключ webhook | `home.life-pay.ru` → Настройки магазина                     | ECOM webhook                            |
+| URL уведомлений        | `home.life-pay.ru` → Настройки → Разработчикам              | ECOM webhook                            |
 
 ## Принципиальный вывод для проекта Ольги
 

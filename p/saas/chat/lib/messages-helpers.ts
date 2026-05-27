@@ -34,7 +34,7 @@ export function normalizeReactions(message: FeedMessageMinimal): Record<string, 
       reactions = {}
     }
   }
-  return (reactions && typeof reactions === 'object' && !Array.isArray(reactions))
+  return reactions && typeof reactions === 'object' && !Array.isArray(reactions)
     ? (reactions as Record<string, unknown>)
     : {}
 }

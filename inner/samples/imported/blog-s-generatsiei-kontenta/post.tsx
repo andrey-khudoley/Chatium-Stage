@@ -1,11 +1,11 @@
-import { jsx } from "@app/html-jsx"
+import { jsx } from '@app/html-jsx'
 import BlogPostPage from './pages/BlogPostPage.vue'
 import PostsTable from './tables/posts.table'
 import { getThumbnailUrl } from '@app/storage'
 
 export const blogPostRoute = app.get('/:slug', async (ctx, req) => {
   const [post] = await PostsTable.findAll(ctx, {
-    where: { 
+    where: {
       slug: req.params.slug
     },
     limit: 1
@@ -21,14 +21,14 @@ export const blogPostRoute = app.get('/:slug', async (ctx, req) => {
   }
 
   const postExcerpt = post.excerpt || (post.content ? post.content.substring(0, 160) : '')
-  const postImageUrl = post.coverImage ? getThumbnailUrl(ctx,post.coverImage, 1200, 630) : null 
+  const postImageUrl = post.coverImage ? getThumbnailUrl(ctx, post.coverImage, 1200, 630) : null
 
   return (
     <html>
       <head>
         <title>{post.title} - Имя автора</title>
         <meta name="description" content={postExcerpt} />
-        
+
         {/* Open Graph meta tags */}
         <meta property="og:title" content={post.title} />
         <meta property="og:description" content={postExcerpt} />
@@ -36,9 +36,15 @@ export const blogPostRoute = app.get('/:slug', async (ctx, req) => {
         <meta property="og:type" content="article" />
         <meta property="og:site_name" content="Название блога - Персональный блог" />
         <meta property="article:author" content="Название блога" />
-        {post.publishedAt && <meta property="article:published_time" content={new Date(post.publishedAt).toISOString()} />}
-        {post.tags && post.tags.split(',').map(tag => <meta property="article:tag" content={tag.trim()} />)}
-        
+        {post.publishedAt && (
+          <meta
+            property="article:published_time"
+            content={new Date(post.publishedAt).toISOString()}
+          />
+        )}
+        {post.tags &&
+          post.tags.split(',').map((tag) => <meta property="article:tag" content={tag.trim()} />)}
+
         {/* Twitter Card meta tags */}
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content={post.title} />
@@ -46,7 +52,10 @@ export const blogPostRoute = app.get('/:slug', async (ctx, req) => {
         <meta name="twitter:image" content={postImageUrl} />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <script src="/s/static/lib/tailwind.3.4.16.min.js"></script>
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+          rel="stylesheet"
+        />
         <link href="/s/static/lib/fontawesome/6.7.2/css/all.min.css" rel="stylesheet" />
         <style type="text/tailwindcss">{`
           body {

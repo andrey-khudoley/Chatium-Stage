@@ -1,16 +1,12 @@
 <template>
   <Teleport to="body">
-    <div 
-      v-if="isOpen" 
-      class="modal-overlay" 
+    <div
+      v-if="isOpen"
+      class="modal-overlay"
       @click="handleOverlayClick"
-      :class="{ 'closing': isClosing }"
+      :class="{ closing: isClosing }"
     >
-      <div 
-        class="modal-container" 
-        :class="[size, { 'closing': isClosing }]"
-        @click.stop
-      >
+      <div class="modal-container" :class="[size, { closing: isClosing }]" @click.stop>
         <!-- Шапка -->
         <div v-if="title || showClose" class="modal-header">
           <h3 v-if="title" class="modal-title">{{ title }}</h3>
@@ -18,12 +14,12 @@
             <i class="fas fa-times"></i>
           </button>
         </div>
-        
+
         <!-- Контент -->
         <div class="modal-body" :class="bodyClass">
           <slot />
         </div>
-        
+
         <!-- Футер -->
         <div v-if="$slots.footer" class="modal-footer">
           <slot name="footer" />
@@ -72,7 +68,7 @@ function handleOverlayClick() {
 
 function close() {
   if (isClosing.value) return
-  
+
   if (props.closeDelay > 0) {
     isClosing.value = true
     setTimeout(() => {
@@ -87,15 +83,18 @@ function close() {
 }
 
 // Закрытие по Escape
-watch(() => props.isOpen, (isOpen) => {
-  if (isOpen) {
-    document.addEventListener('keydown', handleEscape)
-    document.body.style.overflow = 'hidden'
-  } else {
-    document.removeEventListener('keydown', handleEscape)
-    document.body.style.overflow = ''
+watch(
+  () => props.isOpen,
+  (isOpen) => {
+    if (isOpen) {
+      document.addEventListener('keydown', handleEscape)
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.removeEventListener('keydown', handleEscape)
+      document.body.style.overflow = ''
+    }
   }
-})
+)
 
 function handleEscape(e) {
   if (e.key === 'Escape') {
@@ -134,7 +133,9 @@ defineExpose({ close })
   flex-direction: column;
   opacity: 1;
   transform: scale(1);
-  transition: opacity 0.2s ease, transform 0.2s ease;
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease;
 }
 
 .modal-container.closing {
@@ -221,19 +222,19 @@ defineExpose({ close })
     padding: 0;
     align-items: flex-end;
   }
-  
+
   .modal-container {
     border-radius: 12px 12px 0 0;
     max-height: 85vh;
     animation: slideUp 0.2s ease;
   }
-  
+
   .modal-container.small,
   .modal-container.medium,
   .modal-container.large {
     max-width: 100%;
   }
-  
+
   .modal-container.full {
     max-width: 100%;
     height: 85vh;

@@ -1,4 +1,5 @@
 @chatium
+
 # Работа с файлами в Chatium
 
 Исчерпывающее руководство по загрузке, хранению и использованию файлов в Chatium. Документ структурирован для удобства полнотекстового поиска и работы с эмбеддингами.
@@ -73,38 +74,38 @@ const error = ref(null)
 async function uploadImage(file) {
   uploading.value = true
   error.value = null
-  
+
   try {
     // Получаем URL для загрузки
     const uploadUrl = await obtainStorageFilePutUrl(ctx)
-    
+
     // Создаём FormData
     const formData = new FormData()
     formData.append('Filedata', file)
-    
+
     // Загружаем файл
     const response = await fetch(uploadUrl, {
       method: 'POST',
       body: formData
     })
-    
+
     if (!response.ok) {
       throw new Error('Ошибка загрузки')
     }
-    
+
     // Получаем hash файла
     const hash = await response.text()
     imageHash.value = hash
-    
+
     ctx.account.log('Image uploaded', {
       level: 'info',
-      json: { 
+      json: {
         hash,
         fileName: file.name,
         fileSize: file.size
       }
     })
-    
+
     return {
       hash,
       name: file.name,
@@ -129,13 +130,8 @@ function handleFileSelect(event) {
 
 <template>
   <div>
-    <input 
-      type="file" 
-      @change="handleFileSelect" 
-      accept="image/*"
-      :disabled="uploading"
-    />
-    
+    <input type="file" @change="handleFileSelect" accept="image/*" :disabled="uploading" />
+
     <div v-if="uploading">Загрузка...</div>
     <div v-if="error">Ошибка: {{ error }}</div>
     <div v-if="imageHash">
@@ -157,21 +153,21 @@ const files = ref([])
 
 async function uploadFile(file) {
   const uploadUrl = await obtainStorageFilePutUrl(ctx)
-  
+
   const formData = new FormData()
   formData.append('Filedata', file)
-  
+
   const response = await fetch(uploadUrl, {
     method: 'POST',
     body: formData
   })
-  
+
   if (!response.ok) {
     throw new Error('Upload failed')
   }
-  
+
   const hash = await response.text()
-  
+
   // Сохраняем в БД через API
   const result = await apiSaveFileRoute.run(ctx, {
     hash,
@@ -179,7 +175,7 @@ async function uploadFile(file) {
     size: file.size,
     type: file.type
   })
-  
+
   files.value.push(result.file)
 }
 
@@ -192,15 +188,9 @@ function handleMultipleFiles(event) {
 </script>
 
 <template>
-  <input 
-    type="file" 
-    @change="handleMultipleFiles"
-    multiple
-  />
-  
-  <div v-for="file in files" :key="file.hash">
-    {{ file.name }} ({{ file.size }} bytes)
-  </div>
+  <input type="file" @change="handleMultipleFiles" multiple />
+
+  <div v-for="file in files" :key="file.hash">{{ file.name }} ({{ file.size }} bytes)</div>
 </template>
 ```
 
@@ -211,10 +201,10 @@ function handleMultipleFiles(event) {
 ### getThumbnailUrl - получение thumbnail
 
 ```typescript
-import { getThumbnailUrl } from "@app/storage"
+import { getThumbnailUrl } from '@app/storage'
 
 // С шириной и высотой
-const url = getThumbnailUrl(imageHash, 300, 200)  // 300x200
+const url = getThumbnailUrl(imageHash, 300, 200) // 300x200
 
 // Только ширина (высота пропорциональная)
 const url = getThumbnailUrl(imageHash, 400, undefined)
@@ -227,7 +217,7 @@ const url = getThumbnailUrl(imageHash, undefined, 300)
 
 ```vue
 <script setup>
-import { getThumbnailUrl } from "@app/storage"
+import { getThumbnailUrl } from '@app/storage'
 
 const product = {
   imageHash: 'abc123...'
@@ -235,10 +225,7 @@ const product = {
 </script>
 
 <template>
-  <img 
-    :src="getThumbnailUrl(product.imageHash, 300, 300)" 
-    alt="Product"
-  />
+  <img :src="getThumbnailUrl(product.imageHash, 300, 300)" alt="Product" />
 </template>
 ```
 
@@ -247,23 +234,15 @@ const product = {
 ```vue
 <template>
   <!-- Мобильные -->
-  <img 
-    v-if="isMobile"
-    :src="getThumbnailUrl(imageHash, 400, undefined)"
-    alt="Product"
-  />
-  
+  <img v-if="isMobile" :src="getThumbnailUrl(imageHash, 400, undefined)" alt="Product" />
+
   <!-- Десктоп -->
-  <img 
-    v-else
-    :src="getThumbnailUrl(imageHash, 800, undefined)"
-    alt="Product"
-  />
+  <img v-else :src="getThumbnailUrl(imageHash, 800, undefined)" alt="Product" />
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { getThumbnailUrl } from "@app/storage"
+import { getThumbnailUrl } from '@app/storage'
 
 const isMobile = ref(false)
 
@@ -280,7 +259,7 @@ onMounted(() => {
 ```vue
 <template>
   <!-- Отображаем 200x200, но загружаем 400x400 -->
-  <img 
+  <img
     :src="getThumbnailUrl(imageHash, 400, 400)"
     style="width: 200px; height: 200px;"
     alt="Product"
@@ -295,14 +274,14 @@ onMounted(() => {
 ### getVideoInfo - информация о видео
 
 ```typescript
-import { getVideoInfo } from "@app/storage"
+import { getVideoInfo } from '@app/storage'
 
 const videoInfo = await getVideoInfo(ctx, videoHash)
 
 // Доступные свойства
-videoInfo.hlsUrl     // URL для HLS стриминга
-videoInfo.mp4Url     // URL MP4 файла
-videoInfo.poster     // URL постера (обложки)
+videoInfo.hlsUrl // URL для HLS стриминга
+videoInfo.mp4Url // URL MP4 файла
+videoInfo.poster // URL постера (обложки)
 ```
 
 **Использование в Vue**:
@@ -324,12 +303,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <video 
-    v-if="videoInfo"
-    :src="videoInfo.mp4Url"
-    :poster="videoInfo.poster"
-    controls
-  />
+  <video v-if="videoInfo" :src="videoInfo.mp4Url" :poster="videoInfo.poster" controls />
 </template>
 ```
 
@@ -345,20 +319,20 @@ import { getVideoInfo, getThumbnailUrl } from "@app/storage"
 
 export default app.html('/video/:id', async (ctx, req) => {
   const videoHash = req.params.id
-  
+
   // Получаем информацию о видео
   const videoInfo = await getVideoInfo(ctx, videoHash)
-  
+
   // Генерируем постер, если его нет
   let poster = videoInfo.poster
   if (!poster && videoHash) {
     poster = getThumbnailUrl(videoHash, 800, 450)
   }
-  
+
   return (
     <html>
       <body>
-        <VuePage 
+        <VuePage
           videoInfo={videoInfo}
           poster={poster}
         />
@@ -373,7 +347,7 @@ export default app.html('/video/:id', async (ctx, req) => {
 ```vue
 <template>
   <div class="video-player">
-    <video 
+    <video
       v-if="props.videoInfo"
       :src="props.videoInfo.mp4Url"
       :poster="props.poster"
@@ -383,7 +357,7 @@ export default app.html('/video/:id', async (ctx, req) => {
     >
       Ваш браузер не поддерживает видео.
     </video>
-    
+
     <div v-if="props.videoInfo" class="video-info">
       <p>Разрешение: {{ videoWidth }} x {{ videoHeight }}</p>
       <p>Соотношение сторон: {{ aspectRatio }}</p>
@@ -411,15 +385,15 @@ const props = defineProps<{
   poster: string
 }>()
 
-const videoWidth = computed(() => 
+const videoWidth = computed(() =>
   Math.round(props.videoInfo.videoSize.width / 1000)
 )
 
-const videoHeight = computed(() => 
+const videoHeight = computed(() =>
   Math.round(props.videoInfo.videoSize.height / 1000)
 )
 
-const aspectRatio = computed(() => 
+const aspectRatio = computed(() =>
   `${props.videoInfo.videoAspectRatio[0]}:${props.videoInfo.videoAspectRatio[1]}`
 )
 </script>
@@ -449,19 +423,19 @@ const aspectRatio = computed(() =>
 
 ```typescript
 type VideoInfo = {
-  hash: string                    // Hash видео
-  url: string                     // Устаревшее поле
-  hlsUrl: string                  // URL для HLS стриминга
-  mp4Url: string                  // URL MP4 файла
-  status: 'done' | 'processing'   // Статус обработки
-  progress: number                // Прогресс обработки (0-100)
-  imageUrl: string                // URL изображения-превью
-  poster?: string                 // URL постера
+  hash: string // Hash видео
+  url: string // Устаревшее поле
+  hlsUrl: string // URL для HLS стриминга
+  mp4Url: string // URL MP4 файла
+  status: 'done' | 'processing' // Статус обработки
+  progress: number // Прогресс обработки (0-100)
+  imageUrl: string // URL изображения-превью
+  poster?: string // URL постера
   videoSize: {
-    width: number                 // Ширина в микронах (делить на 1000)
-    height: number                // Высота в микронах (делить на 1000)
+    width: number // Ширина в микронах (делить на 1000)
+    height: number // Высота в микронах (делить на 1000)
   }
-  videoAspectRatio: [number, number]  // Соотношение сторон [443, 960]
+  videoAspectRatio: [number, number] // Соотношение сторон [443, 960]
 }
 ```
 
@@ -475,7 +449,7 @@ type VideoInfo = {
 <template>
   <div class="kinescope-player">
     <div style="position: relative; padding-top: 56.25%; width: 100%">
-      <iframe 
+      <iframe
         src="https://kinescope.io/embed/mtrgdfMo3EtAYTervjGNsL"
         allow="autoplay; fullscreen; picture-in-picture; encrypted-media; gyroscope; accelerometer; clipboard-write; screen-wake-lock;"
         frameborder="0"
@@ -493,7 +467,7 @@ type VideoInfo = {
 <template>
   <div class="kinescope-player">
     <div style="position: relative; padding-top: 56.25%; width: 100%">
-      <iframe 
+      <iframe
         :src="`https://kinescope.io/embed/${props.kinescopeId}`"
         allow="autoplay; fullscreen; picture-in-picture; encrypted-media; gyroscope; accelerometer; clipboard-write; screen-wake-lock;"
         frameborder="0"
@@ -517,7 +491,7 @@ const props = defineProps<{
 <template>
   <div class="kinescope-player">
     <div :style="containerStyle">
-      <iframe 
+      <iframe
         :src="`https://kinescope.io/embed/${props.kinescopeId}`"
         allow="autoplay; fullscreen; picture-in-picture; encrypted-media; gyroscope; accelerometer; clipboard-write; screen-wake-lock;"
         frameborder="0"
@@ -564,7 +538,7 @@ const containerStyle = computed(() => ({
 <template>
   <div class="kinescope-player">
     <div style="position: relative; padding-top: 56.25%; width: 100%">
-      <iframe 
+      <iframe
         :src="kinescopeUrl"
         allow="autoplay; fullscreen; picture-in-picture; encrypted-media; gyroscope; accelerometer; clipboard-write; screen-wake-lock;"
         frameborder="0"
@@ -588,15 +562,15 @@ const props = defineProps<{
 
 const kinescopeUrl = computed(() => {
   const params = new URLSearchParams()
-  
+
   if (props.autoplay) params.append('autoplay', '1')
   if (props.muted) params.append('muted', '1')
   if (props.loop) params.append('loop', '1')
   if (props.time) params.append('t', props.time.toString())
-  
+
   const queryString = params.toString()
   const baseUrl = `https://kinescope.io/embed/${props.kinescopeId}`
-  
+
   return queryString ? `${baseUrl}?${queryString}` : baseUrl
 })
 </script>
@@ -624,7 +598,7 @@ export const Products = Heap.Table('products', {
 // Создание
 await Products.create(ctx, {
   name: 'Product',
-  image: imageHash  // Hash от загруженного файла
+  image: imageHash // Hash от загруженного файла
 })
 
 // Получение и отображение
@@ -696,17 +670,17 @@ import Gallery from '../tables/gallery.table'
 
 export const apiUploadImageRoute = app.post('/upload', async (ctx, req) => {
   const { hash, title, description } = req.body
-  
+
   if (!hash) {
     return { success: false, error: 'Image hash is required' }
   }
-  
+
   const image = await Gallery.create(ctx, {
     title,
     image: hash,
     description
   })
-  
+
   return { success: true, image }
 })
 
@@ -715,7 +689,7 @@ export const apiGetGalleryRoute = app.get('/list', async (ctx) => {
     order: [{ createdAt: 'desc' }],
     limit: 100
   })
-  
+
   return { success: true, images }
 })
 ```
@@ -733,33 +707,33 @@ const uploading = ref(false)
 
 async function uploadImage(file, title, description) {
   uploading.value = true
-  
+
   try {
     // 1. Получаем URL для загрузки
     const uploadUrl = await obtainStorageFilePutUrl(ctx)
-    
+
     // 2. Загружаем файл
     const formData = new FormData()
     formData.append('Filedata', file)
-    
+
     const uploadResponse = await fetch(uploadUrl, {
       method: 'POST',
       body: formData
     })
-    
+
     if (!uploadResponse.ok) {
       throw new Error('Upload failed')
     }
-    
+
     const hash = await uploadResponse.text()
-    
+
     // 3. Сохраняем в БД
     const result = await apiUploadImageRoute.run(ctx, {
       hash,
       title,
       description
     })
-    
+
     if (result.success) {
       images.value.unshift(result.image)
     }
@@ -785,10 +759,7 @@ onMounted(() => {
 <template>
   <div class="gallery">
     <div v-for="image in images" :key="image.id">
-      <img 
-        :src="getThumbnailUrl(image.image, 300, 300)"
-        :alt="image.title"
-      />
+      <img :src="getThumbnailUrl(image.image, 300, 300)" :alt="image.title" />
       <h3>{{ image.title }}</h3>
       <p>{{ image.description }}</p>
     </div>
@@ -816,7 +787,7 @@ onMounted(() => {
 // Загрузка файла из запроса
 export const uploadRoute = app.post('/files/upload', async (ctx, req) => {
   const file = req.files?.file
-  
+
   if (!file) {
     return { success: false, error: 'Файл не найден' }
   }
@@ -842,9 +813,9 @@ export const uploadRoute = app.post('/files/upload', async (ctx, req) => {
 ```typescript
 export const getFileInfoRoute = app.get('/files/:fileId/info', async (ctx, req) => {
   const { fileId } = req.params
-  
+
   const fileInfo = await ctx.storage.getFileInfo(fileId)
-  
+
   if (!fileInfo) {
     return { success: false, error: 'Файл не найден' }
   }
@@ -868,13 +839,13 @@ export const getFileInfoRoute = app.get('/files/:fileId/info', async (ctx, req) 
 ```typescript
 export const downloadRoute = app.get('/files/:fileId/download', async (ctx, req) => {
   const { fileId } = req.params
-  
+
   const fileStream = await ctx.storage.getFileStream(fileId)
   const fileInfo = await ctx.storage.getFileInfo(fileId)
-  
+
   ctx.resp.setHeader('Content-Type', fileInfo.type)
   ctx.resp.setHeader('Content-Disposition', `attachment; filename="${fileInfo.name}"`)
-  
+
   return ctx.resp.send(fileStream)
 })
 ```
@@ -886,9 +857,9 @@ export const downloadRoute = app.get('/files/:fileId/download', async (ctx, req)
 ```typescript
 export const deleteRoute = app.delete('/files/:fileId', async (ctx, req) => {
   const { fileId } = req.params
-  
+
   await ctx.storage.deleteFile(fileId)
-  
+
   return {
     success: true,
     message: 'Файл успешно удален'
@@ -903,13 +874,13 @@ export const deleteRoute = app.delete('/files/:fileId', async (ctx, req) => {
 ```typescript
 export const listRoute = app.get('/files', async (ctx, req) => {
   const { limit = 50, offset = 0, type } = req.query
-  
+
   const files = await ctx.storage.listFiles({
     limit: parseInt(limit as string),
     offset: parseInt(offset as string),
     filter: type ? { type } : {}
   })
-  
+
   return {
     success: true,
     files,
@@ -930,13 +901,10 @@ export const listRoute = app.get('/files', async (ctx, req) => {
 export const createThumbnailRoute = app.post('/files/:fileId/thumbnail', async (ctx, req) => {
   const { fileId } = req.params
   const { width, height, quality = 80 } = req.body
-  
-  const thumbnail = await ctx.storage.createThumbnail(
-    fileId,
-    parseInt(width),
-    parseInt(height),
-    { quality: parseInt(quality) }
-  )
+
+  const thumbnail = await ctx.storage.createThumbnail(fileId, parseInt(width), parseInt(height), {
+    quality: parseInt(quality)
+  })
 
   return {
     success: true,
@@ -952,12 +920,14 @@ export const createThumbnailRoute = app.post('/files/:fileId/thumbnail', async (
 ### Когда использовать ctx.storage API
 
 ✅ **Используйте ctx.storage когда:**
+
 - Нужна прямая загрузка файлов из серверного кода
 - Обрабатываете файлы из внешних источников (API, webhooks)
 - Требуется серверная обработка файлов перед сохранением
 - Нужен полный контроль над процессом загрузки
 
 ❌ **Не используйте ctx.storage когда:**
+
 - Загружаете файлы с клиента (используйте `obtainStorageFilePutUrl`)
 - Просто отображаете изображения (используйте `getThumbnailUrl`)
 - Работаете с hash файлов в таблицах (используйте ImageFile, VideoFile)
@@ -989,7 +959,7 @@ export const infoRoute = app.get('/files/:fileId', async (ctx, req) => {
 export const downloadRoute = app.get('/files/:fileId/download', async (ctx, req) => {
   const stream = await ctx.storage.getFileStream(req.params.fileId)
   const info = await ctx.storage.getFileInfo(req.params.fileId)
-  
+
   ctx.resp.setHeader('Content-Disposition', `attachment; filename="${info.name}"`)
   return ctx.resp.send(stream)
 })
@@ -1007,29 +977,29 @@ export const deleteRoute = app.delete('/files/:fileId', async (ctx, req) => {
 export const safeUploadRoute = app.post('/upload', async (ctx, req) => {
   try {
     const file = req.files?.file
-    
+
     if (!file) {
       return { success: false, error: 'Файл не найден' }
     }
-    
+
     // Валидация типа
     const allowedTypes = ['image/jpeg', 'image/png', 'image/gif']
     if (!allowedTypes.includes(file.type)) {
       return { success: false, error: 'Недопустимый тип файла' }
     }
-    
+
     // Валидация размера (макс 10 МБ)
     const maxSize = 10 * 1024 * 1024
     if (file.size > maxSize) {
       return { success: false, error: 'Размер файла превышает 10 МБ' }
     }
-    
+
     const result = await ctx.storage.uploadFile({
       name: file.name,
       type: file.type,
       data: file.data
     })
-    
+
     return { success: true, fileId: result.fileId }
   } catch (error) {
     return {
@@ -1053,32 +1023,30 @@ export const safeUploadRoute = app.post('/upload', async (ctx, req) => {
 ### Загрузка
 
 ✅ **Проверяйте тип файла**:
+
 ```vue
 <script setup>
 function handleFileSelect(event) {
   const file = event.target.files[0]
-  
+
   if (!file.type.startsWith('image/')) {
     error.value = 'Только изображения разрешены'
     return
   }
-  
+
   uploadImage(file)
 }
 </script>
 
 <template>
-  <input 
-    type="file" 
-    @change="handleFileSelect"
-    accept="image/*"
-  />
+  <input type="file" @change="handleFileSelect" accept="image/*" />
 </template>
 ```
 
 ✅ **Проверяйте размер**:
+
 ```typescript
-const MAX_FILE_SIZE = 10 * 1024 * 1024  // 10 MB
+const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10 MB
 
 if (file.size > MAX_FILE_SIZE) {
   return { success: false, error: 'Файл слишком большой' }
@@ -1086,6 +1054,7 @@ if (file.size > MAX_FILE_SIZE) {
 ```
 
 ✅ **Показывайте прогресс**:
+
 ```vue
 <div v-if="uploading">
   <div class="spinner"></div>
@@ -1096,6 +1065,7 @@ if (file.size > MAX_FILE_SIZE) {
 ### Изображения
 
 ✅ **Используйте правильные размеры**:
+
 ```typescript
 // Для карточек товаров
 getThumbnailUrl(hash, 300, 300)
@@ -1108,22 +1078,22 @@ getThumbnailUrl(hash, 1200, undefined)
 ```
 
 ✅ **Учитывайте Retina**:
+
 ```typescript
 // Отображаем 200x200, загружаем 400x400
 getThumbnailUrl(hash, 400, 400)
 ```
 
 ✅ **Добавляйте alt текст**:
+
 ```vue
-<img 
-  :src="getThumbnailUrl(hash, 300, 300)"
-  :alt="product.title"
-/>
+<img :src="getThumbnailUrl(hash, 300, 300)" :alt="product.title" />
 ```
 
 ### Безопасность
 
 ✅ **Валидируйте hash перед использованием**:
+
 ```typescript
 if (!hash || typeof hash !== 'string' || hash.length === 0) {
   return { success: false, error: 'Invalid hash' }
@@ -1131,12 +1101,13 @@ if (!hash || typeof hash !== 'string' || hash.length === 0) {
 ```
 
 ✅ **Проверяйте права доступа**:
+
 ```typescript
 import { requireRealUser } from '@app/auth'
 
 export const uploadRoute = app.post('/upload', async (ctx, req) => {
-  requireRealUser(ctx)  // Только авторизованные могут загружать
-  
+  requireRealUser(ctx) // Только авторизованные могут загружать
+
   // Загрузка файла
 })
 ```
@@ -1154,4 +1125,3 @@ export const uploadRoute = app.post('/upload', async (ctx, req) => {
 **Версия**: 1.1  
 **Дата**: 2025-11-08  
 **Последнее обновление**: Добавлена документация ctx.storage API для серверной работы с файлами
-

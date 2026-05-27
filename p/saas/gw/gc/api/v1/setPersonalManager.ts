@@ -14,6 +14,8 @@ export const setPersonalManagerHandler: V1GcHandler = async (_ctx, a) => {
   return { kind: 'gc_result', gc }
 }
 
-export const setPersonalManagerRoute = app.post('/', async (ctx, req) => handleV1Op(ctx, req, 'setPersonalManager', setPersonalManagerHandler))
+export const setPersonalManagerRoute = app.post('/', async (ctx, req) =>
+  handleV1Op(ctx, req, 'setPersonalManager', setPersonalManagerHandler)
+)
 
 export default setPersonalManagerRoute

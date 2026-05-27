@@ -51,8 +51,8 @@ const visibleScenarios = computed(() => {
         <p class="bpm-design-index__kicker">Design Catalog</p>
         <h1>Design scenarios for BPM</h1>
         <p>
-          Каталог полностью изолирован от API-логики: только демонстрация UI-компоновок
-          на reusable-компонентах из `design_2`.
+          Каталог полностью изолирован от API-логики: только демонстрация UI-компоновок на
+          reusable-компонентах из `design_2`.
         </p>
       </div>
 
@@ -66,10 +66,26 @@ const visibleScenarios = computed(() => {
 
     <section class="bpm-design-index__controls">
       <input v-model="query" type="text" placeholder="Поиск сценария" />
-      <button type="button" :class="{ active: themeFilter === 'all' }" @click="themeFilter = 'all'">All</button>
-      <button type="button" :class="{ active: themeFilter === 'dark' }" @click="themeFilter = 'dark'">Dark</button>
-      <button type="button" :class="{ active: themeFilter === 'light' }" @click="themeFilter = 'light'">Light</button>
-      <span class="bpm-design-index__counter">{{ visibleScenarios.length }} / {{ scenarios.length }}</span>
+      <button type="button" :class="{ active: themeFilter === 'all' }" @click="themeFilter = 'all'">
+        All
+      </button>
+      <button
+        type="button"
+        :class="{ active: themeFilter === 'dark' }"
+        @click="themeFilter = 'dark'"
+      >
+        Dark
+      </button>
+      <button
+        type="button"
+        :class="{ active: themeFilter === 'light' }"
+        @click="themeFilter = 'light'"
+      >
+        Light
+      </button>
+      <span class="bpm-design-index__counter"
+        >{{ visibleScenarios.length }} / {{ scenarios.length }}</span
+      >
     </section>
 
     <section class="bpm-design-index__grid">
@@ -115,9 +131,7 @@ const visibleScenarios = computed(() => {
   display: grid;
   grid-template-columns: 1fr auto;
   gap: 12px;
-  background:
-    var(--gradient-glass),
-    color-mix(in srgb, var(--surface-1) 84%, transparent);
+  background: var(--gradient-glass), color-mix(in srgb, var(--surface-1) 84%, transparent);
 }
 
 .bpm-design-index__kicker {
@@ -215,9 +229,7 @@ const visibleScenarios = computed(() => {
   padding: 10px;
   text-decoration: none;
   color: inherit;
-  background:
-    var(--gradient-glass),
-    color-mix(in srgb, var(--surface-2) 82%, transparent);
+  background: var(--gradient-glass), color-mix(in srgb, var(--surface-2) 82%, transparent);
 }
 
 .bpm-design-index__card h2 {

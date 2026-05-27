@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen flex flex-col" style="background: var(--wr-bg);">
+  <div class="min-h-screen flex flex-col" style="background: var(--wr-bg)">
     <header class="glass sticky top-0 z-50">
       <div class="max-w-7xl mx-auto px-3 sm:px-6 py-3 flex items-center justify-end">
         <HeaderActions />
@@ -13,7 +13,10 @@
         </div>
         <h1 class="text-2xl sm:text-3xl font-bold mb-4 wr-text-primary">Страница не найдена</h1>
         <p class="text-lg wr-text-tertiary mb-6">{{ message }}</p>
-        <p class="text-sm wr-text-muted">Если вы уверены, что ссылка верная — попробуйте обновить страницу или обратитесь к организатору мероприятия.</p>
+        <p class="text-sm wr-text-muted">
+          Если вы уверены, что ссылка верная — попробуйте обновить страницу или обратитесь к
+          организатору мероприятия.
+        </p>
       </div>
     </div>
   </div>

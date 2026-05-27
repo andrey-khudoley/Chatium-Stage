@@ -28,7 +28,7 @@ const props = withDefaults(defineProps<MessageComponentProps>(), {
   timeFormat: 'HH:mm',
   ctxMenuOpen: false,
   enableReplies: true,
-  enableReactions: true,
+  enableReactions: true
 })
 
 const emit = defineEmits<{
@@ -118,7 +118,9 @@ function replyMessageClickHandler(event: MouseEvent) {
   const chatScreenElement = (event.target as HTMLElement)?.closest<HTMLDivElement>('.ChatScreen')
 
   if (chatScreenElement) {
-    const messageElement = chatScreenElement.querySelector(`[data-id="${props.message.replyTo?.id}"]`)
+    const messageElement = chatScreenElement.querySelector(
+      `[data-id="${props.message.replyTo?.id}"]`
+    )
 
     if (messageElement) {
       if (timeoutHandler1) clearTimeout(timeoutHandler1)
@@ -224,7 +226,7 @@ function getHeartCount(): number {
 const hasMyHeart = computed(() => {
   const reactions = props.message.reactions
   if (!reactions || !reactions[HEART_EMOJI] || !currentUserId.value) return false
-  return reactions[HEART_EMOJI].some(r => r.user_id === currentUserId.value)
+  return reactions[HEART_EMOJI].some((r) => r.user_id === currentUserId.value)
 })
 
 const heartCount = computed(() => getHeartCount())
@@ -242,7 +244,7 @@ async function toggleHeart() {
     await post(store.chat.messages_react_url, {
       messageId: props.message.id,
       reaction: HEART_EMOJI,
-      action: isMine ? 'unset' : 'set',
+      action: isMine ? 'unset' : 'set'
     })
   } catch (e) {
     console.error('Failed to toggle reaction:', e)
@@ -262,7 +264,7 @@ async function toggleHeart() {
       MessageOutgoing: message.isOutgoing,
       MessageSameAuthor: message.isSameAuthor,
       MessageAdmin: isAdminMessage,
-      MessageBanner: isSaleBanner,
+      MessageBanner: isSaleBanner
     }"
     :data-id="message.id"
     @dblclick="$emit('dblclick', $event)"
@@ -295,46 +297,80 @@ async function toggleHeart() {
 
     <!-- Regular message rendering -->
     <div v-else class="MessageCenter">
-      <div v-if="!message.isSameAuthor" class="MessageAuthorName" :style="{ color: isAdminMessage ? undefined : nameColor }" :class="{ MessageAdminAuthor: isAdminMessage }">
+      <div
+        v-if="!message.isSameAuthor"
+        class="MessageAuthorName"
+        :style="{ color: isAdminMessage ? undefined : nameColor }"
+        :class="{ MessageAdminAuthor: isAdminMessage }"
+      >
         <span v-if="isAdminMessage && isMyMessage" class="MessageAdminBadge">Модератор</span>
         {{ message.author?.name }}
         <span v-if="isAdminMessage && !isMyMessage" class="MessageAdminBadge">Модератор</span>
       </div>
 
-      <div v-if="message.textTokens?.length || message.text || message.files?.length" class="MessageText">
+      <div
+        v-if="message.textTokens?.length || message.text || message.files?.length"
+        class="MessageText"
+      >
         <div class="MessageWithReply">
-          <div class="MessageTextWrapper" :class="{ MessageTextWrapperOutgoing: message.isOutgoing, MessageTextWrapperAdmin: isAdminMessage && !message.isOutgoing }">
-            <ReplyMessage v-if="message.replyTo" :message="message.replyTo" @click="replyMessageClickHandler" />
+          <div
+            class="MessageTextWrapper"
+            :class="{
+              MessageTextWrapperOutgoing: message.isOutgoing,
+              MessageTextWrapperAdmin: isAdminMessage && !message.isOutgoing
+            }"
+          >
+            <ReplyMessage
+              v-if="message.replyTo"
+              :message="message.replyTo"
+              @click="replyMessageClickHandler"
+            />
 
-          <div v-if="textTokens || message.text" class="MessageContent">
-            <template v-if="textTokens">
-              <template v-for="(token, idx) in textTokens" :key="idx">
-                <br v-if="typeof token === 'string' && token === '\n'" />
-                <span v-else-if="typeof token === 'string'">{{ token }}</span>
-                <a v-else :href="token.onClick?.url ?? token.v" target="_blank" rel="noopener noreferrer" class="MessageLink">{{ token.v }}</a>
+            <div v-if="textTokens || message.text" class="MessageContent">
+              <template v-if="textTokens">
+                <template v-for="(token, idx) in textTokens" :key="idx">
+                  <br v-if="typeof token === 'string' && token === '\n'" />
+                  <span v-else-if="typeof token === 'string'">{{ token }}</span>
+                  <a
+                    v-else
+                    :href="token.onClick?.url ?? token.v"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="MessageLink"
+                    >{{ token.v }}</a
+                  >
+                </template>
               </template>
-            </template>
 
-            <span v-if="showTimestamps" class="MessageInlineTime">{{ time(message.createdAt) }}</span>
-          </div>
+              <span v-if="showTimestamps" class="MessageInlineTime">{{
+                time(message.createdAt)
+              }}</span>
+            </div>
 
-          <div v-if="message.files?.length" class="MessageFiles">
-            <MessageFile v-for="file in message.files" :key="file.hash || file.url" :file="file" />
-          </div>
+            <div v-if="message.files?.length" class="MessageFiles">
+              <MessageFile
+                v-for="file in message.files"
+                :key="file.hash || file.url"
+                :file="file"
+              />
+            </div>
 
-          <AppUiPresenter v-if="message.blocks?.length" :blocks="message.blocks" />
+            <AppUiPresenter v-if="message.blocks?.length" :blocks="message.blocks" />
 
-          <!-- Heart reaction chip -->
-          <div v-if="props.enableReactions && showHeartChip" class="MsgReactions">
-            <button
-              class="MsgReactionChip"
-              :class="{ 'MsgReactionChip--active': hasMyHeart, 'MsgReactionChip--loading': reactingHeart }"
-              @click.stop="toggleHeart()"
-            >
-              <span class="MsgReactionEmoji">❤️</span>
-              <span class="MsgReactionCount">{{ heartCount }}</span>
-            </button>
-          </div>
+            <!-- Heart reaction chip -->
+            <div v-if="props.enableReactions && showHeartChip" class="MsgReactions">
+              <button
+                class="MsgReactionChip"
+                :class="{
+                  'MsgReactionChip--active': hasMyHeart,
+                  'MsgReactionChip--loading': reactingHeart
+                }"
+                @click.stop="toggleHeart()"
+              >
+                <span class="MsgReactionEmoji">❤️</span>
+                <span class="MsgReactionCount">{{ heartCount }}</span>
+              </button>
+            </div>
           </div>
 
           <!-- Hover heart + reply -->
@@ -354,9 +390,19 @@ async function toggleHeart() {
               @click="onReply"
               title="Ответить"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="9 14 4 9 9 4"/>
-                <path d="M20 20v-7a4 4 0 0 0-4-4H4"/>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <polyline points="9 14 4 9 9 4" />
+                <path d="M20 20v-7a4 4 0 0 0-4-4H4" />
               </svg>
             </button>
           </div>
@@ -465,7 +511,9 @@ async function toggleHeart() {
 
 /* Входящие сообщения в светлой теме: тень + контрастная обводка */
 .theme-light .MessageTextWrapper:not(.MessageTextWrapperOutgoing):not(.MessageTextWrapperAdmin) {
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.08),
+    0 1px 2px rgba(0, 0, 0, 0.04);
 }
 
 .MessageContent {

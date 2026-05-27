@@ -1,4 +1,5 @@
 @chatium
+
 # Модуль @sender: Работа с каналами коммуникации
 
 Исчерпывающее руководство по работе с модулем `@sender` для управления мессенджерами, чатами, сообщениями и каналами связи в Chatium. Документ структурирован для удобства полнотекстового поиска и работы с эмбеддингами.
@@ -56,6 +57,7 @@
 ### 1. Каналы связи (Channel)
 
 Настройка источников коммуникации:
+
 - Telegram боты
 - VK группы
 - Email сервера
@@ -65,6 +67,7 @@
 ### 2. Чаты (Chat)
 
 Основная сущность для переписки:
+
 - Хранение истории сообщений
 - Связь с Person (профилем)
 - Поиск по внутренним и внешним ID
@@ -72,6 +75,7 @@
 ### 3. Профили (Person)
 
 Дополнительная информация о пользователе:
+
 - Свойства и поля
 - Теги
 - UTM метки
@@ -80,6 +84,7 @@
 ### 4. Метрики (Metrics)
 
 Система отслеживания:
+
 - UTM параметры
 - Стартовые параметры
 - Короткие ссылки для запуска ботов
@@ -99,12 +104,12 @@
 ```typescript
 app.accountHook('@sender/message-received', async (ctx, params: MessageReceivedParams) => {
   const { channel, chatId, person, user, message, sourcePayload } = params
-  
+
   // Фильтрация по каналу (рекомендуется)
   if (channel.id !== 'your-channel-id') {
     return
   }
-  
+
   ctx.account.log('Входящее сообщение', {
     level: 'info',
     json: {
@@ -113,7 +118,7 @@ app.accountHook('@sender/message-received', async (ctx, params: MessageReceivedP
       username: person?.username
     }
   })
-  
+
   // Обработка сообщения
   if (message.text === '/start') {
     await sendMessageToChat(ctx, chatId, {
@@ -127,16 +132,17 @@ app.accountHook('@sender/message-received', async (ctx, params: MessageReceivedP
 
 ```typescript
 type MessageReceivedParams = {
-  channel: ChannelDto          // Канал, откуда пришло сообщение
-  chatId: string               // ID чата
-  person: PersonDto | null     // Профиль пользователя
-  user: UserDto | null         // Системный пользователь (если привязан)
-  message: MessageFullData     // Полные данные сообщения
-  sourcePayload?: any          // Исходный payload от канала (не у всех)
+  channel: ChannelDto // Канал, откуда пришло сообщение
+  chatId: string // ID чата
+  person: PersonDto | null // Профиль пользователя
+  user: UserDto | null // Системный пользователь (если привязан)
+  message: MessageFullData // Полные данные сообщения
+  sourcePayload?: any // Исходный payload от канала (не у всех)
 }
 ```
 
 **Ограничения**:
+
 - ❌ Не работает с групповыми чатами и каналами
 - ❌ Не работает с транспортом TelegramManager
 
@@ -148,21 +154,21 @@ type MessageReceivedParams = {
 
 ```typescript
 const customUpdatesHandlerRoute = app.post(
-  '/custom-sender-endpoint', 
-  async (ctx, req: app.Req<{ channelId: string, sourcePayload: unknown }>) => {
+  '/custom-sender-endpoint',
+  async (ctx, req: app.Req<{ channelId: string; sourcePayload: unknown }>) => {
     const { channelId, sourcePayload } = req.body
-    
+
     ctx.account.log('Обновление от канала', {
       level: 'info',
       json: { channelId, sourcePayload }
     })
-    
+
     // Исходные данные от канала связи
     const originalUpdateData = sourcePayload
-    
+
     // Обработка по документации конкретного канала
     // ...
-    
+
     return { success: true }
   }
 )
@@ -176,11 +182,11 @@ import { customUpdatesHandlerRoute } from './routes/sender'
 
 async function setupChannelCallback(ctx: app.Ctx, channelId: string) {
   try {
-    await updateChannel(ctx, { 
-      id: channelId, 
+    await updateChannel(ctx, {
+      id: channelId,
       callback: customUpdatesHandlerRoute.url() // null для сброса
     })
-    
+
     ctx.account.log('Callback установлен', {
       level: 'info',
       json: { channelId }
@@ -206,10 +212,10 @@ async function setupChannelCallback(ctx: app.Ctx, channelId: string) {
 import { findMessagesByChatId } from '@sender/sdk'
 
 const messages = await findMessagesByChatId(ctx, chatId, {
-  limit: 50,           // Лимит сообщений (по умолчанию 100)
-  offset: 0,           // Смещение для пагинации
-  reverse: true,       // Обратный порядок (новые первыми)
-  mode: 'tail'         // 'head' (начало) или 'tail' (конец)
+  limit: 50, // Лимит сообщений (по умолчанию 100)
+  offset: 0, // Смещение для пагинации
+  reverse: true, // Обратный порядок (новые первыми)
+  mode: 'tail' // 'head' (начало) или 'tail' (конец)
 })
 ```
 
@@ -218,13 +224,13 @@ const messages = await findMessagesByChatId(ctx, chatId, {
 ```typescript
 export const getChatHistoryRoute = app.get('/chat-history', async (ctx, req) => {
   const { chatId } = req.query
-  
+
   const messages = await findMessagesByChatId(ctx, chatId, {
     limit: 20,
     reverse: true,
     mode: 'tail'
   })
-  
+
   return { success: true, messages }
 })
 ```
@@ -262,12 +268,7 @@ await sendMessageToChat(ctx, chatId, {
 })
 
 // Удаление всех сообщений по origin
-const result = await deleteMessagesByOrigin(
-  ctx,
-  chatId,
-  'order_123',
-  'order_notification'
-)
+const result = await deleteMessagesByOrigin(ctx, chatId, 'order_123', 'order_notification')
 ```
 
 ---
@@ -306,7 +307,7 @@ import { findChatByExternalId } from '@sender/sdk'
 
 // По channelId
 const chat = await findChatByExternalId(ctx, {
-  chatExternalId: '123456789',  // telegram_id
+  chatExternalId: '123456789', // telegram_id
   channelId: 'channel_abc',
   getPerson: true
 })
@@ -327,8 +328,8 @@ const chat2 = await findChatByExternalId(ctx, {
 import { searchChats } from '@sender/sdk'
 
 const chats = await searchChats(ctx, {
-  search: '12345',           // Поисковая строка
-  channelId: 'channel_abc'   // ID канала
+  search: '12345', // Поисковая строка
+  channelId: 'channel_abc' // ID канала
 })
 
 for (const chat of chats) {
@@ -350,14 +351,14 @@ for (const chat of chats) {
 import { getOrCreateChat } from '@sender/sdk'
 
 const result = await getOrCreateChat(ctx, {
-  externalId: '123456789',    // telegram_id, email, phone
+  externalId: '123456789', // telegram_id, email, phone
   channelId: 'channel_abc',
-  userId: ctx.user?.id        // Опционально: привязка к системному User
+  userId: ctx.user?.id // Опционально: привязка к системному User
 })
 
 if (result.success) {
   const { chat, person, message } = result
-  
+
   await sendMessageToChat(ctx, chat.id, {
     text: 'Привет! Рады видеть вас!'
   })
@@ -502,7 +503,7 @@ await updatePersonFields(ctx, personId, {
     subscription: 'premium',
     orderCount: 5
   },
-  user: ctx.user.id  // Привязка к системному User (null для отвязки)
+  user: ctx.user.id // Привязка к системному User (null для отвязки)
 })
 ```
 
@@ -607,11 +608,9 @@ await sendMessageToChat(ctx, chatId, {
       { text: 'Кнопка 1', url: 'https://example.com' },
       { text: 'Кнопка 2', url: 'https://example.com/2' }
     ],
-    [
-      { text: 'Кнопка 3' }
-    ]
+    [{ text: 'Кнопка 3' }]
   ],
-  inlineButtons: true  // Inline кнопки в Telegram
+  inlineButtons: true // Inline кнопки в Telegram
 })
 
 // С файлами
@@ -649,12 +648,12 @@ await sendMessageToUser(ctx, userId, {
 
 // Только определённые каналы
 await sendMessageToUser(
-  ctx, 
-  userId, 
+  ctx,
+  userId,
   {
     text: 'Уведомление в Telegram'
   },
-  ['telegram_channel_id']  // enabledChannels
+  ['telegram_channel_id'] // enabledChannels
 )
 ```
 
@@ -686,17 +685,17 @@ import { sendMessageByTypeAndExternalId } from '@sender/sdk'
 // Отправка в Telegram
 const result = await sendMessageByTypeAndExternalId(ctx, {
   type: 'Telegram',
-  id: '123456789',  // telegram_id
-  channels: ['telegram_channel_id'],  // Рекомендуется!
+  id: '123456789', // telegram_id
+  channels: ['telegram_channel_id'], // Рекомендуется!
   message: {
     text: 'Привет из Chatium!'
   },
   createChatParams: {
     firstName: 'Иван',
     lastName: 'Петров',
-    userId: ctx.user?.id  // Привязка к User
+    userId: ctx.user?.id // Привязка к User
   },
-  wrapLinks: true,  // Обернуть ссылки для отслеживания кликов
+  wrapLinks: true, // Обернуть ссылки для отслеживания кликов
   addLinksParams: {
     utm_source: 'bot',
     utm_medium: 'notification'
@@ -753,12 +752,12 @@ const [channel] = await getChannels(ctx, { id: 'channel_abc' })
 ```typescript
 async function selectChannel(ctx: app.Ctx, userRequest: string) {
   const channels = await getChannels(ctx)
-  
+
   // Поиск подходящего канала
-  const telegramChannel = channels.find(c => c.source === 'Telegram')
-  const vkChannel = channels.find(c => c.source === 'Vk')
-  const emailChannel = channels.find(c => c.source === 'External' && c.title.includes('Email'))
-  
+  const telegramChannel = channels.find((c) => c.source === 'Telegram')
+  const vkChannel = channels.find((c) => c.source === 'Vk')
+  const emailChannel = channels.find((c) => c.source === 'External' && c.title.includes('Email'))
+
   // Если не уверены - спросите пользователя
   return { telegram: telegramChannel, vk: vkChannel, email: emailChannel }
 }
@@ -774,8 +773,8 @@ import { createOrUpdateChannelBySecret } from '@sender/sdk'
 const channel = await createOrUpdateChannelBySecret(ctx, {
   source: 'Telegram',
   secret: 'YOUR_BOT_TOKEN',
-  callback: customUpdatesHandlerRoute.url(),  // null для сброса
-  setWebhook: true  // Установить webhook автоматически
+  callback: customUpdatesHandlerRoute.url(), // null для сброса
+  setWebhook: true // Установить webhook автоматически
 })
 
 ctx.account.log('Канал создан', {
@@ -818,7 +817,7 @@ for (const file of files) {
       id: file.id,
       title: file.title,
       type: file.type,
-      externalId: file.externalId,  // file_id в Telegram
+      externalId: file.externalId, // file_id в Telegram
       hash: file.hash
     }
   })
@@ -826,6 +825,7 @@ for (const file of files) {
 ```
 
 **Типы файлов**:
+
 - `Document` — документы
 - `Image` — изображения
 - `Video` — видео
@@ -843,7 +843,7 @@ await sendMessageToChat(ctx, chatId, {
   text: 'Изображение из библиотеки:',
   files: [
     {
-      url: '',  // Можно оставить пустым
+      url: '', // Можно оставить пустым
       hash: firstImage.hash,
       extra: {
         type: 'Image',
@@ -871,16 +871,20 @@ await sendMessageToChat(ctx, chatId, {
 ```typescript
 import { createBucket } from '@sender/sdk'
 
-const bucket = await createBucket(ctx, {
-  uid: clrtUid,  // Рекомендуется! Для связи с сессией
-  ref: 'campaign_123',
-  promoCode: 'DISCOUNT2024',
-  utmSource: 'google',
-  utmMedium: 'cpc',
-  utmCampaign: 'spring_sale',
-  userProfileId: 'user_456',
-  userId: ctx.user?.id  // Для связи с системным User
-}, clrtUid)  // key (опционально)
+const bucket = await createBucket(
+  ctx,
+  {
+    uid: clrtUid, // Рекомендуется! Для связи с сессией
+    ref: 'campaign_123',
+    promoCode: 'DISCOUNT2024',
+    utmSource: 'google',
+    utmMedium: 'cpc',
+    utmCampaign: 'spring_sale',
+    userProfileId: 'user_456',
+    userId: ctx.user?.id // Для связи с системным User
+  },
+  clrtUid
+) // key (опционально)
 
 return {
   success: true,
@@ -898,21 +902,21 @@ import { findBucketById } from '@sender/sdk'
 
 app.accountHook('@sender/message-received', async (ctx, params) => {
   const messageText = params.message.text || ''
-  
+
   // Проверка команды /start с параметром
   const startMatch = messageText.match(/^\/start\s+bucket-(\w+)/)
-  
+
   if (startMatch) {
     const bucketId = startMatch[1]
     const bucket = await findBucketById(ctx, bucketId)
-    
+
     if (bucket) {
       const { promoCode, ref, utmSource, userProfileId } = bucket.data
-      
+
       ctx.account.log('Бакет обработан', {
         json: { bucketId, data: bucket.data }
       })
-      
+
       await sendMessageToChat(ctx, params.chatId, {
         text: `Привет! Ваш промокод: ${promoCode}`
       })
@@ -947,8 +951,8 @@ const bucket = await updateOrCreateBucket(ctx, bucketId, {
 import { getOrCreateUserChatLinkToken } from '@sender/sdk'
 
 const token = await getOrCreateUserChatLinkToken(ctx, ctx.user.id, {
-  expiresAt: new Date(Date.now() + 15 * 60 * 1000),  // 15 минут
-  callbackUrl: chatLinkProcessedRoute.url()  // Опционально
+  expiresAt: new Date(Date.now() + 15 * 60 * 1000), // 15 минут
+  callbackUrl: chatLinkProcessedRoute.url() // Опционально
 })
 
 return {
@@ -964,7 +968,7 @@ return {
 app.accountHook('@sender/message-received', async (ctx, params) => {
   const messageText = params.message.text || ''
   const userMatch = messageText.match(/^\/start\s+user-(\w+)/)
-  
+
   if (userMatch) {
     // Привязка произойдёт автоматически
     await sendMessageToChat(ctx, params.chatId, {
@@ -985,15 +989,10 @@ app.accountHook('@sender/message-received', async (ctx, params) => {
 ```typescript
 import { runTelegramApi } from '@sender/sdk'
 
-const [success, result, error] = await runTelegramApi(
-  ctx,
-  chatId,
-  'sendMessage',
-  {
-    text: 'Сообщение через Telegram API',
-    parse_mode: 'HTML'
-  }
-) || [false, null, 'No response']
+const [success, result, error] = (await runTelegramApi(ctx, chatId, 'sendMessage', {
+  text: 'Сообщение через Telegram API',
+  parse_mode: 'HTML'
+})) || [false, null, 'No response']
 
 if (success) {
   ctx.account.log('Отправлено', { json: result })
@@ -1046,16 +1045,11 @@ ctx.account.log('Активные группы', { json: { count: groupIds.lengt
 ```typescript
 import { runVkApi } from '@sender/sdk'
 
-const [success, response, error] = await runVkApi(
-  ctx,
-  channelId,
-  'messages.send',
-  {
-    peer_id: 123456,
-    message: 'Привет из VK!',
-    random_id: Math.random()
-  }
-) || [false, null, 'No response']
+const [success, response, error] = (await runVkApi(ctx, channelId, 'messages.send', {
+  peer_id: 123456,
+  message: 'Привет из VK!',
+  random_id: Math.random()
+})) || [false, null, 'No response']
 ```
 
 ### getOrCreateVkChat
@@ -1118,13 +1112,13 @@ type ChannelDto = {
   options: any
 }
 
-type ChannelSource = 
-  | 'Chatium'          // Виджет на сайт
-  | 'Telegram'         // Общение 1-на-1, не пишет в группы
-  | 'TelegramManager'  // Для групп и каналов, не отвечает в личных
+type ChannelSource =
+  | 'Chatium' // Виджет на сайт
+  | 'Telegram' // Общение 1-на-1, не пишет в группы
+  | 'TelegramManager' // Для групп и каналов, не отвечает в личных
   | 'Viber'
   | 'Vk'
-  | 'External'         // Универсальный для кастомных интеграций
+  | 'External' // Универсальный для кастомных интеграций
 ```
 
 ### ChatDto
@@ -1151,8 +1145,8 @@ type PersonDto = {
   id: string
   channel: string
   chat: string | null
-  uid: string | null              // ID сессии (window.clrtUid)
-  externalId: string              // telegram_id, email, phone
+  uid: string | null // ID сессии (window.clrtUid)
+  externalId: string // telegram_id, email, phone
   title: string
   firstName: string | null
   lastName: string | null
@@ -1164,7 +1158,7 @@ type PersonDto = {
   icon: { name: string[] }
   photo: string | null
   originalPhoto: string | null
-  user: string | undefined        // Системный User ID
+  user: string | undefined // Системный User ID
   lastSeenUrl: string | null
   data: any
   utmSource: string | null
@@ -1224,7 +1218,7 @@ app.accountHook('@sender/message-received', async (ctx, params) => {
       channel: params.channel.title
     }
   })
-  
+
   // Обработка
 })
 ```
@@ -1236,7 +1230,7 @@ app.accountHook('@sender/message-received', async (ctx, params) => {
 ```typescript
 try {
   const result = await runTelegramApi(ctx, chatId, 'sendMessage', { text: 'Test' })
-  
+
   if (result) {
     const [success, data, error] = result
     if (!success) {
@@ -1264,7 +1258,7 @@ app.accountHook('@sender/message-received', async (ctx, params) => {
   if (params.channel.id !== 'your-telegram-channel') {
     return
   }
-  
+
   // Обработка
 })
 ```
@@ -1292,20 +1286,20 @@ async function getAllPersons(ctx: app.Ctx) {
   const allPersons = []
   let offset = 0
   const limit = 100
-  
+
   while (true) {
     const persons = await findPersons(ctx, {
       limit,
       offset,
       where: { isBlocked: false }
     })
-    
+
     if (persons.length === 0) break
-    
+
     allPersons.push(...persons)
     offset += limit
   }
-  
+
   return allPersons
 }
 ```
@@ -1324,4 +1318,3 @@ async function getAllPersons(ctx: app.Ctx) {
 **Версия**: 1.0  
 **Дата**: 2025-11-03  
 **Последнее обновление**: Создание исчерпывающей инструкции по модулю @sender
-

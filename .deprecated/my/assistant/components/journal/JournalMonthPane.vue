@@ -54,24 +54,52 @@ const props = defineProps<{
 }>()
 
 const MONTH_NAMES = [
-  'Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь',
-  'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'
+  'Январь',
+  'Февраль',
+  'Март',
+  'Апрель',
+  'Май',
+  'Июнь',
+  'Июль',
+  'Август',
+  'Сентябрь',
+  'Октябрь',
+  'Ноябрь',
+  'Декабрь'
 ]
 
 const MONTH_NAMES_GEN = [
-  'января', 'февраля', 'марта', 'апреля', 'мая', 'июня',
-  'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'
+  'января',
+  'февраля',
+  'марта',
+  'апреля',
+  'мая',
+  'июня',
+  'июля',
+  'августа',
+  'сентября',
+  'октября',
+  'ноября',
+  'декабря'
 ]
 
 const DAY_NAMES_SHORT = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс']
 
 const DAY_NAMES_FULL: Record<number, string> = {
-  0: 'Воскресенье', 1: 'Понедельник', 2: 'Вторник',
-  3: 'Среда', 4: 'Четверг', 5: 'Пятница', 6: 'Суббота'
+  0: 'Воскресенье',
+  1: 'Понедельник',
+  2: 'Вторник',
+  3: 'Среда',
+  4: 'Четверг',
+  5: 'Пятница',
+  6: 'Суббота'
 }
 
 const SEGMENT_LABELS: Record<DaySegmentId, string> = {
-  night: 'Ночь', morning: 'Утро', day: 'День', evening: 'Вечер'
+  night: 'Ночь',
+  morning: 'Утро',
+  day: 'День',
+  evening: 'Вечер'
 }
 
 const SEGMENT_ORDER: DaySegmentId[] = ['night', 'morning', 'day', 'evening']
@@ -349,8 +377,14 @@ function onToggleSegmentLock(segmentId: DaySegmentId) {
 function goMonth(delta: number) {
   let y = currentYear.value
   let m = currentMonth.value + delta
-  if (m < 1) { m = 12; y-- }
-  if (m > 12) { m = 1; y++ }
+  if (m < 1) {
+    m = 12
+    y--
+  }
+  if (m > 12) {
+    m = 1
+    y++
+  }
   currentYear.value = y
   currentMonth.value = m
   void fetchMonthData(true)
@@ -381,7 +415,11 @@ function goDay(delta: number) {
   if (!selectedDayKey.value) return
   const parts = selectedDayKey.value.split('-')
   if (parts.length !== 3) return
-  const date = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10) + delta)
+  const date = new Date(
+    parseInt(parts[0], 10),
+    parseInt(parts[1], 10) - 1,
+    parseInt(parts[2], 10) + delta
+  )
   const ny = date.getFullYear()
   const nm = date.getMonth() + 1
   const nd = date.getDate()
@@ -410,9 +448,13 @@ onMounted(() => {
       <div v-if="mode === 'calendar'" key="calendar" class="jm-calendar">
         <header class="jm-head">
           <div class="jm-controls">
-            <button type="button" class="jm-switch" :disabled="loadingSwitch" @click="goMonth(-1)">← Пред.</button>
+            <button type="button" class="jm-switch" :disabled="loadingSwitch" @click="goMonth(-1)">
+              ← Пред.
+            </button>
             <h2 class="jm-title">{{ MONTH_NAMES[currentMonth - 1] }} {{ currentYear }}</h2>
-            <button type="button" class="jm-switch" :disabled="loadingSwitch" @click="goMonth(1)">След. →</button>
+            <button type="button" class="jm-switch" :disabled="loadingSwitch" @click="goMonth(1)">
+              След. →
+            </button>
           </div>
           <div class="jm-sub-row">
             <p class="jm-sub">Выберите день для детального просмотра</p>
@@ -427,7 +469,9 @@ onMounted(() => {
           </div>
         </header>
 
-        <p v-if="!props.isAuthenticated" class="jm-hint">Войдите в аккаунт для просмотра месячного обзора.</p>
+        <p v-if="!props.isAuthenticated" class="jm-hint">
+          Войдите в аккаунт для просмотра месячного обзора.
+        </p>
         <p v-else-if="loading" class="jm-hint">Загрузка данных месяца…</p>
         <p v-if="globalError" class="jm-error" role="alert">{{ globalError }}</p>
 
@@ -451,7 +495,8 @@ onMounted(() => {
             <div
               v-if="
                 cell.isCurrentMonth &&
-                (tasksCountByDay[cell.dayKey] || (focusByDay[cell.dayKey] && focusByDay[cell.dayKey] > 0))
+                (tasksCountByDay[cell.dayKey] ||
+                  (focusByDay[cell.dayKey] && focusByDay[cell.dayKey] > 0))
               "
               class="jm-cell-meta"
             >
@@ -496,7 +541,9 @@ onMounted(() => {
             <button type="button" class="jm-switch" @click="goDay(1)">След. →</button>
           </div>
           <div class="jm-sub-row">
-            <button type="button" class="jm-current-link" @click="backToCalendar">← Назад к календарю</button>
+            <button type="button" class="jm-current-link" @click="backToCalendar">
+              ← Назад к календарю
+            </button>
           </div>
         </header>
 
@@ -512,7 +559,9 @@ onMounted(() => {
               </span>
             </div>
             <div class="jm-section-body">
-              <p v-if="selectedDayTasks.length === 0" class="jm-section-empty">Нет завершённых задач за этот день</p>
+              <p v-if="selectedDayTasks.length === 0" class="jm-section-empty">
+                Нет завершённых задач за этот день
+              </p>
               <ul v-else class="jm-task-list">
                 <li v-for="t in selectedDayTasks" :key="t.id" class="jm-task-item">
                   <span class="jm-task-title">{{ t.title }}</span>

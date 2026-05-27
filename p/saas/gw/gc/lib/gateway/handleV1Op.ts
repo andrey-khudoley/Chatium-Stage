@@ -96,16 +96,14 @@ type GwLogCtx = {
   requestStart: number
   rawArgs: unknown
   rawHeadersSafe: unknown
-  upstream:
-    | null
-    | {
-        kind: string
-        gcHttpStatus: number
-        rawGcJson: unknown
-        semanticRule: string
-        sentAt: number
-        durationMs: number
-      }
+  upstream: null | {
+    kind: string
+    gcHttpStatus: number
+    rawGcJson: unknown
+    semanticRule: string
+    sentAt: number
+    durationMs: number
+  }
 }
 
 /** Заголовки, которые ВСЕГДА исключаем из rawHeadersSafe до применения redactRawDeep. */
@@ -311,7 +309,11 @@ async function runHandleV1Op(
     await loggerLib.writeServerLog(ctx, {
       severity: 6,
       message: `[api/v1/${op}] body too large (content-length)`,
-      payload: baseLog({ logStage: 'body_too_large', limitBytes: GW_MAX_REQUEST_BODY_BYTES, receivedBytes: cl })
+      payload: baseLog({
+        logStage: 'body_too_large',
+        limitBytes: GW_MAX_REQUEST_BODY_BYTES,
+        receivedBytes: cl
+      })
     })
     return finishError('INVOKE_BODY_TOO_LARGE', {
       limitBytes: GW_MAX_REQUEST_BODY_BYTES,
@@ -324,7 +326,11 @@ async function runHandleV1Op(
     await loggerLib.writeServerLog(ctx, {
       severity: 6,
       message: `[api/v1/${op}] body too large (measured)`,
-      payload: baseLog({ logStage: 'body_too_large', limitBytes: GW_MAX_REQUEST_BODY_BYTES, receivedBytes: measured })
+      payload: baseLog({
+        logStage: 'body_too_large',
+        limitBytes: GW_MAX_REQUEST_BODY_BYTES,
+        receivedBytes: measured
+      })
     })
     return finishError('INVOKE_BODY_TOO_LARGE', {
       limitBytes: GW_MAX_REQUEST_BODY_BYTES,
@@ -361,7 +367,10 @@ async function runHandleV1Op(
       await loggerLib.writeServerLog(ctx, {
         severity: 6,
         message: `[api/v1/${op}] content-type`,
-        payload: baseLog({ logStage: 'content_type_fail', errorCode: 'INVOKE_CONTENT_TYPE_UNSUPPORTED' })
+        payload: baseLog({
+          logStage: 'content_type_fail',
+          errorCode: 'INVOKE_CONTENT_TYPE_UNSUPPORTED'
+        })
       })
       return finishError('INVOKE_CONTENT_TYPE_UNSUPPORTED')
     }
@@ -528,7 +537,11 @@ async function runHandleV1Op(
         durationMs: upstreamDuration
       })
     })
-    return finishError('INVOKE_GC_UPSTREAM_ERROR', { gcHttpStatus: outcome.gcHttpStatus }, packGcDiagnostic(gc))
+    return finishError(
+      'INVOKE_GC_UPSTREAM_ERROR',
+      { gcHttpStatus: outcome.gcHttpStatus },
+      packGcDiagnostic(gc)
+    )
   }
 
   if (outcome.kind === 'json_parse_error') {
@@ -542,7 +555,11 @@ async function runHandleV1Op(
         gcHttpStatus: gc.gcStatus
       })
     })
-    return finishError('INVOKE_GC_UPSTREAM_ERROR', { gcHttpStatus: gc.gcStatus }, packGcDiagnostic(gc))
+    return finishError(
+      'INVOKE_GC_UPSTREAM_ERROR',
+      { gcHttpStatus: gc.gcStatus },
+      packGcDiagnostic(gc)
+    )
   }
 
   if (outcome.kind === 'semantic_error') {

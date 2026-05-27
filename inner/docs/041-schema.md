@@ -1,4 +1,5 @@
 @chatium
+
 # Модуль @app/schema: Схемы и типы Heap
 
 Краткий справочник по модулю `@app/schema` — построение схем, совместимых с Heap (ZType, ZObject, ZString, ZNumber и др.) и билдер `s`. Типизация: `node_modules/@app/schema/index.d.ts`. В 001-standards упоминается валидация через Zod/@app/validation — при необходимости уточнять отдельный пакет validation.

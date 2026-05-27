@@ -16,4 +16,3 @@ export const installPluginRoute = app.post('/install-plugin', async (ctx, req) =
     return { success: false, error: error.message }
   }
 })
-

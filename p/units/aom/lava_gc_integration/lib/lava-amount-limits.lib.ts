@@ -37,9 +37,6 @@ export function buildLavaOfferAmountOutOfRangeMessage(params: {
   if (currency === 'RUB') {
     return `Сумма ${effectiveAmount} RUB вне допустимого диапазона Lava для RUB (${min}…${max}). Измените сумму заказа.`
   }
-  const rubPart =
-    sourceAmountRub != null
-      ? ` Исходная сумма в рублях: ${sourceAmountRub}.`
-      : ''
+  const rubPart = sourceAmountRub != null ? ` Исходная сумма в рублях: ${sourceAmountRub}.` : ''
   return `После конвертации по курсу ЦБ сумма в ${currency} составляет ${effectiveAmount}, это вне допустимого диапазона Lava для ${currency} (${min}…${max}).${rubPart} Скорректируйте сумму заказа в GetCourse.`
 }

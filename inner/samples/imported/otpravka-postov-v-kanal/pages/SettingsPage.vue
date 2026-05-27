@@ -3,14 +3,17 @@
     <div class="container mx-auto px-4 py-8">
       <!-- Header -->
       <div class="text-center mb-8">
-        <div class="inline-flex items-center justify-center w-16 h-16 bg-blue-600 text-white rounded-full mb-4">
+        <div
+          class="inline-flex items-center justify-center w-16 h-16 bg-blue-600 text-white rounded-full mb-4"
+        >
           <i class="fab fa-telegram-plane text-2xl"></i>
         </div>
         <h1 class="text-3xl font-bold text-gray-900 mb-2">
           Настройки инструмента отправки в Telegram
         </h1>
         <p class="text-gray-600 max-w-2xl mx-auto">
-          Настройте отправку сообщений в Telegram каналы и группы через ботов-менеджеров для ваших ИИ агентов
+          Настройте отправку сообщений в Telegram каналы и группы через ботов-менеджеров для ваших
+          ИИ агентов
         </p>
       </div>
 
@@ -27,16 +30,18 @@
           <form @submit.prevent="saveSettings" class="p-6 space-y-6">
             <!-- Выбор бота-менеджера -->
             <div class="space-y-3">
-              <label 
-                class="flex items-center text-sm font-medium text-gray-700"
-              >
+              <label class="flex items-center text-sm font-medium text-gray-700">
                 <i class="fab fa-telegram mr-2 text-blue-500"></i>
                 <span class="flex items-center">
-                Бот-менеджер
-                <div class="tooltip-container ml-1 relative">
-                  <i class="fas fa-question-circle text-gray-400 text-xs hover:text-gray-600 cursor-help"></i>
-                  <div class="tooltip">Через какого бота агент будет отправлять сообщения в вашу группу или канал</div>
-                </div>
+                  Бот-менеджер
+                  <div class="tooltip-container ml-1 relative">
+                    <i
+                      class="fas fa-question-circle text-gray-400 text-xs hover:text-gray-600 cursor-help"
+                    ></i>
+                    <div class="tooltip">
+                      Через какого бота агент будет отправлять сообщения в вашу группу или канал
+                    </div>
+                  </div>
                 </span>
               </label>
               <div class="flex gap-2">
@@ -47,11 +52,7 @@
                   required
                 >
                   <option value="">Выберите бота-менеджера</option>
-                  <option
-                    v-for="manager in telegramManagers"
-                    :key="manager.id"
-                    :value="manager.id"
-                  >
+                  <option v-for="manager in telegramManagers" :key="manager.id" :value="manager.id">
                     {{ manager.name || manager.id }}
                   </option>
                 </select>
@@ -64,17 +65,23 @@
                   <i class="fas fa-sync-alt"></i>
                 </button>
               </div>
-              
+
               <!-- Подсказка если нет менеджеров -->
-              <div v-if="telegramManagers.length === 0" class="bg-amber-50 border border-amber-200 rounded-lg p-4">
+              <div
+                v-if="telegramManagers.length === 0"
+                class="bg-amber-50 border border-amber-200 rounded-lg p-4"
+              >
                 <div class="flex items-start">
                   <i class="fas fa-info-circle text-amber-500 mt-1 mr-3"></i>
                   <div>
-                    <h4 class="text-sm font-medium text-amber-800">Нет доступных ботов-менеджеров</h4>
+                    <h4 class="text-sm font-medium text-amber-800">
+                      Нет доступных ботов-менеджеров
+                    </h4>
                     <p class="text-sm text-amber-700 mt-1">
-                      Для работы инструмента необходимо добавить транспорт с типом "Telegram Manager".
+                      Для работы инструмента необходимо добавить транспорт с типом "Telegram
+                      Manager".
                     </p>
-                    <a 
+                    <a
                       href="/app/sender/v2#/settings/channel/add"
                       target="_blank"
                       class="inline-flex items-center mt-2 px-3 py-1 bg-amber-600 text-white text-xs rounded-md hover:bg-amber-700 transition-colors"
@@ -89,16 +96,16 @@
 
             <!-- ID группы/канала -->
             <div class="space-y-3">
-              <label 
-                class="flex items-center text-sm font-medium text-gray-700"
-              >
+              <label class="flex items-center text-sm font-medium text-gray-700">
                 <i class="fas fa-hashtag mr-2 text-blue-500"></i>
                 <span class="flex items-center">
-                ID группы или канала
-                <div class="tooltip-container ml-1 relative">
-                  <i class="fas fa-question-circle text-gray-400 text-xs hover:text-gray-600 cursor-help"></i>
-                  <div class="tooltip">В какой чат агент будет отправлять сообщения</div>
-                </div>
+                  ID группы или канала
+                  <div class="tooltip-container ml-1 relative">
+                    <i
+                      class="fas fa-question-circle text-gray-400 text-xs hover:text-gray-600 cursor-help"
+                    ></i>
+                    <div class="tooltip">В какой чат агент будет отправлять сообщения</div>
+                  </div>
                 </span>
               </label>
               <div class="flex gap-2">
@@ -118,7 +125,7 @@
                   <i class="fas fa-sync-alt"></i>
                 </button>
               </div>
-              
+
               <!-- Подсказки групп -->
               <div v-if="groupSuggestions.length > 0" class="space-y-2">
                 <p class="text-sm font-medium text-gray-700">
@@ -137,14 +144,21 @@
                   </button>
                 </div>
               </div>
-              
+
               <!-- Информация о правах бота (показывается только если нет активных групп) -->
-              <div v-if="groupSuggestions.length === 0 && settings.tgManagerId" class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <div
+                v-if="groupSuggestions.length === 0 && settings.tgManagerId"
+                class="bg-blue-50 border border-blue-200 rounded-lg p-4"
+              >
                 <div class="flex items-start">
                   <i class="fas fa-lightbulb text-blue-500 mt-1 mr-3"></i>
                   <div class="text-sm text-blue-700">
                     <p class="font-medium mb-1">Важно!</p>
-                    <p>Чтобы появились подсказки групп/каналов, нужно добавить выбранного бота-менеджера в группу или канал администратором с правом отправлять сообщения.</p>
+                    <p>
+                      Чтобы появились подсказки групп/каналов, нужно добавить выбранного
+                      бота-менеджера в группу или канал администратором с правом отправлять
+                      сообщения.
+                    </p>
                   </div>
                 </div>
               </div>
@@ -152,16 +166,18 @@
 
             <!-- Обертка сообщения -->
             <div class="space-y-3">
-              <label 
-                class="flex items-center text-sm font-medium text-gray-700"
-              >
+              <label class="flex items-center text-sm font-medium text-gray-700">
                 <i class="fas fa-code mr-2 text-blue-500"></i>
                 <span class="flex items-center">
-                Обертка для сообщения от агента
-                <div class="tooltip-container ml-1 relative">
-                  <i class="fas fa-question-circle text-gray-400 text-xs hover:text-gray-600 cursor-help"></i>
-                  <div class="tooltip">Текст до и после сообщения агента для лучшего понимания менеджером</div>
-                </div>
+                  Обертка для сообщения от агента
+                  <div class="tooltip-container ml-1 relative">
+                    <i
+                      class="fas fa-question-circle text-gray-400 text-xs hover:text-gray-600 cursor-help"
+                    ></i>
+                    <div class="tooltip">
+                      Текст до и после сообщения агента для лучшего понимания менеджером
+                    </div>
+                  </div>
                 </span>
               </label>
               <textarea
@@ -172,26 +188,33 @@
               ></textarea>
               <p class="text-xs text-gray-500 flex items-center">
                 <i class="fas fa-info-circle mr-2"></i>
-                Используйте <code class="bg-gray-100 px-1 rounded">{TEXT}</code> для вставки текста от агента. Поддерживается HTML разметка Telegram.
+                Используйте <code class="bg-gray-100 px-1 rounded">{TEXT}</code> для вставки текста
+                от агента. Поддерживается HTML разметка Telegram.
               </p>
             </div>
 
             <!-- Кнопки с ссылками -->
             <div class="space-y-4">
-              <label 
-                class="flex items-center text-sm font-medium text-gray-700"
-              >
+              <label class="flex items-center text-sm font-medium text-gray-700">
                 <i class="fas fa-link mr-2 text-blue-500"></i>
                 <span class="flex items-center">
-                Кнопки с ссылками (опционально)
-                <div class="tooltip-container ml-1 relative">
-                  <i class="fas fa-question-circle text-gray-400 text-xs hover:text-gray-600 cursor-help"></i>
-                  <div class="tooltip">Дополнительные кнопки со ссылками, которые будут отображаться под сообщением</div>
-                </div>
+                  Кнопки с ссылками (опционально)
+                  <div class="tooltip-container ml-1 relative">
+                    <i
+                      class="fas fa-question-circle text-gray-400 text-xs hover:text-gray-600 cursor-help"
+                    ></i>
+                    <div class="tooltip">
+                      Дополнительные кнопки со ссылками, которые будут отображаться под сообщением
+                    </div>
+                  </div>
                 </span>
               </label>
-              
-              <div v-for="(button, index) in settings.buttons" :key="index" class="flex gap-3 items-center bg-gray-50 p-3 rounded-lg">
+
+              <div
+                v-for="(button, index) in settings.buttons"
+                :key="index"
+                class="flex gap-3 items-center bg-gray-50 p-3 rounded-lg"
+              >
                 <input
                   v-model="button.text"
                   type="text"
@@ -247,7 +270,7 @@
                 <i class="fas fa-save mr-2"></i>
                 {{ loading ? 'Сохранение...' : 'Сохранить настройки' }}
               </button>
-              
+
               <button
                 type="button"
                 @click="testTool"
@@ -270,10 +293,13 @@
               class="p-4 rounded-lg border"
             >
               <div class="flex">
-                <i :class="{
-                  'fas fa-check-circle text-green-400': result.success,
-                  'fas fa-exclamation-circle text-red-400': !result.success
-                }" class="mr-3 mt-0.5"></i>
+                <i
+                  :class="{
+                    'fas fa-check-circle text-green-400': result.success,
+                    'fas fa-exclamation-circle text-red-400': !result.success
+                  }"
+                  class="mr-3 mt-0.5"
+                ></i>
                 <div>
                   <h3 class="text-sm font-medium">
                     {{ result.success ? 'Успешно!' : 'Ошибка' }}
@@ -293,41 +319,48 @@
               Превью сообщения
             </h2>
           </div>
-          
+
           <div class="p-6">
             <!-- Telegram message preview -->
-            <div class="bg-telegram-bg rounded-lg p-4" style="background: #17212b;">
+            <div class="bg-telegram-bg rounded-lg p-4" style="background: #17212b">
               <div class="max-w-md mx-auto">
                 <!-- Telegram message bubble -->
                 <div class="mb-4">
                   <div class="flex items-start space-x-2">
                     <!-- Avatar -->
                     <div class="flex-shrink-0">
-                      <div class="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white font-medium text-sm">
+                      <div
+                        class="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white font-medium text-sm"
+                      >
                         <i class="fas fa-robot"></i>
                       </div>
                     </div>
-                    
+
                     <!-- Message content -->
                     <div class="flex-1 min-w-0">
                       <!-- Sender name -->
                       <div class="text-sm font-medium text-blue-400 mb-1">
                         {{ selectedManagerName }}
                       </div>
-                      
+
                       <!-- Message bubble -->
                       <div class="bg-white rounded-2xl rounded-tl-sm p-3 shadow-sm relative">
-                        <div 
+                        <div
                           class="text-sm text-gray-900 leading-relaxed whitespace-pre-wrap"
                           v-html="getPreviewHtml()"
                         ></div>
-                        
+
                         <!-- Message time -->
                         <div class="text-xs text-gray-400 mt-2 text-right">
-                          {{ new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }) }}
+                          {{
+                            new Date().toLocaleTimeString('ru-RU', {
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })
+                          }}
                         </div>
                       </div>
-                      
+
                       <!-- Buttons preview -->
                       <div v-if="validButtons.length > 0" class="mt-2 space-y-1">
                         <div
@@ -343,7 +376,7 @@
                   </div>
                 </div>
               </div>
-              
+
               <div class="text-center mt-4">
                 <p class="text-sm text-gray-600">
                   <i class="fas fa-info-circle mr-1"></i>
@@ -360,7 +393,7 @@
 
 <script setup>
 import { ref, onMounted, computed } from 'vue'
-import { 
+import {
   apiGetManagersRoute,
   apiGetGroupSuggestionsRoute,
   apiSaveSettingsRoute,
@@ -387,13 +420,11 @@ const testLoading = ref(false)
 const result = ref(null)
 
 const validButtons = computed(() => {
-  return settings.value.buttons.filter(button => 
-    button.text?.trim() && button.url?.trim()
-  )
+  return settings.value.buttons.filter((button) => button.text?.trim() && button.url?.trim())
 })
 
 const selectedManagerName = computed(() => {
-  const manager = telegramManagers.value.find(m => m.id === settings.value.tgManagerId)
+  const manager = telegramManagers.value.find((m) => m.id === settings.value.tgManagerId)
   return manager?.name || manager?.id || 'Bot Manager'
 })
 
@@ -403,7 +434,8 @@ onMounted(async () => {
 })
 
 function getPreviewHtml() {
-  const sampleText = "Это пример текста от ИИ агента. Он может содержать различную информацию и форматирование."
+  const sampleText =
+    'Это пример текста от ИИ агента. Он может содержать различную информацию и форматирование.'
   let html = settings.value.messageWrapper || '{TEXT}'
   html = html.replace(/{TEXT}/g, sampleText)
   return html
@@ -423,7 +455,7 @@ async function loadGroupSuggestions() {
     groupSuggestions.value = []
     return
   }
-  
+
   try {
     const response = await apiGetGroupSuggestionsRoute.run(ctx, {
       tgManagerId: settings.value.tgManagerId
@@ -449,7 +481,7 @@ async function loadSettings() {
 async function saveSettings() {
   loading.value = true
   result.value = null
-  
+
   try {
     const response = await apiSaveSettingsRoute.run(ctx, settings.value)
     result.value = {
@@ -469,12 +501,14 @@ async function saveSettings() {
 async function testTool() {
   testLoading.value = true
   result.value = null
-  
+
   try {
     const response = await apiTestToolRoute.run(ctx, settings.value)
     result.value = {
       success: response.success,
-      message: response.message || (response.success ? 'Сообщение успешно отправлено!' : 'Ошибка отправки сообщения')
+      message:
+        response.message ||
+        (response.success ? 'Сообщение успешно отправлено!' : 'Ошибка отправки сообщения')
     }
   } catch (error) {
     result.value = {
@@ -523,7 +557,7 @@ function removeButton(index) {
 }
 
 .tooltip::after {
-  content: "";
+  content: '';
   position: absolute;
   top: 100%;
   left: 50%;

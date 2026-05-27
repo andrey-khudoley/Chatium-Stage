@@ -1,4 +1,5 @@
 @chatium
+
 # Traffic Аналитика - События пользователей на сайте
 
 Руководство по работе с событиями трафика через ClickHouse: просмотры страниц, клики, видео и другие действия пользователей.
@@ -57,11 +58,13 @@ const result = await gcQueryAi(ctx, query)
 ```
 
 **Преимущества**:
+
 - ✅ Каждый пользователь видит трафик своего сайта
 - ✅ Изоляция данных между пользователями
 - ✅ Подходит для SaaS приложений
 
 **Когда использовать**:
+
 - Приложения для клиентов (каждый анализирует свой трафик)
 - Мультиаккаунтные решения
 - Агентские инструменты
@@ -78,39 +81,42 @@ const result = await queryAi(ctx, query)
 ```
 
 **Преимущества**:
+
 - ✅ Не требует настройки
 - ✅ Быстрый старт
 
 **Недостатки**:
+
 - ❌ Все видят данные одного аккаунта
 - ❌ Нет изоляции данных
 
 **Когда использовать**:
+
 - Внутренние дашборды компании
 - Аналитика собственного сайта
 - Прототипирование
 
 ### Сравнительная таблица
 
-| Аспект | gcQueryAi (MCP Client) | queryAi (Traffic SDK) |
-|--------|------------------------|----------------------|
-| **Источник данных** | Настроенный пользователем аккаунт | Аккаунт разработчика |
-| **Импорт** | `@gc-mcp-server/sdk` | `@traffic/sdk` |
-| **Настройка** | Требуется установка плагина | Не требуется |
-| **Изоляция** | Да (каждый видит свои данные) | Нет (все видят одно) |
-| **Применение** | SaaS, клиентские приложения | Внутренние инструменты |
+| Аспект              | gcQueryAi (MCP Client)            | queryAi (Traffic SDK)  |
+| ------------------- | --------------------------------- | ---------------------- |
+| **Источник данных** | Настроенный пользователем аккаунт | Аккаунт разработчика   |
+| **Импорт**          | `@gc-mcp-server/sdk`              | `@traffic/sdk`         |
+| **Настройка**       | Требуется установка плагина       | Не требуется           |
+| **Изоляция**        | Да (каждый видит свои данные)     | Нет (все видят одно)   |
+| **Применение**      | SaaS, клиентские приложения       | Внутренние инструменты |
 
 ### Ключевые компоненты
 
-| Компонент | Описание |
-|-----------|----------|
-| `@gc-mcp-server/sdk` | SDK для настраиваемого GetCourse MCP Client |
-| `@traffic/sdk` | SDK для аккаунта разработчика |
-| `gcQueryAi(ctx, query)` | Запросы к настроенному аккаунту |
-| `queryAi(ctx, query)` | Запросы к аккаунту разработчика |
-| `chatium_ai.access_log` | Таблица событий |
-| `window.clrtTrack()` | Клиентская запись событий |
-| ClickHouse | База данных |
+| Компонент               | Описание                                    |
+| ----------------------- | ------------------------------------------- |
+| `@gc-mcp-server/sdk`    | SDK для настраиваемого GetCourse MCP Client |
+| `@traffic/sdk`          | SDK для аккаунта разработчика               |
+| `gcQueryAi(ctx, query)` | Запросы к настроенному аккаунту             |
+| `queryAi(ctx, query)`   | Запросы к аккаунту разработчика             |
+| `chatium_ai.access_log` | Таблица событий                             |
+| `window.clrtTrack()`    | Клиентская запись событий                   |
+| ClickHouse              | База данных                                 |
 
 ---
 
@@ -160,11 +166,11 @@ gc_session_id Int64      -- ID сессии GetCourse
 
 ### Отличие от GetCourse событий
 
-| Аспект | Traffic | GetCourse |
-|--------|---------|-----------|
-| **urlPath** | URL страницы или `event://custom/...` | `event://getcourse/...` |
-| **action** | Название действия | Не используется |
-| **Источник** | Браузер (window.clrtTrack) | Сервер GetCourse |
+| Аспект       | Traffic                               | GetCourse               |
+| ------------ | ------------------------------------- | ----------------------- |
+| **urlPath**  | URL страницы или `event://custom/...` | `event://getcourse/...` |
+| **action**   | Название действия                     | Не используется         |
+| **Источник** | Браузер (window.clrtTrack)            | Сервер GetCourse        |
 
 ---
 
@@ -181,20 +187,20 @@ import { installSupportedApp } from '@store/sdk'
 // Проверка настройки
 export const indexRoute = app.html('/', async (ctx) => {
   const isConfigured = await integrationIsEnabled(ctx)
-  
+
   if (!isConfigured) {
     return <SetupPage />  // Форма установки плагина
   }
-  
+
   return <AnalyticsApp />
 })
 
 // Запросы к настроенному аккаунту
 export const apiGetPageviewsRoute = app.get('/pageviews', async (ctx, req) => {
   const { dateFrom = '2025-01-01', dateTo = '2025-01-31' } = req.query
-  
+
   const query = `
-    SELECT 
+    SELECT
       COUNT(*) as total_pageviews,
       COUNT(DISTINCT uid) as unique_visitors,
       COUNT(DISTINCT session_id) as sessions
@@ -202,11 +208,11 @@ export const apiGetPageviewsRoute = app.get('/pageviews', async (ctx, req) => {
     WHERE action = 'pageview'
       AND dt BETWEEN '${dateFrom}' AND '${dateTo}'
   `
-  
+
   try {
     const result = await gcQueryAi(ctx, query)
     const stats = result.rows?.[0]
-    
+
     return {
       success: true,
       totalPageviews: stats?.total_pageviews || 0,
@@ -232,7 +238,7 @@ import { queryAi } from '@traffic/sdk'
 
 export const apiGetPageviewsRoute = app.get('/pageviews', async (ctx, req) => {
   const { dateFrom = '2025-01-01', dateTo = '2025-01-31' } = req.query
-  
+
   const query = `
     SELECT 
       COUNT(*) as total_pageviews,
@@ -241,12 +247,12 @@ export const apiGetPageviewsRoute = app.get('/pageviews', async (ctx, req) => {
     WHERE action = 'pageview'
       AND dt BETWEEN '${dateFrom}' AND '${dateTo}'
   `
-  
+
   try {
     // Данные из аккаунта разработчика
     const result = await queryAi(ctx, query)
     const stats = result.rows?.[0]
-    
+
     return {
       success: true,
       totalPageviews: stats?.total_pageviews || 0,
@@ -264,11 +270,11 @@ export const apiGetPageviewsRoute = app.get('/pageviews', async (ctx, req) => {
 
 ```typescript
 interface QueryResult {
-  rows: Array<Record<string, any>>  // Массив строк
+  rows: Array<Record<string, any>> // Массив строк
 }
 
 // Использование
-const result = await gcQueryAi(ctx, query)  // или queryAi(ctx, query)
+const result = await gcQueryAi(ctx, query) // или queryAi(ctx, query)
 const rows = result.rows || []
 const firstRow = result.rows?.[0]
 ```
@@ -302,6 +308,7 @@ const result = await queryAi(ctx, query)
 **Описание**: Фиксирует каждое посещение страницы.
 
 **Поля**:
+
 ```
 action = 'pageview'
 urlPath = 'https://example.com/page'
@@ -312,8 +319,9 @@ uid = 'browser_session_id'
 ```
 
 **SQL пример**:
+
 ```sql
-SELECT 
+SELECT
   urlPath as page_url,
   title as page_title,
   COUNT(*) as views,
@@ -331,8 +339,9 @@ LIMIT 20
 #### 2. registration - Регистрация
 
 **SQL пример**:
+
 ```sql
-SELECT 
+SELECT
   dt as registration_date,
   COUNT(DISTINCT user_id) as new_registrations
 FROM chatium_ai.access_log
@@ -345,6 +354,7 @@ ORDER BY dt ASC
 #### 3. form_submit - Отправка формы
 
 **Поля**:
+
 ```
 action = 'form_submit'
 action_param1 = 'form_id'
@@ -352,8 +362,9 @@ action_param2 = 'form_name'
 ```
 
 **SQL пример**:
+
 ```sql
-SELECT 
+SELECT
   action_param2 as form_name,
   COUNT(*) as submissions,
   COUNT(DISTINCT uid) as unique_users
@@ -367,6 +378,7 @@ ORDER BY submissions DESC
 #### 4. button_click - Клик по кнопке
 
 **Поля**:
+
 ```
 action = 'button_click'
 action_param1 = 'button_id'
@@ -374,8 +386,9 @@ action_param2 = 'button_text'
 ```
 
 **SQL пример**:
+
 ```sql
-SELECT 
+SELECT
   action_param1 as button_id,
   action_param2 as button_text,
   COUNT(*) as clicks,
@@ -391,6 +404,7 @@ LIMIT 10
 #### 5. link_click - Клик по ссылке
 
 **Поля**:
+
 ```
 action = 'link_click'
 action_param1 = 'link_url'
@@ -403,9 +417,10 @@ action_param3 = 'link_type' (internal/external)
 #### 6-8. Видео (video_play, video_pause, video_complete)
 
 **SQL пример - завершаемость видео**:
+
 ```sql
 WITH plays AS (
-  SELECT 
+  SELECT
     action_param1 as video_url,
     COUNT(*) as play_count
   FROM chatium_ai.access_log
@@ -414,7 +429,7 @@ WITH plays AS (
   GROUP BY video_url
 ),
 completions AS (
-  SELECT 
+  SELECT
     action_param1 as video_url,
     COUNT(*) as complete_count
   FROM chatium_ai.access_log
@@ -422,7 +437,7 @@ completions AS (
     AND dt >= today() - 7
   GROUP BY video_url
 )
-SELECT 
+SELECT
   p.video_url,
   p.play_count,
   COALESCE(c.complete_count, 0) as complete_count,
@@ -435,14 +450,16 @@ ORDER BY p.play_count DESC
 #### 9. scroll - Прокрутка страницы
 
 **Поля**:
+
 ```
 action = 'scroll'
 action_param1 = 'scroll_depth' (25%, 50%, 75%, 100%)
 ```
 
 **SQL пример - глубина прокрутки**:
+
 ```sql
-SELECT 
+SELECT
   action_param1 as scroll_depth,
   COUNT(*) as events_count,
   COUNT(DISTINCT uid) as unique_users
@@ -456,6 +473,7 @@ ORDER BY scroll_depth ASC
 #### 10. download - Скачивание файла
 
 **Поля**:
+
 ```
 action = 'download'
 action_param1 = 'file_url'
@@ -466,6 +484,7 @@ action_param3 = 'file_type'
 #### 11. search - Поиск
 
 **Поля**:
+
 ```
 action = 'search'
 action_param1 = 'search_query'
@@ -473,8 +492,9 @@ action_param2 = 'search_results_count'
 ```
 
 **SQL пример - популярные запросы**:
+
 ```sql
-SELECT 
+SELECT
   action_param1 as search_query,
   COUNT(*) as search_count,
   AVG(CAST(action_param2 as Float32)) as avg_results
@@ -492,15 +512,17 @@ LIMIT 20
 #### 12-15. Корзина и покупки
 
 **События**:
+
 - `add_to_cart` - Добавление в корзину
 - `remove_from_cart` - Удаление из корзины
 - `checkout` - Оформление заказа
 - `purchase` - Покупка
 
 **SQL пример - воронка покупки**:
+
 ```sql
 WITH funnel AS (
-  SELECT 
+  SELECT
     SUM(CASE WHEN action = 'add_to_cart' THEN 1 ELSE 0 END) as add_to_cart_count,
     SUM(CASE WHEN action = 'checkout' THEN 1 ELSE 0 END) as checkout_count,
     SUM(CASE WHEN action = 'purchase' THEN 1 ELSE 0 END) as purchase_count
@@ -508,7 +530,7 @@ WITH funnel AS (
   WHERE action IN ('add_to_cart', 'checkout', 'purchase')
     AND dt >= today() - 30
 )
-SELECT 
+SELECT
   add_to_cart_count,
   checkout_count,
   purchase_count,
@@ -523,8 +545,9 @@ FROM funnel
 #### 16-17. Вход/выход (login, logout)
 
 **SQL пример - активность по часам**:
+
 ```sql
-SELECT 
+SELECT
   toHour(ts) as hour,
   COUNT(CASE WHEN action = 'login' THEN 1 END) as logins,
   COUNT(CASE WHEN action = 'logout' THEN 1 END) as logouts
@@ -540,8 +563,9 @@ ORDER BY hour ASC
 #### 18-20. Социальные действия (share, comment, like)
 
 **SQL пример - популярный контент**:
+
 ```sql
-SELECT 
+SELECT
   action_param1 as content_url,
   SUM(CASE WHEN action = 'like' THEN 1 ELSE 0 END) as likes,
   SUM(CASE WHEN action = 'comment' THEN 1 ELSE 0 END) as comments,
@@ -569,7 +593,7 @@ LIMIT 20
 
 ```sql
 -- Daily Active Users
-SELECT 
+SELECT
   dt,
   COUNT(DISTINCT uid) as dau
 FROM chatium_ai.access_log
@@ -579,7 +603,7 @@ GROUP BY dt
 ORDER BY dt ASC
 
 -- Monthly Active Users
-SELECT 
+SELECT
   toStartOfMonth(dt) as month,
   COUNT(DISTINCT uid) as mau
 FROM chatium_ai.access_log
@@ -593,7 +617,7 @@ ORDER BY month ASC
 
 ```sql
 WITH sessions AS (
-  SELECT 
+  SELECT
     session_id,
     COUNT(*) as pages_viewed
   FROM chatium_ai.access_log
@@ -601,7 +625,7 @@ WITH sessions AS (
     AND dt >= today() - 7
   GROUP BY session_id
 )
-SELECT 
+SELECT
   COUNT(CASE WHEN pages_viewed = 1 THEN 1 END) as bounced_sessions,
   COUNT(*) as total_sessions,
   ROUND((COUNT(CASE WHEN pages_viewed = 1 THEN 1 END) * 100.0 / COUNT(*)), 2) as bounce_rate
@@ -612,7 +636,7 @@ FROM sessions
 
 ```sql
 WITH sessions AS (
-  SELECT 
+  SELECT
     session_id,
     MIN(ts) as session_start,
     MAX(ts) as session_end,
@@ -621,7 +645,7 @@ WITH sessions AS (
   WHERE dt >= today() - 7
   GROUP BY session_id
 )
-SELECT 
+SELECT
   ROUND(AVG(duration_seconds), 2) as avg_duration_seconds,
   ROUND(AVG(duration_seconds) / 60, 2) as avg_duration_minutes,
   COUNT(*) as total_sessions
@@ -649,7 +673,7 @@ purchases AS (
   FROM chatium_ai.access_log
   WHERE action = 'purchase' AND dt >= today() - 7
 )
-SELECT 
+SELECT
   p.count as pageviews,
   r.count as registrations,
   pu.count as purchases,
@@ -662,7 +686,7 @@ FROM pageviews p, registrations r, purchases pu
 #### User Journey - Путь пользователя
 
 ```sql
-SELECT 
+SELECT
   uid,
   groupArray(action) as user_journey,
   groupArray(ts) as timestamps,
@@ -679,7 +703,7 @@ ORDER BY first_action ASC
 
 ```sql
 WITH first_visit AS (
-  SELECT 
+  SELECT
     uid,
     toStartOfMonth(MIN(dt)) as cohort_month
   FROM chatium_ai.access_log
@@ -687,14 +711,14 @@ WITH first_visit AS (
   GROUP BY uid
 ),
 monthly_activity AS (
-  SELECT 
+  SELECT
     uid,
     toStartOfMonth(dt) as activity_month
   FROM chatium_ai.access_log
   WHERE action = 'pageview'
   GROUP BY uid, activity_month
 )
-SELECT 
+SELECT
   fv.cohort_month,
   ma.activity_month,
   dateDiff('month', fv.cohort_month, ma.activity_month) as months_since_first_visit,
@@ -727,7 +751,7 @@ interface TrafficStats {
 
 export const apiTrafficStatsRoute = app.get('/traffic-stats', async (ctx, req) => {
   const { dateFrom = '2025-01-01', dateTo = '2025-01-31' } = req.query
-  
+
   const query = `
     WITH pageviews AS (
       SELECT 
@@ -767,12 +791,12 @@ export const apiTrafficStatsRoute = app.get('/traffic-stats', async (ctx, req) =
     LEFT JOIN bounced_sessions bs ON 1=1
     GROUP BY pv.pv_count, pv.unique_visitors, pv.sessions
   `
-  
+
   try {
     // Используем gcQueryAi для настроенного аккаунта
     const result = await gcQueryAi(ctx, query)
     const stats = result.rows?.[0] as TrafficStats
-    
+
     return {
       success: true,
       stats: {
@@ -796,7 +820,7 @@ import { queryAi } from '@traffic/sdk'
 
 export const apiTrafficStatsRoute = app.get('/traffic-stats', async (ctx, req) => {
   const { dateFrom = '2025-01-01', dateTo = '2025-01-31' } = req.query
-  
+
   const query = `
     SELECT 
       COUNT(*) as total_pageviews,
@@ -805,12 +829,12 @@ export const apiTrafficStatsRoute = app.get('/traffic-stats', async (ctx, req) =
     WHERE action = 'pageview'
       AND dt BETWEEN '${dateFrom}' AND '${dateTo}'
   `
-  
+
   try {
     // Используем queryAi для аккаунта разработчика
     const result = await queryAi(ctx, query)
     const stats = result.rows?.[0]
-    
+
     return {
       success: true,
       totalPageviews: stats?.total_pageviews || 0,
@@ -829,7 +853,7 @@ import { gcQueryAi } from '@gc-mcp-server/sdk'
 
 export const apiTopPagesRoute = app.get('/top-pages', async (ctx, req) => {
   const { limit = 10 } = req.query
-  
+
   const query = `
     SELECT 
       urlPath as page_url,
@@ -848,10 +872,10 @@ export const apiTopPagesRoute = app.get('/top-pages', async (ctx, req) => {
     ORDER BY views DESC
     LIMIT ${Number(limit)}
   `
-  
+
   // Можно использовать как gcQueryAi, так и queryAi
   const result = await gcQueryAi(ctx, query)
-  
+
   return {
     success: true,
     pages: result.rows || []
@@ -883,10 +907,10 @@ export const apiTrafficSourcesRoute = app.get('/traffic-sources', async (ctx) =>
     GROUP BY source
     ORDER BY visitors DESC
   `
-  
+
   // Для внутреннего инструмента можно использовать queryAi
   const result = await queryAi(ctx, query)
-  
+
   return {
     success: true,
     sources: result.rows || []
@@ -967,6 +991,7 @@ if (duration > 3000) {
 **Все запросы к http:// и https:// URL группируются по полю `action`**, а не по конкретному URL.
 
 **Пример:**
+
 ```sql
 -- ❌ НЕПРАВИЛЬНО: фильтровать по конкретным URL
 WHERE urlPath = 'https://example.com/page1'
@@ -980,16 +1005,16 @@ WHERE action = 'pageview'
 
 Эти события определены в `shared/eventTypes.ts` и доступны для отслеживания:
 
-| Action | Описание | Использование |
-|--------|----------|---------------|
-| `pageview` | Просмотр страницы | Отслеживание просмотров страниц |
-| `button_click` | Клик по кнопке | Клики по интерактивным элементам |
-| `link_click` | Клик по ссылке | Переходы по ссылкам |
-| `scroll` | Прокрутка страницы | Глубина прокрутки контента |
-| `form_submit` | Отправка формы | Отправка любых форм на сайте |
-| `video_play` | Воспроизведение видео | Начало воспроизведения видео |
-| `video_pause` | Пауза видео | Пауза во время просмотра |
-| `video_complete` | Просмотр видео до конца | Завершение просмотра видео |
+| Action           | Описание                | Использование                    |
+| ---------------- | ----------------------- | -------------------------------- |
+| `pageview`       | Просмотр страницы       | Отслеживание просмотров страниц  |
+| `button_click`   | Клик по кнопке          | Клики по интерактивным элементам |
+| `link_click`     | Клик по ссылке          | Переходы по ссылкам              |
+| `scroll`         | Прокрутка страницы      | Глубина прокрутки контента       |
+| `form_submit`    | Отправка формы          | Отправка любых форм на сайте     |
+| `video_play`     | Воспроизведение видео   | Начало воспроизведения видео     |
+| `video_pause`    | Пауза видео             | Пауза во время просмотра         |
+| `video_complete` | Просмотр видео до конца | Завершение просмотра видео       |
 
 **Всего: 8 основных типов событий трафика**
 
@@ -998,6 +1023,7 @@ WHERE action = 'pageview'
 Эти события можно добавить в `eventTypes.ts` при необходимости:
 
 **Регистрация и действия (5):**
+
 - `registration` - Регистрация
 - `download` - Скачивание файла
 - `search` - Поиск
@@ -1005,17 +1031,20 @@ WHERE action = 'pageview'
 - `logout` - Выход
 
 **E-commerce (4):**
+
 - `add_to_cart` - Добавление в корзину
 - `remove_from_cart` - Удаление из корзины
 - `checkout` - Оформление заказа
 - `purchase` - Покупка
 
 **Социальное (3):**
+
 - `share` - Поделиться
 - `comment` - Комментарий
 - `like` - Лайк
 
 **Прочее (1):**
+
 - `custom_action` - Пользовательское действие
 
 **Расширенный список: до 21 типа событий**
@@ -1026,10 +1055,10 @@ WHERE action = 'pageview'
 
 ```sql
 -- Комбинированный запрос: трафик + GetCourse
-SELECT 
+SELECT
   urlPath,
   action,
-  CASE 
+  CASE
     WHEN action IN ('pageview', 'button_click', 'link_click') THEN 'traffic'
     WHEN urlPath LIKE 'event://getcourse/%' THEN 'getcourse'
     WHEN urlPath LIKE 'event://refunnels/%' THEN 'refunnels'
@@ -1054,6 +1083,7 @@ LIMIT 1000
 ```
 
 **Преимущества:**
+
 - ✅ Один запрос вместо нескольких
 - ✅ Все типы событий в едином потоке
 - ✅ Категоризация через CASE
@@ -1066,7 +1096,7 @@ import { EventDefinition } from '../shared/eventTypes'
 
 function buildEventFilter(selectedEvents: EventDefinition[]): string {
   const conditions: string[] = []
-  
+
   for (const event of selectedEvents) {
     if (event.urlPattern) {
       // Паттерн (категория событий)
@@ -1079,7 +1109,7 @@ function buildEventFilter(selectedEvents: EventDefinition[]): string {
       conditions.push(`action = '${event.name}'`)
     }
   }
-  
+
   return conditions.length > 0 ? conditions.join(' OR ') : '1=1'
 }
 
@@ -1107,22 +1137,22 @@ const query = `
 
 ```typescript
 // Единый API endpoint с двумя режимами работы
-export const apiEventsRoute = app.body(s => ({
-  mode: s.string().default('list'),      // 'list' | 'poll'
-  limit: s.number().default(25),
-  offset: s.number().default(0),
-  sinceTimestamp: s.string().optional(), // Для poll: события ПОСЛЕ
-  maxTimestamp: s.string().optional()    // Для list: события ДО
-})).post('/events', async (ctx, req) => {
-  const { mode, limit, offset, maxTimestamp } = req.body
-  
-  if (mode === 'list') {
-    // Фильтр по максимальному timestamp (снимок данных)
-    const timestampFilter = maxTimestamp 
-      ? `AND ts <= '${maxTimestamp.replace(/'/g, "''")}'` 
-      : ''
-    
-    const query = `
+export const apiEventsRoute = app
+  .body((s) => ({
+    mode: s.string().default('list'), // 'list' | 'poll'
+    limit: s.number().default(25),
+    offset: s.number().default(0),
+    sinceTimestamp: s.string().optional(), // Для poll: события ПОСЛЕ
+    maxTimestamp: s.string().optional() // Для list: события ДО
+  }))
+  .post('/events', async (ctx, req) => {
+    const { mode, limit, offset, maxTimestamp } = req.body
+
+    if (mode === 'list') {
+      // Фильтр по максимальному timestamp (снимок данных)
+      const timestampFilter = maxTimestamp ? `AND ts <= '${maxTimestamp.replace(/'/g, "''")}'` : ''
+
+      const query = `
       SELECT 
         ts, urlPath, action, uid, user_id, title
       FROM chatium_ai.access_log
@@ -1132,16 +1162,16 @@ export const apiEventsRoute = app.body(s => ({
       LIMIT ${limit}
       OFFSET ${offset}
     `
-    
-    const result = await gcQueryAi(ctx, query)
-    
-    return {
-      success: true,
-      events: result.rows || [],
-      total: result.rows?.length || 0
+
+      const result = await gcQueryAi(ctx, query)
+
+      return {
+        success: true,
+        events: result.rows || [],
+        total: result.rows?.length || 0
+      }
     }
-  }
-})
+  })
 ```
 
 ### Реализация на фронтенде
@@ -1153,22 +1183,22 @@ import { ref } from 'vue'
 const events = ref([])
 const currentPage = ref(1)
 const pageSize = ref(25)
-const maxTimestamp = ref(null)  // КЛЮЧЕВАЯ переменная!
+const maxTimestamp = ref(null) // КЛЮЧЕВАЯ переменная!
 
 // Загрузка событий
 const loadEvents = async () => {
   const offset = (currentPage.value - 1) * pageSize.value
-  
-  const result = await apiEventsRoute.run(ctx, { 
+
+  const result = await apiEventsRoute.run(ctx, {
     mode: 'list',
-    limit: pageSize.value, 
+    limit: pageSize.value,
     offset: offset,
-    maxTimestamp: maxTimestamp.value  // Используем зафиксированный timestamp
+    maxTimestamp: maxTimestamp.value // Используем зафиксированный timestamp
   })
-  
+
   if (result.success) {
     events.value = result.events || []
-    
+
     // На ПЕРВОЙ странице фиксируем maxTimestamp
     if (currentPage.value === 1 && events.value.length > 0) {
       maxTimestamp.value = events.value[0].ts
@@ -1194,7 +1224,7 @@ const prevPage = async () => {
 // Обновление (сброс на первую страницу)
 const refreshEvents = async () => {
   currentPage.value = 1
-  maxTimestamp.value = null  // Сбрасываем фиксацию
+  maxTimestamp.value = null // Сбрасываем фиксацию
   await loadEvents()
 }
 </script>
@@ -1220,6 +1250,7 @@ ORDER BY ts DESC
 ```
 
 **Зачем нужна вторая колонка (`urlPath`)**:
+
 - События могут иметь одинаковый timestamp
 - Без второй колонки порядок таких событий недетерминирован
 - Это приводит к "прыганию" событий между страницами
@@ -1227,6 +1258,7 @@ ORDER BY ts DESC
 ### Пример работы
 
 **Исходные данные (в реальном времени добавляются новые):**
+
 ```
 18:05:00 - event1
 18:04:00 - event2
@@ -1235,6 +1267,7 @@ ORDER BY ts DESC
 ```
 
 **Без фиксации maxTimestamp:**
+
 ```
 Страница 1 (offset 0):  18:05:00, 18:04:00, 18:03:00 ... (25 событий)
 [Новое событие 18:06:00 добавляется]
@@ -1242,6 +1275,7 @@ ORDER BY ts DESC
 ```
 
 **С фиксацией maxTimestamp:**
+
 ```
 Страница 1 (offset 0):             18:05:00, 18:04:00, ... (25)
 maxTimestamp = 18:05:00  ← ФИКСИРУЕМ
@@ -1283,31 +1317,31 @@ export function deduplicateEvents(events: any[]): any[] {
   if (!events || events.length === 0) {
     return events
   }
-  
+
   const result: any[] = []
   let lastAddedKey: string | null = null
   let lastAddedTs: number | null = null
-  
+
   for (const event of events) {
     const urlPath = event.urlPath || ''
     const uid = event.uid || event.user_id || ''
     const key = `${urlPath}:${uid}`
     const eventTs = new Date(event.ts || '').getTime()
-    
+
     let isDuplicate = false
-    
+
     // Проверяем только с ПОСЛЕДНИМ ДОБАВЛЕННЫМ событием
     if (lastAddedKey && lastAddedTs) {
       if (key === lastAddedKey) {
         const diffSeconds = Math.abs(eventTs - lastAddedTs) / 1000
-        
+
         // Если разница <= 5 секунд - это последовательный дубликат
         if (diffSeconds <= 5) {
           isDuplicate = true
         }
       }
     }
-    
+
     if (!isDuplicate) {
       // Добавляем событие и обновляем "последнее добавленное"
       result.push(event)
@@ -1316,7 +1350,7 @@ export function deduplicateEvents(events: any[]): any[] {
     }
     // Если дубликат - НЕ обновляем "последнее добавленное"
   }
-  
+
   return result
 }
 ```
@@ -1324,6 +1358,7 @@ export function deduplicateEvents(events: any[]): any[] {
 ### Примеры работы дедупликации
 
 **Пример 1: Iframe дубликаты фильтруются**
+
 ```javascript
 Входные события (DESC сортировка):
 1. 18:35:58.955 - key.sobolevarent.ru, user1 ✅ добавляется
@@ -1334,6 +1369,7 @@ export function deduplicateEvents(events: any[]): any[] {
 ```
 
 **Пример 2: Повторные визиты НЕ фильтруются**
+
 ```javascript
 Входные события:
 1. 18:00:10 - page1, user1 ✅ добавляется
@@ -1344,6 +1380,7 @@ export function deduplicateEvents(events: any[]): any[] {
 ```
 
 **Пример 3: Другой URL сбрасывает последовательность**
+
 ```javascript
 Входные события:
 1. 18:00:10 - page1, user1 ✅ добавляется
@@ -1359,7 +1396,7 @@ export function deduplicateEvents(events: any[]): any[] {
 
 ```typescript
 // Запрашиваем БОЛЬШЕ событий с запасом на дубликаты
-const fetchLimit = limit * 3  // 25 → запросим 75
+const fetchLimit = limit * 3 // 25 → запросим 75
 
 const query = `
   SELECT ts, urlPath, uid, user_id, action, title
@@ -1387,6 +1424,7 @@ return {
 ```
 
 **Зачем запрашивать в 3 раза больше?**
+
 - После фильтрации дубликатов может остаться меньше событий
 - Запас гарантирует, что мы получим нужные 25 уникальных событий
 - Если дубликатов нет - просто обрежем до 25
@@ -1395,7 +1433,7 @@ return {
 
 ```typescript
 // Получаем НОВЫЕ события после lastProcessedTs
-const timestampFilter = sinceTimestamp 
+const timestampFilter = sinceTimestamp
   ? `AND ts > '${sinceTimestamp.replace(/'/g, "''")}'`
   : `AND ts >= now() - INTERVAL 30 MINUTE`
 
@@ -1431,44 +1469,44 @@ return {
 // WebSocket обработчик с дедупликацией
 socketSubscription.value.listen((message) => {
   if (message.type === 'events-update') {
-    const incomingEvents = message.data.map(e => ({ ...e, isNew: true }))
-    
+    const incomingEvents = message.data.map((e) => ({ ...e, isNew: true }))
+
     // Берем первое (самое новое) событие из списка
     let lastAddedKey = null
     let lastAddedTs = null
-    
+
     if (events.value.length > 0) {
       const firstEvent = events.value[0]
       lastAddedKey = `${firstEvent.urlPath}:${firstEvent.uid || firstEvent.user_id}`
       lastAddedTs = new Date(firstEvent.ts).getTime()
     }
-    
+
     // Фильтруем последовательные дубликаты
     const newEvents = []
-    
+
     for (const event of incomingEvents) {
       const key = `${event.urlPath}:${event.uid || event.user_id}`
       const eventTs = new Date(event.ts).getTime()
-      
+
       let isDuplicate = false
-      
+
       if (lastAddedKey && lastAddedTs) {
         if (key === lastAddedKey) {
           const diffSeconds = Math.abs(eventTs - lastAddedTs) / 1000
-          
+
           if (diffSeconds <= 5) {
             isDuplicate = true
           }
         }
       }
-      
+
       if (!isDuplicate) {
         newEvents.push(event)
         lastAddedKey = key
         lastAddedTs = eventTs
       }
     }
-    
+
     // Добавляем отфильтрованные события в начало списка
     if (newEvents.length > 0) {
       events.value = [...newEvents, ...events.value]
@@ -1485,19 +1523,18 @@ socketSubscription.value.listen((message) => {
 const startMonitoring = async () => {
   // 1. Сначала обновляем список - загружаем свежие данные
   await refreshEvents()
-  
+
   // 2. Берем timestamp ПОСЛЕДНЕГО загруженного события
-  const lastProcessedTs = events.value.length > 0 && events.value[0].ts 
-    ? events.value[0].ts 
-    : new Date().toISOString()
-  
+  const lastProcessedTs =
+    events.value.length > 0 && events.value[0].ts ? events.value[0].ts : new Date().toISOString()
+
   console.log('Starting monitoring with lastProcessedTs:', lastProcessedTs)
-  
+
   // 3. Запускаем джобу с этим timestamp
   const result = await apiStartMonitoringRoute.run(ctx, {
     lastProcessedTs
   })
-  
+
   if (result.success) {
     isMonitoring.value = true
     // Подключаем WebSocket для получения новых событий
@@ -1510,47 +1547,53 @@ const startMonitoring = async () => {
 ### Джоба мониторинга
 
 ```typescript
-export const monitorEventsJob = app.job('/monitor-events', async (ctx, params: { 
-  userId: string
-  socketId: string
-  lastProcessedTs?: string
-}) => {
-  // Проверяем активность мониторинга
-  const monitoring = await Monitoring.findOneBy(ctx, {
-    userId: params.userId,
-    isActive: true
-  })
-  
-  if (!monitoring) {
-    return // Мониторинг остановлен
-  }
-  
-  // Получаем новые события через API в режиме 'poll'
-  const result = await apiEventsRoute.run(ctx, {
-    mode: 'poll',
-    sinceTimestamp: params.lastProcessedTs
-  })
-  
-  if (result.success && result.events.length > 0) {
-    // Отправляем через WebSocket
-    await sendDataToSocket(ctx, params.socketId, {
-      type: 'events-update',
-      data: result.events
+export const monitorEventsJob = app.job(
+  '/monitor-events',
+  async (
+    ctx,
+    params: {
+      userId: string
+      socketId: string
+      lastProcessedTs?: string
+    }
+  ) => {
+    // Проверяем активность мониторинга
+    const monitoring = await Monitoring.findOneBy(ctx, {
+      userId: params.userId,
+      isActive: true
+    })
+
+    if (!monitoring) {
+      return // Мониторинг остановлен
+    }
+
+    // Получаем новые события через API в режиме 'poll'
+    const result = await apiEventsRoute.run(ctx, {
+      mode: 'poll',
+      sinceTimestamp: params.lastProcessedTs
+    })
+
+    if (result.success && result.events.length > 0) {
+      // Отправляем через WebSocket
+      await sendDataToSocket(ctx, params.socketId, {
+        type: 'events-update',
+        data: result.events
+      })
+    }
+
+    // Планируем следующую проверку через 15 секунд
+    const nextTaskId = await monitorEventsJob.scheduleJobAfter(ctx, 15, 'seconds', {
+      ...params,
+      lastProcessedTs: result.latestTimestamp || params.lastProcessedTs
+    })
+
+    // Обновляем taskId в мониторинге
+    await Monitoring.update(ctx, {
+      id: monitoring.id,
+      taskId: String(nextTaskId)
     })
   }
-  
-  // Планируем следующую проверку через 15 секунд
-  const nextTaskId = await monitorEventsJob.scheduleJobAfter(ctx, 15, 'seconds', {
-    ...params,
-    lastProcessedTs: result.latestTimestamp || params.lastProcessedTs
-  })
-  
-  // Обновляем taskId в мониторинге
-  await Monitoring.update(ctx, {
-    id: monitoring.id,
-    taskId: String(nextTaskId)
-  })
-})
+)
 ```
 
 ### API для запуска мониторинга
@@ -1558,13 +1601,13 @@ export const monitorEventsJob = app.job('/monitor-events', async (ctx, params: {
 ```typescript
 export const apiStartMonitoringRoute = app.post('/start-monitoring', async (ctx, req) => {
   const userId = ctx.user?.id || 'test-user-' + Date.now()
-  
+
   // Проверяем существующий мониторинг
   const existing = await Monitoring.findOneBy(ctx, {
     userId,
     isActive: true
   })
-  
+
   if (existing) {
     return {
       success: true,
@@ -1572,19 +1615,19 @@ export const apiStartMonitoringRoute = app.post('/start-monitoring', async (ctx,
       alreadyActive: true
     }
   }
-  
+
   const socketId = `events-monitor-${userId}`
-  
+
   // ВАЖНО: Используем переданный или текущий timestamp
   const lastProcessedTs = req.body?.lastProcessedTs || new Date().toISOString()
-  
+
   // Запускаем джобу СРАЗУ (scheduleJobAsap)
   const taskId = await monitorEventsJob.scheduleJobAsap(ctx, {
     userId,
     socketId,
-    lastProcessedTs  // ← Ключевой параметр!
+    lastProcessedTs // ← Ключевой параметр!
   })
-  
+
   // Сохраняем мониторинг
   await Monitoring.create(ctx, {
     userId,
@@ -1593,9 +1636,9 @@ export const apiStartMonitoringRoute = app.post('/start-monitoring', async (ctx,
     isActive: true,
     startedAt: new Date()
   })
-  
+
   const encodedSocketId = await genSocketId(ctx, socketId)
-  
+
   return {
     success: true,
     socketId: encodedSocketId,
@@ -1614,7 +1657,7 @@ export const apiStartMonitoringRoute = app.post('/start-monitoring', async (ctx,
    Получаем 25 событий
    ↓
    maxTimestamp = events[0].ts  ← ФИКСИРУЕМ
-   
+
 2. НАЖАТИЕ "НАЧАТЬ МОНИТОРИНГ"
    ↓
    refreshEvents() → обновляем список
@@ -1628,7 +1671,7 @@ export const apiStartMonitoringRoute = app.post('/start-monitoring', async (ctx,
    Каждые 15 сек: API (mode: poll, sinceTimestamp: lastProcessedTs)
    ↓
    Новые события → WebSocket → фронтенд (с дедупликацией)
-   
+
 3. ПЕРЕХОД НА СТРАНИЦУ 2
    ↓
    currentPage = 2
@@ -1645,15 +1688,15 @@ export const apiStartMonitoringRoute = app.post('/start-monitoring', async (ctx,
 ```typescript
 ctx.account.log('Events list executed', {
   level: 'info',
-  json: { 
+  json: {
     mode,
     limit,
     offset,
     maxTimestamp,
-    rowsCount: allEvents.length,           // Получено из ClickHouse
+    rowsCount: allEvents.length, // Получено из ClickHouse
     deduplicatedCount: dedupEvents.length, // После дедупликации
     removedDuplicates: allEvents.length - dedupEvents.length,
-    returnedCount: events.length           // Возвращено клиенту
+    returnedCount: events.length // Возвращено клиенту
   }
 })
 ```
@@ -1670,14 +1713,14 @@ case 'events_deduplication':
     { ts: '2025-11-09 12:00:13.000', urlPath: 'page2', uid: 'user1' }, // НЕ дубликат (другой URL)
     { ts: '2025-11-09 12:00:07.000', urlPath: 'page1', uid: 'user1' }  // НЕ дубликат (предыдущий page2)
   ]
-  
+
   const result = deduplicateEvents(testEvents)
-  
+
   // Ожидаем 4 события (убрались #2, #3)
   if (result.length !== 4) {
     throw new Error(`Ожидалось 4, получено ${result.length}`)
   }
-  
+
   // Проверяем последовательность
   assert(result[0].ts === '2025-11-09 12:00:20.000')
   assert(result[1].ts === '2025-11-09 12:00:14.000')
@@ -1688,23 +1731,25 @@ case 'events_deduplication':
 
 ### Где применять дедупликацию
 
-| Место | Применять? | Причина |
-|-------|-----------|---------|
-| API режим `list` | ✅ ДА | Фильтрует дубликаты при первой загрузке |
-| API режим `poll` | ✅ ДА | Фильтрует дубликаты в джобе |
-| Фронтенд WebSocket | ✅ ДА | Дополнительная фильтрация перед добавлением в UI |
-| Статистика (COUNT) | ❌ НЕТ | Дедупликация уже в `COUNT(DISTINCT uid)` |
-| Экспорт данных | ⚠️ ОПЦИОНАЛЬНО | Зависит от требований |
+| Место              | Применять?     | Причина                                          |
+| ------------------ | -------------- | ------------------------------------------------ |
+| API режим `list`   | ✅ ДА          | Фильтрует дубликаты при первой загрузке          |
+| API режим `poll`   | ✅ ДА          | Фильтрует дубликаты в джобе                      |
+| Фронтенд WebSocket | ✅ ДА          | Дополнительная фильтрация перед добавлением в UI |
+| Статистика (COUNT) | ❌ НЕТ         | Дедупликация уже в `COUNT(DISTINCT uid)`         |
+| Экспорт данных     | ⚠️ ОПЦИОНАЛЬНО | Зависит от требований                            |
 
 ### Ключевые моменты
 
 **✅ Правильно:**
+
 - Сравнивать с **последним добавленным** событием
 - Проверять временную разницу (≤ 5 секунд)
 - НЕ обновлять "последнее" если пропускаем дубликат
 - Применять дедупликацию везде: `list`, `poll`, WebSocket
 
 **❌ Неправильно:**
+
 - Сравнивать со ВСЕМИ предыдущими событиями (слишком агрессивно)
 - Фильтровать только по одной секунде (пропустит дубликаты в 18:00:01 и 18:00:02)
 - Обновлять "последнее" при пропуске дубликата
@@ -1720,7 +1765,7 @@ case 'events_deduplication':
 - **E01-gc-sdk.md** — GetCourse SDK (методы, настройка MCP Client)
 - **014-socket.md** — WebSocket мониторинг
 - **008-heap.md** — Heap таблицы
-- **Проекты**: 
+- **Проекты**:
   - `dev/partnership` - партнёрская система с GetCourse и трафиком
   - `dev/events-subscribe` - мониторинг событий
   - `ref/analitika-getkursa-extended` - референс аналитики
@@ -1730,7 +1775,8 @@ case 'events_deduplication':
 **Версия**: 3.0  
 **Дата создания**: 2025-11-07  
 **Последнее обновление**: 2025-11-10  
-**Статус**: 
+**Статус**:
+
 - ✅ Добавлена исчерпывающая инструкция по **пагинации с фиксацией timestamp**
 - ✅ Добавлена полная инструкция по **последовательной дедупликации**
 - ✅ Описан полный flow работы: загрузка → мониторинг → пагинация
@@ -1742,4 +1788,3 @@ case 'events_deduplication':
 - Добавлено важное правило: HTTP/HTTPS события группируются по `action`, а не по URL
 - Добавлены примеры комбинированных запросов с GetCourse событиями
 - Добавлена функция `buildEventFilter()` для динамической фильтрации
-

@@ -13,17 +13,17 @@
       </div>
       <div class="header-actions">
         <ThemeToggle />
-        <a 
-          v-if="isAdmin && eventsPageUrl" 
-          :href="eventsPageUrl" 
+        <a
+          v-if="isAdmin && eventsPageUrl"
+          :href="eventsPageUrl"
           class="header-settings-btn"
           title="События"
         >
           <i class="fas fa-chart-line"></i>
         </a>
-        <a 
-          v-if="isAdmin" 
-          :href="isOnSettingsPage ? indexPageUrl : settingsPageUrl" 
+        <a
+          v-if="isAdmin"
+          :href="isOnSettingsPage ? indexPageUrl : settingsPageUrl"
           class="header-settings-btn"
           :title="isOnSettingsPage ? 'Вернуться на главную' : 'Настройки проекта'"
         >
@@ -68,18 +68,22 @@ const props = defineProps({
 // Проверяем, находимся ли мы на странице настроек
 const isOnSettingsPage = computed(() => {
   if (!props.settingsPageUrl) return false
-  
+
   try {
     const currentPath = window.location.pathname
     const settingsPath = new URL(props.settingsPageUrl, window.location.origin).pathname
-    
+
     return currentPath === settingsPath
   } catch {
     // Если не удалось распарсить URL, сравниваем строки
     const currentHref = window.location.href.split('?')[0].split('#')[0]
     const settingsHref = props.settingsPageUrl.split('?')[0].split('#')[0]
-    
-    return currentHref === settingsHref || currentHref.endsWith(settingsHref) || settingsHref.endsWith(currentHref)
+
+    return (
+      currentHref === settingsHref ||
+      currentHref.endsWith(settingsHref) ||
+      settingsHref.endsWith(currentHref)
+    )
   }
 })
 </script>
@@ -192,15 +196,14 @@ const isOnSettingsPage = computed(() => {
   .header-title {
     font-size: 1.25rem;
   }
-  
+
   .header-logo {
     width: 36px;
     height: 36px;
   }
-  
+
   .header-logo i {
     font-size: 1.125rem;
   }
 }
 </style>
-

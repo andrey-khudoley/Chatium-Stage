@@ -72,7 +72,8 @@ export async function createPaymentLink(
       effectiveAmount,
       min: limits.min,
       max: limits.max,
-      sourceAmountRub: params.currency === 'USD' || params.currency === 'EUR' ? params.amount : undefined
+      sourceAmountRub:
+        params.currency === 'USD' || params.currency === 'EUR' ? params.amount : undefined
     })
     await loggerLib.writeServerLog(ctx, {
       severity: 4,
@@ -92,7 +93,8 @@ export async function createPaymentLink(
       message,
       amountMin: limits.min,
       amountMax: limits.max,
-      sourceAmountRub: params.currency === 'USD' || params.currency === 'EUR' ? params.amount : undefined,
+      sourceAmountRub:
+        params.currency === 'USD' || params.currency === 'EUR' ? params.amount : undefined,
       convertedAmount:
         params.currency === 'USD' || params.currency === 'EUR' ? effectiveAmount : undefined
     }

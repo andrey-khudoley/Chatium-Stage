@@ -12,6 +12,8 @@ export const getExportResultHandler: V1GcHandler = async (_ctx, a) => {
   return { kind: 'gc_result', gc }
 }
 
-export const getExportResultRoute = app.get('/', async (ctx, req) => handleV1Op(ctx, req, 'getExportResult', getExportResultHandler))
+export const getExportResultRoute = app.get('/', async (ctx, req) =>
+  handleV1Op(ctx, req, 'getExportResult', getExportResultHandler)
+)
 
 export default getExportResultRoute

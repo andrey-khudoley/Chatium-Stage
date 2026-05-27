@@ -71,7 +71,8 @@ export async function getSettingString(ctx: app.Ctx, key: string): Promise<strin
     payload: { key }
   })
   const value = await getSetting(ctx, key)
-  const result = typeof value === 'string' ? value : String((DEFAULTS as Record<string, unknown>)[key] ?? '')
+  const result =
+    typeof value === 'string' ? value : String((DEFAULTS as Record<string, unknown>)[key] ?? '')
   await loggerLib.writeServerLog(ctx, {
     severity: 6,
     message: `[${LOG_MODULE}] getSettingString exit`,
@@ -219,7 +220,9 @@ export async function setSetting(ctx: app.Ctx, key: string, value: unknown): Pro
       payload: { str, isLogLevel: isLogLevel(str) }
     })
     if (!isLogLevel(str)) {
-      throw new Error(`Недопустимый уровень логирования: ${str}. Допустимо: ${LOG_LEVELS.join(', ')}`)
+      throw new Error(
+        `Недопустимый уровень логирования: ${str}. Допустимо: ${LOG_LEVELS.join(', ')}`
+      )
     }
     normalized = str
   } else if (key === SETTING_KEYS.LOGS_LIMIT) {
@@ -281,7 +284,9 @@ export async function setSetting(ctx: app.Ctx, key: string, value: unknown): Pro
       normalized = trimmed.replace(/\/+$/, '')
     } else if (key === SETTING_KEYS.GC_SCHOOL_HOST) {
       if (/^https?:\/\//i.test(trimmed) || trimmed.includes('/') || /\s/.test(trimmed)) {
-        throw new Error(`gc_school_host — имя хоста без схемы и без пути (например myschool.getcourse.ru)`)
+        throw new Error(
+          `gc_school_host — имя хоста без схемы и без пути (например myschool.getcourse.ru)`
+        )
       }
       normalized = trimmed
     } else {

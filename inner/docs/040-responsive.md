@@ -1,4 +1,5 @@
 @chatium
+
 # Модуль @app/responsive: Адаптивное состояние
 
 Краткий справочник по модулю `@app/responsive` — определение состояния экрана (breakpoints) для адаптивной вёрстки. Типизация: `node_modules/@app/responsive/index.d.ts`.

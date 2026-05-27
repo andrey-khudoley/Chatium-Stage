@@ -1,12 +1,12 @@
-import { jsx } from "@app/html-jsx";
-import { requireRealUser } from '@app/auth';
-import AdminDashboard from './pages/AdminDashboard.vue';
+import { jsx } from '@app/html-jsx'
+import { requireRealUser } from '@app/auth'
+import AdminDashboard from './pages/AdminDashboard.vue'
 
-import { bookingIndexRoute } from './index';
+import { bookingIndexRoute } from './index'
 
 export const adminRoute = app.html('/', async (ctx, req) => {
-  requireRealUser(ctx);
-  
+  requireRealUser(ctx)
+
   return (
     <html>
       <head>
@@ -28,5 +28,5 @@ export const adminRoute = app.html('/', async (ctx, req) => {
         <AdminDashboard />
       </body>
     </html>
-  );
-});
+  )
+})

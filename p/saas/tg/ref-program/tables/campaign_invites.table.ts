@@ -7,33 +7,33 @@ export const TSaasRefCampaignInviteP2K8mN = Heap.Table(
     campaignId: Heap.Optional(
       Heap.RefLink('t__tg-ref-program__campaign__8Hn4Lx', {
         customMeta: { title: 'Кампания' },
-        onDelete: 'none',
-      }),
+        onDelete: 'none'
+      })
     ),
     token: Heap.Optional(
       Heap.String({
-        customMeta: { title: 'Токен приглашения', description: 'Уникальный токен для ссылки' },
-      }),
+        customMeta: { title: 'Токен приглашения', description: 'Уникальный токен для ссылки' }
+      })
     ),
     createdByUserId: Heap.Optional(
       Heap.UserRefLink({
         customMeta: { title: 'Кто создал' },
-        onDelete: 'none',
-      }),
+        onDelete: 'none'
+      })
     ),
     expiresAt: Heap.Optional(
       Heap.DateTime({
-        customMeta: { title: 'Истекает' },
-      }),
+        customMeta: { title: 'Истекает' }
+      })
     ),
     acceptedAt: Heap.Optional(
       Heap.DateTime({
         customMeta: { title: 'Принято' },
-        description: 'Когда приглашение было принято; null = не использовано',
-      }),
-    ),
+        description: 'Когда приглашение было принято; null = не использовано'
+      })
+    )
   },
-  { customMeta: { title: 'Приглашения в кампанию', description: 'Приглашения по токену' } },
+  { customMeta: { title: 'Приглашения в кампанию', description: 'Приглашения по токену' } }
 )
 
 export default TSaasRefCampaignInviteP2K8mN

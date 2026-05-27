@@ -22,13 +22,7 @@
     "target": 3.5,
     "globalTypesPath": "./node_modules/.volar/vue-global-temp.d.ts"
   },
-  "include": [
-    "**/*.ts",
-    "**/*.tsx",
-    "**/*.vue",
-    "vue-shim.d.ts",
-    "jsx.d.ts"
-  ],
+  "include": ["**/*.ts", "**/*.tsx", "**/*.vue", "vue-shim.d.ts", "jsx.d.ts"],
   "files": [
     "../../node_modules/@app/types/globals.d.ts",
     "../../node_modules/@app/types/modules.d.ts"

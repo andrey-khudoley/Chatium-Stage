@@ -26,7 +26,12 @@ function initials(name: string): string {
     </header>
 
     <div class="dc-role-stack__list">
-      <article v-for="item in roles" :key="item.id" class="dc-role-stack__item" :class="`state-${item.state}`">
+      <article
+        v-for="item in roles"
+        :key="item.id"
+        class="dc-role-stack__item"
+        :class="`state-${item.state}`"
+      >
         <div class="dc-role-stack__avatar">{{ initials(item.name) }}</div>
         <div class="dc-role-stack__meta">
           <strong>{{ item.name }}</strong>
@@ -43,9 +48,7 @@ function initials(name: string): string {
   border-radius: var(--radius-lg);
   border: 1px solid var(--border-soft);
   padding: 12px;
-  background:
-    var(--gradient-glass),
-    color-mix(in srgb, var(--surface-2) 84%, transparent);
+  background: var(--gradient-glass), color-mix(in srgb, var(--surface-2) 84%, transparent);
   display: grid;
   gap: 10px;
 }

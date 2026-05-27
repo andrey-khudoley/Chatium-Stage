@@ -1,5 +1,5 @@
-import Appointments from "../tables/appointments.table"
-import { sendNotificationToAccountOwners } from "@user-notifier/sdk"
+import Appointments from '../tables/appointments.table'
+import { sendNotificationToAccountOwners } from '@user-notifier/sdk'
 import { writeWorkspaceEvent, getWorkspaceEventUrl } from '@start/sdk'
 
 // @shared-route
@@ -26,17 +26,17 @@ export const apiCreateAppointmentRoute = app.post('/create', async (ctx, req) =>
     user: {
       phone: phone,
       email: email || '',
-      firstName: clientName,
+      firstName: clientName
     },
     action_params: {
       service,
       date,
-      time,
+      time
     }
   })
 
   await sendNotificationToAccountOwners(ctx, {
-    title: "Новая запись на сайте",
+    title: 'Новая запись на сайте',
     html: `<h2>Новая запись</h2>
            <p><strong>Клиент:</strong> ${clientName}</p>
            <p><strong>Телефон:</strong> ${phone}</p>
@@ -53,8 +53,10 @@ export const apiCreateAppointmentRoute = app.post('/create', async (ctx, req) =>
 })
 
 app.accountHook('@start/agent/events', async (ctx, params) => {
-  return [{
-    name: 'Создана запись на прием',
-    url: await getWorkspaceEventUrl(ctx, 'appointment_created'),
-  }]
+  return [
+    {
+      name: 'Создана запись на прием',
+      url: await getWorkspaceEventUrl(ctx, 'appointment_created')
+    }
+  ]
 })

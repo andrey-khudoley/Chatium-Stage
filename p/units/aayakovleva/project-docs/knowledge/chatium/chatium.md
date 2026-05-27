@@ -6,7 +6,7 @@ created: 2026-05-02
 updated: 2026-05-02
 url: https://chatium.ai/docs
 category: low-code / app-platform
-pricing: 
+pricing:
 account-status: known
 area: knowledge-management
 tags:

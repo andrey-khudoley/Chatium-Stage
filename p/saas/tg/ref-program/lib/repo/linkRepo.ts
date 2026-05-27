@@ -53,7 +53,7 @@ export async function getPartnerLinks(
 export async function findLinkByPublicSlug(
   ctx: app.Ctx,
   publicSlug: string
-): Promise<(typeof PartnerLinks.T) | null> {
+): Promise<typeof PartnerLinks.T | null> {
   return PartnerLinks.findOneBy(ctx, { publicSlug })
 }
 

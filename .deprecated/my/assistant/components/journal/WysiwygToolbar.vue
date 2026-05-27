@@ -35,14 +35,14 @@ const FMT_BTNS: BtnDef[] = [
   { cmd: 'bold', icon: 'fa-bold', title: 'Жирный (Ctrl+B)', active: 'bold' },
   { cmd: 'italic', icon: 'fa-italic', title: 'Курсив (Ctrl+I)', active: 'italic' },
   { cmd: 'underline', icon: 'fa-underline', title: 'Подчёркнутый (Ctrl+U)', active: 'underline' },
-  { cmd: 'strikeThrough', icon: 'fa-strikethrough', title: 'Зачёркнутый', active: 'strikeThrough' },
+  { cmd: 'strikeThrough', icon: 'fa-strikethrough', title: 'Зачёркнутый', active: 'strikeThrough' }
 ]
 
 const ALIGN_BTNS: BtnDef[] = [
   { cmd: 'justifyLeft', icon: 'fa-align-left', title: 'По левому краю', active: 'justifyLeft' },
   { cmd: 'justifyCenter', icon: 'fa-align-center', title: 'По центру', active: 'justifyCenter' },
   { cmd: 'justifyRight', icon: 'fa-align-right', title: 'По правому краю', active: 'justifyRight' },
-  { cmd: 'justifyFull', icon: 'fa-align-justify', title: 'По ширине', active: 'justifyFull' },
+  { cmd: 'justifyFull', icon: 'fa-align-justify', title: 'По ширине', active: 'justifyFull' }
 ]
 
 const BLOCK_TYPES = [
@@ -50,14 +50,26 @@ const BLOCK_TYPES = [
   { tag: 'h2', label: 'Заголовок 2' },
   { tag: 'h3', label: 'Заголовок 3' },
   { tag: 'p', label: 'Абзац' },
-  { tag: 'div', label: 'Обычный текст' },
+  { tag: 'div', label: 'Обычный текст' }
 ]
 
 const PRESET_COLORS = [
-  '#e8e8e8', '#a0a0a0', '#707070', '#ffffff',
-  '#d3234b', '#e6395f', '#ff6b6b', '#ffa07a',
-  '#ffd700', '#90ee90', '#00bfff', '#9370db',
-  '#40e0d0', '#ff69b4', '#ff8c00', '#4169e1',
+  '#e8e8e8',
+  '#a0a0a0',
+  '#707070',
+  '#ffffff',
+  '#d3234b',
+  '#e6395f',
+  '#ff6b6b',
+  '#ffa07a',
+  '#ffd700',
+  '#90ee90',
+  '#00bfff',
+  '#9370db',
+  '#40e0d0',
+  '#ff69b4',
+  '#ff8c00',
+  '#4169e1'
 ]
 
 function closeAll() {
@@ -102,7 +114,7 @@ function selectTableCell(r: number, c: number) {
 
 function blockLabel(): string {
   const b = props.currentBlock.toLowerCase().replace(/[<>]/g, '')
-  return BLOCK_TYPES.find(t => t.tag === b)?.label ?? 'Абзац'
+  return BLOCK_TYPES.find((t) => t.tag === b)?.label ?? 'Абзац'
 }
 
 function toggleDropdown(which: 'block' | 'color' | 'link' | 'table' | 'tableMenu') {
@@ -111,7 +123,7 @@ function toggleDropdown(which: 'block' | 'color' | 'link' | 'table' | 'tableMenu
     color: showColorPicker.value,
     link: showLinkDialog.value,
     table: showTablePicker.value,
-    tableMenu: showTableMenu.value,
+    tableMenu: showTableMenu.value
   }[which]
   closeAll()
   if (!wasOpen) {
@@ -134,7 +146,7 @@ const ALLOWED_TYPES = [
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
   'application/vnd.ms-excel',
   'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-  'text/plain',
+  'text/plain'
 ]
 
 function openFilePicker() {
@@ -192,12 +204,7 @@ function getFileType(file: File): 'image' | 'video' | 'pdf' | 'file' {
       <div class="wy-sep" />
 
       <div class="wy-btn-group wy-relative">
-        <button
-          type="button"
-          class="wy-btn"
-          title="Цвет текста"
-          @click="toggleDropdown('color')"
-        >
+        <button type="button" class="wy-btn" title="Цвет текста" @click="toggleDropdown('color')">
           <i class="fa-solid fa-palette" aria-hidden="true" />
           <span class="wy-color-dot" :style="{ background: textColor }" />
         </button>
@@ -214,7 +221,12 @@ function getFileType(file: File): 'image' | 'video' | 'pdf' | 'file' {
             />
           </div>
           <div class="wy-color-custom">
-            <input type="color" v-model="textColor" class="wy-color-input" @change="applyColor(textColor)" />
+            <input
+              type="color"
+              v-model="textColor"
+              class="wy-color-input"
+              @change="applyColor(textColor)"
+            />
             <span class="wy-color-hex">{{ textColor }}</span>
           </div>
         </div>
@@ -223,7 +235,12 @@ function getFileType(file: File): 'image' | 'video' | 'pdf' | 'file' {
       <div class="wy-sep" />
 
       <div class="wy-btn-group wy-relative">
-        <button type="button" class="wy-btn wy-btn--wide" title="Тип блока" @click="toggleDropdown('block')">
+        <button
+          type="button"
+          class="wy-btn wy-btn--wide"
+          title="Тип блока"
+          @click="toggleDropdown('block')"
+        >
           <span>{{ blockLabel() }}</span>
           <i class="fa-solid fa-chevron-down wy-chevron" aria-hidden="true" />
         </button>
@@ -233,7 +250,9 @@ function getFileType(file: File): 'image' | 'video' | 'pdf' | 'file' {
             :key="bt.tag"
             type="button"
             class="wy-drop-item"
-            :class="{ 'wy-drop-item--active': currentBlock.toLowerCase().replace(/[<>]/g, '') === bt.tag }"
+            :class="{
+              'wy-drop-item--active': currentBlock.toLowerCase().replace(/[<>]/g, '') === bt.tag
+            }"
             @click="setBlock(bt.tag)"
           >
             {{ bt.label }}
@@ -308,7 +327,9 @@ function getFileType(file: File): 'image' | 'video' | 'pdf' | 'file' {
           </select>
           <div class="wy-link-actions">
             <button type="button" class="wy-link-ok" @click="confirmLink">Вставить</button>
-            <button type="button" class="wy-link-cancel" @click="exec('unlink')">Убрать ссылку</button>
+            <button type="button" class="wy-link-cancel" @click="exec('unlink')">
+              Убрать ссылку
+            </button>
           </div>
         </div>
       </div>
@@ -319,18 +340,17 @@ function getFileType(file: File): 'image' | 'video' | 'pdf' | 'file' {
         </button>
         <div v-if="showTablePicker" class="wy-dropdown wy-table-drop">
           <div class="wy-table-grid">
-            <div
-              v-for="r in 6"
-              :key="'r' + r"
-              class="wy-table-row"
-            >
+            <div v-for="r in 6" :key="'r' + r" class="wy-table-row">
               <button
                 v-for="c in 6"
                 :key="'c' + c"
                 type="button"
                 class="wy-table-cell"
                 :class="{ 'wy-table-cell--hl': r <= tpHoverR && c <= tpHoverC }"
-                @mouseenter="tpHoverR = r; tpHoverC = c"
+                @mouseenter="
+                  tpHoverR = r
+                  tpHoverC = c
+                "
                 @click="selectTableCell(r, c)"
               />
             </div>
@@ -341,18 +361,43 @@ function getFileType(file: File): 'image' | 'video' | 'pdf' | 'file' {
 
       <template v-if="props.isInTable">
         <div class="wy-btn-group wy-relative">
-          <button type="button" class="wy-btn" title="Операции с таблицей" @click="toggleDropdown('tableMenu')">
+          <button
+            type="button"
+            class="wy-btn"
+            title="Операции с таблицей"
+            @click="toggleDropdown('tableMenu')"
+          >
             <i class="fa-solid fa-table-cells" aria-hidden="true" />
             <i class="fa-solid fa-chevron-down wy-chevron" aria-hidden="true" />
           </button>
           <div v-if="showTableMenu" class="wy-dropdown">
-            <button type="button" class="wy-drop-item" @click="exec('addRowAbove')">Строка выше</button>
-            <button type="button" class="wy-drop-item" @click="exec('addRowBelow')">Строка ниже</button>
-            <button type="button" class="wy-drop-item" @click="exec('addColLeft')">Столбец слева</button>
-            <button type="button" class="wy-drop-item" @click="exec('addColRight')">Столбец справа</button>
+            <button type="button" class="wy-drop-item" @click="exec('addRowAbove')">
+              Строка выше
+            </button>
+            <button type="button" class="wy-drop-item" @click="exec('addRowBelow')">
+              Строка ниже
+            </button>
+            <button type="button" class="wy-drop-item" @click="exec('addColLeft')">
+              Столбец слева
+            </button>
+            <button type="button" class="wy-drop-item" @click="exec('addColRight')">
+              Столбец справа
+            </button>
             <div class="wy-sep-h" />
-            <button type="button" class="wy-drop-item wy-drop-item--danger" @click="exec('deleteRow')">Удалить строку</button>
-            <button type="button" class="wy-drop-item wy-drop-item--danger" @click="exec('deleteCol')">Удалить столбец</button>
+            <button
+              type="button"
+              class="wy-drop-item wy-drop-item--danger"
+              @click="exec('deleteRow')"
+            >
+              Удалить строку
+            </button>
+            <button
+              type="button"
+              class="wy-drop-item wy-drop-item--danger"
+              @click="exec('deleteCol')"
+            >
+              Удалить столбец
+            </button>
           </div>
         </div>
       </template>
@@ -360,7 +405,12 @@ function getFileType(file: File): 'image' | 'video' | 'pdf' | 'file' {
       <div class="wy-sep" />
 
       <div class="wy-btn-group">
-        <button type="button" class="wy-btn" title="Горизонтальная линия" @click="exec('insertHorizontalRule')">
+        <button
+          type="button"
+          class="wy-btn"
+          title="Горизонтальная линия"
+          @click="exec('insertHorizontalRule')"
+        >
           <i class="fa-solid fa-minus" aria-hidden="true" />
         </button>
         <button type="button" class="wy-btn" title="Inline code" @click="exec('insertInlineCode')">
@@ -388,7 +438,12 @@ function getFileType(file: File): 'image' | 'video' | 'pdf' | 'file' {
       <div class="wy-sep" />
 
       <div class="wy-btn-group">
-        <button type="button" class="wy-btn" title="Очистить форматирование" @click="exec('removeFormat')">
+        <button
+          type="button"
+          class="wy-btn"
+          title="Очистить форматирование"
+          @click="exec('removeFormat')"
+        >
           <i class="fa-solid fa-eraser" aria-hidden="true" />
         </button>
       </div>
@@ -439,7 +494,9 @@ function getFileType(file: File): 'image' | 'video' | 'pdf' | 'file' {
   align-items: center;
   gap: 1px;
 }
-.wy-relative { position: relative; }
+.wy-relative {
+  position: relative;
+}
 .wy-sep {
   width: 1px;
   height: 1.1rem;
@@ -485,7 +542,10 @@ function getFileType(file: File): 'image' | 'video' | 'pdf' | 'file' {
   font-size: 0.72rem;
   letter-spacing: 0.04em;
 }
-.wy-chevron { font-size: 0.55rem; margin-left: 0.15rem; }
+.wy-chevron {
+  font-size: 0.55rem;
+  margin-left: 0.15rem;
+}
 .wy-color-dot {
   display: inline-block;
   width: 6px;
@@ -519,11 +579,21 @@ function getFileType(file: File): 'image' | 'video' | 'pdf' | 'file' {
   text-align: left;
   cursor: pointer;
 }
-.wy-drop-item:hover { background: var(--color-bg-tertiary); color: var(--color-text); }
-.wy-drop-item--active { color: var(--color-accent); }
-.wy-drop-item--danger { color: var(--color-accent-hover); }
+.wy-drop-item:hover {
+  background: var(--color-bg-tertiary);
+  color: var(--color-text);
+}
+.wy-drop-item--active {
+  color: var(--color-accent);
+}
+.wy-drop-item--danger {
+  color: var(--color-accent-hover);
+}
 
-.wy-color-drop { min-width: 10rem; padding: 0.4rem; }
+.wy-color-drop {
+  min-width: 10rem;
+  padding: 0.4rem;
+}
 .wy-color-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -538,7 +608,10 @@ function getFileType(file: File): 'image' | 'video' | 'pdf' | 'file' {
   cursor: pointer;
   padding: 0;
 }
-.wy-color-swatch:hover { border-color: var(--color-text); transform: scale(1.15); }
+.wy-color-swatch:hover {
+  border-color: var(--color-text);
+  transform: scale(1.15);
+}
 .wy-color-custom {
   display: flex;
   align-items: center;
@@ -553,9 +626,15 @@ function getFileType(file: File): 'image' | 'video' | 'pdf' | 'file' {
   background: var(--color-bg);
   cursor: pointer;
 }
-.wy-color-hex { font-size: 0.72rem; color: var(--color-text-tertiary); }
+.wy-color-hex {
+  font-size: 0.72rem;
+  color: var(--color-text-tertiary);
+}
 
-.wy-link-drop { min-width: 14rem; padding: 0.4rem; }
+.wy-link-drop {
+  min-width: 14rem;
+  padding: 0.4rem;
+}
 .wy-link-label {
   display: block;
   font-size: 0.68rem;
@@ -564,7 +643,9 @@ function getFileType(file: File): 'image' | 'video' | 'pdf' | 'file' {
   color: var(--color-text-tertiary);
   margin-bottom: 0.15rem;
 }
-.wy-link-label + .wy-link-label { margin-top: 0.3rem; }
+.wy-link-label + .wy-link-label {
+  margin-top: 0.3rem;
+}
 .wy-link-input {
   width: 100%;
   padding: 0.25rem 0.3rem;
@@ -576,7 +657,10 @@ function getFileType(file: File): 'image' | 'video' | 'pdf' | 'file' {
   border-radius: 2px;
   box-sizing: border-box;
 }
-.wy-link-input:focus { border-color: var(--color-accent); outline: none; }
+.wy-link-input:focus {
+  border-color: var(--color-accent);
+  outline: none;
+}
 .wy-link-actions {
   display: flex;
   gap: 0.3rem;
@@ -593,13 +677,31 @@ function getFileType(file: File): 'image' | 'video' | 'pdf' | 'file' {
   background: var(--color-bg-tertiary);
   color: var(--color-text-secondary);
 }
-.wy-link-ok { background: var(--color-accent-light); border-color: var(--color-accent); color: var(--color-text); }
-.wy-link-ok:hover { background: var(--color-accent-medium); }
-.wy-link-cancel:hover { color: var(--color-accent-hover); }
+.wy-link-ok {
+  background: var(--color-accent-light);
+  border-color: var(--color-accent);
+  color: var(--color-text);
+}
+.wy-link-ok:hover {
+  background: var(--color-accent-medium);
+}
+.wy-link-cancel:hover {
+  color: var(--color-accent-hover);
+}
 
-.wy-table-drop { min-width: auto; padding: 0.4rem; }
-.wy-table-grid { display: flex; flex-direction: column; gap: 2px; }
-.wy-table-row { display: flex; gap: 2px; }
+.wy-table-drop {
+  min-width: auto;
+  padding: 0.4rem;
+}
+.wy-table-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.wy-table-row {
+  display: flex;
+  gap: 2px;
+}
 .wy-table-cell {
   width: 1rem;
   height: 1rem;
@@ -645,6 +747,8 @@ function getFileType(file: File): 'image' | 'video' | 'pdf' | 'file' {
   animation: wy-spin 0.8s linear infinite;
 }
 @keyframes wy-spin {
-  to { transform: translate(-50%, -50%) rotate(360deg); }
+  to {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
 }
 </style>

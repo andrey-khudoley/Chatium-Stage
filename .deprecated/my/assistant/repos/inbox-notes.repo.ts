@@ -95,7 +95,11 @@ export async function updateForUser(
   return InboxNotes.update(ctx, patch as Parameters<typeof InboxNotes.update>[1])
 }
 
-export async function deleteByIdForUser(ctx: app.Ctx, userId: string, id: string): Promise<boolean> {
+export async function deleteByIdForUser(
+  ctx: app.Ctx,
+  userId: string,
+  id: string
+): Promise<boolean> {
   const existing = await findByIdForUser(ctx, userId, id)
   if (!existing) return false
   await InboxNotes.delete(ctx, id)

@@ -2,7 +2,11 @@
 declare const ctx: any
 
 import { ref, onMounted, onUnmounted, computed } from 'vue'
-import { apiStartAllTestsRoute, apiStartSingleTestRoute, apiGetManualSocketIdRoute } from '../api/start-tests'
+import {
+  apiStartAllTestsRoute,
+  apiStartSingleTestRoute,
+  apiGetManualSocketIdRoute
+} from '../api/start-tests'
 import { TEST_CATEGORIES } from '../shared/test-definitions'
 import { getOrCreateBrowserSocketClient } from '@app/socket'
 
@@ -22,7 +26,9 @@ interface ConsoleLine {
 }
 
 const testResults = ref<Record<string, Record<string, TestResult>>>({})
-const testStatuses = ref<Record<string, Record<string, 'pending' | 'running' | 'passed' | 'failed'>>>({})
+const testStatuses = ref<
+  Record<string, Record<string, 'pending' | 'running' | 'passed' | 'failed'>>
+>({})
 const isRunning = ref(false)
 const consoleLines = ref<ConsoleLine[]>([])
 const consoleContainer = ref<HTMLElement | null>(null)
@@ -35,7 +41,7 @@ const stats = computed(() => {
   let total = 0
   let passed = 0
   let failed = 0
-  
+
   for (const category of TEST_CATEGORIES) {
     for (const test of category.tests) {
       total++
@@ -49,7 +55,7 @@ const stats = computed(() => {
       }
     }
   }
-  
+
   return { total, passed, failed }
 })
 
@@ -64,159 +70,168 @@ function addConsoleLine(line: ConsoleLine) {
 
 function getTimestamp(): string {
   const now = new Date()
-  return now.toLocaleTimeString('ru-RU', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })
+  return now.toLocaleTimeString('ru-RU', {
+    hour12: false,
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit'
+  })
 }
 
 function setupSocketListener() {
   if (!socketSubscription.value) {
     return
   }
-  
+
   socketSubscription.value.listen((data: any) => {
-      const timestamp = getTimestamp()
-      
-      if (data.type === 'all-tests-started') {
-        addConsoleLine({
-          id: `header-${Date.now()}`,
-          timestamp,
-          category: '',
-          test: '',
-          status: 'passed',
-          type: 'header',
-          message: '=== ЗАПУСК ТЕСТОВ ==='
-        })
-      } else if (data.type === 'category-started') {
-        addConsoleLine({
-          id: `cat-${data.data.categoryName}-${Date.now()}`,
-          timestamp,
-          category: data.data.categoryName,
-          test: '',
-          status: 'passed',
-          type: 'header',
-          message: `>>> ${data.data.categoryTitle}`
-        })
-      } else if (data.type === 'test-started') {
-        const { category, testName } = data.data
-        if (!testStatuses.value[category]) {
-          testStatuses.value[category] = {}
+    const timestamp = getTimestamp()
+
+    if (data.type === 'all-tests-started') {
+      addConsoleLine({
+        id: `header-${Date.now()}`,
+        timestamp,
+        category: '',
+        test: '',
+        status: 'passed',
+        type: 'header',
+        message: '=== ЗАПУСК ТЕСТОВ ==='
+      })
+    } else if (data.type === 'category-started') {
+      addConsoleLine({
+        id: `cat-${data.data.categoryName}-${Date.now()}`,
+        timestamp,
+        category: data.data.categoryName,
+        test: '',
+        status: 'passed',
+        type: 'header',
+        message: `>>> ${data.data.categoryTitle}`
+      })
+    } else if (data.type === 'test-started') {
+      const { category, testName } = data.data
+      if (!testStatuses.value[category]) {
+        testStatuses.value[category] = {}
+      }
+      testStatuses.value[category][testName] = 'running'
+
+      const test = TEST_CATEGORIES.find((c) => c.name === category)?.tests.find(
+        (t) => t.name === testName
+      )
+      const runningLineId = `test-${category}-${testName}-${Date.now()}`
+
+      addConsoleLine({
+        id: runningLineId,
+        timestamp,
+        category,
+        test: testName,
+        status: 'running',
+        type: 'test',
+        message: test?.description || testName
+      })
+    } else if (data.type === 'test-completed') {
+      const { category, testName, result } = data.data
+
+      if (!testResults.value[category]) {
+        testResults.value[category] = {}
+      }
+      if (!testStatuses.value[category]) {
+        testStatuses.value[category] = {}
+      }
+
+      testResults.value[category][testName] = result
+      testStatuses.value[category][testName] = result.success ? 'passed' : 'failed'
+
+      // Обновляем существующую строку - ищем последнюю строку с этой категорией и тестом
+      let lineIndex = -1
+      for (let i = consoleLines.value.length - 1; i >= 0; i--) {
+        const line = consoleLines.value[i]
+        if (line.category === category && line.test === testName && line.type === 'test') {
+          lineIndex = i
+          break
         }
-        testStatuses.value[category][testName] = 'running'
-        
-        const test = TEST_CATEGORIES.find(c => c.name === category)?.tests.find(t => t.name === testName)
-        const runningLineId = `test-${category}-${testName}-${Date.now()}`
-        
+      }
+
+      const test = TEST_CATEGORIES.find((c) => c.name === category)?.tests.find(
+        (t) => t.name === testName
+      )
+      const message = `${test?.description || testName} - ${result.message}`
+
+      if (lineIndex !== -1) {
+        consoleLines.value[lineIndex] = {
+          ...consoleLines.value[lineIndex],
+          status: result.success ? 'passed' : 'failed',
+          type: 'test',
+          message
+        }
+      } else {
+        // Если строка не найдена, добавляем новую
         addConsoleLine({
-          id: runningLineId,
+          id: `test-${category}-${testName}-completed-${Date.now()}`,
           timestamp,
           category,
           test: testName,
-          status: 'running',
+          status: result.success ? 'passed' : 'failed',
           type: 'test',
-          message: test?.description || testName
-        })
-      } else if (data.type === 'test-completed') {
-        const { category, testName, result } = data.data
-        
-        if (!testResults.value[category]) {
-          testResults.value[category] = {}
-        }
-        if (!testStatuses.value[category]) {
-          testStatuses.value[category] = {}
-        }
-        
-        testResults.value[category][testName] = result
-        testStatuses.value[category][testName] = result.success ? 'passed' : 'failed'
-        
-        // Обновляем существующую строку - ищем последнюю строку с этой категорией и тестом
-        let lineIndex = -1
-        for (let i = consoleLines.value.length - 1; i >= 0; i--) {
-          const line = consoleLines.value[i]
-          if (line.category === category && line.test === testName && line.type === 'test') {
-            lineIndex = i
-            break
-          }
-        }
-        
-        const test = TEST_CATEGORIES.find(c => c.name === category)?.tests.find(t => t.name === testName)
-        const message = `${test?.description || testName} - ${result.message}`
-        
-        if (lineIndex !== -1) {
-          consoleLines.value[lineIndex] = {
-            ...consoleLines.value[lineIndex],
-            status: result.success ? 'passed' : 'failed',
-            type: 'test',
-            message
-          }
-        } else {
-          // Если строка не найдена, добавляем новую
-          addConsoleLine({
-            id: `test-${category}-${testName}-completed-${Date.now()}`,
-            timestamp,
-            category,
-            test: testName,
-            status: result.success ? 'passed' : 'failed',
-            type: 'test',
-            message
-          })
-        }
-      } else if (data.type === 'test-error') {
-        const { category, testName, error } = data.data
-        if (!testResults.value[category]) {
-          testResults.value[category] = {}
-        }
-        if (!testStatuses.value[category]) {
-          testStatuses.value[category] = {}
-        }
-        
-        testResults.value[category][testName] = {
-          success: false,
-          message: error
-        }
-        testStatuses.value[category][testName] = 'failed'
-        
-        // Обновляем существующую строку
-        const lineIndex = consoleLines.value.findIndex(line => 
-          line.category === category && 
-          line.test === testName && 
-          line.status === 'running'
-        )
-        
-        if (lineIndex !== -1) {
-          const test = TEST_CATEGORIES.find(c => c.name === category)?.tests.find(t => t.name === testName)
-          consoleLines.value[lineIndex] = {
-            ...consoleLines.value[lineIndex],
-            status: 'failed',
-            message: `${test?.description || testName} - ${error}`
-          }
-        }
-      } else if (data.type === 'test-info') {
-        // Добавляем INFO сообщение в консоль
-        const { category, testName, message } = data.data
-        addConsoleLine({
-          id: `info-${category}-${testName}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-          timestamp,
-          category: category || '',
-          test: testName || '',
-          status: 'info',
-          type: 'info',
-          message: message || ''
-        })
-      } else if (data.type === 'category-completed') {
-        // Категория завершена - проверяем, все ли категории завершены
-        checkAllTestsCompleted()
-      } else if (data.type === 'all-tests-error') {
-        isRunning.value = false
-        addConsoleLine({
-          id: `error-${Date.now()}`,
-          timestamp: getTimestamp(),
-          category: '',
-          test: '',
-          status: 'failed',
-          type: 'test',
-          message: `Ошибка запуска тестов: ${data.data.error}`
+          message
         })
       }
-    })
+    } else if (data.type === 'test-error') {
+      const { category, testName, error } = data.data
+      if (!testResults.value[category]) {
+        testResults.value[category] = {}
+      }
+      if (!testStatuses.value[category]) {
+        testStatuses.value[category] = {}
+      }
+
+      testResults.value[category][testName] = {
+        success: false,
+        message: error
+      }
+      testStatuses.value[category][testName] = 'failed'
+
+      // Обновляем существующую строку
+      const lineIndex = consoleLines.value.findIndex(
+        (line) => line.category === category && line.test === testName && line.status === 'running'
+      )
+
+      if (lineIndex !== -1) {
+        const test = TEST_CATEGORIES.find((c) => c.name === category)?.tests.find(
+          (t) => t.name === testName
+        )
+        consoleLines.value[lineIndex] = {
+          ...consoleLines.value[lineIndex],
+          status: 'failed',
+          message: `${test?.description || testName} - ${error}`
+        }
+      }
+    } else if (data.type === 'test-info') {
+      // Добавляем INFO сообщение в консоль
+      const { category, testName, message } = data.data
+      addConsoleLine({
+        id: `info-${category}-${testName}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        timestamp,
+        category: category || '',
+        test: testName || '',
+        status: 'info',
+        type: 'info',
+        message: message || ''
+      })
+    } else if (data.type === 'category-completed') {
+      // Категория завершена - проверяем, все ли категории завершены
+      checkAllTestsCompleted()
+    } else if (data.type === 'all-tests-error') {
+      isRunning.value = false
+      addConsoleLine({
+        id: `error-${Date.now()}`,
+        timestamp: getTimestamp(),
+        category: '',
+        test: '',
+        status: 'failed',
+        type: 'test',
+        message: `Ошибка запуска тестов: ${data.data.error}`
+      })
+    }
+  })
 }
 
 async function subscribeToSocket(encodedSocketId: string) {
@@ -224,7 +239,7 @@ async function subscribeToSocket(encodedSocketId: string) {
   if (socketSubscription.value && currentEncodedSocketId.value === encodedSocketId) {
     return
   }
-  
+
   // Отписываемся от предыдущей подписки
   if (socketSubscription.value) {
     if (typeof socketSubscription.value.unsubscribe === 'function') {
@@ -232,17 +247,17 @@ async function subscribeToSocket(encodedSocketId: string) {
     }
     socketSubscription.value = null
   }
-  
+
   try {
     const socketClient = await getOrCreateBrowserSocketClient()
     socketSubscription.value = socketClient.subscribeToData(encodedSocketId)
     currentEncodedSocketId.value = encodedSocketId
-    
+
     if (!socketSubscription.value) {
       console.error('[UnitTestsPage] Failed to create subscription!')
       return
     }
-    
+
     // Устанавливаем обработчик событий
     setupSocketListener()
   } catch (error: any) {
@@ -254,7 +269,7 @@ function checkAllTestsCompleted() {
   // Проверяем, все ли тесты завершены
   let allCompleted = true
   let hasRunning = false
-  
+
   for (const category of TEST_CATEGORIES) {
     for (const test of category.tests) {
       const status = testStatuses.value[category.name]?.[test.name]
@@ -269,7 +284,7 @@ function checkAllTestsCompleted() {
     }
     if (hasRunning) break
   }
-  
+
   // Если все тесты завершены и нет выполняющихся - показываем итоги
   if (allCompleted && !hasRunning) {
     updateSummary()
@@ -279,11 +294,11 @@ function checkAllTestsCompleted() {
 
 function updateSummary() {
   // Удаляем старую итоговую строку если есть
-  const summaryIndex = consoleLines.value.findIndex(line => line.type === 'summary')
+  const summaryIndex = consoleLines.value.findIndex((line) => line.type === 'summary')
   if (summaryIndex !== -1) {
     consoleLines.value.splice(summaryIndex, 1)
   }
-  
+
   // Добавляем новую итоговую строку
   addConsoleLine({
     id: `summary-${Date.now()}`,
@@ -301,7 +316,7 @@ async function runAllTests() {
   testResults.value = {}
   testStatuses.value = {}
   consoleLines.value = []
-  
+
   // Инициализируем статусы
   for (const category of TEST_CATEGORIES) {
     testStatuses.value[category.name] = {}
@@ -309,18 +324,18 @@ async function runAllTests() {
       testStatuses.value[category.name][test.name] = 'pending'
     }
   }
-  
+
   try {
     // Запускаем тесты через джобы
     const result = await apiStartAllTestsRoute.run(ctx, {})
-    
+
     if (!result.success) {
       isRunning.value = false
       return
     }
-    
+
     currentTestRunId.value = result.testRunId
-    
+
     // Подписываемся на WebSocket для получения обновлений
     // ВАЖНО: Для всех тестов используется уникальный socketId, поэтому нужно установить подписку на него
     await subscribeToSocket(result.encodedSocketId)
@@ -336,16 +351,16 @@ async function runSingleTest(categoryName: string, testName: string) {
   if (!testStatuses.value[categoryName]) {
     testStatuses.value[categoryName] = {}
   }
-  
+
   testStatuses.value[categoryName][testName] = 'running'
-  
+
   try {
     // Запускаем тест через джоб (подписка уже установлена при монтировании компонента)
     const result = await apiStartSingleTestRoute.run(ctx, {
       category: categoryName,
       test: testName
     })
-    
+
     if (!result.success) {
       testStatuses.value[categoryName][testName] = 'failed'
       testResults.value[categoryName][testName] = {
@@ -354,7 +369,7 @@ async function runSingleTest(categoryName: string, testName: string) {
       }
       return
     }
-    
+
     currentTestRunId.value = result.testRunId
   } catch (error: any) {
     testStatuses.value[categoryName][testName] = 'failed'
@@ -400,19 +415,15 @@ onUnmounted(() => {
             <span class="stat-item stat-error">Провалено: {{ stats.failed }}</span>
           </div>
         </div>
-        <button
-          @click="runAllTests"
-          :disabled="isRunning"
-          class="run-button"
-        >
+        <button @click="runAllTests" :disabled="isRunning" class="run-button">
           <span v-if="isRunning">[RUNNING...]</span>
           <span v-else>[RUN ALL TESTS]</span>
         </button>
       </div>
 
       <div class="console-output" ref="consoleContainer">
-        <div 
-          v-for="line in consoleLines" 
+        <div
+          v-for="line in consoleLines"
           :key="line.id"
           :class="['console-line', `line-${line.type}`, `status-${line.status}`]"
         >
@@ -425,12 +436,20 @@ onUnmounted(() => {
           <span v-else-if="line.type === 'info'" class="line-status">
             <span class="status-info">[INFO]</span>
           </span>
-          <span v-if="(line.type === 'test' || line.type === 'info') && line.category && line.test" class="line-test-path">
+          <span
+            v-if="(line.type === 'test' || line.type === 'info') && line.category && line.test"
+            class="line-test-path"
+          >
             {{ line.category }}/{{ line.test }}
           </span>
           <span v-else-if="line.type === 'header'" class="line-header">{{ line.message }}</span>
           <span v-else-if="line.type === 'summary'" class="line-summary">{{ line.message }}</span>
-          <span v-if="(line.type === 'test' || line.type === 'info') && line.message" class="line-message" :title="line.message">{{ line.message }}</span>
+          <span
+            v-if="(line.type === 'test' || line.type === 'info') && line.message"
+            class="line-message"
+            :title="line.message"
+            >{{ line.message }}</span
+          >
         </div>
         <div v-if="consoleLines.length === 0" class="console-empty">
           <span class="console-prompt">$</span> Нажмите [RUN ALL TESTS] для запуска тестов
@@ -447,19 +466,38 @@ onUnmounted(() => {
             <div
               v-for="test in category.tests"
               :key="test.name"
-              :class="['test-item', {
-                'test-pending': testStatuses[category.name]?.[test.name] === 'pending',
-                'test-running': testStatuses[category.name]?.[test.name] === 'running',
-                'test-passed': testStatuses[category.name]?.[test.name] === 'passed',
-                'test-failed': testStatuses[category.name]?.[test.name] === 'failed'
-              }]"
+              :class="[
+                'test-item',
+                {
+                  'test-pending': testStatuses[category.name]?.[test.name] === 'pending',
+                  'test-running': testStatuses[category.name]?.[test.name] === 'running',
+                  'test-passed': testStatuses[category.name]?.[test.name] === 'passed',
+                  'test-failed': testStatuses[category.name]?.[test.name] === 'failed'
+                }
+              ]"
             >
               <div class="test-info">
                 <span class="test-status-indicator">
-                  <span v-if="testStatuses[category.name]?.[test.name] === 'pending'" class="indicator-pending">[ ]</span>
-                  <span v-else-if="testStatuses[category.name]?.[test.name] === 'running'" class="indicator-running">[...]</span>
-                  <span v-else-if="testStatuses[category.name]?.[test.name] === 'passed'" class="indicator-ok">[OK]</span>
-                  <span v-else-if="testStatuses[category.name]?.[test.name] === 'failed'" class="indicator-error">[ERROR]</span>
+                  <span
+                    v-if="testStatuses[category.name]?.[test.name] === 'pending'"
+                    class="indicator-pending"
+                    >[ ]</span
+                  >
+                  <span
+                    v-else-if="testStatuses[category.name]?.[test.name] === 'running'"
+                    class="indicator-running"
+                    >[...]</span
+                  >
+                  <span
+                    v-else-if="testStatuses[category.name]?.[test.name] === 'passed'"
+                    class="indicator-ok"
+                    >[OK]</span
+                  >
+                  <span
+                    v-else-if="testStatuses[category.name]?.[test.name] === 'failed'"
+                    class="indicator-error"
+                    >[ERROR]</span
+                  >
                 </span>
                 <span class="test-description">{{ test.description }}</span>
               </div>
@@ -619,8 +657,14 @@ onUnmounted(() => {
 }
 
 @keyframes blink {
-  0%, 50% { opacity: 1; }
-  51%, 100% { opacity: 0.3; }
+  0%,
+  50% {
+    opacity: 1;
+  }
+  51%,
+  100% {
+    opacity: 0.3;
+  }
 }
 
 .line-header {
@@ -782,4 +826,3 @@ onUnmounted(() => {
   background: var(--color-border-light);
 }
 </style>
-

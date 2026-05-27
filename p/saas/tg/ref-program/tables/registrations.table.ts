@@ -7,8 +7,8 @@ export const TSaasRefProgramRegistration4Ab3Cd = Heap.Table(
     campaignId: Heap.Optional(
       Heap.RefLink('t__tg-ref-program__campaign__8Hn4Lx', {
         customMeta: { title: 'Кампания' },
-        onDelete: 'none',
-      }),
+        onDelete: 'none'
+      })
     ),
     ref: Heap.Optional(Heap.String({ customMeta: { title: 'Реферальный ID' } })),
     tgId: Heap.Optional(Heap.String({ customMeta: { title: 'Telegram ID' } })),
@@ -18,14 +18,15 @@ export const TSaasRefProgramRegistration4Ab3Cd = Heap.Table(
     phone: Heap.Optional(Heap.String({ customMeta: { title: 'Телефон' } })),
     rawPayload: Heap.Optional(
       Heap.Any({
-        customMeta: { title: 'Исходные данные webhook' },
-      }),
-    ),
+        customMeta: { title: 'Исходные данные webhook' }
+      })
+    )
   },
-  { customMeta: { title: 'Регистрации', description: 'События регистрации' } },
+  { customMeta: { title: 'Регистрации', description: 'События регистрации' } }
 )
 
 export default TSaasRefProgramRegistration4Ab3Cd
 
 export type TSaasRefProgramRegistration4Ab3CdRow = typeof TSaasRefProgramRegistration4Ab3Cd.T
-export type TSaasRefProgramRegistration4Ab3CdRowJson = typeof TSaasRefProgramRegistration4Ab3Cd.JsonT
+export type TSaasRefProgramRegistration4Ab3CdRowJson =
+  typeof TSaasRefProgramRegistration4Ab3Cd.JsonT

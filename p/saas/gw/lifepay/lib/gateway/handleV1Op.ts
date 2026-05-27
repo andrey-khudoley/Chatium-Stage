@@ -29,10 +29,7 @@ import {
   GATEWAY_OP_BETA_UNSTABLE_WARNING
 } from './gatewayResponse'
 import type { GatewayHttpResponse } from './gatewayResponse'
-import {
-  extractAndValidateLpCredentials,
-  maskLpLogin
-} from './lpCredentials'
+import { extractAndValidateLpCredentials, maskLpLogin } from './lpCredentials'
 import type { LpCredentials } from './lpCredentials'
 import { GW_OUTBOUND_TIMEOUT_MS, GW_MAX_REQUEST_BODY_BYTES } from './constants'
 import type { LpClientResult } from './lifePayClient'
@@ -50,16 +47,14 @@ type GatewayLogCtx = {
   requestStart: number
   rawArgs: unknown
   rawHeadersSafe: unknown
-  upstream:
-    | null
-    | {
-        kind: string
-        lpHttpStatus: number
-        rawLpJson: unknown
-        semanticRule: string
-        sentAt: number
-        durationMs: number
-      }
+  upstream: null | {
+    kind: string
+    lpHttpStatus: number
+    rawLpJson: unknown
+    semanticRule: string
+    sentAt: number
+    durationMs: number
+  }
 }
 
 /** Заголовки, которые ВСЕГДА исключаем из rawHeadersSafe до применения redactRawDeep. */
@@ -189,10 +184,7 @@ export type HandlerResult =
       details?: Record<string, unknown>
     }
 
-export type V1OpHandler<A> = (
-  ctx: app.Ctx,
-  args: HandlerArgs<A>
-) => Promise<HandlerResult>
+export type V1OpHandler<A> = (ctx: app.Ctx, args: HandlerArgs<A>) => Promise<HandlerResult>
 
 function isObject(v: unknown): v is Record<string, unknown> {
   return typeof v === 'object' && v !== null && !Array.isArray(v)
@@ -282,7 +274,11 @@ function extractLpJsonShape(lpJson: unknown): Record<string, unknown> | undefine
     const dataKeys = Object.keys(data)
     shape.dataKeys = dataKeys
     const dStatus = data.status
-    if (typeof dStatus === 'string' || typeof dStatus === 'number' || typeof dStatus === 'boolean') {
+    if (
+      typeof dStatus === 'string' ||
+      typeof dStatus === 'number' ||
+      typeof dStatus === 'boolean'
+    ) {
       shape.dataStatus = dStatus
     } else if (dStatus !== undefined) {
       shape.dataStatusType = Array.isArray(dStatus) ? 'array' : typeof dStatus
@@ -299,7 +295,16 @@ function extractLpJsonShape(lpJson: unknown): Record<string, unknown> | undefine
       const firstEntry = (data as Record<string, unknown>)[firstKey]
       if (isObject(firstEntry)) {
         const entryShape: Record<string, unknown> = { keys: Object.keys(firstEntry) }
-        for (const probe of ['status', 'state', 'code', 'message', 'paid', 'cancelled', 'created', 'success']) {
+        for (const probe of [
+          'status',
+          'state',
+          'code',
+          'message',
+          'paid',
+          'cancelled',
+          'created',
+          'success'
+        ]) {
           const v = firstEntry[probe]
           if (typeof v === 'string' || typeof v === 'number' || typeof v === 'boolean') {
             entryShape[probe] = v
@@ -468,11 +473,12 @@ async function runHandleV1Op<A>(
         payload: { requestId, op, bodyType: Array.isArray(body) ? 'array' : typeof body }
       })
       // Сохраним даже невалидный body как preview-маркер, чтобы было видно в журнале.
-      gwLog.rawArgs = body === null || body === undefined
-        ? { __noBody: true }
-        : typeof body === 'string'
-        ? { __nonJson: true, __preview: body.slice(0, 1024) }
-        : redactRawDeep(body)
+      gwLog.rawArgs =
+        body === null || body === undefined
+          ? { __noBody: true }
+          : typeof body === 'string'
+            ? { __nonJson: true, __preview: body.slice(0, 1024) }
+            : redactRawDeep(body)
       return buildErrorResponse(requestId, 'INVOKE_BODY_INVALID_JSON')
     }
     rawArgs = body
@@ -506,7 +512,9 @@ async function runHandleV1Op<A>(
       message: `[${LOG_PATH}] args_post_validator_violation`,
       payload: { requestId, op, errors: postCheck.errors }
     })
-    return buildErrorResponse(requestId, 'INVOKE_ARGS_SCHEMA_VIOLATION', { errors: postCheck.errors })
+    return buildErrorResponse(requestId, 'INVOKE_ARGS_SCHEMA_VIOLATION', {
+      errors: postCheck.errors
+    })
   }
 
   await loggerLib.writeServerLog(ctx, {
@@ -615,7 +623,6 @@ async function runHandleV1Op<A>(
     payload: { requestId, op }
   })
 
-  const warnings =
-    entry.availability === 'beta' ? [GATEWAY_OP_BETA_UNSTABLE_WARNING] : undefined
+  const warnings = entry.availability === 'beta' ? [GATEWAY_OP_BETA_UNSTABLE_WARNING] : undefined
   return buildOkResponse(requestId, result.successData ?? null, warnings)
 }

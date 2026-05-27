@@ -9,7 +9,9 @@
     <div class="content">
       <div class="header">
         <h2 class="title">Видеохостинг</h2>
-        <p class="subtitle">Уроки. Вебинары. Трансляции. <span class="accent">С&nbsp;AI&nbsp;внутри.</span></p>
+        <p class="subtitle">
+          Уроки. Вебинары. Трансляции. <span class="accent">С&nbsp;AI&nbsp;внутри.</span>
+        </p>
       </div>
 
       <div class="features-grid">
@@ -21,8 +23,6 @@
           <p>{{ f.desc }}</p>
         </div>
       </div>
-
-
     </div>
   </div>
 </template>
@@ -31,9 +31,21 @@
 defineProps({ active: Boolean })
 
 const features = [
-  { icon: 'fas fa-chart-line', title: 'Аналитика просмотров', desc: 'Кто досмотрел, кто ушёл, на какой секунде. Данные для роста.' },
-  { icon: 'fas fa-robot', title: 'AI-суммаризация', desc: 'Автоматические конспекты, тайм-коды и субтитры к каждому видео.' },
-  { icon: 'fas fa-bolt', title: 'Мгновенный старт', desc: 'Загрузил видео — оно уже на CDN. Без ожидания, без настроек.' },
+  {
+    icon: 'fas fa-chart-line',
+    title: 'Аналитика просмотров',
+    desc: 'Кто досмотрел, кто ушёл, на какой секунде. Данные для роста.'
+  },
+  {
+    icon: 'fas fa-robot',
+    title: 'AI-суммаризация',
+    desc: 'Автоматические конспекты, тайм-коды и субтитры к каждому видео.'
+  },
+  {
+    icon: 'fas fa-bolt',
+    title: 'Мгновенный старт',
+    desc: 'Загрузил видео — оно уже на CDN. Без ожидания, без настроек.'
+  }
 ]
 </script>
 
@@ -50,10 +62,35 @@ const features = [
   overflow-x: hidden;
 }
 
-.bg-effects { position: fixed; inset: 0; pointer-events: none; overflow: hidden; }
-.glow-orb { position: absolute; border-radius: 50%; filter: blur(140px); opacity: 0.13; animation: float 20s ease-in-out infinite; }
-.orb-1 { width: 600px; height: 600px; background: #ef4444; top: -25%; left: 50%; transform: translateX(-50%); }
-.orb-2 { width: 400px; height: 400px; background: #fb923c; bottom: -20%; right: -10%; animation-delay: -7s; }
+.bg-effects {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+.glow-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(140px);
+  opacity: 0.13;
+  animation: float 20s ease-in-out infinite;
+}
+.orb-1 {
+  width: 600px;
+  height: 600px;
+  background: #ef4444;
+  top: -25%;
+  left: 50%;
+  transform: translateX(-50%);
+}
+.orb-2 {
+  width: 400px;
+  height: 400px;
+  background: #fb923c;
+  bottom: -20%;
+  right: -10%;
+  animation-delay: -7s;
+}
 
 .film-grain {
   position: absolute;
@@ -63,8 +100,13 @@ const features = [
 }
 
 @keyframes float {
-  0%, 100% { transform: translateY(0) translateX(-50%); }
-  50% { transform: translateY(-40px) translateX(-50%); }
+  0%,
+  100% {
+    transform: translateY(0) translateX(-50%);
+  }
+  50% {
+    transform: translateY(-40px) translateX(-50%);
+  }
 }
 
 .content {
@@ -77,7 +119,9 @@ const features = [
   gap: 40px;
 }
 
-.header { text-align: center; }
+.header {
+  text-align: center;
+}
 
 .title {
   font-family: var(--font-display);
@@ -121,23 +165,23 @@ const features = [
   gap: 16px;
   padding: 36px 28px 32px;
   border-radius: 20px;
-  background: rgba(239,68,68,0.04);
-  border: 1px solid rgba(239,68,68,0.1);
+  background: rgba(239, 68, 68, 0.04);
+  border: 1px solid rgba(239, 68, 68, 0.1);
   transition: all 0.3s ease;
 }
 
 .feature-card:hover {
-  border-color: rgba(239,68,68,0.3);
-  background: rgba(239,68,68,0.08);
+  border-color: rgba(239, 68, 68, 0.3);
+  background: rgba(239, 68, 68, 0.08);
   transform: translateY(-5px);
-  box-shadow: 0 12px 40px rgba(239,68,68,0.15);
+  box-shadow: 0 12px 40px rgba(239, 68, 68, 0.15);
 }
 
 .feature-icon {
   width: 56px;
   height: 56px;
   border-radius: 16px;
-  background: rgba(239,68,68,0.12);
+  background: rgba(239, 68, 68, 0.12);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -159,25 +203,48 @@ const features = [
 
 .feature-card p {
   font-size: 16px;
-  color: var(--text-tertiary, rgba(255,255,255,0.5));
+  color: var(--text-tertiary, rgba(255, 255, 255, 0.5));
   margin: 0;
   line-height: 1.6;
 }
 
-
-
 @media (max-width: 768px) {
-  .slide { padding: 30px 16px 16px; }
-  .content { gap: 20px; }
-  .features-grid { grid-template-columns: 1fr; gap: 10px; }
-  .feature-card {
-    flex-direction: row; text-align: left; align-items: center;
-    padding: 14px 16px; gap: 12px; border-radius: 14px;
+  .slide {
+    padding: 30px 16px 16px;
   }
-  .feature-card h3 { font-size: 16px; }
-  .feature-card p { font-size: 13px; line-height: 1.4; }
-  .feature-icon { width: 40px; height: 40px; min-width: 40px; border-radius: 12px; }
-  .feature-icon i { font-size: 16px; }
-  .subtitle { margin-top: 8px; }
+  .content {
+    gap: 20px;
+  }
+  .features-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  .feature-card {
+    flex-direction: row;
+    text-align: left;
+    align-items: center;
+    padding: 14px 16px;
+    gap: 12px;
+    border-radius: 14px;
+  }
+  .feature-card h3 {
+    font-size: 16px;
+  }
+  .feature-card p {
+    font-size: 13px;
+    line-height: 1.4;
+  }
+  .feature-icon {
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    border-radius: 12px;
+  }
+  .feature-icon i {
+    font-size: 16px;
+  }
+  .subtitle {
+    margin-top: 8px;
+  }
 }
 </style>

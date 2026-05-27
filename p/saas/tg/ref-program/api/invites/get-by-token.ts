@@ -13,11 +13,15 @@ export const getInviteByTokenRoute = app.get('/', async (ctx, req) => {
   await loggerLib.writeServerLog(ctx, {
     severity: SEV.debug,
     message: `[${LOG_PATH}] Запрос GET`,
-    payload: { hasToken: !!(req.query?.token) }
+    payload: { hasToken: !!req.query?.token }
   })
   const token = typeof req.query?.token === 'string' ? req.query.token.trim() : ''
   if (!token) {
-    await loggerLib.writeServerLog(ctx, { severity: SEV.warn, message: `[${LOG_PATH}] token не указан`, payload: {} })
+    await loggerLib.writeServerLog(ctx, {
+      severity: SEV.warn,
+      message: `[${LOG_PATH}] token не указан`,
+      payload: {}
+    })
     return { success: false, error: 'Параметр token обязателен' }
   }
 

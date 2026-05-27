@@ -83,7 +83,10 @@ export const getLogsBeforeRoute = app.get('/', async (ctx, req) => {
       message: `[${LOG_PATH}] Валидация не пройдена: некорректный severities`,
       payload: { severitiesRaw }
     })
-    return { success: false, error: 'Параметр severities должен содержать числа 0..7 через запятую' }
+    return {
+      success: false,
+      error: 'Параметр severities должен содержать числа 0..7 через запятую'
+    }
   }
   await loggerLib.writeServerLog(ctx, {
     severity: 7,

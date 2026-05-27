@@ -2,7 +2,7 @@ import { Heap } from '@app/heap'
 
 /**
  * Таблица для хранения переходов по ссылкам с query-параметрами
- * 
+ *
  * Каждая запись содержит:
  * - linkId: ID ссылки из TrackingLinks
  * - fingerprint: хеш фингерпринта для дедупликации
@@ -14,7 +14,7 @@ import { Heap } from '@app/heap'
  * - subscribedAt: время подписки (опционально)
  * - subscriberTgId: tg_id подписчика (опционально)
  * - subscriberName: имя подписчика (опционально)
- * 
+ *
  * Системные поля createdAt и updatedAt добавляются автоматически
  */
 export const LinkClicks = Heap.Table('t__tg_channel_analytics__link_clicks__d2e3f4a5', {
@@ -22,9 +22,10 @@ export const LinkClicks = Heap.Table('t__tg_channel_analytics__link_clicks__d2e3
     customMeta: { title: 'ID ссылки из TrackingLinks' }
   }),
   fingerprint: Heap.String({
-    customMeta: { 
+    customMeta: {
       title: 'Фингерпринт для дедупликации',
-      description: 'Хеш фингерпринта клиента (IP+User-Agent+Accept-Language+доп. заголовки) для предотвращения дубликатов переходов'
+      description:
+        'Хеш фингерпринта клиента (IP+User-Agent+Accept-Language+доп. заголовки) для предотвращения дубликатов переходов'
     }
   }),
   queryParams: Heap.String({

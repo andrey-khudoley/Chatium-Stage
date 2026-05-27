@@ -17,17 +17,17 @@ export const apiRegisterRoute = app.post('/register', async (ctx, req) => {
     user: {
       email: data.email,
       phone: data.phone,
-      firstName: data.name,
+      firstName: data.name
     },
     action_params: {
       cardId: data.cardId,
-      cardTitle: data.cardTitle,
+      cardTitle: data.cardTitle
     },
     action_param1: data.cardId,
-    action_param2: data.cardTitle,
+    action_param2: data.cardTitle
   })
 
   // Здесь можно добавить интеграцию с CRM или отправку в Telegram
-  
+
   return { success: true, message: 'Регистрация успешна!' }
 })

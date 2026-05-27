@@ -14,7 +14,10 @@ export const adminPageRoute = app.html('/', async (ctx) => {
     const allSettings = await settingsLib.getAllSettings(ctx)
     settings = Object.entries(allSettings)
       .slice(0, 12)
-      .map(([key, value]) => ({ key, value: typeof value === 'string' ? value : JSON.stringify(value) }))
+      .map(([key, value]) => ({
+        key,
+        value: typeof value === 'string' ? value : JSON.stringify(value)
+      }))
   } catch {
     settings = [{ key: 'settings', value: 'unavailable' }]
   }
@@ -39,7 +42,9 @@ export const adminPageRoute = app.html('/', async (ctx) => {
 
   return (
     <html>
-      <head>{getDemoPageHead('dark', ADMIN_PAGE_NAME, DEFAULT_PROJECT_TITLE, 'Info', 'forest-night')}</head>
+      <head>
+        {getDemoPageHead('dark', ADMIN_PAGE_NAME, DEFAULT_PROJECT_TITLE, 'Info', 'forest-night')}
+      </head>
       <body>
         {getBootLoaderDiv('dark', DEFAULT_PROJECT_TITLE, 'forest-night')}
         <AdminPage

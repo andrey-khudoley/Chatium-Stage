@@ -17,7 +17,7 @@
 defineProps({
   title: String,
   description: String,
-  icon: String,
+  icon: String
 })
 </script>
 

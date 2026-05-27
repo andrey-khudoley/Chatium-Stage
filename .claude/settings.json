@@ -1,7 +1,5 @@
 {
   "permissions": {
-    "allow": [
-      "Bash(./node_modules/.bin/tsc --noEmit -p p/saas/gw/lifepay/tsconfig.json)"
-    ]
+    "allow": ["Bash(./node_modules/.bin/tsc --noEmit -p p/saas/gw/lifepay/tsconfig.json)"]
   }
 }

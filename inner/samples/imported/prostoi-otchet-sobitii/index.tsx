@@ -1,11 +1,11 @@
-import { jsx } from "@app/html-jsx"
+import { jsx } from '@app/html-jsx'
 import { requireAccountRole } from '@app/auth'
 import TrafficReports from './pages/TrafficReports.vue'
 import EventDetails from './pages/EventDetails.vue'
 import GalleryPage from './pages/GalleryPage.vue'
 
 // Use export to access index route in components and other modules
-export const indexPageRoute = app.get("/", async (ctx, req) => {
+export const indexPageRoute = app.get('/', async (ctx, req) => {
   // If gallery query parameter is present, show gallery page without admin check
   if (req.query.gallery !== undefined) {
     return (
@@ -65,9 +65,9 @@ export const indexPageRoute = app.get("/", async (ctx, req) => {
 })
 
 // Route for event details page
-export const eventDetailsPageRoute = app.get("/event", async (ctx) => {
+export const eventDetailsPageRoute = app.get('/event', async (ctx) => {
   requireAccountRole(ctx, 'Admin')
-  
+
   return (
     <html>
       <head>
@@ -79,7 +79,9 @@ export const eventDetailsPageRoute = app.get("/event", async (ctx) => {
           * { box-sizing: border-box; }
         `}</style>
       </head>
-      <body><EventDetails /></body>
+      <body>
+        <EventDetails />
+      </body>
     </html>
   )
 })

@@ -4,14 +4,20 @@
       <div v-if="show && formData" class="form-popup-overlay" @click.self="$emit('close')">
         <div
           class="form-popup-modal"
-          :class="{ 'form-popup-modal--thankyou': submitted, 'form-popup-modal--with-sidebar': hasBonuses }"
+          :class="{
+            'form-popup-modal--thankyou': submitted,
+            'form-popup-modal--with-sidebar': hasBonuses
+          }"
         >
           <button type="button" class="form-popup-close" @click="$emit('close')">
             <i class="fas fa-times"></i>
           </button>
 
           <!-- Thank You state -->
-          <div v-if="submitted && resultAction === 'thank_you'" class="form-popup-body text-center py-10">
+          <div
+            v-if="submitted && resultAction === 'thank_you'"
+            class="form-popup-body text-center py-10"
+          >
             <div class="form-thankyou-icon">
               <i class="fas fa-check"></i>
             </div>
@@ -135,14 +141,14 @@ import {
   trackFormClosed,
   trackFormFieldFocused,
   trackFormSubmitted,
-  trackFormPaymentPageOpened,
+  trackFormPaymentPageOpened
 } from '../../shared/use-form-analytics'
 
 const props = defineProps({
   show: { type: Boolean, default: false },
   formData: { type: Object, default: null },
   episodeId: { type: String, default: '' },
-  autowebinarId: { type: String, default: '' },
+  autowebinarId: { type: String, default: '' }
 })
 
 const emit = defineEmits(['close', 'submitted'])
@@ -165,7 +171,7 @@ const buttonText = computed(() => {
 const btnStyle = computed(() => ({
   '--btn-color': btnColor.value,
   '--btn-color-dark': darkenHex(btnColor.value, 25),
-  '--btn-color-glow': btnColor.value + '66',
+  '--btn-color-glow': btnColor.value + '66'
 }))
 
 function darkenHex(hex, amount) {
@@ -198,7 +204,9 @@ watch(
             } else if (field.type === 'lastName' && ctx.user.lastName) {
               initialValue = ctx.user.lastName
             } else if (field.type === 'fullName') {
-              const parts = [ctx.user.firstName, ctx.user.middleName, ctx.user.lastName].filter(Boolean)
+              const parts = [ctx.user.firstName, ctx.user.middleName, ctx.user.lastName].filter(
+                Boolean
+              )
               if (parts.length > 0) {
                 initialValue = parts.join(' ')
               }
@@ -215,26 +223,35 @@ watch(
 
     const analyticsId = props.episodeId || props.autowebinarId
     if (!val && oldVal && props.formData && analyticsId) {
-      trackFormClosed(analyticsId, props.formData.id, props.formData.title, props.formData.submitAction)
+      trackFormClosed(
+        analyticsId,
+        props.formData.id,
+        props.formData.title,
+        props.formData.submitAction
+      )
     }
-  },
+  }
 )
 
 function getFieldOptions(field) {
   if (!field.options) return []
   return field.options
     .split('\n')
-    .map(o => o.trim())
+    .map((o) => o.trim())
     .filter(Boolean)
 }
 
 function getSelectOptions(field) {
-  return [{ value: '', label: 'Выберите...' }, ...getFieldOptions(field).map(o => ({ value: o, label: o }))]
+  return [
+    { value: '', label: 'Выберите...' },
+    ...getFieldOptions(field).map((o) => ({ value: o, label: o }))
+  ]
 }
 
 function getInputType(fieldType) {
   if (fieldType === 'phone') return 'tel'
-  if (fieldType === 'firstName' || fieldType === 'lastName' || fieldType === 'fullName') return 'text'
+  if (fieldType === 'firstName' || fieldType === 'lastName' || fieldType === 'fullName')
+    return 'text'
   return fieldType
 }
 
@@ -242,7 +259,13 @@ function handleFieldFocus(field) {
   const analyticsId = props.episodeId || props.autowebinarId
   if (!formInteracted.value && analyticsId && props.formData) {
     formInteracted.value = true
-    trackFormFieldFocused(analyticsId, props.formData.id, props.formData.title, field.id, field.label)
+    trackFormFieldFocused(
+      analyticsId,
+      props.formData.id,
+      props.formData.title,
+      field.id,
+      field.label
+    )
   }
 }
 
@@ -273,7 +296,7 @@ async function submitForm() {
       formId: props.formData.id,
       episodeId: props.episodeId || undefined,
       autowebinarId: props.autowebinarId || undefined,
-      data,
+      data
     })
 
     const analyticsId = props.episodeId || props.autowebinarId
@@ -284,7 +307,7 @@ async function submitForm() {
           props.formData.id,
           props.formData.title,
           props.formData.paymentAmount || 0,
-          props.formData.paymentCurrency || 'RUB',
+          props.formData.paymentCurrency || 'RUB'
         )
       }
       window.location.href = result.paymentLink
@@ -295,7 +318,7 @@ async function submitForm() {
           props.formData.id,
           props.formData.title,
           props.formData.paymentAmount || 0,
-          props.formData.paymentCurrency || 'RUB',
+          props.formData.paymentCurrency || 'RUB'
         )
       }
       window.location.href = result.paymentMethodUrl
@@ -316,7 +339,7 @@ async function submitForm() {
         props.formData.title,
         props.formData.submitAction || 'thank_you',
         props.formData.paymentAmount || 0,
-        props.formData.paymentCurrency,
+        props.formData.paymentCurrency
       )
     }
 

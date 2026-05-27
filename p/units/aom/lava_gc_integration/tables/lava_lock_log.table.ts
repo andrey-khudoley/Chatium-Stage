@@ -7,7 +7,7 @@ export const LavaLockLog = Heap.Table('t__lava-gc-integration__lock-log__5Fm2Nt'
   acquired_at: Heap.Number({ customMeta: { title: 'Lock получен (Unix ms)' } }),
   released_at: Heap.Number({ customMeta: { title: 'Lock снят (Unix ms)' } }),
   result: Heap.String({ customMeta: { title: 'Результат (success/timeout/error)' } }),
-  error_message: Heap.String({ customMeta: { title: 'Текст ошибки' } }),
+  error_message: Heap.String({ customMeta: { title: 'Текст ошибки' } })
 })
 
 export default LavaLockLog

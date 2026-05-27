@@ -45,11 +45,19 @@ async function handleRegisterWebhook(
   })
 
   if (!key || typeof key !== 'string') {
-    await loggerLib.writeServerLog(ctx, { severity: SEV.warn, message: `[${LOG_PATH}] Нет key`, payload: {} })
+    await loggerLib.writeServerLog(ctx, {
+      severity: SEV.warn,
+      message: `[${LOG_PATH}] Нет key`,
+      payload: {}
+    })
     return { success: false, error: 'Missing key parameter' }
   }
   if (!ref || typeof ref !== 'string') {
-    await loggerLib.writeServerLog(ctx, { severity: SEV.warn, message: `[${LOG_PATH}] Нет ref`, payload: {} })
+    await loggerLib.writeServerLog(ctx, {
+      severity: SEV.warn,
+      message: `[${LOG_PATH}] Нет ref`,
+      payload: {}
+    })
     return { success: false, error: 'Missing ref parameter' }
   }
 

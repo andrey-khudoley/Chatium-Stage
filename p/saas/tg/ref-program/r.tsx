@@ -52,7 +52,9 @@ export const redirectRoute = app.html('/', async (ctx, req) => {
           <meta charset="UTF-8" />
           <title>Ссылка не найдена</title>
         </head>
-        <body><p>Ссылка не найдена</p></body>
+        <body>
+          <p>Ссылка не найдена</p>
+        </body>
       </html>
     )
   }
@@ -65,7 +67,9 @@ export const redirectRoute = app.html('/', async (ctx, req) => {
           <meta charset="UTF-8" />
           <title>Ссылка не найдена</title>
         </head>
-        <body><p>Ссылка не найдена</p></body>
+        <body>
+          <p>Ссылка не найдена</p>
+        </body>
       </html>
     )
   }
@@ -82,7 +86,9 @@ export const redirectRoute = app.html('/', async (ctx, req) => {
           <meta charset="UTF-8" />
           <title>Ссылка не найдена</title>
         </head>
-        <body><p>Ссылка не найдена</p></body>
+        <body>
+          <p>Ссылка не найдена</p>
+        </body>
       </html>
     )
   }
@@ -95,7 +101,9 @@ export const redirectRoute = app.html('/', async (ctx, req) => {
           <meta charset="UTF-8" />
           <title>Страница не найдена</title>
         </head>
-        <body><p>Страница не найдена</p></body>
+        <body>
+          <p>Страница не найдена</p>
+        </body>
       </html>
     )
   }
@@ -105,7 +113,13 @@ export const redirectRoute = app.html('/', async (ctx, req) => {
   let visitorId: string = visitorIdFromContext ?? ''
   if (!visitorId) {
     visitorId = generateUrlSafeId(16)
-    const resp = ctx.resp as { cookie?: (name: string, value: string, opts?: { maxAge?: number; httpOnly?: boolean; sameSite?: string; path?: string }) => void }
+    const resp = ctx.resp as {
+      cookie?: (
+        name: string,
+        value: string,
+        opts?: { maxAge?: number; httpOnly?: boolean; sameSite?: string; path?: string }
+      ) => void
+    }
     if (typeof resp.cookie === 'function') {
       resp.cookie(COOKIE_VISITOR, visitorId, {
         maxAge: COOKIE_MAX_AGE_DAYS * 24 * 60 * 60 * 1000,

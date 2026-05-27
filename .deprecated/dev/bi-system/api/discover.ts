@@ -10,7 +10,7 @@ import { requireAnyUser } from '@app/auth'
  */
 export const discoverEventsRoute = app.get('/discover', async (ctx, req) => {
   requireAnyUser(ctx)
-  
+
   try {
     const result = {
       gc_events: [] as any[],
@@ -29,7 +29,7 @@ export const discoverEventsRoute = app.get('/discover', async (ctx, req) => {
         dev_total: 0,
         merged_total: 0,
         unique_urlPaths: 0,
-        unique_actions: 0,
+        unique_actions: 0
       }
     }
 
@@ -49,7 +49,7 @@ export const discoverEventsRoute = app.get('/discover', async (ctx, req) => {
         HAVING urlPath IS NOT NULL OR action IS NOT NULL
         ORDER BY event_count DESC
       `
-      
+
       const gcResult = await gcQueryAi(ctx, gcQuery)
       result.gc_events = gcResult.rows || []
       result.stats.gc_total = result.gc_events.length
@@ -73,12 +73,14 @@ export const discoverEventsRoute = app.get('/discover', async (ctx, req) => {
         HAVING urlPath IS NOT NULL OR action IS NOT NULL
         ORDER BY event_count DESC
       `
-      
+
       const devResult = await queryAi(ctx, devQuery)
       result.dev_events = devResult.rows || []
       result.stats.dev_total = result.dev_events.length
     } catch (devError) {
-      result.dev_events = [{ error: devError instanceof Error ? devError.message : 'Dev query failed' }]
+      result.dev_events = [
+        { error: devError instanceof Error ? devError.message : 'Dev query failed' }
+      ]
     }
 
     // ==================== Merge Events ====================
@@ -118,22 +120,23 @@ export const discoverEventsRoute = app.get('/discover', async (ctx, req) => {
       }
     }
 
-    result.merged = Array.from(eventMap.values())
-      .sort((a, b) => (b.gc_count + b.dev_count) - (a.gc_count + a.dev_count))
+    result.merged = Array.from(eventMap.values()).sort(
+      (a, b) => b.gc_count + b.dev_count - (a.gc_count + a.dev_count)
+    )
 
     result.stats.merged_total = result.merged.length
 
     // Подсчет уникальных urlPath и action
-    const uniqueUrlPaths = new Set(result.merged.map(e => e.urlPath).filter(Boolean))
-    const uniqueActions = new Set(result.merged.map(e => e.action).filter(Boolean))
-    
+    const uniqueUrlPaths = new Set(result.merged.map((e) => e.urlPath).filter(Boolean))
+    const uniqueActions = new Set(result.merged.map((e) => e.action).filter(Boolean))
+
     result.stats.unique_urlPaths = uniqueUrlPaths.size
     result.stats.unique_actions = uniqueActions.size
 
     // ==================== Categorize Events ====================
     for (const event of result.merged) {
       const identifier = event.urlPath || event.action
-      
+
       if (event.action && !event.urlPath) {
         // HTTP событие (traffic)
         result.categorized.traffic.push(event.action)
@@ -173,4 +176,3 @@ export const discoverEventsRoute = app.get('/discover', async (ctx, req) => {
 })
 
 export default discoverEventsRoute
-

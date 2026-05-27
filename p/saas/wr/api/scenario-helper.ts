@@ -19,7 +19,12 @@ export function tryParseScenarioJSON(raw: string): { events: any[] } | null {
 }
 
 export function extractScenarioFromAssistantContent(content: any): { events: any[] } | null {
-  if (content && typeof content === 'object' && !Array.isArray(content) && Array.isArray(content.events)) {
+  if (
+    content &&
+    typeof content === 'object' &&
+    !Array.isArray(content) &&
+    Array.isArray(content.events)
+  ) {
     return content
   }
 
@@ -71,7 +76,7 @@ export function getFakeOnlinePoints(aw: any): Array<{ minute: number; count: num
     .filter((point: any) => Number.isFinite(point.minute) && Number.isFinite(point.count))
     .map((point: any) => ({
       minute: Math.max(0, Math.min(durationMinutes, Math.round(point.minute))),
-      count: Math.max(0, Math.round(point.count)),
+      count: Math.max(0, Math.round(point.count))
     }))
     .sort((a: any, b: any) => a.minute - b.minute)
 
@@ -80,7 +85,7 @@ export function getFakeOnlinePoints(aw: any): Array<{ minute: number; count: num
   return [
     { minute: 0, count: 50 },
     { minute: Math.floor(durationMinutes / 2), count: 100 },
-    { minute: durationMinutes, count: 80 },
+    { minute: durationMinutes, count: 80 }
   ]
 }
 
@@ -95,11 +100,19 @@ export function buildOnlineContext(points: Array<{ minute: number; count: number
   if (first && (!sampled[0] || sampled[0].minute !== first.minute)) sampled.unshift(first)
   if (last && sampled[sampled.length - 1]?.minute !== last.minute) sampled.push(last)
 
-  const peak = points.reduce((best, point) => (point.count > best.count ? point : best), points[0] || { minute: 0, count: 0 })
-  const avg = points.length > 0 ? Math.round(points.reduce((acc, point) => acc + point.count, 0) / points.length) : 0
+  const peak = points.reduce(
+    (best, point) => (point.count > best.count ? point : best),
+    points[0] || { minute: 0, count: 0 }
+  )
+  const avg =
+    points.length > 0
+      ? Math.round(points.reduce((acc, point) => acc + point.count, 0) / points.length)
+      : 0
 
   const timeline = sampled
-    .map(point => `- ${formatMinuteLabel(point.minute)} (${point.minute}м): ~${point.count} зрителей`)
+    .map(
+      (point) => `- ${formatMinuteLabel(point.minute)} (${point.minute}м): ~${point.count} зрителей`
+    )
     .join('\n')
 
   return `Профиль онлайна (из БД):\n- Средний онлайн: ~${avg}\n- Пик онлайна: ~${peak.count} в ${formatMinuteLabel(peak.minute)} (${peak.minute}м)\n- Длительность: ${durationMinutes} минут\n\nТаймкоды онлайна:\n${timeline}`
@@ -109,11 +122,11 @@ export async function updateScenarioGenerationState(
   ctx: app.Ctx,
   autowebinarId: string,
   status: 'processing' | 'completed' | 'failed',
-  error?: string,
+  error?: string
 ) {
   await Autowebinars.update(ctx, {
     id: autowebinarId,
     scenarioGenerationStatus: status,
-    scenarioGenerationError: error || null,
+    scenarioGenerationError: error || null
   } as any)
 }

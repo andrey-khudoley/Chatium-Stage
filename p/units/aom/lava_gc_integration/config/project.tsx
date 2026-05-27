@@ -21,4 +21,3 @@ export function getHeaderText(pageName: string, projectName: string): string {
 
 /** Текст контента домашней страницы (заголовок) */
 export const BODY_TEXT = 'Интеграция Lava.top и GetCourse'
-

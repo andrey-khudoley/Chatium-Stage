@@ -26,7 +26,7 @@ export const PanelInvites = Heap.Table('t__saas-gw-lifepay__pinvite__3EzUBP', {
     searchable: { langs: ['en'], embeddings: false }
   }),
   createdByUserId: Heap.String({
-    customMeta: { title: 'ID Admin\'а, создавшего инвайт' }
+    customMeta: { title: "ID Admin'а, создавшего инвайт" }
   }),
   issuedAt: Heap.Number({
     customMeta: { title: 'Unix ms момента создания (createdAt зарезервировано Heap)' }
@@ -34,18 +34,26 @@ export const PanelInvites = Heap.Table('t__saas-gw-lifepay__pinvite__3EzUBP', {
   expiresAt: Heap.Number({
     customMeta: { title: 'Unix ms момента истечения (issuedAt + INVITE_TTL_DAYS)' }
   }),
-  usedAt: Heap.Optional(Heap.Number({
-    customMeta: { title: 'Unix ms момента потребления (null если не использован)' }
-  })),
-  usedByUserId: Heap.Optional(Heap.String({
-    customMeta: { title: 'ID пользователя, использовавшего инвайт (null если не использован)' }
-  })),
-  revokedAt: Heap.Optional(Heap.Number({
-    customMeta: { title: 'Unix ms момента отзыва Admin\'ом (null если активен)' }
-  })),
-  note: Heap.Optional(Heap.String({
-    customMeta: { title: 'Комментарий Admin\'а при создании (например «для Ольги»)' }
-  }))
+  usedAt: Heap.Optional(
+    Heap.Number({
+      customMeta: { title: 'Unix ms момента потребления (null если не использован)' }
+    })
+  ),
+  usedByUserId: Heap.Optional(
+    Heap.String({
+      customMeta: { title: 'ID пользователя, использовавшего инвайт (null если не использован)' }
+    })
+  ),
+  revokedAt: Heap.Optional(
+    Heap.Number({
+      customMeta: { title: "Unix ms момента отзыва Admin'ом (null если активен)" }
+    })
+  ),
+  note: Heap.Optional(
+    Heap.String({
+      customMeta: { title: "Комментарий Admin'а при создании (например «для Ольги»)" }
+    })
+  )
 })
 
 export default PanelInvites

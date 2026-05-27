@@ -29,7 +29,7 @@ onMounted(() => {
   // Принудительно устанавливаем тёмную тему
   document.documentElement.classList.add('dark')
   localStorage.setItem('theme', 'dark')
-  
+
   if (window.hideAppLoader) {
     window.hideAppLoader()
   }
@@ -57,7 +57,14 @@ const openChatiumLink = () => {
 <template>
   <div class="app-layout bg-[var(--color-bg)] text-[var(--color-text)] flex flex-col">
     <!-- Header -->
-    <Header v-if="bootLoaderDone" :pageTitle="'A/Ley Services'" :indexUrl="props.indexUrl" :profileUrl="props.profileUrl" :loginUrl="props.loginUrl" :isAuthenticated="props.isAuthenticated" />
+    <Header
+      v-if="bootLoaderDone"
+      :pageTitle="'A/Ley Services'"
+      :indexUrl="props.indexUrl"
+      :profileUrl="props.profileUrl"
+      :loginUrl="props.loginUrl"
+      :isAuthenticated="props.isAuthenticated"
+    />
 
     <!-- Content -->
     <main class="content-wrapper flex-1 relative z-10 min-h-0 overflow-y-auto">
@@ -69,9 +76,7 @@ const openChatiumLink = () => {
               <i class="fas fa-fingerprint profile-icon"></i>
             </div>
             <h1 class="profile-heading">Профиль пользователя</h1>
-            <p class="profile-description">
-              Информация о вашем аккаунте
-            </p>
+            <p class="profile-description">Информация о вашем аккаунте</p>
           </div>
 
           <!-- Profile Info Card -->
@@ -127,10 +132,7 @@ const openChatiumLink = () => {
         <div class="footer-left">ИП Худолей Андрей Германович</div>
         <div class="footer-center">Все права сохранены © 2025</div>
         <div class="footer-right">
-          <button 
-            class="footer-link"
-            @click="openChatiumLink"
-          >
+          <button class="footer-link" @click="openChatiumLink">
             Сделано с <i class="fas fa-heart footer-heart"></i> на Chatium
           </button>
         </div>
@@ -237,7 +239,9 @@ body {
   gap: 2rem;
   opacity: 0;
   transform: translateY(20px);
-  transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+  transition:
+    opacity 0.6s ease-out,
+    transform 0.6s ease-out;
 }
 
 .profile-section.content-visible {
@@ -269,7 +273,8 @@ body {
 }
 
 @keyframes profile-glow {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 0.3;
     transform: translate(-50%, -50%) scale(1);
   }
@@ -287,7 +292,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 
+  box-shadow:
     0 8px 24px rgba(211, 35, 75, 0.4),
     0 4px 12px rgba(211, 35, 75, 0.3),
     inset 0 0 0 2px rgba(0, 0, 0, 0.3);
@@ -297,10 +302,18 @@ body {
   cursor: pointer;
   overflow: hidden;
   clip-path: polygon(
-    0 4px, 4px 4px, 4px 0,
-    calc(100% - 4px) 0, calc(100% - 4px) 4px, 100% 4px,
-    100% calc(100% - 4px), calc(100% - 4px) calc(100% - 4px), calc(100% - 4px) 100%,
-    4px 100%, 4px calc(100% - 4px), 0 calc(100% - 4px)
+    0 4px,
+    4px 4px,
+    4px 0,
+    calc(100% - 4px) 0,
+    calc(100% - 4px) 4px,
+    100% 4px,
+    100% calc(100% - 4px),
+    calc(100% - 4px) calc(100% - 4px),
+    calc(100% - 4px) 100%,
+    4px 100%,
+    4px calc(100% - 4px),
+    0 calc(100% - 4px)
   );
 }
 
@@ -325,8 +338,13 @@ body {
 }
 
 @keyframes scanline-flicker {
-  0%, 100% { opacity: 0.7; }
-  50% { opacity: 0.5; }
+  0%,
+  100% {
+    opacity: 0.7;
+  }
+  50% {
+    opacity: 0.5;
+  }
 }
 
 .profile-icon-wrapper::after {
@@ -336,13 +354,15 @@ body {
   left: 0;
   width: 100%;
   height: 3px;
-  background: linear-gradient(90deg, 
-    transparent 0%, 
-    rgba(255, 255, 255, 0.8) 20%, 
-    rgba(255, 255, 255, 1) 50%, 
-    rgba(255, 255, 255, 0.8) 80%, 
-    transparent 100%);
-  box-shadow: 
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.8) 20%,
+    rgba(255, 255, 255, 1) 50%,
+    rgba(255, 255, 255, 0.8) 80%,
+    transparent 100%
+  );
+  box-shadow:
     0 0 8px rgba(255, 255, 255, 0.8),
     0 0 16px rgba(255, 255, 255, 0.4);
   animation: fingerprint-scan 3s ease-in-out 0.5s infinite;
@@ -376,10 +396,11 @@ body {
 }
 
 @keyframes glitch-icon {
-  0%, 100% {
+  0%,
+  100% {
     transform: scale(1) translate(0);
     filter: none;
-    box-shadow: 
+    box-shadow:
       0 8px 24px rgba(211, 35, 75, 0.4),
       0 4px 12px rgba(211, 35, 75, 0.3);
   }
@@ -466,10 +487,13 @@ body {
   display: flex;
   flex-direction: column;
   gap: 2rem;
-  transition: transform 0.6s cubic-bezier(0.34, 1.3, 0.64, 1), border-color 0.25s ease, box-shadow 0.25s ease;
+  transition:
+    transform 0.6s cubic-bezier(0.34, 1.3, 0.64, 1),
+    border-color 0.25s ease,
+    box-shadow 0.25s ease;
   position: relative;
   z-index: 1;
-  box-shadow: 
+  box-shadow:
     0 0 0 0 rgba(0, 0, 0, 0),
     0 0 0 0 rgba(0, 0, 0, 0),
     inset 0 0 0 0 rgba(255, 255, 255, 0);
@@ -484,8 +508,7 @@ body {
   right: 0;
   width: 80px;
   height: 80px;
-  background: 
-    linear-gradient(45deg, transparent 40%, rgba(211, 35, 75, 0.03) 50%, transparent 60%);
+  background: linear-gradient(45deg, transparent 40%, rgba(211, 35, 75, 0.03) 50%, transparent 60%);
   opacity: 0;
   pointer-events: none;
   z-index: 0;
@@ -493,7 +516,8 @@ body {
 }
 
 @keyframes corner-glow {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 0;
     transform: translate(0, 0);
   }
@@ -531,22 +555,34 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, var(--color-accent-medium) 0%, var(--color-accent-light) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--color-accent-medium) 0%,
+    var(--color-accent-light) 100%
+  );
   border: 2px solid rgba(211, 35, 75, 0.4);
   color: var(--color-accent);
   font-size: 0.875rem;
   transition: var(--transition);
-  box-shadow: 
+  box-shadow:
     0 2px 4px rgba(0, 0, 0, 0.3),
     inset 0 1px 0 rgba(255, 255, 255, 0.03),
     inset 0 0 0 1px rgba(0, 0, 0, 0.2);
   position: relative;
   overflow: hidden;
   clip-path: polygon(
-    0 2px, 2px 2px, 2px 0,
-    calc(100% - 2px) 0, calc(100% - 2px) 2px, 100% 2px,
-    100% calc(100% - 2px), calc(100% - 2px) calc(100% - 2px), calc(100% - 2px) 100%,
-    2px 100%, 2px calc(100% - 2px), 0 calc(100% - 2px)
+    0 2px,
+    2px 2px,
+    2px 0,
+    calc(100% - 2px) 0,
+    calc(100% - 2px) 2px,
+    100% 2px,
+    100% calc(100% - 2px),
+    calc(100% - 2px) calc(100% - 2px),
+    calc(100% - 2px) 100%,
+    2px 100%,
+    2px calc(100% - 2px),
+    0 calc(100% - 2px)
   );
 }
 
@@ -577,7 +613,7 @@ body {
 .profile-field:hover .profile-field-icon {
   background: linear-gradient(135deg, rgba(211, 35, 75, 0.3) 0%, rgba(211, 35, 75, 0.2) 100%);
   border-color: var(--color-accent);
-  box-shadow: 
+  box-shadow:
     0 4px 8px rgba(211, 35, 75, 0.3),
     0 2px 4px rgba(211, 35, 75, 0.2),
     inset 0 1px 0 rgba(255, 255, 255, 0.1);
@@ -661,45 +697,64 @@ body {
 }
 
 @keyframes glitch-footer {
-  0%, 100% {
+  0%,
+  100% {
     transform: translate(0);
     text-shadow: none;
   }
   10% {
     transform: translate(-1.5px, 0);
-    text-shadow: 1px 0 #ff00ff, -1px 0 #00ffff;
+    text-shadow:
+      1px 0 #ff00ff,
+      -1px 0 #00ffff;
   }
   20% {
     transform: translate(1.5px, 0);
-    text-shadow: -1px 0 #ff00ff, 1px 0 #00ffff;
+    text-shadow:
+      -1px 0 #ff00ff,
+      1px 0 #00ffff;
   }
   30% {
     transform: translate(-1px, 0);
-    text-shadow: 1.5px 0 #ff00ff, -1.5px 0 #00ffff;
+    text-shadow:
+      1.5px 0 #ff00ff,
+      -1.5px 0 #00ffff;
   }
   40% {
     transform: translate(1px, 0);
-    text-shadow: -1.5px 0 #ff00ff, 1.5px 0 #00ffff;
+    text-shadow:
+      -1.5px 0 #ff00ff,
+      1.5px 0 #00ffff;
   }
   50% {
     transform: translate(-1.5px, 0);
-    text-shadow: 1px 0 #ff00ff, -1px 0 #00ffff;
+    text-shadow:
+      1px 0 #ff00ff,
+      -1px 0 #00ffff;
   }
   60% {
     transform: translate(1.5px, 0);
-    text-shadow: -1px 0 #ff00ff, 1px 0 #00ffff;
+    text-shadow:
+      -1px 0 #ff00ff,
+      1px 0 #00ffff;
   }
   70% {
     transform: translate(-1px, 0);
-    text-shadow: 1px 0 #ff00ff, -1px 0 #00ffff;
+    text-shadow:
+      1px 0 #ff00ff,
+      -1px 0 #00ffff;
   }
   80% {
     transform: translate(1px, 0);
-    text-shadow: -1px 0 #ff00ff, 1px 0 #00ffff;
+    text-shadow:
+      -1px 0 #ff00ff,
+      1px 0 #00ffff;
   }
   90% {
     transform: translate(-0.5px, 0);
-    text-shadow: 0.5px 0 #ff00ff, -0.5px 0 #00ffff;
+    text-shadow:
+      0.5px 0 #ff00ff,
+      -0.5px 0 #00ffff;
   }
 }
 
@@ -822,63 +877,55 @@ body {
 }
 
 @keyframes global-page-glitch {
-  0%, 100% {
+  0%,
+  100% {
     transform: translate(0) skew(0deg);
     filter: none;
   }
   10% {
     transform: translate(-3px, 0) skew(-0.5deg);
-    filter: drop-shadow(2px 0 0 rgba(255, 0, 255, 0.7)) 
-            drop-shadow(-2px 0 0 rgba(0, 255, 255, 0.7))
-            hue-rotate(90deg);
+    filter: drop-shadow(2px 0 0 rgba(255, 0, 255, 0.7)) drop-shadow(-2px 0 0 rgba(0, 255, 255, 0.7))
+      hue-rotate(90deg);
   }
   20% {
     transform: translate(3px, 0) skew(0.5deg);
-    filter: drop-shadow(-2px 0 0 rgba(255, 0, 255, 0.7)) 
-            drop-shadow(2px 0 0 rgba(0, 255, 255, 0.7))
-            hue-rotate(-90deg);
+    filter: drop-shadow(-2px 0 0 rgba(255, 0, 255, 0.7)) drop-shadow(2px 0 0 rgba(0, 255, 255, 0.7))
+      hue-rotate(-90deg);
   }
   30% {
     transform: translate(-2px, 0) skew(-0.3deg);
-    filter: drop-shadow(2px 0 0 rgba(255, 0, 255, 0.8)) 
-            drop-shadow(-2px 0 0 rgba(0, 255, 255, 0.8))
-            brightness(1.2);
+    filter: drop-shadow(2px 0 0 rgba(255, 0, 255, 0.8)) drop-shadow(-2px 0 0 rgba(0, 255, 255, 0.8))
+      brightness(1.2);
   }
   40% {
     transform: translate(2px, 0) skew(0.3deg);
-    filter: drop-shadow(-2px 0 0 rgba(255, 0, 255, 0.8)) 
-            drop-shadow(2px 0 0 rgba(0, 255, 255, 0.8))
-            contrast(1.3);
+    filter: drop-shadow(-2px 0 0 rgba(255, 0, 255, 0.8)) drop-shadow(2px 0 0 rgba(0, 255, 255, 0.8))
+      contrast(1.3);
   }
   50% {
     transform: translate(-3px, 0) skew(-0.5deg);
-    filter: drop-shadow(2px 0 0 rgba(255, 0, 255, 0.7)) 
-            drop-shadow(-2px 0 0 rgba(0, 255, 255, 0.7))
-            saturate(2);
+    filter: drop-shadow(2px 0 0 rgba(255, 0, 255, 0.7)) drop-shadow(-2px 0 0 rgba(0, 255, 255, 0.7))
+      saturate(2);
   }
   60% {
     transform: translate(3px, 0) skew(0.5deg);
-    filter: drop-shadow(-2px 0 0 rgba(255, 0, 255, 0.7)) 
-            drop-shadow(2px 0 0 rgba(0, 255, 255, 0.7))
-            invert(0.1);
+    filter: drop-shadow(-2px 0 0 rgba(255, 0, 255, 0.7)) drop-shadow(2px 0 0 rgba(0, 255, 255, 0.7))
+      invert(0.1);
   }
   70% {
     transform: translate(-2px, 0) skew(-0.2deg);
-    filter: drop-shadow(1px 0 0 rgba(255, 0, 255, 0.6)) 
-            drop-shadow(-1px 0 0 rgba(0, 255, 255, 0.6))
-            brightness(1.1);
+    filter: drop-shadow(1px 0 0 rgba(255, 0, 255, 0.6)) drop-shadow(-1px 0 0 rgba(0, 255, 255, 0.6))
+      brightness(1.1);
   }
   80% {
     transform: translate(2px, 0) skew(0.2deg);
-    filter: drop-shadow(-1px 0 0 rgba(255, 0, 255, 0.6)) 
-            drop-shadow(1px 0 0 rgba(0, 255, 255, 0.6))
-            contrast(1.2);
+    filter: drop-shadow(-1px 0 0 rgba(255, 0, 255, 0.6)) drop-shadow(1px 0 0 rgba(0, 255, 255, 0.6))
+      contrast(1.2);
   }
   90% {
     transform: translate(-1px, 0) skew(0deg);
-    filter: drop-shadow(1px 0 0 rgba(255, 0, 255, 0.5)) 
-            drop-shadow(-1px 0 0 rgba(0, 255, 255, 0.5))
-            brightness(1.05);
+    filter: drop-shadow(1px 0 0 rgba(255, 0, 255, 0.5)) drop-shadow(-1px 0 0 rgba(0, 255, 255, 0.5))
+      brightness(1.05);
   }
 }
 

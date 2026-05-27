@@ -20,7 +20,10 @@ export function computePomodoroStatsDayKeyLocal(nowMs: number): string {
  * Ключ дневной статистики: календарные сутки по смещению UTC из настроек пользователя (UTC+N часов),
  * граница в **полночь** в этой зоне.
  */
-export function computePomodoroStatsDayKeyForUtcOffsetHours(nowMs: number, utcOffsetHours: number): string {
+export function computePomodoroStatsDayKeyForUtcOffsetHours(
+  nowMs: number,
+  utcOffsetHours: number
+): string {
   const h = Number.isFinite(utcOffsetHours) ? utcOffsetHours : 0
   const shifted = new Date(nowMs + h * 3600 * 1000)
   return formatYmd(shifted.getUTCFullYear(), shifted.getUTCMonth() + 1, shifted.getUTCDate())
@@ -34,7 +37,7 @@ export function computePomodoroStatsDayKeyInTimeZone(nowMs: number, timeZone: st
     timeZone,
     year: 'numeric',
     month: '2-digit',
-    day: '2-digit',
+    day: '2-digit'
   }).formatToParts(new Date(nowMs))
 
   const parts: Record<string, string> = {}

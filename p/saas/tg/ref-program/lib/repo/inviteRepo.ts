@@ -56,13 +56,15 @@ export async function getInviteByToken(
   return { invite, campaign }
 }
 
-export type AcceptInviteResult = {
-  success: true
-  campaignId: string
-} | {
-  success: false
-  error: string
-}
+export type AcceptInviteResult =
+  | {
+      success: true
+      campaignId: string
+    }
+  | {
+      success: false
+      error: string
+    }
 
 /**
  * Принимает приглашение: добавляет userId в campaign_members с ролью campaign-member,

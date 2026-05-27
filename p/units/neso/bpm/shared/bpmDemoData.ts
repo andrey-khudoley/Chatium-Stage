@@ -24,7 +24,13 @@ export function getBpmMetrics(ui: BpmUiCopy): BpmMetric[] {
   return [
     { id: 'active', label: ui.metrics.active, value: '124', delta: '+12', tone: 'info' },
     { id: 'sla', label: ui.metrics.slaRisk, value: '7', delta: '-3', tone: 'danger' },
-    { id: 'automation', label: ui.metrics.autoCoverage, value: '68%', delta: '+6%', tone: 'success' },
+    {
+      id: 'automation',
+      label: ui.metrics.autoCoverage,
+      value: '68%',
+      delta: '+6%',
+      tone: 'success'
+    },
     { id: 'bottlenecks', label: ui.metrics.bottleneck, value: '3', delta: '-1', tone: 'warning' },
     { id: 'cycle', label: ui.metrics.cycle, value: '2h 18m', delta: '-14m', tone: 'success' }
   ]
@@ -84,19 +90,31 @@ export function getBpmDetailTimeline(locale: BpmLocale): BpmTimelinePoint[] {
   return [
     {
       time: '09:12',
-      label: locale === 'ru' ? 'Инстанс перешёл в этап проверки платежа' : 'Instance moved to payment validation stage'
+      label:
+        locale === 'ru'
+          ? 'Инстанс перешёл в этап проверки платежа'
+          : 'Instance moved to payment validation stage'
     },
     {
       time: '09:24',
-      label: locale === 'ru' ? 'Сработало правило AMOUNT > 10k, назначен supervisor' : 'Rule AMOUNT > 10k fired, supervisor assigned'
+      label:
+        locale === 'ru'
+          ? 'Сработало правило AMOUNT > 10k, назначен supervisor'
+          : 'Rule AMOUNT > 10k fired, supervisor assigned'
     },
     {
       time: '09:38',
-      label: locale === 'ru' ? 'Отправлена автоматическая задача на риск-проверку' : 'Automated risk check task dispatched'
+      label:
+        locale === 'ru'
+          ? 'Отправлена автоматическая задача на риск-проверку'
+          : 'Automated risk check task dispatched'
     },
     {
       time: '09:49',
-      label: locale === 'ru' ? 'Ожидание подтверждения фин. контролем' : 'Awaiting finance control confirmation'
+      label:
+        locale === 'ru'
+          ? 'Ожидание подтверждения фин. контролем'
+          : 'Awaiting finance control confirmation'
     }
   ]
 }
@@ -148,22 +166,34 @@ export function getBpmExecutionTimeline(locale: BpmLocale): BpmExecutionEvent[] 
     {
       time: '10:03',
       type: 'info',
-      text: locale === 'ru' ? 'Flow WF-3014: сработал маршрут эскалации в L2' : 'Flow WF-3014: escalation route to L2 triggered'
+      text:
+        locale === 'ru'
+          ? 'Flow WF-3014: сработал маршрут эскалации в L2'
+          : 'Flow WF-3014: escalation route to L2 triggered'
     },
     {
       time: '09:51',
       type: 'warning',
-      text: locale === 'ru' ? 'WF-3021 приближается к порогу SLA (11 минут)' : 'WF-3021 approaching SLA threshold (11 min)'
+      text:
+        locale === 'ru'
+          ? 'WF-3021 приближается к порогу SLA (11 минут)'
+          : 'WF-3021 approaching SLA threshold (11 min)'
     },
     {
       time: '09:37',
       type: 'success',
-      text: locale === 'ru' ? 'WF-2962 завершён и отправлен в archive lane' : 'WF-2962 completed and moved to archive lane'
+      text:
+        locale === 'ru'
+          ? 'WF-2962 завершён и отправлен в archive lane'
+          : 'WF-2962 completed and moved to archive lane'
     },
     {
       time: '09:20',
       type: 'danger',
-      text: locale === 'ru' ? 'WF-2988 отклонён правилом Compliance Rule #17' : 'WF-2988 rejected by Compliance Rule #17'
+      text:
+        locale === 'ru'
+          ? 'WF-2988 отклонён правилом Compliance Rule #17'
+          : 'WF-2988 rejected by Compliance Rule #17'
     }
   ]
 }
@@ -177,7 +207,8 @@ export function getBpmRules(locale: BpmLocale): BpmRule[] {
     },
     {
       name: 'COUNTRY in [IR, KP]',
-      action: locale === 'ru' ? 'Блокировать и уведомить Compliance' : 'Block and notify Compliance',
+      action:
+        locale === 'ru' ? 'Блокировать и уведомить Compliance' : 'Block and notify Compliance',
       state: 'critical'
     },
     {

@@ -49,9 +49,11 @@
         @click="handlePasswordLogin()"
         :disabled="loading || !isValidPhone(phone) || !password"
         class="btn w-full mb-4"
-        :style="(loading || !isValidPhone(phone) || !password)
-          ? 'background: var(--color-bg-secondary); color: var(--color-text-tertiary); border: 1.5px solid var(--color-border); cursor: not-allowed;'
-          : 'background: var(--color-primary); color: white; border: 1.5px solid var(--color-primary); cursor: pointer;'"
+        :style="
+          loading || !isValidPhone(phone) || !password
+            ? 'background: var(--color-bg-secondary); color: var(--color-text-tertiary); border: 1.5px solid var(--color-border); cursor: not-allowed;'
+            : 'background: var(--color-primary); color: white; border: 1.5px solid var(--color-primary); cursor: pointer;'
+        "
       >
         <i v-if="loading" class="fas fa-spinner fa-spin mr-2"></i>
         <i v-else class="fas fa-sign-in-alt mr-2"></i>
@@ -64,7 +66,9 @@
           <div class="w-full border-t border-[var(--color-border)]"></div>
         </div>
         <div class="relative flex justify-center text-sm">
-          <span class="px-2 bg-[var(--color-bg-secondary)] text-[var(--color-text-secondary)]">или</span>
+          <span class="px-2 bg-[var(--color-bg-secondary)] text-[var(--color-text-secondary)]"
+            >или</span
+          >
         </div>
       </div>
 
@@ -83,13 +87,15 @@
     <!-- Шаг 2: Ввод кода подтверждения -->
     <div v-if="step === 'code'">
       <div class="text-center mb-6">
-        <div class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4" 
-             style="background: var(--color-primary-light)">
+        <div
+          class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4"
+          style="background: var(--color-primary-light)"
+        >
           <i class="fas fa-sms text-2xl" style="color: var(--color-primary)"></i>
         </div>
         <h3 class="text-lg font-semibold text-[var(--color-text)] mb-2">Введите код</h3>
         <p class="text-[var(--color-text-secondary)] text-sm">
-          Код отправлен на номер<br/>
+          Код отправлен на номер<br />
           <span class="font-medium">{{ formatPhoneNumber(phone) }}</span>
         </p>
       </div>
@@ -120,7 +126,7 @@
       <button
         @click="goBack"
         class="btn w-full"
-        style="background: var(--color-border);"
+        style="background: var(--color-border)"
         :disabled="loading"
       >
         <i class="fas fa-arrow-left mr-2"></i>
@@ -140,8 +146,15 @@
     </div>
 
     <!-- Отображение ошибок -->
-    <div v-if="error" class="mt-4 p-3 rounded-lg border" 
-         style="background: var(--color-danger-light); border-color: var(--color-danger); color: var(--color-danger)">
+    <div
+      v-if="error"
+      class="mt-4 p-3 rounded-lg border"
+      style="
+        background: var(--color-danger-light);
+        border-color: var(--color-danger);
+        color: var(--color-danger);
+      "
+    >
       <div class="flex items-center">
         <i class="fas fa-exclamation-circle mr-2"></i>
         <span class="text-sm">{{ error }}</span>
@@ -152,7 +165,14 @@
 
 <script setup>
 import { ref, defineProps, defineEmits } from 'vue'
-import { sendSmsCode, confirmSmsCode, loginWithPassword, handleAuthError, formatPhoneNumber, isValidPhone } from '../lib/auth/authHelpers'
+import {
+  sendSmsCode,
+  confirmSmsCode,
+  loginWithPassword,
+  handleAuthError,
+  formatPhoneNumber,
+  isValidPhone
+} from '../lib/auth/authHelpers'
 import { apiGetPasswordHashRoute } from '../api/password'
 
 const props = defineProps({
@@ -190,7 +210,7 @@ const sendCode = async () => {
 
   try {
     const result = await sendSmsCode(phone.value)
-    
+
     if (result.success) {
       step.value = 'code'
       startResendTimer()
@@ -215,8 +235,8 @@ const confirmCode = async () => {
 
   try {
     const result = await confirmSmsCode(phone.value, verificationCode.value)
-    
-    if (JSON.stringify(result).includes("authSuccess")) {
+
+    if (JSON.stringify(result).includes('authSuccess')) {
       emit('success')
     } else {
       error.value = handleAuthError(result.error)
@@ -243,9 +263,14 @@ const handlePasswordLogin = async () => {
   error.value = ''
 
   try {
-    const result = await loginWithPassword('Phone', phone.value, apiGetPasswordHashRoute.url(), password.value)
-    
-    if (JSON.stringify(result).includes("authSuccess")) {
+    const result = await loginWithPassword(
+      'Phone',
+      phone.value,
+      apiGetPasswordHashRoute.url(),
+      password.value
+    )
+
+    if (JSON.stringify(result).includes('authSuccess')) {
       emit('success')
     } else {
       error.value = handleAuthError(result.error)
@@ -279,4 +304,3 @@ const clearResendTimer = () => {
   canResend.value = false
 }
 </script>
-

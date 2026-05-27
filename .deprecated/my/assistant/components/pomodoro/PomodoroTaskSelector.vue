@@ -48,8 +48,8 @@ async function assignTask(taskId: string) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         statsDayKey: props.statsDayKey,
-        command: { kind: 'assign-task', taskId },
-      }),
+        command: { kind: 'assign-task', taskId }
+      })
     })
     const j = await r.json()
     if (j.success) {

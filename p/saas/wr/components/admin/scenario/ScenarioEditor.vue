@@ -8,13 +8,30 @@
       </div>
       <div class="se-toolbar-right">
         <div class="se-generate-wrapper group relative">
-          <button @click="generateScenario" :disabled="!hasSubtitles || generatingScenario" class="se-tool-btn" :class="{ 'se-tool-btn--disabled': !hasSubtitles }" :title="hasSubtitles ? 'Сгенерировать сценарий через ИИ' : ''">
-            <i :class="generatingScenario ? 'fas fa-spinner fa-spin' : 'fas fa-magic'" class="text-purple-500"></i>
-            <span class="se-btn-text">{{ generatingScenario ? 'Генерация...' : 'Сгенерировать' }}</span>
+          <button
+            @click="generateScenario"
+            :disabled="!hasSubtitles || generatingScenario"
+            class="se-tool-btn"
+            :class="{ 'se-tool-btn--disabled': !hasSubtitles }"
+            :title="hasSubtitles ? 'Сгенерировать сценарий через ИИ' : ''"
+          >
+            <i
+              :class="generatingScenario ? 'fas fa-spinner fa-spin' : 'fas fa-magic'"
+              class="text-purple-500"
+            ></i>
+            <span class="se-btn-text">{{
+              generatingScenario ? 'Генерация...' : 'Сгенерировать'
+            }}</span>
           </button>
-          <div v-if="!hasSubtitles" class="se-generate-hint invisible group-hover:visible opacity-0 group-hover:opacity-100">
+          <div
+            v-if="!hasSubtitles"
+            class="se-generate-hint invisible group-hover:visible opacity-0 group-hover:opacity-100"
+          >
             <i class="fas fa-info-circle"></i>
-            <span>Для генерации нужен текст видео. Перейдите на вкладку "Текст видео" чтобы проверить статус обработки.</span>
+            <span
+              >Для генерации нужен текст видео. Перейдите на вкладку "Текст видео" чтобы проверить
+              статус обработки.</span
+            >
           </div>
         </div>
         <button @click="exportScenario" class="se-tool-btn" title="Экспорт JSON">
@@ -60,7 +77,12 @@
       </div>
       <div class="se-search-wrap">
         <i class="fas fa-search se-search-icon"></i>
-        <input v-model="searchQuery" type="text" class="se-search" placeholder="Поиск по тексту..." />
+        <input
+          v-model="searchQuery"
+          type="text"
+          class="se-search"
+          placeholder="Поиск по тексту..."
+        />
       </div>
     </div>
 
@@ -86,11 +108,7 @@
     </div>
 
     <div v-else class="se-events-list">
-      <div
-        v-for="(group, gIdx) in groupedEvents"
-        :key="gIdx"
-        class="se-time-group"
-      >
+      <div v-for="(group, gIdx) in groupedEvents" :key="gIdx" class="se-time-group">
         <div class="se-time-marker">
           <span class="se-time-badge">{{ group.label }}</span>
         </div>
@@ -103,7 +121,13 @@
             @click="selectEvent(evt)"
           >
             <div class="se-event-left">
-              <span class="se-event-type-icon" :style="{ background: typeColor(evt.eventType) + '20', color: typeColor(evt.eventType) }">
+              <span
+                class="se-event-type-icon"
+                :style="{
+                  background: typeColor(evt.eventType) + '20',
+                  color: typeColor(evt.eventType)
+                }"
+              >
                 <i :class="typeIcon(evt.eventType)"></i>
               </span>
               <div class="se-event-info">
@@ -114,13 +138,21 @@
             <div class="se-event-right">
               <span class="se-event-time">{{ formatOffset(evt.offsetSeconds) }}</span>
               <div class="se-event-actions">
-                <button @click.stop="openEditModal(evt)" class="se-action-btn" title="Редактировать">
+                <button
+                  @click.stop="openEditModal(evt)"
+                  class="se-action-btn"
+                  title="Редактировать"
+                >
                   <i class="fas fa-pen"></i>
                 </button>
                 <button @click.stop="duplicateEvent(evt)" class="se-action-btn" title="Дублировать">
                   <i class="fas fa-copy"></i>
                 </button>
-                <button @click.stop="deleteEvent(evt.id)" class="se-action-btn se-action-btn--danger" title="Удалить">
+                <button
+                  @click.stop="deleteEvent(evt.id)"
+                  class="se-action-btn se-action-btn--danger"
+                  title="Удалить"
+                >
                   <i class="fas fa-trash"></i>
                 </button>
               </div>
@@ -171,7 +203,7 @@ import {
   apiScenarioEventDeleteRoute,
   apiScenarioExportRoute,
   apiScenarioImportRoute,
-  apiScenarioGenerateRoute,
+  apiScenarioGenerateRoute
 } from '../../../api/scenario'
 import { apiFormsAllRoute } from '../../../api/forms-admin-routes'
 import { apiAutowebinarByIdRoute } from '../../../api/autowebinars'
@@ -179,7 +211,7 @@ import { apiAutowebinarByIdRoute } from '../../../api/autowebinars'
 const props = defineProps({
   autowebinarId: { type: String, required: true },
   duration: { type: Number, default: 3600 },
-  subtitles: { type: String, default: '' },
+  subtitles: { type: String, default: '' }
 })
 
 const events = ref([])
@@ -204,14 +236,18 @@ const filterTabs = [
   { value: 'forms', label: 'Формы', icon: 'fas fa-file-alt' },
   { value: 'sale_banner', label: 'Баннеры', icon: 'fas fa-bullhorn' },
   { value: 'reaction', label: 'Реакции', icon: 'fas fa-heart' },
-  { value: 'system', label: 'Система', icon: 'fas fa-cog' },
+  { value: 'system', label: 'Система', icon: 'fas fa-cog' }
 ]
 
 function getCountForFilter(value) {
   // Считаем только по текущей странице
-  if (value === 'system') return events.value.filter(e => ['waiting_room_start', 'stream_start', 'finish'].includes(e.eventType)).length
-  if (value === 'forms') return events.value.filter(e => ['show_form', 'hide_form'].includes(e.eventType)).length
-  return events.value.filter(e => e.eventType === value).length
+  if (value === 'system')
+    return events.value.filter((e) =>
+      ['waiting_room_start', 'stream_start', 'finish'].includes(e.eventType)
+    ).length
+  if (value === 'forms')
+    return events.value.filter((e) => ['show_form', 'hide_form'].includes(e.eventType)).length
+  return events.value.filter((e) => e.eventType === value).length
 }
 
 function buildServerFilter(filterValue) {
@@ -227,7 +263,7 @@ const filteredEvents = computed(() => {
 
   if (searchQuery.value.trim()) {
     const q = searchQuery.value.toLowerCase().trim()
-    list = list.filter(e => {
+    list = list.filter((e) => {
       if (e.chatMessage?.text?.toLowerCase().includes(q)) return true
       if (e.chatMessage?.authorName?.toLowerCase().includes(q)) return true
       if (e.formSnapshot?.title?.toLowerCase().includes(q)) return true
@@ -258,27 +294,42 @@ const groupedEvents = computed(() => {
 
 function typeLabel(t) {
   const map = {
-    waiting_room_start: 'Начало ожидания', stream_start: 'Старт стрима', finish: 'Завершение',
-    show_form: 'Показать форму', hide_form: 'Скрыть форму', sale_banner: 'Продажный баннер',
-    chat_message: 'Сообщение в чат', reaction: 'Реакция',
+    waiting_room_start: 'Начало ожидания',
+    stream_start: 'Старт стрима',
+    finish: 'Завершение',
+    show_form: 'Показать форму',
+    hide_form: 'Скрыть форму',
+    sale_banner: 'Продажный баннер',
+    chat_message: 'Сообщение в чат',
+    reaction: 'Реакция'
   }
   return map[t] || t
 }
 
 function typeIcon(t) {
   const map = {
-    waiting_room_start: 'fas fa-hourglass-start', stream_start: 'fas fa-play-circle',
-    finish: 'fas fa-flag-checkered', show_form: 'fas fa-file-alt', hide_form: 'fas fa-eye-slash',
-    sale_banner: 'fas fa-bullhorn', chat_message: 'fas fa-comment', reaction: 'fas fa-heart',
+    waiting_room_start: 'fas fa-hourglass-start',
+    stream_start: 'fas fa-play-circle',
+    finish: 'fas fa-flag-checkered',
+    show_form: 'fas fa-file-alt',
+    hide_form: 'fas fa-eye-slash',
+    sale_banner: 'fas fa-bullhorn',
+    chat_message: 'fas fa-comment',
+    reaction: 'fas fa-heart'
   }
   return map[t] || 'fas fa-circle'
 }
 
 function typeColor(t) {
   const map = {
-    waiting_room_start: '#6b7280', stream_start: '#10b981', finish: '#ef4444',
-    show_form: '#10b981', hide_form: '#f59e0b', sale_banner: '#8b5cf6',
-    chat_message: '#3b82f6', reaction: '#ec4899',
+    waiting_room_start: '#6b7280',
+    stream_start: '#10b981',
+    finish: '#ef4444',
+    show_form: '#10b981',
+    hide_form: '#f59e0b',
+    sale_banner: '#8b5cf6',
+    chat_message: '#3b82f6',
+    reaction: '#ec4899'
   }
   return map[t] || '#6b7280'
 }
@@ -289,7 +340,8 @@ function eventDetail(evt) {
     const text = evt.chatMessage.text || ''
     return `${name}: ${text.length > 60 ? text.substring(0, 60) + '...' : text}`
   }
-  if ((evt.eventType === 'show_form' || evt.eventType === 'hide_form') && evt.formSnapshot) return evt.formSnapshot.title
+  if ((evt.eventType === 'show_form' || evt.eventType === 'hide_form') && evt.formSnapshot)
+    return evt.formSnapshot.title
   if (evt.eventType === 'sale_banner' && evt.bannerData) return evt.bannerData.title
   if (evt.eventType === 'reaction' && evt.reactionData) return evt.reactionData.emoji
   if (evt.eventType === 'waiting_room_start') return 'Зрители видят зал ожидания'
@@ -335,9 +387,9 @@ async function handleSaveEvent({ payload, editingId }) {
         formSnapshot: payload.formSnapshot,
         chatMessage: payload.chatMessage,
         bannerData: payload.bannerData,
-        reactionData: payload.reactionData,
+        reactionData: payload.reactionData
       })
-      const idx = events.value.findIndex(e => e.id === editingId)
+      const idx = events.value.findIndex((e) => e.id === editingId)
       if (idx >= 0) events.value[idx] = updated
     } else {
       const created = await apiScenarioEventCreateRoute.run(ctx, payload)
@@ -355,7 +407,7 @@ async function deleteEvent(id) {
   if (!confirm('Удалить событие?')) return
   try {
     await apiScenarioEventDeleteRoute({ id }).run(ctx)
-    events.value = events.value.filter(e => e.id !== id)
+    events.value = events.value.filter((e) => e.id !== id)
     totalCount.value--
     if (selectedEventId.value === id) selectedEventId.value = ''
   } catch (e) {
@@ -374,7 +426,7 @@ async function duplicateEvent(evt) {
       chatMessage: evt.chatMessage,
       bannerData: evt.bannerData,
       reactionData: evt.reactionData,
-      sortOrder: evt.sortOrder || 0,
+      sortOrder: evt.sortOrder || 0
     }
     const created = await apiScenarioEventCreateRoute.run(ctx, payload)
     events.value.push(created)
@@ -464,11 +516,16 @@ async function importScenario(e) {
   try {
     const text = await file.text()
     const scenario = JSON.parse(text)
-    if (!confirm(`Импортировать сценарий (${scenario.events?.length || 0} событий)? Существующие события будут удалены.`)) return
+    if (
+      !confirm(
+        `Импортировать сценарий (${scenario.events?.length || 0} событий)? Существующие события будут удалены.`
+      )
+    )
+      return
     await apiScenarioImportRoute.run(ctx, {
       autowebinarId: props.autowebinarId,
       scenario,
-      clearExisting: true,
+      clearExisting: true
     })
     await loadEvents()
   } catch (e) {
@@ -481,13 +538,18 @@ async function generateScenario() {
     alert('У автовебинара нет текста видео. Дождитесь обработки видео в Muuvee.')
     return
   }
-  
-  if (!confirm('Сгенерировать сценарий через ИИ?\n\nБудет выполнена одна генерация на основе полного текста видео.\nСуществующие события будут удалены и заменены новыми.')) return
-  
+
+  if (
+    !confirm(
+      'Сгенерировать сценарий через ИИ?\n\nБудет выполнена одна генерация на основе полного текста видео.\nСуществующие события будут удалены и заменены новыми.'
+    )
+  )
+    return
+
   generatingScenario.value = true
   try {
     const res = await apiScenarioGenerateRoute.run(ctx, {
-      autowebinarId: props.autowebinarId,
+      autowebinarId: props.autowebinarId
     })
     alert(res.message + '\n\nПроцесс генерации запущен. Ожидайте, статус обновится автоматически.')
     startGenerationPolling()
@@ -501,11 +563,13 @@ async function loadEvents() {
   loadingEvents.value = true
   try {
     const serverFilter = buildServerFilter(activeFilter.value)
-    const res = await apiScenarioEventsListRoute.query({ 
-      autowebinarId: props.autowebinarId,
-      page: page.value,
-      ...serverFilter,
-    }).run(ctx)
+    const res = await apiScenarioEventsListRoute
+      .query({
+        autowebinarId: props.autowebinarId,
+        page: page.value,
+        ...serverFilter
+      })
+      .run(ctx)
     events.value = res.events || []
     totalCount.value = res.totalCount || 0
     totalPages.value = res.totalPages || 1
@@ -513,8 +577,7 @@ async function loadEvents() {
   } catch (e) {
     console.error(e)
     return totalCount.value
-  }
-  finally {
+  } finally {
     loadingEvents.value = false
   }
 }
@@ -537,7 +600,7 @@ onMounted(() => {
   loadEvents()
   loadForms()
   checkGenerationStatus(false, false)
-    .then(done => {
+    .then((done) => {
       if (!done && generatingScenario.value) {
         startGenerationPolling()
       }
@@ -693,7 +756,9 @@ watch(searchQuery, () => {
 
 :global(.theme-light) .se-generate-hint {
   background: white;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.05);
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.1),
+    0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
 /* Filters */
@@ -854,7 +919,11 @@ watch(searchQuery, () => {
   animation: spin 0.7s linear infinite;
 }
 
-@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
 
 .se-empty {
   display: flex;
@@ -1102,17 +1171,38 @@ watch(searchQuery, () => {
 }
 
 /* Slide transition */
-.slide-enter-active { transition: all 0.2s ease; }
-.slide-leave-active { transition: all 0.15s ease; }
-.slide-enter-from, .slide-leave-to { opacity: 0; max-height: 0; padding-top: 0; padding-bottom: 0; }
-.slide-enter-to, .slide-leave-from { max-height: 100px; }
+.slide-enter-active {
+  transition: all 0.2s ease;
+}
+.slide-leave-active {
+  transition: all 0.15s ease;
+}
+.slide-enter-from,
+.slide-leave-to {
+  opacity: 0;
+  max-height: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+.slide-enter-to,
+.slide-leave-from {
+  max-height: 100px;
+}
 
 /* Responsive */
 @media (max-width: 640px) {
-  .se-btn-text { display: none; }
-  .se-search-wrap { width: 100%; }
-  .se-event-detail { max-width: 150px; }
-  .se-event-actions { opacity: 1; }
+  .se-btn-text {
+    display: none;
+  }
+  .se-search-wrap {
+    width: 100%;
+  }
+  .se-event-detail {
+    max-width: 150px;
+  }
+  .se-event-actions {
+    opacity: 1;
+  }
 }
 
 /* Pagination */

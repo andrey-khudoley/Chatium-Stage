@@ -23,9 +23,9 @@
             v-for="i in 5"
             :key="`h-${i}`"
             :x1="padLeft"
-            :y1="padTop + drawHeight * (i - 1) / 4"
+            :y1="padTop + (drawHeight * (i - 1)) / 4"
             :x2="chartWidth - padRight"
-            :y2="padTop + drawHeight * (i - 1) / 4"
+            :y2="padTop + (drawHeight * (i - 1)) / 4"
             stroke="var(--wr-border)"
             stroke-width="1"
             opacity="0.3"
@@ -38,11 +38,13 @@
             v-for="i in 5"
             :key="`yl-${i}`"
             :x="padLeft - 8"
-            :y="padTop + drawHeight * (i - 1) / 4 + 4"
+            :y="padTop + (drawHeight * (i - 1)) / 4 + 4"
             text-anchor="end"
             fill="var(--wr-text-tertiary)"
             font-size="11"
-          >{{ Math.round(maxCount * (1 - (i - 1) / 4)) }}</text>
+          >
+            {{ Math.round(maxCount * (1 - (i - 1) / 4)) }}
+          </text>
         </g>
 
         <!-- X-axis labels -->
@@ -55,15 +57,13 @@
             text-anchor="middle"
             fill="var(--wr-text-tertiary)"
             font-size="11"
-          >{{ label.text }}</text>
+          >
+            {{ label.text }}
+          </text>
         </g>
 
         <!-- Area fill -->
-        <path
-          :d="areaPath"
-          fill="url(#onlineGradient)"
-          opacity="0.2"
-        />
+        <path :d="areaPath" fill="url(#onlineGradient)" opacity="0.2" />
 
         <!-- Line path -->
         <path
@@ -117,7 +117,9 @@
             font-size="11"
             font-weight="600"
             pointer-events="none"
-          >{{ point.count }}</text>
+          >
+            {{ point.count }}
+          </text>
         </g>
       </svg>
     </div>
@@ -170,7 +172,7 @@ import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
 
 const props = defineProps({
   modelValue: { type: Array, default: () => [] },
-  duration: { type: Number, default: 60 },
+  duration: { type: Number, default: 60 }
 })
 
 const emit = defineEmits(['update:modelValue'])
@@ -208,9 +210,8 @@ const sortedPoints = computed(() => {
       const progress = peakMinute > 0 ? minute / peakMinute : 1
       count = Math.round(20 + (maxViewers - 20) * Math.pow(progress, 1.5))
     } else {
-      const progress = (totalMinutes - peakMinute) > 0
-        ? (minute - peakMinute) / (totalMinutes - peakMinute)
-        : 1
+      const progress =
+        totalMinutes - peakMinute > 0 ? (minute - peakMinute) / (totalMinutes - peakMinute) : 1
       count = Math.round(maxViewers * Math.exp(-progress * 1.2) + 10)
     }
     points.push({ minute, count })
@@ -225,8 +226,8 @@ const sortedPoints = computed(() => {
 })
 
 const maxCount = computed(() => {
-  const max = Math.max(...sortedPoints.value.map(p => p.count), 10)
-  return Math.ceil(max * 1.15 / 10) * 10
+  const max = Math.max(...sortedPoints.value.map((p) => p.count), 10)
+  return Math.ceil((max * 1.15) / 10) * 10
 })
 
 const xLabels = computed(() => {
@@ -245,7 +246,7 @@ const xLabels = computed(() => {
 
 const linePath = computed(() => {
   if (sortedPoints.value.length === 0) return ''
-  return 'M ' + sortedPoints.value.map(p => `${getX(p.minute)},${getY(p.count)}`).join(' L ')
+  return 'M ' + sortedPoints.value.map((p) => `${getX(p.minute)},${getY(p.count)}`).join(' L ')
 })
 
 const areaPath = computed(() => {
@@ -254,7 +255,7 @@ const areaPath = computed(() => {
   const bottom = padTop + drawHeight
   const firstX = getX(pts[0].minute)
   const lastX = getX(pts[pts.length - 1].minute)
-  const line = pts.map(p => `${getX(p.minute)},${getY(p.count)}`).join(' L ')
+  const line = pts.map((p) => `${getX(p.minute)},${getY(p.count)}`).join(' L ')
   return `M ${firstX},${bottom} L ${line} L ${lastX},${bottom} Z`
 })
 
@@ -294,7 +295,7 @@ function getSvgCoords(event) {
   const clientY = event.touches ? event.touches[0].clientY : event.clientY
   return {
     x: clientX - rect.left,
-    y: clientY - rect.top,
+    y: clientY - rect.top
   }
 }
 
@@ -315,7 +316,7 @@ function onDrag(event) {
   const newPoints = [...sortedPoints.value]
   newPoints[draggingIndex.value] = {
     minute: getMinuteFromX(x),
-    count: getCountFromY(y),
+    count: getCountFromY(y)
   }
   emit('update:modelValue', newPoints)
 }
@@ -448,7 +449,9 @@ onUnmounted(() => {
 }
 
 .point-circle {
-  transition: r 0.15s, filter 0.15s;
+  transition:
+    r 0.15s,
+    filter 0.15s;
   pointer-events: none;
 }
 

@@ -5,25 +5,31 @@ export const TAnalitikaLendovLandings = Heap.Table(
   't_analitika-lendov_landings_MFS_LAP',
   {
     path: Heap.Optional(
-      Heap.String({ customMeta: { title: 'Путь лендинга' }, searchable: { langs: ['ru', 'en'], embeddings: true } }),
+      Heap.String({
+        customMeta: { title: 'Путь лендинга' },
+        searchable: { langs: ['ru', 'en'], embeddings: true }
+      })
     ),
     title: Heap.Optional(
       Heap.String({
         customMeta: { title: 'Название лендинга' },
-        searchable: { langs: ['ru', 'en'], embeddings: true },
-      }),
+        searchable: { langs: ['ru', 'en'], embeddings: true }
+      })
     ),
     isActive: Heap.Optional(
-      Heap.Boolean({ customMeta: { title: 'Активен' }, searchable: { langs: ['ru', 'en'], embeddings: true } }),
+      Heap.Boolean({
+        customMeta: { title: 'Активен' },
+        searchable: { langs: ['ru', 'en'], embeddings: true }
+      })
     ),
     workspacePath: Heap.Optional(
       Heap.String({
         customMeta: { title: 'Воркспейс лендинга' },
-        searchable: { langs: ['ru', 'en'], embeddings: true },
-      }),
-    ),
+        searchable: { langs: ['ru', 'en'], embeddings: true }
+      })
+    )
   },
-  { customMeta: { title: 'landings.table.ts', description: 'landings.table.ts' } },
+  { customMeta: { title: 'landings.table.ts', description: 'landings.table.ts' } }
 )
 
 export default TAnalitikaLendovLandings

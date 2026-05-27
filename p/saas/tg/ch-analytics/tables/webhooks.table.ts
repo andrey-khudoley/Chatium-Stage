@@ -2,7 +2,7 @@ import { Heap } from '@app/heap'
 
 /**
  * Таблица для логирования всех входящих вебхуков от Telegram
- * 
+ *
  * Каждая запись содержит:
  * - botId: ID бота, которому принадлежит вебхук
  * - projectId: ID проекта, к которому принадлежит бот (для аудита и быстрого доступа)
@@ -31,4 +31,3 @@ export const TelegramWebhooks = Heap.Table('t__tg_channel_analytics__webhooks__a
 })
 
 export default TelegramWebhooks
-

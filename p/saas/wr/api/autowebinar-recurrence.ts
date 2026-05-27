@@ -9,9 +9,9 @@ const awRecurrenceJob = app.job('/aw-recurrence', async (ctx, params) => {
   const autowebinars = await Autowebinars.findAll(ctx, {
     where: {
       status: AutowebinarStatus.Active,
-      mode: AutowebinarMode.Scheduled,
+      mode: AutowebinarMode.Scheduled
     },
-    limit: 100,
+    limit: 100
   })
 
   for (const aw of autowebinars) {
@@ -49,10 +49,10 @@ const awRecurrenceJob = app.job('/aw-recurrence', async (ctx, params) => {
           autowebinar: aw.id,
           scheduledDate: {
             $gte: new Date(scheduledDate.getTime() - 60000),
-            $lte: new Date(scheduledDate.getTime() + 60000),
-          },
+            $lte: new Date(scheduledDate.getTime() + 60000)
+          }
         },
-        limit: 1,
+        limit: 1
       })
 
       if (existing.length > 0) continue
@@ -61,7 +61,7 @@ const awRecurrenceJob = app.job('/aw-recurrence', async (ctx, params) => {
       const schedule = await AutowebinarSchedules.create(ctx, {
         autowebinar: aw.id,
         scheduledDate,
-        status: ScheduleStatus.Scheduled,
+        status: ScheduleStatus.Scheduled
       })
 
       // Schedule the pre-start job

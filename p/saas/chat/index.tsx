@@ -20,29 +20,35 @@ async function loadCssFile(fileName: string): Promise<string> {
 // Роут для theme.css
 export const themeCssRoute = app.get('/styles/theme.css', async (ctx, req) => {
   const css = await loadCssFile('theme.css')
-  return ctx.resp.rawResponse(css, { 
-    status: 200, 
-    headers: { 'Content-Type': 'text/css; charset=utf-8', 'Cache-Control': 'public, max-age=3600' } 
+  return ctx.resp.rawResponse(css, {
+    status: 200,
+    headers: { 'Content-Type': 'text/css; charset=utf-8', 'Cache-Control': 'public, max-age=3600' }
   })
 })
 
 // Роут для chat-view.css
 export const chatViewCssRoute = app.get('/styles/chat-view.css', async (ctx, req) => {
   const css = await loadCssFile('chat-view.css')
-  return ctx.resp.rawResponse(css, { 
-    status: 200, 
-    headers: { 'Content-Type': 'text/css; charset=utf-8', 'Cache-Control': 'public, max-age=3600' } 
+  return ctx.resp.rawResponse(css, {
+    status: 200,
+    headers: { 'Content-Type': 'text/css; charset=utf-8', 'Cache-Control': 'public, max-age=3600' }
   })
 })
 
 // Роут для message-selection.css
-export const messageSelectionCssRoute = app.get('/styles/message-selection.css', async (ctx, req) => {
-  const css = await loadCssFile('message-selection.css')
-  return ctx.resp.rawResponse(css, { 
-    status: 200, 
-    headers: { 'Content-Type': 'text/css; charset=utf-8', 'Cache-Control': 'public, max-age=3600' } 
-  })
-})
+export const messageSelectionCssRoute = app.get(
+  '/styles/message-selection.css',
+  async (ctx, req) => {
+    const css = await loadCssFile('message-selection.css')
+    return ctx.resp.rawResponse(css, {
+      status: 200,
+      headers: {
+        'Content-Type': 'text/css; charset=utf-8',
+        'Cache-Control': 'public, max-age=3600'
+      }
+    })
+  }
+)
 
 export const indexPageRoute = app.html('/', async (ctx, req) => {
   const isAuthenticated = !!ctx.user
@@ -52,7 +58,7 @@ export const indexPageRoute = app.html('/', async (ctx, req) => {
   if (isAuthenticated) {
     userSocketId = await genSocketId(ctx, `user-${ctx.user.id}`)
   }
-  
+
   // Динамически определяем базовый путь для ресурсов
   const manifestUrl = getAppUrl(ctx, '/manifest.json')
   const stylesBaseUrl = getAppUrl(ctx, '/styles')
@@ -61,7 +67,10 @@ export const indexPageRoute = app.html('/', async (ctx, req) => {
     <html lang="ru">
       <head>
         <title>{isAuthenticated ? 'Чаты' : 'Chatium Chat — Общайтесь без границ'}</title>
-        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+        <meta
+          name="viewport"
+          content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
+        />
         <meta name="theme-color" content="#008069" />
         <meta name="background-color" content="#f0f2f5" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -69,29 +78,35 @@ export const indexPageRoute = app.html('/', async (ctx, req) => {
         <meta name="apple-mobile-web-app-title" content="Chatium Chat" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="application-name" content="Chatium Chat" />
-        <meta name="description" content="Современный мессенджер для общения без границ. Групповые чаты, каналы, голосовые и видео-сообщения." />
+        <meta
+          name="description"
+          content="Современный мессенджер для общения без границ. Групповые чаты, каналы, голосовые и видео-сообщения."
+        />
         <meta name="format-detection" content="telephone=no" />
-        
+
         {/* PWA Manifest */}
         <link rel="manifest" href={manifestUrl} />
-        
+
         {/* Apple Touch Icons */}
         <link rel="apple-touch-icon" href="https://fs.chatium.ru/get/image_msk_AaplkedAT7" />
-        
+
         {/* Favicon */}
         <link rel="icon" type="image/png" href="https://fs.chatium.ru/get/image_msk_AaplkedAT7" />
-        
+
         <script src="/s/metric/clarity.js"></script>
         <script src="/s/static/lib/tailwind.3.4.16.min.js"></script>
         <link href="/s/static/lib/fontawesome/6.7.2/css/all.min.css" rel="stylesheet" />
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css" />
+        <link
+          rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css"
+        />
         <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
-        
+
         {/* Стили приложения с версионированием для сброса кэша */}
         <link href={`${stylesBaseUrl}/theme.css?v=2`} rel="stylesheet" />
         <link href={`${stylesBaseUrl}/chat-view.css?v=2`} rel="stylesheet" />
         <link href={`${stylesBaseUrl}/message-selection.css?v=2`} rel="stylesheet" />
-        
+
         <script>{`
           tailwind.config = {
             theme: {
@@ -185,7 +200,7 @@ export const indexPageRoute = app.html('/', async (ctx, req) => {
             display: none;
           }
         `}</style>
-        
+
         {/* Инициализация масштаба из localStorage - выполняется до загрузки Vue */}
         <script type="text/javascript">{`
           (function() {
@@ -203,7 +218,7 @@ export const indexPageRoute = app.html('/', async (ctx, req) => {
             }
           })();
         `}</script>
-        
+
         {/* Диагностика загрузки стилей */}
         <script type="text/javascript">{`
           (function() {
@@ -277,7 +292,7 @@ export const indexPageRoute = app.html('/', async (ctx, req) => {
             <span>Загрузка...</span>
           </div>
         </div>
-        
+
         {isAuthenticated ? <App userSocketId={userSocketId} /> : <LandingPage />}
       </body>
     </html>

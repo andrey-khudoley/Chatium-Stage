@@ -4,7 +4,12 @@ import { requireAccountRole } from '@app/auth'
 import { genSocketId } from '@app/socket'
 import AdminPage from './pages/AdminPage.vue'
 import { Debug } from './shared/debug'
-import { applyDebugLevel, applyLogPrefix, getCachedLogLevel, getCachedLogPrefix } from './lib/logging'
+import {
+  applyDebugLevel,
+  applyLogPrefix,
+  getCachedLogLevel,
+  getCachedLogPrefix
+} from './lib/logging'
 import { loadProjectSettings } from './lib/settings'
 import { getFullUrl, ROUTES } from './config/routes'
 import { getPreloaderStyles, getPreloaderScript, getPreloaderHTML } from './shared/preloader'
@@ -24,7 +29,7 @@ export const adminPageRoute = app.html('/', async (ctx, req) => {
     // Применяем настройки логирования
     await applyDebugLevel(ctx, 'admin-page')
     await applyLogPrefix(ctx, 'admin-page')
-    
+
     Debug.info(ctx, '[admin] Начало обработки запроса на страницу админки')
 
     // Проверка прав доступа
@@ -32,8 +37,12 @@ export const adminPageRoute = app.html('/', async (ctx, req) => {
     Debug.info(ctx, `[admin] Пользователь авторизован как Admin: userId=${ctx.user?.id}`)
 
     // Загрузка настроек проекта
-    const { projectName, projectTitle, projectDescription, logsWebhookUrl, logsWebhookEnabled } = await loadProjectSettings(ctx)
-    Debug.info(ctx, `[admin] Настройки проекта загружены: projectName=${projectName}, projectTitle=${projectTitle}`)
+    const { projectName, projectTitle, projectDescription, logsWebhookUrl, logsWebhookEnabled } =
+      await loadProjectSettings(ctx)
+    Debug.info(
+      ctx,
+      `[admin] Настройки проекта загружены: projectName=${projectName}, projectTitle=${projectTitle}`
+    )
 
     // Генерация socket ID для WebSocket подключения
     const encodedSocketId = await genSocketId(ctx, ADMIN_LOGS_SOCKET_ID)
@@ -41,37 +50,63 @@ export const adminPageRoute = app.html('/', async (ctx, req) => {
 
     const currentLogLevel = getCachedLogLevel()
     const currentLogPrefix = getCachedLogPrefix()
-    Debug.info(ctx, `[admin] Текущие настройки: logLevel=${currentLogLevel}, logPrefix=${currentLogPrefix}`)
+    Debug.info(
+      ctx,
+      `[admin] Текущие настройки: logLevel=${currentLogLevel}, logPrefix=${currentLogPrefix}`
+    )
 
     // Начальные логи и счётчики только при рендере (Heap доступен здесь; в API @shared-route Heap не инициализирован)
     const query = (req as any).query ?? (ctx as any).req?.query ?? {}
     const queryLimit = Math.min(Math.max(Number(query.limit) || 50, 1), 1000)
     const queryBefore = query.before as string | undefined
     const queryLevel = query.level as string | undefined
-    const validLevel = queryLevel === 'info' || queryLevel === 'warn' || queryLevel === 'error' ? queryLevel : undefined
+    const validLevel =
+      queryLevel === 'info' || queryLevel === 'warn' || queryLevel === 'error'
+        ? queryLevel
+        : undefined
 
-    let initialLogs: Array<{ id: string; level: string; message: string; code?: string; createdAt: string }> = []
+    let initialLogs: Array<{
+      id: string
+      level: string
+      message: string
+      code?: string
+      createdAt: string
+    }> = []
     let initialCounts = { info: 0, warn: 0, error: 0 }
     let initialAccumulatedCounts = { error: 0, warn: 0 }
     try {
       // Явно передаём таблицу (ProjectLogs), чтобы не зависеть от инжекции в контексте рендера
       const [logsData, countsData, errorCount, warnCount] = await Promise.all([
-        getLogs(ctx, { limit: queryLimit, before: queryBefore || undefined, level: validLevel }, ProjectLogs),
+        getLogs(
+          ctx,
+          { limit: queryLimit, before: queryBefore || undefined, level: validLevel },
+          ProjectLogs
+        ),
         getLogCounts(ctx, ProjectLogs),
         getErrorCountSilent(ctx),
         getWarnCountSilent(ctx)
       ])
       initialLogs = Array.isArray(logsData) ? logsData : []
-      initialCounts = countsData && typeof countsData.info === 'number' ? countsData : { info: 0, warn: 0, error: 0 }
+      initialCounts =
+        countsData && typeof countsData.info === 'number'
+          ? countsData
+          : { info: 0, warn: 0, error: 0 }
       initialAccumulatedCounts = { error: errorCount ?? 0, warn: warnCount ?? 0 }
     } catch (err) {
-      Debug.error(ctx, `[admin] Ошибка загрузки логов при рендере: ${(err as Error)?.message ?? err}`, 'E_ADMIN_LOGS_LOAD')
+      Debug.error(
+        ctx,
+        `[admin] Ошибка загрузки логов при рендере: ${(err as Error)?.message ?? err}`,
+        'E_ADMIN_LOGS_LOAD'
+      )
       // Оставляем пустые значения, страница отобразится без логов
     }
 
     const initialLimit = queryLimit
     const nextLimit = Math.min(initialLimit + 50, 1000)
-    const loadMoreUrl = nextLimit > initialLimit ? `${getFullUrl(ROUTES.admin)}?limit=${nextLimit}${validLevel ? `&level=${validLevel}` : ''}` : ''
+    const loadMoreUrl =
+      nextLimit > initialLimit
+        ? `${getFullUrl(ROUTES.admin)}?limit=${nextLimit}${validLevel ? `&level=${validLevel}` : ''}`
+        : ''
     const loadAllUrl = `${getFullUrl(ROUTES.admin)}?limit=1000${validLevel ? `&level=${validLevel}` : ''}`
 
     const pageTitle = `Админка | ${projectTitle}`
@@ -254,7 +289,10 @@ export const adminPageRoute = app.html('/', async (ctx, req) => {
           <link rel="stylesheet" href="/s/static/lib/fontawesome/6.7.2/css/all.min.css" />
           <link rel="preconnect" href="https://fonts.googleapis.com" />
           <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
-          <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet" />
+          <link
+            href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap"
+            rel="stylesheet"
+          />
           <style>{`
             :root {
               --color-bg: #0a0a0a;
@@ -285,7 +323,7 @@ export const adminPageRoute = app.html('/', async (ctx, req) => {
         <body>
           <div id="geometric-bg"></div>
           {jsx(getPreloaderHTML())}
-          <AdminPage 
+          <AdminPage
             projectName={projectName}
             projectTitle={projectTitle}
             projectDescription={projectDescription}
@@ -310,9 +348,13 @@ export const adminPageRoute = app.html('/', async (ctx, req) => {
       </html>
     )
   } catch (error: any) {
-    Debug.error(ctx, `[admin] Ошибка при обработке страницы админки: ${error.message}`, 'E_ADMIN_PAGE')
+    Debug.error(
+      ctx,
+      `[admin] Ошибка при обработке страницы админки: ${error.message}`,
+      'E_ADMIN_PAGE'
+    )
     Debug.error(ctx, `[admin] Stack trace: ${error.stack || 'N/A'}`)
-    
+
     // Возвращаем страницу с ошибкой
     return (
       <html>
@@ -324,7 +366,9 @@ export const adminPageRoute = app.html('/', async (ctx, req) => {
         <body style="background: #0a0a0a; color: #e8e8e8; font-family: monospace; padding: 2rem;">
           <h1 style="color: #d3234b;">Ошибка доступа</h1>
           <p>{error.message || 'Произошла ошибка при загрузке страницы админки'}</p>
-          <a href="/" style="color: #d3234b;">Вернуться на главную</a>
+          <a href="/" style="color: #d3234b;">
+            Вернуться на главную
+          </a>
         </body>
       </html>
     )

@@ -4,7 +4,11 @@
       v-for="form in forms"
       :key="form.id"
       class="form-btn"
-      :style="{ background: form.buttonColor ? `linear-gradient(135deg, ${form.buttonColor} 0%, ${darken(form.buttonColor)} 100%)` : '' }"
+      :style="{
+        background: form.buttonColor
+          ? `linear-gradient(135deg, ${form.buttonColor} 0%, ${darken(form.buttonColor)} 100%)`
+          : ''
+      }"
       @click="handleFormClick(form)"
     >
       <span class="form-btn-text">{{ form.buttonText }}</span>
@@ -17,7 +21,7 @@ import { trackFormOpened } from '../../shared/use-form-analytics'
 
 const props = defineProps({
   forms: { type: Array, default: () => [] },
-  episodeId: { type: String, default: '' },
+  episodeId: { type: String, default: '' }
 })
 
 const emit = defineEmits(['open-form'])
@@ -33,9 +37,9 @@ function darken(hex) {
   if (!hex) return '#c7004a'
   const num = parseInt(hex.replace('#', ''), 16)
   const r = Math.max(0, (num >> 16) - 30)
-  const g = Math.max(0, ((num >> 8) & 0x00FF) - 30)
-  const b = Math.max(0, (num & 0x0000FF) - 30)
-  return `#${(r << 16 | g << 8 | b).toString(16).padStart(6, '0')}`
+  const g = Math.max(0, ((num >> 8) & 0x00ff) - 30)
+  const b = Math.max(0, (num & 0x0000ff) - 30)
+  return `#${((r << 16) | (g << 8) | b).toString(16).padStart(6, '0')}`
 }
 </script>
 
@@ -69,7 +73,10 @@ function darken(hex) {
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
-  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    background 0.2s ease;
   line-height: 1.2;
   white-space: nowrap;
   position: relative;
@@ -77,7 +84,9 @@ function darken(hex) {
   background: linear-gradient(135deg, #f8005b 0%, #d4004e 100%);
   color: #fff;
   box-shadow: 0 4px 16px rgba(248, 0, 91, 0.3);
-  animation: form-btn-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both, form-btn-pulse 2s ease-in-out infinite 0.5s;
+  animation:
+    form-btn-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both,
+    form-btn-pulse 2s ease-in-out infinite 0.5s;
 }
 
 .form-btn::before,
@@ -96,19 +105,39 @@ function darken(hex) {
 }
 
 @keyframes form-btn-wave {
-  0% { opacity: 0.7; transform: scale(1); }
-  70% { opacity: 0; transform: scale(1.12, 1.5); }
-  100% { opacity: 0; transform: scale(1.12, 1.5); }
+  0% {
+    opacity: 0.7;
+    transform: scale(1);
+  }
+  70% {
+    opacity: 0;
+    transform: scale(1.12, 1.5);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.12, 1.5);
+  }
 }
 
 @keyframes form-btn-pop {
-  from { opacity: 0; transform: scale(0.8) translateY(8px); }
-  to { opacity: 1; transform: scale(1) translateY(0); }
+  from {
+    opacity: 0;
+    transform: scale(0.8) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
 }
 
 @keyframes form-btn-pulse {
-  0%, 100% { box-shadow: 0 4px 16px rgba(248, 0, 91, 0.3); }
-  50% { box-shadow: 0 6px 28px rgba(248, 0, 91, 0.55); }
+  0%,
+  100% {
+    box-shadow: 0 4px 16px rgba(248, 0, 91, 0.3);
+  }
+  50% {
+    box-shadow: 0 6px 28px rgba(248, 0, 91, 0.55);
+  }
 }
 
 @media (max-width: 480px) {

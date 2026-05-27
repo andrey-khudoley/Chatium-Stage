@@ -1,9 +1,9 @@
 /**
  * Аналитика событий GetCourse из ClickHouse
- * 
+ *
  * Этот модуль предоставляет API для получения аналитики по событиям GetCourse,
  * которые были записаны в ClickHouse через счётчик трафика.
- * 
+ *
  * ВАЖНО: Это НЕ API GetCourse, а аналитика событий из ClickHouse через MCP-сервер.
  * Все запросы выполняются к таблице chatium_ai.access_log, где хранятся события
  * с urlPath вида 'event://getcourse/...'
@@ -15,21 +15,26 @@ import { Debug } from '../shared/debug'
 import { applyDebugLevel } from '../lib/logging'
 
 // @shared-route
-export const apiGetCourseEventsOrdersRoute = app.query(s => ({
-  dateFrom: s.string().optional(),
-  dateTo: s.string().optional(),
-  limit: s.number().default(100),
-  offset: s.number().default(0)
-})).get('/orders', async (ctx, req) => {
-  requireAnyUser(ctx)
-  await applyDebugLevel(ctx, 'getcourse-events:orders')
-  
-  const { dateFrom, dateTo, limit, offset } = req.query
-  
-  try {
-    Debug.info(ctx, `[getcourse-events:orders] чтение событий заказов из ClickHouse (limit=${limit}, offset=${offset}, from=${dateFrom || '-'}, to=${dateTo || '-'})`)
-    // Получаем данные о заказах из событий GetCourse в ClickHouse
-    const query = `
+export const apiGetCourseEventsOrdersRoute = app
+  .query((s) => ({
+    dateFrom: s.string().optional(),
+    dateTo: s.string().optional(),
+    limit: s.number().default(100),
+    offset: s.number().default(0)
+  }))
+  .get('/orders', async (ctx, req) => {
+    requireAnyUser(ctx)
+    await applyDebugLevel(ctx, 'getcourse-events:orders')
+
+    const { dateFrom, dateTo, limit, offset } = req.query
+
+    try {
+      Debug.info(
+        ctx,
+        `[getcourse-events:orders] чтение событий заказов из ClickHouse (limit=${limit}, offset=${offset}, from=${dateFrom || '-'}, to=${dateTo || '-'})`
+      )
+      // Получаем данные о заказах из событий GetCourse в ClickHouse
+      const query = `
       SELECT 
         action_param1 as deal_id,
         action_param3_int as order_number,
@@ -51,36 +56,44 @@ export const apiGetCourseEventsOrdersRoute = app.query(s => ({
       LIMIT ${limit}
       OFFSET ${offset}
     `
-    
-    const result = await gcQueryAi(ctx, query)
-    const rows = result.rows || []
-    
-    Debug.info(ctx, `[getcourse-events:orders] получено ${rows.length} строк из ClickHouse`)
-    
-    return {
-      success: true,
-      orders: rows,
-      total: rows.length
+
+      const result = await gcQueryAi(ctx, query)
+      const rows = result.rows || []
+
+      Debug.info(ctx, `[getcourse-events:orders] получено ${rows.length} строк из ClickHouse`)
+
+      return {
+        success: true,
+        orders: rows,
+        total: rows.length
+      }
+    } catch (error: any) {
+      Debug.error(
+        ctx,
+        `[getcourse-events:orders] ошибка запроса к ClickHouse: ${error?.message || error}`
+      )
+      return { success: false, error: error.message, orders: [], total: 0 }
     }
-  } catch (error: any) {
-    Debug.error(ctx, `[getcourse-events:orders] ошибка запроса к ClickHouse: ${error?.message || error}`)
-    return { success: false, error: error.message, orders: [], total: 0 }
-  }
-})
+  })
 
 // @shared-route
-export const apiGetCourseEventsOrdersStatsRoute = app.query(s => ({
-  dateFrom: s.string().optional(),
-  dateTo: s.string().optional()
-})).get('/orders-stats', async (ctx, req) => {
-  requireAnyUser(ctx)
-  await applyDebugLevel(ctx, 'getcourse-events:orders-stats')
-  
-  const { dateFrom, dateTo } = req.query
-  
-  try {
-    Debug.info(ctx, `[getcourse-events:orders-stats] расчёт статистики из событий ClickHouse (from=${dateFrom || '-'}, to=${dateTo || '-'})`)
-    const query = `
+export const apiGetCourseEventsOrdersStatsRoute = app
+  .query((s) => ({
+    dateFrom: s.string().optional(),
+    dateTo: s.string().optional()
+  }))
+  .get('/orders-stats', async (ctx, req) => {
+    requireAnyUser(ctx)
+    await applyDebugLevel(ctx, 'getcourse-events:orders-stats')
+
+    const { dateFrom, dateTo } = req.query
+
+    try {
+      Debug.info(
+        ctx,
+        `[getcourse-events:orders-stats] расчёт статистики из событий ClickHouse (from=${dateFrom || '-'}, to=${dateTo || '-'})`
+      )
+      const query = `
       WITH created_deals AS (
         SELECT 
           COUNT(DISTINCT action_param1) as count,
@@ -107,40 +120,48 @@ export const apiGetCourseEventsOrdersStatsRoute = app.query(s => ({
         ROUND((p.count * 100.0 / GREATEST(c.count, 1)), 2) as conversion
       FROM created_deals c, paid_deals p
     `
-    
-    const result = await gcQueryAi(ctx, query)
-    const stats = result.rows?.[0]
-    Debug.info(ctx, '[getcourse-events:orders-stats] статистика рассчитана из ClickHouse')
-    
-    return {
-      success: true,
-      stats: {
-        totalOrders: stats?.total_orders || 0,
-        totalAmount: stats?.total_amount || 0,
-        paidOrders: stats?.paid_orders || 0,
-        paidAmount: stats?.paid_amount || 0,
-        conversion: stats?.conversion || 0
+
+      const result = await gcQueryAi(ctx, query)
+      const stats = result.rows?.[0]
+      Debug.info(ctx, '[getcourse-events:orders-stats] статистика рассчитана из ClickHouse')
+
+      return {
+        success: true,
+        stats: {
+          totalOrders: stats?.total_orders || 0,
+          totalAmount: stats?.total_amount || 0,
+          paidOrders: stats?.paid_orders || 0,
+          paidAmount: stats?.paid_amount || 0,
+          conversion: stats?.conversion || 0
+        }
       }
+    } catch (error: any) {
+      Debug.error(
+        ctx,
+        `[getcourse-events:orders-stats] ошибка запроса к ClickHouse: ${error?.message || error}`
+      )
+      return { success: false, error: error.message }
     }
-  } catch (error: any) {
-    Debug.error(ctx, `[getcourse-events:orders-stats] ошибка запроса к ClickHouse: ${error?.message || error}`)
-    return { success: false, error: error.message }
-  }
-})
+  })
 
 // @shared-route
-export const apiGetCourseEventsUsersRoute = app.query(s => ({
-  dateFrom: s.string().optional(),
-  dateTo: s.string().optional()
-})).get('/users', async (ctx, req) => {
-  requireAnyUser(ctx)
-  await applyDebugLevel(ctx, 'getcourse-events:users')
-  
-  const { dateFrom, dateTo } = req.query
-  
-  try {
-    Debug.info(ctx, `[getcourse-events:users] загрузка событий регистрации из ClickHouse (from=${dateFrom || '-'}, to=${dateTo || '-'})`)
-    const query = `
+export const apiGetCourseEventsUsersRoute = app
+  .query((s) => ({
+    dateFrom: s.string().optional(),
+    dateTo: s.string().optional()
+  }))
+  .get('/users', async (ctx, req) => {
+    requireAnyUser(ctx)
+    await applyDebugLevel(ctx, 'getcourse-events:users')
+
+    const { dateFrom, dateTo } = req.query
+
+    try {
+      Debug.info(
+        ctx,
+        `[getcourse-events:users] загрузка событий регистрации из ClickHouse (from=${dateFrom || '-'}, to=${dateTo || '-'})`
+      )
+      const query = `
       SELECT 
         dt as registration_date,
         COUNT(DISTINCT user_id) as new_users
@@ -151,34 +172,42 @@ export const apiGetCourseEventsUsersRoute = app.query(s => ({
       GROUP BY dt
       ORDER BY dt DESC
     `
-    
-    const result = await gcQueryAi(ctx, query)
-    const rows = result.rows || []
-    Debug.info(ctx, `[getcourse-events:users] найдено ${rows.length} записей в ClickHouse`)
-    
-    return {
-      success: true,
-      users: rows
+
+      const result = await gcQueryAi(ctx, query)
+      const rows = result.rows || []
+      Debug.info(ctx, `[getcourse-events:users] найдено ${rows.length} записей в ClickHouse`)
+
+      return {
+        success: true,
+        users: rows
+      }
+    } catch (error: any) {
+      Debug.error(
+        ctx,
+        `[getcourse-events:users] ошибка запроса к ClickHouse: ${error?.message || error}`
+      )
+      return { success: false, error: error.message, users: [] }
     }
-  } catch (error: any) {
-    Debug.error(ctx, `[getcourse-events:users] ошибка запроса к ClickHouse: ${error?.message || error}`)
-    return { success: false, error: error.message, users: [] }
-  }
-})
+  })
 
 // @shared-route
-export const apiGetCourseEventsTelegramUsersRoute = app.query(s => ({
-  dateFrom: s.string().optional(),
-  dateTo: s.string().optional()
-})).get('/telegram-users', async (ctx, req) => {
-  requireAnyUser(ctx)
-  await applyDebugLevel(ctx, 'getcourse-events:telegram-users')
-  
-  const { dateFrom, dateTo } = req.query
-  
-  try {
-    Debug.info(ctx, `[getcourse-events:telegram-users] расчёт статистики Telegram из событий ClickHouse (from=${dateFrom || '-'}, to=${dateTo || '-'})`)
-    const query = `
+export const apiGetCourseEventsTelegramUsersRoute = app
+  .query((s) => ({
+    dateFrom: s.string().optional(),
+    dateTo: s.string().optional()
+  }))
+  .get('/telegram-users', async (ctx, req) => {
+    requireAnyUser(ctx)
+    await applyDebugLevel(ctx, 'getcourse-events:telegram-users')
+
+    const { dateFrom, dateTo } = req.query
+
+    try {
+      Debug.info(
+        ctx,
+        `[getcourse-events:telegram-users] расчёт статистики Telegram из событий ClickHouse (from=${dateFrom || '-'}, to=${dateTo || '-'})`
+      )
+      const query = `
       WITH all_users AS (
         SELECT DISTINCT user_id
         FROM chatium_ai.access_log
@@ -209,39 +238,47 @@ export const apiGetCourseEventsTelegramUsersRoute = app.query(s => ({
       LEFT JOIN telegram_enabled te ON au.user_id = te.user_id
       LEFT JOIN telegram_disabled td ON au.user_id = td.user_id
     `
-    
-    const result = await gcQueryAi(ctx, query)
-    const stats = result.rows?.[0]
-    Debug.info(ctx, '[getcourse-events:telegram-users] статистика собрана из ClickHouse')
-    
-    return {
-      success: true,
-      stats: {
-        totalUsers: stats?.total_users || 0,
-        telegramConnected: stats?.telegram_connected || 0,
-        telegramDisconnected: stats?.telegram_disconnected || 0,
-        activeTelegram: stats?.active_telegram || 0
+
+      const result = await gcQueryAi(ctx, query)
+      const stats = result.rows?.[0]
+      Debug.info(ctx, '[getcourse-events:telegram-users] статистика собрана из ClickHouse')
+
+      return {
+        success: true,
+        stats: {
+          totalUsers: stats?.total_users || 0,
+          telegramConnected: stats?.telegram_connected || 0,
+          telegramDisconnected: stats?.telegram_disconnected || 0,
+          activeTelegram: stats?.active_telegram || 0
+        }
       }
+    } catch (error: any) {
+      Debug.error(
+        ctx,
+        `[getcourse-events:telegram-users] ошибка запроса к ClickHouse: ${error?.message || error}`
+      )
+      return { success: false, error: error.message }
     }
-  } catch (error: any) {
-    Debug.error(ctx, `[getcourse-events:telegram-users] ошибка запроса к ClickHouse: ${error?.message || error}`)
-    return { success: false, error: error.message }
-  }
-})
+  })
 
 // @shared-route
-export const apiGetCourseEventsPaymentsByDateRoute = app.query(s => ({
-  dateFrom: s.string().optional(),
-  dateTo: s.string().optional()
-})).get('/payments-by-date', async (ctx, req) => {
-  requireAnyUser(ctx)
-  await applyDebugLevel(ctx, 'getcourse-events:payments-by-date')
-  
-  const { dateFrom, dateTo } = req.query
-  
-  try {
-    Debug.info(ctx, `[getcourse-events:payments] загрузка событий платежей из ClickHouse (from=${dateFrom || '-'}, to=${dateTo || '-'})`)
-    const query = `
+export const apiGetCourseEventsPaymentsByDateRoute = app
+  .query((s) => ({
+    dateFrom: s.string().optional(),
+    dateTo: s.string().optional()
+  }))
+  .get('/payments-by-date', async (ctx, req) => {
+    requireAnyUser(ctx)
+    await applyDebugLevel(ctx, 'getcourse-events:payments-by-date')
+
+    const { dateFrom, dateTo } = req.query
+
+    try {
+      Debug.info(
+        ctx,
+        `[getcourse-events:payments] загрузка событий платежей из ClickHouse (from=${dateFrom || '-'}, to=${dateTo || '-'})`
+      )
+      const query = `
       SELECT 
         toDate(dt) as payment_date,
         COUNT(DISTINCT action_param1) as orders_paid,
@@ -254,35 +291,43 @@ export const apiGetCourseEventsPaymentsByDateRoute = app.query(s => ({
       GROUP BY payment_date
       ORDER BY payment_date DESC
     `
-    
-    const result = await gcQueryAi(ctx, query)
-    const rows = result.rows || []
-    Debug.info(ctx, `[getcourse-events:payments] получено ${rows.length} записей из ClickHouse`)
-    
-    return {
-      success: true,
-      payments: rows
+
+      const result = await gcQueryAi(ctx, query)
+      const rows = result.rows || []
+      Debug.info(ctx, `[getcourse-events:payments] получено ${rows.length} записей из ClickHouse`)
+
+      return {
+        success: true,
+        payments: rows
+      }
+    } catch (error: any) {
+      Debug.error(
+        ctx,
+        `[getcourse-events:payments] ошибка запроса к ClickHouse: ${error?.message || error}`
+      )
+      return { success: false, error: error.message, payments: [] }
     }
-  } catch (error: any) {
-    Debug.error(ctx, `[getcourse-events:payments] ошибка запроса к ClickHouse: ${error?.message || error}`)
-    return { success: false, error: error.message, payments: [] }
-  }
-})
+  })
 
 // @shared-route
-export const apiGetCourseEventsGroupsRoute = app.query(s => ({
-  dateFrom: s.string().optional(),
-  dateTo: s.string().optional(),
-  limit: s.number().default(20)
-})).get('/groups', async (ctx, req) => {
-  requireAnyUser(ctx)
-  await applyDebugLevel(ctx, 'getcourse-events:groups')
-  
-  const { dateFrom, dateTo, limit } = req.query
-  
-  try {
-    Debug.info(ctx, `[getcourse-events:groups] чтение событий групп из ClickHouse (limit=${limit}, from=${dateFrom || '-'}, to=${dateTo || '-'})`)
-    const query = `
+export const apiGetCourseEventsGroupsRoute = app
+  .query((s) => ({
+    dateFrom: s.string().optional(),
+    dateTo: s.string().optional(),
+    limit: s.number().default(20)
+  }))
+  .get('/groups', async (ctx, req) => {
+    requireAnyUser(ctx)
+    await applyDebugLevel(ctx, 'getcourse-events:groups')
+
+    const { dateFrom, dateTo, limit } = req.query
+
+    try {
+      Debug.info(
+        ctx,
+        `[getcourse-events:groups] чтение событий групп из ClickHouse (limit=${limit}, from=${dateFrom || '-'}, to=${dateTo || '-'})`
+      )
+      const query = `
       SELECT 
         action_param1 as group_id,
         COUNT(DISTINCT user_id) as members_count
@@ -294,18 +339,20 @@ export const apiGetCourseEventsGroupsRoute = app.query(s => ({
       ORDER BY members_count DESC
       LIMIT ${limit}
     `
-    
-    const result = await gcQueryAi(ctx, query)
-    const rows = result.rows || []
-    Debug.info(ctx, `[getcourse-events:groups] найдено ${rows.length} групп в ClickHouse`)
-    
-    return {
-      success: true,
-      groups: rows
-    }
-  } catch (error: any) {
-    Debug.error(ctx, `[getcourse-events:groups] ошибка запроса к ClickHouse: ${error?.message || error}`)
-    return { success: false, error: error.message, groups: [] }
-  }
-})
 
+      const result = await gcQueryAi(ctx, query)
+      const rows = result.rows || []
+      Debug.info(ctx, `[getcourse-events:groups] найдено ${rows.length} групп в ClickHouse`)
+
+      return {
+        success: true,
+        groups: rows
+      }
+    } catch (error: any) {
+      Debug.error(
+        ctx,
+        `[getcourse-events:groups] ошибка запроса к ClickHouse: ${error?.message || error}`
+      )
+      return { success: false, error: error.message, groups: [] }
+    }
+  })

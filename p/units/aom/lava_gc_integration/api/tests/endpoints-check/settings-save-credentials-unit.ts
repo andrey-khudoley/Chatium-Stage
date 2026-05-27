@@ -48,23 +48,22 @@ function runAssertions(): TestResult[] {
     return r !== null && r.nextApiKey === 'new-secret' && r.nextDomain === 'school.getcourse.ru'
   })
 
-  check('gc_merge_save_domain_only', 'GC: сохраняется только gc_account_domain — ключ из Heap', () => {
-    const r = saveCredsLib.resolveGcCredentialsForSave(
-      GC_SETTING_KEYS.GC_ACCOUNT_DOMAIN,
-      'other.domain.ru',
-      'heap-key',
-      ''
-    )
-    return r !== null && r.nextApiKey === 'heap-key' && r.nextDomain === 'other.domain.ru'
-  })
+  check(
+    'gc_merge_save_domain_only',
+    'GC: сохраняется только gc_account_domain — ключ из Heap',
+    () => {
+      const r = saveCredsLib.resolveGcCredentialsForSave(
+        GC_SETTING_KEYS.GC_ACCOUNT_DOMAIN,
+        'other.domain.ru',
+        'heap-key',
+        ''
+      )
+      return r !== null && r.nextApiKey === 'heap-key' && r.nextDomain === 'other.domain.ru'
+    }
+  )
 
   check('gc_verify_when_both_nonempty', 'GC: shouldVerify=true, если оба поля непусты', () => {
-    const r = saveCredsLib.resolveGcCredentialsForSave(
-      GC_SETTING_KEYS.GC_API_KEY,
-      'k',
-      '',
-      'd'
-    )!
+    const r = saveCredsLib.resolveGcCredentialsForSave(GC_SETTING_KEYS.GC_API_KEY, 'k', '', 'd')!
     return saveCredsLib.shouldVerifyCredentialPair(r.nextApiKey, r.nextDomain)
   })
 
@@ -82,19 +81,21 @@ function runAssertions(): TestResult[] {
     return saveCredsLib.resolveGcCredentialsForSave('project_name', 'x', 'a', 'b') === null
   })
 
-  check('lava_merge_save_key_only', 'Lava: только lava_api_key — URL из Heap (нормализован)', () => {
-    const r = saveCredsLib.resolveLavaCredentialsForSave(
-      LAVA_SETTING_KEYS.LAVA_API_KEY,
-      'token',
-      '',
-      'gate.lava.top'
-    )
-    return (
-      r !== null &&
-      r.nextApiKey === 'token' &&
-      r.nextBaseNormalized === 'https://gate.lava.top'
-    )
-  })
+  check(
+    'lava_merge_save_key_only',
+    'Lava: только lava_api_key — URL из Heap (нормализован)',
+    () => {
+      const r = saveCredsLib.resolveLavaCredentialsForSave(
+        LAVA_SETTING_KEYS.LAVA_API_KEY,
+        'token',
+        '',
+        'gate.lava.top'
+      )
+      return (
+        r !== null && r.nextApiKey === 'token' && r.nextBaseNormalized === 'https://gate.lava.top'
+      )
+    }
+  )
 
   check(
     'lava_merge_save_url_normalizes_host',

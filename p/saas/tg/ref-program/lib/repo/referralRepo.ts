@@ -158,7 +158,8 @@ export async function listReferrals(
     const aggByReferralId = new Map(
       aggregatesList.map((a) => {
         const rid = a.referralId as { id?: string } | string | undefined
-        const key = typeof rid === 'object' && rid && 'id' in rid ? rid.id ?? '' : String(rid ?? '')
+        const key =
+          typeof rid === 'object' && rid && 'id' in rid ? (rid.id ?? '') : String(rid ?? '')
         return [key, a] as const
       })
     )
@@ -222,7 +223,7 @@ export async function listReferrals(
   const aggByReferralId = new Map(
     aggregatesList.map((a) => {
       const rid = a.referralId as { id?: string } | string | undefined
-      const key = typeof rid === 'object' && rid && 'id' in rid ? rid.id ?? '' : String(rid ?? '')
+      const key = typeof rid === 'object' && rid && 'id' in rid ? (rid.id ?? '') : String(rid ?? '')
       return [key, a] as const
     })
   )

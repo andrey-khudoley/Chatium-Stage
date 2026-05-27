@@ -113,7 +113,10 @@ const fallbackInstance: BpmInstanceRow = {
 }
 
 const selectedInstance = computed(
-  () => demoState.value.rows.find((row) => row.id === selectedInstanceId.value) ?? demoState.value.rows[0] ?? fallbackInstance
+  () =>
+    demoState.value.rows.find((row) => row.id === selectedInstanceId.value) ??
+    demoState.value.rows[0] ??
+    fallbackInstance
 )
 
 const chartBars = computed(() => getBpmChartBars(activeChartMode.value))
@@ -372,7 +375,10 @@ function setLocale(next: BpmLocale) {
               <DcBpmMetricGrid :metrics="homePageMetrics" />
             </section>
 
-            <section id="section-home-grid" class="bpm-design-scenario-page__section bpm-design-scenario-page__split">
+            <section
+              id="section-home-grid"
+              class="bpm-design-scenario-page__section bpm-design-scenario-page__split"
+            >
               <DcBpmKanbanBoard
                 :title="ui.kanbanTitle"
                 :hint="ui.kanbanHint"
@@ -404,7 +410,10 @@ function setLocale(next: BpmLocale) {
           </template>
 
           <template v-else-if="layout === 'war-room'">
-            <section id="section-workspace" class="bpm-design-scenario-page__section bpm-design-scenario-page__split">
+            <section
+              id="section-workspace"
+              class="bpm-design-scenario-page__section bpm-design-scenario-page__split"
+            >
               <DcSlaGauge
                 title="SLA pulse"
                 subtitle="Live confidence under critical load"
@@ -428,7 +437,10 @@ function setLocale(next: BpmLocale) {
               />
             </section>
 
-            <section id="section-knowledge" class="bpm-design-scenario-page__section bpm-design-scenario-page__split">
+            <section
+              id="section-knowledge"
+              class="bpm-design-scenario-page__section bpm-design-scenario-page__split"
+            >
               <DcMilestoneRail
                 title="Response checkpoints"
                 subtitle="Milestones and ownership for the active incident"
@@ -459,12 +471,18 @@ function setLocale(next: BpmLocale) {
                 :timeline="demoState.detailTimeline"
               />
 
-              <DcScenarioChecklist title="Incident containment checklist" :items="demoState.checklist" />
+              <DcScenarioChecklist
+                title="Incident containment checklist"
+                :items="demoState.checklist"
+              />
             </section>
           </template>
 
           <template v-else-if="layout === 'approval-lab'">
-            <section id="section-workspace" class="bpm-design-scenario-page__section bpm-design-scenario-page__split">
+            <section
+              id="section-workspace"
+              class="bpm-design-scenario-page__section bpm-design-scenario-page__split"
+            >
               <DcBpmProcessInbox
                 :title="ui.processCenterTitle"
                 :hint="ui.processCenterHint"
@@ -509,7 +527,10 @@ function setLocale(next: BpmLocale) {
               />
             </section>
 
-            <section id="section-controls" class="bpm-design-scenario-page__section bpm-design-scenario-page__split">
+            <section
+              id="section-controls"
+              class="bpm-design-scenario-page__section bpm-design-scenario-page__split"
+            >
               <DcDecisionTree
                 title="Approval decision graph"
                 subtitle="Conditions and routing actions"
@@ -527,7 +548,10 @@ function setLocale(next: BpmLocale) {
               />
             </section>
 
-            <section id="section-knowledge" class="bpm-design-scenario-page__section bpm-design-scenario-page__split">
+            <section
+              id="section-knowledge"
+              class="bpm-design-scenario-page__section bpm-design-scenario-page__split"
+            >
               <DcRoleStack
                 title="Review roles stack"
                 subtitle="Current owners and approvers"
@@ -546,12 +570,18 @@ function setLocale(next: BpmLocale) {
                 @update-markdown="markdownDraft = $event"
               />
 
-              <DcScenarioChecklist title="Approval rollout checklist" :items="demoState.checklist" />
+              <DcScenarioChecklist
+                title="Approval rollout checklist"
+                :items="demoState.checklist"
+              />
             </section>
           </template>
 
           <template v-else-if="layout === 'operations-hub'">
-            <section id="section-workspace" class="bpm-design-scenario-page__section bpm-design-scenario-page__split">
+            <section
+              id="section-workspace"
+              class="bpm-design-scenario-page__section bpm-design-scenario-page__split"
+            >
               <DcCapacityMatrix
                 title="Team capacity matrix"
                 subtitle="Load pressure by operational unit"
@@ -565,7 +595,10 @@ function setLocale(next: BpmLocale) {
               />
             </section>
 
-            <section id="section-controls" class="bpm-design-scenario-page__section bpm-design-scenario-page__split">
+            <section
+              id="section-controls"
+              class="bpm-design-scenario-page__section bpm-design-scenario-page__split"
+            >
               <DcBpmProcessInbox
                 :title="ui.processCenterTitle"
                 :hint="ui.processCenterHint"
@@ -596,7 +629,10 @@ function setLocale(next: BpmLocale) {
               />
             </section>
 
-            <section id="section-knowledge" class="bpm-design-scenario-page__section bpm-design-scenario-page__split">
+            <section
+              id="section-knowledge"
+              class="bpm-design-scenario-page__section bpm-design-scenario-page__split"
+            >
               <DcCommandDeck
                 title="Ops quick commands"
                 subtitle="Batch actions for queue operations"
@@ -612,7 +648,10 @@ function setLocale(next: BpmLocale) {
           </template>
 
           <template v-else-if="layout === 'risk-console'">
-            <section id="section-workspace" class="bpm-design-scenario-page__section bpm-design-scenario-page__split">
+            <section
+              id="section-workspace"
+              class="bpm-design-scenario-page__section bpm-design-scenario-page__split"
+            >
               <DcRiskHeatmap
                 title="Risk heatmap"
                 subtitle="Probability × impact score grid"
@@ -635,7 +674,10 @@ function setLocale(next: BpmLocale) {
               />
             </section>
 
-            <section id="section-controls" class="bpm-design-scenario-page__section bpm-design-scenario-page__split">
+            <section
+              id="section-controls"
+              class="bpm-design-scenario-page__section bpm-design-scenario-page__split"
+            >
               <DcDecisionTree
                 title="Mitigation decision chain"
                 subtitle="Rules that drive escalation and controls"
@@ -649,7 +691,10 @@ function setLocale(next: BpmLocale) {
               />
             </section>
 
-            <section id="section-knowledge" class="bpm-design-scenario-page__section bpm-design-scenario-page__split">
+            <section
+              id="section-knowledge"
+              class="bpm-design-scenario-page__section bpm-design-scenario-page__split"
+            >
               <DcBpmBuilderStudio
                 :title="ui.builderTitle"
                 :hint="ui.builderHint"
@@ -665,7 +710,10 @@ function setLocale(next: BpmLocale) {
           </template>
 
           <template v-else-if="layout === 'delivery-studio'">
-            <section id="section-workspace" class="bpm-design-scenario-page__section bpm-design-scenario-page__split">
+            <section
+              id="section-workspace"
+              class="bpm-design-scenario-page__section bpm-design-scenario-page__split"
+            >
               <DcMilestoneRail
                 title="Delivery milestones"
                 subtitle="Flow checkpoints before release"
@@ -681,7 +729,10 @@ function setLocale(next: BpmLocale) {
               />
             </section>
 
-            <section id="section-controls" class="bpm-design-scenario-page__section bpm-design-scenario-page__split">
+            <section
+              id="section-controls"
+              class="bpm-design-scenario-page__section bpm-design-scenario-page__split"
+            >
               <DcBpmKanbanBoard
                 :title="ui.kanbanTitle"
                 :hint="ui.kanbanHint"
@@ -695,7 +746,10 @@ function setLocale(next: BpmLocale) {
               />
             </section>
 
-            <section id="section-knowledge" class="bpm-design-scenario-page__section bpm-design-scenario-page__split">
+            <section
+              id="section-knowledge"
+              class="bpm-design-scenario-page__section bpm-design-scenario-page__split"
+            >
               <DcBpmKnowledgeEditor
                 :title="ui.editorTitle"
                 :hint="ui.editorHint"
@@ -732,7 +786,10 @@ function setLocale(next: BpmLocale) {
           </template>
 
           <template v-else>
-            <section id="section-workspace" class="bpm-design-scenario-page__section bpm-design-scenario-page__split">
+            <section
+              id="section-workspace"
+              class="bpm-design-scenario-page__section bpm-design-scenario-page__split"
+            >
               <DcBpmAnalyticsPanel
                 :title="ui.analyticsTitle"
                 :hint="ui.analyticsHint"
@@ -755,7 +812,10 @@ function setLocale(next: BpmLocale) {
               />
             </section>
 
-            <section id="section-controls" class="bpm-design-scenario-page__section bpm-design-scenario-page__split">
+            <section
+              id="section-controls"
+              class="bpm-design-scenario-page__section bpm-design-scenario-page__split"
+            >
               <DcCapacityMatrix
                 title="Portfolio capacity"
                 subtitle="Load/throughput by strategic stream"
@@ -771,7 +831,10 @@ function setLocale(next: BpmLocale) {
               />
             </section>
 
-            <section id="section-knowledge" class="bpm-design-scenario-page__section bpm-design-scenario-page__split bpm-design-scenario-page__split--triple">
+            <section
+              id="section-knowledge"
+              class="bpm-design-scenario-page__section bpm-design-scenario-page__split bpm-design-scenario-page__split--triple"
+            >
               <DcMilestoneRail
                 title="Strategic checkpoints"
                 subtitle="Roadmap milestones and owners"
@@ -877,9 +940,7 @@ function setLocale(next: BpmLocale) {
   padding: 10px;
   text-decoration: none;
   color: inherit;
-  background:
-    var(--gradient-glass),
-    color-mix(in srgb, var(--surface-2) 82%, transparent);
+  background: var(--gradient-glass), color-mix(in srgb, var(--surface-2) 82%, transparent);
 }
 
 .bpm-home-scenario-card h3 {

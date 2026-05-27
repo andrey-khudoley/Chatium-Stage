@@ -1,4 +1,5 @@
 @chatium
+
 # Модуль @app/metric: Метрики и события платформы
 
 Краткий справочник по модулю `@app/metric` — запись метрик, access log, подписка на события метрик. Типизация: `node_modules/@app/metric/index.d.ts`. События workspace и аналитика в приложении: [016-analytics-workspace.md](016-analytics-workspace.md) и др.

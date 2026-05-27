@@ -9,16 +9,12 @@ export const apiPaidFormIdsRoute = app.get('/my-paid-forms', async (ctx, req) =>
   const submissions = await FormSubmissions.findAll(ctx, {
     where: {
       user: ctx.user.id,
-      paymentId: { $not: null },
+      paymentId: { $not: null }
     },
-    limit: 200,
+    limit: 200
   })
 
-  const paidFormIds = [...new Set(
-    submissions
-      .map(s => s.form?.id)
-      .filter(Boolean)
-  )]
+  const paidFormIds = [...new Set(submissions.map((s) => s.form?.id).filter(Boolean))]
 
   return { paidFormIds }
 })

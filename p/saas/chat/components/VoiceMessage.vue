@@ -3,7 +3,7 @@
     <!-- Основной блок аудио -->
     <div class="voice-message" :class="{ 'is-own': isOwn }">
       <!-- Кнопка воспроизведения -->
-      <button 
+      <button
         class="btn-play"
         @click.stop="togglePlay"
         :title="isPlayingState ? 'Пауза' : 'Воспроизвести'"
@@ -13,30 +13,29 @@
 
       <!-- Waveform и прогресс -->
       <div class="waveform-container" @click.stop="seekTo">
-        <canvas 
-          ref="waveformCanvas" 
-          class="waveform"
-          :width="canvasWidth"
-          height="40"
-        />
-        <div 
+        <canvas ref="waveformCanvas" class="waveform" :width="canvasWidth" height="40" />
+        <div
           class="progress-overlay"
           :style="{ width: (isCurrentTrack ? globalProgress : progressPercent) + '%' }"
         />
         <!-- Проигранная часть waveform (отдельный canvas для производительности) -->
-        <canvas 
+        <canvas
           v-show="isPlayingState || displayTime > 0"
-          ref="progressCanvas" 
+          ref="progressCanvas"
           class="progress-canvas"
           :width="canvasWidth"
           height="40"
-          :style="{ clipPath: `inset(0 ${100 - (isCurrentTrack ? globalProgress : progressPercent)}% 0 0)` }"
+          :style="{
+            clipPath: `inset(0 ${100 - (isCurrentTrack ? globalProgress : progressPercent)}% 0 0)`
+          }"
         />
       </div>
 
       <!-- Информация -->
       <div class="voice-info">
-        <span class="duration">{{ formatTime(displayTime) }} / {{ formatTime(fileDuration || duration) }}</span>
+        <span class="duration"
+          >{{ formatTime(displayTime) }} / {{ formatTime(fileDuration || duration) }}</span
+        >
       </div>
 
       <!-- Аудио элемент (только для локального воспроизведения, если глобальный плеер не используется) -->
@@ -49,12 +48,14 @@
         preload="metadata"
       />
     </div>
-    
+
     <!-- Секция транскрибации (видна всем, если есть результат) -->
     <div class="transcription-section">
       <!-- Кнопка запуска транскрибации - только для админов -->
-      <button 
-        v-if="isWorkspaceAdmin && !displayedTranscription && !isTranscribing && !messageTranscription"
+      <button
+        v-if="
+          isWorkspaceAdmin && !displayedTranscription && !isTranscribing && !messageTranscription
+        "
         class="btn-transcribe"
         @click.stop="requestTranscription"
         :disabled="isTranscribing"
@@ -62,17 +63,17 @@
         <i class="fas fa-closed-captioning"></i>
         <span>Перевести в текст</span>
       </button>
-      
+
       <!-- Индикатор загрузки - виден тому, кто запустил -->
       <div v-else-if="isTranscribing" class="transcription-loading">
         <i class="fas fa-spinner fa-spin"></i>
         <span>Расшифровка...</span>
       </div>
-      
+
       <!-- Результат транскрибации - виден всем -->
       <div v-else-if="displayedTranscription" class="transcription-result">
         <div class="transcription-text">{{ displayedTranscription }}</div>
-        <button 
+        <button
           v-if="isWorkspaceAdmin"
           class="btn-hide-transcription"
           @click.stop="hideTranscription"
@@ -87,7 +88,10 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted, computed, watch, nextTick, inject } from 'vue'
-import { apiVoiceTranscriptionGetRoute, apiVoiceTranscriptionCreateRoute } from '../api/voice-transcriptions'
+import {
+  apiVoiceTranscriptionGetRoute,
+  apiVoiceTranscriptionCreateRoute
+} from '../api/voice-transcriptions'
 import { getOrCreateBrowserSocketClient } from '@app/socket'
 import { useGlobalAudioPlayerSingleton } from '../composables/useGlobalAudioPlayer.ts'
 
@@ -223,7 +227,7 @@ function getColors() {
   const root = document.documentElement
   const styles = getComputedStyle(root)
   const primary = styles.getPropertyValue('--primary-color').trim() || '#008069'
-  
+
   if (props.isOwn) {
     return {
       primary,
@@ -244,23 +248,22 @@ function getColors() {
 // Генерация waveform из аудио
 async function generateWaveform() {
   if (!props.file || isWaveformReady.value) return
-  
+
   try {
     const response = await fetch(audioUrl.value)
     const arrayBuffer = await response.arrayBuffer()
-    
+
     audioContext.value = new (window.AudioContext || window.webkitAudioContext)()
-    
+
     // Пытаемся декодировать аудио
     audioBuffer.value = await audioContext.value.decodeAudioData(arrayBuffer)
-    
+
     if (audioBuffer.value.duration && !isNaN(audioBuffer.value.duration)) {
       duration.value = audioBuffer.value.duration
     }
-    
+
     drawWaveform()
     isWaveformReady.value = true
-    
   } catch (err) {
     // При любой ошибке декодирования используем простую визуализацию
     // Без вывода ошибки в консоль
@@ -272,93 +275,93 @@ async function generateWaveform() {
 // Рисование waveform из аудио данных
 function drawWaveform() {
   if (!waveformCanvas.value || !audioBuffer.value) return
-  
+
   const canvas = waveformCanvas.value
   const ctx = canvas.getContext('2d')
   const width = canvas.width
   const height = canvas.height
-  
+
   const colors = getColors()
   const data = audioBuffer.value.getChannelData(0)
   const step = Math.ceil(data.length / width)
   const amp = height / 2
-  
+
   ctx.clearRect(0, 0, width, height)
-  
+
   const barWidth = 2
   const gap = 1
-  
+
   waveformData.value = []
-  
-  for (let i = 0; i < width; i += (barWidth + gap)) {
+
+  for (let i = 0; i < width; i += barWidth + gap) {
     let min = 1.0
     let max = -1.0
-    
+
     for (let j = 0; j < step; j++) {
       const datum = data[i * step + j]
       if (datum < min) min = datum
       if (datum > max) max = datum
     }
-    
+
     const barHeight = Math.max(2, (max - min) * amp * 0.8)
     const x = i
     const y = (height - barHeight) / 2
-    
+
     ctx.fillStyle = colors.bg
     ctx.roundRect(x, y, barWidth, barHeight, 1)
     ctx.fill()
-    
+
     waveformData.value.push({ x, y, barHeight, barWidth })
   }
-  
+
   drawProgressWaveform()
 }
 
 // Простая визуализация (fallback)
 function drawSimpleWaveform() {
   if (!waveformCanvas.value) return
-  
+
   const canvas = waveformCanvas.value
   const ctx = canvas.getContext('2d')
   const width = canvas.width
   const height = canvas.height
-  
+
   const colors = getColors()
   const bars = 40
   const barWidth = (width - (bars - 1)) / bars
-  
+
   ctx.clearRect(0, 0, width, height)
-  
+
   waveformData.value = []
-  
+
   for (let i = 0; i < bars; i++) {
     const pseudoRandom = Math.sin(i * 12.9898) * 43758.5453
     const normalized = pseudoRandom - Math.floor(pseudoRandom)
     const barHeight = Math.max(4, normalized * height * 0.8)
-    
+
     const x = i * (barWidth + 1)
     const y = (height - barHeight) / 2
-    
+
     ctx.fillStyle = colors.bg
     ctx.roundRect(x, y, barWidth, barHeight, 1)
     ctx.fill()
-    
+
     waveformData.value.push({ x, y, barHeight, barWidth })
   }
-  
+
   drawProgressWaveform()
 }
 
 // Рисуем waveform для прогресса
 function drawProgressWaveform() {
   if (!progressCanvas.value || !waveformData.value) return
-  
+
   const canvas = progressCanvas.value
   const ctx = canvas.getContext('2d')
   const colors = getColors()
-  
+
   ctx.clearRect(0, 0, canvas.width, canvas.height)
-  
+
   for (const bar of waveformData.value) {
     ctx.fillStyle = colors.played
     ctx.roundRect(bar.x, bar.y, bar.barWidth, bar.barHeight, 1)
@@ -374,7 +377,7 @@ function togglePlay() {
     globalPlayer.togglePlay()
     return
   }
-  
+
   // Загружаем новый трек в глобальный плеер
   const track = {
     id: trackId.value,
@@ -387,9 +390,9 @@ function togglePlay() {
     senderName: props.senderName,
     isOwn: props.isOwn
   }
-  
+
   globalPlayer.play(track)
-  
+
   // Приостанавливаем локальное аудио, если оно играло
   if (audioElement.value && isPlaying.value) {
     audioElement.value.pause()
@@ -403,22 +406,22 @@ function seekTo(event) {
   if (!totalDuration || totalDuration === Infinity || totalDuration === 0) {
     return
   }
-  
+
   const rect = event.currentTarget.getBoundingClientRect()
   const x = event.clientX - rect.left
   const percent = Math.max(0, Math.min(100, (x / rect.width) * 100))
-  
+
   // Если этот трек в глобальном плеере - используем его
   if (isCurrentTrack.value) {
     globalPlayer.seekTo(percent)
     return
   }
-  
+
   // Локальная перемотка
   if (!audioElement.value) return
-  
+
   const newTime = (percent / 100) * totalDuration
-  
+
   try {
     if (audioElement.value.readyState >= 1) {
       audioElement.value.currentTime = newTime
@@ -452,14 +455,13 @@ function onEnded() {
 function onLoadedMetadata() {
   if (audioElement.value) {
     const audioDuration = audioElement.value.duration
-    
+
     if (audioDuration && !isNaN(audioDuration) && audioDuration !== Infinity && audioDuration > 0) {
       duration.value = audioDuration
-    }
-    else if (props.file?.duration && !isNaN(props.file.duration) && props.file.duration > 0) {
+    } else if (props.file?.duration && !isNaN(props.file.duration) && props.file.duration > 0) {
       duration.value = props.file.duration
     }
-    
+
     if ((!duration.value || duration.value === Infinity) && audioBuffer.value) {
       duration.value = audioBuffer.value.duration
     }
@@ -486,77 +488,80 @@ async function requestTranscription() {
     logClient('REQUEST_BLOCKED', { reason: 'no_file_hash' })
     return
   }
-  
-  logClient('REQUEST_START', { 
+
+  logClient('REQUEST_START', {
     feedId: props.feedId,
-    isWorkspaceAdmin: props.isWorkspaceAdmin 
+    isWorkspaceAdmin: props.isWorkspaceAdmin
   })
-  
+
   isTranscribing.value = true
   transcriptionStatus.value = 'pending'
-  
+
   try {
     // Сначала проверяем, есть ли уже готовая транскрибация
     logClient('CHECK_EXISTING_START', {})
     const checkResponse = await apiVoiceTranscriptionGetRoute({ fileHash: fileHash.value }).run(ctx)
-    
-    logClient('CHECK_EXISTING_RESULT', { 
+
+    logClient('CHECK_EXISTING_RESULT', {
       found: !!checkResponse.transcription,
-      status: checkResponse.transcription?.status 
+      status: checkResponse.transcription?.status
     })
-    
+
     if (checkResponse.transcription?.status === 'completed') {
-      logClient('CACHE_HIT', { 
-        preview: checkResponse.transcription.transcription?.substring(0, 100) 
+      logClient('CACHE_HIT', {
+        preview: checkResponse.transcription.transcription?.substring(0, 100)
       })
       transcription.value = checkResponse.transcription.transcription
       isTranscribing.value = false
       return
     }
-    
+
     // Запускаем транскрибацию
     logClient('CREATE_START', {})
     const response = await apiVoiceTranscriptionCreateRoute.run(ctx, {
       fileHash: fileHash.value,
       messageId: props.messageId,
-      feedId: props.feedId,
+      feedId: props.feedId
     })
-    
-    logClient('CREATE_RESULT', { 
+
+    logClient('CREATE_RESULT', {
       success: response.success,
       fromCache: response.fromCache,
       status: response.transcription?.status,
       hasTranscription: !!response.transcription?.transcription
     })
-    
+
     // Если транскрипция уже готова (из кэша) - показываем сразу
-    if (response.fromCache && response.transcription?.status === 'completed' && response.transcription?.transcription) {
+    if (
+      response.fromCache &&
+      response.transcription?.status === 'completed' &&
+      response.transcription?.transcription
+    ) {
       transcription.value = response.transcription.transcription
       isTranscribing.value = false
       transcriptionStatus.value = 'completed'
-      logClient('CACHE_USED', { 
+      logClient('CACHE_USED', {
         preview: response.transcription.transcription?.substring(0, 100)
       })
       return
     }
-    
+
     // Если статус completed но fromCache=false (только что создали) - тоже показываем
     if (response.transcription?.status === 'completed' && response.transcription?.transcription) {
       transcription.value = response.transcription.transcription
       isTranscribing.value = false
       transcriptionStatus.value = 'completed'
-      logClient('TRANSCRIPTION_IMMEDIATE', { 
+      logClient('TRANSCRIPTION_IMMEDIATE', {
         preview: response.transcription.transcription?.substring(0, 100)
       })
       return
     }
-    
+
     // Иначе ждем callback через WebSocket (статус processing или нет текста)
-    logClient('WAITING_WEBSOCKET', { 
+    logClient('WAITING_WEBSOCKET', {
       transcriptionId: response.transcription?.id,
-      status: response.transcription?.status 
+      status: response.transcription?.status
     })
-    
   } catch (error) {
     logClient('REQUEST_ERROR', { error: String(error) })
     // console.error('[VoiceMessage] Transcription error:', error)
@@ -577,21 +582,21 @@ function startFallbackPolling() {
   if (!fileHash.value || displayedTranscription.value) {
     return
   }
-  
+
   // Очищаем предыдущий таймер
   if (fallbackPollTimer) {
     clearInterval(fallbackPollTimer)
     fallbackPollTimer = null
   }
-  
+
   logClient('FALLBACK_POLL_START', { fileHash: fileHash.value, interval: FALLBACK_POLL_INTERVAL })
-  
+
   let pollCount = 0
   const maxPolls = 60 // 5 минут максимум (60 * 5 сек)
-  
+
   fallbackPollTimer = setInterval(async () => {
     pollCount++
-    
+
     // Проверяем, не превысили ли лимит попыток
     if (pollCount > maxPolls) {
       logClient('FALLBACK_POLL_STOP', { reason: 'max_polls_reached', pollCount })
@@ -599,7 +604,7 @@ function startFallbackPolling() {
       fallbackPollTimer = null
       return
     }
-    
+
     // Если уже есть транскрипция — останавливаем
     if (displayedTranscription.value) {
       logClient('FALLBACK_POLL_STOP', { reason: 'transcription_received', pollCount })
@@ -607,20 +612,20 @@ function startFallbackPolling() {
       fallbackPollTimer = null
       return
     }
-    
+
     try {
       logClient('FALLBACK_POLL_CHECK', { pollCount, fileHash: fileHash.value })
       const response = await apiVoiceTranscriptionGetRoute({ fileHash: fileHash.value }).run(ctx)
-      
+
       if (response.transcription?.status === 'completed' && response.transcription?.transcription) {
-        logClient('FALLBACK_POLL_SUCCESS', { 
-          pollCount, 
-          transcriptionLength: response.transcription.transcription.length 
+        logClient('FALLBACK_POLL_SUCCESS', {
+          pollCount,
+          transcriptionLength: response.transcription.transcription.length
         })
         transcription.value = response.transcription.transcription
         isTranscribing.value = false
         transcriptionStatus.value = 'completed'
-        
+
         clearInterval(fallbackPollTimer)
         fallbackPollTimer = null
       } else {
@@ -646,7 +651,7 @@ async function setupTranscriptionListener() {
     logClient('LISTENER_SETUP_SKIP', { reason: 'no_feed_id' })
     return
   }
-  
+
   // Если уже есть подписка - отписываемся
   if (unsubscribeFromTranscription) {
     logClient('LISTENER_SETUP_UNSUBSCRIBE', { reason: 'already_subscribed' })
@@ -657,36 +662,36 @@ async function setupTranscriptionListener() {
     }
     unsubscribeFromTranscription = null
   }
-  
-  logClient('LISTENER_SETUP_START', { 
-    feedId: props.feedId, 
-    fileHash: fileHash.value, 
+
+  logClient('LISTENER_SETUP_START', {
+    feedId: props.feedId,
+    fileHash: fileHash.value,
     messageId: props.messageId,
     currentUserId: ctx.user?.id,
-    isWorkspaceAdmin: props.isWorkspaceAdmin 
+    isWorkspaceAdmin: props.isWorkspaceAdmin
   })
-  
+
   // Подписываемся на события транскрибации для всех пользователей
   // (не только админов), чтобы видеть результат когда админ запустит транскрибацию
-  
+
   try {
     const channelName = `chat-${props.feedId}`
     // console.log('[VoiceMessage] Getting socket client for channel:', channelName, 'user:', ctx.user?.id)
-    
+
     const socketClient = await getOrCreateBrowserSocketClient()
     // console.log('[VoiceMessage] Socket client obtained:', !!socketClient, 'for channel:', channelName)
-    
+
     const subscription = socketClient.subscribeToData(channelName)
     // console.log('[VoiceMessage] Subscription created:', !!subscription, 'for channel:', channelName)
-    
-    logClient('LISTENER_SETUP_SUCCESS', { 
-      feedId: props.feedId, 
+
+    logClient('LISTENER_SETUP_SUCCESS', {
+      feedId: props.feedId,
       channel: channelName,
-      fileHash: fileHash.value, 
+      fileHash: fileHash.value,
       messageId: props.messageId,
-      currentUserId: ctx.user?.id 
+      currentUserId: ctx.user?.id
     })
-    
+
     // Сохраняем функцию отписки
     unsubscribeFromTranscription = subscription.listen((data) => {
       // console.log('[VoiceMessage] RAW WebSocket data received:', {
@@ -696,8 +701,8 @@ async function setupTranscriptionListener() {
       //   hasTranscription: !!data?.transcription,
       //   dataKeys: Object.keys(data || {})
       // })
-      
-      logClient('WEBSOCKET_EVENT', { 
+
+      logClient('WEBSOCKET_EVENT', {
         type: data?.type,
         channel: channelName,
         fileHashMatch: data?.fileHash === fileHash.value,
@@ -711,13 +716,13 @@ async function setupTranscriptionListener() {
         currentUserId: ctx.user?.id,
         isWorkspaceAdmin: props.isWorkspaceAdmin
       })
-      
+
       if (data?.type === 'transcription-completed') {
         // Проверяем совпадение по fileHash ИЛИ по messageId
         const fileHashMatch = data.fileHash === fileHash.value
         const messageIdMatch = data.messageId === props.messageId
         const isOurTranscription = fileHashMatch || messageIdMatch
-        
+
         logClient('WEBSOCKET_CHECK_MATCH', {
           fileHashMatch,
           messageIdMatch,
@@ -727,9 +732,9 @@ async function setupTranscriptionListener() {
           eventMessageId: data.messageId,
           ourMessageId: props.messageId
         })
-        
+
         if (isOurTranscription) {
-          logClient('WEBSOCKET_COMPLETED', { 
+          logClient('WEBSOCKET_COMPLETED', {
             transcriptionLength: data.transcription?.length,
             preview: data.transcription?.substring(0, 100),
             matchBy: fileHashMatch ? 'fileHash' : 'messageId'
@@ -745,10 +750,9 @@ async function setupTranscriptionListener() {
             ourMessageId: props.messageId
           })
         }
-      }
-      else if (data?.type === 'transcription-error') {
+      } else if (data?.type === 'transcription-error') {
         const isOurError = data.fileHash === fileHash.value || data.messageId === props.messageId
-        
+
         if (isOurError) {
           logClient('WEBSOCKET_ERROR', { error: data.error })
           isTranscribing.value = false
@@ -756,7 +760,6 @@ async function setupTranscriptionListener() {
         }
       }
     })
-    
   } catch (error) {
     logClient('LISTENER_SETUP_ERROR', { error: String(error) })
     // console.error('[VoiceMessage] Failed to setup transcription listener:', error)
@@ -769,18 +772,18 @@ const messageTranscription = computed(() => {
   // Приоритет: полное сообщение (реактивное) > messageData (статичное)
   const fromMessage = props.message?.data?.voiceTranscription
   const fromMessageData = props.messageData?.voiceTranscription
-  
+
   const result = fromMessage || fromMessageData || ''
-  
+
   if (result && result.length > 0) {
-    logClient('COMPUTED_TRANSCRIPTION', { 
-      source: fromMessage ? 'message' : 'messageData', 
+    logClient('COMPUTED_TRANSCRIPTION', {
+      source: fromMessage ? 'message' : 'messageData',
       length: result.length,
       hasMessageProp: !!props.message,
       hasMessageDataProp: !!props.messageData
     })
   }
-  
+
   return result
 })
 
@@ -789,7 +792,7 @@ const displayedTranscription = computed(() => {
   const fromMessage = messageTranscription.value
   const fromLocal = transcription.value
   const result = fromMessage || fromLocal
-  
+
   if (result && result.length > 0) {
     logClient('DISPLAYED_TRANSCRIPTION', {
       fromMessage: !!fromMessage,
@@ -798,7 +801,7 @@ const displayedTranscription = computed(() => {
       isWorkspaceAdmin: props.isWorkspaceAdmin
     })
   }
-  
+
   return result
 })
 
@@ -813,19 +816,19 @@ async function checkExistingTranscription() {
     logClient('CHECK_MOUNT_SKIP', { reason: 'no_file_hash' })
     return
   }
-  
+
   logClient('CHECK_MOUNT_START', {})
-  
+
   try {
     const response = await apiVoiceTranscriptionGetRoute({ fileHash: fileHash.value }).run(ctx)
-    logClient('CHECK_MOUNT_RESULT', { 
+    logClient('CHECK_MOUNT_RESULT', {
       found: !!response.transcription,
-      status: response.transcription?.status 
+      status: response.transcription?.status
     })
     if (response.transcription?.status === 'completed') {
       transcription.value = response.transcription.transcription
-      logClient('CHECK_MOUNT_LOADED', { 
-        preview: transcription.value?.substring(0, 100) 
+      logClient('CHECK_MOUNT_LOADED', {
+        preview: transcription.value?.substring(0, 100)
       })
     }
   } catch (error) {
@@ -835,47 +838,58 @@ async function checkExistingTranscription() {
 }
 
 // Наблюдатели
-watch(() => props.file, (newFile) => {
-  isWaveformReady.value = false
-  waveformData.value = null
-  currentTime.value = 0
-  isPlaying.value = false
-  
-  if (newFile?.duration && !isNaN(newFile.duration) && newFile.duration > 0) {
-    duration.value = newFile.duration
-  }
-  
-  nextTick(() => {
-    generateWaveform()
-  })
-}, { immediate: true })
+watch(
+  () => props.file,
+  (newFile) => {
+    isWaveformReady.value = false
+    waveformData.value = null
+    currentTime.value = 0
+    isPlaying.value = false
+
+    if (newFile?.duration && !isNaN(newFile.duration) && newFile.duration > 0) {
+      duration.value = newFile.duration
+    }
+
+    nextTick(() => {
+      generateWaveform()
+    })
+  },
+  { immediate: true }
+)
 
 // Следим за изменением feedId для переподписки
-watch(() => props.feedId, (newFeedId, oldFeedId) => {
-  if (newFeedId && newFeedId !== oldFeedId) {
-    logClient('FEED_ID_CHANGED', { newFeedId, oldFeedId })
-    // Переподписываемся на новый канал
-    setupTranscriptionListener()
+watch(
+  () => props.feedId,
+  (newFeedId, oldFeedId) => {
+    if (newFeedId && newFeedId !== oldFeedId) {
+      logClient('FEED_ID_CHANGED', { newFeedId, oldFeedId })
+      // Переподписываемся на новый канал
+      setupTranscriptionListener()
+    }
   }
-})
+)
 
 // Следим за изменением message.data.voiceTranscription (реактивное обновление из ChatView)
-watch(() => props.message?.data?.voiceTranscription, (newTranscription, oldTranscription) => {
-  if (newTranscription && newTranscription !== oldTranscription) {
-    logClient('MESSAGE_DATA_CHANGED', { 
-      newLength: newTranscription?.length,
-      oldLength: oldTranscription?.length,
-      source: 'watch message.data'
-    })
-    // Обновляем локальное значение для отображения
-    transcription.value = newTranscription
-    isTranscribing.value = false
-    transcriptionStatus.value = 'completed'
-  }
-}, { immediate: true })
+watch(
+  () => props.message?.data?.voiceTranscription,
+  (newTranscription, oldTranscription) => {
+    if (newTranscription && newTranscription !== oldTranscription) {
+      logClient('MESSAGE_DATA_CHANGED', {
+        newLength: newTranscription?.length,
+        oldLength: oldTranscription?.length,
+        source: 'watch message.data'
+      })
+      // Обновляем локальное значение для отображения
+      transcription.value = newTranscription
+      isTranscribing.value = false
+      transcriptionStatus.value = 'completed'
+    }
+  },
+  { immediate: true }
+)
 
 onMounted(() => {
-  logClient('MOUNT_START', { 
+  logClient('MOUNT_START', {
     feedId: props.feedId,
     messageId: props.messageId,
     fileHash: fileHash.value,
@@ -884,41 +898,42 @@ onMounted(() => {
     existingInMessage: !!props.message?.data?.voiceTranscription,
     existingInMessageData: !!props.messageData?.voiceTranscription
   })
-  
+
   const container = waveformCanvas.value?.parentElement
   if (container) {
     canvasWidth.value = Math.min(250, container.clientWidth - 80)
   }
-  
+
   nextTick(() => {
     generateWaveform()
   })
-  
+
   // Сначала проверяем, есть ли транскрипция в данных сообщения (например, после обновления страницы)
-  const existingTranscription = props.message?.data?.voiceTranscription || props.messageData?.voiceTranscription
+  const existingTranscription =
+    props.message?.data?.voiceTranscription || props.messageData?.voiceTranscription
   if (existingTranscription) {
-    logClient('MOUNT_EXISTING_TRANSCRIPTION', { 
+    logClient('MOUNT_EXISTING_TRANSCRIPTION', {
       source: props.message?.data?.voiceTranscription ? 'message.data' : 'messageData',
-      length: existingTranscription.length 
+      length: existingTranscription.length
     })
     transcription.value = existingTranscription
     transcriptionStatus.value = 'completed'
   }
-  
+
   // Проверяем существующую транскрибацию через API (для случая когда в данных нет, но в БД есть)
   // (для всех пользователей, не только админов)
   checkExistingTranscription()
-  
+
   // Подписываемся на WebSocket события
   setupTranscriptionListener()
-  
+
   // Запускаем fallback polling для надежности (на случай если WebSocket не сработает)
   // Запускаем для всех, не только админов, чтобы они тоже получили результат
   if (!existingTranscription && fileHash.value) {
     startFallbackPolling()
   }
-  
-  logClient('MOUNT_COMPLETE', { 
+
+  logClient('MOUNT_COMPLETE', {
     displayedTranscriptionLength: displayedTranscription.value?.length,
     isTranscribing: isTranscribing.value,
     fallbackPolling: !!fallbackPollTimer
@@ -928,7 +943,7 @@ onMounted(() => {
 onUnmounted(() => {
   // Не останавливаем глобальный плеер при размонтировании,
   // чтобы аудио продолжало играть при переключении чатов
-  
+
   // Останавливаем только локальное аудио
   if (audioElement.value) {
     audioElement.value.pause()

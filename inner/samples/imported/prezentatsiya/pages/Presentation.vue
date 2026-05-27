@@ -1,7 +1,7 @@
 <template>
   <div class="deck" @keydown="onKey" tabindex="0" ref="deckEl">
     <div class="ambient-glow"></div>
-    
+
     <div class="slide-viewport">
       <component :is="currentComponent" :key="current" :active="true" />
     </div>
@@ -23,7 +23,7 @@
             :key="i"
             class="progress-dot"
             :class="{ active: i === current, passed: i < current }"
-            :style="{ left: ((i / (slides.length - 1)) * 100) + '%' }"
+            :style="{ left: (i / (slides.length - 1)) * 100 + '%' }"
             @click="goTo(i)"
             :title="s.label"
           ></div>
@@ -39,7 +39,6 @@
         </button>
       </div>
     </div>
-
   </div>
 </template>
 
@@ -125,7 +124,7 @@ const slides = [
   { component: SlideBonusRadonets, label: 'Бонус: Курс Радонца' },
   { component: SlideBonusFanclub, label: 'Бонус: Фан-клуб' },
   { component: SlideBonusWebinar, label: 'Бонус: Вебинарная платформа' },
-  { component: SlideSellCTA, label: 'Оформить подписку' },
+  { component: SlideSellCTA, label: 'Оформить подписку' }
 ]
 
 const current = ref(0)
@@ -215,15 +214,23 @@ onUnmounted(() => {
   position: fixed;
   inset: 0;
   pointer-events: none;
-  background: 
-    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(99,102,241,0.08) 0%, transparent 50%),
-    radial-gradient(ellipse 60% 40% at 80% 100%, rgba(6,182,212,0.05) 0%, transparent 40%);
+  background: radial-gradient(
+      ellipse 80% 50% at 50% -20%,
+      rgba(99, 102, 241, 0.08) 0%,
+      transparent 50%
+    ),
+    radial-gradient(ellipse 60% 40% at 80% 100%, rgba(6, 182, 212, 0.05) 0%, transparent 40%);
   animation: ambient-pulse 8s ease-in-out infinite;
 }
 
 @keyframes ambient-pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.7; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
 }
 
 .slide-viewport {
@@ -231,7 +238,6 @@ onUnmounted(() => {
   inset: 0;
   bottom: 56px;
 }
-
 
 .deck-controls {
   position: absolute;
@@ -277,7 +283,7 @@ onUnmounted(() => {
 .progress-track {
   position: relative;
   height: 3px;
-  background: rgba(255,255,255,0.06);
+  background: rgba(255, 255, 255, 0.06);
   border-radius: 2px;
 }
 .progress-fill {
@@ -288,7 +294,7 @@ onUnmounted(() => {
   background: var(--gradient-hero);
   border-radius: 2px;
   transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 0 10px rgba(99,102,241,0.5);
+  box-shadow: 0 0 10px rgba(99, 102, 241, 0.5);
 }
 .progress-dot {
   position: absolute;
@@ -297,7 +303,7 @@ onUnmounted(() => {
   height: 8px;
   border-radius: 50%;
   background: var(--bg-elevated);
-  border: 2px solid rgba(255,255,255,0.15);
+  border: 2px solid rgba(255, 255, 255, 0.15);
   transform: translate(-50%, -50%);
   cursor: pointer;
   transition: all 0.3s ease;
@@ -306,7 +312,7 @@ onUnmounted(() => {
 .progress-dot:hover {
   border-color: var(--accent-indigo);
   transform: translate(-50%, -50%) scale(1.4);
-  box-shadow: 0 0 12px rgba(99,102,241,0.5);
+  box-shadow: 0 0 12px rgba(99, 102, 241, 0.5);
 }
 .progress-dot.passed {
   background: var(--accent-indigo);
@@ -316,13 +322,18 @@ onUnmounted(() => {
   background: var(--accent-cyan);
   border-color: var(--accent-cyan);
   transform: translate(-50%, -50%) scale(1.5);
-  box-shadow: 0 0 16px rgba(6,182,212,0.6);
+  box-shadow: 0 0 16px rgba(6, 182, 212, 0.6);
   animation: pulse-dot 2s ease infinite;
 }
 
 @keyframes pulse-dot {
-  0%, 100% { box-shadow: 0 0 12px rgba(6,182,212,0.4); }
-  50% { box-shadow: 0 0 20px rgba(6,182,212,0.8); }
+  0%,
+  100% {
+    box-shadow: 0 0 12px rgba(6, 182, 212, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(6, 182, 212, 0.8);
+  }
 }
 
 .controls-right {
@@ -336,7 +347,7 @@ onUnmounted(() => {
   height: 40px;
   border-radius: 10px;
   border: 1px solid var(--border-subtle);
-  background: rgba(255,255,255,0.03);
+  background: rgba(255, 255, 255, 0.03);
   color: var(--text-secondary);
   font-size: 14px;
   cursor: pointer;
@@ -348,17 +359,14 @@ onUnmounted(() => {
 .nav-btn:hover:not(:disabled) {
   border-color: var(--accent-indigo);
   color: var(--text-primary);
-  background: rgba(99,102,241,0.15);
+  background: rgba(99, 102, 241, 0.15);
   transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(99,102,241,0.2);
+  box-shadow: 0 8px 20px rgba(99, 102, 241, 0.2);
 }
 .nav-btn:disabled {
   opacity: 0.2;
   cursor: default;
 }
-
-
-
 
 @media (max-width: 768px) {
   .deck-controls {

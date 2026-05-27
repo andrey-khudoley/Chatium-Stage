@@ -8,7 +8,7 @@ export function escapeSql(value: string): string {
   if (typeof value !== 'string') {
     return String(value)
   }
-  
+
   return value
     .replace(/\\/g, '\\\\')
     .replace(/'/g, "''")

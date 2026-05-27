@@ -1,5 +1,9 @@
 // @ts-nocheck
-import { deleteFromCustomJobQueue, pickFromCustomJobQueue, scheduleNextCustomJobQueueRunAfter } from '@app/jobs'
+import {
+  deleteFromCustomJobQueue,
+  pickFromCustomJobQueue,
+  scheduleNextCustomJobQueueRunAfter
+} from '@app/jobs'
 import ScenarioEvents from '../tables/scenario_events.table'
 import Autowebinars from '../tables/autowebinars.table'
 import { ScenarioEventType } from '../shared/enum'
@@ -20,7 +24,7 @@ export type ScenarioImportTask = {
 const SYSTEM_EVENT_TYPES = new Set<ScenarioEventType>([
   ScenarioEventType.WaitingRoomStart,
   ScenarioEventType.StreamStart,
-  ScenarioEventType.Finish,
+  ScenarioEventType.Finish
 ])
 
 const ALLOWED_REACTIONS = new Set(['❤️', '🔥', '😂'])
@@ -59,7 +63,7 @@ function normalizeAndValidateEvent(event: any, duration: number) {
     formSnapshot: null,
     chatMessage: null,
     bannerData: null,
-    reactionData: null,
+    reactionData: null
   }
 
   if (eventType === ScenarioEventType.ShowForm || eventType === ScenarioEventType.HideForm) {
@@ -71,32 +75,36 @@ function normalizeAndValidateEvent(event: any, duration: number) {
   if (eventType === ScenarioEventType.ChatMessage) {
     const authorName = toNonEmptyString(event?.chatMessage?.authorName)
     const text = toNonEmptyString(event?.chatMessage?.text)
-    if (!authorName || !text) throw new Error('chatMessage.authorName and chatMessage.text are required for chat_message')
+    if (!authorName || !text)
+      throw new Error('chatMessage.authorName and chatMessage.text are required for chat_message')
 
     normalized.chatMessage = {
       authorName,
       text,
-      avatarUrl: toNonEmptyString(event?.chatMessage?.avatarUrl) || undefined,
+      avatarUrl: toNonEmptyString(event?.chatMessage?.avatarUrl) || undefined
     }
   }
 
   if (eventType === ScenarioEventType.SaleBanner) {
     const title = toNonEmptyString(event?.bannerData?.title)
     const subtitle = toNonEmptyString(event?.bannerData?.subtitle)
-    if (!title || !subtitle) throw new Error('bannerData.title and bannerData.subtitle are required for sale_banner')
+    if (!title || !subtitle)
+      throw new Error('bannerData.title and bannerData.subtitle are required for sale_banner')
 
     normalized.bannerData = {
       title,
       subtitle,
       buttonText: toNonEmptyString(event?.bannerData?.buttonText) || undefined,
-      formId: toNonEmptyString(event?.bannerData?.formId) || undefined,
+      formId: toNonEmptyString(event?.bannerData?.formId) || undefined
     }
   }
 
   if (eventType === ScenarioEventType.Reaction) {
     const emoji = toNonEmptyString(event?.reactionData?.emoji)
     if (!emoji || !ALLOWED_REACTIONS.has(emoji)) {
-      throw new Error(`reactionData.emoji must be one of: ${Array.from(ALLOWED_REACTIONS).join(', ')}`)
+      throw new Error(
+        `reactionData.emoji must be one of: ${Array.from(ALLOWED_REACTIONS).join(', ')}`
+      )
     }
     normalized.reactionData = { emoji }
   }
@@ -107,7 +115,7 @@ function normalizeAndValidateEvent(event: any, duration: number) {
 export const scenarioImportWorker = app.job('/', async (ctx, params: any) => {
   const QUEUE_NAME = params.queueName
 
-  const task = await pickFromCustomJobQueue(ctx, QUEUE_NAME, 1).then(r => r[0])
+  const task = await pickFromCustomJobQueue(ctx, QUEUE_NAME, 1).then((r) => r[0])
 
   if (!task) {
     ctx.account.log('[ScenarioImportWorker] No task in queue', { level: 'info' })
@@ -119,7 +127,7 @@ export const scenarioImportWorker = app.job('/', async (ctx, params: any) => {
 
   ctx.account.log('[ScenarioImportWorker] Processing task', {
     level: 'info',
-    json: { taskId, autowebinarId: taskData.autowebinarId, eventType: taskData.event.eventType },
+    json: { taskId, autowebinarId: taskData.autowebinarId, eventType: taskData.event.eventType }
   })
 
   try {
@@ -135,12 +143,12 @@ export const scenarioImportWorker = app.job('/', async (ctx, params: any) => {
     if (SYSTEM_EVENT_TYPES.has(normalizedEvent.eventType)) {
       const existingSystemEvent = await ScenarioEvents.findOneBy(ctx, {
         autowebinar: autowebinarId,
-        eventType: normalizedEvent.eventType,
+        eventType: normalizedEvent.eventType
       })
       if (existingSystemEvent) {
         ctx.account.log('[ScenarioImportWorker] Skip duplicate system event', {
           level: 'info',
-          json: { taskId, autowebinarId, eventType: normalizedEvent.eventType },
+          json: { taskId, autowebinarId, eventType: normalizedEvent.eventType }
         })
         await deleteFromCustomJobQueue(ctx, QUEUE_NAME, taskId)
         await scheduleNextCustomJobQueueRunAfter(ctx, QUEUE_NAME, 0, 'seconds')
@@ -158,7 +166,7 @@ export const scenarioImportWorker = app.job('/', async (ctx, params: any) => {
       chatMessage: normalizedEvent.chatMessage || null,
       bannerData: normalizedEvent.bannerData || null,
       reactionData: normalizedEvent.reactionData || null,
-      sortOrder: normalizedEvent.offsetSeconds,
+      sortOrder: normalizedEvent.offsetSeconds
     })
 
     ctx.account.log('[ScenarioImportWorker] Event created', {
@@ -167,8 +175,8 @@ export const scenarioImportWorker = app.job('/', async (ctx, params: any) => {
         taskId,
         autowebinarId,
         eventType: normalizedEvent.eventType,
-        offsetSeconds: normalizedEvent.offsetSeconds,
-      },
+        offsetSeconds: normalizedEvent.offsetSeconds
+      }
     })
 
     // Удаляем задачу из очереди
@@ -180,7 +188,7 @@ export const scenarioImportWorker = app.job('/', async (ctx, params: any) => {
     ctx.account.log('[ScenarioImportWorker] Error processing task', {
       level: 'error',
       err: error as any,
-      json: { taskId, taskData },
+      json: { taskId, taskData }
     })
 
     // В случае ошибки всё равно удаляем задачу, чтобы не блокировать очередь

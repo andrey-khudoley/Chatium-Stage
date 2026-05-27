@@ -4,6 +4,10 @@ export async function findByUserId(ctx: app.Ctx, userId: string): Promise<UserSe
   return UserSettings.findOneBy(ctx, { userId })
 }
 
-export async function upsertTimezone(ctx: app.Ctx, userId: string, timezoneOffsetHours: number): Promise<void> {
+export async function upsertTimezone(
+  ctx: app.Ctx,
+  userId: string,
+  timezoneOffsetHours: number
+): Promise<void> {
   await UserSettings.createOrUpdateBy(ctx, 'userId', { userId, timezoneOffsetHours })
 }

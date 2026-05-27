@@ -41,7 +41,9 @@ export function mapAuthorForTaskAiChat(
         : 'Вы'
 
     author.avatar = author.avatar || {}
-    author.avatar.image = currentUser.getImageThumbnailUrl ? currentUser.getImageThumbnailUrl(200) : undefined
+    author.avatar.image = currentUser.getImageThumbnailUrl
+      ? currentUser.getImageThumbnailUrl(200)
+      : undefined
   } else {
     author.name =
       smartUser?.firstName || smartUser?.lastName
@@ -67,7 +69,11 @@ export function mapTaskAiChatMessage(
     mapAuthorForTaskAiChat(msg.author, currentUser, smartUsersMap)
     if (msg.author) {
       msg.author.name = 'Ассистент'
-      msg.author.avatar = { ...(msg.author.avatar || {}), iconCssClass: 'fas fa-robot', bgColor: '#1a3a2f' }
+      msg.author.avatar = {
+        ...(msg.author.avatar || {}),
+        iconCssClass: 'fas fa-robot',
+        bgColor: '#1a3a2f'
+      }
     }
     msg.isOutgoing = false
   } else {
@@ -109,11 +115,15 @@ export async function buildTaskAiChatProjectContextBlock(
   if (project.context) parts.push(`Контекст (служебный): ${project.context}`)
 
   if (projectTasks.length) {
-    const ordered = [...projectTasks].sort((a, b) => a.sortOrder - b.sortOrder || a.title.localeCompare(b.title))
+    const ordered = [...projectTasks].sort(
+      (a, b) => a.sortOrder - b.sortOrder || a.title.localeCompare(b.title)
+    )
     parts.push('\nЗАДАЧИ ПРОЕКТА (порядок списка):')
     ordered.forEach((task, index) => {
       parts.push(`\n[${index + 1}] [ID: ${task.id}] ${task.title}`)
-      parts.push(`Приоритет: ${PRIORITY_LINE[task.priority] ?? task.priority}; статус: ${task.status}`)
+      parts.push(
+        `Приоритет: ${PRIORITY_LINE[task.priority] ?? task.priority}; статус: ${task.status}`
+      )
       if (task.eventAtMs) {
         const eventAtIso = new Date(task.eventAtMs).toISOString()
         parts.push(
@@ -163,7 +173,12 @@ export function taskAiChatFeedToCompletionMessages(
   }))
 }
 
-export async function appendTaskAiChatAssistantMessage(ctx: app.Ctx, feedId: string, userId: string, text: string) {
+export async function appendTaskAiChatAssistantMessage(
+  ctx: app.Ctx,
+  feedId: string,
+  userId: string,
+  text: string
+) {
   const t = text.trim() || 'Пустой ответ.'
   await createFeedMessage(ctx, feedId, userId, {
     text: t,

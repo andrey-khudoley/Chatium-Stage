@@ -1,5 +1,9 @@
 <template>
-  <div class="flex h-screen bg-white" :class="{ 'overflow-hidden': isMobile && sidebarOpen }" :style="rootStyles">
+  <div
+    class="flex h-screen bg-white"
+    :class="{ 'overflow-hidden': isMobile && sidebarOpen }"
+    :style="rootStyles"
+  >
     <!-- Sidebar -->
     <div :class="sidebarClasses" :style="sidebarStyles">
       <div v-if="sidebarOpen" class="flex flex-col h-full overflow-hidden">
@@ -10,7 +14,10 @@
               <i class="fas fa-comment text-gray-900 text-sm"></i>
             </div>
           </div>
-          <button @click="toggleSidebar" class="p-1.5 hover:bg-gray-200 rounded-lg transition-colors">
+          <button
+            @click="toggleSidebar"
+            class="p-1.5 hover:bg-gray-200 rounded-lg transition-colors"
+          >
             <i class="fas fa-bars text-lg"></i>
           </button>
         </div>
@@ -32,7 +39,9 @@
           <div class="pt-4 pb-2">
             <div class="px-3 py-1.5 text-xs font-semibold text-gray-500 uppercase">Чаты</div>
 
-            <div v-if="recentChats.length === 0" class="px-3 py-4 text-sm text-gray-400">Еще нет ни одного чата</div>
+            <div v-if="recentChats.length === 0" class="px-3 py-4 text-sm text-gray-400">
+              Еще нет ни одного чата
+            </div>
 
             <button
               v-for="chat in recentChats"
@@ -45,7 +54,8 @@
             >
               <span class="text-sm truncate">{{
                 chat.title ||
-                'Без названия от ' + chat.createdAt.toJSON().replace('T', ' ').split('.').shift().replaceAll('-', '.')
+                'Без названия от ' +
+                  chat.createdAt.toJSON().replace('T', ' ').split('.').shift().replaceAll('-', '.')
               }}</span>
             </button>
           </div>
@@ -72,7 +82,11 @@
       </div>
     </div>
 
-    <div v-if="isMobile && sidebarOpen" class="fixed inset-0 z-30 bg-black/30" @click="toggleSidebar"></div>
+    <div
+      v-if="isMobile && sidebarOpen"
+      class="fixed inset-0 z-30 bg-black/30"
+      @click="toggleSidebar"
+    ></div>
 
     <!-- Main Content -->
     <div class="flex-1 flex flex-col relative">
@@ -109,7 +123,9 @@
         v-if="!currentChatId"
       >
         <div class="w-full max-w-md sm:max-w-3xl">
-          <h1 class="text-3xl font-semibold text-gray-900 text-center mb-10 sm:text-4xl sm:mb-12">С чего начнем?</h1>
+          <h1 class="text-3xl font-semibold text-gray-900 text-center mb-10 sm:text-4xl sm:mb-12">
+            С чего начнем?
+          </h1>
 
           <!-- Input Area -->
           <MessageInput
@@ -132,11 +148,17 @@
             >
               <!-- Assistant Message -->
               <div v-if="msg.role === 'assistant'" class="flex gap-4 max-w-[80%]">
-                <div class="w-8 h-8 rounded-full bg-[#19c37d] flex items-center justify-center flex-shrink-0">
+                <div
+                  class="w-8 h-8 rounded-full bg-[#19c37d] flex items-center justify-center flex-shrink-0"
+                >
                   <i class="fas fa-comment text-white text-sm"></i>
                 </div>
                 <div class="flex-1 space-y-4 pt-1">
-                  <div v-if="msg.content" class="prose prose-sm max-w-none" v-html="formatMessage(msg.content)"></div>
+                  <div
+                    v-if="msg.content"
+                    class="prose prose-sm max-w-none"
+                    v-html="formatMessage(msg.content)"
+                  ></div>
 
                   <div v-if="getImageFiles(msg.files).length" class="flex flex-wrap gap-3">
                     <div
@@ -144,8 +166,16 @@
                       :key="file.url || file.name"
                       class="group overflow-hidden rounded-2xl border border-slate-200/70 bg-white/70 shadow-sm backdrop-blur-sm transition-transform hover:-translate-y-0.5"
                     >
-                      <button type="button" class="relative block focus:outline-none" @click="openImagePreview(file)">
-                        <img :src="file.url" :alt="file.name || 'attachment'" class="block h-40 w-48 object-cover" />
+                      <button
+                        type="button"
+                        class="relative block focus:outline-none"
+                        @click="openImagePreview(file)"
+                      >
+                        <img
+                          :src="file.url"
+                          :alt="file.name || 'attachment'"
+                          class="block h-40 w-48 object-cover"
+                        />
                       </button>
                       <div
                         v-if="file.name || isFiniteSize(file.size)"
@@ -185,8 +215,16 @@
                         :key="file.url || file.name"
                         class="group overflow-hidden rounded-2xl border border-slate-200/70 bg-white/70 shadow-sm transition-transform hover:-translate-y-0.5"
                       >
-                        <button type="button" class="relative block focus:outline-none" @click="openImagePreview(file)">
-                          <img :src="file.url" :alt="file.name || 'attachment'" class="block h-40 w-48 object-cover" />
+                        <button
+                          type="button"
+                          class="relative block focus:outline-none"
+                          @click="openImagePreview(file)"
+                        >
+                          <img
+                            :src="file.url"
+                            :alt="file.name || 'attachment'"
+                            class="block h-40 w-48 object-cover"
+                          />
                         </button>
                         <div
                           v-if="file.name || isFiniteSize(file.size)"
@@ -223,7 +261,9 @@
               v-if="typingIndicatorVisible && typingIndicatorChatId === currentChatId"
               class="flex gap-4 max-w-[80%]"
             >
-              <div class="w-8 h-8 rounded-full bg-[#19c37d] flex items-center justify-center flex-shrink-0">
+              <div
+                class="w-8 h-8 rounded-full bg-[#19c37d] flex items-center justify-center flex-shrink-0"
+              >
                 <i class="fas fa-comment text-white text-sm"></i>
               </div>
               <div class="flex-1 space-y-4">
@@ -296,7 +336,12 @@
 import { ref, computed, nextTick, onMounted, onBeforeUnmount } from 'vue'
 import MessageInput from '../components/MessageInput.vue'
 import AudioPlayer from '../components/AudioPlayer.vue'
-import { apiChatsListRoute, apiChatsCreateRoute, apiChatMessagesRoute, apiChatSendMessageRoute } from '../api/chats'
+import {
+  apiChatsListRoute,
+  apiChatsCreateRoute,
+  apiChatMessagesRoute,
+  apiChatSendMessageRoute
+} from '../api/chats'
 import { setupPageRoute } from '../setup'
 import { getOrCreateBrowserSocketClient } from '@app/socket'
 
@@ -316,7 +361,9 @@ const sidebarClasses = computed(() => {
   if (isMobile.value) {
     return [
       `${base} fixed inset-y-0 left-0 z-40 h-full transition-transform duration-300`,
-      sidebarOpen.value ? 'w-full translate-x-0 shadow-xl' : 'w-full -translate-x-full pointer-events-none'
+      sidebarOpen.value
+        ? 'w-full translate-x-0 shadow-xl'
+        : 'w-full -translate-x-full pointer-events-none'
     ]
   }
 
@@ -357,7 +404,7 @@ const getChatIdFromUrl = () => {
   return searchParams.get('id')
 }
 
-const updateUrlWithChatId = chatId => {
+const updateUrlWithChatId = (chatId) => {
   if (typeof window === 'undefined') {
     return
   }
@@ -395,7 +442,7 @@ const userInitials = computed(() => {
 
   const letters = words
     .slice(0, 2)
-    .map(word => word[0] || '')
+    .map((word) => word[0] || '')
     .join('')
 
   const fallback = words[0].slice(0, 2)
@@ -403,11 +450,11 @@ const userInitials = computed(() => {
   return (letters || fallback).toUpperCase()
 })
 
-const getImageFiles = files =>
-  (files || []).filter(file => file?.mime?.startsWith('image/') && (file?.url || file?.thumbnail))
+const getImageFiles = (files) =>
+  (files || []).filter((file) => file?.mime?.startsWith('image/') && (file?.url || file?.thumbnail))
 
-const getAudioFiles = files =>
-  (files || []).filter(file => {
+const getAudioFiles = (files) =>
+  (files || []).filter((file) => {
     if (!file) {
       return false
     }
@@ -415,9 +462,9 @@ const getAudioFiles = files =>
     return Boolean(source) && file?.mime?.startsWith('audio/')
   })
 
-const isFiniteSize = value => Number.isFinite(value) && value > 0
+const isFiniteSize = (value) => Number.isFinite(value) && value > 0
 
-const formatFileSize = bytes => {
+const formatFileSize = (bytes) => {
   if (!Number.isFinite(bytes) || bytes <= 0) {
     return '0 B'
   }
@@ -431,7 +478,7 @@ const formatFileSize = bytes => {
   return `${formatted} ${units[exponent]}`
 }
 
-const openImagePreview = file => {
+const openImagePreview = (file) => {
   previewImage.value = file
 }
 
@@ -487,7 +534,7 @@ const scrollToBottom = async () => {
   }
 }
 
-const loadChat = async chatId => {
+const loadChat = async (chatId) => {
   currentChatId.value = chatId
   updateUrlWithChatId(chatId)
   if (isMobile.value) {
@@ -536,12 +583,12 @@ const handleMessageSubmit = async ({ text, files }) => {
           }
           scheduleTypingIndicator(targetChatId)
         } else {
-          messages.value = messages.value.filter(msg => msg.id !== pending.id)
+          messages.value = messages.value.filter((msg) => msg.id !== pending.id)
           hideTypingIndicator(targetChatId)
         }
       } catch (error) {
         console.error('Failed to send message', error)
-        messages.value = messages.value.filter(msg => msg.id !== pending.id)
+        messages.value = messages.value.filter((msg) => msg.id !== pending.id)
         hideTypingIndicator(targetChatId)
       } finally {
         isSending.value = false
@@ -567,21 +614,24 @@ const handleMessageSubmit = async ({ text, files }) => {
   }
 }
 
-const formatMessage = content => {
+const formatMessage = (content) => {
   // Basic markdown-like formatting
   let formatted = content
     .replace(/\n/g, '<br>')
     .replace(/## (.*?)(<br>|$)/g, '<h2 class="text-lg font-semibold mt-4 mb-2">$1</h2>')
     .replace(/### (.*?)(<br>|$)/g, '<h3 class="text-base font-semibold mt-3 mb-2">$1</h3>')
     .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-    .replace(/`(.*?)`/g, '<code class="bg-gray-100 px-1.5 py-0.5 rounded text-sm font-mono">$1</code>')
+    .replace(
+      /`(.*?)`/g,
+      '<code class="bg-gray-100 px-1.5 py-0.5 rounded text-sm font-mono">$1</code>'
+    )
     .replace(/- (.*?)(<br>|$)/g, '<li class="ml-4">$1</li>')
     .replace(/👉/g, '<span class="inline-block mr-1">👉</span>')
     .replace(/👍/g, '<span class="inline-block mr-1">👍</span>')
     .replace(/❌/g, '<span class="inline-block mr-1">❌</span>')
 
   // Wrap consecutive <li> elements in <ul>
-  formatted = formatted.replace(/(<li.*?<\/li>)+/g, match => {
+  formatted = formatted.replace(/(<li.*?<\/li>)+/g, (match) => {
     return '<ul class="list-disc my-2">' + match + '</ul>'
   })
 
@@ -669,7 +719,7 @@ onMounted(async () => {
 
   const socketClient = await getOrCreateBrowserSocketClient()
   const socketSubscription = socketClient.subscribeToData(props.socketId)
-  socketSubscription.listen(data => {
+  socketSubscription.listen((data) => {
     console.log('Socket message received:', data)
 
     if (data.action === 'chat.received') {

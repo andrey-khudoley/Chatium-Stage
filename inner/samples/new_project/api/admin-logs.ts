@@ -9,7 +9,8 @@ import { resetCounters } from '../lib/logging'
 
 const ADMIN_LOGS_SOCKET_ID = 'admin-logs'
 
-const LOGS_UNAVAILABLE_MESSAGE = 'Логи доступны только при загрузке страницы админки (Heap не инициализирован в контексте API). Используйте ссылки «Показать ещё» / «Показать все» или обновите страницу.'
+const LOGS_UNAVAILABLE_MESSAGE =
+  'Логи доступны только при загрузке страницы админки (Heap не инициализирован в контексте API). Используйте ссылки «Показать ещё» / «Показать все» или обновите страницу.'
 
 /**
  * POST /admin/logs
@@ -54,7 +55,7 @@ export const apiGetLogsCountsRoute = app.get('/counts', async (ctx, req) => {
 /**
  * POST /admin/logs/reset-counters
  * Сброс счётчиков ошибок и предупреждений
- * 
+ *
  * Это действие пользователя - оставляем минимальное логирование.
  */
 export const apiResetCountersRoute = app.post('/reset-counters', async (ctx, req) => {
@@ -69,7 +70,11 @@ export const apiResetCountersRoute = app.post('/reset-counters', async (ctx, req
       message: 'Счётчики успешно сброшены'
     }
   } catch (error: any) {
-    Debug.error(ctx, `[api/admin-logs] Ошибка при сбросе счётчиков: ${error.message}`, 'E_RESET_COUNTERS')
+    Debug.error(
+      ctx,
+      `[api/admin-logs] Ошибка при сбросе счётчиков: ${error.message}`,
+      'E_RESET_COUNTERS'
+    )
     return {
       success: false,
       error: error.message || 'Ошибка при сбросе счётчиков'
@@ -80,7 +85,7 @@ export const apiResetCountersRoute = app.post('/reset-counters', async (ctx, req
 /**
  * GET /admin/logs/socket-id
  * Получение encodedSocketId для WebSocket подключения
- * 
+ *
  * ВАЖНО: Этот endpoint НЕ логирует свою работу через Debug,
  * чтобы избежать рекурсии.
  */
@@ -95,7 +100,11 @@ export const apiGetSocketIdRoute = app.get('/socket-id', async (ctx, req) => {
       encodedSocketId
     }
   } catch (error: any) {
-    Debug.error(ctx, `[api/admin-logs] Ошибка при получении socket-id: ${error.message}`, 'E_GET_SOCKET_ID')
+    Debug.error(
+      ctx,
+      `[api/admin-logs] Ошибка при получении socket-id: ${error.message}`,
+      'E_GET_SOCKET_ID'
+    )
     return {
       success: false,
       error: error.message || 'Ошибка при получении socket-id'
@@ -110,7 +119,7 @@ export const apiGetSocketIdRoute = app.get('/socket-id', async (ctx, req) => {
 export const apiTestErrorRoute = app.post('/test-error', async (ctx, req) => {
   try {
     requireAccountRole(ctx, 'Admin')
-    
+
     // Создаём одну тестовую ошибку
     Debug.error(ctx, '[ТЕСТ] Тестовая ошибка для проверки счётчика', 'E_TEST_ERROR')
 
@@ -119,7 +128,11 @@ export const apiTestErrorRoute = app.post('/test-error', async (ctx, req) => {
       message: 'Тестовая ошибка создана'
     }
   } catch (error: any) {
-    Debug.error(ctx, `[api/admin-logs] Ошибка при создании тестовой ошибки: ${error.message}`, 'E_TEST_ERROR_FAILED')
+    Debug.error(
+      ctx,
+      `[api/admin-logs] Ошибка при создании тестовой ошибки: ${error.message}`,
+      'E_TEST_ERROR_FAILED'
+    )
     return {
       success: false,
       error: error.message || 'Ошибка при создании тестовой ошибки'
@@ -142,7 +155,11 @@ export const apiTestWarningRoute = app.post('/test-warning', async (ctx, req) =>
       message: 'Тестовое предупреждение создано'
     }
   } catch (error: any) {
-    Debug.error(ctx, `[api/admin-logs] Ошибка при создании тестового предупреждения: ${error.message}`, 'E_TEST_WARNING_FAILED')
+    Debug.error(
+      ctx,
+      `[api/admin-logs] Ошибка при создании тестового предупреждения: ${error.message}`,
+      'E_TEST_WARNING_FAILED'
+    )
     return {
       success: false,
       error: error.message || 'Ошибка при создании тестового предупреждения'
@@ -160,15 +177,22 @@ export const apiTestCallbacksRoute = app.get('/test-callbacks', async (ctx, req)
 
     const { checkCallbacksStatus } = await import('../lib/logs-operations')
     const status = checkCallbacksStatus()
-    
-    Debug.info(ctx, `[TEST] Статус callbacks: errorCallback=${status.errorCallbackSet}, warnCallback=${status.warnCallbackSet}`)
+
+    Debug.info(
+      ctx,
+      `[TEST] Статус callbacks: errorCallback=${status.errorCallbackSet}, warnCallback=${status.warnCallbackSet}`
+    )
 
     return {
       success: true,
       status
     }
   } catch (error: any) {
-    Debug.error(ctx, `[api/admin-logs] Ошибка при проверке callbacks: ${error.message}`, 'E_TEST_CALLBACKS_FAILED')
+    Debug.error(
+      ctx,
+      `[api/admin-logs] Ошибка при проверке callbacks: ${error.message}`,
+      'E_TEST_CALLBACKS_FAILED'
+    )
     return {
       success: false,
       error: error.message || 'Ошибка при проверке callbacks'

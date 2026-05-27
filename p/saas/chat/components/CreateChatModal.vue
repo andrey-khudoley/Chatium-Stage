@@ -8,13 +8,18 @@
             <i class="fas fa-times"></i>
           </button>
         </div>
-        
+
         <form @submit.prevent="createChat">
           <!-- Аватарка чата (только для групп и каналов) -->
           <div v-if="!isAgentChat && !isDirectChat" class="form-group">
             <label>Аватар чата</label>
             <div class="chat-avatar-upload">
-              <div class="avatar-preview" :style="getAvatarPreviewStyle()" @click="showAvatarModal = true" style="cursor: pointer;">
+              <div
+                class="avatar-preview"
+                :style="getAvatarPreviewStyle()"
+                @click="showAvatarModal = true"
+                style="cursor: pointer"
+              >
                 <span v-if="!avatarHash">{{ getChatInitials(newChat.title) }}</span>
                 <div class="avatar-overlay" v-if="!avatarHash">
                   <i class="fas fa-camera"></i>
@@ -25,19 +30,14 @@
                   <i class="fas fa-upload"></i>
                   {{ avatarHash ? 'Изменить' : 'Загрузить' }}
                 </button>
-                <button 
-                  v-if="avatarHash" 
-                  type="button" 
-                  @click="removeAvatar" 
-                  class="btn-text"
-                >
+                <button v-if="avatarHash" type="button" @click="removeAvatar" class="btn-text">
                   Удалить
                 </button>
               </div>
             </div>
             <span class="field-hint">Нажмите на аватар, чтобы изменить фото</span>
           </div>
-          
+
           <div v-if="!isAgentChat" class="form-group">
             <label>Название чата *</label>
             <input
@@ -48,7 +48,7 @@
               autofocus
             />
           </div>
-          
+
           <div v-if="!isAgentChat" class="form-group">
             <label>Описание</label>
             <textarea
@@ -57,18 +57,18 @@
               rows="2"
             ></textarea>
           </div>
-          
+
           <div class="form-group">
             <label>Тип чата</label>
             <div class="type-selector">
-              <label 
-                v-for="type in filteredChatTypes" 
+              <label
+                v-for="type in filteredChatTypes"
                 :key="type.value"
                 :class="['type-option', { active: newChat.type === type.value }]"
               >
-                <input 
-                  v-model="newChat.type" 
-                  type="radio" 
+                <input
+                  v-model="newChat.type"
+                  type="radio"
                   :value="type.value"
                   class="hidden"
                   @change="onChatTypeChange"
@@ -78,7 +78,7 @@
               </label>
             </div>
           </div>
-          
+
           <div v-if="isAdmin && !isAgentChat" class="form-group checkbox">
             <label class="checkbox-label">
               <input v-model="newChat.isPublic" type="checkbox" />
@@ -89,7 +89,7 @@
               </span>
             </label>
           </div>
-          
+
           <!-- Настройки платного чата (только для админов, групп и каналов) -->
           <div v-if="isAdmin && !isAgentChat && !isDirectChat" class="paid-section">
             <div class="form-group checkbox">
@@ -102,7 +102,7 @@
                 </span>
               </label>
             </div>
-            
+
             <!-- Настройки тарифов при создании чата -->
             <div v-if="isPaidChat" class="plans-setup">
               <div class="plans-setup-header">
@@ -112,12 +112,12 @@
                   Добавить
                 </button>
               </div>
-              
+
               <div v-if="plans.length === 0" class="plans-empty">
                 <i class="fas fa-tag"></i>
                 <span>Добавьте хотя бы один тариф</span>
               </div>
-              
+
               <div v-else class="plans-list">
                 <div v-for="(plan, index) in plans" :key="index" class="plan-item">
                   <div class="plan-fields">
@@ -165,7 +165,7 @@
               </div>
             </div>
           </div>
-          
+
           <!-- Настройки агента (только для админов и групповых чатов или чата с агентом) -->
           <div v-if="isAdmin && (isGroupChat || isAgentChat)" class="agent-section">
             <div v-if="!isAgentChat" class="form-group checkbox">
@@ -178,11 +178,11 @@
                 </span>
               </label>
             </div>
-            
+
             <div v-if="withAgent || isAgentChat" class="agent-settings">
               <div class="form-group">
                 <label>Выберите агента *</label>
-                <select 
+                <select
                   v-model="selectedAgentId"
                   @change="onAgentChange"
                   class="agent-select"
@@ -200,24 +200,24 @@
                   Нет доступных агентов. Создайте агента в разделе AI-агенты.
                 </div>
               </div>
-              
+
               <div v-if="isGroupChat" class="form-group">
                 <label>Имя агента для упоминаний</label>
-                <input
-                  v-model="agentName"
-                  type="text"
-                  placeholder="Например: Ассистент"
-                />
+                <input v-model="agentName" type="text" placeholder="Например: Ассистент" />
                 <small class="hint">Используйте @Имя чтобы упомянуть агента в чате</small>
               </div>
-              
+
               <div v-if="isGroupChat" class="form-group">
                 <label>Отвечать на</label>
                 <div class="radio-group">
-                  <label v-for="option in respondToOptions" :key="option.value" class="radio-option">
-                    <input 
-                      v-model="agentRespondTo" 
-                      type="radio" 
+                  <label
+                    v-for="option in respondToOptions"
+                    :key="option.value"
+                    class="radio-option"
+                  >
+                    <input
+                      v-model="agentRespondTo"
+                      type="radio"
                       :value="option.value"
                       name="respondTo"
                     />
@@ -229,14 +229,18 @@
                   </label>
                 </div>
               </div>
-              
+
               <div v-if="isGroupChat && agentRespondTo === 'mention'" class="form-group">
                 <label>При упоминании отвечать</label>
                 <div class="radio-group">
-                  <label v-for="option in respondToMentionOptions" :key="option.value" class="radio-option">
-                    <input 
-                      v-model="agentRespondToMention" 
-                      type="radio" 
+                  <label
+                    v-for="option in respondToMentionOptions"
+                    :key="option.value"
+                    class="radio-option"
+                  >
+                    <input
+                      v-model="agentRespondToMention"
+                      type="radio"
                       :value="option.value"
                       name="respondToMention"
                     />
@@ -248,21 +252,27 @@
                   </label>
                 </div>
               </div>
-              
+
               <div v-if="isAgentChat" class="form-group">
-                <small class="hint" style="color: var(--text-secondary);">
+                <small class="hint" style="color: var(--text-secondary)">
                   <i class="fas fa-info-circle"></i>
                   В личном чате с агентом бот будет отвечать на все ваши сообщения
                 </small>
               </div>
             </div>
           </div>
-          
+
           <div class="modal-actions">
-            <button type="button" @click="$emit('close')" class="btn-secondary">
-              Отмена
-            </button>
-            <button type="submit" :disabled="creating || (!isAgentChat && !newChat.title.trim()) || (isAgentChat && !selectedAgentId)" class="btn-primary">
+            <button type="button" @click="$emit('close')" class="btn-secondary">Отмена</button>
+            <button
+              type="submit"
+              :disabled="
+                creating ||
+                (!isAgentChat && !newChat.title.trim()) ||
+                (isAgentChat && !selectedAgentId)
+              "
+              class="btn-primary"
+            >
               <i v-if="creating" class="fas fa-spinner fa-spin"></i>
               <span v-else>{{ isAgentChat ? 'Начать чат' : 'Создать чат' }}</span>
             </button>
@@ -307,7 +317,7 @@ const newChat = ref({
   title: '',
   description: '',
   type: 'group',
-  isPublic: false,
+  isPublic: false
 })
 
 // Настройки агента
@@ -332,7 +342,7 @@ const isDirectChat = computed(() => newChat.value.type === 'direct')
 
 // Фильтруем типы чатов - чат с агентом только для админов
 const filteredChatTypes = computed(() => {
-  return chatTypes.filter(type => !type.adminOnly || props.isAdmin)
+  return chatTypes.filter((type) => !type.adminOnly || props.isAdmin)
 })
 
 // Сброс полей при смене типа чата
@@ -354,18 +364,30 @@ function onChatTypeChange() {
 const chatTypes = [
   { value: 'group', label: 'Группа', icon: 'fas fa-users' },
   { value: 'channel', label: 'Канал', icon: 'fas fa-bullhorn' },
-  { value: 'agent', label: 'Чат с агентом', icon: 'fas fa-robot', adminOnly: true },
+  { value: 'agent', label: 'Чат с агентом', icon: 'fas fa-robot', adminOnly: true }
 ]
 
 const respondToOptions = [
   { value: 'all', label: 'Всем сообщениям', description: 'Агент отвечает на все сообщения' },
-  { value: 'admins', label: 'Только админам', description: 'Агент отвечает только на сообщения от администраторов' },
-  { value: 'mention', label: 'Только при упоминании', description: 'Агент отвечает только когда его упоминают по имени' },
+  {
+    value: 'admins',
+    label: 'Только админам',
+    description: 'Агент отвечает только на сообщения от администраторов'
+  },
+  {
+    value: 'mention',
+    label: 'Только при упоминании',
+    description: 'Агент отвечает только когда его упоминают по имени'
+  }
 ]
 
 const respondToMentionOptions = [
   { value: 'all', label: 'Всем', description: 'При упоминании отвечает всем' },
-  { value: 'admins', label: 'Только админам', description: 'При упоминании отвечает только администраторам' },
+  {
+    value: 'admins',
+    label: 'Только админам',
+    description: 'При упоминании отвечает только администраторам'
+  }
 ]
 
 onMounted(async () => {
@@ -375,11 +397,14 @@ onMounted(async () => {
 })
 
 // Загружаем агентов когда isAdmin становится true (асинхронная загрузка пользователя)
-watch(() => props.isAdmin, async (isAdmin) => {
-  if (isAdmin && availableAgents.value.length === 0) {
-    await loadAgents()
+watch(
+  () => props.isAdmin,
+  async (isAdmin) => {
+    if (isAdmin && availableAgents.value.length === 0) {
+      await loadAgents()
+    }
   }
-})
+)
 
 async function loadAgents() {
   loadingAgents.value = true
@@ -396,7 +421,7 @@ async function loadAgents() {
 }
 
 function onAgentChange() {
-  const agent = availableAgents.value.find(a => a.id === selectedAgentId.value)
+  const agent = availableAgents.value.find((a) => a.id === selectedAgentId.value)
   selectedAgent.value = agent || null
   if (agent && !agentName.value) {
     agentName.value = agent.title
@@ -410,7 +435,7 @@ async function createChat() {
     alert('Выберите агента')
     return
   }
-  
+
   creating.value = true
   try {
     // Если это чат с агентом - используем специальный API
@@ -418,7 +443,7 @@ async function createChat() {
       const response = await apiDirectChatWithAgentRoute.run(ctx, {
         agentId: selectedAgentId.value,
         agentKey: selectedAgent.value?.key || '',
-        agentName: agentName.value || selectedAgent.value?.title || 'Агент',
+        agentName: agentName.value || selectedAgent.value?.title || 'Агент'
       })
       if (response.success) {
         emit('created', response.feedId)
@@ -435,16 +460,16 @@ async function createChat() {
         agentRespondTo: agentRespondTo.value,
         agentRespondToMention: agentRespondToMention.value,
         isPaid: isPaidChat.value,
-        plans: isPaidChat.value ? plans.value.filter(p => p.name && p.priceAmount > 0) : []
+        plans: isPaidChat.value ? plans.value.filter((p) => p.name && p.priceAmount > 0) : []
       }
-      
+
       // Проверка: если платный чат, должны быть тарифы
       if (isPaidChat.value && chatData.plans.length === 0) {
         alert('Добавьте хотя бы один тариф для платного чата')
         creating.value = false
         return
       }
-      
+
       const response = await apiChatsCreateRoute.run(ctx, chatData)
       if (response.success) {
         emit('created', response.feedId)
@@ -461,7 +486,12 @@ async function createChat() {
 // Методы для работы с аватаркой
 function getChatInitials(title) {
   if (!title) return '?'
-  return title.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase()
+  return title
+    .split(' ')
+    .map((w) => w[0])
+    .join('')
+    .substring(0, 2)
+    .toUpperCase()
 }
 
 function getAvatarPreviewStyle() {
@@ -470,19 +500,19 @@ function getAvatarPreviewStyle() {
     ['#f093fb', '#f5576c'],
     ['#4facfe', '#00f2fe'],
     ['#43e97b', '#38f9d7'],
-    ['#fa709a', '#fee140'],
+    ['#fa709a', '#fee140']
   ]
   const index = (newChat.value.title?.charCodeAt(0) || 0) % colors.length
   const [from, to] = colors[index]
-  
+
   if (avatarHash.value) {
     return {
-      background: `url(https://fs.chatium.ru/thumbnail/${avatarHash.value}/s/200x) center/cover no-repeat`,
+      background: `url(https://fs.chatium.ru/thumbnail/${avatarHash.value}/s/200x) center/cover no-repeat`
     }
   }
-  
+
   return {
-    background: `linear-gradient(135deg, ${from} 0%, ${to} 100%)`,
+    background: `linear-gradient(135deg, ${from} 0%, ${to} 100%)`
   }
 }
 
@@ -620,7 +650,7 @@ form {
 
 .type-option {
   flex: 1;
-  display: flex!important;
+  display: flex !important;
   flex-direction: column;
   align-items: center;
   gap: 8px;
@@ -810,7 +840,8 @@ form {
   gap: 8px;
 }
 
-.plan-input, .plan-select {
+.plan-input,
+.plan-select {
   padding: 8px 10px;
   border: 1px solid var(--border-color);
   border-radius: 8px;
@@ -820,7 +851,8 @@ form {
   outline: none;
 }
 
-.plan-input:focus, .plan-select:focus {
+.plan-input:focus,
+.plan-select:focus {
   border-color: var(--accent-color);
 }
 
@@ -1024,27 +1056,27 @@ form {
     border-radius: 12px;
     max-height: 95vh;
   }
-  
+
   .modal-header {
     padding: 16px 20px;
   }
-  
+
   form {
     padding: 16px 20px;
   }
-  
+
   .type-option {
     padding: 12px 8px;
   }
-  
+
   .type-option i {
     font-size: 20px;
   }
-  
+
   .type-option span {
     font-size: 12px;
   }
-  
+
   .modal-overlay {
     padding: 10px;
   }

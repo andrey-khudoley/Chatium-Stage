@@ -49,12 +49,25 @@
             <span class="participant-name" @click="showParticipantProfile(participant)">
               {{ getUserName(participant.userId) }}
             </span>
-            <span v-if="getParticipantModeration(participant.userId)" class="moderation-badge" :title="getModerationTooltip(participant.userId)">
-              <i class="fas" :class="getParticipantModeration(participant.userId).type === 'mute' ? 'fa-volume-mute' : 'fa-ban'"></i>
+            <span
+              v-if="getParticipantModeration(participant.userId)"
+              class="moderation-badge"
+              :title="getModerationTooltip(participant.userId)"
+            >
+              <i
+                class="fas"
+                :class="
+                  getParticipantModeration(participant.userId).type === 'mute'
+                    ? 'fa-volume-mute'
+                    : 'fa-ban'
+                "
+              ></i>
             </span>
           </div>
           <div v-if="participant.user" class="participant-contact">
-            {{ participant.user.email || participant.user.phone || participant.user.username || '' }}
+            {{
+              participant.user.email || participant.user.phone || participant.user.username || ''
+            }}
           </div>
         </div>
 
@@ -69,22 +82,28 @@
           />
 
           <!-- Кнопка профиля -->
-          <button
-            @click="showParticipantProfile(participant)"
-            class="btn-icon-sm"
-            title="Профиль"
-          >
+          <button @click="showParticipantProfile(participant)" class="btn-icon-sm" title="Профиль">
             <i class="fas fa-user"></i>
           </button>
 
           <!-- Кнопки модерации (для админов и владельца) -->
-          <template v-if="canManage && participant.userId !== currentUserId && participant.role !== 'owner'">
+          <template
+            v-if="canManage && participant.userId !== currentUserId && participant.role !== 'owner'"
+          >
             <!-- Снять модерацию -->
             <button
               v-if="getParticipantModeration(participant.userId)"
-              @click="removeModeration(participant.userId, getParticipantModeration(participant.userId).type)"
+              @click="
+                removeModeration(
+                  participant.userId,
+                  getParticipantModeration(participant.userId).type
+                )
+              "
               class="btn-icon-sm btn-moderation-active"
-              :title="'Снять ' + (getParticipantModeration(participant.userId).type === 'mute' ? 'мьют' : 'бан')"
+              :title="
+                'Снять ' +
+                (getParticipantModeration(participant.userId).type === 'mute' ? 'мьют' : 'бан')
+              "
             >
               <i class="fas fa-unlock"></i>
             </button>
@@ -126,7 +145,11 @@
     </div>
 
     <!-- Аккордеон с деталями участника (при клике) -->
-    <div v-if="selectedParticipant" class="participant-details-overlay" @click="selectedParticipant = null">
+    <div
+      v-if="selectedParticipant"
+      class="participant-details-overlay"
+      @click="selectedParticipant = null"
+    >
       <div class="participant-details" @click.stop>
         <div class="details-header">
           <h4>Информация об участнике</h4>
@@ -160,7 +183,15 @@
           </div>
 
           <!-- Смена роли (только для owner и не для себя/владельца) -->
-          <div v-if="isOwner && selectedParticipant.userId !== currentUserId && selectedParticipant.role !== 'owner' && !isDirectChat" class="details-section">
+          <div
+            v-if="
+              isOwner &&
+              selectedParticipant.userId !== currentUserId &&
+              selectedParticipant.role !== 'owner' &&
+              !isDirectChat
+            "
+            class="details-section"
+          >
             <h6>Изменить роль</h6>
             <div class="role-options">
               <button
@@ -179,11 +210,12 @@
               v-if="selectedParticipant.userId !== currentUserId && !isDirectChat"
               :user-id="selectedParticipant.userId"
               :user-name="getUserName(selectedParticipant.userId)"
-              @chat-created="$emit('direct-chat-created', $event); selectedParticipant = null"
+              @chat-created="
+                $emit('direct-chat-created', $event)
+                selectedParticipant = null
+              "
             />
-            <button @click="selectedParticipant = null" class="btn-secondary">
-              Закрыть
-            </button>
+            <button @click="selectedParticipant = null" class="btn-secondary">Закрыть</button>
           </div>
         </div>
       </div>
@@ -235,16 +267,18 @@ const filteredParticipants = computed(() => {
   }
 
   const query = searchQuery.value.toLowerCase().trim()
-  return props.participants.filter(p => {
+  return props.participants.filter((p) => {
     const name = getUserName(p.userId).toLowerCase()
     const email = p.user?.email?.toLowerCase() || ''
     const phone = p.user?.phone?.toLowerCase() || ''
     const username = p.user?.username?.toLowerCase() || ''
 
-    return name.includes(query) ||
-           email.includes(query) ||
-           phone.includes(query) ||
-           username.includes(query)
+    return (
+      name.includes(query) ||
+      email.includes(query) ||
+      phone.includes(query) ||
+      username.includes(query)
+    )
   })
 })
 
@@ -280,12 +314,12 @@ const availableRoles = [
 
 function getUserName(userId) {
   if (String(userId) === String(props.currentUserId)) return 'Вы'
-  const participant = props.participants.find(p => p.userId === userId)
+  const participant = props.participants.find((p) => p.userId === userId)
   if (participant?.user) {
     const name = participant.user.firstName
-      ? (participant.user.lastName
-          ? `${participant.user.firstName} ${participant.user.lastName}`
-          : participant.user.firstName)
+      ? participant.user.lastName
+        ? `${participant.user.firstName} ${participant.user.lastName}`
+        : participant.user.firstName
       : participant.user.displayName
     return name || participant.user.username || userId.substring(0, 8)
   }
@@ -318,12 +352,12 @@ function getParticipantAvatarStyle(participant) {
     ['#fa709a', '#fee140'],
     ['#a8edea', '#fed6e3'],
     ['#d299c2', '#fef9d7'],
-    ['#89f7fe', '#66a6ff'],
+    ['#89f7fe', '#66a6ff']
   ]
   const index = participant.userId.charCodeAt(0) % colors.length
   const [from, to] = colors[index]
   return {
-    background: `linear-gradient(135deg, ${from} 0%, ${to} 100%)`,
+    background: `linear-gradient(135deg, ${from} 0%, ${to} 100%)`
   }
 }
 
@@ -331,7 +365,7 @@ function getRoleLabel(role) {
   const labels = {
     owner: 'Владелец',
     admin: 'Администратор',
-    guest: props.isChannel ? 'Подписчик' : 'Участник',
+    guest: props.isChannel ? 'Подписчик' : 'Участник'
   }
   return labels[role] || role
 }
@@ -356,7 +390,7 @@ function formatModerationExpiry(date) {
     month: '2-digit',
     year: 'numeric',
     hour: '2-digit',
-    minute: '2-digit',
+    minute: '2-digit'
   })
 }
 

@@ -16,7 +16,7 @@
 <script setup>
 defineProps({
   show: { type: Boolean, default: false },
-  url: { type: String, default: '' },
+  url: { type: String, default: '' }
 })
 
 defineEmits(['close'])

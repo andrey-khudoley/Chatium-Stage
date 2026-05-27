@@ -1,13 +1,13 @@
-import Registrations from "../tables/registrations.table"
-import Settings from "../tables/settings.table"
+import Registrations from '../tables/registrations.table'
+import Settings from '../tables/settings.table'
 // @ts-ignore
-import { captureCustomerEvent, ContactType } from "@crm/sdk"
+import { captureCustomerEvent, ContactType } from '@crm/sdk'
 // @ts-ignore
-import { sendNotificationToAccountOwners } from "@user-notifier/sdk"
+import { sendNotificationToAccountOwners } from '@user-notifier/sdk'
 // @ts-ignore
 import { writeWorkspaceEvent, getWorkspaceEventUrl } from '@start/sdk'
 // @ts-ignore
-import { request } from "@app/request"
+import { request } from '@app/request'
 
 function toBase64(str: string): string {
   const utf8Bytes: number[] = []
@@ -48,7 +48,8 @@ function toBase64(str: string): string {
 }
 
 export const apiRegisterRoute = app.post('/register', async (ctx, req) => {
-  const { name, email, phone, utmSource, utmMedium, utmCampaign, utmContent, utmTerm, clrtUid } = req.body
+  const { name, email, phone, utmSource, utmMedium, utmCampaign, utmContent, utmTerm, clrtUid } =
+    req.body
 
   if (!name || name.trim().length < 2) {
     return ctx.resp.json({ success: false, error: 'Имя должно содержать минимум 2 символа' }, 400)
@@ -70,26 +71,26 @@ export const apiRegisterRoute = app.post('/register', async (ctx, req) => {
     utmMedium: utmMedium || '',
     utmCampaign: utmCampaign || '',
     utmContent: utmContent || '',
-    utmTerm: utmTerm || '',
+    utmTerm: utmTerm || ''
   })
 
   await captureCustomerEvent(ctx, {
-    event: "webinar_registration",
+    event: 'webinar_registration',
     customer: {
-      displayName: name,
+      displayName: name
     },
     contacts: [
       ...(email ? [{ type: ContactType.Email, value: email }] : []),
-      ...(phone ? [{ type: ContactType.Phone, value: phone }] : []),
+      ...(phone ? [{ type: ContactType.Phone, value: phone }] : [])
     ],
-    linkRecords: [registration],
+    linkRecords: [registration]
   })
 
   await writeWorkspaceEvent(ctx, 'webinar_registration', {
     uid: clrtUid || undefined,
     customer_contacts: [
       ...(email ? [{ type: 'email' as const, value: email }] : []),
-      ...(phone ? [{ type: 'phone' as const, value: phone }] : []),
+      ...(phone ? [{ type: 'phone' as const, value: phone }] : [])
     ],
     action_param1: name,
     action_param2: email,
@@ -99,15 +100,15 @@ export const apiRegisterRoute = app.post('/register', async (ctx, req) => {
     utm_campaign: utmCampaign,
     action_param1_mapstrstr: {
       utm_content: utmContent || '',
-      utm_term: utmTerm || '',
-    },
+      utm_term: utmTerm || ''
+    }
   })
 
   await sendNotificationToAccountOwners(ctx, {
-    title: "Новая регистрация на вебинар «Жизнь вполсилы»",
+    title: 'Новая регистрация на вебинар «Жизнь вполсилы»',
     html: `<h3>Новая регистрация на вебинар</h3><p><b>Имя:</b> ${name}</p><p><b>Email:</b> ${email}</p><p><b>Телефон:</b> ${phone || 'не указан'}</p>`,
     plain: `Новая регистрация: ${name}, ${email}, ${phone || 'не указан'}`,
-    md: `**Новая регистрация на вебинар**\nИмя: ${name}\nEmail: ${email}\nТелефон: ${phone || 'не указан'}`,
+    md: `**Новая регистрация на вебинар**\nИмя: ${name}\nEmail: ${email}\nТелефон: ${phone || 'не указан'}`
   })
 
   const getcourseResult = await sendToGetcourse(ctx, {
@@ -118,7 +119,7 @@ export const apiRegisterRoute = app.post('/register', async (ctx, req) => {
     utmMedium,
     utmCampaign,
     utmContent,
-    utmTerm,
+    utmTerm
   })
 
   if (!getcourseResult.success) {
@@ -128,13 +129,13 @@ export const apiRegisterRoute = app.post('/register', async (ctx, req) => {
       action_param3: getcourseResult.error,
       utm_source: utmSource,
       utm_medium: utmMedium,
-      utm_campaign: utmCampaign,
+      utm_campaign: utmCampaign
     })
   }
 
-  return { 
+  return {
     success: true,
-    paymentUrl: getcourseResult.paymentUrl,
+    paymentUrl: getcourseResult.paymentUrl
   }
 })
 
@@ -185,18 +186,26 @@ async function sendToGetcourse(ctx: app.Ctx, payload: GetcoursePayload): Promise
         medium: Boolean(payload.utmMedium),
         campaign: Boolean(payload.utmCampaign),
         content: Boolean(payload.utmContent),
-        term: Boolean(payload.utmTerm),
-      },
+        term: Boolean(payload.utmTerm)
+      }
     })
 
     const accountNameSetting = await Settings.findOneBy(ctx, { key: 'getcourse_account_name' })
     const apiKeySetting = await Settings.findOneBy(ctx, { key: 'getcourse_api_key' })
     const offerCodeSetting = await Settings.findOneBy(ctx, { key: 'getcourse_offer_code' })
     const priceSetting = await Settings.findOneBy(ctx, { key: 'getcourse_price' })
-    const utmSourceFieldSetting = await Settings.findOneBy(ctx, { key: 'getcourse_utm_source_field' })
-    const utmMediumFieldSetting = await Settings.findOneBy(ctx, { key: 'getcourse_utm_medium_field' })
-    const utmCampaignFieldSetting = await Settings.findOneBy(ctx, { key: 'getcourse_utm_campaign_field' })
-    const utmContentFieldSetting = await Settings.findOneBy(ctx, { key: 'getcourse_utm_content_field' })
+    const utmSourceFieldSetting = await Settings.findOneBy(ctx, {
+      key: 'getcourse_utm_source_field'
+    })
+    const utmMediumFieldSetting = await Settings.findOneBy(ctx, {
+      key: 'getcourse_utm_medium_field'
+    })
+    const utmCampaignFieldSetting = await Settings.findOneBy(ctx, {
+      key: 'getcourse_utm_campaign_field'
+    })
+    const utmContentFieldSetting = await Settings.findOneBy(ctx, {
+      key: 'getcourse_utm_content_field'
+    })
     const utmTermFieldSetting = await Settings.findOneBy(ctx, { key: 'getcourse_utm_term_field' })
 
     if (!accountNameSetting?.value) {
@@ -207,7 +216,7 @@ async function sendToGetcourse(ctx: app.Ctx, payload: GetcoursePayload): Promise
     if (!apiKeySetting?.value || !offerCodeSetting?.value) {
       logToCtx(ctx, 'half:getcourse:config-missing', {
         hasApiKey: Boolean(apiKeySetting?.value),
-        hasOfferCode: Boolean(offerCodeSetting?.value),
+        hasOfferCode: Boolean(offerCodeSetting?.value)
       })
       return { success: false, error: 'GetCourse settings not configured' }
     }
@@ -230,8 +239,8 @@ async function sendToGetcourse(ctx: app.Ctx, payload: GetcoursePayload): Promise
         medium: utmMediumFieldSetting?.value || '',
         campaign: utmCampaignFieldSetting?.value || '',
         content: utmContentFieldSetting?.value || '',
-        term: utmTermFieldSetting?.value || '',
-      },
+        term: utmTermFieldSetting?.value || ''
+      }
     })
 
     const [firstName, ...lastNameParts] = payload.name.split(' ')
@@ -241,17 +250,17 @@ async function sendToGetcourse(ctx: app.Ctx, payload: GetcoursePayload): Promise
       user: {
         email: payload.email,
         first_name: firstName,
-        phone: payload.phone || undefined,
+        phone: payload.phone || undefined
       },
       system: {
         refresh_if_exists: 1,
         multiple_offers: 1,
-        return_payment_link: 1,
+        return_payment_link: 1
       },
       session: {} as any,
       deal: {
-        offer_code: offerCode,
-      } as any,
+        offer_code: offerCode
+      } as any
     }
 
     if (lastName) {
@@ -297,7 +306,7 @@ async function sendToGetcourse(ctx: app.Ctx, payload: GetcoursePayload): Promise
       action: 'add',
       paramsLength: paramsJson.length,
       paramsBase64Length: paramsBase64.length,
-      requestPayload: paramsObj,
+      requestPayload: paramsObj
     })
 
     const response = await request({
@@ -306,9 +315,9 @@ async function sendToGetcourse(ctx: app.Ctx, payload: GetcoursePayload): Promise
       form: {
         action: 'add',
         key: apiKey,
-        params: paramsBase64,
+        params: paramsBase64
       },
-      throwHttpErrors: false,
+      throwHttpErrors: false
     })
 
     const body = response.body as any
@@ -324,7 +333,7 @@ async function sendToGetcourse(ctx: app.Ctx, payload: GetcoursePayload): Promise
       resultError,
       error: body?.error,
       errorMessage: body?.error_message || body?.result?.error_message,
-      responseBody: body,
+      responseBody: body
     })
 
     await writeWorkspaceEvent(ctx, 'getcourse_api_debug', {
@@ -333,8 +342,8 @@ async function sendToGetcourse(ctx: app.Ctx, payload: GetcoursePayload): Promise
       action_param1_int: response.statusCode,
       action_param1_mapstrstr: {
         request_params: paramsJson,
-        response_body: JSON.stringify(body),
-      },
+        response_body: JSON.stringify(body)
+      }
     })
 
     const isTopLevelSuccess = body && String(body.success) === 'true'
@@ -353,20 +362,21 @@ async function sendToGetcourse(ctx: app.Ctx, payload: GetcoursePayload): Promise
         action_param1_float: price,
         action_param1_mapstrstr: {
           has_payment_url: paymentUrl ? 'true' : 'false',
-          payment_url: paymentUrl || '',
-        },
+          payment_url: paymentUrl || ''
+        }
       })
 
       logToCtx(ctx, 'half:getcourse:success', {
         email: payload.email,
         offerCode,
         price,
-        hasPaymentUrl: Boolean(paymentUrl),
+        hasPaymentUrl: Boolean(paymentUrl)
       })
 
       return { success: true, paymentUrl }
     } else {
-      const errorMessage = body?.result?.error_message || body?.error_message || body?.error || JSON.stringify(body)
+      const errorMessage =
+        body?.result?.error_message || body?.error_message || body?.error || JSON.stringify(body)
       logToCtx(ctx, 'half:getcourse:api-error', {
         email: payload.email,
         offerCode,
@@ -374,7 +384,7 @@ async function sendToGetcourse(ctx: app.Ctx, payload: GetcoursePayload): Promise
         errorMessage,
         topLevelSuccess,
         resultSuccess,
-        resultError,
+        resultError
       })
       await writeWorkspaceEvent(ctx, 'getcourse_api_error', {
         action_param1: payload.email,
@@ -383,8 +393,8 @@ async function sendToGetcourse(ctx: app.Ctx, payload: GetcoursePayload): Promise
         action_param1_int: response.statusCode,
         action_param1_mapstrstr: {
           response_body: JSON.stringify(body),
-          request_params: paramsJson,
-        },
+          request_params: paramsJson
+        }
       })
       return { success: false, error: errorMessage }
     }
@@ -393,11 +403,11 @@ async function sendToGetcourse(ctx: app.Ctx, payload: GetcoursePayload): Promise
     logToCtx(ctx, 'half:getcourse:exception', {
       email: payload.email,
       errorMessage,
-      stack: error instanceof Error ? error.stack : undefined,
+      stack: error instanceof Error ? error.stack : undefined
     })
     await writeWorkspaceEvent(ctx, 'getcourse_integration_exception', {
       action_param1: payload.email,
-      action_param3: errorMessage,
+      action_param3: errorMessage
     })
     return { success: false, error: errorMessage }
   }
@@ -414,8 +424,8 @@ app.accountHook('@start/account-events', async (ctx) => {
       payloadMapping: {
         name: { title: 'Имя', fieldName: 'action_param1', type: 'string' },
         email: { title: 'Email', fieldName: 'action_param2', type: 'string' },
-        phone: { title: 'Телефон', fieldName: 'action_param3', type: 'string' },
-      },
-    },
+        phone: { title: 'Телефон', fieldName: 'action_param3', type: 'string' }
+      }
+    }
   ]
 })

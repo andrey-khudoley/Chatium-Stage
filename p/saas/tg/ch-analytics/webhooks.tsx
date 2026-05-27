@@ -1,5 +1,5 @@
 // @shared
-import { jsx } from "@app/html-jsx"
+import { jsx } from '@app/html-jsx'
 import { requireRealUser } from '@app/auth'
 import WebhooksPage from './pages/WebhooksPage.vue'
 import { TgChannelAnalyticsSettings, ensureDefaultSettings } from './tables/settings.table'
@@ -14,7 +14,7 @@ export const webhooksPageRoute = app.html('/', async (ctx, req) => {
   // Применяем уровень логирования из настроек
   await applyDebugLevel(ctx, 'webhooks')
   Debug.info(ctx, '[webhooks] Начало обработки страницы вебхуков')
-  
+
   try {
     requireRealUser(ctx)
     Debug.info(ctx, `[webhooks] Пользователь авторизован: userId=${ctx.user.id}`)
@@ -33,10 +33,10 @@ export const webhooksPageRoute = app.html('/', async (ctx, req) => {
       </html>
     )
   }
-  
+
   await ensureDefaultSettings(ctx)
   Debug.info(ctx, '[webhooks] Настройки по умолчанию проверены')
-  
+
   const titleSetting = await TgChannelAnalyticsSettings.findOneBy(ctx, { key: 'project_title' })
   const projectTitle = titleSetting?.value ?? 'Аналитика телеграм-каналов'
   Debug.info(ctx, `[webhooks] Название проекта: ${projectTitle}`)
@@ -46,16 +46,25 @@ export const webhooksPageRoute = app.html('/', async (ctx, req) => {
   Debug.info(ctx, `[webhooks] Сгенерирован encodedSocketId для пользователя ${ctx.user.id}`)
 
   const isAuthenticated = !!ctx.user
-  Debug.info(ctx, `[webhooks] Статус авторизации: ${isAuthenticated ? `авторизован (userId=${ctx.user?.id})` : 'не авторизован'}`)
-  
+  Debug.info(
+    ctx,
+    `[webhooks] Статус авторизации: ${isAuthenticated ? `авторизован (userId=${ctx.user?.id})` : 'не авторизован'}`
+  )
+
   // Получаем botId из query параметров (опционально, для фильтрации)
   const botId = req.query.botId as string | undefined
-  Debug.info(ctx, `[webhooks] Параметр botId из query: ${botId || 'не указан (показываем все вебхуки)'}`)
-  
+  Debug.info(
+    ctx,
+    `[webhooks] Параметр botId из query: ${botId || 'не указан (показываем все вебхуки)'}`
+  )
+
   // Получаем chatId из query параметров (опционально, для фильтрации по каналу)
   const chatId = req.query.chatId as string | undefined
-  Debug.info(ctx, `[webhooks] Параметр chatId из query: ${chatId || 'не указан (показываем все каналы)'}`)
-  
+  Debug.info(
+    ctx,
+    `[webhooks] Параметр chatId из query: ${chatId || 'не указан (показываем все каналы)'}`
+  )
+
   Debug.info(ctx, '[webhooks] Рендеринг страницы вебхуков')
   return (
     <html>
@@ -692,12 +701,15 @@ export const webhooksPageRoute = app.html('/', async (ctx, req) => {
               setTimeout(startBoot, 50);
             }
           })();
-        `}</script> 
+        `}</script>
         <script src="/s/static/lib/tailwind.3.4.16.min.js"></script>
         <link rel="stylesheet" href="/s/static/lib/fontawesome/6.7.2/css/all.min.css" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
-        <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap"
+          rel="stylesheet"
+        />
         <style>{`
           :root {
             --color-bg: #0a0a0a;
@@ -734,7 +746,7 @@ export const webhooksPageRoute = app.html('/', async (ctx, req) => {
             <div id="boot-messages-container"></div>
           </div>
         </div>
-        <WebhooksPage 
+        <WebhooksPage
           projectTitle={projectTitle}
           indexUrl={indexPageRoute.url()}
           profileUrl={profilePageRoute.url()}

@@ -27,17 +27,17 @@
 
 **Поля (по плану 4.4):**
 
-| Поле              | Тип           | Описание                          |
-|-------------------|----------------|-----------------------------------|
-| campaignId        | RefLink → campaigns | Кампания                      |
-| partnerLinkId     | RefLink → partner_links | Партнёрская ссылка        |
-| partnerId         | RefLink → partners    | Партнёр                      |
-| pageId            | RefLink → pages       | Целевая страница             |
-| ref               | String                | Реферальный ID (уникальный в кампании) |
-| fingerprintHash   | String                | Хеш fingerprint для дедупликации |
-| fingerprintParts  | Any                   | Компоненты fingerprint (ip, userAgent и т.д.) |
-| clickedAt         | DateTime              | Время клика                  |
-| registeredAt      | DateTime (optional)   | Время регистрации (заполняется в фиче 5) |
+| Поле             | Тип                     | Описание                                      |
+| ---------------- | ----------------------- | --------------------------------------------- |
+| campaignId       | RefLink → campaigns     | Кампания                                      |
+| partnerLinkId    | RefLink → partner_links | Партнёрская ссылка                            |
+| partnerId        | RefLink → partners      | Партнёр                                       |
+| pageId           | RefLink → pages         | Целевая страница                              |
+| ref              | String                  | Реферальный ID (уникальный в кампании)        |
+| fingerprintHash  | String                  | Хеш fingerprint для дедупликации              |
+| fingerprintParts | Any                     | Компоненты fingerprint (ip, userAgent и т.д.) |
+| clickedAt        | DateTime                | Время клика                                   |
+| registeredAt     | DateTime (optional)     | Время регистрации (заполняется в фиче 5)      |
 
 **Реализация:** Создать через Heap API (createOrUpdateHeapTableFile) или вручную по образцу `campaigns.table.ts` / `partner_links.table.ts`. RefLink с `onDelete: 'none'` на все связи.
 
@@ -63,20 +63,22 @@
 
 **Функции:**
 
-1. **createVisit(ctx, data): Promise<{ visit: VisitRow; ref: string; isNew: boolean }>**  
-   - Вход: `campaignId`, `partnerLinkId`, `partnerId`, `pageId`, `fingerprint: FingerprintData`.  
-   - Логика:  
-     - Вычислить `fingerprintHash` из `fingerprint` (та же логика, что в fingerprint.ts, либо вызвать хеш по уже собранным parts).  
-     - Найти существующий визит: `findOneBy(ctx, { fingerprintHash, partnerId })` (опционально: ограничить по времени, если в плане есть «не устарел» — по умолчанию можно не ограничивать для прототипа).  
-     - Если найден — вернуть `{ visit: existing, ref: existing.ref, isNew: false }`.  
-     - Если не найден — сгенерировать уникальный `ref` (generateUrlSafeId(8) + проверка уникальности по campaigns + ref в visits, цикл с maxAttempts).  
-     - Создать запись в `visits`: campaignId, partnerLinkId, partnerId, pageId, ref, fingerprintHash, fingerprintParts, clickedAt = now.  
+1. **createVisit(ctx, data): Promise<{ visit: VisitRow; ref: string; isNew: boolean }>**
+
+   - Вход: `campaignId`, `partnerLinkId`, `partnerId`, `pageId`, `fingerprint: FingerprintData`.
+   - Логика:
+     - Вычислить `fingerprintHash` из `fingerprint` (та же логика, что в fingerprint.ts, либо вызвать хеш по уже собранным parts).
+     - Найти существующий визит: `findOneBy(ctx, { fingerprintHash, partnerId })` (опционально: ограничить по времени, если в плане есть «не устарел» — по умолчанию можно не ограничивать для прототипа).
+     - Если найден — вернуть `{ visit: existing, ref: existing.ref, isNew: false }`.
+     - Если не найден — сгенерировать уникальный `ref` (generateUrlSafeId(8) + проверка уникальности по campaigns + ref в visits, цикл с maxAttempts).
+     - Создать запись в `visits`: campaignId, partnerLinkId, partnerId, pageId, ref, fingerprintHash, fingerprintParts, clickedAt = now.
      - Вернуть `{ visit, ref, isNew: true }`.
 
-2. **findVisitByRef(ctx, ref): Promise<VisitRow | null>**  
+2. **findVisitByRef(ctx, ref): Promise<VisitRow | null>**
+
    - `findOneBy(ctx, { ref })`.
 
-3. **markVisitRegistered(ctx, ref): Promise<void>** (для фичи 5)  
+3. **markVisitRegistered(ctx, ref): Promise<void>** (для фичи 5)
    - Обновить запись визита: `registeredAt = now`. Реализовать сейчас, чтобы не трогать visitRepo в фиче 5.
 
 **Типы:** VisitRow — из таблицы visits (typeof Visits.T или алиас в shared/types).
@@ -125,15 +127,15 @@
 
 ## 7. Порядок реализации
 
-| Шаг | Задача | Файлы |
-|-----|--------|--------|
-| 1 | Создать таблицу `visits` | `tables/visits.table.ts` |
-| 2 | Реализовать fingerprint | `lib/core/fingerprint.ts` |
-| 3 | Реализовать visitRepo | `lib/repo/visitRepo.ts` |
-| 4 | Добавить типы визита | `shared/types.ts` (при необходимости) |
-| 5 | Реализовать роут редиректа | `r.tsx` |
-| 6 | Зарегистрировать роут | Конфиг/роутинг проекта |
-| 7 | Обновить документацию импортов | `docs/imports.md` |
+| Шаг | Задача                         | Файлы                                 |
+| --- | ------------------------------ | ------------------------------------- |
+| 1   | Создать таблицу `visits`       | `tables/visits.table.ts`              |
+| 2   | Реализовать fingerprint        | `lib/core/fingerprint.ts`             |
+| 3   | Реализовать visitRepo          | `lib/repo/visitRepo.ts`               |
+| 4   | Добавить типы визита           | `shared/types.ts` (при необходимости) |
+| 5   | Реализовать роут редиректа     | `r.tsx`                               |
+| 6   | Зарегистрировать роут          | Конфиг/роутинг проекта                |
+| 7   | Обновить документацию импортов | `docs/imports.md`                     |
 
 ---
 

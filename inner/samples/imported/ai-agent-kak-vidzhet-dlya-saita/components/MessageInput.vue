@@ -1,9 +1,6 @@
 <template>
   <div class="message-input">
-    <div
-      class="message-input__surface"
-      :class="{ 'message-input__surface--disabled': isSending }"
-    >
+    <div class="message-input__surface" :class="{ 'message-input__surface--disabled': isSending }">
       <button
         type="button"
         class="message-input__action message-input__action--attach"
@@ -38,23 +35,14 @@
           <div
             v-for="(fileItem, index) in selectedFiles"
             :key="fileItem.file?.name + index"
-            :title="
-              fileItem.status === 'error' ? fileItem.error : fileItem.file?.name
-            "
-            :class="[
-              'message-input__attachment',
-              `message-input__attachment--${fileItem.status}`,
-            ]"
+            :title="fileItem.status === 'error' ? fileItem.error : fileItem.file?.name"
+            :class="['message-input__attachment', `message-input__attachment--${fileItem.status}`]"
           >
             <div
               class="message-input__attachment-progress"
               :style="{
-                width: `${
-                  fileItem.status === 'done' ? 100 : fileItem.progress
-                }%`,
-                opacity: ['uploading', 'done'].includes(fileItem.status)
-                  ? 1
-                  : 0,
+                width: `${fileItem.status === 'done' ? 100 : fileItem.progress}%`,
+                opacity: ['uploading', 'done'].includes(fileItem.status) ? 1 : 0
               }"
             ></div>
             <div class="message-input__attachment-content">
@@ -121,7 +109,7 @@
         class="message-input__action message-input__action--send"
         :class="{
           'message-input__action--send-active': !isSubmitDisabled,
-          'message-input__action--send-loading': isSending,
+          'message-input__action--send-loading': isSending
         }"
         @click="handleSubmit"
         :disabled="isSubmitDisabled"
@@ -139,9 +127,7 @@
           height="24"
           fill="currentColor"
         >
-          <path
-            d="M14,20H10V11L6.5,14.5L4.08,12.08L12,4.16L19.92,12.08L17.5,14.5L14,11V20Z"
-          />
+          <path d="M14,20H10V11L6.5,14.5L4.08,12.08L12,4.16L19.92,12.08L17.5,14.5L14,11V20Z" />
         </svg>
       </button>
     </div>
@@ -149,255 +135,240 @@
 </template>
 
 <script setup>
-import { computed, nextTick, ref, watch } from "vue";
-import { apiGetUploadUrlRoute } from "../api/files";
+import { computed, nextTick, ref, watch } from 'vue'
+import { apiGetUploadUrlRoute } from '../api/files'
 
 const props = defineProps({
   placeholder: {
     type: String,
-    default: "Введите сообщение...",
+    default: 'Введите сообщение...'
   },
   isSending: {
     type: Boolean,
-    default: false,
-  },
-});
+    default: false
+  }
+})
 
-const emit = defineEmits(["submit"]);
+const emit = defineEmits(['submit'])
 
-const text = ref("");
-const selectedFiles = ref([]);
-const textInput = ref(null);
-const fileInput = ref(null);
+const text = ref('')
+const selectedFiles = ref([])
+const textInput = ref(null)
+const fileInput = ref(null)
 const isUploading = computed(() =>
-  selectedFiles.value.some((item) =>
-    ["pending", "uploading"].includes(item.status)
-  )
-);
+  selectedFiles.value.some((item) => ['pending', 'uploading'].includes(item.status))
+)
 
-const hasUploadError = computed(() =>
-  selectedFiles.value.some((item) => item.status === "error")
-);
+const hasUploadError = computed(() => selectedFiles.value.some((item) => item.status === 'error'))
 
-const hasUploadedFiles = computed(() =>
-  selectedFiles.value.some((item) => item.status === "done")
-);
+const hasUploadedFiles = computed(() => selectedFiles.value.some((item) => item.status === 'done'))
 
 const isSubmitDisabled = computed(() => {
-  const trimmedText = text.value.trim();
+  const trimmedText = text.value.trim()
 
   return (
     props.isSending ||
     isUploading.value ||
     hasUploadError.value ||
     (!trimmedText && !hasUploadedFiles.value)
-  );
-});
+  )
+})
 
 const formatFileSize = (bytes) => {
   if (!Number.isFinite(bytes) || bytes <= 0) {
-    return "0 B";
+    return '0 B'
   }
 
-  const units = ["B", "KB", "MB", "GB", "TB"];
-  const exponent = Math.min(
-    Math.floor(Math.log(bytes) / Math.log(1024)),
-    units.length - 1
-  );
-  const size = bytes / Math.pow(1024, exponent);
+  const units = ['B', 'KB', 'MB', 'GB', 'TB']
+  const exponent = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1)
+  const size = bytes / Math.pow(1024, exponent)
 
-  const formatted =
-    size < 10 && exponent > 0 ? size.toFixed(1) : size.toFixed(0);
+  const formatted = size < 10 && exponent > 0 ? size.toFixed(1) : size.toFixed(0)
 
-  return `${formatted} ${units[exponent]}`;
-};
+  return `${formatted} ${units[exponent]}`
+}
 
 const refreshSelectedFiles = () => {
-  selectedFiles.value = [...selectedFiles.value];
-};
+  selectedFiles.value = [...selectedFiles.value]
+}
 
 const triggerFileInput = () => {
   if (props.isSending) {
-    return;
+    return
   }
-  fileInput.value?.click();
-};
+  fileInput.value?.click()
+}
 
 const handleFileSelect = (event) => {
-  const files = Array.from(event.target.files || []);
-  addFilesToUpload(files);
-  event.target.value = "";
-};
+  const files = Array.from(event.target.files || [])
+  addFilesToUpload(files)
+  event.target.value = ''
+}
 
 const removeFile = (index) => {
-  selectedFiles.value.splice(index, 1);
-  refreshSelectedFiles();
-};
+  selectedFiles.value.splice(index, 1)
+  refreshSelectedFiles()
+}
 
 const createFileItem = (file) => ({
   file,
   progress: 0,
-  status: "pending",
+  status: 'pending',
   hash: null,
   error: null,
-  uploaded: null,
-});
+  uploaded: null
+})
 
 const addFilesToUpload = (files) => {
   if (!files?.length) {
-    return;
+    return
   }
 
-  const fileItems = files.map(createFileItem);
-  selectedFiles.value.push(...fileItems);
-  refreshSelectedFiles();
+  const fileItems = files.map(createFileItem)
+  selectedFiles.value.push(...fileItems)
+  refreshSelectedFiles()
 
   fileItems.forEach((item) => {
-    startUpload(item);
-  });
-};
+    startUpload(item)
+  })
+}
 
 const startUpload = async (fileItem) => {
   if (!fileItem?.file) {
-    return;
+    return
   }
 
-  fileItem.status = "uploading";
-  fileItem.progress = 0;
-  refreshSelectedFiles();
+  fileItem.status = 'uploading'
+  fileItem.progress = 0
+  refreshSelectedFiles()
 
   try {
     const uploaded = await uploadFile(fileItem.file, (progress) => {
-      fileItem.progress = progress;
-      refreshSelectedFiles();
-    });
+      fileItem.progress = progress
+      refreshSelectedFiles()
+    })
 
-    fileItem.status = "done";
-    fileItem.progress = 100;
-    fileItem.hash = uploaded.hash;
-    fileItem.uploaded = uploaded;
-    fileItem.error = null;
-    refreshSelectedFiles();
+    fileItem.status = 'done'
+    fileItem.progress = 100
+    fileItem.hash = uploaded.hash
+    fileItem.uploaded = uploaded
+    fileItem.error = null
+    refreshSelectedFiles()
   } catch (error) {
-    fileItem.status = "error";
-    fileItem.progress = 0;
-    fileItem.hash = null;
-    fileItem.uploaded = null;
-    fileItem.error =
-      error instanceof Error ? error.message : String(error ?? "Ошибка");
-    console.error(
-      "Не удалось загрузить файл",
-      fileItem.file?.name ?? "",
-      error
-    );
-    refreshSelectedFiles();
+    fileItem.status = 'error'
+    fileItem.progress = 0
+    fileItem.hash = null
+    fileItem.uploaded = null
+    fileItem.error = error instanceof Error ? error.message : String(error ?? 'Ошибка')
+    console.error('Не удалось загрузить файл', fileItem.file?.name ?? '', error)
+    refreshSelectedFiles()
   }
-};
+}
 
 const retryUpload = (fileItem) => {
-  if (!fileItem || fileItem.status === "uploading") {
-    return;
+  if (!fileItem || fileItem.status === 'uploading') {
+    return
   }
 
-  fileItem.status = "pending";
-  fileItem.progress = 0;
-  fileItem.error = null;
-  fileItem.hash = null;
-  fileItem.uploaded = null;
-  refreshSelectedFiles();
+  fileItem.status = 'pending'
+  fileItem.progress = 0
+  fileItem.error = null
+  fileItem.hash = null
+  fileItem.uploaded = null
+  refreshSelectedFiles()
 
-  startUpload(fileItem);
-};
+  startUpload(fileItem)
+}
 
 const focusInput = () => {
   nextTick(() => {
     if (textInput.value) {
-      textInput.value.focus();
-      const length = text.value.length;
-      textInput.value.setSelectionRange?.(length, length);
+      textInput.value.focus()
+      const length = text.value.length
+      textInput.value.setSelectionRange?.(length, length)
     }
-  });
-};
+  })
+}
 
 const uploadFile = async (file, onProgress) => {
   try {
     // Get upload URL
-    const { uploadUrl } = await apiGetUploadUrlRoute.run(ctx);
+    const { uploadUrl } = await apiGetUploadUrlRoute.run(ctx)
 
     // Upload file
-    const formData = new FormData();
-    formData.append("Filedata", file);
+    const formData = new FormData()
+    formData.append('Filedata', file)
 
     return await new Promise((resolve, reject) => {
-      const xhr = new XMLHttpRequest();
+      const xhr = new XMLHttpRequest()
 
-      xhr.upload.addEventListener("progress", (e) => {
+      xhr.upload.addEventListener('progress', (e) => {
         if (e.lengthComputable) {
-          onProgress?.(Math.round((e.loaded / e.total) * 100));
+          onProgress?.(Math.round((e.loaded / e.total) * 100))
         }
-      });
+      })
 
-      xhr.addEventListener("load", () => {
+      xhr.addEventListener('load', () => {
         if (xhr.status === 200) {
-          onProgress?.(100);
+          onProgress?.(100)
           resolve({
             hash: xhr.responseText,
             mime: file.type,
             size: file.size,
-            name: file.name,
-          });
+            name: file.name
+          })
         } else {
-          reject(new Error("Upload failed"));
+          reject(new Error('Upload failed'))
         }
-      });
+      })
 
-      xhr.addEventListener("error", () => reject(new Error("Upload failed")));
+      xhr.addEventListener('error', () => reject(new Error('Upload failed')))
 
-      xhr.open("POST", uploadUrl);
-      xhr.send(formData);
-    });
+      xhr.open('POST', uploadUrl)
+      xhr.send(formData)
+    })
   } catch (error) {
-    console.error("Ошибка загрузки файла:", error);
-    onProgress?.(0);
-    throw error;
+    console.error('Ошибка загрузки файла:', error)
+    onProgress?.(0)
+    throw error
   }
-};
+}
 
 const handleSubmit = async () => {
   if (props.isSending || isUploading.value || hasUploadError.value) {
-    return;
+    return
   }
 
-  const trimmedText = text.value.trim();
+  const trimmedText = text.value.trim()
 
   if (!trimmedText && !hasUploadedFiles.value) {
-    return;
+    return
   }
 
   const uploadedFiles = selectedFiles.value
-    .filter((item) => item.status === "done" && item.uploaded)
-    .map((item) => item.uploaded);
+    .filter((item) => item.status === 'done' && item.uploaded)
+    .map((item) => item.uploaded)
 
-  emit("submit", {
+  emit('submit', {
     text: trimmedText,
-    files: uploadedFiles,
-  });
+    files: uploadedFiles
+  })
 
-  text.value = "";
-  selectedFiles.value = [];
-};
+  text.value = ''
+  selectedFiles.value = []
+}
 
 watch(text, async () => {
-  await nextTick();
+  await nextTick()
   if (textInput.value) {
-    textInput.value.style.height = "auto";
-    textInput.value.style.height = textInput.value.scrollHeight + "px";
+    textInput.value.style.height = 'auto'
+    textInput.value.style.height = textInput.value.scrollHeight + 'px'
   }
-});
+})
 
 defineExpose({
-  focus: focusInput,
-});
+  focus: focusInput
+})
 </script>
 
 <style scoped>
@@ -415,7 +386,10 @@ defineExpose({
   border: 1px solid var(--chat-border, rgba(79, 140, 255, 0.25));
   border-radius: 28px;
   box-shadow: 0 16px 32px rgba(5, 12, 32, 0.35);
-  transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    background 0.2s ease;
 }
 
 .message-input__surface:focus-within {
@@ -471,12 +445,10 @@ defineExpose({
   top: 0;
   left: 0;
   height: 100%;
-  background: linear-gradient(
-    90deg,
-    rgba(79, 140, 255, 0.35),
-    rgba(85, 196, 255, 0.25)
-  );
-  transition: width 0.3s ease, opacity 0.3s ease;
+  background: linear-gradient(90deg, rgba(79, 140, 255, 0.35), rgba(85, 196, 255, 0.25));
+  transition:
+    width 0.3s ease,
+    opacity 0.3s ease;
   pointer-events: none;
 }
 
@@ -567,15 +539,16 @@ defineExpose({
   background: transparent;
   color: rgba(190, 208, 255, 0.7);
   cursor: pointer;
-  transition: color 0.2s ease, transform 0.2s ease;
+  transition:
+    color 0.2s ease,
+    transform 0.2s ease;
 }
 
 .message-input__attachment--error .message-input__attachment-retry {
   color: rgba(255, 196, 120, 0.95);
 }
 
-.message-input__attachment--error
-  .message-input__attachment-retry:hover:not(:disabled) {
+.message-input__attachment--error .message-input__attachment-retry:hover:not(:disabled) {
   color: rgba(255, 210, 150, 1);
 }
 
@@ -631,7 +604,10 @@ defineExpose({
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease;
   flex-shrink: 0;
 }
 

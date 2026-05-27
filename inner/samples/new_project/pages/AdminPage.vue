@@ -86,7 +86,9 @@ const settingsMessageType = ref<'success' | 'error'>('success')
 // Состояние логов (инициализируем из props, если переданы при рендере страницы)
 const logs = ref<LogEntry[]>(props.initialLogs ?? [])
 const logCounts = ref<LogCounts>(props.initialCounts ?? { info: 0, warn: 0, error: 0 })
-const accumulatedCounts = ref<AccumulatedCounts>(props.initialAccumulatedCounts ?? { error: 0, warn: 0 })
+const accumulatedCounts = ref<AccumulatedCounts>(
+  props.initialAccumulatedCounts ?? { error: 0, warn: 0 }
+)
 const currentLogFilter = ref<'all' | 'info' | 'warn' | 'error'>(props.initialFilter ?? 'all')
 const currentLogLimit = ref(props.initialLimit ?? 50)
 const currentLogCursor = ref<string | null>(null)
@@ -124,15 +126,18 @@ async function saveSettings() {
     if (data.success) {
       settingsMessage.value = 'Настройки успешно сохранены'
       settingsMessageType.value = 'success'
-      
+
       // Обновляем форму новыми значениями из ответа
       if (data.settings) {
         settingsForm.value.project_name = data.settings.project_name || ''
         settingsForm.value.project_title = data.settings.project_title || ''
         settingsForm.value.project_description = data.settings.project_description || ''
         settingsForm.value.log_level = data.settings.log_level || 'info'
-        settingsForm.value.logs_webhook_url = typeof data.settings.logs_webhook_url === 'string' ? data.settings.logs_webhook_url : ''
-        settingsForm.value.logs_webhook_enabled = data.settings.logs_webhook_enabled === true || data.settings.logs_webhook_enabled === 'true'
+        settingsForm.value.logs_webhook_url =
+          typeof data.settings.logs_webhook_url === 'string' ? data.settings.logs_webhook_url : ''
+        settingsForm.value.logs_webhook_enabled =
+          data.settings.logs_webhook_enabled === true ||
+          data.settings.logs_webhook_enabled === 'true'
       }
     } else {
       settingsMessage.value = data.error || 'Ошибка при сохранении настроек'
@@ -143,7 +148,7 @@ async function saveSettings() {
     settingsMessageType.value = 'error'
   } finally {
     isSavingSettings.value = false
-    
+
     // Скрыть сообщение через 5 секунд
     setTimeout(() => {
       settingsMessage.value = ''
@@ -158,14 +163,12 @@ function getLogKey(log: LogEntry): string {
 }
 
 function sortLogsByTimeDesc(items: LogEntry[]): LogEntry[] {
-  return items
-    .slice()
-    .sort((a, b) => {
-      const aTime = new Date(a.createdAt).getTime() || 0
-      const bTime = new Date(b.createdAt).getTime() || 0
-      if (aTime !== bTime) return bTime - aTime
-      return getLogKey(a).localeCompare(getLogKey(b))
-    })
+  return items.slice().sort((a, b) => {
+    const aTime = new Date(a.createdAt).getTime() || 0
+    const bTime = new Date(b.createdAt).getTime() || 0
+    if (aTime !== bTime) return bTime - aTime
+    return getLogKey(a).localeCompare(getLogKey(b))
+  })
 }
 
 function mergeLogs(existing: LogEntry[], incoming: LogEntry[]): LogEntry[] {
@@ -204,12 +207,19 @@ async function resetLogCounters() {
 
   try {
     const raw = await apiResetCountersRoute.run(ctx)
-    const data = raw && typeof (raw as any).body === 'object' ? (raw as any).body : raw && typeof (raw as any).data === 'object' ? (raw as any).data : raw
+    const data =
+      raw && typeof (raw as any).body === 'object'
+        ? (raw as any).body
+        : raw && typeof (raw as any).data === 'object'
+          ? (raw as any).data
+          : raw
 
     if (data?.success) {
       settingsMessage.value = 'Счётчики сброшены. Обновите страницу для обновления данных.'
       settingsMessageType.value = 'success'
-      setTimeout(() => { settingsMessage.value = '' }, 5000)
+      setTimeout(() => {
+        settingsMessage.value = ''
+      }, 5000)
     } else {
       settingsMessage.value = (data as any)?.error || 'Ошибка сброса счётчиков'
       settingsMessageType.value = 'error'
@@ -228,12 +238,19 @@ async function createTestError() {
 
   try {
     const raw = await apiTestErrorRoute.run(ctx)
-    const data = raw && typeof (raw as any).body === 'object' ? (raw as any).body : raw && typeof (raw as any).data === 'object' ? (raw as any).data : raw
+    const data =
+      raw && typeof (raw as any).body === 'object'
+        ? (raw as any).body
+        : raw && typeof (raw as any).data === 'object'
+          ? (raw as any).data
+          : raw
 
     if (data?.success) {
       settingsMessage.value = 'Тестовая ошибка создана. Обновите страницу для просмотра логов.'
       settingsMessageType.value = 'success'
-      setTimeout(() => { settingsMessage.value = '' }, 5000)
+      setTimeout(() => {
+        settingsMessage.value = ''
+      }, 5000)
     } else {
       settingsMessage.value = (data as any)?.error || 'Ошибка создания тестовой ошибки'
       settingsMessageType.value = 'error'
@@ -252,12 +269,20 @@ async function createTestWarning() {
 
   try {
     const raw = await apiTestWarningRoute.run(ctx)
-    const data = raw && typeof (raw as any).body === 'object' ? (raw as any).body : raw && typeof (raw as any).data === 'object' ? (raw as any).data : raw
+    const data =
+      raw && typeof (raw as any).body === 'object'
+        ? (raw as any).body
+        : raw && typeof (raw as any).data === 'object'
+          ? (raw as any).data
+          : raw
 
     if (data?.success) {
-      settingsMessage.value = 'Тестовое предупреждение создано. Обновите страницу для просмотра логов.'
+      settingsMessage.value =
+        'Тестовое предупреждение создано. Обновите страницу для просмотра логов.'
       settingsMessageType.value = 'success'
-      setTimeout(() => { settingsMessage.value = '' }, 5000)
+      setTimeout(() => {
+        settingsMessage.value = ''
+      }, 5000)
     } else {
       settingsMessage.value = (data as any)?.error || 'Ошибка создания тестового предупреждения'
       settingsMessageType.value = 'error'
@@ -297,13 +322,13 @@ async function initWebSocket() {
   try {
     const socketClient = await getOrCreateBrowserSocketClient()
     socketSubscription = socketClient.subscribeToData(props.encodedSocketId)
-    
+
     socketSubscription.listen((data: any) => {
       if (data.type === 'new-log') {
         const newLog = data.data as LogEntry
         logs.value = mergeLogs(logs.value, [newLog]).slice(0, 1000)
         refreshCursor()
-        
+
         // Обновляем счётчики
         if (newLog.level === 'info') {
           logCounts.value.info++
@@ -323,9 +348,10 @@ async function initWebSocket() {
 
 // Фильтрованные логи для отображения (клиентская фильтрация для real-time логов)
 const filteredLogs = computed(() => {
-  const baseLogs = currentLogFilter.value === 'all'
-    ? logs.value
-    : logs.value.filter(log => log.level === currentLogFilter.value)
+  const baseLogs =
+    currentLogFilter.value === 'all'
+      ? logs.value
+      : logs.value.filter((log) => log.level === currentLogFilter.value)
   return sortLogsByTimeDesc(baseLogs)
 })
 
@@ -338,7 +364,7 @@ onMounted(() => {
   // Ждём завершения bootloader. Логи и счётчики уже пришли в props с сервера; подключаем только WebSocket.
   const startAfterBootloader = () => {
     bootLoaderDone.value = true
-    initWebSocket().catch(error => {
+    initWebSocket().catch((error) => {
       console.error('Ошибка инициализации WebSocket:', error)
     })
   }
@@ -359,7 +385,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="app-layout min-h-screen relative" style="z-index: 100;">
+  <div class="app-layout min-h-screen relative" style="z-index: 100">
     <GlobalGlitch />
     <Header
       v-if="bootLoaderDone"
@@ -376,16 +402,23 @@ onBeforeUnmount(() => {
     <main v-if="bootLoaderDone" class="container mx-auto px-4 py-8 max-w-7xl">
       <!-- Настройки проекта -->
       <section class="mb-12">
-        <h2 class="text-2xl font-bold text-[var(--color-text)] mb-6 font-mono flex items-center gap-3">
+        <h2
+          class="text-2xl font-bold text-[var(--color-text)] mb-6 font-mono flex items-center gap-3"
+        >
           <i class="fas fa-cog text-[var(--color-accent)]"></i>
           Настройки проекта
         </h2>
-        
-        <div class="bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-lg p-6">
+
+        <div
+          class="bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-lg p-6"
+        >
           <form @submit.prevent="saveSettings" class="space-y-6">
             <!-- Название проекта -->
             <div>
-              <label for="project-name" class="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">
+              <label
+                for="project-name"
+                class="block text-sm font-medium text-[var(--color-text-secondary)] mb-2"
+              >
                 Название проекта (отображается на главной странице)
               </label>
               <input
@@ -399,7 +432,10 @@ onBeforeUnmount(() => {
 
             <!-- Title проекта -->
             <div>
-              <label for="project-title" class="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">
+              <label
+                for="project-title"
+                class="block text-sm font-medium text-[var(--color-text-secondary)] mb-2"
+              >
                 Title проекта (отображается в хедере и браузерном заголовке)
               </label>
               <input
@@ -413,7 +449,10 @@ onBeforeUnmount(() => {
 
             <!-- Описание проекта -->
             <div>
-              <label for="project-description" class="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">
+              <label
+                for="project-description"
+                class="block text-sm font-medium text-[var(--color-text-secondary)] mb-2"
+              >
                 Описание проекта
               </label>
               <textarea
@@ -427,7 +466,10 @@ onBeforeUnmount(() => {
 
             <!-- Уровень логирования -->
             <div>
-              <label for="log-level" class="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">
+              <label
+                for="log-level"
+                class="block text-sm font-medium text-[var(--color-text-secondary)] mb-2"
+              >
                 Уровень логирования
               </label>
               <select
@@ -443,7 +485,10 @@ onBeforeUnmount(() => {
 
             <!-- Вебхук логов -->
             <div>
-              <label for="logs-webhook-enabled" class="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">
+              <label
+                for="logs-webhook-enabled"
+                class="block text-sm font-medium text-[var(--color-text-secondary)] mb-2"
+              >
                 Вебхук логов (при создании лога отправляется POST в URL, если включён)
               </label>
               <div class="flex items-center gap-3 mb-2">
@@ -483,10 +528,12 @@ onBeforeUnmount(() => {
                   settingsMessageType === 'success' ? 'text-green-400' : 'text-red-400'
                 ]"
               >
-                <i :class="[
-                  'fas mr-2',
-                  settingsMessageType === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'
-                ]"></i>
+                <i
+                  :class="[
+                    'fas mr-2',
+                    settingsMessageType === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'
+                  ]"
+                ></i>
                 {{ settingsMessage }}
               </div>
             </div>
@@ -496,59 +543,89 @@ onBeforeUnmount(() => {
 
       <!-- Логи -->
       <section>
-        <h2 class="text-2xl font-bold text-[var(--color-text)] mb-6 font-mono flex items-center gap-3">
+        <h2
+          class="text-2xl font-bold text-[var(--color-text)] mb-6 font-mono flex items-center gap-3"
+        >
           <i class="fas fa-list text-[var(--color-accent)]"></i>
           Логи системы
         </h2>
 
         <!-- Счётчики и фильтры -->
-        <div class="bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-lg p-6 mb-6">
+        <div
+          class="bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-lg p-6 mb-6"
+        >
           <!-- Статистика: общие счётчики -->
           <div class="mb-6">
-            <h3 class="text-sm font-semibold text-[var(--color-text-secondary)] uppercase tracking-wider mb-4">
+            <h3
+              class="text-sm font-semibold text-[var(--color-text-secondary)] uppercase tracking-wider mb-4"
+            >
               Статистика логов
             </h3>
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <!-- ERROR -->
-              <div class="bg-red-950/20 border border-red-900/30 rounded-lg p-4 hover:border-red-800/50 transition-colors">
+              <div
+                class="bg-red-950/20 border border-red-900/30 rounded-lg p-4 hover:border-red-800/50 transition-colors"
+              >
                 <div class="flex items-center justify-between">
                   <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 bg-red-900/30 rounded-lg flex items-center justify-center">
+                    <div
+                      class="w-10 h-10 bg-red-900/30 rounded-lg flex items-center justify-center"
+                    >
                       <i class="fas fa-exclamation-circle text-red-400"></i>
                     </div>
                     <div>
-                      <div class="text-xs text-red-400/70 uppercase tracking-wide font-medium">Ошибки</div>
-                      <div class="text-2xl font-bold text-red-400 font-mono">{{ logCounts.error }}</div>
+                      <div class="text-xs text-red-400/70 uppercase tracking-wide font-medium">
+                        Ошибки
+                      </div>
+                      <div class="text-2xl font-bold text-red-400 font-mono">
+                        {{ logCounts.error }}
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
 
               <!-- WARN -->
-              <div class="bg-yellow-950/20 border border-yellow-900/30 rounded-lg p-4 hover:border-yellow-800/50 transition-colors">
+              <div
+                class="bg-yellow-950/20 border border-yellow-900/30 rounded-lg p-4 hover:border-yellow-800/50 transition-colors"
+              >
                 <div class="flex items-center justify-between">
                   <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 bg-yellow-900/30 rounded-lg flex items-center justify-center">
+                    <div
+                      class="w-10 h-10 bg-yellow-900/30 rounded-lg flex items-center justify-center"
+                    >
                       <i class="fas fa-exclamation-triangle text-yellow-400"></i>
                     </div>
                     <div>
-                      <div class="text-xs text-yellow-400/70 uppercase tracking-wide font-medium">Предупреждения</div>
-                      <div class="text-2xl font-bold text-yellow-400 font-mono">{{ logCounts.warn }}</div>
+                      <div class="text-xs text-yellow-400/70 uppercase tracking-wide font-medium">
+                        Предупреждения
+                      </div>
+                      <div class="text-2xl font-bold text-yellow-400 font-mono">
+                        {{ logCounts.warn }}
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
 
               <!-- INFO -->
-              <div class="bg-blue-950/20 border border-blue-900/30 rounded-lg p-4 hover:border-blue-800/50 transition-colors">
+              <div
+                class="bg-blue-950/20 border border-blue-900/30 rounded-lg p-4 hover:border-blue-800/50 transition-colors"
+              >
                 <div class="flex items-center justify-between">
                   <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 bg-blue-900/30 rounded-lg flex items-center justify-center">
+                    <div
+                      class="w-10 h-10 bg-blue-900/30 rounded-lg flex items-center justify-center"
+                    >
                       <i class="fas fa-info-circle text-blue-400"></i>
                     </div>
                     <div>
-                      <div class="text-xs text-blue-400/70 uppercase tracking-wide font-medium">Информация</div>
-                      <div class="text-2xl font-bold text-blue-400 font-mono">{{ logCounts.info }}</div>
+                      <div class="text-xs text-blue-400/70 uppercase tracking-wide font-medium">
+                        Информация
+                      </div>
+                      <div class="text-2xl font-bold text-blue-400 font-mono">
+                        {{ logCounts.info }}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -558,28 +635,42 @@ onBeforeUnmount(() => {
 
           <!-- Накопленные счётчики с момента сброса -->
           <div class="mb-6 pb-6 border-b border-[var(--color-border)]">
-            <h3 class="text-sm font-semibold text-[var(--color-text-secondary)] uppercase tracking-wider mb-4">
+            <h3
+              class="text-sm font-semibold text-[var(--color-text-secondary)] uppercase tracking-wider mb-4"
+            >
               С момента сброса
             </h3>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <!-- Accumulated ERROR -->
-              <div class="bg-[var(--color-bg-tertiary)] border border-[var(--color-border)] rounded-lg p-4">
+              <div
+                class="bg-[var(--color-bg-tertiary)] border border-[var(--color-border)] rounded-lg p-4"
+              >
                 <div class="flex items-center gap-3">
                   <i class="fas fa-exclamation-circle text-red-400 text-lg"></i>
                   <div class="flex-1">
-                    <div class="text-xs text-[var(--color-text-secondary)] uppercase tracking-wide">Ошибки</div>
-                    <div class="text-xl font-bold text-red-400 font-mono">{{ accumulatedCounts.error }}</div>
+                    <div class="text-xs text-[var(--color-text-secondary)] uppercase tracking-wide">
+                      Ошибки
+                    </div>
+                    <div class="text-xl font-bold text-red-400 font-mono">
+                      {{ accumulatedCounts.error }}
+                    </div>
                   </div>
                 </div>
               </div>
 
               <!-- Accumulated WARN -->
-              <div class="bg-[var(--color-bg-tertiary)] border border-[var(--color-border)] rounded-lg p-4">
+              <div
+                class="bg-[var(--color-bg-tertiary)] border border-[var(--color-border)] rounded-lg p-4"
+              >
                 <div class="flex items-center gap-3">
                   <i class="fas fa-exclamation-triangle text-yellow-400 text-lg"></i>
                   <div class="flex-1">
-                    <div class="text-xs text-[var(--color-text-secondary)] uppercase tracking-wide">Предупреждения</div>
-                    <div class="text-xl font-bold text-yellow-400 font-mono">{{ accumulatedCounts.warn }}</div>
+                    <div class="text-xs text-[var(--color-text-secondary)] uppercase tracking-wide">
+                      Предупреждения
+                    </div>
+                    <div class="text-xl font-bold text-yellow-400 font-mono">
+                      {{ accumulatedCounts.warn }}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -588,7 +679,9 @@ onBeforeUnmount(() => {
 
           <!-- Управление: кнопки тестирования и сброса -->
           <div class="mb-6 pb-6 border-b border-[var(--color-border)]">
-            <h3 class="text-sm font-semibold text-[var(--color-text-secondary)] uppercase tracking-wider mb-4">
+            <h3
+              class="text-sm font-semibold text-[var(--color-text-secondary)] uppercase tracking-wider mb-4"
+            >
               Управление
             </h3>
             <div class="flex flex-wrap gap-3">
@@ -624,7 +717,9 @@ onBeforeUnmount(() => {
 
           <!-- Фильтры -->
           <div>
-            <h3 class="text-sm font-semibold text-[var(--color-text-secondary)] uppercase tracking-wider mb-4">
+            <h3
+              class="text-sm font-semibold text-[var(--color-text-secondary)] uppercase tracking-wider mb-4"
+            >
               Фильтр
             </h3>
             <div class="flex flex-wrap gap-2">
@@ -681,17 +776,28 @@ onBeforeUnmount(() => {
         </div>
 
         <!-- Окно логов -->
-        <div class="bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-lg p-6">
-          <div v-if="logsError" class="mb-4 p-4 rounded-lg bg-red-950/30 border border-red-800/50 text-red-400 text-sm">
+        <div
+          class="bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-lg p-6"
+        >
+          <div
+            v-if="logsError"
+            class="mb-4 p-4 rounded-lg bg-red-950/30 border border-red-800/50 text-red-400 text-sm"
+          >
             <i class="fas fa-exclamation-circle mr-2"></i>
             {{ logsError }}
           </div>
-          <div v-if="isLoadingLogs && logs.length === 0" class="text-center py-8 text-[var(--color-text-secondary)]">
+          <div
+            v-if="isLoadingLogs && logs.length === 0"
+            class="text-center py-8 text-[var(--color-text-secondary)]"
+          >
             <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
             <p>Загрузка логов...</p>
           </div>
 
-          <div v-else-if="filteredLogs.length === 0" class="text-center py-8 text-[var(--color-text-secondary)]">
+          <div
+            v-else-if="filteredLogs.length === 0"
+            class="text-center py-8 text-[var(--color-text-secondary)]"
+          >
             <i class="fas fa-inbox text-2xl mb-2"></i>
             <p>Логи отсутствуют</p>
           </div>
@@ -700,10 +806,7 @@ onBeforeUnmount(() => {
             <div
               v-for="log in filteredLogs"
               :key="log.id"
-              :class="[
-                'p-4 rounded-lg border font-mono text-sm',
-                levelBgColors[log.level]
-              ]"
+              :class="['p-4 rounded-lg border font-mono text-sm', levelBgColors[log.level]]"
             >
               <div class="flex items-start gap-3">
                 <span :class="['font-bold uppercase flex-shrink-0', levelColors[log.level]]">
@@ -711,7 +814,9 @@ onBeforeUnmount(() => {
                 </span>
                 <div class="flex-1 min-w-0">
                   <p class="text-[var(--color-text)] break-words">{{ log.message }}</p>
-                  <div class="flex flex-wrap items-center gap-4 mt-2 text-xs text-[var(--color-text-tertiary)]">
+                  <div
+                    class="flex flex-wrap items-center gap-4 mt-2 text-xs text-[var(--color-text-tertiary)]"
+                  >
                     <span>{{ formatDate(log.createdAt) }}</span>
                     <span v-if="log.code" class="text-[var(--color-accent)]">{{ log.code }}</span>
                   </div>
@@ -721,7 +826,10 @@ onBeforeUnmount(() => {
           </div>
 
           <!-- Загрузка следующей порции — переход по ссылке (полная перезагрузка страницы, Heap доступен при рендере) -->
-          <div v-if="filteredLogs.length > 0" class="flex flex-wrap items-center gap-3 mt-6 pt-6 border-t border-[var(--color-border)]">
+          <div
+            v-if="filteredLogs.length > 0"
+            class="flex flex-wrap items-center gap-3 mt-6 pt-6 border-t border-[var(--color-border)]"
+          >
             <a
               v-if="loadMoreUrl"
               :href="loadMoreUrl"
@@ -738,7 +846,7 @@ onBeforeUnmount(() => {
               <i class="fas fa-list mr-2"></i>
               Показать все (1000)
             </a>
-            
+
             <div class="text-sm text-[var(--color-text-secondary)]">
               Показано: {{ logs.length }}
               <span v-if="!loadMoreUrl && logs.length > 0" class="text-green-400 ml-2">

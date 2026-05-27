@@ -5,7 +5,11 @@ defineProps<{
 </script>
 
 <template>
-  <div class="dc-page-background" :class="`dc-page-background--${theme ?? 'dark'}`" aria-hidden="true">
+  <div
+    class="dc-page-background"
+    :class="`dc-page-background--${theme ?? 'dark'}`"
+    aria-hidden="true"
+  >
     <div class="dc-page-bg-base"></div>
     <div class="dc-page-bg-vignette"></div>
   </div>
@@ -26,10 +30,7 @@ defineProps<{
 }
 
 .dc-page-bg-base {
-  background:
-    var(--gradient-ambient-top),
-    var(--gradient-ambient-bottom),
-    var(--gradient-app);
+  background: var(--gradient-ambient-top), var(--gradient-ambient-bottom), var(--gradient-app);
 }
 
 .dc-page-bg-vignette {

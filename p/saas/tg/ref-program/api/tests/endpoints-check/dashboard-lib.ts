@@ -46,9 +46,7 @@ export const dashboardLibTestRoute = app.get('/', async (ctx, req) => {
       id: 'resetDashboard',
       title: 'resetDashboard',
       passed:
-        counts.errorCount === 0 &&
-        counts.warnCount === 0 &&
-        typeof counts.resetAt === 'number'
+        counts.errorCount === 0 && counts.warnCount === 0 && typeof counts.resetAt === 'number'
     })
   } catch (e) {
     results.push({

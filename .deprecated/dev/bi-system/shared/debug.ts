@@ -77,9 +77,11 @@ export class Debug extends Error {
     const head = `[${level.toUpperCase()}][${ts}]${code ? `[${code}]` : ''}`
     const line = `${head}: ${message}`
 
-    try { ctx.log?.(line) } catch {}
-    try { ctx.account?.log?.(`${Debug.logPrefix}${line}`) } catch {}
+    try {
+      ctx.log?.(line)
+    } catch {}
+    try {
+      ctx.account?.log?.(`${Debug.logPrefix}${line}`)
+    } catch {}
   }
 }
-
-

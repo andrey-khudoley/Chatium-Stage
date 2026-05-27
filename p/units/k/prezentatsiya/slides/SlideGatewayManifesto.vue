@@ -111,7 +111,11 @@ defineProps({ active: Boolean })
 }
 
 @media (max-width: 768px) {
-  .slide { padding: 32px 16px; }
-  .caption { margin-top: 40px; }
+  .slide {
+    padding: 32px 16px;
+  }
+  .caption {
+    margin-top: 40px;
+  }
 }
 </style>

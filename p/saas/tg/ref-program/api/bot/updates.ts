@@ -21,7 +21,11 @@ export const botUpdatesRoute = app.get('/', async (ctx, req) => {
   const user = requireRealUser(ctx)
   const campaignId = typeof req.query?.campaignId === 'string' ? req.query.campaignId.trim() : ''
   if (!campaignId) {
-    await loggerLib.writeServerLog(ctx, { severity: SEV.warn, message: `[${LOG_PATH}] campaignId не указан`, payload: {} })
+    await loggerLib.writeServerLog(ctx, {
+      severity: SEV.warn,
+      message: `[${LOG_PATH}] campaignId не указан`,
+      payload: {}
+    })
     return { success: false, error: 'Параметр campaignId обязателен' }
   }
 

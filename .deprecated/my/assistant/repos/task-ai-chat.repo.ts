@@ -6,7 +6,11 @@ import TaskProjects from '../tables/task-projects.table'
 /**
  * Проверка, что проект принадлежит пользователю.
  */
-export async function assertProjectOwnedByUser(ctx: app.Ctx, userId: string, projectId: string): Promise<void> {
+export async function assertProjectOwnedByUser(
+  ctx: app.Ctx,
+  userId: string,
+  projectId: string
+): Promise<void> {
   const project = await TaskProjects.findOneBy(ctx, { id: projectId, userId })
   if (!project) {
     throw new Error('Проект не найден')
@@ -54,7 +58,11 @@ export async function getOrCreateAiChatFeed(
 /**
  * Удаляет фид и создаёт новый (сброс истории чата).
  */
-export async function resetAiChatFeed(ctx: app.Ctx, userId: string, projectId: string): Promise<{ feedId: string }> {
+export async function resetAiChatFeed(
+  ctx: app.Ctx,
+  userId: string,
+  projectId: string
+): Promise<{ feedId: string }> {
   await assertProjectOwnedByUser(ctx, userId, projectId)
 
   return runWithExclusiveLock(ctx, `task-ai-chat-feed:${userId}:${projectId}`, async () => {

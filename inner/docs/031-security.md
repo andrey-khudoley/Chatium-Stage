@@ -1,4 +1,5 @@
 @chatium
+
 # Модуль @app/security: CSRF-токены
 
 Краткий справочник по модулю `@app/security` — генерация и проверка динамических CSRF-токенов. Типизация: `node_modules/@app/security/index.d.ts`.

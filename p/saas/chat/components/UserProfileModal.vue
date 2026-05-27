@@ -66,7 +66,7 @@ import ParticipantDirectChat from './ParticipantDirectChat.vue'
 
 const props = defineProps({
   user: Object,
-  userId: String,
+  userId: String
 })
 
 const emit = defineEmits(['close', 'start-chat'])
@@ -82,7 +82,7 @@ const canMessage = computed(() => {
 const displayName = computed(() => {
   if (!props.user) return 'Пользователь'
   if (props.user.firstName) {
-    return props.user.lastName 
+    return props.user.lastName
       ? `${props.user.firstName} ${props.user.lastName}`
       : props.user.firstName
   }
@@ -113,12 +113,12 @@ const avatarStyle = computed(() => {
     ['#fa709a', '#fee140'],
     ['#a8edea', '#fed6e3'],
     ['#d299c2', '#fef9d7'],
-    ['#89f7fe', '#66a6ff'],
+    ['#89f7fe', '#66a6ff']
   ]
   const index = (props.userId?.charCodeAt(0) || 0) % colors.length
   const [from, to] = colors[index]
   return {
-    background: `linear-gradient(135deg, ${from} 0%, ${to} 100%)`,
+    background: `linear-gradient(135deg, ${from} 0%, ${to} 100%)`
   }
 })
 
@@ -127,7 +127,7 @@ const roleLabel = computed(() => {
     Admin: 'Администратор',
     Staff: 'Сотрудник',
     User: 'Пользователь',
-    Owner: 'Владелец',
+    Owner: 'Владелец'
   }
   return roles[props.user?.accountRole] || props.user?.accountRole
 })
@@ -219,7 +219,12 @@ function onChatCreated({ feedId, isNew }) {
   left: 0;
   right: 0;
   padding: 40px 20px 20px;
-  background: linear-gradient(to top, rgba(0, 0, 0, 0.7) 0%, rgba(0, 0, 0, 0.3) 50%, transparent 100%);
+  background: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.7) 0%,
+    rgba(0, 0, 0, 0.3) 50%,
+    transparent 100%
+  );
   text-align: center;
 }
 
@@ -306,15 +311,15 @@ function onChatCreated({ feedId, isNew }) {
     max-width: 100%;
     margin: 0 16px;
   }
-  
+
   .profile-photo-placeholder {
     font-size: 56px;
   }
-  
+
   .profile-name {
     font-size: 20px;
   }
-  
+
   .profile-photo-overlay {
     padding: 30px 16px 16px;
   }

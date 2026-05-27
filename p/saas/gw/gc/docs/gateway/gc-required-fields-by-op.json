@@ -8,11 +8,7 @@
     "legacyHelpSupplement": "https://getcourse.ru/help/api"
   },
   "heapBeforeIntegrationTesting": {
-    "alwaysRequiredKeys": [
-      "gc_developer_api_key",
-      "gc_test_school_api_key",
-      "gc_test_school_host"
-    ],
+    "alwaysRequiredKeys": ["gc_developer_api_key", "gc_test_school_api_key", "gc_test_school_host"],
     "description": "Три ключа обязательны до любого интеграционного вызова gateway→GC через /v1/{op}. Идентификаторы для args по возможности из цепочек в памяти прогона (gateway-testing-strategy.md §2); gc_itest_* — исключения (gateway-operation-manual §5.8 уровень B)."
   },
   "entries": [
@@ -22,11 +18,7 @@
       "openApiPath": "/users",
       "httpMethod": "POST",
       "transportRequired": {
-        "postFormFieldsIfPost": [
-          "action",
-          "key",
-          "params"
-        ],
+        "postFormFieldsIfPost": ["action", "key", "params"],
         "queryParametersIfGet": [],
         "pathParameters": []
       },
@@ -39,11 +31,7 @@
       "openApiPath": "/deals",
       "httpMethod": "POST",
       "transportRequired": {
-        "postFormFieldsIfPost": [
-          "action",
-          "key",
-          "params"
-        ],
+        "postFormFieldsIfPost": ["action", "key", "params"],
         "queryParametersIfGet": [],
         "pathParameters": []
       },
@@ -57,9 +45,7 @@
       "httpMethod": "GET",
       "transportRequired": {
         "postFormFieldsIfPost": [],
-        "queryParametersIfGet": [
-          "key"
-        ],
+        "queryParametersIfGet": ["key"],
         "pathParameters": []
       },
       "schoolApiKeyOnWire": "form_or_query_key_not_in_heap_fixture",
@@ -72,12 +58,8 @@
       "httpMethod": "GET",
       "transportRequired": {
         "postFormFieldsIfPost": [],
-        "queryParametersIfGet": [
-          "key"
-        ],
-        "pathParameters": [
-          "groupId"
-        ]
+        "queryParametersIfGet": ["key"],
+        "pathParameters": ["groupId"]
       },
       "schoolApiKeyOnWire": "form_or_query_key_not_in_heap_fixture",
       "innerParamsJsonNotes": null
@@ -89,9 +71,7 @@
       "httpMethod": "GET",
       "transportRequired": {
         "postFormFieldsIfPost": [],
-        "queryParametersIfGet": [
-          "key"
-        ],
+        "queryParametersIfGet": ["key"],
         "pathParameters": []
       },
       "schoolApiKeyOnWire": "form_or_query_key_not_in_heap_fixture",
@@ -104,9 +84,7 @@
       "httpMethod": "GET",
       "transportRequired": {
         "postFormFieldsIfPost": [],
-        "queryParametersIfGet": [
-          "key"
-        ],
+        "queryParametersIfGet": ["key"],
         "pathParameters": []
       },
       "schoolApiKeyOnWire": "form_or_query_key_not_in_heap_fixture",
@@ -119,9 +97,7 @@
       "httpMethod": "GET",
       "transportRequired": {
         "postFormFieldsIfPost": [],
-        "queryParametersIfGet": [
-          "key"
-        ],
+        "queryParametersIfGet": ["key"],
         "pathParameters": []
       },
       "schoolApiKeyOnWire": "form_or_query_key_not_in_heap_fixture",
@@ -134,12 +110,8 @@
       "httpMethod": "GET",
       "transportRequired": {
         "postFormFieldsIfPost": [],
-        "queryParametersIfGet": [
-          "key"
-        ],
-        "pathParameters": [
-          "exportId"
-        ]
+        "queryParametersIfGet": ["key"],
+        "pathParameters": ["exportId"]
       },
       "schoolApiKeyOnWire": "form_or_query_key_not_in_heap_fixture",
       "innerParamsJsonNotes": null
@@ -155,11 +127,7 @@
       "requiredPathParameters": [],
       "requiredQueryParameters": [],
       "requiredHeaderParameters": [],
-      "requiredJsonBodyTopLevel": [
-        "dealId",
-        "text",
-        "userId"
-      ]
+      "requiredJsonBodyTopLevel": ["dealId", "text", "userId"]
     },
     {
       "op": "addCommentToDialog",
@@ -172,12 +140,7 @@
       "requiredPathParameters": [],
       "requiredQueryParameters": [],
       "requiredHeaderParameters": [],
-      "requiredJsonBodyTopLevel": [
-        "commentText",
-        "dialogId",
-        "transport",
-        "userId"
-      ]
+      "requiredJsonBodyTopLevel": ["commentText", "dialogId", "transport", "userId"]
     },
     {
       "op": "addCommentToLessonAnswer",
@@ -190,11 +153,7 @@
       "requiredPathParameters": [],
       "requiredQueryParameters": [],
       "requiredHeaderParameters": [],
-      "requiredJsonBodyTopLevel": [
-        "lessonAnswerId",
-        "text",
-        "userId"
-      ]
+      "requiredJsonBodyTopLevel": ["lessonAnswerId", "text", "userId"]
     },
     {
       "op": "addCommentToWebinar",
@@ -207,11 +166,7 @@
       "requiredPathParameters": [],
       "requiredQueryParameters": [],
       "requiredHeaderParameters": [],
-      "requiredJsonBodyTopLevel": [
-        "moderatorId",
-        "text",
-        "webinarId"
-      ]
+      "requiredJsonBodyTopLevel": ["moderatorId", "text", "webinarId"]
     },
     {
       "op": "addDealPositions",
@@ -224,10 +179,7 @@
       "requiredPathParameters": [],
       "requiredQueryParameters": [],
       "requiredHeaderParameters": [],
-      "requiredJsonBodyTopLevel": [
-        "dealId",
-        "positions"
-      ]
+      "requiredJsonBodyTopLevel": ["dealId", "positions"]
     },
     {
       "op": "addNote",
@@ -240,10 +192,7 @@
       "requiredPathParameters": [],
       "requiredQueryParameters": [],
       "requiredHeaderParameters": [],
-      "requiredJsonBodyTopLevel": [
-        "dialogId",
-        "text"
-      ]
+      "requiredJsonBodyTopLevel": ["dialogId", "text"]
     },
     {
       "op": "addUserBalance",
@@ -256,11 +205,7 @@
       "requiredPathParameters": [],
       "requiredQueryParameters": [],
       "requiredHeaderParameters": [],
-      "requiredJsonBodyTopLevel": [
-        "comment",
-        "type",
-        "value"
-      ]
+      "requiredJsonBodyTopLevel": ["comment", "type", "value"]
     },
     {
       "op": "addUserGroups",
@@ -273,9 +218,7 @@
       "requiredPathParameters": [],
       "requiredQueryParameters": [],
       "requiredHeaderParameters": [],
-      "requiredJsonBodyTopLevel": [
-        "groups"
-      ]
+      "requiredJsonBodyTopLevel": ["groups"]
     },
     {
       "op": "changeDepartment",
@@ -288,10 +231,7 @@
       "requiredPathParameters": [],
       "requiredQueryParameters": [],
       "requiredHeaderParameters": [],
-      "requiredJsonBodyTopLevel": [
-        "dialogId",
-        "newDepartmentId"
-      ]
+      "requiredJsonBodyTopLevel": ["dialogId", "newDepartmentId"]
     },
     {
       "op": "changeStatusAnswers",
@@ -304,10 +244,7 @@
       "requiredPathParameters": [],
       "requiredQueryParameters": [],
       "requiredHeaderParameters": [],
-      "requiredJsonBodyTopLevel": [
-        "lessonAnswerId",
-        "status"
-      ]
+      "requiredJsonBodyTopLevel": ["lessonAnswerId", "status"]
     },
     {
       "op": "closeDialog",
@@ -320,9 +257,7 @@
       "requiredPathParameters": [],
       "requiredQueryParameters": [],
       "requiredHeaderParameters": [],
-      "requiredJsonBodyTopLevel": [
-        "dialogId"
-      ]
+      "requiredJsonBodyTopLevel": ["dialogId"]
     },
     {
       "op": "createDiploma",
@@ -335,9 +270,7 @@
       "requiredPathParameters": [],
       "requiredQueryParameters": [],
       "requiredHeaderParameters": [],
-      "requiredJsonBodyTopLevel": [
-        "templateId"
-      ]
+      "requiredJsonBodyTopLevel": ["templateId"]
     },
     {
       "op": "getAllGroups",
@@ -387,9 +320,7 @@
         "authorizationBearer": true
       },
       "requiredPathParameters": [],
-      "requiredQueryParameters": [
-        "dealId"
-      ],
+      "requiredQueryParameters": ["dealId"],
       "requiredHeaderParameters": [],
       "requiredJsonBodyTopLevel": null
     },
@@ -415,9 +346,7 @@
         "authorizationBearer": true
       },
       "requiredPathParameters": [],
-      "requiredQueryParameters": [
-        "dealId"
-      ],
+      "requiredQueryParameters": ["dealId"],
       "requiredHeaderParameters": [],
       "requiredJsonBodyTopLevel": null
     },
@@ -430,9 +359,7 @@
         "authorizationBearer": true
       },
       "requiredPathParameters": [],
-      "requiredQueryParameters": [
-        "dealId"
-      ],
+      "requiredQueryParameters": ["dealId"],
       "requiredHeaderParameters": [],
       "requiredJsonBodyTopLevel": null
     },
@@ -445,9 +372,7 @@
         "authorizationBearer": true
       },
       "requiredPathParameters": [],
-      "requiredQueryParameters": [
-        "dealId"
-      ],
+      "requiredQueryParameters": ["dealId"],
       "requiredHeaderParameters": [],
       "requiredJsonBodyTopLevel": null
     },
@@ -473,9 +398,7 @@
         "authorizationBearer": true
       },
       "requiredPathParameters": [],
-      "requiredQueryParameters": [
-        "dialogId"
-      ],
+      "requiredQueryParameters": ["dialogId"],
       "requiredHeaderParameters": [],
       "requiredJsonBodyTopLevel": null
     },
@@ -488,9 +411,7 @@
         "authorizationBearer": true
       },
       "requiredPathParameters": [],
-      "requiredQueryParameters": [
-        "lessonId"
-      ],
+      "requiredQueryParameters": ["lessonId"],
       "requiredHeaderParameters": [],
       "requiredJsonBodyTopLevel": null
     },
@@ -503,9 +424,7 @@
         "authorizationBearer": true
       },
       "requiredPathParameters": [],
-      "requiredQueryParameters": [
-        "offerId"
-      ],
+      "requiredQueryParameters": ["offerId"],
       "requiredHeaderParameters": [],
       "requiredJsonBodyTopLevel": null
     },
@@ -583,9 +502,7 @@
         "authorizationBearer": true
       },
       "requiredPathParameters": [],
-      "requiredQueryParameters": [
-        "chatId"
-      ],
+      "requiredQueryParameters": ["chatId"],
       "requiredHeaderParameters": [],
       "requiredJsonBodyTopLevel": null
     },
@@ -730,9 +647,7 @@
       "requiredPathParameters": [],
       "requiredQueryParameters": [],
       "requiredHeaderParameters": [],
-      "requiredJsonBodyTopLevel": [
-        "ids"
-      ]
+      "requiredJsonBodyTopLevel": ["ids"]
     },
     {
       "op": "moderateWebinarComment",
@@ -745,11 +660,7 @@
       "requiredPathParameters": [],
       "requiredQueryParameters": [],
       "requiredHeaderParameters": [],
-      "requiredJsonBodyTopLevel": [
-        "action",
-        "commentId",
-        "webinarId"
-      ]
+      "requiredJsonBodyTopLevel": ["action", "commentId", "webinarId"]
     },
     {
       "op": "moderateWebinarUser",
@@ -762,12 +673,7 @@
       "requiredPathParameters": [],
       "requiredQueryParameters": [],
       "requiredHeaderParameters": [],
-      "requiredJsonBodyTopLevel": [
-        "action",
-        "userId",
-        "userType",
-        "webinarId"
-      ]
+      "requiredJsonBodyTopLevel": ["action", "userId", "userType", "webinarId"]
     },
     {
       "op": "removeDealPositions",
@@ -780,10 +686,7 @@
       "requiredPathParameters": [],
       "requiredQueryParameters": [],
       "requiredHeaderParameters": [],
-      "requiredJsonBodyTopLevel": [
-        "dealId",
-        "positionIds"
-      ]
+      "requiredJsonBodyTopLevel": ["dealId", "positionIds"]
     },
     {
       "op": "removeUserGroups",
@@ -796,9 +699,7 @@
       "requiredPathParameters": [],
       "requiredQueryParameters": [],
       "requiredHeaderParameters": [],
-      "requiredJsonBodyTopLevel": [
-        "groups"
-      ]
+      "requiredJsonBodyTopLevel": ["groups"]
     },
     {
       "op": "setPersonalManager",
@@ -811,9 +712,7 @@
       "requiredPathParameters": [],
       "requiredQueryParameters": [],
       "requiredHeaderParameters": [],
-      "requiredJsonBodyTopLevel": [
-        "managerId"
-      ]
+      "requiredJsonBodyTopLevel": ["managerId"]
     },
     {
       "op": "setUri",
@@ -826,11 +725,7 @@
       "requiredPathParameters": [],
       "requiredQueryParameters": [],
       "requiredHeaderParameters": [],
-      "requiredJsonBodyTopLevel": [
-        "event_id",
-        "event_object_id",
-        "uri"
-      ]
+      "requiredJsonBodyTopLevel": ["event_id", "event_object_id", "uri"]
     },
     {
       "op": "setUserGroups",
@@ -843,9 +738,7 @@
       "requiredPathParameters": [],
       "requiredQueryParameters": [],
       "requiredHeaderParameters": [],
-      "requiredJsonBodyTopLevel": [
-        "groups"
-      ]
+      "requiredJsonBodyTopLevel": ["groups"]
     },
     {
       "op": "updateDealFields",
@@ -858,9 +751,7 @@
       "requiredPathParameters": [],
       "requiredQueryParameters": [],
       "requiredHeaderParameters": [],
-      "requiredJsonBodyTopLevel": [
-        "dealId"
-      ]
+      "requiredJsonBodyTopLevel": ["dealId"]
     },
     {
       "op": "updateUserCustomFields",
@@ -873,9 +764,7 @@
       "requiredPathParameters": [],
       "requiredQueryParameters": [],
       "requiredHeaderParameters": [],
-      "requiredJsonBodyTopLevel": [
-        "customFields"
-      ]
+      "requiredJsonBodyTopLevel": ["customFields"]
     },
     {
       "op": "updateUserFields",

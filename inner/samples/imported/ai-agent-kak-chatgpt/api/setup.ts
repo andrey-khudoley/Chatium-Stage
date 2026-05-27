@@ -6,7 +6,7 @@ import { getOrCreateAgentForWorkspace } from '@ai-agents/sdk/process'
 import { getWorkspaceTransportIdentity } from '../transport/hook'
 
 // @shared-route
-export const apiCreateTransportRoute = app.post('/create-transport', async ctx => {
+export const apiCreateTransportRoute = app.post('/create-transport', async (ctx) => {
   await requireAccountRole(ctx, 'Admin')
 
   const transportIdentity = await getWorkspaceTransportIdentity(ctx)
@@ -26,8 +26,7 @@ export const apiCreateTransportRoute = app.post('/create-transport', async ctx =
 
   await getOrCreateAgentForWorkspace(ctx, transportIdentity.key, {
     title: transportIdentity.title,
-    instructions:
-      'Ты отвечаешь на все сообщения, которые пишет пользователь',
+    instructions: 'Ты отвечаешь на все сообщения, которые пишет пользователь',
     enabledTools: [sendMessageToChatTool],
     linkToChannelId: channel.id
   })

@@ -161,12 +161,12 @@
 }
 
 /* Темная тема */
-[data-theme="dark"] .checkbox-circle {
+[data-theme='dark'] .checkbox-circle {
   background: var(--bg-secondary);
   border-color: var(--border-color);
 }
 
-[data-theme="dark"] .checkbox-circle.checked {
+[data-theme='dark'] .checkbox-circle.checked {
   background: var(--primary-color);
   border-color: var(--primary-color);
 }

@@ -8,55 +8,55 @@
         </button>
         <h1 class="sidebar-title">Профиль</h1>
       </div>
-      
+
       <nav class="profile-nav">
-        <button 
-          @click="activeTab = 'general'" 
+        <button
+          @click="activeTab = 'general'"
           :class="['nav-item', { active: activeTab === 'general' }]"
         >
           <i class="fas fa-user"></i>
           <span>Основное</span>
         </button>
-        <button 
-          @click="activeTab = 'contacts'" 
+        <button
+          @click="activeTab = 'contacts'"
           :class="['nav-item', { active: activeTab === 'contacts' }]"
         >
           <i class="fas fa-address-card"></i>
           <span>Контакты</span>
         </button>
-        <button 
-          @click="activeTab = 'security'" 
+        <button
+          @click="activeTab = 'security'"
           :class="['nav-item', { active: activeTab === 'security' }]"
         >
           <i class="fas fa-shield-alt"></i>
           <span>Безопасность</span>
         </button>
-        <button 
-          @click="activeTab = 'blocked'" 
+        <button
+          @click="activeTab = 'blocked'"
           :class="['nav-item', { active: activeTab === 'blocked' }]"
         >
           <i class="fas fa-ban"></i>
           <span>Чёрный список</span>
         </button>
-        <button 
-          @click="activeTab = 'privacy'" 
+        <button
+          @click="activeTab = 'privacy'"
           :class="['nav-item', { active: activeTab === 'privacy' }]"
         >
           <i class="fas fa-lock"></i>
           <span>Приватность</span>
         </button>
 
-        <button 
+        <button
           v-if="isAdmin"
-          @click="activeTab = 'agents'" 
+          @click="activeTab = 'agents'"
           :class="['nav-item', { active: activeTab === 'agents' }]"
         >
           <i class="fas fa-robot"></i>
           <span>Агенты</span>
         </button>
-        <button 
+        <button
           v-if="isAdmin"
-          @click="activeTab = 'admin'" 
+          @click="activeTab = 'admin'"
           :class="['nav-item', { active: activeTab === 'admin' }]"
         >
           <i class="fas fa-cog"></i>
@@ -101,19 +101,11 @@
             <div class="form-row">
               <div class="form-group">
                 <label>Имя</label>
-                <input 
-                  v-model="editForm.firstName" 
-                  type="text" 
-                  placeholder="Ваше имя"
-                />
+                <input v-model="editForm.firstName" type="text" placeholder="Ваше имя" />
               </div>
               <div class="form-group">
                 <label>Фамилия</label>
-                <input 
-                  v-model="editForm.lastName" 
-                  type="text" 
-                  placeholder="Ваша фамилия"
-                />
+                <input v-model="editForm.lastName" type="text" placeholder="Ваша фамилия" />
               </div>
             </div>
 
@@ -121,9 +113,9 @@
               <label>Имя пользователя (username)</label>
               <div class="username-input-wrapper">
                 <span class="username-prefix">@</span>
-                <input 
-                  v-model="editForm.username" 
-                  type="text" 
+                <input
+                  v-model="editForm.username"
+                  type="text"
                   placeholder="username"
                   class="username-input"
                 />
@@ -133,12 +125,7 @@
 
             <div class="form-group">
               <label>Отображаемое имя</label>
-              <input 
-                :value="profile.displayName" 
-                type="text" 
-                disabled
-                class="disabled"
-              />
+              <input :value="profile.displayName" type="text" disabled class="disabled" />
               <span class="field-hint">Формируется автоматически из имени и фамилии</span>
             </div>
 
@@ -154,19 +141,12 @@
               </div>
               <div class="form-group">
                 <label>Дата рождения</label>
-                <input 
-                  v-model="editForm.birthday" 
-                  type="date"
-                />
+                <input v-model="editForm.birthday" type="date" />
               </div>
             </div>
 
             <div class="form-actions">
-              <button 
-                type="submit" 
-                :disabled="saving || !hasChanges"
-                class="btn-save"
-              >
+              <button type="submit" :disabled="saving || !hasChanges" class="btn-save">
                 <i v-if="saving" class="fas fa-spinner fa-spin"></i>
                 <span v-else>Сохранить</span>
               </button>
@@ -226,7 +206,9 @@
 
           <div class="contacts-info">
             <i class="fas fa-info-circle"></i>
-            <p>Изменение email и телефона доступно через настройки безопасности аккаунта Chatium.</p>
+            <p>
+              Изменение email и телефона доступно через настройки безопасности аккаунта Chatium.
+            </p>
           </div>
         </div>
 
@@ -251,9 +233,7 @@
                 <span class="security-label">Пароль</span>
                 <span class="security-value">••••••••</span>
               </div>
-              <a href="/s/auth/change-password" class="btn-link">
-                Изменить
-              </a>
+              <a href="/s/auth/change-password" class="btn-link"> Изменить </a>
             </div>
           </div>
         </div>
@@ -286,8 +266,8 @@
                 <div class="blocked-name">{{ getBlockedName(blocked) }}</div>
                 <div v-if="blocked.reason" class="blocked-reason">{{ blocked.reason }}</div>
               </div>
-              <button 
-                @click="unblockUser(blocked)" 
+              <button
+                @click="unblockUser(blocked)"
                 class="btn-unblock"
                 :disabled="unblockingId === blocked.blockedUserId"
               >
@@ -300,8 +280,6 @@
 
         <!-- Вкладка Приватность -->
         <PrivacySettings v-if="activeTab === 'privacy'" />
-
-
 
         <!-- Вкладка Агенты (только для админов) -->
         <AgentChatsList v-if="activeTab === 'agents'" @chat-created="onAgentChatCreated" />
@@ -323,7 +301,10 @@
     />
 
     <!-- Уведомление -->
-    <div v-if="notification.show" :class="['notification', notification.type, { show: notification.show }]">
+    <div
+      v-if="notification.show"
+      :class="['notification', notification.type, { show: notification.show }]"
+    >
       <i :class="notification.icon"></i>
       <span>{{ notification.message }}</span>
     </div>
@@ -333,7 +314,11 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import AgentChatsList from './AgentChatsList.vue'
-import { apiProfileGetRoute, apiProfileUpdateRoute, apiProfileUpdateAvatarRoute } from '../api/profile'
+import {
+  apiProfileGetRoute,
+  apiProfileUpdateRoute,
+  apiProfileUpdateAvatarRoute
+} from '../api/profile'
 import { apiBlockedUsersListRoute, apiBlockedUsersUnblockRoute } from '../api/blocked-users'
 import PrivacySettings from './PrivacySettings.vue'
 import AvatarCropperModal from './AvatarCropperModal.vue'
@@ -359,7 +344,7 @@ const profile = ref({
   gender: '',
   birthday: '',
   imageUrl: '',
-  accountRole: '',
+  accountRole: ''
 })
 
 const isAdmin = computed(() => {
@@ -371,7 +356,7 @@ const editForm = ref({
   lastName: '',
   username: '',
   gender: '',
-  birthday: '',
+  birthday: ''
 })
 
 // ===== Методы для работы с аватаркой =====
@@ -401,7 +386,7 @@ async function onAvatarSaved(hash) {
 
 async function removeAvatar() {
   if (!confirm('Удалить фото профиля?')) return
-  
+
   try {
     await apiProfileUpdateAvatarRoute.run(ctx, { imageHash: null })
     profile.value.imageUrl = ''
@@ -417,7 +402,7 @@ const notification = ref({
   show: false,
   type: 'success',
   message: '',
-  icon: 'fas fa-check-circle',
+  icon: 'fas fa-check-circle'
 })
 
 // Чёрный список
@@ -446,7 +431,7 @@ function showNotification(message, type = 'success') {
     show: true,
     type,
     message,
-    icon: type === 'success' ? 'fas fa-check-circle' : 'fas fa-exclamation-circle',
+    icon: type === 'success' ? 'fas fa-check-circle' : 'fas fa-exclamation-circle'
   }
   setTimeout(() => {
     notification.value.show = false
@@ -458,13 +443,13 @@ async function loadProfile() {
     loading.value = true
     const response = await apiProfileGetRoute.run(ctx)
     profile.value = response.user
-    
+
     editForm.value = {
       firstName: response.user.firstName || '',
       lastName: response.user.lastName || '',
       username: response.user.username || '',
       gender: response.user.gender || '',
-      birthday: response.user.birthday || '',
+      birthday: response.user.birthday || ''
     }
   } catch (error) {
     console.error('Ошибка загрузки профиля:', error)
@@ -476,7 +461,7 @@ async function loadProfile() {
 
 async function saveProfile() {
   if (!hasChanges.value) return
-  
+
   saving.value = true
   try {
     const result = await apiProfileUpdateRoute.run(ctx, {
@@ -484,27 +469,28 @@ async function saveProfile() {
       lastName: editForm.value.lastName,
       username: editForm.value.username,
       gender: editForm.value.gender,
-      birthday: editForm.value.birthday,
+      birthday: editForm.value.birthday
     })
-    
+
     if (result && result.success === false) {
       showNotification(result.message || 'Не удалось сохранить изменения', 'error')
       return
     }
-    
+
     profile.value = {
       ...profile.value,
       firstName: editForm.value.firstName,
       lastName: editForm.value.lastName,
       username: editForm.value.username,
       gender: editForm.value.gender,
-      birthday: editForm.value.birthday,
+      birthday: editForm.value.birthday
     }
-    
+
     showNotification('Профиль успешно обновлён')
   } catch (error) {
     console.error('Ошибка сохранения профиля:', error)
-    const errorMessage = error?.response?.data?.message || error?.message || 'Не удалось сохранить изменения'
+    const errorMessage =
+      error?.response?.data?.message || error?.message || 'Не удалось сохранить изменения'
     showNotification(errorMessage, 'error')
   } finally {
     saving.value = false
@@ -543,11 +529,11 @@ async function loadBlockedUsers() {
 
 async function unblockUser(blocked) {
   if (unblockingId.value) return
-  
+
   unblockingId.value = blocked.blockedUserId
   try {
     await apiBlockedUsersUnblockRoute.run(ctx, { userId: blocked.blockedUserId })
-    blockedUsers.value = blockedUsers.value.filter(b => b.id !== blocked.id)
+    blockedUsers.value = blockedUsers.value.filter((b) => b.id !== blocked.id)
     showNotification('Пользователь разблокирован')
   } catch (error) {
     console.error('Ошибка разблокировки:', error)
@@ -559,8 +545,10 @@ async function unblockUser(blocked) {
 
 function getBlockedName(blocked) {
   if (!blocked.user) return 'Неизвестный пользователь'
-  const name = blocked.user.firstName 
-    ? (blocked.user.lastName ? `${blocked.user.firstName} ${blocked.user.lastName}` : blocked.user.firstName)
+  const name = blocked.user.firstName
+    ? blocked.user.lastName
+      ? `${blocked.user.firstName} ${blocked.user.lastName}`
+      : blocked.user.firstName
     : blocked.user.displayName
   return name || blocked.user.username || 'Пользователь'
 }
@@ -578,12 +566,12 @@ function getBlockedAvatarStyle(blocked) {
     ['#f093fb', '#f5576c'],
     ['#4facfe', '#00f2fe'],
     ['#43e97b', '#38f9d7'],
-    ['#fa709a', '#fee140'],
+    ['#fa709a', '#fee140']
   ]
   const index = (blocked.blockedUserId?.charCodeAt(0) || 0) % colors.length
   const [from, to] = colors[index]
   return {
-    background: `linear-gradient(135deg, ${from} 0%, ${to} 100%)`,
+    background: `linear-gradient(135deg, ${from} 0%, ${to} 100%)`
   }
 }
 </script>
@@ -1043,8 +1031,6 @@ function getBlockedAvatarStyle(blocked) {
   background: var(--accent-light);
 }
 
-
-
 .notification {
   position: fixed;
   bottom: 24px;
@@ -1091,43 +1077,43 @@ function getBlockedAvatarStyle(blocked) {
   .profile-view {
     flex-direction: column;
   }
-  
+
   .profile-sidebar {
     width: 100%;
     border-right: none;
     border-bottom: 1px solid var(--border-color);
   }
-  
+
   .profile-nav {
     flex-direction: row;
     padding: 8px;
     overflow-x: auto;
   }
-  
+
   .nav-item {
     white-space: nowrap;
   }
-  
+
   .nav-item span {
     display: none;
   }
-  
+
   .profile-main {
     padding: 20px;
   }
-  
+
   .form-row {
     grid-template-columns: 1fr;
   }
-  
+
   .username-input-wrapper {
     padding: 0 12px;
   }
-  
+
   .username-prefix {
     font-size: 16px;
   }
-  
+
   .username-input {
     padding: 12px 8px;
     font-size: 15px;
@@ -1138,20 +1124,20 @@ function getBlockedAvatarStyle(blocked) {
   .profile-main {
     padding: 16px;
   }
-  
+
   .profile-avatar {
     width: 100px;
     height: 100px;
   }
-  
+
   .profile-avatar.placeholder {
     font-size: 40px;
   }
-  
+
   .section-header h2 {
     font-size: 20px;
   }
-  
+
   .avatar-modal {
     max-width: 100%;
     margin: 16px;
@@ -1301,6 +1287,4 @@ function getBlockedAvatarStyle(blocked) {
   opacity: 0.6;
   cursor: not-allowed;
 }
-
-
 </style>

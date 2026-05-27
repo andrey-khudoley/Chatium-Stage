@@ -18,7 +18,12 @@ export const reorderTaskProjectsRoute = app
       payload: { clientId: req.body.clientId, n: req.body.orderedIds.length }
     })
     try {
-      const ok = await tasksRepo.reorderProjects(ctx, user.id, req.body.clientId, req.body.orderedIds)
+      const ok = await tasksRepo.reorderProjects(
+        ctx,
+        user.id,
+        req.body.clientId,
+        req.body.orderedIds
+      )
       if (!ok) {
         return { success: false, error: 'Некорректный порядок или клиент не найден' }
       }

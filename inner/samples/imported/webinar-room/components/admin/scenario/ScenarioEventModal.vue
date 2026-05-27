@@ -4,7 +4,9 @@
       <div v-if="visible" class="se-modal-overlay" @click.self="$emit('close')">
         <div class="se-modal" :class="{ 'se-modal--wide': isFormType }">
           <div class="se-modal-header">
-            <h4 class="wr-text-primary font-semibold text-base">{{ editing ? 'Редактировать событие' : 'Новое событие' }}</h4>
+            <h4 class="wr-text-primary font-semibold text-base">
+              {{ editing ? 'Редактировать событие' : 'Новое событие' }}
+            </h4>
             <button type="button" @click="$emit('close')" class="se-close-btn">
               <i class="fas fa-times"></i>
             </button>
@@ -26,17 +28,38 @@
                 <label class="se-label">Таймкод *</label>
                 <div class="se-time-inputs">
                   <div class="se-time-group">
-                    <input v-model.number="timeHours" type="number" min="0" max="23" class="se-time-input" placeholder="00" />
+                    <input
+                      v-model.number="timeHours"
+                      type="number"
+                      min="0"
+                      max="23"
+                      class="se-time-input"
+                      placeholder="00"
+                    />
                     <span class="se-time-label">ч</span>
                   </div>
                   <span class="se-time-sep">:</span>
                   <div class="se-time-group">
-                    <input v-model.number="timeMinutes" type="number" min="0" max="59" class="se-time-input" placeholder="00" />
+                    <input
+                      v-model.number="timeMinutes"
+                      type="number"
+                      min="0"
+                      max="59"
+                      class="se-time-input"
+                      placeholder="00"
+                    />
                     <span class="se-time-label">м</span>
                   </div>
                   <span class="se-time-sep">:</span>
                   <div class="se-time-group">
-                    <input v-model.number="timeSeconds" type="number" min="0" max="59" class="se-time-input" placeholder="00" />
+                    <input
+                      v-model.number="timeSeconds"
+                      type="number"
+                      min="0"
+                      max="59"
+                      class="se-time-input"
+                      placeholder="00"
+                    />
                     <span class="se-time-label">с</span>
                   </div>
                 </div>
@@ -47,11 +70,21 @@
             <template v-if="form.eventType === 'chat_message'">
               <div class="se-field">
                 <label class="se-label">Имя автора *</label>
-                <input v-model="form.chatMessage.authorName" type="text" class="se-input" placeholder="Иван Петров" />
+                <input
+                  v-model="form.chatMessage.authorName"
+                  type="text"
+                  class="se-input"
+                  placeholder="Иван Петров"
+                />
               </div>
               <div class="se-field">
                 <label class="se-label">Сообщение *</label>
-                <textarea v-model="form.chatMessage.text" rows="3" class="se-input se-textarea" placeholder="Текст сообщения..."></textarea>
+                <textarea
+                  v-model="form.chatMessage.text"
+                  rows="3"
+                  class="se-input se-textarea"
+                  placeholder="Текст сообщения..."
+                ></textarea>
               </div>
               <div class="se-field">
                 <label class="se-check-label">
@@ -86,7 +119,10 @@
                   </div>
                   <div class="se-preview-action">
                     Действие: <strong>{{ actionLabel(selectedForm.submitAction) }}</strong>
-                    <span v-if="selectedForm.paymentAmount"> — {{ selectedForm.paymentAmount }} {{ selectedForm.paymentCurrency || 'RUB' }}</span>
+                    <span v-if="selectedForm.paymentAmount">
+                      — {{ selectedForm.paymentAmount }}
+                      {{ selectedForm.paymentCurrency || 'RUB' }}</span
+                    >
                   </div>
                 </div>
               </div>
@@ -96,15 +132,30 @@
             <template v-if="form.eventType === 'sale_banner'">
               <div class="se-field">
                 <label class="se-label">Заголовок баннера *</label>
-                <input v-model="form.bannerData.title" type="text" class="se-input" placeholder="Специальное предложение!" />
+                <input
+                  v-model="form.bannerData.title"
+                  type="text"
+                  class="se-input"
+                  placeholder="Специальное предложение!"
+                />
               </div>
               <div class="se-field">
                 <label class="se-label">Подзаголовок</label>
-                <input v-model="form.bannerData.subtitle" type="text" class="se-input" placeholder="Только сегодня..." />
+                <input
+                  v-model="form.bannerData.subtitle"
+                  type="text"
+                  class="se-input"
+                  placeholder="Только сегодня..."
+                />
               </div>
               <div class="se-field">
                 <label class="se-label">Текст кнопки</label>
-                <input v-model="form.bannerData.buttonText" type="text" class="se-input" placeholder="Купить" />
+                <input
+                  v-model="form.bannerData.buttonText"
+                  type="text"
+                  class="se-input"
+                  placeholder="Купить"
+                />
               </div>
               <div class="se-field">
                 <label class="se-label">Привязать к форме</label>
@@ -129,7 +180,9 @@
                     class="se-emoji-btn"
                     :class="{ 'se-emoji-btn--active': form.reactionData.emoji === emoji }"
                     @click="form.reactionData.emoji = emoji"
-                  >{{ emoji }}</button>
+                  >
+                    {{ emoji }}
+                  </button>
                 </div>
               </div>
             </template>
@@ -166,7 +219,7 @@ const props = defineProps({
   editing: { type: Object, default: null },
   forms: { type: Array, default: () => [] },
   duration: { type: Number, default: 3600 },
-  autowebinarId: { type: String, required: true },
+  autowebinarId: { type: String, required: true }
 })
 
 const emit = defineEmits(['close', 'save'])
@@ -178,7 +231,7 @@ const form = reactive({
   chatMessage: { authorName: '', text: '', isAdmin: false },
   formId: '',
   bannerData: { title: '', subtitle: '', buttonText: '', formType: '' },
-  reactionData: { emoji: '❤️' },
+  reactionData: { emoji: '❤️' }
 })
 
 const timeHours = ref(0)
@@ -195,20 +248,22 @@ const eventTypeOptions = [
   { value: 'reaction', label: '❤️ Реакция' },
   { value: 'waiting_room_start', label: '⏳ Начало ожидания' },
   { value: 'stream_start', label: '▶️ Старт стрима' },
-  { value: 'finish', label: '🏁 Завершение' },
+  { value: 'finish', label: '🏁 Завершение' }
 ]
 
 const formOptions = computed(() =>
-  props.forms.map(f => ({ value: f.id, label: f.title || 'Без названия' }))
+  props.forms.map((f) => ({ value: f.id, label: f.title || 'Без названия' }))
 )
 
 const selectedForm = computed(() => {
   if (!form.formId) return null
-  return props.forms.find(f => f.id === form.formId)
+  return props.forms.find((f) => f.id === form.formId)
 })
 
 const isFormType = computed(() => ['show_form', 'hide_form'].includes(form.eventType))
-const isSystemType = computed(() => ['waiting_room_start', 'stream_start', 'finish'].includes(form.eventType))
+const isSystemType = computed(() =>
+  ['waiting_room_start', 'stream_start', 'finish'].includes(form.eventType)
+)
 
 const isValid = computed(() => {
   if (!form.eventType) return false
@@ -237,46 +292,51 @@ function reset() {
   timeSeconds.value = 0
 }
 
-watch(() => props.visible, (val) => {
-  if (val && props.editing) {
-    form.eventType = props.editing.eventType
-    const sec = props.editing.offsetSeconds || 0
-    timeHours.value = Math.floor(sec / 3600)
-    timeMinutes.value = Math.floor((sec % 3600) / 60)
-    timeSeconds.value = sec % 60
+watch(
+  () => props.visible,
+  (val) => {
+    if (val && props.editing) {
+      form.eventType = props.editing.eventType
+      const sec = props.editing.offsetSeconds || 0
+      timeHours.value = Math.floor(sec / 3600)
+      timeMinutes.value = Math.floor((sec % 3600) / 60)
+      timeSeconds.value = sec % 60
 
-    form.chatMessage = {
-      authorName: props.editing.chatMessage?.authorName || '',
-      text: props.editing.chatMessage?.text || '',
-      isAdmin: props.editing.chatMessage?.isAdmin || false,
+      form.chatMessage = {
+        authorName: props.editing.chatMessage?.authorName || '',
+        text: props.editing.chatMessage?.text || '',
+        isAdmin: props.editing.chatMessage?.isAdmin || false
+      }
+      if (props.editing.formId) {
+        form.formId =
+          typeof props.editing.formId === 'object' ? props.editing.formId.id : props.editing.formId
+      }
+      form.bannerData = {
+        title: props.editing.bannerData?.title || '',
+        subtitle: props.editing.bannerData?.subtitle || '',
+        buttonText: props.editing.bannerData?.buttonText || '',
+        formType: props.editing.bannerData?.formType || ''
+      }
+      form.reactionData = {
+        emoji: props.editing.reactionData?.emoji || '❤️'
+      }
+    } else if (val) {
+      reset()
     }
-    if (props.editing.formId) {
-      form.formId = typeof props.editing.formId === 'object' ? props.editing.formId.id : props.editing.formId
-    }
-    form.bannerData = {
-      title: props.editing.bannerData?.title || '',
-      subtitle: props.editing.bannerData?.subtitle || '',
-      buttonText: props.editing.bannerData?.buttonText || '',
-      formType: props.editing.bannerData?.formType || '',
-    }
-    form.reactionData = {
-      emoji: props.editing.reactionData?.emoji || '❤️',
-    }
-  } else if (val) {
-    reset()
   }
-})
+)
 
 async function save() {
   if (!isValid.value) return
   saving.value = true
 
-  const offsetSeconds = (timeHours.value || 0) * 3600 + (timeMinutes.value || 0) * 60 + (timeSeconds.value || 0)
+  const offsetSeconds =
+    (timeHours.value || 0) * 3600 + (timeMinutes.value || 0) * 60 + (timeSeconds.value || 0)
 
   const payload = {
     autowebinarId: props.autowebinarId,
     offsetSeconds,
-    eventType: form.eventType,
+    eventType: form.eventType
   }
 
   if (form.eventType === 'chat_message') {
@@ -284,14 +344,21 @@ async function save() {
   }
   if (isFormType.value && form.formId) {
     payload.formId = form.formId
-    const f = props.forms.find(f => f.id === form.formId)
+    const f = props.forms.find((f) => f.id === form.formId)
     if (f) {
       payload.formSnapshot = {
-        title: f.title, subtitle: f.subtitle, buttonText: f.buttonText,
-        buttonColor: f.buttonColor, fields: f.fields, submitAction: f.submitAction,
-        thankYouTitle: f.thankYouTitle, thankYouText: f.thankYouText,
-        redirectUrl: f.redirectUrl, paymentAmount: f.paymentAmount,
-        paymentCurrency: f.paymentCurrency, paymentDescription: f.paymentDescription,
+        title: f.title,
+        subtitle: f.subtitle,
+        buttonText: f.buttonText,
+        buttonColor: f.buttonColor,
+        fields: f.fields,
+        submitAction: f.submitAction,
+        thankYouTitle: f.thankYouTitle,
+        thankYouText: f.thankYouText,
+        redirectUrl: f.redirectUrl,
+        paymentAmount: f.paymentAmount,
+        paymentCurrency: f.paymentCurrency,
+        paymentDescription: f.paymentDescription
       }
     }
   }
@@ -614,7 +681,14 @@ async function save() {
 </style>
 
 <style>
-.modal-fade-enter-active { transition: opacity 0.2s ease; }
-.modal-fade-leave-active { transition: opacity 0.15s ease; }
-.modal-fade-enter-from, .modal-fade-leave-to { opacity: 0; }
+.modal-fade-enter-active {
+  transition: opacity 0.2s ease;
+}
+.modal-fade-leave-active {
+  transition: opacity 0.15s ease;
+}
+.modal-fade-enter-from,
+.modal-fade-leave-to {
+  opacity: 0;
+}
 </style>

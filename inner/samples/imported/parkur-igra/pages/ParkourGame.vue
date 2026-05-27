@@ -17,14 +17,14 @@
         </div>
       </div>
     </div>
-    
+
     <canvas ref="canvas" width="800" height="600"></canvas>
-    
+
     <!-- Мобильные кнопки управления -->
     <div class="mobile-controls">
       <div class="left-controls">
-        <button 
-          class="control-btn direction-btn" 
+        <button
+          class="control-btn direction-btn"
           @touchstart.prevent="handleMobileInput('left', true)"
           @touchend.prevent="handleMobileInput('left', false)"
           @mousedown.prevent="handleMobileInput('left', true)"
@@ -32,8 +32,8 @@
         >
           ←
         </button>
-        <button 
-          class="control-btn direction-btn" 
+        <button
+          class="control-btn direction-btn"
           @touchstart.prevent="handleMobileInput('right', true)"
           @touchend.prevent="handleMobileInput('right', false)"
           @mousedown.prevent="handleMobileInput('right', true)"
@@ -42,36 +42,36 @@
           →
         </button>
       </div>
-      
+
       <div class="right-controls">
-        <button 
-          class="control-btn trick-btn" 
+        <button
+          class="control-btn trick-btn"
           @touchstart.prevent="handleMobileInput('flipForward', true)"
           @touchend.prevent="handleMobileInput('flipForward', false)"
           @mousedown.prevent="handleMobileInput('flipForward', true)"
           @mouseup.prevent="handleMobileInput('flipForward', false)"
         >
-          ↑<br><span>Вперёд</span>
+          ↑<br /><span>Вперёд</span>
         </button>
-        <button 
-          class="control-btn jump-btn" 
+        <button
+          class="control-btn jump-btn"
           @touchstart.prevent="handleMobileInput('jump', true)"
           @mousedown.prevent="handleMobileInput('jump', true)"
         >
           🤸
         </button>
-        <button 
-          class="control-btn trick-btn" 
+        <button
+          class="control-btn trick-btn"
           @touchstart.prevent="handleMobileInput('flipBack', true)"
           @touchend.prevent="handleMobileInput('flipBack', false)"
           @mousedown.prevent="handleMobileInput('flipBack', true)"
           @mouseup.prevent="handleMobileInput('flipBack', false)"
         >
-          ↓<br><span>Назад</span>
+          ↓<br /><span>Назад</span>
         </button>
       </div>
     </div>
-    
+
     <div class="controls">
       <div class="control-group">
         <h3>Управление:</h3>
@@ -157,7 +157,7 @@ const handleMobileInput = (action, isPressed) => {
 
 const handleKeyDown = (e) => {
   keys[e.key.toLowerCase()] = true
-  
+
   if (e.key === ' ') {
     e.preventDefault()
     if (player.isOnGround) {
@@ -165,7 +165,7 @@ const handleKeyDown = (e) => {
       player.isOnGround = false
     }
   }
-  
+
   if ((e.key === 'ArrowUp' || e.key.toLowerCase() === 'w') && !player.isOnGround) {
     player.rotationSpeed = 0.3
     if (Math.abs(player.rotation % (Math.PI * 2)) < 0.5) {
@@ -173,7 +173,7 @@ const handleKeyDown = (e) => {
       tricksCount.value++
     }
   }
-  
+
   if ((e.key === 'ArrowDown' || e.key.toLowerCase() === 's') && !player.isOnGround) {
     player.rotationSpeed = -0.3
     if (Math.abs(player.rotation % (Math.PI * 2)) < 0.5) {
@@ -188,10 +188,12 @@ const handleKeyUp = (e) => {
 }
 
 const checkCollision = (rect1, rect2) => {
-  return rect1.x < rect2.x + rect2.width &&
-         rect1.x + rect1.width > rect2.x &&
-         rect1.y < rect2.y + rect2.height &&
-         rect1.y + rect1.height > rect2.y
+  return (
+    rect1.x < rect2.x + rect2.width &&
+    rect1.x + rect1.width > rect2.x &&
+    rect1.y < rect2.y + rect2.height &&
+    rect1.y + rect1.height > rect2.y
+  )
 }
 
 const update = () => {
@@ -202,24 +204,24 @@ const update = () => {
   } else {
     player.velocityX *= 0.8
   }
-  
+
   player.velocityY += gravity
-  
+
   player.x += player.velocityX
   player.y += player.velocityY
-  
+
   if (!player.isOnGround) {
     player.rotation += player.rotationSpeed
   } else {
     player.rotation = 0
     player.rotationSpeed = 0
   }
-  
+
   if (player.x < 0) player.x = 0
   if (player.x + player.width > 800) player.x = 800 - player.width
-  
+
   player.isOnGround = false
-  
+
   for (const platform of platforms) {
     if (checkCollision(player, platform)) {
       if (player.velocityY > 0) {
@@ -231,7 +233,7 @@ const update = () => {
       }
     }
   }
-  
+
   if (player.y > 600) {
     player.x = 100
     player.y = 400
@@ -243,42 +245,42 @@ const update = () => {
 
 const draw = () => {
   ctx.clearRect(0, 0, 800, 600)
-  
+
   ctx.fillStyle = '#f0f0f0'
   ctx.fillRect(0, 0, 800, 600)
-  
-  platforms.forEach(platform => {
+
+  platforms.forEach((platform) => {
     ctx.fillStyle = platform.color
     ctx.fillRect(platform.x, platform.y, platform.width, platform.height)
-    
+
     ctx.fillStyle = '#ffffff'
     ctx.globalAlpha = 0.3
     ctx.fillRect(platform.x, platform.y, platform.width, 5)
     ctx.globalAlpha = 1
   })
-  
+
   ctx.save()
   ctx.translate(player.x + player.width / 2, player.y + player.height / 2)
   ctx.rotate(player.rotation)
-  
+
   ctx.fillStyle = player.color
   ctx.fillRect(-player.width / 2, -player.height / 2, player.width, player.height)
-  
+
   ctx.fillStyle = '#ffffff'
   ctx.fillRect(-player.width / 2 + 5, -player.height / 2 + 5, 8, 8)
   ctx.fillRect(-player.width / 2 + 17, -player.height / 2 + 5, 8, 8)
-  
+
   ctx.fillStyle = '#000000'
   ctx.fillRect(-player.width / 2 + 7, -player.height / 2 + 7, 4, 4)
   ctx.fillRect(-player.width / 2 + 19, -player.height / 2 + 7, 4, 4)
-  
+
   ctx.fillStyle = '#ffffff'
   ctx.beginPath()
   ctx.arc(0, 5, 8, 0, Math.PI)
   ctx.fill()
-  
+
   ctx.restore()
-  
+
   if (!player.isOnGround) {
     ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)'
     ctx.lineWidth = 2
@@ -298,17 +300,17 @@ const gameLoop = () => {
 
 onMounted(() => {
   ctx = canvas.value.getContext('2d')
-  
+
   window.addEventListener('keydown', handleKeyDown)
   window.addEventListener('keyup', handleKeyUp)
-  
+
   gameLoop()
 })
 
 onUnmounted(() => {
   window.removeEventListener('keydown', handleKeyDown)
   window.removeEventListener('keyup', handleKeyUp)
-  
+
   if (animationId) {
     cancelAnimationFrame(animationId)
   }
@@ -487,20 +489,20 @@ canvas {
     max-width: 800px;
     height: auto;
   }
-  
+
   .stats {
     flex-direction: column;
     gap: 10px;
   }
-  
+
   .game-info h1 {
     font-size: 1.5em;
   }
-  
+
   .mobile-controls {
     display: flex;
   }
-  
+
   .controls {
     display: none;
   }
@@ -512,13 +514,13 @@ canvas {
     height: 60px;
     font-size: 28px;
   }
-  
+
   .jump-btn {
     width: 70px;
     height: 70px;
     font-size: 36px;
   }
-  
+
   .trick-btn {
     width: 55px;
     height: 55px;

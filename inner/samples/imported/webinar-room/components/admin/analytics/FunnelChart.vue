@@ -5,7 +5,7 @@
     </h3>
 
     <div v-if="!summary" class="text-xs wr-text-tertiary py-4 text-center">Нет данных</div>
-    
+
     <div v-else class="space-y-3">
       <!-- Step 1: Увидели форму -->
       <div class="funnel-step">
@@ -35,7 +35,13 @@
 
       <!-- Step 2: Начали заполнять -->
       <div class="funnel-step">
-        <div class="funnel-bar" :style="{ width: barWidth(summary.totalFieldFocused, summary.totalSeen), background: getStepColor(1) }">
+        <div
+          class="funnel-bar"
+          :style="{
+            width: barWidth(summary.totalFieldFocused, summary.totalSeen),
+            background: getStepColor(1)
+          }"
+        >
           <div class="funnel-content">
             <div class="flex items-center justify-between w-full px-4 py-3">
               <div class="flex items-center gap-3">
@@ -44,7 +50,9 @@
               </div>
               <div class="flex items-center gap-3">
                 <span class="text-lg font-bold">{{ summary.totalFieldFocused }}</span>
-                <span class="text-xs opacity-75">{{ percentage(summary.totalFieldFocused, summary.totalSeen) }}%</span>
+                <span class="text-xs opacity-75"
+                  >{{ percentage(summary.totalFieldFocused, summary.totalSeen) }}%</span
+                >
               </div>
             </div>
           </div>
@@ -61,7 +69,13 @@
 
       <!-- Step 3: Отправлено -->
       <div class="funnel-step">
-        <div class="funnel-bar" :style="{ width: barWidth(summary.totalSubmitted, summary.totalSeen), background: getStepColor(2) }">
+        <div
+          class="funnel-bar"
+          :style="{
+            width: barWidth(summary.totalSubmitted, summary.totalSeen),
+            background: getStepColor(2)
+          }"
+        >
           <div class="funnel-content">
             <div class="flex items-center justify-between w-full px-4 py-3">
               <div class="flex items-center gap-3">
@@ -70,7 +84,9 @@
               </div>
               <div class="flex items-center gap-3">
                 <span class="text-lg font-bold">{{ summary.totalSubmitted }}</span>
-                <span class="text-xs opacity-75">{{ percentage(summary.totalSubmitted, summary.totalSeen) }}%</span>
+                <span class="text-xs opacity-75"
+                  >{{ percentage(summary.totalSubmitted, summary.totalSeen) }}%</span
+                >
               </div>
             </div>
           </div>
@@ -88,7 +104,13 @@
 
         <!-- Step 4: К оплате -->
         <div class="funnel-step">
-          <div class="funnel-bar" :style="{ width: barWidth(summary.totalPaymentPageOpened, summary.totalSeen), background: getStepColor(3) }">
+          <div
+            class="funnel-bar"
+            :style="{
+              width: barWidth(summary.totalPaymentPageOpened, summary.totalSeen),
+              background: getStepColor(3)
+            }"
+          >
             <div class="funnel-content">
               <div class="flex items-center justify-between w-full px-4 py-3">
                 <div class="flex items-center gap-3">
@@ -97,7 +119,9 @@
                 </div>
                 <div class="flex items-center gap-3">
                   <span class="text-lg font-bold">{{ summary.totalPaymentPageOpened }}</span>
-                  <span class="text-xs opacity-75">{{ percentage(summary.totalPaymentPageOpened, summary.totalSeen) }}%</span>
+                  <span class="text-xs opacity-75"
+                    >{{ percentage(summary.totalPaymentPageOpened, summary.totalSeen) }}%</span
+                  >
                 </div>
               </div>
             </div>
@@ -114,7 +138,13 @@
 
         <!-- Step 5: Оплачено -->
         <div class="funnel-step">
-          <div class="funnel-bar" :style="{ width: barWidth(summary.totalPaymentCompleted, summary.totalSeen), background: getStepColor(4) }">
+          <div
+            class="funnel-bar"
+            :style="{
+              width: barWidth(summary.totalPaymentCompleted, summary.totalSeen),
+              background: getStepColor(4)
+            }"
+          >
             <div class="funnel-content">
               <div class="flex items-center justify-between w-full px-4 py-3">
                 <div class="flex items-center gap-3">
@@ -123,7 +153,9 @@
                 </div>
                 <div class="flex items-center gap-3">
                   <span class="text-lg font-bold">{{ summary.totalPaymentCompleted }}</span>
-                  <span class="text-xs opacity-75">{{ percentage(summary.totalPaymentCompleted, summary.totalSeen) }}%</span>
+                  <span class="text-xs opacity-75"
+                    >{{ percentage(summary.totalPaymentCompleted, summary.totalSeen) }}%</span
+                  >
                 </div>
               </div>
             </div>
@@ -160,8 +192,8 @@ import { computed } from 'vue'
 const props = defineProps({
   summary: {
     type: Object,
-    default: null,
-  },
+    default: null
+  }
 })
 
 const COLORS = [
@@ -169,7 +201,7 @@ const COLORS = [
   '#a78bfa', // started - purple
   '#4ade80', // submitted - green
   '#facc15', // payment - yellow
-  '#f8005b', // completed - pink
+  '#f8005b' // completed - pink
 ]
 
 function getStepColor(index) {
@@ -199,15 +231,24 @@ const conversions = computed(() => {
       seenToStarted: null,
       startedToSubmitted: null,
       submittedToPayment: null,
-      paymentToCompleted: null,
+      paymentToCompleted: null
     }
   }
 
   return {
     seenToStarted: conversionRate(props.summary.totalSeen, props.summary.totalFieldFocused),
-    startedToSubmitted: conversionRate(props.summary.totalFieldFocused, props.summary.totalSubmitted),
-    submittedToPayment: conversionRate(props.summary.totalSubmitted, props.summary.totalPaymentPageOpened),
-    paymentToCompleted: conversionRate(props.summary.totalPaymentPageOpened, props.summary.totalPaymentCompleted),
+    startedToSubmitted: conversionRate(
+      props.summary.totalFieldFocused,
+      props.summary.totalSubmitted
+    ),
+    submittedToPayment: conversionRate(
+      props.summary.totalSubmitted,
+      props.summary.totalPaymentPageOpened
+    ),
+    paymentToCompleted: conversionRate(
+      props.summary.totalPaymentPageOpened,
+      props.summary.totalPaymentCompleted
+    )
   }
 })
 </script>

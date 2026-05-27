@@ -12,9 +12,9 @@ export const TProjektChatChatModerationsEoe = Heap.Table(
     duration: Heap.Optional(Heap.Number({ customMeta: { title: 'Длительность в минутах' } })),
     expiresAt: Heap.Optional(Heap.DateTime({ customMeta: { title: 'Дата окончания' } })),
     isPermanent: Heap.Optional(Heap.Boolean({ customMeta: { title: 'Навсегда' } })),
-    isActive: Heap.Optional(Heap.Boolean({ customMeta: { title: 'Активна' } })),
+    isActive: Heap.Optional(Heap.Boolean({ customMeta: { title: 'Активна' } }))
   },
-  { customMeta: { title: 'Модерации в чатах', description: '' } },
+  { customMeta: { title: 'Модерации в чатах', description: '' } }
 )
 
 export default TProjektChatChatModerationsEoe

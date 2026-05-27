@@ -63,19 +63,21 @@
         <i v-if="loading" class="fas fa-spinner fa-spin mr-2"></i>
         <i v-else-if="usePassword" class="fas fa-sign-in-alt mr-2"></i>
         <i v-else class="fas fa-paper-plane mr-2"></i>
-        {{ loading ? ctx.t('Processing...') : (usePassword ? ctx.t('Sign in') : ctx.t('Send code')) }}
+        {{ loading ? ctx.t('Processing...') : usePassword ? ctx.t('Sign in') : ctx.t('Send code') }}
       </button>
     </div>
 
     <!-- Шаг 2: Ввод кода подтверждения -->
     <div v-if="step === 'code'">
       <div class="text-center mb-6">
-        <div class="bg-blue-50 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+        <div
+          class="bg-blue-50 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4"
+        >
           <i class="fas fa-envelope-open text-blue-600 text-2xl"></i>
         </div>
         <h3 class="text-lg font-semibold text-gray-800 mb-2">{{ ctx.t('Check your email') }}</h3>
         <p class="text-gray-600 text-sm">
-          {{ ctx.t('Code sent to address') }}<br/>
+          {{ ctx.t('Code sent to address') }}<br />
           <span class="font-medium">{{ email }}</span>
         </p>
       </div>
@@ -135,7 +137,13 @@
 
 <script setup>
 import { ref, computed, defineProps, defineEmits } from 'vue'
-import { sendEmailCode, confirmEmailCode, loginWithPassword, handleAuthError, isValidEmail } from '../sdk'
+import {
+  sendEmailCode,
+  confirmEmailCode,
+  loginWithPassword,
+  handleAuthError,
+  isValidEmail
+} from '../sdk'
 import { getPasswordHashRoute } from '../api/password'
 
 const props = defineProps({
@@ -175,7 +183,7 @@ const sendCode = async () => {
 
   try {
     const result = await sendEmailCode(email.value)
-    
+
     if (result.success) {
       step.value = 'code'
       startResendTimer()
@@ -200,8 +208,8 @@ const confirmCode = async () => {
 
   try {
     const result = await confirmEmailCode(email.value, verificationCode.value)
-    
-    if (JSON.stringify(result).includes("authSuccess")) {
+
+    if (JSON.stringify(result).includes('authSuccess')) {
       emit('success')
     } else {
       error.value = handleAuthError(result.error)
@@ -228,9 +236,14 @@ const handlePasswordLogin = async () => {
   error.value = ''
 
   try {
-    const result = await loginWithPassword('Email', email.value, getPasswordHashRoute.url(), password.value)
-    
-    if (JSON.stringify(result).includes("authSuccess")) {
+    const result = await loginWithPassword(
+      'Email',
+      email.value,
+      getPasswordHashRoute.url(),
+      password.value
+    )
+
+    if (JSON.stringify(result).includes('authSuccess')) {
       emit('success')
     } else {
       error.value = handleAuthError(result.error)
@@ -260,7 +273,7 @@ const clearResendTimer = () => {
   if (resendTimer) {
     clearTimeout(resendTimer)
     resendTimer = null
-  } 
+  }
   canResend.value = false
 }
 </script>

@@ -1,9 +1,5 @@
 import { requireRealUser } from '@app/auth'
-import {
-  findFeedMessageById,
-  findFeedParticipants,
-  getFeedById,
-} from '@app/feed'
+import { findFeedMessageById, findFeedParticipants, getFeedById } from '@app/feed'
 import { sendDataToSocket } from '@app/socket'
 import Chats from '../tables/chats.table'
 import PinnedMessages from '../tables/pinned-messages.table'
@@ -19,7 +15,7 @@ async function broadcastPinnedEvent(ctx, feedId, eventType, data) {
         type: 'chat-event',
         event: eventType,
         feedId,
-        ...data,
+        ...data
       })
     }
   } catch (err) {
@@ -30,13 +26,13 @@ async function broadcastPinnedEvent(ctx, feedId, eventType, data) {
 // Закрепить сообщение (заменяет предыдущее если есть)
 export const apiPinnedSetRoute = app
   .body((s) => ({
-    messageId: s.string(),
+    messageId: s.string()
   }))
   .post('/:feedId/set', async (ctx, req) => {
     requireRealUser(ctx)
 
     const chat = await Chats.findOneBy(ctx, {
-      feedId: req.params.feedId,
+      feedId: req.params.feedId
     })
 
     if (!chat) {
@@ -60,9 +56,9 @@ export const apiPinnedSetRoute = app
 
     // Удаляем предыдущее закрепленное сообщение если есть
     const existingPinned = await PinnedMessages.findOneBy(ctx, {
-      chatId: req.params.feedId,
+      chatId: req.params.feedId
     })
-    
+
     if (existingPinned) {
       await PinnedMessages.delete(ctx, existingPinned.id)
     }
@@ -72,108 +68,106 @@ export const apiPinnedSetRoute = app
       chatId: req.params.feedId,
       messageId: message.id,
       pinnedBy: ctx.user.id,
-      pinnedAt: new Date(),
+      pinnedAt: new Date()
     })
 
     // Отправляем событие всем участникам
     await broadcastPinnedEvent(ctx, req.params.feedId, 'message-pinned', {
       messageId: message.id,
-      message,
+      message
     })
 
     return {
       success: true,
-      message,
+      message
     }
   })
 
 // Открепить сообщение
-export const apiPinnedRemoveRoute = app
-  .post('/:feedId/remove', async (ctx, req) => {
-    requireRealUser(ctx)
+export const apiPinnedRemoveRoute = app.post('/:feedId/remove', async (ctx, req) => {
+  requireRealUser(ctx)
 
-    const chat = await Chats.findOneBy(ctx, {
-      feedId: req.params.feedId,
-    })
-
-    if (!chat) {
-      throw new Error('Чат не найден')
-    }
-
-    // Только админ или владелец могут откреплять сообщения
-    const canManage = await canManageChat(ctx, req.params.feedId, ctx.user.id)
-    if (!canManage) {
-      throw new Error('Только администратор или владелец могут откреплять сообщения')
-    }
-
-    // Находим и удаляем закрепленное сообщение из таблицы
-    const pinnedMessage = await PinnedMessages.findOneBy(ctx, {
-      chatId: req.params.feedId,
-    })
-
-    if (pinnedMessage) {
-      await PinnedMessages.delete(ctx, pinnedMessage.id)
-    }
-
-    // Отправляем событие всем участникам
-    await broadcastPinnedEvent(ctx, req.params.feedId, 'message-unpinned', {
-      messageId: pinnedMessage?.messageId,
-    })
-
-    return {
-      success: true,
-    }
+  const chat = await Chats.findOneBy(ctx, {
+    feedId: req.params.feedId
   })
+
+  if (!chat) {
+    throw new Error('Чат не найден')
+  }
+
+  // Только админ или владелец могут откреплять сообщения
+  const canManage = await canManageChat(ctx, req.params.feedId, ctx.user.id)
+  if (!canManage) {
+    throw new Error('Только администратор или владелец могут откреплять сообщения')
+  }
+
+  // Находим и удаляем закрепленное сообщение из таблицы
+  const pinnedMessage = await PinnedMessages.findOneBy(ctx, {
+    chatId: req.params.feedId
+  })
+
+  if (pinnedMessage) {
+    await PinnedMessages.delete(ctx, pinnedMessage.id)
+  }
+
+  // Отправляем событие всем участникам
+  await broadcastPinnedEvent(ctx, req.params.feedId, 'message-unpinned', {
+    messageId: pinnedMessage?.messageId
+  })
+
+  return {
+    success: true
+  }
+})
 
 // Получить закрепленное сообщение
-export const apiPinnedGetRoute = app
-  .get('/:feedId', async (ctx, req) => {
-    requireRealUser(ctx)
+export const apiPinnedGetRoute = app.get('/:feedId', async (ctx, req) => {
+  requireRealUser(ctx)
 
-    const chat = await Chats.findOneBy(ctx, {
-      feedId: req.params.feedId,
-    })
-
-    if (!chat) {
-      throw new Error('Чат не найден')
-    }
-
-    const participants = await findFeedParticipants(ctx, req.params.feedId)
-    const isParticipant = participants.some((p) => p.userId === ctx.user.id)
-
-    // Проверяем доступ: участник, владелец или публичный чат
-    const ownerId = typeof chat.owner === 'object' ? chat.owner?.id : chat.owner
-    const isOwner = ownerId === ctx.user.id
-
-    if (!isParticipant && !isOwner && !chat.isPublic) {
-      throw new Error('Нет доступа к этому чату')
-    }
-
-    // Получаем закрепленное сообщение из таблицы
-    const pinnedRecord = await PinnedMessages.findOneBy(ctx, {
-      chatId: req.params.feedId,
-    })
-
-    if (!pinnedRecord) {
-      return {
-        pinnedMessage: null,
-      }
-    }
-
-    // Получаем данные сообщения
-    try {
-      const message = await findFeedMessageById(ctx, req.params.feedId, pinnedRecord.messageId)
-
-      if (message) {
-        return {
-          pinnedMessage: message,
-        }
-      }
-    } catch (err) {
-      console.error(`Failed to load pinned message ${pinnedRecord.messageId}:`, err)
-    }
-
-    return {
-      pinnedMessage: null,
-    }
+  const chat = await Chats.findOneBy(ctx, {
+    feedId: req.params.feedId
   })
+
+  if (!chat) {
+    throw new Error('Чат не найден')
+  }
+
+  const participants = await findFeedParticipants(ctx, req.params.feedId)
+  const isParticipant = participants.some((p) => p.userId === ctx.user.id)
+
+  // Проверяем доступ: участник, владелец или публичный чат
+  const ownerId = typeof chat.owner === 'object' ? chat.owner?.id : chat.owner
+  const isOwner = ownerId === ctx.user.id
+
+  if (!isParticipant && !isOwner && !chat.isPublic) {
+    throw new Error('Нет доступа к этому чату')
+  }
+
+  // Получаем закрепленное сообщение из таблицы
+  const pinnedRecord = await PinnedMessages.findOneBy(ctx, {
+    chatId: req.params.feedId
+  })
+
+  if (!pinnedRecord) {
+    return {
+      pinnedMessage: null
+    }
+  }
+
+  // Получаем данные сообщения
+  try {
+    const message = await findFeedMessageById(ctx, req.params.feedId, pinnedRecord.messageId)
+
+    if (message) {
+      return {
+        pinnedMessage: message
+      }
+    }
+  } catch (err) {
+    console.error(`Failed to load pinned message ${pinnedRecord.messageId}:`, err)
+  }
+
+  return {
+    pinnedMessage: null
+  }
+})

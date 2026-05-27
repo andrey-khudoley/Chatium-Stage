@@ -1,4 +1,4 @@
-import { jsx } from "@app/html-jsx"
+import { jsx } from '@app/html-jsx'
 import EditPostPage from './pages/EditPostPage.vue'
 import { genSocketId } from '@app/socket'
 import { requireAccountRole } from '@app/auth'
@@ -8,14 +8,17 @@ export const editPostPageRoute = app.get('/:id', async (ctx, req) => {
   requireAccountRole(ctx, 'Admin')
   const socketId = `post-edit-${req.params.id}`
   const encodedSocketId = await genSocketId(ctx, socketId)
-  
+
   return (
     <html>
       <head>
         <title>Редактирование поста - Персональный блог</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <script src="/s/static/lib/tailwind.3.4.16.min.js"></script>
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+          rel="stylesheet"
+        />
         <link href="/s/static/lib/fontawesome/6.7.2/css/all.min.css" rel="stylesheet" />
         <style type="text/tailwindcss">{`
           body {

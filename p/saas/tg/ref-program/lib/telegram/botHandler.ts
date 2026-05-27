@@ -136,12 +136,7 @@ async function sendWelcomeMessage(
   const pages = await pageRepo.getCampaignPages(ctx, campaignId)
   const firstPage = pages[0]
   if (firstPage) {
-    const link = await linkRepo.getOrCreatePartnerLink(
-      ctx,
-      campaignId,
-      partner.id,
-      firstPage.id
-    )
+    const link = await linkRepo.getOrCreatePartnerLink(ctx, campaignId, partner.id, firstPage.id)
     partnerLinkUrl = getPartnerRedirectUrl(link.publicSlug ?? '')
   }
 
@@ -155,8 +150,7 @@ async function sendWelcomeMessage(
 
   await sendTelegramMessage(ctx, token, chatId, {
     text,
-    reply_markup:
-      inlineButtons.length > 0 ? inlineKeyboardFromButtons(inlineButtons) : undefined
+    reply_markup: inlineButtons.length > 0 ? inlineKeyboardFromButtons(inlineButtons) : undefined
   })
 }
 

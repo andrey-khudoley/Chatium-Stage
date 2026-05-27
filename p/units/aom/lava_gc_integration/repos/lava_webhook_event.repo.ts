@@ -19,7 +19,10 @@ export async function create(
     message: `[${LOG}] create`,
     payload: { dedupe_key: data.dedupe_key, lava_contract_id: data.lava_contract_id }
   })
-  const row = await LavaWebhookEvent.create(ctx, data as Parameters<typeof LavaWebhookEvent.create>[1])
+  const row = await LavaWebhookEvent.create(
+    ctx,
+    data as Parameters<typeof LavaWebhookEvent.create>[1]
+  )
   await loggerLib.writeServerLog(ctx, {
     severity: 7,
     message: `[${LOG}] create: ok`,
@@ -28,7 +31,10 @@ export async function create(
   return row
 }
 
-export async function findByDedupeKey(ctx: app.Ctx, dedupeKey: string): Promise<LavaWebhookEventRow | null> {
+export async function findByDedupeKey(
+  ctx: app.Ctx,
+  dedupeKey: string
+): Promise<LavaWebhookEventRow | null> {
   await loggerLib.writeServerLog(ctx, {
     severity: 7,
     message: `[${LOG}] findByDedupeKey`,
@@ -47,7 +53,11 @@ export async function markProcessed(ctx: app.Ctx, id: string, error?: string): P
   await loggerLib.writeServerLog(ctx, {
     severity: 7,
     message: `[${LOG}] markProcessed`,
-    payload: { id, hasError: Boolean(error), errorPreview: error ? String(error).slice(0, 200) : '' }
+    payload: {
+      id,
+      hasError: Boolean(error),
+      errorPreview: error ? String(error).slice(0, 200) : ''
+    }
   })
   await LavaWebhookEvent.update(ctx, {
     id,

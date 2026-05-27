@@ -9,7 +9,7 @@ import { getScheduleTool } from '../tools/getSchedule'
 import { bookServiceTool } from '../tools/bookService'
 
 // @shared-route
-export const apiCreateTransportRoute = app.post('/create-transport', async ctx => {
+export const apiCreateTransportRoute = app.post('/create-transport', async (ctx) => {
   await requireAccountRole(ctx, 'Admin')
 
   const transportIdentity = await getWorkspaceTransportIdentity(ctx)
@@ -39,7 +39,7 @@ export const apiCreateTransportRoute = app.post('/create-transport', async ctx =
 })
 
 // @shared-route
-export const apiCheckTransportRoute = app.get('/check-transport', async ctx => {
+export const apiCheckTransportRoute = app.get('/check-transport', async (ctx) => {
   const transport = await findWorkspaceTransport(ctx)
   return {
     exists: !!transport,

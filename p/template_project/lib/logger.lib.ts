@@ -46,6 +46,26 @@ function severityToLevelName(severity: number): string {
   return SEVERITY_TO_LEVEL[s] ?? 'info'
 }
 
+/** Уровень логирования платформы (значения совпадают с типом параметра `ctx.account.log`). */
+type AccountLogLevel = 'fatal' | 'error' | 'warn' | 'info' | 'debug' | 'trace' | 'unknown'
+
+/** Маппинг severity (0–7) в уровень логирования платформы (тип параметра `ctx.account.log`). */
+const SEVERITY_TO_ACCOUNT_LEVEL: Record<number, AccountLogLevel> = {
+  0: 'fatal',
+  1: 'fatal',
+  2: 'fatal',
+  3: 'error',
+  4: 'warn',
+  5: 'info',
+  6: 'info',
+  7: 'debug'
+}
+
+function severityToAccountLogLevel(severity: number): AccountLogLevel {
+  const s = Math.max(0, Math.min(7, Math.floor(severity)))
+  return SEVERITY_TO_ACCOUNT_LEVEL[s] ?? 'info'
+}
+
 /** Внутренняя запись с timestamp и level, вычисленными в lib. */
 type FormattedEntry = { timestamp: number; level: string; message: string }
 
@@ -70,7 +90,10 @@ function formatLogMessage(entry: FormattedEntry): string {
  * Проверяет, нужно ли логировать сообщение с данным severity при текущей настройке уровня.
  * Логируем, когда severity сообщения <= порога (сообщение не строже порога).
  */
-export function shouldLogByLevel(configuredLevel: settingsLib.LogLevel, messageSeverity: number): boolean {
+export function shouldLogByLevel(
+  configuredLevel: settingsLib.LogLevel,
+  messageSeverity: number
+): boolean {
   const maxSeverity = CONFIG_TO_MAX_SEVERITY[configuredLevel]
   if (maxSeverity < 0) return false
   return messageSeverity >= 0 && messageSeverity <= maxSeverity
@@ -121,10 +144,16 @@ export async function writeServerLog(ctx: app.Ctx, entry: ServerLogEntry): Promi
   const effectivePayload = includePayload ? entry.payload : undefined
 
   const payloadObj =
-    includePayload && typeof effectivePayload === 'object' && effectivePayload !== null && !Array.isArray(effectivePayload)
+    includePayload &&
+    typeof effectivePayload === 'object' &&
+    effectivePayload !== null &&
+    !Array.isArray(effectivePayload)
       ? (effectivePayload as Record<string, unknown>)
       : {}
-  const logPayload = { level, json: { ...payloadObj, message: entry.message } }
+  const logPayload = {
+    level: severityToAccountLogLevel(entry.severity),
+    json: { ...payloadObj, message: entry.message }
+  }
 
   ;(ctx.log as (msg: string) => void)(formattedMessage)
   ctx.account.log(formattedMessage, logPayload)
@@ -151,9 +180,7 @@ export async function writeServerLog(ctx: app.Ctx, entry: ServerLogEntry): Promi
   })
 
   if (isDebug) {
-    ;(ctx.log as (msg: string) => void)(
-      '[DEBUG] [lib/logger.lib] writeServerLog Heap create done'
-    )
+    ;(ctx.log as (msg: string) => void)('[DEBUG] [lib/logger.lib] writeServerLog Heap create done')
   }
 
   const socketId = getAdminLogsSocketId(ctx)
@@ -168,16 +195,16 @@ export async function writeServerLog(ctx: app.Ctx, entry: ServerLogEntry): Promi
   } as any)
 
   if (isDebug) {
-    ;(ctx.log as (msg: string) => void)(
-      '[DEBUG] [lib/logger.lib] writeServerLog WebSocket sent'
-    )
+    ;(ctx.log as (msg: string) => void)('[DEBUG] [lib/logger.lib] writeServerLog WebSocket sent')
   }
 
   const webhook = await settingsLib.getLogWebhook(ctx)
   if (webhook.enable && webhook.url && webhook.url.trim() !== '') {
     const url = webhook.url.trim()
     const fullUrl = url.startsWith('http://') || url.startsWith('https://') ? url : `https://${url}`
-    const webhookPayload = includePayload ? entry : { severity: entry.severity, message: entry.message }
+    const webhookPayload = includePayload
+      ? entry
+      : { severity: entry.severity, message: entry.message }
     request({
       url: fullUrl,
       method: 'post',
@@ -199,8 +226,6 @@ export async function writeServerLog(ctx: app.Ctx, entry: ServerLogEntry): Promi
   }
 
   if (isDebug) {
-    ;(ctx.log as (msg: string) => void)(
-      '[DEBUG] [lib/logger.lib] writeServerLog exit'
-    )
+    ;(ctx.log as (msg: string) => void)('[DEBUG] [lib/logger.lib] writeServerLog exit')
   }
 }

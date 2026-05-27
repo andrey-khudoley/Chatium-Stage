@@ -60,7 +60,7 @@ export const apiFormAnalyticsSummaryRoute = reporterApp.get('/forms-summary', as
 
   const [summaryResult, formStatsResult] = await Promise.all([
     queryAi(ctx, summaryQuery),
-    queryAi(ctx, formStatsQuery),
+    queryAi(ctx, formStatsQuery)
   ])
 
   const summary = summaryResult.rows?.[0] || {}
@@ -85,7 +85,8 @@ export const apiFormAnalyticsSummaryRoute = reporterApp.get('/forms-summary', as
       paymentPageOpened,
       paymentCompleted,
       conversionRate: seen > 0 ? Math.round((submitted / seen) * 100) : 0,
-      paymentRate: paymentPageOpened > 0 ? Math.round((paymentCompleted / paymentPageOpened) * 100) : 0,
+      paymentRate:
+        paymentPageOpened > 0 ? Math.round((paymentCompleted / paymentPageOpened) * 100) : 0
     }
   })
 
@@ -98,7 +99,7 @@ export const apiFormAnalyticsSummaryRoute = reporterApp.get('/forms-summary', as
     totalSubmitted: summary.totalSubmitted || 0,
     totalPaymentPageOpened: summary.totalPaymentPageOpened || 0,
     totalPaymentCompleted: summary.totalPaymentCompleted || 0,
-    formStats,
+    formStats
   }
 })
 
@@ -112,9 +113,7 @@ export const apiFormAnalyticsListRoute = reporterApp.get('/forms-list', async (c
   const limit = 100
   const offset = (page - 1) * limit
 
-  const episodeFilter = episodeId
-    ? `AND action_param1 = '${escapeSql(episodeId)}'`
-    : ''
+  const episodeFilter = episodeId ? `AND action_param1 = '${escapeSql(episodeId)}'` : ''
   const workspacePath = await getWorkspacePath(ctx)
   const FORM_EVENT_PREFIX = `event://custom/${workspacePath}/form_`
 
@@ -156,7 +155,7 @@ export const apiFormAnalyticsListRoute = reporterApp.get('/forms-list', async (c
 
   const [countResult, eventsResult] = await Promise.all([
     queryAi(ctx, countQuery),
-    queryAi(ctx, eventsQuery),
+    queryAi(ctx, eventsQuery)
   ])
 
   const totalCount = countResult.rows?.[0]?.cnt || 0
@@ -171,7 +170,7 @@ export const apiFormAnalyticsListRoute = reporterApp.get('/forms-list', async (c
     amount: row.amount || null,
     currency: row.extraData?.currency || null,
     userName: [row.firstName, row.lastName].filter(Boolean).join(' ') || 'Аноним',
-    userId: row.user_id,
+    userId: row.user_id
   }))
 
   return {
@@ -179,7 +178,6 @@ export const apiFormAnalyticsListRoute = reporterApp.get('/forms-list', async (c
     totalCount,
     totalPages,
     page,
-    limit,
+    limit
   }
 })
-

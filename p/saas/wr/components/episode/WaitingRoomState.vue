@@ -4,11 +4,17 @@
     <header class="glass sticky top-0 z-50">
       <div class="max-w-7xl mx-auto px-3 sm:px-6 py-3 flex items-center justify-between">
         <div class="flex items-center gap-2 sm:gap-3 min-w-0">
-          <div class="hidden sm:flex items-center gap-2 px-3 h-7 rounded-full wr-badge-yellow flex-shrink-0">
+          <div
+            class="hidden sm:flex items-center gap-2 px-3 h-7 rounded-full wr-badge-yellow flex-shrink-0"
+          >
             <span class="w-2 h-2 rounded-full wr-dot-yellow animate-pulse"></span>
-            <span class="wr-status-yellow text-xs font-semibold uppercase tracking-wider">Скоро начнётся</span>
+            <span class="wr-status-yellow text-xs font-semibold uppercase tracking-wider"
+              >Скоро начнётся</span
+            >
           </div>
-          <h1 class="font-semibold text-sm sm:text-base truncate wr-text-primary leading-7">{{ episode.title }}</h1>
+          <h1 class="font-semibold text-sm sm:text-base truncate wr-text-primary leading-7">
+            {{ episode.title }}
+          </h1>
         </div>
         <HeaderActions :episode="episode">
           <button
@@ -32,8 +38,12 @@
           <div class="wr-countdown-box glass flex items-center justify-center overflow-hidden">
             <!-- Ambient background -->
             <div class="absolute inset-0 pointer-events-none">
-              <div class="absolute top-1/4 left-1/4 w-64 h-64 bg-primary/10 rounded-full blur-3xl"></div>
-              <div class="absolute bottom-1/4 right-1/4 w-48 h-48 bg-secondary/10 rounded-full blur-3xl"></div>
+              <div
+                class="absolute top-1/4 left-1/4 w-64 h-64 bg-primary/10 rounded-full blur-3xl"
+              ></div>
+              <div
+                class="absolute bottom-1/4 right-1/4 w-48 h-48 bg-secondary/10 rounded-full blur-3xl"
+              ></div>
             </div>
 
             <div class="relative z-10 text-center px-4">
@@ -48,25 +58,49 @@
               <!-- Countdown -->
               <div class="flex items-center justify-center gap-2 sm:gap-4 mb-4">
                 <template v-if="countdown.showDays">
-                  <div class="countdown-num-box rounded-xl px-3 sm:px-5 py-3 min-w-[60px] sm:min-w-[80px] text-center">
-                    <div class="text-2xl sm:text-3xl font-bold tabular-nums wr-text-primary">{{ countdown.days }}</div>
-                    <div class="text-[10px] sm:text-xs mt-0.5 wr-text-tertiary">{{ pluralDays }}</div>
+                  <div
+                    class="countdown-num-box rounded-xl px-3 sm:px-5 py-3 min-w-[60px] sm:min-w-[80px] text-center"
+                  >
+                    <div class="text-2xl sm:text-3xl font-bold tabular-nums wr-text-primary">
+                      {{ countdown.days }}
+                    </div>
+                    <div class="text-[10px] sm:text-xs mt-0.5 wr-text-tertiary">
+                      {{ pluralDays }}
+                    </div>
                   </div>
                   <span class="text-xl font-bold wr-text-muted">:</span>
                 </template>
-                <div class="countdown-num-box rounded-xl px-3 sm:px-5 py-3 min-w-[60px] sm:min-w-[80px] text-center">
-                  <div class="text-2xl sm:text-3xl font-bold tabular-nums wr-text-primary">{{ countdown.hours }}</div>
-                  <div class="text-[10px] sm:text-xs mt-0.5 wr-text-tertiary">{{ pluralHours }}</div>
+                <div
+                  class="countdown-num-box rounded-xl px-3 sm:px-5 py-3 min-w-[60px] sm:min-w-[80px] text-center"
+                >
+                  <div class="text-2xl sm:text-3xl font-bold tabular-nums wr-text-primary">
+                    {{ countdown.hours }}
+                  </div>
+                  <div class="text-[10px] sm:text-xs mt-0.5 wr-text-tertiary">
+                    {{ pluralHours }}
+                  </div>
                 </div>
                 <span class="text-xl font-bold wr-text-muted">:</span>
-                <div class="countdown-num-box rounded-xl px-3 sm:px-5 py-3 min-w-[60px] sm:min-w-[80px] text-center">
-                  <div class="text-2xl sm:text-3xl font-bold tabular-nums wr-text-primary">{{ countdown.minutes }}</div>
-                  <div class="text-[10px] sm:text-xs mt-0.5 wr-text-tertiary">{{ pluralMinutes }}</div>
+                <div
+                  class="countdown-num-box rounded-xl px-3 sm:px-5 py-3 min-w-[60px] sm:min-w-[80px] text-center"
+                >
+                  <div class="text-2xl sm:text-3xl font-bold tabular-nums wr-text-primary">
+                    {{ countdown.minutes }}
+                  </div>
+                  <div class="text-[10px] sm:text-xs mt-0.5 wr-text-tertiary">
+                    {{ pluralMinutes }}
+                  </div>
                 </div>
                 <span class="text-xl font-bold wr-text-muted">:</span>
-                <div class="countdown-num-box rounded-xl px-3 sm:px-5 py-3 min-w-[60px] sm:min-w-[80px] text-center">
-                  <div class="text-2xl sm:text-3xl font-bold tabular-nums wr-text-primary">{{ countdown.seconds }}</div>
-                  <div class="text-[10px] sm:text-xs mt-0.5 wr-text-tertiary">{{ pluralSeconds }}</div>
+                <div
+                  class="countdown-num-box rounded-xl px-3 sm:px-5 py-3 min-w-[60px] sm:min-w-[80px] text-center"
+                >
+                  <div class="text-2xl sm:text-3xl font-bold tabular-nums wr-text-primary">
+                    {{ countdown.seconds }}
+                  </div>
+                  <div class="text-[10px] sm:text-xs mt-0.5 wr-text-tertiary">
+                    {{ pluralSeconds }}
+                  </div>
                 </div>
               </div>
 
@@ -79,11 +113,17 @@
         </div>
 
         <!-- Form buttons under countdown -->
-        <FormButtons :forms="shownForms" :episode-id="props.episode.id" @open-form="id => emit('open-form', id)" />
+        <FormButtons
+          :forms="shownForms"
+          :episode-id="props.episode.id"
+          @open-form="(id) => emit('open-form', id)"
+        />
 
         <!-- Episode info under countdown -->
         <div class="py-3 px-3 sm:py-4 lg:block">
-          <h2 class="font-bold text-base sm:text-lg lg:text-xl mb-1 lg:mb-2 wr-text-primary">{{ episode.title }}</h2>
+          <h2 class="font-bold text-base sm:text-lg lg:text-xl mb-1 lg:mb-2 wr-text-primary">
+            {{ episode.title }}
+          </h2>
           <p
             v-if="episode.description"
             class="text-xs sm:text-sm leading-relaxed line-clamp-2 lg:line-clamp-none wr-text-tertiary"
@@ -105,7 +145,9 @@
 
         <!-- Chat loading -->
         <div v-if="chatLoading" class="flex-1 flex items-center justify-center p-6">
-          <div class="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+          <div
+            class="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin"
+          ></div>
         </div>
 
         <!-- Chat -->
@@ -122,7 +164,7 @@
           :enable-replies="true"
           :enable-reactions="true"
           class="flex-1"
-          @open-form="id => emit('open-form', id)"
+          @open-form="(id) => emit('open-form', id)"
           @new-incoming-message="onNewIncomingMessage"
         />
 
@@ -142,21 +184,33 @@
     </div>
 
     <!-- Mobile Chat FAB -->
-    <button class="mobile-chat-fab" @click="openMobileChat" :class="{ 'mobile-chat-fab--hidden': mobileChatOpen }">
+    <button
+      class="mobile-chat-fab"
+      @click="openMobileChat"
+      :class="{ 'mobile-chat-fab--hidden': mobileChatOpen }"
+    >
       <span class="mobile-chat-fab-ring"></span>
       <i class="fas fa-comments"></i>
-      <span v-if="unreadCount > 0" class="mobile-chat-fab-badge">{{ unreadCount > 99 ? '99+' : unreadCount }}</span>
+      <span v-if="unreadCount > 0" class="mobile-chat-fab-badge">{{
+        unreadCount > 99 ? '99+' : unreadCount
+      }}</span>
     </button>
 
     <!-- Mobile bottom bar -->
-    <div class="mobile-bottom-bar" :class="{ 'mobile-bottom-bar--hidden': mobileChatOpen }" v-if="mobileForm">
+    <div
+      class="mobile-bottom-bar"
+      :class="{ 'mobile-bottom-bar--hidden': mobileChatOpen }"
+      v-if="mobileForm"
+    >
       <button
         v-if="mobileForm"
         :key="mobileForm.id"
         class="mobile-form-btn"
         :style="
           mobileForm.buttonColor
-            ? { background: `linear-gradient(135deg, ${mobileForm.buttonColor} 0%, ${mobileForm.buttonColor}dd 100%)` }
+            ? {
+                background: `linear-gradient(135deg, ${mobileForm.buttonColor} 0%, ${mobileForm.buttonColor}dd 100%)`
+              }
             : {}
         "
         @click.stop="handleMobileFormClick"
@@ -188,7 +242,9 @@
 
           <div class="mobile-chat-overlay-body">
             <div v-if="chatLoading" class="flex-1 flex items-center justify-center p-6">
-              <div class="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+              <div
+                class="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin"
+              ></div>
             </div>
 
             <ChatScreen
@@ -206,7 +262,7 @@
               :enable-reactions="true"
               class="flex-1"
               @message-sent="() => {}"
-              @open-form="id => emit('open-form', id)"
+              @open-form="(id) => emit('open-form', id)"
               @new-incoming-message="onNewIncomingMessage"
             />
 
@@ -235,7 +291,7 @@ const props = defineProps({
   shownForms: { type: Array, default: () => [] },
   hideCta: { type: Boolean, default: false },
   nameConfirmed: { type: Boolean, default: false },
-  paidFormIds: { type: Array, default: () => [] },
+  paidFormIds: { type: Array, default: () => [] }
 })
 
 const mobileChatOpen = ref(false)
@@ -335,14 +391,18 @@ const countdown = computed(() => {
     days: String(days).padStart(2, '0'),
     hours: String(totalHours % 24).padStart(2, '0'),
     minutes: String(totalMinutes % 60).padStart(2, '0'),
-    seconds: String(totalSeconds % 60).padStart(2, '0'),
+    seconds: String(totalSeconds % 60).padStart(2, '0')
   }
 })
 
 const pluralDays = computed(() => pluralize(countdown.value.daysNum, 'день', 'дня', 'дней'))
 const pluralHours = computed(() => pluralize(countdown.value.hoursNum, 'час', 'часа', 'часов'))
-const pluralMinutes = computed(() => pluralize(countdown.value.minutesNum, 'минута', 'минуты', 'минут'))
-const pluralSeconds = computed(() => pluralize(countdown.value.secondsNum, 'секунда', 'секунды', 'секунд'))
+const pluralMinutes = computed(() =>
+  pluralize(countdown.value.minutesNum, 'минута', 'минуты', 'минут')
+)
+const pluralSeconds = computed(() =>
+  pluralize(countdown.value.secondsNum, 'секунда', 'секунды', 'секунд')
+)
 
 const formattedDate = computed(() => {
   return new Date(props.episode.scheduledDate).toLocaleString('ru-RU', {
@@ -350,7 +410,7 @@ const formattedDate = computed(() => {
     day: 'numeric',
     month: 'long',
     hour: '2-digit',
-    minute: '2-digit',
+    minute: '2-digit'
   })
 })
 
@@ -360,7 +420,12 @@ const formattedOnlineCount = computed(() => {
 
 function handleMobileFormClick() {
   if (mobileForm.value && props.episode.id) {
-    trackFormOpened(props.episode.id, mobileForm.value.id, mobileForm.value.title, mobileForm.value.submitAction)
+    trackFormOpened(
+      props.episode.id,
+      mobileForm.value.id,
+      mobileForm.value.title,
+      mobileForm.value.submitAction
+    )
   }
   emit('open-form', mobileForm.value.id)
 }

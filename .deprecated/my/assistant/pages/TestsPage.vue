@@ -45,7 +45,7 @@ const props = withDefaults(
     encodedLogsSocketId?: string
     timezoneOffsetHours?: number
   }>(),
-  { timezoneOffsetHours: DEFAULT_USER_TIMEZONE_OFFSET_HOURS },
+  { timezoneOffsetHours: DEFAULT_USER_TIMEZONE_OFFSET_HOURS }
 )
 
 const showContent = ref(false)
@@ -57,7 +57,10 @@ const showCursor = ref(false)
 const cursorPosition = ref<'title' | 'description' | 'final'>('title')
 const showTitleUnderline = ref(false)
 
-const intervalIds = { title: null as ReturnType<typeof setInterval> | null, desc: null as ReturnType<typeof setInterval> | null }
+const intervalIds = {
+  title: null as ReturnType<typeof setInterval> | null,
+  desc: null as ReturnType<typeof setInterval> | null
+}
 
 const MAX_LOG_ENTRIES = 500
 const logEntries = ref<LogEntry[]>([])
@@ -79,9 +82,9 @@ function formatLogTime(timestamp: number): string {
 }
 
 function formatLogMessage(e: LogEntry): string {
-  return e.args.map((a) =>
-    typeof a === 'object' && a !== null ? JSON.stringify(a) : String(a)
-  ).join(' ')
+  return e.args
+    .map((a) => (typeof a === 'object' && a !== null ? JSON.stringify(a) : String(a)))
+    .join(' ')
 }
 
 function formatDateDivider(timestamp: number): string {
@@ -142,7 +145,11 @@ const loadRecentLogs = async () => {
   logsError.value = ''
   try {
     const res = await getRecentLogsRoute.query({ limit: 50 }).run(ctx)
-    const data = res as { success?: boolean; entries?: Array<LogEntry & { id: string }>; error?: string }
+    const data = res as {
+      success?: boolean
+      entries?: Array<LogEntry & { id: string }>
+      error?: string
+    }
     if (data?.success && Array.isArray(data.entries)) {
       logEntries.value = [...logEntries.value, ...data.entries]
       if (data.entries.length > 0) {
@@ -325,12 +332,11 @@ const integrationLoading = ref(false)
 const httpPagesLoading = ref(false)
 
 function getApiBaseUrl(): string {
-  const path = props.indexUrl.startsWith('http')
-    ? new URL(props.indexUrl).pathname
-    : props.indexUrl
+  const path = props.indexUrl.startsWith('http') ? new URL(props.indexUrl).pathname : props.indexUrl
   const basePath = path.replace(/\/$/, '') || '/p/template_project'
-  const origin =
-    props.indexUrl.startsWith('http') ? new URL(props.indexUrl).origin : window.location.origin
+  const origin = props.indexUrl.startsWith('http')
+    ? new URL(props.indexUrl).origin
+    : window.location.origin
   return `${origin}${basePath.startsWith('/') ? basePath : '/' + basePath}`
 }
 
@@ -456,7 +462,12 @@ async function runUnitSuite() {
     log.info('Юнит-набор', summarizeRows(unitResults.value))
   } catch (e) {
     unitResults.value = [
-      { id: 'fetch', title: 'GET /api/tests/unit', passed: false, error: (e as Error)?.message ?? String(e) }
+      {
+        id: 'fetch',
+        title: 'GET /api/tests/unit',
+        passed: false,
+        error: (e as Error)?.message ?? String(e)
+      }
     ]
   } finally {
     unitLoading.value = false
@@ -576,10 +587,18 @@ const runAllTests = async () => {
               <i class="fas fa-flask tests-icon"></i>
             </div>
             <h1 class="tests-heading" :class="{ 'show-underline': showTitleUnderline }">
-              {{ displayedTitle }}<span v-if="showCursor && (cursorPosition === 'title' || cursorPosition === 'final')" class="typing-cursor">▮</span>
+              {{ displayedTitle
+              }}<span
+                v-if="showCursor && (cursorPosition === 'title' || cursorPosition === 'final')"
+                class="typing-cursor"
+                >▮</span
+              >
             </h1>
             <p class="tests-description">
-              {{ displayedDescription }}<span v-if="showCursor && cursorPosition === 'description'" class="typing-cursor">▮</span>
+              {{ displayedDescription
+              }}<span v-if="showCursor && cursorPosition === 'description'" class="typing-cursor"
+                >▮</span
+              >
             </p>
           </div>
 
@@ -675,9 +694,11 @@ const runAllTests = async () => {
             <!-- Вкладки: юнит / интеграция (внутри карточки метрик) -->
             <div class="tests-suite-tabs-wrap tests-suite-tabs-wrap--in-dashboard">
               <p class="tests-suite-tabs-hint">
-                Базовый минимум как в шаблоне <code class="tests-code-hint">p/template_project</code>: юнит — GET
+                Базовый минимум как в шаблоне
+                <code class="tests-code-hint">p/template_project</code>: юнит — GET
                 <code class="tests-code-hint">/api/tests/unit</code> (без Heap). Интеграция —
-                <code class="tests-code-hint">/api/tests/integration</code> (Heap + либы) и GET страниц /, /web/admin, /web/profile, /web/login, /web/tests.
+                <code class="tests-code-hint">/api/tests/integration</code> (Heap + либы) и GET
+                страниц /, /web/admin, /web/profile, /web/login, /web/tests.
               </p>
               <div class="tests-suite-tabs" role="tablist" aria-label="Тип тестов">
                 <button
@@ -746,36 +767,47 @@ const runAllTests = async () => {
                 title="Юнит + интеграция сервера + HTTP страниц шаблона"
                 @click="runAllTests"
               >
-                <i class="fas" :class="runAllTestsLoading ? 'fa-spinner fa-spin' : 'fa-layer-group'"></i>
+                <i
+                  class="fas"
+                  :class="runAllTestsLoading ? 'fa-spinner fa-spin' : 'fa-layer-group'"
+                ></i>
                 {{ runAllTestsLoading ? 'Полный прогон...' : 'Полный прогон' }}
               </button>
             </div>
           </div>
 
           <!-- Юнит: GET /api/tests/unit — блоки по слоям, список тестов до запуска -->
-          <div v-if="showContent" v-show="testsSuiteTab === 'unit'" class="tests-card tests-endpoints-card">
+          <div
+            v-if="showContent"
+            v-show="testsSuiteTab === 'unit'"
+            class="tests-card tests-endpoints-card"
+          >
             <div class="tests-endpoints-header">
               <i class="fas fa-microchip tests-endpoints-icon"></i>
               <h2 class="tests-endpoints-title">Юнит-тесты</h2>
             </div>
             <p class="tests-endpoints-desc">
-              Синхронные проверки без Heap. Ниже — функциональные блоки; в каждом перечислены проверки (статус
-              <span class="tests-endpoints-badge tests-endpoints-badge-pending tests-endpoints-badge-inline">ОЖИД</span>
+              Синхронные проверки без Heap. Ниже — функциональные блоки; в каждом перечислены
+              проверки (статус
+              <span
+                class="tests-endpoints-badge tests-endpoints-badge-pending tests-endpoints-badge-inline"
+                >ОЖИД</span
+              >
               до первого запуска). Роут
               <code class="tests-code-hint">GET /api/tests/unit</code>.
             </p>
-            <div
-              v-for="section in unitBlocksView"
-              :key="section.block.id"
-              class="tests-fn-block"
-            >
+            <div v-for="section in unitBlocksView" :key="section.block.id" class="tests-fn-block">
               <div class="tests-fn-block-head">
                 <h3 class="tests-fn-block-title">{{ section.block.title }}</h3>
-                <span class="tests-fn-block-rollup" :title="'Сводка по блоку: ' + section.rollupLabel">{{
-                  section.rollupLabel
-                }}</span>
+                <span
+                  class="tests-fn-block-rollup"
+                  :title="'Сводка по блоку: ' + section.rollupLabel"
+                  >{{ section.rollupLabel }}</span
+                >
               </div>
-              <p v-if="section.block.description" class="tests-fn-block-desc">{{ section.block.description }}</p>
+              <p v-if="section.block.description" class="tests-fn-block-desc">
+                {{ section.block.description }}
+              </p>
               <div class="tests-endpoints-list-wrap tests-fn-block-list">
                 <ul class="tests-endpoints-list" role="list">
                   <li
@@ -794,13 +826,20 @@ const runAllTests = async () => {
                       <span class="tests-endpoints-list-title-inline">{{ row.test.title }}</span>
                     </div>
                     <code class="tests-fn-test-id">{{ row.test.id }}</code>
-                    <div v-if="row.visual.error" class="tests-test-row-error">{{ row.visual.error }}</div>
+                    <div v-if="row.visual.error" class="tests-test-row-error">
+                      {{ row.visual.error }}
+                    </div>
                   </li>
                 </ul>
               </div>
             </div>
             <div class="tests-endpoints-actions">
-              <button type="button" class="tests-run-group-btn" :disabled="unitLoading" @click="runUnitSuite">
+              <button
+                type="button"
+                class="tests-run-group-btn"
+                :disabled="unitLoading"
+                @click="runUnitSuite"
+              >
                 <i class="fas" :class="unitLoading ? 'fa-spinner fa-spin' : 'fa-bolt'"></i>
                 {{ unitLoading ? 'Выполняется...' : 'Запустить юнит-набор' }}
               </button>
@@ -808,7 +847,11 @@ const runAllTests = async () => {
           </div>
 
           <!-- Интеграция: сервер — блоки по слоям -->
-          <div v-if="showContent" v-show="testsSuiteTab === 'integration'" class="tests-card tests-endpoints-card">
+          <div
+            v-if="showContent"
+            v-show="testsSuiteTab === 'integration'"
+            class="tests-card tests-endpoints-card"
+          >
             <div class="tests-endpoints-header">
               <i class="fas fa-server tests-endpoints-icon"></i>
               <h2 class="tests-endpoints-title">Интеграция (сервер + Heap)</h2>
@@ -826,7 +869,9 @@ const runAllTests = async () => {
                 <h3 class="tests-fn-block-title">{{ section.block.title }}</h3>
                 <span class="tests-fn-block-rollup">{{ section.rollupLabel }}</span>
               </div>
-              <p v-if="section.block.description" class="tests-fn-block-desc">{{ section.block.description }}</p>
+              <p v-if="section.block.description" class="tests-fn-block-desc">
+                {{ section.block.description }}
+              </p>
               <div class="tests-endpoints-list-wrap tests-fn-block-list">
                 <ul class="tests-endpoints-list" role="list">
                   <li
@@ -845,7 +890,9 @@ const runAllTests = async () => {
                       <span class="tests-endpoints-list-title-inline">{{ row.test.title }}</span>
                     </div>
                     <code class="tests-fn-test-id">{{ row.test.id }}</code>
-                    <div v-if="row.visual.error" class="tests-test-row-error">{{ row.visual.error }}</div>
+                    <div v-if="row.visual.error" class="tests-test-row-error">
+                      {{ row.visual.error }}
+                    </div>
                   </li>
                 </ul>
               </div>
@@ -864,12 +911,18 @@ const runAllTests = async () => {
           </div>
 
           <!-- Интеграция: HTTP страниц шаблона -->
-          <div v-if="showContent" v-show="testsSuiteTab === 'integration'" class="tests-card tests-endpoints-card">
+          <div
+            v-if="showContent"
+            v-show="testsSuiteTab === 'integration'"
+            class="tests-card tests-endpoints-card"
+          >
             <div class="tests-endpoints-header">
               <i class="fas fa-globe tests-endpoints-icon"></i>
               <h2 class="tests-endpoints-title">Интеграция (HTTP страниц)</h2>
             </div>
-            <p class="tests-endpoints-desc">GET маршрутов из шаблона (ожидается HTTP 200). Список эндпоинтов — до запуска.</p>
+            <p class="tests-endpoints-desc">
+              GET маршрутов из шаблона (ожидается HTTP 200). Список эндпоинтов — до запуска.
+            </p>
             <div
               v-for="section in integrationHttpBlocksView"
               :key="section.block.id"
@@ -879,7 +932,9 @@ const runAllTests = async () => {
                 <h3 class="tests-fn-block-title">{{ section.block.title }}</h3>
                 <span class="tests-fn-block-rollup">{{ section.rollupLabel }}</span>
               </div>
-              <p v-if="section.block.description" class="tests-fn-block-desc">{{ section.block.description }}</p>
+              <p v-if="section.block.description" class="tests-fn-block-desc">
+                {{ section.block.description }}
+              </p>
               <div class="tests-endpoints-list-wrap tests-fn-block-list">
                 <ul class="tests-endpoints-list" role="list">
                   <li
@@ -898,13 +953,20 @@ const runAllTests = async () => {
                       <span class="tests-endpoints-list-title-inline">{{ row.test.title }}</span>
                     </div>
                     <code class="tests-fn-test-id">{{ row.test.id }}</code>
-                    <div v-if="row.visual.error" class="tests-test-row-error">{{ row.visual.error }}</div>
+                    <div v-if="row.visual.error" class="tests-test-row-error">
+                      {{ row.visual.error }}
+                    </div>
                   </li>
                 </ul>
               </div>
             </div>
             <div class="tests-endpoints-actions">
-              <button type="button" class="tests-run-group-btn" :disabled="httpPagesLoading" @click="runHttpPageChecks">
+              <button
+                type="button"
+                class="tests-run-group-btn"
+                :disabled="httpPagesLoading"
+                @click="runHttpPageChecks"
+              >
                 <i class="fas" :class="httpPagesLoading ? 'fa-spinner fa-spin' : 'fa-bolt'"></i>
                 {{ httpPagesLoading ? 'Проверяем...' : 'Проверить страницы' }}
               </button>
@@ -950,7 +1012,9 @@ const runAllTests = async () => {
 .tests-section {
   opacity: 0;
   transform: translateY(20px);
-  transition: opacity 0.8s ease, transform 0.8s ease;
+  transition:
+    opacity 0.8s ease,
+    transform 0.8s ease;
 }
 
 .tests-section.content-visible {
@@ -980,10 +1044,18 @@ const runAllTests = async () => {
   position: relative;
   overflow: hidden;
   clip-path: polygon(
-    0 4px, 4px 4px, 4px 0,
-    calc(100% - 4px) 0, calc(100% - 4px) 4px, 100% 4px,
-    100% calc(100% - 4px), calc(100% - 4px) calc(100% - 4px), calc(100% - 4px) 100%,
-    4px 100%, 4px calc(100% - 4px), 0 calc(100% - 4px)
+    0 4px,
+    4px 4px,
+    4px 0,
+    calc(100% - 4px) 0,
+    calc(100% - 4px) 4px,
+    100% 4px,
+    100% calc(100% - 4px),
+    calc(100% - 4px) calc(100% - 4px),
+    calc(100% - 4px) 100%,
+    4px 100%,
+    4px calc(100% - 4px),
+    0 calc(100% - 4px)
   );
 }
 
@@ -1040,8 +1112,14 @@ const runAllTests = async () => {
 }
 
 @keyframes cursor-blink {
-  0%, 50% { opacity: 1; }
-  51%, 100% { opacity: 0; }
+  0%,
+  50% {
+    opacity: 1;
+  }
+  51%,
+  100% {
+    opacity: 0;
+  }
 }
 
 .tests-card {
@@ -1147,9 +1225,15 @@ const runAllTests = async () => {
   text-transform: lowercase;
 }
 
-.tests-metric-passed .tests-metric-value { color: #2ecc71; }
-.tests-metric-failed .tests-metric-value { color: #e74c3c; }
-.tests-metric-skipped .tests-metric-value { color: #95a5a6; }
+.tests-metric-passed .tests-metric-value {
+  color: #2ecc71;
+}
+.tests-metric-failed .tests-metric-value {
+  color: #e74c3c;
+}
+.tests-metric-skipped .tests-metric-value {
+  color: #95a5a6;
+}
 
 .tests-dashboard-last-run {
   font-size: 0.98rem;
@@ -1795,14 +1879,30 @@ const runAllTests = async () => {
   font-weight: 600;
 }
 
-.tests-log-level-debug { color: #9b59b6; }
-.tests-log-level-info { color: #3498db; }
-.tests-log-level-notice { color: #1abc9c; }
-.tests-log-level-warning { color: #f39c12; }
-.tests-log-level-error { color: #e74c3c; }
-.tests-log-level-critical { color: #c0392b; }
-.tests-log-level-alert { color: #e67e22; }
-.tests-log-level-emergency { color: #d35400; }
+.tests-log-level-debug {
+  color: #9b59b6;
+}
+.tests-log-level-info {
+  color: #3498db;
+}
+.tests-log-level-notice {
+  color: #1abc9c;
+}
+.tests-log-level-warning {
+  color: #f39c12;
+}
+.tests-log-level-error {
+  color: #e74c3c;
+}
+.tests-log-level-critical {
+  color: #c0392b;
+}
+.tests-log-level-alert {
+  color: #e67e22;
+}
+.tests-log-level-emergency {
+  color: #d35400;
+}
 
 .tests-log-message {
   color: var(--color-text-secondary);

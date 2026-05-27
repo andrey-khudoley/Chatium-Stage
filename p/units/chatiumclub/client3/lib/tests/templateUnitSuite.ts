@@ -78,10 +78,7 @@ function clearMockWindow(): void {
 }
 
 /** Матрица shouldLog (клиент shared/logger) при заданном уровне в __BOOT__.logLevel */
-function expectShouldLogForConfig(
-  config: string,
-  expectations: boolean[]
-): boolean {
+function expectShouldLogForConfig(config: string, expectations: boolean[]): boolean {
   setMockWindow({ logLevel: config })
   for (let s = 0; s <= 7; s++) {
     if (shouldLog(s) !== expectations[s]) {
@@ -93,7 +90,12 @@ function expectShouldLogForConfig(
 
 function runRoutesChecks(results: TemplateUnitTestResult[]): void {
   const expRoot = `${BASE_EXPECTED}/`
-  tryPush(results, 'routes_getFullUrl_dot_slash', 'getFullUrl("./")', () => getFullUrl('./') === expRoot)
+  tryPush(
+    results,
+    'routes_getFullUrl_dot_slash',
+    'getFullUrl("./")',
+    () => getFullUrl('./') === expRoot
+  )
   tryPush(results, 'routes_getFullUrl_slash', 'getFullUrl("/")', () => getFullUrl('/') === expRoot)
   tryPush(
     results,
@@ -133,35 +135,36 @@ function runRoutesChecks(results: TemplateUnitTestResult[]): void {
     'withProjectRoot("./")',
     () => withProjectRoot('./') === `./${PROJECT_ROOT}/`
   )
-  tryPush(results, 'routes_withProjectRoot_empty', 'withProjectRoot("")', () => withProjectRoot('') === `./${PROJECT_ROOT}/`)
+  tryPush(
+    results,
+    'routes_withProjectRoot_empty',
+    'withProjectRoot("")',
+    () => withProjectRoot('') === `./${PROJECT_ROOT}/`
+  )
 
   tryPush(
     results,
     'routes_subroute_omit',
     'withProjectRootAndSubroute("./web/admin")',
-    () =>
-      withProjectRootAndSubroute('./web/admin') === `./${PROJECT_ROOT}/web/admin`
+    () => withProjectRootAndSubroute('./web/admin') === `./${PROJECT_ROOT}/web/admin`
   )
   tryPush(
     results,
     'routes_subroute_slash',
     'withProjectRootAndSubroute("./web/admin", "/")',
-    () =>
-      withProjectRootAndSubroute('./web/admin', '/') === `./${PROJECT_ROOT}/web/admin`
+    () => withProjectRootAndSubroute('./web/admin', '/') === `./${PROJECT_ROOT}/web/admin`
   )
   tryPush(
     results,
     'routes_subroute_edit',
     'withProjectRootAndSubroute("./web/admin", "edit")',
-    () =>
-      withProjectRootAndSubroute('./web/admin', 'edit') === `./${PROJECT_ROOT}/web/admin~edit`
+    () => withProjectRootAndSubroute('./web/admin', 'edit') === `./${PROJECT_ROOT}/web/admin~edit`
   )
   tryPush(
     results,
     'routes_subroute_slash_edit',
     'withProjectRootAndSubroute("./web/admin", "/edit")',
-    () =>
-      withProjectRootAndSubroute('./web/admin', '/edit') === `./${PROJECT_ROOT}/web/admin~edit`
+    () => withProjectRootAndSubroute('./web/admin', '/edit') === `./${PROJECT_ROOT}/web/admin~edit`
   )
   tryPush(
     results,
@@ -172,7 +175,12 @@ function runRoutesChecks(results: TemplateUnitTestResult[]): void {
       `./${PROJECT_ROOT}/web/admin~users/123`
   )
 
-  tryPush(results, 'routes_PROJECT_ROOT', 'PROJECT_ROOT', () => PROJECT_ROOT === 'p/units/chatiumclub/client3')
+  tryPush(
+    results,
+    'routes_PROJECT_ROOT',
+    'PROJECT_ROOT',
+    () => PROJECT_ROOT === 'p/units/chatiumclub/client3'
+  )
 
   tryPush(results, 'routes_ROUTES_KEYS_match_PATHS', 'ROUTES vs ROUTE_PATHS keys', () => {
     const a = Object.keys(ROUTES).sort().join(',')
@@ -237,26 +245,26 @@ function runProjectChecks(results: TemplateUnitTestResult[]): void {
 
 function runLogLevelScriptChecks(results: TemplateUnitTestResult[]): void {
   for (const level of settingsLib.LOG_LEVELS) {
-    tryPush(
-      results,
-      `logLevel_script_${level}`,
-      `getLogLevelScript(${level})`,
-      () => {
-        const s = getLogLevelScript(level as settingsLib.LogLevel)
-        return (
-          s.includes('window.__BOOT__=window.__BOOT__||{}') &&
-          s.includes('window.__BOOT__.logLevel=') &&
-          s.includes(JSON.stringify(level)) &&
-          !/[\n\r]/.test(s)
-        )
-      }
-    )
+    tryPush(results, `logLevel_script_${level}`, `getLogLevelScript(${level})`, () => {
+      const s = getLogLevelScript(level as settingsLib.LogLevel)
+      return (
+        s.includes('window.__BOOT__=window.__BOOT__||{}') &&
+        s.includes('window.__BOOT__.logLevel=') &&
+        s.includes(JSON.stringify(level)) &&
+        !/[\n\r]/.test(s)
+      )
+    })
   }
 
-  tryPush(results, 'logLevel_script_preserves_boot', 'getLogLevelScript не затирает __BOOT__', () => {
-    const s = getLogLevelScript('Info')
-    return s.includes('window.__BOOT__||{}') && s.includes('.logLevel=')
-  })
+  tryPush(
+    results,
+    'logLevel_script_preserves_boot',
+    'getLogLevelScript не затирает __BOOT__',
+    () => {
+      const s = getLogLevelScript('Info')
+      return s.includes('window.__BOOT__||{}') && s.includes('.logLevel=')
+    }
+  )
 }
 
 function runLoggerLibPureChecks(results: TemplateUnitTestResult[]): void {
@@ -265,7 +273,10 @@ function runLoggerLibPureChecks(results: TemplateUnitTestResult[]): void {
     return typeof id === 'string' && id.startsWith('admin-logs-')
   })
   tryPush(results, 'loggerLib_getAdminLogsSocketId_stable', 'getAdminLogsSocketId стабилен', () => {
-    return loggerLib.getAdminLogsSocketId({} as app.Ctx) === loggerLib.getAdminLogsSocketId({} as app.Ctx)
+    return (
+      loggerLib.getAdminLogsSocketId({} as app.Ctx) ===
+      loggerLib.getAdminLogsSocketId({} as app.Ctx)
+    )
   })
 
   const lvl = settingsLib.LOG_LEVELS
@@ -277,16 +288,7 @@ function runLoggerLibPureChecks(results: TemplateUnitTestResult[]): void {
   }
   tryPush(results, 'loggerLib_shouldLogByLevel_matrix', 'shouldLogByLevel полная матрица', () => {
     for (const [L, sev, got] of matrix) {
-      const max =
-        L === 'Disable'
-          ? -1
-          : L === 'Error'
-            ? 3
-            : L === 'Warn'
-              ? 4
-              : L === 'Info'
-                ? 6
-                : 7
+      const max = L === 'Disable' ? -1 : L === 'Error' ? 3 : L === 'Warn' ? 4 : L === 'Info' ? 6 : 7
       const want = max >= 0 && sev >= 0 && sev <= max
       if (got !== want) return false
     }
@@ -379,7 +381,11 @@ function runSharedLoggerChecks(results: TemplateUnitTestResult[]): void {
 
 function runCatalogIntegrityChecks(results: TemplateUnitTestResult[]): void {
   tryPush(results, 'catalog_block_ids_unique', 'id блоков уникальны', () => {
-    const ids = [...UNIT_TEST_BLOCKS, ...INTEGRATION_SERVER_TEST_BLOCKS, INTEGRATION_HTTP_TEST_BLOCK].map((b) => b.id)
+    const ids = [
+      ...UNIT_TEST_BLOCKS,
+      ...INTEGRATION_SERVER_TEST_BLOCKS,
+      INTEGRATION_HTTP_TEST_BLOCK
+    ].map((b) => b.id)
     return new Set(ids).size === ids.length
   })
 
@@ -393,7 +399,11 @@ function runCatalogIntegrityChecks(results: TemplateUnitTestResult[]): void {
   })
 
   tryPush(results, 'catalog_blocks_have_tests', 'каждый блок содержит тест', () => {
-    const blocks = [...UNIT_TEST_BLOCKS, ...INTEGRATION_SERVER_TEST_BLOCKS, INTEGRATION_HTTP_TEST_BLOCK]
+    const blocks = [
+      ...UNIT_TEST_BLOCKS,
+      ...INTEGRATION_SERVER_TEST_BLOCKS,
+      INTEGRATION_HTTP_TEST_BLOCK
+    ]
     return blocks.every((b) => b.tests.length > 0)
   })
 
@@ -422,18 +432,23 @@ export function runTemplateUnitChecks(): TemplateUnitTestResult[] {
   runCatalogIntegrityChecks(results)
 
   const idsBeforeSyncCheck = results.map((r) => r.id)
-  tryPush(results, 'catalog_unit_ids_match_runner', 'UNIT_TEST_BLOCKS содержит все id прогона', () => {
-    const fromRunner = new Set(idsBeforeSyncCheck)
-    const catalogUnitIds = flattenCatalogBlocks(UNIT_TEST_BLOCKS)
-      .map((t) => t.id)
-      .filter((id) => id !== 'catalog_unit_ids_match_runner')
-    const fromCatalog = new Set(catalogUnitIds)
-    if (fromRunner.size !== fromCatalog.size) return false
-    for (const id of fromCatalog) {
-      if (!fromRunner.has(id)) return false
+  tryPush(
+    results,
+    'catalog_unit_ids_match_runner',
+    'UNIT_TEST_BLOCKS содержит все id прогона',
+    () => {
+      const fromRunner = new Set(idsBeforeSyncCheck)
+      const catalogUnitIds = flattenCatalogBlocks(UNIT_TEST_BLOCKS)
+        .map((t) => t.id)
+        .filter((id) => id !== 'catalog_unit_ids_match_runner')
+      const fromCatalog = new Set(catalogUnitIds)
+      if (fromRunner.size !== fromCatalog.size) return false
+      for (const id of fromCatalog) {
+        if (!fromRunner.has(id)) return false
+      }
+      return true
     }
-    return true
-  })
+  )
 
   return results
 }

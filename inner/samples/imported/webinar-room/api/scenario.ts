@@ -14,7 +14,7 @@ import {
   extractScenarioFromAssistantContent,
   formatOffsetForTranscript,
   getFakeOnlinePoints,
-  updateScenarioGenerationState,
+  updateScenarioGenerationState
 } from './scenario-helper'
 
 // @shared-route
@@ -33,7 +33,11 @@ export const apiScenarioEventsListRoute = reporterApp.get('/list', async (ctx, r
   } else if (filterTab === 'forms') {
     where.eventType = [ScenarioEventType.ShowForm, ScenarioEventType.HideForm]
   } else if (filterTab === 'system') {
-    where.eventType = [ScenarioEventType.WaitingRoomStart, ScenarioEventType.StreamStart, ScenarioEventType.Finish]
+    where.eventType = [
+      ScenarioEventType.WaitingRoomStart,
+      ScenarioEventType.StreamStart,
+      ScenarioEventType.Finish
+    ]
   }
 
   const page = parseInt(req.query.page as string) || 1
@@ -46,7 +50,7 @@ export const apiScenarioEventsListRoute = reporterApp.get('/list', async (ctx, r
     where,
     order: [{ offsetSeconds: 'asc' }, { sortOrder: 'asc' }],
     limit,
-    offset,
+    offset
   })
 
   return {
@@ -54,7 +58,7 @@ export const apiScenarioEventsListRoute = reporterApp.get('/list', async (ctx, r
     totalCount,
     page,
     limit,
-    totalPages: Math.ceil(totalCount / limit),
+    totalPages: Math.ceil(totalCount / limit)
   }
 })
 
@@ -89,18 +93,18 @@ export const apiScenarioTimelineDataRoute = reporterApp.get('/timeline-data', as
       where,
       order: [{ offsetSeconds: 'asc' }],
       limit,
-      offset,
+      offset
     })
 
     // Минимизируем данные для карты
-    const minimalBatch = batch.map(evt => ({
+    const minimalBatch = batch.map((evt) => ({
       id: evt.id,
       offsetSeconds: evt.offsetSeconds,
       eventType: evt.eventType,
       // Данные для тултипов
       formTitle: evt.formSnapshot?.title,
       chatAuthor: evt.chatMessage?.authorName,
-      chatText: evt.chatMessage?.text?.substring(0, 50),
+      chatText: evt.chatMessage?.text?.substring(0, 50)
     }))
 
     allEvents.push(...minimalBatch)
@@ -112,7 +116,7 @@ export const apiScenarioTimelineDataRoute = reporterApp.get('/timeline-data', as
 
 // @shared-route
 export const apiScenarioEventCreateRoute = reporterApp
-  .body(s => ({
+  .body((s) => ({
     autowebinarId: s.string(),
     offsetSeconds: s.number(),
     eventType: s.enum(ScenarioEventType),
@@ -121,7 +125,7 @@ export const apiScenarioEventCreateRoute = reporterApp
     chatMessage: s.any().optional(),
     bannerData: s.any().optional(),
     reactionData: s.any().optional(),
-    sortOrder: s.number().optional(),
+    sortOrder: s.number().optional()
   }))
   .post('/create', async (ctx, req) => {
     requireAccountRole(ctx, 'Admin')
@@ -135,7 +139,7 @@ export const apiScenarioEventCreateRoute = reporterApp
       chatMessage: req.body.chatMessage,
       bannerData: req.body.bannerData,
       reactionData: req.body.reactionData,
-      sortOrder: req.body.sortOrder || 0,
+      sortOrder: req.body.sortOrder || 0
     })
 
     return evt
@@ -143,7 +147,7 @@ export const apiScenarioEventCreateRoute = reporterApp
 
 // @shared-route
 export const apiScenarioEventUpdateRoute = reporterApp
-  .body(s => ({
+  .body((s) => ({
     offsetSeconds: s.number().optional(),
     eventType: s.enum(ScenarioEventType).optional(),
     formId: s.string().optional(),
@@ -151,14 +155,14 @@ export const apiScenarioEventUpdateRoute = reporterApp
     chatMessage: s.any().optional(),
     bannerData: s.any().optional(),
     reactionData: s.any().optional(),
-    sortOrder: s.number().optional(),
+    sortOrder: s.number().optional()
   }))
   .post('/update/:id', async (ctx, req) => {
     requireAccountRole(ctx, 'Admin')
 
     const evt = await ScenarioEvents.update(ctx, {
       id: req.params.id as string,
-      ...req.body,
+      ...req.body
     })
 
     return evt
@@ -185,26 +189,26 @@ export const apiScenarioExportRoute = reporterApp.get('/export', async (ctx, req
   const events = await ScenarioEvents.findAll(ctx, {
     where: { autowebinar: autowebinarId },
     order: [{ offsetSeconds: 'asc' }, { sortOrder: 'asc' }],
-    limit: 1000,
+    limit: 1000
   })
 
   // Загружаем формы для snapshot
-  const formIds = [...new Set(events.filter(e => e.formId?.id).map(e => e.formId?.id))]
+  const formIds = [...new Set(events.filter((e) => e.formId?.id).map((e) => e.formId?.id))]
   const forms =
     formIds.length > 0
       ? await EpisodeForms.findAll(ctx, {
           where: { id: formIds },
-          limit: 200,
+          limit: 200
         })
       : []
-  const formsMap = new Map(forms.map(f => [f.id, f]))
+  const formsMap = new Map(forms.map((f) => [f.id, f]))
 
   const exportData = {
     version: 1,
     title: aw.title,
     duration: aw.duration,
     waitingRoomDuration: aw.waitingRoomDuration,
-    events: events.map(evt => {
+    events: events.map((evt) => {
       const data: any = {}
 
       if (evt.chatMessage) data.chatMessage = evt.chatMessage
@@ -220,9 +224,9 @@ export const apiScenarioExportRoute = reporterApp.get('/export', async (ctx, req
         offsetSeconds: evt.offsetSeconds,
         eventType: evt.eventType,
         sortOrder: evt.sortOrder,
-        data,
+        data
       }
-    }),
+    })
   }
 
   return exportData
@@ -231,10 +235,10 @@ export const apiScenarioExportRoute = reporterApp.get('/export', async (ctx, req
 // Импорт сценария из JSON
 // @shared-route
 export const apiScenarioImportRoute = reporterApp
-  .body(s => ({
+  .body((s) => ({
     autowebinarId: s.string(),
     scenario: s.any(),
-    clearExisting: s.boolean().optional(),
+    clearExisting: s.boolean().optional()
   }))
   .post('/import', async (ctx, req) => {
     requireAccountRole(ctx, 'Admin')
@@ -249,7 +253,7 @@ export const apiScenarioImportRoute = reporterApp
     if (req.body.clearExisting) {
       const existing = await ScenarioEvents.findAll(ctx, {
         where: { autowebinar: aw.id },
-        limit: 1000,
+        limit: 1000
       })
       for (const evt of existing) {
         await ScenarioEvents.delete(ctx, evt.id)
@@ -269,7 +273,7 @@ export const apiScenarioImportRoute = reporterApp
         autowebinar: aw.id,
         offsetSeconds: evt.offsetSeconds,
         eventType: evt.eventType,
-        sortOrder: evt.sortOrder || 0,
+        sortOrder: evt.sortOrder || 0
       }
 
       if (evt.data?.chatMessage) eventData.chatMessage = evt.data.chatMessage
@@ -279,7 +283,8 @@ export const apiScenarioImportRoute = reporterApp
       // Обработка формы
       if (
         evt.data?.formSnapshot &&
-        (evt.eventType === ScenarioEventType.ShowForm || evt.eventType === ScenarioEventType.HideForm)
+        (evt.eventType === ScenarioEventType.ShowForm ||
+          evt.eventType === ScenarioEventType.HideForm)
       ) {
         const snapshot = evt.data.formSnapshot
         const oldFormId = evt.data.formId
@@ -289,7 +294,7 @@ export const apiScenarioImportRoute = reporterApp
         if (!newFormId && snapshot) {
           // Ищем форму по title
           const existingForm = await EpisodeForms.findOneBy(ctx, {
-            title: snapshot.title,
+            title: snapshot.title
           })
           if (existingForm) {
             newFormId = existingForm.id
@@ -306,7 +311,7 @@ export const apiScenarioImportRoute = reporterApp
               redirectUrl: snapshot.redirectUrl,
               paymentAmount: snapshot.paymentAmount,
               paymentCurrency: snapshot.paymentCurrency,
-              paymentDescription: snapshot.paymentDescription,
+              paymentDescription: snapshot.paymentDescription
             })
             newFormId = newForm.id
           }
@@ -328,8 +333,8 @@ export const apiScenarioImportRoute = reporterApp
 // Генерация сценария через ИИ
 // @shared-route
 export const apiScenarioGenerateRoute = reporterApp
-  .body(s => ({
-    autowebinarId: s.string(),
+  .body((s) => ({
+    autowebinarId: s.string()
   }))
   .post('/generate', async (ctx, req) => {
     requireAccountRole(ctx, 'Admin')
@@ -346,7 +351,7 @@ export const apiScenarioGenerateRoute = reporterApp
     await ScenarioEvents.deleteAll(ctx, {
       where: { autowebinar: aw.id },
       limit: null,
-      hard: true,
+      hard: true
     })
 
     // Парсим VTT в текст с таймкодами для более точных offsetSeconds.
@@ -355,8 +360,8 @@ export const apiScenarioGenerateRoute = reporterApp
       cues.length > 0
         ? cues
             .map(
-              cue =>
-                `[${formatOffsetForTranscript(cue.startTime)} - ${formatOffsetForTranscript(cue.endTime)}] ${cue.text}`,
+              (cue) =>
+                `[${formatOffsetForTranscript(cue.startTime)} - ${formatOffsetForTranscript(cue.endTime)}] ${cue.text}`
             )
             .join('\n')
         : aw.subtitles
@@ -373,24 +378,36 @@ export const apiScenarioGenerateRoute = reporterApp
             eventType: s.enum(ScenarioEventType).describe('Тип события'),
             sortOrder: s.number().optional().describe('Порядок сортировки (опционально)'),
             formId: s.string().optional().describe('ID формы (для show_form/hide_form)'),
-            chatAuthorName: s.string().optional().describe('Имя автора сообщения (для chat_message)'),
+            chatAuthorName: s
+              .string()
+              .optional()
+              .describe('Имя автора сообщения (для chat_message)'),
             chatText: s.string().optional().describe('Текст сообщения (для chat_message)'),
             chatAvatarUrl: s.string().optional().describe('URL аватара автора (для chat_message)'),
             bannerTitle: s.string().optional().describe('Заголовок баннера (для sale_banner)'),
-            bannerSubtitle: s.string().optional().describe('Подзаголовок баннера (для sale_banner)'),
-            bannerButtonText: s.string().optional().describe('Текст кнопки баннера (для sale_banner)'),
+            bannerSubtitle: s
+              .string()
+              .optional()
+              .describe('Подзаголовок баннера (для sale_banner)'),
+            bannerButtonText: s
+              .string()
+              .optional()
+              .describe('Текст кнопки баннера (для sale_banner)'),
             bannerFormId: s.string().optional().describe('ID формы баннера (для sale_banner)'),
-            reactionEmoji: s.string().optional().describe('Эмодзи реакции (❤️, 🔥, 😂) (для reaction)'),
-          }),
+            reactionEmoji: s
+              .string()
+              .optional()
+              .describe('Эмодзи реакции (❤️, 🔥, 😂) (для reaction)')
+          })
         )
-        .describe('Массив событий сценария'),
+        .describe('Массив событий сценария')
     })
 
     // Формируем контекст форм
     const formsContext = allForms
       .map(
-        f =>
-          `- ID: ${f.id}, Название: "${f.title}", Действие: ${f.submitAction}, Цена: ${f.paymentAmount || 0} ${f.paymentCurrency || ''}`,
+        (f) =>
+          `- ID: ${f.id}, Название: "${f.title}", Действие: ${f.submitAction}, Цена: ${f.paymentAmount || 0} ${f.paymentCurrency || ''}`
       )
       .join('\n')
 
@@ -475,25 +492,30 @@ ${transcriptText}
         messages: [
           {
             role: 'user',
-            content: [{ type: 'text', text: generationPrompt }],
-          },
+            content: [{ type: 'text', text: generationPrompt }]
+          }
         ],
         responseFormat: scenarioSchema,
         onCompletionCompleted: scenarioGenerationCompletedCallback,
         onCompletionFailed: scenarioGenerationFailedCallback,
         context: {
           autowebinarId: aw.id,
-          generationMode: 'full',
-        },
+          generationMode: 'full'
+        }
       })
     } catch (e: any) {
-      await updateScenarioGenerationState(ctx, aw.id, 'failed', e?.message || 'Не удалось запустить генерацию')
+      await updateScenarioGenerationState(
+        ctx,
+        aw.id,
+        'failed',
+        e?.message || 'Не удалось запустить генерацию'
+      )
       throw e
     }
 
     ctx.account.log('[ScenarioGeneration] Full generation started', {
       level: 'info',
-      json: { autowebinarId: aw.id },
+      json: { autowebinarId: aw.id }
     })
 
     return { success: true, message: 'Генерация полного сценария запущена' }
@@ -512,7 +534,7 @@ const scenarioGenerationCompletedCallback = app
     const { autowebinarId, generationMode } = body.context ?? {}
     if (!autowebinarId) {
       ctx.account.log('[ScenarioGeneration] No autowebinarId in context', {
-        level: 'warn',
+        level: 'warn'
       })
       return null
     }
@@ -522,17 +544,22 @@ const scenarioGenerationCompletedCallback = app
       json: {
         autowebinarId,
         generationMode,
-        messagesCount: body.messages?.length,
-      },
+        messagesCount: body.messages?.length
+      }
     })
 
     // Получаем последнее сообщение от ИИ с JSON сценария
     const lastMessage = body.messages?.[body.messages.length - 1]
     if (!lastMessage || lastMessage.role !== 'assistant') {
       ctx.account.log('[ScenarioGeneration] No assistant message', {
-        level: 'warn',
+        level: 'warn'
       })
-      await updateScenarioGenerationState(ctx, autowebinarId, 'failed', 'No assistant message in completion result')
+      await updateScenarioGenerationState(
+        ctx,
+        autowebinarId,
+        'failed',
+        'No assistant message in completion result'
+      )
       return null
     }
 
@@ -540,20 +567,29 @@ const scenarioGenerationCompletedCallback = app
     if (!scenarioJSON?.events || !Array.isArray(scenarioJSON.events)) {
       ctx.account.log('[ScenarioGeneration] Invalid scenario JSON format', {
         level: 'warn',
-        json: { content: lastMessage.content },
+        json: { content: lastMessage.content }
       })
-      await updateScenarioGenerationState(ctx, autowebinarId, 'failed', 'Invalid scenario JSON format')
+      await updateScenarioGenerationState(
+        ctx,
+        autowebinarId,
+        'failed',
+        'Invalid scenario JSON format'
+      )
       return null
     }
 
     const existingSystemEvents = await ScenarioEvents.findAll(ctx, {
       where: {
         autowebinar: autowebinarId,
-        eventType: [ScenarioEventType.WaitingRoomStart, ScenarioEventType.StreamStart, ScenarioEventType.Finish],
+        eventType: [
+          ScenarioEventType.WaitingRoomStart,
+          ScenarioEventType.StreamStart,
+          ScenarioEventType.Finish
+        ]
       },
-      limit: 10,
+      limit: 10
     })
-    const existingSystemTypes = new Set(existingSystemEvents.map(evt => evt.eventType))
+    const existingSystemTypes = new Set(existingSystemEvents.map((evt) => evt.eventType))
 
     const events = scenarioJSON.events.filter((event: any) => {
       if (event?.eventType === ScenarioEventType.WaitingRoomStart) {
@@ -573,14 +609,14 @@ const scenarioGenerationCompletedCallback = app
       json: {
         autowebinarId,
         eventsCount: events.length,
-        droppedSystemDuplicates: scenarioJSON.events.length - events.length,
-      },
+        droppedSystemDuplicates: scenarioJSON.events.length - events.length
+      }
     })
 
     if (events.length === 0) {
       ctx.account.log('[ScenarioGeneration] No events to import after filtering', {
         level: 'info',
-        json: { autowebinarId, generationMode },
+        json: { autowebinarId, generationMode }
       })
       await updateScenarioGenerationState(ctx, autowebinarId, 'failed', 'No events generated')
       return null
@@ -599,7 +635,7 @@ const scenarioGenerationCompletedCallback = app
             ? {
                 authorName: event.chatAuthorName,
                 text: event.chatText,
-                avatarUrl: event.chatAvatarUrl || undefined,
+                avatarUrl: event.chatAvatarUrl || undefined
               }
             : null,
         bannerData:
@@ -608,21 +644,23 @@ const scenarioGenerationCompletedCallback = app
                 title: event.bannerTitle,
                 subtitle: event.bannerSubtitle,
                 buttonText: event.bannerButtonText,
-                formId: event.bannerFormId,
+                formId: event.bannerFormId
               }
             : null,
-        reactionData: event.reactionEmoji ? { emoji: event.reactionEmoji } : null,
-      },
+        reactionData: event.reactionEmoji ? { emoji: event.reactionEmoji } : null
+      }
     }))
 
     const QUEUE_NAME = `scenario-import-${autowebinarId}`
 
     // Добавляем все задачи в очередь
-    await pushToCustomJobQueueMulti(ctx, QUEUE_NAME, scenarioImportWorker.path(), tasks, { priority: 1e3 })
+    await pushToCustomJobQueueMulti(ctx, QUEUE_NAME, scenarioImportWorker.path(), tasks, {
+      priority: 1e3
+    })
 
     ctx.account.log('[ScenarioGeneration] Tasks added to queue', {
       level: 'info',
-      json: { autowebinarId, queueName: QUEUE_NAME, tasksCount: tasks.length },
+      json: { autowebinarId, queueName: QUEUE_NAME, tasksCount: tasks.length }
     })
 
     await updateScenarioGenerationState(ctx, autowebinarId, 'completed')
@@ -643,11 +681,16 @@ const scenarioGenerationFailedCallback = app
 
     ctx.account.log('[ScenarioGeneration] Generation failed', {
       level: 'error',
-      json: { autowebinarId, generationMode, error: body.error },
+      json: { autowebinarId, generationMode, error: body.error }
     })
 
     if (autowebinarId) {
-      await updateScenarioGenerationState(ctx, autowebinarId, 'failed', body.error || 'Generation failed')
+      await updateScenarioGenerationState(
+        ctx,
+        autowebinarId,
+        'failed',
+        body.error || 'Generation failed'
+      )
     }
 
     return null

@@ -8,14 +8,10 @@
       </div>
       <i :class="['fas', expanded ? 'fa-chevron-up' : 'fa-chevron-down']"></i>
     </div>
-    
+
     <div v-if="expanded" class="invites-list">
       <div>
-        <div
-          v-for="invite in invites"
-          :key="invite.id"
-          class="invite-item"
-        >
+        <div v-for="invite in invites" :key="invite.id" class="invite-item">
           <div class="invite-chat-info">
             <div class="invite-chat-avatar">
               {{ getChatInitials(invite.chat.title) }}
@@ -58,7 +54,12 @@ const expanded = ref(true)
 
 function getChatInitials(title) {
   if (!title) return '?'
-  return title.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase()
+  return title
+    .split(' ')
+    .map((w) => w[0])
+    .join('')
+    .substring(0, 2)
+    .toUpperCase()
 }
 
 async function acceptInvite(inviteId) {

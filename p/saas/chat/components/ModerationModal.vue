@@ -1,96 +1,88 @@
 <template>
-  <Modal
-    :is-open="isOpen"
-    :title="`Модерация: ${userName}`"
-    size="medium"
-    @close="$emit('close')"
-  >
+  <Modal :is-open="isOpen" :title="`Модерация: ${userName}`" size="medium" @close="$emit('close')">
     <div class="moderation-modal-content">
-        <!-- Выбор типа модерации -->
-        <div class="form-group">
-          <label>Тип</label>
-          <div class="moderation-types">
-            <button 
-              :class="['type-btn', { active: moderationType === 'mute' }]"
-              @click="moderationType = 'mute'"
-            >
-              <i class="fas fa-volume-mute"></i>
-              <span>Мьют</span>
-              <small>Запретить писать</small>
-            </button>
-            <button 
-              :class="['type-btn', { active: moderationType === 'ban' }]"
-              @click="moderationType = 'ban'"
-            >
-              <i class="fas fa-ban"></i>
-              <span>Бан</span>
-              <small>Исключить из чата</small>
-            </button>
-          </div>
+      <!-- Выбор типа модерации -->
+      <div class="form-group">
+        <label>Тип</label>
+        <div class="moderation-types">
+          <button
+            :class="['type-btn', { active: moderationType === 'mute' }]"
+            @click="moderationType = 'mute'"
+          >
+            <i class="fas fa-volume-mute"></i>
+            <span>Мьют</span>
+            <small>Запретить писать</small>
+          </button>
+          <button
+            :class="['type-btn', { active: moderationType === 'ban' }]"
+            @click="moderationType = 'ban'"
+          >
+            <i class="fas fa-ban"></i>
+            <span>Бан</span>
+            <small>Исключить из чата</small>
+          </button>
+        </div>
+      </div>
+
+      <!-- Выбор длительности -->
+      <div class="form-group">
+        <label>Длительность</label>
+        <div class="duration-presets">
+          <button
+            v-for="preset in durationPresets"
+            :key="preset.value"
+            :class="['preset-btn', { active: selectedDuration === preset.value }]"
+            @click="selectedDuration = preset.value"
+          >
+            {{ preset.label }}
+          </button>
         </div>
 
-        <!-- Выбор длительности -->
-        <div class="form-group">
-          <label>Длительность</label>
-          <div class="duration-presets">
-            <button 
-              v-for="preset in durationPresets" 
-              :key="preset.value"
-              :class="['preset-btn', { active: selectedDuration === preset.value }]"
-              @click="selectedDuration = preset.value"
-            >
-              {{ preset.label }}
-            </button>
-          </div>
-          
-          <!-- Кастомная длительность -->
-          <div v-if="selectedDuration === 'custom'" class="custom-duration">
-            <input 
-              v-model.number="customDuration" 
-              type="number" 
-              min="1"
-              placeholder="Введите число"
-              class="duration-input"
-            />
-            <select v-model="customDurationUnit" class="duration-unit">
-              <option value="minutes">Минут</option>
-              <option value="hours">Часов</option>
-              <option value="days">Дней</option>
-            </select>
-          </div>
+        <!-- Кастомная длительность -->
+        <div v-if="selectedDuration === 'custom'" class="custom-duration">
+          <input
+            v-model.number="customDuration"
+            type="number"
+            min="1"
+            placeholder="Введите число"
+            class="duration-input"
+          />
+          <select v-model="customDurationUnit" class="duration-unit">
+            <option value="minutes">Минут</option>
+            <option value="hours">Часов</option>
+            <option value="days">Дней</option>
+          </select>
         </div>
+      </div>
 
-        <!-- Причина -->
-        <div class="form-group">
-          <label>Причина (необязательно)</label>
-          <textarea 
-            v-model="reason" 
-            rows="3"
-            placeholder="Укажите причину модерации..."
-            class="reason-textarea"
-          ></textarea>
-        </div>
+      <!-- Причина -->
+      <div class="form-group">
+        <label>Причина (необязательно)</label>
+        <textarea
+          v-model="reason"
+          rows="3"
+          placeholder="Укажите причину модерации..."
+          class="reason-textarea"
+        ></textarea>
+      </div>
 
-        <!-- Итоговое время -->
-        <div v-if="finalDurationMinutes && finalDurationMinutes > 0" class="moderation-summary">
-          <i class="fas fa-clock"></i>
-          <span>{{ moderationType === 'mute' ? 'Мьют' : 'Бан' }} до {{ formatExpiryDate(finalDurationMinutes) }}</span>
-        </div>
-        <div v-else class="moderation-summary permanent">
-          <i class="fas fa-infinity"></i>
-          <span>{{ moderationType === 'mute' ? 'Мьют' : 'Бан' }} навсегда</span>
-        </div>
+      <!-- Итоговое время -->
+      <div v-if="finalDurationMinutes && finalDurationMinutes > 0" class="moderation-summary">
+        <i class="fas fa-clock"></i>
+        <span
+          >{{ moderationType === 'mute' ? 'Мьют' : 'Бан' }} до
+          {{ formatExpiryDate(finalDurationMinutes) }}</span
+        >
+      </div>
+      <div v-else class="moderation-summary permanent">
+        <i class="fas fa-infinity"></i>
+        <span>{{ moderationType === 'mute' ? 'Мьют' : 'Бан' }} навсегда</span>
+      </div>
     </div>
 
     <template #footer>
-      <button @click="$emit('close')" class="btn-secondary">
-        Отмена
-      </button>
-      <button 
-        @click="applyModeration" 
-        :disabled="applying"
-        class="btn-danger"
-      >
+      <button @click="$emit('close')" class="btn-secondary">Отмена</button>
+      <button @click="applyModeration" :disabled="applying" class="btn-danger">
         <i v-if="applying" class="fas fa-spinner fa-spin"></i>
         <span v-else>Применить</span>
       </button>
@@ -107,7 +99,7 @@ const props = defineProps({
   isOpen: Boolean,
   feedId: String,
   userId: String,
-  userName: String,
+  userName: String
 })
 
 const emit = defineEmits(['close', 'applied'])
@@ -126,7 +118,7 @@ const durationPresets = [
   { label: '1 день', value: '1440' },
   { label: '7 дней', value: '10080' },
   { label: 'Навсегда', value: 'permanent' },
-  { label: 'Другое', value: 'custom' },
+  { label: 'Другое', value: 'custom' }
 ]
 
 const finalDurationMinutes = computed(() => {
@@ -135,7 +127,7 @@ const finalDurationMinutes = computed(() => {
     const multiplier = {
       minutes: 1,
       hours: 60,
-      days: 1440,
+      days: 1440
     }
     return customDuration.value * (multiplier[customDurationUnit.value] || 1)
   }
@@ -150,7 +142,7 @@ function formatExpiryDate(minutes) {
     month: '2-digit',
     year: 'numeric',
     hour: '2-digit',
-    minute: '2-digit',
+    minute: '2-digit'
   })
 }
 
@@ -162,9 +154,9 @@ async function applyModeration() {
       userId: props.userId,
       type: moderationType.value,
       reason: reason.value,
-      duration: finalDurationMinutes.value,
+      duration: finalDurationMinutes.value
     })
-    
+
     emit('applied')
     emit('close')
   } catch (err) {
@@ -364,7 +356,7 @@ async function applyModeration() {
   .moderation-types {
     grid-template-columns: 1fr;
   }
-  
+
   .duration-presets {
     grid-template-columns: repeat(2, 1fr);
   }

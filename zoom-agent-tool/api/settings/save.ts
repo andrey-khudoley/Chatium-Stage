@@ -1,7 +1,8 @@
-import ZoomSettingsTable from "../../tables/zoom_settings.table"
+import ZoomSettingsTable from '../../tables/zoom_settings.table'
 
-export const apiSettingsSaveRoute = app.post('/')
-  .body(s => ({
+export const apiSettingsSaveRoute = app
+  .post('/')
+  .body((s) => ({
     account_id: s.string(),
     client_id: s.string(),
     client_secret: s.string(),
@@ -13,7 +14,7 @@ export const apiSettingsSaveRoute = app.post('/')
   }))
   .handle(async (ctx, req) => {
     const existing = await ZoomSettingsTable.findAll(ctx, { limit: 1 })
-    
+
     const data = {
       account_id: req.body.account_id,
       client_id: req.body.client_id,
@@ -24,7 +25,7 @@ export const apiSettingsSaveRoute = app.post('/')
       default_auto_recording: req.body.default_auto_recording || 'cloud',
       default_timezone: req.body.default_timezone || 'Europe/Moscow'
     }
-    
+
     if (existing.length > 0) {
       const updated = await ZoomSettingsTable.update(ctx, {
         id: existing[0]!.id,

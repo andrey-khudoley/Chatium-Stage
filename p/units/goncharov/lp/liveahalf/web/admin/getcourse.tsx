@@ -1,7 +1,7 @@
-import { jsx } from "@app/html-jsx"
+import { jsx } from '@app/html-jsx'
 import { requireAccountRole } from '@app/auth'
-import Settings from "../../tables/settings.table"
-import { HeadStyles } from "../../styles"
+import Settings from '../../tables/settings.table'
+import { HeadStyles } from '../../styles'
 
 export const adminGetcourseRoute = app.get('/', async (ctx, req) => {
   requireAccountRole(ctx, 'Admin')
@@ -12,8 +12,12 @@ export const adminGetcourseRoute = app.get('/', async (ctx, req) => {
   const priceSetting = await Settings.findOneBy(ctx, { key: 'getcourse_price' })
   const utmSourceFieldSetting = await Settings.findOneBy(ctx, { key: 'getcourse_utm_source_field' })
   const utmMediumFieldSetting = await Settings.findOneBy(ctx, { key: 'getcourse_utm_medium_field' })
-  const utmCampaignFieldSetting = await Settings.findOneBy(ctx, { key: 'getcourse_utm_campaign_field' })
-  const utmContentFieldSetting = await Settings.findOneBy(ctx, { key: 'getcourse_utm_content_field' })
+  const utmCampaignFieldSetting = await Settings.findOneBy(ctx, {
+    key: 'getcourse_utm_campaign_field'
+  })
+  const utmContentFieldSetting = await Settings.findOneBy(ctx, {
+    key: 'getcourse_utm_content_field'
+  })
   const utmTermFieldSetting = await Settings.findOneBy(ctx, { key: 'getcourse_utm_term_field' })
 
   const apiKey = apiKeySetting?.value || ''
@@ -489,7 +493,10 @@ export const adminGetcourseRoute = app.get('/', async (ctx, req) => {
         <div class="organic-blob blob-2"></div>
         <div class="organic-blob blob-3"></div>
 
-        <div id="app" style="padding: 48px 20px; max-width: 720px; margin: 0 auto; position: relative; z-index: 1;">
+        <div
+          id="app"
+          style="padding: 48px 20px; max-width: 720px; margin: 0 auto; position: relative; z-index: 1;"
+        >
           <admin-getcourse-settings
             initial-account-name={accountName}
             initial-api-key={apiKey}

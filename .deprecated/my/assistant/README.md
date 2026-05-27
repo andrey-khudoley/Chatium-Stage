@@ -1,16 +1,19 @@
 # assistant
 
 ## Назначение
+
 Проект `k/assistant` для Chatium. Базовая структура: главная страница (карточки «Мой журнал», «Мои задачи», «Диалоги», «Инструменты», «PARA», «Финансы», «Сервисы», «Библиотека»), страница «Мой журнал» (`/web/journal` — упрощённый блокнот/инбокс с текстом и архивом; вкладка «Задачи» с задачами «В работе» из Heap, порядок дня и сброс в очередь; вкладка «День» с 4 полями дневной фиксации: Ночь/Утро/День/Вечер, фиксация/разблокировка по кнопке и хранение по ключу дня с границей в 05:00; вкладка «Неделя» с двумя уровнями планирования: отдельное поле `Неделя #N` для общего плана недели и дневные поля Пн–Вс с датами, навигацией на прошлую/следующую неделю и фиксацией/разблокировкой), страница «Управление задачами» (`/web/tasks` — три колонки на десктопе: дерево клиентов/проектов, таблица задач, чат с AI на фиде; на мобильном чат из FAB в шторке; клиенты → проекты → задачи, приоритеты, статусы, быстрый клик по статусу открывает меню смены статуса, режимы «Активные/Архив», а задачи со статусами «Завершено» и «Отменено» автоматически уходят в архив; плюс привязка задачи к Pomodoro), страница «Инструменты» (`/web/tools`) и страница Pomodoro (`/web/timers`), админка, профиль, логин и тестовая страница.
 
 Подробнее о задачах и журнале: `docs/architecture.md`, `docs/api.md`, `docs/data.md`.
 
 ## Важно
+
 - Платформа: Chatium. Серверная часть управляется платформой.
 - Стек фиксирован платформой, новые зависимости не добавляем.
 - Деплой происходит автоматически после пуша.
 
 ## Текущее состояние
+
 - 2026-03-30: дневная статистика focus-tools (Pomodoro / таймер / секундомер, `PomodoroToolStatsRow`, `statsPeriodDayKey`) — на **сервере** граница суток только по Heap `timezoneOffsetHours` + время сервера (`lib/focus-tools.lib.ts`); клиентский `statsDayKey` в теле/query не подменяет день (избегание рассинхрона POST/GET и ложного сброса в `applyDayRollover`). В UI по-прежнему `computePomodoroStatsDayKeyForUtcOffsetHours` + SSR `timezoneOffsetHours`; `Header` и страницы с виджетом получают `timezoneOffsetHours` с SSR; при смене дня на `/web/timers` — `refresh` по `watch`; после успешного `control` на Pomodoro лишний `refresh` в `finally` убран.
 - 2026-03-30: страница профиля (`/web/profile`, `ProfilePage.vue`) — блок «Настройки» с выбором часового пояса как смещения UTC в часах (по умолчанию UTC+3); хранение в Heap `tables/user-settings.table.ts`, `lib/user-settings.lib.ts`, API `GET /api/user-settings/get` и `POST /api/user-settings/save`, SSR передаёт `timezoneOffsetHours`.
 - 2026-03-29: focus-tools — овертайм помидора: на сервере `phaseEndsAtMs` при `awaiting_continue` фиксируется по запланированному концу фазы (не по моменту первого запроса после фона). В шапке: `lib/focus-deadline-alarms.ts` — по wall-clock срабатывание звука и системного уведомления («Цикл таймера завершён» / «Таймер завершён») в конце фазы овертайма и таймера; событие `assistant:focus-tools-deadline` обновляет `/web/timers`; звук смены фазы не воспроизводится при переходе с овертайма по «Продолжить» (`PomodoroPage.vue`).
@@ -40,6 +43,7 @@
 - Клиентская часть полностью покрыта логами: страницы и компоненты используют `createComponentLogger`; AdminPage регистрирует sink и подписку на WebSocket для отображения логов в дашборде в реальном времени.
 
 ## Навигация по документации
+
 - Архитектура: `docs/architecture.md`
 - API: `docs/api.md`
 - Данные: `docs/data.md`
@@ -49,11 +53,13 @@
 - История диалогов: `docs/LLM/`
 
 ## TODO
+
 - Заполнить UI для главной/админки/профиля.
 - Добавить реальные сценарии авторизации.
 - Расширить раздел «Инструменты» новыми утилитами (кроме Pomodoro).
 
 ## Changelog
+
 - 2026-03-26: `TasksPage.vue` / `Header.vue` — после привязки задачи к Pomodoro со страницы задач серверный запуск (`control` `start`/`resume`), флаг `pomodoroSessionStartedFromTasksPage` в `assistant:focus-task-selected`, чтобы не дублировать `start` в шапке.
 - 2026-03-25: `JournalHabitsPane.vue` — порядок строк привычек на текущей неделе: HTML5 drag-and-drop за ручку в колонке названия (`fa-grip-vertical`), сохранение через существующий debounced save.
 - 2026-03-25: `JournalHabitsPane.vue` — ввод названия привычки: убран TypeScript `as` из inline `@input` (парсер шаблона Vue его не поддерживает), значение берётся в методе `onTitleInputEvent(row, $event)`.
@@ -96,7 +102,7 @@
 - 2026-03-25: в `NotebookNoteEditor.vue` поле даты переведено с нативного `input[type="date"]` на текстовый формат `dd/mm/yyyy`; добавлены парсинг/валидация на клиенте и конвертация в ISO (`yyyy-mm-dd`) перед сохранением, чтобы формат ввода был стабильным независимо от браузера/локали.
 - 2026-03-25: в `JournalNotebookPane.vue` обработчик `onEditorSaved` больше не переключает панель в список заметок: кнопка «Сохранить» в `NotebookNoteEditor` только сохраняет (и после первого сохранения новой заметки выставляет `editingNoteId` для дальнейших update); выход из редактора — «Назад к списку».
 - 2026-03-25: в `WysiwygEditor.vue` исправлена вставка в блок кода: при курсоре внутри `pre`/`code` буфер вставляется как текст внутрь `<code>`, а не ниже блока (отдельная ветка paste вместо `insertHtmlAtCursor`, который поднимал вставку до корня contenteditable).
-- 2026-03-25: в `WysiwygEditor.vue` последний выбранный язык блока кода сохраняется в `localStorage` (`assistant-journal-preferred-code-lang`); новые блоки кода и вставка Markdown с ``` без языка используют это значение вместо жёсткого `plaintext`.
+- 2026-03-25: в `WysiwygEditor.vue` последний выбранный язык блока кода сохраняется в `localStorage` (`assistant-journal-preferred-code-lang`); новые блоки кода и вставка Markdown с ```без языка используют это значение вместо жёсткого`plaintext`.
 - 2026-03-24: в `WysiwygEditor.vue` реализован блок кода с подсветкой синтаксиса через highlight.js v11.11.1 (CDN cdnjs.cloudflare.com, тема atom-one-dark). Floating-пикер языка при фокусе в блоке (25 языков). Подсветка при выборе языка, при blur, дебаунс 700ms при вводе с сохранением курсора. Язык хранится в `data-language` на `<pre>`. При вставке Markdown fenced blocks язык парсится автоматически. Экспорт MD включает язык.
 - 2026-03-24: в `components/journal/WysiwygEditor.vue` исправлен баг видимости текста внутри `wy-blank-line`: добавлена нормализация `normalizeBlankLineParagraphs`, которая автоматически снимает класс `wy-blank-line`, если в абзаце появляется осмысленный контент. Из-за этого введённый текст больше не «пропадает» в WYSIWYG при том, что оставался в HTML.
 - 2026-03-24: в `components/journal/WysiwygEditor.vue` устранён лишний пустой первый ряд в режиме `HTML`: при переключении `WYSIWYG -> HTML` source-представление теперь нормализуется и очищается от технического ведущего перевода строки, который мог появляться из `innerHTML`.
@@ -222,9 +228,9 @@
 - 2026-02-02: серверные логи: таблица logs, repos/logs.repo, lib/logger.lib, api/logger/log (POST), админка — encodedLogsSocketId и подписка на new-log; сокет без accountId. Body API: только message (обяз.), severity? (0–7), payload?; timestamp и level вычисляются в lib; имя модуля в тексте message. Формат вывода: `[DD.MM.YYYY HH:mm:ss.SSS] [LEVEL] message` (пробелы между группами в скобках).
 - 2026-02-01: клиентская часть покрыта логами (createComponentLogger, setLogSink, sink в AdminPage дашборде; HomePage, AdminPage, ProfilePage, LoginPage, Header, AppFooter, GlobalGlitch, LogoutModal).
 - 2026-02-01: добавлен уровень логирования Debug (кнопка в админке перед Info, lib LOG_LEVELS, logger CONFIG_LEVELS и порог, API save -1–4), порядок: Debug, Info, Warn, Error, Disable.
-- 2026-02-01: уровень логирования -1 (логи выключены): LOG_LEVEL_OFF в shared/logger, приём -1 в window.__BOOT__.logLevel, API save принимает -1 → Disable.
-- 2026-02-01: shared/logger — логгер для браузера (logInfo, logWarn, logError с проверкой уровня по window.__BOOT__.logLevel), импорт в HomePage, AdminPage, ProfilePage.
-- 2026-02-01: чтение уровня логирования при загрузке страницы — shared/logLevel.ts, вызов getLogLevel в lib, скрипт window.__BOOT__.logLevel на главной, админке и профиле (без логина).
+- 2026-02-01: уровень логирования -1 (логи выключены): LOG_LEVEL_OFF в shared/logger, приём -1 в window.**BOOT**.logLevel, API save принимает -1 → Disable.
+- 2026-02-01: shared/logger — логгер для браузера (logInfo, logWarn, logError с проверкой уровня по window.**BOOT**.logLevel), импорт в HomePage, AdminPage, ProfilePage.
+- 2026-02-01: чтение уровня логирования при загрузке страницы — shared/logLevel.ts, вызов getLogLevel в lib, скрипт window.**BOOT**.logLevel на главной, админке и профиле (без логина).
 - 2026-02-01: мгновенное сохранение уровня логирования в админке (кнопки → .run() → POST /api/settings/save), нормализация чисел 0–3 и строк в API.
 - 2026-02-01: добавлен ADR-0002 — настройки в Heap и слоистая архитектура API (решения коммита aaf4a0a).
 - 2026-02-01: обновлено «Текущее состояние» — отражены API настроек, таблица, репозиторий, lib.

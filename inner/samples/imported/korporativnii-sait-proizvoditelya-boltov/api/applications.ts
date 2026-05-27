@@ -1,5 +1,5 @@
-import Applications from "../tables/applications.table"
-import { sendNotificationToAccountOwners } from "@user-notifier/sdk"
+import Applications from '../tables/applications.table'
+import { sendNotificationToAccountOwners } from '@user-notifier/sdk'
 
 // @shared-route
 export const apiCreateApplicationRoute = app.post('/create', async (ctx, req) => {
@@ -21,7 +21,7 @@ export const apiCreateApplicationRoute = app.post('/create', async (ctx, req) =>
 
     // Отправляем уведомление администраторам
     await sendNotificationToAccountOwners(ctx, {
-      title: "Новая заявка с сайта БолтПром",
+      title: 'Новая заявка с сайта БолтПром',
       html: `
         <h2>Получена новая заявка с сайта</h2>
         <p><strong>Имя:</strong> ${name}</p>

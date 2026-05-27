@@ -1,10 +1,10 @@
 ---
-title: "КП — Платёжная страница GetCourse (черновик v1)"
+title: 'КП — Платёжная страница GetCourse (черновик v1)'
 status: draft
 version: v1
 created: 2026-05-08
 updated: 2026-05-08
-project: "[Бриф проекта](../brief.md)"
+project: '[Бриф проекта](../brief.md)'
 tags:
   - note/commercial
   - workflow/proposal

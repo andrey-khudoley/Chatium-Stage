@@ -1,4 +1,5 @@
 @chatium
+
 # Notion API: Полное руководство для Chatium
 
 Исчерпывающее руководство по интеграции Notion в Chatium. Документ адаптирован для использования с `@app/request` и покрывает все аспекты работы с Notion API.
@@ -111,7 +112,7 @@ async function saveNotionToken(ctx, name: string, token: string, workspace: stri
     token,
     workspaceName: workspace
   })
-  
+
   ctx.account.log('Notion token saved', {
     level: 'info',
     json: { integrationName: name }
@@ -121,11 +122,11 @@ async function saveNotionToken(ctx, name: string, token: string, workspace: stri
 // Получение токена
 async function getNotionToken(ctx, integrationName: string) {
   const record = await NotionTokens.findOneBy(ctx, { integrationName })
-  
+
   if (!record) {
     return { success: false, error: 'Token not found' }
   }
-  
+
   return { success: true, token: record.token }
 }
 ```
@@ -142,6 +143,7 @@ async function getNotionToken(ctx, integrationName: string) {
 - ✅ **Read user information** — информация о пользователях
 
 **Важно**: После создания интеграции нужно **добавить её на страницы**:
+
 1. Откройте страницу в Notion
 2. Нажмите **•••** → **Add connections**
 3. Выберите вашу интеграцию
@@ -153,7 +155,7 @@ async function getNotionToken(ctx, integrationName: string) {
 Универсальная функция для запросов к Notion API:
 
 ```typescript
-import { request } from "@app/request"
+import { request } from '@app/request'
 
 interface NotionRequestOptions {
   token: string
@@ -165,20 +167,20 @@ interface NotionRequestOptions {
 
 async function notionRequest(options: NotionRequestOptions) {
   const { token, endpoint, method, data, params } = options
-  
+
   let url = `https://api.notion.com/v1${endpoint}`
-  
+
   if (params) {
     const queryString = new URLSearchParams(params).toString()
     url += `?${queryString}`
   }
-  
+
   try {
     const response = await request({
       url,
       method,
       headers: {
-        'Authorization': `Bearer ${token}`,
+        Authorization: `Bearer ${token}`,
         'Notion-Version': '2025-09-03',
         'Content-Type': 'application/json'
       },
@@ -186,16 +188,16 @@ async function notionRequest(options: NotionRequestOptions) {
       responseType: 'json',
       throwHttpErrors: false
     })
-    
+
     if (response.statusCode >= 200 && response.statusCode < 300) {
       return {
         success: true,
         data: response.body
       }
     }
-    
+
     const errorMessage = response.body?.message || 'Notion API error'
-    
+
     ctx.account.log('Notion API error', {
       level: 'error',
       json: {
@@ -204,7 +206,7 @@ async function notionRequest(options: NotionRequestOptions) {
         error: errorMessage
       }
     })
-    
+
     return {
       success: false,
       error: errorMessage,
@@ -230,18 +232,18 @@ async function notionRequest(options: NotionRequestOptions) {
 export const apiGetNotionPageRoute = app.get('/notion/page/:pageId', async (ctx, req) => {
   const { pageId } = req.params
   const { integrationName } = req.query
-  
+
   const tokenResult = await getNotionToken(ctx, integrationName)
   if (!tokenResult.success) {
     return tokenResult
   }
-  
+
   const result = await notionRequest({
     token: tokenResult.token,
     endpoint: `/pages/${pageId}`,
     method: 'get'
   })
-  
+
   if (result.success) {
     return {
       success: true,
@@ -255,7 +257,7 @@ export const apiGetNotionPageRoute = app.get('/notion/page/:pageId', async (ctx,
       }
     }
   }
-  
+
   return result
 })
 ```
@@ -267,12 +269,12 @@ export const apiGetNotionPageRoute = app.get('/notion/page/:pageId', async (ctx,
 ```typescript
 export const apiCreateNotionPageRoute = app.post('/notion/create-page', async (ctx, req) => {
   const { integrationName, dataSourceId, properties } = req.body
-  
+
   const tokenResult = await getNotionToken(ctx, integrationName)
   if (!tokenResult.success) {
     return tokenResult
   }
-  
+
   const result = await notionRequest({
     token: tokenResult.token,
     endpoint: '/pages',
@@ -283,34 +285,39 @@ export const apiCreateNotionPageRoute = app.post('/notion/create-page', async (c
         data_source_id: dataSourceId
       },
       properties: {
-        Name: {  // Свойство типа Title
-          title: [{
-            type: 'text',
-            text: { content: properties.name }
-          }]
+        Name: {
+          // Свойство типа Title
+          title: [
+            {
+              type: 'text',
+              text: { content: properties.name }
+            }
+          ]
         },
-        Status: properties.status ? {
-          status: { name: properties.status }
-        } : undefined,
+        Status: properties.status
+          ? {
+              status: { name: properties.status }
+            }
+          : undefined
         // Добавьте другие свойства по необходимости
       }
     }
   })
-  
+
   if (result.success) {
     const createdPage = result.data
-    
+
     ctx.account.log('Notion page created', {
       level: 'info',
       json: { pageId: createdPage.id }
     })
-    
+
     return {
       success: true,
       page: createdPage
     }
   }
-  
+
   return result
 })
 ```
@@ -329,10 +336,12 @@ const result = await notionRequest({
     },
     properties: {
       title: {
-        title: [{
-          type: 'text',
-          text: { content: 'Новая подстраница' }
-        }]
+        title: [
+          {
+            type: 'text',
+            text: { content: 'Новая подстраница' }
+          }
+        ]
       }
     }
   }
@@ -344,50 +353,52 @@ const result = await notionRequest({
 ```typescript
 export const apiUpdateNotionPageRoute = app.post('/notion/update-page', async (ctx, req) => {
   const { integrationName, pageId, properties } = req.body
-  
+
   const tokenResult = await getNotionToken(ctx, integrationName)
   if (!tokenResult.success) {
     return tokenResult
   }
-  
+
   const updateData: any = { properties: {} }
-  
+
   // Обновление различных типов свойств
   if (properties.name) {
     updateData.properties.Name = {
-      title: [{
-        type: 'text',
-        text: { content: properties.name }
-      }]
+      title: [
+        {
+          type: 'text',
+          text: { content: properties.name }
+        }
+      ]
     }
   }
-  
+
   if (properties.status) {
     updateData.properties.Status = {
       status: { name: properties.status }
     }
   }
-  
+
   if (properties.date) {
     updateData.properties['Due Date'] = {
       date: { start: properties.date }
     }
   }
-  
+
   const result = await notionRequest({
     token: tokenResult.token,
     endpoint: `/pages/${pageId}`,
     method: 'patch',
     data: updateData
   })
-  
+
   if (result.success) {
     ctx.account.log('Notion page updated', {
       level: 'info',
       json: { pageId }
     })
   }
-  
+
   return result
 })
 ```
@@ -397,12 +408,12 @@ export const apiUpdateNotionPageRoute = app.post('/notion/update-page', async (c
 ```typescript
 export const apiArchiveNotionPageRoute = app.post('/notion/archive-page', async (ctx, req) => {
   const { integrationName, pageId } = req.body
-  
+
   const tokenResult = await getNotionToken(ctx, integrationName)
   if (!tokenResult.success) {
     return tokenResult
   }
-  
+
   const result = await notionRequest({
     token: tokenResult.token,
     endpoint: `/pages/${pageId}`,
@@ -411,7 +422,7 @@ export const apiArchiveNotionPageRoute = app.post('/notion/archive-page', async 
       archived: true
     }
   })
-  
+
   return result
 })
 ```
@@ -426,37 +437,37 @@ export const apiArchiveNotionPageRoute = app.post('/notion/archive-page', async 
 export const apiGetPageContentRoute = app.get('/notion/page-content/:pageId', async (ctx, req) => {
   const { pageId } = req.params
   const { integrationName } = req.query
-  
+
   const tokenResult = await getNotionToken(ctx, integrationName)
   if (!tokenResult.success) {
     return tokenResult
   }
-  
+
   const result = await notionRequest({
     token: tokenResult.token,
     endpoint: `/blocks/${pageId}/children`,
     method: 'get'
   })
-  
+
   if (result.success) {
     const blocks = result.data.results || []
-    
+
     // Извлечение текста из блоков
     const content = blocks
-      .filter(b => b.type === 'paragraph')
-      .map(b => {
+      .filter((b) => b.type === 'paragraph')
+      .map((b) => {
         const richText = b.paragraph?.rich_text || []
-        return richText.map(rt => rt.plain_text).join('')
+        return richText.map((rt) => rt.plain_text).join('')
       })
       .join('\n')
-    
+
     return {
       success: true,
       blocks,
-      content  // Весь текст страницы
+      content // Весь текст страницы
     }
   }
-  
+
   return result
 })
 ```
@@ -466,72 +477,78 @@ export const apiGetPageContentRoute = app.get('/notion/page-content/:pageId', as
 ```typescript
 export const apiAddNotionBlocksRoute = app.post('/notion/add-blocks', async (ctx, req) => {
   const { integrationName, pageId, blocks } = req.body
-  
+
   const tokenResult = await getNotionToken(ctx, integrationName)
   if (!tokenResult.success) {
     return tokenResult
   }
-  
+
   // Подготовка блоков для добавления
   const children = []
-  
+
   // Параграф
   if (blocks.paragraph) {
     children.push({
       object: 'block',
       type: 'paragraph',
       paragraph: {
-        rich_text: [{
-          type: 'text',
-          text: { content: blocks.paragraph }
-        }]
+        rich_text: [
+          {
+            type: 'text',
+            text: { content: blocks.paragraph }
+          }
+        ]
       }
     })
   }
-  
+
   // Заголовок
   if (blocks.heading) {
     children.push({
       object: 'block',
       type: 'heading_2',
       heading_2: {
-        rich_text: [{
-          type: 'text',
-          text: { content: blocks.heading }
-        }]
+        rich_text: [
+          {
+            type: 'text',
+            text: { content: blocks.heading }
+          }
+        ]
       }
     })
   }
-  
+
   // Список задач
   if (blocks.todo) {
     children.push({
       object: 'block',
       type: 'to_do',
       to_do: {
-        rich_text: [{
-          type: 'text',
-          text: { content: blocks.todo }
-        }],
+        rich_text: [
+          {
+            type: 'text',
+            text: { content: blocks.todo }
+          }
+        ],
         checked: false
       }
     })
   }
-  
+
   const result = await notionRequest({
     token: tokenResult.token,
     endpoint: `/blocks/${pageId}/children`,
     method: 'patch',
     data: { children }
   })
-  
+
   if (result.success) {
     ctx.account.log('Blocks added to Notion page', {
       level: 'info',
       json: { pageId, blocksCount: children.length }
     })
   }
-  
+
   return result
 })
 ```
@@ -541,26 +558,28 @@ export const apiAddNotionBlocksRoute = app.post('/notion/add-blocks', async (ctx
 ```typescript
 export const apiUpdateNotionBlockRoute = app.post('/notion/update-block', async (ctx, req) => {
   const { integrationName, blockId, newText } = req.body
-  
+
   const tokenResult = await getNotionToken(ctx, integrationName)
   if (!tokenResult.success) {
     return tokenResult
   }
-  
+
   const result = await notionRequest({
     token: tokenResult.token,
     endpoint: `/blocks/${blockId}`,
     method: 'patch',
     data: {
       paragraph: {
-        rich_text: [{
-          type: 'text',
-          text: { content: newText }
-        }]
+        rich_text: [
+          {
+            type: 'text',
+            text: { content: newText }
+          }
+        ]
       }
     }
   })
-  
+
   return result
 })
 ```
@@ -570,18 +589,18 @@ export const apiUpdateNotionBlockRoute = app.post('/notion/update-block', async 
 ```typescript
 export const apiDeleteNotionBlockRoute = app.post('/notion/delete-block', async (ctx, req) => {
   const { integrationName, blockId } = req.body
-  
+
   const tokenResult = await getNotionToken(ctx, integrationName)
   if (!tokenResult.success) {
     return tokenResult
   }
-  
+
   const result = await notionRequest({
     token: tokenResult.token,
     endpoint: `/blocks/${blockId}`,
     method: 'delete'
   })
-  
+
   return result
 })
 ```
@@ -593,121 +612,132 @@ export const apiDeleteNotionBlockRoute = app.post('/notion/delete-block', async 
 ### Получение базы данных
 
 ```typescript
-export const apiGetNotionDatabaseRoute = app.get('/notion/database/:databaseId', async (ctx, req) => {
-  const { databaseId } = req.params
-  const { integrationName } = req.query
-  
-  const tokenResult = await getNotionToken(ctx, integrationName)
-  if (!tokenResult.success) {
-    return tokenResult
-  }
-  
-  const result = await notionRequest({
-    token: tokenResult.token,
-    endpoint: `/databases/${databaseId}`,
-    method: 'get'
-  })
-  
-  if (result.success) {
-    return {
-      success: true,
-      database: {
-        id: result.data.id,
-        title: result.data.title,
-        dataSources: result.data.data_sources
+export const apiGetNotionDatabaseRoute = app.get(
+  '/notion/database/:databaseId',
+  async (ctx, req) => {
+    const { databaseId } = req.params
+    const { integrationName } = req.query
+
+    const tokenResult = await getNotionToken(ctx, integrationName)
+    if (!tokenResult.success) {
+      return tokenResult
+    }
+
+    const result = await notionRequest({
+      token: tokenResult.token,
+      endpoint: `/databases/${databaseId}`,
+      method: 'get'
+    })
+
+    if (result.success) {
+      return {
+        success: true,
+        database: {
+          id: result.data.id,
+          title: result.data.title,
+          dataSources: result.data.data_sources
+        }
       }
     }
+
+    return result
   }
-  
-  return result
-})
+)
 ```
 
 ### Получение схемы (Data Source)
 
 ```typescript
-export const apiGetDataSourceRoute = app.get('/notion/data-source/:dataSourceId', async (ctx, req) => {
-  const { dataSourceId } = req.params
-  const { integrationName } = req.query
-  
-  const tokenResult = await getNotionToken(ctx, integrationName)
-  if (!tokenResult.success) {
-    return tokenResult
-  }
-  
-  const result = await notionRequest({
-    token: tokenResult.token,
-    endpoint: `/data_sources/${dataSourceId}`,
-    method: 'get'
-  })
-  
-  if (result.success) {
-    return {
-      success: true,
-      dataSource: {
-        id: result.data.id,
-        title: result.data.title,
-        properties: result.data.properties  // Схема полей
+export const apiGetDataSourceRoute = app.get(
+  '/notion/data-source/:dataSourceId',
+  async (ctx, req) => {
+    const { dataSourceId } = req.params
+    const { integrationName } = req.query
+
+    const tokenResult = await getNotionToken(ctx, integrationName)
+    if (!tokenResult.success) {
+      return tokenResult
+    }
+
+    const result = await notionRequest({
+      token: tokenResult.token,
+      endpoint: `/data_sources/${dataSourceId}`,
+      method: 'get'
+    })
+
+    if (result.success) {
+      return {
+        success: true,
+        dataSource: {
+          id: result.data.id,
+          title: result.data.title,
+          properties: result.data.properties // Схема полей
+        }
       }
     }
+
+    return result
   }
-  
-  return result
-})
+)
 ```
 
 ### Создание базы данных
 
 ```typescript
-export const apiCreateNotionDatabaseRoute = app.post('/notion/create-database', async (ctx, req) => {
-  const { integrationName, parentPageId, title, properties } = req.body
-  
-  const tokenResult = await getNotionToken(ctx, integrationName)
-  if (!tokenResult.success) {
-    return tokenResult
-  }
-  
-  const result = await notionRequest({
-    token: tokenResult.token,
-    endpoint: '/databases',
-    method: 'post',
-    data: {
-      parent: {
-        type: 'page_id',
-        page_id: parentPageId
-      },
-      title: [{
-        type: 'text',
-        text: { content: title }
-      }],
-      properties: {
-        Name: {
-          title: {}  // Обязательное свойство типа title
-        },
-        Status: {
-          type: 'select',
-          select: {
-            options: [
-              { name: 'To Do', color: 'red' },
-              { name: 'In Progress', color: 'yellow' },
-              { name: 'Done', color: 'green' }
-            ]
-          }
-        },
-        ...properties  // Дополнительные свойства
-      }
+export const apiCreateNotionDatabaseRoute = app.post(
+  '/notion/create-database',
+  async (ctx, req) => {
+    const { integrationName, parentPageId, title, properties } = req.body
+
+    const tokenResult = await getNotionToken(ctx, integrationName)
+    if (!tokenResult.success) {
+      return tokenResult
     }
-  })
-  
-  if (result.success) {
-    ctx.account.log('Notion database created', {
-      level: 'info',
-      json: { databaseId: result.data.id }
+
+    const result = await notionRequest({
+      token: tokenResult.token,
+      endpoint: '/databases',
+      method: 'post',
+      data: {
+        parent: {
+          type: 'page_id',
+          page_id: parentPageId
+        },
+        title: [
+          {
+            type: 'text',
+            text: { content: title }
+          }
+        ],
+        properties: {
+          Name: {
+            title: {} // Обязательное свойство типа title
+          },
+          Status: {
+            type: 'select',
+            select: {
+              options: [
+                { name: 'To Do', color: 'red' },
+                { name: 'In Progress', color: 'yellow' },
+                { name: 'Done', color: 'green' }
+              ]
+            }
+          },
+          ...properties // Дополнительные свойства
+        }
+      }
     })
+
+    if (result.success) {
+      ctx.account.log('Notion database created', {
+        level: 'info',
+        json: { databaseId: result.data.id }
+      })
+    }
+
+    return result
   }
-  
-  return result
-})
+)
 ```
 
 ### Запрос данных (Query)
@@ -715,25 +745,25 @@ export const apiCreateNotionDatabaseRoute = app.post('/notion/create-database', 
 ```typescript
 export const apiQueryNotionDatabaseRoute = app.post('/notion/query', async (ctx, req) => {
   const { integrationName, dataSourceId, filter, sorts, pageSize } = req.body
-  
+
   const tokenResult = await getNotionToken(ctx, integrationName)
   if (!tokenResult.success) {
     return tokenResult
   }
-  
+
   const queryData: any = {}
-  
+
   if (filter) queryData.filter = filter
   if (sorts) queryData.sorts = sorts
   if (pageSize) queryData.page_size = pageSize
-  
+
   const result = await notionRequest({
     token: tokenResult.token,
     endpoint: `/data_sources/${dataSourceId}/query`,
     method: 'post',
     data: queryData
   })
-  
+
   if (result.success) {
     return {
       success: true,
@@ -742,7 +772,7 @@ export const apiQueryNotionDatabaseRoute = app.post('/notion/query', async (ctx,
       nextCursor: result.data.next_cursor
     }
   }
-  
+
   return result
 })
 ```
@@ -795,16 +825,20 @@ const filter = {
 
 ```typescript
 // Сортировка по дате создания
-const sorts = [{
-  timestamp: 'created_time',
-  direction: 'descending'
-}]
+const sorts = [
+  {
+    timestamp: 'created_time',
+    direction: 'descending'
+  }
+]
 
 // Сортировка по свойству
-const sorts = [{
-  property: 'Due Date',
-  direction: 'ascending'
-}]
+const sorts = [
+  {
+    property: 'Due Date',
+    direction: 'ascending'
+  }
+]
 
 // Множественная сортировка
 const sorts = [
@@ -822,34 +856,34 @@ const sorts = [
 ```typescript
 export const apiGetNotionCommentsRoute = app.get('/notion/comments', async (ctx, req) => {
   const { integrationName, blockId } = req.query
-  
+
   const tokenResult = await getNotionToken(ctx, integrationName)
   if (!tokenResult.success) {
     return tokenResult
   }
-  
+
   const result = await notionRequest({
     token: tokenResult.token,
     endpoint: '/comments',
     method: 'get',
     params: { block_id: blockId }
   })
-  
+
   if (result.success) {
     const comments = result.data.results || []
-    
+
     return {
       success: true,
-      comments: comments.map(c => ({
+      comments: comments.map((c) => ({
         id: c.id,
-        text: c.rich_text?.map(rt => rt.plain_text).join('') || '',
+        text: c.rich_text?.map((rt) => rt.plain_text).join('') || '',
         createdTime: c.created_time,
         createdBy: c.created_by,
         discussionId: c.discussion_id
       }))
     }
   }
-  
+
   return result
 })
 ```
@@ -859,12 +893,12 @@ export const apiGetNotionCommentsRoute = app.get('/notion/comments', async (ctx,
 ```typescript
 export const apiCreateNotionCommentRoute = app.post('/notion/create-comment', async (ctx, req) => {
   const { integrationName, pageId, text } = req.body
-  
+
   const tokenResult = await getNotionToken(ctx, integrationName)
   if (!tokenResult.success) {
     return tokenResult
   }
-  
+
   const result = await notionRequest({
     token: tokenResult.token,
     endpoint: '/comments',
@@ -873,20 +907,22 @@ export const apiCreateNotionCommentRoute = app.post('/notion/create-comment', as
       parent: {
         page_id: pageId
       },
-      rich_text: [{
-        type: 'text',
-        text: { content: text }
-      }]
+      rich_text: [
+        {
+          type: 'text',
+          text: { content: text }
+        }
+      ]
     }
   })
-  
+
   if (result.success) {
     ctx.account.log('Notion comment created', {
       level: 'info',
       json: { pageId, commentId: result.data.id }
     })
   }
-  
+
   return result
 })
 ```
@@ -896,25 +932,27 @@ export const apiCreateNotionCommentRoute = app.post('/notion/create-comment', as
 ```typescript
 export const apiReplyNotionCommentRoute = app.post('/notion/reply-comment', async (ctx, req) => {
   const { integrationName, discussionId, text } = req.body
-  
+
   const tokenResult = await getNotionToken(ctx, integrationName)
   if (!tokenResult.success) {
     return tokenResult
   }
-  
+
   const result = await notionRequest({
     token: tokenResult.token,
     endpoint: '/comments',
     method: 'post',
     data: {
       discussion_id: discussionId,
-      rich_text: [{
-        type: 'text',
-        text: { content: text }
-      }]
+      rich_text: [
+        {
+          type: 'text',
+          text: { content: text }
+        }
+      ]
     }
   })
-  
+
   return result
 })
 ```
@@ -928,34 +966,40 @@ export const apiReplyNotionCommentRoute = app.post('/notion/reply-comment', asyn
 ```typescript
 export const apiAddNotionImageRoute = app.post('/notion/add-image', async (ctx, req) => {
   const { integrationName, pageId, imageUrl, caption } = req.body
-  
+
   const tokenResult = await getNotionToken(ctx, integrationName)
   if (!tokenResult.success) {
     return tokenResult
   }
-  
+
   const result = await notionRequest({
     token: tokenResult.token,
     endpoint: `/blocks/${pageId}/children`,
     method: 'patch',
     data: {
-      children: [{
-        object: 'block',
-        type: 'image',
-        image: {
-          type: 'external',
-          external: {
-            url: imageUrl
-          },
-          caption: caption ? [{
-            type: 'text',
-            text: { content: caption }
-          }] : []
+      children: [
+        {
+          object: 'block',
+          type: 'image',
+          image: {
+            type: 'external',
+            external: {
+              url: imageUrl
+            },
+            caption: caption
+              ? [
+                  {
+                    type: 'text',
+                    text: { content: caption }
+                  }
+                ]
+              : []
+          }
         }
-      }]
+      ]
     }
   })
-  
+
   return result
 })
 ```
@@ -966,12 +1010,12 @@ export const apiAddNotionImageRoute = app.post('/notion/add-image', async (ctx, 
 // Загрузка файла в Notion (Direct upload)
 export const apiUploadNotionFileRoute = app.post('/notion/upload-file', async (ctx, req) => {
   const { integrationName, fileName, fileData } = req.body
-  
+
   const tokenResult = await getNotionToken(ctx, integrationName)
   if (!tokenResult.success) {
     return tokenResult
   }
-  
+
   // 1. Создать upload
   const createUploadResult = await notionRequest({
     token: tokenResult.token,
@@ -982,17 +1026,17 @@ export const apiUploadNotionFileRoute = app.post('/notion/upload-file', async (c
       size: fileData.length
     }
   })
-  
+
   if (!createUploadResult.success) {
     return createUploadResult
   }
-  
+
   const uploadId = createUploadResult.data.id
   const uploadUrl = createUploadResult.data.url
-  
+
   // 2. Загрузить файл
   // (Для упрощения показан концепт, реальная загрузка multipart)
-  
+
   // 3. Завершить upload
   const completeResult = await notionRequest({
     token: tokenResult.token,
@@ -1000,7 +1044,7 @@ export const apiUploadNotionFileRoute = app.post('/notion/upload-file', async (c
     method: 'post',
     data: {}
   })
-  
+
   return completeResult
 })
 ```
@@ -1012,31 +1056,31 @@ export const apiUploadNotionFileRoute = app.post('/notion/upload-file', async (c
 ```typescript
 export const apiSearchNotionRoute = app.post('/notion/search', async (ctx, req) => {
   const { integrationName, query, filter } = req.body
-  
+
   const tokenResult = await getNotionToken(ctx, integrationName)
   if (!tokenResult.success) {
     return tokenResult
   }
-  
+
   const searchData: any = {}
-  
+
   if (query) searchData.query = query
-  if (filter) searchData.filter = filter  // { value: 'page' } или { value: 'database' }
-  
+  if (filter) searchData.filter = filter // { value: 'page' } или { value: 'database' }
+
   const result = await notionRequest({
     token: tokenResult.token,
     endpoint: '/search',
     method: 'post',
     data: searchData
   })
-  
+
   if (result.success) {
     return {
       success: true,
       results: result.data.results || []
     }
   }
-  
+
   return result
 })
 ```
@@ -1048,43 +1092,43 @@ export const apiSearchNotionRoute = app.post('/notion/search', async (ctx, req) 
 ```typescript
 export const apiGetNotionUsersRoute = app.get('/notion/users', async (ctx, req) => {
   const { integrationName } = req.query
-  
+
   const tokenResult = await getNotionToken(ctx, integrationName)
   if (!tokenResult.success) {
     return tokenResult
   }
-  
+
   const result = await notionRequest({
     token: tokenResult.token,
     endpoint: '/users',
     method: 'get'
   })
-  
+
   if (result.success) {
     return {
       success: true,
       users: result.data.results || []
     }
   }
-  
+
   return result
 })
 
 // Получить информацию о боте
 export const apiGetNotionBotInfoRoute = app.get('/notion/bot-info', async (ctx, req) => {
   const { integrationName } = req.query
-  
+
   const tokenResult = await getNotionToken(ctx, integrationName)
   if (!tokenResult.success) {
     return tokenResult
   }
-  
+
   const result = await notionRequest({
     token: tokenResult.token,
     endpoint: '/users/me',
     method: 'get'
   })
-  
+
   return result
 })
 ```
@@ -1110,50 +1154,51 @@ export const apiGetNotionBotInfoRoute = app.get('/notion/bot-info', async (ctx, 
 // Роут для приёма вебхуков от Notion
 export const notionWebhookRoute = app.post('/notion/webhook', async (ctx, req) => {
   const payload = req.body
-  
+
   // Проверка подписи (опционально, но рекомендуется)
   const signature = req.headers['x-notion-signature']
   // Проверьте HMAC SHA256 подпись
-  
+
   ctx.account.log('Notion webhook received', {
     level: 'info',
-    json: { 
+    json: {
       eventType: payload.type,
       objectId: payload.id
     }
   })
-  
+
   // Обработка различных типов событий
   if (payload.type === 'page.created') {
     await handlePageCreated(ctx, payload)
   }
-  
+
   if (payload.type === 'page.updated') {
     await handlePageUpdated(ctx, payload)
   }
-  
+
   if (payload.type === 'comment.created') {
     await handleCommentCreated(ctx, payload)
   }
-  
+
   // Всегда возвращайте 200
   return { success: true }
 })
 
 async function handlePageCreated(ctx, payload) {
   const pageId = payload.id
-  
+
   ctx.account.log('New Notion page created', {
     level: 'info',
     json: { pageId }
   })
-  
+
   // Получить данные страницы и обработать
   // const page = await notionRequest(...)
 }
 ```
 
 **Типы событий**:
+
 - `page.created` — страница создана
 - `page.updated` — страница обновлена
 - `page.content_updated` — контент изменён
@@ -1168,14 +1213,14 @@ async function handlePageCreated(ctx, payload) {
 
 ### Коды ошибок
 
-| Код | Описание | Действие |
-|-----|----------|----------|
-| 200 | Успех | OK |
-| 400 | Некорректный запрос | Проверить данные |
-| 401 | Не авторизован | Проверить токен |
-| 403 | Доступ запрещён | Добавить интеграцию на страницу |
-| 404 | Не найдено | Проверить ID |
-| 429 | Rate limit | Повторить позже |
+| Код | Описание            | Действие                        |
+| --- | ------------------- | ------------------------------- |
+| 200 | Успех               | OK                              |
+| 400 | Некорректный запрос | Проверить данные                |
+| 401 | Не авторизован      | Проверить токен                 |
+| 403 | Доступ запрещён     | Добавить интеграцию на страницу |
+| 404 | Не найдено          | Проверить ID                    |
+| 429 | Rate limit          | Повторить позже                 |
 
 ### Проверка ошибок
 
@@ -1185,9 +1230,9 @@ if (response.statusCode === 401) {
 }
 
 if (response.statusCode === 403) {
-  return { 
-    success: false, 
-    error: 'Access denied. Add integration to page in Notion' 
+  return {
+    success: false,
+    error: 'Access denied. Add integration to page in Notion'
   }
 }
 
@@ -1207,6 +1252,7 @@ if (response.statusCode === 429) {
 ### Авторизация и безопасность
 
 ✅ **Храните токен в Heap**:
+
 ```typescript
 await NotionTokens.createOrUpdateBy(ctx, 'integrationName', {
   integrationName: 'MyIntegration',
@@ -1215,17 +1261,20 @@ await NotionTokens.createOrUpdateBy(ctx, 'integrationName', {
 ```
 
 ✅ **Не публикуйте токен**:
+
 - Не коммитьте в репозиторий
 - Не логируйте токен полностью
 
 ### Запросы к API
 
 ✅ **Используйте @app/request**:
+
 ```typescript
-import { request } from "@app/request"
+import { request } from '@app/request'
 ```
 
 ✅ **Указывайте версию API**:
+
 ```typescript
 headers: {
   'Notion-Version': '2025-09-03'
@@ -1233,6 +1282,7 @@ headers: {
 ```
 
 ✅ **Логируйте операции**:
+
 ```typescript
 ctx.account.log('Notion page created', {
   level: 'info',
@@ -1243,6 +1293,7 @@ ctx.account.log('Notion page created', {
 ### Вебхуки
 
 ✅ **Быстро возвращайте 200**:
+
 ```typescript
 // Запустите обработку асинхронно
 processWebhookAsync(ctx, payload)
@@ -1250,6 +1301,7 @@ return { success: true }
 ```
 
 ✅ **Проверяйте подпись**:
+
 ```typescript
 const signature = req.headers['x-notion-signature']
 // Verify HMAC SHA256
@@ -1258,6 +1310,7 @@ const signature = req.headers['x-notion-signature']
 ### Работа с данными
 
 ✅ **Обрабатывайте пагинацию**:
+
 ```typescript
 let hasMore = true
 let cursor = null
@@ -1271,6 +1324,7 @@ while (hasMore) {
 ```
 
 ✅ **Проверяйте права доступа**:
+
 - Добавляйте интеграцию на страницы в Notion
 - Настраивайте Capabilities правильно
 
@@ -1288,4 +1342,3 @@ while (hasMore) {
 **Версия**: 1.0  
 **Дата**: 2025-11-02  
 **Последнее обновление**: Создание документации по Notion для Chatium
-

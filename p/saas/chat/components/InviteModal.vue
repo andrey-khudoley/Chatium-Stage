@@ -83,7 +83,12 @@
             <i class="fas fa-link"></i>
             {{ inviteLink ? 'Показать ссылку' : 'Создать ссылку' }}
           </button>
-          <button v-if="inviteLink" @click="createInviteLink(true)" class="btn-secondary" :disabled="creatingLink">
+          <button
+            v-if="inviteLink"
+            @click="createInviteLink(true)"
+            class="btn-secondary"
+            :disabled="creatingLink"
+          >
             <i class="fas fa-sync-alt"></i>
             Обновить ссылку
           </button>
@@ -91,12 +96,7 @@
 
         <div v-if="inviteLink" class="link-result">
           <div class="link-box">
-            <input
-              ref="linkInput"
-              type="text"
-              :value="inviteLink"
-              readonly
-            />
+            <input ref="linkInput" type="text" :value="inviteLink" readonly />
             <button @click="copyLink" class="btn-copy" title="Копировать">
               <i :class="copied ? 'fas fa-check' : 'fas fa-copy'"></i>
             </button>
@@ -146,7 +146,7 @@ import { apiUsersFindByIdentityRoute } from '../api/users'
 import { apiInvitesCreateRoute, apiInvitesGetLinkRoute } from '../api/invites'
 
 const props = defineProps({
-  chatId: String,
+  chatId: String
 })
 
 const emit = defineEmits(['close', 'invited'])
@@ -155,7 +155,7 @@ const tabs = [
   { id: 'username', label: 'Username', icon: 'fas fa-at' },
   { id: 'email', label: 'Email', icon: 'fas fa-envelope' },
   { id: 'phone', label: 'Телефон', icon: 'fas fa-phone' },
-  { id: 'link', label: 'Ссылка', icon: 'fas fa-link' },
+  { id: 'link', label: 'Ссылка', icon: 'fas fa-link' }
 ]
 
 const activeTab = ref('username')
@@ -174,7 +174,12 @@ const linkInput = ref(null)
 
 function getInitials(name) {
   if (!name) return '?'
-  return name.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase()
+  return name
+    .split(' ')
+    .map((w) => w[0])
+    .join('')
+    .substring(0, 2)
+    .toUpperCase()
 }
 
 async function searchUser() {
@@ -212,7 +217,7 @@ async function sendInvite() {
   try {
     const response = await apiInvitesCreateRoute.run(ctx, {
       chatId: props.chatId,
-      invitedUserId: foundUser.value.id,
+      invitedUserId: foundUser.value.id
     })
 
     if (response.success) {
@@ -239,7 +244,7 @@ async function createInviteLink(regenerate = false) {
   try {
     const response = await apiInvitesGetLinkRoute.run(ctx, {
       chatId: props.chatId,
-      regenerate,
+      regenerate
     })
 
     if (response.success) {
@@ -259,7 +264,7 @@ function copyLink() {
     linkInput.value.select()
     document.execCommand('copy')
     copied.value = true
-    setTimeout(() => copied.value = false, 2000)
+    setTimeout(() => (copied.value = false), 2000)
   }
 }
 </script>

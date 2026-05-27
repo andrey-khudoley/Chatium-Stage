@@ -3,8 +3,16 @@
     <div class="modal-overlay" :class="{ active: isOpen }" @click.self="close">
       <div class="modal-content-glass">
         <div class="flex justify-between items-center mb-6">
-          <h3 class="font-display text-2xl lg:text-3xl font-bold text-slate-900" style="letter-spacing: 0.015em">Регистрация на встречу</h3>
-          <button @click="close" class="w-10 h-10 rounded-full bg-moss-100 flex items-center justify-center hover:bg-moss-200 transition-all duration-300 hover:scale-110">
+          <h3
+            class="font-display text-2xl lg:text-3xl font-bold text-slate-900"
+            style="letter-spacing: 0.015em"
+          >
+            Регистрация на встречу
+          </h3>
+          <button
+            @click="close"
+            class="w-10 h-10 rounded-full bg-moss-100 flex items-center justify-center hover:bg-moss-200 transition-all duration-300 hover:scale-110"
+          >
             <i class="fa-solid fa-xmark text-moss-700 text-sm"></i>
           </button>
         </div>
@@ -44,19 +52,41 @@
                 <input v-model="consents.offerAccepted" type="checkbox" class="consent-checkbox" />
                 <span class="text-sm text-slate-700 leading-snug">
                   Я согласен с
-                  <a href="https://gc.praktiky.ru/legal" target="_blank" rel="noopener noreferrer" class="consent-link">офертой</a>
+                  <a
+                    href="https://gc.praktiky.ru/legal"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="consent-link"
+                    >офертой</a
+                  >
                 </span>
               </label>
               <label class="consent-item">
-                <input v-model="consents.privacyAccepted" type="checkbox" class="consent-checkbox" />
+                <input
+                  v-model="consents.privacyAccepted"
+                  type="checkbox"
+                  class="consent-checkbox"
+                />
                 <span class="text-sm text-slate-700 leading-snug">
                   Я согласен с
-                  <a href="https://gc.praktiky.ru/privacypolicy" target="_blank" rel="noopener noreferrer" class="consent-link">политикой обработки персональных данных</a>
+                  <a
+                    href="https://gc.praktiky.ru/privacypolicy"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="consent-link"
+                    >политикой обработки персональных данных</a
+                  >
                 </span>
               </label>
               <label class="consent-item">
-                <input v-model="consents.marketingAccepted" type="checkbox" class="consent-checkbox" />
-                <span class="text-sm text-slate-700 leading-snug">Я согласен на получение рекламных и маркетинговых рассылок</span>
+                <input
+                  v-model="consents.marketingAccepted"
+                  type="checkbox"
+                  class="consent-checkbox"
+                />
+                <span class="text-sm text-slate-700 leading-snug"
+                  >Я согласен на получение рекламных и маркетинговых рассылок</span
+                >
               </label>
             </div>
             <button
@@ -76,10 +106,17 @@
         </div>
 
         <div v-else class="text-center py-8">
-          <div class="w-20 h-20 rounded-full bg-gradient-to-br from-moss-100 to-moss-200 flex items-center justify-center mx-auto mb-6 shadow-lg">
+          <div
+            class="w-20 h-20 rounded-full bg-gradient-to-br from-moss-100 to-moss-200 flex items-center justify-center mx-auto mb-6 shadow-lg"
+          >
             <i class="fa-solid fa-check text-moss-600 text-3xl"></i>
           </div>
-          <h4 class="font-display text-2xl lg:text-3xl font-bold text-slate-900 mb-4" style="letter-spacing: 0.015em">Вы зарегистрированы!</h4>
+          <h4
+            class="font-display text-2xl lg:text-3xl font-bold text-slate-900 mb-4"
+            style="letter-spacing: 0.015em"
+          >
+            Вы зарегистрированы!
+          </h4>
           <p class="text-slate-600 leading-relaxed text-lg">
             Информация для подключения придёт на&nbsp;указанный email. До&nbsp;встречи 28 марта!
           </p>
@@ -101,13 +138,16 @@ const form = ref({ name: '', email: '', phone: '' })
 const consents = ref({
   offerAccepted: false,
   privacyAccepted: false,
-  marketingAccepted: false,
+  marketingAccepted: false
 })
 const loading = ref(false)
 const error = ref('')
 const submitted = ref(false)
-const isConsentsAccepted = computed(() =>
-  consents.value.offerAccepted && consents.value.privacyAccepted && consents.value.marketingAccepted
+const isConsentsAccepted = computed(
+  () =>
+    consents.value.offerAccepted &&
+    consents.value.privacyAccepted &&
+    consents.value.marketingAccepted
 )
 
 function close() {
@@ -129,16 +169,16 @@ function getUtm() {
       utmMedium: params.get('utm_medium') || '',
       utmCampaign: params.get('utm_campaign') || '',
       utmContent: params.get('utm_content') || '',
-      utmTerm: params.get('utm_term') || '',
+      utmTerm: params.get('utm_term') || ''
     }
-  } catch { 
-    return { 
-      utmSource: '', 
-      utmMedium: '', 
-      utmCampaign: '', 
-      utmContent: '', 
-      utmTerm: '' 
-    } 
+  } catch {
+    return {
+      utmSource: '',
+      utmMedium: '',
+      utmCampaign: '',
+      utmContent: '',
+      utmTerm: ''
+    }
   }
 }
 
@@ -156,15 +196,15 @@ async function handleSubmit() {
     const result = await apiRegisterRoute.run(ctx, {
       ...form.value,
       ...utm,
-      clrtUid,
+      clrtUid
     })
-    
+
     if (result && !result.success && result.error) {
       error.value = result.error
       loading.value = false
       return
     }
-    
+
     // Если есть ссылка на оплату, перенаправляем на неё
     if (result && result.paymentUrl) {
       if (typeof window !== 'undefined' && window.clrtTrack) {
@@ -172,17 +212,17 @@ async function handleSubmit() {
           url: 'event://custom/half/redirect-to-payment',
           action: 'redirect_to_payment',
           action_param1: 'webinar_half',
-          action_param2: result.paymentUrl,
+          action_param2: result.paymentUrl
         })
       }
-      
+
       // Перенаправляем на страницу оплаты
       if (typeof window !== 'undefined') {
         window.location.href = result.paymentUrl
       }
       return
     }
-    
+
     // Если ссылки нет (бесплатная регистрация), показываем сообщение об успехе
     submitted.value = true
 
@@ -190,7 +230,7 @@ async function handleSubmit() {
       window.clrtTrack({
         url: 'event://custom/half/registration-complete',
         action: 'registration_complete',
-        action_param1: 'webinar_half',
+        action_param1: 'webinar_half'
       })
     }
   } catch (e) {
@@ -200,11 +240,14 @@ async function handleSubmit() {
   }
 }
 
-watch(() => props.isOpen, (val) => {
-  if (typeof document !== 'undefined') {
-    document.body.style.overflow = val ? 'hidden' : ''
+watch(
+  () => props.isOpen,
+  (val) => {
+    if (typeof document !== 'undefined') {
+      document.body.style.overflow = val ? 'hidden' : ''
+    }
   }
-})
+)
 </script>
 
 <style scoped>
@@ -218,7 +261,9 @@ watch(() => props.isOpen, (val) => {
   width: 90%;
   transform: scale(0.9) translateY(20px);
   transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-  box-shadow: 0 30px 80px rgba(44, 48, 56, 0.2), 0 0 0 1px rgba(255, 255, 255, 0.5) inset;
+  box-shadow:
+    0 30px 80px rgba(44, 48, 56, 0.2),
+    0 0 0 1px rgba(255, 255, 255, 0.5) inset;
   border: 1.5px solid rgba(168, 188, 160, 0.2);
 }
 .modal-overlay.active .modal-content-glass {
@@ -244,8 +289,8 @@ watch(() => props.isOpen, (val) => {
   background: rgba(255, 255, 255, 0.95);
   transform: translateY(-1px);
 }
-.input-field-glass::placeholder { 
-  color: #a8bca0; 
+.input-field-glass::placeholder {
+  color: #a8bca0;
 }
 
 .consent-item {

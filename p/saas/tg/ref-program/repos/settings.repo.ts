@@ -4,7 +4,7 @@ import type { SettingsRow } from '../tables/settings.table'
 if (!Settings) {
   throw new Error(
     'Settings table is not initialized. ' +
-    'Check if table "t__tg-ref-program__setting__7Fk2Qw" exists in Heap and is properly exported from tables/settings.table.ts'
+      'Check if table "t__tg-ref-program__setting__7Fk2Qw" exists in Heap and is properly exported from tables/settings.table.ts'
   )
 }
 

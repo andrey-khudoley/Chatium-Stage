@@ -5,32 +5,44 @@ export const TZoomAgentToolZoomMeetingsYmQ = Heap.Table(
   't_zoom_agent_tool_zoom_meetings_UCU',
   {
     meeting_id: Heap.Optional(
-      Heap.String({ customMeta: { title: 'ID встречи' }, searchable: { langs: ['ru', 'en'], embeddings: true } }),
+      Heap.String({
+        customMeta: { title: 'ID встречи' },
+        searchable: { langs: ['ru', 'en'], embeddings: true }
+      })
     ),
     topic: Heap.Optional(
-      Heap.String({ customMeta: { title: 'Тема встречи' }, searchable: { langs: ['ru', 'en'], embeddings: true } }),
+      Heap.String({
+        customMeta: { title: 'Тема встречи' },
+        searchable: { langs: ['ru', 'en'], embeddings: true }
+      })
     ),
     agenda: Heap.Optional(
-      Heap.String({ customMeta: { title: 'Повестка' }, searchable: { langs: ['ru', 'en'], embeddings: true } }),
+      Heap.String({
+        customMeta: { title: 'Повестка' },
+        searchable: { langs: ['ru', 'en'], embeddings: true }
+      })
     ),
     start_url: Heap.Optional(
       Heap.String({
         customMeta: { title: 'Ссылка для организатора' },
-        searchable: { langs: ['ru', 'en'], embeddings: true },
-      }),
+        searchable: { langs: ['ru', 'en'], embeddings: true }
+      })
     ),
     join_url: Heap.Optional(
       Heap.String({
         customMeta: { title: 'Ссылка для участников' },
-        searchable: { langs: ['ru', 'en'], embeddings: true },
-      }),
+        searchable: { langs: ['ru', 'en'], embeddings: true }
+      })
     ),
     password: Heap.Optional(Heap.String({ customMeta: { title: 'Пароль встречи' } })),
     created_at: Heap.Optional(
-      Heap.DateTime({ customMeta: { title: 'Дата создания' }, searchable: { langs: ['ru', 'en'], embeddings: true } }),
-    ),
+      Heap.DateTime({
+        customMeta: { title: 'Дата создания' },
+        searchable: { langs: ['ru', 'en'], embeddings: true }
+      })
+    )
   },
-  { customMeta: { title: 'Zoom встречи', description: 'Созданные Zoom встречи' } },
+  { customMeta: { title: 'Zoom встречи', description: 'Созданные Zoom встречи' } }
 )
 
 // declaration merging: allows using table-related types via default import

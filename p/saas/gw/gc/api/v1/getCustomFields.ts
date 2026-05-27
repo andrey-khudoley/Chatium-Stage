@@ -12,6 +12,8 @@ export const getCustomFieldsHandler: V1GcHandler = async (_ctx, a) => {
   return { kind: 'gc_result', gc }
 }
 
-export const getCustomFieldsRoute = app.get('/', async (ctx, req) => handleV1Op(ctx, req, 'getCustomFields', getCustomFieldsHandler))
+export const getCustomFieldsRoute = app.get('/', async (ctx, req) =>
+  handleV1Op(ctx, req, 'getCustomFields', getCustomFieldsHandler)
+)
 
 export default getCustomFieldsRoute

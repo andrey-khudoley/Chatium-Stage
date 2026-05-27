@@ -25,10 +25,7 @@ export async function getBotById(ctx: app.Ctx, botId: string): Promise<BotRow | 
 /**
  * Возвращает бота по campaignId или null (у кампании не более одного бота).
  */
-export async function getBotByCampaignId(
-  ctx: app.Ctx,
-  campaignId: string
-): Promise<BotRow | null> {
+export async function getBotByCampaignId(ctx: app.Ctx, campaignId: string): Promise<BotRow | null> {
   const rows = await Bots.findAll(ctx, {
     where: { campaignId },
     limit: 1
@@ -58,7 +55,10 @@ export async function validateBotToken(
   await loggerLib.writeServerLog(ctx, {
     severity: SEV.debug,
     message: `[${LOG_PATH}] validateBotToken: начало`,
-    payload: { tokenLength: trimmed.length, tokenPrefix: trimmed ? `${trimmed.slice(0, 8)}…` : '(пусто)' }
+    payload: {
+      tokenLength: trimmed.length,
+      tokenPrefix: trimmed ? `${trimmed.slice(0, 8)}…` : '(пусто)'
+    }
   })
   if (!trimmed) {
     await loggerLib.writeServerLog(ctx, {
@@ -363,11 +363,7 @@ export async function saveUpdate(
   const bot = await Bots.findById(ctx, botId)
   if (!bot || !bot.campaignId?.id) return
 
-  const updateType = update.message
-    ? 'message'
-    : update.callback_query
-      ? 'callback_query'
-      : 'other'
+  const updateType = update.message ? 'message' : update.callback_query ? 'callback_query' : 'other'
   const tgUserId =
     update.message?.from?.id != null
       ? String(update.message.from.id)

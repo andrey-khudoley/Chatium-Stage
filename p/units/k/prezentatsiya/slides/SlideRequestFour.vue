@@ -11,7 +11,7 @@
           v-for="(c, i) in cards"
           :key="c.title"
           class="card"
-          :style="{ animationDelay: (0.05 + i * 0.08) + 's' }"
+          :style="{ animationDelay: 0.05 + i * 0.08 + 's' }"
         >
           <span class="badge">{{ c.num }}</span>
           <h3 class="card-title">{{ c.title }}</h3>
@@ -26,10 +26,22 @@
 defineProps({ active: Boolean })
 
 const cards = [
-  { num: '01', title: 'Метод', code: '<span class="kw">GET</span> · <span class="kw">POST</span> · <span class="kw">PUT</span> · <span class="kw">DELETE</span>' },
+  {
+    num: '01',
+    title: 'Метод',
+    code: '<span class="kw">GET</span> · <span class="kw">POST</span> · <span class="kw">PUT</span> · <span class="kw">DELETE</span>'
+  },
   { num: '02', title: 'URL', code: 'https://school.getcourse.ru/api/users' },
-  { num: '03', title: 'Заголовки', code: '<span class="kw">Authorization:</span> <span class="kw">Bearer</span> …' },
-  { num: '04', title: 'Тело', code: '{ <span class="key">"email"</span>: <span class="str">"…"</span>, <span class="key">"name"</span>: <span class="str">"…"</span> }' },
+  {
+    num: '03',
+    title: 'Заголовки',
+    code: '<span class="kw">Authorization:</span> <span class="kw">Bearer</span> …'
+  },
+  {
+    num: '04',
+    title: 'Тело',
+    code: '{ <span class="key">"email"</span>: <span class="str">"…"</span>, <span class="key">"name"</span>: <span class="str">"…"</span> }'
+  }
 ]
 </script>
 
@@ -60,7 +72,14 @@ const cards = [
   color: var(--text-primary);
   letter-spacing: -1px;
 }
-.strip { display: block; width: 80px; height: 4px; background: var(--accent-cyan); border-radius: 2px; margin-top: 16px; }
+.strip {
+  display: block;
+  width: 80px;
+  height: 4px;
+  background: var(--accent-cyan);
+  border-radius: 2px;
+  margin-top: 16px;
+}
 
 .grid {
   display: grid;
@@ -79,7 +98,9 @@ const cards = [
   gap: 16px;
   opacity: 0;
   animation: fadeInUp 480ms ease-out forwards;
-  transition: transform 0.3s ease, border-color 0.3s ease;
+  transition:
+    transform 0.3s ease,
+    border-color 0.3s ease;
   min-height: 220px;
 }
 .card:hover {
@@ -89,7 +110,8 @@ const cards = [
 
 .badge {
   align-self: flex-start;
-  width: 56px; height: 56px;
+  width: 56px;
+  height: 56px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -121,13 +143,28 @@ const cards = [
   word-break: break-word;
   line-height: 1.55;
 }
-.code :deep(.kw) { color: var(--accent-cyan); font-weight: 600; }
-.code :deep(.key) { color: var(--accent-amber); }
-.code :deep(.str) { color: var(--json-string); }
+.code :deep(.kw) {
+  color: var(--accent-cyan);
+  font-weight: 600;
+}
+.code :deep(.key) {
+  color: var(--accent-amber);
+}
+.code :deep(.str) {
+  color: var(--json-string);
+}
 
 @media (max-width: 1024px) {
-  .slide { padding: 40px 24px; }
-  .grid { grid-template-columns: 1fr; gap: 16px; }
-  .card { min-height: auto; padding: 20px 22px; }
+  .slide {
+    padding: 40px 24px;
+  }
+  .grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .card {
+    min-height: auto;
+    padding: 20px 22px;
+  }
 }
 </style>

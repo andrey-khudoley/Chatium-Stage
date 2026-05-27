@@ -9,36 +9,32 @@
               <i class="fas fa-times"></i>
             </button>
           </div>
-          
+
           <!-- Navigation buttons (for multiple images) -->
           <template v-if="mediaList.length > 1">
-            <button 
-              v-if="currentIndex > 0" 
-              class="viewer-nav viewer-prev"
-              @click="prev"
-            >
+            <button v-if="currentIndex > 0" class="viewer-nav viewer-prev" @click="prev">
               <i class="fas fa-chevron-left"></i>
             </button>
-            <button 
-              v-if="currentIndex < mediaList.length - 1" 
+            <button
+              v-if="currentIndex < mediaList.length - 1"
               class="viewer-nav viewer-next"
               @click="next"
             >
               <i class="fas fa-chevron-right"></i>
             </button>
           </template>
-          
+
           <!-- Image -->
-          <img 
+          <img
             v-if="currentMedia?.type === 'image'"
             :src="currentMedia?.url"
             :alt="currentMedia?.name"
             class="viewer-media viewer-image"
             @click.stop
           />
-          
+
           <!-- Video -->
-          <video 
+          <video
             v-else-if="currentMedia?.type === 'video'"
             :src="currentMedia?.url"
             controls
@@ -46,19 +42,14 @@
             class="viewer-media viewer-video"
             @click.stop
           />
-          
+
           <!-- Bottom bar with counter and download -->
           <div class="viewer-bottom-bar">
             <span v-if="mediaList.length > 1" class="viewer-counter">
               {{ currentIndex + 1 }} / {{ mediaList.length }}
             </span>
             <span v-else></span>
-            <a 
-              :href="currentMedia?.url"
-              download
-              class="viewer-download"
-              @click.stop
-            >
+            <a :href="currentMedia?.url" download class="viewer-download" @click.stop>
               <i class="fas fa-download"></i>
             </a>
           </div>
@@ -74,37 +65,37 @@ import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 const props = defineProps({
   files: {
     type: Array,
-    default: () => [],
+    default: () => []
   },
   initialIndex: {
     type: Number,
-    default: 0,
+    default: 0
   },
   modelValue: {
     type: Boolean,
-    default: false,
-  },
+    default: false
+  }
 })
 
 const emit = defineEmits(['update:modelValue'])
 
 const isOpen = computed({
   get: () => props.modelValue,
-  set: (value) => emit('update:modelValue', value),
+  set: (value) => emit('update:modelValue', value)
 })
 
 const currentIndex = ref(props.initialIndex)
 
 const mediaList = computed(() => {
   return props.files
-    .filter(file => {
+    .filter((file) => {
       const mime = file.mimeType || file.mime_type || ''
       const name = file.name || ''
       const isImage = mime.startsWith('image/') || /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(name)
       const isVideo = mime.startsWith('video/') || /\.(mp4|webm|ogg|mov|avi)$/i.test(name)
       return isImage || isVideo
     })
-    .map(file => {
+    .map((file) => {
       const mime = file.mimeType || file.mime_type || ''
       const name = file.name || ''
       const isImage = mime.startsWith('image/') || /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(name)
@@ -112,7 +103,7 @@ const mediaList = computed(() => {
       return {
         ...file,
         url: fileId ? `https://fs.chatium.ru/get/${fileId}` : '',
-        type: isImage ? 'image' : 'video',
+        type: isImage ? 'image' : 'video'
       }
     })
 })
@@ -143,7 +134,7 @@ function prev() {
 
 function handleKeydown(e) {
   if (!isOpen.value) return
-  
+
   switch (e.key) {
     case 'Escape':
       close()
@@ -157,14 +148,17 @@ function handleKeydown(e) {
   }
 }
 
-watch(() => props.modelValue, (newVal) => {
-  if (newVal) {
-    currentIndex.value = props.initialIndex
-    document.body.style.overflow = 'hidden'
-  } else {
-    document.body.style.overflow = ''
+watch(
+  () => props.modelValue,
+  (newVal) => {
+    if (newVal) {
+      currentIndex.value = props.initialIndex
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = ''
+    }
   }
-})
+)
 
 onMounted(() => {
   window.addEventListener('keydown', handleKeydown)
@@ -207,7 +201,7 @@ onUnmounted(() => {
   display: flex;
   justify-content: flex-end;
   z-index: 10;
-  background: linear-gradient(to bottom, rgba(0,0,0,0.4), transparent);
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.4), transparent);
 }
 
 .viewer-close {
@@ -287,7 +281,7 @@ onUnmounted(() => {
   justify-content: space-between;
   align-items: center;
   z-index: 10;
-  background: linear-gradient(to top, rgba(0,0,0,0.4), transparent);
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.4), transparent);
 }
 
 .viewer-counter {
@@ -321,31 +315,31 @@ onUnmounted(() => {
   .viewer-top-bar {
     padding: 12px;
   }
-  
+
   .viewer-close {
     width: 40px;
     height: 40px;
     font-size: 18px;
   }
-  
+
   .viewer-nav {
     width: 40px;
     height: 40px;
     font-size: 20px;
   }
-  
+
   .viewer-prev {
     left: 8px;
   }
-  
+
   .viewer-next {
     right: 8px;
   }
-  
+
   .viewer-bottom-bar {
     padding: 12px 16px;
   }
-  
+
   .viewer-download {
     width: 40px;
     height: 40px;
@@ -357,7 +351,7 @@ onUnmounted(() => {
   .viewer-nav {
     display: none;
   }
-  
+
   .viewer-media {
     max-height: calc(100% - 100px);
   }

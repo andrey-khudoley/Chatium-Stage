@@ -35,7 +35,7 @@ export function useGlobalAudioPlayer() {
   function initAudioElement() {
     if (!audioElement.value) {
       audioElement.value = new Audio()
-      
+
       audioElement.value.addEventListener('timeupdate', () => {
         if (audioElement.value) {
           playbackProgress.value = audioElement.value.currentTime
@@ -62,7 +62,7 @@ export function useGlobalAudioPlayer() {
 
   function play(track: AudioTrack) {
     initAudioElement()
-    
+
     if (!audioElement.value) return
 
     // Если это тот же трек - просто продолжаем
@@ -75,16 +75,16 @@ export function useGlobalAudioPlayer() {
     // Новый трек
     currentTrack.value = { ...track, currentTime: track.currentTime || 0 }
     playbackProgress.value = track.currentTime || 0
-    
+
     audioElement.value.src = track.url
     audioElement.value.playbackRate = playbackSpeed.value
     audioElement.value.currentTime = track.currentTime || 0
-    
-    audioElement.value.play().catch(err => {
+
+    audioElement.value.play().catch((err) => {
       console.error('Failed to play audio:', err)
       isPlaying.value = false
     })
-    
+
     isPlaying.value = true
   }
 
@@ -118,7 +118,7 @@ export function useGlobalAudioPlayer() {
 
   function seekTo(percent: number) {
     if (!audioElement.value || !currentTrack.value) return
-    
+
     const newTime = (percent / 100) * currentTrack.value.duration
     audioElement.value.currentTime = newTime
     playbackProgress.value = newTime
@@ -127,11 +127,11 @@ export function useGlobalAudioPlayer() {
 
   function seekRelative(seconds: number) {
     if (!audioElement.value || !currentTrack.value) return
-    
-    const newTime = Math.max(0, Math.min(
-      currentTrack.value.duration,
-      audioElement.value.currentTime + seconds
-    ))
+
+    const newTime = Math.max(
+      0,
+      Math.min(currentTrack.value.duration, audioElement.value.currentTime + seconds)
+    )
     audioElement.value.currentTime = newTime
     playbackProgress.value = newTime
     currentTrack.value.currentTime = newTime
@@ -141,9 +141,9 @@ export function useGlobalAudioPlayer() {
     const currentIndex = SPEEDS.indexOf(playbackSpeed.value)
     const nextIndex = (currentIndex + 1) % SPEEDS.length
     const newSpeed = SPEEDS[nextIndex]
-    
+
     playbackSpeed.value = newSpeed
-    
+
     if (audioElement.value) {
       audioElement.value.playbackRate = newSpeed
     }
@@ -183,7 +183,7 @@ export function useGlobalAudioPlayer() {
     setSpeed,
     close,
     updateTrackInfo,
-    SPEEDS,
+    SPEEDS
   }
 }
 

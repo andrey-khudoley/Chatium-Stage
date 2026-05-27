@@ -133,7 +133,7 @@ function parsePlDealsResponse(body: unknown): GcPlApiResult {
     dealId: r.deal_id != null ? String(r.deal_id) : undefined,
     dealNumber: r.deal_number != null ? String(r.deal_number) : undefined,
     userId: r.user_id != null ? String(r.user_id) : undefined,
-    paymentLink: typeof r.payment_link === 'string' ? r.payment_link : undefined,
+    paymentLink: typeof r.payment_link === 'string' ? r.payment_link : undefined
   }
 }
 
@@ -178,8 +178,8 @@ export async function verifyGcAccess(
     user: { email: 'chatium-verify@invalid.local' },
     deal: {
       deal_number: `__verify_${Date.now()}__`,
-      deal_status: 'in_work',
-    },
+      deal_status: 'in_work'
+    }
   }
   const paramsBase64 = encodeBase64(JSON.stringify(paramsObj))
 
@@ -191,22 +191,27 @@ export async function verifyGcAccess(
       form: { action: 'add', key: apiKey, params: paramsBase64 },
       responseType: 'json',
       throwHttpErrors: false,
-      timeout: 15000,
+      timeout: 15000
     })
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e)
     await loggerLib.writeServerLog(ctx, {
       severity: 7,
       message: `[${LOG_MODULE}] verifyGcAccess: сеть`,
-      payload: { error: msg },
+      payload: { error: msg }
     })
     return { ok: false, message: `Не удалось подключиться к ${domain}: ${msg}` }
   }
 
   const statusOk =
-    typeof response.statusCode === 'number' && response.statusCode >= 200 && response.statusCode < 300
+    typeof response.statusCode === 'number' &&
+    response.statusCode >= 200 &&
+    response.statusCode < 300
   if (!statusOk) {
-    return { ok: false, message: `GetCourse ответил HTTP ${String(response.statusCode)}. Проверьте домен.` }
+    return {
+      ok: false,
+      message: `GetCourse ответил HTTP ${String(response.statusCode)}. Проверьте домен.`
+    }
   }
 
   const body = response.body
@@ -224,7 +229,12 @@ export async function verifyGcAccess(
     return { ok: true, message: 'Подключение к GetCourse успешно.' }
   }
 
-  if (raw.includes('не найден') || raw.includes('not found') || raw.includes('сделк') || raw.includes('пользоват')) {
+  if (
+    raw.includes('не найден') ||
+    raw.includes('not found') ||
+    raw.includes('сделк') ||
+    raw.includes('пользоват')
+  ) {
     return { ok: true, message: 'Ключ принят (тестовая сделка отклонена — ожидаемо).' }
   }
 
@@ -257,11 +267,14 @@ export type CreateDealResult = {
   errorMessage?: string
 }
 
-export async function createDeal(ctx: app.Ctx, params: CreateDealParams): Promise<CreateDealResult> {
+export async function createDeal(
+  ctx: app.Ctx,
+  params: CreateDealParams
+): Promise<CreateDealResult> {
   await loggerLib.writeServerLog(ctx, {
     severity: 7,
     message: `[${LOG_MODULE}] createDeal: вход`,
-    payload: { email: params.email, hasPhone: Boolean(params.phone) },
+    payload: { email: params.email, hasPhone: Boolean(params.phone) }
   })
 
   const domain = (await settingsLib.getGcAccountDomain(ctx)).trim()
@@ -274,7 +287,7 @@ export async function createDeal(ctx: app.Ctx, params: CreateDealParams): Promis
     await loggerLib.writeServerLog(ctx, {
       severity: 3,
       message: `[${LOG_MODULE}] createDeal: не заданы gc_account_domain или gc_api_key`,
-      payload: { hasDomain: Boolean(domain), hasKey: Boolean(apiKey) },
+      payload: { hasDomain: Boolean(domain), hasKey: Boolean(apiKey) }
     })
     return { ok: false, errorMessage: 'Интеграция с GetCourse не настроена.' }
   }
@@ -282,7 +295,7 @@ export async function createDeal(ctx: app.Ctx, params: CreateDealParams): Promis
     await loggerLib.writeServerLog(ctx, {
       severity: 3,
       message: `[${LOG_MODULE}] createDeal: не задан ни offer_id, ни offer_code`,
-      payload: {},
+      payload: {}
     })
     return { ok: false, errorMessage: 'Оффер GetCourse не настроен.' }
   }
@@ -294,7 +307,7 @@ export async function createDeal(ctx: app.Ctx, params: CreateDealParams): Promis
 
   const user: Record<string, unknown> = {
     email: params.email,
-    first_name: params.firstName,
+    first_name: params.firstName
   }
   if (params.lastName) user.last_name = params.lastName
   if (params.phone) user.phone = params.phone
@@ -308,11 +321,26 @@ export async function createDeal(ctx: app.Ctx, params: CreateDealParams): Promis
   if (price > 0) deal.deal_cost = price
   if (params.currency) deal.deal_currency = params.currency
 
-  const utmSourceFieldId = await settingsLib.getGcUtmFieldId(ctx, settingsLib.SETTING_KEYS.GC_UTM_SOURCE_FIELD)
-  const utmMediumFieldId = await settingsLib.getGcUtmFieldId(ctx, settingsLib.SETTING_KEYS.GC_UTM_MEDIUM_FIELD)
-  const utmCampaignFieldId = await settingsLib.getGcUtmFieldId(ctx, settingsLib.SETTING_KEYS.GC_UTM_CAMPAIGN_FIELD)
-  const utmContentFieldId = await settingsLib.getGcUtmFieldId(ctx, settingsLib.SETTING_KEYS.GC_UTM_CONTENT_FIELD)
-  const utmTermFieldId = await settingsLib.getGcUtmFieldId(ctx, settingsLib.SETTING_KEYS.GC_UTM_TERM_FIELD)
+  const utmSourceFieldId = await settingsLib.getGcUtmFieldId(
+    ctx,
+    settingsLib.SETTING_KEYS.GC_UTM_SOURCE_FIELD
+  )
+  const utmMediumFieldId = await settingsLib.getGcUtmFieldId(
+    ctx,
+    settingsLib.SETTING_KEYS.GC_UTM_MEDIUM_FIELD
+  )
+  const utmCampaignFieldId = await settingsLib.getGcUtmFieldId(
+    ctx,
+    settingsLib.SETTING_KEYS.GC_UTM_CAMPAIGN_FIELD
+  )
+  const utmContentFieldId = await settingsLib.getGcUtmFieldId(
+    ctx,
+    settingsLib.SETTING_KEYS.GC_UTM_CONTENT_FIELD
+  )
+  const utmTermFieldId = await settingsLib.getGcUtmFieldId(
+    ctx,
+    settingsLib.SETTING_KEYS.GC_UTM_TERM_FIELD
+  )
 
   const addfields: Record<string, string> = {}
   if (utmSourceFieldId && params.utmSource) addfields[utmSourceFieldId] = params.utmSource
@@ -334,10 +362,10 @@ export async function createDeal(ctx: app.Ctx, params: CreateDealParams): Promis
     system: {
       refresh_if_exists: 1,
       multiple_offers: 1,
-      return_payment_link: 1,
+      return_payment_link: 1
     },
     session,
-    deal,
+    deal
   }
 
   const paramsBase64 = encodeBase64(JSON.stringify(paramsObj))
@@ -345,7 +373,7 @@ export async function createDeal(ctx: app.Ctx, params: CreateDealParams): Promis
   await loggerLib.writeServerLog(ctx, {
     severity: 7,
     message: `[${LOG_MODULE}] createDeal: HTTP POST pl/api/deals`,
-    payload: { email: params.email, host: domain, paramsLen: paramsBase64.length },
+    payload: { email: params.email, host: domain, paramsLen: paramsBase64.length }
   })
 
   let response: { statusCode?: number; body?: unknown }
@@ -356,14 +384,14 @@ export async function createDeal(ctx: app.Ctx, params: CreateDealParams): Promis
       form: { action: 'add', key: apiKey, params: paramsBase64 },
       responseType: 'json',
       throwHttpErrors: false,
-      timeout: 15000,
+      timeout: 15000
     })
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e)
     await loggerLib.writeServerLog(ctx, {
       severity: 3,
       message: `[${LOG_MODULE}] createDeal: сеть`,
-      payload: { email: params.email, error: msg },
+      payload: { email: params.email, error: msg }
     })
     return { ok: false, errorMessage: `Ошибка сети: ${msg}` }
   }
@@ -378,8 +406,8 @@ export async function createDeal(ctx: app.Ctx, params: CreateDealParams): Promis
       statusCode: response.statusCode,
       parseOk: parsed.ok,
       parseDetail: parsed.detail,
-      body: jsonForLog(response.body),
-    },
+      body: jsonForLog(response.body)
+    }
   })
 
   if (!parsed.ok) {
@@ -389,6 +417,6 @@ export async function createDeal(ctx: app.Ctx, params: CreateDealParams): Promis
   return {
     ok: true,
     paymentLink: parsed.paymentLink,
-    dealNumber: parsed.dealNumber,
+    dealNumber: parsed.dealNumber
   }
 }

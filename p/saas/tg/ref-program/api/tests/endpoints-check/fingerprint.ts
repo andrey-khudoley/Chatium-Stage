@@ -47,7 +47,11 @@ export const fingerprintTestRoute = app.get('/', async (ctx, req) => {
       passed: hasHash && hashBase36 && partsOk
     })
     if (!results[results.length - 1].passed) {
-      results[results.length - 1].error = hasHash ? (partsOk ? 'hash не base36' : 'parts не совпадают') : 'hash пустой'
+      results[results.length - 1].error = hasHash
+        ? partsOk
+          ? 'hash не base36'
+          : 'parts не совпадают'
+        : 'hash пустой'
     }
   } catch (e) {
     results.push({
@@ -136,14 +140,16 @@ export const fingerprintTestRoute = app.get('/', async (ctx, req) => {
   try {
     const r = mockReq({})
     const out = computeFingerprint(r)
-    const unknownOk = out.parts.ip === 'unknown' && out.parts.userAgent === '' && out.parts.acceptLanguage === ''
+    const unknownOk =
+      out.parts.ip === 'unknown' && out.parts.userAgent === '' && out.parts.acceptLanguage === ''
     results.push({
       id: 'computeFingerprint-empty-headers',
       title: 'Пустые заголовки — ip unknown, строки пустые',
       passed: unknownOk
     })
     if (!unknownOk) {
-      results[results.length - 1].error = `ip=${out.parts.ip}, ua=${out.parts.userAgent}, lang=${out.parts.acceptLanguage}`
+      results[results.length - 1].error =
+        `ip=${out.parts.ip}, ua=${out.parts.userAgent}, lang=${out.parts.acceptLanguage}`
     }
   } catch (e) {
     results.push({
@@ -196,7 +202,8 @@ export const fingerprintTestRoute = app.get('/', async (ctx, req) => {
       passed: optionalOk
     })
     if (!optionalOk) {
-      results[results.length - 1].error = `platform=${out.parts.platform}, timezone=${out.parts.timezone}`
+      results[results.length - 1].error =
+        `platform=${out.parts.platform}, timezone=${out.parts.timezone}`
     }
   } catch (e) {
     results.push({

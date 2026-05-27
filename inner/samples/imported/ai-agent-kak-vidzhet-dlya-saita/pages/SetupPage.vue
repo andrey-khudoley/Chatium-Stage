@@ -11,7 +11,7 @@
           :disabled="isCreatingTransport"
           class="px-6 py-2.5 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-400 text-white font-medium rounded-lg transition-colors duration-200"
         >
-          {{ isCreatingTransport ? "Создание..." : "Создать транспорт" }}
+          {{ isCreatingTransport ? 'Создание...' : 'Создать транспорт' }}
         </button>
         <div v-if="!currentTransport" class="mt-3">
           <p class="text-gray-500 text-xs">
@@ -34,8 +34,8 @@
             Управлять транспортом
           </a>
           <p class="text-gray-500 text-xs">
-            Перейдите в управление транспортом для настройки подключенных к нему
-            агентов и других параметров работы системы.
+            Перейдите в управление транспортом для настройки подключенных к нему агентов и других
+            параметров работы системы.
           </p>
         </div>
       </div>
@@ -58,38 +58,38 @@
 </template>
 
 <script setup>
-import { ref } from "vue";
-import { apiCreateTransportRoute } from "../api/setup";
-import { indexPageRoute } from "../index";
+import { ref } from 'vue'
+import { apiCreateTransportRoute } from '../api/setup'
+import { indexPageRoute } from '../index'
 
 // Пропсы
 const props = defineProps({
-  transport: { type: Object, default: null },
-});
+  transport: { type: Object, default: null }
+})
 
-const currentTransport = ref(props.transport);
+const currentTransport = ref(props.transport)
 
 // Состояния загрузки
-const isCreatingTransport = ref(false);
+const isCreatingTransport = ref(false)
 
 // Создание транспорта
 async function createTransport() {
   try {
-    isCreatingTransport.value = true;
-    const result = await apiCreateTransportRoute.run(ctx);
-    currentTransport.value = result.transport;
-    console.log("Транспорт создан успешно:", result.transport);
+    isCreatingTransport.value = true
+    const result = await apiCreateTransportRoute.run(ctx)
+    currentTransport.value = result.transport
+    console.log('Транспорт создан успешно:', result.transport)
   } catch (error) {
-    console.error("Ошибка создания транспорта:", error);
-    alert("Ошибка при создании транспорта");
+    console.error('Ошибка создания транспорта:', error)
+    alert('Ошибка при создании транспорта')
   } finally {
-    isCreatingTransport.value = false;
+    isCreatingTransport.value = false
   }
 }
 
 // Начать использовать
 function startUsing() {
-  window.location.href = indexPageRoute.url();
+  window.location.href = indexPageRoute.url()
 }
 </script>
 

@@ -1,16 +1,21 @@
 <template>
-  <div class="min-h-screen" :class="isDark ? 'bg-gray-900 text-gray-100' : 'bg-gray-50 text-gray-900'">
+  <div
+    class="min-h-screen"
+    :class="isDark ? 'bg-gray-900 text-gray-100' : 'bg-gray-50 text-gray-900'"
+  >
     <!-- Основной контент -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <!-- Кнопки действий -->
-      <div class="mb-6 flex justify-end items-start" :class="{ 'hidden': isBoardExpanded }">
+      <div class="mb-6 flex justify-end items-start" :class="{ hidden: isBoardExpanded }">
         <div class="flex space-x-3">
           <button
             @click="saveDashboard"
             class="px-4 py-2 rounded-lg font-medium transition-colors"
-            :class="isDark 
-              ? 'bg-blue-600 hover:bg-blue-700 text-white' 
-              : 'bg-blue-500 hover:bg-blue-600 text-white'"
+            :class="
+              isDark
+                ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                : 'bg-blue-500 hover:bg-blue-600 text-white'
+            "
             :disabled="isSaving"
           >
             <i class="fas fa-save mr-2"></i>
@@ -19,9 +24,11 @@
           <a
             :href="indexUrl"
             class="px-4 py-2 rounded-lg font-medium transition-colors"
-            :class="isDark 
-              ? 'bg-gray-700 hover:bg-gray-600 text-white' 
-              : 'bg-gray-200 hover:bg-gray-300 text-gray-900'"
+            :class="
+              isDark
+                ? 'bg-gray-700 hover:bg-gray-600 text-white'
+                : 'bg-gray-200 hover:bg-gray-300 text-gray-900'
+            "
           >
             <i class="fas fa-times mr-2"></i>
             Отменить
@@ -30,7 +37,10 @@
       </div>
 
       <!-- Основные данные дашборда -->
-      <div class="mb-6 p-6 rounded-lg" :class="[isDark ? 'bg-gray-800' : 'bg-white', { 'hidden': isBoardExpanded }]">
+      <div
+        class="mb-6 p-6 rounded-lg"
+        :class="[isDark ? 'bg-gray-800' : 'bg-white', { hidden: isBoardExpanded }]"
+      >
         <h2 class="text-xl font-bold mb-4">
           <i class="fas fa-info-circle mr-2"></i>
           Основная информация
@@ -44,9 +54,11 @@
                 type="text"
                 placeholder="Например: Основные метрики продаж"
                 class="w-full px-4 py-2 rounded-lg border transition-colors"
-                :class="isDark 
-                  ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
-                  : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'"
+                :class="
+                  isDark
+                    ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400'
+                    : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
+                "
               />
             </div>
             <div>
@@ -56,9 +68,11 @@
                 rows="3"
                 placeholder="Кратко опишите, что показывает этот дашборд"
                 class="w-full px-4 py-2 rounded-lg border transition-colors"
-                :class="isDark 
-                  ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
-                  : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'"
+                :class="
+                  isDark
+                    ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400'
+                    : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
+                "
               ></textarea>
             </div>
           </div>
@@ -68,9 +82,11 @@
               <select
                 v-model="timePeriod"
                 class="w-full px-4 py-2 rounded-lg border"
-                :class="isDark 
-                  ? 'bg-gray-700 border-gray-600 text-white' 
-                  : 'bg-white border-gray-300 text-gray-900'"
+                :class="
+                  isDark
+                    ? 'bg-gray-700 border-gray-600 text-white'
+                    : 'bg-white border-gray-300 text-gray-900'
+                "
               >
                 <option v-for="period in timePeriods" :key="period.id" :value="period.id">
                   {{ period.name }}
@@ -82,10 +98,12 @@
             </div>
             <div class="text-sm opacity-80">
               <p class="mb-1">
-                Доска дашборда использует <span class="font-semibold">сетку</span> с привязкой компонентов.
+                Доска дашборда использует <span class="font-semibold">сетку</span> с привязкой
+                компонентов.
               </p>
               <p>
-                Вы можете перетаскивать и растягивать компоненты на доске, чтобы разместить их как вам удобно.
+                Вы можете перетаскивать и растягивать компоненты на доске, чтобы разместить их как
+                вам удобно.
               </p>
             </div>
           </div>
@@ -93,7 +111,7 @@
       </div>
 
       <!-- Компоненты дашборда -->
-      <div class="mb-6 grid grid-cols-1 lg:grid-cols-2 gap-6" :class="{ 'hidden': isBoardExpanded }">
+      <div class="mb-6 grid grid-cols-1 lg:grid-cols-2 gap-6" :class="{ hidden: isBoardExpanded }">
         <!-- Список компонентов -->
         <div class="p-6 rounded-lg" :class="isDark ? 'bg-gray-800' : 'bg-white'">
           <div class="flex justify-between items-center mb-4">
@@ -104,9 +122,11 @@
             <button
               @click="addNewComponent"
               class="px-4 py-2 rounded-lg font-medium transition-colors"
-              :class="isDark 
-                ? 'bg-green-600 hover:bg-green-700 text-white' 
-                : 'bg-green-500 hover:bg-green-600 text-white'"
+              :class="
+                isDark
+                  ? 'bg-green-600 hover:bg-green-700 text-white'
+                  : 'bg-green-500 hover:bg-green-600 text-white'
+              "
             >
               <i class="fas fa-plus mr-2"></i>
               Добавить компонент
@@ -122,9 +142,11 @@
               v-for="(component, index) in components"
               :key="component.id"
               class="p-4 rounded-lg border transition-all"
-              :class="isDark 
-                ? 'bg-gray-700 border-gray-600 hover:border-gray-500' 
-                : 'bg-gray-50 border-gray-200 hover:border-gray-300'"
+              :class="
+                isDark
+                  ? 'bg-gray-700 border-gray-600 hover:border-gray-500'
+                  : 'bg-gray-50 border-gray-200 hover:border-gray-300'
+              "
             >
               <div class="flex justify-between items-start">
                 <div class="flex-1">
@@ -133,11 +155,10 @@
                     <span class="font-medium">{{ component.title }}</span>
                   </div>
                   <div class="text-xs opacity-70 mb-1">
-                    Вид: {{ getViewTypeLabel(component.viewType) }} · Датасет: {{ getDatasetName(component.datasetId) }}
+                    Вид: {{ getViewTypeLabel(component.viewType) }} · Датасет:
+                    {{ getDatasetName(component.datasetId) }}
                   </div>
-                  <div class="text-xs opacity-70">
-                    Метрика: {{ component.metric || 'UNIQ' }}
-                  </div>
+                  <div class="text-xs opacity-70">Метрика: {{ component.metric || 'UNIQ' }}</div>
                 </div>
                 <div class="flex space-x-2">
                   <button
@@ -163,7 +184,7 @@
         </div>
 
         <!-- Доска размещения -->
-        <div 
+        <div
           v-if="!isBoardExpanded"
           :class="[
             'rounded-lg transition-all duration-300 p-6',
@@ -182,9 +203,9 @@
               <button
                 @click="toggleBoardExpand"
                 class="p-2 rounded transition-colors"
-                :class="isDark 
-                  ? 'hover:bg-gray-700 text-gray-300' 
-                  : 'hover:bg-gray-200 text-gray-600'"
+                :class="
+                  isDark ? 'hover:bg-gray-700 text-gray-300' : 'hover:bg-gray-200 text-gray-600'
+                "
                 title="Развернуть"
               >
                 <i class="fas fa-expand"></i>
@@ -198,10 +219,14 @@
               isDark ? 'border-gray-700 bg-gray-900' : 'border-gray-200 bg-gray-50',
               isBoardExpanded ? 'border-2' : ''
             ]"
-            :style="isBoardExpanded ? { 
-              height: 'calc(100vh - 120px)',
-              minHeight: '600px'
-            } : { height: '480px' }"
+            :style="
+              isBoardExpanded
+                ? {
+                    height: 'calc(100vh - 120px)',
+                    minHeight: '600px'
+                  }
+                : { height: '480px' }
+            "
           >
             <!-- Виртуальная область доски -->
             <div
@@ -212,17 +237,16 @@
               }"
             >
               <!-- Фоновая сетка -->
-              <div
-                class="absolute inset-0 pointer-events-none"
-                :style="gridBackgroundStyle"
-              ></div>
+              <div class="absolute inset-0 pointer-events-none" :style="gridBackgroundStyle"></div>
 
               <!-- Компоненты -->
               <div
                 v-for="component in components"
                 :key="component.id"
                 class="absolute rounded-lg shadow-md cursor-move select-none"
-                :class="isDark ? 'bg-gray-700 border border-gray-600' : 'bg-white border border-gray-200'"
+                :class="
+                  isDark ? 'bg-gray-700 border border-gray-600' : 'bg-white border border-gray-200'
+                "
                 :style="getComponentStyle(component)"
                 @mousedown.stop="startDrag(component, $event)"
               >
@@ -236,7 +260,9 @@
                   </div>
                   <button
                     class="text-xs px-2 py-1 rounded-md"
-                    :class="isDark ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300'"
+                    :class="
+                      isDark ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300'
+                    "
                     @click.stop="openEditFromBoard(component)"
                   >
                     Настроить
@@ -244,7 +270,8 @@
                 </div>
                 <div class="px-3 py-3 text-xs">
                   <div class="mb-1 opacity-80">
-                    {{ getViewTypeLabel(component.viewType) }} • {{ getDatasetName(component.datasetId) }}
+                    {{ getViewTypeLabel(component.viewType) }} •
+                    {{ getDatasetName(component.datasetId) }}
                   </div>
                   <div class="opacity-60">
                     Метрика: {{ component.metric || 'UNIQ' }} (уникальные значения)
@@ -267,11 +294,23 @@
       </div>
 
       <!-- Сообщения -->
-      <div v-if="message && !isBoardExpanded" class="mb-6 p-4 rounded-lg" 
-        :class="message.type === 'success' 
-          ? (isDark ? 'bg-green-900/50 text-green-300' : 'bg-green-100 text-green-800')
-          : (isDark ? 'bg-red-900/50 text-red-300' : 'bg-red-100 text-red-800')">
-        <i :class="message.type === 'success' ? 'fas fa-check-circle' : 'fas fa-exclamation-circle'" class="mr-2"></i>
+      <div
+        v-if="message && !isBoardExpanded"
+        class="mb-6 p-4 rounded-lg"
+        :class="
+          message.type === 'success'
+            ? isDark
+              ? 'bg-green-900/50 text-green-300'
+              : 'bg-green-100 text-green-800'
+            : isDark
+              ? 'bg-red-900/50 text-red-300'
+              : 'bg-red-100 text-red-800'
+        "
+      >
+        <i
+          :class="message.type === 'success' ? 'fas fa-check-circle' : 'fas fa-exclamation-circle'"
+          class="mr-2"
+        ></i>
         {{ message.text }}
       </div>
     </div>
@@ -281,9 +320,7 @@
       <button
         @click="toggleBoardExpand"
         class="fixed top-24 right-8 z-[101] p-2 rounded transition-colors"
-        :class="isDark 
-          ? 'hover:bg-gray-700 text-gray-300' 
-          : 'hover:bg-gray-200 text-gray-600'"
+        :class="isDark ? 'hover:bg-gray-700 text-gray-300' : 'hover:bg-gray-200 text-gray-600'"
         title="Свернуть"
       >
         <i class="fas fa-compress"></i>
@@ -292,9 +329,9 @@
 
     <!-- Доска размещения (вынесена для правильного позиционирования при разворачивании) -->
     <teleport to="body" v-if="isBoardExpanded">
-      <div 
+      <div
         class="fixed inset-0 z-50 transition-all duration-300"
-        :style="{ 
+        :style="{
           backgroundColor: isDark ? '#111827' : '#f9fafb',
           paddingTop: '5rem',
           paddingLeft: '1.5rem',
@@ -320,17 +357,16 @@
             }"
           >
             <!-- Фоновая сетка -->
-            <div
-              class="absolute inset-0 pointer-events-none"
-              :style="gridBackgroundStyle"
-            ></div>
+            <div class="absolute inset-0 pointer-events-none" :style="gridBackgroundStyle"></div>
 
             <!-- Компоненты -->
             <div
               v-for="component in components"
               :key="component.id"
               class="absolute rounded-lg shadow-md cursor-move select-none"
-              :class="isDark ? 'bg-gray-700 border border-gray-600' : 'bg-white border border-gray-200'"
+              :class="
+                isDark ? 'bg-gray-700 border border-gray-600' : 'bg-white border border-gray-200'
+              "
               :style="getComponentStyle(component)"
               @mousedown.stop="startDrag(component, $event)"
             >
@@ -344,7 +380,9 @@
                 </div>
                 <button
                   class="text-xs px-2 py-1 rounded-md"
-                  :class="isDark ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300'"
+                  :class="
+                    isDark ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300'
+                  "
                   @click.stop="openEditFromBoard(component)"
                 >
                   Настроить
@@ -352,7 +390,8 @@
               </div>
               <div class="px-3 py-3 text-xs">
                 <div class="mb-1 opacity-80">
-                  {{ getViewTypeLabel(component.viewType) }} • {{ getDatasetName(component.datasetId) }}
+                  {{ getViewTypeLabel(component.viewType) }} •
+                  {{ getDatasetName(component.datasetId) }}
                 </div>
                 <div class="opacity-60">
                   Метрика: {{ component.metric || 'UNIQ' }} (уникальные значения)
@@ -375,11 +414,15 @@
     </teleport>
 
     <!-- Модальное окно редактирования компонента -->
-    <div v-if="editingComponentIndex !== null" 
+    <div
+      v-if="editingComponentIndex !== null"
       class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60] p-4"
-      @click.self="cancelEdit">
-      <div class="rounded-lg max-w-3xl w-full max-h-[90vh] overflow-y-auto" 
-        :class="isDark ? 'bg-gray-800' : 'bg-white'">
+      @click.self="cancelEdit"
+    >
+      <div
+        class="rounded-lg max-w-3xl w-full max-h-[90vh] overflow-y-auto"
+        :class="isDark ? 'bg-gray-800' : 'bg-white'"
+      >
         <div class="p-6">
           <div class="flex justify-between items-center mb-6">
             <h3 class="text-xl font-bold">
@@ -400,9 +443,11 @@
                 type="text"
                 placeholder="Например: Уникальные пользователи за 7 дней"
                 class="w-full px-4 py-2 rounded-lg border"
-                :class="isDark 
-                  ? 'bg-gray-700 border-gray-600 text-white' 
-                  : 'bg-white border-gray-300 text-gray-900'"
+                :class="
+                  isDark
+                    ? 'bg-gray-700 border-gray-600 text-white'
+                    : 'bg-white border-gray-300 text-gray-900'
+                "
               />
             </div>
 
@@ -414,9 +459,11 @@
                 rows="2"
                 placeholder="Краткое описание компонента"
                 class="w-full px-4 py-2 rounded-lg border"
-                :class="isDark 
-                  ? 'bg-gray-700 border-gray-600 text-white' 
-                  : 'bg-white border-gray-300 text-gray-900'"
+                :class="
+                  isDark
+                    ? 'bg-gray-700 border-gray-600 text-white'
+                    : 'bg-white border-gray-300 text-gray-900'
+                "
               ></textarea>
             </div>
 
@@ -425,38 +472,63 @@
               <!-- Шаги -->
               <div class="flex items-center justify-between mb-2 text-xs font-medium">
                 <div class="flex items-center space-x-2">
-                  <div :class="['w-6 h-6 rounded-full flex items-center justify-center', step >= 1 ? activeStepClass : inactiveStepClass]">
+                  <div
+                    :class="[
+                      'w-6 h-6 rounded-full flex items-center justify-center',
+                      step >= 1 ? activeStepClass : inactiveStepClass
+                    ]"
+                  >
                     1
                   </div>
                   <span>Вид компонента</span>
                 </div>
                 <div class="flex-1 h-px mx-2" :class="isDark ? 'bg-gray-700' : 'bg-gray-200'"></div>
                 <div class="flex items-center space-x-2">
-                  <div :class="['w-6 h-6 rounded-full flex items-center justify-center', step >= 2 ? activeStepClass : inactiveStepClass]">
+                  <div
+                    :class="[
+                      'w-6 h-6 rounded-full flex items-center justify-center',
+                      step >= 2 ? activeStepClass : inactiveStepClass
+                    ]"
+                  >
                     2
                   </div>
                   <span>Выбор датасета</span>
                 </div>
                 <div class="flex-1 h-px mx-2" :class="isDark ? 'bg-gray-700' : 'bg-gray-200'"></div>
                 <div class="flex items-center space-x-2">
-                  <div :class="['w-6 h-6 rounded-full flex items-center justify-center', step >= 3 ? activeStepClass : inactiveStepClass]">
+                  <div
+                    :class="[
+                      'w-6 h-6 rounded-full flex items-center justify-center',
+                      step >= 3 ? activeStepClass : inactiveStepClass
+                    ]"
+                  >
                     3
                   </div>
                   <span>
-                    {{ editingComponent && editingComponent.viewType === 'simple-table' ? 'Колонки таблицы' : editingComponent && editingComponent.viewType === 'pivot-table' ? 'Атрибуции' : 'Метрика' }}
+                    {{
+                      editingComponent && editingComponent.viewType === 'simple-table'
+                        ? 'Колонки таблицы'
+                        : editingComponent && editingComponent.viewType === 'pivot-table'
+                          ? 'Атрибуции'
+                          : 'Метрика'
+                    }}
                   </span>
                 </div>
               </div>
 
               <!-- Шаг 1: Вид компонента -->
-              <div v-if="step === 1" class="border rounded-lg p-4"
-                :class="isDark ? 'border-gray-700 bg-gray-800' : 'border-gray-200 bg-white'">
+              <div
+                v-if="step === 1"
+                class="border rounded-lg p-4"
+                :class="isDark ? 'border-gray-700 bg-gray-800' : 'border-gray-200 bg-white'"
+              >
                 <h4 class="text-sm font-semibold mb-3">
                   <i class="fas fa-eye mr-2"></i>
                   Вид компонента
                 </h4>
                 <p class="text-xs opacity-70 mb-3">
-                  Выберите тип визуализации: целочисленный счётчик, простая таблица или сводная таблица с атрибуциями.
+                  Выберите тип визуализации: целочисленный счётчик, простая таблица или сводная
+                  таблица с атрибуциями.
                 </p>
                 <div class="space-y-3">
                   <label class="flex items-start space-x-3 cursor-pointer">
@@ -467,11 +539,10 @@
                       v-model="editingComponent.viewType"
                     />
                     <div>
-                      <div class="text-sm font-medium">
-                        Целочисленный счётчик
-                      </div>
+                      <div class="text-sm font-medium">Целочисленный счётчик</div>
                       <div class="text-xs opacity-70">
-                        Отображает одно агрегированное значение (например, количество уникальных пользователей или заказов).
+                        Отображает одно агрегированное значение (например, количество уникальных
+                        пользователей или заказов).
                       </div>
                     </div>
                   </label>
@@ -484,11 +555,10 @@
                       v-model="editingComponent.viewType"
                     />
                     <div>
-                      <div class="text-sm font-medium">
-                        Простая таблица
-                      </div>
+                      <div class="text-sm font-medium">Простая таблица</div>
                       <div class="text-xs opacity-70">
-                        Табличный компонент с настраиваемыми колонками (время, пользователь, география, событие, UTM-метки).
+                        Табличный компонент с настраиваемыми колонками (время, пользователь,
+                        география, событие, UTM-метки).
                       </div>
                     </div>
                   </label>
@@ -501,11 +571,11 @@
                       v-model="editingComponent.viewType"
                     />
                     <div>
-                      <div class="text-sm font-medium">
-                        Сводная таблица (атрибуции)
-                      </div>
+                      <div class="text-sm font-medium">Сводная таблица (атрибуции)</div>
                       <div class="text-xs opacity-70">
-                        Иерархическая таблица с развертыванием по атрибуциям (utm_source → utm_medium → ...). При раскрытии строки загружаются значения следующей атрибуции.
+                        Иерархическая таблица с развертыванием по атрибуциям (utm_source →
+                        utm_medium → ...). При раскрытии строки загружаются значения следующей
+                        атрибуции.
                       </div>
                     </div>
                   </label>
@@ -513,8 +583,11 @@
               </div>
 
               <!-- Шаг 2: Выбор датасета -->
-              <div v-if="step === 2" class="border rounded-lg p-4"
-                :class="isDark ? 'border-gray-700 bg-gray-800' : 'border-gray-200 bg-white'">
+              <div
+                v-if="step === 2"
+                class="border rounded-lg p-4"
+                :class="isDark ? 'border-gray-700 bg-gray-800' : 'border-gray-200 bg-white'"
+              >
                 <h4 class="text-sm font-semibold mb-3">
                   <i class="fas fa-database mr-2"></i>
                   Выбор датасета
@@ -531,9 +604,15 @@
                     v-for="dataset in datasets"
                     :key="dataset.id"
                     class="flex items-start space-x-3 cursor-pointer p-2 rounded-lg transition-colors"
-                    :class="editingComponent.datasetId === dataset.id 
-                      ? (isDark ? 'bg-blue-900/40 border border-blue-500/60' : 'bg-blue-50 border border-blue-200')
-                      : (isDark ? 'hover:bg-gray-700/80 border border-transparent' : 'hover:bg-gray-100 border border-transparent')"
+                    :class="
+                      editingComponent.datasetId === dataset.id
+                        ? isDark
+                          ? 'bg-blue-900/40 border border-blue-500/60'
+                          : 'bg-blue-50 border border-blue-200'
+                        : isDark
+                          ? 'hover:bg-gray-700/80 border border-transparent'
+                          : 'hover:bg-gray-100 border border-transparent'
+                    "
                   >
                     <input
                       type="radio"
@@ -554,8 +633,11 @@
               </div>
 
               <!-- Шаг 3: Метрика или колонки в зависимости от типа компонента -->
-              <div v-if="step === 3" class="border rounded-lg p-4"
-                :class="isDark ? 'border-gray-700 bg-gray-800' : 'border-gray-200 bg-white'">
+              <div
+                v-if="step === 3"
+                class="border rounded-lg p-4"
+                :class="isDark ? 'border-gray-700 bg-gray-800' : 'border-gray-200 bg-white'"
+              >
                 <!-- Метрика для счётчиков -->
                 <template v-if="editingComponent.viewType === 'counter'">
                   <h4 class="text-sm font-semibold mb-3">
@@ -563,7 +645,8 @@
                     Метрика
                   </h4>
                   <p class="text-xs opacity-70 mb-3">
-                    Для целочисленного счётчика сейчас доступна только метрика уникальных значений (UNIQ).
+                    Для целочисленного счётчика сейчас доступна только метрика уникальных значений
+                    (UNIQ).
                   </p>
                   <div class="space-y-2">
                     <label class="flex items-start space-x-3 cursor-pointer">
@@ -574,11 +657,10 @@
                         v-model="editingComponent.metric"
                       />
                       <div>
-                        <div class="text-sm font-medium">
-                          UNIQ — уникальные значения
-                        </div>
+                        <div class="text-sm font-medium">UNIQ — уникальные значения</div>
                         <div class="text-xs opacity-70">
-                          Считает сумму уникальных значений по выбранному атрибуту (детали будут настраиваться в будущем).
+                          Считает сумму уникальных значений по выбранному атрибуту (детали будут
+                          настраиваться в будущем).
                         </div>
                       </div>
                     </label>
@@ -592,14 +674,13 @@
                     Колонки таблицы
                   </h4>
                   <p class="text-xs opacity-70 mb-4">
-                    Выберите, какие колонки показывать в таблице, и перетащите их для изменения порядка.
+                    Выберите, какие колонки показывать в таблице, и перетащите их для изменения
+                    порядка.
                   </p>
 
                   <!-- Выбранные колонки -->
                   <div class="mb-4">
-                    <div class="text-xs font-medium mb-2 opacity-80">
-                      Текущий порядок колонок
-                    </div>
+                    <div class="text-xs font-medium mb-2 opacity-80">Текущий порядок колонок</div>
                     <div
                       v-if="editingComponent.columns && editingComponent.columns.length"
                       class="space-y-2"
@@ -608,7 +689,9 @@
                         v-for="(columnId, index) in editingComponent.columns"
                         :key="columnId"
                         class="flex items-center justify-between px-3 py-2 rounded-lg border text-xs cursor-move"
-                        :class="isDark ? 'border-gray-600 bg-gray-700' : 'border-gray-200 bg-gray-50'"
+                        :class="
+                          isDark ? 'border-gray-600 bg-gray-700' : 'border-gray-200 bg-gray-50'
+                        "
                         draggable="true"
                         @dragstart="startColumnDrag(index)"
                         @dragover.prevent
@@ -642,14 +725,16 @@
 
                   <!-- Доступные колонки -->
                   <div>
-                    <div class="text-xs font-medium mb-2 opacity-80">
-                      Добавить колонку
-                    </div>
+                    <div class="text-xs font-medium mb-2 opacity-80">Добавить колонку</div>
                     <div class="flex items-center gap-2">
                       <select
                         v-model="columnToAdd"
                         class="px-3 py-2 rounded-lg border text-xs flex-1"
-                        :class="isDark ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'"
+                        :class="
+                          isDark
+                            ? 'bg-gray-700 border-gray-600 text-white'
+                            : 'bg-white border-gray-300 text-gray-900'
+                        "
                       >
                         <option disabled value="">Выберите колонку</option>
                         <option
@@ -663,9 +748,15 @@
                       <button
                         type="button"
                         class="px-3 py-2 rounded-lg text-xs font-medium"
-                        :class="columnToAdd
-                          ? (isDark ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-blue-500 hover:bg-blue-600 text-white')
-                          : (isDark ? 'bg-gray-700 text-gray-400 cursor-not-allowed' : 'bg-gray-200 text-gray-400 cursor-not-allowed')"
+                        :class="
+                          columnToAdd
+                            ? isDark
+                              ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                              : 'bg-blue-500 hover:bg-blue-600 text-white'
+                            : isDark
+                              ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
+                              : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                        "
                         :disabled="!columnToAdd"
                         @click.prevent="handleAddColumn"
                       >
@@ -673,7 +764,8 @@
                       </button>
                     </div>
                     <p class="text-[11px] opacity-60 mt-2">
-                      В списке доступны только колонки, которых ещё нет в текущем порядке. После добавления их можно перетаскивать выше.
+                      В списке доступны только колонки, которых ещё нет в текущем порядке. После
+                      добавления их можно перетаскивать выше.
                     </p>
                   </div>
                 </template>
@@ -685,22 +777,28 @@
                     Атрибуции (уровни сводной таблицы)
                   </h4>
                   <p class="text-xs opacity-70 mb-4">
-                    Укажите порядок атрибуций. Первая атрибуция будет в первой колонке, при раскрытии строки
-                    будут загружаться значения следующей атрибуции.
+                    Укажите порядок атрибуций. Первая атрибуция будет в первой колонке, при
+                    раскрытии строки будут загружаться значения следующей атрибуции.
                   </p>
 
                   <!-- Текущий порядок атрибуций -->
                   <div class="mb-4">
-                    <div class="text-xs font-medium mb-2 opacity-80">
-                      Текущий порядок уровней
-                    </div>
-                    <div v-if="editingComponent.pivotConfig && editingComponent.pivotConfig.attributions && editingComponent.pivotConfig.attributions.length"
-                         class="space-y-2">
+                    <div class="text-xs font-medium mb-2 opacity-80">Текущий порядок уровней</div>
+                    <div
+                      v-if="
+                        editingComponent.pivotConfig &&
+                        editingComponent.pivotConfig.attributions &&
+                        editingComponent.pivotConfig.attributions.length
+                      "
+                      class="space-y-2"
+                    >
                       <div
                         v-for="(attrId, index) in editingComponent.pivotConfig.attributions"
                         :key="attrId"
                         class="flex items-center justify-between px-3 py-2 rounded-lg border text-xs cursor-move"
-                        :class="isDark ? 'border-gray-600 bg-gray-700' : 'border-gray-200 bg-gray-50'"
+                        :class="
+                          isDark ? 'border-gray-600 bg-gray-700' : 'border-gray-200 bg-gray-50'
+                        "
                         draggable="true"
                         @dragstart="startPivotAttrDrag(index)"
                         @dragover.prevent
@@ -734,30 +832,34 @@
 
                   <!-- Доступные атрибуции -->
                   <div>
-                    <div class="text-xs font-medium mb-2 opacity-80">
-                      Добавить уровень
-                    </div>
+                    <div class="text-xs font-medium mb-2 opacity-80">Добавить уровень</div>
                     <div class="flex items-center gap-2">
                       <select
                         v-model="pivotAttrToAdd"
                         class="px-3 py-2 rounded-lg border text-xs flex-1"
-                        :class="isDark ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'"
+                        :class="
+                          isDark
+                            ? 'bg-gray-700 border-gray-600 text-white'
+                            : 'bg-white border-gray-300 text-gray-900'
+                        "
                       >
                         <option disabled value="">Выберите атрибуцию</option>
-                        <option
-                          v-for="attr in availablePivotAttrs"
-                          :key="attr.id"
-                          :value="attr.id"
-                        >
+                        <option v-for="attr in availablePivotAttrs" :key="attr.id" :value="attr.id">
                           {{ attr.label }}
                         </option>
                       </select>
                       <button
                         type="button"
                         class="px-3 py-2 rounded-lg text-xs font-medium"
-                        :class="pivotAttrToAdd
-                          ? (isDark ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-blue-500 hover:bg-blue-600 text-white')
-                          : (isDark ? 'bg-gray-700 text-gray-400 cursor-not-allowed' : 'bg-gray-200 text-gray-400 cursor-not-allowed')"
+                        :class="
+                          pivotAttrToAdd
+                            ? isDark
+                              ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                              : 'bg-blue-500 hover:bg-blue-600 text-white'
+                            : isDark
+                              ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
+                              : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                        "
                         :disabled="!pivotAttrToAdd"
                         @click.prevent="handleAddPivotAttr"
                       >
@@ -765,7 +867,8 @@
                       </button>
                     </div>
                     <p class="text-[11px] opacity-60 mt-2">
-                      Атрибуции соответствуют UTM-полям в ClickHouse (utm_source, utm_medium, utm_campaign и т.д.).
+                      Атрибуции соответствуют UTM-полям в ClickHouse (utm_source, utm_medium,
+                      utm_campaign и т.д.).
                     </p>
                   </div>
                 </template>
@@ -773,14 +876,20 @@
             </div>
 
             <!-- Кнопки шагов -->
-            <div class="flex justify-between items-center pt-4 border-t"
-              :class="isDark ? 'border-gray-700' : 'border-gray-200'">
+            <div
+              class="flex justify-between items-center pt-4 border-t"
+              :class="isDark ? 'border-gray-700' : 'border-gray-200'"
+            >
               <div class="space-x-2">
                 <button
                   class="px-3 py-2 text-xs rounded-lg font-medium"
-                  :class="step > 1 
-                    ? (isDark ? 'bg-gray-700 hover:bg-gray-600 text-white' : 'bg-gray-200 hover:bg-gray-300 text-gray-900')
-                    : 'bg-gray-500/30 text-gray-400 cursor-not-allowed'"
+                  :class="
+                    step > 1
+                      ? isDark
+                        ? 'bg-gray-700 hover:bg-gray-600 text-white'
+                        : 'bg-gray-200 hover:bg-gray-300 text-gray-900'
+                      : 'bg-gray-500/30 text-gray-400 cursor-not-allowed'
+                  "
                   :disabled="step === 1"
                   @click="prevStep"
                 >
@@ -789,9 +898,13 @@
                 </button>
                 <button
                   class="px-3 py-2 text-xs rounded-lg font-medium"
-                  :class="step < 3 
-                    ? (isDark ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-blue-500 hover:bg-blue-600 text-white')
-                    : 'bg-blue-500/40 text-blue-100 cursor-not-allowed'"
+                  :class="
+                    step < 3
+                      ? isDark
+                        ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                        : 'bg-blue-500 hover:bg-blue-600 text-white'
+                      : 'bg-blue-500/40 text-blue-100 cursor-not-allowed'
+                  "
                   :disabled="step === 3"
                   @click="nextStep"
                 >
@@ -803,9 +916,11 @@
               <button
                 @click="saveEditingComponent"
                 class="px-4 py-2 rounded-lg font-medium transition-colors"
-                :class="isDark 
-                  ? 'bg-green-600 hover:bg-green-700 text-white' 
-                  : 'bg-green-500 hover:bg-green-600 text-white'"
+                :class="
+                  isDark
+                    ? 'bg-green-600 hover:bg-green-700 text-white'
+                    : 'bg-green-500 hover:bg-green-600 text-white'
+                "
               >
                 Сохранить компонент
               </button>
@@ -858,17 +973,17 @@ const SIMPLE_TABLE_AVAILABLE_COLUMNS = [
 function getDefaultColumnsForView(viewType) {
   if (viewType === 'simple-table') {
     // По умолчанию показываем все основные колонки в логичном порядке
-    return SIMPLE_TABLE_AVAILABLE_COLUMNS.map(c => c.id)
+    return SIMPLE_TABLE_AVAILABLE_COLUMNS.map((c) => c.id)
   }
   return []
 }
 
 function getSimpleTableColumnMeta(columnId) {
-  return SIMPLE_TABLE_AVAILABLE_COLUMNS.find(c => c.id === columnId) || null
+  return SIMPLE_TABLE_AVAILABLE_COLUMNS.find((c) => c.id === columnId) || null
 }
 
 function createEmptyPivotConfig() {
-  const defaultIds = PIVOT_ATTRIBUTION_FIELDS.slice(0, 2).map(f => f.id)
+  const defaultIds = PIVOT_ATTRIBUTION_FIELDS.slice(0, 2).map((f) => f.id)
   return {
     attributions: defaultIds,
     metric: 'UNIQ'
@@ -974,7 +1089,8 @@ onMounted(() => {
             Array.isArray(comp.columns) && comp.columns.length > 0
               ? comp.columns
               : getDefaultColumnsForView(viewType),
-          pivotConfig: comp.pivotConfig || (viewType === 'pivot-table' ? createEmptyPivotConfig() : null),
+          pivotConfig:
+            comp.pivotConfig || (viewType === 'pivot-table' ? createEmptyPivotConfig() : null),
           layout: normaliseLayout(comp.layout, index)
         }
       })
@@ -1080,7 +1196,7 @@ function getViewTypeLabel(viewType) {
 
 function getDatasetName(datasetId) {
   if (!datasetId) return 'Датасет не выбран'
-  const dataset = datasets.value.find(d => d.id === datasetId)
+  const dataset = datasets.value.find((d) => d.id === datasetId)
   return dataset ? dataset.name : 'Неизвестный датасет'
 }
 
@@ -1125,14 +1241,15 @@ function editComponent(index) {
     columns: Array.isArray(component.columns)
       ? [...component.columns]
       : getDefaultColumnsForView(viewType),
-    pivotConfig: component.pivotConfig || (viewType === 'pivot-table' ? createEmptyPivotConfig() : null),
+    pivotConfig:
+      component.pivotConfig || (viewType === 'pivot-table' ? createEmptyPivotConfig() : null),
     layout: { ...normaliseLayout(component.layout, index) }
   }
   step.value = 1
 }
 
 function openEditFromBoard(component) {
-  const index = components.value.findIndex(c => c.id === component.id)
+  const index = components.value.findIndex((c) => c.id === component.id)
   if (index >= 0) {
     editComponent(index)
   }
@@ -1240,7 +1357,7 @@ function startResize(component, event) {
 
 function handleMouseMove(event) {
   if (draggingComponentId.value) {
-    const component = components.value.find(c => c.id === draggingComponentId.value)
+    const component = components.value.find((c) => c.id === draggingComponentId.value)
     if (!component) return
 
     const ds = dragStart.value
@@ -1258,7 +1375,7 @@ function handleMouseMove(event) {
       y: newY
     }
   } else if (resizingComponentId.value) {
-    const component = components.value.find(c => c.id === resizingComponentId.value)
+    const component = components.value.find((c) => c.id === resizingComponentId.value)
     if (!component) return
 
     const rs = resizeStart.value
@@ -1292,7 +1409,7 @@ const availableColumns = computed(() => {
     return simpleTableAvailableColumns
   }
   const selected = new Set(editingComponent.value.columns)
-  return simpleTableAvailableColumns.filter(col => !selected.has(col.id))
+  return simpleTableAvailableColumns.filter((col) => !selected.has(col.id))
 })
 
 function getColumnLabel(columnId) {
@@ -1361,16 +1478,16 @@ const availablePivotAttrs = computed(() => {
     return PIVOT_ATTRIBUTION_FIELDS
   }
   const selected = new Set(editingComponent.value.pivotConfig.attributions || [])
-  return PIVOT_ATTRIBUTION_FIELDS.filter(a => !selected.has(a.id))
+  return PIVOT_ATTRIBUTION_FIELDS.filter((a) => !selected.has(a.id))
 })
 
 function getPivotAttrLabel(attrId) {
-  const meta = PIVOT_ATTRIBUTION_FIELDS.find(a => a.id === attrId)
+  const meta = PIVOT_ATTRIBUTION_FIELDS.find((a) => a.id === attrId)
   return meta ? meta.label : attrId
 }
 
 function getPivotAttrDescription(attrId) {
-  const meta = PIVOT_ATTRIBUTION_FIELDS.find(a => a.id === attrId)
+  const meta = PIVOT_ATTRIBUTION_FIELDS.find((a) => a.id === attrId)
   return meta ? meta.description : ''
 }
 
@@ -1502,4 +1619,3 @@ function toggleBoardExpand() {
   }
 }
 </script>
-

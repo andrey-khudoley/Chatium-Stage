@@ -6,9 +6,14 @@
         <div class="flex items-center justify-between">
           <div>
             <h1 class="text-3xl font-bold text-gray-900">{{ ctx.t('Settings') }}</h1>
-            <p class="mt-2 text-sm text-gray-600">{{ ctx.t('Documentation Settings Management') }}</p>
+            <p class="mt-2 text-sm text-gray-600">
+              {{ ctx.t('Documentation Settings Management') }}
+            </p>
           </div>
-          <a :href="basePath" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">
+          <a
+            :href="basePath"
+            class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+          >
             <i class="fas fa-arrow-left mr-2"></i>{{ ctx.t('Back') }}
           </a>
         </div>
@@ -24,7 +29,9 @@
       <div v-else class="bg-white rounded-lg shadow">
         <div class="p-6 border-b border-gray-200">
           <h2 class="text-xl font-semibold text-gray-900">{{ ctx.t('URL Type') }}</h2>
-          <p class="mt-1 text-sm text-gray-600">{{ ctx.t('Select URL format for documentation pages') }}</p>
+          <p class="mt-1 text-sm text-gray-600">
+            {{ ctx.t('Select URL format for documentation pages') }}
+          </p>
         </div>
 
         <div class="p-6 space-y-4">

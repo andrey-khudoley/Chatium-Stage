@@ -20,11 +20,7 @@
 import * as loggerLib from '../../logger.lib'
 import * as settingsLib from '../../settings.lib'
 import { findOperationCatalogEntry } from '../../gateway/operationsCatalog'
-import {
-  V1_OPS_HEAP_KEYS,
-  V1_OPS_TESTER_EMAIL,
-  type V1OpsRunContext
-} from './v1OpsRunContext'
+import { V1_OPS_HEAP_KEYS, V1_OPS_TESTER_EMAIL, type V1OpsRunContext } from './v1OpsRunContext'
 import {
   V1_OPS_EXECUTION_ORDER,
   V1_OPS_SCENARIOS,

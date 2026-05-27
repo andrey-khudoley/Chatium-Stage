@@ -22,7 +22,7 @@ export const apiDashboardsListRoute = app.get('/list', async (ctx, req) => {
 
   return {
     success: true,
-    dashboards: dashboards.map(d => ({
+    dashboards: dashboards.map((d) => ({
       id: d.id,
       name: d.name,
       description: d.description,

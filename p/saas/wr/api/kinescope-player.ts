@@ -31,7 +31,7 @@ const PLAYER_SETTINGS = {
   timeline: false,
   title_subtitle: false,
   title_subtitle_visible_on_load: false,
-  video_preload: true,
+  video_preload: true
 }
 
 async function playerExists(ctx: app.Ctx, playerId: string): Promise<boolean> {
@@ -60,7 +60,7 @@ export async function getOrCreateKinescopeWebinarPlayer(ctx: app.Ctx): Promise<s
 
         ctx.account.log('@webinar-room Found existing Kinescope player by name', {
           level: 'info',
-          json: { playerId, name: PLAYER_NAME },
+          json: { playerId, name: PLAYER_NAME }
         })
       }
       return playerId
@@ -68,7 +68,7 @@ export async function getOrCreateKinescopeWebinarPlayer(ctx: app.Ctx): Promise<s
   } catch (e: any) {
     ctx.account.log('@webinar-room Failed to list players', {
       level: 'warn',
-      json: { error: e.message },
+      json: { error: e.message }
     })
   }
 
@@ -81,7 +81,7 @@ export async function getOrCreateKinescopeWebinarPlayer(ctx: app.Ctx): Promise<s
       // Плеер был удалён, очищаем невалидный ID
       ctx.account.log('@webinar-room Clearing invalid Kinescope player ID', {
         level: 'warn',
-        json: { oldPlayerId: config.kinescopeAutowebinarPlayerId },
+        json: { oldPlayerId: config.kinescopeAutowebinarPlayerId }
       })
       delete config.kinescopeAutowebinarPlayerId
     }
@@ -90,18 +90,18 @@ export async function getOrCreateKinescopeWebinarPlayer(ctx: app.Ctx): Promise<s
   // Create new player
   const player = await createPlayer(ctx, {
     name: PLAYER_NAME,
-    settings: PLAYER_SETTINGS,
+    settings: PLAYER_SETTINGS
   })
 
   const playerId = player.data.id
 
   config.kinescopeAutowebinarPlayerId = playerId
-  
+
   await GlobalConfig.updateSingleton(ctx, config)
 
   ctx.account.log('@webinar-room Created shared Kinescope player "Chatium Autowebinar"', {
     level: 'info',
-    json: { playerId },
+    json: { playerId }
   })
 
   return playerId

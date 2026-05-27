@@ -1,4 +1,5 @@
 @chatium
+
 # Модуль @app/inbox: Инбокс пользователя в Chatium
 
 Краткое руководство по модулю `@app/inbox` для работы с лентой элементов инбокса (уведомления, диалоги, задачи) в UGC. Документ опирается на типизацию `node_modules/@app/inbox/index.d.ts`. Связь инбокса с фидами описана в [019-feed.md](019-feed.md#inbox-и-хуки-фида).
@@ -65,7 +66,7 @@ await updateInbox(ctx, userId, {
   title: 'Новое сообщение',
   description: 'Вам написали в поддержку',
   badge: 1,
-  sendPush: true,
+  sendPush: true
 })
 ```
 

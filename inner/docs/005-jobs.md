@@ -1,4 +1,5 @@
 @chatium
+
 # Отложенные задачи в Chatium
 
 Исчерпывающее руководство по работе с отложенными задачами (jobs) в Chatium. Документ структурирован для удобства полнотекстового поиска и работы с эмбеддингами.
@@ -64,15 +65,15 @@ const reminderJob = app.job('/reminder', async (ctx, params) => {
 ```typescript
 const sendReminderJob = app.job('/send-reminder', async (ctx, params) => {
   const { userId, message } = params
-  
+
   ctx.account.log('Sending reminder', {
     level: 'info',
     json: { userId, message }
   })
-  
+
   // Отправка напоминания
   await sendNotification(ctx, userId, message)
-  
+
   ctx.account.log('Reminder sent', {
     level: 'info',
     json: { userId }
@@ -83,11 +84,13 @@ const sendReminderJob = app.job('/send-reminder', async (ctx, params) => {
 ### Параметры задачи
 
 **ctx** — контекст приложения:
+
 - Формируется автоматически
 - Тот же ctx, что и в роутах
 - Доступ к `ctx.user`, `ctx.account`, `ctx.account.log()`
 
 **params** — данные задачи:
+
 - Объект с произвольными данными
 - Передаётся при планировании
 - Может содержать любые сериализуемые данные
@@ -95,7 +98,7 @@ const sendReminderJob = app.job('/send-reminder', async (ctx, params) => {
 ```typescript
 const processOrderJob = app.job('/process-order', async (ctx, params) => {
   const { orderId, action, metadata } = params
-  
+
   // Типизация параметров
   type JobParams = {
     orderId: string
@@ -105,13 +108,13 @@ const processOrderJob = app.job('/process-order', async (ctx, params) => {
       amount?: number
     }
   }
-  
+
   // Использование
   ctx.account.log('Processing order', {
     level: 'info',
     json: { orderId, action }
   })
-  
+
   // Бизнес-логика
   await processOrder(ctx, orderId, action)
 })
@@ -126,6 +129,7 @@ const processOrderJob = app.job('/process-order', async (ctx, params) => {
 Запланировать выполнение через указанное количество времени.
 
 **Сигнатура**:
+
 ```typescript
 job.scheduleJobAfter(
   ctx: app.Ctx,
@@ -177,17 +181,12 @@ const taskId = await reminderJob.scheduleJobAfter(ctx, 7, 'days', {
 ```typescript
 export const scheduleReminderRoute = app.post('/schedule', async (ctx, req) => {
   const { message, delayMinutes } = req.body
-  
-  const taskId = await reminderJob.scheduleJobAfter(
-    ctx,
-    delayMinutes,
-    'minutes',
-    {
-      userId: ctx.user.id,
-      message
-    }
-  )
-  
+
+  const taskId = await reminderJob.scheduleJobAfter(ctx, delayMinutes, 'minutes', {
+    userId: ctx.user.id,
+    message
+  })
+
   return {
     success: true,
     taskId,
@@ -201,11 +200,13 @@ export const scheduleReminderRoute = app.post('/schedule', async (ctx, req) => {
 Запланировать немедленное асинхронное выполнение.
 
 **Сигнатура**:
+
 ```typescript
 job.scheduleJobAsap(ctx: app.Ctx, params: any): Promise<number>
 ```
 
 **Когда использовать**:
+
 - Фоновая обработка после действия пользователя
 - Избежать блокировки роута
 - Асинхронные операции без задержки
@@ -215,10 +216,10 @@ job.scheduleJobAsap(ctx: app.Ctx, params: any): Promise<number>
 ```typescript
 const processDataJob = app.job('/process-data', async (ctx, params) => {
   const { dataId } = params
-  
+
   // Долгая обработка
   await processLargeDataset(ctx, dataId)
-  
+
   ctx.account.log('Data processed', {
     level: 'info',
     json: { dataId }
@@ -227,15 +228,15 @@ const processDataJob = app.job('/process-data', async (ctx, params) => {
 
 export const uploadDataRoute = app.post('/upload', async (ctx, req) => {
   const { data } = req.body
-  
+
   // Сохраняем данные
   const dataRecord = await DataTable.create(ctx, { data })
-  
+
   // Планируем фоновую обработку
   await processDataJob.scheduleJobAsap(ctx, {
     dataId: dataRecord.id
   })
-  
+
   // Сразу возвращаем ответ
   return {
     success: true,
@@ -249,6 +250,7 @@ export const uploadDataRoute = app.post('/upload', async (ctx, req) => {
 Запланировать выполнение на конкретную дату и время.
 
 **Сигнатура**:
+
 ```typescript
 job.scheduleJobAt(ctx: app.Ctx, date: Date, params: any): Promise<number>
 ```
@@ -259,7 +261,7 @@ job.scheduleJobAt(ctx: app.Ctx, date: Date, params: any): Promise<number>
 // Конкретная дата
 const taskId = await reminderJob.scheduleJobAt(
   ctx,
-  new Date(2026, 0, 31, 12, 0),  // 31 января 2026, 12:00
+  new Date(2026, 0, 31, 12, 0), // 31 января 2026, 12:00
   {
     userId: ctx.user.id,
     message: 'Напоминание на 31 января 2026'
@@ -269,7 +271,7 @@ const taskId = await reminderJob.scheduleJobAt(
 // Вычисляемая дата
 const tomorrow = new Date()
 tomorrow.setDate(tomorrow.getDate() + 1)
-tomorrow.setHours(9, 0, 0, 0)  // 9:00 утра
+tomorrow.setHours(9, 0, 0, 0) // 9:00 утра
 
 const taskId = await reminderJob.scheduleJobAt(ctx, tomorrow, {
   userId: ctx.user.id,
@@ -290,15 +292,15 @@ export const createSubscriptionRoute = app.post('/create', async (ctx, req) => {
     userId: ctx.user.id,
     plan: req.body.plan
   })
-  
+
   // Первый платеж через 30 дней
   const nextBillingDate = new Date()
   nextBillingDate.setDate(nextBillingDate.getDate() + 30)
-  
+
   await billingJob.scheduleJobAt(ctx, nextBillingDate, {
     subscriptionId: subscription.id
   })
-  
+
   return {
     success: true,
     subscription,
@@ -328,6 +330,7 @@ const taskId = await job.scheduleJobAt(ctx, date, params)
 ```
 
 **Без `await`:**
+
 - `taskId` будет содержать Promise объект, а не реальный ID
 - При попытке сохранить получите `"[object Promise]"` вместо числа
 - При попытке отменить будет ошибка: `Invalid job id: [object Promise]:undefined`
@@ -342,33 +345,33 @@ export const scheduleRoute = app.post('/schedule', async (ctx, req) => {
   const taskId = await reminderJob.scheduleJobAfter(ctx, 10, 'minutes', {
     message: 'Test'
   })
-  
+
   // taskId - это число (например: 6222078)
   // Для хранения в строковом поле преобразуем
   await TasksTable.create(ctx, {
-    taskId: String(taskId),  // Сохраняем как строку
+    taskId: String(taskId), // Сохраняем как строку
     userId: ctx.user.id,
     scheduledFor: new Date(Date.now() + 10 * 60 * 1000)
   })
-  
+
   return { success: true, taskId }
 })
 
 export const cancelRoute = app.post('/cancel', async (ctx, req) => {
   const { taskId: taskIdString } = req.body
-  
+
   // Преобразуем строку обратно в число для cancelScheduledJob
   const taskId = parseInt(taskIdString, 10)
-  
+
   // ✅ Отменяем задачу (ожидает число!)
   await cancelScheduledJob(ctx, taskId)
-  
+
   // Обновляем статус в БД
   await TasksTable.update(ctx, {
     taskId: taskIdString,
     status: 'cancelled'
   })
-  
+
   return { success: true }
 })
 ```
@@ -380,6 +383,7 @@ export const cancelRoute = app.post('/cancel', async (ctx, req) => {
 - **Heap таблица с полем String** требует **строку** (string)
 
 **Правило конвертации:**
+
 ```typescript
 // При сохранении: число → строка
 const taskIdForStorage = String(taskId)
@@ -396,17 +400,17 @@ await cancelScheduledJob(ctx, taskIdForCancel)
 
 Доступные единицы для `scheduleJobAfter`:
 
-| Единица | Описание | Пример |
-|---------|----------|--------|
+| Единица          | Описание     | Пример                          |
+| ---------------- | ------------ | ------------------------------- |
 | `'milliseconds'` | Миллисекунды | `500, 'milliseconds'` = 0.5 сек |
-| `'seconds'` | Секунды | `30, 'seconds'` = 30 сек |
-| `'minutes'` | Минуты | `15, 'minutes'` = 15 мин |
-| `'hours'` | Часы | `2, 'hours'` = 2 часа |
-| `'days'` | Дни | `7, 'days'` = 7 дней |
-| `'weeks'` | Недели | `2, 'weeks'` = 14 дней |
-| `'months'` | Месяцы | `1, 'months'` = 1 месяц |
-| `'quarters'` | Кварталы | `1, 'quarters'` = 3 месяца |
-| `'years'` | Годы | `1, 'years'` = 1 год |
+| `'seconds'`      | Секунды      | `30, 'seconds'` = 30 сек        |
+| `'minutes'`      | Минуты       | `15, 'minutes'` = 15 мин        |
+| `'hours'`        | Часы         | `2, 'hours'` = 2 часа           |
+| `'days'`         | Дни          | `7, 'days'` = 7 дней            |
+| `'weeks'`        | Недели       | `2, 'weeks'` = 14 дней          |
+| `'months'`       | Месяцы       | `1, 'months'` = 1 месяц         |
+| `'quarters'`     | Кварталы     | `1, 'quarters'` = 3 месяца      |
+| `'years'`        | Годы         | `1, 'years'` = 1 год            |
 
 **Примеры**:
 
@@ -454,9 +458,9 @@ await job.scheduleJobAfter(ctx, 1, 'years', params)
 ```typescript
 const sendReminderJob = app.job('/send-reminder', async (ctx, params) => {
   const { userId, title, message } = params
-  
+
   const user = await findUserById(ctx, userId)
-  
+
   if (!user) {
     ctx.account.log('User not found for reminder', {
       level: 'warn',
@@ -464,7 +468,7 @@ const sendReminderJob = app.job('/send-reminder', async (ctx, params) => {
     })
     return
   }
-  
+
   // Отправка через email
   if (user.confirmedEmail) {
     await sendEmail(ctx, {
@@ -473,12 +477,12 @@ const sendReminderJob = app.job('/send-reminder', async (ctx, params) => {
       body: message
     })
   }
-  
+
   // Отправка через Telegram
   if (user.telegramId) {
     await sendTelegramMessage(ctx, user.telegramId, message)
   }
-  
+
   ctx.account.log('Reminder sent', {
     level: 'info',
     json: { userId, title }
@@ -488,29 +492,25 @@ const sendReminderJob = app.job('/send-reminder', async (ctx, params) => {
 // Планирование
 export const createReminderRoute = app.post('/create', async (ctx, req) => {
   const { title, message, remindAt } = req.body
-  
+
   const reminder = await RemindersTable.create(ctx, {
     userId: ctx.user.id,
     title,
     message,
     remindAt: new Date(remindAt)
   })
-  
-  const taskId = await sendReminderJob.scheduleJobAt(
-    ctx,
-    new Date(remindAt),
-    {
-      userId: ctx.user.id,
-      title,
-      message
-    }
-  )
-  
+
+  const taskId = await sendReminderJob.scheduleJobAt(ctx, new Date(remindAt), {
+    userId: ctx.user.id,
+    title,
+    message
+  })
+
   await RemindersTable.update(ctx, {
     id: reminder.id,
     taskId
   })
-  
+
   return { success: true, reminder }
 })
 ```
@@ -520,10 +520,10 @@ export const createReminderRoute = app.post('/create', async (ctx, req) => {
 ```typescript
 const sendEmailJob = app.job('/send-email', async (ctx, params) => {
   const { email, subject, body } = params
-  
+
   try {
     await sendEmail(ctx, { to: email, subject, body })
-    
+
     ctx.account.log('Email sent', {
       level: 'info',
       json: { email, subject }
@@ -538,14 +538,13 @@ const sendEmailJob = app.job('/send-email', async (ctx, params) => {
 
 export const scheduleEmailRoute = app.post('/schedule-email', async (ctx, req) => {
   const { email, subject, body, delayMinutes } = req.body
-  
-  const taskId = await sendEmailJob.scheduleJobAfter(
-    ctx,
-    delayMinutes || 0,
-    'minutes',
-    { email, subject, body }
-  )
-  
+
+  const taskId = await sendEmailJob.scheduleJobAfter(ctx, delayMinutes || 0, 'minutes', {
+    email,
+    subject,
+    body
+  })
+
   return {
     success: true,
     taskId,
@@ -557,13 +556,13 @@ export const scheduleEmailRoute = app.post('/schedule-email', async (ctx, req) =
 ### Рекуррентные платежи
 
 ```typescript
-import { attemptAutoCharge } from "@pay/sdk"
+import { attemptAutoCharge } from '@pay/sdk'
 
 const processSubscriptionPaymentJob = app.job('/process-subscription', async (ctx, params) => {
   const { subscriptionId, userId } = params
-  
+
   const subscription = await SubscriptionsTable.findById(ctx, subscriptionId)
-  
+
   if (!subscription || subscription.status !== 'active') {
     ctx.account.log('Subscription not active', {
       level: 'warn',
@@ -571,7 +570,7 @@ const processSubscriptionPaymentJob = app.job('/process-subscription', async (ct
     })
     return { success: false, error: 'Subscription is not active' }
   }
-  
+
   // Автоматическое списание
   const response = await attemptAutoCharge(ctx, {
     subject: subscription,
@@ -587,38 +586,40 @@ const processSubscriptionPaymentJob = app.job('/process-subscription', async (ct
       subscriptionId: subscription.id,
       isRecurring: true
     },
-    items: [{
-      id: subscription.planId,
-      name: subscription.planName,
-      quantity: 1,
-      price: subscription.monthlyPrice
-    }],
+    items: [
+      {
+        id: subscription.planId,
+        name: subscription.planName,
+        quantity: 1,
+        price: subscription.monthlyPrice
+      }
+    ],
     initedBy: 'system',
     bySchedule: true
   })
-  
+
   if (response.success) {
     // Обновляем дату следующего списания
     const nextBillingDate = new Date()
     nextBillingDate.setDate(nextBillingDate.getDate() + 30)
-    
+
     await SubscriptionsTable.update(ctx, {
       id: subscription.id,
       nextBillingDate,
       status: 'active'
     })
-    
+
     // Планируем следующее списание
     await processSubscriptionPaymentJob.scheduleJobAt(ctx, nextBillingDate, {
       subscriptionId: subscription.id,
       userId
     })
-    
+
     ctx.account.log('Subscription payment successful', {
       level: 'info',
       json: { subscriptionId, nextBillingDate }
     })
-    
+
     return { success: true }
   } else {
     // При неудаче приостанавливаем подписку
@@ -627,12 +628,12 @@ const processSubscriptionPaymentJob = app.job('/process-subscription', async (ct
       status: 'payment_failed',
       lastError: response.error
     })
-    
+
     ctx.account.log('Subscription payment failed', {
       level: 'error',
       json: { subscriptionId, error: response.error }
     })
-    
+
     return { success: false, error: response.error }
   }
 })
@@ -643,15 +644,15 @@ const processSubscriptionPaymentJob = app.job('/process-subscription', async (ct
 ```typescript
 const cleanupOldDataJob = app.job('/cleanup-old-data', async (ctx, params) => {
   const { tableName, daysOld } = params
-  
+
   const cutoffDate = new Date()
   cutoffDate.setDate(cutoffDate.getDate() - daysOld)
-  
+
   ctx.account.log('Starting cleanup', {
     level: 'info',
     json: { tableName, daysOld, cutoffDate }
   })
-  
+
   // Удаление старых записей
   const oldRecords = await SomeTable.findAll(ctx, {
     where: {
@@ -659,19 +660,19 @@ const cleanupOldDataJob = app.job('/cleanup-old-data', async (ctx, params) => {
     },
     limit: 1000
   })
-  
+
   for (const record of oldRecords) {
     await SomeTable.delete(ctx, record.id)
   }
-  
+
   ctx.account.log('Cleanup completed', {
     level: 'info',
-    json: { 
-      tableName, 
-      deletedCount: oldRecords.length 
+    json: {
+      tableName,
+      deletedCount: oldRecords.length
     }
   })
-  
+
   // Планируем следующую очистку через 24 часа
   if (params.recurring) {
     await cleanupOldDataJob.scheduleJobAfter(ctx, 24, 'hours', params)
@@ -685,7 +686,7 @@ export const startCleanupRoute = app.post('/start-cleanup', async (ctx) => {
     daysOld: 30,
     recurring: true
   })
-  
+
   return { success: true, message: 'Cleanup scheduled' }
 })
 ```
@@ -704,11 +705,11 @@ const myJob = app.job('/my-job', async (ctx, params) => {
     level: 'info',
     json: { params }
   })
-  
+
   try {
     // Выполнение задачи
     await performTask(ctx, params)
-    
+
     ctx.account.log('Job completed', {
       level: 'info',
       json: { params }
@@ -747,13 +748,14 @@ const reliableJob = app.job('/reliable', async (ctx, params) => {
 
 **Ошибка**: `setTimeout is not defined`
 
-**Решение**: 
+**Решение**:
 
 1. **Для задержек используйте `scheduleJobAfter`**:
+
 ```typescript
 // ❌ НЕПРАВИЛЬНО - setTimeout не существует на сервере
 const myJob = app.job('/my-job', async (ctx, params) => {
-  await new Promise(resolve => setTimeout(resolve, 1000))  // ← ОШИБКА!
+  await new Promise((resolve) => setTimeout(resolve, 1000)) // ← ОШИБКА!
   // ...
 })
 
@@ -764,16 +766,19 @@ const delayedJob = app.job('/delayed', async (ctx, params) => {
 })
 
 // Планируем выполнение с задержкой
-await delayedJob.scheduleJobAfter(ctx, 1, 'seconds', { /* params */ })
+await delayedJob.scheduleJobAfter(ctx, 1, 'seconds', {
+  /* params */
+})
 ```
 
 2. **Для паузы между операциями в цикле** - просто не делайте паузы, или разбивайте на отдельные jobs:
+
 ```typescript
 // ❌ НЕПРАВИЛЬНО
 const processBatchJob = app.job('/process-batch', async (ctx, params) => {
   for (const item of items) {
     await processItem(ctx, item)
-    await new Promise(resolve => setTimeout(resolve, 1000))  // ← ОШИБКА!
+    await new Promise((resolve) => setTimeout(resolve, 1000)) // ← ОШИБКА!
   }
 })
 
@@ -788,7 +793,7 @@ const processBatchJob = app.job('/process-batch', async (ctx, params) => {
 // ✅ ПРАВИЛЬНО - если нужна задержка, разбивайте на отдельные jobs
 const processItemJob = app.job('/process-item', async (ctx, params) => {
   await processItem(ctx, params.item)
-  
+
   // Планируем следующий элемент с задержкой
   if (params.nextItem) {
     await processItemJob.scheduleJobAfter(ctx, 1, 'seconds', {
@@ -799,12 +804,13 @@ const processItemJob = app.job('/process-item', async (ctx, params) => {
 ```
 
 3. **Для массовых операций** - используйте батчи без задержек:
+
 ```typescript
 // ✅ ПРАВИЛЬНО - удаление всех записей сразу
 async function deleteAllCache(ctx: app.Ctx, datasetId: string) {
   const deleted = await CacheTable.deleteAll(ctx, {
     where: { dataset_id: datasetId },
-    limit: null  // Удаляем все сразу
+    limit: null // Удаляем все сразу
   })
   return deleted
 }
@@ -818,7 +824,7 @@ async function deleteAllCache(ctx: app.Ctx, datasetId: string) {
       limit: 100
     })
     deleted += batch
-    await new Promise(resolve => setTimeout(resolve, 1000))  // ← ОШИБКА!
+    await new Promise((resolve) => setTimeout(resolve, 1000)) // ← ОШИБКА!
     if (batch === 0) break
   }
   return deleted
@@ -834,10 +840,10 @@ async function deleteAllCache(ctx: app.Ctx, datasetId: string) {
 ```typescript
 const idempotentJob = app.job('/send-notification', async (ctx, params) => {
   const { notificationId } = params
-  
+
   // Проверяем, не была ли уже отправлена
   const notification = await NotificationsTable.findById(ctx, notificationId)
-  
+
   if (notification.status === 'sent') {
     ctx.account.log('Notification already sent', {
       level: 'info',
@@ -845,17 +851,17 @@ const idempotentJob = app.job('/send-notification', async (ctx, params) => {
     })
     return { success: true, message: 'Already sent' }
   }
-  
+
   // Отправка
   await sendNotification(ctx, notification)
-  
+
   // Обновление статуса
   await NotificationsTable.update(ctx, {
     id: notificationId,
     status: 'sent',
     sentAt: new Date()
   })
-  
+
   return { success: true }
 })
 ```
@@ -869,7 +875,7 @@ export const scheduleActionRoute = app.post('/schedule', async (ctx, req) => {
   const taskId = await myJob.scheduleJobAfter(ctx, 10, 'minutes', {
     action: req.body.action
   })
-  
+
   // Сохраняем в БД
   await ScheduledTasksTable.create(ctx, {
     taskId,
@@ -877,7 +883,7 @@ export const scheduleActionRoute = app.post('/schedule', async (ctx, req) => {
     scheduledFor: new Date(Date.now() + 10 * 60 * 1000),
     status: 'pending'
   })
-  
+
   return { success: true, taskId }
 })
 ```
@@ -908,34 +914,34 @@ const myJob = app.job('/my-job', async (ctx, params: MyJobParams) => {
 ```typescript
 const monitoredJob = app.job('/monitored', async (ctx, params) => {
   const startTime = Date.now()
-  
+
   ctx.account.log('Job started', {
     level: 'info',
     json: { params, startTime }
   })
-  
+
   try {
     await performTask(ctx, params)
-    
+
     const duration = Date.now() - startTime
-    
+
     ctx.account.log('Job completed', {
       level: 'info',
       json: { params, duration }
     })
   } catch (error: any) {
     const duration = Date.now() - startTime
-    
+
     ctx.account.log('Job failed', {
       level: 'error',
-      json: { 
-        params, 
+      json: {
+        params,
         duration,
         error: error.message,
         stack: error.stack
       }
     })
-    
+
     throw error
   }
 })
@@ -947,24 +953,24 @@ const monitoredJob = app.job('/monitored', async (ctx, params) => {
 const performanceJob = app.job('/performance', async (ctx, params) => {
   const metrics = {
     startTime: Date.now(),
-    steps: [] as Array<{ name: string, duration: number }>
+    steps: [] as Array<{ name: string; duration: number }>
   }
-  
+
   const step = (name: string, start: number) => {
     metrics.steps.push({
       name,
       duration: Date.now() - start
     })
   }
-  
+
   const step1Start = Date.now()
   await performStep1(ctx)
   step('step1', step1Start)
-  
+
   const step2Start = Date.now()
   await performStep2(ctx)
   step('step2', step2Start)
-  
+
   ctx.account.log('Job performance metrics', {
     level: 'info',
     json: {
@@ -979,41 +985,47 @@ const performanceJob = app.job('/performance', async (ctx, params) => {
 
 ## Частые ошибки при работе с Jobs
 
-### ❌ Ошибка #1: Забыли await перед scheduleJob*
+### ❌ Ошибка #1: Забыли await перед scheduleJob\*
 
 **Симптомы:**
+
 - taskId содержит `"[object Promise]"` вместо числа
 - Ошибка при отмене: `Invalid job id: [object Promise]:undefined`
 - Джоб не отменяется
 
 **Причина:**
+
 ```typescript
 // ❌ НЕПРАВИЛЬНО
-const taskId = job.scheduleJobAsap(ctx, params)  // Возвращает Promise!
+const taskId = job.scheduleJobAsap(ctx, params) // Возвращает Promise!
 ```
 
 **Решение:**
+
 ```typescript
 // ✅ ПРАВИЛЬНО
-const taskId = await job.scheduleJobAsap(ctx, params)  // Ждём Promise
+const taskId = await job.scheduleJobAsap(ctx, params) // Ждём Promise
 ```
 
 ### ❌ Ошибка #2: Неправильный тип при отмене джоба
 
 **Симптомы:**
+
 - Ошибка: `Invalid job id: 6222078:undefined`
 - Джоб остаётся в планировщике после отмены
 
 **Причина:**
+
 ```typescript
 // taskId сохранён как строка "6222078"
-const taskId = taskIdSetting.value  // string
+const taskId = taskIdSetting.value // string
 
 // ❌ Передаём строку, а нужно число
-await cancelScheduledJob(ctx, taskId)  // Ожидает number!
+await cancelScheduledJob(ctx, taskId) // Ожидает number!
 ```
 
 **Решение:**
+
 ```typescript
 // ✅ Преобразуем в число
 const taskId = parseInt(taskIdSetting.value, 10)
@@ -1023,21 +1035,24 @@ await cancelScheduledJob(ctx, taskId)
 ### ❌ Ошибка #3: Сохранение Promise вместо taskId
 
 **Симптомы:**
+
 - В базе данных `taskId = "[object Promise]"`
 - Невозможно отменить задачу
 
 **Причина:**
+
 ```typescript
 // ❌ Забыли await - сохраняем Promise
 const taskId = job.scheduleJobAfter(ctx, 7, 'days', params)
-await Table.create(ctx, { taskId: String(taskId) })  // "[object Promise]"
+await Table.create(ctx, { taskId: String(taskId) }) // "[object Promise]"
 ```
 
 **Решение:**
+
 ```typescript
 // ✅ Ждём результат Promise
 const taskId = await job.scheduleJobAfter(ctx, 7, 'days', params)
-await Table.create(ctx, { taskId: String(taskId) })  // "6222078"
+await Table.create(ctx, { taskId: String(taskId) }) // "6222078"
 ```
 
 ### 📝 Чек-лист перед сохранением taskId
@@ -1050,22 +1065,24 @@ await Table.create(ctx, { taskId: String(taskId) })  // "6222078"
 
 ```typescript
 // Шаблон правильной работы с taskId
-const taskId = await job.scheduleJobAsap(ctx, params)  // 1. await
+const taskId = await job.scheduleJobAsap(ctx, params) // 1. await
 
-ctx.account.log('TaskId received', {  // 2. Логируем
+ctx.account.log('TaskId received', {
+  // 2. Логируем
   level: 'info',
   json: { taskId, type: typeof taskId }
 })
 
-await Table.create(ctx, {  // 3. Сохраняем как строку
+await Table.create(ctx, {
+  // 3. Сохраняем как строку
   taskId: String(taskId)
 })
 
 // ... позже при отмене ...
 
 const taskIdString = setting.value
-const taskIdNumber = parseInt(taskIdString, 10)  // 4. Конвертируем в число
-await cancelScheduledJob(ctx, taskIdNumber)  // 5. Отменяем
+const taskIdNumber = parseInt(taskIdString, 10) // 4. Конвертируем в число
+await cancelScheduledJob(ctx, taskIdNumber) // 5. Отменяем
 ```
 
 ---
@@ -1082,4 +1099,3 @@ await cancelScheduledJob(ctx, taskIdNumber)  // 5. Отменяем
 **Версия**: 1.2  
 **Дата**: 2025-11-02  
 **Последнее обновление**: 2026-03-24 (актуализированы единицы времени по `TimeUnit`, добавлено различие между deprecated API `@app/jobs` и `app.job(...)`, выровнены примеры и типы)
-

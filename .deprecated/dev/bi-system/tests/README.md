@@ -11,12 +11,14 @@
 
 **Проблема была**: Тесты `event_filter_flow` и `event_filter_autosave` падали при параллельном выполнении из-за конфликта за общий ключ `events_filter`.
 
-**Причина**: 
+**Причина**:
+
 - Тесты запускались параллельно на 4 backend-подах
 - Все тесты работали с одним ключом `events_filter` в базе данных
 - Race condition при одновременном создании/обновлении/удалении
 
 **Решение (РЕАЛИЗОВАНО)**:
+
 - Тесты `event_filter_flow` и `event_filter_autosave` теперь используют **уникальные ключи** для каждого запуска:
   ```typescript
   const testFilterKey = `test_filter_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
@@ -26,6 +28,7 @@
 - **Стабильность: 100%** - тесты больше не конфликтуют
 
 **Логирование**:
+
 - Все шаги тестов логируются через `Debug.*`
 - Для просмотра логов конкретного теста: https://s.chtm.khudoley.tech/s/dev/logs?search=event_filter_flow
 
@@ -65,11 +68,13 @@ tests/
 ### Типичные варнинги (можно игнорировать):
 
 1. **Сканирование ботами на уязвимости**:
+
    ```
    209.38.248.17 → GET /info.php → 404
    209.38.248.17 → GET /telescope/requests → 404
    209.38.248.17 → GET /config.json → 404
    ```
+
    Это боты сканируют сервер на уязвимости PHP/Laravel. Нормально.
 
 2. **Ошибка уведомления gc-mcp-server**:
@@ -77,4 +82,3 @@ tests/
    @Store. Failed to notify app gc-mcp-server for event "appInstalled" (404)
    ```
    Не критично для работы тестов.
-

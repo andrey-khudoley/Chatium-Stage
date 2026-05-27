@@ -13,7 +13,12 @@ import { toolsControlRoute } from '../../api/tools/control'
 import { getInProgressTasksRoute } from '../../api/tasks/in-progress'
 import { focusToolsSocketId } from '../../shared/focus-tools-types'
 import type { FocusToolsFullStateDto } from '../../shared/focus-tools-types'
-import { customScrollbarStyles, formControlStyles, mobileSafeAreaStyles, VIEWPORT_META_CONTENT } from '../../styles'
+import {
+  customScrollbarStyles,
+  formControlStyles,
+  mobileSafeAreaStyles,
+  VIEWPORT_META_CONTENT
+} from '../../styles'
 
 export const pomodoroPageRoute = app.html('/', async (ctx) => {
   const isAuthenticated = !!ctx.user
@@ -221,7 +226,10 @@ export const pomodoroPageRoute = app.html('/', async (ctx) => {
         <link rel="stylesheet" href="/s/static/lib/fontawesome/6.7.2/css/all.min.css" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
-        <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap"
+          rel="stylesheet"
+        />
       </head>
       <body>
         <div id="geometric-bg"></div>

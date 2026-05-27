@@ -5,6 +5,7 @@
 Описание: Проверяет соответствие изменённого кода Chatium-стандартам из inner/docs/001-standards.md (форматирование, структура файлов, JSX, TypeScript, Tailwind, FontAwesome, импорты, типичные ошибки Chatium). Использовать после написания/изменения кода. По умолчанию проверяет файлы из git diff; принимает явный список файлов от вызывающего агента.
 
 Claude metadata преобразована в инструкции Codex:
+
 - Бывшие инструменты Claude: `Read, Grep, Glob, Bash`. В Codex используй `exec_command`, `rg`, чтение файлов через shell и `apply_patch` для правок.
 - Бывшая модель Claude: `haiku`. В Codex не закрепляй модель; следуй текущей модели и reasoning mode сессии.
 - Делегирование через `spawn_agent` допустимо только если пользователь явно попросил subagents/делегирование/параллельных агентов или вызвал workflow, который сам явно является делегирующим (`/pipeline`, `/pp`). В остальных случаях выполняй роль локально.
@@ -27,6 +28,7 @@ Claude metadata преобразована в инструкции Codex:
 1. **Прочитай эталон:** `inner/docs/001-standards.md` (или `docs/001-standards.md`, если есть локальный). Если документа нет — отметь это и работай по чеклисту ниже.
 
 2. **Определи затронутые файлы:**
+
    - Если в запросе указан явный список — используй только его.
    - Иначе: `git diff --name-only` + `git ls-files --others --exclude-standard`.
    - Фильтр: `.ts`, `.tsx`, `.vue`, `styles.tsx` в `api/`, `pages/`, `components/`, `shared/`, `tables/`, `lib/`, `repos/`, `config/`.
@@ -44,18 +46,20 @@ Claude metadata преобразована в инструкции Codex:
 </formatting>
 
 <file_organization>
+
 - Файлы ≤ 300–400 строк; крупные секции разнесены по файлам.
 - Только `.ts` / `.tsx` / `.vue` — без `.js`.
 - Heap-таблицы: суффикс `.table.ts`, импорт **без** расширения (`'../tables/leads.table'`, не `'../tables/leads.table.ts'`).
 - Shared-файлы: первая строка `// @shared`. API-маршруты shared: `// @shared-route`.
 - Роуты: один файл = один роут с путём `'/'` (см. file-based-routing-checker для детальной проверки).
-</file_organization>
+  </file_organization>
 
 <jsx_html>
+
 - Все теги закрыты; самозакрывающиеся с `/>`.
 - Комментарии в JSX: `{/* ... */}`, не `<!-- ... -->`.
 - Inline-скрипты: backticks с экранированием.
-</jsx_html>
+  </jsx_html>
 
 <typescript>
 - Интерфейсы / типы для структур данных.
@@ -79,6 +83,7 @@ Claude metadata преобразована в инструкции Codex:
 
 <chatium_pitfalls>
 Типичные ошибки (раздел «Частые ошибки» в 001-standards.md):
+
 - ❌ Хардкод URL → ✅ `route.url()`, `withProjectRoot(route.url())`.
 - ❌ Heap на клиенте (Vue) → ✅ данные через SSR / fetch.
 - ❌ `findAll(...).length` → ✅ `countBy(ctx, { where })`.
@@ -89,7 +94,7 @@ Claude metadata преобразована в инструкции Codex:
 - ❌ `UserRefLinkKind.X` как строка → ✅ `.id` или `.get(ctx)`.
 - ❌ `order: [{ field, direction }]` → ✅ `order: [{ title: 'asc' }]`.
 - ❌ Изображения с `via.placeholder.com` → ✅ `getThumbnailUrl()` или проверенные источники.
-</chatium_pitfalls>
+  </chatium_pitfalls>
 
 ## Output
 

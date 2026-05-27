@@ -1,4 +1,5 @@
 @chatium
+
 # Работа с файлами конфигурации в Chatium
 
 Исчерпывающее руководство по чтению и записи файлов конфигурации (config.json) в Chatium. Документ структурирован для удобства полнотекстового поиска и работы с эмбеддингами.
@@ -45,11 +46,11 @@
 Чтение файла из workspace.
 
 ```typescript
-import { readWorkspaceFile } from "@start/sdk"
+import { readWorkspaceFile } from '@start/sdk'
 
 async function getConfig(ctx: app.Ctx) {
-  const configRaw = await readWorkspaceFile(ctx, "config.json") || "{}"
-  
+  const configRaw = (await readWorkspaceFile(ctx, 'config.json')) || '{}'
+
   try {
     const config = JSON.parse(configRaw)
     return config
@@ -59,7 +60,7 @@ async function getConfig(ctx: app.Ctx) {
       json: { error: e.message }
     })
   }
-  
+
   return {}
 }
 ```
@@ -69,7 +70,7 @@ async function getConfig(ctx: app.Ctx) {
 ```typescript
 export const getSettingsRoute = app.get('/settings', async (ctx, req) => {
   const config = await getConfig(ctx)
-  
+
   return {
     success: true,
     settings: config
@@ -86,18 +87,18 @@ export const getSettingsRoute = app.get('/settings', async (ctx, req) => {
 Запись файла в workspace.
 
 ```typescript
-import { updateWorkspaceFile } from "@start/sdk"
+import { updateWorkspaceFile } from '@start/sdk'
 
 async function writeConfig(ctx: app.Ctx, config: any) {
   await updateWorkspaceFile(ctx, 'config.json', {
     source: JSON.stringify(config, null, 2)
   })
-  
+
   ctx.account.log('Config обновлён', {
     level: 'info',
     json: { config }
   })
-  
+
   return true
 }
 ```
@@ -107,9 +108,9 @@ async function writeConfig(ctx: app.Ctx, config: any) {
 ```typescript
 export const updateSettingsRoute = app.post('/settings/update', async (ctx, req) => {
   const { settings } = req.body
-  
+
   await writeConfig(ctx, settings)
-  
+
   return {
     success: true,
     message: 'Настройки сохранены'
@@ -127,14 +128,14 @@ export const updateSettingsRoute = app.post('/settings/update', async (ctx, req)
 
 ```typescript
 // api/config.ts
-import { readWorkspaceFile } from "@start/sdk"
+import { readWorkspaceFile } from '@start/sdk'
 
 export const getConfigRoute = app.get('/config', async (ctx, req) => {
-  const configRaw = await readWorkspaceFile(ctx, "config.json") || "{}"
-  
+  const configRaw = (await readWorkspaceFile(ctx, 'config.json')) || '{}'
+
   try {
     const config = JSON.parse(configRaw)
-    
+
     return {
       success: true,
       config
@@ -144,7 +145,7 @@ export const getConfigRoute = app.get('/config', async (ctx, req) => {
       level: 'error',
       json: { error: e.message }
     })
-    
+
     return {
       success: false,
       error: 'Ошибка чтения конфигурации',
@@ -160,15 +161,15 @@ export const getConfigRoute = app.get('/config', async (ctx, req) => {
 
 ```typescript
 // api/config.ts
-import { readWorkspaceFile, updateWorkspaceFile } from "@start/sdk"
+import { readWorkspaceFile, updateWorkspaceFile } from '@start/sdk'
 
 export const updateConfigRoute = app.post('/config/update', async (ctx, req) => {
   const { key, value } = req.body
-  
+
   // Читаем текущую конфигурацию
-  const configRaw = await readWorkspaceFile(ctx, "config.json") || "{}"
+  const configRaw = (await readWorkspaceFile(ctx, 'config.json')) || '{}'
   let config = {}
-  
+
   try {
     config = JSON.parse(configRaw)
   } catch (e: any) {
@@ -177,20 +178,20 @@ export const updateConfigRoute = app.post('/config/update', async (ctx, req) => 
       json: { error: e.message }
     })
   }
-  
+
   // Обновляем значение
   config[key] = value
-  
+
   // Сохраняем
   await updateWorkspaceFile(ctx, 'config.json', {
     source: JSON.stringify(config, null, 2)
   })
-  
+
   ctx.account.log('Config обновлён', {
     level: 'info',
     json: { key, value }
   })
-  
+
   return {
     success: true,
     config
@@ -248,15 +249,15 @@ export const DEFAULT_CONFIG: AppConfig = {
 
 ```typescript
 // api/config.ts
-import { readWorkspaceFile, updateWorkspaceFile } from "@start/sdk"
+import { readWorkspaceFile, updateWorkspaceFile } from '@start/sdk'
 import { AppConfig, DEFAULT_CONFIG } from '../shared/config'
 
 export async function getAppConfig(ctx: app.Ctx): Promise<AppConfig> {
-  const configRaw = await readWorkspaceFile(ctx, "config.json") || "{}"
-  
+  const configRaw = (await readWorkspaceFile(ctx, 'config.json')) || '{}'
+
   try {
     const config = JSON.parse(configRaw)
-    
+
     // Мерджим с дефолтными значениями
     return {
       ...DEFAULT_CONFIG,
@@ -271,18 +272,18 @@ export async function getAppConfig(ctx: app.Ctx): Promise<AppConfig> {
       level: 'warn',
       json: { error: e.message }
     })
-    
+
     return DEFAULT_CONFIG
   }
 }
 
 export async function updateAppConfig(
-  ctx: app.Ctx, 
+  ctx: app.Ctx,
   config: Partial<AppConfig>
 ): Promise<AppConfig> {
   // Читаем текущую конфигурацию
   const currentConfig = await getAppConfig(ctx)
-  
+
   // Мерджим с новыми значениями
   const newConfig: AppConfig = {
     telegram: { ...currentConfig.telegram, ...config.telegram },
@@ -290,17 +291,17 @@ export async function updateAppConfig(
     features: { ...currentConfig.features, ...config.features },
     apiKeys: { ...currentConfig.apiKeys, ...config.apiKeys }
   }
-  
+
   // Сохраняем
   await updateWorkspaceFile(ctx, 'config.json', {
     source: JSON.stringify(newConfig, null, 2)
   })
-  
+
   ctx.account.log('Config обновлён', {
     level: 'info',
     json: { config: newConfig }
   })
-  
+
   return newConfig
 }
 ```
@@ -313,7 +314,7 @@ import { getAppConfig, updateAppConfig } from './config'
 
 export const getSettingsRoute = app.get('/settings', async (ctx, req) => {
   const config = await getAppConfig(ctx)
-  
+
   return {
     success: true,
     telegram: config.telegram,
@@ -325,14 +326,14 @@ export const getSettingsRoute = app.get('/settings', async (ctx, req) => {
 
 export const updateTelegramSettingsRoute = app.post('/settings/telegram', async (ctx, req) => {
   const { botToken, channelId } = req.body
-  
+
   const newConfig = await updateAppConfig(ctx, {
     telegram: {
       botToken,
       channelId
     }
   })
-  
+
   return {
     success: true,
     telegram: newConfig.telegram
@@ -348,16 +349,16 @@ import { getAppConfig } from './config'
 
 export const initRoute = app.get('/init', async (ctx, req) => {
   const config = await getAppConfig(ctx)
-  
+
   // Используем конфигурацию для инициализации
   if (config.telegram.botToken) {
     await initializeTelegramBot(ctx, config.telegram)
   }
-  
+
   if (config.features.analytics) {
     await enableAnalytics(ctx)
   }
-  
+
   return {
     success: true,
     message: 'Приложение инициализировано'
@@ -375,8 +376,8 @@ export const initRoute = app.get('/init', async (ctx, req) => {
 
 ```typescript
 async function getConfig(ctx: app.Ctx) {
-  const configRaw = await readWorkspaceFile(ctx, "config.json") || "{}"
-  
+  const configRaw = (await readWorkspaceFile(ctx, 'config.json')) || '{}'
+
   try {
     return JSON.parse(configRaw)
   } catch (e: any) {
@@ -384,7 +385,7 @@ async function getConfig(ctx: app.Ctx) {
       level: 'error',
       json: { error: e.message, configRaw }
     })
-    
+
     // Возвращаем дефолтные значения
     return {}
   }
@@ -397,14 +398,14 @@ async function getConfig(ctx: app.Ctx) {
 
 ```typescript
 async function getConfig(ctx: app.Ctx) {
-  const configRaw = await readWorkspaceFile(ctx, "config.json") || "{}"
-  
+  const configRaw = (await readWorkspaceFile(ctx, 'config.json')) || '{}'
+
   const defaultConfig = {
     apiKey: '',
     enabled: false,
     timeout: 30000
   }
-  
+
   try {
     const config = JSON.parse(configRaw)
     return { ...defaultConfig, ...config }
@@ -421,7 +422,7 @@ async function getConfig(ctx: app.Ctx) {
 ```typescript
 export const updateConfigRoute = app.post('/config/update', async (ctx, req) => {
   const { apiKey } = req.body
-  
+
   // Валидация
   if (!apiKey || typeof apiKey !== 'string') {
     return {
@@ -429,17 +430,17 @@ export const updateConfigRoute = app.post('/config/update', async (ctx, req) => 
       error: 'Некорректный API ключ'
     }
   }
-  
+
   if (apiKey.length < 32) {
     return {
       success: false,
       error: 'API ключ слишком короткий'
     }
   }
-  
+
   // Обновление
   await updateAppConfig(ctx, { apiKeys: { ...config.apiKeys, openai: apiKey } })
-  
+
   return { success: true }
 })
 ```
@@ -450,7 +451,7 @@ export const updateConfigRoute = app.post('/config/update', async (ctx, req) => 
 
 ```typescript
 await updateWorkspaceFile(ctx, 'config.json', {
-  source: JSON.stringify(config, null, 2)  // 2 пробела для отступов
+  source: JSON.stringify(config, null, 2) // 2 пробела для отступов
 })
 ```
 
@@ -461,14 +462,14 @@ await updateWorkspaceFile(ctx, 'config.json', {
 ```typescript
 export const getPublicSettingsRoute = app.get('/settings/public', async (ctx, req) => {
   const config = await getAppConfig(ctx)
-  
+
   // Возвращаем только публичные настройки
   return {
     success: true,
     settings: {
       features: config.features,
       email: {
-        from: config.email.from  // Только публичные поля
+        from: config.email.from // Только публичные поля
       }
       // apiKeys НЕ возвращаем!
     }
@@ -483,31 +484,31 @@ export const getPublicSettingsRoute = app.get('/settings/public', async (ctx, re
 ```typescript
 let cachedConfig: AppConfig | null = null
 let cacheTime = 0
-const CACHE_TTL = 60000  // 1 минута
+const CACHE_TTL = 60000 // 1 минута
 
 async function getCachedConfig(ctx: app.Ctx): Promise<AppConfig> {
   const now = Date.now()
-  
-  if (cachedConfig && (now - cacheTime) < CACHE_TTL) {
+
+  if (cachedConfig && now - cacheTime < CACHE_TTL) {
     return cachedConfig
   }
-  
+
   cachedConfig = await getAppConfig(ctx)
   cacheTime = now
-  
+
   return cachedConfig
 }
 
 // Сброс кеша при обновлении
 async function updateAppConfigWithCache(
-  ctx: app.Ctx, 
+  ctx: app.Ctx,
   config: Partial<AppConfig>
 ): Promise<AppConfig> {
   const newConfig = await updateAppConfig(ctx, config)
-  
+
   // Сбрасываем кеш
   cachedConfig = null
-  
+
   return newConfig
 }
 ```
@@ -525,4 +526,3 @@ async function updateAppConfigWithCache(
 **Версия**: 1.0  
 **Дата**: 2025-11-03  
 **Последнее обновление**: Создание инструкции по работе с конфигурацией
-

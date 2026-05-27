@@ -43,8 +43,10 @@ onMounted(() => {
 .app-footer::before {
   content: '';
   position: absolute;
-  bottom: 10px; left: 10px;
-  width: 20px; height: 20px;
+  bottom: 10px;
+  left: 10px;
+  width: 20px;
+  height: 20px;
   border-left: 2px solid rgba(211, 35, 75, 0.3);
   border-bottom: 2px solid rgba(211, 35, 75, 0.3);
   pointer-events: none;
@@ -53,8 +55,10 @@ onMounted(() => {
 .app-footer::after {
   content: '';
   position: absolute;
-  bottom: 10px; right: 10px;
-  width: 20px; height: 20px;
+  bottom: 10px;
+  right: 10px;
+  width: 20px;
+  height: 20px;
   border-right: 2px solid rgba(211, 35, 75, 0.3);
   border-bottom: 2px solid rgba(211, 35, 75, 0.3);
   pointer-events: none;
@@ -74,26 +78,87 @@ onMounted(() => {
   position: relative;
 }
 
-.footer-left:hover, .footer-center:hover {
+.footer-left:hover,
+.footer-center:hover {
   animation: glitch-footer 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
 }
 
 @keyframes glitch-footer {
-  0%, 100% { transform: translate(0); text-shadow: none; }
-  10% { transform: translate(-1.5px, 0); text-shadow: 1px 0 #ff00ff, -1px 0 #00ffff; }
-  20% { transform: translate(1.5px, 0); text-shadow: -1px 0 #ff00ff, 1px 0 #00ffff; }
-  30% { transform: translate(-1px, 0); text-shadow: 1.5px 0 #ff00ff, -1.5px 0 #00ffff; }
-  40% { transform: translate(1px, 0); text-shadow: -1.5px 0 #ff00ff, 1.5px 0 #00ffff; }
-  50% { transform: translate(-1.5px, 0); text-shadow: 1px 0 #ff00ff, -1px 0 #00ffff; }
-  60% { transform: translate(1.5px, 0); text-shadow: -1px 0 #ff00ff, 1px 0 #00ffff; }
-  70% { transform: translate(-1px, 0); text-shadow: 1px 0 #ff00ff, -1px 0 #00ffff; }
-  80% { transform: translate(1px, 0); text-shadow: -1.5px 0 #ff00ff, 1.5px 0 #00ffff; }
-  90% { transform: translate(-0.5px, 0); text-shadow: 0.5px 0 #ff00ff, -0.5px 0 #00ffff; }
+  0%,
+  100% {
+    transform: translate(0);
+    text-shadow: none;
+  }
+  10% {
+    transform: translate(-1.5px, 0);
+    text-shadow:
+      1px 0 #ff00ff,
+      -1px 0 #00ffff;
+  }
+  20% {
+    transform: translate(1.5px, 0);
+    text-shadow:
+      -1px 0 #ff00ff,
+      1px 0 #00ffff;
+  }
+  30% {
+    transform: translate(-1px, 0);
+    text-shadow:
+      1.5px 0 #ff00ff,
+      -1.5px 0 #00ffff;
+  }
+  40% {
+    transform: translate(1px, 0);
+    text-shadow:
+      -1.5px 0 #ff00ff,
+      1.5px 0 #00ffff;
+  }
+  50% {
+    transform: translate(-1.5px, 0);
+    text-shadow:
+      1px 0 #ff00ff,
+      -1px 0 #00ffff;
+  }
+  60% {
+    transform: translate(1.5px, 0);
+    text-shadow:
+      -1px 0 #ff00ff,
+      1px 0 #00ffff;
+  }
+  70% {
+    transform: translate(-1px, 0);
+    text-shadow:
+      1px 0 #ff00ff,
+      -1px 0 #00ffff;
+  }
+  80% {
+    transform: translate(1px, 0);
+    text-shadow:
+      -1.5px 0 #ff00ff,
+      1.5px 0 #00ffff;
+  }
+  90% {
+    transform: translate(-0.5px, 0);
+    text-shadow:
+      0.5px 0 #ff00ff,
+      -0.5px 0 #00ffff;
+  }
 }
 
-.footer-left { flex: 1; text-align: left; color: var(--color-text-secondary); }
-.footer-center { flex: 0 0 auto; text-align: center; color: var(--color-text-secondary); }
-.footer-right { flex: 1; text-align: right; }
+.footer-left {
+  flex: 1;
+  text-align: left;
+  color: var(--color-text-secondary);
+}
+.footer-center {
+  flex: 0 0 auto;
+  text-align: center;
+  color: var(--color-text-secondary);
+}
+.footer-right {
+  flex: 1;
+  text-align: right;
+}
 
 .footer-link {
   color: var(--color-text-secondary);
@@ -124,12 +189,23 @@ onMounted(() => {
     padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
   }
 
-  .footer-content { flex-direction: column; gap: 0.5rem; font-size: 1.02rem; }
-  .footer-left, .footer-center, .footer-right { text-align: center; flex: none; }
+  .footer-content {
+    flex-direction: column;
+    gap: 0.5rem;
+    font-size: 1.02rem;
+  }
+  .footer-left,
+  .footer-center,
+  .footer-right {
+    text-align: center;
+    flex: none;
+  }
 }
 
 @media (max-width: 480px) {
-  .footer-content { font-size: 0.98rem; }
+  .footer-content {
+    font-size: 0.98rem;
+  }
 }
 
 @media (min-width: 1201px) {

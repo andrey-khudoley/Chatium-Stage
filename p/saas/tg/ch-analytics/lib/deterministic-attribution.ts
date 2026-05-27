@@ -12,15 +12,15 @@ const MIN_INVITE_LINK_PREFIX_LENGTH = 20
 
 /**
  * Находит TrackingLink по совпадению начала invite_link
- * 
+ *
  * Для закрытых каналов (без chat.username) Telegram передаёт полный invite_link в webhook,
  * который можно сопоставить с invite_link, сохранённым в TrackingLinks.
- * 
+ *
  * Алгоритм:
  * 1. Ищем TrackingLink, у которого inviteLink начинается с первых N символов inviteLink из webhook
  * 2. Или наоборот: inviteLink из webhook начинается с inviteLink из TrackingLink
  * 3. Возвращаем первый найденный TrackingLink и соответствующий LinkClick
- * 
+ *
  * @param ctx - контекст
  * @param projectId - ID проекта
  * @param inviteLink - invite_link из webhook
@@ -31,12 +31,22 @@ export async function findTrackingLinkByInviteLink(
   projectId: string,
   inviteLink: string
 ): Promise<{ trackingLink: any; linkClick: any } | null> {
-  if (!inviteLink || typeof inviteLink !== 'string' || inviteLink.length < MIN_INVITE_LINK_PREFIX_LENGTH) {
-    Debug.warn(ctx, `[deterministic-attribution] Некорректный inviteLink: длина=${inviteLink?.length || 0}, минимальная длина=${MIN_INVITE_LINK_PREFIX_LENGTH}`)
+  if (
+    !inviteLink ||
+    typeof inviteLink !== 'string' ||
+    inviteLink.length < MIN_INVITE_LINK_PREFIX_LENGTH
+  ) {
+    Debug.warn(
+      ctx,
+      `[deterministic-attribution] Некорректный inviteLink: длина=${inviteLink?.length || 0}, минимальная длина=${MIN_INVITE_LINK_PREFIX_LENGTH}`
+    )
     return null
   }
 
-  Debug.info(ctx, `[deterministic-attribution] Поиск TrackingLink по inviteLink для проекта ${projectId}, префикс inviteLink: ${inviteLink.substring(0, Math.min(50, inviteLink.length))}...`)
+  Debug.info(
+    ctx,
+    `[deterministic-attribution] Поиск TrackingLink по inviteLink для проекта ${projectId}, префикс inviteLink: ${inviteLink.substring(0, Math.min(50, inviteLink.length))}...`
+  )
 
   // Получаем все TrackingLinks для проекта
   const trackingLinks = await TrackingLinks.findAll(ctx, {
@@ -45,7 +55,10 @@ export async function findTrackingLinkByInviteLink(
     }
   })
 
-  Debug.info(ctx, `[deterministic-attribution] Найдено TrackingLinks для проекта: ${trackingLinks.length}`)
+  Debug.info(
+    ctx,
+    `[deterministic-attribution] Найдено TrackingLinks для проекта: ${trackingLinks.length}`
+  )
 
   // Ищем TrackingLink, у которого inviteLink совпадает с началом inviteLink из webhook
   // или наоборот: inviteLink из webhook начинается с inviteLink из TrackingLink
@@ -63,8 +76,14 @@ export async function findTrackingLinkByInviteLink(
     const trackingStartsWithWebhook = trackingLinkInvite.startsWith(inviteLink)
 
     if (webhookStartsWithTracking || trackingStartsWithWebhook) {
-      Debug.info(ctx, `[deterministic-attribution] ✅ Найден TrackingLink: id=${trackingLink.id}, name=${trackingLink.name}`)
-      Debug.info(ctx, `[deterministic-attribution] Совпадение: webhookStartsWithTracking=${webhookStartsWithTracking}, trackingStartsWithWebhook=${trackingStartsWithWebhook}`)
+      Debug.info(
+        ctx,
+        `[deterministic-attribution] ✅ Найден TrackingLink: id=${trackingLink.id}, name=${trackingLink.name}`
+      )
+      Debug.info(
+        ctx,
+        `[deterministic-attribution] Совпадение: webhookStartsWithTracking=${webhookStartsWithTracking}, trackingStartsWithWebhook=${trackingStartsWithWebhook}`
+      )
 
       // Ищем соответствующий LinkClick по inviteLink
       // LinkClick должен иметь тот же inviteLink, что и TrackingLink
@@ -74,27 +93,36 @@ export async function findTrackingLinkByInviteLink(
       })
 
       if (linkClick) {
-        Debug.info(ctx, `[deterministic-attribution] ✅ Найден LinkClick: id=${linkClick.id}, clickedAt=${linkClick.clickedAt?.toISOString()}`)
+        Debug.info(
+          ctx,
+          `[deterministic-attribution] ✅ Найден LinkClick: id=${linkClick.id}, clickedAt=${linkClick.clickedAt?.toISOString()}`
+        )
         return { trackingLink, linkClick }
       } else {
-        Debug.warn(ctx, `[deterministic-attribution] ⚠️ TrackingLink найден, но LinkClick не найден для inviteLink: ${trackingLinkInvite.substring(0, Math.min(50, trackingLinkInvite.length))}...`)
+        Debug.warn(
+          ctx,
+          `[deterministic-attribution] ⚠️ TrackingLink найден, но LinkClick не найден для inviteLink: ${trackingLinkInvite.substring(0, Math.min(50, trackingLinkInvite.length))}...`
+        )
         // Возвращаем TrackingLink даже без LinkClick, так как он может быть создан позже
         return { trackingLink, linkClick: null }
       }
     }
   }
 
-  Debug.warn(ctx, `[deterministic-attribution] ❌ TrackingLink не найден для inviteLink: ${inviteLink.substring(0, Math.min(50, inviteLink.length))}...`)
+  Debug.warn(
+    ctx,
+    `[deterministic-attribution] ❌ TrackingLink не найден для inviteLink: ${inviteLink.substring(0, Math.min(50, inviteLink.length))}...`
+  )
   return null
 }
 
 /**
  * Выполняет детерминированную атрибуцию JoinEvent к TrackingLink и LinkClick
- * 
+ *
  * Обновляет:
  * - JoinEvent: status='attributed', attributionMethod='deterministic', confidence=1.0
  * - LinkClick: subscribedAt, subscriberTgId, subscriberName (если linkClick существует)
- * 
+ *
  * @param ctx - контекст
  * @param joinEvent - объект JoinEvent (или его ID)
  * @param trackingLink - объект TrackingLink
@@ -110,7 +138,10 @@ export async function attributeJoinDeterministic(
   const joinEventId = typeof joinEvent === 'string' ? joinEvent : joinEvent.id
   const linkClickId = linkClick ? (typeof linkClick === 'string' ? linkClick : linkClick.id) : null
 
-  Debug.info(ctx, `[deterministic-attribution] Выполнение детерминированной атрибуции: joinEventId=${joinEventId}, trackingLinkId=${trackingLink.id}, linkClickId=${linkClickId || 'null'}`)
+  Debug.info(
+    ctx,
+    `[deterministic-attribution] Выполнение детерминированной атрибуции: joinEventId=${joinEventId}, trackingLinkId=${trackingLink.id}, linkClickId=${linkClickId || 'null'}`
+  )
 
   // Получаем текущий JoinEvent
   const currentJoinEvent = await JoinEvents.findById(ctx, joinEventId)
@@ -128,7 +159,10 @@ export async function attributeJoinDeterministic(
     attributedToLinkClickId: linkClickId
   })
 
-  Debug.info(ctx, `[deterministic-attribution] ✅ JoinEvent обновлён: id=${updatedJoinEvent.id}, status=${updatedJoinEvent.status}, attributionMethod=${updatedJoinEvent.attributionMethod}`)
+  Debug.info(
+    ctx,
+    `[deterministic-attribution] ✅ JoinEvent обновлён: id=${updatedJoinEvent.id}, status=${updatedJoinEvent.status}, attributionMethod=${updatedJoinEvent.attributionMethod}`
+  )
 
   // Обновляем LinkClick, если он существует
   if (linkClickId) {
@@ -143,15 +177,27 @@ export async function attributeJoinDeterministic(
           subscriberName: currentJoinEvent.userName,
           status: 'subscribed'
         })
-        Debug.info(ctx, `[deterministic-attribution] ✅ LinkClick обновлён: id=${linkClickId}, subscriberTgId=${currentJoinEvent.userId}, subscriberName=${currentJoinEvent.userName}`)
+        Debug.info(
+          ctx,
+          `[deterministic-attribution] ✅ LinkClick обновлён: id=${linkClickId}, subscriberTgId=${currentJoinEvent.userId}, subscriberName=${currentJoinEvent.userName}`
+        )
       } else {
-        Debug.info(ctx, `[deterministic-attribution] ℹ️ LinkClick уже имеет subscribedAt: ${currentLinkClick.subscribedAt.toISOString()}, пропускаем обновление`)
+        Debug.info(
+          ctx,
+          `[deterministic-attribution] ℹ️ LinkClick уже имеет subscribedAt: ${currentLinkClick.subscribedAt.toISOString()}, пропускаем обновление`
+        )
       }
     } else {
-      Debug.warn(ctx, `[deterministic-attribution] ⚠️ LinkClick с ID ${linkClickId} не найден, пропускаем обновление`)
+      Debug.warn(
+        ctx,
+        `[deterministic-attribution] ⚠️ LinkClick с ID ${linkClickId} не найден, пропускаем обновление`
+      )
     }
   } else {
-    Debug.info(ctx, `[deterministic-attribution] ℹ️ LinkClick не указан, пропускаем обновление LinkClick`)
+    Debug.info(
+      ctx,
+      `[deterministic-attribution] ℹ️ LinkClick не указан, пропускаем обновление LinkClick`
+    )
   }
 
   return updatedJoinEvent

@@ -22,17 +22,15 @@
         <div class="hero-text">
           <h1>Общайтесь без границ</h1>
           <p class="hero-subtitle">
-            Современный мессенджер для команд, друзей и сообществ. 
-            Быстро, безопасно и удобно — прямо в браузере.
+            Современный мессенджер для команд, друзей и сообществ. Быстро, безопасно и удобно —
+            прямо в браузере.
           </p>
           <div class="hero-actions">
             <a :href="loginUrl" class="btn-primary-large">
               <i class="fas fa-rocket"></i>
               Начать общаться
             </a>
-            <a href="#features" class="btn-secondary-large">
-              Узнать больше
-            </a>
+            <a href="#features" class="btn-secondary-large"> Узнать больше </a>
           </div>
           <div class="hero-stats">
             <div class="stat">
@@ -53,7 +51,10 @@
           <div class="chat-preview">
             <div class="chat-messages">
               <div class="message received">
-                <div class="message-avatar" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%)">
+                <div
+                  class="message-avatar"
+                  style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
+                >
                   <span>А</span>
                 </div>
                 <div class="message-content">
@@ -69,7 +70,10 @@
                 </div>
               </div>
               <div class="message received">
-                <div class="message-avatar" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%)">
+                <div
+                  class="message-avatar"
+                  style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%)"
+                >
                   <span>М</span>
                 </div>
                 <div class="message-content">
@@ -92,42 +96,63 @@
       </div>
       <div class="features-grid">
         <div class="feature-card">
-          <div class="feature-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%)">
+          <div
+            class="feature-icon"
+            style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
+          >
             <i class="fas fa-bolt"></i>
           </div>
           <h3>Мгновенные сообщения</h3>
           <p>Отправляйте текстовые сообщения моментально. Никаких задержек и ожиданий.</p>
         </div>
         <div class="feature-card">
-          <div class="feature-icon" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%)">
+          <div
+            class="feature-icon"
+            style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%)"
+          >
             <i class="fas fa-users"></i>
           </div>
           <h3>Групповые чаты</h3>
-          <p>Создавайте чаты для команд, проектов или друзей. Добавляйте неограниченное количество участников.</p>
+          <p>
+            Создавайте чаты для команд, проектов или друзей. Добавляйте неограниченное количество
+            участников.
+          </p>
         </div>
         <div class="feature-card">
-          <div class="feature-icon" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)">
+          <div
+            class="feature-icon"
+            style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)"
+          >
             <i class="fas fa-shield-alt"></i>
           </div>
           <h3>Безопасность</h3>
           <p>Ваши данные под надежной защитой. Только вы решаете, кто может видеть ваши чаты.</p>
         </div>
         <div class="feature-card">
-          <div class="feature-icon" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)">
+          <div
+            class="feature-icon"
+            style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)"
+          >
             <i class="fas fa-mobile-alt"></i>
           </div>
           <h3>Адаптивный дизайн</h3>
           <p>Работает на любом устройстве — компьютере, планшете или телефоне.</p>
         </div>
         <div class="feature-card">
-          <div class="feature-icon" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%)">
+          <div
+            class="feature-icon"
+            style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%)"
+          >
             <i class="fas fa-history"></i>
           </div>
           <h3>История сообщений</h3>
           <p>Все сообщения сохраняются. Вы всегда можете найти важную информацию.</p>
         </div>
         <div class="feature-card">
-          <div class="feature-icon" style="background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)">
+          <div
+            class="feature-icon"
+            style="background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)"
+          >
             <i class="fas fa-bell"></i>
           </div>
           <h3>Уведомления</h3>

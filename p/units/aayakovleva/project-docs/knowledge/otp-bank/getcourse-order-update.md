@@ -1,5 +1,5 @@
 ---
-title: "Обновление заказа GetCourse при оплате через ОТП Банк"
+title: 'Обновление заказа GetCourse при оплате через ОТП Банк'
 type: reference
 tags:
   - topic/getcourse
@@ -20,13 +20,13 @@ project: olga-getcourse-payments-c7d5a1
 
 ## GetCourse API — базовые параметры
 
-| Параметр | Значение |
-|---------|---------|
-| **Endpoint** | `https://{account}.getcourse.ru/pl/api/deals` |
-| **Метод** | POST |
-| **Content-Type** | `application/x-www-form-urlencoded` |
-| **Аутентификация** | Параметр `secret_key` в теле запроса |
-| **Действие** | Параметр `action=add` |
+| Параметр           | Значение                                      |
+| ------------------ | --------------------------------------------- |
+| **Endpoint**       | `https://{account}.getcourse.ru/pl/api/deals` |
+| **Метод**          | POST                                          |
+| **Content-Type**   | `application/x-www-form-urlencoded`           |
+| **Аутентификация** | Параметр `secret_key` в теле запроса          |
+| **Действие**       | Параметр `action=add`                         |
 
 `account` — поддомен аккаунта GetCourse (например, `school.getcourse.ru` → account = `school`)  
 `secret_key` — API-ключ из настроек GetCourse
@@ -54,38 +54,38 @@ params[deal][deal_comment]=Оплата через ОТП Банк (рассро
 
 ## Параметры заказа (deal fields)
 
-| Параметр | Тип | Описание |
-|---------|-----|---------|
-| `deal_number` | string | Номер заказа в GetCourse |
-| `deal_status` | string | Статус заказа (см. ниже) |
-| `deal_is_paid` | int (0/1) | Оплачен: `1` = да, `0` = нет |
-| `payment_type` | string | Тип платежа (произвольная строка) |
-| `payment_status` | string | Статус платежа (произвольная строка) |
-| `deal_cost` | number | Сумма заказа |
-| `deal_comment` | string | Комментарий |
-| `deal_finished_at` | string | Дата оплаты (YYYY-MM-DD HH:MM:SS) |
-| `offer_code` | string | Код предложения в GetCourse |
-| `product_title` | string | Название продукта |
-| `product_description` | string | Описание |
-| `manager_email` | string | Email менеджера |
-| `deal_created_at` | string | Дата создания заказа |
-| `fields[FIELD_NAME]` | string | Дополнительные поля заказа |
+| Параметр              | Тип       | Описание                             |
+| --------------------- | --------- | ------------------------------------ |
+| `deal_number`         | string    | Номер заказа в GetCourse             |
+| `deal_status`         | string    | Статус заказа (см. ниже)             |
+| `deal_is_paid`        | int (0/1) | Оплачен: `1` = да, `0` = нет         |
+| `payment_type`        | string    | Тип платежа (произвольная строка)    |
+| `payment_status`      | string    | Статус платежа (произвольная строка) |
+| `deal_cost`           | number    | Сумма заказа                         |
+| `deal_comment`        | string    | Комментарий                          |
+| `deal_finished_at`    | string    | Дата оплаты (YYYY-MM-DD HH:MM:SS)    |
+| `offer_code`          | string    | Код предложения в GetCourse          |
+| `product_title`       | string    | Название продукта                    |
+| `product_description` | string    | Описание                             |
+| `manager_email`       | string    | Email менеджера                      |
+| `deal_created_at`     | string    | Дата создания заказа                 |
+| `fields[FIELD_NAME]`  | string    | Дополнительные поля заказа           |
 
 ---
 
 ## Статусы заказа (deal_status)
 
-| Код | Описание | Когда использовать |
-|-----|---------|------------------|
-| `new` | Новый | При создании заказа |
-| `payed` | Завершён (Оплачен) | ✅ **Использовать при подтверждении от ОТП Банка** |
-| `payment_waiting` | Ожидаем оплаты | Пока заявка на рассмотрении |
-| `in_work` | В работе | При обработке |
-| `part_payed` | Частично оплачен | Если есть частичный платёж |
-| `not_confirmed` | Не подтверждён | |
-| `cancelled` | Отменён | При отказе от ОТП Банка |
-| `waiting_for_return` | Ожидаем возврата | |
-| `false` | Ложный | |
+| Код                  | Описание           | Когда использовать                                 |
+| -------------------- | ------------------ | -------------------------------------------------- |
+| `new`                | Новый              | При создании заказа                                |
+| `payed`              | Завершён (Оплачен) | ✅ **Использовать при подтверждении от ОТП Банка** |
+| `payment_waiting`    | Ожидаем оплаты     | Пока заявка на рассмотрении                        |
+| `in_work`            | В работе           | При обработке                                      |
+| `part_payed`         | Частично оплачен   | Если есть частичный платёж                         |
+| `not_confirmed`      | Не подтверждён     |                                                    |
+| `cancelled`          | Отменён            | При отказе от ОТП Банка                            |
+| `waiting_for_return` | Ожидаем возврата   |                                                    |
+| `false`              | Ложный             |                                                    |
 
 > ⚠️ **Важно:** при изменении статуса на `payed` через API GetCourse автоматически создаёт запись об оплате в заказе — так же, как при передаче `deal_is_paid=1`.
 
@@ -126,13 +126,13 @@ function updateGetCourseOrderStatus(
     curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($params));
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/x-www-form-urlencoded']);
-    
+
     $response = curl_exec($ch);
     $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     curl_close($ch);
 
     $result = json_decode($response, true);
-    
+
     return $httpCode === 200 && ($result['success'] ?? false);
 }
 ```
@@ -144,29 +144,29 @@ function updateGetCourseOrderStatus(
 ```javascript
 // Вызывается из poscreditCheckStatus при approved
 async function updateGetCourseAfterOtpApproval(orderId, gcDealNumber) {
-    try {
-        const response = await fetch('/api/otp-webhook-handler', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                orderId: orderId,
-                gcDealNumber: gcDealNumber,
-                status: 'approved',
-                source: 'otp-bank-js-callback'
-            })
-        });
-        
-        const data = await response.json();
-        
-        if (data.ok) {
-            // Редирект на страницу успешной оплаты GetCourse
-            window.location.href = '/order/' + gcDealNumber + '/success';
-        } else {
-            console.error('Ошибка обновления заказа:', data.error);
-        }
-    } catch (e) {
-        console.error('Сетевая ошибка:', e);
+  try {
+    const response = await fetch('/api/otp-webhook-handler', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        orderId: orderId,
+        gcDealNumber: gcDealNumber,
+        status: 'approved',
+        source: 'otp-bank-js-callback'
+      })
+    })
+
+    const data = await response.json()
+
+    if (data.ok) {
+      // Редирект на страницу успешной оплаты GetCourse
+      window.location.href = '/order/' + gcDealNumber + '/success'
+    } else {
+      console.error('Ошибка обновления заказа:', data.error)
     }
+  } catch (e) {
+    console.error('Сетевая ошибка:', e)
+  }
 }
 ```
 
@@ -220,6 +220,7 @@ async function updateGetCourseAfterOtpApproval(orderId, gcDealNumber) {
 ## Ответ GetCourse API
 
 **Успешный ответ:**
+
 ```json
 {
   "success": true,
@@ -232,6 +233,7 @@ async function updateGetCourseAfterOtpApproval(orderId, gcDealNumber) {
 ```
 
 **Ошибка:**
+
 ```json
 {
   "success": false,

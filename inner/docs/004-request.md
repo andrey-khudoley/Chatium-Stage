@@ -1,4 +1,5 @@
 @chatium
+
 # Исходящий роутинг (HTTP клиент) в Chatium
 
 Исчерпывающее руководство по выполнению HTTP запросов к внешним API через `@app/request`. Документ структурирован для удобства полнотекстового поиска и работы с эмбеддингами.
@@ -63,7 +64,7 @@
 ### Импорт и структура
 
 ```typescript
-import { request } from "@app/request"
+import { request } from '@app/request'
 
 const response = await request({
   url: 'https://api.example.com/data',
@@ -73,9 +74,9 @@ const response = await request({
 
 ctx.account.log('Response received', {
   level: 'info',
-  json: { 
+  json: {
     statusCode: response.statusCode,
-    body: response.body 
+    body: response.body
   }
 })
 ```
@@ -84,26 +85,26 @@ ctx.account.log('Response received', {
 
 ```typescript
 interface RequestOptions {
-  url: string                    // Полный URL запроса (обязательно)
-  method: 'get' | 'post' | 'put' | 'delete' | 'patch'  // HTTP метод
-  
+  url: string // Полный URL запроса (обязательно)
+  method: 'get' | 'post' | 'put' | 'delete' | 'patch' // HTTP метод
+
   // Тело запроса
-  json?: any                     // Автоматически сериализует в JSON
-  form?: Record<string, any>     // FormData
-  body?: string | Buffer         // Сырое тело
-  
+  json?: any // Автоматически сериализует в JSON
+  form?: Record<string, any> // FormData
+  body?: string | Buffer // Сырое тело
+
   // Параметры
-  searchParams?: Record<string, string>  // Query параметры
-  
+  searchParams?: Record<string, string> // Query параметры
+
   // Заголовки
   headers?: Record<string, string>
-  
+
   // Настройки ответа
-  responseType?: 'json' | 'text' | 'buffer'  // По умолчанию 'json'
-  throwHttpErrors?: boolean      // По умолчанию true
-  
+  responseType?: 'json' | 'text' | 'buffer' // По умолчанию 'json'
+  throwHttpErrors?: boolean // По умолчанию true
+
   // Таймауты
-  timeout?: number               // Таймаут в миллисекундах
+  timeout?: number // Таймаут в миллисекундах
 }
 ```
 
@@ -111,9 +112,9 @@ interface RequestOptions {
 
 ```typescript
 interface Response {
-  statusCode: number             // HTTP статус (200, 404, 500, etc.)
-  body: any                      // Parsed JSON, text или buffer
-  headers: Record<string, string>  // Заголовки ответа
+  statusCode: number // HTTP статус (200, 404, 500, etc.)
+  body: any // Parsed JSON, text или buffer
+  headers: Record<string, string> // Заголовки ответа
 }
 ```
 
@@ -142,7 +143,7 @@ ctx.account.log('API response', {
 ### Простой GET
 
 ```typescript
-import { request } from "@app/request"
+import { request } from '@app/request'
 
 async function fetchUserData(userId: string) {
   const response = await request({
@@ -150,7 +151,7 @@ async function fetchUserData(userId: string) {
     method: 'get',
     responseType: 'json'
   })
-  
+
   return response.body
 }
 ```
@@ -171,7 +172,7 @@ async function searchUsers(query: string, page: number = 1) {
     },
     responseType: 'json'
   })
-  
+
   return response.body
 }
 ```
@@ -181,13 +182,13 @@ async function searchUsers(query: string, page: number = 1) {
 ```typescript
 async function searchProducts(filters: Record<string, string>) {
   const params = new URLSearchParams(filters)
-  
+
   const response = await request({
     url: `https://api.example.com/products?${params}`,
     method: 'get',
     responseType: 'json'
   })
-  
+
   return response.body
 }
 ```
@@ -200,13 +201,13 @@ async function fetchWithAuth(endpoint: string, token: string) {
     url: `https://api.example.com${endpoint}`,
     method: 'get',
     headers: {
-      'Authorization': `Bearer ${token}`,
-      'Accept': 'application/json',
+      Authorization: `Bearer ${token}`,
+      Accept: 'application/json',
       'User-Agent': 'MyApp/1.0'
     },
     responseType: 'json'
   })
-  
+
   return response.body
 }
 ```
@@ -225,10 +226,10 @@ async function createUser(userData: any) {
     headers: {
       'Content-Type': 'application/json'
     },
-    json: userData,  // Автоматически сериализуется
+    json: userData, // Автоматически сериализуется
     responseType: 'json'
   })
-  
+
   return response.body
 }
 
@@ -254,7 +255,7 @@ async function uploadFile(fileData: any) {
     },
     responseType: 'json'
   })
-  
+
   return response.body
 }
 ```
@@ -267,7 +268,7 @@ async function sendNotification(token: string, message: string) {
     url: 'https://api.example.com/notifications',
     method: 'post',
     headers: {
-      'Authorization': `Bearer ${token}`,
+      Authorization: `Bearer ${token}`,
       'Content-Type': 'application/json'
     },
     json: {
@@ -277,7 +278,7 @@ async function sendNotification(token: string, message: string) {
     },
     responseType: 'json'
   })
-  
+
   return response.body
 }
 ```
@@ -299,7 +300,7 @@ async function updateResource(id: string, data: any) {
     json: data,
     responseType: 'json'
   })
-  
+
   return response.body
 }
 ```
@@ -312,11 +313,11 @@ async function deleteResource(id: string, token: string) {
     url: `https://api.example.com/resources/${id}`,
     method: 'delete',
     headers: {
-      'Authorization': `Bearer ${token}`
+      Authorization: `Bearer ${token}`
     },
     responseType: 'json'
   })
-  
+
   return response.body
 }
 ```
@@ -333,7 +334,7 @@ const response = await request({
   method: 'get',
   headers: {
     'Content-Type': 'application/json',
-    'Accept': 'application/json',
+    Accept: 'application/json',
     'User-Agent': 'MyApp/1.0'
   },
   responseType: 'json'
@@ -348,12 +349,12 @@ async function authorizedRequest(token: string, endpoint: string) {
     url: `https://api.example.com${endpoint}`,
     method: 'get',
     headers: {
-      'Authorization': `Bearer ${token}`,
+      Authorization: `Bearer ${token}`,
       'Content-Type': 'application/json'
     },
     responseType: 'json'
   })
-  
+
   return response.body
 }
 ```
@@ -374,7 +375,7 @@ async function customHeadersRequest() {
     json: { data: 'value' },
     responseType: 'json'
   })
-  
+
   return response.body
 }
 ```
@@ -393,28 +394,28 @@ async function safeRequest(url: string) {
     url,
     method: 'get',
     responseType: 'json',
-    throwHttpErrors: false  // Не выбрасывать исключения
+    throwHttpErrors: false // Не выбрасывать исключения
   })
-  
+
   if (response.statusCode === 200) {
     return { success: true, data: response.body }
   }
-  
+
   if (response.statusCode === 404) {
     return { success: false, error: 'Not found' }
   }
-  
+
   if (response.statusCode === 401) {
     return { success: false, error: 'Unauthorized' }
   }
-  
+
   if (response.statusCode >= 500) {
     return { success: false, error: 'Server error' }
   }
-  
-  return { 
-    success: false, 
-    error: `HTTP ${response.statusCode}` 
+
+  return {
+    success: false,
+    error: `HTTP ${response.statusCode}`
   }
 }
 ```
@@ -432,23 +433,23 @@ async function requestWithErrorHandling(url: string) {
       responseType: 'json'
       // throwHttpErrors: true по умолчанию
     })
-    
+
     return { success: true, data: response.body }
   } catch (error: any) {
     ctx.account.log('Request failed', {
       level: 'error',
       json: { error: error.message, url }
     })
-    
+
     if (error.response) {
       // Ошибка с ответом сервера
-      return { 
-        success: false, 
+      return {
+        success: false,
         error: error.message,
         statusCode: error.response.statusCode
       }
     }
-    
+
     // Сетевая ошибка
     return { success: false, error: 'Network error' }
   }
@@ -465,26 +466,26 @@ async function apiRequestWithLogging(endpoint: string) {
       method: 'get',
       responseType: 'json'
     })
-    
+
     ctx.account.log('API request successful', {
       level: 'info',
-      json: { 
-        endpoint, 
-        status: response.statusCode 
+      json: {
+        endpoint,
+        status: response.statusCode
       }
     })
-    
+
     return response.body
   } catch (error: any) {
     ctx.account.log('API request failed', {
       level: 'error',
-      json: { 
+      json: {
         endpoint,
         error: error.message,
         stack: error.stack
       }
     })
-    
+
     throw error
   }
 }
@@ -499,28 +500,28 @@ async function apiRequestWithLogging(endpoint: string) {
 **Валидация токена**:
 
 ```typescript
-import { request } from "@app/request"
+import { request } from '@app/request'
 
 export async function validateNotionToken(token: string) {
   const trimmed = token?.trim()
-  
+
   if (!trimmed) {
     return { valid: false, error: 'Токен пустой' }
   }
-  
+
   try {
     const response = await request({
       url: 'https://api.notion.com/v1/users/me',
       method: 'get',
       headers: {
-        'Authorization': `Bearer ${trimmed}`,
+        Authorization: `Bearer ${trimmed}`,
         'Notion-Version': '2022-06-28',
         'Content-Type': 'application/json'
       },
       responseType: 'json',
       throwHttpErrors: false
     })
-    
+
     if (response.statusCode === 200 && response.body) {
       const user = response.body as any
       return {
@@ -532,14 +533,14 @@ export async function validateNotionToken(token: string) {
         }
       }
     }
-    
+
     let errorMessage = 'Неизвестная ошибка'
     if (response.statusCode === 401) {
       errorMessage = 'Неверный токен'
     } else if (response.statusCode === 403) {
       errorMessage = 'Доступ запрещен'
     }
-    
+
     return { valid: false, error: errorMessage }
   } catch (e: any) {
     ctx.account.log('Notion token validation error', {
@@ -564,7 +565,7 @@ export async function createNotionPage(
     url: 'https://api.notion.com/v1/pages',
     method: 'post',
     headers: {
-      'Authorization': `Bearer ${token}`,
+      Authorization: `Bearer ${token}`,
       'Notion-Version': '2022-06-28',
       'Content-Type': 'application/json'
     },
@@ -572,10 +573,12 @@ export async function createNotionPage(
       parent: { database_id: databaseId },
       properties: {
         Name: {
-          title: [{ 
-            type: 'text', 
-            text: { content: title } 
-          }]
+          title: [
+            {
+              type: 'text',
+              text: { content: title }
+            }
+          ]
         }
       },
       children: [
@@ -583,10 +586,12 @@ export async function createNotionPage(
           object: 'block',
           type: 'paragraph',
           paragraph: {
-            rich_text: [{ 
-              type: 'text', 
-              text: { content } 
-            }]
+            rich_text: [
+              {
+                type: 'text',
+                text: { content }
+              }
+            ]
           }
         }
       ]
@@ -594,17 +599,17 @@ export async function createNotionPage(
     responseType: 'json',
     throwHttpErrors: false
   })
-  
+
   if (response.statusCode === 200 || response.statusCode === 201) {
-    return { 
-      success: true, 
-      pageId: response.body.id 
+    return {
+      success: true,
+      pageId: response.body.id
     }
   }
-  
-  return { 
-    success: false, 
-    error: 'Не удалось создать страницу' 
+
+  return {
+    success: false,
+    error: 'Не удалось создать страницу'
   }
 }
 ```
@@ -616,19 +621,19 @@ async function fetchAllPages<T>(baseUrl: string, token: string): Promise<T[]> {
   const allItems: T[] = []
   let page = 1
   let hasMore = true
-  
+
   while (hasMore) {
     const response = await request({
       url: `${baseUrl}?page=${page}&limit=100`,
       method: 'get',
       headers: {
-        'Authorization': `Bearer ${token}`,
+        Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json'
       },
       responseType: 'json',
       throwHttpErrors: false
     })
-    
+
     if (response.statusCode !== 200) {
       ctx.account.log('Pagination error', {
         level: 'error',
@@ -636,14 +641,14 @@ async function fetchAllPages<T>(baseUrl: string, token: string): Promise<T[]> {
       })
       break
     }
-    
+
     const { items, pagination } = response.body
     allItems.push(...items)
-    
+
     hasMore = pagination.hasMore
     page++
   }
-  
+
   return allItems
 }
 ```
@@ -662,11 +667,11 @@ async function apiRequest(options: RequestOptions) {
   const headers: Record<string, string> = {
     'Content-Type': 'application/json'
   }
-  
+
   if (options.token) {
     headers['Authorization'] = `Bearer ${options.token}`
   }
-  
+
   const response = await request({
     url: options.endpoint,
     method: options.method,
@@ -675,9 +680,9 @@ async function apiRequest(options: RequestOptions) {
     responseType: 'json',
     throwHttpErrors: false
   })
-  
+
   const success = response.statusCode >= 200 && response.statusCode < 300
-  
+
   if (!success) {
     ctx.account.log('API request failed', {
       level: 'warn',
@@ -688,7 +693,7 @@ async function apiRequest(options: RequestOptions) {
       }
     })
   }
-  
+
   return {
     success,
     statusCode: response.statusCode,
@@ -712,21 +717,24 @@ const result = await apiRequest({
 ### Общие рекомендации
 
 ✅ **Всегда обрабатывайте ошибки**:
+
 - Используйте `throwHttpErrors: false` для контроля
 - Логируйте ошибки через `ctx.account.log()`
 - Возвращайте консистентный формат
 
 ✅ **Настраивайте таймауты**:
+
 ```typescript
 const response = await request({
   url: 'https://api.example.com/slow-endpoint',
   method: 'get',
-  timeout: 30000,  // 30 секунд
+  timeout: 30000, // 30 секунд
   responseType: 'json'
 })
 ```
 
 ✅ **Используйте правильный responseType**:
+
 - `'json'` — для JSON API (по умолчанию)
 - `'text'` — для текстовых ответов
 - `'buffer'` — для бинарных данных
@@ -734,10 +742,11 @@ const response = await request({
 ### Логирование
 
 ✅ **Правильно**:
+
 ```typescript
 ctx.account.log('External API call', {
   level: 'info',
-  json: { 
+  json: {
     url,
     method,
     status: response.statusCode,
@@ -747,6 +756,7 @@ ctx.account.log('External API call', {
 ```
 
 ❌ **Неправильно**:
+
 ```typescript
 console.log('API response:', response.body)
 ```
@@ -754,6 +764,7 @@ console.log('API response:', response.body)
 ### Безопасность
 
 ✅ **Не логируйте чувствительные данные**:
+
 ```typescript
 // Плохо
 ctx.account.log('Request', {
@@ -764,7 +775,7 @@ ctx.account.log('Request', {
 // Хорошо
 ctx.account.log('Request', {
   level: 'info',
-  json: { 
+  json: {
     hasToken: !!token,
     endpoint
   }
@@ -772,6 +783,7 @@ ctx.account.log('Request', {
 ```
 
 ✅ **Валидируйте токены перед использованием**:
+
 ```typescript
 if (!token || token.trim().length === 0) {
   return { success: false, error: 'Token is required' }
@@ -781,13 +793,11 @@ if (!token || token.trim().length === 0) {
 ### Повторные попытки
 
 ✅ **Реализуйте retry логику для нестабильных API**:
+
 ```typescript
-async function requestWithRetry(
-  url: string,
-  maxRetries: number = 3
-): Promise<any> {
+async function requestWithRetry(url: string, maxRetries: number = 3): Promise<any> {
   let lastError: any
-  
+
   for (let i = 0; i < maxRetries; i++) {
     try {
       const response = await request({
@@ -796,34 +806,34 @@ async function requestWithRetry(
         responseType: 'json',
         throwHttpErrors: false
       })
-      
+
       if (response.statusCode === 200) {
         return { success: true, data: response.body }
       }
-      
+
       // Если 5xx, пробуем еще раз
       if (response.statusCode >= 500) {
         lastError = `HTTP ${response.statusCode}`
-        await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)))
+        await new Promise((resolve) => setTimeout(resolve, 1000 * (i + 1)))
         continue
       }
-      
+
       // Другие ошибки не retry
-      return { 
-        success: false, 
-        error: `HTTP ${response.statusCode}` 
+      return {
+        success: false,
+        error: `HTTP ${response.statusCode}`
       }
     } catch (error: any) {
       lastError = error
       if (i < maxRetries - 1) {
-        await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)))
+        await new Promise((resolve) => setTimeout(resolve, 1000 * (i + 1)))
       }
     }
   }
-  
-  return { 
-    success: false, 
-    error: lastError?.message || 'Request failed after retries' 
+
+  return {
+    success: false,
+    error: lastError?.message || 'Request failed after retries'
   }
 }
 ```
@@ -841,4 +851,3 @@ async function requestWithRetry(
 **Версия**: 1.0  
 **Дата**: 2025-11-02  
 **Последнее обновление**: Создание инструкции по исходящему роутингу
-

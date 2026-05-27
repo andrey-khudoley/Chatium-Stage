@@ -14,6 +14,8 @@ export const getUserScheduleHandler: V1GcHandler = async (_ctx, a) => {
   return { kind: 'gc_result', gc }
 }
 
-export const getUserScheduleRoute = app.get('/', async (ctx, req) => handleV1Op(ctx, req, 'getUserSchedule', getUserScheduleHandler))
+export const getUserScheduleRoute = app.get('/', async (ctx, req) =>
+  handleV1Op(ctx, req, 'getUserSchedule', getUserScheduleHandler)
+)
 
 export default getUserScheduleRoute

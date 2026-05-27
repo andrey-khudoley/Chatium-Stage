@@ -1,5 +1,5 @@
 // @shared
-import { jsx } from "@app/html-jsx"
+import { jsx } from '@app/html-jsx'
 import { requireRealUser } from '@app/auth'
 import HomePage from './pages/HomePage.vue'
 import ChannelsPage from './pages/ChannelsPage.vue'
@@ -23,15 +23,15 @@ import { generateFingerprint } from './lib/fingerprint'
 export const indexPageRoute = app.html('/', async (ctx, req) => {
   // Применяем уровень логирования из настроек
   await applyDebugLevel(ctx, 'index')
-  
+
   await ensureDefaultSettings(ctx)
-  
+
   const titleSetting = await TgChannelAnalyticsSettings.findOneBy(ctx, { key: 'project_title' })
   const projectTitle = titleSetting?.value ?? 'Аналитика телеграм-каналов'
-  
+
   // Проверяем авторизацию пользователя
   const isAuthenticated = !!ctx.user
-  
+
   return (
     <html>
       <head>
@@ -667,12 +667,15 @@ export const indexPageRoute = app.html('/', async (ctx, req) => {
               setTimeout(startBoot, 50);
             }
           })();
-        `}</script> 
+        `}</script>
         <script src="/s/static/lib/tailwind.3.4.16.min.js"></script>
         <link rel="stylesheet" href="/s/static/lib/fontawesome/6.7.2/css/all.min.css" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
-        <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap"
+          rel="stylesheet"
+        />
         <style>{`
           :root {
             --color-bg: #0a0a0a;
@@ -709,7 +712,7 @@ export const indexPageRoute = app.html('/', async (ctx, req) => {
             <div id="boot-messages-container"></div>
           </div>
         </div>
-        <HomePage 
+        <HomePage
           projectTitle={projectTitle}
           indexUrl={indexPageRoute.url()}
           analyticsUrl={analyticsPageRoute.url()}
@@ -729,7 +732,7 @@ export const analyticsPageRoute = app.html('/analytics', async (ctx, req) => {
   // Применяем уровень логирования из настроек
   await applyDebugLevel(ctx, 'analytics')
   Debug.info(ctx, '[analytics] Начало обработки страницы аналитики')
-  
+
   try {
     requireRealUser(ctx)
     Debug.info(ctx, `[analytics] Пользователь авторизован: userId=${ctx.user.id}`)
@@ -748,14 +751,14 @@ export const analyticsPageRoute = app.html('/analytics', async (ctx, req) => {
       </html>
     )
   }
-  
+
   await ensureDefaultSettings(ctx)
   Debug.info(ctx, '[analytics] Настройки по умолчанию проверены')
-  
+
   const titleSetting = await TgChannelAnalyticsSettings.findOneBy(ctx, { key: 'project_title' })
   const projectTitle = titleSetting?.value ?? 'Аналитика телеграм-каналов'
   Debug.info(ctx, `[analytics] Название проекта: ${projectTitle}`)
-  
+
   Debug.info(ctx, '[analytics] Рендеринг страницы аналитики')
   return (
     <html>
@@ -782,7 +785,7 @@ export const channelsPageRoute = app.html('/channels', async (ctx, req) => {
   // Применяем уровень логирования из настроек
   await applyDebugLevel(ctx, 'channels')
   Debug.info(ctx, '[channels] Начало обработки страницы каналов')
-  
+
   try {
     requireRealUser(ctx)
     Debug.info(ctx, `[channels] Пользователь авторизован: userId=${ctx.user.id}`)
@@ -801,13 +804,13 @@ export const channelsPageRoute = app.html('/channels', async (ctx, req) => {
       </html>
     )
   }
-  
+
   await ensureDefaultSettings(ctx)
   Debug.info(ctx, '[channels] Настройки по умолчанию проверены')
-  
+
   // Получаем projectId из query параметров
   const projectId = req.query.projectId as string | undefined
-  
+
   if (!projectId || !projectId.trim()) {
     Debug.warn(ctx, '[channels] projectId не предоставлен, перенаправление на страницу проектов')
     const projectsUrl = projectsPageRoute.url()
@@ -822,15 +825,18 @@ export const channelsPageRoute = app.html('/channels', async (ctx, req) => {
       </html>
     )
   }
-  
+
   const trimmedProjectId = projectId.trim()
   Debug.info(ctx, `[channels] Запрос страницы каналов для проекта: projectId=${trimmedProjectId}`)
-  
+
   // Получаем проект и проверяем права доступа
   const project = await Projects.findById(ctx, trimmedProjectId)
-  
+
   if (!project) {
-    Debug.warn(ctx, `[channels] Проект с ID ${trimmedProjectId} не найден, перенаправление на страницу проектов`)
+    Debug.warn(
+      ctx,
+      `[channels] Проект с ID ${trimmedProjectId} не найден, перенаправление на страницу проектов`
+    )
     const projectsUrl = projectsPageRoute.url()
     return (
       <html>
@@ -843,20 +849,26 @@ export const channelsPageRoute = app.html('/channels', async (ctx, req) => {
       </html>
     )
   }
-  
+
   const isAdmin = ctx.user.is('Admin')
-  
+
   // Проверяем права доступа: только участники или админ могут видеть каналы проекта
   if (!isAdmin) {
-    const hasAccess = project.members && Array.isArray(project.members) && 
-      project.members.some((member: any) => 
-        member && 
-        userIdsMatch(member.userId, ctx.user?.id) && 
-        (member.role === 'owner' || member.role === 'member')
+    const hasAccess =
+      project.members &&
+      Array.isArray(project.members) &&
+      project.members.some(
+        (member: any) =>
+          member &&
+          userIdsMatch(member.userId, ctx.user?.id) &&
+          (member.role === 'owner' || member.role === 'member')
       )
-    
+
     if (!hasAccess) {
-      Debug.warn(ctx, `[channels] Попытка доступа к каналам проекта без прав: userId=${ctx.user.id}, projectId=${trimmedProjectId}`)
+      Debug.warn(
+        ctx,
+        `[channels] Попытка доступа к каналам проекта без прав: userId=${ctx.user.id}, projectId=${trimmedProjectId}`
+      )
       const projectsUrl = projectsPageRoute.url()
       return (
         <html>
@@ -870,15 +882,18 @@ export const channelsPageRoute = app.html('/channels', async (ctx, req) => {
       )
     }
   }
-  
+
   // Получаем название проекта из проекта или из настроек по умолчанию
   const projectTitle = project.name || 'Проект'
   Debug.info(ctx, `[channels] Название проекта: ${projectTitle}`)
-  
+
   // Проверяем авторизацию пользователя
   const isAuthenticated = !!ctx.user
-  Debug.info(ctx, `[channels] Статус авторизации: ${isAuthenticated ? `авторизован (userId=${ctx.user?.id})` : 'не авторизован'}`)
-  
+  Debug.info(
+    ctx,
+    `[channels] Статус авторизации: ${isAuthenticated ? `авторизован (userId=${ctx.user?.id})` : 'не авторизован'}`
+  )
+
   Debug.info(ctx, '[channels] Рендеринг страницы каналов')
   return (
     <html>
@@ -1515,12 +1530,15 @@ export const channelsPageRoute = app.html('/channels', async (ctx, req) => {
             }
             
           })();
-        `}</script> 
+        `}</script>
         <script src="/s/static/lib/tailwind.3.4.16.min.js"></script>
         <link rel="stylesheet" href="/s/static/lib/fontawesome/6.7.2/css/all.min.css" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
-        <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap"
+          rel="stylesheet"
+        />
         <style>{`
           :root {
             --color-bg: #0a0a0a;
@@ -1557,7 +1575,7 @@ export const channelsPageRoute = app.html('/channels', async (ctx, req) => {
             <div id="boot-messages-container"></div>
           </div>
         </div>
-        <ChannelsPage 
+        <ChannelsPage
           projectTitle={projectTitle}
           projectId={trimmedProjectId}
           indexUrl={indexPageRoute.url()}
@@ -1575,7 +1593,7 @@ export const projectsPageRoute = app.html('/projects', async (ctx, req) => {
   // Применяем уровень логирования из настроек
   await applyDebugLevel(ctx, 'projects')
   Debug.info(ctx, '[projects] Начало обработки страницы проектов')
-  
+
   try {
     requireRealUser(ctx)
     Debug.info(ctx, `[projects] Пользователь авторизован: userId=${ctx.user.id}`)
@@ -1594,18 +1612,21 @@ export const projectsPageRoute = app.html('/projects', async (ctx, req) => {
       </html>
     )
   }
-  
+
   await ensureDefaultSettings(ctx)
   Debug.info(ctx, '[projects] Настройки по умолчанию проверены')
-  
+
   const titleSetting = await TgChannelAnalyticsSettings.findOneBy(ctx, { key: 'project_title' })
   const projectTitle = titleSetting?.value ?? 'Аналитика телеграм-каналов'
   Debug.info(ctx, `[projects] Название проекта: ${projectTitle}`)
-  
+
   // Проверяем авторизацию пользователя
   const isAuthenticated = !!ctx.user
-  Debug.info(ctx, `[projects] Статус авторизации: ${isAuthenticated ? `авторизован (userId=${ctx.user?.id})` : 'не авторизован'}`)
-  
+  Debug.info(
+    ctx,
+    `[projects] Статус авторизации: ${isAuthenticated ? `авторизован (userId=${ctx.user?.id})` : 'не авторизован'}`
+  )
+
   Debug.info(ctx, '[projects] Рендеринг страницы проектов')
   return (
     <html>
@@ -2259,12 +2280,15 @@ export const projectsPageRoute = app.html('/projects', async (ctx, req) => {
               setTimeout(startBoot, 50);
             }
           })();
-        `}</script> 
+        `}</script>
         <script src="/s/static/lib/tailwind.3.4.16.min.js"></script>
         <link rel="stylesheet" href="/s/static/lib/fontawesome/6.7.2/css/all.min.css" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
-        <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap"
+          rel="stylesheet"
+        />
         <style>{`
           :root {
             --color-bg: #0a0a0a;
@@ -2301,7 +2325,7 @@ export const projectsPageRoute = app.html('/projects', async (ctx, req) => {
             <div id="boot-messages-container"></div>
           </div>
         </div>
-        <ProjectsPage 
+        <ProjectsPage
           projectTitle={projectTitle}
           indexUrl={indexPageRoute.url()}
           profileUrl={profilePageRoute.url()}
@@ -2319,12 +2343,15 @@ export const projectDetailPageRoute = app.html('/projects/:id', async (ctx, req)
   // Применяем уровень логирования из настроек
   await applyDebugLevel(ctx, 'project-detail')
   Debug.info(ctx, '[project-detail] Начало обработки детальной страницы проекта')
-  
+
   try {
     requireRealUser(ctx)
     Debug.info(ctx, `[project-detail] Пользователь авторизован: userId=${ctx.user.id}`)
   } catch (error: any) {
-    Debug.warn(ctx, `[project-detail] Пользователь не авторизован, перенаправление на страницу входа`)
+    Debug.warn(
+      ctx,
+      `[project-detail] Пользователь не авторизован, перенаправление на страницу входа`
+    )
     Debug.warn(ctx, `[project-detail] Ошибка авторизации: ${error?.message || 'Unknown error'}`)
     const loginUrl = loginPageRoute.url() + '?back=' + encodeURIComponent(req.url)
     return (
@@ -2338,21 +2365,24 @@ export const projectDetailPageRoute = app.html('/projects/:id', async (ctx, req)
       </html>
     )
   }
-  
+
   await ensureDefaultSettings(ctx)
   Debug.info(ctx, '[project-detail] Настройки по умолчанию проверены')
-  
+
   const titleSetting = await TgChannelAnalyticsSettings.findOneBy(ctx, { key: 'project_title' })
   const projectTitle = titleSetting?.value ?? 'Аналитика телеграм-каналов'
   Debug.info(ctx, `[project-detail] Название проекта: ${projectTitle}`)
-  
+
   const { id } = req.params
   Debug.info(ctx, `[project-detail] ID проекта: ${id}`)
-  
+
   // Проверяем авторизацию пользователя
   const isAuthenticated = !!ctx.user
-  Debug.info(ctx, `[project-detail] Статус авторизации: ${isAuthenticated ? `авторизован (userId=${ctx.user?.id})` : 'не авторизован'}`)
-  
+  Debug.info(
+    ctx,
+    `[project-detail] Статус авторизации: ${isAuthenticated ? `авторизован (userId=${ctx.user?.id})` : 'не авторизован'}`
+  )
+
   Debug.info(ctx, '[project-detail] Рендеринг детальной страницы проекта')
   return (
     <html>
@@ -3006,12 +3036,15 @@ export const projectDetailPageRoute = app.html('/projects/:id', async (ctx, req)
               setTimeout(startBoot, 50);
             }
           })();
-        `}</script> 
+        `}</script>
         <script src="/s/static/lib/tailwind.3.4.16.min.js"></script>
         <link rel="stylesheet" href="/s/static/lib/fontawesome/6.7.2/css/all.min.css" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
-        <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap"
+          rel="stylesheet"
+        />
         <style>{`
           :root {
             --color-bg: #0a0a0a;
@@ -3048,7 +3081,7 @@ export const projectDetailPageRoute = app.html('/projects/:id', async (ctx, req)
             <div id="boot-messages-container"></div>
           </div>
         </div>
-        <ProjectDetailPage 
+        <ProjectDetailPage
           projectTitle={projectTitle}
           indexUrl={indexPageRoute.url()}
           profileUrl={profilePageRoute.url()}
@@ -3067,13 +3100,13 @@ export const projectDetailPageRoute = app.html('/projects/:id', async (ctx, req)
 /**
  * GET /:id (публичный роут)
  * Публичный роут для обработки переходов по отслеживаемым ссылкам
- * 
+ *
  * URL: /saas/analytics/telegram/channel~{id}
- * 
+ *
  * Параметры:
  * - id: ID ссылки из TrackingLinks (в пути)
  * - query параметры: любые query параметры из URL сохраняются в LinkClicks
- * 
+ *
  * Процесс:
  * 1. Извлекает query-параметры из URL
  * 2. Находит TrackingLink по ID
@@ -3092,11 +3125,11 @@ export const publicLinkRoute = app.get('/:id', async (ctx, req) => {
     Debug.info(ctx, `[public-link] Путь запроса: ${req.path || 'N/A'}`)
     Debug.info(ctx, `[public-link] Параметры пути: ${JSON.stringify(req.params || {})}`)
     Debug.info(ctx, `[public-link] Query параметры: ${JSON.stringify(req.query || {})}`)
-    
+
     // НЕ требуем авторизацию - это публичный роут
-    
+
     const { id } = req.params
-    
+
     if (!id || !id.trim()) {
       Debug.warn(ctx, '[public-link] ID ссылки не предоставлен')
       return (
@@ -3111,10 +3144,10 @@ export const publicLinkRoute = app.get('/:id', async (ctx, req) => {
         </html>
       )
     }
-    
+
     const trimmedId = id.trim()
     Debug.info(ctx, `[public-link] Обработка перехода по ссылке с ID: ${trimmedId}`)
-    
+
     // Извлекаем query-параметры из URL
     const queryParams: Record<string, string> = {}
     if (req.query) {
@@ -3124,12 +3157,12 @@ export const publicLinkRoute = app.get('/:id', async (ctx, req) => {
         }
       }
     }
-    
+
     Debug.info(ctx, `[public-link] Query параметры: ${JSON.stringify(queryParams)}`)
-    
+
     // Находим ссылку
     const trackingLink = await TrackingLinks.findById(ctx, trimmedId)
-    
+
     if (!trackingLink) {
       Debug.warn(ctx, `[public-link] Ссылка с ID ${trimmedId} не найдена`)
       return (
@@ -3144,12 +3177,18 @@ export const publicLinkRoute = app.get('/:id', async (ctx, req) => {
         </html>
       )
     }
-    
-    Debug.info(ctx, `[public-link] Ссылка найдена: name=${trackingLink.name}, channelId=${trackingLink.channelId}, botId=${trackingLink.botId}`)
-    
+
+    Debug.info(
+      ctx,
+      `[public-link] Ссылка найдена: name=${trackingLink.name}, channelId=${trackingLink.channelId}, botId=${trackingLink.botId}`
+    )
+
     // Проверяем, не отозвана ли ссылка
     if (trackingLink.revokedAt) {
-      Debug.warn(ctx, `[public-link] Ссылка отозвана: linkId=${trimmedId}, revokedAt=${trackingLink.revokedAt}`)
+      Debug.warn(
+        ctx,
+        `[public-link] Ссылка отозвана: linkId=${trimmedId}, revokedAt=${trackingLink.revokedAt}`
+      )
       return (
         <html>
           <head>
@@ -3162,10 +3201,10 @@ export const publicLinkRoute = app.get('/:id', async (ctx, req) => {
         </html>
       )
     }
-    
+
     // Получаем информацию о канале
     const channel = await TelegramChats.findById(ctx, trackingLink.channelId)
-    
+
     if (!channel) {
       Debug.warn(ctx, `[public-link] Канал с ID ${trackingLink.channelId} не найден`)
       return (
@@ -3180,10 +3219,10 @@ export const publicLinkRoute = app.get('/:id', async (ctx, req) => {
         </html>
       )
     }
-    
+
     // Получаем информацию о боте
     const bot = await BotTokens.findById(ctx, trackingLink.botId)
-    
+
     if (!bot) {
       Debug.warn(ctx, `[public-link] Бот с ID ${trackingLink.botId} не найден`)
       return (
@@ -3198,19 +3237,22 @@ export const publicLinkRoute = app.get('/:id', async (ctx, req) => {
         </html>
       )
     }
-    
-    Debug.info(ctx, `[public-link] Канал: chatId=${channel.chatId}, Бот: token=${bot.token.substring(0, 10)}...`)
-    
+
+    Debug.info(
+      ctx,
+      `[public-link] Канал: chatId=${channel.chatId}, Бот: token=${bot.token.substring(0, 10)}...`
+    )
+
     // Проверяем, есть ли уже инвайт-линк и он не отозван
     let inviteLink = trackingLink.inviteLink
-    
+
     if (!inviteLink || !trackingLink.inviteLinkCreatedAt) {
       // Генерируем новый инвайт-линк
       Debug.info(ctx, `[public-link] Генерация нового инвайт-линка для канала ${channel.chatId}`)
-      
+
       const trimmedToken = bot.token.trim()
       const telegramApiUrl = `https://api.telegram.org/bot${trimmedToken}/createChatInviteLink`
-      
+
       const inviteResponse = await request({
         url: telegramApiUrl,
         method: 'post',
@@ -3222,25 +3264,29 @@ export const publicLinkRoute = app.get('/:id', async (ctx, req) => {
         throwHttpErrors: false,
         timeout: 10000
       })
-      
+
       const inviteBody = inviteResponse.body as any
-      
+
       if (inviteResponse.statusCode === 200 && inviteBody?.ok && inviteBody?.result?.invite_link) {
         inviteLink = inviteBody.result.invite_link
         Debug.info(ctx, `[public-link] Инвайт-линк успешно создан: ${inviteLink}`)
-        
+
         // Обновляем TrackingLink с новым инвайт-линком
         await TrackingLinks.update(ctx, {
           id: trimmedId,
           inviteLink: inviteLink,
           inviteLinkCreatedAt: new Date()
         })
-        
+
         Debug.info(ctx, `[public-link] TrackingLink обновлён с новым инвайт-линком`)
       } else {
         const errorMessage = inviteBody?.description || 'Ошибка создания инвайт-линка'
-        Debug.error(ctx, `[public-link] Ошибка создания инвайт-линка: statusCode=${inviteResponse.statusCode}, error=${errorMessage}`, 'E_CREATE_INVITE_LINK')
-        
+        Debug.error(
+          ctx,
+          `[public-link] Ошибка создания инвайт-линка: statusCode=${inviteResponse.statusCode}, error=${errorMessage}`,
+          'E_CREATE_INVITE_LINK'
+        )
+
         return (
           <html>
             <head>
@@ -3256,13 +3302,16 @@ export const publicLinkRoute = app.get('/:id', async (ctx, req) => {
     } else {
       Debug.info(ctx, `[public-link] Используется существующий инвайт-линк: ${inviteLink}`)
     }
-    
+
     // Сохраняем LinkClick с query-параметрами
     const clickedAt = new Date()
     const queryParamsJson = JSON.stringify(queryParams)
     const fingerprintHash = generateFingerprint(req, trimmedId)
 
-    Debug.info(ctx, `[public-link] Начало сохранения LinkClick: linkId=${trimmedId}, inviteLink=${inviteLink}, clickedAt=${clickedAt.toISOString()}, queryParams=${queryParamsJson}, fingerprint=${fingerprintHash}`)
+    Debug.info(
+      ctx,
+      `[public-link] Начало сохранения LinkClick: linkId=${trimmedId}, inviteLink=${inviteLink}, clickedAt=${clickedAt.toISOString()}, queryParams=${queryParamsJson}, fingerprint=${fingerprintHash}`
+    )
 
     try {
       const linkClick = await LinkClicks.create(ctx, {
@@ -3273,22 +3322,34 @@ export const publicLinkRoute = app.get('/:id', async (ctx, req) => {
         clickedAt: clickedAt,
         status: 'active'
       })
-      
-      Debug.info(ctx, `[public-link] ✅ LinkClick успешно создан: linkClickId=${linkClick.id}, linkId=${linkClick.linkId}, inviteLink=${linkClick.inviteLink}, clickedAt=${linkClick.clickedAt?.toISOString() || 'N/A'}`)
+
+      Debug.info(
+        ctx,
+        `[public-link] ✅ LinkClick успешно создан: linkClickId=${linkClick.id}, linkId=${linkClick.linkId}, inviteLink=${linkClick.inviteLink}, clickedAt=${linkClick.clickedAt?.toISOString() || 'N/A'}`
+      )
     } catch (clickError: any) {
       // Логируем ошибку, но не прерываем процесс - редирект всё равно должен произойти
-      Debug.error(ctx, `[public-link] ❌ Ошибка создания LinkClick: ${clickError.message}`, 'E_CREATE_LINK_CLICK')
+      Debug.error(
+        ctx,
+        `[public-link] ❌ Ошибка создания LinkClick: ${clickError.message}`,
+        'E_CREATE_LINK_CLICK'
+      )
       Debug.error(ctx, `[public-link] Stack trace создания LinkClick: ${clickError.stack || 'N/A'}`)
-      Debug.error(ctx, `[public-link] Данные, которые пытались сохранить: linkId=${trimmedId}, inviteLink=${inviteLink}, queryParams=${queryParamsJson}`)
+      Debug.error(
+        ctx,
+        `[public-link] Данные, которые пытались сохранить: linkId=${trimmedId}, inviteLink=${inviteLink}, queryParams=${queryParamsJson}`
+      )
     }
-    
+
     // Выполняем редирект на инвайт-линк
     Debug.info(ctx, `[public-link] ===== УСПЕШНОЕ ЗАВЕРШЕНИЕ ОБРАБОТКИ =====`)
     Debug.info(ctx, `[public-link] Редирект на инвайт-линк: ${inviteLink}`)
-    Debug.info(ctx, `[public-link] Итоговые данные: linkId=${trimmedId}, channelId=${channel.chatId}, botId=${bot.id}, inviteLink=${inviteLink}`)
-    
+    Debug.info(
+      ctx,
+      `[public-link] Итоговые данные: linkId=${trimmedId}, channelId=${channel.chatId}, botId=${bot.id}, inviteLink=${inviteLink}`
+    )
+
     return ctx.resp.redirect(inviteLink!)
-    
   } catch (error: any) {
     Debug.error(ctx, `[public-link] ===== КРИТИЧЕСКАЯ ОШИБКА ПРИ ОБРАБОТКЕ =====`, 'E_PUBLIC_LINK')
     Debug.error(ctx, `[public-link] Ошибка: ${error.message}`, 'E_PUBLIC_LINK')
@@ -3296,7 +3357,7 @@ export const publicLinkRoute = app.get('/:id', async (ctx, req) => {
     Debug.error(ctx, `[public-link] URL запроса: ${req.url || 'N/A'}`)
     Debug.error(ctx, `[public-link] Параметры пути: ${JSON.stringify(req.params || {})}`)
     Debug.error(ctx, `[public-link] Query параметры: ${JSON.stringify(req.query || {})}`)
-    
+
     return (
       <html>
         <head>

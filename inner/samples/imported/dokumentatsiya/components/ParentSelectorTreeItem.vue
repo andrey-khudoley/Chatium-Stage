@@ -76,25 +76,28 @@ const hasChildren = computed(() => {
   if (props.item.type === 'section') {
     if (props.nodeDocType === 'section') {
       // When editing a section: only check for nested sections
-      const children = props.allDocuments?.filter(d => {
-        const parentId = typeof d.parentId === 'string' ? d.parentId : d.parentId?.id
-        return d.type === 'section' && parentId === props.item.id
-      }) || []
+      const children =
+        props.allDocuments?.filter((d) => {
+          const parentId = typeof d.parentId === 'string' ? d.parentId : d.parentId?.id
+          return d.type === 'section' && parentId === props.item.id
+        }) || []
       return children.length > 0
     } else {
       // When editing a page: check for both nested sections and pages
-      const children = props.allDocuments?.filter(d => {
-        const parentId = typeof d.parentId === 'string' ? d.parentId : d.parentId?.id
-        return parentId === props.item.id
-      }) || []
+      const children =
+        props.allDocuments?.filter((d) => {
+          const parentId = typeof d.parentId === 'string' ? d.parentId : d.parentId?.id
+          return parentId === props.item.id
+        }) || []
       return children.length > 0
     }
   } else {
     // For pages: check for child pages and sections
-    const children = props.allDocuments?.filter(d => {
-      const parentId = typeof d.parentId === 'string' ? d.parentId : d.parentId?.id
-      return parentId === props.item.id
-    }) || []
+    const children =
+      props.allDocuments?.filter((d) => {
+        const parentId = typeof d.parentId === 'string' ? d.parentId : d.parentId?.id
+        return parentId === props.item.id
+      }) || []
     return children.length > 0
   }
 })
@@ -106,35 +109,35 @@ const children = computed(() => {
     if (props.nodeDocType === 'section') {
       // When editing a section: show only nested sections
       const nestedSections = (props.allDocuments || [])
-        .filter(d => {
+        .filter((d) => {
           const parentId = typeof d.parentId === 'string' ? d.parentId : d.parentId?.id
           return d.type === 'section' && parentId === props.item.id
         })
         .sort((a, b) => (a.order || 0) - (b.order || 0))
 
-      return nestedSections.map(s => ({ type: 'section', id: s.id, title: s.title }))
+      return nestedSections.map((s) => ({ type: 'section', id: s.id, title: s.title }))
     } else {
       // When editing a page: show nested sections and pages
       const nestedSections = (props.allDocuments || [])
-        .filter(d => {
+        .filter((d) => {
           const parentId = typeof d.parentId === 'string' ? d.parentId : d.parentId?.id
           return d.type === 'section' && parentId === props.item.id
         })
         .sort((a, b) => (a.order || 0) - (b.order || 0))
 
       const nestedPages = (props.allDocuments || [])
-        .filter(d => {
+        .filter((d) => {
           const parentId = typeof d.parentId === 'string' ? d.parentId : d.parentId?.id
           return d.type === 'page' && parentId === props.item.id
         })
         .sort((a, b) => (a.order || 0) - (b.order || 0))
 
       const allItems = [
-        ...nestedSections.map(s => ({ type: 'section', id: s.id, title: s.title })),
-        ...nestedPages.map(p => ({ type: 'page', id: p.id, title: p.title }))
+        ...nestedSections.map((s) => ({ type: 'section', id: s.id, title: s.title })),
+        ...nestedPages.map((p) => ({ type: 'page', id: p.id, title: p.title }))
       ].sort((a, b) => {
-        const aItem = props.allDocuments?.find(d => d.id === a.id)
-        const bItem = props.allDocuments?.find(d => d.id === b.id)
+        const aItem = props.allDocuments?.find((d) => d.id === a.id)
+        const bItem = props.allDocuments?.find((d) => d.id === b.id)
         return (aItem?.order || 0) - (bItem?.order || 0)
       })
 
@@ -143,25 +146,25 @@ const children = computed(() => {
   } else {
     // For pages: always show child pages and sections
     const childPages = (props.allDocuments || [])
-      .filter(d => {
+      .filter((d) => {
         const parentId = typeof d.parentId === 'string' ? d.parentId : d.parentId?.id
         return d.type === 'page' && parentId === props.item.id
       })
       .sort((a, b) => (a.order || 0) - (b.order || 0))
 
     const childSections = (props.allDocuments || [])
-      .filter(d => {
+      .filter((d) => {
         const parentId = typeof d.parentId === 'string' ? d.parentId : d.parentId?.id
         return d.type === 'section' && parentId === props.item.id
       })
       .sort((a, b) => (a.order || 0) - (b.order || 0))
 
     const allChildren = [
-      ...childSections.map(s => ({ type: 'section', id: s.id, title: s.title })),
-      ...childPages.map(p => ({ type: 'page', id: p.id, title: p.title }))
+      ...childSections.map((s) => ({ type: 'section', id: s.id, title: s.title })),
+      ...childPages.map((p) => ({ type: 'page', id: p.id, title: p.title }))
     ].sort((a, b) => {
-      const aItem = props.allDocuments?.find(d => d.id === a.id)
-      const bItem = props.allDocuments?.find(d => d.id === b.id)
+      const aItem = props.allDocuments?.find((d) => d.id === a.id)
+      const bItem = props.allDocuments?.find((d) => d.id === b.id)
       return (aItem?.order || 0) - (bItem?.order || 0)
     })
 

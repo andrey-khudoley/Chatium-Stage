@@ -4,11 +4,15 @@
     <header class="glass sticky top-0 z-50">
       <div class="max-w-7xl mx-auto px-3 sm:px-6 py-3 flex items-center justify-between">
         <div class="flex items-center gap-2 sm:gap-3 min-w-0">
-          <div class="hidden sm:flex items-center gap-2 px-3 h-7 rounded-full wr-badge-red flex-shrink-0">
+          <div
+            class="hidden sm:flex items-center gap-2 px-3 h-7 rounded-full wr-badge-red flex-shrink-0"
+          >
             <span class="w-2 h-2 rounded-full wr-dot-red animate-pulse"></span>
             <span class="wr-status-red text-xs font-semibold uppercase tracking-wider">Live</span>
           </div>
-          <h1 class="font-semibold text-sm sm:text-base truncate wr-text-primary leading-7">{{ episode.title }}</h1>
+          <h1 class="font-semibold text-sm sm:text-base truncate wr-text-primary leading-7">
+            {{ episode.title }}
+          </h1>
         </div>
         <HeaderActions :episode="episode">
           <button
@@ -31,14 +35,18 @@
         <!-- Video Player (Kinescope IFrame Player API) -->
         <div class="live-player-wrapper">
           <div v-if="props.nameConfirmed" class="live-player-iframe relative">
-            <div id="kinescope-player" style="width: 100%; height: 100%;"></div>
+            <div id="kinescope-player" style="width: 100%; height: 100%"></div>
             <div v-if="playerLoading" class="live-player-loading">
-              <div class="w-10 h-10 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+              <div
+                class="w-10 h-10 border-2 border-primary border-t-transparent rounded-full animate-spin"
+              ></div>
             </div>
           </div>
           <div v-else class="live-player-iframe flex items-center justify-center">
             <div class="text-center">
-              <div class="w-16 h-16 rounded-2xl glass mx-auto mb-4 flex items-center justify-center">
+              <div
+                class="w-16 h-16 rounded-2xl glass mx-auto mb-4 flex items-center justify-center"
+              >
                 <i class="fas fa-play text-primary text-2xl"></i>
               </div>
               <p class="wr-text-tertiary text-sm">Подтвердите имя, чтобы начать просмотр</p>
@@ -47,12 +55,22 @@
         </div>
 
         <!-- Form buttons under player -->
-        <FormButtons :forms="shownForms" :episode-id="props.episode.id" @open-form="(id) => emit('open-form', id)" />
+        <FormButtons
+          :forms="shownForms"
+          :episode-id="props.episode.id"
+          @open-form="(id) => emit('open-form', id)"
+        />
 
         <!-- Episode info under player -->
         <div class="py-3 px-3 sm:py-4 lg:block">
-          <h2 class="font-bold text-base sm:text-lg lg:text-xl mb-1 lg:mb-2 wr-text-primary">{{ episode.title }}</h2>
-          <p v-if="episode.description" class="text-xs sm:text-sm leading-relaxed line-clamp-2 lg:line-clamp-none wr-text-tertiary" v-html="linkifyText(episode.description)"></p>
+          <h2 class="font-bold text-base sm:text-lg lg:text-xl mb-1 lg:mb-2 wr-text-primary">
+            {{ episode.title }}
+          </h2>
+          <p
+            v-if="episode.description"
+            class="text-xs sm:text-sm leading-relaxed line-clamp-2 lg:line-clamp-none wr-text-tertiary"
+            v-html="linkifyText(episode.description)"
+          ></p>
         </div>
       </div>
 
@@ -69,16 +87,36 @@
 
         <!-- Chat loading -->
         <div v-if="chatLoading" class="flex-1 flex items-center justify-center p-6">
-          <div class="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+          <div
+            class="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin"
+          ></div>
         </div>
 
         <!-- Chat -->
-        <ChatScreen v-else-if="chatScreen" :screen="chatScreen" :message-grouping="false" :is-admin="isAdmin" :episode-id="props.episode.id" :chat-access-mode="props.episode.chatAccessMode" :online-count="onlineCount" :hide-cta="props.hideCta" :paid-form-ids="props.paidFormIds" :enable-replies="true" :enable-reactions="true" class="flex-1" @open-form="(id) => emit('open-form', id)" @new-incoming-message="onNewIncomingMessage" />
+        <ChatScreen
+          v-else-if="chatScreen"
+          :screen="chatScreen"
+          :message-grouping="false"
+          :is-admin="isAdmin"
+          :episode-id="props.episode.id"
+          :chat-access-mode="props.episode.chatAccessMode"
+          :online-count="onlineCount"
+          :hide-cta="props.hideCta"
+          :paid-form-ids="props.paidFormIds"
+          :enable-replies="true"
+          :enable-reactions="true"
+          class="flex-1"
+          @open-form="(id) => emit('open-form', id)"
+          @new-incoming-message="onNewIncomingMessage"
+        />
 
         <!-- Chat unavailable -->
         <div v-else class="flex-1 flex items-center justify-center p-6">
           <div class="text-center">
-            <div class="w-14 h-14 rounded-2xl mx-auto mb-4 flex items-center justify-center" style="background: var(--wr-btn-subtle-bg);">
+            <div
+              class="w-14 h-14 rounded-2xl mx-auto mb-4 flex items-center justify-center"
+              style="background: var(--wr-btn-subtle-bg)"
+            >
               <i class="fas fa-comments text-primary text-xl"></i>
             </div>
             <p class="wr-text-tertiary text-sm">Чат недоступен</p>
@@ -95,16 +133,28 @@
     >
       <span class="mobile-chat-fab-ring"></span>
       <i class="fas fa-comments"></i>
-      <span v-if="unreadCount > 0" class="mobile-chat-fab-badge">{{ unreadCount > 99 ? '99+' : unreadCount }}</span>
+      <span v-if="unreadCount > 0" class="mobile-chat-fab-badge">{{
+        unreadCount > 99 ? '99+' : unreadCount
+      }}</span>
     </button>
 
     <!-- Mobile bottom bar (forms) -->
-    <div class="mobile-bottom-bar" :class="{ 'mobile-bottom-bar--hidden': mobileChatOpen }" v-if="mobileForm">
+    <div
+      class="mobile-bottom-bar"
+      :class="{ 'mobile-bottom-bar--hidden': mobileChatOpen }"
+      v-if="mobileForm"
+    >
       <button
         v-if="mobileForm"
         :key="mobileForm.id"
         class="mobile-form-btn"
-        :style="mobileForm.buttonColor ? { background: `linear-gradient(135deg, ${mobileForm.buttonColor} 0%, ${mobileForm.buttonColor}dd 100%)` } : {}"
+        :style="
+          mobileForm.buttonColor
+            ? {
+                background: `linear-gradient(135deg, ${mobileForm.buttonColor} 0%, ${mobileForm.buttonColor}dd 100%)`
+              }
+            : {}
+        "
         @click.stop="handleMobileFormClick"
       >
         <span class="mobile-form-btn-text">{{ mobileForm.buttonText }}</span>
@@ -114,7 +164,11 @@
     <!-- Mobile Fullscreen Chat Overlay -->
     <Teleport to="body">
       <Transition name="mobile-chat-overlay">
-        <div v-if="mobileChatOpen" class="mobile-chat-overlay" :style="keyboardOffset > 0 ? { paddingBottom: keyboardOffset + 'px' } : {}">
+        <div
+          v-if="mobileChatOpen"
+          class="mobile-chat-overlay"
+          :style="keyboardOffset > 0 ? { paddingBottom: keyboardOffset + 'px' } : {}"
+        >
           <!-- Overlay header -->
           <div class="mobile-chat-overlay-header">
             <div class="flex items-center gap-3 min-w-0">
@@ -132,7 +186,9 @@
           <!-- Chat content -->
           <div class="mobile-chat-overlay-body">
             <div v-if="chatLoading" class="flex-1 flex items-center justify-center p-6">
-              <div class="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+              <div
+                class="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin"
+              ></div>
             </div>
 
             <ChatScreen
@@ -180,7 +236,7 @@ const props = defineProps({
   shownForms: { type: Array, default: () => [] },
   hideCta: { type: Boolean, default: false },
   nameConfirmed: { type: Boolean, default: false },
-  paidFormIds: { type: Array, default: () => [] },
+  paidFormIds: { type: Array, default: () => [] }
 })
 
 const playerUrl = computed(() => {
@@ -191,9 +247,7 @@ const playerUrl = computed(() => {
   return url
 })
 
-const analytics = usePlayerAnalytics(
-  props.episode.id
-)
+const analytics = usePlayerAnalytics(props.episode.id)
 let kinescopePlayer = null
 
 const mobileChatOpen = ref(false)
@@ -262,26 +316,29 @@ function initKinescopePlayer() {
     const container = document.getElementById('kinescope-player')
     if (!container) return
 
-    playerFactory.create('kinescope-player', {
-      url: playerUrl.value,
-      size: { width: '100%', height: '100%' },
-      behavior: {
-        autoPlay: true,
-        muted: false,
-      },
-    }).then((player) => {
-      kinescopePlayer = player
-      
-      // Hide loading overlay when player is ready
-      player.once('ready', () => {
+    playerFactory
+      .create('kinescope-player', {
+        url: playerUrl.value,
+        size: { width: '100%', height: '100%' },
+        behavior: {
+          autoPlay: true,
+          muted: false
+        }
+      })
+      .then((player) => {
+        kinescopePlayer = player
+
+        // Hide loading overlay when player is ready
+        player.once('ready', () => {
+          playerLoading.value = false
+        })
+
+        analytics.setupPlayer(player)
+      })
+      .catch((err) => {
+        console.error('Kinescope player creation error:', err)
         playerLoading.value = false
       })
-      
-      analytics.setupPlayer(player)
-    }).catch((err) => {
-      console.error('Kinescope player creation error:', err)
-      playerLoading.value = false
-    })
   }
 }
 
@@ -302,20 +359,23 @@ onMounted(async () => {
   onlineCountTimer = setInterval(fetchOnlineCount, 10000)
 })
 
-watch(() => props.nameConfirmed, (confirmed) => {
-  if (confirmed && !kinescopePlayer) {
-    nextTick(() => {
-      if (!window.onKinescopeIframeAPIReady) {
-        initKinescopePlayer()
-      } else {
-        const container = document.getElementById('kinescope-player')
-        if (container) {
-          window.onKinescopeIframeAPIReady.__trigger?.()
+watch(
+  () => props.nameConfirmed,
+  (confirmed) => {
+    if (confirmed && !kinescopePlayer) {
+      nextTick(() => {
+        if (!window.onKinescopeIframeAPIReady) {
+          initKinescopePlayer()
+        } else {
+          const container = document.getElementById('kinescope-player')
+          if (container) {
+            window.onKinescopeIframeAPIReady.__trigger?.()
+          }
         }
-      }
-    })
+      })
+    }
   }
-})
+)
 
 onUnmounted(() => {
   if (onlineCountTimer) clearInterval(onlineCountTimer)
@@ -330,7 +390,12 @@ const formattedOnlineCount = computed(() => {
 
 function handleMobileFormClick() {
   if (mobileForm.value && props.episode.id) {
-    trackFormOpened(props.episode.id, mobileForm.value.id, mobileForm.value.title, mobileForm.value.submitAction)
+    trackFormOpened(
+      props.episode.id,
+      mobileForm.value.id,
+      mobileForm.value.title,
+      mobileForm.value.submitAction
+    )
   }
   emit('open-form', mobileForm.value.id)
 }
@@ -527,7 +592,6 @@ defineExpose({ reloadChat, exitFullscreen })
   z-index: 10;
 }
 
-
 /* ===== Mobile Chat FAB ===== */
 .mobile-chat-fab {
   display: none;
@@ -543,7 +607,9 @@ defineExpose({ reloadChat, exitFullscreen })
   color: #ffffff;
   font-size: 20px;
   cursor: pointer;
-  box-shadow: 0 0 20px rgba(216, 28, 81, 0.3), 0 4px 24px rgba(0, 0, 0, 0.4);
+  box-shadow:
+    0 0 20px rgba(216, 28, 81, 0.3),
+    0 4px 24px rgba(0, 0, 0, 0.4);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   -webkit-tap-highlight-color: transparent;
   align-items: center;
@@ -576,8 +642,15 @@ defineExpose({ reloadChat, exitFullscreen })
 }
 
 @keyframes fab-ring-pulse {
-  0%, 100% { transform: scale(1); opacity: 0.6; }
-  50% { transform: scale(1.15); opacity: 0; }
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+  50% {
+    transform: scale(1.15);
+    opacity: 0;
+  }
 }
 
 .mobile-chat-fab-badge {
@@ -588,7 +661,7 @@ defineExpose({ reloadChat, exitFullscreen })
   height: 20px;
   padding: 0 5px;
   border-radius: 10px;
-  background: #D81C51;
+  background: #d81c51;
   color: #ffffff;
   font-size: 11px;
   font-weight: 700;
@@ -733,7 +806,10 @@ defineExpose({ reloadChat, exitFullscreen })
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
-  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    background 0.2s ease;
   line-height: 1.3;
   white-space: normal;
   -webkit-tap-highlight-color: transparent;
@@ -801,7 +877,8 @@ defineExpose({ reloadChat, exitFullscreen })
 }
 
 @keyframes mobile-form-pulse {
-  0%, 100% {
+  0%,
+  100% {
     box-shadow: 0 2px 12px rgba(216, 28, 81, 0.3);
   }
   50% {
@@ -812,6 +889,8 @@ defineExpose({ reloadChat, exitFullscreen })
 :global(.theme-light) .mobile-chat-fab {
   background: linear-gradient(135deg, rgba(216, 28, 81, 0.95) 0%, rgba(181, 22, 63, 1) 100%);
   border-color: rgba(216, 28, 81, 0.6);
-  box-shadow: 0 0 20px rgba(216, 28, 81, 0.4), 0 4px 24px rgba(0, 0, 0, 0.15);
+  box-shadow:
+    0 0 20px rgba(216, 28, 81, 0.4),
+    0 4px 24px rgba(0, 0, 0, 0.15);
 }
 </style>

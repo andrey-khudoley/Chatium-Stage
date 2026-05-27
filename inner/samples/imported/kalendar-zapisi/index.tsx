@@ -1,5 +1,5 @@
-import { jsx } from "@app/html-jsx";
-import ClientBooking from './pages/ClientBooking.vue';
+import { jsx } from '@app/html-jsx'
+import ClientBooking from './pages/ClientBooking.vue'
 
 export const bookingIndexRoute = app.html('/', async (ctx, req) => {
   return (
@@ -23,5 +23,5 @@ export const bookingIndexRoute = app.html('/', async (ctx, req) => {
         <ClientBooking />
       </body>
     </html>
-  );
-});
+  )
+})

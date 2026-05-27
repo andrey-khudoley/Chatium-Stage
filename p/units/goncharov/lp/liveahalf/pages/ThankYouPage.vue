@@ -2,23 +2,38 @@
   <main class="relative overflow-hidden min-h-screen flex items-center">
     <div class="absolute inset-0 z-0">
       <img :src="bgImage" alt="" class="w-full h-full object-cover opacity-[0.12]" />
-      <div class="absolute inset-0 bg-gradient-to-br from-cream-50/95 via-moss-50/90 to-sage-50/85"></div>
-      <div class="absolute inset-0 bg-gradient-to-t from-transparent via-transparent to-white/40"></div>
+      <div
+        class="absolute inset-0 bg-gradient-to-br from-cream-50/95 via-moss-50/90 to-sage-50/85"
+      ></div>
+      <div
+        class="absolute inset-0 bg-gradient-to-t from-transparent via-transparent to-white/40"
+      ></div>
     </div>
 
     <div class="organic-blob top-24 right-12 w-80 h-80 bg-moss-200"></div>
-    <div class="organic-blob bottom-16 left-10 w-96 h-96 bg-ochre-100" style="animation-delay: -6s"></div>
-    <div class="organic-blob top-1/2 left-1/3 w-72 h-72 bg-sage-100" style="animation-delay: -11s"></div>
+    <div
+      class="organic-blob bottom-16 left-10 w-96 h-96 bg-ochre-100"
+      style="animation-delay: -6s"
+    ></div>
+    <div
+      class="organic-blob top-1/2 left-1/3 w-72 h-72 bg-sage-100"
+      style="animation-delay: -11s"
+    ></div>
 
     <section class="relative z-10 w-full px-5 md:px-8">
       <div class="max-w-5xl mx-auto">
-        <div class="bg-white/72 backdrop-blur-xl rounded-[2rem] border border-white/60 shadow-2xl shadow-slate-900/10 p-6 md:p-10 lg:p-14">
+        <div
+          class="bg-white/72 backdrop-blur-xl rounded-[2rem] border border-white/60 shadow-2xl shadow-slate-900/10 p-6 md:p-10 lg:p-14"
+        >
           <div class="floating-badge mb-5">
             <i class="fa-solid fa-circle-check text-moss-500"></i>
             Регистрация подтверждена
           </div>
 
-          <h1 class="font-display text-4xl md:text-5xl lg:text-[3.3rem] leading-[1.08] text-slate-950 mb-4" style="letter-spacing: 0.02em">
+          <h1
+            class="font-display text-4xl md:text-5xl lg:text-[3.3rem] leading-[1.08] text-slate-950 mb-4"
+            style="letter-spacing: 0.02em"
+          >
             Спасибо за регистрацию на вебинар
           </h1>
 
@@ -29,19 +44,27 @@
 
           <div class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-8">
             <div class="rounded-2xl border border-sage-100 bg-white/80 px-4 py-4 text-center">
-              <div class="font-display text-3xl md:text-4xl leading-none text-slate-900">{{ timer.days }}</div>
+              <div class="font-display text-3xl md:text-4xl leading-none text-slate-900">
+                {{ timer.days }}
+              </div>
               <div class="text-xs md:text-sm text-sage-700 mt-1">дней</div>
             </div>
             <div class="rounded-2xl border border-sage-100 bg-white/80 px-4 py-4 text-center">
-              <div class="font-display text-3xl md:text-4xl leading-none text-slate-900">{{ timer.hours }}</div>
+              <div class="font-display text-3xl md:text-4xl leading-none text-slate-900">
+                {{ timer.hours }}
+              </div>
               <div class="text-xs md:text-sm text-sage-700 mt-1">часов</div>
             </div>
             <div class="rounded-2xl border border-sage-100 bg-white/80 px-4 py-4 text-center">
-              <div class="font-display text-3xl md:text-4xl leading-none text-slate-900">{{ timer.minutes }}</div>
+              <div class="font-display text-3xl md:text-4xl leading-none text-slate-900">
+                {{ timer.minutes }}
+              </div>
               <div class="text-xs md:text-sm text-sage-700 mt-1">минут</div>
             </div>
             <div class="rounded-2xl border border-sage-100 bg-white/80 px-4 py-4 text-center">
-              <div class="font-display text-3xl md:text-4xl leading-none text-slate-900">{{ timer.seconds }}</div>
+              <div class="font-display text-3xl md:text-4xl leading-none text-slate-900">
+                {{ timer.seconds }}
+              </div>
               <div class="text-xs md:text-sm text-sage-700 mt-1">секунд</div>
             </div>
           </div>
@@ -106,7 +129,7 @@ function updateTimer() {
     days: twoDigits(days),
     hours: twoDigits(hours),
     minutes: twoDigits(minutes),
-    seconds: twoDigits(seconds),
+    seconds: twoDigits(seconds)
   }
 }
 

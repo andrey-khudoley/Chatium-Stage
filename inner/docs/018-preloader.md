@@ -1,7 +1,9 @@
 @chatium
+
 # Прелоадер приложения (App Preloader)
 
 ## Оглавление
+
 1. [Основные концепции](#основные-концепции)
 2. [Типы прелоадеров](#типы-прелоадеров)
 3. [Архитектура решения](#архитектура-решения)
@@ -29,6 +31,7 @@
 **Прелоадер должен быть встроен в HTML и показываться ДО загрузки Vue компонентов.**
 
 Это означает:
+
 - ✅ HTML разметка прелоадера встраивается непосредственно в `<body>`
 - ✅ Стили применяются через inline атрибуты или критический CSS в `<head>`
 - ✅ Прелоадер скрывается ПОСЛЕ монтирования Vue компонента
@@ -42,13 +45,17 @@
 В зависимости от концепции приложения можно использовать разные типы прелоадеров:
 
 ### 1. Классический спиннер (универсальный)
+
 Подходит для большинства приложений:
+
 - Логотип + вращающееся кольцо
 - Текст "Загрузка..."
 - Минималистичный и нейтральный
 
 ### 2. Boot Sequence (системный)
+
 Для технических/IT приложений:
+
 - Имитация загрузки операционной системы
 - Терминальный вид (monospace шрифт)
 - Последовательные сообщения о загрузке компонентов
@@ -56,13 +63,17 @@
 - Отслеживание реальных ресурсов
 
 ### 3. Skeleton Loader (контентный)
+
 Для контент-ориентированных приложений:
+
 - Показывает "скелет" будущей страницы
 - Анимированные placeholder'ы
 - Плавная замена на реальный контент
 
 ### 4. Progress Bar (минималистичный)
+
 Для быстрых приложений:
+
 - Тонкая полоса прогресса вверху
 - Минимально отвлекает
 - Подходит для SPA с быстрой загрузкой
@@ -90,19 +101,19 @@ project/
 ```
 1. HTML парсится
    └─> Inline стили на <body> применяются МГНОВЕННО
-   
+
 2. <head> обрабатывается
    └─> CSS переменные (БЕЗ type="text/tailwindcss"!)
    └─> Стили прелоадера
-   
+
 3. <body> рендерится
    └─> Прелоадер видим СРАЗУ (inline стили)
    └─> Vue компонент загружается (скрыт opacity: 0)
-   
+
 4. Vue монтируется
    └─> onMounted() вызывается
    └─> window.hideAppLoader() выполняется
-   
+
 5. Crossfade переход
    └─> Прелоадер: opacity 1 → 0
    └─> Контент: opacity 0 → 1
@@ -377,28 +388,28 @@ export const indexPageRoute = app.get('/', async (ctx) => {
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>My App</title>
-        
-        {/* 
-          ПЕРВЫМ ДЕЛОМ: CSS переменные 
-          БЕЗ type="text/tailwindcss"! 
+
+        {/*
+          ПЕРВЫМ ДЕЛОМ: CSS переменные
+          БЕЗ type="text/tailwindcss"!
           Обычный <style> для мгновенного применения
         */}
         <style>{cssVariables}</style>
-        
+
         {/* ВТОРЫМ: Стили прелоадера (используют CSS переменные) */}
         <style>{preloaderStyles}</style>
-        
+
         {/* Остальные библиотеки */}
         <script src="/s/static/lib/tailwind.3.4.16.min.js"></script>
         <link href="/s/static/lib/fontawesome/6.7.2/css/all.min.css" rel="stylesheet" />
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-        
+
         {/* Общие стили */}
         <style>{commonStyles}</style>
       </head>
       <body style="margin: 0; padding: 0; background-color: #0f172a; min-height: 100vh;">
-        {/* 
-          Прелоадер - показывается сразу 
+        {/*
+          Прелоадер - показывается сразу
           INLINE СТИЛИ - критически важны для мгновенного применения!
         */}
         <div id="app-loader" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: #0f172a; display: flex; align-items: center; justify-content: center; z-index: 999999;">
@@ -412,12 +423,12 @@ export const indexPageRoute = app.get('/', async (ctx) => {
             <p class="loader-text">Загрузка приложения...</p>
           </div>
         </div>
-        
+
         {/* Контент - изначально скрыт (opacity: 0) */}
         <div id="app-content" style="opacity: 0;">
           <HomePage />
         </div>
-        
+
         {/* Скрипт для скрытия прелоадера */}
         <script>{loaderScript}</script>
       </body>
@@ -436,12 +447,8 @@ import { onMounted } from 'vue'
 
 onMounted(async () => {
   // Загружаем данные
-  await Promise.all([
-    loadSettings(),
-    loadServices(),
-    loadOAuthStatus()
-  ])
-  
+  await Promise.all([loadSettings(), loadServices(), loadOAuthStatus()])
+
   // ВАЖНО: Скрываем прелоадер ПОСЛЕ загрузки данных
   if (window.hideAppLoader) {
     window.hideAppLoader()
@@ -457,6 +464,7 @@ onMounted(async () => {
 ### Концепция
 
 Boot Sequence Preloader имитирует загрузку операционной системы или терминального приложения. Идеально подходит для:
+
 - Аналитических систем
 - DevOps инструментов
 - Технических дашбордов
@@ -486,18 +494,18 @@ export const indexPageRoute = app.get('/', async (ctx) => {
         <title>Analytics System</title>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        
+
         {/* Inline критические стили для предотвращения моргания */}
         <style>{`
-          html { 
+          html {
             background: #0a0a0a;
           }
-          body { 
-            margin: 0; 
+          body {
+            margin: 0;
             background: #0a0a0a;
             min-height: 100vh;
           }
-          
+
           /* Геометрический фон - статичный для preloader и контента */
           #geometric-bg {
             position: fixed;
@@ -515,7 +523,7 @@ export const indexPageRoute = app.get('/', async (ctx) => {
             left: 0;
             right: 0;
             bottom: 0;
-            background: 
+            background:
               linear-gradient(90deg, transparent 0%, transparent calc(100% - 1px), #2a2a2a calc(100% - 1px)),
               linear-gradient(0deg, transparent 0%, transparent calc(100% - 1px), #2a2a2a calc(100% - 1px));
             background-size: 60px 60px;
@@ -536,7 +544,7 @@ export const indexPageRoute = app.get('/', async (ctx) => {
             0%, 100% { transform: translate(0, 0) scale(1); }
             50% { transform: translate(-50px, 50px) scale(1.1); }
           }
-          
+
           /* Boot Loader */
           #boot-loader {
             position: fixed;
@@ -590,14 +598,14 @@ export const indexPageRoute = app.get('/', async (ctx) => {
             51%, 100% { opacity: 0; }
           }
         `}</style>
-        
+
         {/* JavaScript для мониторинга загрузки */}
         <script>{`
           (function() {
             var container = null;
             var loadedResources = new Set();
             var isComplete = false;
-            
+
             // Последовательность загрузки с отслеживанием реальных ресурсов
             var bootSequence = [
               { type: 'init', msg: 'Инициализация системы...' },
@@ -607,29 +615,29 @@ export const indexPageRoute = app.get('/', async (ctx) => {
               { type: 'link', name: 'fonts.googleapis', msg: 'Подключение Google Fonts...' },
               { type: 'link', name: 'fonts.gstatic', msg: 'Загрузка шрифта Inter...' }
             ];
-            
+
             function addMessage(status, text) {
               if (!container) {
                 container = document.getElementById('boot-messages-container');
               }
               if (!container) return;
-              
+
               var div = document.createElement('div');
               div.className = 'boot-message';
               div.innerHTML = '<span class="boot-status">[' + status + ']</span><span class="boot-text">' + text + '</span>';
               container.appendChild(div);
-              
+
               // Ограничиваем количество сообщений на экране
               if (container.children.length > 12) {
                 container.removeChild(container.children[0]);
               }
             }
-            
+
             // Проверяем загрузку ресурса через Performance API
             function checkResource(resource) {
               var name = resource.name;
               if (loadedResources.has(name)) return;
-              
+
               for (var i = 0; i < bootSequence.length; i++) {
                 var item = bootSequence[i];
                 if (item.name && name.indexOf(item.name) !== -1) {
@@ -639,7 +647,7 @@ export const indexPageRoute = app.get('/', async (ctx) => {
                 }
               }
             }
-            
+
             // Мониторим загрузку ресурсов
             function monitorResources() {
               if (window.performance && window.performance.getEntriesByType) {
@@ -649,25 +657,25 @@ export const indexPageRoute = app.get('/', async (ctx) => {
                 }
               }
             }
-            
+
             // Завершаем последовательность
             function completeSequence() {
               if (isComplete) return;
               isComplete = true;
-              
+
               addMessage('OK', 'Компоненты загружены');
               addMessage('OK', 'Инициализация Vue.js...');
               addMessage('OK', 'Проверка аутентификации...');
               addMessage('OK', 'Система готова к работе');
-              
+
               var cursor = document.createElement('div');
               cursor.className = 'boot-cursor';
               cursor.textContent = '_';
               container.appendChild(cursor);
-              
+
               setTimeout(hideBootLoader, 400);
             }
-            
+
             // Скрытие bootloader
             function hideBootLoader() {
               var loader = document.getElementById('boot-loader');
@@ -681,24 +689,24 @@ export const indexPageRoute = app.get('/', async (ctx) => {
                 }, 600);
               }
             }
-            
+
             // Запуск boot sequence
             function startBoot() {
               addMessage('OK', bootSequence[0].msg);
               addMessage('OK', bootSequence[1].msg);
-              
+
               // Проверяем загрузку ресурсов каждые 50ms
               var checkInterval = setInterval(function() {
                 monitorResources();
               }, 50);
-              
+
               // Завершаем когда всё загружено
               window.addEventListener('load', function() {
                 clearInterval(checkInterval);
                 monitorResources();
                 setTimeout(completeSequence, 100);
               });
-              
+
               // Защита от зависания - максимум 3 секунды
               setTimeout(function() {
                 if (!isComplete) {
@@ -708,7 +716,7 @@ export const indexPageRoute = app.get('/', async (ctx) => {
                 }
               }, 3000);
             }
-            
+
             if (document.readyState === 'loading') {
               document.addEventListener('DOMContentLoaded', function() {
                 setTimeout(startBoot, 50);
@@ -718,13 +726,13 @@ export const indexPageRoute = app.get('/', async (ctx) => {
             }
           })();
         `}</script>
-        
+
         <script src="/s/static/lib/tailwind.3.4.16.min.js"></script>
         <link rel="stylesheet" href="/s/static/lib/fontawesome/6.7.2/css/all.min.css" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-        
+
         {/* CSS переменные темы */}
         <style>{`
           :root {
@@ -738,16 +746,16 @@ export const indexPageRoute = app.get('/', async (ctx) => {
       <body>
         {/* Статичный геометрический фон */}
         <div id="geometric-bg"></div>
-        
+
         {/* Boot Loader */}
         <div id="boot-loader">
           <div class="boot-messages">
             <div id="boot-messages-container"></div>
           </div>
         </div>
-        
+
         {/* Основной контент */}
-        <HomePage 
+        <HomePage
           projectTitle="Аналитика телеграм-каналов"
           analyticsUrl="/analytics"
           channelsUrl="/channels"
@@ -800,7 +808,7 @@ onMounted(() => {
   const typeTitle = () => {
     const fullText = props.projectTitle
     let currentIndex = 0
-    
+
     const typeInterval = setInterval(() => {
       if (currentIndex < fullText.length) {
         displayedTitle.value = fullText.substring(0, currentIndex + 1)
@@ -829,15 +837,13 @@ onMounted(() => {
           <div class="hero-icon-wrapper" :class="{ 'hero-icon-visible': showCards }">
             <i class="fas fa-chart-line hero-icon"></i>
           </div>
-          
+
           <!-- Заголовок печатается посимвольно -->
           <h1 class="hero-heading">
             {{ displayedTitle }}<span v-if="showCursor" class="typing-cursor">|</span>
           </h1>
-          
-          <p class="hero-description">
-            Выберите раздел для управления
-          </p>
+
+          <p class="hero-description">Выберите раздел для управления</p>
         </section>
 
         <!-- Карточки появляются после печати заголовка -->
@@ -874,16 +880,23 @@ onMounted(() => {
 }
 
 @keyframes cursor-blink {
-  0%, 50% { opacity: 1; }
-  51%, 100% { opacity: 0; }
+  0%,
+  50% {
+    opacity: 1;
+  }
+  51%,
+  100% {
+    opacity: 0;
+  }
 }
 
 /* Иконка появляется с анимацией */
 .hero-icon-wrapper {
   opacity: 0;
   transform: scale(0.8);
-  transition: opacity 0.6s cubic-bezier(0.34, 1.3, 0.64, 1), 
-              transform 0.6s cubic-bezier(0.34, 1.3, 0.64, 1);
+  transition:
+    opacity 0.6s cubic-bezier(0.34, 1.3, 0.64, 1),
+    transform 0.6s cubic-bezier(0.34, 1.3, 0.64, 1);
 }
 
 .hero-icon-wrapper.hero-icon-visible {
@@ -893,13 +906,14 @@ onMounted(() => {
 }
 
 @keyframes hero-icon-pulse {
-  0%, 100% {
-    box-shadow: 
+  0%,
+  100% {
+    box-shadow:
       0 8px 24px rgba(211, 35, 75, 0.4),
       0 4px 12px rgba(211, 35, 75, 0.3);
   }
   50% {
-    box-shadow: 
+    box-shadow:
       0 12px 32px rgba(211, 35, 75, 0.5),
       0 6px 16px rgba(211, 35, 75, 0.4);
   }
@@ -946,18 +960,18 @@ onMounted(() => {
 
 ```javascript
 // Performance API отслеживает ВСЕ загружаемые ресурсы
-var resources = window.performance.getEntriesByType('resource');
+var resources = window.performance.getEntriesByType('resource')
 
 // Проверяем каждый ресурс
 for (var i = 0; i < resources.length; i++) {
-  var name = resources[i].name;
-  
+  var name = resources[i].name
+
   // Сопоставляем с нашим списком
   if (name.indexOf('tailwind') !== -1) {
-    addMessage('OK', 'Загрузка Tailwind CSS...');
+    addMessage('OK', 'Загрузка Tailwind CSS...')
   }
   if (name.indexOf('fontawesome') !== -1) {
-    addMessage('OK', 'Загрузка FontAwesome иконок...');
+    addMessage('OK', 'Загрузка FontAwesome иконок...')
   }
 }
 ```
@@ -966,16 +980,16 @@ for (var i = 0; i < resources.length; i++) {
 
 ```javascript
 // Быстрая загрузка: показываем как есть, завершаем по window.load
-window.addEventListener('load', function() {
-  completeSequence();
-});
+window.addEventListener('load', function () {
+  completeSequence()
+})
 
 // Медленная загрузка: показываем прогресс, но не дольше 3 секунд
-setTimeout(function() {
+setTimeout(function () {
   if (!isComplete) {
-    completeSequence(); // Защита от зависания
+    completeSequence() // Защита от зависания
   }
-}, 3000);
+}, 3000)
 ```
 
 #### 3. Статичный фон
@@ -985,21 +999,21 @@ setTimeout(function() {
 <div id="geometric-bg"></div>
 
 <!-- Boot loader прозрачный, фон виден сквозь него -->
-<div id="boot-loader" style="background: transparent;">
+<div id="boot-loader" style="background: transparent;"></div>
 ```
 
 #### 4. Синхронизация с Vue
 
 ```javascript
 // В JavaScript (preloader)
-window.bootLoaderComplete = true;
-window.dispatchEvent(new Event('bootloader-complete'));
+window.bootLoaderComplete = true
+window.dispatchEvent(new Event('bootloader-complete'))
 
 // В Vue
 window.addEventListener('bootloader-complete', () => {
   // Запускаем анимации
-  bootLoaderDone.value = true;
-});
+  bootLoaderDone.value = true
+})
 ```
 
 ### Варианты сообщений Boot Sequence
@@ -1007,6 +1021,7 @@ window.addEventListener('bootloader-complete', () => {
 Для разных типов приложений можно использовать разные наборы сообщений:
 
 #### Аналитическая система
+
 ```javascript
 var bootMessages = [
   'Инициализация системы...',
@@ -1019,10 +1034,11 @@ var bootMessages = [
   'Подключение к базе данных...',
   'Проверка аутентификации...',
   'Система готова к работе'
-];
+]
 ```
 
 #### CRM система
+
 ```javascript
 var bootMessages = [
   'Инициализация CRM...',
@@ -1033,10 +1049,11 @@ var bootMessages = [
   'Загрузка пользовательских настроек...',
   'Инициализация вебхуков...',
   'Система готова к работе'
-];
+]
 ```
 
 #### DevOps инструмент
+
 ```javascript
 var bootMessages = [
   'Starting system initialization...',
@@ -1047,7 +1064,7 @@ var bootMessages = [
   'Loading configuration files...',
   'Starting monitoring services...',
   'System ready'
-];
+]
 ```
 
 ### Кастомизация внешнего вида
@@ -1057,13 +1074,13 @@ var bootMessages = [
 ```css
 /* Зелёный терминал (Matrix style) */
 .boot-status {
-  color: #00ff00;  /* Зелёный статус */
+  color: #00ff00; /* Зелёный статус */
 }
 .boot-cursor {
-  color: #00ff00;  /* Зелёный курсор */
+  color: #00ff00; /* Зелёный курсор */
 }
 .boot-text {
-  color: #00cc00;  /* Зелёный текст */
+  color: #00cc00; /* Зелёный текст */
 }
 
 /* Синий терминал (Windows style) */
@@ -1091,21 +1108,21 @@ function startBoot() {
     '  ___              _       _   _          ',
     ' / _ \\            | |     | | (_)         ',
     '/ /_\\ \\_ __   __ _| |_   _| |_ _  ___ ___ ',
-    '|  _  | \'_ \\ / _\` | | | | | __| |/ __/ __|',
+    "|  _  | '_ \\ / _\` | | | | | __| |/ __/ __|",
     '| | | | | | | (_| | | |_| | |_| | (__\\__ \\',
     '\\_| |_/_| |_|\\__,_|_|\\__, |\\__|_|\\___|___/',
     '                      __/ |                ',
     '                     |___/                 ',
     ''
-  ];
-  
+  ]
+
   // Добавляем ASCII-арт построчно
   for (var i = 0; i < ascii.length; i++) {
-    addMessage('', ascii[i]);
+    addMessage('', ascii[i])
   }
-  
+
   // Продолжаем обычные сообщения
-  addMessage('OK', 'Инициализация системы...');
+  addMessage('OK', 'Инициализация системы...')
 }
 ```
 
@@ -1117,16 +1134,16 @@ Boot Sequence Preloader позволяет диагностировать про
 // Добавьте обработку ошибок
 function checkResource(resource) {
   // Проверяем время загрузки
-  var duration = resource.duration;
-  
+  var duration = resource.duration
+
   if (duration > 2000) {
     // Медленная загрузка - предупреждение
-    addMessage('WARN', item.msg + ' (медленно: ' + Math.round(duration) + 'ms)');
+    addMessage('WARN', item.msg + ' (медленно: ' + Math.round(duration) + 'ms)')
   } else if (duration > 5000) {
     // Очень медленная - ошибка
-    addMessage('FAIL', item.msg + ' (таймаут)');
+    addMessage('FAIL', item.msg + ' (таймаут)')
   } else {
-    addMessage('OK', item.msg);
+    addMessage('OK', item.msg)
   }
 }
 ```
@@ -1171,7 +1188,7 @@ export const themes = {
 export const route = app.get('/', async (ctx) => {
   const theme = await getTheme(ctx) // 'analytics' | 'crm' | 'devops'
   const config = themes[theme]
-  
+
   return (
     <html>
       <head>
@@ -1179,7 +1196,7 @@ export const route = app.get('/', async (ctx) => {
           .boot-status { color: ${config.color}; }
           .boot-cursor { color: ${config.color}; }
         `}</style>
-        
+
         <script>{`
           var themeMessages = ${JSON.stringify(config.messages)};
           // Используем themeMessages в bootSequence
@@ -1206,12 +1223,14 @@ export const route = app.get('/', async (ctx) => {
 ### Недостатки и когда НЕ использовать
 
 ❌ **Не подходит для:**
+
 - Простых лендингов
 - Контентных сайтов
 - Приложений для не-технической аудитории
 - Быстрых страниц (загрузка < 200ms)
 
 ❌ **Может показаться:**
+
 - Избыточным для простых задач
 - Слишком "гиковским" для массовой аудитории
 - Замедляющим (если последовательность слишком длинная)
@@ -1219,6 +1238,7 @@ export const route = app.get('/', async (ctx) => {
 ### Когда использовать
 
 ✅ **Идеально подходит для:**
+
 - Технических дашбордов
 - Аналитических систем
 - DevOps инструментов
@@ -1233,6 +1253,7 @@ export const route = app.get('/', async (ctx) => {
 ### ❌ Ошибка 1: Использовать Vue компонент для прелоадера
 
 **Неправильно:**
+
 ```vue
 <!-- components/Loader.vue -->
 <template>
@@ -1241,6 +1262,7 @@ export const route = app.get('/', async (ctx) => {
 ```
 
 **Почему плохо:**
+
 - Vue компонент загружается С ЗАДЕРЖКОЙ
 - Пользователь увидит белый экран до монтирования компонента
 - FOUC (Flash of Unstyled Content) неизбежен
@@ -1248,16 +1270,19 @@ export const route = app.get('/', async (ctx) => {
 ### ❌ Ошибка 2: CSS переменные в `type="text/tailwindcss"`
 
 **Неправильно:**
+
 ```tsx
 <style type="text/tailwindcss">{cssVariables}</style>
 ```
 
 **Почему плохо:**
+
 - Tailwind должен сначала обработать CSS
 - Задержка применения переменных → белый экран
 - Прелоадер не получит правильные цвета вовремя
 
 **Правильно:**
+
 ```tsx
 <style>{cssVariables}</style>  {/* БЕЗ type! */}
 ```
@@ -1265,17 +1290,19 @@ export const route = app.get('/', async (ctx) => {
 ### ❌ Ошибка 3: Использовать CSS переменные в критических местах
 
 **Неправильно:**
+
 ```css
 #app-loader {
-  background: var(--color-bg);  /* Переменная применяется с задержкой! */
+  background: var(--color-bg); /* Переменная применяется с задержкой! */
 }
 
 .loader-ring::before {
-  background: var(--color-bg);  /* Будет белым до применения CSS! */
+  background: var(--color-bg); /* Будет белым до применения CSS! */
 }
 ```
 
 **Правильно:**
+
 ```tsx
 {/* Inline стили для мгновенного применения */}
 <div id="app-loader" style="background: #0f172a;">
@@ -1283,13 +1310,14 @@ export const route = app.get('/', async (ctx) => {
 
 ```css
 .loader-ring::before {
-  background: #0f172a;  /* HARDCODED цвет! */
+  background: #0f172a; /* HARDCODED цвет! */
 }
 ```
 
 ### ❌ Ошибка 4: Скрывать прелоадер по таймеру
 
 **Неправильно:**
+
 ```javascript
 // Фиксированная задержка - не учитывает реальное время загрузки
 setTimeout(() => {
@@ -1298,11 +1326,13 @@ setTimeout(() => {
 ```
 
 **Почему плохо:**
+
 - Быстрый интернет: прелоадер крутится дольше, чем нужно
 - Медленный интернет: контент не успевает загрузиться
 - Не учитывает время загрузки данных
 
 **Правильно:**
+
 ```javascript
 // Vue вызывает скрытие когда готов
 window.hideAppLoader = function() { ... }
@@ -1316,19 +1346,24 @@ setTimeout(() => {
 ### ❌ Ошибка 5: Использовать `dangerouslySetInnerHTML`
 
 **Неправильно:**
+
 ```tsx
 <div dangerouslySetInnerHTML={{ __html: loaderHTML }} />
 ```
 
 **Почему плохо:**
+
 - Может не отрендериться корректно
 - Сложнее отлаживать
 - Проблемы с React/JSX парсингом
 
 **Правильно:**
+
 ```tsx
-{/* Прямой JSX */}
-<div id="app-loader">
+{
+  /* Прямой JSX */
+}
+;<div id="app-loader">
   <div class="loader-content">
     <div class="loader-logo">
       <i class="fas fa-plug"></i>
@@ -1340,20 +1375,24 @@ setTimeout(() => {
 ### ❌ Ошибка 6: Скрывать через CSS классы при наличии inline стилей
 
 **Неправильно:**
+
 ```css
 #app-loader.loaded {
-  display: none;  /* НЕ СРАБОТАЕТ! inline display: flex побеждает */}
+  display: none; /* НЕ СРАБОТАЕТ! inline display: flex побеждает */
+}
 ```
 
 ```javascript
-loader.classList.add('loaded')  // Не скроет элемент!
+loader.classList.add('loaded') // Не скроет элемент!
 ```
 
 **Почему плохо:**
+
 - Inline стили имеют более высокий приоритет, чем CSS классы
 - `display: flex` в inline побеждает `display: none` в классе
 
 **Правильно:**
+
 ```javascript
 // Переопределяем inline стиль напрямую
 loader.style.display = 'none'
@@ -1362,23 +1401,28 @@ loader.style.display = 'none'
 ### ❌ Ошибка 7: Не скрывать контент изначально
 
 **Неправильно:**
+
 ```tsx
 <body>
   <div id="app-loader">...</div>
-  <HomePage />  {/* Виден сразу! Моргает! */}
+  <HomePage /> {/* Виден сразу! Моргает! */}
 </body>
 ```
 
 **Почему плохо:**
+
 - Vue компоненты рендерятся параллельно с прелоадером
 - Контент "просвечивает" через прелоадер
 - Эффект мигания
 
 **Правильно:**
+
 ```tsx
 <body>
   <div id="app-loader">...</div>
-  <div id="app-content" style="opacity: 0;">  {/* Скрыт! */}
+  <div id="app-content" style="opacity: 0;">
+    {' '}
+    {/* Скрыт! */}
     <HomePage />
   </div>
 </body>
@@ -1387,14 +1431,24 @@ loader.style.display = 'none'
 ### ❌ Ошибка 8: Использовать отдельные border-кольца
 
 **Неправильно (рваный эффект):**
+
 ```css
-.loader-ring:nth-child(1) { border-top-color: blue; }
-.loader-ring:nth-child(2) { border-right-color: blue; }
-.loader-ring:nth-child(3) { border-bottom-color: blue; }
-.loader-ring:nth-child(4) { border-left-color: blue; }
+.loader-ring:nth-child(1) {
+  border-top-color: blue;
+}
+.loader-ring:nth-child(2) {
+  border-right-color: blue;
+}
+.loader-ring:nth-child(3) {
+  border-bottom-color: blue;
+}
+.loader-ring:nth-child(4) {
+  border-left-color: blue;
+}
 ```
 
 **Правильно (плавный градиент):**
+
 ```css
 .loader-ring {
   background: conic-gradient(
@@ -1414,6 +1468,7 @@ loader.style.display = 'none'
 ### Полный пример: Минимальная реализация
 
 **styles.tsx:**
+
 ```typescript
 export const cssVariables = `
   :root {
@@ -1463,6 +1518,7 @@ export const loaderScript = `
 ```
 
 **index.tsx:**
+
 ```typescript
 import { jsx } from "@app/html-jsx"
 import { cssVariables, preloaderStyles, loaderScript } from './styles'
@@ -1479,11 +1535,11 @@ export const route = app.get('/', async (ctx) => {
         <div id="app-loader">
           <div class="loader-spinner"></div>
         </div>
-        
+
         <div id="app-content" style="opacity: 0;">
           <HomePage />
         </div>
-        
+
         <script>{loaderScript}</script>
       </body>
     </html>
@@ -1492,13 +1548,14 @@ export const route = app.get('/', async (ctx) => {
 ```
 
 **HomePage.vue:**
+
 ```vue
 <script setup>
 import { onMounted } from 'vue'
 
 onMounted(async () => {
   await loadData()
-  
+
   if (window.hideAppLoader) {
     window.hideAppLoader()
   }
@@ -1509,6 +1566,7 @@ onMounted(async () => {
 ### Полный пример: Продвинутая реализация с градиентным спиннером
 
 См. код выше в разделе "Шаг 1" - это и есть продвинутая версия с:
+
 - Плавными появлением/исчезновением
 - Градиентным conic-gradient спиннером
 - Glow эффектом
@@ -1522,7 +1580,9 @@ onMounted(async () => {
 ### Светлая тема
 
 ```tsx
-<body style="background-color: #fafbfc;">  {/* Светлый фон */}
+<body style="background-color: #fafbfc;">
+  {' '}
+  {/* Светлый фон */}
   <div id="app-loader" style="background: #fafbfc;">
     {/* ... */}
   </div>
@@ -1530,16 +1590,19 @@ onMounted(async () => {
 ```
 
 CSS:
+
 ```css
 .loader-ring::before {
-  background: #fafbfc;  /* Светлый центр кольца */
+  background: #fafbfc; /* Светлый центр кольца */
 }
 ```
 
 ### Тёмная тема
 
 ```tsx
-<body style="background-color: #0f172a;">  {/* Тёмный фон */}
+<body style="background-color: #0f172a;">
+  {' '}
+  {/* Тёмный фон */}
   <div id="app-loader" style="background: #0f172a;">
     {/* ... */}
   </div>
@@ -1547,9 +1610,10 @@ CSS:
 ```
 
 CSS:
+
 ```css
 .loader-ring::before {
-  background: #0f172a;  /* Тёмный центр кольца */
+  background: #0f172a; /* Тёмный центр кольца */
 }
 ```
 
@@ -1560,7 +1624,7 @@ export const route = app.get('/', async (ctx) => {
   // Получаем тему из настроек
   const defaultTheme = await getDefaultTheme(ctx)
   const bgColor = defaultTheme === 'dark' ? '#0f172a' : '#fafbfc'
-  
+
   return (
     <html>
       <head>
@@ -1578,11 +1642,11 @@ export const route = app.get('/', async (ctx) => {
         <div id="app-loader" style="background: ${bgColor};">
           {/* ... */}
         </div>
-        
+
         <div id="app-content" style="opacity: 0;">
           <HomePage />
         </div>
-        
+
         <script>{loaderScript}</script>
       </body>
     </html>
@@ -1591,6 +1655,7 @@ export const route = app.get('/', async (ctx) => {
 ```
 
 И обновите CSS:
+
 ```typescript
 export const preloaderStyles = `
   .loader-ring::before {
@@ -1606,21 +1671,25 @@ export const preloaderStyles = `
 При внедрении прелоадера ОБЯЗАТЕЛЬНО проверьте:
 
 ### ✅ В `<head>`:
+
 1. CSS переменные идут ПЕРВЫМИ
 2. НЕТ `type="text/tailwindcss"` на критических стилях
 3. Стили прелоадера идут ПОСЛЕ CSS переменных
 
 ### ✅ В `<body>`:
+
 1. Есть **inline стиль** с `background-color`
 2. Прелоадер имеет **inline стили** (position, background, display, z-index)
 3. Контент обёрнут в `<div id="app-content" style="opacity: 0;">`
 4. Скрипт `loaderScript` в конце body
 
 ### ✅ В Vue компонентах:
+
 1. `window.hideAppLoader()` вызывается в `onMounted()`
 2. Вызов ПОСЛЕ загрузки данных (если есть API запросы)
 
 ### ✅ В CSS прелоадера:
+
 1. Критические цвета (фон центра кольца) - HARDCODED, не через var()
 2. Анимации определены в том же блоке стилей
 3. Есть адаптивность для мобильных
@@ -1639,6 +1708,7 @@ export const loaderScript = `/* см. выше полный код */`
 ### 2. Обновите роуты
 
 Для каждого роута:
+
 ```tsx
 import { preloaderStyles, loaderScript } from './styles'
 
@@ -1655,11 +1725,11 @@ import { preloaderStyles, loaderScript } from './styles'
       <p class="loader-text">Загрузка...</p>
     </div>
   </div>
-  
+
   <div id="app-content" style="opacity: 0;">
     <YourVueComponent />
   </div>
-  
+
   <script>{loaderScript}</script>
 </body>
 ```
@@ -1667,14 +1737,10 @@ import { preloaderStyles, loaderScript } from './styles'
 ### 3. Добавьте вызов в Vue компоненты
 
 В каждый компонент страницы:
+
 ```vue
-onMounted(async () => {
-  await loadData()  // Ваша логика
-  
-  if (window.hideAppLoader) {
-    window.hideAppLoader()
-  }
-})
+onMounted(async () => { await loadData() // Ваша логика if (window.hideAppLoader) {
+window.hideAppLoader() } })
 ```
 
 **Готово!** ✅
@@ -1686,22 +1752,24 @@ onMounted(async () => {
 ### Градиентный спиннер (conic-gradient)
 
 **Почему conic-gradient:**
+
 - ✅ Плавный переход цветов
 - ✅ Современный вид
 - ✅ Один элемент вместо четырёх
 - ✅ Легко кастомизировать
 
 **Параметры:**
+
 ```css
 background: conic-gradient(
-  from 0deg,           /* Начальный угол */
-  transparent 0deg,    /* Прозрачная зона начало */
-  transparent 40deg,   /* Прозрачная зона конец */
-  #0ea5e9 60deg,       /* Градиент начало */
-  #0284c7 180deg,      /* Градиент середина */
-  #0ea5e9 300deg,      /* Градиент конец */
-  transparent 320deg,  /* Прозрачная зона начало */
-  transparent 360deg   /* Прозрачная зона конец */
+  from 0deg,
+  /* Начальный угол */ transparent 0deg,
+  /* Прозрачная зона начало */ transparent 40deg,
+  /* Прозрачная зона конец */ #0ea5e9 60deg,
+  /* Градиент начало */ #0284c7 180deg,
+  /* Градиент середина */ #0ea5e9 300deg,
+  /* Градиент конец */ transparent 320deg,
+  /* Прозрачная зона начало */ transparent 360deg /* Прозрачная зона конец */
 );
 ```
 
@@ -1713,10 +1781,10 @@ background: conic-gradient(
 .loader-ring::after {
   content: '';
   position: absolute;
-  inset: -2px;  /* Чуть больше основного элемента */
+  inset: -2px; /* Чуть больше основного элемента */
   background: conic-gradient(/* тот же градиент, но полупрозрачный */);
   border-radius: 50%;
-  filter: blur(8px);  /* Размытие создаёт glow */
+  filter: blur(8px); /* Размытие создаёт glow */
   z-index: -1;
 }
 ```
@@ -1725,13 +1793,14 @@ background: conic-gradient(
 
 ```css
 @keyframes loader-logo-pulse {
-  0%, 100% {
+  0%,
+  100% {
     transform: scale(1);
     box-shadow: 0 8px 32px rgba(14, 165, 233, 0.3);
   }
   50% {
-    transform: scale(1.05);  /* Увеличение */
-    box-shadow: 0 8px 48px rgba(14, 165, 233, 0.5);  /* Усиление тени */
+    transform: scale(1.05); /* Увеличение */
+    box-shadow: 0 8px 48px rgba(14, 165, 233, 0.5); /* Усиление тени */
   }
 }
 ```
@@ -1740,8 +1809,8 @@ background: conic-gradient(
 
 ```javascript
 // Одновременно:
-loader.style.opacity = '0'        // Прелоадер исчезает
-content.style.opacity = '1'       // Контент появляется
+loader.style.opacity = '0' // Прелоадер исчезает
+content.style.opacity = '1' // Контент появляется
 
 // С одинаковой анимацией:
 loader.style.transition = 'opacity 0.4s ease'
@@ -1760,31 +1829,26 @@ content.style.transition = 'opacity 0.4s ease'
 ### Проверка 2: Нет ли белого экрана?
 
 В DevTools → Elements → посмотрите на `<body>` - должен быть inline стиль:
+
 ```html
-<body style="background-color: #0f172a;">
+<body style="background-color: #0f172a;"></body>
 ```
 
 ### Проверка 3: Скрывается ли прелоадер?
 
 В консоли после загрузки проверьте:
+
 ```javascript
-document.getElementById('app-loader')  // Должен быть null (удалён)
+document.getElementById('app-loader') // Должен быть null (удалён)
 ```
 
 ### Проверка 4: Вызывается ли hideAppLoader?
 
 Добавьте в `onMounted`:
+
 ```vue
-onMounted(async () => {
-  console.log('Vue mounted!')
-  
-  if (window.hideAppLoader) {
-    console.log('Hiding loader...')
-    window.hideAppLoader()
-  } else {
-    console.error('hideAppLoader not found!')
-  }
-})
+onMounted(async () => { console.log('Vue mounted!') if (window.hideAppLoader) { console.log('Hiding
+loader...') window.hideAppLoader() } else { console.error('hideAppLoader not found!') } })
 ```
 
 ---
@@ -1810,9 +1874,15 @@ onMounted(async () => {
 }
 
 @keyframes progress {
-  0% { width: 0%; }
-  50% { width: 70%; }
-  100% { width: 100%; }
+  0% {
+    width: 0%;
+  }
+  50% {
+    width: 70%;
+  }
+  100% {
+    width: 100%;
+  }
 }
 ```
 
@@ -1840,7 +1910,9 @@ onMounted(async () => {
 }
 
 @keyframes orbit {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 ```
 
@@ -1862,18 +1934,23 @@ onMounted(async () => {
 ```css
 .skeleton-line {
   height: 16px;
-  background: linear-gradient(90deg, 
-    rgba(255,255,255,0.1) 0%, 
-    rgba(255,255,255,0.2) 50%, 
-    rgba(255,255,255,0.1) 100%
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.1) 0%,
+    rgba(255, 255, 255, 0.2) 50%,
+    rgba(255, 255, 255, 0.1) 100%
   );
   background-size: 200% 100%;
   animation: skeleton-loading 1.5s ease-in-out infinite;
 }
 
 @keyframes skeleton-loading {
-  0% { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
 }
 ```
 
@@ -1884,11 +1961,13 @@ onMounted(async () => {
 ### Оптимизация 1: Удаление из DOM
 
 После скрытия прелоадер **удаляется из DOM**:
+
 ```javascript
 loader.parentNode.removeChild(loader)
 ```
 
 **Почему важно:**
+
 - Освобождает память
 - Убирает лишний элемент из дерева
 - Останавливает анимации
@@ -1896,6 +1975,7 @@ loader.parentNode.removeChild(loader)
 ### Оптимизация 2: will-change
 
 Для плавных анимаций:
+
 ```css
 #app-loader {
   will-change: opacity, transform;
@@ -1905,17 +1985,26 @@ loader.parentNode.removeChild(loader)
 ### Оптимизация 3: transform вместо position
 
 Для анимаций используйте `transform`, а не `top/left`:
+
 ```css
 /* Плохо (перерисовка layout) */
 @keyframes slide {
-  from { top: -100px; }
-  to { top: 0; }
+  from {
+    top: -100px;
+  }
+  to {
+    top: 0;
+  }
 }
 
 /* Хорошо (только compositing) */
 @keyframes slide {
-  from { transform: translateY(-100px); }
-  to { transform: translateY(0); }
+  from {
+    transform: translateY(-100px);
+  }
+  to {
+    transform: translateY(0);
+  }
 }
 ```
 
@@ -1939,30 +2028,37 @@ loader.parentNode.removeChild(loader)
 ## Опыт из диалога: Что мы пробовали
 
 ### Попытка 1: Vue компонент ❌
+
 - Создали `components/Loader.vue`
 - **Провал:** Компонент загружается слишком поздно, белый экран остался
 
 ### Попытка 2: dangerouslySetInnerHTML ❌
+
 - Вставляли HTML через innerHTML
 - **Провал:** Некорректный рендеринг, проблемы с парсингом
 
 ### Попытка 3: CSS переменные через Tailwind ❌
+
 - `<style type="text/tailwindcss">{cssVariables}</style>`
 - **Провал:** Tailwind обрабатывает с задержкой → белый экран
 
 ### Попытка 4: CSS классы для скрытия ❌
+
 - `.loaded { display: none }`
 - **Провал:** Inline `display: flex` побеждает CSS класс
 
 ### Попытка 5: Фиксированный таймер ❌
+
 - `setTimeout(hideLoader, 1000)`
 - **Провал:** Не учитывает реальное время загрузки
 
 ### Попытка 6: Отдельные border-кольца ❌
+
 - 4 div с разными border-color
 - **Провал:** Рваный эффект, не плавный
 
 ### ✅ ФИНАЛЬНОЕ РЕШЕНИЕ:
+
 - Inline стили на критических элементах
 - CSS переменные в обычном `<style>`
 - Градиентный conic-gradient спиннер
@@ -1977,6 +2073,7 @@ loader.parentNode.removeChild(loader)
 **Создайте файл `styles.tsx`** и скопируйте код из раздела "Шаг 1" выше.
 
 **Обновите роут `index.tsx`:**
+
 ```typescript
 import { cssVariables, preloaderStyles, loaderScript } from './styles'
 
@@ -1997,11 +2094,11 @@ export const indexPageRoute = app.get('/', async (ctx) => {
             <p class="loader-text">Загрузка приложения...</p>
           </div>
         </div>
-        
+
         <div id="app-content" style="opacity: 0;">
           <HomePage />
         </div>
-        
+
         <script>{loaderScript}</script>
       </body>
     </html>
@@ -2010,13 +2107,14 @@ export const indexPageRoute = app.get('/', async (ctx) => {
 ```
 
 **Обновите Vue компонент:**
+
 ```vue
 <script setup>
 import { onMounted } from 'vue'
 
 onMounted(async () => {
   await loadYourData()
-  
+
   if (window.hideAppLoader) {
     window.hideAppLoader()
   }
@@ -2031,16 +2129,21 @@ onMounted(async () => {
 ## FAQ
 
 ### Q: Почему прелоадер мигает белым?
+
 A: Проверьте inline стили на `<body>` и `#app-loader`. Должны быть hardcoded цвета, не CSS переменные.
 
 ### Q: Почему прелоадер не скрывается?
+
 A: Убедитесь, что `window.hideAppLoader()` вызывается в `onMounted()` ВСЕХ страниц.
 
 ### Q: Почему элементы "прыгают" при загрузке?
+
 A: Контент должен быть обёрнут в `<div id="app-content" style="opacity: 0;">`.
 
 ### Q: Можно ли использовать другую иконку?
+
 A: Да! Замените класс иконки:
+
 ```tsx
 <i class="fas fa-spinner"></i>  {/* spinner */}
 <i class="fas fa-circle-notch"></i>  {/* circle */}
@@ -2048,13 +2151,16 @@ A: Да! Замените класс иконки:
 ```
 
 ### Q: Как изменить цвет прелоадера?
+
 A: Измените `background` в inline стиле и `background` в `.loader-ring::before`:
+
 ```tsx
 <div style="background: #1a1a1a;">  {/* Ваш цвет */}
 ```
+
 ```css
 .loader-ring::before {
-  background: #1a1a1a;  /* Тот же цвет */
+  background: #1a1a1a; /* Тот же цвет */
 }
 ```
 
@@ -2090,6 +2196,7 @@ amocrm-connector/
 ## Заключение
 
 Правильно реализованный прелоадер:
+
 - 🎯 Показывается **мгновенно** при загрузке страницы
 - ⚡ Скрывается **автоматически** когда Vue готов
 - 🎨 Выглядит **современно** с плавными анимациями
@@ -2104,4 +2211,3 @@ amocrm-connector/
 **Версия:** 1.0  
 **Дата:** 3 ноября 2025  
 **Платформа:** Chatium
-

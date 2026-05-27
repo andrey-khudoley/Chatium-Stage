@@ -3,7 +3,7 @@ import * as userSettingsRepo from '../repos/user-settings.repo'
 import {
   DEFAULT_USER_TIMEZONE_OFFSET_HOURS,
   USER_TIMEZONE_OFFSET_MAX,
-  USER_TIMEZONE_OFFSET_MIN,
+  USER_TIMEZONE_OFFSET_MIN
 } from '../shared/user-settings-defaults'
 
 function clampOffsetHours(raw: number): number {
@@ -14,7 +14,10 @@ function clampOffsetHours(raw: number): number {
 /**
  * Эффективное смещение UTC в часах: из Heap или дефолт (+3).
  */
-export async function getEffectiveTimezoneOffsetHours(ctx: app.Ctx, userId: string): Promise<number> {
+export async function getEffectiveTimezoneOffsetHours(
+  ctx: app.Ctx,
+  userId: string
+): Promise<number> {
   const row = await userSettingsRepo.findByUserId(ctx, userId)
   if (!row) return DEFAULT_USER_TIMEZONE_OFFSET_HOURS
   const h = row.timezoneOffsetHours
@@ -22,7 +25,11 @@ export async function getEffectiveTimezoneOffsetHours(ctx: app.Ctx, userId: stri
   return clampOffsetHours(h)
 }
 
-export async function saveTimezoneOffsetHours(ctx: app.Ctx, userId: string, offsetHours: number): Promise<number> {
+export async function saveTimezoneOffsetHours(
+  ctx: app.Ctx,
+  userId: string,
+  offsetHours: number
+): Promise<number> {
   const clamped = clampOffsetHours(offsetHours)
   await userSettingsRepo.upsertTimezone(ctx, userId, clamped)
   return clamped

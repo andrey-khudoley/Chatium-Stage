@@ -19,7 +19,7 @@ export const apiSchedulesListRoute = reporterApp.get('/list', async (ctx, req) =
   const schedules = await AutowebinarSchedules.findAll(ctx, {
     where,
     order: [{ scheduledDate: 'asc' }],
-    limit: 100,
+    limit: 100
   })
 
   return schedules
@@ -37,9 +37,9 @@ export const apiScheduleByIdRoute = reporterApp.get('/by-id/:id', async (ctx, re
 
 // @shared-route
 export const apiScheduleCreateRoute = reporterApp
-  .body(s => ({
+  .body((s) => ({
     autowebinarId: s.string(),
-    scheduledDate: s.date(),
+    scheduledDate: s.date()
   }))
   .post('/create', async (ctx, req) => {
     requireAccountRole(ctx, 'Admin')
@@ -52,7 +52,7 @@ export const apiScheduleCreateRoute = reporterApp
     const schedule = await AutowebinarSchedules.create(ctx, {
       autowebinar: req.body.autowebinarId,
       scheduledDate,
-      status: ScheduleStatus.Scheduled,
+      status: ScheduleStatus.Scheduled
     })
 
     // Schedule the pre-start job at scheduledDate
@@ -63,8 +63,8 @@ export const apiScheduleCreateRoute = reporterApp
 
 // @shared-route
 export const apiScheduleCreateNowRoute = reporterApp
-  .body(s => ({
-    autowebinarId: s.string(),
+  .body((s) => ({
+    autowebinarId: s.string()
   }))
   .post('/create-now', async (ctx, req) => {
     requireAccountRole(ctx, 'Admin')
@@ -75,7 +75,7 @@ export const apiScheduleCreateNowRoute = reporterApp
     const schedule = await AutowebinarSchedules.create(ctx, {
       autowebinar: req.body.autowebinarId,
       scheduledDate: new Date(),
-      status: ScheduleStatus.Scheduled,
+      status: ScheduleStatus.Scheduled
     })
 
     await awPreStartJob.scheduleJobAsap(ctx, { scheduleId: schedule.id })
@@ -101,43 +101,46 @@ export const apiScheduleDeleteRoute = reporterApp.post('/delete/:id', async (ctx
 
 // Получить ближайший/текущий запуск для конкретного автовеба
 // @shared-route
-export const apiScheduleCurrentRoute = reporterApp.get('/current/:autowebinarId', async (ctx, req) => {
-  const autowebinarId = req.params.autowebinarId as string
+export const apiScheduleCurrentRoute = reporterApp.get(
+  '/current/:autowebinarId',
+  async (ctx, req) => {
+    const autowebinarId = req.params.autowebinarId as string
 
-  // Сначала ищем активные (live или waiting_room), берём самый свежий
-  const activeSchedules = await AutowebinarSchedules.findAll(ctx, {
-    where: {
-      autowebinar: autowebinarId,
-      status: [ScheduleStatus.Live, ScheduleStatus.WaitingRoom],
-    },
-    order: [{ scheduledDate: 'desc' }],
-    limit: 1,
-  })
+    // Сначала ищем активные (live или waiting_room), берём самый свежий
+    const activeSchedules = await AutowebinarSchedules.findAll(ctx, {
+      where: {
+        autowebinar: autowebinarId,
+        status: [ScheduleStatus.Live, ScheduleStatus.WaitingRoom]
+      },
+      order: [{ scheduledDate: 'desc' }],
+      limit: 1
+    })
 
-  if (activeSchedules.length > 0) return activeSchedules[0]
+    if (activeSchedules.length > 0) return activeSchedules[0]
 
-  // Иначе ближайший запланированный в будущем
-  const upcoming = await AutowebinarSchedules.findAll(ctx, {
-    where: {
-      autowebinar: autowebinarId,
-      status: ScheduleStatus.Scheduled,
-      scheduledDate: { $gte: new Date() },
-    },
-    order: [{ scheduledDate: 'asc' }],
-    limit: 1,
-  })
+    // Иначе ближайший запланированный в будущем
+    const upcoming = await AutowebinarSchedules.findAll(ctx, {
+      where: {
+        autowebinar: autowebinarId,
+        status: ScheduleStatus.Scheduled,
+        scheduledDate: { $gte: new Date() }
+      },
+      order: [{ scheduledDate: 'asc' }],
+      limit: 1
+    })
 
-  return upcoming[0] || null
-})
+    return upcoming[0] || null
+  }
+)
 
 // Массовое создание расписаний с интервалом
 // @shared-route
 export const apiScheduleBulkCreateRoute = reporterApp
-  .body(s => ({
+  .body((s) => ({
     autowebinarId: s.string(),
     startDate: s.date(),
     endDate: s.date(),
-    intervalMinutes: s.number(),
+    intervalMinutes: s.number()
   }))
   .post('/bulk-create', async (ctx, req) => {
     const MAX_BULK_SCHEDULES = 360
@@ -171,7 +174,7 @@ export const apiScheduleBulkCreateRoute = reporterApp
       const schedule = await AutowebinarSchedules.create(ctx, {
         autowebinar: req.body.autowebinarId,
         scheduledDate: new Date(currentDate),
-        status: ScheduleStatus.Scheduled,
+        status: ScheduleStatus.Scheduled
       })
 
       // Schedule the pre-start job at scheduledDate

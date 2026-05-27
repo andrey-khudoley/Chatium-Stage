@@ -5,7 +5,7 @@ export interface EventDefinition {
   type: 'traffic' | 'getcourse' | 'workspace' | 'custom'
   description: string
   urlPath?: string
-  urlPattern?: string  // Для фильтрации по паттерну (например, 'event://getcourse/%')
+  urlPattern?: string // Для фильтрации по паттерну (например, 'event://getcourse/%')
   fields?: EventField[]
   example?: Record<string, any>
 }
@@ -204,7 +204,7 @@ export const GETCOURSE_EVENTS: EventDefinition[] = [
     description: 'Изменены теги заказа',
     urlPath: 'event://getcourse/dealTagsChanged'
   },
-  
+
   // Пользователи (Users)
   {
     name: 'user/created',
@@ -248,7 +248,7 @@ export const GETCOURSE_EVENTS: EventDefinition[] = [
     description: 'Сессия связана с юзером',
     urlPath: 'event://getcourse/user/session_link'
   },
-  
+
   // Чат-боты
   {
     name: 'user/chatbot/telegram_enabled',
@@ -274,7 +274,7 @@ export const GETCOURSE_EVENTS: EventDefinition[] = [
     description: 'Отвязал ВКонтакте от профиля',
     urlPath: 'event://getcourse/user/chatbot/vk_disabled'
   },
-  
+
   // Обучение (Teaching)
   {
     name: 'teach/lesson/action',
@@ -306,7 +306,7 @@ export const GETCOURSE_EVENTS: EventDefinition[] = [
     description: 'Завершил тренинг',
     urlPath: 'event://getcourse/teach/trainingFinished'
   },
-  
+
   // Сообщения (Messages)
   {
     name: 'message/sent',
@@ -332,7 +332,7 @@ export const GETCOURSE_EVENTS: EventDefinition[] = [
     description: 'Отписался от рассылки',
     urlPath: 'event://getcourse/message/unsubscribed'
   },
-  
+
   // Формы и анкеты
   {
     name: 'form/sent',
@@ -346,7 +346,7 @@ export const GETCOURSE_EVENTS: EventDefinition[] = [
     description: 'Добавлен ответ на анкету',
     urlPath: 'event://getcourse/survey/answerCreated'
   },
-  
+
   // Обращения (Conversations)
   {
     name: 'conversation/addedMessage',
@@ -366,7 +366,7 @@ export const GETCOURSE_EVENTS: EventDefinition[] = [
     description: 'Обновлен ответственный или дедлайн по обращению',
     urlPath: 'event://getcourse/conversation/responsibilityUpdated'
   },
-  
+
   // Контакты и звонки
   {
     name: 'contact/created',
@@ -380,7 +380,7 @@ export const GETCOURSE_EVENTS: EventDefinition[] = [
     description: 'Добавлен файл звонка',
     urlPath: 'event://getcourse/contact/call_file_added'
   },
-  
+
   // ВКонтакте
   {
     name: 'vk/visitSuccess',
@@ -439,4 +439,3 @@ export function getGetCourseEvents(): EventDefinition[] {
 export function getEventCategories(): EventDefinition[] {
   return EVENT_CATEGORIES
 }
-

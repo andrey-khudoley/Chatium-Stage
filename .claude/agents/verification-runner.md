@@ -62,10 +62,12 @@ git ls-files --others --exclude-standard
 ### Шаг 4. Параллельный запуск sub-checker'ов
 
 **Важно:** все три sub-checker'а независимы друг от друга. Вызови их через **Agent** в **одном сообщении** с тремя tool calls параллельно. Каждому передай:
+
 - общий контекст задачи
 - **точный список затронутых файлов** (из шага 1) — чтобы они не пересчитывали git diff заново
 
 Sub-checker'ы:
+
 1. `standards-checker` — стандарты 001-standards.md
 2. `file-based-routing-checker` — роутинг и ссылки
 3. `runtime-architecture-checker` — рантайм-баги и архитектура

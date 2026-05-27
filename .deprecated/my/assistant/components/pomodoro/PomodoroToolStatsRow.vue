@@ -16,21 +16,15 @@ defineProps<{
   <div class="tool-stats-row">
     <div class="stat-cell">
       <span class="stat-cell__value">{{ firstText }}</span>
-      <span class="stat-cell__label">
-        <i :class="firstIcon" /> {{ firstLabel }}
-      </span>
+      <span class="stat-cell__label"> <i :class="firstIcon" /> {{ firstLabel }} </span>
     </div>
     <div class="stat-cell">
       <span class="stat-cell__value">{{ secondText }}</span>
-      <span class="stat-cell__label">
-        <i :class="secondIcon" /> {{ secondLabel }}
-      </span>
+      <span class="stat-cell__label"> <i :class="secondIcon" /> {{ secondLabel }} </span>
     </div>
     <div class="stat-cell">
       <span class="stat-cell__value">{{ thirdText }}</span>
-      <span class="stat-cell__label">
-        <i :class="thirdIcon" /> {{ thirdLabel }}
-      </span>
+      <span class="stat-cell__label"> <i :class="thirdIcon" /> {{ thirdLabel }} </span>
     </div>
   </div>
 </template>

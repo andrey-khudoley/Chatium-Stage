@@ -7,6 +7,7 @@
 ## Контекст
 
 После этапа 1 рефакторинга (ADR-0003) архитектура gateway включала:
+
 - codegen-пайплайн: три скрипта генерировали `*.generated.ts` из `config/gc-op-http-mapping.json` и OpenAPI JSON;
 - центральный обработчик `handleV1OpRoute.ts` со встроенным выбором контура (не per-op);
 - события workspace через `gatewayWorkspaceEvents.ts` (`@start/sdk`) как механизм наблюдаемости;
@@ -19,6 +20,7 @@
 ### 1. Рукописный каталог вместо codegen
 
 `lib/gateway/operationsCatalog.ts` переписан как статический массив `operationsCatalog: OperationEntry[]` (59 записей). Каждая запись содержит:
+
 - метаданные: `op`, `contour`, `httpMethod`, `pathTemplate`, `availability`, `legacyImportAction`;
 - `argsValidator` — объект `s.object(...)` из `@app/schema` для runtime-валидации;
 - `argsSchema` — plain-описание полей `fields[]` для отдачи клиентам через `GET /v1/operations`.
@@ -44,6 +46,7 @@
 Удалены: `lib/gateway/gatewayWorkspaceEvents.ts` (`writeWorkspaceEvent` / `getWorkspaceEventUrl` из `@start/sdk`), `api/gateway-analytics/invocations.ts`, `api/gateway-analytics/filter-save.ts`.
 
 Введены две Heap-таблицы:
+
 - `gatewayRequestLog` (UID `t__saas-gw-gc__greq__Gr9Qm2`) — запись на каждый входящий `/v1/{op}`;
 - `gatewayUpstreamLog` (UID `t__saas-gw-gc__gups__Up7Mn3`) — запись на каждый исходящий вызов GC.
 

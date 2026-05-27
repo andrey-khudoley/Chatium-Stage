@@ -53,7 +53,9 @@ export const PomodoroLaunches = Heap.Table('t__assistant__pomodoro_launch__9Hk2t
       searchable: { langs: ['ru', 'en'], embeddings: false }
     })
   ),
-  runId: Heap.Optional(Heap.String({ customMeta: { title: 'ID непрерывного запуска (смена задачи — тот же runId)' } }))
+  runId: Heap.Optional(
+    Heap.String({ customMeta: { title: 'ID непрерывного запуска (смена задачи — тот же runId)' } })
+  )
 })
 
 export default PomodoroLaunches

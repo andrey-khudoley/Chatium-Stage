@@ -9,19 +9,22 @@ export const TProjektChatChatInvitesWDM = Heap.Table(
     invitedUser: Heap.Optional(Heap.UserRefLink({ customMeta: { title: 'Кого пригласили' } })),
     status: Heap.Optional(Heap.String({ customMeta: { title: 'Статус приглашения' } })),
     token: Heap.Optional(
-      Heap.String({ customMeta: { title: 'Токен приглашения' }, searchable: { langs: ['ru', 'en'] } }),
+      Heap.String({
+        customMeta: { title: 'Токен приглашения' },
+        searchable: { langs: ['ru', 'en'] }
+      })
     ),
     inviteType: Heap.Optional(Heap.String({ customMeta: { title: 'Тип приглашения' } })),
     inviteValue: Heap.Optional(
       Heap.String({
         customMeta: { title: 'Значение приглашения (email/phone/username)' },
-        searchable: { langs: ['ru', 'en'] },
-      }),
+        searchable: { langs: ['ru', 'en'] }
+      })
     ),
     isLinkInvite: Heap.Optional(Heap.Boolean({ customMeta: { title: 'Приглашение по ссылке' } })),
-    expiresAt: Heap.Optional(Heap.DateTime({ customMeta: { title: 'Срок действия' } })),
+    expiresAt: Heap.Optional(Heap.DateTime({ customMeta: { title: 'Срок действия' } }))
   },
-  { customMeta: { title: 'Приглашения в чаты', description: '' } },
+  { customMeta: { title: 'Приглашения в чаты', description: '' } }
 )
 
 export default TProjektChatChatInvitesWDM

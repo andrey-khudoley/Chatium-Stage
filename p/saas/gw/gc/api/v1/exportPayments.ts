@@ -12,6 +12,8 @@ export const exportPaymentsHandler: V1GcHandler = async (_ctx, a) => {
   return { kind: 'gc_result', gc }
 }
 
-export const exportPaymentsRoute = app.get('/', async (ctx, req) => handleV1Op(ctx, req, 'exportPayments', exportPaymentsHandler))
+export const exportPaymentsRoute = app.get('/', async (ctx, req) =>
+  handleV1Op(ctx, req, 'exportPayments', exportPaymentsHandler)
+)
 
 export default exportPaymentsRoute

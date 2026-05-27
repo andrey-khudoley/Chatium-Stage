@@ -161,7 +161,7 @@ async function startRecording(event) {
     mediaRecorder.value.start(100)
     isRecording.value = true
     recordingDuration.value = 0
-    
+
     // Запрашиваем Wake Lock чтобы экран не затухал
     await requestWakeLock()
 
@@ -171,7 +171,6 @@ async function startRecording(event) {
 
     await nextTick()
     drawWaveform()
-
   } catch (err) {
     console.error('Failed to start recording:', err)
     alert('Не удалось получить доступ к микрофону')
@@ -183,11 +182,11 @@ function getSupportedMimeType() {
   // Opus в WebM — единственный формат, поддерживаемый всеми современными браузерами
   // Firefox предпочитает Ogg, но он не работает в Chrome/Safari
   const preferredType = 'audio/webm;codecs=opus'
-  
+
   if (MediaRecorder.isTypeSupported(preferredType)) {
     return preferredType
   }
-  
+
   // Fallback для старых браузеров
   const fallbackTypes = [
     'audio/webm',
@@ -196,13 +195,13 @@ function getSupportedMimeType() {
     'audio/ogg',
     'audio/wav'
   ]
-  
+
   for (const type of fallbackTypes) {
     if (MediaRecorder.isTypeSupported(type)) {
       return type
     }
   }
-  
+
   return 'audio/webm'
 }
 
@@ -268,7 +267,7 @@ function handleRecordingStop() {
 
   try {
     const audioBlob = new Blob(audioChunks.value, { type: mimeType })
-    
+
     // Проверяем, что Blob валидный
     if (audioBlob.size === 0) {
       console.error('Recorded blob is empty')
@@ -277,7 +276,7 @@ function handleRecordingStop() {
       isCancelled.value = false
       return
     }
-    
+
     const file = new File([audioBlob], `voice-message-${Date.now()}.${extension}`, {
       type: mimeType,
       lastModified: Date.now()
@@ -285,7 +284,7 @@ function handleRecordingStop() {
 
     file.duration = recordingDuration.value
     file.isVoiceMessage = true
-    
+
     // console.log('Voice file created (modal):', {
     //   name: file.name,
     //   size: file.size,
@@ -329,7 +328,7 @@ async function cleanup() {
   // Сбрасываем состояние
   isRecording.value = false
   // Не сбрасываем isCancelled здесь - пусть handleRecordingStop() разберётся
-  
+
   // Освобождаем Wake Lock
   await releaseWakeLock()
 
@@ -344,7 +343,7 @@ async function cleanup() {
   }
 
   if (stream.value) {
-    stream.value.getTracks().forEach(track => track.stop())
+    stream.value.getTracks().forEach((track) => track.stop())
     stream.value = null
   }
 
@@ -481,8 +480,13 @@ onUnmounted(() => {
 }
 
 @keyframes blink {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.3; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
 }
 
 .voice-hint {

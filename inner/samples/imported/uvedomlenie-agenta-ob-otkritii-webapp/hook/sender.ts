@@ -35,13 +35,17 @@ app.accountHook('@sender/webapp-opened', async (ctx, params) => {
 
   const telegramId = identity?.key
 
-  const userData = JSON.stringify({
-    firstName: user?.firstName,
-    lastName: user?.lastName,
-    phone: user?.confirmedPhone,
-    email: user?.confirmedEmail,
-    // isNewUser
-  }, null, 2)
+  const userData = JSON.stringify(
+    {
+      firstName: user?.firstName,
+      lastName: user?.lastName,
+      phone: user?.confirmedPhone,
+      email: user?.confirmedEmail
+      // isNewUser
+    },
+    null,
+    2
+  )
 
   const chatResult = await getOrCreateChat(ctx, {
     externalId: telegramId || userId,
@@ -57,9 +61,10 @@ app.accountHook('@sender/webapp-opened', async (ctx, params) => {
   if (!chatResult.success || !chatResult.chat) {
     return false
   }
-  
-  let messageText = (settings.messageTemplate || 'Пользователь открыл WebApp.\n\nДанные пользователя:\n[userData]')
-    .replace('[userData]', userData)
+
+  let messageText = (
+    settings.messageTemplate || 'Пользователь открыл WebApp.\n\nДанные пользователя:\n[userData]'
+  ).replace('[userData]', userData)
 
   messageText += '\n\nChat ID: ' + chatResult.chat.id
 

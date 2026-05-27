@@ -1,5 +1,5 @@
 // @shared
-import { jsx } from "@app/html-jsx"
+import { jsx } from '@app/html-jsx'
 import { requireRealUser } from '@app/auth'
 import HomePage from './pages/HomePage.vue'
 import { TgChannelAnalyticsSettings, ensureDefaultSettings } from './tables/settings.table'
@@ -9,13 +9,13 @@ import { settingsPageRoute } from './settings'
 
 export const indexPageRoute = app.html('/', async (ctx, req) => {
   await ensureDefaultSettings(ctx)
-  
+
   const titleSetting = await TgChannelAnalyticsSettings.findOneBy(ctx, { key: 'project_title' })
   const projectTitle = titleSetting?.value ?? 'Аналитика телеграм-каналов'
-  
+
   // Проверяем авторизацию пользователя
   const isAuthenticated = !!ctx.user
-  
+
   return (
     <html class="dark">
       <head>
@@ -490,12 +490,15 @@ export const indexPageRoute = app.html('/', async (ctx, req) => {
               window.addEventListener('bootloader-complete', setupGlitchEffect);
             }
           })();
-        `}</script> 
+        `}</script>
         <script src="/s/static/lib/tailwind.3.4.16.min.js"></script>
         <link rel="stylesheet" href="/s/static/lib/fontawesome/6.7.2/css/all.min.css" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
-        <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap"
+          rel="stylesheet"
+        />
         <style>{`
           :root {
             --color-bg: #0a0a0a;
@@ -546,7 +549,7 @@ export const indexPageRoute = app.html('/', async (ctx, req) => {
             <div id="boot-messages-container"></div>
           </div>
         </div>
-        <HomePage 
+        <HomePage
           projectTitle={projectTitle}
           indexUrl={indexPageRoute.url()}
           analyticsUrl={analyticsPageRoute.url()}
@@ -578,11 +581,11 @@ export const analyticsPageRoute = app.html('/analytics', async (ctx, req) => {
       </html>
     )
   }
-  
+
   await ensureDefaultSettings(ctx)
   const titleSetting = await TgChannelAnalyticsSettings.findOneBy(ctx, { key: 'project_title' })
   const projectTitle = titleSetting?.value ?? 'Аналитика телеграм-каналов'
-  
+
   return (
     <html>
       <head>
@@ -620,11 +623,11 @@ export const channelsPageRoute = app.html('/channels', async (ctx, req) => {
       </html>
     )
   }
-  
+
   await ensureDefaultSettings(ctx)
   const titleSetting = await TgChannelAnalyticsSettings.findOneBy(ctx, { key: 'project_title' })
   const projectTitle = titleSetting?.value ?? 'Аналитика телеграм-каналов'
-  
+
   return (
     <html>
       <head>
@@ -662,11 +665,11 @@ export const botsPageRoute = app.html('/bots', async (ctx, req) => {
       </html>
     )
   }
-  
+
   await ensureDefaultSettings(ctx)
   const titleSetting = await TgChannelAnalyticsSettings.findOneBy(ctx, { key: 'project_title' })
   const projectTitle = titleSetting?.value ?? 'Аналитика телеграм-каналов'
-  
+
   return (
     <html>
       <head>
