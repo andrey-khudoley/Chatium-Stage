@@ -1,5 +1,5 @@
 /** Название проекта по умолчанию (если в настройках не задано) */
-export const DEFAULT_PROJECT_TITLE = 'GetCourse → LifePay Gateway'
+export const DEFAULT_PROJECT_TITLE = 'LifePay Gateway'
 
 /** Имя страницы: для главной и профиля */
 export const INDEX_PAGE_NAME = 'Главная'
@@ -18,7 +18,7 @@ export function getHeaderText(pageName: string, projectName: string): string {
 }
 
 /** Текст контента домашней страницы (заголовок) */
-export const BODY_TEXT = 'Шаблон проекта'
+export const BODY_TEXT = 'Gateway LifePay'
 
 /** Подзаголовок домашней страницы */
-export const BODY_SUBTEXT = 'В разработке'
+export const BODY_SUBTEXT = 'Прокси-слой к платёжному API LifePay'

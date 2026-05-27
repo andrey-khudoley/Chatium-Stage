@@ -78,8 +78,8 @@ export function normalizeDateFilter(value: unknown): DateFilter {
 
 /** Значения по умолчанию */
 export const DEFAULTS = {
-  [SETTING_KEYS.PROJECT_NAME]: 'GetCourse → LifePay Gateway',
-  [SETTING_KEYS.PROJECT_TITLE]: 'GC→LifePay',
+  [SETTING_KEYS.PROJECT_NAME]: 'LifePay Gateway',
+  [SETTING_KEYS.PROJECT_TITLE]: 'LifePay',
   [SETTING_KEYS.LOG_LEVEL]: 'Info',
   [SETTING_KEYS.LOGS_LIMIT]: '100',
   [SETTING_KEYS.LOG_WEBHOOK]: { enable: false, url: '' } as LogWebhookSetting,
@@ -123,7 +123,8 @@ export async function getSettingString(ctx: app.Ctx, key: string): Promise<strin
     payload: { key }
   })
   const value = await getSetting(ctx, key)
-  const result = typeof value === 'string' ? value : String((DEFAULTS as Record<string, unknown>)[key] ?? '')
+  const result =
+    typeof value === 'string' ? value : String((DEFAULTS as Record<string, unknown>)[key] ?? '')
   await loggerLib.writeServerLog(ctx, {
     severity: 6,
     message: `[${LOG_MODULE}] getSettingString exit`,
@@ -257,7 +258,9 @@ export async function setSetting(ctx: app.Ctx, key: string, value: unknown): Pro
       payload: { str, isLogLevel: isLogLevel(str) }
     })
     if (!isLogLevel(str)) {
-      throw new Error(`Недопустимый уровень логирования: ${str}. Допустимо: ${LOG_LEVELS.join(', ')}`)
+      throw new Error(
+        `Недопустимый уровень логирования: ${str}. Допустимо: ${LOG_LEVELS.join(', ')}`
+      )
     }
     normalized = str
   } else if (key === SETTING_KEYS.LOGS_LIMIT) {
@@ -330,7 +333,9 @@ export async function setSetting(ctx: app.Ctx, key: string, value: unknown): Pro
     })
   } else if (key === SETTING_KEYS.PANEL_DATE_FILTER) {
     if (!isValidDateFilter(value)) {
-      throw new Error('panel_date_filter должен быть объектом { from?: number > 0, to?: number > 0 }, при обеих границах from <= to')
+      throw new Error(
+        'panel_date_filter должен быть объектом { from?: number > 0, to?: number > 0 }, при обеих границах from <= to'
+      )
     }
     normalized = normalizeDateFilter(value)
     await loggerLib.writeServerLog(ctx, {
