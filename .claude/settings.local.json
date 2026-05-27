@@ -22,10 +22,13 @@
       "Bash(powershell -Command \"Get-Command tsc -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source; node --version 2>&1; npx --version 2>&1\")",
       "Bash(Out-String)",
       "Bash(git -c core.quotepath=false status --porcelain)",
-      "Edit(/.claude/skills/auto-commit/**)"
+      "Edit(/.claude/skills/auto-commit/**)",
+      "Bash(node \"D:/Users/andrey/.claude/plans/extract-style.mjs\" p/template_project/components/Header.vue headerStyles p/template_project/styles.tsx)",
+      "Bash(node scripts/check-style.mjs p/template_project)"
     ],
     "additionalDirectories": [
-      "/home/aley/.cursor-server/data/User/globalStorage/chatium.chatium-sync/s.chtm.khudoley.pro/.claude"
+      "/home/aley/.cursor-server/data/User/globalStorage/chatium.chatium-sync/s.chtm.khudoley.pro/.claude",
+      "D:\\Users\\andrey\\.claude\\plans"
     ]
   }
 }
