@@ -1,10 +1,13 @@
 # lifepay — LifePay payments-gateway (Chatium)
 
 ## Назначение
+
 Серверный шлюз к LifePay для проекта «GetCourse платежи (школа Яковлевых)». Публикует контур `bills_v1` (`/v1/createBill`, `/v1/getBillStatus`, `/v1/cancelBill`, `/v1/operations`) с маршрутизацией к LifePay через `@app/request`; на `/` — панель оператора с журналами. Каркас изначально скопирован из `p/template_project` (отсюда исторические упоминания шаблона в changelog ниже).
 
 ## Спецификации проекта (SSOT)
+
 Перенесены в модуль 2026-05-24 (ранее жили в Obsidian-ваулте):
+
 - **`docs/gateway/operation-manual.md`** — единственный полный технический норматив (контракты `/v1/{op}`, секреты, коды ошибок, наблюдаемость). SSOT.
 - `docs/gateway/implementation-plan.md` — план Прототип → MVP → Прод (вкл. §1.11 внутренние права доступа).
 - `docs/gateway/testing-strategy.md` — стратегия юнит/интеграционных тестов.
@@ -12,11 +15,13 @@
 - **Проектный хаб** (бриф, реестр решений, приёмка, база знаний сервисов): `../../../units/aayakovleva/project-docs/README.md`.
 
 ## Важно
+
 - Платформа: Chatium. Серверная часть управляется платформой.
 - Стек фиксирован платформой, новые зависимости не добавляем.
 - Деплой происходит автоматически после пуша.
 
 ## Текущее состояние
+
 - Публичный API gateway v1 (контур `bills_v1`): `POST /v1/createBill`, `GET /v1/getBillStatus?billNumber=...`, `POST /v1/cancelBill`, `GET /v1/operations` — четыре файловых роута в `api/v1/`. Обязательные заголовки `X-Lp-Apikey`, `X-Lp-Login` для трёх первых. Общая цепочка инкапсулирована в `lib/gateway/handleV1Op.ts`.
 - Каталог операций `lib/gateway/operationsCatalog.ts` — SSOT для валидации и UI.
 - Вкладка «Тест запроса» на `/web/tests` (Admin-only): `components/RequestTestTab.vue`.
@@ -30,6 +35,7 @@
 - Сервисная инфраструктура: API настроек, серверные логи, дашборд, API тестов — без изменений. Детали — `docs/api.md`, `docs/data.md`.
 
 ## Навигация по документации
+
 - Индекс каталога docs: `docs/README.md`
 - Архитектура (роутинг, слои, система доступов, фильтр по дате): `docs/architecture.md`
 - API (все эндпоинты, включая `api/access/` и filter-save): `docs/api.md`
@@ -40,9 +46,12 @@
 - Спецификации проекта: `docs/gateway/` + проектный хаб `../../../units/aayakovleva/project-docs/README.md`
 
 ## TODO
+
 - Описать бизнес‑логику и данные (на уровне доменной модели).
 
 ## Changelog
+
+- 2026-05-27: **дропдаун операций «Создать запрос» — группировка по доступности** — операции в `<select>` (`components/RequestTestTab.vue`) разбиты на `<optgroup>` «Доступные» (enabled) и «Недоступные» (остальные availability) через computed `enabledOps`/`otherOps`: сначала доступные, затем разделитель и недоступные. Одинаково применено во всех гейтвеях (`gc`/`lavatop`/`lifepay`).
 - 2026-05-26: **вкладка «Создать запрос» на главной панели** — `components/RequestTestTab.vue` доработан: опциональный проп `testValues` (`LpTestValues`); кнопки «Подставить» тестовые значения (из SSR-пропа в HomePage или `getSettingRoute` в TestsPage), «Подставить» email, «Очистить»; скрытие секретных полей; 4 снапшот-блока (заголовки/тело запроса, ответ LifePay, ответ гейтвея). `HomePage.vue` добавлена вкладка «Создать запрос». `index.tsx` читает `lp_test_apikey`/`lp_test_login` из Heap через `settingsLib.getSettingString` и передаёт как SSR-проп. `shared/gatewaySettingKeys.ts` — добавлен тип `LpTestValues`. Новых API-роутов нет.
 - 2026-05-26: **дашборд на главной — сводка для администратора + таблицы входящих/исходящих** — вкладка «Обзор» переписана по образцу `sbp-client`: блок «Сводка для администратора» с периодом (по умолчанию «за всё время», управляется тем же фильтром по дате) и метриками — запросов, % успешных, p95 latency, вызовов к LifePay, avg latency, top errorCode, upstream success %, ошибок ответа; ниже — `feed-grid` из двух таблиц-превью «Последние входящие запросы» и «Последние вызовы к LifePay» (по 5 строк) с переходом на полные журналы. `api/admin/dashboard/gatewayCounts` переведён с фиксированного окна 24ч на глобальный фильтр панели (`getPanelDateFilter`); добавлен расчёт okShare, avg/p95 latency, topErrorCode и upstreamOkShare (репо-хелперы `countInRange`/`countErrorsInRange`/`countOkInRange`, скан до `DASHBOARD_SCAN_LIMIT`). Только панель и метрики, контракт `/v1/*` не затронут.
 - 2026-05-25: визуальный дизайн приведён к референсу `p/units/aayakovleva/sbp-client` — общий `crtBackgroundStyles` (CRT-фон/vignette/scanlines/glitch) вынесен в `styles.tsx` и подключён в `index.tsx` вместо инлайна (на `body` добавлены `color`/`font-family`/`letter-spacing`); `Header.vue` — `min-width: 0`; на панели `HomePage.vue` 38 общих селекторов выровнены к референсу (clip-path-скосы вместо `border-radius`, полупрозрачные фоны, uppercase-типографика), а проектные `.panel-toolbar`/`.filter-bar`/`.filter-input`/`.badge` переведены на тот же острый bevelled-стиль. Только CSS/визуал, логика и API не затронуты.
@@ -85,9 +94,9 @@
 - 2026-02-02: серверные логи: таблица logs, repos/logs.repo, lib/logger.lib, api/logger/log (POST), админка — encodedLogsSocketId и подписка на new-log; сокет без accountId. Body API: только message (обяз.), severity? (0–7), payload?; timestamp и level вычисляются в lib; имя модуля в тексте message. Формат вывода: `[DD.MM.YYYY HH:mm:ss.SSS] [LEVEL] message` (пробелы между группами в скобках).
 - 2026-02-01: клиентская часть покрыта логами (createComponentLogger, setLogSink, sink в AdminPage дашборде; HomePage, AdminPage, ProfilePage, LoginPage, Header, AppFooter, GlobalGlitch, LogoutModal).
 - 2026-02-01: добавлен уровень логирования Debug (кнопка в админке перед Info, lib LOG_LEVELS, logger CONFIG_LEVELS и порог, API save -1–4), порядок: Debug, Info, Warn, Error, Disable.
-- 2026-02-01: уровень логирования -1 (логи выключены): LOG_LEVEL_OFF в shared/logger, приём -1 в window.__BOOT__.logLevel, API save принимает -1 → Disable.
-- 2026-02-01: shared/logger — логгер для браузера (logInfo, logWarn, logError с проверкой уровня по window.__BOOT__.logLevel), импорт в HomePage, AdminPage, ProfilePage.
-- 2026-02-01: чтение уровня логирования при загрузке страницы — shared/logLevel.ts, вызов getLogLevel в lib, скрипт window.__BOOT__.logLevel на главной, админке и профиле (без логина).
+- 2026-02-01: уровень логирования -1 (логи выключены): LOG_LEVEL_OFF в shared/logger, приём -1 в `window.__BOOT__.logLevel`, API save принимает -1 → Disable.
+- 2026-02-01: shared/logger — логгер для браузера (logInfo, logWarn, logError с проверкой уровня по `window.__BOOT__.logLevel`), импорт в HomePage, AdminPage, ProfilePage.
+- 2026-02-01: чтение уровня логирования при загрузке страницы — shared/logLevel.ts, вызов getLogLevel в lib, скрипт `window.__BOOT__.logLevel` на главной, админке и профиле (без логина).
 - 2026-02-01: мгновенное сохранение уровня логирования в админке (кнопки → .run() → POST /api/settings/save), нормализация чисел 0–3 и строк в API.
 - 2026-02-01: добавлен ADR-0002 — настройки в Heap и слоистая архитектура API (решения коммита aaf4a0a).
 - 2026-02-01: обновлено «Текущее состояние» — отражены API настроек, таблица, репозиторий, lib.
