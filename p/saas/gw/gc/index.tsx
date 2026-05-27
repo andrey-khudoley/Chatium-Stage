@@ -3,6 +3,7 @@ import { requireRealUser } from '@app/auth'
 import PanelHomePage from './pages/PanelHomePage.vue'
 import { getPreloaderStyles, getPreloaderScript } from './lib/preloader'
 import { crtBackgroundStyles, customScrollbarStyles } from './styles'
+import { requestTestTabStyles } from './styles.requestTest'
 import { getLogLevelForPage, getLogLevelScript } from './lib/logLevel'
 import { getFullUrl, ROUTES, ROUTE_PATHS, PROJECT_ROOT } from './config/routes'
 import {
@@ -102,6 +103,7 @@ export const indexPageRoute = app.html('/', async (ctx, req) => {
         <script>{getLogLevelScript(logLevel)}</script>
         <style>{crtBackgroundStyles}</style>
         <style>{customScrollbarStyles}</style>
+        <style>{requestTestTabStyles}</style>
         <style>{getPreloaderStyles()}</style>
         <script>{getPreloaderScript()}</script>
         <script src="/s/metric/clarity.js"></script>
