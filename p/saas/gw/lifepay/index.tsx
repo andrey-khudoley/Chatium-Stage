@@ -3,6 +3,11 @@ import { requireRealUser } from '@app/auth'
 import HomePage from './pages/HomePage.vue'
 import { getPreloaderStyles, getPreloaderScript } from './shared/preloader'
 import { crtBackgroundStyles, customScrollbarStyles } from './styles'
+import { lifepayHeaderCss1 } from './pagecss/lifepayHeaderCss1'
+import { lifepayHeaderCss2 } from './pagecss/lifepayHeaderCss2'
+import { lifepayHomeCss1 } from './pagecss/lifepayHomeCss1'
+import { lifepayHomeCss2 } from './pagecss/lifepayHomeCss2'
+import { lifepayHomeCss3 } from './pagecss/lifepayHomeCss3'
 import { requestTestTabStyles } from './styles.requestTest'
 import { getLogLevelForPage, getLogLevelScript } from './shared/logLevel'
 import { getFullUrl, ROUTES, ROUTE_PATHS, PROJECT_ROOT } from './config/routes'
@@ -104,6 +109,11 @@ export const indexPageRoute = app.html('/', async (ctx, req) => {
         <script>{getLogLevelScript(logLevel)}</script>
         <style>{crtBackgroundStyles}</style>
         <style>{customScrollbarStyles}</style>
+        <style>{lifepayHeaderCss1}</style>
+        <style>{lifepayHeaderCss2}</style>
+        <style>{lifepayHomeCss1}</style>
+        <style>{lifepayHomeCss2}</style>
+        <style>{lifepayHomeCss3}</style>
         <style>{requestTestTabStyles}</style>
         <style>{getPreloaderStyles()}</style>
         <script>{getPreloaderScript()}</script>

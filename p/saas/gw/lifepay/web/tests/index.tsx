@@ -10,6 +10,12 @@ import { getFullUrl, PROJECT_ROOT, ROUTES } from '../../config/routes'
 import { TESTS_PAGE_NAME, getPageTitle, getHeaderText } from '../../config/project'
 import * as settingsLib from '../../lib/settings.lib'
 import { customScrollbarStyles } from '../../styles'
+import { lifepayHeaderCss1 } from '../../pagecss/lifepayHeaderCss1'
+import { lifepayHeaderCss2 } from '../../pagecss/lifepayHeaderCss2'
+import { lifepayTestsCss1 } from '../../pagecss/lifepayTestsCss1'
+import { lifepayTestsCss2 } from '../../pagecss/lifepayTestsCss2'
+import { lifepayTestsCss3 } from '../../pagecss/lifepayTestsCss3'
+import { lifepayTestsCss4 } from '../../pagecss/lifepayTestsCss4'
 import { requestTestTabStyles } from '../../styles.requestTest'
 import { toOperationSummaries } from '../../lib/gateway/operationsCatalog'
 import { htmlRedirect } from '../../lib/htmlRedirect'
@@ -96,6 +102,12 @@ export const testsPageRoute = app.html('/', async (ctx, req) => {
         <script src="/s/metric/clarity.js"></script>
         <style>{getPreloaderStyles()}</style>
         <style>{customScrollbarStyles}</style>
+        <style>{lifepayHeaderCss1}</style>
+        <style>{lifepayHeaderCss2}</style>
+        <style>{lifepayTestsCss1}</style>
+        <style>{lifepayTestsCss2}</style>
+        <style>{lifepayTestsCss3}</style>
+        <style>{lifepayTestsCss4}</style>
         <style>{requestTestTabStyles}</style>
         <style>{`
           html {

@@ -12,6 +12,11 @@ import { getFullUrl, ROUTES } from '../../config/routes'
 import { ADMIN_PAGE_NAME, getPageTitle, getHeaderText } from '../../config/project'
 import * as settingsLib from '../../lib/settings.lib'
 import { customScrollbarStyles } from '../../styles'
+import { lifepayHeaderCss1 } from '../../pagecss/lifepayHeaderCss1'
+import { lifepayHeaderCss2 } from '../../pagecss/lifepayHeaderCss2'
+import { lifepayAdminCss1 } from '../../pagecss/lifepayAdminCss1'
+import { lifepayAdminCss2 } from '../../pagecss/lifepayAdminCss2'
+import { lifepayAdminCss3 } from '../../pagecss/lifepayAdminCss3'
 
 const LOG_PATH = 'web/admin/index'
 
@@ -179,6 +184,11 @@ export const adminPageRoute = app.html('/', async (ctx, req) => {
         <script src="/s/metric/clarity.js"></script>
         <style>{adminPageStyles}</style>
         <style>{customScrollbarStyles}</style>
+        <style>{lifepayHeaderCss1}</style>
+        <style>{lifepayHeaderCss2}</style>
+        <style>{lifepayAdminCss1}</style>
+        <style>{lifepayAdminCss2}</style>
+        <style>{lifepayAdminCss3}</style>
         <style>{getPreloaderStyles()}</style>
         <script>{getPreloaderScript()}</script>
         <script src="/s/static/lib/tailwind.3.4.16.min.js"></script>

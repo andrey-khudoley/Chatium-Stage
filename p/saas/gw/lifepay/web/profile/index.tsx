@@ -8,6 +8,10 @@ import { getFullUrl, ROUTES } from '../../config/routes'
 import { PROFILE_PAGE_NAME, getPageTitle, getHeaderText } from '../../config/project'
 import * as settingsLib from '../../lib/settings.lib'
 import { customScrollbarStyles } from '../../styles'
+import { lifepayHeaderCss1 } from '../../pagecss/lifepayHeaderCss1'
+import { lifepayHeaderCss2 } from '../../pagecss/lifepayHeaderCss2'
+import { lifepayProfileCss1 } from '../../pagecss/lifepayProfileCss1'
+import { lifepayProfileCss2 } from '../../pagecss/lifepayProfileCss2'
 import { htmlRedirect } from '../../lib/htmlRedirect'
 
 const LOG_PATH = 'web/profile/index'
@@ -72,6 +76,10 @@ export const profilePageRoute = app.html('/', async (ctx, req) => {
         <script src="/s/metric/clarity.js"></script>
         <style>{getPreloaderStyles()}</style>
         <style>{customScrollbarStyles}</style>
+        <style>{lifepayHeaderCss1}</style>
+        <style>{lifepayHeaderCss2}</style>
+        <style>{lifepayProfileCss1}</style>
+        <style>{lifepayProfileCss2}</style>
         <style>{`
           html {
             margin: 0;
