@@ -18,7 +18,7 @@ export function getHeaderText(pageName: string, projectName: string): string {
 }
 
 /** Текст контента домашней страницы (заголовок) */
-export const BODY_TEXT = 'Шаблон проекта'
+export const BODY_TEXT = 'Gateway Lava.Top'
 
 /** Подзаголовок домашней страницы */
-export const BODY_SUBTEXT = 'В разработке'
+export const BODY_SUBTEXT = 'Прокси-слой к API Lava.Top'
