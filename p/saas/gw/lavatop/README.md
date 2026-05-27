@@ -1,14 +1,17 @@
 # lavatop — Lava.Top gateway (Chatium)
 
 ## Назначение
+
 Серверный шлюз к Lava.Top (`p/saas/gw/lavatop`), аналогичный соседним шлюзам `lifepay` и `gc`. Публикует публичный контур `invoices_v1` (`/v1/createInvoice`, `/v1/getInvoiceStatus`, `/v1/listProducts`, `/v1/updateOfferPrice`, `/v1/operations`) с маршрутизацией к `https://gate.lava.top`; принимает вебхуки Lava.Top и проксирует их на клиентский callback (`webhook-relay`); на `/` — панель оператора с журналами, KPI и управлением доступами. Каркас изначально скопирован из `p/template_project` (отсюда исторические упоминания шаблона в `docs/LLM/` и changelog ниже).
 
 ## Важно
+
 - Платформа: Chatium. Серверная часть управляется платформой.
 - Стек фиксирован платформой, новые зависимости не добавляем.
 - Деплой происходит автоматически после пуша.
 
 ## Текущее состояние
+
 - **Публичный контур `invoices_v1`**: `POST /v1/createInvoice`, `GET /v1/getInvoiceStatus`, `GET /v1/listProducts`, `POST /v1/updateOfferPrice`, `GET /v1/operations`. Авторизация клиента — заголовок `X-Lava-Apikey`, проксируется в Lava.Top как `X-Api-Key`. Общая цепочка инкапсулирована в `lib/gateway/handleV1Op.ts`. Клиент Lava.Top — `lib/gateway/lavaTopClient.ts` (обработка 429→rate_limited, timeout, network). Семантика ответов — `lib/gateway/invoicesV1Semantic.ts`. Каталог операций (SSOT) — `lib/gateway/operationsCatalog.ts`.
 - **Webhook-relay**: `GET/POST /api/webhook/receive` принимает `PurchaseWebhookLog` от Lava.Top. Авторизация по `lava_webhook_secret` (заголовок `X-Api-Key` или Basic). Сервис `lib/webhook/webhookRelay.service.ts` — дедупликация по `eventType:contractId:status`, поиск маппинга по `contractId` (для рекуррентных — fallback по `parentContractId`), форвард best-effort на клиентский callback. Маппинг создаётся в `createInvoice` при наличии `callbackUrl`. Вся цепочка под `runWithExclusiveLock`. Решение — `docs/ADR/0003-webhook-relay.md`.
 - **Панель оператора `/`** (`pages/HomePage.vue`; `requireInternalAccess`): вкладки Обзор (KPI + webhook-метрики) / Входящие / К Lava / Вебхуки / Доступы / Создать запрос; фильтр по дате (`panel_date_filter`). Вкладка «Создать запрос» — `components/RequestTestTab.vue`.
@@ -19,6 +22,7 @@
 - Сервисная инфраструктура (настройки, серверные логи, дашборд, API тестов) — без изменений. Детали — `docs/api.md`, `docs/data.md`.
 
 ## Навигация по документации
+
 - Архитектура (роутинг, слои, gateway, webhook-relay, доступы): `docs/architecture.md`
 - API (все эндпоинты, включая `api/v1/`, `api/webhook/`, `api/access/`): `docs/api.md`
 - Данные (Heap-таблицы, репозитории): `docs/data.md`
@@ -27,12 +31,15 @@
 - История диалогов: `docs/LLM/`
 
 ## TODO
+
 - Портировать webhook-relay в `lifepay` и `gc` — Этап B (отдельная задача).
 - Настройка webhook-URL в ЛК Lava.Top — ручная операция (документировать в ops-инструкции).
 - Ретрай форварда вебхука — вне scope текущей реализации.
 - Описать доменную модель на уровне `docs/data.md` (бизнес-смысл полей).
 
 ## Changelog
+
+- 2026-05-27: **дропдаун операций «Создать запрос» — группировка по доступности** — операции в `<select>` (`components/RequestTestTab.vue`) разбиты на `<optgroup>` «Доступные» (enabled) и «Недоступные» (остальные availability) через computed `enabledOps`/`otherOps`: сначала доступные, затем разделитель и недоступные. Одинаково применено во всех гейтвеях (`gc`/`lavatop`/`lifepay`).
 - 2026-05-27: реализован полноценный gateway Lava.Top (был каркас-заготовка): публичный контур `invoices_v1` (createInvoice/getInvoiceStatus/listProducts/updateOfferPrice/operations), webhook-relay (приём PurchaseWebhookLog, дедупликация, маппинг contractId→callback_url, форвард best-effort), панель оператора с KPI и вкладкой «Вебхуки», внутренняя система доступов (panelAccess/panelInvites), 6 новых Heap-таблиц, юнит-набор gateway (~21 кейс). Добавлены ADR-0003 (webhook-relay), docs/architecture.md, docs/api.md, docs/data.md обновлены.
 - 2026-05-26: исправлены интеграционные тесты `regression_payload_not_object_object` и `e2e_log_payload_roundtrip` — падали при `log_level != Debug` (payload по дизайну отсекается на не-Debug). Тесты теперь временно выставляют `Debug` на время прогона и восстанавливают прежний уровень через `try/finally` (паттерн как в `logger_writeServerLog_filter`). Поведение логгера не менялось. Портировано из `lifepay`.
 - 2026-05-26: адаптация копии шаблона под новый шлюз `lavatop` (Lava.Top): `PROJECT_ROOT` → `p/saas/gw/lavatop`, `.dir.json`, уникальные ключи Heap-таблиц `t__saas-gw-lavatop__setting__pGtfce` / `t__saas-gw-lavatop__log__4RhPFp`, юнит-тест `routes_PROJECT_ROOT`, SSR-маркер `saas-gw-lavatop-page`; убран хардкод пути в `TestsPage.vue` (теперь через проп `projectRoot` из `config/routes.PROJECT_ROOT`); название проекта по умолчанию → «Lava.Top». Обновлены `docs/data.md`, `docs/api.md`, README, `.CHATIUM-LLM.md`. Удалён `docs/run.md` (инструкция по адаптации шаблона выполнена).
@@ -68,9 +75,9 @@
 - 2026-02-02: серверные логи: таблица logs, repos/logs.repo, lib/logger.lib, api/logger/log (POST), админка — encodedLogsSocketId и подписка на new-log; сокет без accountId. Body API: только message (обяз.), severity? (0–7), payload?; timestamp и level вычисляются в lib; имя модуля в тексте message. Формат вывода: `[DD.MM.YYYY HH:mm:ss.SSS] [LEVEL] message` (пробелы между группами в скобках).
 - 2026-02-01: клиентская часть покрыта логами (createComponentLogger, setLogSink, sink в AdminPage дашборде; HomePage, AdminPage, ProfilePage, LoginPage, Header, AppFooter, GlobalGlitch, LogoutModal).
 - 2026-02-01: добавлен уровень логирования Debug (кнопка в админке перед Info, lib LOG_LEVELS, logger CONFIG_LEVELS и порог, API save -1–4), порядок: Debug, Info, Warn, Error, Disable.
-- 2026-02-01: уровень логирования -1 (логи выключены): LOG_LEVEL_OFF в shared/logger, приём -1 в window.__BOOT__.logLevel, API save принимает -1 → Disable.
-- 2026-02-01: shared/logger — логгер для браузера (logInfo, logWarn, logError с проверкой уровня по window.__BOOT__.logLevel), импорт в HomePage, AdminPage, ProfilePage.
-- 2026-02-01: чтение уровня логирования при загрузке страницы — shared/logLevel.ts, вызов getLogLevel в lib, скрипт window.__BOOT__.logLevel на главной, админке и профиле (без логина).
+- 2026-02-01: уровень логирования -1 (логи выключены): LOG_LEVEL_OFF в shared/logger, приём -1 в `window.__BOOT__.logLevel`, API save принимает -1 → Disable.
+- 2026-02-01: shared/logger — логгер для браузера (logInfo, logWarn, logError с проверкой уровня по `window.__BOOT__.logLevel`), импорт в HomePage, AdminPage, ProfilePage.
+- 2026-02-01: чтение уровня логирования при загрузке страницы — shared/logLevel.ts, вызов getLogLevel в lib, скрипт `window.__BOOT__.logLevel` на главной, админке и профиле (без логина).
 - 2026-02-01: мгновенное сохранение уровня логирования в админке (кнопки → .run() → POST /api/settings/save), нормализация чисел 0–3 и строк в API.
 - 2026-02-01: добавлен ADR-0002 — настройки в Heap и слоистая архитектура API (решения коммита aaf4a0a).
 - 2026-02-01: обновлено «Текущее состояние» — отражены API настроек, таблица, репозиторий, lib.

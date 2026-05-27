@@ -2,7 +2,7 @@ import { jsx } from '@app/html-jsx'
 import { requireRealUser } from '@app/auth'
 import HomePage from './pages/HomePage.vue'
 import { getPreloaderStyles, getPreloaderScript } from './shared/preloader'
-import { customScrollbarStyles } from './styles'
+import { customScrollbarStyles, requestTestTabStyles } from './styles'
 import { getLogLevelForPage, getLogLevelScript } from './shared/logLevel'
 import { getFullUrl, ROUTES, ROUTE_PATHS, PROJECT_ROOT } from './config/routes'
 import {
@@ -463,6 +463,7 @@ export const indexPageRoute = app.html('/', async (ctx, req) => {
 
           ${customScrollbarStyles}
         `}</style>
+        <style>{requestTestTabStyles}</style>
       </head>
       <body>
         <div id="geometric-bg"></div>
