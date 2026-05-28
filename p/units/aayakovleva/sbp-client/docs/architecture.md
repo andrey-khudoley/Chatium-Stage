@@ -33,7 +33,7 @@
 ## Контур интеграции с payments-gateway
 
 ```
-[ Admin UI (PanelHomePage.vue) ]
+[ Admin UI (pages/HomePage.vue → компонент ClientHomePage) ]
             |
             | fetch POST /api/lp/invoke { op, args }
             v
@@ -57,8 +57,8 @@
 
 File-based, один файл = один роут с путём `/`:
 
-- `index.tsx` — главная `/` (requireRealUser + requireInternalAccess; аноним → /s/auth/signin, без гранта → /web/forbidden; SSR-пропсы для PanelHomePage.vue).
-- `web/admin/index.tsx` — админка `/web/admin` (Admin-only). Загружает начальные значения настроек LifePay (`getLpApikey`, `getLpLogin`, `getLpWebhookToken`, `getGatewayBaseUrl` из `settingsLib`) и передаёт пропом `initialSettings` в `AdminPage.vue`. Содержит карточку «Настройки LifePay» (Авторизация / Webhook / Gateway) с сохранением, валидацией и генерацией токена.
+- `index.tsx` — главная `/` (requireRealUser + requireInternalAccess; аноним → /s/auth/signin, без гранта → /web/forbidden; SSR-пропсы для `pages/HomePage.vue`, компонент `ClientHomePage`; инжект CSS из `pagecss/sbpHomeCss1..4.ts`).
+- `web/admin/index.tsx` — админка `/web/admin` (Admin-only). Загружает начальные значения настроек LifePay и передаёт пропом `initialSettings` в `pages/AdminPage.vue` (оркестратор с подкомпонентами в `components/admin/`). Инжект CSS из `pagecss/sbpAdminCss1..4.ts`.
 - `web/profile/index.tsx`, `web/login/index.tsx`, `web/tests/index.tsx` — шаблонные.
 - `web/panel/index.tsx` — редирект на `/` (легаси-совместимость).
 - `web/webhook/index.tsx` — приёмник webhook LifePay (POST, анонимный + токен).
@@ -79,15 +79,16 @@ File-based, один файл = один роут с путём `/`:
 
 ## Разделение слоёв
 
-| Слой              | Каталог                | Ответственность                                                             |
-| ----------------- | ---------------------- | --------------------------------------------------------------------------- |
-| **Таблицы**       | `tables/`              | Схемы Heap (поля, типы)                                                     |
-| **Репозитории**   | `repos/`               | Работа с БД (Heap-операции)                                                 |
-| **Бизнес-логика** | `lib/`                 | Правила, дефолты, валидации, gateway-клиент, webhook-обработка, SSR-хелперы |
-| **API**           | `api/`, `web/webhook/` | HTTP-эндпоинты, парсинг, авторизация                                        |
-| **Pages**         | `pages/`               | Vue (SSR + клиент); без импортов tables/repos/lib                           |
-| **Components**    | `components/`          | Переиспользуемые Vue-компоненты (Header, LogStreamPanel, AppFooter и др.)   |
-| **Web (SSR)**     | `web/`                 | Файловые роуты страниц                                                      |
+| Слой              | Каталог                | Ответственность                                                                                                                               |
+| ----------------- | ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Таблицы**       | `tables/`              | Схемы Heap (поля, типы)                                                                                                                       |
+| **Репозитории**   | `repos/`               | Работа с БД (Heap-операции)                                                                                                                   |
+| **Бизнес-логика** | `lib/`                 | Правила, дефолты, валидации, gateway-клиент, webhook-обработка, SSR-хелперы                                                                   |
+| **API**           | `api/`, `web/webhook/` | HTTP-эндпоинты, парсинг, авторизация                                                                                                          |
+| **Pages**         | `pages/`               | Vue (SSR + клиент); без импортов tables/repos/lib. Страницы — оркестраторы над подкомпонентами                                                |
+| **Components**    | `components/`          | Переиспользуемые Vue-компоненты. Подкаталоги: `home/`, `admin/`, `tests/`; корень: Header, LogStreamPanel, AppFooter и др.                    |
+| **pagecss/**      | `pagecss/`             | CSS-модули (строковые константы), импортируются только в TSX-роутах через `<style>{...}</style>`. Vue-компоненты не содержат `<style scoped>` |
+| **Web (SSR)**     | `web/`                 | Файловые роуты страниц                                                                                                                        |
 
 Поток данных:
 `HTTP → API → lib → repos → Heap` (никаких прямых импортов `tables/` из API).
@@ -112,7 +113,7 @@ File-based, один файл = один роут с путём `/`:
 **Решение — сквозной correlationId:**
 
 ```
-[ PanelHomePage.vue (createBill) ]
+[ pages/HomePage.vue (createBill, компонент HomeCreateBillTab) ]
   1. generateCorrelationId()  →  uuid
   2. callbackUrl += ?correlationId=<uuid>   (shared/correlation.appendCorrelationId)
   3. args.correlationId = uuid
@@ -152,9 +153,46 @@ guardInternalApi(ctx)          — requireRealUser + requireInternalAccess:
 
 Admin может отозвать инвайт (`revoke-invite`) или грант (`revoke-grant`). Ключевой инвариант: переход по URL инвайта не расходует его — расход только при нажатии «Подтвердить».
 
-## Раскладка главной страницы (PanelHomePage.vue)
+## Декомпозиция страниц (реализовано 2026-05-28)
 
-Тулбар главной страницы реализован как двухрядная sticky-полоска (`.panel-toolbar`, `flex-direction: column`):
+Страницы переведены в паттерн «оркестратор + подкомпоненты». Вся CSS вынесена в `pagecss/`.
+
+### `pages/HomePage.vue` (компонент `ClientHomePage`)
+
+Оркестратор главной панели. Подкомпоненты в `components/home/`:
+
+- `HomeStatusStrip.vue` — полоска статуса конфигурации (read-only).
+- `HomeToolbar.vue` — двухрядный sticky-тулбар (вкладки + фильтр дат + LIVE + поиск).
+- `HomeSearchResult.vue` — результат поиска по requestId.
+- `HomeOverviewTab.vue` — вкладка «Обзор» (аналитические карточки).
+- `HomeRequestsTab.vue` — вкладка «Запросы» (журнал `request_log`).
+- `HomeWebhooksTab.vue` — вкладка «Webhook» (журнал `webhook_log`).
+- `HomeCreateBillTab.vue` — вкладка «Создать счёт» (форма + QR).
+- `HomeAccessTab.vue` — вкладка «Доступ» (Admin: инвайты и гранты).
+- `HomeRawModal.vue` — модалка raw-данных.
+- `HomeCreateInviteModal.vue` — модалка создания инвайта.
+
+Логика (Options API mixin): `pages/sbpHomePageMixin.ts`. Форматтеры и helpers (чистые, без Heap/ctx): `shared/sbpHomeFormat.ts`. CSS: `pagecss/sbpHomeCss1.ts`..`sbpHomeCss4.ts`.
+
+### `pages/AdminPage.vue`
+
+Оркестратор. Подкомпоненты в `components/admin/`: `AdminCounters.vue`, `AdminProjectSettings.vue`, `AdminLogLevel.vue`, `AdminLifePaySettings.vue`. Composable WebSocket-потока логов: `shared/useLogsSocket.ts`. CSS: `pagecss/sbpAdminCss1.ts`..`sbpAdminCss4.ts`.
+
+### `pages/TestsPage.vue`
+
+Оркестратор. Подкомпоненты в `components/tests/`: `TestsToolbar.vue`, `TestsMetrics.vue`, `TestSuiteTab.vue`. Composable управления наборами тестов: `shared/useTestSuites.ts`. Чистые хелперы: `shared/testSuiteHelpers.ts`. CSS: `pagecss/sbpTestsCss1.ts`..`sbpTestsCss3.ts`.
+
+### Прочие CSS-модули
+
+- `pagecss/sbpProfileCss1.ts` — ProfilePage.
+- `pagecss/sbpHeaderCss1.ts`, `sbpHeaderCss2.ts` — Header.vue.
+- `pagecss/sbpLogStreamCss1.ts`, `sbpLogStreamCss2.ts` — LogStreamPanel.vue.
+
+CSS-файлы содержат именованные строковые константы с уже неймспейснутыми классами (`home-`, `ap-`, `tp-`, `lsp-`). Импортировать только в TSX-роутах; в `.vue`-файлы запрещено.
+
+## Раскладка главной страницы (pages/HomePage.vue)
+
+Тулбар главной страницы реализован в `components/home/HomeToolbar.vue` как двухрядная sticky-полоска (`.panel-toolbar`, `flex-direction: column`):
 
 - **Строка A** (`.toolbar-row--tabs`): навигационные вкладки `.panel-tabs` на всю ширину — приоритетны визуально.
 - **Строка B** (`.toolbar-row--tools`): фильтр дат (`.date-filter`), LIVE-переключатель (`.live-toggle`), поиск по requestId (`.quick-search`). Отделена от строки вкладок разделителем `border-top: 1px solid var(--color-border-light)`.
@@ -165,9 +203,9 @@ Admin может отозвать инвайт (`revoke-invite`) или гран
 - На ≤480px фильтр дат раскладывается вертикально (`flex-direction: column`), поля занимают полную ширину, разделитель «—» скрыт.
 - `.quick-search` — `flex: 1 1 200px`, `max-width: 480px`, не сжимается ниже 0. `.live-toggle` — `flex-shrink: 0`.
 
-CRT/терминальная эстетика (clip-path-углы, monospace, uppercase, акцент `#d3234b`, анимации live-pulse) сохранена без изменений. Логика (`<script>`), API, таблицы, роутинг — не затронуты.
+CRT/терминальная эстетика (clip-path-углы, monospace, uppercase, акцент `#d3234b`, анимации live-pulse) сохранена без изменений. Логика, API, таблицы, роутинг — не затронуты.
 
-Реализация: `pages/PanelHomePage.vue`, секции `<template>` и `<style scoped>`.
+CSS-стили тулбара и всей главной страницы: `pagecss/sbpHomeCss1.ts`..`sbpHomeCss4.ts`.
 
 ## Глобальный фильтр панели (panel_date_filter)
 

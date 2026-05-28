@@ -9,11 +9,14 @@
 ### `./config/project.tsx`
 
 - нет внутренних импортов (только экспорт DEFAULT_PROJECT_TITLE, INDEX_PAGE_NAME, PROFILE_PAGE_NAME, ADMIN_PAGE_NAME, TESTS_PAGE_NAME, getPageTitle, getHeaderText, BODY_TEXT, BODY_SUBTEXT)
+- удалены: `PANEL_PAGE_NAME`, `CREATE_BILL_PAGE_NAME` (перенесены: `PANEL_PAGE_NAME` локально в `index.tsx`; `CREATE_BILL_PAGE_NAME` не использовался)
 
 ### `./index.tsx`
 
 - `@app/html-jsx` → `jsx`
-- `./pages/HomePage.vue`
+- `./pages/HomePage.vue` (компонент `ClientHomePage`)
+- `./pagecss/sbpHomeCss1` .. `./pagecss/sbpHomeCss4` (инжект через `<style>`)
+- локальная константа `PANEL_PAGE_NAME = 'Панель'` (перенесена из `config/project.tsx`)
 - `./lib/preloader` → `getPreloaderStyles`, `getPreloaderScript`
 - `./styles` → `customScrollbarStyles`
 - `./lib/logLevel` → `getLogLevelForPage`, `getLogLevelScript`
@@ -29,6 +32,7 @@
 - `@app/auth` → `requireAccountRole`
 - `@app/socket` → `genSocketId`
 - `../../pages/AdminPage.vue`
+- `../../pagecss/sbpAdminCss1` .. `../../pagecss/sbpAdminCss4` (инжект через `<style>`)
 - `../login` → `loginPageRoute`
 - `../../lib/preloader` → `getPreloaderStyles`, `getPreloaderScript`
 - `../../lib/logLevel` → `getLogLevelForPage`, `getLogLevelScript`
@@ -59,6 +63,7 @@
 - `@app/socket` → `genSocketId`
 - `../../lib/logger.lib` → `getAdminLogsSocketId`
 - `../../pages/TestsPage.vue`
+- `../../pagecss/sbpTestsCss1` .. `../../pagecss/sbpTestsCss3` (инжект через `<style>`)
 - `../../lib/preloader` → `getPreloaderStyles`, `getPreloaderScript`
 - `../../lib/logLevel` → `getLogLevelForPage`, `getLogLevelScript`
 - `../../lib/htmlRedirect` → `htmlRedirect`
@@ -77,28 +82,31 @@
 
 ## 2) Страницы‑компоненты (Vue)
 
-### `./pages/HomePage.vue`
+### `./pages/HomePage.vue` (компонент `ClientHomePage`)
 
-- `vue` → `onMounted`, `onUnmounted`, `ref`
+- `vue` → `onMounted`, `onUnmounted`, `ref` и др. (через mixin)
+- `./sbpHomePageMixin` → mixin с логикой вкладок, реактивным состоянием, fetch-вызовами
 - `../components/Header.vue`
 - `../components/GlobalGlitch.vue`
 - `../components/AppFooter.vue`
+- `../components/home/HomeStatusStrip.vue`, `HomeToolbar.vue`, `HomeSearchResult.vue`, `HomeOverviewTab.vue`, `HomeRequestsTab.vue`, `HomeWebhooksTab.vue`, `HomeCreateBillTab.vue`, `HomeAccessTab.vue`, `HomeRawModal.vue`, `HomeCreateInviteModal.vue`
 - `../shared/logger` → `createComponentLogger`
+
+### `./pages/sbpHomePageMixin.ts`
+
+- `vue` → Options API mixin
+- `../shared/sbpHomeFormat` → форматтеры и helpers (чистые, без Heap/ctx)
+- `../shared/correlation` → `generateCorrelationId`, `appendCorrelationId`
 
 ### `./pages/AdminPage.vue`
 
 - `vue` → `onMounted`, `onBeforeUnmount`, `onUnmounted`, `ref`, `computed`, `watch`
-- `@app/socket` → `getOrCreateBrowserSocketClient`
 - `../components/Header.vue`
 - `../components/GlobalGlitch.vue`
 - `../components/AppFooter.vue`
 - `../components/LogStreamPanel.vue` → `LogStreamPanel` (лог-панель; `enable-expand-all=false`)
-- `../api/settings/get` → `getSettingRoute`
-- `../api/settings/save` → `saveSettingRoute`
-- `../api/admin/logs/recent` → `getRecentLogsRoute`
-- `../api/admin/logs/before` → `getLogsBeforeRoute`
-- `../api/admin/dashboard/counts` → `getDashboardCountsRoute`
-- `../api/admin/dashboard/reset` → `resetDashboardRoute`
+- `../components/admin/AdminCounters.vue`, `AdminProjectSettings.vue`, `AdminLogLevel.vue`, `AdminLifePaySettings.vue`
+- `../shared/useLogsSocket` → composable управления WebSocket-потоком логов
 - `../shared/logger` → `createComponentLogger`, `setLogSink`, `LogEntry`
 
 ### `./pages/ProfilePage.vue`
@@ -112,15 +120,14 @@
 ### `./pages/TestsPage.vue`
 
 - `vue` → `onMounted`, `onBeforeUnmount`, `onUnmounted`, `ref`, `computed`
-- `@app/socket` → `getOrCreateBrowserSocketClient`
 - `../components/Header.vue`
 - `../components/GlobalGlitch.vue`
 - `../components/AppFooter.vue`
 - `../components/LogStreamPanel.vue` → `LogStreamPanel` (лог-панель; `enable-expand-all=true`)
+- `../components/tests/TestsToolbar.vue`, `TestsMetrics.vue`, `TestSuiteTab.vue`
+- `../shared/useTestSuites` → composable управления прогонами тест-наборов
+- `../shared/testSuiteHelpers` → чистые хелперы форматирования результатов
 - `../shared/logger` → `createComponentLogger`, `setLogSink`, `LogEntry`
-- `../shared/testCatalog` → блоки и тесты каталога (`UNIT_TEST_BLOCKS`, …)
-- `../api/admin/logs/recent` → `getRecentLogsRoute`
-- `../api/admin/logs/before` → `getLogsBeforeRoute`
 
 ### `./pages/LoginPage.vue`
 
@@ -128,6 +135,30 @@
 - `../shared/logger` → `createComponentLogger`
 
 ## 3) Компоненты (components/)
+
+### `./components/home/*` (10 файлов)
+
+Подкомпоненты главной страницы: `HomeStatusStrip.vue`, `HomeToolbar.vue`, `HomeSearchResult.vue`, `HomeOverviewTab.vue`, `HomeRequestsTab.vue`, `HomeWebhooksTab.vue`, `HomeCreateBillTab.vue`, `HomeAccessTab.vue`, `HomeRawModal.vue`, `HomeCreateInviteModal.vue`.
+
+- `vue` → Composition API
+- `../shared/logger` → `createComponentLogger` (где используется)
+- `../shared/sbpHomeFormat` (где нужна форматировка)
+- `../shared/correlation` → `generateCorrelationId`, `appendCorrelationId` (HomeCreateBillTab)
+
+### `./components/admin/*` (4 файла)
+
+Подкомпоненты страницы AdminPage: `AdminCounters.vue`, `AdminProjectSettings.vue`, `AdminLogLevel.vue`, `AdminLifePaySettings.vue`.
+
+- `vue` → Composition API
+- `../shared/logger` → `createComponentLogger`
+
+### `./components/tests/*` (3 файла)
+
+Подкомпоненты страницы TestsPage: `TestsToolbar.vue`, `TestsMetrics.vue`, `TestSuiteTab.vue`.
+
+- `vue` → Composition API
+- `../shared/logger` → `createComponentLogger`
+- `../shared/testCatalog` (TestSuiteTab — блоки каталога)
 
 ### `./components/LogStreamPanel.vue`
 
@@ -167,7 +198,44 @@
 ### `./shared/testCatalog.ts`
 
 - первая строка: `// @shared`
-- нет импортов — каталог блоков для `/api/tests/list` и UI тестов
+- реэкспортирует из `./testCatalogUnit` и `./testCatalogIntegration`
+- содержит: общие типы (`TestBlock`, `TestEntry`, `flattenCatalogBlocks`), `INTEGRATION_HTTP_TEST_BLOCK`
+
+### `./shared/testCatalogUnit.ts`
+
+- первая строка: `// @shared`
+- нет импортов — юнит-блоки каталога (`UNIT_TEST_BLOCKS`): unit-settings, unit-logger, unit-gateway, unit-access, unit-correlation и др.
+
+### `./shared/testCatalogIntegration.ts`
+
+- первая строка: `// @shared`
+- нет импортов — интеграционные блоки (`INTEGRATION_SERVER_TEST_BLOCKS`): int-core, int-api, int-e2e, int-date-filter, int-access и др.
+
+### `./shared/sbpHomeFormat.ts`
+
+- первая строка: `// @shared`
+- нет импортов (чистые форматтеры и helpers без Heap/ctx)
+- используется в: `pages/sbpHomePageMixin.ts`, `components/home/*`
+
+### `./shared/useLogsSocket.ts`
+
+- `vue` → Composition API (composable)
+- `@app/socket` → `getOrCreateBrowserSocketClient`
+- `./logger` → `LogEntry`, `createComponentLogger`
+- используется в: `pages/AdminPage.vue`
+
+### `./shared/useTestSuites.ts`
+
+- `vue` → Composition API (composable)
+- `./testCatalog` → блоки каталога
+- `./logger` → `createComponentLogger`
+- используется в: `pages/TestsPage.vue`
+
+### `./shared/testSuiteHelpers.ts`
+
+- первая строка: `// @shared`
+- нет импортов (чистые хелперы форматирования результатов тест-прогонов)
+- используется в: `shared/useTestSuites.ts`, `components/tests/*`
 
 ### `./shared/logger.ts`
 
@@ -180,7 +248,20 @@
 - экспортирует: `generateCorrelationId`, `appendCorrelationId`, `extractCorrelationId`, `mergeWebhooksById`
 - используется в: `pages/PanelHomePage.vue` (generateCorrelationId + appendCorrelationId), `api/lp/invoke.ts` (extractCorrelationId), `web/webhook/index.tsx` (extractCorrelationId), `api/lp/search-by-request-id.ts` (mergeWebhooksById), `lib/tests/lifepayUnitSuite.ts` (все четыре функции)
 
-## 5) Таблицы (tables/)
+## 5) pagecss/ (CSS-модули)
+
+Каталог `pagecss/` содержит 18 файлов (каждый ≤350 строк), экспортирующих строковые константы CSS. Нет внутренних импортов. Импортируются **только** из TSX-роутов (`index.tsx`, `web/admin/index.tsx`, `web/profile/index.tsx`, `web/tests/index.tsx`) через инжект `<style>{cssConst}</style>`. В `.vue`-файлы импортировать запрещено.
+
+| Группа файлов            | TSX-роут                                     |
+| ------------------------ | -------------------------------------------- |
+| `sbpHomeCss1..4.ts`      | `index.tsx`                                  |
+| `sbpAdminCss1..4.ts`     | `web/admin/index.tsx`                        |
+| `sbpTestsCss1..3.ts`     | `web/tests/index.tsx`                        |
+| `sbpProfileCss1.ts`      | `web/profile/index.tsx`                      |
+| `sbpHeaderCss1..2.ts`    | все роуты, где есть Header.vue               |
+| `sbpLogStreamCss1..2.ts` | `web/admin/index.tsx`, `web/tests/index.tsx` |
+
+## 7) Таблицы (tables/)
 
 ### `./tables/settings.table.ts`
 
@@ -190,7 +271,7 @@
 
 - `@app/heap` → `Heap`
 
-## 6) Репозитории (repos/)
+## 8) Репозитории (repos/)
 
 ### `./repos/settings.repo.ts`
 
@@ -215,7 +296,7 @@
 - `../lib/logger.lib` → `*`
 - экспортирует: `create`, `findById`, `findByOrderNumber`, `findByOrderNumberInRange`, `countSince`, `countStatusSuccessSince`, `countTokenValidSince`, `findInRange`, `countInRange`, `countStatusSuccessInRange`, `countTokenValidInRange` (диапазон `$gte/$lt` по `processedAt`); `@deprecated`: `findRecent`, `findRecentSince`
 
-## 7) Библиотеки (lib/)
+## 9) Библиотеки (lib/)
 
 ### `./lib/preloader.ts`
 
@@ -238,7 +319,15 @@
 ### `./lib/settings.lib.ts`
 
 - `../repos/settings.repo` → `*` (findByKey, findAll, upsert, deleteByKey)
-- `./logger.lib` → `*` (только для функций, не вызываемых из logger.lib: getSettingString, getLogsLimit, getDashboardResetAt, getAllSettings, setSetting)
+- `./logger.lib` → `*` (только для функций, не вызываемых из logger.lib: getSettingString, getLogsLimit, getDashboardResetAt, getAllSettings)
+- `./settings.mutations` → `setSetting` (re-export для обратной совместимости импортов)
+
+### `./lib/settings.mutations.ts`
+
+- `../repos/settings.repo` → `*` (upsert, deleteByKey)
+- `./logger.lib` → `*`
+- экспортирует: `setSetting` (запись/сброс значения настройки)
+- **Зависимость:** `settings.lib` → `settings.mutations` (re-export); прямой импорт `settings.mutations` из `settings.lib` допустим, цикла нет (mutations не импортирует settings.lib)
 
 ### `./lib/admin/dashboard.lib.ts`
 
@@ -254,7 +343,7 @@
 - `@app/request` → `request`
 - экспортирует дополнительно: `severityToPlatformLogLevel` (маппинг syslog severity → платформенный LogLevel для `ctx.account.log`)
 
-## 8) API (api/)
+## 10) API (api/)
 
 ### `./api/settings/list.ts`
 
@@ -342,15 +431,31 @@
 
 - `../logger.lib` → `writeServerLog` — поштучное логирование провалов тестов (severity 3)
 
-### `./lib/tests/templateUnitSuite`
+### `./lib/tests/templateUnitSuite.ts` + helpers
 
-- `../logger.lib`, `../settings.lib`, `../logLevel` (перенесён из shared/), `config/*`, `shared/*`, `shared/testCatalog` — юнит-прогон без Heap
+- `templateUnitSuite.ts` (точка входа, re-export `runTemplateUnitChecks`): импортирует `./templateUnitSuiteHelpers` и `./templateUnitRoutesChecks`
+- `templateUnitSuiteHelpers.ts` (55 строк): общие хелперы прогона шаблонных тестов
+- `templateUnitRoutesChecks.ts` (179 строк): проверки роутинга и конфига
+- Все три: `../logger.lib`, `../settings.lib`, `../logLevel`, `config/*`, `shared/*`, `shared/testCatalog`
 
-### `./lib/tests/integrationSuite`
+### `./lib/tests/integrationSuite.ts` + разделы
 
-- `../settings.lib`, `repos/*` (включая `requestLog.repo`, `webhookLog.repo` — границы выборок фильтра), `../admin/dashboard.lib`, `../logger.lib`, `api/settings/*`, `api/logger/log`, `api/admin/*`, `api/tests/list`, `./templateUnitSuite` (`runTemplateUnitChecks`)
-- проверки фильтра по дате/времени: `getPanelDateFilter` roundtrip, валидация `setSetting(PANEL_DATE_FILTER)`, границы `findInRange`/`countInRange`
+- `integrationSuite.ts` (точка входа, 31 строка, re-export `runTemplateIntegrationChecks`)
+- `integrationSuiteHelpers.ts` (39 строк): хелперы
+- `integrationCoreSuite.ts` (277 строк): базовые Heap-тесты
+- `integrationApiSuite.ts` (86 строк): API-тесты
+- `integrationE2eSuite.ts` (106 строк): сквозные тесты
+- `integrationDateFilterSuite.ts` (122 строки): тесты фильтра панели
+- `integrationAccessSuite.ts` (196 строк): тесты жизненного цикла инвайта/гранта
+- Общие зависимости: `../settings.lib`, `repos/*`, `../admin/dashboard.lib`, `../logger.lib`, `api/*`
 
-### `./lib/tests/lifepayUnitSuite`
+### `./lib/tests/lifepayUnitSuite.ts` + фазы
 
-- `../gateway/buildInvokeUrl`, `../../shared/redact`, `../../shared/redactRaw`, `../../shared/gatewayContract`, `../settings.lib` (валидации, включая `isValidDateFilter`, `normalizeDateFilter`), `../webhook/processWebhook`, `../access/*`, `../../shared/correlation` (generateCorrelationId, appendCorrelationId, extractCorrelationId, mergeWebhooksById — блок `unit-correlation`, 7 тестов) — юнит-прогон без Heap
+- `lifepayUnitSuite.ts` (53 строки, точка входа, re-export `runLifepayUnitChecks`): импортирует все фазы
+- `lifepayUnitHelpers.ts` (50 строк): общие хелперы
+- `lifepayUnitPhase1Catalog.ts` (89 строк): тесты каталога gateway-операций
+- `lifepayUnitPhase2Redaction.ts` (234 строки): тесты redact/redactRaw
+- `lifepayUnitPhase3Settings.ts` (174 строки): тесты валидации настроек
+- `lifepayUnitPhase4Webhook.ts` (298 строк): тесты обработки webhook
+- `lifepayUnitPhase5Correlation.ts` (156 строк): тесты correlationId-связки (7 тестов блока `unit-correlation`)
+- Общие зависимости: `../gateway/buildInvokeUrl`, `../../shared/redact`, `../../shared/redactRaw`, `../../shared/gatewayContract`, `../settings.lib`, `../webhook/processWebhook`, `../access/*`, `../../shared/correlation`
