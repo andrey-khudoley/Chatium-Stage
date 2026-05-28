@@ -12,6 +12,14 @@ import { getFullUrl, ROUTES } from '../../config/routes'
 import { ADMIN_PAGE_NAME, getPageTitle, getHeaderText } from '../../config/project'
 import * as settingsLib from '../../lib/settings.lib'
 import { customScrollbarStyles } from '../../styles'
+import { sbpAdminCss1 } from '../../pagecss/sbpAdminCss1'
+import { sbpAdminCss2 } from '../../pagecss/sbpAdminCss2'
+import { sbpAdminCss3 } from '../../pagecss/sbpAdminCss3'
+import { sbpAdminCss4 } from '../../pagecss/sbpAdminCss4'
+import { sbpHeaderCss1 } from '../../pagecss/sbpHeaderCss1'
+import { sbpHeaderCss2 } from '../../pagecss/sbpHeaderCss2'
+import { sbpLogStreamCss1 } from '../../pagecss/sbpLogStreamCss1'
+import { sbpLogStreamCss2 } from '../../pagecss/sbpLogStreamCss2'
 
 const LOG_PATH = 'web/admin/index'
 
@@ -195,6 +203,14 @@ export const adminPageRoute = app.html('/', async (ctx, req) => {
         <script src="/s/metric/clarity.js"></script>
         <style>{adminPageStyles}</style>
         <style>{customScrollbarStyles}</style>
+        <style>{sbpAdminCss1}</style>
+        <style>{sbpAdminCss2}</style>
+        <style>{sbpAdminCss3}</style>
+        <style>{sbpAdminCss4}</style>
+        <style>{sbpHeaderCss1}</style>
+        <style>{sbpHeaderCss2}</style>
+        <style>{sbpLogStreamCss1}</style>
+        <style>{sbpLogStreamCss2}</style>
         <style>{getPreloaderStyles()}</style>
         <script>{getPreloaderScript()}</script>
         <script src="/s/static/lib/tailwind.3.4.16.min.js"></script>

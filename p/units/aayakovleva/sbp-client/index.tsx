@@ -1,20 +1,29 @@
 import { jsx } from '@app/html-jsx'
 import { requireRealUser } from '@app/auth'
-import PanelHomePage from './pages/PanelHomePage.vue'
+import ClientHomePage from './pages/HomePage.vue'
 import { getPreloaderStyles, getPreloaderScript } from './lib/preloader'
 import { crtBackgroundStyles, customScrollbarStyles } from './styles'
+import { sbpHomeCss1 } from './pagecss/sbpHomeCss1'
+import { sbpHomeCss2 } from './pagecss/sbpHomeCss2'
+import { sbpHomeCss3 } from './pagecss/sbpHomeCss3'
+import { sbpHomeCss4 } from './pagecss/sbpHomeCss4'
+import { sbpHeaderCss1 } from './pagecss/sbpHeaderCss1'
+import { sbpHeaderCss2 } from './pagecss/sbpHeaderCss2'
 import { getLogLevelForPage, getLogLevelScript } from './lib/logLevel'
 import { getFullUrl, ROUTES, ROUTE_PATHS } from './config/routes'
 import {
   requireInternalAccess,
   InternalAccessDeniedError
 } from './lib/access/requireInternalAccess'
-import { PANEL_PAGE_NAME, getPageTitle, getHeaderText } from './config/project'
+import { getPageTitle, getHeaderText } from './config/project'
 import * as loggerLib from './lib/logger.lib'
 import * as settingsLib from './lib/settings.lib'
 import { htmlRedirect } from './lib/htmlRedirect'
 
 const LOG_PATH = 'index'
+
+// Имя главной страницы для заголовка <title> и шапки. Локально, по аналогии с p/saas/gw/gc.
+const PANEL_PAGE_NAME = 'Панель'
 
 export const indexPageRoute = app.html('/', async (ctx, req) => {
   // Доступ: requireRealUser + requireInternalAccess (ADR 0003, §1.11.8).
@@ -64,7 +73,7 @@ export const indexPageRoute = app.html('/', async (ctx, req) => {
   const webhookUrl = `https://${ctx.account.host}${webhookPath}?token=${tokenForUrl}`
 
   // Base URL: путь до эндпоинта создания счёта (из config/routes). Хост дописывается
-  // на фронте через window.location.origin — см. PanelHomePage.vue computed baseUrl.
+  // на фронте через window.location.origin — см. HomePage.vue (ClientHomePage) computed baseUrl.
   const baseUrlPath = getFullUrl(ROUTES.createBill)
 
   // Глобальный фильтр панели по дате/времени (Unix ms). Читается из Heap на SSR
@@ -112,6 +121,12 @@ export const indexPageRoute = app.html('/', async (ctx, req) => {
         <script>{getLogLevelScript(logLevel)}</script>
         <style>{crtBackgroundStyles}</style>
         <style>{customScrollbarStyles}</style>
+        <style>{sbpHomeCss1}</style>
+        <style>{sbpHomeCss2}</style>
+        <style>{sbpHomeCss3}</style>
+        <style>{sbpHomeCss4}</style>
+        <style>{sbpHeaderCss1}</style>
+        <style>{sbpHeaderCss2}</style>
         <style>{getPreloaderStyles()}</style>
         <script>{getPreloaderScript()}</script>
         <script src="/s/metric/clarity.js"></script>
@@ -132,7 +147,7 @@ export const indexPageRoute = app.html('/', async (ctx, req) => {
             <div id="boot-messages-container"></div>
           </div>
         </div>
-        <PanelHomePage
+        <ClientHomePage
           projectTitle={getHeaderText(PANEL_PAGE_NAME, projectName)}
           indexUrl={indexUrl}
           profileUrl={profileUrl}

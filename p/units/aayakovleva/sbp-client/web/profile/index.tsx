@@ -10,6 +10,9 @@ import { PROFILE_PAGE_NAME, getPageTitle, getHeaderText } from '../../config/pro
 import * as settingsLib from '../../lib/settings.lib'
 import { customScrollbarStyles } from '../../styles'
 import { htmlRedirect } from '../../lib/htmlRedirect'
+import { sbpProfileCss1 } from '../../pagecss/sbpProfileCss1'
+import { sbpHeaderCss1 } from '../../pagecss/sbpHeaderCss1'
+import { sbpHeaderCss2 } from '../../pagecss/sbpHeaderCss2'
 
 const LOG_PATH = 'web/profile/index'
 
@@ -74,6 +77,9 @@ export const profilePageRoute = app.html('/', async (ctx, req) => {
         <script src="/s/metric/clarity.js"></script>
         <style>{getPreloaderStyles()}</style>
         <style>{customScrollbarStyles}</style>
+        <style>{sbpProfileCss1}</style>
+        <style>{sbpHeaderCss1}</style>
+        <style>{sbpHeaderCss2}</style>
         <style>{`
           html {
             margin: 0;

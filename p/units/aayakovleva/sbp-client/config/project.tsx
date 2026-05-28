@@ -6,8 +6,6 @@ export const INDEX_PAGE_NAME = 'Главная'
 export const PROFILE_PAGE_NAME = 'Профиль'
 export const ADMIN_PAGE_NAME = 'Админка'
 export const TESTS_PAGE_NAME = 'Тесты'
-export const PANEL_PAGE_NAME = 'Панель LifePay'
-export const CREATE_BILL_PAGE_NAME = 'Создать счёт'
 
 /** Текст для <title>: "Название страницы - Название из настроек" */
 export function getPageTitle(pageName: string, projectName: string): string {
@@ -23,4 +21,5 @@ export function getHeaderText(pageName: string, projectName: string): string {
 export const BODY_TEXT = 'LifePay SBP Client'
 
 /** Подзаголовок домашней страницы */
-export const BODY_SUBTEXT = 'Клиентская панель LifePay'
+export const BODY_SUBTEXT =
+  'Клиентская панель LifePay SBP: журналы запросов и webhook, аналитика, создание счётов'

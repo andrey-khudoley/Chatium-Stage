@@ -11,6 +11,13 @@ import { TESTS_PAGE_NAME, getPageTitle, getHeaderText } from '../../config/proje
 import * as settingsLib from '../../lib/settings.lib'
 import { customScrollbarStyles } from '../../styles'
 import { htmlRedirect } from '../../lib/htmlRedirect'
+import { sbpTestsCss1 } from '../../pagecss/sbpTestsCss1'
+import { sbpTestsCss2 } from '../../pagecss/sbpTestsCss2'
+import { sbpTestsCss3 } from '../../pagecss/sbpTestsCss3'
+import { sbpHeaderCss1 } from '../../pagecss/sbpHeaderCss1'
+import { sbpHeaderCss2 } from '../../pagecss/sbpHeaderCss2'
+import { sbpLogStreamCss1 } from '../../pagecss/sbpLogStreamCss1'
+import { sbpLogStreamCss2 } from '../../pagecss/sbpLogStreamCss2'
 
 const LOG_PATH = 'web/tests/index'
 
@@ -100,6 +107,13 @@ export const testsPageRoute = app.html('/', async (ctx, req) => {
         <script src="/s/metric/clarity.js"></script>
         <style>{getPreloaderStyles()}</style>
         <style>{customScrollbarStyles}</style>
+        <style>{sbpTestsCss1}</style>
+        <style>{sbpTestsCss2}</style>
+        <style>{sbpTestsCss3}</style>
+        <style>{sbpHeaderCss1}</style>
+        <style>{sbpHeaderCss2}</style>
+        <style>{sbpLogStreamCss1}</style>
+        <style>{sbpLogStreamCss2}</style>
         <style>{`
           html {
             margin: 0;
