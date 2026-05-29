@@ -350,7 +350,7 @@ export const operationsCatalogNew1: OperationEntry[] = [
     contour: 'new',
     httpMethod: 'GET',
     pathTemplate: '/offer/get-offers',
-    availability: 'disabled',
+    availability: 'enabled',
     legacyImportAction: null,
     argsValidator: s.object({}),
     argsSchema: EMPTY_SCHEMA
