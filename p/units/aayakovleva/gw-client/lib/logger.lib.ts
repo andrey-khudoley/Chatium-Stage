@@ -104,8 +104,10 @@ function shouldIncludePayload(configuredLevel: settingsLib.LogLevel): boolean {
  * Записывает лог на сервере: проверяет уровень, при прохождении — ctx.log (только сообщение),
  * ctx.account.log (сообщение + payload), запись в Heap, WebSocket, внешний URL (fire-and-forget).
  *
- * Payload (сырые данные) включается во все выходы ТОЛЬКО при уровне Debug.
- * При Info и ниже записывается только текст сообщения — карта вызовов без данных.
+ * Payload (сырые данные) во ВЫХОДНЫЕ потоки (ctx.log/account.log, socket, webhook)
+ * включается ТОЛЬКО при уровне Debug — карта вызовов без данных при Info и ниже.
+ * В Heap payload пишется ВСЕГДА (как JSON-строка) — это персистентное хранилище,
+ * админ читает его через /api/admin/logs/recent независимо от рантайм-уровня.
  */
 export async function writeServerLog(ctx: app.Ctx, entry: ServerLogEntry): Promise<void> {
   const configuredLevel = await settingsLib.getLogLevel(ctx)
@@ -156,11 +158,11 @@ export async function writeServerLog(ctx: app.Ctx, entry: ServerLogEntry): Promi
   }
 
   const payloadForHeap =
-    effectivePayload == null
+    entry.payload == null
       ? null
-      : typeof effectivePayload === 'string'
-        ? effectivePayload
-        : JSON.stringify(effectivePayload)
+      : typeof entry.payload === 'string'
+        ? entry.payload
+        : JSON.stringify(entry.payload)
 
   await logsRepo.create(ctx, {
     message: entry.message,
