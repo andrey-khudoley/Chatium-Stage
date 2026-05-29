@@ -128,6 +128,9 @@ export const indexPageRoute = app.html('/', async (ctx, req) => {
         <title>{getPageTitle(PANEL_PAGE_NAME, projectName)}</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta charset="UTF-8" />
+        {/* Флаги esm-bundler сборки Vue — выставляем ДО загрузки Vue-чанков
+            платформой Chatium, иначе runtime пишет варнинг в консоль. */}
+        <script>{`window.__VUE_OPTIONS_API__=true;window.__VUE_PROD_DEVTOOLS__=false;window.__VUE_PROD_HYDRATION_MISMATCH_DETAILS__=false;`}</script>
         <script>{getLogLevelScript(logLevel)}</script>
         <style>{crtBackgroundStyles}</style>
         <style>{customScrollbarStyles}</style>

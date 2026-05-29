@@ -15,7 +15,7 @@
 - Серверная инфраструктура — Chatium.
 - Нельзя менять стек и зависимости (`@app/*`, `@pay/sdk` и т.п.).
 - Деплой — автоматически при пуше.
-- npm недоступен. QR-код во вкладке «Создать запрос» — через CDN `cdn.jsdelivr.net/npm/qrcode/...` (загрузка при mount; при недоступности UI деградирует к текстовому отображению paymentUrl). QR рисуется только для операций, чей descriptor задаёт `paymentUrlPath`.
+- npm недоступен. QR-код во вкладке «Создать запрос» — через CDN `cdnjs.cloudflare.com/ajax/libs/qrcode/1.5.1/qrcode.min.js` (UMD-сборка node-qrcode v1.5.1, выставляет `window.QRCode.toCanvas`). Загрузка при mount; при недоступности UI деградирует к текстовому отображению paymentUrl. QR рисуется только для операций, чей descriptor задаёт `paymentUrlPath`.
 
 ## Роли и сценарии
 

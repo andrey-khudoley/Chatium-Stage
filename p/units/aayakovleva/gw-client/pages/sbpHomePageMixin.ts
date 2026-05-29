@@ -493,8 +493,11 @@ export const sbpHomePageMethodsMixin = {
     loadQrcodeLib(this: any) {
       if (typeof window === 'undefined') return
       if ((window as any).QRCode) return
+      // cdnjs хостит UMD-сборку, выставляющую window.QRCode.toCanvas (API node-qrcode).
+      // Путь cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js не работает —
+      // папка build/ не публикуется в npm-пакете и отдаётся как 404 text/plain.
       const s = document.createElement('script')
-      s.src = 'https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js'
+      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcode/1.5.1/qrcode.min.js'
       s.async = true
       document.head.appendChild(s)
     }
