@@ -5,19 +5,23 @@ argument-hint: '[пути через пробел | --all для всего work
 
 # /check
 
-Запусти технические проверки через субагента `verification-runner`.
+Запусти технические проверки по плейбуку `verification-runner`. **Этот чат сам исполняет плейбук** — типы/стиль/тесты прогоняет через Bash, а checker'ов порождает напрямую через Agent.
+
+> **Почему не через субагента.** `verification-runner` сам порождает checker'ов через Agent, а субагент вложенных субагентов порождать не может. Поэтому плейбук исполняет основной чат (он порождать субагентов вправе).
 
 ## Что произойдёт
 
-`verification-runner` выполнит:
+По плейбуку `verification-runner` основной чат выполнит:
 
 1. **Строгая проверка типов** — `node scripts/check-types.mjs` (vue-tsc + конфиг, наследующий корневой `tsconfig.json`: `strict: true`, `noUncheckedIndexedAccess`, реальные глобальные типы Chatium; облегчённые локальные шимы проектов исключаются, `.vue` проверяются).
 2. **Стиль** — `node scripts/check-style.mjs` (Prettier по `.prettierrc`).
-3. **Стандарты** — параллельный вызов `standards-checker` (по 001-standards.md).
-4. **File-based роутинг** — параллельный вызов `file-based-routing-checker`.
-5. **Рантайм и архитектура** — параллельный вызов `runtime-architecture-checker`.
-6. **Тесты** — определит способ запуска (страница `./web/tests`, `api/tests/endpoints-check`, `*.test.ts`) или отметит «не применимо».
-7. **Сводный отчёт** с приоритизированными проблемами.
+3. **Параллельный fan-out checker'ов** (Agent, одним сообщением):
+   - `standards-checker` (по 001-standards.md, haiku);
+   - `file-based-routing-checker` (роутинг и ссылки, haiku);
+   - `runtime-architecture-checker` (рантайм-баги и архитектура, opus);
+   - `chatium-platform-checker` mode=code (соответствие подсистемам по `inner/docs/`, opus).
+4. **Тесты** — определит способ запуска (страница `./web/tests`, `api/tests/endpoints-check`, `*.test.ts`) или отметит «не применимо».
+5. **Сводный отчёт** с приоритизированными проблемами.
 
 ## Режимы
 
@@ -27,18 +31,16 @@ argument-hint: '[пути через пробел | --all для всего work
 
 ## Инструкция запуска
 
-Вызови **Agent** с `subagent_type: verification-runner` и передай в промпт:
-
-1. **Аргументы:** $ARGUMENTS
-   - пусто → пусть определит затронутые файлы сам (`git diff --name-only` + untracked), режим «фрагмент»;
+1. Прочитай плейбук `.claude/agents/verification-runner.md` через Read.
+2. **Исполни его сам в этом чате** (не вызывай `Agent` с `subagent_type: verification-runner` — это вложенный субагент, checker'ы не запустятся).
+3. Аргументы режима — `$ARGUMENTS`:
+   - пусто → определи затронутые файлы сам (`git diff --name-only` + untracked), режим «фрагмент»;
    - `--all` / `всё` / `workspace` → режим «весь workspace»;
    - иначе → переданные пути как фрагменты.
-2. **Контекст задачи** из переписки (acceptance criteria, план — если обсуждались).
-
-Не запускай проверки и sub-checker'ов сам — это делает `verification-runner` (типы/стиль — через скрипты, остальное — параллельно через Agent).
+4. Типы/стиль/тесты прогоняй сам через Bash; `standards-checker`, `file-based-routing-checker`, `runtime-architecture-checker`, `chatium-platform-checker`(code) порождай через Agent параллельно одним сообщением. Контекст задачи (acceptance criteria, план — если обсуждались) передай checker'ам.
 
 ## Когда использовать
 
 - Перед коммитом, когда пользователь сказал «готово?», «можно коммитить?», «всё ок?».
-- В рамках конвейера `/pipeline` (шаг 10).
+- В рамках конвейера `/pipeline` (фаза верификации, шаг 8).
 - Для быстрой проверки текущего состояния без формализации/планирования.
