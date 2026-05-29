@@ -50,6 +50,8 @@ import {
 } from '../../lib/webhook/processWebhook'
 import { prepareRawLog } from '../../shared/prepareRawLog'
 import { extractCorrelationId } from '../../shared/correlation'
+import { paymentSocketChannel } from '../../shared/paymentSocket'
+import { sendDataToSocket } from '@app/socket'
 
 const LOG_PATH = 'web/webhook'
 
@@ -262,6 +264,38 @@ export const webhookRoute = app.post('/', async (ctx, req) => {
         successfulPayment && dedupeResult !== 'duplicate' && !!parsed.orderNumber
     }
   })
+
+  // --- 6. Публикация в socket-канал уведомлений об оплате (если есть correlationId) ---
+  // Магазинный JS подписывается на канал `payment-<correlationId>` через
+  // `POST /api/lp/payment-socket` и обновляет страницу / делает редирект на «спасибо».
+  // Публикуем только при `dedupeResult === 'first'` — при `'duplicate'` событие уже
+  // отправлено, при `'no_number'` (нет number в payload или сбой idempotency-lookup —
+  // см. catch выше) LifePay будет ретраить webhook до 10 раз; публикация в каждом из
+  // этих случаев приведёт к многократному обновлению страницы у клиента.
+  const channel = paymentSocketChannel(correlationId)
+  if (channel && dedupeResult === 'first') {
+    try {
+      await sendDataToSocket(ctx, channel, {
+        type: 'payment',
+        data: {
+          gatewayId: 'lifepay',
+          correlationId,
+          status: parsed.status || '',
+          eventType: parsed.type || '',
+          externalId: parsed.number || '',
+          orderNumber: parsed.orderNumber || '',
+          amount: parsed.amount || '',
+          timestamp: Date.now()
+        }
+      })
+    } catch (e) {
+      await loggerLib.writeServerLog(ctx, {
+        severity: 3,
+        message: `[${LOG_PATH}] socket_publish_failed`,
+        payload: { channel, error: String(e) }
+      })
+    }
+  }
 
   return { statusCode: 200, rawHttpBody: 'OK', headers: { 'Content-Type': 'text/plain' } }
 })

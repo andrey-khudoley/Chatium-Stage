@@ -96,6 +96,13 @@
           @open-raw="openRaw"
         />
 
+        <HomeRequestFormatTab
+          v-if="activeTab === 'requestFormat'"
+          :invokeUrl="apiUrls?.invoke"
+          :paymentSocketUrl="apiUrls?.paymentSocket"
+          @copy-text="copyText"
+        />
+
         <HomeCreateRequestTab
           v-show="activeTab === 'createRequest'"
           :currentKey="currentOperationKey"
@@ -156,6 +163,7 @@ import HomeOverviewTab from '../components/home/HomeOverviewTab.vue'
 import HomeRequestsTab from '../components/home/HomeRequestsTab.vue'
 import HomeWebhooksTab from '../components/home/HomeWebhooksTab.vue'
 import HomeCreateRequestTab from '../components/home/HomeCreateRequestTab.vue'
+import HomeRequestFormatTab from '../components/home/HomeRequestFormatTab.vue'
 import HomeAccessTab from '../components/home/HomeAccessTab.vue'
 import HomeRawModal from '../components/home/HomeRawModal.vue'
 import HomeCreateInviteModal from '../components/home/HomeCreateInviteModal.vue'
@@ -194,6 +202,7 @@ export default {
     HomeRequestsTab,
     HomeWebhooksTab,
     HomeCreateRequestTab,
+    HomeRequestFormatTab,
     HomeAccessTab,
     HomeRawModal,
     HomeCreateInviteModal

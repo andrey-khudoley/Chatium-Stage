@@ -28,6 +28,7 @@
 
 - Открыть `/web/admin`, заполнить настройки LifePay (apikey, login, webhook token, gateway base URL) в карточке «Настройки LifePay»; при необходимости — настройки GetCourse (base URL, school api key, school host, enabled) в карточке «Настройки GetCourse».
 - На вкладке «Создать запрос» выбрать операцию из дропдауна (группы — по подключённым гейтвеям LifePay / Lava.Top / GetCourse), заполнить динамическую форму, отправить запрос. Для операций, возвращающих `paymentUrl` (`LifePay.createBill`, `Lava.Top.createInvoice`), на странице сразу отрисуется QR-код. Для GC-операций форма перестраивается из `argsSchema.fields` ответа гейтвея.
+- На вкладке «Формат запросов» — контракты `POST /api/lp/invoke` (LifePay createBill, Lava.Top createInvoice) и подписка на socket уведомлений об оплате (`POST /api/lp/payment-socket` + `@app/socket`) в виде атомарных копируемых сниппетов. Источник истины — `shared/requestFormatSamples.ts` (`buildRequestFormatSamples({ invokeUrl, paymentSocketUrl })`); рендер — `components/home/HomeRequestFormatTab.vue` (декларативный, без бизнес-логики).
 - Оплатить QR со смартфона, получить webhook от LifePay, увидеть запись в журнале.
 
 ## Контур интеграции с payments-gateway
@@ -71,6 +72,7 @@ File-based, один файл = один роут с путём `/`:
 - `api/lp/analytics/filter-save.ts` — POST сохранение/сброс глобального фильтра панели (requireRealUser + requireInternalAccess).
 - `api/lp/search-by-request-id.ts` — GET поиск (requireRealUser + requireInternalAccess).
 - `api/lp/raw-request.ts`, `api/lp/raw-webhook.ts` — GET raw-записи (requireRealUser + requireInternalAccess).
+- `api/lp/payment-socket.ts` — POST выдача `encodedSocketId` для подписки на канал уведомлений об оплате (requireRealUser + requireInternalAccess). Имя канала — `gw-client-payment-<correlationId>` (`shared/paymentSocket.ts`); сервер публикует сообщения в канал из webhook-приёмников через `sendDataToSocket`.
 - `api/access/consume-invite.ts` — POST потребление инвайта (requireRealUser). (ADR 0003.)
 - `api/access/generate-invite.ts`, `api/access/revoke-invite.ts`, `api/access/revoke-grant.ts` — POST Admin-управление. (ADR 0003.)
 - `api/access/invites.ts`, `api/access/grants.ts` — GET списки для Admin. (ADR 0003.)

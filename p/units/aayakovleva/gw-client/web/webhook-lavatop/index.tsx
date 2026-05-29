@@ -23,6 +23,8 @@ import * as webhookLogRepo from '../../repos/webhookLog.repo'
 import * as webhookIdempRepo from '../../repos/webhookIdempotency.repo'
 import { prepareRawLog } from '../../shared/prepareRawLog'
 import { base64ToUtf8String } from '../../lib/base64.lib'
+import { paymentSocketChannel } from '../../shared/paymentSocket'
+import { sendDataToSocket } from '@app/socket'
 
 const LOG_PATH = 'web/webhook-lavatop'
 
@@ -163,6 +165,10 @@ export const webhookLavatopRoute = app.post('/', async (ctx, req) => {
       message: `[${LOG_PATH}] dedupe_error`,
       payload: { dedupeKey, error: String(e) }
     })
+    // Консервативный фоллбэк: при сбое idempotency-lookup помечаем событие
+    // как дубль, чтобы при Lava.Top-ретраях клиентский JS не получал
+    // multiple socket-уведомлений по одной оплате.
+    duplicate = true
   }
 
   // Чтение query (на случай если кто-то проксирует webhook через query) и тело.
@@ -232,6 +238,36 @@ export const webhookLavatopRoute = app.post('/', async (ctx, req) => {
     message: `[${LOG_PATH}] webhook_done`,
     payload: { contractId, eventType, status, duplicate }
   })
+
+  // Публикация в socket-канал уведомлений об оплате. У Lava.Top нет
+  // явного `correlationId` — связку с магазинным заказом обеспечивает
+  // `clientOrderId` (его магазин передаёт в `createInvoice.args`, а Lava.Top
+  // возвращает в payload вебхука). Если он не задан — публикации нет, но
+  // запись webhook_log всё равно сделана.
+  const channel = paymentSocketChannel(orderNumber)
+  if (channel && !duplicate) {
+    try {
+      await sendDataToSocket(ctx, channel, {
+        type: 'payment',
+        data: {
+          gatewayId: 'lavatop',
+          correlationId: orderNumber,
+          status,
+          eventType,
+          externalId: contractId,
+          orderNumber,
+          amount,
+          timestamp: Date.now()
+        }
+      })
+    } catch (e) {
+      await loggerLib.writeServerLog(ctx, {
+        severity: 3,
+        message: `[${LOG_PATH}] socket_publish_failed`,
+        payload: { channel, error: String(e) }
+      })
+    }
+  }
 
   return jsonResponse(200, { success: true, duplicate })
 })

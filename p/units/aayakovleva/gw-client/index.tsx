@@ -102,7 +102,8 @@ export const indexPageRoute = app.html('/', async (ctx, req) => {
     accessRevokeGrant: `${getFullUrl('/api/access/revoke-grant')}`,
     accessInvites: `${getFullUrl('/api/access/invites')}`,
     accessGrants: `${getFullUrl('/api/access/grants')}`,
-    filterSave: `${getFullUrl('/api/lp/analytics/filter-save')}`
+    filterSave: `${getFullUrl('/api/lp/analytics/filter-save')}`,
+    paymentSocket: `${getFullUrl('/api/lp/payment-socket')}`
   }
 
   const indexUrl = getFullUrl(ROUTES.index)

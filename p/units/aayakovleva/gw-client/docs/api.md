@@ -66,6 +66,7 @@
 | POST   | /webhook?token=&correlationId=                       | web/webhook/index.tsx           | Анонимный + токен                       | Приёмник webhook от LifePay. Сверка токена в query; расхождение/отсутствие → 401/403 без тела и без записи. При валидном → `correlationId` извлекается из query (`extractCorrelationId`); `unwrapWebhookBody` снимает обёртку `data`, `parseWebhookBody` извлекает `number/type/status/method/amount/order.number/email`; запись в `webhook_log` с `gatewayId='lifepay'` (включая `correlationId`, `rawBody`/`rawQuery` через `prepareRawLog` — сырые, без PII-маски) + дедупликация по `number` через `webhook_idempotency`, ответ 200 OK. MD5-подпись webhook **не** проверяется. LifePay-ретраи: 1/3/5/10 мин, далее раз в час, до 10 попыток — дедупликация по `number` защищает от двойного учёта. |
 | GET    | /webhook-lavatop                                     | web/webhook-lavatop/index.tsx   | Анонимный                               | Проверка доступности приёмника Lava.Top. Возвращает `{ ok, status: 'ready', webhookSecretConfigured }` без раскрытия секрета.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 | POST   | /webhook-lavatop                                     | web/webhook-lavatop/index.tsx   | Анонимный + секрет (X-Api-Key / Basic)  | Приёмник webhook Lava.Top. Авторизация — `X-Api-Key` или Basic Authorization, значение должно совпадать с `lava_webhook_secret`. Без секрета — 503; неверная авторизация — 401; некорректное тело — 400. При валидном — запись в `webhook_log` с `gatewayId='lavatop'` и `gatewayExternalId=contractId`; дедупликация через `webhook_idempotency` по композитному ключу `lavatop:contractId:eventType:status` (`tryRegister`). Ответ 200 `{ success: true, duplicate }`.                                                                                                                                                                                                                                |
+| POST   | /api/lp/payment-socket                               | api/lp/payment-socket.ts        | requireRealUser + requireInternalAccess | Выдаёт `encodedSocketId` для подписки на канал уведомлений об оплате (`@app/socket`). Тело: `{ correlationId: string }` (1–128 символов, `[A-Za-z0-9._:-]`). Ответ: `{ success, channel, encodedSocketId }`. Имя сырого канала — `gw-client-payment-<correlationId>` (`shared/paymentSocket.ts`). Сервер публикует сообщение `{ type: 'payment', data: {...} }` в этот канал при получении соответствующего webhook (см. `web/webhook` и `web/webhook-lavatop`). 400 `PAYMENT_SOCKET_CORRELATION_ID_INVALID` — невалидный/пустой correlationId.                                                                                                                                                         |
 
 ### Контракт `/api/lp/invoke`
 
@@ -178,6 +179,46 @@
   далее раз в час, всего не более 10 попыток. Поэтому даже при ошибке записи
   в журнал отвечаем 200 OK — дедупликация по `number` через `webhook_idempotency`
   защищает от двойного учёта на стороне клиента.
+
+### Контракт socket-уведомлений об оплате
+
+Реальный поток: магазинный JS получает `encodedSocketId` через
+`POST /api/lp/payment-socket` и подписывается на канал через
+`getOrCreateBrowserSocketClient().subscribeToData(encodedSocketId)`. Сервер
+публикует сообщение в канал из webhook-приёмников после успешной (не-дубль)
+записи в `webhook_log`. Дубли (LifePay ретраит 10 раз) защищаются на стороне
+сервера через `webhook_idempotency` — сообщение публикуется один раз.
+
+Имя сырого канала: `gw-client-payment-<correlationId>`. Ключ `correlationId`:
+
+- LifePay — берётся из query callbackUrl (`extractCorrelationId(queryObj)`,
+  `shared/correlation.ts`). Магазин обязан передать `correlationId` в args
+  при `createBill` — иначе ни связки с request_log, ни socket-уведомления.
+- Lava.Top — берётся из поля `clientOrderId` тела вебхука (Lava.Top возвращает
+  его как есть). Магазин обязан передать `clientOrderId` в args при
+  `createInvoice` — иначе аналогично.
+
+Формат сообщения (`PaymentSocketMessage`, `shared/paymentSocket.ts`):
+
+```json
+{
+  "type": "payment",
+  "data": {
+    "gatewayId": "lifepay" | "lavatop",
+    "correlationId": "<тот же ключ>",
+    "status": "success" | "fail" | "<иной>",
+    "eventType": "payment" | "refund" | "<eventType Lava.Top>",
+    "externalId": "<id транзакции upstream>",
+    "orderNumber": "<orderNumber/clientOrderId, если есть>",
+    "amount": "1.00",
+    "timestamp": 1716985200000
+  }
+}
+```
+
+Если `correlationId` пустой / невалидный — публикация в канал не делается,
+но запись в `webhook_log` всё равно сохраняется (поведение приёмников не
+ломается отсутствием подписчика).
 
 ## Публичные эндпоинты и страницы доступа
 

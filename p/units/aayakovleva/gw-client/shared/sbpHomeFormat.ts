@@ -144,6 +144,7 @@ export type SbpHomeApiUrls = {
   accessInvites: string
   accessGrants: string
   filterSave: string
+  paymentSocket: string
 }
 
 export function defaultSbpHomeApiUrls(): SbpHomeApiUrls {
@@ -160,7 +161,8 @@ export function defaultSbpHomeApiUrls(): SbpHomeApiUrls {
     accessRevokeGrant: '',
     accessInvites: '',
     accessGrants: '',
-    filterSave: ''
+    filterSave: '',
+    paymentSocket: ''
   }
 }
 
@@ -185,9 +187,10 @@ export type SbpHomeTab = { id: string; label: string; icon: string; adminOnly?: 
 export function sbpHomeTabs(): SbpHomeTab[] {
   return [
     { id: 'overview', label: 'Обзор', icon: 'fa-chart-line' },
+    { id: 'createRequest', label: 'Создать запрос', icon: 'fa-paper-plane' },
+    { id: 'requestFormat', label: 'Формат запросов', icon: 'fa-code' },
     { id: 'requests', label: 'Запросы', icon: 'fa-list' },
     { id: 'webhooks', label: 'Webhook', icon: 'fa-bell' },
-    { id: 'createRequest', label: 'Создать запрос', icon: 'fa-paper-plane' },
     { id: 'access', label: 'Доступ', icon: 'fa-user-shield', adminOnly: true }
   ]
 }
