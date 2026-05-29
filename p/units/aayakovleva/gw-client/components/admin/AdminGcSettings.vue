@@ -1,8 +1,10 @@
 <script setup lang="ts">
-// Карточка «Настройки GetCourse» — базовый URL гейтвея, ключ тестовой школы,
-// хост тестовой школы и флаг включения. Источник истины при первой загрузке —
-// SSR-проп initialSettings; компонент сам сохраняет изменения через
-// `saveSettingRoute` и показывает индикатор «не сохранено / OK / ERR».
+// Карточка «Настройки GetCourse» — базовый URL гейтвея, ключ тестовой школы
+// и хост тестовой школы. Источник истины при первой загрузке — SSR-проп
+// initialSettings; компонент сам сохраняет изменения через `saveSettingRoute`
+// и показывает индикатор «не сохранено / OK / ERR».
+// Флаг активации `gc_enabled` живёт на вкладке «Настройки» главной панели
+// (HomeSettingsTab) — operational-тоггл рядом с журналом запросов.
 import { computed, ref } from 'vue'
 import { saveSettingRoute } from '../../api/settings/save'
 import { createComponentLogger } from '../../shared/logger'
@@ -16,23 +18,20 @@ const props = defineProps<{
     gc_base_url: string
     gc_test_school_api_key: string
     gc_test_school_host: string
-    gc_enabled: string
   }
 }>()
 
 const GC_SETTINGS_KEYS = [
   'gc_base_url',
   'gc_test_school_api_key',
-  'gc_test_school_host',
-  'gc_enabled'
+  'gc_test_school_host'
 ] as const
 type GcSettingKey = (typeof GC_SETTINGS_KEYS)[number]
 
 const gcSettings = ref<Record<GcSettingKey, string>>({
   gc_base_url: props.initialSettings?.gc_base_url ?? '',
   gc_test_school_api_key: props.initialSettings?.gc_test_school_api_key ?? '',
-  gc_test_school_host: props.initialSettings?.gc_test_school_host ?? '',
-  gc_enabled: props.initialSettings?.gc_enabled === 'true' ? 'true' : 'false'
+  gc_test_school_host: props.initialSettings?.gc_test_school_host ?? ''
 })
 const savedGcSettings = ref<Record<GcSettingKey, string>>({ ...gcSettings.value })
 const gcSettingsMessage = ref('')
@@ -51,9 +50,8 @@ const saveGcSettings = async () => {
   try {
     for (const key of GC_SETTINGS_KEYS) {
       const value = gcSettings.value[key] ?? ''
-      // gc_enabled — обязательно отправляем (boolean-флаг). Остальные ключи:
-      // пустые секреты не отправляем, чтобы валидация не отвергла очищение.
-      if (key !== 'gc_enabled' && !value) continue
+      // Пустые значения не отправляем, чтобы валидация не отвергла очищение.
+      if (!value) continue
       const res = await saveSettingRoute.run(ctx, { key, value })
       const data = res as { success?: boolean; error?: string }
       if (data?.success === false) {
@@ -140,23 +138,6 @@ const saveGcSettings = async () => {
               >Hostname без схемы (без <code>http://</code>). Передаётся в заголовке
               <code>X-Gc-School-Host</code>.</span
             >
-          </label>
-        </div>
-      </fieldset>
-
-      <fieldset class="ap-set-grp">
-        <legend class="ap-set-legend"><i class="fas fa-toggle-on"></i> Активация</legend>
-        <p class="ap-hint">
-          Когда выключено — gateway GetCourse не запрашивается на SSR и в дропдауне «Создать запрос»
-          нет группы GetCourse.
-        </p>
-        <div class="ap-set-fields">
-          <label class="ap-field ap-field-full">
-            <span class="ap-field-label">gc_enabled</span>
-            <select v-model="gcSettings.gc_enabled" class="ap-input">
-              <option value="true">true — включено</option>
-              <option value="false">false — выключено</option>
-            </select>
           </label>
         </div>
       </fieldset>

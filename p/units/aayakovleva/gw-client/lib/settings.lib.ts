@@ -34,7 +34,21 @@ export const SETTING_KEYS = {
   GC_TEST_SCHOOL_HOST: 'gc_test_school_host',
   GC_ENABLED: 'gc_enabled',
   // Глобальный фильтр панели по дате/времени (один на всё приложение).
-  PANEL_DATE_FILTER: 'panel_date_filter'
+  PANEL_DATE_FILTER: 'panel_date_filter',
+  // Виджеты для встраивания на сторонние страницы (userscripts/*).
+  // Per-method enable/whitelist/maxAmount + общий фильтр офферов.
+  WIDGET_LIFEPAY_ENABLED: 'widget_lifepay_enabled',
+  WIDGET_LIFEPAY_DOMAINS: 'widget_lifepay_domains',
+  WIDGET_LIFEPAY_MIN: 'widget_lifepay_min',
+  WIDGET_LIFEPAY_MAX: 'widget_lifepay_max',
+  WIDGET_LIFEPAY_OFFER_LIST_TYPE: 'widget_lifepay_offer_list_type',
+  WIDGET_LIFEPAY_OFFER_IDS: 'widget_lifepay_offer_ids',
+  WIDGET_LAVATOP_ENABLED: 'widget_lavatop_enabled',
+  WIDGET_LAVATOP_DOMAINS: 'widget_lavatop_domains',
+  WIDGET_LAVATOP_MIN: 'widget_lavatop_min',
+  WIDGET_LAVATOP_MAX: 'widget_lavatop_max',
+  WIDGET_LAVATOP_OFFER_LIST_TYPE: 'widget_lavatop_offer_list_type',
+  WIDGET_LAVATOP_OFFER_IDS: 'widget_lavatop_offer_ids'
 } as const
 
 /** Настройка вебхука логов: enable — активна ли отправка, url — куда отправлять. */
@@ -99,7 +113,19 @@ export const DEFAULTS = {
   [SETTING_KEYS.GC_BASE_URL]: '',
   [SETTING_KEYS.GC_TEST_SCHOOL_API_KEY]: '',
   [SETTING_KEYS.GC_TEST_SCHOOL_HOST]: '',
-  [SETTING_KEYS.GC_ENABLED]: 'false'
+  [SETTING_KEYS.GC_ENABLED]: 'false',
+  [SETTING_KEYS.WIDGET_LIFEPAY_ENABLED]: 'false',
+  [SETTING_KEYS.WIDGET_LIFEPAY_DOMAINS]: '',
+  [SETTING_KEYS.WIDGET_LIFEPAY_MIN]: '0',
+  [SETTING_KEYS.WIDGET_LIFEPAY_MAX]: '0',
+  [SETTING_KEYS.WIDGET_LIFEPAY_OFFER_LIST_TYPE]: 'whitelist',
+  [SETTING_KEYS.WIDGET_LIFEPAY_OFFER_IDS]: '[]',
+  [SETTING_KEYS.WIDGET_LAVATOP_ENABLED]: 'false',
+  [SETTING_KEYS.WIDGET_LAVATOP_DOMAINS]: '',
+  [SETTING_KEYS.WIDGET_LAVATOP_MIN]: '0',
+  [SETTING_KEYS.WIDGET_LAVATOP_MAX]: '0',
+  [SETTING_KEYS.WIDGET_LAVATOP_OFFER_LIST_TYPE]: 'whitelist',
+  [SETTING_KEYS.WIDGET_LAVATOP_OFFER_IDS]: '[]'
 } as const
 
 /** Минимальная длина webhook-токена (implementation-plan §1.8.1: ≥ 32 байт). */

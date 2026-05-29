@@ -7,6 +7,12 @@ import { sbpHomeCss1 } from './pagecss/sbpHomeCss1'
 import { sbpHomeCss2 } from './pagecss/sbpHomeCss2'
 import { sbpHomeCss3 } from './pagecss/sbpHomeCss3'
 import { sbpHomeCss4 } from './pagecss/sbpHomeCss4'
+import { sbpAdminCss1 } from './pagecss/sbpAdminCss1'
+import { sbpAdminCss2 } from './pagecss/sbpAdminCss2'
+import { sbpAdminCss3 } from './pagecss/sbpAdminCss3'
+import { sbpAdminCss4 } from './pagecss/sbpAdminCss4'
+import { sbpWidgetsCss1 } from './pagecss/sbpWidgetsCss1'
+import { sbpSettingsCss1 } from './pagecss/sbpSettingsCss1'
 import { sbpHeaderCss1 } from './pagecss/sbpHeaderCss1'
 import { sbpHeaderCss2 } from './pagecss/sbpHeaderCss2'
 import { getLogLevelForPage, getLogLevelScript } from './lib/logLevel'
@@ -19,6 +25,7 @@ import { getPageTitle, getHeaderText } from './config/project'
 import * as loggerLib from './lib/logger.lib'
 import * as settingsLib from './lib/settings.lib'
 import { fetchGcOperations } from './lib/gateway/gcOperationsLoader'
+import { getWidgetSettings } from './lib/widget/widgetSettings.lib'
 import { htmlRedirect } from './lib/htmlRedirect'
 
 const LOG_PATH = 'index'
@@ -89,6 +96,41 @@ export const indexPageRoute = app.html('/', async (ctx, req) => {
   // массив (дропдаун рендерится без группы GetCourse, остальные гейтвеи работают).
   const gcOperations = await fetchGcOperations(ctx)
 
+  // Флаг активации GC для вкладки «Настройки» (operational-тоггл, перенесён
+  // из /web/admin: секреты/URL/host GC остались в админке, активация живёт
+  // рядом с панелью и доступна сотрудникам).
+  const initialGcEnabled = await settingsLib.getGcEnabled(ctx)
+
+  // Виджет-настройки для карточки «Виджеты оплаты» на вкладке «Настройки»
+  // (бизнес-настройки: enabled, domains, min/max, фильтр офферов). Перенесены
+  // из /web/admin вместе с картой; доступ — guardInternalApi (сотрудник + Admin).
+  // graceful degradation: при сбое геттера компонент получает дефолтный объект.
+  let initialWidgetSettings
+  try {
+    initialWidgetSettings = await getWidgetSettings(ctx)
+  } catch (e) {
+    await loggerLib.writeServerLog(ctx, {
+      severity: 4,
+      message: `[${LOG_PATH}] getWidgetSettings failed — fallback to defaults`,
+      payload: { error: String(e) }
+    })
+    initialWidgetSettings = {
+      lifepayEnabled: false,
+      lifepayDomains: '',
+      lifepayMin: 0,
+      lifepayMax: 0,
+      lifepayOfferListType: 'whitelist' as const,
+      lifepayOfferIds: [] as string[],
+      lavatopEnabled: false,
+      lavatopDomains: '',
+      lavatopMin: 0,
+      lavatopMax: 0,
+      lavatopOfferListType: 'whitelist' as const,
+      lavatopOfferIds: [] as string[]
+    }
+  }
+  const anchorBaseUrl = `https://${ctx.account.host}`
+
   const apiUrls = {
     invoke: `${getFullUrl('/api/lp/invoke')}`,
     recentRequests: `${getFullUrl('/api/lp/recent-requests')}`,
@@ -139,6 +181,12 @@ export const indexPageRoute = app.html('/', async (ctx, req) => {
         <style>{sbpHomeCss2}</style>
         <style>{sbpHomeCss3}</style>
         <style>{sbpHomeCss4}</style>
+        <style>{sbpAdminCss1}</style>
+        <style>{sbpAdminCss2}</style>
+        <style>{sbpAdminCss3}</style>
+        <style>{sbpAdminCss4}</style>
+        <style>{sbpWidgetsCss1}</style>
+        <style>{sbpSettingsCss1}</style>
         <style>{sbpHeaderCss1}</style>
         <style>{sbpHeaderCss2}</style>
         <style>{getPreloaderStyles()}</style>
@@ -177,6 +225,9 @@ export const indexPageRoute = app.html('/', async (ctx, req) => {
           apiUrls={apiUrls}
           initialSettings={initialSettings}
           initialDateFilter={initialDateFilter}
+          initialGcEnabled={initialGcEnabled}
+          initialWidgetSettings={initialWidgetSettings}
+          anchorBaseUrl={anchorBaseUrl}
           gcOperations={gcOperations}
         />
       </body>

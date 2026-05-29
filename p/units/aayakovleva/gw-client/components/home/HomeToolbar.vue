@@ -2,21 +2,26 @@
   <nav class="panel-toolbar" aria-label="Разделы и поиск">
     <div class="toolbar-row toolbar-row--tabs">
       <div class="panel-tabs" role="tablist">
-        <button
-          v-for="t in visibleTabs"
-          :key="t.id"
-          :class="['tab', { active: activeTab === t.id }]"
-          :aria-selected="activeTab === t.id"
-          role="tab"
-          type="button"
-          @click="$emit('set-tab', t.id)"
-        >
-          <i class="fas" :class="t.icon"></i>
-          <span>{{ t.label }}</span>
-        </button>
+        <template v-for="(group, gi) in groupedTabs" :key="group.id">
+          <span v-if="gi > 0" class="tab-group-sep" aria-hidden="true"></span>
+          <div class="tab-group" :data-group="group.id">
+            <button
+              v-for="t in group.tabs"
+              :key="t.id"
+              :class="['tab', { active: activeTab === t.id }]"
+              :aria-selected="activeTab === t.id"
+              role="tab"
+              type="button"
+              @click="$emit('set-tab', t.id)"
+            >
+              <i class="fas" :class="t.icon"></i>
+              <span>{{ t.label }}</span>
+            </button>
+          </div>
+        </template>
       </div>
     </div>
-    <div class="toolbar-row toolbar-row--tools">
+    <div v-if="showJournalTools" class="toolbar-row toolbar-row--tools">
       <div class="date-filter" role="group" aria-label="Фильтр по дате и времени">
         <i class="fas fa-calendar-day date-filter-icon" title="Фильтр по дате/времени"></i>
         <div class="date-filter-field">
@@ -115,10 +120,19 @@
 </template>
 
 <script>
-// Sub-toolbar домашней панели: табы + фильтр по дате/времени + LIVE-toggle + быстрый поиск.
-// Все значения приходят пропсами, изменения — через update:* и события (set-tab, filter-change,
-// reset-filter, search, clear-search). Состояние/логика — в orchestrator'е HomePage.
-// CSS глобальный (sbpHomeCss*); никаких <style scoped>.
+// Sub-toolbar домашней панели: табы (сгруппированы по семантике) +
+// контекстный ряд инструментов (фильтр по дате/Live/поиск), который
+// показывается только когда активна журнальная вкладка (overview / requests /
+// webhooks) — на «Создать запрос», «Формат запросов», «Настройки», «Доступ»
+// фильтровать нечего, и ряд инструментов скрыт.
+//
+// Все значения приходят пропсами, изменения — через update:* и события
+// (set-tab, filter-change, reset-filter, search, clear-search).
+// Состояние/логика — в orchestrator'е HomePage. CSS глобальный (sbpHomeCss*).
+import { sbpTabHasJournalTools } from '../../shared/sbpHomeFormat'
+
+const GROUP_ORDER = ['journal', 'actions', 'management']
+
 export default {
   name: 'HomeToolbar',
   props: {
@@ -146,6 +160,28 @@ export default {
     'update:searchValue',
     'search',
     'clear-search'
-  ]
+  ],
+  computed: {
+    groupedTabs() {
+      const map = new Map()
+      for (const t of this.visibleTabs) {
+        const key = t.group || 'actions'
+        if (!map.has(key)) map.set(key, [])
+        map.get(key).push(t)
+      }
+      const groups = []
+      for (const id of GROUP_ORDER) {
+        const tabs = map.get(id)
+        if (tabs && tabs.length > 0) groups.push({ id, tabs })
+      }
+      for (const [id, tabs] of map.entries()) {
+        if (!GROUP_ORDER.includes(id)) groups.push({ id, tabs })
+      }
+      return groups
+    },
+    showJournalTools() {
+      return sbpTabHasJournalTools(this.activeTab)
+    }
+  }
 }
 </script>

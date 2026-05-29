@@ -124,6 +124,13 @@
           @update:gcArgsValues="gcArgsValues = $event"
         />
 
+        <HomeSettingsTab
+          v-if="activeTab === 'settings'"
+          :initial-gc-enabled="initialGcEnabled"
+          :initial-widget-settings="initialWidgetSettings"
+          :anchor-base-url="anchorBaseUrl"
+        />
+
         <HomeAccessTab
           v-if="activeTab === 'access' && isAdmin"
           :invites="invites"
@@ -164,6 +171,7 @@ import HomeRequestsTab from '../components/home/HomeRequestsTab.vue'
 import HomeWebhooksTab from '../components/home/HomeWebhooksTab.vue'
 import HomeCreateRequestTab from '../components/home/HomeCreateRequestTab.vue'
 import HomeRequestFormatTab from '../components/home/HomeRequestFormatTab.vue'
+import HomeSettingsTab from '../components/home/HomeSettingsTab.vue'
 import HomeAccessTab from '../components/home/HomeAccessTab.vue'
 import HomeRawModal from '../components/home/HomeRawModal.vue'
 import HomeCreateInviteModal from '../components/home/HomeCreateInviteModal.vue'
@@ -203,6 +211,7 @@ export default {
     HomeWebhooksTab,
     HomeCreateRequestTab,
     HomeRequestFormatTab,
+    HomeSettingsTab,
     HomeAccessTab,
     HomeRawModal,
     HomeCreateInviteModal
@@ -223,6 +232,9 @@ export default {
     apiUrls: { type: Object, default: () => defaultSbpHomeApiUrls() },
     initialSettings: { type: Object, default: () => defaultSbpHomeSettings() },
     initialDateFilter: { type: Object, default: () => ({}) },
+    initialGcEnabled: { type: Boolean, default: false },
+    initialWidgetSettings: { type: Object, default: null },
+    anchorBaseUrl: { type: String, default: '' },
     gcOperations: { type: Array, default: () => [] }
   },
   data() {

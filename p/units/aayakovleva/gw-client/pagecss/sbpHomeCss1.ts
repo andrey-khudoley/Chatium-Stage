@@ -218,8 +218,34 @@ export const sbpHomeCss1 = `
 }
 .panel-tabs {
   display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.tab-group {
+  display: inline-flex;
   gap: 0.35rem;
   flex-wrap: wrap;
+}
+.tab-group-sep {
+  width: 1px;
+  height: 1.4rem;
+  background: var(--color-border-light);
+  opacity: 0.55;
+  margin: 0 0.15rem;
+  align-self: center;
+  flex-shrink: 0;
+}
+.tab-group[data-group='management'] .tab {
+  color: var(--color-text-tertiary);
+}
+.tab-group[data-group='management'] .tab.active {
+  color: var(--color-text);
+}
+@media (max-width: 760px) {
+  .tab-group-sep {
+    display: none;
+  }
 }
 .tab {
   display: inline-flex;

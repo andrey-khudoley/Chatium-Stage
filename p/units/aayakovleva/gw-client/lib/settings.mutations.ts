@@ -16,6 +16,7 @@ import {
   isValidDateFilter,
   normalizeDateFilter
 } from './settings.lib'
+import { WIDGET_INTENT_HARD_LIMIT_RUB } from '../shared/widgetSettingsTypes'
 
 const LOG_MODULE = 'lib/settings.mutations'
 
@@ -236,6 +237,99 @@ export async function setSetting(ctx: app.Ctx, key: string, value: unknown): Pro
       severity: 6,
       message: `[${LOG_MODULE}] setSetting PANEL_DATE_FILTER branch`,
       payload: { normalized }
+    })
+  } else if (
+    key === SETTING_KEYS.WIDGET_LIFEPAY_ENABLED ||
+    key === SETTING_KEYS.WIDGET_LAVATOP_ENABLED
+  ) {
+    const str =
+      typeof value === 'string' ? value.trim() : typeof value === 'boolean' ? String(value) : ''
+    if (str !== 'true' && str !== 'false') {
+      throw new Error(`${key} должен быть строкой "true" или "false".`)
+    }
+    normalized = str
+    await loggerLib.writeServerLog(ctx, {
+      severity: 6,
+      message: `[${LOG_MODULE}] setSetting WIDGET_*_ENABLED branch`,
+      payload: { key, normalized }
+    })
+  } else if (
+    key === SETTING_KEYS.WIDGET_LIFEPAY_DOMAINS ||
+    key === SETTING_KEYS.WIDGET_LAVATOP_DOMAINS
+  ) {
+    const str = typeof value === 'string' ? value.trim() : ''
+    normalized = str
+    await loggerLib.writeServerLog(ctx, {
+      severity: 6,
+      message: `[${LOG_MODULE}] setSetting WIDGET_*_DOMAINS branch`,
+      payload: { key, length: str.length }
+    })
+  } else if (
+    key === SETTING_KEYS.WIDGET_LIFEPAY_MIN ||
+    key === SETTING_KEYS.WIDGET_LAVATOP_MIN ||
+    key === SETTING_KEYS.WIDGET_LIFEPAY_MAX ||
+    key === SETTING_KEYS.WIDGET_LAVATOP_MAX
+  ) {
+    const n =
+      typeof value === 'number' ? value : typeof value === 'string' ? parseInt(value, 10) : NaN
+    if (!Number.isFinite(n) || n < 0) {
+      throw new Error(`${key} должен быть неотрицательным числом (0 = без ограничений).`)
+    }
+    if (n > WIDGET_INTENT_HARD_LIMIT_RUB) {
+      throw new Error(
+        `${key} не может превышать серверный hard-limit ${WIDGET_INTENT_HARD_LIMIT_RUB} ₽.`
+      )
+    }
+    normalized = String(Math.floor(n))
+    await loggerLib.writeServerLog(ctx, {
+      severity: 6,
+      message: `[${LOG_MODULE}] setSetting WIDGET_*_MIN/MAX branch`,
+      payload: { key, normalized }
+    })
+  } else if (
+    key === SETTING_KEYS.WIDGET_LIFEPAY_OFFER_LIST_TYPE ||
+    key === SETTING_KEYS.WIDGET_LAVATOP_OFFER_LIST_TYPE
+  ) {
+    const str = typeof value === 'string' ? value.trim() : ''
+    if (str !== 'whitelist' && str !== 'blacklist') {
+      throw new Error(`${key} допустимо только "whitelist" или "blacklist".`)
+    }
+    normalized = str
+    await loggerLib.writeServerLog(ctx, {
+      severity: 6,
+      message: `[${LOG_MODULE}] setSetting WIDGET_*_OFFER_LIST_TYPE branch`,
+      payload: { key, normalized }
+    })
+  } else if (
+    key === SETTING_KEYS.WIDGET_LIFEPAY_OFFER_IDS ||
+    key === SETTING_KEYS.WIDGET_LAVATOP_OFFER_IDS
+  ) {
+    const str = typeof value === 'string' ? value.trim() : ''
+    if (str.length === 0) {
+      normalized = '[]'
+    } else {
+      let parsed: unknown
+      try {
+        parsed = JSON.parse(str)
+      } catch {
+        throw new Error(`${key} должен быть валидной JSON-строкой массива строк.`)
+      }
+      if (!Array.isArray(parsed)) {
+        throw new Error(`${key} должен быть JSON-массивом строк.`)
+      }
+      const cleaned: string[] = []
+      for (const item of parsed) {
+        if (typeof item !== 'string' || item.trim().length === 0) {
+          throw new Error(`${key}: каждый элемент должен быть непустой строкой.`)
+        }
+        cleaned.push(item.trim())
+      }
+      normalized = JSON.stringify(cleaned)
+    }
+    await loggerLib.writeServerLog(ctx, {
+      severity: 6,
+      message: `[${LOG_MODULE}] setSetting WIDGET_*_OFFER_IDS branch`,
+      payload: { key, normalizedLength: (normalized as string).length }
     })
   }
 

@@ -182,12 +182,12 @@ export const adminPageRoute = app.html('/', async (ctx, req) => {
     lava_base_url: await settingsLib.getLavaBaseUrl(ctx),
     lava_webhook_secret: await settingsLib.getLavaWebhookSecret(ctx)
   }
-  // Настройки GC для отдельной карточки на странице настроек.
+  // Настройки GC для отдельной карточки на странице настроек. Секреты и URL/host
+  // живут здесь; флаг `gc_enabled` вынесен на вкладку «Настройки» панели (HomeSettingsTab).
   const initialGcSettings = {
     gc_base_url: await settingsLib.getGcBaseUrl(ctx),
     gc_test_school_api_key: await settingsLib.getGcTestSchoolApiKey(ctx),
-    gc_test_school_host: await settingsLib.getGcTestSchoolHost(ctx),
-    gc_enabled: (await settingsLib.getGcEnabled(ctx)) ? 'true' : 'false'
+    gc_test_school_host: await settingsLib.getGcTestSchoolHost(ctx)
   }
   await loggerLib.writeServerLog(ctx, {
     severity: 6,
@@ -203,8 +203,7 @@ export const adminPageRoute = app.html('/', async (ctx, req) => {
       hasLavaWebhookSecret: !!initialLavatopSettings.lava_webhook_secret,
       hasGcBaseUrl: !!initialGcSettings.gc_base_url,
       hasGcSchoolApiKey: !!initialGcSettings.gc_test_school_api_key,
-      hasGcSchoolHost: !!initialGcSettings.gc_test_school_host,
-      gcEnabled: initialGcSettings.gc_enabled === 'true'
+      hasGcSchoolHost: !!initialGcSettings.gc_test_school_host
     }
   })
   await loggerLib.writeServerLog(ctx, {

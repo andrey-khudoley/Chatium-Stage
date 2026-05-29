@@ -182,17 +182,47 @@ export function defaultSbpHomeSettings(): SbpHomeSettings {
   }
 }
 
-export type SbpHomeTab = { id: string; label: string; icon: string; adminOnly?: boolean }
+/**
+ * Семантическая группа вкладки. Используется для:
+ *   - визуальной группировки в `HomeToolbar` (разделители между группами);
+ *   - контекстного показа фильтра по дате/Live/поиска — он имеет смысл только
+ *     на вкладках группы `journal` (там есть что фильтровать по дате/искать).
+ */
+export type SbpHomeTabGroup = 'journal' | 'actions' | 'management'
+
+export type SbpHomeTab = {
+  id: string
+  label: string
+  icon: string
+  group: SbpHomeTabGroup
+  adminOnly?: boolean
+}
 
 export function sbpHomeTabs(): SbpHomeTab[] {
   return [
-    { id: 'overview', label: 'Обзор', icon: 'fa-chart-line' },
-    { id: 'createRequest', label: 'Создать запрос', icon: 'fa-paper-plane' },
-    { id: 'requestFormat', label: 'Формат запросов', icon: 'fa-code' },
-    { id: 'requests', label: 'Запросы', icon: 'fa-list' },
-    { id: 'webhooks', label: 'Webhook', icon: 'fa-bell' },
-    { id: 'access', label: 'Доступ', icon: 'fa-user-shield', adminOnly: true }
+    { id: 'overview', label: 'Обзор', icon: 'fa-chart-line', group: 'journal' },
+    { id: 'requests', label: 'Запросы', icon: 'fa-list', group: 'journal' },
+    { id: 'webhooks', label: 'Webhook', icon: 'fa-bell', group: 'journal' },
+    { id: 'createRequest', label: 'Создать запрос', icon: 'fa-paper-plane', group: 'actions' },
+    { id: 'requestFormat', label: 'Формат запросов', icon: 'fa-code', group: 'actions' },
+    { id: 'settings', label: 'Настройки', icon: 'fa-sliders', group: 'management' },
+    {
+      id: 'access',
+      label: 'Доступ',
+      icon: 'fa-user-shield',
+      group: 'management',
+      adminOnly: true
+    }
   ]
+}
+
+/**
+ * Вкладки, где имеет смысл фильтр по дате/времени, LIVE-режим и поиск по
+ * requestId. На остальных вкладках tools-ряд тулбара скрывается, чтобы не
+ * мозолить глаза элементами, которые там ничего не делают.
+ */
+export function sbpTabHasJournalTools(tabId: string): boolean {
+  return tabId === 'overview' || tabId === 'requests' || tabId === 'webhooks'
 }
 
 export function sbpRequestsFilters(): Array<{ id: string; label: string }> {

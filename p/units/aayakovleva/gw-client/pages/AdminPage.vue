@@ -54,7 +54,6 @@ const props = defineProps<{
     gc_base_url: string
     gc_test_school_api_key: string
     gc_test_school_host: string
-    gc_enabled: string
   }
 }>()
 

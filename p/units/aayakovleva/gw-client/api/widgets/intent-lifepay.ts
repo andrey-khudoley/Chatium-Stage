@@ -1,0 +1,302 @@
+/**
+ * `POST /api/widgets/intent-lifepay` — публичная инициация платежа LifePay
+ * через виджет на странице магазина.
+ *
+ * ВНИМАНИЕ: эндпоинт сознательно публичный. Защита:
+ *   1) Origin запроса проверяется по `widget_lifepay_domains` (whitelist).
+ *   2) Серверный hard-limit `WIDGET_INTENT_HARD_LIMIT_RUB` независимо от
+ *      пользовательских настроек.
+ *   3) Пользовательский лимит `widget_lifepay_max` (если задан > 0).
+ *   4) Метод должен быть включён (`widget_lifepay_enabled === true`).
+ *   5) Audit-лог через `loggerLib.writeServerLog` на каждый вызов.
+ * `requireRealUser`/`requireInternalAccess` НЕ применяются сознательно —
+ * userscript исполняется в браузере покупателя.
+ *
+ * Тело запроса принимается как JSON. Userscript отправляет `Content-Type:
+ * application/json` — это **triggers CORS preflight** в современных браузерах
+ * (OPTIONS-запрос). Платформа Chatium через `app.options` его не обслуживает,
+ * поэтому userscript использует `Content-Type: text/plain` и JSON-string в
+ * теле — обработчик парсит body вручную.
+ */
+
+import * as loggerLib from '../../lib/logger.lib'
+import * as settingsLib from '../../lib/settings.lib'
+import { getWidgetSettings } from '../../lib/widget/widgetSettings.lib'
+import { checkWidgetOrigin, type WidgetCorsResult } from '../../shared/widgetCorsCheck'
+import { WIDGET_INTENT_HARD_LIMIT_RUB } from '../../shared/widgetSettingsTypes'
+import { invokeByGateway } from '../../lib/gateway/invokeDispatcher'
+import { getFullUrl, ROUTES } from '../../config/routes'
+
+const LOG_PATH = 'api/widgets/intent-lifepay'
+
+function isObject(v: unknown): v is Record<string, unknown> {
+  return typeof v === 'object' && v !== null && !Array.isArray(v)
+}
+
+function readHeaders(req: app.Req): Record<string, unknown> {
+  const h = (req as unknown as { headers?: unknown }).headers
+  return isObject(h) ? h : {}
+}
+
+function parseBody(req: app.Req): Record<string, unknown> | null {
+  const raw = (req as unknown as { body?: unknown }).body
+  if (isObject(raw)) return raw
+  if (typeof raw === 'string') {
+    try {
+      const parsed = JSON.parse(raw)
+      return isObject(parsed) ? parsed : null
+    } catch {
+      return null
+    }
+  }
+  return null
+}
+
+function buildCorsHeaders(corsResult: WidgetCorsResult): Record<string, string> {
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    'Cache-Control': 'no-store'
+  }
+  if (corsResult.allowed && corsResult.origin) {
+    headers['Access-Control-Allow-Origin'] = corsResult.origin
+    headers['Vary'] = 'Origin'
+  }
+  return headers
+}
+
+function jsonResponse(
+  statusCode: number,
+  body: Record<string, unknown>,
+  extraHeaders: Record<string, string>
+) {
+  return {
+    statusCode,
+    rawHttpBody: JSON.stringify(body),
+    headers: extraHeaders
+  }
+}
+
+export const widgetIntentLifepayRoute = app.post('/', async (ctx, req) => {
+  const headers = readHeaders(req)
+  const settings = await getWidgetSettings(ctx)
+  const corsResult = checkWidgetOrigin(headers, settings.lifepayDomains)
+
+  await loggerLib.writeServerLog(ctx, {
+    severity: 6,
+    message: `[${LOG_PATH}] entry`,
+    payload: {
+      hostname: corsResult.hostname,
+      allowed: corsResult.allowed,
+      lifepayEnabled: settings.lifepayEnabled
+    }
+  })
+
+  if (!corsResult.allowed) {
+    await loggerLib.writeServerLog(ctx, {
+      severity: 4,
+      message: `[${LOG_PATH}] widget_intent_attempt: cors_denied`,
+      payload: { method: 'lifepay', hostname: corsResult.hostname, ok: false }
+    })
+    return jsonResponse(
+      403,
+      { ok: false, error: 'CORS_ORIGIN_NOT_ALLOWED' },
+      buildCorsHeaders(corsResult)
+    )
+  }
+
+  if (!settings.lifepayEnabled) {
+    await loggerLib.writeServerLog(ctx, {
+      severity: 4,
+      message: `[${LOG_PATH}] widget_intent_attempt: method_disabled`,
+      payload: { method: 'lifepay', hostname: corsResult.hostname, ok: false }
+    })
+    return jsonResponse(
+      403,
+      { ok: false, error: 'WIDGET_METHOD_DISABLED' },
+      buildCorsHeaders(corsResult)
+    )
+  }
+
+  const body = parseBody(req)
+  if (!body) {
+    return jsonResponse(
+      400,
+      { ok: false, error: 'WIDGET_BODY_INVALID' },
+      buildCorsHeaders(corsResult)
+    )
+  }
+
+  const amountRaw = body.amount
+  const amount =
+    typeof amountRaw === 'number'
+      ? amountRaw
+      : typeof amountRaw === 'string'
+        ? parseFloat(amountRaw)
+        : NaN
+  if (!Number.isFinite(amount) || amount <= 0) {
+    return jsonResponse(
+      400,
+      { ok: false, error: 'WIDGET_AMOUNT_INVALID' },
+      buildCorsHeaders(corsResult)
+    )
+  }
+  if (amount > WIDGET_INTENT_HARD_LIMIT_RUB) {
+    await loggerLib.writeServerLog(ctx, {
+      severity: 4,
+      message: `[${LOG_PATH}] widget_intent_attempt: hard_limit_exceeded`,
+      payload: {
+        method: 'lifepay',
+        hostname: corsResult.hostname,
+        amount,
+        hardLimit: WIDGET_INTENT_HARD_LIMIT_RUB,
+        ok: false
+      }
+    })
+    return jsonResponse(
+      400,
+      { ok: false, error: 'WIDGET_AMOUNT_EXCEEDS_HARD_LIMIT' },
+      buildCorsHeaders(corsResult)
+    )
+  }
+  if (settings.lifepayMin > 0 && amount < settings.lifepayMin) {
+    return jsonResponse(
+      400,
+      { ok: false, error: 'WIDGET_AMOUNT_BELOW_MIN' },
+      buildCorsHeaders(corsResult)
+    )
+  }
+  if (settings.lifepayMax > 0 && amount > settings.lifepayMax) {
+    return jsonResponse(
+      400,
+      { ok: false, error: 'WIDGET_AMOUNT_EXCEEDS_LIMIT' },
+      buildCorsHeaders(corsResult)
+    )
+  }
+
+  const email = typeof body.email === 'string' ? body.email.trim() : ''
+  if (!email) {
+    return jsonResponse(
+      400,
+      { ok: false, error: 'WIDGET_EMAIL_REQUIRED' },
+      buildCorsHeaders(corsResult)
+    )
+  }
+  // Базовая проверка формата (наличие @ + домена). LifePay-gateway сам
+  // отвергнет невалидный — отбрасываем тут, чтобы не платить за upstream-вызов.
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return jsonResponse(
+      400,
+      { ok: false, error: 'WIDGET_EMAIL_INVALID' },
+      buildCorsHeaders(corsResult)
+    )
+  }
+
+  // Серверная фильтрация по списку GC-офферов (whitelist / blacklist).
+  // Если списка нет — фильтр не применяется; иначе оффер должен пройти проверку.
+  const pageOfferId = typeof body.offerId === 'string' ? body.offerId.trim() : ''
+  if (settings.lifepayOfferIds.length > 0) {
+    if (!pageOfferId) {
+      return jsonResponse(
+        400,
+        { ok: false, error: 'WIDGET_OFFER_ID_REQUIRED' },
+        buildCorsHeaders(corsResult)
+      )
+    }
+    const inList = settings.lifepayOfferIds.indexOf(pageOfferId) !== -1
+    const allowed = settings.lifepayOfferListType === 'blacklist' ? !inList : inList
+    if (!allowed) {
+      await loggerLib.writeServerLog(ctx, {
+        severity: 4,
+        message: `[${LOG_PATH}] widget_intent_attempt: offer_not_allowed`,
+        payload: {
+          method: 'lifepay',
+          hostname: corsResult.hostname,
+          offerId: pageOfferId,
+          listType: settings.lifepayOfferListType,
+          ok: false
+        }
+      })
+      return jsonResponse(
+        403,
+        { ok: false, error: 'WIDGET_OFFER_NOT_ALLOWED' },
+        buildCorsHeaders(corsResult)
+      )
+    }
+  }
+  const orderNumber =
+    typeof body.orderNumber === 'string' && body.orderNumber.trim().length > 0
+      ? body.orderNumber.trim()
+      : `widget-${Date.now()}-${Math.floor(Math.random() * 100_000)}`
+  const correlationId =
+    typeof body.correlationId === 'string' ? body.correlationId.trim() : orderNumber
+  const description =
+    typeof body.description === 'string' && body.description.trim().length > 0
+      ? body.description.trim()
+      : `Оплата заказа ${orderNumber}`
+
+  // Webhook URL формируется на сервере: токен из настроек + хост аккаунта.
+  // Если токен не настроен — gateway-клиент отдаст SETTINGS_MISSING, обрабатываем
+  // ниже через `upstreamOk`.
+  const webhookToken = await settingsLib.getLpWebhookToken(ctx)
+  const callbackUrl = webhookToken
+    ? `https://${ctx.account.host}${getFullUrl(ROUTES.webhook)}?token=${webhookToken}`
+    : ''
+
+  const args: Record<string, unknown> = {
+    orderNumber,
+    amount,
+    customerEmail: email,
+    description,
+    callbackUrl
+  }
+  if (typeof body.customerPhone === 'string' && body.customerPhone.trim().length > 0) {
+    args.customerPhone = body.customerPhone.trim()
+  }
+
+  const result = await invokeByGateway(ctx, 'lifepay', 'createBill', args)
+  const upstreamOk = result.ok
+  const responseBody = result.responseBody ?? {}
+  const paymentUrl =
+    (typeof responseBody.paymentUrl === 'string' && responseBody.paymentUrl) ||
+    (typeof (responseBody.data as Record<string, unknown> | undefined)?.paymentUrl === 'string' &&
+      ((responseBody.data as Record<string, unknown>).paymentUrl as string)) ||
+    ''
+
+  await loggerLib.writeServerLog(ctx, {
+    severity: upstreamOk ? 6 : 4,
+    message: `[${LOG_PATH}] widget_intent_attempt`,
+    payload: {
+      method: 'lifepay',
+      hostname: corsResult.hostname,
+      amount,
+      orderNumber,
+      correlationId,
+      ok: upstreamOk,
+      httpStatus: result.httpStatus,
+      requestId: result.requestId,
+      hasPaymentUrl: paymentUrl.length > 0
+    }
+  })
+
+  if (!upstreamOk || !paymentUrl) {
+    return jsonResponse(
+      502,
+      { ok: false, error: 'WIDGET_GATEWAY_ERROR', requestId: result.requestId },
+      buildCorsHeaders(corsResult)
+    )
+  }
+
+  return jsonResponse(
+    200,
+    {
+      ok: true,
+      paymentUrl,
+      orderNumber,
+      correlationId,
+      requestId: result.requestId
+    },
+    buildCorsHeaders(corsResult)
+  )
+})
+
+export default widgetIntentLifepayRoute

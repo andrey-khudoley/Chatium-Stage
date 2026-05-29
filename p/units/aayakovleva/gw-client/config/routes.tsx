@@ -16,7 +16,13 @@ export const ROUTES = {
   webhook: './web/webhook',
   webhookLavatop: './web/webhook-lavatop',
   accessInvite: './web/access/invite',
-  forbidden: './web/forbidden'
+  forbidden: './web/forbidden',
+  widgetConfig: './api/widgets/config',
+  widgetIntentLifepay: './api/widgets/intent-lifepay',
+  widgetIntentLavatop: './api/widgets/intent-lavatop',
+  widgetSettingsGet: './api/widgets/settings-get',
+  widgetSettingsSave: './api/widgets/settings-save',
+  widgetOffers: './api/widgets/offers'
 } as const
 
 /** Пути для getFullUrl (абсолютные от корня проекта) */
@@ -31,7 +37,13 @@ export const ROUTE_PATHS = {
   webhook: '/web/webhook',
   webhookLavatop: '/web/webhook-lavatop',
   accessInvite: '/web/access/invite',
-  forbidden: '/web/forbidden'
+  forbidden: '/web/forbidden',
+  widgetConfig: '/api/widgets/config',
+  widgetIntentLifepay: '/api/widgets/intent-lifepay',
+  widgetIntentLavatop: '/api/widgets/intent-lavatop',
+  widgetSettingsGet: '/api/widgets/settings-get',
+  widgetSettingsSave: '/api/widgets/settings-save',
+  widgetOffers: '/api/widgets/offers'
 } as const
 
 /**
