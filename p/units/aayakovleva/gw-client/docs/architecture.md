@@ -59,8 +59,8 @@
 
 File-based, один файл = один роут с путём `/`:
 
-- `index.tsx` — главная `/` (requireRealUser + requireInternalAccess; аноним → /s/auth/signin, без гранта → /web/forbidden; SSR-пропсы для `pages/HomePage.vue`, компонент `ClientHomePage`; инжект CSS из `pagecss/sbpHomeCss1..4.ts`).
-- `web/admin/index.tsx` — админка `/web/admin` (Admin-only). Загружает начальные значения настроек LifePay и передаёт пропом `initialSettings` в `pages/AdminPage.vue` (оркестратор с подкомпонентами в `components/admin/`). Инжект CSS из `pagecss/sbpAdminCss1..4.ts`.
+- `index.tsx` — главная `/` (requireRealUser + requireInternalAccess; аноним → /s/auth/signin, без гранта → /web/forbidden; SSR-пропсы для `pages/HomePage.vue`, компонент `ClientHomePage`). Загружает в т.ч. виджет-настройки (`initialWidgetSettings`), `anchorBaseUrl` и `initialGcEnabled` — для вкладки «Настройки» главной. Инжект CSS: `pagecss/sbpHomeCss1..4.ts` + `pagecss/sbpAdminCss1..4.ts` + `pagecss/sbpWidgetsCss1.ts` + `pagecss/sbpSettingsCss1.ts`. Вкладка «Настройки» переехала на собственный визуальный язык в стиле главной (`.panel-section`, `.prompt`, `.st-*`); `.ap-*` / `.aw-*` оставлены для обратной совместимости форм submit, но новая разметка их больше не использует.
+- `web/admin/index.tsx` — системные настройки `/web/admin` (**только Admin** — `requireAccountRole(ctx, 'Admin')`). Загружает только инфра/секреты: `initialSettings` (LifePay), `initialLavatopSettings`, `initialGcSettings`. Operational-настройки (gc_enabled, виджеты) сюда **не** попадают — они на главной. Инжект CSS из `pagecss/sbpAdminCss1..4.ts`.
 - `web/profile/index.tsx`, `web/login/index.tsx`, `web/tests/index.tsx` — шаблонные.
 - `web/panel/index.tsx` — редирект на `/` (легаси-совместимость).
 - `web/webhook/index.tsx` — приёмник webhook LifePay (POST, анонимный + токен).
@@ -173,6 +173,12 @@ Admin может отозвать инвайт (`revoke-invite`) или гран
 - `HomeWebhooksTab.vue` — вкладка «Webhook» (журнал `webhook_log`).
 - `HomeCreateRequestTab.vue` — универсальная вкладка «Создать запрос». Дропдаун операций сгруппирован `optgroup`'ами по гейтвеям (LifePay / Lava.Top / GetCourse); форма перестраивается из `shared/operationsClientCatalog.ts` (типы + операции) и `shared/operationsClientForm.ts` (валидация, сборка `args`, начальное состояние). Для GC-операций ветка `v-if="isGcOp"` рендерит `<HomeGcRequestForm/>` вместо стандартной формы. QR рендерится только если у операции задан `paymentUrlPath` и в ответе он есть.
 - `HomeGcRequestForm.vue` — Options API компонент иерархической формы GC-операций. Принимает пропы `gcFormRows` (`FormRow[]`), `gcRootKind`, `gcArgsValues`, `gcErrors`. Группы (`FormGroup`) рендерятся как `fieldset` с отступом; листья (`FormLeaf`) — как поля `LeafInput`. Корневой не-object тип → единый `__root__` textarea. Не содержит бизнес-логики — только рендер.
+- `HomeSettingsTab.vue` — вкладка «Настройки» (доступ — сотрудник + Admin через `requireInternalAccess`, реализовано 2026-05-29). Контейнер для operational/business-настроек. Содержит две карточки:
+  1. **GetCourse** (`gc_enabled`) — единственное локальное поле. SSR-проп `initialGcEnabled: boolean`. Сохранение через `saveOperationalSettingRoute.run(ctx, ...)` (whitelist в endpoint-е допускает только operational-ключи, `guardInternalApi`).
+  2. **Виджеты оплаты** (`HomeWidgetSettings`) — карточка с 12 виджет-ключами (enabled/domains/min/max/offer-фильтр для LifePay и Lava.Top), перенесена из `/web/admin`. Сохранение через `widgetSettingsSaveRoute.run(ctx, ...)` (whitelist 12 ключей, `guardInternalApi`).
+  Стили карточек используют `ap-*` / `aw-*` (admin/widget CSS) — `index.tsx` главной инжектит `sbpAdminCss1..4` + `sbpWidgetsCss1` дополнительно к `sbpHomeCss1..4`.
+- `HomeWidgetSettings.vue` — карточка виджетов на главной (`<script setup lang="ts">`). Loader офферов — `widgetOffersRoute.run(ctx)` (`guardInternalApi`). Использует `HomeWidgetOfferList.vue` для секции фильтра офферов.
+- `HomeWidgetOfferList.vue` — переиспользуемая секция фильтра офферов (whitelist/blacklist + поиск + чекбоксы). Loader передаётся пропом из родителя.
 - `HomeAccessTab.vue` — вкладка «Доступ» (Admin: инвайты и гранты).
 - `HomeRawModal.vue` — модалка raw-данных.
 - `HomeCreateInviteModal.vue` — модалка создания инвайта.
@@ -195,7 +201,21 @@ Admin может отозвать инвайт (`revoke-invite`) или гран
 
 ### `pages/AdminPage.vue`
 
-Оркестратор. Подкомпоненты в `components/admin/`: `AdminCounters.vue`, `AdminProjectSettings.vue`, `AdminLogLevel.vue`, `AdminLifePaySettings.vue`, `AdminGcSettings.vue` (карточка настроек GetCourse: 4 поля — base URL, school api key, school host, enabled). Composable WebSocket-потока логов: `shared/useLogsSocket.ts`. CSS: `pagecss/sbpAdminCss1.ts`..`sbpAdminCss4.ts`. SSR-роут `web/admin/index.tsx` читает четыре GC-настройки и передаёт их пропом `initialGcSettings`.
+Оркестратор системной страницы настроек (**только Admin**, `requireAccountRole('Admin')`). Подкомпоненты в `components/admin/`: `AdminCounters.vue`, `AdminProjectSettings.vue`, `AdminLogLevel.vue`, `AdminLifePaySettings.vue`, `AdminLavatopSettings.vue`, `AdminGcSettings.vue` (карточка настроек GetCourse: 3 поля — base URL, school api key, school host). Здесь живут только секреты, URL/host и инфраструктурные/debug-настройки. Operational/business-настройки (флаг активации GC, виджеты оплаты) переехали на вкладку «Настройки» главной панели — их редактируют сотрудники. Composable WebSocket-потока логов: `shared/useLogsSocket.ts`. CSS: `pagecss/sbpAdminCss1.ts`..`sbpAdminCss4.ts`. SSR-роут `web/admin/index.tsx` читает только LP/Lava/GC настройки.
+
+### Разделение «системные / operational» настройки
+
+Принципиальное разграничение (введено 2026-05-29):
+
+- **Системные** (`/web/admin`, **только Admin**, `requireAccountRole('Admin')`): счётчики дашборда, project_name, log_level, секреты LP (`lp_apikey`, `lp_login`, `lp_webhook_token`, `gateway_base_url`), секреты Lava.Top (`lava_test_apikey`, `lava_base_url`, `lava_webhook_secret`), секреты GC (`gc_base_url`, `gc_test_school_api_key`, `gc_test_school_host`).
+- **Operational** (главная панель → вкладка «Настройки», **сотрудник + Admin** через `guardInternalApi`): `gc_enabled` (флаг активации GC), все 12 виджет-ключей (`widget_lifepay_*`, `widget_lavatop_*` — enabled, domains, min/max, offer-фильтр).
+
+Auth-разделение на уровне save-эндпоинтов:
+
+- `api/settings/save.ts` — общий `setSetting`, `requireAccountRole('Admin')` (для LP/Lava/GC карточек админки).
+- `api/settings/save-operational.ts` — whitelist `[gc_enabled]`, `guardInternalApi` (для `HomeSettingsTab`).
+- `api/widgets/settings-save.ts` — whitelist `WIDGET_SETTING_KEYS` (12 ключей), `guardInternalApi` (для `HomeWidgetSettings`).
+- `api/widgets/settings-get.ts`, `api/widgets/offers.ts` — `guardInternalApi`.
 
 ### `pages/TestsPage.vue`
 
@@ -234,6 +254,80 @@ CSS-стили тулбара и всей главной страницы: `page
 - **Клиент**: Vue получает фильтр пропсом при первой загрузке, хранит состояние локально. Изменение фильтра → `POST /api/lp/analytics/filter-save`; ответ сервера подтверждает сохранённое значение.
 - Фильтр глобальный: общий для всех пользователей и сессий. Менять может любой пользователь с активным доступом к панели (guardInternalApi).
 - При отсутствии фильтра показываются все данные (до кэпа `ANALYTICS_SCAN_LIMIT = 5000` через cursor-пагинацию ≤ 1000 записей на запрос).
+
+## Публичные виджеты оплаты (реализовано 2026-05-29)
+
+Каталог `userscripts/` содержит три файла для встраивания на сторонние страницы магазина. Виджеты обращаются к публичным эндпоинтам `api/widgets/` напрямую из браузера покупателя.
+
+### Поток: userscript → config → intent → gateway
+
+```
+[ Браузер покупателя (страница магазина) ]
+            |
+            | GET /api/widgets/config
+            |   Origin: <домен магазина>
+            v
+[ api/widgets/config.ts — публичный, без авторизации ]
+            | CORS-whitelist: checkWidgetOrigin(lifepayDomains + lavatopDomains, origin)
+            | 403 при недопустимом Origin; иначе — WidgetPublicConfig
+            |   { lifepay: { enabled, maxAmount }, lavatop: { enabled, maxAmount },
+            |     offerListType, offerIds[] }
+            v
+[ Виджет выбирает gateway по конфигу ]
+            |
+            | POST /api/widgets/intent-lifepay  (Content-Type: text/plain, тело — JSON-строка)
+            | POST /api/widgets/intent-lavatop  (аналогично)
+            v
+[ api/widgets/intent-lifepay.ts | api/widgets/intent-lavatop.ts ]
+            | CORS-whitelist: per-method (lifepayDomains | lavatopDomains)
+            | parseBody(req) — ручной разбор text/plain без preflight
+            | Серверный hard-limit: WIDGET_INTENT_HARD_LIMIT_RUB = 500_000 ₽
+            | (применяется до пользовательского per-user-max из настроек)
+            | invokeByGateway('lifepay'|'lavatop', 'createBill'|'createInvoice')
+            | Audit-лог через loggerLib.writeServerLog
+            v
+[ p/saas/gw/lifepay | p/saas/gw/lavatop ]
+            v
+[ LifePay / Lava.Top HTTP API ]
+            |
+            v
+[ Ответ → виджет → QR-модалка (LifePay) | редирект на форму (Lava.Top) ]
+```
+
+### CORS-стратегия
+
+Chatium не поддерживает `app.options`, поэтому preflight-запросы (`OPTIONS`) невозможны. Виджеты отправляют **simple-request** с `Content-Type: text/plain` и JSON-строкой в теле. Сервер читает и парсит тело вручную через `parseBody(req)`. CORS-заголовки выставляются только при допустимом Origin; Origin проверяется через `shared/widgetCorsCheck.ts` (`parseDomains`, `extractHostname`, `isOriginAllowed`, `checkWidgetOrigin`).
+
+### Per-method whitelist доменов
+
+- `widget_lifepay_domains` — список доменов для `/api/widgets/intent-lifepay`.
+- `widget_lavatop_domains` — список доменов для `/api/widgets/intent-lavatop`.
+- `/api/widgets/config` — использует объединение обоих списков.
+
+### Файлы виджетного слоя
+
+| Файл                                       | Назначение                                                                                                                               |
+| ------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `userscripts/common.js`                    | Shared-утилиты в `window.GwWidgetCommon`: DOM-ожидание, fetch конфига, постинг intent, модалка, фильтры суммы/офферов                    |
+| `userscripts/lifepay-widget.user.js`       | Виджет LifePay: по клику на кнопку → fetch `/config` → POST intent → QR-модалка через CDN qrcode.js                                      |
+| `userscripts/lavatop-widget.user.js`       | Виджет Lava.Top: по клику → fetch `/config` → POST intent → редирект на форму оплаты                                                     |
+| `shared/widgetCorsCheck.ts`                | Pure-функции CORS-проверки (`// @shared`)                                                                                                |
+| `shared/widgetSettingsTypes.ts`            | Типы `WidgetSettingsData`, `WidgetPublicConfig`; константы `WIDGET_INTENT_HARD_LIMIT_RUB`, `WIDGET_SETTING_KEYS`; парсеры (`// @shared`) |
+| `lib/widget/widgetSettings.lib.ts`         | `getWidgetSettings(ctx)` — параллельное чтение 8 настроек виджетов                                                                       |
+| `api/widgets/config.ts`                    | GET /api/widgets/config — публичный, возвращает WidgetPublicConfig                                                                       |
+| `api/widgets/intent-lifepay.ts`            | POST /api/widgets/intent-lifepay — публичный intent LifePay                                                                              |
+| `api/widgets/intent-lavatop.ts`            | POST /api/widgets/intent-lavatop — публичный intent Lava.Top                                                                             |
+| `api/widgets/settings-get.ts`              | GET настроек виджетов (`guardInternalApi`, `// @shared-route`)                                                                            |
+| `api/widgets/settings-save.ts`             | POST сохранения настроек виджетов (`guardInternalApi`, `// @shared-route`, whitelist 12 ключей)                                          |
+| `api/widgets/offers.ts`                    | GET офферов GetCourse (`guardInternalApi`, `// @shared-route`, проксирует `getOffers`)                                                   |
+| `api/settings/save-operational.ts`         | POST сохранения operational-настроек (`guardInternalApi`, `// @shared-route`, whitelist `gc_enabled`)                                    |
+| `components/home/HomeWidgetSettings.vue`   | Карточка настроек виджетов на вкладке «Настройки» главной: 3 формы (LifePay, Lava.Top, фильтр офферов)                                   |
+| `components/home/HomeWidgetOfferList.vue`  | Переиспользуемая секция фильтра офферов (whitelist/blacklist + поиск + чекбоксы)                                                          |
+| `pagecss/sbpWidgetsCss1.ts`                | CSS виджет-карточки, классы `.aw-*`                                                                                                      |
+
+### Роутинг виджетных эндпоинтов (config/routes.tsx)
+
+6 новых записей в `ROUTES` и `ROUTE_PATHS`: `widgetConfig`, `widgetIntentLifepay`, `widgetIntentLavatop`, `widgetSettingsGet`, `widgetSettingsSave`, `widgetOffers`.
 
 ## Безопасность
 

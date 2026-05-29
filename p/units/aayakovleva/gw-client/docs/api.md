@@ -229,6 +229,55 @@
 | GET    | /web/forbidden            | web/forbidden/index.tsx     | requireRealUser                              | Страница 403 «Нет доступа к панели».                                                                                    |
 | GET    | /web/tests                | web/tests/index.tsx         | Admin (requireRealUser + requireAccountRole) | Страница тестов. Аноним → /web/login, авторизованный без роли Admin → /web/forbidden.                                   |
 
+## Виджеты оплаты (api/widgets/)
+
+Публичные и admin-эндпоинты для встраиваемых виджетов на стороннюю страницу магазина. Реализовано 2026-05-29.
+
+> CORS-стратегия: simple-request без preflight (`Content-Type: text/plain`, тело — JSON-строка). Сервер парсит тело вручную. Заголовки CORS выставляются только при допустимом Origin (проверка через `shared/widgetCorsCheck.ts`).
+
+| Method | Path                        | File                          | Auth                                                           | Назначение                                                                                                                                                                                                                                                                                                                                        |
+| ------ | --------------------------- | ----------------------------- | -------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| GET    | /api/widgets/config         | api/widgets/config.ts         | Публичный (CORS)                                               | Возвращает `WidgetPublicConfig` для виджетов. CORS-whitelist — объединение `widget_lifepay_domains` + `widget_lavatop_domains`. 403 при недопустимом Origin. Тело: `{ lifepay: { enabled, maxAmount }, lavatop: { enabled, maxAmount }, offerListType, offerIds[] }`.                                                                             |
+| POST   | /api/widgets/intent-lifepay | api/widgets/intent-lifepay.ts | Публичный (CORS, `widget_lifepay_domains`)                     | Создать платёжное намерение LifePay. Парсит `text/plain`-тело. Серверный hard-limit `WIDGET_INTENT_HARD_LIMIT_RUB = 500 000 ₽` (применяется до per-user-max). Email/regex/orderNumber/description/callbackUrl формируются на сервере. Вызов `invokeByGateway('lifepay', 'createBill')`. Audit-лог через `loggerLib`. 403 при недопустимом Origin. |
+| POST   | /api/widgets/intent-lavatop | api/widgets/intent-lavatop.ts | Публичный (CORS, `widget_lavatop_domains`)                     | Создать платёжное намерение Lava.Top. `email` и `offerId` обязательны; `amount` — опционален. Вызов `invokeByGateway('lavatop', 'createInvoice')`. Hard-limit + audit-лог аналогично LifePay.                                                                                                                                                     |
+| GET    | /api/widgets/settings-get   | api/widgets/settings-get.ts   | Сотрудник + Admin (`guardInternalApi`, `// @shared-route`)     | Возвращает `WidgetSettingsData` с текущими значениями 12 виджет-ключей для Vue-формы в `HomeWidgetSettings.vue` (вкладка «Настройки» главной).                                                                                                                                                                                                    |
+| POST   | /api/widgets/settings-save  | api/widgets/settings-save.ts  | Сотрудник + Admin (`guardInternalApi`, `// @shared-route`)     | Сохранить одну виджет-настройку. Тело: `{ key, value }`. Whitelist: только 12 ключей из `WIDGET_SETTING_KEYS`. Делегирует `setSetting(ctx, key, value)`. Виджет-настройки — operational/бизнес, не секреты.                                                                                                                                       |
+| GET    | /api/widgets/offers         | api/widgets/offers.ts         | Сотрудник + Admin (`guardInternalApi`, `// @shared-route`)     | Проксирует `getOffers` GetCourse. При `gc_enabled=false` → `GC_DISABLED`; при пустых GC-настройках → `GC_NOT_CONFIGURED`. Используется `HomeWidgetSettings` для загрузки списка офферов с чекбоксами.                                                                                                                                             |
+| POST   | /api/settings/save-operational | api/settings/save-operational.ts | Сотрудник + Admin (`guardInternalApi`, `// @shared-route`) | Сохранить одну operational-настройку. Тело: `{ key, value }`. Whitelist: `gc_enabled` (расширяется по мере добавления новых operational-ключей). Делегирует `setSetting(ctx, key, value)`. Используется `HomeSettingsTab.vue` для тоггла GC.                                                                                                       |
+
+### Контракт `/api/widgets/intent-lifepay`
+
+Запрос (body в виде JSON-строки, `Content-Type: text/plain`):
+
+```json
+{ "amount": 1500.0, "email": "buyer@example.com", "orderNumber": "ORD-001" }
+```
+
+Ответ (успех, зеркало gateway):
+
+```json
+{ "ok": true, "data": { "paymentUrl": "https://..." }, "requestId": "..." }
+```
+
+### Контракт `/api/widgets/intent-lavatop`
+
+Запрос:
+
+```json
+{ "email": "buyer@example.com", "offerId": "offer-uuid", "amount": 1500.0 }
+```
+
+Ответ — аналогично invoke, `data.paymentUrl` содержит URL формы оплаты.
+
+### Коды ошибок виджетных эндпоинтов
+
+- `WIDGET_ORIGIN_NOT_ALLOWED` (HTTP 403) — Origin не в whitelist доменов.
+- `WIDGET_DISABLED` (HTTP 403) — виджет отключён в настройках.
+- `WIDGET_AMOUNT_EXCEEDS_HARD_LIMIT` (HTTP 400) — сумма > 500 000 ₽.
+- `WIDGET_AMOUNT_EXCEEDS_USER_LIMIT` (HTTP 400) — сумма > `widget_*_max_amount`.
+- `WIDGET_EMAIL_REQUIRED` / `WIDGET_OFFER_ID_REQUIRED` (HTTP 400) — Lava.Top: обязательные поля.
+- `LAVATOP_NOT_CONFIGURED` — Lava.Top: `lava_test_apikey` не задан.
+
 ## SSR-контракт пропа `gcOperations` (index.tsx → ClientHomePage)
 
 `index.tsx` вызывает `fetchGcOperations(ctx)` при SSR и передаёт массив `GcOperationEntry[]` пропом `gcOperations` в компонент `ClientHomePage`.
