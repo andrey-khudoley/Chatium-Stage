@@ -33,7 +33,19 @@
     </div>
 
     <form v-if="descriptor" class="grid-form" @submit.prevent="$emit('submit')">
-      <template v-for="f in descriptor.fields" :key="f.name">
+      <!-- GC-операции: иерархический рендер из argsTree (FormRow[]). -->
+      <HomeGcRequestForm
+        v-if="isGcOp"
+        class="field-full"
+        :form-rows="gcFormRows"
+        :args-values="gcArgsValues"
+        :errors="gcErrors"
+        :root-kind="gcRootKind"
+        @update:args-values="$emit('update:gcArgsValues', $event)"
+      />
+
+      <!-- LifePay/Lava.Top: плоский рендер по descriptor.fields. -->
+      <template v-for="f in flatFields" :key="f.name">
         <label class="field" :class="{ 'field-full': isWideField(f) }">
           <span class="field-label">
             {{ f.label || f.name }}
@@ -83,7 +95,7 @@
         </label>
       </template>
 
-      <div v-if="descriptor.fields.length === 0" class="field-full muted op-no-fields">
+      <div v-if="!isGcOp && descriptor.fields.length === 0" class="field-full muted op-no-fields">
         <i class="fas fa-circle-info"></i> Эта операция не требует аргументов.
       </div>
 
@@ -150,42 +162,81 @@
 
 <script>
 // Универсальная вкладка «Создать запрос»: select операций (групп — по гейтвеям) +
-// динамическая форма (поля строятся из OPERATIONS_CLIENT_CATALOG) + результат с
-// бейджем гейтвея. QR-код рендерится локально, если в descriptor.paymentUrlPath
-// указан путь к строке URL внутри data ответа.
+// динамическая форма + результат с бейджем гейтвея.
+// Не-GC операции (LifePay/Lava.Top) — плоская форма по OPERATIONS_CLIENT_CATALOG.
+// GC-операции — иерархическая форма HomeGcRequestForm по argsTree (FormRow[]).
+// QR-код рендерится локально, если в descriptor.paymentUrlPath указан путь к
+// строке URL внутри data ответа.
 //
-// Двусторонняя связь — через update:form / update:currentKey. Submit, lookup и
-// очистка результата — emit. CSS глобальный (sbpHomeCss*).
+// Двусторонняя связь — через update:form / update:currentKey / update:gcArgsValues.
+// Submit, lookup и очистка результата — emit. CSS глобальный (sbpHomeCss*).
 import {
   groupOperationsForUi,
   findClientOperation,
   gatewayLabel,
   operationKey,
-  validateForm
+  validateForm,
+  buildGcOperationDescriptor
 } from '../../shared/operationsClientCatalog'
+import { isGatewayId } from '../../shared/invokeApi'
+import HomeGcRequestForm from './HomeGcRequestForm.vue'
 
 export default {
   name: 'HomeCreateRequestTab',
+  components: { HomeGcRequestForm },
   props: {
     currentKey: { type: String, required: true },
     form: { type: Object, required: true },
     loading: { type: Boolean, default: false },
-    result: { type: Object, default: null }
+    result: { type: Object, default: null },
+    gcOperations: { type: Array, default: () => [] },
+    // Иерархическая форма GC: единственный источник истины для formRows/rootKind —
+    // computed в `sbpHomePageMixin.ts`; здесь принимаем готовые props.
+    isGcOp: { type: Boolean, default: false },
+    gcFormRows: { type: Array, default: () => [] },
+    gcRootKind: { type: String, default: 'object' },
+    gcArgsValues: { type: Object, default: () => ({}) },
+    gcErrors: { type: Object, default: () => ({}) }
   },
-  emits: ['submit', 'reset-result', 'lookup', 'copy-text', 'update:form', 'update:currentKey'],
+  emits: [
+    'submit',
+    'reset-result',
+    'lookup',
+    'copy-text',
+    'update:form',
+    'update:currentKey',
+    'update:gcArgsValues'
+  ],
   computed: {
     groups() {
-      return groupOperationsForUi()
+      return groupOperationsForUi(this.gcOperations)
     },
     descriptor() {
       const idx = (this.currentKey || '').indexOf(':')
       if (idx <= 0) return null
       const gw = this.currentKey.slice(0, idx)
       const op = this.currentKey.slice(idx + 1)
-      if (gw !== 'lifepay' && gw !== 'lavatop') return null
+      if (!isGatewayId(gw)) return null
+      if (gw === 'gc') {
+        const entry = (this.gcOperations || []).find((e) => e.op === op)
+        return entry ? buildGcOperationDescriptor(entry) : null
+      }
       return findClientOperation(gw, op)
     },
+    /**
+     * Плоские поля для рендера ветки не-GC: для GC возвращаем пустой массив,
+     * чтобы `v-for` не пытался итерировать `descriptor.fields` GC-операции
+     * (для GC рендер идёт через `<HomeGcRequestForm>` по `gcFormRows`).
+     */
+    flatFields() {
+      if (this.isGcOp) return []
+      return (this.descriptor && this.descriptor.fields) || []
+    },
     errors() {
+      // Для GC-операций ошибки приходят пропом из родителя (вычислены через
+      // buildFieldErrors по дереву argsTree, ключи — точечные пути). Для
+      // LifePay/Lava.Top — текущая validateForm по плоским полям.
+      if (this.isGcOp) return this.gcErrors || {}
       if (!this.descriptor) return {}
       return validateForm(this.descriptor, this.form || {})
     },

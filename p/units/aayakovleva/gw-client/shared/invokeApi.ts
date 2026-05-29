@@ -11,11 +11,21 @@
  */
 
 /** Идентификаторы поддерживаемых платёжных гейтвеев. */
-export const SUPPORTED_GATEWAYS = ['lifepay', 'lavatop'] as const
+export const SUPPORTED_GATEWAYS = ['lifepay', 'lavatop', 'gc'] as const
 export type GatewayId = (typeof SUPPORTED_GATEWAYS)[number]
 
 export function isGatewayId(value: unknown): value is GatewayId {
   return typeof value === 'string' && (SUPPORTED_GATEWAYS as readonly string[]).includes(value)
+}
+
+/**
+ * Валидатор имени операции GC. Каталог GC динамический (приходит с
+ * `GET /v1/operations`), поэтому в `api/lp/invoke.ts` для `gatewayId: 'gc'`
+ * нельзя сверяться со статическим списком — операцию мы проверяем
+ * синтаксически и далее доверяем валидации самого GC-гейтвея.
+ */
+export function validateGcOpName(op: string): boolean {
+  return typeof op === 'string' && /^[a-zA-Z][a-zA-Z0-9]*$/.test(op)
 }
 
 export type InvokeRequest = {
@@ -29,6 +39,12 @@ export type InvokeRequest = {
   op: string
   /** Аргументы операции (зависят от пары gatewayId+op). */
   args: Record<string, unknown>
+  /**
+   * HTTP-метод upstream-запроса. Обязателен для `gatewayId: 'gc'`
+   * (динамический каталог не известен на сервере прокладки). Для остальных
+   * гейтвеев игнорируется — метод берётся из локального каталога.
+   */
+  httpMethod?: 'GET' | 'POST'
 }
 
 export type GatewayWarning = { code: string; message: string }

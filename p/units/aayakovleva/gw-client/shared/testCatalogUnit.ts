@@ -262,6 +262,7 @@ export const UNIT_TEST_BLOCKS: TestCatalogBlock[] = [
       { id: 'lavatop_no_lifepay_ops', title: 'createBill отсутствует в Lava.Top' },
       { id: 'lifepay_no_lavatop_ops', title: 'createInvoice отсутствует в LifePay' },
       { id: 'gateway_catalog_total', title: 'FULL = LIFEPAY + LAVATOP' },
+      { id: 'gc_static_catalog_empty', title: 'GC static catalog empty' },
       { id: 'lavatop_operations_by_gateway', title: 'OPERATIONS_BY_GATEWAY.lavatop' },
       { id: 'lavatop_any_gateway_lookup', title: 'findOperationInAnyGateway createInvoice' },
       { id: 'lifepay_any_gateway_lookup', title: 'findOperationInAnyGateway createBill' },

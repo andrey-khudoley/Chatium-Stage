@@ -66,11 +66,18 @@ LifePay-настройки (§1.8.1, валидируются в `lib/settings.l
 - `lp_webhook_token` — случайный токен ≥ 32 символов (тип password, генерируется кнопкой «Сгенерировать» в панели).
 - `gateway_base_url` — публичный базовый URL LifePay payments-gateway (http(s)://...).
 
-Lava.Top-настройки (добавлены 2026-05-28, валидируются в `lib/settings.lib.mutations.setSetting`):
+Lava.Top-настройки (добавлены 2026-05-28, валидируются в `lib/settings.mutations.setSetting`):
 
 - `lava_test_apikey` — API-ключ магазина Lava.Top (тип password, непустой после trim).
 - `lava_base_url` — базовый URL Lava.Top gateway (default `https://gate.lava.top`).
 - `lava_webhook_secret` — секрет webhook Lava.Top (тип password, ≥ 16 символов; передаётся как `X-Api-Key` или Basic Authorization). Без значения приёмник `/web/webhook-lavatop` возвращает 503.
+
+GetCourse-настройки (добавлены 2026-05-28, валидируются в `lib/settings.mutations.setSetting`):
+
+- `gc_base_url` — базовый URL GC gateway (http(s)://...).
+- `gc_test_school_api_key` — API-ключ школы GetCourse (тип password, непустой после trim; маскируется в exit-логе).
+- `gc_test_school_host` — хост школы GetCourse (валидируется `isValidGcSchoolHost`).
+- `gc_enabled` — флаг включения гейтвея GC (`'true'` / `'false'`).
 
 Фильтр панели:
 
@@ -90,13 +97,15 @@ Lava.Top-настройки (добавлены 2026-05-28, валидируют
 
 ## Библиотеки (lib/)
 
-- `lib/settings.lib.ts` — getSetting/getAllSettings/setSetting; ключи и дефолты; валидации `isValidLpLogin` (`^7\d{10}$`), `normalizeGatewayBaseUrl`, `isValidGatewayBaseUrl`; getLpApikey / getLpLogin / getLpWebhookToken / getGatewayBaseUrl; `generateWebhookToken(byteCount)`; **`getPanelDateFilter(ctx)`** — читает ключ `panel_date_filter` из Heap, возвращает `{ from?: number, to?: number }` (серверный вызов, только для API-эндпоинтов и SSR).
+- `lib/settings.lib.ts` — getSetting/getAllSettings; ключи и дефолты; валидации `isValidLpLogin` (`^7\d{10}$`), `normalizeGatewayBaseUrl`, `isValidGatewayBaseUrl`, `isValidGcSchoolHost`; геттеры getLpApikey / getLpLogin / getLpWebhookToken / getGatewayBaseUrl + GC-геттеры (gc_base_url, gc_test_school_api_key, gc_test_school_host, gc_enabled); `generateWebhookToken(byteCount)`; **`getPanelDateFilter(ctx)`** — читает ключ `panel_date_filter` из Heap, возвращает `{ from?: number, to?: number }` (серверный вызов, только для API-эндпоинтов и SSR).
 - `lib/logger.lib.ts` — без изменений: writeServerLog проверяет уровень, пишет в ctx.log, ctx.account.log, Heap, WebSocket, опц. webhook.
 - `lib/gateway/constants.ts` — `INVOKE_TIMEOUT_MS = 15_000` (на 5 секунд больше gateway-таймаута 10 с), `RECENT_DEFAULT_LIMIT`, `RECENT_MAX_LIMIT`, `ANALYTICS_SCAN_LIMIT = 5000` (максимум записей, выгружаемых для аналитики через cursor-пагинацию ≤ 1000 на запрос; `ANALYTICS_DEFAULT_WINDOW_HOURS` удалён).
 - `lib/gateway/buildInvokeUrl.ts` — чистая функция сборки URL `<base>/api/v1/<op>` + метода по каталогу LifePay (`shared/gatewayContract.findOperationInCatalog`, deprecated). Префикс `/api/` соответствует file-based роутингу gateway (`p/saas/gw/lifepay/api/v1/<op>.ts`). Lava.Top использует собственную сборку URL внутри `lib/gateway/lavatopClient.ts`.
 - `lib/gateway/invokeClient.ts` — `invokeGateway(ctx, op, args)` (= `invokeLifepayGateway`): один исходящий вызов LifePay через `@app/request`, без серверных ретраев, без Idempotency-Key; читает секреты из Heap, заголовки `X-Lp-Apikey`/`X-Lp-Login`, тело JSON для POST или query для GET; `requestId` из заголовка `X-Gateway-Request-Id` ответа.
 - `lib/gateway/lavatopClient.ts` (новый) — `invokeLavatopGateway(ctx, op, args)`: аналогично LifePay, но заголовок `X-Lava-Apikey`, base = `lava_base_url`, каталог `LAVATOP_OPERATIONS`.
-- `lib/gateway/invokeDispatcher.ts` (новый) — `invokeByGateway(ctx, gatewayId, op, args)`: выбирает клиент по `gatewayId` через switch с exhaustiveness-check.
+- `lib/gateway/gcClient.ts` (новый) — `invokeGcGateway(ctx, op, args, httpMethod)`: исходящие вызовы к `<gc_base_url>/api/v1/<op>` с заголовками `X-Gc-School-Api-Key` + `X-Gc-School-Host`; `httpMethod` определяет метод HTTP-запроса.
+- `lib/gateway/gcOperationsLoader.ts` (новый) — `fetchGcOperations(ctx)`: загружает список enabled-операций GC через `GET /api/v1/operations`; возвращает `GcOperationEntry[]`; при ошибке — пустой массив (graceful degradation).
+- `lib/gateway/invokeDispatcher.ts` (расширен) — `invokeByGateway(ctx, gatewayId, op, args, meta?)`: выбирает клиент по `gatewayId` через switch с exhaustiveness-check; для `'gc'` явно проверяет наличие `meta.httpMethod`.
 - `lib/gateway/invokeResult.ts` (новый) — общий тип `InvokeResult` + helpers (`buildProxyErrorResult`, `isTimeoutError`, `readResponseRequestId`, `readContentType`), переиспользуемые обоими клиентами.
 - `lib/gateway/recordRequestLog.ts` — запись результата invoke в Heap-таблицу `request_log` с обязательным `gatewayId`. `argsRedacted` и `rawResponseBody` хранятся **сырыми** (клиент — оператор ПД), структурная гигиена через `shared/prepareRawLog.prepareRawLog`. Для `rawResponseBody`: предпочтительно из `invoke.responseBody`; иначе пытается `JSON.parse(rawResponseBody)`; иначе пишет `{ __nonJson: true, __preview }`; для пустого ответа — `{ __noBody: true }`.
 - `lib/webhook/processWebhook.ts` — `parseWebhookBody` (поля по apidoc.life-pay.ru/notification), `checkWebhookToken` (точное равенство строк).

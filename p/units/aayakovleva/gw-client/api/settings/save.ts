@@ -9,7 +9,10 @@ const LOG_PATH = 'api/settings/save'
 function maskValueForLog(key: string, value: unknown): unknown {
   if (
     key === settingsLib.SETTING_KEYS.LP_APIKEY ||
-    key === settingsLib.SETTING_KEYS.LP_WEBHOOK_TOKEN
+    key === settingsLib.SETTING_KEYS.LP_WEBHOOK_TOKEN ||
+    key === settingsLib.SETTING_KEYS.LAVA_TEST_APIKEY ||
+    key === settingsLib.SETTING_KEYS.LAVA_WEBHOOK_SECRET ||
+    key === settingsLib.SETTING_KEYS.GC_TEST_SCHOOL_API_KEY
   ) {
     return typeof value === 'string' && value.length > 0 ? '***' : value
   }

@@ -9,6 +9,7 @@ import AdminProjectSettings from '../components/admin/AdminProjectSettings.vue'
 import AdminLogLevel from '../components/admin/AdminLogLevel.vue'
 import AdminLifePaySettings from '../components/admin/AdminLifePaySettings.vue'
 import AdminLavatopSettings from '../components/admin/AdminLavatopSettings.vue'
+import AdminGcSettings from '../components/admin/AdminGcSettings.vue'
 import { createComponentLogger, setLogSink, type LogEntry } from '../shared/logger'
 import { createBrowserRemoteLogger } from '../shared/browserRemoteLogger'
 import { postBrowserLogsRoute } from '../api/logger/browser'
@@ -48,6 +49,12 @@ const props = defineProps<{
     lava_test_apikey: string
     lava_base_url: string
     lava_webhook_secret: string
+  }
+  initialGcSettings?: {
+    gc_base_url: string
+    gc_test_school_api_key: string
+    gc_test_school_host: string
+    gc_enabled: string
   }
 }>()
 
@@ -283,6 +290,7 @@ onUnmounted(() => {
 
             <AdminLifePaySettings :initial-settings="props.initialSettings" />
             <AdminLavatopSettings :initial-settings="props.initialLavatopSettings" />
+            <AdminGcSettings :initial-settings="props.initialGcSettings" />
           </div>
 
           <aside class="ap-side">

@@ -102,12 +102,19 @@
           :form="requestForm"
           :loading="requestLoading"
           :result="requestResult"
+          :gcOperations="gcOperations"
+          :isGcOp="isGcOp"
+          :gcFormRows="gcFormRows"
+          :gcRootKind="gcRootKind"
+          :gcArgsValues="gcArgsValues"
+          :gcErrors="gcErrors"
           @submit="submitRequest"
           @reset-result="resetRequestResult"
           @lookup="lookupRequest"
           @copy-text="copyText"
           @update:form="requestForm = $event"
           @update:currentKey="onChangeOperationKey"
+          @update:gcArgsValues="gcArgsValues = $event"
         />
 
         <HomeAccessTab
@@ -206,7 +213,8 @@ export default {
     baseUrlPath: { type: String, default: '' },
     apiUrls: { type: Object, default: () => defaultSbpHomeApiUrls() },
     initialSettings: { type: Object, default: () => defaultSbpHomeSettings() },
-    initialDateFilter: { type: Object, default: () => ({}) }
+    initialDateFilter: { type: Object, default: () => ({}) },
+    gcOperations: { type: Array, default: () => [] }
   },
   data() {
     const initFrom =
@@ -250,6 +258,14 @@ export default {
         webhookUrl: this.webhookUrl,
         webhookUrlLavatop: this.webhookUrlLavatop
       }),
+      // GC-форма: отдельное состояние с точечными путями (`params.user.email`).
+      // Инициализируется пустым — `buildInitialRequestState` всегда даёт не-GC
+      // дефолт (первый элемент статического каталога — LifePay.createBill),
+      // заполняется при выборе GC-операции через `onChangeOperationKey`.
+      // Значения всегда строки: `<input>`/`<select>`/`<textarea>` отдают string,
+      // конверсия в number/boolean/JSON делается в `buildArgsObject` (mixin).
+      gcArgsValues: {},
+      gcErrors: {},
       requestResult: null,
       requestLoading: false,
       refreshTimer: null,

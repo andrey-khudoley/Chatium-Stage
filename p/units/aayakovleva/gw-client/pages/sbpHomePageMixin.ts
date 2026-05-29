@@ -11,12 +11,108 @@ import {
   findClientOperation,
   buildArgs,
   validateForm,
-  buildEmptyForm
+  buildEmptyForm,
+  buildGcOperationDescriptor,
+  type ClientOperationDescriptor,
+  type GcOperationEntry
 } from '../shared/operationsClientCatalog'
+import { isGatewayId, type GatewayId } from '../shared/invokeApi'
+import {
+  buildFormRows,
+  buildArgsObject,
+  buildFieldErrors,
+  type FormRow
+} from '../shared/gcArgsForm'
+
+/**
+ * Найти descriptor для пары (gatewayId, op):
+ *   - GC: ищем в SSR-пропе `gcOperations` (динамический каталог);
+ *   - остальные: ищем в статическом `OPERATIONS_CLIENT_CATALOG`.
+ */
+function findDescriptor(
+  gatewayId: GatewayId,
+  op: string,
+  gcOperations: GcOperationEntry[]
+): ClientOperationDescriptor | null {
+  if (gatewayId === 'gc') {
+    const entry = (gcOperations || []).find((e) => e.op === op)
+    return entry ? buildGcOperationDescriptor(entry) : null
+  }
+  return findClientOperation(gatewayId, op)
+}
 
 const REFRESH_INTERVAL_MS = 15000
 
+/** Найти `GcOperationEntry` по composite-ключу `gc:<op>` в SSR-пропе. */
+function findGcEntryByKey(
+  currentOperationKey: string,
+  gcOperations: GcOperationEntry[]
+): GcOperationEntry | null {
+  const idx = (currentOperationKey || '').indexOf(':')
+  if (idx <= 0) return null
+  const gw = currentOperationKey.slice(0, idx)
+  if (gw !== 'gc') return null
+  const op = currentOperationKey.slice(idx + 1)
+  return (gcOperations || []).find((e) => e.op === op) ?? null
+}
+
+/**
+ * Готовит payload (`args`) и ошибки валидации для GC-запроса.
+ * Если `rootKind !== 'object'` — берёт сырой JSON из `__root__` и парсит.
+ * Иначе валидирует листья через `buildFieldErrors` и собирает вложенный объект
+ * через `buildArgsObject`. При ошибках возвращает `{ errors }`, кнопка submit
+ * должна отрисовать их в `gcErrors`.
+ */
+function prepareGcSubmit(
+  rootKind: string,
+  formRows: FormRow[],
+  argsValues: Record<string, string>
+):
+  | { ok: true; args: unknown; errors: Record<string, string> }
+  | { ok: false; errors: Record<string, string> } {
+  if (rootKind !== 'object') {
+    const rawRoot = String(argsValues?.__root__ ?? '').trim()
+    if (!rawRoot) return { ok: false, errors: { __root__: 'Обязательное поле (JSON-тело).' } }
+    try {
+      return { ok: true, args: JSON.parse(rawRoot), errors: {} }
+    } catch {
+      return { ok: false, errors: { __root__: 'Невалидный JSON.' } }
+    }
+  }
+  // Третий аргумент `buildFieldErrors` (requiredHeaders) на клиенте всегда `[]`:
+  // заголовки школы ставит сервер (`gcClient.ts`), клиент в них не участвует.
+  const errs = buildFieldErrors(formRows, argsValues || {}, [])
+  if (Object.keys(errs).length > 0) return { ok: false, errors: errs }
+  return { ok: true, args: buildArgsObject(formRows, argsValues || {}), errors: {} }
+}
+
 export const sbpHomePageMethodsMixin = {
+  computed: {
+    /** Текущая операция — GC? Производное от composite-ключа `gatewayId:op`. */
+    isGcOp(this: any): boolean {
+      const key: string = this.currentOperationKey || ''
+      const idx = key.indexOf(':')
+      if (idx <= 0) return false
+      return key.slice(0, idx) === 'gc'
+    },
+    /** Запись из SSR-пропа `gcOperations` для текущей GC-операции. */
+    gcEntry(this: any): GcOperationEntry | null {
+      if (!this.isGcOp) return null
+      return findGcEntryByKey(this.currentOperationKey, this.gcOperations || [])
+    },
+    /** Плоский список рядов формы (groups + leaves) из `argsTree` текущей GC-операции. */
+    gcFormRows(this: any): FormRow[] {
+      return buildFormRows(this.gcEntry?.argsTree ?? null)
+    },
+    /**
+     * Тип корня `argsTree`. Если `argsTree` отсутствует — `'object'` (поведение
+     * как при пустой схеме). При `kind !== 'object'` форма рендерит одно
+     * textarea-поле `__root__` с произвольным JSON.
+     */
+    gcRootKind(this: any): string {
+      return this.gcEntry?.argsTree?.kind ?? 'object'
+    }
+  },
   methods: {
     /* ====== Маршрутизация загрузок по вкладкам ====== */
     loadForTab(this: any, tab: string) {
@@ -283,10 +379,18 @@ export const sbpHomePageMethodsMixin = {
       this.currentOperationKey = key
       const idx = (key || '').indexOf(':')
       if (idx <= 0) return
-      const gw = key.slice(0, idx) as 'lifepay' | 'lavatop'
+      const gw = key.slice(0, idx)
       const op = key.slice(idx + 1)
-      if (gw !== 'lifepay' && gw !== 'lavatop') return
-      const descriptor = findClientOperation(gw, op)
+      if (!isGatewayId(gw)) return
+      // Для GC: форма рендерится по argsTree через computed `gcFormRows`,
+      // отдельный `requestForm` не пересоздаём. Сбрасываем GC-состояние.
+      if (gw === 'gc') {
+        this.gcArgsValues = {}
+        this.gcErrors = {}
+        this.requestResult = null
+        return
+      }
+      const descriptor = findDescriptor(gw, op, this.gcOperations || [])
       if (!descriptor) return
       this.requestForm = buildEmptyForm(descriptor, {
         webhookUrl: this.webhookUrl,
@@ -300,52 +404,86 @@ export const sbpHomePageMethodsMixin = {
       const key: string = this.currentOperationKey || ''
       const idx = key.indexOf(':')
       if (idx <= 0) return
-      const gatewayId = key.slice(0, idx) as 'lifepay' | 'lavatop'
+      const gw = key.slice(0, idx)
+      if (!isGatewayId(gw)) return
+      const gatewayId = gw as GatewayId
       const op = key.slice(idx + 1)
-      const descriptor = findClientOperation(gatewayId, op)
+      const descriptor = findDescriptor(gatewayId, op, this.gcOperations || [])
       if (!descriptor) return
-      // Клиентская валидация — отклоняет неполные/невалидные данные ДО запроса.
-      const errors = validateForm(descriptor, this.requestForm || {})
-      if (Object.keys(errors).length > 0) {
-        this.requestResult = {
-          ok: false,
-          gatewayId,
-          op,
-          error: {
-            code: 'CLIENT_VALIDATION_FAILED',
-            message: 'Заполните обязательные поля и исправьте ошибки формы.'
-          },
-          requestId: null
+
+      // Для GC — отдельная ветка: валидация и сборка args по argsTree через
+      // хелпер `prepareGcSubmit`. При rootKind !== 'object' тело берётся как
+      // сырой JSON из `__root__`, иначе — buildArgsObject по дереву.
+      let args: unknown
+      if (gatewayId === 'gc') {
+        const prepared = prepareGcSubmit(this.gcRootKind, this.gcFormRows, this.gcArgsValues || {})
+        if (!prepared.ok) {
+          this.gcErrors = prepared.errors
+          this.requestResult = {
+            ok: false,
+            gatewayId,
+            op,
+            error: {
+              code: 'CLIENT_VALIDATION_FAILED',
+              message: 'Заполните обязательные поля и исправьте ошибки формы.'
+            },
+            requestId: null
+          }
+          return
         }
-        return
+        this.gcErrors = {}
+        args = prepared.args
+      } else {
+        // Клиентская валидация для LifePay/Lava.Top — по плоским полям.
+        const errors = validateForm(descriptor, this.requestForm || {})
+        if (Object.keys(errors).length > 0) {
+          this.requestResult = {
+            ok: false,
+            gatewayId,
+            op,
+            error: {
+              code: 'CLIENT_VALIDATION_FAILED',
+              message: 'Заполните обязательные поля и исправьте ошибки формы.'
+            },
+            requestId: null
+          }
+          return
+        }
+        args = buildArgs(descriptor, this.requestForm || {})
       }
+
       this.requestLoading = true
       this.requestResult = null
       try {
-        const args = buildArgs(descriptor, this.requestForm || {})
         // Специфика LifePay.createBill: связка с входящим webhook через correlationId.
         // LifePay не возвращает наш orderNumber в webhook, поэтому генерируем ключ
         // и кладём его и в callbackUrl (query), и в args (сервер сохранит в request_log).
         // Для других операций — отправляем args как есть.
         if (gatewayId === 'lifepay' && op === 'createBill') {
+          const argsObj = args as Record<string, unknown>
           const correlationId = generateCorrelationId()
-          const cb = appendCorrelationId(String(args.callbackUrl || ''), correlationId)
-          args.callbackUrl = cb.url
-          args.correlationId = correlationId
+          const cb = appendCorrelationId(String(argsObj.callbackUrl || ''), correlationId)
+          argsObj.callbackUrl = cb.url
+          argsObj.correlationId = correlationId
         }
+        // Для GC передаём httpMethod в тело — без него `api/lp/invoke.ts`
+        // не сможет выбрать метод upstream (каталог GC динамический).
+        const requestBody: Record<string, unknown> = { gatewayId, op, args }
+        if (gatewayId === 'gc') requestBody.httpMethod = descriptor.httpMethod
         const resp = await fetch(url, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ gatewayId, op, args })
+          body: JSON.stringify(requestBody)
         })
         const data = await resp.json()
         this.requestResult = { ...data, gatewayId, op }
-      } catch (e: any) {
+      } catch (e: unknown) {
+        const message = e instanceof Error ? e.message : String(e)
         this.requestResult = {
           ok: false,
           gatewayId,
           op,
-          error: { code: 'CLIENT_FETCH_ERROR', message: String(e?.message || e) },
+          error: { code: 'CLIENT_FETCH_ERROR', message },
           requestId: null
         }
       } finally {

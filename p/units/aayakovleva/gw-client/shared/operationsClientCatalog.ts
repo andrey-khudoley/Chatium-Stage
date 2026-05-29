@@ -285,6 +285,34 @@ export const OPERATIONS_CLIENT_CATALOG: ClientOperationDescriptor[] = [
   ...LAVATOP_OPERATIONS
 ]
 
+/**
+ * Wire-форма поля операции GC. Зеркалит `ArgsFieldSchema` из
+ * `p/saas/gw/gc/shared/operationsCatalogShared.ts` плоско — вложенные `items`
+ * для текущей формы не разворачиваются (поле типа `array`/`object` рендерится
+ * как JSON-редактор).
+ */
+export type GcOperationField = {
+  name: string
+  type: 'string' | 'number' | 'boolean' | 'array' | 'object'
+  required: boolean
+  description?: string
+}
+
+/**
+ * Wire-форма операции GC для SSR-пропа `gcOperations`. Минимум, нужный для
+ * построения `ClientOperationDescriptor` через `buildGcOperationDescriptor`,
+ * плюс `argsTree` — иерархическая структура для рекурсивной формы (опционально,
+ * для graceful degradation: если гейтвей не отдал поле, форма строится по
+ * плоскому `fields[]`).
+ */
+export type GcOperationEntry = {
+  op: string
+  httpMethod: 'GET' | 'POST'
+  description?: string
+  fields: GcOperationField[]
+  argsTree?: import('./gcArgsForm').ArgsTreeNode
+}
+
 // Хелперы (groupOperationsForUi / findClientOperation / operationKey /
 // buildEmptyForm / validateForm / buildArgs / buildInitialRequestState) живут
 // в `operationsClientForm.ts`, чтобы каталог оставался декларативным.
@@ -298,5 +326,7 @@ export {
   buildEmptyForm,
   validateForm,
   buildArgs,
+  buildGcOperationDescriptor,
+  buildGcGroupForUi,
   type OperationGroupForUi
 } from './operationsClientForm'

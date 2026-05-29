@@ -32,20 +32,22 @@ function runLavatopChecks(results: LifepayUnitTestResult[]): void {
   tryPush(
     results,
     'lavatop_supported_gateways_list',
-    'SUPPORTED_GATEWAYS содержит lifepay и lavatop',
+    'SUPPORTED_GATEWAYS содержит lifepay, lavatop и gc',
     () =>
-      SUPPORTED_GATEWAYS.length === 2 &&
+      SUPPORTED_GATEWAYS.length === 3 &&
       SUPPORTED_GATEWAYS.includes('lifepay') &&
-      SUPPORTED_GATEWAYS.includes('lavatop')
+      SUPPORTED_GATEWAYS.includes('lavatop') &&
+      SUPPORTED_GATEWAYS.includes('gc')
   )
 
   tryPush(
     results,
     'lavatop_isGatewayId_ok',
-    'isGatewayId принимает lifepay/lavatop, отвергает прочее',
+    'isGatewayId принимает lifepay/lavatop/gc, отвергает прочее',
     () =>
       isGatewayId('lifepay') &&
       isGatewayId('lavatop') &&
+      isGatewayId('gc') &&
       !isGatewayId('unknown') &&
       !isGatewayId('') &&
       !isGatewayId(undefined)
@@ -126,8 +128,15 @@ function runLavatopChecks(results: LifepayUnitTestResult[]): void {
   tryPush(
     results,
     'gateway_catalog_total',
-    'FULL_OPERATIONS_CATALOG = sum(LIFEPAY) + sum(LAVATOP)',
+    'FULL_OPERATIONS_CATALOG = sum(LIFEPAY) + sum(LAVATOP) (GC — динамический каталог, пустой)',
     () => FULL_OPERATIONS_CATALOG.length === LIFEPAY_OPERATIONS.length + LAVATOP_OPERATIONS.length
+  )
+
+  tryPush(
+    results,
+    'gc_static_catalog_empty',
+    'OPERATIONS_BY_GATEWAY.gc пуст (динамический каталог приходит с GET /v1/operations)',
+    () => Array.isArray(OPERATIONS_BY_GATEWAY.gc) && OPERATIONS_BY_GATEWAY.gc.length === 0
   )
 
   tryPush(

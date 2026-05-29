@@ -6,9 +6,12 @@
  * Поддерживаются:
  *  - `lifepay` — серверный gateway `p/saas/gw/lifepay` (контур `bills_v1`).
  *  - `lavatop` — серверный gateway `p/saas/gw/lavatop` (контур `invoices_v1`).
+ *  - `gc` — серверный gateway `p/saas/gw/gc` (динамический каталог операций,
+ *    клиент получает enabled-операции через `GET /v1/operations`).
  *
  * Каждый гейтвей имеет свой контракт авторизации к upstream (его клиент собирает
- * `lib/gateway/lifepayClient.ts` или `lib/gateway/lavatopClient.ts`).
+ * `lib/gateway/lifepayClient.ts`, `lib/gateway/lavatopClient.ts` или
+ * `lib/gateway/gcClient.ts`).
  *
  * Значения секретов здесь не хранятся.
  */
@@ -22,6 +25,10 @@ export const X_LP_LOGIN = 'X-Lp-Login'
 
 /** Имя HTTP-заголовка, которое клиент шлёт к gateway Lava.Top. */
 export const X_LAVA_APIKEY = 'X-Lava-Apikey'
+
+/** Имена HTTP-заголовков, которые клиент шлёт к gateway GC (GetCourse). */
+export const X_GC_SCHOOL_API_KEY = 'X-Gc-School-Api-Key'
+export const X_GC_SCHOOL_HOST = 'X-Gc-School-Host'
 
 /** Корреляционный идентификатор ответа gateway (общий для всех гейтвеев). */
 export const X_GATEWAY_REQUEST_ID = 'X-Gateway-Request-Id'
@@ -78,12 +85,21 @@ export const LAVATOP_OPERATIONS: OperationCatalogEntry[] = [
 ]
 
 /**
+ * Каталог операций GC. Пустой — реальный список приходит динамически с
+ * `GET /v1/operations` GC-гейтвея (см. `lib/gateway/gcOperationsLoader.ts`).
+ * `findOperationInGateway('gc', op)` всегда вернёт `null`; в `api/lp/invoke.ts`
+ * для GC применяется отдельная синтаксическая валидация `validateGcOpName`.
+ */
+export const GC_OPERATIONS: OperationCatalogEntry[] = []
+
+/**
  * Каталоги по гейтвеям. При добавлении третьего гейтвея — расширить эту запись
  * и `SUPPORTED_GATEWAYS` в `invokeApi.ts`.
  */
 export const OPERATIONS_BY_GATEWAY: Record<GatewayId, OperationCatalogEntry[]> = {
   lifepay: LIFEPAY_OPERATIONS,
-  lavatop: LAVATOP_OPERATIONS
+  lavatop: LAVATOP_OPERATIONS,
+  gc: GC_OPERATIONS
 }
 
 /** Полный плоский каталог всех операций (со ссылкой на гейтвей). */

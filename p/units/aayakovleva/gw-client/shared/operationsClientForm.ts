@@ -8,11 +8,14 @@
  * чистые функции преобразования каталога/состояния. Без зависимостей от Vue.
  */
 
-import type { GatewayId } from './invokeApi'
+import { isGatewayId, type GatewayId } from './invokeApi'
 import {
   OPERATIONS_CLIENT_CATALOG,
   type ClientFieldDefaultSource,
-  type ClientOperationDescriptor
+  type ClientFieldDescriptor,
+  type ClientOperationDescriptor,
+  type GcOperationEntry,
+  type GcOperationField
 } from './operationsClientCatalog'
 
 export type OperationGroupForUi = {
@@ -25,22 +28,33 @@ export type OperationGroupForUi = {
 export function gatewayLabel(gatewayId: GatewayId): string {
   if (gatewayId === 'lifepay') return 'LifePay'
   if (gatewayId === 'lavatop') return 'Lava.Top'
+  if (gatewayId === 'gc') return 'GetCourse'
   return gatewayId
 }
 
-/** Список групп для дропдауна (порядок — фиксированный, как в каталоге). */
-export function groupOperationsForUi(): OperationGroupForUi[] {
+/**
+ * Список групп для дропдауна (порядок — фиксированный, как в каталоге).
+ * Статические группы (LifePay, Lava.Top) формируются из
+ * `OPERATIONS_CLIENT_CATALOG`. Если передан непустой `gcOperations` —
+ * к ним добавляется группа GC (динамический каталог).
+ */
+export function groupOperationsForUi(gcOperations?: GcOperationEntry[]): OperationGroupForUi[] {
   const groups = new Map<GatewayId, ClientOperationDescriptor[]>()
   for (const op of OPERATIONS_CLIENT_CATALOG) {
     const list = groups.get(op.gatewayId) || []
     list.push(op)
     groups.set(op.gatewayId, list)
   }
-  return Array.from(groups.entries()).map(([gatewayId, operations]) => ({
-    gatewayId,
-    label: gatewayLabel(gatewayId),
-    operations
-  }))
+  const result: OperationGroupForUi[] = Array.from(groups.entries()).map(
+    ([gatewayId, operations]) => ({
+      gatewayId,
+      label: gatewayLabel(gatewayId),
+      operations
+    })
+  )
+  const gcGroup = gcOperations ? buildGcGroupForUi(gcOperations) : null
+  if (gcGroup) result.push(gcGroup)
+  return result
 }
 
 /** Найти описание операции по composite-ключу. */
@@ -65,9 +79,83 @@ export function parseOperationKey(key: string): { gatewayId: GatewayId; op: stri
   if (idx <= 0) return null
   const gw = key.slice(0, idx)
   const op = key.slice(idx + 1)
-  if (gw !== 'lifepay' && gw !== 'lavatop') return null
+  if (!isGatewayId(gw)) return null
   if (!op) return null
   return { gatewayId: gw, op }
+}
+
+/**
+ * Маппинг типа поля GC (`ArgsFieldType`) в тип поля формы клиента
+ * (`ClientFieldType`). Для типов вне списка fallback — `'text'`.
+ */
+function gcFieldToClient(field: GcOperationField): ClientFieldDescriptor {
+  const baseLabel = field.description || field.name
+  if (field.type === 'string') {
+    return { name: field.name, label: baseLabel, type: 'text', required: field.required }
+  }
+  if (field.type === 'number') {
+    return { name: field.name, label: baseLabel, type: 'number', required: field.required }
+  }
+  if (field.type === 'boolean') {
+    return {
+      name: field.name,
+      label: baseLabel,
+      type: 'select',
+      required: field.required,
+      options: [
+        { value: 'true', label: 'true' },
+        { value: 'false', label: 'false' }
+      ]
+    }
+  }
+  if (field.type === 'array') {
+    return {
+      name: field.name,
+      label: baseLabel,
+      type: 'json',
+      required: field.required,
+      hint: 'JSON-массив'
+    }
+  }
+  if (field.type === 'object') {
+    return {
+      name: field.name,
+      label: baseLabel,
+      type: 'json',
+      required: field.required,
+      hint: 'JSON-объект'
+    }
+  }
+  return { name: field.name, label: baseLabel, type: 'text', required: field.required }
+}
+
+/**
+ * Построить `ClientOperationDescriptor` для GC-операции, пришедшей с сервера.
+ * `OperationSummary` GC не содержит `title` — заголовком становится `op`,
+ * описанием — поле `description` (если есть) либо пустая строка.
+ */
+export function buildGcOperationDescriptor(entry: GcOperationEntry): ClientOperationDescriptor {
+  return {
+    gatewayId: 'gc',
+    op: entry.op,
+    httpMethod: entry.httpMethod,
+    title: entry.op,
+    description: entry.description || '',
+    fields: (entry.fields || []).map(gcFieldToClient)
+  }
+}
+
+/**
+ * Сформировать группу GC для дропдауна. Если массив пуст — `null`
+ * (вызывающий не отрисует optgroup).
+ */
+export function buildGcGroupForUi(gcOperations: GcOperationEntry[]): OperationGroupForUi | null {
+  if (gcOperations.length === 0) return null
+  return {
+    gatewayId: 'gc',
+    label: gatewayLabel('gc'),
+    operations: gcOperations.map(buildGcOperationDescriptor)
+  }
 }
 
 /**

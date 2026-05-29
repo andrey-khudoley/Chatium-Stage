@@ -26,8 +26,8 @@
 
 Основные сценарии:
 
-- Открыть `/web/admin`, заполнить настройки LifePay (apikey, login, webhook token, gateway base URL) в карточке «Настройки LifePay».
-- На вкладке «Создать запрос» выбрать операцию из дропдауна (группы — по подключённым гейтвеям LifePay / Lava.Top), заполнить динамическую форму, отправить запрос. Для операций, возвращающих `paymentUrl` (`LifePay.createBill`, `Lava.Top.createInvoice`), на странице сразу отрисуется QR-код.
+- Открыть `/web/admin`, заполнить настройки LifePay (apikey, login, webhook token, gateway base URL) в карточке «Настройки LifePay»; при необходимости — настройки GetCourse (base URL, school api key, school host, enabled) в карточке «Настройки GetCourse».
+- На вкладке «Создать запрос» выбрать операцию из дропдауна (группы — по подключённым гейтвеям LifePay / Lava.Top / GetCourse), заполнить динамическую форму, отправить запрос. Для операций, возвращающих `paymentUrl` (`LifePay.createBill`, `Lava.Top.createInvoice`), на странице сразу отрисуется QR-код. Для GC-операций форма перестраивается из `argsSchema.fields` ответа гейтвея.
 - Оплатить QR со смартфона, получить webhook от LifePay, увидеть запись в журнале.
 
 ## Контур интеграции с payments-gateway
@@ -35,22 +35,23 @@
 ```
 [ Admin UI (pages/HomePage.vue → компонент ClientHomePage) ]
             |
-            | fetch POST /api/lp/invoke { op, args }
+            | fetch POST /api/lp/invoke { gatewayId, op, args, httpMethod? }
             v
-[ api/lp/invoke.ts (Admin-only) ]
+[ api/lp/invoke.ts (guardInternalApi) ]
             |
-            | invokeGateway(ctx, op, args)
-            | читает lp_apikey, lp_login, gateway_base_url из Heap
-            | @app/request POST/GET <gateway_base_url>/api/v1/<op>
-            | заголовки: X-Lp-Apikey, X-Lp-Login
+            | invokeByGateway(ctx, gatewayId, op, args, meta?)
+            | — LifePay:  читает lp_apikey/lp_login/gateway_base_url; X-Lp-Apikey/X-Lp-Login
+            | — Lava.Top: читает lava_test_apikey/lava_base_url; X-Lava-Apikey
+            | — GC:       читает gc_base_url/gc_test_school_api_key/gc_test_school_host;
+            |             X-Gc-School-Api-Key/X-Gc-School-Host; httpMethod обязателен
             v
-[ p/saas/gw/lifepay /api/v1/<op> ]
+[ p/saas/gw/lifepay | p/saas/gw/lavatop | p/saas/gw/gc — /api/v1/<op> ]
             |
             v
-[ LifePay HTTP API ]
+[ LifePay / Lava.Top / GetCourse HTTP API ]
 
 Ответ gateway (с заголовком X-Gateway-Request-Id) → возвращается клиенту без изменений,
-параллельно пишется в Heap-таблицу request_log (без секретов, с маской email/phone).
+параллельно пишется в Heap-таблицу request_log с gatewayId.
 ```
 
 ## Роутинг
@@ -103,8 +104,9 @@ File-based, один файл = один роут с путём `/`:
 
 ## Интеграции
 
-- **payments-gateway** (`p/saas/gw/lifepay`) — единственный исходящий собеседник. Контракт: `POST/GET /api/v1/<op>` (префикс `/api/` от file-based роутинга gateway), заголовки `X-Lp-Apikey`, `X-Lp-Login`, ответ `X-Gateway-Request-Id`. Без серверных ретраев. Таймаут 15 секунд (на 5 секунд больше gateway-таймаута).
-- **LifePay** — только через gateway. Webhook от LifePay приходит на `/web/webhook?token=...&correlationId=<uuid>` (URL формируется клиентом в `createBill`: `callbackUrl` с token + correlationId как query-параметры, не глобально).
+- **LifePay gateway** (`p/saas/gw/lifepay`) — контракт: `POST/GET /api/v1/<op>`, заголовки `X-Lp-Apikey`, `X-Lp-Login`, ответ `X-Gateway-Request-Id`. Без ретраев. Таймаут 15 секунд. Webhook от LifePay приходит на `/web/webhook?token=...&correlationId=<uuid>`.
+- **Lava.Top gateway** (`p/saas/gw/lavatop`) — контракт: `POST/GET /api/v1/<op>`, заголовок `X-Lava-Apikey`, ответ `X-Gateway-Request-Id`. Без ретраев. Webhook от Lava.Top — на `/web/webhook-lavatop`.
+- **GetCourse gateway** (`p/saas/gw/gc`) — контракт: `POST/GET /api/v1/<op>`, заголовки `X-Gc-School-Api-Key`, `X-Gc-School-Host`, ответ `X-Gateway-Request-Id`. Без ретраев. Каталог enabled-операций читается SSR-функцией `fetchGcOperations(ctx)` через `GET /api/v1/operations` с graceful degradation (при недоступности gateway группа GC в UI не отображается). Webhook от GC не реализован (MVP).
 
 ## Механизм correlationId-связки (реализовано 2026-05-25)
 
@@ -167,16 +169,31 @@ Admin может отозвать инвайт (`revoke-invite`) или гран
 - `HomeOverviewTab.vue` — вкладка «Обзор» (аналитические карточки).
 - `HomeRequestsTab.vue` — вкладка «Запросы» (журнал `request_log`).
 - `HomeWebhooksTab.vue` — вкладка «Webhook» (журнал `webhook_log`).
-- `HomeCreateRequestTab.vue` — универсальная вкладка «Создать запрос». Дропдаун операций сгруппирован `optgroup`'ами по гейтвеям (LifePay / Lava.Top); форма перестраивается из `shared/operationsClientCatalog.ts` (типы + операции) и `shared/operationsClientForm.ts` (валидация, сборка `args`, начальное состояние). QR рендерится только если у операции задан `paymentUrlPath` и в ответе он есть.
+- `HomeCreateRequestTab.vue` — универсальная вкладка «Создать запрос». Дропдаун операций сгруппирован `optgroup`'ами по гейтвеям (LifePay / Lava.Top / GetCourse); форма перестраивается из `shared/operationsClientCatalog.ts` (типы + операции) и `shared/operationsClientForm.ts` (валидация, сборка `args`, начальное состояние). Для GC-операций ветка `v-if="isGcOp"` рендерит `<HomeGcRequestForm/>` вместо стандартной формы. QR рендерится только если у операции задан `paymentUrlPath` и в ответе он есть.
+- `HomeGcRequestForm.vue` — Options API компонент иерархической формы GC-операций. Принимает пропы `gcFormRows` (`FormRow[]`), `gcRootKind`, `gcArgsValues`, `gcErrors`. Группы (`FormGroup`) рендерятся как `fieldset` с отступом; листья (`FormLeaf`) — как поля `LeafInput`. Корневой не-object тип → единый `__root__` textarea. Не содержит бизнес-логики — только рендер.
 - `HomeAccessTab.vue` — вкладка «Доступ» (Admin: инвайты и гранты).
 - `HomeRawModal.vue` — модалка raw-данных.
 - `HomeCreateInviteModal.vue` — модалка создания инвайта.
 
 Логика (Options API mixin): `pages/sbpHomePageMixin.ts`. Форматтеры и helpers (чистые, без Heap/ctx): `shared/sbpHomeFormat.ts`. CSS: `pagecss/sbpHomeCss1.ts`..`sbpHomeCss4.ts`.
 
+**Иерархическая форма GC (реализовано 2026-05-29):**
+
+`sbpHomePageMixin.ts` содержит computed-блок для GC-ветки:
+
+- `isGcOp` — true, если выбранная операция принадлежит гейтвею `'gc'`.
+- `gcEntry` — `GcOperationEntry` из `shared/operationsClientCatalog.ts`; поле `argsTree?: ArgsTreeNode` добавлено к типу записи.
+- `gcFormRows` — `FormRow[]`; вычисляется через `buildFormRows(gcEntry.argsTree)` из `shared/gcArgsForm.ts`. Единственный источник истины для структуры иерархии.
+- `gcRootKind` — `'object' | 'scalar'`; определяет, рендерить ли отдельные поля или `__root__` textarea.
+- `prepareGcSubmit(gcArgsValues, gcErrors)` — валидация через `buildFieldErrors` (из `shared/gcArgsForm.ts`) и сборка `args` через `buildArgsObject`; для `__root__` — `JSON.parse`. Возвращает `{ args, errors }`.
+
+`shared/gcArgsForm.ts` — реэкспорт типов и хелперов из `p/saas/gw/gc/shared/requestTestForm.ts` (`buildFormRows`, `buildArgsObject`, `buildFieldErrors`, `jsonPlaceholder`, `FormRow`, `FormGroup`, `FormLeaf`, `LeafInput`) плюс wire-типы `ArgsTreeNode` / `ArgsTreeField`. Кросс-проектный реэкспорт через `@app/*`-имплементацию workspace.
+
+`lib/gateway/gcOperationsLoader.ts` — парсит `argsTree` из ответа `GET /v1/operations` GC-гейтвея в `normalizeEntry`. При изменении схемы полей на стороне `p/saas/gw/gc` клиент правок не требует.
+
 ### `pages/AdminPage.vue`
 
-Оркестратор. Подкомпоненты в `components/admin/`: `AdminCounters.vue`, `AdminProjectSettings.vue`, `AdminLogLevel.vue`, `AdminLifePaySettings.vue`. Composable WebSocket-потока логов: `shared/useLogsSocket.ts`. CSS: `pagecss/sbpAdminCss1.ts`..`sbpAdminCss4.ts`.
+Оркестратор. Подкомпоненты в `components/admin/`: `AdminCounters.vue`, `AdminProjectSettings.vue`, `AdminLogLevel.vue`, `AdminLifePaySettings.vue`, `AdminGcSettings.vue` (карточка настроек GetCourse: 4 поля — base URL, school api key, school host, enabled). Composable WebSocket-потока логов: `shared/useLogsSocket.ts`. CSS: `pagecss/sbpAdminCss1.ts`..`sbpAdminCss4.ts`. SSR-роут `web/admin/index.tsx` читает четыре GC-настройки и передаёт их пропом `initialGcSettings`.
 
 ### `pages/TestsPage.vue`
 

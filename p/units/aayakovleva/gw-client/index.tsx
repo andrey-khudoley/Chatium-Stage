@@ -18,6 +18,7 @@ import {
 import { getPageTitle, getHeaderText } from './config/project'
 import * as loggerLib from './lib/logger.lib'
 import * as settingsLib from './lib/settings.lib'
+import { fetchGcOperations } from './lib/gateway/gcOperationsLoader'
 import { htmlRedirect } from './lib/htmlRedirect'
 
 const LOG_PATH = 'index'
@@ -84,6 +85,10 @@ export const indexPageRoute = app.html('/', async (ctx, req) => {
   // и передаётся пропсом — общий для всех пользователей и сессий.
   const initialDateFilter = await settingsLib.getPanelDateFilter(ctx)
 
+  // Каталог enabled-операций GC. При отключённом gc_enabled или сбое — пустой
+  // массив (дропдаун рендерится без группы GetCourse, остальные гейтвеи работают).
+  const gcOperations = await fetchGcOperations(ctx)
+
   const apiUrls = {
     invoke: `${getFullUrl('/api/lp/invoke')}`,
     recentRequests: `${getFullUrl('/api/lp/recent-requests')}`,
@@ -112,7 +117,8 @@ export const indexPageRoute = app.html('/', async (ctx, req) => {
     message: `[${LOG_PATH}] render`,
     payload: {
       hasApikey: !!initialSettings.lp_apikey,
-      hasGatewayBaseUrl: !!initialSettings.gateway_base_url
+      hasGatewayBaseUrl: !!initialSettings.gateway_base_url,
+      gcOperationsCount: gcOperations.length
     }
   })
 
@@ -167,6 +173,7 @@ export const indexPageRoute = app.html('/', async (ctx, req) => {
           apiUrls={apiUrls}
           initialSettings={initialSettings}
           initialDateFilter={initialDateFilter}
+          gcOperations={gcOperations}
         />
       </body>
     </html>

@@ -10,7 +10,7 @@
 | GET    | /api/settings/get?key= | api/settings/get.ts  | Admin | Получить одну настройку                      |
 | POST   | /api/settings/save     | api/settings/save.ts | Admin | Сохранить настройку (body: `{ key, value }`) |
 
-Для `key`-ей `lp_apikey`, `lp_login`, `lp_webhook_token`, `gateway_base_url` валидация выполняется в `lib/settings.lib.setSetting` (см. `docs/data.md`).
+Для `key`-ей `lp_apikey`, `lp_login`, `lp_webhook_token`, `gateway_base_url` (LifePay), `lava_test_apikey`, `lava_base_url`, `lava_webhook_secret` (Lava.Top) и `gc_base_url`, `gc_test_school_api_key`, `gc_test_school_host`, `gc_enabled` (GC) валидация выполняется в `lib/settings.mutations.setSetting` (см. `docs/data.md`). В exit-логе маскируются `lava_test_apikey`, `lava_webhook_secret`, `gc_test_school_api_key`.
 
 ## Логи (api/logger/, api/admin/logs/)
 
@@ -55,7 +55,7 @@
 
 | Method | Path                                                 | File                            | Auth                                    | Назначение                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | ------ | ---------------------------------------------------- | ------------------------------- | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| POST   | /api/lp/invoke                                       | api/lp/invoke.ts                | requireRealUser + requireInternalAccess | Прокладка `{ gatewayId: 'lifepay' \| 'lavatop', op, args }` → `<base_url>/api/v1/<op>` соответствующего gateway. **`gatewayId` обязательно** (с 2026-05-28). Диспатчер выбирает клиент: LifePay (`X-Lp-Apikey`/`X-Lp-Login`, base = `gateway_base_url`) или Lava.Top (`X-Lava-Apikey`, base = `lava_base_url`). Возвращает тело gateway без изменений; `requestId` из `X-Gateway-Request-Id`. Журналирование в `request_log` с `gatewayId`, включая `correlationId` из `args` (LifePay-механизм связки с webhook). Без ретраев, без `Idempotency-Key`.                                                                                                                                                  |
+| POST   | /api/lp/invoke                                       | api/lp/invoke.ts                | requireRealUser + requireInternalAccess | Прокладка `{ gatewayId: 'lifepay' \| 'lavatop' \| 'gc', op, args, httpMethod? }` → `<base_url>/api/v1/<op>` соответствующего gateway. **`gatewayId` обязательно**. Диспатчер выбирает клиент: LifePay (`X-Lp-Apikey`/`X-Lp-Login`, base = `gateway_base_url`), Lava.Top (`X-Lava-Apikey`, base = `lava_base_url`) или GC (`X-Gc-School-Api-Key`/`X-Gc-School-Host`, base = `gc_base_url`). Для `gatewayId: 'gc'` `httpMethod` обязателен (`'GET'` или `'POST'`); op проходит `validateGcOpName` (SSRF-защита). Возвращает тело gateway без изменений; `requestId` из `X-Gateway-Request-Id`. Журналирование в `request_log` с `gatewayId`. Без ретраев, без `Idempotency-Key`.                          |
 | GET    | /api/lp/recent-requests?limit=                       | api/lp/recent-requests.ts       | requireRealUser + requireInternalAccess | Последние записи `request_log` в пределах глобального фильтра `panel_date_filter` (без полных тел). Ответ: `{ success, entries, hasMore }`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | GET    | /api/lp/recent-webhooks?limit=                       | api/lp/recent-webhooks.ts       | requireRealUser + requireInternalAccess | Последние записи `webhook_log` в пределах глобального фильтра `panel_date_filter`. Ответ: `{ success, entries, hasMore }`. Поле `entries[].orderNumber` обогащается из связанного `request_log` по `correlationId`, если в самом webhook оно пустое (LifePay SBP-webhook не возвращает orderNumber). Поле `entries[].correlationId` возвращается. Поле `entries[].method` возвращается в ответе, но в UI-таблицах не отображается (убрана колонка «метод»).                                                                                                                                                                                                                                             |
 | GET    | /api/lp/analytics/summary                            | api/lp/analytics/summary.ts     | requireRealUser + requireInternalAccess | Карточки аналитики за диапазон из глобального фильтра `panel_date_filter` (без параметра `windowHours`). Если фильтр не задан — все данные (до `ANALYTICS_SCAN_LIMIT = 5000`). Ответ: `dateFilter: { from, to }` (null если граница не задана) + `orders { created, paid, createdSum, paidSum }` + `requests { total, okShare, avgDurationMs, p95DurationMs, topErrorCode, topErrorCount }` + `webhooks { total, successShare, tokenValidShare }`.                                                                                                                                                                                                                                                      |
@@ -101,7 +101,18 @@
 }
 ```
 
-`gatewayId` обязательно (с 2026-05-28). Допустимые значения определяются `SUPPORTED_GATEWAYS` (`shared/invokeApi.ts`).
+Запрос (GetCourse):
+
+```json
+{
+  "gatewayId": "gc",
+  "op": "someOperation",
+  "httpMethod": "POST",
+  "args": { ... }
+}
+```
+
+`gatewayId` обязательно. `httpMethod` обязателен для GC. Допустимые значения `gatewayId` определяются `SUPPORTED_GATEWAYS` (`shared/invokeApi.ts`): `['lifepay', 'lavatop', 'gc']`.
 
 `correlationId` в `args` извлекается сервером и сохраняется в `request_log`; в тело запроса к gateway **не** передаётся (отделяется перед вызовом). Для LifePay `callbackUrl` с `correlationId` в query доходит до LifePay и возвращается приёмнику webhook. Для Lava.Top связка через `contractId` (см. webhook ниже).
 
@@ -114,8 +125,10 @@
 
 - `INVOKE_GATEWAY_REQUIRED` (HTTP 400) — `gatewayId` не указан.
 - `INVOKE_GATEWAY_UNKNOWN` (HTTP 400) — `gatewayId` не из `SUPPORTED_GATEWAYS`.
-- `INVOKE_SETTINGS_MISSING` (HTTP 503) — для LifePay не настроены `lp_apikey`/`lp_login`/`gateway_base_url`; для Lava.Top — `lava_test_apikey`/`lava_base_url`.
+- `INVOKE_SETTINGS_MISSING` (HTTP 503) — для LifePay не настроены `lp_apikey`/`lp_login`/`gateway_base_url`; для Lava.Top — `lava_test_apikey`/`lava_base_url`; для GC — `gc_base_url`/`gc_test_school_api_key`/`gc_test_school_host`.
 - `INVOKE_OP_UNKNOWN` (HTTP 400) — операция не входит в каталог указанного гейтвея.
+- `INVOKE_HTTP_METHOD_REQUIRED` (HTTP 400) — для GC не указан `httpMethod`.
+- `INVOKE_HTTP_METHOD_INVALID` (HTTP 400) — для GC `httpMethod` не `'GET'` или `'POST'`.
 - `INVOKE_PROXY_BODY_INVALID` (HTTP 400) — тело запроса некорректно.
 
 Коды от LifePay-gateway транзитом: `INVOKE_LP_TIMEOUT`, `INVOKE_LP_NETWORK_ERROR`, `INVOKE_LP_UPSTREAM_ERROR`, `INVOKE_LP_SEMANTIC_ERROR` (с `details.lpRule`, `details.lpNumericCode`, `details.lpHttpStatus`) и др. — см. `p/saas/gw/lifepay/lib/gateway/gatewayErrors.ts`.
@@ -174,3 +187,18 @@
 | GET    | /web/access/invite?token= | web/access/invite/index.tsx | requireRealUser                              | Страница подтверждения инвайта. Переход по ссылке не расходует инвайт; расход — только POST /api/access/consume-invite. |
 | GET    | /web/forbidden            | web/forbidden/index.tsx     | requireRealUser                              | Страница 403 «Нет доступа к панели».                                                                                    |
 | GET    | /web/tests                | web/tests/index.tsx         | Admin (requireRealUser + requireAccountRole) | Страница тестов. Аноним → /web/login, авторизованный без роли Admin → /web/forbidden.                                   |
+
+## SSR-контракт пропа `gcOperations` (index.tsx → ClientHomePage)
+
+`index.tsx` вызывает `fetchGcOperations(ctx)` при SSR и передаёт массив `GcOperationEntry[]` пропом `gcOperations` в компонент `ClientHomePage`.
+
+Тип `GcOperationEntry` (`shared/operationsClientCatalog.ts`):
+
+| Поле         | Тип                         | Описание                                                                                                                                                                                  |
+| ------------ | --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `key`        | `string`                    | Ключ операции (имя)                                                                                                                                                                       |
+| `label`      | `string`                    | Отображаемое название                                                                                                                                                                     |
+| `httpMethod` | `'GET' \| 'POST'`           | HTTP-метод для `POST /api/lp/invoke`                                                                                                                                                      |
+| `argsTree`   | `ArgsTreeNode \| undefined` | Иерархия полей из `GET /v1/operations` GC-гейтвея. При наличии — форма строится через `buildFormRows` (`shared/gcArgsForm.ts`). При отсутствии — форма деградирует к `__root__` textarea. |
+
+`ArgsTreeNode` и `ArgsTreeField` определены в `shared/gcArgsForm.ts` и зеркалят wire-контракт `p/saas/gw/gc/shared/requestTestForm.ts`. Источник данных — `GET /api/v1/operations` GC-гейтвея; парсинг — `lib/gateway/gcOperationsLoader.ts:normalizeEntry`. При изменении схемы полей на стороне гейтвея клиент правок не требует.

@@ -12,6 +12,7 @@ import {
   isValidGatewayBaseUrl,
   normalizeLavaBaseUrl,
   isValidLavaBaseUrl,
+  isValidGcSchoolHost,
   isValidDateFilter,
   normalizeDateFilter
 } from './settings.lib'
@@ -175,6 +176,55 @@ export async function setSetting(ctx: app.Ctx, key: string, value: unknown): Pro
       message: `[${LOG_MODULE}] setSetting LAVA_WEBHOOK_SECRET branch (length only, value redacted)`,
       payload: { secretLength: str.length }
     })
+  } else if (key === SETTING_KEYS.GC_BASE_URL) {
+    const trimmed = typeof value === 'string' ? value.trim() : ''
+    if (!trimmed) {
+      normalized = ''
+    } else {
+      const normalizedUrl = normalizeGatewayBaseUrl(trimmed)
+      if (!isValidGatewayBaseUrl(normalizedUrl)) {
+        throw new Error('gc_base_url должен начинаться с http:// или https:// и быть непустым')
+      }
+      normalized = normalizedUrl
+    }
+    await loggerLib.writeServerLog(ctx, {
+      severity: 6,
+      message: `[${LOG_MODULE}] setSetting GC_BASE_URL branch`,
+      payload: { normalized }
+    })
+  } else if (key === SETTING_KEYS.GC_TEST_SCHOOL_API_KEY) {
+    const str = typeof value === 'string' ? value.trim() : ''
+    normalized = str
+    await loggerLib.writeServerLog(ctx, {
+      severity: 6,
+      message: `[${LOG_MODULE}] setSetting GC_TEST_SCHOOL_API_KEY branch (length only, value redacted)`,
+      payload: { keyLength: str.length }
+    })
+  } else if (key === SETTING_KEYS.GC_TEST_SCHOOL_HOST) {
+    const str = typeof value === 'string' ? value.trim() : ''
+    if (str && !isValidGcSchoolHost(str)) {
+      throw new Error(
+        'gc_test_school_host должен быть hostname без схемы (например, school.getcourse.ru).'
+      )
+    }
+    normalized = str
+    await loggerLib.writeServerLog(ctx, {
+      severity: 6,
+      message: `[${LOG_MODULE}] setSetting GC_TEST_SCHOOL_HOST branch`,
+      payload: { normalized }
+    })
+  } else if (key === SETTING_KEYS.GC_ENABLED) {
+    const str =
+      typeof value === 'string' ? value.trim() : typeof value === 'boolean' ? String(value) : ''
+    if (str !== 'true' && str !== 'false') {
+      throw new Error('gc_enabled должен быть строкой "true" или "false".')
+    }
+    normalized = str
+    await loggerLib.writeServerLog(ctx, {
+      severity: 6,
+      message: `[${LOG_MODULE}] setSetting GC_ENABLED branch`,
+      payload: { normalized }
+    })
   } else if (key === SETTING_KEYS.PANEL_DATE_FILTER) {
     if (!isValidDateFilter(value)) {
       throw new Error(
@@ -195,7 +245,8 @@ export async function setSetting(ctx: app.Ctx, key: string, value: unknown): Pro
     key === SETTING_KEYS.LP_APIKEY ||
     key === SETTING_KEYS.LP_WEBHOOK_TOKEN ||
     key === SETTING_KEYS.LAVA_TEST_APIKEY ||
-    key === SETTING_KEYS.LAVA_WEBHOOK_SECRET
+    key === SETTING_KEYS.LAVA_WEBHOOK_SECRET ||
+    key === SETTING_KEYS.GC_TEST_SCHOOL_API_KEY
       ? '***'
       : key === SETTING_KEYS.LP_LOGIN && typeof normalized === 'string' && normalized.length === 11
         ? `+${normalized.slice(0, 4)}***${normalized.slice(-4)}`

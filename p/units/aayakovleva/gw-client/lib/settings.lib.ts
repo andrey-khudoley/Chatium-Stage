@@ -26,6 +26,13 @@ export const SETTING_KEYS = {
   LAVA_TEST_APIKEY: 'lava_test_apikey',
   LAVA_BASE_URL: 'lava_base_url',
   LAVA_WEBHOOK_SECRET: 'lava_webhook_secret',
+  // GetCourse client panel — третий гейтвей. Имена ключей строго соответствуют
+  // контракту gw/gc (`shared/gatewaySettingKeys.ts`): значения подставляются
+  // в заголовки `X-Gc-School-Api-Key` и `X-Gc-School-Host` upstream-запроса.
+  GC_BASE_URL: 'gc_base_url',
+  GC_TEST_SCHOOL_API_KEY: 'gc_test_school_api_key',
+  GC_TEST_SCHOOL_HOST: 'gc_test_school_host',
+  GC_ENABLED: 'gc_enabled',
   // Глобальный фильтр панели по дате/времени (один на всё приложение).
   PANEL_DATE_FILTER: 'panel_date_filter'
 } as const
@@ -88,7 +95,11 @@ export const DEFAULTS = {
   [SETTING_KEYS.GATEWAY_BASE_URL]: '',
   [SETTING_KEYS.LAVA_TEST_APIKEY]: '',
   [SETTING_KEYS.LAVA_BASE_URL]: 'https://gate.lava.top',
-  [SETTING_KEYS.LAVA_WEBHOOK_SECRET]: ''
+  [SETTING_KEYS.LAVA_WEBHOOK_SECRET]: '',
+  [SETTING_KEYS.GC_BASE_URL]: '',
+  [SETTING_KEYS.GC_TEST_SCHOOL_API_KEY]: '',
+  [SETTING_KEYS.GC_TEST_SCHOOL_HOST]: '',
+  [SETTING_KEYS.GC_ENABLED]: 'false'
 } as const
 
 /** Минимальная длина webhook-токена (implementation-plan §1.8.1: ≥ 32 байт). */
@@ -115,6 +126,18 @@ export function isValidGatewayBaseUrl(value: string): boolean {
 /** Алиасы под Lava.Top — переиспользуют общий нормализатор/валидатор. */
 export const normalizeLavaBaseUrl = normalizeGatewayBaseUrl
 export const isValidLavaBaseUrl = isValidGatewayBaseUrl
+
+/**
+ * Валидатор хоста тестовой школы GetCourse: hostname без схемы и слешей,
+ * допустимые символы — буквы/цифры/дефис, точечная нотация. Применяется к
+ * `gc_test_school_host` (значение уходит в заголовок `X-Gc-School-Host`).
+ * `isValidGatewayBaseUrl` сюда не подходит: ожидаемое значение — `school.getcourse.ru`,
+ * без `http://` (§2.5 manual GC).
+ */
+export function isValidGcSchoolHost(value: string): boolean {
+  if (!value) return false
+  return /^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$/i.test(value)
+}
 
 /** Минимальная длина webhook-секрета Lava.Top: 16 символов (по аналогии с gateway). */
 export const LAVA_WEBHOOK_SECRET_MIN_LENGTH = 16
@@ -317,6 +340,30 @@ export async function getLavaBaseUrl(ctx: app.Ctx): Promise<string> {
 /** Получить lava_webhook_secret (без логирования значения). */
 export async function getLavaWebhookSecret(ctx: app.Ctx): Promise<string> {
   return getStringSettingRaw(ctx, SETTING_KEYS.LAVA_WEBHOOK_SECRET)
+}
+
+/** Получить gc_base_url — базовый URL GC-гейтвея (`p/saas/gw/gc`). */
+export async function getGcBaseUrl(ctx: app.Ctx): Promise<string> {
+  return getStringSettingRaw(ctx, SETTING_KEYS.GC_BASE_URL)
+}
+
+/** Получить gc_test_school_api_key (без логирования значения). */
+export async function getGcTestSchoolApiKey(ctx: app.Ctx): Promise<string> {
+  return getStringSettingRaw(ctx, SETTING_KEYS.GC_TEST_SCHOOL_API_KEY)
+}
+
+/** Получить gc_test_school_host — хост тестовой школы без схемы. */
+export async function getGcTestSchoolHost(ctx: app.Ctx): Promise<string> {
+  return getStringSettingRaw(ctx, SETTING_KEYS.GC_TEST_SCHOOL_HOST)
+}
+
+/**
+ * Получить gc_enabled — флаг включения GC-интеграции (safe-by-default:
+ * `true` только при точном значении строки `'true'`).
+ */
+export async function getGcEnabled(ctx: app.Ctx): Promise<boolean> {
+  const value = await getStringSettingRaw(ctx, SETTING_KEYS.GC_ENABLED)
+  return value === 'true'
 }
 
 /**

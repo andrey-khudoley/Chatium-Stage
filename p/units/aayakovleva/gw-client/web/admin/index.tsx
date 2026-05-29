@@ -182,6 +182,13 @@ export const adminPageRoute = app.html('/', async (ctx, req) => {
     lava_base_url: await settingsLib.getLavaBaseUrl(ctx),
     lava_webhook_secret: await settingsLib.getLavaWebhookSecret(ctx)
   }
+  // Настройки GC для отдельной карточки на странице настроек.
+  const initialGcSettings = {
+    gc_base_url: await settingsLib.getGcBaseUrl(ctx),
+    gc_test_school_api_key: await settingsLib.getGcTestSchoolApiKey(ctx),
+    gc_test_school_host: await settingsLib.getGcTestSchoolHost(ctx),
+    gc_enabled: (await settingsLib.getGcEnabled(ctx)) ? 'true' : 'false'
+  }
   await loggerLib.writeServerLog(ctx, {
     severity: 6,
     message: `[${LOG_PATH}] Переменные для рендера`,
@@ -193,7 +200,11 @@ export const adminPageRoute = app.html('/', async (ctx, req) => {
       hasGatewayBaseUrl: !!initialSettings.gateway_base_url,
       hasLavaApikey: !!initialLavatopSettings.lava_test_apikey,
       hasLavaBaseUrl: !!initialLavatopSettings.lava_base_url,
-      hasLavaWebhookSecret: !!initialLavatopSettings.lava_webhook_secret
+      hasLavaWebhookSecret: !!initialLavatopSettings.lava_webhook_secret,
+      hasGcBaseUrl: !!initialGcSettings.gc_base_url,
+      hasGcSchoolApiKey: !!initialGcSettings.gc_test_school_api_key,
+      hasGcSchoolHost: !!initialGcSettings.gc_test_school_host,
+      gcEnabled: initialGcSettings.gc_enabled === 'true'
     }
   })
   await loggerLib.writeServerLog(ctx, {
@@ -251,6 +262,7 @@ export const adminPageRoute = app.html('/', async (ctx, req) => {
           encodedLogsSocketId={encodedLogsSocketId}
           initialSettings={initialSettings}
           initialLavatopSettings={initialLavatopSettings}
+          initialGcSettings={initialGcSettings}
         />
       </body>
     </html>

@@ -199,6 +199,9 @@ export const sbpHomeCss2 = `
 .manager-summary {
   margin-bottom: 1.1rem;
 }
+.admin-summary {
+  margin-bottom: 1.1rem;
+}
 .admin-summary .kpi-grid + .kpi-grid {
   margin-top: 0.9rem;
 }

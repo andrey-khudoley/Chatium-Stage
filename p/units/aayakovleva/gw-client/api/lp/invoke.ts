@@ -3,10 +3,13 @@
  *
  * URL сохранён исторически (исходно — `lp` от LifePay). После ребрендинга
  * проекта `sbp-client` → `gw-client` и введения многогейтвейности (2026-05-28)
- * этот же роут обслуживает оба гейтвея — диспатчеризация по обязательному
- * полю `gatewayId` в теле запроса.
+ * этот же роут обслуживает все подключённые гейтвеи — диспатчеризация по
+ * обязательному полю `gatewayId` в теле запроса.
  *
- * Тело: `{ gatewayId: 'lifepay' | 'lavatop', op: string, args: object }`.
+ * Тело: `{ gatewayId: 'lifepay' | 'lavatop' | 'gc', op, args, httpMethod? }`.
+ * Поле `httpMethod` обязательно для `gatewayId: 'gc'` (каталог GC динамический,
+ * метод приходит с фронта из SSR-пропа `gcOperations`).
+ *
  * Делает один исходящий вызов через `@app/request` к
  * `<base_url>/api/v1/<op>` соответствующего gateway. Тело ответа возвращается
  * клиенту **без изменений**; HTTP-статус — как у gateway. requestId берётся
@@ -16,13 +19,18 @@
  * Без серверных ретраев. Без Idempotency-Key.
  */
 
-import { invokeByGateway } from '../../lib/gateway/invokeDispatcher'
+import { invokeByGateway, type InvokeMeta } from '../../lib/gateway/invokeDispatcher'
 import { recordRequestLog } from '../../lib/gateway/recordRequestLog'
 import { extractCorrelationId } from '../../shared/correlation'
 import { guardInternalApi } from '../../lib/access/apiGuard'
 import * as loggerLib from '../../lib/logger.lib'
 import { findOperationInGateway } from '../../shared/gatewayContract'
-import { INVOKE_PROXY_ERROR_CODES, SUPPORTED_GATEWAYS, isGatewayId } from '../../shared/invokeApi'
+import {
+  INVOKE_PROXY_ERROR_CODES,
+  SUPPORTED_GATEWAYS,
+  isGatewayId,
+  validateGcOpName
+} from '../../shared/invokeApi'
 import { X_GATEWAY_REQUEST_ID } from '../../shared/gatewayContract'
 
 const LOG_PATH = 'api/lp/invoke'
@@ -104,16 +112,67 @@ export const invokeRoute = app.post('/', async (ctx, req) => {
     return jsonError(400, INVOKE_PROXY_ERROR_CODES.BODY_INVALID, 'Поле op обязательно.')
   }
 
-  if (!findOperationInGateway(gatewayId, op)) {
+  // Валидация операции:
+  //   - GC: каталог динамический, операция верифицируется синтаксически
+  //         (`validateGcOpName`) и далее доверяется самому GC-гейтвею;
+  //   - остальные: операция должна быть в локальном статическом каталоге.
+  if (gatewayId === 'gc') {
+    if (!validateGcOpName(op)) {
+      await loggerLib.writeServerLog(ctx, {
+        severity: 4,
+        message: `[${LOG_PATH}] op_unknown_gc`,
+        payload: { gatewayId, op }
+      })
+      return jsonError(
+        400,
+        INVOKE_PROXY_ERROR_CODES.OP_UNKNOWN,
+        `Имя операции GC недопустимо: "${op}". Ожидается camelCase-идентификатор.`
+      )
+    }
+  } else {
+    if (!findOperationInGateway(gatewayId, op)) {
+      await loggerLib.writeServerLog(ctx, {
+        severity: 4,
+        message: `[${LOG_PATH}] op_unknown`,
+        payload: { gatewayId, op }
+      })
+      return jsonError(
+        400,
+        INVOKE_PROXY_ERROR_CODES.OP_UNKNOWN,
+        `Операция "${op}" не найдена в каталоге гейтвея "${gatewayId}".`
+      )
+    }
+  }
+
+  // httpMethod — опциональное поле тела; обязательно для GC. Допустимы только
+  // строки 'GET' и 'POST'; иное значение → 400.
+  const httpMethodRaw = body.httpMethod
+  let httpMethod: 'GET' | 'POST' | undefined
+  if (httpMethodRaw !== undefined) {
+    if (httpMethodRaw !== 'GET' && httpMethodRaw !== 'POST') {
+      await loggerLib.writeServerLog(ctx, {
+        severity: 4,
+        message: `[${LOG_PATH}] http_method_invalid`,
+        payload: { gatewayId, op, httpMethodRaw }
+      })
+      return jsonError(
+        400,
+        INVOKE_PROXY_ERROR_CODES.BODY_INVALID,
+        'Поле httpMethod должно быть строкой "GET" или "POST".'
+      )
+    }
+    httpMethod = httpMethodRaw
+  }
+  if (gatewayId === 'gc' && !httpMethod) {
     await loggerLib.writeServerLog(ctx, {
       severity: 4,
-      message: `[${LOG_PATH}] op_unknown`,
+      message: `[${LOG_PATH}] http_method_required_gc`,
       payload: { gatewayId, op }
     })
     return jsonError(
       400,
-      INVOKE_PROXY_ERROR_CODES.OP_UNKNOWN,
-      `Операция "${op}" не найдена в каталоге гейтвея "${gatewayId}".`
+      INVOKE_PROXY_ERROR_CODES.BODY_INVALID,
+      'Поле httpMethod обязательно для gatewayId: "gc".'
     )
   }
 
@@ -124,7 +183,8 @@ export const invokeRoute = app.post('/', async (ctx, req) => {
   const argsForGateway: Record<string, unknown> = { ...args }
   delete argsForGateway.correlationId
 
-  const invoke = await invokeByGateway(ctx, gatewayId, op, argsForGateway)
+  const invokeMeta: InvokeMeta | undefined = httpMethod ? { httpMethod } : undefined
+  const invoke = await invokeByGateway(ctx, gatewayId, op, argsForGateway, invokeMeta)
 
   // Запись в журнал — синхронно перед возвратом (журнал важнее производительности UI;
   // запись в Heap занимает ~5-50ms).
