@@ -5,7 +5,7 @@
       <div class="footer-center">Все права сохранены © 2018-{{ currentYear }}</div>
       <div class="footer-right">
         <button class="footer-link" @click="onChatiumClick">
-          Сделано с <i class="fas fa-heart footer-heart"></i> для ИП Яковлевой Анны Андреевны
+          Сделано с <i class="fas fa-heart footer-heart"></i> для Анны Яковлевой
         </button>
       </div>
     </div>
