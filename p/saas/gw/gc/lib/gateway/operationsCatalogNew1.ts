@@ -158,7 +158,7 @@ export const operationsCatalogNew1: OperationEntry[] = [
     contour: 'new',
     httpMethod: 'GET',
     pathTemplate: '/deal/get-fields',
-    availability: 'disabled',
+    availability: 'enabled',
     legacyImportAction: null,
     argsValidator: s.object({ dealId: s.number() }),
     argsSchema: { fields: [{ name: 'dealId', type: 'number', required: true }] }

@@ -105,10 +105,15 @@ export const operationsCatalogNew2: OperationEntry[] = [
     contour: 'new',
     httpMethod: 'GET',
     pathTemplate: '/user/get-fields',
-    availability: 'disabled',
+    availability: 'enabled',
     legacyImportAction: null,
-    argsValidator: s.object({}),
-    argsSchema: EMPTY_SCHEMA
+    argsValidator: s.object({ userId: s.number().optional(), email: s.string().optional() }),
+    argsSchema: {
+      fields: [
+        { name: 'userId', type: 'number', required: false },
+        { name: 'email', type: 'string', required: false }
+      ]
+    }
   },
   {
     op: 'getUserGoalRecords',
