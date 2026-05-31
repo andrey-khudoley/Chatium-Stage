@@ -5,27 +5,24 @@
  * Использует loader-функцию (передаётся пропом из родителя), чтобы не зависеть
  * от конкретного route. В `HomeWidgetSettings.vue` обе секции (LifePay и
  * Lava.Top) передают один и тот же loader на `widgetOffersRoute` (GC-офферы),
- * выбирая разные подмножества id.
+ * выбирая разные подмножества офферов.
  *
- * State выбора (offerListType + offerIds) хранится в родителе и приходит сюда
- * через v-model. Сохранение тоже делает родитель — компонент только показывает
- * UI и эмитит изменения.
+ * State выбора (offerListType + selectedOffers {id,title}[]) хранится в родителе
+ * и приходит сюда через v-model. Сохранение тоже делает родитель — компонент
+ * только показывает UI и эмитит изменения.
  *
  * UI-режимы сегмент-переключателя (виртуальные, без серверного представления):
- *   - `off` — фильтр не применяется. На сервере это `offerIds: []`
- *     (виджет покажется всем — см. `userscripts/common.js:isOfferMatched`,
- *     для пустого списка возвращает true независимо от listType). Дефолт.
+ *   - `off` — фильтр не применяется. Маппится на `listType='blacklist'` + пустой
+ *     список офферов (пустой blacklist → виджет показан всем). Дефолт.
  *   - `whitelist` — листинг ограничен выбранными офферами.
  *   - `blacklist` — листинг исключает выбранные офферы.
  *
- * Переход в `off` эмитит `selectedIds: []`, не трогая listType (он не
- * учитывается с пустым списком). Переход в `whitelist`/`blacklist` при
- * текущем пустом списке только меняет listType — пользователь сам выберет
- * офферы, иначе режим визуально снова станет `off`.
+ * Переход в `off` эмитит `selectedOffers: []` И `listType: 'blacklist'`.
+ * Переход в `whitelist`/`blacklist` при пустом списке только запоминает staged-выбор.
  */
 import { computed, onMounted, ref } from 'vue'
 import { createComponentLogger } from '../../shared/logger'
-import type { WidgetOfferListType } from '../../shared/widgetSettingsTypes'
+import type { WidgetOfferListType, AllowedOffer } from '../../shared/widgetSettingsTypes'
 
 const log = createComponentLogger('HomeWidgetOfferList')
 
@@ -47,15 +44,15 @@ const props = defineProps<{
   errorHints?: Record<string, string>
   /** Текущий тип списка (whitelist/blacklist). */
   listType: WidgetOfferListType
-  /** Текущий список id офферов. */
-  selectedIds: string[]
+  /** Текущий список выбранных офферов ({id, title}[]). */
+  selectedOffers: AllowedOffer[]
   /** Функция-загрузчик офферов (route.run(ctx) в родителе). */
   loader: () => Promise<LoaderResult>
 }>()
 
 const emit = defineEmits<{
   (e: 'update:listType', value: WidgetOfferListType): void
-  (e: 'update:selectedIds', value: string[]): void
+  (e: 'update:selectedOffers', value: AllowedOffer[]): void
 }>()
 
 const offers = ref<OfferItem[]>([])
@@ -71,10 +68,13 @@ const search = ref('')
 const stagedListType = ref<WidgetOfferListType | null>(null)
 
 const filterMode = computed<FilterMode>(() => {
-  if (props.selectedIds.length === 0) {
-    return stagedListType.value ?? 'off'
+  // Непустой список → реальный listType (whitelist или blacklist).
+  if (props.selectedOffers.length > 0) {
+    return props.listType
   }
-  return props.listType
+  // Пустой список: если есть staged (пользователь нажал режим, ещё не выбрав офферов) —
+  // показываем staged. Иначе 'off' (и blacklist+[], и whitelist+[] визуально = off).
+  return stagedListType.value ?? 'off'
 })
 
 const filteredOffers = computed(() => {
@@ -87,7 +87,7 @@ const filteredOffers = computed(() => {
   })
 })
 
-const selectedCount = computed(() => props.selectedIds.length)
+const selectedCount = computed(() => props.selectedOffers.length)
 
 async function loadOffers() {
   loading.value = true
@@ -97,9 +97,7 @@ async function loadOffers() {
     if (res?.success === false) {
       const hint = props.errorHints?.[res.error || '']
       loadError.value =
-        hint ||
-        res.error ||
-        'Не удалось загрузить список офферов. Сохранённые id офферов не затронуты.'
+        hint || res.error || 'Не удалось загрузить список офферов. Сохранённые офферы не затронуты.'
       offers.value = []
       return
     }
@@ -113,28 +111,33 @@ async function loadOffers() {
   }
 }
 
-function toggleOffer(id: string) {
-  const arr = [...props.selectedIds]
-  const idx = arr.indexOf(id)
-  if (idx === -1) arr.push(id)
-  else arr.splice(idx, 1)
+function toggleOffer(offer: OfferItem) {
+  const arr = [...props.selectedOffers]
+  const idx = arr.findIndex((o) => o.id === offer.id)
+  if (idx === -1) {
+    arr.push({ id: offer.id, title: offer.name })
+  } else {
+    arr.splice(idx, 1)
+  }
   // При первом добавлении оффера sync staged → реальный listType, чтобы
   // сегмент корректно отображал выбранный режим.
   if (arr.length > 0 && stagedListType.value && props.listType !== stagedListType.value) {
     emit('update:listType', stagedListType.value)
   }
   stagedListType.value = null
-  emit('update:selectedIds', arr)
+  emit('update:selectedOffers', arr)
 }
 
 function setMode(mode: FilterMode) {
   if (mode === 'off') {
     stagedListType.value = null
-    if (props.selectedIds.length > 0) emit('update:selectedIds', [])
+    // 'off' = blacklist + пустой список → пустой blacklist показывает виджет всем.
+    if (props.listType !== 'blacklist') emit('update:listType', 'blacklist')
+    if (props.selectedOffers.length > 0) emit('update:selectedOffers', [])
     return
   }
   // whitelist | blacklist
-  if (props.selectedIds.length === 0) {
+  if (props.selectedOffers.length === 0) {
     // запомним выбор до того, как пользователь выберет первый оффер
     stagedListType.value = mode
   } else if (props.listType !== mode) {
@@ -145,7 +148,7 @@ function setMode(mode: FilterMode) {
 
 function clearSelection() {
   stagedListType.value = props.listType
-  emit('update:selectedIds', [])
+  emit('update:selectedOffers', [])
 }
 
 onMounted(() => {
@@ -233,13 +236,13 @@ onMounted(() => {
           v-for="offer in filteredOffers"
           :key="offer.id"
           class="st-offer-item"
-          :class="selectedIds.includes(offer.id) ? 'is-selected' : ''"
+          :class="selectedOffers.some((o) => o.id === offer.id) ? 'is-selected' : ''"
           :title="offer.id"
         >
           <input
             type="checkbox"
-            :checked="selectedIds.includes(offer.id)"
-            @change="toggleOffer(offer.id)"
+            :checked="selectedOffers.some((o) => o.id === offer.id)"
+            @change="toggleOffer(offer)"
           />
           <span class="st-offer-item__body">
             <span class="st-offer-item__name">{{ offer.name || offer.id }}</span>

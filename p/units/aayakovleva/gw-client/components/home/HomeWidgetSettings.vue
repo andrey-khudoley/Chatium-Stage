@@ -21,7 +21,8 @@ import { widgetOffersRoute } from '../../api/widgets/offers'
 import {
   WIDGET_SETTING_KEYS,
   type WidgetSettingsData,
-  type WidgetOfferListType
+  type WidgetOfferListType,
+  type AllowedOffer
 } from '../../shared/widgetSettingsTypes'
 import { createComponentLogger } from '../../shared/logger'
 import HomeWidgetOfferList from './HomeWidgetOfferList.vue'
@@ -46,14 +47,16 @@ const defaults: WidgetSettingsData = {
   lifepayDomains: '',
   lifepayMin: 0,
   lifepayMax: 0,
-  lifepayOfferListType: 'whitelist',
-  lifepayOfferIds: [],
+  // 'blacklist' + пустой список = показать виджет всем (режим «Выключен»).
+  lifepayOfferListType: 'blacklist',
+  lifepayOffers: [],
   lavatopEnabled: false,
   lavatopDomains: '',
   lavatopMin: 0,
   lavatopMax: 0,
-  lavatopOfferListType: 'whitelist',
-  lavatopOfferIds: []
+  // 'blacklist' + пустой список = показать виджет всем (режим «Выключен»).
+  lavatopOfferListType: 'blacklist',
+  lavatopOffers: []
 }
 
 const initial = props.initialWidgetSettings ?? defaults
@@ -64,7 +67,7 @@ const lifepayDomains = ref<string>(initial.lifepayDomains)
 const lifepayMin = ref<number>(initial.lifepayMin)
 const lifepayMax = ref<number>(initial.lifepayMax)
 const lifepayOfferListType = ref<WidgetOfferListType>(initial.lifepayOfferListType)
-const lifepayOfferIds = ref<string[]>([...initial.lifepayOfferIds])
+const lifepayOffers = ref<AllowedOffer[]>([...(initial.lifepayOffers ?? [])])
 const lifepayMessage = ref('')
 const lifepayError = ref(false)
 const lifepaySaving = ref(false)
@@ -75,7 +78,7 @@ const lavatopDomains = ref<string>(initial.lavatopDomains)
 const lavatopMin = ref<number>(initial.lavatopMin)
 const lavatopMax = ref<number>(initial.lavatopMax)
 const lavatopOfferListType = ref<WidgetOfferListType>(initial.lavatopOfferListType)
-const lavatopOfferIds = ref<string[]>([...initial.lavatopOfferIds])
+const lavatopOffers = ref<AllowedOffer[]>([...(initial.lavatopOffers ?? [])])
 const lavatopMessage = ref('')
 const lavatopError = ref(false)
 const lavatopSaving = ref(false)
@@ -87,13 +90,13 @@ function snapshot(): WidgetSettingsData {
     lifepayMin: lifepayMin.value || 0,
     lifepayMax: lifepayMax.value || 0,
     lifepayOfferListType: lifepayOfferListType.value,
-    lifepayOfferIds: [...lifepayOfferIds.value],
+    lifepayOffers: [...lifepayOffers.value],
     lavatopEnabled: lavatopEnabled.value,
     lavatopDomains: lavatopDomains.value,
     lavatopMin: lavatopMin.value || 0,
     lavatopMax: lavatopMax.value || 0,
     lavatopOfferListType: lavatopOfferListType.value,
-    lavatopOfferIds: [...lavatopOfferIds.value]
+    lavatopOffers: [...lavatopOffers.value]
   }
 }
 
@@ -131,15 +134,15 @@ async function saveLifepay() {
     )
     if (offerTypeRes?.success === false)
       throw new Error(offerTypeRes.error || 'offer list type error')
-    const offerIdsRes = await saveSetting(
-      WIDGET_SETTING_KEYS.LIFEPAY_OFFER_IDS,
-      JSON.stringify(lifepayOfferIds.value)
+    const offersRes = await saveSetting(
+      WIDGET_SETTING_KEYS.LIFEPAY_OFFERS,
+      JSON.stringify(lifepayOffers.value)
     )
-    if (offerIdsRes?.success === false) throw new Error(offerIdsRes.error || 'offer ids error')
+    if (offersRes?.success === false) throw new Error(offersRes.error || 'offers error')
     lifepayMessage.value = 'Сохранено.'
     emit('update:widgetSettings', snapshot())
     log.notice('LifePay-настройки виджета сохранены', {
-      offerCount: lifepayOfferIds.value.length
+      offerCount: lifepayOffers.value.length
     })
   } catch (e) {
     lifepayMessage.value = (e as Error)?.message || String(e)
@@ -172,15 +175,15 @@ async function saveLavatop() {
     )
     if (offerTypeRes?.success === false)
       throw new Error(offerTypeRes.error || 'offer list type error')
-    const offerIdsRes = await saveSetting(
-      WIDGET_SETTING_KEYS.LAVATOP_OFFER_IDS,
-      JSON.stringify(lavatopOfferIds.value)
+    const offersRes = await saveSetting(
+      WIDGET_SETTING_KEYS.LAVATOP_OFFERS,
+      JSON.stringify(lavatopOffers.value)
     )
-    if (offerIdsRes?.success === false) throw new Error(offerIdsRes.error || 'offer ids error')
+    if (offersRes?.success === false) throw new Error(offersRes.error || 'offers error')
     lavatopMessage.value = 'Сохранено.'
     emit('update:widgetSettings', snapshot())
     log.notice('Lava.Top-настройки виджета сохранены', {
-      offerCount: lavatopOfferIds.value.length
+      offerCount: lavatopOffers.value.length
     })
   } catch (e) {
     lavatopMessage.value = (e as Error)?.message || String(e)
@@ -230,30 +233,38 @@ function copySnippet(key: string, text: string) {
 const lifepaySnippets = computed(() => [
   {
     key: 'lp-common',
-    code: `<script src="${anchorBase.value}/p/units/aayakovleva/gw-client/userscripts/common.js"></` + `script>`
+    code:
+      `<script src="${anchorBase.value}/p/units/aayakovleva/gw-client/userscripts/common.js"></` +
+      `script>`
   },
   {
     key: 'lp-widget',
-    code: `<script src="${anchorBase.value}/p/units/aayakovleva/gw-client/userscripts/lifepay-widget.user.js"></` + `script>`
+    code:
+      `<script src="${anchorBase.value}/p/units/aayakovleva/gw-client/userscripts/lifepay-widget.user.js"></` +
+      `script>`
   },
   {
     key: 'lp-anchor',
-    code: `<div id="gw-lifepay-widget" data-gw-base-url="${anchorBase.value}" data-offer-id="…" data-email="…"></div>`
+    code: `<div id="gw-lifepay-widget" data-gw-base-url="${anchorBase.value}"></div>`
   }
 ])
 
 const lavatopSnippets = computed(() => [
   {
     key: 'lv-common',
-    code: `<script src="${anchorBase.value}/p/units/aayakovleva/gw-client/userscripts/common.js"></` + `script>`
+    code:
+      `<script src="${anchorBase.value}/p/units/aayakovleva/gw-client/userscripts/common.js"></` +
+      `script>`
   },
   {
     key: 'lv-widget',
-    code: `<script src="${anchorBase.value}/p/units/aayakovleva/gw-client/userscripts/lavatop-widget.user.js"></` + `script>`
+    code:
+      `<script src="${anchorBase.value}/p/units/aayakovleva/gw-client/userscripts/lavatop-widget.user.js"></` +
+      `script>`
   },
   {
     key: 'lv-anchor',
-    code: `<div id="gw-lavatop-widget" data-gw-base-url="${anchorBase.value}" data-offer-id="…" data-email="…"></div>`
+    code: `<div id="gw-lavatop-widget" data-gw-base-url="${anchorBase.value}"></div>`
   }
 ])
 
@@ -261,8 +272,8 @@ onMounted(() => {
   log.info('Компонент смонтирован', {
     lifepayEnabled: lifepayEnabled.value,
     lavatopEnabled: lavatopEnabled.value,
-    lifepayOfferCount: lifepayOfferIds.value.length,
-    lavatopOfferCount: lavatopOfferIds.value.length
+    lifepayOfferCount: lifepayOffers.value.length,
+    lavatopOfferCount: lavatopOffers.value.length
   })
 })
 </script>
@@ -277,7 +288,8 @@ onMounted(() => {
       </header>
       <p class="st-section-sub">
         Встраиваемая кнопка на сторонней странице. По клику открывает модальное окно с QR-кодом
-        Системы быстрых платежей. После оплаты приходит webhook, статус заказа обновляется автоматически.
+        Системы быстрых платежей. После оплаты приходит webhook, статус заказа обновляется
+        автоматически.
       </p>
 
       <form class="ap-set-form" @submit.prevent="saveLifepay">
@@ -345,7 +357,7 @@ onMounted(() => {
         <div class="st-offer-block">
           <HomeWidgetOfferList
             v-model:list-type="lifepayOfferListType"
-            v-model:selected-ids="lifepayOfferIds"
+            v-model:selected-offers="lifepayOffers"
             title="Фильтр офферов LifePay"
             hint="«Выключен» — виджет работает на всех страницах. «Только выбранные» — покажется на странице перечисленных офферов. «Кроме выбранных» — на всех, кроме перечисленных. Источник списка — GetCourse."
             :error-hints="offerErrorHints"
@@ -361,15 +373,11 @@ onMounted(() => {
           </summary>
           <div class="st-collapsible-body">
             <p class="st-field-hint" style="margin-top: 0; margin-bottom: 0.55rem">
-              Вставьте три фрагмента в HTML карточки оффера. <code>data-offer-id</code> — id оффера
-              GetCourse, <code>data-email</code> — email покупателя (можно подставить из шаблона
-              GC).
+              Вставьте три фрагмента в HTML страницы заказа. Виджет автоматически определяет позиции
+              заказа из DOM (.deal-positions) и применяет фильтр офферов на клиенте. Email и сумма
+              берутся из GetCourse-заказа на сервере.
             </p>
-            <div
-              v-for="s in lifepaySnippets"
-              :key="s.key"
-              class="st-snippet"
-            >
+            <div v-for="s in lifepaySnippets" :key="s.key" class="st-snippet">
               <pre><code>{{ s.code }}</code></pre>
               <button
                 type="button"
@@ -389,11 +397,7 @@ onMounted(() => {
             <i class="fas fa-save"></i>
             {{ lifepaySaving ? 'Сохранение…' : 'Сохранить' }}
           </button>
-          <p
-            v-if="lifepayMessage"
-            class="st-msg"
-            :class="lifepayError ? 'is-err' : 'is-ok'"
-          >
+          <p v-if="lifepayMessage" class="st-msg" :class="lifepayError ? 'is-err' : 'is-ok'">
             <i class="fas" :class="lifepayError ? 'fa-exclamation-circle' : 'fa-check-circle'"></i>
             {{ lifepayMessage }}
           </p>
@@ -477,7 +481,7 @@ onMounted(() => {
         <div class="st-offer-block">
           <HomeWidgetOfferList
             v-model:list-type="lavatopOfferListType"
-            v-model:selected-ids="lavatopOfferIds"
+            v-model:selected-offers="lavatopOffers"
             title="Фильтр офферов Lava.Top"
             hint="«Выключен» — виджет работает на всех страницах. «Только выбранные» — покажется на странице перечисленных офферов. «Кроме выбранных» — на всех, кроме перечисленных. Источник списка — GetCourse."
             :error-hints="offerErrorHints"
@@ -493,14 +497,11 @@ onMounted(() => {
           </summary>
           <div class="st-collapsible-body">
             <p class="st-field-hint" style="margin-top: 0; margin-bottom: 0.55rem">
-              Вставьте три фрагмента в HTML карточки оффера. <code>data-offer-id</code> — id оффера
-              GetCourse, <code>data-email</code> — email покупателя.
+              Вставьте три фрагмента в HTML страницы заказа. Виджет автоматически определяет позиции
+              заказа из DOM (.deal-positions) и применяет фильтр офферов на клиенте. Email и сумма
+              берутся из GetCourse-заказа на сервере.
             </p>
-            <div
-              v-for="s in lavatopSnippets"
-              :key="s.key"
-              class="st-snippet"
-            >
+            <div v-for="s in lavatopSnippets" :key="s.key" class="st-snippet">
               <pre><code>{{ s.code }}</code></pre>
               <button
                 type="button"
@@ -520,11 +521,7 @@ onMounted(() => {
             <i class="fas fa-save"></i>
             {{ lavatopSaving ? 'Сохранение…' : 'Сохранить' }}
           </button>
-          <p
-            v-if="lavatopMessage"
-            class="st-msg"
-            :class="lavatopError ? 'is-err' : 'is-ok'"
-          >
+          <p v-if="lavatopMessage" class="st-msg" :class="lavatopError ? 'is-err' : 'is-ok'">
             <i class="fas" :class="lavatopError ? 'fa-exclamation-circle' : 'fa-check-circle'"></i>
             {{ lavatopMessage }}
           </p>

@@ -331,6 +331,48 @@ export async function setSetting(ctx: app.Ctx, key: string, value: unknown): Pro
       message: `[${LOG_MODULE}] setSetting WIDGET_*_OFFER_IDS branch`,
       payload: { key, normalizedLength: (normalized as string).length }
     })
+  } else if (
+    key === SETTING_KEYS.WIDGET_LIFEPAY_OFFERS ||
+    key === SETTING_KEYS.WIDGET_LAVATOP_OFFERS
+  ) {
+    const str = typeof value === 'string' ? value.trim() : ''
+    if (str.length === 0) {
+      normalized = '[]'
+    } else {
+      let parsed: unknown
+      try {
+        parsed = JSON.parse(str)
+      } catch {
+        throw new Error(`${key} должен быть валидной JSON-строкой массива офферов.`)
+      }
+      if (!Array.isArray(parsed)) {
+        throw new Error(`${key} должен быть JSON-массивом объектов {id, title} или строк.`)
+      }
+      type CleanedOffer = { id: string; title: string }
+      const cleaned: CleanedOffer[] = []
+      for (const item of parsed) {
+        if (typeof item === 'string') {
+          // legacy: строка → id
+          const id = item.trim()
+          if (!id) throw new Error(`${key}: строковый элемент не может быть пустым.`)
+          cleaned.push({ id, title: '' })
+        } else if (typeof item === 'object' && item !== null) {
+          const o = item as Record<string, unknown>
+          const id = String(o.id ?? '').trim()
+          if (!id) throw new Error(`${key}: поле id обязательно и не может быть пустым.`)
+          const title = typeof o.title === 'string' ? o.title.trim() : ''
+          cleaned.push({ id, title })
+        } else {
+          throw new Error(`${key}: каждый элемент должен быть строкой или объектом {id, title}.`)
+        }
+      }
+      normalized = JSON.stringify(cleaned)
+    }
+    await loggerLib.writeServerLog(ctx, {
+      severity: 6,
+      message: `[${LOG_MODULE}] setSetting WIDGET_*_OFFERS branch`,
+      payload: { key, normalizedLength: (normalized as string).length }
+    })
   }
 
   await repo.upsert(ctx, key, normalized)

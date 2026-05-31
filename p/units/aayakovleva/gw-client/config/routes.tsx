@@ -22,7 +22,8 @@ export const ROUTES = {
   widgetIntentLavatop: './api/widgets/intent-lavatop',
   widgetSettingsGet: './api/widgets/settings-get',
   widgetSettingsSave: './api/widgets/settings-save',
-  widgetOffers: './api/widgets/offers'
+  widgetOffers: './api/widgets/offers',
+  widgetIntentByDeal: './api/widgets/intent-by-deal'
 } as const
 
 /** Пути для getFullUrl (абсолютные от корня проекта) */
@@ -43,7 +44,8 @@ export const ROUTE_PATHS = {
   widgetIntentLavatop: '/api/widgets/intent-lavatop',
   widgetSettingsGet: '/api/widgets/settings-get',
   widgetSettingsSave: '/api/widgets/settings-save',
-  widgetOffers: '/api/widgets/offers'
+  widgetOffers: '/api/widgets/offers',
+  widgetIntentByDeal: '/api/widgets/intent-by-deal'
 } as const
 
 /**

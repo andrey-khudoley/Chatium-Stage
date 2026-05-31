@@ -84,8 +84,8 @@ export const widgetConfigRoute = app.get('/', async (ctx, req) => {
       allowed: corsResult.allowed,
       lifepayEnabled: settings.lifepayEnabled,
       lavatopEnabled: settings.lavatopEnabled,
-      lifepayOfferIdsCount: settings.lifepayOfferIds.length,
-      lavatopOfferIdsCount: settings.lavatopOfferIds.length,
+      lifepayOffersCount: settings.lifepayOffers.length,
+      lavatopOffersCount: settings.lavatopOffers.length,
       whitelistConfigured: allDomains.trim().length > 0
     }
   })
@@ -109,14 +109,14 @@ export const widgetConfigRoute = app.get('/', async (ctx, req) => {
       minAmount: settings.lifepayMin,
       maxAmount: settings.lifepayMax,
       offerListType: settings.lifepayOfferListType,
-      offerIds: settings.lifepayOfferIds
+      offers: settings.lifepayOffers
     },
     lavatop: {
       enabled: settings.lavatopEnabled,
       minAmount: settings.lavatopMin,
       maxAmount: settings.lavatopMax,
       offerListType: settings.lavatopOfferListType,
-      offerIds: settings.lavatopOfferIds
+      offers: settings.lavatopOffers
     }
   }
 

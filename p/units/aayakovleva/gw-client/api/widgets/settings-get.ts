@@ -35,9 +35,9 @@ export const widgetSettingsGetRoute = app.get('/', async (ctx) => {
         lifepayMax: settings.lifepayMax,
         lavatopMax: settings.lavatopMax,
         lifepayOfferListType: settings.lifepayOfferListType,
-        lifepayOfferIdsCount: settings.lifepayOfferIds.length,
+        lifepayOffersCount: settings.lifepayOffers.length,
         lavatopOfferListType: settings.lavatopOfferListType,
-        lavatopOfferIdsCount: settings.lavatopOfferIds.length
+        lavatopOffersCount: settings.lavatopOffers.length
       }
     })
     return { success: true, settings }

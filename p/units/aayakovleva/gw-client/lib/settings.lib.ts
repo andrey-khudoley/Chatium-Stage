@@ -42,13 +42,24 @@ export const SETTING_KEYS = {
   WIDGET_LIFEPAY_MIN: 'widget_lifepay_min',
   WIDGET_LIFEPAY_MAX: 'widget_lifepay_max',
   WIDGET_LIFEPAY_OFFER_LIST_TYPE: 'widget_lifepay_offer_list_type',
+  /** @deprecated legacy-ключ string[]; оставлен для fallback-чтения. */
   WIDGET_LIFEPAY_OFFER_IDS: 'widget_lifepay_offer_ids',
+  /** Новый ключ AllowedOffer[] JSON. */
+  WIDGET_LIFEPAY_OFFERS: 'widget_lifepay_offers',
   WIDGET_LAVATOP_ENABLED: 'widget_lavatop_enabled',
   WIDGET_LAVATOP_DOMAINS: 'widget_lavatop_domains',
   WIDGET_LAVATOP_MIN: 'widget_lavatop_min',
   WIDGET_LAVATOP_MAX: 'widget_lavatop_max',
   WIDGET_LAVATOP_OFFER_LIST_TYPE: 'widget_lavatop_offer_list_type',
-  WIDGET_LAVATOP_OFFER_IDS: 'widget_lavatop_offer_ids'
+  /** @deprecated legacy-ключ string[]; оставлен для fallback-чтения. */
+  WIDGET_LAVATOP_OFFER_IDS: 'widget_lavatop_offer_ids',
+  /** Новый ключ AllowedOffer[] JSON. */
+  WIDGET_LAVATOP_OFFERS: 'widget_lavatop_offers',
+  // Deal-поток Lava.Top: фиксированный оффер и ручные курсы валют
+  WIDGET_LAVATOP_OFFER_ID: 'widget_lavatop_offer_id',
+  WIDGET_LAVATOP_PRODUCT_ID: 'widget_lavatop_product_id',
+  WIDGET_LAVATOP_MANUAL_RATE_USD: 'widget_lavatop_manual_rate_usd',
+  WIDGET_LAVATOP_MANUAL_RATE_EUR: 'widget_lavatop_manual_rate_eur'
 } as const
 
 /** Настройка вебхука логов: enable — активна ли отправка, url — куда отправлять. */
@@ -120,12 +131,18 @@ export const DEFAULTS = {
   [SETTING_KEYS.WIDGET_LIFEPAY_MAX]: '0',
   [SETTING_KEYS.WIDGET_LIFEPAY_OFFER_LIST_TYPE]: 'whitelist',
   [SETTING_KEYS.WIDGET_LIFEPAY_OFFER_IDS]: '[]',
+  [SETTING_KEYS.WIDGET_LIFEPAY_OFFERS]: '[]',
   [SETTING_KEYS.WIDGET_LAVATOP_ENABLED]: 'false',
   [SETTING_KEYS.WIDGET_LAVATOP_DOMAINS]: '',
   [SETTING_KEYS.WIDGET_LAVATOP_MIN]: '0',
   [SETTING_KEYS.WIDGET_LAVATOP_MAX]: '0',
   [SETTING_KEYS.WIDGET_LAVATOP_OFFER_LIST_TYPE]: 'whitelist',
-  [SETTING_KEYS.WIDGET_LAVATOP_OFFER_IDS]: '[]'
+  [SETTING_KEYS.WIDGET_LAVATOP_OFFER_IDS]: '[]',
+  [SETTING_KEYS.WIDGET_LAVATOP_OFFERS]: '[]',
+  [SETTING_KEYS.WIDGET_LAVATOP_OFFER_ID]: '',
+  [SETTING_KEYS.WIDGET_LAVATOP_PRODUCT_ID]: '',
+  [SETTING_KEYS.WIDGET_LAVATOP_MANUAL_RATE_USD]: '',
+  [SETTING_KEYS.WIDGET_LAVATOP_MANUAL_RATE_EUR]: ''
 } as const
 
 /** Минимальная длина webhook-токена (implementation-plan §1.8.1: ≥ 32 байт). */
@@ -405,6 +422,41 @@ export function generateWebhookToken(byteCount: number = 32): string {
     result += chars.charAt(Math.floor(Math.random() * chars.length))
   }
   return result
+}
+
+/** Получить widget_lavatop_offer_id (id фиксированного оффера в deal-потоке). */
+export async function getLavatopOfferId(ctx: app.Ctx): Promise<string> {
+  return getStringSettingRaw(ctx, SETTING_KEYS.WIDGET_LAVATOP_OFFER_ID)
+}
+
+/** Получить widget_lavatop_product_id (id продукта в Lava.Top для updateOfferPrice). */
+export async function getLavatopProductId(ctx: app.Ctx): Promise<string> {
+  return getStringSettingRaw(ctx, SETTING_KEYS.WIDGET_LAVATOP_PRODUCT_ID)
+}
+
+/**
+ * Получить ручной курс валюты (₽ за 1 единицу). Возвращает число > 0 или null
+ * (если настройка пустая или невалидная — используется курс ЦБ).
+ */
+export async function getLavatopManualRate(
+  ctx: app.Ctx,
+  currency: 'USD' | 'EUR'
+): Promise<number | null> {
+  const key =
+    currency === 'USD'
+      ? SETTING_KEYS.WIDGET_LAVATOP_MANUAL_RATE_USD
+      : SETTING_KEYS.WIDGET_LAVATOP_MANUAL_RATE_EUR
+  const raw = await getStringSettingRaw(ctx, key)
+  if (!raw) return null
+  const parsed = parseFloat(raw)
+  return isValidManualRate(parsed) ? parsed : null
+}
+
+/**
+ * Проверяет, является ли курс валюты валидным (конечное число > 0).
+ */
+export function isValidManualRate(v: number): boolean {
+  return Number.isFinite(v) && v > 0
 }
 
 // setSetting вынесен в settings.mutations.ts (декомпозиция под /check).

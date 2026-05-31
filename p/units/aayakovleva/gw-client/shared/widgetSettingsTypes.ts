@@ -12,14 +12,17 @@ export type WidgetMethod = 'lifepay' | 'lavatop'
 
 /**
  * Тип списка офферов на стороне виджета.
- * - `whitelist` — показываем виджет только для офферов из `offerIds`.
+ * - `whitelist` — показываем виджет только для офферов из `offers`.
  * - `blacklist` — показываем для всех офферов, кроме перечисленных.
  */
 export type WidgetOfferListType = 'whitelist' | 'blacklist'
 
+/** Запись разрешённого/запрещённого оффера: id (точное совпадение) и title (нечёткое). */
+export type AllowedOffer = { id: string; title: string }
+
 /**
  * Серверный объект настроек виджета — что админ задал в веб-панели.
- * Соответствует 8 ключам в `SETTING_KEYS` (`widget_*`). Поля уже преобразованы
+ * Соответствует ключам в `SETTING_KEYS` (`widget_*`). Поля уже преобразованы
  * из строкового хранения Heap в типизированные значения.
  */
 export type WidgetSettingsData = {
@@ -29,16 +32,16 @@ export type WidgetSettingsData = {
   lifepayMax: number
   /** Per-method фильтр офферов LifePay (источник — GC через `getOffers`). */
   lifepayOfferListType: WidgetOfferListType
-  /** Уже распарсенный массив id GC-офферов. */
-  lifepayOfferIds: string[]
+  /** Уже распарсенный массив офферов (id + title). */
+  lifepayOffers: AllowedOffer[]
   lavatopEnabled: boolean
   lavatopDomains: string
   lavatopMin: number
   lavatopMax: number
   /** Per-method фильтр офферов Lava.Top (источник — Lava.Top `listProducts`). */
   lavatopOfferListType: WidgetOfferListType
-  /** Уже распарсенный массив id Lava.Top-offer'ов. */
-  lavatopOfferIds: string[]
+  /** Уже распарсенный массив офферов (id + title). */
+  lavatopOffers: AllowedOffer[]
 }
 
 /** Конфигурация одного метода в публичном ответе `/api/widgets/config`. */
@@ -50,8 +53,8 @@ export type WidgetMethodPublicConfig = {
   maxAmount: number
   /** Тип фильтра офферов конкретного метода. */
   offerListType: WidgetOfferListType
-  /** Список id офферов для фильтрации показа. */
-  offerIds: string[]
+  /** Список офферов ({id, title}) для фильтрации показа на клиенте. */
+  offers: AllowedOffer[]
 }
 
 /**
@@ -92,34 +95,56 @@ export const WIDGET_SETTING_KEYS = {
   LIFEPAY_MIN: 'widget_lifepay_min',
   LIFEPAY_MAX: 'widget_lifepay_max',
   LIFEPAY_OFFER_LIST_TYPE: 'widget_lifepay_offer_list_type',
+  /** @deprecated legacy-ключ (string[]); чтение для fallback. Запись — через LIFEPAY_OFFERS. */
   LIFEPAY_OFFER_IDS: 'widget_lifepay_offer_ids',
+  /** Новый ключ (AllowedOffer[] JSON). */
+  LIFEPAY_OFFERS: 'widget_lifepay_offers',
   LAVATOP_ENABLED: 'widget_lavatop_enabled',
   LAVATOP_DOMAINS: 'widget_lavatop_domains',
   LAVATOP_MIN: 'widget_lavatop_min',
   LAVATOP_MAX: 'widget_lavatop_max',
   LAVATOP_OFFER_LIST_TYPE: 'widget_lavatop_offer_list_type',
-  LAVATOP_OFFER_IDS: 'widget_lavatop_offer_ids'
+  /** @deprecated legacy-ключ (string[]); чтение для fallback. Запись — через LAVATOP_OFFERS. */
+  LAVATOP_OFFER_IDS: 'widget_lavatop_offer_ids',
+  /** Новый ключ (AllowedOffer[] JSON). */
+  LAVATOP_OFFERS: 'widget_lavatop_offers'
 } as const
 
 /**
- * Безопасный парсер `widget_offer_ids` из Heap. Принимает JSON-строку массива
- * строк, при любой ошибке возвращает пустой массив (виджет покажется для всех).
+ * Безопасный парсер списка офферов из Heap. Поддерживает два формата:
+ * - legacy: JSON-массив строк (`string[]`) → [{id:s, title:''}]
+ * - новый: JSON-массив объектов `{id,title}` → нормализует и дедуплицирует по id.
+ * При любой ошибке или не-массиве возвращает пустой массив.
  */
-export function parseOfferIds(raw: unknown): string[] {
+export function parseAllowedOffers(raw: unknown): AllowedOffer[] {
   if (typeof raw !== 'string' || raw.trim().length === 0) return []
+  let parsed: unknown
   try {
-    const parsed = JSON.parse(raw)
-    if (!Array.isArray(parsed)) return []
-    const result: string[] = []
-    for (const item of parsed) {
-      if (typeof item === 'string' && item.trim().length > 0) {
-        result.push(item.trim())
-      }
-    }
-    return result
+    parsed = JSON.parse(raw)
   } catch {
     return []
   }
+  if (!Array.isArray(parsed)) return []
+  const seen = new Set<string>()
+  const result: AllowedOffer[] = []
+  for (const item of parsed) {
+    if (typeof item === 'string') {
+      // legacy: строка → id=trim, title=''
+      const id = item.trim()
+      if (!id || seen.has(id)) continue
+      seen.add(id)
+      result.push({ id, title: '' })
+    } else if (typeof item === 'object' && item !== null) {
+      const o = item as Record<string, unknown>
+      const id = String(o.id ?? '').trim()
+      if (!id || seen.has(id)) continue
+      seen.add(id)
+      const title = typeof o.title === 'string' ? o.title.trim() : ''
+      result.push({ id, title })
+    }
+    // иначе пропускаем
+  }
+  return result
 }
 
 /**
@@ -129,4 +154,52 @@ export function parseOfferIds(raw: unknown): string[] {
  */
 export function parseOfferListType(raw: unknown): WidgetOfferListType {
   return raw === 'blacklist' ? 'blacklist' : 'whitelist'
+}
+
+/** Нормализует title для нечёткого сравнения офферов. */
+function normalizeTitle(s: unknown): string {
+  // \s+ покрывает неразрывные пробелы ( ) и прочие Unicode-пробелы — JS \s их включает.
+  return String(s || '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase()
+}
+
+/**
+ * СИНХРОНИЗИРОВАНО с userscripts/common.js → areAllPositionsAllowed.
+ * При изменении правил allow/normalize править ОБА места.
+ *
+ * Проверяет, разрешён ли один оффер по whitelist/blacklist.
+ * - whitelist: offer.id точно совпадает с allowed[].id ИЛИ нормализованный
+ *   offer.title совпадает с нормализованным allowed[].title (только непустые title).
+ * - blacklist: не совпадает ни по id, ни по title.
+ *
+ * Используется на сервере в intent-обработчиках для проверки позиций заказа.
+ * Userscript имеет собственную копию в common.js.
+ */
+export function isOfferAllowed(
+  offer: { id: string; title: string },
+  allowed: AllowedOffer[],
+  listType: WidgetOfferListType
+): boolean {
+  const normTitle = normalizeTitle(offer.title)
+  const idMatch = allowed.some((a) => a.id === offer.id)
+  const titleMatch =
+    normTitle !== '' && allowed.some((a) => a.title !== '' && normalizeTitle(a.title) === normTitle)
+  const inList = idMatch || titleMatch
+  return listType === 'blacklist' ? !inList : inList
+}
+
+/**
+ * Проверяет, разрешены ли ВСЕ позиции заказа.
+ * - Пустой массив positions → false (нет позиций — не допускаем).
+ * - Иначе — positions.every(isOfferAllowed).
+ */
+export function areAllOffersAllowed(
+  offers: { id: string; title: string }[],
+  allowed: AllowedOffer[],
+  listType: WidgetOfferListType
+): boolean {
+  if (!Array.isArray(offers) || offers.length === 0) return false
+  return offers.every((o) => isOfferAllowed(o, allowed, listType))
 }

@@ -191,38 +191,7 @@ export const widgetIntentLifepayRoute = app.post('/', async (ctx, req) => {
     )
   }
 
-  // Серверная фильтрация по списку GC-офферов (whitelist / blacklist).
-  // Если списка нет — фильтр не применяется; иначе оффер должен пройти проверку.
-  const pageOfferId = typeof body.offerId === 'string' ? body.offerId.trim() : ''
-  if (settings.lifepayOfferIds.length > 0) {
-    if (!pageOfferId) {
-      return jsonResponse(
-        400,
-        { ok: false, error: 'WIDGET_OFFER_ID_REQUIRED' },
-        buildCorsHeaders(corsResult)
-      )
-    }
-    const inList = settings.lifepayOfferIds.indexOf(pageOfferId) !== -1
-    const allowed = settings.lifepayOfferListType === 'blacklist' ? !inList : inList
-    if (!allowed) {
-      await loggerLib.writeServerLog(ctx, {
-        severity: 4,
-        message: `[${LOG_PATH}] widget_intent_attempt: offer_not_allowed`,
-        payload: {
-          method: 'lifepay',
-          hostname: corsResult.hostname,
-          offerId: pageOfferId,
-          listType: settings.lifepayOfferListType,
-          ok: false
-        }
-      })
-      return jsonResponse(
-        403,
-        { ok: false, error: 'WIDGET_OFFER_NOT_ALLOWED' },
-        buildCorsHeaders(corsResult)
-      )
-    }
-  }
+  // Offer-фильтр по позициям удалён (deprecated endpoint; новый фильтр — в intent-by-deal).
   const orderNumber =
     typeof body.orderNumber === 'string' && body.orderNumber.trim().length > 0
       ? body.orderNumber.trim()

@@ -120,13 +120,13 @@ export const indexPageRoute = app.html('/', async (ctx, req) => {
       lifepayMin: 0,
       lifepayMax: 0,
       lifepayOfferListType: 'whitelist' as const,
-      lifepayOfferIds: [] as string[],
+      lifepayOffers: [] as import('./shared/widgetSettingsTypes').AllowedOffer[],
       lavatopEnabled: false,
       lavatopDomains: '',
       lavatopMin: 0,
       lavatopMax: 0,
       lavatopOfferListType: 'whitelist' as const,
-      lavatopOfferIds: [] as string[]
+      lavatopOffers: [] as import('./shared/widgetSettingsTypes').AllowedOffer[]
     }
   }
   const anchorBaseUrl = `https://${ctx.account.host}`

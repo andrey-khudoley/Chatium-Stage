@@ -257,9 +257,9 @@ CSS-стили тулбара и всей главной страницы: `page
 
 ## Публичные виджеты оплаты (реализовано 2026-05-29)
 
-Каталог `userscripts/` содержит три файла для встраивания на сторонние страницы магазина. Виджеты обращаются к публичным эндпоинтам `api/widgets/` напрямую из браузера покупателя.
+Каталог `userscripts/` содержит файлы для встраивания на сторонние страницы магазина. Виджеты обращаются к публичным эндпоинтам `api/widgets/` напрямую из браузера покупателя.
 
-### Поток: userscript → config → intent → gateway
+### Поток: userscript → config → intent → gateway (offer-поток)
 
 ```
 [ Браузер покупателя (страница магазина) ]
@@ -294,6 +294,65 @@ CSS-стили тулбара и всей главной страницы: `page
 [ Ответ → виджет → QR-модалка (LifePay) | редирект на форму (Lava.Top) ]
 ```
 
+### Поток: deal-поток по GetCourse deal id (реализовано 2026-05-31)
+
+Userscript на странице GetCourse извлекает deal id из URL, затем запрашивает сервер, который резолвит сумму/email через GC-гейтвей и создаёт счёт LifePay или инвойс Lava.Top.
+
+```
+[ Браузер покупателя (страница GC — /sales/shop/dealPay/id/<id>/... или ?id=<id>&...) ]
+            |
+            | userscripts/common.js — extractDealIdFromUrl()
+            |   парсит оба формата URL; path-формат приоритетнее; null → тихий выход
+            v
+[ userscripts/lifepay-widget.user.js     | userscripts/lavatop-widget.user.js ]
+  postWidgetIntentByDeal({ dealId,          postWidgetIntentByDeal({ dealId,
+    method: 'lifepay' })                      method: 'lavatop', currency })
+  POST /api/widgets/intent-by-deal            (3 кнопки: RUB / USD / EUR)
+            |                                          |
+            v                                          v
+[ api/widgets/intent-by-deal.ts — ветвление по method ]
+            |
+            +-- method: 'lifepay' --------------------------+
+            |   CORS: widget_lifepay_domains                |
+            |   resolveGcDeal → только RUB                  |
+            |   invokeByGateway('lifepay','createBill')      |
+            |   → { ok, paymentUrl, orderNumber,            |
+            |        correlationId, requestId }             |
+            |                                               |
+            +-- method: 'lavatop' --------------------------+
+                CORS: widget_lavatop_domains
+                resolveGcDeal → cost (RUB), email
+                handleLavatopDealIntent (lib/gateway/lavatopDealIntent.ts):
+                  фильтр суммы (hard-limit + widget_lavatop_min/max)
+                  convertRubTo(cost, currency)  (lib/rates/currencyConverter.ts)
+                    RUB → тождество
+                    USD/EUR → ручной курс (widget_lavatop_manual_rate_usd/eur)
+                             или курс ЦБ РФ (cbr-xml-daily.ru / @app/request)
+                  проверка MIN_AMOUNT по валюте (RUB 10, USD 1, EUR 1)
+                  runWithExclusiveLock('lavatop-offer:'+offerId):
+                    updateOfferPrice(offerId, productId, amount, currency)
+                    createInvoice(offerId, email, currency,
+                                  clientOrderId='gcdeal-{dealId}')
+                → { ok, paymentUrl, ... } → редирект браузера
+
+[ Общий инвариант: resolveGcDeal ]
+    invokeByGateway(ctx,'gc','getDealFields',{dealId},{httpMethod:'GET'})
+    invokeByGateway(ctx,'gc','getUserFields',{userId},{httpMethod:'GET'})
+    извлекает из responseBody.data.data: cost, currency, user_id, title, is_payed
+    email из getUserFields; email в логи НЕ пишется (PII)
+    возвращает { ok, amount, currency, email, title, userId }
+              или { ok: false, code: WIDGET_GC_* }
+```
+
+**Архитектурные решения deal-потока:**
+
+- **(A1) Единый deal-поток для обоих гейтвеев.** LifePay и Lava.Top работают через один эндпоинт `intent-by-deal`, ветвление по `method`. `intent-lavatop.ts` (offer-поток) помечен deprecated, код не изменён.
+- **(A2) LifePay — только RUB.** `createBill` не принимает параметр валюты. При `currency != 'RUB'` в сделке GC — `WIDGET_GC_CURRENCY_UNSUPPORTED`.
+- **(A3) Lava.Top — конвертация RUB→валюта оплаты.** `createInvoice` не принимает `amount` (берёт из оффера). Поэтому поток: рублёвый `cost` → конвертация → `updateOfferPrice` → `createInvoice`. Лок `runWithExclusiveLock` защищает от гонок при одновременных заявках на один оффер. `clientOrderId = 'gcdeal-{dealId}'` обеспечивает связку webhook → request_log.
+- **(A4) Единый продукт Lava.Top.** Один `offerId` + `productId` из настроек (`widget_lavatop_offer_id`, `widget_lavatop_product_id`) для всех заказов. Маппинг GC-оффер → Lava.Top-оффер не нужен. Offer-фильтр (`widget_lavatop_offer_ids`) в deal-потоке Lava.Top **не** применяется.
+- **(A5) Данные только из GC.** Сумма, валюта и email берутся из GetCourse, а не из DOM/data-атрибутов страницы.
+- **(A6) Предусловие оператора.** Домен GC-страницы должен быть в whitelist соответствующего гейтвея; GC-настройки заполнены, `gc_enabled=true`.
+
 ### CORS-стратегия
 
 Chatium не поддерживает `app.options`, поэтому preflight-запросы (`OPTIONS`) невозможны. Виджеты отправляют **simple-request** с `Content-Type: text/plain` и JSON-строкой в теле. Сервер читает и парсит тело вручную через `parseBody(req)`. CORS-заголовки выставляются только при допустимом Origin; Origin проверяется через `shared/widgetCorsCheck.ts` (`parseDomains`, `extractHostname`, `isOriginAllowed`, `checkWidgetOrigin`).
@@ -304,30 +363,76 @@ Chatium не поддерживает `app.options`, поэтому preflight-з
 - `widget_lavatop_domains` — список доменов для `/api/widgets/intent-lavatop`.
 - `/api/widgets/config` — использует объединение обоих списков.
 
+### Offer-фильтр виджетов (двухуровневая модель, реализовано 2026-06-01)
+
+Фильтр виджетов по позициям заказа работает на двух независимых уровнях.
+
+**Уровень 1 — клиент (показ виджета, `userscripts/common.js`):**
+
+```
+[ Страница GC — DOM-блок .deal-positions ]
+  <li class="offer-position-{posId}" data-offer-id="{offerId}">
+    <span class="position-actual-title">{title}</span>
+
+  extractDealPositions() → [{id, title}]
+  areAllPositionsAllowed(positions, offerListType, offers)
+    → true: все разрешены → рендерить виджет
+    → false: хотя бы одна запрещена → тихий выход
+```
+
+**Уровень 2 — сервер (допуск к intent, `api/widgets/intent-by-deal.ts`):**
+
+```
+  lib/gateway/gcDealResolver.ts — getDealFields → positions[]{id, title} из GC
+  shared/widgetSettingsTypes.ts — areAllOffersAllowed(positions, settings)
+    → true: продолжить поток (LifePay / Lava.Top)
+    → false: 403 WIDGET_OFFER_NOT_ALLOWED
+```
+
+**Формат хранения офферов:**
+
+- Новые ключи: `widget_lifepay_offers` / `widget_lavatop_offers` — JSON-массив `{id,title}[]` (`AllowedOffer[]`).
+- Legacy fallback: `widget_offer_ids` — старый comma-separated список строк; `parseAllowedOffers` поддерживает оба формата при чтении. `lib/widget/widgetSettings.lib.ts` читает новый ключ с fallback на legacy.
+
+**Семантика проверки** (синхронизирована между `shared/widgetSettingsTypes.ts` и `userscripts/common.js`, помечена якорями «СИНХРОНИЗИРОВАНО»):
+- whitelist: позиция разрешена, если её `id` ИЛИ нормализованный `title` есть в списке.
+- blacklist: позиция разрешена, если ни `id`, ни нормализованный `title` не в списке.
+- Нормализация title: trim + схлопывание пробелов + lowercase.
+- Режим «Выключен» = `blacklist` + пустой список (= показать всем). Дефолт `offerListType` — `'blacklist'`.
+
+**Удалённый мёртвый код:**
+- `isOfferMatched`, `extractOrderAmount`, `isAmountInRange`, `postWidgetIntent` — удалены из `userscripts/common.js`.
+- `data-offer-id` на якоре виджета — удалён из сниппетов (`components/home/HomeWidgetSettings.vue`, `HomeWidgetOfferList.vue`).
+- Старый серверный offer-фильтр по одному `offerId` — удалён из `intent-by-deal`, `intent-lifepay`, `intent-lavatop` (в `intent-lavatop` `offerId` как продуктовый параметр `createInvoice` сохранён).
+
 ### Файлы виджетного слоя
 
 | Файл                                       | Назначение                                                                                                                               |
 | ------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| `userscripts/common.js`                    | Shared-утилиты в `window.GwWidgetCommon`: DOM-ожидание, fetch конфига, постинг intent, модалка, фильтры суммы/офферов                    |
-| `userscripts/lifepay-widget.user.js`       | Виджет LifePay: по клику на кнопку → fetch `/config` → POST intent → QR-модалка через CDN qrcode.js                                      |
-| `userscripts/lavatop-widget.user.js`       | Виджет Lava.Top: по клику → fetch `/config` → POST intent → редирект на форму оплаты                                                     |
+| `userscripts/common.js`                    | Shared-утилиты в `window.GwWidgetCommon`: DOM-ожидание, fetch конфига, `postWidgetIntentByDeal`, `extractDealIdFromUrl`, постинг intent, модалка, фильтры суммы/офферов. **С 2026-06-01:** `extractDealPositions`, `areAllPositionsAllowed` (клиентский DOM-фильтр позиций); мёртвый код удалён. |
+| `userscripts/lifepay-widget.user.js`       | Виджет LifePay: deal id из URL → проверка позиций DOM (`extractDealPositions`/`areAllPositionsAllowed`) → `postWidgetIntentByDeal` → QR-модалка. `data-offer-id` на якоре удалён. |
+| `userscripts/lavatop-widget.user.js`       | Виджет Lava.Top: deal id из URL, 3 кнопки валют (RUB/USD/EUR) → аналогичная проверка позиций → `postWidgetIntentByDeal({method:'lavatop', currency})` → редирект. |
+| `lib/rates/currencyConverter.ts`           | `convertRubTo(amount, currency)` — конвертация RUB в RUB (тождество) / USD / EUR. Приоритет: ручной курс (настройки) → курс ЦБ РФ (cbr-xml-daily.ru / `@app/request`). Результат: `{ok, amount, rate, source}` или `{ok:false, code:'RATE_UNAVAILABLE'}`. `roundToCents` — округление до 2 знаков. |
+| `lib/gateway/lavatopDealIntent.ts`         | `handleLavatopDealIntent(ctx, {offerId, productId, gcDeal, currency})` — оркестратор Lava.Top deal-потока. **С 2026-06-01:** вызывается после серверной проверки `areAllOffersAllowed` в `intent-by-deal`. |
+| `lib/gateway/gcDealResolver.ts`            | `resolveGcDeal(ctx, dealId)` — резолвинг сделки GC: getDealFields → getUserFields. **С 2026-06-01:** возвращает также `positions: {id, title}[]` из `getDealFields.positions[].offer_id + title` — для серверной проверки офферов. Email в логи не пишется (PII). |
+| `api/widgets/intent-by-deal.ts`            | POST /api/widgets/intent-by-deal — ветвление по `method`. **С 2026-06-01:** серверная проверка `areAllOffersAllowed(positions, settings)` до запуска платёжного потока; 403 `WIDGET_OFFER_NOT_ALLOWED` при запрещённой позиции. |
+| `api/widgets/intent-lavatop.ts`            | POST /api/widgets/intent-lavatop — **deprecated** (offer-поток Lava.Top). `offerId` как продуктовый параметр `createInvoice` сохранён. |
 | `shared/widgetCorsCheck.ts`                | Pure-функции CORS-проверки (`// @shared`)                                                                                                |
-| `shared/widgetSettingsTypes.ts`            | Типы `WidgetSettingsData`, `WidgetPublicConfig`; константы `WIDGET_INTENT_HARD_LIMIT_RUB`, `WIDGET_SETTING_KEYS`; парсеры (`// @shared`) |
-| `lib/widget/widgetSettings.lib.ts`         | `getWidgetSettings(ctx)` — параллельное чтение 8 настроек виджетов                                                                       |
-| `api/widgets/config.ts`                    | GET /api/widgets/config — публичный, возвращает WidgetPublicConfig                                                                       |
-| `api/widgets/intent-lifepay.ts`            | POST /api/widgets/intent-lifepay — публичный intent LifePay                                                                              |
-| `api/widgets/intent-lavatop.ts`            | POST /api/widgets/intent-lavatop — публичный intent Lava.Top                                                                             |
+| `shared/widgetSettingsTypes.ts`            | **С 2026-06-01:** `AllowedOffer{id,title}`; `offers` вместо `offerIds` в `WidgetSettingsData`/`WidgetPublicConfig`; `parseAllowedOffers` (поддержка нового формата + legacy); `isOfferAllowed`/`areAllOffersAllowed` — серверные чистые функции; ключи `WIDGET_LIFEPAY_OFFERS`, `WIDGET_LAVATOP_OFFERS`. |
+| `lib/widget/widgetSettings.lib.ts`         | `getWidgetSettings(ctx)` — параллельное чтение виджет-ключей; с 2026-06-01 читает `widget_lifepay_offers`/`widget_lavatop_offers` с fallback на legacy `widget_offer_ids`. |
+| `api/widgets/config.ts`                    | GET /api/widgets/config — публичный; с 2026-06-01 поле `offers: AllowedOffer[]` вместо `offerIds: string[]`.                            |
+| `api/widgets/intent-lifepay.ts`            | POST /api/widgets/intent-lifepay — публичный intent LifePay (offer-поток). Старый одиночный offer-фильтр удалён.                         |
 | `api/widgets/settings-get.ts`              | GET настроек виджетов (`guardInternalApi`, `// @shared-route`)                                                                            |
-| `api/widgets/settings-save.ts`             | POST сохранения настроек виджетов (`guardInternalApi`, `// @shared-route`, whitelist 12 ключей)                                          |
+| `api/widgets/settings-save.ts`             | POST сохранения настроек виджетов (`guardInternalApi`, `// @shared-route`, whitelist ключей)                                             |
 | `api/widgets/offers.ts`                    | GET офферов GetCourse (`guardInternalApi`, `// @shared-route`, проксирует `getOffers`)                                                   |
 | `api/settings/save-operational.ts`         | POST сохранения operational-настроек (`guardInternalApi`, `// @shared-route`, whitelist `gc_enabled`)                                    |
-| `components/home/HomeWidgetSettings.vue`   | Карточка настроек виджетов на вкладке «Настройки» главной: 3 формы (LifePay, Lava.Top, фильтр офферов)                                   |
-| `components/home/HomeWidgetOfferList.vue`  | Переиспользуемая секция фильтра офферов (whitelist/blacklist + поиск + чекбоксы)                                                          |
+| `components/home/HomeWidgetSettings.vue`   | Карточка настроек виджетов: с 2026-06-01 хранит `{id,title}[]`; режим «Выключен»=blacklist+[]; сниппеты без `data-offer-id`/`data-email`. |
+| `components/home/HomeWidgetOfferList.vue`  | Переиспользуемая секция фильтра офферов (whitelist/blacklist + поиск + чекбоксы); с 2026-06-01 оперирует `{id,title}[]`.                 |
 | `pagecss/sbpWidgetsCss1.ts`                | CSS виджет-карточки, классы `.aw-*`                                                                                                      |
 
 ### Роутинг виджетных эндпоинтов (config/routes.tsx)
 
-6 новых записей в `ROUTES` и `ROUTE_PATHS`: `widgetConfig`, `widgetIntentLifepay`, `widgetIntentLavatop`, `widgetSettingsGet`, `widgetSettingsSave`, `widgetOffers`.
+7 записей в `ROUTES` и `ROUTE_PATHS`: `widgetConfig`, `widgetIntentLifepay`, `widgetIntentLavatop`, `widgetIntentByDeal`, `widgetSettingsGet`, `widgetSettingsSave`, `widgetOffers`.
 
 ## Безопасность
 

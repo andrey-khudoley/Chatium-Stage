@@ -3,13 +3,14 @@
  * LifePay и Lava.Top на сторонних страницах магазина.
  *
  * Скрипт регистрирует объект `window.GwWidgetCommon` с pure-функциями:
- *   - safeInit(fn)                  — глобальный try/catch вокруг инициализации
- *   - extractOrderAmount()          — извлечение суммы заказа из DOM магазина
- *   - isAmountInRange(amount, max)  — клиентский фильтр по диапазону суммы
- *   - isOfferMatched(id, ids, type) — клиентский фильтр по white/blacklist
- *   - fetchWidgetConfig(baseUrl)    — GET /api/widgets/config
- *   - postWidgetIntent(baseUrl, m, b) — POST /api/widgets/intent-<m>
- *   - createModal(el, onClose?)     — оверлей-модалка без внешних CSS
+ *   - safeInit(fn)                        — глобальный try/catch вокруг инициализации
+ *   - isAmountInRange(amount, min, max)    — клиентский фильтр по диапазону суммы
+ *   - extractDealPositions()              — извлечение позиций заказа из DOM (.deal-positions li)
+ *   - areAllPositionsAllowed(pos, offers, type) — клиентский фильтр всех позиций по white/blacklist
+ *   - fetchWidgetConfig(baseUrl)          — GET /api/widgets/config
+ *   - extractDealIdFromUrl()              — id заказа из URL страницы GC
+ *   - postWidgetIntentByDeal(baseUrl, p)  — POST /api/widgets/intent-by-deal
+ *   - createModal(el, onClose?)           — оверлей-модалка без внешних CSS
  *
  * Подключение: вставить тег <script> с этим файлом перед тегом конкретного
  * виджета (`lifepay-widget.user.js` или `lavatop-widget.user.js`). Файл не
@@ -49,53 +50,6 @@
   }
 
   /**
-   * Реестр CSS-селекторов суммы заказа на странице магазина. Порядок имеет
-   * значение: первый найденный селектор побеждает. Расширяется без релиза
-   * клиента — достаточно добавить новую запись.
-   *
-   * @type {string[]}
-   */
-  var ORDER_AMOUNT_SELECTORS = [
-    '.deal-finish-price-title b',
-    '.order-amount',
-    '[data-order-amount]',
-    '[data-gw-amount]'
-  ]
-
-  /**
-   * Извлекает сумму заказа из DOM магазина по реестру селекторов.
-   * Возвращает число или `null` (например, если страница ещё не отрисовала
-   * итоговую цену). Не бросает исключений.
-   *
-   * @returns {number | null}
-   */
-  function extractOrderAmount() {
-    try {
-      for (var i = 0; i < ORDER_AMOUNT_SELECTORS.length; i++) {
-        var selector = ORDER_AMOUNT_SELECTORS[i]
-        var node = document.querySelector(selector)
-        if (!node) continue
-        // Атрибут data-* приоритетнее textContent для пары `[data-…]`.
-        var raw = ''
-        if (selector === '[data-order-amount]') {
-          raw = node.getAttribute('data-order-amount') || node.textContent || ''
-        } else if (selector === '[data-gw-amount]') {
-          raw = node.getAttribute('data-gw-amount') || node.textContent || ''
-        } else {
-          raw = node.textContent || ''
-        }
-        var digits = String(raw).replace(/[^\d]/g, '')
-        if (!digits) continue
-        var n = parseInt(digits, 10)
-        if (isFinite(n) && n > 0) return n
-      }
-    } catch (err) {
-      /* swallow */
-    }
-    return null
-  }
-
-  /**
    * Проверка соответствия суммы пользовательскому диапазону виджета.
    * `minAmount === 0` — без ограничения снизу. `maxAmount === 0` — без
    * ограничения сверху. Отрицательные/NaN границы трактуются как «без
@@ -114,21 +68,88 @@
   }
 
   /**
-   * Проверка фильтра офферов. Пустой список — виджет показывается для всех
-   * офферов (никакого ограничения). При непустом списке логика зависит от
-   * `listType`: whitelist разрешает только перечисленные, blacklist — наоборот.
+   * Извлекает позиции заказа из DOM магазина (.deal-positions li).
+   * Для каждого li читает data-offer-id (id) и текст .position-actual-title (title).
+   * Включает запись если id !== '' ИЛИ title !== ''. Не бросает исключений.
    *
-   * @param {string | null | undefined} pageOfferId
-   * @param {string[]} offerIds
+   * @returns {{ id: string; title: string }[]}
+   */
+  function extractDealPositions() {
+    try {
+      var items = document.querySelectorAll('.deal-positions li')
+      var result = []
+      for (var i = 0; i < items.length; i++) {
+        var li = items[i]
+        var id = (li.getAttribute('data-offer-id') || '').trim()
+        var titleNode = li.querySelector('.position-actual-title')
+        var title = (titleNode && titleNode.textContent || '').trim()
+        if (id !== '' || title !== '') {
+          result.push({ id: id, title: title })
+        }
+      }
+      return result
+    } catch (err) {
+      return []
+    }
+  }
+
+  /**
+   * СИНХРОНИЗИРОВАНО с shared/widgetSettingsTypes.ts → areAllOffersAllowed/isOfferAllowed.
+   * Править ОБА места.
+   *
+   * Проверяет, что ВСЕ позиции заказа разрешены по white/blacklist офферов.
+   * - Пустой positions → false (нет позиций — не рендерим).
+   * - Пустой allowedOffers → whitelist: false (скрыт), blacklist: true (показан).
+   * - Сверка по id (точное, String().trim()) ИЛИ title (replace(/\s+/g,' ')+trim+lowercase).
+   *
+   * @param {{ id: string; title: string }[]} positions
+   * @param {{ id: string; title: string }[]} allowedOffers
    * @param {'whitelist' | 'blacklist' | string} listType
    * @returns {boolean}
    */
-  function isOfferMatched(pageOfferId, offerIds, listType) {
-    if (!Array.isArray(offerIds) || offerIds.length === 0) return true
-    var id = pageOfferId ? String(pageOfferId) : ''
-    var inList = id ? offerIds.indexOf(id) !== -1 : false
-    if (listType === 'blacklist') return !inList
-    return inList
+  function areAllPositionsAllowed(positions, allowedOffers, listType) {
+    try {
+      if (!Array.isArray(positions) || positions.length === 0) return false
+      var allowed = Array.isArray(allowedOffers) ? allowedOffers : []
+
+      // Идентично shared/widgetSettingsTypes.ts → normalizeTitle.
+      // \s+ покрывает неразрывные пробелы в современных браузерах.
+      function normalizeTitle(s) {
+        return String(s || '').replace(/\s+/g, ' ').trim().toLowerCase()
+      }
+
+      for (var i = 0; i < positions.length; i++) {
+        var pos = positions[i]
+        var posId = pos.id || ''
+        var posTitle = normalizeTitle(pos.title)
+
+        var idMatch = posId !== '' && (function (pid) {
+          for (var j = 0; j < allowed.length; j++) {
+            if (String(allowed[j].id).trim() === pid) return true
+          }
+          return false
+        })(posId)
+
+        var titleMatch = posTitle !== '' && (function (pt) {
+          for (var j = 0; j < allowed.length; j++) {
+            if (allowed[j].title && normalizeTitle(allowed[j].title) === pt) return true
+          }
+          return false
+        })(posTitle)
+
+        var posAllowed
+        if (listType === 'blacklist') {
+          posAllowed = !idMatch && !titleMatch
+        } else {
+          posAllowed = idMatch || titleMatch
+        }
+
+        if (!posAllowed) return false
+      }
+      return true
+    } catch (e) {
+      return false
+    }
   }
 
   /**
@@ -159,18 +180,42 @@
   }
 
   /**
-   * POST к intent-эндпоинту нашего клиента. Тело отправляется как
-   * `Content-Type: text/plain` с JSON-строкой внутри, чтобы избежать CORS
-   * preflight (платформа не обслуживает OPTIONS).
+   * Извлекает числовой id заказа из текущего URL страницы.
+   *
+   * Приоритет — path-формат: `/id/123` или `/id/123/hash/...` (regex
+   * `/\/id\/(\d+)(?:[\/?#]|$)/`). Если не найден — ищет query-параметр `id`
+   * и принимает его только если состоит из цифр.
+   *
+   * Хардкод пути допустим — userscript работает на страницах магазина, где
+   * URL-структура GetCourse стабильна.
+   *
+   * @returns {string | null} — строка с id (цифры) или null
+   */
+  function extractDealIdFromUrl() {
+    try {
+      var pathname = window.location.pathname || ''
+      var pathMatch = /\/id\/(\d+)(?:[/?#]|$)/.exec(pathname)
+      if (pathMatch && pathMatch[1]) return pathMatch[1]
+      var queryId = new URLSearchParams(window.location.search).get('id')
+      if (queryId && /^\d+$/.test(queryId)) return queryId
+    } catch (err) {
+      /* swallow */
+    }
+    return null
+  }
+
+  /**
+   * POST к `/api/widgets/intent-by-deal` нашего клиента (deal-поток).
+   * Тело отправляется как `Content-Type: text/plain` с JSON-строкой внутри,
+   * чтобы избежать CORS preflight (платформа не обслуживает OPTIONS).
    *
    * @param {string} baseUrl
-   * @param {'lifepay' | 'lavatop'} method
-   * @param {object} payload
+   * @param {object} payload — { dealId, method, currency?, customerPhone? }
    * @returns {Promise<object | null>}
    */
-  function postWidgetIntent(baseUrl, method, payload) {
+  function postWidgetIntentByDeal(baseUrl, payload) {
     var url =
-      baseUrl.replace(/\/$/, '') + '/p/units/aayakovleva/gw-client/api/widgets/intent-' + method
+      baseUrl.replace(/\/$/, '') + '/p/units/aayakovleva/gw-client/api/widgets/intent-by-deal'
     var body = JSON.stringify(payload || {})
     return fetch(url, {
       method: 'POST',
@@ -261,11 +306,12 @@
 
   window.GwWidgetCommon = {
     safeInit: safeInit,
-    extractOrderAmount: extractOrderAmount,
     isAmountInRange: isAmountInRange,
-    isOfferMatched: isOfferMatched,
+    extractDealPositions: extractDealPositions,
+    areAllPositionsAllowed: areAllPositionsAllowed,
     fetchWidgetConfig: fetchWidgetConfig,
-    postWidgetIntent: postWidgetIntent,
+    extractDealIdFromUrl: extractDealIdFromUrl,
+    postWidgetIntentByDeal: postWidgetIntentByDeal,
     createModal: createModal
   }
 })(window)

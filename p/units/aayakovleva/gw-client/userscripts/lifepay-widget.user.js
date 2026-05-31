@@ -1,26 +1,30 @@
 /* ========================================================================
  * gw-client LifePay widget — встраиваемый виджет оплаты через LifePay (СБП)
- * для сторонних страниц магазина.
+ * для сторонних страниц магазина. Deal-поток (2026).
  *
  * Поведение:
  *   1. Ждёт DOM-якорь `#gw-lifepay-widget` (если не найден — тихий выход).
- *   2. Запрашивает конфиг через `GwWidgetCommon.fetchWidgetConfig`.
- *   3. Прогоняет 5 фильтров: enabled / amount-есть / amount-в-диапазоне /
- *      offerId-определён / offerId-проходит-white-blacklist. При провале
- *      любого — тихий выход без рендера.
- *   4. Отрисовывает кликабельный блок «Оплатить через СБП (LifePay)».
- *   5. По клику делает POST `/api/widgets/intent-lifepay` (через
- *      `postWidgetIntent`), при успехе — динамически подгружает QR-библиотеку
- *      с CDN и показывает модалку с QR-кодом. При ошибке/недоступности CDN —
- *      fallback на текстовую ссылку.
+ *   2. Читает `data-gw-base-url` с якоря (обязателен).
+ *   3. Извлекает dealId из URL текущей страницы (`GwWidgetCommon.extractDealIdFromUrl`).
+ *      Если null — тихий выход без рендера и ошибок.
+ *   4. Запрашивает конфиг через `GwWidgetCommon.fetchWidgetConfig`.
+ *      Если `config.lifepay.enabled !== true` — тихий выход.
+ *   5. Клиентская проверка позиций заказа (.deal-positions li) по config.lifepay.offers
+ *      и config.lifepay.offerListType. Если хоть одна позиция не разрешена — тихий выход.
+ *      Виджет рендерится только если ВСЕ позиции в белом/чёрном списке.
+ *   6. Отрисовывает кнопку «Оплатить через СБП (LifePay)».
+ *   7. По клику вызывает `GwWidgetCommon.postWidgetIntentByDeal` с dealId.
+ *      При успехе — показывает QR-модалку. При ошибке — текст из errorToText.
  *
  * Параметры через data-атрибуты якорного элемента:
- *   - data-gw-base-url   (обязателен) — корень gw-client, например
- *                        `https://s.chtm.khudoley.pro`.
- *   - data-offer-id      (опционально) — id оффера для фильтрации списком.
- *   - data-email         (опционально) — email покупателя; если магазин
- *                        отрисовывает другое поле, можно прописать на якоре.
- *   - data-order-number  (опционально) — внешний номер заказа.
+ *   - data-gw-base-url  (обязателен) — корень gw-client, например
+ *                       `https://s.chtm.khudoley.pro`.
+ *
+ * УДАЛЕНО:
+ *   - data-offer-id     — заменён проверкой всех позиций .deal-positions.
+ *   - data-email        — email берётся из GC-заказа на сервере.
+ *   - data-order-number — orderNumber детерминирован: `gcdeal-{dealId}`.
+ *   - extractOrderAmount / isAmountInRange — сумма с сервера из GC.
  *
  * Зависимости: глобал `window.GwWidgetCommon` из `common.js`.
  *
@@ -45,41 +49,33 @@
 
     var baseUrl = anchor.getAttribute('data-gw-base-url') || ''
     if (!baseUrl) return
-    var pageOfferId = anchor.getAttribute('data-offer-id')
+
+    // Извлекаем dealId из URL страницы — если null, виджет не отображается
+    // (страница не является страницей конкретного заказа).
+    var dealId = common.extractDealIdFromUrl()
+    if (!dealId) return
 
     common.fetchWidgetConfig(baseUrl).then(function (config) {
       if (!config) return
       if (!config.lifepay || config.lifepay.enabled !== true) return
 
-      var amount = common.extractOrderAmount()
-      if (amount === null) return
-      if (!common.isAmountInRange(amount, config.lifepay.minAmount, config.lifepay.maxAmount))
-        return
+      // Клиентская проверка позиций заказа по белому/чёрному списку офферов.
+      var positions = common.extractDealPositions()
+      if (!common.areAllPositionsAllowed(positions, config.lifepay.offers || [], config.lifepay.offerListType)) return
 
-      var offerIds = Array.isArray(config.lifepay.offerIds) ? config.lifepay.offerIds : []
-      if (offerIds.length > 0 && !pageOfferId) {
-        // Список офферов задан, но якорь не указал id страницы — консервативно
-        // не показываем (иначе админ не сможет ограничить виджет конкретными
-        // офферами через data-offer-id).
-        return
-      }
-      if (!common.isOfferMatched(pageOfferId, offerIds, config.lifepay.offerListType)) return
-
-      renderWidget(anchor, baseUrl, amount, pageOfferId)
+      renderWidget(anchor, baseUrl, dealId)
     })
   })
 
   /**
-   * Создаёт кликабельный блок виджета внутри `anchor`. Удаляет существующий
-   * рендер, если виджет переинициализируется (повторный safeInit вызов
-   * допустим, но не должен дублировать DOM).
+   * Создаёт кнопку виджета внутри `anchor`. Удаляет существующий рендер
+   * при повторной инициализации (дублирование DOM недопустимо).
    *
    * @param {HTMLElement} anchor
    * @param {string} baseUrl
-   * @param {number} amount
-   * @param {string | null} pageOfferId
+   * @param {string} dealId — id заказа GC
    */
-  function renderWidget(anchor, baseUrl, amount, pageOfferId) {
+  function renderWidget(anchor, baseUrl, dealId) {
     anchor.innerHTML = ''
     var button = document.createElement('button')
     button.type = 'button'
@@ -97,19 +93,9 @@
       button.textContent = 'Создание счёта…'
       error.style.display = 'none'
 
-      var email = anchor.getAttribute('data-email') || ''
-      var orderNumber = anchor.getAttribute('data-order-number') || ''
-      var payload = {
-        amount: amount,
-        email: email
-      }
-      if (orderNumber) payload.orderNumber = orderNumber
-      if (pageOfferId) {
-        payload.offerId = pageOfferId
-        payload.correlationId = pageOfferId
-      }
+      var payload = { dealId: dealId, method: 'lifepay' }
 
-      common.postWidgetIntent(baseUrl, 'lifepay', payload).then(function (response) {
+      common.postWidgetIntentByDeal(baseUrl, payload).then(function (response) {
         button.disabled = false
         button.textContent = originalText
         if (!response || !response.ok || !response.paymentUrl) {
@@ -128,8 +114,7 @@
 
   /**
    * Загружает QR-библиотеку с CDN при необходимости, генерирует QR-код по
-   * paymentUrl и показывает модалку. При ошибке загрузки/генерации —
-   * fallback: модалка со ссылкой на paymentUrl.
+   * paymentUrl и показывает модалку. При ошибке — fallback со ссылкой.
    *
    * @param {string} paymentUrl
    */
@@ -222,24 +207,40 @@
     common.createModal(wrapper).show()
   }
 
-  /** Локализация серверных кодов ошибок в человекочитаемые сообщения. */
+  /**
+   * Локализация серверных кодов ошибок в человекочитаемые сообщения.
+   * Включает как новые коды deal-потока, так и сохранённые коды offer-потока.
+   */
   function errorToText(code) {
     switch (code) {
+      // CORS и метод
       case 'CORS_ORIGIN_NOT_ALLOWED':
         return 'Сайт не входит в список разрешённых доменов виджета.'
       case 'WIDGET_METHOD_DISABLED':
         return 'Оплата через LifePay временно отключена.'
+      case 'WIDGET_GC_METHOD_UNSUPPORTED':
+        return 'Способ оплаты недоступен для этого заказа.'
+      // Ограничения суммы
       case 'WIDGET_AMOUNT_INVALID':
       case 'WIDGET_AMOUNT_BELOW_MIN':
       case 'WIDGET_AMOUNT_EXCEEDS_LIMIT':
       case 'WIDGET_AMOUNT_EXCEEDS_HARD_LIMIT':
         return 'Сумма заказа вне допустимого диапазона для оплаты через LifePay.'
-      case 'WIDGET_EMAIL_REQUIRED':
-        return 'Для оплаты через LifePay требуется email покупателя.'
-      case 'WIDGET_OFFER_ID_REQUIRED':
+      // Оффер
       case 'WIDGET_OFFER_NOT_ALLOWED':
-        return 'Этот товар недоступен для оплаты через LifePay.'
-      case 'WIDGET_GATEWAY_ERROR':
+        return 'Заказ содержит товар, недоступный для оплаты этим способом.'
+      // Deal-поток: коды из GC-резолвера
+      case 'WIDGET_GC_DEAL_ID_INVALID':
+        return 'Не удалось определить заказ для оплаты.'
+      case 'WIDGET_GC_DEAL_NOT_FOUND':
+        return 'Заказ не найден или недоступен.'
+      case 'WIDGET_GC_ALREADY_PAID':
+        return 'Этот заказ уже оплачен.'
+      case 'WIDGET_GC_EMAIL_MISSING':
+        return 'Не удалось определить email покупателя в заказе.'
+      case 'WIDGET_GC_CURRENCY_UNSUPPORTED':
+        return 'Оплата возможна только для заказов в рублях.'
+      case 'WIDGET_GC_GATEWAY_ERROR':
         return 'Ошибка при создании счёта. Попробуйте ещё раз через несколько секунд.'
       default:
         return 'Не удалось создать счёт. Попробуйте ещё раз.'

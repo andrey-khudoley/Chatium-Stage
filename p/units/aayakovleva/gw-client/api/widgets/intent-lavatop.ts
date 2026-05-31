@@ -2,6 +2,10 @@
  * `POST /api/widgets/intent-lavatop` — публичная инициация платежа Lava.Top
  * через виджет на странице магазина.
  *
+ * @deprecated DEPRECATED (с 2026-05-31): заменён единым deal-потоком
+ * `api/widgets/intent-by-deal.ts` (method:'lavatop'). Оставлен для обратной
+ * совместимости; новые интеграции должны использовать intent-by-deal.
+ *
  * ВНИМАНИЕ: эндпоинт сознательно публичный. Защита идентична lifepay-intent:
  *   1) Origin запроса проверяется по `widget_lavatop_domains` (whitelist).
  *   2) Серверный hard-limit `WIDGET_INTENT_HARD_LIMIT_RUB`.
@@ -148,31 +152,8 @@ export const widgetIntentLavatopRoute = app.post('/', async (ctx, req) => {
     )
   }
 
-  // Серверная фильтрация по списку GC-офферов (whitelist / blacklist).
-  // Источник списка — единый: GC-офферы. Per-method отличается только
-  // выбранным подмножеством.
-  if (settings.lavatopOfferIds.length > 0) {
-    const inList = settings.lavatopOfferIds.indexOf(offerId) !== -1
-    const allowed = settings.lavatopOfferListType === 'blacklist' ? !inList : inList
-    if (!allowed) {
-      await loggerLib.writeServerLog(ctx, {
-        severity: 4,
-        message: `[${LOG_PATH}] widget_intent_attempt: offer_not_allowed`,
-        payload: {
-          method: 'lavatop',
-          hostname: corsResult.hostname,
-          offerId,
-          listType: settings.lavatopOfferListType,
-          ok: false
-        }
-      })
-      return jsonResponse(
-        403,
-        { ok: false, error: 'WIDGET_OFFER_NOT_ALLOWED' },
-        buildCorsHeaders(corsResult)
-      )
-    }
-  }
+  // Offer-фильтр по ids удалён (deprecated endpoint; новый фильтр — в intent-by-deal).
+  // offerId как продуктовый параметр createInvoice сохраняется (args.offerId ниже).
 
   // amount — опционален для Lava.Top (цена берётся из оффера), но если
   // передан — проверяем фильтры по сумме.
