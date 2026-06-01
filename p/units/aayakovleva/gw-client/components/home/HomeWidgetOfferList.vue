@@ -67,13 +67,17 @@ const search = ref('')
 const stagedListType = ref<'whitelist' | 'blacklist' | null>(null)
 
 const filterMode = computed<FilterMode>(() => {
-  // Если listType уже 'off' — показываем off напрямую.
+  // Staged-выбор приоритетнее всего: пользователь нажал whitelist/blacklist при
+  // пустом списке, listType на сервере ещё 'off', но сегмент уже должен показать
+  // выбранный режим и раскрыть выбор офферов. Без этой проверки первой ранний
+  // выход по listType==='off' схлопывал бы сегмент обратно в «Выключен».
+  if (stagedListType.value) return stagedListType.value
+  // listType уже 'off' и нет staged — показываем off напрямую.
   if (props.listType === 'off') return 'off'
   // Непустой список → реальный listType (whitelist или blacklist).
   if (props.selectedOffers.length > 0) return props.listType
-  // Пустой список: если есть staged (пользователь нажал режим, ещё не выбрав офферов) —
-  // показываем staged. Иначе 'off' (legacy whitelist+[] и blacklist+[] без staged отображаются как off).
-  return stagedListType.value ?? 'off'
+  // Пустой список без staged: legacy whitelist+[] и blacklist+[] отображаем как off.
+  return 'off'
 })
 
 const filteredOffers = computed(() => {
