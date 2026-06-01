@@ -7,6 +7,8 @@ import {
 } from '../../../lib/tests/templateUnitSuite'
 import { runLifepayUnitChecks } from '../../../lib/tests/lifepayUnitSuite'
 import { runLavatopUnitChecks } from '../../../lib/tests/lavatopUnitSuite'
+import { runWidgetConfigCorsChecks } from '../../../lib/tests/widgetConfigCorsSuite'
+import type { LifepayUnitTestResult } from '../../../lib/tests/lifepayUnitHelpers'
 import { logTestRunFailures } from '../../../lib/tests/logTestRunFailures'
 
 const LOG_PATH = 'api/tests/unit'
@@ -28,14 +30,22 @@ export const templateUnitTestsRoute = app.get('/', async (ctx) => {
 
   const lifepayResults = await runLifepayUnitChecks()
   const lavatopResults = await runLavatopUnitChecks()
+  const widgetCorsResults: LifepayUnitTestResult[] = []
+  runWidgetConfigCorsChecks(widgetCorsResults)
   const knownIds = [
     ...lifepayResults.results.map((r) => r.id),
-    ...lavatopResults.results.map((r) => r.id)
+    ...lavatopResults.results.map((r) => r.id),
+    ...widgetCorsResults.map((r) => r.id)
   ]
   const templateResults = runTemplateUnitChecks(knownIds)
 
   // Объединяем результаты, чтобы сохранить контракт ответа (results[]).
-  const results = [...templateResults, ...lifepayResults.results, ...lavatopResults.results]
+  const results = [
+    ...templateResults,
+    ...lifepayResults.results,
+    ...lavatopResults.results,
+    ...widgetCorsResults
+  ]
   const passed = results.filter((r) => r.passed).length
   const failed = results.length - passed
 
@@ -50,7 +60,8 @@ export const templateUnitTestsRoute = app.get('/', async (ctx) => {
       total: results.length,
       templateTotal: templateResults.length,
       lifepayTotal: lifepayResults.results.length,
-      lavatopTotal: lavatopResults.results.length
+      lavatopTotal: lavatopResults.results.length,
+      widgetCorsTotal: widgetCorsResults.length
     }
   })
 

@@ -388,9 +388,9 @@ Chatium не поддерживает `app.options`, поэтому preflight-з
 
 ### Per-method whitelist доменов
 
-- `widget_lifepay_domains` — список доменов для `/api/widgets/intent-lifepay`.
-- `widget_lavatop_domains` — список доменов для `/api/widgets/intent-lavatop`.
-- `/api/widgets/config` — использует объединение обоих списков.
+- `widget_lifepay_domains` — список доменов для `/api/widgets/intent-lifepay` и для ветки LifePay в `/api/widgets/config`.
+- `widget_lavatop_domains` — список доменов для `/api/widgets/intent-lavatop` и для ветки Lava.Top в `/api/widgets/config`.
+- `/api/widgets/config` — **per-method модель** (с 2026-06-01): `lifepay.enabled` требует Origin в `widget_lifepay_domains` (`checkWidgetOrigin(headers, settings.lifepayDomains)`); `lavatop.enabled` — в `widget_lavatop_domains` (`checkWidgetOrigin(headers, settings.lavatopDomains)`). Условие `enabled` для метода: `<m>Cors.allowed AND settings.<m>Enabled AND offerOk AND amountOk`. HTTP 403 `CORS_ORIGIN_NOT_ALLOWED` выдаётся только если Origin не входит НИ В ОДИН список; при частичном совпадении — `enabled:false` для метода с несовпавшим списком, ответ `ok:true`. Ранее использовалось объединение обоих списков для единой проверки — эта схема приводила к тому, что `lifepay.enabled` выдавалось при Origin, разрешённом только для Lava.Top, и наоборот. HTTP 500 `WIDGET_CONFIG_ERROR` — fail-closed при сбое чтения настроек. ACAO/`Vary: Origin` выставляются только при допустимом Origin.
 
 ### Offer-фильтр виджетов (двухуровневая модель, реализовано 2026-06-01)
 

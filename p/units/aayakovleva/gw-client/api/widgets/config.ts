@@ -9,8 +9,11 @@
  * если GC недоступен, метод с ценовым ограничением отключается.
  *
  * CORS-стратегия: simple-request, без OPTIONS-preflight (Content-Type: text/plain).
- * Origin запроса проверяется по объединению `widget_lifepay_domains` и
- * `widget_lavatop_domains`.
+ * Origin запроса проверяется **раздельно** против `widget_lifepay_domains` и
+ * `widget_lavatop_domains` (per-method allow-list). `enabled` метода требует,
+ * чтобы origin входил в allow-list **именно этого** метода. 403 возвращается
+ * только если origin не входит ни в один список. Примечание: `getWidgetSettings`
+ * читается до CORS-решения намеренно — домены нужны для самой проверки.
  *
  * `requireRealUser`/`requireInternalAccess` НЕ применяются сознательно —
  * userscript исполняется в браузере покупателя.
@@ -18,11 +21,7 @@
 
 import * as loggerLib from '../../lib/logger.lib'
 import { getWidgetSettings } from '../../lib/widget/widgetSettings.lib'
-import {
-  checkWidgetOrigin,
-  parseDomains,
-  type WidgetCorsResult
-} from '../../shared/widgetCorsCheck'
+import { checkWidgetOrigin, type WidgetCorsResult } from '../../shared/widgetCorsCheck'
 import {
   areAllOffersAllowed,
   type WidgetAvailabilityConfig
@@ -55,12 +54,6 @@ function parseBody(req: app.Req): Record<string, unknown> | null {
   return null
 }
 
-/** Объединение per-method whitelist'ов: общий список для `/api/widgets/config`. */
-function mergeAllowedDomains(lifepayDomainsRaw: string, lavatopDomainsRaw: string): string {
-  const merged = [...parseDomains(lifepayDomainsRaw), ...parseDomains(lavatopDomainsRaw)]
-  return merged.join(',')
-}
-
 function buildCorsHeaders(corsResult: WidgetCorsResult): Record<string, string> {
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
@@ -87,45 +80,69 @@ function jsonResponse(
 
 export const widgetConfigRoute = app.post('/', async (ctx, req) => {
   const headers = readHeaders(req)
-  const settings = await getWidgetSettings(ctx)
-  const allDomains = mergeAllowedDomains(settings.lifepayDomains, settings.lavatopDomains)
-  const corsResult = checkWidgetOrigin(headers, allDomains)
+  let settings: Awaited<ReturnType<typeof getWidgetSettings>>
+  try {
+    settings = await getWidgetSettings(ctx)
+  } catch (err) {
+    await loggerLib.writeServerLog(ctx, {
+      severity: 3,
+      message: `[${LOG_PATH}] settings_error`,
+      payload: { error: err instanceof Error ? err.message : String(err) }
+    })
+    return jsonResponse(
+      500,
+      { ok: false, error: 'WIDGET_CONFIG_ERROR' },
+      {
+        'Content-Type': 'application/json',
+        'Cache-Control': 'no-store'
+      }
+    )
+  }
+  const lifepayCors = checkWidgetOrigin(headers, settings.lifepayDomains)
+  const lavatopCors = checkWidgetOrigin(headers, settings.lavatopDomains)
 
   await loggerLib.writeServerLog(ctx, {
     severity: 6,
     message: `[${LOG_PATH}] entry`,
     payload: {
-      hostname: corsResult.hostname,
-      allowed: corsResult.allowed,
+      hostname: lifepayCors.hostname,
+      lifepayAllowed: lifepayCors.allowed,
+      lavatopAllowed: lavatopCors.allowed,
       lifepayEnabled: settings.lifepayEnabled,
       lavatopEnabled: settings.lavatopEnabled
     }
   })
 
-  if (!corsResult.allowed) {
+  if (!(lifepayCors.allowed || lavatopCors.allowed)) {
     await loggerLib.writeServerLog(ctx, {
       severity: 4,
       message: `[${LOG_PATH}] cors_denied`,
-      payload: { hostname: corsResult.hostname }
+      payload: {
+        hostname: lifepayCors.hostname,
+        lifepayAllowed: lifepayCors.allowed,
+        lavatopAllowed: lavatopCors.allowed
+      }
     })
     return jsonResponse(
       403,
       { ok: false, error: 'CORS_ORIGIN_NOT_ALLOWED' },
-      buildCorsHeaders(corsResult)
+      buildCorsHeaders(lifepayCors)
     )
   }
+
+  const corsForHeaders = lifepayCors.allowed ? lifepayCors : lavatopCors
 
   const body = parseBody(req)
   if (!body) {
     await loggerLib.writeServerLog(ctx, {
       severity: 4,
       message: `[${LOG_PATH}] body_invalid`,
-      payload: { hostname: corsResult.hostname, reason: 'parse_failed' }
+      payload: { hostname: lifepayCors.hostname, reason: 'parse_failed' }
     })
     return jsonResponse(
       400,
       { ok: false, error: 'WIDGET_BODY_INVALID' },
-      buildCorsHeaders(corsResult)
+      buildCorsHeaders(corsForHeaders)
     )
   }
 
@@ -171,12 +188,12 @@ export const widgetConfigRoute = app.post('/', async (ctx, req) => {
       await loggerLib.writeServerLog(ctx, {
         severity: 4,
         message: `[${LOG_PATH}] body_invalid`,
-        payload: { hostname: corsResult.hostname, reason: 'deal_id_type', dealIdRaw }
+        payload: { hostname: lifepayCors.hostname, reason: 'deal_id_type', dealIdRaw }
       })
       return jsonResponse(
         400,
         { ok: false, error: 'WIDGET_BODY_INVALID' },
-        buildCorsHeaders(corsResult)
+        buildCorsHeaders(corsForHeaders)
       )
     }
 
@@ -185,12 +202,12 @@ export const widgetConfigRoute = app.post('/', async (ctx, req) => {
       await loggerLib.writeServerLog(ctx, {
         severity: 4,
         message: `[${LOG_PATH}] body_invalid`,
-        payload: { hostname: corsResult.hostname, reason: 'deal_id_not_integer', dealIdRaw }
+        payload: { hostname: lifepayCors.hostname, reason: 'deal_id_not_integer', dealIdRaw }
       })
       return jsonResponse(
         400,
         { ok: false, error: 'WIDGET_BODY_INVALID' },
-        buildCorsHeaders(corsResult)
+        buildCorsHeaders(corsForHeaders)
       )
     }
 
@@ -239,7 +256,8 @@ export const widgetConfigRoute = app.post('/', async (ctx, req) => {
       !(settings.lifepayMin > 0 && resolvedAmount < settings.lifepayMin) &&
       !(settings.lifepayMax > 0 && resolvedAmount > settings.lifepayMax)
   }
-  const lifepayEnabled = settings.lifepayEnabled && lifepayOfferOk && lifepayAmountOk
+  const lifepayEnabled =
+    lifepayCors.allowed && settings.lifepayEnabled && lifepayOfferOk && lifepayAmountOk
 
   // Вычисление enabled для Lava.Top
   const lavatopOfferOk = areAllOffersAllowed(
@@ -257,7 +275,8 @@ export const widgetConfigRoute = app.post('/', async (ctx, req) => {
       !(settings.lavatopMin > 0 && resolvedAmount < settings.lavatopMin) &&
       !(settings.lavatopMax > 0 && resolvedAmount > settings.lavatopMax)
   }
-  const lavatopEnabled = settings.lavatopEnabled && lavatopOfferOk && lavatopAmountOk
+  const lavatopEnabled =
+    lavatopCors.allowed && settings.lavatopEnabled && lavatopOfferOk && lavatopAmountOk
 
   // Процесс принятия решения по обоим методам — входы и результат. Пишется
   // всегда (в т.ч. anyNeedsAmount=false: dealId/resolvedAmount тогда пустые —
@@ -269,6 +288,7 @@ export const widgetConfigRoute = app.post('/', async (ctx, req) => {
       dealId: dealIdNormalized,
       resolvedAmount,
       lifepay: {
+        originAllowed: lifepayCors.allowed,
         enabledSetting: settings.lifepayEnabled,
         needsAmount: lifepayNeedsAmount,
         min: settings.lifepayMin,
@@ -280,6 +300,7 @@ export const widgetConfigRoute = app.post('/', async (ctx, req) => {
         enabled: lifepayEnabled
       },
       lavatop: {
+        originAllowed: lavatopCors.allowed,
         enabledSetting: settings.lavatopEnabled,
         needsAmount: lavatopNeedsAmount,
         min: settings.lavatopMin,
@@ -297,7 +318,7 @@ export const widgetConfigRoute = app.post('/', async (ctx, req) => {
     severity: 6,
     message: `[${LOG_PATH}] success`,
     payload: {
-      hostname: corsResult.hostname,
+      hostname: lifepayCors.hostname,
       anyNeedsAmount,
       cachedHit,
       gcFailed,
@@ -317,7 +338,7 @@ export const widgetConfigRoute = app.post('/', async (ctx, req) => {
     lavatop: { enabled: lavatopEnabled }
   }
 
-  return jsonResponse(200, { ok: true, config }, buildCorsHeaders(corsResult))
+  return jsonResponse(200, { ok: true, config }, buildCorsHeaders(corsForHeaders))
 })
 
 export default widgetConfigRoute

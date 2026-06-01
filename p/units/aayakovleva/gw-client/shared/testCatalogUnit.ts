@@ -247,6 +247,73 @@ export const UNIT_TEST_BLOCKS: TestCatalogBlock[] = [
     ]
   },
   {
+    id: 'unit-widget-config-cors',
+    title: 'api/widgets/config — CORS-логика',
+    description:
+      'per-method CORS-проверка checkWidgetOrigin, формула enabled = cors.allowed && methodEnabled && offerOk && amountOk',
+    tests: [
+      {
+        id: 'widget_config_cors_lifepay_origin_only',
+        title: 'origin из lifepay-списка → lifepay allowed=true, lavatop allowed=false'
+      },
+      {
+        id: 'widget_config_cors_lavatop_origin_only',
+        title: 'origin из lavatop-списка → lavatop allowed=true, lifepay allowed=false'
+      },
+      {
+        id: 'widget_config_cors_origin_not_in_any_list',
+        title: 'origin вне обоих списков → оба allowed=false (→ 403)'
+      },
+      {
+        id: 'widget_config_cors_no_origin_no_referer',
+        title: 'Origin отсутствует AND Referer отсутствует → оба allowed=false (fail-closed)'
+      },
+      {
+        id: 'widget_config_cors_referer_fallback_lifepay',
+        title:
+          'Origin отсутствует, Referer=https://<lifepay-домен>/path?q=1 → lifepay allowed=true, lavatop=false'
+      },
+      {
+        id: 'widget_config_cors_referer_empty_string',
+        title: 'Referer присутствует но пустой → оба allowed=false (fail-closed)'
+      },
+      {
+        id: 'widget_config_cors_whitelist_format_plain_host',
+        title: 'whitelist "example.com" матчит origin "https://example.com"'
+      },
+      {
+        id: 'widget_config_cors_whitelist_format_https_host',
+        title: 'whitelist "https://example.com" матчит origin "https://example.com"'
+      },
+      {
+        id: 'widget_config_cors_whitelist_format_https_host_port',
+        title: 'whitelist "https://example.com:8080" матчит origin "https://example.com"'
+      },
+      {
+        id: 'widget_config_cors_whitelist_format_https_host_path',
+        title: 'whitelist "https://example.com/path" матчит origin "https://example.com"'
+      },
+      {
+        id: 'widget_config_cors_shared_domain_both_allowed',
+        title: 'домен в обоих списках → lifepay allowed=true И lavatop allowed=true'
+      },
+      {
+        id: 'widget_config_cors_shared_domain_lifepay_disabled',
+        title:
+          'домен в обоих списках, lifepayEnabled=false → lifepay enabled=false, lavatop enabled=true'
+      },
+      {
+        id: 'widget_config_cors_leak_full_formula',
+        title:
+          'origin только в lifepay-списке; lavatopEnabled = cors.allowed && methodEnabled && offerOk && amountOk → false'
+      },
+      {
+        id: 'widget_config_cors_amount_gates_enabled',
+        title: 'cors.allowed=true, methodEnabled=true, offerOk=true, amountOk=false → enabled=false'
+      }
+    ]
+  },
+  {
     id: 'unit-lavatop',
     title: 'Lava.Top / многогейтвейная архитектура',
     description: 'Каталог Lava.Top, диспатч по gatewayId, валидация настроек',
