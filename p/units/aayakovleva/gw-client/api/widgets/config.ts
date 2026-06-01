@@ -117,6 +117,11 @@ export const widgetConfigRoute = app.post('/', async (ctx, req) => {
 
   const body = parseBody(req)
   if (!body) {
+    await loggerLib.writeServerLog(ctx, {
+      severity: 4,
+      message: `[${LOG_PATH}] body_invalid`,
+      payload: { hostname: corsResult.hostname, reason: 'parse_failed' }
+    })
     return jsonResponse(
       400,
       { ok: false, error: 'WIDGET_BODY_INVALID' },
@@ -136,6 +141,15 @@ export const widgetConfigRoute = app.post('/', async (ctx, req) => {
     }
   }
 
+  // Пишется на КАЖДЫЙ запрос намеренно: сырьё запроса нужно видеть и когда
+  // anyNeedsAmount=false (тогда виджет чаще всего скрывает именно оффер-фильтр).
+  // severity 7 — при LogLevel=Info запись отсекается до Heap, шума в норме нет.
+  await loggerLib.writeServerLog(ctx, {
+    severity: 7,
+    message: `[${LOG_PATH}] positions_parsed`,
+    payload: { positionsCount: positions.length, positionIds: positions.map((p) => p.id) }
+  })
+
   const dealIdRaw = body.dealId
 
   // Определяем, нужна ли сумма хотя бы для одного метода
@@ -154,6 +168,11 @@ export const widgetConfigRoute = app.post('/', async (ctx, req) => {
       (typeof dealIdRaw !== 'string' && typeof dealIdRaw !== 'number') ||
       String(dealIdRaw).trim() === ''
     ) {
+      await loggerLib.writeServerLog(ctx, {
+        severity: 4,
+        message: `[${LOG_PATH}] body_invalid`,
+        payload: { hostname: corsResult.hostname, reason: 'deal_id_type', dealIdRaw }
+      })
       return jsonResponse(
         400,
         { ok: false, error: 'WIDGET_BODY_INVALID' },
@@ -163,6 +182,11 @@ export const widgetConfigRoute = app.post('/', async (ctx, req) => {
 
     const dealIdNum = Number(String(dealIdRaw).trim())
     if (!Number.isInteger(dealIdNum) || dealIdNum <= 0) {
+      await loggerLib.writeServerLog(ctx, {
+        severity: 4,
+        message: `[${LOG_PATH}] body_invalid`,
+        payload: { hostname: corsResult.hostname, reason: 'deal_id_not_integer', dealIdRaw }
+      })
       return jsonResponse(
         400,
         { ok: false, error: 'WIDGET_BODY_INVALID' },
@@ -171,6 +195,12 @@ export const widgetConfigRoute = app.post('/', async (ctx, req) => {
     }
 
     dealIdNormalized = String(dealIdNum)
+
+    await loggerLib.writeServerLog(ctx, {
+      severity: 7,
+      message: `[${LOG_PATH}] amount_resolve_start`,
+      payload: { dealId: dealIdNormalized, lifepayNeedsAmount, lavatopNeedsAmount }
+    })
 
     const cached = await getCachedGcDealAmount(ctx, dealIdNormalized)
     if (cached !== null) {
@@ -185,6 +215,11 @@ export const widgetConfigRoute = app.post('/', async (ctx, req) => {
         gcFailed = true
       }
     }
+    await loggerLib.writeServerLog(ctx, {
+      severity: 7,
+      message: `[${LOG_PATH}] amount_resolved`,
+      payload: { dealId: dealIdNormalized, resolvedAmount, cachedHit, gcFailed }
+    })
   }
 
   // Вычисление enabled для LifePay
@@ -224,6 +259,40 @@ export const widgetConfigRoute = app.post('/', async (ctx, req) => {
   }
   const lavatopEnabled = settings.lavatopEnabled && lavatopOfferOk && lavatopAmountOk
 
+  // Процесс принятия решения по обоим методам — входы и результат. Пишется
+  // всегда (в т.ч. anyNeedsAmount=false: dealId/resolvedAmount тогда пустые —
+  // это штатно и показывает, что решение принято без обращения к GC).
+  await loggerLib.writeServerLog(ctx, {
+    severity: 7,
+    message: `[${LOG_PATH}] decision`,
+    payload: {
+      dealId: dealIdNormalized,
+      resolvedAmount,
+      lifepay: {
+        enabledSetting: settings.lifepayEnabled,
+        needsAmount: lifepayNeedsAmount,
+        min: settings.lifepayMin,
+        max: settings.lifepayMax,
+        offerListType: settings.lifepayOfferListType,
+        offersCount: settings.lifepayOffers.length,
+        offerOk: lifepayOfferOk,
+        amountOk: lifepayAmountOk,
+        enabled: lifepayEnabled
+      },
+      lavatop: {
+        enabledSetting: settings.lavatopEnabled,
+        needsAmount: lavatopNeedsAmount,
+        min: settings.lavatopMin,
+        max: settings.lavatopMax,
+        offerListType: settings.lavatopOfferListType,
+        offersCount: settings.lavatopOffers.length,
+        offerOk: lavatopOfferOk,
+        amountOk: lavatopAmountOk,
+        enabled: lavatopEnabled
+      }
+    }
+  })
+
   await loggerLib.writeServerLog(ctx, {
     severity: 6,
     message: `[${LOG_PATH}] success`,
@@ -234,7 +303,12 @@ export const widgetConfigRoute = app.post('/', async (ctx, req) => {
       gcFailed,
       dealId: dealIdNormalized,
       lifepayEnabled,
-      lavatopEnabled
+      lavatopEnabled,
+      positionsCount: positions.length,
+      lifepayOfferOk,
+      lifepayAmountOk,
+      lavatopOfferOk,
+      lavatopAmountOk
     }
   })
 

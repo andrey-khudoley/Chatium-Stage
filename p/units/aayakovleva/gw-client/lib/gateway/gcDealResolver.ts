@@ -317,6 +317,12 @@ export async function resolveGcDealAmount(
     return { ok: false }
   }
 
+  await loggerLib.writeServerLog(ctx, {
+    severity: 7,
+    message: `[${LOG_MODULE}] resolveGcDealAmount: entry`,
+    payload: { dealId: dealIdNum, dealIdRaw }
+  })
+
   const dealRes = await invokeByGateway(
     ctx,
     'gc',
@@ -369,6 +375,12 @@ export async function resolveGcDealAmount(
     })
     return { ok: false }
   }
+
+  await loggerLib.writeServerLog(ctx, {
+    severity: 7,
+    message: `[${LOG_MODULE}] resolveGcDealAmount: fields_extracted`,
+    payload: { dealId: dealIdNum, costRaw, currency, cost }
+  })
 
   // Конвертация в рубли
   let amountRub: number

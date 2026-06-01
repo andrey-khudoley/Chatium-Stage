@@ -104,6 +104,14 @@ File-based, один файл = один роут с путём `/`:
 
 Без изменений из шаблона: syslog RFC 5424, `lib/logger.lib.ts`, ключ `log_level` (Debug / Info / Warn / Error / Disable). Секреты (`apikey`, `login`, `lp_webhook_token`) **никогда** не пишутся в `writeServerLog.payload`. `argsRedacted` и `rawResponseBody` в `request_log`, а также `rawBody`/`rawQuery`/`email` в `webhook_log` хранятся **сырыми** — клиент является оператором персональных данных по 152-ФЗ и имеет полный доступ к данным платежей. Структурная гигиена (циклы/несериализуемое/усечение по 64KB) — через `shared/prepareRawLog.ts`. Маскирующие утилиты `shared/redact.ts` / `shared/redactRaw.ts` оставлены в коде с их юнит-тестами, но в production-пути не используются.
 
+**Уровни логирования в цепочке виджета (`POST /api/widgets/config`):**
+
+- **Info (severity 6):** запись `success` — итог запроса с агрегатными флагами (`positionsCount`, `*OfferOk`, `*AmountOk`). Массив id офферов из соображений приватности и объёма не включается.
+- **Debug (severity 7):** полная трассировка цепочки — `positions_parsed` (сырые id офферов), `amount_resolve_start`, `amount_resolved` (кэш/GC), `decision` (решение per-метод: все входные параметры и финальный `enabled`). В `resolveGcDealAmount` (`lib/gateway/gcDealResolver.ts`) — `entry` и `fields_extracted`.
+- **Warning (severity 4):** `body_invalid` — невалидный запрос (3 точки вызова: тело не парсится, `dealId` отсутствует, `dealId` невалиден при наличии проверки суммы).
+
+Для диагностики решений о доступности виджета включить `log_level=Debug` в `/web/admin`. При Info поток содержит только `success` и `body_invalid` (warnings).
+
 ## Интеграции
 
 - **LifePay gateway** (`p/saas/gw/lifepay`) — контракт: `POST/GET /api/v1/<op>`, заголовки `X-Lp-Apikey`, `X-Lp-Login`, ответ `X-Gateway-Request-Id`. Без ретраев. Таймаут 15 секунд. Webhook от LifePay приходит на `/web/webhook?token=...&correlationId=<uuid>`.

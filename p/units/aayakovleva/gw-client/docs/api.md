@@ -271,6 +271,21 @@
 - HTTP 403 — недопустимый Origin.
 - HTTP 400 `WIDGET_BODY_INVALID` — тело невалидно или `dealId` отсутствует/невалиден при наличии проверки суммы.
 
+**Наблюдаемость (логирование):** эндпоинт и `resolveGcDealAmount` (`lib/gateway/gcDealResolver.ts`) пишут в `loggerLib.writeServerLog` следующие записи:
+
+| Ключ записи           | Severity | Условие / содержимое                                                                                            |
+| --------------------- | -------- | --------------------------------------------------------------------------------------------------------------- |
+| `body_invalid`        | 4 (warn) | Невалидное тело или невалидный `dealId` (3 точки вызова). Видно при Info и Debug.                               |
+| `success`             | 6 (info) | Итог запроса: `positionsCount`, `lifepayOfferOk`, `lifepayAmountOk`, `lavatopOfferOk`, `lavatopAmountOk`. Без массива id офферов. Видно при Info и Debug. |
+| `positions_parsed`    | 7 (debug)| Сырые данные: `positionsCount` + массив id офферов из тела. Только при LogLevel=Debug.                         |
+| `amount_resolve_start`| 7 (debug)| Вход в ветку резолва суммы: `dealId`, флаги `lifepayNeedsAmount`/`lavatopNeedsAmount`. Только при LogLevel=Debug. |
+| `amount_resolved`     | 7 (debug)| Результат резолва: `resolvedAmount`, `cachedHit`, `gcFailed`. Только при LogLevel=Debug.                       |
+| `decision`            | 7 (debug)| По каждому методу: `enabledSetting`, `needsAmount`, `min`, `max`, `offerListType`, `offersCount`, `offerOk`, `amountOk`, `enabled`. Только при LogLevel=Debug. |
+| `entry` (резолвер)    | 7 (debug)| Вход в `resolveGcDealAmount`: `{dealId, dealIdRaw}`. Только при LogLevel=Debug.                                |
+| `fields_extracted`    | 7 (debug)| После парсинга `getDealFields`: `{dealId, costRaw, currency, cost}`. Только при LogLevel=Debug.                |
+
+При LogLevel=Info из потока видна только запись `success`. Для просмотра полной цепочки принятия решения (сырые данные, промежуточные суммы, решение per-метод) выставить `log_level=Debug` в `/web/admin`.
+
 ### Контракт `/api/widgets/intent-lifepay`
 
 Запрос (body в виде JSON-строки, `Content-Type: text/plain`):
