@@ -23,7 +23,8 @@ import { runSettingsValidationChecks, runDateFilterChecks } from './lifepayUnitP
 import {
   runWebhookParseChecks,
   runWebhookReadChecks,
-  runWebhookTokenChecks
+  runWebhookTokenChecks,
+  runGcDealUpdateChecks
 } from './lifepayUnitPhase4Webhook'
 import { runCorrelationChecks, runAccessChecks } from './lifepayUnitPhase5Correlation'
 
@@ -45,6 +46,7 @@ export async function runLifepayUnitChecks(): Promise<{
   runWebhookParseChecks(results)
   await runWebhookReadChecks(results)
   runWebhookTokenChecks(results)
+  runGcDealUpdateChecks(results)
   runCorrelationChecks(results)
   runAccessChecks(results)
 

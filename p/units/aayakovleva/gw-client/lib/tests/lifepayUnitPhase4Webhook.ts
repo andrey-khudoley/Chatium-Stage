@@ -15,6 +15,7 @@ import {
   extractDataFromRawMultipart,
   isSuccessfulPayment
 } from '../webhook/processWebhook'
+import { buildCreateDealArgs } from '../webhook/gcDealUpdate'
 import { tryPush, tryPushAsync, type LifepayUnitTestResult } from './lifepayUnitHelpers'
 
 export function runWebhookParseChecks(results: LifepayUnitTestResult[]): void {
@@ -260,6 +261,107 @@ export async function runWebhookReadChecks(results: LifepayUnitTestResult[]): Pr
       if ((await readWebhookDataField(empty, 'data')) !== null) return false
       if ((await readWebhookDataField(null, 'data')) !== null) return false
       if ((await readWebhookDataField(undefined, 'data')) !== null) return false
+      return true
+    }
+  )
+}
+
+export function runGcDealUpdateChecks(results: LifepayUnitTestResult[]): void {
+  tryPush(
+    results,
+    'lp_gc_deal_update_basic_mapping',
+    'buildCreateDealArgs: базовый маппинг полей deal и user',
+    () => {
+      const args = buildCreateDealArgs({ orderNumber: 'ORD-001', email: 'buyer@test.ru' })
+      return (
+        args.params.deal.deal_number === 'ORD-001' &&
+        args.params.deal.deal_status === 'payed' &&
+        args.params.deal.deal_is_paid === '1' &&
+        args.params.user.email === 'buyer@test.ru'
+      )
+    }
+  )
+
+  tryPush(
+    results,
+    'lp_gc_deal_update_deal_is_paid_string',
+    'buildCreateDealArgs: deal_is_paid строго строка "1", не число',
+    () => {
+      const args = buildCreateDealArgs({ orderNumber: 'X', email: 'a@b.c' })
+      return (
+        typeof args.params.deal.deal_is_paid === 'string' && args.params.deal.deal_is_paid === '1'
+      )
+    }
+  )
+
+  tryPush(
+    results,
+    'lp_gc_deal_update_amount_parsed',
+    'buildCreateDealArgs: amount="1500.00" → deal_cost === 1500 (число)',
+    () => {
+      const args = buildCreateDealArgs({ orderNumber: 'X', email: 'a@b.c', amount: '1500.00' })
+      return args.params.deal.deal_cost === 1500
+    }
+  )
+
+  tryPush(
+    results,
+    'lp_gc_deal_update_amount_undefined',
+    'buildCreateDealArgs: amount=undefined → deal_cost отсутствует',
+    () => {
+      const args = buildCreateDealArgs({ orderNumber: 'X', email: 'a@b.c' })
+      return !('deal_cost' in args.params.deal)
+    }
+  )
+
+  tryPush(
+    results,
+    'lp_gc_deal_update_amount_zero',
+    'buildCreateDealArgs: amount="0" → deal_cost отсутствует',
+    () => {
+      const args = buildCreateDealArgs({ orderNumber: 'X', email: 'a@b.c', amount: '0' })
+      return !('deal_cost' in args.params.deal)
+    }
+  )
+
+  tryPush(
+    results,
+    'lp_gc_deal_update_amount_zero_decimal',
+    'buildCreateDealArgs: amount="0.00" → deal_cost отсутствует',
+    () => {
+      const args = buildCreateDealArgs({ orderNumber: 'X', email: 'a@b.c', amount: '0.00' })
+      return !('deal_cost' in args.params.deal)
+    }
+  )
+
+  tryPush(
+    results,
+    'lp_gc_deal_update_amount_non_numeric',
+    'buildCreateDealArgs: amount="abc" → deal_cost отсутствует',
+    () => {
+      const args = buildCreateDealArgs({ orderNumber: 'X', email: 'a@b.c', amount: 'abc' })
+      return !('deal_cost' in args.params.deal)
+    }
+  )
+
+  tryPush(
+    results,
+    'lp_gc_deal_update_structure',
+    'buildCreateDealArgs: структура строго { params: { user, deal } }, нет лишних полей',
+    () => {
+      const args = buildCreateDealArgs({
+        orderNumber: 'ORD-99',
+        email: 'x@y.z',
+        amount: '500'
+      }) as Record<string, unknown>
+      const topKeys = Object.keys(args)
+      if (topKeys.length !== 1 || topKeys[0] !== 'params') return false
+      const params = args.params as Record<string, unknown>
+      const paramKeys = Object.keys(params).sort()
+      if (paramKeys.join(',') !== 'deal,user') return false
+      // нет correlationId/dealId на верхнем уровне или в params
+      if ('correlationId' in args || 'dealId' in args) return false
+      if ('correlationId' in params || 'dealId' in params) return false
       return true
     }
   )

@@ -484,6 +484,52 @@ Chatium не поддерживает `app.options`, поэтому preflight-з
 
 7 записей в `ROUTES` и `ROUTE_PATHS`: `widgetConfig`, `widgetIntentLifepay`, `widgetIntentLavatop`, `widgetIntentByDeal`, `widgetSettingsGet`, `widgetSettingsSave`, `widgetOffers`.
 
+## Downstream-вызов GC createDeal из webhook LifePay (реализовано 2026-06-01)
+
+При успешной оплате LifePay webhook-приёмник вызывает downstream-операцию `createDeal` в GetCourse-гейтвее — обновляет заказ (статус `payed`, признак оплаты `deal_is_paid='1'`).
+
+### Поток шага 5a в `web/webhook/index.tsx`
+
+```
+POST /web/webhook?token=...&correlationId=<id>
+  → validateToken                        (шаги 1–2: токен)
+  → guard «legacy-strict»                (шаг 3: correlationId + request_log lookup)
+  → unwrapWebhookBody / parseWebhookBody (шаг 4: разбор тела)
+  → запись в webhook_log + дедупликация  (шаг 5: dedupeResult = 'first' | 'duplicate')
+  → socket-публикация                    (если не дубль)
+  → шаг 5a: downstream createDeal        ← НОВЫЙ
+      только при dedupeResult === 'first'
+         AND isSuccessfulPayment         (type='payment', status='success')
+         AND orderNumber непустой
+         AND email непустой
+      → updateGcDealOnPayment(ctx, input)
+          buildCreateDealArgs({ email, orderNumber, amount? })
+          invokeByGateway(ctx,'gc','createDeal',{params:{user:{email},deal:{...}}},{httpMethod:'POST'})
+          success → severity 6 (info)
+          ошибка  → severity 3 (error), не бросает
+      → обёрнут в try/catch, гарантирует 200 при любом исходе
+  → ответ 200 OK
+```
+
+### Ключевые файлы
+
+| Файл | Роль |
+|------|------|
+| `lib/webhook/gcDealUpdate.ts` | `buildCreateDealArgs` (pure) + `updateGcDealOnPayment` (вызов gateway) |
+| `web/webhook/index.tsx` | Врезка шага 5a после дедупликации |
+| `lib/tests/lifepayUnitPhase4Webhook.ts` | Юнит-тесты `buildCreateDealArgs` (чистая функция) |
+
+### Идемпотентность и ограничения
+
+- Downstream выполняется **только при `dedupeResult==='first'`** — дедупликация на стороне `webhook_idempotency` гарантирует однократность при повторных ретраях LifePay.
+- **Нет авто-ретрая при сбое createDeal.** Если gateway GC ответил ошибкой, вторичный ретрай LifePay придёт как `duplicate` → downstream не повторится. Осознанное ограничение MVP.
+- PII (email) логируется только через `hasEmail: true/false`; в тело запроса к GC-гейтвею email передаётся без логирования.
+- `deal_is_paid='1'` — строка (требование валидатора gateway GC); `deal_cost` — число или отсутствует.
+
+### Внешняя зависимость
+
+Контракт операции `createDeal` (поля `deal_number`, `deal_status`, `deal_is_paid`, `deal_cost`) определён в `p/saas/gw/gc/lib/gateway/operationsCatalogLegacy.ts`. Base64-кодирование `params` выполняет сам gateway, клиент передаёт только `{params}`. Изменение контракта на стороне gateway сломает downstream-вызов здесь — синхронизация ответственности изменяющего gateway.
+
 ## Безопасность
 
 - `requireRealUser(ctx)` + `requireInternalAccess(ctx)` (через `guardInternalApi`) — все `/api/lp/*` и главный роут `/`. Реализовано 2026-05-24 (закрыт auth-разрыв аудита).

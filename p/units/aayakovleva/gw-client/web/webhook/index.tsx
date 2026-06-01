@@ -35,8 +35,9 @@
  * 200 OK — дедупликация по `number` защищает от двойного учёта.
  *
  * Бизнес-действие (обновление заказа в GetCourse) — только при `type='payment'`
- * + `status='success'` (см. `isSuccessfulPayment`). В Прототипе обработка
- * заканчивается записью в журнал; downstream-вызов — MVP §2.8.
+ * + `status='success'` (см. `isSuccessfulPayment`). Downstream-вызов `createDeal`
+ * реализован: при успешной оплате помечает заказ GC статусом `payed` и
+ * `deal_is_paid='1'`. Ответ на webhook не зависит от результата downstream-вызова.
  */
 
 import * as settingsLib from '../../lib/settings.lib'
@@ -53,6 +54,7 @@ import {
   isSuccessfulPayment,
   type FormDataLike
 } from '../../lib/webhook/processWebhook'
+import { updateGcDealOnPayment } from '../../lib/webhook/gcDealUpdate'
 import { prepareRawLog } from '../../shared/prepareRawLog'
 import { extractCorrelationId } from '../../shared/correlation'
 import { paymentSocketChannel } from '../../shared/paymentSocket'
@@ -304,6 +306,62 @@ export const webhookRoute = app.post('/', async (ctx, req) => {
         successfulPayment && dedupeResult !== 'duplicate' && !!parsed.orderNumber
     }
   })
+
+  // --- 5a. Downstream-вызов GC createDeal (только при первом успешном платеже) ---
+  // Весь блок обёрнут в try/catch (как шаги 3/4/6): downstream и его внутреннее
+  // логирование не должны сорвать путь к socket-публикации (шаг 6) и финальному 200.
+  // updateGcDealOnPayment сама не бросает, но writeServerLog делает Heap/socket-await,
+  // который теоретически может бросить — инвариант «webhook всегда 200» держим явно.
+  try {
+    if (!successfulPayment) {
+      await loggerLib.writeServerLog(ctx, {
+        severity: 6,
+        message: `[${LOG_PATH}] gc_deal_update_skipped`,
+        payload: {
+          reason: 'not_successful_payment',
+          dedupeResult,
+          hasEmail: !!parsed.email,
+          orderNumber: parsed.orderNumber
+        }
+      })
+    } else if (dedupeResult !== 'first') {
+      await loggerLib.writeServerLog(ctx, {
+        severity: 6,
+        message: `[${LOG_PATH}] gc_deal_update_skipped`,
+        payload: { reason: 'not_first', dedupeResult, number: parsed.number }
+      })
+    } else if (!parsed.orderNumber) {
+      await loggerLib.writeServerLog(ctx, {
+        severity: 6,
+        message: `[${LOG_PATH}] gc_deal_update_skipped`,
+        payload: { reason: 'empty_order_number' }
+      })
+    } else if (!parsed.email) {
+      await loggerLib.writeServerLog(ctx, {
+        severity: 6,
+        message: `[${LOG_PATH}] gc_deal_update_skipped`,
+        payload: { reason: 'email_missing', orderNumber: parsed.orderNumber, hasEmail: false }
+      })
+    } else {
+      await updateGcDealOnPayment(ctx, {
+        orderNumber: parsed.orderNumber,
+        email: parsed.email,
+        amount: parsed.amount,
+        correlationId
+      })
+    }
+  } catch (e) {
+    // Последний рубеж: не валим 200-ответ из-за сбоя downstream/логирования.
+    try {
+      await loggerLib.writeServerLog(ctx, {
+        severity: 3,
+        message: `[${LOG_PATH}] gc_deal_update_block_failed`,
+        payload: { number: parsed.number, error: String(e) }
+      })
+    } catch {
+      // если и логирование недоступно — глушим, ответ 200 важнее
+    }
+  }
 
   // --- 6. Публикация в socket-канал уведомлений об оплате (если есть correlationId) ---
   // Магазинный JS подписывается на канал `payment-<correlationId>` через

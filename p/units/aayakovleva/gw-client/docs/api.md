@@ -176,10 +176,13 @@
   - Сбой БД при lookup → guard трактует как отказ (строгая политика, severity 2 для алертинга); 200 OK без записи.
   - **Осознанный риск**: легитимный вебхук по заказу, созданному не через панель (или при затяжном сбое БД), будет отклонён без повторной попытки — LifePay сделает до 10 ретраев, но если `request_log` так и не появится, вебхук потеряется. Цель guard'а — исключить приём «чужих» вебхуков и нежелательное дублирование заказов; механизм `correlationId` — единственная верификация происхождения.
 - Guard пройден → запись в `webhook_log` (`tokenValid: true`, `duplicate` по результату дедупа), ответ 200 OK с `OK`.
-- Бизнес-исход: обновление заказа в GetCourse допустимо только при `type='payment'`
-  - `status='success'` (`isSuccessfulPayment`). В Прототипе обработка заканчивается
-    журналом; флаг `eligibleForOrderUpdate` пишется в лог `webhook_done` для будущего
-    downstream-вызова (MVP §2.8).
+- Бизнес-исход: **шаг 5a — downstream GC createDeal** (реализовано 2026-06-01).
+  Выполняется при выполнении всех условий: `type='payment'`, `status='success'` (`isSuccessfulPayment`), непустой `orderNumber` и `email`, `dedupeResult==='first'`.
+  - Вызывает `updateGcDealOnPayment(ctx, input)` (`lib/webhook/gcDealUpdate.ts`) → `invokeByGateway(ctx,'gc','createDeal',...)` через GC-гейтвей.
+  - Устанавливает в GC статус `payed` и `deal_is_paid='1'` для заказа с `deal_number=orderNumber`.
+  - При любом исходе (успех/ошибка) возвращается 200. Ошибка логируется severity 3, не прерывает поток.
+  - **Нет авто-ретрая**: повторный вебхук от LifePay → `dedupeResult==='duplicate'` → downstream не вызывается повторно.
+  - При пропуске условий (дубль / не-`payment`+`success` / нет email или orderNumber): шаг пропускается с reason в лог `webhook_done`.
 - При не-200 ответе LifePay повторяет webhook: 1 мин, 3 мин, 5 мин, 10 мин,
   далее раз в час, всего не более 10 попыток. Поэтому даже при ошибке записи
   в журнал отвечаем 200 OK — дедупликация по `number` через `webhook_idempotency`
