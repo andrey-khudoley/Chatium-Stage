@@ -2,7 +2,7 @@
 /**
  * Типы и константы виджетной конфигурации. Делятся между сервером (геттер
  * `getWidgetSettings`, API-эндпоинты), клиентом (Admin-компоненты в Vue) и
- * сериализуются в публичный ответ `GET /api/widgets/config` для userscripts.
+ * сериализуются в публичный ответ `POST /api/widgets/config` для userscripts.
  *
  * Не содержит логики обращения к Heap — только pure-данные и парсеры.
  */
@@ -202,4 +202,16 @@ export function areAllOffersAllowed(
 ): boolean {
   if (!Array.isArray(offers) || offers.length === 0) return false
   return offers.every((o) => isOfferAllowed(o, allowed, listType))
+}
+
+/** Доступность одного метода оплаты (результат серверного расчёта в /api/widgets/config). */
+export type WidgetMethodAvailability = { enabled: boolean }
+
+/**
+ * Ответ `/api/widgets/config` (POST): доступность каждого метода оплаты
+ * с учётом офферов, диапазона суммы и флага enabled из настроек.
+ */
+export type WidgetAvailabilityConfig = {
+  lifepay: WidgetMethodAvailability
+  lavatop: WidgetMethodAvailability
 }

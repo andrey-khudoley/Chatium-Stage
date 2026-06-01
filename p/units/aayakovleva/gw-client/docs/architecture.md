@@ -261,17 +261,38 @@ CSS-стили тулбара и всей главной страницы: `page
 
 ### Поток: userscript → config → intent → gateway (offer-поток)
 
+С 2026-06-01 `/api/widgets/config` переведён с GET на POST: виджет передаёт `{ dealId, positions }` в теле, сервер самостоятельно определяет `enabled` для каждого метода.
+
 ```
 [ Браузер покупателя (страница магазина) ]
             |
-            | GET /api/widgets/config
+            | POST /api/widgets/config  (Content-Type: text/plain, тело — JSON-строка)
+            |   { dealId, positions: [{id,title}] }
             |   Origin: <домен магазина>
             v
 [ api/widgets/config.ts — публичный, без авторизации ]
             | CORS-whitelist: checkWidgetOrigin(lifepayDomains + lavatopDomains, origin)
-            | 403 при недопустимом Origin; иначе — WidgetPublicConfig
-            |   { lifepay: { enabled, maxAmount }, lavatop: { enabled, maxAmount },
-            |     offerListType, offerIds[] }
+            | 403 при недопустимом Origin
+            | 400 WIDGET_BODY_INVALID — dealId невалиден при наличии minAmount/maxAmount
+            |
+            | Для каждого метода m:
+            |   enabled = settings.<m>Enabled
+            |           AND areAllOffersAllowed(positions из тела, settings)
+            |           AND amountOk (если minAmount>0 || maxAmount>0)
+            |
+            | amountOk: resolveGcDealAmount(ctx, dealId)
+            |   → сначала GcDealCache (TTL=60с, tables/gcDealCache.table.ts)
+            |   → при miss: getDealFields через GC-гейтвей → setCachedGcDealAmount
+            |       (устаревшие записи кэша удаляются при чтении — lazy eviction)
+            |   → конвертация суммы заказа в рубли через convertToRub (lib/rates/):
+            |       RUB → без изменений
+            |       USD/EUR → ручной курс (widget_lavatop_manual_rate_usd/eur),
+            |                  при отсутствии → курс ЦБ РФ (cbr-xml-daily.ru)
+            |   → недоступен курс → fail-closed (enabled:false)
+            |   → при ошибке резолвинга: enabled=false, ok:true (fail-closed)
+            |
+            | Ответ: { ok, config: { lifepay: { enabled }, lavatop: { enabled } } }
+            |         (WidgetAvailabilityConfig, shared/widgetSettingsTypes.ts)
             v
 [ Виджет выбирает gateway по конфигу ]
             |
@@ -409,10 +430,10 @@ Chatium не поддерживает `app.options`, поэтому preflight-з
 
 | Файл                                       | Назначение                                                                                                                               |
 | ------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| `userscripts/common.js`                    | Shared-утилиты в `window.GwWidgetCommon`: DOM-ожидание, fetch конфига, `postWidgetIntentByDeal`, `extractDealIdFromUrl`, постинг intent, модалка, фильтры суммы/офферов. **С 2026-06-01:** `extractDealPositions`, `areAllPositionsAllowed` (клиентский DOM-фильтр позиций); мёртвый код удалён. |
-| `userscripts/lifepay-widget.user.js`       | Виджет LifePay: deal id из URL → проверка позиций DOM (`extractDealPositions`/`areAllPositionsAllowed`) → `postWidgetIntentByDeal` → QR-модалка. `data-offer-id` на якоре удалён. |
-| `userscripts/lavatop-widget.user.js`       | Виджет Lava.Top: deal id из URL, 3 кнопки валют (RUB/USD/EUR) → аналогичная проверка позиций → `postWidgetIntentByDeal({method:'lavatop', currency})` → редирект. |
-| `lib/rates/currencyConverter.ts`           | `convertRubTo(amount, currency)` — конвертация RUB в RUB (тождество) / USD / EUR. Приоритет: ручной курс (настройки) → курс ЦБ РФ (cbr-xml-daily.ru / `@app/request`). Результат: `{ok, amount, rate, source}` или `{ok:false, code:'RATE_UNAVAILABLE'}`. `roundToCents` — округление до 2 знаков. |
+| `userscripts/common.js`                    | Shared-утилиты в `window.GwWidgetCommon`: DOM-ожидание, `fetchWidgetConfig` (**с 2026-06-01: POST** вместо GET, передаёт `{ dealId, positions }` в теле), `postWidgetIntentByDeal`, `extractDealIdFromUrl`, постинг intent, модалка, фильтры суммы/офферов. `extractDealPositions`, `areAllPositionsAllowed` (клиентский DOM-фильтр позиций; **помечена @deprecated** после переноса логики на сервер). Ранний выход `if(!dealId) return` сохранён. |
+| `userscripts/lifepay-widget.user.js`       | Виджет LifePay: deal id из URL → `fetchWidgetConfig(dealId, positions)` → если `config.lifepay.enabled` — `postWidgetIntentByDeal` → QR-модалка. Клиентский offer-гейт убран (решение принимает сервер). `data-offer-id` на якоре удалён. |
+| `userscripts/lavatop-widget.user.js`       | Виджет Lava.Top: deal id из URL → `fetchWidgetConfig(dealId, positions)` → если `config.lavatop.enabled` — 3 кнопки валют (RUB/USD/EUR) → `postWidgetIntentByDeal({method:'lavatop', currency})` → редирект. Клиентский offer-гейт убран. |
+| `lib/rates/currencyConverter.ts`           | `convertRubTo(amount, currency)` — конвертация RUB в RUB (тождество) / USD / EUR. `convertToRub(amount, currency)` — обратная конвертация: валюта → рубли (умножение на курс); используется в `resolveGcDealAmount` для приведения суммы non-RUB заказов к рублям перед сравнением с диапазоном. Приватный `getRubForOne(currency)` — единый источник курса для обоих направлений: ручной курс (`widget_lavatop_manual_rate_*`) → курс ЦБ РФ (cbr-xml-daily.ru / `@app/request`). Результат: `{ok, amount, rate, source:'identity'\|'manual'\|'cbr'}` или `{ok:false, code:'RATE_UNAVAILABLE'}`. `roundToCents` — округление до 2 знаков. |
 | `lib/gateway/lavatopDealIntent.ts`         | `handleLavatopDealIntent(ctx, {offerId, productId, gcDeal, currency})` — оркестратор Lava.Top deal-потока. **С 2026-06-01:** вызывается после серверной проверки `areAllOffersAllowed` в `intent-by-deal`. |
 | `lib/gateway/gcDealResolver.ts`            | `resolveGcDeal(ctx, dealId)` — резолвинг сделки GC: getDealFields → getUserFields. **С 2026-06-01:** возвращает также `positions: {id, title}[]` из `getDealFields.positions[].offer_id + title` — для серверной проверки офферов. Email в логи не пишется (PII). |
 | `api/widgets/intent-by-deal.ts`            | POST /api/widgets/intent-by-deal — ветвление по `method`. **С 2026-06-01:** серверная проверка `areAllOffersAllowed(positions, settings)` до запуска платёжного потока; 403 `WIDGET_OFFER_NOT_ALLOWED` при запрещённой позиции. |
@@ -420,7 +441,9 @@ Chatium не поддерживает `app.options`, поэтому preflight-з
 | `shared/widgetCorsCheck.ts`                | Pure-функции CORS-проверки (`// @shared`)                                                                                                |
 | `shared/widgetSettingsTypes.ts`            | **С 2026-06-01:** `AllowedOffer{id,title}`; `offers` вместо `offerIds` в `WidgetSettingsData`/`WidgetPublicConfig`; `parseAllowedOffers` (поддержка нового формата + legacy); `isOfferAllowed`/`areAllOffersAllowed` — серверные чистые функции; ключи `WIDGET_LIFEPAY_OFFERS`, `WIDGET_LAVATOP_OFFERS`. |
 | `lib/widget/widgetSettings.lib.ts`         | `getWidgetSettings(ctx)` — параллельное чтение виджет-ключей; с 2026-06-01 читает `widget_lifepay_offers`/`widget_lavatop_offers` с fallback на legacy `widget_offer_ids`. |
-| `api/widgets/config.ts`                    | GET /api/widgets/config — публичный; с 2026-06-01 поле `offers: AllowedOffer[]` вместо `offerIds: string[]`.                            |
+| `api/widgets/config.ts`                    | **POST** /api/widgets/config — публичный; с 2026-06-01 метод изменён с GET на POST. Принимает `{ dealId, positions }`, возвращает `WidgetAvailabilityConfig { config: { lifepay: {enabled}, lavatop: {enabled} } }`. Решение о `enabled` принимается на сервере: offer-фильтр + проверка суммы через `resolveGcDealAmount` + `GcDealCache`. |
+| `lib/gateway/gcDealResolver.ts` (resolveGcDealAmount) | `resolveGcDealAmount(ctx, dealId)` — лёгкий резолвер **только суммы** (один вызов `getDealFields`, без getUserFields/email/валюты). Оплаченная сделка → `ok:false`. Используется только в config-эндпоинте. В отличие от `resolveGcDeal` (intent-поток), не запрашивает email и не возвращает positions. |
+| `lib/gateway/gcDealCache.ts`               | `getCachedGcDealAmount` / `setCachedGcDealAmount` — TTL-кэш суммы GC-сделки (TTL=60с). Таблица `GcDealCache` (`tables/gcDealCache.table.ts`). Без `runWithExclusiveLock` — гонка при параллельных запросах безвредна (перезапись той же суммы). Поле `amount` = рублёвый эквивалент суммы заказа. Устаревшие записи удаляются при чтении (lazy eviction при cache miss). |
 | `api/widgets/intent-lifepay.ts`            | POST /api/widgets/intent-lifepay — публичный intent LifePay (offer-поток). Старый одиночный offer-фильтр удалён.                         |
 | `api/widgets/settings-get.ts`              | GET настроек виджетов (`guardInternalApi`, `// @shared-route`)                                                                            |
 | `api/widgets/settings-save.ts`             | POST сохранения настроек виджетов (`guardInternalApi`, `// @shared-route`, whitelist ключей)                                             |

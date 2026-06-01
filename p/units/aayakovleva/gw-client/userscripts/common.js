@@ -7,7 +7,7 @@
  *   - isAmountInRange(amount, min, max)    — клиентский фильтр по диапазону суммы
  *   - extractDealPositions()              — извлечение позиций заказа из DOM (.deal-positions li)
  *   - areAllPositionsAllowed(pos, offers, type) — клиентский фильтр всех позиций по white/blacklist
- *   - fetchWidgetConfig(baseUrl)          — GET /api/widgets/config
+ *   - fetchWidgetConfig(baseUrl, payload)  — POST /api/widgets/config с телом { dealId, positions }
  *   - extractDealIdFromUrl()              — id заказа из URL страницы GC
  *   - postWidgetIntentByDeal(baseUrl, p)  — POST /api/widgets/intent-by-deal
  *   - createModal(el, onClose?)           — оверлей-модалка без внешних CSS
@@ -82,7 +82,7 @@
         var li = items[i]
         var id = (li.getAttribute('data-offer-id') || '').trim()
         var titleNode = li.querySelector('.position-actual-title')
-        var title = (titleNode && titleNode.textContent || '').trim()
+        var title = ((titleNode && titleNode.textContent) || '').trim()
         if (id !== '' || title !== '') {
           result.push({ id: id, title: title })
         }
@@ -102,6 +102,7 @@
    * - Пустой allowedOffers → whitelist: false (скрыт), blacklist: true (показан).
    * - Сверка по id (точное, String().trim()) ИЛИ title (replace(/\s+/g,' ')+trim+lowercase).
    *
+   * @deprecated — оффер-фильтрация перенесена на сервер (config-эндпоинт).
    * @param {{ id: string; title: string }[]} positions
    * @param {{ id: string; title: string }[]} allowedOffers
    * @param {'whitelist' | 'blacklist' | string} listType
@@ -115,7 +116,10 @@
       // Идентично shared/widgetSettingsTypes.ts → normalizeTitle.
       // \s+ покрывает неразрывные пробелы в современных браузерах.
       function normalizeTitle(s) {
-        return String(s || '').replace(/\s+/g, ' ').trim().toLowerCase()
+        return String(s || '')
+          .replace(/\s+/g, ' ')
+          .trim()
+          .toLowerCase()
       }
 
       for (var i = 0; i < positions.length; i++) {
@@ -123,19 +127,23 @@
         var posId = pos.id || ''
         var posTitle = normalizeTitle(pos.title)
 
-        var idMatch = posId !== '' && (function (pid) {
-          for (var j = 0; j < allowed.length; j++) {
-            if (String(allowed[j].id).trim() === pid) return true
-          }
-          return false
-        })(posId)
+        var idMatch =
+          posId !== '' &&
+          (function (pid) {
+            for (var j = 0; j < allowed.length; j++) {
+              if (String(allowed[j].id).trim() === pid) return true
+            }
+            return false
+          })(posId)
 
-        var titleMatch = posTitle !== '' && (function (pt) {
-          for (var j = 0; j < allowed.length; j++) {
-            if (allowed[j].title && normalizeTitle(allowed[j].title) === pt) return true
-          }
-          return false
-        })(posTitle)
+        var titleMatch =
+          posTitle !== '' &&
+          (function (pt) {
+            for (var j = 0; j < allowed.length; j++) {
+              if (allowed[j].title && normalizeTitle(allowed[j].title) === pt) return true
+            }
+            return false
+          })(posTitle)
 
         var posAllowed
         if (listType === 'blacklist') {
@@ -153,19 +161,23 @@
   }
 
   /**
-   * Запрос публичной конфигурации виджета у нашего клиента. Возвращает
-   * `WidgetPublicConfig` или `null` при сетевой ошибке / `403` (CORS).
+   * Запрос конфигурации доступности виджетов у нашего клиента. Возвращает
+   * `WidgetAvailabilityConfig` или `null` при сетевой ошибке / `403` (CORS).
+   * Эндпоинт POST; тело передаётся как text/plain (CORS preflight-обход).
    *
    * @param {string} baseUrl — базовый URL клиента (например, `https://s.chtm.khudoley.pro`).
+   * @param {{ dealId: string, positions: { id: string, title: string }[] }} payload
    * @returns {Promise<object | null>}
    */
-  function fetchWidgetConfig(baseUrl) {
+  function fetchWidgetConfig(baseUrl, payload) {
     var url = baseUrl.replace(/\/$/, '') + '/p/units/aayakovleva/gw-client/api/widgets/config'
     return fetch(url, {
-      method: 'GET',
+      method: 'POST',
       credentials: 'omit',
       mode: 'cors',
-      cache: 'no-store'
+      cache: 'no-store',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify(payload || {})
     })
       .then(function (response) {
         if (!response.ok) return null

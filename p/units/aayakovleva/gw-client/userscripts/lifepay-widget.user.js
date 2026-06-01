@@ -7,13 +7,12 @@
  *   2. Читает `data-gw-base-url` с якоря (обязателен).
  *   3. Извлекает dealId из URL текущей страницы (`GwWidgetCommon.extractDealIdFromUrl`).
  *      Если null — тихий выход без рендера и ошибок.
- *   4. Запрашивает конфиг через `GwWidgetCommon.fetchWidgetConfig`.
+ *   4. Собирает позиции заказа из DOM (`GwWidgetCommon.extractDealPositions`),
+ *      передаёт их вместе с dealId в `GwWidgetCommon.fetchWidgetConfig` (POST).
+ *      Сервер сам решает `enabled` с учётом офферов и суммы заказа.
  *      Если `config.lifepay.enabled !== true` — тихий выход.
- *   5. Клиентская проверка позиций заказа (.deal-positions li) по config.lifepay.offers
- *      и config.lifepay.offerListType. Если хоть одна позиция не разрешена — тихий выход.
- *      Виджет рендерится только если ВСЕ позиции в белом/чёрном списке.
- *   6. Отрисовывает кнопку «Оплатить через СБП (LifePay)».
- *   7. По клику вызывает `GwWidgetCommon.postWidgetIntentByDeal` с dealId.
+ *   5. Отрисовывает кнопку «Оплатить через СБП (LifePay)».
+ *   6. По клику вызывает `GwWidgetCommon.postWidgetIntentByDeal` с dealId.
  *      При успехе — показывает QR-модалку. При ошибке — текст из errorToText.
  *
  * Параметры через data-атрибуты якорного элемента:
@@ -55,16 +54,15 @@
     var dealId = common.extractDealIdFromUrl()
     if (!dealId) return
 
-    common.fetchWidgetConfig(baseUrl).then(function (config) {
-      if (!config) return
-      if (!config.lifepay || config.lifepay.enabled !== true) return
+    var positions = common.extractDealPositions()
+    common
+      .fetchWidgetConfig(baseUrl, { dealId: dealId, positions: positions })
+      .then(function (config) {
+        if (!config || !config.lifepay || config.lifepay.enabled !== true) return
 
-      // Клиентская проверка позиций заказа по белому/чёрному списку офферов.
-      var positions = common.extractDealPositions()
-      if (!common.areAllPositionsAllowed(positions, config.lifepay.offers || [], config.lifepay.offerListType)) return
-
-      renderWidget(anchor, baseUrl, dealId)
-    })
+        renderWidget(anchor, baseUrl, dealId)
+      })
+      .catch(function () {})
   })
 
   /**
@@ -95,17 +93,20 @@
 
       var payload = { dealId: dealId, method: 'lifepay' }
 
-      common.postWidgetIntentByDeal(baseUrl, payload).then(function (response) {
-        button.disabled = false
-        button.textContent = originalText
-        if (!response || !response.ok || !response.paymentUrl) {
-          var errCode = (response && response.error) || 'WIDGET_INTENT_ERROR'
-          error.textContent = errorToText(errCode)
-          error.style.display = 'block'
-          return
-        }
-        showQrModal(response.paymentUrl)
-      })
+      common
+        .postWidgetIntentByDeal(baseUrl, payload)
+        .then(function (response) {
+          button.disabled = false
+          button.textContent = originalText
+          if (!response || !response.ok || !response.paymentUrl) {
+            var errCode = (response && response.error) || 'WIDGET_INTENT_ERROR'
+            error.textContent = errorToText(errCode)
+            error.style.display = 'block'
+            return
+          }
+          showQrModal(response.paymentUrl)
+        })
+        .catch(function () {})
     })
 
     anchor.appendChild(button)

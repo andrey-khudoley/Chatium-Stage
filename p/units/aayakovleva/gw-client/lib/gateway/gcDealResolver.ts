@@ -9,6 +9,7 @@
 
 import * as loggerLib from '../logger.lib'
 import { invokeByGateway } from './invokeDispatcher'
+import { convertToRub, type PaymentCurrency } from '../rates/currencyConverter'
 
 const LOG_MODULE = 'lib/gateway/gcDealResolver'
 
@@ -294,4 +295,112 @@ export async function resolveGcDeal(
     userId: String(dealUserId),
     positions
   }
+}
+
+export type GcDealAmountResult = { ok: true; amountRub: number } | { ok: false }
+
+/**
+ * Лёгкий резолвер ТОЛЬКО суммы заказа для config-эндпоинта (доступность виджета).
+ * Один вызов getDealFields. Не запрашивает email и не проверяет оффер-допуск —
+ * в отличие от resolveGcDeal (тот для intent-потока). Уже оплаченный заказ → ok:false
+ * (виджет скрывается). Конвертирует сумму в рубли через convertToRub (identity для RUB,
+ * ручной/ЦБ для USD/EUR); при недоступности курса → ok:false (fail-closed).
+ *
+ * @param ctx — платформенный контекст
+ * @param dealIdRaw — raw значение id заказа (string или number из тела запроса)
+ */
+export async function resolveGcDealAmount(
+  ctx: app.Ctx,
+  dealIdRaw: string | number
+): Promise<GcDealAmountResult> {
+  // Нормализация и валидация dealId
+  const dealIdNum = Number(String(dealIdRaw).trim())
+  if (!Number.isInteger(dealIdNum) || dealIdNum <= 0 || dealIdNum > Number.MAX_SAFE_INTEGER) {
+    return { ok: false }
+  }
+
+  const dealRes = await invokeByGateway(
+    ctx,
+    'gc',
+    'getDealFields',
+    { dealId: dealIdNum },
+    { httpMethod: 'GET' }
+  )
+
+  if (!dealRes.ok) {
+    await loggerLib.writeServerLog(ctx, {
+      severity: 4,
+      message: `[${LOG_MODULE}] resolveGcDealAmount: gateway_error`,
+      payload: { dealId: dealIdNum, httpStatus: dealRes.httpStatus, requestId: dealRes.requestId }
+    })
+    return { ok: false }
+  }
+
+  const dealObj = extractGcDataObject(dealRes.responseBody)
+  if (!dealObj) {
+    return { ok: false }
+  }
+
+  // Признак оплаченности (та же нормализация что в resolveGcDeal)
+  const isPayedRaw = dealObj[GC_DEAL_FIELD_IS_PAYED]
+  const isPayed =
+    isPayedRaw === true || isPayedRaw === 1 || isPayedRaw === '1' || isPayedRaw === 'true'
+  if (isPayed) {
+    await loggerLib.writeServerLog(ctx, {
+      severity: 6,
+      message: `[${LOG_MODULE}] resolveGcDealAmount: already_paid`,
+      payload: { dealId: dealIdNum }
+    })
+    return { ok: false }
+  }
+
+  // Валюта: default 'RUB' при пустом (та же нормализация что в resolveGcDeal)
+  const currencyRaw = dealObj[GC_DEAL_FIELD_CURRENCY]
+  const currency =
+    typeof currencyRaw === 'string' && currencyRaw.trim() ? currencyRaw.trim().toUpperCase() : 'RUB'
+
+  // Сумма (raw cost)
+  const costRaw = dealObj[GC_DEAL_FIELD_COST]
+  const cost =
+    typeof costRaw === 'number' ? costRaw : typeof costRaw === 'string' ? parseFloat(costRaw) : NaN
+  if (!Number.isFinite(cost) || cost <= 0) {
+    await loggerLib.writeServerLog(ctx, {
+      severity: 4,
+      message: `[${LOG_MODULE}] resolveGcDealAmount: invalid_amount`,
+      payload: { dealId: dealIdNum, costRaw }
+    })
+    return { ok: false }
+  }
+
+  // Конвертация в рубли
+  let amountRub: number
+  if (currency === 'RUB') {
+    amountRub = cost
+  } else if (currency === 'USD' || currency === 'EUR') {
+    const conv = await convertToRub(ctx, { amount: cost, currency: currency as PaymentCurrency })
+    if (!conv.ok) {
+      await loggerLib.writeServerLog(ctx, {
+        severity: 4,
+        message: `[${LOG_MODULE}] resolveGcDealAmount: rate_unavailable`,
+        payload: { dealId: dealIdNum, currency }
+      })
+      return { ok: false }
+    }
+    amountRub = conv.amountRub
+  } else {
+    await loggerLib.writeServerLog(ctx, {
+      severity: 4,
+      message: `[${LOG_MODULE}] resolveGcDealAmount: unknown_currency`,
+      payload: { dealId: dealIdNum, currency }
+    })
+    return { ok: false }
+  }
+
+  await loggerLib.writeServerLog(ctx, {
+    severity: 6,
+    message: `[${LOG_MODULE}] resolveGcDealAmount: success`,
+    payload: { dealId: dealIdNum, currency, cost, amountRub }
+  })
+
+  return { ok: true, amountRub }
 }

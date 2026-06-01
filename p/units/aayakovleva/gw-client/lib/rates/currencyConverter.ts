@@ -22,11 +22,90 @@ export type ConvertResult =
   | { ok: true; amount: number; rate: number; source: 'identity' | 'manual' | 'cbr' }
   | { ok: false; code: 'RATE_UNAVAILABLE' }
 
+export type ConvertToRubResult =
+  | { ok: true; amountRub: number; rate: number; source: 'identity' | 'manual' | 'cbr' }
+  | { ok: false; code: 'RATE_UNAVAILABLE' }
+
 /**
  * Округляет до двух знаков после запятой (центы). Один раунд, без повторной арифметики.
  */
 function roundToCents(x: number): number {
   return Math.round((x + Number.EPSILON) * 100) / 100
+}
+
+/**
+ * Возвращает курс «рублей за 1 единицу валюты» (rubForOne).
+ * Приоритет: ручной курс (widget_lavatop_manual_rate_*) → ЦБ РФ.
+ * Для RUB не вызывается — вызывать только для USD/EUR.
+ */
+async function getRubForOne(
+  ctx: app.Ctx,
+  currency: 'USD' | 'EUR'
+): Promise<
+  { ok: true; rate: number; source: 'manual' | 'cbr' } | { ok: false; code: 'RATE_UNAVAILABLE' }
+> {
+  // Ручной курс (из настроек)
+  const manualRate = await getLavatopManualRate(ctx, currency)
+  if (manualRate !== null) {
+    await loggerLib.writeServerLog(ctx, {
+      severity: 7,
+      message: `[${LOG_MODULE}] getRubForOne: manual`,
+      payload: { currency, rate: manualRate, source: 'manual' }
+    })
+    return { ok: true, rate: manualRate, source: 'manual' }
+  }
+
+  // Курс ЦБ РФ
+  let cbrBody: Record<string, unknown>
+  try {
+    const response = await request({
+      url: CBR_URL,
+      method: 'get',
+      responseType: 'json',
+      throwHttpErrors: false,
+      timeout: 15000
+    })
+    if (response.statusCode !== 200) {
+      await loggerLib.writeServerLog(ctx, {
+        severity: 3,
+        message: `[${LOG_MODULE}] getRubForOne: CBR HTTP error`,
+        payload: { currency, statusCode: response.statusCode }
+      })
+      return { ok: false, code: 'RATE_UNAVAILABLE' }
+    }
+    cbrBody = (response.body ?? {}) as Record<string, unknown>
+  } catch {
+    await loggerLib.writeServerLog(ctx, {
+      severity: 3,
+      message: `[${LOG_MODULE}] getRubForOne: CBR request exception`,
+      payload: { currency }
+    })
+    return { ok: false, code: 'RATE_UNAVAILABLE' }
+  }
+
+  // Извлечение Valute[currency].Value / Nominal
+  const valute = (cbrBody.Valute ?? {}) as Record<string, Record<string, unknown>>
+  const item = valute[currency]
+  if (!item) {
+    await loggerLib.writeServerLog(ctx, {
+      severity: 3,
+      message: `[${LOG_MODULE}] getRubForOne: CBR currency not found`,
+      payload: { currency }
+    })
+    return { ok: false, code: 'RATE_UNAVAILABLE' }
+  }
+  const value = Number(item.Value)
+  const nominal = Number(item.Nominal ?? 1)
+  if (!Number.isFinite(value) || value <= 0 || !Number.isFinite(nominal) || nominal <= 0) {
+    await loggerLib.writeServerLog(ctx, {
+      severity: 3,
+      message: `[${LOG_MODULE}] getRubForOne: CBR invalid value/nominal`,
+      payload: { currency, value, nominal }
+    })
+    return { ok: false, code: 'RATE_UNAVAILABLE' }
+  }
+  const rubForOne = value / nominal
+  return { ok: true, rate: rubForOne, source: 'cbr' }
 }
 
 /**
@@ -49,91 +128,73 @@ export async function convertRubTo(
     return { ok: true, amount, rate: 1, source: 'identity' }
   }
 
-  // Ручной курс (из настроек)
-  const manualRate = await getLavatopManualRate(ctx, currency)
-  if (manualRate !== null) {
-    const amount = roundToCents(amountRub / manualRate)
-    if (!Number.isFinite(amount) || amount <= 0) {
-      await loggerLib.writeServerLog(ctx, {
-        severity: 3,
-        message: `[${LOG_MODULE}] convertRubTo: manual rate produced invalid amount`,
-        payload: { amountRub, currency, rate: manualRate, amount }
-      })
-      return { ok: false, code: 'RATE_UNAVAILABLE' }
-    }
-    await loggerLib.writeServerLog(ctx, {
-      severity: 7,
-      message: `[${LOG_MODULE}] convertRubTo: manual`,
-      payload: { amountRub, currency, rate: manualRate, source: 'manual', amount }
-    })
-    return { ok: true, amount, rate: manualRate, source: 'manual' }
-  }
-
-  // Курс ЦБ РФ
-  let cbrBody: Record<string, unknown>
-  try {
-    const response = await request({
-      url: CBR_URL,
-      method: 'get',
-      responseType: 'json',
-      throwHttpErrors: false,
-      timeout: 15000
-    })
-    if (response.statusCode !== 200) {
-      await loggerLib.writeServerLog(ctx, {
-        severity: 3,
-        message: `[${LOG_MODULE}] convertRubTo: CBR HTTP error`,
-        payload: { currency, statusCode: response.statusCode }
-      })
-      return { ok: false, code: 'RATE_UNAVAILABLE' }
-    }
-    cbrBody = (response.body ?? {}) as Record<string, unknown>
-  } catch {
-    await loggerLib.writeServerLog(ctx, {
-      severity: 3,
-      message: `[${LOG_MODULE}] convertRubTo: CBR request exception`,
-      payload: { currency }
-    })
+  const rateRes = await getRubForOne(ctx, currency)
+  if (!rateRes.ok) {
     return { ok: false, code: 'RATE_UNAVAILABLE' }
   }
 
-  // Извлечение Valute[currency].Value / Nominal
-  const valute = (cbrBody.Valute ?? {}) as Record<string, Record<string, unknown>>
-  const item = valute[currency]
-  if (!item) {
-    await loggerLib.writeServerLog(ctx, {
-      severity: 3,
-      message: `[${LOG_MODULE}] convertRubTo: CBR currency not found`,
-      payload: { currency }
-    })
-    return { ok: false, code: 'RATE_UNAVAILABLE' }
-  }
-  const value = Number(item.Value)
-  const nominal = Number(item.Nominal ?? 1)
-  if (!Number.isFinite(value) || value <= 0 || !Number.isFinite(nominal) || nominal <= 0) {
-    await loggerLib.writeServerLog(ctx, {
-      severity: 3,
-      message: `[${LOG_MODULE}] convertRubTo: CBR invalid value/nominal`,
-      payload: { currency, value, nominal }
-    })
-    return { ok: false, code: 'RATE_UNAVAILABLE' }
-  }
-  const rubForOne = value / nominal
-  const amount = roundToCents(amountRub / rubForOne)
-
+  // ДЕЛЕНИЕ: amountRub / rate — конвертация рублей в иностранную валюту
+  const amount = roundToCents(amountRub / rateRes.rate)
   if (!Number.isFinite(amount) || amount <= 0) {
     await loggerLib.writeServerLog(ctx, {
       severity: 3,
-      message: `[${LOG_MODULE}] convertRubTo: CBR conversion invalid amount`,
-      payload: { currency, amountRub, rubForOne, amount }
+      message: `[${LOG_MODULE}] convertRubTo: conversion produced invalid amount`,
+      payload: { amountRub, currency, rate: rateRes.rate, source: rateRes.source, amount }
     })
     return { ok: false, code: 'RATE_UNAVAILABLE' }
   }
 
   await loggerLib.writeServerLog(ctx, {
     severity: 7,
-    message: `[${LOG_MODULE}] convertRubTo: cbr`,
-    payload: { amountRub, currency, rate: rubForOne, source: 'cbr', amount }
+    message: `[${LOG_MODULE}] convertRubTo: ${rateRes.source}`,
+    payload: { amountRub, currency, rate: rateRes.rate, source: rateRes.source, amount }
   })
-  return { ok: true, amount, rate: rubForOne, source: 'cbr' }
+  return { ok: true, amount, rate: rateRes.rate, source: rateRes.source }
+}
+
+/**
+ * Конвертирует сумму в иностранной валюте в рубли (обратное к convertRubTo).
+ * RUB → identity. USD/EUR → amountRub = amount * rubForOne (УМНОЖЕНИЕ).
+ * Источник курса: ручной (widget_lavatop_manual_rate_* — единственный источник
+ * ручных курсов в проекте, общий для виджетов) → ЦБ РФ.
+ */
+export async function convertToRub(
+  ctx: app.Ctx,
+  params: { amount: number; currency: PaymentCurrency }
+): Promise<ConvertToRubResult> {
+  const { amount, currency } = params
+
+  // RUB → identity, без конвертации
+  if (currency === 'RUB') {
+    const amountRub = roundToCents(amount)
+    await loggerLib.writeServerLog(ctx, {
+      severity: 7,
+      message: `[${LOG_MODULE}] convertToRub: identity`,
+      payload: { amount, currency, rate: 1, source: 'identity', amountRub }
+    })
+    return { ok: true, amountRub, rate: 1, source: 'identity' }
+  }
+
+  const rateRes = await getRubForOne(ctx, currency)
+  if (!rateRes.ok) {
+    return { ok: false, code: 'RATE_UNAVAILABLE' }
+  }
+
+  // УМНОЖЕНИЕ: amount * rate — конвертация иностранной валюты в рубли
+  const amountRub = roundToCents(amount * rateRes.rate)
+  if (!Number.isFinite(amountRub) || amountRub <= 0) {
+    await loggerLib.writeServerLog(ctx, {
+      severity: 3,
+      message: `[${LOG_MODULE}] convertToRub: conversion produced invalid amountRub`,
+      payload: { amount, currency, rate: rateRes.rate, source: rateRes.source, amountRub }
+    })
+    return { ok: false, code: 'RATE_UNAVAILABLE' }
+  }
+
+  await loggerLib.writeServerLog(ctx, {
+    severity: 7,
+    message: `[${LOG_MODULE}] convertToRub: ${rateRes.source}`,
+    payload: { amount, currency, rate: rateRes.rate, source: rateRes.source, amountRub }
+  })
+  return { ok: true, amountRub, rate: rateRes.rate, source: rateRes.source }
 }

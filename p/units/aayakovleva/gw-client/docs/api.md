@@ -237,7 +237,7 @@
 
 | Method | Path                           | File                             | Auth                                                           | Назначение                                                                                                                                                                                                                                                                                                                                        |
 | ------ | ------------------------------ | -------------------------------- | -------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| GET    | /api/widgets/config            | api/widgets/config.ts            | Публичный (CORS)                                               | Возвращает `WidgetPublicConfig` для виджетов. CORS-whitelist — объединение `widget_lifepay_domains` + `widget_lavatop_domains`. 403 при недопустимом Origin. Тело: `{ lifepay: { enabled, maxAmount }, lavatop: { enabled, maxAmount }, offerListType, offers: AllowedOffer[] }`. Поле `offers` — массив объектов `{id,title}` (новый формат с 2026-06-01; парсится из `widget_lifepay_offers` / `widget_lavatop_offers` с legacy-fallback на `widget_offer_ids`). |
+| POST   | /api/widgets/config            | api/widgets/config.ts            | Публичный (CORS)                                               | Определяет доступность каждого метода оплаты для конкретного заказа. С 2026-06-01: **метод изменён с GET на POST** (CORS simple-request, `Content-Type: text/plain`, тело — JSON-строка). Тело запроса: `{ dealId: string\|number, positions: [{id,title}] }`. CORS-whitelist — объединение `widget_lifepay_domains` + `widget_lavatop_domains`. 403 при недопустимом Origin. 400 `WIDGET_BODY_INVALID` если `dealId` отсутствует/невалиден, а хотя бы для одного метода задан `minAmount`/`maxAmount`. Ответ: `{ ok, config: { lifepay: { enabled }, lavatop: { enabled } } }` (тип `WidgetAvailabilityConfig`, `shared/widgetSettingsTypes.ts`). `enabled` = `<m>Enabled` AND `areAllOffersAllowed(positions из тела)` AND `amountOk`. `amountOk` проверяется только если для метода задан `minAmount>0` или `maxAmount>0` — тогда сервер резолвит сумму сделки из GC через `resolveGcDealAmount` (с TTL-кэшом `GcDealCache`). **Проверка суммы ведётся в рублях**: `resolveGcDealAmount` конвертирует сумму заказа в RUB (RUB — без изменений; USD/EUR — по ручному курсу из веб-панели `widget_lavatop_manual_rate_*`, при его отсутствии — по курсу ЦБ РФ через cbr-xml-daily.ru). Если курс недоступен — fail-closed (`enabled:false`). При ошибке резолвинга суммы — fail-closed (`enabled:false`), ответ `ok:true`. Offer-фильтр применяется по `positions` из тела (клиент передаёт из DOM; сервер не доверяет, но используется только здесь — авторитетная проверка — в `intent-by-deal`). |
 | POST   | /api/widgets/intent-lifepay    | api/widgets/intent-lifepay.ts    | Публичный (CORS, `widget_lifepay_domains`)                     | Создать платёжное намерение LifePay. Парсит `text/plain`-тело. Серверный hard-limit `WIDGET_INTENT_HARD_LIMIT_RUB = 500 000 ₽` (применяется до per-user-max). Email/regex/orderNumber/description/callbackUrl формируются на сервере. Вызов `invokeByGateway('lifepay', 'createBill')`. Audit-лог через `loggerLib`. 403 при недопустимом Origin. Серверный offer-фильтр (одиночный `offerId`) удалён — двухуровневая проверка позиций реализована в `intent-by-deal`. |
 | POST   | /api/widgets/intent-lavatop    | api/widgets/intent-lavatop.ts    | Публичный (CORS, `widget_lavatop_domains`)                     | **Deprecated** (offer-поток). Создать платёжное намерение Lava.Top. `email` и `offerId` обязательны; `amount` — опционален. Вызов `invokeByGateway('lavatop', 'createInvoice')`. `offerId` как продуктовый параметр `createInvoice` сохранён. Серверный offer-фильтр (одиночный) удалён; двухуровневая проверка — в `intent-by-deal`.                                                                                                                          |
 | POST   | /api/widgets/intent-by-deal    | api/widgets/intent-by-deal.ts    | Публичный (CORS, `widget_lifepay_domains` или `widget_lavatop_domains` по методу) | Создать платёжное намерение по GetCourse deal id. Тело (`text/plain` JSON): `{ dealId: string\|number, method?: 'lifepay'\|'lavatop', currency?: 'RUB'\|'USD'\|'EUR' }`. `currency` только для Lava.Top. Поток LifePay: `resolveGcDeal` → **`areAllOffersAllowed`** (позиции из `getDealFields.positions`) → `invokeByGateway('lifepay','createBill')` (только RUB). Поток Lava.Top: аналогичная проверка → `convertRubTo` → `runWithExclusiveLock` → `updateOfferPrice` → `createInvoice` → `paymentUrl`. При запрещённой позиции — **403 `WIDGET_OFFER_NOT_ALLOWED`**. `orderNumber`/`correlationId` детерминированы: `gcdeal-{dealId}`. PII (email) в ответ не включается. |
@@ -245,6 +245,31 @@
 | POST   | /api/widgets/settings-save     | api/widgets/settings-save.ts     | Сотрудник + Admin (`guardInternalApi`, `// @shared-route`)     | Сохранить одну виджет-настройку. Тело: `{ key, value }`. Whitelist: только 12 ключей из `WIDGET_SETTING_KEYS`. Делегирует `setSetting(ctx, key, value)`. Виджет-настройки — operational/бизнес, не секреты.                                                                                                                                       |
 | GET    | /api/widgets/offers            | api/widgets/offers.ts            | Сотрудник + Admin (`guardInternalApi`, `// @shared-route`)     | Проксирует `getOffers` GetCourse. При `gc_enabled=false` → `GC_DISABLED`; при пустых GC-настройках → `GC_NOT_CONFIGURED`. Используется `HomeWidgetSettings` для загрузки списка офферов с чекбоксами.                                                                                                                                             |
 | POST   | /api/settings/save-operational | api/settings/save-operational.ts | Сотрудник + Admin (`guardInternalApi`, `// @shared-route`)     | Сохранить одну operational-настройку. Тело: `{ key, value }`. Whitelist: `gc_enabled` (расширяется по мере добавления новых operational-ключей). Делегирует `setSetting(ctx, key, value)`. Используется `HomeSettingsTab.vue` для тоггла GC.                                                                                                       |
+
+### Контракт `/api/widgets/config`
+
+Запрос (body в виде JSON-строки, `Content-Type: text/plain`):
+
+```json
+{ "dealId": "12345", "positions": [{"id": "offer-001", "title": "Курс Python"}] }
+```
+
+`positions` — список позиций заказа из DOM страницы GC (клиент передаёт; используется для offer-фильтра на уровне config; авторитетная проверка — в `intent-by-deal`).
+
+Ответ (успех):
+
+```json
+{ "ok": true, "config": { "lifepay": { "enabled": true }, "lavatop": { "enabled": false } } }
+```
+
+Логика `enabled` для каждого метода `m`:
+1. `settings.<m>Enabled` (флаг в настройках).
+2. `areAllOffersAllowed(positions из тела, settings)` — offer-фильтр по переданным позициям.
+3. Если задан `minAmount>0` или `maxAmount>0` для метода: `resolveGcDealAmount(ctx, dealId)` → конвертация суммы заказа в рубли (RUB без изменений; USD/EUR — ручной курс панели → курс ЦБ РФ; недоступен курс → fail-closed `enabled:false`) → сравнение рублёвой суммы с диапазоном. При любой ошибке резолвинга — `enabled:false`, ответ `ok:true` (fail-closed).
+
+Коды ошибок:
+- HTTP 403 — недопустимый Origin.
+- HTTP 400 `WIDGET_BODY_INVALID` — тело невалидно или `dealId` отсутствует/невалиден при наличии проверки суммы.
 
 ### Контракт `/api/widgets/intent-lifepay`
 
@@ -324,6 +349,7 @@ PII (email покупателя) в ответ **не включается**. П
 - `WIDGET_AMOUNT_EXCEEDS_USER_LIMIT` (HTTP 400) — сумма > `widget_*_max_amount`.
 - `WIDGET_EMAIL_REQUIRED` / `WIDGET_OFFER_ID_REQUIRED` (HTTP 400) — Lava.Top: обязательные поля.
 - `LAVATOP_NOT_CONFIGURED` — Lava.Top: `lava_test_apikey` не задан.
+- `WIDGET_BODY_INVALID` (HTTP 400) — `/api/widgets/config`: тело невалидно или `dealId` отсутствует/невалиден, когда хотя бы один метод требует проверку суммы (`minAmount`/`maxAmount` > 0).
 
 Коды ошибок `intent-by-deal` (маппинг на HTTP):
 

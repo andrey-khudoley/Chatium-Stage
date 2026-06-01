@@ -141,12 +141,7 @@ function onWidgetUpdate(next: WidgetSettingsData) {
       </label>
 
       <div class="st-actions">
-        <button
-          type="button"
-          class="btn-primary"
-          :disabled="!hasUnsaved || saving"
-          @click="saveGc"
-        >
+        <button type="button" class="btn-primary" :disabled="!hasUnsaved || saving" @click="saveGc">
           <i class="fas fa-save"></i>
           {{ saving ? 'Сохранение…' : 'Сохранить' }}
         </button>
@@ -161,11 +156,12 @@ function onWidgetUpdate(next: WidgetSettingsData) {
     </section>
 
     <!-- Секция «Виджеты оплаты»: внутри — две карточки. -->
-    <HomeWidgetSettings
-      id="st-section-widgets"
-      :initial-widget-settings="props.initialWidgetSettings"
-      :anchor-base-url="props.anchorBaseUrl"
-      @update:widget-settings="onWidgetUpdate"
-    />
+    <section id="st-section-widgets">
+      <HomeWidgetSettings
+        :initial-widget-settings="props.initialWidgetSettings"
+        :anchor-base-url="props.anchorBaseUrl"
+        @update:widget-settings="onWidgetUpdate"
+      />
+    </section>
   </div>
 </template>
