@@ -254,7 +254,7 @@
 { "dealId": "12345", "positions": [{"id": "offer-001"}] }
 ```
 
-`positions` — список позиций заказа из DOM страницы GC (клиент передаёт; используется для offer-фильтра на уровне config; авторитетная проверка — в `intent-by-deal`).
+`positions` — список позиций заказа из DOM страницы GC (клиент передаёт; используется для offer-фильтра на уровне config; авторитетная проверка — в `intent-by-deal`). При `offerListType='off'` offer-фильтр не применяется и `positions` не влияет на `enabled`.
 
 Ответ (успех):
 
@@ -264,7 +264,7 @@
 
 Логика `enabled` для каждого метода `m`:
 1. `settings.<m>Enabled` (флаг в настройках).
-2. `areAllOffersAllowed(positions из тела, settings)` — offer-фильтр по переданным позициям.
+2. `areAllOffersAllowed(positions из тела, settings)` — offer-фильтр по переданным позициям. При `offerListType='off'` (дефолт) — всегда `true`, пропускается без проверки списка. При `'whitelist'`/`'blacklist'` — сверка по `id` позиций.
 3. Если задан `minAmount>0` или `maxAmount>0` для метода: `resolveGcDealAmount(ctx, dealId)` → конвертация суммы заказа в рубли (RUB без изменений; USD/EUR — ручной курс панели → курс ЦБ РФ; недоступен курс → fail-closed `enabled:false`) → сравнение рублёвой суммы с диапазоном. При любой ошибке резолвинга — `enabled:false`, ответ `ok:true` (fail-closed).
 
 Коды ошибок:

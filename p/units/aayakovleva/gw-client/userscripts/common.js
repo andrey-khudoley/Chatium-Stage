@@ -6,7 +6,7 @@
  *   - safeInit(fn)                        — глобальный try/catch вокруг инициализации
  *   - isAmountInRange(amount, min, max)    — клиентский фильтр по диапазону суммы
  *   - extractDealPositions()              — извлечение id позиций заказа из DOM (.deal-positions li)
- *   - areAllPositionsAllowed(pos, offers, type) — клиентский фильтр всех позиций по white/blacklist (по id)
+ *   - areAllPositionsAllowed(pos, offers, type) — клиентский фильтр всех позиций по off/white/blacklist (по id)
  *   - fetchWidgetConfig(baseUrl, payload)  — POST /api/widgets/config с телом { dealId, positions }
  *   - extractDealIdFromUrl()              — id заказа из URL страницы GC
  *   - postWidgetIntentByDeal(baseUrl, p)  — POST /api/widgets/intent-by-deal
@@ -96,9 +96,10 @@
    * СИНХРОНИЗИРОВАНО с shared/widgetSettingsTypes.ts → areAllOffersAllowed/isOfferAllowed.
    * Править ОБА места.
    *
-   * Проверяет, что ВСЕ позиции заказа разрешены по white/blacklist офферов —
+   * Проверяет, что ВСЕ позиции заказа разрешены по off/white/blacklist офферов —
    * ТОЛЬКО по id.
-   * - Пустой positions → false (нет позиций — не рендерим).
+   * - off → true (фильтр выключен; любые/пустые позиции допускаются).
+   * - Пустой positions при whitelist/blacklist → false (нет позиций — не рендерим).
    * - Пустой allowedOffers → whitelist: false (скрыт), blacklist: true (показан).
    * - Сверка по id (точное, String().trim()). Title больше не участвует: он был
    *   хрупким (пробелы/кодировка) и избыточным, т.к. id есть и в позициях, и в
@@ -107,11 +108,12 @@
    * @deprecated — оффер-фильтрация перенесена на сервер (config-эндпоинт).
    * @param {{ id: string }[]} positions
    * @param {{ id: string }[]} allowedOffers
-   * @param {'whitelist' | 'blacklist' | string} listType
+   * @param {'off' | 'whitelist' | 'blacklist' | string} listType
    * @returns {boolean}
    */
   function areAllPositionsAllowed(positions, allowedOffers, listType) {
     try {
+      if (listType === 'off') return true
       if (!Array.isArray(positions) || positions.length === 0) return false
       var allowed = Array.isArray(allowedOffers) ? allowedOffers : []
 

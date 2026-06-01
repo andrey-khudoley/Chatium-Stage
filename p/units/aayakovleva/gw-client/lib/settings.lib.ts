@@ -36,7 +36,7 @@ export const SETTING_KEYS = {
   // Глобальный фильтр панели по дате/времени (один на всё приложение).
   PANEL_DATE_FILTER: 'panel_date_filter',
   // Виджеты для встраивания на сторонние страницы (userscripts/*).
-  // Per-method enable/whitelist/maxAmount + общий фильтр офферов.
+  // Per-method enable/off|whitelist|blacklist/minAmount/maxAmount + общий фильтр офферов.
   WIDGET_LIFEPAY_ENABLED: 'widget_lifepay_enabled',
   WIDGET_LIFEPAY_DOMAINS: 'widget_lifepay_domains',
   WIDGET_LIFEPAY_MIN: 'widget_lifepay_min',
@@ -129,14 +129,14 @@ export const DEFAULTS = {
   [SETTING_KEYS.WIDGET_LIFEPAY_DOMAINS]: '',
   [SETTING_KEYS.WIDGET_LIFEPAY_MIN]: '0',
   [SETTING_KEYS.WIDGET_LIFEPAY_MAX]: '0',
-  [SETTING_KEYS.WIDGET_LIFEPAY_OFFER_LIST_TYPE]: 'whitelist',
+  [SETTING_KEYS.WIDGET_LIFEPAY_OFFER_LIST_TYPE]: 'off',
   [SETTING_KEYS.WIDGET_LIFEPAY_OFFER_IDS]: '[]',
   [SETTING_KEYS.WIDGET_LIFEPAY_OFFERS]: '[]',
   [SETTING_KEYS.WIDGET_LAVATOP_ENABLED]: 'false',
   [SETTING_KEYS.WIDGET_LAVATOP_DOMAINS]: '',
   [SETTING_KEYS.WIDGET_LAVATOP_MIN]: '0',
   [SETTING_KEYS.WIDGET_LAVATOP_MAX]: '0',
-  [SETTING_KEYS.WIDGET_LAVATOP_OFFER_LIST_TYPE]: 'whitelist',
+  [SETTING_KEYS.WIDGET_LAVATOP_OFFER_LIST_TYPE]: 'off',
   [SETTING_KEYS.WIDGET_LAVATOP_OFFER_IDS]: '[]',
   [SETTING_KEYS.WIDGET_LAVATOP_OFFERS]: '[]',
   [SETTING_KEYS.WIDGET_LAVATOP_OFFER_ID]: '',

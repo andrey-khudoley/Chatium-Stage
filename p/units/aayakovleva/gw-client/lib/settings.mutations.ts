@@ -291,8 +291,8 @@ export async function setSetting(ctx: app.Ctx, key: string, value: unknown): Pro
     key === SETTING_KEYS.WIDGET_LAVATOP_OFFER_LIST_TYPE
   ) {
     const str = typeof value === 'string' ? value.trim() : ''
-    if (str !== 'whitelist' && str !== 'blacklist') {
-      throw new Error(`${key} допустимо только "whitelist" или "blacklist".`)
+    if (str !== 'off' && str !== 'whitelist' && str !== 'blacklist') {
+      throw new Error(`${key} допустимо только "off", "whitelist" или "blacklist".`)
     }
     normalized = str
     await loggerLib.writeServerLog(ctx, {

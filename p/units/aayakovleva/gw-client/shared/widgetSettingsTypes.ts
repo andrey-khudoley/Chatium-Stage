@@ -12,10 +12,13 @@ export type WidgetMethod = 'lifepay' | 'lavatop'
 
 /**
  * Тип списка офферов на стороне виджета.
+ * - `off` — фильтр офферов не применяется; виджет и платёж доступны для любых
+ *   позиций (в т.ч. пустых) и любого списка офферов; это дефолт несохранённого
+ *   значения.
  * - `whitelist` — показываем виджет только для офферов из `offers`.
  * - `blacklist` — показываем для всех офферов, кроме перечисленных.
  */
-export type WidgetOfferListType = 'whitelist' | 'blacklist'
+export type WidgetOfferListType = 'off' | 'whitelist' | 'blacklist'
 
 /** Запись разрешённого/запрещённого оффера: id (ключ сравнения) и title (только подпись для админки). */
 export type AllowedOffer = { id: string; title: string }
@@ -148,21 +151,28 @@ export function parseAllowedOffers(raw: unknown): AllowedOffer[] {
 }
 
 /**
- * Безопасный парсер `widget_offer_list_type`. Любое значение, кроме `blacklist`,
- * считается whitelist'ом (консервативный дефолт: если список офферов задан,
- * виджет покажется только для перечисленных).
+ * Безопасный парсер `widget_offer_list_type`.
+ * - `'whitelist'` → `'whitelist'`
+ * - `'blacklist'` → `'blacklist'`
+ * - любое другое (в т.ч. несохранённое/null/undefined) → `'off'`
+ *
+ * Дефолт `'off'` означает «фильтр выключен → показывать всем». Прочие защиты
+ * (enabled, лимиты, hard-limit, CORS) от значения этого поля не зависят.
  */
 export function parseOfferListType(raw: unknown): WidgetOfferListType {
-  return raw === 'blacklist' ? 'blacklist' : 'whitelist'
+  if (raw === 'whitelist') return 'whitelist'
+  if (raw === 'blacklist') return 'blacklist'
+  return 'off'
 }
 
 /**
  * СИНХРОНИЗИРОВАНО с userscripts/common.js → areAllPositionsAllowed.
  * При изменении правил allow править ОБА места.
  *
- * Проверяет, разрешён ли один оффер по whitelist/blacklist — ТОЛЬКО по id.
- * - whitelist: offer.id точно совпадает с одним из allowed[].id.
- * - blacklist: offer.id не совпадает ни с одним из allowed[].id.
+ * Проверяет, разрешён ли один оффер по white/blacklist — ТОЛЬКО по id.
+ * - `off`: фильтр не применяется → всегда `true`.
+ * - `whitelist`: offer.id точно совпадает с одним из allowed[].id.
+ * - `blacklist`: offer.id не совпадает ни с одним из allowed[].id.
  *
  * Сверка по title намеренно убрана: offer_id присутствует и в позициях заказа
  * (GC offer_id / DOM data-offer-id), и в настройках админки (источник — GC
@@ -178,13 +188,16 @@ export function isOfferAllowed(
   allowed: AllowedOffer[],
   listType: WidgetOfferListType
 ): boolean {
+  if (listType === 'off') return true
   const inList = offer.id !== '' && allowed.some((a) => a.id === offer.id)
   return listType === 'blacklist' ? !inList : inList
 }
 
 /**
  * Проверяет, разрешены ли ВСЕ позиции заказа.
- * - Пустой массив positions → false (нет позиций — не допускаем).
+ * - `off`: фильтр не применяется → true независимо от positions и allowed
+ *   (фильтр выключен — пустой positions это ожидаемо допускает).
+ * - Пустой массив positions при whitelist/blacklist → false (нет позиций — не допускаем).
  * - Иначе — positions.every(isOfferAllowed).
  */
 export function areAllOffersAllowed(
@@ -192,6 +205,7 @@ export function areAllOffersAllowed(
   allowed: AllowedOffer[],
   listType: WidgetOfferListType
 ): boolean {
+  if (listType === 'off') return true
   if (!Array.isArray(offers) || offers.length === 0) return false
   return offers.every((o) => isOfferAllowed(o, allowed, listType))
 }

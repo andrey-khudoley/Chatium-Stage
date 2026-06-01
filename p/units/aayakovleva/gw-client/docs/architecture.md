@@ -424,10 +424,11 @@ Chatium не поддерживает `app.options`, поэтому preflight-з
 - Legacy fallback: `widget_offer_ids` — старый comma-separated список строк; `parseAllowedOffers` поддерживает оба формата при чтении. `lib/widget/widgetSettings.lib.ts` читает новый ключ с fallback на legacy.
 
 **Семантика проверки** (синхронизирована между `shared/widgetSettingsTypes.ts` и `userscripts/common.js`, помечена якорями «СИНХРОНИЗИРОВАНО»):
-- Сверка **только по `id`**. `title` в настройках — лишь подпись для админки, в сравнении не участвует (с 2026-06-01: убрано как хрупкое из-за различий пробелов/кодировки и риска ложного совпадения; `offer_id` есть и в позициях, и в настройках).
-- whitelist: позиция разрешена, если её `id` есть в списке.
-- blacklist: позиция разрешена, если её `id` не в списке.
-- Режим «Выключен» = `blacklist` + пустой список (= показать всем). Дефолт `offerListType` — `'blacklist'`.
+- Сверка **только по `id`**. `title` в настройках — лишь подпись для админки, в сравнении не участвует.
+- `'off'`: фильтр не применяется — `isOfferAllowed` / `areAllOffersAllowed` возвращают `true` без проверки списка. Это единственный режим, при котором виджет и платёж работают при пустом списке офферов. **Дефолт**: несохранённый ключ `widget_lifepay_offer_list_type` / `widget_lavatop_offer_list_type` интерпретируется как `'off'` (DEFAULTS в `lib/settings.lib.ts`). Применяется одинаково на уровне config-эндпоинта (показ) и intent-эндпоинтов (авторизация платежа) — единый источник правды `areAllOffersAllowed`.
+- `'whitelist'`: позиция разрешена, если её `id` есть в списке.
+- `'blacklist'`: позиция разрешена, если её `id` нет в списке.
+- Режим «Выключен» в веб-панели эмитит `listType='off'`. **Инвариант**: пустой список офферов при сохранении принудительно переводится в `'off'` — нельзя сохранить `whitelist`/`blacklist` без офферов; нормализует и legacy-записи. `areAllPositionsAllowed` в `userscripts/common.js` при `'off'` → `true` (синхронизировано с сервером).
 
 **Удалённый мёртвый код:**
 - `isOfferMatched`, `extractOrderAmount`, `isAmountInRange`, `postWidgetIntent` — удалены из `userscripts/common.js`.

@@ -47,15 +47,15 @@ const defaults: WidgetSettingsData = {
   lifepayDomains: '',
   lifepayMin: 0,
   lifepayMax: 0,
-  // 'blacklist' + пустой список = показать виджет всем (режим «Выключен»).
-  lifepayOfferListType: 'blacklist',
+  // 'off' — фильтр не применяется, виджет показан всем (режим Выключен).
+  lifepayOfferListType: 'off',
   lifepayOffers: [],
   lavatopEnabled: false,
   lavatopDomains: '',
   lavatopMin: 0,
   lavatopMax: 0,
-  // 'blacklist' + пустой список = показать виджет всем (режим «Выключен»).
-  lavatopOfferListType: 'blacklist',
+  // 'off' — фильтр не применяется, виджет показан всем (режим Выключен).
+  lavatopOfferListType: 'off',
   lavatopOffers: []
 }
 
@@ -117,6 +117,9 @@ async function saveLifepay() {
   lifepayError.value = false
   lifepaySaving.value = true
   try {
+    // Инвариант: пустой список офферов = фильтр выключен ('off'). Иначе whitelist/blacklist
+    // без офферов сохранился бы как активный фильтр в UI, но 'off' на сервере (рассинхрон).
+    if (lifepayOffers.value.length === 0) lifepayOfferListType.value = 'off'
     const enabledRes = await saveSetting(
       WIDGET_SETTING_KEYS.LIFEPAY_ENABLED,
       String(lifepayEnabled.value)
@@ -158,6 +161,9 @@ async function saveLavatop() {
   lavatopError.value = false
   lavatopSaving.value = true
   try {
+    // Инвариант: пустой список офферов = фильтр выключен ('off'). Иначе whitelist/blacklist
+    // без офферов сохранился бы как активный фильтр в UI, но 'off' на сервере (рассинхрон).
+    if (lavatopOffers.value.length === 0) lavatopOfferListType.value = 'off'
     const enabledRes = await saveSetting(
       WIDGET_SETTING_KEYS.LAVATOP_ENABLED,
       String(lavatopEnabled.value)

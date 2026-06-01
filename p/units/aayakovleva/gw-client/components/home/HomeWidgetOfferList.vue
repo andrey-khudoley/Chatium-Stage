@@ -11,13 +11,12 @@
  * и приходит сюда через v-model. Сохранение тоже делает родитель — компонент
  * только показывает UI и эмитит изменения.
  *
- * UI-режимы сегмент-переключателя (виртуальные, без серверного представления):
- *   - `off` — фильтр не применяется. Маппится на `listType='blacklist'` + пустой
- *     список офферов (пустой blacklist → виджет показан всем). Дефолт.
+ * UI-режимы сегмент-переключателя:
+ *   - `off` — фильтр не применяется; имеет собственное серверное представление
+ *     (`listType='off'`). Переход в off эмитит `listType: 'off'` + `selectedOffers: []`.
  *   - `whitelist` — листинг ограничен выбранными офферами.
  *   - `blacklist` — листинг исключает выбранные офферы.
  *
- * Переход в `off` эмитит `selectedOffers: []` И `listType: 'blacklist'`.
  * Переход в `whitelist`/`blacklist` при пустом списке только запоминает staged-выбор.
  */
 import { computed, onMounted, ref } from 'vue'
@@ -65,15 +64,15 @@ const search = ref('')
  * выбор в локальном refe, чтобы сегмент не схлопывался обратно в `off`.
  * При первом добавлении оффера значение синхронизируется с props.listType.
  */
-const stagedListType = ref<WidgetOfferListType | null>(null)
+const stagedListType = ref<'whitelist' | 'blacklist' | null>(null)
 
 const filterMode = computed<FilterMode>(() => {
+  // Если listType уже 'off' — показываем off напрямую.
+  if (props.listType === 'off') return 'off'
   // Непустой список → реальный listType (whitelist или blacklist).
-  if (props.selectedOffers.length > 0) {
-    return props.listType
-  }
+  if (props.selectedOffers.length > 0) return props.listType
   // Пустой список: если есть staged (пользователь нажал режим, ещё не выбрав офферов) —
-  // показываем staged. Иначе 'off' (и blacklist+[], и whitelist+[] визуально = off).
+  // показываем staged. Иначе 'off' (legacy whitelist+[] и blacklist+[] без staged отображаются как off).
   return stagedListType.value ?? 'off'
 })
 
@@ -131,8 +130,7 @@ function toggleOffer(offer: OfferItem) {
 function setMode(mode: FilterMode) {
   if (mode === 'off') {
     stagedListType.value = null
-    // 'off' = blacklist + пустой список → пустой blacklist показывает виджет всем.
-    if (props.listType !== 'blacklist') emit('update:listType', 'blacklist')
+    if (props.listType !== 'off') emit('update:listType', 'off')
     if (props.selectedOffers.length > 0) emit('update:selectedOffers', [])
     return
   }
@@ -147,7 +145,8 @@ function setMode(mode: FilterMode) {
 }
 
 function clearSelection() {
-  stagedListType.value = props.listType
+  // staged хранит только whitelist/blacklist; при 'off' (фильтр выключен) staged не нужен.
+  stagedListType.value = props.listType === 'off' ? null : props.listType
   emit('update:selectedOffers', [])
 }
 
