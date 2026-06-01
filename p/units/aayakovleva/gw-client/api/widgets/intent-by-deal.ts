@@ -23,6 +23,7 @@
  * Origin проверяется строго до любых upstream-вызовов.
  */
 
+import { runWithExclusiveLock, LockAcquisitionError } from '@app/sync'
 import * as loggerLib from '../../lib/logger.lib'
 import * as settingsLib from '../../lib/settings.lib'
 import { getWidgetSettings } from '../../lib/widget/widgetSettings.lib'
@@ -32,9 +33,11 @@ import { invokeByGateway } from '../../lib/gateway/invokeDispatcher'
 import { recordRequestLog } from '../../lib/gateway/recordRequestLog'
 import { resolveGcDeal } from '../../lib/gateway/gcDealResolver'
 import { handleLavatopDealIntent } from '../../lib/gateway/lavatopDealIntent'
+import { findCachedBill } from '../../lib/gateway/idempotentBillCache'
 import type { PaymentCurrency } from '../../lib/rates/currencyConverter'
 import { getFullUrl, ROUTES } from '../../config/routes'
 import { appendCorrelationId } from '../../shared/correlation'
+import { BILL_LOCK_WAIT_MS, BILL_LOCK_MAX_DURATION_MS } from '../../lib/gateway/constants'
 
 const LOG_PATH = 'api/widgets/intent-by-deal'
 
@@ -350,32 +353,108 @@ export const widgetIntentByDealRoute = app.post('/', async (ctx, req) => {
   const argsForGateway: Record<string, unknown> = { ...args }
   delete argsForGateway.correlationId
 
-  const result = await invokeByGateway(ctx, 'lifepay', 'createBill', argsForGateway)
-  const responseBody = result.responseBody ?? {}
-  const paymentUrl =
-    (typeof responseBody.paymentUrl === 'string' && responseBody.paymentUrl) ||
-    (typeof (responseBody.data as Record<string, unknown> | undefined)?.paymentUrl === 'string' &&
-      ((responseBody.data as Record<string, unknown>).paymentUrl as string)) ||
-    ''
+  // Идемпотентность: лок на ключ orderNumber — повторный вызов возвращает кэшированный paymentUrl
+  type BillResult =
+    | { cached: true; paymentUrl: string; requestId: string }
+    | { cached: false; ok: boolean; paymentUrl: string; requestId: string }
 
-  // Запись в request_log — до любого раннего return (покрывает ok=false и ok=true без paymentUrl)
+  let billResult: BillResult
   try {
-    await recordRequestLog(ctx, {
-      gatewayId: 'lifepay',
-      op: 'createBill',
-      args: argsForGateway,
-      invoke: result,
-      correlationId
-    })
+    billResult = await runWithExclusiveLock(
+      ctx,
+      `gw-client:bill-idempotency:lifepay:${orderNumber}`,
+      { timeoutMs: BILL_LOCK_WAIT_MS, maxDurationMs: BILL_LOCK_MAX_DURATION_MS },
+      async (lockCtx: app.Ctx): Promise<BillResult> => {
+        // (a) Проверить кэш
+        const hit = await findCachedBill(lockCtx, {
+          op: 'createBill',
+          gatewayId: 'lifepay',
+          orderNumber,
+          expectedAmount: resolved.amount
+        })
+        if (hit && hit.paymentUrl) {
+          return { cached: true, paymentUrl: hit.paymentUrl, requestId: hit.requestId }
+        }
+
+        // (b) Cache miss — вызов gateway
+        const result = await invokeByGateway(lockCtx, 'lifepay', 'createBill', argsForGateway)
+        const responseBody = result.responseBody ?? {}
+        const paymentUrl =
+          (typeof responseBody.paymentUrl === 'string' && responseBody.paymentUrl) ||
+          (typeof (responseBody.data as Record<string, unknown> | undefined)?.paymentUrl ===
+            'string' &&
+            ((responseBody.data as Record<string, unknown>).paymentUrl as string)) ||
+          ''
+
+        // Запись в request_log внутри лока (покрывает ok=false и ok=true без paymentUrl)
+        try {
+          await recordRequestLog(lockCtx, {
+            gatewayId: 'lifepay',
+            op: 'createBill',
+            args: argsForGateway,
+            invoke: result,
+            correlationId
+          })
+        } catch (e) {
+          await loggerLib.writeServerLog(lockCtx, {
+            severity: 3,
+            message: `[${LOG_PATH}] record_log_failed`,
+            payload: { correlationId, error: String(e) }
+          })
+        }
+
+        return { cached: false, ok: result.ok, paymentUrl, requestId: result.requestId }
+      }
+    )
   } catch (e) {
-    await loggerLib.writeServerLog(ctx, {
-      severity: 3,
-      message: `[${LOG_PATH}] record_log_failed`,
-      payload: { correlationId, error: String(e) }
-    })
+    if (e instanceof LockAcquisitionError) {
+      await loggerLib.writeServerLog(ctx, {
+        severity: 4,
+        message: `[${LOG_PATH}] bill_lock_timeout`,
+        payload: { orderNumber, correlationId }
+      })
+      return jsonResponse(
+        503,
+        { ok: false, error: 'WIDGET_GC_BUSY', requestId: '' },
+        buildCorsHeaders(corsResult)
+      )
+    }
+    throw e
   }
 
-  if (!result.ok || !paymentUrl) {
+  // Кэш-хит — сразу возвращаем ранее созданную ссылку
+  if (billResult.cached) {
+    await loggerLib.writeServerLog(ctx, {
+      severity: 6,
+      message: `[${LOG_PATH}] widget_intent_by_deal: success`,
+      payload: {
+        method: 'lifepay',
+        hostname: corsResult.hostname,
+        dealId: dealIdNormalized,
+        amount,
+        orderNumber,
+        correlationId,
+        ok: true,
+        requestId: billResult.requestId,
+        hasPaymentUrl: true,
+        cached: true
+      }
+    })
+    return jsonResponse(
+      200,
+      {
+        ok: true,
+        paymentUrl: billResult.paymentUrl,
+        orderNumber,
+        correlationId,
+        requestId: billResult.requestId
+      },
+      buildCorsHeaders(corsResult)
+    )
+  }
+
+  // Cache miss — стандартная обработка результата gateway
+  if (!billResult.ok || !billResult.paymentUrl) {
     await loggerLib.writeServerLog(ctx, {
       severity: 4,
       message: `[${LOG_PATH}] widget_intent_by_deal: gateway_error`,
@@ -386,14 +465,13 @@ export const widgetIntentByDealRoute = app.post('/', async (ctx, req) => {
         orderNumber,
         correlationId,
         ok: false,
-        httpStatus: result.httpStatus,
-        requestId: result.requestId,
+        requestId: billResult.requestId,
         hasPaymentUrl: false
       }
     })
     return jsonResponse(
       502,
-      { ok: false, error: 'WIDGET_GC_GATEWAY_ERROR', requestId: result.requestId },
+      { ok: false, error: 'WIDGET_GC_GATEWAY_ERROR', requestId: billResult.requestId },
       buildCorsHeaders(corsResult)
     )
   }
@@ -409,8 +487,9 @@ export const widgetIntentByDealRoute = app.post('/', async (ctx, req) => {
       orderNumber,
       correlationId,
       ok: true,
-      requestId: result.requestId,
-      hasPaymentUrl: true
+      requestId: billResult.requestId,
+      hasPaymentUrl: true,
+      cached: false
     }
   })
 
@@ -419,10 +498,10 @@ export const widgetIntentByDealRoute = app.post('/', async (ctx, req) => {
     200,
     {
       ok: true,
-      paymentUrl,
+      paymentUrl: billResult.paymentUrl,
       orderNumber,
       correlationId,
-      requestId: result.requestId
+      requestId: billResult.requestId
     },
     buildCorsHeaders(corsResult)
   )

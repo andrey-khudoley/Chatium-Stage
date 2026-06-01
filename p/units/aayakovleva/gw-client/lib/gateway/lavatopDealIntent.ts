@@ -6,15 +6,18 @@
  * выполняются последовательно внутри runWithExclusiveLock на ключе оффера.
  */
 
-import { runWithExclusiveLock } from '@app/sync'
+import { runWithExclusiveLock, LockAcquisitionError } from '@app/sync'
 import * as loggerLib from '../logger.lib'
 import { getLavatopOfferId, getLavatopProductId } from '../settings.lib'
 import { getWidgetSettings } from '../widget/widgetSettings.lib'
 import { resolveGcDeal } from './gcDealResolver'
 import { invokeByGateway } from './invokeDispatcher'
+import { recordRequestLog } from './recordRequestLog'
+import { findCachedBill } from './idempotentBillCache'
 import { convertRubTo, type PaymentCurrency } from '../rates/currencyConverter'
 import { WIDGET_INTENT_HARD_LIMIT_RUB, areAllOffersAllowed } from '../../shared/widgetSettingsTypes'
 import { getFullUrl, ROUTES } from '../../config/routes'
+import { LAVATOP_LOCK_WAIT_MS, LAVATOP_LOCK_MAX_DURATION_MS } from './constants'
 
 const LOG_MODULE = 'lib/gateway/lavatopDealIntent'
 
@@ -47,7 +50,7 @@ type LockResult = LockSuccess | LockFailure
 
 export type LavatopDealResult =
   | { ok: true; paymentUrl: string; correlationId: string; requestId: string }
-  | { ok: false; code: string; httpStatus: 400 | 403 | 404 | 409 | 422 | 502 }
+  | { ok: false; code: string; httpStatus: 400 | 403 | 404 | 409 | 422 | 502 | 503 }
 
 function isObject(v: unknown): v is Record<string, unknown> {
   return typeof v === 'object' && v !== null && !Array.isArray(v)
@@ -198,90 +201,141 @@ export async function handleLavatopDealIntent(
 
   // 8. КРИТИЧНО — лок на ключе оффера: updateOfferPrice → createInvoice последовательно
   const lockKey = `lavatop-offer:${offerId}`
-  const lockResult: LockResult = await runWithExclusiveLock(
-    ctx,
-    lockKey,
-    async (lockCtx: app.Ctx): Promise<LockResult> => {
-      // 8a. Обновить цену оффера (только выбранная валюта)
-      const updateRes = await invokeByGateway(
-        lockCtx,
-        'lavatop',
-        'updateOfferPrice',
-        {
-          productId,
-          offers: [
-            {
-              id: offerId,
-              prices: [{ amount: convert.amount, currency }]
+  let lockResult: LockResult
+  try {
+    lockResult = await runWithExclusiveLock(
+      ctx,
+      lockKey,
+      { timeoutMs: LAVATOP_LOCK_WAIT_MS, maxDurationMs: LAVATOP_LOCK_MAX_DURATION_MS },
+      async (lockCtx: app.Ctx): Promise<LockResult> => {
+        // 8-idempotency. Проверить кэш до updateOfferPrice
+        const hit = await findCachedBill(lockCtx, {
+          op: 'createInvoice',
+          gatewayId: 'lavatop',
+          orderNumber: correlationId,
+          expectedCurrency: currency,
+          expectedAmount: convert.amount
+        })
+        if (hit && hit.paymentUrl) {
+          return { ok: true, paymentUrl: hit.paymentUrl, requestId: hit.requestId }
+        }
+
+        // 8a. Обновить цену оффера (только выбранная валюта)
+        const updateRes = await invokeByGateway(
+          lockCtx,
+          'lavatop',
+          'updateOfferPrice',
+          {
+            productId,
+            offers: [
+              {
+                id: offerId,
+                prices: [{ amount: convert.amount, currency }]
+              }
+            ]
+          },
+          { httpMethod: 'POST' }
+        )
+
+        if (!updateRes.ok) {
+          await loggerLib.writeServerLog(lockCtx, {
+            severity: 4,
+            message: `[${LOG_MODULE}] lock: updateOfferPrice failed`,
+            payload: {
+              dealId: dealIdNormalized,
+              currency,
+              amountConverted: convert.amount,
+              httpStatus: updateRes.httpStatus,
+              requestId: updateRes.requestId,
+              code: 'PRICE_UPDATE_FAILED'
             }
-          ]
-        },
-        { httpMethod: 'POST' }
-      )
+          })
+          return { ok: false, marker: 'PRICE_UPDATE_FAILED', requestId: updateRes.requestId }
+        }
 
-      if (!updateRes.ok) {
-        await loggerLib.writeServerLog(lockCtx, {
-          severity: 4,
-          message: `[${LOG_MODULE}] lock: updateOfferPrice failed`,
-          payload: {
-            dealId: dealIdNormalized,
+        // 8b. Создать инвойс с зафиксированной суммой
+        const invRes = await invokeByGateway(
+          lockCtx,
+          'lavatop',
+          'createInvoice',
+          {
+            email: resolved.email,
+            offerId,
             currency,
-            amountConverted: convert.amount,
-            httpStatus: updateRes.httpStatus,
-            requestId: updateRes.requestId,
-            code: 'PRICE_UPDATE_FAILED'
-          }
-        })
-        return { ok: false, marker: 'PRICE_UPDATE_FAILED', requestId: updateRes.requestId }
+            callbackUrl,
+            clientOrderId: correlationId
+          },
+          { httpMethod: 'POST' }
+        )
+
+        const invBody = invRes.responseBody ?? {}
+        const paymentUrl =
+          (typeof invBody.paymentUrl === 'string' && invBody.paymentUrl) ||
+          (isObject(invBody.data) &&
+          typeof (invBody.data as Record<string, unknown>).paymentUrl === 'string'
+            ? ((invBody.data as Record<string, unknown>).paymentUrl as string)
+            : '') ||
+          ''
+
+        if (!invRes.ok || !paymentUrl) {
+          await loggerLib.writeServerLog(lockCtx, {
+            severity: 4,
+            message: `[${LOG_MODULE}] lock: createInvoice failed`,
+            payload: {
+              dealId: dealIdNormalized,
+              currency,
+              hasPaymentUrl: false,
+              httpStatus: invRes.httpStatus,
+              requestId: invRes.requestId,
+              code: 'GATEWAY_ERROR'
+            }
+          })
+          return { ok: false, marker: 'GATEWAY_ERROR', requestId: invRes.requestId }
+        }
+
+        // Записать в request_log для последующего кэш-lookup (orderNumber = correlationId)
+        try {
+          await recordRequestLog(lockCtx, {
+            gatewayId: 'lavatop',
+            op: 'createInvoice',
+            args: {
+              email: resolved.email,
+              offerId,
+              currency,
+              amount: convert.amount,
+              callbackUrl,
+              clientOrderId: correlationId,
+              orderNumber: correlationId
+            },
+            invoke: invRes,
+            correlationId
+          })
+        } catch (e) {
+          await loggerLib.writeServerLog(lockCtx, {
+            severity: 3,
+            message: `[${LOG_MODULE}] lavatop_record_log_failed`,
+            payload: { correlationId, error: String(e) }
+          })
+        }
+
+        return {
+          ok: true,
+          paymentUrl,
+          requestId: invRes.requestId
+        }
       }
-
-      // 8b. Создать инвойс с зафиксированной суммой
-      const invRes = await invokeByGateway(
-        lockCtx,
-        'lavatop',
-        'createInvoice',
-        {
-          email: resolved.email,
-          offerId,
-          currency,
-          callbackUrl,
-          clientOrderId: correlationId
-        },
-        { httpMethod: 'POST' }
-      )
-
-      const invBody = invRes.responseBody ?? {}
-      const paymentUrl =
-        (typeof invBody.paymentUrl === 'string' && invBody.paymentUrl) ||
-        (isObject(invBody.data) &&
-        typeof (invBody.data as Record<string, unknown>).paymentUrl === 'string'
-          ? ((invBody.data as Record<string, unknown>).paymentUrl as string)
-          : '') ||
-        ''
-
-      if (!invRes.ok || !paymentUrl) {
-        await loggerLib.writeServerLog(lockCtx, {
-          severity: 4,
-          message: `[${LOG_MODULE}] lock: createInvoice failed`,
-          payload: {
-            dealId: dealIdNormalized,
-            currency,
-            hasPaymentUrl: false,
-            httpStatus: invRes.httpStatus,
-            requestId: invRes.requestId,
-            code: 'GATEWAY_ERROR'
-          }
-        })
-        return { ok: false, marker: 'GATEWAY_ERROR', requestId: invRes.requestId }
-      }
-
-      return {
-        ok: true,
-        paymentUrl,
-        requestId: invRes.requestId
-      }
+    )
+  } catch (e) {
+    if (e instanceof LockAcquisitionError) {
+      await loggerLib.writeServerLog(ctx, {
+        severity: 4,
+        message: `[${LOG_MODULE}] lavatop_lock_timeout`,
+        payload: { correlationId, offerId }
+      })
+      return { ok: false as const, code: 'WIDGET_LAVATOP_BUSY', httpStatus: 503 }
     }
-  )
+    throw e
+  }
 
   // 9. Маппинг маркеров ошибок на публичный результат
   if (!lockResult.ok) {

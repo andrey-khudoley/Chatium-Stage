@@ -350,6 +350,50 @@ export async function countOkInRange(ctx: app.Ctx, from?: number, to?: number): 
 }
 
 /**
+ * Возвращает последние ok-записи по op + gatewayId + orderNumber начиная с sinceRequestedAt.
+ * Используется кэшем идемпотентности (idempotentBillCache) для lookup createBill / createInvoice.
+ * amount и currency НЕ колонки — не фильтруются здесь; сверка делается в вызывающем коде.
+ */
+export async function findLatestOkForIdempotency(
+  ctx: app.Ctx,
+  params: {
+    op: string
+    gatewayId: string
+    orderNumber: string
+    sinceRequestedAt: number
+    limit?: number
+  }
+): Promise<RequestLogRow[]> {
+  await loggerLib.writeServerLog(ctx, {
+    severity: 6,
+    message: `[${LOG_MODULE}] findLatestOkForIdempotency entry`,
+    payload: {
+      op: params.op,
+      gatewayId: params.gatewayId,
+      orderNumber: params.orderNumber,
+      sinceRequestedAt: params.sinceRequestedAt
+    }
+  })
+  const rows = await RequestLog.findAll(ctx, {
+    where: {
+      op: params.op,
+      ok: true,
+      gatewayId: params.gatewayId,
+      orderNumber: params.orderNumber,
+      requestedAt: { $gte: params.sinceRequestedAt }
+    },
+    order: [{ requestedAt: 'desc' }],
+    limit: params.limit ?? 20
+  })
+  await loggerLib.writeServerLog(ctx, {
+    severity: 6,
+    message: `[${LOG_MODULE}] findLatestOkForIdempotency exit`,
+    payload: { op: params.op, orderNumber: params.orderNumber, count: rows.length }
+  })
+  return rows
+}
+
+/**
  * Сколько записей createBill в request_log по correlationId.
  * Используется webhook-guard'ом (legacy-strict): вебхук отклоняется,
  * если для переданного correlationId не найдено ни одного createBill.
