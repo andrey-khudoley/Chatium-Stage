@@ -83,6 +83,14 @@ export const sbpSettingsCss1 = `
   background: #4a4a4a;
 }
 
+/* Обёртка двух секций виджетов (LifePay + Lava.Top): вертикальный зазор,
+   т.к. у .panel-section нет собственного margin, а .st-tab gap сюда не достаёт. */
+.st-widget-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
 /* Раздел: расширение .panel-section с местом под action-кнопку справа в заголовке. */
 .st-section .panel-section-head .st-section-action {
   margin-left: auto;

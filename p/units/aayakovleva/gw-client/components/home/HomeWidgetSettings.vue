@@ -285,7 +285,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div>
+  <div class="st-widget-stack">
     <!-- Виджет LifePay (СБП). -->
     <section class="panel-section st-section">
       <header class="panel-section-head">
