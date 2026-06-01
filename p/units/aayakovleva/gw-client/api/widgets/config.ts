@@ -124,15 +124,14 @@ export const widgetConfigRoute = app.post('/', async (ctx, req) => {
     )
   }
 
-  // Разбор positions из тела запроса
+  // Разбор positions из тела запроса (сверка офферов — только по id)
   const positionsRaw = body.positions
-  const positions: { id: string; title: string }[] = []
+  const positions: { id: string }[] = []
   if (Array.isArray(positionsRaw)) {
     for (const el of positionsRaw) {
       if (isObject(el)) {
         const id = typeof el.id === 'string' ? el.id : ''
-        const title = typeof el.title === 'string' ? el.title : ''
-        positions.push({ id, title })
+        positions.push({ id })
       }
     }
   }

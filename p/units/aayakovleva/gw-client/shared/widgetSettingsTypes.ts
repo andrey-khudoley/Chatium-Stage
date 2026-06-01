@@ -1,4 +1,4 @@
-// @shared
+﻿// @shared
 /**
  * Типы и константы виджетной конфигурации. Делятся между сервером (геттер
  * `getWidgetSettings`, API-эндпоинты), клиентом (Admin-компоненты в Vue) и
@@ -17,7 +17,7 @@ export type WidgetMethod = 'lifepay' | 'lavatop'
  */
 export type WidgetOfferListType = 'whitelist' | 'blacklist'
 
-/** Запись разрешённого/запрещённого оффера: id (точное совпадение) и title (нечёткое). */
+/** Запись разрешённого/запрещённого оффера: id (ключ сравнения) и title (только подпись для админки). */
 export type AllowedOffer = { id: string; title: string }
 
 /**
@@ -156,37 +156,29 @@ export function parseOfferListType(raw: unknown): WidgetOfferListType {
   return raw === 'blacklist' ? 'blacklist' : 'whitelist'
 }
 
-/** Нормализует title для нечёткого сравнения офферов. */
-function normalizeTitle(s: unknown): string {
-  // \s+ покрывает неразрывные пробелы ( ) и прочие Unicode-пробелы — JS \s их включает.
-  return String(s || '')
-    .replace(/\s+/g, ' ')
-    .trim()
-    .toLowerCase()
-}
-
 /**
  * СИНХРОНИЗИРОВАНО с userscripts/common.js → areAllPositionsAllowed.
- * При изменении правил allow/normalize править ОБА места.
+ * При изменении правил allow править ОБА места.
  *
- * Проверяет, разрешён ли один оффер по whitelist/blacklist.
- * - whitelist: offer.id точно совпадает с allowed[].id ИЛИ нормализованный
- *   offer.title совпадает с нормализованным allowed[].title (только непустые title).
- * - blacklist: не совпадает ни по id, ни по title.
+ * Проверяет, разрешён ли один оффер по whitelist/blacklist — ТОЛЬКО по id.
+ * - whitelist: offer.id точно совпадает с одним из allowed[].id.
+ * - blacklist: offer.id не совпадает ни с одним из allowed[].id.
+ *
+ * Сверка по title намеренно убрана: offer_id присутствует и в позициях заказа
+ * (GC offer_id / DOM data-offer-id), и в настройках админки (источник — GC
+ * getOffers), поэтому id однозначен и достаточен. Нечёткое сравнение title было
+ * ненадёжным из-за различий в пробелах/кодировке/символах и риска ложного
+ * совпадения; title в настройках остаётся лишь подписью для админки.
  *
  * Используется на сервере в intent-обработчиках для проверки позиций заказа.
  * Userscript имеет собственную копию в common.js.
  */
 export function isOfferAllowed(
-  offer: { id: string; title: string },
+  offer: { id: string },
   allowed: AllowedOffer[],
   listType: WidgetOfferListType
 ): boolean {
-  const normTitle = normalizeTitle(offer.title)
-  const idMatch = allowed.some((a) => a.id === offer.id)
-  const titleMatch =
-    normTitle !== '' && allowed.some((a) => a.title !== '' && normalizeTitle(a.title) === normTitle)
-  const inList = idMatch || titleMatch
+  const inList = offer.id !== '' && allowed.some((a) => a.id === offer.id)
   return listType === 'blacklist' ? !inList : inList
 }
 
@@ -196,7 +188,7 @@ export function isOfferAllowed(
  * - Иначе — positions.every(isOfferAllowed).
  */
 export function areAllOffersAllowed(
-  offers: { id: string; title: string }[],
+  offers: { id: string }[],
   allowed: AllowedOffer[],
   listType: WidgetOfferListType
 ): boolean {

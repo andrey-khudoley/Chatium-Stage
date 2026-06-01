@@ -267,7 +267,7 @@ CSS-стили тулбара и всей главной страницы: `page
 [ Браузер покупателя (страница магазина) ]
             |
             | POST /api/widgets/config  (Content-Type: text/plain, тело — JSON-строка)
-            |   { dealId, positions: [{id,title}] }
+            |   { dealId, positions: [{id}] }
             |   Origin: <домен магазина>
             v
 [ api/widgets/config.ts — публичный, без авторизации ]
@@ -395,7 +395,7 @@ Chatium не поддерживает `app.options`, поэтому preflight-з
   <li class="offer-position-{posId}" data-offer-id="{offerId}">
     <span class="position-actual-title">{title}</span>
 
-  extractDealPositions() → [{id, title}]
+  extractDealPositions() → [{id}]
   areAllPositionsAllowed(positions, offerListType, offers)
     → true: все разрешены → рендерить виджет
     → false: хотя бы одна запрещена → тихий выход
@@ -404,7 +404,7 @@ Chatium не поддерживает `app.options`, поэтому preflight-з
 **Уровень 2 — сервер (допуск к intent, `api/widgets/intent-by-deal.ts`):**
 
 ```
-  lib/gateway/gcDealResolver.ts — getDealFields → positions[]{id, title} из GC
+  lib/gateway/gcDealResolver.ts — getDealFields → positions[]{id} из GC
   shared/widgetSettingsTypes.ts — areAllOffersAllowed(positions, settings)
     → true: продолжить поток (LifePay / Lava.Top)
     → false: 403 WIDGET_OFFER_NOT_ALLOWED
@@ -416,9 +416,9 @@ Chatium не поддерживает `app.options`, поэтому preflight-з
 - Legacy fallback: `widget_offer_ids` — старый comma-separated список строк; `parseAllowedOffers` поддерживает оба формата при чтении. `lib/widget/widgetSettings.lib.ts` читает новый ключ с fallback на legacy.
 
 **Семантика проверки** (синхронизирована между `shared/widgetSettingsTypes.ts` и `userscripts/common.js`, помечена якорями «СИНХРОНИЗИРОВАНО»):
-- whitelist: позиция разрешена, если её `id` ИЛИ нормализованный `title` есть в списке.
-- blacklist: позиция разрешена, если ни `id`, ни нормализованный `title` не в списке.
-- Нормализация title: trim + схлопывание пробелов + lowercase.
+- Сверка **только по `id`**. `title` в настройках — лишь подпись для админки, в сравнении не участвует (с 2026-06-01: убрано как хрупкое из-за различий пробелов/кодировки и риска ложного совпадения; `offer_id` есть и в позициях, и в настройках).
+- whitelist: позиция разрешена, если её `id` есть в списке.
+- blacklist: позиция разрешена, если её `id` не в списке.
 - Режим «Выключен» = `blacklist` + пустой список (= показать всем). Дефолт `offerListType` — `'blacklist'`.
 
 **Удалённый мёртвый код:**
@@ -435,7 +435,7 @@ Chatium не поддерживает `app.options`, поэтому preflight-з
 | `userscripts/lavatop-widget.user.js`       | Виджет Lava.Top: deal id из URL → `fetchWidgetConfig(dealId, positions)` → если `config.lavatop.enabled` — 3 кнопки валют (RUB/USD/EUR) → `postWidgetIntentByDeal({method:'lavatop', currency})` → редирект. Клиентский offer-гейт убран. |
 | `lib/rates/currencyConverter.ts`           | `convertRubTo(amount, currency)` — конвертация RUB в RUB (тождество) / USD / EUR. `convertToRub(amount, currency)` — обратная конвертация: валюта → рубли (умножение на курс); используется в `resolveGcDealAmount` для приведения суммы non-RUB заказов к рублям перед сравнением с диапазоном. Приватный `getRubForOne(currency)` — единый источник курса для обоих направлений: ручной курс (`widget_lavatop_manual_rate_*`) → курс ЦБ РФ (cbr-xml-daily.ru / `@app/request`). Результат: `{ok, amount, rate, source:'identity'\|'manual'\|'cbr'}` или `{ok:false, code:'RATE_UNAVAILABLE'}`. `roundToCents` — округление до 2 знаков. |
 | `lib/gateway/lavatopDealIntent.ts`         | `handleLavatopDealIntent(ctx, {offerId, productId, gcDeal, currency})` — оркестратор Lava.Top deal-потока. **С 2026-06-01:** вызывается после серверной проверки `areAllOffersAllowed` в `intent-by-deal`. |
-| `lib/gateway/gcDealResolver.ts`            | `resolveGcDeal(ctx, dealId)` — резолвинг сделки GC: getDealFields → getUserFields. **С 2026-06-01:** возвращает также `positions: {id, title}[]` из `getDealFields.positions[].offer_id + title` — для серверной проверки офферов. Email в логи не пишется (PII). |
+| `lib/gateway/gcDealResolver.ts`            | `resolveGcDeal(ctx, dealId)` — резолвинг сделки GC: getDealFields → getUserFields. **С 2026-06-01:** возвращает также `positions: {id}[]` из `getDealFields.positions[].offer_id` — для серверной проверки офферов (сверка только по id). Email в логи не пишется (PII). |
 | `api/widgets/intent-by-deal.ts`            | POST /api/widgets/intent-by-deal — ветвление по `method`. **С 2026-06-01:** серверная проверка `areAllOffersAllowed(positions, settings)` до запуска платёжного потока; 403 `WIDGET_OFFER_NOT_ALLOWED` при запрещённой позиции. |
 | `api/widgets/intent-lavatop.ts`            | POST /api/widgets/intent-lavatop — **deprecated** (offer-поток Lava.Top). `offerId` как продуктовый параметр `createInvoice` сохранён. |
 | `shared/widgetCorsCheck.ts`                | Pure-функции CORS-проверки (`// @shared`)                                                                                                |

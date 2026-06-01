@@ -5,8 +5,8 @@
  * Скрипт регистрирует объект `window.GwWidgetCommon` с pure-функциями:
  *   - safeInit(fn)                        — глобальный try/catch вокруг инициализации
  *   - isAmountInRange(amount, min, max)    — клиентский фильтр по диапазону суммы
- *   - extractDealPositions()              — извлечение позиций заказа из DOM (.deal-positions li)
- *   - areAllPositionsAllowed(pos, offers, type) — клиентский фильтр всех позиций по white/blacklist
+ *   - extractDealPositions()              — извлечение id позиций заказа из DOM (.deal-positions li)
+ *   - areAllPositionsAllowed(pos, offers, type) — клиентский фильтр всех позиций по white/blacklist (по id)
  *   - fetchWidgetConfig(baseUrl, payload)  — POST /api/widgets/config с телом { dealId, positions }
  *   - extractDealIdFromUrl()              — id заказа из URL страницы GC
  *   - postWidgetIntentByDeal(baseUrl, p)  — POST /api/widgets/intent-by-deal
@@ -69,10 +69,11 @@
 
   /**
    * Извлекает позиции заказа из DOM магазина (.deal-positions li).
-   * Для каждого li читает data-offer-id (id) и текст .position-actual-title (title).
-   * Включает запись если id !== '' ИЛИ title !== ''. Не бросает исключений.
+   * Для каждого li читает data-offer-id (id). Включает запись если id !== ''.
+   * Сверка офферов идёт только по id, поэтому title из DOM не читаем (он был
+   * хрупким из-за различий в пробелах/кодировке). Не бросает исключений.
    *
-   * @returns {{ id: string; title: string }[]}
+   * @returns {{ id: string }[]}
    */
   function extractDealPositions() {
     try {
@@ -81,10 +82,8 @@
       for (var i = 0; i < items.length; i++) {
         var li = items[i]
         var id = (li.getAttribute('data-offer-id') || '').trim()
-        var titleNode = li.querySelector('.position-actual-title')
-        var title = ((titleNode && titleNode.textContent) || '').trim()
-        if (id !== '' || title !== '') {
-          result.push({ id: id, title: title })
+        if (id !== '') {
+          result.push({ id: id })
         }
       }
       return result
@@ -97,14 +96,17 @@
    * СИНХРОНИЗИРОВАНО с shared/widgetSettingsTypes.ts → areAllOffersAllowed/isOfferAllowed.
    * Править ОБА места.
    *
-   * Проверяет, что ВСЕ позиции заказа разрешены по white/blacklist офферов.
+   * Проверяет, что ВСЕ позиции заказа разрешены по white/blacklist офферов —
+   * ТОЛЬКО по id.
    * - Пустой positions → false (нет позиций — не рендерим).
    * - Пустой allowedOffers → whitelist: false (скрыт), blacklist: true (показан).
-   * - Сверка по id (точное, String().trim()) ИЛИ title (replace(/\s+/g,' ')+trim+lowercase).
+   * - Сверка по id (точное, String().trim()). Title больше не участвует: он был
+   *   хрупким (пробелы/кодировка) и избыточным, т.к. id есть и в позициях, и в
+   *   настройках.
    *
    * @deprecated — оффер-фильтрация перенесена на сервер (config-эндпоинт).
-   * @param {{ id: string; title: string }[]} positions
-   * @param {{ id: string; title: string }[]} allowedOffers
+   * @param {{ id: string }[]} positions
+   * @param {{ id: string }[]} allowedOffers
    * @param {'whitelist' | 'blacklist' | string} listType
    * @returns {boolean}
    */
@@ -113,19 +115,8 @@
       if (!Array.isArray(positions) || positions.length === 0) return false
       var allowed = Array.isArray(allowedOffers) ? allowedOffers : []
 
-      // Идентично shared/widgetSettingsTypes.ts → normalizeTitle.
-      // \s+ покрывает неразрывные пробелы в современных браузерах.
-      function normalizeTitle(s) {
-        return String(s || '')
-          .replace(/\s+/g, ' ')
-          .trim()
-          .toLowerCase()
-      }
-
       for (var i = 0; i < positions.length; i++) {
-        var pos = positions[i]
-        var posId = pos.id || ''
-        var posTitle = normalizeTitle(pos.title)
+        var posId = positions[i].id || ''
 
         var idMatch =
           posId !== '' &&
@@ -136,21 +127,7 @@
             return false
           })(posId)
 
-        var titleMatch =
-          posTitle !== '' &&
-          (function (pt) {
-            for (var j = 0; j < allowed.length; j++) {
-              if (allowed[j].title && normalizeTitle(allowed[j].title) === pt) return true
-            }
-            return false
-          })(posTitle)
-
-        var posAllowed
-        if (listType === 'blacklist') {
-          posAllowed = !idMatch && !titleMatch
-        } else {
-          posAllowed = idMatch || titleMatch
-        }
+        var posAllowed = listType === 'blacklist' ? !idMatch : idMatch
 
         if (!posAllowed) return false
       }
@@ -166,7 +143,7 @@
    * Эндпоинт POST; тело передаётся как text/plain (CORS preflight-обход).
    *
    * @param {string} baseUrl — базовый URL клиента (например, `https://s.chtm.khudoley.pro`).
-   * @param {{ dealId: string, positions: { id: string, title: string }[] }} payload
+   * @param {{ dealId: string, positions: { id: string }[] }} payload
    * @returns {Promise<object | null>}
    */
   function fetchWidgetConfig(baseUrl, payload) {

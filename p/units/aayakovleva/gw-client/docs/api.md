@@ -251,7 +251,7 @@
 Запрос (body в виде JSON-строки, `Content-Type: text/plain`):
 
 ```json
-{ "dealId": "12345", "positions": [{"id": "offer-001", "title": "Курс Python"}] }
+{ "dealId": "12345", "positions": [{"id": "offer-001"}] }
 ```
 
 `positions` — список позиций заказа из DOM страницы GC (клиент передаёт; используется для offer-фильтра на уровне config; авторитетная проверка — в `intent-by-deal`).
@@ -371,19 +371,19 @@ PII (email покупателя) в ответ **не включается**. П
 
 Коды двухуровневого offer-фильтра (добавлены 2026-06-01):
 
-- `WIDGET_OFFER_NOT_ALLOWED` (HTTP 403) — серверная проверка `areAllOffersAllowed` не прошла: хотя бы одна позиция заказа из `getDealFields.resolved.positions` не входит в whitelist или входит в blacklist по `id` ИЛИ `title` (нормализованный: trim + схлопывание пробелов + lowercase). Сервер проверяет независимо от клиентского DOM-фильтра.
+- `WIDGET_OFFER_NOT_ALLOWED` (HTTP 403) — серверная проверка `areAllOffersAllowed` не прошла: хотя бы одна позиция заказа из `getDealFields.resolved.positions` не входит в whitelist или входит в blacklist по `id` (с 2026-06-01 сверка только по id; `title` в сравнении не участвует). Сервер проверяет независимо от клиентского DOM-фильтра.
 
 ### Двухуровневая модель offer-фильтра (реализовано 2026-06-01)
 
 Фильтрация офферов выполняется на двух независимых уровнях:
 
-**Уровень 1 — клиент (показ виджета):** userscript читает все позиции заказа из DOM-блока `.deal-positions` (каждая `<li class="offer-position-{posId}" data-offer-id="{offerId}">` + `.position-actual-title`). Для каждой позиции проверяется соответствие whitelist/blacklist разрешённых офферов по `id` ИЛИ нормализованному `title`. Виджет рендерится только если ВСЕ позиции разрешены; хотя бы одна запрещённая → виджет не показывается. Логика реализована в `userscripts/common.js` (`extractDealPositions`, `areAllPositionsAllowed`).
+**Уровень 1 — клиент (показ виджета):** userscript читает все позиции заказа из DOM-блока `.deal-positions` (каждая `<li class="offer-position-{posId}" data-offer-id="{offerId}">`, берётся только `data-offer-id`). Для каждой позиции проверяется соответствие whitelist/blacklist разрешённых офферов **по `id`**. Виджет рендерится только если ВСЕ позиции разрешены; хотя бы одна запрещённая → виджет не показывается. Логика реализована в `userscripts/common.js` (`extractDealPositions`, `areAllPositionsAllowed`).
 
-**Уровень 2 — сервер (допуск к intent):** в `api/widgets/intent-by-deal.ts` позиции берутся из `getDealFields` (`lib/gateway/gcDealResolver.ts` возвращает `positions: {id, title}[]`), затем вызывается `areAllOffersAllowed` из `shared/widgetSettingsTypes.ts`. Запрещённая позиция → 403 `WIDGET_OFFER_NOT_ALLOWED`. Сервер не доверяет клиентскому DOM-фильтру.
+**Уровень 2 — сервер (допуск к intent):** в `api/widgets/intent-by-deal.ts` позиции берутся из `getDealFields` (`lib/gateway/gcDealResolver.ts` возвращает `positions: {id}[]`), затем вызывается `areAllOffersAllowed` из `shared/widgetSettingsTypes.ts`. Запрещённая позиция → 403 `WIDGET_OFFER_NOT_ALLOWED`. Сервер не доверяет клиентскому DOM-фильтру.
 
-**Семантика проверки** (синхронизирована между `shared/widgetSettingsTypes.ts` и `userscripts/common.js`, помечена комментариями-якорями «СИНХРОНИЗИРОВАНО»):
-- whitelist: позиция разрешена, если её `id` ИЛИ нормализованный `title` есть в списке. Пустой whitelist → всё запрещено.
-- blacklist: позиция разрешена, если ни `id`, ни нормализованный `title` не в списке. Пустой blacklist → всё разрешено.
+**Семантика проверки** (синхронизирована между `shared/widgetSettingsTypes.ts` и `userscripts/common.js`, помечена комментариями-якорями «СИНХРОНИЗИРОВАНО»). С 2026-06-01 сверка **только по `id`** (`title` в настройках — лишь подпись для админки; нечёткое сравнение по названию убрано как хрупкое и избыточное):
+- whitelist: позиция разрешена, если её `id` есть в списке. Пустой whitelist → всё запрещено.
+- blacklist: позиция разрешена, если её `id` не в списке. Пустой blacklist → всё разрешено.
 - Нет позиций в заказе → виджет не показывается (клиент) / сервер пропускает проверку (поведение при пустом `positions`).
 
 **Режим «Выключен» в веб-панели** = `blacklist` + пустой список (= показать всем). Дефолт `offerListType` теперь `'blacklist'`.

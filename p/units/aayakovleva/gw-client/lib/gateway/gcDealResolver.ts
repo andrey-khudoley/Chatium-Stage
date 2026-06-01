@@ -23,7 +23,7 @@ const GC_DEAL_FIELD_IS_PAYED = 'is_payed'
 // status — вспомогательный признак; список оплаченных статусов расширяем,
 // основной признак — is_payed === true.
 const GC_DEAL_FIELD_STATUS = 'status'
-// positions — позиции заказа (массив объектов с offer_id и title).
+// positions — позиции заказа (массив объектов; для сверки допуска берём offer_id).
 const GC_DEAL_FIELD_POSITIONS = 'positions'
 
 // Имена полей GC-профиля пользователя.
@@ -45,8 +45,8 @@ export type GcDealResolveResult =
       email: string
       title: string
       userId: string
-      /** Позиции заказа из getDealFields (для серверной проверки допуска). */
-      positions: { id: string; title: string }[]
+      /** Позиции заказа из getDealFields (для серверной проверки допуска по id). */
+      positions: { id: string }[]
     }
   | { ok: false; code: GcDealErrorCode }
 
@@ -252,22 +252,20 @@ export async function resolveGcDeal(
   const titleRaw = dealObj[GC_DEAL_FIELD_TITLE]
   const title = typeof titleRaw === 'string' ? titleRaw.trim() : ''
 
-  // 10. Извлечение позиций заказа из поля positions
+  // 10. Извлечение позиций заказа из поля positions (для сверки допуска — только по id).
+  //     Каждый объект-элемент включаем целиком (даже с пустым offer_id): в whitelist
+  //     позиция без распознанного id не совпадёт ни с одним allowed[].id и корректно
+  //     заблокирует показ (fail-closed), а не «протечёт» мимо проверки.
   const positionsRaw = dealObj[GC_DEAL_FIELD_POSITIONS]
-  const positions: { id: string; title: string }[] = []
+  const positions: { id: string }[] = []
   if (Array.isArray(positionsRaw)) {
     for (const pos of positionsRaw) {
       if (typeof pos === 'object' && pos !== null) {
         const p = pos as Record<string, unknown>
-        // offer_id (число или строка, в т.ч. 0) → строка через явное String(); title → строка.
-        // Используем явное сравнение != null вместо truthy, чтобы offer_id=0 корректно
-        // давал id='0' (ненулевую строку), а не пустую.
+        // offer_id (число или строка, в т.ч. 0) → строка через явное String().
+        // Сравнение != null (а не truthy), чтобы offer_id=0 давал id='0', а не пустую.
         const offerId = p.offer_id != null ? String(p.offer_id).trim() : ''
-        const posTitle = typeof p.title === 'string' ? p.title.trim() : ''
-        // Включаем позицию только если есть хотя бы id ИЛИ title.
-        if (offerId !== '' || posTitle !== '') {
-          positions.push({ id: offerId, title: posTitle })
-        }
+        positions.push({ id: offerId })
       }
     }
   }
