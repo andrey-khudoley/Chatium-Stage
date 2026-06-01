@@ -80,9 +80,6 @@ export const sbpHomeCss4 = `
     width: 100%;
     justify-content: flex-start;
   }
-  .panel-toolbar {
-    position: static;
-  }
   .quick-search {
     flex: 1 1 100%;
   }

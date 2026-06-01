@@ -181,9 +181,6 @@ export const sbpHomeCss1 = `
   padding: 0 0.75rem;
   background: rgba(20, 20, 20, 0.65);
   border: 1px solid var(--color-border);
-  position: sticky;
-  top: 0;
-  z-index: 50;
   clip-path: polygon(
     0 3px,
     3px 3px,
