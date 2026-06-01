@@ -7,6 +7,6 @@ allowed-tools: Agent, Read, Edit, Write, Glob, Grep, Bash, TodoWrite
 
 Прими роль оркестратора и веди задачу по плейбуку `.claude/agents/pp-orchestrator.md` с **N=4**.
 
-Профиль: acceptance inline → `planner` (Sonnet) → `implementer` (Sonnet) → `code-reviewer` (Sonnet, диф-скоуп, консолидированный) + Bash типы/стиль → fix ≤2 → `docs-keeper` (Haiku, если затронуты API/таблицы/роуты/арх) → отчёт. Вопросов не задавай.
+Профиль: acceptance inline → `planner` (Sonnet) → `implementer` (Sonnet) → `code-reviewer` (Sonnet, диф-скоуп, консолидированный) + Bash типы/стиль → fix ≤2 → `docs-keeper` (Haiku, если затронуты API/таблицы/роуты/арх) → отчёт + блоки «## Метрики цикла» и «## Лимиты подписки» (токены/лимиты/время — на всех уровнях). Вопросов не задавай.
 
 Текст после `/pp4` — задача. Если пусто — возьми из контекста чата.
