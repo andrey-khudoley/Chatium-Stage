@@ -361,14 +361,24 @@ Userscript на странице GetCourse извлекает deal id из URL, 
             |
             +-- method: 'lifepay' --------------------------+
             |   CORS: widget_lifepay_domains                |
-            |   resolveGcDeal → только RUB                  |
+            |   idempotentBillCache.lookup (TTL 30 мин)     |
+            |     → кэш-попадание: вернуть paymentUrl       |
+            |     → промах: resolveGcDeal → только RUB      |
+            |   runWithExclusiveLock(                        |
+            |     'gw-client:bill-idempotency:lifepay:...'  |
+            |     BILL_LOCK_WAIT_MS/MAX_DURATION_MS=20s)     |
+            |     → LockAcquisitionError: 503 GC_BUSY        |
+            |   повторный lookup внутри лока                 |
             |   invokeByGateway('lifepay','createBill')      |
+            |   recordRequestLog                             |
             |   → { ok, paymentUrl, orderNumber,            |
             |        correlationId, requestId }             |
             |                                               |
             +-- method: 'lavatop' --------------------------+
                 CORS: widget_lavatop_domains
-                resolveGcDeal → cost (RUB), email
+                idempotentBillCache.lookup (TTL 30 мин)
+                  → кэш-попадание: вернуть paymentUrl
+                  → промах: resolveGcDeal → cost (RUB), email
                 handleLavatopDealIntent (lib/gateway/lavatopDealIntent.ts):
                   фильтр суммы (hard-limit + widget_lavatop_min/max)
                   convertRubTo(cost, currency)  (lib/rates/currencyConverter.ts)
@@ -376,10 +386,14 @@ Userscript на странице GetCourse извлекает deal id из URL, 
                     USD/EUR → ручной курс (widget_lavatop_manual_rate_usd/eur)
                              или курс ЦБ РФ (cbr-xml-daily.ru / @app/request)
                   проверка MIN_AMOUNT по валюте (RUB 10, USD 1, EUR 1)
-                  runWithExclusiveLock('lavatop-offer:'+offerId):
+                  runWithExclusiveLock('lavatop-offer:'+offerId,
+                    LAVATOP_LOCK_WAIT_MS/MAX_DURATION_MS=35s):
+                    → LockAcquisitionError: 503 LAVATOP_BUSY
+                    повторный lookup внутри лока
                     updateOfferPrice(offerId, productId, amount, currency)
                     createInvoice(offerId, email, currency,
                                   clientOrderId='{dealId}')  // числовой, без префикса
+                    recordRequestLog  // с 2026-06-01: Lava.Top теперь пишет в request_log
                 → { ok, paymentUrl, ... } → редирект браузера
 
 [ Общий инвариант: resolveGcDeal ]
@@ -461,7 +475,8 @@ Chatium не поддерживает `app.options`, поэтому preflight-з
 | `userscripts/lifepay-widget.user.js`       | Виджет LifePay: deal id из URL → `fetchWidgetConfig(dealId, positions)` → если `config.lifepay.enabled` — `postWidgetIntentByDeal` → QR-модалка. Клиентский offer-гейт убран (решение принимает сервер). `data-offer-id` на якоре удалён. |
 | `userscripts/lavatop-widget.user.js`       | Виджет Lava.Top: deal id из URL → `fetchWidgetConfig(dealId, positions)` → если `config.lavatop.enabled` — 3 кнопки валют (RUB/USD/EUR) → `postWidgetIntentByDeal({method:'lavatop', currency})` → редирект. Клиентский offer-гейт убран. |
 | `lib/rates/currencyConverter.ts`           | `convertRubTo(amount, currency)` — конвертация RUB в RUB (тождество) / USD / EUR. `convertToRub(amount, currency)` — обратная конвертация: валюта → рубли (умножение на курс); используется в `resolveGcDealAmount` для приведения суммы non-RUB заказов к рублям перед сравнением с диапазоном. Приватный `getRubForOne(currency)` — единый источник курса для обоих направлений: ручной курс (`widget_lavatop_manual_rate_*`) → курс ЦБ РФ (cbr-xml-daily.ru / `@app/request`). Результат: `{ok, amount, rate, source:'identity'\|'manual'\|'cbr'}` или `{ok:false, code:'RATE_UNAVAILABLE'}`. `roundToCents` — округление до 2 знаков. |
-| `lib/gateway/lavatopDealIntent.ts`         | `handleLavatopDealIntent(ctx, {offerId, productId, gcDeal, currency})` — оркестратор Lava.Top deal-потока. **С 2026-06-01:** вызывается после серверной проверки `areAllOffersAllowed` в `intent-by-deal`. |
+| `lib/gateway/lavatopDealIntent.ts`         | `handleLavatopDealIntent(ctx, {offerId, productId, gcDeal, currency})` — оркестратор Lava.Top deal-потока. **С 2026-06-01:** включает кэш-lookup идемпотентности и `recordRequestLog` после `createInvoice` (ранее не писал в `request_log`). Вызывается после серверной проверки `areAllOffersAllowed` в `intent-by-deal`. |
+| `lib/gateway/idempotentBillCache.ts`       | **Новый (2026-06-01).** Кэш-lookup идемпотентности создания счёта. Ищет в `request_log` последнюю успешную запись `createBill`/`createInvoice` по `op+gatewayId+orderNumber` в окне TTL 30 минут. Ключ LifePay: `orderNumber+amount`; Lava.Top: `orderNumber+currency+amount`. Сверка `amount`/`currency` в памяти (поля в `argsRedacted`). Статус счёта в gateway не проверяется. |
 | `lib/gateway/gcDealResolver.ts`            | `resolveGcDeal(ctx, dealId)` — резолвинг сделки GC: getDealFields → getUserFields. **С 2026-06-01:** возвращает также `positions: {id}[]` из `getDealFields.positions[].offer_id` — для серверной проверки офферов (сверка только по id). Email в логи не пишется (PII). |
 | `api/widgets/intent-by-deal.ts`            | POST /api/widgets/intent-by-deal — ветвление по `method`. **С 2026-06-01:** серверная проверка `areAllOffersAllowed(positions, settings)` до запуска платёжного потока; 403 `WIDGET_OFFER_NOT_ALLOWED` при запрещённой позиции. |
 | `api/widgets/intent-lavatop.ts`            | POST /api/widgets/intent-lavatop — **deprecated** (offer-поток Lava.Top). `offerId` как продуктовый параметр `createInvoice` сохранён. |
@@ -529,6 +544,38 @@ POST /web/webhook?token=...&correlationId=<id>
 ### Внешняя зависимость
 
 Контракт операции `createDeal` (поля `deal_number`, `deal_status`, `deal_is_paid`, `deal_cost`) определён в `p/saas/gw/gc/lib/gateway/operationsCatalogLegacy.ts`. Base64-кодирование `params` выполняет сам gateway, клиент передаёт только `{params}`. Изменение контракта на стороне gateway сломает downstream-вызов здесь — синхронизация ответственности изменяющего gateway.
+
+## Идемпотентность создания счёта (реализовано 2026-06-01)
+
+Повторный вызов `POST /api/widgets/intent-by-deal` на тот же заказ в окне 30 минут не создаёт новый счёт в платёжном gateway, а возвращает ранее созданную `paymentUrl`.
+
+### Механизм
+
+```
+POST /api/widgets/intent-by-deal { dealId, method }
+  → idempotentBillCache.lookup(ctx, gatewayId, orderNumber, amount, currency?)
+      → findLatestOkForIdempotency(op, gatewayId, orderNumber, since=now-30min)
+          → request_log: ok:true, op='createBill'|'createInvoice',
+                         gatewayId, orderNumber, requestedAt≥since
+      → сверка amount (+ currency для Lava.Top) из argsRedacted в памяти
+      → кэш-попадание: вернуть paymentUrl из rawResponseBody
+  → (при промахе) resolveGcDeal → проверки → захват лока
+      → повторный lookup внутри лока (защита от гонки)
+      → invokeByGateway → recordRequestLog
+```
+
+### Ключи идемпотентности
+
+| Gateway  | op              | Ключ поиска                          | Сверка в памяти          |
+|----------|-----------------|--------------------------------------|--------------------------|
+| LifePay  | `createBill`    | `gatewayId + orderNumber`            | `amount`                 |
+| Lava.Top | `createInvoice` | `gatewayId + orderNumber(=dealId)`   | `currency + amount`      |
+
+### Ограничения
+
+- Статус счёта в gateway не проверяется: если счёт истёк или был отменён, кэшированная ссылка отдаётся как есть. Клиент может получить неоплачиваемый URL до истечения TTL 30 минут.
+- TTL — жёсткий, не сбрасывается при повторных вызовах.
+- Источник кэша — `request_log`. Если `recordRequestLog` упал (try/catch), запись могла не попасть в журнал — кэша нет, следующий запрос снова пойдёт к gateway.
 
 ## Безопасность
 
