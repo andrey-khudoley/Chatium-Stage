@@ -189,9 +189,9 @@ export async function handleLavatopDealIntent(
     return { ok: false, code: 'WIDGET_LAVATOP_AMOUNT_TOO_SMALL', httpStatus: 400 }
   }
 
-  // 6. correlationId (детерминирован по dealId)
+  // 6. correlationId (детерминирован по dealId, сырой числовой dealId после нормализации, без префикса)
   const dealIdNormalized = String(Number(String(dealId).trim()))
-  const correlationId = `gcdeal-${dealIdNormalized}`
+  const correlationId = dealIdNormalized
 
   // 7. callbackUrl для Lava.Top webhook
   const callbackUrl = `https://${ctx.account.host}${getFullUrl(ROUTES.webhookLavatop)}`

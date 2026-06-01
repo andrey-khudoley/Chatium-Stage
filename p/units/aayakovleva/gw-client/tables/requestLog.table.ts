@@ -47,7 +47,8 @@ export const RequestLog = Heap.Table('t__lifepay-sbp-client__reqlog__c7Np4S', {
   correlationId: Heap.Optional(
     Heap.String({
       customMeta: {
-        title: 'correlationId (UUID из callbackUrl/args, для надёжной связки с webhook)'
+        title:
+          'correlationId из callbackUrl/args (UUID или числовой dealId, для надёжной связки с webhook)'
       }
     })
   ),

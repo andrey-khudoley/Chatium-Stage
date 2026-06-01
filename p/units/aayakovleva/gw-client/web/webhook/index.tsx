@@ -10,8 +10,12 @@
  *   - токен не настроен → 503 без тела, без записи в webhook_log;
  *   - токен отсутствует в query → 401 без тела, без записи;
  *   - токен не совпадает → 403 без тела, без записи (значение токена в логи не попадает);
- *   - токен валиден → чтение тела, запись в webhook_log + дедупликация по `number`
- *     через webhook_idempotency, возврат 200 OK.
+ *   - токен валиден, но нет связки с нашим createBill → 200 OK без записи
+ *     (legacy-strict guard, см. §1a ниже): отклоняем вебхуки без `correlationId`
+ *     в query либо без записи `createBill` в request_log по этому `correlationId`.
+ *     Так обрабатываются только заказы, созданные через нашу панель;
+ *   - токен валиден + связка найдена → чтение тела, запись в webhook_log +
+ *     дедупликация по `number` через webhook_idempotency, возврат 200 OK.
  *
  * Формат тела LifePay (подтверждён живым webhook 2026-05-20):
  * `multipart/form-data` с единственным текстовым полем `data` — JSON-строка
@@ -37,6 +41,7 @@
 
 import * as settingsLib from '../../lib/settings.lib'
 import * as loggerLib from '../../lib/logger.lib'
+import * as requestLogRepo from '../../repos/requestLog.repo'
 import * as webhookLogRepo from '../../repos/webhookLog.repo'
 import * as webhookIdempRepo from '../../repos/webhookIdempotency.repo'
 import {
@@ -95,6 +100,41 @@ export const webhookRoute = app.post('/', async (ctx, req) => {
       payload: { tokenLength: tokenFromQuery ? tokenFromQuery.length : 0 }
     })
     return emptyResponse(statusByCheck[tokenCheck])
+  }
+
+  // --- 1a. Guard correlationId: отклонять вебхуки без связки с createBill (legacy-strict) ---
+  if (!correlationId) {
+    await loggerLib.writeServerLog(ctx, {
+      severity: 4,
+      message: `[${LOG_PATH}] webhook_rejected`,
+      payload: { reason: 'correlationId_missing' }
+    })
+    return { statusCode: 200, rawHttpBody: 'OK', headers: { 'Content-Type': 'text/plain' } }
+  }
+
+  let createBillCount = 0
+  try {
+    createBillCount = await requestLogRepo.countCreateBillByCorrelationId(ctx, correlationId)
+  } catch (e) {
+    await loggerLib.writeServerLog(ctx, {
+      // severity 2: сбой lookup при строгой политике = терминальная потеря
+      // легитимного вебхука (LifePay не ретраит вечно) — нужен алертинг.
+      severity: 2,
+      message: `[${LOG_PATH}] createbill_lookup_failed`,
+      payload: { correlationId, error: String(e) }
+    })
+    // При сбое БД трактуем как отказ (строгая политика guard'а: лучше потерять
+    // легитимный вебхук, чем принять мошеннический при недоступной проверке).
+    createBillCount = 0
+  }
+
+  if (createBillCount === 0) {
+    await loggerLib.writeServerLog(ctx, {
+      severity: 4,
+      message: `[${LOG_PATH}] webhook_rejected`,
+      payload: { reason: 'correlationId_not_found', correlationId }
+    })
+    return { statusCode: 200, rawHttpBody: 'OK', headers: { 'Content-Type': 'text/plain' } }
   }
 
   // --- 2. Чтение тела: formData() → body → сырое multipart ---

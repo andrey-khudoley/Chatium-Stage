@@ -118,7 +118,7 @@ File-based, один файл = один роут с путём `/`:
 - **Lava.Top gateway** (`p/saas/gw/lavatop`) — контракт: `POST/GET /api/v1/<op>`, заголовок `X-Lava-Apikey`, ответ `X-Gateway-Request-Id`. Без ретраев. Webhook от Lava.Top — на `/web/webhook-lavatop`.
 - **GetCourse gateway** (`p/saas/gw/gc`) — контракт: `POST/GET /api/v1/<op>`, заголовки `X-Gc-School-Api-Key`, `X-Gc-School-Host`, ответ `X-Gateway-Request-Id`. Без ретраев. Каталог enabled-операций читается SSR-функцией `fetchGcOperations(ctx)` через `GET /api/v1/operations` с graceful degradation (при недоступности gateway группа GC в UI не отображается). Webhook от GC не реализован (MVP).
 
-## Механизм correlationId-связки (реализовано 2026-05-25)
+## Механизм correlationId-связки и верификации вебхуков (обновлено 2026-06-01)
 
 **Проблема:** LifePay в SBP-webhook возвращает `order.number = null`, `orderNumber = ""`, поэтому связать входящий webhook с исходным `createBill` по `orderNumber` невозможно.
 
@@ -144,6 +144,24 @@ File-based, один файл = один роут с путём `/`:
 ```
 
 Модуль `shared/correlation.ts` (`// @shared`) — чистые функции без Heap/ctx: доступны на клиенте (Vue), сервере (api/lp) и в юнит-наборе. Поле `correlationId` в обеих таблицах — `Heap.Optional String` без `searchable` (точный `where`-матч не требует searchable, ср. фильтры по `status`/`tokenValid`).
+
+**Guard «legacy-strict» — верификация происхождения вебхука (2026-06-01):**
+
+`correlationId` используется не только для связки записей, но и как механизм верификации: вебхук без известного `correlationId` не обрабатывается. Guard расположен в `web/webhook/index.tsx` после проверки токена, до чтения тела:
+
+```
+POST /web/webhook?token=...&correlationId=<id>
+  → validateToken (403/401/503 при ошибке)
+  → guard «legacy-strict»:
+      нет correlationId в query → 200 OK, без записи, reason=correlationId_missing
+      есть correlationId → countCreateBillByCorrelationId(ctx, correlationId)
+        count = 0 → 200 OK, без записи, reason=correlationId_not_found
+        сбой БД  → 200 OK, без записи (строгая политика, severity 2)
+        count > 0 → продолжить обработку
+  → unwrapWebhookBody / parseWebhookBody / запись в webhook_log / дедупликация / socket
+```
+
+Цель: принимать только вебхуки по заказам, явно созданным через панель (`invokeByGateway('lifepay','createBill')` из `intent-by-deal` или `api/lp/invoke`). Осознанный риск: при затяжном сбое Heap вебхук потеряется (guard строгий, не пропускает при неопределённости).
 
 ## Внутренняя авторизация (ADR 0003 / §1.11, реализовано 2026-05-24)
 
@@ -361,7 +379,7 @@ Userscript на странице GetCourse извлекает deal id из URL, 
                   runWithExclusiveLock('lavatop-offer:'+offerId):
                     updateOfferPrice(offerId, productId, amount, currency)
                     createInvoice(offerId, email, currency,
-                                  clientOrderId='gcdeal-{dealId}')
+                                  clientOrderId='{dealId}')  // числовой, без префикса
                 → { ok, paymentUrl, ... } → редирект браузера
 
 [ Общий инвариант: resolveGcDeal ]
@@ -377,7 +395,7 @@ Userscript на странице GetCourse извлекает deal id из URL, 
 
 - **(A1) Единый deal-поток для обоих гейтвеев.** LifePay и Lava.Top работают через один эндпоинт `intent-by-deal`, ветвление по `method`. `intent-lavatop.ts` (offer-поток) помечен deprecated, код не изменён.
 - **(A2) LifePay — только RUB.** `createBill` не принимает параметр валюты. При `currency != 'RUB'` в сделке GC — `WIDGET_GC_CURRENCY_UNSUPPORTED`.
-- **(A3) Lava.Top — конвертация RUB→валюта оплаты.** `createInvoice` не принимает `amount` (берёт из оффера). Поэтому поток: рублёвый `cost` → конвертация → `updateOfferPrice` → `createInvoice`. Лок `runWithExclusiveLock` защищает от гонок при одновременных заявках на один оффер. `clientOrderId = 'gcdeal-{dealId}'` обеспечивает связку webhook → request_log.
+- **(A3) Lava.Top — конвертация RUB→валюта оплаты.** `createInvoice` не принимает `amount` (берёт из оффера). Поэтому поток: рублёвый `cost` → конвертация → `updateOfferPrice` → `createInvoice`. Лок `runWithExclusiveLock` защищает от гонок при одновременных заявках на один оффер. `clientOrderId = '{dealId}'` (числовой dealId без префикса) обеспечивает связку webhook → request_log.
 - **(A4) Единый продукт Lava.Top.** Один `offerId` + `productId` из настроек (`widget_lavatop_offer_id`, `widget_lavatop_product_id`) для всех заказов. Маппинг GC-оффер → Lava.Top-оффер не нужен. Offer-фильтр (`widget_lavatop_offer_ids`) в deal-потоке Lava.Top **не** применяется.
 - **(A5) Данные только из GC.** Сумма, валюта и email берутся из GetCourse, а не из DOM/data-атрибутов страницы.
 - **(A6) Предусловие оператора.** Домен GC-страницы должен быть в whitelist соответствующего гейтвея; GC-настройки заполнены, `gc_enabled=true`.

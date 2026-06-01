@@ -170,7 +170,12 @@
 - `lp_webhook_token` пуст в Heap → 503, без тела, без записи.
 - Токен отсутствует в query → 401, без тела, без записи.
 - Токен не совпадает → 403, без тела, без записи (значение в логи не попадает).
-- Токен валиден → запись в `webhook_log` (`tokenValid: true`, `duplicate` по результату дедупа), ответ 200 OK с `OK`.
+- Токен валиден → **guard «legacy-strict»** (§1a, добавлен 2026-06-01, выполняется до чтения тела):
+  - `correlationId` отсутствует в query → 200 OK без тела, без записи в `webhook_log`, без socket-публикации; лог `reason=correlationId_missing`.
+  - `correlationId` есть, но `request_log` не содержит записи `createBill` с таким `correlationId` (проверяется через `repos/requestLog.countCreateBillByCorrelationId`) → 200 OK без тела, без записи, без публикации; лог `reason=correlationId_not_found`.
+  - Сбой БД при lookup → guard трактует как отказ (строгая политика, severity 2 для алертинга); 200 OK без записи.
+  - **Осознанный риск**: легитимный вебхук по заказу, созданному не через панель (или при затяжном сбое БД), будет отклонён без повторной попытки — LifePay сделает до 10 ретраев, но если `request_log` так и не появится, вебхук потеряется. Цель guard'а — исключить приём «чужих» вебхуков и нежелательное дублирование заказов; механизм `correlationId` — единственная верификация происхождения.
+- Guard пройден → запись в `webhook_log` (`tokenValid: true`, `duplicate` по результату дедупа), ответ 200 OK с `OK`.
 - Бизнес-исход: обновление заказа в GetCourse допустимо только при `type='payment'`
   - `status='success'` (`isSuccessfulPayment`). В Прототипе обработка заканчивается
     журналом; флаг `eligibleForOrderUpdate` пишется в лог `webhook_done` для будущего
@@ -240,7 +245,7 @@
 | POST   | /api/widgets/config            | api/widgets/config.ts            | Публичный (CORS)                                               | Определяет доступность каждого метода оплаты для конкретного заказа. С 2026-06-01: **метод изменён с GET на POST** (CORS simple-request, `Content-Type: text/plain`, тело — JSON-строка). Тело запроса: `{ dealId: string\|number, positions: [{id,title}] }`. **Per-method CORS**: `lifepay.enabled` требует Origin в `widget_lifepay_domains`; `lavatop.enabled` — в `widget_lavatop_domains`; 403 `CORS_ORIGIN_NOT_ALLOWED` только если Origin не входит НИ В ОДИН из списков; при частичном совпадении — `enabled:false` только для метода с несовпавшим списком. 500 `WIDGET_CONFIG_ERROR` при сбое чтения настроек (fail-closed). ACAO/`Vary: Origin` выставляются только при допустимом Origin. 400 `WIDGET_BODY_INVALID` если `dealId` отсутствует/невалиден, а хотя бы для одного метода задан `minAmount`/`maxAmount`. Ответ: `{ ok, config: { lifepay: { enabled }, lavatop: { enabled } } }` (тип `WidgetAvailabilityConfig`, `shared/widgetSettingsTypes.ts`). `enabled` для метода `m` = `<m>Cors.allowed` AND `settings.<m>Enabled` AND `areAllOffersAllowed(positions из тела)` AND `amountOk`. `amountOk` проверяется только если для метода задан `minAmount>0` или `maxAmount>0` — тогда сервер резолвит сумму сделки из GC через `resolveGcDealAmount` (с TTL-кэшом `GcDealCache`). **Проверка суммы ведётся в рублях**: `resolveGcDealAmount` конвертирует сумму заказа в RUB (RUB — без изменений; USD/EUR — по ручному курсу из веб-панели `widget_lavatop_manual_rate_*`, при его отсутствии — по курсу ЦБ РФ через cbr-xml-daily.ru). Если курс недоступен — fail-closed (`enabled:false`). При ошибке резолвинга суммы — fail-closed (`enabled:false`), ответ `ok:true`. Offer-фильтр применяется по `positions` из тела (клиент передаёт из DOM; сервер не доверяет, но используется только здесь — авторитетная проверка — в `intent-by-deal`). |
 | POST   | /api/widgets/intent-lifepay    | api/widgets/intent-lifepay.ts    | Публичный (CORS, `widget_lifepay_domains`)                     | Создать платёжное намерение LifePay. Парсит `text/plain`-тело. Серверный hard-limit `WIDGET_INTENT_HARD_LIMIT_RUB = 500 000 ₽` (применяется до per-user-max). Email/regex/orderNumber/description/callbackUrl формируются на сервере. Вызов `invokeByGateway('lifepay', 'createBill')`. Audit-лог через `loggerLib`. 403 при недопустимом Origin. Серверный offer-фильтр (одиночный `offerId`) удалён — двухуровневая проверка позиций реализована в `intent-by-deal`. |
 | POST   | /api/widgets/intent-lavatop    | api/widgets/intent-lavatop.ts    | Публичный (CORS, `widget_lavatop_domains`)                     | **Deprecated** (offer-поток). Создать платёжное намерение Lava.Top. `email` и `offerId` обязательны; `amount` — опционален. Вызов `invokeByGateway('lavatop', 'createInvoice')`. `offerId` как продуктовый параметр `createInvoice` сохранён. Серверный offer-фильтр (одиночный) удалён; двухуровневая проверка — в `intent-by-deal`.                                                                                                                          |
-| POST   | /api/widgets/intent-by-deal    | api/widgets/intent-by-deal.ts    | Публичный (CORS, `widget_lifepay_domains` или `widget_lavatop_domains` по методу) | Создать платёжное намерение по GetCourse deal id. Тело (`text/plain` JSON): `{ dealId: string\|number, method?: 'lifepay'\|'lavatop', currency?: 'RUB'\|'USD'\|'EUR' }`. `currency` только для Lava.Top. Поток LifePay: `resolveGcDeal` → **`areAllOffersAllowed`** (позиции из `getDealFields.positions`) → `invokeByGateway('lifepay','createBill')` (только RUB). Поток Lava.Top: аналогичная проверка → `convertRubTo` → `runWithExclusiveLock` → `updateOfferPrice` → `createInvoice` → `paymentUrl`. При запрещённой позиции — **403 `WIDGET_OFFER_NOT_ALLOWED`**. `orderNumber`/`correlationId` детерминированы: `gcdeal-{dealId}`. PII (email) в ответ не включается. |
+| POST   | /api/widgets/intent-by-deal    | api/widgets/intent-by-deal.ts    | Публичный (CORS, `widget_lifepay_domains` или `widget_lavatop_domains` по методу) | Создать платёжное намерение по GetCourse deal id. Тело (`text/plain` JSON): `{ dealId: string\|number, method?: 'lifepay'\|'lavatop', currency?: 'RUB'\|'USD'\|'EUR' }`. `currency` только для Lava.Top. Поток LifePay: `resolveGcDeal` → **`areAllOffersAllowed`** (позиции из `getDealFields.positions`) → `invokeByGateway('lifepay','createBill')` (только RUB) → **`recordRequestLog`** (результат createBill записывается в `request_log`; `correlationId` исключён из `argsForGateway`, передаётся в журнал отдельно). Поток Lava.Top: аналогичная проверка → `convertRubTo` → `runWithExclusiveLock` → `updateOfferPrice` → `createInvoice` → `paymentUrl`. При запрещённой позиции — **403 `WIDGET_OFFER_NOT_ALLOWED`**. `orderNumber`/`correlationId` детерминированы: числовой dealId (нормализованный, без префикса), например `"848988370"`. PII (email) в ответ не включается. |
 | GET    | /api/widgets/settings-get      | api/widgets/settings-get.ts      | Сотрудник + Admin (`guardInternalApi`, `// @shared-route`)     | Возвращает `WidgetSettingsData` с текущими значениями 12 виджет-ключей для Vue-формы в `HomeWidgetSettings.vue` (вкладка «Настройки» главной).                                                                                                                                                                                                    |
 | POST   | /api/widgets/settings-save     | api/widgets/settings-save.ts     | Сотрудник + Admin (`guardInternalApi`, `// @shared-route`)     | Сохранить одну виджет-настройку. Тело: `{ key, value }`. Whitelist: только 12 ключей из `WIDGET_SETTING_KEYS`. Делегирует `setSetting(ctx, key, value)`. Виджет-настройки — operational/бизнес, не секреты.                                                                                                                                       |
 | GET    | /api/widgets/offers            | api/widgets/offers.ts            | Сотрудник + Admin (`guardInternalApi`, `// @shared-route`)     | Проксирует `getOffers` GetCourse. При `gc_enabled=false` → `GC_DISABLED`; при пустых GC-настройках → `GC_NOT_CONFIGURED`. Используется `HomeWidgetSettings` для загрузки списка офферов с чекбоксами.                                                                                                                                             |
@@ -339,8 +344,8 @@
 {
   "ok": true,
   "paymentUrl": "https://...",
-  "orderNumber": "gcdeal-12345",
-  "correlationId": "gcdeal-12345",
+  "orderNumber": "12345",
+  "correlationId": "12345",
   "requestId": "..."
 }
 ```
@@ -351,7 +356,8 @@ PII (email покупателя) в ответ **не включается**. П
 
 1. `resolveGcDeal(ctx, dealId)` (`lib/gateway/gcDealResolver.ts`) — `getDealFields` → `getUserFields` через GC-гейтвей; извлекает из двойной обёртки `responseBody.data.data`.
 2. Проверки: сделка найдена, не оплачена, валюта RUB, email присутствует, сумма в пределах hard-limit + min/max.
-3. `invokeByGateway('lifepay','createBill')` с суммой/валютой от GC.
+3. `invokeByGateway('lifepay','createBill')` с суммой/валютой от GC. `correlationId` передаётся в `callbackUrl` и в `request_log`, но исключён из `argsForGateway`.
+4. `recordRequestLog` — результат вызова записывается в `request_log` (`lib/gateway/recordRequestLog.ts`); обёрнут в try/catch, не прерывает поток при сбое журналирования.
 
 **Lava.Top (`method: 'lavatop'`, RUB/USD/EUR):**
 
@@ -359,7 +365,7 @@ PII (email покупателя) в ответ **не включается**. П
 2. Проверки сделки + фильтр суммы (hard-limit + `widget_lavatop_min`/`widget_lavatop_max` по рублёвому `cost`).
 3. `convertRubTo(cost, currency)` (`lib/rates/currencyConverter.ts`) — для RUB тождество; для USD/EUR: ручной курс из настроек (`widget_lavatop_manual_rate_usd`/`eur`) приоритетнее, иначе курс ЦБ РФ (cbr-xml-daily.ru через `@app/request`). Возвращает `{ok, amount, rate, source: 'identity'|'manual'|'cbr'}`.
 4. Проверка `MIN_AMOUNT` по валюте (RUB 10, USD 1, EUR 1).
-5. `runWithExclusiveLock('lavatop-offer:'+offerId)` → `updateOfferPrice(offerId, productId, amount, currency)` → `createInvoice(offerId, email, currency)` → `paymentUrl`. `clientOrderId = 'gcdeal-{dealId}'`.
+5. `runWithExclusiveLock('lavatop-offer:'+offerId)` → `updateOfferPrice(offerId, productId, amount, currency)` → `createInvoice(offerId, email, currency)` → `paymentUrl`. `clientOrderId = '{dealId}'` (числовой, нормализованный, без префикса).
 
 Предусловия Lava.Top deal-потока: `widget_lavatop_offer_id` + `widget_lavatop_product_id` заданы; оффер поддерживает RUB/USD/EUR; домен GC-страницы в `widget_lavatop_domains`.
 

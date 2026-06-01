@@ -29,6 +29,7 @@ import { getWidgetSettings } from '../../lib/widget/widgetSettings.lib'
 import { checkWidgetOrigin, type WidgetCorsResult } from '../../shared/widgetCorsCheck'
 import { WIDGET_INTENT_HARD_LIMIT_RUB, areAllOffersAllowed } from '../../shared/widgetSettingsTypes'
 import { invokeByGateway } from '../../lib/gateway/invokeDispatcher'
+import { recordRequestLog } from '../../lib/gateway/recordRequestLog'
 import { resolveGcDeal } from '../../lib/gateway/gcDealResolver'
 import { handleLavatopDealIntent } from '../../lib/gateway/lavatopDealIntent'
 import type { PaymentCurrency } from '../../lib/rates/currencyConverter'
@@ -321,10 +322,10 @@ export const widgetIntentByDealRoute = app.post('/', async (ctx, req) => {
     )
   }
 
-  // Детерминированный orderNumber и correlationId по dealId
+  // Детерминированный orderNumber и correlationId по dealId (сырой числовой dealId после нормализации, без префикса)
   const dealIdNormalized = String(Number(String(dealIdRaw).trim()))
-  const orderNumber = `gcdeal-${dealIdNormalized}`
-  const correlationId = `gcdeal-${dealIdNormalized}`
+  const orderNumber = dealIdNormalized
+  const correlationId = dealIdNormalized
 
   // Webhook callback URL: token из настроек + correlationId через appendCorrelationId
   const webhookToken = await settingsLib.getLpWebhookToken(ctx)
@@ -345,13 +346,34 @@ export const widgetIntentByDealRoute = app.post('/', async (ctx, req) => {
     args.customerPhone = body.customerPhone.trim()
   }
 
-  const result = await invokeByGateway(ctx, 'lifepay', 'createBill', args)
+  // correlationId не должен уходить в gateway — удаляем из копии args (по образцу api/lp/invoke.ts)
+  const argsForGateway: Record<string, unknown> = { ...args }
+  delete argsForGateway.correlationId
+
+  const result = await invokeByGateway(ctx, 'lifepay', 'createBill', argsForGateway)
   const responseBody = result.responseBody ?? {}
   const paymentUrl =
     (typeof responseBody.paymentUrl === 'string' && responseBody.paymentUrl) ||
     (typeof (responseBody.data as Record<string, unknown> | undefined)?.paymentUrl === 'string' &&
       ((responseBody.data as Record<string, unknown>).paymentUrl as string)) ||
     ''
+
+  // Запись в request_log — до любого раннего return (покрывает ok=false и ok=true без paymentUrl)
+  try {
+    await recordRequestLog(ctx, {
+      gatewayId: 'lifepay',
+      op: 'createBill',
+      args: argsForGateway,
+      invoke: result,
+      correlationId
+    })
+  } catch (e) {
+    await loggerLib.writeServerLog(ctx, {
+      severity: 3,
+      message: `[${LOG_PATH}] record_log_failed`,
+      payload: { correlationId, error: String(e) }
+    })
+  }
 
   if (!result.ok || !paymentUrl) {
     await loggerLib.writeServerLog(ctx, {

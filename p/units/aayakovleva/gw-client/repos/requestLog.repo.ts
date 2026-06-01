@@ -348,3 +348,22 @@ export async function countInRange(ctx: app.Ctx, from?: number, to?: number): Pr
 export async function countOkInRange(ctx: app.Ctx, from?: number, to?: number): Promise<number> {
   return RequestLog.countBy(ctx, { ...rangeWhere(from, to), ok: true })
 }
+
+/**
+ * Сколько записей createBill в request_log по correlationId.
+ * Используется webhook-guard'ом (legacy-strict): вебхук отклоняется,
+ * если для переданного correlationId не найдено ни одного createBill.
+ */
+export async function countCreateBillByCorrelationId(
+  ctx: app.Ctx,
+  correlationId: string
+): Promise<number> {
+  if (!correlationId || !correlationId.trim()) return 0
+  const count = await RequestLog.countBy(ctx, { correlationId, op: 'createBill' })
+  await loggerLib.writeServerLog(ctx, {
+    severity: 6,
+    message: `[${LOG_MODULE}] countCreateBillByCorrelationId`,
+    payload: { correlationId, count }
+  })
+  return count
+}

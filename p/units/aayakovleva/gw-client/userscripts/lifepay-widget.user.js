@@ -22,7 +22,7 @@
  * УДАЛЕНО:
  *   - data-offer-id     — заменён проверкой всех позиций .deal-positions.
  *   - data-email        — email берётся из GC-заказа на сервере.
- *   - data-order-number — orderNumber детерминирован: `gcdeal-{dealId}`.
+ *   - data-order-number — orderNumber детерминирован: числовой dealId (нормализованный).
  *   - extractOrderAmount / isAmountInRange — сумма с сервера из GC.
  *
  * Зависимости: глобал `window.GwWidgetCommon` из `common.js`.
