@@ -127,6 +127,7 @@
         <HomeSettingsTab
           v-if="activeTab === 'settings'"
           :initial-gc-enabled="initialGcEnabled"
+          :initial-gc-create-payment="initialGcCreatePayment"
           :initial-widget-settings="initialWidgetSettings"
           :anchor-base-url="anchorBaseUrl"
         />
@@ -233,6 +234,7 @@ export default {
     initialSettings: { type: Object, default: () => defaultSbpHomeSettings() },
     initialDateFilter: { type: Object, default: () => ({}) },
     initialGcEnabled: { type: Boolean, default: false },
+    initialGcCreatePayment: { type: Boolean, default: true },
     initialWidgetSettings: { type: Object, default: null },
     anchorBaseUrl: { type: String, default: '' },
     gcOperations: { type: Array, default: () => [] }

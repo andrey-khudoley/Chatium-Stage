@@ -21,7 +21,7 @@ const LOG_MODULE = 'lib/webhook/gcDealUpdate'
  * Замечания:
  *   - `deal_number` = GC поле `number` (номер заказа для привязки сделки), НЕ id/correlationId.
  *     Значение берётся из `input.dealNumber`, который должен содержать GC `number` из getDealFields.
- *   - `deal_is_paid` передаётся строкой `'1'` (требование валидатора GC gateway).
+ *   - `deal_is_paid` — `'1'` если `createPayment=true`, `'0'` если `false` (настройка «Создавать платёж»).
  *   - `deal_cost` включается ТОЛЬКО если `amount` парсится в конечное число > 0.
  *     `amount === '0'`, `'0.00'` или нечисловые значения → `deal_cost` намеренно
  *     не передаётся (нулевая / неизвестная сумма неинформативна для GC).
@@ -30,6 +30,7 @@ export function buildCreateDealArgs(input: {
   dealNumber: string
   email: string
   amount?: string
+  createPayment: boolean
 }): {
   params: {
     user: { email: string }
@@ -49,7 +50,7 @@ export function buildCreateDealArgs(input: {
   } = {
     deal_number: input.dealNumber,
     deal_status: 'payed',
-    deal_is_paid: '1'
+    deal_is_paid: input.createPayment ? '1' : '0'
   }
 
   if (input.amount !== undefined) {
@@ -81,11 +82,12 @@ export async function updateGcDealOnPayment(
     email: string
     amount?: string
     correlationId: string
+    createPayment: boolean
   }
 ): Promise<{ ok: boolean }> {
-  const { orderNumber, dealNumber, email, amount, correlationId } = input
+  const { orderNumber, dealNumber, email, amount, correlationId, createPayment } = input
   try {
-    const createDealArgs = buildCreateDealArgs({ dealNumber, email, amount })
+    const createDealArgs = buildCreateDealArgs({ dealNumber, email, amount, createPayment })
     const res = await invokeByGateway(ctx, 'gc', 'createDeal', createDealArgs, {
       httpMethod: 'POST'
     })

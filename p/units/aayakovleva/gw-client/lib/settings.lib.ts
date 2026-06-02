@@ -33,6 +33,7 @@ export const SETTING_KEYS = {
   GC_TEST_SCHOOL_API_KEY: 'gc_test_school_api_key',
   GC_TEST_SCHOOL_HOST: 'gc_test_school_host',
   GC_ENABLED: 'gc_enabled',
+  GC_CREATE_PAYMENT: 'gc_create_payment',
   // Глобальный фильтр панели по дате/времени (один на всё приложение).
   PANEL_DATE_FILTER: 'panel_date_filter',
   // Виджеты для встраивания на сторонние страницы (userscripts/*).
@@ -125,6 +126,7 @@ export const DEFAULTS = {
   [SETTING_KEYS.GC_TEST_SCHOOL_API_KEY]: '',
   [SETTING_KEYS.GC_TEST_SCHOOL_HOST]: '',
   [SETTING_KEYS.GC_ENABLED]: 'false',
+  [SETTING_KEYS.GC_CREATE_PAYMENT]: 'true',
   [SETTING_KEYS.WIDGET_LIFEPAY_ENABLED]: 'false',
   [SETTING_KEYS.WIDGET_LIFEPAY_DOMAINS]: '',
   [SETTING_KEYS.WIDGET_LIFEPAY_MIN]: '0',
@@ -407,6 +409,17 @@ export async function getGcTestSchoolHost(ctx: app.Ctx): Promise<string> {
 export async function getGcEnabled(ctx: app.Ctx): Promise<boolean> {
   const value = await getStringSettingRaw(ctx, SETTING_KEYS.GC_ENABLED)
   return value === 'true'
+}
+
+/**
+ * Получить gc_create_payment — флаг передачи deal_is_paid='1' при createDeal.
+ * Дефолт — включено (`DEFAULTS['gc_create_payment'] = 'true'`). Логика `!== 'false'`
+ * намеренна: при любом значении, кроме точной строки `'false'`, функция возвращает `true`
+ * (включая fallback-значение `'true'` из DEFAULTS при отсутствии записи в БД).
+ */
+export async function getGcCreatePayment(ctx: app.Ctx): Promise<boolean> {
+  const value = await getStringSettingRaw(ctx, SETTING_KEYS.GC_CREATE_PAYMENT)
+  return value !== 'false'
 }
 
 /**

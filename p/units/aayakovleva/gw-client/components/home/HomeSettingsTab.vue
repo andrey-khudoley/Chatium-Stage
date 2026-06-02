@@ -19,18 +19,24 @@ declare const ctx: app.Ctx
 
 const props = defineProps<{
   initialGcEnabled?: boolean
+  initialGcCreatePayment?: boolean
   initialWidgetSettings?: WidgetSettingsData
   anchorBaseUrl?: string
 }>()
 
 const gcEnabled = ref<boolean>(!!props.initialGcEnabled)
 const savedGcEnabled = ref<boolean>(!!props.initialGcEnabled)
+const gcCreatePayment = ref<boolean>(props.initialGcCreatePayment !== false)
+const savedGcCreatePayment = ref<boolean>(props.initialGcCreatePayment !== false)
 const saving = ref(false)
 const message = ref('')
 const error = ref(false)
 const widgetSettingsLive = ref<WidgetSettingsData | undefined>(props.initialWidgetSettings)
 
-const hasUnsaved = computed(() => gcEnabled.value !== savedGcEnabled.value)
+const hasUnsaved = computed(
+  () =>
+    gcEnabled.value !== savedGcEnabled.value || gcCreatePayment.value !== savedGcCreatePayment.value
+)
 
 const lifepayOn = computed(() => !!widgetSettingsLive.value?.lifepayEnabled)
 const lavatopOn = computed(() => !!widgetSettingsLive.value?.lavatopEnabled)
@@ -46,15 +52,19 @@ async function saveGc() {
   error.value = false
   saving.value = true
   try {
-    const res = await saveOperationalSettingRoute.run(ctx, {
-      key: 'gc_enabled',
-      value: gcEnabled.value ? 'true' : 'false'
-    })
-    const data = res as { success?: boolean; error?: string }
-    if (data?.success === false) {
-      throw new Error(data.error || 'ошибка')
+    const pairs: Array<{ key: string; value: string }> = [
+      { key: 'gc_enabled', value: gcEnabled.value ? 'true' : 'false' },
+      { key: 'gc_create_payment', value: gcCreatePayment.value ? 'true' : 'false' }
+    ]
+    for (const { key, value } of pairs) {
+      const res = await saveOperationalSettingRoute.run(ctx, { key, value })
+      const data = res as { success?: boolean; error?: string }
+      if (data?.success === false) {
+        throw new Error(data.error || 'ошибка')
+      }
     }
     savedGcEnabled.value = gcEnabled.value
+    savedGcCreatePayment.value = gcCreatePayment.value
     message.value = 'Сохранено.'
   } catch (e) {
     message.value = (e as Error)?.message || String(e)
@@ -137,6 +147,28 @@ function onWidgetUpdate(next: WidgetSettingsData) {
         </span>
         <span class="st-toggle-state" :class="gcEnabled ? 'is-on' : ''">
           {{ gcEnabled ? 'Включено' : 'Выключено' }}
+        </span>
+      </label>
+
+      <label class="st-toggle-row" :for="'gc-create-payment-toggle'">
+        <span class="st-toggle">
+          <input
+            id="gc-create-payment-toggle"
+            v-model="gcCreatePayment"
+            type="checkbox"
+            :disabled="saving"
+          />
+          <span class="st-toggle-slider"></span>
+        </span>
+        <span class="st-toggle-text">
+          <span class="st-toggle-title">Создавать платёж</span>
+          <span class="st-toggle-hint">
+            Передавать <code>deal_is_paid=1</code> при вызове <code>createDeal</code> в GetCourse.
+            Если выключено — передаётся <code>deal_is_paid=0</code>.
+          </span>
+        </span>
+        <span class="st-toggle-state" :class="gcCreatePayment ? 'is-on' : ''">
+          {{ gcCreatePayment ? 'Включено' : 'Выключено' }}
         </span>
       </label>
 

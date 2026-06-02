@@ -21,11 +21,7 @@ const props = defineProps<{
   }
 }>()
 
-const GC_SETTINGS_KEYS = [
-  'gc_base_url',
-  'gc_test_school_api_key',
-  'gc_test_school_host'
-] as const
+const GC_SETTINGS_KEYS = ['gc_base_url', 'gc_test_school_api_key', 'gc_test_school_host'] as const
 type GcSettingKey = (typeof GC_SETTINGS_KEYS)[number]
 
 const gcSettings = ref<Record<GcSettingKey, string>>({

@@ -100,6 +100,7 @@ export const indexPageRoute = app.html('/', async (ctx, req) => {
   // из /web/admin: секреты/URL/host GC остались в админке, активация живёт
   // рядом с панелью и доступна сотрудникам).
   const initialGcEnabled = await settingsLib.getGcEnabled(ctx)
+  const initialGcCreatePayment = await settingsLib.getGcCreatePayment(ctx)
 
   // Виджет-настройки для карточки «Виджеты оплаты» на вкладке «Настройки»
   // (бизнес-настройки: enabled, domains, min/max, фильтр офферов). Перенесены
@@ -226,6 +227,7 @@ export const indexPageRoute = app.html('/', async (ctx, req) => {
           initialSettings={initialSettings}
           initialDateFilter={initialDateFilter}
           initialGcEnabled={initialGcEnabled}
+          initialGcCreatePayment={initialGcCreatePayment}
           initialWidgetSettings={initialWidgetSettings}
           anchorBaseUrl={anchorBaseUrl}
           gcOperations={gcOperations}

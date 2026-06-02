@@ -23,7 +23,8 @@ import { guardInternalApi } from '../../lib/access/apiGuard'
 const LOG_PATH = 'api/settings/save-operational'
 
 const ALLOWED_OPERATIONAL_KEYS: ReadonlySet<string> = new Set([
-  settingsLib.SETTING_KEYS.GC_ENABLED
+  settingsLib.SETTING_KEYS.GC_ENABLED,
+  settingsLib.SETTING_KEYS.GC_CREATE_PAYMENT
 ])
 
 export const saveOperationalSettingRoute = app.post('/', async (ctx, req) => {

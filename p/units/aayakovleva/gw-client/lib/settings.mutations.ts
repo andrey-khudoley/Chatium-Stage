@@ -226,6 +226,18 @@ export async function setSetting(ctx: app.Ctx, key: string, value: unknown): Pro
       message: `[${LOG_MODULE}] setSetting GC_ENABLED branch`,
       payload: { normalized }
     })
+  } else if (key === SETTING_KEYS.GC_CREATE_PAYMENT) {
+    const str =
+      typeof value === 'string' ? value.trim() : typeof value === 'boolean' ? String(value) : ''
+    if (str !== 'true' && str !== 'false') {
+      throw new Error('gc_create_payment должен быть строкой "true" или "false".')
+    }
+    normalized = str
+    await loggerLib.writeServerLog(ctx, {
+      severity: 6,
+      message: `[${LOG_MODULE}] setSetting GC_CREATE_PAYMENT branch`,
+      payload: { normalized }
+    })
   } else if (key === SETTING_KEYS.PANEL_DATE_FILTER) {
     if (!isValidDateFilter(value)) {
       throw new Error(

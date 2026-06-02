@@ -405,12 +405,19 @@ export const webhookRoute = app.post('/', async (ctx, req) => {
           payload: { reason: 'email_missing', correlationId }
         })
       } else {
+        const gcCreatePayment = await settingsLib.getGcCreatePayment(ctx)
+        await loggerLib.writeServerLog(ctx, {
+          severity: 6,
+          message: `[${LOG_PATH}] gc_deal_update_start`,
+          payload: { correlationId, dealNumber, createPayment: gcCreatePayment }
+        })
         await updateGcDealOnPayment(ctx, {
           orderNumber: correlationId,
           dealNumber,
           email,
           amount,
-          correlationId
+          correlationId,
+          createPayment: gcCreatePayment
         })
       }
     }
