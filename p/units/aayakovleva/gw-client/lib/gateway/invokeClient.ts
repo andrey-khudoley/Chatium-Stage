@@ -89,6 +89,11 @@ export async function invokeGateway(
   }
   if (urlBuild.kind === 'base_url_invalid') {
     const durationMs = Date.now() - start
+    await loggerLib.writeServerLog(ctx, {
+      severity: 4,
+      message: `[${LOG_MODULE}] invokeLifepayGateway: base_url_invalid`,
+      payload: { op }
+    })
     return buildProxyErrorResult(
       INVOKE_PROXY_ERROR_CODES.SETTINGS_MISSING,
       503,

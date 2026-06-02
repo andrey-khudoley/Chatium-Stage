@@ -272,7 +272,7 @@ export function runGcDealUpdateChecks(results: LifepayUnitTestResult[]): void {
     'lp_gc_deal_update_basic_mapping',
     'buildCreateDealArgs: базовый маппинг полей deal и user',
     () => {
-      const args = buildCreateDealArgs({ orderNumber: 'ORD-001', email: 'buyer@test.ru' })
+      const args = buildCreateDealArgs({ dealNumber: 'ORD-001', email: 'buyer@test.ru' })
       return (
         args.params.deal.deal_number === 'ORD-001' &&
         args.params.deal.deal_status === 'payed' &&
@@ -284,10 +284,20 @@ export function runGcDealUpdateChecks(results: LifepayUnitTestResult[]): void {
 
   tryPush(
     results,
+    'lp_gc_deal_update_deal_number_from_gc',
+    'buildCreateDealArgs: dealNumber=GC-NUMBER-42 → deal_number === "GC-NUMBER-42"',
+    () => {
+      const args = buildCreateDealArgs({ dealNumber: 'GC-NUMBER-42', email: 'a@b.c' })
+      return args.params.deal.deal_number === 'GC-NUMBER-42'
+    }
+  )
+
+  tryPush(
+    results,
     'lp_gc_deal_update_deal_is_paid_string',
     'buildCreateDealArgs: deal_is_paid строго строка "1", не число',
     () => {
-      const args = buildCreateDealArgs({ orderNumber: 'X', email: 'a@b.c' })
+      const args = buildCreateDealArgs({ dealNumber: 'X', email: 'a@b.c' })
       return (
         typeof args.params.deal.deal_is_paid === 'string' && args.params.deal.deal_is_paid === '1'
       )
@@ -299,7 +309,7 @@ export function runGcDealUpdateChecks(results: LifepayUnitTestResult[]): void {
     'lp_gc_deal_update_amount_parsed',
     'buildCreateDealArgs: amount="1500.00" → deal_cost === 1500 (число)',
     () => {
-      const args = buildCreateDealArgs({ orderNumber: 'X', email: 'a@b.c', amount: '1500.00' })
+      const args = buildCreateDealArgs({ dealNumber: 'X', email: 'a@b.c', amount: '1500.00' })
       return args.params.deal.deal_cost === 1500
     }
   )
@@ -309,7 +319,7 @@ export function runGcDealUpdateChecks(results: LifepayUnitTestResult[]): void {
     'lp_gc_deal_update_amount_undefined',
     'buildCreateDealArgs: amount=undefined → deal_cost отсутствует',
     () => {
-      const args = buildCreateDealArgs({ orderNumber: 'X', email: 'a@b.c' })
+      const args = buildCreateDealArgs({ dealNumber: 'X', email: 'a@b.c' })
       return !('deal_cost' in args.params.deal)
     }
   )
@@ -319,7 +329,7 @@ export function runGcDealUpdateChecks(results: LifepayUnitTestResult[]): void {
     'lp_gc_deal_update_amount_zero',
     'buildCreateDealArgs: amount="0" → deal_cost отсутствует',
     () => {
-      const args = buildCreateDealArgs({ orderNumber: 'X', email: 'a@b.c', amount: '0' })
+      const args = buildCreateDealArgs({ dealNumber: 'X', email: 'a@b.c', amount: '0' })
       return !('deal_cost' in args.params.deal)
     }
   )
@@ -329,7 +339,7 @@ export function runGcDealUpdateChecks(results: LifepayUnitTestResult[]): void {
     'lp_gc_deal_update_amount_zero_decimal',
     'buildCreateDealArgs: amount="0.00" → deal_cost отсутствует',
     () => {
-      const args = buildCreateDealArgs({ orderNumber: 'X', email: 'a@b.c', amount: '0.00' })
+      const args = buildCreateDealArgs({ dealNumber: 'X', email: 'a@b.c', amount: '0.00' })
       return !('deal_cost' in args.params.deal)
     }
   )
@@ -339,7 +349,7 @@ export function runGcDealUpdateChecks(results: LifepayUnitTestResult[]): void {
     'lp_gc_deal_update_amount_non_numeric',
     'buildCreateDealArgs: amount="abc" → deal_cost отсутствует',
     () => {
-      const args = buildCreateDealArgs({ orderNumber: 'X', email: 'a@b.c', amount: 'abc' })
+      const args = buildCreateDealArgs({ dealNumber: 'X', email: 'a@b.c', amount: 'abc' })
       return !('deal_cost' in args.params.deal)
     }
   )
@@ -350,7 +360,7 @@ export function runGcDealUpdateChecks(results: LifepayUnitTestResult[]): void {
     'buildCreateDealArgs: структура строго { params: { user, deal } }, нет лишних полей',
     () => {
       const args = buildCreateDealArgs({
-        orderNumber: 'ORD-99',
+        dealNumber: 'ORD-99',
         email: 'x@y.z',
         amount: '500'
       }) as Record<string, unknown>

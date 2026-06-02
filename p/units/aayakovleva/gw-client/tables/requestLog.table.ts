@@ -52,6 +52,14 @@ export const RequestLog = Heap.Table('t__lifepay-sbp-client__reqlog__c7Np4S', {
       }
     })
   ),
+  gcDealNumber: Heap.Optional(
+    Heap.String({
+      customMeta: {
+        title:
+          'GC поле number (номер заказа) из getDealFields — для передачи в createDeal.deal_number'
+      }
+    })
+  ),
   clientHttpStatus: Heap.Number({
     customMeta: { title: 'HTTP-статус ответа gateway' }
   }),

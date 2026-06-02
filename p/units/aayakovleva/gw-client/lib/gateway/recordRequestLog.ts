@@ -26,6 +26,8 @@ export type RecordParams = {
   invoke: InvokeResult
   /** correlationId из args запроса (не пробрасывается в gateway, хранится для связки с webhook). */
   correlationId?: string
+  /** GC поле number (номер заказа) из getDealFields — для последующей передачи в createDeal.deal_number. */
+  gcDealNumber?: string
 }
 
 /**
@@ -112,6 +114,7 @@ export async function recordRequestLog(ctx: app.Ctx, params: RecordParams): Prom
       argsRedacted: argsForLog,
       orderNumber,
       correlationId: params.correlationId || undefined,
+      gcDealNumber: params.gcDealNumber || undefined,
       clientHttpStatus: params.invoke.httpStatus,
       ok: params.invoke.ok,
       errorCode,

@@ -9,6 +9,7 @@
 
 import * as loggerLib from '../logger.lib'
 import { invokeByGateway } from './invokeDispatcher'
+import { recordRequestLog } from './recordRequestLog'
 import { convertToRub, type PaymentCurrency } from '../rates/currencyConverter'
 
 const LOG_MODULE = 'lib/gateway/gcDealResolver'
@@ -19,6 +20,7 @@ const GC_DEAL_FIELD_COST = 'cost'
 const GC_DEAL_FIELD_CURRENCY = 'currency'
 const GC_DEAL_FIELD_USER_ID = 'user_id'
 const GC_DEAL_FIELD_TITLE = 'title'
+const GC_DEAL_FIELD_NUMBER = 'number'
 const GC_DEAL_FIELD_IS_PAYED = 'is_payed'
 // status — вспомогательный признак; список оплаченных статусов расширяем,
 // основной признак — is_payed === true.
@@ -47,6 +49,8 @@ export type GcDealResolveResult =
       userId: string
       /** Позиции заказа из getDealFields (для серверной проверки допуска по id). */
       positions: { id: string }[]
+      /** GC поле number (номер заказа). Пустая строка при отсутствии в ответе GC. */
+      dealNumber: string
     }
   | { ok: false; code: GcDealErrorCode }
 
@@ -84,10 +88,12 @@ function extractGcDataObject(
  *
  * @param ctx — платформенный контекст
  * @param dealIdRaw — raw значение id заказа (string или number из тела запроса)
+ * @param correlationId — опциональный correlationId для связки с request_log
  */
 export async function resolveGcDeal(
   ctx: app.Ctx,
-  dealIdRaw: string | number
+  dealIdRaw: string | number,
+  correlationId?: string
 ): Promise<GcDealResolveResult> {
   // 1. Нормализация и валидация dealId
   const dealIdNum = Number(String(dealIdRaw).trim())
@@ -114,6 +120,26 @@ export async function resolveGcDeal(
     { dealId: dealIdNum },
     { httpMethod: 'GET' }
   )
+
+  try {
+    await recordRequestLog(ctx, {
+      gatewayId: 'gc',
+      op: 'getDealFields',
+      args: { dealId: dealIdNum },
+      invoke: dealRes,
+      correlationId
+    })
+  } catch (e) {
+    try {
+      await loggerLib.writeServerLog(ctx, {
+        severity: 3,
+        message: `[${LOG_MODULE}] record_log_failed`,
+        payload: { op: 'getDealFields', dealId: dealIdNum, error: String(e) }
+      })
+    } catch {
+      // глотаем
+    }
+  }
 
   if (!dealRes.ok) {
     await loggerLib.writeServerLog(ctx, {
@@ -212,6 +238,26 @@ export async function resolveGcDeal(
     { httpMethod: 'GET' }
   )
 
+  try {
+    await recordRequestLog(ctx, {
+      gatewayId: 'gc',
+      op: 'getUserFields',
+      args: { userId: dealUserId },
+      invoke: userRes,
+      correlationId
+    })
+  } catch (e) {
+    try {
+      await loggerLib.writeServerLog(ctx, {
+        severity: 3,
+        message: `[${LOG_MODULE}] record_log_failed`,
+        payload: { op: 'getUserFields', dealId: dealIdNum, error: String(e) }
+      })
+    } catch {
+      // глотаем
+    }
+  }
+
   if (!userRes.ok) {
     await loggerLib.writeServerLog(ctx, {
       severity: 4,
@@ -252,6 +298,15 @@ export async function resolveGcDeal(
   const titleRaw = dealObj[GC_DEAL_FIELD_TITLE]
   const title = typeof titleRaw === 'string' ? titleRaw.trim() : ''
 
+  // Номер заказа (GC поле number): строку trimим, число → строку, остальное → ''.
+  const numberRaw = dealObj[GC_DEAL_FIELD_NUMBER]
+  const dealNumber =
+    typeof numberRaw === 'string'
+      ? numberRaw.trim()
+      : typeof numberRaw === 'number'
+        ? String(numberRaw)
+        : ''
+
   // 10. Извлечение позиций заказа из поля positions (для сверки допуска — только по id).
   //     Каждый объект-элемент включаем целиком (даже с пустым offer_id): в whitelist
   //     позиция без распознанного id не совпадёт ни с одним allowed[].id и корректно
@@ -291,7 +346,8 @@ export async function resolveGcDeal(
     email,
     title,
     userId: String(dealUserId),
-    positions
+    positions,
+    dealNumber
   }
 }
 
@@ -342,6 +398,11 @@ export async function resolveGcDealAmount(
 
   const dealObj = extractGcDataObject(dealRes.responseBody)
   if (!dealObj) {
+    await loggerLib.writeServerLog(ctx, {
+      severity: 4,
+      message: `[${LOG_MODULE}] resolveGcDealAmount: deal_not_found`,
+      payload: { dealId: dealIdNum }
+    })
     return { ok: false }
   }
 

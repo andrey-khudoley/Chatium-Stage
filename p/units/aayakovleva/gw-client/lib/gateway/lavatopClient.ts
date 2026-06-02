@@ -88,6 +88,11 @@ export async function invokeLavatopGateway(
   const trimmed = baseUrl.trim()
   if (!trimmed) {
     const durationMs = Date.now() - start
+    await loggerLib.writeServerLog(ctx, {
+      severity: 4,
+      message: `[${LOG_MODULE}] invokeLavatopGateway: base_url_invalid`,
+      payload: { op }
+    })
     return buildProxyErrorResult(
       INVOKE_PROXY_ERROR_CODES.SETTINGS_MISSING,
       503,

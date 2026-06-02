@@ -32,32 +32,60 @@ export async function getCachedGcDealAmount(
 ): Promise<number | null> {
   try {
     const hit = await GcDealCache.findOneBy(ctx, { dealId: dealIdNormalized })
-    if (!hit) return null
 
     // Один замер времени — исключаем пограничный случай, когда TTL истекает
     // между двумя независимыми вызовами Date.now().
-    const age = Date.now() - hit.cachedAt
-    if (age < GC_DEAL_CACHE_TTL_MS) {
+    const age = hit ? Date.now() - hit.cachedAt : 0
+    if (hit && age < GC_DEAL_CACHE_TTL_MS) {
+      try {
+        await loggerLib.writeServerLog(ctx, {
+          severity: 7,
+          message: 'gcDealCache hit',
+          payload: { dealId: dealIdNormalized, age }
+        })
+      } catch {
+        // глотаем
+      }
       return hit.amount
     }
+
+    try {
+      await loggerLib.writeServerLog(ctx, {
+        severity: 7,
+        message: 'gcDealCache miss',
+        payload: { dealId: dealIdNormalized, reason: hit ? 'expired' : 'no_entry' }
+      })
+    } catch {
+      // глотаем
+    }
+
+    if (!hit) return null
 
     // Запись протухла — удаляем при чтении (без отдельной джобы).
     try {
       await GcDealCache.delete(ctx, hit.id)
     } catch (delErr) {
-      await loggerLib.writeServerLog(ctx, {
-        severity: 4,
-        message: `[${LOG_MODULE}] getCachedGcDealAmount: delete_stale_error`,
-        payload: { dealId: dealIdNormalized, error: String(delErr) }
-      })
+      try {
+        await loggerLib.writeServerLog(ctx, {
+          severity: 4,
+          message: `[${LOG_MODULE}] getCachedGcDealAmount: delete_stale_error`,
+          payload: { dealId: dealIdNormalized, error: String(delErr) }
+        })
+      } catch {
+        // глотаем
+      }
     }
     return null
   } catch (err) {
-    await loggerLib.writeServerLog(ctx, {
-      severity: 4,
-      message: `[${LOG_MODULE}] getCachedGcDealAmount: error`,
-      payload: { dealId: dealIdNormalized, error: String(err) }
-    })
+    try {
+      await loggerLib.writeServerLog(ctx, {
+        severity: 4,
+        message: `[${LOG_MODULE}] getCachedGcDealAmount: error`,
+        payload: { dealId: dealIdNormalized, error: String(err) }
+      })
+    } catch {
+      // глотаем
+    }
     return null
   }
 }
@@ -80,11 +108,24 @@ export async function setCachedGcDealAmount(
       cachedAt: Date.now(),
       amount
     })
+    try {
+      await loggerLib.writeServerLog(ctx, {
+        severity: 7,
+        message: 'gcDealCache set',
+        payload: { dealId: dealIdNormalized }
+      })
+    } catch {
+      // глотаем
+    }
   } catch (err) {
-    await loggerLib.writeServerLog(ctx, {
-      severity: 4,
-      message: `[${LOG_MODULE}] setCachedGcDealAmount: error`,
-      payload: { dealId: dealIdNormalized, error: String(err) }
-    })
+    try {
+      await loggerLib.writeServerLog(ctx, {
+        severity: 4,
+        message: `[${LOG_MODULE}] setCachedGcDealAmount: error`,
+        payload: { dealId: dealIdNormalized, error: String(err) }
+      })
+    } catch {
+      // глотаем
+    }
   }
 }

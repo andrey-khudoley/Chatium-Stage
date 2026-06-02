@@ -15,6 +15,7 @@ import { invokeLifepayGateway } from './invokeClient'
 import { invokeLavatopGateway } from './lavatopClient'
 import { invokeGcGateway } from './gcClient'
 import type { InvokeResult } from './invokeResult'
+import * as loggerLib from '../logger.lib'
 
 export type InvokeMeta = {
   /** HTTP-метод upstream — обязателен для `gatewayId: 'gc'`. */
@@ -28,10 +29,25 @@ export async function invokeByGateway(
   args: Record<string, unknown>,
   meta?: InvokeMeta
 ): Promise<InvokeResult> {
+  await loggerLib.writeServerLog(ctx, {
+    severity: 6,
+    message: '[gw-client] invokeByGateway start',
+    payload: { gatewayId, op, argsKeys: Object.keys(args) }
+  })
   switch (gatewayId) {
     case 'lifepay':
+      await loggerLib.writeServerLog(ctx, {
+        severity: 7,
+        message: '[gw-client] invokeByGateway dispatch',
+        payload: { gatewayId }
+      })
       return invokeLifepayGateway(ctx, op, args)
     case 'lavatop':
+      await loggerLib.writeServerLog(ctx, {
+        severity: 7,
+        message: '[gw-client] invokeByGateway dispatch',
+        payload: { gatewayId }
+      })
       return invokeLavatopGateway(ctx, op, args)
     case 'gc': {
       // httpMethod обязателен для GC — проверка стоит выше, в `api/lp/invoke.ts`.
@@ -40,6 +56,11 @@ export async function invokeByGateway(
       if (!meta?.httpMethod) {
         throw new Error('invokeByGateway: httpMethod is required for gatewayId="gc"')
       }
+      await loggerLib.writeServerLog(ctx, {
+        severity: 7,
+        message: '[gw-client] invokeByGateway dispatch',
+        payload: { gatewayId }
+      })
       return invokeGcGateway(ctx, op, args, meta.httpMethod)
     }
     default: {

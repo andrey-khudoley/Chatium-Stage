@@ -122,9 +122,23 @@ export async function findCachedBill(
       { amount: expectedAmount, currency: expectedCurrency },
       { checkAmount, checkCurrency }
     )
-    if (!matches) continue
+    if (!matches) {
+      await loggerLib.writeServerLog(ctx, {
+        severity: 7,
+        message: `[${LOG_MODULE}] findCachedBill: candidate_skip`,
+        payload: { reason: 'match_failed', requestId: row.requestId ?? '', op, gatewayId }
+      })
+      continue
+    }
     const url = extractPaymentUrlFromRow(row)
-    if (!url) continue
+    if (!url) {
+      await loggerLib.writeServerLog(ctx, {
+        severity: 7,
+        message: `[${LOG_MODULE}] findCachedBill: candidate_skip`,
+        payload: { reason: 'no_payment_url', requestId: row.requestId ?? '', op, gatewayId }
+      })
+      continue
+    }
     await loggerLib.writeServerLog(ctx, {
       severity: 6,
       message: `[${LOG_MODULE}] cache_hit`,

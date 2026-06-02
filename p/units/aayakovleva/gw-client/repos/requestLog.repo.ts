@@ -21,6 +21,7 @@ export type RequestLogCreatePayload = {
   argsRedacted: unknown
   orderNumber: string
   correlationId?: string
+  gcDealNumber?: string
   clientHttpStatus: number
   ok: boolean
   errorCode: string
@@ -48,7 +49,8 @@ export async function create(ctx: app.Ctx, data: RequestLogCreatePayload): Promi
   const row = await RequestLog.create(ctx, {
     ...data,
     correlationId: data.correlationId || undefined,
-    gatewayId: data.gatewayId || undefined
+    gatewayId: data.gatewayId || undefined,
+    gcDealNumber: data.gcDealNumber || undefined
   })
   await loggerLib.writeServerLog(ctx, {
     severity: 6,
@@ -391,6 +393,34 @@ export async function findLatestOkForIdempotency(
     payload: { op: params.op, orderNumber: params.orderNumber, count: rows.length }
   })
   return rows
+}
+
+/**
+ * Последняя (по requestedAt) запись createBill по correlationId.
+ * Используется dealResolveCache для извлечения gcDealNumber и email из сохранённого
+ * лога без повторного вызова GC API. Возвращает null, если записей нет.
+ */
+export async function findLatestCreateBillByCorrelationId(
+  ctx: app.Ctx,
+  correlationId: string
+): Promise<RequestLogRow | null> {
+  await loggerLib.writeServerLog(ctx, {
+    severity: 6,
+    message: `[${LOG_MODULE}] findLatestCreateBillByCorrelationId entry`,
+    payload: { correlationId }
+  })
+  const rows = await RequestLog.findAll(ctx, {
+    where: { correlationId, op: 'createBill' },
+    order: [{ requestedAt: 'desc' }],
+    limit: 1
+  })
+  const row = rows[0] ?? null
+  await loggerLib.writeServerLog(ctx, {
+    severity: 6,
+    message: `[${LOG_MODULE}] findLatestCreateBillByCorrelationId exit`,
+    payload: { correlationId, found: !!row }
+  })
+  return row
 }
 
 /**

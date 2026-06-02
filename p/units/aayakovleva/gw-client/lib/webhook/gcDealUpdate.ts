@@ -10,6 +10,7 @@
  */
 
 import { invokeByGateway } from '../gateway/invokeDispatcher'
+import { recordRequestLog } from '../gateway/recordRequestLog'
 import * as loggerLib from '../logger.lib'
 
 const LOG_MODULE = 'lib/webhook/gcDealUpdate'
@@ -18,13 +19,15 @@ const LOG_MODULE = 'lib/webhook/gcDealUpdate'
  * Строит аргументы `createDeal` из данных webhook-платежа.
  *
  * Замечания:
+ *   - `deal_number` = GC поле `number` (номер заказа для привязки сделки), НЕ id/correlationId.
+ *     Значение берётся из `input.dealNumber`, который должен содержать GC `number` из getDealFields.
  *   - `deal_is_paid` передаётся строкой `'1'` (требование валидатора GC gateway).
  *   - `deal_cost` включается ТОЛЬКО если `amount` парсится в конечное число > 0.
  *     `amount === '0'`, `'0.00'` или нечисловые значения → `deal_cost` намеренно
  *     не передаётся (нулевая / неизвестная сумма неинформативна для GC).
  */
 export function buildCreateDealArgs(input: {
-  orderNumber: string
+  dealNumber: string
   email: string
   amount?: string
 }): {
@@ -44,7 +47,7 @@ export function buildCreateDealArgs(input: {
     deal_is_paid: string
     deal_cost?: number
   } = {
-    deal_number: input.orderNumber,
+    deal_number: input.dealNumber,
     deal_status: 'payed',
     deal_is_paid: '1'
   }
@@ -74,20 +77,34 @@ export async function updateGcDealOnPayment(
   ctx: app.Ctx,
   input: {
     orderNumber: string
+    dealNumber: string
     email: string
     amount?: string
     correlationId: string
   }
 ): Promise<{ ok: boolean }> {
-  const { orderNumber, email, amount, correlationId } = input
+  const { orderNumber, dealNumber, email, amount, correlationId } = input
   try {
-    const res = await invokeByGateway(
-      ctx,
-      'gc',
-      'createDeal',
-      buildCreateDealArgs({ orderNumber, email, amount }),
-      { httpMethod: 'POST' }
-    )
+    const createDealArgs = buildCreateDealArgs({ dealNumber, email, amount })
+    const res = await invokeByGateway(ctx, 'gc', 'createDeal', createDealArgs, {
+      httpMethod: 'POST'
+    })
+
+    try {
+      await recordRequestLog(ctx, {
+        gatewayId: 'gc',
+        op: 'createDeal',
+        args: createDealArgs,
+        invoke: res,
+        correlationId
+      })
+    } catch (e) {
+      await loggerLib.writeServerLog(ctx, {
+        severity: 3,
+        message: `[${LOG_MODULE}] record_log_failed`,
+        payload: { op: 'createDeal', correlationId, error: String(e) }
+      })
+    }
 
     if (res.ok === true) {
       await loggerLib.writeServerLog(ctx, {
@@ -102,17 +119,41 @@ export async function updateGcDealOnPayment(
       })
       return { ok: true }
     } else {
-      await loggerLib.writeServerLog(ctx, {
-        severity: 3,
-        message: `[${LOG_MODULE}] gc_deal_update_gateway_error`,
-        payload: {
-          orderNumber,
-          correlationId,
-          httpStatus: res.httpStatus,
-          proxyError: res.proxyError,
-          requestId: res.requestId
-        }
-      })
+      const resErrorObj =
+        res.responseBody !== null &&
+        typeof res.responseBody.error === 'object' &&
+        res.responseBody.error !== null
+          ? (res.responseBody.error as Record<string, unknown>)
+          : null
+      const resErrorCode = typeof resErrorObj?.code === 'string' ? resErrorObj.code : undefined
+
+      if (resErrorCode === 'INVOKE_GC_LIMIT_ERROR') {
+        await loggerLib.writeServerLog(ctx, {
+          severity: 4,
+          message: `[${LOG_MODULE}] gc_deal_update_limit_error`,
+          payload: {
+            orderNumber,
+            dealNumber,
+            correlationId,
+            httpStatus: res.httpStatus,
+            requestId: res.requestId,
+            errorCode: resErrorCode
+          }
+        })
+      } else {
+        await loggerLib.writeServerLog(ctx, {
+          severity: 3,
+          message: `[${LOG_MODULE}] gc_deal_update_gateway_error`,
+          payload: {
+            orderNumber,
+            dealNumber,
+            correlationId,
+            httpStatus: res.httpStatus,
+            proxyError: res.proxyError,
+            requestId: res.requestId
+          }
+        })
+      }
       return { ok: false }
     }
   } catch (e) {

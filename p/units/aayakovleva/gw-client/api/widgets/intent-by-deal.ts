@@ -393,7 +393,8 @@ export const widgetIntentByDealRoute = app.post('/', async (ctx, req) => {
             op: 'createBill',
             args: argsForGateway,
             invoke: result,
-            correlationId
+            correlationId,
+            gcDealNumber: resolved.dealNumber
           })
         } catch (e) {
           await loggerLib.writeServerLog(lockCtx, {

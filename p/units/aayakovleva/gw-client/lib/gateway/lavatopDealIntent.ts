@@ -134,9 +134,31 @@ export async function handleLavatopDealIntent(
 
   const settings = await getWidgetSettings(ctx)
   if (settings.lavatopMin > 0 && amountRub < settings.lavatopMin) {
+    await loggerLib.writeServerLog(ctx, {
+      severity: 4,
+      message: `[${LOG_MODULE}] handleLavatopDealIntent: amount_below_min`,
+      payload: {
+        dealId: String(dealId),
+        currency,
+        corsHostname,
+        amountRub,
+        lavatopMin: settings.lavatopMin
+      }
+    })
     return { ok: false, code: 'WIDGET_AMOUNT_BELOW_MIN', httpStatus: 400 }
   }
   if (settings.lavatopMax > 0 && amountRub > settings.lavatopMax) {
+    await loggerLib.writeServerLog(ctx, {
+      severity: 4,
+      message: `[${LOG_MODULE}] handleLavatopDealIntent: amount_exceeds_limit`,
+      payload: {
+        dealId: String(dealId),
+        currency,
+        corsHostname,
+        amountRub,
+        lavatopMax: settings.lavatopMax
+      }
+    })
     return { ok: false, code: 'WIDGET_AMOUNT_EXCEEDS_LIMIT', httpStatus: 400 }
   }
 
@@ -217,6 +239,16 @@ export async function handleLavatopDealIntent(
           expectedAmount: convert.amount
         })
         if (hit && hit.paymentUrl) {
+          await loggerLib.writeServerLog(lockCtx, {
+            severity: 6,
+            message: `[${LOG_MODULE}] lock: idempotent_hit, skip create`,
+            payload: {
+              correlationId,
+              requestId: hit.requestId,
+              hasPaymentUrl: true,
+              gatewayId: 'lavatop'
+            }
+          })
           return { ok: true, paymentUrl: hit.paymentUrl, requestId: hit.requestId }
         }
 

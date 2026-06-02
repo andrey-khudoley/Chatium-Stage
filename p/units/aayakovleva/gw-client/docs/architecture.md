@@ -112,6 +112,17 @@ File-based, один файл = один роут с путём `/`:
 
 Для диагностики решений о доступности виджета включить `log_level=Debug` в `/web/admin`. При Info поток содержит только `success` и `body_invalid` (warnings).
 
+**Уровни логирования в gateway-слое (`lib/gateway/`) — расширено 2026-06-02:**
+
+Все публичные функции gateway-слоя покрыты структурированными логами через `loggerLib.writeServerLog`. Семантика уровней:
+
+- **Debug (severity 7):** сырые данные, промежуточные вычисления, выбор ветки — `argsKeys`, age кэша, выбор конкретного gateway в switch `invokeDispatcher`, cache hit/miss/set в `gcDealCache`. Примеры: запись `cache_hit` с полем `ageMs`; запись `cache_miss` с полем `reason` (`expired` или `no_entry`); запись `gateway_selected` с полем `gatewayId`.
+- **Info (severity 6):** точки входа в публичные функции с ключевыми параметрами — `gatewayId`, `op` — без сырых аргументов и тела ответа. Пример: запись `invoke_entry` в `invokeByGateway`.
+- **Warning (severity 4):** потенциально значимые события, не блокирующие выполнение — cache miss как информация об отсутствии записи, `delete_stale_error`, `event_not_found` в webhook.
+- **Error (severity 3):** ситуации, требующие вмешательства разработчика — `parse_error`, `write_error` при сбое записи в Heap.
+
+**Fail-open паттерн в catch-блоках:** все вызовы `writeServerLog`, расположенные внутри catch-блоков, дополнительно обёрнуты в собственный try/catch. Это исключает ситуацию, при которой сбой самого логирования прерывал бы основной поток или маскировал исходную ошибку. Реализовано в `gcDealCache.ts` (catch-блоки set/delete) и применяется как стандарт для всех новых catch-обработчиков в `lib/gateway/`.
+
 ## Интеграции
 
 - **LifePay gateway** (`p/saas/gw/lifepay`) — контракт: `POST/GET /api/v1/<op>`, заголовки `X-Lp-Apikey`, `X-Lp-Login`, ответ `X-Gateway-Request-Id`. Без ретраев. Таймаут 15 секунд. Webhook от LifePay приходит на `/web/webhook?token=...&correlationId=<uuid>`.
@@ -477,7 +488,8 @@ Chatium не поддерживает `app.options`, поэтому preflight-з
 | `lib/rates/currencyConverter.ts`           | `convertRubTo(amount, currency)` — конвертация RUB в RUB (тождество) / USD / EUR. `convertToRub(amount, currency)` — обратная конвертация: валюта → рубли (умножение на курс); используется в `resolveGcDealAmount` для приведения суммы non-RUB заказов к рублям перед сравнением с диапазоном. Приватный `getRubForOne(currency)` — единый источник курса для обоих направлений: ручной курс (`widget_lavatop_manual_rate_*`) → курс ЦБ РФ (cbr-xml-daily.ru / `@app/request`). Результат: `{ok, amount, rate, source:'identity'\|'manual'\|'cbr'}` или `{ok:false, code:'RATE_UNAVAILABLE'}`. `roundToCents` — округление до 2 знаков. |
 | `lib/gateway/lavatopDealIntent.ts`         | `handleLavatopDealIntent(ctx, {offerId, productId, gcDeal, currency})` — оркестратор Lava.Top deal-потока. **С 2026-06-01:** включает кэш-lookup идемпотентности и `recordRequestLog` после `createInvoice` (ранее не писал в `request_log`). Вызывается после серверной проверки `areAllOffersAllowed` в `intent-by-deal`. |
 | `lib/gateway/idempotentBillCache.ts`       | **Новый (2026-06-01).** Кэш-lookup идемпотентности создания счёта. Ищет в `request_log` последнюю успешную запись `createBill`/`createInvoice` по `op+gatewayId+orderNumber` в окне TTL 30 минут. Ключ LifePay: `orderNumber+amount`; Lava.Top: `orderNumber+currency+amount`. Сверка `amount`/`currency` в памяти (поля в `argsRedacted`). Статус счёта в gateway не проверяется. |
-| `lib/gateway/gcDealResolver.ts`            | `resolveGcDeal(ctx, dealId)` — резолвинг сделки GC: getDealFields → getUserFields. **С 2026-06-01:** возвращает также `positions: {id}[]` из `getDealFields.positions[].offer_id` — для серверной проверки офферов (сверка только по id). Email в логи не пишется (PII). |
+| `lib/gateway/dealResolveCache.ts`          | **Новый (2026-06-02).** `lookupDealResolve(ctx, correlationId)` — persist-first стратегия для webhook шага 5a: читает последнюю `createBill`-запись по `correlationId` через `findLatestCreateBillByCorrelationId`, валидирует `dealNumber`/`email`/`amount`, возвращает `{ok:true, dealNumber, email, amount}` или `{ok:false}`. При `ok:false` — webhook-приёмник переходит к fallback `resolveGcDeal`. |
+| `lib/gateway/gcDealResolver.ts`            | `resolveGcDeal(ctx, dealId, correlationId?)` — резолвинг сделки GC: getDealFields → getUserFields. **С 2026-06-02:** возвращает `dealNumber` (GC поле `number`) наряду с `amount/currency/email/title/userId/positions`; при пустом `number` от GC — `dealNumber` отсутствует без hard-fail; после каждого вызова GC-гейтвея пишет `recordRequestLog` (try/catch, gatewayId='gc', correlationId для связки). Email в логи не пишется (PII). |
 | `api/widgets/intent-by-deal.ts`            | POST /api/widgets/intent-by-deal — ветвление по `method`. **С 2026-06-01:** серверная проверка `areAllOffersAllowed(positions, settings)` до запуска платёжного потока; 403 `WIDGET_OFFER_NOT_ALLOWED` при запрещённой позиции. |
 | `api/widgets/intent-lavatop.ts`            | POST /api/widgets/intent-lavatop — **deprecated** (offer-поток Lava.Top). `offerId` как продуктовый параметр `createInvoice` сохранён. |
 | `shared/widgetCorsCheck.ts`                | Pure-функции CORS-проверки (`// @shared`)                                                                                                |
@@ -503,7 +515,7 @@ Chatium не поддерживает `app.options`, поэтому preflight-з
 
 При успешной оплате LifePay webhook-приёмник вызывает downstream-операцию `createDeal` в GetCourse-гейтвее — обновляет заказ (статус `payed`, признак оплаты `deal_is_paid='1'`).
 
-### Поток шага 5a в `web/webhook/index.tsx`
+### Поток шага 5a в `web/webhook/index.tsx` (актуально с 2026-06-02)
 
 ```
 POST /web/webhook?token=...&correlationId=<id>
@@ -512,16 +524,30 @@ POST /web/webhook?token=...&correlationId=<id>
   → unwrapWebhookBody / parseWebhookBody (шаг 4: разбор тела)
   → запись в webhook_log + дедупликация  (шаг 5: dedupeResult = 'first' | 'duplicate')
   → socket-публикация                    (если не дубль)
-  → шаг 5a: downstream createDeal        ← НОВЫЙ
+  → шаг 5a: downstream createDeal
       только при dedupeResult === 'first'
          AND isSuccessfulPayment         (type='payment', status='success')
-         AND orderNumber непустой
-         AND email непустой
+      → числовой ли correlationId?
+           нет (UUID) → skip, reason=non_numeric_correlationId (sev6)
+           да → dealId = correlationId
+      → lookupDealResolve(ctx, correlationId)       (persist-first, lib/gateway/dealResolveCache.ts)
+           → findLatestCreateBillByCorrelationId → валидация dealNumber/email/amount
+           → ok: true  → dealNumber, email, amount (без новых GC-вызовов)
+           → ok: false → fallback: resolveGcDeal (только при числовом correlationId)
+      → resolveGcDeal(ctx, dealId, correlationId)   (fallback)
+           → invokeByGateway('gc','getDealFields') → recordRequestLog (try/catch)
+           → invokeByGateway('gc','getUserFields') → recordRequestLog (try/catch)
+           → код WIDGET_GC_ALREADY_PAID → skip, reason=already_paid (sev6)
+           → иная ошибка → gc_resolve_failed (sev4), downstream не выполняется
+      → нет dealNumber или email → fail-closed (sev3, createDeal не вызывается, 200 OK)
       → updateGcDealOnPayment(ctx, input)
-          buildCreateDealArgs({ email, orderNumber, amount? })
-          invokeByGateway(ctx,'gc','createDeal',{params:{user:{email},deal:{...}}},{httpMethod:'POST'})
-          success → severity 6 (info)
-          ошибка  → severity 3 (error), не бросает
+           buildCreateDealArgs({ dealNumber, email, amount? })
+              deal_number = dealNumber (GC поле number, НЕ correlationId/id)
+           invokeByGateway('gc','createDeal',{...},{httpMethod:'POST'})
+           → recordRequestLog (try/catch)
+           success → severity 6 (info)
+           INVOKE_GC_LIMIT_ERROR → severity 4 (warn, gc_deal_update_limit_error)
+           иная ошибка → severity 3 (error), не бросает
       → обёрнут в try/catch, гарантирует 200 при любом исходе
   → ответ 200 OK
 ```
@@ -530,8 +556,10 @@ POST /web/webhook?token=...&correlationId=<id>
 
 | Файл | Роль |
 |------|------|
-| `lib/webhook/gcDealUpdate.ts` | `buildCreateDealArgs` (pure) + `updateGcDealOnPayment` (вызов gateway) |
-| `web/webhook/index.tsx` | Врезка шага 5a после дедупликации |
+| `lib/webhook/gcDealUpdate.ts` | `buildCreateDealArgs({ dealNumber, email, amount? })` (pure) + `updateGcDealOnPayment` (вызов gateway + `recordRequestLog`). `deal_number` = GC поле `number`, не correlationId. |
+| `lib/gateway/dealResolveCache.ts` | `lookupDealResolve(ctx, correlationId)` — persist-first: читает `createBill`-запись по correlationId, возвращает `{ dealNumber, email, amount }` без GC-вызовов |
+| `lib/gateway/gcDealResolver.ts` | `resolveGcDeal(ctx, dealId, correlationId?)` — fallback: getDealFields → getUserFields; возвращает `dealNumber` (GC поле `number`); записывает вызовы в `request_log` |
+| `web/webhook/index.tsx` | Шаг 5a: persist-first (lookupDealResolve) → fallback (resolveGcDeal) → fail-closed → createDeal |
 | `lib/tests/lifepayUnitPhase4Webhook.ts` | Юнит-тесты `buildCreateDealArgs` (чистая функция) |
 
 ### Идемпотентность и ограничения

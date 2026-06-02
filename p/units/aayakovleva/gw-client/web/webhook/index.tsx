@@ -55,6 +55,8 @@ import {
   type FormDataLike
 } from '../../lib/webhook/processWebhook'
 import { updateGcDealOnPayment } from '../../lib/webhook/gcDealUpdate'
+import { resolveGcDeal } from '../../lib/gateway/gcDealResolver'
+import { lookupDealResolve } from '../../lib/gateway/dealResolveCache'
 import { prepareRawLog } from '../../shared/prepareRawLog'
 import { extractCorrelationId } from '../../shared/correlation'
 import { paymentSocketChannel } from '../../shared/paymentSocket'
@@ -330,25 +332,87 @@ export const webhookRoute = app.post('/', async (ctx, req) => {
         message: `[${LOG_PATH}] gc_deal_update_skipped`,
         payload: { reason: 'not_first', dedupeResult, number: parsed.number }
       })
-    } else if (!parsed.orderNumber) {
+    } else if (!correlationId) {
       await loggerLib.writeServerLog(ctx, {
-        severity: 6,
+        severity: 4,
         message: `[${LOG_PATH}] gc_deal_update_skipped`,
-        payload: { reason: 'empty_order_number' }
-      })
-    } else if (!parsed.email) {
-      await loggerLib.writeServerLog(ctx, {
-        severity: 6,
-        message: `[${LOG_PATH}] gc_deal_update_skipped`,
-        payload: { reason: 'email_missing', orderNumber: parsed.orderNumber, hasEmail: false }
+        payload: { reason: 'correlationId_missing' }
       })
     } else {
-      await updateGcDealOnPayment(ctx, {
-        orderNumber: parsed.orderNumber,
-        email: parsed.email,
-        amount: parsed.amount,
-        correlationId
-      })
+      // Получаем dealNumber / email / amount: сначала из персистентного кэша (request_log),
+      // fallback — через resolveGcDeal (только при числовом correlationId).
+      let dealNumber = ''
+      let email = ''
+      let amount = ''
+
+      const persisted = await lookupDealResolve(ctx, correlationId)
+      if (persisted.ok) {
+        dealNumber = persisted.dealNumber
+        email = persisted.email
+        amount = persisted.amount
+        await loggerLib.writeServerLog(ctx, {
+          severity: 6,
+          message: `[${LOG_PATH}] gc_deal_update_persist_hit`,
+          payload: { correlationId, dealNumber }
+        })
+      } else if (!/^\d+$/.test(correlationId)) {
+        // correlationId нечисловой — resolveGcDeal не принимает, персиста нет → skip
+        await loggerLib.writeServerLog(ctx, {
+          severity: 4,
+          message: `[${LOG_PATH}] gc_deal_update_skipped`,
+          payload: { reason: 'non_numeric_correlationId_no_persist', correlationId }
+        })
+      } else {
+        // Fallback: вызов resolveGcDeal
+        const resolved = await resolveGcDeal(ctx, correlationId, correlationId)
+        if (!resolved.ok) {
+          const alreadyPaid = resolved.code === 'WIDGET_GC_ALREADY_PAID'
+          await loggerLib.writeServerLog(ctx, {
+            severity: alreadyPaid ? 6 : 4,
+            message: `[${LOG_PATH}] gc_deal_update_skipped`,
+            payload: {
+              reason: alreadyPaid ? 'already_paid' : 'gc_resolve_failed',
+              code: resolved.code,
+              correlationId
+            }
+          })
+        } else {
+          dealNumber = resolved.dealNumber
+          email = resolved.email
+          amount = String(resolved.amount)
+          await loggerLib.writeServerLog(ctx, {
+            severity: 6,
+            message: `[${LOG_PATH}] gc_deal_update_persist_miss_fallback`,
+            payload: { correlationId, dealNumber }
+          })
+        }
+      }
+
+      // Fail-closed: не вызываем createDeal без dealNumber или email.
+      // severity 3 (не 4): мы внутри ветки успешной первой оплаты — отсутствие
+      // данных здесь означает тихое расхождение «оплата прошла, GC-сделка НЕ
+      // помечена оплаченной», которое должно попадать в алертинг.
+      if (!dealNumber) {
+        await loggerLib.writeServerLog(ctx, {
+          severity: 3,
+          message: `[${LOG_PATH}] gc_deal_update_skipped`,
+          payload: { reason: 'deal_number_missing', correlationId }
+        })
+      } else if (!email) {
+        await loggerLib.writeServerLog(ctx, {
+          severity: 3,
+          message: `[${LOG_PATH}] gc_deal_update_skipped`,
+          payload: { reason: 'email_missing', correlationId }
+        })
+      } else {
+        await updateGcDealOnPayment(ctx, {
+          orderNumber: correlationId,
+          dealNumber,
+          email,
+          amount,
+          correlationId
+        })
+      }
     }
   } catch (e) {
     // Последний рубеж: не валим 200-ответ из-за сбоя downstream/логирования.
