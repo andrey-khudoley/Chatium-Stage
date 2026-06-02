@@ -89,6 +89,15 @@ export async function writeGatewayLogs(
       durationMs,
       requestedAt
     })
+    try {
+      await loggerLib.writeServerLog(ctx, {
+        severity: 7,
+        message: 'writeGatewayLogs requestLog saved',
+        payload: { requestId: gwLog.requestId, op: gwLog.op, durationMs }
+      })
+    } catch {
+      // глотаем
+    }
   } catch (e) {
     try {
       await loggerLib.writeServerLog(ctx, {
@@ -113,6 +122,15 @@ export async function writeGatewayLogs(
         durationMs: gwLog.upstream.durationMs,
         sentAt: gwLog.upstream.sentAt
       })
+      try {
+        await loggerLib.writeServerLog(ctx, {
+          severity: 7,
+          message: 'writeGatewayLogs upstreamLog saved',
+          payload: { requestId: gwLog.requestId, op: gwLog.op }
+        })
+      } catch {
+        // глотаем
+      }
     } catch (e) {
       try {
         await loggerLib.writeServerLog(ctx, {
