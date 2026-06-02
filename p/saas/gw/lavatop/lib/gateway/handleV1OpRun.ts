@@ -166,6 +166,11 @@ export async function runHandleV1Op<A>(
     }
   })
 
+  await loggerLib.writeServerLog(ctx, {
+    severity: 7,
+    message: `[api/v1/${op}] dispatch handler`,
+    payload: { requestId, op, argsKeys: Object.keys(args as Record<string, unknown>) }
+  })
   const upstreamStart = Date.now()
   const result = await handler(ctx, { requestId, credentials, args: args as A })
   const upstreamDuration = Date.now() - upstreamStart

@@ -87,6 +87,14 @@ async function forwardToCallback(
   payload: LavaWebhookPayload
 ): Promise<ForwardResult> {
   try {
+    await loggerLib.writeServerLog(ctx, {
+      severity: 7,
+      message: '[webhook] forwardToCallback call',
+      payload: {
+        callbackUrl: callbackUrl.split('?')[0],
+        eventType: payload.eventType
+      }
+    })
     const response = await request({
       url: callbackUrl,
       method: 'post',
@@ -116,6 +124,16 @@ export async function processWebhook(
   auth: WebhookAuth
 ): Promise<ProcessWebhookResult> {
   const secret = (await settingsLib.getLavaWebhookSecret(ctx)).trim()
+  await loggerLib.writeServerLog(ctx, {
+    severity: 6,
+    message: '[webhook] processWebhook start',
+    payload: {
+      eventType: payload.eventType,
+      contractId: payload.contractId,
+      hasEmail: typeof payload.buyer?.email === 'string',
+      hasPhone: false
+    }
+  })
   if (!secret) {
     await loggerLib.writeServerLog(ctx, {
       severity: 3,
@@ -229,6 +247,11 @@ export type ReforwardResult = {
  * Берёт маппинг по `lava_contract_id` события, форвардит сохранённый payload, обновляет результат.
  */
 export async function reforwardEvent(ctx: app.Ctx, eventId: string): Promise<ReforwardResult> {
+  await loggerLib.writeServerLog(ctx, {
+    severity: 6,
+    message: '[webhook] reforwardEvent start',
+    payload: { eventId }
+  })
   // Лок по eventId: два одновременных «Переслать повторно» по одной записи не дадут двойной форвард.
   return runWithExclusiveLock(
     ctx,
@@ -236,17 +259,36 @@ export async function reforwardEvent(ctx: app.Ctx, eventId: string): Promise<Ref
     async (lockCtx: app.Ctx): Promise<ReforwardResult> => {
       const event = await webhookEventRepo.findById(lockCtx, eventId)
       if (!event) {
+        await loggerLib.writeServerLog(lockCtx, {
+          severity: 4,
+          message: '[webhook] reforwardEvent warn: event_not_found',
+          payload: { eventId }
+        })
         return { success: false, error: 'event_not_found' }
       }
       const mapping = await webhookMappingRepo.findByContractId(lockCtx, event.lava_contract_id)
       if (!mapping) {
+        await loggerLib.writeServerLog(lockCtx, {
+          severity: 4,
+          message: '[webhook] reforwardEvent warn: mapping_not_found',
+          payload: { eventId }
+        })
         return { success: false, error: 'mapping_not_found' }
       }
 
       let payload: LavaWebhookPayload
       try {
         payload = JSON.parse(event.payload_json) as LavaWebhookPayload
-      } catch {
+      } catch (e) {
+        try {
+          await loggerLib.writeServerLog(lockCtx, {
+            severity: 3,
+            message: '[webhook] reforwardEvent error: payload_parse_error',
+            payload: { eventId, error: String(e) }
+          })
+        } catch {
+          // глотаем
+        }
         return { success: false, error: 'payload_parse_error' }
       }
 
