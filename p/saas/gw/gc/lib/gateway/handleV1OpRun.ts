@@ -266,6 +266,11 @@ export async function runHandleV1Op(
   const upstreamStart = Date.now()
   let handlerResult: GcHandlerResult
   try {
+    await loggerLib.writeServerLog(ctx, {
+      severity: 7,
+      message: `[api/v1/${op}] dispatch handler`,
+      payload: { requestId, op, argsKeys: Object.keys(args as Record<string, unknown>) }
+    })
     handlerResult = await handler(ctx, handlerArgs)
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : String(e)

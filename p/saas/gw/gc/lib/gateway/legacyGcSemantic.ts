@@ -5,6 +5,7 @@
 export type LegacyGcSemanticRule =
   | 'legacy_root_success_false'
   | 'legacy_root_error_string'
+  | 'legacy_result_limit_error'
   | 'legacy_result_error_flag'
   | 'legacy_result_success_false'
 
@@ -39,11 +40,17 @@ export function detectLegacySemanticErrorRule(gcJson: unknown): LegacyGcSemantic
 
   const result = o.result
   let l3 = false
+  let l3limit = false
   let l4 = false
   if (typeof result === 'object' && result !== null && !Array.isArray(result)) {
     const r = result as Record<string, unknown>
     if (r.error === true || r.error === 1) {
-      l3 = true
+      // GC возвращает текст «лимит» на русском; латинский «limit» не используется
+      if (typeof r.error_message === 'string' && /лимит/i.test(r.error_message)) {
+        l3limit = true
+      } else {
+        l3 = true
+      }
     }
     const rs = 'success' in r ? normalizeLegacyBool(r.success) : 'missing'
     if (rs === false) {
@@ -53,6 +60,7 @@ export function detectLegacySemanticErrorRule(gcJson: unknown): LegacyGcSemantic
 
   if (l1) return 'legacy_root_success_false'
   if (l2) return 'legacy_root_error_string'
+  if (l3limit) return 'legacy_result_limit_error'
   if (l3) return 'legacy_result_error_flag'
   if (l4) return 'legacy_result_success_false'
   return null

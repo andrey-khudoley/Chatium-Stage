@@ -64,6 +64,11 @@ async function executeWithLogging(
 
   let result: RunResult | null = null
   try {
+    await loggerLib.writeServerLog(ctx, {
+      severity: 6,
+      message: `[api/v1/${op}] execute start`,
+      payload: { requestId, op, method: String(req.method ?? 'GET').toUpperCase() }
+    })
     result = await runHandleV1Op(ctx, req, op, handler, gwLog)
     return result
   } catch (error) {

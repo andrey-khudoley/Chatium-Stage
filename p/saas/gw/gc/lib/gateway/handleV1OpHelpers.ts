@@ -159,6 +159,15 @@ export async function writeGatewayLogs(
       durationMs,
       requestedAt
     })
+    try {
+      await loggerLib.writeServerLog(ctx, {
+        severity: 7,
+        message: 'writeGatewayLogs requestLog saved',
+        payload: { requestId: gwLog.requestId, op: gwLog.op, durationMs }
+      })
+    } catch {
+      // глотаем
+    }
   } catch (e) {
     try {
       await loggerLib.writeServerLog(ctx, {
@@ -183,6 +192,15 @@ export async function writeGatewayLogs(
         durationMs: gwLog.upstream.durationMs,
         sentAt: gwLog.upstream.sentAt
       })
+      try {
+        await loggerLib.writeServerLog(ctx, {
+          severity: 7,
+          message: 'writeGatewayLogs upstreamLog saved',
+          payload: { requestId: gwLog.requestId, op: gwLog.op }
+        })
+      } catch {
+        // глотаем
+      }
     } catch (e) {
       try {
         await loggerLib.writeServerLog(ctx, {
@@ -289,6 +307,31 @@ export async function interpretGcAndBuildResult(
   }
 
   if (outcome.kind === 'semantic_error') {
+    // ранняя ветка — limit error
+    if (outcome.gcContour === 'legacy' && outcome.gcRule === 'legacy_result_limit_error') {
+      await loggerLib.writeServerLog(ctx, {
+        severity: 4,
+        message: `[api/v1/${op}] gc semantic limit`,
+        payload: baseLog({
+          logStage: 'gc_semantic_limit',
+          errorCode: 'INVOKE_GC_LIMIT_ERROR',
+          gcSemanticRule: outcome.gcRule,
+          durationMs: upstreamDuration,
+          gcHttpStatus: gc.gcStatus,
+          gcBodyPreview: (gc.gcBodyText ?? '').slice(0, 512)
+        })
+      })
+      return {
+        response: v1ErrorResponse('INVOKE_GC_LIMIT_ERROR', requestId, {
+          gcContour: 'legacy',
+          gcRule: outcome.gcRule
+        }),
+        errorCode: 'INVOKE_GC_LIMIT_ERROR',
+        gcDiagnostic: packGcDiagnostic(gc)
+      }
+    }
+
+    // общая ветка semantic error
     await loggerLib.writeServerLog(ctx, {
       severity: 4,
       message: `[api/v1/${op}] gc semantic`,
@@ -297,7 +340,8 @@ export async function interpretGcAndBuildResult(
         errorCode: 'INVOKE_GC_SEMANTIC_ERROR',
         gcSemanticRule: outcome.gcRule,
         durationMs: upstreamDuration,
-        gcHttpStatus: gc.gcStatus
+        gcHttpStatus: gc.gcStatus,
+        gcBodyPreview: (gc.gcBodyText ?? '').slice(0, 512)
       })
     })
     const semDetails: Record<string, unknown> = {

@@ -30,6 +30,8 @@ export const V1_ERROR_MESSAGES: Record<string, string> = {
     'GetCourse вернул ответ с HTTP вне диапазона 200–299, либо при ожидаемом JSON произошла ошибка разбора тела.',
   INVOKE_GC_SEMANTIC_ERROR:
     'GetCourse вернул HTTP 200–299, но в JSON ответа признаки ошибки платформы (§2.8.2): контур Legacy (success/result) или контур new (status/code, либо data.result при успешной обёртке).',
+  INVOKE_GC_LIMIT_ERROR:
+    'GetCourse вернул HTTP 200–299, но в JSON ответа сообщение о достижении лимита создания объектов через API.',
   INVOKE_GC_TIMEOUT: 'Превышено время ожидания ответа от GetCourse.',
   INVOKE_GC_NETWORK_ERROR: 'Не удалось установить соединение с GetCourse или запрос был оборван.',
   INVOKE_INTERNAL_ERROR:
@@ -54,6 +56,7 @@ export const V1_ERROR_HTTP_STATUS: Record<string, number> = {
   INVOKE_ARGS_SCHEMA_VIOLATION: 400,
   INVOKE_GC_UPSTREAM_ERROR: 502,
   INVOKE_GC_SEMANTIC_ERROR: 502,
+  INVOKE_GC_LIMIT_ERROR: 502,
   INVOKE_GC_TIMEOUT: 504,
   INVOKE_GC_NETWORK_ERROR: 502,
   INVOKE_INTERNAL_ERROR: 500,
