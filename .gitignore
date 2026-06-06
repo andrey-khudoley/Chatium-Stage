@@ -18,3 +18,7 @@ scripts/.usage-log/
 
 # Chatium config
 @.chatiumrc
+
+# Артефакты браузерных сессий (Playwright MCP, скриншоты страниц оплаты)
+.playwright-mcp/
+/payment-*.png
