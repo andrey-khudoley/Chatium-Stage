@@ -11,6 +11,16 @@ export const indexPageRoute = app.html('/', async (ctx, req) => {
   // Генерируем encoded socket ID для пользователя (для real-time обновлений)
   const userSocketId = await genSocketId(ctx, `user-${ctx.user.id}`)
 
+  // Вычисляем базовый URL-путь текущего приложения (например /tg/ или /inner/samples/imported/tg-copy/).
+  // Это нужно для корректной регистрации Service Worker и загрузки статики.
+  let basePath = '/tg/'
+  try {
+    const u = new URL(indexPageRoute.url())
+    basePath = u.pathname.endsWith('/') ? u.pathname : u.pathname + '/'
+  } catch (e) {
+    basePath = '/tg/'
+  }
+
   return (
     <html lang="ru">
       <head>
@@ -27,7 +37,7 @@ export const indexPageRoute = app.html('/', async (ctx, req) => {
         <meta name="format-detection" content="telephone=no" />
         
         {/* PWA Manifest */}
-        <link rel="manifest" href="/tg/manifest.json" />
+        <link rel="manifest" href={`${basePath}manifest.json`} />
         
         {/* Apple Touch Icons — multiple sizes for better iOS support */}
         <link rel="apple-touch-icon" sizes="72x72" href="https://fs.chatium.ru/get/image_msk_AaplkedAT7" />
@@ -52,9 +62,10 @@ export const indexPageRoute = app.html('/', async (ctx, req) => {
         <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
         
         {/* Firebase SDK для Push-уведомлений (compat версии) - defer для гарантии порядка загрузки */}
+        <script type="text/javascript">{`window.APP_BASE_PATH = ${JSON.stringify(basePath)};`}</script>
         <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js" defer></script>
         <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-compat.js" defer></script>
-        <script src="/tg/firebase-config.js" defer></script>
+        <script src={`${basePath}firebase-config.js`} defer></script>
         
         {/* Inline CSS - theme.css */}
         <style>{`

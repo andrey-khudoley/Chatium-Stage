@@ -1,7 +1,19 @@
+// Вычисляем базовый путь из того места, где лежит SW.
+// Например: /inner/samples/imported/tg-copy/firebase-messaging-sw.js -> /inner/samples/imported/tg-copy/
+var BASE_PATH = (function () {
+  try {
+    var p = self.location.pathname || '/';
+    var i = p.lastIndexOf('/');
+    return i >= 0 ? p.slice(0, i + 1) : '/';
+  } catch (e) {
+    return '/';
+  }
+})();
+
 // Функция для отправки логов на сервер (для отладки с телефона)
 async function sendServerLog(type, message, details = null) {
   try {
-    await fetch('/tg/api/client-logs-sw', {
+    await fetch(BASE_PATH + 'api/client-logs-sw', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -20,16 +32,24 @@ async function sendServerLog(type, message, details = null) {
 
 const CACHE_NAME = 'tg-chat-v4';
 const STATIC_ASSETS = [
-  '/tg/icons/icon-192.png',
-  '/tg/icons/icon-512.png'
+  BASE_PATH + 'icons/icon-192.png',
+  BASE_PATH + 'icons/icon-512.png'
 ];
 
 // Импортируем Firebase SDK (compat версии для SW)
-importScripts('https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js');
-importScripts('https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-compat.js');
+try {
+  importScripts('https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js');
+  importScripts('https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-compat.js');
+} catch (e) {
+  console.error('[SW] Failed to load Firebase SDK:', e);
+}
 
 // Загружаем конфигурацию
-importScripts('/tg/firebase-config.js');
+try {
+  importScripts(BASE_PATH + 'firebase-config.js');
+} catch (e) {
+  console.error('[SW] Failed to load firebase-config.js:', e);
+}
 
 let messaging = null;
 try {

@@ -302,6 +302,21 @@ let messaging = null
 let fcmToken = null
 let swRegistration = null
 
+// Вычисляем базовый путь приложения из текущего URL.
+// Это нужно потому, что приложение может отдаваться по разным префиксам
+// (например, /tg/ или /inner/samples/imported/tg-copy/).
+function getAppBasePath() {
+  if (typeof window !== 'undefined' && window.APP_BASE_PATH) {
+    return window.APP_BASE_PATH
+  }
+  if (typeof window === 'undefined') return '/'
+  let path = window.location.pathname || '/'
+  // Убираем хвостовую часть после последнего слеша (это либо файл, либо пустота)
+  const lastSlash = path.lastIndexOf('/')
+  if (lastSlash >= 0) path = path.slice(0, lastSlash + 1)
+  return path || '/'
+}
+
 // Регистрация Service Worker (ПЕРЕД инициализацией Firebase)
 async function registerServiceWorker() {
   console.log('[SW] 🔧 ============================================')
@@ -314,9 +329,11 @@ async function registerServiceWorker() {
   }
   
   try {
-    console.log('[SW] 📝 Registering /tg/firebase-messaging-sw.js...');
-    const registration = await navigator.serviceWorker.register('/tg/firebase-messaging-sw.js', {
-      scope: '/tg/'
+    const basePath = getAppBasePath()
+    const swUrl = basePath + 'firebase-messaging-sw.js'
+    console.log('[SW] 📝 Registering', swUrl, 'with scope', basePath);
+    const registration = await navigator.serviceWorker.register(swUrl, {
+      scope: basePath
     })
     
     console.log('[SW] ✅ SW registered:', registration.scope);
