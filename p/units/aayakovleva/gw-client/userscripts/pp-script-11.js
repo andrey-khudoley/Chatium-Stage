@@ -60,6 +60,86 @@ $(function () {
     return document.getElementById(methodId) || document.querySelector('.' + methodId)
   }
 
+  /**
+   * applyMethodCaption(el, rawCaption): upsert-вставка подписи метода (.pp-method-caption).
+   * Подпись — описательный текст под методом, задаётся в панели вместо скрытых системных
+   * текстов GetCourse. Блок добавляется ПОСЛЕДНИМ прямым потомком карточки метода, чтобы
+   * визуально лежать под кнопкой и переезжать вместе с методом при раскладке по CSS order.
+   * Пустая подпись — удаляет ранее вставленный блок. Идемпотентна (сравнение с textContent).
+   */
+  function applyMethodCaption(el, rawCaption) {
+    var caption = typeof rawCaption === 'string' ? rawCaption.trim() : ''
+    // Кредитные/рассрочечные блоки (gc-payment-method-credit) — насыщенный контент
+    // разной высоты, центрируемый через ID-правило justify-content:center !important.
+    // При подписи это «плавит» выравнивание: лого/кнопки/подписи у соседних карточек
+    // встают на разной высоте. Правим инлайн (см. ниже).
+    var isCredit = el.classList && el.classList.contains('gc-payment-method-credit')
+    var existing = null
+    for (var i = 0; i < el.children.length; i++) {
+      var ch = el.children[i]
+      if (ch.className && (' ' + ch.className + ' ').indexOf(' pp-method-caption ') !== -1) {
+        existing = ch
+        break
+      }
+    }
+    if (!caption) {
+      if (existing) existing.remove()
+      // Карточка метода центрирует контент через flex; класс переводил её в
+      // колоночную раскладку ради подписи — без подписи снимаем класс,
+      // навязанное выравнивание и нормализацию логотипа.
+      if (el.classList) el.classList.remove('pp-has-caption')
+      if (isCredit) {
+        el.style.removeProperty('justify-content')
+        el.style.removeProperty('min-height')
+        var logoOff = el.querySelector('img')
+        if (logoOff) {
+          logoOff.style.removeProperty('height')
+          logoOff.style.removeProperty('object-fit')
+        }
+      }
+      return
+    }
+    if (!existing) {
+      existing = document.createElement('div')
+      existing.className = 'pp-method-caption'
+      el.appendChild(existing)
+    }
+    // Зануляем margin подписи инлайн-!important. GC вешает на любой <div> внутри метода
+    // правило по ID (напр. `#yandex-split div { margin-bottom: 20px }`), которое
+    // class-селектором .pp-method-caption{margin:0} не перебить (ID > class). Без этого
+    // у части карточек подпись «висит» на 20px выше дна и не выравнивается с соседями.
+    existing.style.setProperty('margin', '0', 'important')
+    // Класс на карточке: CSS переключает flex-раскладку в колонку (лого сверху,
+    // подпись снизу) — см. pp-style.css «.pp-has-caption».
+    if (el.classList) el.classList.add('pp-has-caption')
+    // Кредитный блок: контент прижимаем к верху, подпись — к низу (space-between),
+    // чтобы у соседних карточек выровнялись верхний (лого) и нижний (подпись) края.
+    // Инлайн !important перебивает ID-правило justify-content:center !important —
+    // class-селектором это не сделать (ID выигрывает по специфичности). У простых
+    // карточек контент одинаковой высоты — там сохраняем центрирование (без правки).
+    if (isCredit) {
+      el.style.setProperty('justify-content', 'space-between', 'important')
+      // Снимаем навязанную ID-правилом min-height (~240px): на коротких карточках
+      // (лого + кнопка, без списка опций) она создавала большой пустой зазор между
+      // кнопкой и прижатой к низу подписью. Без floor карточка ужимается под контент,
+      // зазор сокращается; на карточках с длинным списком опций контент всё равно выше
+      // (min-height не влияет). Подписи остаются выровнены по низу (space-between).
+      // Нижний отступ контент-блока ужимается в CSS (см. pp-style.css).
+      el.style.setProperty('min-height', '0', 'important')
+      // Нормализуем высоту логотипа. У соседних кредитных карточек логотипы разной
+      // высоты (напр. Я.Сплит: 17px у improved-варианта vs 32px у обычного) → блоки
+      // разной высоты → кнопки и подписи расходятся. Фикс-высота + object-fit:contain
+      // (без искажения, letterbox) выравнивает зоны логотипов → кнопки/подписи встают
+      // на одну линию. Инлайн !important — высоту лого тоже задаёт ID-правило (max-height).
+      var logo = el.querySelector('img')
+      if (logo) {
+        logo.style.setProperty('height', '34px', 'important')
+        logo.style.setProperty('object-fit', 'contain', 'important')
+      }
+    }
+    if (existing.textContent !== caption) existing.textContent = caption
+  }
+
   // Явное распределение методов по секциям. Порядок в массиве = порядок отображения внутри секции.
   // Рассрочки: tinkoffcredit-2, poscredit, resource-razvitie (по запросу) + остальные кредитные.
   let creditIds = [
@@ -435,6 +515,14 @@ $(function () {
             var img = el.querySelector('img')
             if (img) img.src = methodCfg.imageUrl
           }
+
+          // (3a) Подпись метода (caption) — описательная строка под методом.
+          //      Вставляется как блок .pp-method-caption внутрь карточки метода
+          //      (последним потомком), поэтому держится визуально под кнопкой и
+          //      переезжает вместе с методом при раскладке по CSS order. Пустая
+          //      подпись удаляет ранее вставленный блок (идемпотентный upsert).
+          //      textContent (а не innerHTML) — без HTML-инъекций (caption — план-текст).
+          applyMethodCaption(el, methodCfg.caption)
 
           // (5) Amount-фильтр: скрыть если сумма вне диапазона [minAmount, maxAmount].
           //     Пропускаем если сумму не удалось определить.

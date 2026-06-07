@@ -2188,6 +2188,72 @@ form td {
   color: var(--main-color);
 }
 
+/* ============================================================
+   ПОДПИСЬ МЕТОДА (.pp-method-caption) — 2026-06-07
+   Описательная строка под методом, задаётся в панели вместо
+   скрытых системных текстов GetCourse. Блок вставляет скрипт 11
+   последним потомком карточки метода и вешает на карточку класс
+   .pp-has-caption (флаг наличия подписи).
+
+   Все карточки методов — flex с центровкой (align/justify center).
+   .pp-has-caption переводит карточку в колоночную раскладку:
+   лого сверху, подпись снизу. Карточные методы фикс-высотой 200px
+   (overflow:hidden) — ограничиваем высоту лого, чтобы подпись
+   уместилась; кредитные/рассрочечные блоки растут (height:auto,
+   overflow:visible) — лого не ужимаем.
+   ============================================================ */
+.order-left-side .xdget-payform .pp-has-caption {
+  flex-direction: column !important;
+  gap: 6px;
+}
+/* Карточные методы фикс-высоты: ограничиваем лого и снимаем верхний отступ,
+   чтобы подпись (до 2 строк) уместилась в 200px без обрезки. */
+.order-left-side .xdget-payform .pp-has-caption img {
+  max-height: 88px;
+  margin-top: 0 !important;
+  object-fit: contain;
+}
+/* Кредитные/рассрочечные блоки растут по высоте — лого оставляем как есть */
+.order-left-side .xdget-payform .gc-payment-method-credit.pp-has-caption img {
+  max-height: none;
+}
+/* Кредитные блоки: pp-script-11 ставит им инлайн justify-content:space-between
+   (контент к верху, подпись к низу — выравнивание краёв у соседних карточек).
+   Отступ сверху, чтобы при высоком контенте подпись не липла к кнопке. */
+.order-left-side .xdget-payform .gc-payment-method-credit.pp-has-caption .pp-method-caption {
+  padding-top: 12px;
+}
+/* Сжимаем нижний отступ контент-блока GC (инлайн margin-bottom:40px), чтобы подпись
+   шла ближе к кнопке. CSS !important перебивает инлайн-стиль (единственный случай, когда
+   author-!important сильнее inline). Вместе со снятой min-height (JS) даёт компактную
+   карточку с небольшим зазором кнопка→подпись. Контент-блок — единственный прямой
+   потомок-не-подпись (проверено по всем кредитным методам). */
+.order-left-side
+  .xdget-payform
+  .gc-payment-method-credit.pp-has-caption
+  > *:not(.pp-method-caption) {
+  margin-bottom: 6px !important;
+}
+.order-left-side .xdget-payform .pp-method-caption {
+  flex: 0 0 auto;
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0 10px;
+  font-size: 13px;
+  line-height: 1.35;
+  font-weight: 400;
+  color: #707070;
+  text-align: center;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  /* Не более двух строк — длинная подпись усекается аккуратным многоточием */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
 .order-left-side #sbp-pay {
   order: -11 !important;
 }
