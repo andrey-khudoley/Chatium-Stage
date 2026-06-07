@@ -139,14 +139,15 @@
 
 ## 3) Компоненты (components/)
 
-### `./components/home/*` (10 файлов)
+### `./components/home/*` (11 файлов)
 
-Подкомпоненты главной страницы: `HomeStatusStrip.vue`, `HomeToolbar.vue`, `HomeSearchResult.vue`, `HomeOverviewTab.vue`, `HomeRequestsTab.vue`, `HomeWebhooksTab.vue`, `HomeCreateRequestTab.vue`, `HomeAccessTab.vue`, `HomeRawModal.vue`, `HomeCreateInviteModal.vue`.
+Подкомпоненты главной страницы: `HomeStatusStrip.vue`, `HomeToolbar.vue`, `HomeSearchResult.vue`, `HomeOverviewTab.vue`, `HomeRequestsTab.vue`, `HomeWebhooksTab.vue`, `HomeCreateRequestTab.vue`, `HomeAccessTab.vue`, `HomeRawModal.vue`, `HomeCreateInviteModal.vue`, `HomePaymentPageTab.vue`.
 
-- `vue` → Composition API / Options API
+- `vue` → Composition API / Options API; `watch` — в `HomeSettingsTab.vue`, `HomeWidgetSettings.vue`, `HomePaymentPageTab.vue`
 - `../shared/logger` → `createComponentLogger` (где используется)
 - `../shared/sbpHomeFormat` (где нужна форматировка)
 - `../../shared/operationsClientCatalog` → `groupOperationsForUi`, `findClientOperation`, `gatewayLabel`, `operationKey`, `validateForm` (только HomeCreateRequestTab)
+- `../shared/useSettingsAutoSave` → `useSettingsAutoSave`, тип `AutoSaveResult` — в `HomeSettingsTab.vue`, `HomeWidgetSettings.vue`, `HomePaymentPageTab.vue`
 
 ### `./components/admin/*` (4 файла)
 
@@ -219,6 +220,13 @@
 - первая строка: `// @shared`
 - нет импортов (чистые форматтеры и helpers без Heap/ctx)
 - используется в: `pages/sbpHomePageMixin.ts`, `components/home/*`
+
+### `./shared/useSettingsAutoSave.ts`
+
+- `vue` → Composition API (composable)
+- нет внутренних импортов
+- экспортирует: `useSettingsAutoSave` (composable), типы `AutoSaveResult`, `AutoSaveFn`, `UseSettingsAutoSaveOptions`
+- используется в: `components/home/HomeSettingsTab.vue`, `components/home/HomeWidgetSettings.vue`, `components/home/HomePaymentPageTab.vue`
 
 ### `./shared/useLogsSocket.ts`
 

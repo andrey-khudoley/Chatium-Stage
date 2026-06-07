@@ -213,7 +213,7 @@ Admin может отозвать инвайт (`revoke-invite`) или гран
 - `HomeSettingsTab.vue` — вкладка «Настройки» (доступ — сотрудник + Admin через `requireInternalAccess`, реализовано 2026-05-29). Контейнер для operational/business-настроек. Содержит две карточки:
   1. **GetCourse** (`gc_enabled`) — единственное локальное поле. SSR-проп `initialGcEnabled: boolean`. Сохранение через `saveOperationalSettingRoute.run(ctx, ...)` (whitelist в endpoint-е допускает только operational-ключи, `guardInternalApi`).
   2. **Виджеты оплаты** (`HomeWidgetSettings`) — карточка с 12 виджет-ключами (enabled/domains/min/max/offer-фильтр для LifePay и Lava.Top), перенесена из `/web/admin`. Сохранение через `widgetSettingsSaveRoute.run(ctx, ...)` (whitelist 12 ключей, `guardInternalApi`).
-  Стили карточек используют `ap-*` / `aw-*` (admin/widget CSS) — `index.tsx` главной инжектит `sbpAdminCss1..4` + `sbpWidgetsCss1` дополнительно к `sbpHomeCss1..4`.
+     Стили карточек используют `ap-*` / `aw-*` (admin/widget CSS) — `index.tsx` главной инжектит `sbpAdminCss1..4` + `sbpWidgetsCss1` дополнительно к `sbpHomeCss1..4`.
 - `HomeWidgetSettings.vue` — карточка виджетов на главной (`<script setup lang="ts">`). Loader офферов — `widgetOffersRoute.run(ctx)` (`guardInternalApi`). Использует `HomeWidgetOfferList.vue` для секции фильтра офферов.
 - `HomeWidgetOfferList.vue` — переиспользуемая секция фильтра офферов (whitelist/blacklist + поиск + чекбоксы). Loader передаётся пропом из родителя.
 - `HomeAccessTab.vue` — вкладка «Доступ» (Admin: инвайты и гранты).
@@ -265,6 +265,39 @@ Auth-разделение на уровне save-эндпоинтов:
 - `pagecss/sbpLogStreamCss1.ts`, `sbpLogStreamCss2.ts` — LogStreamPanel.vue.
 
 CSS-файлы содержат именованные строковые константы с уже неймспейснутыми классами (`home-`, `ap-`, `tp-`, `lsp-`). Импортировать только в TSX-роутах; в `.vue`-файлы запрещено.
+
+## Паттерн автосохранения настроек главной панели
+
+Вкладки «Настройки», «Виджеты оплаты» и «Страница оплаты» используют единый паттерн автосохранения — по образцу системной админки `/web/admin`.
+
+### Composable `shared/useSettingsAutoSave.ts`
+
+Реализует debounced-очередь сохранений. Принимает функцию сохранения одной пары `{key, value}` (через `route.run`); внутри ведёт карту debounce-таймеров — по одному на каждый ключ настройки.
+
+**Публичный интерфейс:**
+
+- `queue(key, value)` — поставить сохранение в очередь с debounce (не ждёт результата).
+- `flush(key, value)` — немедленное сохранение; возвращает `Promise<boolean>` (успех). Используется для тумблеров — при ошибке вызывающий компонент откатывает UI-состояние.
+- `saving` / `saveStatus` / `error` — реактивные состояния для UI-индикации.
+- Счётчик параллельных сохранений; очистка таймеров в `onBeforeUnmount`.
+
+### Использование в компонентах
+
+| Компонент                                | Применение                                                                                                                                                                                                                                         |
+| ---------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `components/home/HomeSettingsTab.vue`    | Тумблер `gc_enabled` → `flush` с откатом при ошибке                                                                                                                                                                                                |
+| `components/home/HomeWidgetSettings.vue` | По одному экземпляру composable на секцию (LifePay/Lava.Top); тумблер `enabled` → `flush`; текстовые/числовые поля → `watch` + `queue` (debounce); инвариант: пустой список офферов принудительно переводит `listType` в `'off'` до вызова `queue` |
+| `components/home/HomePaymentPageTab.vue` | Общие настройки (`GENERAL`): `enabled` → `flush`, `accentColor`/`calloutHtml` → `queue` (невалидный hex не отправляется); методы (`METHODS`): deep-watch + debounced bulk-update ключа; создание/удаление методов — отдельные роуты без composable |
+
+### Контракт API (не изменился)
+
+Все три эндпоинта принимают `{key, value}`:
+
+- `api/settings/save-operational.ts` — whitelist `[gc_enabled]`
+- `api/widgets/settings-save.ts` — whitelist 12 виджет-ключей
+- `api/payment-page/settings-save.ts` — METHODS bulk-update
+
+Composable не знает о конкретном эндпоинте — сохраняющая функция передаётся параметром при создании экземпляра.
 
 ## Раскладка главной страницы (pages/HomePage.vue)
 
@@ -467,6 +500,7 @@ Chatium не поддерживает `app.options`, поэтому preflight-з
 - Legacy fallback: `widget_offer_ids` — старый comma-separated список строк; `parseAllowedOffers` поддерживает оба формата при чтении. `lib/widget/widgetSettings.lib.ts` читает новый ключ с fallback на legacy.
 
 **Семантика проверки** (синхронизирована между `shared/widgetSettingsTypes.ts` и `userscripts/common.js`, помечена якорями «СИНХРОНИЗИРОВАНО»):
+
 - Сверка **только по `id`**. `title` в настройках — лишь подпись для админки, в сравнении не участвует.
 - `'off'`: фильтр не применяется — `isOfferAllowed` / `areAllOffersAllowed` возвращают `true` без проверки списка. Это единственный режим, при котором виджет и платёж работают при пустом списке офферов. **Дефолт**: несохранённый ключ `widget_lifepay_offer_list_type` / `widget_lavatop_offer_list_type` интерпретируется как `'off'` (DEFAULTS в `lib/settings.lib.ts`). Применяется одинаково на уровне config-эндпоинта (показ) и intent-эндпоинтов (авторизация платежа) — единый источник правды `areAllOffersAllowed`.
 - `'whitelist'`: позиция разрешена, если её `id` есть в списке.
@@ -474,38 +508,39 @@ Chatium не поддерживает `app.options`, поэтому preflight-з
 - Режим «Выключен» в веб-панели эмитит `listType='off'`. **Инвариант**: пустой список офферов при сохранении принудительно переводится в `'off'` — нельзя сохранить `whitelist`/`blacklist` без офферов; нормализует и legacy-записи. `areAllPositionsAllowed` в `userscripts/common.js` при `'off'` → `true` (синхронизировано с сервером).
 
 **Удалённый мёртвый код:**
+
 - `isOfferMatched`, `extractOrderAmount`, `isAmountInRange`, `postWidgetIntent` — удалены из `userscripts/common.js`.
 - `data-offer-id` на якоре виджета — удалён из сниппетов (`components/home/HomeWidgetSettings.vue`, `HomeWidgetOfferList.vue`).
 - Старый серверный offer-фильтр по одному `offerId` — удалён из `intent-by-deal`, `intent-lifepay`, `intent-lavatop` (в `intent-lavatop` `offerId` как продуктовый параметр `createInvoice` сохранён).
 
 ### Файлы виджетного слоя
 
-| Файл                                       | Назначение                                                                                                                               |
-| ------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| `userscripts/common.js`                    | Shared-утилиты в `window.GwWidgetCommon`: DOM-ожидание, `fetchWidgetConfig` (**с 2026-06-01: POST** вместо GET, передаёт `{ dealId, positions }` в теле), `postWidgetIntentByDeal`, `extractDealIdFromUrl`, постинг intent, модалка, фильтры суммы/офферов. `extractDealPositions`, `areAllPositionsAllowed` (клиентский DOM-фильтр позиций; **помечена @deprecated** после переноса логики на сервер). Ранний выход `if(!dealId) return` сохранён. |
-| `userscripts/lifepay-widget.user.js`       | Виджет LifePay: deal id из URL → `fetchWidgetConfig(dealId, positions)` → если `config.lifepay.enabled` — `postWidgetIntentByDeal` → QR-модалка. Клиентский offer-гейт убран (решение принимает сервер). `data-offer-id` на якоре удалён. |
-| `userscripts/lavatop-widget.user.js`       | Виджет Lava.Top: deal id из URL → `fetchWidgetConfig(dealId, positions)` → если `config.lavatop.enabled` — 3 кнопки валют (RUB/USD/EUR) → `postWidgetIntentByDeal({method:'lavatop', currency})` → редирект. Клиентский offer-гейт убран. |
-| `lib/rates/currencyConverter.ts`           | `convertRubTo(amount, currency)` — конвертация RUB в RUB (тождество) / USD / EUR. `convertToRub(amount, currency)` — обратная конвертация: валюта → рубли (умножение на курс); используется в `resolveGcDealAmount` для приведения суммы non-RUB заказов к рублям перед сравнением с диапазоном. Приватный `getRubForOne(currency)` — единый источник курса для обоих направлений: ручной курс (`widget_lavatop_manual_rate_*`) → курс ЦБ РФ (cbr-xml-daily.ru / `@app/request`). Результат: `{ok, amount, rate, source:'identity'\|'manual'\|'cbr'}` или `{ok:false, code:'RATE_UNAVAILABLE'}`. `roundToCents` — округление до 2 знаков. |
-| `lib/gateway/lavatopDealIntent.ts`         | `handleLavatopDealIntent(ctx, {offerId, productId, gcDeal, currency})` — оркестратор Lava.Top deal-потока. **С 2026-06-01:** включает кэш-lookup идемпотентности и `recordRequestLog` после `createInvoice` (ранее не писал в `request_log`). Вызывается после серверной проверки `areAllOffersAllowed` в `intent-by-deal`. |
-| `lib/gateway/idempotentBillCache.ts`       | **Новый (2026-06-01).** Кэш-lookup идемпотентности создания счёта. Ищет в `request_log` последнюю успешную запись `createBill`/`createInvoice` по `op+gatewayId+orderNumber` в окне TTL 30 минут. Ключ LifePay: `orderNumber+amount`; Lava.Top: `orderNumber+currency+amount`. Сверка `amount`/`currency` в памяти (поля в `argsRedacted`). Статус счёта в gateway не проверяется. |
-| `lib/gateway/dealResolveCache.ts`          | **Новый (2026-06-02).** `lookupDealResolve(ctx, correlationId)` — persist-first стратегия для webhook шага 5a: читает последнюю `createBill`-запись по `correlationId` через `findLatestCreateBillByCorrelationId`, валидирует `dealNumber`/`email`/`amount`, возвращает `{ok:true, dealNumber, email, amount}` или `{ok:false}`. При `ok:false` — webhook-приёмник переходит к fallback `resolveGcDeal`. |
-| `lib/gateway/gcDealResolver.ts`            | `resolveGcDeal(ctx, dealId, correlationId?)` — резолвинг сделки GC: getDealFields → getUserFields. **С 2026-06-02:** возвращает `dealNumber` (GC поле `number`) наряду с `amount/currency/email/title/userId/positions`; при пустом `number` от GC — `dealNumber` отсутствует без hard-fail; после каждого вызова GC-гейтвея пишет `recordRequestLog` (try/catch, gatewayId='gc', correlationId для связки). Email в логи не пишется (PII). |
-| `api/widgets/intent-by-deal.ts`            | POST /api/widgets/intent-by-deal — ветвление по `method`. **С 2026-06-01:** серверная проверка `areAllOffersAllowed(positions, settings)` до запуска платёжного потока; 403 `WIDGET_OFFER_NOT_ALLOWED` при запрещённой позиции. |
-| `api/widgets/intent-lavatop.ts`            | POST /api/widgets/intent-lavatop — **deprecated** (offer-поток Lava.Top). `offerId` как продуктовый параметр `createInvoice` сохранён. |
-| `shared/widgetCorsCheck.ts`                | Pure-функции CORS-проверки (`// @shared`)                                                                                                |
-| `shared/widgetSettingsTypes.ts`            | **С 2026-06-01:** `AllowedOffer{id,title}`; `offers` вместо `offerIds` в `WidgetSettingsData`/`WidgetPublicConfig`; `parseAllowedOffers` (поддержка нового формата + legacy); `isOfferAllowed`/`areAllOffersAllowed` — серверные чистые функции; ключи `WIDGET_LIFEPAY_OFFERS`, `WIDGET_LAVATOP_OFFERS`. |
-| `lib/widget/widgetSettings.lib.ts`         | `getWidgetSettings(ctx)` — параллельное чтение виджет-ключей; с 2026-06-01 читает `widget_lifepay_offers`/`widget_lavatop_offers` с fallback на legacy `widget_offer_ids`. |
-| `api/widgets/config.ts`                    | **POST** /api/widgets/config — публичный; с 2026-06-01 метод изменён с GET на POST. Принимает `{ dealId, positions }`, возвращает `WidgetAvailabilityConfig { config: { lifepay: {enabled}, lavatop: {enabled} } }`. Решение о `enabled` принимается на сервере: offer-фильтр + проверка суммы через `resolveGcDealAmount` + `GcDealCache`. |
-| `lib/gateway/gcDealResolver.ts` (resolveGcDealAmount) | `resolveGcDealAmount(ctx, dealId)` — лёгкий резолвер **только суммы** (один вызов `getDealFields`, без getUserFields/email/валюты). Оплаченная сделка → `ok:false`. Используется только в config-эндпоинте. В отличие от `resolveGcDeal` (intent-поток), не запрашивает email и не возвращает positions. |
-| `lib/gateway/gcDealCache.ts`               | `getCachedGcDealAmount` / `setCachedGcDealAmount` — TTL-кэш суммы GC-сделки (TTL=60с). Таблица `GcDealCache` (`tables/gcDealCache.table.ts`). Без `runWithExclusiveLock` — гонка при параллельных запросах безвредна (перезапись той же суммы). Поле `amount` = рублёвый эквивалент суммы заказа. Устаревшие записи удаляются при чтении (lazy eviction при cache miss). |
-| `api/widgets/intent-lifepay.ts`            | POST /api/widgets/intent-lifepay — публичный intent LifePay (offer-поток). Старый одиночный offer-фильтр удалён.                         |
-| `api/widgets/settings-get.ts`              | GET настроек виджетов (`guardInternalApi`, `// @shared-route`)                                                                            |
-| `api/widgets/settings-save.ts`             | POST сохранения настроек виджетов (`guardInternalApi`, `// @shared-route`, whitelist ключей)                                             |
-| `api/widgets/offers.ts`                    | GET офферов GetCourse (`guardInternalApi`, `// @shared-route`, проксирует `getOffers`)                                                   |
-| `api/settings/save-operational.ts`         | POST сохранения operational-настроек (`guardInternalApi`, `// @shared-route`, whitelist `gc_enabled`)                                    |
-| `components/home/HomeWidgetSettings.vue`   | Карточка настроек виджетов: с 2026-06-01 хранит `{id,title}[]`; режим «Выключен»=blacklist+[]; сниппеты без `data-offer-id`/`data-email`. |
-| `components/home/HomeWidgetOfferList.vue`  | Переиспользуемая секция фильтра офферов (whitelist/blacklist + поиск + чекбоксы); с 2026-06-01 оперирует `{id,title}[]`.                 |
-| `pagecss/sbpWidgetsCss1.ts`                | CSS виджет-карточки, классы `.aw-*`                                                                                                      |
+| Файл                                                  | Назначение                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| ----------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `userscripts/common.js`                               | Shared-утилиты в `window.GwWidgetCommon`: DOM-ожидание, `fetchWidgetConfig` (**с 2026-06-01: POST** вместо GET, передаёт `{ dealId, positions }` в теле), `postWidgetIntentByDeal`, `extractDealIdFromUrl`, постинг intent, модалка, фильтры суммы/офферов. `extractDealPositions`, `areAllPositionsAllowed` (клиентский DOM-фильтр позиций; **помечена @deprecated** после переноса логики на сервер). Ранний выход `if(!dealId) return` сохранён.                                                                                                                                                                                       |
+| `userscripts/lifepay-widget.user.js`                  | Виджет LifePay: deal id из URL → `fetchWidgetConfig(dealId, positions)` → если `config.lifepay.enabled` — `postWidgetIntentByDeal` → QR-модалка. Клиентский offer-гейт убран (решение принимает сервер). `data-offer-id` на якоре удалён.                                                                                                                                                                                                                                                                                                                                                                                                 |
+| `userscripts/lavatop-widget.user.js`                  | Виджет Lava.Top: deal id из URL → `fetchWidgetConfig(dealId, positions)` → если `config.lavatop.enabled` — 3 кнопки валют (RUB/USD/EUR) → `postWidgetIntentByDeal({method:'lavatop', currency})` → редирект. Клиентский offer-гейт убран.                                                                                                                                                                                                                                                                                                                                                                                                 |
+| `lib/rates/currencyConverter.ts`                      | `convertRubTo(amount, currency)` — конвертация RUB в RUB (тождество) / USD / EUR. `convertToRub(amount, currency)` — обратная конвертация: валюта → рубли (умножение на курс); используется в `resolveGcDealAmount` для приведения суммы non-RUB заказов к рублям перед сравнением с диапазоном. Приватный `getRubForOne(currency)` — единый источник курса для обоих направлений: ручной курс (`widget_lavatop_manual_rate_*`) → курс ЦБ РФ (cbr-xml-daily.ru / `@app/request`). Результат: `{ok, amount, rate, source:'identity'\|'manual'\|'cbr'}` или `{ok:false, code:'RATE_UNAVAILABLE'}`. `roundToCents` — округление до 2 знаков. |
+| `lib/gateway/lavatopDealIntent.ts`                    | `handleLavatopDealIntent(ctx, {offerId, productId, gcDeal, currency})` — оркестратор Lava.Top deal-потока. **С 2026-06-01:** включает кэш-lookup идемпотентности и `recordRequestLog` после `createInvoice` (ранее не писал в `request_log`). Вызывается после серверной проверки `areAllOffersAllowed` в `intent-by-deal`.                                                                                                                                                                                                                                                                                                               |
+| `lib/gateway/idempotentBillCache.ts`                  | **Новый (2026-06-01).** Кэш-lookup идемпотентности создания счёта. Ищет в `request_log` последнюю успешную запись `createBill`/`createInvoice` по `op+gatewayId+orderNumber` в окне TTL 30 минут. Ключ LifePay: `orderNumber+amount`; Lava.Top: `orderNumber+currency+amount`. Сверка `amount`/`currency` в памяти (поля в `argsRedacted`). Статус счёта в gateway не проверяется.                                                                                                                                                                                                                                                        |
+| `lib/gateway/dealResolveCache.ts`                     | **Новый (2026-06-02).** `lookupDealResolve(ctx, correlationId)` — persist-first стратегия для webhook шага 5a: читает последнюю `createBill`-запись по `correlationId` через `findLatestCreateBillByCorrelationId`, валидирует `dealNumber`/`email`/`amount`, возвращает `{ok:true, dealNumber, email, amount}` или `{ok:false}`. При `ok:false` — webhook-приёмник переходит к fallback `resolveGcDeal`.                                                                                                                                                                                                                                 |
+| `lib/gateway/gcDealResolver.ts`                       | `resolveGcDeal(ctx, dealId, correlationId?)` — резолвинг сделки GC: getDealFields → getUserFields. **С 2026-06-02:** возвращает `dealNumber` (GC поле `number`) наряду с `amount/currency/email/title/userId/positions`; при пустом `number` от GC — `dealNumber` отсутствует без hard-fail; после каждого вызова GC-гейтвея пишет `recordRequestLog` (try/catch, gatewayId='gc', correlationId для связки). Email в логи не пишется (PII).                                                                                                                                                                                               |
+| `api/widgets/intent-by-deal.ts`                       | POST /api/widgets/intent-by-deal — ветвление по `method`. **С 2026-06-01:** серверная проверка `areAllOffersAllowed(positions, settings)` до запуска платёжного потока; 403 `WIDGET_OFFER_NOT_ALLOWED` при запрещённой позиции.                                                                                                                                                                                                                                                                                                                                                                                                           |
+| `api/widgets/intent-lavatop.ts`                       | POST /api/widgets/intent-lavatop — **deprecated** (offer-поток Lava.Top). `offerId` как продуктовый параметр `createInvoice` сохранён.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| `shared/widgetCorsCheck.ts`                           | Pure-функции CORS-проверки (`// @shared`)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| `shared/widgetSettingsTypes.ts`                       | **С 2026-06-01:** `AllowedOffer{id,title}`; `offers` вместо `offerIds` в `WidgetSettingsData`/`WidgetPublicConfig`; `parseAllowedOffers` (поддержка нового формата + legacy); `isOfferAllowed`/`areAllOffersAllowed` — серверные чистые функции; ключи `WIDGET_LIFEPAY_OFFERS`, `WIDGET_LAVATOP_OFFERS`.                                                                                                                                                                                                                                                                                                                                  |
+| `lib/widget/widgetSettings.lib.ts`                    | `getWidgetSettings(ctx)` — параллельное чтение виджет-ключей; с 2026-06-01 читает `widget_lifepay_offers`/`widget_lavatop_offers` с fallback на legacy `widget_offer_ids`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| `api/widgets/config.ts`                               | **POST** /api/widgets/config — публичный; с 2026-06-01 метод изменён с GET на POST. Принимает `{ dealId, positions }`, возвращает `WidgetAvailabilityConfig { config: { lifepay: {enabled}, lavatop: {enabled} } }`. Решение о `enabled` принимается на сервере: offer-фильтр + проверка суммы через `resolveGcDealAmount` + `GcDealCache`.                                                                                                                                                                                                                                                                                               |
+| `lib/gateway/gcDealResolver.ts` (resolveGcDealAmount) | `resolveGcDealAmount(ctx, dealId)` — лёгкий резолвер **только суммы** (один вызов `getDealFields`, без getUserFields/email/валюты). Оплаченная сделка → `ok:false`. Используется только в config-эндпоинте. В отличие от `resolveGcDeal` (intent-поток), не запрашивает email и не возвращает positions.                                                                                                                                                                                                                                                                                                                                  |
+| `lib/gateway/gcDealCache.ts`                          | `getCachedGcDealAmount` / `setCachedGcDealAmount` — TTL-кэш суммы GC-сделки (TTL=60с). Таблица `GcDealCache` (`tables/gcDealCache.table.ts`). Без `runWithExclusiveLock` — гонка при параллельных запросах безвредна (перезапись той же суммы). Поле `amount` = рублёвый эквивалент суммы заказа. Устаревшие записи удаляются при чтении (lazy eviction при cache miss).                                                                                                                                                                                                                                                                  |
+| `api/widgets/intent-lifepay.ts`                       | POST /api/widgets/intent-lifepay — публичный intent LifePay (offer-поток). Старый одиночный offer-фильтр удалён.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| `api/widgets/settings-get.ts`                         | GET настроек виджетов (`guardInternalApi`, `// @shared-route`)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| `api/widgets/settings-save.ts`                        | POST сохранения настроек виджетов (`guardInternalApi`, `// @shared-route`, whitelist ключей)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| `api/widgets/offers.ts`                               | GET офферов GetCourse (`guardInternalApi`, `// @shared-route`, проксирует `getOffers`)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| `api/settings/save-operational.ts`                    | POST сохранения operational-настроек (`guardInternalApi`, `// @shared-route`, whitelist `gc_enabled`)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| `components/home/HomeWidgetSettings.vue`              | Карточка настроек виджетов: с 2026-06-01 хранит `{id,title}[]`; режим «Выключен»=blacklist+[]; сниппеты без `data-offer-id`/`data-email`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| `components/home/HomeWidgetOfferList.vue`             | Переиспользуемая секция фильтра офферов (whitelist/blacklist + поиск + чекбоксы); с 2026-06-01 оперирует `{id,title}[]`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| `pagecss/sbpWidgetsCss1.ts`                           | CSS виджет-карточки, классы `.aw-*`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 
 ### Роутинг виджетных эндпоинтов (config/routes.tsx)
 
@@ -554,13 +589,13 @@ POST /web/webhook?token=...&correlationId=<id>
 
 ### Ключевые файлы
 
-| Файл | Роль |
-|------|------|
-| `lib/webhook/gcDealUpdate.ts` | `buildCreateDealArgs({ dealNumber, email, amount? })` (pure) + `updateGcDealOnPayment` (вызов gateway + `recordRequestLog`). `deal_number` = GC поле `number`, не correlationId. |
-| `lib/gateway/dealResolveCache.ts` | `lookupDealResolve(ctx, correlationId)` — persist-first: читает `createBill`-запись по correlationId, возвращает `{ dealNumber, email, amount }` без GC-вызовов |
-| `lib/gateway/gcDealResolver.ts` | `resolveGcDeal(ctx, dealId, correlationId?)` — fallback: getDealFields → getUserFields; возвращает `dealNumber` (GC поле `number`); записывает вызовы в `request_log` |
-| `web/webhook/index.tsx` | Шаг 5a: persist-first (lookupDealResolve) → fallback (resolveGcDeal) → fail-closed → createDeal |
-| `lib/tests/lifepayUnitPhase4Webhook.ts` | Юнит-тесты `buildCreateDealArgs` (чистая функция) |
+| Файл                                    | Роль                                                                                                                                                                             |
+| --------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `lib/webhook/gcDealUpdate.ts`           | `buildCreateDealArgs({ dealNumber, email, amount? })` (pure) + `updateGcDealOnPayment` (вызов gateway + `recordRequestLog`). `deal_number` = GC поле `number`, не correlationId. |
+| `lib/gateway/dealResolveCache.ts`       | `lookupDealResolve(ctx, correlationId)` — persist-first: читает `createBill`-запись по correlationId, возвращает `{ dealNumber, email, amount }` без GC-вызовов                  |
+| `lib/gateway/gcDealResolver.ts`         | `resolveGcDeal(ctx, dealId, correlationId?)` — fallback: getDealFields → getUserFields; возвращает `dealNumber` (GC поле `number`); записывает вызовы в `request_log`            |
+| `web/webhook/index.tsx`                 | Шаг 5a: persist-first (lookupDealResolve) → fallback (resolveGcDeal) → fail-closed → createDeal                                                                                  |
+| `lib/tests/lifepayUnitPhase4Webhook.ts` | Юнит-тесты `buildCreateDealArgs` (чистая функция)                                                                                                                                |
 
 ### Идемпотентность и ограничения
 
@@ -594,16 +629,164 @@ POST /api/widgets/intent-by-deal { dealId, method }
 
 ### Ключи идемпотентности
 
-| Gateway  | op              | Ключ поиска                          | Сверка в памяти          |
-|----------|-----------------|--------------------------------------|--------------------------|
-| LifePay  | `createBill`    | `gatewayId + orderNumber`            | `amount`                 |
-| Lava.Top | `createInvoice` | `gatewayId + orderNumber(=dealId)`   | `currency + amount`      |
+| Gateway  | op              | Ключ поиска                        | Сверка в памяти     |
+| -------- | --------------- | ---------------------------------- | ------------------- |
+| LifePay  | `createBill`    | `gatewayId + orderNumber`          | `amount`            |
+| Lava.Top | `createInvoice` | `gatewayId + orderNumber(=dealId)` | `currency + amount` |
 
 ### Ограничения
 
 - Статус счёта в gateway не проверяется: если счёт истёк или был отменён, кэшированная ссылка отдаётся как есть. Клиент может получить неоплачиваемый URL до истечения TTL 30 минут.
 - TTL — жёсткий, не сбрасывается при повторных вызовах.
 - Источник кэша — `request_log`. Если `recordRequestLog` упал (try/catch), запись могла не попасть в журнал — кэша нет, следующий запрос снова пойдёт к gateway.
+
+## Страница оплаты GetCourse (реализовано 2026-06-06)
+
+Подсистема кастомизации страницы оплаты GetCourse (dealPay). Архитектурный принцип: школа подключает **один скрипт-loader**; обновления конфигурации и ресурсов катятся с сервера централизованно без изменения кода на стороне GC.
+
+Архитектурный вердикт о разделении ответственности: `payment_page_*`-ключи = единый источник **отображения** методов на странице оплаты; `widget_*`-ключи (lifepay/lavatop) = единый источник **платёжного допуска** (intent). Две подсистемы не дублируют друг друга — переиспользуют только общие типы и паттерны (CORS, `success`-обёртка, `offerListType`/`AllowedOffer`). Подробнее: `docs/architecture/payment-scheme.md`.
+
+### Слои подсистемы
+
+```
+[ Школа (GC-домен) ]
+  <script src="userscripts/pp-loader.js"></script>  ← один тег
+
+[ pp-loader.js (клиент, исполняется на GC-домене) ]
+  ?editMode=1 (конструктор GC) → ранний return: лоадер полностью отключён
+    (нет конфига, стилей, скриптов, прелоадера — кастомизация не мешает редактору)
+  вычисляет URL конфига из <script src>
+  POST /api/payment-page/config  (таймаут 5 с)
+    success:true  → window.__PP_CONFIG__ + инжект CSS-текста + последовательная загрузка 13 скриптов
+    success:false / ошибка / таймаут → оверлей «Ошибка рендеринга страницы оплаты»
+    general.enabled:false → нативная страница без оверлея
+  прелоадер #pp-preloader: showPreloader() создаёт оверлей, если его ещё нет в DOM
+    (если школа вставила пример прелоадера в HTML — переиспользует его, без дубля);
+    hidePreloader() прячет #pp-preloader после загрузки скриптов / при enabled:false
+
+[ api/payment-page/config.ts ]
+  POST, без auth, CORS *
+  success:false с HTTP 200 при внутренней ошибке
+  тело ответа не содержит accountId/секретов
+
+[ lib/paymentPage/paymentPageSettings.lib.ts ]
+  getPaymentPageGeneral(ctx) → { enabled, accentColor, calloutHtml, defaultMethod }
+  parsePaymentPageGeneral() — парсит ключ GENERAL; `defaultMethod` = methodKey выделенного
+    по умолчанию метода или '' (ни один); пустая строка = не задан
+  getPaymentPageMethods(ctx, opts?: { seed?: boolean }) → PaymentPageMethodRecord[]
+    (сортировка: section→order→createdAt)
+    seed=true (default): при первом вызове ensureSeeded(ctx) — идемпотентный reconcile
+      29 системных методов под write-локом gw-client:pp-method-write.
+      Fast-path по countSystem (isSystem=true), а не по countAll — кастомные методы
+      не маскируют недосев.
+    seed=false: только чтение, ensureSeeded не вызывается (используется в config-эндпоинте).
+
+[ repos/paymentPageMethods.repo.ts → tables/paymentPageMethods.table.ts → Heap ]
+  PaymentPageMethods: строка = один метод оплаты (isSystem, methodKey, section, order, resolver…)
+  CRUD: list / getByMethodKey / countAll / countSystem / create / updateByMethodKey / deleteByMethodKey
+  countSystem() — countBy({ isSystem: true }); используется fast-path seed'а.
+  list() логирует дубликаты methodKey (severity 3) при обнаружении.
+  все мутации сериализованы единым write-локом gw-client:pp-method-write
+
+[ repos/settings → Heap ]
+  ключи: payment_page_general (enabled, accentColor, calloutHtml)
+  ключ payment_page_methods — deprecated, не читается (миграция = сброс)
+
+[ userscripts/ — ассеты (плоские файлы) ]
+  pp-loader.js        — точка входа
+  pp-style.css        — конкатенация main.css + payment-page.css
+                        (loader тянет как текст, инжектит <style>)
+  pp-script-01..13.js — скрипты кастомизации
+                        (11/13 читают __PP_CONFIG__ с fallback — инвариант «не теряем метод»)
+                        pp-script-05.js: управление выделением метода по умолчанию.
+                          normalizeDefaultSelection() — вызывается в конце wire() на всех
+                          проходах (ready/load/1600/3600): снимает любое навязанное GC
+                          выделение .picked (в т.ч. штатный sber-pay) и проставляет .picked
+                          методу из general.defaultMethod через resolveDefaultEl()
+                          (resolver из конфига → fallback по methodKey; скрытые методы
+                          через isHidden отсеиваются). После ручного клика покупателя
+                          флаг userHasPicked=true — нормализация становится no-op
+                          (не перетирает выбор покупателя на поздних ретраях).
+                          Исправленный баг: GC помечал #sber-pay классом .picked при рендере
+                          dealPay → метод выглядел выбранным, хотя покупатель его не трогал.
+                        pp-script-11.js: section-driven раскладка методов по конфигу
+                          (с 2026-06-07): el.style.setProperty('order', sectionIndex*1000+order, 'important')
+                          инлайн !important побеждает !important из pp-style.css;
+                          методы раскладываются динамически по Object.keys(cfg.methods);
+                          каждый метод несёт resolver {type:'id'|'class', value} — единый
+                          источник адресации DOM-элемента (заменил конвенцию id-или-класс);
+                          fallback: при отсутствии resolver — старая конвенция id/class по имени;
+                          applyConfigDrivenLabels() — метки секций добавляются только для
+                          секций с видимыми методами, пустые секции скрываются;
+                          маппинг 7 секций→метки: recommended/pay/cards_rf/cards_world/
+                          installments/payparts/noncash;
+                          fallback при отсутствии window.__PP_CONFIG__ — прежнее поведение
+                          (hasAny-метки + DOM-перенос creditIds/payPartsIds);
+                          applyCallout() — инжектит div.pp-callout в .xdget-payform
+                          при непустом general.calloutHtml; CSS order:-13 ставит блок выше
+                          секции «Рекомендуемые способы оплаты» (.label-recommended, order:-12);
+                          upsert по data-pp-callout-src — не пересоздаёт DOM на ретраях build;
+
+[ Зеркало клиентских исходников ]
+  obsidian vault: payment-page/
+  constructor-export.json — встраивает loader + прелоадер как 1 виджет вместо 13 тегов
+```
+
+### Панель управления (вкладка «Страница оплаты»)
+
+Вкладка зарегистрирована в `shared/sbpHomeFormat.ts` (массив `sbpHomeTabs`, group `'management'`, icon `fa-credit-card`). Смонтирована в `pages/HomePage.vue` по условию `activeTab === 'paymentPage'`. SSR-пропсы из `index.tsx`: `initialPaymentPageGeneral`, `initialPaymentPageMethods`, `initialPaymentPageLoaderUrl`, `anchorBaseUrl`.
+
+Компонент: `components/home/HomePaymentPageTab.vue`. Содержит:
+
+- Карточку **общих настроек** (`enabled`, `accentColor`, `defaultMethod`). Select «метод по умолчанию» предлагает только включённые (`enabled=true`) методы, сгруппированные по секциям; значение `''` = не задан (нативное поведение GC без принудительного выделения).
+- **WYSIWYG-редактор коллаут-блока** (`calloutHtml`): поле `contenteditable` с `document.execCommand` (npm недоступен). Хранится в `payment_page_general`. Отдаётся клиенту через `POST /api/payment-page/config` в `general.calloutHtml`. `pp-script-11.js` (`applyCallout()`) инжектит `div.pp-callout` в `.xdget-payform` при непустом значении; блок позиционируется выше секции «Рекомендуемые способы оплаты» (`order:-13`, рекомендуемые — `order:-12`). HTML авторский (staff/admin), без серверной санитизации — доверенная модель. Пустое поле → блок не отображается, отдельного тумблера нет.
+- **Аккордеон-группировку 21 метода** по 7 секциям (`PAYMENT_PAGE_SECTIONS`: `recommended`, `pay`, `cards_rf`, `cards_world`, `installments`, `payparts`, `noncash`). Группы вычисляются динамически через `computed methodsBySection` по полю `section` каждого метода; сортировка внутри группы — `order` + индекс. Пустые группы скрываются. Заголовок группы: chevron + название + счётчик «N вкл / M всего»; клик — `toggleGroup`. Кнопка «Свернуть/Развернуть все» в шапке секции. При смене секции метода через select группа-назначение авто-раскрывается. Стили аккордеона (`.pp-group-*`) и строк методов (`.st-method-*`) определены в `pagecss/sbpSettingsCss1.ts`; компонент не содержит `<style scoped>`.
+- **Drag-and-drop управление секцией и порядком методов** (с 2026-06-07): нативный HTML5 DnD — перетаскивание метода между секциями-группами и переупорядочивание внутри секции; DnD-рукоятка (`.pp-dnd-handle`), классы состояния `.is-dragging` и `.pp-group.is-dnd-over`. При drop записывается последовательный `order` по позиции в группе. Мобайл-fallback: кнопки ↑/↓ и select «Переместить в секцию» (`.pp-mobile-actions`, `.pp-mobile-btn`) — доступны на устройствах без pointer. Поля select «Секция» и числовое «Порядок» удалены из деталей метода — секция и порядок задаются только DnD/кнопками. Атомарное обновление `methods.value` одним присваиванием (без мутаций по элементу). DnD-стили добавлены в `pagecss/sbpSettingsCss1.ts`.
+- Сниппет встраивания: `<script src>` с `loaderUrl` из SSR-пропа (хардкод пути запрещён) + пример прелоадера-оверлея с `id="pp-preloader"` (полноэкранный fixed-оверлей со спиннером; вставляется в HTML страницы заказа — показывается мгновенно и перекрывает «сырую» страницу; лоадер использует тот же id: не дублирует и скрывает его после рендера). Сниппет прелоадера несёт встроенный inline-`<script>`, который сам прячет оверлей при `?editMode=1` — дублирует проверку лоадера на случай, если `pp-loader.js` не загрузится (иначе прелоадер навсегда перекрыл бы редактор конструктора GC).
+
+Vue-компонент импортирует только `shared/*` и роуты.
+
+### Публичный конфиг-эндпоинт
+
+`POST /api/payment-page/config` — публичный (без auth, `Access-Control-Allow-Origin: *`).
+
+Ответ: `{ success: boolean, general: { enabled, accentColor, calloutHtml, defaultMethod }, methods: Record<methodKey, PaymentPageMethodPublic> }`.  
+Поле `methods` — объект с ключами-methodKey; каждый элемент несёт `resolver {type, value}`, `section`, `order`, `enabled`.  
+При `success: false` — HTTP 200 (fail-soft, loader показывает оверлей).  
+Тело не содержит `accountId` или секретных ключей.
+
+### Статика (userscripts/)
+
+Платформа отдаёт `userscripts/*.js` с `Content-Type: application/javascript` и `CORS *` — аналогично существующему `userscripts/common.js`. CSS (`pp-style.css`) loader тянет как текст через `fetch` и инжектит `<style>`-тегом — `Content-Type` сервера нерелевантен, достаточно CORS.
+
+### Поведение loader'а при сбоях
+
+| Ситуация                                        | Поведение                                           |
+| ----------------------------------------------- | --------------------------------------------------- |
+| `success: true`                                 | Применяет конфиг, загружает скрипты последовательно |
+| `success: false` / сетевая ошибка / таймаут 5 с | Непрозрачный оверлей поверх всего контента          |
+| `general.enabled: false`                        | Нативная страница GC без вмешательства              |
+
+Скрипты 5, 11 и 13 читают `window.__PP_CONFIG__` с fallback-значениями — инвариант: метод не скрывается без явного `enabled: false`, выхода суммы за диапазон или попадания в offer-исключение. `pp-script-05.js` читает `general.defaultMethod` из конфига для нормализации начального выделения; при отсутствии конфига — не трогает DOM.
+
+### Файлы подсистемы
+
+| Файл                                         | Назначение                                                                                                                                                                                                                                                     |
+| -------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `components/home/HomePaymentPageTab.vue`     | Vue-компонент вкладки панели управления; источник методов — SSR-пропс (массив записей); select «метод по умолчанию» в общих настройках — только включённые методы, сгруппированные по секциям                                                                  |
+| `api/payment-page/config.ts`                 | Публичный конфиг-эндпоинт (POST, CORS \*); собирает `Record<methodKey, PaymentPageMethodPublic>` (с resolver) из repo                                                                                                                                          |
+| `api/payment-page/settings-get.ts`           | Отдаёт массив записей `PaymentPageMethodRecord[]` для панели (guardInternalApi)                                                                                                                                                                                |
+| `api/payment-page/settings-save.ts`          | METHODS bulk-update через repo (guardInternalApi)                                                                                                                                                                                                              |
+| `api/payment-page/method-create.ts`          | POST создание нового метода (guardInternalApi; fail-closed). Новый метод получает `order = max(order в секции) + 1`, т.е. добавляется в конец своей секции.                                                                                                    |
+| `api/payment-page/method-delete.ts`          | POST удаление метода (guardInternalApi; запрет удаления системного isSystem=true)                                                                                                                                                                              |
+| `lib/paymentPage/paymentPageSettings.lib.ts` | `getPaymentPageMethods(ctx, opts?)` — читает из repo, seed=true (default) вызывает ensureSeeded; seed=false — только чтение (используется config-эндпоинтом); `getPaymentPageGeneral(ctx)` — возвращает `{ enabled, accentColor, calloutHtml, defaultMethod }` |
+| `lib/paymentPage/paymentPageMethodSeed.ts`   | `ensureSeeded(ctx)` — идемпотентный reconcile 29 системных методов под write-локом; fast-path по countSystem, а не countAll                                                                                                                                    |
+| `tables/paymentPageMethods.table.ts`         | Heap-схема таблицы `PaymentPageMethods`                                                                                                                                                                                                                        |
+| `repos/paymentPageMethods.repo.ts`           | CRUD над `PaymentPageMethods`: list/getByMethodKey/countAll/countSystem/create/updateByMethodKey/deleteByMethodKey; list() логирует дубликаты methodKey (severity 3)                                                                                           |
+| `shared/paymentPageTypes.ts`                 | Общие типы `PaymentPageMethodRecord`, `PaymentPageMethodPublic`, `PaymentPageResolver`, `PaymentPageGeneral` (вкл. `defaultMethod`) (`// @shared`)                                                                                                             |
+| `userscripts/pp-loader.js`                   | Клиентский loader (исполняется на GC-домене)                                                                                                                                                                                                                   |
+| `userscripts/pp-style.css`                   | Стили (main.css + payment-page.css)                                                                                                                                                                                                                            |
+| `userscripts/pp-script-01..13.js`            | Скрипты кастомизации dealPay                                                                                                                                                                                                                                   |
 
 ## Безопасность
 
